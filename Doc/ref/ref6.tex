@@ -5,22 +5,23 @@ Simple statements are comprised within a single logical line.
 Several simple statements may occur on a single line separated
 by semicolons.  The syntax for simple statements is:
 
-\begin{verbatim}
-simple_stmt:    expression_stmt
-              | assert_stmt
-              | assignment_stmt
-              | augmented_assignment_stmt
-              | pass_stmt
-              | del_stmt
-              | print_stmt
-              | return_stmt
-              | raise_stmt
-              | break_stmt
-              | continue_stmt
-              | import_stmt
-              | global_stmt
-              | exec_stmt
-\end{verbatim}
+\begin{productionlist}
+  \production{simple_stmt}
+             {\token{expression_stmt}
+              | \token{assert_stmt}
+              | \token{assignment_stmt}
+              | \token{augmented_assignment_stmt}
+              | \token{pass_stmt}
+              | \token{del_stmt}
+              | \token{print_stmt}
+              | \token{return_stmt}
+              | \token{raise_stmt}
+              | \token{break_stmt}
+              | \token{continue_stmt}
+              | \token{import_stmt}
+              | \token{global_stmt}
+              | \token{exec_stmt}}
+\end{productionlist}
 
 
 \section{Expression statements \label{exprstmts}}
@@ -32,9 +33,10 @@ returns no meaningful result; in Python, procedures return the value
 \code{None}).  Other uses of expression statements are allowed and
 occasionally useful.  The syntax for an expression statement is:
 
-\begin{verbatim}
-expression_stmt: expression_list
-\end{verbatim}
+\begin{productionlist}
+  \production{expression_stmt}
+             {\token{expression_list}}
+\end{productionlist}
 
 An expression statement evaluates the expression list (which may be a
 single expression).
@@ -59,9 +61,10 @@ any output.)
 Assert statements\stindex{assert} are a convenient way to insert
 debugging assertions\indexii{debugging}{assertions} into a program:
 
-\begin{verbatim}
-assert_statement: "assert" expression ["," expression]
-\end{verbatim}
+\begin{productionlist}
+  \production{assert_statement}
+             {"assert" \token{expression} ["," \token{expression}]}
+\end{productionlist}
 
 The simple form, \samp{assert expression}, is equivalent to
 
@@ -102,12 +105,19 @@ objects:
 \obindex{mutable}
 \indexii{attribute}{assignment}
 
-\begin{verbatim}
-assignment_stmt: (target_list "=")+ expression_list
-target_list:     target ("," target)* [","]
-target:          identifier | "(" target_list ")" | "[" target_list "]"
-               | attributeref | subscription | slicing
-\end{verbatim}
+\begin{productionlist}
+  \production{assignment_stmt}
+             {(\token{target_list} "=")+ \token{expression_list}}
+  \production{target_list}
+             {\token{target} ("," \token{target})* [","]}
+  \production{target}
+             {\token{identifier}
+              | "(" \token{target_list} ")"
+              | "[" \token{target_list} "]"
+              | \token{attributeref}
+              | \token{subscription}
+              | \token{slicing}}
+\end{productionlist}
 
 (See section \ref{primaries} for the syntax definitions for the last
 three symbols.)
@@ -260,13 +270,20 @@ operation and an assignment statement:
 \indexii{augmented}{assignment}
 \index{statement!assignment, augmented}
 
-\begin{verbatim}
-augmented_assignment_stmt: target augop expression_list
-augop:           "+=" | "-=" | "*=" | "/=" | "%=" | "**="
-               | ">>=" | "<<=" | "&=" | "^=" | "|="
-target:          identifier | "(" target_list ")" | "[" target_list "]"
-               | attributeref | subscription | slicing
-\end{verbatim}
+\begin{productionlist}
+  \production{augmented_assignment_stmt}
+             {\token{target} \token{augop} \token{expression_list}}
+  \production{augop}
+             {"+=" | "-=" | "*=" | "/=" | "\%=" | "**="
+              | ">>=" | "<<=" | "\&=" | "\textasciicircum=" | "|="}
+  \production{target}
+             {\token{identifier}
+              | "(" \token{target_list} ")"
+              | "[" \token{target_list} "]"
+              | \token{attributeref}
+              | \token{subscription}
+              | \token{slicing}}
+\end{productionlist}
 
 (See section \ref{primaries} for the syntax definitions for the last
 three symbols.)
@@ -294,9 +311,10 @@ augmented assignment is the same as the normal binary operations.
 \section{The \keyword{pass} statement \label{pass}}
 \stindex{pass}
 
-\begin{verbatim}
-pass_stmt:      "pass"
-\end{verbatim}
+\begin{productionlist}
+  \production{pass_stmt}
+             {"pass"}
+\end{productionlist}
 
 \keyword{pass} is a null operation --- when it is executed, nothing
 happens.  It is useful as a placeholder when a statement is
@@ -313,9 +331,10 @@ class C: pass       # a class with no methods (yet)
 \section{The \keyword{del} statement \label{del}}
 \stindex{del}
 
-\begin{verbatim}
-del_stmt:       "del" target_list
-\end{verbatim}
+\begin{productionlist}
+  \production{del_stmt}
+             {"del" \token{target_list}}
+\end{productionlist}
 
 Deletion is recursively defined very similar to the way assignment is
 defined. Rather that spelling it out in full details, here are some
@@ -342,9 +361,12 @@ right type (but even this is determined by the sliced object).
 \section{The \keyword{print} statement \label{print}}
 \stindex{print}
 
-\begin{verbatim}
-print_stmt:     "print" [ expression ("," expression)* [","] ]
-\end{verbatim}
+\begin{productionlist}
+  \production{print_stmt}
+             {"print" ( \optional{\token{expression} ("," \token{expression})* \optional{","}}
+                      | ">\code{>}" \token{expression}
+                        \optional{("," \token{expression})+ \optional{","}})}
+\end{productionlist}
 
 \keyword{print} evaluates each expression in turn and writes the
 resulting object to standard output (see below).  If an object is not
@@ -376,13 +398,9 @@ exception is raised.
 \withsubitem{(in module sys)}{\ttindex{stdout}}
 \exindex{RuntimeError}
 
-\keyword{print} also has an extended form, defined as
-\index{extended print statement}
-
-\begin{verbatim}
-print_stmt: "print" ">>" expression [ ("," expression)+ [","] ]
-\end{verbatim}
-
+\keyword{print} also has an extended\index{extended print statement}
+form, defined by the second portion of the syntax described above.
+This form is sometimes referred to as ``\keyword{print} chevron.''
 In this form, the first expression after the \code{>}\code{>} must
 evaluate to a ``file-like'' object, specifically an object that has a
 \method{write()} method as described above.  With this extended form,
@@ -394,9 +412,10 @@ used as the file for output.
 \section{The \keyword{return} statement \label{return}}
 \stindex{return}
 
-\begin{verbatim}
-return_stmt:    "return" [expression_list]
-\end{verbatim}
+\begin{productionlist}
+  \production{return_stmt}
+             {"return" [\token{expression_list}]}
+\end{productionlist}
 
 \keyword{return} may only occur syntactically nested in a function
 definition, not within a nested class definition.
@@ -418,9 +437,11 @@ before really leaving the function.
 \section{The \keyword{raise} statement \label{raise}}
 \stindex{raise}
 
-\begin{verbatim}
-raise_stmt:     "raise" [expression ["," expression ["," expression]]]
-\end{verbatim}
+\begin{productionlist}
+  \production{raise_stmt}
+             {"raise" [\token{expression} ["," \token{expression}
+              ["," \token{expression}]]]}
+\end{productionlist}
 
 If no expressions are present, \keyword{raise} re-raises the last
 expression that was raised in the current scope.
@@ -459,9 +480,10 @@ transparently in an except clause.
 \section{The \keyword{break} statement \label{break}}
 \stindex{break}
 
-\begin{verbatim}
-break_stmt:     "break"
-\end{verbatim}
+\begin{productionlist}
+  \production{break_stmt}
+             {"break"}
+\end{productionlist}
 
 \keyword{break} may only occur syntactically nested in a \keyword{for}
 or \keyword{while} loop, but not nested in a function or class definition
@@ -487,9 +509,10 @@ before really leaving the loop.
 \section{The \keyword{continue} statement \label{continue}}
 \stindex{continue}
 
-\begin{verbatim}
-continue_stmt:  "continue"
-\end{verbatim}
+\begin{productionlist}
+  \production{continue_stmt}
+             {"continue"}
+\end{productionlist}
 
 \keyword{continue} may only occur syntactically nested in a \keyword{for} or
 \keyword{while} loop, but not nested in a function or class definition or
@@ -507,13 +530,17 @@ It continues with the next cycle of the nearest enclosing loop.
 \section{The \keyword{import} statement \label{import}}
 \stindex{import}
 
-\begin{verbatim}
-import_stmt:    "import" module ["as" name] ("," module ["as" name] )* 
-              | "from" module "import" identifier ["as" name]
-                ("," identifier ["as" name] )*
-              | "from" module "import" "*" 
-module:         (identifier ".")* identifier
-\end{verbatim}
+\begin{productionlist}
+  \production{import_stmt}
+             {"import" \token{module} ["as" \token{name}]
+                ( "," \token{module} ["as" \token{name}] )*
+              | "from" \token{module} "import" \token{identifier}
+                ["as" \token{name}]
+                ( "," \token{identifier} ["as" \token{name}] )*
+              | "from" \token{module} "import" "*"}
+  \production{module}
+             {(\token{identifier} ".")* \token{identifier}}
+\end{productionlist}
 
 Import statements are executed in two steps: (1) find a module, and
 initialize it if necessary; (2) define a name or names in the local
@@ -608,9 +635,10 @@ about how the module search works from inside a package.]
 \section{The \keyword{global} statement \label{global}}
 \stindex{global}
 
-\begin{verbatim}
-global_stmt:    "global" identifier ("," identifier)*
-\end{verbatim}
+\begin{productionlist}
+  \production{global_stmt}
+             {"global" \token{identifier} ("," \token{identifier})*}
+\end{productionlist}
 
 The \keyword{global} statement is a declaration which holds for the
 entire current code block.  It means that the listed identifiers are to be
@@ -649,9 +677,11 @@ containing the \keyword{exec} statement.  The same applies to the
 \section{The \keyword{exec} statement \label{exec}}
 \stindex{exec}
 
-\begin{verbatim}
-exec_stmt:    "exec" expression ["in" expression ["," expression]]
-\end{verbatim}
+\begin{productionlist}
+  \production{exec_stmt}
+             {"exec" \token{expression}
+              ["in" \token{expression} ["," \token{expression}]]}
+\end{productionlist}
 
 This statement supports dynamic execution of Python code.  The first
 expression should evaluate to either a string, an open file object, or
