@@ -449,27 +449,26 @@ class PyBuildExt(build_ext):
         # implementation independent wrapper for these; dumbdbm.py provides
         # similar functionality (but slower of course) implemented in Python.
 
-        # Sleepycat Berkeley DB interface.
+        # Sleepycat Berkeley DB interface.  http://www.sleepycat.com
         #
-        # This requires the Sleepycat DB code, see
-        # http://www.sleepycat.com/ The earliest supported version of
-        # that library is 3.0, the latest supported version is 4.0
-        # (4.1 is specifically not supported, as that changes the
-        # semantics of transactional databases). A list of available
-        # releases can be found at
+        # This requires the Sleepycat DB code. The earliest supported version
+        # of that library is 3.0, the latest supported version is 4.1.  A list
+        # of available releases can be found at
         #
         # http://www.sleepycat.com/update/index.html
 
         # when sorted in reverse order, keys for this dict must appear in the
         # order you wish to search - e.g., search for db4 before db3
         db_try_this = {
-            'db4': {'libs': ('db-4.0',),
-                    'libdirs': ('/usr/local/BerkeleyDB.4.0/lib',
+            'db4': {'libs': ('db-4.1', 'db-4.0',),
+                    'libdirs': ('/usr/local/BerkeleyDB.4.1/lib',
+                                '/usr/local/BerkeleyDB.4.0/lib',
                                 '/usr/local/lib',
                                 '/opt/sfw',
                                 '/sw/lib',
                                 ),
-                    'incdirs': ('/usr/local/BerkeleyDB.4.0/include',
+                    'incdirs': ('/usr/local/BerkeleyDB.4.1/include',
+                                '/usr/local/BerkeleyDB.4.0/include',
                                 '/usr/local/include/db4',
                                 '/opt/sfw/include/db4',
                                 '/sw/include/db4',
