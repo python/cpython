@@ -431,7 +431,6 @@ static int
 deque_tp_print(PyObject *deque, FILE *fp, int flags)
 {
 	PyObject *it, *item;
-	int pos=0;
 	char *emit = "";	/* No separator emitted on first pass */
 	char *separator = ", ";
 	int i;
