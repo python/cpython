@@ -29,5 +29,5 @@ def main():
         f.write(rest)
         f.close()
 
-
-main()
+if __name__ == '__main__':
+    main()

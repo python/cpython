@@ -310,4 +310,5 @@ def addsubst(substfile):
         Dict[key] = value
     fp.close()
 
-main()
+if __name__ == '__main__':
+    main()

@@ -22,4 +22,5 @@ def main():
         sys.stderr.write(file2 + ': cannot change time\n')
         sys.exit(2)
 
-main()
+if __name__ == '__main__':
+    main()

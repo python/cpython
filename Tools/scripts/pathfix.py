@@ -145,4 +145,6 @@ def fixline(line):
         return line
     return '#! %s\n' % new_interpreter
 
-main()
+if __name__ == '__main__':
+    main()
+

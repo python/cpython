@@ -167,5 +167,5 @@ def fixline(line):
         line = line[:a] + line[c:d] + line[b:]
     return line
 
-
-main()
+if __name__ == '__main__':
+    main()

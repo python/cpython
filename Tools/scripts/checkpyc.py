@@ -62,4 +62,5 @@ def get_long(s):
         return -1
     return ord(s[0]) + (ord(s[1])<<8) + (ord(s[2])<<16) + (ord(s[3])<<24)
 
-main()
+if __name__ == '__main__':
+    main()

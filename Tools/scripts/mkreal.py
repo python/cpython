@@ -62,4 +62,5 @@ def main():
                 mkrealfile(name)
     sys.exit(status)
 
-main()
+if __name__ == '__main__':
+    main()
