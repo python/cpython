@@ -604,10 +604,12 @@ evil things like call \code{os.unlink()} with an arbitrary file name.
 See section~\ref{pickle-protocol} for more details.
 
 For safely unpickling class instances, you need to control exactly
-which classes will get created.  The issue here is usually not that a
-class's constructor will get called --- it won't by the unpickler ---
-but that the class's destructor (i.e. its \method{__del__()} method)
-might get called when the object is garbage collected.  The way to
+which classes will get created.  Be aware that a class's constructor
+could be called (if the pickler found a \method{__getinitargs__()}
+method) and the the class's destructor (i.e. its \method{__del__()} method)
+might get called when the object is garbage collected.  Depending on
+the class, it isn't very heard to trick either method into doing bad
+things, such as removing a file.  The way to
 control the classes that are safe to instantiate differs in
 \module{pickle} and \module{cPickle}\footnote{A word of caution: the
 mechanisms described here use internal attributes and methods, which
