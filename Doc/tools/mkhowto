@@ -46,6 +46,16 @@ import sys
 import tempfile
 
 
+if not hasattr(os.path, "abspath"):
+    def abspath(path):
+        """Return an absolute path."""
+        if not os.path.isabs(path):
+            path = os.path.join(os.getcwd(), path)
+        return os.path.normpath(path)
+
+    os.path.abspath = abspath
+
+
 MYDIR = os.path.abspath(sys.path[0])
 TOPDIR = os.path.dirname(MYDIR)
 
