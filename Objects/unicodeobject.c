@@ -1379,7 +1379,7 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
     while (size-- > 0) {
         Py_UNICODE ch = *s++;
         /* Escape quotes */
-        if (quotes && (ch == q[1] || ch == '\\')) {
+        if (quotes && (ch == (Py_UNICODE) q[1] || ch == '\\')) {
             *p++ = '\\';
             *p++ = (char) ch;
         } 
@@ -1831,7 +1831,7 @@ PyObject *PyUnicode_AsASCIIString(PyObject *unicode)
 				 NULL);
 }
 
-#ifdef MS_WIN32
+#if defined(MS_WIN32) && defined(HAVE_USABLE_WCHAR_T)
 
 /* --- MBCS codecs for Windows -------------------------------------------- */
 
