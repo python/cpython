@@ -39,10 +39,11 @@ Python extensions written in C or \Cpp.
 To build extensions using these instructions, you need to have a copy
 of the Python sources of the same version as your installed Python.
 You will need Microsoft Visual \Cpp{} ``Developer Studio''; project
-files are supplied for V\Cpp{} version 6, but you can use older
-versions of V\Cpp.  The example files described here are distributed
-with the Python sources in the \file{PC\textbackslash
-example_nt\textbackslash} directory.
+files are supplied for V\Cpp{} version 7.1, but you can use older
+versions of V\Cpp.  Notice that you should use the same version of
+V\Cpp that was used to build Python itself. The example files
+described here are distributed with the Python sources in the
+\file{PC\textbackslash example_nt\textbackslash} directory.
 
 \begin{enumerate}
   \item
@@ -57,9 +58,9 @@ example_nt\textbackslash} directory.
 
   \item
   \strong{Open the project}\\
-    From V\Cpp, use the \menuselection{File \sub Open Workspace}
+    From V\Cpp, use the \menuselection{File \sub Open Solution}
     dialog (not \menuselection{File \sub Open}!).  Navigate to and
-    select the file \file{example.dsw}, in the \emph{copy} of the
+    select the file \file{example.sln}, in the \emph{copy} of the
     \file{example_nt} directory you made above.  Click Open.
 
   \item
@@ -69,18 +70,17 @@ example_nt\textbackslash} directory.
     \begin{enumerate}
       \item
         Select a configuration.  This step is optional.  Choose
-        \menuselection{Build \sub Select Active Configuration} and
-        select either \guilabel{example - Win32 Release} or
-        \guilabel{example - Win32 Debug}.  If you skip this step,
+        \menuselection{Build \sub Configuration Manager \sub Active 
+        Solution Configuration} and select either \guilabel{Release} 
+        or\guilabel{Debug}.  If you skip this step,
         V\Cpp{} will use the Debug configuration by default.
 
       \item
         Build the DLL.  Choose \menuselection{Build \sub Build
-        example_d.dll} in Debug mode, or \menuselection{Build \sub
-        Build example.dll} in Release mode.  This creates all
-        intermediate and result files in a subdirectory called either
-        \file{Debug} or \file{Release}, depending on which
-        configuration you selected in the preceding step.
+        Solution}.  This creates all intermediate and result files in
+        a subdirectory called either \file{Debug} or \file{Release},
+        depending on which configuration you selected in the preceding
+        step.
     \end{enumerate}
 
   \item
@@ -129,7 +129,7 @@ Hello, world
     Now your options are:
 
     \begin{enumerate}
-      \item  Copy \file{example.dsw} and \file{example.dsp}, rename
+      \item  Copy \file{example.sln} and \file{example.vcproj}, rename
              them to \file{spam.*}, and edit them by hand, or
       \item  Create a brand new project; instructions are below.
     \end{enumerate}
@@ -142,62 +142,62 @@ Hello, world
     little file with only two lines.  An alternative approach is to
     forget about the \file{.def} file, and add the option
     \programopt{/export:initspam} somewhere to the Link settings, by
-    manually editing the setting in Project Options dialog).
+    manually editing the setting in Project Properties dialog).
 
   \item
   \strong{Creating a brand new project}\\
-    Use the \menuselection{File \sub New \sub Projects} dialog to
-    create a new Project Workspace.  Select \guilabel{Win32 Dynamic-Link
-    Library}, enter the name (\samp{spam}), and make sure the
-    Location is set to the \file{spam} directory you have created
-    (which should be a direct subdirectory of the Python build tree, a
-    sibling of \file{Include} and \file{PC}).  Select Win32 as the
-    platform (in my version, this is the only choice).  Make sure the
-    Create new workspace radio button is selected.  Click OK.
+    Use the \menuselection{File \sub New \sub Project} dialog to
+    create a new Project Workspace.  Select \guilabel{Visual C++
+    Projects/Win32/ Win32 Project}, enter the name (\samp{spam}), and
+    make sure the Location is set to parent of the \file{spam}
+    directory you have created (which should be a direct subdirectory
+    of the Python build tree, a sibling of \file{Include} and
+    \file{PC}).  Select Win32 as the platform (in my version, this is
+    the only choice).  Make sure the Create new workspace radio button
+    is selected.  Click OK.
 
-    Now open the \menuselection{Project \sub Settings} dialog.  You
-    only need to change a few settings.  Make sure All Configurations
-    is selected from the Settings for: dropdown list.  Select the
-    C/\Cpp{} tab.  Choose the Preprocessor category in the popup menu
-    at the top.  Type the following text in the entry box labeled
-    \guilabel{Additional include directories}:
+    You should now create the file \file{spam.def} as instructed in
+    the previous section. Add the source files to the project, using
+    \menuselection{Project \sub Add Existing Item}. Set the pattern to
+    \code{*.*} and select both \file{spam.c} and \file{spam.def} and
+    click OK.  (Inserting them one by one is fine too.)
+
+    Now open the \menuselection{Project \sub spam properties} dialog.
+    You only need to change a few settings.  Make sure \guilable{All
+    Configurations} is selected from the \guilable{Settings for:}
+    dropdown list.  Select the C/\Cpp{} tab.  Choose the General
+    category in the popup menu at the top.  Type the following text in
+    the entry box labeled \guilabel{Additional Include Directories}:
 
 \begin{verbatim}
 ..\Include,..\PC
 \end{verbatim}
 
-    Then, choose the Input category in the Link tab, and enter
+    Then, choose the General category in the Linker tab, and enter
 
 \begin{verbatim}
 ..\PCbuild
 \end{verbatim}
 
-    in the text box labelled \guilabel{Additional library path}.
+    in the text box labelled \guilabel{Additional library Directories}.
 
     Now you need to add some mode-specific settings:
 
-    Select \guilabel{Win32 Release} in the \guilabel{Settings for}
+    Select \guilabel{Release} in the \guilabel{Configuration}
     dropdown list.  Choose the \guilabel{Link} tab, choose the
-    \guilabel{Input Category}, and append \code{pythonXY.lib} to the
-    list in the \guilabel{Object/library modules} box.
+    \guilabel{Input} category, and append \code{pythonXY.lib} to the
+    list in the \guilabel{Additional Dependencies} box.
 
-    Select \guilabel{Win32 Debug} in the \guilabel{Settings for}
-    dropdown list, and append \code{pythonXY_d.lib} to the list in the
-    \guilabel{Object/library modules} box.  Then click the C/\Cpp{}
-    tab, select \guilabel{Code Generation} from the
-    \guilabel{Category} dropdown list, and select \guilabel{Debug 
-    Multithreaded DLL} from the \guilabel{Use run-time library} dropdown
-    list.
+    Select \guilabel{Debug} in the \guilabel{Configuration} dropdown
+    list, and append \code{pythonXY_d.lib} to the list in the
+    \guilabel{Additional Dependencies} box.  Then click the C/\Cpp{}
+    tab, select \guilabel{Code Generation}, and select
+    \guilabel{Multi-threaded Debug DLL} from the \guilabel{Runtime
+    library} dropdown list.
 
-    Select \guilabel{Win32 Release} again from the \guilabel{Settings
-    for} dropdown list.  Select \guilabel{Multithreaded DLL} from the
-    \guilabel{Use run-time library:} dropdown list.
-
-    You should now create the file \file{spam.def} as instructed in the
-    previous section.  Then chose the \menuselection{Insert \sub Files
-    into Project} dialog.  Set the pattern to \code{*.*} and select
-    both \file{spam.c} and \file{spam.def} and click OK.  (Inserting
-    them one by one is fine too.)
+    Select \guilabel{Release} again from the \guilabel{Configuration}
+    dropdown list.  Select \guilabel{Multi-threaded DLL} from the
+    \guilabel{Runtime library} dropdown list.
 \end{enumerate}
 
 
