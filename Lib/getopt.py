@@ -7,15 +7,15 @@ and `--').  Long options similar to those supported by GNU software
 may be used as well via an optional third argument.  This module
 provides a single function and an exception:
 
-Gerrit Holl <gerrit@nl.linux.org> moved the string-based exceptions
-to class-based exceptions.
-
 getopt() -- Parse command line options
 GetoptError -- exception (class) raised with 'opt' attribute, which is the
 option involved with the exception.
 """
 
 # Long option support added by Lars Wirzenius <liw@iki.fi>.
+
+# Gerrit Holl <gerrit@nl.linux.org> moved the string-based exceptions
+# to class-based exceptions.
 
 import string
 
@@ -81,7 +81,7 @@ def getopt(args, shortopts, longopts = []):
 
 def do_longs(opts, opt, longopts, args):
     try:
-        i = string.index(opt, '=')
+        i = opt.index('=')
         opt, optarg = opt[:i], opt[i+1:]
     except ValueError:
         optarg = None
