@@ -87,7 +87,6 @@ reg_match(re, args)
 	regexobject *re;
 	object *args;
 {
-	object *v;
 	char *buffer;
 	int size;
 	int offset;
@@ -116,7 +115,6 @@ reg_search(re, args)
 	regexobject *re;
 	object *args;
 {
-	object *v;
 	char *buffer;
 	int size;
 	int offset;
