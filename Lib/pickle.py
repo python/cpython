@@ -38,6 +38,11 @@ mloads = marshal.loads
 PicklingError = "pickle.PicklingError"
 UnpicklingError = "pickle.UnpicklingError"
 
+try:
+    from org.python.core import PyStringMap
+except ImportError:
+    PyStringMap = None
+
 MARK            = '('
 STOP            = '.'
 POP             = '0'
@@ -363,6 +368,8 @@ class Pickler:
             write(SETITEMS)
 
     dispatch[DictionaryType] = save_dict
+    if not PyStringMap is None:
+        dispatch[PyStringMap] = save_dict
 
     def save_inst(self, object):
         d = id(object)
