@@ -1003,7 +1003,7 @@ sub do_cmd_declaremodule{
 sub do_cmd_modulesynopsis{
     local($_) = @_;
     my $st = get_synopsis_table(get_chapter_id());
-    $st->set_synopsis($THIS_MODULE, next_argument());
+    $st->set_synopsis($THIS_MODULE, translate_commands(next_argument()));
     return $_;
 }
 
