@@ -67,13 +67,13 @@ def	genallprojects():
 			"CmpInstObj_New",
 			"CmpInstObj_Convert",
 		])
-	genpluginproject("Drag", libraries=["DragLib"])
 	genpluginproject("Fm")
 	genpluginproject("Help")
 	genpluginproject("Icn", libraries=["IconServicesLib"])
 	genpluginproject("List")
-	genpluginproject("Qt", libraries=["QuickTimeLib", "Cm.ppc.slb"], extradirs=["::Plugins"])
-	genpluginproject("Qdoffs")
+	genpluginproject("Qt", libraries=["QuickTimeLib", "Cm.ppc.slb", "Qdoffs.ppc.slb"], extradirs=["::Plugins"])
+	genpluginproject("Qdoffs",
+		extraexportsymbols=["GWorldObj_New", "GWorldObj_Convert"])
 	genpluginproject("Scrap")
 	genpluginproject("Snd", libraries=["SoundLib"])
 	genpluginproject("Sndihooks", sources=[":snd:Sndihooks.c"])
