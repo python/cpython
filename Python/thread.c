@@ -28,9 +28,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    which is included by this file dependent on config settings.
    Stuff shared by all thread_*.h files is collected here. */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <stdio.h>
 

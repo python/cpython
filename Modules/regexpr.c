@@ -24,9 +24,7 @@ from GNU regexp.
 
 */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h" /* For Win* specific redefinition of printf c.s. */
-#endif
 
 #include "myproto.h" /* For PROTO macro --Guido */
 
