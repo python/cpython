@@ -59,17 +59,17 @@ class CreationTestCase(unittest.TestCase):
         self.assertRaises(ValueError, self.sock.settimeout, -1L)
         self.assertRaises(ValueError, self.sock.settimeout, -1.0)
 
-    def testTimeoutThenoBlocking(self):
+    def testTimeoutThenBlocking(self):
         "Test settimeout() followed by setblocking()"
         self.sock.settimeout(10)
         self.sock.setblocking(1)
         self.assertEqual(self.sock.gettimeout(), None)
         self.sock.setblocking(0)
-        self.assertEqual(self.sock.gettimeout(), None)
+        self.assertEqual(self.sock.gettimeout(), 0.0)
 
         self.sock.settimeout(10)
         self.sock.setblocking(0)
-        self.assertEqual(self.sock.gettimeout(), None)
+        self.assertEqual(self.sock.gettimeout(), 0.0)
         self.sock.setblocking(1)
         self.assertEqual(self.sock.gettimeout(), None)
 

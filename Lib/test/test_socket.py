@@ -51,7 +51,10 @@ class ThreadableTest:
         self.queue = Queue.Queue(1)
 
         # Do some munging to start the client test.
-        test_method = getattr(self, '_' + self._TestCase__testMethodName)
+        methodname = self.id()
+        i = methodname.rfind('.')
+        methodname = methodname[i+1:]
+        test_method = getattr(self, '_' + methodname)
         self.client_thread = thread.start_new_thread(
             self.clientRun, (test_method,))
 
