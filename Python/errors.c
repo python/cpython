@@ -277,8 +277,9 @@ PyErr_NoMemory()
 }
 
 PyObject *
-PyErr_SetFromErrno(exc)
+PyErr_SetFromErrnoWithFilename(exc, filename)
 	PyObject *exc;
+	char *filename;
 {
 	PyObject *v;
 	int i = errno;
@@ -286,12 +287,23 @@ PyErr_SetFromErrno(exc)
 	if (i == EINTR && PyErr_CheckSignals())
 		return NULL;
 #endif
-	v = Py_BuildValue("(is)", i, strerror(i));
+	if (filename != NULL && Py_UseClassExceptionsFlag)
+		v = Py_BuildValue("(iss)", i, strerror(i), filename);
+	else
+		v = Py_BuildValue("(is)", i, strerror(i));
 	if (v != NULL) {
 		PyErr_SetObject(exc, v);
 		Py_DECREF(v);
 	}
 	return NULL;
+}
+	
+
+PyObject *
+PyErr_SetFromErrno(exc)
+	PyObject *exc;
+{
+	return PyErr_SetFromErrnoWithFilename(exc, NULL);
 }
 
 void
