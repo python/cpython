@@ -833,6 +833,7 @@ def parsedate_tz(data):
         if not mm in _monthnames:
             return None
     mm = _monthnames.index(mm)+1
+    if mm > 12: mm = mm - 12
     if dd[-1] == ',':
 	dd = dd[:-1]
     i = string.find(yy, ':')
