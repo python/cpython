@@ -421,7 +421,7 @@ Availability: \UNIX.
 Return system configuration information relevant to an open file.
 \var{name} specifies the configuration value to retrieve; it may be a
 string which is the name of a defined system value; these names are
-specified in a number of standards (\POSIX.1, \UNIX 95, \UNIX 98, and
+specified in a number of standards (\POSIX.1, \UNIX{} 95, \UNIX{} 98, and
 others).  Some platforms define additional names as well.  The names
 known to the host operating system are given in the
 \code{pathconf_names} dictionary.  For configuration variables not
@@ -793,7 +793,7 @@ paths are those that use the `\code{\e\e host\e path}' syntax).
 Return system configuration information relevant to a named file.
 \var{name} specifies the configuration value to retrieve; it may be a
 string which is the name of a defined system value; these names are
-specified in a number of standards (\POSIX.1, \UNIX 95, \UNIX 98, and
+specified in a number of standards (\POSIX.1, \UNIX{} 95, \UNIX{} 98, and
 others).  Some platforms define additional names as well.  The names
 known to the host operating system are given in the
 \code{pathconf_names} dictionary.  For configuration variables not
@@ -1080,7 +1080,7 @@ false, the triple for a directory is generated after the triples for all
 of its subdirectories (directories are generated bottom up).
 
 When \var{topdown} is true, the caller can modify the \var{dirnames} list
-in-place (e.g., via \keyword{del} or slice assignment), and
+in-place (perhaps unsing \keyword{del} or slice assignment), and
 \function{walk()} will only recurse into the subdirectories whose names
 remain in \var{dirnames}; this can be used to prune the search,
 impose a specific order of visiting, or even to inform \function{walk()}
@@ -1667,7 +1667,7 @@ Availability: \UNIX.
 Return string-valued system configuration values.
 \var{name} specifies the configuration value to retrieve; it may be a
 string which is the name of a defined system value; these names are
-specified in a number of standards (\POSIX, \UNIX 95, \UNIX 98, and
+specified in a number of standards (\POSIX, \UNIX{} 95, \UNIX{} 98, and
 others).  Some platforms define additional names as well.  The names
 known to the host operating system are given in the
 \code{confstr_names} dictionary.  For configuration variables not
