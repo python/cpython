@@ -1,6 +1,9 @@
 import ConfigParser
 import StringIO
 
+from test_support import TestFailed
+
+
 def basic(src):
     print
     print "Testing basic accessors..."
@@ -24,6 +27,27 @@ def basic(src):
         print '__name__ "option" should not be exposed by the API!'
     else:
         print '__name__ "option" properly hidden by the API.'
+
+    # Make sure the right things happen for remove_option();
+    # added to include check for SourceForge bug #123324:
+    if not cf.remove_option('Foo Bar', 'foo'):
+        raise TestFailed(
+            "remove_option() failed to report existance of option")
+    if cf.has_option('Foo Bar', 'foo'):
+        raise TestFailed("remove_option() failed to remove option")
+    if cf.remove_option('Foo Bar', 'foo'):
+        raise TestFailed(
+            "remove_option() failed to report non-existance of option"
+            " that was removed")
+    try:
+        cf.remove_option('No Such Section', 'foo')
+    except ConfigParser.NoSectionError:
+        pass
+    else:
+        raise TestFailed(
+            "remove_option() failed to report non-existance of option"
+            " that never existed")
+
 
 def interpolation(src):
     print
