@@ -40,10 +40,14 @@ class Build (Command):
         # For now, "build" means "build_py" then "build_ext".  (Eventually
         # it should also build documentation.)
 
-        # Invoke the 'build_py' command
-        self.run_peer ('build_py')
+        # Invoke the 'build_py' command to "build" pure Python modules
+        # (ie. copy 'em into the build tree)
+        if self.distribution.packages or self.distribution.py_modules:
+            self.run_peer ('build_py')
 
-        # And now 'build_ext'
-        self.run_peer ('build_ext')
+        # And now 'build_ext' -- compile extension modules and put them
+        # into the build tree
+        if self.distribution.ext_modules:
+            self.run_peer ('build_ext')
 
 # end class Build
