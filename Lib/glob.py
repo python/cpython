@@ -17,7 +17,7 @@ def glob(pathname):
 		result = []
 		for dirname in list:
 			if basename or path.isdir(dirname):
-				name = path.cat(dirname, basename)
+				name = path.join(dirname, basename)
 				if path.exists(name):
 					result.append(name)
 	else:
@@ -25,7 +25,7 @@ def glob(pathname):
 		for dirname in list:
 			sublist = glob1(dirname, basename)
 			for name in sublist:
-				result.append(path.cat(dirname, name))
+				result.append(path.join(dirname, name))
 	return result
 
 def glob1(dirname, pattern):
