@@ -30,6 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "node.h"
 #include "parsetok.h"
 #include "graminit.h"
+#undef argument /* Avoid conflict on Mac */
 #include "errcode.h"
 #include "sysmodule.h"
 #include "bltinmodule.h"
