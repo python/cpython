@@ -409,6 +409,83 @@ TypeError: object has read-only attributes
 1
 >>> me.gi_running
 0
+
+A clever union-find implementation from c.l.py, due to David Eppstein.
+Sent: Friday, June 29, 2001 12:16 PM
+To: python-list@python.org
+Subject: Re: PEP 255: Simple Generators
+
+>>> class disjointSet:
+...     def __init__(self, name):
+...         self.name = name
+...         self.parent = None
+...         self.generator = self.generate()
+...
+...     def generate(self):
+...         while not self.parent:
+...             yield self
+...         for x in self.parent.generator:
+...             yield x
+...
+...     def find(self):
+...         return self.generator.next()
+...
+...     def union(self, parent):
+...         if self.parent:
+...             raise ValueError("Sorry, I'm not a root!")
+...         self.parent = parent
+...
+...     def __str__(self):
+...         return self.name
+...
+...     def clear(self):
+...         self.__dict__.clear()
+
+>>> names = "ABCDEFGHIJKLM"
+>>> sets = [disjointSet(name) for name in names]
+>>> roots = sets[:]
+
+>>> import random
+>>> random.seed(42)
+>>> while 1:
+...     for s in sets:
+...         print "%s->%s" % (s, s.find()),
+...     print
+...     if len(roots) > 1:
+...         s1 = random.choice(roots)
+...         roots.remove(s1)
+...         s2 = random.choice(roots)
+...         s1.union(s2)
+...         print "merged", s1, "into", s2
+...     else:
+...         break
+A->A B->B C->C D->D E->E F->F G->G H->H I->I J->J K->K L->L M->M
+merged D into G
+A->A B->B C->C D->G E->E F->F G->G H->H I->I J->J K->K L->L M->M
+merged C into F
+A->A B->B C->F D->G E->E F->F G->G H->H I->I J->J K->K L->L M->M
+merged L into A
+A->A B->B C->F D->G E->E F->F G->G H->H I->I J->J K->K L->A M->M
+merged H into E
+A->A B->B C->F D->G E->E F->F G->G H->E I->I J->J K->K L->A M->M
+merged B into E
+A->A B->E C->F D->G E->E F->F G->G H->E I->I J->J K->K L->A M->M
+merged J into G
+A->A B->E C->F D->G E->E F->F G->G H->E I->I J->G K->K L->A M->M
+merged E into G
+A->A B->G C->F D->G E->G F->F G->G H->G I->I J->G K->K L->A M->M
+merged M into G
+A->A B->G C->F D->G E->G F->F G->G H->G I->I J->G K->K L->A M->G
+merged I into K
+A->A B->G C->F D->G E->G F->F G->G H->G I->K J->G K->K L->A M->G
+merged K into A
+A->A B->G C->F D->G E->G F->F G->G H->G I->A J->G K->A L->A M->G
+merged F into A
+A->A B->G C->A D->G E->G F->A G->G H->G I->A J->G K->A L->A M->G
+merged A into G
+A->G B->G C->G D->G E->G F->G G->G H->G I->G J->G K->G L->G M->G
+>>> for s in sets:  # XXX memory leak without this
+...    s.clear()
 """
 
 # Fun tests (for sufficiently warped notions of "fun").
