@@ -95,31 +95,31 @@ Comparison with Python's Samplesort Hybrid
   below that, it's either astronomically lucky, or is finding exploitable
   structure in the data.
 
-      n   lg(n!)    *sort     3sort    +sort    ~sort     !sort
--------  -------   ------  --------  -------  -------  --------
-  32768   444255   453084    453604    32908   130484    469132  samplesort
-                   449235     33019    33016   188720     65534  timsort
-                    0.86%  1273.77%   -0.33%  -30.86%   615.86%  %ch from timsort
+      n   lg(n!)    *sort     3sort    +sort   %sort    ~sort     !sort
+-------  -------   ------  --------  -------  ------  -------  --------
+  32768   444255   453096   453614    32908   452871   130491    469141  old
+                   449235    33019    33016    51328   188720     65534  new
+                    0.86% 1273.80%   -0.33%  782.31%  -30.85%   615.87%  %ch from new
 
-  65536   954037   973111    970464    65686   260019   1004597
-                   963924     65767    65802   377634    131070
-                    0.95%  1375.61%   -0.18%  -31.15%   666.46%
+  65536   954037   972699   981940    65686   973104   260029   1004607
+                   963714    65824    65809   103409   377634    131070
+                    0.93% 1391.77%   -0.19%  841.02%  -31.14%   666.47%
 
- 131072  2039137  2100019   2102708   131232   555035   2161268
-                  2058863    131422   131363   755476    262142
-                    2.00%  1499.97%   -0.10%  -26.53%   724.46%
+ 131072  2039137  2101881  2091491   131232  2092894   554790   2161379
+                  2059092   131413   131362   209130   755476    262142
+                    2.08% 1491.54%   -0.10%  900.76%  -26.56%   724.51%
 
- 262144  4340409  4461471   4442796   262314  1107826   4584316
-                  4380148    262446   262466  1511174    524286
-                    1.86%  1592.84%   -0.06%  -26.69%   774.39%
+ 262144  4340409  4464460  4403233   262314  4445884  1107842   4584560
+                  4380687   262440   262460   421998  1511174    524286
+                    1.91% 1577.81%   -0.06%  953.53%  -26.69%   774.44%
 
- 524288  9205096  9448146   9368681   524468  2218562   9691553
-                  9285454    524576   524626  3022584   1048574
-                    1.75%  1685.95%   -0.03%  -26.60%   824.26%
+ 524288  9205096 9453356   9408463   524468  9441930  2218577   9692015
+                 9285709    524581   524634   848590  3022584   1048574
+                   1.81%  1693.52%   -0.03% 1012.66%  -26.60%   824.30%
 
-1048576 19458756 19950541  20307955  1048766  4430616  20433371
-                 19621100   1048854  1048933  6045418   2097150
-                    1.68%  1836.20%   -0.02%  -26.71%   874.34%
+1048576 19458756 19950272 19838588  1048766 19912134  4430649  20434212
+                 19621118  1048960  1048942  1715806  6045418   2097150
+                    1.68% 1791.26%   -0.02% 1060.51%  -26.71%   874.38%
 
   Discussion of cases:
 
@@ -132,10 +132,10 @@ Comparison with Python's Samplesort Hybrid
   quicksort does about 39% more compares than the limit, and the median-of-3
   variant about 19% more.
 
-  3sort and !sort:  No contest; there's structure in this data, but not of
-  the specific kinds samplesort special-cases.  Note that structure in !sort
-  wasn't put there on purpose -- it was crafted as a worst case for a
-  previous quicksort implementation.  That timsort nails it came as a
+  3sort, %sort, and !sort:  No contest; there's structure in this data, but
+  not of the specific kinds samplesort special-cases.  Note that structure
+  in !sort wasn't put there on purpose -- it was crafted as a worst case for
+  a previous quicksort implementation.  That timsort nails it came as a
   surprise to me (although it's obvious in retrospect).
 
   +sort:  samplesort special-cases this data, and does a few less compares
