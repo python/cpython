@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -74,9 +74,9 @@ static typeobject Tracebacktype = {
 	"traceback",
 	sizeof(tracebackobject),
 	0,
-	tb_dealloc,	/*tp_dealloc*/
+	(destructor)tb_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
-	tb_getattr,	/*tp_getattr*/
+	(getattrfunc)tb_getattr, /*tp_getattr*/
 	0,		/*tp_setattr*/
 	0,		/*tp_compare*/
 	0,		/*tp_repr*/
@@ -150,14 +150,22 @@ tb_store(v)
 }
 
 static void
-tb_displayline(f, filename, lineno)
+tb_displayline(f, filename, lineno, name)
 	object *f;
 	char *filename;
 	int lineno;
+	char *name;
 {
 	FILE *xfp;
 	char linebuf[1000];
 	int i;
+#ifdef MPW
+	/* This is needed by MPW's File and Line commands */
+#define FMT "  File \"%.900s\"; line %d # in %s\n"
+#else
+	/* This is needed by Emacs' compile command */
+#define FMT "  File \"%.900s\", line %d, in %s\n"
+#endif
 	xfp = fopen(filename, "r");
 	if (xfp == NULL) {
 		/* Search tail of filename in sys.path before giving up */
@@ -189,16 +197,7 @@ tb_displayline(f, filename, lineno)
 			}
 		}
 	}
-	sprintf(linebuf, "  File \"%.900s\"%s line %d\n",
-		filename,
-#ifdef applec /* MPW */
-		/* This is needed by MPW's File and Line commands */
-		";",
-#else
-		/* This is needed by Emacs' compile command */
-		",",
-#endif
-		lineno);
+	sprintf(linebuf, FMT, filename, lineno, name);
 	writestring(linebuf, f);
 	if (xfp == NULL)
 		return;
@@ -234,7 +233,8 @@ tb_printinternal(tb, f, limit)
 		if (depth <= limit)
 			tb_displayline(f,
 			    getstringvalue(tb->tb_frame->f_code->co_filename),
-			    tb->tb_lineno);
+			    tb->tb_lineno,
+			    getstringvalue(tb->tb_frame->f_code->co_name));
 		depth--;
 		tb = tb->tb_next;
 	}
