@@ -709,12 +709,7 @@ floattime(void)
    set an exception; else return 0. */
 
 static int
-#ifdef MPW
 floatsleep(double secs)
-#else
-	floatsleep(secs)
-	double secs;
-#endif /* MPW */
 {
 /* XXX Should test for MS_WIN32 first! */
 #if defined(HAVE_SELECT) && !defined(__BEOS__)
