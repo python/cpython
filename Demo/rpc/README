@@ -21,13 +21,3 @@ Other clients are tested similarly.
 
 For hostname, use e.g. wuarchive.wustl.edu or gatekeeper.dec.com (two
 hosts that are known to export NFS filesystems with little restrictions).
-
-Note: this was developed using Python 0.9.8beta (not yet released).  I
-have tried to put in compatibility hacks for Python 0.9.7beta
-(available from ftp.cwi.nl) but I cannot guarantee that it will work
--- if it doesn't, let me know and I'll see what I can do.  In
-particular, if you don't have the built-in module "select", UDP
-time-outs and retries won't work.
-
---Guido van Rossum, CWI, Amsterdam <guido@cwi.nl>
-"I don't want *any* spam"

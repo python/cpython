@@ -12,9 +12,8 @@ Long = type(0L)
 
 class Packer:
 
-	def init(self):
+	def __init__(self):
 		self.reset()
-		return self
 
 	def reset(self):
 		self.buf = ''
@@ -47,6 +46,14 @@ class Packer:
 
 	pack_hyper = pack_uhyper
 
+	def pack_float(self, x):
+		# XXX
+		self.buf = self.buf + struct.pack('f', x)
+
+	def pack_double(self, x):
+		# XXX
+		self.buf = self.buf + struct.pack('d', x)
+
 	def pack_fstring(self, n, s):
 		if n < 0:
 			raise ValueError, 'fstring size must be nonnegative'
@@ -67,7 +74,7 @@ class Packer:
 	def pack_list(self, list, pack_item):
 		for item in list:
 			self.pack_uint(1)
-			pack_item(list)
+			pack_item(item)
 		self.pack_uint(0)
 
 	def pack_farray(self, n, list, pack_item):
@@ -84,9 +91,8 @@ class Packer:
 
 class Unpacker:
 
-	def init(self, data):
+	def __init__(self, data):
 		self.reset(data)
-		return self
 
 	def reset(self, data):
 		self.buf = data
@@ -136,6 +142,24 @@ class Unpacker:
 		if x >= 0x8000000000000000L: x = x - 0x10000000000000000L
 		return x
 
+	def unpack_float(self):
+		# XXX
+		i = self.pos
+		self.pos = j = i+4
+		data = self.buf[i:j]
+		if len(data) < 4:
+			raise EOFError
+		return struct.unpack('f', data)[0]
+
+	def unpack_double(self):
+		# XXX
+		i = self.pos
+		self.pos = j = i+8
+		data = self.buf[i:j]
+		if len(data) < 8:
+			raise EOFError
+		return struct.unpack('8', data)[0]
+
 	def unpack_fstring(self, n):
 		if n < 0:
 			raise ValueError, 'fstring size must be nonnegative'
@@ -158,11 +182,12 @@ class Unpacker:
 		list = []
 		while 1:
 			x = self.unpack_uint()
-			if not x: break
+			if x == 0: break
 			if x <> 1:
 				raise RuntimeError, \
 					'0 or 1 expected, got ' + `x`
-			list.append(unpack_item())
+			item = unpack_item()
+			list.append(item)
 		return list
 
 	def unpack_farray(self, n, unpack_item):

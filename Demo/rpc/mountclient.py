@@ -74,13 +74,13 @@ class MountUnpacker(Unpacker):
 
 class PartialMountClient:
 
-	# This method is called by Client.init to initialize
+	# This method is called by Client.__init__ to initialize
 	# self.packer and self.unpacker
 	def addpackers(self):
-		self.packer = MountPacker().init()
-		self.unpacker = MountUnpacker().init('')
+		self.packer = MountPacker()
+		self.unpacker = MountUnpacker('')
 
-	# This method is called by Client.init to bind the socket
+	# This method is called by Client.__init__ to bind the socket
 	# to a particular network interface and port.  We use the
 	# default network interface, but if we're running as root,
 	# we want to bind to a reserved port
@@ -161,14 +161,14 @@ class PartialMountClient:
 
 class TCPMountClient(PartialMountClient, TCPClient):
 
-	def init(self, host):
-		return TCPClient.init(self, host, MOUNTPROG, MOUNTVERS)
+	def __init__(self, host):
+		TCPClient.__init__(self, host, MOUNTPROG, MOUNTVERS)
 
 
 class UDPMountClient(PartialMountClient, UDPClient):
 
-	def init(self, host):
-		return UDPClient.init(self, host, MOUNTPROG, MOUNTVERS)
+	def __init__(self, host):
+		UDPClient.__init__(self, host, MOUNTPROG, MOUNTVERS)
 
 
 # A little test program for the Mount client.  This takes a host as
@@ -189,7 +189,7 @@ def test():
 		C = UDPMountClient
 	if sys.argv[1:]: host = sys.argv[1]
 	else: host = ''
-	mcl = C().init(host)
+	mcl = C(host)
 	list = mcl.Export()
 	for item in list:
 		print item
