@@ -73,7 +73,7 @@ DVIPS=	   dvips -N0 -t $(PAPER)
 
 MKDVI=	   $(PYTHON) ../tools/mkhowto --paper=$(PAPER) --dvi
 MKHTML=	   $(PYTHON) tools/mkhowto --html --about html/stdabout.dat \
-		--iconserver ../icons \
+		--iconserver ../icons --favicon ../icons/pyfav.gif \
 		--address $(PYTHONDOCS) --up-link ../index.html \
 		--up-title "Python Documentation Index" \
 		--global-module-index "../modindex.html" --dvips-safe
@@ -318,6 +318,7 @@ $(INDEXFILES): $(COMMONPERL) html/about.dat tools/node2label.pl
 
 html/acks.html: ACKS $(TOOLSDIR)/support.py $(TOOLSDIR)/mkackshtml
 	$(PYTHON) $(TOOLSDIR)/mkackshtml --address $(PYTHONDOCS) \
+		--favicon icons/pyfav.gif \
 		--output html/acks.html <ACKS
 
 
@@ -338,6 +339,7 @@ html/modindex.html: html/lib/lib.html html/mac/mac.html
 	cd html && \
 	 $(PYTHON) ../$(TOOLSDIR)/mkmodindex --columns 4 \
 		--output modindex.html --address $(PYTHONDOCS) \
+		--favicon icons/pyfav.gif \
 		lib/modindex.html mac/modindex.html
 
 html:	$(ALLHTMLFILES) $(HTMLCSSFILES)
