@@ -117,7 +117,7 @@ def copycwproject(path, name):
 			print dstdir
 			print 'No CW-project dir, skip', name
 			return
-		dstfile = os.path.join(dstdir, name)
+		dstfile = os.path.join(dstdir, os.path.join(srcdir, name))
 	else:
 		if path[-2:] != '.µ':
 			return
@@ -155,7 +155,7 @@ def copycwexpfile(path, name):
 			print dstdir
 			print 'No CW-project dir, skip', name
 			return
-		dstfile = os.path.join(dstdir, name)
+		dstfile = os.path.join(dstdir, os.path.join(srcdir, name))
 	else:
 		if path[-6:] != '.µ.exp':
 			return
