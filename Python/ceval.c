@@ -94,6 +94,9 @@ typedef struct {
 
 	/* True if generator is being executed. */ 
 	int gi_running;
+
+	/* List of weak reference. */
+	PyObject *gi_weakreflist;
 } genobject;
 
 static PyObject *
@@ -106,6 +109,7 @@ gen_new(PyFrameObject *f)
 	}
 	gen->gi_frame = f;
 	gen->gi_running = 0;
+	gen->gi_weakreflist = NULL;
 	_PyObject_GC_TRACK(gen);
 	return (PyObject *)gen;
 }
@@ -120,6 +124,8 @@ static void
 gen_dealloc(genobject *gen)
 {
 	_PyObject_GC_UNTRACK(gen);
+	if (gen->gi_weakreflist != NULL)
+		PyObject_ClearWeakRefs((PyObject *) gen);
 	Py_DECREF(gen->gi_frame);
 	PyObject_GC_Del(gen);
 }
@@ -205,7 +211,7 @@ static PyTypeObject gentype = {
  	(traverseproc)gen_traverse,		/* tp_traverse */
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
-	0,					/* tp_weaklistoffset */
+	offsetof(genobject, gi_weakreflist),	/* tp_weaklistoffset */
 	(getiterfunc)gen_getiter,		/* tp_iter */
 	(iternextfunc)gen_iternext,		/* tp_iternext */
 	0,					/* tp_methods */
