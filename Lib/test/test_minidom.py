@@ -17,9 +17,7 @@ tstfile = os.path.join(os.path.dirname(base), "test"+os.extsep+"xml")
 del base
 
 def confirm(test, testname = "Test"):
-    if test:
-        print "Passed " + testname
-    else:
+    if not test:
         print "Failed " + testname
         raise Exception
 
@@ -353,7 +351,6 @@ def _testElementReprAndStrUnicodeNS():
     confirm(string1 == string2)
     confirm(string1.find("slash:abc") != -1)
     dom.unlink()
-    confirm(len(Node.allnodes) == 0)
 
 def testAttributeRepr():
     dom = Document()
@@ -361,7 +358,6 @@ def testAttributeRepr():
     node = el.setAttribute("abc", "def")
     confirm(str(node) == repr(node))
     dom.unlink()
-    confirm(len(Node.allnodes) == 0)
 
 def testTextNodeRepr(): pass
 
@@ -371,7 +367,6 @@ def testWriteXML():
     domstr = dom.toxml()
     dom.unlink()
     confirm(str == domstr)
-    confirm(len(Node.allnodes) == 0)
 
 def testProcessingInstruction(): pass
 
@@ -389,7 +384,7 @@ def testTooManyDocumentElements():
     try:
         doc.appendChild(elem)
     except HierarchyRequestErr:
-        print "Caught expected exception when adding extra document element."
+        pass
     else:
         print "Failed to catch expected exception when" \
               " adding extra document element."
@@ -613,23 +608,33 @@ names.sort()
 
 failed = []
 
+try:
+    Node.allnodes
+except AttributeError:
+    # We don't actually have the minidom from the standard library,
+    # but are picking up the PyXML version from site-packages.
+    def check_allnodes():
+        pass
+else:
+    def check_allnodes():
+        confirm(len(Node.allnodes) == 0,
+                "assertion: len(Node.allnodes) == 0")
+        if len(Node.allnodes):
+            print "Garbage left over:"
+            if verbose:
+                print Node.allnodes.items()[0:10]
+            else:
+                # Don't print specific nodes if repeatable results
+                # are needed
+                print len(Node.allnodes)
+        Node.allnodes = {}
+
 for name in names:
     if name.startswith("test"):
         func = globals()[name]
         try:
             func()
-            print "Test Succeeded", name
-            confirm(len(Node.allnodes) == 0,
-                    "assertion: len(Node.allnodes) == 0")
-            if len(Node.allnodes):
-                print "Garbage left over:"
-                if verbose:
-                    print Node.allnodes.items()[0:10]
-                else:
-                    # Don't print specific nodes if repeatable results
-                    # are needed
-                    print len(Node.allnodes)
-            Node.allnodes = {}
+            check_allnodes()
         except:
             failed.append(name)
             print "Test Failed: ", name
@@ -642,9 +647,3 @@ if failed:
     print "\n\n\n**** Check for failures in these tests:"
     for name in failed:
         print "  " + name
-    print
-else:
-    print "All tests succeeded"
-
-Node.debug = None # Delete debug output collected in a StringIO object
-Node._debug = 0   # And reset debug mode
