@@ -1,3 +1,24 @@
+Mon Jul  4 23:01:36 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/timemodule.c (sleep, floatsleep): don't use setjmp or
+	signal, rely on err_errno() or sigcheck() instead.
+
+	* Dos/{pcmodule,dosmodule}.c, Modules/posixmodule.c: don't include
+	<setjmp.h>
+
+Sat Jul  2 00:42:47 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/urllib.py: implemented new quoting rules; added splituser,
+	splitpasswd, splitattr, splitvalue; new ftp syntax (user:passwd,
+	cwd to each subdir, type={a,i,d})
+
+Fri Jul  1 17:32:51 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/traceback.c: add function name to traceback info
+
+	* Object/listobject.c, Modules/{array,mpz}module.c: include
+	<sys/types.h> for size_t
+
 Fri Jul  1 12:47:05 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Makefile.in (Makefile): add dependency on config.status
@@ -151,7 +172,7 @@ Thu Jun  9 23:33:33 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 Tue Jun  7 11:41:05 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
-	* Doc/lib.tex: added warning about lineii, libposixfile and parparse
+	* Doc/lib.tex: added warning about lineii, libposixfile and partparse
 
 	* Lib/bdb.py (clear_all_breaks): this was defined with two
 	arguments that weren't used and shouldn't have been there
