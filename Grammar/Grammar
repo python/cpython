@@ -1,7 +1,12 @@
-# Grammar for Python, version 10
+# Grammar for Python
 
-# Changes since version 9:
-#	Equality is now only tested with '=='
+# Change log:
+
+# 11-Jan-92:
+#	Variable length argument list syntax added: def f(a, b, +rest): ...
+
+# 8-Jan-92:
+#	Allow only '==' for equality testing
 
 # Changes since version 8:
 #	Trailing commas in formal parameter lists are allowed
@@ -56,9 +61,10 @@ expr_input: testlist NEWLINE
 eval_input: testlist ENDMARKER
 
 funcdef: 'def' NAME parameters ':' suite
-parameters: '(' [fplist] ')'
-fplist: fpdef (',' fpdef)* [',']
+parameters: '(' [varargslist] ')'
+varargslist: (fpdef ',')* '+' NAME | fpdef (',' fpdef)* [',']
 fpdef: NAME | '(' fplist ')'
+fplist: fpdef (',' fpdef)* [',']
 
 stmt: simple_stmt | compound_stmt
 simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
