@@ -162,7 +162,7 @@ com_init(c, filename)
 	struct compiling *c;
 	char *filename;
 {
-	if ((c->c_code = newsizedstringobject((char *)NULL, 0)) == NULL)
+	if ((c->c_code = newsizedstringobject((char *)NULL, 1000)) == NULL)
 		goto fail_3;
 	if ((c->c_consts = newlistobject(0)) == NULL)
 		goto fail_2;
