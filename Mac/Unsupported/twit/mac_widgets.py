@@ -80,7 +80,7 @@ class MT_TextWidget:
 				except ValueError:
 					break
 			self.line_index.append(len(data))
-		Win.InvalRect(self.rect)
+		self.wid.InvalWindowRect(self.rect)
 		self.ted.TESetSelect(0,0)
 		self.ted.TECalText()
 		self.ted.TESelView()
@@ -192,7 +192,7 @@ class MT_IconTextWidget(MT_TextWidget):
 	def setbreaks(self, list):
 		self.breakpointlist = list[:]
 		Qd.SetPort(self.wid)
-		Win.InvalRect(self.iconrect)
+		self.wid.InvalWindowRect(self.iconrect)
 		
 	def setcurline(self, line, pic=PIC_CURRENT):
 		self.curline = line
@@ -214,7 +214,7 @@ class MT_IconTextWidget(MT_TextWidget):
 		
 	def setscrollbars(self):
 		MT_TextWidget.setscrollbars(self)
-		Win.InvalRect(self.iconrect)
+		self.wid.InvalWindowRect(self.iconrect)
 				
 	def update(self, rgn):
 		MT_TextWidget.update(self, rgn)
@@ -268,7 +268,7 @@ class MT_IndexList:
 			for y in range(len(column)):
 				self.list.LSetCell(column[y], (x, y))
 		self.list.LSetDrawingMode(1)
-		Win.InvalRect(self.rect)
+		self.wid.InvalWindowRect(self.rect)
 
 	def deselectall(self):
 		while 1:

@@ -94,7 +94,7 @@ class ModuleBrowser(FrameWork.DialogWindow, TwitCore.ModuleBrowser):
 		
 	def force_redraw(self):
 		Qd.SetPort(self.wid)
-		Win.InvalRgn(self.wid.GetWindowPort().visRgn)
+		self.wid.InvalWindowRgn(self.wid.GetWindowPort().visRgn)
 		
 	def do_activate(self, activate, event):
 		self.modules.activate(activate)
