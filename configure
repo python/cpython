@@ -1,0 +1,1347 @@
+
+#!/bin/sh
+# Guess values for system-dependent variables and create Makefiles.
+# Generated automatically using autoconf.
+# Copyright (C) 1991, 1992, 1993 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+# Usage: configure [--srcdir=DIR] [--host=HOST] [--gas] [--nfp]
+#        [--prefix=PREFIX] [--exec-prefix=PREFIX] [--with-PACKAGE[=VALUE]]
+# Ignores all args except --srcdir, --prefix, --exec-prefix, and
+# --with-PACKAGE[=VALUE] unless this script has special code to handle it.
+
+for arg
+do
+  # Handle --exec-prefix with a space before the argument.
+  if test x$next_exec_prefix = xyes; then exec_prefix=$arg; next_exec_prefix=
+  # Handle --host with a space before the argument.
+  elif test x$next_host = xyes; then next_host=
+  # Handle --prefix with a space before the argument.
+  elif test x$next_prefix = xyes; then prefix=$arg; next_prefix=
+  # Handle --srcdir with a space before the argument.
+  elif test x$next_srcdir = xyes; then srcdir=$arg; next_srcdir=
+  else
+    case $arg in
+     # For backward compatibility, recognize -exec-prefix and --exec_prefix.
+     -exec-prefix=* | --exec_prefix=* | --exec-prefix=* | --exec-prefi=* | --exec-pref=* | --exec-pre=* | --exec-pr=* | --exec-p=* | --exec-=* | --exec=* | --exe=* | --ex=* | --e=*)
+	exec_prefix=`echo $arg | sed 's/[-a-z_]*=//'` ;;
+     -exec-prefix | --exec_prefix | --exec-prefix | --exec-prefi | --exec-pref | --exec-pre | --exec-pr | --exec-p | --exec- | --exec | --exe | --ex | --e)
+	next_exec_prefix=yes ;;
+
+     -gas | --gas | --ga | --g) ;;
+
+     -host=* | --host=* | --hos=* | --ho=* | --h=*) ;;
+     -host | --host | --hos | --ho | --h)
+	next_host=yes ;;
+
+     -nfp | --nfp | --nf) ;;
+
+     -prefix=* | --prefix=* | --prefi=* | --pref=* | --pre=* | --pr=* | --p=*)
+	prefix=`echo $arg | sed 's/[-a-z_]*=//'` ;;
+     -prefix | --prefix | --prefi | --pref | --pre | --pr | --p)
+	next_prefix=yes ;;
+
+     -srcdir=* | --srcdir=* | --srcdi=* | --srcd=* | --src=* | --sr=* | --s=*)
+	srcdir=`echo $arg | sed 's/[-a-z_]*=//'` ;;
+     -srcdir | --srcdir | --srcdi | --srcd | --src | --sr | --s)
+	next_srcdir=yes ;;
+
+     -with-* | --with-*)
+       package=`echo $arg|sed -e 's/-*with-//' -e 's/=.*//'`
+       # Reject names that aren't valid shell variable names.
+       if test -n "`echo $package| sed 's/[-a-zA-Z0-9_]//g'`"; then
+         echo "configure: $package: invalid package name" >&2; exit 1
+       fi
+       package=`echo $package| sed 's/-/_/g'`
+       case "$arg" in
+         *=*) val="`echo $arg|sed 's/[^=]*=//'`" ;;
+         *) val=1 ;;
+       esac
+       eval "with_$package='$val'" ;;
+
+     -v | -verbose | --verbose | --verbos | --verbo | --verb | --ver | --ve | --v)
+       verbose=yes ;;
+
+     *) ;;
+    esac
+  fi
+done
+
+trap 'rm -fr conftest* confdefs* core; exit 1' 1 3 15
+trap 'rm -f confdefs*' 0
+
+# NLS nuisances.
+# These must not be set unconditionally because not all systems understand
+# e.g. LANG=C (notably SCO).
+if test "${LC_ALL+set}" = 'set' ; then LC_ALL=C; export LC_ALL; fi
+if test "${LANG+set}"   = 'set' ; then LANG=C;   export LANG;   fi
+
+rm -f conftest* confdefs.h
+# AIX cpp loses on an empty file, so make sure it contains at least a newline.
+echo > confdefs.h
+compile='${CC-cc} $CFLAGS conftest.c -o conftest $LIBS >/dev/null 2>&1'
+
+# A filename unique to this package, relative to the directory that
+# configure is in, which we can look for to find out if srcdir is correct.
+unique_file=Py/object.h
+
+# Find the source files, if location was not specified.
+if test -z "$srcdir"; then
+  srcdirdefaulted=yes
+  # Try the directory containing this script, then `..'.
+  prog=$0
+  confdir=`echo $prog|sed 's%/[^/][^/]*$%%'`
+  test "X$confdir" = "X$prog" && confdir=.
+  srcdir=$confdir
+  if test ! -r $srcdir/$unique_file; then
+    srcdir=..
+  fi
+fi
+if test ! -r $srcdir/$unique_file; then
+  if test x$srcdirdefaulted = xyes; then
+    echo "configure: Can not find sources in \`${confdir}' or \`..'." 1>&2
+  else
+    echo "configure: Can not find sources in \`${srcdir}'." 1>&2
+  fi
+  exit 1
+fi
+# Preserve a srcdir of `.' to avoid automounter screwups with pwd.
+# But we can't avoid them for `..', to make subdirectories work.
+case $srcdir in
+  .|/*|~*) ;;
+  *) srcdir=`cd $srcdir; pwd` ;; # Make relative path absolute.
+esac
+
+
+# Save the original args to write them into config.status later.
+configure_args="$*"
+
+
+# checks for alternative programs
+if test -z "$CC"; then
+  # Extract the first word of `gcc', so it can be a program name with args.
+  set dummy gcc; word=$2
+  echo checking for $word
+  IFS="${IFS= 	}"; saveifs="$IFS"; IFS="${IFS}:"
+  for dir in $PATH; do
+    test -z "$dir" && dir=.
+    if test -f $dir/$word; then
+      CC="gcc"
+      break
+    fi
+  done
+  IFS="$saveifs"
+fi
+test -z "$CC" && CC="cc"
+test -n "$CC" && test -n "$verbose" && echo "	setting CC to $CC"
+
+# Find out if we are using GNU C, under whatever name.
+cat > conftest.c <<EOF
+#ifdef __GNUC__
+  yes
+#endif
+EOF
+${CC-cc} -E conftest.c > conftest.out 2>&1
+if egrep yes conftest.out >/dev/null 2>&1; then
+  GCC=1 # For later tests.
+fi
+rm -f conftest*
+
+if test -z "$RANLIB"; then
+  # Extract the first word of `ranlib', so it can be a program name with args.
+  set dummy ranlib; word=$2
+  echo checking for $word
+  IFS="${IFS= 	}"; saveifs="$IFS"; IFS="${IFS}:"
+  for dir in $PATH; do
+    test -z "$dir" && dir=.
+    if test -f $dir/$word; then
+      RANLIB="ranlib"
+      break
+    fi
+  done
+  IFS="$saveifs"
+fi
+test -z "$RANLIB" && RANLIB=":"
+test -n "$RANLIB" && test -n "$verbose" && echo "	setting RANLIB to $RANLIB"
+
+
+# checks for UNIX variants that set C preprocessor variables
+echo checking for AIX
+echo checking how to run the C preprocessor
+if test -z "$CPP"; then
+  # This must be in double quotes, not single quotes, because CPP may get
+  # substituted into the Makefile and ``${CC-cc}'' will simply confuse
+  # make.  It must be expanded now.
+  CPP="${CC-cc} -E"
+  cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <stdio.h>
+Syntax Error
+EOF
+err=`eval "($CPP conftest.c >/dev/null) 2>&1"`
+if test -z "$err"; then
+  :
+else
+  rm -rf conftest*
+  CPP=/lib/cpp
+fi
+rm -f conftest*
+fi
+test ".${verbose}" != "." && echo "	setting CPP to $CPP"
+
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#ifdef _AIX
+  yes
+#endif
+
+EOF
+eval "$CPP conftest.c > conftest.out 2>&1"
+if egrep "yes" conftest.out >/dev/null 2>&1; then
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining _ALL_SOURCE"
+echo "#define" _ALL_SOURCE 1 >> confdefs.h
+DEFS="$DEFS -D_ALL_SOURCE=1"
+}
+
+
+fi
+rm -f conftest*
+
+
+echo checking for POSIXized ISC
+if test -d /etc/conf/kconfig.d &&
+  grep _POSIX_VERSION /usr/include/sys/unistd.h >/dev/null 2>&1
+then
+  ISC=1 # If later tests want to check for ISC.
+  
+{
+test -n "$verbose" && \
+echo "	defining _POSIX_SOURCE"
+echo "#define" _POSIX_SOURCE 1 >> confdefs.h
+DEFS="$DEFS -D_POSIX_SOURCE=1"
+}
+
+  if test -n "$GCC"; then
+    CC="$CC -posix"
+  else
+    CC="$CC -Xp"
+  fi
+fi
+
+echo checking for minix/config.h
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <minix/config.h>
+EOF
+err=`eval "($CPP conftest.c >/dev/null) 2>&1"`
+if test -z "$err"; then
+  rm -rf conftest*
+  MINIX=1
+
+fi
+rm -f conftest*
+
+# The Minix shell can't assign to the same variable on the same line!
+if test -n "$MINIX"; then
+  
+{
+test -n "$verbose" && \
+echo "	defining _POSIX_SOURCE"
+echo "#define" _POSIX_SOURCE 1 >> confdefs.h
+DEFS="$DEFS -D_POSIX_SOURCE=1"
+}
+
+  
+{
+test -n "$verbose" && \
+echo "	defining" _POSIX_1_SOURCE to be 2
+echo "#define" _POSIX_1_SOURCE 2 >> confdefs.h
+DEFS="$DEFS -D_POSIX_1_SOURCE=2"
+}
+
+  
+{
+test -n "$verbose" && \
+echo "	defining _MINIX"
+echo "#define" _MINIX 1 >> confdefs.h
+DEFS="$DEFS -D_MINIX=1"
+}
+
+fi
+
+LIBS_save="${LIBS}"
+LIBS="${LIBS} -lseq"
+have_lib=""
+echo checking for -lseq
+cat > conftest.c <<EOF
+#include "confdefs.h"
+
+int main() { exit(0); }
+int t() { main(); }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  have_lib="1"
+
+fi
+rm -f conftest*
+LIBS="${LIBS_save}"
+if test -n "${have_lib}"; then
+   :; LIBS="$LIBS -lseq"
+else
+   :; 
+fi
+
+
+
+# checks for header files
+echo checking for ANSI C header files
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
+#include <float.h>
+EOF
+err=`eval "($CPP conftest.c >/dev/null) 2>&1"`
+if test -z "$err"; then
+  rm -rf conftest*
+  # SunOS 4.x string.h does not declare mem*, contrary to ANSI.
+echo '#include "confdefs.h"
+#include <string.h>' > conftest.c
+eval "$CPP conftest.c > conftest.out 2>&1"
+if egrep "memchr" conftest.out >/dev/null 2>&1; then
+  rm -rf conftest*
+  # SGI's /bin/cc from Irix-4.0.5 gets non-ANSI ctype macros unless using -ansi.
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <ctype.h>
+#define ISLOWER(c) ('a' <= (c) && (c) <= 'z')
+#define TOUPPER(c) (ISLOWER(c) ? 'A' + ((c) - 'a') : (c))
+#define XOR(e,f) (((e) && !(f)) || (!(e) && (f)))
+int main () { int i; for (i = 0; i < 256; i++)
+if (XOR (islower (i), ISLOWER (i)) || toupper (i) != TOUPPER (i)) exit(2);
+exit (0); }
+
+EOF
+eval $compile
+if test -s conftest && (./conftest; exit) 2>/dev/null; then
+  
+{
+test -n "$verbose" && \
+echo "	defining STDC_HEADERS"
+echo "#define" STDC_HEADERS 1 >> confdefs.h
+DEFS="$DEFS -DSTDC_HEADERS=1"
+}
+
+
+fi
+rm -fr conftest*
+
+fi
+rm -f conftest*
+
+
+fi
+rm -f conftest*
+
+for hdr in dlfcn.h signal.h stdarg.h unistd.h utime.h sys/param.h sys/select.h sys/times.h sys/utsname.h
+do
+trhdr=HAVE_`echo $hdr | tr '[a-z]./' '[A-Z]__'`
+echo checking for ${hdr}
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <${hdr}>
+EOF
+err=`eval "($CPP conftest.c >/dev/null) 2>&1"`
+if test -z "$err"; then
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining ${trhdr}"
+echo "#define" ${trhdr} 1 >> confdefs.h
+DEFS="$DEFS -D${trhdr}=1"
+}
+
+
+fi
+rm -f conftest*
+done
+
+echo checking for directory library header
+dirheader=
+if test -z "$dirheader"; then
+  echo checking for dirent.h
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <sys/types.h>
+#include <dirent.h>
+int main() { exit(0); }
+int t() { DIR *dirp = 0; }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining DIRENT"
+echo "#define" DIRENT 1 >> confdefs.h
+DEFS="$DEFS -DDIRENT=1"
+}
+ dirheader=dirent.h
+
+fi
+rm -f conftest*
+fi
+if test -z "$dirheader"; then
+  echo checking for sys/ndir.h
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <sys/types.h>
+#include <sys/ndir.h>
+int main() { exit(0); }
+int t() { DIR *dirp = 0; }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining SYSNDIR"
+echo "#define" SYSNDIR 1 >> confdefs.h
+DEFS="$DEFS -DSYSNDIR=1"
+}
+ dirheader=sys/ndir.h
+
+fi
+rm -f conftest*
+fi
+if test -z "$dirheader"; then
+  echo checking for sys/dir.h
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <sys/types.h>
+#include <sys/dir.h>
+int main() { exit(0); }
+int t() { DIR *dirp = 0; }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining SYSDIR"
+echo "#define" SYSDIR 1 >> confdefs.h
+DEFS="$DEFS -DSYSDIR=1"
+}
+ dirheader=sys/dir.h
+
+fi
+rm -f conftest*
+fi
+if test -z "$dirheader"; then
+  echo checking for ndir.h
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <sys/types.h>
+#include <ndir.h>
+int main() { exit(0); }
+int t() { DIR *dirp = 0; }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining NDIR"
+echo "#define" NDIR 1 >> confdefs.h
+DEFS="$DEFS -DNDIR=1"
+}
+ dirheader=ndir.h
+
+fi
+rm -f conftest*
+fi
+
+echo checking for closedir return value
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <sys/types.h>
+#include <$dirheader>
+int closedir(); main() { exit(closedir(opendir(".")) != 0); }
+EOF
+eval $compile
+if test -s conftest && (./conftest; exit) 2>/dev/null; then
+  :
+else
+  
+{
+test -n "$verbose" && \
+echo "	defining VOID_CLOSEDIR"
+echo "#define" VOID_CLOSEDIR 1 >> confdefs.h
+DEFS="$DEFS -DVOID_CLOSEDIR=1"
+}
+
+fi
+rm -fr conftest*
+
+
+# checks for typedefs
+echo checking for uid_t in sys/types.h
+echo '#include "confdefs.h"
+#include <sys/types.h>' > conftest.c
+eval "$CPP conftest.c > conftest.out 2>&1"
+if egrep "uid_t" conftest.out >/dev/null 2>&1; then
+  :
+else
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining" uid_t to be int
+echo "#define" uid_t int >> confdefs.h
+DEFS="$DEFS -Duid_t=int"
+}
+ 
+{
+test -n "$verbose" && \
+echo "	defining" gid_t to be int
+echo "#define" gid_t int >> confdefs.h
+DEFS="$DEFS -Dgid_t=int"
+}
+
+fi
+rm -f conftest*
+
+echo checking for type of array argument to getgroups
+prog='/* Thanks to Mike Rendell for this test.  */
+#include <sys/types.h>
+#define NGID 256
+#undef MAX
+#define MAX(x,y) ((x) > (y) ? (x) : (y))
+main()
+{
+  gid_t gidset[NGID];
+  int i, n;
+  union { gid_t gval; long lval; }  val;
+
+  val.lval = -1;
+  for (i = 0; i < NGID; i++)
+    gidset[i] = val.gval;
+  n = getgroups (sizeof (gidset) / MAX (sizeof (int), sizeof (gid_t)) - 1,
+                 gidset);
+  /* Exit non-zero if getgroups seems to require an array of ints.  This
+     happens when gid_t is short but getgroups modifies an array of ints.  */
+  exit ((n > 0 && gidset[n] != val.gval) ? 1 : 0);
+}'
+cat > conftest.c <<EOF
+#include "confdefs.h"
+$prog
+EOF
+eval $compile
+if test -s conftest && (./conftest; exit) 2>/dev/null; then
+  
+{
+test -n "$verbose" && \
+echo "	defining" GETGROUPS_T to be gid_t
+echo "#define" GETGROUPS_T gid_t >> confdefs.h
+DEFS="$DEFS -DGETGROUPS_T=gid_t"
+}
+
+
+else
+  
+{
+test -n "$verbose" && \
+echo "	defining" GETGROUPS_T to be int
+echo "#define" GETGROUPS_T int >> confdefs.h
+DEFS="$DEFS -DGETGROUPS_T=int"
+}
+
+fi
+rm -fr conftest*
+
+echo checking for mode_t in sys/types.h
+echo '#include "confdefs.h"
+#include <sys/types.h>' > conftest.c
+eval "$CPP conftest.c > conftest.out 2>&1"
+if egrep "mode_t" conftest.out >/dev/null 2>&1; then
+  :
+else
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining" mode_t to be int
+echo "#define" mode_t int >> confdefs.h
+DEFS="$DEFS -Dmode_t=int"
+}
+
+fi
+rm -f conftest*
+
+echo checking for off_t in sys/types.h
+echo '#include "confdefs.h"
+#include <sys/types.h>' > conftest.c
+eval "$CPP conftest.c > conftest.out 2>&1"
+if egrep "off_t" conftest.out >/dev/null 2>&1; then
+  :
+else
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining" off_t to be long
+echo "#define" off_t long >> confdefs.h
+DEFS="$DEFS -Doff_t=long"
+}
+
+fi
+rm -f conftest*
+
+echo checking for pid_t in sys/types.h
+echo '#include "confdefs.h"
+#include <sys/types.h>' > conftest.c
+eval "$CPP conftest.c > conftest.out 2>&1"
+if egrep "pid_t" conftest.out >/dev/null 2>&1; then
+  :
+else
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining" pid_t to be int
+echo "#define" pid_t int >> confdefs.h
+DEFS="$DEFS -Dpid_t=int"
+}
+
+fi
+rm -f conftest*
+
+echo checking for return type of signal handlers
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <sys/types.h>
+#include <signal.h>
+#ifdef signal
+#undef signal
+#endif
+extern void (*signal ()) ();
+int main() { exit(0); }
+int t() { int i; }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining" RETSIGTYPE to be void
+echo "#define" RETSIGTYPE void >> confdefs.h
+DEFS="$DEFS -DRETSIGTYPE=void"
+}
+
+
+else
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining" RETSIGTYPE to be int
+echo "#define" RETSIGTYPE int >> confdefs.h
+DEFS="$DEFS -DRETSIGTYPE=int"
+}
+
+fi
+rm -f conftest*
+
+
+echo checking for size_t in sys/types.h
+echo '#include "confdefs.h"
+#include <sys/types.h>' > conftest.c
+eval "$CPP conftest.c > conftest.out 2>&1"
+if egrep "size_t" conftest.out >/dev/null 2>&1; then
+  :
+else
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining" size_t to be unsigned
+echo "#define" size_t unsigned >> confdefs.h
+DEFS="$DEFS -Dsize_t=unsigned"
+}
+
+fi
+rm -f conftest*
+
+echo checking for uid_t in sys/types.h
+echo '#include "confdefs.h"
+#include <sys/types.h>' > conftest.c
+eval "$CPP conftest.c > conftest.out 2>&1"
+if egrep "uid_t" conftest.out >/dev/null 2>&1; then
+  :
+else
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining" uid_t to be int
+echo "#define" uid_t int >> confdefs.h
+DEFS="$DEFS -Duid_t=int"
+}
+ 
+{
+test -n "$verbose" && \
+echo "	defining" gid_t to be int
+echo "#define" gid_t int >> confdefs.h
+DEFS="$DEFS -Dgid_t=int"
+}
+
+fi
+rm -f conftest*
+
+
+# checks for libraries
+LIBS_save="${LIBS}"
+LIBS="${LIBS} -ldl"
+have_lib=""
+echo checking for -ldl
+cat > conftest.c <<EOF
+#include "confdefs.h"
+
+int main() { exit(0); }
+int t() { main(); }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  have_lib="1"
+
+fi
+rm -f conftest*
+LIBS="${LIBS_save}"
+if test -n "${have_lib}"; then
+   
+{
+test -n "$verbose" && \
+echo "	defining HAVE_LIBDL"
+echo "#define" HAVE_LIBDL 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_LIBDL=1"
+}
+
+   LIBS="${LIBS} -ldl"
+fi
+
+LIBS="${LIBS} -L${READLINESRC-${PWD-${CWD-`pwd`}}/readline}"
+LIBS_save="${LIBS}"
+LIBS="${LIBS} -lreadline"
+have_lib=""
+echo checking for -lreadline
+cat > conftest.c <<EOF
+#include "confdefs.h"
+
+int main() { exit(0); }
+int t() { main(); }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  have_lib="1"
+
+fi
+rm -f conftest*
+LIBS="${LIBS_save}"
+if test -n "${have_lib}"; then
+   
+{
+test -n "$verbose" && \
+echo "	defining HAVE_LIBREADLINE"
+echo "#define" HAVE_LIBREADLINE 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_LIBREADLINE=1"
+}
+
+   LIBS="${LIBS} -lreadline"
+fi
+
+if test -n "${have_lib}"; then
+LIBS_save="${LIBS}"
+LIBS="${LIBS} -ltermcap"
+have_lib=""
+echo checking for -ltermcap
+cat > conftest.c <<EOF
+#include "confdefs.h"
+
+int main() { exit(0); }
+int t() { main(); }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  have_lib="1"
+
+fi
+rm -f conftest*
+LIBS="${LIBS_save}"
+if test -n "${have_lib}"; then
+   
+{
+test -n "$verbose" && \
+echo "	defining HAVE_LIBTERMCAP"
+echo "#define" HAVE_LIBTERMCAP 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_LIBTERMCAP=1"
+}
+
+   LIBS="${LIBS} -ltermcap"
+fi
+
+fi
+
+# Check for IRIX or SOLARIS thread interface
+LIBS_save="${LIBS}"
+LIBS="${LIBS} -lmpc"
+have_lib=""
+echo checking for -lmpc
+cat > conftest.c <<EOF
+#include "confdefs.h"
+
+int main() { exit(0); }
+int t() { main(); }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  have_lib="1"
+
+fi
+rm -f conftest*
+LIBS="${LIBS_save}"
+if test -n "${have_lib}"; then
+   
+{
+test -n "$verbose" && \
+echo "	defining HAVE_LIBMPC"
+echo "#define" HAVE_LIBMPC 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_LIBMPC=1"
+}
+
+   LIBS="${LIBS} -lmpc"
+fi
+
+if test -n "${have_lib}"; then
+DEFS="${DEFS} -DUSE_THREAD"
+LIBOBJS="${LIBOBJS} thread.o"
+fi
+
+LIBS_save="${LIBS}"
+LIBS="${LIBS} -lthread"
+have_lib=""
+echo checking for -lthread
+cat > conftest.c <<EOF
+#include "confdefs.h"
+
+int main() { exit(0); }
+int t() { main(); }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  have_lib="1"
+
+fi
+rm -f conftest*
+LIBS="${LIBS_save}"
+if test -n "${have_lib}"; then
+   
+{
+test -n "$verbose" && \
+echo "	defining HAVE_LIBTHREAD"
+echo "#define" HAVE_LIBTHREAD 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_LIBTHREAD=1"
+}
+
+   LIBS="${LIBS} -lthread"
+fi
+
+if test -n "${have_lib}"; then
+DEFS="${DEFS} -DUSE_THREAD"
+LIBOBJS="${LIBOBJS} thread.o"
+fi
+
+# checks for library functions
+for func in clock ftime gettimeofday getpgrp getwd lstat readlink readline select setsid setpgid setpgrp siginterrupt symlink tcgetpgrp tcsetpgrp times uname waitpid
+do
+trfunc=HAVE_`echo $func | tr '[a-z]' '[A-Z]'`
+echo checking for ${func}
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <ctype.h>
+int main() { exit(0); }
+int t() { 
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_${func}) || defined (__stub___${func})
+choke me
+#else
+/* Override any gcc2 internal prototype to avoid an error.  */
+extern char ${func}(); ${func}();
+#endif
+ }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  {
+test -n "$verbose" && \
+echo "	defining ${trfunc}"
+echo "#define" ${trfunc} 1 >> confdefs.h
+DEFS="$DEFS -D${trfunc}=1"
+}
+
+
+fi
+rm -f conftest*
+done
+
+for func in dup2 getcwd strerror strtoul strtod memmove
+do
+echo checking for ${func}
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <ctype.h>
+int main() { exit(0); }
+int t() { 
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_${func}) || defined (__stub___${func})
+choke me
+#else
+/* Override any gcc2 internal prototype to avoid an error.  */
+extern char ${func}(); ${func}();
+#endif
+ }
+EOF
+if eval $compile; then
+  :
+else
+  rm -rf conftest*
+  LIBOBJS="$LIBOBJS ${func}.o"
+test -n "$verbose" && echo "	using ${func}.o instead"
+fi
+rm -f conftest*
+
+done
+
+echo checking for getpgrp
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <ctype.h>
+int main() { exit(0); }
+int t() { 
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_getpgrp) || defined (__stub___getpgrp)
+choke me
+#else
+/* Override any gcc2 internal prototype to avoid an error.  */
+extern char getpgrp(); getpgrp();
+#endif
+ }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  echo checking for argument to getpgrp
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <unistd.h>
+int main() { exit(0); }
+int t() { getpgrp(0); }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining GETPGRP_HAVE_ARG"
+echo "#define" GETPGRP_HAVE_ARG 1 >> confdefs.h
+DEFS="$DEFS -DGETPGRP_HAVE_ARG=1"
+}
+
+
+fi
+rm -f conftest*
+
+
+fi
+rm -f conftest*
+
+
+# checks for structures
+echo checking for whether time.h and sys/time.h may both be included
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <sys/types.h>
+#include <sys/time.h>
+#include <time.h>
+int main() { exit(0); }
+int t() { struct tm *tp; }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining TIME_WITH_SYS_TIME"
+echo "#define" TIME_WITH_SYS_TIME 1 >> confdefs.h
+DEFS="$DEFS -DTIME_WITH_SYS_TIME=1"
+}
+
+
+fi
+rm -f conftest*
+
+echo checking for struct tm in time.h
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <sys/types.h>
+#include <time.h>
+int main() { exit(0); }
+int t() { struct tm *tp; tp->tm_sec; }
+EOF
+if eval $compile; then
+  :
+else
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining TM_IN_SYS_TIME"
+echo "#define" TM_IN_SYS_TIME 1 >> confdefs.h
+DEFS="$DEFS -DTM_IN_SYS_TIME=1"
+}
+
+fi
+rm -f conftest*
+
+decl='#include <sys/types.h>
+'
+case "$DEFS" in
+  *TM_IN_SYS_TIME*) decl="$decl
+#include <sys/time.h>
+" ;;
+  *) decl="$decl
+#include <time.h>
+" ;;
+esac
+echo checking for tm_zone in struct tm
+cat > conftest.c <<EOF
+#include "confdefs.h"
+$decl
+int main() { exit(0); }
+int t() { struct tm tm; tm.tm_zone; }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining HAVE_TM_ZONE"
+echo "#define" HAVE_TM_ZONE 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_TM_ZONE=1"
+}
+
+
+else
+  rm -rf conftest*
+  no_tm_zone=1
+fi
+rm -f conftest*
+
+if test -n "$no_tm_zone"; then
+echo checking for tzname
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <time.h>
+#ifndef tzname /* For SGI.  */
+extern char *tzname[]; /* RS6000 and others want it this way.  */
+#endif
+int main() { exit(0); }
+int t() { atoi(*tzname); }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining HAVE_TZNAME"
+echo "#define" HAVE_TZNAME 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_TZNAME=1"
+}
+
+
+fi
+rm -f conftest*
+
+fi
+
+
+# checks for compiler characteristics
+prog='/* Ultrix mips cc rejects this.  */
+typedef int charset[2]; const charset x;
+/* SunOS 4.1.1 cc rejects this.  */
+char const *const *ccp;
+char **p;
+/* AIX XL C 1.02.0.0 rejects this.
+   It does not let you subtract one const X* pointer from another in an arm
+   of an if-expression whose if-part is not a constant expression */
+const char *g = "string";
+ccp = &g + (g ? g-g : 0);
+/* HPUX 7.0 cc rejects these. */
+++ccp;
+p = (char**) ccp;
+ccp = (char const *const *) p;
+{ /* SCO 3.2v4 cc rejects this.  */
+  char *t;
+  char const *s = 0 ? (char *) 0 : (char const *) 0;
+
+  *t++ = 0;
+}
+{ /* Someone thinks the Sun supposedly-ANSI compiler will reject this.  */
+  int x[] = {25,17};
+  const int *foo = &x[0];
+  ++foo;
+}
+{ /* Sun SC1.0 ANSI compiler rejects this -- but not the above. */
+  typedef const int *iptr;
+  iptr p = 0;
+  ++p;
+}
+{ /* AIX XL C 1.02.0.0 rejects this saying
+     "k.c", line 2.27: 1506-025 (S) Operand must be a modifiable lvalue. */
+  struct s { int j; const int *ap[3]; };
+  struct s *b; b->j = 5;
+}
+{ /* ULTRIX-32 V3.1 (Rev 9) vcc rejects this */
+  const int foo = 10;
+}'
+echo checking for lack of working const
+cat > conftest.c <<EOF
+#include "confdefs.h"
+
+int main() { exit(0); }
+int t() { $prog }
+EOF
+if eval $compile; then
+  :
+else
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining" const to be empty
+echo "#define" const  >> confdefs.h
+DEFS="$DEFS -Dconst="
+}
+
+fi
+rm -f conftest*
+
+echo checking for prototypes
+cat > conftest.c <<EOF
+#include "confdefs.h"
+int foo(int x){return 0;} int main(){return foo(10);}
+EOF
+eval $compile
+if test -s conftest && (./conftest; exit) 2>/dev/null; then
+  
+{
+test -n "$verbose" && \
+echo "	defining HAVE_PROTOTYPES"
+echo "#define" HAVE_PROTOTYPES 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_PROTOTYPES=1"
+}
+ have_prototypes=1
+
+fi
+rm -fr conftest*
+if test "$have_prototypes"; then
+echo checking for "bad exec* prototypes"
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <unistd.h>
+int main() { exit(0); }
+int t() { char *const*t;execve("@",t,t); }
+EOF
+if eval $compile; then
+  :
+else
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining BAD_EXEC_PROTOTYPES"
+echo "#define" BAD_EXEC_PROTOTYPES 1 >> confdefs.h
+DEFS="$DEFS -DBAD_EXEC_PROTOTYPES=1"
+}
+
+fi
+rm -f conftest*
+
+fi
+
+# checks for system services
+# (none yet)
+
+# other checks for UNIX variants
+LIBS_save="${LIBS}"
+LIBS="${LIBS} -lsun"
+have_lib=""
+echo checking for -lsun
+cat > conftest.c <<EOF
+#include "confdefs.h"
+
+int main() { exit(0); }
+int t() { main(); }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  have_lib="1"
+
+fi
+rm -f conftest*
+LIBS="${LIBS_save}"
+if test -n "${have_lib}"; then
+   :; LIBS="$LIBS -lsun"
+else
+   :; 
+fi
+
+
+echo checking for Xenix
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#if defined(M_XENIX) && !defined(M_UNIX)
+  yes
+#endif
+
+EOF
+eval "$CPP conftest.c > conftest.out 2>&1"
+if egrep "yes" conftest.out >/dev/null 2>&1; then
+  rm -rf conftest*
+  XENIX=1
+
+fi
+rm -f conftest*
+
+if test -n "$XENIX"; then
+  LIBS="$LIBS -lx"
+  case "$DEFS" in
+  *SYSNDIR*) ;;
+  *) LIBS="-ldir $LIBS" ;; # Make sure -ldir precedes any -lx.
+  esac
+fi
+
+
+# generate output files
+# Set default prefixes.
+if test -n "$prefix"; then
+  test -z "$exec_prefix" && exec_prefix='${prefix}'
+  prsub="s%^prefix\\([ 	]*\\)=\\([ 	]*\\).*$%prefix\\1=\\2$prefix%"
+fi
+if test -n "$exec_prefix"; then
+  prsub="$prsub
+s%^exec_prefix\\([ 	]*\\)=\\([ 	]*\\).*$%exec_prefix\\1=\\2$exec_prefix%"
+fi
+# Quote sed substitution magic chars in DEFS.
+cat >conftest.def <<EOF
+$DEFS
+EOF
+escape_ampersand_and_backslash='s%[&\\]%\\&%g'
+DEFS=`sed "$escape_ampersand_and_backslash" <conftest.def`
+rm -f conftest.def
+# Substitute for predefined variables.
+
+trap 'rm -f config.status; exit 1' 1 3 15
+echo creating config.status
+rm -f config.status
+cat > config.status <<EOF
+#!/bin/sh
+# Generated automatically by configure.
+# Run this file to recreate the current configuration.
+# This directory was configured as follows,
+# on host `(hostname || uname -n) 2>/dev/null | sed 1q`:
+#
+# $0 $configure_args
+
+for arg
+do
+  case "\$arg" in
+    -recheck | --recheck | --rechec | --reche | --rech | --rec | --re | --r)
+    echo running \${CONFIG_SHELL-/bin/sh} $0 $configure_args
+    exec \${CONFIG_SHELL-/bin/sh} $0 $configure_args ;;
+    *) echo "Usage: config.status --recheck" 2>&1; exit 1 ;;
+  esac
+done
+
+trap 'rm -f Objects/Makefile Parser/Makefile Python/Makefile; exit 1' 1 3 15
+CC='$CC'
+RANLIB='$RANLIB'
+CPP='$CPP'
+LIBOBJS='$LIBOBJS'
+LIBS='$LIBS'
+srcdir='$srcdir'
+DEFS='$DEFS'
+prefix='$prefix'
+exec_prefix='$exec_prefix'
+prsub='$prsub'
+extrasub='$extrasub'
+EOF
+cat >> config.status <<\EOF
+
+top_srcdir=$srcdir
+
+CONFIG_FILES=${CONFIG_FILES-"Objects/Makefile Parser/Makefile Python/Makefile"}
+for file in .. ${CONFIG_FILES}; do if test "x$file" != x..; then
+  srcdir=$top_srcdir
+  # Remove last slash and all that follows it.  Not all systems have dirname.
+  dir=`echo $file|sed 's%/[^/][^/]*$%%'`
+  if test "$dir" != "$file"; then
+    test "$top_srcdir" != . && srcdir=$top_srcdir/$dir
+    test ! -d $dir && mkdir $dir
+  fi
+  echo creating $file
+  rm -f $file
+  echo "# Generated automatically from `echo $file|sed 's|.*/||'`.in by configure." > $file
+  sed -e "
+$prsub
+$extrasub
+s%@CC@%$CC%g
+s%@RANLIB@%$RANLIB%g
+s%@CPP@%$CPP%g
+s%@LIBOBJS@%$LIBOBJS%g
+s%@LIBS@%$LIBS%g
+s%@srcdir@%$srcdir%g
+s%@DEFS@%$DEFS%
+" $top_srcdir/${file}.in >> $file
+fi; done
+
+
+exit 0
+EOF
+chmod +x config.status
+${CONFIG_SHELL-/bin/sh} config.status
+
