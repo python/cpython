@@ -266,12 +266,13 @@ DEC Ultrix: compile with GCC to avoid bugs in the native compiler,
 	and pass SHELL=/bin/sh5 to Make when installing.
 
 AIX:	A complete overhaul of the shared library support is now in
-	place.  See Misc/AIX-NOTES for some notes on how it's done.
+	place.  See Misc/AIX-NOTES for some notes on how it's done. 
 	(The optimizer bug reported at this place in previous releases
-	has been worked around by a minimal code change.)
-	In addition, Gary Duzan has a hint for C++ users: to enable
-	full C++ module support, set CC="xlC" (or CC="xlC_r" for thread
-	support in AIX 4.2.1).
+	has been worked around by a minimal code change.) If you get
+	errors about ptread_* functions, during compile or during
+	testing, try setting CC to a thread-safe (reentrant) compiler,
+	like "cc_r".  For full C++ module support, set CC="xlC_r" (or
+	CC="xlC" without thread support).
 
 HP-UX:	Please read the file Misc/HPUX-NOTES for shared libraries.
 	When using threading, you may have to add -D_REENTRANT to the
