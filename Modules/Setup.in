@@ -175,10 +175,9 @@ md5 md5module.c md5c.c
 # The mpz module interfaces to the GNU Multiple Precision library.
 # You need to ftp the GNU MP library.  
 # The GMP variable must point to the GMP source directory.
-# This was originally written and tested against GMP 1.2.  I have
-# compiled it against GMP 1.3.2 (the latest I believe) and it seems to
-# work OK, but I haven't tested it thoroughly (lacking knowledge about
-# it).
+# This was originally written and tested against GMP 1.2 and 1.3.2.
+# It has been modified by Rob Hooft to work with 2.0.2 as well, but I
+# haven't tested it recently.
 
 # A compatible MP library unencombered by the GPL also exists.  It was
 # posted to comp.sources.misc in volume 40 and is widely available from

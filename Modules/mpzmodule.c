@@ -76,16 +76,23 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /*
 ** IMHO, mpz_m{div,mod,divmod}() do the wrong things when the denominator < 0
-** I assume that this will be fixed in a future release
+** This has been fixed with gmp release 2.0
 */
 /*#define MPZ_MDIV_BUG fixed the (for me) nexessary parts in libgmp.a */
 /*
 ** IMO, mpz_get_str() assumes a bit too large target space, if he doesn't
 ** allocate it himself
 */
-#define MPZ_GET_STR_BUG
 
 #include "gmp.h"
+#include "gmp-impl.h"
+
+#if __GNU_MP__ == 2
+#define GMP2
+#else
+#define MPZ_GET_STR_BUG
+#endif
+
 typedef struct {
 	OB_HEAD
         MP_INT	mpz;		/* the actual number */
@@ -117,7 +124,6 @@ newmpzobject()
 } /* newmpzobject() */
 
 #ifdef MPZ_GET_STR_BUG
-#include "gmp-impl.h"
 #include "longlong.h"
 #endif /* def MPZ_GET_STR_BUG */
 
@@ -162,8 +168,13 @@ mpz_format(objp, base, withname)
 		(int)mpz_sizeinbase(&mpzp->mpz, base));
 #endif /* def MPZ_DEBUG */
 #ifdef MPZ_GET_STR_BUG
+#ifdef GMP2
+	i += ((size_t) abs(mpzp->mpz._mp_size) * BITS_PER_MP_LIMB
+	      * __mp_bases[base].chars_per_bit_exactly) + 1;
+#else
 	i += ((size_t) abs(mpzp->mpz.size) * BITS_PER_MP_LIMB
 	      * __mp_bases[base].chars_per_bit_exactly) + 1;
+#endif
 #else /* def MPZ_GET_STR_BUG */
 	i += (int)mpz_sizeinbase(&mpzp->mpz, base);
 #endif /* def MPZ_GET_STR_BUG else */
@@ -580,7 +591,6 @@ mpz_power(a, b, m)
 {
 	mpzobject *z;
 	int cmpres;
-	long int longtmp1, longtmp2;
 
  	if ((object *)m!=Py_None)
  	  {
@@ -725,7 +735,7 @@ mpz_nonzero(v)
 } /* mpz_nonzero() */
 		
 static object *
-mpz_invert(v)
+py_mpz_invert(v)
 	mpzobject *v;
 {
 	mpzobject *z;
@@ -737,7 +747,7 @@ mpz_invert(v)
 
 	mpz_com(&z->mpz, &v->mpz);
 	return (object *)z;
-} /* mpz_invert() */
+} /* py_mpz_invert() */
 
 static object *
 mpz_lshift(a, b)
@@ -925,7 +935,7 @@ MPZ_mpz(self, args)
 		mpz_init(&mplongdigit);
 		
 		/* how we're gonna handle this? */
-		if (isnegative = ((i = ((longobject *)objp)->ob_size) < 0) )
+		if ((isnegative = ((i = ((longobject *)objp)->ob_size) < 0) ))
 			i = -i;
 
 		while (i--) {
@@ -1220,7 +1230,11 @@ mpz_divm(res, num, den, mod)
 	mpz_init_set(&d0, den);
 	mpz_init_set(&d1, mod);
 
+#ifdef GMP2
+	while (d1._mp_size != 0) {
+#else
 	while (d1.size != 0) {
+#endif
 		mpz_divmod(&q, &r, &d0, &d1);
 		mpz_set(&d0, &d1);
 		mpz_set(&d1, &r);
@@ -1231,8 +1245,13 @@ mpz_divm(res, num, den, mod)
 		mpz_set(&s1, &x);
 	}
 
+#ifdef GMP2
+	if (d0._mp_size != 1 || d0._mp_d[0] != 1)
+		res->_mp_size = 0; /* trouble: the gcd != 1; set s to zero */
+#else
 	if (d0.size != 1 || d0.d[0] != 1)
 		res->size = 0;	/* trouble: the gcd != 1; set s to zero */
+#endif
 	else {
 #ifdef MPZ_MDIV_BUG
 		/* watch out here! first check the signs, and then perform
@@ -1364,7 +1383,7 @@ mpz_long(self)
 
 	/* determine sign, and copy self to scratch var */
 	mpz_init_set(&mpzscratch, &self->mpz);
-	if (isnegative = (mpz_cmp_ui(&self->mpz, (unsigned long int)0) < 0))
+	if ((isnegative = (mpz_cmp_ui(&self->mpz, (unsigned long int)0) < 0)))
 		mpz_neg(&mpzscratch, &mpzscratch);
 
 	/* let those bits come, let those bits go,
@@ -1440,7 +1459,7 @@ mpz_float(self)
 	i = (int)mpz_size(&self->mpz);
 	
 	/* determine sign, and copy abs(self) to scratch var */
-	if (isnegative = (mpz_cmp_ui(&self->mpz, (unsigned long int)0) < 0)) {
+	if ((isnegative = (mpz_cmp_ui(&self->mpz, (unsigned long int)0) < 0))) {
 		mpz_init(&mpzscratch);
 		mpz_neg(&mpzscratch, &self->mpz);
 	}
@@ -1635,7 +1654,7 @@ static number_methods mpz_as_number = {
 	UF mpz_positive,	/*tp_positive*/
 	UF mpz_absolute,	/*tp_absolute*/
 	IF mpz_nonzero,		/*tp_nonzero*/
-	UF mpz_invert,		/*nb_invert*/
+	UF py_mpz_invert,	/*nb_invert*/
 	BF mpz_lshift,		/*nb_lshift*/
 	BF mpz_rshift,		/*nb_rshift*/
 	BF mpz_andfunc,		/*nb_and*/
