@@ -825,32 +825,6 @@ static PyObject *
 do_richcmp(PyObject *v, PyObject *w, int op)
 {
 	PyObject *res;
-	cmpfunc f;
-
-	/* If the types are equal, don't bother with coercions etc. 
-	   Instances are special-cased in try_3way_compare, since
-	   a result of 2 does *not* mean one value being greater
-	   than the other. */
-	if (v->ob_type == w->ob_type
-	    && (f = v->ob_type->tp_compare) != NULL
-	    && !PyInstance_Check(v)) {
-		int c;
-		richcmpfunc f1;
-		if ((f1 = RICHCOMPARE(v->ob_type)) != NULL) {
-			/* If the type has richcmp, try it first.
-			   try_rich_compare would try it two-sided,
-			   which is not needed since we've a single
-			   type only. */
-			res = (*f1)(v, w, op);
-			if (res != Py_NotImplemented)
-				return res;
-			Py_DECREF(res);
-		}
-		c = (*f)(v, w);
-		if (c < 0 && PyErr_Occurred())
-			return NULL;
-		return convert_3way_to_object(op, c);
-	}
 
 	res = try_rich_compare(v, w, op);
 	if (res != Py_NotImplemented)
@@ -862,8 +836,6 @@ do_richcmp(PyObject *v, PyObject *w, int op)
 
 /* Return:
    NULL for exception;
-   NotImplemented if this particular rich comparison is not implemented or
-     undefined;
    some object not equal to NotImplemented if it is implemented
      (this latter object may not be a Boolean).
 */
@@ -880,11 +852,12 @@ PyObject_RichCompare(PyObject *v, PyObject *w, int op)
 		 || (v->ob_type->tp_as_sequence
 		     && !PyString_Check(v)
 		     && !PyTuple_Check(v)))) {
+
 		/* try to detect circular data structures */
 		PyObject *token = check_recursion(v, w, op);
-
 		if (token == NULL) {
 			res = NULL;
+			goto Done;
 		}
 		else if (token == Py_None) {
 			/* already comparing these objects with this operator.
@@ -904,10 +877,41 @@ PyObject_RichCompare(PyObject *v, PyObject *w, int op)
 			res = do_richcmp(v, w, op);
 			delete_token(token);
 		}
+		goto Done;
 	}
-	else {
-		res = do_richcmp(v, w, op);
+
+	/* No nesting extremism.
+	   If the types are equal, and not old-style instances, try to
+	   get out cheap (don't bother with coercions etc.). */
+	if (v->ob_type == w->ob_type && !PyInstance_Check(v)) {
+		cmpfunc fcmp;
+		richcmpfunc frich = RICHCOMPARE(v->ob_type);
+		/* If the type has richcmp, try it first.  try_rich_compare
+		   tries it two-sided, which is not needed since we've a
+		   single type only. */
+		if (frich != NULL) {
+			res = (*frich)(v, w, op);
+			if (res != Py_NotImplemented)
+				goto Done;
+			Py_DECREF(res);
+		}
+		/* No richcmp, or this particular richmp not implemented.
+		   Try 3-way cmp. */
+		fcmp = v->ob_type->tp_compare;
+		if (fcmp != NULL) {
+			int c = (*fcmp)(v, w);
+			if (c < 0 && PyErr_Occurred()) {
+				res = NULL;
+				goto Done;
+			}
+			res = convert_3way_to_object(op, c);
+			goto Done;
+		}
 	}
+
+	/* Fast path not taken, or couldn't deliver a useful result. */
+	res = do_richcmp(v, w, op);
+Done:
 	compare_nesting--;
 	return res;
 }
