@@ -16,6 +16,23 @@ from distutils.util import convert_path, subst_vars, change_root
 from distutils.errors import DistutilsOptionError
 from glob import glob
 
+if sys.version < "2.2":
+    WINDOWS_SCHEME = {
+        'purelib': '$base',
+        'platlib': '$base',
+        'headers': '$base/Include/$dist_name',
+        'scripts': '$base/Scripts',
+        'data'   : '$base',
+    }
+else:
+    WINDOWS_SCHEME = {
+        'purelib': '$base/Lib/site-packages',
+        'platlib': '$base/Lib/site-packages',
+        'headers': '$base/Include/$dist_name',
+        'scripts': '$base/Scripts',
+        'data'   : '$base',
+    }
+
 INSTALL_SCHEMES = {
     'unix_prefix': {
         'purelib': '$base/lib/python$py_version_short/site-packages',
@@ -31,13 +48,7 @@ INSTALL_SCHEMES = {
         'scripts': '$base/bin',
         'data'   : '$base',
         },
-    'nt': {
-        'purelib': '$base',
-        'platlib': '$base',
-        'headers': '$base/Include/$dist_name',
-        'scripts': '$base/Scripts',
-        'data'   : '$base',
-        },
+    'nt': WINDOWS_SCHEME,
     'mac': {
         'purelib': '$base/Lib/site-packages',
         'platlib': '$base/Lib/site-packages',
