@@ -167,6 +167,34 @@ Comparison with Python's Samplesort Hybrid
   But timsort "should be" slower than samplesort on ~sort, so it's hard
   to count that it isn't on some boxes as a strike against it <wink>.
 
++ Here's the highwater mark for the number of heap-based temp slots (4
+  bytes each on this box) needed by each test, again with arguments
+  "15 20 1":
+
+
+   2**i  *sort \sort /sort  3sort  +sort  %sort  ~sort  =sort  !sort
+  32768  16384     0     0   6256      0  10821  12288      0  16383
+  65536  32766     0     0  21652      0  31276  24576      0  32767
+ 131072  65534     0     0  17258      0  58112  49152      0  65535
+ 262144 131072     0     0  35660      0 123561  98304      0 131071
+ 524288 262142     0     0  31302      0 212057 196608      0 262143
+1048576 524286     0     0 312438      0 484942 393216      0 524287
+
+  Discussion:  The tests that end up doing (close to) perfectly balanced
+  merges (*sort, !sort) need all N//2 temp slots (or almost all).  ~sort
+  also ends up doing balanced merges, but systematically benefits a lot from
+  the preliminary pre-merge searches described under "Merge Memory" later.
+  %sort approaches having a balanced merge at the end because the random
+  selection of elements to replace is expected to produce an out-of-order
+  element near the midpoint.  \sort, /sort, =sort are the trivial one-run
+  cases, needing no merging at all.  +sort ends up having one very long run
+  and one very short, and so gets all the temp space it needs from the small
+  temparray member of the MergeState struct (note that the same would be
+  true if the new random elements were prefixed to the sorted list instead,
+  but not if they appeared "in the middle").  3sort approaches N//3 temp
+  slots twice, but the run lengths that remain after 3 random exchanges
+  clearly has very high variance.
+
 
 A detailed description of timsort follows.
 
@@ -460,13 +488,13 @@ Galloping with a Broken Leg
 ---------------------------
 So why don't we always gallop?  Because it can lose, on two counts:
 
-1. While we're willing to endure small per-run overheads, per-comparison
+1. While we're willing to endure small per-merge overheads, per-comparison
    overheads are a different story.  Calling Yet Another Function per
    comparison is expensive, and gallop_left() and gallop_right() are
    too long-winded for sane inlining.
 
-2. Ignoring function-call overhead, galloping can-- alas --require more
-   comparisons than linear one-at-time search, depending on the data.
+2. Galloping can-- alas --require more comparisons than linear one-at-time
+   search, depending on the data.
 
 #2 requires details.  If A[0] belongs before B[0], galloping requires 1
 compare to determine that, same as linear search, except it costs more
