@@ -32,6 +32,10 @@ Core and builtins
   the overallocation is no more than three elements -- this improves space
   utilization for applications that have large numbers of small lists.
 
+- The dict.update() method now accepts all the same argument forms
+  as the dict() constructor.  This now includes item lists and/or
+  keyword arguments.
+
 - Support for arbitrary objects supporting the read-only buffer
   interface as the co_code field of code objects (something that was
   only possible to create from C code) has been removed.

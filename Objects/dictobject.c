@@ -1029,10 +1029,30 @@ Fail:
 	return NULL;
 }
 
-static PyObject *
-dict_update(PyObject *mp, PyObject *other)
+static int
+dict_update_common(PyObject *self, PyObject *args, PyObject *kwds, char *methname)
 {
-	if (PyDict_Update(mp, other) < 0)
+	PyObject *arg = NULL;
+	int result = 0;
+
+	if (!PyArg_UnpackTuple(args, methname, 0, 1, &arg))
+		result = -1;
+
+	else if (arg != NULL) {
+		if (PyObject_HasAttrString(arg, "keys"))
+			result = PyDict_Merge(self, arg, 1);
+		else
+			result = PyDict_MergeFromSeq2(self, arg, 1);
+	}
+	if (result == 0 && kwds != NULL)
+		result = PyDict_Merge(self, kwds, 1);
+	return result;
+}
+
+static PyObject *
+dict_update(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	if (dict_update_common(self, args, kwds, "update") == -1)
 		return NULL;
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -1806,7 +1826,7 @@ static PyMethodDef mapp_methods[] = {
 	 items__doc__},
 	{"values",	(PyCFunction)dict_values,	METH_NOARGS,
 	 values__doc__},
-	{"update",	(PyCFunction)dict_update,	METH_O,
+	{"update",	(PyCFunction)dict_update,	METH_VARARGS | METH_KEYWORDS,
 	 update__doc__},
 	{"fromkeys",	(PyCFunction)dict_fromkeys,	METH_VARARGS | METH_CLASS,
 	 fromkeys__doc__},
@@ -1875,21 +1895,7 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 dict_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	PyObject *arg = NULL;
-	int result = 0;
-
-	if (!PyArg_UnpackTuple(args, "dict", 0, 1, &arg))
-		result = -1;
-
-	else if (arg != NULL) {
-		if (PyObject_HasAttrString(arg, "keys"))
-			result = PyDict_Merge(self, arg, 1);
-		else
-			result = PyDict_MergeFromSeq2(self, arg, 1);
-	}
-	if (result == 0 && kwds != NULL)
-		result = PyDict_Merge(self, kwds, 1);
-	return result;
+	return dict_update_common(self, args, kwds, "dict");
 }
 
 static long

@@ -1266,9 +1266,9 @@ arbitrary objects):
           {a copy of \var{a}'s list of (\var{key}, \var{value}) pairs}
           {(3)}
   \lineiii{\var{a}.keys()}{a copy of \var{a}'s list of keys}{(3)}
-  \lineiii{\var{a}.update(\var{b})}
-          {\code{for \var{k} in \var{b}.keys(): \var{a}[\var{k}] = \var{b}[\var{k}]}}
-          {}
+  \lineiii{\var{a}.update(\optional{\var{b}})}
+          {updates (and overwrites) key/value pairs from \var{b}}
+          {(9)}
   \lineiii{\var{a}.fromkeys(\var{seq}\optional{, \var{value}})}
           {Creates a new dictionary with keys from \var{seq} and values set to \var{value}}
           {(7)}			   
@@ -1338,6 +1338,13 @@ new dictionary. \var{value} defaults to \code{None}.  \versionadded{2.3}
 value is given and the key is not found.  \versionadded{2.3}
 \end{description}
 
+\item[(9)] \function{update()} accepts either another mapping object
+or an iterable of key/value pairs (as a tuple or other iterable of
+length two).  If keyword arguments are specified, the mapping is
+then is updated with those key/value pairs:
+\samp{d.update(red=1, blue=2)}.
+\versionchanged[Allowed the argument to be an iterable of key/value
+                pairs and allowed keyword arguments]{2.4}
 
 \subsection{File Objects
             \label{bltin-file-objects}}
