@@ -35,6 +35,9 @@
 /* Define if you have POSIX threads */
 #undef _POSIX_THREADS
 
+/* Define to force use of thread-safe errno, h_errno, and other functions */
+#undef _REENTRANT
+
 /* Define if setpgrp() must be called as setpgrp(0, 0). */
 #undef SETPGRP_HAVE_ARG
 
