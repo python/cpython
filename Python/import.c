@@ -546,6 +546,7 @@ load_source_module(name, pathname, fp)
 static PyObject *load_module Py_PROTO((char *, FILE *, char *, int));
 static struct filedescr *find_module Py_PROTO((char *, PyObject *,
 					       char *, int, FILE **));
+static struct _frozen *find_frozen Py_PROTO((char *name));
 
 /* Load a package and return its module object WITH INCREMENTED
    REFERENCE COUNT */
@@ -622,22 +623,6 @@ is_builtin(name)
 	return 0;
 }
 
-/* Helper to test for frozen module */
-
-static int
-is_frozen(name)
-	char *name;
-{
-	struct _frozen *p;
-	for (p = PyImport_FrozenModules; ; p++) {
-		if (p->name == NULL)
-			break;
-		if (strcmp(p->name, name) == 0)
-			return 1;
-	}
-	return 0;
-}
-
 
 /* Search the path (default sys.path) for a module.  Return the
    corresponding filedescr struct, and (via return arguments) the
@@ -666,7 +651,7 @@ find_module(name, path, buf, buflen, p_fp)
 			static struct filedescr fd = {"", "", C_BUILTIN};
 			return &fd;
 		}
-		if (is_frozen(name)) {
+		if (find_frozen(name) != NULL) {
 			static struct filedescr fd = {"", "", PY_FROZEN};
 			return &fd;
 		}
@@ -837,14 +822,14 @@ load_module(name, fp, buf, type)
 		else
 			err = PyImport_ImportFrozenModule(name);
 		if (err < 0)
-			goto failure;
+			return NULL;
 		if (err == 0) {
 			PyErr_Format(PyExc_ImportError,
 				     "Purported %s module %.200s not found",
 				     type == C_BUILTIN ?
 						"builtin" : "frozen",
 				     name);
-			goto failure;
+			return NULL;
 		}
 		modules = PyImport_GetModuleDict();
 		m = PyDict_GetItemString(modules, name);
@@ -855,13 +840,12 @@ load_module(name, fp, buf, type)
 				type == C_BUILTIN ?
 					"builtin" : "frozen",
 				name);
-			goto failure;
+			return NULL;
 		}
 		Py_INCREF(m);
 		break;
 
 	default:
-	  failure:
 		PyErr_Format(PyExc_ImportError,
 			     "Don't know how to import %.200s (type code %d)",
 			      name, type);
@@ -1636,7 +1620,7 @@ imp_is_frozen(self, args)
 	char *name;
 	if (!PyArg_ParseTuple(args, "s", &name))
 		return NULL;
-	return PyInt_FromLong(is_frozen(name));
+	return PyInt_FromLong(find_frozen(name) != NULL);
 }
 
 static FILE *
