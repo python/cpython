@@ -4,7 +4,7 @@
 
 # Provided as-is; use at your own risk; no warranty; no promises; enjoy!
 
-"""Module doctest -- a framework for running examples in docstrings.
+r"""Module doctest -- a framework for running examples in docstrings.
 
 NORMAL USAGE
 
@@ -200,17 +200,26 @@ Bummers:
 + Output to stdout is captured, but not output to stderr (exception
   tracebacks are captured via a different means).
 
-+ If you continue a line via backslashing in an interactive session, or for
-  any other reason use a backslash, you need to double the backslash in the
-  docstring version.  This is simply because you're in a string, and so the
-  backslash must be escaped for it to survive intact.  Like:
++ If you continue a line via backslashing in an interactive session,
+  or for any other reason use a backslash, you should use a raw
+  docstring, which will preserve your backslahses exactly as you type
+  them:
 
->>> if "yes" == \\
-...     "y" +   \\
-...     "es":   # in the source code you'll see the doubled backslashes
-...     print 'yes'
-yes
+      >>> def f(x): 
+      ...     r'''Backslashes in a raw docstring: m\n'''
+      >>> print f.__doc__
+      Backslashes in a raw docstring: m\n
 
+  Otherwise, the backslash will be interpreted as part of the string.
+  E.g., the "\n" above would be interpreted as a newline character.
+  Alternatively, you can double each backslash in the doctest version
+  (and not use a raw string):
+
+      >>> def f(x): 
+      ...     '''Backslashes in a raw docstring: m\\n'''
+      >>> print f.__doc__
+      Backslashes in a raw docstring: m\n
+      
 The starting column doesn't matter:
 
 >>> assert "Easy!"
