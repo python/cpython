@@ -40,6 +40,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 extern int verbose; /* Defined in pythonmain.c */
 
+extern long getmtime(); /* Defined in posixmodule.c */
+
 #ifdef DEBUG
 #define D(x) x
 #else
@@ -47,7 +49,12 @@ extern int verbose; /* Defined in pythonmain.c */
 #endif
 
 #ifdef USE_DL
+#ifdef SUN_SHLIB
+#include <dlfcn.h>
+typedef void (*dl_funcptr)();
+#else
 #include "dl.h"
+#endif /* SUN_SHLIB */
 
 extern char *argv0;
 #endif
@@ -94,44 +101,46 @@ add_module(name)
 	return m;
 }
 
-/* Suffixes used by open_module: */
+/* Suffixes used by find_module: */
 
 #define PY_SUFFIX	".py"
+#define PYC_SUFFIX	".pyc"
 #ifdef USE_DL
+#ifdef SUN_SHLIB
+#define O_SUFFIX	"module.so"
+#else
 #define O_SUFFIX	"module.o"
+#endif /* SUN_SHLIB */
 #endif
 
-/* Find and open a module file, using sys.path.
-   Return a NULL pointer if no module file is found.
-   When dynamic loading is enabled, the contents of namebuf
-   is important when NULL is returned: if namebuf[0] != '\0'
-   a dl-able object file was found and namebuf is its pathname. */
-
+/* This will search for a module named 'name' with the extension 'ext'
+   and return it in 'namebuf' and return the mtime of each in 'mtime'.
+   It returns a file pointer opened for 'mode' if successful, NULL if
+   unsuccessful.
+ */
 static FILE *
-open_module(name, namebuf)
+find_module(name, ext, mode, namebuf, mtime)
 	char *name;
-	char *namebuf; /* XXX No buffer overflow checks! */
+	char *ext;
+	char *mode;
+	char *namebuf;
+	long *mtime;
 {
 	object *path;
 	FILE *fp;
-	
+
 	path = sysget("path");
 	if (path == NULL || !is_listobject(path)) {
 		/* No path -- at least try current directory */
-#ifdef USE_DL
 		strcpy(namebuf, name);
-		strcat(namebuf, O_SUFFIX);
-		if (getmtime(namebuf) > 0)
+		strcat(namebuf, ext);
+		if ((fp = fopen(namebuf, mode)) == NULL)
 			return NULL;
-#endif
-		strcpy(namebuf, name);
-		strcat(namebuf, PY_SUFFIX);
-		fp = fopen(namebuf, "r");
-	}
-	else {
+		*mtime = getmtime(namebuf);
+		return fp;
+	} else {
 		int npath = getlistsize(path);
 		int i;
-		fp = NULL;
 		for (i = 0; i < npath; i++) {
 			object *v = getlistitem(path, i);
 			int len;
@@ -141,22 +150,16 @@ open_module(name, namebuf)
 			len = getstringsize(v);
 			if (len > 0 && namebuf[len-1] != SEP)
 				namebuf[len++] = SEP;
-#ifdef USE_DL
 			strcpy(namebuf+len, name);
-			strcat(namebuf, O_SUFFIX);
-			if (getmtime(namebuf) > 0)
-				return NULL;
-#endif
-			strcpy(namebuf+len, name);
-			strcat(namebuf, PY_SUFFIX);
-			fp = fopen(namebuf, "r");
-			if (fp != NULL)
-				break;
+			strcat(namebuf, ext);
+			if ((fp = fopen(namebuf, mode)) == NULL)
+				continue;
+			*mtime = getmtime(namebuf);
+			return fp;
 		}
 	}
-	if (fp == NULL)
-		namebuf[0] = '\0';
-	return fp;
+	namebuf[0] = '\0';
+	return NULL;
 }
 
 static object *
@@ -173,66 +176,63 @@ get_module(m, name, m_ret)
 	char namebuf[MAXPATHLEN+1];
 	int namelen;
 	long mtime;
-	extern long getmtime();
-	
-	fp = open_module(name, namebuf);
-	if (fp == NULL) {
+
 #ifdef USE_DL
-		if (namebuf[0] != '\0') {
-			char funcname[258];
-			dl_funcptr p;
-			D(fprintf(stderr, "Found %s\n", namebuf));
-			sprintf(funcname, "init%s", name);
-			p =  dl_loadmod(argv0, namebuf, funcname);
-			if (p == NULL) {
-				D(fprintf(stderr, "dl_loadmod failed\n"));
+	if ((fpc = find_module(name, O_SUFFIX, "rb",
+			       namebuf, &mtime)) != NULL) {
+		char funcname[258];
+		dl_funcptr p;
+		D(fprintf(stderr, "Found %s\n", namebuf));
+		fclose(fpc);
+		sprintf(funcname, "init%s", name);
+#ifdef SUN_SHLIB
+		{
+		  void *handle = dlopen (namebuf, 1);
+		  p = (dl_funcptr) dlsym(handle, funcname);
+		}
+#else
+		p =  dl_loadmod(argv0, namebuf, funcname);
+#endif /* SUN_SHLIB */
+		if (p == NULL) {
+			D(fprintf(stderr, "dl_loadmod failed\n"));
+		} else {
+			if (verbose)
+				fprintf(stderr,
+			"import %s # dynamically loaded from \"%s\"\n",
+					name, namebuf);
+			(*p)();
+			*m_ret = m = dictlookup(modules, name);
+			if (m == NULL) {
+				err_setstr(SystemError,
+					   "dynamic module missing");
+				return NULL;
+			} else {
+				D(fprintf(stderr,
+					"module %s loaded!\n", name));
+				INCREF(None);
+				return None;
 			}
-			else {
-				if (verbose)
-					fprintf(stderr,
-				"import %s # dynamically loaded from \"%s\"\n",
-						name, namebuf);
-				(*p)();
-				*m_ret = m = dictlookup(modules, name);
-				if (m == NULL) {
-					err_setstr(SystemError,
-						   "dynamic module missing");
-					return NULL;
-				}
-				else {
-					D(fprintf(stderr,
-						"module %s loaded!\n", name));
-					INCREF(None);
-					return None;
-				}
-			}
 		}
-#endif
-		if (m == NULL) {
-			sprintf(namebuf, "no module named %.200s", name);
-			err_setstr(ImportError, namebuf);
-		}
-		else {
-			sprintf(namebuf, "no source for module %.200s", name);
-			err_setstr(ImportError, namebuf);
-		}
-		return NULL;
 	}
-	/* Get mtime -- always useful */
-	mtime = getmtime(namebuf);
-	/* Check ".pyc" file first */
-	namelen = strlen(namebuf);
-	namebuf[namelen] = 'c';
-	namebuf[namelen+1] = '\0';
-	fpc = fopen(namebuf, "rb");
-	if (fpc != NULL) {
+	else
+#endif
+	if ((fpc = find_module(name, PYC_SUFFIX, "rb",
+			      namebuf, &mtime)) != NULL) {
 		long pyc_mtime;
 		long magic;
+		namebuf[(strlen(namebuf)-1)] = '\0';
+		mtime = getmtime(namebuf);
 		magic = rd_long(fpc);
 		pyc_mtime = rd_long(fpc);
-		if (magic == MAGIC && pyc_mtime == mtime && mtime != 0 && mtime != -1) {
+		if (mtime != -1 && mtime > pyc_mtime) {
+			fclose(fpc);
+			fp = fopen(namebuf, "rb");
+			goto read_py;
+		}
+		if (magic == MAGIC) {
 			v = rd_object(fpc);
-			if (v == NULL || err_occurred() || !is_codeobject(v)) {
+			if (v == NULL || err_occurred() ||
+			    !is_codeobject(v)) {
 				err_clear();
 				XDECREF(v);
 			}
@@ -243,27 +243,41 @@ get_module(m, name, m_ret)
 		if (verbose) {
 			if (co != NULL)
 				fprintf(stderr,
-				"import %s # precompiled from \"%s\"\n",
+			"import %s # precompiled from \"%s\"\n",
 					name, namebuf);
 			else
 				fprintf(stderr,
-					"# invalid precompiled file \"%s\"\n",
+				"# invalid precompiled file \"%s\"\n",
 					namebuf);
 		}
 	}
-	namebuf[namelen] = '\0';
-	if (co == NULL) {
-		if (verbose)
-			fprintf(stderr,
-				"import %s # from \"%s\"\n",
-				name, namebuf);
-		err = parse_file(fp, namebuf, file_input, &n);
+	else if ((fp = find_module(name, PY_SUFFIX, "r",
+				   namebuf, &mtime)) != NULL) {
+read_py:
+		namelen = strlen(namebuf);
+		if (co == NULL) {
+			if (verbose)
+				fprintf(stderr,
+					"import %s # from \"%s\"\n",
+					name, namebuf);
+			err = parse_file(fp, namebuf, file_input, &n);
+		} else
+			err = E_DONE;
+		fclose(fp);
+		if (err != E_DONE) {
+			err_input(err);
+			return NULL;
+		}
 	}
-	else
-		err = E_DONE;
-	fclose(fp);
-	if (err != E_DONE) {
-		err_input(err);
+	else {
+		if (m == NULL) {
+			sprintf(namebuf, "no module named %.200s", name);
+			err_setstr(ImportError, namebuf);
+		}
+		else {
+			sprintf(namebuf, "no source for module %.200s", name);
+			err_setstr(ImportError, namebuf);
+		}
 		return NULL;
 	}
 	if (m == NULL) {

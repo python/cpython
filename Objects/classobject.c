@@ -379,11 +379,24 @@ instance_getattr(inst, name)
 	}
 	else
 		INCREF(v);
-	if (is_funcobject(v) && class != NULL) {
-		object *w = newinstancemethodobject(v, (object *)inst,
-						    (object *)class);
-		DECREF(v);
-		v = w;
+	if (class != NULL) {
+		if (is_funcobject(v)) {
+			object *w = newinstancemethodobject(v, (object *)inst,
+							    (object *)class);
+			DECREF(v);
+			v = w;
+		}
+		else if (is_instancemethodobject(v)) {
+			object *im_class = instancemethodgetclass(v);
+			/* Only if classes are compatible */
+			if (issubclass((object *)class, im_class)) {
+				object *im_func = instancemethodgetfunc(v);
+				object *w = newinstancemethodobject(im_func,
+						(object *)inst, im_class);
+				DECREF(v);
+				v = w;
+			}
+		}
 	}
 	return v;
 }
