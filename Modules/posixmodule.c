@@ -1241,7 +1241,7 @@ posix_times(self, args)
 		       (double)c / HZ);
 }
 #endif /* HAVE_TIMES */
-#if defined(_MSC_VER) && _MSC_VER > 850
+#ifdef MS_WIN32
 #define HAVE_TIMES	/* so the method table will pick it up */
 static object *
 posix_times(self, args)
