@@ -663,9 +663,14 @@ sub make_head_and_body($$) {
         $charset = $CHARSET;
         $charset =~ s/_/\-/go;
     }
+    # Remove section number from the title for use in the
+    # <meta name='description' ...> element in the document head.
+    my $metatitle = "$title";
+    $metatitle =~ s/^\d+(\.\d+)*\s*//;
+
     join('',
          $MY_PARTIAL_HEADER,
-         &meta_information($title),
+         &meta_information($metatitle),
          "<title>", $title, "</title>\n</head>\n<body$body>");
 }
 
