@@ -844,7 +844,11 @@ Py_ReprLeave(obj)
 	int i;
 
 	dict = PyThreadState_GetDict();
+	if (dict == NULL)
+		return;
 	list = PyDict_GetItemString(dict, KEY);
+	if (list == NULL || !PyList_Check(list))
+		return;
 	i = PyList_GET_SIZE(list);
 	/* Count backwards because we always expect obj to be list[-1] */
 	while (--i >= 0) {
