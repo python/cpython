@@ -124,6 +124,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libmain.tex \
 	lib/libstrings.tex \
 	lib/libstring.tex \
+	lib/libtextwrap.tex \
 	lib/libcodecs.tex \
 	lib/libunicodedata.tex \
 	lib/libstruct.tex \
