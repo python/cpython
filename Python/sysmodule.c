@@ -232,6 +232,11 @@ list_builtin_module_names()
 		DECREF(list);
 		list = NULL;
 	}
+	if (list) {
+		object *v = listtuple(list);
+		DECREF(list);
+		list = v;
+	}
 	return list;
 }
 
