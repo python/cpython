@@ -661,15 +661,14 @@ class Unpickler:
     dispatch[GLOBAL] = load_global
 
     def find_class(self, module, name):
-        env = {}
-
         try:
-            exec 'from %s import %s' % (module, name) in env
-        except ImportError:
+            __import__(module)
+            mod = sys.modules[module]
+            klass = getattr(mod, name)
+        except (ImportError, KeyError, AttributeError):
             raise SystemError, \
                   "Failed to import class %s from module %s" % \
                   (name, module)
-        klass = env[name]
         return klass
 
     def load_reduce(self):
