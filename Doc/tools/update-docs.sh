@@ -16,7 +16,7 @@ UPDATES="$HOME/tmp/$2"
 
 TMPDIR="$$-docs"
 
-cd /home/groups/python/htdocs || exit $?
+cd /home/groups/p/py/python/htdocs || exit $?
 mkdir $TMPDIR || exit $?
 cd $TMPDIR || exit $?
 (bzip2 -dc "$UPDATES" | tar xf -) || exit $?
