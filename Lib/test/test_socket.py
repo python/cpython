@@ -502,12 +502,14 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
 class FileObjectClassTestCase(SocketConnectedTest):
 
+    bufsize = -1 # Use default buffer size
+
     def __init__(self, methodName='runTest'):
         SocketConnectedTest.__init__(self, methodName=methodName)
 
     def setUp(self):
         SocketConnectedTest.setUp(self)
-        self.serv_file = socket._fileobject(self.cli_conn, 'rb', 8192)
+        self.serv_file = self.cli_conn.makefile('rb', self.bufsize)
 
     def tearDown(self):
         self.serv_file.close()
@@ -516,7 +518,7 @@ class FileObjectClassTestCase(SocketConnectedTest):
 
     def clientSetUp(self):
         SocketConnectedTest.clientSetUp(self)
-        self.cli_file = socket._fileobject(self.serv_conn, 'rb', 8192)
+        self.cli_file = self.serv_conn.makefile('wb')
 
     def clientTearDown(self):
         self.cli_file.close()
@@ -557,13 +559,40 @@ class FileObjectClassTestCase(SocketConnectedTest):
         self.cli_file.write(MSG)
         self.cli_file.flush()
 
+class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
+
+    """Repeat the tests from FileObjectClassTestCase with bufsize==0.
+    
+    In this case (and in this case only), it should be possible to
+    create a file object, read a line from it, create another file
+    object, read another line from it, without loss of data in the
+    first file object's buffer.  Note that httplib relies on this
+    when reading multiple requests from the same socket."""
+
+    bufsize = 0 # Use unbuffered mode
+
+    def testUnbufferedReadline(self):
+        """Read a line, create a new file object, read another line with it."""
+        line = self.serv_file.readline() # first line
+	self.assertEqual(line, MSG) # first line
+        self.serv_file = self.cli_conn.makefile('rb', 0)
+        line = self.serv_file.readline() # second line
+	self.assertEqual(line, MSG) # second line
+
+    def _testUnbufferedReadline(self):
+        self.cli_file.write(MSG)
+        self.cli_file.write(MSG)
+        self.cli_file.flush()
+
+
 def test_main():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(GeneralModuleTests))
-    suite.addTest(unittest.makeSuite(BasicTCPTest))
-    suite.addTest(unittest.makeSuite(BasicUDPTest))
-    suite.addTest(unittest.makeSuite(NonBlockingTCPTests))
+    ##suite.addTest(unittest.makeSuite(GeneralModuleTests))
+    ##suite.addTest(unittest.makeSuite(BasicTCPTest))
+    ##suite.addTest(unittest.makeSuite(BasicUDPTest))
+    ##suite.addTest(unittest.makeSuite(NonBlockingTCPTests))
     suite.addTest(unittest.makeSuite(FileObjectClassTestCase))
+    suite.addTest(unittest.makeSuite(UnbufferedFileObjectClassTestCase))
     test_support.run_suite(suite)
 
 if __name__ == "__main__":

@@ -174,11 +174,14 @@ class _socketobject:
 class _fileobject:
     """Implements a file object on top of a regular socket object."""
 
-    def __init__(self, sock, mode='rb', bufsize=8192):
+    def __init__(self, sock, mode='rb', bufsize=-1):
         self._sock = sock
         self._mode = mode
         if bufsize <= 0:
-            bufsize = 512
+	    if bufsize == 0:
+	        bufsize = 1 # Unbuffered mode
+	    else:
+                bufsize = 8192
         self._rbufsize = bufsize
         self._wbufsize = bufsize
         self._rbuf = [ ]
