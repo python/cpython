@@ -1,4 +1,4 @@
-#! /usr/local/python
+#! /ufs/guido/bin/sgi/python
 
 # Print some info about a CMIF movie file
 
