@@ -119,7 +119,7 @@ class async_chat (asyncore.dispatcher):
                 # 3) end of buffer does not match any prefix:
                 #    collect data
                 terminator_len = len(terminator)
-                index = terminator.find (self.ac_in_buffer)
+                index = ac_in_buffer.find (self.terminator)
                 if index != -1:
                     # we found the terminator
                     if index > 0:
