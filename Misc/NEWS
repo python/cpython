@@ -27,11 +27,6 @@ Library
   arbitrary shell code can't be executed because a bogus URL was
   passed in.
 
-Windows
-
-- file.truncate([newsize]) now works on Windows for all newsize values.
-  It used to fail if newsize didn't fit in 32 bits, reflecting a
-  limitation of MS _chsize (which is no longer used).
 
 What's New in Python 2.2 final?
 Release date: 21-Dec-2001

@@ -10,10 +10,8 @@
 
 #ifdef MS_WIN32
 #define fileno _fileno
-/* can simulate truncate with Win32 API functions; see file_truncate */
+/* can (almost fully) duplicate with _chsize, see file_truncate */
 #define HAVE_FTRUNCATE
-#define WINDOWS_LEAN_AND_MEAN
-#include <windows.h>
 #endif
 
 #ifdef macintosh
@@ -377,9 +375,6 @@ file_truncate(PyFileObject *f, PyObject *args)
 	newsizeobj = NULL;
 	if (!PyArg_ParseTuple(args, "|O:truncate", &newsizeobj))
 		return NULL;
-
-	/* Set newsize to current postion if newsizeobj NULL, else to the
-	   specified value. */
 	if (newsizeobj != NULL) {
 #if !defined(HAVE_LARGEFILE_SUPPORT)
 		newsize = PyInt_AsLong(newsizeobj);
@@ -390,80 +385,37 @@ file_truncate(PyFileObject *f, PyObject *args)
 #endif
 		if (PyErr_Occurred())
 			return NULL;
-	}
-	else {
-		/* Default to current position. */
+	} else {
+		/* Default to current position*/
 		Py_BEGIN_ALLOW_THREADS
 		errno = 0;
 		newsize = _portable_ftell(f->f_fp);
 		Py_END_ALLOW_THREADS
-		if (newsize == -1)
-			goto onioerror;
+		if (newsize == -1) {
+		        PyErr_SetFromErrno(PyExc_IOError);
+			clearerr(f->f_fp);
+			return NULL;
+		}
 	}
-
-	/* Flush the file. */
 	Py_BEGIN_ALLOW_THREADS
 	errno = 0;
 	ret = fflush(f->f_fp);
 	Py_END_ALLOW_THREADS
-	if (ret != 0)
-		goto onioerror;
+	if (ret != 0) goto onioerror;
 
 #ifdef MS_WIN32
-	/* MS _chsize doesn't work if newsize doesn't fit in 32 bits,
-	   so don't even try using it. */
-	{
-		Py_off_t current;	/* current file position */
-		HANDLE hFile;
-		int error;
-
-		/* current <- current file postion. */
-		if (newsizeobj == NULL)
-			current = newsize;
-		else {
-			Py_BEGIN_ALLOW_THREADS
-			errno = 0;
-			current = _portable_ftell(f->f_fp);
-			Py_END_ALLOW_THREADS
-			if (current == -1)
-				goto onioerror;
-		}
-
-		/* Move to newsize. */
-		if (current != newsize) {
-			Py_BEGIN_ALLOW_THREADS
-			errno = 0;
-			error = _portable_fseek(f->f_fp, newsize, SEEK_SET)
-				!= 0;
-			Py_END_ALLOW_THREADS
-			if (error)
-				goto onioerror;
-		}
-
-		/* Truncate.  Note that this may grow the file! */
+	/* can use _chsize; if, however, the newsize overflows 32-bits then
+	   _chsize is *not* adequate; in this case, an OverflowError is raised */
+	if (newsize > LONG_MAX) {
+		PyErr_SetString(PyExc_OverflowError,
+			"the new size is too long for _chsize (it is limited to 32-bit values)");
+		return NULL;
+	} else {
 		Py_BEGIN_ALLOW_THREADS
 		errno = 0;
-		hFile = (HANDLE)_get_osfhandle(fileno(f->f_fp));
-		error = hFile == (HANDLE)-1;
-		if (!error) {
-			error = SetEndOfFile(hFile) == 0;
-			if (error)
-				errno = EACCES;
-		}
+		ret = _chsize(fileno(f->f_fp), (long)newsize);
 		Py_END_ALLOW_THREADS
-		if (error)
-			goto onioerror;
-
-		/* Restore original file position. */
-		if (current != newsize) {
-			Py_BEGIN_ALLOW_THREADS
-			errno = 0;
-			error = _portable_fseek(f->f_fp, current, SEEK_SET)
-				!= 0;
-			Py_END_ALLOW_THREADS
-			if (error)
-				goto onioerror;
-		}
+		if (ret != 0) goto onioerror;
 	}
 #else
 	Py_BEGIN_ALLOW_THREADS
