@@ -79,6 +79,12 @@ extern int ftime();
 #endif /* MS_WINDOWS */
 #endif /* !__WATCOMC__ */
 
+#ifdef MS_WIN32
+/* Win32 has better clock replacement */
+#include <largeint.h>
+#undef HAVE_CLOCK /* We have our own version down below */
+#endif /* MS_WIN32 */
+
 /* Forward declarations */
 static int floatsleep Py_PROTO((double));
 static double floattime Py_PROTO(());
@@ -120,6 +126,43 @@ time_clock(self, args)
 }
 #endif /* HAVE_CLOCK */
 
+#ifdef MS_WIN32
+/* Due to Mark Hammond */
+static PyObject *
+time_clock(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	static LARGE_INTEGER ctrStart;
+	static LARGE_INTEGER divisor = {0,0};
+	LARGE_INTEGER now, diff, rem;
+
+	if (!PyArg_NoArgs(args))
+		return NULL;
+
+	if (LargeIntegerEqualToZero(divisor)) {
+		QueryPerformanceCounter(&ctrStart);
+		if (!QueryPerformanceFrequency(&divisor) || 
+		    LargeIntegerEqualToZero(divisor)) {
+				/* Unlikely to happen - 
+				   this works on all intel machines at least! 
+				   Revert to clock() */
+			return PyFloat_FromDouble(clock());
+		}
+	}
+	QueryPerformanceCounter(&now);
+	diff = LargeIntegerSubtract(now, ctrStart);
+	diff = LargeIntegerDivide(diff, divisor, &rem);
+	/* XXX - we assume both divide results fit in 32 bits.  This is
+	   true on Intels.  First person who can afford a machine that 
+	   doesnt deserves to fix it :-)
+	*/
+	return PyFloat_FromDouble((double)diff.LowPart + 
+		              ((double)rem.LowPart / (double)divisor.LowPart));
+}
+#define HAVE_CLOCK /* So it gets included in the methods */
+#endif /* MS_WIN32 */
+
 static PyObject *
 time_sleep(self, args)
 	PyObject *self;
@@ -131,7 +174,7 @@ time_sleep(self, args)
 	Py_BEGIN_ALLOW_THREADS
 		if (floatsleep(secs) != 0) {
 			Py_BLOCK_THREADS
-				return NULL;
+			return NULL;
 		}
 	Py_END_ALLOW_THREADS
 		Py_INCREF(Py_None);
