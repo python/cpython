@@ -630,20 +630,79 @@ string_item(PyStringObject *a, register int i)
 	return v;
 }
 
-static int
-string_compare(PyStringObject *a, PyStringObject *b)
+static PyObject*
+string_richcompare(PyStringObject *a, PyStringObject *b, int op)
 {
-	int len_a = a->ob_size, len_b = b->ob_size;
-	int min_len = (len_a < len_b) ? len_a : len_b;
-	int cmp;
-	if (min_len > 0) {
-		cmp = Py_CHARMASK(*a->ob_sval) - Py_CHARMASK(*b->ob_sval);
-		if (cmp == 0)
-			cmp = memcmp(a->ob_sval, b->ob_sval, min_len);
-		if (cmp != 0)
-			return cmp;
+	int c;
+	int len_a, len_b;
+	int min_len;
+	PyObject *result;
+
+	/* One of the objects is a string object. Make sure the
+	   other one is one, too.  */
+	if (a->ob_type != b->ob_type) {
+		result = Py_NotImplemented;
+		goto out;
 	}
-	return (len_a < len_b) ? -1 : (len_a > len_b) ? 1 : 0;
+	if (a == b) {
+		switch (op) {
+		case Py_EQ:case Py_LE:case Py_GE:
+			result = Py_True;
+			goto out;
+		case Py_NE:case Py_LT:case Py_GT:
+			result = Py_False;
+			goto out;
+		}
+	}
+	if (op == Py_EQ) {
+		/* Supporting Py_NE here as well does not save
+		   much time, since Py_NE is rarely used.  */
+		if (a->ob_size == b->ob_size
+		    && (a->ob_sval[0] == b->ob_sval[0]
+			&& memcmp(a->ob_sval, b->ob_sval, 
+				  a->ob_size) == 0)) {
+			result = Py_True;
+		} else {
+			result = Py_False;
+		}
+		goto out;
+	}
+	len_a = a->ob_size; len_b = b->ob_size;
+	min_len = (len_a < len_b) ? len_a : len_b;
+	if (min_len > 0) {
+		c = Py_CHARMASK(*a->ob_sval) - Py_CHARMASK(*b->ob_sval);
+		if (c==0)
+			c = memcmp(a->ob_sval, b->ob_sval, min_len);
+	}else
+		c = 0;
+	if (c == 0)
+		c = (len_a < len_b) ? -1 : (len_a > len_b) ? 1 : 0;
+	switch (op) {
+	case Py_LT: c = c <  0; break;
+	case Py_LE: c = c <= 0; break;
+	case Py_EQ: assert(0);  break; /* unreachable */
+	case Py_NE: c = c != 0; break;
+	case Py_GT: c = c >  0; break;
+	case Py_GE: c = c >= 0; break;
+	default:
+		result = Py_NotImplemented;
+		goto out;
+	}
+	result = c ? Py_True : Py_False;
+  out:
+	Py_INCREF(result);
+	return result;
+}
+
+int
+_PyString_Eq(PyObject *o1, PyObject *o2)
+{
+	PyStringObject *a, *b;
+	a = (PyStringObject*)o1;
+	b = (PyStringObject*)o2;
+        return a->ob_size == b->ob_size
+          && *a->ob_sval == *b->ob_sval
+          && memcmp(a->ob_sval, b->ob_sval, a->ob_size) == 0;
 }
 
 static long
@@ -2466,7 +2525,7 @@ PyTypeObject PyString_Type = {
 	(printfunc)string_print, /*tp_print*/
 	(getattrfunc)string_getattr,		/*tp_getattr*/
 	0,		/*tp_setattr*/
-	(cmpfunc)string_compare, /*tp_compare*/
+	0,		/*tp_compare*/
 	(reprfunc)string_repr, /*tp_repr*/
 	0,		/*tp_as_number*/
 	&string_as_sequence,	/*tp_as_sequence*/
@@ -2479,6 +2538,12 @@ PyTypeObject PyString_Type = {
 	&string_as_buffer,	/*tp_as_buffer*/
 	Py_TPFLAGS_DEFAULT,	/*tp_flags*/
 	0,		/*tp_doc*/
+	0,		/*tp_traverse*/
+	0,		/*tp_clear*/
+	(richcmpfunc)string_richcompare,	/*tp_richcompare*/
+	0,		/*tp_weaklistoffset*/
+	0,		/*tp_iter*/
+	0,		/*tp_iternext*/
 };
 
 void
