@@ -1748,6 +1748,10 @@ def inherits():
     verify((a + 0).__class__ is long)
     verify((0 + a).__class__ is long)
 
+    # Check that negative clones don't segfault
+    a = longclone(-1)
+    vereq(a.__dict__, {})
+
     class precfloat(float):
         __slots__ = ['prec']
         def __init__(self, value=0.0, prec=12):
