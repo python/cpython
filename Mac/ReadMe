@@ -1,5 +1,5 @@
-How to install Python 1.5a3 on your Macintosh
--------------------------------------------
+How to install Python 1.5a4 on your Macintosh
+---------------------------------------------
 
 If this is your first encounter with Python: you definitely need the
 common user documentation (common to all platforms). You can find this
@@ -25,6 +25,11 @@ is available from Apple (available for free from
 7.6.1). If your machine is pre-68020 you cannot use cfm68k and you can
 install the classic 68k Python.
 
+After the installer finishes it automatically launches the
+ConfigurePython applet, to finish configuration of your Python
+installation (except for classic 68K installations, where no extra
+configuration is needed).
+
 If you have a pre-system 7 macintosh: sorry, this release will not work
 on your system. Too many sys7 features are used to make a sys6 python
 easy to create.
@@ -44,12 +49,13 @@ and/or enabling virtual memory may solve these problems.
 After installing
 ----------------
 
-It is probably a good idea to run "autotest.py" from :Lib:test at this
-point, this should not give any errors. It will, however, print some
-messages about optional features not supported. Running testall.py is
-done by double-clicking it or dropping it onto the interpreter.
+It is probably a good idea to run the automatic tests. Start Python and
+"import test.autotest". This should not print any errors. It will,
+however, print some messages about optional features not supported.
+Running testall.py is done by double-clicking it or dropping it onto the
+interpreter.
 
-NOTE: as of 1.5a3 the tests test_time, test_strftime and test_rotor will
+NOTE: as of 1.5a4 the tests test_time and test_strftime will
 fail. This is due to a problem with the tests. test_socket may also fail
 if you have no internet connection.
 
@@ -68,11 +74,23 @@ applet, a tiny application written in python. Drop a python source on it
 and out comes the application. More information can be found in the
 "Mac:Demo" folder.
 
+If you have a slow machine you may want to disable automatic site.py import
+since site.py does not do too much on the mac (unless you make it do
+something), and it can take a few seconds.
+
 PPC and CFM68K users will see one more file in the python folder:
 PythonApplet. This is the template for building applets, leave it alone.
 The applet is "fat", containing both PPC and CFM68K code. Hence, applets
 built with it can be transported to machines with the other
 architecture.
+
+Uninstalling
+------------
+
+Two items are installed in the system folder: the interpreter shared
+library "PythonCore 1.5a4" lives in the Extensions folder and the
+"Python 1.5a4 Preferences" file in the Preferences folder. All the rest
+of Python lives in the folder you installed in.
 
 Things to see
 -------------
@@ -104,16 +122,15 @@ that this means you can keep your older version around if you are unsure
 whether to upgrade. The bad news is that your old preference settings
 are lost and you have to set them again.
 
-After you are satisfied that 1.5a3 works as expected you can trash
+After you are satisfied that 1.5a4 works as expected you can trash
 anything in the system folder that has "python" in the name and not
-"1.5a3".
+"1.5a4".
 
 The installer
 -------------
 
 The installer for this product was created using Installer VISE Lite
 from MindVision Software. For more information on Installer VISE Lite,
-
 contact:
 MindVision Software
 7201 North 7th Street
@@ -123,13 +140,15 @@ Fax: 402-477-1395
 Internet: mindvision@mindvision.com
 http://www.mindvision.com
 
+Just van Rossum <just@knoware.nl> created the installer in just a couple
+of days (hours?).
 
 Feedback
 --------
 
 Send bug reports, suggestions, contributions and fanmail to
-<jack@cwi.nl>. Be warned however that I'm pretty busy, so I may not
-always respond immedeately.
+<jack@cwi.nl>. Be warned however that I'm on holiday for most of october
+and november, so I may not always respond immedeately.
 
 A better way to discuss MacPython is to join the
 <pythonmac-sig@python.org> mailing list, which is explicitly meant for
