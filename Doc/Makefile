@@ -238,7 +238,7 @@ $(INDEXFILES): $(COMMONPERL) html/about.dat tools/node2label.pl
 
 html/acks.html: ACKS $(TOOLSDIR)/support.py $(TOOLSDIR)/mkackshtml
 	$(TOOLSDIR)/mkackshtml --address $(PYTHONDOCS) \
-		--output html/acks.html <../ACKS
+		--output html/acks.html <ACKS
 
 html/modindex.html: $(TOOLSDIR)/support.py $(TOOLSDIR)/mkmodindex
 html/modindex.html: html/lib/lib.html html/mac/mac.html
