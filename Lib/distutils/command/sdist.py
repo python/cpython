@@ -233,6 +233,10 @@ class sdist (Command):
         Warns if (README or README.txt) or setup.py are missing; everything
         else is optional.
         """
+
+        # XXX name of setup script and config file should be taken
+        # programmatically from the Distribution object (except
+        # it doesn't have that capability... yet!)
         standards = [('README', 'README.txt'), 'setup.py']
         for fn in standards:
             if type (fn) is TupleType:
@@ -253,7 +257,7 @@ class sdist (Command):
                 else:
                     self.warn ("standard file '%s' not found" % fn)
 
-        optional = ['test/test*.py']
+        optional = ['test/test*.py', 'setup.cfg']
         for pattern in optional:
             files = filter (os.path.isfile, glob (pattern))
             if files:
