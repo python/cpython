@@ -5,8 +5,10 @@
 
 # HINTS:
 # - Edit the lines marked XXX below to localize.
+# - Make sure the #! line above matches the localizations.
 # - You must have done "make inclinstall libainstall" in the Python
 #   build directory.
+# - The script name should end in ".py".
 # - The script should not use dynamically loaded modules
 #   (*.so on most systems).
 
@@ -14,12 +16,15 @@
 # Usage message
 
 usage_msg = """
-usage: freeze [-p prefix] [-e extension] ... script [module] ...
+usage: freeze [-p prefix] [-P exec_prefix] [-e extension] script [module] ...
 
 -p prefix:    This is the prefix used when you ran
               'Make inclinstall libainstall' in the Python build directory.
               (If you never ran this, freeze won't work.)
               The default is /usr/local.
+
+-P exec_prefix: Like -p but this is the 'exec_prefix', used to
+		install objects etc.  The default is the value for -p.
 
 -e extension: A directory containing additional .o files that
               may be used to resolve modules.  This directory
@@ -27,10 +32,24 @@ usage: freeze [-p prefix] [-e extension] ... script [module] ...
               More than one -e option may be given.
 
 script:       The Python script to be executed by the resulting binary.
+	      It *must* end with a .py suffix!
 
 module ...:   Additional Python modules (referenced by pathname)
               that will be included in the resulting binary.  These
               may be .py or .pyc files.
+
+NOTES:
+
+In order to use freeze successfully, you must have built Python and
+installed it.  In particular, the following two non-standard make
+targets must have been executed:
+
+	make inclinstall
+	make libainstall		# Note: 'liba', not 'lib'
+
+The -p and -P options passed into the freeze script must correspond to
+the --prefix and --exec-prefix options passed into Python's configure
+script.
 """
 
 
@@ -39,6 +58,9 @@ PACK = '/ufs/guido/src/python/Tools/freeze'
 
 # XXX Change the following line to point to your install prefix
 PREFIX = '/usr/local'
+
+# XXX Change the following line to point to your install exec_prefix
+EXEC_PREFIX = None			# If None, use -p option for default
 
 
 # Import standard modules
@@ -76,6 +98,7 @@ import parsesetup
 def main():
 	# overridable context
 	prefix = PREFIX			# settable with -p option
+	exec_prefix = None		# settable with -P option
 	extensions = []
 	path = sys.path
 
@@ -87,7 +110,7 @@ def main():
 
 	# parse command line
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'e:p:')
+		opts, args = getopt.getopt(sys.argv[1:], 'e:p:P:')
 	except getopt.error, msg:
 		usage('getopt error: ' + str(msg))
 
@@ -97,24 +120,34 @@ def main():
 			extensions.append(a)
 		if o == '-p':
 			prefix = a
+		if o == '-P':
+			exec_prefix = a
+	
+	# default exec_prefix
+	if exec_prefix is None:
+		exec_prefix = EXEC_PREFIX
+		if exec_prefix is None:
+			exec_prefix = prefix
 
 	# locations derived from options
-	binlib = os.path.join(prefix, 'lib/python/lib')
+	binlib = os.path.join(exec_prefix, 'lib/python/lib')
 	incldir = os.path.join(prefix, 'include/Py')
 	config_c_in = os.path.join(binlib, 'config.c.in')
 	frozenmain_c = os.path.join(binlib, 'frozenmain.c')
+	getpath_c = os.path.join(binlib, 'getpath.c')
+	supp_sources = [frozenmain_c, getpath_c]
 	makefile_in = os.path.join(binlib, 'Makefile')
-	defines = ['-DHAVE_CONFIG_H', '-DUSE_FROZEN', '-DNO_MAIN',
+	defines = ['-DHAVE_CONFIG_H',
 		   '-DPYTHONPATH=\\"$(PYTHONPATH)\\"']
 	includes = ['-I' + incldir, '-I' + binlib]
 
 	# sanity check of directories and files
-	for dir in [prefix, binlib, incldir] + extensions:
+	for dir in [prefix, exec_prefix, binlib, incldir] + extensions:
 		if not os.path.exists(dir):
 			usage('needed directory %s not found' % dir)
 		if not os.path.isdir(dir):
 			usage('%s: not a directory' % dir)
-	for file in config_c_in, makefile_in, frozenmain_c:
+	for file in [config_c_in, makefile_in] + supp_sources:
 		if not os.path.exists(file):
 			usage('needed file %s not found' % file)
 		if not os.path.isfile(file):
@@ -153,6 +186,11 @@ def main():
 	# Actual work starts here...
 
 	dict = findmodules.findmodules(scriptfile, modules, path)
+	names = dict.keys()
+	names.sort()
+	print "Modules being frozen:"
+	for name in names:
+	    print '\t', name
 
 	backup = frozen_c + '~'
 	try:
@@ -223,8 +261,8 @@ def main():
 		somevars[key] = makevars[key]
 
 	somevars['CFLAGS'] = string.join(cflags) # override
-	files = ['$(OPT)', config_c, frozen_c, frozenmain_c] + \
-		addfiles + libs + \
+	files = ['$(OPT)', config_c, frozen_c] + \
+		supp_sources +  addfiles + libs + \
 		['$(MODLIBS)', '$(LIBS)', '$(SYSLIBS)']
 
 	backup = makefile + '~'
