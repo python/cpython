@@ -206,6 +206,10 @@ class Distribution:
                     raise DistutilsSetupError, \
                           "invalid distribution option '%s'" % key
 
+        if self.metadata.version is None:
+            raise DistutilsSetupError, \
+                  "No version number specified for distribution"
+        
     # __init__ ()
 
 
