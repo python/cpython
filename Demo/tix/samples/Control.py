@@ -86,7 +86,7 @@ def adjust_maker(w, inc):
 def validate_maker(w):
     try:
 	i = maker_list.index(demo_maker.get())
-    except:
+    except ValueError:
 	# Works here though. Why ? Beats me.
 	return maker_list[0]
     # Works here though. Why ? Beats me.
