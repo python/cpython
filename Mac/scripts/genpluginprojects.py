@@ -36,16 +36,17 @@ def genpluginproject(architecture, module,
 		sources=[], sourcedirs=[],
 		libraries=[], extradirs=[],
 		extraexportsymbols=[], outputdir=":::Lib:lib-dynload",
-		libraryflags=None, stdlibraryflags=None, prefixname=None):
+		libraryflags=None, stdlibraryflags=None, prefixname=None,
+		initialize=None):
 	if architecture == "all":
 		# For the time being we generate two project files. Not as nice as
 		# a single multitarget project, but easier to implement for now.
 		genpluginproject("ppc", module, project, projectdir, sources, sourcedirs,
 				libraries, extradirs, extraexportsymbols, outputdir, libraryflags,
-				stdlibraryflags, prefixname)
+				stdlibraryflags, prefixname, initialize)
 		genpluginproject("carbon", module, project, projectdir, sources, sourcedirs,
 				libraries, extradirs, extraexportsymbols, outputdir, libraryflags,
-				stdlibraryflags, prefixname)
+				stdlibraryflags, prefixname, initialize)
 		return
 	templatename = "template-%s" % architecture
 	targetname = "%s.%s" % (module, architecture)
@@ -99,6 +100,8 @@ def genpluginproject(architecture, module,
 		dict['libraryflags'] = libraryflags
 	if stdlibraryflags:
 		dict['stdlibraryflags'] = stdlibraryflags
+	if initialize:
+		dict['initialize'] = initialize
 	mkcwproject.mkproject(os.path.join(projectdir, project), module, dict, 
 			force=FORCEREBUILD, templatename=templatename)
 

@@ -549,7 +549,7 @@
                 <SETTING><NAME>MWLinker_PPC_dontdeadstripinitcode</NAME><VALUE>0</VALUE></SETTING>
                 <SETTING><NAME>MWLinker_PPC_permitmultdefs</NAME><VALUE>0</VALUE></SETTING>
                 <SETTING><NAME>MWLinker_PPC_linkmode</NAME><VALUE>Fast</VALUE></SETTING>
-                <SETTING><NAME>MWLinker_PPC_initname</NAME><VALUE>__initialize</VALUE></SETTING>
+                <SETTING><NAME>MWLinker_PPC_initname</NAME><VALUE>%(initialize)s</VALUE></SETTING>
                 <SETTING><NAME>MWLinker_PPC_mainname</NAME><VALUE></VALUE></SETTING>
                 <SETTING><NAME>MWLinker_PPC_termname</NAME><VALUE>__terminate</VALUE></SETTING>
 
