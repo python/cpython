@@ -1,9 +1,8 @@
 #! /usr/bin/env python
 
-"""
-"""
 __version__ = '$Revision$'
 
+import os
 import re
 import string
 import sys
@@ -307,16 +306,21 @@ def main():
     nodes = []
     for fn in args:
         nodes = nodes + load(open(fn))
+    num_nodes = len(nodes)
     nodes.sort()
     collapse(nodes)
     if letters:
         html = format_html_letters(nodes, columns)
     else:
         html = format_html(nodes, columns)
+    program = os.path.basename(sys.argv[0])
     if ofn == "-":
         sys.stdout.write(html)
+        sys.stderr.write("\n%s: %d index nodes" % (program, num_nodes))
     else:
         open(ofn, "w").write(html)
+        print
+        print "%s: %d index nodes" % (program, num_nodes)
 
 
 if __name__ == "__main__":
