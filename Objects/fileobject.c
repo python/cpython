@@ -47,7 +47,7 @@ FILE *
 getfilefile(f)
 	object *f;
 {
-	if (!is_fileobject(f)) {
+	if (!is_fileobject(f) || ((fileobject *)f)->f_fp == NULL) {
 		err_badcall();
 		return NULL;
 	}
@@ -102,6 +102,13 @@ newfileobject(name, mode)
 	return (object *)f;
 }
 
+static object *
+err_closed()
+{
+	err_setstr(ValueError, "I/O operation on closed file");
+	return NULL;
+}
+
 /* Methods */
 
 static void
@@ -153,10 +160,8 @@ file_close(f, args)
 	object *args;
 {
 	int sts = 0;
-	if (args != NULL) {
-		err_badarg();
+	if (!getnoarg(args))
 		return NULL;
-	}
 	errno = 0;
 	if (f->f_fp != NULL) {
 		if (f->f_close != NULL)
@@ -177,22 +182,18 @@ file_seek(f, args)
 	object *args;
 {
 	long offset;
-	long whence;
+	int whence;
 	
-	if (f->f_fp == NULL) {
-		err_badarg();
-		return NULL;
-	}
-	if (args != NULL && is_intobject(args)) {
-		offset = getintvalue(args);
-		whence = 0; /* SEEK_SET */
-	}
-	else {
-		if (!getlonglongarg(args, &offset, &whence))
+	if (f->f_fp == NULL)
+		return err_closed();
+	whence = 0;
+	if (!getargs(args, "l", &offset)) {
+		err_clear();
+		if (!getargs(args, "(li)", &offset, &whence))
 			return NULL;
 	}
 	errno = 0;
-	if (fseek(f->f_fp, offset, (int)whence) != 0) {
+	if (fseek(f->f_fp, offset, whence) != 0) {
 		err_errno(IOError);
 		clearerr(f->f_fp);
 		return NULL;
@@ -207,10 +208,10 @@ file_tell(f, args)
 	object *args;
 {
 	long offset;
-	if (args != NULL || f->f_fp == NULL) {
-		err_badarg();
+	if (f->f_fp == NULL)
+		return err_closed();
+	if (!getnoarg(args))
 		return NULL;
-	}
 	errno = 0;
 	offset = ftell(f->f_fp);
 	if (offset == -1L) {
@@ -226,6 +227,8 @@ file_fileno(f, args)
 	fileobject *f;
 	object *args;
 {
+	if (f->f_fp == NULL)
+		return err_closed();
 	if (!getnoarg(args))
 		return NULL;
 	return newintobject((long) fileno(f->f_fp));
@@ -236,10 +239,10 @@ file_flush(f, args)
 	fileobject *f;
 	object *args;
 {
-	if (args != NULL || f->f_fp == NULL) {
-		err_badarg();
+	if (f->f_fp == NULL)
+		return err_closed();
+	if (!getnoarg(args))
 		return NULL;
-	}
 	errno = 0;
 	if (fflush(f->f_fp) != 0) {
 		err_errno(IOError);
@@ -255,10 +258,10 @@ file_isatty(f, args)
 	fileobject *f;
 	object *args;
 {
-	if (args != NULL || f->f_fp == NULL) {
-		err_badarg();
+	if (f->f_fp == NULL)
+		return err_closed();
+	if (!getnoarg(args))
 		return NULL;
-	}
 	return newintobject((long)isatty((int)fileno(f->f_fp)));
 }
 
@@ -270,20 +273,17 @@ file_read(f, args)
 	int n, n1, n2, n3;
 	object *v;
 	
-	if (f->f_fp == NULL) {
-		err_badarg();
-		return NULL;
-	}
-	if (args == 0)
+	if (f->f_fp == NULL)
+		return err_closed();
+	if (args == NULL) {
 		n = 0;
-	else {
-		if (!getintarg(args, &n))
-			return NULL;
 		if (n < 0) {
-			err_badarg();
+			err_setstr(ValueError, "negative read count");
 			return NULL;
 		}
 	}
+	else if (!getargs(args, "i", &n))
+		return NULL;
 	
 	n2 = n != 0 ? n : BUFSIZ;
 	v = newsizedstringobject((char *)NULL, n2);
@@ -326,11 +326,6 @@ getline(f, n)
 	register char *buf, *end;
 	int n1, n2;
 	object *v;
-
-	if ((fp = f->f_fp) == NULL) {
-		err_badarg();
-		return NULL;
-	}
 
 	n2 = n > 0 ? n : 100;
 	v = newsizedstringobject((char *)NULL, n2);
@@ -389,6 +384,8 @@ filegetline(f, n)
 		err_badcall();
 		return NULL;
 	}
+	if (((fileobject*)f)->f_fp == NULL)
+		return err_closed();
 	return getline((fileobject *)f, n);
 }
 
@@ -401,13 +398,15 @@ file_readline(f, args)
 {
 	int n;
 
+	if (f->f_fp == NULL)
+		return err_closed();
 	if (args == NULL)
 		n = 0; /* Unlimited */
 	else {
 		if (!getintarg(args, &n))
 			return NULL;
 		if (n < 0) {
-			err_badarg();
+			err_setstr(ValueError, "negative readline count");
 			return NULL;
 		}
 	}
@@ -423,6 +422,8 @@ file_readlines(f, args)
 	object *list;
 	object *line;
 
+	if (f->f_fp == NULL)
+		return err_closed();
 	if (!getnoarg(args))
 		return NULL;
 	if ((list = newlistobject(0)) == NULL)
@@ -448,18 +449,15 @@ file_write(f, args)
 	fileobject *f;
 	object *args;
 {
+	char *s;
 	int n, n2;
-	if (f->f_fp == NULL) {
-		err_badarg();
+	if (f->f_fp == NULL)
+		return err_closed();
+	if (!getargs(args, "s#", &s, &n))
 		return NULL;
-	}
-	if (args == NULL || !is_stringobject(args)) {
-		err_badarg();
-		return NULL;
-	}
 	f->f_softspace = 0;
 	errno = 0;
-	n2 = fwrite(getstringvalue(args), 1, n = getstringsize(args), f->f_fp);
+	n2 = fwrite(s, 1, n, f->f_fp);
 	if (n2 != n) {
 		err_errno(IOError);
 		clearerr(f->f_fp);
