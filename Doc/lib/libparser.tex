@@ -10,12 +10,13 @@
 %
 
 \section{\module{parser} ---
-         Access parse trees of Python code.}
+         Access parse trees for Python code}
+
 \declaremodule{builtin}{parser}
+\modulesynopsis{Access parse trees for Python source code.}
 \moduleauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
 \sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
 
-\modulesynopsis{Access parse trees of Python source code.}
 
 \index{parsing!Python source code}
 
@@ -26,10 +27,6 @@ and create executable code from this.  This is better than trying
 to parse and modify an arbitrary Python code fragment as a string
 because parsing is performed in a manner identical to the code
 forming the application.  It is also faster.
-
-The \module{parser} module was written and documented by Fred
-L. Drake, Jr. (\email{fdrake@acm.org}).%
-\index{Drake, Fred L., Jr.}
 
 There are a few things to note about this module which are important
 to making use of the data structures created.  This is not a tutorial
