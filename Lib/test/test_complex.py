@@ -63,8 +63,7 @@ for i in range(100):
 if complex(0.0, 0.0):
     raise TestFailed("complex(0.0, 0.0) should be false")
 
-if vereq(complex(5.3, 9.8).conjugate(), 5.3-9.8j):
-    raise TestFailed("complex.conjugate() didn't work")
+vereq(complex(5.3, 9.8).conjugate(), 5.3-9.8j)
 
 try:
     print int(5+3j)

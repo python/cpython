@@ -118,6 +118,16 @@ def verify(condition, reason='test failed'):
         raise TestFailed(reason)
 
 def vereq(a, b):
+    """Raise TestFailed if a == b is false.
+
+    This is better than verify(a == b) because, in case of failure, the
+    error message incorporates repr(a) and repr(b) so you can see the
+    inputs.
+
+    Note that "not (a == b)" isn't necessarily the same as "a != b"; the
+    former is tested.
+    """
+
     if not (a == b):
         raise TestFailed, "%r == %r" % (a, b)
 
