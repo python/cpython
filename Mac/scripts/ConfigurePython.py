@@ -9,6 +9,8 @@
 
 import sys
 import os
+import warnings
+warnings.filterwarnings("ignore", "macfs.*", DeprecationWarning, __name__)
 import macfs
 import MacOS
 import gestalt
