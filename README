@@ -1,20 +1,18 @@
-This is Python release 1.3
-==========================
+This is Python release 1.4 beta 1
+=================================
+
+It's a beta release.  Only use this if you want to help me iron the
+last wrinkles out of the distribution before I release the real 1.4
+release.  In particular, I'm interested in porting experiences to Unix
+boxes.  It should build out of the box using "./configure; make".
+Also try running configue with the --with-thread and --with-readline
+options (described below).
 
 
 What's new in this release?
 ---------------------------
 
-- Keyword parameters (see the last chapter of the tutorial).
-- Third argument to raise (the stacktrace to provide).
-- Faster function and method calls.
-- Jim Fulton's abstract object interface (Include/abstract.h).
-- Support for Tk 4.0 in Tkinter (Tkinter now supports keywords!).
-- Rewritten htmllib.py (HTML parser), with new formatter.py.
-- Rewritten rexec.py (restricted execution).
-- New modules ni.py and ihooks.py (package support and more).
-- And lots more that you'll have to discover on your own (see chapter
-  12 of the Tutorial or the Misc/NEWS file).
+XXX
 
 
 What is Python anyway?
@@ -22,7 +20,8 @@ What is Python anyway?
 
 Python is an interpreted object-oriented programming language, and is
 often compared to Tcl, Perl or Scheme.  For a quick summary of what
-Python can mean for a UNIX/C programmer, read Misc/BLURB.LUTZ.
+Python can mean for a UNIX/C programmer, read Misc/BLURB.LUTZ.  If you
+have web access, point your browser to <URL:http://www.python.org>.
 
 
 If you don't read instructions
@@ -89,8 +88,10 @@ problems as well.  Try it before sending in a bug report!
 Troubleshooting
 ---------------
 
-If you run into trouble, see section 3 of the FAQ (file Misc/FAQ) for
-hints on what can go wrong, and how to fix it.
+If recursive makes fail, try invoking make as "make MAKE=make".
+
+If you run into other trouble, see section 3 of the FAQ (file
+Misc/FAQ) for hints on what can go wrong, and how to fix it.
 
 
 Platform specific notes
@@ -104,7 +105,7 @@ Linux:	Once you've built Python, use it to run the regen.py script in
 	the Lib/linux1 directory.  Apparently the files as distributed
 	don't match the system headers on some Linux versions.
 
-AIX:	Read the file Misc/AIX-NOTES before trying to build.
+AIX:	Read the files Misc/AIX-NOTES* before trying to build.
 
 HP-UX:	Read the file Misc/HPUX-NOTES if you want to be able to
 	use shared libraries for dynamically loaded modules.
@@ -180,7 +181,7 @@ To install the interpreter as /usr/local/bin/python, type "make
 install".  To install the library as /usr/local/lib/python, type "make
 libinstall".  To install the manual page as
 /usr/local/man/man1/python.1, type "make maninstall".  To install the
-Emacs editing mode for python, manually copy the file
+Emacs editing mode for Python, manually copy the file
 Misc/python-mode.el to your local Emacs lisp directory.  The directory
 /usr/local can be overridden at configuration time by passing
 --prefix=DIRECTORY to the configure script, or at make time by passing
@@ -230,12 +231,13 @@ all object files by running "make clean" before rebuilding.
 	about the install prefix...
 
 --with-readline: You can use the GNU readline library to improve the
-	interactive user interface: this gives you line editing and
-	command history when calling python interactively.  You need
-	to configure build the GNU readline library before running the
-	configure script.  Its sources are not distributed with
-	Python; you can ftp them from any GNU mirror site, or from its
-	home site:
+	interactive user interface.  This gives you line editing and
+	command history when calling Python interactively.  Unless GNU
+	readline is a standard part of your system (it is on Linux),
+	you need to configure build the GNU readline library before
+	running the configure script.  Its sources are not distributed
+	with Python; you can ftp them from any GNU mirror site, or
+	from its home site:
 	<URL:ftp://slc2.ins.cwru.edu/pub/dist/readline-2.0.tar.gz> (or
 	a higher version number -- using version 1.x is not
 	recommended).
@@ -248,15 +250,17 @@ all object files by running "make clean" before rebuilding.
 	Pass the Python configure script the option
 	--with-readline=DIRECTORY where DIRECTORY is the absolute
 	pathname of the directory where you've built the readline
-	library.  Some hints on building and using the readline
-	library are in the FAQ (file Misc/FAQ).
+	library.  If GNU readline is a standard part of your system,
+	don't pass '=DIRECTORY'.  Some hints on building and using the
+	readline library are in the FAQ (file Misc/FAQ).
 
---with-thread: On SGI IRIX, and on Sun SOLARIS 2, you can use multiple
-	threads.  To enable this, pass --with-thread.  In the
-	Modules/Setup file, enable the thread module.  (Threads aren't
-	enabled automatically because there are run-time penalties
-	when support for them is compiled in even if you don't use
-	them.)
+--with-thread: On most Unix systems, you can now use multiple threads.
+	To enable this, pass --with-thread.  If the library required
+	for threads lives in a peculiar place, you can use
+	--with-thread=DIRECTORY.  In the Modules/Setup file, enable
+	the thread module.  (Threads aren't enabled automatically
+	because there are run-time penalties when support for them is
+	compiled in even if you don't use them.)
 
 --with-sgi-dl: On SGI IRIX 4, dynamic loading of extension modules is
 	supported by the "dl" library by Jack Jansen, which is
@@ -392,9 +396,9 @@ send the four resulting PostScript files (tut.ps, lib.ps, ref.ps, and
 ext.ps) to the printer.  See the README file there.
 
 All documentation is also available on-line via the World-Wide Web
-(WWW): <URL:http://www.cwi.nl/~guido/Python.html>.  It can also be
-downloaded separately from the ftp archives (see below) in Emacs INFO,
-HTML or PostScript form -- see the FAQ (file Misc/FAQ) for more info.
+(WWW): <URL:http://www.python.org>.  It can also be downloaded
+separately from the ftp archives (see below) in Emacs INFO, HTML or
+PostScript form -- see the FAQ (file Misc/FAQ) for more info.
 
 
 Emacs mode
@@ -427,9 +431,9 @@ problem has already been answered!
 Ftp access
 ----------
 
-Python's "home ftp site" is ftp.cwi.nl, directory pub/python.  See the
-FAQ (file Misc/FAQ) for a list of other ftp sites carrying the Python
-distribution.
+Python's "home ftp site" is ftp.python.org, directory /pub/python.
+See the FAQ (file Misc/FAQ) for a list of other ftp sites carrying the
+Python distribution.
 
 
 Newsgroup and mailing list
@@ -461,8 +465,9 @@ have to edit the first line as well to fix the -I and -L options.)
 See the Build Instructions above for more details.
 
 There is little documentation.  Begin with fetching the "Tk Lifesaver"
-document, e.g. <URL:ftp://ftp.cwi.nl/pub/python/doc/tkinter-doc.tar.gz>
-(a gzipped tar file containing a PostScript file).  There are demos in
+document,
+e.g. <URL:ftp://ftp.python.org/pub/python/doc/tkinter-doc.tar.gz> (a
+gzipped tar file containing a PostScript file).  There are demos in
 the Demo/tkinter directory, in the subdirectories guido, matt and www.
 
 Note that there's a Python module called "Tkinter" (capital T) which
@@ -526,12 +531,12 @@ Author's address
 ----------------
 
 Guido van Rossum
-CWI, dept. CST
-P.O. Box 94079
-1090 GB  Amsterdam
-The Netherlands
+CNRI
+1895 Preston White Drive
+Reston, VA 22094
+USA
 
-E-mail: guido@cwi.nl
+E-mail: guido@python.org
 
 
 
@@ -565,5 +570,4 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ----------------------------------------------------------------------
 
 
---Guido van Rossum, CWI, Amsterdam <mailto:guido@cwi.nl>
-<http://www.cwi.nl/~guido/>
+--Guido van Rossum (home page: http://www.python.org/~guido/)
