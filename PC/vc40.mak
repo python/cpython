@@ -37,7 +37,7 @@ NULL=nul
 !ENDIF 
 ################################################################################
 # Begin Project
-# PROP Target_Last_Scanned "python15 - Win32 Debug"
+# PROP Target_Last_Scanned "python15 - Win32 Release"
 
 !IF  "$(CFG)" == "python15 - Win32 Release"
 
@@ -464,8 +464,8 @@ DEF_FILE= \
 LINK32_OBJS= \
 	"$(INTDIR)\_tkinter.obj" \
 	"$(OUTDIR)\python15.lib" \
-	"..\..\..\..\Program Files\Tcl\lib\tcl80vc.lib" \
-	"..\..\..\..\Program Files\Tcl\lib\tk80vc.lib"
+	"..\..\Program Files\Tcl\lib\tcl80vc.lib" \
+	"..\..\Program Files\Tcl\lib\tk80vc.lib"
 
 "$(OUTDIR)\_tkinter.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -551,8 +551,8 @@ CLEAN :
 	-@erase "$(INTDIR)\parsetok.obj"
 	-@erase "$(INTDIR)\pcremodule.obj"
 	-@erase "$(INTDIR)\posixmodule.obj"
-	-@erase "$(INTDIR)\pystate.obj"
 	-@erase "$(INTDIR)\pypcre.obj"
+	-@erase "$(INTDIR)\pystate.obj"
 	-@erase "$(INTDIR)\python_nt.res"
 	-@erase "$(INTDIR)\pythonrun.obj"
 	-@erase "$(INTDIR)\rangeobject.obj"
@@ -2387,21 +2387,54 @@ DEP_CPP_TIMEM=\
 # Begin Source File
 
 SOURCE=.\Python\thread.c
+
+!IF  "$(CFG)" == "python15 - Win32 Release"
+
+DEP_CPP_THREA=\
+	".\Include\thread.h"\
+	".\PC\config.h"\
+	".\Python\thread_cthread.h"\
+	".\Python\thread_foobar.h"\
+	".\Python\thread_lwp.h"\
+	".\Python\thread_nt.h"\
+	".\Python\thread_os2.h"\
+	".\Python\thread_pthread.h"\
+	".\Python\thread_sgi.h"\
+	".\Python\thread_solaris.h"\
+	{$(INCLUDE)}"\sys\TYPES.H"\
+	
+NODEP_CPP_THREA=\
+	"..\..\usr\include\thread.h"\
+	".\Python\os2.h"\
+	
+
+"$(INTDIR)\thread.obj" : $(SOURCE) $(DEP_CPP_THREA) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
+
 DEP_CPP_THREA=\
 	".\Include\thread.h"\
 	".\PC\config.h"\
 	".\Python\thread_cthread.h"\
 	".\Python\thread_lwp.h"\
 	".\Python\thread_nt.h"\
+	".\Python\thread_os2.h"\
 	".\Python\thread_pthread.h"\
 	".\Python\thread_sgi.h"\
 	".\Python\thread_solaris.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
+NODEP_CPP_THREA=\
+	".\Python\os2.h"\
+	
 
 "$(INTDIR)\thread.obj" : $(SOURCE) $(DEP_CPP_THREA) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -2783,7 +2816,39 @@ DEP_CPP_RGBIM=\
 
 SOURCE=.\Modules\regexpr.c
 DEP_CPP_REGEX=\
+	".\Include\abstract.h"\
+	".\Include\ceval.h"\
+	".\Include\classobject.h"\
+	".\Include\cobject.h"\
+	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
+	".\Include\fileobject.h"\
+	".\Include\floatobject.h"\
+	".\Include\funcobject.h"\
+	".\Include\import.h"\
+	".\Include\intobject.h"\
+	".\Include\intrcheck.h"\
+	".\Include\listobject.h"\
+	".\Include\longobject.h"\
+	".\Include\methodobject.h"\
+	".\Include\modsupport.h"\
+	".\Include\moduleobject.h"\
+	".\Include\mymalloc.h"\
 	".\Include\myproto.h"\
+	".\Include\object.h"\
+	".\Include\objimpl.h"\
+	".\Include\pydebug.h"\
+	".\Include\pyerrors.h"\
+	".\Include\pyfpe.h"\
+	".\Include\pystate.h"\
+	".\Include\Python.h"\
+	".\Include\pythonrun.h"\
+	".\Include\rangeobject.h"\
+	".\Include\sliceobject.h"\
+	".\Include\stringobject.h"\
+	".\Include\sysmodule.h"\
+	".\Include\traceback.h"\
+	".\Include\tupleobject.h"\
 	".\Modules\regexpr.h"\
 	".\PC\config.h"\
 	
@@ -3616,6 +3681,8 @@ DEP_CPP_IMPORT=\
 	".\Include\tupleobject.h"\
 	".\PC\config.h"\
 	".\Python\importdl.h"\
+	{$(INCLUDE)}"\sys\STAT.H"\
+	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_IMPORT=\
 	".\Python\macglue.h"\
@@ -3840,6 +3907,7 @@ DEP_CPP_MAIN_=\
 	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
+	".\Include\osdefs.h"\
 	".\Include\pydebug.h"\
 	".\Include\pyerrors.h"\
 	".\Include\pyfpe.h"\
@@ -4056,6 +4124,9 @@ SOURCE=.\PC\python_nt.rc
 SOURCE=.\Modules\getbuildinfo.c
 DEP_CPP_GETBU=\
 	".\PC\config.h"\
+	
+NODEP_CPP_GETBU=\
+	".\Modules\macbuildno.h"\
 	
 
 "$(INTDIR)\getbuildinfo.obj" : $(SOURCE) $(DEP_CPP_GETBU) "$(INTDIR)"
@@ -4349,6 +4420,71 @@ DEP_CPP_GETPA=\
 ################################################################################
 # Begin Source File
 
+SOURCE=.\Modules\reopmodule.c
+
+!IF  "$(CFG)" == "python15 - Win32 Release"
+
+DEP_CPP_REOPM=\
+	".\Include\abstract.h"\
+	".\Include\ceval.h"\
+	".\Include\classobject.h"\
+	".\Include\cobject.h"\
+	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
+	".\Include\fileobject.h"\
+	".\Include\floatobject.h"\
+	".\Include\funcobject.h"\
+	".\Include\import.h"\
+	".\Include\intobject.h"\
+	".\Include\intrcheck.h"\
+	".\Include\listobject.h"\
+	".\Include\longobject.h"\
+	".\Include\methodobject.h"\
+	".\Include\modsupport.h"\
+	".\Include\moduleobject.h"\
+	".\Include\mymalloc.h"\
+	".\Include\myproto.h"\
+	".\Include\object.h"\
+	".\Include\objimpl.h"\
+	".\Include\pydebug.h"\
+	".\Include\pyerrors.h"\
+	".\Include\pyfpe.h"\
+	".\Include\pystate.h"\
+	".\Include\Python.h"\
+	".\Include\pythonrun.h"\
+	".\Include\rangeobject.h"\
+	".\Include\sliceobject.h"\
+	".\Include\stringobject.h"\
+	".\Include\sysmodule.h"\
+	".\Include\traceback.h"\
+	".\Include\tupleobject.h"\
+	".\Modules\regexpr.h"\
+	".\PC\config.h"\
+	
+
+"$(INTDIR)\reopmodule.obj" : $(SOURCE) $(DEP_CPP_REOPM) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
+
+DEP_CPP_REOPM=\
+	".\Modules\regexpr.h"\
+	
+NODEP_CPP_REOPM=\
+	".\Modules\Python.h"\
+	
+
+"$(INTDIR)\reopmodule.obj" : $(SOURCE) $(DEP_CPP_REOPM) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
 SOURCE=.\Modules\pcremodule.c
 DEP_CPP_PCREM=\
 	".\Include\abstract.h"\
@@ -4444,53 +4580,6 @@ DEP_CPP_PYPCR=\
 
 
 # End Source File
-################################################################################
-# Begin Source File
-
-SOURCE=.\Modules\reopmodule.c
-DEP_CPP_REOPM=\
-	".\Include\abstract.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\Modules\regexpr.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\reopmodule.obj" : $(SOURCE) $(DEP_CPP_REOPM) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-# End Source File
 # End Target
 ################################################################################
 # Begin Target
@@ -4521,15 +4610,42 @@ SOURCE=.\Modules\python.c
 
 SOURCE=.\Modules\_tkinter.c
 DEP_CPP__TKIN=\
-	"\Program Files\TCL\include\tcl.h"\
-	"\Program Files\TCL\include\tk.h"\
-	"\Program Files\TCL\include\X11\X.h"\
-	"\Program Files\TCL\include\X11\Xfuncproto.h"\
-	"\Program Files\TCL\include\X11\Xlib.h"\
-	
-NODEP_CPP__TKIN=\
-	".\Modules\myselect.h"\
-	".\Modules\Python.h"\
+	".\Include\abstract.h"\
+	".\Include\ceval.h"\
+	".\Include\classobject.h"\
+	".\Include\cobject.h"\
+	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
+	".\Include\fileobject.h"\
+	".\Include\floatobject.h"\
+	".\Include\funcobject.h"\
+	".\Include\import.h"\
+	".\Include\intobject.h"\
+	".\Include\intrcheck.h"\
+	".\Include\listobject.h"\
+	".\Include\longobject.h"\
+	".\Include\methodobject.h"\
+	".\Include\modsupport.h"\
+	".\Include\moduleobject.h"\
+	".\Include\mymalloc.h"\
+	".\Include\myproto.h"\
+	".\Include\myselect.h"\
+	".\Include\mytime.h"\
+	".\Include\object.h"\
+	".\Include\objimpl.h"\
+	".\Include\pydebug.h"\
+	".\Include\pyerrors.h"\
+	".\Include\pyfpe.h"\
+	".\Include\pystate.h"\
+	".\Include\Python.h"\
+	".\Include\pythonrun.h"\
+	".\Include\rangeobject.h"\
+	".\Include\sliceobject.h"\
+	".\Include\stringobject.h"\
+	".\Include\sysmodule.h"\
+	".\Include\traceback.h"\
+	".\Include\tupleobject.h"\
+	".\PC\config.h"\
 	
 
 "$(INTDIR)\_tkinter.obj" : $(SOURCE) $(DEP_CPP__TKIN) "$(INTDIR)"

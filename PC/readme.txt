@@ -33,7 +33,7 @@ C:/python, and copy all library files and subdirectories (using XCOPY)
 to C:/python/lib.  Then you don't need to set PYTHONPATH.  Otherwise,
 set the environment variable PYTHONPATH to your Python search path.
 For example,
-   set PYTHONPATH=.;d:\python\lib;d:\python\lib\win;d:\python\lib\dos_8x3
+   set PYTHONPATH=.;d:\python\lib;d:\python\lib\win;d:\python\lib\dos-8x3
 
 There are several add-in modules to build Python programs which use
 the native Windows operating environment.  The ports here just make
