@@ -3,27 +3,28 @@
 \stmodindex{multiFile}
 \label{module-multifile}
 
-The \code{MultiFile} object enables you to treat sections of a text
-file as file-like input objects, with EOF being returned by
-\code{readline} when a given delimiter pattern is encountered.  The
+The \class{MultiFile} object enables you to treat sections of a text
+file as file-like input objects, with \code{''} being returned by
+\method{readline()} when a given delimiter pattern is encountered.  The
 defaults of this class are designed to make it useful for parsing
 MIME multipart messages, but by subclassing it and overriding methods 
 it can be easily adapted for more general use.
 
-\begin{classdesc}{MultiFile}{fp[, seekable=1]}
+\begin{classdesc}{MultiFile}{fp\optional{, seekable}}
 Create a multi-file.  You must instantiate this class with an input
-object argument for MultiFile to get lines from, such as as a file
-object returned by \code{open}.
+object argument for the \class{MultiFile} instance to get lines from,
+such as as a file object returned by \function{open()}.
 
-MultiFile only ever looks at the input object's \code{readline},
-\code{seek} and \code{tell} methods, and the latter two are only
-needed if you want to random-access the multifile sections. To use
-MultiFile on a non-seekable stream object, set the optional seekable
-argument to 0; this will avoid using the input object's \code{seek}
-and \code{tell} at all.
+\class{MultiFile} only ever looks at the input object's
+\method{readline()}, \method{seek()} and \method{tell()} methods, and
+the latter two are only needed if you want random access to the
+individual MIME parts. To use \class{MultiFile} on a non-seekable
+stream object, set the optional \var{seekable} argument to false; this
+will prevent using the input object's \method{seek()} and
+\method{tell()} methods.
 \end{classdesc}
 
-It will be useful to know that in MultiFile's view of the world, text
+It will be useful to know that in \class{MultiFile}'s view of the world, text
 is composed of three kinds of lines: data, section-dividers, and
 end-markers.  MultiFile is designed to support parsing of
 messages that may have multiple nested message parts, each with its
@@ -37,9 +38,10 @@ A \class{MultiFile} instance has the following methods:
 \begin{methoddesc}{push}{str}
 Push a boundary string.  When an appropriately decorated version of
 this boundary is found as an input line, it will be interpreted as a
-section-divider or end-marker and passed back as EOF.  All subsequent
-reads will also be passed back as EOF, until a \method{pop} removes
-the boundary a or \method{next} call reenables it.
+section-divider or end-marker.  All subsequent
+reads will return the empty string to indicate end-of-file, until a
+call to \method{pop()} removes the boundary a or \method{next()} call
+reenables it.
 
 It is possible to push more than one boundary.  Encountering the
 most-recently-pushed boundary will return EOF; encountering any other
@@ -51,97 +53,105 @@ Read a line.  If the line is data (not a section-divider or end-marker
 or real EOF) return it.  If the line matches the most-recently-stacked
 boundary, return \code{''} and set \code{self.last} to 1 or 0 according as
 the match is or is not an end-marker.  If the line matches any other
-stacked boundary, raise an error.  If the line is a real EOF, raise an
-error unless all boundaries have been popped.
+stacked boundary, raise an error.  On encountering end-of-file on the
+underlying stream object, the method raises \exception{Error} unless
+all boundaries have been popped.
 \end{methoddesc}
 
 \begin{methoddesc}{readlines}{str}
-Read all lines, up to the next section.  Return them as a list of strings
+Return all lines remaining in this part as a list of strings.
 \end{methoddesc}
 
-\begin{methoddesc}{read}{str}
+\begin{methoddesc}{read}{}
 Read all lines, up to the next section.  Return them as a single
 (multiline) string.  Note that this doesn't take a size argument!
 \end{methoddesc}
 
-\begin{methoddesc}{next}{str}
+\begin{methoddesc}{next}{}
 Skip lines to the next section (that is, read lines until a
-section-divider or end-marker has been consumed).  Return 1 if there
-is such a section, 0 if an end-marker is seen.  Re-enable the
-most-recently-pushed boundary.
+section-divider or end-marker has been consumed).  Return true if
+there is such a section, false if an end-marker is seen.  Re-enable
+the most-recently-pushed boundary.
 \end{methoddesc}
 
-\begin{methoddesc}{pop}{str}
-Pop a section boundary.  This boundary will no longer be interpreted as EOF.
+\begin{methoddesc}{pop}{}
+Pop a section boundary.  This boundary will no longer be interpreted
+as EOF.
 \end{methoddesc}
 
-\begin{methoddesc}{seek}{str, pos, whence=0}
+\begin{methoddesc}{seek}{pos\optional{, whence}}
 Seek.  Seek indices are relative to the start of the current section.
-The pos and whence arguments are interpreted as for a file seek.
+The \var{pos} and \var{whence} arguments are interpreted as for a file
+seek.
 \end{methoddesc}
 
-\begin{methoddesc}{next}{str}
-Tell.  Tell indices are relative to the start of the current section.
+\begin{methoddesc}{tell}{}
+Return the file position relative to the start of the current section.
 \end{methoddesc}
 
 \begin{methoddesc}{is_data}{str}
-Return true if a 1 is certainly data and 0 if it might be a section
-boundary.  As written, it tests for a prefix other than '--' at start of
-line (which all MIME boundaries have) but it is declared so it can be
-overridden in derived classes.
+Return true if \var{str} is data and false if it might be a section
+boundary.  As written, it tests for a prefix other than \code{'--'} at
+start of line (which all MIME boundaries have) but it is declared so
+it can be overridden in derived classes.
 
 Note that this test is used intended as a fast guard for the real
-boundary tests; if it always returns 0 it will merely slow processing,
-not cause it to fail.
+boundary tests; if it always returns false it will merely slow
+processing, not cause it to fail.
 \end{methoddesc}
 
 \begin{methoddesc}{section_divider}{str}
 Turn a boundary into a section-divider line.  By default, this
-method prepends '--' (which MIME section boundaries have) but it is
-declared so it can be overridden in derived classes.  This method
-need not append LF or CR-LF, as comparison with the result ignores
-trailing whitespace. 
+method prepends \code{'--'} (which MIME section boundaries have) but
+it is declared so it can be overridden in derived classes.  This
+method need not append LF or CR-LF, as comparison with the result
+ignores trailing whitespace. 
 \end{methoddesc}
 
 \begin{methoddesc}{end_marker}{str}
 Turn a boundary string into an end-marker line.  By default, this
-method prepends '--' and appends '--' (like a MIME-multipart
-end-of-message marker) but it is declared so it can be be overridden
-in derived classes.  This method need not append LF or CR-LF, as
-comparison with the result ignores trailing whitespace.
+method prepends \code{'--'} and appends \code{'--'} (like a
+MIME-multipart end-of-message marker) but it is declared so it can be
+be overridden in derived classes.  This method need not append LF or
+CR-LF, as comparison with the result ignores trailing whitespace.
 \end{methoddesc}
 
 Finally, \class{MultiFile} instances have two public instance variables:
 
 \begin{memberdesc}{level}
+Nesting depth of the current part.
 \end{memberdesc}
 
 \begin{memberdesc}{last}
-1 if the last EOF passed back was for an end-of-message marker, 0 otherwise. 
+True if the last end-of-file was for an end-of-message marker. 
 \end{memberdesc}
 
-Example:
+
+\subsection{\class{Multifile} Example}
+\label{multifile-example}
+
+% This is almost unreadable; should be re-written when someone gets time.
 
 \begin{verbatim}
-    fp = MultiFile(sys.stdin, 0)
-    fp.push(outer_boundary)
-    message1 = fp.readlines()
-    # We should now be either at real EOF or stopped on a message
-    # boundary. Re-enable the outer boundary.
-    fp.next()
-    # Read another message with the same delimiter
-    message2 = fp.readlines()
-    # Re-enable that delimiter again
-    fp.next()
-    # Now look for a message subpart with a different boundary
-    fp.push(inner_boundary)
-    sub_header = fp.readlines()
-    # If no exception has been thrown, we're looking at the start of
-    # the message subpart.  Reset and grab the subpart
-    fp.next()
-    sub_body = fp.readlines()
-    # Got it.  Now pop the inner boundary to re-enable the outer one.
-    fp.pop()
-    # Read to next outer boundary
-    message3 = fp.readlines()
+fp = MultiFile(sys.stdin, 0)
+fp.push(outer_boundary)
+message1 = fp.readlines()
+# We should now be either at real EOF or stopped on a message
+# boundary. Re-enable the outer boundary.
+fp.next()
+# Read another message with the same delimiter
+message2 = fp.readlines()
+# Re-enable that delimiter again
+fp.next()
+# Now look for a message subpart with a different boundary
+fp.push(inner_boundary)
+sub_header = fp.readlines()
+# If no exception has been thrown, we're looking at the start of
+# the message subpart.  Reset and grab the subpart
+fp.next()
+sub_body = fp.readlines()
+# Got it.  Now pop the inner boundary to re-enable the outer one.
+fp.pop()
+# Read to next outer boundary
+message3 = fp.readlines()
 \end{verbatim}
