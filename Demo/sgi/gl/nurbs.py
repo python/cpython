@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # Rotate a 3D surface created using NURBS.
 #

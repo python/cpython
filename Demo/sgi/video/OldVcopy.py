@@ -1,4 +1,4 @@
-#! /ufs/guido/bin/sgi/python
+#! /usr/bin/env python
 
 # Copy a video file, interactively, frame-by-frame.
 

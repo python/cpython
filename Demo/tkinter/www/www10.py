@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # www10.py -- display the contents of a URL in a Text widget
 # - set window title

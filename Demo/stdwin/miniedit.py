@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # A miniature multi-window editor using STDWIN's text objects.
 #

@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 testlabels = 'Name', 'Address', 'City', 'Country', 'Comments'
 

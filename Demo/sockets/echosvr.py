@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # Python implementation of an 'echo' tcp server: echo all data it receives.
 #

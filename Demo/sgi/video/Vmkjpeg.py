@@ -1,4 +1,4 @@
-#!/ufs/guido/bin/sgi/python
+#! /usr/bin/env python
 
 # Compress an rgb or grey video file to jpeg format
 

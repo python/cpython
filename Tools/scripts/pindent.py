@@ -1,5 +1,4 @@
-#! /usr/local/bin/python
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # This file contains a class and a main program that perform two
 # related (though complimentary) formatting operations on Python

@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # Fix Python source files to use the new equality test operator, i.e.,
 #	if x = y: ...

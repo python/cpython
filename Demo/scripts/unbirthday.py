@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # Calculate your unbirthday count (see Alice in Wonderland).
 # This is defined as the number of days from your birth until today

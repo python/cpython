@@ -1,4 +1,4 @@
-#! /ufs/guido/bin/sgi/python
+#! /usr/bin/env python
 
 # Capture a CMIF movie using the Indigo video library and board in burst mode
 

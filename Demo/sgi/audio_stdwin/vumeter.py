@@ -1,4 +1,4 @@
-#! /usr/local/python
+#! /usr/bin/env python
 
 import audio
 import stdwin

@@ -1,4 +1,4 @@
-#! /ufs/guido/bin/sgi/python
+#! /usr/bin/env python
 
 # Print the value of all video parameters
 

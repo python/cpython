@@ -1,4 +1,4 @@
-#! /ufs/guido/bin/sgi/python
+#! /usr/bin/env python
 
 # Video bag of tricks: record video(+audio) in various formats and modes
 

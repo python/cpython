@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # Like mkdir, but also make intermediate directories if necessary.
 # It is not an error if the given directory already exists (as long

@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 # Print digits of pi forever.
 #
 # The algorithm, using Python's 'long' integers ("bignums"), works

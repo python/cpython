@@ -1,4 +1,4 @@
-#!/ufs/guido/bin/sgi/python
+#! /usr/bin/env python
 
 # Decompress a jpeg or jpeggrey video file to rgb format
 

@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # XXX This only works on SGIs running IRIX 4.0 or higher
 

@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#! /usr/bin/env python
 
 # A somewhat-generalized FAQ-to-HTML converter (by Ka-Ping Yee, 10 Sept 96)
 

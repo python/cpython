@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # Perform massive identifier substitution on C source files.
 # This actually tokenizes the files (to some extent) so it can

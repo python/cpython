@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # This script is obsolete -- it is kept for historical purposes only.
 #

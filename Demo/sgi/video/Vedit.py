@@ -1,4 +1,4 @@
-#! /ufs/guido/bin/sgi/python
+#! /usr/bin/env python
 
 # Edit CMIF movies interactively -- copy one or more files to an output file
 

@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#! /usr/bin/env python
 
 """Support module for CGI (Common Gateway Interface) scripts.
 
@@ -216,9 +216,13 @@ Unix file mode should be 755 (use "chmod 755 filename").  Make sure
 that the first line of the script contains "#!" starting in column 1
 followed by the pathname of the Python interpreter, for instance:
 
-	#!/usr/local/bin/python
+	#! /usr/local/bin/python
 
 Make sure the Python interpreter exists and is executable by "others".
+
+(Note that it's probably not a good idea to use #! /usr/bin/env python
+here, since the Python interpreter may not be on the default path
+given to CGI scripts!!!)
 
 Make sure that any files your script needs to read or write are
 readable or writable, respectively, by "others" -- their mode should

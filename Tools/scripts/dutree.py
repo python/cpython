@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 # Format du output in a tree shape
 
 import os, string, sys
