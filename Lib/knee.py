@@ -63,13 +63,22 @@ def load_tail(q, tail):
 	    raise ImportError, "No module named " + mname
     return m
 
-def ensure_fromlist(m, fromlist):
+def ensure_fromlist(m, fromlist, recursive=0):
     for sub in fromlist:
+	if sub == "*":
+	    if not recursive:
+		try:
+		    all = m.__all__
+		except AttributeError:
+		    pass
+		else:
+		    ensure_fromlist(m, all, 1)
+	    continue
 	if sub != "*" and not hasattr(m, sub):
 	    subname = "%s.%s" % (m.__name__, sub)
 	    submod = import_module(sub, subname, m)
-## 	    if not submod:
-## 		raise ImportError, "No module named " + subname
+	    if not submod:
+		raise ImportError, "No module named " + subname
 
 def import_module(partname, fqname, parent):
     try:
@@ -108,8 +117,3 @@ original_reload = __builtin__.reload
 # Now install our hooks
 __builtin__.__import__ = import_hook
 __builtin__.reload = reload_hook
-
-# pretend we're ni, too
-sys.modules['ni'] = sys.modules[__name__]
-def ni(): pass
-def install(): pass
