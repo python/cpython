@@ -582,6 +582,8 @@ Tools/Demos
 Build
 -----
 
+- On Unix, IDLE is now installed automatically.
+
 - The fpectl module is not built by default; it's dangerous or useless
   except in the hands of experts.
 
