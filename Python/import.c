@@ -2408,11 +2408,16 @@ imp_load_module(PyObject *self, PyObject *args)
 			      &name, &fob, &pathname,
 			      &suffix, &mode, &type))
 		return NULL;
-	if (*mode &&
-	    !(*mode == 'r' || *mode == 'U' || strchr(mode, '+'))) {
+	if (*mode) {
+		/* Mode must start with 'r' or 'U' and must not contain '+'.
+		   Implicit in this test is the assumption that the mode
+		   may contain other modifiers like 'b' or 't'. */
+
+		if (!(*mode == 'r' || *mode == 'U') || strchr(mode, '+')) {
 			PyErr_Format(PyExc_ValueError,
 				     "invalid file open mode %.200s", mode);
 			return NULL;
+		}
 	}
 	if (fob == Py_None)
 		fp = NULL;
