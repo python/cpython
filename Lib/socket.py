@@ -181,7 +181,7 @@ class _fileobject:
 
     def flush(self):
         if self._wbuf:
-            self._sock.send(self._wbuf)
+            self._sock.sendall(self._wbuf)
             self._wbuf = ""
 
     def fileno(self):
@@ -197,7 +197,7 @@ class _fileobject:
                 self.flush()
 
     def writelines(self, list):
-        filter(self._sock.send, list)
+        filter(self._sock.sendall, list)
         self.flush()
 
     def read(self, n=-1):
