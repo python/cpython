@@ -29,10 +29,14 @@ are recognized and imported modules are scanned as well, this
 shouldn't happen often.
 
 BUGS
-Continuation lines are not dealt with at all and strings may confuse
-the hell out of the parser, but it usually works.
-Nested classes are not recognized.
-Nested defs may be mistaken for class methods.''' # ' <-- bow to font lock
+Continuation lines are not dealt with at all.
+While triple-quoted strings won't confuse it, lines that look like
+def, class, import or "from ... import" stmts inside backslash-continued
+single-quoted strings are treated like code.  The expense of stopping
+that isn't worth it.
+Code that doesn't pass tabnanny or python -t will confuse it, unless
+you set the module TABWIDTH vrbl (default 8) to the correct tab width
+for the file.''' # ' <-- bow to font lock
 
 import os
 import sys
@@ -40,39 +44,35 @@ import imp
 import re
 import string
 
+TABWIDTH = 8
+
 _getnext = re.compile(r"""
-## String slows it down by more than a factor of 2 (not because the
-## string regexp is slow, but because there are often a lot of strings,
-## which means the regexp has to get called that many more times).
-##    (?P<String>
-##	" [^"\\\n]* (?: \\. [^"\\\n]* )* "
-##
-##    |   ' [^'\\\n]* (?: \\. [^'\\\n]* )* '
-##
-##    |  \""" [^"\\]* (?:
-##			(?: \\. | "(?!"") )
-##			[^"\\]*
-##		    )*
-##       \"""
-##
-##    |   ''' [^'\\]* (?:
-##			(?: \\. | '(?!'') )
-##			[^'\\]*
-##		    )*
-##	'''
-##    )
-##
-##|   (?P<Method>
-    (?P<Method>
-	# dicey trick:  assume a def not at top level is a method
-	^ [ \t]+ def [ \t]+
+    (?P<String>
+       \""" [^"\\]* (?:
+			(?: \\. | "(?!"") )
+			[^"\\]*
+		    )*
+       \"""
+
+    |   ''' [^'\\]* (?:
+			(?: \\. | '(?!'') )
+			[^'\\]*
+		    )*
+	'''
+    )
+
+|   (?P<Method>
+	^
+	(?P<MethodIndent> [ \t]* )
+	def [ \t]+
 	(?P<MethodName> [a-zA-Z_] \w* )
 	[ \t]* \(
     )
 
 |   (?P<Class>
-	# lightly questionable:  assume only top-level classes count
-	^ class [ \t]+
+	^
+	(?P<ClassIndent> [ \t]* )
+	class [ \t]+
 	(?P<ClassName> [a-zA-Z_] \w* )
 	[ \t]*
 	(?P<ClassSupers> \( [^)\n]* \) )?
@@ -95,11 +95,6 @@ _getnext = re.compile(r"""
 	[ \t]+
 	import [ \t]+
 	(?P<ImportFromList> [^#;\n]+ )
-    )
-
-|   (?P<AtTopLevel>
-	# cheap trick: anything other than ws in first column
-	^ \S
     )
 """, re.VERBOSE | re.DOTALL | re.MULTILINE).search
 
@@ -169,10 +164,10 @@ def readmodule(module, path=[], inpackage=0):
 		_modules[module] = dict
 		return dict
 
-	cur_class = None
 	dict = {}
 	_modules[module] = dict
 	imports = []
+	classstack = []	# stack of (class, indent) pairs
 	src = f.read()
 	f.close()
 
@@ -191,26 +186,33 @@ def readmodule(module, path=[], inpackage=0):
 			break
 		start, i = m.span()
 
-		if m.start("AtTopLevel") >= 0:
-			# end of class definition
-			cur_class = None
-
-##		elif m.start("String") >= 0:
-##			pass
-
-		elif m.start("Method") >= 0:
-			# found a method definition
-			if cur_class:
+		if m.start("Method") >= 0:
+			# found a method definition or function
+			thisindent = _indent(m.group("MethodIndent"))
+			# close all classes indented at least as much
+			while classstack and \
+			      classstack[-1][1] >= thisindent:
+				del classstack[-1]
+			if classstack:
 				# and we know the class it belongs to
 				meth_name = m.group("MethodName")
 				lineno = lineno + \
 					 countnl(src, '\n',
 						 last_lineno_pos, start)
 				last_lineno_pos = start
+				cur_class = classstack[-1][0]
 				cur_class._addmethod(meth_name, lineno)
+
+		elif m.start("String") >= 0:
+			pass
 
 		elif m.start("Class") >= 0:
 			# we found a class definition
+			thisindent = _indent(m.group("ClassIndent"))
+			# close all classes indented at least as much
+			while classstack and \
+			      classstack[-1][1] >= thisindent:
+				del classstack[-1]
 			lineno = lineno + \
 				 countnl(src, '\n', last_lineno_pos, start)
 			last_lineno_pos = start
@@ -245,6 +247,7 @@ def readmodule(module, path=[], inpackage=0):
 			cur_class = Class(module, class_name, inherit,
 					  file, lineno)
 			dict[class_name] = cur_class
+			classstack.append((cur_class, thisindent))
 
 		elif m.start("Import") >= 0:
 			# import module
@@ -287,3 +290,6 @@ def readmodule(module, path=[], inpackage=0):
 			assert 0, "regexp _getnext found something unexpected"
 
 	return dict
+
+def _indent(ws, _expandtabs=string.expandtabs):
+	return len(_expandtabs(ws, TABWIDTH))
