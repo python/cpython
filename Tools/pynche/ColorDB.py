@@ -16,6 +16,9 @@ Supporte file types are:
 import sys
 import re
 
+class BadColor(Exception):
+    pass
+
 
 # generic class
 class ColorDB:
@@ -66,11 +69,16 @@ class ColorDB:
 
     def find(self, red, green, blue):
 	rrggbb = (red << 16) + (blue << 8) + green
-	return self.__byrrggbb.get(rrggbb, (None, []))
+	try:
+	    return self.__byrrggbb[rrggbb]
+	except KeyError:
+	    raise BadColor(red, green, blue)
 
     def find_byname(self, name):
-	# TBD: is the unfound value right?
-	return self.__byname.get(name, (0, 0, 0, 0))
+	try:
+	    return self.__byname[name]
+	except KeyError:
+	    raise BadColor(name)
 
     def nearest(self, red, green, blue):
 	# TBD: use Voronoi diagrams, Delaunay triangulation, or octree for
@@ -126,6 +134,37 @@ def get_colordb(file, filetype=X_RGB_TXT):
 	    fp.close()
     return colordb
 
+
+
+def rrggbb_to_triplet(color):
+    """Converts a #rrggbb color to the tuple (red, green, blue)."""
+    if color[0] <> '#':
+	raise BadColor(color)
+
+    zero = ord('0')
+    a = ord('a')
+    A = ord('A')
+    def _hexchar(c, zero=zero, a=a, A=A):
+	v = ord(c)
+	if v >= zero and v <= zero+9:
+	    return v - zero
+	elif v >= a and v <= a+26:
+	    return v - a + 10
+	elif v >= A and v <= A+26:
+	    return v - A + 10
+	else:
+	    raise BadColor
+
+    try:
+	digits = map(_hexchar, color[1:])
+    except BadColor:
+	raise BadColor(color)
+    red = digits[0] * 16 + digits[1]
+    green = digits[2] * 16 + digits[3]
+    blue = digits[4] * 16 + digits[5]
+    return (red, green, blue)
+
+
 
 if __name__ == '__main__':
     import string
@@ -150,3 +189,4 @@ if __name__ == '__main__':
     nearest = apply(colordb.nearest, target)
     t1 = time.time()
     print 'found nearest color', nearest, 'in', t1-t0, 'seconds'
+
