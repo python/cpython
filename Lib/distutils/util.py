@@ -18,7 +18,7 @@ from distutils.errors import *
 # I don't use os.makedirs because a) it's new to Python 1.5.2, and
 # b) it blows up if the directory already exists (I want to silently
 # succeed in that case).
-def mkpath (name, mode=0777, verbose=0):
+def mkpath (name, mode=0777, verbose=0, dry_run=0):
     """Create a directory and any missing ancestor directories.  If the
        directory already exists, return silently.  Raise
        DistutilsFileError if unable to create some directory along the
@@ -44,16 +44,20 @@ def mkpath (name, mode=0777, verbose=0):
 
     #print "stack of tails:", tails
 
-    # now 'head' contains the highest directory that already exists
+    # now 'head' contains the deepest directory that already exists
+    # (that is, the child of 'head' in 'name' is the highest directory
+    # that does *not* exist)
     for d in tails:
         #print "head = %s, d = %s: " % (head, d),
         head = os.path.join (head, d)
         if verbose:
             print "creating", head
-        try:
-            os.mkdir (head)
-        except os.error, (errno, errstr):
-            raise DistutilsFileError, "%s: %s" % (head, errstr)
+
+        if not dry_run:
+            try:
+                os.mkdir (head)
+            except os.error, (errno, errstr):
+                raise DistutilsFileError, "%s: %s" % (head, errstr)
 
 # mkpath ()
 
@@ -147,7 +151,8 @@ def copy_file (src, dst,
                preserve_mode=1,
                preserve_times=1,
                update=0,
-               verbose=0):
+               verbose=0,
+               dry_run=0):
 
     """Copy a file 'src' to 'dst'.  If 'dst' is a directory, then 'src'
        is copied there with the same name; otherwise, it must be a
@@ -163,7 +168,6 @@ def copy_file (src, dst,
 
     # XXX doesn't copy Mac-specific metadata
        
-    from shutil import copyfile
     from stat import *
 
     if not os.path.isfile (src):
@@ -177,12 +181,16 @@ def copy_file (src, dst,
         dir = os.path.dirname (dst)
 
     if update and not newer (src, dst):
+        print "not copying %s (output up-to-date)" % src
         return
 
     if verbose:
         print "copying %s -> %s" % (src, dir)
 
-    copyfile (src, dst)
+    if dry_run:
+        return
+
+    _copy_file_contents (src, dst)
     if preserve_mode or preserve_times:
         st = os.stat (src)
         if preserve_mode:
@@ -198,7 +206,9 @@ def copy_tree (src, dst,
                preserve_times=1,
                preserve_symlinks=0,
                update=0,
-               verbose=0):               
+               verbose=0,
+               dry_run=0):
+
 
     """Copy an entire directory tree 'src' to a new location 'dst'.  Both
        'src' and 'dst' must be directory names.  If 'src' is not a
@@ -223,8 +233,8 @@ def copy_tree (src, dst,
         raise DistutilsFileError, \
               "error listing files in %s: %s" % (src, errstr)
 
-        
-    mkpath (dst, verbose=verbose)
+    if not dry_run:
+        mkpath (dst, verbose=verbose)
 
     for n in names:
         src_name = os.path.join (src, n)
@@ -232,14 +242,17 @@ def copy_tree (src, dst,
 
         if preserve_symlinks and os.path.islink (src_name):
             link_dest = os.readlink (src_name)
-            os.symlink (link_dest, dst_name)
+            if verbose:
+                print "linking %s -> %s" % (dst_name, link_dest)
+            if not dry_run:
+                os.symlink (link_dest, dst_name)
         elif os.path.isdir (src_name):
             copy_tree (src_name, dst_name,
                        preserve_mode, preserve_times, preserve_symlinks,
-                       update, verbose)
+                       update, verbose, dry_run)
         else:
             copy_file (src_name, dst_name,
                        preserve_mode, preserve_times,
-                       update, verbose)
+                       update, verbose, dry_run)
 
 # copy_tree ()
