@@ -5399,7 +5399,7 @@ super_getattro(PyObject *self, PyObject *name)
 			else
 				continue;
 			res = PyDict_GetItem(dict, name);
-			if (res != NULL && !PyDescr_IsData(res)) {
+			if (res != NULL) {
 				Py_INCREF(res);
 				f = res->ob_type->tp_descr_get;
 				if (f != NULL) {
