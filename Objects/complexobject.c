@@ -55,7 +55,7 @@ extern double pow PROTO((double, double));
 
 /* elementary operations on complex numbers */
 
-int c_error;
+static int c_error;
 static complex c_1 = {1., 0.};
 
 complex c_sum(a,b)
@@ -136,7 +136,7 @@ complex c_pow(a,b)
 	return r;
 }
 
-complex c_powu(x, n)
+static complex c_powu(x, n)
 	complex x;
 	long n;
 {
@@ -152,7 +152,7 @@ complex c_powu(x, n)
 	return r;
 }
 
-complex c_powi(x, n)
+static complex c_powi(x, n)
 	complex x;
 	long n;
 {
@@ -228,7 +228,7 @@ complex_dealloc(op)
 }
 
 
-void
+static void
 complex_buf_repr(buf, v)
 	char *buf;
 	complexobject *v;

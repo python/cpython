@@ -316,7 +316,7 @@ float_divmod(v, w)
 	return mkvalue("(dd)", div, mod);
 }
 
-double powu(x, n)
+static double powu(x, n)
 	double x;
 	long n;
 {
@@ -332,7 +332,7 @@ double powu(x, n)
 	return r;
 }
 
-double powi(x, n)
+static double powi(x, n)
 	double x;
 	long n;
 {
