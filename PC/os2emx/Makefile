@@ -45,7 +45,7 @@ GMPZ=		no
 #       - is linked statically
 #       I have had no success trying to use a DLL version, even with
 #       the multithreading switch.
-GREADLINE=	no
+GREADLINE=	yes
 # Do you have the BSD DB library (v1.85) as included in the EMXBSD package?
 # NOTE: this library needs to be recompiled with a structure member
 #       renamed to avoid problems with the multithreaded errno support
@@ -54,10 +54,10 @@ GREADLINE=	no
 BSDDB=		no
 # Do you have the ncurses library installed? EMX's BSD curses aren't enough! 
 CURSES=		no
-# Do you have the expat XML parsing library installed?
-EXPAT=		no
 # Do you have the GDBM library installed?
 GDBM=		no
+# Do you have the BZ2 compression library installed?
+BZ2=		no
 
 # === The Tools ===
 CC=		gcc
@@ -239,6 +239,7 @@ DESCRIPTION.readline$(MODULE.EXT)=	Python Extension DLL for access to GNU ReadLi
 DESCRIPTION.bsddb185$(MODULE.EXT)=	Python Extension DLL for access to BSD DB (v1.85) library
 DESCRIPTION._curses$(MODULE.EXT)=	Python Extension DLL for access to ncurses library
 DESCRIPTION.pyexpat$(MODULE.EXT)=	Python Extension DLL for access to expat library
+DESCRIPTION.bz2$(MODULE.EXT)=		Python Extension DLL for accessing the bz2 compression library
 
 # Source files
 SRC.OS2EMX=	config.c dlfcn.c getpathp.c
@@ -364,6 +365,7 @@ SRC.PMEXE=	pythonpm.c
 EASYEXTMODULES=	array \
 		cmath \
 		_codecs \
+		datetime \
 		dl \
 		errno \
 		fcntl \
@@ -373,6 +375,7 @@ EASYEXTMODULES=	array \
 		math \
 		parser \
 		pwd \
+		_random \
 		rgbimg \
 		rotor \
 		select \
@@ -396,12 +399,14 @@ HARDEXTMODULES=	binascii \
 		regex \
 		_socket \
 		_sre \
+		_symtabl \
 		termios \
 		_testcap \
 		unicoded \
 		_weakref \
 		xreadlin \
-		xxsubtyp
+		xxsubtyp \
+		zipimpor
 
 # Python external ($(MODULE.EXT)) modules - can be EASY or HARD
 ifeq ($(ZLIB),yes)
@@ -427,13 +432,24 @@ endif
 ifeq ($(CURSES),yes)
   HARDEXTMODULES+=	_curses _curses_
 endif
-ifeq ($(EXPAT),yes)
-  HARDEXTMODULES+=	pyexpat
-endif
 ifeq ($(GDBM),yes)
   HARDEXTMODULES+=	gdbm dbm
 endif
+ifeq ($(BZ2),yes)
+  HARDEXTMODULES+=	bz2
+endif
 
+# Expat is now distributed with the Python source
+HARDEXTMODULES+=	pyexpat
+EXPAT.INC=	-I../../Modules/expat
+EXPAT.DEF=	-DHAVE_EXPAT_H -DXML_NS=1 -DXML_DTD=1 -DXML_BYTE_ORDER=12 \
+		-DXML_CONTENT_BYTES=1024
+EXPAT.SRC=	$(addprefix ../../Modules/expat/, \
+		xmlparse.c \
+		xmlrole.c \
+		xmltok.c)
+
+# all the external modules
 EXTERNDLLS=	$(addsuffix $(MODULE.EXT),$(patsubst %module,%,$(EASYEXTMODULES)))
 EXTERNDLLS+=	$(addsuffix $(MODULE.EXT),$(patsubst %module,%,$(HARDEXTMODULES)))
 
@@ -574,6 +590,13 @@ xxsubtype$(MODULE.EXT): $(OUT)xxsubtype$O $(OUT)xxsubtype_m.def $(PYTHON.IMPLIB)
 xxsubtyp$(MODULE.EXT): xxsubtype$(MODULE.EXT)
 	cp $^ $@
 
+# zipimport needs to be renamed to be useful
+zipimport$(MODULE.EXT): $(OUT)zipimport$O $(OUT)zipimport_m.def $(PYTHON.IMPLIB)
+	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
+
+zipimpor$(MODULE.EXT): zipimport$(MODULE.EXT)
+	cp $^ $@
+
 # - optional modules (requiring other software to be installed)
 bsddb185$(MODULE.EXT): $(OUT)bsddbmodule$O $(OUT)bsddb185_m.def $(PYTHON.IMPLIB)
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) -ldb $(LIBS)
@@ -631,8 +654,18 @@ gdbm$(MODULE.EXT): $(OUT)gdbmmodule$O $(OUT)gdbm_m.def $(PYTHON.IMPLIB)
 mpz$(MODULE.EXT): $(OUT)mpzmodule$O $(OUT)mpz_m.def $(PYTHON.IMPLIB)
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS) -lgmp
 
-pyexpat$(MODULE.EXT): $(OUT)pyexpat$O $(OUT)pyexpat_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS) -lexpat
+# Expat is now distributed with Python, so use the included version
+$(OUT)pyexpat$O:	../../Modules/pyexpat.c
+	$(CC) $(CFLAGS) $(EXPAT.INC) -c -o $@ $^
+$(OUT)xmlparse$O:	../../Modules/expat/xmlparse.c
+	$(CC) $(CFLAGS) $(EXPAT.INC) $(EXPAT.DEF) -c -o $@ $^
+$(OUT)xmlrole$O:	../../Modules/expat/xmlrole.c
+	$(CC) $(CFLAGS) $(EXPAT.INC) $(EXPAT.DEF) -c -o $@ $^
+$(OUT)xmltok$O:	../../Modules/expat/xmltok.c
+	$(CC) $(CFLAGS) $(EXPAT.INC) $(EXPAT.DEF) -c -o $@ $^
+pyexpat$(MODULE.EXT): $(OUT)pyexpat$O $(OUT)xmlparse$O $(OUT)xmlrole$O \
+		$(OUT)xmltok$O $(OUT)pyexpat_m.def $(PYTHON.IMPLIB)
+	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
 
 readline$(MODULE.EXT): $(OUT)readline$O $(OUT)readline_m.def $(PYTHON.IMPLIB)
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS) -lreadline -lncurses
@@ -645,8 +678,13 @@ _tkinter$(MODULE.EXT): $(OUT)_tkinter$O $(OUT)tclNotify$O \
 zlib$(MODULE.EXT): $(OUT)zlibmodule$O $(OUT)zlib_m.def $(PYTHON.IMPLIB)
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS) -lz
 
+bz2$(MODULE.EXT): $(OUT)bz2module$O $(OUT)bz2_m.def $(PYTHON.IMPLIB)
+	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS) -lbz2
+
 # the test target
 test:
+	-find ../../Lib -name "*.py[co]" -exec rm {} ";"
+	-./python -E -tt ../../lib/test/regrtest.py -l -u "network"
 	./python -E -tt ../../lib/test/regrtest.py -l -u "network"
 
 -include $(OUTBASE)python.dep
