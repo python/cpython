@@ -52,7 +52,7 @@ error = db.DBError  # So bsddb.error will mean something...
 
 #----------------------------------------------------------------------
 
-import sys
+import sys, os
 
 # for backwards compatibility with python versions older than 2.3, the
 # iterator interface is dynamically defined and added using a mixin
@@ -181,7 +181,7 @@ class _DBWithCursor(_iter_mixin):
 def hashopen(file, flag='c', mode=0666, pgsize=None, ffactor=None, nelem=None,
             cachesize=None, lorder=None, hflags=0):
 
-    flags = _checkflag(flag)
+    flags = _checkflag(flag, file)
     d = db.DB()
     d.set_flags(hflags)
     if cachesize is not None: d.set_cachesize(0, cachesize)
@@ -198,7 +198,7 @@ def btopen(file, flag='c', mode=0666,
             btflags=0, cachesize=None, maxkeypage=None, minkeypage=None,
             pgsize=None, lorder=None):
 
-    flags = _checkflag(flag)
+    flags = _checkflag(flag, file)
     d = db.DB()
     if cachesize is not None: d.set_cachesize(0, cachesize)
     if pgsize is not None: d.set_pagesize(pgsize)
@@ -216,7 +216,7 @@ def rnopen(file, flag='c', mode=0666,
             rnflags=0, cachesize=None, pgsize=None, lorder=None,
             rlen=None, delim=None, source=None, pad=None):
 
-    flags = _checkflag(flag)
+    flags = _checkflag(flag, file)
     d = db.DB()
     if cachesize is not None: d.set_cachesize(0, cachesize)
     if pgsize is not None: d.set_pagesize(pgsize)
@@ -232,7 +232,7 @@ def rnopen(file, flag='c', mode=0666,
 #----------------------------------------------------------------------
 
 
-def _checkflag(flag):
+def _checkflag(flag, file):
     if flag == 'r':
         flags = db.DB_RDONLY
     elif flag == 'rw':
@@ -242,7 +242,12 @@ def _checkflag(flag):
     elif flag == 'c':
         flags =  db.DB_CREATE
     elif flag == 'n':
-        flags = db.DB_CREATE | db.DB_TRUNCATE
+        flags = db.DB_CREATE
+        #flags = db.DB_CREATE | db.DB_TRUNCATE
+        # we used db.DB_TRUNCATE flag for this before but BerkeleyDB
+        # 4.2.52 changed to disallowed truncate with txn environments.
+        if os.path.isfile(file):
+            os.unlink(file)
     else:
         raise error, "flags should be one of 'r', 'w', 'c' or 'n'"
     return flags | db.DB_THREAD
