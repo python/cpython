@@ -1775,7 +1775,13 @@ posix_listdir(PyObject *self, PyObject *args)
 	PyObject *d, *v;
 	DIR *dirp;
 	struct dirent *ep;
-	if (!PyArg_ParseTuple(args, "s:listdir", &name))
+	int arg_is_unicode = 1;
+
+	if (!PyArg_ParseTuple(args, "U:listdir", &v)) {
+		arg_is_unicode = 0;
+		PyErr_Clear();
+	}
+	if (!PyArg_ParseTuple(args, "et:listdir", Py_FileSystemDefaultEncoding, &name))
 		return NULL;
 	if ((dirp = opendir(name)) == NULL) {
 		return posix_error_with_filename(name);
@@ -1796,7 +1802,7 @@ posix_listdir(PyObject *self, PyObject *args)
 			break;
 		}
 #ifdef Py_USING_UNICODE
-		if (Py_FileSystemDefaultEncoding != NULL) {
+		if (arg_is_unicode) {
 			PyObject *w;
 
 			w = PyUnicode_FromEncodedObject(v,
@@ -1809,14 +1815,6 @@ posix_listdir(PyObject *self, PyObject *args)
 				d = NULL;
 				break;
 			}
-			/* attempt to convert to ASCII */
-			w = PyUnicode_AsASCIIString(v);
-			if (w != NULL) {
-				Py_DECREF(v);
-				v = w;
-			}
-			else
-				PyErr_Clear();
 		}
 #endif
 		if (PyList_Append(d, v) != 0) {
