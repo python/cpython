@@ -367,12 +367,33 @@ class BuiltinTest(unittest.TestCase):
                 raise ValueError
         self.assertRaises(ValueError, filter, lambda x: x >="3", badstr("1234"))
 
+        class badstr2(str):
+            def __getitem__(self, index):
+                return 42
+        self.assertRaises(TypeError, filter, lambda x: x >=42, badstr2("1234"))
+
+        class weirdstr(str):
+            def __getitem__(self, index):
+                return weirdstr(2*str.__getitem__(self, index))
+        self.assertEqual(filter(lambda x: x>="33", weirdstr("1234")), "3344")
+
         if have_unicode:
             # test bltinmodule.c::filterunicode()
             self.assertEqual(filter(None, unicode("12")), unicode("12"))
             self.assertEqual(filter(lambda x: x>="3", unicode("1234")), unicode("34"))
             self.assertRaises(TypeError, filter, 42, unicode("12"))
             self.assertRaises(ValueError, filter, lambda x: x >="3", badstr(unicode("1234")))
+
+            class badunicode(unicode):
+                def __getitem__(self, index):
+                    return 42
+            self.assertRaises(TypeError, filter, lambda x: x >=42, badunicode("1234"))
+
+            class weirdunicode(unicode):
+                def __getitem__(self, index):
+                    return weirdunicode(2*unicode.__getitem__(self, index))
+            self.assertEqual(
+                filter(lambda x: x>=unicode("33"), weirdunicode("1234")), unicode("3344"))
 
     def test_float(self):
         self.assertEqual(float(3.14), 3.14)
