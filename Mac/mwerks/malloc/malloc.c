@@ -61,6 +61,13 @@ static char *rcsid = "$Id$";
 #define VCHECK
 #endif /* USE_MALLOC_DEBUG */
 
+/* 
+ * Set the next define if you want to return memory that is aligned to 32-byte
+ * boundaries. This allows 604 (and, to a lesser extent, any PPC) programs to
+ * make better use of the L1 cache.
+ */
+/* #define USE_CACHE_ALIGNED 8	/* The alignment (in 4-byte words) */
+
 typedef unsigned char u_char;
 typedef unsigned long u_long;
 typedef unsigned int u_int;
