@@ -17,8 +17,8 @@
 
 import sys
 import os
-import formatter
-import htmllib
+from formatter import NullWriter, AbstractFormatter
+from htmllib import HTMLParser
 import string
 import getopt
 
@@ -196,63 +196,87 @@ supported_libraries = {
     ]
 }
 
-class AlmostNullWriter(formatter.NullWriter):
-    savedliteral = ''
+# AlmostNullWriter doesn't print anything; it just arranges to save the
+# text sent to send_flowing_data().  This is used to capture the text
+# between an anchor begin/end pair, e.g. for TOC entries.
+
+class AlmostNullWriter(NullWriter):
+
+    def __init__(self):
+        NullWriter.__init__(self)
+        self.saved_clear()
 
     def send_flowing_data(self, data):
-        # need the text tag for later
-        datastriped = string.strip(data)
-        if self.savedliteral == '':
-            self.savedliteral = datastriped
-        else:
-            self.savedliteral = string.strip(self.savedliteral +
-                                            ' ' + datastriped)
+        stripped = data.strip()
+        if stripped:    # don't bother to save runs of whitespace
+            self.saved.append(stripped)
 
+    # Forget all saved text.
+    def saved_clear(self):
+        self.saved = []
 
-class HelpHtmlParser(htmllib.HTMLParser):
-    indent = 0  # number of tabs for pritty printing of files
-    ft = None   # output file
-    path = None # relative path
-    proc = 0    # if true I process, if false I skip
-                #   (some headers, footers, etc.)
+    # Return all saved text as a string.
+    def saved_get(self):
+        return ' '.join(self.saved)
+
+class HelpHtmlParser(HTMLParser):
+
+    def __init__(self, formatter, path, output):
+        HTMLParser.__init__(self, formatter)
+        self.path = path    # relative path
+        self.ft = output    # output file
+        self.indent = 0     # number of tabs for pretty printing of files
+        self.proc = False   # True when actively processing, else False
+                            # (headers, footers, etc)
 
     def begin_group(self):
-        if not self.proc:
-            # first level, start processing
-            self.proc = 1
-        self.indent = self.indent + 1
+        self.indent += 1
+        self.proc = True
 
-    def finnish_group(self):
-        self.indent = self.indent - 1
-        if self.proc and self.indent == 0:
-            # if processing and back to root, then stop
-            self.proc = 0
+    def finish_group(self):
+        self.indent -= 1
+        # stop processing when back to top level
+        self.proc = self.indent > 0
 
     def anchor_bgn(self, href, name, type):
         if self.proc:
-            self.formatter.writer.savedliteral = ''
-            self.ft.write('<OBJECT type="text/sitemap">\n')
-            self.ft.write('\t' * self.indent + \
-                '\t<param name="Local" value="' + self.path + \
-                '/' + href + '">\n')
+            self.saved_clear()
+            self.write('<OBJECT type="text/sitemap">\n')
+            self.tab('\t<param name="Local" value="%s/%s">\n' %
+                     (self.path, href))
 
     def anchor_end(self):
         if self.proc:
-            self.ft.write('\t' * self.indent + \
-                '\t<param name="Name" value="' + \
-                self.formatter.writer.savedliteral + '">\n')
-            self.ft.write('\t' * self.indent + '\t</OBJECT>\n')
+            self.tab('\t<param name="Name" value="%s">\n' % self.saved_get())
+            self.tab('\t</OBJECT>\n')
 
     def start_dl(self, atr_val):
         self.begin_group()
 
     def end_dl(self):
-        self.finnish_group()
+        self.finish_group()
 
     def do_dt(self, atr_val):
-        # no trailing newline on pourpose!
-        self.ft.write("\t" * self.indent + "<LI>")
+        # no trailing newline on purpose!
+        self.tab("<LI>")
 
+    # Write text to output file.
+    def write(self, text):
+        self.ft.write(text)
+
+    # Write text to output file after indenting by self.indent tabs.
+    def tab(self, text=''):
+        self.write('\t' * self.indent)
+        if text:
+            self.write(text)
+
+    # Forget all saved text.
+    def saved_clear(self):
+        self.formatter.writer.saved_clear()
+
+    # Return all saved text as a string.
+    def saved_get(self):
+        return self.formatter.writer.saved_get()
 
 class IdxHlpHtmlParser(HelpHtmlParser):
     # nothing special here, seems enough with parent class
@@ -262,46 +286,39 @@ class TocHlpHtmlParser(HelpHtmlParser):
 
     def start_dl(self, atr_val):
         self.begin_group()
-        self.ft.write('\t' * self.indent + '<UL>\n')
+        self.tab('<UL>\n')
 
     def end_dl(self):
-        self.finnish_group()
-        self.ft.write('</UL>\n')
+        self.finish_group()
+        self.tab('</UL>\n')
 
     def start_ul(self, atr_val):
         self.begin_group()
-        self.ft.write('\t' * self.indent + '<UL>\n')
+        self.tab('<UL>\n')
 
     def end_ul(self):
-        self.finnish_group()
-        self.ft.write('</UL>\n')
+        self.finish_group()
+        self.tab('</UL>\n')
 
     def do_li(self, atr_val):
-        # no trailing newline on pourpose!
-        self.ft.write("\t" * self.indent + "<LI>")
-
+        # no trailing newline on purpose!
+        self.tab("<LI>")
 
 def index(path, indexpage, output):
-    f = formatter.AbstractFormatter(AlmostNullWriter())
-    parser = IdxHlpHtmlParser(f)
-    parser.path = path
-    parser.ft = output
+    parser = IdxHlpHtmlParser(AbstractFormatter(AlmostNullWriter()),
+                              path, output)
     f = open(path + '/' + indexpage)
     parser.feed(f.read())
     parser.close()
     f.close()
 
-
 def content(path, contentpage, output):
-    f = formatter.AbstractFormatter(AlmostNullWriter())
-    parser = TocHlpHtmlParser(f)
-    parser.path = path
-    parser.ft = output
+    parser = TocHlpHtmlParser(AbstractFormatter(AlmostNullWriter()),
+                              path, output)
     f = open(path + '/' + contentpage)
     parser.feed(f.read())
     parser.close()
     f.close()
-
 
 def do_index(library, output):
     output.write('<UL>\n')
@@ -310,7 +327,6 @@ def do_index(library, output):
         if book.indexpage:
             index(book.directory, book.indexpage, output)
     output.write('</UL>\n')
-
 
 def do_content(library, version, output):
     output.write(contents_header % version)
@@ -334,7 +350,6 @@ def do_project(library, output, arch, version):
             if page.endswith('.html') or page.endswith('.css'):
                 output.write(path % page)
 
-
 def openfile(file):
     try:
         p = open(file, "w")
@@ -346,8 +361,6 @@ def openfile(file):
 def usage():
         print usage_mode
         sys.exit(0)
-
-
 
 def do_it(args = None):
     if not args:
