@@ -29,7 +29,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef MPW /* MPW pushes 'extended' for float and double types with varargs */
 typedef extended va_double;
-#else 
+#else
 typedef double va_double;
 #endif
 
@@ -42,7 +42,7 @@ object *
 initmodule2(name, methods, passthrough)
 	char *name;
 	struct methodlist *methods;
-	object *passthrough; 
+	object *passthrough;
 {
 	object *m, *d, *v;
 	struct methodlist *ml;
@@ -58,7 +58,7 @@ initmodule2(name, methods, passthrough)
 			fatal("out of mem for method name");
 		sprintf(namebuf, "%s.%s", name, ml->ml_name);
 		v = newmethodobject(namebuf, ml->ml_meth,
-					(object *)passthrough, ml->ml_varargs);
+				    (object *)passthrough, ml->ml_varargs);
 		/* XXX The malloc'ed memory in namebuf is never freed */
 		if (v == NULL || dictinsert(d, ml->ml_name, v) != 0) {
 			fprintf(stderr, "initializing module: %s\n", name);
@@ -90,20 +90,33 @@ static int countformat(format, endchar)
 	int count = 0;
 	int level = 0;
 	while (level > 0 || *format != endchar) {
-		if (*format == '\0') {
+		switch (*format) {
+		case '\0':
 			/* Premature end */
 			err_setstr(SystemError, "unmatched paren in format");
 			return -1;
-		}
-		else if (*format == '(') {
+		case '(':
+		case '[':
+		case '{':
 			if (level == 0)
 				count++;
 			level++;
-		}
-		else if (*format == ')')
+			break;
+		case ')':
+		case ']':
+		case '}':
 			level--;
-		else if (level == 0 && *format != '#')
-			count++;
+			break;
+		case '#':
+		case ',':
+		case ':':
+		case ' ':
+		case '\t':
+			break;
+		default:
+			if (level == 0)
+				count++;
+		}
 		format++;
 	}
 	return count;
@@ -114,7 +127,84 @@ static int countformat(format, endchar)
 /* After an original idea and first implementation by Steven Miale */
 
 static object *do_mktuple PROTO((char**, va_list *, int, int));
+static object *do_mklist PROTO((char**, va_list *, int, int));
+static object *do_mkdict PROTO((char**, va_list *, int, int));
 static object *do_mkvalue PROTO((char**, va_list *));
+
+
+static object *
+do_mkdict(p_format, p_va, endchar, n)
+	char **p_format;
+	va_list *p_va;
+	int endchar;
+	int n;
+{
+	object *d;
+	int i;
+	if (n < 0)
+		return NULL;
+	if ((d = newdictobject()) == NULL)
+		return NULL;
+	for (i = 0; i < n; i+= 2) {
+		object *k, *v;
+		k = do_mkvalue(p_format, p_va);
+		if (k == NULL) {
+			DECREF(d);
+			return NULL;
+		}
+		v = do_mkvalue(p_format, p_va);
+		if (v == NULL) {
+			DECREF(k);
+			DECREF(d);
+			return NULL;
+		}
+		if (dict2insert(d, k, v) < 0) {
+			DECREF(k);
+			DECREF(v);
+			DECREF(d);
+			return NULL;
+		}
+	}
+	if (d != NULL && **p_format != endchar) {
+		DECREF(d);
+		d = NULL;
+		err_setstr(SystemError, "Unmatched paren in format");
+	}
+	else if (endchar)
+		++*p_format;
+	return d;
+}
+
+static object *
+do_mklist(p_format, p_va, endchar, n)
+	char **p_format;
+	va_list *p_va;
+	int endchar;
+	int n;
+{
+	object *v;
+	int i;
+	if (n < 0)
+		return NULL;
+	if ((v = newlistobject(n)) == NULL)
+		return NULL;
+	for (i = 0; i < n; i++) {
+		object *w = do_mkvalue(p_format, p_va);
+		if (w == NULL) {
+			DECREF(v);
+			return NULL;
+		}
+		setlistitem(v, i, w);
+	}
+	if (v != NULL && **p_format != endchar) {
+		DECREF(v);
+		v = NULL;
+		err_setstr(SystemError, "Unmatched paren in format");
+	}
+	else if (endchar)
+		++*p_format;
+	return v;
+}
 
 static object *
 do_mktuple(p_format, p_va, endchar, n)
@@ -152,34 +242,41 @@ do_mkvalue(p_format, p_va)
 	char **p_format;
 	va_list *p_va;
 {
-	
-	switch (*(*p_format)++) {
-	
-	case '(':
-		return do_mktuple(p_format, p_va, ')',
-				  countformat(*p_format, ')'));
-		
-	case 'b':
-	case 'h':
-	case 'i':
-		return newintobject((long)va_arg(*p_va, int));
-		
-	case 'l':
-		return newintobject((long)va_arg(*p_va, long));
-		
-	case 'f':
-	case 'd':
-		return newfloatobject((double)va_arg(*p_va, va_double));
-		
-	case 'c':
+	for (;;) {
+		switch (*(*p_format)++) {
+		case '(':
+			return do_mktuple(p_format, p_va, ')',
+					  countformat(*p_format, ')'));
+
+		case '[':
+			return do_mklist(p_format, p_va, ']',
+					 countformat(*p_format, ']'));
+
+		case '{':
+			return do_mkdict(p_format, p_va, '}',
+					 countformat(*p_format, '}'));
+
+		case 'b':
+		case 'h':
+		case 'i':
+			return newintobject((long)va_arg(*p_va, int));
+
+		case 'l':
+			return newintobject((long)va_arg(*p_va, long));
+
+		case 'f':
+		case 'd':
+			return newfloatobject((double)va_arg(*p_va, double));
+
+		case 'c':
 		{
 			char p[1];
 			p[0] = va_arg(*p_va, int);
 			return newsizedstringobject(p, 1);
 		}
-	
-	case 's':
-	case 'z':
+
+		case 's':
+		case 'z':
 		{
 			object *v;
 			char *str = va_arg(*p_va, char *);
@@ -201,32 +298,43 @@ do_mkvalue(p_format, p_va)
 			}
 			return v;
 		}
-	
-	case 'S':
-	case 'O':
+
+		case 'S':
+		case 'O':
 		{
 			object *v;
 			v = va_arg(*p_va, object *);
 			if (v != NULL)
 				INCREF(v);
 			else if (!err_occurred())
-				/* If a NULL was passed because a call
-				   that should have constructed a value
-				   failed, that's OK, and we pass the error
-				   on; but if no error occurred it's not
-				   clear that the caller knew what she
-				   was doing. */
+				/* If a NULL was passed
+				 * because a call that should
+				 * have constructed a value
+				 * failed, that's OK, and we
+				 * pass the error on; but if
+				 * no error occurred it's not
+				 * clear that the caller knew
+				 * what she was doing. */
 				err_setstr(SystemError,
 					   "NULL object passed to mkvalue");
 			return v;
 		}
-	
-	default:
-		err_setstr(SystemError, "bad format char passed to mkvalue");
-		return NULL;
-	
+
+		case ':':
+		case ',':
+		case ' ':
+		case '\t':
+			break;
+
+		default:
+			err_setstr(SystemError,
+				   "bad format char passed to mkvalue");
+			return NULL;
+
+		}
 	}
 }
+
 
 #ifdef HAVE_STDARG_PROTOTYPES
 /* VARARGS 2 */
@@ -257,6 +365,14 @@ vmkvalue(format, va)
 {
 	char *f = format;
 	int n = countformat(f, '\0');
+	va_list lva;
+
+#ifdef VA_LIST_IS_ARRAY
+	memcpy(lva, va, sizeof(va_list));
+#else
+	lva = va;
+#endif
+
 	if (n < 0)
 		return NULL;
 	if (n == 0) {
@@ -264,6 +380,83 @@ vmkvalue(format, va)
 		return None;
 	}
 	if (n == 1)
-		return do_mkvalue(&f, &va);
-	return do_mktuple(&f, &va, '\0', n);
+		return do_mkvalue(&f, &lva);
+	return do_mktuple(&f, &lva, '\0', n);
+}
+
+
+#ifdef HAVE_STDARG_PROTOTYPES
+object *
+PyEval_CallFunction(object *obj, char *format, ...)
+#else
+object *
+PyEval_CallFunction(obj, format, va_alist)
+	object *obj;
+	char *format;
+	va_dcl
+#endif
+{
+	va_list vargs;
+	object *args;
+	object *res;
+
+#ifdef HAVE_STDARG_PROTOTYPES
+	va_start(vargs, format);
+#else
+	va_start(vargs);
+#endif
+
+	args = vmkvalue(format, vargs);
+	va_end(vargs);
+
+	if (args == NULL)
+		return NULL;
+
+	res = call_object(obj, args);
+	DECREF(args);
+
+	return res;
+}
+
+
+#ifdef HAVE_STDARG_PROTOTYPES
+object *
+PyEval_CallMethod(object *obj, char *method, char *format, ...)
+#else
+object *
+PyEval_CallMethod(obj, method, format, va_alist)
+	object *obj;
+	char *method;
+	char *format;
+	va_dcl
+#endif
+{
+	va_list vargs;
+	object *meth;
+	object *args;
+	object *res;
+
+	meth = getattr(obj, method);
+	if (meth == NULL)
+		return NULL;
+
+#ifdef HAVE_STDARG_PROTOTYPES
+	va_start(vargs, format);
+#else
+	va_start(vargs);
+#endif
+
+	args = vmkvalue(format, vargs);
+	va_end(vargs);
+
+	if (args == NULL) {
+		DECREF(meth);
+		return NULL;
+	}
+
+	res = call_object(meth, args);
+	DECREF(meth);
+	DECREF(args);
+
+	return res;
 }

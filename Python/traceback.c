@@ -258,7 +258,6 @@ tb_print(v, f)
 		err_badcall();
 		return -1;
 	}
-	sysset("last_traceback", v);
 	limitv = sysget("tracebacklimit");
 	if (limitv && is_intobject(limitv)) {
 		limit = getintvalue(limitv);

@@ -68,7 +68,7 @@ int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 	funcarg = (struct func_arg *) malloc(sizeof(struct func_arg));
 	funcarg->func = func;
 	funcarg->arg = arg;
-	if (thr_create(0, 0, new_func, funcarg, THR_NEW_LWP, 0)) {
+	if (thr_create(0, 0, new_func, funcarg, THR_DETACHED, 0)) {
 		perror("thr_create");
 		free((void *) funcarg);
 		success = -1;

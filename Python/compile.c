@@ -336,7 +336,7 @@ com_addbyte(c, byte)
 	if (byte < 0 || byte > 255) {
 		/*
 		fprintf(stderr, "XXX compiling bad byte: %d\n", byte);
-		abort();
+		fatal("com_addbyte: byte out of range");
 		*/
 		err_setstr(SystemError, "com_addbyte: byte out of range");
 		c->c_errors++;
@@ -2379,7 +2379,7 @@ optimize(c)
 	int oparg;
 	object *name;
 	int fast_reserved;
-	object *error_type, *error_value;
+	object *error_type, *error_value, *error_traceback;
 	
 #define NEXTOP()	(*next_instr++)
 #define NEXTARG()	(next_instr += 2, (next_instr[-1]<<8) + next_instr[-2])
@@ -2393,7 +2393,7 @@ optimize(c)
 	}
 	nlocals = 0;
 
-	err_get(&error_type, &error_value);
+	err_fetch(&error_type, &error_value, &error_traceback);
 	
 	next_instr = (unsigned char *) getstringvalue(c->c_code);
 	for (;;) {
@@ -2493,7 +2493,7 @@ optimize(c)
 	}
 
  end:
-	err_setval(error_type, error_value);
+	err_restore(error_type, error_value, error_traceback);
  err:
 	DECREF(locals);
 }

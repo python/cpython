@@ -204,7 +204,8 @@ initsys()
 	XDECREF(v);
 	dictinsert(sysdict, "modules", get_modules());
 	dictinsert(sysdict, "builtin_module_names",
-		   list_builtin_module_names());
+		   v = list_builtin_module_names());
+	XDECREF(v);
 	if (err_occurred())
 		fatal("can't insert sys.* objects in sys dict");
 }

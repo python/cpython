@@ -35,7 +35,7 @@ OBJS=		\
 		errors.o \
 		frozenmain.o \
 		getargs.o getmtime.o graminit.o \
-		import.o \
+		import.o importdl.o \
 		marshal.o modsupport.o mystrtoul.o \
 		pythonmain.o pythonrun.o \
 		sigcheck.o structmember.o sysmodule.o \
@@ -66,8 +66,8 @@ Makefile:	$(srcdir)/Makefile.in ../config.status
 		(cd ..; CONFIG_FILES=Python/Makefile CONFIG_HEADERS= \
 		$(SHELL) config.status)
 
-import.o:	import.c
-		$(CC) $(CFLAGS) -I$(DLINCLDIR) -c $(srcdir)/import.c
+importdl.o:	importdl.c
+		$(CC) $(CFLAGS) -I$(DLINCLDIR) -c $(srcdir)/importdl.c
 
 depend:
 		$(MKDEP) $(CFLAGS) `echo $(OBJS) | tr ' ' '\012' | \
@@ -88,6 +88,7 @@ getcwd.o: getcwd.c
 getmtime.o: getmtime.c
 graminit.o: graminit.c
 import.o: import.c
+importdl.o: importdl.c
 marshal.o: marshal.c
 memmove.o: memmove.c
 modsupport.o: modsupport.c

@@ -242,12 +242,10 @@ run_command(command)
 void
 print_error()
 {
-	object *exception, *v, *f;
-	err_get(&exception, &v);
-	if (exception == NULL) {
-		fprintf(stderr, "print_error called but no exception\n");
-		abort();
-	}
+	object *exception, *v, *tb, *f;
+	err_fetch(&exception, &v, &tb);
+	if (exception == NULL)
+		fatal("print_error called but no exception");
 	if (exception == SystemExit) {
 		if (v == NULL || v == None)
 			goaway(0);
@@ -262,11 +260,12 @@ print_error()
 	}
 	sysset("last_type", exception);
 	sysset("last_value", v);
+	sysset("last_traceback", tb);
 	f = sysget("stderr");
 	if (f == NULL)
 		fprintf(stderr, "lost sys.stderr\n");
 	else {
-		printtraceback(f);
+		tb_print(tb, f);
 		if (exception == SyntaxError) {
 			object *message;
 			char *filename, *text;
@@ -331,6 +330,7 @@ print_error()
 	}
 	XDECREF(exception);
 	XDECREF(v);
+	XDECREF(tb);
 }
 
 object *
@@ -421,7 +421,6 @@ compile_string(str, filename, start)
 	int start;
 {
 	node *n;
-	int err;
 	codeobject *co;
 	n = parse_string(str, start);
 	if (n == NULL)
