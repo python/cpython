@@ -31,55 +31,52 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* SGI module -- random SGI-specific things */
 
-#include "allobjects.h"
-#include "modsupport.h"
-#include "ceval.h"
+#include "Python.h"
 
-#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
 
-static object *
+static PyObject *
 sgi_nap(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	long ticks;
-	if (!getargs(args, "l", &ticks))
+	if (!PyArg_Parse(args, "l", &ticks))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	sginap(ticks);
-	END_SAVE
-	INCREF(None);
-	return None;
+	Py_END_ALLOW_THREADS
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 extern char *_getpty(int *, int, mode_t, int);
 
-static object *
+static PyObject *
 sgi__getpty(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int oflag;
 	int mode;
 	int nofork;
 	char *name;
 	int fildes;
-	if (!getargs(args, "(iii)", &oflag, &mode, &nofork))
+	if (!PyArg_Parse(args, "(iii)", &oflag, &mode, &nofork))
 		return NULL;
 	errno = 0;
 	name = _getpty(&fildes, oflag, (mode_t)mode, nofork);
 	if (name == NULL) {
-		err_errno(IOError);
+		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
 	}
-	return mkvalue("(si)", name, fildes);
+	return Py_BuildValue("(si)", name, fildes);
 }
 
-static struct methodlist sgi_methods[] = {
+static PyMethodDef sgi_methods[] = {
 	{"nap",		sgi_nap},
 	{"_getpty",	sgi__getpty},
 	{NULL,		NULL}		/* sentinel */
@@ -89,8 +86,5 @@ static struct methodlist sgi_methods[] = {
 void
 initsgi()
 {
-	initmodule("sgi", sgi_methods);
+	Py_InitModule("sgi", sgi_methods);
 }
-
-int _Py_sgi_dummy; /* $%#@!& dl wants at least a byte of bss */
-/* And gcc -Wall doesn't like unused static variables :-( */
