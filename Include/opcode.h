@@ -144,7 +144,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #define BUILD_SLICE 	133	/* Number of items */
 
 /* The next 3 opcodes must be contiguous and satisfy
-   (CALL_FUNCTION_STAR - CALL_FUNCTION) & 3 == 1  */
+   (CALL_FUNCTION_VAR - CALL_FUNCTION) & 3 == 1  */
 #define CALL_FUNCTION_VAR          140	/* #args + (#kwargs<<8) */
 #define CALL_FUNCTION_KW           141	/* #args + (#kwargs<<8) */
 #define CALL_FUNCTION_VAR_KW       142	/* #args + (#kwargs<<8) */
