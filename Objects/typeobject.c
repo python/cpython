@@ -80,7 +80,7 @@ type_dict(PyTypeObject *type, void *context)
 	return PyDictProxy_New(type->tp_dict);
 }
 
-PyGetSetDef type_getsets[] = {
+static PyGetSetDef type_getsets[] = {
 	{"__name__", (getter)type_name, NULL, NULL},
 	{"__module__", (getter)type_module, (setter)type_set_module, NULL},
 	{"__dict__",  (getter)type_dict,  NULL, NULL},
@@ -371,7 +371,7 @@ lookup_method(PyObject *self, char *attrstr, PyObject **attrobj)
    instead of PyObject_GetAttrString().  This uses the same convention
    as lookup_method to cache the interned name string object. */
 
-PyObject *
+static PyObject *
 call_method(PyObject *o, char *name, PyObject **nameobj, char *format, ...)
 {
 	va_list va;
@@ -407,7 +407,7 @@ call_method(PyObject *o, char *name, PyObject **nameobj, char *format, ...)
 
 /* Clone of call_method() that returns NotImplemented when the lookup fails. */
 
-PyObject *
+static PyObject *
 call_maybe(PyObject *o, char *name, PyObject **nameobj, char *format, ...)
 {
 	va_list va;
@@ -674,7 +674,7 @@ subtype_dict(PyObject *obj, void *context)
 	return dict;
 }
 
-PyGetSetDef subtype_getsets[] = {
+static PyGetSetDef subtype_getsets[] = {
 	{"__dict__", subtype_dict, NULL, NULL},
 	{0},
 };
