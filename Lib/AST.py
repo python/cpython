@@ -1,13 +1,13 @@
 """Object-oriented interface to the parser module.
 
-This module exports three classes which together provide an interface
+This module exports four classes which together provide an interface
 to the parser module.  Together, the three classes represent two ways
 to create parsed representations of Python source and the two starting
 data types (source text and tuple representations).  Each class
 provides interfaces which are identical other than the constructors.
 The constructors are described in detail in the documentation for each
 class and the remaining, shared portion of the interface is documented
-below.  Briefly, the three classes provided are:
+below.  Briefly, the classes provided are:
 
 AST
     Defines the primary interface to the AST objects and supports creation
@@ -22,6 +22,9 @@ SuiteAST
 FileSuiteAST
     Convenience subclass of the `SuiteAST' class; loads source text of the
     suite from an external file.
+
+Common Methods
+--------------
 
 Aside from the constructors, several methods are provided to allow
 access to the various interpretations of the parse tree and to check
@@ -68,8 +71,8 @@ class AST:
     This base class provides all of the query methods for subclass
     objects defined in this module.
     """
-    _p = __import__('parser')		# import internally to avoid
-					# namespace pollution at the
+    import parser			# import internally to avoid
+    _p = parser				# namespace pollution at the
 					# top level
     _text = None
     _code = None
@@ -84,7 +87,8 @@ class AST:
 	    The tuple tree to convert.
 
 	The tuple-tree may represent either an expression or a suite; the
-	type will be determined automatically.
+	type will be determined automatically.  Line number information may
+	optionally be present for any subset of the terminal tokens.
 	"""
 	if type(tuple) is not type(()):
 	    raise TypeError, 'Base AST class requires tuple parameter.'
@@ -93,11 +97,24 @@ class AST:
 	self._ast  = self._p.tuple2ast(tuple)
 	self._type = (self._p.isexpr(self._ast) and 'expression') or 'suite'
 
-    def tuple(self):
+    def list(self, line_info = 0):
+	"""Returns a fresh list representing the parse tree.
+
+	line_info
+	    If true, includes line number information for terminal tokens in
+	    the output data structure,
+	"""
+	return self._p.ast2list(self._ast, line_info)
+
+    def tuple(self, line_info = 0):
 	"""Returns the tuple representing the parse tree.
+
+	line_info
+	    If true, includes line number information for terminal tokens in
+	    the output data structure,
 	"""
 	if self._tupl is None:
-	    self._tupl = self._p.ast2tuple(self._ast)
+	    self._tupl = self._p.ast2tuple(self._ast, line_info)
 	return self._tupl
 
     def code(self):

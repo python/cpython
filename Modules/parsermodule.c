@@ -1,21 +1,22 @@
 /*  parsermodule.c
  *
- *  Copyright 1995 by Fred L. Drake, Jr. and Virginia Polytechnic Institute
- *  and State University, Blacksburg, Virginia, USA.  Portions copyright
- *  1991-1995 by Stichting Mathematisch Centrum, Amsterdam, The Netherlands.
- *  Copying is permitted under the terms associated with the main Python
- *  distribution, with the additional restriction that this additional notice
- *  be included and maintained on all distributed copies.
+ *  Copyright 1995-1996 by Fred L. Drake, Jr. and Virginia Polytechnic
+ *  Institute and State University, Blacksburg, Virginia, USA.
+ *  Portions copyright 1991-1995 by Stichting Mathematisch Centrum,
+ *  Amsterdam, The Netherlands.  Copying is permitted under the terms
+ *  associated with the main Python distribution, with the additional
+ *  restriction that this additional notice be included and maintained
+ *  on all distributed copies.
  *
- *  This module serves to replace the original parser module written by
- *  Guido.  The functionality is not matched precisely, but the original
- *  may be implemented on top of this.  This is desirable since the source
- *  of the text to be parsed is now divorced from this interface.
+ *  This module serves to replace the original parser module written
+ *  by Guido.  The functionality is not matched precisely, but the
+ *  original may be implemented on top of this.  This is desirable
+ *  since the source of the text to be parsed is now divorced from
+ *  this interface.
  *
- *  Unlike the prior interface, the ability to give a parse tree produced
- *  by Python code as a tuple to the compiler is enabled by this module.
- *  See the documentation for more details.
- *
+ *  Unlike the prior interface, the ability to give a parse tree
+ *  produced by Python code as a tuple to the compiler is enabled by
+ *  this module.  See the documentation for more details.
  */
 
 #include "Python.h"			/* general Python API		  */
@@ -34,15 +35,15 @@
 extern char* strdup();
 
 
-
 /*  String constants used to initialize module attributes.
  *
  */
 static char*
 parser_copyright_string
-= "Copyright 1995 by Virginia Polytechnic Institute & State University and\n"
-  "Fred L. Drake, Jr., Blacksburg, Virginia, USA.  Portions copyright\n"
-  "1991-1995 by Stichting Mathematisch Centrum, Amsterdam, The Netherlands.";
+= "Copyright 1995-1996 by Virginia Polytechnic Institute & State\n"
+  "University, Blacksburg, Virginia, USA, and Fred L. Drake, Jr., Reston,\n"
+  "Virginia, USA.  Portions copyright 1991-1995 by Stichting Mathematisch\n"
+  "Centrum, Amsterdam, The Netherlands.";
 
 
 static char*
@@ -50,8 +51,11 @@ parser_doc_string
 = "This is an interface to Python's internal parser.";
 
 static char*
-parser_version_string = "0.3";		/* changed to match python version  */
+parser_version_string = "0.4";
 
+
+typedef PyObject* (*SeqMaker) (int length);
+typedef void (*SeqInserter) (PyObject* sequence, int index, PyObject* element);
 
 /*  The function below is copyrigthed by Stichting Mathematisch Centrum.  The
  *  original copyright statement is included below, and continues to apply
@@ -86,9 +90,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 static PyObject*
-node2tuple(n)
-     node *n;
- {
+node2tuple(n, mkseq, addelem, lineno)
+     node *n;				/* node to convert		 */
+     SeqMaker mkseq;			/* create sequence		 */
+     SeqInserter addelem;		/* func. to add elem. in seq.	 */
+     int lineno;			/* include line numbers?	 */
+{
     if (n == NULL) {
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -96,7 +103,7 @@ node2tuple(n)
     if (ISNONTERMINAL(TYPE(n))) {
 	int i;
 	PyObject *v, *w;
-	v = PyTuple_New(1 + NCH(n));
+	v = mkseq(1 + NCH(n));
 	if (v == NULL)
 	    return v;
 	w = PyInt_FromLong(TYPE(n));
@@ -104,26 +111,33 @@ node2tuple(n)
 	    Py_DECREF(v);
 	    return NULL;
 	}
-	PyTuple_SetItem(v, 0, w);
+	addelem(v, 0, w);
 	for (i = 0; i < NCH(n); i++) {
-	    w = node2tuple(CHILD(n, i));
+	    w = node2tuple(CHILD(n, i), mkseq, addelem, lineno);
 	    if (w == NULL) {
 		Py_DECREF(v);
 		return NULL;
 	    }
-	    PyTuple_SetItem(v, i+1, w);
+	    addelem(v, i+1, w);
 	}
-	return v;
+	return (v);
     }
     else if (ISTERMINAL(TYPE(n))) {
-	return Py_BuildValue("(is)", TYPE(n), STR(n));
+	PyObject *result = mkseq(2 + lineno);
+	if (result != NULL) {
+	    addelem(result, 0, PyInt_FromLong(TYPE(n)));
+	    addelem(result, 1, PyString_FromString(STR(n)));
+	    if (lineno == 1)
+		addelem(result, 2, PyInt_FromLong(n->n_lineno));
+	}
+	return (result);
     }
     else {
 	PyErr_SetString(PyExc_SystemError,
 			"unrecognized parse tree node type");
 	return NULL;
     }
-}
+}   /* node2tuple() */
 /*
  *  End of material copyrighted by Stichting Mathematisch Centrum.
  */
@@ -195,7 +209,7 @@ static int
 parser_compare_nodes(left, right)
      node *left;
      node *right;
- {
+{
     int j;
 
     if (TYPE(left) < TYPE(right))
@@ -235,8 +249,7 @@ static int
 parser_compare(left, right)
      PyAST_Object *left;
      PyAST_Object *right;
- {
-
+{
     if (left == right)
 	return (0);
 
@@ -259,8 +272,7 @@ static PyObject*
 parser_newastobject(ast, type)
      node *ast;
      int type;
- {
-
+{
     PyAST_Object* o = PyObject_NEW(PyAST_Object, &PyAST_Type);
 
     if (o != 0) {
@@ -280,8 +292,7 @@ parser_newastobject(ast, type)
 static void
 parser_free(ast)
      PyAST_Object *ast;
- {
-
+{
     PyNode_Free(ast->ast_node);
     PyMem_DEL(ast);
 
@@ -298,21 +309,62 @@ static PyObject*
 parser_ast2tuple(self, args)
      PyObject *self;
      PyObject *args;
- {
+{
+    PyObject *ast;
+    PyObject *line_option = 0;
+    PyObject *res = 0;
 
-    PyObject* ast;
-    PyObject* res = 0;
-
-    if (PyArg_ParseTuple(args, "O!:ast2tuple", &PyAST_Type, &ast)) {
+    if (PyArg_ParseTuple(args, "O!|O:ast2tuple", &PyAST_Type, &ast,
+			 &line_option)) {
+	int lineno = 0;
+	if (line_option != 0) {
+	    lineno = PyObject_IsTrue(line_option);
+	    lineno = lineno ? 1 : 0;
+	}
 	/*
 	 *  Convert AST into a tuple representation.  Use Guido's function,
 	 *  since it's known to work already.
 	 */
-	res = node2tuple(((PyAST_Object*)ast)->ast_node);
+	res = node2tuple(((PyAST_Object*)ast)->ast_node,
+			 PyTuple_New, PyTuple_SetItem, lineno);
     }
     return (res);
 
 }   /* parser_ast2tuple() */
+
+
+/*  parser_ast2tuple(PyObject* self, PyObject* args)
+ *
+ *  This provides conversion from a node* to a tuple object that can be
+ *  returned to the Python-level caller.  The AST object is not modified.
+ *
+ */
+static PyObject*
+parser_ast2list(self, args)
+     PyObject *self;
+     PyObject *args;
+{
+    PyObject *ast;
+    PyObject *line_option = 0;
+    PyObject *res = 0;
+
+    if (PyArg_ParseTuple(args, "O!|O:ast2list", &PyAST_Type, &ast,
+			 &line_option)) {
+	int lineno = 0;
+	if (line_option != 0) {
+	    lineno = PyObject_IsTrue(line_option);
+	    lineno = lineno ? 1 : 0;
+	}
+	/*
+	 *  Convert AST into a tuple representation.  Use Guido's function,
+	 *  since it's known to work already.
+	 */
+	res = node2tuple(((PyAST_Object*)ast)->ast_node,
+			 PyList_New, PyList_SetItem, lineno);
+    }
+    return (res);
+
+}   /* parser_ast2list() */
 
 
 /*  parser_compileast(PyObject* self, PyObject* args)
@@ -325,8 +377,7 @@ static PyObject*
 parser_compileast(self, args)
      PyObject *self;
      PyObject *args;
- {
-
+{
     PyAST_Object* ast;
     PyObject*     res = 0;
     char*	  str = "<ast>";
@@ -350,7 +401,7 @@ static PyObject*
 parser_isexpr(self, args)
      PyObject *self;
      PyObject *args;
- {
+{
     PyAST_Object* ast;
     PyObject* res = 0;
 
@@ -370,8 +421,7 @@ static PyObject*
 parser_issuite(self, args)
      PyObject *self;
      PyObject *args;
- {
-
+{
     PyAST_Object* ast;
     PyObject* res = 0;
 
@@ -395,7 +445,7 @@ parser_issuite(self, args)
 static void
 err_string(message)
      char *message;
- {
+{
     PyErr_SetString(parser_error, message);
 
 }  /* err_string() */
@@ -411,8 +461,7 @@ static PyObject*
 parser_do_parse(args, type)
      PyObject *args;
      int type;
- {
-
+{
     char*     string = 0;
     PyObject* res    = 0;
 
@@ -443,8 +492,7 @@ static PyObject*
 parser_expr(self, args)
      PyObject *self;
      PyObject *args;
- {
-
+{
     return (parser_do_parse(args, PyAST_EXPR));
 
 }   /* parser_expr() */
@@ -454,8 +502,7 @@ static PyObject*
 parser_suite(self, args)
      PyObject *self;
      PyObject *args;
- {
-
+{
     return (parser_do_parse(args, PyAST_SUITE));
 
 }   /* parser_suite() */
@@ -501,60 +548,87 @@ static PyObject*
 parser_tuple2ast(self, args)
      PyObject *self;
      PyObject *args;
- {
+{
+    PyObject *ast = 0;
+    PyObject *tuple = 0;
+    PyObject *temp = 0;
+    int ok;
+    int start_sym;
 
-    PyObject* ast	= 0;
-    PyObject* tuple	= 0;
-
-    if ((PyObject_Length(args) == 1)
-	&& (tuple = PySequence_GetItem(args, 0))
-	&& PySequence_Check(tuple)
-	&& (PyObject_Length(tuple) >= 2)
-	&& PyInt_Check(PySequence_GetItem(tuple, 0))
-	&& PySequence_Check(PySequence_GetItem(tuple, 1))
-	&& (PyObject_Length(PySequence_GetItem(tuple, 1)) >= 2)
-	&& PyInt_Check(PySequence_GetItem(PySequence_GetItem(tuple, 1), 0))) {
-
-	/*
-	 *  This might be a valid parse tree, but let's do a quick check
-	 *  before we jump the gun.
-	 */
-
-	int start_sym = PyInt_AsLong(PySequence_GetItem(tuple, 0));
-
-	if (start_sym == eval_input) {
-	    /*
-	     *  Might be an eval form.
-	     */
-	    node* expression = build_node_tree(PySequence_GetItem(args, 0));
-
-	    if ((expression != 0) && validate_expr_tree(expression))
-		ast = parser_newastobject(expression, PyAST_EXPR);
+    if (!PyArg_ParseTuple(args, "O:tuple2ast", &tuple))
+	return (0);
+    if (!PySequence_Check(tuple)) {
+	PyErr_SetString(PyExc_ValueError,
+			"tuple2ast() requires a single sequence argument");
+	return (0);
+    }
+    /*
+     *	This mess of tests is written this way so we can use the abstract
+     *	object interface (AOI).  Unfortunately, the AOI increments reference
+     *	counts, which requires that we store a pointer to retrieved object
+     *	so we can DECREF it after the check.  But we really should accept
+     *	lists as well as tuples at the very least.
+     */
+    ok = PyObject_Length(tuple) >= 2;
+    if (ok) {
+	temp = PySequence_GetItem(tuple, 0);
+	ok = (temp != NULL) && PyInt_Check(temp);
+	if (ok)
+	    /* this is used after the initial checks: */
+	    start_sym = PyInt_AsLong(temp);
+	Py_XDECREF(temp);
+    }
+    if (ok) {
+	temp = PySequence_GetItem(tuple, 1);
+	ok = (temp != NULL) && PySequence_Check(temp);
+	Py_XDECREF(temp);
+    }
+    if (ok) {
+	temp = PySequence_GetItem(tuple, 1);
+	ok = (temp != NULL) && PyObject_Length(temp) >= 2;
+	if (ok) {
+	    PyObject *temp2 = PySequence_GetItem(temp, 0);
+	    if (temp2 != NULL) {
+		ok = PyInt_Check(temp2);
+		Py_DECREF(temp2);
+	    }
 	}
-	else if (start_sym == file_input) {
-	    /*
-	     *  This looks like an exec form so far.
-	     */
-	    node* suite_tree = build_node_tree(PySequence_GetItem(args, 0));
+	Py_XDECREF(temp);
+    }
+    /* If we've failed at some point, get out of here. */
+    if (!ok) {
+	err_string("malformed sequence for tuple2ast()");
+	return (0);
+    }
+    /*
+     *  This might be a valid parse tree, but let's do a quick check
+     *  before we jump the gun.
+     */
+    if (start_sym == eval_input) {
+	/*  Might be an eval form.  */
+	node* expression = build_node_tree(tuple);
 
-	    if ((suite_tree != 0) && validate_file_input(suite_tree))
-		ast = parser_newastobject(suite_tree, PyAST_SUITE);
-	}
-	else
-	    /*	This is a fragment, and is not yet supported.  Maybe they
-	     *	will be if I find a use for them.
-	     */
-	    err_string("Fragmentary parse trees not supported.");
+	if ((expression != 0) && validate_expr_tree(expression))
+	    ast = parser_newastobject(expression, PyAST_EXPR);
+    }
+    else if (start_sym == file_input) {
+	/*  This looks like an exec form so far.  */
+	node* suite_tree = build_node_tree(tuple);
 
-	/*  Make sure we throw an exception on all errors.  We should never
-	 *  get this, but we'd do well to be sure something is done.
-	 */
-	if ((ast == 0) && !PyErr_Occurred())
-	    err_string("Unspecified ast error occurred.");
+	if ((suite_tree != 0) && validate_file_input(suite_tree))
+	    ast = parser_newastobject(suite_tree, PyAST_SUITE);
     }
     else
-	PyErr_SetString(PyExc_TypeError,
-			"parser.tuple2ast(): expected single tuple.");
+	/*  This is a fragment, and is not yet supported.  Maybe they
+	 *  will be if I find a use for them.
+	 */
+	err_string("Fragmentary parse trees not supported.");
+
+    /*  Make sure we throw an exception on all errors.  We should never
+     *  get this, but we'd do well to be sure something is done.
+     */
+    if ((ast == 0) && !PyErr_Occurred())
+	err_string("Unspecified ast error occurred.");
 
     return (ast);
 
@@ -563,36 +637,43 @@ parser_tuple2ast(self, args)
 
 /*  int check_terminal_tuple()
  *
- *  Check a tuple to determine that it is indeed a valid terminal node.  The
- *  node is known to be required as a terminal, so we throw an exception if
- *  there is a failure.  The portion of the resulting node tree already built
- *  is passed in so we can deallocate it in the event of a failure.
+ *  Check a tuple to determine that it is indeed a valid terminal
+ *  node.  The node is known to be required as a terminal, so we throw
+ *  an exception if there is a failure.
  *
- *  The format of an acceptable terminal tuple is "(is)":  the fact that elem
- *  is a tuple and the integer is a valid terminal symbol has been established
- *  before this function is called.  We must check the length of the tuple and
- *  the type of the second element.  We do *NOT* check the actual text of the
- *  string element, which we could do in many cases.  This is done by the
- *  validate_*() functions which operate on the internal representation.
- *
+ *  The format of an acceptable terminal tuple is "(is[i])": the fact
+ *  that elem is a tuple and the integer is a valid terminal symbol
+ *  has been established before this function is called.  We must
+ *  check the length of the tuple and the type of the second element
+ *  and optional third element.  We do *NOT* check the actual text of
+ *  the string element, which we could do in many cases.  This is done
+ *  by the validate_*() functions which operate on the internal
+ *  representation.
  */
 static int
-check_terminal_tuple(elem, result)
+check_terminal_tuple(elem)
      PyObject *elem;
-     node *result;
- {
+{
+    int   len = PyObject_Length(elem);
+    int   res = 1;
+    char* str = "Illegal terminal symbol; bad node length.";
 
-    int   res = 0;
-    char* str = 0;
-
-    if (PyObject_Length(elem) != 2)
-	str = "Illegal terminal symbol; node too long.";
-    else if (!PyString_Check(PySequence_GetItem(elem, 1)))
+    if ((len == 2) || (len == 3)) {
+	PyObject *temp = PySequence_GetItem(elem, 1);
+	res = PyString_Check(temp);
 	str = "Illegal terminal symbol; expected a string.";
-    else
-	res = 1;
-
-    if ((res == 0) && (result != 0)) {
+	if (res && (len == 3)) {
+	    PyObject* third = PySequence_GetItem(elem, 2);
+	    res = PyInt_Check(third);
+	    str = "Invalid third element of terminal node.";
+	    Py_XDECREF(third);
+	}
+	Py_XDECREF(temp);
+    }
+    else {
+	res = 0;
+    }
+    if (!res) {
 	elem = Py_BuildValue("(os)", elem, str);
 	PyErr_SetObject(parser_error, elem);
     }
@@ -614,31 +695,54 @@ build_node_children(tuple, root, line_num)
      PyObject *tuple;
      node *root;
      int *line_num;
- {
-
+{
     int len = PyObject_Length(tuple);
     int i;
 
     for (i = 1; i < len; ++i) {
 	/* elem must always be a tuple, however simple */
 	PyObject* elem = PySequence_GetItem(tuple, i);
-	long      type = 0;
-	char*     strn = 0;
+	int ok = elem != NULL;
+	long  type = 0;
+	char *strn = 0;
 
-	if ((!PySequence_Check(elem))
-	    || !PyInt_Check(PySequence_GetItem(elem, 0))) {
+	if (ok)
+	    ok = PySequence_Check(elem);
+	if (ok) {
+	    PyObject *temp = PySequence_GetItem(elem, 0);
+	    if (temp == NULL)
+		ok = 0;
+	    else {
+		ok = PyInt_Check(temp);
+		if (ok)
+		    type = PyInt_AsLong(temp);
+		Py_DECREF(temp);
+	    }
+	}
+	if (!ok) {
 	    PyErr_SetObject(parser_error,
 			    Py_BuildValue("(os)", elem,
 					  "Illegal node construct."));
+	    Py_XDECREF(elem);
 	    return (0);
 	}
-	type = PyInt_AsLong(PySequence_GetItem(elem, 0));
-
 	if (ISTERMINAL(type)) {
-	    if (check_terminal_tuple(elem, root))
-		strn = strdup(PyString_AsString(PySequence_GetItem(elem, 1)));
-	    else
+	    if (check_terminal_tuple(elem)) {
+		PyObject *temp = PySequence_GetItem(elem, 1);
+
+		strn = strdup(PyString_AsString(temp));
+		Py_XDECREF(temp);
+
+		if (PyObject_Length(elem) == 3) {
+		    PyObject* temp = PySequence_GetItem(elem, 2);
+		    *line_num = PyInt_AsLong(temp);
+		    Py_DECREF(temp);
+		}
+	    }
+	    else {
+		Py_XDECREF(elem);
 		return (0);
+	    }
 	}
 	else if (!ISNONTERMINAL(type)) {
 	    /*
@@ -648,6 +752,7 @@ build_node_children(tuple, root, line_num)
 	    PyErr_SetObject(parser_error,
 			    Py_BuildValue("(os)", elem,
 					  "Unknown node type."));
+	    Py_XDECREF(elem);
 	    return (0);
 	}
 	PyNode_AddChild(root, type, strn, *line_num);
@@ -655,11 +760,15 @@ build_node_children(tuple, root, line_num)
 	if (ISNONTERMINAL(type)) {
 	    node* new_child = CHILD(root, i - 1);
 
-	    if (new_child != build_node_children(elem, new_child, line_num))
+	    if (new_child != build_node_children(elem, new_child, line_num)) {
+		Py_XDECREF(elem);
 		return (0);
+	    }
 	}
-	else if (type == NEWLINE)	/* It's true:  we increment the     */
+	else if (type == NEWLINE) {	/* It's true:  we increment the     */
 	    ++(*line_num);		/* line number *after* the newline! */
+	}
+	Py_XDECREF(elem);
     }
     return (root);
 
@@ -669,11 +778,14 @@ build_node_children(tuple, root, line_num)
 static node*
 build_node_tree(tuple)
      PyObject *tuple;
- {
-
+{
     node* res = 0;
-    long  num = PyInt_AsLong(PySequence_GetItem(tuple, 0));
+    PyObject *temp = PySequence_GetItem(tuple, 0);
+    long  num = -1;
 
+    if (temp != NULL)
+	num = PyInt_AsLong(temp);
+    Py_XDECREF(temp);
     if (ISTERMINAL(num)) {
 	/*
 	 *  The tuple is simple, but it doesn't start with a start symbol.
@@ -737,11 +849,9 @@ staticforward int validate_terminal();
 #define	validate_star(ch)	validate_terminal(ch,	    STAR, "*")
 #define	validate_vbar(ch)	validate_terminal(ch,	    VBAR, "|")
 #define validate_doublestar(ch)	validate_terminal(ch, DOUBLESTAR, "**")
+#define validate_dot(ch)	validate_terminal(ch,	     DOT, ".")
 #define	validate_name(ch, str)	validate_terminal(ch,	    NAME, str)
 
-#if defined(access_stmt) && defined(accesstype)
-VALIDATER(access_stmt);		VALIDATER(accesstype);
-#endif
 VALIDATER(node);		VALIDATER(small_stmt);
 VALIDATER(class);		VALIDATER(node);
 VALIDATER(parameters);		VALIDATER(suite);
@@ -764,6 +874,7 @@ VALIDATER(shift_expr);		VALIDATER(arith_expr);
 VALIDATER(term);		VALIDATER(factor);
 VALIDATER(atom);		VALIDATER(lambdef);
 VALIDATER(trailer);		VALIDATER(subscript);
+VALIDATER(subscriptlist);	VALIDATER(sliceop);
 VALIDATER(exprlist);		VALIDATER(dictmaker);
 VALIDATER(arglist);		VALIDATER(argument);
 
@@ -776,7 +887,7 @@ static int
 validate_ntype(n, t)
      node *n;
      int t;
- {
+{
     int res = (TYPE(n) == t);
 
     if (!res) {
@@ -794,7 +905,7 @@ validate_numnodes(n, num, name)
      node *n;
      int num;
      const char *const name;
- {
+{
     if (NCH(n) != num) {
 	char buff[60];
 	sprintf(buff, "Illegal number of children for %s node.", name);
@@ -810,7 +921,7 @@ validate_terminal(terminal, type, string)
      node *terminal;
      int type;
      char *string;
- {
+{
     int res = (validate_ntype(terminal, type)
 	       && ((string == 0) || (strcmp(string, STR(terminal)) == 0)));
 
@@ -824,11 +935,42 @@ validate_terminal(terminal, type, string)
 }   /* validate_terminal() */
 
 
+/*  X (',' X) [',']
+ */
+static int
+validate_repeating_list(tree, ntype, vfunc, name)
+    node *tree;
+    int ntype;
+    int (*vfunc)();
+    const char *const name;
+{
+    int nch = NCH(tree);
+    int res = (nch && validate_ntype(tree, ntype)
+	       && vfunc(CHILD(tree, 0)));
+
+    if (!res && !PyErr_Occurred())
+	validate_numnodes(tree, 1, name);
+    else {
+	if (is_even(nch))
+	    res = validate_comma(CHILD(tree, --nch));
+	if (res && nch > 1) {
+	    int pos = 1;
+	    for ( ; res && pos < nch; pos += 2)
+		res = (validate_comma(CHILD(tree, pos))
+		       && vfunc(CHILD(tree, pos + 1)));
+	}
+    }
+    return (res);
+
+}   /* validate_repeating_list() */
+
+
 /*  VALIDATE(class)
  *
  *  classdef:
  *	'class' NAME ['(' testlist ')'] ':' suite
  */
+static int
 validate_class(tree)
     node *tree;
 {
@@ -856,6 +998,7 @@ validate_class(tree)
 /*  if_stmt:
  *	'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
  */
+static int
 validate_if(tree)
     node *tree;
 {
@@ -899,6 +1042,7 @@ validate_if(tree)
  *	'(' [varargslist] ')'
  *
  */
+static int
 validate_parameters(tree)
     node *tree;
 {
@@ -925,6 +1069,7 @@ validate_parameters(tree)
  *	simple_stmt
  *    | NEWLINE INDENT stmt+ DEDENT
  */
+static int
 validate_suite(tree)
     node *tree;
 {
@@ -954,34 +1099,12 @@ validate_suite(tree)
 }   /* validate_suite() */
 
 
+static int
 validate_testlist(tree)
     node *tree;
 {
-    int i;
-    int nch = NCH(tree);
-    int res = validate_ntype(tree, testlist) && (nch >= 1);
-
-    /*	If there are an even, non-zero number of children, the last one
-     *	absolutely must be a comma.  Why the trailing comma is allowed,
-     *	I have no idea!
-     */
-    if (res && is_even(nch))
-	res = validate_comma(CHILD(tree, --nch));
-
-    if (res) {
-	/*
-	 *  If the number is odd, the last is a test, and can be
-	 *  verified.  What's left, if anything, can be verified
-	 *  as a list of [test, comma] pairs.
-	 */
-	--nch;
-	res = validate_test(CHILD(tree, nch));
-    }
-    for (i = 0; res && (i < nch); i += 2)
-	res = (validate_test(CHILD(tree, i))
-	       && validate_comma(CHILD(tree, i + 1)));
-
-    return (res);
+    return (validate_repeating_list(tree, testlist,
+				    validate_test, "testlist"));
 
 }   /* validate_testlist() */
 
@@ -998,6 +1121,7 @@ validate_testlist(tree)
  *    | fpdef ['=' test] (',' fpdef ['=' test])* [',']
  *
  */
+static int
 validate_varargslist(tree)
     node *tree;
 {
@@ -1100,6 +1224,7 @@ validate_varargslist(tree)
  *	NAME
  *    | '(' fplist ')'
  */
+static int
 validate_fpdef(tree)
     node *tree;
 {
@@ -1121,22 +1246,12 @@ validate_fpdef(tree)
 } /* validate_fpdef() */
 
 
+static int
 validate_fplist(tree)
     node *tree;
 {
-    int j;
-    int nch = NCH(tree);
-    int res = (validate_ntype(tree, fplist)
-	       && (nch != 0) && validate_fpdef(CHILD(tree, 0)));
-
-    if (res && is_even(nch))
-	res = validate_comma(CHILD(tree, --nch));
-
-    for (j = 1; res && (j < nch); j += 2)
-	res = (validate_comma(CHILD(tree, j))
-	       && validate_fpdef(CHILD(tree, j + 1)));
-
-    return (res);
+    return (validate_repeating_list(tree, fplist,
+				    validate_fpdef, "fplist"));
 
 }   /* validate_fplist() */
 
@@ -1144,6 +1259,7 @@ validate_fplist(tree)
 /*  simple_stmt | compound_stmt
  *
  */
+static int
 validate_stmt(tree)
     node *tree;
 {
@@ -1166,6 +1282,7 @@ validate_stmt(tree)
 /*  small_stmt (';' small_stmt)* [';'] NEWLINE
  *
  */
+static int
 validate_simple_stmt(tree)
     node *tree;
 {
@@ -1192,6 +1309,7 @@ validate_simple_stmt(tree)
 }   /* validate_simple_stmt() */
 
 
+static int
 validate_small_stmt(tree)
     node *tree;
 {
@@ -1204,9 +1322,6 @@ validate_small_stmt(tree)
 		   || (TYPE(CHILD(tree, 0)) == flow_stmt)
 		   || (TYPE(CHILD(tree, 0)) == import_stmt)
 		   || (TYPE(CHILD(tree, 0)) == global_stmt)
-#if defined(access_stmt) && defined(accesstype)
-		   || (TYPE(CHILD(tree, 0)) == access_stmt)
-#endif
 		   || (TYPE(CHILD(tree, 0)) == exec_stmt)));
 
     if (res)
@@ -1225,6 +1340,7 @@ validate_small_stmt(tree)
 /*  compound_stmt:
  *	if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
  */
+static int
 validate_compound_stmt(tree)
     node *tree;
 {
@@ -1253,6 +1369,7 @@ validate_compound_stmt(tree)
 }   /* validate_compound_stmt() */
 
 
+static int
 validate_expr_stmt(tree)
     node *tree;
 {
@@ -1276,6 +1393,7 @@ validate_expr_stmt(tree)
  *	'print' (test ',')* [test]
  *
  */
+static int
 validate_print_stmt(tree)
     node *tree;
 {
@@ -1300,6 +1418,7 @@ validate_print_stmt(tree)
 }   /* validate_print_stmt() */
 
 
+static int
 validate_del_stmt(tree)
     node *tree;
 {
@@ -1310,6 +1429,7 @@ validate_del_stmt(tree)
 }   /* validate_del_stmt() */
 
 
+static int
 validate_return_stmt(tree)
     node *tree;
 {
@@ -1326,6 +1446,7 @@ validate_return_stmt(tree)
 }   /* validate_return_stmt() */
 
 
+static int
 validate_raise_stmt(tree)
     node *tree;
 {
@@ -1360,6 +1481,7 @@ validate_raise_stmt(tree)
  *    'import' dotted_name (',' dotted_name)*
  *  | 'from' dotted_name 'import' ('*' | NAME (',' NAME)*)
  */
+static int
 validate_import_stmt(tree)
     node *tree;
 {
@@ -1402,6 +1524,7 @@ validate_import_stmt(tree)
 }   /* validate_import_stmt() */
 
 
+static int
 validate_global_stmt(tree)
     node *tree;
 {
@@ -1422,67 +1545,11 @@ validate_global_stmt(tree)
 }   /* validate_global_stmt() */
 
 
-#if defined(access_stmt) && defined(accesstype)
-/*  VALIDATE(accesstype)
- *
- *  This should be removed as soon as the 'access' statement is actually
- *  removed from the language.  The conditional compilation should help.
- */
-validate_access_stmt(tree)
-    node *tree;
-{
-    int pos = 3;
-    int nch = NCH(tree);
-    int res = (validate_ntype(tree, access_stmt)
-	       && (nch >= 4) && is_even(nch)
-	       && validate_name(CHILD(tree, 0), "access")
-	       && validate_accesstype(CHILD(tree, nch - 1)));
-
-    if (res && (TYPE(CHILD(tree, 1)) != STAR)) {
-	int j;
-
-	res = validate_ntype(CHILD(tree, 1), NAME);
-	for (j = 2; res && (j < (nch - 2)); j += 2) {
-	    if (TYPE(CHILD(tree, j)) == COLON)
-		break;
-	    res = (validate_comma(CHILD(tree, j))
-		   && validate_ntype(CHILD(tree, j + 1), NAME)
-		   && (pos += 2));
-	}
-    }
-    else
-	res = validate_star(CHILD(tree, 1));
-
-    res = (res && validate_colon(CHILD(tree, pos - 1)));
-    for (; res && (pos < (nch - 1)); pos += 2)
-	res = (validate_accesstype(CHILD(tree, pos))
-	       && validate_comma(CHILD(tree, pos + 1)));
-
-    return (res && (pos == (nch - 1)));
-
-}   /* validate_access_stmt() */
-
-
-validate_accesstype(tree)
-    node *tree;
-{
-    int nch = NCH(tree);
-    int res = validate_ntype(tree, accesstype) && (nch >= 1);
-    int i;
-
-    for (i = 0; res && (i < nch); ++i)
-	res = validate_ntype(CHILD(tree, i), NAME);
-
-    return (res);
-
-}   /* validate_accesstype() */
-#endif
-
-
 /*  exec_stmt:
  *
  *  'exec' expr ['in' test [',' test]]
  */
+static int
 validate_exec_stmt(tree)
     node *tree;
 {
@@ -1506,6 +1573,7 @@ validate_exec_stmt(tree)
 }   /* validate_exec_stmt() */
 
 
+static int
 validate_while(tree)
     node *tree;
 {
@@ -1527,6 +1595,7 @@ validate_while(tree)
 }   /* validate_while() */
 
 
+static int
 validate_for(tree)
     node *tree;
 {
@@ -1555,6 +1624,7 @@ validate_for(tree)
  *    | 'try' ':' suite 'finally' ':' suite
  *
  */
+static int
 validate_try(tree)
     node *tree;
 {
@@ -1610,6 +1680,7 @@ validate_try(tree)
 }   /* validate_try() */
 
 
+static int
 validate_except_clause(tree)
     node *tree;
 {
@@ -1629,6 +1700,7 @@ validate_except_clause(tree)
 }   /* validate_except_clause() */
 
 
+static int
 validate_test(tree)
     node *tree;
 {
@@ -1650,6 +1722,7 @@ validate_test(tree)
 }   /* validate_test() */
 
 
+static int
 validate_and_test(tree)
     node *tree;
 {
@@ -1668,6 +1741,7 @@ validate_and_test(tree)
 }   /* validate_and_test() */
 
 
+static int
 validate_not_test(tree)
     node *tree;
 {
@@ -1686,6 +1760,7 @@ validate_not_test(tree)
 }   /* validate_not_test() */
 
 
+static int
 validate_comparison(tree)
     node *tree;
 {
@@ -1704,6 +1779,7 @@ validate_comparison(tree)
 }   /* validate_comparison() */
 
 
+static int
 validate_comp_op(tree)
     node *tree;
 {
@@ -1757,6 +1833,7 @@ validate_comp_op(tree)
 }   /* validate_comp_op() */
 
 
+static int
 validate_expr(tree)
     node *tree;
 {
@@ -1775,6 +1852,7 @@ validate_expr(tree)
 }   /* validate_expr() */
 
 
+static int
 validate_xor_expr(tree)
     node *tree;
 {
@@ -1793,6 +1871,7 @@ validate_xor_expr(tree)
 }   /* validate_xor_expr() */
 
 
+static int
 validate_and_expr(tree)
     node *tree;
 {
@@ -1834,6 +1913,7 @@ validate_chain_two_ops(tree, termvalid, op1, op2)
 }   /* validate_chain_two_ops() */
 
 
+static int
 validate_shift_expr(tree)
     node *tree;
 {
@@ -1844,6 +1924,7 @@ validate_shift_expr(tree)
 }   /* validate_shift_expr() */
 
 
+static int
 validate_arith_expr(tree)
     node *tree;
 {
@@ -1853,6 +1934,7 @@ validate_arith_expr(tree)
 }   /* validate_arith_expr() */
 
 
+static int
 validate_term(tree)
     node *tree;
 {
@@ -1877,6 +1959,7 @@ validate_term(tree)
  *
  *  factor: ('+'|'-'|'~') factor | power
  */
+static int
 validate_factor(tree)
     node *tree;
 {
@@ -1898,6 +1981,7 @@ validate_factor(tree)
  *
  *  power: atom trailer* ('**' factor)*
  */
+static int
 validate_power(tree)
     node *tree;
 {
@@ -1922,6 +2006,7 @@ validate_power(tree)
 }   /* validate_power() */
 
 
+static int
 validate_atom(tree)
     node *tree;
 {
@@ -1979,6 +2064,7 @@ validate_atom(tree)
  *	'def' NAME parameters ':' suite
  *
  */
+static int
 validate_funcdef(tree)
     node *tree;
 {
@@ -1993,6 +2079,7 @@ validate_funcdef(tree)
 }   /* validate_funcdef() */
 
 
+static int
 validate_lambdef(tree)
     node *tree;
 {
@@ -2017,26 +2104,12 @@ validate_lambdef(tree)
  *
  *  argument (',' argument)* [',']
  */
+static int
 validate_arglist(tree)
     node *tree;
 {
-    int nch = NCH(tree);
-    int res = (validate_ntype(tree, arglist)
-	       && (nch > 0)
-	       && validate_argument(CHILD(tree, 0)));
-
-    if (res && is_even(nch))
-	res = validate_comma(CHILD(tree, nch - 1));
-    if (!res && !PyErr_Occurred())
-	validate_numnodes(tree, 1, "arglist");
-    --nch;
-    if (res && (nch > 1)) {
-	int j = 1;
-	for ( ; res && (j < (nch - 2)); j += 2)
-	    res = (validate_comma(CHILD(tree, j))
-		   && validate_argument(CHILD(tree, j + 1)));
-    }
-    return (res);
+    return (validate_repeating_list(tree, arglist,
+				    validate_argument, "arglist"));
 
 }   /* validate_arglist() */
 
@@ -2046,6 +2119,7 @@ validate_arglist(tree)
  *
  *  [test '='] test
  */
+static int
 validate_argument(tree)
     node *tree;
 {
@@ -2066,8 +2140,9 @@ validate_argument(tree)
 
 /*  trailer:
  *
- *  '(' [arglist] ')' | '[' subscript ']' | '.' NAME
+ *  '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
  */
+static int
 validate_trailer(tree)
     node *tree;
 {
@@ -2083,7 +2158,7 @@ validate_trailer(tree)
 	    break;
 	  case LSQB:
 	    res = (validate_numnodes(tree, 3, "trailer")
-		   && validate_subscript(CHILD(tree, 1))
+		   && validate_subscriptlist(CHILD(tree, 1))
 		   && validate_ntype(CHILD(tree, 2), RSQB));
 	    break;
 	  case DOT:
@@ -2103,75 +2178,109 @@ validate_trailer(tree)
 }   /* validate_trailer() */
 
 
+/*  subscriptlist:
+ *
+ *  subscript (',' subscript)* [',']
+ */
+static int
+validate_subscriptlist(tree)
+    node *tree;
+{
+    return (validate_repeating_list(tree, subscriptlist,
+				    validate_subscript, "subscriptlist"));
+
+}   /* validate_subscriptlist() */
+
+
 /*  subscript:
  *
- *  test (',' test)* [','] | [test] ':' [test]
+ *  '.' '.' '.' | test | [test] ':' [test] [sliceop]
  */
+static int
 validate_subscript(tree)
     node *tree;
 {
+    int offset = 0;
     int nch = NCH(tree);
-    int res = validate_ntype(tree, subscript) && (nch >= 1);
+    int res = validate_ntype(tree, subscript) && (nch >= 1) && (nch <= 4);
 
-    if (res && is_even(nch) && (nch >= 4))
-	if (TYPE(CHILD(tree, nch - 1)) == COMMA)
-	    --nch;
-	else
-	    res = 0;
-    if (res && is_odd(nch)) {
-	if (TYPE(CHILD(tree, 0)) == COLON)
-	    res = validate_numnodes(tree, 1, "subscript");
-	else {
-	    res = validate_test(CHILD(tree, 0));
-	    if (res && (nch == 3))
-		res = ((TYPE(CHILD(tree, 1)) == COMMA)
-			|| validate_colon(CHILD(tree, 1)))
-		       && validate_test(CHILD(tree, 2));
-	    else if ((res && (nch >= 5))) {
-		int pos = 1;
-		while (res && (pos <= (nch - 2))) {
-		    res = (validate_comma(CHILD(tree, pos))
-			   && validate_test(CHILD(tree, pos + 1)));
-		    pos += 2;
-		}
-	    }
-	}
+    if (!res) {
+	if (!PyErr_Occurred())
+	    err_string("invalid number of arguments for subscript node");
+	return (0);
     }
-    else if (nch == 2) {
-	if (TYPE(CHILD(tree, 0)) == COLON)
-	    res = validate_test(CHILD(tree, 1));
-	else if (TYPE(CHILD(tree, 1)) == COLON)
+    if (TYPE(CHILD(tree, 0)) == DOT)
+	/* take care of ('.' '.' '.') possibility */
+	return (validate_numnodes(tree, 3, "subscript")
+		&& validate_dot(CHILD(tree, 0))
+		&& validate_dot(CHILD(tree, 1))
+		&& validate_dot(CHILD(tree, 2)));
+    if (nch == 1) {
+	if (TYPE(CHILD(tree, 0)) == test)
 	    res = validate_test(CHILD(tree, 0));
 	else
-	    res = (validate_test(CHILD(tree, 0))
-		   && validate_comma(CHILD(tree, 1)));
+	    res = validate_colon(CHILD(tree, 0));
+	return (res);
+    }
+    /*	Must be [test] ':' [test] [sliceop],
+     *	but at least one of the optional components will
+     *	be present, but we don't know which yet.
+     */
+    if ((TYPE(CHILD(tree, 0)) != COLON) || (nch == 4)) {
+	res = validate_test(CHILD(tree, 0));
+	offset = 1;
+    }
+    if (res)
+	res = validate_colon(CHILD(tree, offset));
+    if (res) {
+	int rem = nch - ++offset;
+	if (rem) {
+	    if (TYPE(CHILD(tree, offset)) == test) {
+		res = validate_test(CHILD(tree, offset));
+		++offset;
+		--rem;
+	    }
+	    if (res && rem)
+		res = validate_sliceop(CHILD(tree, offset));
+	}
     }
     return (res);
 
 }   /* validate_subscript() */
 
 
-validate_exprlist(tree)
+static int
+validate_sliceop(tree)
     node *tree;
 {
     int nch = NCH(tree);
-    int res = (validate_ntype(tree, exprlist)
-	       && (nch >= 1)
-	       && validate_expr(CHILD(tree, 0)));
-
-    if (res && is_even(nch))
-	res = validate_comma(CHILD(tree, --nch));
-    if (res && (nch > 1)) {
-	int pos;
-	for (pos = 1; res && (pos < nch); pos += 2)
-	    res = (validate_comma(CHILD(tree, pos))
-		   && validate_expr(CHILD(tree, pos + 1)));
+    int res = ((nch == 1) || validate_numnodes(tree, 2, "sliceop"))
+	      && validate_ntype(tree, sliceop);
+    if (!res && !PyErr_Occurred()) {
+	validate_numnodes(tree, 1, "sliceop");
+	res = 0;
     }
+    if (res)
+	res = validate_colon(CHILD(tree, 0));
+    if (res && (nch == 2))
+	res = validate_test(CHILD(tree, 1));
+
     return (res);
+
+}   /* validate_sliceop() */
+
+
+static int
+validate_exprlist(tree)
+    node *tree;
+{
+    return (validate_repeating_list(tree, exprlist,
+				    validate_expr, "exprlist"));
 
 }   /* validate_exprlist() */
 
 
+static int
 validate_dictmaker(tree)
     node *tree;
 {
@@ -2203,6 +2312,7 @@ validate_dictmaker(tree)
 }   /* validate_dictmaker() */
 
 
+static int
 validate_eval_input(tree)
     node *tree;
 {
@@ -2221,6 +2331,7 @@ validate_eval_input(tree)
 }   /* validate_eval_input() */
 
 
+static int
 validate_node(tree)
     node *tree;
 {
@@ -2251,7 +2362,7 @@ validate_node(tree)
 	  case small_stmt:
 	    /*
 	     *  expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt
-	     *  | import_stmt | global_stmt | access_stmt | exec_stmt
+	     *  | import_stmt | global_stmt | exec_stmt
 	     */
 	    res = validate_small_stmt(tree);
 	    break;
@@ -2311,11 +2422,6 @@ validate_node(tree)
 	  case global_stmt:
 	    res = validate_global_stmt(tree);
 	    break;
-#if defined(access_stmt) && defined(accesstype)
-	  case access_stmt:
-	    res = validate_access_stmt(tree);
-	    break;
-#endif
 	  case exec_stmt:
 	    res = validate_exec_stmt(tree);
 	    break;
@@ -2399,6 +2505,7 @@ validate_node(tree)
 }   /* validate_node() */
 
 
+static int
 validate_expr_tree(tree)
     node *tree;
 {
@@ -2415,6 +2522,7 @@ validate_expr_tree(tree)
 /*  file_input:
  *	(NEWLINE | stmt)* ENDMARKER
  */
+static int
 validate_file_input(tree)
     node *tree;
 {
@@ -2450,6 +2558,8 @@ validate_file_input(tree)
 static PyMethodDef parser_functions[] =  {
     {"ast2tuple",	parser_ast2tuple,	1,
 	"Creates a tuple-tree representation of an AST."},
+    {"ast2list",	parser_ast2list,	1,
+	"Creates a list-tree representation of an AST."},
     {"compileast",	parser_compileast,	1,
 	"Compiles an AST object into a code object."},
     {"expr",		parser_expr,		1,
@@ -2460,8 +2570,10 @@ static PyMethodDef parser_functions[] =  {
 	"Determines if an AST object was created from a suite."},
     {"suite",		parser_suite,		1,
 	"Creates an AST object from a suite."},
+    {"sequence2ast",	parser_tuple2ast,	1,
+	"Creates an AST object from a tree representation."},
     {"tuple2ast",	parser_tuple2ast,	1,
-	"Creates an AST object from a tuple-tree representation."},
+	"Creates an AST object from a tree representation."},
 
     {0, 0, 0}
     };
