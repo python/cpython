@@ -41,6 +41,7 @@ chop $mydir;			# remove trailing '/'
 $mydir = getcwd() . "$dd$mydir"
   unless $mydir =~ s|^/|/|;
 $LATEX2HTMLSTYLES = "$mydir$envkey$LATEX2HTMLSTYLES";
+push (@INC, $mydir);
 
 ($myrootname, $myrootdir, $myext) = fileparse($mydir, '\..*');
 chop $myrootdir;
@@ -218,8 +219,9 @@ sub add_module_idx{
 
 # replace both indexes as needed:
 sub add_idx_hook{
-    &add_idx if (/$idx_mark/);
-    &add_module_idx if (/$idx_module_mark/);
+    add_idx() if (/$idx_mark/);
+    add_module_idx() if (/$idx_module_mark/);
+    process_all_localmoduletables();
 }
 
 
