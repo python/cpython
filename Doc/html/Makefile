@@ -61,6 +61,8 @@ $(INDEXFILES): $(COMMONPERL) \
 	       $(TOPDIR)/html/about.dat \
 	       $(TOPDIR)/tools/node2label.pl
 
+include ../Makefile.deps
+
 # The index.html target is at the end since it screws up font-lock.
 
 modindex.html: lib/lib.html mac/mac.html $(TOOLSDIR)/mkmodindex
@@ -100,8 +102,6 @@ inst/inst.html:$(INSTFILES) $(TOPDIR)/perl/distutils.perl
 dist/dist.html:$(DISTFILES) $(TOPDIR)/perl/distutils.perl
 	$(TOOLSDIR)/mkhowto --about stdabout.dat --address $(PYTHONDOCS) \
 		--html $(TOPDIR)/dist/dist.tex
-
-include ../Makefile.deps
 
 $(PAPERDIR)/api.aux: $(APIFILES)
 	(cd $(PAPERDIR); $(MKAUX) api)
