@@ -1,85 +1,288 @@
 # Complex numbers
+# ---------------
+
+# This module represents complex numbers as instances of the class Complex.
+# A Complex instance z has two data attribues, z.re (the real part) and z.im
+# (the imaginary part).  In fact, z.re and z.im can have any value -- all
+# arithmetic operators work regardless of the type of z.re and z.im (as long
+# as they support numerical operations).
+#
+# The following functions exist (Complex is actually a class):
+# Complex([re [,im]) -> creates a complex number from a real and an imaginary part
+# IsComplex(z) -> true iff z is a complex number (== has .re and .im attributes)
+# ToComplex(z) -> a complex number equal to z; z itself if IsComplex(z) is true
+#                 if z is a tuple(re, im) it will also be converted
+# PolarToComplex([r [,phi [,fullcircle]]]) ->
+#	the complex number z for which r == z.radius() and phi == z.angle(fullcircle)
+#	(r and phi default to 0)
+#
+# Complex numbers have the following methods:
+# z.abs() -> absolute value of z
+# z.radius() == z.abs()
+# z.angle([fullcircle]) -> angle from positive X axis; fullcircle gives units
+# z.phi([fullcircle]) == z.angle(fullcircle)
+#
+# These standard functions and unary operators accept complex arguments:
+# abs(z)
+# -z
+# +z
+# not z
+# repr(z) == `z`
+# str(z)
+# hash(z) -> a combination of hash(z.re) and hash(z.im) such that if z.im is zero
+#            the result equals hash(z.re)
+# Note that hex(z) and oct(z) are not defined.
+#
+# These conversions accept complex arguments only if their imaginary part is zero:
+# int(z)
+# long(z)
+# float(z)
+#
+# The following operators accept two complex numbers, or one complex number
+# and one real number (int, long or float):
+# z1 + z2
+# z1 - z2
+# z1 * z2
+# z1 / z2
+# pow(z1, z2)
+# cmp(z1, z2)
+# Note that z1 % z2 and divmod(z1, z2) are not defined,
+# nor are shift and mask operations.
+#
+# The standard module math does not support complex numbers.
+# (I suppose it would be easy to implement a cmath module.)
+#
+# Idea:
+# add a class Polar(r, phi) and mixed-mode arithmetic which
+# chooses the most appropriate type for the result:
+# Complex for +,-,cmp
+# Polar   for *,/,pow
 
 
-from math import sqrt
+import types, math
 
+twopi = math.pi*2.0
+halfpi = math.pi/2.0
 
-class complex:
+def IsComplex(obj):
+	return hasattr(obj, 're') and hasattr(obj, 'im')
 
-	def __init__(self, re, im):
-		self.re = float(re)
-		self.im = float(im)
+def ToComplex(obj):
+	if IsComplex(obj):
+		return obj
+	elif type(obj) == types.TupleType:
+		return apply(Complex, obj)
+	else:
+		return Complex(obj)
 
-	def __coerce__(self, other):
-		if type(other) == type(self):
-			if other.__class__ == self.__class__:
-				return self, other
-			else:
-				raise TypeError, 'cannot coerce to complex'
-		else:
-			# The cast to float() may raise an exception!
-			return self, complex(float(other), 0.0)
+def PolarToComplex(r = 0, phi = 0, fullcircle = twopi):
+	phi = phi * (twopi / fullcircle)
+	return Complex(math.cos(phi)*r, math.sin(phi)*r)
+
+def Re(obj):
+	if IsComplex(obj):
+		return obj.re
+	else:
+		return obj
+
+def Im(obj):
+	if IsComplex(obj):
+		return obj.im
+	else:
+		return obj
+
+class Complex:
+
+	def __init__(self, re=0, im=0):
+		if IsComplex(re):
+			im = i + Complex(0, re.im)
+			re = re.re
+		if IsComplex(im):
+			re = re - im.im
+			im = im.re
+		self.__dict__['re'] = re
+		self.__dict__['im'] = im
+	
+	def __setattr__(self, name, value):
+			raise TypeError, 'Complex numbers are immutable'
+
+	def __hash__(self):
+		if not self.im: return hash(self.re)
+		mod = sys.maxint + 1L
+		return int((hash(self.re) + 2L*hash(self.im) + mod) % (2L*mod) - mod)
 
 	def __repr__(self):
-		return 'complex' + `self.re, self.im`
+		if not self.im:
+			return 'Complex(%s)' % `self.re`
+		else:
+			return 'Complex(%s, %s)' % (`self.re`, `self.im`)
 
-	def __cmp__(a, b):
-		a = a.__abs__()
-		b = b.__abs__()
-		return (a > b) - (a < b)
+	def __str__(self):
+		if not self.im:
+			return `self.re`
+		else:
+			return 'Complex(%s, %s)' % (`self.re`, `self.im`)
+
+	def __neg__(self):
+		return Complex(-self.re, -self.im)
+
+	def __pos__(self):
+		return self
+
+	def __abs__(self):
+		# XXX could be done differently to avoid overflow!
+		return math.sqrt(self.re*self.re + self.im*self.im)
+
+	def __int__(self):
+		if self.im:
+			raise ValueError, "can't convert Complex with nonzero im to int"
+		return int(self.re)
+
+	def __long__(self):
+		if self.im:
+			raise ValueError, "can't convert Complex with nonzero im to long"
+		return long(self.re)
 
 	def __float__(self):
 		if self.im:
-			raise ValueError, 'cannot convert complex to float'
+			raise ValueError, "can't convert Complex with nonzero im to float"
 		return float(self.re)
 
-	def __long__(self):
-		return long(float(self))
+	def __cmp__(self, other):
+		other = ToComplex(other)
+		return cmp((self.re, self.im), (other.re, other.im))
 
-	def __int__(self):
-		return int(float(self))
+	def __rcmp__(self, other):
+		other = ToComplex(other)
+		return cmp(other, self)
+	
+	def __nonzero__(self):
+		return not (self.re == self.im == 0)
 
-	def __abs__(self):
-		# XXX overflow?
-		return sqrt(self.re*self.re + self.im*self.im)
+	abs = radius = __abs__
 
-	def __add__(a, b):
-		return complex(a.re + b.re, a.im + b.im)
+	def angle(self, fullcircle = twopi):
+		return (fullcircle/twopi) * ((halfpi - math.atan2(self.re, self.im)) % twopi)
 
-	def __sub__(a, b):
-		return complex(a.re - b.re, a.im - b.im)
+	phi = angle
 
-	def __mul__(a, b):
-		return complex(a.re*b.re - a.im*b.im, a.re*b.im + a.im*b.re)
+	def __add__(self, other):
+		other = ToComplex(other)
+		return Complex(self.re + other.re, self.im + other.im)
 
-	def __div__(a, b):
-		q = (b.re*b.re + b.im*b.im)
-		re = (a.re*b.re + a.im*b.im) / q
-		im = (a.im*b.re - b.im*a.re) / q
-		return complex(re, im)
+	__radd__ = __add__
 
-	def __neg__(self):
-		return complex(-self.re, -self.im)
+	def __sub__(self, other):
+		other = ToComplex(other)
+		return Complex(self.re - other.re, self.im - other.im)
+
+	def __rsub__(self, other):
+		other = ToComplex(other)
+		return other - self
+
+	def __mul__(self, other):
+		other = ToComplex(other)
+		return Complex(self.re*other.re - self.im*other.im,
+		               self.re*other.im + self.im*other.re)
+
+	__rmul__ = __mul__
+
+	def __div__(self, other):
+		other = ToComplex(other)
+		d = float(other.re*other.re + other.im*other.im)
+		if not d: raise ZeroDivisionError, 'Complex division'
+		return Complex((self.re*other.re + self.im*other.im) / d,
+		               (self.im*other.re - self.re*other.im) / d)
+
+	def __rdiv__(self, other):
+		other = ToComplex(other)
+		return other / self
+
+	def __pow__(self, n, z=None):
+		if z is not None:
+			raise TypeError, 'Complex does not support ternary pow()'
+		if IsComplex(n):
+			if n.im: raise TypeError, 'Complex to the Complex power'
+			n = n.re
+		r = pow(self.abs(), n)
+		phi = n*self.angle()
+		return Complex(math.cos(phi)*r, math.sin(phi)*r)
+	
+	def __rpow__(self, base):
+		base = ToComplex(base)
+		return pow(base, self)
+
+
+def checkop(expr, a, b, value, fuzz = 1e-6):
+	import sys
+	print '       ', a, 'and', b,
+	try:
+		result = eval(expr)
+	except:
+		result = sys.exc_type
+	print '->', result
+	if (type(result) == type('') or type(value) == type('')):
+		ok = result == value
+	else:
+		ok = abs(result - value) <= fuzz
+	if not ok:
+		print '!!\t!!\t!! should be', value, 'diff', abs(result - value)
 
 
 def test():
-	a = complex(2, 0)
-	b = complex(3, 4)
-	print a
-	print b
-	print a+b
-	print a-b
-	print a*b
-	print a/b
-	print b+a
-	print b-a
-	print b*a
-	print b/a
-	i = complex(0, 1)
-	print i, i*i, i*i*i, i*i*i*i
-	j = complex(1, 1)
-	print j, j*j, j*j*j, j*j*j*j
-	print abs(j), abs(j*j), abs(j*j*j), abs(j*j*j*j)
-	print i/-i
+	testsuite = {
+		'a+b': [
+			(1, 10, 11),
+			(1, Complex(0,10), Complex(1,10)),
+			(Complex(0,10), 1, Complex(1,10)),
+			(Complex(0,10), Complex(1), Complex(1,10)),
+			(Complex(1), Complex(0,10), Complex(1,10)),
+		],
+		'a-b': [
+			(1, 10, -9),
+			(1, Complex(0,10), Complex(1,-10)),
+			(Complex(0,10), 1, Complex(-1,10)),
+			(Complex(0,10), Complex(1), Complex(-1,10)),
+			(Complex(1), Complex(0,10), Complex(1,-10)),
+		],
+		'a*b': [
+			(1, 10, 10),
+			(1, Complex(0,10), Complex(0, 10)),
+			(Complex(0,10), 1, Complex(0,10)),
+			(Complex(0,10), Complex(1), Complex(0,10)),
+			(Complex(1), Complex(0,10), Complex(0,10)),
+		],
+		'a/b': [
+			(1., 10, 0.1),
+			(1, Complex(0,10), Complex(0, -0.1)),
+			(Complex(0, 10), 1, Complex(0, 10)),
+			(Complex(0, 10), Complex(1), Complex(0, 10)),
+			(Complex(1), Complex(0,10), Complex(0, -0.1)),
+		],
+		'pow(a,b)': [
+			(1, 10, 1),
+			(1, Complex(0,10), 'TypeError'),
+			(Complex(0,10), 1, Complex(0,10)),
+			(Complex(0,10), Complex(1), Complex(0,10)),
+			(Complex(1), Complex(0,10), 'TypeError'),
+			(2, Complex(4,0), 16),
+		],
+		'cmp(a,b)': [
+			(1, 10, -1),
+			(1, Complex(0,10), 1),
+			(Complex(0,10), 1, -1),
+			(Complex(0,10), Complex(1), -1),
+			(Complex(1), Complex(0,10), 1),
+		],
+	}
+	exprs = testsuite.keys()
+	exprs.sort()
+	for expr in exprs:
+		print expr + ':'
+		t = (expr,)
+		for item in testsuite[expr]:
+			apply(checkop, t+item)
+	
 
-test()
+if __name__ == '__main__':
+	test()
