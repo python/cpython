@@ -322,6 +322,9 @@ Extension modules
 Library
 -------
 
+- refactored site.py into functions.  Also wrote regression tests for the
+  module.
+
 - asyncore.loop now has repeat count parameter that defaults to infinity.
 
 - The distutils sdist command now ignores all .svn directories, in
