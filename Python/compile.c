@@ -5464,7 +5464,7 @@ symtable_assign(struct symtable *st, node *n, int def_flag)
 				PyErr_SetString(PyExc_SyntaxError, 
 						ASSIGN_DEBUG);
 				PyErr_SyntaxLocation(st->st_filename,
-					     st->st_cur->ste_opt_lineno);
+						     n->n_lineno);
 				st->st_errors++;
 			}
 			symtable_add_def(st, STR(tmp), DEF_LOCAL | def_flag);

@@ -45,6 +45,7 @@ PySymtableEntry_New(struct symtable *st, char *name, int type, int lineno)
 	ste->ste_children = v;
 
 	ste->ste_optimized = 0;
+	ste->ste_opt_lineno = 0;
 	ste->ste_lineno = lineno;
 	switch (type) {
 	case funcdef:
