@@ -12,7 +12,7 @@ import traceback
 
 MAGIC = imp.get_magic()
 
-__all__ = ["compile"]
+__all__ = ["compile", "main"]
 
 # Define an internal helper according to the platform
 if os.name == "mac":
@@ -86,3 +86,21 @@ def compile(file, cfile=None, dfile=None):
     fc.write(MAGIC)
     fc.close()
     set_creator_type(cfile)
+
+def main(args=None):
+    """Compile several source files.
+
+    The files named in 'args' (or on the command line, if 'args' is
+    not specified) are compiled and the resulting bytecode is cached
+    in the normal manner.  This function does not search a directory
+    structure to locate source files; it only compiles files named
+    explicitly.
+
+    """
+    if args is None:
+        args = sys.argv[1:]
+    for filename in args:
+        compile(filename)
+
+if __name__ == "__main__":
+    main()
