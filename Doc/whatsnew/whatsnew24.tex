@@ -379,9 +379,11 @@ function that's constructed and returned.
 by Kevin D. Smith, Jim Jewett, and Skip Montanaro.  Several people
 wrote patches implementing function decorators, but the one that was
 actually checked in was patch \#979728, written by Mark Russell.}
-\end{seealso}
 
-% XXX add link to decorators module in Wiki
+\seeurl{http://www.python.org/moin/PythonDecoratorLibrary}
+{This Wiki page contains several examples of decorators.}
+
+\end{seealso}
 
 
 %======================================================================
@@ -1426,6 +1428,12 @@ sidestep the checking and if you were unlucky Python could segfault.
 Python 2.4's regular expression engine can match this pattern without
 problems.
 
+\item The \module{signal} module now performs tighter error-checking
+on the parameters to the \function{signal.signal()} function.  For
+example, you can't set a handler on the \constant{SIGKILL} signal;
+previous versions of Python would quietly accept this, but 2.4 will
+raise a \exception{RuntimeError} exception.
+
 \item Two new functions were added to the \module{socket} module.
 \function{socketpair()} returns a pair of connected sockets and
 \function{getservbyport(\var{port})} looks up the service name for a
@@ -1724,8 +1732,10 @@ a partially-initialized module object in \code{sys.modules}.
 \item \constant{None} is now a constant; code that binds a new value to 
 the name \samp{None} is now a syntax error.
 
-% signal module now raises a RuntimeError on insane calls - e.g. setting a 
-% handler on SIGKILL
+\item The \function{signals.signal()} function now raises a
+\exception{RuntimeError} exception for certain illegal values;
+previously these errors would pass silently.  For example, you can no
+longer set a handler on the \constant{SIGKILL} signal.
 
 \end{itemize}
 
