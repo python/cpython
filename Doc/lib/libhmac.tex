@@ -1,0 +1,48 @@
+\section{\module{hmac} ---
+         Keyed-Hashing for Message Authentication}
+
+\declaremodule{standard}{hmac}
+\modulesynopsis{Keyed-Hashing for Message Authentication (HMAC)
+                implementation for Python.}
+\moduleauthor{Gerhard H{\"a}ring}{ghaering@users.sourceforge.net}
+\sectionauthor{Gerhard H{\"a}ring}{ghaering@users.sourceforge.net}
+
+\versionadded{2.2}
+
+This module implements the HMAC algorithm as described by \rfc{2104}.
+
+\begin{funcdesc}{new}{key\optional{, msg\optional{, digestmod}}}
+  Return a new hmac object.  If \var{msg} is present, the method call
+  \code{update(\var{msg})} is made. \var{digestmod} is the digest
+  module for the HMAC object to use. It defaults to the
+  \refmodule{md5} module.
+\end{funcdesc}
+
+An HMAC object has the following methods:
+
+\begin{methoddesc}[hmac]{update}{msg}
+  Update the hmac object with the string \var{msg}.  Repeated calls
+  are equivalent to a single call with the concatenation of all the
+  arguments: \code{m.update(a); m.update(b)} is equivalent to
+  \code{m.update(a + b)}.
+\end{methoddesc}
+
+\begin{methoddesc}[hmac]{digest}{}
+  Return the digest of the strings passed to the \method{update()}
+  method so far.  This is a 16-byte string (for \refmodule{md5}) or a
+  20-byte string (for \refmodule{sha}) which may contain non-\ASCII{}
+  characters, including NUL bytes.
+\end{methoddesc}
+
+\begin{methoddesc}[hmac]{hexdigest}{}
+  Like \method{digest()} except the digest is returned as a string of
+  length 32 for \refmodule{md5} (40 for \refmodule{sha}), containing
+  only hexadecimal digits.  This may be used to exchange the value
+  safely in email or other non-binary environments.
+\end{methoddesc}
+
+\begin{methoddesc}[hmac]{copy}{}
+  Return a copy (``clone'') of the hmac object.  This can be used to
+  efficiently compute the digests of strings that share a common
+  initial substring.
+\end{methoddesc}
