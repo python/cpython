@@ -37,6 +37,8 @@ class build_clib (Command):
          "directory to put temporary build by-products"),
         ('debug', 'g',
          "compile with debugging information"),
+        ('force', 'f',
+         "forcibly build everything (ignore file timestamps"),
         ]
 
     def initialize_options (self):
@@ -51,6 +53,7 @@ class build_clib (Command):
         self.define = None
         self.undef = None
         self.debug = None
+        self.force = 0
 
     # initialize_options()
 
@@ -65,7 +68,8 @@ class build_clib (Command):
         self.set_undefined_options ('build',
                                     ('build_temp', 'build_clib'),
                                     ('build_temp', 'build_temp'),
-                                    ('debug', 'debug'))
+                                    ('debug', 'debug'),
+                                    ('force', 'force'))
 
         self.libraries = self.distribution.libraries
         if self.libraries:
