@@ -150,6 +150,7 @@ fcntl fcntlmodule.c	# fcntl(2) and ioctl(2)
 pwd pwdmodule.c		# pwd(3) 
 grp grpmodule.c		# grp(3)
 errno errnomodule.c	# posix (UNIX) errno values
+mmap mmapmodule.c       # Memory-mapped files (also works on Win32)
 select selectmodule.c	# select(2); not on ancient System V
 socket socketmodule.c	# socket(2); not on ancient System V
 #_socket socketmodule.c	# socket(2); use this one for BeOS sockets
@@ -417,7 +418,6 @@ cPickle cPickle.c
 # This require zlib 1.1.3 (or later).
 # See http://www.cdrom.com/pub/infozip/zlib/
 #zlib zlibmodule.c -I$(prefix)/include -L$(exec_prefix)/lib -lz
-
 
 # Example -- included for reference only:
 # xx xxmodule.c
