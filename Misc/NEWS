@@ -79,6 +79,9 @@ Extension modules
 Library
 -------
 
+- Patch #934356: if a module defines __all__, believe that rather than using
+  heuristics for filtering out imported names. 
+
 - Patch #941486: added os.path.lexists(), which returns True for broken
   symlinks, unlike os.path.exists().
 
