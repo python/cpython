@@ -166,7 +166,7 @@ is no way to return it to blocking mode.
 
 \begin{methoddesc}[audio device]{getfmts}{}
 Return a bitmask of the audio output formats supported by the
-soundcard.  On a typical Linux system, these formats are:
+soundcard.  Some of the formats supported by OSS are:
 
 \begin{tableii}{l|l}{constant}{Format}{Description}
 \lineii{AFMT_MU_LAW}
@@ -180,21 +180,22 @@ soundcard.  On a typical Linux system, these formats are:
 \lineii{AFMT_U8}
        {Unsigned, 8-bit audio}
 \lineii{AFMT_S16_LE}
-       {Unsigned, 16-bit audio, little-endian byte order (as used by
+       {Signed, 16-bit audio, little-endian byte order (as used by
         Intel processors)}
 \lineii{AFMT_S16_BE}
-       {Unsigned, 16-bit audio, big-endian byte order (as used by 68k,
+       {Signed, 16-bit audio, big-endian byte order (as used by 68k,
         PowerPC, Sparc)}
 \lineii{AFMT_S8}
        {Signed, 8 bit audio}
 \lineii{AFMT_U16_LE}
-       {Signed, 16-bit little-endian audio}
+       {Unsigned, 16-bit little-endian audio}
 \lineii{AFMT_U16_BE}
-       {Signed, 16-bit big-endian audio}
+       {Unsigned, 16-bit big-endian audio}
 \end{tableii}
-Most systems support only a subset of these formats.  Many devices only
-support \constant{AFMT_U8}; the most common format used today is
-\constant{AFMT_S16_LE}.
+Consult the OSS documentation for a full list of audio formats, and note
+that most devices support only a subset of these formats.  Some older
+devices only support \constant{AFMT_U8}; the most common format used
+today is \constant{AFMT_S16_LE}.
 \end{methoddesc}
 
 \begin{methoddesc}[audio device]{setfmt}{format}
