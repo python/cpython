@@ -66,6 +66,18 @@ dialog. \var{prompt} is the prompt string, and the optional.
 Return an FSSpec object and a success-indicator.
 \end{funcdesc}
 
+\begin{funcdesc}{SetFolder}{\optional{fsspec}}
+Set the folder that is initially presented to the user when one of
+the file selection dialogs is presented. \var{Fsspec} should point to
+a file in the folder, not the folder itself (the file need not exist,
+though). If no argument is passed the folder will be set to the
+current directory, i.e. what \code{os.getcwd()} returns.
+
+Note that starting with system 7.5 the user can change Standard File
+behaviour with the ``general controls'' controlpanel, thereby making
+this call inoperative.
+\end{funcdesc}
+
 \begin{funcdesc}{FindFolder}{where\, which\, create}
 Locates one of the ``special'' folders that MacOS knows about, such as
 the trash or the Preferences folder. \var{Where} is the disk to
