@@ -21,10 +21,11 @@
 \begin{abstract}
 
 \noindent
-This document describes how you can extend the Python interpreter with
-new modules written in C or C++.  It also describes how to use the
-interpreter as a library package from applications using Python as an
-``embedded'' language.
+This document describes how to write modules in C or C++ to extend the
+Python interpreter.  It also describes how to use Python as an
+`embedded' language, and how extension modules can be loaded
+dynamically (at run time) into the interpreter, if the operating
+system supports this feature.
 
 \end{abstract}
 
@@ -42,26 +43,31 @@ interpreter as a library package from applications using Python as an
 
 \chapter{Extending Python with C or C++ code}
 
+
+\section{Introduction}
+
 It is quite easy to add non-standard built-in modules to Python, if
 you know how to program in C.  A built-in module known to the Python
-programmer as \code{foo} is generally implemented in a file called
-\file{foomodule.c}.  The standard built-in modules also adhere to this
-convention, and in fact some of them form excellent examples of how to
-create an extension.
+programmer as \code{foo} is generally implemented by a file called
+\file{foomodule.c}.  All but the most essential standard built-in
+modules also adhere to this convention, and in fact some of them form
+excellent examples of how to create an extension.
 
 Extension modules can do two things that can't be done directly in
-Python: implement new data types and provide access to system calls or
-C library functions.  Since the latter is usually the most important
-reason for adding an extension, I'll concentrate on adding "wrappers"
-around C library functions; the concrete example uses the wrapper for
-\code{system()} in module posix, found in (of course) the file
-posixmodule.c.
+Python: they can implement new data types, and they can make system
+calls or call C library functions.  Since the latter is usually the
+most important reason for adding an extension, I'll concentrate on
+adding `wrappers' around C library functions; the concrete example
+uses the wrapper for
+\code{system()} in module \code{posix}, found in (of course) the file
+\file{posixmodule.c}.
 
 It is important not to be impressed by the size and complexity of
 the average extension module; much of this is straightforward
-``boilerplate'' code (starting right with the copyright notice!).
+`boilerplate' code (starting right with the copyright notice)!
 
-Let's skip the boilerplate and jump right to an interesting function:
+Let's skip the boilerplate and have a look at an interesting function
+in \file{posixmodule.c} first:
 
 \begin{verbatim}
     static object *
@@ -74,7 +80,7 @@ Let's skip the boilerplate and jump right to an interesting function:
         if (!getargs(args, "s", &command))
             return NULL;
         sts = system(command);
-        return newintobject((long)sts);
+        return mkvalue("i", sts);
     }
 \end{verbatim}
 
@@ -88,34 +94,36 @@ Python program executes statements like
 \end{verbatim}
 
 There is a straightforward translation from the arguments to the call
-in Python (here the single value 'ls -l') to the arguments that are
-passed to the C function.  The C function always has two parameters,
-conventionally named 'self' and 'args'.  In this example, 'self' will
-always be a NULL pointer, since this is a function, not a method (this
-is done so that the interpreter doesn't have to understand two
-different types of C functions).
+in Python (here the single value \code{'ls -l'}) to the arguments that
+are passed to the C function.  The C function always has two
+parameters, conventionally named \var{self} and \var{args}.  In this
+example, \var{self} will always be a \code{NULL} pointer, since this is a
+function, not a method (this is done so that the interpreter doesn't
+have to understand two different types of C functions).
 
-The 'args' parameter will be a pointer to a Python object, or NULL if
-the Python function/method was called without arguments.  It is
-necessary to do full argument type checking on each call, since
-otherwise the Python user could cause a core dump by passing the wrong
-arguments (or no arguments at all).  Because argument checking and
-converting arguments to C is such a common task, there's a general
-function in the Python interpreter which combines these tasks:
-\code{getargs()}.  It uses a template string to determine both the
-types of the Python argument and the types of the C variables into
-which it should store the converted values.
+The \var{args} parameter will be a pointer to a Python object, or
+\code{NULL} if the Python function/method was called without
+arguments.  It is necessary to do full argument type checking on each
+call, since otherwise the Python user would be able to cause the
+Python interpreter to `dump core' by passing the wrong arguments to a
+function in an extension module (or no arguments at all).  Because
+argument checking and converting arguments to C is such a common task,
+there's a general function in the Python interpreter which combines
+these tasks: \code{getargs()}.  It uses a template string to determine
+both the types of the Python argument and the types of the C variables
+into which it should store the converted values.  (More about this
+later.)\footnote{
+There are convenience macros \code{getstrarg()},
+\code{getintarg()}, etc., for many common forms of \code{getargs()}
+templates.  These are relics from the past; it's better to call
+\code{getargs()} directly.}
 
-When getargs returns nonzero, the argument list has the right type and
-its components have been stored in the variables whose addresses are
-passed.  When it returns zero, an error has occurred.  In the latter
-case it has already raised an appropriate exception by calling
-\code{err_setstr()}, so the calling function can just return NULL.
-
-The form of the format string is described at the end of this file.
-(There are convenience macros \code{getstrarg()}, \code{getintarg()},
-etc., for many common forms of argument lists.  These are relics from
-the past; it's better to call \code{getargs()} directly.)
+If \code{getargs()} returns nonzero, the argument list has the right
+type and its components have been stored in the variables whose
+addresses are passed.  If it returns zero, an error has occurred.  In
+the latter case it has already raised an appropriate exception by
+calling \code{err_setstr()}, so the calling function can just return
+\code{NULL}.
 
 
 \section{Intermezzo: errors and exceptions}
@@ -124,7 +132,7 @@ An important convention throughout the Python interpreter is the
 following: when a function fails, it should set an exception condition
 and return an error value (often a NULL pointer).  Exceptions are set
 in a global variable in the file errors.c; if this variable is NULL no
-exception has occurred.  A second variable is the ``associated value''
+exception has occurred.  A second variable is the `associated value'
 of the exception.
 
 The file errors.h declares a host of err_* functions to set various
@@ -132,7 +140,7 @@ types of exceptions.  The most common one is \code{err_setstr()} --- its
 arguments are an exception object (e.g. RuntimeError --- actually it
 can be any string object) and a C string indicating the cause of the
 error (this is converted to a string object and stored as the
-``associated value'' of the exception).  Another useful function is
+`associated value' of the exception).  Another useful function is
 \code{err_errno()}, which only takes an exception argument and
 constructs the associated value by inspection of the (UNIX) global
 variable errno.
@@ -300,7 +308,7 @@ info about this.)
 The above concentrates on making C functions accessible to the Python
 programmer.  The reverse is also often useful: calling Python
 functions from C.  This is especially the case for libraries that
-support so-called ``callback'' functions.  If a C interface makes heavy
+support so-called `callback' functions.  If a C interface makes heavy
 use of callbacks, the equivalent Python often needs to provide a
 callback mechanism to the Python programmer; the implementation may
 require calling the Python callback functions from a C callback.
@@ -351,8 +359,8 @@ example:
 
 \code{call_object()} returns a Python object pointer: this is
 the return value of the Python function.  \code{call_object()} is
-``reference-count-neutral'' with respect to its arguments, but the
-return value is ``new'': either it is a brand new object, or it is an
+`reference-count-neutral' with respect to its arguments, but the
+return value is `new': either it is a brand new object, or it is an
 existing object whose reference count has been incremented.  So, you
 should somehow apply DECREF to the result, even (especially!) if you
 are not interested in its value.
@@ -733,6 +741,171 @@ exactly will depend on the details of the C++ system used; in general
 you will need to write the main program in C++, and use the C++
 compiler to compile and link your program.  There is no need to
 recompile Python itself with C++.
+
+
+\chapter{Dynamic Loading}
+
+On some systems (e.g., SunOS, SGI Irix) it is possible to configure
+Python to support dynamic loading of modules implemented in C.  Once
+configured and installed it's trivial to use: if a Python program
+executes \code{import foo}, the search for modules tries to find a
+file \file{foomodule.o} in the module search path, and if one is
+found, it is linked with the executing binary and executed.  Once
+linked, the module acts just like a built-in module.
+
+The advantages of dynamic loading are twofold: the `core' Python
+binary gets smaller, and users can extend Python with their own
+modules implemented in C without having to build and maintain their
+own copy of the Python interpreter.  There are also disadvantages:
+dynamic loading isn't available on all systems (this just means that
+on some systems you have to use static loading), and dynamically
+loading a module that was compiled for a different version of Python
+(e.g., with a different representation of objects) may dump core.
+
+{\bf NEW:} Under SunOS, dynamic loading now uses SunOS shared
+libraries and is always configured.  See at the end of this chapter
+for how to create a dynamically loadable module.
+
+
+\section{Configuring and building the interpreter for dynamic loading}
+
+(Ignore this section for SunOS --- on SunOS dynamic loading is always
+configured.)
+
+Dynamic loading is a little complicated to configure, since its
+implementation is extremely system dependent, and there are no
+really standard libraries or interfaces for it.  I'm using an
+extremely simple interface, which basically needs only one function:
+
+\begin{verbatim}
+    funcptr = dl_loadmod(binary, object, function)
+\end{verbatim}
+
+where \code{binary} is the pathname of the currently executing program
+(not just \code{argv[0]}!), \code{object} is the name of the \samp{.o}
+file to be dynamically loaded, and \code{function} is the name of a
+function in the module.  If the dynamic loading succeeds,
+\code{dl_loadmod()} returns a pointer to the named function; if not, it
+returns \code{NULL}.
+
+I provide two implementations of \code{dl_loadmod()}: one for SGI machines
+running Irix 4.0 (written by my colleague Jack Jansen), and one that
+is a thin interface layer for Wilson Ho's (GNU) dynamic loading
+package \dfn{dld} (version 3.2.3).  Dld implements a much more powerful
+version of dynamic loading than needed (including unlinking), but it
+does not support System V's COFF object file format.  It currently
+supports only VAX (Ultrix), Sun 3 (SunOS 3.4 and 4.0), SPARCstation
+(SunOS 4.0), Sequent Symmetry (Dynix), and Atari ST (from the dld
+3.2.3 README file).  Dld is part of the standard Python distribution;
+if you didn't get it,many ftp archive sites carry dld these days, so
+it won't be hard to get hold of it if you need it (using archie).
+
+(If you don't know where to get dld, try anonymous ftp to
+\file{wuarchive.wustl.edu:/mirrors2/gnu/dld-3.2.3.tar.Z}.  Jack's dld
+can be found at \file{ftp.cwi.nl:/pub/python/dl.tar.Z}.)
+
+To build a Python interpreter capable of dynamic loading, you need to
+edit the Makefile.  Basically you must uncomment the lines starting
+with \samp{\#DL_}, but you must also edit some of the lines to choose
+which version of dl_loadmod to use, and fill in the pathname of the dld
+library if you use it.  And, of course, you must first build
+dl_loadmod and dld, if used.  (This is now done through the Configure
+script.  For SunOS, everything is now automatic as long as the
+architecture type is \code{sun4}.)
+
+
+\section{Building a dynamically loadable module}
+
+Building an object file usable by dynamic loading is easy, if you
+follow these rules (substitute your module name for \code{foo}
+everywhere):
+
+\begin{itemize}
+
+\item
+The source filename must be \file{foomodule.c}, so the object
+name is \file{foomodule.o}.
+
+\item
+The module must be written as a (statically linked) Python extension
+module (described in an earlier chapter) except that no line for it
+must be added to \file{config.c} and it mustn't be linked with the
+main Python interpreter.
+
+\item
+The module's initialization function must be called \code{initfoo}; it
+must install the module in \code{sys.modules} (generally by calling
+\code{initmodule()} as explained earlier.
+
+\item
+The module must be compiled with \samp{-c}.  The resulting .o file must
+not be stripped.
+
+\item
+Since the module must include many standard Python include files, it
+must be compiled with a \samp{-I} option pointing to the Python source
+directory (unless it resides there itself).
+
+\item
+On SGI Irix, the compiler flag \samp{-G0} (or \samp{-G 0}) must be passed.
+IF THIS IS NOT DONE THE RESULTING CODE WILL NOT WORK.
+
+\item
+{\bf NEW:} On SunOS, you must create a shared library from your \samp{.o}
+file using the following command (assuming your module is called
+\code{foo}):
+
+\begin{verbatim}
+	ld -o foomodule.so foomodule.o <any other libraries needed>
+\end{verbatim}
+
+and place the resulting \samp{.so} file in the Python search path (not
+the \samp{.o} file).  Note: on Solaris, you need to pass \samp{-G} to
+the loader.
+
+\end{itemize}
+
+
+\section{Using libraries}
+
+If your dynamically loadable module needs to be linked with one or
+more libraries that aren't linked with Python (or if it needs a
+routine that isn't used by Python from one of the libraries with which
+Python is linked), you must specify a list of libraries to search
+after loading the module in a file with extension \samp{.libs} (and
+otherwise the same as your \samp{.o} file).  This file should contain
+one or more lines containing whitespace-separated absolute library
+pathnames.  When using the dl interface, \samp{-l...} flags may also
+be used (it is in fact passed as an option list to the system linker
+ld(1)), but the dl-dld interface requires absolute pathnames.  I
+believe it is possible to specify shared libraries here.
+
+(On SunOS, any extra libraries must be specified on the \code{ld}
+command that creates the \samp{.so} file.)
+
+
+\section{Caveats}
+
+Dynamic loading requires that \code{main}'s \code{argv[0]} contains
+the pathname or at least filename of the Python interpreter.
+Unfortunately, when executing a directly executable Python script (an
+executable file with \samp{\#!...} on the first line), the kernel
+overwrites \code{argv[0]} with the name of the script.  There is no
+easy way around this, so executable Python scripts cannot use
+dynamically loaded modules.  (You can always write a simple shell
+script that calls the Python interpreter with the script as its
+input.)
+
+When using dl, the overlay is first converted into an `overlay' for
+the current process by the system linker (\code{ld}).  The overlay is
+saved as a file with extension \samp{.ld}, either in the directory
+where the \samp{.o} file lives or (if that can't be written) in a
+temporary directory.  An existing \samp{.ld} file resulting from a
+previous run (not from a temporary directory) is used, bypassing the
+(costly) linking phase, provided its version matches the \samp{.o}
+file and the current binary.  (See the \code{dl} man page for more
+details.)
+
 
 \input{ext.ind}
 
