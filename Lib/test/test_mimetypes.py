@@ -13,42 +13,49 @@ class MimeTypesTestCase(unittest.TestCase):
         self.db = mimetypes.MimeTypes()
 
     def test_default_data(self):
-        self.assertEqual(self.db.guess_type("foo.html"),
-                         ("text/html", None))
-        self.assertEqual(self.db.guess_type("foo.tgz"),
-                         ("application/x-tar", "gzip"))
-        self.assertEqual(self.db.guess_type("foo.tar.gz"),
-                         ("application/x-tar", "gzip"))
-        self.assertEqual(self.db.guess_type("foo.tar.Z"),
-                         ("application/x-tar", "compress"))
+        eq = self.assertEqual
+        eq(self.db.guess_type("foo.html"), ("text/html", None))
+        eq(self.db.guess_type("foo.tgz"), ("application/x-tar", "gzip"))
+        eq(self.db.guess_type("foo.tar.gz"), ("application/x-tar", "gzip"))
+        eq(self.db.guess_type("foo.tar.Z"), ("application/x-tar", "compress"))
 
     def test_data_urls(self):
-        self.assertEqual(self.db.guess_type("data:,thisIsTextPlain"),
-                         ("text/plain", None))
-        self.assertEqual(self.db.guess_type("data:;base64,thisIsTextPlain"),
-                         ("text/plain", None))
-        self.assertEqual(self.db.guess_type("data:text/x-foo,thisIsTextXFoo"),
-                         ("text/x-foo", None))
+        eq = self.assertEqual
+        guess_type = self.db.guess_type
+        eq(guess_type("data:,thisIsTextPlain"), ("text/plain", None))
+        eq(guess_type("data:;base64,thisIsTextPlain"), ("text/plain", None))
+        eq(guess_type("data:text/x-foo,thisIsTextXFoo"), ("text/x-foo", None))
 
     def test_file_parsing(self):
+        eq = self.assertEqual
         sio = StringIO.StringIO("x-application/x-unittest pyunit\n")
         self.db.readfp(sio)
-        self.assertEqual(self.db.guess_type("foo.pyunit"),
-                         ("x-application/x-unittest", None))
-        self.assertEqual(self.db.guess_extension("x-application/x-unittest"),
-                         ".pyunit")
+        eq(self.db.guess_type("foo.pyunit"),
+           ("x-application/x-unittest", None))
+        eq(self.db.guess_extension("x-application/x-unittest"), ".pyunit")
 
     def test_non_standard_types(self):
+        eq = self.assertEqual
         # First try strict
-        self.assertEqual(self.db.guess_type('foo.xul', strict=1),
-                         (None, None))
-        self.assertEqual(self.db.guess_extension('image/jpg', strict=1),
-                         None)
+        eq(self.db.guess_type('foo.xul', strict=True), (None, None))
+        eq(self.db.guess_extension('image/jpg', strict=True), None)
         # And then non-strict
-        self.assertEqual(self.db.guess_type('foo.xul', strict=0),
-                         ('text/xul', None))
-        self.assertEqual(self.db.guess_extension('image/jpg', strict=0),
-                         '.jpg')
+        eq(self.db.guess_type('foo.xul', strict=False), ('text/xul', None))
+        eq(self.db.guess_extension('image/jpg', strict=False), '.jpg')
+
+    def test_guess_all_types(self):
+        eq = self.assertEqual
+        # First try strict
+        all = self.db.guess_all_extensions('text/plain', strict=True)
+        all.sort()
+        eq(all, ['.bat', '.c', '.h', '.ksh', '.pl', '.txt'])
+        # And now non-strict
+        all = self.db.guess_all_extensions('image/jpg', strict=False)
+        all.sort()
+        eq(all, ['.jpg'])
+        # And now for no hits
+        all = self.db.guess_all_extensions('image/jpg', strict=True)
+        eq(all, [])
 
 
 def test_main():
