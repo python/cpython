@@ -24,6 +24,7 @@ def makemakefile(outfp, makevars, files, target):
             deps.append(dest)
 
     outfp.write("\n%s: %s\n" % (target, string.join(deps)))
-    outfp.write("\t$(CC) %s -o %s\n" % (string.join(files), target))
+    outfp.write("\t$(CC) %s -o %s $(LDLAST)\n" % 
+                (string.join(files), target))
 
     outfp.write("\nclean:\n\t-rm -f *.o %s\n" % target)
