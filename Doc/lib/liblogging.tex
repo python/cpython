@@ -193,6 +193,11 @@ is added to the logging message. This function should only be called
 from an exception handler.
 \end{funcdesc}
 
+\begin{funcdesc}{log}{level, msg\optional{, *args\optional{, **kwargs}}}
+Logs a message with level \var{level} on the root logger.
+The other arguments are interpreted as for \function{debug()}.
+\end{funcdesc}
+
 \begin{funcdesc}{disable}{lvl}
 Provides an overriding level \var{lvl} for all loggers which takes
 precedence over the logger's own level. When the need arises to
