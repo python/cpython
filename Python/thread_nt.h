@@ -182,7 +182,11 @@ static void PyThread__init_thread(void)
  */
 int PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
+#if _MSC_VER >= 1200
 	INT_PTR rv;
+#else
+	unsigned long rv;
+#endif
 	int success = 0;
 
 	dprintf(("%ld: PyThread_start_new_thread called\n", PyThread_get_thread_ident()));
