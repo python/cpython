@@ -64,6 +64,22 @@ COREPYTHONPATH=.:$(DESTLIB)$(TESTPATH)$(MACHDEPPATH)$(STDWINPATH)$(TKPATH)
 PYTHONPATH=$(COREPYTHONPATH)
 
 
+# If you want to build most modules as shared libraries, here are
+# a couple of lines to enable.  The modules listed here can't be
+# built as shared libraries for various reasons.
+# IF YOU ENABLE THEM HERE, DISABLE THEM LATER IN THE Setup FILE!
+
+#posix posixmodule.c		# posix (UNIX) system calls
+#signal signalmodule.c		# signal(2)
+#gl glmodule.c -lgl -lX11	# Graphics Library -- SGI only
+#thread threadmodule.c		# threads -- see below
+
+# Uncommenting the following line tells makesetup that all following
+# modules are to be built as shared libraries (see above for more detail).
+
+#*noconfig*
+
+
 # Modules that should always be present (non UNIX dependent)
 # NB when using shared libraries, don't make posix a shared library!
 
@@ -80,6 +96,7 @@ time timemodule.c	# time operations and variables
 # Modules with some UNIX dependencies -- on by default.
 # (If you have a really backward UNIX, select and socket may not be
 # supported...)
+# NB when using shared libraries, don't make signal a shared library!
 
 fcntl fcntlmodule.c	# fcntl(2) and ioctl(2)
 pwd pwdmodule.c		# pwd(3) 
@@ -157,21 +174,29 @@ md5 md5module.c md5c.c
 
 
 # SGI IRIX specific modules -- off by default.
-# Switch this on if you have an SGI machine.
-# Note that some required libraries and header files aren't always
-# installed; you may be better off switching on only 'fm' and 'gl'
-# (Font Manager and Graphics Library).
+
+# These module work on any SGI machine.
 # NB when using shared libraries, don't make gl a shared library!
 
-#				      # THESE ARE ONLY FOR IRIX5:
-#al almodule.c -laudio
-#cd cdmodule.c -lcdaudio -lds		-lmediad
-#cl clmodule.c -lcl			-lawareaudio
-#fm fmmodule.c -lfm -lgl
-#gl glmodule.c -lgl -lX11
-#imgfile imgfile.c -limage -lgutil -lm
-#sgi sgimodule.c
-#sv svmodule.c yuvconvert.c -lsvideo -lXext -lX11
+#fm fmmodule.c -lfm -lgl		# Font Manager
+#gl glmodule.c -lgl -lX11		# Graphics Library
+#sgi sgimodule.c			# sgi.nap() and a few more
+
+# This module requires the header file
+# /usr/people/4Dgifts/iristools/include/izoom.h
+
+#imgfile imgfile.c -limage -lgutil -lm	# Image Processing Utilities
+
+
+# These modules require the Multimedia Development Option (I think).
+# Note that -lmediad and -lawareaudio are only present on IRIX 5 and
+# should be taken out for IRIX 4.
+
+#al almodule.c -laudio			# Audio Library
+#cd cdmodule.c -lcdaudio -lds -lmediad	# CD Audio Library
+#cl clmodule.c -lcl -lawareaudio	# Compression Library
+#sv svmodule.c yuvconvert.c -lsvideo -lXext -lX11	# Starter Video
+
 
 # The FORMS library, by Mark Overmars, implements user interface
 # components such as dialogs and buttons using SGI's GL and FM
