@@ -108,6 +108,36 @@ class ReadTest(unittest.TestCase):
         writer.write(u"foo\r\n")
         self.assertEqual(reader.readline(keepends=True), u"foo\r\n")
 
+    def test_bug1098990_a(self):
+        s1 = u"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\r\n"
+        s2 = u"offending line: ladfj askldfj klasdj fskla dfzaskdj fasklfj laskd fjasklfzzzzaa%whereisthis!!!\r\n"
+        s3 = u"next line.\r\n"
+
+        s = (s1+s2+s3).encode(self.encoding)
+        stream = StringIO.StringIO(s)
+        reader = codecs.getreader(self.encoding)(stream)
+        self.assertEqual(reader.readline(), s1)
+        self.assertEqual(reader.readline(), s2)
+        self.assertEqual(reader.readline(), s3)
+        self.assertEqual(reader.readline(), u"")
+
+    def test_bug1098990_b(self):
+        s1 = u"aaaaaaaaaaaaaaaaaaaaaaaa\r\n"
+        s2 = u"bbbbbbbbbbbbbbbbbbbbbbbb\r\n"
+        s3 = u"stillokay:bbbbxx\r\n"
+        s4 = u"broken!!!!badbad\r\n"
+        s5 = u"againokay.\r\n"
+
+        s = (s1+s2+s3+s4+s5).encode(self.encoding)
+        stream = StringIO.StringIO(s)
+        reader = codecs.getreader(self.encoding)(stream)
+        self.assertEqual(reader.readline(), s1)
+        self.assertEqual(reader.readline(), s2)
+        self.assertEqual(reader.readline(), s3)
+        self.assertEqual(reader.readline(), s4)
+        self.assertEqual(reader.readline(), s5)
+        self.assertEqual(reader.readline(), u"")
+
 class UTF16Test(ReadTest):
     encoding = "utf-16"
 

@@ -322,9 +322,9 @@ class StreamReader(Codec):
                         line = line0withend
                     else:
                         line = line0withoutend
-                break
+                    break
             # we didn't get anything or this was our only try
-            elif not data or size is not None:
+            if not data or size is not None:
                 if line and not keepends:
                     line = line.splitlines(False)[0]
                 break
