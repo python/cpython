@@ -272,20 +272,18 @@ class TestModule(unittest.TestCase):
         self.failUnless(Set(random.__all__) <= Set(dir(random)))
 
 def test_main(verbose=None):
-    suite = unittest.TestSuite()
-    for testclass in (WichmannHill_TestBasicOps,
+    testclasses =    (WichmannHill_TestBasicOps,
                       MersenneTwister_TestBasicOps,
                       TestDistributions,
-                      TestModule):
-        suite.addTest(unittest.makeSuite(testclass))
-    test_support.run_suite(suite)
+                      TestModule)
+    test_support.run_unittest(*testclasses)
 
     # verify reference counting
     import sys
     if verbose and hasattr(sys, "gettotalrefcount"):
         counts = [None] * 5
         for i in xrange(len(counts)):
-            test_support.run_suite(suite)
+            test_support.run_unittest(*testclasses)
             counts[i] = sys.gettotalrefcount()
         print counts
 
