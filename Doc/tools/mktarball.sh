@@ -35,7 +35,7 @@ rm -f $TEMPDIR/Python-$RELEASE/Doc/ref/ref.ps
 
 cd $TEMPDIR
 
-(tar cf - Python-$RELEASE | gzip -9 >$MYDIR/latex-$RELEASE.tar.gz) || exit $?
+(tar cf - Python-$RELEASE | gzip -9 >$MYDIR/latex-$RELEASE.tgz) || exit $?
 cd $MYDIR
 rm -r $TEMPDIR || exit $?
 
