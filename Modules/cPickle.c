@@ -1686,7 +1686,7 @@ save_inst(Picklerobject *self, PyObject *args)
 static int
 save_global(Picklerobject *self, PyObject *args, PyObject *name) 
 {
-	PyObject *global_name = 0, *module = 0, *mod = 0, *moddict = 0, *klass = 0;
+	PyObject *global_name = 0, *module = 0, *mod = 0, *klass = 0;
 	char *name_str, *module_str;
 	int module_size, name_size, res = -1;
 
