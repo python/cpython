@@ -294,14 +294,14 @@ static PyObject *WinObj_GetWindowFeatures(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	OSStatus _rv;
+	OSStatus _err;
 	UInt32 outFeatures;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	_rv = GetWindowFeatures(_self->ob_itself,
-	                        &outFeatures);
-	_res = Py_BuildValue("ll",
-	                     _rv,
+	_err = GetWindowFeatures(_self->ob_itself,
+	                         &outFeatures);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
 	                     outFeatures);
 	return _res;
 }
@@ -311,18 +311,19 @@ static PyObject *WinObj_GetWindowRegion(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	OSStatus _rv;
+	OSStatus _err;
 	WindowRegionCode inRegionCode;
 	RgnHandle ioWinRgn;
 	if (!PyArg_ParseTuple(_args, "hO&",
 	                      &inRegionCode,
 	                      ResObj_Convert, &ioWinRgn))
 		return NULL;
-	_rv = GetWindowRegion(_self->ob_itself,
-	                      inRegionCode,
-	                      ioWinRgn);
-	_res = Py_BuildValue("l",
-	                     _rv);
+	_err = GetWindowRegion(_self->ob_itself,
+	                       inRegionCode,
+	                       ioWinRgn);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -503,15 +504,16 @@ static PyObject *WinObj_CollapseWindow(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	OSStatus _rv;
+	OSStatus _err;
 	Boolean inCollapseIt;
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &inCollapseIt))
 		return NULL;
-	_rv = CollapseWindow(_self->ob_itself,
-	                     inCollapseIt);
-	_res = Py_BuildValue("l",
-	                     _rv);
+	_err = CollapseWindow(_self->ob_itself,
+	                      inCollapseIt);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -1070,9 +1072,9 @@ static PyMethodDef WinObj_methods[] = {
 	{"HiliteWindow", (PyCFunction)WinObj_HiliteWindow, 1,
 	 "(Boolean fHilite) -> None"},
 	{"GetWindowFeatures", (PyCFunction)WinObj_GetWindowFeatures, 1,
-	 "() -> (OSStatus _rv, UInt32 outFeatures)"},
+	 "() -> (UInt32 outFeatures)"},
 	{"GetWindowRegion", (PyCFunction)WinObj_GetWindowRegion, 1,
-	 "(WindowRegionCode inRegionCode, RgnHandle ioWinRgn) -> (OSStatus _rv)"},
+	 "(WindowRegionCode inRegionCode, RgnHandle ioWinRgn) -> None"},
 	{"SetWRefCon", (PyCFunction)WinObj_SetWRefCon, 1,
 	 "(long data) -> None"},
 	{"GetWRefCon", (PyCFunction)WinObj_GetWRefCon, 1,
@@ -1098,7 +1100,7 @@ static PyMethodDef WinObj_methods[] = {
 	{"IsWindowCollapsed", (PyCFunction)WinObj_IsWindowCollapsed, 1,
 	 "() -> (Boolean _rv)"},
 	{"CollapseWindow", (PyCFunction)WinObj_CollapseWindow, 1,
-	 "(Boolean inCollapseIt) -> (OSStatus _rv)"},
+	 "(Boolean inCollapseIt) -> None"},
 	{"MacMoveWindow", (PyCFunction)WinObj_MacMoveWindow, 1,
 	 "(short hGlobal, short vGlobal, Boolean front) -> None"},
 	{"SizeWindow", (PyCFunction)WinObj_SizeWindow, 1,
@@ -1475,14 +1477,15 @@ static PyObject *Win_CollapseAllWindows(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	OSStatus _rv;
+	OSStatus _err;
 	Boolean inCollapseEm;
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &inCollapseEm))
 		return NULL;
-	_rv = CollapseAllWindows(inCollapseEm);
-	_res = Py_BuildValue("l",
-	                     _rv);
+	_err = CollapseAllWindows(inCollapseEm);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -1584,7 +1587,7 @@ static PyMethodDef Win_methods[] = {
 	{"ValidRgn", (PyCFunction)Win_ValidRgn, 1,
 	 "(RgnHandle goodRgn) -> None"},
 	{"CollapseAllWindows", (PyCFunction)Win_CollapseAllWindows, 1,
-	 "(Boolean inCollapseEm) -> (OSStatus _rv)"},
+	 "(Boolean inCollapseEm) -> None"},
 	{"PinRect", (PyCFunction)Win_PinRect, 1,
 	 "(Rect theRect, Point thePt) -> (long _rv)"},
 	{"GetGrayRgn", (PyCFunction)Win_GetGrayRgn, 1,
