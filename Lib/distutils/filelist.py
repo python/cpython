@@ -248,30 +248,6 @@ class FileList:
 
     # exclude_pattern ()
 
-
-    def recursive_exclude_pattern (self, dir, pattern=None):
-        """Remove filenames from 'self.files' that are under 'dir' and
-        whose basenames match 'pattern'.
-        Return 1 if files are found.
-        """
-        files_found = 0
-        self.debug_print("recursive_exclude_pattern: dir=%s, pattern=%s" %
-                         (dir, pattern))
-        if pattern is None:
-            pattern_re = None
-        else:
-            pattern_re = translate_pattern (pattern)
-
-        for i in range (len (self.files)-1, -1, -1):
-            (cur_dir, cur_base) = os.path.split (self.files[i])
-            if (cur_dir == dir and
-                (pattern_re is None or pattern_re.match (cur_base))):
-                self.debug_print("removing %s" % self.files[i])
-                del self.files[i]
-                files_found = 1
-    
-        return files_found
-
 # class FileList
 
 
