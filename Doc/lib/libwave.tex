@@ -12,7 +12,7 @@ mono/stereo.
 
 The \module{wave} module defines the following function and exception:
 
-\begin{funcdesc}{open}{file, mode}
+\begin{funcdesc}{open}{file\optional{, mode}}
 If \var{file} is a string, open the file by that name, other treat it
 as a seekable file-like object. \var{mode} can be any of
 \begin{description}
@@ -23,7 +23,10 @@ Note that it does not allow read/write WAV files.
 
 A \var{mode} of \code{'r'} or \code{'rb'} returns a \class{Wave_read}
 object, while a \var{mode} of \code{'w'} or \code{'wb'} returns
-a \class{Wave_write} object.
+a \class{Wave_write} object.  If \var{mode} is omitted and a file-like 
+object is passed as \var{file}, \code{\var{file}.mode} is used as the
+default value for \var{mode} (the \character{b} flag is still added if 
+necessary).
 \end{funcdesc}
 
 \begin{funcdesc}{openfp}{file, mode}
