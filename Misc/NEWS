@@ -38,6 +38,9 @@ Core and builtins
 Library
 -------
 
+- Bug #920575: A problem that _locale module segfaults on
+  nl_langinfo(ERA) caused by GNU libc's illegal NULL return is fixed.
+
 - Bug #883604: Fix Lib/test/test_strftime.py to escape characters from locale
   time values that might be mistaken as regex syntax.
 
