@@ -48,10 +48,10 @@ class DrawingObject:
 		#print 'box', ((left, top), (right, bottom))
 		gl.rect(left, top, right, bottom)
 	#
-	def circle(self, ((h, v), radius)):
+	def circle(self, (h, v), radius):
 		gl.circ(h, v, radius)
 	#
-	def elarc(self, (center, (rh, rv), a1, a2)):
+	def elarc(self, center, (rh, rv), (a1, a2)):
 		pass # XXX
 	#
 	def erase(self, ((left, top), (right, bottom))):
@@ -68,14 +68,14 @@ class DrawingObject:
 		gl.color(self.fg)
 		gl.logicop(LO_SRC)
 	#
-	def line(self, ((h0, v0), (h1, v1))):
+	def line(self, (h0, v0), (h1, v1)):
 		#print 'line', ((h0, v0), (h1, v1))
 		gl.bgnline()
 		gl.v2i(h0, v0)
 		gl.v2i(h1, v1)
 		gl.endline()
 	#
-	def xorline(self, ((h0, v0), (h1, v1))):
+	def xorline(self, (h0, v0), (h1, v1)):
 		#print 'xorline', ((h0, v0), (h1, v1))
 		gl.logicop(LO_XOR)
 		gl.color(self.bg)
@@ -92,7 +92,7 @@ class DrawingObject:
 		gl.v2i(h, v)
 		gl.endpoint()
 	#
-	def text(self, ((h, v), string)):
+	def text(self, (h, v), string):
 		#print 'text', ((h, v), string)
 		if h < 0:
 			# If the point is outside the window
@@ -108,7 +108,7 @@ class DrawingObject:
 		self.font.setfont()
 		fm.prstr(string)
 	#
-	def shade(self, ((h, v), percent)):
+	def shade(self, (h, v), percent):
 		pass # XXX
 	#
 	def baseline(self):
@@ -121,7 +121,7 @@ class DrawingObject:
 			height, nglyphs) = self.font.getfontinfo()
 		return height
 	#
-	def textbreak(self, (string, width)):
+	def textbreak(self, string, width):
 		# XXX Slooooow!
 		n = len(string)
 		nwidth = self.textwidth(string[:n])

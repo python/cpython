@@ -33,9 +33,9 @@ def main():
 			d = window.begindrawing()
 			if window == w1:
 				if color: d.setfgcolor(BLACK)
-				d.box((50, 50), (250, 250))
+				d.box(((50, 50), (250, 250)))
 				if color: d.setfgcolor(RED)
-				d.cliprect((50, 50), (250, 250))
+				d.cliprect(((50, 50), (250, 250)))
 				d.paint(w1.box)
 				d.noclip()
 				if color: d.setfgcolor(BLUE)
@@ -59,7 +59,7 @@ def main():
 		elif type in (WE_MOUSE_DOWN, WE_MOUSE_MOVE, WE_MOUSE_UP):
 			h, v = detail[0]
 			window.box = (h, v), (h+80, v+80)
-			window.change((0,0), (2000, 2000))
+			window.change(((0,0), (2000, 2000)))
 		elif type == WE_CHAR:
 			print 'character', `detail`
 		else:

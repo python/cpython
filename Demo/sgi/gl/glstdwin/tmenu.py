@@ -27,7 +27,7 @@ def main():
 			break
 		elif type == WE_DRAW:
 			d = w.begindrawing()
-			d.box((50,50), (100,100))
+			d.box(((50,50), (100,100)))
 			del d
 		elif type == WE_MENU:
 			mp, i = detail

@@ -51,7 +51,7 @@ class WindowObject:
 	def getwinsize(self):
 		return self._area[1]
 	#
-	def scroll(self, (area, by)):
+	def scroll(self, area, by):
 		# XXX ought to use gl.rectcopy()
 		if by <> (0, 0):
 			self.change(area)
