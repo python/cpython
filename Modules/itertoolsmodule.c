@@ -1766,7 +1766,7 @@ PyDoc_STRVAR(module_doc,
 Infinite iterators:\n\
 count([n]) --> n, n+1, n+2, ...\n\
 cycle(p) --> p0, p1, ... plast, p0, p1, ...\n\
-repeat(elem [,n]) --> elem, elem, elem, ... endlessly or upto n times\n\
+repeat(elem [,n]) --> elem, elem, elem, ... endlessly or up to n times\n\
 \n\
 Iterators terminating on the shortest input sequence:\n\
 izip(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ... \n\
