@@ -741,7 +741,6 @@ initmacfs
 PyMac_BuildFSSpec
 PyMac_BuildFSRef
 PyMac_GetFSRef
-newmfsrobject
 newmfssobject
 PyMac_GetFSSpec
 initmac
