@@ -18,7 +18,7 @@ cygwin in no-cygwin mode).
 #
 #   see also http://starship.python.net/crew/kernr/mingw32/Notes.html
 #
-# * We use put export_symbols in a def-file, and don't use 
+# * We put export_symbols in a def-file, and don't use 
 #   --export-all-symbols because it doesn't worked reliable in some
 #   tested configurations. And because other windows compilers also
 #   need their symbols specified this no serious problem.
@@ -32,7 +32,7 @@ cygwin in no-cygwin mode).
 #   (ld doesn't support -shared, so we use dllwrap)   
 # * cygwin gcc 2.95.2/ld 2.10.90/dllwrap 2.10.90 works now
 #   - its dllwrap doesn't work, there is a bug in binutils 2.10.90
-#     see also .....
+#     see also http://sources.redhat.com/ml/cygwin/2000-06/msg01274.html
 #   - using gcc -mdll instead dllwrap doesn't work without -static because 
 #     it tries to link against dlls instead their import libraries. (If
 #     it finds the dll first.)
