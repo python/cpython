@@ -80,7 +80,7 @@ class ASTVisitor:
     VERBOSE = 0
 
     def __init__(self):
-	self.node = None
+        self.node = None
 
     def preorder(self, tree, visitor):
         """Do preorder walk of tree using visitor"""
@@ -163,27 +163,26 @@ class CodeGenerator:
     # XXX should clean up initialization and generateXXX funcs
     def __init__(self, filename="<?>"):
         self.filename = filename
-	self.code = PyAssembler()
+        self.code = PyAssembler()
         self.code.setFlags(0)
-	self.locals = misc.Stack()
+        self.locals = misc.Stack()
         self.loops = misc.Stack()
         self.namespace = 0
         self.curStack = 0
         self.maxStack = 0
 
     def emit(self, *args):
-	# XXX could just use self.emit = self.code.emit
-	apply(self.code.emit, args)
+        # XXX could just use self.emit = self.code.emit
+        apply(self.code.emit, args)
 
     def _generateFunctionOrLambdaCode(self, func):
         self.name = func.name
-        self.filename = filename
-
+ 
         # keep a lookout for 'def foo((x,y)):'
         args, hasTupleArg = self.generateArglist(func.argnames)
         
-	self.code = PyAssembler(args=args, name=func.name,
-                                 filename=filename)
+        self.code = PyAssembler(args=args, name=func.name,
+                                filename=self.filename)
         self.namespace = self.OPTIMIZED
         if func.varargs:
             self.code.setVarArgs()
@@ -191,8 +190,8 @@ class CodeGenerator:
             self.code.setKWArgs()
         lnf = walk(func.code, LocalNameFinder(args), 0)
         self.locals.push(lnf.getLocals())
-	self.emit('SET_LINENO', func.lineno)
-	if hasTupleArg:
+        self.emit('SET_LINENO', func.lineno)
+        if hasTupleArg:
             self.generateArgUnpack(func.argnames)
         walk(func.code, self)
 
@@ -239,7 +238,7 @@ class CodeGenerator:
 
     def generateClassCode(self, klass):
         self.code = PyAssembler(name=klass.name,
-                                 filename=filename)
+                                 filename=self.filename)
         self.emit('SET_LINENO', klass.lineno)
         lnf = walk(klass.code, LocalNameFinder(), 0)
         self.locals.push(lnf.getLocals())
@@ -254,7 +253,7 @@ class CodeGenerator:
         return self.code.makeCodeObject()
 
     def isLocalName(self, name):
-	return self.locals.top().has_elt(name)
+        return self.locals.top().has_elt(name)
 
     def _nameOp(self, prefix, name):
         if self.isLocalName(name):
@@ -290,8 +289,8 @@ class CodeGenerator:
         self.emit('SET_LINENO', node.lineno)
 
     def visitModule(self, node):
-	lnf = walk(node.node, LocalNameFinder(), 0)
-	self.locals.push(lnf.getLocals())
+        lnf = walk(node.node, LocalNameFinder(), 0)
+        self.locals.push(lnf.getLocals())
         self.visit(node.node)
         self.emit('LOAD_CONST', None)
         self.emit('RETURN_VALUE')
@@ -353,15 +352,15 @@ class CodeGenerator:
         kw = 0
         if hasattr(node, 'lineno'):
             self.emit('SET_LINENO', node.lineno)
-	self.visit(node.node)
-	for arg in node.args:
-	    self.visit(arg)
+        self.visit(node.node)
+        for arg in node.args:
+            self.visit(arg)
             if isinstance(arg, ast.Keyword):
                 kw = kw + 1
             else:
                 pos = pos + 1
-	self.emit('CALL_FUNCTION', kw << 8 | pos)
-	return 1
+        self.emit('CALL_FUNCTION', kw << 8 | pos)
+        return 1
 
     def visitKeyword(self, node):
         self.emit('LOAD_CONST', node.name)
@@ -369,24 +368,24 @@ class CodeGenerator:
         return 1
 
     def visitIf(self, node):
-	after = StackRef()
-	for test, suite in node.tests:
+        after = StackRef()
+        for test, suite in node.tests:
             if hasattr(test, 'lineno'):
                 self.emit('SET_LINENO', test.lineno)
             else:
                 print "warning", "no line number"
-	    self.visit(test)
-	    dest = StackRef()
-	    self.emit('JUMP_IF_FALSE', dest)
-	    self.emit('POP_TOP')
-	    self.visit(suite)
-	    self.emit('JUMP_FORWARD', after)
-	    dest.bind(self.code.getCurInst())
-	    self.emit('POP_TOP')
-	if node.else_:
-	    self.visit(node.else_)
-	after.bind(self.code.getCurInst())
-	return 1
+            self.visit(test)
+            dest = StackRef()
+            self.emit('JUMP_IF_FALSE', dest)
+            self.emit('POP_TOP')
+            self.visit(suite)
+            self.emit('JUMP_FORWARD', after)
+            dest.bind(self.code.getCurInst())
+            self.emit('POP_TOP')
+        if node.else_:
+            self.visit(node.else_)
+        after.bind(self.code.getCurInst())
+        return 1
 
     def startLoop(self):
         l = Loop()
@@ -516,64 +515,64 @@ class CodeGenerator:
         return 1
 
     def visitCompare(self, node):
-	"""Comment from compile.c follows:
+        """Comment from compile.c follows:
 
-	The following code is generated for all but the last
-	comparison in a chain:
-	   
-	label:	on stack:	opcode:		jump to:
-	   
-		a		<code to load b>
-		a, b		DUP_TOP
-		a, b, b		ROT_THREE
-		b, a, b		COMPARE_OP
-		b, 0-or-1	JUMP_IF_FALSE	L1
-		b, 1		POP_TOP
-		b		
-	
-	We are now ready to repeat this sequence for the next
-	comparison in the chain.
-	   
-	For the last we generate:
-	   
-	   	b		<code to load c>
-	   	b, c		COMPARE_OP
-	   	0-or-1		
-	   
-	If there were any jumps to L1 (i.e., there was more than one
-	comparison), we generate:
-	   
-	   	0-or-1		JUMP_FORWARD	L2
-	   L1:	b, 0		ROT_TWO
-	   	0, b		POP_TOP
-	   	0
-	   L2:	0-or-1
-	"""
-	self.visit(node.expr)
-	# if refs are never emitted, subsequent bind call has no effect
-	l1 = StackRef()
-	l2 = StackRef()
-	for op, code in node.ops[:-1]:
-	    # emit every comparison except the last
-	    self.visit(code)
-	    self.emit('DUP_TOP')
-	    self.emit('ROT_THREE')
-	    self.emit('COMPARE_OP', op)
+        The following code is generated for all but the last
+        comparison in a chain:
+           
+        label:  on stack:       opcode:         jump to:
+           
+                a               <code to load b>
+                a, b            DUP_TOP
+                a, b, b         ROT_THREE
+                b, a, b         COMPARE_OP
+                b, 0-or-1       JUMP_IF_FALSE   L1
+                b, 1            POP_TOP
+                b               
+        
+        We are now ready to repeat this sequence for the next
+        comparison in the chain.
+           
+        For the last we generate:
+           
+                b               <code to load c>
+                b, c            COMPARE_OP
+                0-or-1          
+           
+        If there were any jumps to L1 (i.e., there was more than one
+        comparison), we generate:
+           
+                0-or-1          JUMP_FORWARD    L2
+           L1:  b, 0            ROT_TWO
+                0, b            POP_TOP
+                0
+           L2:  0-or-1
+        """
+        self.visit(node.expr)
+        # if refs are never emitted, subsequent bind call has no effect
+        l1 = StackRef()
+        l2 = StackRef()
+        for op, code in node.ops[:-1]:
+            # emit every comparison except the last
+            self.visit(code)
+            self.emit('DUP_TOP')
+            self.emit('ROT_THREE')
+            self.emit('COMPARE_OP', op)
             # dupTop and compareOp cancel stack effect
-	    self.emit('JUMP_IF_FALSE', l1)
-	    self.emit('POP_TOP')
-	if node.ops:
-	    # emit the last comparison
-	    op, code = node.ops[-1]
-	    self.visit(code)
-	    self.emit('COMPARE_OP', op)
-	if len(node.ops) > 1:
-	    self.emit('JUMP_FORWARD', l2)
-	    l1.bind(self.code.getCurInst())
-	    self.emit('ROT_TWO')
-	    self.emit('POP_TOP')
-	    l2.bind(self.code.getCurInst())
-	return 1
+            self.emit('JUMP_IF_FALSE', l1)
+            self.emit('POP_TOP')
+        if node.ops:
+            # emit the last comparison
+            op, code = node.ops[-1]
+            self.visit(code)
+            self.emit('COMPARE_OP', op)
+        if len(node.ops) > 1:
+            self.emit('JUMP_FORWARD', l2)
+            l1.bind(self.code.getCurInst())
+            self.emit('ROT_TWO')
+            self.emit('POP_TOP')
+            l2.bind(self.code.getCurInst())
+        return 1
 
     def visitGetattr(self, node):
         self.visit(node.expr)
@@ -590,7 +589,7 @@ class CodeGenerator:
             self.emit('BINARY_SUBSCR')
         elif node.flags == 'OP_ASSIGN':
             self.emit('STORE_SUBSCR')
-	elif node.flags == 'OP_DELETE':
+        elif node.flags == 'OP_DELETE':
             self.emit('DELETE_SUBSCR')
         return 1
 
@@ -624,11 +623,11 @@ class CodeGenerator:
     def visitAssign(self, node):
         self.emit('SET_LINENO', node.lineno)
         self.visit(node.expr)
-	dups = len(node.nodes) - 1
+        dups = len(node.nodes) - 1
         for i in range(len(node.nodes)):
-	    elt = node.nodes[i]
-	    if i < dups:
-		self.emit('DUP_TOP')
+            elt = node.nodes[i]
+            if i < dups:
+                self.emit('DUP_TOP')
             if isinstance(elt, ast.Node):
                 self.visit(elt)
         return 1
@@ -659,10 +658,10 @@ class CodeGenerator:
     visitAssList = visitAssTuple
 
     def binaryOp(self, node, op):
-	self.visit(node.left)
-	self.visit(node.right)
-	self.emit(op)
-	return 1
+        self.visit(node.left)
+        self.visit(node.right)
+        self.emit(op)
+        return 1
 
     def unaryOp(self, node, op):
         self.visit(node.expr)
@@ -670,28 +669,28 @@ class CodeGenerator:
         return 1
 
     def visitAdd(self, node):
-	return self.binaryOp(node, 'BINARY_ADD')
+        return self.binaryOp(node, 'BINARY_ADD')
 
     def visitSub(self, node):
-	return self.binaryOp(node, 'BINARY_SUBTRACT')
+        return self.binaryOp(node, 'BINARY_SUBTRACT')
 
     def visitMul(self, node):
-	return self.binaryOp(node, 'BINARY_MULTIPLY')
+        return self.binaryOp(node, 'BINARY_MULTIPLY')
 
     def visitDiv(self, node):
-	return self.binaryOp(node, 'BINARY_DIVIDE')
+        return self.binaryOp(node, 'BINARY_DIVIDE')
 
     def visitMod(self, node):
-	return self.binaryOp(node, 'BINARY_MODULO')
+        return self.binaryOp(node, 'BINARY_MODULO')
 
     def visitPower(self, node):
-	return self.binaryOp(node, 'BINARY_POWER')
+        return self.binaryOp(node, 'BINARY_POWER')
 
     def visitLeftShift(self, node):
-	return self.binaryOp(node, 'BINARY_LSHIFT')
+        return self.binaryOp(node, 'BINARY_LSHIFT')
 
     def visitRightShift(self, node):
-	return self.binaryOp(node, 'BINARY_RSHIFT')
+        return self.binaryOp(node, 'BINARY_RSHIFT')
 
     def visitInvert(self, node):
         return self.unaryOp(node, 'UNARY_INVERT')
@@ -712,20 +711,20 @@ class CodeGenerator:
         return self.unaryOp(node, 'UNARY_CONVERT')
 
     def bitOp(self, nodes, op):
-	self.visit(nodes[0])
-	for node in nodes[1:]:
-	    self.visit(node)
-	    self.emit(op)
-	return 1
+        self.visit(nodes[0])
+        for node in nodes[1:]:
+            self.visit(node)
+            self.emit(op)
+        return 1
 
     def visitBitand(self, node):
-	return self.bitOp(node.nodes, 'BINARY_AND')
+        return self.bitOp(node.nodes, 'BINARY_AND')
 
     def visitBitor(self, node):
-	return self.bitOp(node.nodes, 'BINARY_OR')
+        return self.bitOp(node.nodes, 'BINARY_OR')
 
     def visitBitxor(self, node):
-	return self.bitOp(node.nodes, 'BINARY_XOR')
+        return self.bitOp(node.nodes, 'BINARY_XOR')
 
     def visitTest(self, node, jump):
         end = StackRef()
@@ -738,22 +737,22 @@ class CodeGenerator:
         return 1
 
     def visitAssert(self, node):
-	# XXX __debug__ and AssertionError appear to be special cases
-	# -- they are always loaded as globals even if there are local
-	# names.  I guess this is a sort of renaming op.
-	skip = StackRef()
-	self.emit('SET_LINENO', node.lineno)
-	self.emit('LOAD_GLOBAL', '__debug__')
-	self.emit('JUMP_IF_FALSE', skip)
-	self.emit('POP_TOP')
-	self.visit(node.test)
-	self.emit('JUMP_IF_TRUE', skip)
-	self.emit('LOAD_GLOBAL', 'AssertionError')
-	self.visit(node.fail)
-	self.emit('RAISE_VARARGS', 2)
-	skip.bind(self.code.getCurInst())
-	self.emit('POP_TOP')
-	return 1
+        # XXX __debug__ and AssertionError appear to be special cases
+        # -- they are always loaded as globals even if there are local
+        # names.  I guess this is a sort of renaming op.
+        skip = StackRef()
+        self.emit('SET_LINENO', node.lineno)
+        self.emit('LOAD_GLOBAL', '__debug__')
+        self.emit('JUMP_IF_FALSE', skip)
+        self.emit('POP_TOP')
+        self.visit(node.test)
+        self.emit('JUMP_IF_TRUE', skip)
+        self.emit('LOAD_GLOBAL', 'AssertionError')
+        self.visit(node.fail)
+        self.emit('RAISE_VARARGS', 2)
+        skip.bind(self.code.getCurInst())
+        self.emit('POP_TOP')
+        return 1
 
     def visitAnd(self, node):
         return self.visitTest(node, 'JUMP_IF_FALSE')
@@ -765,12 +764,12 @@ class CodeGenerator:
         self.loadName(node.name)
 
     def visitConst(self, node):
-	self.emit('LOAD_CONST', node.value)
+        self.emit('LOAD_CONST', node.value)
         return 1
 
     def visitEllipsis(self, node):
-	self.emit('LOAD_CONST', Ellipsis)
-	return 1
+        self.emit('LOAD_CONST', Ellipsis)
+        return 1
 
     def visitTuple(self, node):
         for elt in node.nodes:
@@ -785,76 +784,76 @@ class CodeGenerator:
         return 1
 
     def visitDict(self, node):
-	self.emit('BUILD_MAP', 0)
-	for k, v in node.items:
-	    # XXX need to add set lineno when there aren't constants
-	    self.emit('DUP_TOP')
-	    self.visit(v)
-	    self.emit('ROT_TWO')
-	    self.visit(k)
-	    self.emit('STORE_SUBSCR')
-	return 1
+        self.emit('BUILD_MAP', 0)
+        for k, v in node.items:
+            # XXX need to add set lineno when there aren't constants
+            self.emit('DUP_TOP')
+            self.visit(v)
+            self.emit('ROT_TWO')
+            self.visit(k)
+            self.emit('STORE_SUBSCR')
+        return 1
 
     def visitReturn(self, node):
-	self.emit('SET_LINENO', node.lineno)
-	self.visit(node.value)
-	self.emit('RETURN_VALUE')
-	return 1
+        self.emit('SET_LINENO', node.lineno)
+        self.visit(node.value)
+        self.emit('RETURN_VALUE')
+        return 1
 
     def visitRaise(self, node):
-	self.emit('SET_LINENO', node.lineno)
-	n = 0
-	if node.expr1:
-	    self.visit(node.expr1)
-	    n = n + 1
-	if node.expr2:
-	    self.visit(node.expr2)
-	    n = n + 1
-	if node.expr3:
-	    self.visit(node.expr3)
-	    n = n + 1
-	self.emit('RAISE_VARARGS', n)
-	return 1
+        self.emit('SET_LINENO', node.lineno)
+        n = 0
+        if node.expr1:
+            self.visit(node.expr1)
+            n = n + 1
+        if node.expr2:
+            self.visit(node.expr2)
+            n = n + 1
+        if node.expr3:
+            self.visit(node.expr3)
+            n = n + 1
+        self.emit('RAISE_VARARGS', n)
+        return 1
 
     def visitPrint(self, node):
-	self.emit('SET_LINENO', node.lineno)
-	for child in node.nodes:
-	    self.visit(child)
-	    self.emit('PRINT_ITEM')
-	return 1
+        self.emit('SET_LINENO', node.lineno)
+        for child in node.nodes:
+            self.visit(child)
+            self.emit('PRINT_ITEM')
+        return 1
 
     def visitPrintnl(self, node):
-	self.visitPrint(node)
-	self.emit('PRINT_NEWLINE')
-	return 1
+        self.visitPrint(node)
+        self.emit('PRINT_NEWLINE')
+        return 1
 
     def visitExec(self, node):
-	self.visit(node.expr)
-	if node.locals is None:
-	    self.emit('LOAD_CONST', None)
-	else:
-	    self.visit(node.locals)
-	if node.globals is None:
-	    self.emit('DUP_TOP')
-	else:
-	    self.visit(node.globals)
-	self.emit('EXEC_STMT')
+        self.visit(node.expr)
+        if node.locals is None:
+            self.emit('LOAD_CONST', None)
+        else:
+            self.visit(node.locals)
+        if node.globals is None:
+            self.emit('DUP_TOP')
+        else:
+            self.visit(node.globals)
+        self.emit('EXEC_STMT')
 
 class LocalNameFinder:
     def __init__(self, names=()):
-	self.names = misc.Set()
+        self.names = misc.Set()
         self.globals = misc.Set()
-	for name in names:
-	    self.names.add(name)
+        for name in names:
+            self.names.add(name)
 
     def getLocals(self):
         for elt in self.globals.items():
             if self.names.has_elt(elt):
                 self.names.remove(elt)
-	return self.names
+        return self.names
 
     def visitDict(self, node):
-	return 1
+        return 1
 
     def visitGlobal(self, node):
         for name in node.names:
@@ -863,25 +862,25 @@ class LocalNameFinder:
 
     def visitFunction(self, node):
         self.names.add(node.name)
-	return 1
+        return 1
 
     def visitLambda(self, node):
         return 1
 
     def visitImport(self, node):
-	for name in node.names:
-	    self.names.add(name)
+        for name in node.names:
+            self.names.add(name)
 
     def visitFrom(self, node):
-	for name in node.names:
-	    self.names.add(name)
+        for name in node.names:
+            self.names.add(name)
 
     def visitClassdef(self, node):
-	self.names.add(node.name)
-	return 1
+        self.names.add(node.name)
+        return 1
 
     def visitAssName(self, node):
-	self.names.add(node.name)
+        self.names.add(node.name)
 
 class Loop:
     def __init__(self):
@@ -926,7 +925,13 @@ class CompiledModule:
         mtime = os.stat(self.filename)[stat.ST_MTIME]
         mtime = struct.pack('i', mtime)
         return magic + mtime
-	
+
+def compile(filename):
+    buf = open(filename).read()
+    mod = CompiledModule(buf, filename)
+    mod.compile()
+    mod.dump(filename + 'c')
+        
 if __name__ == "__main__":
     import getopt
 
@@ -945,7 +950,4 @@ if __name__ == "__main__":
         for filename in args:
             if VERBOSE:
                 print filename
-            buf = open(filename).read()
-            mod = CompiledModule(buf, filename)
-            mod.compile()
-            mod.dump(filename + 'c')
+            compile(filename)
