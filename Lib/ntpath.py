@@ -13,13 +13,13 @@ import string
 # Other normalizations (such as optimizing '../' away) are not done
 # (this is done by normpath).
 
-_normtable = string.maketrans(string.uppercase + "\\/",
-                              string.lowercase + os.sep * 2)
-
 def normcase(s):
-    """Normalize case of pathname.  Makes all characters lowercase and all 
-slashes into backslashes"""
-    return string.translate(s, _normtable)
+    """Normalize case of pathname.
+
+    Makes all characters lowercase and all slashes into backslashes.
+
+    """
+    return string.lower(string.replace(s, "/", "\\"))
 
 
 # Return wheter a path is absolute.
@@ -356,7 +356,7 @@ are left unchanged"""
 
 def normpath(path):
     """Normalize path, eliminating double slashes, etc."""
-    path = normcase(path)
+    path = string.replace(path, "/", "\\")
     prefix, path = splitdrive(path)
     while path[:1] == os.sep:
         prefix = prefix + os.sep
