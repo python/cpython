@@ -298,7 +298,7 @@ class PythonIDE(Wapplication.Application):
 		
 	def domenu_localdocs(self, *args):
 		from Carbon import AH
-		AH.AHGotoPage("Python Help", "index.html", "")
+		AH.AHGotoPage("Python Help", None, None)
 		
 	def domenu_appledocs(self, *args):
 		from Carbon import AH, AppleHelp
