@@ -10,10 +10,14 @@ def _strxor(s1, s2):
     """
     return "".join(map(lambda x, y: chr(ord(x) ^ ord(y)), s1, s2))
 
+# The size of the digests returned by HMAC depends on the underlying
+# hashing module used.
+digest_size = None
+
 class HMAC:
     """RFC2104 HMAC class.
 
-    This (mostly) supports the API for Cryptographic Hash Functions (PEP 247).
+    This supports the API for Cryptographic Hash Functions (PEP 247).
     """
 
     def __init__(self, key, msg = None, digestmod = None):
@@ -27,9 +31,11 @@ class HMAC:
             import md5
             digestmod = md5
 
+        self.digestmod = digestmod
         self.outer = digestmod.new()
         self.inner = digestmod.new()
-
+        self.digest_size = digestmod.digest_size
+        
         blocksize = 64
         ipad = "\x36" * blocksize
         opad = "\x5C" * blocksize
@@ -56,7 +62,11 @@ class HMAC:
 
         An update to this copy won't affect the original object.
         """
-        return HMAC(self)
+        other = HMAC("")
+        other.digestmod = self.digestmod
+        other.inner = self.inner.copy()
+        other.outer = self.outer.copy()
+        return other
 
     def digest(self):
         """Return the hash value of this hashing object.
@@ -88,23 +98,3 @@ def new(key, msg = None, digestmod = None):
     """
     return HMAC(key, msg, digestmod)
 
-def test():
-    def md5test(key, data, digest):
-        h = HMAC(key, data)
-        assert(h.hexdigest().upper() == digest.upper())
-
-    # Test vectors from the RFC
-    md5test(chr(0x0b) * 16,
-            "Hi There",
-            "9294727A3638BB1C13F48EF8158BFC9D")
-
-    md5test("Jefe",
-            "what do ya want for nothing?",
-            "750c783e6ab0b503eaa86e310a5db738")
-
-    md5test(chr(0xAA)*16,
-            chr(0xDD)*50,
-            "56be34521d144c88dbb8c733f0e8b3f6")
-
-if __name__ == "__main__":
-    test()
