@@ -104,6 +104,7 @@ class URLopener:
 		# Undocumented feature: you can use a different
 		# ftp cache by assigning to the .ftpcache member;
 		# in case you want logically independent URL openers
+		# XXX This is not threadsafe.  Bah.
 
 	def __del__(self):
 		self.close()
@@ -345,6 +346,7 @@ class URLopener:
 		dirs, file = dirs[:-1], dirs[-1]
 		if dirs and not dirs[0]: dirs = dirs[1:]
 		key = (user, host, port, string.joinfields(dirs, '/'))
+		# XXX thread unsafe!
 		if len(self.ftpcache) > MAXFTPCACHE:
 			# Prune the cache, rather arbitrarily
 			for k in self.ftpcache.keys():
@@ -908,21 +910,53 @@ def urlencode(dict):
 
 
 # Proxy handling
-def getproxies():
-	"""Return a dictionary of protocol scheme -> proxy server URL mappings.
+if os.name == 'mac':
+	def getproxies():
+		"""Return a dictionary of scheme -> proxy server URL mappings.
 
-	Scan the environment for variables named <scheme>_proxy;
-	this seems to be the standard convention.  If you need a
-	different way, you can pass a proxies dictionary to the
-	[Fancy]URLopener constructor.
+		By convention the mac uses Internet Config to store
+		proxies.  An HTTP proxy, for instance, is stored under
+		the HttpProxy key.
 
-	"""
-	proxies = {}
-	for name, value in os.environ.items():
-		name = string.lower(name)
-		if value and name[-6:] == '_proxy':
-			proxies[name[:-6]] = value
-	return proxies
+		"""
+		try:
+			import ic
+		except ImportError:
+			return {}
+		
+		try:
+			config = ic.IC()
+		except ic.error:
+			return {}
+		proxies = {}
+		# HTTP:
+		if config.has_key('UseHTTPProxy') and config['UseHTTPProxy']:
+			try:
+				value = config['HTTPProxyHost']
+			except ic.error:
+				pass
+			else:
+				proxies['http'] = 'http://%s' % value
+		# FTP: XXXX To be done.
+		# Gopher: XXXX To be done.
+		return proxies
+				
+else:
+	def getproxies():
+		"""Return a dictionary of scheme -> proxy server URL mappings.
+	
+		Scan the environment for variables named <scheme>_proxy;
+		this seems to be the standard convention.  If you need a
+		different way, you can pass a proxies dictionary to the
+		[Fancy]URLopener constructor.
+	
+		"""
+		proxies = {}
+		for name, value in os.environ.items():
+			name = string.lower(name)
+			if value and name[-6:] == '_proxy':
+				proxies[name[:-6]] = value
+		return proxies
 
 
 # Test and time quote() and unquote()
