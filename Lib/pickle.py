@@ -845,43 +845,6 @@ class Unpickler:
         self.append(rep.decode("string-escape"))
     dispatch[STRING] = load_string
 
-    def _is_string_secure(self, s):
-        """Return true if s contains a string that is safe to eval
-
-        The definition of secure string is based on the implementation
-        in cPickle.  s is secure as long as it only contains a quoted
-        string and optional trailing whitespace.
-        """
-        q = s[0]
-        if q not in ("'", '"'):
-            return 0
-        # find the closing quote
-        offset = 1
-        i = None
-        while 1:
-            try:
-                i = s.index(q, offset)
-            except ValueError:
-                # if there is an error the first time, there is no
-                # close quote
-                if offset == 1:
-                    return 0
-            if s[i-1] != '\\':
-                break
-            # check to see if this one is escaped
-            nslash = 0
-            j = i - 1
-            while j >= offset and s[j] == '\\':
-                j = j - 1
-                nslash = nslash + 1
-            if nslash % 2 == 0:
-                break
-            offset = i + 1
-        for c in s[i+1:]:
-            if ord(c) > 32:
-                return 0
-        return 1
-
     def load_binstring(self):
         len = mloads('i' + self.read(4))
         self.append(self.read(len))
