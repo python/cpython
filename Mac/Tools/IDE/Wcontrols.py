@@ -305,6 +305,8 @@ class Scrollbar(ControlWidget):
 			self._control.HiliteControl(part)
 			self._hit(part)
 			oldpart = part
+			import time
+			time.sleep(0.3)
 			while Evt.StillDown():
 				part = self._control.TestControl(point)
 				if part == oldpart:
