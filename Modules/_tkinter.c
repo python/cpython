@@ -810,6 +810,17 @@ PyTclObject_repr(PyTclObject *self)
 	return PyString_FromString(buf);
 }
 
+static int
+PyTclObject_cmp(PyTclObject *self, PyTclObject *other)
+{
+	int res;
+	res = strcmp(Tcl_GetString(self->value),
+		     Tcl_GetString(other->value));
+	if (res < 0) return -1;
+	if (res > 0) return 1;
+	return 0;
+}
+
 PyDoc_STRVAR(get_typename__doc__, "name of the Tcl type");
 
 static PyObject*
@@ -843,7 +854,7 @@ statichere PyTypeObject PyTclObject_Type = {
 	0,			/*tp_print*/
 	0,			/*tp_getattr*/
 	0,			/*tp_setattr*/
-	0,			/*tp_compare*/
+	(cmpfunc)PyTclObject_cmp,	/*tp_compare*/
 	(reprfunc)PyTclObject_repr,	/*tp_repr*/
 	0,			/*tp_as_number*/
 	0,			/*tp_as_sequence*/
