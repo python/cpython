@@ -32,6 +32,7 @@ markov.py		Markov chain simulation of words or characters
 methfix.py		Fix old method syntax def f(self, (a1, ..., aN)):
 mkreal.py		Turn a symbolic link into a real file or directory
 objgraph.py		Print object graph from nm output on a library
+pathfix.py		Change #!/usr/local/bin/python into something else
 pdeps.py		Print dependencies between Python modules
 pi.py			Print all digits of pi -- given enough time and memory
 pindent.py		Indent Python code, giving block-closing comments
