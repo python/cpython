@@ -157,9 +157,11 @@ buildno:
 
 # Build the shared modules
 sharedmods: 	python$(EXE)
-		cd Modules;  $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
-			prefix="$(prefix)" exec_prefix="$(exec_prefix)" \
-			sharedmods
+		./python$(EXE) $(srcdir)/setup.py build
+# Old rules for building shared modules using makesetup
+#		cd Modules;  $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
+#			prefix="$(prefix)" exec_prefix="$(exec_prefix)" \
+#			sharedmods
 
 # Build the library
 $(LIBRARY):	$(SUBDIRS)
@@ -422,17 +424,19 @@ libainstall:	all
 # Install the dynamically loadable modules
 # This goes into $(exec_prefix)
 sharedinstall:
-		cd Modules; $(MAKE) \
-			OPT="$(OPT)" \
-			VERSION="$(VERSION)" \
-			SO="$(SO)" \
-			LDSHARED="$(LDSHARED)" \
-			CCSHARED="$(CCSHARED)" \
-			LINKFORSHARED="$(LINKFORSHARED)" \
-			DESTSHARED="$(DESTSHARED)" \
-			prefix="$(prefix)" \
-			exec_prefix="$(exec_prefix)" \
-			sharedinstall
+		./python$(EXE) $(srcdir)/setup.py install
+# Old rules for installing shared modules built using makesetup
+#		cd Modules; $(MAKE) \
+#			OPT="$(OPT)" \
+#			VERSION="$(VERSION)" \
+#			SO="$(SO)" \
+#			LDSHARED="$(LDSHARED)" \
+#			CCSHARED="$(CCSHARED)" \
+#			LINKFORSHARED="$(LINKFORSHARED)" \
+#			DESTSHARED="$(DESTSHARED)" \
+#			prefix="$(prefix)" \
+#			exec_prefix="$(exec_prefix)" \
+#			sharedinstall
 
 # Build the sub-Makefiles
 Makefiles:	config.status Modules/Makefile.pre
@@ -515,7 +519,8 @@ clean:		localclean
 
 localclobber:	localclean
 		-rm -f tags TAGS python$(EXE) $(LIBRARY) $(LDLIBRARY) *.o
-		-rm -f config.log config.cache config.h
+		-rm -f config.log config.cache config.h 
+		-rm -rf build
 
 clobber:	localclobber
 		-for i in $(SUBDIRS); do \
