@@ -551,7 +551,6 @@ class Pickler:
         dispatch[PyStringMap] = save_dict
 
     def save_inst(self, object):
-        d = id(object)
         cls = object.__class__
 
         memo  = self.memo
@@ -569,23 +568,15 @@ class Pickler:
 
         if self.bin:
             save(cls)
-
-        for arg in args:
-            save(arg)
-
-        # This method does not use memoize() so that it can handle
-        # the special case for non-binary mode.
-        # XXX What did that comment mean?  That is, what "special case for
-        # XXX non-binary mode"?  It sure *looks* like nothing special is
-        # XXX happening in the INST case.
-        memo_len = len(memo)
-        if self.bin:
-            write(OBJ + self.put(memo_len))
+            for arg in args:
+                save(arg)
+            write(OBJ)
         else:
-            write(INST + cls.__module__ + '\n' + cls.__name__ + '\n' +
-                self.put(memo_len))
+            for arg in args:
+                save(arg)
+            write(INST + cls.__module__ + '\n' + cls.__name__ + '\n')
 
-        memo[d] = (memo_len, object)
+        self.memoize(object)
 
         try:
             getstate = object.__getstate__
@@ -596,6 +587,7 @@ class Pickler:
             _keep_alive(stuff, memo)
         save(stuff)
         write(BUILD)
+
     dispatch[InstanceType] = save_inst
 
     def save_global(self, object, name = None):
@@ -626,6 +618,7 @@ class Pickler:
 
         write(GLOBAL + module + '\n' + name + '\n')
         self.memoize(object)
+
     dispatch[ClassType] = save_global
     dispatch[FunctionType] = save_global
     dispatch[BuiltinFunctionType] = save_global
