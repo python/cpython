@@ -39,6 +39,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "eval.h"
 #include "osdefs.h"
 #include "importdl.h"
+#ifdef macintosh
+#include "macglue.h"
+#endif
 
 extern int verbose; /* Defined in pythonrun.c */
 
@@ -135,10 +138,10 @@ add_module(name)
 /* Execute a code object in a module and return the module object
    WITH INCREMENTED REFERENCE COUNT */
 
-static object *
+object *
 exec_code_module(name, co)
 	char *name;
-	codeobject *co;
+	object *co;
 {
 	object *m, *d, *v;
 
@@ -269,12 +272,11 @@ load_compiled_module(name, cpathname, fp)
 	if (verbose)
 		fprintf(stderr, "import %s # precompiled from %s\n",
 			name, cpathname);
-	m = exec_code_module(name, co);
+	m = exec_code_module(name, (object *)co);
 	DECREF(co);
 
 	return m;
 }
-
 
 /* Parse a source file and return the corresponding code object */
 
@@ -379,7 +381,7 @@ load_source_module(name, pathname, fp)
 				name, pathname);
 		write_compiled_module(co, cpathname, mtime);
 	}
-	m = exec_code_module(name, co);
+	m = exec_code_module(name, (object *)co);
 	DECREF(co);
 
 	return m;
@@ -422,6 +424,13 @@ find_module(name, path, buf, buflen, p_fp)
 		strcpy(buf, getstringvalue(v));
 		if (strlen(buf) != len)
 			continue; /* v contains '\0' */
+#ifdef macintosh
+		if ( PyMac_FindResourceModule(name, buf) ) {
+			static struct filedescr resfiledescr = { "", "", PY_RESOURCE};
+			
+			return &resfiledescr;
+		}
+#endif
 		if (len > 0 && buf[len-1] != SEP)
 			buf[len++] = SEP;
 		strcpy(buf+len, name);
@@ -479,13 +488,20 @@ load_module(name)
 		m = load_dynamic_module(name, buf);
 		break;
 
+#ifdef macintosh
+	case PY_RESOURCE:
+		m = PyMac_LoadResourceModule(name, buf);
+		break;
+#endif
+
 	default:
 		err_setstr(SystemError,
 			   "find_module returned unexpected result");
 		m = NULL;
 
 	}
-	fclose(fp);
+	if ( fp )
+		fclose(fp);
 
 	return m;
 }
@@ -555,7 +571,7 @@ init_frozen(name)
 		err_setstr(SystemError, "frozen object is not a code object");
 		return -1;
 	}
-	m = exec_code_module(name, (codeobject *)co);
+	m = exec_code_module(name, co);
 	DECREF(co);
 	if (m == NULL)
 		return -1;
@@ -874,6 +890,23 @@ imp_load_source(self, args)
 	return m;
 }
 
+#ifdef macintosh
+static object *
+imp_load_resource(self, args)
+	object *self;
+	object *args;
+{
+	char *name;
+	char *pathname;
+	object *m;
+
+	if (!newgetargs(args, "ss", &name, &pathname))
+		return NULL;
+	m = PyMac_LoadResourceModule(name, pathname);
+	return m;
+}
+#endif /* macintosh */
+
 static object *
 imp_new_module(self, args)
 	object *self;
@@ -897,6 +930,9 @@ static struct methodlist imp_methods[] = {
 	{"load_dynamic",	imp_load_dynamic,	1},
 	{"load_source",		imp_load_source,	1},
 	{"new_module",		imp_new_module,		1},
+#ifdef macintosh
+	{"load_resource",	imp_load_resource,	1},
+#endif
 	{NULL,			NULL}		/* sentinel */
 };
 

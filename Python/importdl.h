@@ -23,8 +23,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 /* Definitions for dynamic loading of extension modules */
-
+#ifdef macintosh
+enum filetype {SEARCH_ERROR, PY_SOURCE, PY_COMPILED, C_EXTENSION, PY_RESOURCE};
+#else
 enum filetype {SEARCH_ERROR, PY_SOURCE, PY_COMPILED, C_EXTENSION};
+#endif
 
 extern struct filedescr {
 	char *suffix;
