@@ -8,7 +8,7 @@
 #       sktobj.shutdown()
 
 
-from test_support import verify, verbose, TestFailed
+from test_support import verbose, TestFailed
 import socket
 import os
 import time

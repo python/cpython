@@ -6,7 +6,7 @@ import struct
 import fcntl
 import FCNTL
 import os, sys
-from test_support import verify, verbose, TESTFN
+from test_support import verbose, TESTFN
 
 filename = TESTFN
 

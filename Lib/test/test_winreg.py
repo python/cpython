@@ -4,6 +4,8 @@
 from _winreg import *
 import os, sys
 
+from test_support import verify
+
 test_key_name = "SOFTWARE\\Python Registry Test Key - Delete Me"
 
 test_data = [
