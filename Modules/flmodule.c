@@ -1496,29 +1496,6 @@ form_redraw_form(f, args)
 }
 
 static PyObject *
-form_add_object(f, args)
-	formobject *f;
-	PyObject *args;
-{
-	genericobject *g;
-	if (args == NULL || !is_genericobject(args)) {
-		PyErr_BadArgument();
-		return NULL;
-	}
-	g = (genericobject *)args;
-	if (findgeneric(g->ob_generic) != NULL) {
-		PyErr_SetString(PyExc_RuntimeError,
-			   "add_object of object already in a form");
-		return NULL;
-	}
-	fl_add_object(f->ob_form, g->ob_generic);
-	knowgeneric(g);
-
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-static PyObject *
 form_set_form_position(f, args)
 	formobject *f;
 	PyObject *args;
@@ -1915,8 +1892,6 @@ form_setattr(f, name, v)
 	char *name;
 	PyObject *v;
 {
-	int ret;
-
 	if (v == NULL) {
 		PyErr_SetString(PyExc_TypeError,
 				"can't delete form attributes");

@@ -121,11 +121,11 @@ static void fpe_reset(Sigfunc *handler)
     handle_sigfpes(_OFF, 0,
 		 (user_routine *)0,
 		 _TURN_OFF_HANDLER_ON_ERROR,
-		 (abort_routine*)0);
+		 NULL);
     handle_sigfpes(_ON, _EN_OVERFL | _EN_DIVZERO | _EN_INVALID,
 		 (user_routine *)0,
 		 _ABORT_ON_ERROR,
-		 (abort_routine*)0);
+		 NULL);
     signal(SIGFPE, handler);
 
 /*-- SunOS and Solaris ----------------------------------------------------*/

@@ -777,7 +777,7 @@ strop_translate(self, args)
 		trans_table[i] = Py_CHARMASK(table[i]);
 
 	for (i = 0; i < dellen; i++) 
-		trans_table[Py_CHARMASK(del_table[i])] = -1;
+		trans_table[(int) Py_CHARMASK(del_table[i])] = -1;
 
 	for (i = inlen; --i >= 0; ) {
 		c = Py_CHARMASK(*input++);
