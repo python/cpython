@@ -133,7 +133,7 @@ Socket methods:
 
 /* Generic _socket.h definitions and includes */
 #define PySocket_BUILDING_SOCKET
-#include "_socket.h"
+#include "socketmodule.h"
 
 /* Addressing includes */
 
