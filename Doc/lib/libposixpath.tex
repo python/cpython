@@ -137,9 +137,23 @@ Raise an exception if a \function{os.stat()} call on either pathname
 fails.
 \end{funcdesc}
 
+\begin{funcdesc}{sameopenfile}{fp1, fp2}
+Return true if the file objects \var{fp1} and \var{fp2} refer to the
+same file.  The two file objects may represent different file
+descriptors.
+\end{funcdesc}
+
+\begin{funcdesc}{samestat}{stat1, stat2}
+Return true if the stat tuples \var{stat1} and \var{stat2} refer to
+the same file.  These structures may have been returned by
+\function{fstat()}, \function{lstat()}, or \function{stat()}.  This
+function implements the underlying comparison used by
+\function{samefile()} and \function{sameopenfile()}.
+\end{funcdesc}
+
 \begin{funcdesc}{split}{path}
-Split the pathname \var{path} into a pair \code{(\var{head},
-\var{tail})}, where \var{tail} is the last pathname component and
+Split the pathname \var{path} into a pair, \code{(\var{head},
+\var{tail})} where \var{tail} is the last pathname component and
 \var{head} is everything leading up to that.  The \var{tail} part will
 never contain a slash; if \var{path} ends in a slash, \var{tail} will
 be empty.  If there is no slash in \var{path}, \var{head} will be
@@ -153,7 +167,7 @@ from \var{tail}).
 
 \begin{funcdesc}{splitdrive}{path}
 Split the pathname \var{path} into a pair \code{(\var{drive},
-\var{tail})}, where \var{drive} is either a drive specification or the
+\var{tail})} where \var{drive} is either a drive specification or the
 empty string.  On systems which do not use drive specifications,
 \var{drive} will always be the empty string.  In all cases,
 \code{\var{drive} + \var{tail}} will be the same as \var{path}.
