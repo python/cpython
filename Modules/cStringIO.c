@@ -1,63 +1,56 @@
 /*
-
-  cStringIO.c,v 1.23 1997/12/04 00:12:05 jim Exp
-
-  A simple fast partial StringIO replacement.
-
-
-
-     Copyright 
-
-       Copyright 1996 Digital Creations, L.C., 910 Princess Anne
-       Street, Suite 300, Fredericksburg, Virginia 22401 U.S.A. All
-       rights reserved.  Copyright in this software is owned by DCLC,
-       unless otherwise indicated. Permission to use, copy and
-       distribute this software is hereby granted, provided that the
-       above copyright notice appear in all copies and that both that
-       copyright notice and this permission notice appear. Note that
-       any product, process or technology described in this software
-       may be the subject of other Intellectual Property rights
-       reserved by Digital Creations, L.C. and are not licensed
-       hereunder.
-
-     Trademarks 
-
-       Digital Creations & DCLC, are trademarks of Digital Creations, L.C..
-       All other trademarks are owned by their respective companies. 
-
-     No Warranty 
-
-       The software is provided "as is" without warranty of any kind,
-       either express or implied, including, but not limited to, the
-       implied warranties of merchantability, fitness for a particular
-       purpose, or non-infringement. This software could include
-       technical inaccuracies or typographical errors. Changes are
-       periodically made to the software; these changes will be
-       incorporated in new editions of the software. DCLC may make
-       improvements and/or changes in this software at any time
-       without notice.
-
-     Limitation Of Liability 
-
-       In no event will DCLC be liable for direct, indirect, special,
-       incidental, economic, cover, or consequential damages arising
-       out of the use of or inability to use this software even if
-       advised of the possibility of such damages. Some states do not
-       allow the exclusion or limitation of implied warranties or
-       limitation of liability for incidental or consequential
-       damages, so the above limitation or exclusion may not apply to
-       you.
-
-    If you have questions regarding this software,
-    contact:
-   
-      info@digicool.com
-      Digital Creations L.C.  
-   
-      (540) 371-6909
-
-
-*/
+ * cStringIO.c,v 1.26 1998/10/01 22:30:56 jim Exp
+ * 
+ * Copyright (c) 1996-1998, Digital Creations, Fredericksburg, VA, USA.  
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ *   o Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions, and the disclaimer that follows.
+ * 
+ *   o Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions, and the following disclaimer in
+ *     the documentation and/or other materials provided with the
+ *     distribution.
+ * 
+ *   o All advertising materials mentioning features or use of this
+ *     software must display the following acknowledgement:
+ * 
+ *       This product includes software developed by Digital Creations
+ *       and its contributors.
+ * 
+ *   o Neither the name of Digital Creations nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ * 
+ * 
+ * THIS SOFTWARE IS PROVIDED BY DIGITAL CREATIONS AND CONTRIBUTORS *AS
+ * IS* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ * PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL DIGITAL
+ * CREATIONS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+ * TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ * DAMAGE.
+ * 
+ # 
+ # If you have questions regarding this software, contact:
+ #
+ #   Digital Creations, L.C.
+ #   910 Princess Ann Street
+ #   Fredericksburge, Virginia  22401
+ #
+ #   info@digicool.com
+ #
+ #   (540) 371-6909
+ */
 static char cStringIO_module_documentation[] = 
 "A simple fast partial StringIO replacement.\n"
 "\n"
@@ -79,13 +72,13 @@ static char cStringIO_module_documentation[] =
 "  an_input_stream=StringIO(a_string)\n"
 "  spam=an_input_stream.readline()\n"
 "  spam=an_input_stream.read(5)\n"
-"  an_input_stream.reset()           # OK, start over\n"
+"  an_input_stream.seek(0)           # OK, start over\n"
 "  spam=an_input_stream.read()       # and read it all\n"
 "  \n"
 "If someone else wants to provide a more complete implementation,\n"
 "go for it. :-)  \n"
 "\n"
-"cStringIO.c,v 1.23 1997/12/04 00:12:05 jim Exp\n"
+"cStringIO.c,v 1.26 1998/10/01 22:30:56 jim Exp\n"
 ;
 
 #include "Python.h"
@@ -152,8 +145,19 @@ O_seek(Oobject *self, PyObject *args) {
     position += self->pos;
   }
 
-  self->pos = (position > self->string_size ? self->string_size : 
-	       (position < 0 ? 0 : position));
+  if (position > self->buf_size) {
+      self->buf_size*=2;
+      if(self->buf_size <= position) self->buf_size=position+1;
+      UNLESS(self->buf=(char*)realloc(self->buf,self->buf_size*sizeof(char))) {
+	  self->buf_size=self->pos=0;
+	  return PyErr_NoMemory();
+	}
+    }
+  else if(position < 0) position=0;
+  
+  self->pos=position;
+
+  while(--position >= self->string_size) self->buf[position]=0;
 
   Py_INCREF(Py_None);
   return Py_None;
@@ -389,11 +393,8 @@ O_dealloc(Oobject *self) {
 
 static PyObject *
 O_getattr(Oobject *self, char *name) {
-  if (name[0] == 's' && strcmp(name, "softspace") == 0) {
+  if (strcmp(name, "softspace") == 0) {
 	  return PyInt_FromLong(self->softspace);
-  }
-  else if (name[0] == 'c' && strcmp(name, "closed") == 0) {
-	  return PyInt_FromLong(self->closed);
   }
   return Py_FindMethod(O_methods, (PyObject *)self, name);
 }
@@ -499,9 +500,6 @@ I_dealloc(Iobject *self) {
 
 static PyObject *
 I_getattr(Iobject *self, char *name) {
-  if (name[0] == 'c' && strcmp(name,"closed") == 0) {
-	  return PyInt_FromLong(self->closed);
-  }
   return Py_FindMethod(I_methods, (PyObject *)self, name);
 }
 
@@ -565,7 +563,7 @@ static PyObject *
 IO_StringIO(PyObject *self, PyObject *args) {
   PyObject *s=0;
 
-  UNLESS(PyArg_ParseTuple(args, "|S", &s)) return NULL;
+  UNLESS(PyArg_ParseTuple(args, "|O", &s)) return NULL;
   if(s) return newIobject(s);
   return newOobject(128);
 }
