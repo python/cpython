@@ -139,8 +139,9 @@ Availability: \UNIX.
 \end{funcdesc}
 
 \begin{funcdesc}{getlogin}{}
-Return the actual login name for the current process, even if there
-are multiple login names which map to the same user id.
+Return the name of the user logged in on the controlling terminal of
+the process.  For most purposes, it is more useful to use the
+environment variable \envvar{LOGNAME} to find out who the user is.
 Availability: \UNIX.
 \end{funcdesc}
 
