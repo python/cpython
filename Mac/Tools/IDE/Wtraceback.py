@@ -55,7 +55,7 @@ class TraceBack:
 			filename = "<unknown>"
 		if filename and os.path.exists(filename):
 			filename = os.path.split(filename)[1]
-		if lineno:
+		if lineno and charno is not None:
 			charno = charno - 1
 			text = str(value) + '\rFile: "' + str(filename) + '", line ' + str(lineno) + '\r\r' + line[:charno] + "\xa5" + line[charno:-1]
 		else:
@@ -84,6 +84,8 @@ class TraceBack:
 			filename = "<unknown>"
 		self.syntaxclose()
 		if lineno:
+			if charno is None:
+				charno = 1
 			W.getapplication().openscript(filename, lineno, charno - 1)
 		else:
 			W.getapplication().openscript(filename)
