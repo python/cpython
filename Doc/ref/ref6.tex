@@ -7,6 +7,7 @@ by semicolons.  The syntax for simple statements is:
 
 \begin{verbatim}
 simple_stmt:    expression_stmt
+              | assert_stmt
               | assignment_stmt
               | pass_stmt
               | del_stmt
@@ -26,28 +27,64 @@ simple_stmt:    expression_stmt
 Expression statements are used (mostly interactively) to compute and
 write a value, or (usually) to call a procedure (a function that
 returns no meaningful result; in Python, procedures return the value
-\code{None}):
+\code{None}).  Other uses of expression statements are allowed and
+occasionally useful.  The syntax for an expression statement is:
 
 \begin{verbatim}
-expression_stmt: condition_list
+expression_stmt: expression_list
 \end{verbatim}
 
-An expression statement evaluates the condition list (which may be a
-single condition).
+An expression statement evaluates the expression list (which may be a
+single expression).
 \indexii{expression}{list}
 
 In interactive mode, if the value is not \code{None}, it is converted
-to a string using the rules for string conversions (expressions in
-reverse quotes), and the resulting string is written to standard
-output (see section \ref{print}) on a line by itself.
-(The exception for \code{None} is made so that procedure calls, which
-are syntactically equivalent to expressions, do not cause any output.)
+to a string using the built-in \function{repr()}\bifuncindex{repr}
+function and the resulting string is written to standard output (see
+section \ref{print}) on a line by itself.  (Expression statements
+yielding None are not written, so that procedure calls do not cause
+any output.)
 \ttindex{None}
 \indexii{string}{conversion}
 \index{output}
 \indexii{standard}{output}
 \indexii{writing}{values}
 \indexii{procedure}{call}
+
+\section{Assert statements}\stindex{assert}
+
+Assert statements are a convenient way to insert debugging
+assertions\indexii{debugging}{assertions} into a program:
+
+\begin{verbatim}
+assert_statement: "assert" expression ["," expression]
+\end{verbatim}
+
+The simple form, ``\code{assert expression}'', is equivalent to
+
+\begin{verbatim}
+if __debug__:
+   if not expression: raise AssertionError
+\end{verbatim}
+
+The extended form, ``\code{assert expression1, expression2}'', is
+equivalent to
+
+\begin{verbatim}
+if __debug__:
+   if not expression1: raise AssertionError, expression2
+\end{verbatim}
+
+These equivalences assume that \code{__debug__}\ttindex{__debug__} and
+\code{AssertionError}\exindex{AssertionError} refer to the built-in
+variables with those names.  In the current implementation, the
+built-in variable \code{__debug__} is 1 under normal circumstances, 0
+when optimization is requested (command line option -O).  The current
+code generator emits no code for an assert statement when optimization
+is requested at compile time.  Note that it is unnecessary to include
+the source code for the expression that failed in the error message;
+it will be displayed as part of the stack trace.
+
 
 \section{Assignment statements}
 \indexii{assignment}{statement}
@@ -91,14 +128,17 @@ follows.
 
 \begin{itemize}
 \item
-If the target list is a single target: the object is assigned to that
+If the target list is a single target: The object is assigned to that
 target.
 
 \item
-If the target list is a comma-separated list of targets: the object
-must be a tuple with the same number of items as the list contains
-targets, and the items are assigned, from left to right, to the
-corresponding targets.
+If the target list is a comma-separated list of targets: The object
+must be a sequence with the same number of items as the there are
+targets in the target list, and the items are assigned, from left to
+right, to the corresponding targets.  (This rule is relaxed as of
+Python 1.5; in earlier versions, the object had to be a tuple.  Since
+strings are sequences, an assignment like ``\code{a, b = "xy"}'' is
+now legal as long as the string has the right length.)
 
 \end{itemize}
 
@@ -114,27 +154,26 @@ If the target is an identifier (name):
 
 \item
 If the name does not occur in a \keyword{global} statement in the current
-code block: the name is bound to the object in the current local name
-space.
+code block: the name is bound to the object in the current local
+namespace.
 \stindex{global}
 
 \item
-Otherwise: the name is bound to the object in the current global name
-space.
+Otherwise: the name is bound to the object in the current global
+namespace.
 
 \end{itemize} % nested
 
-The name is rebound if it was already bound.
+The name is rebound if it was already bound.  This may cause the
+reference count for the object previously bound to the name to reach
+zero, causing the object to be deallocated and its
+destructor\index{destructor} (if it has one) to be called.
 
 \item
-If the target is a target list enclosed in parentheses: the object is
-assigned to that target list as described above.
-
-\item
-If the target is a target list enclosed in square brackets: the object
-must be a list with the same number of items as the target list
-contains targets, and its items are assigned, from left to right, to
-the corresponding targets.
+If the target is a target list enclosed in parentheses or in square
+brackets: The object must be a sequence with the same number of items
+as there are targets in the target list, and its items are assigned,
+from left to right, to the corresponding targets.
 
 \item
 If the target is an attribute reference: The primary expression in the
@@ -148,12 +187,12 @@ attribute; if it cannot perform the assignment, it raises an exception
 \item
 If the target is a subscription: The primary expression in the
 reference is evaluated.  It should yield either a mutable sequence
-(list) object or a mapping (dictionary) object.  Next, the subscript
-expression is evaluated.
+object (e.g., a list) or a mapping object (e.g., a dictionary).  Next,
+the subscript expression is evaluated.
 \indexii{subscription}{assignment}
 \obindex{mutable}
 
-If the primary is a mutable sequence object (a list), the subscript
+If the primary is a mutable sequence object (e.g., a list), the subscript
 must yield a plain integer.  If it is negative, the sequence's length
 is added to it.  The resulting value must be a nonnegative integer
 less than the sequence's length, and the sequence is asked to assign
@@ -163,7 +202,7 @@ sequence cannot add new items to a list).
 \obindex{sequence}
 \obindex{list}
 
-If the primary is a mapping (dictionary) object, the subscript must
+If the primary is a mapping object (e.g., a dictionary), the subscript must
 have a type compatible with the mapping's key type, and the mapping is
 then asked to create a key/datum pair which maps the subscript to
 the assigned object.  This can either replace an existing key/value
@@ -174,7 +213,7 @@ key with the same value existed).
 
 \item
 If the target is a slicing: The primary expression in the reference is
-evaluated.  It should yield a mutable sequence object (e.g. a list).  The
+evaluated.  It should yield a mutable sequence object (e.g., a list).  The
 assigned object should be a sequence object of the same type.  Next,
 the lower and upper bound expressions are evaluated, insofar they are
 present; defaults are zero and the sequence's length.  The bounds
@@ -195,10 +234,10 @@ during the code generation phase, causing less detailed error
 messages.)
 
 WARNING: Although the definition of assignment implies that overlaps
-between the left-hand side and the right-hand side are `safe' (e.g.
-\code{a, b = b, a} swaps two variables), overlaps within the
+between the left-hand side and the right-hand side are `safe' (e.g.,
+``\code{a, b = b, a}'' swaps two variables), overlaps \emph{within} the
 collection of assigned-to variables are not safe!  For instance, the
-following program prints \code{[0, 2]}:
+following program prints ``\code{[0, 2]}'':
 
 \begin{verbatim}
 x = [0, 1]
@@ -243,7 +282,7 @@ Deletion of a target list recursively deletes each target, from left
 to right.
 
 Deletion of a name removes the binding of that name (which must exist)
-from the local or global name space, depending on whether the name
+from the local or global namespace, depending on whether the name
 occurs in a \keyword{global} statement in the same code block.
 \stindex{global}
 \indexii{unbinding}{name}
@@ -258,18 +297,18 @@ right type (but even this is determined by the sliced object).
 \stindex{print}
 
 \begin{verbatim}
-print_stmt:     "print" [ condition ("," condition)* [","] ]
+print_stmt:     "print" [ expression ("," expression)* [","] ]
 \end{verbatim}
 
-\keyword{print} evaluates each condition in turn and writes the resulting
+\keyword{print} evaluates each expression in turn and writes the resulting
 object to standard output (see below).  If an object is not a string,
 it is first converted to a string using the rules for string
 conversions.  The (resulting or original) string is then written.  A
 space is written before each object is (converted and) written, unless
 the output system believes it is positioned at the beginning of a
-line.  This is the case: (1) when no characters have yet been written
-to standard output; or (2) when the last character written to standard
-output is \character{\\n}; or (3) when the last write operation on standard
+line.  This is the case (1) when no characters have yet been written
+to standard output, (2) when the last character written to standard
+output is \character{\\n}, or (3) when the last write operation on standard
 output was not a \keyword{print} statement.  (In some cases it may be
 functional to write an empty string to standard output for this
 reason.)
@@ -283,10 +322,9 @@ contains just the keyword \keyword{print}.
 \indexii{newline}{suppression}
 
 Standard output is defined as the file object named \code{stdout}
-in the built-in module \module{sys}.  If no such object exists,
-or if it is not a writable file, a \exception{RuntimeError} exception is raised.
-(The original implementation attempts to write to the system's original
-standard output instead, but this is not safe, and should be fixed.)
+in the built-in module \module{sys}.  If no such object exists, or if
+it does not have a \method{write()} method, a \exception{RuntimeError}
+exception is raised.
 \indexii{standard}{output}
 \refbimodindex{sys}
 \ttindex{stdout}
@@ -296,7 +334,7 @@ standard output instead, but this is not safe, and should be fixed.)
 \stindex{return}
 
 \begin{verbatim}
-return_stmt:    "return" [condition_list]
+return_stmt:    "return" [expression_list]
 \end{verbatim}
 
 \keyword{return} may only occur syntactically nested in a function
@@ -304,14 +342,14 @@ definition, not within a nested class definition.
 \indexii{function}{definition}
 \indexii{class}{definition}
 
-If a condition list is present, it is evaluated, else \code{None}
+If an expression list is present, it is evaluated, else \code{None}
 is substituted.
 
-\keyword{return} leaves the current function call with the condition
+\keyword{return} leaves the current function call with the expression
 list (or \code{None}) as return value.
 
 When \keyword{return} passes control out of a \keyword{try} statement
-with a finally clause, that finally clause is executed
+with a \keyword{finally} clause, that \keyword{finally} clause is executed
 before really leaving the function.
 \kwindex{finally}
 
@@ -319,15 +357,18 @@ before really leaving the function.
 \stindex{raise}
 
 \begin{verbatim}
-raise_stmt:     "raise" condition ["," condition ["," condition]]
+raise_stmt:     "raise" [expression ["," expression ["," expression]]]
 \end{verbatim}
 
-\keyword{raise} evaluates its first condition, which must yield
-a string, class, or instance object.  If there is a second condition,
+If no expressions are present, \keyword{raise} re-raises the last
+expression that was raised in the current scope.
+
+Otherwose, \keyword{raise} evaluates its first expression, which must yield
+a string, class, or instance object.  If there is a second expression,
 this is evaluated, else \code{None} is substituted.  If the first
-condition is a class object, then the second condition must be an
+expression is a class object, then the second expression must be an
 instance of that class or one of its derivatives.  If the first
-condition is an instance object, the second condition must be
+expression is an instance object, the second expression must be
 \code{None}.
 \index{exception}
 \indexii{raising}{exception}
@@ -339,7 +380,7 @@ exception identified by the class of the object, with the instance as
 its parameter (and there should be no second object, or the second
 object should be \code{None}).
 
-If a third object is present, and it it not \code{None}, it should be
+If a third object is present, and it is not \code{None}, it should be
 a traceback object (see section \ref{traceback}), and it is
 substituted instead of the current location as the place where the
 exception occurred.  This is useful to re-raise an exception
@@ -361,7 +402,7 @@ within that loop.
 \indexii{loop}{statement}
 
 It terminates the nearest enclosing loop, skipping the optional
-else clause if the loop has one.
+\keyword{else} clause if the loop has one.
 \kwindex{else}
 
 If a \keyword{for} loop is terminated by \keyword{break}, the loop control
@@ -369,7 +410,7 @@ target keeps its current value.
 \indexii{loop control}{target}
 
 When \keyword{break} passes control out of a \keyword{try} statement
-with a finally clause, that finally clause is executed
+with a \keyword{finally} clause, that \keyword{finally} clause is executed
 before really leaving the loop.
 \kwindex{finally}
 
@@ -382,45 +423,45 @@ continue_stmt:  "continue"
 
 \keyword{continue} may only occur syntactically nested in a \keyword{for} or
 \keyword{while} loop, but not nested in a function or class definition or
-\keyword{try} statement within that loop.\footnote{Except that it may
-currently occur within an except clause.}
+\keyword{try} statement within that loop.\footnote{It may
+occur within an \keyword{except} or \keyword{else} clause.  The
+restriction on occurring in the \keyword{try} clause is implementer's
+laziness and will eventually be lifted.}
+It continues with the next cycle of the nearest enclosing loop.
 \stindex{for}
 \stindex{while}
 \indexii{loop}{statement}
 \kwindex{finally}
 
-It continues with the next cycle of the nearest enclosing loop.
-
 \section{The \keyword{import} statement} \label{import}
 \stindex{import}
 
 \begin{verbatim}
-import_stmt:    "import" identifier ("," identifier)*
-              | "from" identifier "import" identifier ("," identifier)*
-              | "from" identifier "import" "*"
+import_stmt:    "import" module ("," module)* 
+              | "from" module "import" identifier ("," identifier)*
+              | "from" module "import" "*" 
+module:         (identifier ".")* identifier
 \end{verbatim}
 
 Import statements are executed in two steps: (1) find a module, and
 initialize it if necessary; (2) define a name or names in the local
-name space (of the scope where the \keyword{import} statement occurs).
+namespace (of the scope where the \keyword{import} statement occurs).
 The first form (without \keyword{from}) repeats these steps for each
-identifier in the list, the \keyword{from} form performs them once, with
-the first identifier specifying the module name.
+identifier in the list.  The form with \keyword{from} performs step
+(1) once, and then performs step (2) repeatedly.
 \indexii{importing}{module}
 \indexii{name}{binding}
 \kwindex{from}
 
 The system maintains a table of modules that have been initialized,
-indexed by module name.  (The current implementation makes this table
-accessible as \code{sys.modules}.)  When a module name is found in
+indexed by module name.  This table table
+accessible as \code{sys.modules}.  When a module name is found in
 this table, step (1) is finished.  If not, a search for a module
-definition is started.  This first looks for a built-in module
-definition, and if no built-in module if the given name is found, it
-searches a user-specified list of directories for a file whose name is
-the module name with extension \file{.py}.  (The current
-implementation uses the list of strings \code{sys.path} as the search
-path; it is initialized from the shell environment variable
-\envvar{PYTHONPATH}, with an installation-dependent default.)
+definition is started.  When a module is found, it is loaded.  Details
+of the module searching and loading process are implementation and
+platform specific.  It generally involves searching for a ``built-in''
+module with the given name and then searching a list of locations
+given as \code{sys.path}.
 \ttindex{modules}
 \ttindex{sys.modules}
 \indexii{module}{name}
@@ -447,19 +488,19 @@ When step (1) finishes without raising an exception, step (2) can
 begin.
 
 The first form of \keyword{import} statement binds the module name in the
-local name space to the module object, and then goes on to import the
-next identifier, if any.  The \keyword{from} from does not bind the
+local namespace to the module object, and then goes on to import the
+next identifier, if any.  The \keyword{from} form does not bind the
 module name: it goes through the list of identifiers, looks each one
 of them up in the module found in step (1), and binds the name in the
-local name space to the object thus found.  If a name is not found,
+local namespace to the object thus found.  If a name is not found,
 \exception{ImportError} is raised.  If the list of identifiers is replaced
 by a star (\code{*}), all names defined in the module are bound,
 except those beginning with an underscore(\code{_}).
 \indexii{name}{binding}
 \exindex{ImportError}
 
-Names bound by import statements may not occur in \keyword{global}
-statements in the same scope.
+Names bound by \keyword{import} statements may not occur in
+\keyword{global} statements in the same scope.
 \stindex{global}
 
 The \keyword{from} form with \code{*} may only occur in a module scope.
@@ -470,6 +511,21 @@ The \keyword{from} form with \code{*} may only occur in a module scope.
 restrictions, but programs should not abuse this freedom, as future
 implementations may enforce them or silently change the meaning of the
 program.)
+
+\strong{Hierarchical module names:}\indexiii{hierarchical}{module names}
+when the module names contains one or more dots, the module search
+path is carried out differently.  The sequence of identifiers up to
+the last dot is used to find a ``package''\index{packages}; the final
+identifier is then searched inside the package.  A package is
+generally a subdirectory of a directory on \code{sys.path} that has a
+file \file{__init__.py}.\ttindex{__init__.py}
+%
+[XXX Can't be bothered to spell this out right now; see the URL
+http://www.python.org/doc/essays/packages.html for more details, also
+about how the module search works from inside a package.]
+
+[XXX Also should mention __import__().]
+\bifuncindex{__import__}
 
 \section{The \keyword{global} statement} \label{global}
 \stindex{global}
@@ -497,7 +553,8 @@ restrictions, but programs should not abuse this freedom, as future
 implementations may enforce them or silently change the meaning of the
 program.)
 
-Note: the \keyword{global} is a directive to the parser.  Therefore, it
+\strong{Programmer's note:}
+the \keyword{global} is a directive to the parser.  It
 applies only to code parsed at the same time as the \keyword{global}
 statement.  In particular, a \keyword{global} statement contained in an
 \keyword{exec} statement does not affect the code block \emph{containing}
@@ -539,7 +596,8 @@ may add a reference to the dictionary of the built-in module
 \ttindex{__builtins__}
 \refbimodindex{__builtin__}
 
-Hints: dynamic evaluation of expressions is supported by the built-in
+\strong{Programmer's hints:}
+dynamic evaluation of expressions is supported by the built-in
 function \function{eval()}.  The built-in functions
 \function{globals()} and \function{locals()} return the current global
 and local dictionary, respectively, which may be useful to pass around
