@@ -693,7 +693,7 @@ class Unpickler:
     dispatch[POP_MARK] = load_pop_mark
 
     def load_dup(self):
-        self.append(stack[-1])
+        self.append(self.stack[-1])
     dispatch[DUP] = load_dup
 
     def load_get(self):
