@@ -83,6 +83,10 @@ Extension modules
 Library
 -------
 
+- ZipFile.testzip() now only traps BadZipfile exceptions.  Previously,
+  a bare except caught to much and reported all errors as a problem
+  in the archive.
+
 - The logging module now has a new function, makeLogRecord() making
   LogHandler easier to interact with DatagramHandler and SocketHandler.
 
