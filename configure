@@ -1,5 +1,5 @@
 #!/bin/sh
-# From configure.in Revision: 1.8 
+# From configure.in Revision: 1.9 
 #!/bin/sh
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 1.11 
@@ -681,7 +681,7 @@ rm -f conftest*
 fi
 rm -f conftest*
 
-for ac_hdr in dlfcn.h fcntl.h limits.h signal.h stdarg.h stdlib.h thread.h unistd.h utime.h sys/audioio.h sys/param.h sys/select.h sys/time.h sys/times.h sys/un.h sys/utsname.h
+for ac_hdr in dlfcn.h fcntl.h limits.h signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h sys/audioio.h sys/param.h sys/select.h sys/time.h sys/times.h sys/un.h sys/utsname.h
 do
 ac_tr_hdr=HAVE_`echo $ac_hdr | tr '[a-z]./' '[A-Z]__'`
 test -n "$silent" || echo "checking for ${ac_hdr}"
@@ -1624,6 +1624,54 @@ DEFS="$DEFS -DGETPGRP_HAVE_ARG=1"
 ac_sed_defs="${ac_sed_defs}\${ac_dA}GETPGRP_HAVE_ARG\${ac_dB}GETPGRP_HAVE_ARG\${ac_dC}1\${ac_dD}
 \${ac_uA}GETPGRP_HAVE_ARG\${ac_uB}GETPGRP_HAVE_ARG\${ac_uC}1\${ac_uD}
 \${ac_eA}GETPGRP_HAVE_ARG\${ac_eB}GETPGRP_HAVE_ARG\${ac_eC}1\${ac_eD}
+"
+}
+
+
+fi
+rm -f conftest*
+
+
+fi
+rm -f conftest*
+
++ test -n "$silent" || echo "checking for setpgrp"
+cat > conftest.${ac_ext} <<EOF
+#include "confdefs.h"
+#include <ctype.h>
+int main() { return 0; }
+int t() { 
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_setpgrp) || defined (__stub___setpgrp)
+choke me
+#else
+/* Override any gcc2 internal prototype to avoid an error.  */
+extern char setpgrp(); setpgrp();
+#endif
+; return 0; }
+EOF
+if eval $ac_compile; then
+  rm -rf conftest*
+  test -n "$silent" || echo "checking for arguments to setpgrp"
+cat > conftest.${ac_ext} <<EOF
+#include "confdefs.h"
+#include <unistd.h>
+int main() { return 0; }
+int t() { setpgrp(0,0);; return 0; }
+EOF
+if eval $ac_compile; then
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining SETPGRP_HAVE_ARG"
+echo "#define" SETPGRP_HAVE_ARG "1" >> confdefs.h
+DEFS="$DEFS -DSETPGRP_HAVE_ARG=1"
+ac_sed_defs="${ac_sed_defs}\${ac_dA}SETPGRP_HAVE_ARG\${ac_dB}SETPGRP_HAVE_ARG\${ac_dC}1\${ac_dD}
+\${ac_uA}SETPGRP_HAVE_ARG\${ac_uB}SETPGRP_HAVE_ARG\${ac_uC}1\${ac_uD}
+\${ac_eA}SETPGRP_HAVE_ARG\${ac_eB}SETPGRP_HAVE_ARG\${ac_eC}1\${ac_eD}
 "
 }
 
