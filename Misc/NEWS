@@ -17,6 +17,8 @@ Type/class unification and new-style classes
   (formerly these were silently ignored).  The only built-in methods
   that take keyword arguments are __call__, __init__ and __new__.
 
+- The socket function has been converted to a type; see below.
+
 Core and builtins
 
 - Clarified the error messages for unsupported operands to an operator
@@ -26,7 +28,9 @@ Extension modules
 
 - The socket module defines a new method for socket objects,
   sendall().  This is like send() but may make multiple calls to
-  send() until all data has been sent.
+  send() until all data has been sent.  Also, the socket function has
+  been converted to a subclassable type, like list and tuple (etc.)
+  before it; socket and SocketType are now the same thing.
 
 - Various bugfixes to the curses module.  There is now a test suite
   for the curses module (you have to run it manually).
@@ -53,6 +57,9 @@ C API
   PySequence_Size().
 
 New platforms
+
+- We've finally confirmed that this release builds on HP-UX 11.00,
+  *with* threads, and passes the test suite.
 
 - Updated RISCOS port by Dietmar Schwertberger.
 
