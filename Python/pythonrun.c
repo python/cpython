@@ -286,6 +286,7 @@ print_error()
 	object *exception, *v, *tb, *f;
 	err_fetch(&exception, &v, &tb);
 	flushline();
+	fflush(stdout);
 	if (exception == NULL)
 		fatal("print_error called but no exception");
 	if (exception == SystemExit) {
