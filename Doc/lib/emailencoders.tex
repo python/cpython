@@ -17,8 +17,8 @@ set the \mailheader{Content-Transfer-Encoding} header as appropriate.
 Here are the encoding functions provided:
 
 \begin{funcdesc}{encode_quopri}{msg}
-Encodes the payload into \emph{Quoted-Printable} form and sets the
-\code{Content-Transfer-Encoding:} header to
+Encodes the payload into quoted-Printable form and sets the
+\mailheader{Content-Transfer-Encoding} header to
 \code{quoted-printable}\footnote{Note that encoding with
 \method{encode_quopri()} also encodes all tabs and space characters in
 the data.}.
@@ -27,11 +27,11 @@ printable data, but contains a few unprintable characters.
 \end{funcdesc}
 
 \begin{funcdesc}{encode_base64}{msg}
-Encodes the payload into \emph{Base64} form and sets the
+Encodes the payload into base64 form and sets the
 \mailheader{Content-Transfer-Encoding} header to
 \code{base64}.  This is a good encoding to use when most of your payload
 is unprintable data since it is a more compact form than
-Quoted-Printable.  The drawback of Base64 encoding is that it
+quoted-printable.  The drawback of base64 encoding is that it
 renders the text non-human readable.
 \end{funcdesc}
 

@@ -29,3 +29,35 @@ Thus, by default \function{typed_subpart_iterator()} returns each
 subpart that has a MIME type of \mimetype{text/*}.
 \end{funcdesc}
 
+The following function has been added as a useful debugging tool.  It
+should \emph{not} be considered part of the supported public interface
+for the package.
+
+\begin{funcdesc}{_structure}{msg\optional{, fp\optional{, level}}}
+Prints an indented representation of the content types of the
+message object structure.  For example:
+
+\begin{verbatim}
+>>> msg = email.message_from_file(somefile)
+>>> _structure(msg)
+multipart/mixed
+    text/plain
+    text/plain
+    multipart/digest
+        message/rfc822
+            text/plain
+        message/rfc822
+            text/plain
+        message/rfc822
+            text/plain
+        message/rfc822
+            text/plain
+        message/rfc822
+            text/plain
+    text/plain
+\end{verbatim}
+
+Optional \var{fp} is a file-like object to print the output to.  It
+must be suitable for Python's extended print statement.  \var{level}
+is used internally.
+\end{funcdesc}

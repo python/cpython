@@ -21,10 +21,10 @@ Parse address -- which should be the value of some address-containing
 field such as \mailheader{To} or \mailheader{Cc} -- into its constituent
 \emph{realname} and \emph{email address} parts.  Returns a tuple of that
 information, unless the parse fails, in which case a 2-tuple of
-\code{(None, None)} is returned.
+\code{('', '')} is returned.
 \end{funcdesc}
 
-\begin{funcdesc}{dump_address_pair}{pair}
+\begin{funcdesc}{formataddr}{pair}
 The inverse of \method{parseaddr()}, this takes a 2-tuple of the form
 \code{(realname, email_address)} and returns the string value suitable
 for a \mailheader{To} or \mailheader{Cc} header.  If the first element of
@@ -46,27 +46,6 @@ resent_tos = msg.get_all('resent-to', [])
 resent_ccs = msg.get_all('resent-cc', [])
 all_recipients = getaddresses(tos + ccs + resent_tos + resent_ccs)
 \end{verbatim}
-\end{funcdesc}
-
-\begin{funcdesc}{decode}{s}
-This method decodes a string according to the rules in \rfc{2047}.  It
-returns the decoded string as a Python unicode string.
-\end{funcdesc}
-
-\begin{funcdesc}{encode}{s\optional{, charset\optional{, encoding}}}
-This method encodes a string according to the rules in \rfc{2047}.  It
-is not actually the inverse of \function{decode()} since it doesn't
-handle multiple character sets or multiple string parts needing
-encoding.  In fact, the input string \var{s} must already be encoded
-in the \var{charset} character set (Python can't reliably guess what
-character set a string might be encoded in).  The default
-\var{charset} is \samp{iso-8859-1}.
-
-\var{encoding} must be either the letter \character{q} for
-Quoted-Printable or \character{b} for Base64 encoding.  If
-neither, a \exception{ValueError} is raised.  Both the \var{charset} and
-the \var{encoding} strings are case-insensitive, and coerced to lower
-case in the returned string.
 \end{funcdesc}
 
 \begin{funcdesc}{parsedate}{date}
@@ -116,7 +95,48 @@ Optional \var{timeval} if given is a floating point time value as
 accepted by \function{time.gmtime()} and \function{time.localtime()},
 otherwise the current time is used.
 
-Optional \var{localtime} is a flag that when true, interprets
+Optional \var{localtime} is a flag that when \code{True}, interprets
 \var{timeval}, and returns a date relative to the local timezone
 instead of UTC, properly taking daylight savings time into account.
+The default is \code{False} meaning UTC is used.
 \end{funcdesc}
+
+\begin{funcdesc}{make_msgid}{\optional{idstring}}
+Returns a string suitable for an \rfc{2822}-compliant
+\mailheader{Message-ID} header.  Optional \var{idstring} if given, is
+a string used to strengthen the uniqueness of the message id.
+\end{funcdesc}
+
+\begin{funcdesc}{decode_rfc2231}{s}
+Decode the string \var{s} according to \rfc{2231}.
+\end{funcdesc}
+
+\begin{funcdesc}{encode_rfc2231}{s\optional{, charset\optional{, language}}}
+Encode the string \var{s} according to \rfc{2231}.  Optional
+\var{charset} and \var{language}, if given is the character set name
+and language name to use.  If neither is given, \var{s} is returned
+as-is.  If \var{charset} is given but \var{language} is not, the
+string is encoded using the empty string for \var{language}.
+\end{funcdesc}
+
+\begin{funcdesc}{decode_params}{params}
+Decode parameters list according to \rfc{2231}.  \var{params} is a
+sequence of 2-tuples containing elements of the form
+\code{(content-type, string-value)}.
+\end{funcdesc}
+
+The following functions have been deprecated:
+
+\begin{funcdesc}{dump_address_pair}{pair}
+\deprecated{2.2.2}{Use \function{formataddr()} instead.}
+\end{funcdesc}
+
+\begin{funcdesc}{decode}{s}
+\deprecated{2.2.2}{Use \method{Header.decode_header()} instead.}
+\end{funcdesc}
+
+
+\begin{funcdesc}{encode}{s\optional{, charset\optional{, encoding}}}
+\deprecated{2.2.2}{Use \method{Header.encode()} instead.}
+\end{funcdesc}
+

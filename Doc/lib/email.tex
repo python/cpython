@@ -1,4 +1,4 @@
-% Copyright (C) 2001 Python Software Foundation
+% Copyright (C) 2001,2002 Python Software Foundation
 % Author: barry@zope.com (Barry Warsaw)
 
 \section{\module{email} ---
@@ -19,13 +19,10 @@ such as \refmodule{rfc822}, \refmodule{mimetools},
 \refmodule{multifile}, and other non-standard packages such as
 \module{mimecntl}.  It is specifically \emph{not} designed to do any
 sending of email messages to SMTP (\rfc{2821}) servers; that is the
-function of the \refmodule{smtplib} module\footnote{For this reason,
-line endings in the \module{email} package are always native line
-endings.  The \module{smtplib} module is responsible for converting
-from native line endings to \rfc{2821} line endings, just as your mail
-server would be responsible for converting from \rfc{2821} line
-endings to native line endings when it stores messages in a local
-mailbox.}.
+function of the \refmodule{smtplib} module.  The \module{email}
+package attempts to be as RFC-compliant as possible, supporting in
+addition to \rfc{2822}, such MIME-related RFCs as
+\rfc{2045}-\rfc{2047}, and \rfc{2231}.
 
 The primary distinguishing feature of the \module{email} package is
 that it splits the parsing and generating of email messages from the
@@ -55,8 +52,8 @@ Also included are detailed specifications of all the classes and
 modules that the \module{email} package provides, the exception
 classes you might encounter while using the \module{email} package,
 some auxiliary utilities, and a few examples.  For users of the older
-\module{mimelib} package, from which the \module{email} package is
-descended, a section on differences and porting is provided.
+\module{mimelib} package, or previous versions of the \module{email}
+package, a section on differences and porting is provided.
 
 \begin{seealso}
     \seemodule{smtplib}{SMTP protocol client}
@@ -72,133 +69,10 @@ descended, a section on differences and porting is provided.
 \input{emailgenerator}
 
 \subsection{Creating email and MIME objects from scratch}
+\input{emailmimebase}
 
-Ordinarily, you get a message object tree by passing some text to a
-parser, which parses the text and returns the root of the message
-object tree.  However you can also build a complete object tree from
-scratch, or even individual \class{Message} objects by hand.  In fact,
-you can also take an existing tree and add new \class{Message}
-objects, move them around, etc.  This makes a very convenient
-interface for slicing-and-dicing MIME messages.
-
-You can create a new object tree by creating \class{Message}
-instances, adding payloads and all the appropriate headers manually.
-For MIME messages though, the \module{email} package provides some
-convenient classes to make things easier.  Each of these classes
-should be imported from a module with the same name as the class, from
-within the \module{email} package.  E.g.:
-
-\begin{verbatim}
-import email.MIMEImage.MIMEImage
-\end{verbatim}
-
-or
-
-\begin{verbatim}
-from email.MIMEText import MIMEText
-\end{verbatim}
-
-Here are the classes:
-
-\begin{classdesc}{MIMEBase}{_maintype, _subtype, **_params}
-This is the base class for all the MIME-specific subclasses of
-\class{Message}.  Ordinarily you won't create instances specifically
-of \class{MIMEBase}, although you could.  \class{MIMEBase} is provided
-primarily as a convenient base class for more specific MIME-aware
-subclasses.
-
-\var{_maintype} is the \mailheader{Content-Type} major type
-(e.g. \mimetype{text} or \mimetype{image}), and \var{_subtype} is the
-\mailheader{Content-Type} minor type 
-(e.g. \mimetype{plain} or \mimetype{gif}).  \var{_params} is a parameter
-key/value dictionary and is passed directly to
-\method{Message.add_header()}.
-
-The \class{MIMEBase} class always adds a \mailheader{Content-Type} header
-(based on \var{_maintype}, \var{_subtype}, and \var{_params}), and a
-\mailheader{MIME-Version} header (always set to \code{1.0}).
-\end{classdesc}
-
-\begin{classdesc}{MIMEAudio}{_audiodata\optional{, _subtype\optional{,
-    _encoder\optional{, **_params}}}}
-
-A subclass of \class{MIMEBase}, the \class{MIMEAudio} class is used to
-create MIME message objects of major type \mimetype{audio}.
-\var{_audiodata} is a string containing the raw audio data.  If this
-data can be decoded by the standard Python module \refmodule{sndhdr},
-then the subtype will be automatically included in the
-\mailheader{Content-Type} header.  Otherwise you can explicitly specify the
-audio subtype via the \var{_subtype} parameter.  If the minor type could
-not be guessed and \var{_subtype} was not given, then \exception{TypeError}
-is raised.
-
-Optional \var{_encoder} is a callable (i.e. function) which will
-perform the actual encoding of the audio data for transport.  This
-callable takes one argument, which is the \class{MIMEAudio} instance.
-It should use \method{get_payload()} and \method{set_payload()} to
-change the payload to encoded form.  It should also add any
-\mailheader{Content-Transfer-Encoding} or other headers to the message
-object as necessary.  The default encoding is \emph{Base64}.  See the
-\refmodule{email.Encoders} module for a list of the built-in encoders.
-
-\var{_params} are passed straight through to the \class{MIMEBase}
-constructor.
-\end{classdesc}
-
-\begin{classdesc}{MIMEImage}{_imagedata\optional{, _subtype\optional{,
-    _encoder\optional{, **_params}}}}
-
-A subclass of \class{MIMEBase}, the \class{MIMEImage} class is used to
-create MIME message objects of major type \mimetype{image}.
-\var{_imagedata} is a string containing the raw image data.  If this
-data can be decoded by the standard Python module \refmodule{imghdr},
-then the subtype will be automatically included in the
-\mailheader{Content-Type} header.  Otherwise you can explicitly specify the
-image subtype via the \var{_subtype} parameter.  If the minor type could
-not be guessed and \var{_subtype} was not given, then \exception{TypeError}
-is raised.
-
-Optional \var{_encoder} is a callable (i.e. function) which will
-perform the actual encoding of the image data for transport.  This
-callable takes one argument, which is the \class{MIMEImage} instance.
-It should use \method{get_payload()} and \method{set_payload()} to
-change the payload to encoded form.  It should also add any
-\mailheader{Content-Transfer-Encoding} or other headers to the message
-object as necessary.  The default encoding is \emph{Base64}.  See the
-\refmodule{email.Encoders} module for a list of the built-in encoders.
-
-\var{_params} are passed straight through to the \class{MIMEBase}
-constructor.
-\end{classdesc}
-
-\begin{classdesc}{MIMEText}{_text\optional{, _subtype\optional{,
-    _charset\optional{, _encoder}}}}
-
-A subclass of \class{MIMEBase}, the \class{MIMEText} class is used to
-create MIME objects of major type \mimetype{text}.  \var{_text} is the
-string for the payload.  \var{_subtype} is the minor type and defaults
-to \mimetype{plain}.  \var{_charset} is the character set of the text and is
-passed as a parameter to the \class{MIMEBase} constructor; it defaults
-to \code{us-ascii}.  No guessing or encoding is performed on the text
-data, but a newline is appended to \var{_text} if it doesn't already
-end with a newline.
-
-The \var{_encoding} argument is as with the \class{MIMEImage} class
-constructor, except that the default encoding for \class{MIMEText}
-objects is one that doesn't actually modify the payload, but does set
-the \mailheader{Content-Transfer-Encoding} header to \code{7bit} or
-\code{8bit} as appropriate.
-\end{classdesc}
-
-\begin{classdesc}{MIMEMessage}{_msg\optional{, _subtype}}
-A subclass of \class{MIMEBase}, the \class{MIMEMessage} class is used to
-create MIME objects of main type \mimetype{message}.  \var{_msg} is used as
-the payload, and must be an instance of class \class{Message} (or a
-subclass thereof), otherwise a \exception{TypeError} is raised.
-
-Optional \var{_subtype} sets the subtype of the message; it defaults
-to \mimetype{rfc822}.
-\end{classdesc}
+\subsection{Headers, Character sets, and Internationalization}
+\input{emailheaders}
 
 \subsection{Encoders}
 \input{emailencoders}
@@ -211,6 +85,77 @@ to \mimetype{rfc822}.
 
 \subsection{Iterators}
 \input{emailiter}
+
+\subsection{Differences from \module{email} v1 (up to Python 2.2.1)}
+
+Version 1 of the \module{email} package was bundled with Python
+releases up to Python 2.2.1.  Version 2 was developed for the Python
+2.3 release, and backported to Python 2.2.2.  It was also available as
+a separate distutils based package.  \module{email} version 2 is
+almost entirely backwards compatible with version 1, with the
+following differences:
+
+\begin{itemize}
+\item The \module{email.Header} and \module{email.Charset} modules
+      have been added.
+\item The pickle format for \class{Message} instances has changed.
+      Since this was never (and still isn't) formally defined, this
+      isn't considered a backwards incompatibility.  However if your
+      application pickles and unpickles \class{Message} instances, be
+      aware that in \module{email} version 2, \class{Message}
+      instances now have private variables \var{_charset} and
+      \var{_default_type}.
+\item Several methods in the \class{Message} class have been
+      deprecated, or their signatures changes.  Also, many new methods
+      have been added.  See the documentation for the \class{Message}
+      class for deatils.  The changes should be completely backwards
+      compatible.
+\item The object structure has changed in the face of
+      \mimetype{message/rfc822} content types.  In \module{email}
+      version 1, such a type would be represented by a scalar payload,
+      i.e. the container message's \method{is_multipart()} returned
+      false, \method{get_payload()} was not a list object, and was
+      actually a \class{Message} instance.
+
+      This structure was inconsistent with the rest of the package, so
+      the object representation for \mimetype{message/rfc822} content
+      types was changed.  In module{email} version 2, the container
+      \emph{does} return \code{True} from \method{is_multipart()}, and
+      \method{get_payload()} returns a list containing a single
+      \class{Message} item.
+
+      Note that this is one place that backwards compatibility could
+      not be completely maintained.  However, if you're already
+      testing the return type of \method{get_payload()}, you should be
+      fine.  You just need to make sure your code doesn't do a
+      \method{set_payload()} with a \class{Message} instance on a
+      container with a content type of \mimetype{message/rfc822}.
+\item The \class{Parser} constructor's \var{strict} argument was
+      added, and its \method{parse()} and \method{parsestr()} methods
+      grew a \var{headersonly} argument.  The \var{strict} flag was
+      also added to functions \function{email.message_from_file()}
+      and \function{email.message_from_string()}.
+\item \method{Generator.__call__()} is deprecated; use
+      \method{Generator.flatten()} instead.  The \class{Generator}
+      class has also grown the \method{clone()} method.
+\item The \class{DecodedGenerator} class in the
+      \module{email.Generator} module was added.
+\item The intermediate base classes \class{MIMENonMultipart} and
+      \class{MIMEMultipart} have been added, and interposed in the
+      class heirarchy for most of the other MIME-related derived
+      classes.
+\item The \var{_encoder} argument to the \class{MIMEText} constructor
+      has been deprecated.  Encoding  now happens implicitly based
+      on the \var{_charset} argument.
+\item The following functions in the \module{email.Utils} module have
+      been deprecated: \function{dump_address_pairs()},
+      \function{decode()}, and \function{encode()}.  The following
+      functions have been added to the module:
+      \function{make_msgid()}, \function{decode_rfc2231()},
+      \function{encode_rfc2231()}, and \function{decode_params()}.
+\item The non-public function \function{email.Iterators._structure()}
+      was added.
+\end{itemize}
 
 \subsection{Differences from \module{mimelib}}
 
