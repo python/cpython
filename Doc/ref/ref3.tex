@@ -910,12 +910,15 @@ imported modules are still available at the time when the
 \begin{methoddesc}[object]{__repr__}{self}
 Called by the \function{repr()}\bifuncindex{repr} built-in function
 and by string conversions (reverse quotes) to compute the ``official''
-string representation of an object.  This should normally look like a
-valid Python expression that can be used to recreate an object with
-the same value.  By convention, objects which cannot be trivially
-converted to strings which can be used to create a similar object
-produce a string of the form \samp{<\var{...some useful
-description...}>}.
+string representation of an object.  It at all possible, this should
+look like a valid Python expression that could be used to recreate an
+object with the same value (given an appropriate environment).  If
+this is not possible, a string of the form \samp{<\var{...some useful
+description...}>} should be returned.  The return value must be a
+string object.
+
+This is typically used for debugging, so it is important that the
+representation is information-rich and unambiguous.
 \indexii{string}{conversion}
 \indexii{reverse}{quotes}
 \indexii{backward}{quotes}
@@ -928,7 +931,7 @@ by the \keyword{print}\stindex{print} statement to compute the
 ``informal'' string representation of an object.  This differs from
 \method{__repr__()} in that it does not have to be a valid Python
 expression: a more convenient or concise representation may be used
-instead.
+instead.  The return value must be a string object.
 \end{methoddesc}
 
 \begin{methoddesc}[object]{__cmp__}{self, other}
