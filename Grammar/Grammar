@@ -1,4 +1,8 @@
-# Grammar for Python, version 6
+# Grammar for Python, version 7
+
+# Changes since version 6:
+#	Add logical operators '|', '^', '&' and '~'
+#	Add shift operators '<<' and '>>'
 
 # Changes since version 5:
 #	Comparison operators '<=' '>' '<>' are now 1 token
@@ -73,9 +77,13 @@ and_test: not_test ('and' not_test)*
 not_test: 'not' not_test | comparison
 comparison: expr (comp_op expr)*
 comp_op: '<'|'>'|'='|'>='|'<='|'<>'|'!='|'=='|'in'|'not' 'in'|'is'|'is' 'not'
-expr: term (('+'|'-') term)*
+expr: xor_expr ('|' xor_expr)*
+xor_expr: and_expr ('^' and_expr)*
+and_expr: shift_expr ('&' shift_expr)*
+shift_expr: arith_expr (('<<'|'>>') arith_expr)*
+arith_expr: term (('+'|'-') term)*
 term: factor (('*'|'/'|'%') factor)*
-factor: ('+'|'-') factor | atom trailer*
+factor: ('+'|'-'|'~') factor | atom trailer*
 atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' [dictmaker] '}' | '`' testlist '`' | NAME | NUMBER | STRING
 trailer: '(' [testlist] ')' | '[' subscript ']' | '.' NAME
 subscript: test | [test] ':' [test]
