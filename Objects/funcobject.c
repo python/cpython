@@ -106,6 +106,27 @@ func_repr(op)
 	return newstringobject(buf);
 }
 
+static int
+func_compare(f, g)
+	funcobject *f, *g;
+{
+	if (f->func_globals != g->func_globals)
+		return (f->func_globals < g->func_globals) ? -1 : 1;
+	return cmpobject(f->func_code, g->func_code);
+}
+
+static long
+func_hash(f)
+	funcobject *f;
+{
+	long h;
+	h = hashobject(f->func_code);
+	if (h == -1) return h;
+	h = h ^ (long)f->func_globals;
+	if (h == -1) h = -2;
+	return h;
+}
+
 typeobject Functype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
@@ -116,6 +137,10 @@ typeobject Functype = {
 	0,		/*tp_print*/
 	func_getattr,	/*tp_getattr*/
 	0,		/*tp_setattr*/
-	0,		/*tp_compare*/
+	func_compare,	/*tp_compare*/
 	func_repr,	/*tp_repr*/
+	0,		/*tp_as_number*/
+	0,		/*tp_as_sequence*/
+	0,		/*tp_as_mapping*/
+	func_hash,	/*tp_hash*/
 };

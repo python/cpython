@@ -92,6 +92,35 @@ code_repr(co)
 	return newstringobject(buf);
 }
 
+static int
+code_compare(co, cp)
+	codeobject *co, *cp;
+{
+	int cmp;
+	cmp = cmpobject((object *)co->co_code, (object *)cp->co_code);
+	if (cmp) return cmp;
+	cmp = cmpobject(co->co_consts, cp->co_consts);
+	if (cmp) return cmp;
+	cmp = cmpobject(co->co_names, cp->co_names);
+	return cmp;
+}
+
+static long
+code_hash(co)
+	codeobject *co;
+{
+	long h, h1, h2, h3;
+	h1 = hashobject((object *)co->co_code);
+	if (h1 == -1) return -1;
+	h2 = hashobject(co->co_consts);
+	if (h2 == -1) return -1;
+	h3 = hashobject(co->co_names);
+	if (h3 == -1) return -1;
+	h = h1 ^ h2 ^ h3;
+	if (h == -1) h = -2;
+	return h;
+}
+
 typeobject Codetype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
@@ -102,11 +131,12 @@ typeobject Codetype = {
 	0,		/*tp_print*/
 	code_getattr,	/*tp_getattr*/
 	0,		/*tp_setattr*/
-	0,		/*tp_compare*/
+	code_compare,	/*tp_compare*/
 	code_repr,	/*tp_repr*/
 	0,		/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
+	code_hash,	/*tp_hash*/
 };
 
 codeobject *
