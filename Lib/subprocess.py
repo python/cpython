@@ -711,7 +711,7 @@ class Popen(object):
             self.pid = pid
             ht.Close()
 
-            # Child is launched. Close the parents copy of those pipe
+            # Child is launched. Close the parent's copy of those pipe
             # handles that only the child should have open.  You need
             # to make sure that no handles to the write end of the
             # output pipe are maintained in this process or else the
