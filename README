@@ -146,13 +146,24 @@ Platform specific notes
 on these platforms without the special directions mentioned here, let
 me know so I can remove them!)
 
+Solaris: When using Sun's C compiler with threads, at least on Solaris
+	2.5.1, you need to add the "-mt" compiler option (the simplest
+	way is probably to specify the compiler with this option as
+	the "CC" environment variable when running the configure
+	script).
+
 Linux:  On Linux version 1.x, once you've built Python, use it to run
 	the regen script in the Lib/linux1 directory.  Apparently
 	the files as distributed don't match the system headers on
 	some Linux versions.  (The "h2py" command refers to
 	Tools/scripts/h2py.py.)  The modules distributed for Linux 2.x
 	should be okay.  Shared library support now works by default
-	on ELF-based x86 Linux systems.
+	on ELF-based x86 Linux systems.  (Note: when you change the
+	status of a module from static to shared, you must remove its
+	.o file or do a "make clean".)
+
+DEC Alpha OFS/1: When enabling threads, use --with-dec-threads, not
+	--with-thread.
 
 AIX:	A complete overhaul of the shared library support is now in
 	place.  To enable it, uncomment the LINKCC line in the Setup
@@ -188,12 +199,9 @@ SCO:    1) Everything works much better if you add -U__STDC__ to the
 	3) According to at least one report, the above apply only to
 	SCO 3 -- Python builds out of the box on SCO 5.
 
-SunOS:  On SunOS 4.x, when using the native "cc" compiler, you have to
-	disable modules "cmath" and "operator" in Modules/Setup (see
-	the next section) and edit the various Makefiles to add
-	"-DWITHOUT_COMPLEX" to the CFLAGS variable, in order to
-	overcome the limitation to pre-ANSI C.  (Or, of course, you
-	could get gcc :-).
+SunOS:	On SunOS 4.1.x, when using the SunPro C compiler, you may want
+	to use the '-Xa' option instead of '-Xc', to enable some
+	needed non-ANSI Sunisms.
 
 NeXT:   To build fat binaries, use the --with-next-archs switch
 	described below.
@@ -225,6 +233,12 @@ system libraries, e.g. the GL library and the audio hardware.
 
 For SunOS and Solaris, enable module "sunaudiodev" to support the
 audio device.
+
+In addition to the file Setup, you can also edit the file Setup.local.
+(the makesetup script processes both).  You may find it more
+convenient to edit Setup.local and leave Setup alone.  Then, when
+installing a new Python version, you can copy your old Setup.local
+file.
 
 
 Setting the optimization/debugging options
@@ -303,7 +317,8 @@ WARNING: if you rerun the configure script with different options, you
 must run "make clean" before rebuilding.  Exceptions to this rule:
 after changing --prefix or --exec-prefix, all you need to do is remove
 Modules/getpath.o; after changing --with-readline, just remove
-Parser/myreadline.o.
+Parser/myreadline.o (but if it doesn't seem to work, always try "make
+clean" before giving up or complaining!).
 
 --with(out)-gcc: The configure script uses gcc (the GNU C compiler) if
 	it finds it.  If you don't want this, or if this compiler is
@@ -353,14 +368,15 @@ Parser/myreadline.o.
 	readline library are in the FAQ (file Misc/FAQ).
 
 --with-thread: On most Unix systems, you can now use multiple threads.
-	To enable this, pass --with-thread.  If the library required
-	for threads lives in a peculiar place, you can use
-	--with-thread=DIRECTORY.  In the Modules/Setup file, enable
-	the thread module.  (Threads aren't enabled automatically
-	because there are run-time penalties when support for them is
-	compiled in even if you don't use them.)  IMPORTANT: run "make
-	clean" after changing (either enabling or disabling) this
-	option!
+	To enable this, pass --with-thread.  (--with-threads is an
+	alias.)  If the library required for threads lives in a
+	peculiar place, you can use --with-thread=DIRECTORY.  In the
+	Modules/Setup file, enable the thread module.  (Threads aren't
+	enabled automatically because there are run-time penalties
+	when support for them is compiled in even if you don't use
+	them.)  IMPORTANT: run "make clean" after changing (either
+	enabling or disabling) this option!  Note: for DEC Alpha OSF/1,
+	use --with-dec-threads instead.
 
 --with-sgi-dl: On SGI IRIX 4, dynamic loading of extension modules is
 	supported by the "dl" library by Jack Jansen, which is
