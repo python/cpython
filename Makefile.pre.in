@@ -494,9 +494,10 @@ DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
 
 oldsharedinstall: $(DESTSHARED) $(SHAREDMODS)
 		@for i in X $(SHAREDMODS); do \
-			if test $$i != X; \
-			then $(INSTALL_SHARED) $$i $(DESTSHARED)/$$i; \
-			fi; \
+		  if test $$i != X; then \
+		    echo $(INSTALL_SHARED) $$i $(DESTSHARED)/`basename $$i`; \
+		    $(INSTALL_SHARED) $$i $(DESTSHARED)/`basename $$i`; \
+		  fi; \
 		done
 
 $(DESTSHARED): 
