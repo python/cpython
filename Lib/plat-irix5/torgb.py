@@ -40,6 +40,12 @@ t.append('pnmtoppm', '--')
 t.append('fromppm $IN $OUT', 'ff')
 table['rast'] = t
 
+t = pipes.Template().init()
+t.append('djpeg', '--')
+t.append('pnmtoppm', '--')
+t.append('fromppm $IN $OUT', 'ff')
+table['jpeg'] = t
+
 uncompress = pipes.Template().init()
 uncompress.append('uncompress', '--')
 

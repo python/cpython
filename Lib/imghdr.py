@@ -81,6 +81,12 @@ def test_xbm(h, f):
 
 tests.append(test_xbm)
 
+def test_jpeg(h, f):
+	# JPEG data in JFIF format
+	if h[6:10] == 'JFIF':
+		return 'jpeg'
+
+tests.append(test_jpeg)
 
 #--------------------#
 # Small test program #

@@ -56,6 +56,7 @@ def whatraw(filename):
 	from stat import ST_SIZE
 	# XXX "whatsound" should be part of the distribution somehow...
 	cmd = 'whatsound ' + filename + ' 2>/dev/null'
+	cmd = 'PATH=$PATH:/ufs/guido/bin/sgi\n' + cmd
 	pipe = os.popen(cmd, 'r')
 	data = pipe.read()
 	sts = pipe.close()

@@ -1,36 +1,15 @@
-##############################
-# Calendar support functions #
-##############################
+###############################
+# Calendar printing functions #
+###############################
 
-# Revision 2: uses funtions from built-in time module where possible.
+# Revision 2: uses funtions from built-in time module
 
 # Import functions and variables from time module
-from time import gmtime, localtime, mktime
+from time import gmtime, localtime, mktime, asctime, ctime
 from time import timezone, altzone, daylight, tzname
 
 # Exception raised for bad input (with string parameter for details)
 error = 'calendar.error'
-
-# Abbreviated names of months (1-based arrays!!!)
-month_abbr =       ['   ', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', \
-		           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
-# Turn calendar time as returned by localtime() into a string
-def asctime(arg):
-	year, month, day, hours, mins, secs, wday, yday, isdst = arg
-	return '%s %s %02d %02d:%02d:%02d %04d' % (
-		day_abbr[wday], month_abbr[month], day,
-		hours, mins, secs, year)
-
-# UNIX-style ctime (except it doesn't append '\n'!)
-def ctime(secs):
-	return asctime(localtime(secs))
-
-######################
-# Non-UNIX additions #
-######################
-
-# Calendar printing etc.
 
 # Note when comparing these calendars to the ones printed by cal(1):
 # My calendars have Monday as the first day of the week, and Sunday as
@@ -48,10 +27,12 @@ day_name = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', \
 	    'Friday', 'Saturday', 'Sunday']
 day_abbr = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-# Full names of months (1-based arrays!!!)
+# Full and abbreviated names of months (1-based arrays!!!)
 month_name =          ['', 'January',   'February', 'March',    'April', \
 		           'May',       'June',     'July',     'August', \
 			   'September', 'October',  'November', 'December']
+month_abbr =       ['   ', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', \
+		           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 # Return 1 for leap years, 0 for non-leap years
 def isleap(year):
