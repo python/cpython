@@ -59,6 +59,9 @@
 /* About box */
 #define ABOUT_ID		136
 
+/* No preferences file name resource */
+#define NOPREFNAME_ID	137
+
 /* EditPythonPrefs range. Needed here to forestall conflicts with applets */
 #define EDITPYTHONPREFS_MIN	500
 #define EDITPYTHONPREFS_MAX 511
@@ -77,6 +80,10 @@
 ** while a 'Popt' of 129 (in the application *only*) overrides any options in the
 ** preferences file.
 */
+
+/* The STR resource that holds the preference file name */
+/* #define PREFFILENAME_ID 128 */
+#define PREFFILENAME_NAME "\pPythonPreferenceFileName"
 
 /* The STR# resource for sys.path initialization */
 #define PYTHONPATH_ID 128
