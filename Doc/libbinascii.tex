@@ -1,0 +1,146 @@
+\section{Standard module \sectcode{binhex}}
+\stmodindex{binhex}
+
+This module encodes and decodes files in binhex4 format, a format
+allowing representation of Macintosh files in ASCII. On the macintosh,
+both forks of a file and the finder information are encoded (or
+decoded), on other platforms only the data fork is handled.
+
+The \code{binhex} module defines the following functions:
+
+\renewcommand{\indexsubitem}{(in module binhex)}
+
+\begin{funcdesc}{binhex}{input\, output}
+Convert a binary file with filename \var{input} to binhex file
+\var{output}. The \var{output} parameter can either be a filename or a
+file-like object (any object supporting a \var{write} and \var{close}
+method).
+\end{funcdesc}
+
+\begin{funcdesc}{hexbin}{input\optional{\, output}}
+Decode a binhex file \var{input}. \var{Input} may be a filename or a
+file-like object supporting \var{read} and \var{close} methods.
+The resulting file is written to a file named \var{output}, unless the
+argument is empty in which case the output filename is read from the
+binhex file.
+\end{funcdesc}
+
+\subsection{notes}
+There is an alternative, more powerful interface to the coder and
+decoder, see the source for details.
+
+If you code or decode textfiles on non-Macintosh platforms they will
+still use the macintosh newline convention (carriage-return as end of
+line).
+
+As of this writing, hexbin appears to not work in all cases.
+
+\section{Standard module \sectcode{uu}}
+\stmodindex{uu}
+
+This module encodes and decodes files in uuencode format, allowing
+arbitrary binary data to be transferred over ascii-only connections.
+
+The \code{uu} module defines the following functions:
+
+\renewcommand{\indexsubitem}{(in module uu)}
+
+\begin{funcdesc}{encode}{filename\, mode\, in_file\, out_file}
+Uuencode file \var{in_file} into file \var{out_file}. Both are
+file-like objects supporting a \var{read} and \var{write} method
+respectively. The uuencoded file will have the header specifying
+\var{filename} and \var{mode} as the defaults for the results of
+decoding the file.
+\end{funcdesc}
+
+\begin{funcdesc}{decode}{filename\, mode\, in_file}
+Note that this function uses a non-standard form of variable
+arguments, see below for other variants of argument lists.
+
+This call decodes uuencoded file \var{in_file} (an object supporting a
+\var{readline} method), placing the result on a file with name
+\var{filename} and mode \var{mode}.
+\end{funcdesc}
+
+\begin{funcdesc}{decode}{in_file\, out_file}
+An alternative form of \var{decode} which writes the resulting data to
+\var{out_file} (an object supporting a \var{write} method).
+\end{funcdesc}
+
+\begin{funcdesc}{decode}{in_file}
+An alternative form of \var{decode} which stores the result in the
+file specified in the uuencoded file.
+\end{funcdesc}
+
+\subsection{notes}
+This code was contributed by Lance Ellinghouse, and modified by Jack
+Jansen to use the \var{binascii} module.
+
+Encoding a file on a non-unix platforms may well result in a file
+with the incorrect newline semantics or a file extractable only on the
+original platform.
+\section{Built-in Module \sectcode{binascii}}	% If implemented in C
+\bimodindex{binascii}
+
+The binascii module contains a number of methods to convert between
+binary and various ascii-encoded binary representations. Normally, you
+will not use these modules directly but use wrapper modules like
+\var{uu} or \var{hexbin} in stead, this module solely exists because
+bit-manipuation of large amounts of data is slow in python.
+
+The \code{binascii} module defines the following functions:
+
+\renewcommand{\indexsubitem}{(in module binascii)}
+
+\begin{funcdesc}{a2b_uu}{string}
+Convert a single line of uuencoded data back to binary and return the
+binary data. Lines normally contain 45 (binary) bytes, except for the
+last line. Line data may be followed by whitespace.
+\end{funcdesc}
+
+\begin{funcdesc}{b2a_uu}{data}
+Convert binary data to a line of ascii characters, the return value is
+the converted line, including a newline char. The length of \var{data}
+should be at most 45.
+\end{funcdesc}
+
+\begin{funcdesc}{a2b_hqx}{string}
+Convert binhex4 formatted ascii data to binary, without doing
+rle-decompression. The string should contain a complete number of
+binary bytes, or (in case of the last portion of the binhex4 data)
+have the remaining bits zero.
+\end{funcdesc}
+
+\begin{funcdesc}{rledecode_hqx}{data}
+Perform RLE-decompression on the data, as per the binhex4
+standard. The algorithm uses \code{0x90} after a byte as a repeat
+indicator, followed by a count. A count of \code{0} specifies a byte
+value of \code{0x90}. The routine returns the decompressed data,
+unless data input data ends in an orphaned repeat indicator, in which
+case the \var{Incomplete} exception is raised.
+\end{funcdesc}
+
+\begin{funcdesc}{rlecode_hqx}{data}
+Perform binhex4 style RLE-compression on \var{data} and return the
+result.
+\end{funcdesc}
+
+\begin{funcdesc}{b2a_hqx}{data}
+Perform hexbin4 binary-to-ascii translation and return the resulting
+string. The argument should already be rle-coded, and have a length
+divisible by 3 (except possibly the last fragment).
+\end{funcdesc}
+
+\begin{funcdesc}{crc_hqx}{data, crc}
+Compute the binhex4 crc value of \var{data}, starting with an initial
+\var{crc} and returning the result.
+\end{funcdesc}
+ 
+\begin{excdesc}{Error}
+Exception raised on errors. These are usually programming errors.
+\end{excdesc}
+
+\begin{excdesc}{Incomplete}
+Exception raised on incomplete data. These are usually not programming
+errors, but handled by reading a little more data and trying again.
+\end{excdesc}

@@ -100,7 +100,7 @@ ref.dvi: ref.tex ref1.tex ref2.tex ref3.tex ref4.tex ref5.tex ref6.tex \
 LIBFILES = lib.tex \
 libal.tex libaifc.tex liballos.tex \
 	libamoeba.tex libarray.tex libaudio.tex libaudioop.tex \
-libbltin.tex \
+libbltin.tex libbinascii.tex \
 libcd.tex \
 libcgi.tex libcopy.tex libctb.tex libcrypto.tex \
 libdbm.tex \
@@ -111,7 +111,7 @@ libhtmllib.tex libhttplib.tex \
 libimageop.tex libimgfile.tex libintro.tex \
 libjpeg.tex \
 libmac.tex libmacconsole.tex libmacdnr.tex \
-	libmacfs.tex libmactcp.tex libmacspeech.tex \
+	libmacfs.tex libmacos.tex libmactcp.tex libmacspeech.tex \
 	libmain.tex libmarshal.tex libmath.tex \
 	libmd5.tex libmimetools.tex libmisc.tex \
 	libmm.tex libmpz.tex \
