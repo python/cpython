@@ -66,6 +66,8 @@ def compile_dir(dir, maxlevels=10, ddir=None,
                 except KeyboardInterrupt:
                     raise KeyboardInterrupt
                 except py_compile.PyCompileError,err:
+                    if quiet:
+                        print 'Compiling', fullname, '...'
                     print err.msg
                     success = 0
                 except IOError, e:
