@@ -267,6 +267,20 @@ class AbstractPickleTests(unittest.TestCase):
             u = self.loads(s)
             self.assertEqual(t, u)
 
+    # Tests for protocol 2
+
+    def test_long1(self):
+        x = 12345678910111213141516178920L
+        s = self.dumps(x, 2)
+        y = self.loads(s)
+        self.assertEqual(x, y)
+
+    def test_long4(self):
+        x = 12345678910111213141516178920L << (256*8)
+        s = self.dumps(x, 2)
+        y = self.loads(s)
+        self.assertEqual(x, y)
+
 class AbstractPickleModuleTests(unittest.TestCase):
 
     def test_dump_closed_file(self):
