@@ -837,6 +837,43 @@ message is raised, then it is reported as a failure:
         ValueError: message
     (1, 1)
 
+However, IGNORE_EXCEPTION_DETAIL can be used to allow a mismatch in the
+detail:
+
+    >>> def f(x):
+    ...     r'''
+    ...     >>> raise ValueError, 'message' #doctest: +IGNORE_EXCEPTION_DETAIL
+    ...     Traceback (most recent call last):
+    ...     ValueError: wrong message
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    (0, 1)
+
+But IGNORE_EXCEPTION_DETAIL does not allow a mismatch in the exception type:
+
+    >>> def f(x):
+    ...     r'''
+    ...     >>> raise ValueError, 'message' #doctest: +IGNORE_EXCEPTION_DETAIL
+    ...     Traceback (most recent call last):
+    ...     TypeError: wrong type
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    Line 2, in f
+    Failed example:
+        raise ValueError, 'message' #doctest: +IGNORE_EXCEPTION_DETAIL
+    Expected:
+        Traceback (most recent call last):
+        TypeError: wrong type
+    Got:
+        Traceback (most recent call last):
+        ...
+        ValueError: message
+    (1, 1)
+
 If an exception is raised but not expected, then it is reported as an
 unexpected exception:
 
