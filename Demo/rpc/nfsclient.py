@@ -96,22 +96,22 @@ class NFSUnpacker(MountUnpacker):
 		return status, attributes
 
 	def unpack_fattr(self):
-              type = self.unpack_enum()
-              mode = self.unpack_uint()
-              nlink = self.unpack_uint()
-              uid = self.unpack_uint()
-              gid = self.unpack_uint()
-              size = self.unpack_uint()
-              blocksize = self.unpack_uint()
-              rdev = self.unpack_uint()
-              blocks = self.unpack_uint()
-              fsid = self.unpack_uint()
-              fileid = self.unpack_uint()
-              atime = self.unpack_timeval()
-              mtime = self.unpack_timeval()
-              ctime = self.unpack_timeval()
-	      return (type, mode, nlink, uid, gid, size, blocksize, \
-		      rdev, blocks, fsid, fileid, atime, mtime, ctime)
+		type = self.unpack_enum()
+		mode = self.unpack_uint()
+		nlink = self.unpack_uint()
+		uid = self.unpack_uint()
+		gid = self.unpack_uint()
+		size = self.unpack_uint()
+		blocksize = self.unpack_uint()
+		rdev = self.unpack_uint()
+		blocks = self.unpack_uint()
+		fsid = self.unpack_uint()
+		fileid = self.unpack_uint()
+		atime = self.unpack_timeval()
+		mtime = self.unpack_timeval()
+		ctime = self.unpack_timeval()
+		return (type, mode, nlink, uid, gid, size, blocksize, \
+			rdev, blocks, fsid, fileid, atime, mtime, ctime)
 
 	def unpack_timeval(self):
 		secs = self.unpack_uint()

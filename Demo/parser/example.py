@@ -14,7 +14,7 @@ def get_docs(fileName):
     """Retrieve information from the parse tree of a source file.
 
     fileName
-	Name of the file to read Python source code from.
+        Name of the file to read Python source code from.
     """
     source = open(fileName).read()
     import os
@@ -30,86 +30,86 @@ class SuiteInfoBase:
     _name = ''
 
     def __init__(self, tree = None):
-	self._class_info = {}
-	self._function_info = {}
-	if tree:
-	    self._extract_info(tree)
+        self._class_info = {}
+        self._function_info = {}
+        if tree:
+            self._extract_info(tree)
 
     def _extract_info(self, tree):
-	# extract docstring
-	if len(tree) == 2:
-	    found, vars = match(DOCSTRING_STMT_PATTERN[1], tree[1])
-	else:
-	    found, vars = match(DOCSTRING_STMT_PATTERN, tree[3])
-	if found:
-	    self._docstring = eval(vars['docstring'])
-	# discover inner definitions
-	for node in tree[1:]:
-	    found, vars = match(COMPOUND_STMT_PATTERN, node)
-	    if found:
-		cstmt = vars['compound']
-		if cstmt[0] == symbol.funcdef:
-		    name = cstmt[2][1]
-		    self._function_info[name] = FunctionInfo(cstmt)
-		elif cstmt[0] == symbol.classdef:
-		    name = cstmt[2][1]
-		    self._class_info[name] = ClassInfo(cstmt)
+        # extract docstring
+        if len(tree) == 2:
+            found, vars = match(DOCSTRING_STMT_PATTERN[1], tree[1])
+        else:
+            found, vars = match(DOCSTRING_STMT_PATTERN, tree[3])
+        if found:
+            self._docstring = eval(vars['docstring'])
+        # discover inner definitions
+        for node in tree[1:]:
+            found, vars = match(COMPOUND_STMT_PATTERN, node)
+            if found:
+                cstmt = vars['compound']
+                if cstmt[0] == symbol.funcdef:
+                    name = cstmt[2][1]
+                    self._function_info[name] = FunctionInfo(cstmt)
+                elif cstmt[0] == symbol.classdef:
+                    name = cstmt[2][1]
+                    self._class_info[name] = ClassInfo(cstmt)
 
     def get_docstring(self):
-	return self._docstring
+        return self._docstring
 
     def get_name(self):
-	return self._name
+        return self._name
 
     def get_class_names(self):
-	return self._class_info.keys()
+        return self._class_info.keys()
 
     def get_class_info(self, name):
-	return self._class_info[name]
+        return self._class_info[name]
 
     def __getitem__(self, name):
-	try:
-	    return self._class_info[name]
-	except KeyError:
-	    return self._function_info[name]
+        try:
+            return self._class_info[name]
+        except KeyError:
+            return self._function_info[name]
 
 
 class SuiteFuncInfo:
     #  Mixin class providing access to function names and info.
 
     def get_function_names(self):
-	return self._function_info.keys()
+        return self._function_info.keys()
 
     def get_function_info(self, name):
-	return self._function_info[name]
+        return self._function_info[name]
 
 
 class FunctionInfo(SuiteInfoBase, SuiteFuncInfo):
     def __init__(self, tree = None):
-	self._name = tree[2][1]
-	SuiteInfoBase.__init__(self, tree and tree[-1] or None)
+        self._name = tree[2][1]
+        SuiteInfoBase.__init__(self, tree and tree[-1] or None)
 
 
 class ClassInfo(SuiteInfoBase):
     def __init__(self, tree = None):
-	self._name = tree[2][1]
-	SuiteInfoBase.__init__(self, tree and tree[-1] or None)
+        self._name = tree[2][1]
+        SuiteInfoBase.__init__(self, tree and tree[-1] or None)
 
     def get_method_names(self):
-	return self._function_info.keys()
+        return self._function_info.keys()
 
     def get_method_info(self, name):
-	return self._function_info[name]
+        return self._function_info[name]
 
 
 class ModuleInfo(SuiteInfoBase, SuiteFuncInfo):
     def __init__(self, tree = None, name = "<string>"):
-	self._name = name
-	SuiteInfoBase.__init__(self, tree)
-	if tree:
-	    found, vars = match(DOCSTRING_STMT_PATTERN, tree[1])
-	    if found:
-		self._docstring = vars["docstring"]
+        self._name = name
+        SuiteInfoBase.__init__(self, tree)
+        if tree:
+            found, vars = match(DOCSTRING_STMT_PATTERN, tree[1])
+            if found:
+                self._docstring = vars["docstring"]
 
 
 from types import ListType, TupleType
@@ -118,14 +118,14 @@ def match(pattern, data, vars=None):
     """Match `data' to `pattern', with variable extraction.
 
     pattern
-	Pattern to match against, possibly containing variables.
+        Pattern to match against, possibly containing variables.
 
     data
-	Data to be checked and against which variables are extracted.
+        Data to be checked and against which variables are extracted.
 
     vars
-	Dictionary of variables which have already been found.  If not
-	provided, an empty dictionary is created.
+        Dictionary of variables which have already been found.  If not
+        provided, an empty dictionary is created.
 
     The `pattern' value may contain variables of the form ['varname'] which
     are allowed to match anything.  The value that is matched is returned as
@@ -138,18 +138,18 @@ def match(pattern, data, vars=None):
     values.
     """
     if vars is None:
-	vars = {}
-    if type(pattern) is ListType:	# 'variables' are ['varname']
-	vars[pattern[0]] = data
-	return 1, vars
+        vars = {}
+    if type(pattern) is ListType:       # 'variables' are ['varname']
+        vars[pattern[0]] = data
+        return 1, vars
     if type(pattern) is not TupleType:
-	return (pattern == data), vars
+        return (pattern == data), vars
     if len(data) != len(pattern):
-	return 0, vars
+        return 0, vars
     for pattern, data in map(None, pattern, data):
-	same, vars = match(pattern, data, vars)
-	if not same:
-	    break
+        same, vars = match(pattern, data, vars)
+        if not same:
+            break
     return same, vars
 
 
@@ -172,21 +172,21 @@ DOCSTRING_STMT_PATTERN = (
      (symbol.small_stmt,
       (symbol.expr_stmt,
        (symbol.testlist,
-	(symbol.test,
-	 (symbol.and_test,
-	  (symbol.not_test,
-	   (symbol.comparison,
-	    (symbol.expr,
-	     (symbol.xor_expr,
-	      (symbol.and_expr,
-	       (symbol.shift_expr,
-		(symbol.arith_expr,
-		 (symbol.term,
-		  (symbol.factor,
-		   (symbol.power,
-		    (symbol.atom,
-		     (token.STRING, ['docstring'])
-		     )))))))))))))))),
+        (symbol.test,
+         (symbol.and_test,
+          (symbol.not_test,
+           (symbol.comparison,
+            (symbol.expr,
+             (symbol.xor_expr,
+              (symbol.and_expr,
+               (symbol.shift_expr,
+                (symbol.arith_expr,
+                 (symbol.term,
+                  (symbol.factor,
+                   (symbol.power,
+                    (symbol.atom,
+                     (token.STRING, ['docstring'])
+                     )))))))))))))))),
      (token.NEWLINE, '')
      ))
 

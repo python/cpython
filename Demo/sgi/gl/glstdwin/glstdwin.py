@@ -217,108 +217,108 @@ commands['\b'] = WC_BACKSPACE
 commands['\t'] = WC_TAB
 #
 def getevent():
-  while 1:
-	#
-	# Get next event from the processed queue, if any
-	#
-	if G.queue:
-		event = G.queue[0]
-		del G.queue[0]
-		#print 'getevent from queue -->', event
-		return event
-	#
-	# Get next event from the draw queue, if any,
-	# but only if there is nothing in the system queue.
-	#
-	if G.drawqueue and not gl.qtest():
-		win = G.drawqueue[0]
-		del G.drawqueue[0]
-		gl.winset(win._gid)
-		gl.color(win._bg)
-		gl.clear()
-		event = WE_DRAW, win, win._area
-		#print 'getevent from drawqueue -->', event
-		return event
-	#
-	# Get next event from system queue, blocking if necessary
-	# until one is available.
-	# Some cases immediately return the event, others do nothing
-	# or append one or more events to the processed queue.
-	#
-	dev, val = gl.qread()
-	#
-	if dev == REDRAW:
-		win = G.windowmap[`val`]
-		old_area = win._area
-		win._fixviewport()
-		win._needredraw()
-		if old_area <> win._area:
-			#print 'getevent --> WE_SIZE'
-			return WE_SIZE, win, None
-	elif dev == KEYBD:
-		if val == 3:
-			raise KeyboardInterrupt # Control-C in window
-		character = chr(val)
-		if commands.has_key(character):
-			return WE_COMMAND, G.focus, commands[character]
-		return WE_CHAR, G.focus, character
-	elif dev == LEFTARROWKEY:
-		if val:
-			return WE_COMMAND, G.focus, WC_LEFT
-	elif dev == RIGHTARROWKEY:
-		if val:
-			return WE_COMMAND, G.focus, WC_RIGHT
-	elif dev == UPARROWKEY:
-		if val:
-			return WE_COMMAND, G.focus, WC_UP
-	elif dev == DOWNARROWKEY:
-		if val:
-			return WE_COMMAND, G.focus, WC_DOWN
-	elif dev in (LEFTALTKEY, RIGHTALTKEY):
-		if val:
-			for code in codelist:
-				gl.qdevice(code)
+	while 1:
+		#
+		# Get next event from the processed queue, if any
+		#
+		if G.queue:
+			event = G.queue[0]
+			del G.queue[0]
+			#print 'getevent from queue -->', event
+			return event
+		#
+		# Get next event from the draw queue, if any,
+		# but only if there is nothing in the system queue.
+		#
+		if G.drawqueue and not gl.qtest():
+			win = G.drawqueue[0]
+			del G.drawqueue[0]
+			gl.winset(win._gid)
+			gl.color(win._bg)
+			gl.clear()
+			event = WE_DRAW, win, win._area
+			#print 'getevent from drawqueue -->', event
+			return event
+		#
+		# Get next event from system queue, blocking if necessary
+		# until one is available.
+		# Some cases immediately return the event, others do nothing
+		# or append one or more events to the processed queue.
+		#
+		dev, val = gl.qread()
+		#
+		if dev == REDRAW:
+			win = G.windowmap[`val`]
+			old_area = win._area
+			win._fixviewport()
+			win._needredraw()
+			if old_area <> win._area:
+				#print 'getevent --> WE_SIZE'
+				return WE_SIZE, win, None
+		elif dev == KEYBD:
+			if val == 3:
+				raise KeyboardInterrupt # Control-C in window
+			character = chr(val)
+			if commands.has_key(character):
+				return WE_COMMAND, G.focus, commands[character]
+			return WE_CHAR, G.focus, character
+		elif dev == LEFTARROWKEY:
+			if val:
+				return WE_COMMAND, G.focus, WC_LEFT
+		elif dev == RIGHTARROWKEY:
+			if val:
+				return WE_COMMAND, G.focus, WC_RIGHT
+		elif dev == UPARROWKEY:
+			if val:
+				return WE_COMMAND, G.focus, WC_UP
+		elif dev == DOWNARROWKEY:
+			if val:
+				return WE_COMMAND, G.focus, WC_DOWN
+		elif dev in (LEFTALTKEY, RIGHTALTKEY):
+			if val:
+				for code in codelist:
+					gl.qdevice(code)
+			else:
+				for code in codelist:
+					gl.unqdevice(code)
+		elif dev in codelist:
+			if val:
+				event = G.focus._doshortcut(code2key[`dev`])
+				if event:
+					return event
+		elif dev == LEFTMOUSE:
+			G.mousex = gl.getvaluator(MOUSEX)
+			G.mousey = gl.getvaluator(MOUSEY)
+			if val:
+				type = WE_MOUSE_DOWN
+				gl.qdevice(MOUSEX)
+				gl.qdevice(MOUSEY)
+			else:
+				type = WE_MOUSE_UP
+				gl.unqdevice(MOUSEX)
+				gl.unqdevice(MOUSEY)
+			return _mouseevent(type)
+		elif dev == MOUSEX:
+			G.mousex = val
+			return _mouseevent(WE_MOUSE_MOVE)
+		elif dev == MOUSEY:
+			G.mousey = val
+			return _mouseevent(WE_MOUSE_MOVE)
+		elif dev == RIGHTMOUSE:		# Menu button press/release
+			if val:			# Press
+				event = G.focus._domenu()
+				if event:
+					return event
+		elif dev == INPUTCHANGE:
+			if G.focus:
+				G.queue.append(WE_DEACTIVATE, G.focus, None)
+			G.focus = G.windowmap[`val`]
+			if G.focus:
+				G.queue.append(WE_ACTIVATE, G.focus, None)
+		elif dev in (WINSHUT, WINQUIT):
+			return WE_CLOSE, G.windowmap[`val`], None
 		else:
-			for code in codelist:
-				gl.unqdevice(code)
-	elif dev in codelist:
-		if val:
-			event = G.focus._doshortcut(code2key[`dev`])
-			if event:
-				return event
-	elif dev == LEFTMOUSE:
-		G.mousex = gl.getvaluator(MOUSEX)
-		G.mousey = gl.getvaluator(MOUSEY)
-		if val:
-			type = WE_MOUSE_DOWN
-			gl.qdevice(MOUSEX)
-			gl.qdevice(MOUSEY)
-		else:
-			type = WE_MOUSE_UP
-			gl.unqdevice(MOUSEX)
-			gl.unqdevice(MOUSEY)
-		return _mouseevent(type)
-	elif dev == MOUSEX:
-		G.mousex = val
-		return _mouseevent(WE_MOUSE_MOVE)
-	elif dev == MOUSEY:
-		G.mousey = val
-		return _mouseevent(WE_MOUSE_MOVE)
-	elif dev == RIGHTMOUSE:		# Menu button press/release
-		if val:			# Press
-			event = G.focus._domenu()
-			if event:
-				return event
-	elif dev == INPUTCHANGE:
-		if G.focus:
-			G.queue.append(WE_DEACTIVATE, G.focus, None)
-		G.focus = G.windowmap[`val`]
-		if G.focus:
-			G.queue.append(WE_ACTIVATE, G.focus, None)
-	elif dev in (WINSHUT, WINQUIT):
-		return WE_CLOSE, G.windowmap[`val`], None
-	else:
-		print '*** qread() --> dev:', dev, 'val:', val
+			print '*** qread() --> dev:', dev, 'val:', val
 
 # Helper routine to construct a mouse (up, move or down) event
 #

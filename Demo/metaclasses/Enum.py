@@ -12,9 +12,9 @@ class EnumMetaClass:
     To define your own enumeration, do something like
 
     class Color(Enum):
-	red = 1
-	green = 2
-	blue = 3
+        red = 1
+        green = 2
+        blue = 3
 
     Now, Color.red, Color.green and Color.blue behave totally
     different: they are enumerated values, not integers.
@@ -25,66 +25,66 @@ class EnumMetaClass:
     """
 
     def __init__(self, name, bases, dict):
-	"""Constructor -- create an enumeration.
+        """Constructor -- create an enumeration.
 
-	Called at the end of the class statement.  The arguments are
-	the name of the new class, a tuple containing the base
-	classes, and a dictionary containing everything that was
-	entered in the class' namespace during execution of the class
-	statement.  In the above example, it would be {'red': 1,
-	'green': 2, 'blue': 3}.
+        Called at the end of the class statement.  The arguments are
+        the name of the new class, a tuple containing the base
+        classes, and a dictionary containing everything that was
+        entered in the class' namespace during execution of the class
+        statement.  In the above example, it would be {'red': 1,
+        'green': 2, 'blue': 3}.
 
-	"""
-	for base in bases:
-	    if base.__class__ is not EnumMetaClass:
-		raise TypeError, "Enumeration base class must be enumeration"
-	bases = filter(lambda x: x is not Enum, bases)
-	self.__name__ = name
-	self.__bases__ = bases
-	self.__dict = {}
-	for key, value in dict.items():
-	    self.__dict[key] = EnumInstance(name, key, value)
+        """
+        for base in bases:
+            if base.__class__ is not EnumMetaClass:
+                raise TypeError, "Enumeration base class must be enumeration"
+        bases = filter(lambda x: x is not Enum, bases)
+        self.__name__ = name
+        self.__bases__ = bases
+        self.__dict = {}
+        for key, value in dict.items():
+            self.__dict[key] = EnumInstance(name, key, value)
 
     def __getattr__(self, name):
-	"""Return an enumeration value.
+        """Return an enumeration value.
 
-	For example, Color.red returns the value corresponding to red.
+        For example, Color.red returns the value corresponding to red.
 
-	XXX Perhaps the values should be created in the constructor?
+        XXX Perhaps the values should be created in the constructor?
 
-	This looks in the class dictionary and if it is not found
-	there asks the base classes.
+        This looks in the class dictionary and if it is not found
+        there asks the base classes.
 
-	The special attribute __members__ returns the list of names
-	defined in this class (it does not merge in the names defined
-	in base classes).
+        The special attribute __members__ returns the list of names
+        defined in this class (it does not merge in the names defined
+        in base classes).
 
-	"""
-	if name == '__members__':
-	    return self.__dict.keys()
+        """
+        if name == '__members__':
+            return self.__dict.keys()
 
-	try:
-	    return self.__dict[name]
-	except KeyError:
-	    for base in self.__bases__:
-		try:
-		    return getattr(base, name)
-		except AttributeError:
-		    continue
+        try:
+            return self.__dict[name]
+        except KeyError:
+            for base in self.__bases__:
+                try:
+                    return getattr(base, name)
+                except AttributeError:
+                    continue
 
-	raise AttributeError, name
+        raise AttributeError, name
 
     def __repr__(self):
-	s = self.__name__
-	if self.__bases__:
-	    s = s + '(' + string.join(map(lambda x: x.__name__,
-					  self.__bases__), ", ") + ')'
-	if self.__dict:
-	    list = []
-	    for key, value in self.__dict.items():
-		list.append("%s: %s" % (key, int(value)))
-	    s = "%s: {%s}" % (s, string.join(list, ", "))
-	return s
+        s = self.__name__
+        if self.__bases__:
+            s = s + '(' + string.join(map(lambda x: x.__name__,
+                                          self.__bases__), ", ") + ')'
+        if self.__dict:
+            list = []
+            for key, value in self.__dict.items():
+                list.append("%s: %s" % (key, int(value)))
+            s = "%s: {%s}" % (s, string.join(list, ", "))
+        return s
 
 
 class EnumInstance:
@@ -99,23 +99,23 @@ class EnumInstance:
     """
 
     def __init__(self, classname, enumname, value):
-	self.__classname = classname
-	self.__enumname = enumname
-	self.__value = value
+        self.__classname = classname
+        self.__enumname = enumname
+        self.__value = value
 
     def __int__(self):
-	return self.__value
+        return self.__value
 
     def __repr__(self):
-	return "EnumInstance(%s, %s, %s)" % (`self.__classname`,
-					     `self.__enumname`,
-					     `self.__value`)
+        return "EnumInstance(%s, %s, %s)" % (`self.__classname`,
+                                             `self.__enumname`,
+                                             `self.__value`)
 
     def __str__(self):
-	return "%s.%s" % (self.__classname, self.__enumname)
+        return "%s.%s" % (self.__classname, self.__enumname)
 
     def __cmp__(self, other):
-	return cmp(self.__value, int(other))
+        return cmp(self.__value, int(other))
 
 
 # Create the base class for enumerations.
@@ -126,9 +126,9 @@ Enum = EnumMetaClass("Enum", (), {})
 def _test():
 
     class Color(Enum):
-	red = 1
-	green = 2
-	blue = 3
+        red = 1
+        green = 2
+        blue = 3
 
     print Color.red
     print dir(Color)
@@ -139,11 +139,11 @@ def _test():
     print Color.red == 2
 
     class ExtendedColor(Color):
-	white = 0
-	orange = 4
-	yellow = 5
-	purple = 6
-	black = 7
+        white = 0
+        orange = 4
+        yellow = 5
+        purple = 6
+        black = 7
 
     print ExtendedColor.orange
     print ExtendedColor.red
@@ -151,11 +151,11 @@ def _test():
     print Color.red == ExtendedColor.red
 
     class OtherColor(Enum):
-	white = 4
-	blue = 5
+        white = 4
+        blue = 5
 
     class MergedColor(Color, OtherColor):
-	pass
+        pass
 
     print MergedColor.red
     print MergedColor.white
