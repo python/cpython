@@ -70,12 +70,13 @@ def runtest(hier, code):
 # Test descriptions
 
 tests = [
-    ("t1", [("t1", None)], "import t1"),
+    ("t1", [("t1", None), ("t1 __init__.py", "")], "import t1"),
     
     ("t2", [
     ("t2", None),
     ("t2 __init__.py", "'doc for t2'; print __name__, 'loading'"),
     ("t2 sub", None),
+    ("t2 sub __init__.py", ""),
     ("t2 sub subsub", None),
     ("t2 sub subsub __init__.py", "print __name__, 'loading'; spam = 1"),
     ],
@@ -105,6 +106,7 @@ print dir()
     ("t3", None),
     ("t3 __init__.py", "print __name__, 'loading'"),
     ("t3 sub", None),
+    ("t3 sub __init__.py", ""),
     ("t3 sub subsub", None),
     ("t3 sub subsub __init__.py", "print __name__, 'loading'; spam = 1"),
     ],
@@ -122,6 +124,7 @@ reload(t3.sub.subsub)
     ("t4 __init__.py", "print __name__, 'loading'"),
     ("t4 sub.py", "print 'THIS SHOULD NOT BE PRINTED (sub.py)'"),
     ("t4 sub", None),
+    ("t4 sub __init__.py", ""),
     ("t4 sub subsub.py", "print 'THIS SHOULD NOT BE PRINTED (subsub.py)'"),
     ("t4 sub subsub", None),
     ("t4 sub subsub __init__.py", "print __name__, 'loading'; spam = 1"),
