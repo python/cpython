@@ -16,16 +16,10 @@ The \module{weakref} module allows the Python programmer to create
 XXX --- need to say more here!
 
 Not all objects can be weakly referenced; those objects which do
-include class instances and dictionaries.  Extension types can easily
+include class instances, functions written in Python (but not in C),
+and methods (both bound and unbound).  Extension types can easily
 be made to support weak references; see section \ref{weakref-extension},
 ``Weak References in Extension Types,'' for more information.
-
-\strong{Warning:}
-The desired semantics of weak-reference proxy objects are not
-completely clear; it is very difficult to create proxies which behave
-exactly like the type of the referent.  The details of these objects
-are likely to change to some degree before the final release as
-experience reports become available.
 
 
 \begin{funcdesc}{ref}{object\optional{, callback}}
@@ -56,7 +50,6 @@ experience reports become available.
   \var{object} is still alive, to references are equal if the objects
   are equal (regardless of the \var{callback}).  If the \var{object}
   has been deleted, they are equal iff they are identical.
-
 \end{funcdesc}
 
 \begin{funcdesc}{mapping}{\optional{dict\optional{, weakkeys=0}}}
@@ -198,8 +191,8 @@ overhead on those objects which do not benefit by weak referencing
 
 For an object to be weakly referencable, the extension must include a
 \ctype{PyObject *} field in the instance structure for the use of the
-weak reference mechanism; it will be initialized by Python's functions
-for object creation.  It must also set the \code{tp_weaklistoffset}
+weak reference mechanism; it must be initialized to \NULL{} by the
+object's constructor.  It must also set the \member{tp_weaklistoffset}
 field of the corresponding type object to the offset of the field.
 For example, the instance type is defined with the following structure:
 
