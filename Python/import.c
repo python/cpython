@@ -1943,9 +1943,9 @@ PyImport_Import(PyObject *module_name)
 
 	/* Get the __import__ function from the builtins */
 	if (PyDict_Check(builtins))
-		import=PyObject_GetItem(builtins, import_str);
+		import = PyObject_GetItem(builtins, import_str);
 	else
-		import=PyObject_GetAttr(builtins, import_str);
+		import = PyObject_GetAttr(builtins, import_str);
 	if (import == NULL)
 		goto err;
 
