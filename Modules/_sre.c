@@ -1297,7 +1297,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 
         flags = pattern[2];
 
-        if (pattern[3] > 0) {
+        if (pattern[3] > 1) {
             /* adjust end point (but make sure we leave at least one
                character in there, so literal search will work) */
             end -= pattern[3]-1;
