@@ -28,6 +28,11 @@ else
     rm -r `find $TEMPDIR -name CVS -print` || exit $?
 fi
 
+rm -f `find $TEMPDIR/Python-$VERSION -name .cvsignore -print`
+
+rm -f $TEMPDIR/Python-$VERSION/Doc/ref/ref.pdf
+rm -f $TEMPDIR/Python-$VERSION/Doc/ref/ref.ps
+
 cd $TEMPDIR
 
 (tar cf - Python-$VERSION | gzip -9 >$MYDIR/latex-$VERSION.tar.gz) || exit $?
