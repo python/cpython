@@ -14,6 +14,9 @@ TO DO:
   - ^K should cut to buffer
 - restructure state sensitive code to avoid testing flags all the time
 - finish debugger
+  - quitting while debugging dosen't work
+  - should have a kill command
+  - break GUI should be finished
 - object browser instead of current stack viewer
 - persistent user state (e.g. window and cursor positions, bindings)
 - make backups when saving
