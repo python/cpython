@@ -298,11 +298,67 @@ do_cmp(v, w)
 	return PyInt_FromLong(c);
 }
 
+PyObject *_PyCompareState_Key;
+
+/* _PyCompareState_nesting is incremented beforing call compare (for
+   some types) and decremented on exit.  If the count exceeds the
+   nesting limit, enable code to detect circular data structures.
+*/
+#define NESTING_LIMIT 500
+int _PyCompareState_nesting = 0;
+
+static PyObject*
+get_inprogress_dict()
+{
+	PyObject *tstate_dict, *inprogress;
+
+	tstate_dict = PyThreadState_GetDict();
+	if (tstate_dict == NULL) {
+		PyErr_BadInternalCall();
+		return NULL;
+	} 
+	inprogress = PyDict_GetItem(tstate_dict, _PyCompareState_Key); 
+	if (inprogress == NULL) {
+		PyErr_Clear();
+		inprogress = PyDict_New();
+		if (inprogress == NULL)
+			return NULL;
+		if (PyDict_SetItem(tstate_dict, _PyCompareState_Key,
+				   inprogress) == -1) {
+		    Py_DECREF(inprogress);
+		    return NULL;
+		}
+	}
+	return inprogress;
+}
+
+static PyObject *
+make_pair(v, w)
+	PyObject *v, *w;
+{
+	PyObject *pair;
+
+	pair = PyTuple_New(2);
+	if (pair == NULL) {
+		return NULL;
+	}
+	if ((long)v <= (long)w) {
+		PyTuple_SET_ITEM(pair, 0, PyLong_FromVoidPtr((void *)v));
+		PyTuple_SET_ITEM(pair, 1, PyLong_FromVoidPtr((void *)w));
+	} else {
+		PyTuple_SET_ITEM(pair, 0, PyLong_FromVoidPtr((void *)w));
+		PyTuple_SET_ITEM(pair, 1, PyLong_FromVoidPtr((void *)v));
+	}
+	return pair;
+}
+
 int
 PyObject_Compare(v, w)
 	PyObject *v, *w;
 {
 	PyTypeObject *vtp, *wtp;
+	int result;
+
 	if (v == NULL || w == NULL) {
 		PyErr_BadInternalCall();
 		return -1;
@@ -314,7 +370,32 @@ PyObject_Compare(v, w)
 		int c;
 		if (!PyInstance_Check(v))
 			return -PyObject_Compare(w, v);
-		res = do_cmp(v, w);
+		if (++_PyCompareState_nesting > NESTING_LIMIT) {
+			PyObject *inprogress, *pair;
+
+			inprogress = get_inprogress_dict();
+			if (inprogress == NULL) {
+				return -1;
+			}
+			pair = make_pair(v, w);
+			if (PyDict_GetItem(inprogress, pair)) {
+				/* already comparing these objects.  assume
+				   they're equal until shown otherwise */
+				Py_DECREF(pair);
+				--_PyCompareState_nesting;
+				return 0;
+			}
+			if (PyDict_SetItem(inprogress, pair, pair) == -1) {
+				return -1;
+			}
+			res = do_cmp(v, w);
+			_PyCompareState_nesting--;
+			/* XXX DelItem shouldn't fail */
+			PyDict_DelItem(inprogress, pair);
+			Py_DECREF(pair);
+		} else {
+			res = do_cmp(v, w);
+		}
 		if (res == NULL)
 			return -1;
 		if (!PyInt_Check(res)) {
@@ -369,9 +450,37 @@ PyObject_Compare(v, w)
 		/* Numerical types compare smaller than all other types */
 		return strcmp(vname, wname);
 	}
-	if (vtp->tp_compare == NULL)
+	if (vtp->tp_compare == NULL) {
 		return (v < w) ? -1 : 1;
-	return (*vtp->tp_compare)(v, w);
+	}
+	if (++_PyCompareState_nesting > NESTING_LIMIT
+	    && (vtp->tp_as_mapping 
+		|| (vtp->tp_as_sequence && !PyString_Check(v)))) {
+		PyObject *inprogress, *pair;
+
+		inprogress = get_inprogress_dict();
+		if (inprogress == NULL) {
+			return -1;
+		}
+		pair = make_pair(v, w);
+		if (PyDict_GetItem(inprogress, pair)) {
+			/* already comparing these objects.  assume
+			   they're equal until shown otherwise */
+			_PyCompareState_nesting--;
+			Py_DECREF(pair);
+			return 0;
+		}
+		if (PyDict_SetItem(inprogress, pair, pair) == -1) {
+			return -1;
+		}
+		result = (*vtp->tp_compare)(v, w);
+		_PyCompareState_nesting--;
+		PyDict_DelItem(inprogress, pair); /* XXX shouldn't fail */
+		Py_DECREF(pair);
+	} else {
+		result = (*vtp->tp_compare)(v, w);
+	}
+	return result;
 }
 
 long

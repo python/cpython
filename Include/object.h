@@ -284,6 +284,9 @@ extern DL_IMPORT(int) PyNumber_CoerceEx Py_PROTO((PyObject **, PyObject **));
 extern DL_IMPORT(int) Py_ReprEnter Py_PROTO((PyObject *));
 extern DL_IMPORT(void) Py_ReprLeave Py_PROTO((PyObject *));
 
+/* tstate dict key for PyObject_Compare helper */
+extern PyObject *_PyCompareState_Key;
+
 /* Flag bits for printing: */
 #define Py_PRINT_RAW	1	/* No string quotes etc. */
 
