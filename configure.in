@@ -813,14 +813,21 @@ AC_MSG_CHECKING(for --with-libdb)
 AC_ARG_WITH(libdb,
 [  --with(out)-libdb               disable/enable bsddb module])
 
-# default is enabled
-if test -z "$with_libdb"
-then with_libdb="yes"
+# enabled by default, but db.h must be found
+if test "$ac_cv_header_db_h" = "yes"
+then
+    if test "$with_libdb" != "no"
+    then with_libdb="yes"
+    fi
+else
+    # make sure user knows why bsddb support wasn't enabled event
+    # though s/he requested it
+    if test "$with_libdb" = "yes"
+    then echo $ac_n "(requested, but db.h was not found) $ac_c"
+    fi
+    with_libdb="no"
 fi
-# if we found db.h, enable, unless with_libdb is expressly set to "no"
-if test "$ac_cv_header_db_h" = "yes" -a "$with_libdb" != "no"
-then with_libdb="yes"
-fi
+
 if test "$with_libdb" = "no"
 then
     USE_BSDDB_MODULE="#"
