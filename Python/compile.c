@@ -2417,8 +2417,12 @@ com_assign_trailer(struct compiling *c, node *n, int assigning, node *augn)
 	REQ(n, trailer);
 	switch (TYPE(CHILD(n, 0))) {
 	case LPAR: /* '(' [exprlist] ')' */
-		com_error(c, PyExc_SyntaxError,
-			  "can't assign to function call");
+		if (assigning == OP_DELETE)
+			com_error(c, PyExc_SyntaxError,
+				  "can't delete function call");
+		else
+			com_error(c, PyExc_SyntaxError,
+				  "can't assign to function call");
 		break;
 	case DOT: /* '.' NAME */
 		if (assigning > OP_APPLY)
