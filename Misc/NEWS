@@ -89,6 +89,9 @@ New platforms
 Tests
 -----
 
+- The test data files for the decimal test suite are now installed on 
+  platforms that use the Makefile.
+
 Windows
 -------
 
