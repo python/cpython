@@ -103,17 +103,17 @@ class XMLParser:
             self.__fixclass(k)
 
     def __fixdict(self, dict):
-        for key, val in dict.items():
+        for key in dict.keys():
             if key[:6] == 'start_':
-                key = key[6:]
-                start, end = self.elements.get(key, (None, None))
+                tag = key[6:]
+                start, end = self.elements.get(tag, (None, None))
                 if start is None:
-                    self.elements[key] = val, end
+                    self.elements[tag] = getattr(self, key), end
             elif key[:4] == 'end_':
-                key = key[4:]
-                start, end = self.elements.get(key, (None, None))
+                tag = key[4:]
+                start, end = self.elements.get(tag, (None, None))
                 if end is None:
-                    self.elements[key] = start, val
+                    self.elements[tag] = start, getattr(self, key)
 
     # Interface -- reset this instance.  Loses all unprocessed data
     def reset(self):
