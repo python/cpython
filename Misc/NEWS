@@ -1,6 +1,11 @@
 What's New in Python 2.1 final?
 ===============================
 
+- Eric Raymond extended the pstats module with a simple interactive
+  statistics browser, invoked when the module is run as a script.
+
+- Ping added an interactive help browser to pydoc.
+
 - An updated python-mode.el version 4.0 which integrates Ken
   Manheimer's pdbtrack.el.  This makes debugging Python code via pdb
   much nicer in XEmacs and Emacs.  When stepping through your program
