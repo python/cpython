@@ -1045,7 +1045,7 @@ sequence, the allowable keys should be the integers \var{k} for which
 sequence, or slice objects, which define a range of items. (For backwards
 compatibility, the method \method{__getslice__()} (see below) can also be
 defined to handle simple, but not extended slices.) It is also recommended
-that mappings provide methods \method{keys()}, \method{values()},
+that mappings provide the methods \method{keys()}, \method{values()},
 \method{items()}, \method{has_key()}, \method{get()}, \method{clear()},
 \method{copy()}, and \method{update()} behaving similar to those for
 Python's standard dictionary objects; mutable sequences should provide
@@ -1132,6 +1132,8 @@ objects.  Immutable sequences methods should only define
 three methods.
 
 \begin{methoddesc}[sequence object]{__getslice__}{self, i, j}
+\deprecated{2.0}{Support slice objects as parameters to the
+\method{__getitem__()} method.}
 Called to implement evaluation of \code{\var{self}[\var{i}:\var{j}]}.
 The returned object should be of the same type as \var{self}.  Note
 that missing \var{i} or \var{j} in the slice expression are replaced
@@ -1142,7 +1144,7 @@ If the instance does not implement the \method{__len__()} method, an
 No guarantee is made that indexes adjusted this way are not still
 negative.  Indexes which are greater than the length of the sequence
 are not modified.
-This method is deprecated. If no \method{__getslice__()} is found, a slice
+If no \method{__getslice__()} is found, a slice
 object is created instead, and passed to \method{__getitem__()} instead.
 \end{methoddesc}
 
