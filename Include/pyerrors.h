@@ -79,6 +79,7 @@ extern DL_IMPORT(PyObject *) PyExc_SystemError;
 extern DL_IMPORT(PyObject *) PyExc_SystemExit;
 extern DL_IMPORT(PyObject *) PyExc_TypeError;
 extern DL_IMPORT(PyObject *) PyExc_UnboundLocalError;
+extern DL_IMPORT(PyObject *) PyExc_UnicodeError;
 extern DL_IMPORT(PyObject *) PyExc_ValueError;
 extern DL_IMPORT(PyObject *) PyExc_ZeroDivisionError;
 #ifdef MS_WINDOWS
