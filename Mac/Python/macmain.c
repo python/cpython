@@ -29,6 +29,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #include "rename2.h"
+#include "mymalloc.h"
 
 #ifdef THINK_C
 #define CONSOLE_IO
@@ -45,12 +46,20 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <SIOUX.h>
 #endif
 
-char *fileargument;
+extern char *fileargument;
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
+#ifdef USE_MAC_SHARED_LIBRARY
+	PyMac_AddLibResources();
+#endif
+#ifdef __MWERKS__
+	SIOUXSettings.asktosaveonclose = 0;
+	SIOUXSettings.showstatusline = 0;
+	SIOUXSettings.tabspaces = 4;
+#endif
 #ifdef USE_STDWIN
 #ifdef THINK_C
 	/* This is done to initialize the Think console I/O library before stdwin.
@@ -66,15 +75,38 @@ main(argc, argv)
 	   (A more dynamic solution may be possible e.g. based on bits in the
 	   SIZE resource or whatever...  Have fun, and let me know if you find
 	   a better way!) */
-	printf("\n");   
+	printf("\n");
 #endif
-#ifdef __MWERKS__
-	SIOUXSettings.asktosaveonclose = 0;
-	SIOUXSettings.showstatusline = 0;
-	SIOUXSettings.tabspaces = 4;
-#endif
+#ifdef BUILD_APPLET_TEMPLATE
+	/* Make argv[0] and [1] be application name. The "argument" will later
+	** be recognized as APPL type and interpreted as being a .pyc file.
+	** XXXX Should be changed. Argv[0] should be the shared lib location or
+	** something, so we can find our Lib directory, etc.
+	*/
+	{
+		char *progname;
+		extern char *getappname();
+		
+		progname = getappname();
+		if ( (argv = (char **)malloc(3*sizeof(char *))) == NULL ) {
+			fprintf(stderr, "No memory\n");
+			exit(1);
+		}
+		argv[0] = malloc(strlen(progname)+1);
+		argv[1] = malloc(strlen(progname)+1);
+		argv[2] = NULL;
+		if ( argv[0] == NULL || argv[1] == NULL ) {
+			fprintf(stderr, "No memory\n");
+			exit(1);
+		}
+		strcpy(argv[0], progname);
+		strcpy(argv[1], progname);
+		argc = 2;
+	}
+#else
 	/* Use STDWIN's wargs() to set argc/argv to list of files to open */
 	wargs(&argc, &argv);
+#endif
 	/* Put About Python... in Apple menu */
 	{
 		extern char *about_message;
