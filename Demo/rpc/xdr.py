@@ -184,8 +184,7 @@ class Unpacker:
 			x = self.unpack_uint()
 			if x == 0: break
 			if x <> 1:
-				raise RuntimeError, \
-					'0 or 1 expected, got ' + `x`
+				raise RuntimeError, '0 or 1 expected, got %r' % (x, )
 			item = unpack_item()
 			list.append(item)
 		return list

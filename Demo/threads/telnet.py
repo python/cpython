@@ -57,7 +57,7 @@ def main():
     try:
         s.connect((host, port))
     except error, msg:
-        sys.stderr.write('connect failed: ' + `msg` + '\n')
+        sys.stderr.write('connect failed: %r\n' % (msg,))
         sys.exit(1)
     #
     thread.start_new(child, (s,))
@@ -77,7 +77,7 @@ def parent(s):
         for c in data:
             if opt:
                 print ord(c)
-##                              print '(replying: ' + `opt+c` + ')'
+##                              print '(replying: %r)' % (opt+c,)
                 s.send(opt + c)
                 opt = ''
             elif iac:
@@ -101,13 +101,13 @@ def parent(s):
                 cleandata = cleandata + c
         sys.stdout.write(cleandata)
         sys.stdout.flush()
-##              print 'Out:', `cleandata`
+##              print 'Out:', repr(cleandata)
 
 def child(s):
     # read stdin, write socket
     while 1:
         line = sys.stdin.readline()
-##              print 'Got:', `line`
+##              print 'Got:', repr(line)
         if not line: break
         s.send(line)
 

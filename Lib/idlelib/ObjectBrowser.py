@@ -97,7 +97,7 @@ class SequenceTreeItem(ObjectTreeItem):
                 continue
             def setfunction(value, key=key, object=self.object):
                 object[key] = value
-            item = make_objecttreeitem(`key` + ":", value, setfunction)
+            item = make_objecttreeitem("%r:" % (key,), value, setfunction)
             sublist.append(item)
         return sublist
 

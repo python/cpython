@@ -134,11 +134,11 @@ class SecureServer(Server, Security):
 			response = string.atol(string.strip(response))
 		except string.atol_error:
 			if self._verbose > 0:
-				print "Invalid response syntax", `response`
+				print "Invalid response syntax", repr(response)
 			return 0
 		if not self._compare_challenge_response(challenge, response):
 			if self._verbose > 0:
-				print "Invalid response value", `response`
+				print "Invalid response value", repr(response)
 			return 0
 		if self._verbose > 1:
 			print "Response matches challenge.  Go ahead!"

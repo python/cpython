@@ -40,9 +40,9 @@ if __name__ == "__main__":
     def x1():
         print "running x1"
     def x2(n):
-        print "running x2(%s)" % `n`
+        print "running x2(%r)" % (n,)
     def x3(n, kwd=None):
-        print "running x3(%s, kwd=%s)" % (`n`, `kwd`)
+        print "running x3(%r, kwd=%r)" % (n, kwd)
 
     register(x1)
     register(x2, 12)

@@ -42,7 +42,7 @@ for filename in sys.argv[1:]:
     try:
         st = statfunc(filename)
     except os.error, msg:
-        sys.stderr.write('can\'t stat ' + `filename` + ': ' + `msg` + '\n')
+        sys.stderr.write("can't stat %r: %r\n" % (filename, msg))
         status = 1
         st = ()
     if st:

@@ -374,9 +374,9 @@ class TixWidget(Tkinter.Widget):
         if option == '':
             return
         elif not isinstance(option, StringType):
-            option = `option`
+            option = repr(option)
         if not isinstance(value, StringType):
-            value = `value`
+            value = repr(value)
         names = self._subwidget_names()
         for name in names:
             self.tk.call(name, 'configure', '-' + option, value)

@@ -110,8 +110,8 @@ def warn_explicit(message, category, filename, lineno,
     else:
         # Unrecognized actions are errors
         raise RuntimeError(
-              "Unrecognized action (%s) in warnings.filters:\n %s" %
-              (`action`, str(item)))
+              "Unrecognized action (%r) in warnings.filters:\n %s" %
+              (action, item))
     # Print message and context
     showwarning(message, category, filename, lineno)
 
@@ -139,7 +139,7 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     Use assertions to check that all arguments have the right type."""
     import re
     assert action in ("error", "ignore", "always", "default", "module",
-                      "once"), "invalid action: %s" % `action`
+                      "once"), "invalid action: %r" % (action,)
     assert isinstance(message, basestring), "message must be a string"
     assert isinstance(category, types.ClassType), "category must be a class"
     assert issubclass(category, Warning), "category must be a Warning subclass"
@@ -159,7 +159,7 @@ def simplefilter(action, category=Warning, lineno=0, append=0):
     A simple filter matches all modules and messages.
     """
     assert action in ("error", "ignore", "always", "default", "module",
-                      "once"), "invalid action: %s" % `action`
+                      "once"), "invalid action: %r" % (action,)
     assert isinstance(lineno, int) and lineno >= 0, \
            "lineno must be an int >= 0"
     item = (action, None, category, None, lineno)
@@ -189,7 +189,7 @@ def _setoption(arg):
     import re
     parts = arg.split(':')
     if len(parts) > 5:
-        raise _OptionError("too many fields (max 5): %s" % `arg`)
+        raise _OptionError("too many fields (max 5): %r" % (arg,))
     while len(parts) < 5:
         parts.append('')
     action, message, category, module, lineno = [s.strip()
@@ -206,7 +206,7 @@ def _setoption(arg):
             if lineno < 0:
                 raise ValueError
         except (ValueError, OverflowError):
-            raise _OptionError("invalid lineno %s" % `lineno`)
+            raise _OptionError("invalid lineno %r" % (lineno,))
     else:
         lineno = 0
     filterwarnings(action, message, category, module, lineno)
@@ -219,7 +219,7 @@ def _getaction(action):
     for a in ['default', 'always', 'ignore', 'module', 'once', 'error']:
         if a.startswith(action):
             return a
-    raise _OptionError("invalid action: %s" % `action`)
+    raise _OptionError("invalid action: %r" % (action,))
 
 # Helper for _setoption()
 def _getcategory(category):
@@ -230,7 +230,7 @@ def _getcategory(category):
         try:
             cat = eval(category)
         except NameError:
-            raise _OptionError("unknown warning category: %s" % `category`)
+            raise _OptionError("unknown warning category: %r" % (category,))
     else:
         i = category.rfind(".")
         module = category[:i]
@@ -238,14 +238,14 @@ def _getcategory(category):
         try:
             m = __import__(module, None, None, [klass])
         except ImportError:
-            raise _OptionError("invalid module name: %s" % `module`)
+            raise _OptionError("invalid module name: %r" % (module,))
         try:
             cat = getattr(m, klass)
         except AttributeError:
-            raise _OptionError("unknown warning category: %s" % `category`)
+            raise _OptionError("unknown warning category: %r" % (category,))
     if (not isinstance(cat, types.ClassType) or
         not issubclass(cat, Warning)):
-        raise _OptionError("invalid warning category: %s" % `category`)
+        raise _OptionError("invalid warning category: %r" % (category,))
     return cat
 
 # Module initialization

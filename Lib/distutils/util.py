@@ -285,7 +285,7 @@ def execute (func, args, msg=None, verbose=0, dry_run=0):
     print.
     """
     if msg is None:
-        msg = "%s%s" % (func.__name__, `args`)
+        msg = "%s%r" % (func.__name__, args)
         if msg[-2:] == ',)':        # correct for singleton tuple
             msg = msg[0:-2] + ')'
 
@@ -307,7 +307,7 @@ def strtobool (val):
     elif val in ('n', 'no', 'f', 'false', 'off', '0'):
         return 0
     else:
-        raise ValueError, "invalid truth value %s" % `val`
+        raise ValueError, "invalid truth value %r" % (val,)
 
 
 def byte_compile (py_files,
@@ -394,11 +394,11 @@ files = [
 
             script.write(string.join(map(repr, py_files), ",\n") + "]\n")
             script.write("""
-byte_compile(files, optimize=%s, force=%s,
-             prefix=%s, base_dir=%s,
-             verbose=%s, dry_run=0,
+byte_compile(files, optimize=%r, force=%r,
+             prefix=%r, base_dir=%r,
+             verbose=%r, dry_run=0,
              direct=1)
-""" % (`optimize`, `force`, `prefix`, `base_dir`, `verbose`))
+""" % (optimize, force, prefix, base_dir, verbose))
 
             script.close()
 
@@ -432,8 +432,8 @@ byte_compile(files, optimize=%s, force=%s,
             if prefix:
                 if file[:len(prefix)] != prefix:
                     raise ValueError, \
-                          ("invalid prefix: filename %s doesn't start with %s"
-                           % (`file`, `prefix`))
+                          ("invalid prefix: filename %r doesn't start with %r"
+                           % (file, prefix))
                 dfile = dfile[len(prefix):]
             if base_dir:
                 dfile = os.path.join(base_dir, dfile)

@@ -794,8 +794,8 @@ class addbase:
                 self.next = self.fp.next
 
     def __repr__(self):
-        return '<%s at %s whose fp = %s>' % (self.__class__.__name__,
-                                             `id(self)`, `self.fp`)
+        return '<%s at %r whose fp = %r>' % (self.__class__.__name__,
+                                             id(self), self.fp)
 
     def close(self):
         self.read = None
@@ -1407,9 +1407,9 @@ def test1():
     t1 = time.time()
     if uqs != s:
         print 'Wrong!'
-    print `s`
-    print `qs`
-    print `uqs`
+    print repr(s)
+    print repr(qs)
+    print repr(uqs)
     print round(t1 - t0, 3), 'sec'
 
 

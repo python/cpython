@@ -674,7 +674,7 @@ def main(argv=None):
                   ignoremods=ignore_modules, ignoredirs=ignore_dirs,
                   infile=counts_file, outfile=counts_file)
         try:
-            t.run('execfile(' + `progname` + ')')
+            t.run('execfile(%r)' % (progname,))
         except IOError, err:
             _err_exit("Cannot run file %r because: %s" % (sys.argv[0], err))
         except SystemExit:

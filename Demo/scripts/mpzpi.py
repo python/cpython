@@ -27,7 +27,7 @@ def main():
 def output(d):
 	# Use write() to avoid spaces between the digits
 	# Use int(d) to avoid a trailing L after each digit
-	sys.stdout.write(`int(d)`)
+	sys.stdout.write(repr(int(d)))
 	# Flush so the output is seen immediately
 	sys.stdout.flush()
 

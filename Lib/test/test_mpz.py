@@ -6,7 +6,7 @@ def check_conversion(num):
     mpz_num = mpz.mpz(num)
     vereq(int(mpz_num), num)
     vereq(long(mpz_num), num)
-    vereq(str(mpz_num), 'mpz(%s)' % `int(num)`)
+    vereq(str(mpz_num), 'mpz(%d)' % int(num))
 
 check_conversion(10)
 check_conversion(10L)

@@ -411,7 +411,7 @@ class Profile:
 
     # This method is more useful to profile a single function call.
     def runcall(self, func, *args, **kw):
-        self.set_cmd(`func`)
+        self.set_cmd(repr(func))
         sys.setprofile(self.dispatcher)
         try:
             return func(*args, **kw)
@@ -550,4 +550,4 @@ if __name__ == '__main__':
     # Insert script directory in front of module search path
     sys.path.insert(0, os.path.dirname(filename))
 
-    run('execfile(' + `filename` + ')')
+    run('execfile(%r)' % (filename,))

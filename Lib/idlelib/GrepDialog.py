@@ -77,7 +77,7 @@ class GrepDialog(SearchDialogBase):
         list.sort()
         self.close()
         pat = self.engine.getpat()
-        print "Searching %s in %s ..." % (`pat`, path)
+        print "Searching %r in %s ..." % (pat, path)
         hits = 0
         for fn in list:
             try:

@@ -151,7 +151,7 @@ if missing: raise "Missing Types"
         """
         f = self.openrepairfile()
         if not f: return []
-        print "Reading repair file", `f.name`, "..."
+        print "Reading repair file", repr(f.name), "..."
         list = []
         lineno = 0
         while 1:
@@ -169,14 +169,14 @@ if missing: raise "Missing Types"
             if len(words) <> 3:
                 print "Line", startlineno,
                 print ": bad line (not 3 colon-separated fields)"
-                print `line`
+                print repr(line)
                 continue
             [fpat, pat, rep] = words
             if not fpat: fpat = "*"
             if not pat:
                 print "Line", startlineno,
                 print "Empty pattern"
-                print `line`
+                print repr(line)
                 continue
             patparts = [s.strip() for s in pat.split(',')]
             repparts = [s.strip() for s in rep.split(',')]
@@ -185,13 +185,13 @@ if missing: raise "Missing Types"
                 if not p:
                     print "Line", startlineno,
                     print "Empty pattern part"
-                    print `line`
+                    print repr(line)
                     continue
                 pattern = p.split()
                 if len(pattern) > 3:
                     print "Line", startlineno,
                     print "Pattern part has > 3 words"
-                    print `line`
+                    print repr(line)
                     pattern = pattern[:3]
                 else:
                     while len(pattern) < 3:
@@ -202,13 +202,13 @@ if missing: raise "Missing Types"
                 if not p:
                     print "Line", startlineno,
                     print "Empty replacement part"
-                    print `line`
+                    print repr(line)
                     continue
                 replacement = p.split()
                 if len(replacement) > 3:
                     print "Line", startlineno,
                     print "Pattern part has > 3 words"
-                    print `line`
+                    print repr(line)
                     replacement = replacement[:3]
                 else:
                     while len(replacement) < 3:
@@ -224,7 +224,7 @@ if missing: raise "Missing Types"
         try:
             return open(filename, "rU")
         except IOError, msg:
-            print `filename`, ":", msg
+            print repr(filename), ":", msg
             print "Cannot open repair file -- assume no repair needed"
             return None
 
@@ -360,7 +360,7 @@ if missing: raise "Missing Types"
         if not os.path.isabs(filename):
             for dir in self.includepath:
                 fullname = os.path.join(dir, filename)
-                #self.report("trying full name %s", `fullname`)
+                #self.report("trying full name %r", fullname)
                 try:
                     return open(fullname, 'rU')
                 except IOError:
@@ -387,17 +387,17 @@ if missing: raise "Missing Types"
             self.error("No input file has been specified")
             return
         inputname = self.scanfile.name
-        self.report("scanfile = %s", `inputname`)
+        self.report("scanfile = %r", inputname)
         if not self.specfile:
             self.report("(No interface specifications will be written)")
         else:
-            self.report("specfile = %s", `self.specfile.name`)
-            self.specfile.write("# Generated from %s\n\n" % `inputname`)
+            self.report("specfile = %r", self.specfile.name)
+            self.specfile.write("# Generated from %r\n\n" % (inputname,))
         if not self.defsfile:
             self.report("(No symbol definitions will be written)")
         else:
-            self.report("defsfile = %s", `self.defsfile.name`)
-            self.defsfile.write("# Generated from %s\n\n" % `os.path.split(inputname)[1]`)
+            self.report("defsfile = %r", (self.defsfile.name,))
+            self.defsfile.write("# Generated from %r\n\n" % (os.path.split(inputname)[1],))
             self.writeinitialdefs()
         self.alreadydone = []
         try:
@@ -405,17 +405,17 @@ if missing: raise "Missing Types"
                 try: line = self.getline()
                 except EOFError: break
                 if self.debug:
-                    self.report("LINE: %s" % `line`)
+                    self.report("LINE: %r" % (line,))
                 match = self.comment1.match(line)
                 if match:
                     line = match.group('rest')
                     if self.debug:
-                        self.report("\tafter comment1: %s" % `line`)
+                        self.report("\tafter comment1: %r" % (line,))
                 match = self.comment2.match(line)
                 while match:
                     line = match.group('rest1')+match.group('rest2')
                     if self.debug:
-                        self.report("\tafter comment2: %s" % `line`)
+                        self.report("\tafter comment2: %r" % (line,))
                     match = self.comment2.match(line)
                 if self.defsfile:
                     match = self.sym.match(line)
@@ -438,7 +438,7 @@ if missing: raise "Missing Types"
         name, defn = match.group('name', 'defn')
         defn = escape8bit(defn)
         if self.debug:
-            self.report("\tsym: name=%s, defn=%s" % (`name`, `defn`))
+            self.report("\tsym: name=%r, defn=%r" % (name, defn))
         if not name in self.blacklistnames:
             self.defsfile.write("%s = %s\n" % (name, defn))
         else:
@@ -450,27 +450,27 @@ if missing: raise "Missing Types"
         while not self.tail.search(raw):
             line = self.getline()
             if self.debug:
-                self.report("* CONTINUATION LINE: %s" % `line`)
+                self.report("* CONTINUATION LINE: %r" % (line,))
             match = self.comment1.match(line)
             if match:
                 line = match.group('rest')
                 if self.debug:
-                    self.report("\tafter comment1: %s" % `line`)
+                    self.report("\tafter comment1: %r" % (line,))
             match = self.comment2.match(line)
             while match:
                 line = match.group('rest1')+match.group('rest2')
                 if self.debug:
-                    self.report("\tafter comment1: %s" % `line`)
+                    self.report("\tafter comment1: %r" % (line,))
                 match = self.comment2.match(line)
             raw = raw + line
         if self.debug:
-            self.report("* WHOLE LINE: %s" % `raw`)
+            self.report("* WHOLE LINE: %r" % (raw,))
         self.processrawspec(raw)
 
     def processrawspec(self, raw):
         match = self.whole.search(raw)
         if not match:
-            self.report("Bad raw spec: %s", `raw`)
+            self.report("Bad raw spec: %r", raw)
             if self.debug:
                 if not self.type.search(raw):
                     self.report("(Type already doesn't match)")
@@ -481,7 +481,7 @@ if missing: raise "Missing Types"
         type = re.sub("\*", " ptr", type)
         type = re.sub("[ \t]+", "_", type)
         if name in self.alreadydone:
-            self.report("Name has already been defined: %s", `name`)
+            self.report("Name has already been defined: %r", name)
             return
         self.report("==> %s %s <==", type, name)
         if self.blacklisted(type, name):
@@ -494,7 +494,7 @@ if missing: raise "Missing Types"
         arglist = self.repairarglist(name, arglist)
         if self.unmanageable(type, name, arglist):
             ##for arg in arglist:
-            ##  self.report("    %s", `arg`)
+            ##  self.report("    %r", arg)
             self.report("*** %s %s unmanageable", type, name)
             return
         self.alreadydone.append(name)
@@ -516,7 +516,7 @@ if missing: raise "Missing Types"
         part = part.strip()
         match = self.asplit.match(part)
         if not match:
-            self.error("Indecipherable argument: %s", `part`)
+            self.error("Indecipherable argument: %r", part)
             return ("unknown", part, mode)
         type, name, array = match.group('type', 'name', 'array')
         if array:
@@ -583,21 +583,21 @@ if missing: raise "Missing Types"
                     index = int(item[i][1:]) - 1
                     newitem[i] = old[index][i]
             new.append(tuple(newitem))
-        ##self.report("old: %s", `old`)
-        ##self.report("new: %s", `new`)
+        ##self.report("old: %r", old)
+        ##self.report("new: %r", new)
         return new
 
     def generate(self, type, name, arglist):
         self.typeused(type, 'return')
         classname, listname = self.destination(type, name, arglist)
         if not self.specfile: return
-        self.specfile.write("f = %s(%s, %s,\n" % (classname, type, `name`))
+        self.specfile.write("f = %s(%s, %r,\n" % (classname, type, name))
         for atype, aname, amode in arglist:
             self.typeused(atype, amode)
-            self.specfile.write("    (%s, %s, %s),\n" %
-                                (atype, `aname`, amode))
+            self.specfile.write("    (%s, %r, %s),\n" %
+                                (atype, aname, amode))
         if self.greydictnames.has_key(name):
-            self.specfile.write("    condition=%s,\n"%`self.greydictnames[name]`)
+            self.specfile.write("    condition=%r,\n"%(self.greydictnames[name],))
         self.specfile.write(")\n")
         self.specfile.write("%s.append(f)\n\n" % listname)
 

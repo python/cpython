@@ -232,7 +232,7 @@ class RCS:
         """
         name, rev = self._unmangle(name_rev)
         if not self.isvalid(name):
-            raise os.error, 'not an rcs file %s' % `name`
+            raise os.error, 'not an rcs file %r' % (name,)
         return name, rev
 
     # --- Internal methods ---
@@ -252,7 +252,7 @@ class RCS:
         namev = self.rcsname(name)
         if rev:
             cmd = cmd + ' ' + rflag + rev
-        return os.popen("%s %s" % (cmd, `namev`))
+        return os.popen("%s %r" % (cmd, namev))
 
     def _unmangle(self, name_rev):
         """INTERNAL: Normalize NAME_REV argument to (NAME, REV) tuple.

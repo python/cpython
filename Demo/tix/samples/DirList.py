@@ -75,7 +75,7 @@ class DemoDirList:
         top.btn['command'] = lambda dir=top.dir, ent=top.ent, self=self: \
                              self.copy_name(dir,ent)
 
-        # top.ent.entry.insert(0,'tix'+`self`)
+        # top.ent.entry.insert(0,'tix'+repr(self))
         top.ent.entry.bind('<Return>', lambda self=self: self.okcmd () )
 
         top.pack( expand='yes', fill='both', side=TOP)

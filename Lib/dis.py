@@ -80,7 +80,7 @@ def disassemble(co, lasti=-1):
         else: print '   ',
         if i in labels: print '>>',
         else: print '  ',
-        print `i`.rjust(4),
+        print repr(i).rjust(4),
         print opname[op].ljust(20),
         i = i+1
         if op >= HAVE_ARGUMENT:
@@ -89,13 +89,13 @@ def disassemble(co, lasti=-1):
             i = i+2
             if op == EXTENDED_ARG:
                 extended_arg = oparg*65536L
-            print `oparg`.rjust(5),
+            print repr(oparg).rjust(5),
             if op in hasconst:
-                print '(' + `co.co_consts[oparg]` + ')',
+                print '(' + repr(co.co_consts[oparg]) + ')',
             elif op in hasname:
                 print '(' + co.co_names[oparg] + ')',
             elif op in hasjrel:
-                print '(to ' + `i + oparg` + ')',
+                print '(to ' + repr(i + oparg) + ')',
             elif op in haslocal:
                 print '(' + co.co_varnames[oparg] + ')',
             elif op in hascompare:
@@ -118,16 +118,16 @@ def disassemble_string(code, lasti=-1, varnames=None, names=None,
         else: print '   ',
         if i in labels: print '>>',
         else: print '  ',
-        print `i`.rjust(4),
+        print repr(i).rjust(4),
         print opname[op].ljust(15),
         i = i+1
         if op >= HAVE_ARGUMENT:
             oparg = ord(code[i]) + ord(code[i+1])*256
             i = i+2
-            print `oparg`.rjust(5),
+            print repr(oparg).rjust(5),
             if op in hasconst:
                 if constants:
-                    print '(' + `constants[oparg]` + ')',
+                    print '(' + repr(constants[oparg]) + ')',
                 else:
                     print '(%d)'%oparg,
             elif op in hasname:
@@ -136,7 +136,7 @@ def disassemble_string(code, lasti=-1, varnames=None, names=None,
                 else:
                     print '(%d)'%oparg,
             elif op in hasjrel:
-                print '(to ' + `i + oparg` + ')',
+                print '(to ' + repr(i + oparg) + ')',
             elif op in haslocal:
                 if varnames:
                     print '(' + varnames[oparg] + ')',

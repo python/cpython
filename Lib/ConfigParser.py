@@ -118,7 +118,7 @@ class NoSectionError(Error):
     """Raised when no section matches a requested option."""
 
     def __init__(self, section):
-        Error.__init__(self, 'No section: ' + `section`)
+        Error.__init__(self, 'No section: %r' % (section,))
         self.section = section
 
 class DuplicateSectionError(Error):
@@ -191,7 +191,7 @@ class MissingSectionHeaderError(ParsingError):
     def __init__(self, filename, lineno, line):
         Error.__init__(
             self,
-            'File contains no section headers.\nfile: %s, line: %d\n%s' %
+            'File contains no section headers.\nfile: %s, line: %d\n%r' %
             (filename, lineno, line))
         self.filename = filename
         self.lineno = lineno
@@ -453,7 +453,7 @@ class RawConfigParser:
                     optname = None
                 # no section header in the file?
                 elif cursect is None:
-                    raise MissingSectionHeaderError(fpname, lineno, `line`)
+                    raise MissingSectionHeaderError(fpname, lineno, line)
                 # an option line?
                 else:
                     mo = self.OPTCRE.match(line)
@@ -478,7 +478,7 @@ class RawConfigParser:
                         # list of all bogus lines
                         if not e:
                             e = ParsingError(fpname)
-                        e.append(lineno, `line`)
+                        e.append(lineno, repr(line))
         # if any parsing errors occurred, raise an exception
         if e:
             raise e
@@ -613,4 +613,4 @@ class SafeConfigParser(ConfigParser):
             else:
                 raise InterpolationSyntaxError(
                     option, section,
-                    "'%' must be followed by '%' or '(', found: " + `rest`)
+                    "'%%' must be followed by '%%' or '(', found: %r" % (rest,))

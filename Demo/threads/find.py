@@ -116,7 +116,7 @@ def main():
     wq.run(nworkers)
     t2 = time.time()
 
-    sys.stderr.write('Total time ' + `t2-t1` + ' sec.\n')
+    sys.stderr.write('Total time %r sec.\n' % (t2-t1))
 
 
 # The predicate -- defines what files we look for.
@@ -133,7 +133,7 @@ def find(dir, pred, wq):
     try:
         names = os.listdir(dir)
     except os.error, msg:
-        print `dir`, ':', msg
+        print repr(dir), ':', msg
         return
     for name in names:
         if name not in (os.curdir, os.pardir):
@@ -141,7 +141,7 @@ def find(dir, pred, wq):
             try:
                 stat = os.lstat(fullname)
             except os.error, msg:
-                print `fullname`, ':', msg
+                print repr(fullname), ':', msg
                 continue
             if pred(dir, name, fullname, stat):
                 print fullname

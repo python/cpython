@@ -161,7 +161,7 @@ class FTP:
             while i > 5 and s[i-1] in '\r\n':
                 i = i-1
             s = s[:5] + '*'*(i-5) + s[i:]
-        return `s`
+        return repr(s)
 
     # Internal: send one line to the server, appending CRLF
     def putline(self, line):
@@ -250,7 +250,7 @@ class FTP:
         port number.
         '''
         hbytes = host.split('.')
-        pbytes = [`port/256`, `port%256`]
+        pbytes = [repr(port/256), repr(port%256)]
         bytes = hbytes + pbytes
         cmd = 'PORT ' + ','.join(bytes)
         return self.voidcmd(cmd)
@@ -264,7 +264,7 @@ class FTP:
             af = 2
         if af == 0:
             raise error_proto, 'unsupported address family'
-        fields = ['', `af`, host, `port`, '']
+        fields = ['', repr(af), host, repr(port), '']
         cmd = 'EPRT ' + '|'.join(fields)
         return self.voidcmd(cmd)
 
@@ -397,7 +397,7 @@ class FTP:
         fp = conn.makefile('rb')
         while 1:
             line = fp.readline()
-            if self.debugging > 2: print '*retr*', `line`
+            if self.debugging > 2: print '*retr*', repr(line)
             if not line:
                 break
             if line[-2:] == CRLF:

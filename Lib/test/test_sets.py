@@ -12,7 +12,7 @@ class TestBasicOps(unittest.TestCase):
 
     def test_repr(self):
         if self.repr is not None:
-            self.assertEqual(`self.set`, self.repr)
+            self.assertEqual(repr(self.set), self.repr)
 
     def test_length(self):
         self.assertEqual(len(self.set), self.length)
@@ -670,7 +670,7 @@ class TestCopying(unittest.TestCase):
 
     def test_deep_copy(self):
         dup = copy.deepcopy(self.set)
-        ##print type(dup), `dup`
+        ##print type(dup), repr(dup)
         dup_list = list(dup); dup_list.sort()
         set_list = list(self.set); set_list.sort()
         self.assertEqual(len(dup_list), len(set_list))

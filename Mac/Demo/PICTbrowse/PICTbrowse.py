@@ -47,7 +47,7 @@ class PICTbrowse(FrameWork.Application):
 	def showPICT(self, resid):
 		w = PICTwindow(self)
 		w.open(resid)
-		#EasyDialogs.Message('Show PICT '+`resid`)
+		#EasyDialogs.Message('Show PICT %r' % (resid,))
 		
 	def findPICTresources(self):
 		num = Res.CountResources('PICT')
@@ -65,11 +65,11 @@ class PICTbrowse(FrameWork.Application):
 class PICTwindow(FrameWork.Window):
 	def open(self, (resid, resname)):
 		if not resname:
-			resname = '#'+`resid`
+			resname = '#%r' % (resid,)
 		self.resid = resid
 		picture = Qd.GetPicture(self.resid)
 		# Get rect for picture
-		print `picture.data[:16]`
+		print repr(picture.data[:16])
 		sz, t, l, b, r = struct.unpack('hhhhh', picture.data[:10])
 		print 'pict:', t, l, b, r
 		width = r-l
@@ -105,7 +105,7 @@ class MyDialog(FrameWork.DialogWindow):
 		if self.contents:
 			self.list.LAddRow(len(self.contents), 0)
 			for i in range(len(self.contents)):
-				v = `self.contents[i][0]`
+				v = repr(self.contents[i][0])
 				if self.contents[i][1]:
 					v = v + '"' + self.contents[i][1] + '"'
 				self.list.LSetCell(v, (0, i))

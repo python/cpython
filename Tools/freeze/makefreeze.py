@@ -87,4 +87,4 @@ def writecode(outfp, mod, str):
 
 ## def writecode(outfp, mod, str):
 ##     outfp.write('unsigned char M_%s[%d] = "%s";\n' % (mod, len(str),
-##     '\\"'.join(map(lambda s: `s`[1:-1], str.split('"')))))
+##     '\\"'.join(map(lambda s: repr(s)[1:-1], str.split('"')))))

@@ -53,7 +53,7 @@ class imgbrowse(FrameWork.Application):
 		try:
 			rdr = img.reader(imgformat.macrgb16, pathname)
 		except img.error, arg:
-			EasyDialogs.Message(`arg`)
+			EasyDialogs.Message(repr(arg))
 			return
 		w, h = rdr.width, rdr.height
 		bar.set(10)

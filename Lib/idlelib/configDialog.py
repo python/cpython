@@ -718,7 +718,7 @@ class ConfigDialog(Toplevel):
     def DeleteCustomKeys(self):
         keySetName=self.customKeys.get()
         if not tkMessageBox.askyesno('Delete Key Set','Are you sure you wish '+
-                                     'to delete the key set '+`keySetName`+' ?',
+                                     'to delete the key set %r ?' % (keySetName),
                                      parent=self):
             return
         #remove key set from config
@@ -745,7 +745,7 @@ class ConfigDialog(Toplevel):
     def DeleteCustomTheme(self):
         themeName=self.customTheme.get()
         if not tkMessageBox.askyesno('Delete Theme','Are you sure you wish '+
-                                     'to delete the theme '+`themeName`+' ?',
+                                     'to delete the theme %r ?' % (themeName,),
                                      parent=self):
             return
         #remove theme from config

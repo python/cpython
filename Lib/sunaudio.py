@@ -41,4 +41,4 @@ def printhdr(file):
     print 'Encoding:   ', encoding
     print 'Sample rate:', sample_rate
     print 'Channels:   ', channels
-    print 'Info:       ', `info`
+    print 'Info:       ', repr(info)

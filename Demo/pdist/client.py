@@ -139,7 +139,7 @@ class SecureClient(Client, Security):
 		line = self._rf.readline()
 		challenge = string.atoi(string.strip(line))
 		response = self._encode_challenge(challenge)
-		line = `long(response)`
+		line = repr(long(response))
 		if line[-1] in 'Ll': line = line[:-1]
 		self._wf.write(line + '\n')
 		self._wf.flush()

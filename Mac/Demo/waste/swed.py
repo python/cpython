@@ -375,7 +375,7 @@ class Wed(Application):
 		self.sizemenu = Menu(self.menubar, "Size")
 		self.sizeitems = []
 		for n in SIZES:
-			m = MenuItem(self.sizemenu, `n`, "", self.selsize)
+			m = MenuItem(self.sizemenu, repr(n), "", self.selsize)
 			self.sizeitems.append(m)
 		self.sizemenu.addseparator()
 		self.sizeitem_bigger = MenuItem(self.sizemenu, "Bigger", "+", 
@@ -529,7 +529,7 @@ class Wed(Application):
 				data = fp.read()
 				fp.close()
 			except IOError, arg:
-				EasyDialogs.Message("IOERROR: "+`arg`)
+				EasyDialogs.Message("IOERROR: %r" % (arg,))
 				return
 		else:
 			path = None

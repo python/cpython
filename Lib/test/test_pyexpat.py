@@ -216,7 +216,7 @@ for entry in L:
     if tag is not entry:
         print "expected L to contain many references to the same string",
         print "(it didn't)"
-        print "L =", `L`
+        print "L =", repr(L)
         break
 
 # Tests of the buffer_text attribute.
@@ -228,8 +228,8 @@ class TextCollector:
 
     def check(self, expected, label):
         require(self.stuff == expected,
-                "%s\nstuff    = %s\nexpected = %s"
-                % (label, `self.stuff`, `map(unicode, expected)`))
+                "%s\nstuff    = %r\nexpected = %r"
+                % (label, self.stuff, map(unicode, expected)))
 
     def CharacterDataHandler(self, text):
         self.stuff.append(text)

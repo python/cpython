@@ -86,7 +86,7 @@ class TestCopy(unittest.TestCase):
                  "hello", u"hello\u1234", f.func_code,
                  NewStyle, xrange(10), Classic, max]
         for x in tests:
-            self.assert_(copy.copy(x) is x, `x`)
+            self.assert_(copy.copy(x) is x, repr(x))
 
     def test_copy_list(self):
         x = [1, 2, 3]
@@ -259,7 +259,7 @@ class TestCopy(unittest.TestCase):
                  "hello", u"hello\u1234", f.func_code,
                  NewStyle, xrange(10), Classic, max]
         for x in tests:
-            self.assert_(copy.deepcopy(x) is x, `x`)
+            self.assert_(copy.deepcopy(x) is x, repr(x))
 
     def test_deepcopy_list(self):
         x = [[1, 2], 3]

@@ -146,7 +146,7 @@ def freeze(filename):
     forms = parse_forms(filename)
     altforms = _pack_cache(forms)
     print 'import flp'
-    print 'flp._internal_cache[', `filename`, '] =', altforms
+    print 'flp._internal_cache[', repr(filename), '] =', altforms
 
 #
 # Internal: create the data structure to be placed in the cache
@@ -417,7 +417,7 @@ def _select_crfunc(fm, cl):
     elif cl == FL.TEXT: return fm.add_text
     elif cl == FL.TIMER: return fm.add_timer
     else:
-        raise error, 'Unknown object type: ' + `cl`
+        raise error, 'Unknown object type: %r' % (cl,)
 
 
 def test():

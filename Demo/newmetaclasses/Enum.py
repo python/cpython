@@ -97,7 +97,7 @@ def _test():
 
     print Color.red
 
-    print `Color.red`
+    print repr(Color.red)
     print Color.red == Color.red
     print Color.red == Color.blue
     print Color.red == 1
@@ -139,7 +139,7 @@ def _test2():
 
     print Color.red
 
-    print `Color.red`
+    print repr(Color.red)
     print Color.red == Color.red
     print Color.red == Color.blue
     print Color.red == 1

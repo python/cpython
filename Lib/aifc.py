@@ -392,7 +392,7 @@ class Aifc_read:
         for marker in self._markers:
             if id == marker[0]:
                 return marker
-        raise Error, 'marker ' + `id` + ' does not exist'
+        raise Error, 'marker %r does not exist' % (id,)
 
     def setpos(self, pos):
         if pos < 0 or pos > self._nframes:
@@ -697,7 +697,7 @@ class Aifc_write:
         for marker in self._markers:
             if id == marker[0]:
                 return marker
-        raise Error, 'marker ' + `id` + ' does not exist'
+        raise Error, 'marker %r does not exist' % (id,)
 
     def getmarkers(self):
         if len(self._markers) == 0:

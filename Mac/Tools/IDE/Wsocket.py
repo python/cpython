@@ -129,14 +129,14 @@ class Connection(asyncore.dispatcher):
 		data = asyncore.dispatcher.recv(self, BUFSIZE)
 		if data:
 			if VERBOSE > 2:
-				print "incoming ->", "%x" % id(self), `data`
+				print "incoming -> %x %r" % (id(self), data)
 			self.handle_incoming_data(data)
 	
 	def handle_write(self):
 		if self._out_buffer:
 			sent = self.socket.send(self._out_buffer[:BUFSIZE])
 			if VERBOSE > 2:
-				print "outgoing ->", "%x" % id(self), `self._out_buffer[:sent]`
+				print "outgoing -> %x %r" % (id(self), self._out_buffer[:sent])
 			self._out_buffer = self._out_buffer[sent:]
 	
 	def close(self):
@@ -144,7 +144,7 @@ class Connection(asyncore.dispatcher):
 			self.readfunc(self._in_buffer)
 			self._in_buffer = ""
 		#elif VERBOSE > 1 and self._in_buffer:
-		#	print "--- there is unread data:", `self._in_buffer`
+		#	print "--- there is unread data: %r", (self._in_buffer,)
 		asyncore.dispatcher.close(self)
 	
 	def handle_close(self):
@@ -290,7 +290,7 @@ class PyConnection(Connection):
 				self.currentmessage = PyMessage()
 	
 	def handle_object(self, object):
-		print 'unhandled object:', `object`
+		print 'unhandled object:', repr(object)
 	
 	def send(self, object):
 		import cPickle, zlib, struct
@@ -356,7 +356,7 @@ class HTTPProxy(Proxy):
 	
 	def connectproxy(self, data):
 		if VERBOSE:
-			print "--- proxy request", `data`
+			print "--- proxy request", repr(data)
 		addr, data = de_proxify(data)
 		other = Proxy(addr)
 		self.other = other

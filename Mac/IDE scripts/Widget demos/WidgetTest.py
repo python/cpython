@@ -79,7 +79,7 @@ window.open()
 if 0:
 	import time
 	for i in range(20):
-		window.et2.set(`i`)
+		window.et2.set(repr(i))
 		#window.et2.SetPort()
 		#window.et2.draw()
 		time.sleep(0.1)

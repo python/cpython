@@ -212,7 +212,7 @@ def _safe_repr(object, context, maxlevels, level):
     typ = _type(object)
     if typ is str:
         if 'locale' not in _sys.modules:
-            return `object`, True, False
+            return repr(object), True, False
         if "'" in object and '"' not in object:
             closure = '"'
             quotes = {'"': '\\"'}
@@ -226,7 +226,7 @@ def _safe_repr(object, context, maxlevels, level):
             if char.isalpha():
                 write(char)
             else:
-                write(qget(char, `char`[1:-1]))
+                write(qget(char, repr(char)[1:-1]))
         return ("%s%s%s" % (closure, sio.getvalue(), closure)), True, False
 
     r = typ.__repr__
@@ -288,7 +288,7 @@ def _safe_repr(object, context, maxlevels, level):
         del context[objid]
         return format % _commajoin(components), readable, recursive
 
-    rep = `object`
+    rep = repr(object)
     return rep, (rep and not rep.startswith('<')), False
 
 

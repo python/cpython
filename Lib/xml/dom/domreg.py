@@ -87,7 +87,7 @@ def _parse_feature_string(s):
     while i < length:
         feature = parts[i]
         if feature[0] in "0123456789":
-            raise ValueError, "bad feature name: " + `feature`
+            raise ValueError, "bad feature name: %r" % (feature,)
         i = i + 1
         version = None
         if i < length:

@@ -55,12 +55,12 @@ def ispython(name):
     return ispythonprog.match(name) >= 0
 
 def recursedown(dirname):
-    dbg('recursedown(' + `dirname` + ')\n')
+    dbg('recursedown(%r)\n' % (dirname,))
     bad = 0
     try:
         names = os.listdir(dirname)
     except os.error, msg:
-        err(dirname + ': cannot list directory: ' + `msg` + '\n')
+        err('%s: cannot list directory: %r\n' % (dirname, msg))
         return 1
     names.sort()
     subdirs = []
@@ -77,11 +77,11 @@ def recursedown(dirname):
     return bad
 
 def fix(filename):
-##  dbg('fix(' + `filename` + ')\n')
+##  dbg('fix(%r)\n' % (filename,))
     try:
         f = open(filename, 'r')
     except IOError, msg:
-        err(filename + ': cannot open: ' + `msg` + '\n')
+        err('%s: cannot open: %r\n' % (filename, msg))
         return 1
     head, tail = os.path.split(filename)
     tempname = os.path.join(head, '@' + tail)
@@ -119,14 +119,13 @@ def fix(filename):
                     g = open(tempname, 'w')
                 except IOError, msg:
                     f.close()
-                    err(tempname+': cannot create: '+\
-                        `msg`+'\n')
+                    err('%s: cannot create: %r\n' % (tempname, msg))
                     return 1
                 f.seek(0)
                 lineno = 0
                 rep(filename + ':\n')
                 continue # restart from the beginning
-            rep(`lineno` + '\n')
+            rep(repr(lineno) + '\n')
             rep('< ' + line)
             rep('> ' + newline)
         if g is not None:
@@ -143,17 +142,17 @@ def fix(filename):
         statbuf = os.stat(filename)
         os.chmod(tempname, statbuf[ST_MODE] & 07777)
     except os.error, msg:
-        err(tempname + ': warning: chmod failed (' + `msg` + ')\n')
+        err('%s: warning: chmod failed (%r)\n' % (tempname, msg))
     # Then make a backup of the original file as filename~
     try:
         os.rename(filename, filename + '~')
     except os.error, msg:
-        err(filename + ': warning: backup failed (' + `msg` + ')\n')
+        err('%s: warning: backup failed (%r)\n' % (filename, msg))
     # Now move the temp file to the original file
     try:
         os.rename(tempname, filename)
     except os.error, msg:
-        err(filename + ': rename failed (' + `msg` + ')\n')
+        err('%s: rename failed (%r)\n' % (filename, msg))
         return 1
     # Return succes
     return 0

@@ -253,8 +253,8 @@ class Command:
 
             if not ok:
                 raise DistutilsOptionError, \
-                      "'%s' must be a list of strings (got %s)" % \
-                      (option, `val`)
+                      "'%s' must be a list of strings (got %r)" % \
+                      (option, val)
 
     def _ensure_tested_string (self, option, tester,
                                what, error_fmt, default=None):

@@ -177,7 +177,7 @@ class Command:
         t = (self.index1, self.index2, self.chars, self.tags)
         if self.tags is None:
             t = t[:-1]
-        return s + `t`
+        return s + repr(t)
 
     def do(self, text):
         pass
@@ -310,7 +310,7 @@ class CommandSequence(Command):
         s = self.__class__.__name__
         strs = []
         for cmd in self.cmds:
-            strs.append("    " + `cmd`)
+            strs.append("    %r" % (cmd,))
         return s + "(\n" + ",\n".join(strs) + "\n)"
 
     def __len__(self):

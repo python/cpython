@@ -124,7 +124,7 @@ def Bastion(object, filter = lambda name: name[:1] != '_',
         return get1(name)
 
     if name is None:
-        name = `object`
+        name = repr(object)
     return bastionclass(get2, name)
 
 

@@ -67,8 +67,7 @@ class MiniApplication:
         what, message, when, where, modifiers = event
         h, v = where
         if what == kHighLevelEvent:
-            msg = "High Level Event: %s %s" % \
-                (`code(message)`, `code(h | (v<<16))`)
+            msg = "High Level Event: %r %r" % (code(message), code(h | (v<<16)))
             try:
                 AE.AEProcessAppleEvent(event)
             except AE.Error, err:

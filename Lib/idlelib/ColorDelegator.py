@@ -182,7 +182,7 @@ class ColorDelegator(Delegator):
                 lines_to_get = min(lines_to_get * 2, 100)
                 ok = "SYNC" in self.tag_names(next + "-1c")
                 line = self.get(mark, next)
-                ##print head, "get", mark, next, "->", `line`
+                ##print head, "get", mark, next, "->", repr(line)
                 if not line:
                     return
                 for tag in self.tagdefs.keys():

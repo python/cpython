@@ -73,7 +73,7 @@ def mmdf(f):
 			sts = message(f, line) or sts
 		else:
 			sys.stderr.write(
-				'Bad line in MMFD mailbox: %s\n' % `line`)
+				'Bad line in MMFD mailbox: %r\n' % (line,))
 	return sts
 
 counter = 0 # for generating unique Message-ID headers
@@ -89,7 +89,7 @@ def message(f, delimiter = ''):
 		t = time.mktime(tt)
 	else:
 		sys.stderr.write(
-			'Unparseable date: %s\n' % `m.getheader('Date')`)
+			'Unparseable date: %r\n' % (m.getheader('Date'),))
 		t = os.fstat(f.fileno())[stat.ST_MTIME]
 	print 'From', email, time.ctime(t)
 	# Copy RFC822 header

@@ -62,11 +62,11 @@ class Module:
         self.starimports = {}
 
     def __repr__(self):
-        s = "Module(%s" % `self.__name__`
+        s = "Module(%r" % % (self.__name__,)
         if self.__file__ is not None:
-            s = s + ", %s" % `self.__file__`
+            s = s + ", %r" % (self.__file__,)
         if self.__path__ is not None:
-            s = s + ", %s" % `self.__path__`
+            s = s + ", %r" % (self.__path__,)
         s = s + ")"
         return s
 
@@ -564,7 +564,7 @@ def test():
     if debug > 1:
         print "path:"
         for item in path:
-            print "   ", `item`
+            print "   ", repr(item)
 
     # Create the module finder and turn its crank
     mf = ModuleFinder(path, debug, exclude)

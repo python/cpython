@@ -35,7 +35,7 @@ class ICOpaqueData:
         self.data = data
 
     def __repr__(self):
-        return "ICOpaqueData(%s)"%`self.data`
+        return "ICOpaqueData(%r)"%(self.data,)
 
 _ICOpaqueDataType=type(ICOpaqueData(''))
         
@@ -94,7 +94,7 @@ def _code_fontrecord(data, key):
         chr(0) + _code_default(name)
     
 def _code_boolean(data, key):
-    print 'XXXX boolean:', `data`
+    print 'XXXX boolean:', repr(data)
     return chr(data)
     
 def _code_text(data, key):

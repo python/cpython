@@ -47,7 +47,7 @@ def type_to_name(gtype):
                 _type_to_name_map[eval(name)] = name[2:]
     if gtype in _type_to_name_map:
         return _type_to_name_map[gtype]
-    return 'TYPE=' + `gtype`
+    return 'TYPE=%r' % (gtype,)
 
 # Names for characters and strings
 CRLF = '\r\n'
@@ -113,7 +113,7 @@ def get_directory(f):
         gtype = line[0]
         parts = line[1:].split(TAB)
         if len(parts) < 4:
-            print '(Bad line from server:', `line`, ')'
+            print '(Bad line from server: %r)' % (line,)
             continue
         if len(parts) > 4:
             if parts[4:] != ['+']:
@@ -198,7 +198,7 @@ def test():
         for item in entries: print item
     else:
         data = get_binary(f)
-        print 'binary data:', len(data), 'bytes:', `data[:100]`[:40]
+        print 'binary data:', len(data), 'bytes:', repr(data[:100])[:40]
 
 # Run the test when run as script
 if __name__ == '__main__':

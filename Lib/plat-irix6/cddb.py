@@ -111,9 +111,7 @@ class Cddb:
 					print 'syntax error in ' + file
 					continue
 				if trackno > ntracks:
-					print 'track number ' + `trackno` + \
-						  ' in file ' + file + \
-						  ' out of range'
+					print 'track number %r in file %s out of range' % (trackno, file)
 					continue
 				if name2 == 'title':
 					self.track[trackno] = value
@@ -191,7 +189,7 @@ class Cddb:
 		prevpref = None
 		for i in range(1, len(self.track)):
 			if self.trackartist[i]:
-				f.write('track'+`i`+'.artist:\t'+self.trackartist[i]+'\n')
+				f.write('track%r.artist:\t%s\n' % (i, self.trackartist[i])
 			track = self.track[i]
 			try:
 				off = track.index(',')
@@ -202,5 +200,5 @@ class Cddb:
 					track = track[off:]
 				else:
 					prevpref = track[:off]
-			f.write('track' + `i` + '.title:\t' + track + '\n')
+			f.write('track%r.title:\t%s\n' % (i, track))
 		f.close()

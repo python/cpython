@@ -38,7 +38,7 @@ def sender(flag):
 		ttl = struct.pack('b', 1)		# Time-to-live
 		s.setsockopt(IPPROTO_IP, IP_MULTICAST_TTL, ttl)
 	while 1:
-		data = `time.time()`
+		data = repr(time.time())
 ##		data = data + (1400 - len(data)) * '\0'
 		s.sendto(data, (mygroup, MYPORT))
 		time.sleep(1)
@@ -53,7 +53,7 @@ def receiver():
 	while 1:
 		data, sender = s.recvfrom(1500)
 		while data[-1:] == '\0': data = data[:-1] # Strip trailing \0's
-		print sender, ':', `data`
+		print sender, ':', repr(data)
 
 
 # Open a UDP socket, bind it to a port and select a multicast group

@@ -118,7 +118,7 @@ class Application(FrameWork.Application):
 					func()
 				except:
 					import sys
-					sys.stderr.write("exception in idle function %s; killed:\n" % `func`)
+					sys.stderr.write("exception in idle function %r; killed:\n" % (func,))
 					traceback.print_exc()
 					self._idlefuncs.remove(func)
 					break
@@ -175,7 +175,7 @@ class Application(FrameWork.Application):
 				self.do_rawmenu(id, item, None, event)
 				return	# here! we had a menukey! 
 			#else:
-			#	print "XXX Command-" +`ch`
+			#	print "XXX Command-%r" % ch
 		# See whether the front window wants it
 		if wid and self._windows.has_key(wid):
 			window = self._windows[wid]

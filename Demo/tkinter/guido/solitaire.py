@@ -183,7 +183,7 @@ class Card:
 
     def __repr__(self):
 	"""Return a string for debug print statements."""
-	return "Card(%s, %s)" % (`self.suit`, `self.value`)
+	return "Card(%r, %r)" % (self.suit, self.value)
 
     def moveto(self, x, y):
 	"""Move the card to absolute position (x, y)."""

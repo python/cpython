@@ -114,7 +114,7 @@ class Lock:
 		self.delay = delay
 		self.lockdir = None
 		self.lockfile = None
-		pid = `os.getpid()`
+		pid = repr(os.getpid())
 		self.cvslck = self.join(CVSLCK)
 		self.cvsrfl = self.join(CVSRFL + pid)
 		self.cvswfl = self.join(CVSWFL + pid)

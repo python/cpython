@@ -12,13 +12,13 @@ def main():
 	rcstree = 'RCStree'
 	rcs = 'RCS'
 	if os.path.islink(rcs):
-		print `rcs`, 'is a symlink to', `os.readlink(rcs)`
+		print '%r is a symlink to %r' % (rcs, os.readlink(rcs))
 		return
 	if os.path.isdir(rcs):
-		print `rcs`, 'is an ordinary directory'
+		print '%r is an ordinary directory' % (rcs,)
 		return
 	if os.path.exists(rcs):
-		print `rcs`, 'is a file?!?!'
+		print '%r is a file?!?!' % (rcs,)
 		return
 	#
 	p = os.getcwd()
@@ -29,26 +29,26 @@ def main():
 	# (2) up is the same directory as p
 	# Ergo:
 	# (3) join(up, down) is the current directory
-	#print 'p =', `p`
+	#print 'p =', repr(p)
 	while not os.path.isdir(os.path.join(p, rcstree)):
 		head, tail = os.path.split(p)
-		#print 'head =', `head`, '; tail =', `tail`
+		#print 'head = %r; tail = %r' % (head, tail)
 		if not tail:
-			print 'Sorry, no ancestor dir contains', `rcstree`
+			print 'Sorry, no ancestor dir contains %r' % (rcstree,)
 			return
 		p = head
 		up = os.path.join(os.pardir, up)
 		down = os.path.join(tail, down)
-		#print 'p =', `p`, '; up =', `up`, '; down =', `down`
+		#print 'p = %r; up = %r; down = %r' % (p, up, down)
 	there = os.path.join(up, rcstree)
 	there = os.path.join(there, down)
 	there = os.path.join(there, rcs)
 	if os.path.isdir(there):
-		print `there`, 'already exists'
+		print '%r already exists' % (there, )
 	else:
-		print 'making', `there`
+		print 'making %r' % (there,)
 		makedirs(there)
-	print 'making symlink', `rcs`, '->', `there`
+	print 'making symlink %r -> %r' % (rcs, there)
 	os.symlink(there, rcs)
 
 def makedirs(p):

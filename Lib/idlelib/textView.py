@@ -46,7 +46,7 @@ class TextViewer(Toplevel):
             textFile = open(fileName, 'r')
         except IOError:
             tkMessageBox.showerror(title='File Load Error',
-                    message='Unable to load file '+`fileName`+' .')
+                    message='Unable to load file %r .' % (fileName,))
         else:
             self.textView.insert(0.0,textFile.read())
 

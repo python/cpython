@@ -236,7 +236,7 @@ Guido's binary tree example.
     ...         self.right = right
     ...
     ...     def __repr__(self, level=0, indent="    "):
-    ...         s = level*indent + `self.label`
+    ...         s = level*indent + repr(self.label)
     ...         if self.left:
     ...             s = s + "\\n" + self.left.__repr__(level+1, indent)
     ...         if self.right:

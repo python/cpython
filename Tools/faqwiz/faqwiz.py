@@ -383,7 +383,7 @@ class FaqWizard:
         try:
             meth = getattr(self, mname)
         except AttributeError:
-            self.error("Bad request type %s." % `req`)
+            self.error("Bad request type %r." % (req,))
         else:
             try:
                 meth()
@@ -664,7 +664,7 @@ class FaqWizard:
         rev = self.ui.rev
         mami = revparse(rev)
         if not mami:
-            self.error("Invalid revision number: %s." % `rev`)
+            self.error("Invalid revision number: %r." % (rev,))
         self.prologue(T_REVISION, entry)
         self.shell(interpolate(SH_REVISION, entry, rev=rev))
 
@@ -674,10 +674,10 @@ class FaqWizard:
         rev = self.ui.rev
         mami = revparse(rev)
         if not mami:
-            self.error("Invalid revision number: %s." % `rev`)
+            self.error("Invalid revision number: %r." % (rev,))
         if prev:
             if not revparse(prev):
-                self.error("Invalid previous revision number: %s." % `prev`)
+                self.error("Invalid previous revision number: %r." % (prev,))
         else:
             prev = '%d.%d' % (mami[0], mami[1])
         self.prologue(T_DIFF, entry)

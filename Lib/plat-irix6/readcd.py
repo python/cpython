@@ -9,7 +9,7 @@ class _Stop(Exception):
 
 def _doatime(self, cb_type, data):
 	if ((data[0] * 60) + data[1]) * 75 + data[2] > self.end:
-##		print 'done with list entry',`self.listindex`
+##		print 'done with list entry', repr(self.listindex)
 		raise _Stop
 	func, arg = self.callbacks[cb_type]
 	if func:
@@ -17,7 +17,7 @@ def _doatime(self, cb_type, data):
 
 def _dopnum(self, cb_type, data):
 	if data > self.end:
-##		print 'done with list entry',`self.listindex`
+##		print 'done with list entry', repr(self.listindex)
 		raise _Stop
 	func, arg = self.callbacks[cb_type]
 	if func:

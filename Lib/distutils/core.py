@@ -202,7 +202,7 @@ def run_setup (script_name, script_args=None, stop_after="run"):
     used to drive the Distutils.
     """
     if stop_after not in ('init', 'config', 'commandline', 'run'):
-        raise ValueError, "invalid value for 'stop_after': %s" % `stop_after`
+        raise ValueError, "invalid value for 'stop_after': %r" % (stop_after,)
 
     global _setup_stop_after, _setup_distribution
     _setup_stop_after = stop_after

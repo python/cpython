@@ -304,7 +304,7 @@ def getallgroups(server):
 def getnewgroups(server, treedate):
    print 'Getting list of new groups since start of '+treedate+'...',
    info = server.newgroups(treedate,'000001')[1]
-   print 'got '+`len(info)`+'.'
+   print 'got %d.' % len(info)
    print 'Processing...',
    groups = []
    for i in info:

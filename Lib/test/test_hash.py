@@ -14,7 +14,7 @@ class HashEqualityTestCase(unittest.TestCase):
         hashed = map(hash, objlist)
         for h in hashed[1:]:
             if h != hashed[0]:
-                self.fail("hashed values differ: %s" % `objlist`)
+                self.fail("hashed values differ: %r" % (objlist,))
 
     def test_numeric_literals(self):
         self.same_hash(1, 1L, 1.0, 1.0+0.0j)

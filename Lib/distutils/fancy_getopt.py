@@ -162,7 +162,7 @@ class FancyGetopt:
             else:
                 # the option table is part of the code, so simply
                 # assert that it is correct
-                assert "invalid option tuple: %s" % `option`
+                assert "invalid option tuple: %r" % (option,)
 
             # Type- and value-check the option names
             if type(long) is not StringType or len(long) < 2:

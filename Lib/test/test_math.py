@@ -91,8 +91,8 @@ testit('fmod(-10,1.5)', math.fmod(-10,1.5), -1)
 print 'frexp'
 def testfrexp(name, (mant, exp), (emant, eexp)):
     if abs(mant-emant) > eps or exp != eexp:
-        raise TestFailed, '%s returned %s, expected %s'%\
-              (name, `mant, exp`, `emant,eexp`)
+        raise TestFailed, '%s returned %r, expected %r'%\
+              (name, (mant, exp), (emant,eexp))
 
 testfrexp('frexp(-1)', math.frexp(-1), (-0.5, 1))
 testfrexp('frexp(0)', math.frexp(0), (0, 0))
@@ -125,8 +125,8 @@ testit('log10(10)', math.log10(10), 1)
 print 'modf'
 def testmodf(name, (v1, v2), (e1, e2)):
     if abs(v1-e1) > eps or abs(v2-e2):
-        raise TestFailed, '%s returned %s, expected %s'%\
-              (name, `v1,v2`, `e1,e2`)
+        raise TestFailed, '%s returned %r, expected %r'%\
+              (name, (v1,v2), (e1,e2))
 
 testmodf('modf(1.5)', math.modf(1.5), (0.5, 1.0))
 testmodf('modf(-1.5)', math.modf(-1.5), (-0.5, -1.0))

@@ -117,7 +117,7 @@ def _test():
         def m2(self, y): return self.x + y
         __trace_output__ = sys.stdout
     class D(C):
-        def m2(self, y): print "D.m2(%s)" % `y`; return C.m2(self, y)
+        def m2(self, y): print "D.m2(%r)" % (y,); return C.m2(self, y)
         __trace_output__ = None
     x = C(4321)
     print x

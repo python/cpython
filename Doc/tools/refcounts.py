@@ -32,7 +32,7 @@ def loadfile(fp):
             continue
         parts = line.split(":", 4)
         if len(parts) != 5:
-            raise ValueError("Not enough fields in " + `line`)
+            raise ValueError("Not enough fields in %r" % line)
         function, type, arg, refcount, comment = parts
         if refcount == "null":
             refcount = None

@@ -48,8 +48,8 @@ fmt3 = '3c3b18x12h6i6l6f3d'
 sz = struct.calcsize(fmt)
 sz3 = struct.calcsize(fmt3)
 if sz * 3 != sz3:
-    raise TestFailed, 'inconsistent sizes (3*%s -> 3*%d = %d, %s -> %d)' % (
-        `fmt`, sz, 3*sz, `fmt3`, sz3)
+    raise TestFailed, 'inconsistent sizes (3*%r -> 3*%d = %d, %r -> %d)' % (
+        fmt, sz, 3*sz, fmt3, sz3)
 
 simple_err(struct.pack, 'iii', 3)
 simple_err(struct.pack, 'i', 3, 3, 3)
@@ -120,21 +120,21 @@ tests = [
 
 for fmt, arg, big, lil, asy in tests:
     if verbose:
-        print `fmt`, `arg`, `big`, `lil`
+        print "%r %r %r %r" % (fmt, arg, big, lil)
     for (xfmt, exp) in [('>'+fmt, big), ('!'+fmt, big), ('<'+fmt, lil),
                         ('='+fmt, ISBIGENDIAN and big or lil)]:
         res = struct.pack(xfmt, arg)
         if res != exp:
-            raise TestFailed, "pack(%s, %s) -> %s # expected %s" % (
-                `fmt`, `arg`, `res`, `exp`)
+            raise TestFailed, "pack(%r, %r) -> %r # expected %r" % (
+                fmt, arg, res, exp)
         n = struct.calcsize(xfmt)
         if n != len(res):
-            raise TestFailed, "calcsize(%s) -> %d # expected %d" % (
-                `xfmt`, n, len(res))
+            raise TestFailed, "calcsize(%r) -> %d # expected %d" % (
+                xfmt, n, len(res))
         rev = struct.unpack(xfmt, res)[0]
         if rev != arg and not asy:
-            raise TestFailed, "unpack(%s, %s) -> (%s,) # expected (%s,)" % (
-                `fmt`, `res`, `rev`, `arg`)
+            raise TestFailed, "unpack(%r, %r) -> (%r,) # expected (%r,)" % (
+                fmt, res, rev, arg)
 
 ###########################################################################
 # Simple native q/Q tests.

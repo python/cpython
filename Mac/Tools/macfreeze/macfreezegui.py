@@ -113,7 +113,7 @@ def dialog(script=None):
 	try:
 		debug = string.atoi(string.strip(debug))
 	except ValueError:
-		EasyDialogs.Message("Illegal debug value %s, set to zero."%`debug`)
+		EasyDialogs.Message("Illegal debug value %r, set to zero."%(debug,))
 		debug = 0
 	if gentype == ITEM_GENSOURCE:
 		return 'source', script, dirname, debug

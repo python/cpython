@@ -66,7 +66,7 @@ class AboutDialog(Toplevel):
                                sys.version.split()[0], fg=self.fg, bg=self.bg)
         labelPythonVer.grid(row=9, column=0, sticky=W, padx=10, pady=0)
         # handle weird tk version num in windoze python >= 1.6 (?!?)
-        tkVer = `TkVersion`.split('.')
+        tkVer = repr(TkVersion).split('.')
         tkVer[len(tkVer)-1] = str('%.3g' % (float('.'+tkVer[len(tkVer)-1])))[2:]
         if tkVer[len(tkVer)-1] == '':
             tkVer[len(tkVer)-1] = '0'
@@ -141,8 +141,7 @@ class AboutDialog(Toplevel):
             except IOError:
                 import tkMessageBox
                 tkMessageBox.showerror(title='File Load Error',
-                                       message='Unable to load file '+
-                                       `fn`+' .',
+                                       message='Unable to load file %r .' % (fn,),
                                        parent=self)
                 return
             else:

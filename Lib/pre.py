@@ -544,7 +544,7 @@ class MatchObject:
             try:
                 g = self.re.groupindex[g]
             except (KeyError, TypeError):
-                raise IndexError, 'group %s is undefined' % `g`
+                raise IndexError, 'group %r is undefined' % (g,)
         return self.regs[g][0]
 
     def end(self, g = 0):
@@ -560,7 +560,7 @@ class MatchObject:
             try:
                 g = self.re.groupindex[g]
             except (KeyError, TypeError):
-                raise IndexError, 'group %s is undefined' % `g`
+                raise IndexError, 'group %r is undefined' % (g,)
         return self.regs[g][1]
 
     def span(self, g = 0):
@@ -576,7 +576,7 @@ class MatchObject:
             try:
                 g = self.re.groupindex[g]
             except (KeyError, TypeError):
-                raise IndexError, 'group %s is undefined' % `g`
+                raise IndexError, 'group %r is undefined' % (g,)
         return self.regs[g]
 
     def groups(self, default=None):
@@ -629,9 +629,9 @@ class MatchObject:
                 try:
                     g = self.re.groupindex[g]
                 except (KeyError, TypeError):
-                    raise IndexError, 'group %s is undefined' % `g`
+                    raise IndexError, 'group %r is undefined' % (g,)
             if g >= len(self.regs):
-                raise IndexError, 'group %s is undefined' % `g`
+                raise IndexError, 'group %r is undefined' % (g,)
             a, b = self.regs[g]
             if a == -1 or b == -1:
                 result.append(None)

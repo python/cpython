@@ -232,7 +232,7 @@ def generate(type, func, database):
 				brac = '('
 				ket = ')'
 			print brac + '*',
-		print 'arg' + `i+1` + ket,
+		print 'arg' + repr(i+1) + ket,
 		if a_sub and isnum(a_sub):
 			print '[', a_sub, ']',
 		if a_factor:
@@ -249,7 +249,7 @@ def generate(type, func, database):
 			if 1 <= n <= len(database):
 			    b_type, b_mode, b_factor, b_sub = database[n-1]
 			    if b_mode == 's':
-			        database[n-1] = b_type, 'i', a_factor, `i`
+			        database[n-1] = b_type, 'i', a_factor, repr(i)
 			        n_in_args = n_in_args - 1
 	#
 	# Assign argument positions in the Python argument list
@@ -281,20 +281,20 @@ def generate(type, func, database):
 			j = eval(a_sub)
 			print '\tif',
 			print '(!geti' + xtype + 'arraysize(args,',
-			print `n_in_args` + ',',
-			print `in_pos[j]` + ',',
+			print repr(n_in_args) + ',',
+			print repr(in_pos[j]) + ',',
 			if xtype <> a_type:
 				print '('+xtype+' *)',
-			print '&arg' + `i+1` + '))'
+			print '&arg' + repr(i+1) + '))'
 			print '\t\treturn NULL;'
 			if a_factor:
-				print '\targ' + `i+1`,
-				print '= arg' + `i+1`,
+				print '\targ' + repr(i+1),
+				print '= arg' + repr(i+1),
 				print '/', a_factor + ';'
 		elif a_mode == 's':
 			if a_sub and not isnum(a_sub):
 				# Allocate memory for varsize array
-				print '\tif ((arg' + `i+1`, '=',
+				print '\tif ((arg' + repr(i+1), '=',
 				if a_factor:
 					print '('+a_type+'(*)['+a_factor+'])',
 				print 'PyMem_NEW(' + a_type, ',',
@@ -305,22 +305,22 @@ def generate(type, func, database):
 			print '\tif',
 			if a_factor or a_sub: # Get a fixed-size array array
 				print '(!geti' + xtype + 'array(args,',
-				print `n_in_args` + ',',
-				print `in_pos[i]` + ',',
+				print repr(n_in_args) + ',',
+				print repr(in_pos[i]) + ',',
 				if a_factor: print a_factor,
 				if a_factor and a_sub: print '*',
 				if a_sub: print a_sub,
 				print ',',
 				if (a_sub and a_factor) or xtype <> a_type:
 					print '('+xtype+' *)',
-				print 'arg' + `i+1` + '))'
+				print 'arg' + repr(i+1) + '))'
 			else: # Get a simple variable
 				print '(!geti' + xtype + 'arg(args,',
-				print `n_in_args` + ',',
-				print `in_pos[i]` + ',',
+				print repr(n_in_args) + ',',
+				print repr(in_pos[i]) + ',',
 				if xtype <> a_type:
 					print '('+xtype+' *)',
-				print '&arg' + `i+1` + '))'
+				print '&arg' + repr(i+1) + '))'
 			print '\t\treturn NULL;'
 	#
 	# Begin of function call
@@ -337,7 +337,7 @@ def generate(type, func, database):
 		a_type, a_mode, a_factor, a_sub = database[i]
 		if a_mode == 'r' and not a_factor:
 			print '&',
-		print 'arg' + `i+1`,
+		print 'arg' + repr(i+1),
 	#
 	# End of function call
 	#
@@ -348,7 +348,7 @@ def generate(type, func, database):
 	for i in range(len(database)):
 		a_type, a_mode, a_factor, a_sub = database[i]
 		if a_mode == 's' and a_sub and not isnum(a_sub):
-			print '\tPyMem_DEL(arg' + `i+1` + ');'
+			print '\tPyMem_DEL(arg' + repr(i+1) + ');'
 	#
 	# Return
 	#
@@ -366,7 +366,7 @@ def generate(type, func, database):
 			else:
 				raise arg_error, 'expected r arg not found'
 			print '\treturn',
-			print mkobject(a_type, 'arg' + `i+1`) + ';'
+			print mkobject(a_type, 'arg' + repr(i+1)) + ';'
 		else:
 			print '\t{ PyObject *v = PyTuple_New(',
 			print n_out_args, ');'
@@ -374,15 +374,15 @@ def generate(type, func, database):
 			i_out = 0
 			if type <> 'void':
 				print '\t  PyTuple_SetItem(v,',
-				print `i_out` + ',',
+				print repr(i_out) + ',',
 				print mkobject(type, 'retval') + ');'
 				i_out = i_out + 1
 			for i in range(len(database)):
 				a_type, a_mode, a_factor, a_sub = database[i]
 				if a_mode == 'r':
 					print '\t  PyTuple_SetItem(v,',
-					print `i_out` + ',',
-					s = mkobject(a_type, 'arg' + `i+1`)
+					print repr(i_out) + ',',
+					s = mkobject(a_type, 'arg' + repr(i+1))
 					print s + ');'
 					i_out = i_out + 1
 			print '\t  return v;'

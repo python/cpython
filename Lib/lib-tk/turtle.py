@@ -95,18 +95,18 @@ class RawPen:
                 try:
                     id = self._canvas.create_line(0, 0, 0, 0, fill=color)
                 except Tkinter.TclError:
-                    raise Error, "bad color string: %s" % `color`
+                    raise Error, "bad color string: %r" % (color,)
                 self._set_color(color)
                 return
             try:
                 r, g, b = color
             except:
-                raise Error, "bad color sequence: %s" % `color`
+                raise Error, "bad color sequence: %r" % (color,)
         else:
             try:
                 r, g, b = args
             except:
-                raise Error, "bad color arguments: %s" % `args`
+                raise Error, "bad color arguments: %r" % (args,)
         assert 0 <= r <= 1
         assert 0 <= g <= 1
         assert 0 <= b <= 1
@@ -240,12 +240,12 @@ class RawPen:
             try:
                 x, y = args[0]
             except:
-                raise Error, "bad point argument: %s" % `args[0]`
+                raise Error, "bad point argument: %r" % (args[0],)
         else:
             try:
                 x, y = args
             except:
-                raise Error, "bad coordinates: %s" % `args[0]`
+                raise Error, "bad coordinates: %r" % (args[0],)
         x0, y0 = self._origin
         self._goto(x0+x, y0-y)
 

@@ -117,9 +117,8 @@ class Stats:
             self.stats = arg.stats
             arg.stats = {}
         if not self.stats:
-            raise TypeError,  "Cannot create or construct a " \
-                      + `self.__class__` \
-                      + " object from '" + `arg` + "'"
+            raise TypeError,  "Cannot create or construct a %r object from '%r''" % (
+                              self.__class__, arg)
         return
 
     def get_top_level_stats(self):
@@ -300,9 +299,8 @@ class Stats:
                 count = sel
                 new_list = list[:count]
         if len(list) != len(new_list):
-            msg = msg + "   List reduced from " + `len(list)` \
-                      + " to " + `len(new_list)` + \
-                      " due to restriction <" + `sel` + ">\n"
+            msg = msg + "   List reduced from %r to %r due to restriction <%r>\n" % (
+                         len(list), len(new_list), sel)
 
         return new_list, msg
 
@@ -392,8 +390,7 @@ class Stats:
         indent = ""
         for func in clist:
             name = func_std_string(func)
-            print indent*name_size + name + '(' \
-                      + `call_dict[func]`+')', \
+            print indent*name_size + name + '(%r)' % (call_dict[func],), \
                       f8(self.stats[func][3])
             indent = " "
 

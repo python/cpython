@@ -7,7 +7,7 @@ def list1resources():
 	ntypes = Res.Count1Types()
 	for itype in range(1, 1+ntypes):
 		type = Res.Get1IndType(itype)
-		print "Type:", `type`
+		print "Type:", repr(type)
 		nresources = Res.Count1Resources(type)
 		for i in range(1, 1 + nresources):
 			Res.SetResLoad(0)
@@ -19,7 +19,7 @@ def listresources():
 	ntypes = Res.CountTypes()
 	for itype in range(1, 1+ntypes):
 		type = Res.GetIndType(itype)
-		print "Type:", `type`
+		print "Type:", repr(type)
 		nresources = Res.CountResources(type)
 		for i in range(1, 1 + nresources):
 			Res.SetResLoad(0)

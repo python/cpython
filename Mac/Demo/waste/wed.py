@@ -338,7 +338,7 @@ class Wed(Application):
 				data = fp.read()
 				fp.close()
 			except IOError, arg:
-				EasyDialogs.Message("IOERROR: "+`arg`)
+				EasyDialogs.Message("IOERROR: %r" % (arg,))
 				return
 		else:
 			path = None

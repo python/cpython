@@ -109,7 +109,7 @@ class TableDBTestCase(unittest.TestCase):
             assert values[1]['Species'] == 'Penguin'
         else :
             if verbose:
-                print "values=", `values`
+                print "values= %r" % (values,)
             raise "Wrong values returned!"
 
     def test03(self):

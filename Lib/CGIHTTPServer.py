@@ -117,21 +117,21 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         scriptname = dir + '/' + script
         scriptfile = self.translate_path(scriptname)
         if not os.path.exists(scriptfile):
-            self.send_error(404, "No such CGI script (%s)" % `scriptname`)
+            self.send_error(404, "No such CGI script (%r)" % scriptname)
             return
         if not os.path.isfile(scriptfile):
-            self.send_error(403, "CGI script is not a plain file (%s)" %
-                            `scriptname`)
+            self.send_error(403, "CGI script is not a plain file (%r)" % 
+                            scriptname)
             return
         ispy = self.is_python(scriptname)
         if not ispy:
             if not (self.have_fork or self.have_popen2 or self.have_popen3):
-                self.send_error(403, "CGI script is not a Python script (%s)" %
-                                `scriptname`)
+                self.send_error(403, "CGI script is not a Python script (%r)" %
+                                scriptname)
                 return
             if not self.is_executable(scriptfile):
-                self.send_error(403, "CGI script is not executable (%s)" %
-                                `scriptname`)
+                self.send_error(403, "CGI script is not executable (%r)" %
+                                scriptname)
                 return
 
         # Reference: http://hoohoo.ncsa.uiuc.edu/cgi/env.html

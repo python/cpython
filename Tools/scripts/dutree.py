@@ -46,7 +46,7 @@ def show(total, d, prefix):
 ##      list.append((total - sum, os.curdir))
     list.sort()
     list.reverse()
-    width = len(`list[0][0]`)
+    width = len(repr(list[0][0]))
     for tsub, key in list:
         if tsub is None:
             psub = prefix

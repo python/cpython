@@ -219,7 +219,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             filename = arg[:colon].rstrip()
             f = self.lookupmodule(filename)
             if not f:
-                print '*** ', `filename`,
+                print '*** ', repr(filename),
                 print 'not found from sys.path'
                 return
             else:
@@ -252,7 +252,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     (ok, filename, ln) = self.lineinfo(arg)
                     if not ok:
                         print '*** The specified object',
-                        print `arg`,
+                        print repr(arg),
                         print 'is not a function'
                         print ('or was not found '
                                'along sys.path.')
@@ -596,7 +596,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if isinstance(t, str):
                 exc_type_name = t
             else: exc_type_name = t.__name__
-            print '***', exc_type_name + ':', `v`
+            print '***', exc_type_name + ':', repr(v)
             raise
 
     def do_p(self, arg):
@@ -627,7 +627,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 else:
                     first = max(1, int(x) - 5)
             except:
-                print '*** Error in argument:', `arg`
+                print '*** Error in argument:', repr(arg)
                 return
         elif self.lineno is None:
             first = max(1, self.curframe.f_lineno - 5)
@@ -644,7 +644,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     print '[EOF]'
                     break
                 else:
-                    s = `lineno`.rjust(3)
+                    s = repr(lineno).rjust(3)
                     if len(s) < 4: s = s + ' '
                     if lineno in breaklist: s = s + 'B'
                     else: s = s + ' '
@@ -665,7 +665,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if type(t) == type(''):
                 exc_type_name = t
             else: exc_type_name = t.__name__
-            print '***', exc_type_name + ':', `v`
+            print '***', exc_type_name + ':', repr(v)
             return
         code = None
         # Is it a function?
@@ -1034,7 +1034,7 @@ if __name__=='__main__':
 
     mainpyfile = filename = sys.argv[1]     # Get script filename
     if not os.path.exists(filename):
-        print 'Error:', `filename`, 'does not exist'
+        print 'Error:', repr(filename), 'does not exist'
         sys.exit(1)
     mainmodule = os.path.basename(filename)
     del sys.argv[0]         # Hide "pdb.py" from argument list
@@ -1042,4 +1042,4 @@ if __name__=='__main__':
     # Insert script directory in front of module search path
     sys.path.insert(0, os.path.dirname(filename))
 
-    run('execfile(' + `filename` + ')')
+    run('execfile(%r)' % (filename,))

@@ -238,7 +238,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
         if len(words) == 3:
             [command, path, version] = words
             if version[:5] != 'HTTP/':
-                self.send_error(400, "Bad request version (%s)" % `version`)
+                self.send_error(400, "Bad request version (%r)" % version)
                 return False
             try:
                 base_version_number = version.split('/', 1)[1]
@@ -253,7 +253,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
                     raise ValueError
                 version_number = int(version_number[0]), int(version_number[1])
             except (ValueError, IndexError):
-                self.send_error(400, "Bad request version (%s)" % `version`)
+                self.send_error(400, "Bad request version (%r)" % version)
                 return False
             if version_number >= (1, 1) and self.protocol_version >= "HTTP/1.1":
                 self.close_connection = 0
@@ -266,12 +266,12 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
             self.close_connection = 1
             if command != 'GET':
                 self.send_error(400,
-                                "Bad HTTP/0.9 request type (%s)" % `command`)
+                                "Bad HTTP/0.9 request type (%r)" % command)
                 return False
         elif not words:
             return False
         else:
-            self.send_error(400, "Bad request syntax (%s)" % `requestline`)
+            self.send_error(400, "Bad request syntax (%r)" % requestline)
             return False
         self.command, self.path, self.request_version = command, path, version
 
@@ -302,7 +302,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
             return
         mname = 'do_' + self.command
         if not hasattr(self, mname):
-            self.send_error(501, "Unsupported method (%s)" % `self.command`)
+            self.send_error(501, "Unsupported method (%r)" % self.command)
             return
         method = getattr(self, mname)
         method()

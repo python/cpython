@@ -18,7 +18,7 @@ class SyntaxTestCase(unittest.TestCase):
         except SyntaxError, err:
             mo = re.search(errtext, str(err))
             if mo is None:
-                self.fail("SyntaxError did not contain '%s'" % `errtext`)
+                self.fail("SyntaxError did not contain '%r'" % (errtext,))
         else:
             self.fail("compile() did not raise SyntaxError")
 

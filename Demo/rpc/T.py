@@ -18,5 +18,5 @@ def TSTOP(*label):
 	[u, s, r] = tt
 	msg = ''
 	for x in label: msg = msg + (x + ' ')
-	msg = msg + `u` + ' user, ' + `s` + ' sys, ' + `r` + ' real\n'
+	msg = msg + '%r user, %r sys, %r real\n' % (u, s, r)
 	sys.stderr.write(msg)
