@@ -57,12 +57,13 @@ It is possible to build a non-GUSI Python, see below.
 <A NAME="optional">The MacPython project files are configured to
 include a plethora of optional modules</A>, and these modules need a
 number extra packages. To use the project files as-is you have to
-download these packages too. PPC Python has all such modules as
+download these packages too. PPC and CFM68K Python have all such modules as
 dynamically loaded modules, so if you don't need a certain package it
-suffices to just refrain from builing the extension module. For 68K
+suffices to just refrain from builing the extension module. For static 68K
 Python things are a bit more complicated: you have to edit the
 interpreter project file to remove the reference to the module (and
-the libraries it uses).  Here are the locations for the various things
+the libraries it uses), and edit the <code>Mac:mwerks:mwerks_nonshared_config.h</code>
+file to remove the <code>USE_...</code> line.  Here are the locations for the various things
 you need:
 
 <UL>
@@ -120,11 +121,12 @@ Top-level-folder:
 </PRE>
 
 Now build all the libraries. In <code>CWGUSI</code> you build the
-projects <code>GUSI.68K.µ</code> and <code>GUSI.PPC.µ</code>, in
+projects <code>GUSI.68K.µ</code>, <code>GUSI.CFM68K.µ</code>
+and <code>GUSI.PPC.µ</code>, in
 <code>MoreFiles</code>, <code>libjpeg</code>, <code>pbmplus</code>
 and<code>libtiff</code> you build all projects. Tcl/tk is a special
-case, see below. Of course, if you are only interested in 68K you can
-skip building the PPC libraries and vice versa.
+case, see below. Of course, if you are only interested in one of
+static 68K, CFM68K or PPC you can skip building the other libraries.
 
 <H2><A NAME="tcltk">Building Tcl/Tk</H2>
 
@@ -159,6 +161,12 @@ As distributed, tcl and tk assume that malloc calls always succeed and
 use the resulting pointer without checking for <code>NULL</code>
 values. Needless to say, this wreaks havoc on a Macintosh.
 
+<LI> If you want to build for CFM68K you have to modify <code>TclMacNotify.c</code>
+because there is an error in the Apple Universal headers (sic!). Read the
+comments at the beginning of <code>Mac:Python:macglue.c</code> and copy the
+code to <code>TclMacNotify.c</code>. If you get linker errors on <code>GetEvQHdr</code>
+you have not done this correctly.
+
 </UL>
 
 Build first the MoreFiles library, then the Tcl library, then
@@ -187,11 +195,15 @@ folders:
 
 <DL>
 <DT> build.mac68k.stand
-<DD> This is where you will build 68K interpreters.
+<DD> This is where you will build static 68K interpreters.
+
+<DT> build.mac68k.shared
+<DD> This is where you build the CFM68K shared library, interpreter
+and applet framework.
 
 <DT> build.macppc.shared
 <DD> This is where you build the PPC shared library, interpreter and
-applet framework.
+applet framework. You can also build the fat applet framework here.
 
 <DT> build.macppc.stand
 <DD> This is where you build a nonshared PPC interpreter (optional).
@@ -225,7 +237,7 @@ not really optional: the interpreter will not function without them.
 <DD> The Python parser (machine-independent).
 
 <DT> PlugIns
-<DD> This is where you build the PPC dynamically-loaded plugin modules.
+<DD> This is where you build the PPC and CFM68K dynamically-loaded plugin modules.
 
 <DT> Python
 <DD> The core interpreter. Most files are machine-independent, some
@@ -318,6 +330,12 @@ distribution. Read the release notes
 (<code>Relnotes-somethingorother</code>) and
 <code>ReadMeOrSuffer</code> in the <code>Mac</code> folder.
 
+<H2>Building the CFM68K interpreter</H2>
+
+Building the CFM68K interpreter is as almost exactly the same as building
+the PPC interpreter, with the exception that you should read "CFM68K"
+for "PPC" every time. Continue reading with the next section.
+
 <H2>Building the PPC interpreter</H2>
 
 First you build the interpreter, core library and applet skeleton in
@@ -325,12 +343,12 @@ folder <code>build.macppc.stand</code>.  The order to build things is
 the following:
 
 <DL>
-<DT> PythonCoreRuntime
+<DT> MWRuntimeStaticLib
 <DD> A modified version of the MetroWerks runtime library that is
 suitable for Pythons' shared library architecture. The sources all
 come from the MW distribution.
 
-<DT> PythonCore
+<DT> PythonCorePPC
 <DD> The shared library that contains the bulk of the interpreter and
 its resources. It is a good idea to immedeately put an alias to this
 shared library in the <code>Extensions</code> folder of your system
@@ -366,11 +384,12 @@ cause the correct file to be used if you ever rebuild
 PythonApplet). <p>
 
 Next, you have to build the extension modules in the
-<code>PlugIns</code> folder. Open each project and build it. After all
+<code>PlugIns</code> folder. Open each project with <code>.ppc</code> in the
+name and build it. After all
 the dynamically loaded modules are built you have to create a number
 of aliases: some modules live together in a single dynamic
-library. Copy or move the <code>MkPluginAliases.py</code> script from
-<code>Mac:scripts</code> to the main python folder and run it. <p>
+library. Run the <code>MkPluginAliases.py</code> script from
+<code>Mac:scripts</code> to create the aliases. <p>
 
 Finally, you must build the standard applets:
 <code>EditPythonPrefs</code>, <code>mkapplet</code>, etc. This is
@@ -391,6 +410,24 @@ this use only.
 You are all set now, and should read the release notes and
 <code>ReadMeOrSuffer</code> file from the <code>Mac</code> folder.
 
+<H2>Rebuilding <code>.exp</code> files for PPC and CFM68K</H2>
+
+Occasionally it may be necessary to rebuild your PythonCore <code>.exp</code>
+file, a file that controls which symbols are exported by your PythonCore
+shared library. Rebuild it if you get unexpected undefined symbols when you
+are building a plugin module. <p>
+
+Rebuilding the .exp file is done by first removing the file and removing the
+reference to it in the project (in the "config" section). Next, build PythonCore.
+This will create a new .exp file. Edit this file to remove the references to
+the symbols <code>__initialize</code>, <code>__terminate</code>, <code>setjmp</code>,
+<code>longjmp</code> and <code>__ptmf_null</code>. Next, add the .exp file to the project
+again and rebuild PythonCore. <p>
+
+This rather convoluted procedure is needed to ensure that plugin modules don't
+accidentally link with those entrypoints from PythonCore, which will not work because
+those routines have to be in the same code fragment as they are used from.
+
 <H2>Odds and ends</H2>
 
 Some remarks that I could not fit in elsewhere:
@@ -408,7 +445,22 @@ complete Python. Take the binary distribution, add folders
 <code>Include</code>, <code>Mac:Include</code> and
 <code>Mac:mwerks</code> from the source distribution and you should be
 all set. A template for a dynamic module can be found in
-<code>xxmodule.µ</code>.
+<code>xx.ppc.µ</code> or <code>xx.CFM68K.µ</code>.
+
+<LI> The Python shared library architecture is a variant of the architecture
+described as "application with shared libraries and dropins" in the MetroWerks
+"Targeting MacOS" documentation. The Python Application and applet-template use
+the <code>AppRuntime.Lib</code> runtime library (with properly set CFM
+initialization and termination routines). PythonCore uses <code>ShlibRuntime.Lib</code>
+and <code>MWRuntimeStaticLib.Lib</code>, which is almost identical to the MW
+standard <code>MWRuntimeLib</code>, but not dynamically loaded. This library contains
+the part of the runtime that can (or must) be shared between all modules in the program.
+It is linked statically into PythonCore (and exported to the applications and plugins)
+so we do not have to distribute yet another shared library. Plugin modules use
+<code>ShlibRuntime.Lib</code> and obtain the rest from PythonCore. PythonCore uses a
+non-standard initialization entry point, <code>__initialize_with_resources</code>, to
+be able to obtain resources from the library file lateron. Plugins can do the same or
+use the standard <code>__initialize</code> entry point.
 
 
 <UL>
