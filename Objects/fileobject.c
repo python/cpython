@@ -1297,18 +1297,49 @@ file_setattr(PyFileObject *f, char *name, PyObject *v)
 	return PyMember_Set((char *)f, file_memberlist, name, v);
 }
 
+static PyObject *
+file_getiter(PyFileObject *f)
+{
+	static PyObject *es;
+	PyObject *iter;
+	PyObject *rl = Py_FindMethod(file_methods, (PyObject *)f, "readline");
+	if (rl == NULL)
+		return NULL;
+	if (es == NULL)
+		es = PyString_FromString("");
+	iter = PyCallIter_New(rl, es);
+	Py_DECREF(rl);
+	return iter;
+}
+
 PyTypeObject PyFile_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"file",
 	sizeof(PyFileObject),
 	0,
-	(destructor)file_dealloc, /*tp_dealloc*/
-	0,		/*tp_print*/
-	(getattrfunc)file_getattr, /*tp_getattr*/
-	(setattrfunc)file_setattr, /*tp_setattr*/
-	0,		/*tp_compare*/
-	(reprfunc)file_repr, /*tp_repr*/
+	(destructor)file_dealloc,		/* tp_dealloc */
+	0,					/* tp_print */
+	(getattrfunc)file_getattr,		/* tp_getattr */
+	(setattrfunc)file_setattr,		/* tp_setattr */
+	0,					/* tp_compare */
+	(reprfunc)file_repr,			/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	0,					/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+ 	0,					/* tp_doc */
+ 	0,					/* tp_traverse */
+ 	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	(getiterfunc)file_getiter,		/* tp_iter */
 };
 
 /* Interface for the 'soft space' between print items. */
@@ -1477,6 +1508,3 @@ int PyObject_AsFileDescriptor(PyObject *o)
 	}
 	return fd;
 }
-
-
-
