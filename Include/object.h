@@ -264,7 +264,7 @@ extern DL_IMPORT(PyTypeObject) PyType_Type; /* The type of type objects */
 
 /* Generic operations on objects */
 extern DL_IMPORT(int) PyObject_Print(PyObject *, FILE *, int);
-extern DL_IMPORT(void) PyObject_Dump(PyObject *);
+extern DL_IMPORT(void) _PyObject_Dump(PyObject *);
 extern DL_IMPORT(PyObject *) PyObject_Repr(PyObject *);
 extern DL_IMPORT(PyObject *) PyObject_Str(PyObject *);
 extern DL_IMPORT(PyObject *) PyObject_Unicode(PyObject *);
