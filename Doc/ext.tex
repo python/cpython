@@ -196,7 +196,7 @@ or \code{NULL} if no exception has occurred.  You normally don't need
 to call \code{PyErr_Occurred()} to see whether an error occurred in a
 function call, since you should be able to tell from the return value.
 
-When a function \var{f} that calls another function var{g} detects
+When a function \var{f} that calls another function \var{g} detects
 that the latter fails, \var{f} should itself return an error value
 (e.g. \code{NULL} or \code{-1}).  It should \emph{not} call one of the
 \code{PyErr_*()} functions --- one has already been called by \var{g}.
@@ -305,7 +305,7 @@ passing it the string we just got from \code{PyArg_ParseTuple()}:
         sts = system(command);
 \end{verbatim}
 
-Our \code{spam.system()} function must return the value of \code{sys}
+Our \code{spam.system()} function must return the value of \code{sts}
 as a Python object.  This is done using the function
 \code{Py_BuildValue()}, which is something like the inverse of
 \code{PyArg_ParseTuple()}: it takes a format string and an arbitrary
