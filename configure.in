@@ -1294,6 +1294,14 @@ cat >> confdefs.h <<\EOF
 EOF
 AC_CHECK_TYPE(socklen_t, int)
 
+AC_MSG_CHECKING(for Modules/Setup)
+if test ! -f Modules/Setup ; then
+    cp "$srcdir/Modules/Setup.dist" Modules/Setup
+    AC_MSG_RESULT(creating)
+else
+    AC_MSG_RESULT(already exists)
+fi
+
 # generate output files
 AC_OUTPUT(Makefile \
  Objects/Makefile \
