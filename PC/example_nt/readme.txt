@@ -1,3 +1,7 @@
+*** WARNING -- THIS DIRECTORY IS OUT OF DATE.
+*** It has not been updated since Python 1.4beta3.
+
+
 Example Python extension for Windows NT
 =======================================
 
