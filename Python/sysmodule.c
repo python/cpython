@@ -260,6 +260,8 @@ profile_trampoline(PyObject *self, PyFrameObject *frame,
 	PyThreadState *tstate = frame->f_tstate;
 	PyObject *result;
 
+	if (arg == NULL)
+		arg = Py_None;
 	result = call_trampoline(tstate, self, frame, what, arg);
 	if (result == NULL) {
 		PyEval_SetProfile(NULL, NULL);

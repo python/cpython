@@ -2198,14 +2198,9 @@ eval_frame(PyFrameObject *f)
 				f->f_lasti -= 2;
 			PyTraceBack_Here(f);
 
-			if (tstate->use_tracing) {
-				if (tstate->c_tracefunc)
-					call_exc_trace(tstate->c_tracefunc,
-						       tstate->c_traceobj, f);
-				if (tstate->c_profilefunc)
-					call_exc_trace(tstate->c_profilefunc,
-						       tstate->c_profileobj,f);
-			}
+			if (tstate->c_tracefunc != NULL)
+				call_exc_trace(tstate->c_tracefunc,
+					       tstate->c_traceobj, f);
 		}
 
 		/* For the rest, treat WHY_RERAISE as WHY_EXCEPTION */
@@ -2301,8 +2296,7 @@ eval_frame(PyFrameObject *f)
 				why = WHY_EXCEPTION;
 			}
 		}
-		if (tstate->c_profilefunc
-		    && (why == WHY_RETURN || why == WHY_YIELD)) {
+		if (tstate->c_profilefunc) {
 			if (call_trace(tstate->c_profilefunc,
 				       tstate->c_profileobj, f,
 				       PyTrace_RETURN, retval)) {
