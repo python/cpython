@@ -984,13 +984,24 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 	return fdp;
 }
 
-/* case_ok(buf, len, namelen, name)
- * We've already done a successful stat() or fopen() on buf (a path of length
- * len, exclusive of trailing null).  name is the last component of that path
- * (a string of length namelen, exclusive of trailing null).
+/* case_ok(char* buf, int len, int namelen, char* name)
+ * The arguments here are tricky, best shown by example:
+ *    /a/b/c/d/e/f/g/h/i/j/k/some_long_module_name.py\0
+ *    ^                      ^                   ^    ^
+ *    |--------------------- buf ---------------------|
+ *    |------------------- len ------------------|
+ *                           |------ name -------|
+ *                           |----- namelen -----|
+ * buf is the full path, but len only counts up to (& exclusive of) the
+ * extension.  name is the module name, also exclusive of extension.
+ *
+ * We've already done a successful stat() or fopen() on buf, so know that
+ * there's some match, possibly case-insensitive.
+ *
  * case_ok() is to return 1 if there's a case-sensitive match for
  * name, else 0.  case_ok() is also to return 1 if envar PYTHONCASEOK
  * exists.
+ *
  * case_ok() is used to implement case-sensitive import semantics even
  * on platforms with case-insensitive filesystems.  It's trivial to implement
  * for case-sensitive filesystems.  It's pretty much a cross-platform
@@ -1015,7 +1026,7 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 #include "TFileSpec.h"		/* for Path2FSSpec() */
 #endif
 
-#elif defined(__MACH__) && defined(__APPLE__)
+#elif defined(__MACH__) && defined(__APPLE__) && defined(HAVE_DIRENT_H)
 #include <sys/types.h>
 #include <dirent.h>
 
@@ -1107,28 +1118,35 @@ case_ok(char *buf, int len, int namelen, char *name)
 	return fss.name[0] >= namelen &&
 	       strncmp(name, (char *)fss.name+1, namelen) == 0;
 
-/* new-fangled macintosh */
-#elif defined(__MACH__) && defined(__APPLE__)
+/* new-fangled macintosh (macosx)
+ *
+ * XXX This seems prone to obscure errors, like suppose someone does
+ * XXX "import xyz", and in some directory there's both "XYZ.py" and
+ * XXX "xyz.txt".  fopen("xyz.py") will open XYZ.py, but when marching thru
+ * XXX the directory we'll eventually "succeed" on "xyz.txt" because the
+ * XXX extension is never checked.
+ */
+#elif defined(__MACH__) && defined(__APPLE__) && defined(HAVE_DIRENT_H)
 	DIR *dirp;
 	struct dirent *dp;
-	char pathname[MAXPATHLEN + 1];
-	const int pathlen = len - namelen - 1; /* don't want trailing SEP */
+	char dirname[MAXPATHLEN + 1];
+	const int dirlen = len - namelen - 1; /* don't want trailing SEP */
 
 	if (getenv("PYTHONCASEOK") != NULL)
 		return 1;
 
-	/* Copy the path component into pathname; substitute "." if empty */
-	if (pathlen <= 0) {
-		pathname[0] = '.';
-		pathname[1] = '\0';
+	/* Copy the dir component into dirname; substitute "." if empty */
+	if (dirlen <= 0) {
+		dirname[0] = '.';
+		dirname[1] = '\0';
 	}
 	else {
-		assert(pathlen <= MAXPATHLEN);
-		memcpy(pathname, buf, pathlen);
-		pathname[pathlen] = '\0';
+		assert(dirlen <= MAXPATHLEN);
+		memcpy(dirname, buf, dirlen);
+		dirname[dirlen] = '\0';
 	}
 	/* Open the directory and search the entries for an exact match. */
-	dirp = opendir(pathname);
+	dirp = opendir(dirname);
 	if (dirp) {
 		while ((dp = readdir(dirp)) != NULL) {
 			const int thislen =
@@ -1137,7 +1155,8 @@ case_ok(char *buf, int len, int namelen, char *name)
 #else
 						strlen(dp->d_name);
 #endif
-			if (thislen == namelen && !strcmp(dp->d_name, name)) {
+			if (thislen >= namelen &&
+			    strncmp(dp->d_name, name, namelen) == 0) {
 				(void)closedir(dirp);
 				return 1; /* Found */
 			}
