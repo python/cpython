@@ -84,7 +84,7 @@ pwd_getpwuid(PyObject *self, PyObject *args)
 {
 	int uid;
 	struct passwd *p;
-	if (!PyArg_Parse(args, "i", &uid))
+	if (!PyArg_ParseTuple(args, "i:getpwuid", &uid))
 		return NULL;
 	if ((p = getpwuid(uid)) == NULL) {
 		PyErr_SetString(PyExc_KeyError, "getpwuid(): uid not found");
@@ -103,7 +103,7 @@ pwd_getpwnam(PyObject *self, PyObject *args)
 {
 	char *name;
 	struct passwd *p;
-	if (!PyArg_Parse(args, "s", &name))
+	if (!PyArg_ParseTuple(args, "s:getpwnam", &name))
 		return NULL;
 	if ((p = getpwnam(name)) == NULL) {
 		PyErr_SetString(PyExc_KeyError, "getpwnam(): name not found");
@@ -146,8 +146,8 @@ pwd_getpwall(PyObject *self)
 #endif
 
 static PyMethodDef pwd_methods[] = {
-	{"getpwuid",	pwd_getpwuid, METH_OLDARGS, pwd_getpwuid__doc__},
-	{"getpwnam",	pwd_getpwnam, METH_OLDARGS, pwd_getpwnam__doc__},
+	{"getpwuid",	pwd_getpwuid, METH_VARARGS, pwd_getpwuid__doc__},
+	{"getpwnam",	pwd_getpwnam, METH_VARARGS, pwd_getpwnam__doc__},
 #ifdef HAVE_GETPWENT
 	{"getpwall",	(PyCFunction)pwd_getpwall,
 		METH_NOARGS,  pwd_getpwall__doc__},

@@ -120,7 +120,7 @@ nis_match (PyObject *self, PyObject *args)
 	PyObject *res;
 	int fix;
 
-	if (!PyArg_Parse(args, "(t#s)", &key, &keylen, &map))
+	if (!PyArg_ParseTuple(args, "t#s:match", &key, &keylen, &map))
 		return NULL;
 	if ((err = yp_get_default_domain(&domain)) != 0)
 		return nis_error(err);
@@ -149,7 +149,7 @@ nis_cat (PyObject *self, PyObject *args)
 	PyObject *dict;
 	int err;
 
-	if (!PyArg_Parse(args, "s", &map))
+	if (!PyArg_ParseTuple(args, "s:cat", &map))
 		return NULL;
 	if ((err = yp_get_default_domain(&domain)) != 0)
 		return nis_error(err);
@@ -338,13 +338,11 @@ nis_maplist (void)
 }
 
 static PyObject *
-nis_maps (PyObject *self, PyObject *args)
+nis_maps (PyObject *self)
 {
 	nismaplist *maps;
 	PyObject *list;
 
-        if (!PyArg_NoArgs(args))
-		return NULL;
 	if ((maps = nis_maplist ()) == NULL)
 		return NULL;
 	if ((list = PyList_New(0)) == NULL)
@@ -364,9 +362,9 @@ nis_maps (PyObject *self, PyObject *args)
 }
 
 static PyMethodDef nis_methods[] = {
-	{"match",	nis_match, METH_OLDARGS},
-	{"cat",		nis_cat, METH_OLDARGS},
-	{"maps",	nis_maps, METH_OLDARGS},
+	{"match",	nis_match, METH_VARARGS},
+	{"cat",		nis_cat, METH_VARARGS},
+	{"maps",	(PyCFunction)nis_maps, METH_NOARGS},
 	{NULL,		NULL}		 /* Sentinel */
 };
 

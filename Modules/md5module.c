@@ -52,7 +52,7 @@ md5_update(md5object *self, PyObject *args)
 	unsigned char *cp;
 	int len;
 
-	if (!PyArg_Parse(args, "s#", &cp, &len))
+	if (!PyArg_ParseTuple(args, "s#:update", &cp, &len))
 		return NULL;
 
 	MD5Update(&self->md5, cp, len);
@@ -142,7 +142,7 @@ Return a copy (``clone'') of the md5 object.";
 
 
 static PyMethodDef md5_methods[] = {
-	{"update",    (PyCFunction)md5_update,    METH_OLDARGS, update_doc},
+	{"update",    (PyCFunction)md5_update,    METH_VARARGS, update_doc},
 	{"digest",    (PyCFunction)md5_digest,    METH_NOARGS,  digest_doc},
 	{"hexdigest", (PyCFunction)md5_hexdigest, METH_NOARGS,  hexdigest_doc},
 	{"copy",      (PyCFunction)md5_copy,      METH_NOARGS,  copy_doc},

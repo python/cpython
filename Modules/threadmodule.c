@@ -54,14 +54,10 @@ lock_dealloc(lockobject *self)
 static PyObject *
 lock_PyThread_acquire_lock(lockobject *self, PyObject *args)
 {
-	int i;
+	int i = 1;
 
-	if (args != NULL) {
-		if (!PyArg_Parse(args, "i", &i))
-			return NULL;
-	}
-	else
-		i = 1;
+	if (!PyArg_ParseTuple(args, "|i:acquire", &i))
+		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
 	i = PyThread_acquire_lock(self->lock_lock, i);
@@ -127,9 +123,9 @@ Return whether the lock is in the locked state.";
 
 static PyMethodDef lock_methods[] = {
 	{"acquire_lock", (PyCFunction)lock_PyThread_acquire_lock, 
-	 METH_OLDARGS, acquire_doc},
+	 METH_VARARGS, acquire_doc},
 	{"acquire",      (PyCFunction)lock_PyThread_acquire_lock, 
-	 METH_OLDARGS, acquire_doc},
+	 METH_VARARGS, acquire_doc},
 	{"release_lock", (PyCFunction)lock_PyThread_release_lock, 
 	 METH_NOARGS, release_doc},
 	{"release",      (PyCFunction)lock_PyThread_release_lock, 
@@ -279,7 +275,7 @@ static PyObject *
 thread_PyThread_exit_prog(PyObject *self, PyObject *args)
 {
 	int sts;
-	if (!PyArg_Parse(args, "i", &sts))
+	if (!PyArg_ParseTuple(args, "i:exit_prog", &sts))
 		return NULL;
 	Py_Exit(sts); /* Calls PyThread_exit_prog(sts) or _PyThread_exit_prog(sts) */
 	for (;;) { } /* Should not be reached */
@@ -339,7 +335,8 @@ static PyMethodDef thread_methods[] = {
 	{"get_ident",		(PyCFunction)thread_get_ident, 
 	 METH_NOARGS, get_ident_doc},
 #ifndef NO_EXIT_PROG
-	{"exit_prog",		(PyCFunction)thread_PyThread_exit_prog},
+	{"exit_prog",		(PyCFunction)thread_PyThread_exit_prog,
+	 METH_VARARGS},
 #endif
 	{NULL,			NULL}		/* sentinel */
 };

@@ -14,7 +14,7 @@ static PyObject *crypt_crypt(PyObject *self, PyObject *args)
 	char *word, *salt; 
 	extern char * crypt(const char *, const char *);
 
-	if (!PyArg_Parse(args, "(ss)", &word, &salt)) {
+	if (!PyArg_ParseTuple(args, "ss:crypt", &word, &salt)) {
 		return NULL;
 	}
 	return PyString_FromString( crypt( word, salt ) );
@@ -31,7 +31,7 @@ the same alphabet as the salt.";
 
 
 static PyMethodDef crypt_methods[] = {
-	{"crypt",	crypt_crypt, METH_OLDARGS, crypt_crypt__doc__},
+	{"crypt",	crypt_crypt, METH_VARARGS, crypt_crypt__doc__},
 	{NULL,		NULL}		/* sentinel */
 };
 
