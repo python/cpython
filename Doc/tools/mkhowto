@@ -276,25 +276,29 @@ class Job:
 
     def use_latex(self, binary):
         self.require_temps(binary=binary)
-        if os.path.isfile("mod%s.idx" % self.doc):
-            self.run("%s mod%s.idx" % (MAKEINDEX_BINARY, self.doc))
-        if os.path.isfile(self.doc + ".idx"):
-            # call to Doc/tools/fix_hack omitted; doesn't appear necessary
-            self.run("%s %s.idx" % (MAKEINDEX_BINARY, self.doc))
-            import indfix
-            indfix.process(self.doc + ".ind")
-        if self.use_bibtex:
-            self.run("%s %s" % (BIBTEX_BINARY, self.doc))
-        self.process_synopsis_files()
-        #
-        # let the doctype-specific handler do some intermediate work:
-        #
-        if self.doctype == "manual":
-            self.use_latex_manual(binary=binary)
-        elif self.doctype == "howto":
-            self.use_latex_howto(binary=binary)
-        else:
-            raise RuntimeError, "unsupported document type: " + self.doctype
+        if self.latex_runs < 2:
+            if os.path.isfile("mod%s.idx" % self.doc):
+                self.run("%s mod%s.idx" % (MAKEINDEX_BINARY, self.doc))
+            if os.path.isfile(self.doc + ".idx"):
+                # call to Doc/tools/fix_hack omitted; doesn't appear necessary
+                self.run("%s %s.idx" % (MAKEINDEX_BINARY, self.doc))
+                import indfix
+                indfix.process(self.doc + ".ind")
+            if self.use_bibtex:
+                self.run("%s %s" % (BIBTEX_BINARY, self.doc))
+            self.process_synopsis_files()
+            #
+            # let the doctype-specific handler do some intermediate work:
+            #
+            self.run("%s %s" % (binary, self.doc))
+            self.latex_runs += 1
+            if os.path.isfile("mod%s.idx" % self.doc):
+                self.run("%s -s %s mod%s.idx"
+                         % (MAKEINDEX_BINARY, ISTFILE, self.doc))
+            if os.path.isfile(self.doc + ".idx"):
+                self.run("%s -s %s %s.idx"
+                         % (MAKEINDEX_BINARY, ISTFILE, self.doc))
+            self.process_synopsis_files()
         #
         # and now finish it off:
         #
@@ -308,18 +312,7 @@ class Job:
         if self.use_bibtex:
             self.run("%s %s" % (BIBTEX_BINARY, self.doc))
         self.run("%s %s" % (binary, self.doc))
-
-    def use_latex_howto(self, binary):
-        self.run("%s %s" % (binary, self.doc))
-        if os.path.isfile("mod%s.idx" % self.doc):
-            self.run("%s -s %s mod%s.idx"
-                     % (MAKEINDEX_BINARY, ISTFILE, self.doc))
-        if os.path.isfile(self.doc + ".idx"):
-            self.run("%s -s %s %s.idx" % (MAKEINDEX_BINARY, ISTFILE, self.doc))
-        self.process_synopsis_files()
-
-    def use_latex_manual(self, binary):
-        self.use_latex_howto(binary)
+        self.latex_runs += 1
 
     def process_synopsis_files(self):
         synopsis_files = glob.glob(self.doc + "*.syn")
