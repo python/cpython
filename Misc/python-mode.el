@@ -658,12 +658,31 @@ py-scroll-process-buffer\t\talways scroll Python process buffer
 py-temp-directory\t\tdirectory used for temp files (if needed)
 py-beep-if-tab-change\t\tring the bell if tab-width is changed"
   (interactive)
+  ;; set up local variables
   (kill-all-local-variables)
+  (make-local-variable 'font-lock-defaults)
+  (make-local-variable 'paragraph-separate)
+  (make-local-variable 'paragraph-start)
+  (make-local-variable 'require-final-newline)
+  (make-local-variable 'comment-start)
+  (make-local-variable 'comment-start-skip)
+  (make-local-variable 'comment-column)
+  (make-local-variable 'indent-region-function)
+  (make-local-variable 'indent-line-function)
+  ;;
   (set-syntax-table py-mode-syntax-table)
-  (setq major-mode 'python-mode
-	mode-name "Python"
-	local-abbrev-table python-mode-abbrev-table
-	font-lock-defaults '(python-font-lock-keywords)
+  (setq major-mode             'python-mode
+	mode-name              "Python"
+	local-abbrev-table     python-mode-abbrev-table
+	font-lock-defaults     '(python-font-lock-keywords)
+	paragraph-separate     "^[ \t]*$"
+	paragraph-start        "^[ \t]*$"
+	require-final-newline  t
+	comment-start          "# "
+	comment-start-skip     "# *"
+	comment-column         40
+	indent-region-function py-indent-region
+	indent-line-function   py-indent-line
 	)
   (use-local-map py-mode-map)
   ;; add the menu
@@ -672,18 +691,6 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
   ;; Emacs 19 requires this
   (if (or py-this-is-lucid-emacs-p py-this-is-emacs-19-p)
       (setq comment-multi-line nil))
-  ;; BAW -- style...
-  (mapcar (function (lambda (x)
-		      (make-local-variable (car x))
-		      (set (car x) (cdr x))))
-	  '((paragraph-separate . "^[ \t]*$")
-	    (paragraph-start	 . "^[ \t]*$")
-	    (require-final-newline . t)
-	    (comment-start .		"# ")
-	    (comment-start-skip .	"# *")
-	    (comment-column . 40)
-	    (indent-region-function . py-indent-region)
-	    (indent-line-function . py-indent-line)))
   ;; hack to allow overriding the tabsize in the file (see tokenizer.c)
   ;;
   ;; not sure where the magic comment has to be; to save time
