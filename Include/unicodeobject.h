@@ -174,6 +174,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_Format PyUnicodeUCS2_Format
 # define PyUnicode_FromEncodedObject PyUnicodeUCS2_FromEncodedObject
 # define PyUnicode_FromObject PyUnicodeUCS2_FromObject
+# define PyUnicode_FromOrdinal PyUnicodeUCS2_FromOrdinal
 # define PyUnicode_FromUnicode PyUnicodeUCS2_FromUnicode
 # define PyUnicode_FromWideChar PyUnicodeUCS2_FromWideChar
 # define PyUnicode_GetDefaultEncoding PyUnicodeUCS2_GetDefaultEncoding
@@ -244,6 +245,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_Format PyUnicodeUCS4_Format
 # define PyUnicode_FromEncodedObject PyUnicodeUCS4_FromEncodedObject
 # define PyUnicode_FromObject PyUnicodeUCS4_FromObject
+# define PyUnicode_FromOrdinal PyUnicodeUCS4_FromOrdinal
 # define PyUnicode_FromUnicode PyUnicodeUCS4_FromUnicode
 # define PyUnicode_FromWideChar PyUnicodeUCS4_FromWideChar
 # define PyUnicode_GetDefaultEncoding PyUnicodeUCS4_GetDefaultEncoding
@@ -527,7 +529,7 @@ PyAPI_FUNC(int) PyUnicode_AsWideChar(
 
 */
 
-extern DL_IMPORT(PyObject*) PyUnicode_FromOrdinal(int ordinal);
+PyAPI_FUNC(PyObject*) PyUnicode_FromOrdinal(int ordinal);
 
 /* === Builtin Codecs ===================================================== 
 
