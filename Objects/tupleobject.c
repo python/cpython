@@ -408,13 +408,13 @@ resizetuple(pv, newsize, last_is_sticky)
 	int sizediff;
 
 	v = (tupleobject *) *pv;
-	sizediff = newsize - v->ob_size;
-	if (!is_tupleobject(v) || v->ob_refcnt != 1) {
+	if (v == NULL || !is_tupleobject(v) || v->ob_refcnt != 1) {
 		*pv = 0;
 		DECREF(v);
 		err_badcall();
 		return -1;
 	}
+	sizediff = newsize - v->ob_size;
 	if (sizediff == 0)
 		return 0;
 	/* XXX UNREF/NEWREF interface should be more symmetrical */
