@@ -749,7 +749,7 @@ static void
 newdatatype_dealloc(newdatatypeobject * obj)
 {
     free(obj->obj_UnderlyingDatatypePtr);
-    obj->ob_type->tp_free(self);
+    obj->ob_type->tp_free(obj);
 }
 \end{verbatim}
 
