@@ -174,6 +174,16 @@ An \class{IMAP4} instance has the following methods:
   The method is non-standard, but is supported by the \samp{Cyrus} server.
 \end{methoddesc}
 
+\begin{methoddesc}{getquota}{root}
+  Get the \samp{quota} \var{root}'s resource usage and limits.
+  This method is part of the IMAP4 QUOTA extension defined in rfc2087.
+\end{methoddesc}
+
+\begin{methoddesc}{getquotaroot}{mailbox}
+  Get the list of \samp{quota} \samp{roots} for the named \var{mailbox}.
+  This method is part of the IMAP4 QUOTA extension defined in rfc2087.
+\end{methoddesc}
+
 \begin{methoddesc}{list}{\optional{directory\optional{, pattern}}}
   List mailbox names in \var{directory} matching
   \var{pattern}.  \var{directory} defaults to the top-level mail
@@ -204,7 +214,7 @@ An \class{IMAP4} instance has the following methods:
 \begin{methoddesc}{open}{host, port}
   Opens socket to \var{port} at \var{host}.
   The connection objects established by this method
-  will be used in the \code{read}, \code{readline}, and \code{shutdown} methods.
+  will be used in the \code{read}, \code{readline}, \code{send}, and \code{shutdown} methods.
   You may override this method.
 \end{methoddesc}
 
@@ -263,9 +273,19 @@ msgnums = M.search(None, '(FROM "LDJ")')
   to the mailbox are not allowed.
 \end{methoddesc}
 
+\begin{methoddesc}{send}{data}
+  Sends \code{data} to the remote server.
+  You may override this method.
+\end{methoddesc}
+
 \begin{methoddesc}{setacl}{mailbox, who, what}
   Set an \samp{ACL} for \var{mailbox}.
   The method is non-standard, but is supported by the \samp{Cyrus} server.
+\end{methoddesc}
+
+\begin{methoddesc}{setquota}{root, limits}
+  Set the \samp{quota} \var{root}'s resource \var{limits}.
+  This method is part of the IMAP4 QUOTA extension defined in rfc2087.
 \end{methoddesc}
 
 \begin{methoddesc}{shutdown}{}
