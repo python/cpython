@@ -16,12 +16,12 @@
 # number of reference counts it current has and the hex address the
 # object is allocated at.  The argument must be a PyObject*
 define pyo
-print PyObject_Dump($arg0)
+print _PyObject_Dump($arg0)
 end
 
 # Prints a representation of the object to stderr, along with the
 # number of reference counts it current has and the hex address the
 # object is allocated at.  The argument must be a PyGC_Head*
 define pyg
-print PyGC_Dump($arg0)
+print _PyGC_Dump($arg0)
 end

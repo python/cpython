@@ -221,7 +221,7 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
 }
 
 /* For debugging convenience.  See Misc/gdbinit for some useful gdb hooks */
-void PyObject_Dump(PyObject* op) 
+void _PyObject_Dump(PyObject* op) 
 {
 	(void)PyObject_Print(op, stderr, 0);
 	fprintf(stderr, "\nrefcounts: %d\n", op->ob_refcnt);
@@ -229,9 +229,9 @@ void PyObject_Dump(PyObject* op)
 }
 
 #ifdef WITH_CYCLE_GC
-void PyGC_Dump(PyGC_Head* op)
+void _PyGC_Dump(PyGC_Head* op)
 {
-	PyObject_Dump(PyObject_FROM_GC(op));
+	_PyObject_Dump(PyObject_FROM_GC(op));
 }
 #endif /* WITH_CYCLE_GC */
 
