@@ -218,6 +218,8 @@ class IOBinding:
         self.set_filename(filename)
         self.text.mark_set("insert", "1.0")
         self.text.see("insert")
+
+        self.updaterecentfileslist(filename)
         return True
 
     def decode(self, chars):
@@ -294,6 +296,7 @@ class IOBinding:
             if self.writefile(self.filename):
                 self.set_saved(1)
         self.text.focus_set()
+
         return "break"
 
     def save_as(self, event):
@@ -303,6 +306,8 @@ class IOBinding:
                 self.set_filename(filename)
                 self.set_saved(1)
         self.text.focus_set()
+
+        self.updaterecentfileslist(filename)
         return "break"
 
     def save_a_copy(self, event):
@@ -310,6 +315,8 @@ class IOBinding:
         if filename:
             self.writefile(filename)
         self.text.focus_set()
+
+        self.updaterecentfileslist(filename)
         return "break"
 
     def writefile(self, filename):
@@ -462,6 +469,12 @@ class IOBinding:
                                                   filetypes=self.filetypes)
         return self.savedialog.show(initialdir=dir, initialfile=base)
 
+
+    def updaterecentfileslist(self,filename):
+        #
+        # Updates recent file list on all editor windows
+        #
+        self.editwin.UpdateRecentFilesList(filename)
 
 def test():
     root = Tk()
