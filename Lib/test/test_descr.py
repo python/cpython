@@ -1417,9 +1417,18 @@ def inherits():
     a = madtuple((1,2,3,4,5))
     verify(tuple(a) == (1,2,3,4,5))
     verify(tuple(a).__class__ is tuple)
+    verify(a[:].__class__ is tuple)
+    verify((a * 1).__class__ is tuple)
+    verify((a * 0).__class__ is tuple)
+    verify((a + ()).__class__ is tuple)
     a = madtuple(())
     verify(tuple(a) == ())
     verify(tuple(a).__class__ is tuple)
+    verify((a + a).__class__ is tuple)
+    verify((a * 0).__class__ is tuple)
+    verify((a * 1).__class__ is tuple)
+    verify((a * 2).__class__ is tuple)
+    verify(a[:].__class__ is tuple)
 
     class madstring(str):
         _rev = None

@@ -298,8 +298,7 @@ tupleslice(register PyTupleObject *a, register int ilow, register int ihigh)
 		ihigh = a->ob_size;
 	if (ihigh < ilow)
 		ihigh = ilow;
-	if (ilow == 0 && ihigh == a->ob_size) {
-		/* XXX can only do this if tuples are immutable! */
+	if (ilow == 0 && ihigh == a->ob_size && PyTuple_CheckExact(a)) {
 		Py_INCREF(a);
 		return (PyObject *)a;
 	}
@@ -366,10 +365,14 @@ tuplerepeat(PyTupleObject *a, int n)
 	if (n < 0)
 		n = 0;
 	if (a->ob_size == 0 || n == 1) {
-		/* Since tuples are immutable, we can return a shared
-		   copy in this case */
-		Py_INCREF(a);
-		return (PyObject *)a;
+		if (PyTuple_CheckExact(a)) {
+			/* Since tuples are immutable, we can return a shared
+			   copy in this case */
+			Py_INCREF(a);
+			return (PyObject *)a;
+		}
+		if (a->ob_size == 0)
+			return PyTuple_New(0);
 	}
 	size = a->ob_size * n;
 	if (size/a->ob_size != n)
