@@ -89,6 +89,21 @@ elif 'mac' in _names:
     import macpath
     path = macpath
     del macpath
+elif 'ce' in _names:
+    name = 'ce'
+    linesep = '\r\n'
+    curdir = '.'; pardir = '..'; sep = '\\'; pathsep = ';'
+    defpath = '\\Windows'
+    from ce import *
+    for i in ['_exit']:
+        try:
+            exec "from ce import " + i
+        except ImportError:
+            pass
+    # We can use the standard Windows path.
+    import ntpath
+    path = ntpath
+    del ntpath
 else:
     raise ImportError, 'no os specific module found'
 
