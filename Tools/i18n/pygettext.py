@@ -4,7 +4,15 @@
 # minimally patched to make it even more xgettext compatible 
 # by Peter Funk <pf@artcom-gmbh.de>
 
-"""pygettext -- Python equivalent of xgettext(1)
+# for selftesting
+try:
+    import fintl
+    _ = fintl.gettext
+except ImportError:
+    def _(s): return s
+
+
+__doc__ = _("""pygettext -- Python equivalent of xgettext(1)
 
 Many systems (Solaris, Linux, Gnu) provide extensive tools that ease the
 internationalization of C programs.  Most of these tools are independent of
@@ -39,9 +47,11 @@ below for how to augment this.
 
 NOTE: pygettext attempts to be option and feature compatible with GNU xgettext
 where ever possible.  However some options are still missing or are not fully
-implemented.
+implemented.  Also, xgettext's use of command line switches with option
+arguments is broken, and in these cases, pygettext just defines additional
+switches.
 
-Usage: pygettext [options] filename ...
+Usage: pygettext [options] inputfile ...
 
 Options:
 
@@ -61,33 +71,42 @@ Options:
     --help
         print this help message and exit
 
-    -k [word]
-    --keyword[=word]
-        Additional keywords to look for.  Without `word' means not to use the
-        default keywords.  The default keywords, which are always looked for
-        if not explicitly disabled: _
+    -k word
+    --keyword=word
+        Keywords to look for in addition to the default set, which are:
+        %(DEFAULTKEYWORDS)s
 
-        The default keyword list is different than GNU xgettext. You can have
-        multiple -k flags on the command line.
+        You can have multiple -k flags on the command line.
+
+    -K
+    --no-default-keywords
+        Disable the default set of keywords (see above).  Any keywords
+        explicitly added with the -k/--keyword option are still recognized.
 
     --no-location
-        Do not write filename/lineno location comments
+        Do not write filename/lineno location comments.
 
-    -n [style]
-    --add-location[=style]
+    -n
+    --add-location
         Write filename/lineno location comments indicating where each
         extracted string is found in the source.  These lines appear before
-        each msgid.  Two styles are supported:
+        each msgid.  The style of comments is controlled by the -S/--style
+        option.  This is the default.
+
+    -S stylename
+    --style stylename
+        Specify which style to use for location comments.  Two styles are
+        supported:
 
         Solaris  # File: filename, line: line-number
-        Gnu      #: filename:line
+        GNU      #: filename:line
 
-        If style is omitted, Gnu is used.  The style name is case
-        insensitive.  By default, locations are included.
+        The style name is case insensitive.  GNU style is the default.
 
     -o filename
     --output=filename
-        Rename the default output file from messages.pot to filename.
+        Rename the default output file from messages.pot to filename.  If
+        filename is `-' then the output is sent to standard out.
 
     -p dir
     --output-dir=dir
@@ -111,27 +130,25 @@ Options:
         extracted from the input files.  Each string to be excluded must
         appear on a line by itself in the file.
 
-"""
+If `inputfile' is -, standard input is read.
+
+""")
 
 import os
 import sys
-import string
 import time
 import getopt
 import tokenize
 
-__version__ = '1.0'
+__version__ = '1.1'
+
+default_keywords = ['_']
+DEFAULTKEYWORDS = ', '.join(default_keywords)
+
+EMPTYSTRING = ''
 
 
 
-# for selftesting
-try:
-    import fintl
-    _ = fintl.gettext
-except ImportError:
-    def _(s): return s
-
-
 # The normal pot-file header. msgmerge and EMACS' po-mode work better if
 # it's there.
 pot_header = _('''\
@@ -189,7 +206,7 @@ def escape(s):
     s = list(s)
     for i in range(len(s)):
         s[i] = escapes[ord(s[i])]
-    return string.join(s, '')
+    return EMPTYSTRING.join(s)
 
 
 def safe_eval(s):
@@ -200,7 +217,7 @@ def safe_eval(s):
 def normalize(s):
     # This converts the various Python string types into a format that is
     # appropriate for .po files, namely much closer to C style.
-    lines = string.split(s, '\n')
+    lines = s.split('\n')
     if len(lines) == 1:
         s = '"' + escape(s) + '"'
     else:
@@ -209,7 +226,8 @@ def normalize(s):
             lines[-1] = lines[-1] + '\n'
         for i in range(len(lines)):
             lines[i] = escape(lines[i])
-        s = '""\n"' + string.join(lines, '\\n"\n"') + '"'
+        lineterm = '\\n"\n"'
+        s = '""\n"' + lineterm.join(lines) + '"'
     return s
 
 
@@ -245,7 +263,7 @@ class TokenEater:
             # of messages seen.  Reset state for the next batch.  If there
             # were no strings inside _(), then just ignore this entry.
             if self.__data:
-                msg = string.join(self.__data, '')
+                msg = EMPTYSTRING.join(self.__data)
                 if not msg in self.__options.toexclude:
                     entry = (self.__curfile, self.__lineno)
                     linenos = self.__messages.get(msg)
@@ -271,12 +289,14 @@ class TokenEater:
             # as that generated by xgettext...
             print pot_header % {'time': timestamp, 'version': __version__}
             for k, v in self.__messages.items():
+                if not options.writelocations:
+                    pass
                 # location comments are different b/w Solaris and GNU:
-                if options.location == options.SOLARIS:
+                elif options.locationstyle == options.SOLARIS:
                     for filename, lineno in v:
                         d = {'filename': filename, 'lineno': lineno}
                         print _('# File: %(filename)s, line: %(lineno)d') % d
-                elif options.location == options.GNU:
+                elif options.locationstyle == options.GNU:
                     # fit as many locations on one line, as long as the
                     # resulting line length doesn't exceeds 'options.width'
                     locline = '#:'
@@ -298,14 +318,15 @@ class TokenEater:
 
 
 def main():
-    default_keywords = ['_']
+    global default_keywords
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            'ad:Ehk:n:o:p:Vvw:x:',
-            ['extract-all', 'default-domain', 'escape', 'help', 'keyword',
+            'ad:Ehk:Kno:p:S:Vvw:x:',
+            ['extract-all', 'default-domain', 'escape', 'help',
+             'keyword=', 'no-default-keywords',
              'add-location', 'no-location', 'output=', 'output-dir=',
-             'verbose', 'version', 'width=', 'exclude-file=',
+             'style=', 'verbose', 'version', 'width=', 'exclude-file=',
              ])
     except getopt.error, msg:
         usage(1, msg)
@@ -321,7 +342,8 @@ def main():
         keywords = []
         outpath = ''
         outfile = 'messages.pot'
-        location = GNU
+        writelocations = 1
+        locationstyle = GNU
         verbose = 0
         width = 78
         excludefilename = ''
@@ -342,19 +364,17 @@ def main():
         elif opt in ('-E', '--escape'):
             options.escape = 1
         elif opt in ('-k', '--keyword'):
-            if arg is None:
-                default_keywords = []
             options.keywords.append(arg)
+        elif opt in ('-K', '--no-default-keywords'):
+            default_keywords = []
         elif opt in ('-n', '--add-location'):
-            if arg is None:
-                arg = 'gnu'
-            try:
-                options.location = locations[string.lower(arg)]
-            except KeyError:
-                d = {'arg':arg}
-                usage(1, _('Invalid value for --add-location: %(arg)s') % d)
+            options.writelocations = 1
         elif opt in ('--no-location',):
-            options.location = 0
+            options.writelocations = 0
+        elif opt in ('-S', '--style'):
+            options.locationstyle = locations.get(arg.lower())
+            if options.locationstyle is None:
+                usage(1, _('Invalid value for --style: %s') % arg)
         elif opt in ('-o', '--output'):
             options.outfile = arg
         elif opt in ('-p', '--output-dir'):
@@ -368,9 +388,7 @@ def main():
             try:
                 options.width = int(arg)
             except ValueError:
-                d = {'arg':arg}
-                usage(1, _('Invalid value for --width: %(arg)s, must be int')
-                      % d)
+                usage(1, _('--width argument must be an integer: %s') % arg)
         elif opt in ('-x', '--exclude-file'):
             options.excludefilename = arg
 
@@ -396,19 +414,37 @@ def main():
     # slurp through all the files
     eater = TokenEater(options)
     for filename in args:
-        if options.verbose:
-            print _('Working on %(filename)s') % {'filename':filename}
-        fp = open(filename)
-        eater.set_filename(filename)
-        tokenize.tokenize(fp.readline, eater)
-        fp.close()
+        if filename == '-':
+            if options.verbose:
+                print _('Reading standard input')
+            fp = sys.stdin
+            closep = 0
+        else:
+            if options.verbose:
+                print _('Working on %s') % filename
+            fp = open(filename)
+            closep = 1
+        try:
+            eater.set_filename(filename)
+            tokenize.tokenize(fp.readline, eater)
+        finally:
+            if closep:
+                fp.close()
 
-    if options.outpath:
-        options.outfile = os.path.join(options.outpath, options.outfile)
-    fp = open(options.outfile, 'w')
-    eater.write(fp)
-    fp.close()
-
+    # write the output
+    if options.outfile == '-':
+        fp = sys.stdout
+        closep = 0
+    else:
+        if options.outpath:
+            options.outfile = os.path.join(options.outpath, options.outfile)
+        fp = open(options.outfile, 'w')
+        closep = 1
+    try:
+        eater.write(fp)
+    finally:
+        if closep:
+            fp.close()
 
 
 if __name__ == '__main__':
