@@ -30,6 +30,11 @@ changes as the radical Python 2.2, but introduces more features than
 the conservative 2.3 release did.  The most significant new language
 features (as of this writing) are function decorators and generator
 expressions; most other changes are to the standard library.
+% XXX update these figures as we go
+According to the CVS change logs, there were 421 patches applied and
+413 bugs fixed between Python 2.3 and 2.4.  Both figures are likely to
+be underestimates.
+
 
 This article doesn't attempt to provide a complete specification of
 every single new feature, but instead provides a convenient overview.
@@ -228,6 +233,9 @@ method that ignores missing keys:
 >>> t.safe_substitute({'page':3})
 u'3: $title'
 \end{verbatim}
+
+% $ Terminate math-mode for Emacs
+
 
 \begin{seealso}
 \seepep{292}{Simpler String Substitutions}{Written and implemented 
@@ -950,17 +958,15 @@ details.
 
 \begin{itemize}
 
-% XXX new email parser
-
 \item The \module{asyncore} module's \function{loop()} now has a 
    \var{count} parameter that lets you perform a limited number 
    of passes through the polling loop.  The default is still to loop
    forever.
 
-\item The \module{curses} modules now supports the ncurses extension 
-   \function{use_default_colors()}.  On platforms where the terminal
-   supports transparency, this makes it possible to use a transparent
-   background.  (Contributed by J\"org Lehmann.)
+\item The \module{base64} module now has more complete RFC 3548 support
+  for Base64, Base32, and Base16 encoding and decoding, including
+  optional case folding and optional alternative alphabets.
+  (Contributed by Barry Warsaw.)
 
 \item The \module{bisect} module now has an underlying C implementation
    for improved performance.
@@ -1016,6 +1022,22 @@ improved performance, such as the \module{Queue} and
    were successfully parsed, and the \method{set()} method raises
    \exception{TypeError} if passed a \var{value} argument that isn't a
    string.
+
+\item The \module{curses} module now supports the ncurses extension 
+   \function{use_default_colors()}.  On platforms where the terminal
+   supports transparency, this makes it possible to use a transparent
+   background.  (Contributed by J\"org Lehmann.)
+
+\item The \module{difflib} module now includes an \class{HtmlDiff} class
+that creates an HTML table showing a side by side comparison
+of two versions of a text.   (Contributed by Dan Gass.)
+
+\item The \module{email} package uses a new incremental parser for MIME
+message, available in the \module{email.FeedParser} module.  
+The new parser doesn't require reading the entire message into memory, 
+and doesn't throw exceptions if a message is malformed; instead it records
+any problems as a \member{defect} attribute of the message.
+(Developed by Anthony Baxter, Barry Warsaw, Thomas Wouters, and others.)
 
 \item The \module{heapq} module has been converted to C.  The resulting
    tenfold improvement in speed makes the module suitable for handling
@@ -1237,6 +1259,10 @@ Other threads can assign and retrieve their own values for the
 \class{local} to initialize attributes or to add methods.
 (Contributed by Jim Fulton.)
 
+\item The \module{timeit} module now automatically disables periodic
+  garbarge collection during the timing loop.  This change makes
+  consecutive timings more comparable.
+
 \item The \module{weakref} module now supports a wider variety of objects
    including Python functions, class instances, sets, frozensets, deques,
    arrays, files, sockets, and regular expression pattern objects.
@@ -1336,30 +1362,6 @@ Changes to Python's build process and to the C API include:
 
 \end{itemize}
 
-
-%======================================================================
-\section{Other Changes and Fixes \label{section-other}}
-
-% XXX update these figures as we go
-As usual, there were a bunch of other improvements and bugfixes
-scattered throughout the source tree.  A search through the CVS change
-logs finds there were 421 patches applied and 413 bugs fixed between
-Python 2.3 and 2.4.  Both figures are likely to be underestimates.
-
-Some of the more notable changes are:
-
-\begin{itemize}
-
-\item The \module{timeit} module now automatically disables periodic
-  garbarge collection during the timing loop.  This change makes
-  consecutive timings more comparable.
-
-\item The \module{base64} module now has more complete RFC 3548 support
-  for Base64, Base32, and Base16 encoding and decoding, including
-  optional case folding and optional alternative alphabets.
-  (Contributed by Barry Warsaw.)
-
-\end{itemize}
 
 
 %======================================================================
