@@ -39,7 +39,6 @@ TK_TABWIDTH_DEFAULT = 8
 ###$ unix <Alt-Key-6>
 
 import re
-_is_block_opener = re.compile(r":\s*(#.*)?$").search
 _is_block_closer = re.compile(r"""
     \s*
     ( return
@@ -50,6 +49,9 @@ _is_block_closer = re.compile(r"""
     )
     \b
 """, re.VERBOSE).match
+
+# colon followed by optional comment
+_looks_like_opener = re.compile(r":\s*(#.*)?$").search
 del re
 
 class AutoIndent:
@@ -136,7 +138,7 @@ class AutoIndent:
 
         if guess and ispythonsource:
             i = self.guess_indent()
-            import sys
+            ##import sys
             ##sys.__stdout__.write("indent %d\n" % i)
             if 2 <= i <= 8:
                 self.indentwidth = i
@@ -422,6 +424,54 @@ def classifyws(s, tabwidth):
         else:
             break
     return raw, effective
+
+# Return true iff line probably opens a block.  This is a limited
+# analysis based on whether the line's last "interesting" character
+# is a colon.
+
+def _is_block_opener(line):
+    if not _looks_like_opener(line):
+        return 0
+    # Looks like an opener, but possible we're in a comment
+    #     x = 3 # and then:
+    # or a string
+    #     x = ":#"
+    # If no comment character, we're not in a comment <duh>, and the
+    # colon is the last non-ws char on the line so it's not in a
+    # (single-line) string either.
+    if string.find(line, '#') < 0:
+        return 1
+    # Now it's hard: There's a colon and a comment char.  Brute force
+    # approximation.
+    lastch, i, n = 0, 0, len(line)
+    while i < n:
+        ch = line[i]
+        if ch == '\\':
+            lastch = ch
+            i = i+2
+        elif ch in "\"'":
+            # consume string
+            w = 1   # width of string quote
+            if line[i:i+3] in ('"""', "'''"):
+                w = 3
+                ch = ch * 3
+            i = i+w
+            while i < n:
+                if line[i] == '\\':
+                    i = i+2
+                elif line[i:i+w] == ch:
+                    i = i+w
+                    break
+                else:
+                    i = i+1
+            lastch = ch
+        elif ch == '#':
+            break
+        else:
+            if ch not in string.whitespace:
+                lastch = ch
+            i = i+1
+    return lastch == ':'
 
 import tokenize
 _tokenize = tokenize
