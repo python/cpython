@@ -554,6 +554,7 @@ _expectations = {
     'win32':
         """
         test__locale
+        test_applesingle
         test_al
         test_bsddb185
         test_bsddb3
