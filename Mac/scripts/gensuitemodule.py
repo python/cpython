@@ -127,20 +127,53 @@ def processfile_fromresource(fullname, output=None, basepkgname=None,
 def processfile(fullname, output=None, basepkgname=None, 
 		edit_modnames=None, creatorsignature=None):
 	"""Ask an application for its terminology and process that"""
-	aedescobj, launched = OSATerminology.GetSysTerminology(fullname)
-	if launched:
-		print "Launched", fullname
-	raw = aetools.unpack(aedescobj)
-	if not raw: 
-		print 'Unpack returned empty value:', raw
-		return
-	if not raw[0].data: 
-		print 'Unpack returned value without data:', raw
-		return
-	aedata = raw[0]
+	try:
+		aedescobj, launched = OSATerminology.GetAppTerminology(fullname)
+	except MacOS.Error, arg:
+		if arg[0] == -1701: # errAEDescNotFound
+			print "GetAppTerminology failed with errAEDescNotFound, trying manually"
+			aedata, sig = getappterminology(fullname)
+			if not creatorsignature:
+				creatorsignature = sig
+		else:
+			raise
+	else:
+		if launched:
+			print "Launched", fullname
+		raw = aetools.unpack(aedescobj)
+		if not raw: 
+			print 'Unpack returned empty value:', raw
+			return
+		if not raw[0].data: 
+			print 'Unpack returned value without data:', raw
+			return
+		aedata = raw[0]
 	aete = decode(aedata.data)
 	compileaete(aete, None, fullname, output=output, basepkgname=basepkgname,
 		creatorsignature=creatorsignature)
+		
+def getappterminology(fullname):
+	"""Get application terminology by sending an AppleEvent"""
+	# First check that we actually can send AppleEvents
+	if not MacOS.WMAvailable():
+		raise RuntimeError, "Cannot send AppleEvents, no access to window manager"
+	# Next, a workaround for a bug in MacOS 10.2: sending events will hang unless
+	# you have created an event loop first.
+	import Carbon.Evt
+	Carbon.Evt.WaitNextEvent(0,0)
+	# Now get the signature of the application, hoping it is a bundle
+	pkginfo = os.path.join(fullname, 'Contents', 'PkgInfo')
+	if not os.path.exists(pkginfo):
+		raise RuntimeError, "No PkgInfo file found"
+	tp_cr = open(pkginfo, 'rb').read()
+	cr = tp_cr[4:8]
+	# Let's talk to it and ask for its AETE
+	talker = aetools.TalkTo(cr)
+	talker._start()
+	reply = talker.send("ascr", "gdte")
+	# Now pick the bits out of the return that we need.
+	return reply[1]['----'], cr
+	
 
 def compileaetelist(aetelist, fullname, output=None, basepkgname=None, 
 			edit_modnames=None, creatorsignature=None):
@@ -334,6 +367,7 @@ def compileaete(aete, resinfo, fname, output=None, basepkgname=None,
 	else:
 		pathname = EasyDialogs.AskFolder(message='Create and select package folder for %s'%packagename,
 			defaultLocation=DEFAULT_USER_PACKAGEFOLDER)
+		output = pathname
 	if not pathname:
 		return
 	packagename = os.path.split(os.path.normpath(pathname))[1]
