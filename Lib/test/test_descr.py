@@ -2982,7 +2982,6 @@ def copy_setstate():
     vereq(b.getfoo(), 24)
 
 def subtype_resurrection():
-    import gc
     if verbose:
         print "Testing resurrection of new-style instance..."
 
