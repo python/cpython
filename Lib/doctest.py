@@ -2135,7 +2135,7 @@ def DocTestSuite(module=None, globs=None, extraglobs=None,
                  setUp=lambda: None, tearDown=lambda: None,
                  checker=None):
     """
-    Convert doctest tests for a mudule to a unittest test suite.
+    Convert doctest tests for a module to a unittest test suite.
 
     This converts each documentation string in a module that
     contains doctest tests to a unittest test case.  If any of the
