@@ -26,7 +26,7 @@ $BOTTOM_NAVIGATION = 1;
 $AUTO_NAVIGATION = 0;
 
 $BODYTEXT = '';
-$CHILDLINE = "\n<p><hr>\n";
+$CHILDLINE = "\n<p></p><hr />\n";
 $VERBOSITY = 0;
 
 # default # of columns for the indexes
@@ -104,6 +104,7 @@ sub make_nav_sectref($$$) {
     if ($title) {
         if ($title =~ /\<[aA] /) {
             $title =~ s/\<[aA] /<a class="sectref" rel="$linktype" /;
+            $title =~ s/ HREF=/ href=/;
         }
         else {
             $title = "<span class=\"sectref\">$title</span>";
@@ -138,7 +139,7 @@ sub get_my_icon($) {
     }
     my $iconserver = ($ICONSERVER eq '.') ? '' : "$ICONSERVER/";
     return "<img src='$iconserver$name.$IMAGE_TYPE'\n  border='0'"
-           . " height='32'  alt='$text' width='32'>";
+           . " height='32'  alt='$text' width='32' />";
 }
 
 sub unlinkify($) {
@@ -157,6 +158,7 @@ sub use_icon($$$) {
             $s =~ s/\<tex2html_[a-z_]+_visible_mark\>/$r/;
         }
         $s =~ s/<[aA] /<a rel="$rel" title="$title" \n  /;
+        $s =~ s/ HREF=/ href=/;
         return $s;
     }
     else {
@@ -202,7 +204,7 @@ sub add_child_links {
     my $toc = add_real_child_links(@_);
     $toc =~ s|\s*</[aA]>|</a>|g;
     $toc =~ s/ NAME=\"tex2html\d+\"\s*href=/ href=/gi;
-    $toc =~ s|</UL>(\s*<BR>)?|</ul>|gi;
+    $toc =~ s|</UL>(\s*<BR( /)?>)?|</ul>|gi;
     return $toc;
 }
 
@@ -227,13 +229,13 @@ sub get_version_text() {
 sub top_navigation_panel() {
     return "\n"
            . make_nav_panel()
-           . "<br><hr>\n";
+           . "<br /><hr />\n";
 }
 
 sub bot_navigation_panel() {
-    return "\n<p><hr>\n"
+    return "\n<p></p><hr />\n"
            . make_nav_panel()
-           . "<hr>\n"
+           . "<hr />\n"
            . get_version_text()
            . "\n";
 }
@@ -409,8 +411,8 @@ sub do_cmd_tableofcontents {
     my($closures, $reopens) = preserve_open_tags();
     anchor_label('contents', $CURRENT_FILE, $_);	# this is added
     $MY_CONTENTS_PAGE = "$CURRENT_FILE";
-    join('', "<BR>\n\\tableofchildlinks[off]", $closures
-	 , make_section_heading($toc_title, 'H2'), $toc_mark
+    join('', "<br />\n\\tableofchildlinks[off]", $closures
+	 , make_section_heading($toc_title, 'h2'), $toc_mark
 	 , $reopens, $_);
 }
 # In addition to the standard stuff, add label to allow named node files.
@@ -420,8 +422,8 @@ sub do_cmd_listoffigures {
     $loffile = $CURRENT_FILE;
     my($closures, $reopens) = preserve_open_tags();
     anchor_label('lof', $CURRENT_FILE, $_);		# this is added
-    join('', "<BR>\n", $closures
-	 , make_section_heading($lof_title, 'H2'), $lof_mark
+    join('', "<br />\n", $closures
+	 , make_section_heading($lof_title, 'h2'), $lof_mark
 	 , $reopens, $_);
 }
 # In addition to the standard stuff, add label to allow named node files.
@@ -431,8 +433,8 @@ sub do_cmd_listoftables {
     $lotfile = $CURRENT_FILE;
     my($closures, $reopens) = preserve_open_tags();
     anchor_label('lot', $CURRENT_FILE, $_);		# this is added
-    join('', "<BR>\n", $closures
-	 , make_section_heading($lot_title, 'H2'), $lot_mark
+    join('', "<br />\n", $closures
+	 , make_section_heading($lot_title, 'h2'), $lot_mark
 	 , $reopens, $_);
 }
 # In addition to the standard stuff, add label to allow named node files.
@@ -473,7 +475,7 @@ sub do_cmd_textohtmlindex {
     my $heading = make_section_heading($idx_title, 'h2') . $idx_mark;
     my($pre, $post) = minimize_open_tags($heading);
     anchor_label('genindex',$CURRENT_FILE,$_);		# this is added
-    return "<br>\n" . $pre . $_;
+    return "<br />\n" . $pre . $_;
 }
 
 $MODULE_INDEX_FILE = '';
@@ -484,7 +486,7 @@ sub do_cmd_textohtmlmoduleindex {
     $TITLE = $idx_module_title;
     anchor_label('modindex', $CURRENT_FILE, $_);
     $MODULE_INDEX_FILE = "$CURRENT_FILE";
-    $_ = ('<p>' . make_section_heading($idx_module_title, 'h2')
+    $_ = ('<p></p>' . make_section_heading($idx_module_title, 'h2')
           . $idx_module_mark . $_);
     return $_;
 }
@@ -624,7 +626,7 @@ sub make_head_and_body($$) {
     $title = &purify($title,1);
     eval("\$title = ". $default_title ) unless ($title);
 
-    # allow user-modification of the <TITLE> tag; thanks Dan Young
+    # allow user-modification of the <title> tag; thanks Dan Young
     if (defined &custom_TITLE_hook) {
 	$title = &custom_TITLE_hook($title, $toc_sec_title);
     }
@@ -640,30 +642,31 @@ sub make_head_and_body($$) {
         $MY_PARTIAL_HEADER = join('',
             ($DOCTYPE ? $DTDcomment : ''),
             "<html>\n<head>",
-            ($BASE ? "\n<base href=\"$BASE\">" : ''),
-            "\n<link rel=\"STYLESHEET\" href=\"$STYLESHEET\" type='text/css'>",
+            ($BASE ? "\n<base href=\"$BASE\" />" : ''),
+            "\n<link rel=\"STYLESHEET\" href=\"$STYLESHEET\" type='text/css'",
+            " />",
             ($FAVORITES_ICON
-             ? ("\n<link rel=\"SHORTCUT ICON\" href=\"" . "$FAVORITES_ICON\">")
+             ? ("\n<link rel=\"SHORTCUT ICON\" href=\"$FAVORITES_ICON\" />")
              : ''),
             ($EXTERNAL_UP_LINK
              ? ("\n<link rel='start' href='" . $EXTERNAL_UP_LINK
                 . ($EXTERNAL_UP_TITLE ?
-                   "' title='$EXTERNAL_UP_TITLE'>" : "'>"))
+                   "' title='$EXTERNAL_UP_TITLE' />" : "' />"))
              : ''),
             "\n<link rel=\"first\" href=\"$FILE.html\"",
             ($t_title ? " title='$t_title'" : ''),
-            '>',
+            ' />',
             ($HAVE_TABLE_OF_CONTENTS
              ? ("\n<link rel='contents' href='$MY_CONTENTS_PAGE'"
-                . ' title="Contents">')
+                . ' title="Contents" />')
              : ''),
             ($HAVE_GENERAL_INDEX
-             ? "\n<link rel='index' href='genindex.html' title='Index'>"
+             ? "\n<link rel='index' href='genindex.html' title='Index' />"
              : ''),
             # disable for now -- Mozilla doesn't do well with multiple indexes
             # ($HAVE_MODULE_INDEX
-            #  ? '<link rel="index" href="modindex.html" title="Module Index">'
-            #    . "\n"
+            #  ? '<link rel="index" href="modindex.html" title="Module Index"'
+            #    . " />\n"
             #  : ''),
             ($INFO
              # XXX We can do this with the Python tools since the About...
@@ -671,18 +674,18 @@ sub make_head_and_body($$) {
              # generated node###.html page names.  Won't work with the
              # rest of the Python doc tools.
              ? ("\n<link rel='last' href='about.html'"
-                . " title='About this document...'>"
+                . " title='About this document...' />"
                 . "\n<link rel='help' href='about.html'"
-                . " title='About this document...'>")
+                . " title='About this document...' />")
              : ''),
             $more_links_mark,
             "\n",
             ($CHARSET && $HTML_VERSION ge "2.1"
              ? ('<meta http-equiv="Content-Type" content="text/html; '
-                . "charset=$CHARSET\">\n")
+                . "charset=$CHARSET\" />\n")
              : ''),
             ($AESOP_META_TYPE
-             ? "<meta name='aesop' content='$AESOP_META_TYPE'>\n" : ''));
+             ? "<meta name='aesop' content='$AESOP_META_TYPE' />\n" : ''));
     }
     if (!$charset && $CHARSET) {
         $charset = $CHARSET;
@@ -692,11 +695,20 @@ sub make_head_and_body($$) {
     # <meta name='description' ...> element in the document head.
     my $metatitle = "$title";
     $metatitle =~ s/^\d+(\.\d+)*\s*//;
+    $metatitle = meta_information($metatitle);
+    $metatitle =~ s/ NAME=/ name=/g;
+    $metatitle =~ s/ CONTENT=/ content=/g;
 
     join('',
          $MY_PARTIAL_HEADER,
-         &meta_information($metatitle),
+         $metatitle,
          "<title>", $title, "</title>\n</head>\n<body$body>");
+}
+
+sub replace_morelinks {
+    $more_links =~ s/ REL=/ rel=/g;
+    $more_links =~ s/ HREF=/ href=/g;
+    $_ =~ s/$more_links_mark/$more_links/e;
 }
 
 1;	# This must be the last line
