@@ -104,9 +104,9 @@ class EnvironmentError(StandardError):
             self.errno, self.strerror = args
 
     def __str__(self):
-        if self.filename:
+        if self.filename is not None:
             return '[Errno %s] %s: %s' % (self.errno, self.strerror,
-                                        self.filename)
+                                          repr(self.filename))
         elif self.errno and self.strerror:
             return '[Errno %s] %s' % (self.errno, self.strerror)
         else:
