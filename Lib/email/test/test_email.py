@@ -1859,6 +1859,14 @@ class TestMiscellaneous(unittest.TestCase):
         b = 'person@dom.ain'
         self.assertEqual(Utils.parseaddr(Utils.formataddr((a, b))), (a, b))
 
+    def test_escape_backslashes(self):
+        self.assertEqual(
+            Utils.formataddr(('Arthur \Backslash\ Foobar', 'person@dom.ain')),
+            r'"Arthur \\Backslash\\ Foobar" <person@dom.ain>')
+        a = r'Arthur \Backslash\ Foobar'
+        b = 'person@dom.ain'
+        self.assertEqual(Utils.parseaddr(Utils.formataddr((a, b))), (a, b))
+
     def test_name_with_dot(self):
         x = 'John X. Doe <jxd@example.com>'
         y = '"John X. Doe" <jxd@example.com>'
