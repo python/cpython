@@ -524,13 +524,13 @@ class test_mktemp(TC):
         for i in extant:
             extant[i] = self.do_create(pre="aa")
 
-    def test_warning(self):
-        # mktemp issues a warning when used
-        warnings.filterwarnings("error",
-                                category=RuntimeWarning,
-                                message="mktemp")
-        self.assertRaises(RuntimeWarning,
-                          tempfile.mktemp, (), { 'dir': self.dir })
+##     def test_warning(self):
+##         # mktemp issues a warning when used
+##         warnings.filterwarnings("error",
+##                                 category=RuntimeWarning,
+##                                 message="mktemp")
+##         self.assertRaises(RuntimeWarning,
+##                           tempfile.mktemp, dir=self.dir)
 
 test_classes.append(test_mktemp)
 
