@@ -31,7 +31,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Python interpreter top-level routines, including init/exit */
 
-#include "allobjects.h"
+#include "Python.h"
 
 #include "grammar.h"
 #include "node.h"
@@ -39,12 +39,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "graminit.h"
 #undef argument /* Avoid conflict on Mac */
 #include "errcode.h"
-#include "sysmodule.h"
-#include "bltinmodule.h"
 #include "compile.h"
 #include "eval.h"
-#include "ceval.h"
-#include "import.h"
 #include "marshal.h"
 
 #ifdef HAVE_UNISTD_H
@@ -61,30 +57,30 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "windows.h"
 #endif
 
-extern char *getpythonpath();
+extern char *Py_GetPath();
 
-extern grammar gram; /* From graminit.c */
+extern grammar _PyParser_Grammar; /* From graminit.c */
 
 /* Forward */
-static void initmain PROTO((void));
-static object *run_err_node PROTO((node *n, char *filename,
-				   object *globals, object *locals));
-static object *run_node PROTO((node *n, char *filename,
-			       object *globals, object *locals));
-static object *run_pyc_file PROTO((FILE *fp, char *filename,
-				   object *globals, object *locals));
-static void err_input PROTO((perrdetail *));
-static void initsigs PROTO((void));
+static void initmain Py_PROTO((void));
+static PyObject *run_err_node Py_PROTO((node *n, char *filename,
+				   PyObject *globals, PyObject *locals));
+static PyObject *run_node Py_PROTO((node *n, char *filename,
+			       PyObject *globals, PyObject *locals));
+static PyObject *run_pyc_file Py_PROTO((FILE *fp, char *filename,
+				   PyObject *globals, PyObject *locals));
+static void err_input Py_PROTO((perrdetail *));
+static void initsigs Py_PROTO((void));
 
-int debugging; /* Needed by parser.c */
-int verbose; /* Needed by import.c */
-int suppress_print; /* Needed by ceval.c */
+int Py_DebugFlag; /* Needed by parser.c */
+int Py_VerboseFlag; /* Needed by import.c */
+int Py_SuppressPrintingFlag; /* Needed by ceval.c */
 int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */
 
 /* Initialize all */
 
 void
-initall()
+Py_Initialize()
 {
 	static int inited;
 	
@@ -92,17 +88,17 @@ initall()
 		return;
 	inited = 1;
 	
-	initimport();
+	PyImport_Init();
 	
 	/* Modules '__builtin__' and 'sys' are initialized here,
 	   they are needed by random bits of the interpreter.
 	   All other modules are optional and are initialized
 	   when they are first imported. */
 	
-	initbuiltin(); /* Also initializes builtin exceptions */
-	initsys();
+	PyBuiltin_Init(); /* Also initializes builtin exceptions */
+	PySys_Init();
 
-	setpythonpath(getpythonpath());
+	PySys_SetPath(Py_GetPath());
 
 	initsigs(); /* Signal handling stuff, including initintr() */
 
@@ -114,51 +110,52 @@ initall()
 static void
 initmain()
 {
-	object *m, *d;
-	m = add_module("__main__");
+	PyObject *m, *d;
+	m = PyImport_AddModule("__main__");
 	if (m == NULL)
-		fatal("can't create __main__ module");
-	d = getmoduledict(m);
-	if (dictlookup(d, "__builtins__") == NULL) {
-		if (dictinsert(d, "__builtins__", getbuiltins()))
-			fatal("can't add __builtins__ to __main__");
+		Py_FatalError("can't create __main__ module");
+	d = PyModule_GetDict(m);
+	if (PyDict_GetItemString(d, "__builtins__") == NULL) {
+		if (PyDict_SetItemString(d, "__builtins__",
+					 PyEval_GetBuiltins()))
+			Py_FatalError("can't add __builtins__ to __main__");
 	}
 }
 
 /* Parse input from a file and execute it */
 
 int
-run(fp, filename)
+PyRun_AnyFile(fp, filename)
 	FILE *fp;
 	char *filename;
 {
 	if (filename == NULL)
 		filename = "???";
 	if (Py_FdIsInteractive(fp, filename))
-		return run_tty_loop(fp, filename);
+		return PyRun_InteractiveLoop(fp, filename);
 	else
-		return run_script(fp, filename);
+		return PyRun_SimpleFile(fp, filename);
 }
 
 int
-run_tty_loop(fp, filename)
+PyRun_InteractiveLoop(fp, filename)
 	FILE *fp;
 	char *filename;
 {
-	object *v;
+	PyObject *v;
 	int ret;
-	v = sysget("ps1");
+	v = PySys_GetObject("ps1");
 	if (v == NULL) {
-		sysset("ps1", v = newstringobject(">>> "));
-		XDECREF(v);
+		PySys_SetObject("ps1", v = PyString_FromString(">>> "));
+		Py_XDECREF(v);
 	}
-	v = sysget("ps2");
+	v = PySys_GetObject("ps2");
 	if (v == NULL) {
-		sysset("ps2", v = newstringobject("... "));
-		XDECREF(v);
+		PySys_SetObject("ps2", v = PyString_FromString("... "));
+		Py_XDECREF(v);
 	}
 	for (;;) {
-		ret = run_tty_1(fp, filename);
+		ret = PyRun_InteractiveOne(fp, filename);
 #ifdef Py_REF_DEBUG
 		fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
 #endif
@@ -172,37 +169,38 @@ run_tty_loop(fp, filename)
 }
 
 int
-run_tty_1(fp, filename)
+PyRun_InteractiveOne(fp, filename)
 	FILE *fp;
 	char *filename;
 {
-	object *m, *d, *v, *w;
+	PyObject *m, *d, *v, *w;
 	node *n;
 	perrdetail err;
 	char *ps1, *ps2;
-	v = sysget("ps1");
-	w = sysget("ps2");
-	if (v != NULL && is_stringobject(v)) {
-		INCREF(v);
-		ps1 = getstringvalue(v);
+	v = PySys_GetObject("ps1");
+	w = PySys_GetObject("ps2");
+	if (v != NULL && PyString_Check(v)) {
+		Py_INCREF(v);
+		ps1 = PyString_AsString(v);
 	}
 	else {
 		v = NULL;
 		ps1 = "";
 	}
-	if (w != NULL && is_stringobject(w)) {
-		INCREF(w);
-		ps2 = getstringvalue(w);
+	if (w != NULL && PyString_Check(w)) {
+		Py_INCREF(w);
+		ps2 = PyString_AsString(w);
 	}
 	else {
 		w = NULL;
 		ps2 = "";
 	}
-	BGN_SAVE
-	n = parsefile(fp, filename, &gram, single_input, ps1, ps2, &err);
-	END_SAVE
-	XDECREF(v);
-	XDECREF(w);
+	Py_BEGIN_ALLOW_THREADS
+	n = PyParser_ParseFile(fp, filename, &_PyParser_Grammar,
+			       single_input, ps1, ps2, &err);
+	Py_END_ALLOW_THREADS
+	Py_XDECREF(v);
+	Py_XDECREF(w);
 	if (n == NULL) {
 		if (err.error == E_EOF) {
 			if (err.text)
@@ -210,35 +208,35 @@ run_tty_1(fp, filename)
 			return E_EOF;
 		}
 		err_input(&err);
-		print_error();
+		PyErr_Print();
 		return err.error;
 	}
-	m = add_module("__main__");
+	m = PyImport_AddModule("__main__");
 	if (m == NULL)
 		return -1;
-	d = getmoduledict(m);
+	d = PyModule_GetDict(m);
 	v = run_node(n, filename, d, d);
 	if (v == NULL) {
-		print_error();
+		PyErr_Print();
 		return -1;
 	}
-	DECREF(v);
-	flushline();
+	Py_DECREF(v);
+	Py_FlushLine();
 	return 0;
 }
 
 int
-run_script(fp, filename)
+PyRun_SimpleFile(fp, filename)
 	FILE *fp;
 	char *filename;
 {
-	object *m, *d, *v;
+	PyObject *m, *d, *v;
 	char *ext;
 
-	m = add_module("__main__");
+	m = PyImport_AddModule("__main__");
 	if (m == NULL)
 		return -1;
-	d = getmoduledict(m);
+	d = PyModule_GetDict(m);
 	ext = filename + strlen(filename) - 4;
 #ifdef macintosh
 	/* On a mac, we also assume a pyc file for types 'PYC ' and 'APPL' */
@@ -255,83 +253,83 @@ run_script(fp, filename)
 		}
 		v = run_pyc_file(fp, filename, d, d);
 	} else {
-		v = run_file(fp, filename, file_input, d, d);
+		v = PyRun_File(fp, filename, file_input, d, d);
 	}
 	if (v == NULL) {
-		print_error();
+		PyErr_Print();
 		return -1;
 	}
-	DECREF(v);
-	flushline();
+	Py_DECREF(v);
+	Py_FlushLine();
 	return 0;
 }
 
 int
-run_command(command)
+PyRun_SimpleString(command)
 	char *command;
 {
-	object *m, *d, *v;
-	m = add_module("__main__");
+	PyObject *m, *d, *v;
+	m = PyImport_AddModule("__main__");
 	if (m == NULL)
 		return -1;
-	d = getmoduledict(m);
-	v = run_string(command, file_input, d, d);
+	d = PyModule_GetDict(m);
+	v = PyRun_String(command, file_input, d, d);
 	if (v == NULL) {
-		print_error();
+		PyErr_Print();
 		return -1;
 	}
-	DECREF(v);
-	flushline();
+	Py_DECREF(v);
+	Py_FlushLine();
 	return 0;
 }
 
 void
-print_error()
+PyErr_Print()
 {
-	object *exception, *v, *tb, *f;
-	err_fetch(&exception, &v, &tb);
-	flushline();
+	PyObject *exception, *v, *tb, *f;
+	PyErr_Fetch(&exception, &v, &tb);
+	Py_FlushLine();
 	fflush(stdout);
 	if (exception == NULL)
-		fatal("print_error called but no exception");
-	if (exception == SystemExit) {
-		if (v == NULL || v == None)
-			goaway(0);
-		if (is_intobject(v))
-			goaway((int)getintvalue(v));
+		Py_FatalError("print_error called but no exception");
+	if (exception == PyExc_SystemExit) {
+		if (v == NULL || v == Py_None)
+			Py_Exit(0);
+		if (PyInt_Check(v))
+			Py_Exit((int)PyInt_AsLong(v));
 		else {
 			/* OK to use real stderr here */
-			printobject(v, stderr, PRINT_RAW);
+			PyObject_Print(v, stderr, Py_PRINT_RAW);
 			fprintf(stderr, "\n");
-			goaway(1);
+			Py_Exit(1);
 		}
 	}
-	sysset("last_type", exception);
-	sysset("last_value", v);
-	sysset("last_traceback", tb);
-	f = sysget("stderr");
+	PySys_SetObject("last_type", exception);
+	PySys_SetObject("last_value", v);
+	PySys_SetObject("last_traceback", tb);
+	f = PySys_GetObject("stderr");
 	if (f == NULL)
 		fprintf(stderr, "lost sys.stderr\n");
 	else {
-		tb_print(tb, f);
-		if (exception == SyntaxError) {
-			object *message;
+		PyTraceBack_Print(tb, f);
+		if (exception == PyExc_SyntaxError) {
+			PyObject *message;
 			char *filename, *text;
 			int lineno, offset;
-			if (!getargs(v, "(O(ziiz))", &message,
+			if (!PyArg_Parse(v, "(O(ziiz))", &message,
 				     &filename, &lineno, &offset, &text))
-				err_clear();
+				PyErr_Clear();
 			else {
 				char buf[10];
-				writestring("  File \"", f);
+				PyFile_WriteString("  File \"", f);
 				if (filename == NULL)
-					writestring("<string>", f);
+					PyFile_WriteString("<string>", f);
 				else
-					writestring(filename, f);
-				writestring("\", line ", f);
+					PyFile_WriteString(filename, f);
+				PyFile_WriteString("\", line ", f);
 				sprintf(buf, "%d", lineno);
-				writestring(buf, f);
-				writestring("\n", f);
+				PyFile_WriteString(buf, f);
+				PyFile_WriteString("\n", f);
 				if (text != NULL) {
 					char *nl;
 					if (offset > 0 &&
@@ -349,159 +347,162 @@ print_error()
 						text++;
 						offset--;
 					}
-					writestring("    ", f);
-					writestring(text, f);
+					PyFile_WriteString("    ", f);
+					PyFile_WriteString(text, f);
 					if (*text == '\0' ||
 					    text[strlen(text)-1] != '\n')
-						writestring("\n", f);
-					writestring("    ", f);
+						PyFile_WriteString("\n", f);
+					PyFile_WriteString("    ", f);
 					offset--;
 					while (offset > 0) {
-						writestring(" ", f);
+						PyFile_WriteString(" ", f);
 						offset--;
 					}
-					writestring("^\n", f);
+					PyFile_WriteString("^\n", f);
 				}
-				INCREF(message);
-				DECREF(v);
+				Py_INCREF(message);
+				Py_DECREF(v);
 				v = message;
 			}
 		}
-		if (is_classobject(exception)) {
-			object* className = ((classobject*)exception)->cl_name;
+		if (PyClass_Check(exception)) {
+			PyObject* className =
+				((PyClassObject*)exception)->cl_name;
 			if (className == NULL)
-				writestring("<unknown>", f);
+				PyFile_WriteString("<unknown>", f);
 			else {
-				if (writeobject(className, f, PRINT_RAW) != 0)
-					err_clear();
+				if (PyFile_WriteObject(className, f,
+						       Py_PRINT_RAW) != 0)
+					PyErr_Clear();
 			}
 		} else {
-			if (writeobject(exception, f, PRINT_RAW) != 0)
-				err_clear();
+			if (PyFile_WriteObject(exception, f,
+					       Py_PRINT_RAW) != 0)
+				PyErr_Clear();
 		}
-		if (v != NULL && v != None) {
-			writestring(": ", f);
-			if (writeobject(v, f, PRINT_RAW) != 0)
-				err_clear();
+		if (v != NULL && v != Py_None) {
+			PyFile_WriteString(": ", f);
+			if (PyFile_WriteObject(v, f, Py_PRINT_RAW) != 0)
+				PyErr_Clear();
 		}
-		writestring("\n", f);
+		PyFile_WriteString("\n", f);
 	}
-	XDECREF(exception);
-	XDECREF(v);
-	XDECREF(tb);
+	Py_XDECREF(exception);
+	Py_XDECREF(v);
+	Py_XDECREF(tb);
 }
 
-object *
-run_string(str, start, globals, locals)
+PyObject *
+PyRun_String(str, start, globals, locals)
 	char *str;
 	int start;
-	object *globals, *locals;
+	PyObject *globals, *locals;
 {
-	return run_err_node(parse_string(str, start),
+	return run_err_node(PyParser_SimpleParseString(str, start),
 			    "<string>", globals, locals);
 }
 
-object *
-run_file(fp, filename, start, globals, locals)
+PyObject *
+PyRun_File(fp, filename, start, globals, locals)
 	FILE *fp;
 	char *filename;
 	int start;
-	object *globals, *locals;
+	PyObject *globals, *locals;
 {
-	return run_err_node(parse_file(fp, filename, start),
+	return run_err_node(PyParser_SimpleParseFile(fp, filename, start),
 			    filename, globals, locals);
 }
 
-static object *
+static PyObject *
 run_err_node(n, filename, globals, locals)
 	node *n;
 	char *filename;
-	object *globals, *locals;
+	PyObject *globals, *locals;
 {
 	if (n == NULL)
 		return  NULL;
 	return run_node(n, filename, globals, locals);
 }
 
-static object *
+static PyObject *
 run_node(n, filename, globals, locals)
 	node *n;
 	char *filename;
-	object *globals, *locals;
+	PyObject *globals, *locals;
 {
-	codeobject *co;
-	object *v;
-	co = compile(n, filename);
-	freetree(n);
+	PyCodeObject *co;
+	PyObject *v;
+	co = PyNode_Compile(n, filename);
+	PyNode_Free(n);
 	if (co == NULL)
 		return NULL;
-	v = eval_code(co, globals, locals);
-	DECREF(co);
+	v = PyEval_EvalCode(co, globals, locals);
+	Py_DECREF(co);
 	return v;
 }
 
-static object *
+static PyObject *
 run_pyc_file(fp, filename, globals, locals)
 	FILE *fp;
 	char *filename;
-	object *globals, *locals;
+	PyObject *globals, *locals;
 {
-	codeobject *co;
-	object *v;
+	PyCodeObject *co;
+	PyObject *v;
 	long magic;
-	long get_pyc_magic();
+	long PyImport_GetMagicNumber();
 
-	magic = rd_long(fp);
-	if (magic != get_pyc_magic()) {
-		err_setstr(RuntimeError,
+	magic = PyMarshal_ReadLongFromFile(fp);
+	if (magic != PyImport_GetMagicNumber()) {
+		PyErr_SetString(PyExc_RuntimeError,
 			   "Bad magic number in .pyc file");
 		return NULL;
 	}
-	(void) rd_long(fp);
-	v = rd_object(fp);
+	(void) PyMarshal_ReadLongFromFile(fp);
+	v = PyMarshal_ReadObjectFromFile(fp);
 	fclose(fp);
-	if (v == NULL || !is_codeobject(v)) {
-		XDECREF(v);
-		err_setstr(RuntimeError,
+	if (v == NULL || !PyCode_Check(v)) {
+		Py_XDECREF(v);
+		PyErr_SetString(PyExc_RuntimeError,
 			   "Bad code object in .pyc file");
 		return NULL;
 	}
-	co = (codeobject *)v;
-	v = eval_code(co, globals, locals);
-	DECREF(co);
+	co = (PyCodeObject *)v;
+	v = PyEval_EvalCode(co, globals, locals);
+	Py_DECREF(co);
 	return v;
 }
 
-object *
-compile_string(str, filename, start)
+PyObject *
+Py_CompileString(str, filename, start)
 	char *str;
 	char *filename;
 	int start;
 {
 	node *n;
-	codeobject *co;
-	n = parse_string(str, start);
+	PyCodeObject *co;
+	n = PyParser_SimpleParseString(str, start);
 	if (n == NULL)
 		return NULL;
-	co = compile(n, filename);
-	freetree(n);
-	return (object *)co;
+	co = PyNode_Compile(n, filename);
+	PyNode_Free(n);
+	return (PyObject *)co;
 }
 
 /* Simplified interface to parsefile -- return node or set exception */
 
 node *
-parse_file(fp, filename, start)
+PyParser_SimpleParseFile(fp, filename, start)
 	FILE *fp;
 	char *filename;
 	int start;
 {
 	node *n;
 	perrdetail err;
-	BGN_SAVE
-	n = parsefile(fp, filename, &gram, start,
+	Py_BEGIN_ALLOW_THREADS
+	n = PyParser_ParseFile(fp, filename, &_PyParser_Grammar, start,
 				(char *)0, (char *)0, &err);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (n == NULL)
 		err_input(&err);
 	return n;
@@ -510,13 +511,13 @@ parse_file(fp, filename, start)
 /* Simplified interface to parsestring -- return node or set exception */
 
 node *
-parse_string(str, start)
+PyParser_SimpleParseString(str, start)
 	char *str;
 	int start;
 {
 	node *n;
 	perrdetail err;
-	n = parsestring(str, &gram, start, &err);
+	n = PyParser_ParseString(str, &_PyParser_Grammar, start, &err);
 	if (n == NULL)
 		err_input(&err);
 	return n;
@@ -528,9 +529,9 @@ static void
 err_input(err)
 	perrdetail *err;
 {
-	object *v, *w;
+	PyObject *v, *w;
 	char *msg = NULL;
-	v = mkvalue("(ziiz)", err->filename,
+	v = Py_BuildValue("(ziiz)", err->filename,
 			    err->lineno, err->offset, err->text);
 	if (err->text != NULL) {
 		free(err->text);
@@ -545,10 +546,10 @@ err_input(err)
 
 		break;
 	case E_INTR:
-		err_set(KeyboardInterrupt);
+		PyErr_SetNone(PyExc_KeyboardInterrupt);
 		return;
 	case E_NOMEM:
-		err_nomem();
+		PyErr_NoMemory();
 		return;
 	case E_EOF:
 		msg = "unexpected EOF while parsing";
@@ -558,16 +559,16 @@ err_input(err)
 		msg = "unknown parsing error";
 		break;
 	}
-	w = mkvalue("(sO)", msg, v);
-	XDECREF(v);
-	err_setval(SyntaxError, w);
-	XDECREF(w);
+	w = Py_BuildValue("(sO)", msg, v);
+	Py_XDECREF(v);
+	PyErr_SetObject(PyExc_SyntaxError, w);
+	Py_XDECREF(w);
 }
 
 /* Print fatal error message and abort */
 
 void
-fatal(msg)
+Py_FatalError(msg)
 	char *msg;
 {
 	fprintf(stderr, "Fatal Python error: %s\n", msg);
@@ -586,7 +587,7 @@ fatal(msg)
 
 #ifdef WITH_THREAD
 #include "thread.h"
-int threads_started = 0; /* Set by threadmodule.c and maybe others */
+int _PyThread_Started = 0; /* Set by threadmodule.c and maybe others */
 #endif
 
 #define NEXITFUNCS 32
@@ -594,7 +595,7 @@ static void (*exitfuncs[NEXITFUNCS])();
 static int nexitfuncs = 0;
 
 int Py_AtExit(func)
-	void (*func) PROTO((void));
+	void (*func) Py_PROTO((void));
 {
 	if (nexitfuncs >= NEXITFUNCS)
 		return -1;
@@ -603,37 +604,37 @@ int Py_AtExit(func)
 }
 
 void
-cleanup()
+Py_Cleanup()
 {
-	object *exitfunc = sysget("exitfunc");
+	PyObject *exitfunc = PySys_GetObject("exitfunc");
 
 	if (exitfunc) {
-		object *res;
-		INCREF(exitfunc);
-		sysset("exitfunc", (object *)NULL);
-		res = call_object(exitfunc, (object *)NULL);
+		PyObject *res;
+		Py_INCREF(exitfunc);
+		PySys_SetObject("exitfunc", (PyObject *)NULL);
+		res = PyEval_CallObject(exitfunc, (PyObject *)NULL);
 		if (res == NULL) {
 			fprintf(stderr, "Error in sys.exitfunc:\n");
-			print_error();
+			PyErr_Print();
 		}
-		DECREF(exitfunc);
+		Py_DECREF(exitfunc);
 	}
 
-	flushline();
+	Py_FlushLine();
 
 	while (nexitfuncs > 0)
 		(*exitfuncs[--nexitfuncs])();
 }
 
 #ifdef COUNT_ALLOCS
-extern void dump_counts PROTO((void));
+extern void dump_counts Py_PROTO((void));
 #endif
 
 void
-goaway(sts)
+Py_Exit(sts)
 	int sts;
 {
-	cleanup();
+	Py_Cleanup();
 
 #ifdef COUNT_ALLOCS
 	dump_counts();
@@ -645,14 +646,14 @@ goaway(sts)
 	   cleanup actions usually done (these are mostly for
 	   debugging anyway). */
 	
-	(void) save_thread();
+	(void) PyEval_SaveThread();
 #ifndef NO_EXIT_PROG
-	if (threads_started)
+	if (_PyThread_Started)
 		_exit_prog(sts);
 	else
 		exit_prog(sts);
 #else /* !NO_EXIT_PROG */
-	if (threads_started)
+	if (_PyThread_Started)
 		_exit(sts);
 	else
 		exit(sts);
@@ -660,16 +661,16 @@ goaway(sts)
 	
 #else /* WITH_THREAD */
 	
-	doneimport();
+	PyImport_Cleanup();
 	
-	err_clear();
+	PyErr_Clear();
 
 #ifdef Py_REF_DEBUG
 	fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
 #endif
 
 #ifdef Py_TRACE_REFS
-	if (askyesno("Print left references?")) {
+	if (_Py_AskYesNo("Print left references?")) {
 		_Py_PrintReferences(stderr);
 	}
 #endif /* Py_TRACE_REFS */
@@ -689,7 +690,7 @@ sighandler(sig)
 	int sig;
 {
 	signal(sig, SIG_DFL); /* Don't catch recursive signals */
-	cleanup(); /* Do essential clean-up */
+	Py_Cleanup(); /* Do essential clean-up */
 #ifdef HAVE_GETPID
 	kill(getpid(), sig); /* Pretend the signal killed us */
 #else
@@ -722,14 +723,14 @@ initsigs()
 		signal(SIGTERM, t);
 #endif
 #endif /* HAVE_SIGNAL_H */
-	initintr(); /* May imply initsignal() */
+	PyOS_InitInterrupts(); /* May imply initsignal() */
 }
 
 #ifdef Py_TRACE_REFS
 /* Ask a yes/no question */
 
 int
-askyesno(prompt)
+_Py_AskYesNo(prompt)
 	char *prompt;
 {
 	char buf[256];
