@@ -15,9 +15,6 @@ class Bdb: # Basic Debugger
 	
 	def __init__(self):
 		self.breaks = {}
-
-	def init(self):			# BW compat only
-		return self
 	
 	def reset(self):
 		self.botframe = None

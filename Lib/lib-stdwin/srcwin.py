@@ -10,7 +10,7 @@ MAXHEIGHT = 24
 
 class TextWindow(basewin.BaseWindow):
 	
-	def init(self, title, contents):
+	def __init__(self, title, contents):
 		self.contents = contents
 		self.linecount = countlines(self.contents)
 		#
@@ -23,11 +23,10 @@ class TextWindow(basewin.BaseWindow):
 		width = WIDTH*stdwin.textwidth('0')
 		height = lh*min(MAXHEIGHT, self.linecount)
 		stdwin.setdefwinsize(width, height)
-		self = basewin.BaseWindow.init(self, title)
+		basewin.BaseWindow.__init__(self, title)
 		#
 		self.win.setdocsize(0, self.bottom)
 		self.initeditor()
-		return self
 	
 	def initeditor(self):
 		r = (self.leftmargin, self.top), (self.rightmargin, self.bottom)
@@ -113,12 +112,12 @@ def countlines(text):
 
 class SourceWindow(TextWindow):
 
-	def init(self, filename):
+	def __init__(self, filename):
 		self.filename = filename
 		f = open(self.filename, 'r')
 		contents = f.read()
 		f.close()
-		return TextWindow.init(self, self.filename, contents)
+		TextWindow.__init__(self, self.filename, contents)
 
 # ------------------------------ testing ------------------------------
 
@@ -126,5 +125,5 @@ TESTFILE = 'srcwin.py'
 
 def test():
 	import mainloop
-	sw = SourceWindow().init(TESTFILE)
+	sw = SourceWindow(TESTFILE)
 	mainloop.mainloop()

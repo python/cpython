@@ -17,7 +17,7 @@ MAXHEIGHT = 16
 
 class FrameWindow(basewin.BaseWindow):
 
-	def init(self, debugger, frame, dict, name):
+	def __init__(self, debugger, frame, dict, name):
 		self.debugger = debugger
 		self.frame = frame # Not used except for identity tests
 		self.dict = dict
@@ -27,12 +27,12 @@ class FrameWindow(basewin.BaseWindow):
 		width = WIDTH*stdwin.textwidth('0')
 		height = nl*stdwin.lineheight()
 		stdwin.setdefwinsize(width, height)
-		self = basewin.BaseWindow.init(self, '--Frame ' + name + '--')
+		basewin.BaseWindow.__init__(
+			  self, '--Frame ' + name + '--')
 		# XXX Should use current function name
 		self.initeditor()
 		self.displaylist = ['>>>', '', '-'*WIDTH]
 		self.refreshframe()
-		return self
 	
 	def initeditor(self):
 		r = (stdwin.textwidth('>>> '), 0), (30000, stdwin.lineheight())
@@ -81,7 +81,7 @@ class FrameWindow(basewin.BaseWindow):
 				self.debugger.framewindows[name].popup()
 			else:
 				self.debugger.framewindows[name] = \
-					  FrameWindow().init(self.debugger,
+					  FrameWindow(self.debugger,
 						  self.frame, value.__dict__,
 						  name)
 			return

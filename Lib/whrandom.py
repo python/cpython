@@ -35,7 +35,7 @@ class whrandom:
 	# Without arguments, initialize from current time.
 	# With arguments (x, y, z), initialize from them.
 	#
-	def init(self, *xyz):
+	def __init__(self, *xyz):
 		if not xyz:
 			# Initialize from current time
 			import time
@@ -47,7 +47,6 @@ class whrandom:
 			# Initialize from arguments (x, y, z)
 			x, y, z = xyz
 		self.seed(x, y, z)
-		return self
 	#
 	# Set the seed from (x, y, z).
 	# These must be integers in the range [0, 256).
@@ -97,7 +96,7 @@ class whrandom:
 
 # Initialize from the current time
 #
-_inst = whrandom().init()
+_inst = whrandom()
 seed = _inst.seed
 random = _inst.random
 uniform = _inst.uniform

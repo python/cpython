@@ -30,7 +30,7 @@ class Readcd:
 		elif len(arg) == 2:
 			self.player = cd.open(arg[0], arg[1])
 		else:
-			raise Error, 'bad init call'
+			raise Error, 'bad __init__ call'
 		self.list = []
 		self.callbacks = [(None, None)] * 8
 		self.parser = cd.createparser()

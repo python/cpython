@@ -10,15 +10,14 @@ import rfc822
 
 class Message(rfc822.Message):
 
-	def init(self, fp):
-		self = rfc822.Message.init(self, fp)
+	def __init__(self, fp):
+		rfc822.Message.__init__(self, fp)
 		self.encodingheader = \
 			self.getheader('content-transfer-encoding')
 		self.typeheader = \
 			self.getheader('content-type')
 		self.parsetype()
 		self.parseplist()
-		return self
 
 	def parsetype(self):
 		str = self.typeheader

@@ -192,11 +192,12 @@ class Au_read:
 					break
 		else:
 			self._info = ''
-		return self
 
-	def init(self, filename):
-		import builtin
-		return self.initfp(builtin.open(filename, 'r'))
+	def __init__(self, f):
+		if type(f) == type(''):
+			import builtin
+			f = builtin.open(f, 'r')
+		self.initfp(f)
 
 	def __del__(self):
 		if self._file:
@@ -277,9 +278,11 @@ class Au_read:
 		self._file = None
 
 class Au_write:
-	def init(self, filename):
-		import builtin
-		return self.initfp(builtin.open(filename, 'w'))
+	def __init__(self, f):
+		if type(f) == type(''):
+			import builtin
+			f = builtin.open(f, 'w')
+		self.initfp(f)
 
 	def initfp(self, file):
 		self._file = file
@@ -293,7 +296,6 @@ class Au_write:
 		self._datalength = 0
 		self._info = ''
 		self._comptype = 'ULAW'	# default is U-law
-		return self
 
 	def __del__(self):
 		if self._file:
@@ -453,18 +455,12 @@ class Au_write:
 		self._datalength = self._datawritten
 		self._file.seek(0, 2)
 
-def open(filename, mode):
+def open(f, mode):
 	if mode == 'r':
-		return Au_read().init(filename)
+		return Au_read(f)
 	elif mode == 'w':
-		return Au_write().init(filename)
+		return Au_write(f)
 	else:
 		raise Error, "mode must be 'r' or 'w'"
 
-def openfp(filep, mode):
-	if mode == 'r':
-		return Au_read().initfp(filep)
-	elif mode == 'w':
-		return Au_write().initfp(filep)
-	else:
-		raise Error, "mode must be 'r' or 'w'"
+openfp = open

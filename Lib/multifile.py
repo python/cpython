@@ -6,7 +6,7 @@
 # Suggested use:
 #
 # real_fp = open(...)
-# fp = MultiFile().init(real_fp)
+# fp = MultiFile(real_fp)
 #
 # "read some lines from fp"
 # fp.push(separator)
@@ -31,14 +31,13 @@ Error = 'multifile.Error'
 
 class MultiFile:
 	#
-	def init(self, fp):
+	def __init__(self, fp):
 		self.fp = fp
 		self.stack = [] # Grows down
 		self.level = 0
 		self.last = 0
 		self.start = self.fp.tell()
 		self.posstack = [] # Grows down
-		return self
 	#
 	def tell(self):
 		if self.level > 0:

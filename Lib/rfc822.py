@@ -10,8 +10,8 @@
 #   fp = open(file, 'r')
 # (or use any other legal way of getting an open file object, e.g. use
 # sys.stdin or call os.popen()).
-# Then pass the open file object to the init() method of Message:
-#   m = Message().init(fp)
+# Then pass the open file object to the Message() constructor:
+#   m = Message(fp)
 #
 # To get the text of a particular header there are several methods:
 #   str = m.getheader(name)
@@ -35,7 +35,7 @@ class Message:
 
 	# Initialize the class instance and read the headers.
 	
-	def init(self, fp):
+	def __init__(self, fp):
 		self.fp = fp
 		#
 		try:
@@ -49,8 +49,6 @@ class Message:
 			self.startofbody = self.fp.tell()
 		except IOError:
 			self.startofbody = None
-		#
-		return self
 
 
 	# Rewind the file to the start of the body (if seekable).

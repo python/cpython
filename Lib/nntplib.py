@@ -5,7 +5,7 @@
 # Example:
 #
 # >>> from nntplib import NNTP
-# >>> s = NNTP().init('charon')
+# >>> s = NNTP('charon')
 # >>> resp, count, first, last, name = s.group('nlnet.misc')
 # >>> print 'Group', name, 'has', count, 'articles, range', first, 'to', last
 # Group nlnet.misc has 525 articles, range 6960 to 7485
@@ -60,7 +60,7 @@ class NNTP:
 	# - host: hostname to connect to
 	# - port: port to connect to (default the standard NNTP port)
 
-	def init(self, host, *args):
+	def __init__(self, host, *args):
 		if len(args) > 1: raise TypeError, 'too many args'
 		if args: port = args[0]
 		else: port = NNTP_PORT
@@ -71,10 +71,9 @@ class NNTP:
 		self.file = self.sock.makefile('r')
 		self.debugging = 0
 		self.welcome = self.getresp()
-		return self
 
 	# Get the welcome message from the server
-	# (this is read and squirreled away by init()).
+	# (this is read and squirreled away by __init__()).
 	# If the response code is 200, posting is allowed;
 	# if it 201, posting is not allowed
 

@@ -224,11 +224,10 @@ def dispatch(event):
 #
 class Dialog:
 	#
-	def init(self, title):
+	def __init__(self, title):
 		self.window = stdwin.open(title)
 		self.window.dispatch = self.dispatch
 		register(self.window)
-		return self
 	#
 	def close(self):
 		unregister(self.window)

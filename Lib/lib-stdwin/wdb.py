@@ -19,16 +19,15 @@ WdbDone = 'wdb.WdbDone' # Exception to continue execution
 
 class Wdb(bdb.Bdb, basewin.BaseWindow): # Window debugger
 	
-	def init(self):
+	def __init__(self):
 		self.sourcewindows = {}
 		self.framewindows = {}
-		self = bdb.Bdb.init(self)
+		bdb.Bdb.__init__(self)
 		width = WIDTH*stdwin.textwidth('0')
 		height = HEIGHT*stdwin.lineheight()
 		stdwin.setdefwinsize(width, height)
-		self = basewin.BaseWindow.init(self, '--Stack--')
+		basewin.BaseWindow.__init__(self, '--Stack--')
 		self.closed = 0
-		return self
 	
 	def reset(self):
 		if self.closed: raise RuntimeError, 'already closed'
@@ -151,9 +150,8 @@ class Wdb(bdb.Bdb, basewin.BaseWindow): # Window debugger
 		if not self.sourcewindows.has_key(fn):
 			import wdbsrcwin
 			try:
-				self.sourcewindows[fn] = \
-					wdbsrcwin.DebuggerSourceWindow(). \
-					init(self, fn)
+				self.sourcewindows[fn] = wdbsrcwin. \
+					  DebuggerSourceWindow(self, fn)
 			except IOError:
 				stdwin.fleep()
 				return
@@ -170,7 +168,7 @@ class Wdb(bdb.Bdb, basewin.BaseWindow): # Window debugger
 		else:
 			import wdbframewin
 			self.framewindows[name] = \
-				wdbframewin.FrameWindow().init(self, \
+				wdbframewin.FrameWindow(self, \
 					self.curframe, \
 					self.curframe.f_locals, name)
 	do_f = do_frame
@@ -182,7 +180,7 @@ class Wdb(bdb.Bdb, basewin.BaseWindow): # Window debugger
 		else:
 			import wdbframewin
 			self.framewindows[name] = \
-				wdbframewin.FrameWindow().init(self, \
+				wdbframewin.FrameWindow(self, \
 					self.curframe, \
 					self.curframe.f_globals, name)
 	do_g = do_globalframe
@@ -274,27 +272,27 @@ class Wdb(bdb.Bdb, basewin.BaseWindow): # Window debugger
 # Simplified interface
 
 def run(statement):
-	x = Wdb().init()
+	x = Wdb()
 	try: x.run(statement)
 	finally: x.close()
 
 def runctx(statement, globals, locals):
-	x = Wdb().init()
+	x = Wdb()
 	try: x.runctx(statement, globals, locals)
 	finally: x.close()
 
 def runcall(*args):
-	x = Wdb().init()
-	try: apply(Pdb().init().runcall, args)
+	x = Wdb()
+	try: apply(x.runcall, args)
 	finally: x.close()
 
 
 # Post-Mortem interface
 
 def post_mortem(traceback):
-	p = Pdb().init()
-	p.reset()
-	p.interaction(None, traceback)
+	x = Wdb()
+	x.reset()
+	x.interaction(None, traceback)
 
 def pm():
 	import sys
