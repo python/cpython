@@ -73,7 +73,7 @@ suspend input, or \code{TERMIOS.TCION} to restart input.
 
 Here's a function that prompts for a password with echoing turned off.
 Note the technique using a separate \code{termios.tcgetattr()} call
-and a \code{try {\ldots} finally} statement to ensure that the old tty
+and a \code{try \ldots{} finally} statement to ensure that the old tty
 attributes are restored exactly no matter what happens:
 
 \begin{verbatim}
