@@ -98,7 +98,7 @@ MS_CORE_DLL.
 /* set the COMPILER */
 #ifdef MS_WIN64
 #ifdef _M_IX86
-#define COMPILER _Py_PASTE_VERSION("64 bit (Intel)"
+#define COMPILER _Py_PASTE_VERSION("64 bit (Intel)")
 #else
 #define COMPILER _Py_PASTE_VERSION("64 bit (Unknown)")
 #endif
