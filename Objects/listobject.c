@@ -517,6 +517,7 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 	   we temporarily copy the items that are deleted from the
 	   list. :-( */
 	PyObject **recycle, **p;
+	PyObject *recycled[8];
 	PyObject **item;
 	PyObject **vitem = NULL;
 	PyObject *v_as_SF = NULL; /* PySequence_Fast(v) */
@@ -559,8 +560,10 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 		return list_clear(a);
 	}
 	item = a->ob_item;
-	if (ihigh > ilow) {
-		p = recycle = PyMem_NEW(PyObject *, (ihigh-ilow));
+	/* recycle the ihigh-ilow items that we are about to remove */
+	s = (ihigh - ilow)*sizeof(PyObject *);
+	if (s > sizeof(recycled)) {
+		recycle = (PyObject **)PyMem_MALLOC(s);
 		if (recycle == NULL) {
 			PyErr_NoMemory();
 			Py_XDECREF(v_as_SF);
@@ -568,41 +571,36 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 		}
 	}
 	else
-		p = recycle = NULL;
-	if (d <= 0) { /* Delete -d items; recycle ihigh-ilow items */
-		memcpy(p, &item[ilow], (ihigh - ilow)*sizeof(PyObject *));
-		p += ihigh - ilow;
-		if (d < 0) {
-			memmove(&item[ihigh+d], &item[ihigh],
-				(a->ob_size - ihigh)*sizeof(PyObject *));
-			list_resize(a, a->ob_size + d);
-			item = a->ob_item;
-		}
+		recycle = recycled;
+	p = recycle + (ihigh - ilow);
+	memcpy(recycle, &item[ilow], s);
+	if (d < 0) { /* Delete -d items */
+		memmove(&item[ihigh+d], &item[ihigh],
+			(a->ob_size - ihigh)*sizeof(PyObject *));
+		list_resize(a, a->ob_size + d);
+		item = a->ob_item;
 	}
-	else { /* Insert d items; recycle ihigh-ilow items */
+	else if (d > 0) { /* Insert d items */
 		s = a->ob_size;
 		if (list_resize(a, s+d) == -1) {
-			if (recycle != NULL)
-				PyMem_DEL(recycle);
+			if (recycle != recycled)
+				PyMem_FREE(recycle);
 			Py_XDECREF(v_as_SF);
 			return -1;
 		}
 		item = a->ob_item;
 		memmove(&item[ihigh+d], &item[ihigh],
 			(s - ihigh)*sizeof(PyObject *));
-		memcpy(p, &item[ilow], (ihigh - ilow)*sizeof(PyObject *));
-		p += ihigh - ilow;
 	}
 	for (k = 0; k < n; k++, ilow++) {
 		PyObject *w = vitem[k];
 		Py_XINCREF(w);
 		item[ilow] = w;
 	}
-	if (recycle) {
-		while (--p >= recycle)
-			Py_XDECREF(*p);
-		PyMem_DEL(recycle);
-	}
+	while (--p >= recycle)
+		Py_XDECREF(*p);
+	if (recycle != recycled)
+		PyMem_FREE(recycle);
 	Py_XDECREF(v_as_SF);
 	return 0;
 #undef b
