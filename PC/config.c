@@ -50,6 +50,7 @@ extern void initsoundex();
 extern void initstrop();
 extern void initstruct();
 extern void inittime();
+extern void initthread();
 
 /* -- ADDMODULE MARKER 1 -- */
 
@@ -83,6 +84,9 @@ struct _inittab inittab[] = {
         {"strop", initstrop},
         {"struct", initstruct},
         {"time", inittime},
+#ifdef WITH_THREAD
+        {"thread", initthread},
+#endif
 
 /* -- ADDMODULE MARKER 2 -- */
 
