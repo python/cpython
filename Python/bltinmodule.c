@@ -164,7 +164,7 @@ builtin_filter(PyObject *self, PyObject *args)
 {
 	PyObject *func, *seq, *result, *it;
 	int len;   /* guess for result list size */
-	register int i, j;
+	register int j;
 
 	if (!PyArg_ParseTuple(args, "OO:filter", &func, &seq))
 		return NULL;
@@ -204,22 +204,15 @@ builtin_filter(PyObject *self, PyObject *args)
 	}
 
 	/* Build the result list. */
-	for (i = j = 0; ; ++i) {
+	j = 0;
+	for (;;) {
 		PyObject *item, *good;
 		int ok;
 
 		item = PyIter_Next(it);
 		if (item == NULL) {
-			/* We're out of here in any case, but if this is a
-			 * StopIteration exception it's expected, but if
-			 * any other kind of exception it's an error.
-			 */
-			if (PyErr_Occurred()) {
-				if (PyErr_ExceptionMatches(PyExc_StopIteration))
-					PyErr_Clear();
-				else
-					goto Fail_result_it;
-			}
+			if (PyErr_Occurred())
+				goto Fail_result_it;
 			break;
 		}
 
@@ -1030,24 +1023,14 @@ builtin_map(PyObject *self, PyObject *args)
 				if (item)
 					++numactive;
 				else {
-					/* StopIteration is *implied* by a
-					 * NULL return from PyIter_Next() if
-					 * PyErr_Occurred() is false.
-					 */
 					if (PyErr_Occurred()) {
-						if (PyErr_ExceptionMatches(
-						    PyExc_StopIteration))
-							PyErr_Clear();
-						else {
-							Py_XDECREF(alist);
-							goto Fail_1;
-						}
+						Py_XDECREF(alist);
+						goto Fail_1;
 					}
 					Py_INCREF(Py_None);
 					item = Py_None;
 					sqp->saw_StopIteration = 1;
 				}
-
 			}
 			if (alist)
 				PyTuple_SET_ITEM(alist, j, item);
@@ -1445,7 +1428,6 @@ Return the dictionary containing the current scope's local variables.";
 static PyObject *
 min_max(PyObject *args, int op)
 {
-	int i;
 	PyObject *v, *w, *x, *it;
 
 	if (PyTuple_Size(args) > 1)
@@ -1458,21 +1440,13 @@ min_max(PyObject *args, int op)
 		return NULL;
 
 	w = NULL;  /* the result */
-	for (i = 0; ; i++) {
+	for (;;) {
 		x = PyIter_Next(it);
 		if (x == NULL) {
-			/* We're out of here in any case, but if this is a
-			 * StopIteration exception it's expected, but if
-			 * any other kind of exception it's an error.
-			 */
 			if (PyErr_Occurred()) {
-				if (PyErr_ExceptionMatches(PyExc_StopIteration))
-					PyErr_Clear();
-				else {
-					Py_XDECREF(w);
-					Py_DECREF(it);
-					return NULL;
-				}
+				Py_XDECREF(w);
+				Py_DECREF(it);
+				return NULL;
 			}
 			break;
 		}
@@ -1880,16 +1854,9 @@ builtin_reduce(PyObject *self, PyObject *args)
 
 		op2 = PyIter_Next(it);
 		if (op2 == NULL) {
-			/* StopIteration is *implied* by a NULL return from
-			 * PyIter_Next() if PyErr_Occurred() is false.
-			 */
-			if (PyErr_Occurred()) {
-				if (PyErr_ExceptionMatches(PyExc_StopIteration))
-					PyErr_Clear();
-				else
-					goto Fail;
-			}
-			break;
+			if (PyErr_Occurred())
+				goto Fail;
+ 			break;
 		}
 
 		if (result == NULL)

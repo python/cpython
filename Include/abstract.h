@@ -484,9 +484,8 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      DL_IMPORT(PyObject *) PyIter_Next(PyObject *);
      /* Takes an iterator object and calls its tp_iternext slot,
 	returning the next value.  If the iterator is exhausted,
-	this can return NULL without setting an exception, *or*
-	NULL with a StopIteration exception.
-	NULL with any other exception  means an error occurred. */
+	this returns NULL without setting an exception.
+	NULL with an exception means an error occurred. */
 
 /*  Number Protocol:*/
 
