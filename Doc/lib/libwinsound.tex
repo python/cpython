@@ -44,35 +44,36 @@ two functions and several constants.
 \end{datadesc}
 
 \begin{datadesc}{SND_ALIAS}
-  The \var{sound} parameter is a sound association name from the registry.
-  If the registry contains no such name, play the system default sound
-  unless \constant{SND_NODEFAULT} is also specified.
-  If no default sound is registered, raise RuntimeError.
-  Do not use with \constant{SND_FILENAME).
+  The \var{sound} parameter is a sound association name from the
+  registry.  If the registry contains no such name, play the system
+  default sound unless \constant{SND_NODEFAULT} is also specified.
+  If no default sound is registered, raise \exception{RuntimeError}.
+  Do not use with \constant{SND_FILENAME}.
 
   All Win32 systems support at least the following; most systems support
   many more:
 
-  \begin{verbatim}
-  PlaySound argument    Corresponding Control Panel -> Sounds name
-  ------------------    ------------------------------------------
-  'SystemAsterisk'      Asterisk
-  'SystemExclamation'   Exclamation
-  'SystemExit'          Exit Windows
-  'SystemHand'          Critical Stop
-  'SystemQuestion'      Question
-  \end{verbatim}
+\begin{tableii}{l|l}{code}
+               {\function{PlaySound()} \var{name}}
+               {Corresponding Control Panel Sound name}
+  \lineii{'SystemAsterisk'}   {Asterisk}
+  \lineii{'SystemExclamation'}{Exclamation}
+  \lineii{'SystemExit'}       {Exit Windows}
+  \lineii{'SystemHand'}       {Critical Stop}
+  \lineii{'SystemQuestion'}   {Question}
+\end{tableii}
 
-  For example,
+  For example:
 
-  \begin{verbatim}
-    # Play Windows exit sound.
-    winsound.PlaySound("SystemExit", winsound.SND_ALIAS)
+\begin{verbatim}
+import winsound
+# Play Windows exit sound.
+winsound.PlaySound("SystemExit", winsound.SND_ALIAS)
 
-    # Probably play Windows default sound, if any is registered (because
-    # "*" probably isn't the registered name of any sound).
-    winsound.PlaySound("*", winsound.SND_ALIAS)
-  \end{verbatim}
+# Probably play Windows default sound, if any is registered (because
+# "*" probably isn't the registered name of any sound).
+winsound.PlaySound("*", winsound.SND_ALIAS)
+\end{verbatim}
 \end{datadesc}
 
 \begin{datadesc}{SND_LOOP}
@@ -86,7 +87,7 @@ two functions and several constants.
 
   \strong{Note:}  This module does not support playing from a memory
   image asynchronously, so a combination of this flag and
-  \constant{SND_ASYNC} will raise a \exception{RuntimeError}.
+  \constant{SND_ASYNC} will raise \exception{RuntimeError}.
 \end{datadesc}
 
 \begin{datadesc}{SND_PURGE}
