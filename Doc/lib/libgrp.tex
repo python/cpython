@@ -1,0 +1,32 @@
+\section{Built-in Module \sectcode{grp}}
+
+\bimodindex{grp}
+This module provides access to the \UNIX{} group database.
+It is available on all \UNIX{} versions.
+
+Group database entries are reported as 4-tuples containing the
+following items from the group database (see \file{<grp.h>}), in order:
+\code{gr_name},
+\code{gr_passwd},
+\code{gr_gid},
+\code{gr_mem}.
+The gid is an integer, name and password are strings, and the member
+list is a list of strings.
+(Note that most users are not explicitly listed as members of the
+group(s) they are in.)
+An exception is raised if the entry asked for cannot be found.
+
+It defines the following items:
+
+\renewcommand{\indexsubitem}{(in module grp)}
+\begin{funcdesc}{getgrgid}{gid}
+Return the group database entry for the given numeric group ID.
+\end{funcdesc}
+
+\begin{funcdesc}{getgrnam}{name}
+Return the group database entry for the given group name.
+\end{funcdesc}
+
+\begin{funcdesc}{getgrall}{}
+Return a list of all available group entries entries, in arbitrary order.
+\end{funcdesc}

@@ -1,0 +1,24 @@
+\section{Built-in Module \sectcode{dbm}}
+\bimodindex{dbm}
+
+Dbm provides python programs with an interface to the unix \code{ndbm}
+database library.  Dbm objects are of the mapping type, so they can be
+handled just like objects of the built-in \dfn{dictionary} type,
+except that keys and values are always strings, and printing a dbm
+object doesn't print the keys and values.
+
+The module defines the following constant and functions:
+
+\renewcommand{\indexsubitem}{(in module dbm)}
+\begin{excdesc}{error}
+Raised on dbm-specific errors, such as I/O errors. \code{KeyError} is
+raised for general mapping errors like specifying an incorrect key.
+\end{excdesc}
+
+\begin{funcdesc}{open}{filename\, rwmode\, filemode}
+Open a dbm database and return a mapping object.  \var{filename} is
+the name of the database file (without the \file{.dir} or \file{.pag}
+extensions), \var{rwmode} is \code{'r'}, \code{'w'} or \code{'rw'} as for
+\code{open}, and \var{filemode} is the unix mode of the file, used only
+when the database has to be created.
+\end{funcdesc}

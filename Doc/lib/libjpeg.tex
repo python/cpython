@@ -1,0 +1,51 @@
+\section{Built-in Module \sectcode{jpeg}}
+\bimodindex{jpeg}
+
+The module jpeg provides access to the jpeg compressor and
+decompressor written by the Independent JPEG Group. JPEG is a (draft?)
+standard for compressing pictures.  For details on jpeg or the
+Indepent JPEG Group software refer to the JPEG standard or the
+documentation provided with the software.
+
+The jpeg module defines these functions:
+
+\renewcommand{\indexsubitem}{(in module jpeg)}
+\begin{funcdesc}{compress}{data\, w\, h\, b}
+Treat data as a pixmap of width w and height h, with b bytes per
+pixel.  The data is in sgi gl order, so the first pixel is in the
+lower-left corner. This means that lrectread return data can
+immedeately be passed to compress.  Currently only 1 byte and 4 byte
+pixels are allowed, the former being treaded as greyscale and the
+latter as RGB color.  Compress returns a string that contains the
+compressed picture, in JFIF format.
+\end{funcdesc}
+
+\begin{funcdesc}{decompress}{data}
+Data is a string containing a picture in JFIF format. It returns a
+tuple
+\code{(\var{data}, \var{width}, \var{height}, \var{bytesperpixel})}.
+Again, the data is suitable to pass to lrectwrite.
+\end{funcdesc}
+
+\begin{funcdesc}{setoption}{name\, value}
+Set various options.  Subsequent compress and decompress calls
+will use these options.  The following options are available:
+\begin{description}
+\item[\code{'forcegray'}]
+Force output to be grayscale, even if input is RGB.
+
+\item[\code{'quality'}]
+Set the quality of the compressed image to a
+value between \code{0} and \code{100} (default is \code{75}).  Compress only.
+
+\item[\code{'optimize'}]
+Perform huffman table optimization.  Takes longer, but results in
+smaller compressed image.  Compress only.
+
+\item[\code{'smooth'}]
+Perform inter-block smoothing on uncompressed image.  Only useful for
+low-quality images.  Decompress only.
+\end{description}
+\end{funcdesc}
+
+Compress and uncompress raise the error jpeg.error in case of errors.

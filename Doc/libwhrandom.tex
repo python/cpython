@@ -1,0 +1,20 @@
+\section{Standard Module \sectcode{whrandom}}
+
+\stmodindex{whrandom}
+This module implements a Wichmann-Hill pseudo-random number generator.
+It defines the following functions:
+
+\renewcommand{\indexsubitem}{(in module whrandom)}
+\begin{funcdesc}{random}{}
+Returns the next random floating point number in the range [0.0 ... 1.0).
+\end{funcdesc}
+
+\begin{funcdesc}{seed}{x\, y\, z}
+Initializes the random number generator from the integers
+\var{x},
+\var{y}
+and
+\var{z}.
+When the module is first imported, the random number is initialized
+using values derived from the current time.
+\end{funcdesc}

@@ -1,0 +1,121 @@
+\section{Built-in Module \sectcode{time}}
+
+\bimodindex{time}
+This module provides various time-related functions.
+It is always available.  (On some systems, not all functions may
+exist; e.g. the ``milli'' variants can't always be implemented.)
+
+An explanation of some terminology and conventions is in order.
+
+\begin{itemize}
+
+\item
+The ``epoch'' is the point where the time starts.  On January 1st that
+year, at 0 hours, the ``time since the epoch'' is zero.  For UNIX, the
+epoch is 1970.  To find out what the epoch is, look at the first
+element of \code{gmtime(0)}.
+
+\item
+UTC is Coordinated Universal Time (formerly known as Greenwich Mean
+Time).  The acronym UTC is not a mistake but a compromise between
+English and French.
+
+\item
+DST is Daylight Saving Time, an adjustment of the timezone by
+(usually) one hour during part of the year.  DST rules are magic
+(determined by local law) and can change from year to year.  The C
+library has a table containing the local rules (often it is read from
+a system file for flexibility) and is the only source of True Wisdom
+in this respect.
+
+\item
+The precision of the various real-time functions may be less than
+suggested by the units in which their value or argument is expressed.
+E.g. on most UNIX systems, the clock ``ticks'' only every 1/50th or
+1/100th of a second, and on the Mac, it ticks 60 times a second.
+
+\end{itemize}
+
+Functions and data items are:
+
+\renewcommand{\indexsubitem}{(in module time)}
+
+\begin{datadesc}{altzone}
+The offset of the local DST timezone, in seconds west of the 0th
+meridian, if one is defined.  Only use this if \code{daylight} is
+nonzero.
+\end{datadesc}
+
+
+\begin{funcdesc}{asctime}{tuple}
+Convert a tuple representing a time as returned by \code{gmtime()} or
+\code{localtime()} to a 24-character string of the following form:
+\code{'Sun Jun 20 23:21:05 1993'}.  Note: unlike the C function of
+the same name, there is no trailing newline.
+\end{funcdesc}
+
+
+\begin{funcdesc}{ctime}{secs}
+Convert a time expressed in seconds since the epoch to a string
+representing local time.  \code{ctime(t)} is equivalent to
+\code{asctime(localtime(t))}.
+\end{funcdesc}
+
+\begin{datadesc}{daylight}
+Nonzero if a DST timezone is defined.
+\end{datadesc}
+
+\begin{funcdesc}{gmtime}{secs}
+Convert a time expressed in seconds since the epoch to a tuple of 9
+integers, in UTC: year (e.g. 1993), month (1-12), day (1-31), hour
+(0-23), minute (0-59), second (0-59), weekday (0-6, monday is 0),
+julian day (1-366), dst flag (always zero).  Fractions of a second are
+ignored.  Note subtle differences with the C function of this name.
+\end{funcdesc}
+
+\begin{funcdesc}{localtime}{secs}
+Like \code{gmtime} but converts to local time.  The dst flag is set
+to 1 when DST applies to the given time.
+\end{funcdesc}
+
+\begin{funcdesc}{millisleep}{msecs}
+Suspend execution for the given number of milliseconds.  (Obsolete,
+you can now use use \code{sleep} with a floating point argument.)
+\end{funcdesc}
+
+\begin{funcdesc}{millitimer}{}
+Return the number of milliseconds of real time elapsed since some
+point in the past that is fixed per execution of the python
+interpreter (but may change in each following run).  The return value
+may be negative, and it may wrap around.
+\end{funcdesc}
+
+\begin{funcdesc}{mktime}{tuple}
+This is the inverse function of \code{localtime}.  Its argument is the
+full 9-tuple (since the dst flag is needed).  It returns an integer.
+\end{funcdesc}
+
+\begin{funcdesc}{sleep}{secs}
+Suspend execution for the given number of seconds.  The argument may
+be a floating point number to indicate a more precise sleep time.
+\end{funcdesc}
+
+\begin{funcdesc}{time}{}
+Return the time as a floating point number expressed in seconds since
+the epoch, in UTC.  Note that even though the time is always returned
+as a floating point number, not all systems provide time with a better
+precision than 1 second.  An alternative for measuring precise
+intervals is \code{millitimer}.
+\end{funcdesc}
+
+\begin{datadesc}{timezone}
+The offset of the local (non-DST) timezone, in seconds west of the 0th
+meridian (i.e. negative in most of Western Europe, positive in the US,
+zero in the UK).
+\end{datadesc}
+
+\begin{datadesc}{tzname}
+A tuple of two strings: the first is the name of the local non-DST
+timezone, the second is the name of the local DST timezone.  If no DST
+timezone is defined, the second string should not be used.
+\end{datadesc}

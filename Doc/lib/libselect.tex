@@ -1,0 +1,42 @@
+\section{Built-in module \sectcode{select}}
+\bimodindex{select}
+
+This module provides access to the function \code{select} available in
+most \UNIX{} versions.  It defines the following:
+
+\renewcommand{\indexsubitem}{(in module select)}
+\begin{excdesc}{error}
+The exception raised when an error occurs.  The accompanying value is
+a pair containing the numeric error code from \code{errno} and the
+corresponding string, as would be printed by the C function
+\code{perror()}.
+\end{excdesc}
+
+\begin{funcdesc}{select}{iwtd\, owtd\, ewtd\, timeout}
+This is a straightforward interface to the \UNIX{} \code{select()}
+system call.  The first three arguments are lists of `waitable
+objects': either integers representing \UNIX{} file descriptors or
+objects with a parameterless method named \code{fileno()} returning
+such an integer.  The three lists of waitable objects are for input,
+output and `exceptional conditions', respectively.  Empty lists are
+allowed.  The optional last argument is a time-out specified as a
+floating point number in seconds.  When the \var{timeout} argument
+is omitted the function blocks until at least one file descriptor is
+ready.  A time-out value of zero specifies a poll and never blocks.
+
+The return value is a triple of lists of objects that are ready:
+subsets of the first three arguments.  When the time-out is reached
+without a file descriptor becoming ready, three empty lists are
+returned.
+
+Amongst the acceptable object types in the lists are Python file
+objects (e.g. \code{sys.stdin}, or objects returned by \code{open()}
+or \code{posix.popen()}), socket objects returned by
+\code{socket.socket()}, and the module \code{stdwin} which happens to
+define a function \code{fileno()} for just this purpose.  You may
+also define a \dfn{wrapper} class yourself, as long as it has an
+appropriate \code{fileno()} method (that really returns a \UNIX{} file
+descriptor, not just a random integer).
+\end{funcdesc}
+\ttindex{socket}
+\ttindex{stdwin}

@@ -1,0 +1,77 @@
+\section{Standard Module \sectcode{os}}
+
+\stmodindex{os}
+This module provides a more portable way of using operating system
+(OS) dependent functionality than importing an OS dependent built-in
+module like \code{posix}.
+
+When the optional built-in module \code{posix} is available, this
+module exports the same functions and data as \code{posix}; otherwise,
+it searches for an OS dependent built-in module like \code{mac} and
+exports the same functions and data as found there.  The design of all
+Python's built-in OS dependen modules is such that as long as the same
+functionality is available, it uses the same interface; e.g., the
+function \code{os.stat(\var{file})} returns stat info about a \var{file} in a
+format compatible with the POSIX interface.
+
+Extensions peculiar to a particular OS are also available through the
+\code{os} module, but using them is of course a threat to portability!
+
+Note that after the first time \code{os} is imported, there is \emph{no}
+performance penalty in using functions from \code{os} instead of
+directly from the OS dependent built-in module, so there should be
+\emph{no} reason not to use \code{os}!
+
+In addition to whatever the correct OS dependent module exports, the
+following variables and functions are always exported by \code{os}:
+
+\renewcommand{\indexsubitem}{(in module os)}
+\begin{datadesc}{name}
+The name of the OS dependent module imported, e.g. \code{'posix'} or
+\code{'mac'}.
+\end{datadesc}
+
+\begin{datadesc}{path}
+The corresponding OS dependent standard module for pathname
+operations, e.g., \code{posixpath} or \code{macpath}.  Thus, (given
+the proper imports), \code{os.path.split(\var{file})} is equivalent to but
+more portable than \code{posixpath.split(\var{file})}.
+\end{datadesc}
+
+\begin{datadesc}{curdir}
+The constant string used by the OS to refer to the current directory,
+e.g. \code{'.'} for POSIX or \code{':'} for the Mac.
+\end{datadesc}
+
+\begin{datadesc}{pardir}
+The constant string used by the OS to refer to the parent directory,
+e.g. \code{'..'} for POSIX or \code{'::'} for the Mac.
+\end{datadesc}
+
+\begin{datadesc}{sep}
+The character used by the OS to separate pathname components, e.g.
+\code{'/'} for POSIX or \code{':'} for the Mac.  Note that knowing this
+is not sufficient to be able to parse or concatenate pathnames---better
+use \code{os.path.split()} and \code{os.path.join()}---but it is
+occasionally useful.
+\end{datadesc}
+
+\begin{funcdesc}{execl}{path\, arg0\, arg1\, ...}
+This is equivalent to a call to \code{os.execv} with an \var{argv}
+of \code{[\var{arg0}, \var{arg1}, ...]}.
+\end{funcdesc}
+
+\begin{funcdesc}{execle}{path\, arg0\, arg1\, ...\, env}
+This is equivalent to a call to \code{os.execve} with an \var{argv}
+of \code{[\var{arg0}, \var{arg1}, ...]}.
+\end{funcdesc}
+
+\begin{funcdesc}{execlp}{path\, arg0\, arg1\, ...}
+This is like \code{execl} but duplicates the shell's actions in
+searching for an executable file in a list of directories.  The
+directory list is obtained from \code{environ['PATH']}.
+\end{funcdesc}
+
+\begin{funcdesc}{execvp}{path\, arg0\, arg1\, ...}
+\code{execvp} is for \code{execv} what \code{execlp} is for \code{execl}.
+\end{funcdesc}

@@ -1,0 +1,19 @@
+\chapter{Built-in Types, Exceptions and Functions}
+
+\nodename{Built-in Objects}
+
+Names for built-in exceptions and functions are found in a separate
+symbol table.  This table is searched last, so local and global
+user-defined names can override built-in names.  Built-in types have
+no names but are created easily by constructing an object of the
+desired type (e.g., using a literal) and applying the built-in
+function \code{type()} to it.  They are described together here for
+easy reference.%
+\footnote{Some descriptions sorely lack explanations of the exceptions
+	that may be raised --- this will be fixed in a future version of
+	this document.}
+\indexii{built-in}{types}
+\indexii{built-in}{exceptions}
+\indexii{built-in}{functions}
+\index{symbol table}
+\bifuncindex{type}

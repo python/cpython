@@ -1,0 +1,75 @@
+\section{Built-in module \sectcode{struct}}
+\bimodindex{struct}
+\indexii{C}{structures}
+
+This module performs conversions between Python values and C
+structs represented as Python strings.  It uses \dfn{format strings}
+(explained below) as compact descriptions of the lay-out of the C
+structs and the intended conversion to/from Python values.
+
+The module defines the following exception and functions:
+
+\renewcommand{\indexsubitem}{(in module struct)}
+\begin{excdesc}{error}
+  Exception raised on various occasions; argument is a string
+  describing what is wrong.
+\end{excdesc}
+
+\begin{funcdesc}{pack}{fmt\, v1\, v2\, {\rm \ldots}}
+  Return a string containing the values
+  \code{\var{v1}, \var{v2}, {\rm \ldots}} packed according to the given
+  format.  The arguments must match the values required by the format
+  exactly.
+\end{funcdesc}
+
+\begin{funcdesc}{unpack}{fmt\, string}
+  Unpack the string (presumably packed by \code{pack(\var{fmt}, {\rm \ldots})})
+  according to the given format.  The result is a tuple even if it
+  contains exactly one item.  The string must contain exactly the
+  amount of data required by the format (i.e.  \code{len(\var{string})} must
+  equal \code{calcsize(\var{fmt})}).
+\end{funcdesc}
+
+\begin{funcdesc}{calcsize}{fmt}
+  Return the size of the struct (and hence of the string)
+  corresponding to the given format.
+\end{funcdesc}
+
+Format characters have the following meaning; the conversion between C
+and Python values should be obvious given their types:
+
+\begin{tableiii}{|c|l|l|}{samp}{Format}{C}{Python}
+  \lineiii{x}{pad byte}{no value}
+  \lineiii{c}{char}{string of length 1}
+  \lineiii{b}{signed char}{integer}
+  \lineiii{h}{short}{integer}
+  \lineiii{i}{int}{integer}
+  \lineiii{l}{long}{integer}
+  \lineiii{f}{float}{float}
+  \lineiii{d}{double}{float}
+\end{tableiii}
+
+A format character may be preceded by an integral repeat count; e.g.
+the format string \code{'4h'} means exactly the same as \code{'hhhh'}.
+
+C numbers are represented in the machine's native format and byte
+order, and properly aligned by skipping pad bytes if necessary
+(according to the rules used by the C compiler).
+
+Examples (all on a big-endian machine):
+
+\bcode\begin{verbatim}
+pack('hhl', 1, 2, 3) == '\000\001\000\002\000\000\000\003'
+unpack('hhl', '\000\001\000\002\000\000\000\003') == (1, 2, 3)
+calcsize('hhl') == 8
+\end{verbatim}\ecode
+
+Hint: to align the end of a structure to the alignment requirement of
+a particular type, end the format with the code for that type with a
+repeat count of zero, e.g. the format \code{'llh0l'} specifies two
+pad bytes at the end, assuming longs are aligned on 4-byte boundaries.
+
+(More format characters are planned, e.g. \code{'s'} for character
+arrays, upper case for unsigned variants, and a way to specify the
+byte order, which is useful for [de]constructing network packets and
+reading/writing portable binary file formats like TIFF and AIFF.)
