@@ -461,14 +461,27 @@ class Random:
         return mu + z*sigma
 
 ## -------------------- beta --------------------
+## See
+## http://sourceforge.net/bugs/?func=detailbug&bug_id=130030&group_id=5470
+## for Ivan Frohne's insightful analysis of why the original implementation:
+##
+##    def betavariate(self, alpha, beta):
+##        # Discrete Event Simulation in C, pp 87-88.
+##
+##        y = self.expovariate(alpha)
+##        z = self.expovariate(1.0/beta)
+##        return z/(y+z)
+##
+## was dead wrong, and how it probably got that way.
 
     def betavariate(self, alpha, beta):
-
-        # Discrete Event Simulation in C, pp 87-88.
-
-        y = self.expovariate(alpha)
-        z = self.expovariate(1.0/beta)
-        return z/(y+z)
+        # This version due to Janne Sinkkonen, and matches all the std
+        # texts (e.g., Knuth Vol 2 Ed 3 pg 134 "the beta distribution").
+        y = self.gammavariate(alpha, 1.)
+        if y == 0:
+            return 0.0
+        else:
+            return y / (y + self.gammavariate(beta, 1.))
 
 ## -------------------- Pareto --------------------
 
