@@ -1,4 +1,4 @@
-# Generated from 'Sap:CodeWarrior7:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:AppleEvents.h'
+# Generated from 'Sap:CW8 Gold:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:AppleEvents.h'
 
 f = AEFunction(OSErr, 'AECreateDesc',
     (DescType, 'typeCode', InMode),

@@ -1,13 +1,14 @@
 # Scan an Apple header file, generating a Python file of generator calls.
 import addpack
 addpack.addpack(':Tools:bgen:bgen')
+from bgenlocations import TOOLBOXDIR
 
 from scantools import Scanner
 
 def main():
 	input = "Windows.h"
 	output = "wingen.py"
-	defsoutput = "Windows.py"
+	defsoutput = TOOLBOXDIR + "Windows.py"
 	scanner = MyScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()

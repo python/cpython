@@ -4,13 +4,14 @@
 
 import addpack
 addpack.addpack(':Tools:bgen:bgen')
+from bgenlocations import TOOLBOXDIR
 
 from scantools import Scanner
 
 def main():
 	input = "Sound.h"
 	output = "sndgen.py"
-	defsoutput = "Sound.py"
+	defsoutput = TOOLBOXDIR + "Sound.py"
 	scanner = SoundScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()

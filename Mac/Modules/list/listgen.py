@@ -1,4 +1,4 @@
-# Generated from 'flap:CW8 Gold:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Lists.h'
+# Generated from 'Sap:CW8 Gold:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Lists.h'
 
 f = Function(ListRef, 'LNew',
     (Rect_ptr, 'rView', InMode),

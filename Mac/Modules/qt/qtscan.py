@@ -3,6 +3,7 @@
 import addpack
 addpack.addpack(':tools:bgen:bgen')
 from scantools import Scanner
+from bgenlocations import TOOLBOXDIR
 
 LONG = "QuickTime"
 SHORT = "qt"
@@ -11,7 +12,7 @@ OBJECTS = ("Movie", "Track", "Media", "UserData", "TimeBase", "MovieController")
 def main():
 	input = "Movies.h"
 	output = SHORT + "gen.py"
-	defsoutput = LONG + ".py"
+	defsoutput = TOOLBOXDIR + LONG + ".py"
 	scanner = MyScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()

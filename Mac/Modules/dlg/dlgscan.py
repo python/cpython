@@ -4,6 +4,7 @@ import addpack
 addpack.addpack(':Tools:bgen:bgen')
 
 from scantools import Scanner
+from bgenlocations import TOOLBOXDIR
 
 LONG = "Dialogs"
 SHORT = "dlg"
@@ -12,7 +13,7 @@ OBJECT = "DialogPtr"
 def main():
 	input = LONG + ".h"
 	output = SHORT + "gen.py"
-	defsoutput = LONG + ".py"
+	defsoutput = TOOLBOXDIR + LONG + ".py"
 	scanner = MyScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()

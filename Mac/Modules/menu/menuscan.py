@@ -3,11 +3,12 @@ import addpack
 addpack.addpack(':Tools:bgen:bgen')
 
 from scantools import Scanner
+from bgenlocations import TOOLBOXDIR
 
 def main():
 	input = "Menus.h"
 	output = "menugen.py"
-	defsoutput = "Menus.py"
+	defsoutput = TOOLBOXDIR + "Menus.py"
 	scanner = MyScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()
