@@ -1,0 +1,59 @@
+\section{Built-in Module \sectcode{marshal}}
+
+\bimodindex{marshal}
+This module contains functions that can read and write Python
+values in a binary format.  The format is specific to Python, but
+independent of machine architecture issues (e.g., you can write a
+Python value to a file on a VAX, transport the file to a Mac, and read
+it back there).  Details of the format not explained here; read the
+source if you're interested.%
+\footnote{The name of this module stems from a bit of terminology used
+by the designers of Modula-3 (amongst others), who use the term
+``marshalling'' for shipping of data around in a self-contained form.
+Strictly speaking, ``to marshal'' means to convert some data from
+internal to external form (in an RPC buffer for instance) and
+``unmarshalling'' for the reverse process.}
+
+
+Not all Python object types are supported; in general, only objects
+whose value is independent from a particular invocation of Python can
+be written and read by this module.  The following types are supported:
+\code{None}, integers, long integers, floating point numbers,
+strings, tuples, lists, dictionaries, and code objects, where it
+should be understood that tuples, lists and dictionaries are only
+supported as long as the values contained therein are themselves
+supported; and recursive lists and dictionaries should not be written
+(they will cause an infinite loop).
+
+There are functions that read/write files as well as functions
+operating on strings.
+
+The module defines these functions:
+
+\renewcommand{\indexsubitem}{(in module marshal)}
+\begin{funcdesc}{dump}{value\, file}
+  Write the value on the open file.  The value must be a supported
+  type.  The file must be an open file object such as
+  \code{sys.stdout} or returned by \code{open()} or
+  \code{posix.popen()}.
+  
+  If the value has an unsupported type, garbage is written which cannot
+  be read back by \code{load()}.
+\end{funcdesc}
+
+\begin{funcdesc}{load}{file}
+  Read one value from the open file and return it.  If no valid value
+  is read, raise \code{EOFError}, \code{ValueError} or
+  \code{TypeError}.  The file must be an open file object.
+\end{funcdesc}
+
+\begin{funcdesc}{dumps}{value}
+  Return the string that would be written to a file by
+  \code{dump(value, file)}.  The value must be a supported type.
+\end{funcdesc}
+
+\begin{funcdesc}{loads}{string}
+  Convert the string to a value.  If no valid value is found, raise
+  \code{EOFError}, \code{ValueError} or \code{TypeError}.  Extra
+  characters in the string are ignored.
+\end{funcdesc}

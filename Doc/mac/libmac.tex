@@ -1,0 +1,40 @@
+\chapter{MACINTOSH ONLY}
+
+The following modules are available on the Apple Macintosh only.
+
+\section{Built-in module \sectcode{mac}}
+
+\bimodindex{mac}
+This module provides a subset of the operating system dependent
+functionality provided by the optional built-in module \code{posix}.
+It is best accessed through the more portable standard module
+\code{os}.
+
+The following functions are available in this module:
+\code{chdir},
+\code{getcwd},
+\code{listdir},
+\code{mkdir},
+\code{rename},
+\code{rmdir},
+\code{stat},
+\code{sync},
+\code{unlink},
+as well as the exception \code{error}.
+
+\section{Standard module \sectcode{macpath}}
+
+\stmodindex{macpath}
+This module provides a subset of the pathname manipulation functions
+available from the optional standard module \code{posixpath}.  It is
+best accessed through the more portable standard module \code{os}, as
+\code{os.path}.
+
+The following functions are available in this module:
+\code{normcase},
+\code{isabs},
+\code{join},
+\code{split},
+\code{isdir},
+\code{isfile},
+\code{exists}.

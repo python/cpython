@@ -1,0 +1,70 @@
+\section{Built-in Module \sectcode{math}}
+
+\bimodindex{math}
+\renewcommand{\indexsubitem}{(in module math)}
+This module is always available.
+It provides access to the mathematical functions defined by the C
+standard.
+They are:
+\iftexi
+\begin{funcdesc}{acos}{x}
+\funcline{asin}{x}
+\funcline{atan}{x}
+\funcline{atan2}{x, y}
+\funcline{ceil}{x}
+\funcline{cos}{x}
+\funcline{cosh}{x}
+\funcline{exp}{x}
+\funcline{fabs}{x}
+\funcline{floor}{x}
+\funcline{fmod}{x, y}
+\funcline{frexp}{x}
+\funcline{ldexp}{x, y}
+\funcline{log}{x}
+\funcline{log10}{x}
+\funcline{modf}{x}
+\funcline{pow}{x, y}
+\funcline{sin}{x}
+\funcline{sinh}{x}
+\funcline{sqrt}{x}
+\funcline{tan}{x}
+\funcline{tanh}{x}
+\end{funcdesc}
+\else
+\code{acos(\varvars{x})},
+\code{asin(\varvars{x})},
+\code{atan(\varvars{x})},
+\code{atan2(\varvars{x\, y})},
+\code{ceil(\varvars{x})},
+\code{cos(\varvars{x})},
+\code{cosh(\varvars{x})},
+\code{exp(\varvars{x})},
+\code{fabs(\varvars{x})},
+\code{floor(\varvars{x})},
+\code{fmod(\varvars{x\, y})},
+\code{frexp(\varvars{x})},
+\code{ldexp(\varvars{x\, y})},
+\code{log(\varvars{x})},
+\code{log10(\varvars{x})},
+\code{modf(\varvars{x})},
+\code{pow(\varvars{x\, y})},
+\code{sin(\varvars{x})},
+\code{sinh(\varvars{x})},
+\code{sqrt(\varvars{x})},
+\code{tan(\varvars{x})},
+\code{tanh(\varvars{x})}.
+\fi
+
+Note that \code{frexp} and \code{modf} have a different call/return
+pattern than their C equivalents: they take a single argument and
+return a pair of values, rather than returning their second return
+value through an `output parameter' (there is no such thing in Python).
+
+The module also defines two mathematical constants:
+\iftexi
+\begin{datadesc}{pi}
+\dataline{e}
+\end{datadesc}
+\else
+\code{pi} and \code{e}.
+\fi

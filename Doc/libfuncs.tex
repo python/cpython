@@ -1,0 +1,356 @@
+\section{Built-in Functions}
+
+The Python interpreter has a number of functions built into it that
+are always available.  They are listed here in alphabetical order.
+
+
+\renewcommand{\indexsubitem}{(built-in function)}
+\begin{funcdesc}{abs}{x}
+  Return the absolute value of a number.  The argument may be a plain
+  or long integer or a floating point number.
+\end{funcdesc}
+
+\begin{funcdesc}{apply}{function\, args}
+The \var{function} argument must be a callable object (a user-defined or
+built-in function or method, or a class object) and the \var{args}
+argument must be a tuple.  The \var{function} is called with
+\var{args} as argument list; the number of arguments is the the length
+of the tuple.  (This is different from just calling
+\code{\var{func}(\var{args})}, since in that case there is always
+exactly one argument.)
+\end{funcdesc}
+
+\begin{funcdesc}{chr}{i}
+  Return a string of one character whose \ASCII{} code is the integer
+  \var{i}, e.g., \code{chr(97)} returns the string \code{'a'}.  This is the
+  inverse of \code{ord()}.  The argument must be in the range [0..255],
+  inclusive.
+\end{funcdesc}
+
+\begin{funcdesc}{cmp}{x\, y}
+  Compare the two objects \var{x} and \var{y} and return an integer
+  according to the outcome.  The return value is negative if \code{\var{x}
+  < \var{y}}, zero if \code{\var{x} == \var{y}} and strictly positive if
+  \code{\var{x} > \var{y}}.
+\end{funcdesc}
+
+\begin{funcdesc}{coerce}{x\, y}
+  Return a tuple consisting of the two numeric arguments converted to
+  a common type, using the same rules as used by arithmetic
+  operations.
+\end{funcdesc}
+
+\begin{funcdesc}{compile}{string\, filename\, kind}
+  Compile the \var{string} into a code object.  Code objects can be
+  executed by a \code{exec()} statement or evaluated by a call to
+  \code{eval()}.  The \var{filename} argument should
+  give the file from which the code was read; pass e.g. \code{'<string>'}
+  if it wasn't read from a file.  The \var{kind} argument specifies
+  what kind of code must be compiled; it can be \code{'exec'} if
+  \var{string} consists of a sequence of statements, or \code{'eval'}
+  if it consists of a single expression.
+\end{funcdesc}
+
+\begin{funcdesc}{dir}{}
+  Without arguments, return the list of names in the current local
+  symbol table.  With a module, class or class instance object as
+  argument (or anything else that has a \code{__dict__} attribute),
+  returns the list of names in that object's attribute dictionary.
+  The resulting list is sorted.  For example:
+
+\bcode\begin{verbatim}
+>>> import sys
+>>> dir()
+['sys']
+>>> dir(sys)
+['argv', 'exit', 'modules', 'path', 'stderr', 'stdin', 'stdout']
+>>> 
+\end{verbatim}\ecode
+\end{funcdesc}
+
+\begin{funcdesc}{divmod}{a\, b}
+  Take two numbers as arguments and return a pair of integers
+  consisting of their integer quotient and remainder.  With mixed
+  operand types, the rules for binary arithmetic operators apply.  For
+  plain and long integers, the result is the same as
+  \code{(\var{a} / \var{b}, \var{a} \%{} \var{b})}.
+  For floating point numbers the result is the same as
+  \code{(math.floor(\var{a} / \var{b}), \var{a} \%{} \var{b})}.
+\end{funcdesc}
+
+\begin{funcdesc}{eval}{s\, globals\, locals}
+  The arguments are a string and two optional dictionaries.  The
+  string argument is parsed and evaluated as a Python expression
+  (technically speaking, a condition list) using the dictionaries as
+  global and local name space.  The string must not contain null bytes
+  or newline characters.  The return value is the
+  result of the expression.  If the third argument is omitted it
+  defaults to the second.  If both dictionaries are omitted, the
+  expression is executed in the environment where \code{eval} is
+  called.  Syntax errors are reported as exceptions.  Example:
+
+\bcode\begin{verbatim}
+>>> x = 1
+>>> print eval('x+1')
+2
+>>> 
+\end{verbatim}\ecode
+
+  This function can also be used to execute arbitrary code objects
+  (e.g. created by \code{compile()}).  In this case pass a code
+  object instead of a string.  The code object must have been compiled
+  passing \code{'eval'} to the \var{kind} argument.
+
+  Note: dynamic execution of statements is supported by the
+  \code{exec} statement.
+
+\end{funcdesc}
+
+\begin{funcdesc}{filter}{function\, list}
+Construct a list from those elements of \var{list} for which
+\var{function} returns true.  If \var{list} is a string or a tuple,
+the result also has that type; otherwise it is always a list.  If
+\var{function} is \code{None}, the identity function is assumed,
+i.e. all elements of \var{list} that are false (zero or empty) are
+removed.
+\end{funcdesc}
+
+\begin{funcdesc}{float}{x}
+  Convert a number to floating point.  The argument may be a plain or
+  long integer or a floating point number.
+\end{funcdesc}
+
+\begin{funcdesc}{getattr}{object\, name}
+  The arguments are an object and a string.  The string must be the
+  name
+  of one of the object's attributes.  The result is the value of that
+  attribute.  For example, \code{getattr(\var{x}, '\var{foobar}')} is equivalent to
+  \code{\var{x}.\var{foobar}}.
+\end{funcdesc}
+
+\begin{funcdesc}{hasattr}{object\, name}
+  The arguments are an object and a string.  The result is 1 if the
+  string is the name of one of the object's attributes, 0 if not.
+  (This is implemented by calling \code{getattr(object, name)} and
+  seeing whether it raises an exception or not.)
+\end{funcdesc}
+
+\begin{funcdesc}{hash}{object}
+  Return the hash value of the object (if it has one).  Hash values
+  are 32-bit integers.  They are used to quickly compare dictionary
+  keys during a dictionary lookup.  Numeric values that compare equal
+  have the same hash value (even if they are of different types, e.g.
+  1 and 1.0).
+\end{funcdesc}
+
+\begin{funcdesc}{hex}{x}
+  Convert a number to a hexadecimal string.  The result is a valid
+  Python expression.
+\end{funcdesc}
+
+\begin{funcdesc}{id}{object}
+  Return the `identity' of an object.  This is an integer which is
+  guaranteed to be unique and constant for this object during its
+  lifetime.  (Two objects whose lifetimes are disjunct may have the
+  same id() value.)  (Implementation note: this is the address of the
+  object.)
+\end{funcdesc}
+
+\begin{funcdesc}{input}{prompt}
+  Almost equivalent to \code{eval(raw_input(\var{prompt}))}.  As for
+  \code{raw_input()}, the prompt argument is optional.  The difference is
+  that a long input expression may be broken over multiple lines using the
+  backslash convention.
+\end{funcdesc}
+
+\begin{funcdesc}{int}{x}
+  Convert a number to a plain integer.  The argument may be a plain or
+  long integer or a floating point number.
+\end{funcdesc}
+
+\begin{funcdesc}{len}{s}
+  Return the length (the number of items) of an object.  The argument
+  may be a sequence (string, tuple or list) or a mapping (dictionary).
+\end{funcdesc}
+
+\begin{funcdesc}{long}{x}
+  Convert a number to a long integer.  The argument may be a plain or
+  long integer or a floating point number.
+\end{funcdesc}
+
+\begin{funcdesc}{map}{function\, list\, ...}
+Apply \var{function} to every item of \var{list} and return a list
+of the results.  If additional \var{list} arguments are passed, 
+\var{function} must take that many arguments and is applied to
+the items of all lists in parallel; if a list is shorter than another
+it is assumed to be extended with \code{None} items.  If
+\var{function} is \code{None}, the identity function is assumed; if
+there are multiple list arguments, \code{map} returns a list
+consisting of tuples containing the corresponding items from all lists
+(i.e. a kind of transpose operation).  The \var{list} arguments may be
+any kind of sequence; the result is always a list.
+\end{funcdesc}
+
+\begin{funcdesc}{max}{s}
+  Return the largest item of a non-empty sequence (string, tuple or
+  list).
+\end{funcdesc}
+
+\begin{funcdesc}{min}{s}
+  Return the smallest item of a non-empty sequence (string, tuple or
+  list).
+\end{funcdesc}
+
+\begin{funcdesc}{oct}{x}
+  Convert a number to an octal string.  The result is a valid Python
+  expression.
+\end{funcdesc}
+
+\begin{funcdesc}{open}{filename\, mode}
+  % XXXJH xrefs here to Built-in types?
+  Return a new file object (described earlier under Built-in Types).
+  The string arguments are the same as for \code{stdio}'s
+  \code{fopen()}: \var{filename} is the file name to be opened,
+  \var{mode} indicates how the file is to be opened: \code{'r'} for
+  reading, \code{'w'} for writing (truncating an existing file), and
+  \code{'a'} opens it for appending.  Modes \code{'r+'}, \code{'w+'} and
+  \code{'a+'} open the file for updating, provided the underlying
+  \code{stdio} library understands this.  On systems that differentiate
+  between binary and text files, \code{'b'} appended to the mode opens
+  the file in binary mode.  If the file cannot be opened, \code{IOError}
+  is raised.
+\end{funcdesc}
+
+\begin{funcdesc}{ord}{c}
+  Return the \ASCII{} value of a string of one character.  E.g.,
+  \code{ord('a')} returns the integer \code{97}.  This is the inverse of
+  \code{chr()}.
+\end{funcdesc}
+
+\begin{funcdesc}{pow}{x\, y}
+  Return \var{x} to the power \var{y}.  The arguments must have
+  numeric types.  With mixed operand types, the rules for binary
+  arithmetic operators apply.  The effective operand type is also the
+  type of the result; if the result is not expressible in this type, the
+  function raises an exception; e.g., \code{pow(2, -1)} is not allowed.
+\end{funcdesc}
+
+\begin{funcdesc}{range}{start\, end\, step}
+  This is a versatile function to create lists containing arithmetic
+  progressions.  It is most often used in \code{for} loops.  The
+  arguments must be plain integers.  If the \var{step} argument is
+  omitted, it defaults to \code{1}.  If the \var{start} argument is
+  omitted, it defaults to \code{0}.  The full form returns a list of
+  plain integers \code{[\var{start}, \var{start} + \var{step},
+  \var{start} + 2 * \var{step}, \ldots]}.  If \var{step} is positive,
+  the last element is the largest \code{\var{start} + \var{i} *
+  \var{step}} less than \var{end}; if \var{step} is negative, the last
+  element is the largest \code{\var{start} + \var{i} * \var{step}}
+  greater than \var{end}.  \var{step} must not be zero.  Example:
+
+\bcode\begin{verbatim}
+>>> range(10)
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+>>> range(1, 11)
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+>>> range(0, 30, 5)
+[0, 5, 10, 15, 20, 25]
+>>> range(0, 10, 3)
+[0, 3, 6, 9]
+>>> range(0, -10, -1)
+[0, -1, -2, -3, -4, -5, -6, -7, -8, -9]
+>>> range(0)
+[]
+>>> range(1, 0)
+[]
+>>> 
+\end{verbatim}\ecode
+\end{funcdesc}
+
+\begin{funcdesc}{raw_input}{prompt}
+  The string argument is optional; if present, it is written to
+  standard
+  output without a trailing newline.  The function then reads a line
+  from input, converts it to a string (stripping a trailing newline),
+  and returns that.  When \EOF{} is read, \code{EOFError} is raised.
+  Example:
+
+\bcode\begin{verbatim}
+>>> s = raw_input('--> ')
+--> Monty Python's Flying Circus
+>>> s
+'Monty Python\'s Flying Circus'
+>>> 
+\end{verbatim}\ecode
+\end{funcdesc}
+
+\begin{funcdesc}{reduce}{function\, list\, initializer}
+Apply the binary \var{function} to the items of \var{list} so as to
+reduce the list to a single value.  E.g.,
+\code{reduce(lambda x, y: x*y, \var{list}, 1)} returns the product of
+the elements of \var{list}.  The optional \var{initializer} can be
+thought of as being prepended to \var{list} so as to allow reduction
+of an empty \var{list}.  The \var{list} arguments may be any kind of
+sequence.
+\end{funcdesc}
+
+\begin{funcdesc}{reload}{module}
+  Re-parse and re-initialize an already imported \var{module}.  The
+  argument must be a module object, so it must have been successfully
+  imported before.  This is useful if you have edited the module source
+  file using an external editor and want to try out the new version
+  without leaving the Python interpreter.  Note that if a module is
+  syntactically correct but its initialization fails, the first
+  \code{import} statement for it does not import the name, but does
+  create a (partially initialized) module object; to reload the module
+  you must first \code{import} it again (this will just make the
+  partially initialized module object available) before you can
+  \code{reload()} it.
+\end{funcdesc}
+
+\begin{funcdesc}{repr}{object}
+Return a string containing a printable representation of an object.
+This is the same value yielded by conversions (reverse quotes).
+It is sometimes useful to be able to access this operation as an
+ordinary function.  For many types, this function makes an attempt
+to return a string that would yield an object with the same value
+when passed to \code{eval()}.
+\end{funcdesc}
+
+\begin{funcdesc}{round}{x\, n}
+  Return the floating point value \var{x} rounded to \var{n} digits
+  after the decimal point.  If \var{n} is omitted, it defaults to zero.
+  The result is a floating point number.  Values are rounded to the
+  closest multiple of 10 to the power minus \var{n}; if two multiples
+  are equally close, rounding is done away from 0 (so e.g.
+  \code{round(0.5)} is \code{1.0} and \code{round(-0.5)} is \code{-1.0}).
+\end{funcdesc}
+
+\begin{funcdesc}{setattr}{object\, name\, value}
+  This is the counterpart of \code{getattr}.  The arguments are an
+  object, a string and an arbitrary value.  The string must be the name
+  of one of the object's attributes.  The function assigns the value to
+  the attribute, provided the object allows it.  For example,
+  \code{setattr(\var{x}, '\var{foobar}', 123)} is equivalent to
+  \code{\var{x}.\var{foobar} = 123}.
+\end{funcdesc}
+
+\begin{funcdesc}{str}{object}
+Return a string containing a nicely printable representation of an
+object.  For strings, this returns the string itself.  The difference
+with \code{repr(\var{object}} is that \code{str(\var{object}} does not
+always attempt to return a string that is acceptable to \code{eval()};
+its goal is to return a printable string.
+\end{funcdesc}
+
+\begin{funcdesc}{type}{object}
+% XXXJH xref to buil-in objects here?
+  Return the type of an \var{object}.  The return value is a type
+  object.  There is not much you can do with type objects except compare
+  them to other type objects; e.g., the following checks if a variable
+  is a string:
+
+\bcode\begin{verbatim}
+>>> if type(x) == type(''): print 'It is a string'
+\end{verbatim}\ecode
+\end{funcdesc}

@@ -1,0 +1,21 @@
+\section{Standard Module \sectcode{rand}}
+
+\stmodindex{rand} This module implements a pseudo-random number
+generator with an interface similar to \code{rand()} in C.  It defines
+the following functions:
+
+\renewcommand{\indexsubitem}{(in module rand)}
+\begin{funcdesc}{rand}{}
+Returns an integer random number in the range [0 ... 32768).
+\end{funcdesc}
+
+\begin{funcdesc}{choice}{s}
+Returns a random element from the sequence (string, tuple or list)
+\var{s}.
+\end{funcdesc}
+
+\begin{funcdesc}{srand}{seed}
+Initializes the random number generator with the given integral seed.
+When the module is first imported, the random number is initialized with
+the current time.
+\end{funcdesc}

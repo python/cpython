@@ -1,0 +1,55 @@
+\section{Standard Module \sectcode{getopt}}
+
+\stmodindex{getopt}
+This module helps scripts to parse the command line arguments in
+\code{sys.argv}.
+It uses the same conventions as the \UNIX{}
+\code{getopt()}
+function.
+It defines the function
+\code{getopt.getopt(args, options)}
+and the exception
+\code{getopt.error}.
+
+The first argument to
+\code{getopt()}
+is the argument list passed to the script with its first element
+chopped off (i.e.,
+\code{sys.argv[1:]}).
+The second argument is the string of option letters that the
+script wants to recognize, with options that require an argument
+followed by a colon (i.e., the same format that \UNIX{}
+\code{getopt()}
+uses).
+The return value consists of two elements: the first is a list of
+option-and-value pairs; the second is the list of program arguments
+left after the option list was stripped (this is a trailing slice of the
+first argument).
+Each option-and-value pair returned has the option as its first element,
+prefixed with a hyphen (e.g.,
+\code{'-x'}),
+and the option argument as its second element, or an empty string if the
+option has no argument.
+The options occur in the list in the same order in which they were
+found, thus allowing multiple occurrences.
+Example:
+
+\bcode\begin{verbatim}
+>>> import getopt, string
+>>> args = string.split('-a -b -cfoo -d bar a1 a2')
+>>> args
+['-a', '-b', '-cfoo', '-d', 'bar', 'a1', 'a2']
+>>> optlist, args = getopt.getopt(args, 'abc:d:')
+>>> optlist
+[('-a', ''), ('-b', ''), ('-c', 'foo'), ('-d', 'bar')]
+>>> args
+['a1', 'a2']
+>>> 
+\end{verbatim}\ecode
+
+The exception
+\code{getopt.error = 'getopt error'}
+is raised when an unrecognized option is found in the argument list or
+when an option requiring an argument is given none.
+The argument to the exception is a string indicating the cause of the
+error.

@@ -1,0 +1,162 @@
+\section{Built-in Module \sectcode{regex}}
+
+\bimodindex{regex}
+This module provides regular expression matching operations similar to
+those found in Emacs.  It is always available.
+
+By default the patterns are Emacs-style regular expressions; there is
+a way to change the syntax to match that of several well-known
+\UNIX{} utilities.
+
+This module is 8-bit clean: both patterns and strings may contain null
+bytes and characters whose high bit is set.
+
+\strong{Please note:} There is a little-known fact about Python string literals
+which means that you don't usually have to worry about doubling
+backslashes, even though they are used to escape special characters in
+string literals as well as in regular expressions.  This is because
+Python doesn't remove backslashes from string literals if they are
+followed by an unrecognized escape character.  \emph{However}, if you
+want to include a literal \dfn{backslash} in a regular expression
+represented as a string literal, you have to \emph{quadruple} it.  E.g.
+to extract LaTeX \samp{\e section\{{\rm \ldots}\}} headers from a document, you can
+use this pattern: \code{'\e \e \e\e section\{\e (.*\e )\}'}.
+
+The module defines these functions, and an exception:
+
+\renewcommand{\indexsubitem}{(in module regex)}
+\begin{funcdesc}{match}{pattern\, string}
+  Return how many characters at the beginning of \var{string} match
+  the regular expression \var{pattern}.  Return \code{-1} if the
+  string does not match the pattern (this is different from a
+  zero-length match!).
+\end{funcdesc}
+
+\begin{funcdesc}{search}{pattern\, string}
+  Return the first position in \var{string} that matches the regular
+  expression \var{pattern}.  Return -1 if no position in the string
+  matches the pattern (this is different from a zero-length match
+  anywhere!).
+\end{funcdesc}
+
+\begin{funcdesc}{compile}{pattern\, translate}
+  Compile a regular expression pattern into a regular expression
+  object, which can be used for matching using its \code{match} and
+  \code{search} methods, described below.  The optional
+  \var{translate}, if present, must be a 256-character string
+  indicating how characters (both of the pattern and of the strings to
+  be matched) are translated before comparing them; the \code{i}-th
+  element of the string gives the translation for the character with
+  ASCII code \code{i}.
+
+  The sequence
+
+\bcode\begin{verbatim}
+prog = regex.compile(pat)
+result = prog.match(str)
+\end{verbatim}\ecode
+
+is equivalent to
+
+\bcode\begin{verbatim}
+result = regex.match(pat, str)
+\end{verbatim}\ecode
+
+but the version using \code{compile()} is more efficient when multiple
+regular expressions are used concurrently in a single program.  (The
+compiled version of the last pattern passed to \code{regex.match()} or
+\code{regex.search()} is cached, so programs that use only a single
+regular expression at a time needn't worry about compiling regular
+expressions.)
+\end{funcdesc}
+
+\begin{funcdesc}{set_syntax}{flags}
+  Set the syntax to be used by future calls to \code{compile},
+  \code{match} and \code{search}.  (Already compiled expression objects
+  are not affected.)  The argument is an integer which is the OR of
+  several flag bits.  The return value is the previous value of
+  the syntax flags.  Names for the flags are defined in the standard
+  module \code{regex_syntax}; read the file \file{regex_syntax.py} for
+  more information.
+\end{funcdesc}
+
+\begin{excdesc}{error}
+  Exception raised when a string passed to one of the functions here
+  is not a valid regular expression (e.g., unmatched parentheses) or
+  when some other error occurs during compilation or matching.  (It is
+  never an error if a string contains no match for a pattern.)
+\end{excdesc}
+
+\begin{datadesc}{casefold}
+A string suitable to pass as \var{translate} argument to
+\code{compile} to map all upper case characters to their lowercase
+equivalents.
+\end{datadesc}
+
+\noindent
+Compiled regular expression objects support these methods:
+
+\renewcommand{\indexsubitem}{(regex method)}
+\begin{funcdesc}{match}{string\, pos}
+  Return how many characters at the beginning of \var{string} match
+  the compiled regular expression.  Return \code{-1} if the string
+  does not match the pattern (this is different from a zero-length
+  match!).
+  
+  The optional second parameter \var{pos} gives an index in the string
+  where the search is to start; it defaults to \code{0}.  This is not
+  completely equivalent to slicing the string; the \code{'\^'} pattern
+  character matches at the real begin of the string and at positions
+  just after a newline, not necessarily at the index where the search
+  is to start.
+\end{funcdesc}
+
+\begin{funcdesc}{search}{string\, pos}
+  Return the first position in \var{string} that matches the regular
+  expression \code{pattern}.  Return \code{-1} if no position in the
+  string matches the pattern (this is different from a zero-length
+  match anywhere!).
+  
+  The optional second parameter has the same meaning as for the
+  \code{match} method.
+\end{funcdesc}
+
+\begin{funcdesc}{group}{index\, index\, ...}
+This method is only valid when the last call to the \code{match}
+or \code{search} method found a match.  It returns one or more
+groups of the match.  If there is a single \var{index} argument,
+the result is a single string; if there are multiple arguments, the
+result is a tuple with one item per argument.  If the \var{index} is
+zero, the corresponding return value is the entire matching string; if
+it is in the inclusive range [1..9], it is the string matching the
+the corresponding parenthesized group (using the default syntax,
+groups are parenthesized using \code{\\(} and \code{\\)}).  If no
+such group exists, the corresponding result is \code{None}.
+\end{funcdesc}
+
+\noindent
+Compiled regular expressions support these data attributes:
+
+\renewcommand{\indexsubitem}{(regex attribute)}
+\begin{datadesc}{regs}
+When the last call to the \code{match} or \code{search} method found a
+match, this is a tuple of pairs of indices corresponding to the
+beginning and end of all parenthesized groups in the pattern.  Indices
+are relative to the string argument passed to \code{match} or
+\code{search}.  The 0-th tuple gives the beginning and end or the
+whole pattern.  When the last match or search failed, this is
+\code{None}.
+\end{datadesc}
+
+\begin{datadesc}{last}
+When the last call to the \code{match} or \code{search} method found a
+match, this is the string argument passed to that method.  When the
+last match or search failed, this is \code{None}.
+\end{datadesc}
+
+\begin{datadesc}{translate}
+This is the value of the \var{translate} argument to
+\code{regex.compile} that created this regular expression object.  If
+the \var{translate} argument was omitted in the \code{regex.compile}
+call, this is \code{None}.
+\end{datadesc}

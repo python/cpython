@@ -1,0 +1,30 @@
+\section{Standard Module \sectcode{regsub}}
+
+\stmodindex{regsub}
+This module defines a number of functions useful for working with
+regular expressions (see built-in module \code{regex}).
+
+\renewcommand{\indexsubitem}{(in module regsub)}
+\begin{funcdesc}{sub}{pat\, repl\, str}
+Replace the first occurrence of pattern \var{pat} in string
+\var{str} by replacement \var{repl}.  If the pattern isn't found,
+the string is returned unchanged.  The pattern may be a string or an
+already compiled pattern.  The replacement may contain references
+\samp{\e \var{digit}} to subpatterns and escaped backslashes.
+\end{funcdesc}
+
+\begin{funcdesc}{gsub}{pat\, repl\, str}
+Replace all (non-overlapping) occurrences of pattern \var{pat} in
+string \var{str} by replacement \var{repl}.  The same rules as for
+\code{sub()} apply.  Empty matches for the pattern are replaced only
+when not adjacent to a previous match, so e.g.
+\code{gsub('', '-', 'abc')} returns \code{'-a-b-c-'}.
+\end{funcdesc}
+
+\begin{funcdesc}{split}{str\, pat}
+Split the string \var{str} in fields separated by delimiters matching
+the pattern \var{pat}, and return a list containing the fields.  Only
+non-empty matches for the pattern are considered, so e.g.
+\code{split('a:b', ':*')} returns \code{['a', 'b']} and
+\code{split('abc', '')} returns \code{['abc']}.
+\end{funcdesc}

@@ -1,0 +1,193 @@
+\section{Standard Module \sectcode{string}}
+
+\stmodindex{string}
+
+This module defines some constants useful for checking character
+classes, some exceptions, and some useful string functions.
+The constants are:
+
+\renewcommand{\indexsubitem}{(data in module string)}
+\begin{datadesc}{digits}
+  The string \code{'0123456789'}.
+\end{datadesc}
+
+\begin{datadesc}{hexdigits}
+  The string \code{'0123456789abcdefABCDEF'}.
+\end{datadesc}
+
+\begin{datadesc}{letters}
+  The concatenation of the strings \code{lowercase} and
+  \code{uppercase} described below.
+\end{datadesc}
+
+\begin{datadesc}{lowercase}
+  A string containing all the characters that are considered lowercase
+  letters.  On most systems this is the string
+  \code{'abcdefghijklmnopqrstuvwxyz'}.  Do not change its definition --
+  the effect on the routines \code{upper} and \code{swapcase} is
+  undefined.
+\end{datadesc}
+
+\begin{datadesc}{octdigits}
+  The string \code{'01234567'}.
+\end{datadesc}
+
+\begin{datadesc}{uppercase}
+  A string containing all the characters that are considered uppercase
+  letters.  On most systems this is the string
+  \code{'ABCDEFGHIJKLMNOPQRSTUVWXYZ'}.  Do not change its definition --
+  the effect on the routines \code{lower} and \code{swapcase} is
+  undefined.
+\end{datadesc}
+
+\begin{datadesc}{whitespace}
+  A string containing all characters that are considered whitespace.
+  On most systems this includes the characters space, tab, linefeed,
+  return, formfeed, and vertical tab.  Do not change its definition --
+  the effect on the routines \code{strip} and \code{split} is
+  undefined.
+\end{datadesc}
+
+The exceptions are:
+
+\renewcommand{\indexsubitem}{(exception in module string)}
+
+\begin{excdesc}{atof_error}
+Exception raised by
+\code{atof}
+when a non-float string argument is detected.
+The exception argument is the offending string.
+\end{excdesc}
+
+\begin{excdesc}{atoi_error}
+Exception raised by
+\code{atoi}
+when a non-integer string argument is detected.
+The exception argument is the offending string.
+\end{excdesc}
+
+\begin{excdesc}{atol_error}
+Exception raised by
+\code{atol}
+when a non-integer string argument is detected.
+The exception argument is the offending string.
+\end{excdesc}
+
+\begin{excdesc}{index_error}
+Exception raised by \code{index} when \var{sub} is not found.
+The exception argument is undefined (it may be a tuple containing the
+offending arguments to \code{index} or it may be the constant string
+\code{'substring not found'}).
+\end{excdesc}
+
+The functions are:
+
+\renewcommand{\indexsubitem}{(in module string)}
+
+\begin{funcdesc}{atof}{s}
+Convert a string to a floating point number.  The string must have
+the standard syntax for a floating point literal in Python, optionally
+preceded by a sign (\samp{+} or \samp{-}).
+\end{funcdesc}
+
+\begin{funcdesc}{atoi}{s}
+Convert a string to an integer.  The string must consist of one or more
+digits, optionally preceded by a sign (\samp{+} or \samp{-}).
+\end{funcdesc}
+
+\begin{funcdesc}{atol}{s}
+Convert a string to a long integer.  The string must consist of one
+or more digits, optionally preceded by a sign (\samp{+} or \samp{-}).
+\end{funcdesc}
+
+\begin{funcdesc}{expandtabs}{s\, tabsize}
+Expand tabs in a string, i.e. replace them by one or more spaces,
+depending on the current column and the given tab size.  The column
+number is reset to zero after each newline occurring in the string.
+This doesn't understand other non-printing characters or escape
+sequences.
+\end{funcdesc}
+
+\begin{funcdesc}{find}{s\, sub\, i}
+Return the lowest index in \var{s} not smaller than \var{i} where the
+substring \var{sub} is found.  Return \code{-1} when \var{sub}
+does not occur as a substring of \var{s} with index at least \var{i}.
+If \var{i} is omitted, it defaults to \code{0}.  If \var{i} is
+negative, \code{len(\var{s})} is added.
+\end{funcdesc}
+
+\begin{funcdesc}{rfind}{s\, sub\, i}
+Like \code{find} but finds the highest index.
+\end{funcdesc}
+
+\begin{funcdesc}{index}{s\, sub\, i}
+Like \code{find} but raise \code{index_error} when the substring is
+not found.
+\end{funcdesc}
+
+\begin{funcdesc}{rindex}{s\, sub\, i}
+Like \code{rfind} but raise \code{index_error} when the substring is
+not found.
+\end{funcdesc}
+
+\begin{funcdesc}{lower}{s}
+Convert letters to lower case.
+\end{funcdesc}
+
+\begin{funcdesc}{split}{s}
+Returns a list of the whitespace-delimited words of the string
+\var{s}.
+\end{funcdesc}
+
+\begin{funcdesc}{splitfields}{s\, sep}
+  Returns a list containing the fields of the string \var{s}, using
+  the string \var{sep} as a separator.  The list will have one more
+  items than the number of non-overlapping occurrences of the
+  separator in the string.  Thus, \code{string.splitfields(\var{s}, '
+  ')} is not the same as \code{string.split(\var{s})}, as the latter
+  only returns non-empty words.  As a special case,
+  \code{splitfields(\var{s}, '')} returns \code{[\var{s}]}, for any string
+  \var{s}.  (See also \code{regsub.split()}.)
+\end{funcdesc}
+
+\begin{funcdesc}{join}{words}
+Concatenate a list or tuple of words with intervening spaces.
+\end{funcdesc}
+
+\begin{funcdesc}{joinfields}{words\, sep}
+Concatenate a list or tuple of words with intervening separators.
+It is always true that
+\code{string.joinfields(string.splitfields(\var{t}, \var{sep}), \var{sep})}
+equals \var{t}.
+\end{funcdesc}
+
+\begin{funcdesc}{strip}{s}
+Removes leading and trailing whitespace from the string
+\var{s}.
+\end{funcdesc}
+
+\begin{funcdesc}{swapcase}{s}
+Converts lower case letters to upper case and vice versa.
+\end{funcdesc}
+
+\begin{funcdesc}{upper}{s}
+Convert letters to upper case.
+\end{funcdesc}
+
+\begin{funcdesc}{ljust}{s\, width}
+\funcline{rjust}{s\, width}
+\funcline{center}{s\, width}
+These functions respectively left-justify, right-justify and center a
+string in a field of given width.
+They return a string that is at least
+\var{width}
+characters wide, created by padding the string
+\var{s}
+with spaces until the given width on the right, left or both sides.
+The string is never truncated.
+\end{funcdesc}
+
+\begin{funcdesc}{zfill}{s\, width}
+Pad a numeric string on the left with zero digits until the given
+width is reached.  Strings starting with a sign are handled correctly.
+\end{funcdesc}

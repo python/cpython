@@ -1,0 +1,265 @@
+\section{Built-in Module \sectcode{socket}}
+
+\bimodindex{socket}
+This module provides access to the BSD {\em socket} interface.
+It is available on \UNIX{} systems that support this interface.
+
+For an introduction to socket programming (in C), see the following
+papers: \emph{An Introductory 4.3BSD Interprocess Communication
+Tutorial}, by Stuart Sechrest and \emph{An Advanced 4.3BSD Interprocess
+Communication Tutorial}, by Samuel J.  Leffler et al, both in the
+\UNIX{} Programmer's Manual, Supplementary Documents 1 (sections PS1:7
+and PS1:8).  The \UNIX{} manual pages for the various socket-related
+system calls also a valuable source of information on the details of
+socket semantics.
+
+The Python interface is a straightforward transliteration of the
+\UNIX{} system call and library interface for sockets to Python's
+object-oriented style: the \code{socket()} function returns a
+\dfn{socket object} whose methods implement the various socket system
+calls.  Parameter types are somewhat higer-level than in the C
+interface: as with \code{read()} and \code{write()} operations on Python
+files, buffer allocation on receive operations is automatic, and
+buffer length is implicit on send operations.
+
+Socket addresses are represented as a single string for the
+\code{AF_UNIX} address family and as a pair
+\code{(\var{host}, \var{port})} for the \code{AF_INET} address family,
+where \var{host} is a string representing
+either a hostname in Internet domain notation like
+\code{'daring.cwi.nl'} or an IP address like \code{'100.50.200.5'},
+and \var{port} is an integral port number.  Other address families are
+currently not supported.  The address format required by a particular
+socket object is automatically selected based on the address family
+specified when the socket object was created.
+
+All errors raise exceptions.  The normal exceptions for invalid
+argument types and out-of-memory conditions can be raised; errors
+related to socket or address semantics raise the error \code{socket.error}.
+
+Non-blocking and asynchronous mode are not supported; see module
+\code{select} for a way to do non-blocking socket I/O.
+
+The module \code{socket} exports the following constants and functions:
+
+\renewcommand{\indexsubitem}{(in module socket)}
+\begin{excdesc}{error}
+This exception is raised for socket- or address-related errors.
+The accompanying value is either a string telling what went wrong or a
+pair \code{(\var{errno}, \var{string})}
+representing an error returned by a system
+call, similar to the value accompanying \code{posix.error}.
+\end{excdesc}
+
+\begin{datadesc}{AF_UNIX}
+\dataline{AF_INET}
+These constants represent the address (and protocol) families,
+used for the first argument to \code{socket()}.
+\end{datadesc}
+
+\begin{datadesc}{SOCK_STREAM}
+\dataline{SOCK_DGRAM}
+These constants represent the socket types,
+used for the second argument to \code{socket()}.
+(There are other types, but only \code{SOCK_STREAM} and
+\code{SOCK_DGRAM} appear to be generally useful.)
+\end{datadesc}
+
+\begin{funcdesc}{gethostbyname}{hostname}
+Translate a host name to IP address format.  The IP address is
+returned as a string, e.g.,  \code{'100.50.200.5'}.  If the host name
+is an IP address itself it is returned unchanged.
+\end{funcdesc}
+
+\begin{funcdesc}{getservbyname}{servicename\, protocolname}
+Translate an Internet service name and protocol name to a port number
+for that service.  The protocol name should be \code{'tcp'} or
+\code{'udp'}.
+\end{funcdesc}
+
+\begin{funcdesc}{socket}{family\, type\, proto}
+Create a new socket using the given address family, socket type and
+protocol number.  The address family should be \code{AF_INET} or
+\code{AF_UNIX}.  The socket type should be \code{SOCK_STREAM},
+\code{SOCK_DGRAM} or perhaps one of the other \samp{SOCK_} constants.
+The protocol number is usually zero and may be omitted in that case.
+\end{funcdesc}
+
+\begin{funcdesc}{fromfd}{fd\, family\, type\, proto}
+Build a socket object from an existing file descriptor (an integer as
+returned by a file object's \code{fileno} method).  Address family,
+socket type and protocol number are as for the \code{socket} function
+above.  The file descriptor should refer to a socket, but this is not
+checked --- subsequent operations on the object may fail if the file
+descriptor is invalid.  This function is rarely needed, but can be
+used to get or set socket options on a socket passed to a program as
+standard input or output (e.g. a server started by the \UNIX{} inet
+daemon).
+\end{funcdesc}
+
+\subsection{Socket Object Methods}
+
+\noindent
+Socket objects have the following methods.  Except for
+\code{makefile()} these correspond to \UNIX{} system calls applicable to
+sockets.
+
+\renewcommand{\indexsubitem}{(socket method)}
+\begin{funcdesc}{accept}{}
+Accept a connection.
+The socket must be bound to an address and listening for connections.
+The return value is a pair \code{(\var{conn}, \var{address})}
+where \var{conn} is a \emph{new} socket object usable to send and
+receive data on the connection, and \var{address} is the address bound
+to the socket on the other end of the connection.
+\end{funcdesc}
+
+\begin{funcdesc}{avail}{}
+Return true (nonzero) if at least one byte of data can be received
+from the socket without blocking, false (zero) if not.  There is no
+indication of how many bytes are available.  (\strong{This function is
+obsolete --- see module \code{select} for a more general solution.})
+\end{funcdesc}
+
+\begin{funcdesc}{bind}{address}
+Bind the socket to an address.  The socket must not already be bound.
+\end{funcdesc}
+
+\begin{funcdesc}{close}{}
+Close the socket.  All future operations on the socket object will fail.
+The remote end will receive no more data (after queued data is flushed).
+Sockets are automatically closed when they are garbage-collected.
+\end{funcdesc}
+
+\begin{funcdesc}{connect}{address}
+Connect to a remote socket.
+\end{funcdesc}
+
+\begin{funcdesc}{fileno}{}
+Return the socket's file descriptor (a small integer).  This is useful
+with \code{select}.
+\end{funcdesc}
+
+\begin{funcdesc}{getpeername}{}
+Return the remote address to which the socket is connected.  This is
+useful to find out the port number of a remote IP socket, for instance.
+\end{funcdesc}
+
+\begin{funcdesc}{getsockname}{}
+Return the socket's own address.  This is useful to find out the port
+number of an IP socket, for instance.
+\end{funcdesc}
+
+\begin{funcdesc}{getsockopt}{level\, optname\, buflen}
+Return the value of the given socket option (see the \UNIX{} man page
+{\it getsockopt}(2)).  The needed symbolic constants are defined in module
+SOCKET.  If the optional third argument is absent, an integer option
+is assumed and its integer value is returned by the function.  If
+\var{buflen} is present, it specifies the maximum length of the buffer used
+to receive the option in, and this buffer is returned as a string.
+It's up to the caller to decode the contents of the buffer (see the
+optional built-in module \code{struct} for a way to decode C structures
+encoded as strings).
+\end{funcdesc}
+
+\begin{funcdesc}{listen}{backlog}
+Listen for connections made to the socket.
+The argument (in the range 0-5) specifies the maximum number of
+queued connections.
+\end{funcdesc}
+
+\begin{funcdesc}{makefile}{mode}
+Return a \dfn{file object} associated with the socket.
+(File objects were described earlier under Built-in Types.)
+The file object references a \code{dup}ped version of the socket file
+descriptor, so the file object and socket object may be closed or
+garbage-collected independently.
+\end{funcdesc}
+
+\begin{funcdesc}{recv}{bufsize\, flags}
+Receive data from the socket.  The return value is a string representing
+the data received.  The maximum amount of data to be received
+at once is specified by \var{bufsize}.  See the \UNIX{} manual page
+for the meaning of the optional argument \var{flags}; it defaults to
+zero.
+\end{funcdesc}
+
+\begin{funcdesc}{recvfrom}{bufsize}
+Receive data from the socket.  The return value is a pair
+\code{(\var{string}, \var{address})} where \var{string} is a string
+representing the data received and \var{address} is the address of the
+socket sending the data.
+\end{funcdesc}
+
+\begin{funcdesc}{send}{string}
+Send data to the socket.  The socket must be connected to a remote
+socket.
+\end{funcdesc}
+
+\begin{funcdesc}{sendto}{string\, address}
+Send data to the socket.  The socket should not be connected to a
+remote socket, since the destination socket is specified by
+\code{address}.
+\end{funcdesc}
+
+\begin{funcdesc}{setsockopt}{level\, optname\, value}
+Set the value of the given socket option (see the \UNIX{} man page
+{\it setsockopt}(2)).  The needed symbolic constants are defined in module
+\code{SOCKET}.  The value can be an integer or a string representing a
+buffer.  In the latter case it is up to the caller to ensure that the
+string contains the proper bits (see the optional built-in module
+\code{struct} for a way to encode C structures as strings).
+\end{funcdesc}
+
+\begin{funcdesc}{shutdown}{how}
+Shut down one or both halves of the connection.  If \var{how} is \code{0},
+further receives are disallowed.  If \var{how} is \code{1}, further sends are
+disallowed.  If \var{how} is \code{2}, further sends and receives are
+disallowed.
+\end{funcdesc}
+
+Note that there are no methods \code{read()} or \code{write()}; use
+\code{recv()} and \code{send()} without \var{flags} argument instead.
+
+\subsection{Example}
+\nodename{Socket Example}
+
+Here are two minimal example programs using the TCP/IP protocol: a
+server that echoes all data that it receives back (servicing only one
+client), and a client using it.  Note that a server must perform the
+sequence \code{socket}, \code{bind}, \code{listen}, \code{accept}
+(possibly repeating the \code{accept} to service more than one client),
+while a client only needs the sequence \code{socket}, \code{connect}.
+Also note that the server does not \code{send}/\code{receive} on the
+socket it is listening on but on the new socket returned by
+\code{accept}.
+
+\bcode\begin{verbatim}
+# Echo server program
+from socket import *
+HOST = ''                 # Symbolic name meaning the local host
+PORT = 50007              # Arbitrary non-privileged server
+s = socket(AF_INET, SOCK_STREAM)
+s.bind(HOST, PORT)
+s.listen(0)
+conn, addr = s.accept()
+print 'Connected by', addr
+while 1:
+    data = conn.recv(1024)
+    if not data: break
+    conn.send(data)
+conn.close()
+\end{verbatim}\ecode
+
+\bcode\begin{verbatim}
+# Echo client program
+from socket import *
+HOST = 'daring.cwi.nl'    # The remote host
+PORT = 50007              # The same port as used by the server
+s = socket(AF_INET, SOCK_STREAM)
+s.connect(HOST, PORT)
+s.send('Hello, world')
+data = s.recv(1024)
+s.close()
+print 'Received', `data`
+\end{verbatim}\ecode

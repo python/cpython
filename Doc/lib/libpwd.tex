@@ -1,0 +1,32 @@
+\section{Built-in Module \sectcode{pwd}}
+
+\bimodindex{pwd}
+This module provides access to the \UNIX{} password database.
+It is available on all \UNIX{} versions.
+
+Password database entries are reported as 7-tuples containing the
+following items from the password database (see \file{<pwd.h>}), in order:
+\code{pw_name},
+\code{pw_passwd},
+\code{pw_uid},
+\code{pw_gid},
+\code{pw_gecos},
+\code{pw_dir},
+\code{pw_shell}.
+The uid and gid items are integers, all others are strings.
+An exception is raised if the entry asked for cannot be found.
+
+It defines the following items:
+
+\renewcommand{\indexsubitem}{(in module pwd)}
+\begin{funcdesc}{getpwuid}{uid}
+Return the password database entry for the given numeric user ID.
+\end{funcdesc}
+
+\begin{funcdesc}{getpwnam}{name}
+Return the password database entry for the given user name.
+\end{funcdesc}
+
+\begin{funcdesc}{getpwall}{}
+Return a list of all available password database entries, in arbitrary order.
+\end{funcdesc}

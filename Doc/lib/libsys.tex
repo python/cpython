@@ -1,0 +1,129 @@
+\section{Built-in Module \sectcode{sys}}
+
+\bimodindex{sys}
+This module provides access to some variables used or maintained by the
+interpreter and to functions that interact strongly with the interpreter.
+It is always available.
+
+\renewcommand{\indexsubitem}{(in module sys)}
+\begin{datadesc}{argv}
+  The list of command line arguments passed to a Python script.
+  \code{sys.argv[0]} is the script name.
+  If no script name was passed to the Python interpreter,
+  \code{sys.argv} is empty.
+\end{datadesc}
+
+\begin{datadesc}{builtin_module_names}
+  A list of strings giving the names of all modules that are compiled
+  into this Python interpreter.  (This information is not available in
+  any other way --- \code{sys.modules.keys()} only lists the imported
+  modules.)
+\end{datadesc}
+
+\begin{datadesc}{exc_type}
+\dataline{exc_value}
+\dataline{exc_traceback}
+  These three variables are not always defined; they are set when an
+  exception handler (an \code{except} clause of a \code{try} statement) is
+  invoked.  Their meaning is: \code{exc_type} gets the exception type of
+  the exception being handled; \code{exc_value} gets the exception
+  parameter (its \dfn{associated value} or the second argument to
+  \code{raise}); \code{exc_traceback} gets a traceback object which
+  encapsulates the call stack at the point where the exception
+  originally occurred.
+\end{datadesc}
+
+\begin{funcdesc}{exit}{n}
+  Exit from Python with numeric exit status \var{n}.  This is
+  implemented by raising the \code{SystemExit} exception, so cleanup
+  actions specified by \code{finally} clauses of \code{try} statements
+  are honored, and it is possible to catch the exit attempt at an outer
+  level.
+\end{funcdesc}
+
+\begin{datadesc}{exitfunc}
+  This value is not actually defined by the module, but can be set by
+  the user (or by a program) to specify a clean-up action at program
+  exit.  When set, it should be a parameterless function.  This function
+  will be called when the interpreter exits in any way (but not when a
+  fatal error occurs: in that case the interpreter's internal state
+  cannot be trusted).
+\end{datadesc}
+
+\begin{datadesc}{last_type}
+\dataline{last_value}
+\dataline{last_traceback}
+  These three variables are not always defined; they are set when an
+  exception is not handled and the interpreter prints an error message
+  and a stack traceback.  Their intended use is to allow an interactive
+  user to import a debugger module and engage in post-mortem debugging
+  without having to re-execute the command that cause the error (which
+  may be hard to reproduce).  The meaning of the variables is the same
+  as that of \code{exc_type}, \code{exc_value} and \code{exc_tracaback},
+  respectively.
+\end{datadesc}
+
+\begin{datadesc}{modules}
+  Gives the list of modules that have already been loaded.
+  This can be manipulated to force reloading of modules and other tricks.
+\end{datadesc}
+
+\begin{datadesc}{path}
+  A list of strings that specifies the search path for modules.
+  Initialized from the environment variable \code{PYTHONPATH}, or an
+  installation-dependent default.
+\end{datadesc}
+
+\begin{datadesc}{ps1}
+\dataline{ps2}
+  Strings specifying the primary and secondary prompt of the
+  interpreter.  These are only defined if the interpreter is in
+  interactive mode.  Their initial values in this case are
+  \code{'>>> '} and \code{'... '}.
+\end{datadesc}
+
+\begin{funcdesc}{settrace}{tracefunc}
+  Set the system's trace function, which allows you to implement a
+  Python source code debugger in Python.  The standard modules
+  \code{pdb} and \code{wdb} are such debuggers; the difference is that
+  \code{wdb} uses windows and needs STDWIN, while \code{pdb} has a
+  line-oriented interface not unlike dbx.  See the file \file{pdb.doc}
+  in the Python library source directory for more documentation (both
+  about \code{pdb} and \code{sys.trace}).
+\end{funcdesc}
+\ttindex{pdb}
+\ttindex{wdb}
+\index{trace function}
+
+\begin{funcdesc}{setprofile}{profilefunc}
+  Set the system's profile function, which allows you to implement a
+  Python source code profiler in Python.  The system's profile function
+  is called similarly to the system's trace function (see
+  \code{sys.settrace}), but it isn't called for each executed line of
+  code (only on call and return and when an exception occurs).  Also,
+  its return value is not used, so it can just return \code{None}.
+\end{funcdesc}
+\index{profile function}
+
+\begin{datadesc}{stdin}
+\dataline{stdout}
+\dataline{stderr}
+  File objects corresponding to the interpreter's standard input,
+  output and error streams.  \code{sys.stdin} is used for all
+  interpreter input except for scripts but including calls to
+  \code{input()} and \code{raw_input()}.  \code{sys.stdout} is used
+  for the output of \code{print} and expression statements and for the
+  prompts of \code{input()} and \code{raw_input()}.  The interpreter's
+  own prompts and (almost all of) its error messages go to
+  \code{sys.stderr}.  \code{sys.stdout} and \code{sys.stderr} needn't
+  be built-in file objects: any object is acceptable as long as it has
+  a \code{write} method that takes a string argument.
+\end{datadesc}
+
+\begin{datadesc}{tracebacklimit}
+When this variable is set to an integer value, it determines the
+maximum number of levels of traceback information printed when an
+unhandled exception occurs.  The default is 1000.  When set to 0 or
+less, all traceback information is suppressed and only the exception
+type and value are printed.
+\end{datadesc}
