@@ -250,12 +250,13 @@ _parse_func = { \
 # This function parses a line, and returns either
 # a string or a tuple (name,value)
 
-import regexp
+import regex
+prog = regex.compile('^\([^:]*\): *\(.*\)')
 
 def _parse_line(line):
-    a = regexp.match('^([^:]*): *(.*)', line)
-    if not a:
+    if prog.match(line) < 0:
 	return line
+    a = prog.regs
     name = line[:a[1][1]]
     if name[0] == 'N':
 	    name = string.joinfields(string.split(name),'')
