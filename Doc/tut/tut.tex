@@ -33,7 +33,7 @@ on most platforms.
 
 The Python interpreter and the extensive standard library are freely
 available in source or binary form for all major platforms from the
-Python Web site, \url{http://www.python.org/}, and can be freely
+Python Web site, \url{http://www.python.org/}, and may be freely
 distributed.  The same site also contains distributions of and
 pointers to many free third party Python modules, programs and tools,
 and additional documentation.
@@ -84,7 +84,7 @@ sufficiently familiar with C.
 
 Another situation: perhaps you have to work with several C libraries,
 and the usual C write/compile/test/re-compile cycle is too slow.  You
-need to develop software more quickly.  Possibly perhaps you've
+need to develop software more quickly.  Possibly you've
 written a program that could use an extension language, and you don't
 want to design a language, write and debug an interpreter for it, then
 tie it into your application.
@@ -103,8 +103,8 @@ in Python as in those languages.
 Python allows you to split up your program in modules that can be
 reused in other Python programs.  It comes with a large collection of
 standard modules that you can use as the basis of your programs --- or
-as examples to start learning to program in Python.  There are also
-built-in modules that provide things like file I/O, system calls,
+as examples to start learning to program in Python.  Some of these
+modules provide things like file I/O, system calls,
 sockets, and even interfaces to graphical user interface toolkits like Tk.  
 
 Python is an interpreted language, which can save you considerable time
@@ -145,7 +145,7 @@ it is encouraged!
 
 Now that you are all excited about Python, you'll want to examine it
 in some more detail.  Since the best way to learn a language is
-using it, you are invited here to do so.
+using it, you are invited to do so with this tutorial.
 
 In the next chapter, the mechanics of using the interpreter are
 explained.  This is rather mundane information, but essential for
@@ -603,7 +603,7 @@ several lines of text just as you would do in C.\n\
 print hello
 \end{verbatim}
 
-Note that newlines would still need to be embedded in the string using
+Note that newlines still need to be embedded in the string using
 \code{\e n}; the newline following the trailing backslash is
 discarded.  This example would print the following:
 
@@ -847,7 +847,7 @@ The built-in function \function{len()} returns the length of a string:
 Starting with Python 2.0 a new data type for storing text data is
 available to the programmer: the Unicode object. It can be used to
 store and manipulate Unicode data (see \url{http://www.unicode.org/})
-and integrates well with the existing string objects providing
+and integrates well with the existing string objects, providing
 auto-conversions where necessary.
 
 Unicode has the advantage of providing one ordinal for every character
@@ -978,8 +978,8 @@ concatenated and so on:
 ['eggs', 100]
 >>> a[:2] + ['bacon', 2*2]
 ['spam', 'eggs', 'bacon', 4]
->>> 3*a[:3] + ['Boe!']
-['spam', 'eggs', 100, 'spam', 'eggs', 100, 'spam', 'eggs', 100, 'Boe!']
+>>> 3*a[:3] + ['Boo!']
+['spam', 'eggs', 100, 'spam', 'eggs', 100, 'spam', 'eggs', 100, 'Boo!']
 \end{verbatim}
 
 Unlike strings, which are \emph{immutable}, it is possible to change
@@ -1553,8 +1553,9 @@ TypeError: function() got multiple values for keyword argument 'a'
 \end{verbatim}
 
 When a final formal parameter of the form \code{**\var{name}} is
-present, it receives a \ulink{dictionary}{../lib/typesmapping.html} containing all keyword arguments
-whose keyword doesn't correspond to a formal parameter.  This may be
+present, it receives a \ulink{dictionary}{../lib/typesmapping.html}
+containing all keyword arguments except for those corresponding to
+a formal parameter.  This may be
 combined with a formal parameter of the form
 \code{*\var{name}} (described in the next subsection) which receives a
 tuple containing the positional arguments beyond the formal parameter
@@ -1883,8 +1884,8 @@ is shorter than another).  For example:
 [0, 2, 4, 6, 8, 10, 12, 14]
 \end{verbatim}
 
-\samp{reduce(\var{func}, \var{sequence})} returns a single value
-constructed by calling the binary function \var{func} on the first two
+\samp{reduce(\var{function}, \var{sequence})} returns a single value
+constructed by calling the binary function \var{function} on the first two
 items of the sequence, then on the result and the next item, and so
 on.  For example, to compute the sum of the numbers 1 through 10:
 
@@ -2174,9 +2175,13 @@ pattern, list comprehensions can compactly specify the key-value list.
 \begin{verbatim}
 >>> dict([('sape', 4139), ('guido', 4127), ('jack', 4098)])
 {'sape': 4139, 'jack': 4098, 'guido': 4127}
->>> dict([(x, x**2) for x in vec])     # use a list comprehension
+>>> dict([(x, x**2) for x in (2, 4, 6))     # use a list comprehension
 {2: 4, 4: 16, 6: 36}
 \end{verbatim}
+
+Later in the tutorial, we will learn about Generator Expressions
+which are even better suited for the task of supplying key-values pairs to
+the \function{dict()} constructor.
 
 
 \section{Looping Techniques \label{loopidioms}}
@@ -2635,7 +2640,7 @@ currently:
 >>> import fibo, sys
 >>> fib = fibo.fib
 >>> dir()
-['__name__', 'a', 'fib', 'fibo', 'sys']
+['__builtins__', '__doc__', '__file__', '__name__', 'fib', 'fib2']
 \end{verbatim}
 
 Note that it lists all types of names: variables, modules, functions, etc.
@@ -2647,27 +2652,29 @@ standard module \module{__builtin__}\refbimodindex{__builtin__}:
 \begin{verbatim}
 >>> import __builtin__
 >>> dir(__builtin__)
-['ArithmeticError', 'AssertionError', 'AttributeError',
- 'DeprecationWarning', 'EOFError', 'Ellipsis', 'EnvironmentError',
- 'Exception', 'False', 'FloatingPointError', 'IOError', 'ImportError',
+['ArithmeticError', 'AssertionError', 'AttributeError', 'DeprecationWarning',
+ 'EOFError', 'Ellipsis', 'EnvironmentError', 'Exception', 'False',
+ 'FloatingPointError', 'FutureWarning', 'IOError', 'ImportError',
  'IndentationError', 'IndexError', 'KeyError', 'KeyboardInterrupt',
  'LookupError', 'MemoryError', 'NameError', 'None', 'NotImplemented',
  'NotImplementedError', 'OSError', 'OverflowError', 'OverflowWarning',
- 'PendingDeprecationWarning', 'ReferenceError',
- 'RuntimeError', 'RuntimeWarning', 'StandardError', 'StopIteration',
- 'SyntaxError', 'SyntaxWarning', 'SystemError', 'SystemExit', 'TabError',
- 'True', 'TypeError', 'UnboundLocalError', 'UnicodeError', 'UserWarning',
- 'ValueError', 'Warning', 'ZeroDivisionError', '__debug__', '__doc__',
- '__import__', '__name__', 'abs', 'apply', 'bool', 'buffer',
- 'callable', 'chr', 'classmethod', 'cmp', 'coerce', 'compile', 'complex',
- 'copyright', 'credits', 'delattr', 'dict', 'dir', 'divmod',
+ 'PendingDeprecationWarning', 'ReferenceError', 'RuntimeError',
+ 'RuntimeWarning', 'StandardError', 'StopIteration', 'SyntaxError',
+ 'SyntaxWarning', 'SystemError', 'SystemExit', 'TabError', 'True',
+ 'TypeError', 'UnboundLocalError', 'UnicodeDecodeError',
+ 'UnicodeEncodeError', 'UnicodeError', 'UnicodeTranslateError',
+ 'UserWarning', 'ValueError', 'Warning', 'WindowsError',
+ 'ZeroDivisionError', '_', '__debug__', '__doc__', '__import__',
+ '__name__', 'abs', 'apply', 'basestring', 'bool', 'buffer',
+ 'callable', 'chr', 'classmethod', 'cmp', 'coerce', 'compile',
+ 'complex', 'copyright', 'credits', 'delattr', 'dict', 'dir', 'divmod',
  'enumerate', 'eval', 'execfile', 'exit', 'file', 'filter', 'float',
- 'getattr', 'globals', 'hasattr', 'hash', 'help', 'hex', 'id',
- 'input', 'int', 'intern', 'isinstance', 'issubclass', 'iter',
+ 'frozenset', 'getattr', 'globals', 'hasattr', 'hash', 'help', 'hex',
+ 'id', 'input', 'int', 'intern', 'isinstance', 'issubclass', 'iter',
  'len', 'license', 'list', 'locals', 'long', 'map', 'max', 'min',
- 'object', 'oct', 'open', 'ord', 'pow', 'property', 'quit',
- 'range', 'raw_input', 'reduce', 'reload', 'repr', 'round',
- 'setattr', 'slice', 'staticmethod', 'str', 'string', 'sum', 'super',
+ 'object', 'oct', 'open', 'ord', 'pow', 'property', 'quit', 'range',
+ 'raw_input', 'reduce', 'reload', 'repr', 'reversed', 'round', 'set',
+ 'setattr', 'slice', 'sorted', 'staticmethod', 'str', 'sum', 'super',
  'tuple', 'type', 'unichr', 'unicode', 'vars', 'xrange', 'zip']
 \end{verbatim}
 
@@ -2824,8 +2831,8 @@ import the three named submodules of the \module{Sound} package.
 If \code{__all__} is not defined, the statement \code{from Sound.Effects
 import *} does \emph{not} import all submodules from the package
 \module{Sound.Effects} into the current namespace; it only ensures that the
-package \module{Sound.Effects} has been imported (possibly running its
-initialization code, \file{__init__.py}) and then imports whatever names are
+package \module{Sound.Effects} has been imported (possibly running any
+initialization code in \file{__init__.py}) and then imports whatever names are
 defined in the package.  This includes any names defined (and
 submodules explicitly loaded) by \file{__init__.py}.  It also includes any
 submodules of the package that were explicitly loaded by previous
@@ -2907,7 +2914,7 @@ Often you'll want more control over the formatting of your output than
 simply printing space-separated values.  There are two ways to format
 your output; the first way is to do all the string handling yourself;
 using string slicing and concatenation operations you can create any
-lay-out you can imagine.  The standard module
+layout you can imagine.  The standard module
 \module{string}\refstmodindex{string} contains some useful operations
 for padding strings to a given column width; these will be discussed
 shortly.  The second way is to use the \code{\%} operator with a
@@ -3322,8 +3329,8 @@ it is a useful convention).
 Standard exception names are built-in identifiers (not reserved
 keywords).
 
-The rest of the line is a detail whose interpretation depends on the
-exception type; its meaning is dependent on the exception type.
+The rest of the line provides detail based on the type of exception
+and what caused it.
 
 The preceding part of the error message shows the context where the
 exception happened, in the form of a stack backtrace.
@@ -3367,9 +3374,8 @@ execution of the \keyword{try} statement is finished.
 \item
 If an exception occurs during execution of the try clause, the rest of
 the clause is skipped.  Then if its type matches the exception named
-after the \keyword{except} keyword, the rest of the try clause is
-skipped, the except clause is executed, and then execution continues
-after the \keyword{try} statement.
+after the \keyword{except} keyword, the except clause is executed, and
+then execution continues after the \keyword{try} statement.
 
 \item
 If an exception occurs which does not match the exception named in the
@@ -3480,7 +3486,7 @@ For example:
 ... except ZeroDivisionError, detail:
 ...     print 'Handling run-time error:', detail
 ... 
-Handling run-time error: integer division or modulo
+Handling run-time error: integer division or modulo by zero
 \end{verbatim}
 
 
@@ -3499,7 +3505,9 @@ NameError: HiThere
 
 The first argument to \keyword{raise} names the exception to be
 raised.  The optional second argument specifies the exception's
-argument.
+argument.  Alternatively, the above could be written as
+\code{raise NameError('HiThere')}.  Either form works fine, but there
+seems to be a growing stylistic preference for the latter.
 
 If you need to determine whether an exception was raised but don't
 intend to handle it, a simpler form of the \keyword{raise} statement
@@ -3545,10 +3553,14 @@ Traceback (most recent call last):
 __main__.MyError: 'oops!'
 \end{verbatim}
 
+In this example, the default \method{__init__} of \class{Exception} has
+been overriden.  The new behavior simply creates the \var{value} attribute.
+This replaces the default behavior of creating the \var{args} attribute.
+
 Exception classes can be defined which do anything any other class can
 do, but are usually kept simple, often only offering a number of
 attributes that allow information about the error to be extracted by
-handlers for the exception.  When creating a module which can raise
+handlers for the exception.  When creating a module that can raise
 several distinct errors, a common practice is to create a base class
 for exceptions defined by that module, and subclass that to create
 specific exception classes for different error conditions:
@@ -3623,7 +3635,8 @@ resources (such as files or network connections), regardless of
 whether or not the use of the resource was successful.
 
 A \keyword{try} statement must either have one or more except clauses
-or one finally clause, but not both.
+or one finally clause, but not both (because it would be unclear which
+clause should be executed).
 
 
 \chapter{Classes \label{classes}}
@@ -3825,7 +3838,7 @@ When a class definition is left normally (via the end), a \emph{class
 object} is created.  This is basically a wrapper around the contents
 of the namespace created by the class definition; we'll learn more
 about class objects in the next section.  The original local scope
-(the one in effect just before the class definitions was entered) is
+(the one in effect just before the class definitions were entered) is
 reinstated, and the class object is bound here to the class name given
 in the class definition header (\class{ClassName} in the example).
 
@@ -3907,9 +3920,9 @@ example,
 
 Now what can we do with instance objects?  The only operations
 understood by instance objects are attribute references.  There are
-two kinds of valid attribute names.
+two kinds of valid attribute names, data attributes and methods.
 
-The first I'll call \emph{data attributes}.  These correspond to
+\emph{data attributes} correspond to
 ``instance variables'' in Smalltalk, and to ``data members'' in
 \Cpp.  Data attributes need not be declared; like local variables,
 they spring into existence when they are first assigned to.  For
@@ -3925,16 +3938,16 @@ print x.counter
 del x.counter
 \end{verbatim}
 
-The second kind of attribute references understood by instance objects
-are \emph{methods}.  A method is a function that ``belongs to'' an
+The other kind of instance attribute references is a \emph{method}.
+A method is a function that ``belongs to'' an
 object.  (In Python, the term method is not unique to class instances:
 other object types can have methods as well.  For example, list objects have
 methods called append, insert, remove, sort, and so on.  However,
-below, we'll use the term method exclusively to mean methods of class
-instance objects, unless explicitly stated otherwise.)
+in the following discussion, we'll use the term method exclusively to mean
+methods of class instance objects, unless explicitly stated otherwise.)
 
 Valid method names of an instance object depend on its class.  By
-definition, all attributes of a class that are (user-defined) function 
+definition, all attributes of a class that are function 
 objects define corresponding methods of its instances.  So in our
 example, \code{x.f} is a valid method reference, since
 \code{MyClass.f} is a function, but \code{x.i} is not, since
@@ -4029,12 +4042,12 @@ the readability of methods: there is no chance of confusing local
 variables and instance variables when glancing through a method.
 
 
-Conventionally, the first argument of methods is often called
+Conventionally, the first argument of a method is often called
 \code{self}.  This is nothing more than a convention: the name
 \code{self} has absolutely no special meaning to Python.  (Note,
 however, that by not following the convention your code may be less
-readable by other Python programmers, and it is also conceivable that
-a \emph{class browser} program be written which relies upon such a
+readable to other Python programmers, and it is also conceivable that
+a \emph{class browser} program might be written that relies upon such a
 convention.)
 
 
