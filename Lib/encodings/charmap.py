@@ -25,7 +25,7 @@ class StreamWriter(Codec,codecs.StreamWriter):
 
     def __init__(self,stream,errors='strict',mapping=None):
 
-        codecs.StreamWriter.__init__(self,strict,errors)
+        codecs.StreamWriter.__init__(self,stream,errors)
         self.mapping = mapping
 
     def encode(self,input,errors='strict'):
