@@ -303,11 +303,11 @@ def expanduser(path):
     do nothing."""
     if not path.startswith('~'):
         return path
-    i, n = 1, len(path)
-    while i < n and path[i] != '/':
-        i += 1
+    i = path.find('/', 1)
+    if i < 0:
+        i = len(path)
     if i == 1:
-        if not 'HOME' in os.environ:
+        if 'HOME' not in os.environ:
             import pwd
             userhome = pwd.getpwuid(os.getuid()).pw_dir
         else:
