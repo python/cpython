@@ -883,7 +883,7 @@ static struct {
  {"IOError", &PyExc_IOError, &PyExc_EnvironmentError, IOError__doc__},
  {"OSError", &PyExc_OSError, &PyExc_EnvironmentError, OSError__doc__},
 #ifdef MS_WINDOWS
- {"WindowsError", &PyExc_WindowsError, &PyExc_EnvironmentError,
+ {"WindowsError", &PyExc_WindowsError, &PyExc_OSError,
   WindowsError__doc__},
 #endif /* MS_WINDOWS */
  {"EOFError",     &PyExc_EOFError,     0, EOFError__doc__},
