@@ -51,6 +51,9 @@ without arguments.
 # python -O for the older versions to avoid timing SET_LINENO
 # instructions.
 
+# XXX Maybe for convenience of comparing with previous Python versions,
+# itertools.repeat() should not be used at all?
+
 import sys
 import math
 import time
@@ -133,6 +136,17 @@ class Timer:
         specifies how many times to call timer(), defaulting to 10;
         the second argument specifies the timer argument, defaulting
         to one million.
+
+        Note: it's tempting to calculate mean and standard deviation
+        from the result vector and report these.  However, this is not
+        very useful.  In a typical case, the lowest value gives a
+        lower bound for how fast your machine can run the given code
+        snippet; higher values in the result vector are typically not
+        caused by variability in Python's speed, but by other
+        processes interfering with your timing accuracy.  So the min()
+        of the result is probably the only number you should be
+        interested in.  After that, you should look at the entire
+        vector and apply common sense rather than statistics.
         """
         r = []
         for i in range(repeat):
