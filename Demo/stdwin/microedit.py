@@ -1,4 +1,4 @@
-#! /usr/local/python
+#! /usr/local/bin/python
 
 # A minimal single-window text editor using STDWIN's text objects.
 #
