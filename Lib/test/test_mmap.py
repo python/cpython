@@ -15,10 +15,7 @@ def test_both():
     f.write('foo')
     f.write('\0'* (PAGESIZE-3) )
 
-    if sys.platform[:3]=="win":
-        m = mmap.mmap(f.fileno(), 2 * PAGESIZE)
-    else:
-        m = mmap.mmap(f.fileno(), 2 * PAGESIZE)
+    m = mmap.mmap(f.fileno(), 2 * PAGESIZE)
     f.close()
     
     # Simple sanity checks
