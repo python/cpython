@@ -14,6 +14,9 @@ Extension modules
 
 - Patch #813445: Add missing socket.IPPROTO_IPV6.
 
+- Bug #807314: Properly raise an exception if non-existent Tcl
+  variable is accessed.
+
 What's New in Python 2.3.2 (final)?
 ===================================
 
