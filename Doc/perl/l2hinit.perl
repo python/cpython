@@ -13,8 +13,7 @@ use Cwd qw(getcwd);
 
 package main;
 
-$INFO = 1;              # 0 = do not make a "About this document..." section
-$MAX_LINK_DEPTH = 3;
+$MAX_LINK_DEPTH = 2;
 $ADDRESS = '';
 
 $NO_FOOTNODE = 1;
@@ -26,6 +25,11 @@ $NUMBERED_FOOTNOTES = 1;
 $SHOW_SECTION_NUMBERS = 1;
 
 $ICONSERVER = '../icons';
+
+# Control where the navigation bars should show up:
+$TOP_NAVIGATION = 1;
+$BOTTOM_NAVIGATION = 1;
+$AUTO_NAVIGATION = 0;
 
 $BODYTEXT = 'bgcolor="#ffffff"';
 $CHILDLINE = "\n<p><hr>\n";
@@ -81,13 +85,15 @@ sub custom_driver_hook{
 }
 
 
+$CUSTOM_BUTTONS = '';
+
 sub make_nav_panel{
     ($NEXT_TITLE ? $NEXT : '')
       . ($UP_TITLE ? $UP : '')
       . ($PREVIOUS_TITLE ? $PREVIOUS : '')
       . $CONTENTS
+      . $CUSTOM_BUTTONS
       . $INDEX
-#      . " $CUSTOM_BUTTONS"
       . "\n<br>\n"
       . ($NEXT_TITLE ? "<b>Next:</b> $NEXT_TITLE\n" : '')
       . ($UP_TITLE ? "<b>Up:</b> $UP_TITLE\n" : '')
@@ -346,6 +352,11 @@ sub add_bbl_and_idx_dummy_commands {
 	my $rx = "([\\\\]begin\\s*$O\\d+$C\\s*theindex[\\s\\S]*)"
 	         . "([\\\\]begin\\s*$O\\d+$C\\s*theindex)";
 	s/$rx/\\textohtmlmoduleindex \1 \\textohtmlindex \2/o;
+	# Add a button to the navigation areas:
+	$CUSTOM_BUTTONS .= ("<a\n href=\"modindex.html\"><img"
+			    . " src=\"$ICONSERVER$dd"
+			    . "modules_motif.gif\" border=0"
+			    . " alt=\"[Modules]\"></a>");
     }
     else {
 	$global{'max_id'} = $id; # not sure why....
