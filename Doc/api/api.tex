@@ -1613,12 +1613,6 @@ failure, return \NULL{}. This is equivalent to the Python
 expression \samp{\var{o}.items()}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyMapping_Clear}{PyObject *o}
-Make object \var{o} empty.  Returns \code{1} on success and \code{0}
-on failure.  This is equivalent to the Python statement
-\samp{for key in \var{o}.keys(): del \var{o}[key]}.
-\end{cfuncdesc}
-
 
 \begin{cfuncdesc}{PyObject*}{PyMapping_GetItemString}{PyObject *o, char *key}
 Return element of \var{o} corresponding to the object \var{key} or
