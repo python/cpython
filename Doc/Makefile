@@ -89,7 +89,7 @@ MKHTML=		TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkhtml.sh
 MKPDF=		TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkdvi.sh --pdf
 
 # Main target
-all:
+all:	all-ps
 
 all-dvi:
 	(cd paper-$(PAPER); $(MAKE) all-dvi)
