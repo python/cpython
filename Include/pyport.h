@@ -117,13 +117,6 @@ typedef LONG_LONG		Py_intptr_t;
 
 #include <sys/select.h>
 
-#else /* !HAVE_SYS_SELECT_H */
-
-#ifdef USE_GUSI1
-/* If we don't have sys/select the definition may be in unistd.h */
-#include <GUSI.h>
-#endif
-
 #endif /* !HAVE_SYS_SELECT_H */
 
 /*******************************
