@@ -195,7 +195,7 @@ t_bootstrap(args_raw)
 	func = gettupleitem(args, 0);
 	arg = gettupleitem(args, 1);
 	res = call_object(func, arg);
-	DECREF(arg); /* Matches the INCREF(arg) in thread_start_new_thread */
+	DECREF(args); /* Matches the INCREF(args) in thread_start_new_thread */
 	if (res == NULL) {
 		fprintf(stderr, "Unhandled exception in thread:\n");
 		print_error(); /* From pythonmain.c */

@@ -30,7 +30,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <stropts.h>
 #include <sys/ioctl.h>
+#ifdef SOLARIS
+#include <multimedia/libaudio.h>
+#else
 #include <sun/audioio.h>
+#endif
 
 /* #define offsetof(str,mem) ((int)(((str *)0)->mem)) */
 
@@ -50,7 +54,7 @@ typedef struct {
 
 extern typeobject Sadtype;		/* Really static, forward */
 extern typeobject Sadstatustype;	/* Really static, forward */
-extern sadstatusobject *sads_alloc();	/* Forward */
+static sadstatusobject *sads_alloc();	/* Forward */
 
 static object *SunAudioError;
 
@@ -256,6 +260,24 @@ sad_drain(self, args)
     return None;
 }
 
+#ifdef SOLARIS
+static object *
+sad_getdev(self, args)
+    sadobject *self;
+    object *args;
+{
+    struct audio_device ad;
+
+    if ( !getargs(args, "") )
+	return 0;
+    if ( ioctl(self->x_fd, AUDIO_GETDEV, &ad) < 0 ) {
+	err_errno(SunAudioError);
+	return NULL;
+    }
+    return mkvalue("(sss)", ad.name, ad.version, ad.config);
+}
+#endif
+
 static object *
 sad_flush(self, args)
     sadobject *self;
@@ -298,6 +320,9 @@ static struct methodlist sad_methods[] = {
         { "setinfo",	sad_setinfo },
         { "drain",	sad_drain },
         { "flush",	sad_flush },
+#ifdef SOLARIS
+	{ "getdev",	sad_getdev },
+#endif
         { "close",	sad_close },
 	{NULL,		NULL}		/* sentinel */
 };
@@ -345,6 +370,11 @@ static struct memberlist sads_ml[] = {
 	{ "i_waiting",		T_UBYTE,	OFF(record.waiting) },
 	{ "i_open",		T_UBYTE,	OFF(record.open) ,	 RO},
 	{ "i_active",		T_UBYTE,	OFF(record.active) ,	 RO},
+#ifdef SOLARIS
+	{ "i_buffer_size",	T_UINT,		OFF(record.buffer_size) },
+	{ "i_balance",		T_UBYTE,	OFF(record.balance) },
+	{ "i_avail_ports",	T_UINT,		OFF(record.avail_ports) },
+#endif
 
 	{ "o_sample_rate",	T_UINT,		OFF(play.sample_rate) },
 	{ "o_channels",		T_UINT,		OFF(play.channels) },
@@ -359,6 +389,11 @@ static struct memberlist sads_ml[] = {
 	{ "o_waiting",		T_UBYTE,	OFF(play.waiting) },
 	{ "o_open",		T_UBYTE,	OFF(play.open) ,	 RO},
 	{ "o_active",		T_UBYTE,	OFF(play.active) ,	 RO},
+#ifdef SOLARIS
+	{ "o_buffer_size",	T_UINT,		OFF(play.buffer_size) },
+	{ "o_balance",		T_UBYTE,	OFF(play.balance) },
+	{ "o_avail_ports",	T_UINT,		OFF(play.avail_ports) },
+#endif
 
 	{ "monitor_gain",	T_UINT,		OFF(monitor_gain) },
         { NULL,                 0,              0},
@@ -382,7 +417,7 @@ sads_setattr(xp, name, v)
 	if (v == NULL) {
 		err_setstr(TypeError,
 			   "can't delete sun audio status attributes");
-		return NULL;
+		return 0;
 	}
 	return setmember((char *)&xp->ai, sads_ml, name, v);
 }
