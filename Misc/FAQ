@@ -6,7 +6,7 @@ Reply-to: guido@cwi.nl (Guido van Rossum)
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
-Version: 1.18
+Version: 1.19--
 Last-modified: 2 January 1995
 
 This article contains answers to Frequently Asked Questions about
@@ -24,7 +24,7 @@ Author's address:
         P.O. Box 94079
         1090 GB  Amsterdam
         The Netherlands
-Email:  guido@cwi.nl
+Email:  <guido@cwi.nl>
 
 The latest version of this FAQ is available by anonymous ftp from
 <URL:ftp://ftp.cwi.nl/pub/python/python-FAQ>.  It will also be posted
@@ -41,9 +41,6 @@ There's a mail server on that machine which will send you files from
 the archive by e-mail if you have no ftp access.  You send a e-mail
 message to <mail-server@rtfm.mit.edu> containing the single word help
 in the message body to receive instructions.
-
-Skip Montanaro <skip@automatrix.com> maintains an HTML version of this
-FAQ, <URL:http://www.automatrix.com/~skip/python-faq.html>.
 
 This FAQ is divided in the following chapters:
 
@@ -153,6 +150,8 @@ Here's an overview of the questions per chapter:
   4.28. Q. How can I create a stand-alone binary from a Python script?
   4.29. Q. Is there a special lib for writing CGI scripts in Python?
   4.30. Q. What other WWW tools are there for Python?
+  4.31. Q. How do I run a subprocess with pipes connected to both input
+        and output?
 
  5. Extending Python
   5.1. Q. Can I create my own functions in C?
@@ -161,7 +160,7 @@ Here's an overview of the questions per chapter:
   5.4. Q. How can I evaluate an arbitrary Python expression from C?
   5.5. Q. How do I extract C values from a Python object?
   5.6. Q. How do I use mkvalue() to create a tuple of arbitrary length?
-  5.7. Q. What happened to mktuple(), featuring in an example in the
+  5.7. Q. What happened to mktuple(), featured in an example in the
        Extensions manual?
   5.8. Q. How do I call an object's method from C?
   5.9. Q. How do I catch the output from print_error()?
@@ -235,7 +234,7 @@ down).
 
 1.2. Q. Why is it called Python?
 
-A. Apart from being a computer wizard, I'm also a fan of "Monty
+A. Apart from being a computer scientist, I'm also a fan of "Monty
 Python's Flying Circus" (a BBC comedy series from the seventies, in
 the -- unlikely -- case you didn't know).  It occurred to me one day
 that I needed a name that was short, unique, and slightly mysterious.
@@ -297,8 +296,7 @@ A. There is a newsgroup, comp.lang.python <URL:news:comp.lang.python>,
 and a mailing list.  The newsgroup and mailing list are gatewayed into
 each other -- if you can read news it's unnecessary to subscribe to
 the mailing list.  Send e-mail to <python-list-request@cwi.nl> to
-(un)subscribe to the mailing list
-<URL:mailto:python-list-request@cwi.nl>.  Hypermail archives of
+(un)subscribe to the mailing list.  Hypermail archives of
 (nearly) everything posted to the mailing list (and thus the
 newsgroup) are available on our WWW server,
 <URL:http://www.cwi.nl/~guido/hypermail/index.html>.  The raw archives
@@ -419,7 +417,7 @@ included in the list above, send me email!
 2.3. Q. Are there any commercial projects going on using Python?
 
 A. Several companies have revealed to me that they are planning or
-considering to use Python in a future product.
+considering use of Python in a future product.
 
 The furthest is Sunrise Software, who already have a product out using
 Python -- they use Python for a GUI management application and an SNMP
@@ -540,10 +538,10 @@ A. Get STDWIN 0.9.9 <URL:ftp://ftp.cwi.nl/pub/stdwin/stdwin0.9.9.tar.gz>.
 
 3.4. Q. Link errors building Python with STDWIN 0.9.9.
 
-A. Probably routines like 'tereate', 'tenew' etc.  The STDWIN 0.9.9
-distribution requires that you add TWO libraries from stdwin to the
-line for stdwin in the Setupfile.  Use something like this (all on one
-line!):
+A. The linker probably complains that it can't find routines like
+'tecreate', 'tenew' etc.  The STDWIN 0.9.9 distribution requires that
+you add TWO libraries from stdwin to the line for stdwin in the
+Setupfile.  Use something like this (all on one line!):
 
         stdwin stdwinmodule.c -I$(STDWIN)/H $(STDWIN)/Packs/textedit/libtextedit.a $(STDWIN)/Ports/x11/libstdwin.a -lX11
 
@@ -601,7 +599,7 @@ A. Consider using readline 2.0.  From the Python 1.1 README:
 
 - You can use the GNU readline library to improve the interactive user
 interface: this gives you line editing and command history when
-calling python interactively. You need to configure build the GNU
+calling python interactively. You need to configure and build the GNU
 readline library before running the configure script. Its sources are
 no longer distributed with Python; you can ftp them from any GNU
 mirror site, or from its home site
@@ -664,31 +662,25 @@ HAVE_PROTOTYPES.
 
 3.13. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
 
-A. The problem seems to be that that the NeXT posix library and the
-NeXT dynamic loading library are incompatible.  Mike Carlton reports
-that the following worked for him (from a clean 1.1 distribution):
+A. If you built 1.2, you probably forgot to pass -posix as mentioned
+in the README file -- this links with the right version of the
+libraries.  If you built an earlier version, that's also your problem
+(edit Makefile to add it to OPT), but you also need to remove this
+NeXT-specific section from import.c:
 
-        1) ./configure
-        2) edited config.status and changed 
-                OPT='-O'
-           to
-                OPT='-posix -O'
-        3) edited Python/import.c and commented out the section
                 #if defined(NeXT) || defined(WITH_RLD) 
                 #define DYNAMIC_LINK
                 #define USE_RLD
                 #endif
-           this disables dynamic loading
-        4) make
 
 3.14. Q. Other trouble building Python on platform X.
 
-A. Please email me the details <URL:mailto:guido@cwi.nl> and I'll look
-into it.  Please provide as many details as possible.  In particular,
-if you don't tell me what type of computer and what operating system
-(and version) you are using it will be difficult for me to figure out
-what is the matter.  If you get a specific error message, please email
-it to me too.
+A. Please email the details to <guido@cwi.nl> and I'll look into it.
+Please provide as many details as possible.  In particular, if you
+don't tell me what type of computer and what operating system (and
+version) you are using it will be difficult for me to figure out what
+is the matter.  If you get a specific error message, please email it
+to me too.
 
 
 4. Programming in Python
@@ -850,10 +842,10 @@ again (into the same Python process), the changes don't seem to take
 place.  What is going on?
 
 A. For reasons of efficiency as well as consistency, Python only reads
-the module file on the first time a module is imported (otherwise a
+the module file on the first time a module is imported.  (Otherwise a
 program consisting of many modules, each of which imports the same
-basic module, would read the basic module over and over again).  To
-force a changed module being read again, do this:
+basic module, would read the basic module over and over again.)  To
+force rereading of a changed module, do this:
 
         import modname
         reload(modname)
@@ -896,7 +888,7 @@ machines).
 NOTE: if the complaint is about "Tkinter" (upper case T) and you have
 already configured module "tkinter" (lower case t), the solution is
 *not* to rename tkinter to Tkinter or vice versa.  There is probably
-something wring with your module search path.  Check out the value of
+something wrong with your module search path.  Check out the value of
 sys.path.
 
 For X-related modules (Xt and Xm) you will have to do more work: they
@@ -931,7 +923,7 @@ is also very likely that in the future the standard Python GUI API
 will be based on or at least look very much like the Tkinter
 interface.  For more info about Tk, including pointers to the source,
 see John Ousterhout's home page
-<URL:http://playground.Sun.COM:80/~ouster/>.
+<URL:http://playground.sun.com/~ouster/>.
 
 - The standard Python distribution comes with an interface to STDWIN,
 a platform-independent low-level windowing interface.  You have to ftp
@@ -977,12 +969,15 @@ Athena widget sets.  Last I heard about it it was included in the WAFE
 A. There's an interface to SYBASE by John Redford
 <jredford@lehman.com>.
 
-There's also an interface to metalbase by Lance Ellinghaus
+There's an interface to metalbase by Lance Ellinghaus
 <lance@markv.com>; it is part of the separate Extensions distribution
 <URL:ftp://ftp.cwi.nl/pub/python/extensions.tar.gz>.
 
 Anthony Baxter <anthony.baxter@aaii.oz.au> has written an interface to
 mSQL (mini-SQL).  <URL:ftp://ftp.cwi.nl/pub/python/PymSQL.tar.gz>.
+
+Tom Culliton <culliton@clark.net> has written an Oracle module.  Write
+him to get a copy of a late BETA version.
 
 4.15. Q. Is it possible to write obfuscated one-liners in Python?
 
@@ -1074,31 +1069,34 @@ setenv(), and some have none at all).
 However if all you want is to pass environment variables to the
 commands run by os.system() or os.popen(), there's a simple solution:
 prefix the command string with a couple of variable assignments and
-export statements. I guess the following would be universal for popen
-(untested):
+export statements.  The following would be universal for popen:
 
         import os
         from commands import mkarg # nifty routine to add shell quoting
         def epopen(cmd, mode, env = {}):
                 # env is a dictionary of environment variables
                 prefix = ''
-                for key, value in env.values():
-                        prefix = prefix + '%s=%s\n' % (key, mkarg(value))
+                for key, value in env.items():
+                        prefix = prefix + '%s=%s\n' % (key, mkarg(value)[1:])
                         prefix = prefix + 'export %s\n' % key
                 return os.popen(prefix + cmd, mode)
 
 4.19. Q. What is a class?
 
 A. A class is the particular object type that is created by executing
-a class statement.
+a class statement.  Class objects are used as templates, to create
+class instance objects, which embody both the data structure and
+program routines specific to a datatype.
 
 4.20. Q. What is a method?
 
 A. A method is a function that you normally call as
-x.name(arguments...) for some object x.  The word is used for methods
+x.name(arguments...) for some object x.  The term is used for methods
 of classes and class instances as well as for methods of built-in
-objects.  The latter have a completely different implementation and
-only share the way their calls look in Python code.
+objects.  (The latter have a completely different implementation and
+only share the way their calls look in Python code.)  Methods of
+classes (and class instances) are defined as functions inside the
+class definition.
 
 4.21. Q. What is self?
 
@@ -1196,13 +1194,6 @@ modules which are actually used in the program.  It then compiles the
 generated C code and links it with the rest of the Python interpreter
 to form a self-contained binary which acts exactly like your script.
 
-Unfortunately, the current version is very platform-specific, because
-each platform has its own compilation flags and libraries to link
-with.  You will probably have to edit the freeze.py file to point it
-to the right directories and tell it about the compilation and link
-flags for your platform.  A new version will be released with Python
-1.1 -- if you want a peek write to my colleague <Jack.Jansen@cwi.nl>.
-
 4.29. Q. Is there a special lib for writing CGI scripts in Python?
 
 A. There's documentation and code for a cgi.py module by Michael McLay
@@ -1228,6 +1219,73 @@ called Dancer.  An alpha version can be FTP'ed from
 <URL:ftp://ftp.cs.indiana.edu/pub/smiale/dancer.tar.gz>.  (There are a
 few articles about Dancer in the (hyper)mail archive
 <URL:http://www.cwi.nl/~guido/hypermail/python-1994q3/index.html>.)
+
+4.31. Q. How do I run a subprocess with pipes connected to both input
+and output?
+
+A. This is really a UNIX question.  Also, in general, it is unwise to
+do so, because you can easily cause a deadlock where the parent
+process is blocked waiting for output from the child, while the child
+is blocked waiting for input from the child.  This can be caused
+because the parent expects the child to output more text than it does,
+or it can be caused by data being stuck in stdio buffers due to lack
+of flushing.  The Python parent can of course explicitly flush the data
+it sends to the child before it reads any output, but if the child is
+a naive C program it can easily have been written to never explicitly
+flush its output, even if it is interactive, since flushing is
+normally automatic.
+
+In many cases, all you really need is to run some data through a
+command and get the result back.  Unless the data is infinite in size,
+the easiest (and often the most efficient!) way to do this is to write
+it to a temporary file and run the command with that temporary file as
+input.  The standard module tempfile exports a function mktemp() which
+generates unique temporary file names.
+
+If after reading all of the above you still want to connect two pipes
+to a subprocess's standard input and output, here's a simple solution,
+due to Jack Jansen:
+
+	import os
+	import sys
+	import string
+
+	MAXFD = 100	# Max number of file descriptors in this system
+
+	def popen2(cmd):
+		cmd = string.split(cmd)
+		p2cread, p2cwrite = os.pipe()
+		c2pread, c2pwrite = os.pipe()
+		pid = os.fork()
+		if pid == 0:
+			# Child
+			os.close(0)
+			os.close(1)
+			if os.dup(p2cread) <> 0:
+				sys.stderr.write('popen2: bad read dup\n')
+			if os.dup(c2pwrite) <> 1:
+				sys.stderr.write('popen2: bad write dup\n')
+			for i in range(3, MAXFD):
+				try:
+					os.close(i)
+				except:
+					pass
+			try:
+				os.execv(cmd[0], cmd)
+			finally:
+				os._exit(1)
+		os.close(p2cread)
+		tochild = os.fdopen(p2cwrite, 'w')
+		os.close(c2pwrite)
+		fromchild = os.fdopen(c2pread, 'r')
+		return fromchild, tochild
+
+Note that many interactive programs (e.g. vi) don't work well with
+pipes substituted for standard input and output.  You will have to use
+pseudo ttys ("ptys") instead of pipes.  There is some undocumented
+code to use these in the library module pty.py -- I'm afraid you're on
+your own here.  What's *really* needed is a Python interface to Don
+Libes' expect library -- any takers?
 
 
 5. Extending Python
@@ -1283,7 +1341,7 @@ some value before you pass the tuple to Python code --
 newtupleobject(n) initializes them to NULL, which isn't a valid Python
 value.
 
-5.7. Q. What happened to mktuple(), featuring in an example in the
+5.7. Q. What happened to mktuple(), featured in an example in the
 Extensions manual?
 
 A. It's a typo, I meant newtupleobject() (see previous question).
@@ -1537,7 +1595,7 @@ implementation requires thread support for C.
 6.11. Q. Why can't lambda forms contain statements?
 
 A. Python lambda forms cannot contain statements because Python's
-syntactic framework can't handle statements nested inside functions.
+syntactic framework can't handle statements nested inside expressions.
 
 However, in Python, this is not a serious problem.  Unlike lambda
 forms in other languages, where they add functionality, Python lambdas
@@ -1690,7 +1748,7 @@ A. You still need to copy the files from the distribution directory
 "python/Lib" to your system.  If you don't have the full distribution,
 you can get the file pythonlib<version>.tar.gz from most ftp sites
 carrying Python; this is a subset of the distribution containing just
-those file, e.g.
+those files, e.g.
 <URL:ftp://ftp.cwi.nl/pub/python/pythonlib1.1.tar.gz>.
 
 Once you have installed the library, you need to point sys.path to it.
