@@ -1048,6 +1048,7 @@ x_sub(PyLongObject *a, PyLongObject *b)
 		borrow = a->ob_digit[i] - borrow;
 		z->ob_digit[i] = borrow & MASK;
 		borrow >>= SHIFT;
+		borrow &= 1; /* Keep only one sign bit */
 	}
 	assert(borrow == 0);
 	if (sign < 0)
