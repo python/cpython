@@ -17,19 +17,19 @@ from distutils.util import mkpath, newer, make_file, copy_file
 
 class BuildPy (Command):
 
-    options = [('dir=', 'd', "directory for platform-shared files"),
+    options = [('build-dir=', 'd', "directory for platform-shared files"),
               ]
 
 
     def set_default_options (self):
-        self.dir = None
+        self.build_dir = None
         self.modules = None
         self.package = None
         self.package_dir = None
 
     def set_final_options (self):
         self.set_undefined_options ('build',
-                                    ('libdir', 'dir'))
+                                    ('build_lib', 'build_dir'))
 
         # Get the distribution options that are aliases for build_py
         # options -- list of packages and list of modules.
@@ -52,8 +52,6 @@ class BuildPy (Command):
         # when the time comes for that -- does MacOS use its special
         # metadata to know that a file is meant to be interpreted by
         # Python?)
-
-        self.set_final_options ()
 
         infiles = []
         outfiles = []
@@ -155,7 +153,7 @@ class BuildPy (Command):
     # check_module ()
 
 
-    def find_modules (self, package, package_dir):
+    def find_package_modules (self, package, package_dir):
         module_files = glob (os.path.join (package_dir, "*.py"))
         module_pairs = []
         for f in module_files:
@@ -164,35 +162,17 @@ class BuildPy (Command):
         return module_pairs
 
 
-    def build_module (self, module, module_file, package):
-
-        if type (package) is StringType:
-            package = string.split (package, '.')
-
-        # Now put the module source file into the "build" area -- this
-        # is easy, we just copy it somewhere under self.dir (the build
-        # directory for Python source).
-        outfile_path = package
-        outfile_path.append (module + ".py")
-        outfile_path.insert (0, self.dir)
-        outfile = apply (os.path.join, outfile_path)
-
-        dir = os.path.dirname (outfile)
-        self.mkpath (dir)
-        self.copy_file (module_file, outfile)
-
-
-    def build_modules (self):
-
+    def find_modules (self):
         # Map package names to tuples of useful info about the package:
         #    (package_dir, checked)
         # package_dir - the directory where we'll find source files for
         #   this package
         # checked - true if we have checked that the package directory
         #   is valid (exists, contains __init__.py, ... ?)
-
-
         packages = {}
+
+        # List of (module, package, filename) tuples to return
+        modules = []
 
         # We treat modules-in-packages almost the same as toplevel modules,
         # just the "package" for a toplevel is empty (either an empty
@@ -202,7 +182,7 @@ class BuildPy (Command):
         for module in self.modules:
             path = string.split (module, '.')
             package = tuple (path[0:-1])
-            module = path[-1]
+            module_base = path[-1]
 
             try:
                 (package_dir, checked) = packages[package]
@@ -217,14 +197,65 @@ class BuildPy (Command):
             # XXX perhaps we should also check for just .pyc files
             # (so greedy closed-source bastards can distribute Python
             # modules too)
-            module_file = os.path.join (package_dir, module + ".py")
+            module_file = os.path.join (package_dir, module_base + ".py")
             if not self.check_module (module, module_file):
                 continue
 
+            modules.append ((module, package, module_file))
+
+        return modules
+
+    # find_modules ()
+
+
+    def get_source_files (self):
+
+        if self.modules:
+            modules = self.find_modules ()
+        else:
+            modules = []
+            for package in self.packages:
+                package_dir = self.get_package_dir (package)
+                m = self.find_package_modules (package, package_dir)
+                modules.extend (m)
+
+        # Both find_modules() and find_package_modules() return a list of
+        # tuples where the last element of each tuple is the filename --
+        # what a happy coincidence!
+        filenames = []
+        for module in modules:
+            filenames.append (module[-1])
+
+        return filenames                
+
+
+    def build_module (self, module, module_file, package):
+
+        if type (package) is StringType:
+            package = string.split (package, '.')
+
+        # Now put the module source file into the "build" area -- this is
+        # easy, we just copy it somewhere under self.build_dir (the build
+        # directory for Python source).
+        outfile_path = package
+        outfile_path.append (module + ".py")
+        outfile_path.insert (0, self.build_dir)
+        outfile = apply (os.path.join, outfile_path)
+
+        dir = os.path.dirname (outfile)
+        self.mkpath (dir)
+        self.copy_file (module_file, outfile)
+
+
+    def build_modules (self):
+
+        modules = self.find_modules()
+        for (module, package, module_file) in modules:
+
             # Now "build" the module -- ie. copy the source file to
-            # self.dir (the build directory for Python source).  (Actually,
-            # it gets copied to the directory for this package under
-            # self.dir.)
+            # self.build_dir (the build directory for Python source).
+            # (Actually, it gets copied to the directory for this package
+            # under self.build_dir.)
             self.build_module (module, module_file, package)
 
     # build_modules ()
@@ -242,10 +273,10 @@ class BuildPy (Command):
             # package!), and module_file is the path to the .py file,
             # relative to the current directory (ie. including
             # 'package_dir').
-            modules = self.find_modules (package, package_dir)
+            modules = self.find_package_modules (package, package_dir)
 
             # Now loop over the modules we found, "building" each one (just
-            # copy it to self.dir).
+            # copy it to self.build_dir).
             for (module, module_file) in modules:
                 self.build_module (module, module_file, package)
 
