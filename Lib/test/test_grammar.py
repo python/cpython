@@ -411,6 +411,9 @@ if g.has_key('__builtins__'): del g['__builtins__']
 if g != {'z': 1}: raise TestFailed, 'exec \'z = 1\' in g'
 g = {}
 l = {}
+
+import warnings
+warnings.filterwarnings("ignore", "global statement", module="<string>")
 exec 'global a; a = 1; b = 2' in g, l
 if g.has_key('__builtins__'): del g['__builtins__']
 if l.has_key('__builtins__'): del l['__builtins__']
