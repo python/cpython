@@ -1,0 +1,126 @@
+\chapter{MacOS Toolbox Modules \label{toolbox}}
+
+There are a set of modules that provide interfaces to various MacOS
+toolboxes.  If applicable the module will define a number of Python
+objects for the various structures declared by the toolbox, and
+operations will be implemented as methods of the object.  Other
+operations will be implemented as functions in the module.  Not all
+operations possible in C will also be possible in Python (callbacks
+are often a problem), and parameters will occasionally be different in
+Python (input and output buffers, especially).  All methods and
+functions have a \member{__doc__} string describing their arguments
+and return values, and for additional description you are referred to
+\citetitle[http://developer.apple.com/techpubs/macos8/mac8.html]{Inside
+Macintosh} or similar works.
+
+
+\strong{Warning!}  These modules are not yet documented.  If you
+wish to contribute documentation of any of these modules, please get
+in touch with \email{python-docs@python.org}.
+
+\localmoduletable
+
+
+%\section{Argument Handling for Toolbox Modules}
+
+
+\section{\module{AE} --- Apple Events}
+\declaremodule{standard}{AE}
+  \platform{Mac}
+\modulesynopsis{Interface to the Apple Events toolbox}
+
+
+\section{\module{Cm} --- Component Manager}
+\declaremodule{standard}{Cm}
+  \platform{Cm}
+\modulesynopsis{Interface to the Component Manager}
+
+
+\section{\module{Ctl} --- Control Manager}
+\declaremodule{standard}{Ctl}
+  \platform{Mac}
+\modulesynopsis{Interface to the Control Manager}
+
+
+\section{\module{Dlg} --- Dialog Manager}
+\declaremodule{standard}{Dlg}
+  \platform{Mac}
+\modulesynopsis{Interface to the Dialog Manager}
+
+
+\section{\module{Evt} --- Event Manager}
+\declaremodule{standard}{Evt}
+  \platform{Mac}
+\modulesynopsis{Interface to the Event Manager}
+
+
+\section{\module{Fm} --- Font Manager}
+\declaremodule{standard}{Fm}
+  \platform{Mac}
+\modulesynopsis{Interface to the Font Manager}
+
+
+\section{\module{List} --- List Manager}
+\declaremodule{standard}{List}
+  \platform{Mac}
+\modulesynopsis{Interface to the List Manager}
+
+
+\section{\module{Menu} --- Menu Manager}
+\declaremodule{standard}{Menu}
+  \platform{Mac}
+\modulesynopsis{Interface to the Menu Manager}
+
+
+\section{\module{Qd} --- QuickDraw}
+\declaremodule{builtin}{Qd}
+  \platform{Mac}
+\modulesynopsis{Interface to the QuickDraw toolbox}
+
+
+\section{\module{Qt} --- QuickTime}
+\declaremodule{standard}{Qt}
+  \platform{Mac}
+\modulesynopsis{Interface to the QuickTime toolbox}
+
+
+\section{\module{Res} --- Resource Manager and Handles}
+\declaremodule{standard}{Res}
+  \platform{Mac}
+\modulesynopsis{Interface to the Resource Manager and Handles}
+
+
+\section{\module{Scrap} --- Scrap Manager}
+\declaremodule{standard}{Scrap}
+  \platform{Mac}
+\modulesynopsis{Interface to the Scrap Manager}
+
+
+\section{\module{Snd} --- Sound Manager}
+\declaremodule{standard}{Snd}
+  \platform{Mac}
+\modulesynopsis{Interface to the Sound Manager }
+
+
+\section{\module{TE} --- TextEdit}
+\declaremodule{standard}{TE}
+  \platform{Mac}
+\modulesynopsis{Interface to TextEdit}
+
+
+\section{\module{waste} --- non-Apple \program{TextEdit} replacement}
+\declaremodule{standard}{waste}
+  \platform{Mac}
+\modulesynopsis{Interface to the ``WorldScript-Aware Styled Text Engine.''}
+
+\begin{seealso}
+  \seetitle[http://www.merzwaren.com/waste/]{About WASTE}{Information
+            about the WASTE widget and library, including
+            documentation and downloads.}
+\end{seealso}
+
+
+\section{\module{Win} --- Window Manager}
+\declaremodule{standard}{Win}
+  \platform{Mac}
+\modulesynopsis{Interface to the Window Manager}
