@@ -3328,14 +3328,18 @@ loop_subscript(PyObject *v, PyObject *w)
 	return NULL;
 }
 
-/* Extract a slice index from a PyInt or PyLong, the index is bound to
-   the range [-INT_MAX+1, INTMAX]. Returns 0 and an exception if there is
-   and error. Returns 1 on success.*/
-
+/* Extract a slice index from a PyInt or PyLong, and store in *pi.
+   Silently reduce values larger than INT_MAX to INT_MAX, and silently
+   boost values less than -INT_MAX to 0.  Return 0 on error, 1 on success.
+*/
+/* XXX If v is NULL, this goes out of its way to indicate success(!), but
+   XXX doesn't store into *pi.  Why isn't that an error, or at least v!=NULL
+   XXX an asserted precondition?
+*/
 int
 _PyEval_SliceIndex(PyObject *v, int *pi)
 {
-	if (v != NULL) {
+	if (v != NULL) {  /* XXX why isn't this assert(v != NULL()? */
 		long x;
 		if (PyInt_Check(v)) {
 			x = PyInt_AsLong(v);
@@ -3362,7 +3366,8 @@ _PyEval_SliceIndex(PyObject *v, int *pi)
 
 				/* Create a long integer with a value of 0 */
 				long_zero = PyLong_FromLong(0L);
-				if (long_zero == NULL) return 0;
+				if (long_zero == NULL)
+					return 0;
 
 				/* Check sign */
 				cmp = PyObject_RichCompareBool(v, long_zero,
