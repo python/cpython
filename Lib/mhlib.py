@@ -409,9 +409,9 @@ class Folder:
 
 	# Refile one or more messages -- may raise os.error.
 	# 'tofolder' is an open folder object
-	def refilemessages(self, list, tofolder):
+	def refilemessages(self, list, tofolder, keepsequences=0):
 		errors = []
-		refiled = []
+		refiled = {}
 		for n in list:
 			ton = tofolder.getlast() + 1
 			path = self.getmessagefilename(n)
@@ -431,14 +431,37 @@ class Folder:
 						pass
 					continue
 			tofolder.setlast(ton)
-			refiled.append(n)
+			refiled[n] = ton
 		if refiled:
-			self.removefromallsequences(refiled)
+			if keepsequences:
+				tofolder._copysequences(self, refiled.items())
+			self.removefromallsequences(refiled.keys())
 		if errors:
 			if len(errors) == 1:
 				raise os.error, errors[0]
 			else:
 				raise os.error, ('multiple errors:', errors)
+
+	# Helper for refilemessages() to copy sequences
+	def _copysequences(self, fromfolder, refileditems):
+		fromsequences = fromfolder.getsequences()
+		tosequences = self.getsequences()
+		changed = 0
+		for name, seq in fromsequences.items():
+			try:
+				toseq = tosequences[name]
+				new = 0
+			except:
+				toseq = []
+				new = 1
+			for fromn, ton in refileditems:
+				if fromn in seq:
+					toseq.append(ton)
+					changed = 1
+			if new and toseq:
+				tosequences[name] = toseq
+		if changed:
+			self.putsequences(tosequences)
 
 	# Move one message over a specific destination message,
 	# which may or may not already exist.
