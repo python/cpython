@@ -391,7 +391,7 @@ result = re.match(pat, str)
 but the version using \function{compile()} is more efficient when the
 expression will be used several times in a single program.
 %(The compiled version of the last pattern passed to
-%\function{regex.match()} or \function{regex.search()} is cached, so
+%\function{re.match()} or \function{re.search()} is cached, so
 %programs that use only a single regular expression at a time needn't
 %worry about compiling regular expressions.)
 \end{funcdesc}
@@ -514,9 +514,8 @@ replacement string.  For example:
 'pro--gram files'
 \end{verbatim}
 
-The pattern may be a string or a 
-regex object; if you need to specify
-regular expression flags, you must use a regex object, or use
+The pattern may be a string or an RE object; if you need to specify
+regular expression flags, you must use a RE object, or use
 embedded modifiers in a pattern; e.g.
 \samp{sub("(?i)b+", "x", "bbbb BBBB")} returns \code{'x x'}.
 
@@ -623,7 +622,7 @@ Identical to the \function{subn()} function, using the compiled pattern.
 
 
 \begin{memberdesc}[RegexObject]{flags}
-The flags argument used when the regex object was compiled, or
+The flags argument used when the RE object was compiled, or
 \code{0} if no flags were provided.
 \end{memberdesc}
 
@@ -634,7 +633,7 @@ symbolic groups were used in the pattern.
 \end{memberdesc}
 
 \begin{memberdesc}[RegexObject]{pattern}
-The pattern string from which the regex object was compiled.
+The pattern string from which the RE object was compiled.
 \end{memberdesc}
 
 
@@ -732,14 +731,14 @@ Note that if \var{group} did not contribute to the match, this is
 
 \begin{memberdesc}[MatchObject]{pos}
 The value of \var{pos} which was passed to the
-\function{search()} or \function{match()} function.  This is the index into
-the string at which the regex engine started looking for a match. 
+\function{search()} or \function{match()} function.  This is the index
+into the string at which the RE engine started looking for a match. 
 \end{memberdesc}
 
 \begin{memberdesc}[MatchObject]{endpos}
 The value of \var{endpos} which was passed to the
-\function{search()} or \function{match()} function.  This is the index into
-the string beyond which the regex engine will not go.
+\function{search()} or \function{match()} function.  This is the index
+into the string beyond which the RE engine will not go.
 \end{memberdesc}
 
 \begin{memberdesc}[MatchObject]{lastgroup}
