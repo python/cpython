@@ -5,6 +5,7 @@ from bgenVariable import *
 
 Error = "bgenGenerator.Error"
 
+DEBUG=0
 
 # Strings to specify argument transfer modes in generator calls
 IN = "in"
@@ -15,7 +16,7 @@ INOUT = IN_OUT = "in-out"
 class BaseFunctionGenerator:
 
 	def __init__(self, name, condition=None):
-		print "<--", name
+		if DEBUG: print "<--", name
 		self.name = name
 		self.prefix = name
 		self.objecttype = "PyObject" # Type of _self argument to function
@@ -25,7 +26,7 @@ class BaseFunctionGenerator:
 		self.prefix = prefix
 
 	def generate(self):
-		print "-->", self.name
+		if DEBUG: print "-->", self.name
 		if self.condition:
 			Output()
 			Output(self.condition)
