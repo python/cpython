@@ -47,8 +47,9 @@ def error(msg, rc=2):
 
 
 _rx = re.compile(
-    '<dt><a href="(module-.*\.html)">'
-    '([a-zA-Z_][a-zA-Z0-9_.]*(\s*<em>\(.*\)</em>)?)</a>')
+    "<dt><a href='(module-.*\.html)#l2h-\d+'><tt class='module'>"
+    "([a-zA-Z_][a-zA-Z0-9_.]*</tt>(\s*<em>"
+    "\(<span class='platform'>.*</span>\)</em>)?)</a>")
 
 def main():
     outputfile = "-"

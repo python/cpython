@@ -34,7 +34,7 @@ fi
 
 part=$1; shift 1
 
-TEXINPUTS=$srcdir/$part:$TEXINPUTS
+TEXINPUTS=.:$srcdir/$part:$TEXINPUTS
 export TEXINPUTS
 
 echo $srcdir'/tools/newind.py >'$part'.ind'
