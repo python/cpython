@@ -1050,7 +1050,7 @@ static struct {
 
 
 
-DL_EXPORT(void)
+void
 _PyExc_Init(void)
 {
     char *modulename = "exceptions";
@@ -1146,7 +1146,7 @@ _PyExc_Init(void)
 }
 
 
-DL_EXPORT(void)
+void
 _PyExc_Fini(void)
 {
     int i;

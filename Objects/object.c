@@ -8,10 +8,10 @@
 #endif
 
 #ifdef Py_REF_DEBUG
-DL_IMPORT(long) _Py_RefTotal;
+long _Py_RefTotal;
 #endif
 
-DL_IMPORT(int) Py_DivisionWarningFlag;
+int Py_DivisionWarningFlag;
 
 /* Object allocation routines used by NEWOBJ and NEWVAROBJ macros.
    These are used by the individual routines for object creation.

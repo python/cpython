@@ -327,52 +327,52 @@ typedef struct _typeobject {
 
 
 /* Generic type check */
-extern DL_IMPORT(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);
+PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);
 #define PyObject_TypeCheck(ob, tp) \
 	((ob)->ob_type == (tp) || PyType_IsSubtype((ob)->ob_type, (tp)))
 
-extern DL_IMPORT(PyTypeObject) PyType_Type; /* built-in 'type' */
-extern DL_IMPORT(PyTypeObject) PyBaseObject_Type; /* built-in 'object' */
-extern DL_IMPORT(PyTypeObject) PySuper_Type; /* built-in 'super' */
+PyAPI_DATA(PyTypeObject) PyType_Type; /* built-in 'type' */
+PyAPI_DATA(PyTypeObject) PyBaseObject_Type; /* built-in 'object' */
+PyAPI_DATA(PyTypeObject) PySuper_Type; /* built-in 'super' */
 
 #define PyType_Check(op) PyObject_TypeCheck(op, &PyType_Type)
 #define PyType_CheckExact(op) ((op)->ob_type == &PyType_Type)
 
-extern DL_IMPORT(int) PyType_Ready(PyTypeObject *);
-extern DL_IMPORT(PyObject *) PyType_GenericAlloc(PyTypeObject *, int);
-extern DL_IMPORT(PyObject *) PyType_GenericNew(PyTypeObject *,
+PyAPI_FUNC(int) PyType_Ready(PyTypeObject *);
+PyAPI_FUNC(PyObject *) PyType_GenericAlloc(PyTypeObject *, int);
+PyAPI_FUNC(PyObject *) PyType_GenericNew(PyTypeObject *,
 					       PyObject *, PyObject *);
-extern DL_IMPORT(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
 
 /* Generic operations on objects */
-extern DL_IMPORT(int) PyObject_Print(PyObject *, FILE *, int);
-extern DL_IMPORT(void) _PyObject_Dump(PyObject *);
-extern DL_IMPORT(PyObject *) PyObject_Repr(PyObject *);
-extern DL_IMPORT(PyObject *) PyObject_Str(PyObject *);
+PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
+PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
+PyAPI_FUNC(PyObject *) PyObject_Repr(PyObject *);
+PyAPI_FUNC(PyObject *) PyObject_Str(PyObject *);
 #ifdef Py_USING_UNICODE
-extern DL_IMPORT(PyObject *) PyObject_Unicode(PyObject *);
+PyAPI_FUNC(PyObject *) PyObject_Unicode(PyObject *);
 #endif
-extern DL_IMPORT(int) PyObject_Compare(PyObject *, PyObject *);
-extern DL_IMPORT(PyObject *) PyObject_RichCompare(PyObject *, PyObject *, int);
-extern DL_IMPORT(int) PyObject_RichCompareBool(PyObject *, PyObject *, int);
-extern DL_IMPORT(PyObject *) PyObject_GetAttrString(PyObject *, char *);
-extern DL_IMPORT(int) PyObject_SetAttrString(PyObject *, char *, PyObject *);
-extern DL_IMPORT(int) PyObject_HasAttrString(PyObject *, char *);
-extern DL_IMPORT(PyObject *) PyObject_GetAttr(PyObject *, PyObject *);
-extern DL_IMPORT(int) PyObject_SetAttr(PyObject *, PyObject *, PyObject *);
-extern DL_IMPORT(int) PyObject_HasAttr(PyObject *, PyObject *);
-extern DL_IMPORT(PyObject **) _PyObject_GetDictPtr(PyObject *);
-extern DL_IMPORT(PyObject *) PyObject_GenericGetAttr(PyObject *, PyObject *);
-extern DL_IMPORT(int) PyObject_GenericSetAttr(PyObject *,
+PyAPI_FUNC(int) PyObject_Compare(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyObject_RichCompare(PyObject *, PyObject *, int);
+PyAPI_FUNC(int) PyObject_RichCompareBool(PyObject *, PyObject *, int);
+PyAPI_FUNC(PyObject *) PyObject_GetAttrString(PyObject *, char *);
+PyAPI_FUNC(int) PyObject_SetAttrString(PyObject *, char *, PyObject *);
+PyAPI_FUNC(int) PyObject_HasAttrString(PyObject *, char *);
+PyAPI_FUNC(PyObject *) PyObject_GetAttr(PyObject *, PyObject *);
+PyAPI_FUNC(int) PyObject_SetAttr(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(int) PyObject_HasAttr(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
+PyAPI_FUNC(PyObject *) PyObject_GenericGetAttr(PyObject *, PyObject *);
+PyAPI_FUNC(int) PyObject_GenericSetAttr(PyObject *,
 					      PyObject *, PyObject *);
-extern DL_IMPORT(long) PyObject_Hash(PyObject *);
-extern DL_IMPORT(int) PyObject_IsTrue(PyObject *);
-extern DL_IMPORT(int) PyObject_Not(PyObject *);
-extern DL_IMPORT(int) PyCallable_Check(PyObject *);
-extern DL_IMPORT(int) PyNumber_Coerce(PyObject **, PyObject **);
-extern DL_IMPORT(int) PyNumber_CoerceEx(PyObject **, PyObject **);
+PyAPI_FUNC(long) PyObject_Hash(PyObject *);
+PyAPI_FUNC(int) PyObject_IsTrue(PyObject *);
+PyAPI_FUNC(int) PyObject_Not(PyObject *);
+PyAPI_FUNC(int) PyCallable_Check(PyObject *);
+PyAPI_FUNC(int) PyNumber_Coerce(PyObject **, PyObject **);
+PyAPI_FUNC(int) PyNumber_CoerceEx(PyObject **, PyObject **);
 
-extern DL_IMPORT(void) PyObject_ClearWeakRefs(PyObject *);
+PyAPI_FUNC(void) PyObject_ClearWeakRefs(PyObject *);
 
 /* A slot function whose address we need to compare */
 extern int _PyObject_SlotCompare(PyObject *, PyObject *);
@@ -383,16 +383,16 @@ extern int _PyObject_SlotCompare(PyObject *, PyObject *);
    returning the names of the current locals.  In this case, if there are
    no current locals, NULL is returned, and PyErr_Occurred() is false.
 */
-extern DL_IMPORT(PyObject *) PyObject_Dir(PyObject *);
+PyAPI_FUNC(PyObject *) PyObject_Dir(PyObject *);
 
 
 /* Helpers for printing recursive container types */
-extern DL_IMPORT(int) Py_ReprEnter(PyObject *);
-extern DL_IMPORT(void) Py_ReprLeave(PyObject *);
+PyAPI_FUNC(int) Py_ReprEnter(PyObject *);
+PyAPI_FUNC(void) Py_ReprLeave(PyObject *);
 
 /* Helpers for hash functions */
-extern DL_IMPORT(long) _Py_HashDouble(double);
-extern DL_IMPORT(long) _Py_HashPointer(void*);
+PyAPI_FUNC(long) _Py_HashDouble(double);
+PyAPI_FUNC(long) _Py_HashPointer(void*);
 
 /* Helper for passing objects to printf and the like */
 #define PyObject_REPR(obj) PyString_AS_STRING(PyObject_Repr(obj))
@@ -521,8 +521,8 @@ environment the global variable trick is not safe.)
  * #ifdefs (we used to do that -- it was impenetrable).
  */
 #ifdef Py_REF_DEBUG
-extern DL_IMPORT(long) _Py_RefTotal;
-extern DL_IMPORT(void) _Py_NegativeRefcount(const char *fname,
+PyAPI_DATA(long) _Py_RefTotal;
+PyAPI_FUNC(void) _Py_NegativeRefcount(const char *fname,
 					    int lineno, PyObject *op);
 #define _Py_INC_REFTOTAL	_Py_RefTotal++
 #define _Py_DEC_REFTOTAL	_Py_RefTotal--
@@ -540,7 +540,7 @@ extern DL_IMPORT(void) _Py_NegativeRefcount(const char *fname,
 #endif /* Py_REF_DEBUG */
 
 #ifdef COUNT_ALLOCS
-extern DL_IMPORT(void) inc_count(PyTypeObject *);
+PyAPI_FUNC(void) inc_count(PyTypeObject *);
 #define _Py_INC_TPALLOCS(OP)	inc_count((OP)->ob_type)
 #define _Py_INC_TPFREES(OP)	(OP)->ob_type->tp_frees++
 #define _Py_DEC_TPFREES(OP)	(OP)->ob_type->tp_frees--
@@ -554,11 +554,11 @@ extern DL_IMPORT(void) inc_count(PyTypeObject *);
 
 #ifdef Py_TRACE_REFS
 /* Py_TRACE_REFS is such major surgery that we call external routines. */
-extern DL_IMPORT(void) _Py_NewReference(PyObject *);
-extern DL_IMPORT(void) _Py_ForgetReference(PyObject *);
-extern DL_IMPORT(void) _Py_Dealloc(PyObject *);
-extern DL_IMPORT(void) _Py_PrintReferences(FILE *);
-extern DL_IMPORT(void) _Py_ResetReferences(void);
+PyAPI_FUNC(void) _Py_NewReference(PyObject *);
+PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
+PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
+PyAPI_FUNC(void) _Py_PrintReferences(FILE *);
+PyAPI_FUNC(void) _Py_ResetReferences(void);
 
 #else
 /* Without Py_TRACE_REFS, there's little enough to do that we expand code
@@ -597,14 +597,14 @@ where NULL (nil) is not suitable (since NULL often means 'error').
 
 Don't forget to apply Py_INCREF() when returning this value!!!
 */
-extern DL_IMPORT(PyObject) _Py_NoneStruct; /* Don't use this directly */
+PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
 #define Py_None (&_Py_NoneStruct)
 
 /*
 Py_NotImplemented is a singleton used to signal that an operation is
 not implemented for a given type combination.
 */
-extern DL_IMPORT(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
+PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #define Py_NotImplemented (&_Py_NotImplementedStruct)
 
 /* Rich comparison opcodes */
@@ -720,10 +720,10 @@ chain of N deallocations is broken into N / PyTrash_UNWIND_LEVEL pieces,
 with the call stack never exceeding a depth of PyTrash_UNWIND_LEVEL.
 */
 
-extern DL_IMPORT(void) _PyTrash_deposit_object(PyObject*);
-extern DL_IMPORT(void) _PyTrash_destroy_chain(void);
-extern DL_IMPORT(int) _PyTrash_delete_nesting;
-extern DL_IMPORT(PyObject *) _PyTrash_delete_later;
+PyAPI_FUNC(void) _PyTrash_deposit_object(PyObject*);
+PyAPI_FUNC(void) _PyTrash_destroy_chain(void);
+PyAPI_DATA(int) _PyTrash_delete_nesting;
+PyAPI_DATA(PyObject *) _PyTrash_delete_later;
 
 #define PyTrash_UNWIND_LEVEL 50
 
