@@ -159,6 +159,15 @@ class UTF16Test(ReadTest):
         f = reader(s)
         self.assertEquals(f.read(), u"spamspam")
 
+    def test_badbom(self):
+        s = StringIO.StringIO("\xff\xff")
+        f = codecs.getwriter(self.encoding)(s)
+        self.assertRaises(UnicodeError, f.read)
+
+        s = StringIO.StringIO("\xff\xff\xff\xff")
+        f = codecs.getwriter(self.encoding)(s)
+        self.assertRaises(UnicodeError, f.read)
+
     def test_partial(self):
         self.check_partial(
             u"\x00\xff\u0100\uffff",
