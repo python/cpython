@@ -18,10 +18,143 @@ requires more effort to read.  Let me know if this is acceptable.
 
 ======================================================================
 
+
+From 1.5.2c1 to 1.5.2 (final)
+=============================
+
+Tue Apr 13 15:44:49 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* PCbuild/python15.wse: Bump version to 1.5.2 (final)
+
+	* PCbuild/python15.dsp: Added shamodule.c
+
+	* PC/config.c: Added sha module!
+
+	* README, Include/patchlevel.h: Prepare for final release.
+
+	* Misc/ACKS:
+	More (Cameron Laird is honorary; the others are 1.5.2c1 testers).
+
+	* Python/thread_solaris.h:
+	While I can't really test this thoroughly, Pat Knight and the Solaris
+	man pages suggest that the proper thing to do is to add THR_NEW_LWP to
+	the flags on thr_create(), and that there really isn't a downside, so
+	I'll do that.
+
+	* Misc/ACKS:
+	Bunch of new names who helped iron out the last wrinkles of 1.5.2.
+
+	* PC/python_nt.rc:
+	Bump the myusterious M$ version number from 1,5,2,1 to 1,5,2,3.
+	(I can't even display this on NT, maybe Win/98 can?)
+
+	* Lib/pstats.py:
+	Fix mysterious references to jprofile that were in the source since
+	its creation.  I'm assuming these were once valid references to "Jim
+	Roskind's profile"...
+
+	* Lib/Attic/threading_api.py:
+	Removed; since long subsumed in Doc/lib/libthreading.tex
+
+	* Modules/socketmodule.c:
+	Put back __osf__ support for gethostbyname_r(); the real bug was that
+	it was being used even without threads.  This of course might be an
+	all-platform problem so now we only use the _r variant when we are
+	using threads.
+
+Mon Apr 12 22:51:20 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Modules/cPickle.c:
+	Fix accidentally reversed NULL test in load_mark().  Suggested by
+	Tamito Kajiyama.  (This caused a bug only on platforms where malloc(0)
+	returns NULL.)
+
+	* README:
+	Add note about popen2 problem on Linux noticed by Pablo Bleyer.
+
+	* README: Add note about -D_REENTRANT for HP-UX 10.20.
+
+	* Modules/Makefile.pre.in: 'clean' target should remove hassignal.
+
+	* PC/Attic/vc40.mak, PC/readme.txt:
+	Remove all VC++ info (except VC 1.5) from readme.txt;
+	remove the VC++ 4.0 project file; remove the unused _tkinter extern defs.
+
+	* README: Clarify PC build instructions (point to PCbuild).
+
+	* Modules/zlibmodule.c: Cast added by Jack Jansen (for Mac port).
+
+	* Lib/plat-sunos5/CDIO.py, Lib/plat-linux2/CDROM.py:
+	Forgot to add this file.  CDROM device parameters.
+
+	* Lib/gzip.py: Two different changes.
+
+	1. Jack Jansen reports that on the Mac, the time may be negative, and
+	solves this by adding a write32u() function that writes an unsigned
+	long.
+
+	2. On 64-bit platforms the CRC comparison fails; I've fixed this by
+	casting both values to be compared to "unsigned long" i.e. modulo
+	0x100000000L.
+
+Sat Apr 10 18:42:02 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* PC/Attic/_tkinter.def: No longer needed.
+
+	* Misc/ACKS: Correct missed character in Andrew Dalke's name.
+
+	* README: Add DEC Ultrix notes (from Donn Cave's email).
+
+	* configure: The usual
+
+	* configure.in:
+	Quote a bunch of shell variables used in test, related to long-long.
+
+	* Objects/fileobject.c, Modules/shamodule.c, Modules/regexpr.c:
+	casts for picky compilers.
+
+	* Modules/socketmodule.c:
+	3-arg gethostbyname_r doesn't really work on OSF/1.
+
+	* PC/vc15_w31/_.c, PC/vc15_lib/_.c, Tools/pynche/__init__.py:
+	Avoid totally empty files.
+
+Fri Apr  9 14:56:35 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Tools/scripts/fixps.py: Use re instead of regex.
+	Don't rewrite the file in place.
+	(Reported by Andy Dustman.)
+
+	* Lib/netrc.py, Lib/shlex.py: Get rid of #! line
+
+Thu Apr  8 23:13:37 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* PCbuild/python15.wse: Use the Tcl 8.0.5 installer.
+	Add a variable %_TCL_% that makes it easier to switch to a different version.
+
+
+======================================================================
+
+
 From 1.5.2b2 to 1.5.2c1
 =======================
 
-Thu Apr  8 17:23:11 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+Thu Apr  8 23:13:37 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* PCbuild/python15.wse:
+	Release 1.5.2c1.  Add IDLE and Uninstall to program group.
+	Don't distribute zlib.dll.  Tweak some comments.
+
+	* PCbuild/zlib.dsp: Now using static zlib 1.1.3
+
+	* Lib/dos-8x3/userdict.py, Lib/dos-8x3/userlist.py, Lib/dos-8x3/test_zli.py, Lib/dos-8x3/test_use.py, Lib/dos-8x3/test_pop.py, Lib/dos-8x3/test_pic.py, Lib/dos-8x3/test_ntp.py, Lib/dos-8x3/test_gzi.py, Lib/dos-8x3/test_fcn.py, Lib/dos-8x3/test_cpi.py, Lib/dos-8x3/test_bsd.py, Lib/dos-8x3/posixfil.py, Lib/dos-8x3/mimetype.py, Lib/dos-8x3/nturl2pa.py, Lib/dos-8x3/compilea.py, Lib/dos-8x3/exceptio.py, Lib/dos-8x3/basehttp.py:
+	The usual
+
+	* Include/patchlevel.h: Release 1.5.2c1
+
+	* README: Release 1.5.2c1.
+
+	* Misc/NEWS: News for the 1.5.2c1 release.
 
 	* Lib/test/test_strftime.py:
 	On Windows, we suddenly find, strftime() may return "" for an
