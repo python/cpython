@@ -1,5 +1,3 @@
-# Test the cPickle module
-
 import cPickle
-import test_pickle
-test_pickle.dotest(cPickle)
+import pickletester
+pickletester.dotest(cPickle)
