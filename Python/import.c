@@ -1913,6 +1913,17 @@ PyImport_ImportModuleEx(char *name, PyObject *globals, PyObject *locals,
 	return result;
 }
 
+/* Return the package that an import is being performed in.  If globals comes
+   from the module foo.bar.bat (not itself a package), this returns the
+   sys.modules entry for foo.bar.  If globals is from a package's __init__.py,
+   the package's entry in sys.modules is returned.
+
+   The *name* of the returned package is returned in buf, with the length of
+   the name in *p_buflen.
+
+   If globals doesn't come from a package or a module in a package, or a
+   corresponding entry is not found in sys.modules, Py_None is returned.
+*/
 static PyObject *
 get_parent(PyObject *globals, char *buf, int *p_buflen)
 {
