@@ -408,7 +408,7 @@ class PyBuildExt(build_ext):
         # These represent audio samples or images as strings:
 
         # Operations on audio samples
-        # According to #993173, this one should actually work fine on 
+        # According to #993173, this one should actually work fine on
         # 64-bit platforms.
         exts.append( Extension('audioop', ['audioop.c']) )
 
