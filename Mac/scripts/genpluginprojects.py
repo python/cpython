@@ -128,6 +128,11 @@ def	genallprojects(force=0):
 	genpluginproject("carbon", "_App", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_Cm", libraries=["QuickTimeLib"], outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Cm", outputdir="::Lib:Carbon")
+	# XXX can't work properly because we need to set a custom fragment initializer
+	#genpluginproject("carbon", "_CG", 
+	#		sources=["_CGModule.c", "CFMLateImport.c"],
+	#		libraries=["CGStubLib"],
+	#		outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Ctl", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_Ctl", libraries=["CarbonAccessors.o", "ControlsLib", "AppearanceLib"], 
 			libraryflags="Debug, WeakImport", outputdir="::Lib:Carbon")
