@@ -206,6 +206,57 @@ def test_trashcan():
             v = {1: v, 2: Ouch()}
     gc.disable()
 
+class Boom:
+    def __getattr__(self, someattribute):
+        del self.attr
+        raise AttributeError
+
+def test_boom():
+    a = Boom()
+    b = Boom()
+    a.attr = b
+    b.attr = a
+
+    gc.collect()
+    garbagelen = len(gc.garbage)
+    del a, b
+    # a<->b are in a trash cycle now.  Collection will invoke Boom.__getattr__
+    # (to see whether a and b have __del__ methods), and __getattr__ deletes
+    # the internal "attr" attributes as a side effect.  That causes the
+    # trash cycle to get reclaimed via refcounts falling to 0, thus mutating
+    # the trash graph as a side effect of merely asking whether __del__
+    # exists.  This used to (before 2.3b1) crash Python.  Now __getattr__
+    # isn't called.
+    expect(gc.collect(), 4, "boom")
+    expect(len(gc.garbage), garbagelen, "boom")
+
+class Boom2:
+    def __init__(self):
+        self.x = 0
+
+    def __getattr__(self, someattribute):
+        self.x += 1
+        if self.x > 1:
+            del self.attr
+        raise AttributeError
+
+def test_boom2():
+    a = Boom2()
+    b = Boom2()
+    a.attr = b
+    b.attr = a
+
+    gc.collect()
+    garbagelen = len(gc.garbage)
+    del a, b
+    # Much like test_boom(), except that __getattr__ doesn't break the
+    # cycle until the second time gc checks for __del__.  As of 2.3b1,
+    # there isn't a second time, so this simply cleans up the trash cycle.
+    # We expect a, b, a.__dict__ and b.__dict__ (4 objects) to get reclaimed
+    # this way.
+    expect(gc.collect(), 4, "boom2")
+    expect(len(gc.garbage), garbagelen, "boom2")
+
 def test_all():
     gc.collect() # Delete 2nd generation garbage
     run_test("lists", test_list)
@@ -222,6 +273,8 @@ def test_all():
     run_test("__del__", test_del)
     run_test("saveall", test_saveall)
     run_test("trashcan", test_trashcan)
+    run_test("boom", test_boom)
+    run_test("boom2", test_boom2)
 
 def test():
     if verbose:
