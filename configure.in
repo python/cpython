@@ -29,7 +29,11 @@ then
 		MACHDEP="$ac_sys_system$ac_sys_release$ac_sys_cpu"
 	else
 		ac_sys_system=`uname -s`
-		ac_sys_release=`uname -r`
+		if test "$ac_sys_system" = "AIX" ; then
+			ac_sys_release=`uname -v`
+		else
+			ac_sys_release=`uname -r`
+		fi
 		ac_md_system=`echo $ac_sys_system |
 				   tr -d '[/ ]' | tr '[[A-Z]]' '[[a-z]]'`
 		ac_md_release=`echo $ac_sys_release |
@@ -148,6 +152,7 @@ AC_MSG_CHECKING(LDSHARED)
 if test -z "$LDSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
+	AIX*) LDSHARED="ld_so_aix";;
 	IRIX*) LDSHARED="ld -shared";;
 	SunOS/4*) LDSHARED="ld";;
 	SunOS/5*) LDSHARED="ld -G";;
@@ -182,6 +187,7 @@ AC_MSG_CHECKING(LINKFORSHARED)
 if test -z "$LINKFORSHARED"
 then
 	case $ac_sys_system in
+	AIX*)	LINKFORSHARED="-Wl,-bE:python.exp";;
 	hp*|HP*) LINKFORSHARED="-Wl,-E";;
 	Linux*) LINKFORSHARED="-rdynamic";;
 	esac
@@ -246,12 +252,10 @@ AC_DEFINE(C_THREADS)
 LIBOBJS="$LIBOBJS thread.o"],[
 AC_CHECK_LIB(pthreads, pthread_create, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(_POSIX_THREADS)
-AC_DEFINE(_REENTRANT)
 LIBS="$LIBS -lpthreads"
 LIBOBJS="$LIBOBJS thread.o"], [
 AC_CHECK_LIB(pthread, pthread_create, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(_POSIX_THREADS)
-AC_DEFINE(_REENTRANT)
 LIBS="$LIBS -lpthread"
 LIBOBJS="$LIBOBJS thread.o"])
 ])])
