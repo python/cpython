@@ -318,31 +318,7 @@ class Command:
 
 
     def execute (self, func, args, msg=None, level=1):
-        """Perform some action that affects the outside world (eg.  by
-        writing to the filesystem).  Such actions are special because they
-        should be disabled by the "dry run" flag, and should announce
-        themselves if the current verbosity level is high enough.  This
-        method takes care of all that bureaucracy for you; all you have to
-        do is supply the function to call and an argument tuple for it (to
-        embody the "external action" being performed), a message to print
-        if the verbosity level is high enough, and an optional verbosity
-        threshold.
-        """
-
-        # Generate a message if we weren't passed one
-        if msg is None:
-            msg = "%s %s" % (func.__name__, `args`)
-            if msg[-2:] == ',)':        # correct for singleton tuple 
-                msg = msg[0:-2] + ')'
-
-        # Print it if verbosity level is high enough
-        self.announce (msg, level)
-
-        # And do it, as long as we're not in dry-run mode
-        if not self.dry_run:
-            apply (func, args)
-
-    # execute()
+        util.execute(func, args, msg, self.verbose >= level, self.dry_run)
 
 
     def mkpath (self, name, mode=0777):
