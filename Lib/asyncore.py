@@ -201,6 +201,7 @@ class dispatcher:
             # I think it should inherit this anyway
             self.socket.setblocking (0)
             self.connected = 1
+            self.addr = sock.getpeername()
 
     def __repr__ (self):
         try:
@@ -306,6 +307,7 @@ class dispatcher:
                 return
             else:
                 raise socket.error, why
+        self.addr = address
         self.connected = 1
         self.handle_connect()
 
