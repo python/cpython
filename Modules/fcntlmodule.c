@@ -37,7 +37,7 @@ fcntl_fcntl(PyObject *self, PyObject *args)
 	int len;
 	char buf[1024];
 
-	if (PyArg_Parse(args, "(iis#)", &fd, &code, &str, &len)) {
+	if (PyArg_ParseTuple(args, "iis#:fcntl", &fd, &code, &str, &len)) {
 		if (len > sizeof buf) {
 			PyErr_SetString(PyExc_ValueError,
 					"fcntl string arg too long");
@@ -55,12 +55,10 @@ fcntl_fcntl(PyObject *self, PyObject *args)
 	}
 
 	PyErr_Clear();
-	if (PyArg_Parse(args, "(ii)", &fd, &code))
-		arg = 0;
-	else {
-		PyErr_Clear();
-		if (!PyArg_Parse(args, "(iii)", &fd, &code, &arg))
-			return NULL;
+	arg = 0;
+	if (!PyArg_ParseTuple(args, "ii|i;fcntl requires 2 integers and optionally a third integer or a string", 
+			      &fd, &code, &arg)) {
+	  return NULL;
 	}
 	Py_BEGIN_ALLOW_THREADS
 	ret = fcntl(fd, code, arg);
@@ -79,7 +77,12 @@ static char fcntl_doc [] =
 Perform the requested operation on file descriptor fd.  The operation\n\
 is defined by op and is operating system dependent.  Typically these\n\
 codes can be retrieved from the library module FCNTL.  The argument arg\n\
-is optional, and defaults to 0; it may be an int or a string.";
+is optional, and defaults to 0; it may be an int or a string. If arg is\n\
+given as a string, the return value of fcntl is a string of that length,\n\
+containing the resulting value put in the arg buffer by the operating system.\n\
+The length of the arg string is not allowed to exceed 1024 bytes. If the arg\n\
+given is an integer or if none is specified, the result value is an integer\n\
+corresponding to the return value of the fcntl call in the C code.";
 
 
 /* ioctl(fd, opt, [arg]) */
@@ -95,7 +98,7 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 	int len;
 	char buf[1024];
 
-	if (PyArg_Parse(args, "(iis#)", &fd, &code, &str, &len)) {
+	if (PyArg_ParseTuple(args, "iis#:ioctl", &fd, &code, &str, &len)) {
 		if (len > sizeof buf) {
 			PyErr_SetString(PyExc_ValueError,
 					"ioctl string arg too long");
@@ -113,12 +116,10 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 	}
 
 	PyErr_Clear();
-	if (PyArg_Parse(args, "(ii)", &fd, &code))
-		arg = 0;
-	else {
-		PyErr_Clear();
-		if (!PyArg_Parse(args, "(iii)", &fd, &code, &arg))
-			return NULL;
+	arg = 0;
+	if (!PyArg_ParseTuple(args, "ii|i;ioctl requires 2 integers and optionally a third integer or a string", 
+			      &fd, &code, &arg)) {
+	  return NULL;
 	}
 	Py_BEGIN_ALLOW_THREADS
 	ret = ioctl(fd, code, arg);
@@ -136,7 +137,12 @@ static char ioctl_doc [] =
 Perform the requested operation on file descriptor fd.  The operation\n\
 is defined by op and is operating system dependent.  Typically these\n\
 codes can be retrieved from the library module IOCTL.  The argument arg\n\
-is optional, and defaults to 0; it may be an int or a string.";
+is optional, and defaults to 0; it may be an int or a string. If arg is\n\
+given as a string, the return value of ioctl is a string of that length,\n\
+containing the resulting value put in the arg buffer by the operating system.\n\
+The length of the arg string is not allowed to exceed 1024 bytes. If the arg\n\
+given is an integer or if none is specified, the result value is an integer\n\
+corresponding to the return value of the ioctl call in the C code.";
 
 
 /* flock(fd, operation) */
@@ -148,7 +154,7 @@ fcntl_flock(PyObject *self, PyObject *args)
 	int code;
 	int ret;
 
-	if (!PyArg_Parse(args, "(ii)", &fd, &code))
+	if (!PyArg_ParseTuple(args, "ii:flock", &fd, &code))
 		return NULL;
 
 #ifdef HAVE_FLOCK
@@ -273,10 +279,10 @@ calls.  See the Unix manual for details.";
 /* List of functions */
 
 static PyMethodDef fcntl_methods[] = {
-	{"fcntl",	fcntl_fcntl, 0, fcntl_doc},
-	{"ioctl",	fcntl_ioctl, 0, ioctl_doc},
-	{"flock",	fcntl_flock, 0, flock_doc},
-	{"lockf",       fcntl_lockf, 1, lockf_doc},
+	{"fcntl",	fcntl_fcntl, METH_VARARGS, fcntl_doc},
+	{"ioctl",	fcntl_ioctl, METH_VARARGS, ioctl_doc},
+	{"flock",	fcntl_flock, METH_VARARGS, flock_doc},
+	{"lockf",       fcntl_lockf, METH_VARARGS, lockf_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 
