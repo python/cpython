@@ -19,11 +19,11 @@ def main():
 	#
 	magic = f.read(4)
 	extra = ''
-	if magic = '0008':
+	if magic == '0008':
 		rate = 8000
-	elif magic = '0016':
+	elif magic == '0016':
 		rate = 16000
-	elif magic = '0032':
+	elif magic == '0032':
 		rate = 32000
 	else:
 		sys.stderr.write('no magic header; assuming 8k samples/sec.\n')

@@ -28,8 +28,8 @@ def main():
 	remote = 0
 	opts, args = getopt.getopt(sys.argv[1:], 'rd')
 	for opt, arg in opts:
-		if opt = '-r': remote = 1
-		elif opt = '-d': debug.append(opt)
+		if opt == '-r': remote = 1
+		elif opt == '-d': debug.append(opt)
 	if len(args) <> 1:
 		msg = 'usage: intercom [-d] [-r] hostname'
 		msg = msg + ' (-r is for internal use only!)\n'
@@ -56,10 +56,10 @@ def client(hostname):
 		line = pipe.readline()
 		if not line: break
 		sys.stdout.write('remote: ' + line)
-		if line = 'NAK\n':
+		if line == 'NAK\n':
 			nak = 1
 			break
-		elif line = 'ACK\n':
+		elif line == 'ACK\n':
 			ack = 1
 			break
 	if nak:
@@ -135,7 +135,7 @@ def ioloop(s, otheraddr):
 	for i in range(0, len(params), 2):
 		if params[i] in (AL.INPUT_RATE, AL.OUTPUT_RATE):
 			params[i+1] = AL.RATE_16000
-		elif params[i] = AL.INPUT_SOURCE:
+		elif params[i] == AL.INPUT_SOURCE:
 			params[i+1] = AL.INPUT_MIC
 	try:
 		al.setparams(dev, params)
@@ -166,7 +166,7 @@ def ioloop1(s, otheraddr):
 		spkr = al.openport('spkr', 'w', config)
 		while 1:
 			data = s.recv(BUFSIZE)
-			if len(data) = 0:
+			if len(data) == 0:
 				# EOF packet
 				log('parent got empty packet; killing child')
 				posix.kill(pid, 15)

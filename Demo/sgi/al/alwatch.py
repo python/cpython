@@ -24,7 +24,7 @@ while 1:
 		for i in range(0, len(params), 2):
 			if params[i+1] <> old[i+1]:
 				name = parameter_name[params[i]]
-				if params[i] = AL.INPUT_SOURCE:
+				if params[i] == AL.INPUT_SOURCE:
 					if 0 <= old[i+1] < len(source_name):
 						oldval = source_name[old[i+1]]
 					else:
