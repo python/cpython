@@ -478,9 +478,12 @@ struct langinfo_constant{
     LANGINFO(AM_STR),
     LANGINFO(PM_STR),
 
+    /* The following constants are available only with XPG4. AIX 3.2. only has
+       CODESET. */
 #ifdef CODESET
-    /* The following constants are available only with XPG4. */
     LANGINFO(CODESET),
+#endif
+#ifdef T_FMT_AMPM
     LANGINFO(T_FMT_AMPM),
     LANGINFO(ERA),
     LANGINFO(ERA_D_FMT),
