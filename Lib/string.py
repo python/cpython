@@ -1,9 +1,9 @@
-"""A collection of string operations (most are no longer used in Python 1.6).
+"""A collection of string operations (most are no longer used).
 
-Warning: most of the code you see here isn't normally used nowadays.  With
-Python 1.6, many of these functions are implemented as methods on the
-standard string object. They used to be implemented by a built-in module
-called strop, but strop is now obsolete itself.
+Warning: most of the code you see here isn't normally used nowadays.
+Beginning with Python 1.6, many of these functions are implemented as
+methods on the standard string object. They used to be implemented by
+a built-in module called strop, but strop is now obsolete itself.
 
 Public module variables:
 
