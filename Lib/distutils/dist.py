@@ -172,12 +172,6 @@ class Distribution:
         # operations, we just check the 'have_run' dictionary and carry on.
         # It's only safe to query 'have_run' for a command class that has
         # been instantiated -- a false value will be inserted when the
-        if sys.platform == 'mac':
-            import EasyDialogs
-            cmdlist = self.get_command_list()
-            self.script_args = EasyDialogs.GetArgv(
-                self.global_options + self.display_options, cmdlist)
-
         # command object is created, and replaced with a true value when
         # the command is successfully run.  Thus it's probably best to use
         # '.get()' rather than a straight lookup.
@@ -375,6 +369,16 @@ class Distribution:
         execute commands (currently, this only happens if user asks for
         help).
         """
+        #
+        # We now have enough information to show the Macintosh dialog that allows
+        # the user to interactively specify the "command line".
+        #
+        if sys.platform == 'mac':
+            import EasyDialogs
+            cmdlist = self.get_command_list()
+            self.script_args = EasyDialogs.GetArgv(
+                self.global_options + self.display_options, cmdlist)
+ 
         # We have to parse the command line a bit at a time -- global
         # options, then the first command, then its options, and so on --
         # because each command will be handled by a different class, and
