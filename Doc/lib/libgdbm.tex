@@ -35,12 +35,21 @@ The optional \var{flag} argument can be
 \code{'c'} (which creates the database if it doesn't exist), or
 \code{'n'} (which always creates a new empty database).
 
-Appending \character{f} to the flag opens the database in fast mode;
-altered data will not automatically be written to the disk after every
-change.  This results in faster writes to the database, but may result
-in an inconsistent database if the program crashes while the database
-is still open.  Use the \method{sync()} method to force any unwritten
-data to be written to the disk.
+The following additional characters may be appended to the flag to
+control how the database is opened:
+
+\begin{itemize}
+\item \code{'f'} --- Open the database in fast mode.  Writes to the database
+                     will not be syncronized.
+\item \code{'s'} --- Synchronized mode. This will cause changes to the database
+                     will be immediately written to the file.
+\item \code{'u'} --- Do not lock database. 
+\end{itemize}
+
+Not all flags are valid for all versions of \code{gdbm}.  The
+module constant \code{open_flags} is a string of supported flag
+characters.  The exception \exception{error} is raised if an invalid
+flag is specified.
 
 The optional \var{mode} argument is the \UNIX{} mode of the file, used
 only when the database has to be created.  It defaults to octal
