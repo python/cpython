@@ -10,7 +10,7 @@ An explanation of some terminology and conventions is in order.
 
 \item
 The ``epoch'' is the point where the time starts.  On January 1st of that
-year, at 0 hours, the ``time since the epoch'' is zero.  For UNIX, the
+year, at 0 hours, the ``time since the epoch'' is zero.  For \UNIX{}, the
 epoch is 1970.  To find out what the epoch is, look at \code{gmtime(0)}.
 
 \item
@@ -29,15 +29,15 @@ in this respect.
 \item
 The precision of the various real-time functions may be less than
 suggested by the units in which their value or argument is expressed.
-E.g.\ on most UNIX systems, the clock ``ticks'' only 50 or 100 times a
+E.g.\ on most \UNIX{} systems, the clock ``ticks'' only 50 or 100 times a
 second, and on the Mac, times are only accurate to whole seconds.
 
 \item
 On the other hand, the precision of \code{time()} and \code{sleep()}
-is better than their UNIX equivalents: times are expressed as floating
+is better than their \UNIX{} equivalents: times are expressed as floating
 point numbers, \code{time()} returns the most accurate time available
-(using UNIX \code{gettimeofday()} where available), and \code{sleep()}
-will accept a time with a nonzero fraction (UNIX \code{select()} is
+(using \UNIX{} \code{gettimeofday()} where available), and \code{sleep()}
+will accept a time with a nonzero fraction (\UNIX{} \code{select()} is
 used to implement this, where available).
 
 \item
@@ -106,7 +106,7 @@ to 1 when DST applies to the given time.
 This is the inverse function of \code{localtime}.  Its argument is the
 full 9-tuple (since the dst flag is needed --- pass -1 as the dst flag if
 it is unknown) which expresses the time
-in \em{local} time, not UTC.  It returns a floating
+in \emph{local} time, not UTC.  It returns a floating
 point number, for compatibility with \code{time.time()}.  If the input
 value can't be represented as a valid time, OverflowError is raised.
 \end{funcdesc}
@@ -120,48 +120,45 @@ be a floating point number to indicate a more precise sleep time.
 Convert a tuple representing a time as returned by \code{gmtime()} or
 \code{localtime()} to a string as specified by the format argument.
 
-      The following directives, shown without the optional field width and
-      precision specification, are replaced by the indicated characters:
+The following directives, shown without the optional field width and
+precision specification, are replaced by the indicated characters:
 
-\begin{tabular}{lp{25em}}
-           \%a  &      Locale's abbreviated weekday name. \\
-           \%A  &      Locale's full weekday name. \\
-           \%b  &      Locale's abbreviated month name. \\
-           \%B  &      Locale's full month name. \\
-           \%c  &      Locale's appropriate date and time representation. \\
-           \%d  &      Day of the month as a decimal number [01,31]. \\
-           \%H  &      Hour (24-hour clock) as a decimal number [00,23]. \\
-           \%I  &      Hour (12-hour clock) as a decimal number [01,12]. \\
-           \%j  &      Day of the year as a decimal number [001,366]. \\
-           \%m  &      Month as a decimal number [01,12]. \\
-           \%M  &      Minute as a decimal number [00,59]. \\
-           \%p  &      Locale's equivalent of either AM or PM. \\
-           \%S  &      Second as a decimal number [00,61]. \\
-           \%U  &      Week number of the year (Sunday as the first day of the
-                     week) as a decimal number [00,53].  All days in a new
-                     year preceding the first Sunday are considered to be in
-                     week 0. \\
-           \%w  &      Weekday as a decimal number [0(Sunday),6]. \\
-           \%W  &      Week number of the year (Monday as the first day of the
-                     week) as a decimal number [00,53].  All days in a new
-                     year preceding the first Sunday are considered to be in
-                     week 0. \\
-           \%x  &      Locale's appropriate date representation. \\
-           \%X  &      Locale's appropriate time representation. \\
-           \%y  &      Year without century as a decimal number [00,99]. \\
-           \%Y  &      Year with century as a decimal number. \\
-           \%Z  &      Time zone name (or by no characters if no time zone
-                     exists). \\
-           \%\%  &     \% \\
-\end{tabular}
+\begin{tableii}{|c|p{24em}|}{code}{Directive}{Meaning}
+\lineii{\%a}{Locale's abbreviated weekday name.}
+\lineii{\%A}{Locale's full weekday name.}
+\lineii{\%b}{Locale's abbreviated month name.}
+\lineii{\%B}{Locale's full month name.}
+\lineii{\%c}{Locale's appropriate date and time representation.}
+\lineii{\%d}{Day of the month as a decimal number [01,31].}
+\lineii{\%H}{Hour (24-hour clock) as a decimal number [00,23].}
+\lineii{\%I}{Hour (12-hour clock) as a decimal number [01,12].}
+\lineii{\%j}{Day of the year as a decimal number [001,366].}
+\lineii{\%m}{Month as a decimal number [01,12].}
+\lineii{\%M}{Minute as a decimal number [00,59].}
+\lineii{\%p}{Locale's equivalent of either AM or PM.}
+\lineii{\%S}{Second as a decimal number [00,61].}
+\lineii{\%U}{Week number of the year (Sunday as the first day of the
+             week) as a decimal number [00,53].  All days in a new year
+             preceding the first Sunday are considered to be in week 0.}
+\lineii{\%w}{Weekday as a decimal number [0(Sunday),6].}
+\lineii{\%W}{Week number of the year (Monday as the first day of the
+             week) as a decimal number [00,53].  All days in a new year
+             preceding the first Sunday are considered to be in week 0.}
+\lineii{\%x}{Locale's appropriate date representation.}
+\lineii{\%X}{Locale's appropriate time representation.}
+\lineii{\%y}{Year without century as a decimal number [00,99].}
+\lineii{\%Y}{Year with century as a decimal number.}
+\lineii{\%Z}{Time zone name (or by no characters if no time zone exists).}
+\lineii{\%\%}{\%}
+\end{tableii}
 
-      Additional directives may be supported on certain platforms, but
-      only the ones listed here have a meaning standardized by ANSI C.
+Additional directives may be supported on certain platforms, but
+only the ones listed here have a meaning standardized by ANSI C.
 
-      On some platforms, an optional field width and precision
-      specification can immediately follow the initial \% of a
-      directive in the following order; this is also not portable.
-      The field width is normally 2 except for \%j where it is 3.
+On some platforms, an optional field width and precision
+specification can immediately follow the initial \% of a
+directive in the following order; this is also not portable.
+The field width is normally 2 except for \%j where it is 3.
 
 \end{funcdesc}
 
