@@ -103,8 +103,8 @@ The \module{signal} module defines the following functions:
   If \var{time} is zero, no alarm id scheduled, and any scheduled
   alarm is canceled.  The return value is the number of seconds
   remaining before a previously scheduled alarm.  If the return value
-  is zero, no alarm is currently scheduled.  (See the \UNIX{} man page
-  \manpage{alarm}{2}.)
+  is zero, no alarm is currently scheduled.  Not on Windows.  (See the
+  \UNIX{} man page \manpage{alarm}{2}.)
 \end{funcdesc}
 
 \begin{funcdesc}{getsignal}{signalnum}
@@ -120,8 +120,8 @@ The \module{signal} module defines the following functions:
 
 \begin{funcdesc}{pause}{}
   Cause the process to sleep until a signal is received; the
-  appropriate handler will then be called.  Returns nothing.  (See the
-  \UNIX{} man page \manpage{signal}{2}.)
+  appropriate handler will then be called.  Returns nothing.  Not on
+  Windows. (See the \UNIX{} man page \manpage{signal}{2}.)
 \end{funcdesc}
 
 \begin{funcdesc}{signal}{signalnum, handler}
