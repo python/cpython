@@ -1721,35 +1721,21 @@ eval_frame(PyFrameObject *f)
 		PREDICTED_WITH_ARG(UNPACK_SEQUENCE);
 		case UNPACK_SEQUENCE:
 			v = POP();
-			if (PyTuple_CheckExact(v)) {
-				if (PyTuple_Size(v) != oparg) {
-					PyErr_SetString(PyExc_ValueError,
-						 "unpack tuple of wrong size");
-					why = WHY_EXCEPTION;
+			if (PyTuple_CheckExact(v) && PyTuple_GET_SIZE(v) == oparg) {
+				PyObject **items = ((PyTupleObject *)v)->ob_item;
+				while (oparg--) {
+					w = items[oparg];
+					Py_INCREF(w);
+					PUSH(w);
 				}
-				else {
-					for (; --oparg >= 0; ) {
-						w = PyTuple_GET_ITEM(v, oparg);
-						Py_INCREF(w);
-						PUSH(w);
-					}
+			} else if (PyList_CheckExact(v) && PyList_GET_SIZE(v) == oparg) {
+				PyObject **items = ((PyListObject *)v)->ob_item;
+				while (oparg--) {
+					w = items[oparg];
+					Py_INCREF(w);
+					PUSH(w);
 				}
-			}
-			else if (PyList_CheckExact(v)) {
-				if (PyList_Size(v) != oparg) {
-					PyErr_SetString(PyExc_ValueError,
-						  "unpack list of wrong size");
-					why = WHY_EXCEPTION;
-				}
-				else {
-					for (; --oparg >= 0; ) {
-						w = PyList_GET_ITEM(v, oparg);
-						Py_INCREF(w);
-						PUSH(w);
-					}
-				}
-			}
-			else if (unpack_iterable(v, oparg,
+			} else if (unpack_iterable(v, oparg,
 						 stack_pointer + oparg))
 				stack_pointer += oparg;
 			else {
