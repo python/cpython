@@ -1165,8 +1165,13 @@ class Transformer:
             if node[0] == token.STAR or node[0] == token.DOUBLESTAR:
                 break
             kw, result = self.com_argument(node, kw)
-            if len_nodelist != 2 and isinstance(result, GenExpr):
+
+            if len_nodelist != 2 and isinstance(result, GenExpr) \
+               and len(node) == 3 and node[2][0] == symbol.gen_for:
+                # allow f(x for x in y), but reject f(x for x in y, 1)
+                # should use f((x for x in y), 1) instead of f(x for x in y, 1)
                 raise SyntaxError, 'generator expression needs parenthesis'
+
             args.append(result)
         else:
             # No broken by star arg, so skip the last one we processed.
