@@ -212,7 +212,7 @@ class TimeRE(dict):
                                         for tz in tz_names),
                                 'Z'),
             '%': '%'})
-        base.__setitem__('W', base.__getitem__('U'))
+        base.__setitem__('W', base.__getitem__('U').replace('U', 'W'))
         base.__setitem__('c', self.pattern(self.locale_time.LC_date_time))
         base.__setitem__('x', self.pattern(self.locale_time.LC_date))
         base.__setitem__('X', self.pattern(self.locale_time.LC_time))
@@ -298,10 +298,17 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     month = day = 1
     hour = minute = second = 0
     tz = -1
+    week_of_year = -1
+    week_of_year_start = -1
     # weekday and julian defaulted to -1 so as to signal need to calculate values
     weekday = julian = -1
     found_dict = found.groupdict()
     for group_key in found_dict.iterkeys():
+        # Directives not explicitly handled below:
+        #   c, x, X
+        #      handled by making out of other directives
+        #   U, W
+        #      worthless without day of the week
         if group_key == 'y':
             year = int(found_dict['y'])
             # Open Group specification for strptime() states that a %y
@@ -355,6 +362,14 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                 weekday -= 1
         elif group_key == 'j':
             julian = int(found_dict['j'])
+        elif group_key in ('U', 'W'):
+            week_of_year = int(found_dict[group_key])
+            if group_key == 'U':
+                # U starts week on Sunday
+                week_of_year_start = 6
+            else:
+                # W starts week on Monday
+                week_of_year_start = 0
         elif group_key == 'Z':
             # Since -1 is default value only need to worry about setting tz if
             # it can be something other than -1.
@@ -370,6 +385,33 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                     else:
                         tz = value
                         break
+    # If we know the week of the year and what day of that week, we can figure
+    # out the Julian day of the year
+    # Calculations below assume 0 is a Monday
+    # XXX only works for W
+    if julian == -1 and week_of_year != -1 and weekday != -1 and year != -1:
+        # Adjust for U directive so that calculations are not dependent on
+        # directive used to figure out week of year
+        if weekday == 6 and week_of_year_start == 6:
+            week_of_year -= 1
+        # For some reason when Dec 31 falls on a Monday the week of the year is
+        # off by a week; verified on both OS X and Solaris.
+        elif weekday == 0 and week_of_year_start == 6 and week_of_year >= 52:
+            week_of_year += 1
+        # Calculate how many days in week 0
+        first_weekday = datetime_date(year, 1, 1).weekday()
+        preceeding_days = 7 - first_weekday
+        if preceeding_days == 7:
+            preceeding_days = 0
+        # If in week 0, then just figure out how many days from Jan 1 to day of
+        # week specified, else calculate by multiplying week of year by 7,
+        # adding in days in week 0, and the number of days from Monday to the
+        # day of the week
+        if not week_of_year:
+            julian = 1 + weekday - first_weekday
+        else:
+            days_to_week = preceeding_days + (7 * (week_of_year - 1))
+            julian = 1 + days_to_week + weekday
     # Cannot pre-calculate datetime_date() since can change in Julian
     #calculation and thus could have different value for the day of the week
     #calculation

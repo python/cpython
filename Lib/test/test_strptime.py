@@ -6,6 +6,7 @@ import locale
 import re
 import sys
 from test import test_support
+from datetime import date as datetime_date
 
 import _strptime
 
@@ -416,6 +417,27 @@ class CalculationTests(unittest.TestCase):
         self.failUnless(result.tm_wday == self.time_tuple.tm_wday,
                         "Calculation of day of the week failed;"
                          "%s != %s" % (result.tm_wday, self.time_tuple.tm_wday))
+
+    def test_week_of_year_and_day_of_week_calculation(self):
+        # Should be able to infer date if given year, week of year (%U or %W)
+        # and day of the week
+        def test_helper(ymd_tuple, test_reason):
+            for directive in ('W', 'U'):
+                format_string = "%%Y %%%s %%w" % directive
+                strp_input = datetime_date(*ymd_tuple).strftime(format_string)
+                strp_output = _strptime.strptime(strp_input, format_string)
+                self.failUnless(strp_output[:3] == ymd_tuple,
+                        "%s(%s) test failed w/ '%s': %s != %s" %
+                            (test_reason, directive, strp_input,
+                                strp_output[:3], ymd_tuple[:3]))
+        test_helper((1901, 1, 3), "week 0")
+        test_helper((1901, 1, 8), "common case")
+        test_helper((1901, 1, 13), "day on Sunday")
+        test_helper((1901, 1, 14), "day on Monday")
+        test_helper((1905, 1, 1), "Jan 1 on Sunday")
+        test_helper((1906, 1, 1), "Jan 1 on Monday")
+        test_helper((1905, 12, 31), "Dec 31 on Sunday")
+        test_helper((1906, 12, 31), "Dec 31 on Monday")
 
 
 class CacheTests(unittest.TestCase):
