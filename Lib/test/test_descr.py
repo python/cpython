@@ -2835,6 +2835,32 @@ def modules():
     m.foo = 1
     vereq(m.__dict__, {"foo": 1})
 
+def dictproxyiterkeys():
+    class C(object):
+        def meth(self):
+            pass
+    if verbose: print "Testing dict-proxy iterkeys..."
+    keys = [ key for key in C.__dict__.iterkeys() ]
+    keys.sort()
+    vereq(keys, ['__dict__', '__doc__', '__module__', '__weakref__', 'meth'])
+
+def dictproxyitervalues():
+    class C(object):
+        def meth(self):
+            pass
+    if verbose: print "Testing dict-proxy itervalues..."
+    values = [ values for values in C.__dict__.itervalues() ]
+    vereq(len(values), 5)
+
+def dictproxyiteritems():
+    class C(object):
+        def meth(self):
+            pass
+    if verbose: print "Testing dict-proxy iteritems..."
+    keys = [ key for (key, value) in C.__dict__.iteritems() ]
+    keys.sort()
+    vereq(keys, ['__dict__', '__doc__', '__module__', '__weakref__', 'meth'])
+
 def test_main():
     class_docstrings()
     lists()
@@ -2891,6 +2917,9 @@ def test_main():
     strops()
     deepcopyrecursive()
     modules()
+    dictproxyiterkeys()
+    dictproxyitervalues()
+    dictproxyiteritems()
     pickleslots()
     if verbose: print "All OK"
 
