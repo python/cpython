@@ -1,0 +1,15 @@
+[(]*[)]
+*.Lib
+*.MAP
+*.SYM
+*.c
+*.dbg
+*.h
+*.hqx
+*.pyc
+*.slb
+*.xSYM
+*.µ
+*.µ.exp
+*.xMAP
+

@@ -1,0 +1,10 @@
+* Data
+*.Lib
+*.MAP
+*.SYM
+*.dbg
+*.hqx
+*.pyc
+*.slb
+*.xSYM
+[(]*[)]

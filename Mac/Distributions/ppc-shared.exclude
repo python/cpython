@@ -1,0 +1,18 @@
+[(]*[)]
+*.CFM68K.slb
+*.Lib
+*.MAP
+*.SYM
+*.c
+*.dbg
+*.h
+*.hqx
+*.pyc
+*.xSYM
+*.µ
+*.µ.exp
+@*
+*.jack
+*.prj
+*.prj.exp
+* Data

@@ -1,0 +1,23 @@
+* Data
+*.Lib
+*.MAP
+*.SYM
+*.c
+*.dbg
+*.h
+*.hqx
+*.jack
+*.lib
+*.orig
+*.prj
+*.prj.exp
+*.pyc
+*.xSYM
+*.µ
+*.µ.exp
+*Icon
+*xMAP
+@*
+Makefile*
+Setup.in
+[(]*[)]
