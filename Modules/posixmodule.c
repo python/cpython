@@ -685,31 +685,31 @@ static PyStructSequence_Field stat_result_fields[] = {
 	{"st_atime",   "time of last access"},
 	{"st_mtime",   "time of last modification"},
 	{"st_ctime",   "time of last change"},
-#ifdef HAVE_ST_BLKSIZE
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 	{"st_blksize", "blocksize for filesystem I/O"},
 #endif
-#ifdef HAVE_ST_BLOCKS
+#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
 	{"st_blocks",  "number of blocks allocated"},
 #endif
-#ifdef HAVE_ST_RDEV
+#ifdef HAVE_STRUCT_STAT_ST_RDEV
 	{"st_rdev",    "device type (if inode device)"},
 #endif
 	{0}
 };
 
-#ifdef HAVE_ST_BLKSIZE
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 #define ST_BLKSIZE_IDX 13
 #else
 #define ST_BLKSIZE_IDX 12
 #endif
 
-#ifdef HAVE_ST_BLOCKS
+#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
 #define ST_BLOCKS_IDX (ST_BLKSIZE_IDX+1)
 #else
 #define ST_BLOCKS_IDX ST_BLKSIZE_IDX
 #endif
 
-#ifdef HAVE_ST_RDEV
+#ifdef HAVE_STRUCT_STAT_ST_RDEV
 #define ST_RDEV_IDX (ST_BLOCKS_IDX+1)
 #else
 #define ST_RDEV_IDX ST_BLOCKS_IDX
@@ -866,15 +866,15 @@ _pystat_fromstructstat(STRUCT_STAT st)
 	fill_time(v, 8, st.st_mtime, mnsec);
 	fill_time(v, 9, st.st_ctime, cnsec);
 
-#ifdef HAVE_ST_BLKSIZE
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 	PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX,
 			 PyInt_FromLong((long)st.st_blksize));
 #endif
-#ifdef HAVE_ST_BLOCKS
+#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
 	PyStructSequence_SET_ITEM(v, ST_BLOCKS_IDX,
 			 PyInt_FromLong((long)st.st_blocks));
 #endif
-#ifdef HAVE_ST_RDEV
+#ifdef HAVE_STRUCT_STAT_ST_RDEV
 	PyStructSequence_SET_ITEM(v, ST_RDEV_IDX,
 			 PyInt_FromLong((long)st.st_rdev));
 #endif
