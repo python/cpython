@@ -413,19 +413,20 @@ Currently-active file is at the head of the list.")
     ;; who cares?  XEmacs 20 does the right thing with these too).
     (define-key py-mode-map [delete]    'py-electric-delete)
     (define-key py-mode-map [backspace] 'py-electric-backspace))
+  ;; marking interesting locations
+  (define-key py-mode-map "\C-c\C-m"  'py-mark-def-or-class)
+  (define-key py-mode-map "\C-c\C-k"  'py-mark-block)
   ;; Miscellaneous
   (define-key py-mode-map "\C-c:"     'py-guess-indent-offset)
   (define-key py-mode-map "\C-c\t"    'py-indent-region)
   (define-key py-mode-map "\C-c\C-n"  'py-next-statement)
   (define-key py-mode-map "\C-c\C-p"  'py-previous-statement)
   (define-key py-mode-map "\C-c\C-u"  'py-goto-block-up)
-  (define-key py-mode-map "\C-c\C-m"  'py-mark-block)
   (define-key py-mode-map "\C-c#"     'py-comment-region)
   (define-key py-mode-map "\C-c?"     'py-describe-mode)
   (define-key py-mode-map "\C-c\C-hm" 'py-describe-mode)
   (define-key py-mode-map "\e\C-a"    'beginning-of-python-def-or-class)
   (define-key py-mode-map "\e\C-e"    'end-of-python-def-or-class)
-  (define-key py-mode-map "\e\C-h"    'mark-python-def-or-class)
   ;; information
   (define-key py-mode-map "\C-c\C-b" 'py-submit-bug-report)
   (define-key py-mode-map "\C-c\C-v" 'py-version)
@@ -499,8 +500,8 @@ package.  Note that the latest X/Emacs releases contain this package.")
 	["Uncomment Region"     (py-comment-region (point) (mark) '(4)) (mark)]
 	"-"
 	["Mark current block"   py-mark-block t]
-	["Mark current def"     mark-python-def-or-class t]
-	["Mark current class"   (mark-python-def-or-class t) t]
+	["Mark current def"     py-mark-def-or-class t]
+	["Mark current class"   (py-mark-def-or-class t) t]
 	"-"
 	["Shift region left"    py-shift-region-left (mark)]
 	["Shift region right"   py-shift-region-right (mark)]
@@ -991,7 +992,8 @@ filter."
   ;; this bug still exists?
   (interactive)
   (require 'comint)
-  (switch-to-buffer-other-window (make-comint "Python" py-python-command "-i"))
+  (switch-to-buffer-other-window
+   (make-comint "Python" py-python-command nil "-i"))
   (make-local-variable 'comint-prompt-regexp)
   (setq comint-prompt-regexp "^>>> \\|^[.][.][.] ")
   (set-process-filter (get-buffer-process (current-buffer)) 'py-process-filter)
@@ -1629,7 +1631,7 @@ Note that doing this command repeatedly will take you closer to the
 start of the buffer each time.
 
 If you want to mark the current def/class, see
-`\\[mark-python-def-or-class]'."
+`\\[py-mark-def-or-class]'."
   (interactive "P")			; raw prefix arg
   (let ((at-or-before-p (<= (current-column) (current-indentation)))
 	(start-of-line (progn (beginning-of-line) (point)))
@@ -1664,7 +1666,7 @@ Note that doing this command repeatedly will take you closer to the
 end of the buffer each time.
 
 If you want to mark the current def/class, see
-`\\[mark-python-def-or-class]'."
+`\\[py-mark-def-or-class]'."
   (interactive "P")			; raw prefix arg
   (let ((start (progn (py-goto-initial-line) (point)))
 	(which (if class "class" "def"))
@@ -1809,7 +1811,7 @@ moves to the end of the block (& does not set mark or display a msg)."
       (message "Mark set after: %s" (py-suck-up-leading-text))
       (goto-char initial-pos))))
 
-(defun mark-python-def-or-class (&optional class)
+(defun py-mark-def-or-class (&optional class)
   "Set region to body of def (or class, with prefix arg) enclosing point.
 Pushes the current mark, then point, on the mark ring (all language
 modes do this, but although it's handy it's never documented ...).
@@ -2133,12 +2135,12 @@ the block structure:
 @MARKING & MANIPULATING REGIONS OF CODE
 
 \\[py-mark-block]\t mark block of lines
-\\[mark-python-def-or-class]\t mark smallest enclosing def
-\\[universal-argument] \\[mark-python-def-or-class]\t mark smallest enclosing class
+\\[py-mark-def-or-class]\t mark smallest enclosing def
+\\[universal-argument] \\[py-mark-def-or-class]\t mark smallest enclosing class
 \\[comment-region]\t comment out region of code
 \\[universal-argument] \\[comment-region]\t uncomment region of code
 %c:py-mark-block
-%c:mark-python-def-or-class
+%c:py-mark-def-or-class
 %c:comment-region
 
 @MOVING POINT
