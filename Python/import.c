@@ -39,6 +39,8 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #endif
 #ifndef DONT_HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#elif defined(HAVE_STAT_H)
+#include <stat.h>
 #endif
 
 #if defined(PYCC_VACPP)
@@ -1129,8 +1131,7 @@ check_case(char *buf, int len, int namelen, char *name)
 		     name, buf);
 		return 0;
 	}
-	p2cstr(fss.name);
-	if ( strncmp(name, (char *)fss.name, namelen) != 0 ) {
+	if ( namelen > fss.name[0] || strncmp(name, (char *)fss.name+1, namelen) != 0 ) {
 		PyErr_Format(PyExc_NameError,
 		     "Case mismatch for module name %.100s\n(filename %.300s)",
 		     name, fss.name);
