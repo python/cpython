@@ -677,6 +677,14 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 		goto exitUnchanged;
 	codestr = memcpy(codestr, PyString_AS_STRING(code), codelen);
 
+	/* Verify that RETURN_VALUE terminates the codestring.  This allows
+	   the various transformation patterns to look ahead several
+	   instructions without additional checks to make sure they are not
+	   looking beyond the end of the code string.
+	*/
+	if (codestr[codelen-1] != RETURN_VALUE)
+		goto exitUnchanged;
+
 	/* Mapping to new jump targets after NOPs are removed */
 	addrmap = PyMem_Malloc(codelen * sizeof(int));
 	if (addrmap == NULL)
