@@ -7,7 +7,13 @@
    All rights reserved.
 */
 
-#define BLOCKLEN 2
+/* The block length may be set to any number over 1.  Larger numbers
+ * reduce the number of calls to the memory allocator but take more
+ * memory.  Ideally, BLOCKLEN should be set with an eye to the
+ * length of a cache line.  
+ */
+
+#define BLOCKLEN 46
 #define CENTER ((BLOCKLEN - 1) / 2)
 
 /* A `dequeobject` is composed of a doubly-linked list of `block` nodes.
