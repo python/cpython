@@ -200,18 +200,21 @@ def _dateToString(d):
     )
 
 
-# Regex to strip all control chars, but for \t \n and \r
-_controlStripper = re.compile(
+# Regex to find any control chars, except for \t \n and \r
+_controlCharPat = re.compile(
     r"[\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0c\x0e\x0f"
     r"\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f]")
 
 def _escapeAndEncode(text):
+    m = _controlCharPat.search(text)
+    if m is not None:
+        raise ValueError("strings can't contains control characters; "
+                         "use plistlib.Data instead")
     text = text.replace("\r\n", "\n")       # convert DOS line endings
     text = text.replace("\r", "\n")         # convert Mac line endings
     text = text.replace("&", "&amp;")       # escape '&'
     text = text.replace("<", "&lt;")        # escape '<'
     text = text.replace(">", "&gt;")        # escape '>'
-    text = _controlStripper.sub("?", text)  # replace control chars with '?'
     return text.encode("utf-8")             # encode as UTF-8
 
 
