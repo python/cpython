@@ -33,6 +33,8 @@ pass_stmt
 flow_stmt
 break_stmt
 continue_stmt
+continue + try/except ok
+continue + try/finally ok
 return_stmt
 raise_stmt
 import_stmt

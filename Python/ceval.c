@@ -322,7 +322,8 @@ enum why_code {
 		WHY_EXCEPTION,	/* Exception occurred */
 		WHY_RERAISE,	/* Exception re-raised by 'finally' */
 		WHY_RETURN,	/* 'return' statement */
-		WHY_BREAK	/* 'break' statement */
+		WHY_BREAK,	/* 'break' statement */
+		WHY_CONTINUE,	/* 'continue' statement */
 };
 
 static enum why_code do_raise(PyObject *, PyObject *, PyObject *);
@@ -1357,6 +1358,11 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		case BREAK_LOOP:
 			why = WHY_BREAK;
 			break;
+		
+		case CONTINUE_LOOP:
+			retval = PyInt_FromLong(oparg);
+			why = WHY_CONTINUE;
+			break;
 
 		case RAISE_VARARGS:
 			u = v = w = NULL;
@@ -1419,7 +1425,8 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			v = POP();
 			if (PyInt_Check(v)) {
 				why = (enum why_code) PyInt_AsLong(v);
-				if (why == WHY_RETURN)
+				if (why == WHY_RETURN ||
+				    why == CONTINUE_LOOP)
 					retval = POP();
 			}
 			else if (PyString_Check(v) || PyClass_Check(v)) {
@@ -1834,7 +1841,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		case SETUP_EXCEPT:
 		case SETUP_FINALLY:
 			PyFrame_BlockSetup(f, opcode, INSTR_OFFSET() + oparg,
-						STACK_LEVEL());
+					   STACK_LEVEL());
 			continue;
 
 		case SET_LINENO:
@@ -2110,6 +2117,18 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 
 		while (why != WHY_NOT && f->f_iblock > 0) {
 			PyTryBlock *b = PyFrame_BlockPop(f);
+
+			if (b->b_type == SETUP_LOOP && why == WHY_CONTINUE) {
+				/* For a continue inside a try block,
+				   don't pop the block for the loop. */
+				PyFrame_BlockSetup(f, b->b_type, b->b_level, 
+						   b->b_handler);
+				why = WHY_NOT;
+				JUMPTO(PyInt_AS_LONG(retval));
+				Py_DECREF(retval);
+				break;
+			}
+
 			while (STACK_LEVEL() > b->b_level) {
 				v = POP();
 				Py_XDECREF(v);
@@ -2145,7 +2164,8 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 					PUSH(exc);
 				}
 				else {
-					if (why == WHY_RETURN)
+					if (why == WHY_RETURN ||
+					    why == CONTINUE_LOOP)
 						PUSH(retval);
 					v = PyInt_FromLong((long)why);
 					PUSH(v);

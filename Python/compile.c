@@ -5,7 +5,7 @@
    XXX add __doc__ attribute == co_doc to code object attributes?
    XXX   (it's currently the first item of the co_const tuple)
    XXX Generate simple jump for break/return outside 'try...finally'
-   XXX Allow 'continue' inside try-finally
+   XXX Allow 'continue' inside finally clause of try-finally
    XXX New opcode for loading the initial index for a for loop
    XXX other JAR tricks?
 */
@@ -3247,19 +3247,24 @@ com_continue_stmt(struct compiling *c, node *n)
 	}
 	else {
 		int j;
-		for (j = 0; j <= i; ++j) {
+		for (j = i-1; j >= 0; --j) {
 			if (c->c_block[j] == SETUP_LOOP)
 				break;
 		}
-		if (j < i+1) {
+		if (j >= 0) {
 			/* there is a loop, but something interferes */
-			for (++j; j <= i; ++j) {
-				if (c->c_block[i] == SETUP_EXCEPT
-				    || c->c_block[i] == SETUP_FINALLY) {
-					com_error(c, PyExc_SyntaxError,
-			       "'continue' not supported inside 'try' clause");
+			for (; i > j; --i) {
+				if (c->c_block[i] == SETUP_EXCEPT ||
+				    c->c_block[i] == SETUP_FINALLY) {
+					com_addoparg(c, CONTINUE_LOOP,
+						     c->c_begin);
 					return;
 				}
+				if (c->c_block[i] == END_FINALLY) {
+					com_error(c, PyExc_SyntaxError,
+			  "'continue' not supported inside 'finally' clause");
+			  		return;
+			  	}
 			}
 		}
 		com_error(c, PyExc_SyntaxError,

@@ -104,28 +104,11 @@ def ckmsg(src, msg):
 s = '''\
 while 1:
     try:
-        continue
-    except:
         pass
-'''
-ckmsg(s, "'continue' not supported inside 'try' clause")
-s = '''\
-while 1:
-    try:
-        continue
     finally:
-        pass
+        continue
 '''
-ckmsg(s, "'continue' not supported inside 'try' clause")
-s = '''\
-while 1:
-    try:
-        if 1:
-            continue
-    finally:
-        pass
-'''
-ckmsg(s, "'continue' not supported inside 'try' clause")
+ckmsg(s, "'continue' not supported inside 'finally' clause")
 s = '''\
 try:
     continue

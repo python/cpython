@@ -259,6 +259,7 @@ jrel_op('FOR_LOOP', 114)        # Number of bytes to skip
 
 name_op('LOAD_GLOBAL', 116)     # Index in name list
 
+jabs_op('CONTINUE_LOOP', 119)   # Target address
 jrel_op('SETUP_LOOP', 120)      # Distance to target address
 jrel_op('SETUP_EXCEPT', 121)    # ""
 jrel_op('SETUP_FINALLY', 122)   # ""
