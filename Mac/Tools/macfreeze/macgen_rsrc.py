@@ -30,7 +30,7 @@ def generate(output, module_dict, debug=0, preload=1):
 def warnings(module_dict):
 	problems = 0
 	for name, module in module_dict.items():
-		if module.gettype() not in ('builtin', 'module'):
+		if module.gettype() not in ('builtin', 'module', 'package'):
 			problems = problems + 1
 			print 'Warning: %s not included: %s %s'%(name, module.gettype(), module)
 	return problems
