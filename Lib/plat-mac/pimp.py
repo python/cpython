@@ -15,6 +15,7 @@ intention is that the end user will use this through a GUI.
 import sys
 import os
 import urllib
+import urllib2
 import urlparse
 import plistlib
 import distutils.util
@@ -48,11 +49,6 @@ ARCHIVE_FORMATS = [
 	(".tar.bz", "bzcat \"%s\" | tar -xf -"),
 	(".zip", "unzip \"%s\""),
 ]
-
-class MyURLopener(urllib.FancyURLopener):
-	"""Like FancyURLOpener, but we do want to get errors as exceptions."""
-	def http_error_default(self, url, fp, errcode, errmsg, headers):
-		urllib.URLopener.http_error_default(self, url, fp, errcode, errmsg, headers)
 
 class PimpPreferences:
 	"""Container for per-user preferences, such as the database to use
@@ -149,7 +145,7 @@ class PimpDatabase:
 		if url in self._urllist:
 			return
 		self._urllist.append(url)
-		fp = MyURLopener().open(url).fp
+		fp = urllib2.urlopen(url).fp
 		dict = plistlib.Plist.fromFile(fp)
 		# Test here for Pimp version, etc
 		if not included:
