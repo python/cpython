@@ -1059,7 +1059,7 @@ Tktt_GetAttr (self, name)
 
 static PyTypeObject Tktt_Type =
 {
-  PyObject_HEAD_INIT (&PyType_Type)
+  PyObject_HEAD_INIT (NULL)
   0,				/*ob_size */
   "tktimertoken",		/*tp_name */
   sizeof (TkttObject),		/*tp_basicsize */
@@ -1240,7 +1240,7 @@ Tkapp_GetAttr (self, name)
 
 static PyTypeObject Tkapp_Type =
 {
-  PyObject_HEAD_INIT (&PyType_Type)
+  PyObject_HEAD_INIT (NULL)
   0,				/*ob_size */
   "tkapp",			/*tp_name */
   sizeof (TkappObject),		/*tp_basicsize */
@@ -1334,6 +1334,9 @@ init_tkinter ()
   extern int (*rl_event_hook) ();
 #endif /* WITH_READLINE */
   PyObject *m, *d, *v;
+
+  Tkapp_Type.ob_type = &PyType_Type;
+  Tktt_Type.ob_type = &PyType_Type;
 
   m = Py_InitModule ("_tkinter", moduleMethods);
 
