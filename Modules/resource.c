@@ -30,6 +30,7 @@ PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 #include "Python.h"
+#include "mytime.h" /* needed for SunOS4.1 */
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <unistd.h>
