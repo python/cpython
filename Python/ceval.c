@@ -430,7 +430,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 
 	f = PyFrame_New(tstate,			/*back*/
 			co,			/*code*/
-			globals, locals, closure);
+			globals, locals);
 	if (f == NULL)
 		return NULL;
 
@@ -578,8 +578,11 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	}
 	if (f->f_nfreevars) {
 		int i;
-		for (i = 0; i < f->f_nfreevars; ++i)
-			freevars[f->f_ncells + i] = PyTuple_GET_ITEM(closure, i);
+		for (i = 0; i < f->f_nfreevars; ++i) {
+			PyObject *o = PyTuple_GET_ITEM(closure, i);
+			Py_INCREF(o);
+			freevars[f->f_ncells + i] = o;
+		}
 	}
 
 	if (tstate->sys_tracefunc != NULL) {
@@ -1662,7 +1665,6 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				err = -1;
 				break;
 			}
-			Py_INCREF(w);
 			PUSH(w);
 			break;
 
@@ -1670,6 +1672,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			w = POP();
 			x = freevars[oparg];
 			PyCell_Set(x, w);
+			Py_DECREF(w);
 			continue;
 
 		case BUILD_TUPLE:
