@@ -25,6 +25,8 @@ used to query various info about the object, if available.
 import string
 import socket
 import os
+import stat
+import time
 import sys
 import types
 
@@ -402,15 +404,26 @@ class URLopener:
     def open_local_file(self, url):
         """Use local file."""
         import mimetypes, mimetools, StringIO
+        host, file = splithost(url)
+        localname = url2pathname(file)
+        stats = os.stat(localname)
+        size = stats[stat.ST_SIZE]
+        modified = time.gmtime(stats[stat.ST_MTIME])
+        modified = "%s, %02d %s %04d %02d:%02d:%02d GMT" % (
+            ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][modified[6]],
+            modified[2],
+            ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][modified[1]-1],
+            modified[0], modified[3], modified[4], modified[5])
         mtype = mimetypes.guess_type(url)[0]
         headers = mimetools.Message(StringIO.StringIO(
-            'Content-Type: %s\n' % (mtype or 'text/plain')))
-        host, file = splithost(url)
+            'Content-Type: %s\nContent-Length: %d\nLast-modified: %s\n' %
+            (mtype or 'text/plain', size, modified)))
         if not host:
             urlfile = file
             if file[:1] == '/':
                 urlfile = 'file://' + file
-            return addinfourl(open(url2pathname(file), 'rb'),
+            return addinfourl(open(localname, 'rb'),
                               headers, urlfile)
         host, port = splitport(host)
         if not port \
@@ -418,7 +431,7 @@ class URLopener:
             urlfile = file
             if file[:1] == '/':
                 urlfile = 'file://' + file
-            return addinfourl(open(url2pathname(file), 'rb'),
+            return addinfourl(open(localname, 'rb'),
                               headers, urlfile)
         raise IOError, ('local file error', 'not on local host')
 
