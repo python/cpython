@@ -43,29 +43,39 @@ import string
 import time
 
 
+_blanklines = ('\r\n', '\n')		# Optimization for islast()
+
+
 class Message:
 
 	# Initialize the class instance and read the headers.
 	
-	def __init__(self, fp):
+	def __init__(self, fp, seekable = 1):
 		self.fp = fp
+		self.seekable = seekable
+		self.startofheaders = None
+		self.startofbody = None
 		#
-		try:
-			self.startofheaders = self.fp.tell()
-		except IOError:
-			self.startofheaders = None
+		if self.seekable:
+			try:
+				self.startofheaders = self.fp.tell()
+			except IOError:
+				self.seekable = 0
 		#
 		self.readheaders()
 		#
-		try:
-			self.startofbody = self.fp.tell()
-		except IOError:
-			self.startofbody = None
+		if self.seekable:
+			try:
+				self.startofbody = self.fp.tell()
+			except IOError:
+				self.seekable = 0
 
 
 	# Rewind the file to the start of the body (if seekable).
 
 	def rewindbody(self):
+		if not self.seekable:
+			raise IOError, "unseekable file"
 		self.fp.seek(self.startofbody)
 
 
@@ -83,6 +93,7 @@ class Message:
 	# reproduce the header exactly as it appears in the file).
 
 	def readheaders(self):
+		self.unixfrom = ''
 		self.headers = list = []
 		self.status = ''
 		headerseen = 0
@@ -94,6 +105,7 @@ class Message:
 				break
 			# Skip unix From name time lines
 			if firstline and line[:5] == 'From ':
+				self.unixfrom = self.unixfrom + line
 			        continue
 			firstline = 0
 			if self.islast(line):
@@ -112,9 +124,9 @@ class Message:
 				else:
 					self.status = 'Bad header'
 				# Try to undo the read.
-				try:
+				if self.seekable:
 					self.fp.seek(-len(line), 1)
-				except IOError:
+				else:
 					self.status = \
 						self.status + '; bad seek'
 				break
@@ -128,7 +140,7 @@ class Message:
 	# sockets) a line consisting of \r\n also matches.
 
 	def islast(self, line):
-		return line == '\n' or line == '\r\n'
+		return line in _blanklines
 
 
 	# Look through the list of headers and find all lines matching
