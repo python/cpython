@@ -2078,7 +2078,7 @@ recursive_isinstance(PyObject *inst, PyObject *cls, int recursion_depth)
                 if (!recursion_depth) {
                     PyErr_SetString(PyExc_RuntimeError,
                                     "Recursion depth exceeded");
-                    return NULL;
+                    return -1;
                 }
 
 		n = PyTuple_GET_SIZE(cls);
@@ -2138,7 +2138,7 @@ recursive_issubclass(PyObject *derived, PyObject *cls, int recursion_depth)
                         if (!recursion_depth) {
                             PyErr_SetString(PyExc_RuntimeError,
                                             "Recursion depth exceeded");
-                            return NULL;
+                            return -1;
                         }
                         
 			for (i = 0; i < n; ++i) {
