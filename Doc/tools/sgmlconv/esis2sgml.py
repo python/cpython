@@ -22,9 +22,10 @@ def format_attrs(attrs):
     return s
 
 
-def do_convert(ifp, ofp, knownempties, xml=0):
+def do_convert(ifp, ofp, xml=0):
     attrs = {}
     lastopened = None
+    knownempties = []
     knownempty = 0
     lastempty = 0
     while 1:
@@ -79,12 +80,12 @@ def do_convert(ifp, ofp, knownempties, xml=0):
             knownempty = 1
 
 
-def sgml_convert(ifp, ofp, knownempties=()):
-    return do_convert(ifp, ofp, list(knownempties), xml=0)
+def sgml_convert(ifp, ofp):
+    return do_convert(ifp, ofp, xml=0)
 
 
-def xml_convert(ifp, ofp, knownempties=()):
-    return do_convert(ifp, ofp, list(knownempties), xml=1)
+def xml_convert(ifp, ofp):
+    return do_convert(ifp, ofp, xml=1)
 
 
 def main():
