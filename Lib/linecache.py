@@ -1,5 +1,9 @@
 # Cache lines from files.
+# This is intended to read lines from modules imported -- hence if a filename
+# is not found, it will look down the module search path for a file by
+# that name.
 
+import sys
 import os
 from stat import *
 
@@ -34,12 +38,13 @@ def getlines(filename):
 
 
 # Discard cache entries that are out of date.
-# (This is not checked upon each call
+# (This is not checked upon each call!)
 
 def checkcache():
 	for filename in cache.keys():
-		size, mtime, lines = cache[filename]
-		try:	stat = os.stat(filename)
+		size, mtime, lines, fullname = cache[filename]
+		try:
+			stat = os.stat(fullname)
 		except os.error:
 			del cache[filename]
 			continue
@@ -52,20 +57,34 @@ def checkcache():
 # and return an empty list.
 
 def updatecache(filename):
-	try:	del cache[filename]
-	except KeyError: pass
-	try:	stat = os.stat(filename)
-	except os.error, msg:
-		if filename[0] + filename[-1] <> '<>':
-			print '*** Cannot stat', filename, ':', msg
+	if cache.has_key(filename):
+		del cache[filename]
+	if filename[0] + filename[-1] == '<>':
 		return []
+	fullname = filename
 	try:
-		fp = open(filename, 'r')
+		stat = os.stat(fullname)
+	except os.error, msg:
+		# Try looking through the module search path
+		basename = os.path.split(filename)[1]
+		for dirname in sys.path:
+			fullname = os.path.join(dirname, basename)
+			try:
+				stat = os.stat(fullname)
+				break
+			except os.error:
+				pass
+		else:
+			# No luck
+			print '*** Cannot stat', filename, ':', msg
+			return []
+	try:
+		fp = open(fullname, 'r')
 		lines = fp.readlines()
 		fp.close()
 	except IOError, msg:
-		print '*** Cannot open', filename, ':', msg
+		print '*** Cannot open', fullname, ':', msg
 		return []
 	size, mtime = stat[ST_SIZE], stat[ST_MTIME]
-	cache[filename] = size, mtime, lines
+	cache[filename] = size, mtime, lines, fullname
 	return lines
