@@ -7,6 +7,163 @@
    All rights reserved.
 */
 
+/* cycle object **********************************************************/
+
+typedef struct {
+	PyObject_HEAD
+	PyObject *it;
+	PyObject *saved;
+	int firstpass;
+} cycleobject;
+
+PyTypeObject cycle_type;
+
+static PyObject *
+cycle_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *it;
+	PyObject *iterable;
+	PyObject *saved;
+	cycleobject *lz;
+
+	if (!PyArg_UnpackTuple(args, "cycle", 1, 1, &iterable))
+		return NULL;
+
+	/* Get iterator. */
+	it = PyObject_GetIter(iterable);
+	if (it == NULL)
+		return NULL;
+
+	saved = PyList_New(0);
+	if (saved == NULL) {
+		Py_DECREF(it);
+		return NULL;
+	}
+
+	/* create cycleobject structure */
+	lz = (cycleobject *)type->tp_alloc(type, 0);
+	if (lz == NULL) {
+		Py_DECREF(it);
+		Py_DECREF(saved);
+		return NULL;
+	}
+	lz->it = it;
+	lz->saved = saved;
+	lz->firstpass = 0;
+
+	return (PyObject *)lz;
+}
+
+static void
+cycle_dealloc(cycleobject *lz)
+{
+	PyObject_GC_UnTrack(lz);
+	Py_XDECREF(lz->saved);
+	Py_XDECREF(lz->it);
+	lz->ob_type->tp_free(lz);
+}
+
+static int
+cycle_traverse(cycleobject *lz, visitproc visit, void *arg)
+{
+	int err;
+
+	if (lz->it) {
+		err = visit(lz->it, arg);
+		if (err)
+			return err;
+	}
+	if (lz->saved) {
+		err = visit(lz->saved, arg);
+		if (err)
+			return err;
+	}
+	return 0;
+}
+
+static PyObject *
+cycle_next(cycleobject *lz)
+{
+	PyObject *item;
+	PyObject *it;
+
+	while (1) {
+		item = PyIter_Next(lz->it);
+		if (item != NULL) {
+			if (!lz->firstpass)
+				PyList_Append(lz->saved, item);
+			return item;
+		}
+		if (PyList_Size(lz->saved) == 0) 
+			return NULL;
+		it = PyObject_GetIter(lz->saved);
+		if (it == NULL)
+			return NULL;
+		Py_DECREF(lz->it);
+		lz->it = it;
+		lz->firstpass = 1;
+	}
+}
+
+static PyObject *
+cycle_getiter(PyObject *lz)
+{
+	Py_INCREF(lz);
+	return lz;
+}
+
+PyDoc_STRVAR(cycle_doc,
+"cycle(iterable) --> cycle object\n\
+\n\
+Return elements from the iterable until it is exhausted.\n\
+Then repeat the sequence indefinitely.");
+
+PyTypeObject cycle_type = {
+	PyObject_HEAD_INIT(NULL)
+	0,				/* ob_size */
+	"itertools.cycle",		/* tp_name */
+	sizeof(cycleobject),		/* tp_basicsize */
+	0,				/* tp_itemsize */
+	/* methods */
+	(destructor)cycle_dealloc,	/* tp_dealloc */
+	0,				/* tp_print */
+	0,				/* tp_getattr */
+	0,				/* tp_setattr */
+	0,				/* tp_compare */
+	0,				/* tp_repr */
+	0,				/* tp_as_number */
+	0,				/* tp_as_sequence */
+	0,				/* tp_as_mapping */
+	0,				/* tp_hash */
+	0,				/* tp_call */
+	0,				/* tp_str */
+	PyObject_GenericGetAttr,	/* tp_getattro */
+	0,				/* tp_setattro */
+	0,				/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+		Py_TPFLAGS_BASETYPE,	/* tp_flags */
+	cycle_doc,			/* tp_doc */
+	(traverseproc)cycle_traverse,	/* tp_traverse */
+	0,				/* tp_clear */
+	0,				/* tp_richcompare */
+	0,				/* tp_weaklistoffset */
+	(getiterfunc)cycle_getiter,	/* tp_iter */
+	(iternextfunc)cycle_next,	/* tp_iternext */
+	0,				/* tp_methods */
+	0,				/* tp_members */
+	0,				/* tp_getset */
+	0,				/* tp_base */
+	0,				/* tp_dict */
+	0,				/* tp_descr_get */
+	0,				/* tp_descr_set */
+	0,				/* tp_dictoffset */
+	0,				/* tp_init */
+	PyType_GenericAlloc,		/* tp_alloc */
+	cycle_new,			/* tp_new */
+	PyObject_GC_Del,		/* tp_free */
+};
+
+
 /* dropwhile object **********************************************************/
 
 typedef struct {
@@ -826,93 +983,110 @@ PyTypeObject imap_type = {
 };
 
 
-/* times object ************************************************************/
+/* chain object ************************************************************/
 
 typedef struct {
 	PyObject_HEAD
-	PyObject *obj;
-	long	cnt;
-} timesobject;
+	long	tuplesize;
+	long	iternum;		/* which iterator is active */
+	PyObject *ittuple;		/* tuple of iterators */
+} chainobject;
 
-PyTypeObject times_type;
+PyTypeObject chain_type;
 
 static PyObject *
-times_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	timesobject *lz;
-	PyObject *obj = Py_None;
-	long cnt;
+	chainobject *lz;
+	int tuplesize = PySequence_Length(args);
+	int i;
+	PyObject *ittuple;
 
-	if (!PyArg_ParseTuple(args, "l|O:times", &cnt, &obj))
+	/* obtain iterators */
+	assert(PyTuple_Check(args));
+	ittuple = PyTuple_New(tuplesize);
+	if(ittuple == NULL)
 		return NULL;
-
-	if (cnt < 0) {
-		PyErr_SetString(PyExc_ValueError,
-		   "count for times() cannot be negative.");
-		return NULL;
+	for (i=0; i < tuplesize; ++i) {
+		PyObject *item = PyTuple_GET_ITEM(args, i);
+		PyObject *it = PyObject_GetIter(item);
+		if (it == NULL) {
+			if (PyErr_ExceptionMatches(PyExc_TypeError))
+				PyErr_Format(PyExc_TypeError,
+				    "chain argument #%d must support iteration",
+				    i+1);
+			Py_DECREF(ittuple);
+			return NULL;
+		}
+		PyTuple_SET_ITEM(ittuple, i, it);
 	}
 
-	/* create timesobject structure */
-	lz = (timesobject *)type->tp_alloc(type, 0);
+	/* create chainobject structure */
+	lz = (chainobject *)type->tp_alloc(type, 0);
 	if (lz == NULL)
 		return NULL;
-	lz->cnt = cnt;
-	Py_INCREF(obj);
-	lz->obj = obj;
+
+	lz->ittuple = ittuple;
+	lz->iternum = 0;
+	lz->tuplesize = tuplesize;
 
 	return (PyObject *)lz;
 }
 
 static void
-times_dealloc(timesobject *lz)
+chain_dealloc(chainobject *lz)
 {
 	PyObject_GC_UnTrack(lz);
-	Py_XDECREF(lz->obj);
+	Py_XDECREF(lz->ittuple);
 	lz->ob_type->tp_free(lz);
 }
 
 static int
-times_traverse(timesobject *lz, visitproc visit, void *arg)
+chain_traverse(chainobject *lz, visitproc visit, void *arg)
 {
-	if (lz->obj)
-		return visit(lz->obj, arg);
+	if (lz->ittuple)
+		return visit(lz->ittuple, arg);
 	return 0;
 }
 
 static PyObject *
-times_next(timesobject *lz)
+chain_next(chainobject *lz)
 {
-	PyObject *obj = lz->obj;
+	PyObject *it;
+	PyObject *item;
 
-	if (lz->cnt > 0) {
-		lz->cnt--;
-		Py_INCREF(obj);
-		return obj;
+	while (lz->iternum < lz->tuplesize) {
+		it = PyTuple_GET_ITEM(lz->ittuple, lz->iternum);
+		item = PyIter_Next(it);
+		if (item != NULL)
+			return item;
+		lz->iternum++;
 	}
 	return NULL;
 }
 
 static PyObject *
-times_getiter(PyObject *lz)
+chain_getiter(PyObject *lz)
 {
 	Py_INCREF(lz);
 	return lz;
 }
 
-PyDoc_STRVAR(times_doc,
-"times(n [,obj]) --> times object\n\
+PyDoc_STRVAR(chain_doc,
+"chain(*iterables) --> chain object\n\
 \n\
-Return a times object whose .next() method returns n consecutive\n\
-instances of obj (default is None).");
+Return a chain object whose .next() method returns elements from the\n\
+first iterable until it is exhausted, then elements from the next\n\
+iterable, until all of the iterables are exhausted.");
 
-PyTypeObject times_type = {
+PyTypeObject chain_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
-	"itertools.times",		/* tp_name */
-	sizeof(timesobject),		/* tp_basicsize */
+	"itertools.chain",		/* tp_name */
+	sizeof(chainobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
 	/* methods */
-	(destructor)times_dealloc,	/* tp_dealloc */
+	(destructor)chain_dealloc,	/* tp_dealloc */
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
@@ -929,13 +1103,13 @@ PyTypeObject times_type = {
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_BASETYPE,	/* tp_flags */
-	times_doc,			/* tp_doc */
-	(traverseproc)times_traverse,	/* tp_traverse */
+	chain_doc,			/* tp_doc */
+	(traverseproc)chain_traverse,	/* tp_traverse */
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)times_getiter,	/* tp_iter */
-	(iternextfunc)times_next,	/* tp_iternext */
+	(getiterfunc)chain_getiter,	/* tp_iter */
+	(iternextfunc)chain_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
 	0,				/* tp_getset */
@@ -946,7 +1120,7 @@ PyTypeObject times_type = {
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
 	PyType_GenericAlloc,		/* tp_alloc */
-	times_new,			/* tp_new */
+	chain_new,			/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
 
@@ -1544,6 +1718,7 @@ PyTypeObject izip_type = {
 typedef struct {
 	PyObject_HEAD
 	PyObject *element;
+	long cnt;
 } repeatobject;
 
 PyTypeObject repeat_type;
@@ -1553,8 +1728,9 @@ repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	repeatobject *ro;
 	PyObject *element;
+	long cnt = -1;
 
-	if (!PyArg_UnpackTuple(args, "repeat", 1, 1, &element))
+	if (!PyArg_ParseTuple(args, "O|l:repeat", &element, &cnt))
 		return NULL;
 
 	ro = (repeatobject *)type->tp_alloc(type, 0);
@@ -1562,6 +1738,7 @@ repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 	Py_INCREF(element);
 	ro->element = element;
+	ro->cnt = cnt;
 	return (PyObject *)ro;
 }
 
@@ -1584,6 +1761,10 @@ repeat_traverse(repeatobject *ro, visitproc visit, void *arg)
 static PyObject *
 repeat_next(repeatobject *ro)
 {
+	if (ro->cnt == 0)
+		return NULL;
+	if (ro->cnt > 0)
+		ro->cnt--;
 	Py_INCREF(ro->element);
 	return ro->element;
 }
@@ -1596,7 +1777,9 @@ repeat_getiter(PyObject *ro)
 }
 
 PyDoc_STRVAR(repeat_doc,
-"repeat(element) -> create an iterator which returns the element endlessly.");
+"repeat(element [,times]) -> create an iterator which returns the element\n\
+for the specified number of times.  If not specified, returns the element\n\
+endlessly.");
 
 PyTypeObject repeat_type = {
 	PyObject_HEAD_INIT(NULL)
@@ -1651,7 +1834,8 @@ PyDoc_STRVAR(module_doc,
 \n\
 Infinite iterators:\n\
 count([n]) --> n, n+1, n+2, ...\n\
-repeat(elem) --> elem, elem, elem, ...\n\
+cycle(p) --> p0, p1, ... plast, p0, p1, ...\n\
+repeat(elem [,n]) --> elem, elem, elem, ... endlessly or upto n times\n\
 \n\
 Iterators terminating on the shortest input sequence:\n\
 izip(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ... \n\
@@ -1661,7 +1845,7 @@ islice(seq, [start,] stop [, step]) --> elements from\n\
        seq[start:stop:step]\n\
 imap(fun, p, q, ...) --> fun(p0, q0), fun(p1, q1), ...\n\
 starmap(fun, seq) --> fun(*seq[0]), fun(*seq[1]), ...\n\
-times(n, [obj]) --> obj, obj, ... for n times.  obj defaults to None\n\
+chain(p, q, ...) --> p0, p1, ... plast, q0, q1, ... \n\
 takewhile(pred, seq) --> seq[0], seq[1], until pred fails\n\
 dropwhile(pred, seq) --> seq[n], seq[n+1], starting when pred fails\n\
 ");
@@ -1674,12 +1858,13 @@ inititertools(void)
 	PyObject *m;
 	char *name;
 	PyTypeObject *typelist[] = {
+		&cycle_type,
 		&dropwhile_type,
 		&takewhile_type,
 		&islice_type,
 		&starmap_type,
 		&imap_type,
-		&times_type,
+		&chain_type,
 		&ifilter_type,
 		&ifilterfalse_type,
 		&count_type,
@@ -1694,8 +1879,7 @@ inititertools(void)
 		if (PyType_Ready(typelist[i]) < 0)
 			return;
 		name = strchr(typelist[i]->tp_name, '.') + 1;
-		if (name == NULL)
-			return;
+		assert (name != NULL);
 		Py_INCREF(typelist[i]);
 		PyModule_AddObject(m, name, (PyObject *)typelist[i]);
 	}

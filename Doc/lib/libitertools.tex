@@ -33,22 +33,8 @@ Adopting the principles of just-in-time manufacturing, they create
 data when and where needed instead of consuming memory with the
 computer equivalent of ``inventory''.
 
-Some tools were omitted from the module because they offered no
-advantage over their pure python counterparts or because their behavior
-was too surprising.
-
-For instance, SML provides a tool:  \code{cycle(\var{seq})} which
-loops over the sequence elements and then starts again when the
-sequence is exhausted.  The surprising behavior is the need for
-significant auxiliary storage (which is unusual for an iterator).
-If needed, the tool is readily constructible using pure Python.
-
-Other tools are being considered for inclusion in future versions of the
-module.  For instance, the function
-\function{chain(\var{it0}, \var{it1}, ...)} would return elements from
-the first iterator until it was exhausted and then move on to each
-successive iterator.  The module author welcomes suggestions for other
-basic building blocks.
+The module author welcomes suggestions for other basic building blocks
+to be added to future versions of the module.
 
 \begin{seealso}
   \seetext{The Standard ML Basis Library,
@@ -67,6 +53,20 @@ The following module functions all construct and return iterators.
 Some provide streams of infinite length, so they should only be accessed
 by functions or loops that truncate the stream.
 
+\begin{funcdesc}{chain}{*iterables}
+  Make an iterator that returns elements from the first iterable until
+  it is exhausted, then proceeds to the next iterable, until all of the
+  iterables are exhausted.  Used for treating consecutive sequences as
+  a single sequence.  Equivalent to:
+
+  \begin{verbatim}
+     def chain(*iterables):
+         for it in iterables:
+             for element in it:
+                 yield element
+  \end{verbatim}
+\end{funcdesc}
+
 \begin{funcdesc}{count}{\optional{n}}
   Make an iterator that returns consecutive integers starting with \var{n}.
   Does not currently support python long integers.  Often used as an
@@ -83,6 +83,29 @@ by functions or loops that truncate the stream.
   Note, \function{count()} does not check for overflow and will return
   negative numbers after exceeding \code{sys.maxint}.  This behavior
   may change in the future.
+\end{funcdesc}
+
+\begin{funcdesc}{cycle}{iterable}
+  Make an iterator returning elements from the iterable and saving a
+  copy of each.  When the iterable is exhausted, return elements from
+  the saved copy.  Repeats indefinitely.  Equivalent to:
+
+  \begin{verbatim}
+     def cycle(iterable):
+         saved = []
+         for element in iterable:
+             yield element
+             saved.append(element)
+         if len(saved) == 0:
+             return
+         while True:
+             for element in saved:
+                   yield element
+  \end{verbatim}
+
+  Note, this is the only member of the toolkit that may require
+  significant auxiliary storage (depending on the length of the
+  iterable.
 \end{funcdesc}
 
 \begin{funcdesc}{dropwhile}{predicate, iterable}
@@ -207,16 +230,21 @@ by functions or loops that truncate the stream.
   \end{verbatim}
 \end{funcdesc}
 
-\begin{funcdesc}{repeat}{object}
+\begin{funcdesc}{repeat}{object\optional{, times}}
   Make an iterator that returns \var{object} over and over again.
+  Runs indefinitely unless the \var{times} argument is specified.
   Used as argument to \function{imap()} for invariant parameters
   to the called function.  Also used with \function{izip()} to create
   an invariant part of a tuple record.  Equivalent to:
 
   \begin{verbatim}
-     def repeat(object):
-         while True:
-             yield object
+     def repeat(object, times=None):
+         if times is None:
+             while True:
+                 yield object
+         else:
+             for i in xrange(times):
+                 yield object
   \end{verbatim}
 \end{funcdesc}
 
@@ -253,20 +281,6 @@ by functions or loops that truncate the stream.
   \end{verbatim}
 \end{funcdesc}
 
-\begin{funcdesc}{times}{n, \optional{object}}
-  Make an iterator that returns \var{object} \var{n} times.
-  \var{object} defaults to \code{None}.  Used for looping a specific
-  number of times without creating a number object on each pass.
-  Equivalent to:
-
-  \begin{verbatim}
-     def times(n, object=None):
-         if n<0 : raise ValueError
-         for i in xrange(n):
-             yield object
-  \end{verbatim}
-\end{funcdesc}
-
 
 \subsection{Examples \label{itertools-example}}
 
@@ -274,12 +288,6 @@ The following examples show common uses for each tool and
 demonstrate ways they can be combined.
 
 \begin{verbatim}
->>> for i in times(3):
-...     print "Hello"
-...
-Hello
-Hello
-Hello
 
 >>> amounts = [120.15, 764.05, 823.14]
 >>> for checknum, amount in izip(count(1200), amounts):
@@ -342,5 +350,9 @@ from building blocks.
 >>> def no(pred, seq):
 ...     "Returns True if pred(x) is False for every element in the iterable"
 ...     return not nth(ifilter(pred, seq), 0)
+
+>>> def pairwise(seq):
+...     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+...     return izip(seq, islice(seq,1,len(seq)))
 
 \end{verbatim}

@@ -17,7 +17,9 @@ TBD
 Extension modules
 -----------------
 
-TBD
+- Made user requested changes to the itertools module.
+  Subsumed the times() function into repeat().
+  Added chain() and cycle().
 
 Library
 -------
