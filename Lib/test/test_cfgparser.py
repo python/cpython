@@ -387,7 +387,7 @@ class RawConfigParserTestCase(TestCaseBase):
         self.assertEqual(cf.get('non-string', 'list'),
                          [0, 1, 1, 2, 3, 5, 8, 13])
         self.assertEqual(cf.get('non-string', 'dict'), {'pi': 3.14159})
-        
+
 
 class SafeConfigParserTestCase(ConfigParserTestCase):
     config_class = ConfigParser.SafeConfigParser
