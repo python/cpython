@@ -960,7 +960,9 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
   (save-excursion
     (and (progn (back-to-indentation)
 		(looking-at py-outdent-re))
-	 (progn (backward-to-indentation 1)
+	 (progn (forward-line -1)
+		(py-goto-initial-line)
+		(back-to-indentation)
 		(while (or (looking-at py-blank-or-comment-re)
 			   (bobp))
 		  (backward-to-indentation 1))
