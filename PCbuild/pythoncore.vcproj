@@ -40,15 +40,15 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="./python24.dll"
+				OutputFile="./python25.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				IgnoreDefaultLibraryNames="libc"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./python24.pdb"
+				ProgramDatabaseFile=".\./python25.pdb"
 				SubSystem="2"
 				BaseAddress="0x1e000000"
-				ImportLibrary=".\./python24.lib"
+				ImportLibrary=".\./python25.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -107,15 +107,15 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="./python24_d.dll"
+				OutputFile="./python25_d.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				IgnoreDefaultLibraryNames="libc"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./python24_d.pdb"
+				ProgramDatabaseFile=".\./python25_d.pdb"
 				SubSystem="2"
 				BaseAddress="0x1e000000"
-				ImportLibrary=".\./python24_d.lib"
+				ImportLibrary=".\./python25_d.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -181,15 +181,15 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
-				OutputFile="./python24.dll"
+				OutputFile="./python25.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="FALSE"
 				IgnoreDefaultLibraryNames="libc"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./python24.pdb"
+				ProgramDatabaseFile=".\./python25.pdb"
 				SubSystem="2"
 				BaseAddress="0x1e000000"
-				ImportLibrary=".\./python24.lib"
+				ImportLibrary=".\./python25.lib"
 				TargetMachine="0"/>
 			<Tool
 				Name="VCMIDLTool"
