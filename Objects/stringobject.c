@@ -749,10 +749,10 @@ formatstring(format, args)
 				if (--fmtcnt >= 0)
 					c = *fmt++;
 			}
-			else if (isdigit(c)) {
+			else if (c >= 0 && isdigit(c)) {
 				width = c - '0';
 				while (--fmtcnt >= 0) {
-					c = *fmt++;
+					c = Py_CHARMASK(*fmt++);
 					if (!isdigit(c))
 						break;
 					if ((width*10) / 10 != width) {
@@ -782,10 +782,10 @@ formatstring(format, args)
 					if (--fmtcnt >= 0)
 						c = *fmt++;
 				}
-				else if (isdigit(c)) {
+				else if (c >= 0 && isdigit(c)) {
 					prec = c - '0';
 					while (--fmtcnt >= 0) {
-						c = *fmt++;
+						c = Py_CHARMASK(*fmt++);
 						if (!isdigit(c))
 							break;
 						if ((prec*10) / 10 != prec) {
@@ -913,7 +913,7 @@ formatstring(format, args)
 				--rescnt;
 				*res++ = ' ';
 			}
-                        if (dict && (argidx < arglen)) {
+                        if (dict && (argidx < arglen) && c != '%') {
                                 err_setstr(TypeError,
                                            "not all arguments converted");
                                 goto error;
