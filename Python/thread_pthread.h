@@ -133,7 +133,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 #ifdef THREAD_STACK_SIZE
 	pthread_attr_setstacksize(&attrs, THREAD_STACK_SIZE);
 #endif
-#ifdef PTHREAD_SYSTEM_SCHED_SUPPORTED
+#if defined(PTHREAD_SYSTEM_SCHED_SUPPORTED) && !defined(__FreeBSD__)
         pthread_attr_setscope(&attrs, PTHREAD_SCOPE_SYSTEM);
 #endif
 
