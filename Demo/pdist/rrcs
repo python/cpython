@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#!/usr/bin/env python
 
 import addpack
 addpack.addpack('/home/guido/src/python/Demo/pdist')
