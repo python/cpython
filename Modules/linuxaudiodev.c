@@ -64,8 +64,6 @@ newladobject(PyObject *arg)
     int fd, afmts, imode;
     char *mode;
     char *basedev;
-    char *ctldev;
-    char *opendev;
 
     /* Check arg for r/w/rw */
     if (!PyArg_ParseTuple(arg, "s:open", &mode)) return NULL;
@@ -384,17 +382,6 @@ static PyMethodDef linuxaudiodev_methods[] = {
     { "open", ladopen, METH_VARARGS },
     { 0, 0 },
 };
-
-static int
-ins(PyObject *d, char *symbol, long value)
-{
-    PyObject* v = PyInt_FromLong(value);
-    if (!v || PyDict_SetItemString(d, symbol, v) < 0)
-        return -1;                   /* triggers fatal error */
-
-    Py_DECREF(v);
-    return 0;
-}
 
 void
 initlinuxaudiodev()
