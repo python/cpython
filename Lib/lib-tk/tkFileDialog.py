@@ -124,6 +124,20 @@ def askdirectory (**options):
 # test stuff
 
 if __name__ == "__main__":
+    # Since the file name may contain non-ASCII characters, we need
+    # to find an encoding that likely supports the file name, and
+    # displays correctly on the terminal.
 
-    print "open", askopenfilename(filetypes=[("all filez", "*")])
-    print "saveas", asksaveasfilename()
+    # Start off with UTF-8
+    enc = "utf-8"
+
+    # See whether CODESET is defined
+    try:
+        import locale
+        enc = locale.nl_langinfo(locale.CODESET)
+    except (ImportError, AttributeError):
+        pass
+
+    print "open", askopenfilename(filetypes=[("all filez", "*")]).encode(enc)
+    print "saveas", asksaveasfilename().encode(enc)
+
