@@ -5,7 +5,6 @@ import linecache
 
 from TreeWidget import TreeNode, TreeItem, ScrolledCanvas
 from ObjectBrowser import ObjectTreeItem, make_objecttreeitem
-from OldStackViewer import StackViewer, NamespaceViewer
 
 def StackBrowser(root, flist=None, tb=None, top=None):
     if top is None:
