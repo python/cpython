@@ -157,11 +157,15 @@ sharedinstall:
 			sharedinstall
 
 # Build the sub-Makefiles
-Makefiles:	config.status
+Makefiles:	config.status Modules/Makefile.pre
 		(cd Modules; $(MAKE) -f Makefile.pre Makefile)
 		for i in . $(SUBDIRS); do \
 			(echo $$i; cd $$i; $(MAKE) Makefile); \
 		done
+
+# Build the intermediate Makefile in Modules
+Modules/Makefile.pre: config.status
+		$(SHELL) config.status
 
 # Build the toplevel Makefile
 Makefile:	Makefile.in config.status
