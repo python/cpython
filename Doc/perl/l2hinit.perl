@@ -39,7 +39,7 @@ $VERBOSITY = 0;
 
 # default # of columns for the indexes
 $INDEX_COLUMNS = 2;
-$MODULE_INDEX_COLUMNS = 5;
+$MODULE_INDEX_COLUMNS = 4;
 
 
 # A little painful, but lets us clean up the top level directory a little,
@@ -247,7 +247,7 @@ sub make_index_entry {
 
 
 sub insert_index{
-    my($mark,$datafile,$columns,$letters) = @_;
+    my($mark,$datafile,$columns,$letters,$prefix) = @_;
     my $prog = "$myrootdir/tools/buildindex.py";
     my $index;
     if ($letters) {
@@ -256,13 +256,13 @@ sub insert_index{
     else {
 	$index = `$prog --columns $columns $datafile`;
     }
-    s/$mark/$index/;
+    s/$mark/$prefix$index/;
 }
 
 sub add_idx{
     print "\nBuilding HTML for the index ...";
     close(IDXFILE);
-    insert_index($idx_mark, 'index.dat', $INDEX_COLUMNS, 1);
+    insert_index($idx_mark, 'index.dat', $INDEX_COLUMNS, 1, '');
 }
 
 
@@ -272,20 +272,56 @@ $idx_module_title = 'Module Index';
 sub add_module_idx{
     print "\nBuilding HTML for the module index ...";
     my $key;
+    my $first = 1;
+    my $prevplat = '';
+    my $allthesame = 1;
+    my $prefix = '';
+    foreach $key (keys %Modules) {
+	$key =~ s/<tt>([a-zA-Z0-9._]*)<\/tt>/\1/;
+	my $plat = "$ModulePlatforms{$key}";
+	$plat = ''
+	  if $IGNORE_PLATFORM_ANNOTATION;
+	if (!$first) {
+	    $allthesame = 0
+	      if ($prevplat ne $plat);
+	}
+	else { $first = 0; }
+	$prevplat = $plat;
+    }
     open(MODIDXFILE, '>modindex.dat') || die "\n$!\n";
     foreach $key (keys %Modules) {
 	# dump the line in the data file; just use a dummy seqno field
-	print MODIDXFILE "$Modules{$key}" . $IDXFILE_FIELD_SEP . "$key###\n";
+	my $nkey = $1;
+	my $moditem = "$Modules{$key}";
+	my $plat = '';
+	$key =~ s/<tt>([a-zA-Z0-9._]*)<\/tt>/\1/;
+	if ($ModulePlatforms{$key} && !$allthesame) {
+	    $plat = " <em>($ModulePlatforms{$key})</em>";
+	}
+	print MODIDXFILE
+	  $moditem
+	    . $IDXFILE_FIELD_SEP
+	    . "<tt class=module>$key</tt>$plat###\n";
     }
     close(MODIDXFILE);
-    insert_index($idx_module_mark, 'modindex.dat', $MODULE_INDEX_COLUMNS, 0);
+    if (!$allthesame) {
+	$prefix = <<PLAT_DISCUSS;
+
+
+<p> Some module names are followed by an annotation indicating what
+platform they are available on.</p>
+
+PLAT_DISCUSS
+    }
+    insert_index($idx_module_mark, 'modindex.dat', $MODULE_INDEX_COLUMNS, 0,
+		 $prefix);
 }
 
 # replace both indexes as needed:
 sub add_idx_hook{
     add_idx() if (/$idx_mark/);
     add_module_idx() if (/$idx_module_mark/);
-    process_all_localmoduletables();
+    process_python_state();
 }
 
 
