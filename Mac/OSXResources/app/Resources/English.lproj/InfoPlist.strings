@@ -1,7 +1,7 @@
 /* Localized versions of Info.plist keys */
 
-CFBundleName = "PythonInterpreter";
-CFBundleShortVersionString = "Python Interpreter version 2.2";
-CFBundleGetInfoString = "Python Interpreter version 2.2, (c) 2001 Python Software Foundation.";
-CFBundleLongVersionString = "2.2, (c) 2001 Python Software Foundation.";
-NSHumanReadableCopyright = "Copyright 2001 Python Software Foundation.";
+CFBundleName = "PythonW";
+CFBundleShortVersionString = "Python Interpreter version 2.3";
+CFBundleGetInfoString = "Python Interpreter version 2.3, (c) 2002 Python Software Foundation.";
+CFBundleLongVersionString = "2.3, (c) 2002 Python Software Foundation.";
+NSHumanReadableCopyright = "Copyright 2002 Python Software Foundation.";
