@@ -40,10 +40,10 @@ else:
 print '''\
 <table border="1" cellpadding="3" align="center">
   <thead>
-    <tr bgcolor="#3399ff"><th rowspan="2">Content</th>
+    <tr bgcolor="#99ccff"><th rowspan="2">Content</th>
                           <th colspan="3">Format</th>
       </tr>
-    <tr bgcolor="#3399ff"><th>ZIP</th><th>GZip</th><th>BZip2</th>
+    <tr bgcolor="#99ccff"><th>ZIP</th><th>GZip</th><th>BZip2</th>
     </thead>
   <tbody>'''
 
