@@ -39,22 +39,36 @@ class ChipWidget:
                             height=height,
                             background=initialcolor)
         self.__chip.grid(row=1, column=0)
-        # create the color name, ctor argument must be a string
-        self.__name = Label(master, text=initialcolor)
+        # create the color name
+        self.__namevar = StringVar()
+        self.__namevar.set(initialcolor)
+        self.__name = Entry(master, textvariable=self.__namevar,
+                            relief=FLAT, justify=CENTER, state=DISABLED,
+                            font=self.__label['font'])
         self.__name.grid(row=2, column=0)
-        #
+        # create the message area
+        self.__msgvar = StringVar()
+        self.__name = Entry(master, textvariable=self.__msgvar,
+                            relief=FLAT, justify=CENTER, state=DISABLED,
+                            font=self.__label['font'])
+        self.__name.grid(row=3, column=0)
         # set bindings
         if presscmd:
             self.__chip.bind('<ButtonPress-1>', presscmd)
         if releasecmd:
             self.__chip.bind('<ButtonRelease-1>', releasecmd)
 
-    def set_color(self, color, colorname=None):
+    def set_color(self, color):
         self.__chip.config(background=color)
-        self.__name.config(text=colorname or color)
 
     def get_color(self):
         return self.__chip['background']
+
+    def set_name(self, colorname):
+        self.__namevar.set(colorname)
+
+    def set_message(self, message):
+        self.__msgvar.set(message)
 
     def press(self):
         self.__chip.configure(relief=SUNKEN)
@@ -97,7 +111,15 @@ class ChipViewer:
         nearest_tuple = colordb.find_byname(nearest)
         nearest_rrggbb = ColorDB.triplet_to_rrggbb(nearest_tuple)
         self.__selected.set_color(rrggbb)
-        self.__nearest.set_color(nearest_rrggbb, nearest)
+        self.__nearest.set_color(nearest_rrggbb)
+        # set the name and messages areas
+        self.__selected.set_name(rrggbb)
+        if rrggbb == nearest_rrggbb:
+            self.__selected.set_message(nearest)
+        else:
+            self.__selected.set_message('')
+        self.__nearest.set_name(nearest_rrggbb)
+        self.__nearest.set_message(nearest)
 
     def __buttonpress(self, event=None):
         self.__nearest.press()
