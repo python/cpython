@@ -2367,16 +2367,16 @@ Sjoerd     ==>       4127
 
 Most formats work exactly as in \C{} and require that you pass the proper
 type; however, if you don't you get an exception, not a core dump.
-The \verb\%s\ format is more relaxed: if the corresponding argument is
+The \code{\%s} format is more relaxed: if the corresponding argument is
 not a string object, it is converted to string using the
 \function{str()} built-in function.  Using \code{*} to pass the width
 or precision in as a separate (integer) argument is supported.  The
-\C{} formats \verb\%n\ and \verb\%p\ are not supported.
+\C{} formats \code{\%n} and \code{\%p} are not supported.
 
 If you have a really long format string that you don't want to split
 up, it would be nice if you could reference the variables to be
 formatted by name instead of by position.  This can be done by using
-an extension of \C{} formats using the form \verb\%(name)format\, e.g.
+an extension of \C{} formats using the form \code{\%(name)format}, e.g.
 
 \begin{verbatim}
 >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
