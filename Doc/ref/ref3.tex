@@ -1199,7 +1199,7 @@ assignment.  This should only be implemented if \samp{del
 obj.\var{name}} is meaningful for the object.
 \end{methoddesc}
 
-\subsubsection{More attribute access for new-style classes \lable{new-style-attribute-access}}
+\subsubsection{More attribute access for new-style classes \label{new-style-attribute-access}}
 
 The following methods only apply to new-style classes.
 
@@ -1215,7 +1215,7 @@ name to access any attributes it needs to access, for example,
 \samp{object.__getattribute__(self, name)}.
 \end{methoddesc}
 
-\subsubsubsection{Implementing Descriptors \label{descriptors}}
+\subsubsection{Implementing Descriptors \label{descriptors}}
 
 The following methods only apply when an instance of the class
 containing the method (a so-called \emph{descriptor} class) is in
@@ -1235,13 +1235,13 @@ return the (computed) attribute value or raise an
 \end{methoddesc}
 
 \begin{methoddesc}[object]{__set__}{self, instance, value}
-Called to set the attribute on an instance \{instance} of the owner
+Called to set the attribute on an instance \var{instance} of the owner
 class to a new value, \var{value}.
 \end{methoddesc}
 
 \begin{methoddesc}[object]{__delete__}{self, instance}
-Called to delete the attribute on an instance \{instance} of the owner
-class.
+Called to delete the attribute on an instance \var{instance} of the
+owner class.
 \end{methoddesc}
 
 
