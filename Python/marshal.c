@@ -35,6 +35,8 @@
 #define TYPE_CODE	'c'
 #define TYPE_UNICODE	'u'
 #define TYPE_UNKNOWN	'?'
+#define TYPE_SET	'<'
+#define TYPE_FROZENSET  '>'
 
 typedef struct {
 	FILE *fp;
@@ -258,6 +260,38 @@ w_object(PyObject *v, WFILE *p)
 		}
 		w_object((PyObject *)NULL, p);
 	}
+	else if (PyAnySet_Check(v)) {
+		int pos;
+		PyObject *value, *it;
+
+		if (PyObject_TypeCheck(v, &PySet_Type))
+			w_byte(TYPE_SET, p);
+		else
+			w_byte(TYPE_FROZENSET, p);
+		n = PyObject_Size(v);
+		if (n == -1) {
+			p->depth--;
+			p->error = 1;
+			return;
+		}
+		w_long((long)n, p);
+		it = PyObject_GetIter(v);
+		if (it == NULL) {
+			p->depth--;
+			p->error = 1;
+			return;
+		}
+		while ((value = PyIter_Next(it)) != NULL) {
+			w_object(value, p);
+			Py_DECREF(value);
+		}
+		Py_DECREF(it);
+		if (PyErr_Occurred()) {
+			p->depth--;
+			p->error = 1;
+			return;
+		}
+	}
 	else if (PyCode_Check(v)) {
 		PyCodeObject *co = (PyCodeObject *)v;
 		w_byte(TYPE_CODE, p);
@@ -406,7 +440,7 @@ r_object(RFILE *p)
 {
 	/* NULL is a valid return value, it does not necessarily means that
 	   an exception is set. */
-	PyObject *v, *v2;
+	PyObject *v, *v2, *v3;
 	long i, n;
 	int type = r_byte(p);
 
@@ -634,6 +668,37 @@ r_object(RFILE *p)
 			v = NULL;
 		}
 		return v;
+
+	case TYPE_SET:
+	case TYPE_FROZENSET:
+		n = r_long(p);
+		if (n < 0) {
+			PyErr_SetString(PyExc_ValueError, "bad marshal data");
+			return NULL;
+		}
+		v = PyTuple_New((int)n);
+		if (v == NULL)
+			return v;
+		for (i = 0; i < n; i++) {
+			v2 = r_object(p);
+			if ( v2 == NULL ) {
+				if (!PyErr_Occurred())
+					PyErr_SetString(PyExc_TypeError,
+						"NULL object in marshal data");
+				Py_DECREF(v);
+				v = NULL;
+				break;
+			}
+			PyTuple_SET_ITEM(v, (int)i, v2);
+		}
+		if (type == TYPE_SET)
+			v3 = PyObject_CallFunctionObjArgs(
+				(PyObject *)&PySet_Type, v, NULL);
+		else
+			v3 = PyObject_CallFunctionObjArgs(
+				(PyObject *)&PyFrozenSet_Type, v, NULL);
+		Py_DECREF(v);
+		return v3;
 
 	case TYPE_CODE:
 		if (PyEval_GetRestricted()) {

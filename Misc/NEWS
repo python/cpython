@@ -16,6 +16,8 @@ Core and builtins
 - The peephole optimizer now performs simple constant folding in expressions:
       (2+3) --> (5).
 
+- set and frozenset objects can now be marshalled.  SF #1098985.
+
 
 Extension Modules
 -----------------
