@@ -391,25 +391,27 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     # If we know the week of the year and what day of that week, we can figure
     # out the Julian day of the year
     # Calculations below assume 0 is a Monday
-    if julian == -1 and week_of_year != -1 and weekday != -1 and year != -1:
-        # Adjust for U directive so that calculations are not dependent on
-        # directive used to figure out week of year
-        if weekday == 6 and week_of_year_start == 6:
-            week_of_year -= 1
-        # For some reason when Dec 31 falls on a Monday the week of the year is
-        # off by a week; verified on both OS X and Solaris.
-        elif weekday == 0 and week_of_year_start == 6 and week_of_year >= 52:
-            week_of_year += 1
+    if julian == -1 and week_of_year != -1 and weekday != -1:
         # Calculate how many days in week 0
         first_weekday = datetime_date(year, 1, 1).weekday()
         preceeding_days = 7 - first_weekday
         if preceeding_days == 7:
             preceeding_days = 0
+        # Adjust for U directive so that calculations are not dependent on
+        # directive used to figure out week of year
+        if weekday == 6 and week_of_year_start == 6:
+            week_of_year -= 1
+        # If a year starts and ends on a Monday but a week is specified to
+        # start on a Sunday we need to up the week to counter-balance the fact
+        # that with %W that first Monday starts week 1 while with %U that is
+        # week 0 and thus shifts everything by a week
+        if weekday == 0 and first_weekday == 0 and week_of_year_start == 6:
+            week_of_year += 1
         # If in week 0, then just figure out how many days from Jan 1 to day of
         # week specified, else calculate by multiplying week of year by 7,
         # adding in days in week 0, and the number of days from Monday to the
         # day of the week
-        if not week_of_year:
+        if week_of_year == 0:
             julian = 1 + weekday - first_weekday
         else:
             days_to_week = preceeding_days + (7 * (week_of_year - 1))
