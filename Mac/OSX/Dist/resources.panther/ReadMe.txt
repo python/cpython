@@ -22,13 +22,14 @@ you started quickly with MacPython and contains
 references to other documentation.
 
 Changes since the second build:
-- Package Manager has been updated to version 0.4:
+- Package Manager has been updated to version 0.5:
   - added commands to open database description page
     and standard experimental database.
   - the scrollbar had a mind of its own. Fixed.
   - show all packages in case of an error message.
   - easier maintainance (mainly important for me:-)
     in the light of micro-releases of OSX.
+  - some integration with external installers
 - IDE fixes:
   - better handling of various end-of-line schemes.
   - fixed "run with commandline python" to use pythonw.
