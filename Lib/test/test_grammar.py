@@ -268,10 +268,18 @@ print >> sys.stdout
 print >> sys.stdout, 0 or 1, 0 or 1,
 print >> sys.stdout, 0 or 1
 
-# test print >> None
+# test printing to an instance
 class Gulp:
 	def write(self, msg): pass
 
+gulp = Gulp()
+print >> gulp, 1, 2, 3
+print >> gulp, 1, 2, 3,
+print >> gulp
+print >> gulp, 0 or 1, 0 or 1,
+print >> gulp, 0 or 1
+
+# test print >> None
 def driver():
 	oldstdout = sys.stdout
 	sys.stdout = Gulp()
