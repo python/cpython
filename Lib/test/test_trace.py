@@ -141,6 +141,29 @@ ireturn_example.events = [(0, 'call'),
                           (4, 'line'),
                           (4, 'return')]
 
+# Tight loop with while(1) example (SF #765624)
+def tightloop_example():
+    items = range(0, 3)
+    try:
+        i = 0
+        while 1:
+            print items[i]; i+=1
+    except IndexError:
+        pass
+
+tightloop_example.events = [(0, 'call'),
+                            (1, 'line'),
+                            (2, 'line'),
+                            (3, 'line'),
+                            (4, 'line'),
+                            (5, 'line'),
+                            (5, 'line'),
+                            (5, 'line'),
+                            (5, 'exception'),
+                            (6, 'line'),
+                            (7, 'line'),
+                            (7, 'return')]
+
 class Tracer:
     def __init__(self):
         self.events = []
@@ -194,6 +217,8 @@ class TraceTestCase(unittest.TestCase):
         self.run_test2(settrace_and_raise)
     def test_10_ireturn(self):
         self.run_test(ireturn_example)
+    def test_11_tightloop(self):
+        self.run_test(tightloop_example)
 
 class RaisingTraceFuncTestCase(unittest.TestCase):
     def trace(self, frame, event, arg):
