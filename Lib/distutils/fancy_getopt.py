@@ -359,7 +359,7 @@ class FancyGetopt:
             lines = ['Option summary:']
 
         for option in self.option_table:
-            long, short, help = option_table[:3]
+            long, short, help = option[:3]
             text = wrap_text(help, text_width)
             if long[-1] == '=':
                 long = long[0:-1]
