@@ -1,6 +1,6 @@
 from collections import deque
 import unittest
-from test import test_support
+from test import test_support, seq_tests
 from weakref import proxy
 import copy
 import cPickle as pickle
@@ -378,93 +378,17 @@ class TestBasic(unittest.TestCase):
             d.append(1)
             gc.collect()
 
-def R(seqn):
-    'Regular generator'
-    for i in seqn:
-        yield i
-
-class G:
-    'Sequence using __getitem__'
-    def __init__(self, seqn):
-        self.seqn = seqn
-    def __getitem__(self, i):
-        return self.seqn[i]
-
-class I:
-    'Sequence using iterator protocol'
-    def __init__(self, seqn):
-        self.seqn = seqn
-        self.i = 0
-    def __iter__(self):
-        return self
-    def next(self):
-        if self.i >= len(self.seqn): raise StopIteration
-        v = self.seqn[self.i]
-        self.i += 1
-        return v
-
-class Ig:
-    'Sequence using iterator protocol defined with a generator'
-    def __init__(self, seqn):
-        self.seqn = seqn
-        self.i = 0
-    def __iter__(self):
-        for val in self.seqn:
-            yield val
-
-class X:
-    'Missing __getitem__ and __iter__'
-    def __init__(self, seqn):
-        self.seqn = seqn
-        self.i = 0
-    def next(self):
-        if self.i >= len(self.seqn): raise StopIteration
-        v = self.seqn[self.i]
-        self.i += 1
-        return v
-
-class N:
-    'Iterator missing next()'
-    def __init__(self, seqn):
-        self.seqn = seqn
-        self.i = 0
-    def __iter__(self):
-        return self
-
-class E:
-    'Test propagation of exceptions'
-    def __init__(self, seqn):
-        self.seqn = seqn
-        self.i = 0
-    def __iter__(self):
-        return self
-    def next(self):
-        3 // 0
-
-class S:
-    'Test immediate stop'
-    def __init__(self, seqn):
-        pass
-    def __iter__(self):
-        return self
-    def next(self):
-        raise StopIteration
-
-from itertools import chain, imap
-def L(seqn):
-    'Test multiple tiers of iterators'
-    return chain(imap(lambda x:x, R(Ig(G(seqn)))))
-
-
 class TestVariousIteratorArgs(unittest.TestCase):
 
     def test_constructor(self):
         for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
-            for g in (G, I, Ig, S, L, R):
+            for g in (seq_tests.Sequence, seq_tests.IterFunc,
+                      seq_tests.IterGen, seq_tests.IterFuncStop,
+                      seq_tests.itermulti, seq_tests.iterfunc):
                 self.assertEqual(list(deque(g(s))), list(g(s)))
-            self.assertRaises(TypeError, deque, X(s))
-            self.assertRaises(TypeError, deque, N(s))
-            self.assertRaises(ZeroDivisionError, deque, E(s))
+            self.assertRaises(TypeError, deque, seq_tests.IterNextOnly(s))
+            self.assertRaises(TypeError, deque, seq_tests.IterNoNext(s))
+            self.assertRaises(ZeroDivisionError, deque, seq_tests.IterGenExc(s))
 
     def test_iter_with_altered_data(self):
         d = deque('abcdefg')
