@@ -153,15 +153,82 @@ def handle_labels(doc):
         parent.removeChild(label)
 
 
+def fixup_trailing_whitespace(doc, wsmap):
+    queue = [doc]
+    while queue:
+        node = queue[0]
+        del queue[0]
+        if node.nodeType == xml.dom.core.ELEMENT \
+           and wsmap.has_key(node.tagName):
+            ws = wsmap[node.tagName]
+            children = node.childNodes
+            children.reverse()
+            if children[0].nodeType == xml.dom.core.TEXT:
+                data = string.rstrip(children[0].data) + ws
+                children[0].data = data
+            children.reverse()
+            # hack to get the title in place:
+            if node.tagName == "title" \
+               and node.parentNode.firstChild.nodeType == xml.dom.core.ELEMENT:
+                node.parentNode.insertBefore(doc.createText("\n  "),
+                                             node.parentNode.firstChild)
+        for child in node.childNodes:
+            if child.nodeType == xml.dom.core.ELEMENT:
+                queue.append(child)
+
+
+def normalize(doc):
+    for node in doc.childNodes:
+        if node.nodeType == xml.dom.core.ELEMENT:
+            node.normalize()
+
+
+def cleanup_trailing_parens(doc, element_names):
+    d = {}
+    for gi in element_names:
+        d[gi] = gi
+    rewrite_element = d.has_key
+    queue = []
+    for node in doc.childNodes:
+        if node.nodeType == xml.dom.core.ELEMENT:
+            queue.append(node)
+    while queue:
+        node = queue[0]
+        del queue[0]
+        if rewrite_element(node.tagName):
+            children = node.childNodes
+            if len(children) == 1 \
+               and children[0].nodeType == xml.dom.core.TEXT:
+                data = children[0].data
+                if data[-2:] == "()":
+                    children[0].data = data[:-2]
+        else:
+            for child in node.childNodes:
+                if child.nodeType == xml.dom.core.ELEMENT:
+                    queue.append(child)
+
+
 def convert(ifp, ofp):
     p = xml.dom.esis_builder.EsisBuilder()
     p.feed(ifp.read())
     doc = p.document
+    normalize(doc)
     handle_args(doc)
     handle_comments(doc)
     simplify(doc)
     handle_labels(doc)
+    fixup_trailing_whitespace(doc, {
+        "abstract": "\n",
+        "title": "",
+        "chapter": "\n\n",
+        "section": "\n\n",
+        "subsection": "\n\n",
+        "subsubsection": "\n\n",
+        "paragraph": "\n\n",
+        "subparagraph": "\n\n",
+        })
     cleanup_root_text(doc)
+    cleanup_trailing_parens(doc, ["function", "method", "cfunction"])
     try:
         ofp.write(doc.toxml())
         ofp.write("\n")
