@@ -14,7 +14,6 @@ The format of the table is largely undocumented; see the commented
 headers where the table is specified in main().  There is no provision 
 to load an alternate table from an external file.
 """
-__version__ = '$Revision$'
 
 import errno
 import getopt
@@ -113,9 +112,6 @@ class Conversion:
         self.table = table
         self.line = string.join(map(string.rstrip, ifp.readlines()), "\n")
         self.preamble = 1
-
-    def write_ordinal(self, ordinal):
-        self.write("-\\%%%d;\n" % ordinal)
 
     def err_write(self, msg):
         if DEBUG:
