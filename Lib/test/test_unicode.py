@@ -32,6 +32,13 @@ def test(method, input, output, *args):
 test('capitalize', u' hello ', u' hello ')
 test('capitalize', u'hello ', u'Hello ')
 
+test('count', u'aaa', 3, u'a')
+test('count', u'aaa', 0, u'b')
+test('count', 'aaa', 3, u'a')
+test('count', 'aaa', 0, u'b')
+test('count', u'aaa', 3, 'a')
+test('count', u'aaa', 0, 'b')
+
 test('title', u' hello ', u' Hello ')
 test('title', u'hello ', u'Hello ')
 test('title', u"fOrMaT thIs aS titLe String", u'Format This As Title String')
