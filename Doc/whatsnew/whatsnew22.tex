@@ -3,7 +3,7 @@
 % $Id$
 
 \title{What's New in Python 2.2}
-\release{0.03}
+\release{0.04}
 \author{A.M. Kuchling}
 \authoraddress{\email{akuchlin@mems-exchange.org}}
 \begin{document}
@@ -339,32 +339,46 @@ and Tim Peters, with other fixes from the Python Labs crew.}
 \section{Unicode Changes}
 
 Python's Unicode support has been enhanced a bit in 2.2.  Unicode
-strings are usually stored as UCS-2, as 16-bit unsigned integers.
+strings are usually stored as UTF-16, as 16-bit unsigned integers.
 Python 2.2 can also be compiled to use UCS-4, 32-bit unsigned
 integers, as its internal encoding by supplying
 \longprogramopt{enable-unicode=ucs4} to the configure script.  When
-built to use UCS-4, in theory Python could handle Unicode characters
-from U-00000000 to U-7FFFFFFF.  Being able to use UCS-4 internally is
-a necessary step to do that, but it's not the only step, and in Python
-2.2alpha1 the work isn't complete yet.  For example, the
-\function{unichr()} function still only accepts values from 0 to
-65535, and there's no \code{\e U} notation for embedding characters
-greater than 65535 in a Unicode string literal.  All this is the
-province of the still-unimplemented PEP 261, ``Support for `wide'
-Unicode characters''; consult it for further details, and please offer
-comments and suggestions on the proposal it describes.
+built to use UCS-4 (a ``wide Python''), the interpreter can natively
+handle Unicode characters from U+000000 to U+110000.  The range of
+legal values for the \function{unichr()} function has been expanded;
+it used to only accept values up to 65535, but in 2.2 will accept
+values from 0 to 0x110000.  Using a ``narrow Python'', an interpreter
+compiled to use UTF-16, values greater than 65535 will result in
+\function{unichr()} returning a string of length 2:
 
-Another change is much simpler to explain.
-Since their introduction, Unicode strings have supported an
-\method{encode()} method to convert the string to a selected encoding
-such as UTF-8 or Latin-1.  A symmetric
-\method{decode(\optional{\var{encoding}})} method has been added to
-both 8-bit and Unicode strings in 2.2, which assumes that the string
-is in the specified encoding and decodes it. This means that
-\method{encode()} and \method{decode()} can be called on both types of
-strings, and can be used for tasks not directly related to Unicode.
-For example, codecs have been added for UUencoding, MIME's base-64
-encoding, and compression with the \module{zlib} module.
+\begin{verbatim}
+>>> s = unichr(65536)
+>>> s
+u'\ud800\udc00'
+>>> len(s)
+2
+\end{verbatim}
+
+This possibly-confusing behaviour, breaking the intuitive invariant
+that \function{chr()} and\function{unichr()} always return strings of
+length 1, may be changed later in 2.2 depending on public reaction.
+
+All this is the province of the still-unimplemented PEP 261, ``Support
+for `wide' Unicode characters''; consult it for further details, and
+please offer comments and suggestions on the proposal it describes.
+
+Another change is much simpler to explain. Since their introduction,
+Unicode strings have supported an \method{encode()} method to convert
+the string to a selected encoding such as UTF-8 or Latin-1.  A
+symmetric \method{decode(\optional{\var{encoding}})} method has been
+added to 8-bit strings (though not to Unicode strings) in 2.2.
+\method{decode()} assumes that the string is in the specified encoding
+and decodes it, returning whatever is returned by the codec. 
+
+Using this new feature, codecs have been added for tasks not directly
+related to Unicode.  For example, codecs have been added for
+uu-encoding, MIME's base64 encoding, and compression with the
+\module{zlib} module:
 
 \begin{verbatim}
 >>> s = """Here is a lengthy piece of redundant, overly verbose,
@@ -610,6 +624,15 @@ changes are:
   been changed to use the new C-level interface.  (Contributed by Fred
   L. Drake, Jr.)
 
+  \item Another low-level API, primarily of interest to implementors
+  of Python debuggers and development tools, was added.
+  \cfunction{PyInterpreterState_Head()} and
+  \cfunction{PyInterpreterState_Next()} let a caller walk through all
+  the existing interpreter objects;
+  \cfunction{PyInterpreterState_ThreadHead()} and
+  \cfunction{PyThreadState_Next()} allow looping over all the thread
+  states for a given interpreter.  (Contributed by David Beazley.)
+
   % XXX is this explanation correct?  
   \item When presented with a Unicode filename on Windows, Python will
   now correctly convert it to a string using the MBCS encoding.
@@ -668,6 +691,7 @@ changes are:
 
 The author would like to thank the following people for offering
 suggestions and corrections to various drafts of this article: Fred
-Bremmer, Fred L. Drake, Jr., Tim Peters, Neil Schemenauer.  
+Bremmer, Fred L. Drake, Jr., Marc-Andr\'e Lemburg,
+Tim Peters, Neil Schemenauer, Guido van Rossum.  
 
 \end{document}
