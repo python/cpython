@@ -226,7 +226,7 @@ class install (Command):
         # about needing recursive variable expansion (shudder).
 
         py_version = (string.split(sys.version))[0]
-        prefix = get_config_vars('prefix', 'exec_prefix')
+        (prefix, exec_prefix) = get_config_vars('prefix', 'exec_prefix')
         self.config_vars = {'dist_name': self.distribution.get_name(),
                             'dist_version': self.distribution.get_version(),
                             'dist_fullname': self.distribution.get_fullname(),
