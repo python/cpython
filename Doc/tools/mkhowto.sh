@@ -1,5 +1,12 @@
 #! /usr/bin/env bash
 
+# This script may be invoked by naming it directly or via a shell alias,
+# but NOT through a symbolic link.  Perhaps a future version will allow
+# the use of a symbolic link.
+#
+# Using a symbolic link will cause the script to not be able to locate
+# its support files.
+
 MYDIR=`dirname $0`
 WORKDIR=`pwd`
 cd $MYDIR
