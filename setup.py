@@ -59,7 +59,7 @@ class PyBuildExt(build_ext):
             print 'removing sigcheck.o intrcheck.o'
             ar, library = sysconfig.get_config_vars('AR', 'LIBRARY')
             cmd = '%s d Modules/%s sigcheck.o intrcheck.o' % (ar, library)
-#            os.system(cmd)
+            os.system(cmd)
             
         build_ext.build_extensions(self)
 
@@ -68,7 +68,6 @@ class PyBuildExt(build_ext):
         # a fixed list
         lib_dirs = self.compiler.library_dirs[:]
         lib_dirs += ['/lib', '/usr/lib', '/usr/local/lib']
-#        std_lib_dirs = ['/lib', '/usr/lib']
         exts = []
 
         # XXX Omitted modules: gl, pure, dl, SGI-specific modules
@@ -83,8 +82,7 @@ class PyBuildExt(build_ext):
         exts.append( Extension('pcre', ['pcremodule.c', 'pypcre.c']) )
         exts.append( Extension('signal', ['signalmodule.c']) )
         
-        # XXX uncomment this with 2.0CVS
-        #exts.append( Extension('xreadlines', ['xreadlines.c']) )
+        exts.append( Extension('xreadlines', ['xreadlinesmodule.c']) )
 
         # array objects
         exts.append( Extension('array', ['arraymodule.c']) )
@@ -366,16 +364,11 @@ class PyBuildExt(build_ext):
         # done by the shell's "read" command and it may not be implemented on
         # every system.
 
-        # XXX need to add the old 7.x/4.x unsynced version numbers here
-        for tcl_version, tk_version in [('8.4', '8.4'),
-                                        ('8.3', '8.3'),
-                                        ('8.2', '8.2'),
-                                        ('8.1', '8.1'),
-                                        ('8.0', '8.0')]:
+        for version in ['8.4', '8.3', '8.2', '8.1', '8.0']:
             tklib = self.compiler.find_library_file(lib_dirs,
-                                                    'tk' + tk_version )
+                                                    'tk' + version )
             tcllib = self.compiler.find_library_file(lib_dirs,
-                                                     'tcl' + tcl_version )
+                                                     'tcl' + version )
             if tklib and tcllib:
                 # Exit the loop when we've found the Tcl/Tk libraries
                 break
@@ -395,11 +388,10 @@ class PyBuildExt(build_ext):
 
                 # Check for the include files on Debian, where
                 # they're put in /usr/include/{tcl,tk}X.Y
-                # XXX currently untested
                 debian_tcl_include = ( prefix + os.sep + 'include/tcl' +
-                                       tcl_version )
+                                       version )
                 debian_tk_include = ( prefix + os.sep + 'include/tk' +
-                                       tk_version )
+                                       version )
                 if os.path.exists(debian_tcl_include):
                     include_dirs = [debian_tcl_include, debian_tk_include]
                 else:
