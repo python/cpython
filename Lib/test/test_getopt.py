@@ -124,6 +124,7 @@ os.environ["POSIXLY_CORRECT"] = "1"
 opts, args = getopt.gnu_getopt(cmdline, 'ab:', ['alpha', 'beta='])
 verify(opts == [('-a', '')])
 verify(args == ['arg1', '-b', '1', '--alpha', '--beta=2'])
+del os.environ["POSIXLY_CORRECT"] 
 
 #------------------------------------------------------------------------------
 
