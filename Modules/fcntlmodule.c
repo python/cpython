@@ -344,6 +344,20 @@ all_ins(PyObject* d)
         if (ins(d, "LOCK_EX", (long)LOCK_EX)) return -1;
         if (ins(d, "LOCK_NB", (long)LOCK_NB)) return -1;
         if (ins(d, "LOCK_UN", (long)LOCK_UN)) return -1;
+/* GNU extensions, as of glibc 2.2.4 */
+#ifdef LOCK_MAND
+        if (ins(d, "LOCK_MAND", (long)LOCK_MAND)) return -1;
+#endif
+#ifdef LOCK_READ
+        if (ins(d, "LOCK_READ", (long)LOCK_READ)) return -1;
+#endif
+#ifdef LOCK_WRITE
+        if (ins(d, "LOCK_WRITE", (long)LOCK_WRITE)) return -1;
+#endif
+#ifdef LOCK_RW
+        if (ins(d, "LOCK_RW", (long)LOCK_RW)) return -1;
+#endif
+
 #ifdef F_DUPFD
         if (ins(d, "F_DUPFD", (long)F_DUPFD)) return -1;
 #endif
@@ -389,6 +403,62 @@ all_ins(PyObject* d)
 #ifdef F_UNLCK
         if (ins(d, "F_UNLCK", (long)F_UNLCK)) return -1;
 #endif
+/* LFS constants */
+#ifdef F_GETLK64
+        if (ins(d, "F_GETLK64", (long)F_GETLK64)) return -1;
+#endif
+#ifdef F_SETLK64
+        if (ins(d, "F_SETLK64", (long)F_SETLK64)) return -1;
+#endif
+#ifdef F_SETLKW64
+        if (ins(d, "F_SETLKW64", (long)F_SETLKW64)) return -1;
+#endif
+/* GNU extensions, as of glibc 2.2.4. */
+#ifdef F_SETLEASE
+        if (ins(d, "F_SETLEASE", (long)F_SETLEASE)) return -1;
+#endif
+#ifdef F_GETLEASE
+        if (ins(d, "F_GETLEASE", (long)F_GETLEASE)) return -1;
+#endif
+#ifdef F_NOTIFY
+        if (ins(d, "F_NOTIFY", (long)F_NOTIFY)) return -1;
+#endif
+/* Old BSD flock(). */
+#ifdef F_EXLCK
+        if (ins(d, "F_EXLCK", (long)F_EXLCK)) return -1;
+#endif
+#ifdef F_SHLCK
+        if (ins(d, "F_SHLCK", (long)F_SHLCK)) return -1;
+#endif
+
+/* For F_{GET|SET}FL */
+#ifdef FD_CLOEXEC
+        if (ins(d, "FD_CLOEXEC", (long)FD_CLOEXEC)) return -1;
+#endif
+
+/* For F_NOTIFY */
+#ifdef DN_ACCESS
+        if (ins(d, "DN_ACCESS", (long)DN_ACCESS)) return -1;
+#endif
+#ifdef DN_MODIFY
+        if (ins(d, "DN_MODIFY", (long)DN_MODIFY)) return -1;
+#endif
+#ifdef DN_CREATE
+        if (ins(d, "DN_CREATE", (long)DN_CREATE)) return -1;
+#endif
+#ifdef DN_DELETE
+        if (ins(d, "DN_DELETE", (long)DN_DELETE)) return -1;
+#endif
+#ifdef DN_RENAME
+        if (ins(d, "DN_RENAME", (long)DN_RENAME)) return -1;
+#endif
+#ifdef DN_ATTRIB
+        if (ins(d, "DN_ATTRIB", (long)DN_ATTRIB)) return -1;
+#endif
+#ifdef DN_MULTISHOT
+        if (ins(d, "DN_MULTISHOT", (long)DN_MULTISHOT)) return -1;
+#endif
+
 	return 0;
 }
 
