@@ -31,13 +31,16 @@ if time.gmtime(0)[0] == 1970:
 		t = utc[1] + _EPOCHCONVERT
 		return int(t)
 	def _time2utc(t):
-		t = t - _EPOCHCONVERT
+		t = int(t) - _EPOCHCONVERT
 		if t < -0x7fffffff:
 			t = t + 0x10000000L
 		return (0, int(t), 0)
 else:
 	def _utc2time(utc): return utc[1]
-	def _time2utc(t): return (0, t, 0)
+	def _time2utc(t):
+		if t > 0x7fffffff:
+			t = t - 0x100000000L
+		return (0, int(t), 0)
 
 # The old name of the error object:
 error = Carbon.File.Error
