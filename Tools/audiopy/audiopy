@@ -73,42 +73,97 @@ class MainWindow:
         # device
         self.__devctl = sunaudiodev.open('control')
         info = self.__devctl.getinfo()
-        
         #
-        # create the speaker/headphone radio button
-        label = Label(root, text='Output to:')
+        # where does input come from?
+        frame = Frame(root, bd=1, relief=RAISED)
+        frame.grid(row=0, column=0)
+        label = Label(frame, text='Input From:')
+        label.grid(row=0, column=0, sticky=E)
+        self.__micvar = IntVar()
+        btn = Checkbutton(frame,
+                          text='Microphone',
+                          variable=self.__micvar,
+                          onvalue=MICROPHONE,
+                          command=self.__pushtodev,
+                          underline=0)
+        btn.grid(row=0, column=1, sticky=W)
+        root.bind('<Alt-m>', self.__mic)
+        root.bind('<Alt-M>', self.__mic)
+        self.__lineinvar = IntVar()
+        btn = Checkbutton(frame,
+                          text='Line In',
+                          variable=self.__lineinvar,
+                          onvalue=LINE_IN,
+                          command=self.__pushtodev,
+                          underline=5)
+        btn.grid(row=1, column=1, sticky=W)
+        root.bind('<Alt-i>', self.__linein)
+        root.bind('<Alt-I>', self.__linein)
+        self.__cdvar = IntVar()
+        btn = Checkbutton(frame,
+                          text='CD',
+                          variable=self.__cdvar,
+                          onvalue=CD,
+                          command=self.__pushtodev,
+                          underline=0)
+        btn.grid(row=2, column=1, sticky=W)
+        root.bind('<Alt-c>', self.__cd)
+        root.bind('<Alt-C>', self.__cd)
+        #
+        # where does output go to?
+        frame = Frame(root, bd=1, relief=RAISED)
+        frame.grid(row=1, column=0)
+        label = Label(frame, text='Output To:')
         label.grid(row=0, column=0, sticky=E)
         self.__spkvar = IntVar()
-        btn = Checkbutton(root,
+        btn = Checkbutton(frame,
                           text='Speaker',
                           variable=self.__spkvar,
                           onvalue=SPEAKER,
-                          command=self.__outputto,
+                          command=self.__pushtodev,
                           underline=0)
         btn.grid(row=0, column=1, sticky=W)
         root.bind('<Alt-s>', self.__speaker)
         root.bind('<Alt-S>', self.__speaker)
         self.__headvar = IntVar()
-        btn = Checkbutton(root,
+        btn = Checkbutton(frame,
                           text='Headphones',
                           variable=self.__headvar,
                           onvalue=HEADPHONE,
-                          command=self.__outputto,
+                          command=self.__pushtodev,
                           underline=0)
         btn.grid(row=1, column=1, sticky=W)
         root.bind('<Alt-h>', self.__headphones)
         root.bind('<Alt-H>', self.__headphones)
         self.__linevar = IntVar()
-        btn = Checkbutton(root,
+        btn = Checkbutton(frame,
                           variable=self.__linevar,
                           onvalue=LINE_OUT,
-                          text='Line out',
-                          command=self.__outputto,
+                          text='Line Out',
+                          command=self.__pushtodev,
                           underline=0)
         btn.grid(row=2, column=1, sticky=W)
         root.bind('<Alt-l>', self.__lineout)
         root.bind('<Alt-L>', self.__lineout)
-
+        #
+        # do we need to poll for changes?
+        self.__needtopoll = 1
+        try:
+            fd = self.__devctl.fileno()
+            self.__needtopoll = 0
+        except AttributeError:
+            pass
+        else:
+            import struct
+            import fcntl
+            import signal
+            import FCNTL
+            import STROPTS
+            # set up the signal handler
+            signal.signal(signal.SIGPOLL, self.__update)
+            fcntl.ioctl(fd, STROPTS.I_SETSIG, STROPTS.S_MSG)
+            self.__update()
+        
     def __quit(self, event=None):
         self.__devctl.close()
         self.__root.quit()
@@ -117,7 +172,10 @@ class MainWindow:
         # Exercise the Python interpreter regularly so keyboard interrupts get
         # through.
         self.__tkroot.tk.createtimerhandler(KEEPALIVE_TIMER, self.__keepalive)
-        #
+        if self.__needtopoll:
+            self.__update()
+
+    def __update(self, num=None, frame=None):
         # We have to poll because the device could have changed state and the
         # underlying module does not support the SIGPOLL notification
         # interface.
@@ -125,12 +183,18 @@ class MainWindow:
         self.__spkvar.set(info.o_port & SPEAKER)
         self.__headvar.set(info.o_port & HEADPHONE)
         self.__linevar.set(info.o_port & LINE_OUT)
+        self.__micvar.set(info.i_port & MICROPHONE)
+        self.__lineinvar.set(info.i_port & LINE_IN)
+        self.__cdvar.set(info.i_port & CD)
 
-    def __outputto(self, event=None):
+    def __pushtodev(self, event=None):
         info = self.__devctl.getinfo()
         info.o_port = self.__spkvar.get() + \
                       self.__headvar.get() + \
                       self.__linevar.get()
+        info.i_port = self.__micvar.get() + \
+                      self.__lineinvar.get() + \
+                      self.__cdvar.get()
         self.__devctl.setinfo(info)
 
     def __getset(self, var, onvalue):
@@ -138,7 +202,16 @@ class MainWindow:
             var.set(0)
         else:
             var.set(onvalue)
-        self.__outputto()
+        self.__pushtodev()
+
+    def __mic(self, event=None):
+        self.__getset(self.__micvar, MICROPHONE)
+
+    def __linein(self, event=None):
+        self.__getset(self.__lineinvar, LINE_IN)
+
+    def __cd(self, event=None):
+        self.__getset(self.__cdvar, CD)
 
     def __speaker(self, event=None):
         self.__getset(self.__spkvar, SPEAKER)
@@ -165,7 +238,10 @@ def main():
     if len(sys.argv) == 1:
         # GUI
         w = MainWindow()
-        w.start()
+        try:
+            w.start()
+        except KeyboardInterrupt:
+            pass
         return
 
     # command line
