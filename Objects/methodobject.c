@@ -160,7 +160,7 @@ meth_compare(a, b)
 	PyCFunctionObject *a, *b;
 {
 	if (a->m_self != b->m_self)
-		return PyObject_Compare(a->m_self, b->m_self);
+		return (a->m_self < b->m_self) ? -1 : 1;
 	if (a->m_ml->ml_meth == b->m_ml->ml_meth)
 		return 0;
 	if (strcmp(a->m_ml->ml_name, b->m_ml->ml_name) < 0)
