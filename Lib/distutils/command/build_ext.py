@@ -178,10 +178,9 @@ class BuildExt (Command):
                 objects.extend (extra_objects)
             libraries = build_info.get ('libraries')
             library_dirs = build_info.get ('library_dirs')
-
             ext_filename = self.extension_filename (extension_name)
             self.compiler.link_shared_object (objects, ext_filename,
-                                              libraries, library_dirs)
+                                              libraries, library_dirs, build_info)
 
     # build_extensions ()
 
