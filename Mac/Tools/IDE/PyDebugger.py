@@ -345,7 +345,7 @@ class Debugger(bdb.Bdb):
 				self.w.panes.bottom.src.source.set(editor.get(), filename)
 			else:
 				try:
-					f = open(filename, 'rT')
+					f = open(filename, 'rU')
 					data = f.read()
 					f.close()
 				except IOError:
@@ -360,7 +360,7 @@ class Debugger(bdb.Bdb):
 							if f:
 								f.close()
 							if f and suff == '.py':
-								f = open(filename, 'rT')
+								f = open(filename, 'rU')
 								data = f.read()
 								f.close()
 								self.w.panes.bottom.src.source.set(data, filename)
