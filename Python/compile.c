@@ -179,6 +179,8 @@ code_hash(PyCodeObject *co)
 	return h;
 }
 
+/* XXX code objects need to participate in GC? */
+
 PyTypeObject PyCode_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -2132,8 +2134,13 @@ com_make_closure(struct compiling *c, PyCodeObject *co)
 		else /* (reftype == FREE) */
 			arg = com_lookup_arg(c->c_freevars, name);
 		if (arg == -1) {
-			fprintf(stderr, "lookup %s in %s %d %d\n",
-				PyObject_REPR(name), c->c_name, reftype, arg);
+			fprintf(stderr, "lookup %s in %s %d %d\n"
+				"freevars of %s: %s\n",
+				PyObject_REPR(name), 
+				c->c_name, 
+				reftype, arg,
+				PyString_AS_STRING(co->co_name),
+				PyObject_REPR(co->co_freevars));
 			Py_FatalError("com_make_closure()");
 		}
 		com_addoparg(c, LOAD_CLOSURE, arg);
@@ -4424,8 +4431,8 @@ symtable_update_free_vars(struct symtable *st)
 		child = (PySymtableEntryObject *)
 			PyList_GET_ITEM(ste->ste_children, i);
 		while (PyDict_Next(child->ste_symbols, &pos, &name, &o)) {
-			int v = PyInt_AS_LONG(o);
-			if (!(is_free(v)))
+			int flags = PyInt_AS_LONG(o);
+			if (!(is_free(flags)))
 				continue; /* avoids indentation */
 			if (list == NULL) {
 				list = PyList_New(0);
@@ -4438,18 +4445,24 @@ symtable_update_free_vars(struct symtable *st)
 				return -1;
 			}
 		}
-/*
-		if (st->st_nested_scopes == 0 
-		    && list && PyList_GET_SIZE(list) > 0) {
-			fprintf(stderr, "function %s has children with "
-				"the following free vars:\n%s\n",
-				PyString_AS_STRING(ste->ste_name),
-				PyObject_REPR(list));
-			continue; 
-		}
-*/
 		for (j = 0; list && j < PyList_GET_SIZE(list); j++) {
+			PyObject *v;
 			name = PyList_GET_ITEM(list, j);
+			v = PyDict_GetItem(ste->ste_symbols, name);
+			/* If a name N is declared global in scope A and
+			   referenced in scope B contained (perhaps
+			   indirectly) in A and there are no scopes
+			   with bindings for N between B and A, then N
+			   is global in B.
+			*/
+			if (v) {
+				int flags = PyInt_AS_LONG(v); 
+				if (flags & DEF_GLOBAL) {
+					symtable_undo_free(st, child->ste_id,
+							   name);
+					continue;
+				}
+			}
 			if (ste->ste_nested) {
 				if (symtable_add_def_o(st, ste->ste_symbols,
 						       name, def) < 0) {
@@ -4481,13 +4494,14 @@ symtable_check_global(struct symtable *st, PyObject *child, PyObject *name)
 	PyObject *o;
 	int v;
 	PySymtableEntryObject *ste = st->st_cur;
-
+			
 	if (ste->ste_type == TYPE_CLASS)
 		return symtable_undo_free(st, child, name);
 	o = PyDict_GetItem(ste->ste_symbols, name);
 	if (o == NULL)
 		return symtable_undo_free(st, child, name);
 	v = PyInt_AS_LONG(o);
+
 	if (is_free(v) || (v & DEF_GLOBAL)) 
 		return symtable_undo_free(st, child, name);
 	else
@@ -4506,6 +4520,7 @@ symtable_undo_free(struct symtable *st, PyObject *id,
 	ste = (PySymtableEntryObject *)PyDict_GetItem(st->st_symbols, id);
 	if (ste == NULL)
 		return -1;
+
 	info = PyDict_GetItem(ste->ste_symbols, name);
 	if (info == NULL)
 		return 0;
@@ -4938,6 +4953,7 @@ symtable_global(struct symtable *st, node *n)
 	int i;
 
 	if (st->st_nscopes == 1) {
+		/* XXX must check that we are compiling file_input */
 		if (symtable_warn(st, 
 		  "global statement has no meaning at module level") < 0)
 			return;
