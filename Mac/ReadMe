@@ -68,10 +68,10 @@ If you have to do this anyway you should remove your preference file, run
 ConfigurePython and remove all .pyc files.
 
 If you don't have enough memory: the sizes choosen are somewhat
-arbitrary. Try lowering the application sizes in the finder "get info"
-window, and seeing whether the resulting python is still usable. Some
-modules (Tkinter comes to mind) need a lot of memory, so it may also be
-necessary to increase the application size.
+arbitrary, and they are as high as they are so that test.autotest runs with fewer
+problems. An average Python program can make do with much less memory.
+Try lowering the application sizes in the finder "get info"
+window, and seeing whether the resulting python is still usable.
 
 After installing
 ----------------
@@ -175,6 +175,10 @@ Goodger, Chris Barker, Luc Lefebvre, Tattoo Mabonzo K., Russell Finn,
 Tom Bridgman and all the other people who provided feedback, code or both!
 
 MacPython includes waste, a TextEdit replacement which is (c) 1998 Marco Piovanelli.
+
+A special mention is deserved by Matthias Neeracher, who has written the brilliant
+unix-compatible GUSI I/O library, without which MacPython would not have sockets
+or select, and to Alexandre Parenteau, who has ported this library to Carbon.
 
 Feedback
 --------
