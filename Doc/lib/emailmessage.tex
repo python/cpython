@@ -354,15 +354,18 @@ instead of \mailheader{Content-Type}.
 Parameter keys are always compared case insensitively.  The return
 value can either be a string, or a 3-tuple if the parameter was
 \rfc{2231} encoded.  When it's a 3-tuple, the elements of the value are of
-the form \code{(CHARSET, LANGUAGE, VALUE)}, where \code{LANGUAGE} may
-be the empty string.  Your application should be prepared to deal with
-3-tuple return values, which it can convert to a Unicode string like
-so:
+the form \code{(CHARSET, LANGUAGE, VALUE)}.  Note that both \code{CHARSET} and
+\code{LANGUAGE} can be \code{None}, in which case you should consider
+\code{VALUE} to be encoded in the \code{us-ascii} charset.  You can
+usually ignore \code{LANGUAGE}.
+
+Your application should be prepared to deal with 3-tuple return
+values, and can convert the parameter to a Unicode string like so:
 
 \begin{verbatim}
 param = msg.get_param('foo')
 if isinstance(param, tuple):
-    param = unicode(param[2], param[0])
+    param = unicode(param[2], param[0] or 'us-ascii')
 \end{verbatim}
 
 In any case, the parameter value (either the returned string, or the
