@@ -1566,6 +1566,25 @@ class Tributton(Button):
 		self['fg']               = self['bg']
 		self['activebackground'] = self['bg']
 
+######################################################################
+# Test:
+
+def _test():
+	root = Tk()
+	label = Label(root, text="Proof-of-existence test for Tk")
+	label.pack()
+	test = Button(root, text="Click me!",
+		      command=lambda root=root: root.test.config(
+			      text="[%s]" % root.test['text']))
+	test.pack()
+	root.test = test
+	quit = Button(root, text="QUIT", command=root.destroy)
+	quit.pack()
+	root.mainloop()
+
+if __name__ == '__main__':
+	_test()
+
 
 # Emacs cruft
 # Local Variables:
