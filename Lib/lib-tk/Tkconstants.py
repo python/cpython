@@ -5,7 +5,7 @@
 NO=FALSE=OFF=0
 YES=TRUE=ON=1
 
-# -anchor
+# -anchor and -sticky
 N='n'
 S='s'
 W='w'
@@ -14,6 +14,8 @@ NW='nw'
 SW='sw'
 NE='ne'
 SE='se'
+NS='ns'
+EW='ew'
 CENTER='center'
 
 # -fill
