@@ -92,7 +92,7 @@ register_dialect("excel-tab", excel_tab)
 
 
 class DictReader:
-    def __init__(self, f, fieldnames, restkey=None, restval=None,
+    def __init__(self, f, fieldnames=None, restkey=None, restval=None,
                  dialect="excel", *args, **kwds):
         self.fieldnames = fieldnames    # list of keys for the dict
         self.restkey = restkey          # key to catch long rows
@@ -104,6 +104,10 @@ class DictReader:
 
     def next(self):
         row = self.reader.next()
+        if self.fieldnames is None:
+            self.fieldnames = row
+            row = self.reader.next()
+
         # unlike the basic reader, we prefer not to return blanks,
         # because we will typically wind up with a dict full of None
         # values

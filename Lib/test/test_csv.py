@@ -382,7 +382,6 @@ class TestQuotedEscapedExcel(TestCsvBase):
     def test_read_escape_fieldsep(self):
         self.readerAssertEqual('"abc\\,def"\r\n', [['abc,def']])
 
-# Disabled, pending support in csv.utils module
 class TestDictFields(unittest.TestCase):
     ### "long" means the row is longer than the number of fieldnames
     ### "short" means there are fewer elements in the row than fieldnames
@@ -401,6 +400,10 @@ class TestDictFields(unittest.TestCase):
                                 fieldnames=["f1", "f2", "f3"])
         self.assertEqual(reader.next(), {"f1": '1', "f2": '2', "f3": 'abc'})
 
+    def test_read_dict_no_fieldnames(self):
+        reader = csv.DictReader(StringIO("f1,f2,f3\r\n1,2,abc\r\n"))
+        self.assertEqual(reader.next(), {"f1": '1', "f2": '2', "f3": 'abc'})
+
     def test_read_long(self):
         reader = csv.DictReader(StringIO("1,2,abc,4,5,6\r\n"),
                                 fieldnames=["f1", "f2"])
@@ -410,6 +413,12 @@ class TestDictFields(unittest.TestCase):
     def test_read_long_with_rest(self):
         reader = csv.DictReader(StringIO("1,2,abc,4,5,6\r\n"),
                                 fieldnames=["f1", "f2"], restkey="_rest")
+        self.assertEqual(reader.next(), {"f1": '1', "f2": '2',
+                                         "_rest": ["abc", "4", "5", "6"]})
+
+    def test_read_long_with_rest_no_fieldnames(self):
+        reader = csv.DictReader(StringIO("f1,f2\r\n1,2,abc,4,5,6\r\n"),
+                                restkey="_rest")
         self.assertEqual(reader.next(), {"f1": '1', "f2": '2',
                                          "_rest": ["abc", "4", "5", "6"]})
 
