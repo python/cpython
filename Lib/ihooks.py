@@ -351,9 +351,6 @@ class ModuleImporter(_Verbose):
 	    del __builtin__.unload
 
 
-# XXX Some experimental hacks -- importing ihooks auto-installs!
-# XXX (That's supposed to be transparent anyway...)
-
 default_importer = None
 current_importer = None
 
@@ -365,6 +362,3 @@ def install(importer = None):
 def uninstall():
     global current_importer
     current_importer.uninstall()
-
-
-install()
