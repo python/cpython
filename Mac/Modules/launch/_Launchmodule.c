@@ -15,6 +15,10 @@
     }} while(0)
 
 
+#if PY_VERSION_HEX < 0x02040000
+PyObject *PyMac_GetOSErrException(void);
+#endif
+
 #include <ApplicationServices/ApplicationServices.h>
 
 /*
