@@ -3219,6 +3219,19 @@ def subtype_resurrection():
     # it as a leak.
     del C.__del__
 
+def slottrash():
+    # Deallocating deeply nested slotted trash caused stack overflows
+    if verbose:
+        print "Testing slot trash..."
+    class trash(object):
+        __slots__ = ['x']
+        def __init__(self, x):
+            self.x = x
+    o = None
+    for i in xrange(50000):
+        o = trash(o)
+    del o
+
 def do_this_first():
     if verbose:
         print "Testing SF bug 551412 ..."
@@ -3310,6 +3323,7 @@ def test_main():
     copy_setstate()
     slices()
     subtype_resurrection()
+    slottrash()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
