@@ -44,6 +44,20 @@ syntax_table['_'].append('word')
 #
 #
 
+def valid_identifier(id):
+    if len(id) == 0:
+	return 0
+    if ('word' not in syntax_table[id[0]]) or ('digit' in syntax_table[id[0]]):
+	return 0
+    for char in id[1:]:
+	if 'word' not in syntax_table[char]:
+	    return 0
+    return 1
+
+#
+#
+#
+
 def match(pattern, string, flags=0):
     return compile(pattern, flags).match(string)
 
@@ -787,13 +801,15 @@ def compile(pattern, flags=0):
 			raise error, 'extension ends prematurely'
 
 		    elif pattern[index] == '<':
-			# Handle Python symbolic group names (?<...>...)
+			# Handle Python symbolic group names (?P<...>...)
 			index = index + 1
 			end = string.find(pattern, '>', index)
 			if end == -1:
 			    raise error, 'no end to symbolic group name'
 			name = pattern[index:end]
-			# XXX check syntax of name
+			if not valid_identifier(name):
+			    raise error, ('symbolic group name must be a '
+					  'valid identifier')
 			index = end + 1
 			groupindex[name] = register
 			stack.append([OpenParen(register)])
@@ -808,7 +824,7 @@ def compile(pattern, flags=0):
 			if end == -1:
 			    raise error, 'no ) to end symbolic group name'
 			name = pattern[start:end]
-			if name not in groupindex:
+			if name not in groupindex.keys():
 			    raise error, ('symbolic group name ' + name + \
 					  ' has not been used yet')
 			stack.append([MatchMemory(groupindex[name])])
@@ -1148,8 +1164,11 @@ def compile(pattern, flags=0):
 		stack.append([Exact(char)])
 
 	elif char == '[':
+	    # compile character class
+	    
 	    if index >= len(pattern):
-		raise error, 'incomplete set'
+		raise error, 'unclosed character class'
+	    
 	    negate = 0
 	    last = ''
 	    set = []
@@ -1157,42 +1176,64 @@ def compile(pattern, flags=0):
 	    if pattern[index] == '^':
 		negate = 1
 		index = index + 1
-	    if index >= len(pattern):
-		raise error, 'incomplete set'
+		if index >= len(pattern):
+		    raise error, 'unclosed character class'
 
+	    if pattern[index] == ']':
+		set.append(']')
+		index = index + 1
+		if index >= len(pattern):
+		    raise error, 'unclosed character class'
+		
+	    elif pattern[index] == '-':
+		set.append('-')
+		index = index + 1
+		if index >= len(pattern):
+		    raise error, 'unclosed character class'
+		
 	    while (index < len(pattern)) and (pattern[index] != ']'):
 		next = pattern[index]
 		index = index + 1
 		if next == '-':
-		    if last == '':
-			raise error, 'improper use of range in character set'
+		    if index >= len(pattern):
+			raise error, 'incomplete range in character class'
 
-		    start = last
-		    
-		    if (index >= len(pattern)) or (pattern[index] == ']'):
-			raise error, 'incomplete range in set'
-		    
-		    if pattern[index] == '\\':
-			escape_type, value, index = expand_escape(pattern,
-								  index + 1,
-								  CHARCLASS)
-
-			if escape_type == CHAR:
-			    end = value
-			else:
-			    raise error, ('illegal escape in character '
-					  'class range')
-		    else:
-			end = pattern[index]
+		    elif pattern[index] == ']':
+			set.append('-')
 			
-		    if start > end:
-			raise error, 'range arguments out of order in set'
-		    for char in map(chr, range(ord(start), ord(end) + 1)):
-			if char not in set:
-			    set.append(char)
+		    else:
+			if last == '':
+			    raise error, ('improper use of range in '
+					  'character class')
+
+			start = last
+			
+			if pattern[index] == '\\':
+			    escape_type,
+			    value,
+			    index = expand_escape(pattern,
+						  index + 1,
+						  CHARCLASS)
+
+			    if escape_type == CHAR:
+				end = value
+				
+			    else:
+				raise error, ('illegal escape in character '
+					      'class range')
+			else:
+			    end = pattern[index]
+			    index = index + 1
+
+			if start > end:
+			    raise error, ('range arguments out of order '
+					  'in character class')
+			
+			for char in map(chr, range(ord(start), ord(end) + 1)):
+			    if char not in set:
+				set.append(char)
 			    
-		    last = ''
-		    index = index + 1
+			last = ''
 
 		elif next == '\\':
 		    # expand syntax meta-characters and add to set
