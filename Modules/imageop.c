@@ -32,6 +32,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 
 #define CHARP(cp, xmax, x, y) ((char *)(cp+y*xmax+x))
+#define SHORTP(cp, xmax, x, y) ((short *)(cp+2*(y*xmax+x)))
 #define LONGP(cp, xmax, x, y) ((long *)(cp+4*(y*xmax+x)))
 
 static object *ImageopError;
@@ -42,6 +43,7 @@ imageop_crop(self, args)
     object *args;
 {
     char *cp, *ncp;
+    short *nsp;
     long *nlp;
     int len, size, x, y, newx1, newx2, newy1, newy2;
     int ix, iy, xstep, ystep;
@@ -51,8 +53,8 @@ imageop_crop(self, args)
 		  &newx1, &newy1, &newx2, &newy2) )
       return 0;
     
-    if ( size != 1 && size != 4 ) {
-	err_setstr(ImageopError, "Size should be 1 or 4");
+    if ( size != 1 && size != 2 && size != 4 ) {
+	err_setstr(ImageopError, "Size should be 1, 2 or 4");
 	return 0;
     }
     if ( len != size*x*y ) {
@@ -67,6 +69,7 @@ imageop_crop(self, args)
     if ( rv == 0 )
       return 0;
     ncp = (char *)getstringvalue(rv);
+    nsp = (short *)ncp;
     nlp = (long *)ncp;
     newy2 += ystep;
     newx2 += xstep;
@@ -76,8 +79,9 @@ imageop_crop(self, args)
 	      if ( size == 1 ) *ncp++ = 0;
 	      else             *nlp++ = 0;
 	    } else {
-		if ( size == 1 ) *ncp++ = *CHARP(cp, x, ix, iy);
-		else             *nlp++ = *LONGP(cp, x, ix, iy);
+		if      ( size == 1 ) *ncp++ = *CHARP(cp, x, ix, iy);
+		else if ( size == 2 ) *nsp++ = *SHORTP(cp, x, ix, iy);
+		else                  *nlp++ = *LONGP(cp, x, ix, iy);
 	    }
 	}
     }
@@ -90,6 +94,7 @@ imageop_scale(self, args)
     object *args;
 {
     char *cp, *ncp;
+    short *nsp;
     long *nlp;
     int len, size, x, y, newx, newy;
     int ix, iy;
@@ -99,8 +104,8 @@ imageop_scale(self, args)
     if ( !getargs(args, "(s#iiiii)", &cp, &len, &size, &x, &y, &newx, &newy) )
       return 0;
     
-    if ( size != 1 && size != 4 ) {
-	err_setstr(ImageopError, "Size should be 1 or 4");
+    if ( size != 1 && size != 2 && size != 4 ) {
+	err_setstr(ImageopError, "Size should be 1, 2 or 4");
 	return 0;
     }
     if ( len != size*x*y ) {
@@ -112,13 +117,15 @@ imageop_scale(self, args)
     if ( rv == 0 )
       return 0;
     ncp = (char *)getstringvalue(rv);
+    nsp = (short *)ncp;
     nlp = (long *)ncp;
     for( iy = 0; iy < newy; iy++ ) {
 	for ( ix = 0; ix < newx; ix++ ) {
 	    oix = ix * x / newx;
 	    oiy = iy * y / newy;
-	    if ( size == 1 ) *ncp++ = *CHARP(cp, x, oix, oiy);
-	    else             *nlp++ = *LONGP(cp, x, oix, oiy);
+	    if      ( size == 1 ) *ncp++ = *CHARP(cp, x, oix, oiy);
+	    else if ( size == 2 ) *nsp++ = *SHORTP(cp, x, oix, oiy);
+	    else                  *nlp++ = *LONGP(cp, x, oix, oiy);
 	}
     }
     return rv;
