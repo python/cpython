@@ -1,5 +1,6 @@
 import sys
 import unittest
+import UserList
 import weakref
 
 import test_support
@@ -148,6 +149,23 @@ class ReferencesTestCase(TestBase):
     def test_basic_proxy(self):
         o = C()
         self.check_proxy(o, weakref.proxy(o))
+
+        L = UserList.UserList()
+        p = weakref.proxy(L)
+        self.failIf(p, "proxy for empty UserList should be false")
+        p.append(12)
+        self.assertEqual(len(L), 1)
+        self.failUnless(p, "proxy for non-empty UserList should be true")
+        p[:] = [2, 3]
+        self.assertEqual(len(L), 2)
+        self.assertEqual(len(p), 2)
+        self.failUnless(3 in p, "proxy didn't support __contains__() properly")
+        p[1] = 5
+        self.assertEqual(L[1], 5)
+        self.assertEqual(p[1], 5)
+        L2 = UserList.UserList(L)
+        p2 = weakref.proxy(L2)
+        self.assertEqual(p, p2)
 
     def test_callable_proxy(self):
         o = Callable()
