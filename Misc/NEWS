@@ -40,6 +40,9 @@ Extension modules
 Library
 -------
 
+- dircache now passes exceptions to the caller, instead of returning
+  empty lists.
+
 - The bsddb module and dbhash module now support the iterator and
   mapping protocols which make them more substitutable for dictionaries
   and shelves.
