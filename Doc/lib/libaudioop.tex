@@ -43,7 +43,7 @@ This function returns the average over all samples in the fragment.
 
 \begin{funcdesc}{avgpp}{fragment\, width}
 This function returns the average peak-peak value over all samples in
-the fragment. No filtering is done, so the useability of this routine
+the fragment. No filtering is done, so the usefulness of this routine
 is questionable.
 \end{funcdesc}
 
@@ -74,9 +74,9 @@ match \var{reference} as good as possible to a portion of
 (conceptually) does this by taking slices out of \var{fragment}, using
 \code{findfactor} to compute the best match, and minimizing the
 result.
-It returns a tuple \code{(\var{offset}, \var{factor})} with offset the
+It returns a tuple \code{(\var{offset}, \var{factor})} with \var{offset} the
 (integer) offset into \var{fragment} where the optimal match started
-and \var{factor} the floating-point factor as per findfactor.
+and \var{factor} the floating-point factor as per \code{findfactor}.
 \end{funcdesc}
 
 \begin{funcdesc}{findmax}{fragment\, length}
@@ -101,8 +101,8 @@ This function converts samples between 1-, 2- and 4-byte formats.
 This function converts samples to 4 bit Intel/DVI ADPCM encoding.
 ADPCM coding is an adaptive coding scheme, whereby each 4 bit number
 is the difference between one sample and the next, divided by a
-(varying) step. The Intel/DVI ADPCM algorythm has been selected for
-use by the IMA, so may well become a standard.
+(varying) step. The Intel/DVI ADPCM algorithm has been selected for
+use by the IMA, so it may well become a standard.
 
 \code{State} is a tuple containing the state of the coder. The coder
 returns a tuple \code{(\var{adpcmfrag}, \var{newstate})}, and the
@@ -120,7 +120,7 @@ discouraged.
 
 \begin{funcdesc}{lin2ulaw}{fragment\, width}
 This function converts samples in the audio fragment to U-LAW encoding
-and returns this as a python string. U-LAW is an audio encoding format
+and returns this as a Python string. U-LAW is an audio encoding format
 whereby you get a dynamic range of about 14 bits using only 8 bit
 samples. It is used by the Sun audio hardware, among others.
 \end{funcdesc}

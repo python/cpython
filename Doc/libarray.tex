@@ -20,14 +20,14 @@ which is a single character.  The following type codes are defined:
 \end{tableiii}
 
 The actual representation of values is determined by the machine
-architecture (strictly spoken, by the C implementation).  The actual
+architecture (strictly speaking, by the C implementation).  The actual
 size can be accessed through the \var{typecode} attribute.
 
 The module defines the following function:
 
 \renewcommand{\indexsubitem}{(in module array)}
 
-\begin{funcdesc}{array}{typecode\, initializer}
+\begin{funcdesc}{array}{typecode\optional{\, initializer}}
 Return a new array whose items are restricted by \var{typecode}, and
 initialized from the optional \var{initializer} value, which must be a
 list or a string.  The list or string is passed to the new array's
@@ -51,7 +51,7 @@ Append a new item with value \var{x} to the end of the array.
 
 \begin{funcdesc}{byteswap}{x}
 ``Byteswap'' all items of the array.  This is only supported for
-integer values.  It is useful when reading data ffrom a file written
+integer values.  It is useful when reading data from a file written
 on a machine with a different byte order.
 \end{funcdesc}
 

@@ -854,7 +854,7 @@ class Wobj:
 		self.data = self.data + data
 		
 # ignore these commands
-ignoredcommands = ('bcode', 'ecode')
+ignoredcommands = ('bcode', 'ecode', 'optional')
 # map commands like these to themselves as plaintext
 wordsselves = ('UNIX', 'ABC', 'C', 'ASCII', 'EOF')
 # \{ --> {,  \} --> }, etc

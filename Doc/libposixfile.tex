@@ -47,17 +47,14 @@ The posixfile module defines the following functions:
 The posixfile object defines the following additional methods:
 
 \renewcommand{\indexsubitem}{(posixfile method)}
-\begin{funcdesc}{lock}{fmt\, len\, start\, whence}
+\begin{funcdesc}{lock}{fmt\, \optional{len\optional{\, start
+\optional{\, whence}}}}
  Lock the specified section of the file that the file object is
- referring to.  The arguments \code{\var{len}}, \code{\var{start}}
- and \code{\var{whence}} are optional with the understanding that
- if \code{\var{start}} is used \code{\var{len}} becomes mandatory,
- and if \code{\var{whence}} is used \code{\var{len}} and
- \code{\var{start}} become mandatory.  The format is explained
- below in a table. The length argument specifies the length of the
- section that should be locked. The default is \code{0}. The start
- specifies the starting offset of the section. The default is
- \code{0}.  The whence argument specifies where the offset is
+ referring to.  The format is explained
+ below in a table.  The \var{len} argument specifies the length of the
+ section that should be locked. The default is \code{0}. \var{start}
+ specifies the starting offset of the section, where the default is
+ \code{0}.  The \var{whence} argument specifies where the offset is
  relative to. It accepts one of the constants \code{SEEK_SET},
  \code{SEEK_CUR} or \code{SEEK_END}.  The default is \code{SEEK_SET}.
  For more information about the arguments refer to the fcntl
@@ -69,7 +66,7 @@ The posixfile object defines the following additional methods:
  to.  The new flags are ORed with the old flags, unless specified
  otherwise.  The format is explained below in a table.  Without
  arguments a string indicating the current flags is returned (this is
- the same as the '?'modifier).  For more information about the flags
+ the same as the '?' modifier).  For more information about the flags
  refer to the fcntl manual page on your system.
 \end{funcdesc}
 
@@ -105,8 +102,8 @@ In addition the following modifiers can be added to the format:
 
 \begin{tableiii}{|c|l|c|}{samp}{Modifier}{Meaning}{Notes}
   \lineiii{|}{wait until the lock has been granted}{}
-  \lineiii{?}{return the first lock conflicting with the requested lock,
-  or \code{None} if there is no conflict.}{(1)}
+  \lineiii{?}{return the first lock conflicting with the requested lock,}{(1)}
+  {}&{\hskip0.5cm or \code{None} if there is no conflict.}&{}\\
 \end{tableiii}
 
 Note:
@@ -138,7 +135,7 @@ Note:
 
 (1) The \code{!} and \code{=} modifiers are mutually exclusive.
 
-(2) This string represents the flag after they may have been altered
+(2) This string represents the flags after they may have been altered
 by the same call.
 
 Examples:

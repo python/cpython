@@ -13,12 +13,12 @@ The module defines the following functions:
 
 \renewcommand{\indexsubitem}{(in module struct)}
 
-\begin{funcdesc}{fcntl}{fd\, op\, arg}
+\begin{funcdesc}{fcntl}{fd\, op\optional{\, arg}}
   Perform the requested operation on file descriptor \code{\var{fd}}.
   The operation is defined by \code{\var{op}} and is operating system
   dependent.  Typically these codes can be retrieved from the library
-  module \code{FCNTL}. The argument \code{\var{arg}} is optional.  When
-  it is missing it is interpreted as the integer value \code{0}. When
+  module \code{FCNTL}. The argument \code{\var{arg}} is optional, and
+  defaults to the integer value \code{0}.  When
   it is present, it can either be an integer value, or a string.  With
   the argument missing or an integer value, the return value of this
   function is the integer return value of the real \code{fcntl()}

@@ -9,7 +9,7 @@
 	E-mail: {\tt guido@cwi.nl}
 }
 
-\date{14 Jul 1994 \\ Release 1.0.3} % XXX update before release!
+\date{14 July 1994 \\ Release 1.0.3} % XXX update before release!
 
 % Tell \index to actually write the .idx file
 \makeindex
@@ -23,7 +23,7 @@
 \begin{abstract}
 
 \noindent
-This document describes how to write modules in C or C++ to extend the
+This document describes how to write modules in C or \Cpp{} to extend the
 Python interpreter.  It also describes how to use Python as an
 `embedded' language, and how extension modules can be loaded
 dynamically (at run time) into the interpreter, if the operating
@@ -43,7 +43,7 @@ system supports this feature.
 \pagenumbering{arabic}
 
 
-\chapter{Extending Python with C or C++ code}
+\chapter{Extending Python with C or \Cpp{} code}
 
 
 \section{Introduction}
@@ -57,12 +57,9 @@ excellent examples of how to create an extension.
 
 Extension modules can do two things that can't be done directly in
 Python: they can implement new data types (which are different from
-classes by the way), and they can make system calls or call C library
-functions.  Since the latter is usually the most important reason for
-adding an extension, I'll concentrate on adding `wrappers' around C
-library functions; the concrete example uses the wrapper for
-\code{system()} in module \code{posix}, found in (of course) the file
-\file{Modules/posixmodule.c}.
+classes, by the way), and they can make system calls or call C library
+functions.   We'll see how both types of extension are implemented by
+examining the code for a Python curses interface.
 
 Note: unless otherwise mentioned, all file references in this
 document are relative to the toplevel directory of the Python
@@ -112,7 +109,7 @@ in Python (here the single expression \code{'ls -l'}) to the arguments that
 are passed to the C function.  The C function always has two
 parameters, conventionally named \var{self} and \var{args}.  The
 \var{self} argument is used when the C function implements a builtin
-method --- this is advanced material and not covered in this document.
+method---this will be discussed later.
 In the example, \var{self} will always be a \code{NULL} pointer, since
 we are defining a function, not a method (this is done so that the
 interpreter doesn't have to understand two different types of C
@@ -780,9 +777,9 @@ which you keep references in your object, but you should not use
 \code{DECREF()} on your object.  You should use \code{DEL()} instead.
 
 
-\section{Writing extensions in C++}
+\section{Writing extensions in \Cpp{}}
 
-It is possible to write extension modules in C++.  Some restrictions
+It is possible to write extension modules in \Cpp{}.  Some restrictions
 apply: since the main program (the Python interpreter) is compiled and
 linked by the C compiler, global or static objects with constructors
 cannot be used.  All functions that will be called directly or
@@ -797,7 +794,7 @@ It is unnecessary to enclose the Python header files in
 
 Embedding Python is similar to extending it, but not quite.  The
 difference is that when you extend Python, the main program of the
-application is still the Python interpreter, while of you embed
+application is still the Python interpreter, while if you embed
 Python, the main program may have nothing to do with Python ---
 instead, some parts of the application occasionally call the Python
 interpreter to run some Python code.
@@ -820,13 +817,13 @@ A simple demo of embedding Python can be found in the directory
 \file{Demo/embed}.
 
 
-\section{Embedding Python in C++}
+\section{Embedding Python in \Cpp{}}
 
-It is also possible to embed Python in a C++ program; how this is done
-exactly will depend on the details of the C++ system used; in general
-you will need to write the main program in C++, and use the C++
-compiler to compile and link your program.  There is no need to
-recompile Python itself with C++.
+It is also possible to embed Python in a \Cpp{} program; precisely how this
+is done will depend on the details of the \Cpp{} system used; in general you
+will need to write the main program in \Cpp{}, and use the \Cpp{} compiler
+to compile and link your program.  There is no need to recompile Python
+itself using \Cpp{}.
 
 
 \chapter{Dynamic Loading}
@@ -860,7 +857,7 @@ loading.
 
 \subsection{Shared libraries}
 
-The following systems supports dynamic loading using shared libraries:
+The following systems support dynamic loading using shared libraries:
 SunOS 4; Solaris 2; SGI IRIX 5 (but not SGI IRIX 4!); and probably all
 systems derived from SVR4, or at least those SVR4 derivatives that
 support shared libraries (are there any that don't?).

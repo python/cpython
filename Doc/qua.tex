@@ -1,4 +1,5 @@
 \documentstyle[11pt]{article}
+\newcommand{\Cpp}{C\protect\raisebox{.18ex}{++}}
 
 \title{
 Interactively Testing Remote Servers Using the Python Programming Language
@@ -550,7 +551,7 @@ x = Foo().init('Dr. Strangelove')
 
 Any user-defined class can be used as a base class to derive other
 classes.  However, built-in types like lists cannot be used as base
-classes.  (Incidentally, the same is true in C++ and Modula-3.)  A
+classes.  (Incidentally, the same is true in \Cpp{} and Modula-3.)  A
 class may override any method of its base classes.  Instance methods
 are first searched in the method list of their class, and then,
 recursively, in the method lists of their base class.  Initialization
@@ -668,7 +669,7 @@ C preprocessor, so we get macros, include files and conditional
 compilation for free.  AIL's type declaration syntax is a superset of
 C's, so the user can include C header files to use the types declared
 there as function parameter types --- which are declared using
-function prototypes as in C++ or Standard C\@.  It should be clear by
+function prototypes as in \Cpp{} or Standard C\@.  It should be clear by
 now that AIL's lexical conventions are also identical to C's.  The
 same is true for its expression syntax.
 
@@ -768,7 +769,7 @@ Since AIL class inheritance only means interface sharing, not
 implementation sharing, inheriting the same class multiple times is
 never a problem and has the same effect as inheriting it once.
 
-Note that the power of AIL classes doesn't go as far as C++.
+Note that the power of AIL classes doesn't go as far as \Cpp{}.
 AIL classes cannot have data members, and there is
 no mechanism for a server that implements a derived class
 to inherit the implementation of the base
@@ -1007,7 +1008,7 @@ value passed together with the exception is used to relay the error
 code returned by the server to the handler.  Since in general RPC
 failures are rare, Python test programs can usually ignore exceptions
 --- making the program simpler --- without the risk of occasional
-errors going undetected.  (I still remember the embarrassment a
+errors going undetected.  (I still remember the embarrassment of a
 hundredfold speed improvement reported, long, long, ago, about a new
 version of a certain program, which later had to be attributed to a
 benchmark that silently dumped core...)

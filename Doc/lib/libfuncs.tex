@@ -78,7 +78,7 @@ exactly one argument.)
   \code{(math.floor(\var{a} / \var{b}), \var{a} \%{} \var{b})}.
 \end{funcdesc}
 
-\begin{funcdesc}{eval}{s\, globals\, locals}
+\begin{funcdesc}{eval}{s\optional{\, globals\optional{\, locals}}}
   The arguments are a string and two optional dictionaries.  The
   string argument is parsed and evaluated as a Python expression
   (technically speaking, a condition list) using the dictionaries as
@@ -156,11 +156,11 @@ removed.
   object.)
 \end{funcdesc}
 
-\begin{funcdesc}{input}{prompt}
-  Almost equivalent to \code{eval(raw_input(\var{prompt}))}.  As for
-  \code{raw_input()}, the prompt argument is optional.  The difference is
-  that a long input expression may be broken over multiple lines using the
-  backslash convention.
+\begin{funcdesc}{input}{\optional{prompt}}
+  Almost equivalent to \code{eval(raw_input(\var{prompt}))}.  Like
+  \code{raw_input()}, the \var{prompt} argument is optional.  The difference
+  is that a long input expression may be broken over multiple lines using
+  the backslash convention.
 \end{funcdesc}
 
 \begin{funcdesc}{int}{x}
@@ -206,7 +206,7 @@ any kind of sequence; the result is always a list.
   expression.
 \end{funcdesc}
 
-\begin{funcdesc}{open}{filename\, mode\, bufsize}
+\begin{funcdesc}{open}{filename\, \optional{mode\optional{\, bufsize}}}
   Return a new file object (described earlier under Built-in Types).
   The first two arguments are the same as for \code{stdio}'s
   \code{fopen()}: \var{filename} is the file name to be opened,
@@ -238,15 +238,17 @@ there's no reliable way to determine whether this is the case.}
   \code{chr()}.
 \end{funcdesc}
 
-\begin{funcdesc}{pow}{x\, y}
-  Return \var{x} to the power \var{y}.  The arguments must have
+\begin{funcdesc}{pow}{x\, y\optional{\, z}}
+  Return \var{x} to the power \var{y}; if \var{z} is present, $x^y \bmod z$
+  is returned.  The arguments must have
   numeric types.  With mixed operand types, the rules for binary
   arithmetic operators apply.  The effective operand type is also the
   type of the result; if the result is not expressible in this type, the
-  function raises an exception; e.g., \code{pow(2, -1)} is not allowed.
+  function raises an exception; e.g., \code{pow(2, -1)} or \code{pow(2,
+  35000)} is not allowed.
 \end{funcdesc}
 
-\begin{funcdesc}{range}{start\, end\, step}
+\begin{funcdesc}{range}{\optional{start\,} end\optional{\, step}}
   This is a versatile function to create lists containing arithmetic
   progressions.  It is most often used in \code{for} loops.  The
   arguments must be plain integers.  If the \var{step} argument is
@@ -278,13 +280,11 @@ there's no reliable way to determine whether this is the case.}
 \end{verbatim}\ecode
 \end{funcdesc}
 
-\begin{funcdesc}{raw_input}{prompt}
-  The string argument is optional; if present, it is written to
-  standard
-  output without a trailing newline.  The function then reads a line
-  from input, converts it to a string (stripping a trailing newline),
-  and returns that.  When \EOF{} is read, \code{EOFError} is raised.
-  Example:
+\begin{funcdesc}{raw_input}{\optional{prompt}}
+  If the \var{prompt} argument is present, it is written to standard output
+  without a trailing newline.  The function then reads a line from input,
+  converts it to a string (stripping a trailing newline), and returns that.
+  When \EOF{} is read, \code{EOFError} is raised. Example:
 
 \bcode\begin{verbatim}
 >>> s = raw_input('--> ')
@@ -295,7 +295,7 @@ there's no reliable way to determine whether this is the case.}
 \end{verbatim}\ecode
 \end{funcdesc}
 
-\begin{funcdesc}{reduce}{function\, list\, initializer}
+\begin{funcdesc}{reduce}{function\, list\optional{\, initializer}}
 Apply the binary \var{function} to the items of \var{list} so as to
 reduce the list to a single value.  E.g.,
 \code{reduce(lambda x, y: x*y, \var{list}, 1)} returns the product of
@@ -378,7 +378,7 @@ cannot normally be affected this way, but variables retrieved from
 other scopes can be.  This may change.}
 \end{funcdesc}
 
-\begin{funcdesc}{xrange}{start\, end\, step}
+\begin{funcdesc}{xrange}{\optional{start\,} end\optional{\, step}}
 This function is very similar to \code{range()}, but returns an
 ``xrange object'' instead of a list.  This is an opaque sequence type
 which yields the same values as the corresponding list, without

@@ -4,14 +4,23 @@ LIBDEST=$LIBDESTDIR/python
 DOCDESTDIR=$LIBDEST/doc
 DVIPS=	dvips -f
 
-all:	tut lib ref ext
+all:	tut.dvi lib.dvi ref.dvi ext.dvi
 
-tut:
+ext:	ext.dvi
+tut:	tut.dvi
+qua:	qua.dvi
+ref:	ref.dvi
+lib:	lib.dvi
+
+tut.dvi lib.dvi ref.dvi ext.dvi: myformat.sty fix_hack
+
+tut.dvi: tut.tex 
 	latex tut
 	latex tut
 	$(DVIPS) tut >tut.ps
 
-ref:
+ref.dvi: ref.tex ref1.tex ref2.tex ref3.tex ref4.tex ref5.tex ref6.tex \
+						     ref7.tex ref8.tex 
 	touch ref.ind
 	latex ref
 	./fix_hack ref.idx
@@ -19,7 +28,29 @@ ref:
 	latex ref
 	$(DVIPS) ref >ref.ps
 
-lib:
+# LaTeX source files for the Python Library Reference
+LIBFILES = lib.tex \
+libal.tex libamoeba.tex libarray.tex libaudio.tex libaudioop.tex \
+libbltin.tex \
+libcrypto.tex \
+libdbm.tex \
+libexcs.tex \
+libfcntl.tex libfl.tex libfm.tex libfuncs.tex \
+libgdbm.tex libgetopt.tex libgl.tex libgrp.tex \
+libimageop.tex libimgfile.tex libintro.tex \
+libjpeg.tex \
+libmac.tex libmain.tex libmarshal.tex libmath.tex \
+	libmd5.tex libmm.tex libmods.tex libmpz.tex \
+libobjs.tex libos.tex \
+libpanel.tex libposix.tex libposixfile.tex libppath.tex libpwd.tex \
+librand.tex libregex.tex libregsub.tex librgbimg.tex librotor.tex \
+libselect.tex libsgi.tex libsocket.tex libstd.tex libstdwin.tex \
+	libstring.tex libstruct.tex libsun.tex libsys.tex \
+libthread.tex libtime.tex libtypes.tex \
+libunix.tex \
+libwhrandom.tex
+
+lib.dvi: $(LIBFILES)
 	touch lib.ind
 	latex lib
 	./fix_hack lib.idx
@@ -27,7 +58,7 @@ lib:
 	latex lib
 	$(DVIPS) lib >lib.ps
 
-ext:
+ext.dvi: ext.tex 
 	touch ext.ind
 	latex ext
 	./fix_hack ext.idx
@@ -35,7 +66,7 @@ ext:
 	latex ext
 	$(DVIPS) ext >ext.ps
 
-qua:
+qua.dvi: qua.tex quabib.bib
 	latex qua
 	bibtex qua
 	latex qua

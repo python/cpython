@@ -29,7 +29,7 @@ the string. This format is suitable to pass to \code{gl.lrectwrite},
 for instance.
 \end{funcdesc}
 
-\begin{funcdesc}{readscaled}{file\, x\, y\, filter\, blur}
+\begin{funcdesc}{readscaled}{file\, x\, y\, filter\optional{\, blur}}
 This function is identical to read but it returns an image that is
 scaled to the given \var{x} and \var{y} sizes. If the \var{filter} and
 \var{blur} parameters are omitted scaling is done by
@@ -42,7 +42,7 @@ after scaling. The filter forms supported are \code{'impulse'},
 \code{'gaussian'}. If a filter is specified \var{blur} is an optional
 parameter specifying the blurriness of the filter. It defaults to \code{1.0}.
 
-Readscaled makes no
+\code{readscaled} makes no
 attempt to keep the aspect ratio correct, so that is the users'
 responsibility.
 \end{funcdesc}
