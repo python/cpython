@@ -190,7 +190,8 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		     (PyDict_Check(kwds) && PyDict_Size(kwds) == 0)))
 			return obj;
 		type = obj->ob_type;
-		if (type->tp_init != NULL &&
+		if (PyType_HasFeature(type, Py_TPFLAGS_HAVE_CLASS) &&
+		    type->tp_init != NULL &&
 		    type->tp_init(obj, args, kwds) < 0) {
 			Py_DECREF(obj);
 			obj = NULL;
