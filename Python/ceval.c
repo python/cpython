@@ -1583,15 +1583,6 @@ eval_frame(PyFrameObject *f)
 #ifdef CASE_TOO_BIG
 		default: switch (opcode) {
 #endif
-		case BREAK_LOOP:
-			why = WHY_BREAK;
-			goto fast_block_end;
-
-		case CONTINUE_LOOP:
-			retval = PyInt_FromLong(oparg);
-			why = WHY_CONTINUE;
-			goto fast_block_end;
-
 		case RAISE_VARARGS:
 			u = v = w = NULL;
 			switch (oparg) {
@@ -2108,6 +2099,15 @@ eval_frame(PyFrameObject *f)
 			Py_DECREF(v);
 			JUMPBY(oparg);
 			continue;
+
+		case BREAK_LOOP:
+			why = WHY_BREAK;
+			goto fast_block_end;
+
+		case CONTINUE_LOOP:
+			retval = PyInt_FromLong(oparg);
+			why = WHY_CONTINUE;
+			goto fast_block_end;
 
 		case SETUP_LOOP:
 		case SETUP_EXCEPT:
