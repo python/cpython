@@ -16,6 +16,7 @@ from EditorWindow import EditorWindow, fixwordbreaks
 from FileList import FileList
 from ColorDelegator import ColorDelegator
 from OutputWindow import OutputWindow
+import idlever
 
 # We need to patch linecache.checkcache, because we don't want it
 # to throw away our <pyshell#...> entries.
@@ -406,8 +407,9 @@ class PyShell(OutputWindow):
 
     def begin(self):
         self.resetoutput()
-        self.write("Python %s on %s\n%s\n" %
-                   (sys.version, sys.platform, sys.copyright))
+        self.write("Python %s on %s\n%s\nIDLE %s\n" %
+                   (sys.version, sys.platform, sys.copyright,
+                    idlever.IDLE_VERSION))
         try:
             sys.ps1
         except AttributeError:
@@ -639,7 +641,7 @@ usage: idle.py [-c command] [-d] [-e] [-s] [-t title] [arg] ...
 -c command  run this command
 -d          enable debugger
 -e          edit mode; arguments are files to be edited
--s          run $PYTHONSTARTUP before anything else
+-s          run $IDLESTARTUP or $PYTHONSTARTUP before anything else
 -t title    set title of shell window
 
 When neither -c nor -e is used, and there are arguments, and the first
