@@ -254,7 +254,7 @@ class Request:
 class OpenerDirector:
     def __init__(self):
         server_version = "Python-urllib/%s" % __version__
-        self.addheaders = [('User-Agent', server_version)]
+        self.addheaders = [('User-agent', server_version)]
         # manage the individual handlers
         self.handlers = []
         self.handle_open = {}
@@ -507,7 +507,7 @@ class ProxyHandler(BaseHandler):
                 user, password = user_pass.split(':', 1)
                 user_pass = base64.encodestring('%s:%s' % (unquote(user),
                                                            unquote(password)))
-                req.add_header('Proxy-Authorization', 'Basic ' + user_pass)
+                req.add_header('Proxy-authorization', 'Basic ' + user_pass)
         host = unquote(host)
         req.set_proxy(host, type)
         if orig_type == type:
@@ -666,7 +666,7 @@ class HTTPBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
 
 class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
 
-    auth_header = 'Proxy-Authorization'
+    auth_header = 'Proxy-authorization'
 
     def http_error_407(self, req, fp, code, msg, headers):
         host = req.get_host()
@@ -818,10 +818,10 @@ class AbstractHTTPHandler(BaseHandler):
         scheme, sel = splittype(req.get_selector())
         sel_host, sel_path = splithost(sel)
         h.putheader('Host', sel_host or host)
-        for args in self.parent.addheaders:
-            name, value = args
+        for name, value in self.parent.addheaders:
+            name = name.capitalize()
             if name not in req.headers:
-                h.putheader(*args)
+                h.putheader(name, value)
         for k, v in req.headers.items():
             h.putheader(k, v)
         # httplib will attempt to connect() here.  be prepared
@@ -943,7 +943,7 @@ class FileHandler(BaseHandler):
         modified = rfc822.formatdate(stats.st_mtime)
         mtype = mimetypes.guess_type(file)[0]
         headers = mimetools.Message(StringIO(
-            'Content-Type: %s\nContent-Length: %d\nLast-modified: %s\n' %
+            'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
             (mtype or 'text/plain', size, modified)))
         if host:
             host, port = splitport(host)
@@ -985,9 +985,9 @@ class FTPHandler(BaseHandler):
             headers = ""
             mtype = mimetypes.guess_type(req.get_full_url())[0]
             if mtype:
-                headers += "Content-Type: %s\n" % mtype
+                headers += "Content-type: %s\n" % mtype
             if retrlen is not None and retrlen >= 0:
-                headers += "Content-Length: %d\n" % retrlen
+                headers += "Content-length: %d\n" % retrlen
             sf = StringIO(headers)
             headers = mimetools.Message(sf)
             return addinfourl(fp, headers, req.get_full_url())
