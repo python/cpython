@@ -32,6 +32,7 @@ class TransParent() = ManageOneChild():
 		parent.addchild(self)
 		self.parent = parent
 		self.child = 0 # No child yet
+		return self
 	#
 	# Downcalls from parent to child
 	#
@@ -55,9 +56,15 @@ class TransParent() = ManageOneChild():
 			raise Error, 'setbounds w/o child'
 		else:
 			self.child.setbounds(bounds)
+	def realize(self):
+		if self.child:
+			self.child.realize()
 	def draw(self, args):
 		if self.child:
 			self.child.draw(args)
+	def altdraw(self, args):
+		if self.child:
+			self.child.altdraw(args)
 	#
 	# Downcalls only made after certain upcalls
 	#
@@ -83,10 +90,17 @@ class TransParent() = ManageOneChild():
 	def no_timer(self, child):
 		self.parent.no_timer(self)
 	#
+	def need_altdraw(self, child):
+		self.parent.need_altdraw(self)
+	def no_altdraw(self, child):
+		self.parent.no_altdraw(self)
+	#
 	def begindrawing(self):
 		return self.parent.begindrawing()
 	def beginmeasuring(self):
 		return self.parent.beginmeasuring()
+	def getwindow(self):
+		return self.parent.getwindow()
 	#
 	def change(self, area):
 		self.parent.change(area)
