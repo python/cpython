@@ -12,6 +12,13 @@ def init():
 	if hasattr(MacOS, 'EnableAppswitch'):
 		MacOS.EnableAppswitch(-1)
 	
+	try:
+		import autoGIL
+	except ImportError:
+		pass
+	else:
+		autoGIL.installAutoGIL()
+	
 	from Carbon import Qd, QuickDraw
 	Qd.SetCursor(Qd.GetCursor(QuickDraw.watchCursor).data)
 	
