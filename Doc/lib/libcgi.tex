@@ -155,10 +155,12 @@ These classes, present in earlier versions of the \code{cgi} module, are still
 supported for backward compatibility.  New applications should use the
 FieldStorage class.
 
-\code{SvFormContentDict}: single value form content as dictionary; assumes each 
+\code{SvFormContentDict}
+single value form content as dictionary; assumes each 
 field name occurs in the form only once.
 
-\code{FormContentDict}: multiple value form content as dictionary (the form
+\code{FormContentDict}
+multiple value form content as dictionary (the form
 items are lists of values).  Useful if your form contains multiple
 fields with the same name.
 
@@ -175,18 +177,22 @@ These are useful if you want more control, or if you want to employ
 some of the algorithms implemented in this module in other
 circumstances.
 
-\begin{funcdesc}{parse}{fp}: Parse a query in the environment or from a file (default \code{sys.stdin}).
+\begin{funcdesc}{parse}{fp}
+Parse a query in the environment or from a file (default \code{sys.stdin}).
 \end{funcdesc}
 
-\begin{funcdesc}{parse_qs}{qs}: parse a query string given as a string argument (data of type 
+\begin{funcdesc}{parse_qs}{qs}
+parse a query string given as a string argument (data of type 
 \code{application/x-www-form-urlencoded}).
 \end{funcdesc}
 
-\begin{funcdesc}{parse_multipart}{fp\, pdict}: parse input of type \code{multipart/form-data} (for 
+\begin{funcdesc}{parse_multipart}{fp\, pdict}
+parse input of type \code{multipart/form-data} (for 
 file uploads).  Arguments are \code{fp} for the input file and 
     \code{pdict} for the dictionary containing other parameters of \code{content-type} header
 
-    Returns a dictionary just like \code{parse_qs()}: keys are the field names, each 
+    Returns a dictionary just like \code{parse_qs()}
+keys are the field names, each 
     value is a list of values for that field.  This is easy to use but not 
     much good if you are expecting megabytes to be uploaded -- in that case, 
     use the \code{FieldStorage} class instead which is much more flexible.  Note 
@@ -197,29 +203,36 @@ file uploads).  Arguments are \code{fp} for the input file and
     that.
 \end{funcdesc}
 
-\begin{funcdesc}{parse_header}{string}: parse a header like \code{Content-type} into a main
+\begin{funcdesc}{parse_header}{string}
+parse a header like \code{Content-type} into a main
 content-type and a dictionary of parameters.
 \end{funcdesc}
 
-\begin{funcdesc}{test}{}: robust test CGI script, usable as main program.
+\begin{funcdesc}{test}{}
+robust test CGI script, usable as main program.
     Writes minimal HTTP headers and formats all information provided to
     the script in HTML form.
 \end{funcdesc}
 
-\begin{funcdesc}{print_environ}{}: format the shell environment in HTML.
+\begin{funcdesc}{print_environ}{}
+format the shell environment in HTML.
 \end{funcdesc}
 
-\begin{funcdesc}{print_form}{form}: format a form in HTML.
+\begin{funcdesc}{print_form}{form}
+format a form in HTML.
 \end{funcdesc}
 
-\begin{funcdesc}{print_directory}{}: format the current directory in HTML.
+\begin{funcdesc}{print_directory}{}
+format the current directory in HTML.
 \end{funcdesc}
 
-\begin{funcdesc}{print_environ_usage}{}: print a list of useful (used by CGI) environment variables in
+\begin{funcdesc}{print_environ_usage}{}
+print a list of useful (used by CGI) environment variables in
 HTML.
 \end{funcdesc}
 
-\begin{funcdesc}{escape}{s\optional{\, quote}}: convert the characters
+\begin{funcdesc}{escape}{s\optional{\, quote}}
+convert the characters
 ``\code{\&}'', ``\code{<}'' and ``\code{>}'' in string \var{s} to HTML-safe
 sequences.  Use this if you need to display text that might contain
 such characters in HTML.  If the optional flag \var{quote} is true,
