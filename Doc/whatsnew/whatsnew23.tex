@@ -13,7 +13,6 @@
 
 % To do:
 % PYTHONINSPECT
-% list.index
 % file.encoding
 % doctest extensions
 % new version of IDLE
@@ -424,12 +423,12 @@ and implemented by Raymond D. Hettinger.}
 
 A standard package for writing logs, \module{logging}, has been added
 to Python 2.3.  It provides a powerful and flexible mechanism for
-components to generate logging output which can then be filtered and
-processed in various ways.  A standard configuration file format can
-be used to control the logging behavior of a program.  Python's
-standard library includes handlers that will write log records to
+generating logging output which can then be filtered and processed in
+various ways.  A configuration file written in a standard format can
+be used to control the logging behavior of a program.  Python
+includes handlers that will write log records to
 standard error or to a file or socket, send them to the system log, or
-even e-mail them to a particular address, and of course it's also
+even e-mail them to a particular address; of course, it's also
 possible to write your own handler classes.
 
 The \class{Logger} class is the primary class.
@@ -469,7 +468,7 @@ CRITICAL:root:Critical error -- shutting down
 
 In the default configuration, informational and debugging messages are
 suppressed and the output is sent to standard error.  You can enable
-the display of information and debugging messages by calling the
+the display of informational and debugging messages by calling the
 \method{setLevel()} method on the root logger.
 
 Notice the \function{warning()} call's use of string formatting
@@ -553,7 +552,7 @@ A Boolean type was added to Python 2.3.  Two new constants were added
 to the \module{__builtin__} module, \constant{True} and
 \constant{False}.  (\constant{True} and
 \constant{False} constants were added to the built-ins
-in Python 2.2.1, but the 2.2.1 versions simply have integer values of
+in Python 2.2.1, but the 2.2.1 versions are simply set to integer values of
 1 and 0 and aren't a different type.)
 
 The type object for this new type is named
@@ -596,10 +595,10 @@ Python's Booleans were \emph{not} added for the sake of strict
 type-checking.  A very strict language such as Pascal would also
 prevent you performing arithmetic with Booleans, and would require
 that the expression in an \keyword{if} statement always evaluate to a
-Boolean.  Python is not this strict, and it never will be, as
+Boolean result.  Python is not this strict and never will be, as
 \pep{285} explicitly says.  This means you can still use any
 expression in an \keyword{if} statement, even ones that evaluate to a
-list or tuple or some random object, and the Boolean type is a
+list or tuple or some random object.  The Boolean type is a
 subclass of the \class{int} class so that arithmetic using a Boolean
 still works.
 
@@ -642,7 +641,7 @@ string.
 
 Python now has a flexible framework to add different processing
 strategies.  New error handlers can be added with
-\function{codecs.register_error}. Codecs then can access the error
+\function{codecs.register_error}, and codecs then can access the error
 handler with \function{codecs.lookup_error}. An equivalent C API has
 been added for codecs written in C. The error handler gets the
 necessary state information such as the string being converted, the
@@ -680,7 +679,7 @@ Archive:  /tmp/example.zip
  --------                   -------
      8467                   1 file
 amk@nyman:~/src/python$ ./python
-Python 2.3a0 (#1, Dec 30 2002, 19:54:32) 
+Python 2.3 (#1, Aug 1 2003, 19:54:32) 
 >>> import sys
 >>> sys.path.insert(0, '/tmp/example.zip')  # Add .zip file to front of path
 >>> import jwzthreading
@@ -721,11 +720,11 @@ Distutils\label{section-pep301}}
 Support for the long-requested Python catalog makes its first
 appearance in 2.3.
 
-The core component is the new Distutils \command{register} command.
+The heart of the catalog is the new Distutils \command{register} command.
 Running \code{python setup.py register} will collect the metadata
 describing a package, such as its name, version, maintainer,
 description, \&c., and send it to a central catalog server.  The
-catalog is available from \url{http://www.python.org/pypi}.
+resulting catalog is available from \url{http://www.python.org/pypi}.
 
 To make the catalog a bit more useful, a new optional
 \var{classifiers} keyword argument has been added to the Distutils
@@ -845,7 +844,8 @@ Implemented by Just van~Rossum.
 Comma-separated files are a format frequently used for exporting data
 from databases and spreadsheets.  Python 2.3 adds a parser for
 comma-separated files.
-The format is deceptively simple at first glance:
+
+Comma-separated format is deceptively simple at first glance:
 
 \begin{verbatim}
 Costs,150,200,3.95
@@ -876,7 +876,7 @@ The field separator isn't limited to the comma and can be changed to
 any character, and so can the quoting and line-ending characters.
 
 Different dialects of comma-separated files can be defined and
-registered; currently there are two, both for Microsoft Excel.
+registered; currently there are two dialects, both used by Microsoft Excel.
 A separate \class{csv.writer} class will generate comma-separated files
 from a succession of tuples or lists, quoting strings that contain the
 delimiter.  
@@ -902,10 +902,10 @@ class.
 The solution was to invent a new pickle protocol.  The
 \function{pickle.dumps()} function has supported a text-or-binary flag 
 for a long time.  In 2.3, this flag is redefined from a Boolean to an
-integer; 0 is the old text-mode pickle format, 1 is the old binary
-format, and now 2 is a new 2.3-specific format.  (A new constant,
+integer: 0 is the old text-mode pickle format, 1 is the old binary
+format, and now 2 is a new 2.3-specific format.  A new constant,
 \constant{pickle.HIGHEST_PROTOCOL}, can be used to select the fanciest
-protocol available.)
+protocol available.
 
 Unpickling is no longer considered a safe operation.  2.2's
 \module{pickle} provided hooks for trying to prevent unsafe classes
@@ -942,7 +942,7 @@ legal Python syntax: \code{L[1:10:2]}, \code{L[:-1:1]},
 \code{L[::-1]}.  This was added to Python at the request of
 the developers of Numerical Python, which uses the third argument
 extensively.  However, Python's built-in list, tuple, and string
-sequence types have never supported this feature, and you got a
+sequence types have never supported this feature, raising a
 \exception{TypeError} if you tried it.  Michael Hudson contributed a
 patch to fix this shortcoming.
 
@@ -988,7 +988,7 @@ regular slice can be used to change the length of the sequence:
 \end{verbatim}
 
 Extended slices aren't this flexible.  When assigning to an extended
-slice the list on the right hand side of the statement must contain
+slice, the list on the right hand side of the statement must contain
 the same number of items as the slice it is replacing:
 
 \begin{verbatim}
@@ -1094,7 +1094,7 @@ as described in section~\ref{section-slices} of this document.
 \item A new built-in function, \function{sum(\var{iterable}, \var{start}=0)}, 
 adds up the numeric items in the iterable object and returns their sum. 
 \function{sum()} only accepts numbers, meaning that you can't use it
-to concatenate a bunch of strings, for example.   (Contributed by Alex
+to concatenate a bunch of strings.   (Contributed by Alex
 Martelli.)
 
 \item \code{list.insert(\var{pos}, \var{value})} used to 
@@ -1102,6 +1102,11 @@ insert \var{value} at the front of the list when \var{pos} was
 negative.  The behaviour has now been changed to be consistent with
 slice indexing, so when \var{pos} is -1 the value will be inserted
 before the last element, and so forth.
+
+\item \code{list.index(\var{value})}, which searches for \var{value} 
+within the list and returns its index, now takes optional 
+\var{start} and \var{stop} arguments to limit the search to 
+only part of the list.
 
 \item Dictionaries have a new method, \method{pop(\var{key}\optional{,
 \var{default}})}, that returns the value corresponding to \var{key}
@@ -1186,8 +1191,8 @@ now trigger \exception{PendingDeprecationWarning}.
 
 \item The method resolution order used by new-style classes has
 changed, though you'll only notice the difference if you have a really
-complicated inheritance hierarchy.  (Classic classes are unaffected by
-this change.)  Python 2.2 originally used a topological sort of a
+complicated inheritance hierarchy.  Classic classes are unaffected by
+this change.  Python 2.2 originally used a topological sort of a
 class's ancestors, but 2.3 now uses the C3 algorithm as described in
 the paper \ulink{``A Monotonic Superclass Linearization for
 Dylan''}{http://www.webcom.com/haahr/dylan/linearization-oopsla96.html}.
@@ -1261,8 +1266,7 @@ True
 \end{verbatim}
 
 Note that this doesn't tell you where the substring starts; if you
-need that information, you must use the \method{find()} method
-instead.
+need that information, use the \method{find()} string method.
 
 \item The \method{strip()}, \method{lstrip()}, and \method{rstrip()}
 string methods now have an optional argument for specifying the
