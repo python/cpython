@@ -751,10 +751,20 @@ distribution, to create or maintain whole documents or sections.
     additional macros to support creating reference entries in a
     reasonable manner.
 
+    The \env{seealso} environment is typically placed in a section
+    just before any sub-sections.  This is done to ensure that
+    reference links related to the section are not hidden in a
+    subsection in the hypertext renditions of the documentation.
+
     \begin{envdesc}{seealso}{}
       This environment creates a ``See also:'' heading and defines the
       markup used to describe individual references.
     \end{envdesc}
+
+    For each of the following macros, \var{why} should be a complete
+    sentence, start with a capital letter (unless it starts with an
+    identifier, which should not be modified), and end with the
+    apropriate punctuation.
 
     \begin{macrodesc}{seemodule}{\op{key}\p{name}\p{why}}
       Refer to another module.  \var{why} should be a brief
@@ -766,10 +776,29 @@ distribution, to create or maintain whole documents or sections.
       document (the corresponding \macro{declaremodule} is required).
     \end{macrodesc}
 
+    \begin{macrodesc}{seerfc}{\p{number}\p{title}\p{why}}
+      Refer to an IETF Request for Comments (RFC).  \var{number}
+      should be the official number assigned by the RFC Editor,
+      \var{title} should be the human-readable title of the RFC as
+      found in the official copy of the document, and \var{why} should
+      explain what's interesting about the RFC.  This should be used
+      to refer the reader to RFCs which specify protocols or data
+      formats relevant to the material in the annotated section of the
+      documentation.
+    \end{macrodesc}
+
     \begin{macrodesc}{seetext}{\p{text}}
       Add arbitrary text \var{text} to the ``See also:'' list.  This
       can be used to refer to off-line materials or on-line materials
-      using the \macro{url} macro.
+      using the \macro{url} macro.  This should consist of one or more
+      complete sentences.
+    \end{macrodesc}
+
+    \begin{macrodesc}{seeurl}{\p{url}\p{why}}
+      References to specific on-line resources should be given using
+      the \macro{seeurl} macro.  No title is associated with the
+      reference, but the \var{why} text may include a title marked
+      using the \macro{citetitle} macro.
     \end{macrodesc}
 
 
