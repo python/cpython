@@ -54,7 +54,7 @@ extern PyObject *PyFloat_FromDouble Py_PROTO((double));
 extern double PyFloat_AsDouble Py_PROTO((PyObject *));
 
 /* Macro, trading safety for speed */
-#define PyFloat_AS_DOUBLE(op) ((op)->ob_fval)
+#define PyFloat_AS_DOUBLE(op) (((PyFloatObject *)(op))->ob_fval)
 
 #ifdef __cplusplus
 }
