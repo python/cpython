@@ -331,8 +331,9 @@ static state states_18[3] = {
 static arc arcs_19_0[1] = {
 	{48, 1},
 };
-static arc arcs_19_1[1] = {
+static arc arcs_19_1[2] = {
 	{21, 2},
+	{0, 1},
 };
 static arc arcs_19_2[2] = {
 	{22, 3},
@@ -353,7 +354,7 @@ static arc arcs_19_6[1] = {
 };
 static state states_19[7] = {
 	{1, arcs_19_0},
-	{1, arcs_19_1},
+	{2, arcs_19_1},
 	{2, arcs_19_2},
 	{1, arcs_19_3},
 	{2, arcs_19_4},

@@ -1090,6 +1090,7 @@ eval_code2(co, globals, locals,
 				/* Fallthrough */
 			case 1:
 				w = POP(); /* exc */
+			case 0: /* Fallthrough */
 				why = do_raise(w, v, u);
 				break;
 			default:
@@ -1967,6 +1968,17 @@ static enum why_code
 do_raise(type, value, tb)
 	PyObject *type, *value, *tb;
 {
+	if (type == NULL) {
+		/* Reraise */
+		PyThreadState *tstate = PyThreadState_Get();
+		type = tstate->exc_type == NULL ? Py_None : tstate->exc_type;
+		value = tstate->exc_value;
+		tb = tstate->exc_traceback;
+		Py_XINCREF(type);
+		Py_XINCREF(value);
+		Py_XINCREF(tb);
+	}
+		
 	/* We support the following forms of raise:
 	   raise <class>, <classinstance>
 	   raise <class>, <argument tuple>
