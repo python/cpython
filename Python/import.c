@@ -962,6 +962,13 @@ initimp()
 	dictinsert(d, "C_EXTENSION", v);
 	XDECREF(v);
 
+#ifdef macintosh
+	v = newintobject(PY_RESOURCE);
+	dictinsert(d, "PY_RESOURCE", v);
+	XDECREF(v);
+#endif
+
+
 	if (err_occurred())
 		fatal("imp module initialization failed");
 }
