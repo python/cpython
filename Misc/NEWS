@@ -321,6 +321,11 @@ Extension modules
 
 Library
 
+- mimetypes has two new functions: guess_all_extensions() which
+  returns a list of all known extensions for a mime type, and
+  add_type() which adds one mapping between a mime type and
+  an extension to the database.
+
 - New module: sets, defines the class Set that implements a mutable
   set type using the keys of a dict to represent the set.  There's
   also a class ImmutableSet which is useful when you need sets of sets
