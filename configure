@@ -1388,6 +1388,20 @@ fi
 echo "$as_me:$LINENO: result: $MACHDEP" >&5
 echo "${ECHO_T}$MACHDEP" >&6
 
+# And add extra plat-mac for darwin
+
+echo "$as_me:$LINENO: checking EXTRAPLATDIR" >&5
+echo $ECHO_N "checking EXTRAPLATDIR... $ECHO_C" >&6
+if test -z "$EXTRAPLATDIR"
+then
+	case $MACHDEP in
+	darwin)	EXTRAPLATDIR="\$(PLATMACDIRS)";;
+	*) EXTRAPLATDIR="";;
+	esac
+fi
+echo "$as_me:$LINENO: result: $EXTRAPLATDIR" >&5
+echo "${ECHO_T}$EXTRAPLATDIR" >&6
+
 # checks for alternative programs
 echo "$as_me:$LINENO: checking for --without-gcc" >&5
 echo $ECHO_N "checking for --without-gcc... $ECHO_C" >&6
@@ -17296,6 +17310,7 @@ s,@PYTHONFRAMEWORKPREFIX@,$PYTHONFRAMEWORKPREFIX,;t t
 s,@PYTHONFRAMEWORKINSTALLDIR@,$PYTHONFRAMEWORKINSTALLDIR,;t t
 s,@MACHDEP@,$MACHDEP,;t t
 s,@SGI_ABI@,$SGI_ABI,;t t
+s,@EXTRAPLATDIR@,$EXTRAPLATDIR,;t t
 s,@CXX@,$CXX,;t t
 s,@MAINOBJ@,$MAINOBJ,;t t
 s,@EXEEXT@,$EXEEXT,;t t

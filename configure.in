@@ -104,7 +104,7 @@ then
 	'')	MACHDEP="unknown";;
 	esac
 fi
-
+	
 # Some systems cannot stand _XOPEN_SOURCE being defined at all; they
 # disable features if it is defined, without any means to access these
 # features as extensions. For these systems, we skip the definition of
@@ -154,6 +154,18 @@ then
         MACHDEP=`echo "${MACHDEP}${SGI_ABI}" | sed 's/ *//g'`
 fi
 AC_MSG_RESULT($MACHDEP)
+
+# And add extra plat-mac for darwin
+AC_SUBST(EXTRAPLATDIR)
+AC_MSG_CHECKING(EXTRAPLATDIR)
+if test -z "$EXTRAPLATDIR"
+then
+	case $MACHDEP in
+	darwin)	EXTRAPLATDIR="\$(PLATMACDIRS)";;
+	*) EXTRAPLATDIR="";;
+	esac
+fi
+AC_MSG_RESULT($EXTRAPLATDIR)
 
 # checks for alternative programs
 AC_MSG_CHECKING(for --without-gcc)
