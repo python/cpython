@@ -92,7 +92,7 @@ nmake -nologo -f win32\Makefile.msc zlib.lib
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC,..\..\zlib-1.1.4"
+				AdditionalIncludeDirectories="..\Include,..\PC,..\..\zlib-1.2.1"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
