@@ -45,6 +45,7 @@ FILE *PyWin_FindRegisteredModule( const char *moduleName, struct filedescr **ppF
 	FILE *fp;
 	HKEY keyBase = PyWin_IsWin32s() ? HKEY_CLASSES_ROOT : HKEY_LOCAL_MACHINE;
 	int modNameSize;
+	long regStat;
 
 	// Calculate the size for the sprintf buffer.
 	// Get the size of the chars only, plus 1 NULL.
@@ -53,7 +54,9 @@ FILE *PyWin_FindRegisteredModule( const char *moduleName, struct filedescr **ppF
 	moduleKey = alloca(bufSize); 
 	sprintf(moduleKey, "Software\\Python\\PythonCore\\%s\\Modules\\%s%s", PyWin_DLLVersionString, moduleName, debugString);
 
-	if (RegQueryValue(keyBase, moduleKey, pathBuf, &modNameSize)!=ERROR_SUCCESS)
+	modNameSize = bufSize;
+	regStat = RegQueryValue(keyBase, moduleKey, pathBuf, &modNameSize);
+	if (regStat!=ERROR_SUCCESS)
 		return NULL;
 	// use the file extension to locate the type entry.
 	for (fdp = _PyImport_Filetab; fdp->suffix != NULL; fdp++) {
