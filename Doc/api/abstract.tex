@@ -175,12 +175,16 @@ for which they do not apply, they will raise a Python exception.
   or a subclass of \var{cls}, or \code{0} if not.  On error, returns
   \code{-1} and sets an exception.  If \var{cls} is a type object
   rather than a class object, \cfunction{PyObject_IsInstance()}
-  returns \code{1} if \var{inst} is of type \var{cls}.  If \var{inst}
-  is not a class instance and \var{cls} is neither a type object or
-  class object, \var{inst} must have a \member{__class__} attribute
+  returns \code{1} if \var{inst} is of type \var{cls}.  If \var{cls}
+  is a tuple, the check will be done against every entry in \var{cls}.
+  The result will be \code{1} when at least one of the checks returns
+  \code{1}, otherwise it will be \code{0}. If \var{inst} is not a class
+  instance and \var{cls} is neither a type object, nor a class object,
+  nor a tuple, \var{inst} must have a \member{__class__} attribute
   --- the class relationship of the value of that attribute with
   \var{cls} will be used to determine the result of this function.
   \versionadded{2.1}
+  \versionchanged[Support for a tuple as the second argument added]{2.2}
 \end{cfuncdesc}
 
 Subclass determination is done in a fairly straightforward way, but
