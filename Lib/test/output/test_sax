@@ -29,6 +29,9 @@ Passed test_nsattrs_wattr
 Passed test_quoteattr_basic
 Passed test_single_double_quoteattr
 Passed test_single_quoteattr
+Passed test_unescape_all
+Passed test_unescape_basic
+Passed test_unescape_extra
 Passed test_xmlgen_attr_escape
 Passed test_xmlgen_basic
 Passed test_xmlgen_content
@@ -36,4 +39,4 @@ Passed test_xmlgen_content_escape
 Passed test_xmlgen_ignorable
 Passed test_xmlgen_ns
 Passed test_xmlgen_pi
-37 tests, 0 failures
+40 tests, 0 failures

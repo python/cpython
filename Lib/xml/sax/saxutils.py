@@ -12,20 +12,40 @@ try:
 except AttributeError:
     _StringTypes = [types.StringType]
 
+def __dict_replace(s, d):
+    """Replace substrings of a string using a dictionary."""
+    for key, value in d.items():
+        s = s.replace(key, value)
+    return s
 
 def escape(data, entities={}):
     """Escape &, <, and > in a string of data.
-
+    
     You can escape other strings of data by passing a dictionary as
     the optional entities parameter.  The keys and values must all be
     strings; each key will be replaced with its corresponding value.
     """
+
+    # must do ampersand first
     data = data.replace("&", "&amp;")
-    data = data.replace("<", "&lt;")
-    data = data.replace(">", "&gt;")
-    for chars, entity in entities.items():
-        data = data.replace(chars, entity)
-    return data
+    data = __dict_replace(data, {"<" : "&lt;",
+                                 ">" : "&gt;",
+                                 })
+    return __dict_replace(data, entities)
+
+def unescape(data, entities={}):
+    """Unescape &amp;, &lt;, and &gt; in a string of data.
+
+    You can unescape other strings of data by passing a dictionary as
+    the optional entities parameter.  The keys and values must all be
+    strings; each key will be replaced with its corresponding value.
+    """
+    data = __dict_replace(data, {"&lt;"  : "<",
+                                 "&gt;"  : ">",
+                                 })
+    # must do ampersand last
+    data = data.replace("&amp;", "&")
+    return __dict_replace(data, entities)
 
 def quoteattr(data, entities={}):
     """Escape and quote an attribute value.
