@@ -48,7 +48,7 @@ for more informations about rich comparisons.
 
 
 The logical operations are also generally applicable to all objects,
-and support truth tests, identity tests, and Boolean operations:
+and support truth tests, identity tests, and boolean operations:
 
 \begin{funcdesc}{not_}{o}
 \funcline{__not__}{o}
@@ -328,6 +328,10 @@ symbols in the Python syntax and the functions in the
           {\code{or_(\var{a}, \var{b})}}
   \lineiii{Exponentiation}{\code{\var{a} ** \var{b}}}
           {\code{pow(\var{a}, \var{b})}}
+  \lineiii{Identity}{\code{\var{a} is \var{b}}}
+          {\code{is_(\var{a}, \var{b})}}
+  \lineiii{Identity}{\code{\var{a} is not \var{b}}}
+          {\code{is_not(\var{a}, \var{b})}}
   \lineiii{Indexed Assignment}{\code{\var{o}[\var{k}] = \var{v}}}
           {\code{setitem(\var{o}, \var{k}, \var{v})}}
   \lineiii{Indexed Deletion}{\code{del \var{o}[\var{k}]}}
