@@ -9,7 +9,7 @@ class TypeinWidget(Pmw.MegaWidget):
 		   )
 	self.defineoptions(kw, options)
 
-	Pmw.MegaWidget.__init__(self,parent)
+	Pmw.MegaWidget.__init__(self, parent)
 	interiorarg = (self.interior(),)
 
 	# create the x, y, and z label
