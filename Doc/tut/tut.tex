@@ -1467,7 +1467,7 @@ Here's an example that fails due to this restriction:
 >>> function(0, a=0)
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
-TypeError: keyword parameter redefined
+TypeError: function() got multiple values for keyword argument 'a'
 \end{verbatim}
 
 When a final formal parameter of the form \code{**\var{name}} is
@@ -1875,9 +1875,8 @@ of the comprehension:
 >>> x = 100                     # this gets overwritten
 >>> [x**3 for x in range(5)]
 [0, 1, 8, 27, 64]
->>> x
-4                               # the final value for range(5)
->>
+>>> x                           # the final value for range(5)
+4
 \end{verbatim}
 
 
@@ -1889,8 +1888,7 @@ remove slices from a list (which we did earlier by assignment of an
 empty list to the slice).  For example:
 
 \begin{verbatim}
->>> a
-[-1, 1, 66.6, 333, 333, 1234.5]
+>>> a = [-1, 1, 66.6, 333, 333, 1234.5]
 >>> del a[0]
 >>> a
 [1, 66.6, 333, 333, 1234.5]
@@ -2036,7 +2034,7 @@ Here is a small example using a dictionary:
 >>> tel.keys()
 ['guido', 'irv', 'jack']
 >>> tel.has_key('guido')
-1
+True
 \end{verbatim}
 
 The \function{dict()} contructor builds dictionaries directly from
@@ -2428,7 +2426,8 @@ prompts:
 >>> sys.ps1 = 'C> '
 C> print 'Yuck!'
 Yuck!
-C> 
+C>
+
 \end{verbatim}
 
 These two variables are only defined if the interpreter is in
@@ -3135,7 +3134,7 @@ however, and result in error messages as shown here:
 >>> 10 * (1/0)
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
-ZeroDivisionError: integer division or modulo
+ZeroDivisionError: integer division or modulo by zero
 >>> 4 + spam*3
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
@@ -3143,7 +3142,7 @@ NameError: name 'spam' is not defined
 >>> '2' + 2
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
-TypeError: illegal argument type for built-in operation
+TypeError: cannot concatenate 'str' and 'int' objects
 \end{verbatim}
 
 The last line of the error message indicates what happened.
