@@ -28,14 +28,15 @@ return a tuple of functions \code{(\var{encoder}, \var{decoder}, \var{stream_rea
 \var{stream_writer})} taking the following arguments:
 
   \var{encoder} and \var{decoder}: These must be functions or methods
-  which have the same interface as the .encode/.decode methods of
-  Codec instances (see Codec Interface). The functions/methods are
-  expected to work in a stateless mode.
+  which have the same interface as the
+  \method{encode()}/\method{decode()} methods of Codec instances (see
+  Codec Interface). The functions/methods are expected to work in a
+  stateless mode.
 
   \var{stream_reader} and \var{stream_writer}: These have to be
   factory functions providing the following interface:
 
-	\code{factory(\var{stream}, \var{errors}='strict')}
+        \code{factory(\var{stream}, \var{errors}='strict')}
 
   The factory functions must return objects providing the interfaces
   defined by the base classes \class{StreamWriter} and
@@ -103,12 +104,6 @@ If \var{output} is not given, it defaults to \var{input}.
 an encoding error occurs.
 \end{funcdesc}
 
-
-
-...XXX document codec base classes...
-
-
-
 The module also provides the following constants which are useful
 for reading and writing to platform dependent files:
 
@@ -126,4 +121,275 @@ depending on the platform's native byte order, while the others
 represent big endian (\samp{_BE} suffix) and little endian
 (\samp{_LE} suffix) byte order using 32-bit and 64-bit encodings.
 \end{datadesc}
+
+\subsection{Codec Base Classes}
+
+The \module{codecs} defines a set of base classes which define the
+interface and can also be used to easily write you own codecs for use
+in Python.
+
+Each codec has to define four interfaces to make it usable as codec in
+Python: stateless encoder, stateless decoder, stream reader and stream
+writer. The stream reader and writers typically reuse the stateless
+encoder/decoder to implement the file protocols.
+
+The \class{Codec} class defines the interface for stateless
+encoders/decoders.
+
+To simplify and standardize error handling, the \method{encode()} and
+\method{decode()} methods may implement different error handling
+schemes by providing the \var{errors} string argument.  The following
+string values are defined and implemented by all standard Python
+codecs:
+
+\begin{itemize}
+  \item \code{'strict'} Raise \exception{ValueError} (or a subclass);
+                      this is the default.
+  \item \code{'ignore'} Ignore the character and continue with the next.
+  \item \code{'replace'} Replace with a suitable replacement character;
+                      Python will use the official U+FFFD REPLACEMENT
+                      CHARACTER for the builtin Unicode codecs.
+\end{itemize}
+
+
+\subsubsection{Codec Objects \label{codec-objects}}
+
+The \class{Codec} class defines these methods which also define the
+function interfaces of the stateless encoder and decoder:
+
+\begin{methoddesc}{encode}{input\optional{, errors}}
+  Encodes the object \var{input} and returns a tuple (output object,
+  length consumed).
+
+  \var{errors} defines the error handling to apply. It defaults to
+  \code{'strict'} handling.
+
+  The method may not store state in the \class{Codec} instance. Use
+  \class{StreamCodec} for codecs which have to keep state in order to
+  make encoding/decoding efficient.
+
+  The encoder must be able to handle zero length input and return an
+  empty object of the output object type in this situation.
+\end{methoddesc}
+
+\begin{methoddesc}{decode}{input\optional{, errors}}
+  Decodes the object \var{input} and returns a tuple (output object,
+  length consumed).
+
+  \var{input} must be an object which provides the \code{bf_getreadbuf}
+  buffer slot.  Python strings, buffer objects and memory mapped files
+  are examples of objects providing this slot.
+
+  \var{errors} defines the error handling to apply. It defaults to
+  \code{'strict'} handling.
+
+  The method may not store state in the \class{Codec} instance. Use
+  \class{StreamCodec} for codecs which have to keep state in order to
+  make encoding/decoding efficient.
+
+  The decoder must be able to handle zero length input and return an
+  empty object of the output object type in this situation.
+\end{methoddesc}
+
+The \class{StreamWriter} and \class{StreamReader} classes provide
+generic working interfaces which can be used to implement new
+encodings submodules very easily. See \module{encodings.utf_8} for an
+example on how this is done.
+
+
+\subsubsection{StreamWriter Objects \label{stream-writer-objects}}
+
+The \class{StreamWriter} class is a subclass of \class{Codec} and
+defines the following methods which every stream writer must define in
+order to be compatible to the Python codec registry.
+
+\begin{classdesc}{StreamWriter}{stream\optional{, errors}}
+  Constructor for a \class{StreamWriter} instance. 
+
+  All stream writers must provide this constructor interface. They are
+  free to add additional keyword arguments, but only the ones defined
+  here are used by the Python codec registry.
+
+  \var{stream} must be a file-like object open for writing (binary)
+  data.
+
+  The \class{StreamWriter} may implement different error handling
+  schemes by providing the \var{errors} keyword argument. These
+  parameters are defined:
+
+  \begin{itemize}
+    \item \code{'strict'} Raise \exception{ValueError} (or a subclass);
+                          this is the default.
+    \item \code{'ignore'} Ignore the character and continue with the next.
+    \item \code{'replace'} Replace with a suitable replacement character
+  \end{itemize}
+\end{classdesc}
+
+\begin{methoddesc}{write}{object}
+  Writes the object's contents encoded to the stream.
+\end{methoddesc}
+
+\begin{methoddesc}{writelines}{list}
+  Writes the concatenated list of strings to the stream (possibly by
+  reusing the \method{write()} method).
+\end{methoddesc}
+
+\begin{methoddesc}{reset}{}
+  Flushes and resets the codec buffers used for keeping state.
+
+  Calling this method should ensure that the data on the output is put
+  into a clean state, that allows appending of new fresh data without
+  having to rescan the whole stream to recover state.
+\end{methoddesc}
+
+In addition to the above methods, the \class{StreamWriter} must also
+inherit all other methods and attribute from the underlying stream.
+
+
+\subsubsection{StreamReader Objects \label{stream-reader-objects}}
+
+The \class{StreamReader} class is a subclass of \class{Codec} and
+defines the following methods which every stream reader must define in
+order to be compatible to the Python codec registry.
+
+\begin{classdesc}{StreamReader}{stream\optional{, errors}}
+  Constructor for a \class{StreamReader} instance. 
+
+  All stream readers must provide this constructor interface. They are
+  free to add additional keyword arguments, but only the ones defined
+  here are used by the Python codec registry.
+
+  \var{stream} must be a file-like object open for reading (binary)
+  data.
+
+  The \class{StreamReader} may implement different error handling
+  schemes by providing the \var{errors} keyword argument. These
+  parameters are defined:
+
+  \begin{itemize}
+    \item \code{'strict'} Raise \exception{ValueError} (or a subclass);
+                          this is the default.
+    \item \code{'ignore'} Ignore the character and continue with the next.
+    \item \code{'replace'} Replace with a suitable replacement character.
+  \end{itemize}
+\end{classdesc}
+
+\begin{methoddesc}{read}{\optional{size}}
+  Decodes data from the stream and returns the resulting object.
+
+  \var{size} indicates the approximate maximum number of bytes to read
+  from the stream for decoding purposes. The decoder can modify this
+  setting as appropriate. The default value -1 indicates to read and
+  decode as much as possible.  \var{size} is intended to prevent having
+  to decode huge files in one step.
+
+  The method should use a greedy read strategy meaning that it should
+  read as much data as is allowed within the definition of the encoding
+  and the given size, e.g.  if optional encoding endings or state
+  markers are available on the stream, these should be read too.
+\end{methoddesc}
+
+\begin{methoddesc}{readline}{[size]}
+  Read one line from the input stream and return the
+  decoded data.
+
+  Note: Unlike the \method{readlines()} method, this method inherits
+  the line breaking knowledge from the underlying stream's
+  \method{readline()} method -- there is currently no support for line
+  breaking using the codec decoder due to lack of line buffering.
+  Sublcasses should however, if possible, try to implement this method
+  using their own knowledge of line breaking.
+
+  \var{size}, if given, is passed as size argument to the stream's
+  \method{readline()} method.
+\end{methoddesc}
+
+\begin{methoddesc}{readlines}{[sizehint]}
+  Read all lines available on the input stream and return them as list
+  of lines.
+
+  Line breaks are implemented using the codec's decoder method and are
+  included in the list entries.
+
+  \var{sizehint}, if given, is passed as \var{size} argument to the
+  stream's \method{read()} method.
+\end{methoddesc}
+
+\begin{methoddesc}{reset}{}
+  Resets the codec buffers used for keeping state.
+
+  Note that no stream repositioning should take place.  This method is
+  primarily intended to be able to recover from decoding errors.
+\end{methoddesc}
+
+In addition to the above methods, the \class{StreamReader} must also
+inherit all other methods and attribute from the underlying stream.
+
+The next two base classes are included for convenience. They are not
+needed by the codec registry, but may provide useful in practice.
+
+
+\subsubsection{StreamReaderWriter Objects \label{stream-reader-writer}}
+
+The \class{StreamReaderWriter} allows wrapping streams which work in
+both read and write modes.
+
+The design is such that one can use the factory functions returned by
+the \function{lookup()} function to construct the instance.
+
+\begin{classdesc}{StreamReaderWriter}{stream, Reader, Writer, errors}
+  Creates a \class{StreamReaderWriter} instance.
+  \var{stream} must be a file-like object.
+  \var{Reader} and \var{Writer} must be factory functions or classes
+  providing the \class{StreamReader} and \class{StreamWriter} interface
+  resp.
+  Error handling is done in the same way as defined for the
+  stream readers and writers.
+\end{classdesc}
+
+\class{StreamReaderWriter} instances define the combined interfaces of
+\class{StreamReader} and \class{StreamWriter} classes. They inherit
+all other methods and attribute from the underlying stream.
+
+
+\subsubsection{StreamRecoder Objects \label{stream-recoder-objects}}
+
+The \class{StreamRecoder} provide a frontend - backend view of
+encoding data which is sometimes useful when dealing with different
+encoding environments.
+
+The design is such that one can use the factory functions returned by
+the \function{lookup()} function to construct the instance.
+
+\begin{classdesc}{StreamRecoder}{stream, encode, decode,
+                                 Reader, Writer, errors}
+  Creates a \class{StreamRecoder} instance which implements a two-way
+  conversion: \var{encode} and \var{decode} work on the frontend (the
+  input to \method{read()} and output of \method{write()}) while
+  \var{Reader} and \var{Writer} work on the backend (reading and
+  writing to the stream).
+
+  You can use these objects to do transparent direct recodings from
+  e.g.\ Latin-1 to UTF-8 and back.
+
+  \var{stream} must be a file-like object.
+
+  \var{encode}, \var{decode} must adhere to the \class{Codec}
+  interface, \var{Reader}, \var{Writer} must be factory functions or
+  classes providing objects of the the \class{StreamReader} and
+  \class{StreamWriter} interface respectively.
+
+  \var{encode} and \var{decode} are needed for the frontend
+  translation, \var{Reader} and \var{Writer} for the backend
+  translation.  The intermediate format used is determined by the two
+  sets of codecs, e.g. the Unicode codecs will use Unicode as
+  intermediate encoding.
+
+  Error handling is done in the same way as defined for the
+  stream readers and writers.
+\end{classdesc}
+
+\class{StreamRecoder} instances define the combined interfaces of
+\class{StreamReader} and \class{StreamWriter} classes. They inherit
+all other methods and attribute from the underlying stream.
 
