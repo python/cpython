@@ -99,7 +99,7 @@ class Message(rfc822.Message):
 _prefix = None
 
 def choose_boundary():
-	global _generation, _prefix, _timestamp
+	global _prefix
 	import time
 	import rand
 	if _prefix == None:
