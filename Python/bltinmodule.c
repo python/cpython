@@ -169,7 +169,7 @@ builtin_filter(self, args)
 		if ((item = (*sqf->sq_item)(seq, i)) == NULL) {
 			if (i < len)
 				goto Fail_1;
-			if (PyErr_Occurred() == PyExc_IndexError) {
+			if (PyErr_ExceptionMatches(PyExc_IndexError)) {
 				PyErr_Clear();
 				break;
 			}
@@ -726,8 +726,9 @@ builtin_map(self, args)
 				if (item == NULL) {
 					if (i < sqp->len)
 						goto Fail_0;
-					if (PyErr_Occurred() ==
-					    PyExc_IndexError) {
+					if (PyErr_ExceptionMatches(
+						PyExc_IndexError))
+					{
 						PyErr_Clear();
 						Py_INCREF(Py_None);
 						item = Py_None;
@@ -1067,7 +1068,7 @@ min_max(args, sign)
 	for (i = 0; ; i++) {
 		x = (*sq->sq_item)(v, i); /* Implies INCREF */
 		if (x == NULL) {
-			if (PyErr_Occurred() == PyExc_IndexError) {
+			if (PyErr_ExceptionMatches(PyExc_IndexError)) {
 				PyErr_Clear();
 				break;
 			}
@@ -1415,7 +1416,7 @@ builtin_reduce(self, args)
 		}
 
 		if ((op2 = (*sqf->sq_item)(seq, i)) == NULL) {
-			if (PyErr_Occurred() == PyExc_IndexError) {
+			if (PyErr_ExceptionMatches(PyExc_IndexError)) {
 				PyErr_Clear();
 				break;
 			}
@@ -1613,6 +1614,57 @@ builtin_vars(self, args)
 	return d;
 }
 
+static PyObject *
+builtin_isinstance(self, args)
+     PyObject *self;
+     PyObject *args;
+{
+	PyObject *inst;
+	PyObject *cls;
+	int retval;
+
+	if (!PyArg_ParseTuple(args, "OO", &inst, &cls))
+		return NULL;
+	if (!PyClass_Check(cls)) {
+		PyErr_SetString(PyExc_TypeError,
+				"second argument must be a class");
+		return NULL;
+	}
+
+	if (!PyInstance_Check(inst))
+		retval = 0;
+	else {
+		PyObject *inclass =
+			(PyObject*)((PyInstanceObject*)inst)->in_class;
+		retval = PyClass_IsSubclass(inclass, cls);
+	}
+	return PyInt_FromLong(retval);
+}
+
+
+static PyObject *
+builtin_issubclass(self, args)
+     PyObject *self;
+     PyObject *args;
+{
+	PyObject *derived;
+	PyObject *cls;
+	int retval;
+
+	if (!PyArg_ParseTuple(args, "OO", &derived, &cls))
+		return NULL;
+	if (!PyClass_Check(derived) || !PyClass_Check(cls)) {
+		PyErr_SetString(PyExc_TypeError, "arguments must be classes");
+		return NULL;
+	}
+	/* shortcut */
+	if (!(retval = (derived == cls)))
+		retval = PyClass_IsSubclass(derived, cls);
+
+	return PyInt_FromLong(retval);
+}
+
+
 static PyMethodDef builtin_methods[] = {
 	{"__import__",	builtin___import__, 1},
 	{"abs",		builtin_abs, 1},
@@ -1641,6 +1693,8 @@ static PyMethodDef builtin_methods[] = {
 	{"input",	builtin_input, 1},
 	{"intern",	builtin_intern, 1},
 	{"int",		builtin_int, 1},
+	{"isinstance",  builtin_isinstance, 1},
+	{"issubclass",  builtin_issubclass, 1},
 	{"len",		builtin_len, 1},
 	{"list",	builtin_list, 1},
 	{"locals",	builtin_locals, 1},
