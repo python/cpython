@@ -51,7 +51,9 @@
 #endif
 
 #ifndef Py_DEBUG
+#ifndef NDEBUG
 #define NDEBUG 1
+#endif
 #endif
 #include <assert.h>
 
