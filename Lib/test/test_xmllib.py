@@ -16,7 +16,6 @@ testdoc = """\
 import warnings
 warnings.filterwarnings("ignore", ".* xmllib .* obsolete.*",
                         DeprecationWarning)
-del warnings
 
 import test_support
 import unittest
@@ -33,6 +32,7 @@ class XMLParserTestCase(unittest.TestCase):
 
 def test_main():
     test_support.run_unittest(XMLParserTestCase)
+    warnings.resetwarnings()
 
 
 if __name__ == "__main__":
