@@ -28,7 +28,7 @@ without surprises: heap[0] is the smallest item, and heap.sort()
 maintains the heap invariant!
 """
 
-# Code by Kevin O'Connor
+# Original code by Kevin O'Connor, augmented by Tim Peters
 
 __about__ = """Heap queues
 
