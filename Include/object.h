@@ -130,9 +130,11 @@ typedef struct {
 	object *(*nb_multiply) FPROTO((object *, object *));
 	object *(*nb_divide) FPROTO((object *, object *));
 	object *(*nb_remainder) FPROTO((object *, object *));
+	object *(*nb_divmod) FPROTO((object *, object *));
 	object *(*nb_power) FPROTO((object *, object *));
 	object *(*nb_negative) FPROTO((object *));
 	object *(*nb_positive) FPROTO((object *));
+	object *(*nb_absolute) FPROTO((object *));
 } number_methods;
 
 typedef struct {
