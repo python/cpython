@@ -3798,6 +3798,46 @@ datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
 	return result;
 }
 
+/* Return new datetime from time.strptime(). */
+static PyObject *
+datetime_strptime(PyObject *cls, PyObject *args)
+{
+	PyObject *result = NULL, *obj, *module;
+	const char *string, *format;
+
+	if (!PyArg_ParseTuple(args, "ss:strptime", &string, &format))
+		return NULL;
+
+	if ((module = PyImport_ImportModule("time")) == NULL)
+		return NULL;
+	obj = PyObject_CallMethod(module, "strptime", "ss", string, format);
+	Py_DECREF(module);
+
+	if (obj != NULL) {
+		int i, good_timetuple = 1;
+		long int ia[6];
+		if (PySequence_Check(obj) && PySequence_Size(obj) >= 6)
+			for (i=0; i < 6; i++) {
+				PyObject *p = PySequence_GetItem(obj, i);
+				if (PyInt_Check(p))
+					ia[i] = PyInt_AsLong(p);
+				else
+					good_timetuple = 0;
+				Py_DECREF(p);
+			}
+		else
+			good_timetuple = 0;
+		if (good_timetuple)
+			result = PyObject_CallFunction(cls, "iiiiii",
+				ia[0], ia[1], ia[2], ia[3], ia[4], ia[5]);
+		else
+			PyErr_SetString(PyExc_ValueError,
+				"unexpected value from time.strptime");
+		Py_DECREF(obj);
+	}
+	return result;
+}
+
 /* Return new datetime from date/datetime and time arguments. */
 static PyObject *
 datetime_combine(PyObject *cls, PyObject *args, PyObject *kw)
@@ -4418,6 +4458,11 @@ static PyMethodDef datetime_methods[] = {
 	 METH_VARARGS | METH_CLASS,
 	 PyDoc_STR("timestamp -> UTC datetime from a POSIX timestamp "
 	 	   "(like time.time()).")},
+
+	{"strptime", (PyCFunction)datetime_strptime,
+	 METH_VARARGS | METH_CLASS,
+	 PyDoc_STR("string, format -> new datetime parsed from a string "
+	 	   "(like time.strptime()).")},
 
 	{"combine", (PyCFunction)datetime_combine,
 	 METH_VARARGS | METH_KEYWORDS | METH_CLASS,

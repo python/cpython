@@ -624,6 +624,15 @@ Other constructors, all class methods:
   ignored.
   \end{methoddesc}
 
+\begin{methoddesc}{strptime}{date_string, format}
+  Return a \class{datetime} corresponding to \var{date_string}, parsed
+  according to \var{format}.  This is equivalent to
+  \code{datetime(*(time.strptime(date_string,
+  format)[0:6]))}. \exception{ValueError} is raised if the date_string and
+  format can't be parsed by \function{time.strptime()} or if it returns a
+  value which isn't a time tuple.
+\end{methoddesc}
+
 Class attributes:
 
 \begin{memberdesc}{min}
