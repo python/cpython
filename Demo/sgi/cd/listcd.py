@@ -20,3 +20,5 @@ def main():
 def z(n):
 	s = `n`
 	return '0' * (2 - len(s)) + s
+
+main()
