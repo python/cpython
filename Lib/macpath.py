@@ -104,17 +104,17 @@ def isdir(s):
 def getsize(filename):
     """Return the size of a file, reported by os.stat()."""
     st = os.stat(filename)
-    return st[stat.ST_SIZE]
+    return st[ST_SIZE]
 
 def getmtime(filename):
     """Return the last modification time of a file, reported by os.stat()."""
     st = os.stat(filename)
-    return st[stat.ST_MTIME]
+    return st[ST_MTIME]
 
 def getatime(filename):
     """Return the last access time of a file, reported by os.stat()."""
     st = os.stat(filename)
-    return st[stat.ST_MTIME]
+    return st[ST_MTIME]
 
 
 # Return true if the pathname refers to a symbolic link.
