@@ -154,7 +154,7 @@ class IMAP4:
 		self._simple_command(cap)
 		if not self.untagged_responses.has_key(cap):
 			raise self.error('no CAPABILITY response from server')
-		self.capabilities = tuple(string.split(self.untagged_responses[cap][-1]))
+		self.capabilities = tuple(string.split(string.upper(self.untagged_responses[cap][-1])))
 
 		if __debug__ and self.debug >= 3:
 			_mesg('CAPABILITIES: %s' % `self.capabilities`)
