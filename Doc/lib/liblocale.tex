@@ -155,6 +155,20 @@ for which symbolic constants are available in the locale module.
   \versionadded{2.0}
 \end{funcdesc}
 
+\begin{funcdesc}{getpreferredencoding}{\optional{do_setlocale}}
+  Return the encoding used for text data, according to user
+  preferences.  User preferences are expressed differently on
+  different systems, and might not be available programmatically on
+  some systems, so this function only returns a guess.
+
+  On some systems, it is necessary to invoke \function{setlocale}
+  to obtain the user preferences, so this function is not thread-safe.
+  If invoking setlocale is not necessary or desired, \var{do_setlocale}
+  should be set to \code{False}.
+
+  \versionadded{2.3}
+\end{funcdesc}
+
 \begin{funcdesc}{normalize}{localename}
   Returns a normalized locale code for the given locale name.  The
   returned locale code is formatted for use with
