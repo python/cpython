@@ -95,6 +95,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* No preferences file name resource */
 #define NOPREFNAME_ID	BASE_ID+9
 
+/* Not a script */
+#define NOTASCRIPT_ID BASE_ID+10
+
 /* EditPythonPrefs range. Needed here to forestall conflicts with applets */
 #define EDITPYTHONPREFS_MIN	508
 #define EDITPYTHONPREFS_MAX 511

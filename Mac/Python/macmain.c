@@ -486,6 +486,11 @@ PyMac_InitApplication()
 			PyMac_FixGUSIcd();
 #endif
 		}
+		/* Check that the first argument is a text file */
+		if ( PyMac_getfiletype(argv[1]) != 'TEXT' ) {
+			Alert(NOTASCRIPT_ID, NULL);
+			exit(0);
+		}
 	}
 	Py_Main(argc, argv);
 }
