@@ -36,6 +36,10 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "structmember.h"
 #include "ceval.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifdef THINK_C
 #define HAVE_FOPENRF
 #endif
