@@ -358,10 +358,17 @@ class PimpDatabase:
     def __init__(self, prefs):
         self._packages = []
         self.preferences = prefs
+        self._url = ""
         self._urllist = []
         self._version = ""
         self._maintainer = ""
         self._description = ""
+        
+    # Accessor functions
+    def url(self): return self._url
+    def version(self): return self._version
+    def maintainer(self): return self._maintainer
+    def description(self): return self._description
         
     def close(self):
         """Clean up"""
@@ -393,6 +400,7 @@ class PimpDatabase:
                     % (self._version, PIMP_VERSION))
             self._maintainer = plistdata.get('Maintainer', '')
             self._description = plistdata.get('Description', '').strip()
+            self._url = url
         self._appendPackages(plistdata['Packages'])
         others = plistdata.get('Include', [])
         for url in others:
@@ -900,7 +908,7 @@ class PimpInstaller:
     def _addPackages(self, packages):
         for package in packages:
             if not package in self._todo:
-                self._todo.insert(0, package)
+                self._todo.append(package)
             
     def _prepareInstall(self, package, force=0, recursive=1):
         """Internal routine, recursive engine for prepareInstall.

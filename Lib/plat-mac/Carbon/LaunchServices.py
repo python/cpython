@@ -4,6 +4,8 @@ def FOUR_CHAR_CODE(x): return x
 from Carbon.Files import *
 kLSRequestAllInfo = -1
 kLSRolesAll = -1
+kLSUnknownType = FOUR_CHAR_CODE('\0\0\0\0')
+kLSUnknownCreator = FOUR_CHAR_CODE('\0\0\0\0')
 kLSInvalidExtensionIndex = -1
 kLSUnknownErr = -10810
 kLSNotAnApplicationErr = -10811
@@ -49,8 +51,8 @@ kLSRolesViewer = 0x00000002
 kLSRolesEditor = 0x00000004
 # kLSRolesAll = (unsigned long)0xFFFFFFFF 
 kLSUnknownKindID = 0
-kLSUnknownType = 0
-kLSUnknownCreator = 0
+# kLSUnknownType = 0
+# kLSUnknownCreator = 0
 kLSAcceptDefault = 0x00000001
 kLSAcceptAllowLoginUI = 0x00000002 
 kLSLaunchDefaults = 0x00000001
