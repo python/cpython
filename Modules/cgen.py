@@ -38,7 +38,7 @@ import sys
 
 # Function to print to stderr
 #
-def err(args):
+def err(*args):
 	savestdout = sys.stdout
 	try:
 		sys.stdout = sys.stderr
@@ -213,8 +213,8 @@ def generate(type, func, database):
 			# Can't happen
 			raise arg_error, ('bad a_mode', a_mode)
 		if (a_mode == 'r' and a_sub) or a_sub == 'retval':
-			e = 'Function', func, 'too complicated:'
-			err(e + (a_type, a_mode, a_factor, a_sub))
+			err('Function', func, 'too complicated:',
+			    a_type, a_mode, a_factor, a_sub)
 			print '/* XXX Too complicated to generate code for */'
 			return
 	#
