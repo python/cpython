@@ -57,11 +57,11 @@ class List(Wbase.SelectableWidget):
 	def adjust(self, oldbounds):
 		self.SetPort()
 		if self._selected:
-			Win.InvalRect(Qd.InsetRect(oldbounds, -3, -3))
-			Win.InvalRect(Qd.InsetRect(self._bounds, -3, -3))
+			Win.InvalWindowRect(Qd.InsetRect(oldbounds, -3, -3))
+			Win.InvalWindowRect(Qd.InsetRect(self._bounds, -3, -3))
 		else:
-			Win.InvalRect(oldbounds)
-			Win.InvalRect(self._bounds)
+			Win.InvalWindowRect(oldbounds)
+			Win.InvalWindowRect(self._bounds)
 		if oldbounds[:2] == self._bounds[:2]:
 			# set visRgn to empty, to prevent nasty drawing side effect of LSize()
 			Qd.RectRgn(self._parentwindow.wid.GetWindowPort().visRgn, (0, 0, 0, 0))
@@ -359,7 +359,7 @@ class List(Wbase.SelectableWidget):
 						self.SetPort()
 						Qd.EraseRect((l, cb, cr, b))
 					self._list.LUpdate(self._parentwindow.wid.GetWindowPort().visRgn)
-					Win.ValidRect(bounds)
+					Win.ValidWindowRect(bounds)
 		else:
 			if self.drawingmode == 0 and self._list is not None:
 				self._list.LSetDrawingMode(0)

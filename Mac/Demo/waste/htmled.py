@@ -194,7 +194,7 @@ class WasteWindow(ScrolledWindow):
 		l, t, r, b = self.ted.WEGetViewRect()
 		vr = (l, t, l+width-15, t+height-15)
 		self.ted.WESetViewRect(vr)
-		Win.InvalRect(vr)
+		Win.InvalWindowRect(vr)
 		ScrolledWindow.do_postresize(self, width, height, window)
 		
 	def do_contentclick(self, local, modifiers, evt):
@@ -290,7 +290,7 @@ class WasteWindow(ScrolledWindow):
 		self.ted.WESetSelection(start, end)
 		self.ted.WESelView()
 		self.ted.WEFeatureFlag(WASTEconst.weFInhibitRecal, 0)
-		Win.InvalRect(self.ted.WEGetViewRect())
+		Win.InvalWindowRect(self.ted.WEGetViewRect())
 
 		self.updatescrollbars()
 		self.parent.updatemenubar()
