@@ -459,8 +459,4 @@ print
 print 'initgl()'
 print '{'
 print '\tinitmodule("gl", gl_methods);'
-print '\t/* Initialize GL and don\'t go in the background */'
-print '\tforeground();'
-print '\tnoport();'
-print '\twinopen("");'
 print '}'
