@@ -278,7 +278,8 @@ recheck:
 
 # Rebuild the configure script from configure.in; also rebuild config.h.in
 autoconf:
-		(cd $(srcdir); autoconf; autoheader)
+		(cd $(srcdir); autoconf)
+		(cd $(srcdir); autoheader)
 
 # Create a tags file for vi
 tags::
