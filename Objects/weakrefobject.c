@@ -505,11 +505,7 @@ proxy_nonzero(PyWeakReference *proxy)
     PyObject *o = PyWeakref_GET_OBJECT(proxy);
     if (!proxy_checkref(proxy))
         return -1;
-    if (o->ob_type->tp_as_number &&
-        o->ob_type->tp_as_number->nb_nonzero)
-        return (*o->ob_type->tp_as_number->nb_nonzero)(o);
-    else
-        return 1;
+    return PyObject_IsTrue(o);
 }
 
 static void
