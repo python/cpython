@@ -965,8 +965,17 @@ PyNumber_Int(PyObject *o)
 					 10);
 #endif
 	m = o->ob_type->tp_as_number;
-	if (m && m->nb_int)
-		return m->nb_int(o);
+	if (m && m->nb_int) {
+		PyObject *res = m->nb_int(o);
+		if (res && (!PyInt_Check(res) && !PyLong_Check(res))) {
+			PyErr_Format(PyExc_TypeError,
+				     "__int__ returned non-int (type %.200s)",
+				     res->ob_type->tp_name);
+			Py_DECREF(res);
+			return NULL;
+		}
+		return res;
+	}
 	if (!PyObject_AsCharBuffer(o, &buffer, &buffer_len))
 		return int_from_string((char*)buffer, buffer_len);
 
@@ -1022,8 +1031,17 @@ PyNumber_Long(PyObject *o)
 					  10);
 #endif
 	m = o->ob_type->tp_as_number;
-	if (m && m->nb_long)
-		return m->nb_long(o);
+	if (m && m->nb_long) {
+		PyObject *res = m->nb_long(o);
+		if (res && (!PyInt_Check(res) && !PyLong_Check(res))) {
+			PyErr_Format(PyExc_TypeError,
+				     "__long__ returned non-long (type %.200s)",
+				     res->ob_type->tp_name);
+			Py_DECREF(res);
+			return NULL;
+		}
+		return res;
+	}
 	if (!PyObject_AsCharBuffer(o, &buffer, &buffer_len))
 		return long_from_string(buffer, buffer_len);
 
@@ -1047,8 +1065,17 @@ PyNumber_Float(PyObject *o)
 	}
 	if (!PyString_Check(o)) {
 		m = o->ob_type->tp_as_number;
-		if (m && m->nb_float)
-			return m->nb_float(o);
+		if (m && m->nb_float) {
+			PyObject *res = m->nb_float(o);
+			if (res && !PyFloat_Check(res)) {
+				PyErr_Format(PyExc_TypeError,
+			          "__float__ returned non-float (type %.200s)",
+			          res->ob_type->tp_name);
+				Py_DECREF(res);
+				return NULL;
+			}
+			return res;
+		}
 	}
 	return PyFloat_FromString(o, NULL);
 }

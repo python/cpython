@@ -962,6 +962,7 @@ static PyObject *
 builtin_hex(PyObject *self, PyObject *v)
 {
 	PyNumberMethods *nb;
+	PyObject *res;
 
 	if ((nb = v->ob_type->tp_as_number) == NULL ||
 	    nb->nb_hex == NULL) {
@@ -969,7 +970,15 @@ builtin_hex(PyObject *self, PyObject *v)
 			   "hex() argument can't be converted to hex");
 		return NULL;
 	}
-	return (*nb->nb_hex)(v);
+	res = (*nb->nb_hex)(v);
+	if (res && !PyString_Check(res)) {
+		PyErr_Format(PyExc_TypeError,
+			     "__hex__ returned non-string (type %.200s)",
+			     res->ob_type->tp_name);
+		Py_DECREF(res);
+		return NULL;
+	}
+	return res;
 }
 
 PyDoc_STRVAR(hex_doc,
@@ -1178,6 +1187,7 @@ static PyObject *
 builtin_oct(PyObject *self, PyObject *v)
 {
 	PyNumberMethods *nb;
+	PyObject *res;
 
 	if (v == NULL || (nb = v->ob_type->tp_as_number) == NULL ||
 	    nb->nb_oct == NULL) {
@@ -1185,7 +1195,15 @@ builtin_oct(PyObject *self, PyObject *v)
 			   "oct() argument can't be converted to oct");
 		return NULL;
 	}
-	return (*nb->nb_oct)(v);
+	res = (*nb->nb_oct)(v);
+	if (res && !PyString_Check(res)) {
+		PyErr_Format(PyExc_TypeError,
+			     "__oct__ returned non-string (type %.200s)",
+			     res->ob_type->tp_name);
+		Py_DECREF(res);
+		return NULL;
+	}
+	return res;
 }
 
 PyDoc_STRVAR(oct_doc,

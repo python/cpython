@@ -948,12 +948,6 @@ int_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (tmp == NULL)
 		return NULL;
 	if (!PyInt_Check(tmp)) {
-		if (!PyLong_Check(tmp)) {
-			PyErr_SetString(PyExc_ValueError,
-					"value can't be converted to int");
-			Py_DECREF(tmp);
-			return NULL;
-		}
 		ival = PyLong_AsLong(tmp);
 		if (ival == -1 && PyErr_Occurred()) {
 			Py_DECREF(tmp);

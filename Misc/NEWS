@@ -28,6 +28,11 @@ Core and builtins
 
 - Compiler now treats None as a constant.
 
+- The type of values returned by __int__, __float__, __long__,
+  __oct__, and __hex__ are now checked.  Returning an invalid type
+  will cause a TypeError to be raised.  This matches the behavior of
+  Jython.
+
 Extension modules
 -----------------
 
