@@ -281,6 +281,51 @@ builtin_compile(self, args)
 	return compile_string(str, filename, start);
 }
 
+#ifndef WITHOUT_COMPLEX
+
+static object *
+builtin_complex(self, args)
+	object *self;
+	object *args;
+{
+	object *r, *i;
+	number_methods *nbr, *nbi;
+	complex cr, ci;
+
+	i = NULL;
+	if (!newgetargs(args, "O|O:complex", &r, &i))
+		return NULL;
+	if ((nbr = r->ob_type->tp_as_number) == NULL ||
+	     nbr->nb_float == NULL || (i != NULL &&
+	   ((nbi = i->ob_type->tp_as_number) == NULL ||
+	     nbi->nb_float == NULL))) {
+		err_setstr(TypeError,
+			   "complex() argument can't be converted to complex");
+		return NULL;
+	}
+	if (is_complexobject(r))
+		cr = ((complexobject*)r)->cval;
+	else {
+		cr.real = getfloatvalue((*nbr->nb_float)(r));
+		cr.imag = 0.;
+	}
+	if (i == NULL) {
+		ci.real = 0.;
+		ci.imag = 0.;
+	}
+	else if (is_complexobject(i))
+		ci = ((complexobject*)i)->cval;
+	else {
+		ci.real = getfloatvalue((*nbi->nb_float)(i));
+		ci.imag = 0.;
+	}
+	cr.real -= ci.imag;
+	cr.imag += ci.real;
+	return newcomplexobject(cr);
+}
+
+#endif
+
 static object *
 builtin_dir(self, args)
 	object *self;
@@ -954,7 +999,11 @@ do_pow(v, w)
 		err_setstr(TypeError, "pow() requires numeric arguments");
 		return NULL;
 	}
-	if (is_floatobject(w) && getfloatvalue(v) < 0.0) {
+	if (
+#ifndef WITHOUT_COMPLEX
+            !is_complexobject(v) && 
+#endif
+            is_floatobject(w) && getfloatvalue(v) < 0.0) {
 		if (!err_occurred())
 		    err_setstr(ValueError, "negative number to float power");
 		return NULL;
@@ -1394,6 +1443,9 @@ static struct methodlist builtin_methods[] = {
 	{"cmp",		builtin_cmp, 1},
 	{"coerce",	builtin_coerce, 1},
 	{"compile",	builtin_compile, 1},
+#ifndef WITHOUT_COMPLEX
+	{"complex",	builtin_complex, 1},
+#endif
 	{"delattr",	builtin_delattr, 1},
 	{"dir",		builtin_dir, 1},
 	{"divmod",	builtin_divmod, 1},
