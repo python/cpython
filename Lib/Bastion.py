@@ -141,6 +141,7 @@ def _test():
 	    return self.sum
     o = Original()
     b = Bastion(o)
+    testcode = """if 1:
     b.add(81)
     b.add(18)
     print "b.total() =", b.total()
@@ -156,6 +157,20 @@ def _test():
 	print "inaccessible"
     else:
 	print "accessible"
+    try:
+	print "b._get_.func_defaults =", b._get_.func_defaults,
+    except:
+	print "inaccessible"
+    else:
+	print "accessible"
+    \n"""
+    exec testcode
+    print '='*20, "Using rexec:", '='*20
+    import rexec
+    r = rexec.RExec()
+    m = r.add_module('__main__')
+    m.b = b
+    r.r_exec(testcode)
 
 
 if __name__ == '__main__':
