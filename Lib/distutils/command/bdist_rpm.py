@@ -19,27 +19,34 @@ class bdist_rpm (Command):
 
     user_options = [
         ('spec-only', None,
-         "Only regenerate spec file"),
+         "only regenerate spec file"),
         ('source-only', None,
-         "Only generate source RPM"),
+         "only generate source RPM"),
         ('binary-only', None,
-         "Only generate binary RPM"),
+         "only generate binary RPM"),
         ('use-bzip2', None,
-         "Use bzip2 instead of gzip to create source distribution"),
+         "use bzip2 instead of gzip to create source distribution"),
+        ('clean', None,
+         "clean up RPM build directory [default]"),
         ('no-clean', None,
-         "Do not clean RPM build directory"),
+         "don't clean up RPM build directory"),
+        ('use-rpm-opt-flags', None,
+         "compile with RPM_OPT_FLAGS when building from source RPM"),
         ('no-rpm-opt-flags', None,
-         "Do not pass any RPM CFLAGS to compiler")
-        ]
+         "do not pass any RPM CFLAGS to compiler"),
+       ]
 
+    negative_opt = {'no-clean': 'clean',
+                    'no-rpm-opt-flags': 'use-rpm-opt-flags'}
 
+                    
     def initialize_options (self):
         self.spec_only = None
         self.binary_only = None
         self.source_only = None
         self.use_bzip2 = None
-        self.no_clean = None
-        self.no_rpm_opt_flags = None
+        self.clean = 1
+        self.use_rpm_opt_flags = 1
 
     # initialize_options()
 
@@ -54,7 +61,7 @@ class bdist_rpm (Command):
                   "Cannot supply both '--source-only' and '--binary-only'"
         # don't pass CFLAGS to pure python distributions
         if not self.distribution.has_ext_modules():
-            self.no_rpm_opt_flags = 1
+            self.use_rpm_opt_flags = 0
 
     # finalize_options()
 
@@ -120,7 +127,7 @@ class bdist_rpm (Command):
         topdir = os.getcwd() + 'build/rpm'
         rpm_args.extend(['--define',
                          '_topdir ' + os.getcwd() + '/build/rpm',])
-        if not self.no_clean:
+        if self.clean:
             rpm_args.append('--clean')
         rpm_args.append(spec_path)
         self.spawn(rpm_args)
@@ -168,7 +175,7 @@ class bdist_rpm (Command):
         self.preun = self._check_string('preun')
         self.postun = self._check_string('postun')
         self.prep = self._check_string('prep', '%setup')
-        if not self.no_rpm_opt_flags:
+        if self.use_rpm_opt_flags:
             self.build = (self._check_string(
                 'build',
                 'env CFLAGS="$RPM_OPT_FLAGS" python setup.py build'))
