@@ -44,7 +44,7 @@ def compile(file, cfile=None, dfile=None):
     import os, marshal, __builtin__
     f = open(file)
     try:
-        timestamp = os.fstat(file.fileno())
+        timestamp = long(os.fstat(f.fileno())[8])
     except AttributeError:
         timestamp = long(os.stat(file)[8])
     codestring = f.read()
