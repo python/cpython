@@ -10,16 +10,17 @@ modules that needed to use site-specific modules would place
 longer necessary.
 
 This will append site-specific paths to to the module search path.
+\indexiii{module}{search}{path}
 
 It starts by constructing up to four directories from a head and a
 tail part.  For the head part, it uses \code{sys.prefix} and
 \code{sys.exec_prefix}; empty heads are skipped.  For
 the tail part, it uses the empty string (on Mac or Windows) or it uses
 first \file{lib/python\var{version}/site-packages} and then
-\file{lib/site-python} (on Unix).  For each of the distinct head-tail
-combinations, it sees if it refers to an existing directory, and if
-so, adds to \code{sys.path}, and also inspected for path configuration
-files.
+\file{lib/site-python} (on \UNIX{}).  For each of the distinct
+head-tail combinations, it sees if it refers to an existing directory,
+and if so, adds to \code{sys.path}, and also inspected for path
+configuration files.
 \indexii{site-python}{directory}
 \indexii{site-packages}{directory}
 
@@ -32,10 +33,6 @@ refers to a directory (rather than a file).  No item is added to
 \code{\#} are skipped.
 \index{package}
 \indexiii{path}{configuration}{file}
-\kwindex{sys.prefix}
-\kwindex{sys.exec_prefix}
-\kwindex{prefix}
-\kwindex{exec_prefix}
 
 For example, suppose \code{sys.prefix} and \code{sys.exec_prefix} are
 set to \file{/usr/local}.  The Python 1.5 library is then installed in
@@ -61,7 +58,8 @@ and \file{bar.pth} contains:
 bar
 \end{verbatim}\ecode
 
-Then the following directories are added to sys.path, in this order:
+Then the following directories are added to \code{sys.path}, in this
+order:
 
 \bcode\begin{verbatim}
 /usr/local/python1.5/site-packages/bar
@@ -75,11 +73,11 @@ Note that \file{bletch} is omitted because it doesn't exist; the
 configuration file.
 
 After these path manipulations, an attempt is made to import a module
-named \code{sitecustomize}, which can perform arbitrary site-specific
-customizations.  If this import fails with an \code{ImportError}
-exception, it is silently ignored.
-\refmodindex{sitecustomize}
+named \code{sitecustomize}\refmodindex{sitecustomize}, which can
+perform arbitrary site-specific customizations.  If this import fails
+with an \code{ImportError} exception, it is silently ignored.
 
-Note that for some non-Unix systems, \code{sys.prefix} and
+Note that for some non-\UNIX{} systems, \code{sys.prefix} and
 \code{sys.exec_prefix} are empty, and the path manipulations are
-skipped; however the import of \code{sitecustomize} is still attempted.
+skipped; however the import of
+\code{sitecustomize}\refmodindex{sitecustomize} is still attempted.
