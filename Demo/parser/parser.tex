@@ -1,0 +1,77 @@
+\documentstyle[twoside,10pt,myformat]{report}
+
+%%  This manual does not supplement the chapter from the Python
+%%  Library Reference, but only allows formatting of the parser module
+%%  component of that document as a separate document, and was created
+%%  primarily to ease review of the formatted document during authoring.
+
+\title{Python Parser Module Reference}
+\author{
+	Fred L. Drake, Jr. \\
+	Corporation for National Research Initiatives (CNRI) \\
+	1895 Preston White Drive, Reston, Va 20191, USA \\
+	E-mail: {\tt fdrake@cnri.reston.va.us}, {\tt fdrake@intr.net}
+}
+
+\date{August 20th, 1996 \\ Release 1.4}
+
+\begin{document}
+
+\pagenumbering{roman}
+
+\maketitle
+
+Copyright \copyright{} 1995-1996 by Fred L. Drake, Jr. and Virginia
+Polytechnic Institute and State University, Blacksburg, Virginia, USA.
+Portions of the software copyright 1991-1995 by Stichting Mathematisch
+Centrum, Amsterdam, The Netherlands.  Copying is permitted under the
+terms associated with the main Python distribution, with the
+additional restriction that this additional notice be included and
+maintained on all distributed copies.
+
+\begin{center}
+All Rights Reserved
+\end{center}
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in
+supporting documentation, and that the names of Fred L. Drake, Jr. and
+Virginia Polytechnic Institute and State University not be used in
+advertising or publicity pertaining to distribution of the software
+without specific, written prior permission.
+
+FRED L. DRAKE, JR. AND VIRGINIA POLYTECHNIC INSTITUTE AND STATE
+UNIVERSITY DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
+EVENT SHALL FRED L. DRAKE, JR. OR VIRGINIA POLYTECHNIC INSTITUTE AND
+STATE UNIVERSITY BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL
+DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+
+\begin{abstract}
+
+\noindent
+The \emph{Python Parser Module Reference} describes the interfaces
+published by the optional \code{parser} module and gives examples of
+how they may be used.  It contains the same text as the chapter on the
+\code{parser} module in the \emph{Python Library Reference}, but is
+presented as a separate document.
+
+This manual assumes basic knowledge about the Python language.  For an
+informal introduction to Python, see the {\em Python Tutorial}; the
+Python Reference Manual remains the highest authority on syntactic and
+semantic questions.
+
+\end{abstract}
+
+\pagebreak
+\pagenumbering{arabic}
+
+\chapter{Parser Module Reference}
+\input{libparser}
+
+\end{document}

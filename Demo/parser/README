@@ -1,0 +1,15 @@
+These files are from the large example of using the `parser' module.  Refer
+to the Python Library Reference for more information.
+
+Files:
+------
+
+	example.py   --	module that uses the `parser' module to extract
+			information from the parse tree of Python source
+			code.
+
+	source.py    --	sample source code used to demonstrate ability to
+			handle nested constructs easily using the functions
+			and classes in example.py.
+
+Enjoy!
