@@ -338,9 +338,10 @@ print_stmt: '>>' expression [ (',' expression)+ [','] ] )
 
 In this form, the first expression after the \keyword{>>} must
 evaluate to a ``file-like'' object, specifically an object that has a
-\method{write()} method as described above.  With the extended form,
-the subsequent expressions are printed to this file-like object
-instead of \code{sys.stdout}.
+\method{write()} method as described above.  With this extended form,
+the subsequent expressions are printed to this file object.  If the
+first expression evaluates to \code{None}, then \code{sys.stdout} is
+used as the file for output.
 
 \section{The \keyword{return} statement \label{return}}
 \stindex{return}
