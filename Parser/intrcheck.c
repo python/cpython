@@ -168,6 +168,9 @@ intcatcher(int sig)
 	}
 	signal(SIGINT, intcatcher);
 	Py_AddPendingCall(checksignals_witharg, NULL);
+#if RETSIGTYPE != void
+	return 0;
+#endif
 }
 
 static RETSIGTYPE (*old_siginthandler)(int) = SIG_DFL;
