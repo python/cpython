@@ -1430,6 +1430,30 @@ def inherits():
     verify(hash(a) == hash(12345.0))
     verify((+a).__class__ is float)
 
+    class madcomplex(complex):
+        def __repr__(self):
+            return "%.17gj%+.17g" % (self.imag, self.real)
+    a = madcomplex(-3, 4)
+    verify(repr(a) == "4j-3")
+    base = complex(-3, 4)
+    verify(base.__class__ is complex)
+    verify(complex(a) == base)
+    verify(complex(a).__class__ is complex)
+    a = madcomplex(a)  # just trying another form of the constructor
+    verify(repr(a) == "4j-3")
+    verify(complex(a) == base)
+    verify(complex(a).__class__ is complex)
+    verify(hash(a) == hash(base))
+    verify((+a).__class__ is complex)
+    verify((a + 0).__class__ is complex)
+    verify(a + 0 == base)
+    verify((a - 0).__class__ is complex)
+    verify(a - 0 == base)
+    verify((a * 1).__class__ is complex)
+    verify(a * 1 == base)
+    verify((a / 1).__class__ is complex)
+    verify(a / 1 == base)
+
     class madtuple(tuple):
         _rev = None
         def rev(self):

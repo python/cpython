@@ -43,6 +43,7 @@ typedef struct {
 extern DL_IMPORT(PyTypeObject) PyComplex_Type;
 
 #define PyComplex_Check(op) PyObject_TypeCheck(op, &PyComplex_Type)
+#define PyComplex_CheckExact(op) ((op)->ob_type == &PyComplex_Type)
 
 extern DL_IMPORT(PyObject *) PyComplex_FromCComplex(Py_complex);
 extern DL_IMPORT(PyObject *) PyComplex_FromDoubles(double real, double imag);
