@@ -150,7 +150,7 @@ class Profile:
             bias = self.bias
         self.bias = bias     # Materialize in local dict for lookup speed.
 
-        if not timer:
+        if timer is None:
             if os.name == 'mac':
                 self.timer = MacOS.GetTicks
                 self.dispatcher = self.trace_dispatch_mac

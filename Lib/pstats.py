@@ -506,7 +506,7 @@ if __name__ == '__main__':
         def __init__(self, profile=None):
             cmd.Cmd.__init__(self)
             self.prompt = "% "
-            if profile:
+            if profile is not None:
                 self.stats = Stats(profile)
             else:
                 self.stats = None

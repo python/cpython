@@ -21,7 +21,7 @@ class NetrcParseError(Exception):
 
 class netrc:
     def __init__(self, file=None):
-        if not file:
+        if file is None:
             try:
                 file = os.path.join(os.environ['HOME'], ".netrc")
             except KeyError:
