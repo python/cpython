@@ -44,7 +44,7 @@ typedef double va_double;
 
 static char api_version_warning[] =
 "WARNING: Python C API version mismatch for module %s:\n\
-  This Python has API version %d, module %s has version %s.\n";
+  This Python has API version %d, module %s has version %d.\n";
 
 object *
 initmodule4(name, methods, doc, passthrough, module_api_version)
