@@ -732,7 +732,7 @@ static PyObject *
 PyCursesWindow_GetCh(PyCursesWindowObject *self, PyObject *args)
 {
   int x, y;
-  chtype rtn;
+  int rtn;
 
   switch (PyTuple_Size(args)) {
   case 0:
@@ -758,7 +758,7 @@ static PyObject *
 PyCursesWindow_GetKey(PyCursesWindowObject *self, PyObject *args)
 {
   int x, y;
-  chtype rtn;
+  int rtn;
 
   switch (PyTuple_Size(args)) {
   case 0:
@@ -777,7 +777,11 @@ PyCursesWindow_GetKey(PyCursesWindowObject *self, PyObject *args)
     PyErr_SetString(PyExc_TypeError, "getkey requires 0 or 2 arguments");
     return NULL;
   }
-  if (rtn<=255)
+  if (rtn == ERR) {
+    /* getch() returns ERR in nodelay mode */
+    PyErr_SetString(PyCursesError, "no input");
+    return NULL;
+  } else if (rtn<=255)
     return Py_BuildValue("c", rtn);
   else
 #if defined(__NetBSD__)
@@ -1953,6 +1957,10 @@ PyCurses_KeyName(PyObject *self, PyObject *args)
 
   if (!PyArg_ParseTuple(args,"i",&ch)) return NULL;
 
+  if (ch < 0) {
+    PyErr_SetString(PyExc_ValueError, "invalid key number");
+    return NULL;
+  }
   knp = keyname(ch);
 
   return PyString_FromString((knp == NULL) ? "" : (char *)knp);
@@ -2347,16 +2355,16 @@ static PyObject *
 PyCurses_UngetCh(PyObject *self, PyObject *args)
 {
   PyObject *temp;
-  chtype ch;
+  int ch;
 
   PyCursesInitialised
 
   if (!PyArg_ParseTuple(args,"O;ch or int",&temp)) return NULL;
 
   if (PyInt_Check(temp))
-    ch = (chtype) PyInt_AsLong(temp);
+    ch = (int) PyInt_AsLong(temp);
   else if (PyString_Check(temp))
-    ch = (chtype) *PyString_AsString(temp);
+    ch = (int) *PyString_AsString(temp);
   else {
     PyErr_SetString(PyExc_TypeError, "argument must be a ch or an int");
     return NULL;
