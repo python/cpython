@@ -347,7 +347,7 @@ class bdist_rpm (Command):
             spec_file.append('Source0: %{name}-%{version}.tar.gz')
 
         spec_file.extend([
-            'Copyright: ' + self.distribution.get_licence(),
+            'Copyright: ' + self.distribution.get_license(),
             'Group: ' + self.group,
             'BuildRoot: %{_tmppath}/%{name}-buildroot',
             'Prefix: %{_prefix}', ])
