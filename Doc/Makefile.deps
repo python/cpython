@@ -196,6 +196,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/windows.tex \
 	../lib/libpyclbr.tex \
 	../lib/libtokenize.tex \
+	../lib/libtabnanny.tex \
 	../lib/libmhlib.tex \
 	../lib/libtelnetlib.tex \
 	../lib/libcolorsys.tex \
