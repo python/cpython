@@ -74,7 +74,7 @@ class ReadTest(BaseTest):
         """
         if self.sep != "|":
             f1 = self.tar.extractfile("S-SPARSE")
-            f2 = self.tar.extractfile("S-SPARSE-WITH-NULLS")
+            f2 = self.tar.extractfile("/S-SPARSE-WITH-NULLS")
             self.assert_(f1.read() == f2.read(),
                          "_FileObject failed on sparse file member")
 
@@ -82,9 +82,9 @@ class ReadTest(BaseTest):
         """Test readlines() method of _FileObject.
         """
         if self.sep != "|":
-            filename = "0-REGTYPE-TEXT"
+            filename = "/0-REGTYPE-TEXT"
             self.tar.extract(filename, dirname())
-            lines1 = file(os.path.join(dirname(), filename), "r").readlines()
+            lines1 = file(os.path.join(dirname(), filename), "rU").readlines()
             lines2 = self.tar.extractfile(filename).readlines()
             self.assert_(lines1 == lines2,
                          "_FileObject.readline() does not work correctly")
@@ -93,7 +93,7 @@ class ReadTest(BaseTest):
         """Test seek() method of _FileObject, incl. random reading.
         """
         if self.sep != "|":
-            filename = "0-REGTYPE"
+            filename = "/0-REGTYPE"
             self.tar.extract(filename, dirname())
             data = file(os.path.join(dirname(), filename), "rb").read()
 
