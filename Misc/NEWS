@@ -37,6 +37,9 @@ Extension modules
 Library
 -------
 
+- Bug #982215: The Back and Next buttons in bdist_wininst installers are now
+  disabled during file copy operations.
+
 - Bug #981299: rsync is now a recognized protocol in urlparse that uses a
   "netloc" portion of a URL.
 
