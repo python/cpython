@@ -84,9 +84,9 @@ class netrc:
 
     def authenticators(self, host):
         """Return a (user, account, password) tuple for given host."""
-        if self.hosts.has_key(host):
+        if host in self.hosts:
             return self.hosts[host]
-        elif self.hosts.has_key('default'):
+        elif 'default' in self.hosts:
             return self.hosts['default']
         else:
             return None

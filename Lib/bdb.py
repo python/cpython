@@ -103,7 +103,7 @@ class Bdb:
 
     def break_here(self, frame):
         filename = self.canonic(frame.f_code.co_filename)
-        if not self.breaks.has_key(filename):
+        if not filename in self.breaks:
             return False
         lineno = frame.f_lineno
         if not lineno in self.breaks[filename]:
@@ -211,7 +211,7 @@ class Bdb:
         if not line:
             return 'Line %s:%d does not exist' % (filename,
                                    lineno)
-        if not self.breaks.has_key(filename):
+        if not filename in self.breaks:
             self.breaks[filename] = []
         list = self.breaks[filename]
         if not lineno in list:
@@ -220,7 +220,7 @@ class Bdb:
 
     def clear_break(self, filename, lineno):
         filename = self.canonic(filename)
-        if not self.breaks.has_key(filename):
+        if not filename in self.breaks:
             return 'There are no breakpoints in %s' % filename
         if lineno not in self.breaks[filename]:
             return 'There is no breakpoint at %s:%d' % (filename,
@@ -249,7 +249,7 @@ class Bdb:
 
     def clear_all_file_breaks(self, filename):
         filename = self.canonic(filename)
-        if not self.breaks.has_key(filename):
+        if not filename in self.breaks:
             return 'There are no breakpoints in %s' % filename
         for line in self.breaks[filename]:
             blist = Breakpoint.bplist[filename, line]
@@ -267,18 +267,18 @@ class Bdb:
 
     def get_break(self, filename, lineno):
         filename = self.canonic(filename)
-        return self.breaks.has_key(filename) and \
+        return filename in self.breaks and \
             lineno in self.breaks[filename]
 
     def get_breaks(self, filename, lineno):
         filename = self.canonic(filename)
-        return self.breaks.has_key(filename) and \
+        return filename in self.breaks and \
             lineno in self.breaks[filename] and \
             Breakpoint.bplist[filename, lineno] or []
 
     def get_file_breaks(self, filename):
         filename = self.canonic(filename)
-        if self.breaks.has_key(filename):
+        if filename in self.breaks:
             return self.breaks[filename]
         else:
             return []
@@ -316,7 +316,7 @@ class Bdb:
             s = s + frame.f_code.co_name
         else:
             s = s + "<lambda>"
-        if frame.f_locals.has_key('__args__'):
+        if '__args__' in frame.f_locals:
             args = frame.f_locals['__args__']
         else:
             args = None
@@ -324,7 +324,7 @@ class Bdb:
             s = s + repr.repr(args)
         else:
             s = s + '()'
-        if frame.f_locals.has_key('__return__'):
+        if '__return__' in frame.f_locals:
             rv = frame.f_locals['__return__']
             s = s + '->'
             s = s + repr.repr(rv)

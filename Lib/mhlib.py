@@ -375,7 +375,7 @@ class Folder:
                 anchor = self._parseindex(head, all)
             except Error, msg:
                 seqs = self.getsequences()
-                if not seqs.has_key(head):
+                if not head in seqs:
                     if not msg:
                         msg = "bad message list %s" % seq
                     raise Error, msg, sys.exc_info()[2]
@@ -412,7 +412,7 @@ class Folder:
             n = self._parseindex(seq, all)
         except Error, msg:
             seqs = self.getsequences()
-            if not seqs.has_key(seq):
+            if not seq in seqs:
                 if not msg:
                     msg = "bad message list %s" % seq
                 raise Error, msg

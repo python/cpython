@@ -42,7 +42,7 @@ def filter(names, pat):
     import os,posixpath
     result=[]
     pat=os.path.normcase(pat)
-    if not _cache.has_key(pat):
+    if not pat in _cache:
         res = translate(pat)
         _cache[pat] = re.compile(res)
     match=_cache[pat].match
@@ -64,7 +64,7 @@ def fnmatchcase(name, pat):
     its arguments.
     """
 
-    if not _cache.has_key(pat):
+    if not pat in _cache:
         res = translate(pat)
         _cache[pat] = re.compile(res)
     return _cache[pat].match(name) is not None

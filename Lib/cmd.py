@@ -304,7 +304,7 @@ class Cmd:
                         continue
                     prevname = name
                     cmd=name[3:]
-                    if help.has_key(cmd):
+                    if cmd in help:
                         cmds_doc.append(cmd)
                         del help[cmd]
                     elif getattr(self, name).__doc__:

@@ -305,7 +305,7 @@ def expanduser(path):
     while i < n and path[i] != '/':
         i = i + 1
     if i == 1:
-        if not os.environ.has_key('HOME'):
+        if not 'HOME' in os.environ:
             return path
         userhome = os.environ['HOME']
     else:
@@ -343,7 +343,7 @@ def expandvars(path):
         name = m.group(1)
         if name[:1] == '{' and name[-1:] == '}':
             name = name[1:-1]
-        if os.environ.has_key(name):
+        if name in os.environ:
             tail = path[j:]
             path = path[:i] + os.environ[name]
             i = len(path)

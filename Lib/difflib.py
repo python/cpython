@@ -321,7 +321,7 @@ class SequenceMatcher:
                         junkdict[elt] = 1
                         del d[elt]
 
-        # Now for x in b, isjunk(x) == junkdict.has_key(x), but the
+        # Now for x in b, isjunk(x) == x in junkdict, but the
         # latter is much faster.  Note too that while there may be a
         # lot of junk in the sequence, the number of *unique* junk
         # elements is probably small.  So the memory burden of keeping

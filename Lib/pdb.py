@@ -58,7 +58,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         # Read $HOME/.pdbrc and ./.pdbrc
         self.rcLines = []
-        if os.environ.has_key('HOME'):
+        if 'HOME' in os.environ:
             envHome = os.environ['HOME']
             try:
                 rcFile = open(os.path.join(envHome, ".pdbrc"))
@@ -154,7 +154,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if not line:
             return line
         args = line.split()
-        while self.aliases.has_key(args[0]):
+        while args[0] in self.aliases:
             line = self.aliases[args[0]]
             ii = 1
             for tmpArg in args[1:]:
@@ -509,12 +509,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         for i in range(n):
             name = co.co_varnames[i]
             print name, '=',
-            if dict.has_key(name): print dict[name]
+            if name in dict: print dict[name]
             else: print "*** undefined ***"
     do_a = do_args
 
     def do_retval(self, arg):
-        if self.curframe.f_locals.has_key('__return__'):
+        if '__return__' in self.curframe.f_locals:
             print self.curframe.f_locals['__return__']
         else:
             print '*** Not yet returned!'
@@ -614,7 +614,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             for alias in keys:
                 print "%s = %s" % (alias, self.aliases[alias])
             return
-        if self.aliases.has_key(args[0]) and len (args) == 1:
+        if args[0] in self.aliases and len (args) == 1:
             print "%s = %s" % (args[0], self.aliases[args[0]])
         else:
             self.aliases[args[0]] = ' '.join(args[1:])
@@ -622,7 +622,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_unalias(self, arg):
         args = arg.split()
         if len(args) == 0: return
-        if self.aliases.has_key(args[0]):
+        if args[0] in self.aliases:
             del self.aliases[args[0]]
 
     # Print a traceback starting at the top stack frame.

@@ -134,7 +134,7 @@ def compile(pat):
     if type(pat) != type(''):
         return pat              # Assume it is a compiled regex
     key = (pat, regex.get_syntax())
-    if cache.has_key(key):
+    if key in cache:
         prog = cache[key]       # Get it from the cache
     else:
         prog = cache[key] = regex.compile(pat)

@@ -265,7 +265,7 @@ def _test():
     args = sys.argv[1:]
     if not args:
         for key in 'MAILDIR', 'MAIL', 'LOGNAME', 'USER':
-            if os.environ.has_key(key):
+            if key in os.environ:
                 mbox = os.environ[key]
                 break
         else:

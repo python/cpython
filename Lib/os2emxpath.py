@@ -291,9 +291,9 @@ def expanduser(path):
     while i < n and path[i] not in '/\\':
         i = i + 1
     if i == 1:
-        if os.environ.has_key('HOME'):
+        if 'HOME' in os.environ:
             userhome = os.environ['HOME']
-        elif not os.environ.has_key('HOMEPATH'):
+        elif not 'HOMEPATH' in os.environ:
             return path
         else:
             try:
@@ -347,7 +347,7 @@ def expandvars(path):
                 try:
                     index = path.index('}')
                     var = path[:index]
-                    if os.environ.has_key(var):
+                    if var in os.environ:
                         res = res + os.environ[var]
                 except ValueError:
                     res = res + path
@@ -360,7 +360,7 @@ def expandvars(path):
                     var = var + c
                     index = index + 1
                     c = path[index:index + 1]
-                if os.environ.has_key(var):
+                if var in os.environ:
                     res = res + os.environ[var]
                 if c != '':
                     res = res + c

@@ -568,9 +568,9 @@ def _parse(source, state):
                     continue
                 else:
                     # flags
-                    if not FLAGS.has_key(source.next):
+                    if not source.next in FLAGS:
                         raise error, "unexpected end of pattern"
-                    while FLAGS.has_key(source.next):
+                    while source.next in FLAGS:
                         state.flags = state.flags | FLAGS[source.get()]
             if group:
                 # parse group contents

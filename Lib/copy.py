@@ -158,7 +158,7 @@ def deepcopy(x, memo = None):
     if memo is None:
         memo = {}
     d = id(x)
-    if memo.has_key(d):
+    if d in memo:
         return memo[d]
     try:
         copierfunction = _deepcopy_dispatch[type(x)]

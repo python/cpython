@@ -151,7 +151,7 @@ class Stats:
         self.fcn_list = None
 
         for func in other.stats.keys():
-            if self.stats.has_key(func):
+            if func in self.stats:
                 old_func_stat = self.stats[func]
             else:
                 old_func_stat = (0, 0, 0, 0, {},)
@@ -183,7 +183,7 @@ class Stats:
                 while fragment:
                     if not fragment:
                         break
-                    if dict.has_key(fragment):
+                    if fragment in dict:
                         bad_list[fragment] = 0
                         break
                     dict[fragment] = self.sort_arg_dict_default[word]
@@ -243,7 +243,7 @@ class Stats:
             for func2 in callers.keys():
                 newcallers[func_strip_path(func2)] = callers[func2]
 
-            if newstats.has_key(newfunc):
+            if newfunc in newstats:
                 newstats[newfunc] = add_func_stats(
                                         newstats[newfunc],
                                         (cc, nc, tt, ct, newcallers))
@@ -264,11 +264,11 @@ class Stats:
         if self.all_callees: return
         self.all_callees = all_callees = {}
         for func in self.stats.keys():
-            if not all_callees.has_key(func):
+            if not func in all_callees:
                 all_callees[func] = {}
             cc, nc, tt, ct, callers = self.stats[func]
             for func2 in callers.keys():
-                if not all_callees.has_key(func2):
+                if not func2 in all_callees:
                     all_callees[func2] = {}
                 all_callees[func2][func]  = callers[func2]
         return
@@ -354,7 +354,7 @@ class Stats:
 
             self.print_call_heading(width, "called...")
             for func in list:
-                if self.all_callees.has_key(func):
+                if func in self.all_callees:
                     self.print_call_line(width, func, self.all_callees[func])
                 else:
                     self.print_call_line(width, func, {})
@@ -471,7 +471,7 @@ def add_callers(target, source):
     for func in target.keys():
         new_callers[func] = target[func]
     for func in source.keys():
-        if new_callers.has_key(func):
+        if func in new_callers:
             new_callers[func] = source[func] + new_callers[func]
         else:
             new_callers[func] = source[func]

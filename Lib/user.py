@@ -24,11 +24,11 @@ wishes to do different things depending on the Python version.
 import os
 
 home = os.curdir                        # Default
-if os.environ.has_key('HOME'):
+if 'HOME' in os.environ:
     home = os.environ['HOME']
 elif os.name == 'nt':                   # Contributed by Jeff Bauer
-    if os.environ.has_key('HOMEPATH'):
-        if os.environ.has_key('HOMEDRIVE'):
+    if 'HOMEPATH' in os.environ:
+        if 'HOMEDRIVE' in os.environ:
             home = os.environ['HOMEDRIVE'] + os.environ['HOMEPATH']
         else:
             home = os.environ['HOMEPATH']

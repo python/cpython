@@ -354,7 +354,7 @@ class ZipFile:
 
     def _writecheck(self, zinfo):
         """Check for errors before writing a file to the archive."""
-        if self.NameToInfo.has_key(zinfo.filename):
+        if zinfo.filename in self.NameToInfo:
             if self.debug:      # Warning for duplicate names
                 print "Duplicate name:", zinfo.filename
         if self.mode not in ("w", "a"):

@@ -206,7 +206,7 @@ class Pickler:
                 self.save_tuple(object)
             return
 
-        if memo.has_key(d):
+        if d in memo:
             self.write(self.get(memo[d][0]))
             return
 
@@ -430,7 +430,7 @@ class Pickler:
         for element in object:
             save(element)
 
-        if len(object) and memo.has_key(d):
+        if len(object) and d in memo:
             if self.bin:
                 write(POP_MARK + self.get(memo[d][0]))
                 return
@@ -620,7 +620,7 @@ def whichmodule(cls, clsname):
     Return a module name.
     If the class cannot be found, return __main__.
     """
-    if classmap.has_key(cls):
+    if cls in classmap:
         return classmap[cls]
 
     for name, module in sys.modules.items():
@@ -913,7 +913,7 @@ class Unpickler:
         del stack[-2:]
 
         if type(callable) is not ClassType:
-            if not safe_constructors.has_key(callable):
+            if not callable in safe_constructors:
                 try:
                     safe = callable.__safe_for_unpickling__
                 except AttributeError:

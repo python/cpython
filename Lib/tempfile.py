@@ -63,7 +63,7 @@ def _gettempdir_inner():
         if scrapdir:
             attempdirs.insert(0, scrapdir)
     for envname in 'TMPDIR', 'TEMP', 'TMP':
-        if os.environ.has_key(envname):
+        if envname in os.environ:
             attempdirs.insert(0, os.environ[envname])
     testfile = gettempprefix() + 'test'
     for dir in attempdirs:

@@ -411,7 +411,7 @@ class SMTP:
 
     def has_extn(self, opt):
         """Does the server support a given SMTP service extension?"""
-        return self.esmtp_features.has_key(opt.lower())
+        return opt.lower() in self.esmtp_features
 
     def help(self, args=''):
         """SMTP 'help' command.

@@ -168,16 +168,16 @@ class IMAP4:
                 self._mesg('new IMAP4 connection, tag=%s' % self.tagpre)
 
         self.welcome = self._get_response()
-        if self.untagged_responses.has_key('PREAUTH'):
+        if 'PREAUTH' in self.untagged_responses:
             self.state = 'AUTH'
-        elif self.untagged_responses.has_key('OK'):
+        elif 'OK' in self.untagged_responses:
             self.state = 'NONAUTH'
         else:
             raise self.error(self.welcome)
 
         cap = 'CAPABILITY'
         self._simple_command(cap)
-        if not self.untagged_responses.has_key(cap):
+        if not cap in self.untagged_responses:
             raise self.error('no CAPABILITY response from server')
         self.capabilities = tuple(self.untagged_responses[cap][-1].upper().split())
 
@@ -196,7 +196,7 @@ class IMAP4:
 
     def __getattr__(self, attr):
         #       Allow UPPERCASE variants of IMAP4 command methods.
-        if Commands.has_key(attr):
+        if attr in Commands:
             return getattr(self, attr.lower())
         raise AttributeError("Unknown IMAP4 command: '%s'" % attr)
 
@@ -454,7 +454,7 @@ class IMAP4:
         try: typ, dat = self._simple_command('LOGOUT')
         except: typ, dat = 'NO', ['%s: %s' % sys.exc_info()[:2]]
         self.shutdown()
-        if self.untagged_responses.has_key('BYE'):
+        if 'BYE' in self.untagged_responses:
             return 'BYE', self.untagged_responses['BYE']
         return typ, dat
 
@@ -548,7 +548,7 @@ class IMAP4:
             self.state = 'AUTH'     # Might have been 'SELECTED'
             return typ, dat
         self.state = 'SELECTED'
-        if self.untagged_responses.has_key('READ-ONLY') \
+        if 'READ-ONLY' in self.untagged_responses \
                 and not readonly:
             if __debug__:
                 if self.debug >= 1:
@@ -619,7 +619,7 @@ class IMAP4:
         Returns response appropriate to 'command'.
         """
         command = command.upper()
-        if not Commands.has_key(command):
+        if not command in Commands:
             raise self.error("Unknown IMAP4 UID command: %s" % command)
         if self.state not in Commands[command]:
             raise self.error('command %s illegal in state %s'
@@ -654,7 +654,7 @@ class IMAP4:
         name = name.upper()
         #if not name in self.capabilities:      # Let the server decide!
         #    raise self.error('unknown extension command: %s' % name)
-        if not Commands.has_key(name):
+        if not name in Commands:
             Commands[name] = (self.state,)
         return apply(self._simple_command, (name,) + args)
 
@@ -671,7 +671,7 @@ class IMAP4:
             if self.debug >= 5:
                 self._mesg('untagged_responses[%s] %s += ["%s"]' %
                         (typ, len(ur.get(typ,'')), dat))
-        if ur.has_key(typ):
+        if typ in ur:
             ur[typ].append(dat)
         else:
             ur[typ] = [dat]
@@ -691,10 +691,10 @@ class IMAP4:
             'command %s illegal in state %s' % (name, self.state))
 
         for typ in ('OK', 'NO', 'BAD'):
-            if self.untagged_responses.has_key(typ):
+            if typ in self.untagged_responses:
                 del self.untagged_responses[typ]
 
-        if self.untagged_responses.has_key('READ-ONLY') \
+        if 'READ-ONLY' in self.untagged_responses \
         and not self.is_readonly:
             raise self.readonly('mailbox status changed to READ-ONLY')
 
@@ -782,7 +782,7 @@ class IMAP4:
 
         if self._match(self.tagre, resp):
             tag = self.mo.group('tag')
-            if not self.tagged_commands.has_key(tag):
+            if not tag in self.tagged_commands:
                 raise self.abort('unexpected tagged response: %s' % resp)
 
             typ = self.mo.group('type')
@@ -935,7 +935,7 @@ class IMAP4:
 
         if typ == 'NO':
             return typ, dat
-        if not self.untagged_responses.has_key(name):
+        if not name in self.untagged_responses:
             return typ, [None]
         data = self.untagged_responses[name]
         if __debug__:

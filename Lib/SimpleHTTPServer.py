@@ -175,10 +175,10 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """
 
         base, ext = posixpath.splitext(path)
-        if self.extensions_map.has_key(ext):
+        if ext in self.extensions_map:
             return self.extensions_map[ext]
         ext = ext.lower()
-        if self.extensions_map.has_key(ext):
+        if ext in self.extensions_map:
             return self.extensions_map[ext]
         else:
             return self.extensions_map['']

@@ -223,7 +223,7 @@ def safeimport(path, forceload=0, cache={}):
     package path is specified, the module at the end of the path is returned,
     not the package at the beginning.  If the optional 'forceload' argument
     is 1, we reload the module from disk (unless it's a dynamic extension)."""
-    if forceload and sys.modules.has_key(path):
+    if forceload and path in sys.modules:
         # This is the only way to be sure.  Checking the mtime of the file
         # isn't good enough (e.g. what if the module contains a class that
         # inherits from another module that has changed?).
@@ -241,7 +241,7 @@ def safeimport(path, forceload=0, cache={}):
     except:
         # Did the error occur before or after the module was found?
         (exc, value, tb) = info = sys.exc_info()
-        if sys.modules.has_key(path):
+        if path in sys.modules:
             # An error occured while executing the imported module.
             raise ErrorDuringImport(sys.modules[path].__file__, info)
         elif exc is SyntaxError:
@@ -403,7 +403,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
     def namelink(self, name, *dicts):
         """Make a link for an identifier, given name-to-URL mappings."""
         for dict in dicts:
-            if dict.has_key(name):
+            if name in dict:
                 return '<a href="%s">%s</a>' % (dict[name], name)
         return name
 
@@ -536,7 +536,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
                 module = sys.modules.get(modname)
                 if modname != name and module and hasattr(module, key):
                     if getattr(module, key) is base:
-                        if not cdict.has_key(key):
+                        if not key in cdict:
                             cdict[key] = cdict[base] = modname + '.html#' + key
         funcs, fdict = [], {}
         for key, value in inspect.getmembers(object, inspect.isroutine):
@@ -778,7 +778,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
         if name == realname:
             title = '<a name="%s"><strong>%s</strong></a>' % (anchor, realname)
         else:
-            if (cl and cl.__dict__.has_key(realname) and
+            if (cl and realname in cl.__dict__ and
                 cl.__dict__[realname] is object):
                 reallink = '<a href="#%s">%s</a>' % (
                     cl.__name__ + '-' + realname, realname)
@@ -822,8 +822,8 @@ TT { font-family: lucidatypewriter, lucida console, courier }
 
         def found(name, ispackage,
                   modpkgs=modpkgs, shadowed=shadowed, seen=seen):
-            if not seen.has_key(name):
-                modpkgs.append((name, '', ispackage, shadowed.has_key(name)))
+            if not name in seen:
+                modpkgs.append((name, '', ispackage, name)) in shadowed
                 seen[name] = 1
                 shadowed[name] = 1
 
@@ -1140,7 +1140,7 @@ class TextDoc(Doc):
         if name == realname:
             title = self.bold(realname)
         else:
-            if (cl and cl.__dict__.has_key(realname) and
+            if (cl and realname in cl.__dict__ and
                 cl.__dict__[realname] is object):
                 skipdocs = 1
             title = self.bold(name) + ' = ' + realname
@@ -1189,7 +1189,7 @@ def getpager():
         return plainpager
     if os.environ.get('TERM') in ['dumb', 'emacs']:
         return plainpager
-    if os.environ.has_key('PAGER'):
+    if 'PAGER' in os.environ:
         if sys.platform == 'win32': # pipes completely broken in Windows
             return lambda text: tempfilepager(plain(text), os.environ['PAGER'])
         elif os.environ.get('TERM') in ['dumb', 'emacs']:
@@ -1375,7 +1375,7 @@ def writedocs(dir, pkgpath='', done=None):
             modname = inspect.getmodulename(path)
             if modname:
                 modname = pkgpath + modname
-                if not done.has_key(modname):
+                if not modname in done:
                     done[modname] = 1
                     writedoc(modname)
 
@@ -1546,8 +1546,8 @@ has the same effect as typing a particular string at the help> prompt.
             elif request == 'modules': self.listmodules()
             elif request[:8] == 'modules ':
                 self.listmodules(split(request)[1])
-            elif self.keywords.has_key(request): self.showtopic(request)
-            elif self.topics.has_key(request): self.showtopic(request)
+            elif request in self.keywords: self.showtopic(request)
+            elif request in self.topics: self.showtopic(request)
             elif request: doc(request, 'Help on %s:')
         elif isinstance(request, Helper): self()
         else: doc(request, 'Help on %s:')
@@ -1740,7 +1740,7 @@ class ModuleScanner(Scanner):
             modname = inspect.getmodulename(path)
             if os.path.isfile(path) and modname:
                 modname = package + (package and '.') + modname
-                if not seen.has_key(modname):
+                if not modname in seen:
                     seen[modname] = 1 # if we see spam.py, skip spam.pyc
                     if key is None:
                         callback(path, modname, '')

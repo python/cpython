@@ -268,7 +268,7 @@ class Profile:
         fn = (fcode.co_filename, fcode.co_firstlineno, fcode.co_name)
         self.cur = (t, 0, 0, fn, frame, self.cur)
         timings = self.timings
-        if timings.has_key(fn):
+        if fn in timings:
             cc, ns, tt, ct, callers = timings[fn]
             timings[fn] = cc, ns + 1, tt, ct, callers
         else:
@@ -300,7 +300,7 @@ class Profile:
             ct = ct + frame_total
             cc = cc + 1
 
-        if callers.has_key(pfn):
+        if pfn in callers:
             callers[pfn] = callers[pfn] + 1  # hack: gather more
             # stats such as the amount of time added to ct courtesy
             # of this specific call, and the contribution to cc

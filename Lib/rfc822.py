@@ -406,7 +406,7 @@ class Message:
     def __delitem__(self, name):
         """Delete all occurrences of a specific header, if it is present."""
         name = name.lower()
-        if not self.dict.has_key(name):
+        if not name in self.dict:
             return
         del self.dict[name]
         name = name + ':'
@@ -427,14 +427,14 @@ class Message:
 
     def get(self, name, default=""):
         name = name.lower()
-        if self.dict.has_key(name):
+        if name in self.dict:
             return self.dict[name]
         else:
             return default
 
     def setdefault(self, name, default=""):
         lowername = name.lower()
-        if self.dict.has_key(lowername):
+        if lowername in self.dict:
             return self.dict[lowername]
         else:
             text = name + ": " + default
@@ -446,7 +446,11 @@ class Message:
 
     def has_key(self, name):
         """Determine whether a message contains the named header."""
-        return self.dict.has_key(name.lower())
+        return name.lower() in self.dict
+
+    def __contains__(self, name):
+        """Determine whether a message contains the named header."""
+        return name.lower() in self.dict        
 
     def keys(self):
         """Get all of a message's header field names."""
@@ -919,7 +923,7 @@ def parsedate_tz(data):
         return None
     tzoffset = None
     tz = tz.upper()
-    if _timezones.has_key(tz):
+    if tz in _timezones:
         tzoffset = _timezones[tz]
     else:
         try:
@@ -1010,8 +1014,8 @@ if __name__ == '__main__':
     print 'Lines:', n
     print '-'*70
     print 'len =', len(m)
-    if m.has_key('Date'): print 'Date =', m['Date']
-    if m.has_key('X-Nonsense'): pass
+    if 'Date' in m: print 'Date =', m['Date']
+    if 'X-Nonsense' in m: pass
     print 'keys =', m.keys()
     print 'values =', m.values()
     print 'items =', m.items()

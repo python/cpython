@@ -96,24 +96,24 @@ class MimeTypes:
                 type = 'text/plain'
             return type, None           # never compressed, so encoding is None
         base, ext = posixpath.splitext(url)
-        while self.suffix_map.has_key(ext):
+        while ext in self.suffix_map:
             base, ext = posixpath.splitext(base + self.suffix_map[ext])
-        if self.encodings_map.has_key(ext):
+        if ext in self.encodings_map:
             encoding = self.encodings_map[ext]
             base, ext = posixpath.splitext(base)
         else:
             encoding = None
         types_map = self.types_map
         common_types = self.common_types
-        if types_map.has_key(ext):
+        if ext in types_map:
             return types_map[ext], encoding
-        elif types_map.has_key(ext.lower()):
+        elif ext.lower() in types_map:
             return types_map[ext.lower()], encoding
         elif strict:
             return None, encoding
-        elif common_types.has_key(ext):
+        elif ext in common_types:
             return common_types[ext], encoding
-        elif common_types.has_key(ext.lower()):
+        elif ext.lower() in common_types:
             return common_types[ext.lower()], encoding
         else:
             return None, encoding

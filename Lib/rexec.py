@@ -206,7 +206,7 @@ class RExec(ihooks._Verbose):
     def load_dynamic(self, name, filename, file):
         if name not in self.ok_dynamic_modules:
             raise ImportError, "untrusted dynamic module: %s" % name
-        if sys.modules.has_key(name):
+        if name in sys.modules:
             src = sys.modules[name]
         else:
             src = imp.load_dynamic(name, filename, file)
@@ -288,7 +288,7 @@ class RExec(ihooks._Verbose):
     # Add a module -- return an existing module or create one
 
     def add_module(self, mname):
-        if self.modules.has_key(mname):
+        if mname in self.modules:
             return self.modules[mname]
         self.modules[mname] = m = self.hooks.new_module(mname)
         m.__builtins__ = self.modules['__builtin__']
