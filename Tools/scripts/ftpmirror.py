@@ -18,10 +18,6 @@ remotedir: remote directory (default initial)
 localdir: local directory (default current)
 """
 
-# XXX To do:
-# - handle symbolic links
-# - back up .mirrorinfo before overwriting
-
 import os
 import sys
 import time
@@ -76,11 +72,11 @@ def main():
 			if args[3:]: usage('too many arguments')
 	#
 	f = ftplib.FTP()
-	if verbose: print 'Connecting to %s...' % host
+	if verbose: print 'Connecting to %s...' % `host`
 	f.connect(host)
 	if not nologin:
 		if verbose:
-			print 'Logging in as %s...' % (login or 'anonymous')
+			print 'Logging in as %s...' % `login or 'anonymous'`
 		f.login(login, passwd, account)
 	if verbose: print 'OK.'
 	pwd = f.pwd()
@@ -98,11 +94,11 @@ def main():
 def mirrorsubdir(f, localdir):
 	pwd = f.pwd()
 	if localdir and not os.path.isdir(localdir):
-		if verbose: print 'Creating local directory', localdir
+		if verbose: print 'Creating local directory', `localdir`
 		try:
 		    makedir(localdir)
 		except os.error, msg:
-		    print "Failed to establish local directory", localdir
+		    print "Failed to establish local directory", `localdir`
 		    return
 	infofilename = os.path.join(localdir, '.mirrorinfo')
 	try:
@@ -112,11 +108,11 @@ def mirrorsubdir(f, localdir):
 	try:
 		info = eval(text)
 	except (SyntaxError, NameError):
-		print 'Bad mirror info in %s' % infofilename
+		print 'Bad mirror info in %s' % `infofilename`
 		info = {}
 	subdirs = []
 	listing = []
-	if verbose: print 'Listing remote directory %s...' % pwd
+	if verbose: print 'Listing remote directory %s...' % `pwd`
 	f.retrlines('LIST', listing.append)
 	filesfound = []
 	for line in listing:
@@ -136,33 +132,35 @@ def mirrorsubdir(f, localdir):
 			if len(words) < 6:
 				if verbose > 1: print 'Skipping short line'
 				continue
-			filename = words[-1]
-			if string.find(filename, " -> ") >= 0:
+			filename = string.lstrip(words[-1])
+			i = string.find(filename, " -> ")
+			if i >= 0:
+				# words[0] had better start with 'l'...
 				if verbose > 1:
-				    print 'Skipping symbolic link %s' % \
-					  filename
-				continue
+				    print 'Found symbolic link %s' % `filename`
+				linkto = filename[i+4:]
+				filename = filename[:i]
 			infostuff = words[-5:-1]
 			mode = words[0]
 		skip = 0
 		for pat in skippats:
 			if fnmatch(filename, pat):
 				if verbose > 1:
-					print 'Skip pattern', pat,
-					print 'matches', filename
+					print 'Skip pattern', `pat`,
+					print 'matches', `filename`
 				skip = 1
 				break
 		if skip:
 			continue
 		if mode[0] == 'd':
 			if verbose > 1:
-				print 'Remembering subdirectory', filename
+				print 'Remembering subdirectory', `filename`
 			subdirs.append(filename)
 			continue
 		filesfound.append(filename)
 		if info.has_key(filename) and info[filename] == infostuff:
 			if verbose > 1:
-				print 'Already have this version of', filename
+				print 'Already have this version of',`filename`
 			continue
 		fullname = os.path.join(localdir, filename)
 		tempname = os.path.join(localdir, '@'+filename)
@@ -176,28 +174,41 @@ def mirrorsubdir(f, localdir):
 			os.unlink(tempname)
 		except os.error:
 			pass
-		try:
-			fp = open(tempname, 'wb')
-		except IOError, msg:
-			print "Can't create %s: %s" % (tempname, str(msg))
-			continue
-		if verbose:
-			print 'Retrieving %s from %s as %s...' % \
-				  (filename, pwd, fullname)
-		if verbose:
-			fp1 = LoggingFile(fp, 1024, sys.stdout)
+		if mode[0] == 'l':
+			if verbose:
+				print "Creating symlink %s -> %s" % (
+					`filename`, `linkto`)
+			try:
+				os.symlink(linkto, tempname)
+			except IOError, msg:
+				print "Can't create %s: %s" % (
+					`tempname`, str(msg))
+				continue
 		else:
-			fp1 = fp
-		t0 = time.time()
-		try:
-			f.retrbinary('RETR ' + filename, fp1.write, 8*1024)
-		except ftplib.error_perm, msg:
-			print msg
-		t1 = time.time()
-		bytes = fp.tell()
-		fp.close()
-		if fp1 != fp:
-			fp1.close()
+			try:
+				fp = open(tempname, 'wb')
+			except IOError, msg:
+				print "Can't create %s: %s" % (
+					`tempname`, str(msg))
+				continue
+			if verbose:
+				print 'Retrieving %s from %s as %s...' % \
+					  (`filename`, `pwd`, `fullname`)
+			if verbose:
+				fp1 = LoggingFile(fp, 1024, sys.stdout)
+			else:
+				fp1 = fp
+			t0 = time.time()
+			try:
+				f.retrbinary('RETR ' + filename,
+					     fp1.write, 8*1024)
+			except ftplib.error_perm, msg:
+				print msg
+			t1 = time.time()
+			bytes = fp.tell()
+			fp.close()
+			if fp1 != fp:
+				fp1.close()
 		try:
 			os.unlink(fullname)
 		except os.error:
@@ -205,13 +216,13 @@ def mirrorsubdir(f, localdir):
 		try:
 			os.rename(tempname, fullname)
 		except os.error, msg:
-			print "Can't rename %s to %s: %s" % (tempname,
-							     fullname,
+			print "Can't rename %s to %s: %s" % (`tempname`,
+							     `fullname`,
 							     str(msg))
 			continue
 		info[filename] = infostuff
 		writedict(info, infofilename)
-		if verbose:
+		if verbose and mode[0] != 'l':
 			dt = t1 - t0
 			kbytes = bytes / 1024.0
 			print int(round(kbytes)),
@@ -229,7 +240,7 @@ def mirrorsubdir(f, localdir):
 		if filename not in filesfound:
 			if verbose:
 				print "Removing obsolete info entry for",
-				print filename, "in", localdir or "."
+				print `filename`, "in", `localdir or "."`
 			del info[filename]
 			deletions = deletions + 1
 	if deletions:
@@ -248,8 +259,8 @@ def mirrorsubdir(f, localdir):
 		for pat in skippats:
 			if fnmatch(name, pat):
 				if verbose > 1:
-					print 'Skip pattern', pat,
-					print 'matches', name
+					print 'Skip pattern', `pat`,
+					print 'matches', `name`
 				skip = 1
 				break
 		if skip:
@@ -257,10 +268,10 @@ def mirrorsubdir(f, localdir):
 		fullname = os.path.join(localdir, name)
 		if not rmok:
 			if verbose:
-				print 'Local file', fullname,
+				print 'Local file', `fullname`,
 				print 'is no longer pertinent'
 			continue
-		if verbose: print 'Removing local file/dir', fullname
+		if verbose: print 'Removing local file/dir', `fullname`
 		remove(fullname)
 	#
 	# Recursively mirror subdirectories
@@ -268,18 +279,18 @@ def mirrorsubdir(f, localdir):
 		if interactive:
 			doit = askabout('subdirectory', subdir, pwd)
 			if not doit: continue
-		if verbose: print 'Processing subdirectory', subdir
+		if verbose: print 'Processing subdirectory', `subdir`
 		localsubdir = os.path.join(localdir, subdir)
 		pwd = f.pwd()
 		if verbose > 1:
-			print 'Remote directory now:', pwd
-			print 'Remote cwd', subdir
+			print 'Remote directory now:', `pwd`
+			print 'Remote cwd', `subdir`
 		try:
 			f.cwd(subdir)
 		except ftplib.error_perm, msg:
-			print "Can't chdir to", subdir, ":", msg
+			print "Can't chdir to", `subdir`, ":", `msg`
 		else:
-			if verbose: print 'Mirroring as', localsubdir
+			if verbose: print 'Mirroring as', `localsubdir`
 			mirrorsubdir(f, localsubdir)
 			if verbose > 1: print 'Remote cwd ..'
 			f.cwd('..')
@@ -308,14 +319,14 @@ def remove(fullname):
 			os.rmdir(fullname)
 		except os.error, msg:
 			print "Can't remove local directory %s: %s" % \
-			      (fullname, str(msg))
+			      (`fullname`, str(msg))
 			return 0
 	else:
 		try:
 			os.unlink(fullname)
 		except os.error, msg:
 			print "Can't remove local file %s: %s" % \
-			      (fullname, str(msg))
+			      (`fullname`, str(msg))
 			return 0
 	return 1
 
@@ -360,12 +371,25 @@ def makedir(pathname):
 
 # Write a dictionary to a file in a way that can be read back using
 # rval() but is still somewhat readable (i.e. not a single long line).
+# Also creates a backup file.
 def writedict(dict, filename):
-	fp = open(filename, 'w')
+	dir, file = os.path.split(filename)
+	tempname = os.path.join(dir, '@' + file)
+	backup = os.path.join(dir, file + '~')
+	try:
+		os.unlink(backup)
+	except os.error:
+		pass
+	fp = open(tempname, 'w')
 	fp.write('{\n')
 	for key, value in dict.items():
 		fp.write('%s: %s,\n' % (`key`, `value`))
 	fp.write('}\n')
 	fp.close()
+	try:
+		os.rename(filename, backup)
+	except os.error:
+		pass
+	os.rename(tempname, filename)
 
 main()
