@@ -810,6 +810,18 @@ Face-2: iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
 
 """)
 
+    def test_another_long_multiline_header(self):
+        eq = self.ndiffAssertEqual
+        m = '''\
+Received: from siimage.com ([172.25.1.3]) by zima.siliconimage.com with Microsoft SMTPSVC(5.0.2195.4905);
+	Wed, 16 Oct 2002 07:41:11 -0700'''
+        msg = email.message_from_string(m)
+        eq(msg.as_string(), '''\
+Received: from siimage.com ([172.25.1.3]) by zima.siliconimage.com with
+	Microsoft SMTPSVC(5.0.2195.4905); Wed, 16 Oct 2002 07:41:11 -0700
+
+''')
+
 
 
 # Test mangling of "From " lines in the body of a message
