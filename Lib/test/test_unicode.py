@@ -6,7 +6,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
 """#"
-from test.test_support import verify, verbose, TestFailed
+from test.test_support import verify, vereq, verbose, TestFailed
 import sys, string
 
 if not sys.platform.startswith('java'):
@@ -396,23 +396,23 @@ test('translate', u"abababc", u'iiix', {ord('a'):None, ord('b'):ord('i'), ord('c
 
 # Contains:
 print 'Testing Unicode contains method...',
-verify(('a' in u'abdb') == 1)
-verify(('a' in u'bdab') == 1)
-verify(('a' in u'bdaba') == 1)
-verify(('a' in u'bdba') == 1)
-verify(('a' in u'bdba') == 1)
-verify((u'a' in u'bdba') == 1)
-verify((u'a' in u'bdb') == 0)
-verify((u'a' in 'bdb') == 0)
-verify((u'a' in 'bdba') == 1)
-verify((u'a' in ('a',1,None)) == 1)
-verify((u'a' in (1,None,'a')) == 1)
-verify((u'a' in (1,None,u'a')) == 1)
-verify(('a' in ('a',1,None)) == 1)
-verify(('a' in (1,None,'a')) == 1)
-verify(('a' in (1,None,u'a')) == 1)
-verify(('a' in ('x',1,u'y')) == 0)
-verify(('a' in ('x',1,None)) == 0)
+vereq(('a' in u'abdb'), True)
+vereq(('a' in u'bdab'), True)
+vereq(('a' in u'bdaba'), True)
+vereq(('a' in u'bdba'), True)
+vereq(('a' in u'bdba'), True)
+vereq((u'a' in u'bdba'), True)
+vereq((u'a' in u'bdb'), False)
+vereq((u'a' in 'bdb'), False)
+vereq((u'a' in 'bdba'), True)
+vereq((u'a' in ('a',1,None)), True)
+vereq((u'a' in (1,None,'a')), True)
+vereq((u'a' in (1,None,u'a')), True)
+vereq(('a' in ('a',1,None)), True)
+vereq(('a' in (1,None,'a')), True)
+vereq(('a' in (1,None,u'a')), True)
+vereq(('a' in ('x',1,u'y')), False)
+vereq(('a' in ('x',1,None)), False)
 print 'done.'
 
 # Formatting:
@@ -758,3 +758,42 @@ print u'abc\n',
 print u'def\n'
 print u'def\n'
 print 'done.'
+
+def test_exception(lhs, rhs, msg):
+    try:
+        lhs in rhs
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, msg
+
+def run_contains_tests():
+    vereq(u'' in '', True)
+    vereq('' in u'', True)
+    vereq(u'' in u'', True)
+    vereq(u'' in 'abc', True)
+    vereq('' in u'abc', True)
+    vereq(u'' in u'abc', True)
+    vereq(u'\0' in 'abc', False)
+    vereq('\0' in u'abc', False)
+    vereq(u'\0' in u'abc', False)
+    vereq(u'\0' in '\0abc', True)
+    vereq('\0' in u'\0abc', True)
+    vereq(u'\0' in u'\0abc', True)
+    vereq(u'\0' in 'abc\0', True)
+    vereq('\0' in u'abc\0', True)
+    vereq(u'\0' in u'abc\0', True)
+    vereq(u'a' in '\0abc', True)
+    vereq('a' in u'\0abc', True)
+    vereq(u'a' in u'\0abc', True)
+    vereq(u'asdf' in 'asdf', True)
+    vereq('asdf' in u'asdf', True)
+    vereq(u'asdf' in u'asdf', True)
+    vereq(u'asdf' in 'asd', False)
+    vereq('asdf' in u'asd', False)
+    vereq(u'asdf' in u'asd', False)
+    vereq(u'asdf' in '', False)
+    vereq('asdf' in u'', False)
+    vereq(u'asdf' in u'', False)
+
+run_contains_tests()

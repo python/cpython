@@ -803,24 +803,31 @@ string_slice(register PyStringObject *a, register int i, register int j)
 static int
 string_contains(PyObject *a, PyObject *el)
 {
-	register char *s, *end;
-	register char c;
+	const char *lhs, *rhs, *end;
+	int size;
 #ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(el))
 		return PyUnicode_Contains(a, el);
 #endif
-	if (!PyString_Check(el) || PyString_Size(el) != 1) {
+	if (!PyString_Check(el)) {
 		PyErr_SetString(PyExc_TypeError,
-		    "'in <string>' requires character as left operand");
+			      "'in <string>' requires string as left operand");
 		return -1;
 	}
-	c = PyString_AsString(el)[0];
-	s = PyString_AsString(a);
-	end = s + PyString_Size(a);
-	while (s < end) {
-		if (c == *s++)
+	size = PyString_Size(el);
+	rhs = PyString_AS_STRING(el);
+	lhs = PyString_AS_STRING(a);
+
+	/* optimize for a single character */
+	if (size == 1)
+		return memchr(lhs, *rhs, PyString_Size(a)) != NULL;
+
+	end = lhs + (PyString_Size(a) - size);
+	while (lhs <= end) {
+		if (memcmp(lhs++, rhs, size) == 0)
 			return 1;
 	}
+
 	return 0;
 }
 
