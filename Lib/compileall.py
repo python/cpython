@@ -17,6 +17,8 @@ import stat
 import sys
 import py_compile
 
+__all__ = ["compile_dir","compile_path"]
+
 def compile_dir(dir, maxlevels=10, ddir=None, force=0):
     """Byte-compile all modules in the given directory tree.
 

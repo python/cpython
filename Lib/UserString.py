@@ -8,6 +8,8 @@ This module requires Python 1.6 or later.
 from types import StringType, UnicodeType
 import sys
 
+__all__ = ["UserString","MutableString"]
+
 class UserString:
     def __init__(self, seq):
         if isinstance(seq, StringType) or isinstance(seq, UnicodeType):

@@ -34,6 +34,8 @@ import rfc822
 import UserDict
 from StringIO import StringIO
 
+__all__ = ["MiniFieldStorage","FieldStorage","FormContentDict",
+           "SvFormContentDict","InterpFormContentDict","FormContent"]
 
 # Logging support
 # ===============

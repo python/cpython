@@ -42,6 +42,8 @@ only if it doesn't exist; and 'n' always creates a new database.
 
 """
 
+__all__ = ["error","open"]
+
 try:
     class error(Exception):
         pass

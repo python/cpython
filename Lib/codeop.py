@@ -4,6 +4,8 @@ import sys
 import string
 import traceback
 
+__all__ = ["compile_command"]
+
 def compile_command(source, filename="<input>", symbol="single"):
     r"""Compile a command and determine whether it is incomplete.
 

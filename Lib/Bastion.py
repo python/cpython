@@ -26,6 +26,7 @@ bastion is created.
 
 """
 
+__all__ = ["BastionClass", "Bastion"]
 
 from types import MethodType
 

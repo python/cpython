@@ -228,6 +228,8 @@ try:
 except ImportError:
     raise ImportError, "Cookie.py requires 're' from Python 1.5 or later"
 
+__all__ = ["CookieError","BaseCookie","SimpleCookie","SerialCookie",
+           "SmartCookie","Cookie"]
 
 #
 # Define an exception visible to External modules

@@ -127,6 +127,13 @@ import socket
 import sys
 import os
 
+__all__ = ["TCPServer","UDPServer","ForkingUDPServer","ForkingTCPServer",
+           "ThreadingUDPServer","ThreadingTCPServer","BaseRequestHandler",
+           "StreamRequestHandler","DatagramRequestHandler"]
+if hasattr(socket, "AF_UNIX"):
+    __all__.extend(["UnixStreamServer","UnixDatagramServer",
+                    "ThreadingUnixStreamServer",
+                    "ThreadingUnixDatagramServer"])
 
 class BaseServer:
 

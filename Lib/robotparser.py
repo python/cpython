@@ -11,6 +11,8 @@
 """
 import re,string,urlparse,urllib
 
+__all__ = ["RobotFileParser"]
+
 debug = 0
 
 def _debug(msg):

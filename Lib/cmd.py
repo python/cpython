@@ -37,6 +37,8 @@ they automatically support Emacs-like command history and editing features.
 
 import string
 
+__all__ = ["Cmd"]
+
 PROMPT = '(Cmd) '
 IDENTCHARS = string.letters + string.digits + '_'
 

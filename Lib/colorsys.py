@@ -17,6 +17,8 @@ HSV: Hue, Saturation, Value
 # References:
 # XXX Where's the literature?
 
+__all__ = ["rgb_to_yiq","yiq_to_rgb","rgb_to_hls","hls_to_rgb",
+           "rgb_to_hsv","hsv_to_rgb"]
 
 # Some floating point constants
 

@@ -17,6 +17,9 @@ except ImportError,why:
     raise SystemError,\
           'Failed to load the builtin codecs: %s' % why
 
+__all__ = ["register","lookup","open","EncodedFile","BOM","BOM_BE",
+           "BOM_LE","BOM32_BE","BOM32_LE","BOM64_BE","BOM64_LE"]
+
 ### Constants
 
 #

@@ -61,6 +61,8 @@ try:
 except ImportError:
     PyStringMap = None
 
+__all__ = ["Error","error","copy","deepcopy"]
+
 def copy(x):
     """Shallow copy operation on arbitrary Python objects.
 
