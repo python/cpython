@@ -8,6 +8,7 @@ byteyears.py		Print product of a file's size and age
 checkpyc.py		Check presence and validity of ".pyc" files
 classfix.py		Convert old class syntax to new
 copytime.py		Copy one file's atime and mtime to another
+cvsfiles.py		Print a list of files that are under CVS
 dutree.py		Format du(1) output as a tree sorted by size
 eptags.py		Create Emacs TAGS file for Python modules
 findlinksto.py		Recursively find symbolic links to a given path prefix
@@ -29,5 +30,6 @@ ptags.py		Create vi tags file for Python modules
 pystone.py		Benchmark, based on "Dhrystone" C benchmark
 suff.py			Sort a list of files by suffix
 sum5.py			Print md5 checksums of files
+treesync.py		Synchronize source trees (very ideosyncratic)
 which.py		Find a program in $PATH
 xxci.py			Wrapper for rcsdiff and ci
