@@ -60,6 +60,10 @@ Library
 - heapq.nsmallest() and heapq.nlargest() now support key= arguments with
   the same meaning as in list.sort().
 
+- Bug #1076985: ``codecs.StreamReader.readline()`` now calls ``read()`` only
+  once when a size argument is given. This prevents a buffer overflow in the
+  tokenizer with very long source lines.
+
 
 Build
 -----
