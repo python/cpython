@@ -388,12 +388,16 @@ Reliant UNIX: The thread support does not compile on Reliant UNIX, and
         platform as well.  This should be resolved in time for a
         future release.
 
-MacOS X:  You need to add the "-traditional-cpp" option to the
-        compiler command line for the MacOS X Public Beta.  This is
+Mac OS X: You need to add the "-traditional-cpp" option to the
+        compiler command line for the Mac OS X Public Beta.  This is
         appearantly a bug in the default pre-processor, and is
         expected not to be a problem with future versions.  Run
-        configure with "OPT=-traditional-cpp ./configure" to add this
-        option.
+        configure with "OPT='-g -traditional-cpp' ./configure
+        --with-suffix=.exe --with-dyld" to add this
+        option.  One of the regular expression tests fails due to the
+        small stack size used by default (how to change this?), and
+        the test_largefile test is only expected to work on a Unix UFS
+        filesystem (how to check for this on Mac OS X?).
 
 
 Configuring threads
