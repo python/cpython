@@ -2017,7 +2017,11 @@ posix_waitpid(self, args)
 	if (!PyArg_Parse(args, "(ii)", &pid, &options))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
+#ifdef NeXT
 	pid = wait4(pid, &status, options, NULL);
+#else
+	pid = waitpid(pid, &status, options);
+#endif
 	Py_END_ALLOW_THREADS
 	if (pid == -1)
 		return posix_error();
