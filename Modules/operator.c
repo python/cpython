@@ -69,42 +69,42 @@ used for special class methods; variants without leading and trailing\n\
 
 #include "Python.h"
 
-#define spam1(OP,AOP) static PyObject *OP(s,a) PyObject *s, *a; { \
+#define spam1(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1; \
   if(! PyArg_ParseTuple(a,"O",&a1)) return NULL; \
   return AOP(a1); }
 
-#define spam2(OP,AOP) static PyObject *OP(s,a) PyObject *s, *a; { \
+#define spam2(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1, *a2; \
   if(! PyArg_ParseTuple(a,"OO",&a1,&a2)) return NULL; \
   return AOP(a1,a2); }
 
-#define spamoi(OP,AOP) static PyObject *OP(s,a) PyObject *s, *a; { \
+#define spamoi(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1; int a2; \
   if(! PyArg_ParseTuple(a,"Oi",&a1,&a2)) return NULL; \
   return AOP(a1,a2); }
 
-#define spam2n(OP,AOP) static PyObject *OP(s,a) PyObject *s, *a; { \
+#define spam2n(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1, *a2; \
   if(! PyArg_ParseTuple(a,"OO",&a1,&a2)) return NULL; \
   if(-1 == AOP(a1,a2)) return NULL; \
   Py_INCREF(Py_None); \
   return Py_None; }
 
-#define spam3n(OP,AOP) static PyObject *OP(s,a) PyObject *s, *a; { \
+#define spam3n(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1, *a2, *a3; \
   if(! PyArg_ParseTuple(a,"OOO",&a1,&a2,&a3)) return NULL; \
   if(-1 == AOP(a1,a2,a3)) return NULL; \
   Py_INCREF(Py_None); \
   return Py_None; }
 
-#define spami(OP,AOP) static PyObject *OP(s,a) PyObject *s, *a; { \
+#define spami(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1; long r; \
   if(! PyArg_ParseTuple(a,"O",&a1)) return NULL; \
   if(-1 == (r=AOP(a1))) return NULL; \
   return PyInt_FromLong(r); }
 
-#define spami2(OP,AOP) static PyObject *OP(s,a) PyObject *s, *a; { \
+#define spami2(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1, *a2; long r; \
   if(! PyArg_ParseTuple(a,"OO",&a1,&a2)) return NULL; \
   if(-1 == (r=AOP(a1,a2))) return NULL; \
@@ -140,8 +140,7 @@ spam2n(op_delitem       , PyObject_DelItem)
 spam3n(op_setitem      , PyObject_SetItem)
 
 static PyObject*
-op_getslice(s,a)
-        PyObject *s, *a;
+op_getslice(PyObject *s, PyObject *a)
 {
         PyObject *a1;
         int a2,a3;
@@ -152,8 +151,7 @@ op_getslice(s,a)
 }
 
 static PyObject*
-op_setslice(s,a)
-        PyObject *s, *a;
+op_setslice(PyObject *s, PyObject *a)
 {
         PyObject *a1, *a4;
         int a2,a3;
@@ -169,8 +167,7 @@ op_setslice(s,a)
 }
 
 static PyObject*
-op_delslice(s,a)
-        PyObject *s, *a;
+op_delslice(PyObject *s, PyObject *a)
 {
         PyObject *a1;
         int a2,a3;
@@ -188,13 +185,13 @@ op_delslice(s,a)
 #undef spam1
 #undef spam2
 #ifdef HAVE_OLD_CPP
-#define spam1(OP,DOC) {"OP", OP, 1, DOC},
-#define spam2(OP,ALTOP,DOC) {"OP", op_/**/OP, 1, DOC}, \
-			   {"ALTOP", op_/**/OP, 1, DOC}, 
+#define spam1(OP,DOC) {"OP", OP, METH_VARARGS, DOC},
+#define spam2(OP,ALTOP,DOC) {"OP", op_/**/OP, METH_VARARGS, DOC}, \
+			   {"ALTOP", op_/**/OP, METH_VARARGS, DOC}, 
 #else
-#define spam1(OP,DOC) {#OP, OP, 1, DOC},
-#define spam2(OP,ALTOP,DOC) {#OP, op_##OP, 1, DOC}, \
-			   {#ALTOP, op_##OP, 1, DOC}, 
+#define spam1(OP,DOC) {#OP, OP, METH_VARARGS, DOC},
+#define spam2(OP,ALTOP,DOC) {#OP, op_##OP, METH_VARARGS, DOC}, \
+			   {#ALTOP, op_##OP, METH_VARARGS, DOC}, 
 #endif
 
 static struct PyMethodDef operator_methods[] = {
