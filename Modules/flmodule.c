@@ -231,6 +231,7 @@ generic_unfreeze_object(g, args)
 
 static struct methodlist generic_methods[] = {
 	{"set_call_back",	generic_set_call_back},
+	{"delete_object",	generic_delete_object},
 	{"show_object",		generic_show_object},
 	{"hide_object",		generic_hide_object},
 	{"redraw_object",	generic_redraw_object},
@@ -1733,15 +1734,47 @@ form_dealloc(f)
 	DEL(f);
 }
 
+static struct memberlist form_memberlist[] = {
+	{"window",	T_LONG,		OFF(window),	RO},
+	{"w",		T_FLOAT,	OFF(w)},
+	{"h",		T_FLOAT,	OFF(h)},
+	{"x",		T_FLOAT,	OFF(x)},
+	{"y",		T_FLOAT,	OFF(y)},
+	{"deactivated",	T_INT,		OFF(deactivated)},
+	{"visible",	T_INT,		OFF(visible)},
+	{"frozen",	T_INT,		OFF(frozen)},
+	{"doublebuf",	T_INT,		OFF(doublebuf)},
+	{NULL}	/* Sentinel */
+};
+
 static object *
 form_getattr(f, name)
 	formobject *f;
 	char *name;
 {
-	if (strcmp(name, "window") == 0)
-		return newintobject(f->ob_form->window);
-	/* XXX check for data attr's: x, y etc. */
-	return findmethod(form_methods, (object *)f, name);
+	object *meth;
+
+	meth = findmethod(form_methods, (object *)f, name);
+	if (meth != NULL)
+		return meth;
+	err_clear();
+	return getmember((char *)f->ob_form, form_memberlist, name);
+}
+
+static int
+form_setattr(f, name, v)
+	formobject *f;
+	char *name;
+	object *v;
+{
+	int ret;
+
+	if (v == NULL) {
+		err_setstr(TypeError, "can't delete form attributes");
+		return NULL;
+	}
+
+	return setmember((char *)f->ob_form, form_memberlist, name, v);
 }
 
 typeobject Formtype = {
@@ -1754,7 +1787,7 @@ typeobject Formtype = {
 	form_dealloc,		/*tp_dealloc*/
 	0,			/*tp_print*/
 	form_getattr,		/*tp_getattr*/
-	0,			/*tp_setattr*/
+	form_setattr,		/*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
 };
