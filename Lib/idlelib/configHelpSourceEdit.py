@@ -94,7 +94,7 @@ class GetHelpSourceDialog(Toplevel):
         file = opendialog.show(initialdir=dir, initialfile=base)
         if file:
             self.path.set(file)
-        
+
     def MenuOk(self):
         "Simple validity check for a sensible menu item name"
         menuOk = True
