@@ -18,30 +18,95 @@
 #	occurrences.)  Boolean options have '' as option_argument.
 # (2)	the list of remaining arguments (may be empty).
 
+# Added by Lars Wirzenius (liw@iki.fi): A third argument is optional.
+# If present, getopt.getopt works similar to the GNU getopt_long
+# function (but optional arguments are not supported).  The third
+# argument should be a list of strings that name the long options.  If
+# the name ends '=', the argument requires an argument.
+
+# (While making this addition, I rewrote the whole thing.)
+
+import string
+
 error = 'getopt error'
 
-def getopt(args, options):
-    list = []
-    while args and args[0][:1] == '-' and args[0] <> '-':
-    	if args[0] == '--':
-    	    args = args[1:]
-    	    break
-    	optstring, args = args[0][1:], args[1:]
-    	while optstring <> '':
-    	    opt, optstring = optstring[0], optstring[1:]
-    	    if classify(opt, options): # May raise exception as well
-    	    	if optstring == '':
-    	    	    if not args:
-    	    	    	raise error, 'option -' + opt + ' requires argument'
-    	    	    optstring, args = args[0], args[1:]
-    	    	optarg, optstring = optstring, ''
-    	    else:
-    	    	optarg = ''
-    	    list.append('-' + opt, optarg)
-    return list, args
+def getopt(args, shortopts, longopts = []):
+        list = []
+        longopts = longopts[:]
+        longopts.sort()
+        while args and args[0][:1] == '-' and args[0] != '-':
+                if args[0] == '-' or args[0] == '--':
+                        args = args[1:]
+                        break
+                if args[0][:2] == '--':
+                        list, args = do_longs(list, args[0][2:],
+                                        longopts, args[1:])
+                else:
+                        list, args = do_shorts(list, args[0][1:],
+                                        shortopts, args[1:])
 
-def classify(opt, options): # Helper to check type of option
-    for i in range(len(options)):
-	if opt == options[i] <> ':':
-	    return options[i+1:i+2] == ':'
-    raise error, 'option -' + opt + ' not recognized'
+        return list, args
+
+def do_longs(list, opt, longopts, args):
+        try:
+                i = string.index(opt, '=')
+                opt, optarg = opt[:i], opt[i+1:]
+        except ValueError:
+                optarg = ''
+
+        has_arg, opt = long_has_args(opt, longopts)
+        if has_arg:
+                if not optarg:
+                        if not args:
+                                raise error, 'option --' + opt + \
+                                        ' requires argument'
+                        optarg, args = args[0], args[1:]
+        else:
+                if optarg:
+                        raise error, 'argument --' + opt + \
+                                ' must not have an argument'
+        list.append('--' + opt, optarg)
+        return list, args
+
+# Return:
+#   has_arg?
+#   full option name
+def long_has_args(opt, longopts):
+        optlen = len(opt)
+        for i in range(len(longopts)):
+                x, y = longopts[i][:optlen], longopts[i][optlen:]
+                if opt != x:
+                        continue
+                if y != '' and y != '=' and i+1 < len(longopts):
+                        if opt == longopts[i+1][:optlen]:
+                                raise error, 'option --' + opt + \
+                                        ' not a unique prefix'
+                if longopts[i][-1:] == '=':
+                        return 1, longopts[i][:-1]
+                return 0, longopts[i]
+        raise error, 'option --' + opt + ' not recognized'
+
+def do_shorts(list, optstring, shortopts, args):
+        while optstring != '':
+                opt, optstring = optstring[0], optstring[1:]
+                if short_has_arg(opt, shortopts):
+                        if optstring == '':
+                                if not args:
+                                        raise error, 'option -' + opt + \
+                                                ' requires argument'
+                                optstring, args = args[0], args[1:]
+                        optarg, optstring = optstring, ''
+                else:
+                        optarg = ''
+                list.append('-' + opt, optarg)
+        return list, args
+
+def short_has_arg(opt, shortopts):
+        for i in range(len(shortopts)):
+                if opt == shortopts[i] != ':':
+                        return shortopts[i+1:i+2] == ':'
+        raise error, 'option -' + opt + ' not recognized'
+
+if __name__ == '__main__':
+        import sys
+        print getopt(sys.argv[1:], "a:b")
