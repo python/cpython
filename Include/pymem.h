@@ -140,7 +140,7 @@ extern DL_IMPORT(void) PyMem_Free(void *);
 
    d_malloc(size_t n, char* src_file, unsigned long src_line) c.s.
 
-   In this case, you would define (for example in config.h) :
+   In this case, you would define (for example in pyconfig.h) :
 
    #define PyCore_MALLOC_FUNC      d_malloc
    ...
