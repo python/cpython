@@ -221,7 +221,6 @@ sub clean_key {
 
 $idx_module_mark = '<tex2html_idx_module_mark>';
 $idx_module_title = 'Module Index';
-$idxmodulefile = '';
 
 sub add_module_idx {
     print "\nDoing the module index ...";
@@ -255,8 +254,9 @@ sub remove_general_markers {
 # $idx_mark will be replaced with the real index at the end
 sub do_cmd_textohtmlmoduleindex {
     local($_) = @_;
+    local($key) = q/modindex/;
     $TITLE = $idx_module_title;
-    $idxmodulefile = $CURRENT_FILE;
+    &anchor_label("modindex",$CURRENT_FILE,$_);
     join('', '<p>' , &make_section_heading($idx_module_title, "h2"),
 	 $idx_module_mark, $_);
 }
