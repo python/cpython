@@ -265,6 +265,14 @@ PyObject_Repr(v)
 		res = (*v->ob_type->tp_repr)(v);
 		if (res == NULL)
 			return NULL;
+		if (PyUnicode_Check(res)) {
+			PyObject* str;
+			str = PyUnicode_AsEncodedString(res, NULL, NULL);
+			if (str) {
+				Py_DECREF(res);
+				res = str;
+			}
+		}
 		if (!PyString_Check(res)) {
 			PyErr_Format(PyExc_TypeError,
 				     "__repr__ returned non-string (type %.200s)",
@@ -302,6 +310,14 @@ PyObject_Str(v)
 	}
 	if (res == NULL)
 		return NULL;
+    if (PyUnicode_Check(res)) {
+        PyObject* str;
+        str = PyUnicode_AsEncodedString(res, NULL, NULL);
+        if (str) {
+            Py_DECREF(res);
+            res = str;
+        }
+    }
 	if (!PyString_Check(res)) {
 		PyErr_Format(PyExc_TypeError,
 			     "__str__ returned non-string (type %.200s)",
