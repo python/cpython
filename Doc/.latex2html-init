@@ -1,7 +1,7 @@
 #LaTeX2HTML Version 96.1 : dot.latex2html-init		-*- perl -*-
 #
 
-$INFO = 1;              # 0 = do not make a "About this document..." section 
+$INFO = 1;              # 0 = do not make a "About this document..." section
 $MAX_LINK_DEPTH = 3;
 
 # Python documentation uses section numbers to support references to match
@@ -60,7 +60,7 @@ sub process_command {
 		# $ref_before may also be modified ...
 		$after = &$cmd_msub($after, @open_font_tags);
 		if ( !$math_mode ) {
-		    $after = "<MATH>" . $after . "</MATH>";
+		    $after = "<math>" . $after . "</math>";
 		    ++$commands_outside_math{$cmd};
 		};
 	    }
@@ -73,7 +73,7 @@ sub process_command {
 		if ( $math_mode ) {
 		    $after = "&$mathentity;" . $after;
 		} else {
-		    $after = "<MATH>&$mathentity;</MATH>" . $after;
+		    $after = "<math>&$mathentity;</math>" . $after;
 		    ++$commands_outside_math{$cmd};
 		}; }
 	    # Here's the hack:
@@ -100,42 +100,42 @@ sub top_navigation_panel {
     # Now add a few buttons with a space between them
     "<DIV CLASS=navigation>\n" .
     "$NEXT $UP $PREVIOUS $CONTENTS $INDEX $CUSTOM_BUTTONS" .
-    
+
     "<BR>\n" .		# Line break
-	
+
     # If ``next'' section exists, add its title to the navigation panel
-    ($NEXT_TITLE ? "<B> Next:</B> $NEXT_TITLE\n" : undef) . 
-    
+    ($NEXT_TITLE ? "<B> Next:</B> $NEXT_TITLE\n" : undef) .
+
     # Similarly with the ``up'' title ...
-    ($UP_TITLE ? "<B>Up:</B> $UP_TITLE\n" : undef) . 
- 
+    ($UP_TITLE ? "<B>Up:</B> $UP_TITLE\n" : undef) .
+
     # ... and the ``previous'' title
     ($PREVIOUS_TITLE ? "<B> Previous:</B> $PREVIOUS_TITLE\n" : undef) .
-   
-    #  Line Break, horizontal rule (3-d dividing line) and new paragraph  
-    "<BR><HR><P></DIV>\n"		
+
+    #  Line Break, horizontal rule (3-d dividing line) and new paragraph
+    "<BR><HR><P></DIV>\n"
 }
 
 sub bot_navigation_panel {
 
     #  Start with a horizontal rule (3-d dividing line)
-    "\n<DIV CLASS=navigation><HR>".
+    "\n<div class=navigation><hr>".
 
     # Now add a few buttons with a space between them
     "$NEXT $UP $PREVIOUS $CONTENTS $INDEX $CUSTOM_BUTTONS" .
 
-    "<BR>\n" .		# Line break
+    "<br>\n" .		# Line break
 
     # If ``next'' section exists, add its title to the navigation panel
-    ($NEXT_TITLE ? "<B> Next:</B> $NEXT_TITLE\n" : undef) . 
- 
+    ($NEXT_TITLE ? "<b> Next:</b> $NEXT_TITLE\n" : undef) .
+
     # Similarly with the ``up'' title ...
-    ($UP_TITLE ? "<B>Up:</B> $UP_TITLE\n" : undef) . 
- 
+    ($UP_TITLE ? "<b>Up:</b> $UP_TITLE\n" : undef) .
+
     # ... and the ``previous'' title
-    ($PREVIOUS_TITLE ? "<B> Previous:</B> $PREVIOUS_TITLE\n" : undef) .
- 
-    "</DIV>\n"
+    ($PREVIOUS_TITLE ? "<b> Previous:</b> $PREVIOUS_TITLE\n" : undef) .
+
+    "</div>\n"
 }
 
 
@@ -148,14 +148,14 @@ sub make_str_index_entry {
     # of the current section), use $ref_before.
     $TITLE = $ref_before unless $TITLE;
     # Save the reference
-    local($nstr) = "$str###" . ++$global{'max_id'}; # Make unique 
+    local($nstr) = "$str###" . ++$global{'max_id'}; # Make unique
     $index{$nstr} .= &make_half_href("$CURRENT_FILE#$br_id");
     "<a name=\"$br_id\">$str<\/a>";
 }
 
 sub add_idx {
     print "\nDoing the index ...";
-    local($key, $str, @keys, $index, $level, $count, 
+    local($key, $str, @keys, $index, $level, $count,
 	  @previous, @current);
     @keys = keys %index;
     @keys = sort keysort  @keys;
@@ -169,11 +169,11 @@ sub add_idx {
 	while ($count > $level) {
 	    $index .= "<dl compact>\n";
 	    $level++;
-	} 
+	}
 	while ($count < $level) {
 	    $index .= "</dl>\n";
 	    $level--;
-	} 
+	}
 	foreach $term (@current[$count .. $#current-1]) {
 	    # need to "step in" a little
 	    $index .= "<dt>" . $term . "\n<dl compact>\n";
@@ -184,14 +184,14 @@ sub add_idx {
 	$index .= #$index{$key} .
 	    # If it's the same string don't start a new line
 	    (&index_key_eq(join('',@current), join('',@previous)) ?
-	     ", $index{$key}<strong>" . $cross_ref_visible_mark . "</strong></a>\n" :
+	     ", $index{$key}" . $cross_ref_visible_mark . "</a>\n" :
 	     "<dt>$index{$key}<strong>" . $str . "</strong></a>\n");
 	@previous = @current;
     }
     while ($count < $level) {
 	$index .= "</dl>\n";
 	$level--;
-    } 
+    }
     s/$idx_mark/<dl compact>$index<\/dl>/o;
 }
 
