@@ -1843,8 +1843,6 @@ parenthesized.
 [12, 18]
 >>> [3*x for x in vec if x < 2]
 []
->>> [{x: x**2} for x in vec]
-[{2: 4}, {4: 16}, {6: 36}]
 >>> [[x,x**2] for x in vec]
 [[2, 4], [4, 16], [6, 36]]
 >>> [x, x**2 for x in vec]	# error - parens required for tuples
