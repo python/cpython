@@ -40,7 +40,6 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="largeint.lib"
 				OutputFile="./python24.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -108,7 +107,6 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="largeint.lib"
 				OutputFile="./python24_d.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -604,6 +602,9 @@
 					AdditionalIncludeDirectories=""
 					PreprocessorDefinitions="_DEBUG;USE_DL_EXPORT;WIN32;_WINDOWS;$(NoInherit)"/>
 			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\Modules\collectionsmodule.c">
 		</File>
 		<File
 			RelativePath="..\Python\compile.c">
