@@ -49,6 +49,7 @@ includestuff = includestuff + """
 #include <CFDictionary.h>
 #include <CFString.h>
 #include <CFURL.h>
+#include <CFPropertyList.h>
 #else
 #include <CoreServices/CoreServices.h>
 #endif
@@ -195,6 +196,7 @@ CFStringRef = OpaqueByValueType("CFStringRef", "CFStringRefObj")
 CFMutableStringRef = OpaqueByValueType("CFMutableStringRef", "CFMutableStringRefObj")
 CFURLRef = OpaqueByValueType("CFURLRef", "CFURLRefObj")
 OptionalCFURLRef  = OpaqueByValueType("CFURLRef", "OptionalCFURLRefObj")
+##CFPropertyListRef = OpaqueByValueType("CFPropertyListRef", "CFTypeRefObj")
 # ADD object type here
 
 # Our (opaque) objects
@@ -301,6 +303,18 @@ class CFMutableDictionaryRefObjectDefinition(MyGlobalObjectDefinition):
 class CFDataRefObjectDefinition(MyGlobalObjectDefinition):
 	basechain = "&CFTypeRefObj_chain"
 	
+	def outputCheckConvertArg(self):
+		Out("""
+		if (v == Py_None) { *p_itself = NULL; return 1; }
+		if (PyString_Check(v)) {
+		    char *cStr;
+		    int cLen;
+		    if( PyString_AsStringAndSize(v, &cStr, &cLen) < 0 ) return 0;
+		    *p_itself = CFDataCreate((CFAllocatorRef)NULL, (unsigned char *)cStr, cLen);
+		    return 1;
+		}
+		""")
+
 	def outputRepr(self):
 		Output()
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
@@ -490,6 +504,21 @@ CFStringRef_object.add(f)
 toPython_body = """
 return PyCF_CF2Python(_self->ob_itself);
 """
+
+# Get data from CFDataRef
+getasdata_body = """
+int size = CFDataGetLength(_self->ob_itself);
+char *data = (char *)CFDataGetBytePtr(_self->ob_itself);
+
+_res = (PyObject *)PyString_FromStringAndSize(data, size);
+return _res;
+"""
+
+f = ManualGenerator("CFDataGetData", getasdata_body);
+f.docstring = lambda: "() -> (string _rv)"
+CFDataRef_object.add(f)
+
+
 
 f = ManualGenerator("toPython", toPython_body);
 f.docstring = lambda: "() -> (python_object)"
