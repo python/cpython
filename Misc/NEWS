@@ -12,6 +12,10 @@ What's New in Python 2.3 beta 1?
 Core and builtins
 -----------------
 
+- super() no longer ignores data descriptors, except __class__.  See
+  the thread started at
+  http://mail.python.org/pipermail/python-dev/2003-April/034338.html
+
 - list.insert(i, x) now interprets negative i as it would be
   interpreted by slicing, so negative values count from the end of the
   list.  This was the only place where such an interpretation was not
