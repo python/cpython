@@ -1,12 +1,13 @@
 % By Skip Montanaro
 
-\section{Standard module \sectcode{stat}}
+\section{Standard Module \sectcode{stat}}
 \stmodindex{stat}
+\label{module-stat}
 
 The \code{stat} module defines constants and functions for interpreting the
-results of \code{os.stat} and \code{os.lstat} (if it exists).  For complete
-details about the \code{stat} and \code{lstat} system calls, consult your
-local man pages.
+results of \code{os.stat()} and \code{os.lstat()} (if they exist).
+For complete details about the \code{stat()} and \code{lstat()} system
+calls, consult your local man pages.
 
 The \code{stat} module defines the following functions:
 
@@ -37,7 +38,7 @@ Return non-zero if the mode was gotten from a socket.
 \end{funcdesc}
 
 All the data items below are simply symbolic indexes into the 10-tuple
-returned by \code{os.stat} or \code{os.lstat}.  
+returned by \code{os.stat()} or \code{os.lstat()}.  
 
 \begin{datadesc}{ST_MODE}
 Inode protection mode.
