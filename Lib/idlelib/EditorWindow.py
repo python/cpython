@@ -14,68 +14,11 @@ import SearchDialog
 import GrepDialog
 import ReplaceDialog
 import PyParse
-#from IdleConf import idleconf
 from configHandler import idleConf
 import aboutDialog, textView, configDialog
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
-
-# File menu
-
-#$ event <<open-module>>
-#$ win <Alt-m>
-#$ unix <Control-x><Control-m>
-
-#$ event <<open-class-browser>>
-#$ win <Alt-c>
-#$ unix <Control-x><Control-b>
-
-#$ event <<open-path-browser>>
-
-#$ event <<close-window>>
-
-#$ unix <Control-x><Control-0>
-#$ unix <Control-x><Key-0>
-#$ win <Alt-F4>
-
-# Edit menu
-
-#$ event <<Copy>>
-#$ win <Control-c>
-#$ unix <Alt-w>
-
-#$ event <<Cut>>
-#$ win <Control-x>
-#$ unix <Control-w>
-
-#$ event <<Paste>>
-#$ win <Control-v>
-#$ unix <Control-y>
-
-#$ event <<select-all>>
-#$ win <Alt-a>
-#$ unix <Alt-a>
-
-# Help menu
-
-#$ event <<help>>
-#$ win <F1>
-#$ unix <F1>
-
-#$ event <<about-idle>>
-
-# Events without menu entries
-
-#$ event <<remove-selection>>
-#$ win <Escape>
-
-#$ event <<center-insert>>
-#$ win <Control-l>
-#$ unix <Control-l>
-
-#$ event <<do-nothing>>
-#$ unix <Control-x>
 
 class EditorWindow:
     from Percolator import Percolator
