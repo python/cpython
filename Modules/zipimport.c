@@ -391,7 +391,7 @@ zipimporter_get_data(PyObject *obj, PyObject *args)
 	ZipImporter *self = (ZipImporter *)obj;
 	char *path;
 #ifdef ALTSEP
-	char *p, buf[MAXPATHLEN + 1];;
+	char *p, buf[MAXPATHLEN + 1];
 #endif
 	PyObject *toc_entry;
 	int len;
