@@ -83,6 +83,48 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.sub('\r\n', '\n', 'abc\r\ndef\r\n'),
                          'abc\ndef\n')
 
+    def test_sub_template_numeric_escape(self):
+        # bug 776311 and friends
+        self.assertEqual(re.sub('x', r'\0', 'x'), '\0')
+        self.assertEqual(re.sub('x', r'\000', 'x'), '\000')
+        self.assertEqual(re.sub('x', r'\001', 'x'), '\001')
+        self.assertEqual(re.sub('x', r'\008', 'x'), '\0' + '8')
+        self.assertEqual(re.sub('x', r'\009', 'x'), '\0' + '9')
+        self.assertEqual(re.sub('x', r'\111', 'x'), '\111')
+        self.assertEqual(re.sub('x', r'\117', 'x'), '\117')
+
+        self.assertEqual(re.sub('x', r'\1111', 'x'), '\1111')
+        self.assertEqual(re.sub('x', r'\1111', 'x'), '\111' + '1')
+
+        self.assertEqual(re.sub('x', r'\00', 'x'), '\x00')
+        self.assertEqual(re.sub('x', r'\07', 'x'), '\x07')
+        self.assertEqual(re.sub('x', r'\08', 'x'), '\0' + '8')
+        self.assertEqual(re.sub('x', r'\09', 'x'), '\0' + '9')
+        self.assertEqual(re.sub('x', r'\0a', 'x'), '\0' + 'a')
+
+        self.assertEqual(re.sub('x', r'\400', 'x'), '\0')
+        self.assertEqual(re.sub('x', r'\777', 'x'), '\377')
+        
+        self.assertRaises(re.error, re.sub, 'x', r'\1', 'x')
+        self.assertRaises(re.error, re.sub, 'x', r'\8', 'x')
+        self.assertRaises(re.error, re.sub, 'x', r'\9', 'x')
+        self.assertRaises(re.error, re.sub, 'x', r'\11', 'x')
+        self.assertRaises(re.error, re.sub, 'x', r'\18', 'x')
+        self.assertRaises(re.error, re.sub, 'x', r'\1a', 'x')
+        self.assertRaises(re.error, re.sub, 'x', r'\90', 'x')
+        self.assertRaises(re.error, re.sub, 'x', r'\99', 'x')
+        self.assertRaises(re.error, re.sub, 'x', r'\118', 'x') # r'\11' + '8'
+        self.assertRaises(re.error, re.sub, 'x', r'\11a', 'x')
+        self.assertRaises(re.error, re.sub, 'x', r'\181', 'x') # r'\18' + '1'
+        self.assertRaises(re.error, re.sub, 'x', r'\800', 'x') # r'\80' + '0'
+
+        # in python2.3 (etc), these loop endlessly in sre_parser.py
+        self.assertEqual(re.sub('(((((((((((x)))))))))))', r'\11', 'x'), 'x')
+        self.assertEqual(re.sub('((((((((((y))))))))))(.)', r'\118', 'xyz'),
+                         'xz8')
+        self.assertEqual(re.sub('((((((((((y))))))))))(.)', r'\11a', 'xyz'),
+                         'xza')
+
     def test_qualified_re_sub(self):
         self.assertEqual(re.sub('a', 'b', 'aaaaa'), 'bbbbb')
         self.assertEqual(re.sub('a', 'b', 'aaaaa', 1), 'baaaa')
@@ -105,6 +147,7 @@ class ReTests(unittest.TestCase):
         self.assertRaises(IndexError, re.sub, '(?P<a>x)', '\g<ab>', 'xx')
         self.assertRaises(re.error, re.sub, '(?P<a>x)|(?P<b>y)', '\g<b>', 'xx')
         self.assertRaises(re.error, re.sub, '(?P<a>x)|(?P<b>y)', '\\2', 'xx')
+        self.assertRaises(re.error, re.sub, '(?P<a>x)', '\g<-1>', 'xx')
 
     def test_re_subn(self):
         self.assertEqual(re.subn("(?i)b+", "x", "bbbb BBBB"), ('x x', 2))
@@ -385,6 +428,16 @@ class ReTests(unittest.TestCase):
             self.assertNotEqual(re.match(r"\x%02x0" % i, chr(i)+"0"), None)
             self.assertNotEqual(re.match(r"\x%02xz" % i, chr(i)+"z"), None)
         self.assertRaises(re.error, re.match, "\911", "")
+
+    def test_sre_character_class_literals(self):
+        for i in [0, 8, 16, 32, 64, 127, 128, 255]:
+            self.assertNotEqual(re.match(r"[\%03o]" % i, chr(i)), None)
+            self.assertNotEqual(re.match(r"[\%03o0]" % i, chr(i)), None)
+            self.assertNotEqual(re.match(r"[\%03o8]" % i, chr(i)), None)
+            self.assertNotEqual(re.match(r"[\x%02x]" % i, chr(i)), None)
+            self.assertNotEqual(re.match(r"[\x%02x0]" % i, chr(i)), None)
+            self.assertNotEqual(re.match(r"[\x%02xz]" % i, chr(i)), None)
+        self.assertRaises(re.error, re.match, "[\911]", "")
 
     def test_bug_113254(self):
         self.assertEqual(re.match(r'(a)|(b)', 'b').start(1), -1)

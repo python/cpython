@@ -217,20 +217,10 @@ def isname(name):
     # check that group name is a valid string
     if not isident(name[0]):
         return False
-    for char in name:
+    for char in name[1:]:
         if not isident(char) and not isdigit(char):
             return False
     return True
-
-def _group(escape, groups):
-    # check if the escape string represents a valid group
-    try:
-        gid = int(escape[1:])
-        if gid and gid < groups:
-            return gid
-    except ValueError:
-        pass
-    return None # not a valid group
 
 def _class_escape(source, escape):
     # handle escape code inside character class
@@ -241,7 +231,8 @@ def _class_escape(source, escape):
     if code:
         return code
     try:
-        if escape[1:2] == "x":
+        c = escape[1:2]
+        if c == "x":
             # hexadecimal escape (exactly two digits)
             while source.next in HEXDIGITS and len(escape) < 4:
                 escape = escape + source.get()
@@ -249,12 +240,14 @@ def _class_escape(source, escape):
             if len(escape) != 2:
                 raise error, "bogus escape: %s" % repr("\\" + escape)
             return LITERAL, int(escape, 16) & 0xff
-        elif escape[1:2] in OCTDIGITS:
+        elif c in OCTDIGITS:
             # octal escape (up to three digits)
-            while source.next in OCTDIGITS and len(escape) < 5:
+            while source.next in OCTDIGITS and len(escape) < 4:
                 escape = escape + source.get()
             escape = escape[1:]
             return LITERAL, int(escape, 8) & 0xff
+        elif c in DIGITS:
+            raise error, "bogus escape: %s" % repr(escape)
         if len(escape) == 2:
             return LITERAL, ord(escape[1])
     except ValueError:
@@ -270,19 +263,20 @@ def _escape(source, escape, state):
     if code:
         return code
     try:
-        if escape[1:2] == "x":
+        c = escape[1:2]
+        if c == "x":
             # hexadecimal escape
             while source.next in HEXDIGITS and len(escape) < 4:
                 escape = escape + source.get()
             if len(escape) != 4:
                 raise ValueError
             return LITERAL, int(escape[2:], 16) & 0xff
-        elif escape[1:2] == "0":
+        elif c == "0":
             # octal escape
             while source.next in OCTDIGITS and len(escape) < 4:
                 escape = escape + source.get()
             return LITERAL, int(escape[1:], 8) & 0xff
-        elif escape[1:2] in DIGITS:
+        elif c in DIGITS:
             # octal escape *or* decimal group reference (sigh)
             if source.next in DIGITS:
                 escape = escape + source.get()
@@ -291,9 +285,9 @@ def _escape(source, escape, state):
                     # got three octal digits; this is an octal escape
                     escape = escape + source.get()
                     return LITERAL, int(escape[1:], 8) & 0xff
-            # got at least one decimal digit; this is a group reference
-            group = _group(escape, state.groups)
-            if group:
+            # not an octal escape, so this is a group reference
+            group = int(escape[1:])
+            if group < state.groups:
                 if not state.checkgroup(group):
                     raise error, "cannot refer to open group"
                 return GROUPREF, group
@@ -709,7 +703,8 @@ def parse_template(source, pattern):
             break # end of replacement string
         if this and this[0] == "\\":
             # group
-            if this == "\\g":
+            c = this[1:2]
+            if c == "g":
                 name = ""
                 if s.match("<"):
                     while 1:
@@ -723,6 +718,8 @@ def parse_template(source, pattern):
                     raise error, "bad group name"
                 try:
                     index = int(name)
+                    if index < 0:
+                        raise error, "negative group number"
                 except ValueError:
                     if not isname(name):
                         raise error, "bad character in group name"
@@ -731,26 +728,23 @@ def parse_template(source, pattern):
                     except KeyError:
                         raise IndexError, "unknown group name"
                 a((MARK, index))
-            elif len(this) > 1 and this[1] in DIGITS:
-                code = None
-                while 1:
-                    group = _group(this, pattern.groups+1)
-                    if group:
-                        if (s.next not in DIGITS or
-                            not _group(this + s.next, pattern.groups+1)):
-                            code = MARK, group
-                            break
-                    elif s.next in OCTDIGITS:
+            elif c == "0":
+                if s.next in OCTDIGITS:
+                    this = this + sget()
+                    if s.next in OCTDIGITS:
                         this = this + sget()
-                    else:
-                        break
-                if not code:
-                    this = this[1:]
-                    code = LITERAL, makechar(int(this[-6:], 8) & 0xff)
-                if code[0] is LITERAL:
-                    literal(code[1])
-                else:
-                    a(code)
+                literal(makechar(int(this[1:], 8) & 0xff))
+            elif c in DIGITS:
+                isoctal = False
+                if s.next in DIGITS:
+                    this = this + sget()
+                    if (c in OCTDIGITS and s.next in OCTDIGITS and
+                        this[2] in OCTDIGITS):
+                        this = this + sget()
+                        isoctal = True
+                        literal(makechar(int(this[1:], 8) & 0xff))
+                if not isoctal:
+                    a((MARK, int(this[1:])))
             else:
                 try:
                     this = makechar(ESCAPES[this][1])
@@ -782,7 +776,7 @@ def expand_template(template, match):
         for index, group in groups:
             literals[index] = s = g(group)
             if s is None:
-                raise IndexError
+                raise error, "unmatched group"
     except IndexError:
-        raise error, "empty group"
+        raise error, "invalid group reference"
     return sep.join(literals)
