@@ -364,10 +364,15 @@ class Checker:
     def newdonelink(self, url, origin):
         self.done[url].append(origin)
         self.note(3, "  Done link %s", url)
+        if self.bad.has_key(url):
+            source, rawlink = origin
+            triple = url, rawlink, self.bad[url]
+            self.seterror(source, triple)
 
     def newtodolink(self, url, origin):
         if self.todo.has_key(url):
-            self.todo[url].append(origin)
+            if origin not in self.todo[url]:
+                self.todo[url].append(origin)
             self.note(3, "  Seen todo link %s", url)
         else:
             self.todo[url] = [origin]
