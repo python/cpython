@@ -63,8 +63,11 @@ class HotShotTestCase(unittest.TestCase):
     def run_test(self, callable, events, profiler=None):
         if profiler is None:
             profiler = self.new_profiler()
+        self.failUnless(not profiler._prof.closed)
         profiler.runcall(callable)
+        self.failUnless(not profiler._prof.closed)
         profiler.close()
+        self.failUnless(profiler._prof.closed)
         self.check_events(events)
 
     def test_addinfo(self):
