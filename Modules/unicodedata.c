@@ -53,6 +53,13 @@ _getrecord(PyUnicodeObject* v)
 
 /* --- Module API --------------------------------------------------------- */
 
+PyDoc_STRVAR(unicodedata_decimal__doc__,
+"decimal(unichr[, default])\n\
+\n\
+Returns the decimal value assigned to the Unicode character unichr\n\
+as integer. If no such value is defined, default is returned, or, if\n\
+not given, ValueError is raised.");
+
 static PyObject *
 unicodedata_decimal(PyObject *self, PyObject *args)
 {
@@ -82,6 +89,13 @@ unicodedata_decimal(PyObject *self, PyObject *args)
     return PyInt_FromLong(rc);
 }
 
+PyDoc_STRVAR(unicodedata_digit__doc__,
+"digit(unichr[, default])\n\
+\n\
+Returns the digit value assigned to the Unicode character unichr as\n\
+integer. If no such value is defined, default is returned, or, if\n\
+not given, ValueError is raised.");
+
 static PyObject *
 unicodedata_digit(PyObject *self, PyObject *args)
 {
@@ -109,6 +123,13 @@ unicodedata_digit(PyObject *self, PyObject *args)
     }
     return PyInt_FromLong(rc);
 }
+
+PyDoc_STRVAR(unicodedata_numeric__doc__,
+"numeric(unichr[, default])\n\
+\n\
+Returns the numeric value assigned to the Unicode character unichr\n\
+as float. If no such value is defined, default is returned, or, if\n\
+not given, ValueError is raised.");
 
 static PyObject *
 unicodedata_numeric(PyObject *self, PyObject *args)
@@ -138,6 +159,12 @@ unicodedata_numeric(PyObject *self, PyObject *args)
     return PyFloat_FromDouble(rc);
 }
 
+PyDoc_STRVAR(unicodedata_category__doc__,
+"category(unichr)\n\
+\n\
+Returns the general category assigned to the Unicode character\n\
+unichr as string.");
+
 static PyObject *
 unicodedata_category(PyObject *self, PyObject *args)
 {
@@ -155,6 +182,13 @@ unicodedata_category(PyObject *self, PyObject *args)
     index = (int) _getrecord(v)->category;
     return PyString_FromString(_PyUnicode_CategoryNames[index]);
 }
+
+PyDoc_STRVAR(unicodedata_bidirectional__doc__,
+"bidirectional(unichr)\n\
+\n\
+Returns the bidirectional category assigned to the Unicode character\n\
+unichr as string. If no such value is defined, an empty string is\n\
+returned.");
 
 static PyObject *
 unicodedata_bidirectional(PyObject *self, PyObject *args)
@@ -174,6 +208,13 @@ unicodedata_bidirectional(PyObject *self, PyObject *args)
     return PyString_FromString(_PyUnicode_BidirectionalNames[index]);
 }
 
+PyDoc_STRVAR(unicodedata_combining__doc__,
+"combining(unichr)\n\
+\n\
+Returns the canonical combining class assigned to the Unicode\n\
+character unichr as integer. Returns 0 if no combining class is\n\
+defined.");
+
 static PyObject *
 unicodedata_combining(PyObject *self, PyObject *args)
 {
@@ -190,6 +231,13 @@ unicodedata_combining(PyObject *self, PyObject *args)
     return PyInt_FromLong((int) _getrecord(v)->combining);
 }
 
+PyDoc_STRVAR(unicodedata_mirrored__doc__,
+"mirrored(unichr)\n\
+\n\
+Returns the mirrored property assigned to the Unicode character\n\
+unichr as integer. Returns 1 if the character has been identified as\n\
+a \"mirrored\" character in bidirectional text, 0 otherwise.");
+
 static PyObject *
 unicodedata_mirrored(PyObject *self, PyObject *args)
 {
@@ -205,6 +253,12 @@ unicodedata_mirrored(PyObject *self, PyObject *args)
     }
     return PyInt_FromLong((int) _getrecord(v)->mirrored);
 }
+
+PyDoc_STRVAR(unicodedata_east_asian_width__doc__,
+"east_asian_width(unichr)\n\
+\n\
+Returns the east asian width assigned to the Unicode character\n\
+unichr as string.");
 
 static PyObject *
 unicodedata_east_asian_width(PyObject *self, PyObject *args)
@@ -223,6 +277,13 @@ unicodedata_east_asian_width(PyObject *self, PyObject *args)
     index = (int) _getrecord(v)->east_asian_width;
     return PyString_FromString(_PyUnicode_EastAsianWidthNames[index]);
 }
+
+PyDoc_STRVAR(unicodedata_decomposition__doc__,
+"decomposition(unichr)\n\
+\n\
+Returns the character decomposition mapping assigned to the Unicode\n\
+character unichr as string. An empty string is returned in case no\n\
+such mapping is defined.");
 
 static PyObject *
 unicodedata_decomposition(PyObject *self, PyObject *args)
@@ -525,6 +586,12 @@ nfc_nfkc(PyObject *input, int k)
     return result;
 }
 		
+PyDoc_STRVAR(unicodedata_normalize__doc__,
+"normalize(form, unistr)\n\
+\n\
+Return the normal form 'form' for the Unicode string unistr.  Valid\n\
+values for form are 'NFC', 'NFKC', 'NFD', and 'NFKD'.");
+
 static PyObject*
 unicodedata_normalize(PyObject *self, PyObject *args)
 {
@@ -826,6 +893,12 @@ static const _PyUnicode_Name_CAPI hashAPI =
 /* -------------------------------------------------------------------- */
 /* Python bindings */
 
+PyDoc_STRVAR(unicodedata_name__doc__,
+"name(unichr[, default])\n\
+Returns the name assigned to the Unicode character unichr as a\n\
+string. If no name is defined, default is returned, or, if not\n\
+given, ValueError is raised.");
+
 static PyObject *
 unicodedata_name(PyObject* self, PyObject* args)
 {
@@ -857,6 +930,13 @@ unicodedata_name(PyObject* self, PyObject* args)
     return Py_BuildValue("s", name);
 }
 
+PyDoc_STRVAR(unicodedata_lookup__doc__,
+"lookup(name)\n\
+\n\
+Look up character by name.  If a character with the\n\
+given name is found, return the corresponding Unicode\n\
+character.  If not found, KeyError is raised.");
+
 static PyObject *
 unicodedata_lookup(PyObject* self, PyObject* args)
 {
@@ -884,22 +964,37 @@ unicodedata_lookup(PyObject* self, PyObject* args)
 /* XXX Add doc strings. */
 
 static PyMethodDef unicodedata_functions[] = {
-    {"decimal", unicodedata_decimal, METH_VARARGS},
-    {"digit", unicodedata_digit, METH_VARARGS},
-    {"numeric", unicodedata_numeric, METH_VARARGS},
-    {"category", unicodedata_category, METH_VARARGS},
-    {"bidirectional", unicodedata_bidirectional, METH_VARARGS},
-    {"combining", unicodedata_combining, METH_VARARGS},
-    {"mirrored", unicodedata_mirrored, METH_VARARGS},
-    {"east_asian_width", unicodedata_east_asian_width, METH_VARARGS},
-    {"decomposition",unicodedata_decomposition, METH_VARARGS},
-    {"name", unicodedata_name, METH_VARARGS},
-    {"lookup", unicodedata_lookup, METH_VARARGS},
-    {"normalize", unicodedata_normalize, METH_VARARGS},
+    {"decimal", unicodedata_decimal, METH_VARARGS, unicodedata_decimal__doc__},
+    {"digit", unicodedata_digit, METH_VARARGS, unicodedata_digit__doc__},
+    {"numeric", unicodedata_numeric, METH_VARARGS, unicodedata_numeric__doc__},
+    {"category", unicodedata_category, METH_VARARGS,
+                 unicodedata_category__doc__},
+    {"bidirectional", unicodedata_bidirectional, METH_VARARGS,
+                      unicodedata_bidirectional__doc__},
+    {"combining", unicodedata_combining, METH_VARARGS,
+                  unicodedata_combining__doc__},
+    {"mirrored", unicodedata_mirrored, METH_VARARGS,
+                 unicodedata_mirrored__doc__},
+    {"east_asian_width", unicodedata_east_asian_width, METH_VARARGS,
+                         unicodedata_east_asian_width__doc__},
+    {"decomposition", unicodedata_decomposition, METH_VARARGS,
+                      unicodedata_decomposition__doc__},
+    {"name", unicodedata_name, METH_VARARGS, unicodedata_name__doc__},
+    {"lookup", unicodedata_lookup, METH_VARARGS, unicodedata_lookup__doc__},
+    {"normalize", unicodedata_normalize, METH_VARARGS,
+                  unicodedata_normalize__doc__},
     {NULL, NULL}		/* sentinel */
 };
 
-PyDoc_STRVAR(unicodedata_docstring, "unicode character database");
+PyDoc_STRVAR(unicodedata_docstring,
+"This module provides access to the Unicode Character Database which\n\
+defines character properties for all Unicode characters. The data in\n\
+this database is based on the UnicodeData.txt file version\n\
+3.2.0 which is publically available from ftp://ftp.unicode.org/.\n\
+\n\
+The module uses the same names and symbols as defined by the\n\
+UnicodeData File Format 3.2.0 (see\n\
+http://www.unicode.org/Public/UNIDATA/UnicodeData.html).");
 
 PyMODINIT_FUNC
 initunicodedata(void)
