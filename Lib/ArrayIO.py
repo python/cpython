@@ -1,82 +1,102 @@
-# port of StringIO.py using arrays
-# ArrayIO.py
-# jjk  02/28/96  001  direct mod of StringIO, test suite checks out
-# jjk  02/28/96  002  inherit from StringIO, test suite checks out
-# jjk  02/28/96  003  add __xx__() functions
-#
-# class ArrayIO implements  file-like objects that read/write a
-# string buffer (a.k.a. "memory files"). 
-#
-# all methods that interface with ArrayIO pass strings. Internally, however,
-# ArrayIO uses an array object.
-#
-# the interface is the same as StringIO.py
-# also handles len(a), a[i], a[i]='x', a[i:j], a[i:j] = aString
-#
+"""File-like objects that read/write an array buffer.
+
+This implements (nearly) all stdio methods.
+
+f = ArrayIO()       # ready for writing
+f = ArrayIO(buf)    # ready for reading
+f.close()           # explicitly release resources held
+flag = f.isatty()   # always false
+pos = f.tell()      # get current position
+f.seek(pos)         # set current position
+f.seek(pos, mode)   # mode 0: absolute; 1: relative; 2: relative to EOF
+buf = f.read()      # read until EOF
+buf = f.read(n)     # read up to n bytes
+buf = f.readline()  # read until end of line ('\n') or EOF
+list = f.readlines()# list of f.readline() results until EOF
+f.write(buf)        # write at current position
+f.writelines(list)  # for line in list: f.write(line)
+f.getvalue()        # return whole file's contents as a string
+
+Notes:
+- This is very similar to StringIO.  StringIO is faster for reading,
+  but ArrayIO is faster for writing.
+- ArrayIO uses an array object internally, but all its interfaces
+  accept and return strings.
+- Using a real file is often faster (but less convenient).
+- fileno() is left unimplemented so that code which uses it triggers
+  an exception early.
+- Seeking far beyond EOF and then writing will insert real null
+  bytes that occupy space in the buffer.
+- There's a simple test set (see end of this file).
+"""
 
 import string
-import array
-import StringIO
+from array import array
 
-class ArrayIO(StringIO.StringIO):
-# jjk  02/28/96
+class ArrayIO:
 	def __init__(self, buf = ''):
-	#jjk  02/28/96
-		self.buf = array.array('c', buf)
+		self.buf = array('c', buf)
 		self.pos = 0
 		self.closed = 0
-	def __len__(self): 
-	#jjk  02/28/96
-		return len(self.buf)
-	def __getitem__(self, key): 
-	#jjk  02/28/96
-		return self.buf[key]
-	def __setitem__(self, key, item): 
-	#jjk  02/28/96
-		self.buf[key] = item
-	def __getslice__(self, i, j): 
-	#jjk  02/28/96
-		return self.buf[i:j].tostring()
-	def __setslice__(self, i, j, aString): 
-	#jjk  02/28/96
-		self.buf[i:j] = array.array('c', aString)
-	def read(self, n = 0):
-	#jjk  02/28/96
-		r = StringIO.StringIO.read(self, n)
-		return (r.tostring())
-	def _findCharacter(self, char, start):
-        #probably very slow
-	#jjk  02/28/96
-		for i in range(max(start, 0), len(self.buf)):
-			if (self.buf[i] == char):
-				return(i)
-		return(-1)
-	def readline(self):
-	#jjk  02/28/96
-		i = self._findCharacter('\n', self.pos)
-		if i < 0:
+		self.softspace = 0
+	def close(self):
+		if not self.closed:
+			self.closed = 1
+			del self.buf, self.pos
+	def isatty(self):
+		return 0
+	def seek(self, pos, mode = 0):
+		if mode == 1:
+			pos = pos + self.pos
+		elif mode == 2:
+			pos = pos + len(self.buf)
+		self.pos = max(0, pos)
+	def tell(self):
+		return self.pos
+	def read(self, n = -1):
+		if n < 0:
 			newpos = len(self.buf)
 		else:
-			newpos = i+1
+			newpos = min(self.pos+n, len(self.buf))
 		r = self.buf[self.pos:newpos].tostring()
 		self.pos = newpos
 		return r
-	def write(self, s):
-	#jjk  02/28/96
-		if not s: return
-		if self.pos > len(self.buf):
-			self.buf.fromstring('\0'*(self.pos - len(self.buf)))
-		newpos = self.pos + len(s)
-		self.buf[self.pos:newpos] = array.array('c', s)
+	def readline(self):
+		i = string.find(self.buf[self.pos:].tostring(), '\n')
+		if i < 0:
+			newpos = len(self.buf)
+		else:
+			newpos = self.pos+i+1
+		r = self.buf[self.pos:newpos].tostring()
 		self.pos = newpos
+		return r
+	def readlines(self):
+		lines = string.splitfields(self.read(), '\n')
+		if not lines:
+			return lines
+		for i in range(len(lines)-1):
+			lines[i] = lines[i] + '\n'
+		if not lines[-1]:
+			del lines[-1]
+		return lines
+	def write(self, s):
+		if not s: return
+		a = array('c', s)
+		n = self.pos - len(self.buf)
+		if n > 0:
+			self.buf[len(self.buf):] = array('c', '\0')*n
+		newpos = self.pos + len(a)
+		self.buf[self.pos:newpos] = a
+		self.pos = newpos
+	def writelines(self, list):
+		self.write(string.joinfields(list, ''))
+	def flush(self):
+		pass
 	def getvalue(self):
-	#jjk  02/28/96
 		return self.buf.tostring()
 
 
 # A little test suite
-# identical to test suite in StringIO.py , except for "f = ArrayIO()"
-# too bad I couldn't inherit this :-)
 
 def test():
 	import sys
