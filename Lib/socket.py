@@ -62,8 +62,8 @@ if (sys.platform.lower().startswith("win")
 
     _realsocketcall = _socket.socket
 
-    def socket(*args):
-        return _socketobject(_realsocketcall(*args))
+    def socket(family=AF_INET, type=SOCK_STREAM, proto=0):
+        return _socketobject(_realsocketcall(family, type, proto))
     socket.__doc__ = _realsocketcall.__doc__
 
     if SSL_EXISTS:
