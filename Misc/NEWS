@@ -90,6 +90,11 @@ Core
 
 Library
 
+- StringIO.StringIO instances and cStringIO.StringIO instances support
+  read character buffer compatible objects for their .write() methods.
+  These objects are converted to strings and then handled as such
+  by the instances.
+
 - The "email" package has been added.  This is basically a port of the
   mimelib package <http://sf.net/projects/mimelib> with API changes
   and some implementations updated to use iterators and generators.
