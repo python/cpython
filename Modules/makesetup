@@ -6,8 +6,9 @@
 # Usage: makesetup [-s dir] [-c file] [-m file] [Setup] ... [-n [Setup] ...]
 #
 # Options:
-# -s directory: alternative source directory (default derived from $0)
-# -c file:      alternative config.c template (default $srcdir/config.c.in)
+# -s directory: alternative source directory (default .)
+# -l directory: library source directory (default derived from $0)
+# -c file:      alternative config.c template (default $libdir/config.c.in)
 # -c -:         don't write config.c
 # -m file:      alternative Makefile template (default ./Makefile.pre)
 # -m -:         don't write Makefile
@@ -40,9 +41,10 @@
 
 # Loop over command line options
 usage='
-usage: makesetup [-s srcdir] [-c config.c.in] [-m Makefile.pre]
+usage: makesetup [-s srcdir] [-l libdir] [-c config.c.in] [-m Makefile.pre]
                  [Setup] ... [-n [Setup] ...]'
-srcdir=''
+srcdir='.'
+libdir=''
 config=''
 makepre=''
 noobjects=''
@@ -51,6 +53,7 @@ while :
 do
 	case $1 in
 	-s)	shift; srcdir=$1; shift;;
+	-l)	shift; libdir=$1; shift;;
 	-c)	shift; config=$1; shift;;
 	-m)	shift; makepre=$1; shift;;
 	--)	shift; break;;
@@ -60,16 +63,16 @@ do
 	esac
 done
 
-# Set default srcdir and config if not set by command line
+# Set default libdir and config if not set by command line
 # (Not all systems have dirname)
 case $srcdir in
 '')	case $0 in
-	*/*)	srcdir=`echo $0 | sed 's,/[^/]*$,,'`;;
-	*)	srcdir=.;;
+	*/*)	libdir=`echo $0 | sed 's,/[^/]*$,,'`;;
+	*)	libdir=.;;
 	esac;;
 esac
 case $config in
-'')	config=$srcdir/config.c.in;;
+'')	config=$libdir/config.c.in;;
 esac
 case $makepre in
 '')	makepre=Makefile.pre;;
@@ -82,9 +85,9 @@ NL='\
 # Setup to link with extra libraries when makeing shared extensions.
 # Currently, only Cygwin needs this baggage.
 case `uname -s` in
-CYGWIN*) if test $srcdir = .
+CYGWIN*) if test $libdir = .
 	 then
-	 	ExtraLibDir=..
+	 	ExtraLibDir=.
 	 else
 	 	ExtraLibDir='$(LIBPL)'
 	 fi
@@ -204,17 +207,18 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			*.m)   obj=`basename $src .m`.o; cc='$(CXX)';; # Obj-C
 			*)     continue;;
 			esac
+			obj="$srcdir/$obj"
 			objs="$objs $obj"
 			case $src in
 			glmodule.c) ;;
 			/*) ;;
 			\$*) ;;
-			*) src='$(srcdir)/'$src;;
+			*) src='$(srcdir)/'"$srcdir/$src";;
 			esac
 			case $doconfig in
 			no)	cc="$cc \$(CCSHARED)";;
 			esac
-			rule="$obj: $src; $cc $cpps \$(CFLAGS) -c $src"
+			rule="$obj: $src; $cc $cpps \$(CFLAGS) -c $src -o $obj"
 			echo "$rule" >>$rulesf
 		done
 		case $doconfig in
