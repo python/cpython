@@ -12,7 +12,23 @@ class UserDict:
 	def __getitem__(self, key): return self.data[key]
 	def __setitem__(self, key, item): self.data[key] = item
 	def __delitem__(self, key): del self.data[key]
+	def clear(self): return self.data.clear()
+	def copy(self):
+	    if self.__class__ is UserDict:
+		new = UserDict()
+		new.dict = self.data.copy()
+	    else:
+		new = self.__class__()	# XXX assumption: constructor signature
+		for k, v in self.items():
+		    new[k] = v
+	    return new
 	def keys(self): return self.data.keys()
 	def items(self): return self.data.items()
 	def values(self): return self.data.values()
 	def has_key(self, key): return self.data.has_key(key)
+	def update(self, other):
+	    if type(other) is type(self.data):
+		self.data.update(other)
+	    else:
+		for k, v in other.items():
+		    self.data[k] = v
