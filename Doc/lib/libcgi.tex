@@ -135,19 +135,14 @@ instance but a list of such instances.  Similarly, in this situation,
 \samp{form.getvalue(\var{key})} would return a list of strings.
 If you expect this possibility
 (when your HTML form contains multiple fields with the same name), use
-the \function{isinstance()} built-in function to determine whether you
-have a single instance or a list of instances.  For example, this
+the \function{getlist()} function, which always returns a list of values (so that you
+do not need to special-case the single item case).  For example, this
 code concatenates any number of username fields, separated by
 commas:
 
 \begin{verbatim}
-value = form.getvalue("username", "")
-if isinstance(value, list):
-    # Multiple username fields specified
-    usernames = ",".join(value)
-else:
-    # Single or no username field specified
-    usernames = value
+value = form.getlist("username")
+usernames = ",".join(value)
 \end{verbatim}
 
 If a field represents an uploaded file, accessing the value via the
