@@ -433,6 +433,7 @@ if missing: raise "Missing Types"
 
 	def dosymdef(self, match):
 		name, defn = match.group('name', 'defn')
+		defn = escape8bit(defn)
 		if self.debug:
 			self.report("\tsym: name=%s, defn=%s" % (`name`, `defn`))
 		if not name in self.blacklistnames:
@@ -638,7 +639,21 @@ class Scanner_OSX(Scanner):
 		self.whole_pat = self.type_pat + self.name_pat + self.args_pat
 		self.sym_pat = "^[ \t]*(?P<name>[a-zA-Z0-9_]+)[ \t]*=" + \
 		               "[ \t]*(?P<defn>[-0-9_a-zA-Z'\"\(][^\t\n,;}]*),?"
-	
+
+_8bit = re.compile(r"[\200-\377]")
+
+def escape8bit(s):
+	if _8bit.search(s) is not None:
+		out = []
+		for c in s:
+			o = ord(c)
+			if o >= 128:
+				out.append("\\" + hex(o)[1:])
+			else:
+				out.append(c)
+		s = "".join(out)
+	return s
+
 def test():
 	input = "D:Development:THINK C:Mac #includes:Apple #includes:AppleEvents.h"
 	output = "@aespecs.py"
