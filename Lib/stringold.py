@@ -203,7 +203,11 @@ re = None
 def atof(str):
 	global re
 	if re is None:
-		import re
+		# Don't fail if re doesn't exist -- just skip the syntax check
+		try:
+			import re
+		except ImportError:
+			re = 0
 	sign = ''
 	s = strip(str)
 	if s and s[0] in '+-':
@@ -212,10 +216,10 @@ def atof(str):
 	if not s:
 		raise ValueError, 'non-float argument to string.atof'
 	while s[0] == '0' and len(s) > 1 and s[1] in digits: s = s[1:]
-	if not re.match('[0-9]*(\.[0-9]*)?([eE][-+]?[0-9]+)?$', s):
+	if re and not re.match('[0-9]*(\.[0-9]*)?([eE][-+]?[0-9]+)?$', s):
 		raise ValueError, 'non-float argument to string.atof'
 	try:
-		return float(eval(sign + s))
+		return float(eval(sign + s, {}))
 	except SyntaxError:
 		raise ValueError, 'non-float argument to string.atof'
 
