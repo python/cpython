@@ -264,6 +264,7 @@ builtin_filter(PyObject *self, PyObject *args)
 	if (j < len && PyList_SetSlice(result, j, len, NULL) < 0)
 		goto Fail_result_it;
 
+	Py_DECREF(it);
 	return result;
 
 Fail_result_it:
