@@ -13,16 +13,15 @@ chunks.\footnote{``EA IFF 85'' Standard for Interchange Format Files,
 Jerry Morrison, Electronic Arts, January 1985.}  This format is used
 in at least the Audio\index{Audio Interchange File
 Format}\index{AIFF}\index{AIFF-C} Interchange File Format
-(AIFF/AIFF-C), the Real\index{Real Media File Format} Media File
-Format\index{RMFF} (RMFF), and the
-Tagged\index{Tagged Image File Format} Image File Format\index{TIFF}
-(TIFF).
+(AIFF/AIFF-C) and the Real\index{Real Media File Format} Media File
+Format\index{RMFF} (RMFF).  The WAVE audio file format is closely
+related and can also be read using this module.
 
 A chunk has the following structure:
 
 \begin{tableiii}{c|c|l}{textrm}{Offset}{Length}{Contents}
   \lineiii{0}{4}{Chunk ID}
-  \lineiii{4}{4}{Size of chunk in big-endian byte order, including the 
+  \lineiii{4}{4}{Size of chunk in big-endian byte order, not including the 
                  header}
   \lineiii{8}{\var{n}}{Data bytes, where \var{n} is the size given in
                        the preceeding field}
@@ -33,7 +32,7 @@ A chunk has the following structure:
 The ID is a 4-byte string which identifies the type of chunk.
 
 The size field (a 32-bit value, encoded using big-endian byte order)
-gives the size of the whole chunk, including the 8-byte header.
+gives the size of the chunk data, not including the 8-byte header.
 
 Usually an IFF-type file consists of one or more chunks.  The proposed
 usage of the \class{Chunk} class defined here is to instantiate an
@@ -42,7 +41,7 @@ it reaches the end, after which a new instance can be instantiated.
 At the end of the file, creating a new instance will fail with a
 \exception{EOFError} exception.
 
-\begin{classdesc}{Chunk}{file\optional{, align}}
+\begin{classdesc}{Chunk}{file\optional{, align, bigendian, inclheader}}
 Class which represents a chunk.  The \var{file} argument is expected
 to be a file-like object.  An instance of this class is specifically
 allowed.  The only method that is needed is \method{read()}.  If the
@@ -51,7 +50,12 @@ raise an exception, they are also used.  If these methods are present
 and raise an exception, they are expected to not have altered the
 object.  If the optional argument \var{align} is true, chunks are
 assumed to be aligned on 2-byte boundaries.  If \var{align} is
-false, no alignment is assumed.  The default value is true.
+false, no alignment is assumed.  The default value is true.  If the
+optional argument \var{bigendian} is false, the chunk size is assumed
+to be in little-endian order.  This is needed for WAVE audio files.
+The default value is true.  If the optional argument \var{inclheader}
+is true, the size given in the chunk header includes the size of the
+header.  The default value is false.
 \end{classdesc}
 
 A \class{Chunk} object supports the following methods:
@@ -59,6 +63,10 @@ A \class{Chunk} object supports the following methods:
 \begin{methoddesc}{getname}{}
 Returns the name (ID) of the chunk.  This is the first 4 bytes of the
 chunk.
+\end{methoddesc}
+
+\begin{methoddesc}{getsize}{}
+Returns the size of the chunk.
 \end{methoddesc}
 
 \begin{methoddesc}{close}{}
