@@ -1464,6 +1464,10 @@ class Text(Widget):
 		return self._bind((self._w, 'tag', 'bind', tagName),
 				  sequence, func, add)
 	def tag_cget(self, tagName, option):
+		if option[:1] != '-':
+			option = '-' + option
+		if option[-1:] == '_':
+			option = option[:-1]
 		return self.tk.call(self._w, 'tag', 'cget', tagName, option)
 	def tag_config(self, tagName, cnf={}, **kw):
 		if type(cnf) == StringType:
