@@ -14,11 +14,11 @@ import sys
 # The following struct is created to hold the instance variables
 # main_form, button1, button2 and exitbutton.
 
-class myform():
+class myform:
 	#
-	# The init function parses and creates the form, but doesn't
+	# The constructor parses and creates the form, but doesn't
 	# display it (yet).
-	def init(self, number):
+	def __init__(self, number):
 		#
 		# First we parse the form
 		parsetree = flp.parse_form('test_cb', 'main_form')
@@ -29,7 +29,6 @@ class myform():
 
 		# And keep our number
 		self.number = number
-		return self
 
 	#
 	# The show function displays the form. It doesn't do any interaction,
@@ -52,8 +51,8 @@ class myform():
 # The main program. Instantiate two variables of the forms class
 # and interact with them.
 
-form1 = myform().init(1)
-form2 = myform().init(2)
+form1 = myform(1)
+form2 = myform(2)
 
 form1.show()
 form2.show()

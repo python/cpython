@@ -51,7 +51,7 @@ def mkslice(z1, z2, nparts, docircle):
 #
 # Drawcylinder : draw the cylinder
 #
-class struct(): pass
+class struct: pass
 curobj = struct()
 curobj.curobj = 1
 def drawcylinder(cyl):
