@@ -1049,9 +1049,8 @@ is inserted at the end.  See also the command `py-clear-queue'."
       ;; use the existing python shell
       (if (not py-file-queue)
 	  (py-execute-file proc file)
-	(push file py-file-queue)
 	(message "File %s queued for execution" file))
-      )
+      (push file py-file-queue))
      (t
       ;; otherwise either run it synchronously in a subprocess
       (shell-command-on-region start end py-python-command outbuf)
