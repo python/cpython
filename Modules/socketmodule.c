@@ -106,7 +106,8 @@ Socket methods:
 # endif
 #endif
 
-#if !defined(HAVE_GETHOSTBYNAME_R) && defined(WITH_THREAD) && !defined(MS_WINDOWS)
+#if !defined(HAVE_GETHOSTBYNAME_R) && defined(WITH_THREAD) && \
+    !defined(MS_WINDOWS)
 # define USE_GETHOSTBYNAME_LOCK
 #endif
 
@@ -184,7 +185,7 @@ int h_errno; /* not used */
 #include "addrinfo.h"
 
 #ifndef HAVE_INET_PTON
-int inet_pton (int af, const char *src, void *dst);
+int inet_pton(int af, const char *src, void *dst);
 const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #endif
 
@@ -218,8 +219,8 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #endif
 
 #ifdef MS_WIN32
-#	define EAFNOSUPPORT            WSAEAFNOSUPPORT
-#	define snprintf _snprintf
+#define EAFNOSUPPORT WSAEAFNOSUPPORT
+#define snprintf _snprintf
 #endif
 
 #if defined(PYOS_OS2) && !defined(PYCC_GCC)
@@ -260,73 +261,69 @@ PySocket_Err(void)
 {
 #ifdef MS_WINDOWS
 	int err_no = WSAGetLastError();
+	static struct {
+		int no;
+		const char *msg;
+	} *msgp, msgs[] = {
+		{WSAEINTR, "Interrupted system call"},
+		{WSAEBADF, "Bad file descriptor"},
+		{WSAEACCES, "Permission denied"},
+		{WSAEFAULT, "Bad address"},
+		{WSAEINVAL, "Invalid argument"},
+		{WSAEMFILE, "Too many open files"},
+		{WSAEWOULDBLOCK,
+		  "The socket operation could not complete "
+		  "without blocking"},
+		{WSAEINPROGRESS, "Operation now in progress"},
+		{WSAEALREADY, "Operation already in progress"},
+		{WSAENOTSOCK, "Socket operation on non-socket"},
+		{WSAEDESTADDRREQ, "Destination address required"},
+		{WSAEMSGSIZE, "Message too long"},
+		{WSAEPROTOTYPE, "Protocol wrong type for socket"},
+		{WSAENOPROTOOPT, "Protocol not available"},
+		{WSAEPROTONOSUPPORT, "Protocol not supported"},
+		{WSAESOCKTNOSUPPORT, "Socket type not supported"},
+		{WSAEOPNOTSUPP, "Operation not supported"},
+		{WSAEPFNOSUPPORT, "Protocol family not supported"},
+		{WSAEAFNOSUPPORT, "Address family not supported"},
+		{WSAEADDRINUSE, "Address already in use"},
+		{WSAEADDRNOTAVAIL, "Can't assign requested address"},
+		{WSAENETDOWN, "Network is down"},
+		{WSAENETUNREACH, "Network is unreachable"},
+		{WSAENETRESET, "Network dropped connection on reset"},
+		{WSAECONNABORTED, "Software caused connection abort"},
+		{WSAECONNRESET, "Connection reset by peer"},
+		{WSAENOBUFS, "No buffer space available"},
+		{WSAEISCONN, "Socket is already connected"},
+		{WSAENOTCONN, "Socket is not connected"},
+		{WSAESHUTDOWN, "Can't send after socket shutdown"},
+		{WSAETOOMANYREFS, "Too many references: can't splice"},
+		{WSAETIMEDOUT, "Operation timed out"},
+		{WSAECONNREFUSED, "Connection refused"},
+		{WSAELOOP, "Too many levels of symbolic links"},
+		{WSAENAMETOOLONG, "File name too long"},
+		{WSAEHOSTDOWN, "Host is down"},
+		{WSAEHOSTUNREACH, "No route to host"},
+		{WSAENOTEMPTY, "Directory not empty"},
+		{WSAEPROCLIM, "Too many processes"},
+		{WSAEUSERS, "Too many users"},
+		{WSAEDQUOT, "Disc quota exceeded"},
+		{WSAESTALE, "Stale NFS file handle"},
+		{WSAEREMOTE, "Too many levels of remote in path"},
+		{WSASYSNOTREADY, "Network subsystem is unvailable"},
+		{WSAVERNOTSUPPORTED, "WinSock version is not supported"},
+		{WSANOTINITIALISED,
+		  "Successful WSAStartup() not yet performed"},
+		{WSAEDISCON, "Graceful shutdown in progress"},
+		/* Resolver errors */
+		{WSAHOST_NOT_FOUND, "No such host is known"},
+		{WSATRY_AGAIN, "Host not found, or server failed"},
+		{WSANO_RECOVERY, "Unexpected server error encountered"},
+		{WSANO_DATA, "Valid name without requested data"},
+		{WSANO_ADDRESS, "No address, look for MX record"},
+		{0, NULL}
+	};
 	if (err_no) {
-		static struct { int no; const char *msg; } *msgp, msgs[] = {
-			{ WSAEINTR, "Interrupted system call" },
-			{ WSAEBADF, "Bad file descriptor" },
-			{ WSAEACCES, "Permission denied" },
-			{ WSAEFAULT, "Bad address" },
-			{ WSAEINVAL, "Invalid argument" },
-			{ WSAEMFILE, "Too many open files" },
-			{ WSAEWOULDBLOCK,
-				"The socket operation could not complete "
-				"without blocking" },
-			{ WSAEINPROGRESS, "Operation now in progress" },
-			{ WSAEALREADY, "Operation already in progress" },
-			{ WSAENOTSOCK, "Socket operation on non-socket" },
-			{ WSAEDESTADDRREQ, "Destination address required" },
-			{ WSAEMSGSIZE, "Message too long" },
-			{ WSAEPROTOTYPE, "Protocol wrong type for socket" },
-			{ WSAENOPROTOOPT, "Protocol not available" },
-			{ WSAEPROTONOSUPPORT, "Protocol not supported" },
-			{ WSAESOCKTNOSUPPORT, "Socket type not supported" },
-			{ WSAEOPNOTSUPP, "Operation not supported" },
-			{ WSAEPFNOSUPPORT, "Protocol family not supported" },
-			{ WSAEAFNOSUPPORT, "Address family not supported" },
-			{ WSAEADDRINUSE, "Address already in use" },
-			{ WSAEADDRNOTAVAIL,
-				"Can't assign requested address" },
-			{ WSAENETDOWN, "Network is down" },
-			{ WSAENETUNREACH, "Network is unreachable" },
-			{ WSAENETRESET,
-				"Network dropped connection on reset" },
-			{ WSAECONNABORTED,
-				"Software caused connection abort" },
-			{ WSAECONNRESET, "Connection reset by peer" },
-			{ WSAENOBUFS, "No buffer space available" },
-			{ WSAEISCONN, "Socket is already connected" },
-			{ WSAENOTCONN, "Socket is not connected" },
-			{ WSAESHUTDOWN, "Can't send after socket shutdown" },
-			{ WSAETOOMANYREFS,
-				"Too many references: can't splice" },
-			{ WSAETIMEDOUT, "Operation timed out" },
-			{ WSAECONNREFUSED, "Connection refused" },
-			{ WSAELOOP, "Too many levels of symbolic links" },
-			{ WSAENAMETOOLONG, "File name too long" },
-			{ WSAEHOSTDOWN, "Host is down" },
-			{ WSAEHOSTUNREACH, "No route to host" },
-			{ WSAENOTEMPTY, "Directory not empty" },
-			{ WSAEPROCLIM, "Too many processes" },
-			{ WSAEUSERS, "Too many users" },
-			{ WSAEDQUOT, "Disc quota exceeded" },
-			{ WSAESTALE, "Stale NFS file handle" },
-			{ WSAEREMOTE, "Too many levels of remote in path" },
-			{ WSASYSNOTREADY,
-				"Network subsystem is unvailable" },
-			{ WSAVERNOTSUPPORTED,
-				"WinSock version is not supported" },
-			{ WSANOTINITIALISED,
-				"Successful WSAStartup() not yet performed" },
-			{ WSAEDISCON, "Graceful shutdown in progress" },
-			/* Resolver errors */
-			{ WSAHOST_NOT_FOUND, "No such host is known" },
-			{ WSATRY_AGAIN, "Host not found, or server failed" },
-			{ WSANO_RECOVERY,
-				"Unexpected server error encountered" },
-			{ WSANO_DATA, "Valid name without requested data" },
-			{ WSANO_ADDRESS, "No address, look for MX record" },
-			{ 0, NULL }
-		};
 		PyObject *v;
 		const char *msg = "winsock error";
 
@@ -348,32 +345,38 @@ PySocket_Err(void)
 #endif
 
 #if defined(PYOS_OS2) && !defined(PYCC_GCC)
-    if (sock_errno() != NO_ERROR) {
-        APIRET rc;
-        ULONG  msglen;
-        char   outbuf[100];
-        int    myerrorcode = sock_errno();
+	if (sock_errno() != NO_ERROR) {
+		APIRET rc;
+		ULONG  msglen;
+		char outbuf[100];
+		int myerrorcode = sock_errno();
 
-        /* Retrieve Socket-Related Error Message from MPTN.MSG File */
-        rc = DosGetMessage(NULL, 0, outbuf, sizeof(outbuf),
-                           myerrorcode - SOCBASEERR + 26, "mptn.msg", &msglen);
-        if (rc == NO_ERROR) {
-            PyObject *v;
+		/* Retrieve socket-related error message from MPTN.MSG file */
+		rc = DosGetMessage(NULL, 0, outbuf, sizeof(outbuf),
+				   myerrorcode - SOCBASEERR + 26,
+				   "mptn.msg",
+				   &msglen);
+		if (rc == NO_ERROR) {
+			PyObject *v;
 
-            outbuf[msglen] = '\0'; /* OS/2 Doesn't Guarantee a Terminator */
-            if (strlen(outbuf) > 0) { /* If Non-Empty Msg, Trim CRLF */
-                char *lastc = &outbuf[ strlen(outbuf)-1 ];
-                while (lastc > outbuf && isspace(*lastc))
-                    *lastc-- = '\0'; /* Trim Trailing Whitespace (CRLF) */
-            }
-            v = Py_BuildValue("(is)", myerrorcode, outbuf);
-            if (v != NULL) {
-                PyErr_SetObject(PySocket_Error, v);
-                Py_DECREF(v);
-            }
-            return NULL;
-        }
-    }
+			/* OS/2 doesn't guarantee a terminator */
+			outbuf[msglen] = '\0';
+			if (strlen(outbuf) > 0) {
+				/* If non-empty msg, trim CRLF */
+				char *lastc = &outbuf[ strlen(outbuf)-1 ];
+				while (lastc > outbuf && isspace(*lastc)) {
+					/* Trim trailing whitespace (CRLF) */
+					*lastc-- = '\0';
+				}
+			}
+			v = Py_BuildValue("(is)", myerrorcode, outbuf);
+			if (v != NULL) {
+				PyErr_SetObject(PySocket_Error, v);
+				Py_DECREF(v);
+			}
+			return NULL;
+		}
+	}
 #endif
 
 	return PyErr_SetFromErrno(PySocket_Error);
@@ -443,9 +446,8 @@ timeout_err(void)
 	return NULL;
 }
 
-/* Function to perfrom the setting of socket blocking mode
- * internally. block = (1 | 0).
- */
+/* Function to perform the setting of socket blocking mode
+   internally. block = (1 | 0). */
 static int
 internal_setblocking(PySocketSockObject *s, int block)
 {
@@ -458,8 +460,8 @@ internal_setblocking(PySocketSockObject *s, int block)
 	Py_BEGIN_ALLOW_THREADS
 #ifdef __BEOS__
 	block = !block;
-	setsockopt( s->sock_fd, SOL_SOCKET, SO_NONBLOCK,
-				(void *)(&block), sizeof(int));
+	setsockopt(s->sock_fd, SOL_SOCKET, SO_NONBLOCK,
+		   (void *)(&block), sizeof(int));
 #else
 #ifndef RISCOS
 #ifndef MS_WINDOWS
@@ -487,10 +489,9 @@ internal_setblocking(PySocketSockObject *s, int block)
 }
 
 /* For access to the select module to poll the socket for timeout
- * functionality. writing is 1 for writing, 0 for reading.
- * Return value: -1 if error, 0 if not ready, >= 1 if ready.
- * An exception is set when the return value is <= 0 (!).
- */
+   functionality. writing is 1 for writing, 0 for reading.
+   Return value: -1 if error, 0 if not ready, >= 1 if ready.
+   An exception is set when the return value is <= 0 (!). */
 static int
 internal_select(PySocketSockObject *s, int writing)
 {
@@ -517,8 +518,7 @@ internal_select(PySocketSockObject *s, int writing)
 	}
 
 	/* Set the error if the timeout has elapsed, i.e, we were not
-	 * polled.
-	 */
+	  polled. */
 	if (count == 0)
 		timeout_err();
 
@@ -543,9 +543,8 @@ init_sockobject(PySocketSockObject *s,
 
 	s->errorhandler = &PySocket_Err;
 #ifdef RISCOS
-	if(taskwindow) {
+	if (taskwindow)
 		socketioctl(s->sock_fd, 0x80046679, (u_long*)&block);
-	}
 #endif
 }
 
@@ -581,7 +580,7 @@ PyThread_type_lock gethostbyname_lock;
    an error occurred; then an exception is raised. */
 
 static int
-setipaddr(char* name, struct sockaddr * addr_ret, int af)
+setipaddr(char *name, struct sockaddr *addr_ret, int af)
 {
 	struct addrinfo hints, *res;
 	int error;
@@ -643,12 +642,12 @@ setipaddr(char* name, struct sockaddr * addr_ret, int af)
 	hints.ai_family = af;
 	error = getaddrinfo(name, NULL, &hints, &res);
 #if defined(__digital__) && defined(__unix__)
-        if (error == EAI_NONAME && af == AF_UNSPEC) {
-          /* On Tru64 V5.1, numeric-to-addr conversion
-             fails if no address family is given. Assume IPv4 for now.*/
-          hints.ai_family = AF_INET;
-          error = getaddrinfo(name, NULL, &hints, &res);
-        }
+	if (error == EAI_NONAME && af == AF_UNSPEC) {
+		/* On Tru64 V5.1, numeric-to-addr conversion fails
+		   if no address family is given. Assume IPv4 for now.*/
+		hints.ai_family = AF_INET;
+		error = getaddrinfo(name, NULL, &hints, &res);
+	}
 #endif
 	if (error) {
 		PyGAI_Err(error);
@@ -741,8 +740,11 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen)
 		PyObject *ret = NULL;
 		if (addrobj) {
 			a = (struct sockaddr_in6 *)addr;
-			ret = Py_BuildValue("Oiii", addrobj, ntohs(a->sin6_port),
-				a->sin6_flowinfo, a->sin6_scope_id);
+			ret = Py_BuildValue("Oiii",
+					    addrobj,
+					    ntohs(a->sin6_port),
+					    a->sin6_flowinfo,
+					    a->sin6_scope_id);
 			Py_DECREF(addrobj);
 		}
 		return ret;
@@ -761,9 +763,13 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen)
 			if (ioctl(sockfd, SIOCGIFNAME, &ifr) == 0)
 				ifname = ifr.ifr_name;
 		}
-		return Py_BuildValue("shbhs#", ifname, ntohs(a->sll_protocol),
-				     a->sll_pkttype, a->sll_hatype,
-				     a->sll_addr, a->sll_halen);
+		return Py_BuildValue("shbhs#",
+				     ifname,
+				     ntohs(a->sll_protocol),
+				     a->sll_pkttype,
+				     a->sll_hatype,
+				     a->sll_addr,
+				     a->sll_halen);
 	}
 #endif
 
@@ -822,9 +828,11 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		int port;
  		addr=(struct sockaddr_in*)&(s->sock_addr).in;
 		if (!PyTuple_Check(args)) {
-			PyErr_Format(PyExc_TypeError,
-		  "getsockaddrarg: AF_INET address must be tuple, not %.500s",
-				     args->ob_type->tp_name);
+			PyErr_Format(
+				PyExc_TypeError,
+				"getsockaddrarg: "
+				"AF_INET address must be tuple, not %.500s",
+				args->ob_type->tp_name);
 			return 0;
 		}
 		if (!PyArg_ParseTuple(args, "si:getsockaddrarg", &host, &port))
@@ -847,7 +855,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
  		addr = (struct sockaddr_in6*)&(s->sock_addr).in6;
 		flowinfo = scope_id = 0;
 		if (!PyArg_ParseTuple(args, "si|ii", &host, &port, &flowinfo,
-				&scope_id)) {
+				      &scope_id)) {
 			return 0;
 		}
 		if (setipaddr(host, (struct sockaddr *)addr, AF_INET6) < 0)
@@ -1007,8 +1015,7 @@ PySocketSock_accept(PySocketSockObject *s)
 	}
 
 	/* At this point, we really have an error, whether using timeout
-	 * behavior or regular socket behavior
-	 */
+	   behavior or regular socket behavior */
 #ifdef MS_WINDOWS
 	if (newfd == INVALID_SOCKET)
 #else
@@ -1028,7 +1035,7 @@ PySocketSock_accept(PySocketSockObject *s)
 		goto finally;
 	}
 	addr = makesockaddr(s->sock_fd, (struct sockaddr *)addrbuf,
-	                    addrlen);
+			    addrlen);
 	if (addr == NULL)
 		goto finally;
 
@@ -1061,8 +1068,7 @@ PySocketSock_setblocking(PySocketSockObject *s, PyObject *arg)
 	s->sock_blocking = block;
 
 	/* If we're not using timeouts, actually set the blocking to give
-	 * old python behavior.
-	 */
+	   old python behavior. */
 	if (s->sock_timeout < 0.0)
 		internal_setblocking(s, block);
 
@@ -1076,10 +1082,9 @@ static char setblocking_doc[] =
 Set the socket to blocking (flag is true) or non-blocking (false).\n\
 This uses the FIONBIO ioctl with the O_NDELAY flag.";
 
-/* s.settimeout(float | None) method.
- * Causes an exception to be raised when the given time has
- * elapsed when performing a blocking socket operation.
- */
+/* s.settimeout(None | float) method.
+   Causes an exception to be raised when the given time has
+   elapsed when performing a blocking socket operation. */
 static PyObject *
 PySocketSock_settimeout(PySocketSockObject *s, PyObject *arg)
 {
@@ -1100,17 +1105,16 @@ PySocketSock_settimeout(PySocketSockObject *s, PyObject *arg)
 	s->sock_timeout = value;
 
 	/* The semantics of setting socket timeouts are:
-	 * If you settimeout(!=None):
-	 *     The actual socket gets put in non-blocking mode and the select
-	 *     is used to control timeouts.
-	 * Else if you settimeout(None) [then value is -1.0]:
-	 *     The old behavior is used AND automatically, the socket is set
-	 *     to blocking mode. That means that someone who was doing
-	 *     non-blocking stuff before, sets a timeout, and then unsets
-	 *     one, will have to call setblocking(0) again if he wants
-	 *     non-blocking stuff. This makes sense because timeout stuff is
-	 *     blocking by nature.
-	 */
+	   If you settimeout(!=None):
+	       The actual socket gets put in non-blocking mode and the select
+	       is used to control timeouts.
+	   Else if you settimeout(None) [then value is -1.0]:
+	       The old behavior is used AND automatically, the socket is set
+	       to blocking mode. That means that someone who was doing
+	       non-blocking stuff before, sets a timeout, and then unsets
+	       one, will have to call setblocking(0) again if he wants
+	       non-blocking stuff. This makes sense because timeout stuff is
+	       blocking by nature. */
 	internal_setblocking(s, value < 0.0);
 
 	s->sock_blocking = 1; /* Always negate setblocking() */
@@ -1120,17 +1124,13 @@ PySocketSock_settimeout(PySocketSockObject *s, PyObject *arg)
 }
 
 static char settimeout_doc[] =
-"settimeout(seconds)\n\
+"settimeout(timeout)\n\
 \n\
-Set a timeout on blocking socket operations. 'seconds' can be a floating,\n\
-integer, or long number of seconds, or the None value. Socket operations\n\
-will raise an exception if the timeout period has elapsed before the\n\
-operation has completed. Setting a timeout of None disables timeouts\n\
-on socket operations.";
+Set a timeout on blocking socket operations.  'timeout' can be a float,\n\
+giving seconds, or None.  Setting a timeout of None disables timeout.";
 
-/* s.gettimeout () method.
- * Returns the timeout associated with a socket.
- */
+/* s.gettimeout() method.
+   Returns the timeout associated with a socket. */
 static PyObject *
 PySocketSock_gettimeout(PySocketSockObject *s)
 {
@@ -1356,8 +1356,9 @@ PySocketSock_connect(PySocketSockObject *s, PyObject *addro)
 
 			/* Check if we have an error */
 			if (!s->sock_blocking)
-				return s->errorhandler ();
-			/* Check if we have a true failure for a blocking socket */
+				return s->errorhandler();
+			/* Check if we have a true failure
+			   for a blocking socket */
 #ifdef MS_WINDOWS
 			if (errno != WSAEWOULDBLOCK)
 #else
@@ -1423,7 +1424,8 @@ PySocketSock_connect_ex(PySocketSockObject *s, PyObject *addro)
 			/* Check if we have an error */
 			if (!s->sock_blocking)
 				goto conex_finally;
-			/* Check if we have a true failure for a blocking socket */
+			/* Check if we have a true failure
+			   for a blocking socket */
 #ifdef MS_WINDOWS
 			if (errno != WSAEWOULDBLOCK)
 #else
@@ -1753,7 +1755,7 @@ PySocketSock_recvfrom(PySocketSockObject *s, PyObject *args)
 		return NULL;
 
 	if (!(addr = makesockaddr(s->sock_fd, (struct sockaddr *)addrbuf,
-	                          addrlen)))
+				  addrlen)))
 		goto finally;
 
 	ret = Py_BuildValue("OO", buf, addr);
@@ -1939,11 +1941,11 @@ static PyMethodDef PySocketSock_methods[] = {
 	{"fileno",	(PyCFunction)PySocketSock_fileno, METH_NOARGS,
 			fileno_doc},
 #ifdef HAVE_GETPEERNAME
-	{"getpeername",	(PyCFunction)PySocketSock_getpeername, 
-	                METH_NOARGS, getpeername_doc},
+	{"getpeername",	(PyCFunction)PySocketSock_getpeername,
+			METH_NOARGS, getpeername_doc},
 #endif
 	{"getsockname",	(PyCFunction)PySocketSock_getsockname,
-	                METH_NOARGS, getsockname_doc},
+			METH_NOARGS, getsockname_doc},
 	{"getsockopt",	(PyCFunction)PySocketSock_getsockopt, METH_VARARGS,
 			getsockopt_doc},
 	{"listen",	(PyCFunction)PySocketSock_listen, METH_O,
@@ -2002,15 +2004,17 @@ PySocketSock_repr(PySocketSockObject *s)
 		   ugly printf formatter for decimal pointer length integer
 		   printing, only bother if necessary*/
 		PyErr_SetString(PyExc_OverflowError,
-			"no printf formatter to display the socket descriptor in decimal");
+				"no printf formatter to display "
+				"the socket descriptor in decimal");
 		return NULL;
 	}
 #endif
-	PyOS_snprintf(buf, sizeof(buf),
-		      "<socket object, fd=%ld, family=%d, type=%d, protocol=%d>",
-		      (long)s->sock_fd, s->sock_family,
-		      s->sock_type,
-		      s->sock_proto);
+	PyOS_snprintf(
+		buf, sizeof(buf),
+		"<socket object, fd=%ld, family=%d, type=%d, protocol=%d>",
+		(long)s->sock_fd, s->sock_family,
+		s->sock_type,
+		s->sock_proto);
 	return PyString_FromString(buf);
 }
 
@@ -2106,6 +2110,7 @@ send() -- send data, may not send all of it\n\
 sendall() -- send all data\n\
 sendto() -- send data to a given address\n\
 setblocking() -- set or clear the blocking I/O flag\n\
+settimeout() -- set or clear the timeout\n\
 setsockopt() -- set socket options\n\
 shutdown() -- shut down traffic in one or both directions\n\
 \n\
@@ -2226,11 +2231,13 @@ gethost_common(struct hostent *h, struct sockaddr *addr, int alen, int af)
 
 	if (h->h_addrtype != af) {
 #ifdef HAVE_STRERROR
-	        /* Let's get real error message to return */
-		PyErr_SetString(PySocket_Error, (char *)strerror(EAFNOSUPPORT));
-#else
+		/* Let's get real error message to return */
 		PyErr_SetString(PySocket_Error,
-		    "Address family not supported by protocol family");
+				(char *)strerror(EAFNOSUPPORT));
+#else
+		PyErr_SetString(
+			PySocket_Error,
+			"Address family not supported by protocol family");
 #endif
 		return NULL;
 	}
@@ -2312,7 +2319,7 @@ gethost_common(struct hostent *h, struct sockaddr *addr, int alen, int af)
 
 		default:	/* can't happen */
 			PyErr_SetString(PySocket_Error,
-				"unsupported address family");
+					"unsupported address family");
 			return NULL;
 		}
 
@@ -2367,7 +2374,8 @@ PySocket_gethostbyname_ex(PyObject *self, PyObject *args)
 	Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
 #if   defined(HAVE_GETHOSTBYNAME_R_6_ARG)
-	result = gethostbyname_r(name, &hp_allocated, buf, buf_len, &h, &errnop);
+	result = gethostbyname_r(name, &hp_allocated, buf, buf_len,
+				 &h, &errnop);
 #elif defined(HAVE_GETHOSTBYNAME_R_5_ARG)
 	h = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
 #else /* HAVE_GETHOSTBYNAME_R_3_ARG */
@@ -2383,13 +2391,12 @@ PySocket_gethostbyname_ex(PyObject *self, PyObject *args)
 #endif /* HAVE_GETHOSTBYNAME_R */
 	Py_END_ALLOW_THREADS
 	/* Some C libraries would require addr.__ss_family instead of
-	 * addr.ss_family.
-	 * Therefore, we cast the sockaddr_storage into sockaddr to
-	 * access sa_family.
-	 */
+	   addr.ss_family.
+	   Therefore, we cast the sockaddr_storage into sockaddr to
+	   access sa_family. */
 	sa = (struct sockaddr*)&addr;
 	ret = gethost_common(h, (struct sockaddr *)&addr, sizeof(addr),
-	                     sa->sa_family);
+			     sa->sa_family);
 #ifdef USE_GETHOSTBYNAME_LOCK
 	PyThread_release_lock(gethostbyname_lock);
 #endif
@@ -2410,7 +2417,7 @@ static PyObject *
 PySocket_gethostbyaddr(PyObject *self, PyObject *args)
 {
 #ifdef ENABLE_IPV6
-        struct sockaddr_storage addr;
+	struct sockaddr_storage addr;
 #else
 	struct sockaddr_in addr;
 #endif
@@ -2664,12 +2671,7 @@ static char htonl_doc[] =
 \n\
 Convert a 32-bit integer from host to network byte order.";
 
-/*
- * socket.inet_aton() and socket.inet_ntoa() functions
- *
- * written 20 Aug 1999 by Ben Gertzfield <che@debian.org> <- blame him!
- *
- */
+/* socket.inet_aton() and socket.inet_ntoa() functions. */
 
 static char inet_aton_doc[] =
 "inet_aton(string) -> packed 32-bit IP representation\n\
@@ -2827,7 +2829,8 @@ PySocket_getnameinfo(PyObject *self, PyObject *args)
 	flags = flowinfo = scope_id = 0;
 	if (!PyArg_ParseTuple(args, "Oi:getnameinfo", &sa, &flags))
 		return NULL;
-	if  (!PyArg_ParseTuple(sa, "si|ii", &hostp, &port, &flowinfo, &scope_id))
+	if  (!PyArg_ParseTuple(sa, "si|ii",
+			       &hostp, &port, &flowinfo, &scope_id))
 		return NULL;
 	PyOS_snprintf(pbuf, sizeof(pbuf), "%d", port);
 	memset(&hints, 0, sizeof(hints));
@@ -2951,8 +2954,9 @@ NTinit(void)
 		break;
 	case WSAVERNOTSUPPORTED:
 	case WSAEINVAL:
-		PyErr_SetString(PyExc_ImportError,
-		    "WSAStartup failed: requested version not supported");
+		PyErr_SetString(
+			PyExc_ImportError,
+			"WSAStartup failed: requested version not supported");
 		break;
 	default:
 		PyOS_snprintf(buf, sizeof(buf),
@@ -2972,29 +2976,29 @@ NTinit(void)
 static void
 OS2cleanup(void)
 {
-    /* No cleanup is necessary for OS/2 Sockets */
+	/* No cleanup is necessary for OS/2 Sockets */
 }
 
 static int
 OS2init(void)
 {
 #if !defined(PYCC_GCC)
-    char reason[64];
-    int rc = sock_init();
+	char reason[64];
+	int rc = sock_init();
 
-    if (rc == 0) {
-	    atexit(OS2cleanup);
-	    return 1; /* Indicate Success */
-    }
+	if (rc == 0) {
+		atexit(OS2cleanup);
+		return 1; /* Indicate Success */
+	}
 
-    PyOS_snprintf(reason, sizeof(reason),
-		  "OS/2 TCP/IP Error# %d", sock_errno());
-    PyErr_SetString(PyExc_ImportError, reason);
+	PyOS_snprintf(reason, sizeof(reason),
+		      "OS/2 TCP/IP Error# %d", sock_errno());
+	PyErr_SetString(PyExc_ImportError, reason);
 
-    return 0;  /* Indicate Failure */
+	return 0;  /* Indicate Failure */
 #else
-    /* no need to initialise sockets with GCC/EMX */
-    return 1;
+	/* no need to initialise sockets with GCC/EMX */
+	return 1;
 #endif
 }
 
@@ -3005,26 +3009,27 @@ OS2init(void)
 static
 PySocketModule_APIObject PySocketModuleAPI =
 {
-    &PySocketSock_Type,
+	&PySocketSock_Type,
 };
 
 /* Initialize this module.
- *   This is called when the first 'import socket' is done,
- *   via a table in config.c, if config.c is compiled with USE_SOCKET
- *   defined.
- *
- *   For MS_WINDOWS (which means any Windows variant), this module
- *   is actually called "_socket", and there's a wrapper "socket.py"
- *   which implements some missing functionality (such as makefile(),
- *   dup() and fromfd()).  The import of "_socket" may fail with an
- *   ImportError exception if initialization of WINSOCK fails.  When
- *   WINSOCK is initialized succesfully, a call to WSACleanup() is
- *   scheduled to be made at exit time.
- *
- *   For OS/2, this module is also called "_socket" and uses a wrapper
- *   "socket.py" which implements that functionality that is missing
- *   when PC operating systems don't put socket descriptors in the
- *   operating system's filesystem layer.
+
+   This is called when the first 'import socket' is done,
+   via a table in config.c, if config.c is compiled with USE_SOCKET
+   defined.
+
+   For MS_WINDOWS (which means any Windows variant), this module
+   is actually called "_socket", and there's a wrapper "socket.py"
+   which implements some missing functionality (such as makefile(),
+   dup() and fromfd()).  The import of "_socket" may fail with an
+   ImportError exception if initialization of WINSOCK fails.  When
+   WINSOCK is initialized succesfully, a call to WSACleanup() is
+   scheduled to be made at exit time.
+
+   For OS/2, this module is also called "_socket" and uses a wrapper
+   "socket.py" which implements that functionality that is missing
+   when PC operating systems don't put socket descriptors in the
+   operating system's filesystem layer.
  */
 
 static char module_doc[] =
@@ -3055,8 +3060,8 @@ init_socket(void)
 	PySocketSock_Type.tp_getattro = PyObject_GenericGetAttr;
 	PySocketSock_Type.tp_alloc = PyType_GenericAlloc;
 	PySocketSock_Type.tp_free = PyObject_Del;
-	m = Py_InitModule3(PySocket_MODULE_NAME, 
-			   PySocket_methods, 
+	m = Py_InitModule3(PySocket_MODULE_NAME,
+			   PySocket_methods,
 			   module_doc);
 
 	PySocket_Error = PyErr_NewException("socket.error", NULL, NULL);
@@ -3216,7 +3221,7 @@ init_socket(void)
 #ifdef	SOMAXCONN
 	PyModule_AddIntConstant(m, "SOMAXCONN", SOMAXCONN);
 #else
-	PyModule_AddIntConstant(m, "SOMAXCONN", 5);	/* Common value */
+	PyModule_AddIntConstant(m, "SOMAXCONN", 5); /* Common value */
 #endif
 
 	/* Flags for send, recv */
@@ -3666,10 +3671,10 @@ init_socket(void)
 
 /* Simplistic emulation code for inet_pton that only works for IPv4 */
 #ifndef HAVE_INET_PTON
-int 
+int
 inet_pton (int af, const char *src, void *dst)
 {
-	if(af == AF_INET){
+	if (af == AF_INET){
 		long packed_addr;
 		packed_addr = inet_addr(src);
 		if (packed_addr == INADDR_NONE)
