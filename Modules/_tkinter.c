@@ -57,6 +57,12 @@ Copyright (C) 1994 Steen Lumholt.
 #include <tk.h>
 #endif
 
+/* For Tcl 8.2 and 8.3, CONST* is not defined. */
+#ifndef CONST84_RETURN
+#define CONST84_RETURN
+#define CONST
+#endif
+
 #define TKMAJORMINOR (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION)
 
 #if TKMAJORMINOR < 8002
@@ -1349,9 +1355,9 @@ Tkapp_AddErrorInfo(PyObject *self, PyObject *args)
 
 TCL_DECLARE_MUTEX(var_mutex)
 
-typedef const char* (*EventFunc1)(Tcl_Interp*, const char*, int);
-typedef const char* (*EventFunc2)(Tcl_Interp*, const char*, const char*, int);
-typedef const char* (*EventFunc3)(Tcl_Interp*, const char*, const char*, const char*, int);
+typedef CONST84_RETURN char* (*EventFunc1)(Tcl_Interp*, CONST char*, int);
+typedef CONST84_RETURN char* (*EventFunc2)(Tcl_Interp*, CONST char*, CONST char*, int);
+typedef CONST84_RETURN char* (*EventFunc3)(Tcl_Interp*, CONST char*, CONST char*, CONST char*, int);
 typedef struct VarEvent {
 	Tcl_Event ev; /* must be first */
 	TkappObject *self;
@@ -1468,9 +1474,9 @@ var_invoke(PyObject *_self, char* arg1, char* arg2, char* arg3, int flags,
 
 static PyObject*
 var_invoke2(PyObject *_self, char* arg1, char* arg2, char* arg3, int flags,
-	   int (*func1)(Tcl_Interp*, const char*, int),
-	   int (*func2)(Tcl_Interp*, const char*, const char*, int),
-	   int (*func3)(Tcl_Interp*, const char*, const char*, const char*, int))
+	   int (*func1)(Tcl_Interp*, CONST char*, int),
+	   int (*func2)(Tcl_Interp*, CONST char*, CONST char*, int),
+	   int (*func3)(Tcl_Interp*, CONST char*, CONST char*, CONST char*, int))
 {
 	return var_invoke(_self, arg1, arg2, arg3, flags,
 			  (EventFunc1)func1, (EventFunc2)func2,
