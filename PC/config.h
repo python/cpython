@@ -442,6 +442,9 @@ typedef int pid_t;
 /* Define if you have the <stdarg.h> prototypes.  */
 #define HAVE_STDARG_PROTOTYPES
 
+/* Define if you have the <stddef.h> header file.  */
+#define HAVE_STDDEF_H 1
+
 /* Define if you have the <stdlib.h> header file.  */
 #define HAVE_STDLIB_H 1
 
