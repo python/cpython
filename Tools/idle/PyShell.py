@@ -368,18 +368,20 @@ class PyShell(PyShellEditorWindow):
         if self.executing and not self.reading:
             return # Let the default binding (insert '\n') take over
         # If some text is selected, recall the selection
+        # (but only if this before the I/O mark)
         try:
             sel = self.text.get("sel.first", "sel.last")
             if sel:
-                self.recall(sel)
-                return "break"
+                if self.text.compare("self.last", "<=", "iomark"):
+                    self.recall(sel)
+                    return "break"
         except:
             pass
         # If we're strictly before the line containing iomark, recall
         # the current line, less a leading prompt, less leading or
         # trailing whitespace
         if self.text.compare("insert", "<", "iomark linestart"):
-            # Check if there's a relevant stdin mark -- if so, use it
+            # Check if there's a relevant stdin range -- if so, use it
             prev = self.text.tag_prevrange("stdin", "insert")
             if prev and self.text.compare("insert", "<", prev[1]):
                 self.recall(self.text.get(prev[0], prev[1]))
@@ -391,13 +393,13 @@ class PyShell(PyShellEditorWindow):
             # No stdin mark -- just get the current line
             self.recall(self.text.get("insert linestart", "insert lineend"))
             return "break"
-        # If we're anywhere in the current input (including in the
-        # prompt) but not at the very end, move the cursor to the end.
-        if self.text.compare("insert", "<", "end-1c"):
-            self.text.mark_set("insert", "end-1c")
-            self.text.see("insert")
+        # If we're in the current input before its last line,
+        # insert a newline right at the insert point
+        if self.text.compare("insert", "<", "end-1c linestart"):
+            self.auto.autoindent(event)
             return "break"
-        # OK, we're already at the end -- insert a newline and run it.
+        # We're in the last line; append a newline and submit it
+        self.text.mark_set("insert", "end-1c")
         if self.reading:
             self.text.insert("insert", "\n")
             self.text.see("insert")
