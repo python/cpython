@@ -1957,7 +1957,7 @@ class Tester:
                       DeprecationWarning, stacklevel=2)
         if mod is None and globs is None:
             raise TypeError("Tester.__init__: must specify mod or globs")
-        if mod is not None and not _ismodule(mod):
+        if mod is not None and not inspect.ismodule(mod):
             raise TypeError("Tester.__init__: mod must be a module; %r" %
                             (mod,))
         if globs is None:
