@@ -61,24 +61,29 @@ range_length(rangeobject *r)
 static PyObject *
 range_repr(rangeobject *r)
 {
-	char buf1[80];
-	char buf2[80];
+	/* buffers must be big enough to hold 3 longs + an int +
+	 * a bit of "(xrange(...) * ...)" text.
+	 */
+	char buf1[250];
+	char buf2[250];
 
-	if (r->start == 0 && r->step == 1) {
+	if (r->start == 0 && r->step == 1)
 		sprintf(buf1, "xrange(%ld)", r->start + r->len * r->step);
-	}
-	else {
-		char *fmt = "xrange(%ld, %ld, %ld)";
-		if (r->step == 1)
-			fmt = "xrange(%ld, %ld)";
-		sprintf(buf1, fmt,
+
+	else if (r->step == 1)
+		sprintf(buf1, "xrange(%ld, %ld)",
+			r->start,
+			r->start + r->len * r->step);
+
+	else
+		sprintf(buf1, "xrange(%ld, %ld, %ld)",
 			r->start,
 			r->start + r->len * r->step,
 			r->step);
-	}
-	if (r->reps != 1) {
+
+	if (r->reps != 1)
 		sprintf(buf2, "(%s * %d)", buf1, r->reps);
-	}
+
 	return PyString_FromString(r->reps == 1 ? buf1 : buf2);
 }
 
@@ -193,10 +198,10 @@ static int
 range_contains(rangeobject *r, PyObject *obj)
 {
 	long num = PyInt_AsLong(obj);
-	
+
 	if (num < 0 && PyErr_Occurred())
 		return -1;
-	
+
 	if (num < r->start || (num - r->start) % r->step)
 		return 0;
 	if (num > (r->start + (r->len * r->step)))
