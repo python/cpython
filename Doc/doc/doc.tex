@@ -11,7 +11,7 @@
 \author{Fred L. Drake, Jr.}
 \authoraddress{
 	PythonLabs \\
-	E-mail: \email{fdrake@acm.org}
+	Email: \email{fdrake@acm.org}
 }
 
 
@@ -170,15 +170,27 @@ distribution, to create or maintain whole documents or sections.
   the names of operating systems, programming languages, standards
   bodies, and the like.  Many of these were assigned \LaTeX{} macros
   at some point in the distant past, and these macros lived on long
-  past their usefulness.  In the current markup, these entities are
-  not assigned any special markup, but the preferred spellings are
+  past their usefulness.  In the current markup, most of these entities
+  are not assigned any special markup, but the preferred spellings are
   given here to aid authors in maintaining the consistency of
   presentation in the Python documentation.
 
+  Other terms and words deserve special mention as well; these conventions
+  should be used to ensure consistency throughout the documentation:
+
   \begin{description}
-    \item[POSIX]
+    \item[CPU]
+    For ``central processing unit.''  Many style guides say this
+    should be spelled out on the first use (and if you must use it,
+    do so!).  For the Python documentation, this abbreviation should
+    be avoided since there's no reasonable way to predict which occurance
+    will be the first seen by the reader.  It is better to use the
+    word ``processor'' instead.
+
+    \item[\POSIX]
 	The name assigned to a particular group of standards.  This is
-	always uppercase.
+	always uppercase.  Use the macro \macro{POSIX} to represent this
+    name.
 
     \item[Python]
 	The name of our favorite programming language is always
@@ -186,7 +198,11 @@ distribution, to create or maintain whole documents or sections.
 
     \item[Unicode]
 	The name of a character set and matching encoding.  This is
-        always written capitalized.
+    always written capitalized.
+
+    \item[\UNIX]
+    The name of the operating system developed at AT\&T Bell Labs
+    in the early 1970s.  Use the macro \macro{UNIX} to use this name.
   \end{description}
 
 
@@ -828,7 +844,7 @@ This \UNIX\ is also followed by a space.
     \end{macrodesc}
 
     \begin{macrodesc}{newsgroup}{\p{name}}
-      The name of a USENET newsgroup.
+      The name of a Usenet newsgroup.
     \end{macrodesc}
 
     \begin{macrodesc}{pep}{\p{number}}
@@ -975,7 +991,7 @@ This \UNIX\ is also followed by a space.
 
 \declaremodule{extension}{spam}
   \platform{Unix}
-\modulesynopsis{Access to the SPAM facility of \UNIX{}.}
+\modulesynopsis{Access to the SPAM facility of \UNIX.}
 \moduleauthor{Jane Doe}{jane.doe@frobnitz.org}
 \end{verbatim}
 
