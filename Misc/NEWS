@@ -97,6 +97,13 @@ Core language, builtins, and interpreter
 
 Standard library
 
+- The ftplib module now defaults to passive mode, which is deemed a
+  more useful default given that clients are often inside firewalls
+  these days.  Note that this could break if ftplib is used to connect
+  to a *server* that is inside a firewall, from outside; this is
+  expected to be a very rare situation.  To fix that, you can call
+  ftp.set_pasv(0).
+
 - The module site now treats .pth files not only for path configuration,
   but also supports extensions to the initialization code: Lines starting
   with import are executed.
