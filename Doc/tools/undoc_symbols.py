@@ -1,4 +1,7 @@
-"""This script prints out a list of undocumented symbols found in
+#! /usr/bin/env python
+
+"""\
+This script prints out a list of undocumented symbols found in
 Python include files, prefixed by their tag kind.
 
 Pass Python's include files to ctags, parse the output into a
@@ -11,14 +14,14 @@ output, prefixed with their tag kind.
 """
 
 # Which kind of tags do we need?
-TAG_KINDS = "dpt"
+TAG_KINDS = "dpst"
 
 # Doc sections to use
 DOCSECTIONS = ["api"]# ["api", "ext"]
 
 # Only print symbols starting with this prefix,
 # to get all symbols, use an empty string
-PREFIX = "Py"
+PREFIXES = ("Py", "PY")
 
 INCLUDEPATTERN = "*.h"
 
@@ -45,16 +48,21 @@ INCLUDEPATTERN = "*.h"
 
 import os, glob, re, sys, tempfile
 
-def findnames(file, prefix=""):
+def findnames(file, prefixes=()):
     names = {}
-    for line in file.readlines():
+    for line in file.xreadlines():
         if line[0] == '!':
             continue
         fields = line.split()
         name, tag = fields[0], fields[-1]
         if tag == 'd' and name.endswith('_H'):
             continue
-        if name.startswith(prefix):
+        if prefixes:
+            sw = name.startswith
+            for prefix in prefixes:
+                if sw(prefix):
+                    names[name] = tag
+        else:
             names[name] = tag
     return names
 
@@ -69,7 +77,8 @@ def print_undoc_symbols(prefix, docdir, incdir):
 
     incfiles = os.path.join(incdir, INCLUDEPATTERN)
 
-    fp = os.popen("ctags -IDL_IMPORT --c-types=%s -f - %s" % (TAG_KINDS, incfiles))
+    fp = os.popen("ctags -IDL_IMPORT --c-types=%s -f - %s"
+                  % (TAG_KINDS, incfiles))
     dict = findnames(fp, prefix)
     names = dict.keys()
     names.sort()
@@ -82,4 +91,4 @@ if __name__ == '__main__':
     incdir = os.path.normpath(os.path.join(srcdir, "../../Include"))
     docdir = os.path.normpath(os.path.join(srcdir, ".."))
 
-    print_undoc_symbols(PREFIX, docdir, incdir)
+    print_undoc_symbols(PREFIXES, docdir, incdir)
