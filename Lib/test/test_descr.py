@@ -2773,6 +2773,16 @@ def subclasspropagation():
     else:
         raise TestFailed, "d.foo should be undefined now"
 
+    # Test a nasty bug in recurse_down_subclasses()
+    import gc
+    class A(object):
+        pass
+    class B(A):
+        pass
+    del B
+    gc.collect()
+    A.__setitem__ = lambda *a: None # crash
+
 def buffer_inherit():
     import binascii
     # SF bug [#470040] ParseTuple t# vs subclasses.
