@@ -57,7 +57,7 @@ NOTE: you MUST use the SAME key in rotor.newrotor()
 
 #include "Python.h"
 
-#include <math.h>
+#include "mymath.h"
 
 #define TRUE	1
 #define FALSE	0
@@ -755,7 +755,7 @@ PyRotor_GetAttr(s, name)
 	return Py_FindMethod(PyRotor_Methods, (PyObject * ) s, name);
 }
 
-static PyTypeObject PyRotor_Type = {
+statichere PyTypeObject PyRotor_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
 	"rotor",			/*tp_name*/

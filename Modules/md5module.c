@@ -141,7 +141,7 @@ md5_getattr(self, name)
 	return findmethod(md5_methods, (object *)self, name);
 }
 
-static typeobject MD5type = {
+statichere typeobject MD5type = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/*ob_size*/
 	"md5",			/*tp_name*/
