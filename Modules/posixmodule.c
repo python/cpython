@@ -326,20 +326,18 @@ convertenviron()
 }
 
 
-static PyObject *PosixError; /* Exception posix.error */
-
 /* Set a POSIX-specific error from errno, and return NULL */
 
 static PyObject *
 posix_error()
 {
-	return PyErr_SetFromErrno(PosixError);
+	return PyErr_SetFromErrno(PyExc_OSError);
 }
 static PyObject *
 posix_error_with_filename(name)
 	char* name;
 {
-	return PyErr_SetFromErrnoWithFilename(PosixError, name);
+	return PyErr_SetFromErrnoWithFilename(PyExc_OSError, name);
 }
 
 
@@ -410,7 +408,7 @@ static PyObject * os2_error(int code)
 
     v = Py_BuildValue("(is)", code, text);
     if (v != NULL) {
-        PyErr_SetObject(PosixError, v);
+        PyErr_SetObject(PyExc_OSError, v);
         Py_DECREF(v);
     }
     return NULL; /* Signal to Python that an Exception is Pending */
@@ -3482,7 +3480,5 @@ INITFUNC()
         if (all_ins(d))
                 return;
 
-	Py_INCREF(PyExc_OSError);
-	PosixError = PyExc_OSError;
-	PyDict_SetItemString(d, "error", PosixError);
+	PyDict_SetItemString(d, "error", PyExc_OSError);
 }
