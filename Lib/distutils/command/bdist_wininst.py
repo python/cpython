@@ -82,7 +82,7 @@ class bdist_wininst (Command):
 
         self.run_command('build')
 
-        install = self.reinitialize_command('install')
+        install = self.reinitialize_command('install', reinit_subcommands=1)
         install.root = self.bdist_dir
         install.warn_dir = 0
 
