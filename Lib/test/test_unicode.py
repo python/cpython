@@ -445,8 +445,16 @@ verify(u'hello'.encode('utf-16-le') == 'h\000e\000l\000l\000o\000')
 verify(u'hello'.encode('utf-16-be') == '\000h\000e\000l\000l\000o')
 verify(u'hello'.encode('latin-1') == 'hello')
 
+# Roundtrip safety for BMP (just the first 1024 chars)
 u = u''.join(map(unichr, range(1024)))
 for encoding in ('utf-8', 'utf-16', 'utf-16-le', 'utf-16-be',
+                 'raw_unicode_escape', 'unicode_escape', 'unicode_internal'):
+    verify(unicode(u.encode(encoding),encoding) == u)
+
+# Roundtrip safety for non-BMP (just a few chars)
+u = u'\U00010001\U00020002\U00030003\U00040004\U00050005'
+for encoding in ('utf-8',
+                 'utf-16', 'utf-16-le', 'utf-16-be',
                  'raw_unicode_escape', 'unicode_escape', 'unicode_internal'):
     verify(unicode(u.encode(encoding),encoding) == u)
 
