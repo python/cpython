@@ -19,18 +19,23 @@ part=$1; shift 1
 TEXINPUTS=$srcdir/$part:$TEXINPUTS
 export TEXINPUTS
 
-set -x
+echo $srcdir'/tools/newind.py >'$part'.ind'
 $srcdir/tools/newind.py >$part.ind || exit $?
+echo "$latex $part"
 $latex $part || exit $?
 if [ -f $part.idx ] ; then
     # using the index
+    echo $srcdir'/tools/fix_hack '$part'.idx'
     $srcdir/tools/fix_hack $part.idx || exit $?
+    echo 'makeindex -s '$srcdir'/texinputs/myindex.ist '$part'.idx'
     makeindex -s $srcdir/texinputs/myindex.ist $part.idx || exit $?
 else
     # skipping the index; clean up the unused file
     rm -f $part.ind
 fi
 if [ "$pdf" ] ; then
+    echo $srcdir'/tools/toc2bkm.py '$part
     $srcdir/tools/toc2bkm.py $part
 fi
+echo "$latex $part"
 $latex $part || exit $?
