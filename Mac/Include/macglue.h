@@ -22,10 +22,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <Types.h>
 #include <Files.h>
 #include <Events.h>
 #include <StandardFile.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 
 #ifdef __cplusplus
 	extern "C" {
@@ -47,6 +51,8 @@ extern void PyMac_SetGUSISpin(void);		/* Install our private GUSI spin routine *
 #endif
 
 char *PyMac_StrError(int);			/* strerror with mac errors */
+PyObject *PyErr_Mac(PyObject *, int);		/* Exception with a mac error */
+PyObject *PyMac_Error(OSErr);			/* Uses PyMac_GetOSErrException */
 unsigned char *Pstring(char *str);		/* Convert c-string to pascal-string in static buffer */
 
 #ifdef USE_GUSI
@@ -65,19 +71,20 @@ extern int PyMac_AppearanceCompliant;	/* True if in appearance support mode */
 extern PyObject *PyMac_OSErrException;		/* Exception for OSErr */
 PyObject *PyMac_GetOSErrException(void);	/* Initialize & return it */
 
+#if !TARGET_API_MAC_OSX
 void PyMac_GetSchedParams(PyMacSchedParams *);	/* Get schedulers params */
 void PyMac_SetSchedParams(PyMacSchedParams *);	/* Set schedulers params */
-PyObject *PyErr_Mac(PyObject *, int);		/* Exception with a mac error */
-PyObject *PyMac_Error(OSErr);			/* Uses PyMac_GetOSErrException */
 int PyMac_DoYield(int, int);	/* Yield cpu. First arg is maxtime, second ok to call python */
+#endif
 int PyMac_HandleEvent(EventRecord *);	/* Handle one event, possibly in Python */
 void PyMac_HandleEventIntern(EventRecord *); /* Handle one event internal only */
 int PyMac_SetEventHandler(PyObject *);	/* set python-coded event handler */
 
+#if !TARGET_API_MAC_OSX
 void PyMac_InitMenuBar(void);			/* Setup menu bar as we want it */
 void PyMac_RestoreMenuBar(void);		/* Restore menu bar for ease of exiting */
 void PyMac_RaiseConsoleWindow();		/* Bring console window to front, if it exists */
-
+#endif
 int PyMac_FindResourceModule(PyStringObject *, char *, char *); /* Test for 'PYC ' resource in a file */
 PyObject * PyMac_LoadResourceModule(char *, char *); /* Load 'PYC ' resource from file */
 int PyMac_FindCodeResourceModule(PyStringObject *, char *, char *); /* Test for 'PYD ' resource in a file */
