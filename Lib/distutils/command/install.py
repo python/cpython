@@ -9,6 +9,7 @@ __revision__ = "$Id$"
 import sys, os, string
 from types import *
 from distutils.core import Command
+from distutils import sysconfig
 from distutils.util import write_file, native_path, subst_vars
 from distutils.errors import DistutilsOptionError
 
@@ -182,14 +183,46 @@ class install (Command):
         # install_{purelib,platlib,lib,scripts,data,...}, and the
         # INSTALL_SCHEME dictionary above.  Phew!
 
+        from pprint import pprint
+        print "pre-finalize:"
+        pprint (self.__dict__)
+
         if os.name == 'posix':
             self.finalize_unix ()
         else:
             self.finalize_other ()
 
+        print "post-finalize:"
+        pprint (self.__dict__)
+
+        # Expand configuration variables, tilde, etc. in self.install_base
+        # and self.install_platbase -- that way, we can use $base or
+        # $platbase in the other installation directories and not worry
+        # about needing recursive variable expansion (shudder).
+
+        self.config_vars = {'py_version_short': sys.version[0:3],
+                            'sys_prefix': sysconfig.PREFIX,
+                            'sys_exec_prefix': sysconfig.EXEC_PREFIX,
+                           }
+        self.expand_basedirs ()
+
+        print "post-expand_basedirs:"
+        pprint (self.__dict__)
+
+        # Now define config vars for the base directories so we can expand
+        # everything else.
+        self.config_vars['base'] = self.install_base
+        self.config_vars['platbase'] = self.install_platbase
+
+        print "config vars:"
+        pprint (self.config_vars)
+
         # Expand "~" and configuration variables in the installation
         # directories.
         self.expand_dirs ()
+
+        print "post-expand:"
+        pprint (self.__dict__)
 
         # Pick the actual directory to install all modules to: either
         # install_purelib or install_platlib, depending on whether this
@@ -288,40 +321,32 @@ class install (Command):
 
 
     def select_scheme (self, name):
-
-        # "select a scheme" means:
-        #   - set install-base and install-platbase
-        #   - subst. base/platbase/version into the values of the
-        #     particular scheme dictionary
-        #   - use the resultings strings to set install-lib, etc.
-
         # it's the caller's problem if they supply a bad name!
         scheme = INSTALL_SCHEMES[name]
-
-        vars = { 'base': self.install_base,
-                 'platbase': self.install_platbase,
-                 'py_version_short': sys.version[0:3],
-               }
-
         for key in ('purelib', 'platlib', 'scripts', 'data'):
-            val = subst_vars (scheme[key], vars)
-            setattr (self, 'install_' + key, val)
+            setattr (self, 'install_' + key, scheme[key])
 
+
+    def _expand_attrs (self, attrs):
+        for attr in attrs:
+            val = getattr (self, attr)
+            if val is not None:
+                if os.name == 'posix':
+                    val = os.path.expanduser (val)
+                val = subst_vars (val, self.config_vars)
+                setattr (self, attr, val)
+
+
+    def expand_basedirs (self):
+        self._expand_attrs (['install_base',
+                             'install_platbase'])        
 
     def expand_dirs (self):
-
-        # XXX probably don't want to 'expanduser()' on Windows or Mac
-        # XXX should use 'util.subst_vars()' with our own set of
-        #     configuration variables
-
-        for att in ('base', 'platbase',
-                    'purelib', 'platlib', 'lib',
-                    'scripts', 'data'):
-            fullname = "install_" + att
-            val = getattr (self, fullname)
-            if val is not None:
-                setattr (self, fullname,
-                         os.path.expandvars (os.path.expanduser (val)))
+        self._expand_attrs (['install_purelib',
+                             'install_platlib',
+                             'install_lib',
+                             'install_scripts',
+                             'install_data',])
 
 
     def handle_extra_path (self):
