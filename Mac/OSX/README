@@ -1,0 +1,28 @@
+This directory contains a Makefile that will create a proof-of-concept
+Mac OS X application for Python. The process is far from streamlined,
+and it will definitely change in future releases of Python, but I wanted to
+include this in the current distribution so people could play with it.
+
+To create a fullblown Python.app proceed as follows.
+
+1. In the main Python source directory configure python with
+   configure --enable-framework --with-suffix
+2. Do a "make clean" if you did a previous build, then "make".
+3. Install this as a framework with "make frameworkinstall". This puts a Python
+   framework into /Library/Frameworks.
+4. Come back here (Mac/OSX) and build and install the application,
+   with "make install".
+5. It is probably a good idea to add the Mac-specific modules to the framework,
+   with "make installmacsubtree". This puts a MacPython lib directory into
+   sys.prefix/Mac/Lib. Again, this is a temporary measure.
+   
+You are now done. In your Applications you should have a "Python", with the icon
+being a falling 16 Ton weight with a shadow under it. You can drop Python scripts
+on this and the will be run, in a full-windowing environment. Note that you
+do not get sys.stdin, and that sys.stdout goes to the console (Use
+Applications/Utilities/Console to see it).
+
+Something to take note of is that the ".rsrc" files in the distribution are not
+actually resource files, they're AppleSingle encoded resource files.
+
+	Jack Jansen, jack@oratrix.com, 6-Sep-01.
