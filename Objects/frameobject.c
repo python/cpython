@@ -182,8 +182,9 @@ PyFrame_New(tstate, code, globals, locals)
 		f = free_list;
 		free_list = free_list->f_back;
 		if (f->f_nlocals + f->f_stacksize < extras) {
-			f = realloc(f, sizeof(PyFrameObject) +
-				       extras*sizeof(PyObject *));
+			f = (PyFrameObject *)
+				realloc(f, sizeof(PyFrameObject) +
+					extras*sizeof(PyObject *));
 			if (f == NULL)
 				return (PyFrameObject *)PyErr_NoMemory();
 		}

@@ -998,8 +998,8 @@ audioop_ratecv(self, args)
 	inrate /= d;
 	outrate /= d;
 
-	prev_i = malloc(nchannels * sizeof(int));
-	cur_i = malloc(nchannels * sizeof(int));
+	prev_i = (int *) malloc(nchannels * sizeof(int));
+	cur_i = (int *) malloc(nchannels * sizeof(int));
 	len /= size * nchannels;	/* # of frames */
 
 	if (state == Py_None) {
