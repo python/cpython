@@ -577,9 +577,9 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 	PyFPE_START_PROTECT("pow", return NULL)
 	ix = pow(iv, iw);
 	PyFPE_END_PROTECT(ix)
-	Py_SET_ERANGE_IF_OVERFLOW(ix);
+	Py_ADJUST_ERANGE1(ix);
 	if (errno != 0) {
-		/* XXX could it be another type of error? */
+		assert(errno == ERANGE);
 		PyErr_SetFromErrno(PyExc_OverflowError);
 		return NULL;
 	}

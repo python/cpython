@@ -337,8 +337,7 @@ math_1(PyObject *args, Py_complex (*func)(Py_complex))
 	PyFPE_START_PROTECT("complex function", return 0)
 	x = (*func)(x);
 	PyFPE_END_PROTECT(x)
-	Py_SET_ERANGE_IF_OVERFLOW(x.real);
-	Py_SET_ERANGE_IF_OVERFLOW(x.imag);
+	Py_ADJUST_ERANGE2(x.real, x.imag);
 	if (errno != 0)
 		return math_error();
 	else
