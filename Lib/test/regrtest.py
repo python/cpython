@@ -855,6 +855,7 @@ _expectations = {
     'cygwin':
         """
         test_al
+        test_bsddb3
         test_cd
         test_cl
         test_curses
@@ -867,7 +868,6 @@ _expectations = {
         test_locale
         test_mpz
         test_nis
-        test_socket_ssl
         test_socketserver
         test_sunaudiodev
         test_unicode_file
