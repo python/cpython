@@ -1,7 +1,7 @@
 
 import imp
 import unittest
-from test_support import TestFailed, run_unittest
+from test.test_support import TestFailed, run_unittest
 
 class ImpLock(unittest.TestCase):
 
