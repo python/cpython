@@ -89,7 +89,7 @@ class Open(_Dialog):
         if not widget.tk.wantobjects() and "multiple" in self.options:
             # Need to split result explicitly
             return self._fixresult(widget, widget.tk.splitlist(result))
-        return _Dialog._fixresult(widget, result)
+        return _Dialog._fixresult(self, widget, result)
 
 class SaveAs(_Dialog):
     "Ask for a filename to save as"
