@@ -178,6 +178,7 @@ class _posixfile_:
         # additions for AIX by Vladimir.Marangozov@imag.fr
         import sys, os
         if sys.platform in ('netbsd1',
+                            'openbsd2',
                             'freebsd2', 'freebsd3',
                             'bsdos2', 'bsdos3', 'bsdos4'):
             flock = struct.pack('lxxxxlxxxxlhh', \
@@ -193,6 +194,7 @@ class _posixfile_:
 
         if '?' in how:
             if sys.platform in ('netbsd1',
+                                'openbsd2',
                                 'freebsd2', 'freebsd3',
                                 'bsdos2', 'bsdos3', 'bsdos4'):
                 l_start, l_len, l_pid, l_type, l_whence = \
