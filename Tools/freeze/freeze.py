@@ -28,6 +28,13 @@ Options:
 
 -h:           Print this help message.
 
+-w:           Toggle Windows (NT or 95) behavior.
+              (For debugging only -- on a win32 platform, win32 behaviour
+              is automatic.)
+
+-s subsystem: Specify the subsystem; 'windows' or 'console' (default).
+              (For Windows only.)
+
 Arguments:
 
 script.py:    The Python script to be executed by the resulting binary.
@@ -76,16 +83,18 @@ def main():
     extensions = []
     path = sys.path
     odir = ''
+    win = sys.platform[:3] == 'win'
 
     # output files
     frozen_c = 'frozen.c'
     config_c = 'config.c'
     target = 'a.out'                    # normally derived from script name
     makefile = 'Makefile'
+    subsystem = 'console'
 
     # parse command line
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'he:o:p:P:')
+        opts, args = getopt.getopt(sys.argv[1:], 'he:o:p:P:s:w')
     except getopt.error, msg:
         usage('getopt error: ' + str(msg))
 
@@ -102,6 +111,12 @@ def main():
             prefix = a
         if o == '-P':
             exec_prefix = a
+        if o == '-w':
+            win = not win
+        if o == '-s':
+            if not win:
+                usage("-s subsystem option only on Windows")
+            subsystem = a
 
     # default prefix and exec_prefix
     if not exec_prefix:
@@ -122,7 +137,7 @@ def main():
         binlib = exec_prefix
         incldir = os.path.join(prefix, 'Include')
         config_c_in = os.path.join(prefix, 'Modules', 'config.c.in')
-        frozenmain_c = os.path.join(prefix, 'Modules', 'frozenmain.c')
+        frozenmain_c = os.path.join(prefix, 'Python', 'frozenmain.c')
         makefile_in = os.path.join(exec_prefix, 'Modules', 'Makefile')
     else:
         binlib = os.path.join(exec_prefix,
@@ -141,17 +156,22 @@ def main():
             usage('needed directory %s not found' % dir)
         if not os.path.isdir(dir):
             usage('%s: not a directory' % dir)
-    for file in [config_c_in, makefile_in] + supp_sources:
+    if win:
+        files = supp_sources
+    else:
+        files = [config_c_in, makefile_in] + supp_sources
+    for file in supp_sources:
         if not os.path.exists(file):
             usage('needed file %s not found' % file)
         if not os.path.isfile(file):
             usage('%s: not a plain file' % file)
-    for dir in extensions:
-        setup = os.path.join(dir, 'Setup')
-        if not os.path.exists(setup):
-            usage('needed file %s not found' % setup)
-        if not os.path.isfile(setup):
-            usage('%s: not a plain file' % setup)
+    if not win:
+        for dir in extensions:
+            setup = os.path.join(dir, 'Setup')
+            if not os.path.exists(setup):
+                usage('needed file %s not found' % setup)
+            if not os.path.isfile(setup):
+                usage('%s: not a plain file' % setup)
 
     # check that enough arguments are passed
     if not args:
@@ -221,6 +241,19 @@ def main():
             sys.stderr.write('%s not changed, not written\n' %
                              frozen_c)
             os.rename(backup, frozen_c)
+
+    if win:
+        # Taking a shortcut here...
+        import winmakemakefile
+        outfp = open(makefile, 'w')
+        try:
+            winmakemakefile.makemakefile(outfp,
+                                         locals(),
+                                         [frozenmain_c, frozen_c],
+                                         target)
+        finally:
+            outfp.close()
+        return
 
     builtins = []
     unknown = []
