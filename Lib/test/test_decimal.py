@@ -811,6 +811,9 @@ class DecimalUsabilityTest(unittest.TestCase):
         hash(Decimal(23))
         #the same hash that to an int
         self.assertEqual(hash(Decimal(23)), hash(23))
+        self.assertRaises(TypeError, hash, Decimal('NaN'))
+        self.assert_(hash(Decimal('Inf')))
+        self.assert_(hash(Decimal('-Inf')))
 
     def test_min_and_max_methods(self):
 
