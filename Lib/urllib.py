@@ -27,6 +27,7 @@ import socket
 import os
 import time
 import sys
+from urlparse import urljoin as basejoin
 
 __all__ = ["urlopen", "URLopener", "FancyURLopener", "urlretrieve",
            "urlcleanup", "quote", "quote_plus", "unquote", "unquote_plus",
@@ -36,7 +37,7 @@ __all__ = ["urlopen", "URLopener", "FancyURLopener", "urlretrieve",
            "splitnport", "splitquery", "splitattr", "splitvalue",
            "splitgophertype", "getproxies"]
 
-__version__ = '1.15'    # XXX This version is not always updated :-(
+__version__ = '1.16'    # XXX This version is not always updated :-(
 
 MAXFTPCACHE = 10        # Trim the ftp cache beyond this size
 
@@ -843,64 +844,6 @@ class addinfourl(addbase):
 
     def geturl(self):
         return self.url
-
-
-def basejoin(base, url):
-    """Utility to combine a URL with a base URL to form a new URL."""
-    type, path = splittype(url)
-    if type:
-        # if url is complete (i.e., it contains a type), return it
-        return url
-    host, path = splithost(path)
-    type, basepath = splittype(base) # inherit type from base
-    if host:
-        # if url contains host, just inherit type
-        if type: return type + '://' + host + path
-        else:
-            # no type inherited, so url must have started with //
-            # just return it
-            return url
-    host, basepath = splithost(basepath) # inherit host
-    basepath, basetag = splittag(basepath) # remove extraneous cruft
-    basepath, basequery = splitquery(basepath) # idem
-    if path[:1] != '/':
-        # non-absolute path name
-        if path[:1] in ('#', '?'):
-            # path is just a tag or query, attach to basepath
-            i = len(basepath)
-        else:
-            # else replace last component
-            i = basepath.rfind('/')
-        if i < 0:
-            # basepath not absolute
-            if host:
-                # host present, make absolute
-                basepath = '/'
-            else:
-                # else keep non-absolute
-                basepath = ''
-        else:
-            # remove last file component
-            basepath = basepath[:i+1]
-        # Interpret ../ (important because of symlinks)
-        while basepath and path[:3] == '../':
-            path = path[3:]
-            i = basepath[:-1].rfind('/')
-            if i > 0:
-                basepath = basepath[:i+1]
-            elif i == 0:
-                basepath = '/'
-                break
-            else:
-                basepath = ''
-
-        path = basepath + path
-    if host and path and path[0] != '/':
-        path = '/' + path
-    if type and host: return type + '://' + host + path
-    elif type: return type + ':' + path
-    elif host: return '//' + host + path # don't know what this means
-    else: return path
 
 
 # Utilities to parse URLs (most of these return None for missing parts):
