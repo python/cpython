@@ -2,7 +2,7 @@
 
 from macsupport import *
 
-from CarbonEventsscan import RefObjectTypes
+from CarbonEvtscan import RefObjectTypes
 
 # where should this go? macsupport.py?
 CFStringRef = OpaqueByValueType('CFStringRef')
@@ -172,8 +172,7 @@ execfile('CarbonEventsgen.py')
 for f in functions: module.add(f)	# add all the functions carboneventsgen put in the list
 
 for typ in RefObjectTypes:				 ## go thru all ObjectTypes as defined in CarbonEventsscan.py
-	methods = eval(typ + 'methods')  ## get a reference to the method list 
-from the main namespace
+	methods = eval(typ + 'methods')  ## get a reference to the method list from the main namespace
 	obj = eval(typ + 'object')		  ## get a reference to the object
 	for m in methods: obj.add(m)	## add each method in the list to the object
 
@@ -227,5 +226,5 @@ module.add(f)
 SetOutputFileName('_CarbonEvt.c')
 module.generate()
 
-import os
-os.system("python setup.py build")
+##import os
+##os.system("python setup.py build")
