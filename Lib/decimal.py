@@ -459,7 +459,7 @@ class Decimal(object):
     #  (-1)**_sign * _int * 10**_exp
     # Special values are signified by _is_special == True
 
-    # We're immutable, so use _new__ not __init__
+    # We're immutable, so use __new__ not __init__
     def __new__(cls, value="0", context=None):
         """Create a decimal point instance.
 
@@ -851,7 +851,7 @@ class Decimal(object):
         if context is None:
             context = getcontext()
         if context._rounding_decision == ALWAYS_ROUND:
-            return Decimal((sign, self._int, self._exp))._fix(context=context)
+            return Decimal((sign, self._int, self._exp))._fix(context)
         return Decimal( (sign, self._int, self._exp))
 
     def __pos__(self, context=None):
@@ -873,7 +873,7 @@ class Decimal(object):
             context = getcontext()
 
         if context._rounding_decision == ALWAYS_ROUND:
-            ans = self._fix(context=context)
+            ans = self._fix(context)
         else:
             ans = Decimal(self)
         ans._sign = sign
@@ -943,14 +943,14 @@ class Decimal(object):
                 exp = other._exp - context.prec-1
             ans = other._rescale(exp, watchexp=0, context=context)
             if shouldround:
-                ans = ans._fix(context=context)
+                ans = ans._fix(context)
             return ans
         if not other:
             if exp < self._exp - context.prec-1:
                 exp = self._exp - context.prec-1
             ans = self._rescale(exp, watchexp=0, context=context)
             if shouldround:
-                ans = ans._fix(context=context)
+                ans = ans._fix(context)
             return ans
 
         op1 = _WorkRep(self)
@@ -991,7 +991,7 @@ class Decimal(object):
         result.exp = op1.exp
         ans = Decimal(result)
         if shouldround:
-            ans = ans._fix(context=context)
+            ans = ans._fix(context)
         return ans
 
     __radd__ = __add__
@@ -1052,7 +1052,7 @@ class Decimal(object):
         if context is None:
             context = getcontext()
         if round and context._rounding_decision == ALWAYS_ROUND:
-            ans = ans._fix(context=context)
+            ans = ans._fix(context)
         return ans
 
     def __mul__(self, other, context=None):
@@ -1090,19 +1090,19 @@ class Decimal(object):
             ans = Decimal((resultsign, (0,), resultexp))
             if shouldround:
                 #Fixing in case the exponent is out of bounds
-                ans = ans._fix(context=context)
+                ans = ans._fix(context)
             return ans
 
         # Special case for multiplying by power of 10
         if self._int == (1,):
             ans = Decimal((resultsign, other._int, resultexp))
             if shouldround:
-                ans = ans._fix(context=context)
+                ans = ans._fix(context)
             return ans
         if other._int == (1,):
             ans = Decimal((resultsign, self._int, resultexp))
             if shouldround:
-                ans = ans._fix(context=context)
+                ans = ans._fix(context)
             return ans
 
         op1 = _WorkRep(self)
@@ -1110,7 +1110,7 @@ class Decimal(object):
 
         ans = Decimal( (resultsign, map(int, str(op1.int * op2.int)), resultexp))
         if shouldround:
-            ans = ans._fix(context=context)
+            ans = ans._fix(context)
 
         return ans
     __rmul__ = __mul__
@@ -1209,7 +1209,7 @@ class Decimal(object):
                 exp = min(self._exp, other._exp)
                 ans2 = self._rescale(exp, context=context, watchexp=0)
                 if shouldround:
-                    ans2 = ans2._fix(context=context)
+                    ans2 = ans2._fix(context)
                 return (Decimal( (sign, (0,), 0) ),
                         ans2)
 
@@ -1246,7 +1246,7 @@ class Decimal(object):
                                               watchexp=0)
                 context._regard_flags(*frozen)
                 if shouldround:
-                    otherside = otherside._fix(context=context)
+                    otherside = otherside._fix(context)
                 return (Decimal(res), otherside)
 
             if op1.int == 0 and adjust >= 0 and not divmod:
@@ -1286,7 +1286,7 @@ class Decimal(object):
 
         ans = Decimal(res)
         if shouldround:
-            ans = ans._fix(context=context)
+            ans = ans._fix(context)
         return ans
 
     def __rdiv__(self, other, context=None):
@@ -1371,7 +1371,7 @@ class Decimal(object):
             r._sign, comparison._sign = s1, s2
             #Get flags now
             self.__divmod__(other, context=context)
-            return r._fix(context=context)
+            return r._fix(context)
         r._sign, comparison._sign = s1, s2
 
         rounding = context._set_rounding_decision(NEVER_ROUND)
@@ -1402,7 +1402,7 @@ class Decimal(object):
         else:
             r._sign, comparison._sign = s1, s2
 
-        return r._fix(context=context)
+        return r._fix(context)
 
     def __floordiv__(self, other, context=None):
         """self // other"""
@@ -1441,44 +1441,31 @@ class Decimal(object):
         """
         return long(self.__int__())
 
-    def _fix(self, prec=None, rounding=None, folddown=None, context=None):
+    def _fix(self, context):
         """Round if it is necessary to keep self within prec precision.
 
         Rounds and fixes the exponent.  Does not raise on a sNaN.
 
         Arguments:
         self - Decimal instance
-        prec - precision to which  to round.  By default, the context decides.
-        rounding - Rounding method.  By default, the context decides.
-        folddown - Fold down high elements, by default context._clamp
         context - context used.
         """
         if self._is_special:
             return self
         if context is None:
             context = getcontext()
-        if prec is None:
-            prec = context.prec
-        ans = Decimal(self)
-        ans = ans._fixexponents(prec, rounding, folddown=folddown,
-                               context=context)
+        prec = context.prec
+        ans = self._fixexponents(prec, context)
         if len(ans._int) > prec:
-            ans = ans._round(prec, rounding, context=context)
-            ans = ans._fixexponents(prec, rounding, folddown=folddown,
-                                   context=context)
+            ans = ans._round(prec, context=context)
+            ans = ans._fixexponents(prec, context)
         return ans
 
-    def _fixexponents(self, prec=None, rounding=None, folddown=None,
-                     context=None):
-        """Fix the exponents and return a copy with the exponent in bounds."""
-        if self._is_special:
-            return self
-        if context is None:
-            context = getcontext()
-        if prec is None:
-            prec = context.prec
-        if folddown is None:
-            folddown = context._clamp
+    def _fixexponents(self, prec, context):
+        """Fix the exponents and return a copy with the exponent in bounds.
+        Only call if known to not be a special value.
+        """
+        folddown = context._clamp
         Emin = context.Emin
         ans = Decimal(self)
         ans_adjusted = ans.adjusted()
@@ -1756,7 +1743,7 @@ class Decimal(object):
         context.prec = firstprec
 
         if shouldround:
-            return val._fix(context=context)
+            return val._fix(context)
         return val
 
     def __rpow__(self, other, context=None):
@@ -1772,7 +1759,7 @@ class Decimal(object):
             if ans:
                 return ans
 
-        dup = self._fix(context=context)
+        dup = self._fix(context)
         if dup._isinfinity():
             return dup
 
@@ -1786,7 +1773,7 @@ class Decimal(object):
         return Decimal( (dup._sign, dup._int[:end], exp) )
 
 
-    def quantize(self, exp, rounding = None, context=None, watchexp = 1):
+    def quantize(self, exp, rounding=None, context=None, watchexp=1):
         """Quantize self so its exponent is the same as that of exp.
 
         Similar to self._rescale(exp._exp) but with error checking.
@@ -1817,7 +1804,7 @@ class Decimal(object):
                 return self._isinfinity() and other._isinfinity() and True
         return self._exp == other._exp
 
-    def _rescale(self, exp, rounding = None, context=None, watchexp = 1):
+    def _rescale(self, exp, rounding=None, context=None, watchexp=1):
         """Rescales so that the exponent is exp.
 
         exp = exp to scale to (an integer)
@@ -1848,13 +1835,13 @@ class Decimal(object):
             return ans
 
         diff = self._exp - exp
-        digits = len(self._int)+diff
+        digits = len(self._int) + diff
 
         if watchexp and digits > context.prec:
             return context._raise_error(InvalidOperation, 'Rescale > prec')
 
         tmp = Decimal(self)
-        tmp._int = (0,)+tmp._int
+        tmp._int = (0,) + tmp._int
         digits += 1
 
         prevexact = context.flags[Inexact]
@@ -1875,7 +1862,7 @@ class Decimal(object):
             return context._raise_error(InvalidOperation, 'rescale(a, INF)')
         return tmp
 
-    def to_integral(self, rounding = None, context=None):
+    def to_integral(self, rounding=None, context=None):
         """Rounds to the nearest integer, without raising inexact, rounded."""
         if self._is_special:
             ans = self._check_nans(context=context)
@@ -1991,7 +1978,7 @@ class Decimal(object):
 
         context.prec = firstprec
         context.rounding = rounding
-        ans = ans._fix(context=context)
+        ans = ans._fix(context)
 
         rounding = context._set_rounding_decision(NEVER_ROUND)
         if not ans.__mul__(ans, context=context) == self:
@@ -2011,7 +1998,7 @@ class Decimal(object):
             context._regard_flags(flags)
         context.Emax, context.Emin = Emax, Emin
 
-        return ans._fix(context=context)
+        return ans._fix(context)
 
     def max(self, other, context=None):
         """Returns the larger value.
@@ -2057,7 +2044,7 @@ class Decimal(object):
         if context is None:
             context = getcontext()
         context._rounding_decision == ALWAYS_ROUND
-        return ans._fix(context=context)
+        return ans._fix(context)
 
     def min(self, other, context=None):
         """Returns the smaller value.
@@ -2103,7 +2090,7 @@ class Decimal(object):
         if context is None:
             context = getcontext()
         context._rounding_decision == ALWAYS_ROUND
-        return ans._fix(context=context)
+        return ans._fix(context)
 
     def _isinteger(self):
         """Returns whether self is an integer"""
@@ -2316,7 +2303,7 @@ class Context(object):
     def create_decimal(self, num='0'):
         """Creates a new Decimal instance but using self as context."""
         d = Decimal(num, context=self)
-        return d._fix(context=self)
+        return d._fix(self)
 
     #Methods
     def abs(self, a):
@@ -2348,7 +2335,7 @@ class Context(object):
         return a.__add__(b, context=self)
 
     def _apply(self, a):
-        return str(a._fix(context=self))
+        return str(a._fix(self))
 
     def compare(self, a, b):
         """Compares values numerically.
