@@ -59,7 +59,7 @@ class WasteWindow(ScrolledWindow):
 			return None, None
 		oldrf = Res.CurResFile()
 		try:
-			rf = Res.OpenResFile(self.path)
+			rf = Res.FSpOpenResFile(self.path, 1)
 		except Res.Error:
 			return None, None
 		try:
@@ -210,10 +210,10 @@ class WasteWindow(ScrolledWindow):
 		#
 		oldresfile = Res.CurResFile()
 		try:
-			rf = Res.OpenResFile(self.path)
+			rf = Res.FSpOpenResFile(self.path, 3)
 		except Res.Error:
 			Res.CreateResFile(self.path)
-			rf = Res.OpenResFile(self.path)
+			rf = Res.FSpOpenResFile(self.path, 3)
 		styles = Res.Resource('')
 		soup = Res.Resource('')
 		self.ted.WECopyRange(0, 0x3fffffff, None, styles, soup)

@@ -19,7 +19,7 @@ def main():
         dummy = Res.GetResource('DLOG', ID_MAIN)
     except Res.Error:
         try:
-            Res.OpenResFile("dnslookup-2.rsrc")
+            Res.FSpOpenResFile("dnslookup-2.rsrc", 1)
         except Res.Error:
             EasyDialogs.Message("Cannot open dnslookup-2.rsrc")
             sys.exit(1) 

@@ -25,7 +25,7 @@ def main():
 		dummy = Res.GetResource('DLOG', ID_MAIN)
 	except Res.Error:
 		try:
-			Res.OpenResFile("PICTbrowse.rsrc")
+			Res.FSpOpenResFile("PICTbrowse.rsrc", 1)
 		except Res.Error, arg:
 			EasyDialogs.Message("Cannot open PICTbrowse.rsrc: "+arg[1])
 			sys.exit(1)	

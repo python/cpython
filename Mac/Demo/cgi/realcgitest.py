@@ -4,6 +4,8 @@
 from MiniAEFrame import AEServer, MiniApplication
 import MacOS
 
+debug=1
+
 class CGITest(AEServer, MiniApplication):
 	
 	def __init__(self):
@@ -12,6 +14,8 @@ class CGITest(AEServer, MiniApplication):
 		self.installaehandler('aevt', 'oapp', self.open_app)
 		self.installaehandler('aevt', 'quit', self.quit)
 		self.installaehandler('WWW\275', 'sdoc', self.cgihandler)
+		if debug:
+			self.installaehandler('****', '****', self.otherhandler)
 		oldparams = MacOS.SchedParams(0, 0)
 		self.mainloop()
 		apply(MacOS.SchedParams, oldparams)
@@ -21,8 +25,15 @@ class CGITest(AEServer, MiniApplication):
 		
 	def open_app(self, **args):
 		pass
-				
+	
+	def otherhandler(self, *args, **kwargs):
+		print 'Unknown AppleEvent'
+		print 'args', args
+		print 'kwargs', kwargs
+		
 	def cgihandler(self, pathargs, **args):
+		if debug:
+			print 'CGI request', pathargs, args
 		rv = """HTTP/1.0 200 OK
 Server: Unknown; python-cgi-script
 MIME-Version: 1.0

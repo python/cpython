@@ -20,7 +20,7 @@ ITEM_QUIT_BUTTON=4
 def main():
     """Main routine: open resource file, call dialog handler"""
     try:
-        Res.OpenResFile("dnslookup-1.rsrc")
+        Res.FSpOpenResFile("dnslookup-1.rsrc", 1)
     except Res.Error:
         EasyDialogs.Message("Cannot open dnslookup-1.rsrc")
         sys.exit(1) 
