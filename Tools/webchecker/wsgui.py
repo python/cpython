@@ -12,9 +12,12 @@ import string
 import websucker
 import sys
 import os
+try:
+	import threading
+except ImportError:
+	threading = None
 
 VERBOSE = 1
-DEFAULT_URL = "http://www.python.org/download/"
 
 
 try:
@@ -49,27 +52,34 @@ class App(websucker.Sucker):
 		top.columnconfigure(99, weight=1)
 		self.url_label = Label(top, text="URL:")
 		self.url_label.grid(row=0, column=0, sticky='e')
-		self.url_entry = Entry(top, width=60)
-		self.url_entry.insert(END, DEFAULT_URL)
-		self.url_entry.grid(row=0, column=1, sticky='we', columnspan=99)
+		self.url_entry = Entry(top, width=60, exportselection=0)
+		self.url_entry.grid(row=0, column=1, sticky='we',
+				    columnspan=99)
+		self.url_entry.focus_set()
 		self.dir_label = Label(top, text="Directory:")
 		self.dir_label.grid(row=1, column=0, sticky='e')
 		self.dir_entry = Entry(top)
-		self.dir_entry.grid(row=1, column=1, sticky='we', columnspan=99)
+		self.dir_entry.grid(row=1, column=1, sticky='we',
+				    columnspan=99)
 		self.exit_button = Button(top, text="Exit", command=self.exit)
 		self.exit_button.grid(row=2, column=0, sticky='w')
 		self.go_button = Button(top, text="Go", command=self.go)
 		self.go_button.grid(row=2, column=1, sticky='w')
-		self.cancel_button = Button(top, text="Cancel", command=self.cancel,
+		self.cancel_button = Button(top, text="Cancel",
+					    command=self.cancel,
 		                            state=DISABLED)
 		self.cancel_button.grid(row=2, column=2, sticky='w')
-		self.auto_button = Button(top, text="Paste+Go", command=self.auto)
+		self.auto_button = Button(top, text="Paste+Go",
+					  command=self.auto)
 		self.auto_button.grid(row=2, column=3, sticky='w')
 		self.status_label = Label(top, text="[idle]")
 		self.status_label.grid(row=2, column=4, sticky='w')
 		sys.stdout = self
 		self.top.update_idletasks()
 		self.top.grid_propagate(0)
+
+	def mainloop(self):
+		self.top.mainloop()
 	
 	def exit(self):
 		self.stopit = 1
@@ -80,6 +90,9 @@ class App(websucker.Sucker):
 	buffer = ""
 	
 	def write(self, text):
+		self.top.update()
+		if self.stopit:
+			raise Canceled
 		sys.stderr.write(text)
 		lines = string.split(text, "\n")
 		if len(lines) > 1:
@@ -87,9 +100,6 @@ class App(websucker.Sucker):
 		self.buffer = self.buffer + lines[-1]
 		if string.strip(self.buffer):
 			self.message(self.buffer)
-		self.top.update()
-		if self.stopit:
-			raise Canceled
 	
 	def message(self, text, *args):
 		if args:
@@ -120,9 +130,15 @@ class App(websucker.Sucker):
 		self.cancel_button.configure(state=NORMAL)
 		self.status_label['text'] = '[running...]'
 		self.top.update_idletasks()
+		if threading:
+			t = threading.Thread(target=self.run1, args=(url,))
+			t.start()
+		else:
+			self.run1(url)
+
+	def run1(self, url):
 		self.reset()
 		self.addroot(url)
-
 		self.stopit = 0
 		try:
 			try:
@@ -143,8 +159,16 @@ class App(websucker.Sucker):
 		self.message("[canceling...]")
 	
 	def auto(self):
-		text = self.top.selection_get(selection='CLIPBOARD')
-		text = string.strip(text)
+		tries = ['PRIMARY', 'CLIPBOARD']
+		text = ""
+		for t in tries:
+			try:
+				text = self.top.selection_get(selection=t)
+			except TclError:
+				continue
+			text = string.strip(text)
+			if text:
+				break
 		if not text:
 			self.top.bell()
 			self.message("[Error: clipboard is empty]")
@@ -153,9 +177,6 @@ class App(websucker.Sucker):
 		self.url_entry.insert(0, text)
 		self.top.update_idletasks()
 		self.go()
-
-	def mainloop(self):
-		self.top.mainloop()
 	
 	def savefile(self, text, path):
 		self.top.update()
