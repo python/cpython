@@ -27,6 +27,8 @@ Extension modules
 Library
 -------
 
+- sets.py can now run under Py2.2
+
 - Bug #778964:  random.seed() now uses fractional seconds so that
   rapid successive, seeding calls will produce different sequences.
 
