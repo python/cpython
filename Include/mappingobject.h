@@ -44,6 +44,7 @@ extern int mappinggetnext
 extern object *getmappingkeys PROTO((object *mp));
 extern object *getmappingvalues PROTO((object *mp));
 extern object *getmappingitems PROTO((object *mp));
+extern int getmappingsize PROTO((object *mp));
 
 #ifdef __cplusplus
 }
