@@ -7,7 +7,7 @@ import time
 import unittest
 import base64
 from cStringIO import StringIO
-from types import StringType
+from types import StringType, ListType
 import warnings
 
 import email
@@ -191,7 +191,7 @@ class TestMessageAPI(TestEmailBase):
             fp.close()
         s = StringIO()
         g = DecodedGenerator(s)
-        g(msg)
+        g.flatten(msg)
         eq(s.getvalue(), text)
 
     def test__contains__(self):
@@ -403,7 +403,7 @@ class TestLongHeaders(unittest.TestCase):
             'spooge="yummy"; hippos="gargantuan"; marshmallows="gooey"')
         sfp = StringIO()
         g = Generator(sfp)
-        g(msg)
+        g.flatten(msg)
         self.assertEqual(sfp.getvalue(), '''\
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
@@ -423,7 +423,7 @@ X-Foobar-Spoink-Defrobnit: wasnipoop; giraffes="very-long-necked-animals";
         msg.set_payload('Test')
         sfp = StringIO()
         g = Generator(sfp)
-        g(msg)
+        g.flatten(msg)
         self.assertEqual(sfp.getvalue(), """\
 From: test@dom.ain
 References: <0@dom.ain> <1@dom.ain> <2@dom.ain> <3@dom.ain> <4@dom.ain>
@@ -439,7 +439,7 @@ Test""")
         msg.set_payload('Test')
         sfp = StringIO()
         g = Generator(sfp)
-        g(msg)
+        g.flatten(msg)
         self.assertEqual(sfp.getvalue(), """\
 From: test@dom.ain
 References: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -477,7 +477,7 @@ class TestFromMangling(unittest.TestCase):
     def setUp(self):
         self.msg = Message()
         self.msg['From'] = 'aaa@bbb.org'
-        self.msg.add_payload("""\
+        self.msg.set_payload("""\
 From the desk of A.A.A.:
 Blah blah blah
 """)
@@ -485,7 +485,7 @@ Blah blah blah
     def test_mangled_from(self):
         s = StringIO()
         g = Generator(s, mangle_from_=1)
-        g(self.msg)
+        g.flatten(self.msg)
         self.assertEqual(s.getvalue(), """\
 From: aaa@bbb.org
 
@@ -496,7 +496,7 @@ Blah blah blah
     def test_dont_mangle_from(self):
         s = StringIO()
         g = Generator(s, mangle_from_=0)
-        g(self.msg)
+        g.flatten(self.msg)
         self.assertEqual(s.getvalue(), """\
 From: aaa@bbb.org
 
@@ -658,8 +658,8 @@ Hi there,
 
 This is the dingus fish.
 ''')
-        container.add_payload(intro)
-        container.add_payload(image)
+        container.attach(intro)
+        container.attach(image)
         container['From'] = 'Barry <barry@digicool.com>'
         container['To'] = 'Dingus Lovers <cravindogs@cravindogs.com>'
         container['Subject'] = 'Here is your dingus fish'
@@ -851,24 +851,38 @@ class TestMIMEMessage(TestEmailBase):
 
     def test_valid_argument(self):
         eq = self.assertEqual
+        unless = self.failUnless
         subject = 'A sub-message'
         m = Message()
         m['Subject'] = subject
         r = MIMEMessage(m)
         eq(r.get_type(), 'message/rfc822')
-        self.failUnless(r.get_payload() is m)
-        eq(r.get_payload()['subject'], subject)
+        payload = r.get_payload()
+        unless(type(payload), ListType)
+        eq(len(payload), 1)
+        subpart = payload[0]
+        unless(subpart is m)
+        eq(subpart['subject'], subject)
+
+    def test_bad_multipart(self):
+        eq = self.assertEqual
+        msg1 = Message()
+        msg1['Subject'] = 'subpart 1'
+        msg2 = Message()
+        msg2['Subject'] = 'subpart 2'
+        r = MIMEMessage(msg1)
+        self.assertRaises(Errors.MultipartConversionError, r.attach, msg2)
 
     def test_generate(self):
         # First craft the message to be encapsulated
         m = Message()
         m['Subject'] = 'An enclosed message'
-        m.add_payload('Here is the body of the message.\n')
+        m.set_payload('Here is the body of the message.\n')
         r = MIMEMessage(m)
         r['Subject'] = 'The enclosing message'
         s = StringIO()
         g = Generator(s)
-        g(r)
+        g.flatten(r)
         self.assertEqual(s.getvalue(), """\
 Content-Type: message/rfc822
 MIME-Version: 1.0
@@ -881,10 +895,13 @@ Here is the body of the message.
 
     def test_parse_message_rfc822(self):
         eq = self.assertEqual
+        unless = self.failUnless
         msg = self._msgobj('msg_11.txt')
         eq(msg.get_type(), 'message/rfc822')
-        eq(len(msg.get_payload()), 1)
-        submsg = msg.get_payload()
+        payload = msg.get_payload()
+        unless(isinstance(payload, ListType))
+        eq(len(payload), 1)
+        submsg = payload[0]
         self.failUnless(isinstance(submsg, Message))
         eq(submsg['subject'], 'An enclosed message')
         eq(submsg.get_payload(), 'Here is the body of the message.\n')
@@ -938,7 +955,10 @@ Your message cannot be delivered to the following recipients:
         # Subpart 3 is the original message
         subpart = msg.get_payload(2)
         eq(subpart.get_type(), 'message/rfc822')
-        subsubpart = subpart.get_payload()
+        payload = subpart.get_payload()
+        unless(isinstance(payload, ListType))
+        eq(len(payload), 1)
+        subsubpart = payload[0]
         unless(isinstance(subsubpart, Message))
         eq(subsubpart.get_type(), 'text/plain')
         eq(subsubpart['message-id'],
@@ -959,11 +979,11 @@ Your message cannot be delivered to the following recipients:
         msg1 = MIMEText('One')
         msg2 = MIMEText('Two')
         msg.add_header('Content-Type', 'multipart/mixed', boundary='BOUNDARY')
-        msg.add_payload(msg1)
-        msg.add_payload(msg2)
+        msg.attach(msg1)
+        msg.attach(msg2)
         sfp = StringIO()
         g = Generator(sfp)
-        g(msg)
+        g.flatten(msg)
         self.assertEqual(sfp.getvalue(), text)
 
 
@@ -987,7 +1007,7 @@ class TestIdempotent(unittest.TestCase):
         eq = self.assertEquals
         s = StringIO()
         g = Generator(s, maxheaderlen=0)
-        g(msg)
+        g.flatten(msg)
         eq(text, s.getvalue())
 
     def test_parse_text_message(self):
@@ -1044,6 +1064,7 @@ class TestIdempotent(unittest.TestCase):
 
     def test_content_type(self):
         eq = self.assertEquals
+        unless = self.failUnless
         # Get a message object and reset the seek pointer for other tests
         msg, text = self._msgobj('msg_05.txt')
         eq(msg.get_type(), 'multipart/report')
@@ -1066,18 +1087,25 @@ class TestIdempotent(unittest.TestCase):
         msg3 = msg.get_payload(2)
         eq(msg3.get_type(), 'message/rfc822')
         self.failUnless(isinstance(msg3, Message))
-        msg4 = msg3.get_payload()
-        self.failUnless(isinstance(msg4, Message))
+        payload = msg3.get_payload()
+        unless(isinstance(payload, ListType))
+        eq(len(payload), 1)
+        msg4 = payload[0]
+        unless(isinstance(msg4, Message))
         eq(msg4.get_payload(), 'Yadda yadda yadda\n')
 
     def test_parser(self):
         eq = self.assertEquals
+        unless = self.failUnless
         msg, text = self._msgobj('msg_06.txt')
         # Check some of the outer headers
         eq(msg.get_type(), 'message/rfc822')
-        # Make sure there's exactly one thing in the payload and that's a
-        # sub-Message object of type text/plain
-        msg1 = msg.get_payload()
+        # Make sure the payload is a list of exactly one sub-Message, and that
+        # that submessage has a type of text/plain
+        payload = msg.get_payload()
+        unless(isinstance(payload, ListType))
+        eq(len(payload), 1)
+        msg1 = payload[0]
         self.failUnless(isinstance(msg1, Message))
         eq(msg1.get_type(), 'text/plain')
         self.failUnless(isinstance(msg1.get_payload(), StringType))
@@ -1097,7 +1125,7 @@ class TestMiscellaneous(unittest.TestCase):
         # Don't wrap/continue long headers since we're trying to test
         # idempotency.
         g = Generator(s, maxheaderlen=0)
-        g(msg)
+        g.flatten(msg)
         self.assertEqual(text, s.getvalue())
 
     def test_message_from_file(self):
@@ -1110,7 +1138,7 @@ class TestMiscellaneous(unittest.TestCase):
             # Don't wrap/continue long headers since we're trying to test
             # idempotency.
             g = Generator(s, maxheaderlen=0)
-            g(msg)
+            g.flatten(msg)
             self.assertEqual(text, s.getvalue())
         finally:
             fp.close()
