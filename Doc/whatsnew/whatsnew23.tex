@@ -1104,8 +1104,9 @@ now return enhanced tuples:
 
 \item The new \module{heapq} module contains an implementation of a
 heap queue algorithm.  A heap is an array-like data structure that
-keeps items in a sorted order such that, for every index k, heap[k] <=
-heap[2*k+1] and heap[k] <= heap[2*k+2].  This makes it quick to remove
+keeps items in a partially sorted order such that,
+for every index k, heap[k] <= heap[2*k+1] and heap[k] <= heap[2*k+2].
+This makes it quick to remove
 the smallest item, and inserting a new item while maintaining the heap
 property is O(lg~n).  (See
 \url{http://www.nist.gov/dads/HTML/priorityque.html} for more
