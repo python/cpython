@@ -460,17 +460,19 @@ The following operations are defined on mutable sequence types (where
   \lineiii{\var{s}.append(\var{x})}
 	{same as \code{\var{s}[len(\var{s}):len(\var{s})] = [\var{x}]}}{}
   \lineiii{\var{s}.count(\var{x})}
-	{return number of \var{i}'s for which \code{\var{s}[\var{i}] == \var{x}}}{}
+    {return number of \var{i}'s for which \code{\var{s}[\var{i}] == \var{x}}}{}
   \lineiii{\var{s}.index(\var{x})}
-	{return smallest \var{i} such that \code{\var{s}[\var{i}] == \var{x}}}{(1)}
+    {return smallest \var{i} such that \code{\var{s}[\var{i}] == \var{x}}}{(1)}
   \lineiii{\var{s}.insert(\var{i}, \var{x})}
 	{same as \code{\var{s}[\var{i}:\var{i}] = [\var{x}]}
 	  if \code{\var{i} >= 0}}{}
+  \lineiii{\var{s}.pop(\optional{\var{i}})}
+    {same as \code{x = \var{s}[\var{i}]; del \var{s}[\var{i}]; return x}}{(4)}
   \lineiii{\var{s}.remove(\var{x})}
 	{same as \code{del \var{s}[\var{s}.index(\var{x})]}}{(1)}
   \lineiii{\var{s}.reverse()}
 	{reverses the items of \var{s} in place}{(3)}
-  \lineiii{\var{s}.sort()}
+  \lineiii{\var{s}.sort(\var{cmpfunc})}
 	{sort the items of \var{s} in place}{(2), (3)}
 \end{tableiii}
 \indexiv{operations on}{mutable}{sequence}{types}
@@ -507,6 +509,9 @@ Notes:
 list in place for economy of space when sorting or reversing a large
 list.  They don't return the sorted or reversed list to remind you of
 this side effect.
+
+\item[(4)4] The optional argument \var{i} defaults to \code{-1}, so that
+by default the last item is removed and returned.
 
 \end{description}
 
@@ -849,7 +854,7 @@ object's (writable) attributes;
 \item
 \code{\var{x}.__methods__} lists the methods of many built-in object types,
 e.g., \code{[].__methods__} yields
-\code{['append', 'count', 'index', 'insert', 'remove', 'reverse', 'sort']};
+\code{['append', 'count', 'index', 'insert', 'pop', 'remove', 'reverse', 'sort']};
 
 \item
 \code{\var{x}.__members__} lists data attributes;
