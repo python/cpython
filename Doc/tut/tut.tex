@@ -3330,7 +3330,7 @@ be accessed or printed directly without having to reference \code{.args}.
 ...    raise Exception('spam', 'eggs')
 ... except Exception, inst:
 ...    print type(inst)     # the exception instance
-...    print inst.args	    # arguments stored in .args
+...    print inst.args      # arguments stored in .args
 ...    print inst           # __str__ allows args to printed directly
 ...    x, y = inst          # __getitem__ allows args to be unpacked directly
 ...    print 'x =', x
@@ -4299,7 +4299,7 @@ iterators as described in the previous section.  What makes generators so
 compact is that the \method{__iter__()} and \method{next()} methods are
 created automatically.
 
-Another other key feature is that the local variables and execution state
+Another key feature is that the local variables and execution state
 are automatically saved between calls.  This made the function easier to write
 and much more clear than an approach using class variables like
 \code{self.index} and \code{self.data}.
