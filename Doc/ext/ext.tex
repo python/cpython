@@ -255,7 +255,7 @@ course, you should choose exceptions wisely --- don't use
 should probably be \cdata{PyExc_IOError}).  If something's wrong with
 the argument list, the \cfunction{PyArg_ParseTuple()} function usually
 raises \cdata{PyExc_TypeError}.  If you have an argument whose value
-which must be in a particular range or must satisfy other conditions,
+must be in a particular range or must satisfy other conditions,
 \cdata{PyExc_ValueError} is appropriate.
 
 You can also define a new exception that is unique to your module.
@@ -380,7 +380,7 @@ The \constant{METH_KEYWORDS} bit may be set in the third field if keyword
 arguments should be passed to the function.  In this case, the C
 function should accept a third \samp{PyObject *} parameter which will
 be a dictionary of keywords.  Use \cfunction{PyArg_ParseTupleAndKeywords()}
-to parse the arguemts to such a function.
+to parse the arguments to such a function.
 
 The method table must be passed to the interpreter in the module's
 initialization function (which should be the only non-\code{static}
@@ -462,7 +462,7 @@ Calling a Python function is easy.  First, the Python program must
 somehow pass you the Python function object.  You should provide a
 function (or some other interface) to do this.  When this function is
 called, save a pointer to the Python function object (be careful to
-\cfunction{Py_INCREF()} it!) in a global variable --- or whereever you
+\cfunction{Py_INCREF()} it!) in a global variable --- or wherever you
 see fit. For example, the following function might be part of a module
 definition:
 
@@ -719,7 +719,7 @@ It is possible to pass Python long integers where integers are
 requested; however no proper range checking is done --- the most
 significant bits are silently truncated when the receiving field is
 too small to receive the value (actually, the semantics are inherited
-from downcasts in C --- your milage may vary).
+from downcasts in C --- your mileage may vary).
 
 A few other characters have a meaning in a format string.  These may
 not occur inside nested parentheses.  They are:
@@ -736,7 +736,7 @@ of the corresponding C variable(s).
 \item[\samp{:}]
 The list of format units ends here; the string after the colon is used
 as the function name in error messages (the ``associated value'' of
-the exceptions that \cfunction{PyArg_ParseTuple()} raises).
+the exception that \cfunction{PyArg_ParseTuple()} raises).
 
 \item[\samp{;}]
 The list of format units ends here; the string after the colon is used
@@ -866,6 +866,10 @@ keywdarg_parrot(self, args, keywds)
 }
 
 static PyMethodDef keywdarg_methods[] = {
+    /* The cast of the function is necessary since PyCFunction values
+     * only take two PyObject* parameters, and keywdarg_parrot() takes
+     * three.
+     */
     {"parrot", (PyCFunction)keywdarg_parrot, METH_VARARGS|METH_KEYWORDS},
     {NULL,  NULL}   /* sentinel */
 };
@@ -1605,9 +1609,9 @@ begin:
 \end{verbatim}
 
 to indicate that the modules defined in \file{Setup} are to be built
-as dynamically-linked linked modules.  A line containing only
-\samp{*static*} can be used to indicate the subsequently listed
-modules should be statically linked.
+as dynamically linked modules.  A line containing only \samp{*static*}
+can be used to indicate the subsequently listed modules should be
+statically linked.
 
 Here is a complete \file{Setup} file for building a
 \module{cPersistent} module:
@@ -1672,7 +1676,7 @@ Several compiler options are supported:
 \end{tableii}
 
 Other compiler options can be included (snuck in) by putting them
-in variable variables.
+in variables.
 
 Source files can include files with \file{.c}, \file{.C}, \file{.cc},
 \file{.cpp}, \file{.cxx}, and \file{.c++} extensions. 
