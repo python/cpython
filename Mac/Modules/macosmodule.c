@@ -29,6 +29,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <Windows.h>
 #include <Files.h>
+#include <LowMem.h>
 
 static PyObject *MacOS_Error; /* Exception MacOS.Error */
 
@@ -532,6 +533,20 @@ MacOS_splash(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
+static char DebugStr_doc[] = "Switch to low-level debugger with a message";
+
+static PyObject *
+MacOS_DebugStr(PyObject *self, PyObject *args)
+{
+	Str255 message;
+	PyObject *object = 0;
+	
+	if (!PyArg_ParseTuple(args, "O&|O", PyMac_GetStr255, message, &object))
+		return NULL;
+	DebugStr(message);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
 
 static char openrf_doc[] = "Open resource fork of a file";
 
@@ -606,6 +621,7 @@ static PyMethodDef MacOS_Methods[] = {
 	{"GetErrorString",		MacOS_GetErrorString, 1},
 	{"openrf",				MacOS_openrf, 1, 	openrf_doc},
 	{"splash",				MacOS_splash, 1, 	splash_doc},
+	{"DebugStr",			MacOS_DebugStr,	1,	DebugStr_doc},
 	{NULL,				NULL}		 /* Sentinel */
 };
 
