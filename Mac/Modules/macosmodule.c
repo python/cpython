@@ -493,15 +493,111 @@ MacOS_SndControl(PyObject *self, PyObject *args)
 	return Py_BuildValue("(hhl)", c.cmd, c.param1, c.param2);
 }
 
+/*----------------------------------------------------------------------*/
+/* STDWIN High Level Event interface */
+
+#include <EPPC.h>
+#include <Events.h>
+
+#ifdef USE_STDWIN
+
+extern void (*_w_high_level_event_proc)(EventRecord *);
+
+static PyObject *MacOS_HighLevelEventHandler = NULL;
+
+static void
+MacOS_HighLevelEventProc(EventRecord *erp)
+{
+	if (MacOS_HighLevelEventHandler != NULL) {
+		PyObject *args = Py_BuildValue("(s#)", (char *)erp, (int)sizeof(*erp));
+		PyObject *res;
+		if (args == NULL)
+			res = NULL;
+		else {
+			res = PyEval_CallObject(MacOS_HighLevelEventHandler, args);
+			Py_DECREF(args);
+		}
+		if (res == NULL) {
+			fprintf(stderr, "Exception in MacOS_HighLevelEventProc:\n");
+			PyErr_Print();
+		}
+		else
+			Py_DECREF(res);
+	}
+}
+
+static PyObject *
+MacOS_SetHighLevelEventHandler(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	PyObject *previous = MacOS_HighLevelEventHandler;
+	PyObject *next = NULL;
+	if (!PyArg_ParseTuple(args, "|O", &next))
+		return NULL;
+	if (next == Py_None)
+		next = NULL;
+	Py_INCREF(next);
+	MacOS_HighLevelEventHandler = next;
+	if (next == NULL)
+		_w_high_level_event_proc = NULL;
+	else
+		_w_high_level_event_proc = MacOS_HighLevelEventProc;
+	if (previous == NULL) {
+		Py_INCREF(Py_None);
+		previous = Py_None;
+	}
+	return previous;
+}
+
+#endif /* USE_STDWIN */
+
+static PyObject *
+MacOS_AcceptHighLevelEvent(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	TargetID sender;
+	unsigned long refcon;
+	Ptr buf;
+	unsigned long len;
+	OSErr err;
+	PyObject *res;
+	
+	buf = NULL;
+	len = 0;
+	err = AcceptHighLevelEvent(&sender, &refcon, buf, &len);
+	if (err == bufferIsSmall) {
+		buf = malloc(len);
+		if (buf == NULL)
+			return PyErr_NoMemory();
+		err = AcceptHighLevelEvent(&sender, &refcon, buf, &len);
+		if (err != noErr) {
+			free(buf);
+			return PyErr_Mac(MacOS_Error, (int)err);
+		}
+	}
+	else if (err != noErr)
+		return PyErr_Mac(MacOS_Error, (int)err);
+	res = Py_BuildValue("s#ls#",
+		(char *)&sender, (int)(sizeof sender), refcon, (char *)buf, (int)len);
+	free(buf);
+	return res;
+}
+
 static PyMethodDef MacOS_Methods[] = {
+	{"AcceptHighLevelEvent",	MacOS_AcceptHighLevelEvent, 1},
 	{"GetResource",			MacOS_GetResource, 1},
-	{"GetNamedResource",	MacOS_GetNamedResource, 1},
+	{"GetNamedResource",		MacOS_GetNamedResource, 1},
 	{"GetFileType",			MacOS_GetFileType, 1},
 	{"SetFileType",			MacOS_SetFileType, 1},
 	{"SndNewChannel",		MacOS_SndNewChannel, 1},
-	{"SndPlay",				MacOS_SndPlay, 1},
+	{"SndPlay",			MacOS_SndPlay, 1},
 	{"SndControl",			MacOS_SndControl, 1},
-	{NULL,					NULL}		 /* Sentinel */
+#ifdef USE_STDWIN
+	{"SetHighLevelEventHandler",	MacOS_SetHighLevelEventHandler, 1},
+#endif
+	{NULL,				NULL}		 /* Sentinel */
 };
 
 
