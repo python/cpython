@@ -1646,6 +1646,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 #undef COPYNUM
 #undef COPYSEQ
 #undef COPYMAP
+#undef COPYBUF
 
 #define SLOTDEFINED(SLOT) \
 	(base->SLOT != 0 && \
