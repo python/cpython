@@ -215,7 +215,7 @@ t_bootstrap(boot_raw)
 	Py_XDECREF(boot->keyw);
 	PyMem_DEL(boot_raw);
 	if (res == NULL) {
-		if (PyErr_Occurred() == PyExc_SystemExit)
+		if (PyErr_ExceptionMatches(PyExc_SystemExit))
 			PyErr_Clear();
 		else {
 			fprintf(stderr, "Unhandled exception in thread:\n");
