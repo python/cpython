@@ -474,6 +474,12 @@ class Misc:
 
         Identifier returned by after or after_idle must be
         given as first parameter."""
+        try:
+            (script, type) = self.tk.splitlist(
+                self.tk.call('after', 'info', id))
+            self.deletecommand(script)
+        except TclError:
+            pass
         self.tk.call('after', 'cancel', id)
     def bell(self, displayof=0):
         """Ring a display's bell."""
