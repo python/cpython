@@ -2,7 +2,7 @@
 # email package unit tests for (optional) Asian codecs
 
 import unittest
-from test.test_support import TestSkipped, run_unittest
+from test_support import TestSkipped, run_unittest
 
 from email.test.test_email import TestEmailBase
 from email.Charset import Charset
