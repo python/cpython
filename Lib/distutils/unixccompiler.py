@@ -51,6 +51,11 @@ class UnixCCompiler (CCompiler):
     # directories and any module- or package-specific include directories
     # are specified via {add,set}_include_dirs(), and there's no way to
     # distinguish them.  This might be a bug.
+
+    _obj_ext = '.o'
+    _exe_ext = ''
+    _shared_lib_ext = SO
+    _static_lib_ext = '.a'
     
     def __init__ (self,
                   verbose=0,
@@ -121,23 +126,29 @@ class UnixCCompiler (CCompiler):
                          objects,
                          output_libname,
                          libraries=None,
-                         library_dirs=None):
+                         library_dirs=None,
+                         build_info=None):
         # XXX should we sanity check the library name? (eg. no
         # slashes)
-        self.link_shared_object (objects, "lib%s%s" % (output_libname, SO))
+        self.link_shared_object (objects, "lib%s%s" % \
+                                 (output_libname, self._shared_lib_ext),
+                                 build_info=build_info)
 
 
     def link_shared_object (self,
                             objects,
                             output_filename,
                             libraries=None,
-                            library_dirs=None):
+                            library_dirs=None,
+                            build_info=None):
 
         if libraries is None:
             libraries = []
         if library_dirs is None:
             library_dirs = []
-
+        if build_info is None:
+            build_info = {}
+        
         lib_opts = _gen_lib_options (self.libraries + libraries,
                                      self.library_dirs + library_dirs)
         ld_args = self.ldflags_shared + lib_opts + \
@@ -150,17 +161,19 @@ class UnixCCompiler (CCompiler):
     def object_filenames (self, source_filenames):
         outnames = []
         for inname in source_filenames:
-            outnames.append (re.sub (r'\.(c|C|cc|cxx)$', '.o', inname))
+            outnames.append ( re.sub (r'\.(c|C|cc|cxx|cpp)$',
+                                      self._obj_ext, inname))
         return outnames
 
     def shared_object_filename (self, source_filename):
-        return re.sub (r'\.(c|C|cc|cxx)$', SO)
+        return re.sub (r'\.(c|C|cc|cxx|cpp)$', self._shared_lib_ext)
 
     def library_filename (self, libname):
-        return "lib%s.a" % libname
+        return "lib%s%s" % (libname, self._static_lib_ext )
 
     def shared_library_filename (self, libname):
-        return "lib%s.so" % libname
+        return "lib%s%s" % (libname, self._shared_lib_ext )
+
 
 
 # class UnixCCompiler
