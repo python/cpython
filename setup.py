@@ -65,8 +65,8 @@ class PyBuildExt(build_ext):
         # with Modules/ and adding Python's include directory to the path.
         (srcdir,) = sysconfig.get_config_vars('srcdir')
 
-        #
-        moddir = os.path.join(os.getcwd(), 'Modules', srcdir)
+        # Figure out the location of the source code for extension modules
+        moddir = os.path.join(os.getcwd(), srcdir, 'Modules')
         moddir = os.path.normpath(moddir)
         srcdir, tail = os.path.split(moddir)
         srcdir = os.path.normpath(srcdir)
