@@ -19,17 +19,17 @@ import os
 # ===== Utilities
 
 tests = 0
-fails = 0
+failures = []
 
 def confirm(outcome, name):
-    global tests, fails
+    global tests
 
     tests = tests + 1
     if outcome:
-        print "Passed", name
+        if verbose:
+            print "Failed", name
     else:
-        print "Failed", name
-        fails = fails + 1
+        failures.append(name)
 
 def test_make_parser2():
     try:
@@ -81,6 +81,9 @@ def test_unescape_all():
 
 def test_unescape_extra():
     return unescape("Hei på deg", {"å" : "&aring;"}) == "Hei p&aring; deg"
+
+def test_unescape_amp_extra():
+    return unescape("&amp;foo;", {"&foo;": "splat"}) == "&foo;"
 
 # ===== quoteattr
 
@@ -650,6 +653,8 @@ for (name, value) in items:
     if name[ : 5] == "test_":
         confirm(value(), name)
 
-print "%d tests, %d failures" % (tests, fails)
-if fails != 0:
-    raise TestFailed, "%d of %d tests failed" % (fails, tests)
+if verbose:
+    print "%d tests, %d failures" % (tests, len(failures))
+if failures:
+    raise TestFailed("%d of %d tests failed: %s"
+                     % (len(failures), tests, ", ".join(failures)))
