@@ -91,7 +91,8 @@ def _test():
     w.close()
     assert r.read() == teststr
     assert e.read() == ""
-    _cleanup()
+    for inst in _active[:]:
+        inst.wait()
     assert not _active
     print "All OK"
 
