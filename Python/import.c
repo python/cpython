@@ -68,24 +68,17 @@ void
 doneimport()
 {
 	if (import_modules != NULL) {
-		int pos;
-		object *modname, *module;
-		/* Explicitly erase all modules; this is the safest way
-		   to get rid of at least *some* circular dependencies */
-		pos = 0;
-		while (mappinggetnext(import_modules,
-				      &pos, &modname, &module)) {
-			if (is_moduleobject(module)) {
-				object *dict;
-				dict = getmoduledict(module);
-				if (dict != NULL && is_dictobject(dict))
-					mappingclear(dict);
-			}
-		}
-		mappingclear(import_modules);
-		DECREF(import_modules);
+		object *tmp = import_modules;
+		import_modules = NULL;
+		/* This deletes all modules from sys.modules.
+		   When a module is deallocated, it in turn clears its dictionary,
+		   thus hopefully breaking any circular references between modules
+		   and between a module's dictionary and its functions.
+		   Note that "import" will fail while we are cleaning up.
+		   */
+		mappingclear(tmp);
+		DECREF(tmp);
 	}
-	import_modules = NULL;
 }
 
 
@@ -119,6 +112,10 @@ add_module(name)
 {
 	object *m;
 
+	if (import_modules == NULL) {
+		err_setstr(SystemError, "sys.modules has been deleted");
+		return NULL;
+	}
 	if ((m = dictlookup(import_modules, name)) != NULL &&
 	    is_moduleobject(m))
 		return m;
@@ -574,6 +571,10 @@ import_module(name)
 {
 	object *m;
 
+	if (import_modules == NULL) {
+		err_setstr(SystemError, "sys.modules has been deleted");
+		return NULL;
+	}
 	if ((m = dictlookup(import_modules, name)) != NULL) {
 		INCREF(m);
 	}
@@ -615,6 +616,10 @@ reload_module(m)
 	name = getmodulename(m);
 	if (name == NULL)
 		return NULL;
+	if (import_modules == NULL) {
+		err_setstr(SystemError, "sys.modules has been deleted");
+		return NULL;
+	}
 	if (m != dictlookup(import_modules, name)) {
 		err_setstr(ImportError, "reload() module not in sys.modules");
 		return NULL;
