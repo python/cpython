@@ -468,7 +468,7 @@ class ZipFile:
             endrec = struct.pack(structEndArchive, stringEndArchive,
                      0, 0, count, count, pos2 - pos1, pos1, 0)
             self.fp.write(endrec)
-        self.fp.flush()
+            self.fp.flush()
         if not self._filePassed:
             self.fp.close()
         self.fp = None
