@@ -1,13 +1,13 @@
 """
 Provides access to stored idle configuration information.
-
-Throughout this module there is an emphasis on returning useable defaults if
-there is a problem returning a requested configuration value back to idle.
-This is to allow idle to continue to function in spite of errors in the
-retrieval of config information. When a default is returned instead of a 
-requested config value, a message is printed to stderr to aid in 
-configuration problem notification and resolution. 
 """
+# Throughout this module there is an emphasis on returning useable defaults
+# when a problem occurs in returning a requested configuration value back to
+# idle. This is to allow idle to continue to function in spite of errors in
+# the retrieval of config information. When a default is returned instead of
+# a requested config value, a message is printed to stderr to aid in 
+# configuration problem notification and resolution. 
+
 import os
 import sys
 from ConfigParser import ConfigParser, NoOptionError, NoSectionError
@@ -38,14 +38,6 @@ class IdleConfParser(ConfigParser):
         if self.has_option(section,option):
             #return getVal(section, option, raw, vars)
             return getVal(section, option)
-#         #the following handled in IdleConf.GetOption instead
-#         else: 
-#             warning=('\n Warning: configHandler.py - IdleConfParser.Get -\n'+
-#                        ' problem retrieving configration option '+`option`+'\n'+
-#                        ' from section '+`section`+'.\n'+
-#                        ' returning default value: '+`default`+'\n')
-#             sys.stderr.write(warning)
-#             return default
 
     def GetOptionList(self,section):
         """

@@ -1,9 +1,6 @@
 # IDLE reads several config files to determine user preferences.  This 
 # file is the default config file for idle extensions settings.  
 
-[SearchBinding]
-enable=1
-
 [AutoIndent]
 enable=1
 

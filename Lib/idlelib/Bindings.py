@@ -41,6 +41,13 @@ menudefs = [
    ('_Copy', '<<Copy>>'),
    ('_Paste', '<<Paste>>'),
    ('Select _All', '<<select-all>>'),
+   None,
+   ('_Find...', '<<find>>'),
+   ('Find a_gain', '<<find-again>>'),
+   ('Find _selection', '<<find-selection>>'),
+   ('Find in Files...', '<<find-in-files>>'),
+   ('R_eplace...', '<<replace>>'),
+   ('Go to _line', '<<goto-line>>'),
   ]),
  ('run',[
    ('Python shell', '<<open-python-shell>>'),
