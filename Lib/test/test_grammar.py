@@ -152,7 +152,8 @@ verify(f2.func_code.co_varnames == ('one_argument',))
 verify(f3.func_code.co_varnames == ('two', 'arguments'))
 if sys.platform.startswith('java'):
     verify(f4.func_code.co_varnames ==
-           ('two', '(compound, (argument, list))',))
+           ('two', '(compound, (argument, list))', 'compound', 'argument',
+                        'list',))
     verify(f5.func_code.co_varnames ==
            ('(compound, first)', 'two', 'compound', 'first'))
 else:
