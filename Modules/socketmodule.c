@@ -149,9 +149,7 @@ Socket methods:
 #  include <netdb.h>
 typedef size_t socklen_t;
 # else
-#  ifndef USE_GUSI1
 #   include <arpa/inet.h>
-#  endif
 # endif
 
 # ifndef RISCOS
@@ -179,11 +177,6 @@ int h_errno; /* not used */
 
 #ifndef O_NDELAY
 # define O_NDELAY O_NONBLOCK	/* For QNX only? */
-#endif
-
-#ifdef USE_GUSI1
-/* fdopen() isn't declared in stdio.h (sigh) */
-# include <GUSI.h>
 #endif
 
 #include "addrinfo.h"
@@ -2332,11 +2325,7 @@ PySocket_inet_aton(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s:inet_aton", &ip_addr)) {
 		return NULL;
 	}
-#ifdef USE_GUSI1
-	packed_addr = inet_addr(ip_addr).s_addr;
-#else
 	packed_addr = inet_addr(ip_addr);
-#endif
 
 	if (packed_addr == INADDR_NONE) {	/* invalid address */
 		PyErr_SetString(PySocket_Error,
@@ -3331,11 +3320,7 @@ inet_pton (int af, const char *src, void *dst)
 {
 	if(af == AF_INET){
 		long packed_addr;
-#ifdef USE_GUSI1
-		packed_addr = (long)inet_addr(src).s_addr;
-#else
 		packed_addr = inet_addr(src);
-#endif
 		if (packed_addr == INADDR_NONE)
 			return 0;
 		memcpy(dst, &packed_addr, 4);

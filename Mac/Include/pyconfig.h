@@ -36,7 +36,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define macintosh
 #endif
 
-#if defined(USE_GUSI1) || defined(USE_GUSI2)
+#if defined(USE_GUSI2)
 #define USE_GUSI
 #endif
 

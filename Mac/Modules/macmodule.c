@@ -46,9 +46,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #undef S_IWRITE
 #undef S_IEXEC
 
-#ifdef USE_GUSI1
-#include <GUSI.h>
-#endif /* USE_GUSI1 */
 #include <sys/types.h>
 #include <sys/stat.h>
 #else /* USE_GUSI */
@@ -181,17 +178,7 @@ mac_chdir(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-#ifdef USE_GUSI1
-	PyObject *rv;
-	
-	/* Change MacOS's idea of wd too */
-	rv = mac_1str(args, chdir);
-	PyMac_FixGUSIcd();
-	return rv;
-#else
 	return mac_1str(args, chdir);
-#endif
-
 }
 
 static PyObject *
@@ -205,11 +192,8 @@ mac_close(self, args)
 	Py_BEGIN_ALLOW_THREADS
 	res = close(fd);
 	Py_END_ALLOW_THREADS
-#ifndef USE_GUSI1
-	/* GUSI gives surious errors here? */
 	if (res < 0)
 		return mac_error();
-#endif
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -385,11 +369,7 @@ mac_mkdir(self, args)
 	if (!PyArg_ParseTuple(args, "s|i", &path, &mode))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-#ifdef USE_GUSI1
-	res = mkdir(path);
-#else
 	res = mkdir(path, mode);
-#endif
 	Py_END_ALLOW_THREADS
 	if (res < 0)
 		return mac_error();

@@ -9,13 +9,6 @@
 #ifdef macintosh
 #include <time.h>
 #include <OSUtils.h>
-#ifdef USE_GUSI211
-/* GUSI, the I/O library which has the time() function and such uses the
-** Mac epoch of 1904. MSL, the C library which has localtime() and so uses
-** the ANSI epoch of 1900.
-*/
-#define GUSI_TO_MSL_EPOCH (4*365*24*60*60)
-#endif /* USE_GUSI2 */
 #else
 #include <sys/types.h>
 #endif
@@ -259,9 +252,6 @@ time_convert(time_t when, struct tm * (*function)(const time_t *))
 {
 	struct tm *p;
 	errno = 0;
-#if defined(macintosh) && defined(USE_GUSI204)
-	when = when + GUSI_TO_MSL_EPOCH;
-#endif
 	p = function(&when);
 	if (p == NULL) {
 #ifdef EINVAL
@@ -487,9 +477,6 @@ time_ctime(PyObject *self, PyObject *args)
 			return NULL;
 		tt = (time_t)dt;
 	}
-#if defined(macintosh) && defined(USE_GUSI204)
-	tt = tt + GUSI_TO_MSL_EPOCH;
-#endif
 	p = ctime(&tt);
 	if (p == NULL) {
 		PyErr_SetString(PyExc_ValueError, "unconvertible time");
@@ -526,9 +513,6 @@ time_mktime(PyObject *self, PyObject *args)
 				"mktime argument out of range");
 		return NULL;
 	}
-#if defined(macintosh) && defined(USE_GUSI211)
-	tt = tt - GUSI_TO_MSL_EPOCH;
-#endif
 	return PyFloat_FromDouble((double)tt);
 }
 

@@ -35,14 +35,10 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 
 #ifdef __MWERKS__
-#ifdef USE_GUSI1
-#define HASGUSI " GUSI1"
-#else
 #ifdef USE_GUSI2
 #define HASGUSI " GUSI2"
 #else
 #define HASGUSI ""
-#endif
 #endif
 
 #ifdef WITH_THREAD
