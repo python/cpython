@@ -36,7 +36,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Events.h>
 #include <Windows.h>
 #include <Fonts.h>
-
+#include <Balloons.h>
 #ifdef __MWERKS__
 #include <SIOUX.h>
 #define USE_SIOUX
@@ -124,11 +124,13 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 
 	SET_OPT_ITEM(OPT_INSPECT, inspect);
 	SET_OPT_ITEM(OPT_VERBOSE, verbose);
-/*	SET_OPT_ITEM(OPT_SUPPRESS, suppress_print); */
+	SET_OPT_ITEM(OPT_OPTIMIZE, optimize);
 	SET_OPT_ITEM(OPT_UNBUFFERED, unbuffered);
 	SET_OPT_ITEM(OPT_DEBUGGING, debugging);
 	SET_OPT_ITEM(OPT_KEEPNORMAL, keep_normal);
 	SET_OPT_ITEM(OPT_KEEPERROR, keep_error);
+	SET_OPT_ITEM(OPT_OLDEXC, oldexc);
+	SET_OPT_ITEM(OPT_NOSITE, nosite);
 	/* The rest are not settable interactively */
 
 #undef SET_OPT_ITEM
@@ -141,6 +143,9 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 		if ( item == OPT_CANCEL ) {
 			DisposeDialog(dialog);
 			exit(0);
+		}
+		if ( item == OPT_HELP ) {
+			HMSetBalloons(!HMGetBalloons());
 		}
 		if ( item == OPT_CMDLINE ) {
 			int new_argc, newer_argc;
@@ -169,11 +174,13 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 		
 		OPT_ITEM(OPT_INSPECT, inspect);
 		OPT_ITEM(OPT_VERBOSE, verbose);
-/*		OPT_ITEM(OPT_SUPPRESS, suppress_print); */
+		OPT_ITEM(OPT_OPTIMIZE, optimize);
 		OPT_ITEM(OPT_UNBUFFERED, unbuffered);
 		OPT_ITEM(OPT_DEBUGGING, debugging);
 		OPT_ITEM(OPT_KEEPNORMAL, keep_normal);
 		OPT_ITEM(OPT_KEEPERROR, keep_error);
+		OPT_ITEM(OPT_OLDEXC, oldexc);
+		OPT_ITEM(OPT_NOSITE, nosite);
 		
 #undef OPT_ITEM
 	}
@@ -233,6 +240,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 	/* Copy selected options to where the machine-independent stuff wants it */
 	Py_VerboseFlag = options.verbose;
 /*	Py_SuppressPrintingFlag = options.suppress_print; */
+	Py_OptimizeFlag = options.optimize;
 	Py_DebugFlag = options.debugging;
 	if ( options.noargs ) {
 		/* don't process events at all without the scripts permission */
@@ -243,6 +251,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 		/* Should we disable command-dot as well? */
 		PyMac_SetSchedParams(&scp);
 	}
+	/* XXXX dispatch oldexc and nosite */
 
 	/* Set buffering */
 	if (options.unbuffered) {
