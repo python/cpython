@@ -248,7 +248,7 @@ def parse_multipart(fp, pdict):
         boundary = pdict['boundary']
     if not valid_boundary(boundary):
         raise ValueError,  ('Invalid boundary in multipart form: %s'
-                            % `ib`)
+                            % `boundary`)
 
     nextpart = "--" + boundary
     lastpart = "--" + boundary + "--"
