@@ -939,7 +939,10 @@ with regular slices.
 
 A class can implement certain operations that are invoked by special
 syntax (such as arithmetic operations or subscripting and slicing) by
-defining methods with special names.  For instance, if a class defines
+defining methods with special names.\indexii{operator}{overloading}
+This is Python's approach to \dfn{operator overloading}, allowing
+classes to define their own behavior with respect to language
+operators.  For instance, if a class defines
 a method named \method{__getitem__()}, and \code{x} is an instance of
 this class, then \code{x[i]} is equivalent to
 \code{x.__getitem__(i)}.  Except where mentioned, attempts to execute
