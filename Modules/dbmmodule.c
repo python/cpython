@@ -285,7 +285,7 @@ dbm_getattr(dbmobject *dp, char *name)
 }
 
 static PyTypeObject Dbmtype = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0,
 	"dbm",
 	sizeof(dbmobject),
@@ -342,6 +342,7 @@ DL_EXPORT(void)
 initdbm(void) {
 	PyObject *m, *d, *s;
 
+	Dbmtype.ob_type = &PyType_Type;
 	m = Py_InitModule("dbm", dbmmodule_methods);
 	d = PyModule_GetDict(m);
 	if (DbmError == NULL)

@@ -350,7 +350,7 @@ PyCursesPanel_GetAttr(PyCursesPanelObject *self, char *name)
 /* -------------------------------------------------------*/
 
 PyTypeObject PyCursesPanel_Type = {
-    PyObject_HEAD_INIT(&PyType_Type)
+    PyObject_HEAD_INIT(NULL)
     0,			/*ob_size*/
     "curses panel",	/*tp_name*/
     sizeof(PyCursesPanelObject),	/*tp_basicsize*/
@@ -469,10 +469,13 @@ static PyMethodDef PyCurses_methods[] = {
 
 /* Initialization function for the module */
 
-void
+DL_EXPORT(void)
 init_curses_panel(void)
 {
     PyObject *m, *d, *v;
+
+	/* Initialize object type */
+	PyCursesPanel_Type.ob_type = &PyType_Type;
 
     import_curses();
         
