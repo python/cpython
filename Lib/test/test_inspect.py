@@ -370,3 +370,7 @@ test(args == ['self'], 'A.m args')
 test(varargs is None, 'A.m varargs')
 test(varkw is None, 'A.m varkw')
 test(defaults is None, 'A.m defaults')
+
+# Doc/lib/libinspect.tex claims there are 11 such functions
+count = len(filter(lambda x:x.startswith('is'), dir(inspect)))
+test(count == 11, "There are %d (not 11) is* functions", count)
