@@ -68,7 +68,16 @@ fi
 
 
 # The link in the app bundles needs updated.
+installed_python=$DEST/Library/Frameworks/Python.framework/Versions/$PYVER/Resources/Python.app/Contents/MacOS/python
 for app in BuildApplet IDLE PackageManager PythonIDE; do
-    ln -fsh $DEST/Library/Frameworks/Python.framework/Versions/$PYVER/Resources/Python.app/Contents/MacOS/python \
+    ln -fsh  $installed_python \
           $DEST/Applications/MacPython-$PYVER/$app.app/Contents/MacOS
+    ed -s $DEST/Applications/MacPython-$PYVER/$app.app/Contents/MacOS/$app << xyzzy
+1c
+#!$installed_python
+.
+w
+q
+xyzzy
+    
 done
