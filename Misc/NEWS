@@ -55,6 +55,10 @@ Core and builtins
 Extension modules
 -----------------
 
+- mimetools.choose_boundary() could return duplicate strings at times,
+  especially likely on Windows.  The strings returned are now guaranteed
+  unique within a single program run.
+
 - thread.interrupt_main() raises KeyboardInterrupt in the main thread.
   dummy_thread has also been modified to try to simulate the behavior.
 
