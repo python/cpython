@@ -172,6 +172,21 @@ determination.
 \end{cfuncdesc}
 
 
+\begin{cfuncdesc}{PyObject*}{PyObject_Call}{PyObject *callable_object,
+                                            PyObject *args,
+                                            PyObject *kw}
+  Call a callable Python object \var{callable_object}, with arguments
+  given by the tuple \var{args}, and named arguments given by the
+  dictionary \var{kw}. If no named arguments are needed, \var{kw} may
+  be \NULL{}. \var{args} must not be \NULL{}, use an empty tuple if
+  no arguments are needed. Returns the result of the call on success,
+  or \NULL{} on failure.  This is the equivalent of the Python
+  expression \samp{apply(\var{callable_object}, \var{args}, \var{kw})}
+  or \samp{\var{callable_object}(*\var{args}, **\var{kw})}.
+  \bifuncindex{apply}
+\end{cfuncdesc}
+
+
 \begin{cfuncdesc}{PyObject*}{PyObject_CallObject}{PyObject *callable_object,
                                                   PyObject *args}
   Call a callable Python object \var{callable_object}, with arguments
@@ -261,6 +276,7 @@ determination.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyObject_Length}{PyObject *o}
+\cfuncline{int}{PyObject_Size}{PyObject *o}
   Return the length of object \var{o}.  If the object \var{o} provides
   both sequence and mapping protocols, the sequence length is
   returned.  On error, \code{-1} is returned.  This is the equivalent
