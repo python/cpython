@@ -435,12 +435,39 @@ class Dist (Command):
 
     def make_zipfile (self, base_dir):
 
-        # This assumes the Unix 'zip' utility -- it could be easily recast
-        # to use pkzip (or whatever the command-line zip creation utility
-        # on Redmond's archaic CP/M knockoff is nowadays), but I'll let
-        # someone who can actually test it do that.
+        # This initially assumed the Unix 'zip' utility -- but
+        # apparently InfoZIP's zip.exe works the same under Windows, so
+        # no changes needed!
 
-        self.spawn (["zip", "-r", base_dir + ".zip", base_dir])
+        try:
+            self.spawn (["zip", "-r", base_dir + ".zip", base_dir])
+        except DistutilsExecError:
+
+            # XXX really should distinguish between "couldn't find
+            # external 'zip' command" and "zip failed" -- shouldn't try
+            # again in the latter case.  (I think fixing this will
+            # require some cooperation from the spawn module -- perhaps
+            # a utility function to search the path, so we can fallback
+            # on zipfile.py without the failed spawn.)
+            try:
+                import zipfile
+            except ImportError:
+                raise DistutilsExecError, \
+                      ("unable to create zip file '%s.zip':" + 
+                       "could neither find a standalone zip utility nor " +
+                       "import the 'zipfile' module") % base_dir
+
+                z = zipfile.ZipFile (base_dir + ".zip", "wb",
+                                     compression=zipfile.ZIP_DEFLATED)
+            
+            def visit (z, dirname, names):
+                for name in names:
+                    path = os.path.join (dirname, name)
+                    if os.path.isfile (path):
+                        z.write (path, path)
+                        
+            os.path.walk (base_dir, visit, z)
+            z.close()
 
 
     def make_distribution (self):
