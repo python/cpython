@@ -522,7 +522,7 @@ r_object(p)
 			object *varnames = NULL;
 			object *filename = NULL;
 			object *name = NULL;
-			int firstlineno;
+			int firstlineno = 0;
 			object *lnotab = NULL;
 			
 			code = r_object(p);
