@@ -72,7 +72,6 @@ extern void initsignal();
 extern void initdl();
 extern void initsyslog();
 extern void initgestalt();
-extern void initmacfs();
 extern void initbinascii();
 extern void initoperator();
 extern void initerrno();
@@ -117,6 +116,8 @@ extern void init_Ctl();
 extern void init_Dlg();
 extern void init_Drag();
 extern void init_Evt();
+extern void init_File();
+extern void init_Folder();
 extern void init_Menu();
 extern void init_Qd();
 extern void init_Res();
@@ -199,7 +200,6 @@ struct _inittab _PyImport_Inittab[] = {
 	{"md5", initmd5},
 	{"rotor", initrotor},
 	{"gestalt", initgestalt},
-	{"macfs", initmacfs},
 	{"binascii", initbinascii},
 	{"operator", initoperator},
 	{"errno", initerrno},
@@ -224,6 +224,8 @@ struct _inittab _PyImport_Inittab[] = {
 	{"_Dlg", init_Dlg},
 	{"_Drag", init_Drag},
 	{"_Evt", init_Evt},
+	{"_File", init_File},
+	{"_Folder", init_Folder},
 	{"_Menu", init_Menu},
 	{"_Qd", init_Qd},
 	{"_Win", init_Win},
