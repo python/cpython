@@ -1185,6 +1185,9 @@ parsenumber(struct compiling *co, char *s)
 static PyObject *
 decode_utf8(char **sPtr, char *end, char* encoding)
 {
+#ifndef Py_USING_UNICODE
+	abort();
+#else
 	PyObject *u, *v;
 	char *s, *t;
 	t = s = *sPtr;
@@ -1197,6 +1200,7 @@ decode_utf8(char **sPtr, char *end, char* encoding)
 	v = PyUnicode_AsEncodedString(u, encoding, NULL);
 	Py_DECREF(u);
 	return v;
+#endif
 }
 
 static PyObject *
@@ -1312,12 +1316,18 @@ parsestr(struct compiling *com, char *s)
 			 strcmp(encoding, "iso-8859-1") != 0);
 	if (rawmode || strchr(s, '\\') == NULL) {
 		if (need_encoding) {
+#ifndef Py_USING_UNICODE
+			/* This should not happen - we never see any other
+			   encoding. */
+			abort();
+#else
 			PyObject* u = PyUnicode_DecodeUTF8(s, len, NULL);
 			if (u == NULL)
 				return NULL;
 			v = PyUnicode_AsEncodedString(u, encoding, NULL);
 			Py_DECREF(u);
 			return v;
+#endif
 		} else {
 			return PyString_FromStringAndSize(s, len);
 		}
