@@ -214,11 +214,9 @@ select_select(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	else {
-		tout = PyNumber_Float(tout);
-		if (!tout)
+		timeout = PyFloat_AsDouble(tout);
+		if (timeout == -1 && PyErr_Occurred())
 			return NULL;
-		timeout = PyFloat_AS_DOUBLE(tout);
-		Py_DECREF(tout);
 		if (timeout > (double)LONG_MAX) {
 			PyErr_SetString(PyExc_OverflowError,
 					"timeout period too long");
