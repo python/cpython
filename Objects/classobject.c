@@ -47,15 +47,35 @@ PyClass_New(bases, dict, name)
 {
 	PyClassObject *op, *dummy;
 	static PyObject *getattrstr, *setattrstr, *delattrstr;
-	static PyObject *docstr;
+	static PyObject *docstr, *modstr, *namestr;
 	if (docstr == NULL) {
 		docstr= PyString_InternFromString("__doc__");
 		if (docstr == NULL)
 			return NULL;
 	}
+	if (modstr == NULL) {
+		modstr= PyString_InternFromString("__module__");
+		if (modstr == NULL)
+			return NULL;
+	}
+	if (namestr == NULL) {
+		namestr= PyString_InternFromString("__name__");
+		if (namestr == NULL)
+			return NULL;
+	}
 	if (PyDict_GetItem(dict, docstr) == NULL) {
 		if (PyDict_SetItem(dict, docstr, Py_None) < 0)
 			return NULL;
+	}
+	if (PyDict_GetItem(dict, modstr) == NULL) {
+		PyObject *globals = PyEval_GetGlobals();
+		if (globals != NULL) {
+			PyObject *name = PyDict_GetItem(globals, namestr);
+			if (name != NULL) {
+				if (PyDict_SetItem(dict, modstr, name) < 0)
+					return NULL;
+			}
+		}
 	}
 	if (bases == NULL) {
 		bases = PyTuple_New(0);
@@ -114,6 +134,7 @@ class_lookup(cp, name, pclass)
 	}
 	n = PyTuple_Size(cp->cl_bases);
 	for (i = 0; i < n; i++) {
+		/* XXX What if one of the bases is not a class? */
 		PyObject *v = class_lookup(
 			(PyClassObject *)
 			PyTuple_GetItem(cp->cl_bases, i), name, pclass);
