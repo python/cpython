@@ -321,6 +321,7 @@ libinstall:	python $(srcdir)/Lib/$(PLATDIR)
 				esac; \
 			done; \
 		done
+		$(INSTALL_DATA) LICENSE $(LIBDEST)/LICENSE.txt
 		PYTHONPATH=$(LIBDEST) \
 			./python$(EXE) -tt $(LIBDEST)/compileall.py $(LIBDEST)
 		PYTHONPATH=$(LIBDEST) \
