@@ -147,7 +147,7 @@ class _socketobject:
     for _m in ('bind', 'connect', 'connect_ex', 'fileno', 'listen',
                'getpeername', 'getsockname',
                'getsockopt', 'setsockopt',
-               'recv', 'recvfrom', 'send', 'sendto',
+               'recv', 'recvfrom', 'send', 'sendall', 'sendto',
                'setblocking',
                'shutdown'):
         exec _s % (_m, _m)
