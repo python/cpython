@@ -357,7 +357,9 @@ class PimpPackage:
 		
 		rv = []
 		if not self._dict.get('Download-URL'):
-			return [(None, "This package needs to be installed manually")]
+			return [(None, 
+				"%s: This package needs to be installed manually (no Download-URL field)" %
+					self.fullname())]
 		if not self._dict.get('Prerequisites'):
 			return []
 		for item in self._dict['Prerequisites']:
@@ -447,14 +449,15 @@ class PimpPackage:
 				break
 		else:
 			return "unknown extension for archive file: %s" % filename
-		basename = filename[:-len(ext)]
+		self.basename = filename[:-len(ext)]
 		cmd = cmd % self.archiveFilename
 		if self._cmd(output, self._db.preferences.buildDir, cmd):
 			return "unpack command failed"
 			
 	def installPackageOnly(self, output=None):
 		"""Default install method, to be overridden by subclasses"""
-		return "Cannot automatically install package %s" % self.fullname()
+		return "%s: This package needs to be installed manually (no support for flavor=\"%s\")" \
+			% (self.fullname(), self._dict.get(flavor, ""))
 			
 	def installSinglePackage(self, output=None):
 		"""Download, unpack and install a single package.
@@ -463,14 +466,14 @@ class PimpPackage:
 		will receive a log of what happened."""
 		
 		if not self._dict['Download-URL']:
-			return "%s: This package needs to be installed manually" % _fmtpackagename(self)
+			return "%s: This package needs to be installed manually (no Download-URL field)" % _fmtpackagename(self)
 		msg = self.downloadPackageOnly(output)
 		if msg:
-			return "download %s: %s" % (self.fullname(), msg)
+			return "%s: download: %s" % (self.fullname(), msg)
 			
 		msg = self.unpackPackageOnly(output)
 		if msg:
-			return "unpack %s: %s" % (self.fullname(), msg)
+			return "%s: unpack: %s" % (self.fullname(), msg)
 			
 		return self.installPackageOnly(output)
 		
@@ -517,6 +520,7 @@ class PimpPackage_binary(PimpPackage):
 		
 		If output is given it should be a file-like object and it
 		will receive a log of what happened."""
+		print 'PimpPackage_binary installPackageOnly'
 					
 		msgs = []
 		if self._dict.has_key('Pre-install-command'):
@@ -557,7 +561,7 @@ class PimpPackage_source(PimpPackage):
 		"""Unpack a source package and check that setup.py exists"""
 		PimpPackage.unpackPackageOnly(self, output)
 		# Test that a setup script has been create
-		self._buildDirname = os.path.join(self._db.preferences.buildDir, basename)
+		self._buildDirname = os.path.join(self._db.preferences.buildDir, self.basename)
 		setupname = os.path.join(self._buildDirname, "setup.py")
 		if not os.path.exists(setupname) and not NO_EXECUTE:
 			return "no setup.py found after unpack of archive"
