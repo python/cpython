@@ -54,9 +54,8 @@ debug output from Python may not match this screen dump exactly):
     C>..\..\PCbuild\python_d
     Adding parser accelerators ...
     Done.
-    2.1a1 (#9, Jan 17 2001, 23:26:42) [MSC 32 bit (Intel)] on win32
-    Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam
-    Copyright 1995-2000 Corporation for National Research Initiatives (CNRI)
+    Python 2.1a1 (#9, Jan 17 2001, 23:26:37) [MSC 32 bit (Intel)] on win32
+    Type "copyright", "credits" or "license" for more information.
     >>> import example
     [4897 refs]
     >>> example.foo()
