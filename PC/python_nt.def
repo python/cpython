@@ -114,6 +114,8 @@ EXPORTS
 	PyErr_SetString
 	PyEval_AcquireLock
 	PyEval_AcquireThread
+	PyEval_CallFunction
+	PyEval_CallMethod
 	PyEval_CallObject
 	PyEval_CallObjectWithKeywords
 	PyEval_EvalCode
