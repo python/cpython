@@ -7,6 +7,8 @@
 """#"
 import sha
 
+encoding = 'utf-8'
+
 def test_methods():
 
     h = sha.sha()
@@ -48,7 +50,7 @@ def test_methods():
             (char + u'ABC').title(),
             
             ]
-        h.update(u''.join(data).encode('unicode-internal'))
+        h.update(u''.join(data).encode(encoding))
     return h.hexdigest()
 
 def test_unicodedata():
