@@ -42,8 +42,8 @@ corresponding Unix manual entries for more information on calls.");
 #include <io.h>
 #include <stdio.h>
 #include <process.h>
-#include "osdefs.h"
 #endif
+#include "osdefs.h"
 #endif
 
 #include <sys/types.h>

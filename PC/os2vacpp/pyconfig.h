@@ -54,7 +54,7 @@
 /* Provide a default library so writers of extension modules
  * won't have to explicitly specify it anymore
  */
-#pragma library("Python22.lib")
+#pragma library("Python23.lib")
 
 /***************************************************/
 /*    32-Bit IBM VisualAge C/C++ v3.0 for OS/2     */
