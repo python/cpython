@@ -115,8 +115,11 @@ Py_Initialize(void)
 		Py_FatalError("Py_Initialize: can't make first thread");
 	(void) PyThreadState_Swap(tstate);
 
-	if (PyType_InitDict(&PyType_Type) < 0)
+	if (PyType_Ready(&PyType_Type) < 0)
 		Py_FatalError("Py_Initialize: can't initialize 'type'");
+
+	if (PyType_Ready(&PyList_Type) < 0)
+		Py_FatalError("Py_Initialize: can't initialize 'list'");
 
 	interp->modules = PyDict_New();
 	if (interp->modules == NULL)

@@ -297,7 +297,7 @@ extern DL_IMPORT(PyTypeObject) PyBaseObject_Type; /* Most base object type */
 
 #define PyType_Check(op) PyObject_TypeCheck(op, &PyType_Type)
 
-extern DL_IMPORT(int) PyType_InitDict(PyTypeObject *);
+extern DL_IMPORT(int) PyType_Ready(PyTypeObject *);
 extern DL_IMPORT(PyObject *) PyType_GenericAlloc(PyTypeObject *, int);
 extern DL_IMPORT(PyObject *) PyType_GenericNew(PyTypeObject *,
 					       PyObject *, PyObject *);

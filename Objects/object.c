@@ -1160,7 +1160,7 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 	PyObject **dictptr;
 
 	if (tp->tp_dict == NULL) {
-		if (PyType_InitDict(tp) < 0)
+		if (PyType_Ready(tp) < 0)
 			return NULL;
 	}
 
@@ -1207,7 +1207,7 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 	PyObject **dictptr;
 
 	if (tp->tp_dict == NULL) {
-		if (PyType_InitDict(tp) < 0)
+		if (PyType_Ready(tp) < 0)
 			return -1;
 	}
 

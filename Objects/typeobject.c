@@ -387,7 +387,7 @@ best_base(PyObject *bases)
 			return NULL;
 		}
 		if (base_i->tp_dict == NULL) {
-			if (PyType_InitDict(base_i) < 0)
+			if (PyType_Ready(base_i) < 0)
 				return NULL;
 		}
 		candidate = solid_base(base_i);
@@ -656,7 +656,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	type->tp_free = _PyObject_Del;
 
 	/* Initialize the rest */
-	if (PyType_InitDict(type) < 0) {
+	if (PyType_Ready(type) < 0) {
 		Py_DECREF(type);
 		return NULL;
 	}
@@ -719,7 +719,7 @@ type_getattro(PyTypeObject *type, PyObject *name)
 
 	/* Initialize this type (we'll assume the metatype is initialized) */
 	if (type->tp_dict == NULL) {
-		if (PyType_InitDict(type) < 0)
+		if (PyType_Ready(type) < 0)
 			return NULL;
 	}
 
@@ -1157,7 +1157,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 }
 
 int
-PyType_InitDict(PyTypeObject *type)
+PyType_Ready(PyTypeObject *type)
 {
 	PyObject *dict, *bases, *x;
 	PyTypeObject *base;
@@ -1185,7 +1185,7 @@ PyType_InitDict(PyTypeObject *type)
 
 	/* Initialize the base class */
 	if (base && base->tp_dict == NULL) {
-		if (PyType_InitDict(base) < 0)
+		if (PyType_Ready(base) < 0)
 			return -1;
 	}
 
@@ -1892,7 +1892,7 @@ add_tp_new_wrapper(PyTypeObject *type)
 	return PyDict_SetItemString(type->tp_defined, "__new__", func);
 }
 
-/* This function is called by PyType_InitDict() to populate the type's
+/* This function is called by PyType_Ready() to populate the type's
    dictionary with method descriptors for function slots.  For each
    function slot (like tp_repr) that's defined in the type, one or
    more corresponding descriptors are added in the type's tp_defined
@@ -2335,7 +2335,7 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 /* This is called at the very end of type_new() (even after
-   PyType_InitDict()) to complete the initialization of dynamic types.
+   PyType_Ready()) to complete the initialization of dynamic types.
    The dict argument is the dictionary argument passed to type_new(),
    which is the local namespace of the class statement, in other
    words, it contains the methods.  For each special method (like
