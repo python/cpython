@@ -56,7 +56,7 @@ class Play_Audio_mac:
 		if self._sampwidth == 1:
 			import audioop
 			data = audioop.add(data, '\x80'*len(data), 1)
-		h1 = struct.pack('llhhllbbl',
+		h1 = struct.pack('llHhllbbl',
 			id(data)+MacOS.string_id_to_buffer,
 			self._nchannels,
 			self._outrate, 0,
