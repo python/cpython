@@ -110,6 +110,14 @@ class MyScanner(Scanner):
 			# MCDoAction and more
 			([('void', '*', 'OutMode')], [('mcactionparams', '*', 'InMode')]),
 			
+			# SetTimeBaseZero. Does not handle NULLs, unfortunately
+			([('TimeRecord', 'zero', 'OutMode')], [('TimeRecord', 'zero', 'InMode')]),
+			
+			# ConvertTime and ConvertTimeScale
+			([('TimeRecord', 'inout', 'OutMode')], [('TimeRecord', 'inout', 'InOutMode')]),
+			
+			# AddTime and SubtractTime
+			([('TimeRecord', 'dst', 'OutMode')], [('TimeRecord', 'dst', 'InOutMode')]),
 			]
 			
 if __name__ == "__main__":
