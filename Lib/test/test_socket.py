@@ -8,7 +8,7 @@
 #	sktobj.shutdown()
 
 
-from test_support import verbose
+from test_support import verbose, TestFailed
 import socket
 import os
 import time
@@ -89,39 +89,41 @@ except socket.error:
     pass
 
 
+canfork = hasattr(os, 'fork')
 try:
     PORT = 50007
-    if os.fork():
+    if not canfork or os.fork():
 	# parent is server
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.bind(hostname, PORT)
 	s.listen(1)
 	if verbose:
 	    print 'parent accepting'
-	conn, addr = s.accept()
-	if verbose:
-	    print 'connected by', addr
-	# couple of interesting tests while we've got a live socket
-	f = conn.fileno()
-	if verbose:
-	    print 'fileno:', f
-	p = conn.getpeername()
-	if verbose:
-	    print 'peer:', p
-	n = conn.getsockname()
-	if verbose:
-	    print 'sockname:', n
-	f = conn.makefile()
-	if verbose:
-	    print 'file obj:', f
-	while 1:
-	    data = conn.recv(1024)
-	    if not data:
-		break
+	if canfork:
+	    conn, addr = s.accept()
 	    if verbose:
-		print 'received:', data
-	    conn.send(data)
-	conn.close()
+		print 'connected by', addr
+	    # couple of interesting tests while we've got a live socket
+	    f = conn.fileno()
+	    if verbose:
+		print 'fileno:', f
+	    p = conn.getpeername()
+	    if verbose:
+		print 'peer:', p
+	    n = conn.getsockname()
+	    if verbose:
+		print 'sockname:', n
+	    f = conn.makefile()
+	    if verbose:
+		print 'file obj:', f
+	    while 1:
+		data = conn.recv(1024)
+		if not data:
+		    break
+		if verbose:
+		    print 'received:', data
+		conn.send(data)
+	    conn.close()
     else:
 	try:
 	    # child is client
@@ -138,5 +140,5 @@ try:
 	    s.close()
 	finally:
 	    os._exit(1)
-except socket.error:
-    pass
+except socket.error, msg:
+    raise TestFailed, msg
