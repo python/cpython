@@ -493,7 +493,10 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 			sprintf(p, ".\\%-.255s", pathname);
 			pathname = pathbuf;
 		}
-		hDLL = LoadLibrary(pathname);
+		/* Look for dependent DLLs in directory of pathname first */
+		/* XXX This call doesn't exist in Windows CE */
+		hDLL = LoadLibraryEx(pathname, NULL,
+				     LOAD_WITH_ALTERED_SEARCH_PATH);
 		if (hDLL==NULL){
 			char errBuf[256];
 			unsigned int errorCode;
