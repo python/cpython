@@ -806,7 +806,7 @@ PySequence_Tuple(s)
 
   for(i=0; i < l; i++)
     {
-      if(((item=PySequence_GetItem(s,i))) ||
+      if(!(item=PySequence_GetItem(s,i)) ||
 	 PyTuple_SetItem(t,i,item) == -1)
 	{
 	  Py_DECREF(t);
@@ -830,7 +830,7 @@ PySequence_List(s)
 
   for(i=0; i < l; i++)
     {
-      if((item=PySequence_GetItem(s,i)) ||
+      if(!(item=PySequence_GetItem(s,i)) ||
 	 PyList_SetItem(t,i,item) == -1)
 	{
 	  Py_DECREF(t);
