@@ -46,7 +46,7 @@ CGrafPtr = OpaqueByValueType("CGrafPtr", "GrafObj")
 GrafPtr = OpaqueByValueType("GrafPtr", "GrafObj")
 BitMap_ptr = OpaqueByValueType("BitMapPtr", "BMObj")
 const_BitMap_ptr = OpaqueByValueType("const BitMap *", "BMObj")
-BitMap = OpaqueType("BitMap", "BMObj")
+BitMap = OpaqueType("BitMap", "BMObj_NewCopied", "BUG")
 RGBColor = OpaqueType('RGBColor', 'QdRGB')
 RGBColor_ptr = RGBColor
 FontInfo = OpaqueType('FontInfo', 'QdFI')
@@ -64,7 +64,7 @@ includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
 
 #if !ACCESSOR_CALLS_ARE_FUNCTIONS
-#define GetPortBitMapForCopyBits(port) (((GrafPort)(port))->portBits)
+#define GetPortBitMapForCopyBits(port) ((const struct BitMap *)&((GrafPort *)(port))->portBits)
 #define GetPortPixMap(port) (((CGrafPtr)(port))->portPixMap)
 #define GetPortBounds(port, bounds) (*(bounds) = (port)->portRect, (bounds))
 #define GetPortForeColor(port, color) (*(color) = (port)->rgbFgColor, (color))
@@ -132,6 +132,8 @@ includestuff = includestuff + """
 #define QDIsPortBuffered(port) 0
 #endif /* !TARGET_API_MAC_CARBON  */
 
+staticforward PyObject *BMObj_NewCopied(BitMapPtr);
+
 /*
 ** Parse/generate RGB records
 */
@@ -167,7 +169,25 @@ PyObject *QdFI_New(itself)
 	return Py_BuildValue("hhhh", itself->ascent, itself->descent,
 			itself->widMax, itself->leading);
 }
+"""
 
+finalstuff = finalstuff + """
+/* Like BMObj_New, but the original bitmap data structure is copied (and
+** released when the object is released)
+*/
+PyObject *BMObj_NewCopied(itself)
+	BitMapPtr itself;
+{
+	BitMapObject *it;
+	BitMapPtr itself_copy;
+	
+	if ((itself_copy=(BitMapPtr)malloc(sizeof(BitMap))) == NULL)
+		return PyErr_NoMemory();
+	*itself_copy = *itself;
+	it = (BitMapObject *)BMObj_New(itself_copy);
+	it->referred_bitmap = itself_copy;
+	return (PyObject *)it;
+}
 
 """
 
@@ -458,7 +478,7 @@ class QDGlobalsAccessObjectDefinition(ObjectDefinition):
 	if ( strcmp(name, "screenBits") == 0 ) {
 		BitMap rv;
 		GetQDGlobalsScreenBits(&rv);
-		return BMObj_New(&rv);
+		return BMObj_NewCopied(&rv);
 	}
 	if ( strcmp(name, "thePort") == 0 ) 
 		return GrafObj_New(GetQDGlobalsThePort());
