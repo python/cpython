@@ -5,6 +5,7 @@ import Wtraceback
 from Wkeys import *
 
 import macfs
+import MACFS
 import MacOS
 import Win
 import Res
@@ -134,7 +135,7 @@ class Editor(W.Window):
 		try:
 			resref = Res.FSpOpenResFile(self.path, 3)
 		except Res.Error:
-			Res.CreateResFile(self.path)
+			Res.FSpCreateResFile(self.path, self._creator, 'TEXT', MACFS.smAllScripts)
 			resref = Res.FSpOpenResFile(self.path, 3)
 		try:
 			data = Res.Resource(marshal.dumps(self.settings))
