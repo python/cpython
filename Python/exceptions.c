@@ -1042,10 +1042,7 @@ static struct {
 
 
 
-void
-#ifdef WIN32
-__declspec(dllexport)
-#endif /* WIN32 */
+DL_EXPORT(void)
 init_exceptions(void)
 {
     char *modulename = "exceptions";
@@ -1128,10 +1125,7 @@ init_exceptions(void)
 }
 
 
-void
-#ifdef WIN32
-__declspec(dllexport)
-#endif /* WIN32 */
+DL_EXPORT(void)
 fini_exceptions(void)
 {
     int i;
