@@ -610,7 +610,6 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 		PY_LONG_LONG *p = va_arg( *p_va, PY_LONG_LONG * );
 		PY_LONG_LONG ival = PyLong_AsLongLong( arg );
 		if( ival == (PY_LONG_LONG)-1 && PyErr_Occurred() ) {
-			PyErr_Clear();
 			return converterr("long<L>", arg, msgbuf, bufsize);
 		} else {
 			*p = ival;
