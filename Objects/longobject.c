@@ -1615,12 +1615,15 @@ long_true_divide(PyObject *v, PyObject *w)
 {
 	PyLongObject *a, *b;
 	double ad, bd;
-	int aexp, bexp;
+	int aexp, bexp, failed;
 
 	CONVERT_BINOP(v, w, &a, &b);
 	ad = _PyLong_AsScaledDouble((PyObject *)a, &aexp);
 	bd = _PyLong_AsScaledDouble((PyObject *)b, &bexp);
-	if ((ad == -1.0 || bd == -1.0) && PyErr_Occurred())
+	failed = (ad == -1.0 || bd == -1.0) && PyErr_Occurred();
+	Py_DECREF(a);
+	Py_DECREF(b);
+	if (failed)
 		return NULL;
 
 	if (bd == 0.0) {
