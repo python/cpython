@@ -146,6 +146,7 @@ class Distribution:
         self.package_dir = None
         self.py_modules = None
         self.libraries = None
+        self.headers = None
         self.ext_modules = None
         self.ext_package = None
         self.include_dirs = None
@@ -698,6 +699,9 @@ class Distribution:
 
     def has_modules (self):
         return self.has_pure_modules() or self.has_ext_modules()
+
+    def has_headers (self):
+        return self.headers and len(self.headers) > 0
 
     def has_scripts (self):
         return self.scripts and len(self.scripts) > 0
