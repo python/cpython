@@ -24,7 +24,7 @@ def get(using=None):
     for browser in alternatives:
         if browser.find('%s') > -1:
             # User gave us a command line, don't mess with it.
-            return browser
+            return GenericBrowser(browser)
         else:
             # User gave us a browser name.
             command = _browsers[browser.lower()]
