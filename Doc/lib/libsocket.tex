@@ -265,7 +265,7 @@ protocol number.  The address family should be \constant{AF_INET}, \constant{AF_
 The protocol number is usually zero and may be omitted in that case.
 \end{funcdesc}
 
-\begin{funcdesc}{ssl}{sock, keyfile, certfile}
+\begin{funcdesc}{ssl}{sock\optional{, keyfile, certfile}}
 Initiate a SSL connection over the socket \var{sock}. \var{keyfile} is
 the name of a PEM formatted file that contains your private
 key. \var{certfile} is a PEM formatted certificate chain file. On
