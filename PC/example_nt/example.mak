@@ -34,8 +34,8 @@ NULL=nul
 # Begin Project
 # PROP Target_Last_Scanned "example - Win32 Debug"
 CPP=cl.exe
-MTL=mktyplib.exe
 RSC=rc.exe
+MTL=mktyplib.exe
 
 !IF  "$(CFG)" == "example - Win32 Release"
 
@@ -204,7 +204,6 @@ LINK32_OBJS= \
 SOURCE=.\example.c
 DEP_CPP_EXAMP=\
 	"..\Include\abstract.h"\
-	"..\Include\bltinmodule.h"\
 	"..\Include\ceval.h"\
 	"..\Include\classobject.h"\
 	"..\Include\cobject.h"\
@@ -259,7 +258,7 @@ SOURCE=.\readme.txt
 ################################################################################
 # Begin Source File
 
-SOURCE=\python\src\vc40\python15.lib
+SOURCE=.\example.def
 
 !IF  "$(CFG)" == "example - Win32 Release"
 
@@ -271,7 +270,7 @@ SOURCE=\python\src\vc40\python15.lib
 ################################################################################
 # Begin Source File
 
-SOURCE=.\example.def
+SOURCE=\users\guido\python\src\vc40\python15.lib
 
 !IF  "$(CFG)" == "example - Win32 Release"
 
