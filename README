@@ -231,6 +231,9 @@ AIX:	A complete overhaul of the shared library support is now in
 	place.  See Misc/AIX-NOTES for some notes on how it's done.
 	(The optimizer bug reported at this place in previous releases
 	has been worked around by a minimal code change.)
+	In addition, Gary Duzan has a hint for C++ users: to enable
+	full C++ module support, set CC="xlC" (or CC="xlC_r" for thread
+	support in AIX 4.2.1).
 
 HP-UX:	Please read the file Misc/HPUX-NOTES for shared libraries.
 	When using threading, you may have to add -D_REENTRANT to the
