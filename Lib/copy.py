@@ -220,6 +220,7 @@ except AttributeError:
     pass
 d[types.TypeType] = _deepcopy_atomic
 d[types.XRangeType] = _deepcopy_atomic
+d[types.ClassType] = _deepcopy_atomic
 
 def _deepcopy_list(x, memo):
     y = []
