@@ -134,6 +134,7 @@ errno errnomodule.c	# posix (UNIX) errno values
 #dbm dbmmodule.c 	# dbm(3) may require -lndbm or similar
 #nis nismodule.c 	# Sun yellow pages -- not everywhere
 #termios termios.c	# Steen Lumholt's termios module
+#_xdr xdrmodule.c # -lnsl # Helper for xdrlib.py
 
 
 # Multimedia modules -- on by default.
