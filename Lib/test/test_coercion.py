@@ -67,10 +67,25 @@ class MethodNumber:
 
 
 candidates = [ 2, 4.0, 2L, 2+0j, [1], (2,), None,
-               MethodNumber(1), CoerceNumber(2)]
+               MethodNumber(2), CoerceNumber(2)]
 
 infix_binops = [ '+', '-', '*', '/', '**', '%' ]
 prefix_binops = [ 'divmod' ]
+
+def format_float(value):
+    if abs(value) < 0.01:
+        return '0.0'
+    else:
+        return '%.1f' % value
+
+# avoid testing platform fp quirks
+def format_result(value):
+    if isinstance(value, complex):
+        return '(%s + %sj)' % (format_float(value.real),
+                               format_float(value.imag))
+    elif isinstance(value, float):
+        return format_float(value)
+    return str(value)
 
 def do_infix_binops():
     for a in candidates:
@@ -83,7 +98,7 @@ def do_infix_binops():
                     error = sys.exc_info()[:2]
                     print '... %s' % error[0]
                 else:
-                    print '=', x
+                    print '=', format_result(x)
                 try:
                     z = copy.copy(a)
                 except copy.Error:
@@ -95,7 +110,7 @@ def do_infix_binops():
                     error = sys.exc_info()[:2]
                     print '... %s' % error[0]
                 else:
-                    print '=>', z
+                    print '=>', format_result(z)
 
 def do_prefix_binops():
     for a in candidates:
@@ -108,7 +123,7 @@ def do_prefix_binops():
                     error = sys.exc_info()[:2]
                     print '... %s' % error[0]
                 else:
-                    print '=', x
+                    print '=', format_result(x)
 
 warnings.filterwarnings("ignore",
                         r'complex divmod\(\), // and % are deprecated',
