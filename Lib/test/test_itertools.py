@@ -504,19 +504,19 @@ Samuele
 ...     "Returns the nth item"
 ...     return list(islice(iterable, n, n+1))
 
->>> def all(pred, seq):
+>>> def all(seq, pred=bool):
 ...     "Returns True if pred(x) is True for every element in the iterable"
 ...     return False not in imap(pred, seq)
 
->>> def some(pred, seq):
+>>> def any(seq, pred=bool):
 ...     "Returns True if pred(x) is True for at least one element in the iterable"
 ...     return True in imap(pred, seq)
 
->>> def no(pred, seq):
+>>> def no(seq, pred=bool):
 ...     "Returns True if pred(x) is False for every element in the iterable"
 ...     return True not in imap(pred, seq)
 
->>> def quantify(pred, seq):
+>>> def quantify(seq, pred=bool):
 ...     "Count how many times the predicate is True in the sequence"
 ...     return sum(imap(pred, seq))
 
@@ -571,25 +571,25 @@ perform as purported.
 >>> nth('abcde', 3)
 ['d']
 
->>> all(lambda x: x%2==0, [2, 4, 6, 8])
+>>> all([2, 4, 6, 8], lambda x: x%2==0)
 True
 
->>> all(lambda x: x%2==0, [2, 3, 6, 8])
+>>> all([2, 3, 6, 8], lambda x: x%2==0)
 False
 
->>> some(lambda x: x%2==0, [2, 4, 6, 8])
+>>> any([2, 4, 6, 8], lambda x: x%2==0)
 True
 
->>> some(lambda x: x%2==0, [1, 3, 5, 9])
+>>> any([1, 3, 5, 9], lambda x: x%2==0,)
 False
 
->>> no(lambda x: x%2==0, [1, 3, 5, 9])
+>>> no([1, 3, 5, 9], lambda x: x%2==0)
 True
 
->>> no(lambda x: x%2==0, [1, 2, 5, 9])
+>>> no([1, 2, 5, 9], lambda x: x%2==0)
 False
 
->>> quantify(lambda x: x%2==0, xrange(99))
+>>> quantify(xrange(99), lambda x: x%2==0)
 50
 
 >>> list(window('abc'))
