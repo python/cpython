@@ -2633,7 +2633,7 @@ static PyMethodDef parser_functions[] =  {
 
 
 DL_EXPORT(void)
-initparser()
+initparser(void)
  {
     PyObject* module;
     PyObject* dict;
