@@ -58,12 +58,7 @@ class bdist_dumb (Command):
 
         self.run_command ('build')
 
-        # XXX don't use 'self.get_finalized_command()', because it always runs
-        # 'ensure_finalized()' on the command object; we explictly want a
-        # command object that has *not* been finalized, so we can set
-        # options on it!  (The option we set, 'root', is so that we can do
-        # a proper "fake install" using this install command object.)
-        install = self.distribution.get_command_obj('install')
+        install = self.reinitialize_command('install')
         install.root = self.bdist_dir
 
         self.announce ("installing to %s" % self.bdist_dir)
