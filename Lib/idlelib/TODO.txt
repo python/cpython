@@ -46,8 +46,6 @@ TO DO:
 
 Details:
 
-- when there's a selection, left/right arrow should go to either
-  end of the selection
 - ^O (on Unix -- open-line) should honor autoindent
 - after paste, show end of pasted text
 - on Windows, should turn short filename to long filename (not only in argv!)

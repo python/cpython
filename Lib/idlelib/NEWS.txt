@@ -7,6 +7,12 @@ What's New in IDLEfork 0.9 Alpha 2?
 
 *Release date: XX-XXX-2003*
 
+- Left cursor move in presence of selected text now moves from left end
+  of the selection.
+
+- Add Meta keybindings to "IDLE Classic Windows" to handle reversed
+  Alt/Meta on some Linux distros.
+
 - Change default: IDLE now starts with Python Shell.
 
 - Removed the File Path from the Additional Help Sources scrolled list.
