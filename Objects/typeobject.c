@@ -3,6 +3,20 @@
 #include "Python.h"
 #include "structmember.h"
 
+#include <ctype.h>
+
+/* The *real* layout of a type object when allocated on the heap */
+/* XXX Should we publish this in a header file? */
+typedef struct {
+	PyTypeObject type;
+	PyNumberMethods as_number;
+	PySequenceMethods as_sequence;
+	PyMappingMethods as_mapping;
+	PyBufferProcs as_buffer;
+	PyObject *name, *slots;
+	PyMemberDef members[1];
+} etype;
+
 static PyMemberDef type_members[] = {
 	{"__basicsize__", T_INT, offsetof(PyTypeObject,tp_basicsize),READONLY},
 	{"__itemsize__", T_INT, offsetof(PyTypeObject, tp_itemsize), READONLY},
@@ -226,16 +240,43 @@ PyType_GenericNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
 /* Helpers for subtyping */
 
 static int
+traverse_slots(PyTypeObject *type, PyObject *self, visitproc visit, void *arg)
+{
+	int i, n;
+	PyMemberDef *mp;
+
+	n = type->ob_size;
+	mp = ((etype *)type)->members;
+	for (i = 0; i < n; i++, mp++) {
+		if (mp->type == T_OBJECT_EX) {
+			char *addr = (char *)self + mp->offset;
+			PyObject *obj = *(PyObject **)addr;
+			if (obj != NULL) {
+				int err = visit(obj, arg);
+				if (err)
+					return err;
+			}
+		}
+	}
+	return 0;
+}
+
+static int
 subtype_traverse(PyObject *self, visitproc visit, void *arg)
 {
 	PyTypeObject *type, *base;
-	traverseproc f;
-	int err;
+	traverseproc basetraverse;
 
-	/* Find the nearest base with a different tp_traverse */
+	/* Find the nearest base with a different tp_traverse,
+	   and traverse slots while we're at it */
 	type = self->ob_type;
-	base = type->tp_base;
-	while ((f = base->tp_traverse) == subtype_traverse) {
+	base = type;
+	while ((basetraverse = base->tp_traverse) == subtype_traverse) {
+		if (base->ob_size) {
+			int err = traverse_slots(base, self, visit, arg);
+			if (err)
+				return err;
+		}
 		base = base->tp_base;
 		assert(base);
 	}
@@ -243,14 +284,63 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
 	if (type->tp_dictoffset != base->tp_dictoffset) {
 		PyObject **dictptr = _PyObject_GetDictPtr(self);
 		if (dictptr && *dictptr) {
-			err = visit(*dictptr, arg);
+			int err = visit(*dictptr, arg);
 			if (err)
 				return err;
 		}
 	}
 
-	if (f)
-		return f(self, visit, arg);
+	if (basetraverse)
+		return basetraverse(self, visit, arg);
+	return 0;
+}
+
+static void
+clear_slots(PyTypeObject *type, PyObject *self)
+{
+	int i, n;
+	PyMemberDef *mp;
+
+	n = type->ob_size;
+	mp = ((etype *)type)->members;
+	for (i = 0; i < n; i++, mp++) {
+		if (mp->type == T_OBJECT_EX && !(mp->flags & READONLY)) {
+			char *addr = (char *)self + mp->offset;
+			PyObject *obj = *(PyObject **)addr;
+			if (obj != NULL) {
+				Py_DECREF(obj);
+				*(PyObject **)addr = NULL;
+			}
+		}
+	}
+}
+
+static int
+subtype_clear(PyObject *self)
+{
+	PyTypeObject *type, *base;
+	inquiry baseclear;
+
+	/* Find the nearest base with a different tp_clear
+	   and clear slots while we're at it */
+	type = self->ob_type;
+	base = type;
+	while ((baseclear = base->tp_clear) == subtype_clear) {
+		if (base->ob_size)
+			clear_slots(base, self);
+		base = base->tp_base;
+		assert(base);
+	}
+
+	if (type->tp_dictoffset != base->tp_dictoffset) {
+		PyObject **dictptr = _PyObject_GetDictPtr(self);
+		if (dictptr && *dictptr) {
+			PyDict_Clear(*dictptr);
+		}
+	}
+
+	if (baseclear)
+		return baseclear(self);
 	return 0;
 }
 
@@ -329,39 +419,22 @@ static void
 subtype_dealloc(PyObject *self)
 {
 	PyTypeObject *type, *base;
-	destructor f;
+	destructor basedealloc;
 
 	/* This exists so we can DECREF self->ob_type */
 
 	if (call_finalizer(self) < 0)
 		return;
 
-	/* Find the nearest base with a different tp_dealloc */
+	/* Find the nearest base with a different tp_dealloc
+	   and clear slots while we're at it */
 	type = self->ob_type;
-	base = type->tp_base;
-	while ((f = base->tp_dealloc) == subtype_dealloc) {
+	base = type;
+	while ((basedealloc = base->tp_dealloc) == subtype_dealloc) {
+		if (base->ob_size)
+			clear_slots(base, self);
 		base = base->tp_base;
 		assert(base);
-	}
-
-	/* Clear __slots__ variables */
-	if (type->tp_basicsize != base->tp_basicsize &&
-	    type->tp_itemsize == 0)
-	{
-		char *addr = ((char *)self);
-		char *p = addr + base->tp_basicsize;
-		char *q = addr + type->tp_basicsize;
-		for (; p < q; p += sizeof(PyObject *)) {
-			PyObject **pp;
-			if (p == addr + type->tp_dictoffset ||
-			    p == addr + type->tp_weaklistoffset)
-				continue;
-			pp = (PyObject **)p;
-			if (*pp != NULL) {
-				Py_DECREF(*pp);
-				*pp = NULL;
-			}
-		}
 	}
 
 	/* If we added a dict, DECREF it */
@@ -385,8 +458,8 @@ subtype_dealloc(PyObject *self)
 		_PyObject_GC_UNTRACK(self);
 
 	/* Call the base tp_dealloc() */
-	assert(f);
-	f(self);
+	assert(basedealloc);
+	basedealloc(self);
 
 	/* Can't reference self beyond this point */
 	if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
@@ -395,16 +468,6 @@ subtype_dealloc(PyObject *self)
 }
 
 staticforward PyTypeObject *solid_base(PyTypeObject *type);
-
-typedef struct {
-	PyTypeObject type;
-	PyNumberMethods as_number;
-	PySequenceMethods as_sequence;
-	PyMappingMethods as_mapping;
-	PyBufferProcs as_buffer;
-	PyObject *name, *slots;
-	PyMemberDef members[1];
-} etype;
 
 /* type test with subclassing support */
 
@@ -890,6 +953,33 @@ static PyMethodDef bozo_ml = {"__getstate__", bozo_func, METH_VARARGS};
 
 static PyObject *bozo_obj = NULL;
 
+static int
+valid_identifier(PyObject *s)
+{
+	char *p;
+	int i, n;
+
+	if (!PyString_Check(s)) {
+		PyErr_SetString(PyExc_TypeError,
+				"__slots__ must be strings");
+		return 0;
+	}
+	p = PyString_AS_STRING(s);
+	n = PyString_GET_SIZE(s);
+	/* We must reject an empty name.  As a hack, we bump the
+	   length to 1 so that the loop will balk on the trailing \0. */
+	if (n == 0)
+		n = 1;
+	for (i = 0; i < n; i++, p++) {
+		if (!(i == 0 ? isalpha(*p) : isalnum(*p)) && *p != '_') {
+			PyErr_SetString(PyExc_TypeError,
+					"__slots__ must be identifiers");
+			return 0;
+		}
+	}
+	return 1;
+}
+
 static PyObject *
 type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 {
@@ -1004,13 +1094,10 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 			return NULL;
 		}
 		for (i = 0; i < nslots; i++) {
-			if (!PyString_Check(PyTuple_GET_ITEM(slots, i))) {
-				PyErr_SetString(PyExc_TypeError,
-				"__slots__ must be a sequence of strings");
+			if (!valid_identifier(PyTuple_GET_ITEM(slots, i))) {
 				Py_DECREF(slots);
 				return NULL;
 			}
-			/* XXX Check against null bytes in name */
 		}
 	}
 	if (slots != NULL) {
@@ -1145,6 +1232,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 			if (base->tp_weaklistoffset == 0 &&
 			    strcmp(mp->name, "__weakref__") == 0) {
 				mp->type = T_OBJECT;
+				mp->flags = READONLY;
 				type->tp_weaklistoffset = slotoffset;
 			}
 			slotoffset += sizeof(PyObject *);
@@ -1194,7 +1282,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	if (type->tp_flags & Py_TPFLAGS_HAVE_GC) {
 		type->tp_free = PyObject_GC_Del;
 		type->tp_traverse = subtype_traverse;
-		type->tp_clear = base->tp_clear;
+		type->tp_clear = subtype_clear;
 	}
 	else
 		type->tp_free = PyObject_Del;

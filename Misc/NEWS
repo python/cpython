@@ -6,6 +6,12 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- Classes using __slots__ are now properly garbage collected.
+  [SF bug 519621]
+
+- Tightened the __slots__ rules: a slot name must be a valid Python
+  identifier.
+
 - The constructor for the module type now requires a name argument and
   takes an optional docstring argument.  Previously, this constructor
   ignored its arguments.  As a consequence, deriving a class from a
