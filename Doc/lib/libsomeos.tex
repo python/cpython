@@ -1,8 +1,9 @@
 \chapter{Optional Operating System Services}
+\label{someos}
 
 The modules described in this chapter provide interfaces to operating
 system features that are available on selected operating systems only.
-The interfaces are generally modelled after the \UNIX{} or C
+The interfaces are generally modelled after the \UNIX{} or \C{}
 interfaces but they are available on some other systems as well
 (e.g. Windows or NT).  Here's an overview:
 
@@ -32,7 +33,7 @@ interfaces but they are available on some other systems as well
 \item[zlib]
 \item[gzip]
 --- Compression and decompression compatible with the
-\code{gzip} program (zlib is the low-level interface, gzip the
-high-level one).
+\program{gzip} program (\module{zlib} is the low-level interface,
+\module{gzip} the high-level one).
 
 \end{description}
