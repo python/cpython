@@ -24,6 +24,11 @@ def copyfile(src, dst):
     """Copy data from src to dst"""
     fsrc = None
     fdst = None
+    # check for same pathname; all platforms
+    _src = os.path.normcase(os.path.abspath(src))
+    _dst = os.path.normcase(os.path.abspath(dst))
+    if _src == _dst:
+        return
     try:
         fsrc = open(src, 'rb')
         fdst = open(dst, 'wb')
