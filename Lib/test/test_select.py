@@ -45,7 +45,6 @@ def test():
                 if verbose:
                         print 'timeout =', tout
                 rfd, wfd, xfd = select.select([p], [], [], tout)
-##              print rfd, wfd, xfd
                 if (rfd, wfd, xfd) == ([], [], []):
                         continue
                 if (rfd, wfd, xfd) == ([p], [], []):

@@ -212,6 +212,8 @@ def runtest(test, generate, verbose, testdir = None):
                 sys.stdout = cfp
                 print test              # Output file starts with test name
             __import__(test, globals(), locals(), [])
+            if cfp and not (generate or verbose):
+                cfp.close()
         finally:
             sys.stdout = save_stdout
     except ImportError, msg:
