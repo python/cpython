@@ -277,7 +277,7 @@ class TestCase:
            operator.
         """
         if first == second:
-            raise self.failureException, (msg or '%s != %s' % (first, second))
+            raise self.failureException, (msg or '%s == %s' % (first, second))
 
     assertEqual = assertEquals = failUnlessEqual
 
@@ -672,7 +672,6 @@ Examples:
         try:
             options, args = getopt.getopt(argv[1:], 'hHvq',
                                           ['help','verbose','quiet'])
-            opts = {}
             for opt, value in options:
                 if opt in ('-h','-H','--help'):
                     self.usageExit()
