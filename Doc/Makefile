@@ -14,17 +14,20 @@
 #   inst -- Installing Python Modules
 #   dist -- Distributing Python Modules
 #
-# The latex sources for each of these documents are in subdirectories
+# The LaTeX sources for each of these documents are in subdirectories
 # with the three-letter designations above as the directory names.
 #
-# The main target creates DVI and PostScript for the main each of the
-# documents.  You can also do "make lib" (etc.) to create the DVI and
-# PostScript versions of individual documents.
+# The main target creates HTML for each of the documents.  You can
+# also do "make lib" (etc.) to create the HTML versions of individual
+# documents.
 #
 # The document classes and styles are in the texinputs/ directory.
 # These define a number of macros that are similar in name and intent
 # as macros in Texinfo (e.g. \code{...} and \emph{...}), as well as a
 # number of environments for formatting function and data definitions.
+# Documentation for the macros is included in "Documenting Python"; see
+# http://www.python.org/doc/current/doc/doc.html, or the sources for
+# this document in the doc/ directory.
 #
 # Everything is processed by LaTeX.  See the file `README' for more
 # information on the tools needed for processing.
@@ -37,8 +40,8 @@
 # various other formats.  These are generally site specific because
 # the tools used are all but universal.  These targets are:
 #
-#   html -- convert all documents from LaTeX to HTML
-#   pdf  -- convert all documents from LaTeX to the
+#   ps  -- convert all documents from LaTeX to PostScript
+#   pdf -- convert all documents from LaTeX to the
 #		Portable Document Format
 #
 # See the README file for more information on these targets.
@@ -51,9 +54,9 @@
 # This Makefile only includes information on how to perform builds; for
 # dependency information, see Makefile.deps.
 
-# Customizations -- you *may* have to edit these
+# Customization -- you *may* have to edit this
 
-# you could set this to a4
+# You could set this to a4:
 PAPER=letter
 
 # Ideally, you shouldn't need to edit beyond this point
@@ -74,7 +77,7 @@ RELEASE=2.0
 
 
 # Main target
-all:	ps
+all:	html
 
 dvi:
 	(cd paper-$(PAPER); $(MAKE) dvi)
@@ -89,31 +92,31 @@ world:	ps pdf html tarballs
 
 
 # Targets for each document:
-api api.ps:
+api.ps:
 	(cd paper-$(PAPER); $(MAKE) api.ps)
 
-doc doc.ps:
+doc.ps:
 	(cd paper-$(PAPER); $(MAKE) doc.ps)
 
-ext ext.ps:
+ext.ps:
 	(cd paper-$(PAPER); $(MAKE) ext.ps)
 
-lib lib.ps:
+lib.ps:
 	(cd paper-$(PAPER); $(MAKE) lib.ps)
 
-mac mac.ps:
+mac.ps:
 	(cd paper-$(PAPER); $(MAKE) mac.ps)
 
-ref ref.ps:
+ref.ps:
 	(cd paper-$(PAPER); $(MAKE) ref.ps)
 
-tut tut.ps:
+tut.ps:
 	(cd paper-$(PAPER); $(MAKE) tut.ps)
 
-inst inst.ps:
+inst.ps:
 	(cd paper-$(PAPER); $(MAKE) inst.ps)
 
-dist dist.ps:
+dist.ps:
 	(cd paper-$(PAPER); $(MAKE) dist.ps)
 
 
@@ -198,31 +201,31 @@ info:
 html:
 	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile)
 
-htmlapi:
+api htmlapi:
 	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile api)
 
-htmldoc:
+doc htmldoc:
 	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile doc)
 
-htmlext:
+ext htmlext:
 	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile ext)
 
-htmllib:
+lib htmllib:
 	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile lib)
 
-htmlmac:
+mac htmlmac:
 	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile mac)
 
-htmlref:
+ref htmlref:
 	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile ref)
 
-htmltut:
+tut htmltut:
 	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile tut)
 
-htmlinst:
+inst htmlinst:
 	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile inst)
 
-htmldist:
+dist htmldist:
 	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile dist)
 
 longhtml:
