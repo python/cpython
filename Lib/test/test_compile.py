@@ -9,7 +9,9 @@ except SyntaxError:
     pass
 
 import __builtin__
+prev = __builtin__.__debug__
 setattr(__builtin__, '__debug__', 'sure')
+setattr(__builtin__, '__debug__', prev)
 
 if verbose:
     print 'Running tests on argument handling'
