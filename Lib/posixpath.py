@@ -62,7 +62,12 @@ def splitext(p):
 	for c in p:
 		if c == '/':
 			root, ext = root + ext + c, ''
-		elif c == '.' or ext:
+		elif c == '.':
+			if ext:
+				root, ext = root + ext, c
+			else:
+				ext = c
+		elif ext:
 			ext = ext + c
 		else:
 			root = root + c
