@@ -1,4 +1,4 @@
-#!/uns/bin/perl
+#! /usr/bin/perl
 
 package checkargs;
 require 5.004;			# uses "for my $var"
