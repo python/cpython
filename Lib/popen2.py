@@ -62,7 +62,7 @@ class Popen3:
         for i in range(3, MAXFD):
             try:
                 os.close(i)
-            except:
+            except OSError:
                 pass
         try:
             os.execvp(cmd[0], cmd)
