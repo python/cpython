@@ -18,8 +18,9 @@ the "typical" Unix-style command-line C compiler:
 __revision__ = "$Id$"
 
 import os, sys
-from types import *
+from types import StringType, NoneType
 from copy import copy
+
 from distutils import sysconfig
 from distutils.dep_util import newer
 from distutils.ccompiler import \
@@ -43,8 +44,7 @@ from distutils import log
 #     should just happily stuff them into the preprocessor/compiler/linker
 #     options and carry on.
 
-
-class UnixCCompiler (CCompiler):
+class UnixCCompiler(CCompiler):
 
     compiler_type = 'unix'
 
@@ -85,8 +85,7 @@ class UnixCCompiler (CCompiler):
                  verbose=0,
                  dry_run=0,
                  force=0):
-        CCompiler.__init__ (self, verbose, dry_run, force)
-
+        CCompiler.__init__(self, verbose, dry_run, force)
 
     def preprocess(self,
                    source,
@@ -95,7 +94,6 @@ class UnixCCompiler (CCompiler):
                    include_dirs=None,
                    extra_preargs=None,
                    extra_postargs=None):
-
         (_, macros, include_dirs) = \
             self._fix_compile_args(None, macros, include_dirs)
         pp_opts = gen_preprocess_options(macros, include_dirs)
@@ -119,7 +117,6 @@ class UnixCCompiler (CCompiler):
             except DistutilsExecError, msg:
                 raise CompileError, msg
 
-
     def compile(self,
                 sources,
                 output_dir=None,
@@ -128,7 +125,6 @@ class UnixCCompiler (CCompiler):
                 debug=0,
                 extra_preargs=None,
                 extra_postargs=None):
-
         (output_dir, macros, include_dirs) = \
             self._fix_compile_args(output_dir, macros, include_dirs)
         (objects, skip_sources) = self._prep_compile(sources, output_dir)
@@ -161,15 +157,11 @@ class UnixCCompiler (CCompiler):
         # Return *all* object filenames, not just the ones we just built.
         return objects
 
-    # compile ()
-
-
     def create_static_lib(self,
                           objects,
                           output_libname,
                           output_dir=None,
                           debug=0):
-
         (objects, output_dir) = self._fix_object_args(objects, output_dir)
 
         output_filename = \
@@ -194,9 +186,6 @@ class UnixCCompiler (CCompiler):
         else:
             log.debug("skipping %s (up-to-date)", output_filename)
 
-    # create_static_lib ()
-
-
     def link(self,
              target_desc,
              objects,
@@ -210,7 +199,6 @@ class UnixCCompiler (CCompiler):
              extra_preargs=None,
              extra_postargs=None,
              build_temp=None):
-
         (objects, output_dir) = self._fix_object_args(objects, output_dir)
         (libraries, library_dirs, runtime_library_dirs) = \
             self._fix_lib_args(libraries, library_dirs, runtime_library_dirs)
@@ -243,9 +231,6 @@ class UnixCCompiler (CCompiler):
         else:
             log.debug("skipping %s (up-to-date)", output_filename)
 
-    # link ()
-
-
     # -- Miscellaneous methods -----------------------------------------
     # These are all used by the 'gen_lib_options() function, in
     # ccompiler.py.
@@ -275,9 +260,7 @@ class UnixCCompiler (CCompiler):
     def library_option(self, lib):
         return "-l" + lib
 
-
     def find_library_file(self, dirs, lib, debug=0):
-
         for dir in dirs:
             shared = os.path.join(
                 dir, self.library_filename(lib, lib_type='shared'))
@@ -300,7 +283,3 @@ class UnixCCompiler (CCompiler):
         else:
             # Oops, didn't find it in *any* of 'dirs'
             return None
-
-    # find_library_file ()
-
-# class UnixCCompiler
