@@ -118,6 +118,8 @@ Extension modules
 Library
 -------
 
+- The self-documenting XML server library DocXMLRPCServer was added.
+
 - Support for internationalized domain names has been added through
   the 'idna' and 'punycode' encodings, the 'stringprep' module, the
   'mkstringprep' tool, and enhancements to the socket and httplib
