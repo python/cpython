@@ -524,7 +524,7 @@ BUILD_FUNC_DEF_2(makesockaddr,struct sockaddr *,addr, int,addrlen)
 	}
 
 #ifdef __BEOS__
-	/* XXX: BeOS version of accept() doesn't set family coreectly */
+	/* XXX: BeOS version of accept() doesn't set family correctly */
 	addr->sa_family = AF_INET;
 #endif
 
@@ -2525,6 +2525,9 @@ initsocket()
 #endif
 #ifdef	MSG_DONTROUTE
 	insint(d, "MSG_DONTROUTE", MSG_DONTROUTE);
+#endif
+#ifdef	MSG_DONTWAIT
+	insint(d, "MSG_DONWAIT", MSG_DONTWAIT);
 #endif
 #ifdef	MSG_EOR
 	insint(d, "MSG_EOR", MSG_EOR);
