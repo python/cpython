@@ -348,6 +348,8 @@ Extension modules
 Library
 -------
 
+- Queue.Queue.{put,get} now support an optional timeout argument.
+
 - Various features of Tk 8.4 are exposed in Tkinter.py. The multiple
   option of tkFileDialog is exposed as function askopenfile{,name}s.
 
