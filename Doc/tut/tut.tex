@@ -4286,7 +4286,7 @@ finally the instance converted to a string using the built-in function
 \section{Iterators\label{iterators}}
 
 By now, you've probably noticed that most container objects can be looped
-over using a \code{for} statement:
+over using a \keyword{for} statement:
 
 \begin{verbatim}
 for element in [1, 2, 3]:
@@ -4302,11 +4302,12 @@ for line in open("myfile.txt"):
 \end{verbatim}
 
 This style of access is clear, concise, and convenient.  The use of iterators
-pervades and unifies Python.  Behind the scenes, the \code{for} statement calls
-\function{iter()} on the container object.  The function returns an iterator
-object that defines the method \method{next()} which accesses elements in the
-container one at a time.  When there are no more elements, \method{next()}
-raises a \exception{StopIteration} exception which tells the \code{for} loop
+pervades and unifies Python.  Behind the scenes, the \keyword{for}
+statement calls \function{iter()} on the container object.  The
+function returns an iterator object that defines the method
+\method{next()} which accesses elements in the container one at a
+time.  When there are no more elements, \method{next()} raises a
+\exception{StopIteration} exception which tells the \keyword{for} loop
 to terminate.  This example shows how it all works:
 
 \begin{verbatim}
