@@ -7,9 +7,11 @@
 
 import sys
 import posix
-import stat
+from stat import *
 import path
 import commands
+import fnmatch
+import string
 
 EXECMAGIC = '\001\140\000\010'
 
@@ -19,34 +21,57 @@ def getargs():
 	args = sys.argv[1:]
 	if args:
 		return args
-	print 'No arguments, checking almost *'
+	print 'No arguments, checking almost *, in "ls -t" order'
+	list = []
 	for file in posix.listdir('.'):
 		if not skipfile(file):
-			args.append(file)
-	if not args:
+			list.append((getmtime(file), file))
+	list.sort()
+	if not list:
 		print 'Nothing to do -- exit 1'
 		sys.exit(1)
-	args.sort()
+	list.sort()
+	list.reverse()
+	for mtime, file in list: args.append(file)
 	return args
+
+def getmtime(file):
+	try:
+		st = posix.stat(file)
+		return st[ST_MTIME]
+	except posix.error:
+		return -1
 
 badnames = ['tags', 'TAGS', 'xyzzy', 'nohup.out', 'core']
 badprefixes = ['.', ',', '@', '#', 'o.']
 badsuffixes = \
 	['~', '.a', '.o', '.old', '.bak', '.orig', '.new', '.prev', '.not', \
 	 '.pyc', '.elc']
-# XXX Should generalize even more to use fnmatch!
+
+def setup():
+	global ignore
+	ignore = badnames[:]
+	for p in badprefixes:
+		ignore.append(p + '*')
+	for p in badsuffixes:
+		ignore.append('*' + p)
+	try:
+		f = open('.xxcign', 'r')
+	except IOError:
+		return
+	ignore = ignore + string.split(f.read())
 
 def skipfile(file):
-	if file in badnames or \
-		badprefix(file) or badsuffix(file) or \
-		path.islink(file) or path.isdir(file):
-		return 1
-	# Skip huge files -- probably binaries.
+	for p in ignore:
+		if fnmatch.fnmatch(file, p): return 1
 	try:
-		st = posix.stat(file)
+		st = posix.lstat(file)
 	except posix.error:
 		return 1 # Doesn't exist -- skip it
-	if st[stat.ST_SIZE] >= MAXSIZE: return 1
+	# Skip non-plain files.
+	if not S_ISREG(st[ST_MODE]): return 1
+	# Skip huge files -- probably binaries.
+	if st[ST_SIZE] >= MAXSIZE: return 1
 	# Skip executables
 	try:
 		data = open(file, 'r').read(len(EXECMAGIC))
@@ -86,4 +111,5 @@ def askyesno(prompt):
 	s = raw_input(prompt)
 	return s in ['y', 'yes']
 
+setup()
 go(getargs())
