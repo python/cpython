@@ -15,6 +15,7 @@ import tkMessageBox
 from EditorWindow import EditorWindow, fixwordbreaks
 from FileList import FileList
 from ColorDelegator import ColorDelegator
+from UndoDelegator import UndoDelegator
 from OutputWindow import OutputWindow
 from IdleConf import idleconf
 import idlever
@@ -126,6 +127,28 @@ class ModifiedColorDelegator(ColorDelegator):
 	None: cconf.getcolor("normal"),
     })
 
+
+class ModifiedUndoDelegator(UndoDelegator):
+
+    # Forbid insert/delete before the I/O mark
+
+    def insert(self, index, chars, tags=None):
+        try:
+            if self.delegate.compare(index, "<", "iomark"):
+                self.delegate.bell()
+                return
+        except TclError:
+            pass
+        UndoDelegator.insert(self, index, chars, tags)
+
+    def delete(self, index1, index2=None):
+        try:
+            if self.delegate.compare(index1, "<", "iomark"):
+                self.delegate.bell()
+                return
+        except TclError:
+            pass
+        UndoDelegator.delete(self, index1, index2)
 
 class ModifiedInterpreter(InteractiveInterpreter):
 
@@ -264,6 +287,7 @@ class PyShell(OutputWindow):
 
     # Override classes
     ColorDelegator = ModifiedColorDelegator
+    UndoDelegator = ModifiedUndoDelegator
 
     # Override menu bar specs
     menu_specs = PyShellEditorWindow.menu_specs[:]
