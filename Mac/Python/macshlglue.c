@@ -54,7 +54,7 @@ PERFORMANCE OF THIS SOFTWARE.
 extern void __initialize(void);
 
 /* Defined either in macglue.c or in a MPW library: */
-extern pascal int PLstrcmp(unsigned char *, unsigned char *);
+extern pascal short PLstrcmp(const unsigned char *, const unsigned char *);
 
 /*
 ** Variables passed from shared lib initialization to PyMac_AddLibResources.
