@@ -16,6 +16,9 @@ Command line options:
 If non-option arguments are present, they are names for tests to run,
 unless -x is given, in which case they are names for tests not to run.
 If no test names are given, all tests are run.
+
+If -v is given *twice*, the tests themselves are run in verbose mode.
+This is incompatible with -g and does not compare test output files.
 """
 
 import sys
@@ -37,10 +40,13 @@ def main():
     generate = 0
     exclude = 0
     for o, a in opts:
-	if o == '-v': verbose = 1
+	if o == '-v': verbose = verbose+1
 	if o == '-q': quiet = 1
 	if o == '-g': generate = 1
 	if o == '-x': exclude = 1
+    if generate and verbose>1:
+	print "-g and more than one -v don't go together!"
+	sys.exit(2)
     good = []
     bad = []
     skipped = []
@@ -48,11 +54,11 @@ def main():
 	nottests[:0] = args
 	args = []
     tests = args or findtests()
-    test_support.verbose = 0		# Tell tests to be moderately quiet
+    test_support.verbose = verbose>1	# Tell tests to be moderately quiet
     for test in tests:
 	if verbose:
 	    print test
-	ok = runtest(test, generate)
+	ok = runtest(test, generate, verbose>1)
 	if ok > 0:
 	    good.append(test)
 	elif ok == 0:
@@ -102,7 +108,7 @@ def findtests():
     tests.sort()
     return stdtests + tests
 
-def runtest(test, generate):
+def runtest(test, generate, verbose2):
     test_support.unload(test)
     testdir = findtestdir()
     outputdir = os.path.join(testdir, "output")
@@ -110,6 +116,8 @@ def runtest(test, generate):
     try:
 	if generate:
 	    cfp = open(outputfile, "w")
+	elif verbose2:
+	    cfp = sys.stdout
 	else:
 	    cfp = Compare(outputfile)
     except IOError:
