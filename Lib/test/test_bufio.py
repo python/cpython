@@ -1,4 +1,4 @@
-from test_support import TestFailed, TESTFN
+from test_support import TestFailed, TESTFN, verify
 
 # Simple test to ensure that optimizations in fileobject.c deliver
 # the expected results.  For best testing, run this under a debug-build

@@ -1,3 +1,4 @@
+from test_support import verify
 import sys, os
 import gzip, tempfile
 
@@ -31,7 +32,7 @@ verify(d == (data1*50) + (data2*15))
 f = gzip.GzipFile(filename, 'rb')
 line_length = 0
 while 1:
-    L = f.readline( line_length )
+    L = f.readline(line_length)
     if L == "" and line_length != 0: break
     verify(len(L) <= line_length)
     line_length = (line_length + 1) % 50
@@ -50,4 +51,4 @@ while 1:
 f.close()
 
 
-os.unlink( filename )
+os.unlink(filename)

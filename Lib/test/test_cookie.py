@@ -1,5 +1,6 @@
 # Simple test suite for Cookie.py
 
+from test_support import verify
 import Cookie
 
 # Currently this only tests SimpleCookie
