@@ -48,6 +48,7 @@ extern DL_IMPORT(PyObject *) PyExc_NotImplementedError;
 extern DL_IMPORT(PyObject *) PyExc_SyntaxError;
 extern DL_IMPORT(PyObject *) PyExc_IndentationError;
 extern DL_IMPORT(PyObject *) PyExc_TabError;
+extern DL_IMPORT(PyObject *) PyExc_ReferenceError;
 extern DL_IMPORT(PyObject *) PyExc_SystemError;
 extern DL_IMPORT(PyObject *) PyExc_SystemExit;
 extern DL_IMPORT(PyObject *) PyExc_TypeError;

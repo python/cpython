@@ -97,6 +97,7 @@ Exception\n\
  |    |    |\n\
  |    |    +-- UnicodeError\n\
  |    |\n\
+ |    +-- ReferenceError\n\
  |    +-- SystemError\n\
  |    +-- MemoryError\n\
  |\n\
@@ -889,6 +890,9 @@ Please report this to the Python maintainer, along with the traceback,\n\
 the Python version, and the hardware/OS platform and version.";
 
 static char
+ReferenceError__doc__[] = "Weak ref proxy used after referent went away.";
+
+static char
 MemoryError__doc__[] = "Out of memory.";
 
 static char
@@ -956,6 +960,7 @@ PyObject *PyExc_NotImplementedError;
 PyObject *PyExc_SyntaxError;
 PyObject *PyExc_IndentationError;
 PyObject *PyExc_TabError;
+PyObject *PyExc_ReferenceError;
 PyObject *PyExc_SystemError;
 PyObject *PyExc_SystemExit;
 PyObject *PyExc_UnboundLocalError;
@@ -1044,6 +1049,7 @@ static struct {
   FloatingPointError__doc__},
  {"ValueError",   &PyExc_ValueError,  0, ValueError__doc__},
  {"UnicodeError", &PyExc_UnicodeError, &PyExc_ValueError, UnicodeError__doc__},
+ {"ReferenceError",  &PyExc_ReferenceError, 0, ReferenceError__doc__},
  {"SystemError",  &PyExc_SystemError, 0, SystemError__doc__},
  {"MemoryError",  &PyExc_MemoryError, 0, MemoryError__doc__},
  /* Warning categories */
