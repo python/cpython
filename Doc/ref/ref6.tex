@@ -300,6 +300,20 @@ the same way as normal assignments. Similarly, with the exception of the
 possible \emph{in-place} behavior, the binary operation performed by
 augmented assignment is the same as the normal binary operations.
 
+For targets which are attribute references, the initial value is
+retrieved with a \method{getattr()} and the result is assigned with a
+\method{setattr()}.  Notice that the two methods do not necessarily
+refer to the same variable.  When \method{getattr()} refers to a class
+variable, \method{setattr()} still writes to an instance variable.
+For example:
+
+\begin{verbatim}
+class A:
+    x = 3    # class variable
+a = A()
+a.x += 1     # writes a.x as 4 leaving A.x as 3
+\end{verbatim}
+
 
 \section{The \keyword{pass} statement \label{pass}}
 \stindex{pass}
