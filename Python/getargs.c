@@ -367,7 +367,8 @@ convertitem(PyObject *arg, char **p_format, va_list *p_va, int *levels,
 static char *
 converterr(char *expected, PyObject *arg, char *msgbuf)
 {
-	assert (expected != NULL);
+	assert(expected != NULL);
+	assert(arg != NULL); 
 	sprintf(msgbuf, "must be %.50s, not %.50s", expected,
 		arg == Py_None ? "None" : arg->ob_type->tp_name);
 	return msgbuf;
@@ -387,6 +388,7 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf)
 {
 	char *format = *p_format;
 	char c = *format++;
+	PyObject *uarg;
 	
 	switch (c) {
 	
@@ -568,12 +570,12 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf)
 			}
 #ifdef Py_USING_UNICODE
 			else if (PyUnicode_Check(arg)) {
-				arg = UNICODE_DEFAULT_ENCODING(arg);
-				if (arg == NULL)
+				uarg = UNICODE_DEFAULT_ENCODING(arg);
+				if (uarg == NULL)
 					return converterr(CONV_UNICODE,
 							  arg, msgbuf);
-				*p = PyString_AS_STRING(arg);
-				*q = PyString_GET_SIZE(arg);
+				*p = PyString_AS_STRING(uarg);
+				*q = PyString_GET_SIZE(uarg);
 			}
 #endif
 			else { /* any buffer-like object */
@@ -591,11 +593,11 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf)
 				*p = PyString_AS_STRING(arg);
 #ifdef Py_USING_UNICODE
 			else if (PyUnicode_Check(arg)) {
-				arg = UNICODE_DEFAULT_ENCODING(arg);
-				if (arg == NULL)
+				uarg = UNICODE_DEFAULT_ENCODING(arg);
+				if (uarg == NULL)
 					return converterr(CONV_UNICODE,
 							  arg, msgbuf);
-				*p = PyString_AS_STRING(arg);
+				*p = PyString_AS_STRING(uarg);
 			}
 #endif
 			else
@@ -622,12 +624,12 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf)
 			}
 #ifdef Py_USING_UNICODE
 			else if (PyUnicode_Check(arg)) {
-				arg = UNICODE_DEFAULT_ENCODING(arg);
-				if (arg == NULL)
+				uarg = UNICODE_DEFAULT_ENCODING(arg);
+				if (uarg == NULL)
 					return converterr(CONV_UNICODE,
 							  arg, msgbuf);
-				*p = PyString_AS_STRING(arg);
-				*q = PyString_GET_SIZE(arg);
+				*p = PyString_AS_STRING(uarg);
+				*q = PyString_GET_SIZE(uarg);
 			}
 #endif
 			else { /* any buffer-like object */
@@ -648,11 +650,11 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf)
 				*p = PyString_AsString(arg);
 #ifdef Py_USING_UNICODE
 			else if (PyUnicode_Check(arg)) {
-				arg = UNICODE_DEFAULT_ENCODING(arg);
-				if (arg == NULL)
+				uarg = UNICODE_DEFAULT_ENCODING(arg);
+				if (uarg == NULL)
 					return converterr(CONV_UNICODE,
 							  arg, msgbuf);
-				*p = PyString_AS_STRING(arg);
+				*p = PyString_AS_STRING(uarg);
 			}
 #endif
 			else
