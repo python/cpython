@@ -549,7 +549,7 @@ _MainThread()
 
 def _test():
 
-    import whrandom
+    import random
 
     class BoundedQueue(_Verbose):
 
@@ -592,7 +592,7 @@ def _test():
             self.quota = quota
 
         def run(self):
-            from whrandom import random
+            from random import random
             counter = 0
             while counter < self.quota:
                 counter = counter + 1

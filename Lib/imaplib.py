@@ -12,7 +12,7 @@ Public functions:	Internaldate2tuple
 			Time2Internaldate
 """
 
-import re, socket, string, time, whrandom
+import re, socket, string, time, random
 
 #	Globals
 
@@ -109,7 +109,7 @@ class IMAP4:
 		# Create unique tag for this session,
 		# and compile tagged response matcher.
 
-		self.tagpre = Int2AP(whrandom.random()*32000)
+		self.tagpre = Int2AP(random.random()*32000)
 		self.tagre = re.compile(r'(?P<tag>'
 				+ self.tagpre
 				+ r'\d+) (?P<type>[A-Z]+) (?P<data>.*)')
