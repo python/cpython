@@ -41,7 +41,17 @@ def getstatusoutput(cmd):
 # Return a string containing a file's contents.
 #
 def readfile(fn):
-	return open(fn, 'r').read(posix.stat(fn)[stat.ST_SIZE])
+	st = posix.stat(fn)
+	size = st[stat.ST_SIZE]
+	if not size: return ''
+	try:
+		fp = open(fn, 'r')
+	except:
+		raise posix.error, 'readfile(' + fn + '): open failed'
+	try:
+		return fp.read(size)
+	except:
+		raise posix.error, 'readfile(' + fn + '): read failed'
 
 
 # Make command argument from directory and pathname (prefix space, add quotes).
