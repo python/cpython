@@ -68,7 +68,7 @@ ALL = ¶
 	"{Objs}"macstat.c.o ¶
 	"{Objs}"mappingobject.c.o ¶
 	"{Objs}"marshal.c.o ¶
-	"{Objs}"mathmodule.c.o ¶
+#	"{Objs}"mathmodule.c.o ¶
 	"{Objs}"md5c.c.o ¶
 	"{Objs}"md5module.c.o ¶
 	"{Objs}"methodobject.c.o ¶
@@ -511,4 +511,3 @@ xxmodule.slb Ä PythonLib.slb "{Objs}"xxmodule.c.o
 
 "{Objs}"fmod.c.o Ä "{Top}"Python:fmod.c
 	{CC} "{Top}"Python:fmod.c -o "{Objs}"fmod.c.o -s fmod.c {CFlags}
-
