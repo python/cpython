@@ -282,7 +282,8 @@ class SMTPServer(asyncore.dispatcher):
             self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR) | 1)
         self.bind(localaddr)
         self.listen(5)
-        print '%s started at %s\n\tLocal addr: %s\n\tRemote addr:%s' % (
+        print >> DEBUGSTREAM, \
+              '%s started at %s\n\tLocal addr: %s\n\tRemote addr:%s' % (
             self.__class__.__name__, time.ctime(time.time()),
             localaddr, remoteaddr)
 
