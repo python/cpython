@@ -85,7 +85,7 @@ as follows:
 >>> status = spam.system("ls -l")
 \end{verbatim}
 
-Begin by creating a file \samp{spammodule.c}.  (In general, if a
+Begin by creating a file \file{spammodule.c}.  (In general, if a
 module is called \samp{spam}, the \C{} file containing its implementation
 is called \file{spammodule.c}; if the module name is very long, like
 \samp{spammify}, the module name can be just \file{spammify.c}.)
@@ -120,6 +120,7 @@ spam_system(self, args)
 {
     char *command;
     int sts;
+
     if (!PyArg_ParseTuple(args, "s", &command))
         return NULL;
     sts = system(command);
@@ -265,6 +266,7 @@ void
 initspam()
 {
     PyObject *m, *d;
+
     m = Py_InitModule("spam", SpamMethods);
     d = PyModule_GetDict(m);
     SpamError = PyErr_NewException("spam.error", NULL, NULL);
@@ -334,8 +336,8 @@ returning \ctype{void}), the corresponding Python function must return
 \end{verbatim}
 
 \cdata{Py_None} is the \C{} name for the special Python object
-\code{None}.  It is a genuine Python object (not a \NULL{}
-pointer, which means ``error'' in most contexts, as we have seen).
+\code{None}.  It is a genuine Python object rather than a \NULL{}
+pointer, which means ``error'' in most contexts, as we have seen.
 
 
 \section{The Module's Method Table and Initialization Function}
@@ -357,7 +359,7 @@ static PyMethodDef SpamMethods[] = {
 Note the third entry (\samp{METH_VARARGS}).  This is a flag telling
 the interpreter the calling convention to be used for the \C{}
 function.  It should normally always be \samp{METH_VARARGS} or
-\samp{METH_VARARGS | METH_KEYWORDS}; a value of \samp{0} means that an
+\samp{METH_VARARGS | METH_KEYWORDS}; a value of \code{0} means that an
 obsolete variant of \cfunction{PyArg_ParseTuple()} is used.
 
 When using only \samp{METH_VARARGS}, the function should expect
@@ -402,15 +404,15 @@ doesn't need to check for errors.
 There are two more things to do before you can use your new extension:
 compiling and linking it with the Python system.  If you use dynamic
 loading, the details depend on the style of dynamic loading your
-system uses; see the chapter on Dynamic Loading for more info about
-this.
+system uses; see the chapter ``Dynamic Loading'' for more information
+about this.
 
 If you can't use dynamic loading, or if you want to make your module a
 permanent part of the Python interpreter, you will have to change the
 configuration setup and rebuild the interpreter.  Luckily, this is
 very simple: just place your file (\file{spammodule.c} for example) in
 the \file{Modules} directory, add a line to the file
-\file{Modules/Setup} describing your file:
+\file{Modules/Setup.local} describing your file:
 
 \begin{verbatim}
 spam spammodule.o
@@ -418,12 +420,12 @@ spam spammodule.o
 
 and rebuild the interpreter by running \program{make} in the toplevel
 directory.  You can also run \program{make} in the \file{Modules}
-subdirectory, but then you must first rebuilt the \file{Makefile}
+subdirectory, but then you must first rebuild \file{Makefile}
 there by running `\program{make} Makefile'.  (This is necessary each
 time you change the \file{Setup} file.)
 
 If your module requires additional libraries to link with, these can
-be listed on the line in the \file{Setup} file as well, for instance:
+be listed on the line in the configuration file as well, for instance:
 
 \begin{verbatim}
 spam spammodule.o -lX11
@@ -747,9 +749,9 @@ Some example calls:
         int left, top, right, bottom, h, v;
         ok = PyArg_ParseTuple(args, "((ii)(ii))(ii)",
                  &left, &top, &right, &bottom, &h, &v);
-                 /* A rectangle and a point */
-                 /* Possible Python call:
-                    f(((0, 0), (400, 300)), (10, 10)) */
+        /* A rectangle and a point */
+        /* Possible Python call:
+           f(((0, 0), (400, 300)), (10, 10)) */
     }
 
     {
@@ -784,7 +786,8 @@ arguments!  Keyword parameters passed in which are not present in the
 \var{kwlist} will cause \exception{TypeError} to be raised.
 
 Here is an example module which uses keywords, based on an example by
-Geoff Philbrick (\email{philbrick@hks.com}):
+Geoff Philbrick (\email{philbrick@hks.com}):%
+\index{Philbrick, Geoff}
 
 \begin{verbatim}
 #include <stdio.h>
@@ -1110,7 +1113,7 @@ owner.  There are exactly two important exceptions to this rule:
 \cfunction{PyTuple_SetItem()} and \cfunction{PyList_SetItem()}.  These
 functions take over ownership of the item passed to them --- even if
 they fail!  (Note that \cfunction{PyDict_SetItem()} and friends don't
-take over ownership --- they are ``normal''.)
+take over ownership --- they are ``normal.'')
 
 When a \C{} function is called from Python, it borrows references to its
 arguments from the caller.  The caller owns a reference to the object,
@@ -1138,6 +1141,7 @@ reference to a list item.  For instance:
 \begin{verbatim}
 bug(PyObject *list) {
     PyObject *item = PyList_GetItem(list, 0);
+
     PyList_SetItem(list, 1, PyInt_FromLong(0L));
     PyObject_Print(item, stdout, 0); /* BUG! */
 }
@@ -1171,6 +1175,7 @@ function reads:
 \begin{verbatim}
 no_bug(PyObject *list) {
     PyObject *item = PyList_GetItem(list, 0);
+
     Py_INCREF(item);
     PyList_SetItem(list, 1, PyInt_FromLong(0L));
     PyObject_Print(item, stdout, 0);
@@ -1206,7 +1211,7 @@ bug(PyObject *list) {
 \subsection{NULL Pointers}
 \label{nullPointers}
 
-In general, functions that take object references as arguments don't
+In general, functions that take object references as arguments do not
 expect you to pass them \NULL{} pointers, and will dump core (or
 cause later core dumps) if you do so.  Functions that return object
 references generally return \NULL{} only to indicate that an
@@ -1220,7 +1225,7 @@ when a pointer that may be \NULL{} is received, e.g.\ from
 \cfunction{malloc()} or from a function that may raise an exception.
 
 The macros \cfunction{Py_INCREF()} and \cfunction{Py_DECREF()}
-don't check for \NULL{} pointers --- however, their variants
+do not check for \NULL{} pointers --- however, their variants
 \cfunction{Py_XINCREF()} and \cfunction{Py_XDECREF()} do.
 
 The macros for checking for a particular object type
@@ -1329,13 +1334,14 @@ loading.
 \label{sharedlibs}
 
 The following systems support dynamic loading using shared libraries:
-SunOS 4; Solaris 2; SGI IRIX 5 (but not SGI IRIX 4!); and probably all
-systems derived from SVR4, or at least those SVR4 derivatives that
-support shared libraries (are there any that don't?).
+SunOS 4; Solaris 2; SGI IRIX 5 (but not SGI IRIX 4!), Linux, FreeBSD,
+NetBSD; and probably all systems derived from SVR4, or at least those
+SVR4 derivatives that support shared libraries (are there any that
+don't?).
 
 You don't need to do anything to configure dynamic loading on these
 systems --- the \file{configure} detects the presence of the
-\file{<dlfcn.h>} header file and automatically configures dynamic
+\code{<dlfcn.h>} header file and automatically configures dynamic
 loading.
 
 \subsection{SGI IRIX 4 Dynamic Loading}
@@ -1348,12 +1354,12 @@ work right away so I gave up trying to support it.)
 
 Before you build Python, you first need to fetch and build the
 \code{dl} package written by Jack Jansen.  This is available by
-anonymous ftp from \url{ftp://ftp.cwi.nl/pub/dynload}, file
+anonymous ftp from \url{ftp://ftp.cwi.nl/pub/dynload/}, file
 \file{dl-1.6.tar.Z}.  (The version number may change.)  Follow the
 instructions in the package's \file{README} file to build it.
 
 Once you have built \code{dl}, you can configure Python to use it.  To
-this end, you run the \file{configure} script with the option
+this end, you run the \program{configure} script with the option
 \code{--with-dl=\var{directory}} where \var{directory} is the absolute
 pathname of the \code{dl} directory.
 
@@ -1417,7 +1423,7 @@ contain the options \samp{-I\$(PYTHONTOP) -I\$(PYTHONTOP)/Include}.
 
 You must link the \file{.o} file to produce a shared library.  This is 
 done using a special invocation of the \UNIX{} loader/linker,
-\emph{ld}(1).  Unfortunately the invocation differs slightly per
+\manpage{ld}{1}.  Unfortunately the invocation differs slightly per
 system.
 
 On SunOS 4, use
@@ -1451,7 +1457,7 @@ along the Python module search path.
 \label{irixLinking}
 
 \strong{IMPORTANT:} You must compile your extension module with the
-additional \C{} flag \samp{-G0} (or \samp{-G 0}).  This instruct the
+additional \C{} flag \samp{-G0} (or \samp{-G 0}).  This instructs the
 assembler to generate position-independent code.
 
 You don't need to link the resulting \file{spammodule.o} file; just
