@@ -1,0 +1,23 @@
+These are some programs to work with the SCSI CD-ROM player's audio
+interface (see cdaudio(3) in IRIX 4.0[.2?] or higher).  At the moment
+the Python code is not very clean, sorry about that...
+
+cdwin.py	A trivial window interface to play a CD over the CD
+		player's audio jack.  More functionality is left as an
+		excersice to the reader.  Uses module stdwin.
+
+listcd.py	List the table-of-contents of a CD (data CDs will
+		appear as a single track).
+
+playcd.py	Read audio data from the CD and play it over the
+		Indigo's built-in speker or audio jack.  Uses module al.
+
+sendcd.py	Read audio data from the CD and send it as UDP packets
+		over the network (to readcd.py).
+
+readcd.py	Receive UDP packets containing CD audio data (from
+		sendcd.py) and play them over the Indigo's built-in
+		speaker or audio jack.  Uses module al.  (Doesn't
+		actually use module cd.)
+
+Note that to read *data* CD-ROMs you must open /dev/rdsk/dks0d4s7...
