@@ -1,5 +1,5 @@
-Python 1.4beta3 for Windows NT 3.5
-==================================
+Python 1.4beta3 for Windows NT 3.5 and Windows 95
+=================================================
 
 The zip file pyth14b3.zip contains a preliminary binary release of
 Python 1.4beta3 for Windows NT 3.5 and Windows '95, with Tcl/Tk
