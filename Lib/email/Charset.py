@@ -1,7 +1,15 @@
 # Copyright (C) 2001,2002 Python Software Foundation
 # Author: che@debian.org (Ben Gertzfield)
 
-from types import UnicodeType
+try:
+    unicode
+except NameError:
+    def _is_unicode(x):
+        return 1==0
+else:
+    def _is_unicode(x):
+        return isinstance(x, unicode)
+    
 from email.Encoders import encode_7or8bit
 import email.base64MIME
 import email.quopriMIME
@@ -226,7 +234,7 @@ class Charset:
         Characters that could not be converted to Unicode will be replaced
         with the Unicode replacement character U+FFFD.
         """
-        if isinstance(s, UnicodeType) or self.input_codec is None:
+        if _is_unicode(s) or self.input_codec is None:
             return s
         try:
             return unicode(s, self.input_codec, 'replace')
@@ -254,7 +262,7 @@ class Charset:
             codec = self.output_codec
         else:
             codec = self.input_codec
-        if not isinstance(ustr, UnicodeType) or codec is None:
+        if not _is_unicode(ustr) or codec is None:
             return ustr
         try:
             return ustr.encode(codec, 'replace')
