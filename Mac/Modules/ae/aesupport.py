@@ -115,7 +115,7 @@ AEIdleUPP upp_AEIdleProc;
 
 finalstuff = finalstuff + """
 static pascal OSErr
-GenericEventHandler(const AppleEvent *request, AppleEvent *reply, long refcon)
+GenericEventHandler(AppleEvent *request, AppleEvent *reply, long refcon)
 {
 	PyObject *handler = (PyObject *)refcon;
 	AEDescObject *requestObject, *replyObject;

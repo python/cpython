@@ -6,14 +6,21 @@ especially to figure out all the different forms an object specifier
 can have (without having to rely on Apple's implementation).
 """
 
+import addpack
+addpack.addpack('Demo')
+addpack.addpack('bgen')
+addpack.addpack('ae')
+addpack.addpack('evt')
+
+import sys
+sys.stdout = sys.stderr
+import traceback
+import MacOS
 import AE
 from AppleEvents import *
 import Evt
 from Events import *
 import aetools
-import sys
-import MacOS
-import traceback
 
 kHighLevelEvent = 23				# Not defined anywhere for Python yet?
 
@@ -49,6 +56,9 @@ class EchoServer:
 	
 	def mainloop(self, mask = everyEvent, timeout = 60*60):
 		while 1:
+			self.dooneevent(mask, timeout)
+	
+	def dooneevent(self, mask = everyEvent, timeout = 60*60):
 			got, event = Evt.WaitNextEvent(mask, timeout)
 			if got:
 				self.lowlevelhandler(event)
@@ -116,4 +126,3 @@ def code(x):
 
 if __name__ == '__main__':
 	main()
-else: main()

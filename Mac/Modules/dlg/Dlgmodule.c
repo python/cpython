@@ -34,6 +34,10 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <Dialogs.h>
 
+#ifndef HAVE_UNIVERSAL_HEADERS
+#define NewModalFilterProc(x) (x)
+#endif
+
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
 /* XXX Shouldn't this be a stack? */
@@ -51,7 +55,7 @@ static pascal Boolean Dlg_UnivFilterProc(DialogPtr dialog,
 	if (callback == NULL)
 		return 0; /* Default behavior */
 	Dlg_FilterProc_callback = NULL; /* We'll restore it when call successful */
-	args = Py_BuildValue("O&s#", DlgObj_New, dialog, event, sizeof(EventRecord));
+	args = Py_BuildValue("O&s#", DlgObj_New, dialog, event, (int)sizeof(EventRecord));
 	if (args == NULL)
 		res = NULL;
 	else {
@@ -108,7 +112,7 @@ typedef struct DialogObject {
 } DialogObject;
 
 PyObject *DlgObj_New(itself)
-	const DialogPtr itself;
+	DialogPtr itself;
 {
 	DialogObject *it;
 	if (itself == NULL) return Py_None;
@@ -149,20 +153,6 @@ static PyObject *DlgObj_DrawDialog(_self, _args)
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	DrawDialog(_self->ob_itself);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *DlgObj_UpdtDialog(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	UpdtDialog(_self->ob_itself,
-	           _self->ob_itself->visRgn);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -406,8 +396,6 @@ static PyObject *DlgObj_ShortenDITL(_self, _args)
 static PyMethodDef DlgObj_methods[] = {
 	{"DrawDialog", (PyCFunction)DlgObj_DrawDialog, 1,
 	 "() -> None"},
-	{"UpdtDialog", (PyCFunction)DlgObj_UpdtDialog, 1,
-	 "() -> None"},
 	{"UpdateDialog", (PyCFunction)DlgObj_UpdateDialog, 1,
 	 "() -> None"},
 	{"GetDItem", (PyCFunction)DlgObj_GetDItem, 1,
@@ -524,36 +512,6 @@ static PyObject *Dlg_GetNewDialog(_self, _args)
 	return _res;
 }
 
-static PyObject *Dlg_CouldDialog(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short dialogID;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &dialogID))
-		return NULL;
-	CouldDialog(dialogID);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Dlg_FreeDialog(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short dialogID;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &dialogID))
-		return NULL;
-	FreeDialog(dialogID);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
 static PyObject *Dlg_ParamText(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -588,7 +546,7 @@ static PyObject *Dlg_ModalDialog(_self, _args)
 	if (!PyArg_ParseTuple(_args, "O",
 	                      &filterProc))
 		return NULL;
-	ModalDialog(Dlg_PassFilterProc(filterProc),
+	ModalDialog(NewModalFilterProc(Dlg_PassFilterProc(filterProc)),
 	            &itemHit);
 	_res = Py_BuildValue("h",
 	                     itemHit);
@@ -646,7 +604,7 @@ static PyObject *Dlg_Alert(_self, _args)
 	                      &filterProc))
 		return NULL;
 	_rv = Alert(alertID,
-	            Dlg_PassFilterProc(filterProc));
+	            NewModalFilterProc(Dlg_PassFilterProc(filterProc)));
 	_res = Py_BuildValue("h",
 	                     _rv);
 	return _res;
@@ -665,7 +623,7 @@ static PyObject *Dlg_StopAlert(_self, _args)
 	                      &filterProc))
 		return NULL;
 	_rv = StopAlert(alertID,
-	                Dlg_PassFilterProc(filterProc));
+	                NewModalFilterProc(Dlg_PassFilterProc(filterProc)));
 	_res = Py_BuildValue("h",
 	                     _rv);
 	return _res;
@@ -684,7 +642,7 @@ static PyObject *Dlg_NoteAlert(_self, _args)
 	                      &filterProc))
 		return NULL;
 	_rv = NoteAlert(alertID,
-	                Dlg_PassFilterProc(filterProc));
+	                NewModalFilterProc(Dlg_PassFilterProc(filterProc)));
 	_res = Py_BuildValue("h",
 	                     _rv);
 	return _res;
@@ -703,39 +661,9 @@ static PyObject *Dlg_CautionAlert(_self, _args)
 	                      &filterProc))
 		return NULL;
 	_rv = CautionAlert(alertID,
-	                   Dlg_PassFilterProc(filterProc));
+	                   NewModalFilterProc(Dlg_PassFilterProc(filterProc)));
 	_res = Py_BuildValue("h",
 	                     _rv);
-	return _res;
-}
-
-static PyObject *Dlg_CouldAlert(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short alertID;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &alertID))
-		return NULL;
-	CouldAlert(alertID);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Dlg_FreeAlert(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short alertID;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &alertID))
-		return NULL;
-	FreeAlert(alertID);
-	Py_INCREF(Py_None);
-	_res = Py_None;
 	return _res;
 }
 
@@ -845,10 +773,6 @@ static PyMethodDef Dlg_methods[] = {
 	 "(Rect boundsRect, Str255 title, Boolean visible, short procID, WindowPtr behind, Boolean goAwayFlag, long refCon, Handle itmLstHndl) -> (DialogPtr _rv)"},
 	{"GetNewDialog", (PyCFunction)Dlg_GetNewDialog, 1,
 	 "(short dialogID, WindowPtr behind) -> (DialogPtr _rv)"},
-	{"CouldDialog", (PyCFunction)Dlg_CouldDialog, 1,
-	 "(short dialogID) -> None"},
-	{"FreeDialog", (PyCFunction)Dlg_FreeDialog, 1,
-	 "(short dialogID) -> None"},
 	{"ParamText", (PyCFunction)Dlg_ParamText, 1,
 	 "(Str255 param0, Str255 param1, Str255 param2, Str255 param3) -> None"},
 	{"ModalDialog", (PyCFunction)Dlg_ModalDialog, 1,
@@ -865,10 +789,6 @@ static PyMethodDef Dlg_methods[] = {
 	 "(short alertID, PyObject* filterProc) -> (short _rv)"},
 	{"CautionAlert", (PyCFunction)Dlg_CautionAlert, 1,
 	 "(short alertID, PyObject* filterProc) -> (short _rv)"},
-	{"CouldAlert", (PyCFunction)Dlg_CouldAlert, 1,
-	 "(short alertID) -> None"},
-	{"FreeAlert", (PyCFunction)Dlg_FreeAlert, 1,
-	 "(short alertID) -> None"},
 	{"GetIText", (PyCFunction)Dlg_GetIText, 1,
 	 "(Handle item) -> (Str255 text)"},
 	{"SetIText", (PyCFunction)Dlg_SetIText, 1,

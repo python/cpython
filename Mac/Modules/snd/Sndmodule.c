@@ -30,9 +30,11 @@ extern int MenuObj_Convert(PyObject *, MenuHandle *);
 extern PyObject *CtlObj_New(ControlHandle);
 extern int CtlObj_Convert(PyObject *, ControlHandle *);
 
+extern PyObject *WinObj_WhichWindow(WindowPtr);
+
 #include <Sound.h>
 
-#ifndef __MWERKS__
+#ifndef HAVE_UNIVERSAL_HEADERS
 #define SndCallBackUPP ProcPtr
 #define NewSndCallBackProc(x) (x)
 #define SndListHandle Handle
@@ -100,7 +102,7 @@ typedef struct SndChannelObject {
 } SndChannelObject;
 
 static PyObject *SndCh_New(itself)
-	const SndChannelPtr itself;
+	SndChannelPtr itself;
 {
 	SndChannelObject *it;
 	it = PyObject_NEW(SndChannelObject, &SndChannel_Type);
@@ -262,7 +264,6 @@ static PyObject *SndCh_SndChannelStatus(_self, _args)
 	OSErr _err;
 	short theLength;
 	SCStatus theStatus__out__;
-	int theStatus__len__;
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &theLength))
 		return NULL;
@@ -271,7 +272,7 @@ static PyObject *SndCh_SndChannelStatus(_self, _args)
 	                        &theStatus__out__);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("s#",
-	                     (char *)&theStatus__out__, sizeof(SCStatus));
+	                     (char *)&theStatus__out__, (int)sizeof(SCStatus));
  theStatus__error__: ;
 	return _res;
 }
@@ -305,7 +306,7 @@ static PyObject *SndCh_getattr(self, name)
 
 #define SndCh_setattr NULL
 
-static PyTypeObject SndChannel_Type = {
+staticforward PyTypeObject SndChannel_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
 	"SndChannel", /*tp_name*/
@@ -344,7 +345,7 @@ static PyObject *Snd_SndNewChannel(_self, _args)
 	_err = SndNewChannel(&chan,
 	                     synth,
 	                     init,
-	                     (SndCallBackProcPtr)&SndCh_UserRoutine);
+	                     NewSndCallBackProc(SndCh_UserRoutine));
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
 	                     SndCh_New, chan);
@@ -378,35 +379,6 @@ static PyObject *Snd_SndControl(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SetSoundVol(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short level;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &level))
-		return NULL;
-	SetSoundVol(level);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Snd_GetSoundVol(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short level;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	GetSoundVol(&level);
-	_res = Py_BuildValue("h",
-	                     level);
-	return _res;
-}
-
 static PyObject *Snd_SndSoundManagerVersion(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -429,7 +401,6 @@ static PyObject *Snd_SndManagerStatus(_self, _args)
 	OSErr _err;
 	short theLength;
 	SMStatus theStatus__out__;
-	int theStatus__len__;
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &theLength))
 		return NULL;
@@ -437,7 +408,7 @@ static PyObject *Snd_SndManagerStatus(_self, _args)
 	                        &theStatus__out__);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("s#",
-	                     (char *)&theStatus__out__, sizeof(SMStatus));
+	                     (char *)&theStatus__out__, (int)sizeof(SMStatus));
  theStatus__error__: ;
 	return _res;
 }
@@ -495,34 +466,38 @@ static PyObject *Snd_Comp3to1(_self, _args)
 	char *buffer__in__;
 	char *buffer__out__;
 	long buffer__len__;
+	int buffer__in_len__;
 	char *state__in__;
 	char state__out__[128];
 	int state__len__;
+	int state__in_len__;
 	unsigned long numChannels;
 	unsigned long whichChannel;
 	if (!PyArg_ParseTuple(_args, "s#s#ll",
-	                      &buffer__in__, &buffer__len__,
-	                      &state__in__, &state__len__,
+	                      &buffer__in__, &buffer__in_len__,
+	                      &state__in__, &state__in_len__,
 	                      &numChannels,
 	                      &whichChannel))
 		return NULL;
-	if ((buffer__out__ = malloc(buffer__len__)) == NULL)
+	if ((buffer__out__ = malloc(buffer__in_len__)) == NULL)
 	{
 		PyErr_NoMemory();
 		goto buffer__error__;
 	}
-	if (state__len__ != 128)
+	buffer__len__ = buffer__in_len__;
+	if (state__in_len__ != 128)
 	{
 		PyErr_SetString(PyExc_TypeError, "buffer length should be 128");
 		goto state__error__;
 	}
-	Comp3to1(buffer__in__, buffer__out__, buffer__len__,
+	state__len__ = state__in_len__;
+	Comp3to1(buffer__in__, buffer__out__, (long)buffer__len__,
 	         state__in__, state__out__,
 	         numChannels,
 	         whichChannel);
 	_res = Py_BuildValue("s#s#",
-	                     buffer__out__, buffer__len__,
-	                     state__out__, 128);
+	                     buffer__out__, (int)buffer__len__,
+	                     state__out__, (int)128);
  state__error__: ;
 	free(buffer__out__);
  buffer__error__: ;
@@ -537,34 +512,38 @@ static PyObject *Snd_Exp1to3(_self, _args)
 	char *buffer__in__;
 	char *buffer__out__;
 	long buffer__len__;
+	int buffer__in_len__;
 	char *state__in__;
 	char state__out__[128];
 	int state__len__;
+	int state__in_len__;
 	unsigned long numChannels;
 	unsigned long whichChannel;
 	if (!PyArg_ParseTuple(_args, "s#s#ll",
-	                      &buffer__in__, &buffer__len__,
-	                      &state__in__, &state__len__,
+	                      &buffer__in__, &buffer__in_len__,
+	                      &state__in__, &state__in_len__,
 	                      &numChannels,
 	                      &whichChannel))
 		return NULL;
-	if ((buffer__out__ = malloc(buffer__len__)) == NULL)
+	if ((buffer__out__ = malloc(buffer__in_len__)) == NULL)
 	{
 		PyErr_NoMemory();
 		goto buffer__error__;
 	}
-	if (state__len__ != 128)
+	buffer__len__ = buffer__in_len__;
+	if (state__in_len__ != 128)
 	{
 		PyErr_SetString(PyExc_TypeError, "buffer length should be 128");
 		goto state__error__;
 	}
-	Exp1to3(buffer__in__, buffer__out__, buffer__len__,
+	state__len__ = state__in_len__;
+	Exp1to3(buffer__in__, buffer__out__, (long)buffer__len__,
 	        state__in__, state__out__,
 	        numChannels,
 	        whichChannel);
 	_res = Py_BuildValue("s#s#",
-	                     buffer__out__, buffer__len__,
-	                     state__out__, 128);
+	                     buffer__out__, (int)buffer__len__,
+	                     state__out__, (int)128);
  state__error__: ;
 	free(buffer__out__);
  buffer__error__: ;
@@ -579,34 +558,38 @@ static PyObject *Snd_Comp6to1(_self, _args)
 	char *buffer__in__;
 	char *buffer__out__;
 	long buffer__len__;
+	int buffer__in_len__;
 	char *state__in__;
 	char state__out__[128];
 	int state__len__;
+	int state__in_len__;
 	unsigned long numChannels;
 	unsigned long whichChannel;
 	if (!PyArg_ParseTuple(_args, "s#s#ll",
-	                      &buffer__in__, &buffer__len__,
-	                      &state__in__, &state__len__,
+	                      &buffer__in__, &buffer__in_len__,
+	                      &state__in__, &state__in_len__,
 	                      &numChannels,
 	                      &whichChannel))
 		return NULL;
-	if ((buffer__out__ = malloc(buffer__len__)) == NULL)
+	if ((buffer__out__ = malloc(buffer__in_len__)) == NULL)
 	{
 		PyErr_NoMemory();
 		goto buffer__error__;
 	}
-	if (state__len__ != 128)
+	buffer__len__ = buffer__in_len__;
+	if (state__in_len__ != 128)
 	{
 		PyErr_SetString(PyExc_TypeError, "buffer length should be 128");
 		goto state__error__;
 	}
-	Comp6to1(buffer__in__, buffer__out__, buffer__len__,
+	state__len__ = state__in_len__;
+	Comp6to1(buffer__in__, buffer__out__, (long)buffer__len__,
 	         state__in__, state__out__,
 	         numChannels,
 	         whichChannel);
 	_res = Py_BuildValue("s#s#",
-	                     buffer__out__, buffer__len__,
-	                     state__out__, 128);
+	                     buffer__out__, (int)buffer__len__,
+	                     state__out__, (int)128);
  state__error__: ;
 	free(buffer__out__);
  buffer__error__: ;
@@ -621,34 +604,38 @@ static PyObject *Snd_Exp1to6(_self, _args)
 	char *buffer__in__;
 	char *buffer__out__;
 	long buffer__len__;
+	int buffer__in_len__;
 	char *state__in__;
 	char state__out__[128];
 	int state__len__;
+	int state__in_len__;
 	unsigned long numChannels;
 	unsigned long whichChannel;
 	if (!PyArg_ParseTuple(_args, "s#s#ll",
-	                      &buffer__in__, &buffer__len__,
-	                      &state__in__, &state__len__,
+	                      &buffer__in__, &buffer__in_len__,
+	                      &state__in__, &state__in_len__,
 	                      &numChannels,
 	                      &whichChannel))
 		return NULL;
-	if ((buffer__out__ = malloc(buffer__len__)) == NULL)
+	if ((buffer__out__ = malloc(buffer__in_len__)) == NULL)
 	{
 		PyErr_NoMemory();
 		goto buffer__error__;
 	}
-	if (state__len__ != 128)
+	buffer__len__ = buffer__in_len__;
+	if (state__in_len__ != 128)
 	{
 		PyErr_SetString(PyExc_TypeError, "buffer length should be 128");
 		goto state__error__;
 	}
-	Exp1to6(buffer__in__, buffer__out__, buffer__len__,
+	state__len__ = state__in_len__;
+	Exp1to6(buffer__in__, buffer__out__, (long)buffer__len__,
 	        state__in__, state__out__,
 	        numChannels,
 	        whichChannel);
 	_res = Py_BuildValue("s#s#",
-	                     buffer__out__, buffer__len__,
-	                     state__out__, 128);
+	                     buffer__out__, (int)buffer__len__,
+	                     state__out__, (int)128);
  state__error__: ;
 	free(buffer__out__);
  buffer__error__: ;
@@ -660,10 +647,6 @@ static PyMethodDef Snd_methods[] = {
 	 "(short synth, long init, PyObject* userRoutine) -> (SndChannelPtr chan)"},
 	{"SndControl", (PyCFunction)Snd_SndControl, 1,
 	 "(short id) -> (SndCommand cmd)"},
-	{"SetSoundVol", (PyCFunction)Snd_SetSoundVol, 1,
-	 "(short level) -> None"},
-	{"GetSoundVol", (PyCFunction)Snd_GetSoundVol, 1,
-	 "() -> (short level)"},
 	{"SndSoundManagerVersion", (PyCFunction)Snd_SndSoundManagerVersion, 1,
 	 "() -> (NumVersion _rv)"},
 	{"SndManagerStatus", (PyCFunction)Snd_SndManagerStatus, 1,

@@ -36,11 +36,9 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
-#ifdef __MWERKS__
+#ifdef HAVE_UNIVERSAL_HEADERS
 #define WindowPeek WindowPtr
 #endif
-
-extern PyObject *WinObj_WhichWindow(WindowPtr w); /* Forward */
 
 static PyObject *Win_Error;
 
@@ -56,7 +54,7 @@ typedef struct WindowObject {
 } WindowObject;
 
 PyObject *WinObj_New(itself)
-	const WindowPtr itself;
+	WindowPtr itself;
 {
 	WindowObject *it;
 	if (itself == NULL) return PyMac_Error(resNotFound);
@@ -844,7 +842,10 @@ WinObj_WhichWindow(w)
 	
 	/* XXX What if we find a stdwin window or a window belonging
 	       to some other package? */
-	it = (PyObject *) GetWRefCon(w);
+	if (w == NULL)
+		it = NULL;
+	else
+		it = (PyObject *) GetWRefCon(w);
 	if (it == NULL || ((WindowObject *)it)->ob_itself != w)
 		it = Py_None;
 	Py_INCREF(it);

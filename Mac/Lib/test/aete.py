@@ -11,7 +11,7 @@ import StringIO
 from Res import *
 
 def main():
-	filename = raw_input("Listing file? (default stdout): ")
+	filename = ""
 	redirect(filename, realmain)
 
 def redirect(filename, func, *args):
@@ -27,14 +27,14 @@ def redirect(filename, func, *args):
 def realmain():
 	#list('C:System Folder:Extensions:AppleScript\252')
 	#list('C:Tao AppleScript:Finder Liaison:Finder Liaison 1.0')
-	#list('C:Tao AppleScript:Scriptable Text Editor')
+	list('C:Tao AppleScript:Scriptable Text Editor')
 	#list('C:Internet:Eudora 1.4.2:Eudora1.4.2')
 	#list('E:Excel 4.0:Microsoft Excel')
 	#list('C:Internet:Netscape 1.0N:Netscape 1.0N')
 	#find('C:')
-	find('D:')
-	find('E:')
-	find('F:')
+	#find('D:')
+	#find('E:')
+	#find('F:')
 
 def find(dir, maxlevel = 5):
 	hits = []

@@ -41,6 +41,8 @@ class SoundScanner(Scanner):
 
 	def makeblacklisttypes(self):
 		return [
+			"GetSoundVol",
+			"SetSoundVol",
 			]
 
 	def makerepairinstructions(self):
