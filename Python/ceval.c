@@ -66,6 +66,7 @@ static object *eval_code2 PROTO((codeobject *,
 				 object **, int,
 				 object **, int,
 				 object *));
+static int do_raise PROTO((object *, object *, object *));
 #ifdef LLTRACE
 static int prtrace PROTO((object *, char *));
 #endif
@@ -945,77 +946,20 @@ eval_code2(co, globals, locals,
 			switch (oparg) {
 			case 3:
 				u = POP(); /* traceback */
-				if (u == None) {
-					DECREF(u);
-					u = NULL;
-				}
-				else if (!PyTraceBack_Check(u)) {
-					err_setstr(TypeError,
-				    "raise 3rd arg must be traceback or None");
-					goto raise_error;
-				}
 				/* Fallthrough */
 			case 2:
 				v = POP(); /* value */
 				/* Fallthrough */
 			case 1:
 				w = POP(); /* exc */
+				why = do_raise(w, v, u);
 				break;
 			default:
 				err_setstr(SystemError,
 					   "bad RAISE_VARARGS oparg");
-				goto raise_error;
-			}
-			if (v == NULL) {
-				v = None;
-				INCREF(v);
-			}
-			/* A tuple is equivalent to its first element here */
-			while (is_tupleobject(w) && gettuplesize(w) > 0) {
-				t = w;
-				w = GETTUPLEITEM(w, 0);
-				INCREF(w);
-				DECREF(t);
-			}
-			if (is_stringobject(w)) {
-				;
-			} else if (is_classobject(w)) {
-				if (!is_instanceobject(v)
-				    || !issubclass((object*)((instanceobject*)v)->in_class,
-						   w)) {
-					err_setstr(TypeError,
-						   "a class exception must have a value that is an instance of the class");
-					goto raise_error;
-				}
-			} else if (is_instanceobject(w)) {
-				if (v != None) {
-					err_setstr(TypeError,
-						   "an instance exception may not have a separate value");
-					goto raise_error;
-				}
-				else {
-					DECREF(v);
-					v = w;
-					w = (object*) ((instanceobject*)w)->in_class;
-					INCREF(w);
-				}
-			}
-			else {
-				err_setstr(TypeError,
-					"exceptions must be strings, classes, or instances");
-				goto raise_error;
-			}
-			err_restore(w, v, u);
-			if (u == NULL)
 				why = WHY_EXCEPTION;
-			else
-				why = WHY_RERAISE;
-			break;
-		raise_error:
-			XDECREF(v);
-			XDECREF(w);
-			XDECREF(u);
-			why = WHY_EXCEPTION;
+				break;
+			}
 			break;
 		
 		case LOAD_LOCALS:
@@ -1872,6 +1816,129 @@ eval_code2(co, globals, locals,
 	--recursion_depth;
 	
 	return retval;
+}
+
+/* Logic for the raise statement (too complicated for inlining).
+   This *consumes* a reference count to each of its arguments. */
+static int
+do_raise(type, value, tb)
+	object *type, *value, *tb;
+{
+	/* We support the following forms of raise:
+	   raise <class>, <classinstance>
+	   raise <class>, <argument tuple>
+	   raise <class>, None
+	   raise <class>, <argument>
+	   raise <classinstance>, None
+	   raise <string>, <object>
+	   raise <string>, None
+
+	   An omitted second argument is the same as None.
+
+	   In addition, raise <tuple>, <anything> is the same as
+	   raising the tuple's first item (and it better have one!);
+	   this rule is applied recursively.
+
+	   Finally, an optional third argument can be supplied, which
+	   gives the traceback to be substituted (useful when
+	   re-raising an exception after examining it).  */
+
+	/* First, check the traceback argument, replacing None with
+	   NULL. */
+	if (tb == None) {
+		DECREF(tb);
+		tb = NULL;
+	}
+	else if (tb != NULL && !PyTraceBack_Check(tb)) {
+		err_setstr(TypeError,
+			   "raise 3rd arg must be traceback or None");
+		goto raise_error;
+	}
+
+	/* Next, replace a missing value with None */
+	if (value == NULL) {
+		value = None;
+		INCREF(value);
+	}
+
+	/* Next, repeatedly, replace a tuple exception with its first item */
+	while (is_tupleobject(type) && gettuplesize(type) > 0) {
+		object *tmp = type;
+		type = GETTUPLEITEM(type, 0);
+		INCREF(type);
+		DECREF(tmp);
+	}
+
+	/* Now switch on the exception's type */
+	if (is_stringobject(type)) {
+		;
+	}
+	else if (is_classobject(type)) {
+		/* Raising a class.  If the value is an instance, it
+		   better be an instance of the class.  If it is not,
+		   it will be used to create an instance. */
+		if (is_instanceobject(value)) {
+			object *inclass = (object*)
+				(((instanceobject*)value)->in_class);
+			if (!issubclass(inclass, type)) {
+				err_setstr(TypeError,
+ "raise <class>, <instance> requires that <instance> is a member of <class>");
+				goto raise_error;
+			}
+		}
+		else {
+			/* Go instantiate the class */
+			object *args, *res;
+			if (value == None)
+				args = mkvalue("()");
+			else if (is_tupleobject(value)) {
+				INCREF(value);
+				args = value;
+			}
+			else
+				args = mkvalue("(O)", value);
+			if (args == NULL)
+				goto raise_error;
+			res = call_object(type, args);
+			DECREF(args);
+			if (res == NULL)
+				goto raise_error;
+			DECREF(value);
+			value = res;
+		}
+	}
+	else if (is_instanceobject(type)) {
+		/* Raising an instance.  The value should be a dummy. */
+		if (value != None) {
+			err_setstr(TypeError,
+			  "instance exception may not have a separate value");
+			goto raise_error;
+		}
+		else {
+			/* Normalize to raise <class>, <instance> */
+			DECREF(value);
+			value = type;
+			type = (object*) ((instanceobject*)type)->in_class;
+			INCREF(type);
+		}
+	}
+	else {
+		/* Not something you can raise.  You get an exception
+		   anyway, just not what you specified :-) */
+		err_setstr(TypeError,
+		    "exceptions must be strings, classes, or instances");
+		goto raise_error;
+	}
+	err_restore(type, value, tb);
+	if (tb == NULL)
+		return WHY_EXCEPTION;
+	else
+		return WHY_RERAISE;
+ raise_error:
+	XDECREF(value);
+	XDECREF(type);
+	XDECREF(tb);
+	return WHY_EXCEPTION;
 }
 
 #ifdef LLTRACE
