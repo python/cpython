@@ -84,4 +84,10 @@ for line in lines:
     res = res + b
 assert res == testdata
 
+# Test crc32()
+crc = binascii.crc32("Test the CRC-32 of")
+crc = binascii.crc32(" this string.", crc)
+if crc != 1571220330:
+    print "binascii.crc32() failed."
+
 # The hqx test is in test_binhex.py
