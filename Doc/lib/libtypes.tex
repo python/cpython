@@ -528,6 +528,7 @@ mapping, \var{k} is a key and \var{x} is an arbitrary object):
   \lineiii{\var{a}.keys()}{a copy of \var{a}'s list of keys}{(2)}
   \lineiii{\var{a}.update(b)}{\code{for k, v in b.items(): a[k] = v}}{(3)}
   \lineiii{\var{a}.values()}{a copy of \var{a}'s list of values}{(2)}
+  \lineiii{\var{a}.get(k, f)}{the item of \var{a} with key \var{k}}{(4)}
 \end{tableiii}
 \indexiii{operations on}{mapping}{types}
 \indexiii{operations on}{dictionary}{type}
@@ -545,6 +546,10 @@ Notes:
 \item[(2)] Keys and values are listed in random order.
 
 \item[(3)] \code{b} must be of the same type as \code{a}.
+
+\item[(4)] Never raises an exception if \var{k} is not in the map,
+instead it returns \var{f}.  \var{f} is optional, when not provided
+and \var{k} is not in the map, \code{None} is returned.
 \end{description}
 
 \subsection{Other Built-in Types}
