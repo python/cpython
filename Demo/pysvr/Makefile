@@ -1,8 +1,8 @@
 # Makefile for 'pysvr' application embedding Python.
 # Tailored for Python 1.5a3 or later.
-# Some details are specific to Solaris or CNRI.
+# Some details are specific for Solaris or CNRI.
 
-# Which C compiler (only set because I don't have cc here)
+# Which C compiler
 CC=gcc
 
 # Optimization preferences
@@ -14,16 +14,13 @@ VER=1.5
 
 # Expressions using the above definitions -- no need to change
 PYVER=python$(VER)
-#PYC=$(INST)/lib/$(PYVER)/config
-PYC=../src/sparc
+PYC=$(INST)/lib/$(PYVER)/config
 PYINCL=-I$(INST)/include/$(PYVER) -I$(PYC)
 PYLIBS=$(PYC)/libpython1.5.a
 
-# Where GNU readline is installed
-RLINST=/depot/gnu/plat
-
 # Libraries to link with -- very installation dependent
-RLLIBS=-L$(RLINST)/lib -lreadline -ltermcap
+# (See LIBS= in Modules/Makefile in build tree)
+RLLIBS=-lreadline -ltermcap
 OTHERLIBS=-lsocket -lnsl -lpthread -ldl -lm
 
 # Compilation and link flags -- no need to change normally
