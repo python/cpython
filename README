@@ -878,6 +878,10 @@ platform-specific files will be installed in subdirectories if the
 directory given by --exec-prefix or the `exec_prefix' Make variable
 (defaults to the --prefix directory) is given.
 
+If DESTDIR is set, it will be taken as the root directory of the
+installation, and files will be installed into $(DESTDIR)$(prefix),
+$(DESTDIR)$(exec_prefix), etc.
+
 All subdirectories created will have Python's version number in their
 name, e.g. the library modules are installed in
 "/usr/local/lib/python<version>/" by default, where <version> is the
