@@ -1,7 +1,18 @@
 test_minidom
 Test Succeeded testAAA
 Test Succeeded testAAB
+Passed Test
+Passed Test
+Passed Test
+Passed Test
+Passed Test
+Passed Test
+Passed Test
+Passed Test
 Test Succeeded testAddAttr
+Passed Test
+Passed Test
+Passed Test
 Test Succeeded testAppendChild
 Test Succeeded testAttrListItem
 Test Succeeded testAttrListItemNS
@@ -12,7 +23,14 @@ Test Succeeded testAttrListLength
 Test Succeeded testAttrListValues
 Test Succeeded testAttrList__getitem__
 Test Succeeded testAttrList__setitem__
+Passed Test
 Test Succeeded testAttributeRepr
+Passed Test
+Passed Test
+Passed Test
+Passed Test
+Passed Test
+Passed Test
 Test Succeeded testChangeAttr
 Test Succeeded testChildNodes
 Test Succeeded testCloneAttributeDeep
@@ -27,9 +45,16 @@ Test Succeeded testClonePIShallow
 Test Succeeded testComment
 Test Succeeded testCreatAttributeNS
 Test Succeeded testCreateElementNS
+Passed Test
+Passed Test
+Passed Test
+Passed Test
 Test Succeeded testDeleteAttr
 Test Succeeded testDocumentElement
+Passed Test
+Passed Test
 Test Succeeded testElement
+Passed Test
 Test Succeeded testElementReprAndStr
 Test Succeeded testFirstChild
 Test Succeeded testGetAttrLength
@@ -38,28 +63,47 @@ Test Succeeded testGetAttrValues
 Test Succeeded testGetAttribute
 Test Succeeded testGetAttributeNS
 Test Succeeded testGetAttributeNode
+Passed Test
+Passed Test
 Test Succeeded testGetElementsByTagName
 Test Succeeded testGetElementsByTagNameNS
 Test Succeeded testGetEmptyNodeListFromElementsByTagNameNS
 Test Succeeded testHasChildNodes
+Passed Test
 Test Succeeded testInsertBefore
+Passed Test
+Passed Test
+Passed Test
 Test Succeeded testNonZero
 Test Succeeded testParse
 Test Succeeded testParseAttributeNamespaces
 Test Succeeded testParseAttributes
 Test Succeeded testParseElement
 Test Succeeded testParseElementNamespaces
+<xml.dom.minidom.Document instance at 0xa104c8c>
+Test Succeeded testParseFromFile
+Garbage left over:
+[('168820100<class xml.dom.minidom.Element at 0xa0cc58c>', "{'childNodes': []}"), ('168926628<class xml.dom.minidom.Text at 0xa0ccfac>', "{'childNodes': []}"), ('168722260<class xml.dom.minidom.Text at 0xa0ccfac>', "{'childNodes': []}"), ('168655020<class xml.dom.minidom.Text at 0xa0ccfac>', "{'childNodes': []}"), ('168650868<class xml.dom.minidom.Text at 0xa0ccfac>', "{'childNodes': []}"), ('168663308<class xml.dom.minidom.Text at 0xa0ccfac>', "{'childNodes': []}"), ('168846892<class xml.dom.minidom.Text at 0xa0ccfac>', "{'childNodes': []}"), ('169039972<class xml.dom.minidom.Text at 0xa0ccfac>', "{'childNodes': []}"), ('168666508<class xml.dom.minidom.Element at 0xa0cc58c>', "{'childNodes': []}"), ('168730780<class xml.dom.minidom.Element at 0xa0cc58c>', "{'childNodes': []}")]
 Test Succeeded testParseProcessingInstructions
 Test Succeeded testParseString
 Test Succeeded testProcessingInstruction
 Test Succeeded testProcessingInstructionRepr
+Passed Test
+Passed Test
 Test Succeeded testRemoveAttr
+Passed Test
+Passed Test
 Test Succeeded testRemoveAttrNS
+Passed Test
+Passed Test
+Passed Test
 Test Succeeded testRemoveAttributeNode
 Test Succeeded testSetAttrValueandNodeValue
 Test Succeeded testTextNodeRepr
 Test Succeeded testTextRepr
 Test Succeeded testTooManyDocumentElements
+Passed Test
 Test Succeeded testUnlink
 Test Succeeded testWriteText
 Test Succeeded testWriteXML
+All tests succeeded
