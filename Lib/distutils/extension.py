@@ -10,6 +10,10 @@ __revision__ = "$Id$"
 import os, string
 from types import *
 
+try:
+    import warnings
+except ImportError:
+    warnings = None
 
 # This class is really only used by the "build_ext" command, so it might
 # make sense to put it in distutils.command.build_ext.  However, that
@@ -93,8 +97,8 @@ class Extension:
                   export_symbols=None,
                   depends=None,
                   language=None,
+                  **kw                      # To catch unknown keywords
                  ):
-
         assert type(name) is StringType, "'name' must be a string"
         assert (type(sources) is ListType and
                 map(type, sources) == [StringType]*len(sources)), \
@@ -115,6 +119,15 @@ class Extension:
         self.depends = depends or []
         self.language = language
 
+        # If there are unknown keyword options, warn about them
+        if len(kw):
+            L = kw.keys() ; L.sort()
+            L = map(repr, L)
+            msg = "Unknown Extension options: " + string.join(L, ', ')
+            if warnings is not None:
+                warnings.warn(msg)
+            else:
+                sys.stderr.write(msg + '\n')
 # class Extension
 
 
