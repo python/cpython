@@ -118,7 +118,7 @@ class ProgressBar:
 		self.curval = -1
 		self.d = GetNewDialog(259, -1)
 		tp, text_h, rect = self.d.GetDialogItem(2)
-		SetDialogItemText(text_h, "Progress...")
+		SetDialogItemText(text_h, label)
 		self._update(0)
 		
 	def _update(self, value):
@@ -128,17 +128,16 @@ class ProgressBar:
 		Qd.FrameRect(bar_rect)	# Draw outline
 		
 		inner_rect = Qd.InsetRect(bar_rect, 1, 1)
-		Qd.ForeColor(QuickDraw.whiteColor)
-		Qd.BackColor(QuickDraw.whiteColor)
-		Qd.PaintRect(inner_rect)	# Clear internal
-		
 		l, t, r, b = inner_rect
-		r = int(l + (r-l)*value/self.maxval)
-		inner_rect = l, t, r, b
+
 		Qd.ForeColor(QuickDraw.blackColor)
 		Qd.BackColor(QuickDraw.blackColor)
-		Qd.PaintRect(inner_rect)	# Draw bar
-		
+		Qd.PaintRect((l, t, int(l + (r-l)*value/self.maxval), b))	# Draw bar
+
+		Qd.ForeColor(QuickDraw.whiteColor)
+		Qd.BackColor(QuickDraw.whiteColor)
+		Qd.PaintRect((int(l + (r-l)*value/self.maxval), t, r, b))	# Clear rest
+				
 		# Restore settings
 		Qd.ForeColor(QuickDraw.blackColor)
 		Qd.BackColor(QuickDraw.whiteColor)
