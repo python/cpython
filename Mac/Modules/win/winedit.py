@@ -96,6 +96,16 @@ f = Method(void, 'SetWindowUserState',
 )
 methods.append(f)
 
+f = Method(Handle, 'GetWindowDataHandle',
+	(WindowRef, 'theWindow', InMode),
+)
+methods.append(f)
+f = Method(void, 'SetWindowDataHandle',
+	(WindowRef, 'theWindow', InMode),
+	(Handle, 'data', InMode),
+)
+methods.append(f)
+
 # These have Mac prefixed to their name in the 3.1 universal headers,
 # so we add the old/real names by hand.
 f = Method(void, 'CloseWindow',

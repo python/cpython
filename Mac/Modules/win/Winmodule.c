@@ -46,9 +46,6 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
-#ifdef HAVE_UNIVERSAL_HEADERS
-#define WindowPeek WindowPtr
-#endif
 
 static PyObject *Win_Error;
 
@@ -967,6 +964,36 @@ static PyObject *WinObj_SetWindowUserState(_self, _args)
 	return _res;
 }
 
+static PyObject *WinObj_GetWindowDataHandle(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Handle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetWindowDataHandle(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *WinObj_SetWindowDataHandle(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Handle data;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &data))
+		return NULL;
+	SetWindowDataHandle(_self->ob_itself,
+	                    data);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *WinObj_CloseWindow(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
@@ -1128,6 +1155,10 @@ static PyMethodDef WinObj_methods[] = {
 	 "(Rect r) -> None"},
 	{"SetWindowUserState", (PyCFunction)WinObj_SetWindowUserState, 1,
 	 "(Rect r) -> None"},
+	{"GetWindowDataHandle", (PyCFunction)WinObj_GetWindowDataHandle, 1,
+	 "() -> (Handle _rv)"},
+	{"SetWindowDataHandle", (PyCFunction)WinObj_SetWindowDataHandle, 1,
+	 "(Handle data) -> None"},
 	{"CloseWindow", (PyCFunction)WinObj_CloseWindow, 1,
 	 "() -> None"},
 	{"MoveWindow", (PyCFunction)WinObj_MoveWindow, 1,

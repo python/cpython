@@ -42,9 +42,6 @@ includestuff = includestuff + """
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
-#ifdef HAVE_UNIVERSAL_HEADERS
-#define WindowPeek WindowPtr
-#endif
 """
 
 finalstuff = finalstuff + """
