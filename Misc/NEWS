@@ -3,6 +3,12 @@ What's New in Python 2.2a3?
 
 Core
 
++ The syntax of floating-point and imaginary literals has been
+  liberalized, to allow leading zeroes.  Examples of literals now
+  legal that were SyntaxErrors before:
+
+      00.0    0e3   0100j   07.5   00000000000000000008.
+
 + An old tokenizer bug allowed floating point literals with an incomplete
   exponent, such as 1e and 3.1e-.  Such literals now raise SyntaxError.
 
@@ -27,13 +33,13 @@ API
   module:
 
     - rename Py_TPFLAGS_GC to PyTPFLAGS_HAVE_GC
-    
+
     - use PyObject_GC_New or PyObject_GC_NewVar to allocate objects and
       PyObject_GC_Del to deallocate them
-      
+
     - rename PyObject_GC_Init to PyObject_GC_Track and PyObject_GC_Fini
       to PyObject_GC_UnTrack
-  
+
     - remove PyGC_HEAD_SIZE from object size calculations
 
     - remove calls to PyObject_AS_GC and PyObject_FROM_GC

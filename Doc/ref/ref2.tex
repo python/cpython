@@ -517,26 +517,26 @@ definitions:
   \production{pointfloat}
              {[\token{intpart}] \token{fraction} | \token{intpart} "."}
   \production{exponentfloat}
-             {(\token{nonzerodigit} \token{digit}* | \token{pointfloat})
+             {(\token{intpart} | \token{pointfloat})
               \token{exponent}}
   \production{intpart}
-             {\token{nonzerodigit} \token{digit}* | "0"}
+             {\token{digit}+}
   \production{fraction}
              {"." \token{digit}+}
   \production{exponent}
              {("e" | "E") ["+" | "-"] \token{digit}+}
 \end{productionlist}
 
-Note that the integer part of a floating point number cannot look like
-an octal integer, though the exponent may look like an octal literal
-but will always be interpreted using radix 10.  For example,
-\samp{1e010} is legal, while \samp{07.1} is a syntax error.
+Note that the integer and exponent parts of floating point numbers
+can look like octal integers, but are interpreted using radix 10.  For
+example, \samp{077e010} is legal, and denotes the same number
+as \samp{77e10}.
 The allowed range of floating point literals is
 implementation-dependent.
 Some examples of floating point literals:
 
 \begin{verbatim}
-3.14    10.    .001    1e100    3.14e-10
+3.14    10.    .001    1e100    3.14e-10    0e0
 \end{verbatim}
 
 Note that numeric literals do not include a sign; a phrase like

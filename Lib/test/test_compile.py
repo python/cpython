@@ -65,3 +65,47 @@ expect_error("2e")
 expect_error("2.0e+")
 expect_error("1e-")
 expect_error("3-4e/21")
+
+
+if verbose:
+    print "testing literals with leading zeroes"
+
+def expect_same(test_source, expected):
+    got = eval(test_source)
+    if got != expected:
+        raise TestFailed("eval(%r) gave %r, but expected %r" %
+                         (test_source, got, expected))
+
+expect_error("077787")
+expect_error("0xj")
+expect_error("0x.")
+expect_error("0e")
+expect_same("0777", 511)
+expect_same("0777L", 511)
+expect_same("000777", 511)
+expect_same("0xff", 255)
+expect_same("0xffL", 255)
+expect_same("0XfF", 255)
+expect_same("0777.", 777)
+expect_same("0777.0", 777)
+expect_same("000000000000000000000000000000000000000000000000000777e0", 777)
+expect_same("0777e1", 7770)
+expect_same("0e0", 0)
+expect_same("0000E-012", 0)
+expect_same("09.5", 9.5)
+expect_same("0777j", 777j)
+expect_same("00j", 0j)
+expect_same("00.0", 0)
+expect_same("0e3", 0)
+expect_same("090000000000000.", 90000000000000.)
+expect_same("090000000000000.0000000000000000000000", 90000000000000.)
+expect_same("090000000000000e0", 90000000000000.)
+expect_same("090000000000000e-0", 90000000000000.)
+expect_same("090000000000000j", 90000000000000j)
+expect_error("090000000000000")  # plain octal literal w/ decimal digit
+expect_error("080000000000000")  # plain octal literal w/ decimal digit
+expect_error("000000000000009")  # plain octal literal w/ decimal digit
+expect_error("000000000000008")  # plain octal literal w/ decimal digit
+expect_same("000000000000007", 7)
+expect_same("000000000000008.", 8.)
+expect_same("000000000000009.", 9.)
