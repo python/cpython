@@ -94,6 +94,7 @@ pcre pcremodule.c pypcre.c	# Regular expressions, Perl style (for re.py)
 posix posixmodule.c		# posix (UNIX) system calls
 signal signalmodule.c		# signal(2)
 _sre _sre.c			# Fredrik Lundh's new regular expressions
+_exceptions _exceptions.c	# Class-based standard exceptions
 
 # The SGI specific GL module:
 
