@@ -4,6 +4,11 @@
 \declaremodule{standard}{UserDict}
 \modulesynopsis{Class wrapper for dictionary objects.}
 
+\note{This module is available for backward compatibility only.  If
+you are writing code that does not need to work with versions of
+Python earlier than Python 2.2, please consider subclassing directly
+from the built-in \class{dictionary} type.}
+
 This module defines a class that acts as a wrapper around
 dictionary objects.  It is a useful base class for
 your own dictionary-like classes, which can inherit from
@@ -37,6 +42,11 @@ class.
 \declaremodule{standard}{UserList}
 \modulesynopsis{Class wrapper for list objects.}
 
+
+\note{This module is available for backward compatibility only.  If
+you are writing code that does not need to work with versions of
+Python earlier than Python 2.2, please consider subclassing directly
+from the built-in \class{list} type.}
 
 This module defines a class that acts as a wrapper around
 list objects.  It is a useful base class for
@@ -91,6 +101,13 @@ methods which need to be provided in that case.
 \modulesynopsis{Class wrapper for string objects.}
 \moduleauthor{Peter Funk}{pf@artcom-gmbh.de}
 \sectionauthor{Peter Funk}{pf@artcom-gmbh.de}
+
+\note{This \class{UserString} class from this module is available for
+backward compatibility only.  If you are writing code that does not
+need to work with versions of Python earlier than Python 2.2, please
+consider subclassing directly from the built-in \class{str} type
+instead of using \class{UserString} (there is no built-in equivalent
+to \class{MutableString}).}
 
 This module defines a class that acts as a wrapper around string
 objects.  It is a useful base class for your own string-like classes,
