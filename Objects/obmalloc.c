@@ -437,7 +437,7 @@ new_arena(void)
 	arenabase = bp;
 	nfreepools = ARENA_SIZE / POOL_SIZE;
 	assert(POOL_SIZE * nfreepools == ARENA_SIZE);
-	excess = (uint)bp & POOL_SIZE_MASK;
+	excess = (uint) ((Py_uintptr_t)bp & POOL_SIZE_MASK);
 	if (excess != 0) {
 		--nfreepools;
 		arenabase += POOL_SIZE - excess;

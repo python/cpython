@@ -3883,7 +3883,8 @@ PyString_Format(PyObject *format, PyObject *args)
 				PyErr_Format(PyExc_ValueError,
 				  "unsupported format character '%c' (0x%x) "
 				  "at index %i",
-				  c, c, fmt - 1 - PyString_AsString(format));
+				  c, c,
+				  (int)(fmt - 1 - PyString_AsString(format)));
 				goto error;
 			}
 			if (sign) {
