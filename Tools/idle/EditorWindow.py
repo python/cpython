@@ -1,7 +1,9 @@
 import sys
 import os
 import string
+import imp
 from Tkinter import *
+import tkSimpleDialog
 import tkMessageBox
 
 about_title = "About IDLE"
@@ -42,6 +44,7 @@ class EditorWindow:
         self.text.bind("<<center-insert>>", self.center_insert_event)
         self.text.bind("<<help>>", self.help_dialog)
         self.text.bind("<<about-idle>>", self.about_dialog)
+        self.text.bind("<<open-module>>", self.open_module)
 
         vbar['command'] = text.yview
         vbar.pack(side=RIGHT, fill=Y)
@@ -98,6 +101,34 @@ class EditorWindow:
     def help_dialog(self, event=None):
         from HelpWindow import HelpWindow
         HelpWindow(root=self.root)
+    
+    def open_module(self, event=None):
+        try:
+            name = self.text.get("sel.first", "sel.last")
+        except TclError:
+            name = ""
+        else:
+            name = string.strip(name)
+        if not name:
+            name = tkSimpleDialog.askstring("Module",
+                     "Module name:",
+                     parent=self.text)
+            if name:
+                name = string.strip(name)
+            if not name:
+                return
+        try:
+            (f, file, (suffix, mode, type)) = imp.find_module(name)
+        except ImportError, msg:
+            tkMessageBox.showerror("Import error", str(msg), parent=self.text)
+            return
+        if type != imp.PY_SOURCE:
+            tkMessageBox.showerror("Unsupported type",
+                "%s is not a source module" % name, parent=self.text)
+            return
+        if f:
+            f.close()
+        self.flist.open(file, self)
 
     def gotoline(self, lineno):
         if lineno is not None and lineno > 0:
