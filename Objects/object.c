@@ -1399,7 +1399,9 @@ merge_class_dict(PyObject* dict, PyObject* aclass)
 
 	/* Recursively merge in the base types' (if any) dicts. */
 	bases = PyObject_GetAttrString(aclass, "__bases__");
-	if (bases != NULL) {
+	if (bases == NULL)
+		PyErr_Clear();
+	else {
 		int i, n;
 		assert(PyTuple_Check(bases));
 		n = PyTuple_GET_SIZE(bases);
