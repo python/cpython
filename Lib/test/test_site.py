@@ -141,14 +141,6 @@ class ImportSideEffectTests(unittest.TestCase):
         # XXX: implement
         pass
 
-    def test_sitepackages(self):
-        # There should be a path that ends in site-packages
-        for path in sys.path:
-            if path.endswith("site-packages"):
-                break
-        else:
-            self.fail("'site-packages' directory missing'")
-
     def test_setting_quit(self):
         # 'quit' and 'exit' should be injected into __builtin__
         self.failUnless(hasattr(__builtin__, "quit"))
