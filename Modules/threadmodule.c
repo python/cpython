@@ -133,11 +133,11 @@ static PyMethodDef lock_methods[] = {
 	{"release_lock", (PyCFunction)lock_PyThread_release_lock, 
 	 METH_NOARGS, release_doc},
 	{"release",      (PyCFunction)lock_PyThread_release_lock, 
-	 METH_OLDARGS, release_doc},
+	 METH_NOARGS, release_doc},
 	{"locked_lock",  (PyCFunction)lock_locked_lock,  
 	 METH_NOARGS, locked_doc},
 	{"locked",       (PyCFunction)lock_locked_lock,  
-	 METH_OLDARGS, locked_doc},
+	 METH_NOARGS, locked_doc},
 	{NULL,           NULL}		/* sentinel */
 };
 
