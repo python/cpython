@@ -854,6 +854,19 @@ command line or use \function{warnings.filterwarnings()}.
 \exception{SyntaxWarning} warning.  In a future version of Python,
 \code{None} may finally become a keyword.
 
+\item The method resolution order used by new-style classes has
+changed, though you'll only notice the difference if you have a really
+complicated inheritance hierarchy.  (Classic classes are unaffected by
+this change.)  Python 2.2 originally used a topological sort of a
+class's ancestors, but 2.3 now uses the C3 algorithm as described in
+\citetitle[http://www.webcom.com/haahr/dylan/linearization-oopsla96.html]{``A
+Monotonic Superclass Linearization for Dylan''}.  To understand the
+motivation for this change, read the thread on python-dev starting
+with the message at
+\url{http://mail.python.org/pipermail/python-dev/2002-October/029035.html}.
+Samuele Pedroni first pointed out the problem and also implemented the
+fix by coding the C3 algorithm.
+
 \item Python runs multithreaded programs by switching between threads
 after executing N bytecodes.  The default value for N has been
 increased from 10 to 100 bytecodes, speeding up single-threaded
