@@ -116,7 +116,6 @@ class Random:
         """
 
         self.seed(x)
-        self.gauss_next = None
 
 ## -------------------- core generator -------------------
 
@@ -149,6 +148,8 @@ class Random:
         a, y = divmod(a, 30306)
         a, z = divmod(a, 30322)
         self._seed = int(x)+1, int(y)+1, int(z)+1
+
+        self.gauss_next = None
 
     def random(self):
         """Get the next random number in the range [0.0, 1.0)."""
@@ -237,6 +238,8 @@ class Random:
             t, z = divmod(t, 256)
         # Zero is a poor seed, so substitute 1
         self._seed = (x or 1, y or 1, z or 1)
+
+        self.gauss_next = None
 
     def whseed(self, a=None):
         """Seed from hashable object's hash code.
@@ -444,7 +447,7 @@ class Random:
     def gammavariate(self, alpha, beta):
 
         # alpha > 0, beta > 0, mean is alpha*beta, variance is alpha*beta**2
-        
+
         # Warning: a few older sources define the gamma distribution in terms
         # of alpha > -1.0
         if alpha <= 0.0 or beta <= 0.0:
@@ -460,7 +463,7 @@ class Random:
             ainv = _sqrt(2.0 * alpha - 1.0)
             bbb = alpha - LOG4
             ccc = alpha + ainv
-            
+
             while 1:
                 u1 = random()
                 u2 = random()
@@ -627,7 +630,7 @@ def _test(N=20000):
     _test_generator(N, 'vonmisesvariate(0.0, 1.0)')
     _test_generator(N, 'gammavariate(0.01, 1.0)')
     _test_generator(N, 'gammavariate(0.1, 1.0)')
-    _test_generator(N, 'gammavariate(0.1, 2.0)')    
+    _test_generator(N, 'gammavariate(0.1, 2.0)')
     _test_generator(N, 'gammavariate(0.5, 1.0)')
     _test_generator(N, 'gammavariate(0.9, 1.0)')
     _test_generator(N, 'gammavariate(1.0, 1.0)')
