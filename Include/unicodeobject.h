@@ -864,63 +864,63 @@ extern DL_IMPORT(int) PyUnicode_Contains(
 */
 
 extern DL_IMPORT(int) _PyUnicode_IsLowercase(
-    register const Py_UNICODE ch 	/* Unicode character */
+    Py_UNICODE ch 	/* Unicode character */
     );
 
 extern DL_IMPORT(int) _PyUnicode_IsUppercase(
-    register const Py_UNICODE ch 	/* Unicode character */
+    Py_UNICODE ch 	/* Unicode character */
     );
 
 extern DL_IMPORT(int) _PyUnicode_IsTitlecase(
-    register const Py_UNICODE ch 	/* Unicode character */
+    Py_UNICODE ch 	/* Unicode character */
     );
 
 extern DL_IMPORT(int) _PyUnicode_IsWhitespace(
-    register const Py_UNICODE ch 	/* Unicode character */
+    Py_UNICODE ch 	/* Unicode character */
     );
 
 extern DL_IMPORT(int) _PyUnicode_IsLinebreak(
-    register const Py_UNICODE ch 	/* Unicode character */
+    Py_UNICODE ch 	/* Unicode character */
     );
 
 extern DL_IMPORT(Py_UNICODE) _PyUnicode_ToLowercase(
-    register const Py_UNICODE ch 	/* Unicode character */
+    Py_UNICODE ch 	/* Unicode character */
     );
 
 extern DL_IMPORT(Py_UNICODE) _PyUnicode_ToUppercase(
-    register const Py_UNICODE ch 	/* Unicode character */
+    Py_UNICODE ch 	/* Unicode character */
     );
 
 extern DL_IMPORT(Py_UNICODE) _PyUnicode_ToTitlecase(
-    register const Py_UNICODE ch 	/* Unicode character */
+    Py_UNICODE ch 	/* Unicode character */
     );
 
 extern DL_IMPORT(int) _PyUnicode_ToDecimalDigit(
-    register const Py_UNICODE ch 	/* Unicode character */
+    Py_UNICODE ch 	/* Unicode character */
     );
 
 extern DL_IMPORT(int) _PyUnicode_ToDigit(
-    register const Py_UNICODE ch 	/* Unicode character */
+    Py_UNICODE ch 	/* Unicode character */
     );
 
 extern DL_IMPORT(double) _PyUnicode_ToNumeric(
-    register const Py_UNICODE ch 	/* Unicode character */
+    Py_UNICODE ch 	/* Unicode character */
     );
 
 extern DL_IMPORT(int) _PyUnicode_IsDecimalDigit(
-    register const Py_UNICODE ch 	/* Unicode character */
+    Py_UNICODE ch 	/* Unicode character */
     );
 
 extern DL_IMPORT(int) _PyUnicode_IsDigit(
-    register const Py_UNICODE ch 	/* Unicode character */
+    Py_UNICODE ch 	/* Unicode character */
     );
 
 extern DL_IMPORT(int) _PyUnicode_IsNumeric(
-    register const Py_UNICODE ch 	/* Unicode character */
+    Py_UNICODE ch 	/* Unicode character */
     );
 
 extern DL_IMPORT(int) _PyUnicode_IsAlpha(
-    register const Py_UNICODE ch 	/* Unicode character */
+    Py_UNICODE ch 	/* Unicode character */
     );
 
 #ifdef __cplusplus
