@@ -32,6 +32,18 @@ functions from multiple threads, you should explicitly serialize the calls.
 Else, because no critical sections are implemented internally, calls
 from different threads may see the same return values.
 
+The functions supplied by this module are actually bound methods of a
+hidden instance of the \var{random.Random} class.  You can instantiate
+your own instances of \var{Random} to get generators that don't share state.
+This may be especially useful for multi-threaded programs, although there's
+no simple way to seed the distinct generators to ensure that the generated
+sequences won't overlap.  Class \var{Random} can also be subclassed if you
+want to use a different basic generator of your own devising:  in that
+case, override the \method{random()}, \method{seed()}, \method{getstate()}
+and \method{setstate()} methods.
+
+
+Bookkeeping functions:
 
 \begin{funcdesc}{seed}{\optional{x}}
   Initialize the basic random number generator.
@@ -45,15 +57,19 @@ from different threads may see the same return values.
   the module is first imported.
 \end{funcdesc}
 
-\begin{funcdesc}{choice}{seq}
-  Return a random element from the non-empty sequence \var{seq}.
-\end{funcdesc}
+\begin{funcdesc}{getstate}{}
+  Return an object capturing the current internal state of the generator.
+  This object can be passed to \code{setstate()} to restore the state.
+ \end{funcdesc}
 
-\begin{funcdesc}{randint}{a, b}
-  \deprecated{2.0}{Use \function{randrange()} instead.}
-  Return a random integer \var{N} such that
-  \code{\var{a} <= \var{N} <= \var{b}}.
-\end{funcdesc}
+\begin{funcdesc}{setstate}{state}
+  \var{state} should have been obtained from a previous call to
+  \code{getstate()}, and \code{setstate()} restores the internal state
+  of the generate to what it was at the time \code{setstate()} was called.
+ \end{funcdesc}
+
+
+Functions for integers:
 
 \begin{funcdesc}{randrange}{\optional{start,} stop\optional{, step}}
   Return a randomly selected element from \code{range(\var{start},
@@ -63,6 +79,37 @@ from different threads may see the same return values.
   \versionadded{1.5.2}
 \end{funcdesc}
 
+\begin{funcdesc}{randint}{a, b}
+  \deprecated{2.0}{Use \function{randrange()} instead.}
+  Return a random integer \var{N} such that
+  \code{\var{a} <= \var{N} <= \var{b}}.
+\end{funcdesc}
+
+
+Functions for sequences:
+
+\begin{funcdesc}{choice}{seq}
+  Return a random element from the non-empty sequence \var{seq}.
+\end{funcdesc}
+
+\begin{funcdesc}{shuffle}{x\optional{, random}}
+  Shuffle the sequence \var{x} in place.
+  The optional argument \var{random} is a 0-argument function
+  returning a random float in [0.0, 1.0); by default, this is the
+  function \function{random()}.
+
+  Note that for even rather small \code{len(\var{x})}, the total
+  number of permutations of \var{x} is larger than the period of most
+  random number generators; this implies that most permutations of a
+  long sequence can never be generated.
+\end{funcdesc}
+
+
+The following functions generate specific real-valued distributions.
+Function parameters are named after the corresponding variables in the
+distribution's equation, as used in common mathematical practice; most of
+these equations can be found in any statistics text.
+
 \begin{funcdesc}{random}{}
   Return the next random floating point number in the range [0.0, 1.0).
 \end{funcdesc}
@@ -71,14 +118,6 @@ from different threads may see the same return values.
   Return a random real number \var{N} such that
   \code{\var{a} <= \var{N} < \var{b}}.
 \end{funcdesc}
-
-
-The following functions are defined to support specific distributions,
-and all return real values.  Function parameters are named after the
-corresponding variables in the distribution's equation, as used in
-common mathematical practice; most of these equations can be found in
-any statistics text.
-
 
 \begin{funcdesc}{betavariate}{alpha, beta}
   Beta distribution.  Conditions on the parameters are
@@ -142,21 +181,6 @@ any statistics text.
   \var{beta} is the shape parameter.
 \end{funcdesc}
 
-
-This function does not represent a specific distribution, but
-implements a standard useful algorithm:
-
-\begin{funcdesc}{shuffle}{x\optional{, random}}
-  Shuffle the sequence \var{x} in place.
-  The optional argument \var{random} is a 0-argument function
-  returning a random float in [0.0, 1.0); by default, this is the
-  function \function{random()}.
-
-  Note that for even rather small \code{len(\var{x})}, the total
-  number of permutations of \var{x} is larger than the period of most
-  random number generators; this implies that most permutations of a
-  long sequence can never be generated.
-\end{funcdesc}
 
 \begin{seealso}
   \seetext{Wichmann, B. A. \& Hill, I. D., ``Algorithm AS 183:

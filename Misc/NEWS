@@ -1,3 +1,16 @@
+What's New in Python 2.1 alpha 2?
+=================================
+Core language, builtins, and interpreter
+
+
+Standard library
+
+- random.py is now self-contained, and offers all the functionality of
+  the now-deprecated whrandom.py.  See the docs for details.  random.py
+  also supports new functions getstate() and setstate(), for saving
+  and restoring the internal state of all the generators.
+
+
 What's New in Python 2.1 alpha 1?
 =================================
 
