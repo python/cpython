@@ -131,9 +131,6 @@ class bdist (Command):
             if cmd_name not in self.no_format_option:
                 sub_cmd.format = self.formats[i]
 
-            print ("bdist.run: format=%s, command=%s, rest=%s" %
-                   (self.formats[i], cmd_name, commands[i+1:]))
-
             # If we're going to need to run this command again, tell it to
             # keep its temporary files around so subsequent runs go faster.
             if cmd_name in commands[i+1:]:
