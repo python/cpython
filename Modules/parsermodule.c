@@ -26,16 +26,6 @@
 					/* ISTERMINAL() / ISNONTERMINAL() */
 #include "compile.h"			/* PyNode_Compile()		  */
 
-/*
- *  All the "fudge" declarations are here:
- *
- *  This isn't part of the Python runtime, but it's in the library somewhere.
- *  Where it is varies a bit, so just declare it.  Don't use any prototype;
- *  different systems declare it a little differently, and we don't need the
- *  extra warnings.
- */
-extern char* strdup();
-
 
 /*  String constants used to initialize module attributes.
  *
