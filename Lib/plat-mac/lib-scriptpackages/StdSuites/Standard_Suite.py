@@ -457,23 +457,23 @@ alias = aliases
 class application(aetools.ComponentItem):
 	"""application - An application program """
 	want = 'capp'
-class clipboard(aetools.NProperty):
+class _Prop_clipboard(aetools.NProperty):
 	"""clipboard - the contents of the clipboard for this application """
 	which = 'pcli'
 	want = '****'
-class frontmost(aetools.NProperty):
+class _Prop_frontmost(aetools.NProperty):
 	"""frontmost - Is this the frontmost application? """
 	which = 'pisf'
 	want = 'bool'
-class name(aetools.NProperty):
+class _Prop_name(aetools.NProperty):
 	"""name - the name of the application """
 	which = 'pnam'
 	want = 'itxt'
-class selection(aetools.NProperty):
+class _Prop_selection(aetools.NProperty):
 	"""selection - the selection visible to the user.  Use the \xd4select\xd5 command to set a new selection; use \xd4contents of selection\xd5 to get or change information in the document. """
 	which = 'sele'
 	want = 'csel'
-class version(aetools.NProperty):
+class _Prop_version(aetools.NProperty):
 	"""version - the version of the application """
 	which = 'vers'
 	want = 'vers'
@@ -489,7 +489,7 @@ insertion_point = insertion_points
 class selection_2d_object(aetools.ComponentItem):
 	"""selection-object - A way to refer to the state of the current of the selection.  Use the \xd4select\xd5 command to make a new selection. """
 	want = 'csel'
-class contents(aetools.NProperty):
+class _Prop_contents(aetools.NProperty):
 	"""contents - the information currently selected.  Use \xd4contents of selection\xd5 to get or change information in a document. """
 	which = 'pcnt'
 	want = '****'
@@ -497,43 +497,43 @@ class contents(aetools.NProperty):
 class window(aetools.ComponentItem):
 	"""window - A window """
 	want = 'cwin'
-class bounds(aetools.NProperty):
+class _Prop_bounds(aetools.NProperty):
 	"""bounds - the boundary rectangle for the window """
 	which = 'pbnd'
 	want = 'qdrt'
-class closeable(aetools.NProperty):
+class _Prop_closeable(aetools.NProperty):
 	"""closeable - Does the window have a close box? """
 	which = 'hclb'
 	want = 'bool'
-class floating(aetools.NProperty):
+class _Prop_floating(aetools.NProperty):
 	"""floating - Does the window float? """
 	which = 'isfl'
 	want = 'bool'
-class index(aetools.NProperty):
+class _Prop_index(aetools.NProperty):
 	"""index - the number of the window """
 	which = 'pidx'
 	want = 'long'
-class modal(aetools.NProperty):
+class _Prop_modal(aetools.NProperty):
 	"""modal - Is the window modal? """
 	which = 'pmod'
 	want = 'bool'
-class resizable(aetools.NProperty):
+class _Prop_resizable(aetools.NProperty):
 	"""resizable - Is the window resizable? """
 	which = 'prsz'
 	want = 'bool'
-class titled(aetools.NProperty):
+class _Prop_titled(aetools.NProperty):
 	"""titled - Does the window have a title bar? """
 	which = 'ptit'
 	want = 'bool'
-class visible(aetools.NProperty):
+class _Prop_visible(aetools.NProperty):
 	"""visible - Is the window visible? """
 	which = 'pvis'
 	want = 'bool'
-class zoomable(aetools.NProperty):
+class _Prop_zoomable(aetools.NProperty):
 	"""zoomable - Is the window zoomable? """
 	which = 'iszm'
 	want = 'bool'
-class zoomed(aetools.NProperty):
+class _Prop_zoomed(aetools.NProperty):
 	"""zoomed - Is the window zoomed? """
 	which = 'pzum'
 	want = 'bool'
@@ -543,7 +543,7 @@ windows = window
 class document(aetools.ComponentItem):
 	"""document - A document of a scriptable application """
 	want = 'docu'
-class modified(aetools.NProperty):
+class _Prop_modified(aetools.NProperty):
 	"""modified - Has the document been modified since the last save? """
 	which = 'imod'
 	want = 'bool'
@@ -553,7 +553,7 @@ documents = document
 class file(aetools.ComponentItem):
 	"""file - a file on a disk or server """
 	want = 'file'
-class stationery(aetools.NProperty):
+class _Prop_stationery(aetools.NProperty):
 	"""stationery - Is the file a stationery file? """
 	which = 'pspd'
 	want = 'bool'
@@ -566,11 +566,11 @@ aliases._privelemdict = {
 }
 application._superclassnames = []
 application._privpropdict = {
-	'clipboard' : clipboard,
-	'frontmost' : frontmost,
-	'name' : name,
-	'selection' : selection,
-	'version' : version,
+	'clipboard' : _Prop_clipboard,
+	'frontmost' : _Prop_frontmost,
+	'name' : _Prop_name,
+	'selection' : _Prop_selection,
+	'version' : _Prop_version,
 }
 application._privelemdict = {
 }
@@ -581,34 +581,34 @@ insertion_points._privelemdict = {
 }
 selection_2d_object._superclassnames = []
 selection_2d_object._privpropdict = {
-	'contents' : contents,
+	'contents' : _Prop_contents,
 }
 selection_2d_object._privelemdict = {
 }
 window._superclassnames = []
 window._privpropdict = {
-	'bounds' : bounds,
-	'closeable' : closeable,
-	'floating' : floating,
-	'index' : index,
-	'modal' : modal,
-	'resizable' : resizable,
-	'titled' : titled,
-	'visible' : visible,
-	'zoomable' : zoomable,
-	'zoomed' : zoomed,
+	'bounds' : _Prop_bounds,
+	'closeable' : _Prop_closeable,
+	'floating' : _Prop_floating,
+	'index' : _Prop_index,
+	'modal' : _Prop_modal,
+	'resizable' : _Prop_resizable,
+	'titled' : _Prop_titled,
+	'visible' : _Prop_visible,
+	'zoomable' : _Prop_zoomable,
+	'zoomed' : _Prop_zoomed,
 }
 window._privelemdict = {
 }
 document._superclassnames = []
 document._privpropdict = {
-	'modified' : modified,
+	'modified' : _Prop_modified,
 }
 document._privelemdict = {
 }
 file._superclassnames = []
 file._privpropdict = {
-	'stationery' : stationery,
+	'stationery' : _Prop_stationery,
 }
 file._privelemdict = {
 }
@@ -670,42 +670,4 @@ _classdeclarations = {
 	'cwin' : window,
 	'docu' : document,
 	'file' : file,
-}
-
-_propdeclarations = {
-	'hclb' : closeable,
-	'imod' : modified,
-	'isfl' : floating,
-	'iszm' : zoomable,
-	'pbnd' : bounds,
-	'pcli' : clipboard,
-	'pcnt' : contents,
-	'pidx' : index,
-	'pisf' : frontmost,
-	'pmod' : modal,
-	'pnam' : name,
-	'prsz' : resizable,
-	'pspd' : stationery,
-	'ptit' : titled,
-	'pvis' : visible,
-	'pzum' : zoomed,
-	'sele' : selection,
-	'vers' : version,
-}
-
-_compdeclarations = {
-	'<   ' : _3c_,
-	'<=  ' : _b2_,
-	'=   ' : _3d_,
-	'>   ' : _3e_,
-	'>=  ' : _b3_,
-	'bgwt' : starts_with,
-	'cont' : contains,
-	'ends' : ends_with,
-}
-
-_enumdeclarations = {
-	'kfrm' : _Enum_kfrm,
-	'savo' : _Enum_savo,
-	'styl' : _Enum_styl,
 }

@@ -85,12 +85,3 @@ class Microsoft_Internet_Explorer_Events:
 #
 _classdeclarations = {
 }
-
-_propdeclarations = {
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
-}

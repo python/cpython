@@ -255,15 +255,3 @@ _Enum_ncmd = {
 #
 _classdeclarations = {
 }
-
-_propdeclarations = {
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
-	'comp' : _Enum_comp,
-	'dire' : _Enum_dire,
-	'ncmd' : _Enum_ncmd,
-}

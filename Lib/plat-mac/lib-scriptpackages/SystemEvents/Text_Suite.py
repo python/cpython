@@ -18,11 +18,11 @@ class Text_Suite_Events:
 class attachment(aetools.ComponentItem):
 	"""attachment - Represents an inline text attachment.  This class is used mainly for make commands. """
 	want = 'atts'
-class _3c_Inheritance_3e_(aetools.NProperty):
+class _Prop__3c_Inheritance_3e_(aetools.NProperty):
 	"""<Inheritance> - All of the properties of the superclass. """
 	which = 'c@#^'
 	want = 'ctxt'
-class file_name(aetools.NProperty):
+class _Prop_file_name(aetools.NProperty):
 	"""file name - The path to the file for the attachment """
 	which = 'atfn'
 	want = 'utxt'
@@ -34,15 +34,15 @@ class file_name(aetools.NProperty):
 class attribute_run(aetools.ComponentItem):
 	"""attribute run - This subdivides the text into chunks that all have the same attributes. """
 	want = 'catr'
-class color(aetools.NProperty):
+class _Prop_color(aetools.NProperty):
 	"""color - The color of the first character. """
 	which = 'colr'
 	want = 'colr'
-class font(aetools.NProperty):
+class _Prop_font(aetools.NProperty):
 	"""font - The name of the font of the first character. """
 	which = 'font'
 	want = 'utxt'
-class size(aetools.NProperty):
+class _Prop_size(aetools.NProperty):
 	"""size - The size in points of the first character. """
 	which = 'ptsz'
 	want = 'long'
@@ -92,8 +92,8 @@ class word(aetools.ComponentItem):
 words = word
 attachment._superclassnames = ['text']
 attachment._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'file_name' : file_name,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
+	'file_name' : _Prop_file_name,
 }
 attachment._privelemdict = {
 	'attribute_run' : attribute_run,
@@ -104,10 +104,10 @@ attachment._privelemdict = {
 import Standard_Suite
 attribute_run._superclassnames = ['item']
 attribute_run._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'color' : color,
-	'font' : font,
-	'size' : size,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
+	'color' : _Prop_color,
+	'font' : _Prop_font,
+	'size' : _Prop_size,
 }
 attribute_run._privelemdict = {
 	'attribute_run' : attribute_run,
@@ -117,10 +117,10 @@ attribute_run._privelemdict = {
 }
 character._superclassnames = ['item']
 character._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'color' : color,
-	'font' : font,
-	'size' : size,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
+	'color' : _Prop_color,
+	'font' : _Prop_font,
+	'size' : _Prop_size,
 }
 character._privelemdict = {
 	'attribute_run' : attribute_run,
@@ -130,10 +130,10 @@ character._privelemdict = {
 }
 paragraph._superclassnames = ['item']
 paragraph._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'color' : color,
-	'font' : font,
-	'size' : size,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
+	'color' : _Prop_color,
+	'font' : _Prop_font,
+	'size' : _Prop_size,
 }
 paragraph._privelemdict = {
 	'attribute_run' : attribute_run,
@@ -143,10 +143,10 @@ paragraph._privelemdict = {
 }
 text._superclassnames = ['item']
 text._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'color' : color,
-	'font' : font,
-	'size' : size,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
+	'color' : _Prop_color,
+	'font' : _Prop_font,
+	'size' : _Prop_size,
 }
 text._privelemdict = {
 	'attribute_run' : attribute_run,
@@ -156,10 +156,10 @@ text._privelemdict = {
 }
 word._superclassnames = ['item']
 word._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'color' : color,
-	'font' : font,
-	'size' : size,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
+	'color' : _Prop_color,
+	'font' : _Prop_font,
+	'size' : _Prop_size,
 }
 word._privelemdict = {
 	'attribute_run' : attribute_run,
@@ -178,18 +178,4 @@ _classdeclarations = {
 	'cpar' : paragraph,
 	'ctxt' : text,
 	'cwor' : word,
-}
-
-_propdeclarations = {
-	'atfn' : file_name,
-	'c@#^' : _3c_Inheritance_3e_,
-	'colr' : color,
-	'font' : font,
-	'ptsz' : size,
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
 }

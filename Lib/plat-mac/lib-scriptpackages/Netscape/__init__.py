@@ -61,8 +61,6 @@ import StdSuites
 #
 getbaseclasses(window)
 getbaseclasses(application)
-getbaseclasses(text)
-getbaseclasses(styleset)
 getbaseclasses(StdSuites.Text_Suite.text_flow)
 getbaseclasses(StdSuites.Text_Suite.character)
 getbaseclasses(StdSuites.Text_Suite.text_style_info)
@@ -70,6 +68,8 @@ getbaseclasses(StdSuites.Text_Suite.line)
 getbaseclasses(StdSuites.Text_Suite.word)
 getbaseclasses(StdSuites.Text_Suite.paragraph)
 getbaseclasses(StdSuites.Text_Suite.text)
+getbaseclasses(text)
+getbaseclasses(styleset)
 
 #
 # Indices of types declared in this module
@@ -77,8 +77,6 @@ getbaseclasses(StdSuites.Text_Suite.text)
 _classdeclarations = {
 	'cwin' : window,
 	'capp' : application,
-	'ctxt' : text,
-	'stys' : styleset,
 	'cflo' : StdSuites.Text_Suite.text_flow,
 	'cha ' : StdSuites.Text_Suite.character,
 	'tsty' : StdSuites.Text_Suite.text_style_info,
@@ -86,6 +84,8 @@ _classdeclarations = {
 	'cwor' : StdSuites.Text_Suite.word,
 	'cpar' : StdSuites.Text_Suite.paragraph,
 	'ctxt' : StdSuites.Text_Suite.text,
+	'ctxt' : text,
+	'stys' : styleset,
 }
 
 

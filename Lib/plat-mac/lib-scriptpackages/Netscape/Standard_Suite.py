@@ -104,11 +104,11 @@ class Standard_Suite_Events(Standard_Suite_Events):
 class application(aetools.ComponentItem):
 	"""application - An application program """
 	want = 'capp'
-class alert_application(aetools.NProperty):
+class _Prop_alert_application(aetools.NProperty):
 	"""alert application - Most of the alerts will be sent to this application using yet unspecified AE interface. We need a few alert boxes: alert, confirm and notify. Any ideas on how to design this event? mailto:atotic@netscape.com. I\xd5d like to conform to the standard. """
 	which = 'ALAP'
 	want = 'type'
-class kiosk_mode(aetools.NProperty):
+class _Prop_kiosk_mode(aetools.NProperty):
 	"""kiosk mode - Kiosk mode leaves very few menus enabled """
 	which = 'KOSK'
 	want = 'long'
@@ -117,91 +117,91 @@ class kiosk_mode(aetools.NProperty):
 class window(aetools.ComponentItem):
 	"""window - A Window """
 	want = 'cwin'
-class URL(aetools.NProperty):
+class _Prop_URL(aetools.NProperty):
 	"""URL - Current URL """
 	which = 'curl'
 	want = 'TEXT'
-class bounds(aetools.NProperty):
+class _Prop_bounds(aetools.NProperty):
 	"""bounds - the boundary rectangle for the window """
 	which = 'pbnd'
 	want = 'qdrt'
-class busy(aetools.NProperty):
+class _Prop_busy(aetools.NProperty):
 	"""busy - Is window loading something right now. 2, window is busy and will reject load requests. 1, window is busy, but will interrupt outstanding loads """
 	which = 'busy'
 	want = 'long'
-class closeable(aetools.NProperty):
+class _Prop_closeable(aetools.NProperty):
 	"""closeable - Does the window have a close box? """
 	which = 'hclb'
 	want = 'bool'
-class floating(aetools.NProperty):
+class _Prop_floating(aetools.NProperty):
 	"""floating - Does the window float? """
 	which = 'isfl'
 	want = 'bool'
-class index(aetools.NProperty):
+class _Prop_index(aetools.NProperty):
 	"""index - the number of the window """
 	which = 'pidx'
 	want = 'long'
-class modal(aetools.NProperty):
+class _Prop_modal(aetools.NProperty):
 	"""modal - Is the window modal? """
 	which = 'pmod'
 	want = 'bool'
-class name(aetools.NProperty):
+class _Prop_name(aetools.NProperty):
 	"""name - the title of the window """
 	which = 'pnam'
 	want = 'itxt'
-class position(aetools.NProperty):
+class _Prop_position(aetools.NProperty):
 	"""position - upper left coordinates of window """
 	which = 'ppos'
 	want = 'QDpt'
-class resizable(aetools.NProperty):
+class _Prop_resizable(aetools.NProperty):
 	"""resizable - Is the window resizable? """
 	which = 'prsz'
 	want = 'bool'
-class titled(aetools.NProperty):
+class _Prop_titled(aetools.NProperty):
 	"""titled - Does the window have a title bar? """
 	which = 'ptit'
 	want = 'bool'
-class unique_ID(aetools.NProperty):
+class _Prop_unique_ID(aetools.NProperty):
 	"""unique ID - Window\xd5s unique ID (a bridge between WWW! suite window id\xd5s and standard AE windows) """
 	which = 'wiid'
 	want = 'long'
-class visible(aetools.NProperty):
+class _Prop_visible(aetools.NProperty):
 	"""visible - is the window visible? """
 	which = 'pvis'
 	want = 'bool'
-class zoomable(aetools.NProperty):
+class _Prop_zoomable(aetools.NProperty):
 	"""zoomable - Is the window zoomable? """
 	which = 'iszm'
 	want = 'bool'
-class zoomed(aetools.NProperty):
+class _Prop_zoomed(aetools.NProperty):
 	"""zoomed - Is the window zoomed? """
 	which = 'pzum'
 	want = 'bool'
 application._superclassnames = []
 application._privpropdict = {
-	'alert_application' : alert_application,
-	'kiosk_mode' : kiosk_mode,
+	'alert_application' : _Prop_alert_application,
+	'kiosk_mode' : _Prop_kiosk_mode,
 }
 application._privelemdict = {
 	'window' : window,
 }
 window._superclassnames = []
 window._privpropdict = {
-	'URL' : URL,
-	'bounds' : bounds,
-	'busy' : busy,
-	'closeable' : closeable,
-	'floating' : floating,
-	'index' : index,
-	'modal' : modal,
-	'name' : name,
-	'position' : position,
-	'resizable' : resizable,
-	'titled' : titled,
-	'unique_ID' : unique_ID,
-	'visible' : visible,
-	'zoomable' : zoomable,
-	'zoomed' : zoomed,
+	'URL' : _Prop_URL,
+	'bounds' : _Prop_bounds,
+	'busy' : _Prop_busy,
+	'closeable' : _Prop_closeable,
+	'floating' : _Prop_floating,
+	'index' : _Prop_index,
+	'modal' : _Prop_modal,
+	'name' : _Prop_name,
+	'position' : _Prop_position,
+	'resizable' : _Prop_resizable,
+	'titled' : _Prop_titled,
+	'unique_ID' : _Prop_unique_ID,
+	'visible' : _Prop_visible,
+	'zoomable' : _Prop_zoomable,
+	'zoomed' : _Prop_zoomed,
 }
 window._privelemdict = {
 }
@@ -212,30 +212,4 @@ window._privelemdict = {
 _classdeclarations = {
 	'capp' : application,
 	'cwin' : window,
-}
-
-_propdeclarations = {
-	'ALAP' : alert_application,
-	'KOSK' : kiosk_mode,
-	'busy' : busy,
-	'curl' : URL,
-	'hclb' : closeable,
-	'isfl' : floating,
-	'iszm' : zoomable,
-	'pbnd' : bounds,
-	'pidx' : index,
-	'pmod' : modal,
-	'pnam' : name,
-	'ppos' : position,
-	'prsz' : resizable,
-	'ptit' : titled,
-	'pvis' : visible,
-	'pzum' : zoomed,
-	'wiid' : unique_ID,
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
 }

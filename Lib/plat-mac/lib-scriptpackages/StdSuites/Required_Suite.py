@@ -21,12 +21,3 @@ class Required_Suite_Events(builtin_Suite_Events):
 #
 _classdeclarations = {
 }
-
-_propdeclarations = {
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
-}

@@ -18,35 +18,35 @@ class Containers_and_folders_Events:
 class disk(aetools.ComponentItem):
 	"""disk - A disk """
 	want = 'cdis'
-class _3c_Inheritance_3e_(aetools.NProperty):
+class _Prop__3c_Inheritance_3e_(aetools.NProperty):
 	"""<Inheritance> - inherits some of its properties from the container class """
 	which = 'c@#^'
 	want = 'ctnr'
-class capacity(aetools.NProperty):
+class _Prop_capacity(aetools.NProperty):
 	"""capacity - the total number of bytes (free or used) on the disk """
 	which = 'capa'
 	want = 'comp'
-class ejectable(aetools.NProperty):
+class _Prop_ejectable(aetools.NProperty):
 	"""ejectable - Can the media be ejected (floppies, CD's, and so on)? """
 	which = 'isej'
 	want = 'bool'
-class format(aetools.NProperty):
+class _Prop_format(aetools.NProperty):
 	"""format - the filesystem format of this disk """
 	which = 'dfmt'
 	want = 'edfm'
-class free_space(aetools.NProperty):
+class _Prop_free_space(aetools.NProperty):
 	"""free space - the number of free bytes left on the disk """
 	which = 'frsp'
 	want = 'comp'
-class ignore_privileges(aetools.NProperty):
+class _Prop_ignore_privileges(aetools.NProperty):
 	"""ignore privileges - Ignore permissions on this disk? """
 	which = 'igpr'
 	want = 'bool'
-class local_volume(aetools.NProperty):
+class _Prop_local_volume(aetools.NProperty):
 	"""local volume - Is the media a local volume (as opposed to a file server)? """
 	which = 'isrv'
 	want = 'bool'
-class startup(aetools.NProperty):
+class _Prop_startup(aetools.NProperty):
 	"""startup - Is this disk the boot disk? """
 	which = 'istd'
 	want = 'bool'
@@ -97,23 +97,23 @@ folders = folder
 class container(aetools.ComponentItem):
 	"""container - An item that contains other items """
 	want = 'ctnr'
-class completely_expanded(aetools.NProperty):
+class _Prop_completely_expanded(aetools.NProperty):
 	"""completely expanded - (NOT AVAILABLE YET) Are the container and all of its children opened as outlines? (can only be set for containers viewed as lists) """
 	which = 'pexc'
 	want = 'bool'
-class container_window(aetools.NProperty):
+class _Prop_container_window(aetools.NProperty):
 	"""container window - the container window for this folder """
 	which = 'cwnd'
 	want = 'obj '
-class entire_contents(aetools.NProperty):
+class _Prop_entire_contents(aetools.NProperty):
 	"""entire contents - the entire contents of the container, including the contents of its children """
 	which = 'ects'
 	want = 'obj '
-class expandable(aetools.NProperty):
+class _Prop_expandable(aetools.NProperty):
 	"""expandable - (NOT AVAILABLE YET) Is the container capable of being expanded as an outline? """
 	which = 'pexa'
 	want = 'bool'
-class expanded(aetools.NProperty):
+class _Prop_expanded(aetools.NProperty):
 	"""expanded - (NOT AVAILABLE YET) Is the container opened as an outline? (can only be set for containers viewed as lists) """
 	which = 'pexp'
 	want = 'bool'
@@ -133,7 +133,7 @@ containers = container
 class trash_2d_object(aetools.ComponentItem):
 	"""trash-object - Trash-object is the class of the \xd2trash\xd3 object """
 	want = 'ctrs'
-class warns_before_emptying(aetools.NProperty):
+class _Prop_warns_before_emptying(aetools.NProperty):
 	"""warns before emptying - Display a dialog when emptying the trash? """
 	which = 'warn'
 	want = 'bool'
@@ -151,14 +151,14 @@ disk._superclassnames = ['container']
 import Files
 import Finder_items
 disk._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'capacity' : capacity,
-	'ejectable' : ejectable,
-	'format' : format,
-	'free_space' : free_space,
-	'ignore_privileges' : ignore_privileges,
-	'local_volume' : local_volume,
-	'startup' : startup,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
+	'capacity' : _Prop_capacity,
+	'ejectable' : _Prop_ejectable,
+	'format' : _Prop_format,
+	'free_space' : _Prop_free_space,
+	'ignore_privileges' : _Prop_ignore_privileges,
+	'local_volume' : _Prop_local_volume,
+	'startup' : _Prop_startup,
 }
 disk._privelemdict = {
 	'alias_file' : Files.alias_file,
@@ -174,7 +174,7 @@ disk._privelemdict = {
 }
 desktop_2d_object._superclassnames = ['container']
 desktop_2d_object._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
 }
 desktop_2d_object._privelemdict = {
 	'alias_file' : Files.alias_file,
@@ -191,7 +191,7 @@ desktop_2d_object._privelemdict = {
 }
 folder._superclassnames = ['container']
 folder._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
 }
 folder._privelemdict = {
 	'alias_file' : Files.alias_file,
@@ -207,12 +207,12 @@ folder._privelemdict = {
 }
 container._superclassnames = ['item']
 container._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'completely_expanded' : completely_expanded,
-	'container_window' : container_window,
-	'entire_contents' : entire_contents,
-	'expandable' : expandable,
-	'expanded' : expanded,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
+	'completely_expanded' : _Prop_completely_expanded,
+	'container_window' : _Prop_container_window,
+	'entire_contents' : _Prop_entire_contents,
+	'expandable' : _Prop_expandable,
+	'expanded' : _Prop_expanded,
 }
 container._privelemdict = {
 	'alias_file' : Files.alias_file,
@@ -228,8 +228,8 @@ container._privelemdict = {
 }
 trash_2d_object._superclassnames = ['container']
 trash_2d_object._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'warns_before_emptying' : warns_before_emptying,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
+	'warns_before_emptying' : _Prop_warns_before_emptying,
 }
 trash_2d_object._privelemdict = {
 	'alias_file' : Files.alias_file,
@@ -253,27 +253,4 @@ _classdeclarations = {
 	'cfol' : folder,
 	'ctnr' : container,
 	'ctrs' : trash_2d_object,
-}
-
-_propdeclarations = {
-	'c@#^' : _3c_Inheritance_3e_,
-	'capa' : capacity,
-	'cwnd' : container_window,
-	'dfmt' : format,
-	'ects' : entire_contents,
-	'frsp' : free_space,
-	'igpr' : ignore_privileges,
-	'isej' : ejectable,
-	'isrv' : local_volume,
-	'istd' : startup,
-	'pexa' : expandable,
-	'pexc' : completely_expanded,
-	'pexp' : expanded,
-	'warn' : warns_before_emptying,
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
 }

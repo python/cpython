@@ -39,12 +39,3 @@ class Hidden_Suite_Events(Type_Names_Suite_Events):
 #
 _classdeclarations = {
 }
-
-_propdeclarations = {
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
-}

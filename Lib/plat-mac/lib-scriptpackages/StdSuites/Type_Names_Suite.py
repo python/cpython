@@ -424,12 +424,3 @@ _classdeclarations = {
 	'trot' : rotation,
 	'vers' : version,
 }
-
-_propdeclarations = {
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
-}

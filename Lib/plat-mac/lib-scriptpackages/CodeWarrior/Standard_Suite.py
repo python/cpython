@@ -175,7 +175,7 @@ class Standard_Suite_Events(Standard_Suite_Events):
 class application(aetools.ComponentItem):
 	"""application - an application program """
 	want = 'capp'
-class user_interaction(aetools.NProperty):
+class _Prop_user_interaction(aetools.NProperty):
 	"""user interaction - user interaction level """
 	which = 'inte'
 	want = 'Inte'
@@ -185,11 +185,11 @@ class user_interaction(aetools.NProperty):
 class character(aetools.ComponentItem):
 	"""character - a character """
 	want = 'cha '
-class length(aetools.NProperty):
+class _Prop_length(aetools.NProperty):
 	"""length - length in characters of this object """
 	which = 'pLen'
 	want = 'long'
-class offset(aetools.NProperty):
+class _Prop_offset(aetools.NProperty):
 	"""offset - offset of a text object from the beginning of the document (first char has offset 1) """
 	which = 'pOff'
 	want = 'long'
@@ -201,7 +201,7 @@ class insertion_point(aetools.ComponentItem):
 class line(aetools.ComponentItem):
 	"""line - lines of text """
 	want = 'clin'
-class index(aetools.NProperty):
+class _Prop_index(aetools.NProperty):
 	"""index - index of a line object from the beginning of the document (first line has index 1) """
 	which = 'pidx'
 	want = 'long'
@@ -212,7 +212,7 @@ lines = line
 class selection_2d_object(aetools.ComponentItem):
 	"""selection-object - the selection visible to the user """
 	want = 'csel'
-class contents(aetools.NProperty):
+class _Prop_contents(aetools.NProperty):
 	"""contents - the contents of the selection """
 	which = 'pcnt'
 	want = 'type'
@@ -231,27 +231,27 @@ class text(aetools.ComponentItem):
 class window(aetools.ComponentItem):
 	"""window - A window """
 	want = 'cwin'
-class bounds(aetools.NProperty):
+class _Prop_bounds(aetools.NProperty):
 	"""bounds - the boundary rectangle for the window """
 	which = 'pbnd'
 	want = 'qdrt'
-class document(aetools.NProperty):
+class _Prop_document(aetools.NProperty):
 	"""document - the document that owns this window """
 	which = 'docu'
 	want = 'docu'
-class name(aetools.NProperty):
+class _Prop_name(aetools.NProperty):
 	"""name - the title of the window """
 	which = 'pnam'
 	want = 'itxt'
-class position(aetools.NProperty):
+class _Prop_position(aetools.NProperty):
 	"""position - upper left coordinates of window """
 	which = 'ppos'
 	want = 'QDpt'
-class visible(aetools.NProperty):
+class _Prop_visible(aetools.NProperty):
 	"""visible - is the window visible? """
 	which = 'pvis'
 	want = 'bool'
-class zoomed(aetools.NProperty):
+class _Prop_zoomed(aetools.NProperty):
 	"""zoomed - Is the window zoomed? """
 	which = 'pzum'
 	want = 'bool'
@@ -261,19 +261,19 @@ windows = window
 class document(aetools.ComponentItem):
 	"""document - a document """
 	want = 'docu'
-class file_permissions(aetools.NProperty):
+class _Prop_file_permissions(aetools.NProperty):
 	"""file permissions - the file permissions for the document """
 	which = 'PERM'
 	want = 'PERM'
-class kind(aetools.NProperty):
+class _Prop_kind(aetools.NProperty):
 	"""kind - the kind of document """
 	which = 'DKND'
 	want = 'DKND'
-class location(aetools.NProperty):
+class _Prop_location(aetools.NProperty):
 	"""location - the file of the document """
 	which = 'FILE'
 	want = 'fss '
-class window(aetools.NProperty):
+class _Prop_window(aetools.NProperty):
 	"""window - the window of the document. """
 	which = 'cwin'
 	want = 'cwin'
@@ -287,7 +287,7 @@ class files(aetools.ComponentItem):
 file = files
 application._superclassnames = []
 application._privpropdict = {
-	'user_interaction' : user_interaction,
+	'user_interaction' : _Prop_user_interaction,
 }
 application._privelemdict = {
 	'document' : document,
@@ -295,32 +295,32 @@ application._privelemdict = {
 }
 character._superclassnames = []
 character._privpropdict = {
-	'length' : length,
-	'offset' : offset,
+	'length' : _Prop_length,
+	'offset' : _Prop_offset,
 }
 character._privelemdict = {
 }
 insertion_point._superclassnames = []
 insertion_point._privpropdict = {
-	'length' : length,
-	'offset' : offset,
+	'length' : _Prop_length,
+	'offset' : _Prop_offset,
 }
 insertion_point._privelemdict = {
 }
 line._superclassnames = []
 line._privpropdict = {
-	'index' : index,
-	'length' : length,
-	'offset' : offset,
+	'index' : _Prop_index,
+	'length' : _Prop_length,
+	'offset' : _Prop_offset,
 }
 line._privelemdict = {
 	'character' : character,
 }
 selection_2d_object._superclassnames = []
 selection_2d_object._privpropdict = {
-	'contents' : contents,
-	'length' : length,
-	'offset' : offset,
+	'contents' : _Prop_contents,
+	'length' : _Prop_length,
+	'offset' : _Prop_offset,
 }
 selection_2d_object._privelemdict = {
 	'character' : character,
@@ -329,8 +329,8 @@ selection_2d_object._privelemdict = {
 }
 text._superclassnames = []
 text._privpropdict = {
-	'length' : length,
-	'offset' : offset,
+	'length' : _Prop_length,
+	'offset' : _Prop_offset,
 }
 text._privelemdict = {
 	'character' : character,
@@ -340,24 +340,24 @@ text._privelemdict = {
 }
 window._superclassnames = []
 window._privpropdict = {
-	'bounds' : bounds,
-	'document' : document,
-	'index' : index,
-	'name' : name,
-	'position' : position,
-	'visible' : visible,
-	'zoomed' : zoomed,
+	'bounds' : _Prop_bounds,
+	'document' : _Prop_document,
+	'index' : _Prop_index,
+	'name' : _Prop_name,
+	'position' : _Prop_position,
+	'visible' : _Prop_visible,
+	'zoomed' : _Prop_zoomed,
 }
 window._privelemdict = {
 }
 document._superclassnames = []
 document._privpropdict = {
-	'file_permissions' : file_permissions,
-	'index' : index,
-	'kind' : kind,
-	'location' : location,
-	'name' : name,
-	'window' : window,
+	'file_permissions' : _Prop_file_permissions,
+	'index' : _Prop_index,
+	'kind' : _Prop_kind,
+	'location' : _Prop_location,
+	'name' : _Prop_name,
+	'window' : _Prop_window,
 }
 document._privelemdict = {
 }
@@ -380,28 +380,4 @@ _classdeclarations = {
 	'cwin' : window,
 	'docu' : document,
 	'file' : files,
-}
-
-_propdeclarations = {
-	'DKND' : kind,
-	'FILE' : location,
-	'PERM' : file_permissions,
-	'cwin' : window,
-	'docu' : document,
-	'inte' : user_interaction,
-	'pLen' : length,
-	'pOff' : offset,
-	'pbnd' : bounds,
-	'pcnt' : contents,
-	'pidx' : index,
-	'pnam' : name,
-	'ppos' : position,
-	'pvis' : visible,
-	'pzum' : zoomed,
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
 }

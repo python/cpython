@@ -168,111 +168,111 @@ class Finder_items_Events:
 class item(aetools.ComponentItem):
 	"""item - An item """
 	want = 'cobj'
-class bounds(aetools.NProperty):
+class _Prop_bounds(aetools.NProperty):
 	"""bounds - the bounding rectangle of the item (can only be set for an item in a window viewed as icons or buttons) """
 	which = 'pbnd'
 	want = 'qdrt'
-class comment(aetools.NProperty):
+class _Prop_comment(aetools.NProperty):
 	"""comment - the comment of the item, displayed in the \xd2Get Info\xd3 window """
 	which = 'comt'
 	want = 'utxt'
-class container(aetools.NProperty):
+class _Prop_container(aetools.NProperty):
 	"""container - the container of the item """
 	which = 'ctnr'
 	want = 'obj '
-class creation_date(aetools.NProperty):
+class _Prop_creation_date(aetools.NProperty):
 	"""creation date - the date on which the item was created """
 	which = 'ascd'
 	want = 'ldt '
-class description(aetools.NProperty):
+class _Prop_description(aetools.NProperty):
 	"""description - a description of the item """
 	which = 'dscr'
 	want = 'utxt'
-class disk(aetools.NProperty):
+class _Prop_disk(aetools.NProperty):
 	"""disk - the disk on which the item is stored """
 	which = 'cdis'
 	want = 'obj '
-class displayed_name(aetools.NProperty):
+class _Prop_displayed_name(aetools.NProperty):
 	"""displayed name - the user-visible name of the item """
 	which = 'dnam'
 	want = 'utxt'
-class everyones_privileges(aetools.NProperty):
+class _Prop_everyones_privileges(aetools.NProperty):
 	"""everyones privileges -  """
 	which = 'gstp'
 	want = 'priv'
-class extension_hidden(aetools.NProperty):
+class _Prop_extension_hidden(aetools.NProperty):
 	"""extension hidden - Is the item's extension hidden from the user? """
 	which = 'hidx'
 	want = 'bool'
-class group(aetools.NProperty):
+class _Prop_group(aetools.NProperty):
 	"""group - the user or group that has special access to the container """
 	which = 'sgrp'
 	want = 'utxt'
-class group_privileges(aetools.NProperty):
+class _Prop_group_privileges(aetools.NProperty):
 	"""group privileges -  """
 	which = 'gppr'
 	want = 'priv'
-class icon(aetools.NProperty):
+class _Prop_icon(aetools.NProperty):
 	"""icon - the icon bitmap of the item """
 	which = 'iimg'
 	want = 'ifam'
-class index(aetools.NProperty):
+class _Prop_index(aetools.NProperty):
 	"""index - the index in the front-to-back ordering within its container """
 	which = 'pidx'
 	want = 'long'
-class information_window(aetools.NProperty):
+class _Prop_information_window(aetools.NProperty):
 	"""information window - the information window for the item """
 	which = 'iwnd'
 	want = 'obj '
-class kind(aetools.NProperty):
+class _Prop_kind(aetools.NProperty):
 	"""kind - the kind of the item """
 	which = 'kind'
 	want = 'utxt'
-class label_index(aetools.NProperty):
+class _Prop_label_index(aetools.NProperty):
 	"""label index - the label of the item """
 	which = 'labi'
 	want = 'long'
-class locked(aetools.NProperty):
+class _Prop_locked(aetools.NProperty):
 	"""locked - Is the file locked? """
 	which = 'aslk'
 	want = 'bool'
-class modification_date(aetools.NProperty):
+class _Prop_modification_date(aetools.NProperty):
 	"""modification date - the date on which the item was last modified """
 	which = 'asmo'
 	want = 'ldt '
-class name(aetools.NProperty):
+class _Prop_name(aetools.NProperty):
 	"""name - the name of the item """
 	which = 'pnam'
 	want = 'utxt'
-class name_extension(aetools.NProperty):
+class _Prop_name_extension(aetools.NProperty):
 	"""name extension - the name extension of the item (such as \xd2txt\xd3) """
 	which = 'nmxt'
 	want = 'utxt'
-class owner(aetools.NProperty):
+class _Prop_owner(aetools.NProperty):
 	"""owner - the user that owns the container """
 	which = 'sown'
 	want = 'utxt'
-class owner_privileges(aetools.NProperty):
+class _Prop_owner_privileges(aetools.NProperty):
 	"""owner privileges -  """
 	which = 'ownr'
 	want = 'priv'
-class physical_size(aetools.NProperty):
+class _Prop_physical_size(aetools.NProperty):
 	"""physical size - the actual space used by the item on disk """
 	which = 'phys'
 	want = 'comp'
-class position(aetools.NProperty):
+class _Prop_position(aetools.NProperty):
 	"""position - the position of the item within its parent window (can only be set for an item in a window viewed as icons or buttons) """
 	which = 'posn'
 	want = 'QDpt'
-class properties(aetools.NProperty):
+class _Prop_properties(aetools.NProperty):
 	"""properties - every property of an item """
 	which = 'pALL'
 	want = 'reco'
-class size(aetools.NProperty):
+class _Prop_size(aetools.NProperty):
 	"""size - the logical size of the item """
 	which = 'ptsz'
 	want = 'comp'
-class url(aetools.NProperty):
+class _Prop_url(aetools.NProperty):
 	"""url - the url of the item """
 	which = 'pURL'
 	want = 'utxt'
@@ -280,33 +280,33 @@ class url(aetools.NProperty):
 items = item
 item._superclassnames = []
 item._privpropdict = {
-	'bounds' : bounds,
-	'comment' : comment,
-	'container' : container,
-	'creation_date' : creation_date,
-	'description' : description,
-	'disk' : disk,
-	'displayed_name' : displayed_name,
-	'everyones_privileges' : everyones_privileges,
-	'extension_hidden' : extension_hidden,
-	'group' : group,
-	'group_privileges' : group_privileges,
-	'icon' : icon,
-	'index' : index,
-	'information_window' : information_window,
-	'kind' : kind,
-	'label_index' : label_index,
-	'locked' : locked,
-	'modification_date' : modification_date,
-	'name' : name,
-	'name_extension' : name_extension,
-	'owner' : owner,
-	'owner_privileges' : owner_privileges,
-	'physical_size' : physical_size,
-	'position' : position,
-	'properties' : properties,
-	'size' : size,
-	'url' : url,
+	'bounds' : _Prop_bounds,
+	'comment' : _Prop_comment,
+	'container' : _Prop_container,
+	'creation_date' : _Prop_creation_date,
+	'description' : _Prop_description,
+	'disk' : _Prop_disk,
+	'displayed_name' : _Prop_displayed_name,
+	'everyones_privileges' : _Prop_everyones_privileges,
+	'extension_hidden' : _Prop_extension_hidden,
+	'group' : _Prop_group,
+	'group_privileges' : _Prop_group_privileges,
+	'icon' : _Prop_icon,
+	'index' : _Prop_index,
+	'information_window' : _Prop_information_window,
+	'kind' : _Prop_kind,
+	'label_index' : _Prop_label_index,
+	'locked' : _Prop_locked,
+	'modification_date' : _Prop_modification_date,
+	'name' : _Prop_name,
+	'name_extension' : _Prop_name_extension,
+	'owner' : _Prop_owner,
+	'owner_privileges' : _Prop_owner_privileges,
+	'physical_size' : _Prop_physical_size,
+	'position' : _Prop_position,
+	'properties' : _Prop_properties,
+	'size' : _Prop_size,
+	'url' : _Prop_url,
 }
 item._privelemdict = {
 }
@@ -316,40 +316,4 @@ item._privelemdict = {
 #
 _classdeclarations = {
 	'cobj' : item,
-}
-
-_propdeclarations = {
-	'ascd' : creation_date,
-	'aslk' : locked,
-	'asmo' : modification_date,
-	'cdis' : disk,
-	'comt' : comment,
-	'ctnr' : container,
-	'dnam' : displayed_name,
-	'dscr' : description,
-	'gppr' : group_privileges,
-	'gstp' : everyones_privileges,
-	'hidx' : extension_hidden,
-	'iimg' : icon,
-	'iwnd' : information_window,
-	'kind' : kind,
-	'labi' : label_index,
-	'nmxt' : name_extension,
-	'ownr' : owner_privileges,
-	'pALL' : properties,
-	'pURL' : url,
-	'pbnd' : bounds,
-	'phys' : physical_size,
-	'pidx' : index,
-	'pnam' : name,
-	'posn' : position,
-	'ptsz' : size,
-	'sgrp' : group,
-	'sown' : owner,
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
 }

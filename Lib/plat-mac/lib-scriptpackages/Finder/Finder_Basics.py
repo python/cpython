@@ -61,55 +61,55 @@ class Finder_Basics_Events:
 class application(aetools.ComponentItem):
 	"""application - The Finder """
 	want = 'capp'
-class Finder_preferences(aetools.NProperty):
+class _Prop_Finder_preferences(aetools.NProperty):
 	"""Finder preferences - (NOT AVAILABLE YET) Various preferences that apply to the Finder as a whole """
 	which = 'pfrp'
 	want = 'cprf'
-class clipboard(aetools.NProperty):
+class _Prop_clipboard(aetools.NProperty):
 	"""clipboard - (NOT AVAILABLE YET) the Finder\xd5s clipboard window """
 	which = 'pcli'
 	want = 'obj '
-class desktop(aetools.NProperty):
+class _Prop_desktop(aetools.NProperty):
 	"""desktop - the desktop """
 	which = 'desk'
 	want = 'cdsk'
-class frontmost(aetools.NProperty):
+class _Prop_frontmost(aetools.NProperty):
 	"""frontmost - Is the Finder the frontmost process? """
 	which = 'pisf'
 	want = 'bool'
-class home(aetools.NProperty):
+class _Prop_home(aetools.NProperty):
 	"""home - the home directory """
 	which = 'home'
 	want = 'cfol'
-class insertion_location(aetools.NProperty):
+class _Prop_insertion_location(aetools.NProperty):
 	"""insertion location - the container in which a new folder would appear if \xd2New Folder\xd3 was selected """
 	which = 'pins'
 	want = 'obj '
-class name(aetools.NProperty):
+class _Prop_name(aetools.NProperty):
 	"""name - the Finder\xd5s name """
 	which = 'pnam'
 	want = 'itxt'
-class product_version(aetools.NProperty):
+class _Prop_product_version(aetools.NProperty):
 	"""product version - the version of the System software running on this computer """
 	which = 'ver2'
 	want = 'utxt'
-class selection(aetools.NProperty):
+class _Prop_selection(aetools.NProperty):
 	"""selection - the selection in the frontmost Finder window """
 	which = 'sele'
 	want = 'obj '
-class startup_disk(aetools.NProperty):
+class _Prop_startup_disk(aetools.NProperty):
 	"""startup disk - the startup disk """
 	which = 'sdsk'
 	want = 'cdis'
-class trash(aetools.NProperty):
+class _Prop_trash(aetools.NProperty):
 	"""trash - the trash """
 	which = 'trsh'
 	want = 'ctrs'
-class version(aetools.NProperty):
+class _Prop_version(aetools.NProperty):
 	"""version - the version of the Finder """
 	which = 'vers'
 	want = 'utxt'
-class visible(aetools.NProperty):
+class _Prop_visible(aetools.NProperty):
 	"""visible - Is the Finder\xd5s layer visible? """
 	which = 'pvis'
 	want = 'bool'
@@ -133,19 +133,19 @@ import Window_classes
 import Containers_and_folders
 import Finder_items
 application._privpropdict = {
-	'Finder_preferences' : Finder_preferences,
-	'clipboard' : clipboard,
-	'desktop' : desktop,
-	'frontmost' : frontmost,
-	'home' : home,
-	'insertion_location' : insertion_location,
-	'name' : name,
-	'product_version' : product_version,
-	'selection' : selection,
-	'startup_disk' : startup_disk,
-	'trash' : trash,
-	'version' : version,
-	'visible' : visible,
+	'Finder_preferences' : _Prop_Finder_preferences,
+	'clipboard' : _Prop_clipboard,
+	'desktop' : _Prop_desktop,
+	'frontmost' : _Prop_frontmost,
+	'home' : _Prop_home,
+	'insertion_location' : _Prop_insertion_location,
+	'name' : _Prop_name,
+	'product_version' : _Prop_product_version,
+	'selection' : _Prop_selection,
+	'startup_disk' : _Prop_startup_disk,
+	'trash' : _Prop_trash,
+	'version' : _Prop_version,
+	'visible' : _Prop_visible,
 }
 application._privelemdict = {
 	'Finder_window' : Window_classes.Finder_window,
@@ -169,26 +169,4 @@ application._privelemdict = {
 #
 _classdeclarations = {
 	'capp' : application,
-}
-
-_propdeclarations = {
-	'desk' : desktop,
-	'home' : home,
-	'pcli' : clipboard,
-	'pfrp' : Finder_preferences,
-	'pins' : insertion_location,
-	'pisf' : frontmost,
-	'pnam' : name,
-	'pvis' : visible,
-	'sdsk' : startup_disk,
-	'sele' : selection,
-	'trsh' : trash,
-	'ver2' : product_version,
-	'vers' : version,
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
 }

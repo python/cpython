@@ -18,11 +18,11 @@ class Text_Suite_Events:
 class text_flow(aetools.ComponentItem):
 	"""text flow - A contiguous block of text.  Page layout applications call this a \xd4story.\xd5 """
 	want = 'cflo'
-class _3c_inheritance_3e_(aetools.NProperty):
+class _Prop__3c_inheritance_3e_(aetools.NProperty):
 	"""<inheritance> - inherits some of its properties from this class """
 	which = 'c@#^'
 	want = 'ctxt'
-class name(aetools.NProperty):
+class _Prop_name(aetools.NProperty):
 	"""name - the name """
 	which = 'pnam'
 	want = 'itxt'
@@ -36,7 +36,7 @@ class character(aetools.ComponentItem):
 class line(aetools.ComponentItem):
 	"""line - A line of text """
 	want = 'clin'
-class justification(aetools.NProperty):
+class _Prop_justification(aetools.NProperty):
 	"""justification - the justification of the text """
 	which = 'pjst'
 	want = 'just'
@@ -52,27 +52,27 @@ paragraphs = paragraph
 class text(aetools.ComponentItem):
 	"""text - Text """
 	want = 'ctxt'
-class color(aetools.NProperty):
+class _Prop_color(aetools.NProperty):
 	"""color - the color of the first character """
 	which = 'colr'
 	want = 'cRGB'
-class font(aetools.NProperty):
+class _Prop_font(aetools.NProperty):
 	"""font - the name of the font of the first character """
 	which = 'font'
 	want = 'ctxt'
-class size(aetools.NProperty):
+class _Prop_size(aetools.NProperty):
 	"""size - the size in points of the first character """
 	which = 'ptsz'
 	want = 'fixd'
-class style(aetools.NProperty):
+class _Prop_style(aetools.NProperty):
 	"""style - the text style of the first character of the first character """
 	which = 'txst'
 	want = 'tsty'
-class uniform_styles(aetools.NProperty):
+class _Prop_uniform_styles(aetools.NProperty):
 	"""uniform styles - the text styles that are uniform throughout the text """
 	which = 'ustl'
 	want = 'tsty'
-class writing_code(aetools.NProperty):
+class _Prop_writing_code(aetools.NProperty):
 	"""writing code - the script system and language """
 	which = 'psct'
 	want = 'intl'
@@ -91,11 +91,11 @@ words = word
 class text_style_info(aetools.ComponentItem):
 	"""text style info - On and Off styles of text run """
 	want = 'tsty'
-class off_styles(aetools.NProperty):
+class _Prop_off_styles(aetools.NProperty):
 	"""off styles - the styles that are off for the text """
 	which = 'ofst'
 	want = 'styl'
-class on_styles(aetools.NProperty):
+class _Prop_on_styles(aetools.NProperty):
 	"""on styles - the styles that are on for the text """
 	which = 'onst'
 	want = 'styl'
@@ -103,38 +103,38 @@ class on_styles(aetools.NProperty):
 text_style_infos = text_style_info
 text_flow._superclassnames = ['text']
 text_flow._privpropdict = {
-	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
-	'name' : name,
+	'_3c_inheritance_3e_' : _Prop__3c_inheritance_3e_,
+	'name' : _Prop_name,
 }
 text_flow._privelemdict = {
 }
 character._superclassnames = ['text']
 character._privpropdict = {
-	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
+	'_3c_inheritance_3e_' : _Prop__3c_inheritance_3e_,
 }
 character._privelemdict = {
 }
 line._superclassnames = ['text']
 line._privpropdict = {
-	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
-	'justification' : justification,
+	'_3c_inheritance_3e_' : _Prop__3c_inheritance_3e_,
+	'justification' : _Prop_justification,
 }
 line._privelemdict = {
 }
 paragraph._superclassnames = ['text']
 paragraph._privpropdict = {
-	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
+	'_3c_inheritance_3e_' : _Prop__3c_inheritance_3e_,
 }
 paragraph._privelemdict = {
 }
 text._superclassnames = []
 text._privpropdict = {
-	'color' : color,
-	'font' : font,
-	'size' : size,
-	'style' : style,
-	'uniform_styles' : uniform_styles,
-	'writing_code' : writing_code,
+	'color' : _Prop_color,
+	'font' : _Prop_font,
+	'size' : _Prop_size,
+	'style' : _Prop_style,
+	'uniform_styles' : _Prop_uniform_styles,
+	'writing_code' : _Prop_writing_code,
 }
 text._privelemdict = {
 	'character' : character,
@@ -145,14 +145,14 @@ text._privelemdict = {
 }
 word._superclassnames = ['text']
 word._privpropdict = {
-	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
+	'_3c_inheritance_3e_' : _Prop__3c_inheritance_3e_,
 }
 word._privelemdict = {
 }
 text_style_info._superclassnames = []
 text_style_info._privpropdict = {
-	'off_styles' : off_styles,
-	'on_styles' : on_styles,
+	'off_styles' : _Prop_off_styles,
+	'on_styles' : _Prop_on_styles,
 }
 text_style_info._privelemdict = {
 }
@@ -193,26 +193,4 @@ _classdeclarations = {
 	'ctxt' : text,
 	'cwor' : word,
 	'tsty' : text_style_info,
-}
-
-_propdeclarations = {
-	'c@#^' : _3c_inheritance_3e_,
-	'colr' : color,
-	'font' : font,
-	'ofst' : off_styles,
-	'onst' : on_styles,
-	'pjst' : justification,
-	'pnam' : name,
-	'psct' : writing_code,
-	'ptsz' : size,
-	'txst' : style,
-	'ustl' : uniform_styles,
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
-	'just' : _Enum_just,
-	'styl' : _Enum_styl,
 }
