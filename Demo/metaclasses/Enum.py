@@ -1,4 +1,8 @@
-"""Enumeration metaclass."""
+"""Enumeration metaclass.
+
+XXX This is very much a work in progress.
+
+"""
 
 import string
 
