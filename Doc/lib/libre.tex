@@ -4,7 +4,7 @@
 \bimodindex{re}
 
 % XXX Remove before 1.5final release.
-{\large\bf This documentation is also preliminary and incomplete.  If you
+{\large\bf This documentation is preliminary and incomplete.  If you
 find a bug or documentation error, or just find something unclear,
 please send a message to
 \code{string-sig@python.org}, and we'll fix it.}
@@ -485,33 +485,6 @@ The pattern string from which the regex object was compiled.
 \subsection{MatchObjects}
 \code{Matchobject} instances support the following methods and attributes:
 
-\begin{funcdesc}{start}{group}
-\end{funcdesc}
-
-\begin{funcdesc}{end}{group}
-Return the indices of the start and end of the substring
-matched by \var{group}.  Return \code{None} if \var{group} exists but
-did not contribute to the match.  Note that for a match object
-\code{m}, and a group \code{g} that did contribute to the match, the
-substring matched by group \code{g} is
-\bcode\begin{verbatim}
-    m.string[m.start(g):m.end(g)]
-\end{verbatim}\ecode
-%
-Note too that \code{m.start(\var{group})} will equal
-\code{m.end(\var{group})} if \var{group} matched a null string.  For example,
-after \code{m = re.search('b(c?)', 'cba')}, \code{m.start(0)} is 1,
-\code{m.end(0)} is 2, \code{m.start(1)} and \code{m.end(1)} are both
-2, and \code{m.start(2)} raises an 
-\code{IndexError} exception.
-\end{funcdesc}
-
-\begin{funcdesc}{span}{group}
-Return the 2-tuple \code{(start(\var{group}), end(\var{group}))}.
-Note that if \var{group} did not contribute to the match, this is
-\code{(None, None)}.
-\end{funcdesc}
-
 \begin{funcdesc}{group}{\optional{g1, g2, ...}}
 Returns one or more groups of the match.  If there is a single
 \var{index} argument, the result is a single string; if there are
@@ -525,6 +498,14 @@ such group exists, the corresponding result is
 If the regular expression uses the \code{(?P<\var{name}>...)} syntax,
 the \var{index} arguments may also be strings identifying groups by
 their group name.
+
+A moderately complicated example:
+\bcode\begin{verbatim}
+m = re.match(r"(?P<int>\d+)\.(\d*)", '3.14')
+\end{verbatim}\ecode
+%
+After performing this match, \code{m.group(1)} is \code{'3'}, as is \code{m.group('int')}.
+\code{m.group(2)} is \code{'14'}.
 \end{funcdesc}
 
 \begin{funcdesc}{groups}{}
@@ -532,6 +513,34 @@ Return a tuple containing all the subgroups of the match, from 1 up to
 however many groups are in the pattern.  Groups that did not
 participate in the match have values of \code{None}.  If the tuple
 would only be one element long, a string will be returned instead.  
+\end{funcdesc}
+
+\begin{funcdesc}{start}{group}
+\end{funcdesc}
+
+\begin{funcdesc}{end}{group}
+Return the indices of the start and end of the substring
+matched by \var{group}.  Return \code{None} if \var{group} exists but
+did not contribute to the match.  For a match object
+\code{m}, and a group \code{g} that did contribute to the match, the
+substring matched by group \code{g} (equivalent to \code{m.group(g)}) is
+\bcode\begin{verbatim}
+    m.string[m.start(g):m.end(g)]
+\end{verbatim}\ecode
+%
+Note that
+\code{m.start(\var{group})} will equal \code{m.end(\var{group})} if
+\var{group} matched a null string.  For example, after \code{m =
+re.search('b(c?)', 'cba')}, \code{m.start(0)} is 1, \code{m.end(0)} is
+2, \code{m.start(1)} and \code{m.end(1)} are both 2, and
+\code{m.start(2)} raises an \code{IndexError} exception.
+
+\end{funcdesc}
+
+\begin{funcdesc}{span}{group}
+Return the 2-tuple \code{(start(\var{group}), end(\var{group}))}.
+Note that if \var{group} did not contribute to the match, this is
+\code{(None, None)}.
 \end{funcdesc}
 
 \begin{datadesc}{pos}
@@ -556,5 +565,10 @@ The string passed to \code{match()} or \code{search()}.
 \end{datadesc}
 
 \begin{seealso}
-\seetext Jeffrey Friedl, \emph{Mastering Regular Expressions}.
+\seetext Jeffrey Friedl, \emph{Mastering Regular Expressions},
+O'Reilly.  The Python material in this book dates from before the re
+module, but it covers writing good regular expression patterns in
+great detail. 
 \end{seealso}
+
+
