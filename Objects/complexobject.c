@@ -514,7 +514,7 @@ static int
 complex_nonzero(v)
 	PyComplexObject *v;
 {
-	return v->cval.real != 0.0 && v->cval.imag != 0.0;
+	return v->cval.real != 0.0 || v->cval.imag != 0.0;
 }
 
 static int
