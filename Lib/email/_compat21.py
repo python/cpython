@@ -30,6 +30,10 @@ def _floordiv(i, j):
     return i / j
 
 
+def _isstring(obj):
+    return isinstance(obj, StringType) or isinstance(obj, UnicodeType)    
+
+
 
 # These two functions are imported into the Iterators.py interface module.
 # The Python 2.2 version uses generators for efficiency.
@@ -38,7 +42,7 @@ def body_line_iterator(msg):
     lines = []
     for subpart in msg.walk():
         payload = subpart.get_payload()
-        if isinstance(payload, StringType) or isinstance(payload, UnicodeType):
+        if _isstring(payload):
             for line in StringIO(payload).readlines():
                 lines.append(line)
     return lines
