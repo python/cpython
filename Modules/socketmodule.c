@@ -163,6 +163,7 @@ int shutdown( int, int );
 #include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 
 /* Headers needed for inet_ntoa() and inet_addr() */
 #ifdef __BEOS__
