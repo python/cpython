@@ -93,7 +93,9 @@ platforms), and is equivalent to \code{getenv("HOME")} in C.
 If the platform supports the \function{putenv()} function, this
 mapping may be used to modify the environment as well as query the
 environment.  \function{putenv()} will be called automatically when
-the mapping is modified.
+the mapping is modified.  \note{On some platforms, including
+FreeBSD and Mac OS X, setting \code{environ} may cause memory leaks.
+Refer to the system documentation for putenv.}
 
 If \function{putenv()} is not provided, this mapping may be passed to
 the appropriate process-creation functions to cause child processes to
@@ -192,6 +194,10 @@ Set the environment variable named \var{varname} to the string
 started with \function{os.system()}, \function{popen()} or
 \function{fork()} and \function{execv()}.
 Availability: most flavors of \UNIX, Windows.
+
+\note{On some platforms, including FreeBSD and Mac OS X,
+setting \code{environ} may cause memory leaks.
+Refer to the system documentation for putenv.}
 
 When \function{putenv()} is
 supported, assignments to items in \code{os.environ} are automatically
