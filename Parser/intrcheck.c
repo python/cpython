@@ -33,7 +33,11 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "config.h"
 #include "myproto.h"
+#include "mymalloc.h" /* For ANY */
 #include "intrcheck.h"
+
+/* Copied here from ceval.h -- can't include that file. */
+int Py_AddPendingCall Py_PROTO((int (*func) Py_PROTO((ANY *)), ANY *arg));
 
 
 #ifdef QUICKWIN
