@@ -95,6 +95,13 @@ lib:	lib.ps
 ext:	ext.ps
 api:	api.ps
 
+# All formats for a single document
+api-all:  api.dvi api.pdf api.ps l2hapi
+ext-all:  ext.dvi ext.pdf ext.ps l2hext
+lib-all:  lib.dvi lib.pdf lib.ps l2hlib
+tut-all:  tut.dvi tut.pdf tut.ps l2htut
+
+
 # Rules to build PostScript and PDF formats
 .SUFFIXES: .dvi .ps .pdf
 
@@ -155,7 +162,7 @@ LIBFILES = lib.tex \
     libmailbox.tex libcommands.tex libcmath.tex libni.tex libgzip.tex \
     libpprint.tex libcode.tex libmimify.tex libre.tex libmacic.tex \
     libuserdict.tex libdis.tex libxmllib.tex libqueue.tex \
-    liblocale.tex libbasehttp.tex libcopyreg.tex
+    liblocale.tex libbasehttp.tex libcopyreg.tex libsymbol.tex libtoken.tex
 
 # Library document
 lib.dvi: modindex.py indfix.py $(LIBFILES)
@@ -257,7 +264,9 @@ l2hext: ext.dvi myformat.perl
 l2hlib: lib.dvi myformat.perl
 	./fix_libaux.sed <lib.aux >lib1.aux
 	mv lib1.aux lib.aux
+	if [ -d lib ] ; then rm -f lib/*.html ; fi
 	$(L2H) $(L2HARGS) lib.tex
+	(cd lib; ../node2label.pl footnode.html lib.html node*.html)
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
 		<lib/lib.html >lib/xxx
 	mv lib/xxx lib/lib.html
