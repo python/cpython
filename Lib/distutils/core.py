@@ -13,10 +13,7 @@ __revision__ = "$Id$"
 import sys, os
 from types import *
 
-# If DISTUTILS_DEBUG is anything other than the empty string, we run in
-# debug mode.
-DEBUG = os.environ.get('DISTUTILS_DEBUG')
-
+from distutils.debug import DEBUG
 from distutils.errors import *
 from distutils.util import grok_environment_error
 
@@ -24,7 +21,6 @@ from distutils.util import grok_environment_error
 from distutils.dist import Distribution
 from distutils.cmd import Command
 from distutils.extension import Extension
-
 
 # This is a barebones help message generated displayed when the user
 # runs the setup script with no arguments at all.  More useful help
