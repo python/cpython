@@ -1098,3 +1098,61 @@ PyFile_WriteString(char *s, PyObject *f)
 	else
 		return -1;
 }
+
+/* Try to get a file-descriptor from a Python object.  If the object
+   is an integer or long integer, its value is returned.  If not, the
+   object's fileno() method is called if it exists; the method must return
+   an integer or long integer, which is returned as the file descriptor value.
+   -1 is returned on failure.
+*/
+
+int PyObject_AsFileDescriptor(PyObject *o)
+{
+	int fd;
+	PyObject *meth;
+
+	if (PyInt_Check(o)) {
+		fd = PyInt_AsLong(o);
+	}
+	else if (PyLong_Check(o)) {
+		fd = PyLong_AsLong(o);
+	}
+	else if ((meth = PyObject_GetAttrString(o, "fileno")) != NULL)
+	{
+		PyObject *fno = PyEval_CallObject(meth, NULL);
+		Py_DECREF(meth);
+		if (fno == NULL)
+			return -1;
+		
+		if (PyInt_Check(fno)) {
+			fd = PyInt_AsLong(fno);
+			Py_DECREF(fno);
+		}
+		else if (PyLong_Check(fno)) {
+			fd = PyLong_AsLong(fno);
+			Py_DECREF(fno);
+		}
+		else {
+			PyErr_SetString(PyExc_TypeError,
+					"fileno() returned a non-integer");
+			Py_DECREF(fno);
+			return -1;
+		}
+	}
+	else {
+		PyErr_SetString(PyExc_TypeError,
+				"argument must be an int, or have a fileno() method.");
+		return -1;
+	}
+
+	if (fd < 0) {
+		PyErr_Format(PyExc_ValueError,
+			     "file descriptor cannot be a negative integer (%i)",
+			     fd);
+		return -1;
+	}
+	return fd;
+}
+
+
+
