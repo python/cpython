@@ -10,7 +10,7 @@ import stat
 import exceptions
 
 __all__ = ["copyfileobj","copyfile","copymode","copystat","copy","copy2",
-           "copytree","rmtree","Error"]
+           "copytree","move","rmtree","Error"]
 
 class Error(exceptions.EnvironmentError):
     pass
