@@ -416,9 +416,14 @@ def findsource(object):
     raise IOError, 'could not find code object'
 
 def getcomments(object):
-    """Get lines of comments immediately preceding an object's source code."""
-    try: lines, lnum = findsource(object)
-    except IOError: return None
+    """Get lines of comments immediately preceding an object's source code.
+
+    Returns None when source can't be found.
+    """
+    try:
+        lines, lnum = findsource(object)
+    except (IOError, TypeError):
+        return None
 
     if ismodule(object):
         # Look for a comment block at the top of the file.
