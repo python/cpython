@@ -280,6 +280,13 @@ sub make_str_index_entry{
     "<a name=\"$br_id\">$str<\/a>";
 }
 
+# Changed from the stock version to indent {verbatim} sections:
+sub replace_verbatim {
+    # Modifies $_
+    s/$verbatim_mark(verbatim)(\d+)/<dl><dd><pre>$verbatim{$2}<\/pre><\/dl>/go;
+    s/$verbatim_mark(rawhtml)(\d+)/$verbatim{$2}/ego;	# Raw HTML
+}
+
 sub do_env_cfuncdesc{
     local($_) = @_;
     local($return_type,$function_name,$arg_list,$idx) = ('', '', '', '');
