@@ -373,7 +373,7 @@ class URLopener:
             errcode, errmsg, headers = h.getreply()
             fp = h.getfile()
             if errcode == 200:
-                return addinfourl(fp, headers, url)
+                return addinfourl(fp, headers, "https:" + url)
             else:
                 if data is None:
                     return self.http_error(url, fp, errcode, errmsg, headers)
