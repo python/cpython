@@ -29,7 +29,7 @@ def generate(input, output, module_dict = None, architecture = 'fat', debug=0):
 	
 	dynamicmodules, dynamicfiles, extraresfiles = findfragments(module_dict, architecture)
 	
-	print "Adding ³__main__²"
+	print 'Adding "__main__"'
 	buildtools.process(applettemplatepath, input, output, 0)
 	
 	outputref = Res.OpenResFile(output)
@@ -40,7 +40,7 @@ def generate(input, output, module_dict = None, architecture = 'fat', debug=0):
 		addpythonmodules(module_dict)
 		
 		print "Adding PythonCore resources"
-		copyres(corepath, outputref, ['cfrg', 'Popt', 'GU…I'], 1)
+		copyres(corepath, outputref, ['cfrg', 'Popt', 'GU\267I'], 1)
 		
 		print "Adding resources from shared libraries"
 		for ppcpath, cfm68kpath in extraresfiles:
@@ -144,7 +144,7 @@ def addpythonmodules(module_dict):
 			print '*** skipping', location
 			continue
 		
-		print 'Adding module ³%s²' % name
+		print 'Adding module "%s"' % name
 		id, name = py_resource.frompyfile(location, name, preload=0, 
 				ispackage=mtype=='package')
 
