@@ -33,7 +33,11 @@ class ScrolledText(Text):
         self['yscrollcommand'] = self.vbar.set
         self.vbar['command'] = self.yview
 
-        # Copy Pack methods of self.frame -- hack!
-        for m in Pack.__dict__.keys():
+        # Copy geometry methods of self.frame -- hack!
+	methods = Pack.__dict__.keys()
+	methods = methods + Grid.__dict__.keys()
+	methods = methods + Place.__dict__.keys()
+
+        for m in methods:
             if m[0] != '_' and m != 'config' and m != 'configure':
                 setattr(self, m, getattr(self.frame, m))
