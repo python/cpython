@@ -19,8 +19,8 @@ from Tkinter import *
 # | New...         |
 # | Open...        |
 # | Print          |
-# |                |  <-------- This is a MENU. The lines of text in the menu are
-# |                |                            MENU ENTRIES
+# |                |  <------ This is a MENU. The lines of text in the menu are
+# |                |                          MENU ENTRIES
 # |                +---------------+
 # | Open Files >   | file1         |               
 # |                | file2         |
