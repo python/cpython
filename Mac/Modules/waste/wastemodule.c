@@ -487,20 +487,6 @@ static PyObject *wasteObj_WEGetTextLength(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WECountLines(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	SInt32 _rv;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = WECountLines(_self->ob_itself);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
 static PyObject *wasteObj_WEGetHeight(_self, _args)
 	wasteObject *_self;
 	PyObject *_args;
@@ -605,19 +591,85 @@ static PyObject *wasteObj_WEGetLineRange(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	SInt32 lineNo;
+	SInt32 lineIndex;
 	SInt32 lineStart;
 	SInt32 lineEnd;
 	if (!PyArg_ParseTuple(_args, "l",
-	                      &lineNo))
+	                      &lineIndex))
 		return NULL;
-	WEGetLineRange(lineNo,
+	WEGetLineRange(lineIndex,
 	               &lineStart,
 	               &lineEnd,
 	               _self->ob_itself);
 	_res = Py_BuildValue("ll",
 	                     lineStart,
 	                     lineEnd);
+	return _res;
+}
+
+static PyObject *wasteObj_WECountLines(_self, _args)
+	wasteObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt32 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = WECountLines(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *wasteObj_WEOffsetToRun(_self, _args)
+	wasteObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt32 _rv;
+	SInt32 offset;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &offset))
+		return NULL;
+	_rv = WEOffsetToRun(offset,
+	                    _self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *wasteObj_WEGetRunRange(_self, _args)
+	wasteObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt32 runIndex;
+	SInt32 runStart;
+	SInt32 runEnd;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &runIndex))
+		return NULL;
+	WEGetRunRange(runIndex,
+	              &runStart,
+	              &runEnd,
+	              _self->ob_itself);
+	_res = Py_BuildValue("ll",
+	                     runStart,
+	                     runEnd);
+	return _res;
+}
+
+static PyObject *wasteObj_WECountRuns(_self, _args)
+	wasteObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt32 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = WECountRuns(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
 	return _res;
 }
 
@@ -725,6 +777,23 @@ static PyObject *wasteObj_WEGetRunInfo(_self, _args)
 	return _res;
 }
 
+static PyObject *wasteObj_WEGetRunDirection(_self, _args)
+	wasteObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	SInt32 offset;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &offset))
+		return NULL;
+	_rv = WEGetRunDirection(offset,
+	                        _self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
 static PyObject *wasteObj_WEGetOffset(_self, _args)
 	wasteObject *_self;
 	PyObject *_args;
@@ -817,6 +886,30 @@ static PyObject *wasteObj_WEFindLine(_self, _args)
 	return _res;
 }
 
+static PyObject *wasteObj_WEFindParagraph(_self, _args)
+	wasteObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt32 offset;
+	WEEdge edge;
+	SInt32 paragraphStart;
+	SInt32 paragraphEnd;
+	if (!PyArg_ParseTuple(_args, "lb",
+	                      &offset,
+	                      &edge))
+		return NULL;
+	WEFindParagraph(offset,
+	                edge,
+	                &paragraphStart,
+	                &paragraphEnd,
+	                _self->ob_itself);
+	_res = Py_BuildValue("ll",
+	                     paragraphStart,
+	                     paragraphEnd);
+	return _res;
+}
+
 static PyObject *wasteObj_WECopyRange(_self, _args)
 	wasteObject *_self;
 	PyObject *_args;
@@ -871,6 +964,36 @@ static PyObject *wasteObj_WESetAlignment(_self, _args)
 	                      &alignment))
 		return NULL;
 	WESetAlignment(alignment,
+	               _self->ob_itself);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *wasteObj_WEGetDirection(_self, _args)
+	wasteObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	WEDirection _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = WEGetDirection(_self->ob_itself);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *wasteObj_WESetDirection(_self, _args)
+	wasteObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	WEDirection direction;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &direction))
+		return NULL;
+	WESetDirection(direction,
 	               _self->ob_itself);
 	Py_INCREF(Py_None);
 	_res = Py_None;
@@ -1201,6 +1324,39 @@ static PyObject *wasteObj_WEIsTyping(_self, _args)
 	return _res;
 }
 
+static PyObject *wasteObj_WEBeginAction(_self, _args)
+	wasteObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = WEBeginAction(_self->ob_itself);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *wasteObj_WEEndAction(_self, _args)
+	wasteObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	WEActionKind actionKind;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &actionKind))
+		return NULL;
+	_err = WEEndAction(actionKind,
+	                   _self->ob_itself);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *wasteObj_WEGetModCount(_self, _args)
 	wasteObject *_self;
 	PyObject *_args;
@@ -1453,6 +1609,47 @@ static PyObject *wasteObj_WEFeatureFlag(_self, _args)
 	return _res;
 }
 
+static PyObject *wasteObj_WEGetUserInfo(_self, _args)
+	wasteObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	WESelector tag;
+	SInt32 userInfo;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetOSType, &tag))
+		return NULL;
+	_err = WEGetUserInfo(tag,
+	                     &userInfo,
+	                     _self->ob_itself);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     userInfo);
+	return _res;
+}
+
+static PyObject *wasteObj_WESetUserInfo(_self, _args)
+	wasteObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	WESelector tag;
+	SInt32 userInfo;
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      PyMac_GetOSType, &tag,
+	                      &userInfo))
+		return NULL;
+	_err = WESetUserInfo(tag,
+	                     userInfo,
+	                     _self->ob_itself);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *wasteObj_WEInstallTabHooks(_self, _args)
 	wasteObject *_self;
 	PyObject *_args;
@@ -1504,8 +1701,6 @@ static PyMethodDef wasteObj_methods[] = {
 	 "(SInt32 offset) -> (SInt16 _rv)"},
 	{"WEGetTextLength", (PyCFunction)wasteObj_WEGetTextLength, 1,
 	 "() -> (SInt32 _rv)"},
-	{"WECountLines", (PyCFunction)wasteObj_WECountLines, 1,
-	 "() -> (SInt32 _rv)"},
 	{"WEGetHeight", (PyCFunction)wasteObj_WEGetHeight, 1,
 	 "(SInt32 startLine, SInt32 endLine) -> (SInt32 _rv)"},
 	{"WEGetSelection", (PyCFunction)wasteObj_WEGetSelection, 1,
@@ -1519,7 +1714,15 @@ static PyMethodDef wasteObj_methods[] = {
 	{"WEOffsetToLine", (PyCFunction)wasteObj_WEOffsetToLine, 1,
 	 "(SInt32 offset) -> (SInt32 _rv)"},
 	{"WEGetLineRange", (PyCFunction)wasteObj_WEGetLineRange, 1,
-	 "(SInt32 lineNo) -> (SInt32 lineStart, SInt32 lineEnd)"},
+	 "(SInt32 lineIndex) -> (SInt32 lineStart, SInt32 lineEnd)"},
+	{"WECountLines", (PyCFunction)wasteObj_WECountLines, 1,
+	 "() -> (SInt32 _rv)"},
+	{"WEOffsetToRun", (PyCFunction)wasteObj_WEOffsetToRun, 1,
+	 "(SInt32 offset) -> (SInt32 _rv)"},
+	{"WEGetRunRange", (PyCFunction)wasteObj_WEGetRunRange, 1,
+	 "(SInt32 runIndex) -> (SInt32 runStart, SInt32 runEnd)"},
+	{"WECountRuns", (PyCFunction)wasteObj_WECountRuns, 1,
+	 "() -> (SInt32 _rv)"},
 	{"WEGetClickCount", (PyCFunction)wasteObj_WEGetClickCount, 1,
 	 "() -> (UInt16 _rv)"},
 	{"WESetSelection", (PyCFunction)wasteObj_WESetSelection, 1,
@@ -1532,6 +1735,8 @@ static PyMethodDef wasteObj_methods[] = {
 	 "(WEStyleMode mode) -> (Boolean _rv, WEStyleMode mode, TextStyle ts)"},
 	{"WEGetRunInfo", (PyCFunction)wasteObj_WEGetRunInfo, 1,
 	 "(SInt32 offset) -> (WERunInfo runInfo)"},
+	{"WEGetRunDirection", (PyCFunction)wasteObj_WEGetRunDirection, 1,
+	 "(SInt32 offset) -> (Boolean _rv)"},
 	{"WEGetOffset", (PyCFunction)wasteObj_WEGetOffset, 1,
 	 "(LongPt thePoint) -> (SInt32 _rv, WEEdge edge)"},
 	{"WEGetPoint", (PyCFunction)wasteObj_WEGetPoint, 1,
@@ -1540,12 +1745,18 @@ static PyMethodDef wasteObj_methods[] = {
 	 "(SInt32 offset, WEEdge edge) -> (SInt32 wordStart, SInt32 wordEnd)"},
 	{"WEFindLine", (PyCFunction)wasteObj_WEFindLine, 1,
 	 "(SInt32 offset, WEEdge edge) -> (SInt32 lineStart, SInt32 lineEnd)"},
+	{"WEFindParagraph", (PyCFunction)wasteObj_WEFindParagraph, 1,
+	 "(SInt32 offset, WEEdge edge) -> (SInt32 paragraphStart, SInt32 paragraphEnd)"},
 	{"WECopyRange", (PyCFunction)wasteObj_WECopyRange, 1,
 	 "(SInt32 rangeStart, SInt32 rangeEnd, Handle hText, StScrpHandle hStyles, WESoupHandle hSoup) -> None"},
 	{"WEGetAlignment", (PyCFunction)wasteObj_WEGetAlignment, 1,
 	 "() -> (WEAlignment _rv)"},
 	{"WESetAlignment", (PyCFunction)wasteObj_WESetAlignment, 1,
 	 "(WEAlignment alignment) -> None"},
+	{"WEGetDirection", (PyCFunction)wasteObj_WEGetDirection, 1,
+	 "() -> (WEDirection _rv)"},
+	{"WESetDirection", (PyCFunction)wasteObj_WESetDirection, 1,
+	 "(WEDirection direction) -> None"},
 	{"WECalText", (PyCFunction)wasteObj_WECalText, 1,
 	 "() -> None"},
 	{"WEUpdate", (PyCFunction)wasteObj_WEUpdate, 1,
@@ -1584,6 +1795,10 @@ static PyMethodDef wasteObj_methods[] = {
 	 "() -> (WEActionKind _rv, Boolean redoFlag)"},
 	{"WEIsTyping", (PyCFunction)wasteObj_WEIsTyping, 1,
 	 "() -> (Boolean _rv)"},
+	{"WEBeginAction", (PyCFunction)wasteObj_WEBeginAction, 1,
+	 "() -> None"},
+	{"WEEndAction", (PyCFunction)wasteObj_WEEndAction, 1,
+	 "(WEActionKind actionKind) -> None"},
 	{"WEGetModCount", (PyCFunction)wasteObj_WEGetModCount, 1,
 	 "() -> (UInt32 _rv)"},
 	{"WEResetModCount", (PyCFunction)wasteObj_WEResetModCount, 1,
@@ -1614,6 +1829,10 @@ static PyMethodDef wasteObj_methods[] = {
 	 "() -> None"},
 	{"WEFeatureFlag", (PyCFunction)wasteObj_WEFeatureFlag, 1,
 	 "(SInt16 feature, SInt16 action) -> (SInt16 _rv)"},
+	{"WEGetUserInfo", (PyCFunction)wasteObj_WEGetUserInfo, 1,
+	 "(WESelector tag) -> (SInt32 userInfo)"},
+	{"WESetUserInfo", (PyCFunction)wasteObj_WESetUserInfo, 1,
+	 "(WESelector tag, SInt32 userInfo) -> None"},
 	{"WEInstallTabHooks", (PyCFunction)wasteObj_WEInstallTabHooks, 1,
 	 "() -> None"},
 	{"WERemoveTabHooks", (PyCFunction)wasteObj_WERemoveTabHooks, 1,
@@ -1675,6 +1894,26 @@ static PyObject *waste_WENew(_self, _args)
 	return _res;
 }
 
+static PyObject *waste_WEUpdateStyleScrap(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	StScrpHandle hStyles;
+	WEFontTableHandle hFontTable;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      ResObj_Convert, &hStyles,
+	                      ResObj_Convert, &hFontTable))
+		return NULL;
+	_err = WEUpdateStyleScrap(hStyles,
+	                          hFontTable);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *waste_WEInstallTSMHandlers(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -1702,6 +1941,25 @@ static PyObject *waste_WERemoveTSMHandlers(_self, _args)
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	return _res;
+}
+
+static PyObject *waste_WEHandleTSMEvent(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	AppleEvent ae;
+	AppleEvent reply;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      AEDesc_Convert, &ae))
+		return NULL;
+	_err = WEHandleTSMEvent(&ae,
+	                        &reply);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     AEDesc_New, &reply);
 	return _res;
 }
 
@@ -1926,10 +2184,14 @@ static PyObject *waste_WEInstallObjectHandler(_self, _args)
 static PyMethodDef waste_methods[] = {
 	{"WENew", (PyCFunction)waste_WENew, 1,
 	 "(LongRect destRect, LongRect viewRect, UInt32 flags) -> (WEReference we)"},
+	{"WEUpdateStyleScrap", (PyCFunction)waste_WEUpdateStyleScrap, 1,
+	 "(StScrpHandle hStyles, WEFontTableHandle hFontTable) -> None"},
 	{"WEInstallTSMHandlers", (PyCFunction)waste_WEInstallTSMHandlers, 1,
 	 "() -> None"},
 	{"WERemoveTSMHandlers", (PyCFunction)waste_WERemoveTSMHandlers, 1,
 	 "() -> None"},
+	{"WEHandleTSMEvent", (PyCFunction)waste_WEHandleTSMEvent, 1,
+	 "(AppleEvent ae) -> (AppleEvent reply)"},
 	{"WELongPointToPoint", (PyCFunction)waste_WELongPointToPoint, 1,
 	 "(LongPt lp) -> (Point p)"},
 	{"WEPointToLongPoint", (PyCFunction)waste_WEPointToLongPoint, 1,

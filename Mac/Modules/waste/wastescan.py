@@ -2,10 +2,10 @@
 
 import addpack
 addpack.addpack(':tools:bgen:bgen')
-from scantools import Scanner
+from scantools import Scanner_PreUH3
 from bgenlocations import MWERKSDIR, TOOLBOXDIR
 
-WASTEDIR=":::::Waste 1.2 Distribution:WASTE C/C++ Headers:"
+WASTEDIR=":::::Waste 1.3 Distribution:WASTE C/C++ Headers:"
 
 OBJECT = "TEHandle"
 SHORT = "waste"
@@ -24,7 +24,7 @@ def main():
 	exec "import " + SHORT + "support"
 	print "=== Done.  It's up to you to compile it now! ==="
 
-class MyScanner(Scanner):
+class MyScanner(Scanner_PreUH3):
 
 	def destination(self, type, name, arglist):
 		classname = "Function"
@@ -42,6 +42,8 @@ class MyScanner(Scanner):
 					listname = "methods2"
 		return classname, listname
 
+	def writeinitialdefs(self):
+		self.defsfile.write("kPascalStackBased = None # workaround for header parsing\n")
 	def makeblacklistnames(self):
 		return [
 			"WEDispose",
