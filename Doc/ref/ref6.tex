@@ -896,11 +896,5 @@ for use by \keyword{exec}.
 \bifuncindex{globals}
 \bifuncindex{locals}
 
-Also, in the current implementation, multi-line compound statements must
-end with a newline:
-\code{exec "for v in seq:\e{}n\e{}tprint v\e{}n"} works, but
-\code{exec "for v in seq:\e{}n\e{}tprint v"} fails with
-\exception{SyntaxError}.
-\exindex{SyntaxError}
   
 
