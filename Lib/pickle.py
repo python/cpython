@@ -843,8 +843,7 @@ class Unpickler:
         try:
             setstate = inst.__setstate__
         except AttributeError:
-            for key in value.keys():
-                setattr(inst, key, value[key])
+	    inst.__dict__.update(value)
         else:
             setstate(value)
     dispatch[BUILD] = load_build
