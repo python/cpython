@@ -1,7 +1,4 @@
 # Format and print Python stack traces
-#
-# updated to take optional "file" named parameter
-#    by Tommy Burnette, 9/20/95
 
 import linecache
 import string
