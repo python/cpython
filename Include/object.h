@@ -271,6 +271,7 @@ extern int PyObject_SetAttr Py_PROTO((PyObject *, PyObject *, PyObject *));
 extern int PyObject_HasAttr Py_PROTO((PyObject *, PyObject *));
 extern long PyObject_Hash Py_PROTO((PyObject *));
 extern int PyObject_IsTrue Py_PROTO((PyObject *));
+extern int PyObject_Not Py_PROTO((PyObject *));
 extern int PyCallable_Check Py_PROTO((PyObject *));
 extern int PyNumber_Coerce Py_PROTO((PyObject **, PyObject **));
 extern int PyNumber_CoerceEx Py_PROTO((PyObject **, PyObject **));

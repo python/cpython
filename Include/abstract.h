@@ -382,6 +382,18 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 
        */
 
+     /* Implemented elsewhere:
+
+     int PyObject_Not(PyObject *o);
+
+	 Returns 0 if the object, o, is considered to be true, and
+	 1 otherwise. This is equivalent to the Python expression:
+	 not o
+
+	 This function always succeeds.
+	 
+       */
+
      PyObject *PyObject_Type Py_PROTO((PyObject *o));
 
        /*

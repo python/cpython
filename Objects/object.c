@@ -470,6 +470,20 @@ PyObject_IsTrue(v)
 	return res;
 }
 
+/* equivalent of 'not v' 
+   Return -1 if an error occurred */
+
+int
+PyObject_Not(v)
+	PyObject *v;
+{
+	int res;
+	res = PyObject_IsTrue(v);
+	if (res < 0)
+		return res;
+	return res == 0;
+}
+
 /* Coerce two numeric types to the "larger" one.
    Increment the reference count on each argument.
    Return -1 and raise an exception if no coercion is possible
