@@ -495,24 +495,6 @@ posix_2str(PyObject *args, char *format,
 	return Py_None;
 }
 
-static PyObject *
-posix_strint(PyObject *args, char *format, int (*func)(const char *, int))
-{
-	char *path;
-	int i;
-	int res;
-	if (!PyArg_ParseTuple(args, format, &path, &i))
-		return NULL;
-	Py_BEGIN_ALLOW_THREADS
-	res = (*func)(path, i);
-	Py_END_ALLOW_THREADS
-	if (res < 0)
-		return posix_error_with_filename(path);
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-
 /* pack a system stat C structure into the Python stat tuple 
    (used by posix_stat() and posix_fstat()) */
 static PyObject*
