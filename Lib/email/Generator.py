@@ -60,7 +60,7 @@ class Generator:
         # Just delegate to the file object
         self._fp.write(s)
 
-    def __call__(self, msg, unixfrom=0):
+    def flatten(self, msg, unixfrom=0):
         """Print the message object tree rooted at msg to the output file
         specified when the Generator instance was created.
 
@@ -77,6 +77,9 @@ class Generator:
                 ufrom = 'From nobody ' + time.ctime(time.time())
             print >> self._fp, ufrom
         self._write(msg)
+
+    # For backwards compatibility, but this is slower
+    __call__ = flatten
 
     #
     # Protected interface - undocumented ;/
@@ -254,7 +257,7 @@ class Generator:
         for part in subparts:
             s = StringIO()
             g = self.__class__(s, self._mangle_from_, self.__maxheaderlen)
-            g(part, unixfrom=0)
+            g.flatten(part, unixfrom=0)
             msgtexts.append(s.getvalue())
         # Now make sure the boundary we've selected doesn't appear in any of
         # the message texts.
@@ -302,7 +305,7 @@ class Generator:
         for part in msg.get_payload():
             s = StringIO()
             g = self.__class__(s, self._mangle_from_, self.__maxheaderlen)
-            g(part, unixfrom=0)
+            g.flatten(part, unixfrom=0)
             text = s.getvalue()
             lines = text.split('\n')
             # Strip off the unnecessary trailing empty line
@@ -318,10 +321,11 @@ class Generator:
     def _handle_message(self, msg):
         s = StringIO()
         g = self.__class__(s, self._mangle_from_, self.__maxheaderlen)
-        # A message/rfc822 should contain a scalar payload which is another
-        # Message object.  Extract that object, stringify it, and write that
-        # out.
-        g(msg.get_payload(), unixfrom=0)
+        # The payload of a message/rfc822 part should be a multipart sequence
+        # of length 1.  The zeroth element of the list should be the Message
+        # object for the subpart.Extract that object, stringify it, and write
+        # that out.
+        g.flatten(msg.get_payload(0), unixfrom=0)
         self._fp.write(s.getvalue())
 
 
