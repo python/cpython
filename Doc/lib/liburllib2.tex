@@ -56,6 +56,11 @@ them, instances of them or subclasses of them:
 
 If the Python installation has SSL support (\function{socket.ssl()}
 exists), \class{HTTPSHandler} will also be added.
+
+Beginning in Python 2.3, a \class{BaseHandler} subclass may also change its
+\var{handler_order} member variable to modify its position in the handlers
+list. Besides \class{ProxyHandler}, which has \var{handler_order} of
+\code{100}, all handlers currently have it set to \code{500}.
 \end{funcdesc}
 
 
