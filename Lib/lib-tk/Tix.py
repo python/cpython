@@ -1005,6 +1005,17 @@ class HList(TixWidget):
     def item_delete(self, entry, col):
         self.tk.call(self._w, 'item', 'delete', entry, col)
 
+    def entrycget(self, entry, opt):
+        return self.tk.call(self._w, 'entrycget', entry, opt)
+
+    def entryconfigure(self, entry, cnf={}, **kw):
+        if cnf is None:
+            return _lst2dict(
+                self.tk.split(
+                self.tk.call(self._w, 'entryconfigure', entry)))
+        self.tk.call(self._w, 'entryconfigure', entry,
+              *self._options(cnf, kw))
+
     def nearest(self, y):
         return self.tk.call(self._w, 'nearest', y)
 
