@@ -208,7 +208,12 @@ class ProcessTestCase(unittest.TestCase):
 
     def test_cwd(self):
         tmpdir = os.getenv("TEMP", "/tmp")
-        tmpdir = os.path.realpath(tmpdir)
+        # We cannot use os.path.realpath to canonicalize the path,
+        # since it doesn't expand Tru64 {memb} strings. See bug 1063571.
+        cwd = os.getcwd()
+        os.chdir(tmpdir)
+        tmpdir = os.getcwd()
+        os.chdir(cwd)
         p = subprocess.Popen([sys.executable, "-c",
                           'import sys,os;' \
                           'sys.stdout.write(os.getcwd())'],
