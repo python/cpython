@@ -3,7 +3,7 @@ import Wkeys
 import struct
 import string
 import types
-import regex
+import re
 
 nullid = '\0\0'
 closedid = struct.pack('h', 468)
@@ -13,11 +13,15 @@ opensolidid = struct.pack('h', 471)
 
 arrows = (nullid, closedid, openid, closedsolidid, opensolidid)
 
-has_ctlcharsRE = regex.compile('[\000-\037\177-\377]')
-
+has_ctlcharsRE = re.compile('[\000-\037\177-\377]')
+def ctlcharsREsearch(str):
+	if has_ctlcharsRE(str) is None:
+		return -1
+	return 1
+	
 def double_repr(key, value, truncvalue = 0, 
 			type = type, StringType = types.StringType,
-			has_ctlchars = has_ctlcharsRE.search, _repr = repr, str = str):
+			has_ctlchars = ctlcharsREsearch, _repr = repr, str = str):
 	if type(key) == StringType and has_ctlchars(key) < 0:
 		key = str(key)
 	else:

@@ -2,7 +2,7 @@ import aetools
 import Standard_Suite
 import Required_Suite
 import WWW_Suite
-import regex
+import re
 import W
 import macfs
 import os
@@ -29,16 +29,16 @@ app = W.getapplication()
 #SIGNATURE='MSIE' # MS Explorer
 SIGNATURE='MOSS' # Netscape
 
-_titlepat = regex.compile('<title>\([^<]*\)</title>')
+_titlepat = re.compile('<title>\([^<]*\)</title>')
 
 def sucktitle(path):
 	f = open(path)
 	text = f.read(1024) # assume the title is in the first 1024 bytes
 	f.close()
 	lowertext = string.lower(text)
-	if _titlepat.search(lowertext) > 0:
-		a, b = _titlepat.regs[1]
-		return text[a:b]
+	matcher = _titlepat.search(lowertext)
+	if matcher:
+		return matcher.group(1)
 	return path
 
 def verifydocpath(docpath):
