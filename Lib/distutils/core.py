@@ -636,10 +636,10 @@ class Command:
                    preserve_mode=1, preserve_times=1, update=1, level=1):
         """Copy a file respecting verbose and dry-run flags."""
 
-        util.copy_file (infile, outfile,
-                        preserve_mode, preserve_times,
-                        update, self.distribution.verbose >= level,
-                        self.distribution.dry_run)
+        return util.copy_file (infile, outfile,
+                               preserve_mode, preserve_times,
+                               update, self.distribution.verbose >= level,
+                               self.distribution.dry_run)
 
 
     def copy_tree (self, infile, outfile,
@@ -648,10 +648,10 @@ class Command:
         """Copy an entire directory tree respecting verbose and dry-run
            flags."""
 
-        util.copy_tree (infile, outfile, 
-                        preserve_mode, preserve_times, preserve_symlinks,
-                        update, self.distribution.verbose >= level,
-                        self.distribution.dry_run)
+        return util.copy_tree (infile, outfile, 
+                               preserve_mode,preserve_times,preserve_symlinks,
+                               update, self.distribution.verbose >= level,
+                               self.distribution.dry_run)
 
 
     def make_file (self, infiles, outfile, func, args,

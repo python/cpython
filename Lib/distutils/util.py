@@ -164,7 +164,11 @@ def copy_file (src, dst,
        'update' is true, 'src' will only be copied if 'dst' does not
        exist, or if 'dst' does exist but is older than 'src'.  If
        'verbose' is true, then a one-line summary of the copy will be
-       printed to stdout."""
+       printed to stdout.
+
+       Return true if the file was copied (or would have been copied),
+       false otherwise (ie. 'update' was true and the destination is
+       up-to-date)."""
 
     # XXX doesn't copy Mac-specific metadata
        
@@ -181,14 +185,15 @@ def copy_file (src, dst,
         dir = os.path.dirname (dst)
 
     if update and not newer (src, dst):
-        print "not copying %s (output up-to-date)" % src
-        return
+        if verbose:
+            print "not copying %s (output up-to-date)" % src
+        return 0
 
     if verbose:
         print "copying %s -> %s" % (src, dir)
 
     if dry_run:
-        return
+        return 1
 
     _copy_file_contents (src, dst)
     if preserve_mode or preserve_times:
@@ -197,6 +202,8 @@ def copy_file (src, dst,
             os.chmod (dst, S_IMODE (st[ST_MODE]))
         if preserve_times:
             os.utime (dst, (st[ST_ATIME], st[ST_MTIME]))
+
+    return 1
 
 # copy_file ()
 
@@ -213,9 +220,12 @@ def copy_tree (src, dst,
     """Copy an entire directory tree 'src' to a new location 'dst'.  Both
        'src' and 'dst' must be directory names.  If 'src' is not a
        directory, raise DistutilsFileError.  If 'dst' does not exist, it
-       is created with 'mkpath'.  The endresult of the copy is that
+       is created with 'mkpath'.  The end result of the copy is that
        every file in 'src' is copied to 'dst', and directories under
-       'src' are recursively copied to 'dst'.
+       'src' are recursively copied to 'dst'.  Return the list of files
+       copied (under their output names) -- note that if 'update' is true,
+       this might be less than the list of files considered.  Return
+       value is not affected by 'dry_run'.
 
        'preserve_mode' and 'preserve_times' are the same as for
        'copy_file'; note that they only apply to regular files, not to
@@ -236,6 +246,8 @@ def copy_tree (src, dst,
     if not dry_run:
         mkpath (dst, verbose=verbose)
 
+    outputs = []
+
     for n in names:
         src_name = os.path.join (src, n)
         dst_name = os.path.join (dst, n)
@@ -246,13 +258,19 @@ def copy_tree (src, dst,
                 print "linking %s -> %s" % (dst_name, link_dest)
             if not dry_run:
                 os.symlink (link_dest, dst_name)
+            outputs.append (dst_name)
+            
         elif os.path.isdir (src_name):
-            copy_tree (src_name, dst_name,
-                       preserve_mode, preserve_times, preserve_symlinks,
-                       update, verbose, dry_run)
+            outputs[-1:] = \
+                copy_tree (src_name, dst_name,
+                           preserve_mode, preserve_times, preserve_symlinks,
+                           update, verbose, dry_run)
         else:
-            copy_file (src_name, dst_name,
-                       preserve_mode, preserve_times,
-                       update, verbose, dry_run)
+            if (copy_file (src_name, dst_name,
+                           preserve_mode, preserve_times,
+                           update, verbose, dry_run)):
+                outputs.append (dst_name)
+
+    return outputs
 
 # copy_tree ()
