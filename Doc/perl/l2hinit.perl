@@ -26,12 +26,11 @@ $VERBOSITY = 0;
 # stripped.  Only the directory is returned.
 #
 sub find_my_file{
-    local($myfile,$key,$tmp,$mydir) = (@_[0], '', '', '');
+    my($myfile,$key,$tmp,$mydir) = (@_[0], '', '', '');
     foreach $key (keys %INC) {
 	$tmp = "$key";
 	$tmp =~ s|^.*/||o;
 	if ($tmp eq $myfile) {
-	    #print "\nfound $tmp: $key --> ", $INC{$key}, "\n";
 	    $mydir = $INC{$key};
 	}
     }
@@ -87,7 +86,7 @@ sub gen_index_id {
 }
 
 sub make_index_entry {
-    local($br_id,$str) = @_;
+    my($br_id,$str) = @_;
     # If TITLE is not yet available (i.e the \index command is in the title of the
     # current section), use $ref_before.
     $TITLE = $ref_before unless $TITLE;
@@ -134,7 +133,7 @@ sub do_cmd_tableofcontents {
     local($_) = @_;
     $TITLE = $toc_title;
     $tocfile = $CURRENT_FILE;
-    local($closures,$reopens) = &preserve_open_tags();
+    my($closures,$reopens) = &preserve_open_tags();
     &anchor_label("contents",$CURRENT_FILE,$_);		# this is added
     join('', "<BR>\n", $closures
 	 , &make_section_heading($toc_title, "H2"), $toc_mark
@@ -145,7 +144,7 @@ sub do_cmd_listoffigures {
     local($_) = @_;
     $TITLE = $lof_title;
     $loffile = $CURRENT_FILE;
-    local($closures,$reopens) = &preserve_open_tags();
+    my($closures,$reopens) = &preserve_open_tags();
     &anchor_label("lof",$CURRENT_FILE,$_);		# this is added
     join('', "<BR>\n", $closures
 	 , &make_section_heading($lof_title, "H2"), $lof_mark
@@ -156,7 +155,7 @@ sub do_cmd_listoftables {
     local($_) = @_;
     $TITLE = $lot_title;
     $lotfile = $CURRENT_FILE;
-    local($closures,$reopens) = &preserve_open_tags();
+    my($closures,$reopens) = &preserve_open_tags();
     &anchor_label("lot",$CURRENT_FILE,$_);		# this is added
     join('', "<BR>\n", $closures
 	 , &make_section_heading($lot_title, "H2"), $lot_mark
@@ -192,7 +191,7 @@ sub do_cmd_textohtmlindex {
     if (($SHORT_INDEX) && (%index_segment)) { make_preindex(); }
     else { $preindex = ''; }
     my $heading = make_section_heading($idx_title, 'h2') . $idx_mark;
-    local($pre,$post) = minimize_open_tags($heading);
+    my($pre,$post) = minimize_open_tags($heading);
     anchor_label('genindex',$CURRENT_FILE,$_);		# this is added
     '<br>\n' . $pre . $_;
 }
@@ -221,27 +220,32 @@ sub do_cmd_textohtmlmoduleindex {
 #	it.
 
 sub add_bbl_and_idx_dummy_commands {
-    local($id) = $global{'max_id'};
-
-#    $section_commands{'textohtmlmoduleindex'} = 2;
+    my $id = $global{'max_id'};
 
     s/([\\]begin\s*$O\d+$C\s*thebibliography)/$bbl_cnt++; $1/eg;
     s/([\\]begin\s*$O\d+$C\s*thebibliography)/$id++; "\\bibliography$O$id$C$O$id$C $1"/geo
       #if ($bbl_cnt == 1)
     ;
     #}
-    #----------------------------------------------------------------------#
-    # (FLD) This was added						   #
-    local(@parts) = split(/\\begin\s*$O\d+$C\s*theindex/);		   #
-    if (scalar(@parts) == 3) {						   #
-	print "\nadd_bbl_and_idx_dummy_commands ==> adding module index"; #
-	s/([\\]begin\s*$O\d+$C\s*theindex)/\\textohtmlmoduleindex $1/o;    #
-    }									   #
-    #----------------------------------------------------------------------#
-    $global{'max_id'} = $id;
-    s/([\\]begin\s*$O\d+$C\s*theindex)/\\textohtmlindex $1/o;
-    s/[\\]printindex/\\textohtmlindex /o;
-    &lib_add_bbl_and_idx_dummy_commands() if defined(&lib_add_bbl_and_idx_dummy_commands);
+    #----------------------------------------------------------------------
+    # (FLD) This was added
+    my(@parts) = split(/\\begin\s*$O\d+$C\s*theindex/);
+    if (scalar(@parts) == 3) {
+	# Be careful to re-write the string in place, since $_ is *not*
+	# returned explicity;  *** nasty side-effect dependency! ***
+	print "\nadd_bbl_and_idx_dummy_commands ==> adding module index";
+	my $rx = "([\\\\]begin\\s*$O\\d+$C\\s*theindex[\\s\\S]*)"
+	         . "([\\\\]begin\\s*$O\\d+$C\\s*theindex)";
+	s/$rx/\\textohtmlmoduleindex \1 \\textohtmlindex \2/o;
+    }
+    else {
+	$global{'max_id'} = $id; # not sure why....
+	s/([\\]begin\s*$O\d+$C\s*theindex)/\\textohtmlindex $1/o;
+	s/[\\]printindex/\\textohtmlindex /o;
+    }
+    #----------------------------------------------------------------------
+    &lib_add_bbl_and_idx_dummy_commands()
+        if defined(&lib_add_bbl_and_idx_dummy_commands);
 }
 
 # The bibliographic references, the appendices, the lists of figures and tables
@@ -251,7 +255,7 @@ sub add_bbl_and_idx_dummy_commands {
 
 sub set_depth_levels {
     # Sets $outermost_level
-    local($level);
+    my $level;
     #RRM:  do not alter user-set value for  $MAX_SPLIT_DEPTH
     foreach $level ("part", "chapter", "section", "subsection",
 		    "subsubsection", "paragraph") {
@@ -273,11 +277,14 @@ sub set_depth_levels {
 	, 'textohtmlindex', $level
 	, 'textohtmlmoduleindex', $level
         );
+    $section_headings{'textohtmlmoduleindex'} = "h1";
 
     %section_commands = ( 
 	  %unnumbered_section_commands
         , %section_commands
         );
+
+    make_sections_rx();
 }
 
 
@@ -287,12 +294,14 @@ sub set_depth_levels {
 #
 sub protect_useritems {
     local(*_) = @_;
-    local($preitems, $thisitem);
+    local($preitems,$thisitem);
     while (/\\item\s*\[/) {
-        $preitems .= $`; $_ = $';
+        $preitems .= $`;
+	$_ = $';
         $thisitem = $&.'<<'.++$global{'max_id'}.'>>';
         s/^(((($O|$OP)\d+($C|$CP)).*\3|<[^<>]*>|[^\]<]+)*)\]/$thisitem.=$1;''/e;
-        $preitems .= $thisitem.'<<'.$global{'max_id'}.'>>]'; s/^]//;
+        $preitems .= $thisitem . '<<' . $global{'max_id'} . '>>]';
+	s/^]//;
     }
     $_ = $preitems . $_;
 }
