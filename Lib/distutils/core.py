@@ -136,6 +136,10 @@ class Distribution:
         self.licence = None
         self.description = None
 
+        # 'cmdclass' maps command names to class objects, so we
+        # can 1) quickly figure out which class to instantiate when
+        # we need to create a new command object, and 2) have a way
+        # for the client to override command classes
         self.cmdclass = {}
 
         # The rest of these are really the business of various commands,
@@ -152,8 +156,22 @@ class Distribution:
                 setattr (self, k, attrs[k])
 
         # And now initialize bookkeeping stuff that can't be supplied by
-        # the caller at all
+        # the caller at all.  'command_obj' maps command names to
+        # Command instances -- that's how we enforce that every command
+        # class is a singleton.
         self.command_obj = {}
+
+        # 'have_run' maps command names to boolean values; it keeps track
+        # of whether we have actually run a particular command, to make it
+        # cheap to "run" a command whenever we think we might need to -- if
+        # it's already been done, no need for expensive filesystem
+        # operations, we just check the 'have_run' dictionary and carry on.
+        # It's only safe to query 'have_run' for a command class
+        # that has been instantiated -- a false value will be put inserted
+        # when the command object is created, and replaced with a true
+        # value when the command is succesfully run.  Thus it's
+        # probably best to use '.get()' rather than a straight lookup.
+        self.have_run = {}
 
     # __init__ ()
 
@@ -211,6 +229,7 @@ class Distribution:
             # attribute, but we're not enforcing that anywhere!
             args = fancy_getopt (cmd_obj.options, cmd_obj, args[1:])
             self.command_obj[command] = cmd_obj
+            self.have_run[command] = 0
 
         # while args
 
@@ -347,12 +366,23 @@ class Distribution:
     # -- Methods that operate on its Commands --------------------------
 
     def run_command (self, command):
-        """Create a command object for 'command' if necessary, and
-           run the command by invoking its 'run()' method."""
+
+        """Do whatever it takes to run a command (including nothing at all,
+           if the command has already been run).  Specifically: if we have
+           already created and run the command named by 'command', return
+           silently without doing anything.  If the command named by
+           'command' doesn't even have a command object yet, create one.
+           Then invoke 'run()' on that command object (or an existing
+           one)."""
+
+        # Already been here, done that? then return silently.
+        if self.have_run.get (command):
+            return
 
         self.announce ("running " + command)
         cmd_obj = self.find_command_obj (command)
         cmd_obj.run ()
+        self.have_run[command] = 1
 
 
     def get_command_option (self, command, option):
