@@ -90,7 +90,7 @@ objecttable = {}
 
 class SocketIO:
 
-    debugging = 0
+    debugging = False
 
     def __init__(self, sock, objtable=None, debugging=None):
         self.mainthread = threading.currentThread()
@@ -189,6 +189,7 @@ class SocketIO:
 
     def asyncreturn(self, seq):
         response = self.getresponse(seq)
+        self.debug("asyncreturn:", response)
         return self.decoderesponse(response)
 
     def decoderesponse(self, response):
