@@ -188,10 +188,8 @@ Pdata_grow(Pdata *self)
 	int bigger;
 	size_t nbytes;
 
-	if (! self->size)
-		goto nomemory;
 	bigger = self->size << 1;
-	if (bigger <= 0)
+	if (bigger <= 0)	/* was 0, or new value overflows */
 		goto nomemory;
 	if ((int)(size_t)bigger != bigger)
 		goto nomemory;
@@ -210,18 +208,46 @@ Pdata_grow(Pdata *self)
 	return -1;
 }
 
-/* D is a Pdata *.  Pop the topmost element and store it into V, which
- * must be an lvalue holding PyObject *.  On stack underflow, UnpicklingError
+/* D is a Pdata*.  Pop the topmost element and store it into V, which
+ * must be an lvalue holding PyObject*.  On stack underflow, UnpicklingError
  * is raised and V is set to NULL.  D and V may be evaluated several times.
  */
 #define PDATA_POP(D, V) {					\
-    if ((D)->length)						\
-    	(V) = (D)->data[--((D)->length)];			\
-    else {							\
-        PyErr_SetString(UnpicklingError, "bad pickle data");	\
-        (V) = NULL;						\
-    }								\
+	if ((D)->length)					\
+		(V) = (D)->data[--((D)->length)];		\
+	else {							\
+		PyErr_SetString(UnpicklingError, "bad pickle data");	\
+		(V) = NULL;					\
+	}							\
 }
+
+/* PDATA_PUSH and PDATA_APPEND both push rvalue PyObject* O on to Pdata*
+ * D.  If the Pdata stack can't be grown to hold the new value, both
+ * raise MemoryError and execute "return ER".  The difference is in ownership
+ * of O after:  _PUSH transfers ownership of O from the caller to the stack
+ * (no incref of O is done, and in case of error O is decrefed), while
+ * _APPEND pushes a new reference.
+ */
+
+/* Push O on stack D, giving ownership of O to the stack. */
+#define PDATA_PUSH(D, O, ER) {					\
+	if (((Pdata*)(D))->length == ((Pdata*)(D))->size &&	\
+	    Pdata_grow((Pdata*)(D)) < 0) {			\
+		Py_DECREF(O);					\
+		return ER;					\
+	}							\
+	((Pdata*)(D))->data[((Pdata*)(D))->length++] = (O);	\
+}
+
+/* Push O on stack D, pushing a new reference. */
+#define PDATA_APPEND(D, O, ER) {				\
+	if (((Pdata*)(D))->length == ((Pdata*)(D))->size &&	\
+	    Pdata_grow((Pdata*)(D)) < 0)			\
+		return ER;					\
+	Py_INCREF(O);						\
+	((Pdata*)(D))->data[((Pdata*)(D))->length++] = (O);	\
+}
+
 
 static PyObject *
 Pdata_popTuple(Pdata *self, int start)
@@ -253,23 +279,6 @@ Pdata_popList(Pdata *self, int start)
 
 	self->length=start;
 	return r;
-}
-
-#define PDATA_APPEND(D,O,ER) {                                 \
-    if (((Pdata*)(D))->length == ((Pdata*)(D))->size &&        \
-        Pdata_grow((Pdata*)(D)) < 0)                           \
-        return ER;                                             \
-    Py_INCREF(O);                                              \
-    ((Pdata*)(D))->data[((Pdata*)(D))->length++]=O;            \
-}
-
-#define PDATA_PUSH(D,O,ER) {                                   \
-    if (((Pdata*)(D))->length == ((Pdata*)(D))->size &&        \
-        Pdata_grow((Pdata*)(D)) < 0) {                         \
-        Py_DECREF(O);                                          \
-        return ER;                                             \
-    }                                                          \
-    ((Pdata*)(D))->data[((Pdata*)(D))->length++]=O;            \
 }
 
 /*************************************************************************/
@@ -2886,8 +2895,7 @@ static int
 load_bool(Unpicklerobject *self, PyObject *boolean)
 {
 	assert(boolean == Py_True || boolean == Py_False);
-	Py_INCREF(boolean);
-	PDATA_PUSH(self->stack, boolean, -1);
+	PDATA_APPEND(self->stack, boolean, -1);
 	return 0;
 }
 
