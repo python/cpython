@@ -31,6 +31,8 @@ def test(method, input, output, *args):
 
 test('capitalize', u' hello ', u' hello ')
 test('capitalize', u'hello ', u'Hello ')
+test('capitalize', u'aaaa', u'Aaaa')
+test('capitalize', u'AaAa', u'Aaaa')
 
 test('count', u'aaa', 3, u'a')
 test('count', u'aaa', 0, u'b')
