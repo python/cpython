@@ -33,7 +33,9 @@ provide access to the Expat parser.  Direct use of the
 This module provides one exception and one type object:
 
 \begin{excdesc}{ExpatError}
-  The exception raised when Expat reports an error.
+  The exception raised when Expat reports an error.  See section
+  \ref{expaterror-objects}, ``ExpatError Exceptions,'' for more
+  information on interpreting Expat errors.
 \end{excdesc}
 
 \begin{excdesc}{error}
@@ -169,7 +171,7 @@ will be passed Unicode strings.  If \member{returns_unicode} is 0,
 8-bit strings containing UTF-8 encoded data will be passed to the
 handlers.
 \versionchanged[Can be changed at any time to affect the result
-  type.]{1.6}
+  type]{1.6}
 \end{memberdesc}
 
 \begin{memberdesc}[xmlparser]{specified_attributes}
@@ -514,15 +516,16 @@ such as \code{(A, B, C)}.
 The constants in the quantifier group are:
 
 \begin{datadescni}{XML_CQUANT_NONE}
+No modifier is given, so it can appear exactly once, as for \code{A}.
 \end{datadescni}
 
 \begin{datadescni}{XML_CQUANT_OPT}
-The model is option: it can appear once or not at all, as for
+The model is optional: it can appear once or not at all, as for
 \code{A?}.
 \end{datadescni}
 
 \begin{datadescni}{XML_CQUANT_PLUS}
-The model must occur one or more times (\code{A+}).
+The model must occur one or more times (like \code{A+}).
 \end{datadescni}
 
 \begin{datadescni}{XML_CQUANT_REP}
@@ -549,9 +552,13 @@ entity instead of an internal entity.
 \end{datadescni}
 
 \begin{datadescni}{XML_ERROR_BAD_CHAR_REF}
+A character reference referred to a character which is illegal in XML
+(for example, character \code{0}, or `\code{\&\#0;}'.
 \end{datadescni}
 
 \begin{datadescni}{XML_ERROR_BINARY_ENTITY_REF}
+An entity reference referred to an entity which was declared with a
+notation, so cannot be parsed.
 \end{datadescni}
 
 \begin{datadescni}{XML_ERROR_DUPLICATE_ATTRIBUTE}
@@ -562,6 +569,9 @@ An attribute was used more than once in a start tag.
 \end{datadescni}
 
 \begin{datadescni}{XML_ERROR_INVALID_TOKEN}
+Raised when an input byte could not properly be assigned to a
+character; for example, a NUL byte (value \code{0}) in a UTF-8 input
+stream.
 \end{datadescni}
 
 \begin{datadescni}{XML_ERROR_JUNK_AFTER_DOC_ELEMENT}
@@ -569,10 +579,13 @@ Something other than whitespace occurred after the document element.
 \end{datadescni}
 
 \begin{datadescni}{XML_ERROR_MISPLACED_XML_PI}
+An XML declaration was found somewhere other than the start of the
+input data.
 \end{datadescni}
 
 \begin{datadescni}{XML_ERROR_NO_ELEMENTS}
-The document contains no elements.
+The document contains no elements (XML requires all documents to
+contain exactly one top-level element)..
 \end{datadescni}
 
 \begin{datadescni}{XML_ERROR_NO_MEMORY}
@@ -580,12 +593,16 @@ Expat was not able to allocate memory internally.
 \end{datadescni}
 
 \begin{datadescni}{XML_ERROR_PARAM_ENTITY_REF}
+A parameter entity reference was found where it was not allowed.
 \end{datadescni}
 
 \begin{datadescni}{XML_ERROR_PARTIAL_CHAR}
+
 \end{datadescni}
 
 \begin{datadescni}{XML_ERROR_RECURSIVE_ENTITY_REF}
+An entity reference contained another reference to the same entity;
+possibly via a different name, and possibly indirectly.
 \end{datadescni}
 
 \begin{datadescni}{XML_ERROR_SYNTAX}
@@ -597,6 +614,8 @@ An end tag did not match the innermost open start tag.
 \end{datadescni}
 
 \begin{datadescni}{XML_ERROR_UNCLOSED_TOKEN}
+Some token (such as a start tag) was not closed before the end of the
+stream or the next token was encountered.
 \end{datadescni}
 
 \begin{datadescni}{XML_ERROR_UNDEFINED_ENTITY}
