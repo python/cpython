@@ -1661,8 +1661,43 @@ static struct wrapperbase tab_imul_int[] = {
 	{0}
 };
 
+static int
+getindex(PyObject *self, PyObject *arg)
+{
+	int i;
+
+	i = PyInt_AsLong(arg);
+	if (i == -1 && PyErr_Occurred())
+		return -1;
+	if (i < 0) {
+		PySequenceMethods *sq = self->ob_type->tp_as_sequence;
+		if (sq && sq->sq_length) {
+			int n = (*sq->sq_length)(self);
+			if (n < 0)
+				return -1;
+			i += n;
+		}
+	}
+	return i;
+}
+
+static PyObject *
+wrap_sq_item(PyObject *self, PyObject *args, void *wrapped)
+{
+	intargfunc func = (intargfunc)wrapped;
+	PyObject *arg;
+	int i;
+
+	if (!PyArg_ParseTuple(args, "O", &arg))
+		return NULL;
+	i = getindex(self, arg);
+	if (i == -1 && PyErr_Occurred())
+		return NULL;
+	return (*func)(self, i);
+}
+
 static struct wrapperbase tab_getitem_int[] = {
-	{"__getitem__", (wrapperfunc)wrap_intargfunc,
+	{"__getitem__", (wrapperfunc)wrap_sq_item,
 	 "x.__getitem__(i) <==> x[i]"},
 	{0}
 };
@@ -1685,13 +1720,16 @@ static struct wrapperbase tab_getslice[] = {
 };
 
 static PyObject *
-wrap_intobjargproc(PyObject *self, PyObject *args, void *wrapped)
+wrap_sq_setitem(PyObject *self, PyObject *args, void *wrapped)
 {
 	intobjargproc func = (intobjargproc)wrapped;
 	int i, res;
-	PyObject *value;
+	PyObject *arg, *value;
 
-	if (!PyArg_ParseTuple(args, "iO", &i, &value))
+	if (!PyArg_ParseTuple(args, "OO", &arg, &value))
+		return NULL;
+	i = getindex(self, arg);
+	if (i == -1 && PyErr_Occurred())
 		return NULL;
 	res = (*func)(self, i, value);
 	if (res == -1 && PyErr_Occurred())
@@ -1701,12 +1739,16 @@ wrap_intobjargproc(PyObject *self, PyObject *args, void *wrapped)
 }
 
 static PyObject *
-wrap_delitem_int(PyObject *self, PyObject *args, void *wrapped)
+wrap_sq_delitem(PyObject *self, PyObject *args, void *wrapped)
 {
 	intobjargproc func = (intobjargproc)wrapped;
 	int i, res;
+	PyObject *arg;
 
-	if (!PyArg_ParseTuple(args, "i", &i))
+	if (!PyArg_ParseTuple(args, "O", &arg))
+		return NULL;
+	i = getindex(self, arg);
+	if (i == -1 && PyErr_Occurred())
 		return NULL;
 	res = (*func)(self, i, NULL);
 	if (res == -1 && PyErr_Occurred())
@@ -1716,9 +1758,9 @@ wrap_delitem_int(PyObject *self, PyObject *args, void *wrapped)
 }
 
 static struct wrapperbase tab_setitem_int[] = {
-	{"__setitem__", (wrapperfunc)wrap_intobjargproc,
+	{"__setitem__", (wrapperfunc)wrap_sq_setitem,
 	 "x.__setitem__(i, y) <==> x[i]=y"},
-	{"__delitem__", (wrapperfunc)wrap_delitem_int,
+	{"__delitem__", (wrapperfunc)wrap_sq_delitem,
 	 "x.__delitem__(y) <==> del x[y]"},
 	{0}
 };
