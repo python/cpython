@@ -534,6 +534,9 @@ def printlist(x, width=70, indent=4):
 #         Whether a skip is expected here depends on whether a large test
 #         input file has been downloaded.  test_normalization.skip_expected
 #         controls that.
+#     test_socket_ssl
+#         Controlled by test_socket_ssl.skip_expected.  Requires the network
+#         resource, and a socket module with ssl support.
 
 _expectations = {
     'win32':
@@ -565,7 +568,6 @@ _expectations = {
         test_pwd
         test_resource
         test_signal
-        test_socket_ssl
         test_socketserver
         test_sunaudiodev
         test_timing
@@ -583,7 +585,6 @@ _expectations = {
         test_largefile
         test_nis
         test_ntpath
-        test_socket_ssl
         test_socketserver
         test_sunaudiodev
         test_unicode_file
@@ -618,7 +619,6 @@ _expectations = {
         test_pty
         test_pwd
         test_signal
-        test_socket_ssl
         test_socketserver
         test_sunaudiodev
         test_sundry
@@ -736,7 +736,6 @@ _expectations = {
         test_popen2
         test_pty
         test_pwd
-        test_socket_ssl
         test_socketserver
         test_strop
         test_sunaudiodev
@@ -769,7 +768,6 @@ _expectations = {
         test_nis
         test_ntpath
         test_poll
-        test_socket_ssl
         test_socketserver
         test_sunaudiodev
         test_unicode_file
@@ -792,7 +790,6 @@ _expectations = {
         test_linuxaudiodev
         test_mpz
         test_openpty
-        test_socket_ssl
         test_socketserver
         test_winreg
         test_winsound
@@ -820,7 +817,6 @@ _expectations = {
         test_openpty
         test_pyexpat
         test_sax
-        test_socket_ssl
         test_socketserver
         test_sunaudiodev
         test_unicode_file
@@ -850,7 +846,6 @@ _expectations = {
         test_poll
         test_popen2
         test_resource
-        test_socket_ssl
         test_socketserver
         test_sunaudiodev
         test_unicode_file
@@ -863,6 +858,7 @@ class _ExpectedSkips:
     def __init__(self):
         import os.path
         from test import test_normalization
+        from test import test_socket_ssl
 
         self.valid = False
         if sys.platform in _expectations:
@@ -874,6 +870,9 @@ class _ExpectedSkips:
 
             if test_normalization.skip_expected:
                 self.expected.add('test_normalization')
+
+            if test_socket_ssl.skip_expected:
+                self.expected.add('test_socket_ssl')
 
             self.valid = True
 
