@@ -77,8 +77,7 @@
 # Start symbols for the grammar:
 #	single_input is a single interactive statement;
 #	file_input is a module or sequence of commands read from an input file;
-#	expr_input is the input for the input() function;
-#	eval_input is the input for the eval() function;
+#	eval_input is the input for the eval() and input() functions;
 #	lambda_input is the input for the proposed lambda() function.
 
 # NB: compound_stmt in single_input is followed by extra NEWLINE!
