@@ -44,6 +44,8 @@ class MyScanner(Scanner):
 
 	def makeblacklistnames(self):
 		return [
+			"LSInit",
+			"LSTerm",
 			"kLSRequestAllInfo",
 			"kLSRolesAll",
 			]
