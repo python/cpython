@@ -1,7 +1,7 @@
 """Suite Enumerations: Enumerations for the Finder
 Level 1, version 1
 
-Generated from /Volumes/Moes/Systeemmap/Finder
+Generated from /System/Library/CoreServices/Finder.app
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -26,32 +26,54 @@ _Enum_earr = {
 	'arranged_by_label' : 'laba',	# 
 }
 
-_Enum_ese0 = {
-	'starting_up' : 'ese2',	# 
-	'running' : 'ese3',	# 
-	'rebuilding_desktop' : 'ese5',	# 
-	'copying' : 'ese4',	# 
-	'restarting' : 'ese6',	# 
-	'quitting' : 'ese7',	# 
+_Enum_ecvw = {
+	'icon_view' : 'icnv',	# 
+	'list_view' : 'lsvw',	# 
+	'column_view' : 'clvw',	# 
 }
 
-_Enum_gsen = {
-	'CPU' : 'proc',	# 
-	'FPU' : 'fpu ',	# 
-	'MMU' : 'mmu ',	# 
-	'hardware' : 'hdwr',	# 
-	'operating_system' : 'os  ',	# 
-	'sound_system' : 'snd ',	# 
-	'memory_available' : 'lram',	# 
-	'memory_installed' : 'ram ',	# 
+_Enum_edfm = {
+	'Mac_OS_format' : 'dfhf',	# 
+	'Mac_OS_Extended_format' : 'dfh+',	# 
+	'UFS_format' : 'dfuf',	# 
+	'NFS_format' : 'dfnf',	# 
+	'audio_format' : 'dfau',	# 
+	'ProDOS_format' : 'dfpr',	# 
+	'MS_2d_DOS_format' : 'dfms',	# 
+	'ISO_9660_format' : 'df96',	# 
+	'High_Sierra_format' : 'dfhs',	# 
+	'QuickTake_format' : 'dfqt',	# 
+	'Apple_Photo_format' : 'dfph',	# 
+	'AppleShare_format' : 'dfas',	# 
+	'UDF_format' : 'dfud',	# 
+	'WebDAV_format' : 'dfwd',	# 
+	'FTP_format' : 'dfft',	# 
+	'Packet_2d_written_UDF_format' : 'dfpu',	# 
+	'unknown_format' : 'df??',	# 
+}
+
+_Enum_elsv = {
+	'name_column' : 'elsn',	# 
+	'modification_date_column' : 'elsm',	# 
+	'creation_date_column' : 'elsc',	# 
+	'size_column' : 'elss',	# 
+	'kind_column' : 'elsk',	# 
+	'label_column' : 'elsl',	# 
+	'version_column' : 'elsv',	# 
+	'comment_column' : 'elsC',	# 
 }
 
 _Enum_ipnl = {
 	'General_Information_panel' : 'gpnl',	# 
 	'Sharing_panel' : 'spnl',	# 
 	'Memory_panel' : 'mpnl',	# 
-	'Status_and_Configuration_panel' : 'scnl',	# 
-	'Fonts_panel' : 'fpnl',	# 
+	'Preview_panel' : 'vpnl',	# 
+	'Application_panel' : 'apnl',	# 
+	'Languages_panel' : 'pklg',	# 
+	'Plugins_panel' : 'pkpg',	# 
+	'Name__26__Extension_panel' : 'npnl',	# 
+	'Comments_panel' : 'cpnl',	# 
+	'Content_Index_panel' : 'cinl',	# 
 }
 
 _Enum_isiz = {
@@ -60,12 +82,16 @@ _Enum_isiz = {
 	'large' : 'lgic',	# 
 }
 
-_Enum_pple = {
-	'General_Preferences_panel' : 'pgnp',	# 
-	'Label_Preferences_panel' : 'plbp',	# 
-	'Icon_View_Preferences_panel' : 'pivp',	# 
-	'Button_View_Preferences_panel' : 'pbvp',	# 
-	'List_View_Preferences_panel' : 'plvp',	# 
+_Enum_lvic = {
+	'small_icon' : 'smic',	# 
+	'large_icon' : 'lgic',	# 
+}
+
+_Enum_priv = {
+	'read_only' : 'read',	# 
+	'read_write' : 'rdwr',	# 
+	'write_only' : 'writ',	# 
+	'none' : 'none',	# 
 }
 
 _Enum_sodr = {
@@ -107,11 +133,13 @@ _compdeclarations = {
 
 _enumdeclarations = {
 	'earr' : _Enum_earr,
-	'ese0' : _Enum_ese0,
-	'gsen' : _Enum_gsen,
+	'ecvw' : _Enum_ecvw,
+	'edfm' : _Enum_edfm,
+	'elsv' : _Enum_elsv,
 	'ipnl' : _Enum_ipnl,
 	'isiz' : _Enum_isiz,
-	'pple' : _Enum_pple,
+	'lvic' : _Enum_lvic,
+	'priv' : _Enum_priv,
 	'sodr' : _Enum_sodr,
 	'vwby' : _Enum_vwby,
 }

@@ -1,7 +1,7 @@
 """Suite Standard Suite: Common terms that most applications should support
 Level 1, version 1
 
-Generated from /Volumes/Moes/Systeemmap/Finder
+Generated from /System/Library/CoreServices/Finder.app
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -170,7 +170,7 @@ class Standard_Suite_Events(Standard_Suite_Events):
 		"""make: Make a new element
 		Keyword argument new: the class of the new element
 		Keyword argument at: the location at which to insert the element
-		Keyword argument to: when creating an alias file, the original item to create an alias to
+		Keyword argument to: when creating an alias file, the original item to create an alias to or when creating a file viewer window, the target of the window
 		Keyword argument with_properties: the initial values for the properties of the element
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: to the new object(s)

@@ -1,19 +1,82 @@
-"""Suite Process classes: Classes representing processes that are running
+"""Suite Legacy suite: Operations formerly handled by the Finder, but now automatically delegated to other applications
 Level 1, version 1
 
-Generated from /Volumes/Moes/Systeemmap/Finder
+Generated from /System/Library/CoreServices/Finder.app
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
 import aetools
 import MacOS
 
-_code = 'fndr'
+_code = 'fleg'
 
-class Process_classes_Events:
+class Legacy_suite_Events:
 
-	pass
+	def restart(self, _no_object=None, _attributes={}, **_arguments):
+		"""restart: Restart the computer
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'fndr'
+		_subcode = 'rest'
 
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def shut_down(self, _no_object=None, _attributes={}, **_arguments):
+		"""shut down: Shut Down the computer
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'fndr'
+		_subcode = 'shut'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def sleep(self, _no_object=None, _attributes={}, **_arguments):
+		"""sleep: Put the computer to sleep
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'fndr'
+		_subcode = 'slep'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+
+class application(aetools.ComponentItem):
+	"""application - The Finder """
+	want = 'capp'
+class desktop_picture(aetools.NProperty):
+	"""desktop picture - the desktop picture of the main monitor """
+	which = 'dpic'
+	want = 'file'
 
 class application_process(aetools.ComponentItem):
 	"""application process - A process launched from an application file """
@@ -88,6 +151,12 @@ class visible(aetools.NProperty):
 	want = 'bool'
 
 processes = process
+application._superclassnames = []
+application._privpropdict = {
+	'desktop_picture' : desktop_picture,
+}
+application._privelemdict = {
+}
 application_process._superclassnames = ['process']
 application_process._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
@@ -123,6 +192,7 @@ process._privelemdict = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
+	'capp' : application,
 	'pcap' : application_process,
 	'pcda' : desk_accessory_process,
 	'prcs' : process,
@@ -134,6 +204,7 @@ _propdeclarations = {
 	'asty' : file_type,
 	'c@#^' : _3c_Inheritance_3e_,
 	'dafi' : desk_accessory_file,
+	'dpic' : desktop_picture,
 	'fcrt' : creator_type,
 	'file' : file,
 	'hscr' : has_scripting_terminology,

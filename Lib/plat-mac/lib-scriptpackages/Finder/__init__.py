@@ -1,63 +1,54 @@
 """
-Package generated from /Volumes/Moes/Systeemmap/Finder
-Resource aete resid 0 
+Package generated from /System/Library/CoreServices/Finder.app
 """
 import aetools
 Error = aetools.Error
 import Standard_Suite
+import Legacy_suite
 import Containers_and_folders
-import Files_and_suitcases
+import Files
 import Finder_Basics
 import Finder_items
-import Process_classes
 import Window_classes
 import Type_Definitions
-import Earlier_terms
 import Enumerations
-import Obsolete_terms
 
 
 _code_to_module = {
 	'CoRe' : Standard_Suite,
+	'fleg' : Legacy_suite,
 	'fndr' : Containers_and_folders,
-	'fndr' : Files_and_suitcases,
+	'fndr' : Files,
 	'fndr' : Finder_Basics,
 	'fndr' : Finder_items,
-	'fndr' : Process_classes,
 	'fndr' : Window_classes,
 	'tpdf' : Type_Definitions,
-	'tpnm' : Earlier_terms,
 	'tpnm' : Enumerations,
-	'tpnm' : Obsolete_terms,
 }
 
 
 
 _code_to_fullname = {
 	'CoRe' : ('Finder.Standard_Suite', 'Standard_Suite'),
+	'fleg' : ('Finder.Legacy_suite', 'Legacy_suite'),
 	'fndr' : ('Finder.Containers_and_folders', 'Containers_and_folders'),
-	'fndr' : ('Finder.Files_and_suitcases', 'Files_and_suitcases'),
+	'fndr' : ('Finder.Files', 'Files'),
 	'fndr' : ('Finder.Finder_Basics', 'Finder_Basics'),
 	'fndr' : ('Finder.Finder_items', 'Finder_items'),
-	'fndr' : ('Finder.Process_classes', 'Process_classes'),
 	'fndr' : ('Finder.Window_classes', 'Window_classes'),
 	'tpdf' : ('Finder.Type_Definitions', 'Type_Definitions'),
-	'tpnm' : ('Finder.Earlier_terms', 'Earlier_terms'),
 	'tpnm' : ('Finder.Enumerations', 'Enumerations'),
-	'tpnm' : ('Finder.Obsolete_terms', 'Obsolete_terms'),
 }
 
 from Standard_Suite import *
+from Legacy_suite import *
 from Containers_and_folders import *
-from Files_and_suitcases import *
+from Files import *
 from Finder_Basics import *
 from Finder_items import *
-from Process_classes import *
 from Window_classes import *
 from Type_Definitions import *
-from Earlier_terms import *
 from Enumerations import *
-from Obsolete_terms import *
 
 def getbaseclasses(v):
 	if not getattr(v, '_propdict', None):
@@ -76,387 +67,163 @@ import StdSuites
 #
 # Set property and element dictionaries now that all classes have been defined
 #
-getbaseclasses(StdSuites.Type_Names_Suite.small_integer)
-getbaseclasses(StdSuites.Type_Names_Suite.RGB16_color)
-getbaseclasses(StdSuites.Type_Names_Suite.system_dictionary)
-getbaseclasses(StdSuites.Type_Names_Suite.color_table)
-getbaseclasses(StdSuites.Type_Names_Suite.fixed_point)
-getbaseclasses(StdSuites.Type_Names_Suite.plain_text)
-getbaseclasses(StdSuites.Type_Names_Suite.type_element_info)
-getbaseclasses(StdSuites.Type_Names_Suite.location_reference)
-getbaseclasses(StdSuites.Type_Names_Suite.version)
-getbaseclasses(StdSuites.Type_Names_Suite.PostScript_picture)
-getbaseclasses(StdSuites.Type_Names_Suite.machine_location)
-getbaseclasses(StdSuites.Type_Names_Suite.menu_item)
-getbaseclasses(StdSuites.Type_Names_Suite.pixel_map_record)
-getbaseclasses(StdSuites.Type_Names_Suite.application_dictionary)
-getbaseclasses(StdSuites.Type_Names_Suite.unsigned_integer)
-getbaseclasses(StdSuites.Type_Names_Suite.menu)
-getbaseclasses(StdSuites.Type_Names_Suite.fixed_rectangle)
-getbaseclasses(StdSuites.Type_Names_Suite.long_fixed_rectangle)
-getbaseclasses(StdSuites.Type_Names_Suite.type_event_info)
-getbaseclasses(StdSuites.Type_Names_Suite.small_real)
-getbaseclasses(StdSuites.Type_Names_Suite.type_suite_info)
-getbaseclasses(StdSuites.Type_Names_Suite.rotation)
-getbaseclasses(StdSuites.Type_Names_Suite.fixed)
-getbaseclasses(StdSuites.Type_Names_Suite.scrap_styles)
-getbaseclasses(StdSuites.Type_Names_Suite.long_point)
-getbaseclasses(StdSuites.Type_Names_Suite.type_class_info)
-getbaseclasses(StdSuites.Type_Names_Suite.TIFF_picture)
-getbaseclasses(StdSuites.Type_Names_Suite.RGB96_color)
-getbaseclasses(StdSuites.Type_Names_Suite.dash_style)
-getbaseclasses(StdSuites.Type_Names_Suite.type_property_info)
-getbaseclasses(StdSuites.Type_Names_Suite.type_parameter_info)
-getbaseclasses(StdSuites.Type_Names_Suite.long_fixed_point)
-getbaseclasses(StdSuites.Type_Names_Suite.long_rectangle)
-getbaseclasses(StdSuites.Type_Names_Suite.extended_real)
-getbaseclasses(StdSuites.Type_Names_Suite.double_integer)
-getbaseclasses(StdSuites.Type_Names_Suite.long_fixed)
-getbaseclasses(StdSuites.Type_Names_Suite.null)
-getbaseclasses(StdSuites.Type_Names_Suite.target_id)
-getbaseclasses(StdSuites.Type_Names_Suite.point)
-getbaseclasses(StdSuites.Type_Names_Suite.bounding_rectangle)
-getbaseclasses(accessory_suitcase)
-getbaseclasses(preferences)
-getbaseclasses(sharable_container)
+getbaseclasses(item)
 getbaseclasses(application)
-getbaseclasses(trash_2d_object)
-getbaseclasses(accessory_process)
-getbaseclasses(window)
-getbaseclasses(information_window)
-getbaseclasses(process)
+getbaseclasses(package)
+getbaseclasses(file)
 getbaseclasses(application_file)
-getbaseclasses(internet_location)
-getbaseclasses(container_window)
-getbaseclasses(item)
-getbaseclasses(item)
+getbaseclasses(alias_file)
+getbaseclasses(internet_location_file)
+getbaseclasses(document_file)
+getbaseclasses(clipping)
+getbaseclasses(process)
+getbaseclasses(application_process)
+getbaseclasses(desk_accessory_process)
+getbaseclasses(application)
+getbaseclasses(preferences_window)
+getbaseclasses(Finder_window)
+getbaseclasses(window)
+getbaseclasses(clipping_window)
+getbaseclasses(information_window)
 getbaseclasses(trash_2d_object)
 getbaseclasses(desktop_2d_object)
-getbaseclasses(sharable_container)
-getbaseclasses(sharing_privileges)
-getbaseclasses(disk)
+getbaseclasses(container)
 getbaseclasses(folder)
-getbaseclasses(container)
-getbaseclasses(sound_file)
-getbaseclasses(font_file)
-getbaseclasses(internet_location_file)
-getbaseclasses(clipping)
-getbaseclasses(alias_file)
-getbaseclasses(desk_accessory_file)
-getbaseclasses(desk_accessory_suitcase)
-getbaseclasses(font_suitcase)
-getbaseclasses(file)
-getbaseclasses(application_file)
-getbaseclasses(suitcase)
-getbaseclasses(document_file)
-getbaseclasses(package)
-getbaseclasses(application)
-getbaseclasses(special_folders)
-getbaseclasses(preferences_window)
-getbaseclasses(view_options_window)
-getbaseclasses(window)
-getbaseclasses(container_window)
-getbaseclasses(content_space)
-getbaseclasses(information_window)
-getbaseclasses(clipping_window)
-getbaseclasses(status_window)
-getbaseclasses(application)
-getbaseclasses(sharing_window)
-getbaseclasses(control_panel)
-getbaseclasses(process)
-getbaseclasses(item)
-getbaseclasses(file)
-getbaseclasses(sharable_container)
-getbaseclasses(container_window)
-getbaseclasses(container)
-getbaseclasses(information_window)
-getbaseclasses(process)
-getbaseclasses(desk_accessory_process)
-getbaseclasses(application_process)
+getbaseclasses(disk)
+getbaseclasses(icon_view_options)
+getbaseclasses(label)
+getbaseclasses(column)
 getbaseclasses(preferences)
 getbaseclasses(alias_list)
 getbaseclasses(icon_family)
-getbaseclasses(label)
-getbaseclasses(StdSuites.Type_Names_Suite.small_integer)
+getbaseclasses(list_view_options)
+getbaseclasses(StdSuites.Type_Names_Suite.double_integer)
+getbaseclasses(StdSuites.Type_Names_Suite.version)
 getbaseclasses(StdSuites.Type_Names_Suite.RGB16_color)
 getbaseclasses(StdSuites.Type_Names_Suite.system_dictionary)
 getbaseclasses(StdSuites.Type_Names_Suite.color_table)
 getbaseclasses(StdSuites.Type_Names_Suite.fixed_point)
-getbaseclasses(StdSuites.Type_Names_Suite.plain_text)
+getbaseclasses(StdSuites.Type_Names_Suite.TIFF_picture)
 getbaseclasses(StdSuites.Type_Names_Suite.type_element_info)
-getbaseclasses(StdSuites.Type_Names_Suite.location_reference)
-getbaseclasses(StdSuites.Type_Names_Suite.version)
-getbaseclasses(StdSuites.Type_Names_Suite.PostScript_picture)
+getbaseclasses(StdSuites.Type_Names_Suite.type_event_info)
 getbaseclasses(StdSuites.Type_Names_Suite.machine_location)
+getbaseclasses(StdSuites.Type_Names_Suite.PostScript_picture)
+getbaseclasses(StdSuites.Type_Names_Suite.point)
+getbaseclasses(StdSuites.Type_Names_Suite.long_fixed_point)
 getbaseclasses(StdSuites.Type_Names_Suite.menu_item)
-getbaseclasses(StdSuites.Type_Names_Suite.pixel_map_record)
+getbaseclasses(StdSuites.Type_Names_Suite.scrap_styles)
 getbaseclasses(StdSuites.Type_Names_Suite.application_dictionary)
 getbaseclasses(StdSuites.Type_Names_Suite.unsigned_integer)
 getbaseclasses(StdSuites.Type_Names_Suite.menu)
 getbaseclasses(StdSuites.Type_Names_Suite.fixed_rectangle)
+getbaseclasses(StdSuites.Type_Names_Suite.type_property_info)
 getbaseclasses(StdSuites.Type_Names_Suite.long_fixed_rectangle)
-getbaseclasses(StdSuites.Type_Names_Suite.type_event_info)
-getbaseclasses(StdSuites.Type_Names_Suite.small_real)
+getbaseclasses(StdSuites.Type_Names_Suite.long_fixed)
 getbaseclasses(StdSuites.Type_Names_Suite.type_suite_info)
 getbaseclasses(StdSuites.Type_Names_Suite.rotation)
-getbaseclasses(StdSuites.Type_Names_Suite.fixed)
-getbaseclasses(StdSuites.Type_Names_Suite.scrap_styles)
-getbaseclasses(StdSuites.Type_Names_Suite.long_point)
-getbaseclasses(StdSuites.Type_Names_Suite.type_class_info)
-getbaseclasses(StdSuites.Type_Names_Suite.TIFF_picture)
-getbaseclasses(StdSuites.Type_Names_Suite.RGB96_color)
-getbaseclasses(StdSuites.Type_Names_Suite.dash_style)
-getbaseclasses(StdSuites.Type_Names_Suite.type_property_info)
-getbaseclasses(StdSuites.Type_Names_Suite.type_parameter_info)
-getbaseclasses(StdSuites.Type_Names_Suite.long_fixed_point)
-getbaseclasses(StdSuites.Type_Names_Suite.long_rectangle)
-getbaseclasses(StdSuites.Type_Names_Suite.extended_real)
-getbaseclasses(StdSuites.Type_Names_Suite.double_integer)
-getbaseclasses(StdSuites.Type_Names_Suite.long_fixed)
-getbaseclasses(StdSuites.Type_Names_Suite.null)
-getbaseclasses(StdSuites.Type_Names_Suite.target_id)
-getbaseclasses(StdSuites.Type_Names_Suite.point)
-getbaseclasses(StdSuites.Type_Names_Suite.bounding_rectangle)
 getbaseclasses(StdSuites.Type_Names_Suite.small_integer)
-getbaseclasses(StdSuites.Type_Names_Suite.RGB16_color)
-getbaseclasses(StdSuites.Type_Names_Suite.system_dictionary)
-getbaseclasses(StdSuites.Type_Names_Suite.color_table)
-getbaseclasses(StdSuites.Type_Names_Suite.fixed_point)
-getbaseclasses(StdSuites.Type_Names_Suite.plain_text)
-getbaseclasses(StdSuites.Type_Names_Suite.type_element_info)
-getbaseclasses(StdSuites.Type_Names_Suite.location_reference)
-getbaseclasses(StdSuites.Type_Names_Suite.version)
-getbaseclasses(StdSuites.Type_Names_Suite.PostScript_picture)
-getbaseclasses(StdSuites.Type_Names_Suite.machine_location)
-getbaseclasses(StdSuites.Type_Names_Suite.menu_item)
-getbaseclasses(StdSuites.Type_Names_Suite.pixel_map_record)
-getbaseclasses(StdSuites.Type_Names_Suite.application_dictionary)
-getbaseclasses(StdSuites.Type_Names_Suite.unsigned_integer)
-getbaseclasses(StdSuites.Type_Names_Suite.menu)
-getbaseclasses(StdSuites.Type_Names_Suite.fixed_rectangle)
-getbaseclasses(StdSuites.Type_Names_Suite.long_fixed_rectangle)
-getbaseclasses(StdSuites.Type_Names_Suite.type_event_info)
-getbaseclasses(StdSuites.Type_Names_Suite.small_real)
-getbaseclasses(StdSuites.Type_Names_Suite.type_suite_info)
-getbaseclasses(StdSuites.Type_Names_Suite.rotation)
 getbaseclasses(StdSuites.Type_Names_Suite.fixed)
-getbaseclasses(StdSuites.Type_Names_Suite.scrap_styles)
 getbaseclasses(StdSuites.Type_Names_Suite.long_point)
 getbaseclasses(StdSuites.Type_Names_Suite.type_class_info)
-getbaseclasses(StdSuites.Type_Names_Suite.TIFF_picture)
 getbaseclasses(StdSuites.Type_Names_Suite.RGB96_color)
-getbaseclasses(StdSuites.Type_Names_Suite.dash_style)
-getbaseclasses(StdSuites.Type_Names_Suite.type_property_info)
-getbaseclasses(StdSuites.Type_Names_Suite.type_parameter_info)
-getbaseclasses(StdSuites.Type_Names_Suite.long_fixed_point)
-getbaseclasses(StdSuites.Type_Names_Suite.long_rectangle)
-getbaseclasses(StdSuites.Type_Names_Suite.extended_real)
-getbaseclasses(StdSuites.Type_Names_Suite.double_integer)
-getbaseclasses(StdSuites.Type_Names_Suite.long_fixed)
-getbaseclasses(StdSuites.Type_Names_Suite.null)
 getbaseclasses(StdSuites.Type_Names_Suite.target_id)
-getbaseclasses(StdSuites.Type_Names_Suite.point)
+getbaseclasses(StdSuites.Type_Names_Suite.pixel_map_record)
+getbaseclasses(StdSuites.Type_Names_Suite.type_parameter_info)
+getbaseclasses(StdSuites.Type_Names_Suite.extended_real)
+getbaseclasses(StdSuites.Type_Names_Suite.long_rectangle)
+getbaseclasses(StdSuites.Type_Names_Suite.dash_style)
+getbaseclasses(StdSuites.Type_Names_Suite.plain_text)
+getbaseclasses(StdSuites.Type_Names_Suite.small_real)
+getbaseclasses(StdSuites.Type_Names_Suite.null)
+getbaseclasses(StdSuites.Type_Names_Suite.location_reference)
 getbaseclasses(StdSuites.Type_Names_Suite.bounding_rectangle)
 
 #
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'shor' : StdSuites.Type_Names_Suite.small_integer,
-	'tr16' : StdSuites.Type_Names_Suite.RGB16_color,
-	'aeut' : StdSuites.Type_Names_Suite.system_dictionary,
-	'clrt' : StdSuites.Type_Names_Suite.color_table,
-	'fpnt' : StdSuites.Type_Names_Suite.fixed_point,
-	'TEXT' : StdSuites.Type_Names_Suite.plain_text,
-	'elin' : StdSuites.Type_Names_Suite.type_element_info,
-	'insl' : StdSuites.Type_Names_Suite.location_reference,
-	'vers' : StdSuites.Type_Names_Suite.version,
-	'EPS ' : StdSuites.Type_Names_Suite.PostScript_picture,
-	'mLoc' : StdSuites.Type_Names_Suite.machine_location,
-	'cmen' : StdSuites.Type_Names_Suite.menu_item,
-	'tpmm' : StdSuites.Type_Names_Suite.pixel_map_record,
-	'aete' : StdSuites.Type_Names_Suite.application_dictionary,
-	'magn' : StdSuites.Type_Names_Suite.unsigned_integer,
-	'cmnu' : StdSuites.Type_Names_Suite.menu,
-	'frct' : StdSuites.Type_Names_Suite.fixed_rectangle,
-	'lfrc' : StdSuites.Type_Names_Suite.long_fixed_rectangle,
-	'evin' : StdSuites.Type_Names_Suite.type_event_info,
-	'sing' : StdSuites.Type_Names_Suite.small_real,
-	'suin' : StdSuites.Type_Names_Suite.type_suite_info,
-	'trot' : StdSuites.Type_Names_Suite.rotation,
-	'fixd' : StdSuites.Type_Names_Suite.fixed,
-	'styl' : StdSuites.Type_Names_Suite.scrap_styles,
-	'lpnt' : StdSuites.Type_Names_Suite.long_point,
-	'gcli' : StdSuites.Type_Names_Suite.type_class_info,
-	'TIFF' : StdSuites.Type_Names_Suite.TIFF_picture,
-	'tr96' : StdSuites.Type_Names_Suite.RGB96_color,
-	'tdas' : StdSuites.Type_Names_Suite.dash_style,
-	'pinf' : StdSuites.Type_Names_Suite.type_property_info,
-	'pmin' : StdSuites.Type_Names_Suite.type_parameter_info,
-	'lfpt' : StdSuites.Type_Names_Suite.long_fixed_point,
-	'lrct' : StdSuites.Type_Names_Suite.long_rectangle,
-	'exte' : StdSuites.Type_Names_Suite.extended_real,
-	'comp' : StdSuites.Type_Names_Suite.double_integer,
-	'lfxd' : StdSuites.Type_Names_Suite.long_fixed,
-	'null' : StdSuites.Type_Names_Suite.null,
-	'targ' : StdSuites.Type_Names_Suite.target_id,
-	'QDpt' : StdSuites.Type_Names_Suite.point,
-	'qdrt' : StdSuites.Type_Names_Suite.bounding_rectangle,
-	'dsut' : accessory_suitcase,
-	'cprf' : preferences,
-	'sctr' : sharable_container,
+	'cobj' : item,
 	'capp' : application,
-	'ctrs' : trash_2d_object,
-	'pcda' : accessory_process,
-	'cwin' : window,
-	'iwnd' : information_window,
-	'prcs' : process,
+	'pack' : package,
+	'file' : file,
 	'appf' : application_file,
-	'inlf' : internet_location,
-	'cwnd' : container_window,
-	'cobj' : item,
-	'cobj' : item,
+	'alia' : alias_file,
+	'inlf' : internet_location_file,
+	'docf' : document_file,
+	'clpf' : clipping,
+	'prcs' : process,
+	'pcap' : application_process,
+	'pcda' : desk_accessory_process,
+	'capp' : application,
+	'pwnd' : preferences_window,
+	'brow' : Finder_window,
+	'cwin' : window,
+	'lwnd' : clipping_window,
+	'iwnd' : information_window,
 	'ctrs' : trash_2d_object,
 	'cdsk' : desktop_2d_object,
-	'sctr' : sharable_container,
-	'priv' : sharing_privileges,
-	'cdis' : disk,
+	'ctnr' : container,
 	'cfol' : folder,
-	'ctnr' : container,
-	'sndf' : sound_file,
-	'fntf' : font_file,
-	'inlf' : internet_location_file,
-	'clpf' : clipping,
-	'alia' : alias_file,
-	'dafi' : desk_accessory_file,
-	'dsut' : desk_accessory_suitcase,
-	'fsut' : font_suitcase,
-	'file' : file,
-	'appf' : application_file,
-	'stcs' : suitcase,
-	'docf' : document_file,
-	'pack' : package,
-	'capp' : application,
-	'spfl' : special_folders,
-	'pwnd' : preferences_window,
-	'vwnd' : view_options_window,
-	'cwin' : window,
-	'cwnd' : container_window,
-	'dwnd' : content_space,
-	'iwnd' : information_window,
-	'lwnd' : clipping_window,
-	'qwnd' : status_window,
-	'capp' : application,
-	'swnd' : sharing_window,
-	'ccdv' : control_panel,
-	'prcs' : process,
-	'cobj' : item,
-	'file' : file,
-	'sctr' : sharable_container,
-	'cwnd' : container_window,
-	'ctnr' : container,
-	'iwnd' : information_window,
-	'prcs' : process,
-	'pcda' : desk_accessory_process,
-	'pcap' : application_process,
+	'cdis' : disk,
+	'icop' : icon_view_options,
+	'clbl' : label,
+	'lvcl' : column,
 	'cprf' : preferences,
 	'alst' : alias_list,
 	'ifam' : icon_family,
-	'clbl' : label,
-	'shor' : StdSuites.Type_Names_Suite.small_integer,
+	'lvop' : list_view_options,
+	'comp' : StdSuites.Type_Names_Suite.double_integer,
+	'vers' : StdSuites.Type_Names_Suite.version,
 	'tr16' : StdSuites.Type_Names_Suite.RGB16_color,
 	'aeut' : StdSuites.Type_Names_Suite.system_dictionary,
 	'clrt' : StdSuites.Type_Names_Suite.color_table,
 	'fpnt' : StdSuites.Type_Names_Suite.fixed_point,
-	'TEXT' : StdSuites.Type_Names_Suite.plain_text,
+	'TIFF' : StdSuites.Type_Names_Suite.TIFF_picture,
 	'elin' : StdSuites.Type_Names_Suite.type_element_info,
-	'insl' : StdSuites.Type_Names_Suite.location_reference,
-	'vers' : StdSuites.Type_Names_Suite.version,
-	'EPS ' : StdSuites.Type_Names_Suite.PostScript_picture,
+	'evin' : StdSuites.Type_Names_Suite.type_event_info,
 	'mLoc' : StdSuites.Type_Names_Suite.machine_location,
+	'EPS ' : StdSuites.Type_Names_Suite.PostScript_picture,
+	'QDpt' : StdSuites.Type_Names_Suite.point,
+	'lfpt' : StdSuites.Type_Names_Suite.long_fixed_point,
 	'cmen' : StdSuites.Type_Names_Suite.menu_item,
-	'tpmm' : StdSuites.Type_Names_Suite.pixel_map_record,
+	'styl' : StdSuites.Type_Names_Suite.scrap_styles,
 	'aete' : StdSuites.Type_Names_Suite.application_dictionary,
 	'magn' : StdSuites.Type_Names_Suite.unsigned_integer,
 	'cmnu' : StdSuites.Type_Names_Suite.menu,
 	'frct' : StdSuites.Type_Names_Suite.fixed_rectangle,
+	'pinf' : StdSuites.Type_Names_Suite.type_property_info,
 	'lfrc' : StdSuites.Type_Names_Suite.long_fixed_rectangle,
-	'evin' : StdSuites.Type_Names_Suite.type_event_info,
-	'sing' : StdSuites.Type_Names_Suite.small_real,
+	'lfxd' : StdSuites.Type_Names_Suite.long_fixed,
 	'suin' : StdSuites.Type_Names_Suite.type_suite_info,
 	'trot' : StdSuites.Type_Names_Suite.rotation,
-	'fixd' : StdSuites.Type_Names_Suite.fixed,
-	'styl' : StdSuites.Type_Names_Suite.scrap_styles,
-	'lpnt' : StdSuites.Type_Names_Suite.long_point,
-	'gcli' : StdSuites.Type_Names_Suite.type_class_info,
-	'TIFF' : StdSuites.Type_Names_Suite.TIFF_picture,
-	'tr96' : StdSuites.Type_Names_Suite.RGB96_color,
-	'tdas' : StdSuites.Type_Names_Suite.dash_style,
-	'pinf' : StdSuites.Type_Names_Suite.type_property_info,
-	'pmin' : StdSuites.Type_Names_Suite.type_parameter_info,
-	'lfpt' : StdSuites.Type_Names_Suite.long_fixed_point,
-	'lrct' : StdSuites.Type_Names_Suite.long_rectangle,
-	'exte' : StdSuites.Type_Names_Suite.extended_real,
-	'comp' : StdSuites.Type_Names_Suite.double_integer,
-	'lfxd' : StdSuites.Type_Names_Suite.long_fixed,
-	'null' : StdSuites.Type_Names_Suite.null,
-	'targ' : StdSuites.Type_Names_Suite.target_id,
-	'QDpt' : StdSuites.Type_Names_Suite.point,
-	'qdrt' : StdSuites.Type_Names_Suite.bounding_rectangle,
 	'shor' : StdSuites.Type_Names_Suite.small_integer,
-	'tr16' : StdSuites.Type_Names_Suite.RGB16_color,
-	'aeut' : StdSuites.Type_Names_Suite.system_dictionary,
-	'clrt' : StdSuites.Type_Names_Suite.color_table,
-	'fpnt' : StdSuites.Type_Names_Suite.fixed_point,
-	'TEXT' : StdSuites.Type_Names_Suite.plain_text,
-	'elin' : StdSuites.Type_Names_Suite.type_element_info,
-	'insl' : StdSuites.Type_Names_Suite.location_reference,
-	'vers' : StdSuites.Type_Names_Suite.version,
-	'EPS ' : StdSuites.Type_Names_Suite.PostScript_picture,
-	'mLoc' : StdSuites.Type_Names_Suite.machine_location,
-	'cmen' : StdSuites.Type_Names_Suite.menu_item,
-	'tpmm' : StdSuites.Type_Names_Suite.pixel_map_record,
-	'aete' : StdSuites.Type_Names_Suite.application_dictionary,
-	'magn' : StdSuites.Type_Names_Suite.unsigned_integer,
-	'cmnu' : StdSuites.Type_Names_Suite.menu,
-	'frct' : StdSuites.Type_Names_Suite.fixed_rectangle,
-	'lfrc' : StdSuites.Type_Names_Suite.long_fixed_rectangle,
-	'evin' : StdSuites.Type_Names_Suite.type_event_info,
-	'sing' : StdSuites.Type_Names_Suite.small_real,
-	'suin' : StdSuites.Type_Names_Suite.type_suite_info,
-	'trot' : StdSuites.Type_Names_Suite.rotation,
 	'fixd' : StdSuites.Type_Names_Suite.fixed,
-	'styl' : StdSuites.Type_Names_Suite.scrap_styles,
 	'lpnt' : StdSuites.Type_Names_Suite.long_point,
 	'gcli' : StdSuites.Type_Names_Suite.type_class_info,
-	'TIFF' : StdSuites.Type_Names_Suite.TIFF_picture,
 	'tr96' : StdSuites.Type_Names_Suite.RGB96_color,
-	'tdas' : StdSuites.Type_Names_Suite.dash_style,
-	'pinf' : StdSuites.Type_Names_Suite.type_property_info,
-	'pmin' : StdSuites.Type_Names_Suite.type_parameter_info,
-	'lfpt' : StdSuites.Type_Names_Suite.long_fixed_point,
-	'lrct' : StdSuites.Type_Names_Suite.long_rectangle,
-	'exte' : StdSuites.Type_Names_Suite.extended_real,
-	'comp' : StdSuites.Type_Names_Suite.double_integer,
-	'lfxd' : StdSuites.Type_Names_Suite.long_fixed,
-	'null' : StdSuites.Type_Names_Suite.null,
 	'targ' : StdSuites.Type_Names_Suite.target_id,
-	'QDpt' : StdSuites.Type_Names_Suite.point,
+	'tpmm' : StdSuites.Type_Names_Suite.pixel_map_record,
+	'pmin' : StdSuites.Type_Names_Suite.type_parameter_info,
+	'exte' : StdSuites.Type_Names_Suite.extended_real,
+	'lrct' : StdSuites.Type_Names_Suite.long_rectangle,
+	'tdas' : StdSuites.Type_Names_Suite.dash_style,
+	'TEXT' : StdSuites.Type_Names_Suite.plain_text,
+	'sing' : StdSuites.Type_Names_Suite.small_real,
+	'null' : StdSuites.Type_Names_Suite.null,
+	'insl' : StdSuites.Type_Names_Suite.location_reference,
 	'qdrt' : StdSuites.Type_Names_Suite.bounding_rectangle,
 }
 
 
 class Finder(Standard_Suite_Events,
+		Legacy_suite_Events,
 		Containers_and_folders_Events,
-		Files_and_suitcases_Events,
+		Files_Events,
 		Finder_Basics_Events,
 		Finder_items_Events,
-		Process_classes_Events,
 		Window_classes_Events,
 		Type_Definitions_Events,
-		Earlier_terms_Events,
 		Enumerations_Events,
-		Obsolete_terms_Events,
 		aetools.TalkTo):
 	_signature = 'MACS'
 

@@ -1,6 +1,5 @@
 """
-Package generated from /Volumes/Moes/Applications (Mac OS 9)/Internet Explorer 5/Internet Explorer
-Resource aete resid 0 
+Package generated from /Applications/Internet Explorer.app
 """
 import aetools
 Error = aetools.Error
