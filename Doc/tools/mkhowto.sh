@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#! /usr/bin/env ksh
 
 # This script may be invoked by naming it directly or via a shell alias,
 # but NOT through a symbolic link.  Perhaps a future version will allow
@@ -107,6 +107,12 @@ use_latex() {
 	makeindex $MYFILE.idx
 	$MYDIR/indfix.py $MYFILE.ind
     fi
+    if [ `grep -c '^\\\\bibdata{' $MYFILE.aux` -ne 0 ] ; then
+	USE_BIBTEX=true
+	bibtex $MYFILE
+    else
+	USE_BIBTEX=''
+    fi
     if [ -f $MYFILE.syn ] ; then
 	# This hack is due to a bug with the module synopsis support that
 	# causes the last module synopsis to be written out twice in
@@ -126,6 +132,9 @@ use_latex() {
     fi
     if [ -f $MYFILE.syn ] ; then
 	uniq $MYFILE.syn >TEMP.syn && mv TEMP.syn $MYFILE.syn || exit $?
+    fi
+    if [ "$USE_BIBTEX" ] ; then
+	bibtex $MYFILE
     fi
     $MYLATEX $MYFILE || exit $?
 }
@@ -160,6 +169,8 @@ cleanup() {
     fi
     rm -rf $1.temp-html
     rm -f $1/IMG* $1/*.pl $1/WARNINGS $1/index.dat $1/modindex.dat
+    # bibtex stuff
+    rm -f $1.bbl $1.blg
 }
 
 parse_option() {
