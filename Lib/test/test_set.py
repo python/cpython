@@ -152,6 +152,13 @@ class TestJointOps(unittest.TestCase):
 class TestSet(TestJointOps):
     thetype = set
 
+    def test_init(self):
+        s = set()
+        s.__init__(self.word)
+        self.assertEqual(s, set(self.word))
+        s.__init__(self.otherword)
+        self.assertEqual(s, set(self.otherword))
+
     def test_hash(self):
         self.assertRaises(TypeError, hash, self.s)
 
@@ -252,9 +259,19 @@ class TestSet(TestJointOps):
             else:
                 self.assert_(c not in self.s)
 
+class SetSubclass(set):
+    pass
+
+class TestSetSubclass(TestSet):
+    thetype = SetSubclass
 
 class TestFrozenSet(TestJointOps):
     thetype = frozenset
+
+    def test_init(self):
+        s = frozenset()
+        s.__init__(self.word)
+        self.assertEqual(s, frozenset())
 
     def test_hash(self):
         self.assertEqual(hash(frozenset('abcdeb')), hash(frozenset('ebecda')))
@@ -272,6 +289,12 @@ class TestFrozenSet(TestJointOps):
     def test_hash_caching(self):
         f = frozenset('abcdcda')
         self.assertEqual(hash(f), hash(f))
+
+class FrozenSetSubclass(frozenset):
+    pass
+
+class TestFrozenSetSubclass(TestFrozenSet):
+    thetype = FrozenSetSubclass
 
 # Tests taken from test_sets.py =============================================
 
@@ -1137,7 +1160,9 @@ def test_main(verbose=None):
     from test import test_sets
     test_classes = (
         TestSet,
+        TestSetSubclass,
         TestFrozenSet,
+        TestFrozenSetSubclass,
         TestSetOfSets,
         TestExceptionPropagation,
         TestBasicOpsEmpty,
