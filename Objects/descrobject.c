@@ -709,7 +709,10 @@ static PySequenceMethods proxy_as_sequence = {
 static PyObject *
 proxy_has_key(proxyobject *pp, PyObject *key)
 {
-	return PyInt_FromLong(PySequence_Contains(pp->dict, key));
+	int res = PySequence_Contains(pp->dict, key);
+	if (res < 0)
+		return NULL;
+	return PyBool_FromLong(res);
 }
 
 static PyObject *
