@@ -42,6 +42,10 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "mymath.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 /* Forward */
 static object *filterstring PROTO((object *, object *));
 static object *filtertuple  PROTO((object *, object *));
