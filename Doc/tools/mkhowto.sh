@@ -94,6 +94,12 @@ use_latex() {
 	makeindex $MYFILE.idx
 	$MYDIR/indfix.py $MYFILE.ind
     fi
+    if [ -f $MYFILE.syn ] ; then
+	# This hack is due to a bug with the module synopsis support that
+	# causes the last module synopsis to be written out twice in
+	# howto documents (not present for manuals).  Repeated below.
+	uniq $MYFILE.syn >TEMP.syn && mv TEMP.syn $MYFILE.syn || exit $?
+    fi
     $MYLATEX $MYFILE || exit $?
     if [ -f mod$MYFILE.idx ] ; then
 	makeindex mod$MYFILE.idx
@@ -104,6 +110,9 @@ use_latex() {
     fi
     if [ -f $MYFILE.toc -a $MYLATEX = pdflatex ] ; then
 	$MYDIR/toc2bkm.py -c section $MYFILE
+    fi
+    if [ -f $MYFILE.syn ] ; then
+	uniq $MYFILE.syn >TEMP.syn && mv TEMP.syn $MYFILE.syn || exit $?
     fi
     $MYLATEX $MYFILE || exit $?
 }
@@ -121,7 +130,7 @@ build_ps() {
 }
 
 cleanup() {
-    rm -f $1.aux $1.log $1.out $1.toc $1.bkm $1.idx $1.ilg $1.ind
+    rm -f $1.aux $1.log $1.out $1.toc $1.bkm $1.idx $1.ilg $1.ind $1.syn
     rm -f mod$1.idx mod$1.ilg mod$1.ind
     if [ ! "$BUILD_DVI" ] ; then
 	rm -f $1.dvi
