@@ -943,6 +943,9 @@ sub fix_font{
     elsif ($font eq 'member') {
         $font = 'tt class="member"';
     }
+    elsif ($font eq 'constant') {
+        $font = 'tt class="constant"';
+    }
     return $font;
 }
 
