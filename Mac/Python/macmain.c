@@ -28,6 +28,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pythonresources.h"
 #include "import.h"
 #include "marshal.h"
+#include "macglue.h"
 
 #include <Memory.h>
 #include <Resources.h>
@@ -108,6 +109,7 @@ init_common()
 #if defined(USE_GUSI)
 	/* Setup GUSI */
 	GUSIDefaultSetup();
+	PyMac_SetGUSISpin();
 #endif
 
 #ifdef USE_SIOUX
@@ -396,7 +398,14 @@ PyMac_Exit(status)
 	}
 	else
 		SIOUXSettings.autocloseonquit = 1;
-#endif
+#ifdef USE_GUSI
+	/*
+	** Workaround for Sioux/GUSI combo: we should not call
+	** SiouxHandleOneEvent after the window is closed
+	*/
+	PyMac_ConsoleIsDead = 1;
+#endif /* USE_GUSI */
+#endif /* USE_SIOUX */
 #ifdef THINK_C
 	console_options.pause_atexit = keep;
 #endif
