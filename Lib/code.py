@@ -340,7 +340,7 @@ class InteractiveConsole(InteractiveInterpreter):
         return raw_input(prompt)
 
 
-def interact(banner=None, readfunc=None, locals=None):
+def interact(banner=None, readfunc=None, local=None):
     """Closely emulate the interactive Python interpreter.
 
     This is a backwards compatible interface to the InteractiveConsole
@@ -351,10 +351,10 @@ def interact(banner=None, readfunc=None, locals=None):
 
     banner -- passed to InteractiveConsole.interact()
     readfunc -- if not None, replaces InteractiveConsole.raw_input()
-    locals -- passed to InteractiveInterpreter.__init__()
+    local -- passed to InteractiveInterpreter.__init__()
 
     """
-    console = InteractiveConsole(locals)
+    console = InteractiveConsole(local)
     if readfunc is not None:
         console.raw_input = readfunc
     else:
