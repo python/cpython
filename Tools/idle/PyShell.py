@@ -16,6 +16,7 @@ from EditorWindow import EditorWindow, fixwordbreaks
 from FileList import FileList
 from ColorDelegator import ColorDelegator
 from OutputWindow import OutputWindow
+from IdleConf import IdleConf
 import idlever
 
 # We need to patch linecache.checkcache, because we don't want it
@@ -114,21 +115,15 @@ class ModifiedColorDelegator(ColorDelegator):
         ColorDelegator.recolorize_main(self)
 
     tagdefs = ColorDelegator.tagdefs.copy()
-    cprefs = ColorDelegator.cprefs
+    cconf = IdleConf.getsection('Colors')
 
     tagdefs.update({
-        "stdin":   {"foreground": cprefs.CStdIn[0],
-                    "background": cprefs.CStdIn[1]},
-        "stdout":  {"foreground": cprefs.CStdOut[0],
-                    "background": cprefs.CStdOut[1]},
-        "stderr":  {"foreground": cprefs.CStdErr[0],
-                    "background": cprefs.CStdErr[1]},
-        "console": {"foreground": cprefs.CConsole[0],
-                    "background": cprefs.CConsole[1]},
-        "ERROR":   {"background": cprefs.CError[0],
-                    "background": cprefs.CError[1]},
-        None:      {"foreground": cprefs.CNormal[0],
-                    "background": cprefs.CNormal[1]},
+        "stdin": cconf.getcolor("stdin"),
+        "stdout": cconf.getcolor("stdout"),
+        "stderr": cconf.getcolor("stderr"),
+        "console": cconf.getcolor("console"),
+        "ERROR": cconf.getcolor("ERROR"),
+	None: cconf.getcolor("normal"),
     })
 
 

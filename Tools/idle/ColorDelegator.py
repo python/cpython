@@ -4,7 +4,7 @@ import re
 import keyword
 from Tkinter import *
 from Delegator import Delegator
-import IdlePrefs
+from IdleConf import IdleConf
 
 #$ event <<toggle-auto-coloring>>
 #$ win <Control-slash>
@@ -51,29 +51,18 @@ class ColorDelegator(Delegator):
                 apply(self.tag_configure, (tag,), cnf)
         self.tag_raise('sel')
 
-    cprefs = IdlePrefs.ColorPrefs()
+    cconf = IdleConf.getsection('Colors')
 
     tagdefs = {
-        "COMMENT":    {"foreground": cprefs.CComment[0],
-                       "background": cprefs.CComment[1]},
-        "KEYWORD":    {"foreground": cprefs.CKeyword[0],
-                       "background": cprefs.CKeyword[1]},
-        "STRING":     {"foreground": cprefs.CString[0],
-                       "background": cprefs.CString[1]},
-        "DEFINITION": {"foreground": cprefs.CDefinition[0],
-                       "background": cprefs.CDefinition[1]},
-
-        "SYNC":       {"background": cprefs.CSync[0],
-                       "background": cprefs.CSync[1]},
-        "TODO":       {"background": cprefs.CTodo[0],
-                       "background": cprefs.CTodo[1]},
-
-        "BREAK":      {"background": cprefs.CBreak[0],
-                       "background": cprefs.CBreak[1]},
-
+        "COMMENT": cconf.getcolor("comment"),
+        "KEYWORD": cconf.getcolor("keyword"),
+        "STRING": cconf.getcolor("string"),
+        "DEFINITION": cconf.getcolor("definition"),
+        "SYNC": cconf.getcolor("sync"),
+        "TODO": cconf.getcolor("todo"),
+        "BREAK": cconf.getcolor("break"),
         # The following is used by ReplaceDialog:
-        "hit":        {"foreground": cprefs.CHit[0],
-                       "background": cprefs.CHit[1]},
+        "hit": cconf.getcolor("hit"),
         }
 
     def insert(self, index, chars, tags=None):
