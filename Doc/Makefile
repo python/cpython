@@ -72,13 +72,13 @@ RELEASE=2.1a2
 PYTHON=	   python
 DVIPS=	   dvips -N0 -t $(PAPER)
 
-MKHOWTO=   $(TOOLSDIR)/mkhowto
-MKHTML=	   $(MKHOWTO) --html --about html/stdabout.dat \
+MKDVI=	   ../tools/mkhowto --paper=$(PAPER) --dvi
+MKHTML=	   tools/mkhowto --html --about html/stdabout.dat \
 		--address $(PYTHONDOCS) --up-link ../index.html \
 		--up-title "Python Documentation Index" \
 		--global-module-index "../modindex.html"
-MKPDF=	   $(MKHOWTO) --paper=$(PAPER) --pdf
-MKPS=	   $(MKHOWTO) --paper=$(PAPER) --ps
+MKPDF=	   ../tools/mkhowto --paper=$(PAPER) --pdf
+MKPS=	   ../tools/mkhowto --paper=$(PAPER) --ps
 
 BUILDINDEX=$(TOOLSDIR)/buildindex.py
 
@@ -161,14 +161,14 @@ paper-$(PAPER)/dist.dvi: $(DISTFILES)
 	(cd paper-$(PAPER); $(MKDVI) ../dist/dist.tex)
 
 paper-$(PAPER)/dist.pdf: $(DISTFILES)
-	(cd paper-$(PAPER); $(MKPDF) ../dist/dist.tex
+	(cd paper-$(PAPER); $(MKPDF) ../dist/dist.tex)
 
 # Documenting Python
 paper-$(PAPER)/doc.dvi: $(DOCFILES)
-	(cd paper-$(PAPER); $(MKDVI) ../doc/doc.tex
+	(cd paper-$(PAPER); $(MKDVI) ../doc/doc.tex)
 
 paper-$(PAPER)/doc.pdf: $(DOCFILES)
-	(cd paper-$(PAPER); $(MKPDF) ../doc/doc.tex_
+	(cd paper-$(PAPER); $(MKPDF) ../doc/doc.tex)
 
 # Extending and Embedding the Python Interpreter
 paper-$(PAPER)/ext.dvi: $(EXTFILES)
