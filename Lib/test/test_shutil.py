@@ -6,6 +6,7 @@ import tempfile
 import os
 import os.path
 from test import test_support
+from test.test_support import TESTFN
 
 class TestShutil(unittest.TestCase):
     def test_rmtree_errors(self):
@@ -26,6 +27,26 @@ class TestShutil(unittest.TestCase):
             except:
                 pass
 
+    if hasattr(os, "symlink"):
+        def test_dont_copy_file_onto_link_to_itself(self):
+            # bug 851123.
+            os.mkdir(TESTFN)
+            src = os.path.join(TESTFN,'cheese')
+            dst = os.path.join(TESTFN,'shop')
+            try:
+                f = open(src,'w')
+                f.write('cheddar')
+                f.close()
+                for funcname in 'link','symlink':
+                    getattr(os, funcname)(src, dst)
+                    self.assertRaises(shutil.Error, shutil.copyfile, src, dst)
+                    self.assertEqual(open(src,'r').read(), 'cheddar')
+                    os.remove(dst)
+            finally:
+                try:
+                    shutil.rmtree(TESTFN)
+                except OSError:
+                    pass
 
 
 def test_main():
