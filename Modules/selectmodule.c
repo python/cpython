@@ -318,7 +318,7 @@ select_select(PyObject *self, PyObject *args)
 	return ret;
 }
 
-#ifdef HAVE_POLL
+#if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
 /* 
  * poll() support
  */
@@ -612,7 +612,7 @@ select_poll(PyObject *self, PyObject *args)
 		return NULL;
 	return (PyObject *)rv;
 }
-#endif /* HAVE_POLL */
+#endif /* HAVE_POLL && !HAVE_BROKEN_POLL */
 
 PyDoc_STRVAR(select_doc,
 "select(rlist, wlist, xlist[, timeout]) -> (rlist, wlist, xlist)\n\
@@ -639,9 +639,9 @@ On Windows, only sockets are supported; on Unix, all file descriptors.");
 
 static PyMethodDef select_methods[] = {
     {"select",	select_select, METH_VARARGS, select_doc},
-#ifdef HAVE_POLL
+#if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
     {"poll",    select_poll,   METH_VARARGS, poll_doc},
-#endif /* HAVE_POLL */
+#endif /* HAVE_POLL && !HAVE_BROKEN_POLL */
     {0,  	0},			     /* sentinel */
 };
 
@@ -660,7 +660,7 @@ initselect(void)
 	SelectError = PyErr_NewException("select.error", NULL, NULL);
 	Py_INCREF(SelectError);
 	PyModule_AddObject(m, "error", SelectError);
-#ifdef HAVE_POLL
+#if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
 	poll_Type.ob_type = &PyType_Type;
 	PyModule_AddIntConstant(m, "POLLIN", POLLIN);
 	PyModule_AddIntConstant(m, "POLLPRI", POLLPRI);
@@ -684,5 +684,5 @@ initselect(void)
 #ifdef POLLMSG
 	PyModule_AddIntConstant(m, "POLLMSG", POLLMSG);
 #endif
-#endif /* HAVE_POLL */
+#endif /* HAVE_POLL && !HAVE_BROKEN_POLL */
 }

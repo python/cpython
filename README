@@ -667,6 +667,7 @@ AtheOS: From Octavian Cerna <tavy at ylabs.com>:
 	    - select: poll is available in the C library, but does not
 	      work (It does not return POLLNVAL for bad fds and
 	      hangs).
+              (Believed fixed, unverified - autoconf check for broken poll)
 	    - posix: statvfs and fstatvfs always return ENOSYS.
 	    - disabled modules:
 		- mmap: not yet implemented in AtheOS

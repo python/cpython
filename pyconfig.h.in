@@ -44,6 +44,9 @@
 /* Define if nice() returns success/failure instead of the new priority. */
 #undef HAVE_BROKEN_NICE
 
+/* Define if poll() sets errno on invalid file descriptors. */
+#undef HAVE_BROKEN_POLL
+
 /* Define if the Posix semaphores do not work on your system */
 #undef HAVE_BROKEN_POSIX_SEMAPHORES
 
@@ -125,6 +128,9 @@
 
 /* Define to 1 if you have the `fstatvfs' function. */
 #undef HAVE_FSTATVFS
+
+/* Define if you have the 'fsync' function. */
+#undef HAVE_FSYNC
 
 /* Define to 1 if you have the `ftell64' function. */
 #undef HAVE_FTELL64
@@ -484,9 +490,6 @@
 
 /* Define if you have the 'symlink' function. */
 #undef HAVE_SYMLINK
-
-/* Define if you have the 'fsync' function. */
-#undef HAVE_FSYNC
 
 /* Define to 1 if you have the `sysconf' function. */
 #undef HAVE_SYSCONF

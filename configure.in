@@ -2839,6 +2839,43 @@ then
   [Define if nice() returns success/failure instead of the new priority.])
 fi
 
+AC_MSG_CHECKING(for broken poll())
+AC_TRY_RUN([
+#include <poll.h>
+
+int main (void)
+    {
+    struct pollfd poll_struct = { 42, POLLIN|POLLPRI|POLLOUT, 0 };
+    
+    close (42);
+
+    int poll_test = poll (&poll_struct, 1, 0);
+
+    if (poll_test < 0)
+        {
+        exit(0);
+        }
+    else if (poll_test == 0 && poll_struct.revents != POLLNVAL)
+        {
+        exit(0);
+        }
+    else
+        {
+        exit(1);
+        }
+    }
+],
+ac_cv_broken_poll=yes,
+ac_cv_broken_poll=no,
+ac_cv_broken_poll=no)
+AC_MSG_RESULT($ac_cv_broken_poll)
+if test "$ac_cv_broken_poll" = yes
+then
+  AC_DEFINE(HAVE_BROKEN_POLL, 1,
+      [Define if poll() sets errno on invalid file descriptors.])
+fi
+
+
 # tzset(3) exists and works like we expect it to
 AC_MSG_CHECKING(for working tzset())
 AC_CACHE_VAL(ac_cv_working_tzset, [
