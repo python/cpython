@@ -312,8 +312,8 @@ division by \code{pow(2, \var{n})} without overflow check.
 
 \subsection{Sequence Types \label{typesseq}}
 
-There are five sequence types: strings, Unicode strings, lists,
-tuples, and buffers.
+There are six sequence types: strings, Unicode strings, lists,
+tuples, buffers, and ranges.
 
 Strings literals are written in single or double quotes:
 \code{'xyzzy'}, \code{"frobozz"}.  See chapter 2 of the
@@ -327,7 +327,10 @@ or without enclosing parentheses, but an empty tuple must have the
 enclosing parentheses, e.g., \code{a, b, c} or \code{()}.  A single
 item tuple must have a trailing comma, e.g., \code{(d,)}.  Buffers are
 not directly support by Python syntax, but can created by calling the
-builtin function \function{buffer()}.\bifuncindex{buffer}
+builtin function \function{buffer()}.\bifuncindex{buffer}  Ranges are
+similar to buffers in that there is no specific syntax to create them,
+but they are created using the \function{xrange()}
+function.\bifuncindex{xrange}
 \indexii{sequence}{types}
 \indexii{string}{type}
 \indexii{Unicode}{type}
@@ -630,9 +633,26 @@ In this case no \code{*} specifiers may occur in a format (since they
 require a sequential parameter list).
 
 Additional string operations are defined in standard module
-\module{string} and in built-in module \module{re}.
+\refmodule{string} and in built-in module \refmodule{re}.
 \refstmodindex{string}
 \refstmodindex{re}
+
+
+\subsubsection{Range Type \label{typesseq-range}}
+
+The range\indexii{range}{type} type is an immutable sequence which is
+commonly used for looping.  The advantage of the range type is that a
+range object will always take the same amount of memory, no matter the
+size of the range it represents.  There are no consistent performance
+advantages.
+
+Range objects behave like tuples, and offer a single method:
+
+\begin{methoddesc}[range]{tolist}{}
+  Return a list object which represents the same values as the range
+  object.
+\end{methoddesc}
+
 
 \subsubsection{Mutable Sequence Types \label{typesseq-mutable}}
 
