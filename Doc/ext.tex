@@ -12,9 +12,6 @@
 
 \begin{document}
 
-\pagestyle{empty}
-\pagenumbering{roman}
-
 \maketitle
 
 \input{copyright}
@@ -50,8 +47,6 @@ for an upgrade for some time now).
 
 \tableofcontents
 
-\pagenumbering{arabic}
-
 
 \chapter{Extending Python with \C{} or \Cpp{} code}
 
@@ -84,11 +79,11 @@ This function takes a null-terminated character string as argument and
 returns an integer.  We want this function to be callable from Python
 as follows:
 
-\bcode\begin{verbatim}
-    >>> import spam
-    >>> status = spam.system("ls -l")
-\end{verbatim}\ecode
-%
+\begin{verbatim}
+>>> import spam
+>>> status = spam.system("ls -l")
+\end{verbatim}
+
 Begin by creating a file \samp{spammodule.c}.  (In general, if a
 module is called \samp{spam}, the \C{} file containing its implementation
 is called \file{spammodule.c}; if the module name is very long, like
@@ -96,10 +91,10 @@ is called \file{spammodule.c}; if the module name is very long, like
 
 The first line of our file can be:
 
-\bcode\begin{verbatim}
-    #include "Python.h"
-\end{verbatim}\ecode
-%
+\begin{verbatim}
+#include "Python.h"
+\end{verbatim}
+
 which pulls in the Python API (you can add a comment describing the
 purpose of the module and a copyright notice if you like).
 
@@ -116,21 +111,21 @@ The next thing we add to our module file is the \C{} function that will
 be called when the Python expression \samp{spam.system(\var{string})}
 is evaluated (we'll see shortly how it ends up being called):
 
-\bcode\begin{verbatim}
-    static PyObject *
-    spam_system(self, args)
-        PyObject *self;
-        PyObject *args;
-    {
-        char *command;
-        int sts;
-        if (!PyArg_ParseTuple(args, "s", &command))
-            return NULL;
-        sts = system(command);
-        return Py_BuildValue("i", sts);
-    }
-\end{verbatim}\ecode
-%
+\begin{verbatim}
+static PyObject *
+spam_system(self, args)
+    PyObject *self;
+    PyObject *args;
+{
+    char *command;
+    int sts;
+    if (!PyArg_ParseTuple(args, "s", &command))
+        return NULL;
+    sts = system(command);
+    return Py_BuildValue("i", sts);
+}
+\end{verbatim}
+
 There is a straightforward translation from the argument list in
 Python (e.g.\ the single expression \code{"ls -l"}) to the arguments
 passed to the \C{} function.  The \C{} function always has two arguments,
@@ -254,26 +249,26 @@ You can also define a new exception that is unique to your module.
 For this, you usually declare a static object variable at the
 beginning of your file, e.g.
 
-\bcode\begin{verbatim}
-    static PyObject *SpamError;
-\end{verbatim}\ecode
-%
+\begin{verbatim}
+static PyObject *SpamError;
+\end{verbatim}
+
 and initialize it in your module's initialization function
 (\code{initspam()}) with a string object, e.g. (leaving out the error
 checking for now):
 
-\bcode\begin{verbatim}
-    void
-    initspam()
-    {
-        PyObject *m, *d;
-        m = Py_InitModule("spam", SpamMethods);
-        d = PyModule_GetDict(m);
-        SpamError = PyString_FromString("spam.error");
-        PyDict_SetItemString(d, "error", SpamError);
-    }
-\end{verbatim}\ecode
-%
+\begin{verbatim}
+void
+initspam()
+{
+    PyObject *m, *d;
+    m = Py_InitModule("spam", SpamMethods);
+    d = PyModule_GetDict(m);
+    SpamError = PyString_FromString("spam.error");
+    PyDict_SetItemString(d, "error", SpamError);
+}
+\end{verbatim}
+
 Note that the Python name for the exception object is
 \code{spam.error}.  It is conventional for module and exception names
 to be spelled in lower case.  It is also conventional that the
@@ -286,11 +281,11 @@ the string \code{"spam.error"}.
 Going back to our example function, you should now be able to
 understand this statement:
 
-\bcode\begin{verbatim}
-        if (!PyArg_ParseTuple(args, "s", &command))
-            return NULL;
-\end{verbatim}\ecode
-%
+\begin{verbatim}
+    if (!PyArg_ParseTuple(args, "s", &command))
+        return NULL;
+\end{verbatim}
+
 It returns \NULL{} (the error indicator for functions returning
 object pointers) if an error is detected in the argument list, relying
 on the exception set by \code{PyArg_ParseTuple()}.  Otherwise the
@@ -303,10 +298,10 @@ to modify the string to which it points (so in Standard \C{}, the variable
 The next statement is a call to the \UNIX{} function \code{system()},
 passing it the string we just got from \code{PyArg_ParseTuple()}:
 
-\bcode\begin{verbatim}
-        sts = system(command);
-\end{verbatim}\ecode
-%
+\begin{verbatim}
+    sts = system(command);
+\end{verbatim}
+
 Our \code{spam.system()} function must return the value of \code{sts}
 as a Python object.  This is done using the function
 \code{Py_BuildValue()}, which is something like the inverse of
@@ -314,10 +309,10 @@ as a Python object.  This is done using the function
 number of \C{} values, and returns a new Python object.  More info on
 \code{Py_BuildValue()} is given later.
 
-\bcode\begin{verbatim}
-        return Py_BuildValue("i", sts);
-\end{verbatim}\ecode
-%
+\begin{verbatim}
+    return Py_BuildValue("i", sts);
+\end{verbatim}
+
 In this case, it will return an integer object.  (Yes, even integers
 are objects on the heap in Python!)
 
@@ -325,11 +320,11 @@ If you have a \C{} function that returns no useful argument (a function
 returning \code{void}), the corresponding Python function must return
 \code{None}.   You need this idiom to do so:
 
-\bcode\begin{verbatim}
-        Py_INCREF(Py_None);
-        return Py_None;
-\end{verbatim}\ecode
-%
+\begin{verbatim}
+    Py_INCREF(Py_None);
+    return Py_None;
+\end{verbatim}
+
 \code{Py_None} is the \C{} name for the special Python object
 \code{None}.  It is a genuine Python object (not a \NULL{}
 pointer, which means ``error'' in most contexts, as we have seen).
@@ -341,15 +336,15 @@ I promised to show how \code{spam_system()} is called from Python
 programs.  First, we need to list its name and address in a ``method
 table'':
 
-\bcode\begin{verbatim}
-    static PyMethodDef SpamMethods[] = {
-        ...
-        {"system",  spam_system, METH_VARARGS},
-        ...
-        {NULL,      NULL}        /* Sentinel */
-    };
-\end{verbatim}\ecode
-%
+\begin{verbatim}
+static PyMethodDef SpamMethods[] = {
+    ...
+    {"system",  spam_system, METH_VARARGS},
+    ...
+    {NULL,      NULL}        /* Sentinel */
+};
+\end{verbatim}
+
 Note the third entry (\samp{METH_VARARGS}).  This is a flag telling
 the interpreter the calling convention to be used for the \C{}
 function.  It should normally always be \samp{METH_VARARGS} or
@@ -371,14 +366,14 @@ The method table must be passed to the interpreter in the module's
 initialization function (which should be the only non-\code{static}
 item defined in the module file):
 
-\bcode\begin{verbatim}
-    void
-    initspam()
-    {
-        (void) Py_InitModule("spam", SpamMethods);
-    }
-\end{verbatim}\ecode
-%
+\begin{verbatim}
+void
+initspam()
+{
+    (void) Py_InitModule("spam", SpamMethods);
+}
+\end{verbatim}
+
 When the Python program imports module \code{spam} for the first time,
 \code{initspam()} is called.  It calls \code{Py_InitModule()}, which
 creates a ``module object'' (which is inserted in the dictionary
@@ -406,10 +401,10 @@ very simple: just place your file (\file{spammodule.c} for example) in
 the \file{Modules} directory, add a line to the file
 \file{Modules/Setup} describing your file:
 
-\bcode\begin{verbatim}
-    spam spammodule.o
-\end{verbatim}\ecode
-%
+\begin{verbatim}
+spam spammodule.o
+\end{verbatim}
+
 and rebuild the interpreter by running \code{make} in the toplevel
 directory.  You can also run \code{make} in the \file{Modules}
 subdirectory, but then you must first rebuilt the \file{Makefile}
@@ -419,10 +414,10 @@ you change the \file{Setup} file.)
 If your module requires additional libraries to link with, these can
 be listed on the line in the \file{Setup} file as well, for instance:
 
-\bcode\begin{verbatim}
-    spam spammodule.o -lX11
-\end{verbatim}\ecode
-%
+\begin{verbatim}
+spam spammodule.o -lX11
+\end{verbatim}
+
 \section{Calling Python Functions From \C{}}
 
 So far we have concentrated on making \C{} functions callable from
@@ -447,22 +442,22 @@ called, save a pointer to the Python function object (be careful to
 For example, the following function might be part of a module
 definition:
 
-\bcode\begin{verbatim}
-    static PyObject *my_callback = NULL;
+\begin{verbatim}
+static PyObject *my_callback = NULL;
 
-    static PyObject *
-    my_set_callback(dummy, arg)
-        PyObject *dummy, *arg;
-    {
-        Py_XDECREF(my_callback); /* Dispose of previous callback */
-        Py_XINCREF(arg); /* Add a reference to new callback */
-        my_callback = arg; /* Remember new callback */
-        /* Boilerplate to return "None" */
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-\end{verbatim}\ecode
-%
+static PyObject *
+my_set_callback(dummy, arg)
+    PyObject *dummy, *arg;
+{
+    Py_XDECREF(my_callback); /* Dispose of previous callback */
+    Py_XINCREF(arg); /* Add a reference to new callback */
+    my_callback = arg; /* Remember new callback */
+    /* Boilerplate to return "None" */
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+\end{verbatim}
+
 The macros \code{Py_XINCREF()} and \code{Py_XDECREF()} increment/decrement
 the reference count of an object and are safe in the presence of
 \NULL{} pointers.  More info on them in the section on Reference
@@ -478,7 +473,7 @@ a singleton tuple.  \code{Py_BuildValue()} returns a tuple when its
 format string consists of zero or more format codes between
 parentheses.  For example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
     int arg;
     PyObject *arglist;
     PyObject *result;
@@ -489,8 +484,8 @@ parentheses.  For example:
     arglist = Py_BuildValue("(i)", arg);
     result = PyEval_CallObject(my_callback, arglist);
     Py_DECREF(arglist);
-\end{verbatim}\ecode
-%
+\end{verbatim}
+
 \code{PyEval_CallObject()} returns a Python object pointer: this is
 the return value of the Python function.  \code{PyEval_CallObject()} is
 ``reference-count-neutral'' with respect to its arguments.  In the
@@ -512,13 +507,13 @@ calling Python code can handle the exception.  If this is not possible
 or desirable, the exception should be cleared by calling
 \code{PyErr_Clear()}.  For example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
     if (result == NULL)
         return NULL; /* Pass error back */
     ...use result...
     Py_DECREF(result); 
-\end{verbatim}\ecode
-%
+\end{verbatim}
+
 Depending on the desired interface to the Python callback function,
 you may also have to provide an argument list to \code{PyEval_CallObject()}.
 In some cases the argument list is also provided by the Python
@@ -529,7 +524,7 @@ tuple to pass as the argument list.  The simplest way to do this is to
 call \code{Py_BuildValue()}.  For example, if you want to pass an integral
 event code, you might use the following code:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
     PyObject *arglist;
     ...
     arglist = Py_BuildValue("(l)", eventcode);
@@ -539,8 +534,8 @@ event code, you might use the following code:
         return NULL; /* Pass error back */
     /* Here maybe use the result */
     Py_DECREF(result);
-\end{verbatim}\ecode
-%
+\end{verbatim}
+
 Note the placement of \code{Py_DECREF(argument)} immediately after the call,
 before the error check!  Also note that strictly spoken this code is
 not complete: \code{Py_BuildValue()} may run out of memory, and this should
@@ -551,10 +546,10 @@ be checked.
 
 The \code{PyArg_ParseTuple()} function is declared as follows:
 
-\bcode\begin{verbatim}
-    int PyArg_ParseTuple(PyObject *arg, char *format, ...);
-\end{verbatim}\ecode
-%
+\begin{verbatim}
+int PyArg_ParseTuple(PyObject *arg, char *format, ...);
+\end{verbatim}
+
 The \var{arg} argument must be a tuple object containing an argument
 list passed from Python to a \C{} function.  The \var{format} argument
 must be a format string, whose syntax is explained below.  The
@@ -757,10 +752,10 @@ Some example calls:
 The \cfunction{PyArg_ParseTupleAndKeywords()} function is declared as
 follows:
 
-\bcode\begin{verbatim}
-    int PyArg_ParseTupleAndKeywords(PyObject *arg, PyObject *kwdict,
-                                    char *format, char **kwlist, ...);
-\end{verbatim}\ecode
+\begin{verbatim}
+int PyArg_ParseTupleAndKeywords(PyObject *arg, PyObject *kwdict,
+                                char *format, char **kwlist, ...);
+\end{verbatim}
 
 The \var{arg} and \var{format} parameters are identical to those of the
 \cfunction{PyArg_ParseTuple()} function.  The \var{kwdict} parameter
@@ -826,10 +821,10 @@ initkeywdarg()
 This function is the counterpart to \code{PyArg_ParseTuple()}.  It is
 declared as follows:
 
-\bcode\begin{verbatim}
-    PyObject *Py_BuildValue(char *format, ...);
-\end{verbatim}\ecode
-%
+\begin{verbatim}
+PyObject *Py_BuildValue(char *format, ...);
+\end{verbatim}
+
 It recognizes a set of format units similar to the ones recognized by
 \code{PyArg_ParseTuple()}, but the arguments (which are input to the
 function, not output) must not be pointers, just values.  It returns a
@@ -931,7 +926,7 @@ If there is an error in the format string, the
 
 Examples (to the left the call, to the right the resulting Python value):
 
-\bcode\begin{verbatim}
+\begin{verbatim}
     Py_BuildValue("")                        None
     Py_BuildValue("i", 123)                  123
     Py_BuildValue("iii", 123, 456, 789)      (123, 456, 789)
@@ -947,8 +942,8 @@ Examples (to the left the call, to the right the resulting Python value):
                   "abc", 123, "def", 456)    {'abc': 123, 'def': 456}
     Py_BuildValue("((ii)(ii)) (ii)",
                   1, 2, 3, 4, 5, 6)          (((1, 2), (3, 4)), (5, 6))
-\end{verbatim}\ecode
-%
+\end{verbatim}
+
 \section{Reference Counts}
 
 \subsection{Introduction}
@@ -1117,14 +1112,14 @@ The first and most important case to know about is using
 \code{Py_DECREF()} on an unrelated object while borrowing a reference
 to a list item.  For instance:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 bug(PyObject *list) {
     PyObject *item = PyList_GetItem(list, 0);
     PyList_SetItem(list, 1, PyInt_FromLong(0L));
     PyObject_Print(item, stdout, 0); /* BUG! */
 }
-\end{verbatim}\ecode
-%
+\end{verbatim}
+
 This function first borrows a reference to \code{list[0]}, then
 replaces \code{list[1]} with the value \code{0}, and finally prints
 the borrowed reference.  Looks harmless, right?  But it's not!
@@ -1150,7 +1145,7 @@ The solution, once you know the source of the problem, is easy:
 temporarily increment the reference count.  The correct version of the
 function reads:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 no_bug(PyObject *list) {
     PyObject *item = PyList_GetItem(list, 0);
     Py_INCREF(item);
@@ -1158,8 +1153,8 @@ no_bug(PyObject *list) {
     PyObject_Print(item, stdout, 0);
     Py_DECREF(item);
 }
-\end{verbatim}\ecode
-%
+\end{verbatim}
+
 This is a true story.  An older version of Python contained variants
 of this bug and someone spent a considerable amount of time in a \C{}
 debugger to figure out why his \code{__del__()} methods would fail...
@@ -1175,7 +1170,7 @@ calls, to let other threads use the CPU while waiting for the I/O to
 complete.  Obviously, the following function has the same problem as
 the previous one:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 bug(PyObject *list) {
     PyObject *item = PyList_GetItem(list, 0);
     Py_BEGIN_ALLOW_THREADS
@@ -1183,8 +1178,8 @@ bug(PyObject *list) {
     Py_END_ALLOW_THREADS
     PyObject_Print(item, stdout, 0); /* BUG! */
 }
-\end{verbatim}\ecode
-%
+\end{verbatim}
+
 \subsection{NULL Pointers}
 
 In general, functions that take object references as arguments don't
@@ -1391,20 +1386,20 @@ done using a special invocation of the \UNIX{} loader/linker,
 system.
 
 On SunOS 4, use
-\bcode\begin{verbatim}
-    ld spammodule.o -o spammodule.so
-\end{verbatim}\ecode
-%
+\begin{verbatim}
+ld spammodule.o -o spammodule.so
+\end{verbatim}
+
 On Solaris 2, use
-\bcode\begin{verbatim}
-    ld -G spammodule.o -o spammodule.so
-\end{verbatim}\ecode
-%
+\begin{verbatim}
+ld -G spammodule.o -o spammodule.so
+\end{verbatim}
+
 On SGI IRIX 5, use
-\bcode\begin{verbatim}
-    ld -shared spammodule.o -o spammodule.so
-\end{verbatim}\ecode
-%
+\begin{verbatim}
+ld -shared spammodule.o -o spammodule.so
+\end{verbatim}
+
 On other systems, consult the manual page for \code{ld}(1) to find what
 flags, if any, must be used.
 
