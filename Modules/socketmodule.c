@@ -2546,6 +2546,8 @@ PySocket_getaddrinfo(PyObject *self, PyObject *args)
 			goto err;
 		Py_XDECREF(single);
 	}
+	if (res0)
+		freeaddrinfo(res0);
 	return all;
  err:
 	Py_XDECREF(single);
