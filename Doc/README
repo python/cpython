@@ -120,6 +120,13 @@ To create info files:
 	- Perl.  Find the software at
 	  <http://language.perl.com/info/software.html>.
 
+	- HTML::Element.  If you don't have this installed, you can get
+	  this from CPAN.  Use the command:
+
+	  perl -e 'use CPAN; CPAN::install("HTML::Element");'
+
+	  You may need to be root to do this.
+
 To create HTML files:
 
 	- Perl 5.004_04 or newer.  Find the software at
@@ -130,7 +137,7 @@ To create HTML files:
 	  likely to work.  Many older versions don't work with Perl
 	  5.6 as well.  This also screws up code fragments.  ;-(
 	  Releases are available at:
-          <http://saftsack.fs.uni-bayreuth.de/~latex2ht/current/>.
+	  <http://saftsack.fs.uni-bayreuth.de/~latex2ht/current/>.
 
 
 What if Times fonts are not available?
