@@ -460,16 +460,23 @@ Mac OS X 10: One of the regular expression tests fails with a segmentation
 
         On a clean OSX /usr/local does not exist. Do a
         "sudo mkdir -m 775 /usr/local"
-        before you do a make install. Alternatively, do "sudo make install"
-        which installs everything as superuser.
+        before you do a make install. It is probably not a good idea to
+        do "sudo make install" which installs everything as superuser,
+        as this may later cause problems when installing distutils-based
+        additions.
+        
+        Some people have reported problems building Python after using "fink"
+        to install additional unix software. Disabling fink (remove all references
+        to /sw from your .profile or .login) should solve this.
 
         You may want to try the configure option "--enable-framework"
         which installs Python as a framework. The location can be set
         as argument to the --enable-framework option (default
-        /Library/Frameworks). You may also want to check out ./Mac/OSX
-        for building a Python.app. You may also want to manually
-        install a symlink in /usr/local/bin/python to the executable
-        deep down in the framework.
+        /Library/Frameworks). A framework install is probably needed if you
+        want to use any Aqua-based GUI toolkit (whether Tkinter, wxPython,
+        Carbon, Cocoa or anything else).
+        
+        See Mac/OSX/README for more information on framework builds.
 
 Cygwin: With recent (relative to the time of writing, 2001-12-19)
         Cygwin installations, there are problems with the interaction
