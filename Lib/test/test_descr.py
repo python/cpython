@@ -2408,6 +2408,17 @@ def kwdargs():
     list.__init__(a, sequence=[0, 1, 2])
     vereq(a, [0, 1, 2])
 
+def delhook():
+    if verbose: print "Testing __del__ hook..."
+    log = []
+    class C(object):
+        def __del__(self):
+            log.append(1)
+    c = C()
+    vereq(log, [])
+    del c
+    vereq(log, [1])
+
 def test_main():
     class_docstrings()
     lists()
@@ -2459,6 +2470,7 @@ def test_main():
     buffer_inherit()
     str_of_str_subclass()
     kwdargs()
+    delhook()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
