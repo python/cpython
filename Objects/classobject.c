@@ -32,22 +32,25 @@ typedef struct {
 	OB_HEAD
 	object	*cl_bases;	/* A tuple */
 	object	*cl_methods;	/* A dictionary */
+	object	*cl_name;	/* A string */
 } classobject;
 
 object *
-newclassobject(bases, methods)
+newclassobject(bases, methods, name)
 	object *bases; /* NULL or tuple of classobjects! */
 	object *methods;
+	object *name; /* String; NULL if unknown */
 {
 	classobject *op;
 	op = NEWOBJ(classobject, &Classtype);
 	if (op == NULL)
 		return NULL;
-	if (bases != NULL)
-		INCREF(bases);
+	XINCREF(bases);
 	op->cl_bases = bases;
 	INCREF(methods);
 	op->cl_methods = methods;
+	XINCREF(name);
+	op->cl_name = name;
 	return (object *) op;
 }
 
@@ -58,9 +61,9 @@ class_dealloc(op)
 	classobject *op;
 {
 	int i;
-	if (op->cl_bases != NULL)
-		DECREF(op->cl_bases);
+	XDECREF(op->cl_bases);
 	DECREF(op->cl_methods);
+	XDECREF(op->cl_name);
 	free((ANY *)op);
 }
 
@@ -70,6 +73,24 @@ class_getattr(op, name)
 	register char *name;
 {
 	register object *v;
+	if (strcmp(name, "__dict__") == 0) {
+		INCREF(op->cl_methods);
+		return op->cl_methods;
+	}
+	if (strcmp(name, "__bases__") == 0) {
+		if (op->cl_bases == NULL)
+			return newtupleobject(0);
+		INCREF(op->cl_bases);
+		return op->cl_bases;
+	}
+	if (strcmp(name, "__name__") == 0) {
+		if (op->cl_name == NULL)
+			v = None;
+		else
+			v = op->cl_name;
+		INCREF(v);
+		return v;
+	}
 	v = dictlookup(op->cl_methods, name);
 	if (v != NULL) {
 		INCREF(v);
@@ -89,6 +110,18 @@ class_getattr(op, name)
 	return NULL;
 }
 
+static int
+class_setattr(op, name, v)
+	classobject *op;
+	char *name;
+	object *v;
+{
+	if (v == NULL)
+		return dictremove(op->cl_methods, name);
+	else
+		return dictinsert(op->cl_methods, name, v);
+}
+
 typeobject Classtype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
@@ -98,7 +131,7 @@ typeobject Classtype = {
 	class_dealloc,	/*tp_dealloc*/
 	0,		/*tp_print*/
 	class_getattr,	/*tp_getattr*/
-	0,		/*tp_setattr*/
+	class_setattr,	/*tp_setattr*/
 	0,		/*tp_compare*/
 	0,		/*tp_repr*/
 	0,		/*tp_as_number*/
@@ -154,7 +187,16 @@ instance_getattr(inst, name)
 	register instanceobject *inst;
 	register char *name;
 {
-	register object *v = dictlookup(inst->in_attr, name);
+	register object *v;
+	if (strcmp(name, "__dict__") == 0) {
+		INCREF(inst->in_attr);
+		return inst->in_attr;
+	}
+	if (strcmp(name, "__class__") == 0) {
+		INCREF(inst->in_class);
+		return (object *)inst->in_class;
+	}
+	v = dictlookup(inst->in_attr, name);
 	if (v != NULL) {
 		INCREF(v);
 		return v;
@@ -202,8 +244,7 @@ typeobject Instancetype = {
 };
 
 
-/* And finally, here are instance method objects
-   (accidentally called class methods) */
+/* And finally, here are instance method objects */
 
 typedef struct {
 	OB_HEAD
