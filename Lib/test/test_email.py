@@ -886,6 +886,24 @@ a simple kind of mirror
 to reflect upon our own
 """)
 
+    def test_typed_subpart_iterator_default_type(self):
+        eq = self.assertEqual
+        msg = self._msgobj('msg_03.txt')
+        it = Iterators.typed_subpart_iterator(msg, 'text', 'plain')
+        lines = []
+        subparts = 0
+        for subpart in it:
+            subparts += 1
+            lines.append(subpart.get_payload())
+        eq(subparts, 1)
+        eq(EMPTYSTRING.join(lines), """\
+
+Hi,
+
+Do you like this message?
+
+-Me
+""")
 
 
 class TestParsers(unittest.TestCase):
