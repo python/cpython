@@ -17,6 +17,16 @@ http://starship.python.net/crew/amk/python/writing/new-python/.
 What's new in 2.0 release candidate 1 (since beta 2)?
 =====================================================
 
+What is release candidate 1?
+
+We believe that release candidate 1 will fix all known bugs that we
+intend to fix for the 2.0 final release.  This release should be a bit
+more stable than the previous betas.  We would like to see even more
+widespread testing before the final release, so we are producing this
+release candidate.  The final release will be exactly the same unless
+any show-stopping (or brown bag) bugs are found by testers of the
+release candidate.
+
 All the changes since the last beta release are bug fixes or changes
 to build support for specific platforms.
 
