@@ -104,20 +104,15 @@ class AutoIndent:
     tabwidth = TK_TABWIDTH_DEFAULT
 
     # If context_use_ps1 is true, parsing searches back for a ps1 line;
-    # else searches back for closest preceding def or class.
+    # else searches for a popular (if, def, ...) Python stmt.
     context_use_ps1 = 0
 
-    # When searching backwards for the closest preceding def or class,
+    # When searching backwards for a reliable place to begin parsing,
     # first start num_context_lines[0] lines back, then
     # num_context_lines[1] lines back if that didn't work, and so on.
     # The last value should be huge (larger than the # of lines in a
     # conceivable file).
     # Making the initial values larger slows things down more often.
-    # OTOH, if you happen to find a line that looks like a def or class
-    # in a multiline string, the parsing is utterly hosed.  Can't think
-    # of a way to stop that without always reparsing from the start
-    # of the file.  doctest.py is a killer example of this (IDLE is
-    # useless for editing that!).
     num_context_lines = 50, 500, 5000000
 
     def __init__(self, editwin):
@@ -260,14 +255,19 @@ class AutoIndent:
                 text.delete("insert")
             # start new line
             text.insert("insert", '\n')
+
             # adjust indentation for continuations and block open/close
+            # first need to find the last stmt
             lno = index2line(text.index('insert'))
             y = PyParse.Parser(self.indentwidth, self.tabwidth)
             for context in self.num_context_lines:
                 startat = max(lno - context, 1)
-                rawtext = text.get(`startat` + ".0", "insert")
+                startatindex = `startat` + ".0"
+                rawtext = text.get(startatindex, "insert")
                 y.set_str(rawtext)
-                bod = y.find_last_def_or_class(self.context_use_ps1)
+                bod = y.find_good_parse_start(
+                          self.context_use_ps1,
+                          self._build_char_in_string_func(startatindex))
                 if bod is not None or startat == 1:
                     break
             y.set_lo(bod or 0)
@@ -312,6 +312,16 @@ class AutoIndent:
             text.undo_block_stop()
 
     auto_indent = newline_and_indent_event
+
+    # Our editwin provides a is_char_in_string function that works with
+    # a Tk text index, but PyParse only knows about offsets into a string.
+    # This builds a function for PyParse that accepts an offset.
+
+    def _build_char_in_string_func(self, startindex):
+        def inner(offset, _startindex=startindex,
+                  _icis=self.editwin.is_char_in_string):
+            return _icis(_startindex + "+%dc" % offset)
+        return inner
 
     def indent_region_event(self, event):
         head, tail, chars, lines = self.get_region()
