@@ -6,6 +6,12 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- Fixed two bugs reported as SF #535905: under certain conditions,
+  deallocating a deeply nested structure could cause a segfault in the
+  garbage collector, due to interaction with the "trashcan" code;
+  access to the current frame during destruction of a local variable
+  could access a pointer to freed memory.
+
 - The optional object allocator has been enabled by default.
 
 - If you try to pickle an instance of a class that has __slots__ but
