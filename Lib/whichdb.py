@@ -50,7 +50,7 @@ def whichdb(filename):
         return "gdbm"
 
     # Check for BSD hash
-    if magic == 0x061561:
+    if magic in (0x00061561, 0x61150600):
         return "dbhash"
 
     # Unknown
