@@ -146,7 +146,7 @@ push the result back on the stack.
 Implements \code{TOS = +TOS}.
 \end{opcodedesc}
 
-\begin{opcodedesc}{UNARY_NEG}{}
+\begin{opcodedesc}{UNARY_NEGATIVE}{}
 Implements \code{TOS = -TOS}.
 \end{opcodedesc}
 
@@ -595,7 +595,7 @@ information.
 Prefixes any opcode which has an argument too big to fit into the
 default two bytes.  \var{ext} holds two additional bytes which, taken
 together with the subsequent opcode's argument, comprise a four-byte
-argument, \var {ext} being the two most-significant bytes.
+argument, \var{ext} being the two most-significant bytes.
 \end{opcodedesc}
 
 \begin{opcodedesc}{CALL_FUNCTION_VAR}{argc}
