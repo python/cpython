@@ -113,4 +113,5 @@ def tuple(list):
     i = len(list)/2
     return tuple(list[:i]) + tuple(list[i:])
 
-test()
+if __name__ == "__main__":
+    test()

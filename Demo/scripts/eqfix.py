@@ -194,5 +194,5 @@ def fixline(line):
             print line,
     return line
 
-
-main()
+if __name__ == "__main__":
+    main()

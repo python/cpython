@@ -57,4 +57,5 @@ def makedirs(p):
         makedirs(head)
         os.mkdir(p, 0777)
 
-main()
+if __name__ == "__main__":
+    main()

@@ -45,4 +45,5 @@ def main():
         except EOFError:
             pass
 
-main()
+if __name__ == "__main__":
+    main()

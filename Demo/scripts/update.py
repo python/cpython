@@ -88,4 +88,5 @@ def main():
             curfile = FileObj(filename)
         curfile.process(lineno, line[n:])
 
-main()
+if __name__ == "__main__":
+    main()
