@@ -166,6 +166,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/libuserdict.tex \
 	../lib/libdis.tex \
 	../lib/libxmllib.tex \
+	../lib/libpyexpat.tex \
 	../lib/libqueue.tex \
 	../lib/liblocale.tex \
 	../lib/libbasehttp.tex \
@@ -187,6 +188,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/libthreading.tex \
 	../lib/internet.tex \
 	../lib/netdata.tex \
+	../lib/markup.tex \
 	../lib/libpycompile.tex \
 	../lib/libcompileall.tex \
 	../lib/libshlex.tex \
