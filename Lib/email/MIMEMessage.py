@@ -28,3 +28,5 @@ class MIMEMessage(MIMENonMultipart):
         # It's convenient to use this base class method.  We need to do it
         # this way or we'll get an exception
         Message.Message.attach(self, _msg)
+        # And be sure our default type is set correctly
+        self.set_default_type('message/rfc822')
