@@ -7,13 +7,13 @@ import sys, string
 import os
 
 import pyexpat
-	 	
+                
 class Outputter:
     def StartElementHandler(self, name, attrs):
-	print 'Start element:\n\t', name, attrs
-	
+        print 'Start element:\n\t', name, attrs
+        
     def EndElementHandler(self, name):
-	print 'End element:\n\t', name
+        print 'End element:\n\t', name
 
     def CharacterDataHandler(self, data):
         data = string.strip(data)
@@ -22,26 +22,26 @@ class Outputter:
             print '\t', repr(data)
 
     def ProcessingInstructionHandler(self, target, data):
-	print 'PI:\n\t', target, data
+        print 'PI:\n\t', target, data
 
     def StartNamespaceDeclHandler(self, prefix, uri):
-	print 'NS decl:\n\t', prefix, uri
+        print 'NS decl:\n\t', prefix, uri
 
     def EndNamespaceDeclHandler(self, prefix):
-	print 'End of NS decl:\n\t', prefix
+        print 'End of NS decl:\n\t', prefix
 
     def StartCdataSectionHandler(self):
-	print 'Start of CDATA section'
+        print 'Start of CDATA section'
 
     def EndCdataSectionHandler(self):
-	print 'End of CDATA section'
+        print 'End of CDATA section'
 
     def CommentHandler(self, text):
-	print 'Comment:\n\t', repr(text)
+        print 'Comment:\n\t', repr(text)
 
     def NotationDeclHandler(self, *args):
         name, base, sysid, pubid = args
-	print 'Notation declared:', args
+        print 'Notation declared:', args
 
     def UnparsedEntityDeclHandler(self, *args):
         entityName, base, systemId, publicId, notationName = args
@@ -65,14 +65,14 @@ class Outputter:
 out = Outputter()
 parser = pyexpat.ParserCreate(namespace_separator='!')
 for name in ['StartElementHandler', 'EndElementHandler',
-	     'CharacterDataHandler', 'ProcessingInstructionHandler',
-	     'UnparsedEntityDeclHandler', 'NotationDeclHandler',
-	     'StartNamespaceDeclHandler', 'EndNamespaceDeclHandler',
-	     'CommentHandler', 'StartCdataSectionHandler',
-	     'EndCdataSectionHandler',
+             'CharacterDataHandler', 'ProcessingInstructionHandler',
+             'UnparsedEntityDeclHandler', 'NotationDeclHandler',
+             'StartNamespaceDeclHandler', 'EndNamespaceDeclHandler',
+             'CommentHandler', 'StartCdataSectionHandler',
+             'EndCdataSectionHandler',
              'DefaultHandler', 'DefaultHandlerExpand',
              #'NotStandaloneHandler',
-	     'ExternalEntityRefHandler'
+             'ExternalEntityRefHandler'
              ]:
     setattr(parser, name, getattr(out, name) )
 
