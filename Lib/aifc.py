@@ -40,7 +40,7 @@
 #		<size of the samples> (2 bytes)
 #		<sampling frequency> (10 bytes, IEEE 80-bit extended
 #			floating point)
-#		if AIFF-C files only:
+#		in AIFF-C files only:
 #		<compression type> (4 bytes)
 #		<human-readable version of compression type> ("pstring")
 #	SSND
@@ -58,9 +58,9 @@
 # or
 #	f = aifc.openfp(filep, 'r')
 # where file is the name of a file and filep is an open file pointer.
-# The open file pointer must have methods  read(), seek(), and
-# close().  In some types of audio files, if the setpos() method is
-# not used, the seek() method is not necessary.
+# The open file pointer must have methods read(), seek(), and close().
+# In some types of audio files, if the setpos() method is not used,
+# the seek() method is not necessary.
 #
 # This returns an instance of a class with the following public methods:
 #	getnchannels()	-- returns number of audio channels (1 for
@@ -85,6 +85,8 @@
 # The position returned by tell(), the position given to setpos() and
 # the position of marks are all compatible and have nothing to do with
 # the actual postion in the file.
+# The close() method is called automatically when the class instance
+# is destroyed.
 #
 # Writing AIFF files:
 #	f = aifc.open(file, 'w')
@@ -122,11 +124,13 @@
 # but when it is set to the correct value, the header does not have to
 # be patched up.
 # It is best to first set all parameters, perhaps possibly the
-# compression type, and the write audio frames using writeframesraw.
+# compression type, and then write audio frames using writeframesraw.
 # When all frames have been written, either call writeframes('') or
 # close() to patch up the sizes in the header.
 # Marks can be added anytime.  If there are any marks, ypu must call
 # close() after all frames have been written.
+# The close() method is called automatically when the class instance
+# is destroyed.
 #
 # When a file is opened with the extension '.aiff', an AIFF file is
 # written, otherwise an AIFF-C file is written.  This default can be
@@ -347,7 +351,7 @@ class Aifc_read:
 	#		methods
 	# _soundpos -- the position in the audio stream
 	#		available through the tell() method, set through the
-	#		tell() method
+	#		setpos() method
 	#
 	# These variables are used internally only:
 	# _version -- the AIFF-C version number
@@ -362,6 +366,7 @@ class Aifc_read:
 		self._file = file
 		self._version = 0
 		self._decomp = None
+		self._convert = None
 		self._markers = []
 		self._soundpos = 0
 		form = self._file.read(4)
@@ -433,6 +438,10 @@ class Aifc_read:
 	def init(self, filename):
 		return self.initfp(builtin.open(filename, 'r'))
 
+	def __del__(self):
+		if self._file:
+			self.close()
+
 	#
 	# User visible methods.
 	#
@@ -475,8 +484,9 @@ class Aifc_read:
 ##		return self._version
 
 	def getparams(self):
-		return self._nchannels, self._sampwidth, self._framerate, \
-			  self._nframes, self._comptype, self._compname
+		return self.getnchannels(), self.getsampwidth(), \
+			  self.getframerate(), self.getnframes(), \
+			  self.getcomptype(), self.getcompname()
 
 	def getmarkers(self):
 		if len(self._markers) == 0:
@@ -506,16 +516,24 @@ class Aifc_read:
 		if nframes == 0:
 			return ''
 		data = self._ssnd_chunk.read(nframes * self._framesize)
-		if self._decomp and data:
-			dummy = self._decomp.SetParam(CL.FRAME_BUFFER_SIZE, \
-				  len(data) * 2)
-			data = self._decomp.Decompress(len(data) / self._nchannels, data)
+		if self._convert and data:
+			data = self._convert(data)
 		self._soundpos = self._soundpos + len(data) / (self._nchannels * self._sampwidth)
 		return data
 
 	#
 	# Internal methods.
 	#
+	def _decomp_data(self, data):
+		dummy = self._decomp.SetParam(CL.FRAME_BUFFER_SIZE,
+					      len(data) * 2)
+		return self._decomp.Decompress(len(data) / self._nchannels,
+					       data)
+
+	def _ulaw2lin(self, data):
+		import audioop
+		return audioop.ulaw2lin(data, 2)
+
 	def _read_comm_chunk(self, chunk):
 		nchannels = _read_short(chunk)
 		self._nchannels = _convert1(nchannels, _nchannelslist)
@@ -547,6 +565,14 @@ class Aifc_read:
 				try:
 					import cl, CL
 				except ImportError:
+					if self._comptype == 'ULAW':
+						try:
+							import audioop
+							self._convert = self._ulaw2lin
+							self._framesize = self._framesize / 2
+							return
+						except ImportError:
+							pass
 					raise Error, 'cannot read compressed AIFF-C files'
 				if self._comptype == 'ULAW':
 					scheme = CL.G711_ULAW
@@ -557,6 +583,7 @@ class Aifc_read:
 				else:
 					raise Error, 'unsupported compression type'
 				self._decomp = cl.OpenDecompressor(scheme)
+				self._convert = self._decomp_data
 		else:
 			self._comptype = 'NONE'
 			self._compname = 'not compressed'
@@ -622,6 +649,7 @@ class Aifc_write:
 		self._comptype = 'NONE'
 		self._compname = 'not compressed'
 		self._comp = None
+		self._convert = None
 		self._nchannels = 0
 		self._sampwidth = 0
 		self._framerate = 0
@@ -633,6 +661,10 @@ class Aifc_write:
 		self._marklength = 0
 		self._aifc = 1		# AIFF-C is default
 		return self
+
+	def __del__(self):
+		if self._file:
+			self.close()
 
 	#
 	# User visible methods.
@@ -752,15 +784,14 @@ class Aifc_write:
 			return None
 		return self._markers
 				
+	def tell(self):
+		return self._nframeswritten
+
 	def writeframesraw(self, data):
 		self._ensure_header_written(len(data))
 		nframes = len(data) / (self._sampwidth * self._nchannels)
-		if self._comp:
-			dummy = self._comp.SetParam(CL.FRAME_BUFFER_SIZE, \
-				  len(data))
-			dummy = self._comp.SetParam(CL.COMPRESSED_BUFFER_SIZE,\
-				  len(data))
-			data = self._comp.Compress(nframes, data)
+		if self._convert:
+			data = self._convert(data)
 		self._file.write(data)
 		self._nframeswritten = self._nframeswritten + nframes
 		self._datawritten = self._datawritten + len(data)
@@ -791,6 +822,15 @@ class Aifc_write:
 	#
 	# Internal methods.
 	#
+	def _comp_data(self, data):
+		dum = self._comp.SetParam(CL.FRAME_BUFFER_SIZE, len(data))
+		dum = self._comp.SetParam(CL.COMPRESSED_BUFFER_SIZE, len(data))
+		return self._comp.Compress(nframes, data)
+
+	def _lin2ulaw(self, data):
+		import audioop
+		return audioop.lin2ulaw(data, 2)
+
 	def _ensure_header_written(self, datasize):
 		if not self._nframeswritten:
 			if self._comptype in ('ULAW', 'ALAW'):
@@ -806,37 +846,48 @@ class Aifc_write:
 				raise Error, 'sampling rate not specified'
 			self._write_header(datasize)
 
+	def _init_compression(self):
+		try:
+			import cl, CL
+		except ImportError:
+			if self._comptype == 'ULAW':
+				try:
+					import audioop
+					self._convert = self._lin2ulaw
+					return
+				except ImportError:
+					pass
+			raise Error, 'cannot write compressed AIFF-C files'
+		if self._comptype == 'ULAW':
+			scheme = CL.G711_ULAW
+		elif self._comptype == 'ALAW':
+			scheme = CL.G711_ALAW
+		else:
+			raise Error, 'unsupported compression type'
+		self._comp = cl.OpenCompressor(scheme)
+		params = [CL.ORIGINAL_FORMAT, 0, \
+			  CL.BITS_PER_COMPONENT, 0, \
+			  CL.FRAME_RATE, self._framerate, \
+			  CL.FRAME_BUFFER_SIZE, 100, \
+			  CL.COMPRESSED_BUFFER_SIZE, 100]
+		if self._nchannels == AL.MONO:
+			params[1] = CL.MONO
+		else:
+			params[1] = CL.STEREO_INTERLEAVED
+		if self._sampwidth == AL.SAMPLE_8:
+			params[3] = 8
+		elif self._sampwidth == AL.SAMPLE_16:
+			params[3] = 16
+		else:
+			params[3] = 24
+		self._comp.SetParams(params)
+		# the compressor produces a header which we ignore
+		dummy = self._comp.Compress(0, '')
+		self._convert = self._comp_data
+
 	def _write_header(self, initlength):
 		if self._aifc and self._comptype != 'NONE':
-			try:
-				import cl, CL
-			except ImportError:
-				raise Error, 'cannot write compressed AIFF-C files'
-			if self._comptype == 'ULAW':
-				scheme = CL.G711_ULAW
-			elif self._comptype == 'ALAW':
-				scheme = CL.G711_ALAW
-			else:
-				raise Error, 'unsupported compression type'
-			self._comp = cl.OpenCompressor(scheme)
-			params = [CL.ORIGINAL_FORMAT, 0, \
-				  CL.BITS_PER_COMPONENT, 0, \
-				  CL.FRAME_RATE, self._framerate, \
-				  CL.FRAME_BUFFER_SIZE, 100, \
-				  CL.COMPRESSED_BUFFER_SIZE, 100]
-			if self._nchannels == AL.MONO:
-				params[1] = CL.MONO
-			else:
-				params[1] = CL.STEREO_INTERLEAVED
-			if self._sampwidth == AL.SAMPLE_8:
-				params[3] = 8
-			elif self._sampwidth == AL.SAMPLE_16:
-				params[3] = 16
-			else:
-				params[3] = 24
-			self._comp.SetParams(params)
-			# the compressor produces a header which we ignore
-			dummy = self._comp.Compress(0, '')
+			self._init_compression()
 		self._file.write('FORM')
 		if not self._nframes:
 			self._nframes = initlength / (self._nchannels * self._sampwidth)
