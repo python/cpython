@@ -8,10 +8,7 @@ class netrc:
     def __init__(self, file=None):
         if not file:
             file = os.path.join(os.environ['HOME'], ".netrc")
-        try:
-            fp = open(file)
-        except:
-            return None
+        fp = open(file)
         self.hosts = {}
         self.macros = {}
         lexer = shlex.shlex(fp)
