@@ -82,6 +82,10 @@ Unicode Integration Proposal (see file Misc/unicode.txt).
 #endif
 
 #ifdef HAVE_WCHAR_H
+/* Work around a cosmetic bug in BSDI 4.x wchar.h; thanks to Thomas Wouters */
+# ifdef _HAVE_BSDI
+#  include <time.h>
+# endif
 # include "wchar.h"
 #endif
 
@@ -562,7 +566,9 @@ extern DL_IMPORT(PyObject *) PyUnicode_TranslateCharmap(
     );
 
 #ifdef MS_WIN32
+
 /* --- MBCS codecs for Windows -------------------------------------------- */
+
 extern DL_IMPORT(PyObject*) PyUnicode_DecodeMBCS(
     const char *string,         /* MBCS encoded string */
     int length,                 /* size of string */
@@ -579,8 +585,8 @@ extern DL_IMPORT(PyObject*) PyUnicode_EncodeMBCS(
     const char *errors          /* error handling */
     );
 
-
 #endif /* MS_WIN32 */
+
 /* --- Methods & Slots ----------------------------------------------------
 
    These are capable of handling Unicode objects and strings on input

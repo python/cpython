@@ -34,4 +34,3 @@ class StreamConverter(StreamWriter,StreamReader):
 def getregentry():
 
     return (Codec.encode,Codec.decode,StreamReader,StreamWriter)
-

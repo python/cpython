@@ -704,7 +704,7 @@ convertsimple1(arg, p_format, p_va)
 				   the data copied into it; *buffer is
 				   updated to point to the new buffer;
 				   the caller is responsible for
-				   free()ing it after usage
+				   PyMem_Free()ing it after usage
 
 				   - if *buffer is not NULL, the data
 				   is copied to *buffer; *buffer_len
@@ -752,7 +752,7 @@ convertsimple1(arg, p_format, p_va)
 				   is allocated and the data copied
 				   into it; *buffer is updated to
 				   point to the new buffer; the caller
-				   is responsible for free()ing it
+				   is responsible for PyMem_Free()ing it
 				   after usage
 
 				 */
