@@ -1,0 +1,162 @@
+BUILDING PYTHON 1.1 FOR THE MACINTOSH
+*************************************
+
+Python can be built on the Mac using either THINK C 6.0 or MPW 3.2.
+In the past it has been compiled with earlier versions of these
+compilers, but no guarantees are made that the source is still
+compatible with those versions.  Likewise, new compiler versions may
+effectively change the language accepted (or the library!) and thus
+cause problems.
+
+[[MPW version and procedure must still be checked]]
+
+
+1. Using Think C 6.0
+====================
+
+1.1 The directory structure
+---------------------------
+
+I duplicate the UNIX directory structure from the distribution.  The
+subdirectories needed to compile are: Mac, Include, Parser, Python,
+Objects, Modules.  (Don't bother with Grammar and the parser
+generator, nor with the Doc subdirectory.)
+
+For running and testing, you also need Lib and its subdirectories test
+and stdwin.  You could also copy some things from the Demo/stdwin
+directory (unfortunately most other demos are UNIX specific and even
+many stdwin demos are).
+
+Make sure there is no config.c file in the Modules subdirectory (if
+you copy from a directory where you have done a UNIX build this might
+occur).  Also don't use the config.h generated on UNIX.
+
+1.2 The project file
+--------------------
+
+I put all source files in one project, which I place in the parent
+directory of the source directories.
+
+1.2.1 Project type
+
+(This is the Set Project Type... dialog in the Project menu.)
+
+Set the creator to PYTH; turn on "far data"; leave "far code" and
+"separate strs" unchecked (they just serve to bloat the application).
+A partition size of 1000K should be enough to run the standard test
+suite (which requires a lot of memory because it stress tests the
+parser quite a bit) and most demos or medium-size applications.  The
+interpreter will do basic things in as little at 500K but this may
+prevent parsing larger modules.
+
+1.2.2 Compiler options
+
+(This is the Options -> THINK C ... dialog in the Edit menu.)
+
+	- Start with Factory Settings.
+
+	- In the Prefix, remove #include <MacHeaders> and add
+		#define HAVE_CONFIG_H
+
+	- Choose any optimizer and debugger settings you like.  - You
+	can choose 4-byte ints if you want.  This requires that you
+	rebuild the ANSI and unix libraries with 4-bytes ints as well
+	(better make copies with names like ANSI 32 bit).  With 4-byte
+	ints the interpreter is marginally bigger and somewhat (~10%)
+	slower, but Python programs can use strings and lists with
+	more than 32000 items (with 2-byte ints these can cause
+	crashes).  The range of Python integers is not affected (these
+	are always represented as longs).
+
+1.2.3 Files to add
+
+(This is the Add Files... dialog in the Source menu.)
+
+The following source files must be added to the project.  I use a
+separate segment for each begin letter -- this avoids segment
+overflow, except for 'c', where you have to put either ceval.c or
+compile.c in a separate segment.  You could also group them by
+subdirectory or function, but you may still have to split segments
+arbitrarily because of the 32000 bytes restriction.
+
+	- From Mac: all .c files except fopenRF.c [[which shouldn't even
+	be there]].
+
+	- From Parser: acceler.c, grammar1.c, myreadline.c, node.c,
+	parser.c, parsetok.c, tokenizer.c.
+
+	- From Python: bltinmodule.c, ceval.c, cgensupport.c,
+	compile.c, errors.c, getopt.c, graminit.c, import.c,
+	marshal.c, modsupport.c, mystrtoul.c, pythonmain.c,
+	pythonrun.c, structmember.c, sysmodule.c, traceback.c
+	(i.e. all .c files except dup2.c, fmod.c, frozenmain.c,
+	getcwd.c, getmtime.c, memmove.c, sigcheck.c, strerror.c,
+	strtod.c, thread.c)
+
+	- From Objects: all .c files except xxobject.c.
+
+	- From Modules: all the modules listed in config.c (in the Mac
+	subdirectory) in the initializer for inittab[], before
+	"ADDMODULE MARKER 2".  Also add md5c.c if you add md5module.c,
+	and regexpr.c if you add regexmodule.c.  (You'll find
+	macmodule.c in the Mac subdirectory, so it should already have
+	been added in a previous step.)  Note that for most modules,
+	the source file is called <name>module.c, but for a few long
+	module names it is just <module>.c.  - If you don't add
+	signalmodule.c, you must add intrcheck.c from Parser and
+	sigcheck.c from Python.
+
+The following THINK C libraries must be added: from Standard
+Libraries, ANSI and unix; from Mac Libraries, MacTraps.  I put each
+library in a separate segment.  Also see my earlier remark on 4-byte
+ints.
+
+1.3 Living without STDWIN
+-------------------------
+
+Although STDWIN is really neat on the Mac, it's easier to begin
+building Python without it, so you can concentrate on the Python
+build.  To this end, you have to comment out the lines defining the
+symbol USE_STDWIN in macmain.c and config.c.
+
+1.4 Adding STDWIN
+-----------------
+
+STDWIN is built in two separate projects: stdwin.pi contains the core
+STDWIN implementation from Ports/mac, textedit.pi contains the files
+from Packs/textedit.  Use the same compiler options as for Python and
+the same general source setup (in a sister directory of the toplevel
+Python directory).  Put all sources in the same segment.  To
+stdwin.pi, also add Tools/strdup.c and Gen/wtextbreak.c.
+
+The two projects can now be added as libraries to the Python project,
+and the two lines commented out to live without STDWIN should be
+reinstated.
+
+Note that stdwinmodule.c contains an #include statement that
+references "stdwin.h" by relative path name -- if the stdwin toplevel
+directory is not a sibling of the python toplevel directory, you may
+have to adjust the number of colons in the pathname.
+
+1.5 Resources
+-------------
+
+Since I created them with ResEdit I have no text source of the
+resources needed to give the application an icon etc...  You can copy
+the size, bundle, file reference and icon resources from the
+distributed Python application with ResEdit.  THINK C automatically
+copies resources into the application file from a file
+<projectname>.rsrc.
+
+
+2. Using MPW
+============
+
+See the subdirectory MPW.  I haven't tried this recently.  You're
+supposed to merge the directory tree found here with the UNIX source
+tree.  I think this is intended for use with MPW 3.2.  The dynload
+stuff in not recommended.
+
+
+--Guido van Rossum, CWI, Amsterdam <Guido.van.Rossum@cwi.nl>
+<URL:http://www.cwi.nl/cwi/people/Guido.van.Rossum.html>
