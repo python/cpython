@@ -639,6 +639,14 @@ try: d.pop(k)
 except KeyError: pass
 else: raise TestFailed, "{}.pop(k) doesn't raise KeyError when dictionary is empty"
 
+# verify longs/ints get same value when key > 32 bits (for 64-bit archs)
+# see SF bug #689659
+x = 4503599627370496L
+y = 4503599627370496
+h = {x: 'anything', y: 'something else'} 
+if h[x] != h[y]:
+    raise TestFailed, "long/int key should match"
+
 d[1] = 1
 try:
     for i in d:
