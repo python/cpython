@@ -82,6 +82,8 @@ class Extension:
         from the source extensions if not provided.
     """
 
+    # When adding arguments to this constructor, be sure to update
+    # setup_keywords in core.py.
     def __init__ (self, name, sources,
                   include_dirs=None,
                   define_macros=None,
