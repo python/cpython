@@ -962,8 +962,8 @@ PySocketSock_getsockopt(PySocketSockObject *s, PyObject *args)
 	socklen_t buflen = 0;
 
 #ifdef __BEOS__
-/* We have incomplete socket support. */
-	PyErr_SetString( PySocket_Error, "getsockopt not supported" );
+	/* We have incomplete socket support. */
+	PyErr_SetString(PySocket_Error, "getsockopt not supported");
 	return NULL;
 #else
 
@@ -989,7 +989,7 @@ PySocketSock_getsockopt(PySocketSockObject *s, PyObject *args)
 	if (buf == NULL)
 		return NULL;
 	res = getsockopt(s->sock_fd, level, optname,
-			 (void *)PyString_AsString(buf), &buflen);
+			 (void *)PyString_AS_STRING(buf), &buflen);
 	if (res < 0) {
 		Py_DECREF(buf);
 		return PySocket_Err();
