@@ -127,15 +127,28 @@ there, run
 This installs a complete distribution set in /tmp/pythondist: in a framework
 build all other pathnames are computed from the framework pathname.
 
+Optionally you may want to include the full documentation in the binary installer.
+To this end, execute the following commands:
+	python.exe ../Mac/OSX/setupDocs.py build
+	python.exe ../Mac/OSX/setupDocs.py install \
+		--prefix=/tmp/python/Library/Frameworks/Python.framework/Versions/Current
+		
 Note that the unix tools in /tmp/pythondist are wrong, these have to be
 removed, and the installer post-install script should recreate them on the
 target system. Also, the .pyc and .pyo files need to be removed:
 	rm -rf /tmp/pythondist/usr
 	python.exe ../Mac/script/zappycfiles.py /tmp/pythondist
 
-TBD: find out how to make a .pkg from here.
+Finally, create the .pkg file with a commandline like
+	python ../Mac/scripts/buildpkg.py \
+		--Title=MacPython-X \
+		--Version=2.3a0 \
+		--Description="Python for Mac OS X, framework based" \
+		/tmp/pythondist
+This creates a MacPython-X.pkg in the current directory.
 
-TBD: documentation.
+TBD: provide postinstall scripts to precompile .pyc/.pyo files, and to recreate
+the unix programs.
 
 7. Odds and ends.
 -----------------
