@@ -15,7 +15,14 @@ Core and builtins
 - The bytecode optimizer now folds tuples of constants into a single
   constant.
 
-- PyLong_AsUnsignedLong[Mask] now support int objects as well.
+- SF bug #513866:  Float/long comparison anomaly.  Prior to 2.4b1, when
+  an integer was compared to a float, the integer was coerced to a float.
+  That could yield spurious overflow errors (if the integer was very
+  large), and to anomalies such as
+  ``long(1e200)+1 == 1e200 == long(1e200)-1``.  Coercion to float is no
+  longer performed, and cases like ``long(1e200)-1 < 1e200``,
+  ``long(1e200)+1 > 1e200`` and ``(1 << 20000) > 1e200`` are computed
+  correctly now.
 
 Extension modules
 -----------------
@@ -71,6 +78,8 @@ Build
 
 C API
 -----
+
+- PyLong_AsUnsignedLong[Mask] now support int objects as well.
 
 - SF patch #998993: ``PyUnicode_DecodeUTF8Stateful`` and
   ``PyUnicode_DecodeUTF16Stateful`` have been added, which implement stateful

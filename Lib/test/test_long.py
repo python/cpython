@@ -387,8 +387,7 @@ def test_float_overflow():
                  "1. ** huge", "huge ** 1.", "1. ** mhuge", "mhuge ** 1.",
                  "math.sin(huge)", "math.sin(mhuge)",
                  "math.sqrt(huge)", "math.sqrt(mhuge)", # should do better
-                 "math.floor(huge)", "math.floor(mhuge)",
-                 "float(shuge) == int(shuge)"]:
+                 "math.floor(huge)", "math.floor(mhuge)"]:
 
         try:
             eval(test, namespace)
@@ -396,6 +395,11 @@ def test_float_overflow():
             pass
         else:
             raise TestFailed("expected OverflowError from %s" % test)
+
+        # XXX Perhaps float(shuge) can raise OverflowError on some box?
+        # The comparison should not.
+        if float(shuge) == int(shuge):
+            raise TestFailed("float(shuge) should not equal int(shuge)")
 
 # ---------------------------------------------- test huge log and log10
 
@@ -431,6 +435,101 @@ def test_logs():
         except ValueError:
             pass
 
+# ----------------------------------------------- test mixed comparisons
+
+def test_mixed_compares():
+    import math
+    import sys
+
+    if verbose:
+        print "mixed comparisons"
+
+    # We're mostly concerned with that mixing floats and longs does the
+    # right stuff, even when longs are too large to fit in a float.
+    # The safest way to check the results is to use an entirely different
+    # method, which we do here via a skeletal rational class (which
+    # represents all Python ints, longs and floats exactly).
+    class Rat:
+        def __init__(self, value):
+            if isinstance(value, (int, long)):
+                self.n = value
+                self.d = 1
+
+            elif isinstance(value, float):
+                # Convert to exact rational equivalent.
+                f, e = math.frexp(abs(value))
+                assert f == 0 or 0.5 <= f < 1.0
+                # |value| = f * 2**e exactly
+
+                # Suck up CHUNK bits at a time; 28 is enough so that we suck
+                # up all bits in 2 iterations for all known binary double-
+                # precision formats, and small enough to fit in an int.
+                CHUNK = 28
+                top = 0
+                # invariant: |value| = (top + f) * 2**e exactly
+                while f:
+                    f = math.ldexp(f, CHUNK)
+                    digit = int(f)
+                    assert digit >> CHUNK == 0
+                    top = (top << CHUNK) | digit
+                    f -= digit
+                    assert 0.0 <= f < 1.0
+                    e -= CHUNK
+
+                # Now |value| = top * 2**e exactly.
+                if e >= 0:
+                    n = top << e
+                    d = 1
+                else:
+                    n = top
+                    d = 1 << -e
+                if value < 0:
+                    n = -n
+                self.n = n
+                self.d = d
+                assert float(n) / float(d) == value
+
+            else:
+                raise TypeError("can't deal with %r" % val)
+
+        def __cmp__(self, other):
+            if not isinstance(other, Rat):
+                other = Rat(other)
+            return cmp(self.n * other.d, self.d * other.n)
+
+    cases = [0, 0.001, 0.99, 1.0, 1.5, 1e20, 1e200]
+    # 2**48 is an important boundary in the internals.  2**53 is an
+    # important boundary for IEEE double precision.
+    for t in 2.0**48, 2.0**50, 2.0**53:
+        cases.extend([t - 1.0, t - 0.3, t, t + 0.3, t + 1.0,
+                      long(t-1), long(t), long(t+1)])
+    cases.extend([0, 1, 2, sys.maxint, float(sys.maxint)])
+    # 1L<<20000 should exceed all double formats.  long(1e200) is to
+    # check that we get equality with 1e200 above.
+    t = long(1e200)
+    cases.extend([0L, 1L, 2L, 1L << 20000, t-1, t, t+1])
+    cases.extend([-x for x in cases])
+    for x in cases:
+        Rx = Rat(x)
+        for y in cases:
+            Ry = Rat(y)
+            Rcmp = cmp(Rx, Ry)
+            xycmp = cmp(x, y)
+            if Rcmp != xycmp:
+                raise TestFailed('%r %r %d %d' % (x, y, Rcmp, xycmp))
+            if (x == y) != (Rcmp == 0):
+                raise TestFailed('%r == %r %d' % (x, y, Rcmp))
+            if (x != y) != (Rcmp != 0):
+                raise TestFailed('%r != %r %d' % (x, y, Rcmp))
+            if (x < y) != (Rcmp < 0):
+                raise TestFailed('%r < %r %d' % (x, y, Rcmp))
+            if (x <= y) != (Rcmp <= 0):
+                raise TestFailed('%r <= %r %d' % (x, y, Rcmp))
+            if (x > y) != (Rcmp > 0):
+                raise TestFailed('%r > %r %d' % (x, y, Rcmp))
+            if (x >= y) != (Rcmp >= 0):
+                raise TestFailed('%r >= %r %d' % (x, y, Rcmp))
+
 # ---------------------------------------------------------------- do it
 
 test_division()
@@ -441,3 +540,4 @@ test_misc()
 test_auto_overflow()
 test_float_overflow()
 test_logs()
+test_mixed_compares()
