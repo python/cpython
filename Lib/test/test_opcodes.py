@@ -14,7 +14,6 @@ for i in range(10):
 	except NameError: pass
 	except ZeroDivisionError: pass
 	except TypeError: pass
-	finally: pass
 	try: pass
 	except: pass
 	try: pass

@@ -19,10 +19,11 @@ fp.close()
 fp = open(TESTFN, 'r')
 savestdin = sys.stdin
 try:
-	sys.stdin = fp
-	x = raw_input()
-except EOFError:
-	pass
+	try:
+		sys.stdin = fp
+		x = raw_input()
+	except EOFError:
+		pass
 finally:
 	sys.stdin = savestdin
 	fp.close()
