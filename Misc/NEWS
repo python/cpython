@@ -381,6 +381,9 @@ Extension modules
 Library
 -------
 
+- A new package, logging, implements the logging API defined by PEP
+  282.  The code is written by Vinay Sajip.
+
 - StreamReader, StreamReaderWriter and StreamRecoder in the codecs
   modules are iterators now.
 
