@@ -4810,11 +4810,14 @@ symtable_assign(struct symtable *st, node *n, int flag)
 	default:
 		if (NCH(n) == 0)
 			return;
-		if (NCH(n) != 1) {
-			DUMP(n);
-			Py_FatalError("too many children in default case\n");
+		if (NCH(n) == 1) {
+			n = CHILD(n, 0);
+			goto loop;
 		}
-		n = CHILD(n, 0);
-		goto loop;
+		/* Should only occur for errors like x + 1 = 1,
+		   which will be caught in the next pass. */
+		for (i = 0; i < NCH(n); ++i)
+			if (TYPE(CHILD(n, i)) >= single_input)
+				symtable_assign(st, CHILD(n, i), flag);
 	}
 }
