@@ -714,7 +714,7 @@ s.connect((HOST, PORT))
 s.send('Hello, world')
 data = s.recv(1024)
 s.close()
-print 'Received', `data`
+print 'Received', repr(data)
 \end{verbatim}
 
 The next two examples are identical to the above two, but support both
@@ -790,5 +790,5 @@ if s is None:
 s.send('Hello, world')
 data = s.recv(1024)
 s.close()
-print 'Received', `data`
+print 'Received', repr(data)
 \end{verbatim}
