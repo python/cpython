@@ -295,9 +295,6 @@ class CoverageResults:
     def write_results_file(self, path, lines, lnotab, lines_hit):
         """Return a coverage results file in path."""
 
-        print "path =", `path`
-        if "/arse" in path:
-            import pdb; pdb.set_trace()
         try:
             outfile = open(path, "w")
         except IOError, err:
