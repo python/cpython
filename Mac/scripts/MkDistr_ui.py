@@ -20,7 +20,6 @@ from Carbon import Win
 from Carbon import Qd
 from FrameWork import *
 import EasyDialogs
-import macfs
 import os
 import sys
 import macresource
@@ -304,11 +303,9 @@ def GetType():
 		if rv == DTYPE_CANCEL:
 			sys.exit(0)
 		if rv == DTYPE_EXIST:
-##			macfs.SetFolder(':(MkDistr)')
-			fss, ok = macfs.StandardGetFile('TEXT')
-			if not ok:
+			path = EasyDialogs.AskFileForOpen()
+			if not path:
 				sys.exit(0)
-			path = fss.as_pathname()
 			basename = os.path.split(path)[-1]
 			if basename[-8:] <> '.include':
 				EasyDialogs.Message('That is not a distribution include file')
