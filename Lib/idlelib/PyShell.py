@@ -96,10 +96,13 @@ class PyShellEditorWindow(EditorWindow):
     def __init__(self, *args):
         apply(EditorWindow.__init__, (self,) + args)
         self.text.bind("<<set-breakpoint-here>>", self.set_breakpoint_here)
+        self.text.bind("<<clear-breakpoint-here>>",
+                       self.clear_breakpoint_here)
         self.text.bind("<<open-python-shell>>", self.flist.open_shell)
 
     rmenu_specs = [
-        ("Set breakpoint here", "<<set-breakpoint-here>>"),
+        ("Set Breakpoint", "<<set-breakpoint-here>>"),
+        ("Clear Breakpoint", "<<clear-breakpoint-here>>")
     ]
 
     def set_breakpoint_here(self, event=None):
@@ -108,6 +111,12 @@ class PyShellEditorWindow(EditorWindow):
             return
         self.flist.pyshell.interp.debugger.set_breakpoint_here(self)
 
+    def clear_breakpoint_here(self, event=None):
+        if not self.flist.pyshell or not self.flist.pyshell.interp.debugger:
+            self.text.bell()
+            return
+        self.flist.pyshell.interp.debugger.clear_breakpoint_here(self)
+                                    
 
 class PyShellFileList(FileList):
 

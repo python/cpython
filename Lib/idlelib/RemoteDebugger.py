@@ -26,7 +26,9 @@ import Debugger
 
 debugging = 0
 
-# In the PYTHON subprocess
+#=======================================
+#
+# In the PYTHON subprocess:
 
 frametable = {}
 dicttable = {}
@@ -59,6 +61,8 @@ class IdbAdapter:
     def __init__(self, idb):
         self.idb = idb
 
+    #----------called by an IdbProxy----------
+
     def set_step(self):
         self.idb.set_step()
 
@@ -90,6 +94,15 @@ class IdbAdapter:
         import __main__
         self.idb.run(cmd, __main__.__dict__)
 
+    def set_break(self, filename, lineno):
+        msg = self.idb.set_break(filename, lineno)
+        return msg
+
+    def clear_break(self, filename, lineno):
+        msg = self.idb.clear_break(filename, lineno)
+
+    #----------called by a FrameProxy----------
+
     def frame_attr(self, fid, name):
         frame = frametable[fid]
         return getattr(frame, name)
@@ -115,6 +128,8 @@ class IdbAdapter:
         codetable[cid] = code
         return cid
 
+    #----------called by a CodeProxy----------
+
     def code_name(self, cid):
         code = codetable[cid]
         return code.co_name
@@ -122,6 +137,8 @@ class IdbAdapter:
     def code_filename(self, cid):
         code = codetable[cid]
         return code.co_filename
+
+    #----------called by a DictProxy----------
 
     def dict_keys(self, did):
         dict = dicttable[did]
@@ -141,8 +158,18 @@ class IdbAdapter:
 #              #value = None
         return value
 
+#----------end class IdbAdapter----------
+
+
 def start_debugger(conn, gui_adap_oid):
-    "Launch debugger in the remote python subprocess"
+    """Start the debugger and its RPC link in the Python subprocess
+
+    Start the subprocess side of the split debugger and set up that side of the
+    RPC link by instantiating the GUIProxy, Idle debugger, and IdbAdapter
+    objects and linking them together.  Register the IdbAdapter to handle RPC
+    requests from the split Debugger GUI via the IdbProxy.
+
+    """
     gui_proxy = GUIProxy(conn, gui_adap_oid)
     idb = Debugger.Idb(gui_proxy)
     idb_adap = IdbAdapter(idb)
@@ -150,7 +177,11 @@ def start_debugger(conn, gui_adap_oid):
     conn.register(idb_adap_oid, idb_adap)
     return idb_adap_oid
 
-# In the IDLE process
+
+#=======================================
+#
+# In the IDLE process:
+
 
 class FrameProxy:
 
@@ -193,6 +224,7 @@ class FrameProxy:
         self._dictcache[did] = dp
         return dp
 
+
 class CodeProxy:
 
     def __init__(self, conn, oid, cid):
@@ -207,6 +239,7 @@ class CodeProxy:
         if name == "co_filename":
             return self._conn.remotecall(self._oid, "code_filename",
                                          (self._cid,), {})
+
 
 class DictProxy:
 
@@ -226,6 +259,7 @@ class DictProxy:
         ##print >>sys.__stderr__, "failed DictProxy.__getattr__:", name
         raise AttributeError, name
 
+
 class GUIAdapter:
 
     def __init__(self, conn, gui):
@@ -237,6 +271,7 @@ class GUIAdapter:
         frame = FrameProxy(self.conn, fid)
         info = None # XXX for now
         self.gui.interaction(message, frame, info)
+
 
 class IdbProxy:
 
@@ -274,14 +309,22 @@ class IdbProxy:
     def set_quit(self):
         self.call("set_quit")
 
+    def set_break(self, filename, lineno):
+        msg = self.call("set_break", filename, lineno)
+        return msg
+
+    def clear_break(self, filename, lineno):
+        msg = self.call("clear_break", filename, lineno)
+
 def start_remote_debugger(conn, pyshell):
     """Start the subprocess debugger, initialize the debugger GUI and RPC link
 
-    Start the debugger in the remote Python process.  Instantiate IdbProxy,
-    Debugger GUI, and Debugger GUIAdapter objects, and link them together.
+    Request the RPCServer start the Python subprocess debugger and link.  Set
+    up the Idle side of the split debugger by instantiating the IdbProxy,
+    Debugger GUI, and Debugger GUIAdapter objects and linking them together.
 
-    The GUIAdapter will handle debugger GUI interaction requests coming from
-    the subprocess debugger via the GUIProxy.
+    Register the GUIAdapter to handle debugger GUI interaction requests coming
+    from the subprocess debugger via the GUIProxy.
 
     The IdbAdapter will pass execution and environment requests coming from the
     Idle debugger GUI to the subprocess debugger via the IdbProxy.
