@@ -14,12 +14,16 @@ from distutils.core import Command
 from distutils.errors import *
 from distutils.dep_util import newer_group
 from distutils.extension import Extension
-from distutils.ccompiler import show_compilers
 
 # An extension name is just a dot-separated list of Python NAMEs (ie.
 # the same as a fully-qualified module name).
 extension_name_re = re.compile \
     (r'^[a-zA-Z_][a-zA-Z_0-9]*(\.[a-zA-Z_][a-zA-Z_0-9]*)*$')
+
+
+def show_compilers ():
+    from distutils.ccompiler import show_compilers
+    show_compilers()
 
 
 class build_ext (Command):
@@ -73,11 +77,11 @@ class build_ext (Command):
         ('compiler=', 'c',
          "specify the compiler type"),
         ]
+
     help_options = [
         ('help-compiler', None,
-         "lists available compilers",show_compilers),
+         "list available compilers", show_compilers),
 	]
-
 
     def initialize_options (self):
         self.extensions = None

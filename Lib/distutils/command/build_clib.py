@@ -23,7 +23,11 @@ import os, string
 from types import *
 from distutils.core import Command
 from distutils.errors import *
-from distutils.ccompiler import new_compiler,show_compilers
+
+
+def show_compilers ():
+    from distutils.ccompiler import show_compilers
+    show_compilers()
 
 
 class build_clib (Command):
@@ -102,6 +106,7 @@ class build_clib (Command):
             return
 
         # Yech -- this is cut 'n pasted from build_ext.py!
+        from distutils.ccompiler import new_compiler
         self.compiler = new_compiler (compiler=self.compiler,
                                       verbose=self.verbose,
                                       dry_run=self.dry_run,
