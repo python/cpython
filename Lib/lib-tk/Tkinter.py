@@ -848,8 +848,7 @@ class Misc:
             cmd = ('%sif {"[%s %s]" == "break"} break\n'
                    %
                    (add and '+' or '',
-                funcid,
-                " ".join(self._subst_format)))
+                funcid, self._subst_format_str))
             self.tk.call(what + (sequence, cmd))
             return funcid
         elif sequence:
@@ -1012,6 +1011,7 @@ class Misc:
     _subst_format = ('%#', '%b', '%f', '%h', '%k',
              '%s', '%t', '%w', '%x', '%y',
              '%A', '%E', '%K', '%N', '%W', '%T', '%X', '%Y', '%D')
+    _subst_format_str = " ".join(_subst_format)
     def _substitute(self, *args):
         """Internal function."""
         if len(args) != len(self._subst_format): return args
