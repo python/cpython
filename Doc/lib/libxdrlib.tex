@@ -127,6 +127,10 @@ Sets the data buffer unpack position to \var{position}.  You should be
 careful about using \code{get_position()} and \code{set_position()}.
 \end{funcdesc}
 
+\begin{funcdesc}{get_buffer}{}
+Returns the current unpack data buffer as a string.
+\end{funcdesc}
+
 \begin{funcdesc}{done}{}
 Indicates unpack completion.  Raises an \code{xdrlib.Error} exception
 if all of the data has not been unpacked.
