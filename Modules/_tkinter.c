@@ -2030,8 +2030,13 @@ init_tkinter()
 	if (PyErr_Occurred())
 		return;
 
+#if 0
+	/* This was not a good idea; through <Destroy> bindings,
+	   Tcl_Finalize() may invoke Python code but at that point the
+	   interpreter and thread state have already been destroyed! */
 #if TKMAJORMINOR >= 8000
 	Py_AtExit(Tcl_Finalize);
+#endif
 #endif
 
 #ifdef macintosh
