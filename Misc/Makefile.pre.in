@@ -179,10 +179,16 @@ sharedmods:	$(SHAREDMODS)
 
 # Build a static Python binary containing our extension modules
 static:		$(TARGET)
-$(TARGET):	$(ADDOBJS) lib.a $(PYTHONLIBS) Makefile $(BASELIB)
-		$(CC) $(LDFLAGS) $(ADDOBJS) lib.a $(PYTHONLIBS) \
+$(TARGET):	$(ADDOBJS) lib.a $(PYTHONLIBS) Makefile $(BASELIB) buildno
+		expr `cat buildno` + 1 >@buildno
+		mv @buildno buildno
+		$(CC) -c $(CFLAGS) -DBUILD=`cat buildno` $(LIBPL)/getbuildinfo.c
+		$(CC) $(LDFLAGS) $(ADDOBJS) getbuildinfo.o lib.a $(PYTHONLIBS) \
 		 $(LINKPATH) $(BASELIB) $(MODLIBS) $(LIBS) $(SYSLIBS) \
 		 -o $(TARGET)
+
+buildno:
+		echo 0 >buildno
 
 # Build the library containing our extension modules
 lib.a:		$(MODOBJS)
