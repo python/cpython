@@ -996,6 +996,12 @@ class C(B):
     def meth(self, arg):
         super(C, self).meth(arg)
 \end{verbatim}
+
+  Note that \function{super} is implemented as part of the binding process for
+  explicit dotted attribute lookups such as
+  \samp{super(C, self).__getitem__(name)}.  Accordingly, \function{super} is
+  undefined for implicit lookups using statements or operators such as
+  \samp{super(C, self)[name]}.
 \versionadded{2.2}
 \end{funcdesc}
 
