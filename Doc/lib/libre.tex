@@ -61,13 +61,14 @@ matches a particular string, which comes down to the same thing).
 
 Regular expressions can be concatenated to form new regular
 expressions; if \emph{A} and \emph{B} are both regular expressions,
-then \emph{AB} is also an regular expression.  If a string \emph{p}
+then \emph{AB} is also a regular expression.  If a string \emph{p}
 matches A and another string \emph{q} matches B, the string \emph{pq}
-will match AB.  Thus, complex expressions can easily be constructed
-from simpler primitive expressions like the ones described here.  For
-details of the theory and implementation of regular expressions,
-consult the Friedl book referenced below, or almost any textbook about
-compiler construction.
+will match AB if \emph{A} and \emph{B} do no specify boundary
+conditions that are no longer satisfied by \emph{pq}.  Thus, complex
+expressions can easily be constructed from simpler primitive
+expressions like the ones described here.  For details of the theory
+and implementation of regular expressions, consult the Friedl book
+referenced below, or almost any textbook about compiler construction.
 
 A brief explanation of the format of regular expressions follows.  For
 further information and a gentler presentation, consult the Regular
@@ -138,9 +139,11 @@ not five.
 \var{m} to \var{n} repetitions of the preceding RE, attempting to
 match as many repetitions as possible.  For example, \regexp{a\{3,5\}}
 will match from 3 to 5 \character{a} characters.  Omitting \var{n}
-specifies an infinite upper bound; you can't omit \var{m}.  The comma
-may not be omitted or the modifier would be confused with the
-previously described form.
+specifies an infinite upper bound; you can't omit \var{m}.  As an
+example, \regexp{a\{4,\}b} will match \code{aaaab}, a thousand
+\character{a} characters followed by a \code{b}, but not \code{aaab}.
+The comma may not be omitted or the modifier would be confused with
+the previously described form.
 
 \item[\code{\{\var{m},\var{n}\}?}] Causes the resulting RE to
 match from \var{m} to \var{n} repetitions of the preceding RE,
