@@ -33,6 +33,9 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 /* Interface to getopt(): */
 extern int optind;
