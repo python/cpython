@@ -66,7 +66,7 @@ unchanged.
 \end{funcdesc}
 
 \begin{funcdesc}{getatime}{path}
-Return the time of last access of \var{filename}.  The return
+Return the time of last access of \var{path}.  The return
 value is a number giving the number of seconds since the epoch (see the 
 \refmodule{time} module).  Raise \exception{os.error} if the file does
 not exist or is inaccessible.
@@ -75,7 +75,7 @@ not exist or is inaccessible.
 \end{funcdesc}
 
 \begin{funcdesc}{getmtime}{path}
-Return the time of last modification of \var{filename}.  The return
+Return the time of last modification of \var{path}.  The return
 value is a number giving the number of seconds since the epoch (see the 
 \refmodule{time} module).  Raise \exception{os.error} if the file does
 not exist or is inaccessible.
@@ -84,7 +84,7 @@ not exist or is inaccessible.
 \end{funcdesc}
 
 \begin{funcdesc}{getctime}{path}
-Return the time of creation of \var{filename}.  The return
+Return the time of creation of \var{path}.  The return
 value is a number giving the number of seconds since the epoch (see the 
 \refmodule{time} module).  Raise \exception{os.error} if the file does
 not exist or is inaccessible.
@@ -92,7 +92,7 @@ not exist or is inaccessible.
 \end{funcdesc}
 
 \begin{funcdesc}{getsize}{path}
-Return the size, in bytes, of \var{filename}.  Raise
+Return the size, in bytes, of \var{path}.  Raise
 \exception{os.error} if the file does not exist or is inaccessible.
 \versionadded{1.5.2}
 \end{funcdesc}
