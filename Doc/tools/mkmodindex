@@ -166,8 +166,10 @@ NAVIGATION = """\
 <tr>
 <td><img width=32 height=32 align=bottom border=0 alt=""
  src="%(iconserver)s/blank.%(imgtype)s"></td>
-<td><a href="./"><img width=32 height=32 align=bottom border=0 alt="%(uplinkalt)s"
- src="%(iconserver)s/%(uplinkicon)s.%(imgtype)s"></A></td>
+<td><a href="%(uplink)s"
+ title="%(uptitle)s"><img width=32 height=32 align=bottom border=0
+ alt="%(uplinkalt)s"
+ src="%(iconserver)s/%(uplinkicon)s.%(imgtype)s"></a></td>
 <td><img width=32 height=32 align=bottom border=0 alt=""
  src="%(iconserver)s/blank.%(imgtype)s"></td>
 <td align=center bgcolor="#99CCFF" width="100%%">
@@ -179,9 +181,9 @@ NAVIGATION = """\
 <td><img width=32 height=32 align=bottom border=0 alt=""
  src="%(iconserver)s/blank.%(imgtype)s"></td>
 </tr></table>
-<b class=navlabel>Up:</b> <span class=sectref><A
- href="%(uplink)s">%(uptitle)s</A></span>
-<br><hr></div>
+<b class=navlabel>Up:</b> <span class=sectref><a href="%(uplink)s"
+ title="%(uptitle)s">%(uptitle)s</A></span>
+<br></div>
 """
 
 HEAD = """\
@@ -195,12 +197,13 @@ HEAD = """\
 </head>
 <body bgcolor=white>
 """ + NAVIGATION + """\
+<hr>
 
 <h2>%(title)s</h2>
 
 """
 
-TAIL = NAVIGATION + """\
+TAIL = "<hr>\n" + NAVIGATION + """\
 %(address)s</body>
 </html>
 """
