@@ -3,9 +3,6 @@
 /* See http://www.winimage.com/zLibDll for Windows */
 
 #include "Python.h"
-#ifdef MS_WIN32
-#define ZLIB_DLL
-#endif
 #include "zlib.h"
 
 /* The following parameters are copied from zutil.h, version 0.95 */
