@@ -58,7 +58,7 @@ sub ArabictoRoman {
 
 # This is a fairly simple hack; it supports \let when it is used to create
 # (or redefine) a macro to exactly be some other macro: \let\newname=\oldname.
-# Many uses of \let aren't supported.
+# Many possible uses of \let aren't supported or aren't supported correctly.
 #
 sub do_cmd_let{
     local($_) = @_;
