@@ -74,7 +74,7 @@ text editor with multiple undo, Python colorizing, and many other things,
 as well as a Python shell window and a debugger.""",
 
       cmdclass = {'build_py':idle_build_py,
-                  'install_lib':idle_install_lib}, 
+                  'install_lib':idle_install_lib},
       package_dir = {idlelib:'.'},
       packages = [idlelib],
       scripts = ['idle']
