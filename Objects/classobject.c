@@ -1065,6 +1065,59 @@ instance_ass_slice(inst, i, j, value)
 	return 0;
 }
 
+static int instance_contains(PyInstanceObject *inst, PyObject *member)
+{
+	static PyObject *__contains__;
+	PyObject *func, *arg, *res;
+	int ret;
+
+	if(__contains__ == NULL) {
+		__contains__ = PyString_InternFromString("__contains__");
+		if(__contains__ == NULL)
+			return -1;
+	}
+	func = instance_getattr(inst, __contains__);
+	if(func == NULL) {
+		/* fall back to previous behaviour */
+		int i, cmp_res;
+
+		if(!PyErr_ExceptionMatches(PyExc_AttributeError))
+			return -1;
+		PyErr_Clear();
+		for(i=0;;i++) {
+			PyObject *obj = instance_item(inst, i);
+			int ret = 0;
+
+			if(obj == NULL) {
+				if(!PyErr_ExceptionMatches(PyExc_IndexError))
+					return -1;
+				PyErr_Clear();
+				return 0;
+			}
+			if(PyObject_Cmp(obj, member, &cmp_res) == -1)
+				ret = -1;
+			if(cmp_res == 0) 
+				ret = 1;
+			Py_DECREF(obj);
+			if(ret)
+				return ret;
+		}
+	}
+	arg = Py_BuildValue("(O)", member);
+	if(arg == NULL) {
+		Py_DECREF(func);
+		return -1;
+	}
+	res = PyEval_CallObject(func, arg);
+	Py_DECREF(func);
+	Py_DECREF(arg);
+	if(res == NULL) 
+		return -1;
+	ret = PyObject_IsTrue(res);
+	Py_DECREF(res);
+	return ret;
+}
+
 static PySequenceMethods instance_as_sequence = {
 	(inquiry)instance_length, /*sq_length*/
 	0, /*sq_concat*/
@@ -1073,6 +1126,7 @@ static PySequenceMethods instance_as_sequence = {
 	(intintargfunc)instance_slice, /*sq_slice*/
 	(intobjargproc)instance_ass_item, /*sq_ass_item*/
 	(intintobjargproc)instance_ass_slice, /*sq_ass_slice*/
+	(objobjproc)instance_contains, /* sq_contains */
 };
 
 static PyObject *
@@ -1405,6 +1459,8 @@ PyTypeObject PyInstance_Type = {
 	0,			/*tp_str*/
 	(getattrofunc)instance_getattr, /*tp_getattro*/
 	(setattrofunc)instance_setattr, /*tp_setattro*/
+        0, /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT, /*tp_flags */
 };
 
 
