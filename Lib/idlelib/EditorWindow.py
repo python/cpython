@@ -325,14 +325,22 @@ class EditorWindow:
     help_url = "http://www.python.org/doc/current/"
     if sys.platform[:3] == "win":
         fn = os.path.dirname(__file__)
-        fn = os.path.join(fn, os.pardir, os.pardir, "Doc", "index.html")
+        fn = os.path.join(fn, os.pardir, os.pardir, "pythlp.chm")
         fn = os.path.normpath(fn)
         if os.path.isfile(fn):
             help_url = fn
+        else:
+            fn = os.path.dirname(__file__)
+            fn = os.path.join(fn, os.pardir, os.pardir, "Doc", "index.html")
+            fn = os.path.normpath(fn)
+            if os.path.isfile(fn):
+                help_url = fn
         del fn
-
-    def python_docs(self, event=None):
-        self.display_docs(self.help_url)
+        def python_docs(self, event=None):
+            os.startfile(self.help_url)
+    else:
+        def python_docs(self, event=None):
+            self.display_docs(self.help_url)
 
     def display_docs(self, url):
         webbrowser.open(url)
