@@ -5,7 +5,7 @@
 %   Go through and get the contributor's name for all the various changes
 
 \title{What's New in Python 2.3}
-\release{0.02}
+\release{0.03}
 \author{A.M. Kuchling}
 \authoraddress{\email{akuchlin@mems-exchange.org}}
 
@@ -13,26 +13,23 @@
 \maketitle
 \tableofcontents
 
-% Types now callable; `new' module replaced
-%
-% Timeout sockets: 
-% Executive summary: after sock.settimeout(T), all methods of sock will
-% block for at most T floating seconds and fail if they can't complete
-% within that time.  sock.settimeout(None) restores full blocking mode.
-%
 % Optik (or whatever it gets called)
 %
 % New dependency argument to distutils.Extension
 %
+% The assert statement no longer tests __debug__ at runtime. 
+%
+% 
 
 %\section{Introduction \label{intro}}
 
 {\large This article is a draft, and is currently up to date for some
-random version of the CVS tree around May 26 2002.  Please send any
+random version of the CVS tree around mid-July 2002.  Please send any
 additions, comments or errata to the author.}
 
 This article explains the new features in Python 2.3.  The tentative
-release date of Python 2.3 is currently scheduled for August 30 2002.
+release date of Python 2.3 is currently scheduled for some undefined
+time before the end of 2002.
 
 This article doesn't attempt to provide a complete specification of
 the new features, but instead provides a convenient overview.  For
@@ -462,9 +459,32 @@ than \method{zfill()}.
 '0goofy'
 \end{verbatim}
 
+\item A new type object, \class{basestring}, has been added.  
+   Both 8-bit strings and Unicode strings inherit from this type, so
+   \code{isinstance(obj, basestring)} will return \constant{True} for
+   either kind of string.  It's a completely abstract type, so you
+   can't create \class{basestring} instances.
+
+\item Most type objects are now callable, so you can use them
+to create new objects such as functions, classes, and modules.  (This
+means that the \module{new} module can be deprecated in a future
+Python version, because you can now use the type objects available
+in the \module{types} module.)
+% XXX should new.py use PendingDeprecationWarning?
+For example, you can create a new module object with the following code:
+
+\begin{verbatim}
+>>> import types
+>>> m = types.ModuleType('abc','docstring')
+>>> m
+<module 'abc' (built-in)>
+>>> m.__doc__
+'docstring'
+\end{verbatim}
+
 \item 
 A new warning, \exception{PendingDeprecationWarning} was added to
-provide direction on features which are in the process of being
+indicate features which are in the process of being
 deprecated.  The warning will \emph{not} be printed by default.  To
 check for use of features that will be deprecated in the future,
 supply \programopt{-Walways::PendingDeprecationWarning::} on the
@@ -582,7 +602,7 @@ in the source tree, or the CVS logs, for a more complete list.
 
 \begin{itemize}
 
-\item The \module{textwrap} module contains functions for wrapping
+\item The new \module{textwrap} module contains functions for wrapping
 strings containing paragraphs of text.  The \function{wrap(\var{text},
 \var{width})} function takes a string and returns a list containing
 the text split into lines of no more than the chosen width.  The
@@ -629,6 +649,18 @@ and \function{mknod()}, were added to the \module{posix} module that
 underlies the \module{os} module.  (Contributed by Gustavo Niemeyer
 and Geert Jansen.)
 
+\item The \module{socket} module now supports timeouts.  You
+can call the \method{settimeout(\var{t})} method on a socket object to
+set a timeout of \var{t} seconds.  Subsequent socket operations that
+take longer than \var{t} seconds to complete will abort and raise a
+\exception{socket.error} exception.  
+
+(The original timeout implementation was by Tim O'Malley.  Michael
+Gilfix integrated it into the Python \module{socket} module, after the
+patch had undergone a lengthy review.  After it was checked in, Guido
+van~Rossum rewrote parts of it.  This is a good example of the free
+software development process.)
+
 \item The \module{getopt} module gained a new function,
 \function{gnu_getopt()}, that supports the same arguments as the existing
 \function{getopt()} function but uses GNU-style scanning mode. 
@@ -649,7 +681,11 @@ example:
 \item Two new binary packagers were added to the Distutils.
 \code{bdist_pkgtool} builds \file{.pkg} files to use with Solaris
 \program{pkgtool}, and \code{bdist_sdux} builds \program{swinstall}
-packages for use on HP-UX.  (Contributed by Mark Alexander.)
+packages for use on HP-UX.  
+An abstract binary packager class, 
+\module{distutils.command.bdist_packager}, was added; this may make it
+easier to write binary packaging commands.  (Contributed by Mark
+Alexander.)
 
 \item The \module{array} module now supports arrays of Unicode
 characters using the \samp{u} format character.  Arrays also 
@@ -657,7 +693,8 @@ now support using the \code{+=} assignment operator to add another array's
 contents, and the \code{*=} assignment operator to repeat an array.
 (Contributed by Jason Orendorff.)
 
-\item The \module{grp} module now returns enhanced tuples:
+\item The \module{grp}, \module{pwd}, and \module{resource} modules
+now return enhanced tuples: 
 
 \begin{verbatim}
 >>> import grp
@@ -676,6 +713,11 @@ to the \module{signal} module by adding the \function{sigpending},
 by the platform.  These functions make it possible to avoid some previously
 unavoidable race conditions.
 
+\item The DOM implementation
+in \module{xml.dom.minidom} can now generate XML output in a
+particular encoding, by specifying an optional encoding argument to
+the \method{toxml()} and \method{toprettyxml()} methods of DOM nodes.
+
 \end{itemize}
 
 
@@ -693,10 +735,15 @@ Palkovsky.)
 
 \item The interpreter can be compiled without any docstrings for 
 the built-in functions and modules by supplying
-\longprogramopt{--without-doc-strings} to the \file{configure} script.
+\longprogramopt{without-doc-strings} to the \file{configure} script.
 This makes the Python executable about 10\% smaller, but will also
 mean that you can't get help for Python's built-ins.  (Contributed by
 Gustavo Niemeyer.)
+
+\item The cycle detection implementation used by the garbage collection
+has proven to be stable, so it's now being made mandatory; you can no
+longer compile Python without it, and the
+\longprogramopt{with-cycle-gc} switch to \file{configure} has been removed.
 
 \item The \cfunction{PyArg_NoArgs()} macro is now deprecated, and code
 that uses it should be changed.  For Python 2.2 and later, the method
@@ -750,6 +797,8 @@ Instead calling the missing routine will raise an exception.
 The RPM spec files, found in the \file{Misc/RPM/} directory in the
 Python source distribution, were updated for 2.3.  (Contributed by
 Sean Reifschneider.)
+
+Python now supports AtheOS (\url{www.atheos.cx}) and GNU/Hurd.
 
 
 %======================================================================
