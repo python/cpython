@@ -293,7 +293,7 @@ def record(v, info, filename, audiofilename, mono, grey, greybits, \
 			initaudio(audiofilename, audiostop, audiodone)
 	gl.wintitle('(rec) ' + filename)
 	lastid = 0
-	t0 = time.millitimer()
+	t0 = time.time()
 	count = 0
 	ids = []
 	v.InitContinuousCapture(info)
@@ -301,7 +301,7 @@ def record(v, info, filename, audiofilename, mono, grey, greybits, \
 		try:
 			cd, id = v.GetCaptureData()
 		except sv.error:
-			#time.millisleep(10) # XXX is this necessary?
+			#time.sleep(0.010) # XXX is this necessary?
 			sgi.nap(1)	# XXX Try by Jack
 			continue
 		ids.append(id)
@@ -322,15 +322,16 @@ def record(v, info, filename, audiofilename, mono, grey, greybits, \
 			cd.UnlockCaptureData()
 			if filename:
 				queue.put((data, int(id*tpf)))
-	t1 = time.millitimer()
+	t1 = time.time()
 	gl.wintitle('(busy) ' + filename)
-	print lastid, 'fields in', t1-t0, 'msec',
-	print '--', 0.1 * int(lastid * 10000.0 / (t1-t0)), 'fields/sec'
+	print lastid, 'fields in', round(t1-t0, 3), 'sec',
+	print '--', round(lastid/(t1-t0), 1), 'fields/sec'
 	print 'Captured',count*2, 'fields,',
-	print 0.1*int(count*20000.0/(t1-t0)), 'f/s',
+	print round(count*2/(t1-t0), 1), 'f/s',
 	if lastid:
-		print count*200.0/lastid, '%,',
-		print count*rate*200.0/lastid, '% of wanted rate',
+		print '(',
+		print round(count*200.0/lastid), '%, or',
+		print round(count*rate*200.0/lastid), '% of wanted rate )',
 	print
 	if ids:
 		print 'Ids:',
