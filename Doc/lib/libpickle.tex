@@ -27,6 +27,13 @@ to send them across a network or store them in a database.  The module
 objects on ``dbm''-style database files.
 \stmodindex{shelve}
 
+\strong{Note:} The \code{pickle} module is rather slow.  A
+reimplementation of the same algorithm in C, which is up to 1000 times
+faster, is available as the \code{cPickle} module.  This has the same
+interface except that \code{Pickler} and \code{Unpickler} are factory
+functions, not classes (so they cannot be used as a base class for
+inheritance).
+
 Unlike the built-in module \code{marshal}, \code{pickle} handles the
 following correctly:
 \stmodindex{marshal}
@@ -47,20 +54,19 @@ standards such as CORBA (which probably can't represent pointer
 sharing or recursive objects); however it means that non-Python
 programs may not be able to reconstruct pickled Python objects.
 
-The \code{pickle} data format uses a printable \ASCII{} representation.
-This is slightly more voluminous than a binary representation.
-However, small integers actually take {\em less} space when
-represented as minimal-size decimal strings than when represented as
-32-bit binary numbers, and strings are only much longer if they
-contain many control characters or 8-bit characters.  The big
-advantage of using printable \ASCII{} (and of some other characteristics
-of \code{pickle}'s representation) is that for debugging or recovery
-purposes it is possible for a human to read the pickled file with a
-standard text editor.  (I could have gone a step further and used a
-notation like S-expressions, but the parser
-(currently written in Python) would have been
-considerably more complicated and slower, and the files would probably
-have become much larger.)
+By default, the \code{pickle} data format uses a printable \ASCII{}
+representation.  This is slightly more voluminous than a binary
+representation.  The big advantage of using printable \ASCII{} (and of
+some other characteristics of \code{pickle}'s representation) is that
+for debugging or recovery purposes it is possible for a human to read
+the pickled file with a standard text editor.
+
+A binary format, which is slightly more efficient, can be chosen by
+specifying a nonzero (true) value for the \var{bin} argument to the
+\code{Pickler} constructor or the \code{dump()} and \code{dumps()}
+functions.  The binary format is not the default because of backwards
+compatibility with the Python 1.4 pickle module.  In a future version,
+the default may change to binary.
 
 The \code{pickle} module doesn't handle code objects, which the
 \code{marshal} module does.  I suppose \code{pickle} could, and maybe
@@ -83,16 +89,21 @@ returns either \code{None} or the persistent ID of the object.
 There are some restrictions on the pickling of class instances.
 
 First of all, the class must be defined at the top level in a module.
+Furthermore, all its instance variables must be picklable.
 
 \renewcommand{\indexsubitem}{(pickle protocol)}
 
-Next, it must normally be possible to create class instances by
-calling the class without arguments.  Usually, this is best
-accomplished by providing default values for all arguments to its
-\code{__init__} method (if it has one).  If this is undesirable, the
-class can define a method \code{__getinitargs__()}, which should
-return a {\em tuple} containing the arguments to be passed to the
-class constructor (\code{__init__()}).
+When a pickled class instance is unpickled, its \code{__init__} method
+is normally \emph{not} invoked.  \strong{Note:} This is a deviation
+from previous versions of this module; the change was introduced in
+Python 1.5b2.  The reason for the change is that in many cases it is
+desirable to have a constructor that requires arguments; it is a
+(minor) nuisance to have to provide a \code{__getinitargs__} method.
+
+If it is desirable that the \code{__init__} method be called on
+unpickling, a class can define a method \code{__getinitargs__()},
+which should return a {\em tuple} containing the arguments to be
+passed to the class constructor (\code{__init__()}).
 \ttindex{__getinitargs__}
 \ttindex{__init__}
 
@@ -166,6 +177,13 @@ objects here, as long as they have the right methods.
 \ttindex{Unpickler}
 \ttindex{Pickler}
 
+The constructor for the \code{Pickler} class has an optional second
+argument, \var{bin}.  If this is present and nonzero, the binary
+pickle format is used; if it is zero or absent, the (less efficient,
+but backwards compatible) text pickle format is used.  The
+\code{Unpickler} class does not have an argument to distinguish
+between binary and text pickle formats; it accepts either format.
+
 The following types can be pickled:
 \begin{itemize}
 
@@ -206,9 +224,13 @@ Collection may also become a problem here.)
 Apart from the \code{Pickler} and \code{Unpickler} classes, the
 module defines the following functions, and an exception:
 
-\begin{funcdesc}{dump}{object\, file}
+\begin{funcdesc}{dump}{object\, file\optional{, bin}}
 Write a pickled representation of \var{obect} to the open file object
-\var{file}.  This is equivalent to \code{Pickler(file).dump(object)}.
+\var{file}.  This is equivalent to
+\code{Pickler(\var{file}, \var{bin}).dump(\var{object})}.
+If the optional \var{bin} argument is present and nonzero, the binary
+pickle format is used; if it is zero or absent, the (less efficient)
+text pickle format is used.
 \end{funcdesc}
 
 \begin{funcdesc}{load}{file}
@@ -216,9 +238,11 @@ Read a pickled object from the open file object \var{file}.  This is
 equivalent to \code{Unpickler(file).load()}.
 \end{funcdesc}
 
-\begin{funcdesc}{dumps}{object}
+\begin{funcdesc}{dumps}{object\optional{, bin}}
 Return the pickled representation of the object as a string, instead
-of writing it to a file.
+of writing it to a file.  If the optional \var{bin} argument is
+present and nonzero, the binary pickle format is used; if it is zero
+or absent, the (less efficient) text pickle format is used.
 \end{funcdesc}
 
 \begin{funcdesc}{loads}{string}
