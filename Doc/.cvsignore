@@ -1,4 +1,4 @@
 *.tgz
 *.tar.bz2
 *.zip
-html-*.tar
+*.tar
