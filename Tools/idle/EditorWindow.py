@@ -81,6 +81,20 @@ An Integrated DeveLopment Environment for Python
 by Guido van Rossum
 """ % idlever.IDLE_VERSION
 
+def _find_module(fullname, path=None):
+    """Version of imp.find_module() that handles hierarchical module names"""
+
+    file = None
+    for tgt in fullname.split('.'):
+        if file is not None:
+            file.close()            # close intermediate files
+        (file, filename, descr) = imp.find_module(tgt, path)
+        if descr[2] == imp.PY_SOURCE:
+            break                   # find but not load the source file
+        module = imp.load_module(tgt, file, filename, descr)
+        path = module.__path__
+    return file, filename, descr
+
 class EditorWindow:
 
     from Percolator import Percolator
@@ -340,10 +354,9 @@ class EditorWindow:
                 name = string.strip(name)
             if not name:
                 return
-        # XXX Ought to support package syntax
         # XXX Ought to insert current file's directory in front of path
         try:
-            (f, file, (suffix, mode, type)) = imp.find_module(name)
+            (f, file, (suffix, mode, type)) = _find_module(name)
         except (NameError, ImportError), msg:
             tkMessageBox.showerror("Import error", str(msg), parent=self.text)
             return
