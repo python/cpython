@@ -867,14 +867,8 @@ arbitrary objects):
           {(1)}
   \lineiii{\var{a}.clear()}{remove all items from \code{a}}{}
   \lineiii{\var{a}.copy()}{a (shallow) copy of \code{a}}{}
-  \lineiii{\var{k} \code{in} \var{a}}
-          {\code{1} if \var{a} has a key \var{k}, else \code{0}}
-          {}
-  \lineiii{\var{k} not in \var{a}}
-          {\code{0} if \var{a} has a key \var{k}, else \code{1}}
-          {}
   \lineiii{\var{a}.has_key(\var{k})}
-          {Equivalent to \var{k} \code{in} \var{a}}
+          {\code{1} if \var{a} has a key \var{k}, else \code{0}}
           {}
   \lineiii{\var{a}.items()}
           {a copy of \var{a}'s list of (\var{key}, \var{value}) pairs}
@@ -885,11 +879,11 @@ arbitrary objects):
           {(3)}
   \lineiii{\var{a}.values()}{a copy of \var{a}'s list of values}{(2)}
   \lineiii{\var{a}.get(\var{k}\optional{, \var{x}})}
-          {\code{\var{a}[\var{k}]} if \code{\var{k} in \var{a}},
+          {\code{\var{a}[\var{k}]} if \code{\var{a}.has_key(\var{k})},
            else \var{x}}
           {(4)}
   \lineiii{\var{a}.setdefault(\var{k}\optional{, \var{x}})}
-          {\code{\var{a}[\var{k}]} if \code{\var{k} in \var{a}},
+          {\code{\var{a}[\var{k}]} if \code{\var{a}.has_key(\var{k})},
            else \var{x} (also setting it)}
           {(5)}
   \lineiii{\var{a}.popitem()}
