@@ -27,7 +27,7 @@ BOM = struct.pack('=H',0xFEFF)
 BOM_BE = BOM32_BE = '\376\377'
 #	corresponds to Unicode U+FEFF in UTF-16 on big endian
 #	platforms == ZERO WIDTH NO-BREAK SPACE
-BOM_LE = BOM32_LE = '\377\376' 
+BOM_LE = BOM32_LE = '\377\376'
 #	corresponds to Unicode U+FFFE in UTF-16 on little endian
 #	platforms == defined as being an illegal Unicode character
 
@@ -58,7 +58,7 @@ class Codec:
 
     """
     def encode(self,input,errors='strict'):
-        
+
         """ Encodes the object input and returns a tuple (output
             object, length consumed).
 
@@ -84,7 +84,7 @@ class Codec:
             input must be an object which provides the bf_getreadbuf
             buffer slot. Python strings, buffer objects and memory
             mapped files are examples of objects providing this slot.
-        
+
             errors defines the error handling to apply. It defaults to
             'strict' handling.
 
@@ -96,7 +96,7 @@ class Codec:
             return an empty object of the output object type in this
             situation.
 
-        """ 
+        """
         raise NotImplementedError
 
 #
@@ -104,7 +104,7 @@ class Codec:
 # interfaces which can be used to implement new encodings submodules
 # very easily. See encodings/utf_8.py for an example on how this is
 # done.
-# 
+#
 
 class StreamWriter(Codec):
 
@@ -140,7 +140,7 @@ class StreamWriter(Codec):
             using .write().
         """
         self.write(''.join(list))
-        
+
     def reset(self):
 
         """ Flushes and resets the codec buffers used for keeping state.
@@ -206,7 +206,7 @@ class StreamReader(Codec):
         # Unsliced reading:
         if size < 0:
             return self.decode(self.stream.read())[0]
-        
+
         # Sliced reading:
         read = self.stream.read
         decode = self.decode
@@ -238,14 +238,14 @@ class StreamReader(Codec):
 
             size, if given, is passed as size argument to the stream's
             .readline() method.
-            
+
         """
         if size is None:
             line = self.stream.readline()
         else:
             line = self.stream.readline(size)
         return self.decode(line)[0]
-            
+
 
     def readlines(self, sizehint=0):
 
@@ -254,7 +254,7 @@ class StreamReader(Codec):
 
             Line breaks are implemented using the codec's decoder
             method and are included in the list entries.
-            
+
             sizehint, if given, is passed as size argument to the
             stream's .read() method.
 
@@ -354,7 +354,7 @@ class StreamRecoder:
 
         """ Creates a StreamRecoder instance which implements a two-way
             conversion: encode and decode work on the frontend (the
-            input to .read() and output of .write()) while 
+            input to .read() and output of .write()) while
             Reader and Writer work on the backend (reading and
             writing to the stream).
 
@@ -502,13 +502,13 @@ def EncodedFile(file, data_encoding, file_encoding=None, errors='strict'):
     return sr
 
 ### Tests
-    
+
 if __name__ == '__main__':
 
     import sys
-    
+
     # Make stdout translate Latin-1 output into UTF-8 output
     sys.stdout = EncodedFile(sys.stdout, 'latin-1', 'utf-8')
-    
+
     # Have stdin translate Latin-1 input into UTF-8 input
     sys.stdin = EncodedFile(sys.stdin, 'utf-8', 'latin-1')
