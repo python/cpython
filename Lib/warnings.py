@@ -79,7 +79,7 @@ def warn_explicit(message, category, filename, lineno,
         action, msg, cat, mod, ln = item
         if ((msg is None or msg.match(text)) and
             issubclass(category, cat) and
-            (msg is None or mod.match(module)) and
+            (mod is None or mod.match(module)) and
             (ln == 0 or lineno == ln)):
             break
     else:
