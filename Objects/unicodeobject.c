@@ -5300,6 +5300,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 				    "incomplete format key");
 		    goto onError;
 		}
+#if 0
 		/* keys are converted to strings using UTF-8 and
 		   then looked up since Python uses strings to hold
 		   variables names etc. in its namespaces and we
@@ -5307,6 +5308,9 @@ PyObject *PyUnicode_Format(PyObject *format,
 		key = PyUnicode_EncodeUTF8(keystart,
 					   keylen,
 					   NULL);
+#else
+		key = PyUnicode_FromUnicode(keystart, keylen);
+#endif
 		if (key == NULL)
 		    goto onError;
 		if (args_owned) {
