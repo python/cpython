@@ -267,46 +267,99 @@ static PyGetSetDef func_getsetlist[] = {
 };
 
 PyDoc_STRVAR(func_doc,
-"function(code, globals[, name[, argdefs]])\n\
+"function(code, globals[, name[, argdefs[, closure]]])\n\
 \n\
 Create a function object from a code object and a dictionary.\n\
 The optional name string overrides the name from the code object.\n\
-The optional argdefs tuple specifies the default argument values.");
+The optional argdefs tuple specifies the default argument values.\n\
+The optional closure tuple supplies the bindings for free variables.");
+
+/* func_new() maintains the following invariants for closures.  The
+   closure must correspond to the free variables of the code object.
+   
+   if len(code.co_freevars) == 0: 
+           closure = NULL
+   else:
+           len(closure) == len(code.co_freevars)
+   for every elt in closure, type(elt) == cell
+*/
 
 static PyObject *
 func_new(PyTypeObject* type, PyObject* args, PyObject* kw)
 {
-	PyObject *code;
+	PyCodeObject *code;
 	PyObject *globals;
 	PyObject *name = Py_None;
 	PyObject *defaults = Py_None;
+	PyObject *closure = Py_None;
 	PyFunctionObject *newfunc;
+	int nfree, nclosure;
 
-	if (!PyArg_ParseTuple(args, "O!O!|OO!:function",
+	if (!PyArg_ParseTuple(args, "O!O!|OOO:function",
 			      &PyCode_Type, &code,
 			      &PyDict_Type, &globals,
-			      &name,
-			      &PyTuple_Type, &defaults))
+			      &name, &defaults, &closure))
 		return NULL;
 	if (name != Py_None && !PyString_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
 				"arg 3 (name) must be None or string");
 		return NULL;
 	}
+	if (defaults != Py_None && !PyTuple_Check(defaults)) {
+		PyErr_SetString(PyExc_TypeError,
+				"arg 4 (defaults) must be None or tuple");
+		return NULL;
+	}
+	nfree = PyTuple_GET_SIZE(code->co_freevars);
+	if (!PyTuple_Check(closure)) {
+		if (nfree && closure == Py_None) {
+			PyErr_SetString(PyExc_TypeError,
+					"arg 5 (closure) must be tuple");
+			return NULL;
+		}
+		else if (closure != Py_None) {
+			PyErr_SetString(PyExc_TypeError,
+				"arg 5 (closure) must be None or tuple");
+			return NULL;
+		}
+	}
 
-	newfunc = (PyFunctionObject *)PyFunction_New(code, globals);
+	/* check that the closure is well-formed */
+	nclosure = closure == Py_None ? 0 : PyTuple_GET_SIZE(closure);
+	if (nfree != nclosure)
+		return PyErr_Format(PyExc_ValueError,
+				    "%s requires closure of length %d, not %d",
+				    PyString_AS_STRING(code->co_name),
+				    nfree, nclosure);
+	if (nclosure) {
+		int i;
+		for (i = 0; i < nclosure; i++) {
+			PyObject *o = PyTuple_GET_ITEM(closure, i);
+			if (!PyCell_Check(o)) {
+				return PyErr_Format(PyExc_TypeError,
+				    "arg 5 (closure) expected cell, found %s",
+						    o->ob_type->tp_name);
+			}
+		}
+	}
+	
+	newfunc = (PyFunctionObject *)PyFunction_New((PyObject *)code, 
+						     globals);
 	if (newfunc == NULL)
 		return NULL;
-
+	
 	if (name != Py_None) {
-		Py_XINCREF(name);
-		Py_XDECREF(newfunc->func_name);
+		Py_INCREF(name);
+		Py_DECREF(newfunc->func_name);
 		newfunc->func_name = name;
 	}
 	if (defaults != Py_None) {
-		Py_XINCREF(defaults);
-		Py_XDECREF(newfunc->func_defaults);
+		Py_INCREF(defaults);
 		newfunc->func_defaults  = defaults;
+	}
+	if (closure != Py_None) {
+		Py_INCREF(closure);
+		newfunc->func_closure = closure;
 	}
 
 	return (PyObject *)newfunc;
