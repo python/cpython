@@ -1,6 +1,3 @@
 This directory contains support file used to build RPM releases of
 Python.  Its contents are maintained by Sean Reifschneider
-<jafo@tummy.com>.
-
-Note that the patches say "2.1" in the name -- they didn't need to be
-updated for 2.2.
+<jafo-rpms@tummy.com>.

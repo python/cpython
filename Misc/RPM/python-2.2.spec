@@ -30,16 +30,19 @@
 #################################
 
 %define name python
-%define version 2.2
-%define libvers 2.2
-%define release 2
+%define version 2.2.1
+%define release 1
 %define __prefix /usr
+%define libvers %(echo "%{version}" | awk -F. '{ printf "%s.%s", $1, $2 }')
 
 #  kludge to get around rpm <percent>define weirdness
 %define ipv6 %(if [ "%{config_ipv6}" = yes ]; then echo --enable-ipv6; else echo --disable-ipv6; fi)
 %define pymalloc %(if [ "%{config_pymalloc}" = yes ]; then echo --with-pymalloc; else echo --without-pymalloc; fi)
 %define binsuffix %(if [ "%{config_binsuffix}" = none ]; then echo ; else echo "%{config_binsuffix}"; fi)
 %define include_tkinter %(if [ \\( "%{config_tkinter}" = auto -a -f /usr/bin/wish \\) -o "%{config_tkinter}" = yes ]; then echo 1; else echo 0; fi)
+
+#  look for documentation files
+%define include_htmldocs %(if [ -f "%{_sourcedir}/html-%{version}.tar.bz2" ]; then echo 1; else echo 0; fi)
 
 Summary: An interpreted, interactive, object-oriented programming language.
 Name: %{name}%{binsuffix}
@@ -48,13 +51,12 @@ Release: %{release}
 Copyright: Modified CNRI Open Source License
 Group: Development/Languages
 Source: Python-%{version}.tgz
+%if %{include_htmldocs}
 Source1: html-%{version}.tar.bz2
-Source2: info-%{version}.tar.bz2
-Patch0: Python-2.1-pythonpath.patch
-Patch1: Python-2.1-expat.patch
+%endif
 BuildRoot: /var/tmp/%{name}-%{version}-root
 BuildPrereq: expat-devel
-BuildPrereq: db1-devel
+BuildPrereq: /usr/include/db1/db.h
 BuildPrereq: gdbm-devel
 Prefix: %{__prefix}
 Packager: Sean Reifschneider <jafo-rpms@tummy.com>
@@ -114,6 +116,7 @@ Install python-tools if you want to use these tools to develop
 Python programs.  You will also need to install the python and
 tkinter packages.
 
+%if %{include_htmldocs}
 %package docs
 Summary: Python-related documentation.
 Group: Development/Documentation
@@ -121,8 +124,20 @@ Group: Development/Documentation
 %description docs
 Documentation relating to the Python programming language in HTML and info
 formats.
+%endif
 
 %changelog
+* Tue Mar 26 2002 Sean Reifschneider <jafo-rpms@tummy.com>
+[Release 2.2.1c2-1]
+- Updated to 2.2.1c2.
+- Changed build pre-req for db to use file instead of package.
+  (Suggested by Alf Werder)
+
+* Wed Jan 23 2002 Sean Reifschneider <jafo-rpms@tummy.com>
+[Release 2.2-3]
+- Using "*" for the man page extension to pick up both systems which use
+  .bz2 and .gz compressed man pages.  (Pointed out by Tony Hammitt)
+
 * Sun Dec 23 2001 Sean Reifschneider <jafo-rpms@tummy.com>
 [Release 2.2-2]
 - Added -docs package.
@@ -170,8 +185,8 @@ formats.
 #######
 %prep
 %setup -n Python-%{version}
-%patch0 -p1
-%patch1
+
+#  fix path to xmlparse header file
 
 ########
 #  BUILD
@@ -179,6 +194,17 @@ formats.
 %build
 ./configure %{ipv6} %{pymalloc} --prefix=%{__prefix}
 make
+
+#  fix paths
+for file in \
+      Tools/scripts/pathfix.py \
+      Lib/cgi.py \
+      Tools/faqwiz/faqw.py \
+      Tools/scripts/parseentities.py
+do
+   ./python Tools/scripts/pathfix.py -i '/usr/bin/env python' "$file"
+   rm -f "$file"~       #  remove backup
+done
 
 ##########
 #  INSTALL
@@ -237,16 +263,13 @@ echo "%{__prefix}"/bin/idle%{binsuffix} >>tools.files
 
 ######
 # Docs
+%if %{include_htmldocs}
 mkdir -p "$RPM_BUILD_ROOT"/var/www/html/python
 (
    cd "$RPM_BUILD_ROOT"/var/www/html/python
    bunzip2 < %{SOURCE1} | tar x
 )
-mkdir -p "$RPM_BUILD_ROOT"/usr/share/info
-(
-   cd "$RPM_BUILD_ROOT"/usr/share/info
-   bunzip2 < %{SOURCE2} | tar x
-)
+%endif
 
 ########
 #  CLEAN
@@ -260,9 +283,11 @@ rm -f mainpkg.files tools.files
 ########
 %files -f mainpkg.files
 %defattr(-,root,root)
-%doc Misc/README Misc/HYPE Misc/cheatsheet Misc/unicode.txt Misc/Porting
-%doc LICENSE Misc/ACKS Misc/BLURB.* Misc/HISTORY Misc/NEWS
-%{__prefix}/man/man1/python%{binsuffix}.1.gz
+%doc Misc/*README Misc/cheatsheet Misc/Porting Misc/gdbinit Misc/indent.pro
+%doc LICENSE Misc/ACKS Misc/HISTORY Misc/NEWS Misc/Porting
+%doc Misc/python-mode.el Misc/RFD Misc/setuid-prog.c Misc/vgrindefs
+%doc Misc/RPM/README
+%{__prefix}/man/man1/python%{binsuffix}.1*
 
 %dir %{__prefix}/include/python%{libvers}
 %dir %{__prefix}/lib/python%{libvers}/
@@ -296,7 +321,9 @@ rm -f mainpkg.files tools.files
 %{__prefix}/lib/python%{libvers}/lib-dynload/_tkinter.so*
 %endif
 
+%if %{include_htmldocs}
 %files docs
 %defattr(-,root,root)
 /var/www/html/python
-/usr/share/info
+#/usr/share/info
+%endif
