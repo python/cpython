@@ -1,3 +1,570 @@
+IDLEfork ChangeLog
+==================
+
+2001-07-20 11:35  elguavas
+
+	* README.txt, NEWS.txt: bring up to date for 0.8.1 release
+
+2001-07-19 16:40  elguavas
+
+	* IDLEFORK.html: replaced by IDLEFORK-index.html
+
+2001-07-19 16:39  elguavas
+
+	* IDLEFORK-index.html: updated placeholder idlefork homepage
+
+2001-07-19 14:49  elguavas
+
+	* ChangeLog, EditorWindow.py, INSTALLATION, NEWS.txt, README.txt,
+	TODO.txt, idlever.py: 
+	minor tidy-ups ready for 0.8.1 alpha tarball release
+
+2001-07-17 15:12  kbk
+
+	* INSTALLATION, setup.py: INSTALLATION: Remove the coexist.patch
+	instructions
+	
+	**************** setup.py:
+	
+	Remove the idles script, add some words on IDLE Fork to the
+	long_description, and clean up some line spacing.
+
+2001-07-17 15:01  kbk
+
+	* coexist.patch: Put this in the attic, at least for now...
+
+2001-07-17 14:59  kbk
+
+	* PyShell.py, idle, idles: Implement idle command interface as
+	suggested by GvR [idle-dev] 16 July **************** PyShell: Added
+	functionality:
+	
+	usage: idle.py [-c command] [-d] [-i] [-r script] [-s] [-t title]
+	[arg] ...
+	
+	idle file(s)	(without options) edit the file(s)
+	
+	-c cmd	   run the command in a shell -d	 enable the
+	debugger -i	    open an interactive shell -i file(s) open a
+	shell and also an editor window for each file -r script  run a file
+	as a script in a shell -s	  run $IDLESTARTUP or
+	$PYTHONSTARTUP before anything else -t title   set title of shell
+	window
+	
+	Remaining arguments are applied to the command (-c) or script (-r).
+	
+	****************** idles: Removed the idles script, not needed
+	
+	****************** idle:  Removed the IdleConf references, not
+	required anymore
+
+2001-07-16 17:08  kbk
+
+	* INSTALLATION, coexist.patch: Added installation instructions.
+	
+	Added a patch which modifies idlefork so that it can co-exist with
+	"official" IDLE in the site-packages directory. This patch is not
+	necessary if only idlefork IDLE is installed. See INSTALLATION for
+	further details.
+
+2001-07-16 15:50  kbk
+
+	* idles: Add a script "idles" which opens a Python Shell window.
+	
+	The default behaviour of idlefork idle is to open an editor window
+	instead of a shell. Complex expressions may be run in a fresh
+	environment by selecting "run".  There are times, however, when a
+	shell is desired.  Though one can be started by "idle -t 'foo'",
+	this script is more convenient.  In addition, a shell and an editor
+	window can be started in parallel by "idles -e foo.py".
+
+2001-07-16 15:25  kbk
+
+	* PyShell.py: Call out IDLE Fork in startup message.
+
+2001-07-16 14:00  kbk
+
+	* PyShell.py, setup.py: Add a script "idles" which opens a Python
+	Shell window.
+	
+	The default behaviour of idlefork idle is to open an editor window
+	instead of a shell. Complex expressions may be run in a fresh
+	environment by selecting "run".  There are times, however, when a
+	shell is desired.  Though one can be started by "idle -t 'foo'",
+	this script is more convenient.  In addition, a shell and an editor
+	window can be started in parallel by "idles -e foo.py".
+
+2001-07-15 03:06  kbk
+
+	* pyclbr.py, tabnanny.py: tabnanny and pyclbr are now found in /Lib
+
+2001-07-15 02:29  kbk
+
+	* BrowserControl.py: Remove, was retained for 1.5.2 support
+
+2001-07-14 15:48  kbk
+
+	* setup.py: Installing Idle to site-packages via Distutils does not
+	copy the Idle help.txt file.
+	
+	Ref SF Python Patch 422471
+
+2001-07-14 15:26  kbk
+
+	* keydefs.py: py-cvs-2001_07_13 (Rev 1.3) merge
+	
+	"Make copy, cut and paste events case insensitive.  Reported by
+	Patrick K. O'Brien on idle-dev. (Should other bindings follow
+	suit?)" --GvR
+
+2001-07-14 15:21  kbk
+
+	* idle.py: py-cvs-2001_07_13 (Rev 1.4) merge
+	
+	"Move the action of loading the configuration to the IdleConf
+	module rather than the idle.py script.	This has advantages and
+	disadvantages; the biggest advantage being that we can more easily
+	have an alternative main program."  --GvR
+
+2001-07-14 15:18  kbk
+
+	* extend.txt: py-cvs-2001_07_13 (Rev 1.4) merge
+	
+	"Quick update to the extension mechanism (extend.py is gone, long
+	live config.txt)" --GvR
+
+2001-07-14 15:15  kbk
+
+	* StackViewer.py: py-cvs-2001_07_13 (Rev 1.16) merge
+	
+	"Refactored, with some future plans in mind. This now uses the new
+	gotofileline() method defined in FileList.py"  --GvR
+
+2001-07-14 15:10  kbk
+
+	* PyShell.py: py-cvs-2001_07_13 (Rev 1.34) merge
+	
+	"Amazing.  A very subtle change in policy in descr-branch actually
+	found a bug here.  Here's the deal: Class PyShell derives from
+	class OutputWindow.  Method PyShell.close() wants to invoke its
+	parent method, but because PyShell long ago was inherited from
+	class PyShellEditorWindow, it invokes
+	PyShelEditorWindow.close(self).  Now, class PyShellEditorWindow
+	itself derives from class OutputWindow, and inherits the close()
+	method from there without overriding it.  Under the old rules,
+	PyShellEditorWindow.close would return an unbound method restricted
+	to the class that defined the implementation of close(), which was
+	OutputWindow.close.  Under the new rules, the unbound method is
+	restricted to the class whose method was requested, that is
+	PyShellEditorWindow, and this was correctly trapped as an error."
+	--GvR
+
+2001-07-14 14:59  kbk
+
+	* PyParse.py: py-cvs-2001_07_13 (Rel 1.9) merge
+	
+	"Taught IDLE's autoident parser that "yield" is a keyword that
+	begins a stmt.	Along w/ the preceding change to keyword.py, making
+	all this work w/ a future-stmt just looks harder and harder."
+	--tim_one
+	
+	(From Rel 1.8: "Hack to make this still work with Python 1.5.2. 
+	;-( " --fdrake)
+
+2001-07-14 14:51  kbk
+
+	* IdleConf.py: py-cvs-2001_07_13 (Rel 1.7) merge
+	
+	"Move the action of loading the configuration to the IdleConf
+	module rather than the idle.py script.	This has advantages and
+	disadvantages; the biggest advantage being that we can more easily
+	have an alternative main program." --GvR
+
+2001-07-14 14:45  kbk
+
+	* FileList.py: py-cvs-2000_07_13 (Rev 1.9) merge
+	
+	"Delete goodname() method, which is unused. Add gotofileline(), a
+	convenience method which I intend to use in a variant. Rename
+	test() to _test()."  --GvR
+	
+	This was an interesting merge. The join completely missed removing
+	goodname(), which was adjacent, but outside of, a small conflict. 
+	I only caught it by comparing the 1.1.3.2/1.1.3.3 diff.  CVS ain't
+	infallible.
+
+2001-07-14 13:58  kbk
+
+	* EditorWindow.py: py-cvs-2000_07_13 (Rev 1.38) merge "Remove
+	legacy support for the BrowserControl module; the webbrowser module
+	has been included since Python 2.0, and that is the preferred
+	interface." --fdrake
+
+2001-07-14 13:32  kbk
+
+	* EditorWindow.py, FileList.py, IdleConf.py, PyParse.py,
+	PyShell.py, StackViewer.py, extend.txt, idle.py, keydefs.py: Import
+	the 2001 July 13 23:59 GMT version of Python CVS IDLE on the
+	existing 1.1.3 vendor branch named py-cvs-vendor-branch. Release
+	tag is py-cvs-2001_07_13.
+
+2001-07-14 12:02  kbk
+
+	* Icons/python.gif: py-cvs-rel2_1 (Rev 1.2) merge Copied py-cvs rev
+	1.2 changed file to idlefork MAIN
+
+2001-07-14 11:58  kbk
+
+	* Icons/minusnode.gif: py-cvs-rel2_1 (Rev 1.2) merge Copied py-cvs
+	1.2 changed file to idlefork MAIN
+
+2001-07-14 11:23  kbk
+
+	* ScrolledList.py: py-cvs-rel2_1 (rev 1.5) merge - whitespace
+	normalization
+
+2001-07-14 11:20  kbk
+
+	* Separator.py: py-cvs-rel2_1 (Rev 1.3) merge - whitespace
+	normalization
+
+2001-07-14 11:16  kbk
+
+	* StackViewer.py: py-cvs-rel2_1 (Rev 1.15) merge - whitespace
+	normalization
+
+2001-07-14 11:14  kbk
+
+	* ToolTip.py: py-cvs-rel2_1 (Rev 1.2) merge - whitespace
+	normalization
+
+2001-07-14 10:13  kbk
+
+	* PyShell.py: cvs-py-rel2_1 (Rev 1.29 - 1.33) merge
+	
+	Merged the following py-cvs revs without conflict: 1.29 Reduce
+	copyright text output at startup 1.30 Delay setting sys.args until
+	Tkinter is fully initialized 1.31 Whitespace normalization 1.32
+	Turn syntax warning into error when interactive 1.33 Fix warning
+	initialization bug
+	
+	Note that module is extensively modified wrt py-cvs
+
+2001-07-14 06:33  kbk
+
+	* PyParse.py: py-cvs-rel2_1 (Rev 1.6 - 1.8) merge Fix autoindent
+	bug and deflect Unicode from text.get()
+
+2001-07-14 06:00  kbk
+
+	* Percolator.py: py-cvs-rel2_1 (Rev 1.3) "move "from Tkinter import
+	*" to module level" --jhylton
+
+2001-07-14 05:57  kbk
+
+	* PathBrowser.py: py-cvs-rel2_1 (Rev 1.6) merge - whitespace
+	normalization
+
+2001-07-14 05:49  kbk
+
+	* ParenMatch.py: cvs-py-rel2_1 (Rev 1.5) merge - whitespace
+	normalization
+
+2001-07-14 03:57  kbk
+
+	* ObjectBrowser.py: py-cvs-rel2_1 (Rev 1.3) merge "Make the test
+	program work outside IDLE."  -- GvR
+
+2001-07-14 03:52  kbk
+
+	* MultiStatusBar.py: py-cvs-rel2_1 (Rev 1.2) merge - whitespace
+	normalization
+
+2001-07-14 03:44  kbk
+
+	* MultiScrolledLists.py: py-cvs-rel2_1 (Rev 1.2) merge - whitespace
+	normalization
+
+2001-07-14 03:40  kbk
+
+	* IdleHistory.py: py-cvs-rel2_1 (Rev 1.4) merge - whitespace
+	normalization
+
+2001-07-14 03:38  kbk
+
+	* IdleConf.py: py-cvs-rel2_1 (Rev 1.6) merge - whitespace
+	normalization
+
+2001-07-13 14:18  kbk
+
+	* IOBinding.py: py-cvs-rel2_1 (Rev 1.4) merge - move "import *" to
+	module level
+
+2001-07-13 14:12  kbk
+
+	* FormatParagraph.py: py-cvs-rel2_1 (Rev 1.9) merge - whitespace
+	normalization
+
+2001-07-13 14:07  kbk
+
+	* FileList.py: py-cvs-rel2_1 (Rev 1.8) merge - whitespace
+	normalization
+
+2001-07-13 13:35  kbk
+
+	* EditorWindow.py: py-cvs-rel2_1 (Rev 1.33 - 1.37) merge
+	
+	VP IDLE version depended on VP's ExecBinding.py and spawn.py to get
+	the path to the Windows Doc directory (relative to python.exe).
+	Removed this conflicting code in favor of py-cvs updates which on
+	Windows use a hard coded path relative to the location of this
+	module. py-cvs updates include support for webbrowser.py.  Module
+	still has BrowserControl.py for 1.5.2 support.
+	
+	At this point, the differences wrt py-cvs relate to menu
+	functionality.
+
+2001-07-13 11:30  kbk
+
+	* ConfigParser.py: py-cvs-rel2_1 merge - Remove, lives in /Lib
+
+2001-07-13 10:10  kbk
+
+	* Delegator.py: py-cvs-rel2_1 (Rev 1.3) merge - whitespace
+	normalization
+
+2001-07-13 10:07  kbk
+
+	* Debugger.py: py-cvs-rel2_1 (Rev 1.15) merge - whitespace
+	normalization
+
+2001-07-13 10:04  kbk
+
+	* ColorDelegator.py: py-cvs-rel2_1 (Rev 1.11 and 1.12) merge
+	Colorize "as" after "import" / use DEBUG instead of __debug__
+
+2001-07-13 09:54  kbk
+
+	* ClassBrowser.py: py-cvs-rel2_1 (Rev 1.12) merge - whitespace
+	normalization
+
+2001-07-13 09:41  kbk
+
+	* BrowserControl.py: py-cvs-rel2_1 (Rev 1.1) merge - New File -
+	Force HEAD to trunk with -f Note: browser.py was renamed
+	BrowserControl.py 10 May 2000. It provides a collection of classes
+	and convenience functions to control external browsers "for 1.5.2
+	support". It was removed from py-cvs 18 April 2001.
+
+2001-07-13 09:10  kbk
+
+	* CallTips.py: py-cvs-rel2_1 (Rev 1.8) merge - whitespace
+	normalization
+
+2001-07-13 08:26  kbk
+
+	* CallTipWindow.py: py-cvs-rel2_1 (Rev 1.3) merge - whitespace
+	normalization
+
+2001-07-13 08:13  kbk
+
+	* AutoExpand.py: py-cvs-rel1_2 (Rev 1.4) merge, "Add Alt-slash to
+	Unix keydefs (I somehow need it on RH 6.2).  Get rid of assignment
+	to unused self.text.wordlist."	--GvR
+
+2001-07-12 16:54  elguavas
+
+	* ReplaceDialog.py: py-cvs merge, python 1.5.2 compatability
+
+2001-07-12 16:46  elguavas
+
+	* ScriptBinding.py: py-cvs merge, better error dialog
+
+2001-07-12 16:38  elguavas
+
+	* TODO.txt: py-cvs merge, additions
+
+2001-07-12 15:35  elguavas
+
+	* WindowList.py: py-cvs merge, correct indentation
+
+2001-07-12 15:24  elguavas
+
+	* config.txt: py-cvs merge, correct typo
+
+2001-07-12 15:21  elguavas
+
+	* help.txt: py-cvs merge, update colour changing info
+
+2001-07-12 14:51  elguavas
+
+	* idle.py: py-cvs merge, idle_dir loading changed
+
+2001-07-12 14:44  elguavas
+
+	* idlever.py: py-cvs merge, version update
+
+2001-07-11 12:53  kbk
+
+	* BrowserControl.py: Initial revision
+
+2001-07-11 12:53  kbk
+
+	* AutoExpand.py, BrowserControl.py, CallTipWindow.py, CallTips.py,
+	ClassBrowser.py, ColorDelegator.py, Debugger.py, Delegator.py,
+	EditorWindow.py, FileList.py, FormatParagraph.py, IOBinding.py,
+	IdleConf.py, IdleHistory.py, MultiScrolledLists.py,
+	MultiStatusBar.py, ObjectBrowser.py, OutputWindow.py,
+	ParenMatch.py, PathBrowser.py, Percolator.py, PyParse.py,
+	PyShell.py, RemoteInterp.py, ReplaceDialog.py, ScriptBinding.py,
+	ScrolledList.py, Separator.py, StackViewer.py, TODO.txt,
+	ToolTip.py, WindowList.py, config.txt, help.txt, idle, idle.bat,
+	idle.py, idlever.py, setup.py, Icons/minusnode.gif,
+	Icons/python.gif: Import the release 2.1 version of Python CVS IDLE
+	on the existing 1.1.3 vendor branch named py-cvs-vendor-branch,
+	with release tag py-cvs-rel2_1.
+
+2001-07-11 12:34  kbk
+
+	* AutoExpand.py, AutoIndent.py, Bindings.py, CallTipWindow.py,
+	CallTips.py, ChangeLog, ClassBrowser.py, ColorDelegator.py,
+	Debugger.py, Delegator.py, EditorWindow.py, FileList.py,
+	FormatParagraph.py, FrameViewer.py, GrepDialog.py, IOBinding.py,
+	IdleConf.py, IdleHistory.py, MultiScrolledLists.py,
+	MultiStatusBar.py, NEWS.txt, ObjectBrowser.py, OldStackViewer.py,
+	OutputWindow.py, ParenMatch.py, PathBrowser.py, Percolator.py,
+	PyParse.py, PyShell.py, README.txt, RemoteInterp.py,
+	ReplaceDialog.py, ScriptBinding.py, ScrolledList.py,
+	SearchBinding.py, SearchDialog.py, SearchDialogBase.py,
+	SearchEngine.py, Separator.py, StackViewer.py, TODO.txt,
+	ToolTip.py, TreeWidget.py, UndoDelegator.py, WidgetRedirector.py,
+	WindowList.py, ZoomHeight.py, __init__.py, config-unix.txt,
+	config-win.txt, config.txt, eventparse.py, extend.txt, help.txt,
+	idle.bat, idle.py, idle.pyw, idlever.py, keydefs.py, pyclbr.py,
+	tabnanny.py, testcode.py, Icons/folder.gif, Icons/minusnode.gif,
+	Icons/openfolder.gif, Icons/plusnode.gif, Icons/python.gif,
+	Icons/tk.gif: Import the 9 March 2000 version of Python CVS IDLE as
+	1.1.3 vendor branch named py-cvs-vendor-branch.
+
+2001-07-04 13:43  kbk
+
+	* Icons/: folder.gif, minusnode.gif, openfolder.gif, plusnode.gif,
+	python.gif, tk.gif: Null commit with -f option to force an uprev
+	and put HEADs firmly on the trunk.
+
+2001-07-04 13:15  kbk
+
+	* AutoExpand.py, AutoIndent.py, Bindings.py, CallTipWindow.py,
+	CallTips.py, ChangeLog, ClassBrowser.py, ColorDelegator.py,
+	ConfigParser.py, Debugger.py, Delegator.py, EditorWindow.py,
+	ExecBinding.py, FileList.py, FormatParagraph.py, FrameViewer.py,
+	GrepDialog.py, IDLEFORK.html, IOBinding.py, IdleConf.py,
+	IdleHistory.py, MultiScrolledLists.py, MultiStatusBar.py, NEWS.txt,
+	ObjectBrowser.py, OldStackViewer.py, OutputWindow.py,
+	ParenMatch.py, PathBrowser.py, Percolator.py, PyParse.py,
+	PyShell.py, README.txt, Remote.py, RemoteInterp.py,
+	ReplaceDialog.py, ScriptBinding.py, ScrolledList.py,
+	SearchBinding.py, SearchDialog.py, SearchDialogBase.py,
+	SearchEngine.py, Separator.py, StackViewer.py, TODO.txt,
+	ToolTip.py, TreeWidget.py, UndoDelegator.py, WidgetRedirector.py,
+	WindowList.py, ZoomHeight.py, __init__.py, config-unix.txt,
+	config-win.txt, config.txt, eventparse.py, extend.txt, help.txt,
+	idle, idle.bat, idle.py, idle.pyw, idlever.py, keydefs.py,
+	loader.py, protocol.py, pyclbr.py, setup.py, spawn.py, tabnanny.py,
+	testcode.py: Null commit with -f option to force an uprev and put
+	HEADs firmly on the trunk.
+
+2001-06-27 10:24  elguavas
+
+	* IDLEFORK.html: updated contact details
+
+2001-06-25 17:23  elguavas
+
+	* idle, RemoteInterp.py, setup.py: Initial revision
+
+2001-06-25 17:23  elguavas
+
+	* idle, RemoteInterp.py, setup.py: import current python cvs idle
+	as a vendor branch
+
+2001-06-24 15:10  elguavas
+
+	* IDLEFORK.html: tiny change to test new syncmail setup
+
+2001-06-24 14:41  elguavas
+
+	* IDLEFORK.html: change to new developer contact, also a test
+	commit for new syncmail setup
+
+2001-06-23 18:15  elguavas
+
+	* IDLEFORK.html: tiny test update for revitalised idle-fork
+
+2000-09-24 17:29  nriley
+
+	* protocol.py: Fixes for Python 1.6 compatibility - socket bind and
+	connect get a tuple instead two arguments.
+
+2000-09-24 17:28  nriley
+
+	* spawn.py: Change for Python 1.6 compatibility - UNIX's 'os'
+	module defines 'spawnv' now, so we check for 'fork' first.
+
+2000-08-15 22:51  nowonder
+
+	* IDLEFORK.html: 
+	corrected email address
+
+2000-08-15 22:47  nowonder
+
+	* IDLEFORK.html: 
+	added .html file for http://idlefork.sourceforge.net
+
+2000-08-15 11:13  dscherer
+
+	* AutoExpand.py, AutoIndent.py, Bindings.py, CallTipWindow.py,
+	CallTips.py, __init__.py, ChangeLog, ClassBrowser.py,
+	ColorDelegator.py, ConfigParser.py, Debugger.py, Delegator.py,
+	FileList.py, FormatParagraph.py, FrameViewer.py, GrepDialog.py,
+	IOBinding.py, IdleConf.py, IdleHistory.py, MultiScrolledLists.py,
+	MultiStatusBar.py, NEWS.txt, ObjectBrowser.py, OldStackViewer.py,
+	OutputWindow.py, ParenMatch.py, PathBrowser.py, Percolator.py,
+	PyParse.py, PyShell.py, README.txt, ReplaceDialog.py,
+	ScriptBinding.py, ScrolledList.py, SearchBinding.py,
+	SearchDialog.py, SearchDialogBase.py, SearchEngine.py,
+	Separator.py, StackViewer.py, TODO.txt, ToolTip.py, TreeWidget.py,
+	UndoDelegator.py, WidgetRedirector.py, WindowList.py, help.txt,
+	ZoomHeight.py, config-unix.txt, config-win.txt, config.txt,
+	eventparse.py, extend.txt, idle.bat, idle.py, idle.pyw, idlever.py,
+	keydefs.py, loader.py, pyclbr.py, tabnanny.py, testcode.py,
+	EditorWindow.py, ExecBinding.py, Remote.py, protocol.py, spawn.py,
+	Icons/folder.gif, Icons/minusnode.gif, Icons/openfolder.gif,
+	Icons/plusnode.gif, Icons/python.gif, Icons/tk.gif: Initial
+	revision
+
+2000-08-15 11:13  dscherer
+
+	* AutoExpand.py, AutoIndent.py, Bindings.py, CallTipWindow.py,
+	CallTips.py, __init__.py, ChangeLog, ClassBrowser.py,
+	ColorDelegator.py, ConfigParser.py, Debugger.py, Delegator.py,
+	FileList.py, FormatParagraph.py, FrameViewer.py, GrepDialog.py,
+	IOBinding.py, IdleConf.py, IdleHistory.py, MultiScrolledLists.py,
+	MultiStatusBar.py, NEWS.txt, ObjectBrowser.py, OldStackViewer.py,
+	OutputWindow.py, ParenMatch.py, PathBrowser.py, Percolator.py,
+	PyParse.py, PyShell.py, README.txt, ReplaceDialog.py,
+	ScriptBinding.py, ScrolledList.py, SearchBinding.py,
+	SearchDialog.py, SearchDialogBase.py, SearchEngine.py,
+	Separator.py, StackViewer.py, TODO.txt, ToolTip.py, TreeWidget.py,
+	UndoDelegator.py, WidgetRedirector.py, WindowList.py, help.txt,
+	ZoomHeight.py, config-unix.txt, config-win.txt, config.txt,
+	eventparse.py, extend.txt, idle.bat, idle.py, idle.pyw, idlever.py,
+	keydefs.py, loader.py, pyclbr.py, tabnanny.py, testcode.py,
+	EditorWindow.py, ExecBinding.py, Remote.py, protocol.py, spawn.py,
+	Icons/folder.gif, Icons/minusnode.gif, Icons/openfolder.gif,
+	Icons/plusnode.gif, Icons/python.gif, Icons/tk.gif: Modified IDLE
+	from VPython 0.2
+
+
 original IDLE ChangeLog:
 ========================
 
