@@ -72,12 +72,17 @@ fill_file_fields(PyFileObject *f, FILE *fp, char *name, char *mode,
 {
 	assert(f != NULL);
 	assert(PyFile_Check(f));
-	f->f_fp = NULL;
+	assert(f->f_fp == NULL);
+
+	Py_DECREF(f->f_name);
+	Py_DECREF(f->f_mode);
 	f->f_name = PyString_FromString(name);
 	f->f_mode = PyString_FromString(mode);
+
 	f->f_close = close;
 	f->f_softspace = 0;
 	f->f_binary = strchr(mode,'b') != NULL;
+
 	if (f->f_name == NULL || f->f_mode == NULL)
 		return NULL;
 	f->f_fp = fp;
@@ -91,6 +96,7 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 	assert(PyFile_Check(f));
 	assert(name != NULL);
 	assert(mode != NULL);
+	assert(f->f_fp == NULL);
 
 	/* rexec.py can't stop a user from getting the file() constructor --
 	   all they have to do is get *any* file object f, and then do
@@ -130,7 +136,8 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 PyObject *
 PyFile_FromFile(FILE *fp, char *name, char *mode, int (*close)(FILE *))
 {
-	PyFileObject *f = PyObject_NEW(PyFileObject, &PyFile_Type);
+	PyFileObject *f = (PyFileObject *)PyFile_Type.tp_new(&PyFile_Type,
+							     NULL, NULL);
 	if (f != NULL) {
 		if (fill_file_fields(f, fp, name, mode, close) == NULL) {
 			Py_DECREF(f);
@@ -199,12 +206,8 @@ file_dealloc(PyFileObject *f)
 		(*f->f_close)(f->f_fp);
 		Py_END_ALLOW_THREADS
 	}
-	if (f->f_name != NULL) {
-		Py_DECREF(f->f_name);
-	}
-	if (f->f_mode != NULL) {
-		Py_DECREF(f->f_mode);
-	}
+	Py_XDECREF(f->f_name);
+	Py_XDECREF(f->f_mode);
 	PyObject_DEL(f);
 }
 
@@ -1328,35 +1331,65 @@ file_getiter(PyObject *f)
 static PyObject *
 file_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	/* XXX As for all XXX_new functions, file_new is called
-	   with kwds=NULL by type_call(), so the kwlist is impotent. */
+	PyObject *self;
+	static PyObject *not_yet_string;
+
+	assert(type != NULL && type->tp_alloc != NULL);
+
+	if (not_yet_string == NULL) {
+		not_yet_string = PyString_FromString("<uninitialized file>");
+		if (not_yet_string == NULL)
+			return NULL;
+	}
+
+	self = type->tp_alloc(type, 0);
+	if (self != NULL) {
+		/* Always fill in the name and mode, so that nobody else
+		   needs to special-case NULLs there. */
+		Py_INCREF(not_yet_string);
+		((PyFileObject *)self)->f_name = not_yet_string;
+		Py_INCREF(not_yet_string);
+		((PyFileObject *)self)->f_mode = not_yet_string;
+	}
+	return self;
+}
+
+static int
+file_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	PyFileObject *foself = (PyFileObject *)self;
+	int ret = 0;
 	static char *kwlist[] = {"name", "mode", "buffering", 0};
 	char *name = NULL;
 	char *mode = "r";
 	int bufsize = -1;
-	PyObject *f;
-	extern int fclose(FILE *);
+
+	assert(PyFile_Check(self));
+	if (foself->f_fp != NULL) {
+		/* Have to close the existing file first. */
+		PyObject *closeresult = file_close(foself);
+		if (closeresult == NULL)
+			return -1;
+		Py_DECREF(closeresult);
+	}
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "et|si:file", kwlist,
 					 Py_FileSystemDefaultEncoding, &name,
 					 &mode, &bufsize))
-		return NULL;
-	f = PyType_GenericAlloc(type, 0);
-	if (f != NULL) {
-		PyFileObject *g = (PyFileObject *)f;
-		if (fill_file_fields(g, NULL, name, mode, fclose) == NULL) {
-			Py_DECREF(f);
-			f = NULL;
-		}
-		if (f != NULL && open_the_file(g, name, mode) == NULL) {
-			Py_DECREF(f);
-			f = NULL;
-		}
-		if (f != NULL)
-			PyFile_SetBufSize(f, bufsize);
-	}
+		return -1;
+	if (fill_file_fields(foself, NULL, name, mode, fclose) == NULL)
+		goto Error;
+	if (open_the_file(foself, name, mode) == NULL)
+		goto Error;
+	PyFile_SetBufSize(self, bufsize);
+	goto Done;
+
+Error:
+	ret = -1;
+	/* fall through */
+Done:
 	PyMem_Free(name); /* free the encoded string */
-	return f;
+	return ret;
 }
 
 static char file_doc[] =
@@ -1409,8 +1442,8 @@ PyTypeObject PyFile_Type = {
 	0,					/* tp_descr_get */
 	0,					/* tp_descr_set */
 	0,					/* tp_dictoffset */
-	0,					/* tp_init */
-	0,					/* tp_alloc */
+	(initproc)file_init,			/* tp_init */
+	PyType_GenericAlloc,			/* tp_alloc */
 	file_new,				/* tp_new */
 };
 
