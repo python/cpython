@@ -1979,6 +1979,22 @@ wrap_binaryfunc(PyObject *self, PyObject *args, void *wrapped)
 }
 
 static PyObject *
+wrap_binaryfunc_l(PyObject *self, PyObject *args, void *wrapped)
+{
+	binaryfunc func = (binaryfunc)wrapped;
+	PyObject *other;
+
+	if (!PyArg_ParseTuple(args, "O", &other))
+		return NULL;
+	if (!(self->ob_type->tp_flags & Py_TPFLAGS_CHECKTYPES) &&
+	    self->ob_type != other->ob_type) {
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+	return (*func)(self, other);
+}
+
+static PyObject *
 wrap_binaryfunc_r(PyObject *self, PyObject *args, void *wrapped)
 {
 	binaryfunc func = (binaryfunc)wrapped;
@@ -1986,6 +2002,11 @@ wrap_binaryfunc_r(PyObject *self, PyObject *args, void *wrapped)
 
 	if (!PyArg_ParseTuple(args, "O", &other))
 		return NULL;
+	if (!(self->ob_type->tp_flags & Py_TPFLAGS_CHECKTYPES) &&
+	    self->ob_type != other->ob_type) {
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
 	return (*func)(other, self);
 }
 
@@ -1993,7 +2014,7 @@ wrap_binaryfunc_r(PyObject *self, PyObject *args, void *wrapped)
 #define BINARY(NAME, OP) \
 static struct wrapperbase tab_##NAME[] = { \
 	{"__" #NAME "__", \
-	 (wrapperfunc)wrap_binaryfunc, \
+	 (wrapperfunc)wrap_binaryfunc_l, \
 	 "x.__" #NAME "__(y) <==> " #OP}, \
 	{"__r" #NAME "__", \
 	 (wrapperfunc)wrap_binaryfunc_r, \
@@ -2778,11 +2799,7 @@ add_operators(PyTypeObject *type)
 		ADD(mp->mp_ass_subscript, tab_setitem);
 	}
 
-	/* We don't support "old-style numbers" because their binary
-	   operators require that both arguments have the same type;
-	   the wrappers here only work for new-style numbers. */
-	if ((type->tp_flags & Py_TPFLAGS_CHECKTYPES) &&
-	    (nb = type->tp_as_number) != NULL) {
+	if ((nb = type->tp_as_number) != NULL) {
 		ADD(nb->nb_add, tab_add);
 		ADD(nb->nb_subtract, tab_sub);
 		ADD(nb->nb_multiply, tab_mul);
@@ -2817,7 +2834,7 @@ add_operators(PyTypeObject *type)
 		ADD(nb->nb_inplace_and, tab_iand);
 		ADD(nb->nb_inplace_xor, tab_ixor);
 		ADD(nb->nb_inplace_or, tab_ior);
-		if (type->tp_flags & Py_TPFLAGS_CHECKTYPES) {
+		if (type->tp_flags & Py_TPFLAGS_HAVE_CLASS) {
 			ADD(nb->nb_floor_divide, tab_floordiv);
 			ADD(nb->nb_true_divide, tab_truediv);
 			ADD(nb->nb_inplace_floor_divide, tab_ifloordiv);

@@ -365,10 +365,11 @@ def numops(a, b, skip=[]):
                 res = eval(expr, dict)
                 testbinop(a, b, res, expr, name)
     for name, expr in unops.items():
-        name = "__%s__" % name
-        if hasattr(a, name):
-            res = eval(expr, dict)
-            testunop(a, res, expr, name)
+        if name not in skip:
+            name = "__%s__" % name
+            if hasattr(a, name):
+                res = eval(expr, dict)
+                testunop(a, res, expr, name)
 
 def ints():
     if verbose: print "Testing int operations..."
@@ -384,7 +385,7 @@ def floats():
 
 def complexes():
     if verbose: print "Testing complex operations..."
-    numops(100.0j, 3.0j, skip=['lt', 'le', 'gt', 'ge'])
+    numops(100.0j, 3.0j, skip=['lt', 'le', 'gt', 'ge', 'int', 'long', 'float'])
     class Number(complex):
         __slots__ = ['prec']
         def __new__(cls, *args, **kwds):
