@@ -33,6 +33,7 @@
 /* #define USE_ZLIB		/* Include the zlib module */
 #define USE_APPEARANCE	/* Enable Appearance support */
 #define WITHOUT_FRAMEWORKS /* Use old-style Universal Header includes, not Carbon/Carbon.h */
+#define USE_TOOLBOX_OBJECT_GLUE /* Call toolbox object converters indirectly */
 
 #define USE_MSL_MALLOC	/* Disable private malloc. Also disables next two defines */
 #ifndef USE_MSL_MALLOC
