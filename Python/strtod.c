@@ -69,7 +69,7 @@ double strtod(str, ptr)
 	register char *sp, *dp;
 	register int c;
 	char *buforg, *buflim;
-	char buffer[64];		/* 45-digit significand + */
+	char buffer[64];		/* 45-digit significant + */
 					/* 13-digit exponent */
 	sp = str;
 	while (*sp == ' ') sp++;

@@ -219,7 +219,7 @@ class NNTP:
 		- date: string 'yymmdd' indicating the date
 		- time: string 'hhmmss' indicating the time
 		Return:
-		- resp: server response if succesful
+		- resp: server response if successful
 		- list: list of newsgroup names"""
 
 		return self.longcmd('NEWGROUPS ' + date + ' ' + time)
@@ -230,7 +230,7 @@ class NNTP:
 		- date: string 'yymmdd' indicating the date
 		- time: string 'hhmmss' indicating the time
 		Return:
-		- resp: server response if succesful
+		- resp: server response if successful
 		- list: list of article ids"""
 
 		cmd = 'NEWNEWS ' + group + ' ' + date + ' ' + time
@@ -238,7 +238,7 @@ class NNTP:
 
 	def list(self):
 		"""Process a LIST command.  Return:
-		- resp: server response if succesful
+		- resp: server response if successful
 		- list: list of (group, last, first, flag) (strings)"""
 
 		resp, list = self.longcmd('LIST')
@@ -251,7 +251,7 @@ class NNTP:
 		"""Process a GROUP command.  Argument:
 		- group: the group name
 		Returns:
-		- resp: server response if succesful
+		- resp: server response if successful
 		- count: number of articles (string)
 		- first: first article number (string)
 		- last: last article number (string)
@@ -275,7 +275,7 @@ class NNTP:
 
 	def help(self):
 		"""Process a HELP command.  Returns:
-		- resp: server response if succesful
+		- resp: server response if successful
 		- list: list of strings"""
 
 		return self.longcmd('HELP')
@@ -303,7 +303,7 @@ class NNTP:
 		"""Process a STAT command.  Argument:
 		- id: article number or message id
 		Returns:
-		- resp: server response if succesful
+		- resp: server response if successful
 		- nr:   the article number
 		- id:   the article id"""
 
@@ -327,7 +327,7 @@ class NNTP:
 		"""Process a HEAD command.  Argument:
 		- id: article number or message id
 		Returns:
-		- resp: server response if succesful
+		- resp: server response if successful
 		- nr: article number
 		- id: message id
 		- list: the lines of the article's header"""
@@ -338,7 +338,7 @@ class NNTP:
 		"""Process a BODY command.  Argument:
 		- id: article number or message id
 		Returns:
-		- resp: server response if succesful
+		- resp: server response if successful
 		- nr: article number
 		- id: message id
 		- list: the lines of the article's body"""
@@ -349,7 +349,7 @@ class NNTP:
 		"""Process an ARTICLE command.  Argument:
 		- id: article number or message id
 		Returns:
-		- resp: server response if succesful
+		- resp: server response if successful
 		- nr: article number
 		- id: message id
 		- list: the lines of the article"""
@@ -358,7 +358,7 @@ class NNTP:
 
 	def slave(self):
 		"""Process a SLAVE command.  Returns:
-		- resp: server response if succesful"""
+		- resp: server response if successful"""
 
 		return self.shortcmd('SLAVE')
 
@@ -367,7 +367,7 @@ class NNTP:
 		- hdr: the header type (e.g. 'subject')
 		- str: an article nr, a message id, or a range nr1-nr2
 		Returns:
-		- resp: server response if succesful
+		- resp: server response if successful
 		- list: list of (nr, value) strings"""
 
 		pat = re.compile('^([0-9]+) ?(.*)\n?')
@@ -384,7 +384,7 @@ class NNTP:
 		- start: start of range
 		- end: end of range
 		Returns:
-		- resp: server response if succesful
+		- resp: server response if successful
 		- list: list of (art-nr, subject, poster, date,
 		                 id, references, size, lines)"""
 
@@ -409,7 +409,7 @@ class NNTP:
 		"""Process an XGTITLE command (optional server extension) Arguments:
 		- group: group name wildcard (i.e. news.*)
 		Returns:
-		- resp: server response if succesful
+		- resp: server response if successful
 		- list: list of (name,title) strings"""
 
 		line_pat = re.compile("^([^ \t]+)[ \t]+(.*)$")
@@ -425,7 +425,7 @@ class NNTP:
 		"""Process an XPATH command (optional server extension) Arguments:
 		- id: Message id of article
 		Returns:
-		resp: server response if succesful
+		resp: server response if successful
 		path: directory path to article"""
 
 		resp = self.shortcmd("XPATH " + id)
@@ -442,7 +442,7 @@ class NNTP:
 		"""Process the DATE command. Arguments:
 		None
 		Returns:
-		resp: server response if succesful
+		resp: server response if successful
 		date: Date suitable for newnews/newgroups commands etc.
 		time: Time suitable for newnews/newgroups commands etc."""
 
@@ -463,7 +463,7 @@ class NNTP:
 		"""Process a POST command.  Arguments:
 		- f: file containing the article
 		Returns:
-		- resp: server response if succesful"""
+		- resp: server response if successful"""
 
 		resp = self.shortcmd('POST')
 		# Raises error_??? if posting is not allowed
@@ -486,7 +486,7 @@ class NNTP:
 		- id: message-id of the article
 		- f:  file containing the article
 		Returns:
-		- resp: server response if succesful
+		- resp: server response if successful
 		Note that if the server refuses the article an exception is raised."""
 
 		resp = self.shortcmd('IHAVE ' + id)
@@ -507,7 +507,7 @@ class NNTP:
 
 	def quit(self):
 		"""Process a QUIT command and close the socket.  Returns:
-		- resp: server response if succesful"""
+		- resp: server response if successful"""
 
 		resp = self.shortcmd('QUIT')
 		self.file.close()

@@ -4,7 +4,7 @@ class UserList:
     def __init__(self, initlist=None):
         self.data = []
         if initlist is not None:
-            # XXX should this accept an arbitary sequence?
+            # XXX should this accept an arbitrary sequence?
             if type(initlist) == type(self.data):
                 self.data[:] = initlist
             elif isinstance(initlist, UserList):

@@ -658,7 +658,7 @@ PyWinObject_CloseHKEY(PyObject *obHandle)
 ** Note that fixupMultiSZ and countString have both had changes
 ** made to support "incorrect strings".  The registry specification
 ** calls for strings to be terminated with 2 null bytes.  It seems
-** some commercial packages install strings whcich dont conform,
+** some commercial packages install strings which dont conform,
 ** causing this code to fail - however, "regedit" etc still work
 ** with these strings (ie only we dont!).
 */

@@ -283,7 +283,7 @@ string_print(PyStringObject *op, FILE *fp, int flags)
 		return 0;
 	}
 
-	/* figure out which quote to use; single is prefered */
+	/* figure out which quote to use; single is preferred */
 	quote = '\'';
 	if (strchr(op->ob_sval, '\'') && !strchr(op->ob_sval, '"'))
 		quote = '"';
@@ -321,7 +321,7 @@ string_repr(register PyStringObject *op)
 		register char *p;
 		int quote;
 
-		/* figure out which quote to use; single is prefered */
+		/* figure out which quote to use; single is preferred */
 		quote = '\'';
 		if (strchr(op->ob_sval, '\'') && !strchr(op->ob_sval, '"'))
 			quote = '"';
@@ -1416,10 +1416,10 @@ mymemcnt(const char *mem, int len, const char *pat, int pat_len)
 /*
    mymemreplace
 
-   Return a string in which all occurences of PAT in memory STR are
+   Return a string in which all occurrences of PAT in memory STR are
    replaced with SUB.
 
-   If length of PAT is less than length of STR or there are no occurences
+   If length of PAT is less than length of STR or there are no occurrences
    of PAT in STR, then the original string is returned. Otherwise, a new
    string is allocated here and returned.
 
@@ -1689,7 +1689,7 @@ string_expandtabs(PyStringObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|i:expandtabs", &tabsize))
 	return NULL;
 
-    /* First pass: determine size of ouput string */
+    /* First pass: determine size of output string */
     i = j = 0;
     e = PyString_AS_STRING(self) + PyString_GET_SIZE(self);
     for (p = PyString_AS_STRING(self); p < e; p++)

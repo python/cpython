@@ -48,7 +48,7 @@ class Chooser(Dialog):
         # to simplify application code, the color chooser returns
         # an RGB tuple together with the Tk color string
         if not result:
-            return None, None # cancelled
+            return None, None # canceled
         r, g, b = widget.winfo_rgb(result)
         return (r/256, g/256, b/256), result
 

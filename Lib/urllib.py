@@ -773,7 +773,7 @@ def basejoin(base, url):
             # just return it
             return url
     host, basepath = splithost(basepath) # inherit host
-    basepath, basetag = splittag(basepath) # remove extraneuous cruft
+    basepath, basetag = splittag(basepath) # remove extraneous cruft
     basepath, basequery = splitquery(basepath) # idem
     if path[:1] != '/':
         # non-absolute path name

@@ -146,7 +146,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     }
 
     /* Convert the encoding to a normalized Python string: all
-       characters are converted to lower case, spaces and hypens are
+       characters are converted to lower case, spaces and hyphens are
        replaced with underscores. */
     v = normalizestring(encoding);
     if (v == NULL)
@@ -427,7 +427,7 @@ void _PyCodecRegistry_Init()
 	_PyCodec_SearchCache = PyDict_New();
     if (_PyCodec_SearchPath == NULL || 
 	_PyCodec_SearchCache == NULL)
-	Py_FatalError("can't intialize codec registry");
+	Py_FatalError("can't initialize codec registry");
 }
 
 void _PyCodecRegistry_Fini()

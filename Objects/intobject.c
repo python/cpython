@@ -311,7 +311,7 @@ int_sub(PyIntObject *v, PyIntObject *w)
 /*
 Integer overflow checking used to be done using a double, but on 64
 bit machines (where both long and double are 64 bit) this fails
-because the double doesn't have enouvg precision.  John Tromp suggests
+because the double doesn't have enough precision.  John Tromp suggests
 the following algorithm:
 
 Suppose again we normalize a and b to be nonnegative.

@@ -143,7 +143,7 @@ MD5Update(MD5_CTX *context, unsigned char *input, unsigned int inputLen)
 }
 
 /* MD5 finalization. Ends an MD5 message-digest operation, writing the
-   the message digest and zeroizing the context.
+  the message digest and zeroing the context.
  */
 void
 MD5Final(unsigned char digest[16], MD5_CTX *context)

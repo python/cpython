@@ -1077,7 +1077,7 @@ static int instance_contains(PyInstanceObject *inst, PyObject *member)
 	}
 	func = instance_getattr(inst, __contains__);
 	if(func == NULL) {
-		/* fall back to previous behaviour */
+		/* fall back to previous behavior */
 		int i, cmp_res;
 
 		if(!PyErr_ExceptionMatches(PyExc_AttributeError))
@@ -1160,7 +1160,7 @@ PyInstance_DoBinOp(PyObject *v, PyObject *w, char *opname, char *ropname,
 		return result;
 	if (halfbinop(w, v, ropname, &result, thisfunc, 1) <= 0)
 		return result;
-	/* Sigh -- special case for comnparisons */
+	/* Sigh -- special case for comparisons */
 	if (strcmp(opname, "__cmp__") == 0) {
 		long c = (v < w) ? -1 : (v > w) ? 1 : 0;
 		return PyInt_FromLong(c);

@@ -277,7 +277,7 @@ class Tester:
         return self
 
     def dnd_enter(self, source, event):
-        self.canvas.focus_set() # Show higlight border
+        self.canvas.focus_set() # Show highlight border
         x, y = source.where(self.canvas, event)
         x1, y1, x2, y2 = source.canvas.bbox(source.id)
         dx, dy = x2-x1, y2-y1

@@ -75,7 +75,7 @@ int Py_UnicodeFlag = 0; /* Needed by compile.c */
 
 static int initialized = 0;
 
-/* API to access the initialized flag -- useful for eroteric use */
+/* API to access the initialized flag -- useful for esoteric use */
 
 int
 Py_IsInitialized()

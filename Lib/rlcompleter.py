@@ -84,7 +84,7 @@ class Completer:
         """Compute matches when text contains a dot.
 
         Assuming the text is of the form NAME.NAME....[NAME], and is
-        evaluabable in the globals of __main__, it will be evaluated
+        evaluatable in the globals of __main__, it will be evaluated
         and its attributes (as revealed by dir()) are used as possible
         completions.  (For class instances, class members are are also
         considered.)

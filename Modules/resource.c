@@ -70,8 +70,8 @@ resource_getrusage(PyObject *self, PyObject *args)
 		ru.ru_msgsnd,		     /* messages sent */
 		ru.ru_msgrcv,		     /* messages received */
 		ru.ru_nsignals,		     /* signals received */
-		ru.ru_nvcsw,		     /* voluntary context switchs */
-		ru.ru_nivcsw		     /* involuntary context switchs */
+		ru.ru_nvcsw,		     /* voluntary context switches */
+		ru.ru_nivcsw		     /* involuntary context switches */
 		);
 }
 

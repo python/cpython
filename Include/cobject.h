@@ -28,7 +28,7 @@ extern DL_IMPORT(PyTypeObject) PyCObject_Type;
 #define PyCObject_Check(op) ((op)->ob_type == &PyCObject_Type)
 
 /* Create a PyCObject from a pointer to a C object and an optional
-   destrutor function.  If the second argument is non-null, then it
+   destructor function.  If the second argument is non-null, then it
    will be called with the first argument if and when the PyCObject is
    destroyed.
 
@@ -38,7 +38,7 @@ PyCObject_FromVoidPtr(void *cobj, void (*destruct)(void*));
 
 
 /* Create a PyCObject from a pointer to a C object, a description object,
-   and an optional destrutor function.  If the third argument is non-null,
+   and an optional destructor function.  If the third argument is non-null,
    then it will be called with the first and second arguments if and when 
    the PyCObject is destroyed.
 */

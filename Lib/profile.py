@@ -98,9 +98,9 @@ class Profile:
 	       subfunctions
 	[ 2] = Cumulative time spent in this frame's function, including time in
 	       all subfunctions to this frame.
-	[-3] = Name of the function that corresonds to this frame.  
+	[-3] = Name of the function that corresponds to this frame.  
 	[-2] = Actual frame that we correspond to (used to sync exception handling)
-	[-1] = Our parent 6-tuple (corresonds to frame.f_back)
+	[-1] = Our parent 6-tuple (corresponds to frame.f_back)
 
 	Timing data for each function is stored as a 5-tuple in the dictionary
 	self.timings[].  The index is always the name stored in self.cur[4].
@@ -205,7 +205,7 @@ class Profile:
 		return
 
 
-	# SLOW generic dispatch rountine for timer returning lists of numbers
+	# SLOW generic dispatch routine for timer returning lists of numbers
 
 	def trace_dispatch_l(self, frame, event, arg):
 		t = self.get_time() - self.t
@@ -368,7 +368,7 @@ class Profile:
 	#******************************************************************
 	# The following calculates the overhead for using a profiler.  The
 	# problem is that it takes a fair amount of time for the profiler
-	# to stop the stopwatch (from the time it recieves an event).
+	# to stop the stopwatch (from the time it receives an event).
 	# Similarly, there is a delay from the time that the profiler
 	# re-starts the stopwatch before the user's code really gets to
 	# continue.  The following code tries to measure the difference on

@@ -77,7 +77,7 @@ Some of the functions in this module takes flags as optional parameters:
     M  MULTILINE   "^" matches the beginning of lines as well as the string.
                    "$" matches the end of lines as well as the string.
     S  DOTALL      "." matches any character at all, including the newline.
-    X  VERBOSE     Ignore whitespaces and comments for nicer looking RE's.
+    X  VERBOSE     Ignore whitespace and comments for nicer looking RE's.
 
 This module also defines an exception 'error'.
 

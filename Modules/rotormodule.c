@@ -23,7 +23,7 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 /* This creates an encryption and decryption engine I am calling
-   a rotor due to the original design was a harware rotor with
+   a rotor due to the original design was a hardware rotor with
    contacts used in Germany during WWII.
 
 Rotor Module:
@@ -43,7 +43,7 @@ Rotor Objects:
 NOTE: the {en,de}cryptmore() methods use the setup that was
       established via the {en,de}crypt calls. They will NOT
       re-initalize the rotors unless: 1) They have not been
-      initalized with {en,de}crypt since the last setkey() call;
+      initialized with {en,de}crypt since the last setkey() call;
       2) {en,de}crypt has not been called for this rotor yet.
 
 NOTE: you MUST use the SAME key in rotor.newrotor()
@@ -209,7 +209,7 @@ rotorobj_new(int num_rotors, char *key)
 }
 
 
-/* These routines impliment the rotor itself */
+/* These routines implement the rotor itself */
 
 /*  Here is a fairly sophisticated {en,de}cryption system.  It is based on
     the idea of a "rotor" machine.  A bunch of rotors, each with a
@@ -217,7 +217,7 @@ rotorobj_new(int num_rotors, char *key)
     after encrypting one character.  The current state of the rotors is
     used to encrypt one character.
 
-    The code is smart enought to tell if your alphabet has a number of
+    The code is smart enough to tell if your alphabet has a number of
     characters equal to a power of two.  If it does, it uses logical
     operations, if not it uses div and mod (both require a division).
 

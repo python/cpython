@@ -287,7 +287,7 @@ class fifo:
 ##	return result
 
 # yes, this is about twice as fast, but still seems
-# to be neglible CPU.  The previous could do about 290
+# to be negligible CPU.  The previous could do about 290
 # searches/sec. the new one about 555/sec.
 
 import regex

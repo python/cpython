@@ -88,7 +88,7 @@ class SMTPSenderRefused(SMTPResponseException):
 
 class SMTPRecipientsRefused(SMTPException):
     """All recipient addresses refused.
-    The errors for each recipient are accessable thru the attribute
+    The errors for each recipient are accessible through the attribute
     'recipients', which is a dictionary of exactly the same sort as 
     SMTP.sendmail() returns.  
     """
@@ -323,7 +323,7 @@ class SMTP:
         if code<>250:
             return (code,msg)
         self.does_esmtp=1
-        #parse the ehlo responce -ddm
+        #parse the ehlo response -ddm
         resp=string.split(self.ehlo_resp,'\n')
         del resp[0]
         for each in resp:

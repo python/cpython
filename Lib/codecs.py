@@ -273,7 +273,7 @@ class StreamReader(Codec):
         """ Resets the codec buffers used for keeping state.
 
             Note that no stream repositioning should take place.
-            This method is primarely intended to be able to recover
+            This method is primarily intended to be able to recover
             from decoding errors.
 
         """
@@ -295,7 +295,7 @@ class StreamReaderWriter:
         work in both read and write modes.
 
         The design is such that one can use the factory functions
-        returned by the codec.lookup() function to contruct the
+        returned by the codec.lookup() function to construct the
         instance.
 
     """

@@ -2769,7 +2769,7 @@ build_class(methods, bases, name)
 			/* Call the base's *type*, if it is callable.
 			   This code is a hook for Donald Beaudry's
 			   and Jim Fulton's type extensions.  In
-			   unexended Python it will never be triggered
+			   unextended Python it will never be triggered
 			   since its types are not callable.
 			   Ditto: call the bases's *class*, if it has
 			   one.  This makes the same thing possible

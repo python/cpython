@@ -49,16 +49,16 @@ class Stats:
 	The big change from the previous Profiler (in terms of raw functionality)
 	is that an "add()" method has been provided to combine Stats from
 	several distinct profile runs.  Both the constructor and the add()
-	method now take arbitrarilly many file names as arguments.
+	method now take arbitrarily many file names as arguments.
 
-	All the print methods now take an argument that indicats how many lines
+	All the print methods now take an argument that indicates how many lines
 	to print.  If the arg is a floating point number between 0 and 1.0, then
-	it is taken as a decimal percentage of the availabel lines to be printed
+	it is taken as a decimal percentage of the available lines to be printed
 	(e.g., .1 means print 10% of all available lines).  If it is an integer,
 	it is taken to mean the number of lines of data that you wish to have
 	printed.
 
-	The sort_stats() method now processes some additionaly options (i.e., in
+	The sort_stats() method now processes some additional options (i.e., in
 	addition to the old -1, 0, 1, or 2).  It takes an arbitrary number of quoted
 	strings to select the sort order.  For example sort_stats('time', 'name')
 	sorts on the major key of "internal function time", and on the minor
@@ -165,7 +165,7 @@ class Stats:
 			
 
 
-	# list the tuple indicies and directions for sorting,
+	# list the tuple indices and directions for sorting,
 	# along with some printable description
 	sort_arg_dict_default = {\
 		  "calls"     : (((1,-1),              ), "call count"),\
@@ -447,7 +447,7 @@ class Stats:
 
 class TupleComp:
 	"""This class provides a generic function for comparing any two tuples.
-	Each instance records a list of tuple-indicies (from most significant
+	Each instance records a list of tuple-indices (from most significant
 	to least significant), and sort direction (ascending or decending) for
 	each tuple-index.  The compare functions can then be used as the function
 	argument to the system sort() function when a list of tuples need to be

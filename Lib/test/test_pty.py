@@ -66,7 +66,7 @@ if pid == pty.CHILD:
         pass
     except:
         # We don't want this error to propagate, escape the call to
-        # os._exit(), and cause very peculiar behaviour in the calling
+        # os._exit(), and cause very peculiar behavior in the calling
         # regrtest.py !
         debug("Some other error was raised.")
         os._exit(1)

@@ -117,7 +117,7 @@ class Event:
 					        Enter, KeyPress, KeyRelease,
 					        Leave, Motion)
 	state - state as a string (Visibility)
-	time - when the event occured
+	time - when the event occurred
 	x - x-position of the mouse
 	y - y-position of the mouse
 	x_root - x-position of the mouse on the screen
@@ -129,7 +129,7 @@ class Event:
 	keysym - keysym of the the event as a string (KeyPress, KeyRelease)
 	keysym_num - keysym of the event as a number (KeyPress, KeyRelease)
 	type - type of the event as a number
-	widget - widget in which the event occured
+	widget - widget in which the event occurred
 	delta - delta of wheel movement (MouseWheel)
 	"""
 	pass
@@ -409,7 +409,7 @@ class Misc:
 		The focus order first goes to the next child, then to
 		the children of the child recursively and then to the
 		next sibling which is higher in the stacking order.  A
-		widget is ommited if it has the takefocus resource set
+		widget is omitted if it has the takefocus resource set
 		to 0."""
 		name = self.tk.call('tk_focusNext', self._w)
 		if not name: return None
@@ -529,7 +529,7 @@ class Misc:
 	def option_readfile(self, fileName, priority = None):
 		"""Read file FILENAME into the option database.
 
-		An optional second paramter gives the numeric
+		An optional second parameter gives the numeric
 		priority."""
 		self.tk.call('option', 'readfile', fileName, priority)
 	def selection_clear(self, **kw):
@@ -639,7 +639,7 @@ class Misc:
 		"""Return geometry string for this widget in the form "widthxheight+X+Y"."""
 		return self.tk.call('winfo', 'geometry', self._w)
 	def winfo_height(self):
-		"""Return heigth of this widget."""
+		"""Return height of this widget."""
 		return getint(
 			self.tk.call('winfo', 'height', self._w))
 	def winfo_id(self):
@@ -754,7 +754,7 @@ class Misc:
 		return self._nametowidget(self.tk.call(
 			'winfo', 'toplevel', self._w))
 	def winfo_viewable(self):
-		"""Return true if the widget and all its higher anchestors are mapped."""
+		"""Return true if the widget and all its higher ancestors are mapped."""
 		return getint(
 			self.tk.call('winfo', 'viewable', self._w))
 	def winfo_visual(self):
@@ -1135,7 +1135,7 @@ class Misc:
 		cell. If COL2 and ROW2 are given the bounding box
 		starts at that cell.
 
-		The returned integers specify the offset of the uppler left
+		The returned integers specify the offset of the upper left
 		corner in the master widget and the width and height.
 		"""
 		args = ('grid', 'bbox', self._w)
@@ -1268,7 +1268,7 @@ class Misc:
 
 class CallWrapper:
 	"""Internal class. Stores function to call when some user
-	defined Tcl function is called e.g. after an event occured."""
+	defined Tcl function is called e.g. after an event occurred."""
 	def __init__(self, func, subst, widget):
 		"""Store FUNC, SUBST and WIDGET as members."""
 		self.func = func
@@ -1316,7 +1316,7 @@ class Wm:
 	def wm_command(self, value=None):
 		"""Store VALUE in WM_COMMAND property. It is the command
 		which shall be used to invoke the application. Return current
-		commmand if VALUE is None."""
+		command if VALUE is None."""
 		return self.tk.call('wm', 'command', self._w, value)
 	command = wm_command
 	def wm_deiconify(self):
@@ -1335,7 +1335,7 @@ class Wm:
 		return self.tk.call('wm', 'frame', self._w)
 	frame = wm_frame
 	def wm_geometry(self, newGeometry=None):
-		"""Set geometry to NEWGEOMETRY of the form =widthxheigth+x+y. Return
+		"""Set geometry to NEWGEOMETRY of the form =widthxheight+x+y. Return
 		current value if None is given."""
 		return self.tk.call('wm', 'geometry', self._w, newGeometry)
 	geometry = wm_geometry
@@ -1623,7 +1623,7 @@ class Place:
 		                  relative to width of master (1.0 is the same width
 				  as the master)
 	        relheight=amount - height of this widget between 0.0 and 1.0
-		                   relative to heigth of master (1.0 is the same
+		                   relative to height of master (1.0 is the same
 				   height as the master)
 	        bordermode="inside" or "outside" - whether to take border width of master widget
 	                                           into account
@@ -1913,12 +1913,12 @@ class Canvas(Widget):
 				  sequence, func, add)
 	def canvasx(self, screenx, gridspacing=None):
 		"""Return the canvas x coordinate of pixel position SCREENX rounded
-		to nearest muliple of GRIDSPACING units."""
+		to nearest multiple of GRIDSPACING units."""
 		return getdouble(self.tk.call(
 			self._w, 'canvasx', screenx, gridspacing))
 	def canvasy(self, screeny, gridspacing=None):
 		"""Return the canvas y coordinate of pixel position SCREENY rounded
-		to nearest muliple of GRIDSPACING units."""
+		to nearest multiple of GRIDSPACING units."""
 		return getdouble(self.tk.call(
 			self._w, 'canvasy', screeny, gridspacing))
 	def coords(self, *args):
@@ -2609,7 +2609,7 @@ class Text(Widget):
 		width, wrap, xscrollcommand, yscrollcommand."""
 		Widget.__init__(self, master, 'text', cnf, kw)
 	def bbox(self, *args):
-		"""Return a tuple of (x,y,width,heigth) which gives the bounding
+		"""Return a tuple of (x,y,width,height) which gives the bounding
 		box of the visible part of the character at the index in ARGS."""
 		return self._getints(
 			self.tk.call((self._w, 'bbox') + args)) or None
@@ -2674,7 +2674,7 @@ class Text(Widget):
 		"""Return the index in the form line.char for INDEX."""
 		return self.tk.call(self._w, 'index', index)
 	def insert(self, index, chars, *args):
-		"""Insert CHARS before the charaters at INDEX. An additional
+		"""Insert CHARS before the characters at INDEX. An additional
 		tag can be given in ARGS. Additional CHARS and tags can follow in ARGS."""
 		self.tk.call((self._w, 'insert', index, chars) + args)
 	def mark_gravity(self, markName, direction=None):
@@ -2728,7 +2728,7 @@ class Text(Widget):
 		self.tk.call(self._w, 'see', index)
 	def tag_add(self, tagName, index1, *args):
 		"""Add tag TAGNAME to all characters between INDEX1 and index2 in ARGS.
-		Addtional pairs of indices may follow in ARGS."""
+		Additional pairs of indices may follow in ARGS."""
 		self.tk.call(
 			(self._w, 'tag', 'add', tagName, index1) + args)
 	def tag_unbind(self, tagName, sequence, funcid=None):

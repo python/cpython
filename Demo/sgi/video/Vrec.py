@@ -26,7 +26,7 @@ def usage():
 	print '-g bits       : greyscale (2, 4 or 8 bits)'
 	print '-G            : 2-bit greyscale dithered'
 	print '-m            : monochrome dithered'
-	print '-M value      : monochrome tresholded with value'
+	print '-M value      : monochrome thresholded with value'
 	print '-f            : Capture fields (in stead of frames)'
 	print '-P frames     : preallocate space for "frames" frames'
 	print 'moviefile     : here goes the movie data (default film.video)'

@@ -21,7 +21,7 @@ fp.pop()
 The latter sequence may be used recursively at (A).
 It is also allowed to use multiple push()...pop() sequences.
 
-If seekable is given as 0, the class code will not do the bookeeping
+If seekable is given as 0, the class code will not do the bookkeeping
 it normally attempts in order to make seeks relative to the beginning of the
 current file part.  This may be useful when using MultiFile with a non-
 seekable stream object.

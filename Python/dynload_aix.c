@@ -189,7 +189,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 	/*
 	-- Invoke load() with L_NOAUTODEFER leaving the imported symbols
 	-- of the shared module unresolved. Thus we have to resolve them
-	-- explicitely with loadbind. The new module is loaded, then we
+	-- explicitly with loadbind. The new module is loaded, then we
 	-- resolve its symbols using the list of already loaded modules
 	-- (only those that belong to the python executable). Get these
 	-- with loadquery(L_GETINFO).

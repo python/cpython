@@ -51,7 +51,7 @@ and the type pointer.  The actual memory allocated for an object
 contains other data that can only be accessed after casting the pointer
 to a pointer to a longer structure type.  This longer type must start
 with the reference count and type fields; the macro PyObject_HEAD should be
-used for this (to accomodate for future changes).  The implementation
+used for this (to accommodate for future changes).  The implementation
 of a particular object type can cast the object pointer to the proper
 type and back.
 
@@ -326,7 +326,7 @@ The macros Py_INCREF(op) and Py_DECREF(op) are used to increment or decrement
 reference counts.  Py_DECREF calls the object's deallocator function; for
 objects that don't contain references to other objects or heap memory
 this can be the standard function free().  Both macros can be used
-whereever a void expression is allowed.  The argument shouldn't be a
+wherever a void expression is allowed.  The argument shouldn't be a
 NIL pointer.  The macro _Py_NewReference(op) is used only to initialize
 reference counts to 1; it is defined here for convenience.
 
@@ -518,7 +518,7 @@ times.
   redefinition for better locality and less overhead.
 
   Objects that want to be recursion safe need to use
-  the macroes 
+  the macro's 
 		Py_TRASHCAN_SAFE_BEGIN(name)
   and
 		Py_TRASHCAN_SAFE_END(name)

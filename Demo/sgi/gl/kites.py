@@ -43,7 +43,7 @@ def viewobj (r, s, t, mat) :
 	popmatrix()
 
 #
-# makeobj : the contructor of the object
+# makeobj : the constructor of the object
 #
 def mkobj () :
 	v0 = (-5.0 ,0.0, 0.0)

@@ -268,7 +268,7 @@ def getdefaultlocale(envvars=('LANGUAGE', 'LC_ALL', 'LC_CTYPE', 'LANG')):
         setlocale(LC_ALL, "") runs using the portable 'C' locale.
         Calling setlocale(LC_ALL, "") lets it use the default locale as
         defined by the LANG variable. Since we don't want to interfere
-        with the current locale setting we thus emulate the behaviour
+        with the current locale setting we thus emulate the behavior
         in the way described above.
 
         To maintain compatibility with other platforms, not only the

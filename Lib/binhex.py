@@ -75,7 +75,7 @@ if os.name == 'mac':
 
 else:
     #
-    # Glue code for non-macintosh useage
+    # Glue code for non-macintosh usage
     #
     
     class FInfo:

@@ -66,7 +66,7 @@ typedef int (*SeqInserter) (PyObject* sequence,
                             int index,
                             PyObject* element);
 
-/*  The function below is copyrigthed by Stichting Mathematisch Centrum.  The
+/*  The function below is copyrighted by Stichting Mathematisch Centrum.  The
  *  original copyright statement is included below, and continues to apply
  *  in full to the function immediately following.  All other material is
  *  original, copyrighted by Fred L. Drake, Jr. and Virginia Polytechnic
@@ -2403,7 +2403,7 @@ validate_node(node *tree)
             res = validate_compound_stmt(tree);
             break;
             /*
-             *  Fundemental statements.
+             *  Fundamental statements.
              */
           case expr_stmt:
             res = validate_expr_stmt(tree);
@@ -2552,7 +2552,7 @@ validate_file_input(node *tree)
         else
             res = validate_newline(CHILD(tree, j));
     }
-    /*  This stays in to prevent any internal failues from getting to the
+    /*  This stays in to prevent any internal failures from getting to the
      *  user.  Hopefully, this won't be needed.  If a user reports getting
      *  this, we have some debugging to do.
      */

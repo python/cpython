@@ -1360,7 +1360,7 @@ Execute a path with arguments and environment, replacing current process.\n\
 \n\
 	path: path of executable file\n\
 	args: tuple or list of arguments\n\
-	env: dictonary of strings mapping to strings";
+	env: dictionary of strings mapping to strings";
 
 static PyObject *
 posix_execve(PyObject *self, PyObject *args)
@@ -1558,7 +1558,7 @@ Execute a path with arguments and environment, replacing current process.\n\
 	mode: mode of process creation\n\
 	path: path of executable file\n\
 	args: tuple or list of arguments\n\
-	env: dictonary of strings mapping to strings";
+	env: dictionary of strings mapping to strings";
 
 static PyObject *
 posix_spawnve(PyObject *self, PyObject *args)
@@ -1700,7 +1700,7 @@ posix_fork(PyObject *self, PyObject *args)
 #include <libutil.h>
 #else
 /* BSDI does not supply a prototype for the 'openpty' and 'forkpty'
-   functions, eventhough they are included in libutil. */
+   functions, even though they are included in libutil. */
 #include <termios.h>
 extern int openpty(int *, int *, char *, struct termios *, struct winsize *);
 extern int forkpty(int *, char *, struct termios *, struct winsize *);
@@ -3897,7 +3897,7 @@ posix_tmpnam(PyObject *self, PyObject *args)
 /* This is used for fpathconf(), pathconf(), confstr() and sysconf().
  * It maps strings representing configuration variable names to
  * integer values, allowing those functions to be called with the
- * magic names instead of poluting the module's namespace with tons of
+ * magic names instead of polluting the module's namespace with tons of
  * rarely-used constants.  There are three separate tables that use
  * these definitions.
  *

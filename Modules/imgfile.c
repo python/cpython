@@ -10,7 +10,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 /* IMGFILE module - Interface to sgi libimage */
 
-/* XXX This modele should be done better at some point. It should return
+/* XXX This module should be done better at some point. It should return
 ** an object of image file class, and have routines to manipulate these
 ** image files in a neater way (so you can get rgb images off a greyscale
 ** file, for instance, or do a straight display without having to get the

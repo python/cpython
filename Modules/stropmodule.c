@@ -167,7 +167,7 @@ static char joinfields__doc__[] =
 joinfields(list [,sep]) -> string\n\
 \n\
 Return a string composed of the words in list, with\n\
-intervening occurences of sep.  Sep defaults to a single\n\
+intervening occurrences of sep.  Sep defaults to a single\n\
 space.\n\
 \n\
 (join and joinfields are synonymous)";
@@ -1040,10 +1040,10 @@ static int mymemcnt(char *mem, int len, char *pat, int pat_len)
 /*
    mymemreplace
 
-   Return a string in which all occurences of PAT in memory STR are
+   Return a string in which all occurrences of PAT in memory STR are
    replaced with SUB.
 
-   If length of PAT is less than length of STR or there are no occurences
+   If length of PAT is less than length of STR or there are no occurrences
    of PAT in STR, then the original string is returned. Otherwise, a new
    string is allocated here and returned.
 

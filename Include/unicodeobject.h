@@ -493,7 +493,7 @@ extern DL_IMPORT(PyObject*) PyUnicode_AsUTF16String(
 
    Note that Py_UNICODE data is being interpreted as UTF-16 reduced to
    UCS-2. This trick makes it possible to add full UTF-16 capabilities
-   at a later point without comprimising the APIs.
+   at a later point without compromising the APIs.
 
 */
 
@@ -815,7 +815,7 @@ extern DL_IMPORT(int) PyUnicode_Compare(
     PyObject *right		/* Right string */
     );
 
-/* Apply a argument tuple or dictionar to a format string and return
+/* Apply a argument tuple or dictionary to a format string and return
    the resulting Unicode string. */
 
 extern DL_IMPORT(PyObject *) PyUnicode_Format(

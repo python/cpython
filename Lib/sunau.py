@@ -63,7 +63,7 @@ This returns an instance of a class with the following public methods:
         tell()		-- return the current position
         close()		-- close the instance (make it unusable)
 The position returned by tell() and the position given to setpos()
-are compatible and have nothing to do with the actual postion in the
+are compatible and have nothing to do with the actual position in the
 file.
 The close() method is called automatically when the class instance
 is destroyed.
@@ -170,7 +170,7 @@ class Au_read:
 		if self._hdr_size < 24:
 			raise Error, 'header size too small'
 		if self._hdr_size > 100:
-			raise Error, 'header size rediculously large'
+			raise Error, 'header size ridiculously large'
 		self._data_size = _read_u32(file)
 		if self._data_size != AUDIO_UNKNOWN_SIZE:
 			self._data_size = int(self._data_size)

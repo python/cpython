@@ -120,10 +120,10 @@ decoding_map = {
 	0x00d0: None,	# UNDEFINED
 	0x00d1: None,	# UNDEFINED
 	0x00d2: None,	# UNDEFINED
-	0x00d3: None,	# UNDEFINEDS
+	0x00d3: None,	# UNDEFINED
 	0x00d4: None,	# UNDEFINED
 	0x00d5: None,	# UNDEFINED
-	0x00d6: None,	# UNDEFINEDE
+	0x00d6: None,	# UNDEFINED
 	0x00d7: None,	# UNDEFINED
 	0x00d8: None,	# UNDEFINED
 	0x00d9: 0x2518,	# BOX DRAWINGS LIGHT UP AND LEFT

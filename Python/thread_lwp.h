@@ -13,7 +13,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include <lwp/stackdep.h>
 
 #define STACKSIZE	1000	/* stacksize for a thread */
-#define NSTACKS		2	/* # stacks to be put in cache initialy */
+#define NSTACKS		2	/* # stacks to be put in cache initially */
 
 struct lock {
 	int lock_locked;
