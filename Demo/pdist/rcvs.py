@@ -28,6 +28,8 @@ class MyFile(File):
 		'C' -- conflict: changed locally as well as remotely
 		       (includes cases where the file has been added
 		       or removed locally and remotely)
+		'D' -- deleted remotely
+		'N' -- new remotely
 		'r' -- get rid of entry
 		'c' -- create entry
 		'u' -- update entry
@@ -80,11 +82,25 @@ class MyFile(File):
 	def update(self):
 		code = self.action()
 		print code, self.file
-		if code == 'U':
+		if code in ('U', 'N'):
 			self.get()
 		elif code == 'C':
 			print "%s: conflict resolution not yet implemented" % \
 			      self.file
+		elif code == 'D':
+			try:
+				os.unlink(self.file)
+			except os.error:
+				pass
+			self.eseen = 0
+		elif code == 'r':
+			self.eseen = 0
+		elif code in ('c', 'u'):
+			self.erev = self.rrev
+			self.enew = 0
+			self.edeleted = 0
+			self.esum = self.rsum
+			self.emtime, self.ectime = os.stat(self.file)[-2:]
 
 	def commit(self, message = ""):
 		code = self.action()
