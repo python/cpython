@@ -102,7 +102,7 @@ SOURCE="$(InputPath)"
 # Name "make_versioninfo - Win32 Debug"
 # Begin Source File
 
-SOURCE=..\..\make_versioninfo.c
+SOURCE=..\make_versioninfo.c
 # End Source File
 # End Target
 # End Project
