@@ -22,7 +22,10 @@ Unix.
                            characters, regardless of your locale
                            settings.}
   \seemodule{curses.textpad}{Editable text widget for curses supporting 
-			     Emacs-like bindings.}
+			     \program{Emacs}-like bindings.}
+  \seemodule{curses.wrapper}{Convenience function to ensure proper
+                             terminal setup and resetting on
+                             application entry and exit.}
   \seetext{Tutorial material on using curses with Python is available
            on the Python Web site as Andrew Kuchling's
 \citetitle[http://www.python.org/doc/howto/curses/curses.html]{Curses
@@ -34,8 +37,9 @@ Unix.
 \subsection{Functions \label{curses-functions}}
 
 The module \module{curses} defines the following exception:
+
 \begin{excdesc}{error}
-Curses function returned an error status.
+Exception raised when a curses library function returns an error.
 \end{excdesc}
 
 \strong{Note:} Whenever \var{x} or \var{y} arguments to a function
@@ -967,8 +971,9 @@ A string representing the current version of the module.
 Also available as \constant{__version__}.
 \end{datadesc}
 
+Several constants are available to specify character cell attributes:
 
-\begin{tableii}{c|l}{code}{Attribute}{Meaning}
+\begin{tableii}{l|l}{code}{Attribute}{Meaning}
   \lineii{A_ALTCHARSET}{Alternate character set mode.}
   \lineii{A_BLINK}{Blink mode.}
   \lineii{A_BOLD}{Bold mode.}
@@ -979,12 +984,12 @@ Also available as \constant{__version__}.
 \end{tableii}
 
 Keys are referred to by integer constants with names starting with 
-\code{KEY_}.   The exact keycaps available are system dependent.
+\samp{KEY_}.   The exact keycaps available are system dependent.
 
 % XXX this table is far too large!
 % XXX should this table be alphabetized?
 
-\begin{tableii}{c|l}{code}{Key constant}{Key}
+\begin{tableii}{l|l}{code}{Key constant}{Key}
   \lineii{KEY_MIN}{Minimum key value}
   \lineii{KEY_BREAK}{ Break key (unreliable) }
   \lineii{KEY_DOWN}{ Down-arrow }
@@ -1081,14 +1086,16 @@ Keys are referred to by integer constants with names starting with
   \lineii{KEY_MAX}{Maximum key value}
 \end{tableii}
 
-On VT100s and their software emulations such as X terminal emulators,
-there are normally at least four function keys (KEY_F1, KEY_F2,
-KEY_F3, KEY_F4) available and the arrow keys mapped to KEY_UP,
-KEY_DOWN, KEY_LEFT and KEY_RIGHT in the obvious way. If your machine has a PC
-keybboard, it is safe to expect arrow keys and twelve function keys; also,
-the following keypad mappings are standard:
+On VT100s and their software emulations, such as X terminal emulators,
+there are normally at least four function keys (\constant{KEY_F1},
+\constant{KEY_F2}, \constant{KEY_F3}, \constant{KEY_F4}) available,
+and the arrow keys mapped to \constant{KEY_UP}, \constant{KEY_DOWN},
+\constant{KEY_LEFT} and \constant{KEY_RIGHT} in the obvious way.  If
+your machine has a PC keybboard, it is safe to expect arrow keys and
+twelve function keys (older PC keyboards may have only ten function
+keys); also, the following keypad mappings are standard:
 
-\begin{tableii}{c|l}{code}{Keycap}{code}
+\begin{tableii}{l|l}{kbd}{Keycap}{Constant}
    \lineii{Insert}{KEY_IC}
    \lineii{Delete}{KEY_DC}
    \lineii{Home}{KEY_HOME}
@@ -1105,7 +1112,7 @@ approximation.
 \strong{Note:} These are available only after \function{initscr()} has 
 been called.
 
-\begin{tableii}{c|l}{code}{ACS code}{Meaning}
+\begin{tableii}{l|l}{code}{ACS code}{Meaning}
   \lineii{ACS_BBSS}{alternate name for upper right corner}
   \lineii{ACS_BLOCK}{solid square block}
   \lineii{ACS_BOARD}{board of squares}
@@ -1153,7 +1160,7 @@ been called.
 
 The following table lists the predefined colors:
 
-\begin{tableii}{c|l}{code}{Constant}{Color}
+\begin{tableii}{l|l}{code}{Constant}{Color}
   \lineii{COLOR_BLACK}{Black}
   \lineii{COLOR_BLUE}{Blue}
   \lineii{COLOR_CYAN}{Cyan (light greenish blue)}
@@ -1180,9 +1187,7 @@ Navigator, BBedit 6.x, FrameMaker, and many other programs).  The
 module also provides a rectangle-drawing function useful for framing
 text boxes or for other purposes.
 
-\subsection{Functions \label{curses-textpad-functions}}
-
-The module \module{curses.textpad} defines the following functions:
+The module \module{curses.textpad} defines the following function:
 
 \begin{funcdesc}{rectangle}{win, uly, ulx, lry, lrx}
 Draw a rectangle.  The first argument must be a window object; the
@@ -1196,34 +1201,36 @@ software terminal emulators).  Otherwise it will be drawn with ASCII
 dashes, vertical bars, and plus signs.
 \end{funcdesc}
 
+
 \subsection{Textbox objects \label{curses-textpad-objects}}
 
 You can instantiate a \class{Textbox} object as follows:
 
-\classdesc{Textbox}{win}
-Return a textbox widget object.  The win argument should be a curses
-\class{WindowObject} in which the textbox is to be contained.  The
-edit cursor of the textbox is initially located at the upper left
-hand corner of the containin window, with coordinates (0,0). The
-instance's \member{stripspaces} flag is initially on.
+\begin{classdesc}{Textbox}{win}
+Return a textbox widget object.  The \var{win} argument should be a
+curses \class{WindowObject} in which the textbox is to be contained.
+The edit cursor of the textbox is initially located at the upper left
+hand corner of the containin window, with coordinates \code{(0, 0)}.
+The instance's \member{stripspaces} flag is initially on.
 \end{classdesc}
 
-Textbox objects, have the following methods:
+\class{Textbox} objects have the following methods:
 
-\begin{methoddesc}{edit}{validator=None}
+\begin{methoddesc}{edit}{\optional{validator}}
 This is the entry point you will normally use.  It accepts editing
-keystrokes until one of the termination keystrokes is entered.  If a
-validator function is specified, each entered keystroke is passed to
-it; command dispatch is done on the result. This method returns the
-window contents as a string; whether blanks in the window are included
-is affected by the \member{stripspaces} member.
+keystrokes until one of the termination keystrokes is entered.  If
+\var{validator} is supplied, it must be a function.  It will be called
+for each keystroke entered with the keystroke as a parameter; command
+dispatch is done on the result. This method returns the window
+contents as a string; whether blanks in the window are included is
+affected by the \member{stripspaces} member.
 \end{methoddesc}
 
 \begin{methoddesc}{do_command}{ch}
 Process a single command keystroke.  Here are the supported special
 keystrokes: 
 
-\begin{tableii}{c|l}{code}{keystroke}{action}
+\begin{tableii}{l|l}{kbd}{Keystroke}{Action}
   \lineii{Ctrl-A}{Go to left edge of window.}
   \lineii{Ctrl-B}{Cursor left, wrapping to previous line if appropriate.}
   \lineii{Ctrl-D}{Delete character under cursor.}
@@ -1241,8 +1248,15 @@ keystrokes:
 
 Move operations do nothing if the cursor is at an edge where the
 movement is not possible.  The following synonyms are supported where
-possible:  KEY_LEFT = Ctrl-B, KEY_RIGHT = Ctrl-F, KEY_UP = Ctrl-P,
-KEY_DOWN = Ctrl-N, KEY_BACKSPACE = Ctrl-h.
+possible:
+
+\begin{tableii}{l|l}{constant}{Constant}{Keystroke}
+  \lineii{KEY_LEFT}{\kbd{Ctrl-B}}
+  \lineii{KEY_RIGHT}{\kbd{Ctrl-F}}
+  \lineii{KEY_UP}{\kbd{Ctrl-P}}
+  \lineii{KEY_DOWN}{\kbd{Ctrl-N}}
+  \lineii{KEY_BACKSPACE}{\kbd{Ctrl-h}}
+\end{tableii}
 
 All other keystrokes are treated as a command to insert the given
 character and move right (with line wrapping).
@@ -1254,21 +1268,22 @@ the window are included is affected by the \member{stripspaces}
 member.
 \end{methoddesc}
 
-\begin{methoddesc}{stripspaces}{}
+\begin{memberdesc}{stripspaces}
 This data member is a flag which controls the interpretation of blanks in
 the window.  When it is on, trailing blanks on each line are ignored;
 any cursor motion that would land the cursor on a trailing blank goes
 to the end of that line instead, and trailing blanks are stripped when
 the window contents is gathered.
-\end{methoddesc}
+\end{memberdesc}
+
 
 \section{\module{curses.wrapper} ---
-         Exception-handling wrapper for curses programs.}
+         Terminal handler for curses programs}
 
 \declaremodule{standard}{curses.wrapper}
 \sectionauthor{Eric Raymond}{esr@thyrsus.com}
 \moduleauthor{Eric Raymond}{esr@thyrsus.com}
-\modulesynopsis{Exception-handling wrapper for curses programs.}
+\modulesynopsis{Terminal configuration wrapper for curses programs.}
 \versionadded{1.6}
 
 This module supplies one function, \function{wrapper()}, which runs
@@ -1277,12 +1292,10 @@ application.  If the application raises an exception,
 \function{wrapper()} will restore the terminal to a sane state before
 passing it further up the stack and generating a traceback.
 
-\subsection{Functions \label{curses-wrapper-functions}}
-
-\begin{funcdesc}{wrapper}{func, *rest}
+\begin{funcdesc}{wrapper}{func, \moreargs}
 Wrapper function that initializes curses and calls another function,
-\function{func}, restoring normal keyboard/screen behavior on error.
-The callable object 'func' is then passed the main window 'stdscr'
+\var{func}, restoring normal keyboard/screen behavior on error.
+The callable object \var{func} is then passed the main window 'stdscr'
 as its first argument, followed by any other arguments passed to
 \function{wrapper()}.
 \end{funcdesc}
