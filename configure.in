@@ -58,7 +58,10 @@ AC_MINIX
 
 # checks for header files
 AC_HEADER_STDC
-AC_CHECK_HEADERS(dlfcn.h fcntl.h limits.h ncurses.h signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h sys/audioio.h sys/param.h sys/select.h sys/time.h sys/times.h sys/un.h sys/utsname.h sys/wait.h)
+AC_CHECK_HEADERS(dlfcn.h fcntl.h limits.h ncurses.h \
+signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h \
+sys/audioio.h sys/param.h sys/select.h sys/time.h sys/times.h \
+sys/un.h sys/utsname.h sys/wait.h)
 AC_HEADER_DIRENT
 
 # checks for typedefs
@@ -175,25 +178,27 @@ fi
 # XXX need to check whether libreadline.a actually exists there!
 # XXX Also, on some systems, it's libreadline.so...
 AC_MSG_CHECKING(for --with-readline)
-AC_ARG_WITH(readline, [--with-readline=DIRECTORY GNU readline], [
+AC_ARG_WITH(readline, [--with-readline[=DIRECTORY] use GNU readline library], [
 AC_MSG_RESULT($withval)
 AC_DEFINE(WITH_READLINE)
-if test ! -d "$withval"
-then AC_ERROR(proper usage is --with-readline=DIRECTORY)
+if test -d "$withval"
+then LIBS="$LIBS -L$withval"
 fi
 termcap=
 AC_CHECK_LIB(termcap, tgetent, [termcap=termcap], [
-AC_CHECK_LIB(termlib, tgetent, [termcap=termlib])])
-if test ! -z "$termcap"
-then LIBS="$LIBS $withval/libreadline.a"
-     # Avoid possible conflict between shared libraries termcap and gl
-     # on IRIX 5: both contain a routine called clear.
-     if test -f /usr/lib/lib$termcap.a
-     then LIBS="$LIBS /usr/lib/lib$termcap.a"
-     else LIBS="$LIBS -l$termcap"
-     fi
-else AC_ERROR(no working termcap/termlib, do not use --with-readline)
-fi], AC_MSG_RESULT(no))
+AC_CHECK_LIB(termlib, tgetent, [termcap=termlib], [
+AC_ERROR(no working termcap/termlib -- do not use --with-readline)])])
+AC_CHECK_LIB(readline, readline, [
+LIBS="$LIBS -lreadline"
+# Avoid possible conflict between shared libraries termcap and gl
+# on IRIX 5: both contain a routine called clear.
+if test -f /usr/lib/lib$termcap.a
+then LIBS="$LIBS /usr/lib/lib$termcap.a"
+else LIBS="$LIBS -l$termcap"
+fi
+], [AC_ERROR(no working GNU readline -- do not use --with-readline)],
+-l$termcap)],
+AC_MSG_RESULT(no))
 
 AC_MSG_CHECKING(for --with-thread)
 AC_ARG_WITH(thread, [--with-thread[=DIRECTORY] make interpreter thread-safe], [
@@ -204,7 +209,12 @@ fi
 AC_CHECK_LIB(pthreads, pthread_create, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(_POSIX_THREADS)
 LIBS="$LIBS -lpthreads"
+LIBOBJS="$LIBOBJS thread.o"], [
+AC_CHECK_LIB(pthread, pthread_create, [AC_DEFINE(WITH_THREAD)
+AC_DEFINE(_POSIX_THREADS)
+LIBS="$LIBS -lpthread"
 LIBOBJS="$LIBOBJS thread.o"])
+])
 AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
 LIBS="$LIBS -lmpc"
 LIBOBJS="$LIBOBJS thread.o"])
@@ -243,7 +253,7 @@ DLINCLDIR=${dldir}
 LIBS="$LIBS -ldl -ldld"], AC_MSG_RESULT(no))
 
 # checks for library functions
-AC_CHECK_FUNCS(chown clock dlopen ftime ftruncate \
+AC_CHECK_FUNCS(chown clock dlopen flock ftime ftruncate \
  gethostname_r getpeername getpgrp getpid gettimeofday getwd \
  link lstat mkfifo nice readlink \
  select setgid setuid setsid setpgid setpgrp setvbuf \
