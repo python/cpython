@@ -450,7 +450,7 @@ class QDGlobalsAccessObjectDefinition(ObjectDefinition):
 		pass
 	def outputNew(self):
 		Output()
-		Output("%sPyObject *%s_New()", self.static, self.prefix)
+		Output("%sPyObject *%s_New(void)", self.static, self.prefix)
 		OutLbrace()
 		Output("%s *it;", self.objecttype)
 		Output("it = PyObject_NEW(%s, &%s);", self.objecttype, self.typename)

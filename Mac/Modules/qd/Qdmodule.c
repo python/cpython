@@ -521,7 +521,7 @@ typedef struct QDGlobalsAccessObject {
 	PyObject_HEAD
 } QDGlobalsAccessObject;
 
-static PyObject *QDGA_New()
+static PyObject *QDGA_New(void)
 {
 	QDGlobalsAccessObject *it;
 	it = PyObject_NEW(QDGlobalsAccessObject, &QDGlobalsAccess_Type);

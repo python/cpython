@@ -351,7 +351,7 @@ typedef struct SPBObject {
 	SPB ob_spb;
 } SPBObject;
 
-static PyObject *SPBObj_New()
+static PyObject *SPBObj_New(void)
 {
 	SPBObject *it;
 	it = PyObject_NEW(SPBObject, &SPB_Type);
