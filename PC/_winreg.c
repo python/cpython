@@ -1031,6 +1031,7 @@ PyEnumKey(PyObject *self, PyObject *args)
 	PyObject *obKey;
 	int index;
 	long rc;
+	PyObject *retStr;
 	char *retBuf;
 	DWORD len;
 
@@ -1045,11 +1046,17 @@ PyEnumKey(PyObject *self, PyObject *args)
 		return PyErr_SetFromWindowsErrWithFunction(rc,
 							   "RegQueryInfoKey");
 	++len;    /* include null terminator */
-	retBuf = (char *)alloca(len);
+	retStr = PyString_FromStringAndSize(NULL, len);
+	if (retStr == NULL)
+		return NULL;
+	retBuf = PyString_AS_STRING(retStr);
 
-	if ((rc = RegEnumKey(hKey, index, retBuf, len)) != ERROR_SUCCESS)
+	if ((rc = RegEnumKey(hKey, index, retBuf, len)) != ERROR_SUCCESS) {
+		Py_DECREF(retStr);
 		return PyErr_SetFromWindowsErrWithFunction(rc, "RegEnumKey");
-	return Py_BuildValue("s", retBuf);
+	}
+	_PyString_Resize(&retStr, strlen(retBuf));
+	return retStr;
 }
 
 static PyObject *
@@ -1080,8 +1087,14 @@ PyEnumValue(PyObject *self, PyObject *args)
 							   "RegQueryInfoKey");
 	++retValueSize;    /* include null terminators */
 	++retDataSize;
-	retValueBuf = (char *)alloca(retValueSize);
-	retDataBuf = (char *)alloca(retDataSize);
+	retValueBuf = (char *)PyMem_Malloc(retValueSize);
+	if (retValueBuf == NULL)
+		return PyErr_NoMemory();
+	retDataBuf = (char *)PyMem_Malloc(retDataSize);
+	if (retDataBuf == NULL) {
+		PyMem_Free(retValueBuf);
+		return PyErr_NoMemory();
+	}
 
 	Py_BEGIN_ALLOW_THREADS
 	rc = RegEnumValue(hKey,
@@ -1094,14 +1107,21 @@ PyEnumValue(PyObject *self, PyObject *args)
 			  &retDataSize);
 	Py_END_ALLOW_THREADS
 
-	if (rc != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc,
-							   "PyRegEnumValue");
+	if (rc != ERROR_SUCCESS) {
+		retVal = PyErr_SetFromWindowsErrWithFunction(rc,
+							     "PyRegEnumValue");
+		goto fail;
+	}
 	obData = Reg2Py(retDataBuf, retDataSize, typ);
-	if (obData == NULL)
-		return NULL;
+	if (obData == NULL) {
+		retVal = NULL;
+		goto fail;
+	}
 	retVal = Py_BuildValue("sOi", retValueBuf, obData, typ);
 	Py_DECREF(obData);
+  fail:
+	PyMem_Free(retValueBuf);
+	PyMem_Free(retDataBuf);
 	return retVal;
 }
 
@@ -1206,10 +1226,11 @@ PyQueryValue(PyObject *self, PyObject *args)
 	HKEY hKey;
 	PyObject *obKey;
 	char *subKey;
-
 	long rc;
+	PyObject *retStr;
 	char *retBuf;
 	long bufSize = 0;
+
 	if (!PyArg_ParseTuple(args, "Oz:QueryValue", &obKey, &subKey))
 		return NULL;
 
@@ -1219,12 +1240,18 @@ PyQueryValue(PyObject *self, PyObject *args)
 	    != ERROR_SUCCESS)
 		return PyErr_SetFromWindowsErrWithFunction(rc,
 							   "RegQueryValue");
-	retBuf = (char *)alloca(bufSize);
+	retStr = PyString_FromStringAndSize(NULL, bufSize);
+	if (retStr == NULL)
+		return NULL;
+	retBuf = PyString_AS_STRING(retStr);
 	if ((rc = RegQueryValue(hKey, subKey, retBuf, &bufSize))
-	    != ERROR_SUCCESS)
+	    != ERROR_SUCCESS) {
+		Py_DECREF(retStr);
 		return PyErr_SetFromWindowsErrWithFunction(rc,
 							   "RegQueryValue");
-	return Py_BuildValue("s", retBuf);
+	}
+	_PyString_Resize(&retStr, strlen(retBuf));
+	return retStr;
 }
 
 static PyObject *
@@ -1252,13 +1279,18 @@ PyQueryValueEx(PyObject *self, PyObject *args)
 	    != ERROR_SUCCESS)
 		return PyErr_SetFromWindowsErrWithFunction(rc,
 							   "RegQueryValueEx");
-	retBuf = (char *)alloca(bufSize);
+	retBuf = (char *)PyMem_Malloc(bufSize);
+	if (retBuf == NULL)
+		return PyErr_NoMemory();
 	if ((rc = RegQueryValueEx(hKey, valueName, NULL,
 				  &typ, (BYTE *)retBuf, &bufSize))
-	    != ERROR_SUCCESS)
+	    != ERROR_SUCCESS) {
+		PyMem_Free(retBuf);
 		return PyErr_SetFromWindowsErrWithFunction(rc,
 							   "RegQueryValueEx");
+	}
 	obData = Reg2Py(retBuf, bufSize, typ);
+	PyMem_Free((void *)retBuf);
 	if (obData == NULL)
 		return NULL;
 	result = Py_BuildValue("Oi", obData, typ);
