@@ -17,6 +17,9 @@ READ, WRITE = 1, 2
 def write32(output, value):
     output.write(struct.pack("<l", value))
     
+def write32u(output, value):
+    output.write(struct.pack("<L", value))
+
 def read32(input):
     return struct.unpack("<l", input.read(4))[0]
 
@@ -83,7 +86,7 @@ class GzipFile:
         if fname:
             flags = FNAME
         self.fileobj.write(chr(flags))
-        write32(self.fileobj, int(time.time()))
+        write32u(self.fileobj, long(time.time()))
         self.fileobj.write('\002')
         self.fileobj.write('\377')
         if fname:
@@ -231,7 +234,7 @@ class GzipFile:
         self.fileobj.seek(-8, 1)
         crc32 = read32(self.fileobj)
         isize = read32(self.fileobj)
-        if crc32 != self.crc:
+        if crc32%0x100000000L != self.crc%0x100000000L:
             raise ValueError, "CRC check failed"
         elif isize != self.size:
             raise ValueError, "Incorrect length of data produced"
