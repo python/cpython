@@ -336,8 +336,8 @@ O_seek(Oobject *self, PyObject *args) {
         if (position > self->buf_size) {
                   self->buf_size*=2;
                   if (self->buf_size <= position) self->buf_size=position+1;
-                  UNLESS (self->buf=(char*)
-                          realloc(self->buf,self->buf_size*sizeof(char))) {
+                  UNLESS (self->buf = (char*)
+                          realloc(self->buf,self->buf_size)) {
                       self->buf_size=self->pos=0;
                       return PyErr_NoMemory();
                     }
@@ -371,8 +371,7 @@ O_cwrite(PyObject *self, char *c, int  l) {
             if (oself->buf_size <= newl) 
                     oself->buf_size = newl+1;
             UNLESS (oself->buf = 
-                    (char*)realloc(oself->buf,
-                                   (oself->buf_size) * sizeof(char))) {
+                    (char*)realloc(oself->buf, oself->buf_size)) {
                     PyErr_SetString(PyExc_MemoryError,"out of memory");
                     oself->buf_size = oself->pos = 0;
                     return -1;
@@ -529,7 +528,7 @@ newOobject(int  size) {
         self->string_size = 0;
         self->softspace = 0;
 
-        UNLESS (self->buf=malloc(size*sizeof(char))) {
+        UNLESS (self->buf = (char *)malloc(size)) {
                   PyErr_SetString(PyExc_MemoryError,"out of memory");
                   self->buf_size = 0;
                   return NULL;
