@@ -1742,8 +1742,10 @@ PyEval_EvalFrame(PyFrameObject *f)
 					     PyObject_REPR(w));
 				break;
 			}
-			if (PyDict_CheckExact(v))
+			if (PyDict_CheckExact(v)) {
 				x = PyDict_GetItem(v, w);
+				Py_XINCREF(x);
+			}
 			else {
 				x = PyObject_GetItem(v, w);
 				if (x == NULL && PyErr_Occurred()) {
@@ -1763,8 +1765,8 @@ PyEval_EvalFrame(PyFrameObject *f)
 						break;
 					}
 				}
+				Py_INCREF(x);
 			}
-			Py_INCREF(x);
 			PUSH(x);
 			continue;
 
