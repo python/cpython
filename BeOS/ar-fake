@@ -48,6 +48,7 @@ is_abs() {
 # PowerPC or x86 systems running BeOS.
 build_lib() {
 	LIB=$1 ; shift
+	SO_LIB=${LIB/.a/.so}
 	SO_NAME=$1 ; shift
 	CRUD_NAME=$1 ; shift
 
@@ -79,7 +80,7 @@ build_lib() {
 		PARTS="$PARTS ${OBJ_PATH}${OBJ_FILE}"
 	done < $CRUD_NAME
 
-	$AR_CC -o ${LIB%.a}.so $PARTS $AR_GLUE $EXTRA_LIBS > /dev/null 2>&1
+	$AR_CC -o $SO_LIB $PARTS $AR_GLUE $EXTRA_LIBS > /dev/null 2>&1
 
 	return 0
 }
