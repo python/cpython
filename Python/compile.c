@@ -3967,22 +3967,8 @@ jcompile(node *n, char *filename, struct compiling *base,
 			com_free(&sc);
 			return NULL;
 		}
-		if (flags) {
-			if (flags->cf_flags & PyCF_NESTED_SCOPES)
-				sc.c_future->ff_nested_scopes = 1;
-			else if (sc.c_future->ff_nested_scopes)
-				flags->cf_flags |= PyCF_NESTED_SCOPES;
-
-			if (flags->cf_flags & PyCF_GENERATORS)
-				sc.c_future->ff_generators = 1;
-			else if (sc.c_future->ff_generators)
-				flags->cf_flags |= PyCF_GENERATORS;
-
-			if (flags->cf_flags & PyCF_DIVISION)
-				sc.c_future->ff_division = 1;
-			else if (sc.c_future->ff_division)
-				flags->cf_flags |= PyCF_DIVISION;
-		}
+		if (flags)
+			sc.c_future->ff_features |= flags->cf_flags;
 		if (symtable_build(&sc, n) < 0) {
 			com_free(&sc);
 			return NULL;
@@ -4150,8 +4136,6 @@ symtable_build(struct compiling *c, node *n)
 	if ((c->c_symtable = symtable_init()) == NULL)
 		return -1;
 	c->c_symtable->st_future = c->c_future;
-	if (c->c_future->ff_nested_scopes)
-		c->c_symtable->st_nested_scopes = 1;
 	c->c_symtable->st_filename = c->c_filename;
 	symtable_enter_scope(c->c_symtable, TOP, TYPE(n), n->n_lineno);
 	if (c->c_symtable->st_errors > 0)
@@ -4451,14 +4435,8 @@ static int
 symtable_update_flags(struct compiling *c, PySymtableEntryObject *ste,
 		      struct symbol_info *si)
 {
-	if (c->c_future) {
-		if (c->c_future->ff_nested_scopes)
-			c->c_flags |= CO_NESTED;
-		if (c->c_future->ff_generators)
-			c->c_flags |= CO_GENERATOR_ALLOWED;
-		if (c->c_future->ff_division)
-			c->c_flags |= CO_FUTURE_DIVISION;
-	}
+	if (c->c_future)
+		c->c_flags |= c->c_future->ff_features;
 	if (ste->ste_generator)
 		c->c_flags |= CO_GENERATOR;
 	if (ste->ste_type != TYPE_MODULE)
@@ -4617,7 +4595,6 @@ symtable_init()
 	if (st == NULL)
 		return NULL;
 	st->st_pass = 1;
-	st->st_nested_scopes = NESTED_SCOPES_DEFAULT;
 	st->st_filename = NULL;
 	if ((st->st_stack = PyList_New(0)) == NULL)
 		goto fail;

@@ -30,11 +30,11 @@ future_check_features(PyFutureFeatures *ff, node *n, char *filename)
 		REQ(ch, import_as_name);
 		feature = STR(CHILD(ch, 0));
 		if (strcmp(feature, FUTURE_NESTED_SCOPES) == 0) {
-			ff->ff_nested_scopes = 1;
+			continue;
 		} else if (strcmp(feature, FUTURE_GENERATORS) == 0) {
-			ff->ff_generators = 1;
+			ff->ff_features |= CO_GENERATOR_ALLOWED;
 		} else if (strcmp(feature, FUTURE_DIVISION) == 0) {
-			ff->ff_division = 1;
+			ff->ff_features |= CO_FUTURE_DIVISION;
 		} else if (strcmp(feature, "braces") == 0) {
 			PyErr_SetString(PyExc_SyntaxError,
 					"not a chance");
@@ -234,9 +234,7 @@ PyNode_Future(node *n, char *filename)
 		return NULL;
 	ff->ff_found_docstring = 0;
 	ff->ff_last_lineno = -1;
-	ff->ff_nested_scopes = 0;
-	ff->ff_generators = 0;
-	ff->ff_division = 0;
+	ff->ff_features = 0;
 
 	if (future_parse(ff, n, filename) < 0) {
 		PyMem_Free((void *)ff);
