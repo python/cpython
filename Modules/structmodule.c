@@ -518,14 +518,16 @@ np_double(char *p, PyObject *v, const formatdef *f)
 static int
 np_void_p(char *p, PyObject *v, const formatdef *f)
 {
-	void *x = PyLong_AsVoidPtr(v);
-	if (x == NULL && PyErr_Occurred()) {
-		/* ### hrm. PyLong_AsVoidPtr raises SystemError */
-		if (PyErr_ExceptionMatches(PyExc_TypeError))
-			PyErr_SetString(StructError,
-					"required argument is not an integer");
+	void *x;
+
+	v = get_pylong(v);
+	if (v == NULL)
 		return -1;
-	}
+	assert(PyLong_Check(v));
+	x = PyLong_AsVoidPtr(v);
+	Py_DECREF(v);
+	if (x == NULL && PyErr_Occurred())
+		return -1;
 	memcpy(p, (char *)&x, sizeof x);
 	return 0;
 }
