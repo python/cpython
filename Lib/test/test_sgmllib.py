@@ -262,6 +262,12 @@ DOCTYPE html PUBLIC '-//W3C//DTD HTML 4.01//EN'
             ("data", "def"),
             ])
 
+    def test_enumerated_attr_type(self):
+        s = "<!DOCTYPE doc [<!ATTLIST doc attr (a | b) >]>"
+        self.check_events(s, [
+            ('decl', 'DOCTYPE doc [<!ATTLIST doc attr (a | b) >]'),
+            ])
+
     # XXX These tests have been disabled by prefixing their names with
     # an underscore.  The first two exercise outstanding bugs in the
     # sgmllib module, and the third exhibits questionable behavior
