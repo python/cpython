@@ -126,6 +126,9 @@ Build
 - Detect pthreads support (provided by gnu pth pthread emulation) on
   GNU/k*BSD systems.
 
+- bug #1005737, #1007249: Fixed several build problems and warnings
+  found on old/legacy C compilers of HP-UX, IRIX and Tru64.
+
 C API
 -----
 
