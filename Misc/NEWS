@@ -31,6 +31,13 @@ in the same archive file, and perhaps not on the same date.
 - All bugs noted on the errors page (and many unnoted) are fixed.  All
 new bugs take their places.
 
+- No longer a core dump when attempting to print (or repr(), or str())
+a list or dictionary that contains an instance of itself; instead, the
+recursive entry is printed as [...] or {...}.  See Py_ReprEnter() and
+Py_ReprLeave() below.  Comparisons of such objects still go beserk,
+since this requires a different kind of fix; fortunately, this is a
+less common scenario in practice.
+
 Syntax change
 -------------
 
@@ -52,13 +59,9 @@ careful with the order in which modules are destroyed.  Destructors
 pwill now generally be able to reference built-in names such as None
 without trouble.
 
-- On case-insensitive platforms such as Mac and Windows, require the
-case of a module's filename, e.g. "SocketServer.py", to match the case
-of the module name as specified in the import statement.  This is an
-experimental feature -- if it turns out to break in too many
-situations, it will be removed (or disabled by default) in the future.
-On Windows, it can be disabled on a per-case basis by setting the
-environment variable PYTHONCASEOK (to any value).
+- Case-insensitive platforms such as Mac and Windows require the case
+of a module's filename to match the case of the module name as
+specified in the import statement (see below).
 
 - The code for figuring out the default path now distinguishes between
 files, modules, executable files, and directories.  When expecting a
@@ -68,9 +71,10 @@ Parser/tokenizer changes
 ------------------------
 
 - The tokenizer can now warn you when your source code mixes tabs and
-spaces for indentation in a manner that depends on the worth of a tab
-in spaces.  Use "python -t" or "python -v" to enable this option.  Use 
-"python -tt" to turn the warnings into errors.
+spaces for indentation in a manner that depends on how much a tab is
+worth in spaces.  Use "python -t" or "python -v" to enable this
+option.  Use "python -tt" to turn the warnings into errors.  (See also
+tabnanny.py and tabpolice.py below.)
 
 - Return unsigned characters from tok_nextc(), so '\377' isn't
 mistaken for an EOF character.
@@ -161,7 +165,9 @@ Standard library modules
 
 - All standard library modules have been converted to an indentation
 style using either only tabs or only spaces -- never a mixture -- if
-they weren't already consistent according to tabnanny.
+they weren't already consistent according to tabnanny.  This means
+that the new -t option (see above) won't complain about standard
+library modules.
 
 - New standard library modules:
 
@@ -199,8 +205,8 @@ the re module and the supporting pcre extension) by Andrew Kuchling.
 Incompatible new feature in re.sub(): the handling of escapes in the
 replacement string has changed.
 
-- Interface change in copy.py: a __deepcopy__ method is now called
-with the memo dictionary as an argument.
+- Interface change in the copy module: a __deepcopy__ method is now
+called with the memo dictionary as an argument.
 
 - Feature change in the tokenize module: differentiate between NEWLINE
 token (an official newline) and NL token (a newline that the grammar
@@ -323,6 +329,13 @@ so Tcl will be finalized when Python exits.
 The Python/C API
 ----------------
 
+- New function PyThreadState_GetDict() returns a per-thread dictionary
+intended for storing thread-local global variables.
+
+- New functions Py_ReprEnter() and Py_ReprLeave() use the per-thread
+dictionary to allow recursive container types to detect recursion in
+their repr(), str() and print implementations.
+
 - New function PyObject_Not(x) calculates (not x) according to Python's 
 standard rules (basically, it negates the outcome PyObject_IsTrue(x).
 
@@ -368,6 +381,23 @@ of the file.
 - Performance hack by Vladimir Marangozov for stack frame creation.
 
 - Make sure setvbuf() isn't used unless HAVE_SETVBUF is defined.
+
+Windows 95/NT
+-------------
+
+- The .lib files are now part of the distribution; they are collected
+in the subdirectory "libs" of the installation directory.
+
+- The extension modules (.pyd files) are now collected in a separate
+subdirectory of the installation directory named "DLLs".
+
+- The case of a module's filename must now match the case of the
+module name as specified in the import statement.  This is an
+experimental feature -- if it turns out to break in too many
+situations, it will be removed (or disabled by default) in the future.
+It can be disabled on a per-case basis by setting the environment
+variable PYTHONCASEOK (to any value).
+
 
 
 ======================================================================
