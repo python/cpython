@@ -131,20 +131,26 @@ class _Hqxcoderengine:
 		todo = (datalen/3)*3
 		data = self.data[:todo]
 		self.data = self.data[todo:]
+		if not data:
+			return
 		self.hqxdata = self.hqxdata + binascii.b2a_hqx(data)
-		while len(self.hqxdata) > self.linelen:
-			self.ofp.write(self.hqxdata[:self.linelen]+'\n')
-			self.hqxdata = self.hqxdata[self.linelen:]
+		self._flush(0)
+
+	def _flush(self, force):
+		first = 0
+		while first <= len(self.hqxdata)-self.linelen:
+			last = first + self.linelen
+			self.ofp.write(self.hqxdata[first:last]+'\n')
 			self.linelen = LINELEN
+			first = last
+		self.hqxdata = self.hqxdata[first:]
+		if force:
+			self.ofp.write(self.hqxdata + ':\n')
 
 	def close(self):
 		if self.data:
 			self.hqxdata = self.hqxdata + binascii.b2a_hqx(self.data)
-		while self.hqxdata:
-			self.ofp.write(self.hqxdata[:self.linelen])
-			self.hqxdata = self.hqxdata[self.linelen:]
-			self.linelen = LINELEN
-		self.ofp.write(':\n')
+		self._flush(1)
 		self.ofp.close()
 		del self.ofp
 
@@ -290,7 +296,6 @@ class _Hqxdecoderengine:
 			while 1:
 				try:
 					decdatacur, self.eof = binascii.a2b_hqx(data)
-					if self.eof: print 'EOF'
 					break
 				except binascii.Incomplete:
 					pass
