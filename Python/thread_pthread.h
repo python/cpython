@@ -98,6 +98,8 @@ int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 		init_thread();
 	success = pthread_create(&th, pthread_attr_default,
 				 (void* (*) _P((void *)))func, arg);
+	if (success >= 0)
+		pthread_detach(th);
 	return success < 0 ? 0 : 1;
 }
 
