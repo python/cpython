@@ -22,14 +22,14 @@ cache = {}
 # Compare two files, use the cache if possible.
 # May raise os.error if a stat or open of either fails.
 #
-def cmp(f1, f2):
+def cmp(f1, f2, shallow=1):
 	# Return 1 for identical files, 0 for different.
 	# Raise exceptions if either file could not be statted, read, etc.
 	s1, s2 = sig(statcache.stat(f1)), sig(statcache.stat(f2))
 	if not S_ISREG(s1[0]) or not S_ISREG(s2[0]):
 		# Either is a not a plain file -- always report as different
 		return 0
-	if s1 == s2:
+	if shallow and s1 == s2:
 		# type, size & mtime match -- report same
 		return 1
 	if s1[:2] <> s2[:2]: # Types or sizes differ, don't bother
@@ -59,8 +59,8 @@ def sig(st):
 def do_cmp(f1, f2):
 	#print '    cmp', f1, f2 # XXX remove when debugged
 	bufsize = 8*1024 # Could be tuned
-	fp1 = open(f1, 'r')
-	fp2 = open(f2, 'r')
+	fp1 = open(f1, 'rb')
+	fp2 = open(f2, 'rb')
 	while 1:
 		b1 = fp1.read(bufsize)
 		b2 = fp2.read(bufsize)
