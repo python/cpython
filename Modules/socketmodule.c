@@ -2627,8 +2627,8 @@ static void SSL_dealloc(SSLObject *self)
 {
 	if (self->server_cert)	/* Possible not to have one? */
 		X509_free (self->server_cert);
-	SSL_CTX_free(self->ctx);
 	SSL_free(self->ssl);
+	SSL_CTX_free(self->ctx);
 	Py_XDECREF(self->x_attr);
 	Py_XDECREF(self->Socket);
 	PyObject_Del(self);
