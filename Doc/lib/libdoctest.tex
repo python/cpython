@@ -712,14 +712,12 @@ can be useful.
 
 \subsubsection{Warnings\label{doctest-warnings}}
 
-\begin{itemize}
-
-\item \module{doctest} is serious about requiring exact matches in expected
-  output.  If even a single character doesn't match, the test fails.  This
-  will probably surprise you a few times, as you learn exactly what Python
-  does and doesn't guarantee about output.  For example, when printing a
-  dict, Python doesn't guarantee that the key-value pairs will be printed
-  in any particular order, so a test like
+\module{doctest} is serious about requiring exact matches in expected
+output.  If even a single character doesn't match, the test fails.  This
+will probably surprise you a few times, as you learn exactly what Python
+does and doesn't guarantee about output.  For example, when printing a
+dict, Python doesn't guarantee that the key-value pairs will be printed
+in any particular order, so a test like
 
 % Hey! What happened to Monty Python examples?
 % Tim: ask Guido -- it's his example!
@@ -787,8 +785,6 @@ often contrive doctest examples to produce numbers of that form:
 
 Simple fractions are also easier for people to understand, and that makes
 for better documentation.
-
-\end{itemize}
 
 \subsection{Basic API\label{doctest-basic-api}}
 
