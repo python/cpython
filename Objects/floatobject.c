@@ -314,7 +314,6 @@ PyFloat_AsString(char *buf, PyFloatObject *v)
 /* ARGSUSED */
 static int
 float_print(PyFloatObject *v, FILE *fp, int flags)
-     /* flags -- not used but required by interface */
 {
 	char buf[100];
 	PyFloat_AsStringEx(buf, v, flags&Py_PRINT_RAW ? PREC_STR : PREC_REPR);
