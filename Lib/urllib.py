@@ -188,13 +188,9 @@ class URLopener:
 		if not filename:
 			import tempfile
 			garbage, path = splittype(url)
-			print (garbage, path)
 			garbage, path = splithost(path or "")
-			print (garbage, path)
 			path, garbage = splitquery(path or "")
-			print (path, garbage)
 			path, garbage = splitattr(path or "")
-			print (path, garbage)
 			suffix = os.path.splitext(path)[1]
 			filename = tempfile.mktemp(suffix)
 			self.__tempfiles.append(filename)
