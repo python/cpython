@@ -349,10 +349,10 @@ def copy_tree (src, dst,
             outputs.append (dst_name)
             
         elif os.path.isdir (src_name):
-            outputs[-1:] = \
+            outputs.extend (
                 copy_tree (src_name, dst_name,
                            preserve_mode, preserve_times, preserve_symlinks,
-                           update, verbose, dry_run)
+                           update, verbose, dry_run))
         else:
             if (copy_file (src_name, dst_name,
                            preserve_mode, preserve_times,
