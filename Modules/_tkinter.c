@@ -49,6 +49,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef macintosh
 #define MAC_TCL
+#include "myselect.h"
 #endif
 
 #include <tcl.h>
@@ -1589,6 +1590,66 @@ PyMacConvertEvent(eventPtr)
 		return 0; /* Nothing happened to the Tcl event queue */
 	return TkMacConvertEvent(eventPtr);
 }
+
+#ifdef USE_GUSI
+/*
+ * For Python we have to override this routine (from TclMacNotify),
+ * since we use GUSI for our sockets, not Tcl streams. Hence, we have
+ * to use GUSI select to see whether our socket is ready. Note that
+ * createfilehandler (above) sets the type to TCL_UNIX_FD for our
+ * files and sockets.
+ *
+ * NOTE: this code was lifted from Tcl 7.6, it may need to be modified
+ * for other versions.  */
+
+int
+Tcl_FileReady(file, mask)
+    Tcl_File file;		/* File handle for a stream. */
+    int mask;			/* OR'ed combination of TCL_READABLE,
+				 * TCL_WRITABLE, and TCL_EXCEPTION:
+				 * indicates conditions caller cares about. */
+{
+    int type;
+    int fd;
+
+    fd = (int) Tcl_GetFileInfo(file, &type);
+
+    if (type == TCL_MAC_SOCKET) {
+	return TclMacSocketReady(file, mask);
+    } else if (type == TCL_MAC_FILE) {
+	/*
+	 * Under the Macintosh, files are always ready, so we just 
+	 * return the mask that was passed in.
+	 */
+
+	return mask;
+    } else if (type == TCL_UNIX_FD) {
+	fd_set readset, writeset, excset;
+	struct timeval tv;
+	
+	FD_ZERO(&readset);
+	FD_ZERO(&writeset);
+	FD_ZERO(&excset);
+	
+	if ( mask & TCL_READABLE ) FD_SET(fd, &readset);
+	if ( mask & TCL_WRITABLE ) FD_SET(fd, &writeset);
+	if ( mask & TCL_EXCEPTION ) FD_SET(fd, &excset);
+	
+	tv.tv_sec = tv.tv_usec = 0;
+	if ( select(fd+1, &readset, &writeset, &excset, &tv) <= 0 )
+		return 0;
+	
+	mask = 0;
+	if ( FD_ISSET(fd, &readset) ) mask |= TCL_READABLE;
+	if ( FD_ISSET(fd, &writeset) ) mask |= TCL_WRITABLE;
+	if ( FD_ISSET(fd, &excset) ) mask |= TCL_EXCEPTION;
+
+	return mask;
+    }
+    
+    return 0;
+}
+#endif /* USE_GUSI */
 
 #if GENERATINGCFM
 
