@@ -741,6 +741,13 @@
                     <FILEKIND>Library</FILEKIND>
                     <FILEFLAGS>Debug</FILEFLAGS>
                 </FILE>
+                <FILE>
+                    <PATHTYPE>Name</PATHTYPE>
+                    <PATH>Qdoffs.ppc.slb</PATH>
+                    <PATHFORMAT>MacOS</PATHFORMAT>
+                    <FILEKIND>Library</FILEKIND>
+                    <FILEFLAGS>Debug</FILEFLAGS>
+                </FILE>
 
                 <FILE>
                     <PATHTYPE>Name</PATHTYPE>
@@ -789,6 +796,11 @@
                 <FILEREF>
                     <PATHTYPE>Name</PATHTYPE>
                     <PATH>Cm.ppc.slb</PATH>
+                    <PATHFORMAT>MacOS</PATHFORMAT>
+                </FILEREF>
+                <FILEREF>
+                    <PATHTYPE>Name</PATHTYPE>
+                    <PATH>Qdoffs.ppc.slb</PATH>
                     <PATHFORMAT>MacOS</PATHFORMAT>
                 </FILEREF>
 
@@ -848,6 +860,12 @@
                 <TARGETNAME>Qt.ppc</TARGETNAME>
                 <PATHTYPE>Name</PATHTYPE>
                 <PATH>Cm.ppc.slb</PATH>
+                <PATHFORMAT>MacOS</PATHFORMAT>
+            </FILEREF>
+            <FILEREF>
+                <TARGETNAME>Qt.ppc</TARGETNAME>
+                <PATHTYPE>Name</PATHTYPE>
+                <PATH>Qdoffs.ppc.slb</PATH>
                 <PATHFORMAT>MacOS</PATHFORMAT>
             </FILEREF>
 
