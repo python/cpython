@@ -7,6 +7,8 @@ import sys
 import types
 
 from compiler import misc
+from compiler.consts import CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, \
+     CO_VARKEYWORDS
 
 def xxx_sort(l):
     l = l[:]
@@ -311,11 +313,6 @@ class Block:
         return contained
 
 # flags for code objects
-CO_OPTIMIZED = 0x0001
-CO_NEWLOCALS = 0x0002
-CO_VARARGS = 0x0004
-CO_VARKEYWORDS = 0x0008
-CO_NESTED = 0x0010
 
 # the FlowGraph is transformed in place; it exists in one of these states
 RAW = "RAW"
@@ -503,7 +500,8 @@ class PyFlowGraph(FlowGraph):
         return self._lookupName(arg, self.names)
 
     def _convert_NAME(self, arg):
-        self._lookupName(arg, self.varnames)
+        if self.klass is None:
+            self._lookupName(arg, self.varnames)
         return self._lookupName(arg, self.names)
     _convert_STORE_NAME = _convert_NAME
     _convert_DELETE_NAME = _convert_NAME
@@ -739,9 +737,8 @@ class StackDepthTracker:
         'DELETE_SUBSCR': -2,
         # PRINT_EXPR?
         'PRINT_ITEM': -1,
-        'LOAD_LOCALS': 1,
         'RETURN_VALUE': -1,
-        'EXEC_STMT': -2,
+        'EXEC_STMT': -3,
         'BUILD_CLASS': -2,
         'STORE_NAME': -1,
         'STORE_ATTR': -2,
@@ -756,6 +753,7 @@ class StackDepthTracker:
         # close enough...
         'SETUP_EXCEPT': 3,
         'SETUP_FINALLY': 3,
+        'FOR_ITER': 1,
         }
     # use pattern match
     patterns = [
