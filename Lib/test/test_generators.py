@@ -1,3 +1,5 @@
+from __future__ import nested_scopes
+
 tutorial_tests = """
 Let's try a simple generator:
 
@@ -739,11 +741,170 @@ Traceback (most recent call last):
 SyntaxError: 'return' with argument inside generator (<string>, line 8)
 """
 
+# conjoin is a simple backtracking generator, named in honor of Icon's
+# "conjunction" control structure.  Pass a list of no-argument functions
+# that return iterable objects.  Easiest to explain by example:  assume the
+# function list [x, y, z] is passed.  Then conjoin acts like:
+#
+# def g():
+#     values = [None] * 3
+#     for values[0] in x():
+#         for values[1] in y():
+#             for values[2] in z():
+#                 yield values
+#
+# So some 3-lists of values *may* be generated, each time we successfully
+# get into the innermost loop.  If an iterator fails (is exhausted) before
+# then, it "backtracks" to get the next value from the nearest enclosing
+# iterator (the one "to the left"), and starts all over again at the next
+# slot (pumps a fresh iterator).  Of course this is most useful when the
+# iterators have side-effects, so that which values *can* be generated at
+# each slot depend on the values iterated at previous slots.
+
+def conjoin(gs):
+
+    values = [None] * len(gs)
+
+    def gen(i, values=values):
+        if i >= len(gs):
+            yield values
+        else:
+            for values[i] in gs[i]():
+                for x in gen(i+1):
+                    yield x
+
+    for x in gen(0):
+        yield x
+
+# A conjoin-based N-Queens solver.
+
+class Queens:
+    def __init__(self, n):
+        self.n = n
+        rangen = range(n)
+
+        # Assign a unique int to each column and diagonal.
+        # columns:  n of those, range(n).
+        # NW-SE diagonals: 2n-1 of these, i-j unique and invariant along
+        # each, smallest i-j is 0-(n-1) = 1-n, so add n-1 to shift to 0-
+        # based.
+        # NE-SW diagonals: 2n-1 of these, i+j unique and invariant along
+        # each, smallest i+j is 0, largest is 2n-2.
+
+        # For each square, compute a bit vector of the columns and
+        # diagonals it covers, and for each row compute a function that
+        # generates the possiblities for the columns in that row.
+        self.rowgenerators = []
+        for i in rangen:
+            rowuses = [(1L << j) |                  # column ordinal
+                       (1L << (n + i-j + n-1)) |    # NW-SE ordinal
+                       (1L << (n + 2*n-1 + i+j))    # NE-SW ordinal
+                            for j in rangen]
+
+            def rowgen(rowuses=rowuses):
+                for j in rangen:
+                    uses = rowuses[j]
+                    if uses & self.used:
+                        continue
+                    self.used |= uses
+                    yield j
+                    self.used &= ~uses
+
+            self.rowgenerators.append(rowgen)
+
+    # Generate solutions.
+    def solve(self):
+        self.used = 0
+        for row2col in conjoin(self.rowgenerators):
+            yield row2col
+
+    def printsolution(self, row2col):
+        n = self.n
+        assert n == len(row2col)
+        sep = "+" + "-+" * n
+        print sep
+        for i in range(n):
+            squares = [" " for j in range(n)]
+            squares[row2col[i]] = "Q"
+            print "|" + "|".join(squares) + "|"
+            print sep
+
+conjoin_tests = """
+
+Generate the 3-bit binary numbers in order.  This illustrates dumbest-
+possible use of conjoin, just to generate the full cross-product.
+
+>>> def g():
+...    return [0, 1]
+
+>>> for c in conjoin([g] * 3):
+...     print c
+[0, 0, 0]
+[0, 0, 1]
+[0, 1, 0]
+[0, 1, 1]
+[1, 0, 0]
+[1, 0, 1]
+[1, 1, 0]
+[1, 1, 1]
+
+And run an 8-queens solver.
+
+>>> q = Queens(8)
+>>> LIMIT = 2
+>>> count = 0
+>>> for row2col in q.solve():
+...     count += 1
+...     if count <= LIMIT:
+...         print "Solution", count
+...         q.printsolution(row2col)
+Solution 1
++-+-+-+-+-+-+-+-+
+|Q| | | | | | | |
++-+-+-+-+-+-+-+-+
+| | | | |Q| | | |
++-+-+-+-+-+-+-+-+
+| | | | | | | |Q|
++-+-+-+-+-+-+-+-+
+| | | | | |Q| | |
++-+-+-+-+-+-+-+-+
+| | |Q| | | | | |
++-+-+-+-+-+-+-+-+
+| | | | | | |Q| |
++-+-+-+-+-+-+-+-+
+| |Q| | | | | | |
++-+-+-+-+-+-+-+-+
+| | | |Q| | | | |
++-+-+-+-+-+-+-+-+
+Solution 2
++-+-+-+-+-+-+-+-+
+|Q| | | | | | | |
++-+-+-+-+-+-+-+-+
+| | | | | |Q| | |
++-+-+-+-+-+-+-+-+
+| | | | | | | |Q|
++-+-+-+-+-+-+-+-+
+| | |Q| | | | | |
++-+-+-+-+-+-+-+-+
+| | | | | | |Q| |
++-+-+-+-+-+-+-+-+
+| | | |Q| | | | |
++-+-+-+-+-+-+-+-+
+| |Q| | | | | | |
++-+-+-+-+-+-+-+-+
+| | | | |Q| | | |
++-+-+-+-+-+-+-+-+
+
+>>> print count, "solutions in all."
+92 solutions in all.
+"""
+
 __test__ = {"tut":      tutorial_tests,
             "pep":      pep_tests,
             "email":    email_tests,
             "fun":      fun_tests,
-            "syntax":   syntax_tests}
+            "syntax":   syntax_tests,
+            "conjoin":  conjoin_tests}
 
 # Magic test name that regrtest.py invokes *after* importing this module.
 # This worms around a bootstrap problem.
