@@ -2199,7 +2199,7 @@ pattern_subx(PatternObject* self, PyObject* template, PyObject* string,
                 goto error;
             args = Py_BuildValue("(O)", match);
             if (!args) {
-                Py_DECREF(args);
+                Py_DECREF(match);
                 goto error;
             }
             item = PyObject_CallObject(filter, args);
@@ -2246,6 +2246,8 @@ next:
 
     state_fini(&state);
 
+    Py_DECREF(filter);
+
     /* convert list to single string (also removes list) */
     item = join(list, self->pattern);
 
@@ -2258,6 +2260,7 @@ next:
     return item;
 
 error:
+    Py_DECREF(filter);
     Py_DECREF(list);
     state_fini(&state);
     return NULL;
