@@ -16,20 +16,20 @@
 ** shared ppc python, in the core dynamic library)
 */
 
-/* The alert for "No Python directory, where is it?" */
-#define NOPYTHON_ALERT 128
-#define YES_ITEM 1
-#define NO_ITEM 2
-#define CURWD_ITEM 3
+/* The alert for "No Python directory, where is it?" (OBSOLETE) */
+#define NOPYTHON_ALERT	128
+#define YES_ITEM		1
+#define NO_ITEM			2
+#define CURWD_ITEM		3
 
 /* The alert for "this is an applet template" */
-#define NOPYC_ALERT 129
+#define NOPYC_ALERT		129
 
 /* The dialog for our GetDirectory and PromptGetFile call */
-#define GETDIR_ID 130		/* Resource ID for our "get directory" */
+#define GETDIR_ID 		130		/* Resource ID for our "get directory" */
 #define GETFILEPROMPT_ID 132	/* Resource id for prompted get file */
-#define PROMPT_ITEM	10		/* The prompt, at the top */
-#define SELECTCUR_ITEM 11	/* "Select current directory" button */
+#define PROMPT_ITEM		10		/* The prompt, at the top */
+#define SELECTCUR_ITEM	11	/* "Select current directory" button */
 
 
 /* The dialog for interactive options */
@@ -41,6 +41,17 @@
 #define OPT_SUPPRESS	5
 #define OPT_UNBUFFERED	6
 #define OPT_DEBUGGING	7
+
+/* Dialog for 'No preferences directory' */
+#define NOPREFDIR_ID	133
+
+/* Dialog for 'Create preferences file?' */
+#define NOPREFFILE_ID	134
+#define NOPREFFILE_YES	1
+#define NOPREFFILE_NO	2
+
+/* Dialog for 'Bad preference file' */
+#define BADPREFFILE_ID	135
 
 /*
 ** The following are valid both in the binary (or shared library)

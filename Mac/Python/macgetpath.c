@@ -85,6 +85,57 @@ getpythonpath()
 	return pythonpath;
 }
 
+/*
+** Open/create the Python Preferences file, return the handle
+*/
+short
+PyMac_OpenPrefFile()
+{
+    AliasHandle handle;
+    FSSpec dirspec;
+    short prefrh;
+    short prefdirRefNum;
+    long prefdirDirID;
+    short action;
+
+    if ( FindFolder(kOnSystemDisk, 'pref', kDontCreateFolder, &prefdirRefNum,
+    				&prefdirDirID) != noErr ) {
+    	/* Something wrong with preferences folder */
+    	(void)StopAlert(NOPREFDIR_ID, NULL);
+    	exit(1);
+    }
+    
+	(void)FSMakeFSSpec(prefdirRefNum, prefdirDirID, "\pPython Preferences", &dirspec);
+	prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
+	if ( prefrh < 0 ) {
+		action = CautionAlert(NOPREFFILE_ID, NULL);
+		if ( action == NOPREFFILE_NO )
+			exit(1);
+	
+		FSpCreateResFile(&dirspec, 'PYTH', 'pref', 0);
+		prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
+		if ( prefrh == -1 ) {
+			/* This "cannot happen":-) */
+			printf("Cannot create preferences file!!\n");
+			exit(1);
+		}
+		if ( PyMac_process_location(&dirspec) != 0 ) {
+			printf("Cannot get FSSpec for application!!\n");
+			exit(1);
+		}
+		dirspec.name[0] = 0;
+		if (NewAlias(NULL, &dirspec, &handle) != 0 ) {
+			printf("Cannot make alias to application directory!!\n");
+			exit(1);
+		}
+    	AddResource((Handle)handle, 'alis', PYTHONHOME_ID, "\p");
+    	UpdateResFile(prefrh);
+
+	} else {
+		UseResFile(prefrh);
+	}
+	return prefrh;
+}
 
 /*
 ** Return the name of the Python directory
@@ -92,111 +143,41 @@ getpythonpath()
 char *
 PyMac_GetPythonDir()
 {
-    int item;
     static char name[256];
     AliasHandle handle;
     FSSpec dirspec;
-    int ok = 0;
-    Boolean modified = 0, cannotmodify = 0;
+    Boolean modified = 0;
     short oldrh, prefrh;
-    short prefdirRefNum;
-    long prefdirDirID;
     
     /*
     ** Remember old resource file and try to open preferences file
-    ** in the preferences folder. If it doesn't exist we try to create
-    ** it. If anything fails here we limp on, but set cannotmodify so
-    ** we don't try to store things later on.
+    ** in the preferences folder.
     */
     oldrh = CurResFile();
-    if ( FindFolder(kOnSystemDisk, 'pref', kDontCreateFolder, &prefdirRefNum,
-    				&prefdirDirID) != noErr ) {
-    	/* Something wrong with preferences folder */
-    	cannotmodify = 1;
-    } else {
-    	(void)FSMakeFSSpec(prefdirRefNum, prefdirDirID, "\pPython Preferences", &dirspec);
-		prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
-		if ( prefrh == -1 ) {
-#ifdef USE_MAC_MODPREFS
-			/* It doesn't exist. Try to create it */
-			FSpCreateResFile(&dirspec, 'PYTH', 'pref', 0);
-	  		prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
-			if ( prefrh == -1 ) {
-				/* This is strange, what should we do now? */
-				cannotmodify = 1;
-			} else {
-				UseResFile(prefrh);
-    		}
-#else
-			printf("Error: no Preferences file. Attempting to limp on...\n");
-			name[0] = 0;
-			getwd(name);
-			return name;
-#endif
-    	}
-    }
+    prefrh = PyMac_OpenPrefFile();
     /* So, we've opened our preferences file, we hope. Look for the alias */
     handle = (AliasHandle)Get1Resource('alis', PYTHONHOME_ID);
-    if ( handle ) {
-    	/* It exists. Resolve it (possibly updating it) */
-    	if ( ResolveAlias(NULL, handle, &dirspec, &modified) == noErr ) {
-    		ok = 1;
-    	}
+    if ( handle == NULL ) {
+    	(void)StopAlert(BADPREFFILE_ID, NULL);
+    	exit(1);
     }
-    if ( !ok ) {
-#ifdef USE_MAC_MODPREFS
-    	/* No luck, so far. ask the user for help */
-	    item = Alert(NOPYTHON_ALERT, NULL);
-	    if ( item == YES_ITEM ) {
-	    	/* The user wants to point us to a directory. Let her do so */
-	    	ok = PyMac_GetDirectory(&dirspec);
-	    	if ( ok )
-	    		modified = 1;
-	    } else if ( item == CURWD_ITEM ) {
-	    	/* The user told us the current directory is fine. Build an FSSpec for it */
-	    	if ( getwd(name) ) {
-	    		if ( FSMakeFSSpec(0, 0, Pstring(name), &dirspec) == 0 ) {
-	    			ok = 1;
-	    			modified = 1;
-	    		}
-	    	}
-	    }
-	    if ( handle ) {
-	    	/* Set the (old, invalid) alias record to the new data */
-	    	UpdateAlias(NULL, &dirspec, handle, &modified);
-	    }
-#else
-		printf("Error: corrupted Preferences file. Attempting to limp on...\n");
-		name[0] = 0;
-		getwd(name);
-		return name;
-#endif
+	/* It exists. Resolve it (possibly updating it) */
+	if ( ResolveAlias(NULL, handle, &dirspec, &modified) != noErr ) {
+    	(void)StopAlert(BADPREFFILE_ID, NULL);
+    	exit(1);
     }
-#ifdef USE_MAC_MODPREFS
-    if ( ok && modified && !cannotmodify) {
-    	/* We have a new, valid fsspec and we can update the preferences file. Do so. */
-    	if ( !handle ) {
-    		if (NewAlias(NULL, &dirspec, &handle) == 0 )
-    			AddResource((Handle)handle, 'alis', PYTHONHOME_ID, "\p");
-    	} else {
-    		ChangedResource((Handle)handle);
-    	}
+    if ( modified ) {
+   		ChangedResource((Handle)handle);
     	UpdateResFile(prefrh);
     }
-#endif
-    if ( !cannotmodify ) {
-    	/* This means we have the resfile open. Close it. */
-    	CloseResFile(prefrh);
-    }
-    /* Back to the old resource file */
+   	CloseResFile(prefrh);
     UseResFile(oldrh);
-    /* Now turn the fsspec into a path to give back to our caller */
-    if ( ok ) {
-    	ok = (nfullpath(&dirspec, name) == 0);
-    	if ( ok ) strcat(name, ":");
-    }
-    if ( !ok ) {
-		/* If all fails, we return the current directory */
+
+   	if ( nfullpath(&dirspec, name) == 0 ) {
+   		strcat(name, ":");
+    } else {
+ 		/* If all fails, we return the current directory */
+   		printf("Python home dir exists but I cannot find the pathname!!\n");
 		name[0] = 0;
 		(void)getwd(name);
 	}

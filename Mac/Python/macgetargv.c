@@ -75,8 +75,8 @@ strdup(char *src)
 
 /* Return FSSpec of current application */
 
-static OSErr
-current_process_location(FSSpec *applicationSpec)
+OSErr
+PyMac_process_location(FSSpec *applicationSpec)
 {
 	ProcessSerialNumber currentPSN;
 	ProcessInfoRec info;
@@ -155,7 +155,7 @@ get_application_name()
 	static char appname[256];
 	FSSpec appspec;
 	
-	if (current_process_location(&appspec))
+	if (PyMac_process_location(&appspec))
 		return NULL;
 	if (get_full_path(&appspec, appname))
 		return NULL;
