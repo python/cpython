@@ -113,7 +113,7 @@ range_repr(r)
 	return newstringobject(buf);
 }
 
-object *
+static object *
 range_concat(r, obj)
 	rangeobject *r;
 	object *obj;
@@ -122,7 +122,7 @@ range_concat(r, obj)
 	return NULL;
 }
 
-object *
+static object *
 range_repeat(r, n)
 	rangeobject *r;
 	int n;
