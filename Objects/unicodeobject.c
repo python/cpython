@@ -529,7 +529,7 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
     /* Shortcuts for common default encodings */
     if (errors == NULL) {
 	if (strcmp(encoding, "utf-8") == 0)
-        return PyUnicode_AsUTF8String(unicode);
+	    return PyUnicode_AsUTF8String(unicode);
 	else if (strcmp(encoding, "latin-1") == 0)
 	    return PyUnicode_AsLatin1String(unicode);
 	else if (strcmp(encoding, "ascii") == 0)
