@@ -454,10 +454,13 @@ static PyObject *
 time_strptime(PyObject *self, PyObject *args)
 {
     PyObject *strptime_module = PyImport_ImportModule("_strptime");
+    PyObject *strptime_result;
 
     if (!strptime_module)
         return NULL;
-    return PyObject_CallMethod(strptime_module, "strptime", "O", args);
+    strptime_result = PyObject_CallMethod(strptime_module, "strptime", "O", args);
+    Py_DECREF(strptime_module);
+    return strptime_result;
 }
 
 #endif /* !HAVE_STRPTIME */
