@@ -18,5 +18,5 @@
 #if defined(HAVE_HYPOT)
 /* Defined in <math.h> */
 #else
-extern double hypot PROTO((double, double)); /* defined in mathmodule.c */
+extern double hypot Py_PROTO((double, double)); /* defined in mathmodule.c */
 #endif
