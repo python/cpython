@@ -12,6 +12,9 @@ Core
 
 Library
 
+- doctest now excludes functions and classes not defined by the module
+  being tested, thanks to Tim Hochberg.
+
 - quopri's encode and decode methods take an optional header parameter,
   which indicates whether output is intended for the header 'Q' encoding.
 

@@ -32,7 +32,7 @@ class PyclbrTest(unittest.TestCase):
     def assertHasattr(self, obj, attr, ignore):
         ''' succeed iff hasattr(obj,attr) or attr in ignore. '''
         if attr in ignore: return
-        if not hasattr(obj, attr): print "???",attr
+        if not hasattr(obj, attr): print "???", attr
         self.failUnless(hasattr(obj, attr))
 
 
@@ -100,7 +100,8 @@ class PyclbrTest(unittest.TestCase):
 
     def test_easy(self):
         self.checkModule('pyclbr')
-        self.checkModule('doctest')
+        self.checkModule('doctest',
+                         ignore=['_isclass', '_isfunction', '_ismodule'])
         self.checkModule('rfc822')
         self.checkModule('xmllib')
         self.checkModule('difflib')

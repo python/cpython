@@ -48,10 +48,10 @@ WHICH DOCSTRINGS ARE EXAMINED?
 + M.__doc__.
 
 + f.__doc__ for all functions f in M.__dict__.values(), except those
-  with private names.
+  with private names and those defined in other modules.
 
 + C.__doc__ for all classes C in M.__dict__.values(), except those with
-  private names.
+  private names and those defined in other modules.
 
 + If M.__test__ exists and "is true", it must be a dict, and
   each entry maps a (string) name to a function object, class object, or
@@ -74,28 +74,6 @@ If you want to test docstrings in objects with private names too, stuff
 them into an M.__test__ dict, or see ADVANCED USAGE below (e.g., pass your
 own isprivate function to Tester's constructor, or call the rundoc method
 of a Tester instance).
-
-Warning:  imports can cause trouble; e.g., if you do
-
-from XYZ import XYZclass
-
-then XYZclass is a name in M.__dict__ too, and doctest has no way to know
-that XYZclass wasn't *defined* in M.  So it may try to execute the examples
-in XYZclass's docstring, and those in turn may require a different set of
-globals to work correctly.  I prefer to do "import *"- friendly imports,
-a la
-
-import XYY
-_XYZclass = XYZ.XYZclass
-del XYZ
-
-or (Python 2.0)
-
-from XYZ import XYZclass as _XYZclass
-
-and then the leading underscore stops testmod from going nuts.  You may
-prefer the method in the next section.
-
 
 WHAT'S THE EXECUTION CONTEXT?
 
@@ -303,13 +281,6 @@ __all__ = [
 
 import __future__
 
-import types
-_FunctionType = types.FunctionType
-_ClassType    = types.ClassType
-_ModuleType   = types.ModuleType
-_StringType   = types.StringType
-del types
-
 import re
 PS1 = ">>>"
 PS2 = "..."
@@ -318,6 +289,12 @@ _isPS2 = re.compile(r"(\s*)" + re.escape(PS2)).match
 _isEmpty = re.compile(r"\s*$").match
 _isComment = re.compile(r"\s*#").match
 del re
+
+from types import StringTypes as _StringTypes
+
+from inspect import isclass    as _isclass
+from inspect import isfunction as _isfunction
+from inspect import ismodule   as _ismodule
 
 # Extract interactive examples from a string.  Return a list of triples,
 # (source, outcome, lineno).  "source" is the source code, and ends
@@ -574,6 +551,15 @@ def is_private(prefix, base):
 
     return base[:1] == "_" and not base[:2] == "__" == base[-2:]
 
+# Determine if a class of function was defined in the given module.
+
+def _from_module(module, object):
+    if _isfunction(object):
+        return module.__dict__ is object.func_globals
+    if _isclass(object):
+        return module.__name__ == object.__module__
+    raise ValueError("object must be a class or function")
+
 class Tester:
     """Class Tester -- runs docstring examples and accumulates stats.
 
@@ -590,9 +576,10 @@ Methods:
         Search object.__doc__ for examples to run; use name (or
         object.__name__) for logging.  Return (#failures, #tries).
 
-    rundict(d, name)
+    rundict(d, name, module=None)
         Search for examples in docstrings in all of d.values(); use name
-        for logging.  Return (#failures, #tries).
+        for logging.  Exclude functions and classes not defined in module
+        if specified.  Return (#failures, #tries).
 
     run__test__(d, name)
         Treat dict d like module.__test__.  Return (#failures, #tries).
@@ -664,7 +651,7 @@ see its docs for details.
 
         if mod is None and globs is None:
             raise TypeError("Tester.__init__: must specify mod or globs")
-        if mod is not None and type(mod) is not _ModuleType:
+        if mod is not None and not _ismodule(mod):
             raise TypeError("Tester.__init__: mod must be a module; " +
                             `mod`)
         if globs is None:
@@ -759,35 +746,65 @@ see its docs for details.
         if self.verbose:
             print f, "of", t, "examples failed in", name + ".__doc__"
         self.__record_outcome(name, f, t)
-        if type(object) is _ClassType:
+        if _isclass(object):
             f2, t2 = self.rundict(object.__dict__, name)
             f = f + f2
             t = t + t2
         return f, t
 
-    def rundict(self, d, name):
+    def rundict(self, d, name, module=None):
         """
-        d. name -> search for docstring examples in all of d.values().
+        d, name, module=None -> search for docstring examples in d.values().
 
         For k, v in d.items() such that v is a function or class,
         do self.rundoc(v, name + "." + k).  Whether this includes
         objects with private names depends on the constructor's
-        "isprivate" argument.
+        "isprivate" argument.  If module is specified, functions and
+        classes that are not defined in module are excluded.
         Return aggregate (#failures, #examples).
 
-        >>> def _f():
-        ...    '''>>> assert 1 == 1
-        ...    '''
-        >>> def g():
+        Build and populate two modules with sample functions to test that
+        exclusion of external functions and classes works.
+
+        >>> import new
+        >>> m1 = new.module('_m1')
+        >>> m2 = new.module('_m2')
+        >>> test_data = \"""
+        ... def f():
+        ...     '''>>> assert 1 == 1
+        ...     '''
+        ... def g():
         ...    '''>>> assert 2 != 1
         ...    '''
-        >>> d = {"_f": _f, "g": g}
+        ... class H:
+        ...    '''>>> assert 2 > 1
+        ...    '''
+        ...    def bar(self):
+        ...        '''>>> assert 1 < 2
+        ...        '''
+        ... \"""
+        >>> exec test_data in m1.__dict__
+        >>> exec test_data in m2.__dict__
+
+        Tests that objects outside m1 are excluded:
+
+        >>> d = {"_f": m1.f,  "g": m1.g,  "h": m1.H,
+        ...      "f2": m2.f, "g2": m2.g, "h2": m2.H}
         >>> t = Tester(globs={}, verbose=0)
-        >>> t.rundict(d, "rundict_test")  # _f is skipped
-        (0, 1)
+        >>> t.rundict(d, "rundict_test", m1)  # _f, f2 and g2 and h2 skipped
+        (0, 3)
+
+        Again, but with a custom isprivate function allowing _f:
+
         >>> t = Tester(globs={}, verbose=0, isprivate=lambda x,y: 0)
-        >>> t.rundict(d, "rundict_test_pvt")  # both are searched
-        (0, 2)
+        >>> t.rundict(d, "rundict_test_pvt", m1)  # Only f2, g2 and h2 skipped
+        (0, 4)
+
+        And once more, not excluding stuff outside m1:
+
+        >>> t = Tester(globs={}, verbose=0, isprivate=lambda x,y: 0)
+        >>> t.rundict(d, "rundict_test_pvt")  # None are skipped.
+        (0, 8)
         """
 
         if not hasattr(d, "items"):
@@ -800,7 +817,9 @@ see its docs for details.
         names.sort()
         for thisname in names:
             value = d[thisname]
-            if type(value) in (_FunctionType, _ClassType):
+            if _isfunction(value) or _isclass(value):
+                if module and not _from_module(module, value):
+                    continue
                 f2, t2 = self.__runone(value, name + "." + thisname)
                 f = f + f2
                 t = t + t2
@@ -825,9 +844,9 @@ see its docs for details.
             for k in keys:
                 v = d[k]
                 thisname = prefix + k
-                if type(v) is _StringType:
+                if type(v) in _StringTypes:
                     f, t = self.runstring(v, thisname)
-                elif type(v) in (_FunctionType, _ClassType):
+                elif _isfunction(v) or _isclass(v):
                     f, t = self.rundoc(v, thisname)
                 else:
                     raise TypeError("Tester.run__test__: values in "
@@ -1012,7 +1031,7 @@ def testmod(m, name=None, globs=None, verbose=None, isprivate=None,
 
     global master
 
-    if type(m) is not _ModuleType:
+    if not _ismodule(m):
         raise TypeError("testmod: module required; " + `m`)
     if name is None:
         name = m.__name__
