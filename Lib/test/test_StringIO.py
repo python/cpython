@@ -49,9 +49,10 @@ class TestGenericStringIO(unittest.TestCase):
         f.seek(10)
         f.truncate()
         eq(f.getvalue(), 'abcdefghij')
-        f.seek(0)
         f.truncate(5)
         eq(f.getvalue(), 'abcde')
+        f.write('xyz')
+        eq(f.getvalue(), 'abcdexyz')
         f.close()
         self.assertRaises(ValueError, f.write, 'frobnitz')
 
