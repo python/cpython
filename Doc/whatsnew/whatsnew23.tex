@@ -3,7 +3,7 @@
 % $Id$
 
 \title{What's New in Python 2.3}
-\release{0.10}
+\release{0.11}
 \author{A.M.\ Kuchling}
 \authoraddress{\email{amk@amk.ca}}
 
@@ -300,8 +300,8 @@ alphanumerics.
 \begin{seealso}
 
 \seepep{263}{Defining Python Source Code Encodings}{Written by
-Marc-Andr\'e Lemburg and Martin von L\"owis; implemented by SUZUKI
-Hisao and Martin von L\"owis.}
+Marc-Andr\'e Lemburg and Martin von~L\"owis; implemented by Suzuki
+Hisao and Martin von~L\"owis.}
 
 \end{seealso}
 
@@ -335,7 +335,7 @@ Under MacOS, \function{os.listdir()} may now return Unicode filenames.
 \begin{seealso}
 
 \seepep{277}{Unicode file name support for Windows NT}{Written by Neil
-Hodgson; implemented by Neil Hodgson, Martin von L\"owis, and Mark
+Hodgson; implemented by Neil Hodgson, Martin von~L\"owis, and Mark
 Hammond.}
 
 \end{seealso}
@@ -1091,6 +1091,12 @@ adds up the numeric items in the iterable object and returns their sum.
 to concatenate a bunch of strings, for example.   (Contributed by Alex
 Martelli.)
 
+\item \code{list.insert(\var{pos}, \var{value})} used to 
+insert \var{value} at the front of the list when \var{pos} was
+negative.  The behaviour has now been changed to be consistent with
+slice indexing, so when \var{pos} is -1 the value will be inserted
+before the last element, and so forth.
+
 \item Dictionaries have a new method, \method{pop(\var{key}\optional{,
 \var{default}})}, that returns the value corresponding to \var{key}
 and removes that key/value pair from the dictionary.  If the requested
@@ -1786,7 +1792,7 @@ results.  Other interfaces can't be handled automatically but
 at least you can find out about the problem.  See
 \url{http://mail.python.org/pipermail/python-dev/2002-December/031107.html} %
 for a more detailed explanation of this change.  (Implemented by
-Martin von L\"owis.)
+Martin von~L\"owis.)
 
 \item Calling Tcl methods through \module{_tkinter} no longer 
 returns only strings. Instead, if Tcl returns other objects those
@@ -2328,9 +2334,9 @@ suggestions, corrections and assistance with various drafts of this
 article: Jeff Bauer, Simon Brunning, Brett Cannon, Michael Chermside,
 Andrew Dalke, Scott David Daniels, Fred~L. Drake, Jr., Kelly Gerber,
 Raymond Hettinger, Michael Hudson, Chris Lambert, Detlef Lannert,
-Martin von L\"owis, Andrew MacIntyre, Lalo Martins, Gustavo Niemeyer,
-Neal Norwitz, Hans Nowak, Chris Reedy, Francesco Ricciardi, 
-Vinay Sajip, Neil Schemenauer,
-Roman Suzi, Jason Tishler, Just van~Rossum.
+Martin von~L\"owis, Andrew MacIntyre, Lalo Martins, Chad Netzer,
+Gustavo Niemeyer, Neal Norwitz, Hans Nowak, Chris Reedy, Francesco
+Ricciardi, Vinay Sajip, Neil Schemenauer, Roman Suzi, Jason Tishler,
+Just van~Rossum.
 
 \end{document}
