@@ -85,10 +85,11 @@ class Sucker(webchecker.Checker):
         user, host = urllib.splituser(host)
         host, port = urllib.splitnport(host)
         host = string.lower(host)
-        path = os.path.join(host, path)
-        if path[-1] == "/": path = path + "index.html"
+        if not path or path[-1] == "/":
+        	path = path + "index.html"
         if os.sep != "/":
             path = string.join(string.split(path, "/"), os.sep)
+        path = os.path.join(host, path)
         return path
 
 def makedirs(dir):
