@@ -2262,6 +2262,9 @@ PyObject *PyExc_UnboundLocalError;
 PyObject *PyExc_TypeError;
 PyObject *PyExc_ValueError;
 PyObject *PyExc_ZeroDivisionError;
+#ifdef MS_WINDOWS
+PyObject *PyExc_WindowsError;
+#endif
 
 PyObject *PyExc_MemoryErrorInst;
 
@@ -2303,6 +2306,9 @@ bltin_exc[] = {
 	{"UnboundLocalError",  &PyExc_UnboundLocalError,  1},
 	{"TypeError",          &PyExc_TypeError,          1},
 	{"ValueError",         &PyExc_ValueError,         1},
+#ifdef MS_WINDOWS
+	{"WindowsError",       &PyExc_WindowsError,       1},
+#endif
 	{"ZeroDivisionError",  &PyExc_ZeroDivisionError,  1},
 	{NULL, NULL}
 };
