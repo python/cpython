@@ -66,6 +66,11 @@ buffer_from_memory(PyObject *base, int size, int offset, void *ptr,
 				"size must be zero or positive");
 		return NULL;
 	}
+	if (offset < 0) {
+		PyErr_SetString(PyExc_ValueError,
+				"offset must be zero or positive");
+		return NULL;
+	}
 
 	b = PyObject_NEW(PyBufferObject, &PyBuffer_Type);
 	if ( b == NULL )
@@ -85,20 +90,11 @@ buffer_from_memory(PyObject *base, int size, int offset, void *ptr,
 static PyObject *
 buffer_from_object(PyObject *base, int size, int offset, int readonly)
 {
-	if ( offset < 0 ) {
-		PyErr_SetString(PyExc_ValueError,
-				"offset must be zero or positive");
-		return NULL;
-	}
-
-	/* if the base object is another buffer, then try to refer to the
-	 * base object.
-	 */
 	if ( PyBuffer_Check(base) && (((PyBufferObject *)base)->b_base) ) {
+		/* another buffer, refer to the base object */
+		offset += ((PyBufferObject *)base)->b_offset;
 		base = ((PyBufferObject *)base)->b_base;
-		offset = ((PyBufferObject *)base)->b_offset + offset;
 	}
-	
 	return buffer_from_memory(base, size, offset, NULL, readonly);
 }
 
