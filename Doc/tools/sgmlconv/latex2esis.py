@@ -44,7 +44,7 @@ def encode(s):
     return string.join(map(_charmap.get, s), '')
 
 
-ESCAPED_CHARS = "$%#^ {}"
+ESCAPED_CHARS = "$%#^ {}&"
 
 
 def subconvert(line, ofp, table, discards, autoclosing, knownempty,
