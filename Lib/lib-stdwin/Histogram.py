@@ -1,22 +1,22 @@
 # Module 'Histogram'
 
 from Buttons import *
+from Resize import Resize
 
 
 # A Histogram displays a histogram of numeric data.
 # It reacts to resize events by resizing itself,
 # leaving the same amount of space around the borders.
+# (This is geometry management, and should really be implemented
+# by a different group of classes, but for now this hack is OK.)
 #
-class HistogramAppearance() = LabelAppearance():
+class HistogramAppearance() = Resize(), LabelAppearance():
 	#
 	def define(self, (win, bounds, ydata, scale)):
 		self.init_appearance(win, bounds)
+		self.init_resize()
 		self.ydata = ydata
 		self.scale = scale # (min, max)
-		self.left_top, (right, bottom) = bounds
-		width, height = win.getwinsize()
-		self.right_margin = width - right
-		self.bottom_margin = height - bottom
 		return self
 	#
 	def setdata(self, (ydata, scale)):
@@ -37,13 +37,5 @@ class HistogramAppearance() = LabelAppearance():
 			v1 = top + height
 			d.paint((h0, v0), (h1, v1))
 	#
-	def resize(self):
-		width, height = self.win.getwinsize()
-		right = width - self.right_margin
-		bottom = height - self.bottom_margin
-		self.setbounds(self.left_top, (right, bottom))
-	#
 
-class HistogramReactivity() = NoReactivity(): pass
-
-class Histogram() = HistogramAppearance(), HistogramReactivity(): pass
+class Histogram() = HistogramAppearance(), NoReactivity(): pass
