@@ -421,11 +421,13 @@ def add_ui(db):
     exit_dialog.cancel("Cancel", "Back", active = 0)
     exit_dialog.text("Acknowledgements", 135, 95, 220, 120, 0x30003,
       "Special Windows thanks to:\n"
-      "    LettError, Erik van Blokland, for the Python for Windows graphic.\n"
+      "    LettError, Erik van Blokland, for the \n"
+      "    Python for Windows graphic.\n"
       "       http://www.letterror.com/\n"
       "\n"
-      "    Mark Hammond, without whose years of freely shared Windows\n"
-      "    expertise, Python for Windows would still be Python for DOS.")
+      "    Mark Hammond, without whose years of freely \n"
+      "    shared Windows expertise, Python for Windows \n"
+      "    would still be Python for DOS.")
 
     exit_dialog.text("Description", 135, 235, 220, 20, 0x30003,
                "Click the Finish button to exit the Installer.")
@@ -917,7 +919,7 @@ def add_files(db):
         lib.start_component("TkDLLs", tcltk)
         lib.add_file("_tkinter.pyd")
         dlls.append("_tkinter.pyd")
-        tcldir = os.path.normpath(srcdir+"/../tcl84/bin")
+        tcldir = os.path.normpath(srcdir+"/../tcltk/bin")
         for f in glob.glob1(tcldir, "*.dll"):
             lib.add_file(f, src=os.path.join(tcldir, f))
     # check whether there are any unknown extensions
@@ -937,7 +939,7 @@ def add_files(db):
         lib.add_file(f.replace('pyd','lib'))
     lib.add_file('python%s%s.lib' % (major, minor))
     # Add Tcl/Tk
-    tcldirs = [(root, '../tcl84/lib', 'tcl')]
+    tcldirs = [(root, '../tcltk/lib', 'tcl')]
     tcltk.set_current()
     while tcldirs:
         parent, phys, dir = tcldirs.pop()
