@@ -141,11 +141,8 @@ class TestReversed(unittest.TestCase):
         x = xrange(1)
         self.assertEqual(type(reversed(x)), type(iter(x)))
 
-    def test_double_reverse(self):
-        s = 'hello'
-        self.assertEqual(list(reversed(reversed(s))), list(s))
-
     def test_len(self):
+        # This is an implementation detail, not an interface requirement
         s = 'hello'
         self.assertEqual(len(reversed(s)), len(s))
 
