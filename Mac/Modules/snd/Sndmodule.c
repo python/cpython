@@ -36,7 +36,7 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #ifndef HAVE_UNIVERSAL_HEADERS
 #define SndCallBackUPP ProcPtr
-#define NewSndCallBackProc(x) (x)
+#define NewSndCallBackProc(x) ((SndCallBackProcPtr)(x))
 #define SndListHandle Handle
 #endif
 
