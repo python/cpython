@@ -11,7 +11,7 @@ SCRIPTS=$(TOOLSDIR)/html2texi.pl $(TOOLSDIR)/checkargs.pm $(TOOLSDIR)/mkinfo \
 	$(TOOLSDIR)/fixinfo.el
 
 all:	python-api.info python-ext.info python-lib.info \
-	python-mac.info python-ref.info python-tut.info
+	python-ref.info python-tut.info
 
 
 python-api.info:	$(HTMLDIR)/api/api.html $(SCRIPTS)
@@ -23,6 +23,7 @@ python-ext.info:	$(HTMLDIR)/ext/ext.html $(SCRIPTS)
 python-lib.info:	$(HTMLDIR)/lib/lib.html $(SCRIPTS)
 	$(MKINFO) $<
 
+# Not built by default; the conversion doesn't really handle it well.
 python-mac.info:	$(HTMLDIR)/mac/mac.html $(SCRIPTS)
 	$(MKINFO) $<
 
