@@ -98,7 +98,7 @@ the
 '''
 
 # Library Doc list of tuples:
-# each 'book' : ( Dir, Title, First page, Content page, Index page)
+# each 'book' : (Dir, Title, First page, Content page, Index page)
 #
 supported_libraries = {
     '2.2':  ### Beta!!!  fix for actual release
@@ -178,10 +178,10 @@ supported_libraries = {
     ]
 }
 
-class AlmostNullWriter(formatter.NullWriter) :
+class AlmostNullWriter(formatter.NullWriter):
     savedliteral = ''
 
-    def send_flowing_data(self, data) :
+    def send_flowing_data(self, data):
         # need the text tag for later
         datastriped = string.strip(data)
         if self.savedliteral == '':
@@ -191,79 +191,79 @@ class AlmostNullWriter(formatter.NullWriter) :
                                             ' ' + datastriped)
 
 
-class HelpHtmlParser(htmllib.HTMLParser) :
+class HelpHtmlParser(htmllib.HTMLParser):
     indent = 0  # number of tabs for pritty printing of files
     ft = None   # output file
     path = None # relative path
     proc = 0    # if true I process, if false I skip
                 #   (some headers, footers, etc.)
 
-    def begin_group(self) :
-        if not self.proc :
+    def begin_group(self):
+        if not self.proc:
             # first level, start processing
             self.proc = 1
         self.indent = self.indent + 1
 
-    def finnish_group(self) :
+    def finnish_group(self):
         self.indent = self.indent - 1
-        if self.proc and self.indent == 0 :
+        if self.proc and self.indent == 0:
             # if processing and back to root, then stop
             self.proc = 0
 
-    def anchor_bgn(self, href, name, type) :
-        if self.proc :
+    def anchor_bgn(self, href, name, type):
+        if self.proc:
             self.formatter.writer.savedliteral = ''
             self.ft.write('<OBJECT type="text/sitemap">\n')
             self.ft.write('\t' * self.indent + \
                 '\t<param name="Local" value="' + self.path + \
                 '/' + href + '">\n')
 
-    def anchor_end(self) :
-        if self.proc :
+    def anchor_end(self):
+        if self.proc:
             self.ft.write('\t' * self.indent + \
                 '\t<param name="Name" value="' + \
                 self.formatter.writer.savedliteral + '">\n')
-            self.ft.write('\t' * self.indent + '\t</OBJECT>\n' )
+            self.ft.write('\t' * self.indent + '\t</OBJECT>\n')
 
-    def start_dl(self, atr_val) :
+    def start_dl(self, atr_val):
         self.begin_group()
 
-    def end_dl(self) :
+    def end_dl(self):
         self.finnish_group()
 
-    def do_dt(self, atr_val) :
+    def do_dt(self, atr_val):
         # no trailing newline on pourpose!
         self.ft.write("\t" * self.indent + "<LI>")
 
 
-class IdxHlpHtmlParser(HelpHtmlParser) :
+class IdxHlpHtmlParser(HelpHtmlParser):
     # nothing special here, seems enough with parent class
     pass
 
-class TocHlpHtmlParser(HelpHtmlParser) :
+class TocHlpHtmlParser(HelpHtmlParser):
 
-    def start_dl(self, atr_val) :
+    def start_dl(self, atr_val):
         self.begin_group()
         self.ft.write('\t' * self.indent + '<UL>\n')
 
-    def end_dl(self) :
+    def end_dl(self):
         self.finnish_group()
         self.ft.write('</UL>\n')
 
-    def start_ul(self, atr_val) :
+    def start_ul(self, atr_val):
         self.begin_group()
         self.ft.write('\t' * self.indent + '<UL>\n')
 
-    def end_ul(self) :
+    def end_ul(self):
         self.finnish_group()
         self.ft.write('</UL>\n')
 
-    def do_li(self, atr_val) :
+    def do_li(self, atr_val):
         # no trailing newline on pourpose!
         self.ft.write("\t" * self.indent + "<LI>")
 
 
-def index(path, archivo, output) :
+def index(path, archivo, output):
     f = formatter.AbstractFormatter(AlmostNullWriter())
     parser = IdxHlpHtmlParser(f)
     parser.path = path
@@ -273,7 +273,7 @@ def index(path, archivo, output) :
     parser.close()
 
 
-def content(path, archivo, output) :
+def content(path, archivo, output):
     f = formatter.AbstractFormatter(AlmostNullWriter())
     parser = TocHlpHtmlParser(f)
     parser.path = path
@@ -283,21 +283,21 @@ def content(path, archivo, output) :
     parser.close()
 
 
-def do_index(library, output) :
+def do_index(library, output):
     output.write('<UL>\n')
-    for book in library :
+    for book in library:
         print '\t', book[2]
-        if book[4] :
+        if book[4]:
             index(book[0], book[4], output)
     output.write('</UL>\n')
 
 
-def do_content(library, version, output) :
+def do_content(library, version, output):
     output.write(contents_header % version)
-    for book in library :
+    for book in library:
         print '\t', book[2]
         output.write(object_sitemap % (book[0]+"/"+book[2], book[1]))
-        if book[3] :
+        if book[3]:
             content(book[0], book[3], output)
     output.write(contents_footer)
 
@@ -314,34 +314,34 @@ def do_project(library, output, arch, version):
                 output.write(path % page)
 
 
-def openfile(file) :
-    try :
+def openfile(file):
+    try:
         p = open(file, "w")
-    except IOError, msg :
+    except IOError, msg:
         print file, ":", msg
         sys.exit(1)
     return p
 
-def usage() :
+def usage():
         print usage_mode
         sys.exit(0)
 
 
 
-def do_it(args = None) :
-    if not args :
+def do_it(args = None):
+    if not args:
         args = sys.argv[1:]
 
-    if not args :
+    if not args:
         usage()
 
-    try :
+    try:
         optlist, args = getopt.getopt(args, 'ckpv:')
-    except getopt.error, msg :
+    except getopt.error, msg:
         print msg
         usage()
 
-    if not args or len(args) > 1 :
+    if not args or len(args) > 1:
         usage()
     arch = args[0]
 
@@ -355,7 +355,7 @@ def do_it(args = None) :
 
     library = supported_libraries[ version ]
 
-    if not (('-p','') in optlist) :
+    if not (('-p','') in optlist):
         fname = arch + '.stp'
         f = openfile(fname)
         print "Building stoplist", fname, "..."
@@ -374,17 +374,17 @@ def do_it(args = None) :
 
         f.close()
 
-    if not (('-c','') in optlist) :
+    if not (('-c','') in optlist):
         f = openfile(arch + '.hhc')
         print "Building Table of Content..."
         do_content(library, version, f)
         f.close()
 
-    if not (('-k','') in optlist) :
+    if not (('-k','') in optlist):
         f = openfile(arch + '.hhk')
         print "Building Index..."
         do_index(library, f)
         f.close()
 
-if __name__ == '__main__' :
+if __name__ == '__main__':
     do_it()
