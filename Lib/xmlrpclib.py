@@ -361,6 +361,8 @@ else:
 
 try:
     from xml.parsers import expat
+    if not hasattr(expat, "ParserCreate"):
+        raise ImportError, "ParserCreate"
 except ImportError:
     ExpatParser = None
 else:
