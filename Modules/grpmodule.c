@@ -31,29 +31,28 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* UNIX group file access module */
 
-#include "allobjects.h"
-#include "modsupport.h"
+#include "Python.h"
 
 #include <sys/types.h>
 #include <grp.h>
 
-static object *mkgrent(p)
+static PyObject *mkgrent(p)
 	struct group *p;
 {
-	object *v, *w;
+	PyObject *v, *w;
 	char **member;
-	if ((w = newlistobject(0)) == NULL) {
+	if ((w = PyList_New(0)) == NULL) {
 		return NULL;
 	}
 	for (member = p->gr_mem; *member != NULL; member++) {
-		object *x = newstringobject(*member);
-		if (x == NULL || addlistitem(w, x) != 0) {
-			XDECREF(x);
-			DECREF(w);
+		PyObject *x = PyString_FromString(*member);
+		if (x == NULL || PyList_Append(w, x) != 0) {
+			Py_XDECREF(x);
+			Py_DECREF(w);
 			return NULL;
 		}
 	}
-	v = mkvalue("(sslO)",
+	v = Py_BuildValue("(sslO)",
 		       p->gr_name,
 		       p->gr_passwd,
 #if defined(NeXT) && defined(_POSIX_SOURCE) && defined(__LITTLE_ENDIAN__)
@@ -64,60 +63,60 @@ static object *mkgrent(p)
 		       (long)p->gr_gid,
 #endif
 		       w);
-	DECREF(w);
+	Py_DECREF(w);
 	return v;
 }
 
-static object *grp_getgrgid(self, args)
-	object *self, *args;
+static PyObject *grp_getgrgid(self, args)
+	PyObject *self, *args;
 {
 	int gid;
 	struct group *p;
 	if (!getintarg(args, &gid))
 		return NULL;
 	if ((p = getgrgid(gid)) == NULL) {
-		err_setstr(KeyError, "getgrgid(): gid not found");
+		PyErr_SetString(PyExc_KeyError, "getgrgid(): gid not found");
 		return NULL;
 	}
 	return mkgrent(p);
 }
 
-static object *grp_getgrnam(self, args)
-	object *self, *args;
+static PyObject *grp_getgrnam(self, args)
+	PyObject *self, *args;
 {
 	char *name;
 	struct group *p;
 	if (!getstrarg(args, &name))
 		return NULL;
 	if ((p = getgrnam(name)) == NULL) {
-		err_setstr(KeyError, "getgrnam(): name not found");
+		PyErr_SetString(PyExc_KeyError, "getgrnam(): name not found");
 		return NULL;
 	}
 	return mkgrent(p);
 }
 
-static object *grp_getgrall(self, args)
-	object *self, *args;
+static PyObject *grp_getgrall(self, args)
+	PyObject *self, *args;
 {
-	object *d;
+	PyObject *d;
 	struct group *p;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	if ((d = newlistobject(0)) == NULL)
+	if ((d = PyList_New(0)) == NULL)
 		return NULL;
 	setgrent();
 	while ((p = getgrent()) != NULL) {
-		object *v = mkgrent(p);
-		if (v == NULL || addlistitem(d, v) != 0) {
-			XDECREF(v);
-			DECREF(d);
+		PyObject *v = mkgrent(p);
+		if (v == NULL || PyList_Append(d, v) != 0) {
+			Py_XDECREF(v);
+			Py_DECREF(d);
 			return NULL;
 		}
 	}
 	return d;
 }
 
-static struct methodlist grp_methods[] = {
+static PyMethodDef grp_methods[] = {
 	{"getgrgid",	grp_getgrgid},
 	{"getgrnam",	grp_getgrnam},
 	{"getgrall",	grp_getgrall},
@@ -127,5 +126,5 @@ static struct methodlist grp_methods[] = {
 void
 initgrp()
 {
-	initmodule("grp", grp_methods);
+	Py_InitModule("grp", grp_methods);
 }
