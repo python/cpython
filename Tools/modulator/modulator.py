@@ -21,7 +21,6 @@ sys.path.append(os.path.join(os.environ['HOME'], 'src/python/Tools/modulator'))
 
 from Tkinter import *
 from Tkextra import *
-import tkinter
 from ScrolledListbox import ScrolledListbox
 import sys
 import genmodule
