@@ -96,13 +96,13 @@
 /* Define to 1 if you have the `execv' function. */
 #undef HAVE_EXECV
 
-/* Define to 1 if you have the `fchdir' function. */
+/* Define if you have the 'fchdir' function. */
 #undef HAVE_FCHDIR
 
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 
-/* Define to 1 if you have the `fdatasync' function. */
+/* Define if you have the 'fdatasync' function. */
 #undef HAVE_FDATASYNC
 
 /* Define if you have the 'flock' function. */
@@ -125,9 +125,6 @@
 
 /* Define to 1 if you have the `fstatvfs' function. */
 #undef HAVE_FSTATVFS
-
-/* Define to 1 if you have the `fsync' function. */
-#undef HAVE_FSYNC
 
 /* Define to 1 if you have the `ftell64' function. */
 #undef HAVE_FTELL64
@@ -487,6 +484,9 @@
 
 /* Define if you have the 'symlink' function. */
 #undef HAVE_SYMLINK
+
+/* Define if you have the 'fsync' function. */
+#undef HAVE_SYNC
 
 /* Define to 1 if you have the `sysconf' function. */
 #undef HAVE_SYSCONF
