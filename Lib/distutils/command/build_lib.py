@@ -28,7 +28,9 @@ from distutils.ccompiler import new_compiler
 
 class BuildLib (Command):
 
-    options = []
+    options = [('debug', 'g',
+                "compile with debugging information"),
+              ]
 
     def set_default_options (self):
         # List of libraries to build
@@ -38,10 +40,13 @@ class BuildLib (Command):
         self.include_dirs = None
         self.define = None
         self.undef = None
+        self.debug = None
 
     # set_default_options()
 
     def set_final_options (self):
+        self.set_undefined_options ('build',
+                                    ('debug', 'debug'))
         self.libraries = self.distribution.libraries
         if self.include_dirs is None:
             self.include_dirs = self.distribution.include_dirs or []
@@ -146,12 +151,13 @@ class BuildLib (Command):
             objects = self.compiler.compile (sources,
                                              macros=macros,
                                              include_dirs=include_dirs,
-                                             output_dir=lib_dir)
+                                             output_dir=lib_dir,
+                                             debug=self.debug)
 
             # Now "link" the object files together into a static library.
             # (On Unix at least, this isn't really linking -- it just
             # builds an archive.  Whatever.)
-            self.compiler.link_static_lib (objects, lib_name)
+            self.compiler.link_static_lib (objects, lib_name, debug=self.debug)
 
         # for libraries
 
