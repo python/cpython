@@ -21,14 +21,14 @@ class ScrolledText(Pack, Place):
 			del cnf[Pack]
 		self.vbar = Scrollbar(self.frame, {})
 		self.vbar.pack({'side': 'right', 'fill': 'y'})
-		cnf[Pack] = {'side': 'left', 'fill': 'both',
-			     'expand': 'yes'}
+		cnf[Pack] = {'side': 'left', 'fill': 'both', 'expand': 'yes'}
 		self.text = Text(self.frame, cnf)
 		self.text['yscrollcommand'] = (self.vbar, 'set')
 		self.vbar['command'] = (self.text, 'yview')
 		self.insert = self.text.insert
 		# XXX should do all Text methods...
 		self.pack = self.frame.pack
+		self.bind = self.text.bind
 		self.forget = self.frame.forget
 		self.delete = self.text.delete
 		self.insert = self.text.insert
@@ -38,6 +38,7 @@ class ScrolledText(Pack, Place):
 		self.tag_add = self.text.tag_add
 		self.tag_delete = self.text.tag_delete
 		self.tag_remove = self.text.tag_remove
+		self.tag_config = self.text.tag_config
 		self.yview = self.text.yview
 		self.yview_pickplace = self.text.yview_pickplace
 		self.tk = master.tk
