@@ -3,8 +3,8 @@ The Python Debugger
 
 To use the debugger in its simplest form:
 
-	>>> import pdb
-	>>> pdb.run('<a statement>')
+        >>> import pdb
+        >>> pdb.run('<a statement>')
 
 The debugger's prompt is '(Pdb) '.  This will stop in the first
 function call in <a statement>.
@@ -13,10 +13,10 @@ Alternatively, if a statement terminated with an unhandled exception,
 you can use pdb's post-mortem facility to inspect the contents of the
 traceback:
 
-	>>> <a statement>
-	<exception traceback>
-	>>> import pdb
-	>>> pdb.pm()
+        >>> <a statement>
+        <exception traceback>
+        >>> import pdb
+        >>> pdb.pm()
 
 The commands recognized by the debugger are listed in the next
 section.  Most can be abbreviated as indicated; e.g., h(elp) means
@@ -50,17 +50,17 @@ h(elp)
         "help exec" gives help on the ! command
 
 w(here)
-	Print a stack trace, with the most recent frame at the bottom.
-	An arrow indicates the "current frame", which determines the
-	context of most commands.
+        Print a stack trace, with the most recent frame at the bottom.
+        An arrow indicates the "current frame", which determines the
+        context of most commands.
 
 d(own)
-	Move the current frame one level down in the stack trace
-	(to an older frame).
+        Move the current frame one level down in the stack trace
+        (to an older frame).
 
 u(p)
-	Move the current frame one level up in the stack trace
-	(to a newer frame).
+        Move the current frame one level up in the stack trace
+        (to a newer frame).
 
 b(reak) ([file:]lineno | function) [, "condition"]
         With a line number argument, set a break there in the current
@@ -74,51 +74,51 @@ b(reak) ([file:]lineno | function) [, "condition"]
         hasn't been loaded yet).  The file is searched on sys.path.
 
 cl(ear) [lineno]
-	With a line number argument, clear that break in the current file.
-	Without argument, clear all breaks (but first ask confirmation).
+        With a line number argument, clear that break in the current file.
+        Without argument, clear all breaks (but first ask confirmation).
 
         The line number may be prefixed with a filename and a colon,
         to specify a breakpoint in another file (probably one that
         hasn't been loaded yet).  The file is searched on sys.path.
 
 s(tep)
-	Execute the current line, stop at the first possible occasion
-	(either in a function that is called or in the current function).
+        Execute the current line, stop at the first possible occasion
+        (either in a function that is called or in the current function).
 
 n(ext)
-	Continue execution until the next line in the current function
-	is reached or it returns.
+        Continue execution until the next line in the current function
+        is reached or it returns.
 
 r(eturn)
-	Continue execution until the current function returns.
+        Continue execution until the current function returns.
 
 c(ont(inue))
-	Continue execution, only stop when a breakpoint is encountered.
+        Continue execution, only stop when a breakpoint is encountered.
 
 l(ist) [first [,last]]
-	List source code for the current file.
-	Without arguments, list 11 lines around the current line
-	or continue the previous listing.
-	With one argument, list 11 lines starting at that line.
-	With two arguments, list the given range;
-	if the second argument is less than the first, it is a count.
+        List source code for the current file.
+        Without arguments, list 11 lines around the current line
+        or continue the previous listing.
+        With one argument, list 11 lines starting at that line.
+        With two arguments, list the given range;
+        if the second argument is less than the first, it is a count.
 
 a(rgs)
-	Print the argument list of the current function.
+        Print the argument list of the current function.
 
 p expression
-	Print the value of the expression.
+        Print the value of the expression.
 
 (!) statement
-	Execute the (one-line) statement in the context of
-	the current stack frame.
-	The exclamation point can be omitted unless the first word
-	of the statement resembles a debugger command.
-	To assign to a global variable you must always prefix the
-	command with a 'global' command, e.g.:
-	(Pdb) global list_options; list_options = ['-l']
-	(Pdb)
+        Execute the (one-line) statement in the context of
+        the current stack frame.
+        The exclamation point can be omitted unless the first word
+        of the statement resembles a debugger command.
+        To assign to a global variable you must always prefix the
+        command with a 'global' command, e.g.:
+        (Pdb) global list_options; list_options = ['-l']
+        (Pdb)
 
 q(uit)
-	Quit from the debugger.
-	The program being executed is aborted.
+        Quit from the debugger.
+        The program being executed is aborted.
