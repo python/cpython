@@ -244,7 +244,6 @@ class PimpInterface:
 	def setuppimp(self, url):
 		self.pimpprefs = pimp.PimpPreferences()
 		self.pimpdb = pimp.PimpDatabase(self.pimpprefs)
-		self.pimpinstaller = pimp.PimpInstaller(self.pimpdb)
 		if not url:
 			url = self.pimpprefs.pimpDatabase
 		try:
@@ -271,7 +270,6 @@ class PimpInterface:
 		self.pimpdb.close()
 		self.pimpprefs = None
 		self.pimpdb = None
-		self.pimpinstaller = None
 		self.packages = []
 
 	def setuserinstall(self, onoff):
@@ -320,10 +318,11 @@ class PimpInterface:
 		
 	def installpackage(self, sel, output, recursive, force):
 		pkg = self.packages[sel]
-		list, messages = self.pimpinstaller.prepareInstall(pkg, force, recursive)
+		pimpinstaller = pimp.PimpInstaller(self.pimpdb)
+		list, messages = pimpinstaller.prepareInstall(pkg, force, recursive)
 		if messages:
 			return messages
-		messages = self.pimpinstaller.install(list, output)
+		messages = pimpinstaller.install(list, output)
 		return messages
 			
 class PackageBrowser(PimpInterface):
