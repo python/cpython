@@ -3359,6 +3359,7 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		PyTuple_SET_ITEM(newargs, i+1, x);
 	}
 	x = PyObject_Call(func, newargs, kwds);
+	Py_DECREF(newargs);
 	Py_DECREF(func);
 	return x;
 }
