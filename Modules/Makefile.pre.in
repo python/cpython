@@ -68,7 +68,7 @@ SYSLIBS=	$(LIBM) $(LIBC)
 
 # === Rules ===
 
-all:		$(LIB) ../python
+all:		$(LIB) ../python sharedmods
 
 $(LIB):		$(OBJS) Makefile
 		-rm -f $(LIB)
