@@ -1,5 +1,5 @@
 What's New in Python 2.2b1?
-Release date: 28-Sep-2100
+Release date: 19-Oct-2001
 ===========================
 
 Type/class unification and new-style classes
@@ -39,6 +39,11 @@ Core and builtins
 - Weak reference objects are now part of the core and offers a C API.
   A bug which could allow a core dump when binary operations involved
   proxy reference has been fixed.
+
+- unicode(obj) now behaves more like str(obj), accepting arbitrary
+  objects, and calling a __unicode__ method if it exists.
+  unicode(obj, encoding) and unicode(obj, encoding, errors) still
+  require an 8-bit string argument.
 
 Extension modules
 
@@ -130,6 +135,9 @@ C API
   the thread module used this API).  This code has only really been
   tested on Linux and Windows; other platforms please beware (and
   report any bugs or strange behavior).
+
+- PyUnicode_FromEncodedObject() no longer accepts Unicode objects as
+  input.
 
 New platforms
 
