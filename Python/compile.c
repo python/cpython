@@ -4078,7 +4078,7 @@ symtable_resolve_free(struct compiling *c, PyObject *name, int flags,
 		   anything here.
 		*/
 		if (is_free(flags ^ DEF_FREE_CLASS) 
-		    || flags == DEF_FREE_CLASS)
+		    || (flags == DEF_FREE_CLASS))
 			return 0;
 		v = PyInt_FromLong(si->si_nfrees++);
 		dict = c->c_freevars;
@@ -4260,6 +4260,7 @@ symtable_check_shadow(struct symtable *st, PyObject *name, int flags)
 
 	if (!(flags & DEF_BOUND))
 		return 0;
+
 	/* The semantics of this code will change with nested scopes.
 	   It is defined in the current scope and referenced in a
 	   child scope.  Under the old rules, the child will see a
@@ -4364,8 +4365,10 @@ symtable_load_symbols(struct compiling *c)
 		   2. Free variables in methods that are also class
 		   variables or declared global.
 		*/
-		if (flags & (DEF_FREE | DEF_FREE_CLASS)) {
+		if (st->st_nested_scopes) {
+		    if (flags & (DEF_FREE | DEF_FREE_CLASS)) {
 			symtable_resolve_free(c, name, flags, &si);
+		    }
 		}
 
 		if (flags & DEF_STAR) {
@@ -4425,14 +4428,10 @@ symtable_load_symbols(struct compiling *c)
 		}
 	}
 
-	/*
-	fprintf(stderr, 
-		"cells %d: %s\n"
-		"frees %d: %s\n",
-		si.si_ncells, PyObject_REPR(c->c_cellvars),
-		si.si_nfrees, PyObject_REPR(c->c_freevars));
-	*/
 	assert(PyDict_Size(c->c_freevars) == si.si_nfrees);
+
+	if (st->st_nested_scopes == 0)
+		assert(si.si_nfrees == 0);
 
 	if (si.si_ncells > 1) { /* one cell is always in order */
 		if (symtable_cellvar_offsets(&c->c_cellvars, c->c_argcount,
@@ -4538,7 +4537,9 @@ symtable_update_free_vars(struct symtable *st)
 			   referenced in scope B contained (perhaps
 			   indirectly) in A and there are no scopes
 			   with bindings for N between B and A, then N
-			   is global in B.
+			   is global in B.  Unless A is a class scope,
+			   because class scopes are not considered for
+			   nested scopes.
 			*/
 			if (v && (ste->ste_type != TYPE_CLASS)) {
 				int flags = PyInt_AS_LONG(v); 
