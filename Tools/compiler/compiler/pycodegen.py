@@ -1101,11 +1101,10 @@ class AbstractFunctionCode:
         self.emit('RETURN_VALUE')
 
     def generateArgUnpack(self, args):
-        count = 0
-        for arg in args:
+        for i in range(len(args)):
+            arg = args[i]
             if type(arg) == types.TupleType:
-                self.emit('LOAD_FAST', '.nested%d' % count)
-                count = count + 1
+                self.emit('LOAD_FAST', '.%d' % (i * 2))
                 self.unpackSequence(arg)
                         
     def unpackSequence(self, tup):
@@ -1184,13 +1183,14 @@ def generateArgList(arglist):
     args = []
     extra = []
     count = 0
-    for elt in arglist:
+    for i in range(len(arglist)):
+        elt = arglist[i]
         if type(elt) == types.StringType:
             args.append(elt)
         elif type(elt) == types.TupleType:
-            args.append(TupleArg(count, elt))
-            count = count + 1
+            args.append(TupleArg(i * 2, elt))
             extra.extend(misc.flatten(elt))
+            count = count + 1
         else:
             raise ValueError, "unexpect argument type:", elt
     return args + extra, count
