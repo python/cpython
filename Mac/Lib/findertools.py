@@ -121,7 +121,7 @@ def update(file):
 #
 
 def comment(object, comment=None):
-	"""comment: get or set the Finder-comment of the item, displayed in the ³Get Info² window."""
+	"""comment: get or set the Finder-comment of the item, displayed in the –Get Info” window."""
 	object = macfs.FSSpec(object)
 	fss = macfs.FSSpec(object)
 	object_alias = fss.NewAlias()
@@ -756,7 +756,7 @@ def _test():
 		sys.stdin.readline()
 
 def _test2():
-	print '\nmorefindertools version %s\nTests coming upŠ' %__version__
+	print '\nmorefindertools version %s\nTests coming upƒ' %__version__
 	import os
 	import random
 
@@ -800,7 +800,7 @@ def _test2():
 		pos = (100+i*10, 100+i*10)
 		windowposition(base, pos)
 		print '\twindow position', pos
-	windowposition(base, orgpos)	# park it where it was beforeŠ
+	windowposition(base, orgpos)	# park it where it was beforeƒ
 
 	print 'Put a comment in file', f, ':'
 	print '\t', comment(f)		# print the Finder comment this file has

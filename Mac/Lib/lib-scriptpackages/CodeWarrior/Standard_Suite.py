@@ -102,7 +102,7 @@ class Standard_Suite_Events:
 
 	def make(self, _no_object=None, _attributes={}, **_arguments):
 		"""make: make a new element
-		Keyword argument new: the class of the new element‹keyword 'new' is optional in AppleScript
+		Keyword argument new: the class of the new element„keyword 'new' is optional in AppleScript
 		Keyword argument as: the desired types for the data, in order of preference
 		Keyword argument at: the location at which to insert the element
 		Keyword argument with_data: the initial data for the element

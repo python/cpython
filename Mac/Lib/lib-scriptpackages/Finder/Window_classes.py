@@ -162,7 +162,7 @@ class uses_relative_dates(aetools.NProperty):
 container_windows = container_window
 
 class information_window(aetools.ComponentItem):
-	"""information window - An information window (opened by ³Get Info²) """
+	"""information window - An information window (opened by –Get Info”) """
 	want = 'iwnd'
 class current_panel(aetools.NProperty):
 	"""current panel - the current panel in the information window """
@@ -217,11 +217,11 @@ class warns_before_emptying(aetools.NProperty):
 	which = 'warn'
 	want = 'bool'
 class product_version(aetools.NProperty):
-	"""product version - the version of the product (visible at the top of the ³Get Info² window) """
+	"""product version - the version of the product (visible at the top of the –Get Info” window) """
 	which = 'ver2'
 	want = 'itxt'
 class version(aetools.NProperty):
-	"""version - the version of the file (visible at the bottom of the ³Get Info² window) """
+	"""version - the version of the file (visible at the bottom of the –Get Info” window) """
 	which = 'vers'
 	want = 'itxt'
 
@@ -238,7 +238,7 @@ class clipping_window(aetools.ComponentItem):
 clipping_windows = clipping_window
 
 class content_space(aetools.ComponentItem):
-	"""content space - All windows, including the desktop window (³Window² does not include the desktop window) """
+	"""content space - All windows, including the desktop window (–Window” does not include the desktop window) """
 	want = 'dwnd'
 
 content_spaces = content_space

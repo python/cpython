@@ -24,7 +24,7 @@ class properties(aetools.NProperty):
 	which = 'qpro'
 	want = 'reco'
 class clipboard(aetools.NProperty):
-	"""clipboard - the Finder¹s clipboard window """
+	"""clipboard - the FinderÕs clipboard window """
 	which = 'pcli'
 	want = 'obj '
 class largest_free_block(aetools.NProperty):
@@ -32,11 +32,11 @@ class largest_free_block(aetools.NProperty):
 	which = 'mfre'
 	want = 'long'
 class name(aetools.NProperty):
-	"""name - the Finder¹s name """
+	"""name - the FinderÕs name """
 	which = 'pnam'
 	want = 'itxt'
 class visible(aetools.NProperty):
-	"""visible - Is the Finder¹s layer visible? """
+	"""visible - Is the FinderÕs layer visible? """
 	which = 'pvis'
 	want = 'bool'
 class frontmost(aetools.NProperty):
@@ -48,7 +48,7 @@ class selection(aetools.NProperty):
 	which = 'sele'
 	want = 'obj '
 class insertion_location(aetools.NProperty):
-	"""insertion location - the container in which a new folder would appear if ³New Folder² was selected """
+	"""insertion location - the container in which a new folder would appear if –New Folder” was selected """
 	which = 'pins'
 	want = 'obj '
 class file_sharing(aetools.NProperty):
@@ -68,7 +68,7 @@ class version(aetools.NProperty):
 	which = 'vers'
 	want = 'itxt'
 class about_this_computer(aetools.NProperty):
-	"""about this computer - the ³About this Computer² dialog and the list of running processes displayed in it """
+	"""about this computer - the –About this Computer” dialog and the list of running processes displayed in it """
 	which = 'abbx'
 	want = 'obj '
 class desktop(aetools.NProperty):
@@ -195,7 +195,7 @@ class internet_location(aetools.ComponentItem):
 internet_locations = internet_location
 
 class information_window(aetools.ComponentItem):
-	"""information window - An information window (opened by ³Get Info²) """
+	"""information window - An information window (opened by –Get Info”) """
 	want = 'iwnd'
 class comment(aetools.NProperty):
 	"""comment - the comment """
@@ -359,7 +359,7 @@ class protected(aetools.NProperty):
 	want = 'bool'
 
 class trash_2d_object(aetools.ComponentItem):
-	"""trash-object - Trash-object is the class of the ³trash² object """
+	"""trash-object - Trash-object is the class of the –trash” object """
 	want = 'ctrs'
 
 class preferences(aetools.ComponentItem):

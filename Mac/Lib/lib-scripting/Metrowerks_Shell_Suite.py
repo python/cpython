@@ -791,7 +791,7 @@ class Metrowerks_Shell_Suite:
 
 
 class Access_Paths(aetools.ComponentItem):
-	"""Access Paths - Contains the definitions of a projectπs access (search) paths."""
+	"""Access Paths - Contains the definitions of a project’s access (search) paths."""
 	want = 'PATH'
 class User_Paths(aetools.NProperty):
 	"""User Paths - To add an access path for the source files."""
@@ -814,7 +814,7 @@ class Flash_delay(aetools.NProperty):
 	which = 'ED01'
 	want = 'long'
 class Dynamic_scroll(aetools.NProperty):
-	"""Dynamic scroll - Display a windowπs contents as you move the scroll box."""
+	"""Dynamic scroll - Display a window’s contents as you move the scroll box."""
 	which = 'ED02'
 	want = 'bool'
 class Balance(aetools.NProperty):
@@ -1111,14 +1111,14 @@ class filetype(aetools.NProperty):
 	"""filetype - What kind of file is this ?"""
 	which = 'SrcT'
 	want = 'SrcT'
-# repeated property name The fileπs name
-# repeated property disk_file The fileπs location on disk
+# repeated property name The file’s name
+# repeated property disk_file The file’s location on disk
 class codesize(aetools.NProperty):
-	"""codesize - The size of this fileπs code."""
+	"""codesize - The size of this file’s code."""
 	which = 'CSiz'
 	want = 'long'
 class datasize(aetools.NProperty):
-	"""datasize - The size of this fileπs data."""
+	"""datasize - The size of this file’s data."""
 	which = 'DSiz'
 	want = 'long'
 class up_to_date(aetools.NProperty):
@@ -1172,7 +1172,7 @@ class system_heap(aetools.NProperty):
 	want = 'bool'
 
 class Target_Settings(aetools.ComponentItem):
-	"""Target Settings - Contains the definitions of a projectπs target."""
+	"""Target Settings - Contains the definitions of a project’s target."""
 	want = 'TARG'
 class Linker(aetools.NProperty):
 	"""Linker - The name of the current linker."""
@@ -1624,8 +1624,8 @@ _Enum_SrcT = {
 
 _Enum_PPrm = {
 	'absolute' : 'Abso',	# An absolute path name, including volume name.
-	'project_relative' : 'PRel',	# A path relative to the current projectπs folder.
-	'shell_relative' : 'SRel',	# A path relative to the CodeWarriorÅ folder.
+	'project_relative' : 'PRel',	# A path relative to the current project’s folder.
+	'shell_relative' : 'SRel',	# A path relative to the CodeWarrioré folder.
 	'system_relative' : 'YRel',	# A path relative to the system folder
 }
 

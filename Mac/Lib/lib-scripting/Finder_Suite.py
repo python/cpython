@@ -85,7 +85,7 @@ class Finder_Suite:
 
 	def empty(self, _object=None, _attributes={}, **_arguments):
 		"""empty: Empty the trash
-		Required argument: ³empty² and ³empty trash² both do the same thing
+		Required argument: –empty” and –empty trash” both do the same thing
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'fndr'
@@ -311,7 +311,7 @@ class accessory_suitcase(aetools.ComponentItem):
 accessory_suitcases = accessory_suitcase
 
 class alias_file(aetools.ComponentItem):
-	"""alias file - An alias file (created with ³Make Alias²)"""
+	"""alias file - An alias file (created with –Make Alias”)"""
 	want = 'alia'
 class original_item(aetools.NProperty):
 	"""original item - the original item pointed to by the alias"""
@@ -324,11 +324,11 @@ class application(aetools.ComponentItem):
 	"""application - An application program"""
 	want = 'capp'
 class about_this_macintosh(aetools.NProperty):
-	"""about this macintosh - the ³About this Macintosh² dialog, and the list of running processes displayed in it"""
+	"""about this macintosh - the –About this Macintosh” dialog, and the list of running processes displayed in it"""
 	which = 'abbx'
 	want = 'obj '
 class apple_menu_items_folder(aetools.NProperty):
-	"""apple menu items folder - the special folder ³Apple Menu Items,² the contents of which appear in the Apple menu"""
+	"""apple menu items folder - the special folder –Apple Menu Items,” the contents of which appear in the Apple menu"""
 	which = 'amnu'
 	want = 'obj '
 class clipboard(aetools.NProperty):
@@ -336,7 +336,7 @@ class clipboard(aetools.NProperty):
 	which = 'pcli'
 	want = 'obj '
 class control_panels_folder(aetools.NProperty):
-	"""control panels folder - the special folder ³Control Panels²"""
+	"""control panels folder - the special folder –Control Panels”"""
 	which = 'ctrl'
 	want = 'obj '
 class desktop(aetools.NProperty):
@@ -344,7 +344,7 @@ class desktop(aetools.NProperty):
 	which = 'desk'
 	want = 'obj '
 class extensions_folder(aetools.NProperty):
-	"""extensions folder - the special folder ³Extensions²"""
+	"""extensions folder - the special folder –Extensions”"""
 	which = 'extn'
 	want = 'obj '
 class file_sharing(aetools.NProperty):
@@ -352,7 +352,7 @@ class file_sharing(aetools.NProperty):
 	which = 'fshr'
 	want = 'bool'
 class fonts_folder(aetools.NProperty):
-	"""fonts folder - the special folder ³Fonts²"""
+	"""fonts folder - the special folder –Fonts”"""
 	which = 'ffnt'
 	want = 'obj '
 class frontmost(aetools.NProperty):
@@ -360,7 +360,7 @@ class frontmost(aetools.NProperty):
 	which = 'pisf'
 	want = 'bool'
 class insertion_location(aetools.NProperty):
-	"""insertion location - the container that a new folder would appear in if ³New Folder² was selected"""
+	"""insertion location - the container that a new folder would appear in if –New Folder” was selected"""
 	which = 'pins'
 	want = 'obj '
 class largest_free_block(aetools.NProperty):
@@ -368,7 +368,7 @@ class largest_free_block(aetools.NProperty):
 	which = 'mfre'
 	want = 'long'
 class preferences_folder(aetools.NProperty):
-	"""preferences folder - the special folder ³Preferences²"""
+	"""preferences folder - the special folder –Preferences”"""
 	which = 'pref'
 	want = 'obj '
 class product_version(aetools.NProperty):
@@ -384,15 +384,15 @@ class sharing_starting_up(aetools.NProperty):
 	which = 'fsup'
 	want = 'bool'
 class shortcuts(aetools.NProperty):
-	"""shortcuts - the ³Finder Shortcuts² item in the Finder's help menu"""
+	"""shortcuts - the –Finder Shortcuts” item in the Finder's help menu"""
 	which = 'scut'
 	want = 'obj '
 class shutdown_items_folder(aetools.NProperty):
-	"""shutdown items folder - the special folder ³Shutdown Items²"""
+	"""shutdown items folder - the special folder –Shutdown Items”"""
 	which = 'shdf'
 	want = 'obj '
 class startup_items_folder(aetools.NProperty):
-	"""startup items folder - the special folder ³Startup Items²"""
+	"""startup items folder - the special folder –Startup Items”"""
 	which = 'strt'
 	want = 'obj '
 class system_folder(aetools.NProperty):
@@ -400,7 +400,7 @@ class system_folder(aetools.NProperty):
 	which = 'macs'
 	want = 'obj '
 class temporary_items_folder(aetools.NProperty):
-	"""temporary items folder - the special folder ³Temporary Items² (invisible)"""
+	"""temporary items folder - the special folder –Temporary Items” (invisible)"""
 	which = 'temp'
 	want = 'obj '
 class version(aetools.NProperty):
@@ -562,7 +562,7 @@ class item(aetools.NProperty):
 container_windows = container_window
 
 class content_space(aetools.ComponentItem):
-	"""content space - All windows, including the desktop window (³Window² does not include the desktop window)"""
+	"""content space - All windows, including the desktop window (–Window” does not include the desktop window)"""
 	want = 'dwnd'
 
 content_spaces = content_space
@@ -632,7 +632,7 @@ class desk_accessory_file(aetools.ComponentItem):
 desk_accessory_files = desk_accessory_file
 
 class desktop_2d_object(aetools.ComponentItem):
-	"""desktop-object - Desktop-object is the class of the ³desktop² object"""
+	"""desktop-object - Desktop-object is the class of the –desktop” object"""
 	want = 'cdsk'
 class startup_disk(aetools.NProperty):
 	"""startup disk - the startup disk"""
@@ -720,12 +720,12 @@ class locked(aetools.NProperty):
 	"""locked - Is the file locked?"""
 	which = 'islk'
 	want = 'bool'
-# repeated property product_version the version of the product (visible at the top of the ³Get Info² dialog)
+# repeated property product_version the version of the product (visible at the top of the –Get Info” dialog)
 class stationery(aetools.NProperty):
 	"""stationery - Is the item a stationery pad?"""
 	which = 'pspd'
 	want = 'bool'
-# repeated property version the version of the file (visible at the bottom of the ³Get Info² dialog)
+# repeated property version the version of the file (visible at the bottom of the –Get Info” dialog)
 
 files = file
 
@@ -790,7 +790,7 @@ class position(aetools.NProperty):
 groups = group
 
 class information_window(aetools.ComponentItem):
-	"""information window - An information window (opened by ³Get InfoŠ²)"""
+	"""information window - An information window (opened by –Get Infoƒ”)"""
 	want = 'iwnd'
 class comment(aetools.NProperty):
 	"""comment - the comment"""
@@ -813,16 +813,16 @@ class physical_size(aetools.NProperty):
 	"""physical size - the actual space used by the item on disk"""
 	which = 'phys'
 	want = 'long'
-# repeated property product_version the version of the product (visible at the top of the ³Get Info² dialog)
+# repeated property product_version the version of the product (visible at the top of the –Get Info” dialog)
 class size(aetools.NProperty):
 	"""size - the logical size of the item"""
 	which = 'ptsz'
 	want = 'long'
 # repeated property stationery Is the item a stationery pad?
 # repeated property suggested_partition_size the memory size that the developer recommends that the application should be launched with
-# repeated property version the version of the file (visible at the bottom of the ³Get Info² dialog)
+# repeated property version the version of the file (visible at the bottom of the –Get Info” dialog)
 class warn_before_emptying(aetools.NProperty):
-	"""warn before emptying - Is a dialog displayed when ³Empty trashŠ² is selected?"""
+	"""warn before emptying - Is a dialog displayed when –Empty trashƒ” is selected?"""
 	which = 'warn'
 	want = 'bool'
 
@@ -832,7 +832,7 @@ class item(aetools.ComponentItem):
 	"""item - An item"""
 	want = 'cobj'
 # repeated property bounds the bounding rectangle of the item
-# repeated property comment the comment displayed in the ³Get Info² window of the item
+# repeated property comment the comment displayed in the –Get Info” window of the item
 # repeated property container the container of this item
 class content_space(aetools.NProperty):
 	"""content space - the window that would open if the item was opened"""
@@ -978,7 +978,7 @@ class see_folders(aetools.NProperty):
 	want = 'bool'
 
 class sharing_window(aetools.ComponentItem):
-	"""sharing window - A sharing window (opened by ³SharingŠ²)"""
+	"""sharing window - A sharing window (opened by –Sharingƒ”)"""
 	want = 'swnd'
 # repeated property container the container that this window was opened from
 # repeated property exported Is this container a share point or inside a share point?
@@ -1020,9 +1020,9 @@ class suitcase(aetools.ComponentItem):
 suitcases = suitcase
 
 class trash_2d_object(aetools.ComponentItem):
-	"""trash-object - Trash-object is the class of the ³trash² object"""
+	"""trash-object - Trash-object is the class of the –trash” object"""
 	want = 'ctrs'
-# repeated property warn_before_emptying Is a dialog displayed when ³Empty trashŠ² is selected?
+# repeated property warn_before_emptying Is a dialog displayed when –Empty trashƒ” is selected?
 #        element 'dsut' as ['indx', 'name']
 #        element 'alia' as ['indx', 'name']
 #        element 'appf' as ['indx', 'name']

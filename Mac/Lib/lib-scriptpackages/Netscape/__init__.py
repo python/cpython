@@ -1,5 +1,5 @@
 """
-Package generated from Macintosh HD:Internet:Internet-programma's:Netscape CommunicatorÅ-map:Netscape CommunicatorÅ
+Package generated from Macintosh HD:Internet:Internet-programma's:Netscape Communicatoré-map:Netscape Communicatoré
 Resource aete resid 0 
 """
 import aetools

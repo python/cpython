@@ -75,7 +75,7 @@ class uniform_styles(aetools.NProperty):
 #        element 'cwor' as ['indx']
 
 class text_flow(aetools.ComponentItem):
-	"""text flow - A contiguous block of text.  Page layout applications call this a Œstory.¹ """
+	"""text flow - A contiguous block of text.  Page layout applications call this a •story.Õ """
 	want = 'cflo'
 # repeated property _3c_inheritance_3e_ inherits some of its properties from this class
 class name(aetools.NProperty):

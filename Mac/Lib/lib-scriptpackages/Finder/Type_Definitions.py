@@ -163,7 +163,7 @@ class small_4_bit_icon(aetools.NProperty):
 	want = 'ics4'
 
 class alias_list(aetools.ComponentItem):
-	"""alias list - A list of aliases.  Use åas alias listπ when a list of aliases is needed (instead of a list of file system item references). """
+	"""alias list - A list of aliases.  Use ïas alias list’ when a list of aliases is needed (instead of a list of file system item references). """
 	want = 'alst'
 preferences._propdict = {
 	'window' : window,

@@ -56,7 +56,7 @@ char start(struct runloc& r,BBLMParamBlock &pb)
 	r.last_start = pb.fCalcRunParams.fStartOffset;
 	r.pos = pb.fCalcRunParams.fStartOffset;
 	r.p = ((unsigned char*)pb.fText) + pb.fCalcRunParams.fStartOffset;
-	// Adjust for the gap if we¹re not already past it.
+	// Adjust for the gap if weÕre not already past it.
 	if ((!r.past_gap) && (r.pos >= pb.fTextGapLocation)){
 		r.p += pb.fTextGapLength;
 		r.past_gap = true;

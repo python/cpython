@@ -63,7 +63,7 @@ class PythonSlave(FrameWork.Application):
 		raise self
 	
 	def getabouttext(self):
-		return "About PythonSlaveŠ"
+		return "About PythonSlaveƒ"
 	
 	def do_about(self, id, item, window, event):
 		EasyDialogs.Message("PythonSlave " + __version__ + "\rCopyright © 1996, Letterror, JvR")

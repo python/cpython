@@ -204,7 +204,7 @@ class index(aetools.NProperty):
 	which = 'pidx'
 	want = 'long'
 class mode(aetools.NProperty):
-	"""mode - The documentπs open mode"""
+	"""mode - The document’s open mode"""
 	which = 'Mode'
 	want = 'Mode'
 class modified(aetools.NProperty):

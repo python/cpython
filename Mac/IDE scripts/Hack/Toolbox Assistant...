@@ -35,7 +35,7 @@ class ToolboxAssi:
 			try:
 				self.talker = Toolbox('ALTV', start = 1)
 			except:
-				raise W.AlertError, "Can¹t find ³Toolbox Assistant²"
+				raise W.AlertError, "CanÕt find –Toolbox Assistant”"
 		lookup = self.w.edit.get()
 		try:
 			self.talker.LookupTopic(lookup)
