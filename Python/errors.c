@@ -29,6 +29,8 @@ extern char *strerror(int);
 #include "winbase.h"
 #endif
 
+#include <ctype.h>
+
 void
 PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
 {
@@ -364,7 +366,6 @@ PyObject *PyErr_SetFromWindowsErrWithFilename(
 PyObject *PyErr_SetFromWindowsErr(int ierr)
 {
 	return PyErr_SetFromWindowsErrWithFilename(ierr, NULL);
-
 }
 #endif /* MS_WINDOWS */
 
@@ -393,12 +394,131 @@ PyObject *
 PyErr_Format(PyObject *exception, const char *format, ...)
 {
 	va_list vargs;
-	char buffer[500]; /* Caller is responsible for limiting the format */
+	int n, i;
+	const char* f;
+	char* s;
+	PyObject* string;
 
+	/* step 1: figure out how large a buffer we need */
+
+#ifdef HAVE_STDARG_PROTOTYPES
 	va_start(vargs, format);
+#else
+	va_start(vargs);
+#endif
 
-	vsprintf(buffer, format, vargs);
-	PyErr_SetString(exception, buffer);
+	n = 0;
+	for (f = format; *f; f++) {
+		if (*f == '%') {
+			const char* p = f;
+			while (*++f && *f != '%' && !isalpha(*f))
+				;
+			switch (*f) {
+			case 'c':
+				va_arg(vargs, int);
+				/* fall through... */
+			case '%':
+				n++;
+				break;
+			case 'd': case 'i': case 'x':
+				va_arg(vargs, int);
+				/* 20 bytes should be enough to hold a 64-bit
+				   integer */
+				n = n + 20;
+				break;
+			case 's':
+				s = va_arg(vargs, char*);
+				n = n + strlen(s);
+				break;
+			default:
+				/* if we stumble upon an unknown
+				   formatting code, copy the rest of
+				   the format string to the output
+				   string. (we cannot just skip the
+				   code, since there's no way to know
+				   what's in the argument list) */ 
+				n = n + strlen(p);
+				goto expand;
+			}
+		} else
+			n = n + 1;
+	}
+	
+ expand:
+	
+	string = PyString_FromStringAndSize(NULL, n);
+	if (!string)
+		return NULL;
+	
+#ifdef HAVE_STDARG_PROTOTYPES
+	va_start(vargs, format);
+#else
+	va_start(vargs);
+#endif
+
+	/* step 2: fill the buffer */
+
+	s = PyString_AsString(string);
+
+	for (f = format; *f; f++) {
+		if (*f == '%') {
+			const char* p = f++;
+			/* parse the width.precision part (we're only
+			   interested in the precision value, if any) */
+			n = 0;
+			while (isdigit(*f))
+				n = (n*10) + *f++ - '0';
+			if (*f == '.') {
+				f++;
+				n = 0;
+				while (isdigit(*f))
+					n = (n*10) + *f++ - '0';
+			}
+			while (*f && *f != '%' && !isalpha(*f))
+				f++;
+			switch (*f) {
+			case 'c':
+				*s++ = va_arg(vargs, int);
+				break;
+			case 'd': 
+				sprintf(s, "%d", va_arg(vargs, int));
+				s = s + strlen(s);
+				break;
+			case 'i':
+				sprintf(s, "%i", va_arg(vargs, int));
+				s = s + strlen(s);
+				break;
+			case 'x':
+				sprintf(s, "%x", va_arg(vargs, int));
+				s = s + strlen(s);
+				break;
+			case 's':
+				p = va_arg(vargs, char*);
+				i = strlen(p);
+				if (n > 0 && i > n)
+					i = n;
+				memcpy(s, p, i);
+				s = s + i;
+				break;
+			case '%':
+				*s++ = '%';
+				break;
+			default:
+				strcpy(s, p);
+				s = s + strlen(s);
+				goto end;
+			}
+		} else
+			*s++ = *f;
+	}
+	
+ end:
+	
+	_PyString_Resize(&string, s - PyString_AsString(string));
+	
+	PyErr_SetObject(exception, string);
+	Py_XDECREF(string);
+	
 	return NULL;
 }
 
