@@ -786,6 +786,7 @@ class StackDepthTracker:
         'IMPORT_NAME': 0,
         'IMPORT_FROM': 1,
         'LOAD_ATTR': 0, # unlike other loads
+        'FOR_LOOP': 1,
         # close enough...
         'SETUP_EXCEPT': 3,
         'SETUP_FINALLY': 3,
