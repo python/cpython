@@ -522,168 +522,83 @@ PyLong_AsVoidPtr(PyObject *vv)
 }
 
 #ifdef HAVE_LONG_LONG
-/*
- * LONG_LONG support by Chris Herborth (chrish@qnx.com)
- *
- * For better or worse :-), I tried to follow the coding style already
- * here.
+
+/* Initial LONG_LONG support by Chris Herborth (chrish@qnx.com), later
+ * rewritten to use the newer PyLong_{As,From}ByteArray API.
  */
 
-/* Create a new long int object from a C LONG_LONG int */
+#define IS_LITTLE_ENDIAN *(char*)&one != '\0'
+
+/* Create a new long int object from a C LONG_LONG int. */
 
 PyObject *
 PyLong_FromLongLong(LONG_LONG ival)
 {
-#if SIZEOF_LONG_LONG == SIZEOF_LONG
-	/* In case the compiler is faking it. */
-	return PyLong_FromLong( (long)ival );
-#else
-	if ((LONG_LONG)LONG_MIN <= ival && ival <= (LONG_LONG)LONG_MAX) {
-		return PyLong_FromLong( (long)ival );
-	}
-	else if (0 <= ival && ival <= (unsigned LONG_LONG)ULONG_MAX) {
-		return PyLong_FromUnsignedLong( (unsigned long)ival );
-	}
-	else {
-		/* Assume a C LONG_LONG fits in at most 10 'digits'.
-		 * Should be OK if we're assuming long fits in 5.
-		 */
-		PyLongObject *v = _PyLong_New(10);
-
-		if (v != NULL) {
-			unsigned LONG_LONG t = ival;
-			int i;
-			if (ival < 0) {
-				t = -ival;
-				v->ob_size = -(v->ob_size);
-  			}
-
-			for (i = 0; i < 10; i++) {
-				v->ob_digit[i] = (digit) (t & MASK);
-				t >>= SHIFT;
-			}
-
-			v = long_normalize(v);
-		}
-
-		return (PyObject *)v;
-	}
-#endif
+	LONG_LONG bytes = ival;
+	int one = 1;
+	return _PyLong_FromByteArray(
+			(unsigned char *)&bytes,
+			SIZEOF_LONG_LONG, IS_LITTLE_ENDIAN, 1);
 }
 
-/* Create a new long int object from a C unsigned LONG_LONG int */
+/* Create a new long int object from a C unsigned LONG_LONG int. */
+
 PyObject *
 PyLong_FromUnsignedLongLong(unsigned LONG_LONG ival)
 {
-#if SIZEOF_LONG_LONG == SIZEOF_LONG
-	/* In case the compiler is faking it. */
-	return PyLong_FromUnsignedLong( (unsigned long)ival );
-#else
-	if( ival <= (unsigned LONG_LONG)ULONG_MAX ) {
-		return PyLong_FromUnsignedLong( (unsigned long)ival );
-	}
-	else {
-		/* Assume a C long fits in at most 10 'digits'. */
-		PyLongObject *v = _PyLong_New(10);
-
-		if (v != NULL) {
-			unsigned LONG_LONG t = ival;
-			int i;
-			for (i = 0; i < 10; i++) {
-				v->ob_digit[i] = (digit) (t & MASK);
-				t >>= SHIFT;
-			}
-
-			v = long_normalize(v);
-		}
-
-		return (PyObject *)v;
-	}
-#endif
+	unsigned LONG_LONG bytes = ival;
+	int one = 1;
+	return _PyLong_FromByteArray(
+			(unsigned char *)&bytes,
+			SIZEOF_LONG_LONG, IS_LITTLE_ENDIAN, 0);
 }
 
 /* Get a C LONG_LONG int from a long int object.
-   Returns -1 and sets an error condition if overflow occurs. */
+   Return -1 and set an error if overflow occurs. */
 
 LONG_LONG
 PyLong_AsLongLong(PyObject *vv)
 {
-#if SIZEOF_LONG_LONG == SIZEOF_LONG
-	/* In case the compiler is faking it. */
-	return (LONG_LONG)PyLong_AsLong( vv );
-#else
-	register PyLongObject *v;
-	LONG_LONG x, prev;
-	int i, sign;
-	
+	LONG_LONG bytes;
+	int one = 1;
+	int res;
+
 	if (vv == NULL || !PyLong_Check(vv)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
 
-	v = (PyLongObject *)vv;
-	i = v->ob_size;
-	sign = 1;
-	x = 0;
+	res = _PyLong_AsByteArray(
+			(PyLongObject *)vv, (unsigned char *)&bytes,
+			SIZEOF_LONG_LONG, IS_LITTLE_ENDIAN, 1);
 
-	if (i < 0) {
-		sign = -1;
-		i = -(i);
-	}
-
-	while (--i >= 0) {
-		prev = x;
-		x = (x << SHIFT) + v->ob_digit[i];
-		if ((x >> SHIFT) != prev) {
-			PyErr_SetString(PyExc_OverflowError,
-				"long int too long to convert");
-			return -1;
-		}
-	}
-
-	return x * sign;
-#endif
+	return (LONG_LONG)(res < 0 ? res : bytes);
 }
+
+/* Get a C unsigned LONG_LONG int from a long int object.
+   Return -1 and set an error if overflow occurs. */
 
 unsigned LONG_LONG
 PyLong_AsUnsignedLongLong(PyObject *vv)
 {
-#if SIZEOF_LONG_LONG == 4
-	/* In case the compiler is faking it. */
-	return (unsigned LONG_LONG)PyLong_AsUnsignedLong( vv );
-#else
-	register PyLongObject *v;
-	unsigned LONG_LONG x, prev;
-	int i;
-	
+	unsigned LONG_LONG bytes;
+	int one = 1;
+	int res;
+
 	if (vv == NULL || !PyLong_Check(vv)) {
 		PyErr_BadInternalCall();
-		return (unsigned LONG_LONG) -1;
+		return -1;
 	}
 
-	v = (PyLongObject *)vv;
-	i = v->ob_size;
-	x = 0;
+	res = _PyLong_AsByteArray(
+			(PyLongObject *)vv, (unsigned char *)&bytes,
+			SIZEOF_LONG_LONG, IS_LITTLE_ENDIAN, 0);
 
-	if (i < 0) {
-		PyErr_SetString(PyExc_OverflowError,
-			   "can't convert negative value to unsigned long");
-		return (unsigned LONG_LONG) -1;
-	}
-
-	while (--i >= 0) {
-		prev = x;
-		x = (x << SHIFT) + v->ob_digit[i];
-		if ((x >> SHIFT) != prev) {
-			PyErr_SetString(PyExc_OverflowError,
-				"long int too long to convert");
-			return (unsigned LONG_LONG) -1;
-		}
-	}
-
-	return x;
-#endif
+	return (unsigned LONG_LONG)(res < 0 ? res : bytes);
 }
+
+#undef IS_LITTLE_ENDIAN
+
 #endif /* HAVE_LONG_LONG */
 
 
