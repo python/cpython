@@ -303,9 +303,47 @@ in try/except, not like a return.
 [1, 2, 3]
 """
 
+# Fun tests (for sufficiently warped notions of "fun").
+
+fun_tests = """
+
+Build up to a recursive Sieve of Eratosthenes generator.
+
+>>> def firstn(g, n):
+...     return [g.next() for i in range(n)]
+
+>>> def intsfrom(i):
+...     while 1:
+...         yield i
+...         i += 1
+
+>>> firstn(intsfrom(5), 7)
+[5, 6, 7, 8, 9, 10, 11]
+
+>>> def exclude_multiples(n, ints):
+...     for i in ints:
+...         if i % n:
+...             yield i
+
+>>> firstn(exclude_multiples(3, intsfrom(1)), 6)
+[1, 2, 4, 5, 7, 8]
+
+>>> def sieve(ints):
+...     prime = ints.next()
+...     yield prime
+...     not_divisible_by_prime = exclude_multiples(prime, ints)
+...     for p in sieve(not_divisible_by_prime):
+...         yield p
+
+>>> primes = sieve(intsfrom(2))
+>>> firstn(primes, 20)
+[2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71]
+"""
+
 __test__ = {"tut": tutorial_tests,
             "pep": pep_tests,
-            "zemail": email_tests}
+            "email": email_tests,
+            "fun": fun_tests}
 
 # Magic test name that regrtest.py invokes *after* importing this module.
 # This worms around a bootstrap problem.
