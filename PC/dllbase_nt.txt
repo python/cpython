@@ -12,10 +12,13 @@ command line switch.
 
 
 
-Python.dll                 - 1e100000 - 1e180000
-Standard Extension Modules - 1e180000 - 1e200000
- - socket                    1e180000 - 1e188000
+Python.dll                 - 1e100000 - 1e180000 (-1)
+Standard Extension Modules - 1e180000 - 1e200000  ""
+ - bsddb                     1e180000 - 1e188000  ""
  - _tkinter                  1e190000 - 1e1A0000
+ - parser                    1e1A0000 - 1e1B0000
+ - zlib                      1e1B0000 - 1e1C0000
+ - winreg                    1e1C0000 - 1e1D0000
 
 Other extension modules
  - win32api                  1e200000 - 1e220000
@@ -23,16 +26,19 @@ Other extension modules
  - win32lz                   1e230000 - 1e240000
  - timer                     1e240000 - 1e250000
  - mmapfile                  1e250000 - 1e260000
+ - win32pipe                 1e260000 - 1e270000
  - avl                       1e270000 - 1e270000
  - dbhash                    1e280000 - 1e290000
  - win32net                  1e290000 - 1e2A0000
- - oleauto                   1e2A0000 - 1e2B0000
- - oleautsv                  1e2B0000 - 1e2c0000
- - nspi                      1e2d0000 - 1e2e0000
- - npipw.dll                 1e2e0000 - 1e2f0000
+ - win32security             1e2A0000 - 1e2B0000
+ - win32print                1e2B0000 - 1e2c0000
+ - <nspi is dead too??>      1e2d0000 - 1e2e0000
+ - win32gui                  1e2e0000 - 1e2f0000
  - _imaging                  1e2f0000 - 1e300000
  - multiarray                1e300000 - 1e310000
- - bsddb                     1e320000 - 1e330000
+ - win32help                 1e310000 - 1e320000
+ - win32clipboard            1e320000 - 1e330000
 
 PythonWin
  win32ui                     1e400000 - 1e500000
+
