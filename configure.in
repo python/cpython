@@ -793,8 +793,9 @@ then
 			# Link against the framework. All externals should be defined.
 			LDSHARED="$LDSHARED "'-framework $(PYTHONFRAMEWORK)'
 		else
-			# No framework. Ignore undefined symbols, assuming they come from Python
-			LDSHARED="$LDSHARED -flat_namespace -undefined suppress"
+			# No framework, use the Python app as bundle-loader
+			BLDSHARED="$LDSHARED "'-bundle_loader $(BUILDPYTHON)'
+			LDSHARED="$LDSHARED "'-bundle_loader $(BINDIR)/$(PYTHON)'
 		fi ;;
 	Linux*) LDSHARED="gcc -shared";;
 	dgux*) LDSHARED="ld -G";;
