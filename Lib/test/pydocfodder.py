@@ -177,3 +177,34 @@ class D_new(B_new, C_new):
         "Method defined in C and D."
     def D_method(self):
         "Method defined in D."
+
+class FunkyProperties(object):
+    """From SF bug 472347, by Roeland Rengelink.
+
+    Property getters etc may not be vanilla functions or methods,
+    and this used to make GUI pydoc blow up.
+    """
+
+    def __init__(self):
+        self.desc = {'x':0}
+
+    class get_desc:
+        def __init__(self, attr):
+            self.attr = attr
+        def __call__(self, inst):
+            print 'Get called', self, inst
+            return inst.desc[self.attr]
+    class set_desc:
+        def __init__(self, attr):
+            self.attr = attr
+        def __call__(self, inst, val):
+            print 'Set called', self, inst, val
+            inst.desc[self.attr] = val
+    class del_desc:
+        def __init__(self, attr):
+            self.attr = attr
+        def __call__(self, inst):
+            print 'Del called', self, inst
+            del inst.desc[self.attr]
+
+    x = property(get_desc('x'), set_desc('x'), del_desc('x'), 'prop x')

@@ -486,7 +486,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
                     entry, modname, c)
         return '<dl>\n%s</dl>\n' % result
 
-    def docmodule(self, object, name=None, mod=None):
+    def docmodule(self, object, name=None, mod=None, *ignored):
         """Produce HTML documentation for a module object."""
         name = object.__name__ # ignore the passed-in name
         parts = split(name, '.')
@@ -601,7 +601,8 @@ TT { font-family: lucidatypewriter, lucida console, courier }
 
         return result
 
-    def docclass(self, object, name=None, mod=None, funcs={}, classes={}):
+    def docclass(self, object, name=None, mod=None, funcs={}, classes={},
+                 *ignored):
         """Produce HTML documentation for a class object."""
         realname = object.__name__
         name = name or realname
@@ -800,7 +801,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
             doc = doc and '<dd><tt>%s</tt></dd>' % doc
             return '<dl><dt>%s</dt>%s</dl>\n' % (decl, doc)
 
-    def docother(self, object, name=None, mod=None):
+    def docother(self, object, name=None, mod=None, *ignored):
         """Produce HTML documentation for a data object."""
         lhs = name and '<strong>%s</strong> = ' % name or ''
         return lhs + self.repr(object)
