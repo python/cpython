@@ -4,7 +4,7 @@
 # There are functions to reset the cache or to selectively remove items.
 
 import posix
-
+from stat import *
 
 # The cache.
 # Keys are pathnames, values are `posix.stat' outcomes.
@@ -15,10 +15,8 @@ cache = {}
 # Stat a file, possibly out of the cache.
 #
 def stat(path):
-	try:
+	if cache.has_key(path):
 		return cache[path]
-	except RuntimeError:
-		pass
 	cache[path] = ret = posix.stat(path)
 	return ret
 
@@ -37,10 +35,8 @@ def reset():
 # Remove a given item from the cache, if it exists.
 #
 def forget(path):
-	try:
+	if cache.has_key(path):
 		del cache[path]
-	except RuntimeError:
-		pass
 
 
 # Remove all pathnames with a given prefix.
@@ -84,7 +80,7 @@ def forget_except_prefix(prefix):
 #
 def isdir(path):
 	try:
-		# mode is st[0]; type is mode/4096; S_IFDIR is 4
-		return stat(path)[0] / 4096 = 4
-	except RuntimeError:
+		st = stat(path)
+	except posix.error:
 		return 0
+	return S_ISDIR(st[ST_MODE])

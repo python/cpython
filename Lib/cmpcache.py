@@ -8,10 +8,9 @@
 #	- Files with different type or size cannot be identical
 #	- We keep a cache of outcomes of earlier comparisons
 #	- We don't fork a process to run 'cmp' but read the files ourselves
-#
-# XXX There is a dependency on constants in <sys/stat.h> here.
 
 import posix
+import stat
 import statcache
 
 
@@ -27,7 +26,7 @@ def cmp(f1, f2):
 	# Return 1 for identical files, 0 for different.
 	# Raise exceptions if either file could not be statted, read, etc.
 	s1, s2 = sig(statcache.stat(f1)), sig(statcache.stat(f2))
-	if s1[0] <> 8 or s2[0] <> 8: # XXX 8 is S_IFREG in <sys/stat.h>
+	if not stat.S_ISREG(s1[0]) or not stat.S_ISREG(s2[0]):
 		# Either is a not a plain file -- always report as different
 		return 0
 	if s1 = s2:
@@ -53,12 +52,7 @@ def cmp(f1, f2):
 # Return signature (i.e., type, size, mtime) from raw stat data.
 #
 def sig(st):
-	# 0-5: st_mode, st_ino, st_dev, st_nlink, st_uid, st_gid
-	# 6-9: st_size, st_atime, st_mtime, st_ctime
-	type = st[0] / 4096 # XXX dependent on S_IFMT in <sys/stat.h>
-	size = st[6]
-	mtime = st[8]
-	return type, size, mtime
+	return stat.S_IFMT(st[ST_MODE]), st[stat.ST_SIZE], st[stat.ST_MTIME]
 
 # Compare two files, really.
 #

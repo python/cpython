@@ -1,6 +1,7 @@
 # Module 'path' -- common operations on POSIX pathnames
 
 import posix
+import stat
 
 
 # Intelligent pathname concatenation.
@@ -63,7 +64,7 @@ def isdir(path):
 		st = posix.stat(path)
 	except posix.error:
 		return 0
-	return st[0] / 4096 = 4 # S_IFDIR
+	return stat.S_ISDIR(st[stat.ST_MODE])
 
 
 # Is a path a symbolic link?
@@ -74,7 +75,7 @@ def islink(path):
 		st = posix.lstat(path)
 	except (posix.error, NameError):
 		return 0
-	return st[0] / 4096 = 10 # S_IFLNK
+	return stat.S_ISLNK(st[stat.ST_MODE])
 
 
 _mounts = []
