@@ -8,7 +8,6 @@ Utility functions for operating on single files.
 __revision__ = "$Id$"
 
 import os
-from stat import *
 from distutils.errors import DistutilsFileError
 
 
@@ -108,6 +107,7 @@ def copy_file (src, dst,
     # (not update) and (src newer than dst).
 
     from distutils.dep_util import newer
+    from stat import ST_ATIME, ST_MTIME, ST_MODE, S_IMODE
 
     if not os.path.isfile(src):
         raise DistutilsFileError, \
