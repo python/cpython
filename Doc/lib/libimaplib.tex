@@ -65,8 +65,21 @@ The following utility functions are defined:
 \end{funcdesc}
 
 
-\subsection{IMAP4 Objects}
-\label{imap4-objects}
+Note that IMAP4 message numbers change as the mailbox changes, so it
+is highly advisable to use UIDs instead, with the UID command.
+
+At the end of the module, there is a test section that contains a more
+extensive example of usage.
+
+\begin{seealso}
+\seetext{Documents describing the protocol, and sources and binaries
+for servers implementing it, can all be found at the University of
+Washington's \emph{IMAP Information Center}
+(\url{http://www.cac.washington.edu/imap/}).}
+\end{seealso}
+
+
+\subsection{IMAP4 Objects \label{imap4-objects}}
 
 All IMAP4rev1 commands are represented by methods of the same name,
 either upper-case or lower-case.
@@ -212,33 +225,20 @@ three trace each command.
 \end{memberdesc}
 
 
-\subsection{IMAP4 Example}
-\label{imap4-example}
+\subsection{IMAP4 Example \label{imap4-example}}
 
 Here is a minimal example (without error checking) that opens a
 mailbox and retrieves and prints all messages:
 
 \begin{verbatim}
 import getpass, imaplib, string
+
 M = imaplib.IMAP4()
-M.LOGIN(getpass.getuser(), getpass.getpass())
-M.SELECT()
-typ, data = M.SEARCH(None, 'ALL')
+M.login(getpass.getuser(), getpass.getpass())
+M.select()
+typ, data = M.search(None, 'ALL')
 for num in string.split(data[0]):
-    typ, data = M.FETCH(num, '(RFC822)')
+    typ, data = M.fetch(num, '(RFC822)')
     print 'Message %s\n%s\n' % (num, data[0][1])
-M.LOGOUT()
+M.logout()
 \end{verbatim}
-
-Note that IMAP4 message numbers change as the mailbox changes, so it
-is highly advisable to use UIDs instead, with the UID command.
-
-At the end of the module, there is a test section that contains a more
-extensive example of usage.
-
-\begin{seealso}
-\seetext{Documents describing the protocol, and sources and binaries
-for servers implementing it, can all be found at the University of
-Washington's \emph{IMAP Information Center}
-(\url{http://www.cac.washington.edu/imap/}).}
-\end{seealso}
