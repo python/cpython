@@ -624,6 +624,16 @@ TT { font-family: lucidatypewriter, lucida console, courier }
                 self.needone = 1
         hr = HorizontalRule()
 
+        # List the mro, if non-trivial.
+        mro = inspect.getmro(object)
+        if len(mro) > 2:
+            hr.maybe()
+            push('<dl><dt>Method resolution order:</dt>\n')
+            for base in mro:
+                push('<dd>%s</dd>\n' % self.classlink(base,
+                                                      object.__module__))
+            push('</dl>\n')
+
         def spill(msg, attrs, predicate):
             ok, attrs = _split_list(attrs, predicate)
             if ok:
@@ -738,6 +748,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
             title = title + '(%s)' % join(parents, ', ')
         doc = self.markup(getdoc(object), self.preformat, funcs, classes, mdict)
         doc = doc and '<tt>%s<br>&nbsp;</tt>' % doc or '&nbsp;'
+
         return self.section(title, '#000000', '#ffc8d8', contents, 5, doc)
 
     def formatvalue(self, object):
@@ -985,18 +996,28 @@ class TextDoc(Doc):
         name = name or realname
         bases = object.__bases__
 
+        def makename(c, m=object.__module__):
+            return classname(c, m)
+
         if name == realname:
             title = 'class ' + self.bold(realname)
         else:
             title = self.bold(name) + ' = class ' + realname
         if bases:
-            def makename(c, m=object.__module__): return classname(c, m)
             parents = map(makename, bases)
             title = title + '(%s)' % join(parents, ', ')
 
         doc = getdoc(object)
         contents = doc and [doc + '\n'] or []
         push = contents.append
+
+        # List the mro, if non-trivial.
+        mro = inspect.getmro(object)
+        if len(mro) > 2:
+            push("Method resolution order:")
+            for base in mro:
+                push('    ' + makename(base))
+            push('')
 
         # Cute little class to pump out a horizontal rule between sections.
         class HorizontalRule:
