@@ -47,32 +47,77 @@ extern grammar gram; /* From graminit.c */
 int debugging; /* Needed by parser.c */
 #endif
 
+/* Interface to getopt(): */
+extern int optind;
+extern char *optarg;
+extern int getopt PROTO((int, char **, char *));
+
 main(argc, argv)
 	int argc;
 	char **argv;
 {
+	int c;
+	int sts;
+	char *command = NULL;
 	char *filename = NULL;
 	FILE *fp = stdin;
 	
-	initargs(&argc, &argv);
+	initargs(&argc, &argv); /* Defined in config*.c */
+
+	while ((c = getopt(argc, argv, "c:")) != EOF) {
+		switch (c) {
+
+		default:
+			fprintf(stderr,
+				"usage: %s [-c cmd | file | -] [arg] ...\n",
+				argv[0]);
+			exit(2);
+			/*NOTREACHED*/
+
+		case 'c':
+			if (command != NULL) {
+				fprintf(stderr, "%s: duplicate -c option\n",
+					argv[0]);
+				exit(2);
+			}
+			command = malloc(strlen(optarg) + 2);
+			/* Ignore malloc errors this early... */
+			strcpy(command, optarg);
+			strcat(command, "\n");
+			break;
+
+		}
+	}
 	
-	if (argc > 1 && strcmp(argv[1], "-") != 0)
-		filename = argv[1];
+	if (command == NULL && optind < argc && strcmp(argv[optind], "-") != 0)
+		filename = argv[optind];
 	
 	if (filename != NULL) {
 		if ((fp = fopen(filename, "r")) == NULL) {
-			fprintf(stderr, "python: can't open file '%s'\n",
-				filename);
+			fprintf(stderr, "%s: can't open file '%s'\n",
+				argv[0], filename);
 			exit(2);
 		}
 	}
 	
-	initall();
+	initall(); /* Defined in config*.c */
 	
 	setpythonpath(getpythonpath());
-	setpythonargv(argc-1, argv+1);
-	
-	goaway(run(fp, filename == NULL ? "<stdin>" : filename));
+	if (command != NULL) {
+		/* Backup optind and force sys.argv[0] = '-c' */
+		optind--;
+		argv[optind] = "-c";
+	}
+	setpythonargv(argc-optind, argv+optind);
+
+	if (command) {
+		sts = run_command(command) != 0;
+	}
+	else {
+		sts = run(fp, filename == NULL ? "<stdin>" : filename) != 0;
+	}
+
+	goaway(sts);
 	/*NOTREACHED*/
 }
 
@@ -210,6 +255,25 @@ run_script(fp, filename)
 		return -1;
 	d = getmoduledict(m);
 	v = run_file(fp, filename, file_input, d, d);
+	flushline();
+	if (v == NULL) {
+		print_error();
+		return -1;
+	}
+	DECREF(v);
+	return 0;
+}
+
+int
+run_command(command)
+	char *command;
+{
+	object *m, *d, *v;
+	m = add_module("__main__");
+	if (m == NULL)
+		return -1;
+	d = getmoduledict(m);
+	v = run_string(command, file_input, d, d);
 	flushline();
 	if (v == NULL) {
 		print_error();
