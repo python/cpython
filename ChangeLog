@@ -1,4 +1,12 @@
+========================================================================
+Release of 1.0.0 (Jan 26 1994)
+========================================================================
+
 Wed Jan 26 14:13:39 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/tut.tex: updated version number in invocation example
+
+	* Doc/Makefile: update destination of texi2html
 
 	* Misc/FAQ: updated for release 1.0.0
 
@@ -25,6 +33,7 @@ Tue Jan 25 20:11:49 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 ========================================================================
 Release of 1.0.0 BETA 6 (Jan 24 1994)
 ========================================================================
+
 Mon Jan 24 16:37:46 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Doc/ref?.tex: Change \verb\<stuff>\ into \verb@<stuff>@ so
