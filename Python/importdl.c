@@ -29,8 +29,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "osdefs.h"
 #include "importdl.h"
 
-extern int verbose; /* Defined in pythonrun.c */
-
 /* Explanation of some of the the various #defines used by dynamic linking...
 
    symbol	-- defined for:
@@ -41,6 +39,7 @@ extern int verbose; /* Defined in pythonrun.c */
    USE_SHLIB	-- SunOS or IRIX 5 (SVR4?) shared libraries
    _AIX		-- AIX style dynamic linking
    NT		-- NT style dynamic linking (using DLLs)
+   WIN16_DL	-- Windows 16-bit dynamic linking (using DLLs)
    _DL_FUNCPTR_DEFINED	-- if the typedef dl_funcptr has been defined
    USE_MAC_DYNAMIC_LOADING -- Mac CFM shared libraries
    SHORT_EXT	-- short extension for dynamic module, e.g. ".so"
@@ -79,7 +78,11 @@ typedef void (*dl_funcptr)();
 #define NT
 #endif
 
-#ifdef NT
+#ifdef MS_WIN16
+#define WIN16_DL
+#endif
+
+#if defined(NT) || defined(WIN16_DL)
 #define DYNAMIC_LINK
 #include <windows.h>
 typedef FARPROC dl_funcptr;
@@ -377,6 +380,19 @@ load_dynamic_module(name, pathname, fp)
 		p = GetProcAddress(hDLL, funcname);
 	}
 #endif /* NT */
+#ifdef WIN16_DL
+	{
+		HINSTANCE hDLL;
+		hDLL = LoadLibrary(pathname);
+		if (hDLL < HINSTANCE_ERROR){
+			char errBuf[256];
+			sprintf(errBuf, "DLL load failed with error code %d", hDLL);
+			err_setstr(ImportError, errBuf);
+			return NULL;
+		}
+		p = GetProcAddress(hDLL, funcname);
+	}
+#endif /* WIN16_DL */
 #ifdef USE_DL
 	p =  dl_loadmod(getprogramname(), pathname, funcname);
 #endif /* USE_DL */
