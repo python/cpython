@@ -2,6 +2,8 @@ from datetime import tzinfo, timedelta
 
 ZERO = timedelta(0)
 
+# A UTC class.
+
 class UTC(tzinfo):
     """UTC"""
 
@@ -14,11 +16,17 @@ class UTC(tzinfo):
     def dst(self, dt):
         return ZERO
 
+utc = UTC()
+
+# A class building tzinfo objects for fixed-offset time zones.
+# Note that FixedOffset(0, "UTC") is a different way to build a
+# UTC tzinfo object.
+
 class FixedOffset(tzinfo):
     """Fixed offset in minutes east from UTC."""
 
     def __init__(self, offset, name):
-        self.__offset = offset
+        self.__offset = timdelta(minutes = offset)
         self.__name = name
 
     def utcoffset(self, dt):
@@ -30,23 +38,41 @@ class FixedOffset(tzinfo):
     def dst(self, dt):
         return ZERO
 
-import time
+# A class capturing the platform's idea of local time.
 
-class LocalTime(tzinfo):
-    """Local time as defined by the operating system."""
+import time as _time
 
-    def _isdst(self, dt):
-        t = (dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second,
-             -1, -1, -1)
-        # XXX This may fail for years < 1970 or >= 2038
-        t = time.localtime(time.mktime(t))
-        return t.tm_isdst > 0
+STDOFFSET = timedelta(seconds = -_time.timezone)
+if _time.daylight:
+    DSTOFFSET = timedelta(seconds = -_time.altzone)
+else:
+    DSTOFFSET = STDOFFSET
+
+DSTDIFF = DSTOFFSET - STDOFFSET
+
+class LocalTimezone(tzinfo):
 
     def utcoffset(self, dt):
         if self._isdst(dt):
-            return timedelta(seconds=-time.timezone)
+            return DSTOFFSET
         else:
-            return timedelta(seconds=-time.altzone)
+            return STDOFFSET
+
+    def dst(self, dt):
+        if self._isdst(dt):
+            return DSTDIFF
+        else:
+            return ZERO
 
     def tzname(self, dt):
-        return time.tzname[self._isdst(dt)]
+        return _time.tzname[self._isdst(dt)]
+
+    def _isdst(self, dt):
+        tt = (dt.year, dt.month, dt.day,
+              dt.hour, dt.minute, dt.second,
+              dt.weekday(), 0, -1)
+        stamp = _time.mktime(tt)
+        tt = _time.localtime(stamp)
+        return tt.tm_isdst > 0
+
+Local = LocalTimezone()
