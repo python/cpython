@@ -945,6 +945,8 @@ of the first definition found."
       ;; what level is the next definition on?  must be same, deeper
       ;; or shallower indentation
       (cond
+       ;; Skip code in comments and strings
+       ((py-in-literal))
        ;; at the same indent level, add it to the list...
        ((= start-indent cur-indent)
 	(push (cons def-name def-pos) index-alist))
