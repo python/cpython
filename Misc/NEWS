@@ -10,6 +10,9 @@ Core language, builtins, and interpreter
   '\texample \r\n\x00\xff'         # in 2.1
   '\011example \015\012\000\377'   # in 2.0
 
+- Functions are now compared and hashed by identity, not by value, since
+  the func_code attribute is writable.
+
 
 Standard library
 
