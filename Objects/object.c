@@ -346,8 +346,10 @@ PyObject_Unicode(PyObject *v)
 		Py_INCREF(v);
 		return v;
 	}
-	else if (PyString_Check(v))
+	else if (PyString_Check(v)) {
+		Py_INCREF(v);
 	    	res = v;
+    	}
 	else if (v->ob_type->tp_str != NULL)
 		res = (*v->ob_type->tp_str)(v);
 	else {
