@@ -54,10 +54,13 @@ parsestring(s, g, start, n_ret)
 		return E_NOMEM;
 	}
 	ret = parsetok(tok, g, start, n_ret);
+/*
+XXX Need a more sophisticated way to report the line number.
 	if (ret == E_TOKEN || ret == E_SYNTAX) {
 		fprintf(stderr, "String parsing error at line %d\n",
 			tok->lineno);
 	}
+*/
 	tok_free(tok);
 	return ret;
 }
