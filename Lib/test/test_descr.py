@@ -2698,6 +2698,8 @@ def pickles():
     class C1(list):
         def __new__(cls, a, b):
             return super(C1, cls).__new__(cls)
+        def __getnewargs__(self):
+            return (self.a, self.b)
         def __init__(self, a, b):
             self.a = a
             self.b = b
@@ -2708,6 +2710,8 @@ def pickles():
     class C2(int):
         def __new__(cls, a, b, val=0):
             return super(C2, cls).__new__(cls, val)
+        def __getnewargs__(self):
+            return (self.a, self.b, int(self))
         def __init__(self, a, b, val=0):
             self.a = a
             self.b = b
