@@ -414,6 +414,25 @@ float_div(PyObject *v, PyObject *w)
 }
 
 static PyObject *
+float_classic_div(PyObject *v, PyObject *w)
+{
+	double a,b;
+	CONVERT_TO_DOUBLE(v, a);
+	CONVERT_TO_DOUBLE(w, b);
+	if (Py_DivisionWarningFlag &&
+	    PyErr_Warn(PyExc_DeprecationWarning, "classic float division") < 0)
+		return NULL;
+	if (b == 0.0) {
+		PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+		return NULL;
+	}
+	PyFPE_START_PROTECT("divide", return 0)
+	a = a / b;
+	PyFPE_END_PROTECT(a)
+	return PyFloat_FromDouble(a);
+}
+
+static PyObject *
 float_rem(PyObject *v, PyObject *w)
 {
 	double vx, wx;
@@ -677,7 +696,7 @@ static PyNumberMethods float_as_number = {
 	(binaryfunc)float_add, /*nb_add*/
 	(binaryfunc)float_sub, /*nb_subtract*/
 	(binaryfunc)float_mul, /*nb_multiply*/
-	(binaryfunc)float_div, /*nb_divide*/
+	(binaryfunc)float_classic_div, /*nb_divide*/
 	(binaryfunc)float_rem, /*nb_remainder*/
 	(binaryfunc)float_divmod, /*nb_divmod*/
 	(ternaryfunc)float_pow, /*nb_power*/

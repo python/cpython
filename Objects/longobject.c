@@ -1509,6 +1509,26 @@ long_div(PyObject *v, PyObject *w)
 }
 
 static PyObject *
+long_classic_div(PyObject *v, PyObject *w)
+{
+	PyLongObject *a, *b, *div, *mod;
+
+	CONVERT_BINOP(v, w, &a, &b);
+
+	if (Py_DivisionWarningFlag &&
+	    PyErr_Warn(PyExc_DeprecationWarning, "classic long division") < 0)
+		div = NULL;
+	else if (l_divmod(a, b, &div, &mod) < 0)
+		div = NULL;
+	else
+		Py_DECREF(mod);
+
+	Py_DECREF(a);
+	Py_DECREF(b);
+	return (PyObject *)div;
+}
+
+static PyObject *
 long_mod(PyObject *v, PyObject *w)
 {
 	PyLongObject *a, *b, *div, *mod;
@@ -2115,7 +2135,7 @@ static PyNumberMethods long_as_number = {
 	(binaryfunc)	long_add,	/*nb_add*/
 	(binaryfunc)	long_sub,	/*nb_subtract*/
 	(binaryfunc)	long_mul,	/*nb_multiply*/
-	(binaryfunc)	long_div,	/*nb_divide*/
+	(binaryfunc)	long_classic_div, /*nb_divide*/
 	(binaryfunc)	long_mod,	/*nb_remainder*/
 	(binaryfunc)	long_divmod,	/*nb_divmod*/
 	(ternaryfunc)	long_pow,	/*nb_power*/
