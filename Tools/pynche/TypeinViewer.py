@@ -84,7 +84,7 @@ class TypeinWidget(Pmw.MegaWidget):
 
     def __validate(self, text):
 	val = self.__str_to_int(text)
-	if val and val >= 0 and val < 256:
+	if (val is not None) and (val >= 0) and (val < 256):
 	    return 1
 	else:
 	    return -1
@@ -96,7 +96,7 @@ class TypeinWidget(Pmw.MegaWidget):
 	rgbs = map(self.__str_to_int, vals)
 	valids = map(self.__validate, vals)
 	delegate = self['delegate']
-	if None not in rgbs and -1 not in valids and delegate:
+	if (None not in rgbs) and (-1 not in valids) and delegate:
 	    delegate.set_color(self, rgbs)
 
     # called whenever the color option is changed
