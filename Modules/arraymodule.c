@@ -775,16 +775,35 @@ setarrayitem(PyObject *a, int i, PyObject *v)
 }
 
 static int
+array_iter_extend(arrayobject *self, PyObject *bb)
+{
+	PyObject *it, *v;
+
+	it = PyObject_GetIter(bb);
+	if (it == NULL)
+		return -1;
+
+	while ((v = PyIter_Next(it)) != NULL) {
+		if (ins1(self, (int) self->ob_size, v) != 0) {
+			Py_DECREF(v);
+			Py_DECREF(it);
+			return -1;
+		}
+		Py_DECREF(v);
+	}
+	Py_DECREF(it);
+	if (PyErr_Occurred())
+		return -1;
+	return 0;
+}
+
+static int
 array_do_extend(arrayobject *self, PyObject *bb)
 {
 	int size;
 
-	if (!array_Check(bb)) {
-		PyErr_Format(PyExc_TypeError,
-			"can only extend array with array (not \"%.200s\")",
-			bb->ob_type->tp_name);
-		return -1;
-	}
+	if (!array_Check(bb))
+		return array_iter_extend(self, bb);
 #define b ((arrayobject *)bb)
 	if (self->ob_descr != b->ob_descr) {
 		PyErr_SetString(PyExc_TypeError,
@@ -810,6 +829,12 @@ array_do_extend(arrayobject *self, PyObject *bb)
 static PyObject *
 array_inplace_concat(arrayobject *self, PyObject *bb)
 {
+	if (!array_Check(bb)) {
+		PyErr_Format(PyExc_TypeError,
+			"can only extend array with array (not \"%.200s\")",
+			bb->ob_type->tp_name);
+		return NULL;
+	}
 	if (array_do_extend(self, bb) == -1)
 		return NULL;
 	Py_INCREF(self);
@@ -990,9 +1015,9 @@ array_extend(arrayobject *self, PyObject *bb)
 }
 
 PyDoc_STRVAR(extend_doc,
-"extend(array)\n\
+"extend(array or iterable)\n\
 \n\
- Append array items to the end of the array.");
+ Append items to the end of the array.");
 
 static PyObject *
 array_insert(arrayobject *self, PyObject *args)
@@ -1881,7 +1906,7 @@ append() -- append a new item to the end of the array\n\
 buffer_info() -- return information giving the current memory info\n\
 byteswap() -- byteswap all the items of the array\n\
 count() -- return number of occurences of an object\n\
-extend() -- extend array by appending array elements\n\
+extend() -- extend array by appending multiple elements from an iterable\n\
 fromfile() -- read items from a file object\n\
 fromlist() -- append items from the list\n\
 fromstring() -- append items from the string\n\

@@ -182,7 +182,9 @@ Extension modules
 
 - array objects now support the copy module.  Also, their resizing
   scheme has been updated the same as for list objects.  The improves
-  performance for append() operations.
+  the performance (speed and memory usage) of append() operations.
+  Also, array.extend() now accepts any iterable argument for repeated
+  appends without needing to create another temporary array.
 
 - cStringIO.writelines() now accepts any iterable argument and writes
   the lines one at a time rather than joining them and writing once.
