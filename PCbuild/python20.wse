@@ -956,7 +956,7 @@ item: Install File
 end
 item: Install File
   Source=%_SRC_%\Tools\scripts\pydoc
-  Destination=%MAINDIR%\pydoc
+  Destination=%MAINDIR%\pydoc.pyw
   Description=Utility Scripts
   Flags=0000000000000010
 end
