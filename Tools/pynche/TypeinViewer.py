@@ -1,3 +1,17 @@
+"""TypeinViewer class.
+
+The TypeinViewer is what you see at the lower right of the main Pynche
+widget.  It contains three text entry fields, one each for red, green, blue.
+Input into these windows is highly constrained; it only allows you to enter
+values that are legal for a color axis.  This usually means 0-255 for decimal
+input and 0x0 - 0xff for hex input.
+
+You can toggle whether you want to view and input the values in either decimal
+or hex by clicking on Hexadecimal.  By clicking on Update while typing, the
+color selection will be made on every change to the text field.  Otherwise,
+you must hit Return or Tab to select the color.
+"""
+
 from Tkinter import *
 import string
 import re
