@@ -26,12 +26,6 @@ NL = N_TOKENS + 1
 tok_name[NL] = 'NL'
 N_TOKENS += 2
 
-# Changes from 1.3:
-#     Ignore now accepts \f as whitespace.  Operator now includes '**'.
-#     Ignore and Special now accept \n or \r\n at the end of a line.
-#     Imagnumber is new.  Expfloat is corrected to reject '0e4'.
-# Note: to quote a backslash in a regex, it must be doubled in a r'aw' string.
-
 def group(*choices): return '(' + '|'.join(choices) + ')'
 def any(*choices): return apply(group, choices) + '*'
 def maybe(*choices): return apply(group, choices) + '?'
@@ -103,14 +97,21 @@ endprogs = {"'": re.compile(Single), '"': re.compile(Double),
 
 tabsize = 8
 
-class TokenError(Exception):
-    pass
+class TokenError(Exception): pass
+
+class StopTokenizing(Exception): pass
 
 def printtoken(type, token, (srow, scol), (erow, ecol), line): # for testing
     print "%d,%d-%d,%d:\t%s\t%s" % \
         (srow, scol, erow, ecol, tok_name[type], repr(token))
 
 def tokenize(readline, tokeneater=printtoken):
+    try:
+        tokenize_loop(readline, tokeneater)
+    except StopTokenizing:
+        pass
+
+def tokenize_loop(readline, tokeneater):
     lnum = parenlev = continued = 0
     namechars, numchars = string.letters + '_', string.digits
     contstr, needcont = '', 0
@@ -178,8 +179,8 @@ def tokenize(readline, tokeneater=printtoken):
                 spos, epos, pos = (lnum, start), (lnum, end), end
                 token, initial = line[start:end], line[start]
 
-                if initial in numchars \
-                    or (initial == '.' and token != '.'):  # ordinary number
+                if initial in numchars or \
+                   (initial == '.' and token != '.'):      # ordinary number
                     tokeneater(NUMBER, token, spos, epos, line)
                 elif initial in '\r\n':
                     tokeneater(parenlev > 0 and NL or NEWLINE,
