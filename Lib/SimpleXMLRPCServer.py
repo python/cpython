@@ -147,22 +147,6 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         not be called by SimpleXMLRPCServer.
         """
 
-        def resolve_dotted_attribute(obj, attr):
-            """resolve_dotted_attribute(math, 'cos.__doc__') => math.cos.__doc__
-
-            Resolves a dotted attribute name to an object. Raises
-            an AttributeError if any attribute in the chain starts
-            with a '_'.
-            """
-            for i in attr.split('.'):
-                if i.startswith('_'):
-                    raise AttributeError(
-                        'attempt to access private attribute "%s"' % i
-                        )
-                else:
-                    obj = getattr(obj,i)
-            return obj
-
         func = None
         try:
             # check to see if a matching function has been registered
@@ -171,14 +155,11 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             if self.server.instance is not None:
                 # check for a _dispatch method
                 if hasattr(self.server.instance, '_dispatch'):
-                    return apply(
-                        getattr(self.server.instance,'_dispatch'),
-                        (method, params)
-                        )
+                    return self.server.instance._dispatch(method, params)
                 else:
                     # call instance method directly
                     try:
-                        func = resolve_dotted_attribute(
+                        func = _resolve_dotted_attribute(
                             self.server.instance,
                             method
                             )
@@ -195,6 +176,21 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         if self.server.logRequests:
             BaseHTTPServer.BaseHTTPRequestHandler.log_request(self, code, size)
+
+
+def _resolve_dotted_attribute(obj, attr):
+    """Resolves a dotted attribute name to an object.  Raises
+    an AttributeError if any attribute in the chain starts with a '_'.
+    """
+    for i in attr.split('.'):
+        if i.startswith('_'):
+            raise AttributeError(
+                'attempt to access private attribute "%s"' % i
+                )
+        else:
+            obj = getattr(obj,i)
+    return obj
+
 
 class SimpleXMLRPCServer(SocketServer.TCPServer):
     """Simple XML-RPC server.
