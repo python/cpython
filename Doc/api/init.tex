@@ -348,7 +348,7 @@ Therefore, the rule exists that only the thread that has acquired the
 global interpreter lock may operate on Python objects or call Python/C
 API functions.  In order to support multi-threaded Python programs,
 the interpreter regularly releases and reacquires the lock --- by
-default, every ten bytecode instructions (this can be changed with
+default, every 100 bytecode instructions (this can be changed with
 \withsubitem{(in module sys)}{\ttindex{setcheckinterval()}}
 \function{sys.setcheckinterval()}).  The lock is also released and
 reacquired around potentially blocking I/O operations like reading or

@@ -394,8 +394,8 @@ else:
 \begin{funcdesc}{setcheckinterval}{interval}
   Set the interpreter's ``check interval''.  This integer value
   determines how often the interpreter checks for periodic things such
-  as thread switches and signal handlers.  The default is \code{10},
-  meaning the check is performed every 10 Python virtual instructions.
+  as thread switches and signal handlers.  The default is \code{100},
+  meaning the check is performed every 100 Python virtual instructions.
   Setting it to a larger value may increase performance for programs
   using threads.  Setting it to a value \code{<=} 0 checks every
   virtual instruction, maximizing responsiveness as well as overhead.
