@@ -100,7 +100,7 @@ class CodeContext:
             indent, text, opener = self.get_line_info(line_index)
             if indent < lastindent:
                 lastindent = indent
-                if opener == "else" or "elif":
+                if opener in ("else", "elif"):
                     # We also show the if statement
                     lastindent += 1
                 if opener and line_index < firstline:
