@@ -206,20 +206,33 @@ def my_import(name):
 \begin{funcdesc}{dir}{\optional{object}}
   Without arguments, return the list of names in the current local
   symbol table.  With an argument, attempts to return a list of valid
-  attribute for that object.  This information is gleaned from the
+  attributes for that object.  This information is gleaned from the
   object's \member{__dict__} attribute, if defined, and from the class
-  or type object.  The list is not necessarily complete.  For
-  example, for classes, attributes defined in base classes are not
-  included, and for class instances, methods are not included.
-  The resulting list is sorted alphabetically.  For example:
+  or type object.  The list is not necessarily complete.
+  If the object is a module object, the list contains the names of the
+  module's attributes.
+  If the object is a type or class object,
+  the list contains the names of its attributes,
+  and recursively of the attributes of its bases.
+  Otherwise, the list contains the object's attributes' names,
+  the names of its class's attributes,
+  and recursively of the attributes of its class's base classes.
+  The resulting list is sorted alphabetically.
+  For example:
 
 \begin{verbatim}
->>> import sys
+>>> import struct
 >>> dir()
-['sys']
->>> dir(sys)
-['argv', 'exit', 'modules', 'path', 'stderr', 'stdin', 'stdout']
+['__builtins__', '__doc__', '__name__', 'struct']
+>>> dir(struct)
+['__doc__', '__name__', 'calcsize', 'error', 'pack', 'unpack']
 \end{verbatim}
+
+  \note{Because \function{dir()} is supplied primarily as a convenience
+  for use at an interactive prompt,
+  it tries to supply an interesting set of names more than it tries to
+  supply a rigorously or consistently defined set of names,
+  and its detailed behavior may change across releases.}
 \end{funcdesc}
 
 \begin{funcdesc}{divmod}{a, b}
