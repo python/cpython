@@ -1,15 +1,18 @@
 \section{\module{struct} ---
-         Interpret strings as packed binary data.}
+         Interpret strings as packed binary data}
 \declaremodule{builtin}{struct}
 
 \modulesynopsis{Interpret strings as packed binary data.}
 
-\indexii{C@\C{}}{structures}
+\indexii{C}{structures}
+\indexiii{packing}{binary}{data}
 
-This module performs conversions between Python values and \C{}
+This module performs conversions between Python values and C
 structs represented as Python strings.  It uses \dfn{format strings}
-(explained below) as compact descriptions of the lay-out of the \C{}
-structs and the intended conversion to/from Python values.
+(explained below) as compact descriptions of the lay-out of the C
+structs and the intended conversion to/from Python values.  This can
+be used in handling binary data stored in files or from network
+connections, among other sources.
 
 The module defines the following exception and functions:
 
@@ -40,7 +43,7 @@ The module defines the following exception and functions:
 \end{funcdesc}
 
 Format characters have the following meaning; the conversion between
-\C{} and Python values should be obvious given their types:
+C and Python values should be obvious given their types:
 
 \begin{tableiii}{c|l|l}{samp}{Format}{C Type}{Python}
   \lineiii{x}{pad byte}{no value}
@@ -96,9 +99,9 @@ example, the Alpha and Merced processors use 64-bit pointer values,
 meaning a Python long integer will be used to hold the pointer; other
 platforms use 32-bit pointers and will use a Python integer.
 
-By default, \C{} numbers are represented in the machine's native format
+By default, C numbers are represented in the machine's native format
 and byte order, and properly aligned by skipping pad bytes if
-necessary (according to the rules used by the \C{} compiler).
+necessary (according to the rules used by the C compiler).
 
 Alternatively, the first character of the format string can be used to
 indicate the byte order, size and alignment of the packed data,
@@ -118,7 +121,7 @@ Native byte order is big-endian or little-endian, depending on the
 host system (e.g. Motorola and Sun are big-endian; Intel and DEC are
 little-endian).
 
-Native size and alignment are determined using the \C{} compiler's
+Native size and alignment are determined using the C compiler's
 \keyword{sizeof} expression.  This is always combined with native byte
 order.
 
@@ -168,6 +171,6 @@ This only works when native size and alignment are in effect;
 standard size and alignment does not enforce any alignment.
 
 \begin{seealso}
-  \seemodule{array}{packed binary storage of homogeneous data}
-  \seemodule{xdrlib}{packing and unpacking of XDR data}
+  \seemodule{array}{Packed binary storage of homogeneous data.}
+  \seemodule{xdrlib}{Packing and unpacking of XDR data.}
 \end{seealso}
