@@ -118,7 +118,7 @@ class Application(FrameWork.Application):
 					func()
 				except:
 					import sys
-					sys.stderr.write("exception in idle function %s; killed:\n" % `func`)
+					sys.stderr.write("exception in idle function %r; killed:\n" % (func,))
 					traceback.print_exc()
 					self._idlefuncs.remove(func)
 					break
@@ -175,7 +175,7 @@ class Application(FrameWork.Application):
 				self.do_rawmenu(id, item, None, event)
 				return	# here! we had a menukey! 
 			#else:
-			#	print "XXX Command-" +`ch`
+			#	print "XXX Command-%r" % ch
 		# See whether the front window wants it
 		if wid and self._windows.has_key(wid):
 			window = self._windows[wid]
@@ -275,17 +275,21 @@ class Application(FrameWork.Application):
 		self.makeusermenus()
 	
 	def scriptswalk(self, top, menu, done=None):
+		if menu.id > 200:
+			import W
+			W.Message("Scripts folder not completely traversed: running out of menus")
+			return False
 		if done is None:
 			done = {}
 		if done.has_key(top):
-			return
+			return True
 		done[top] = 1
 		import os, string
 		try:
 			names = os.listdir(top)
 		except os.error:
 			FrameWork.MenuItem(menu, '(Scripts Folder not found)', None, None)
-			return
+			return True
 		savedir = os.getcwd()
 		os.chdir(top)
 		for name in names:
@@ -306,7 +310,8 @@ class Application(FrameWork.Application):
 				menu.addseparator()
 			elif isdir:
 				submenu = FrameWork.SubMenu(menu, name)
-				self.scriptswalk(path, submenu, done)
+				if not self.scriptswalk(path, submenu, done):
+					return False
 			else:
 				creator, type = MacOS.GetCreatorAndType(path)
 				if type == 'TEXT':
@@ -316,6 +321,7 @@ class Application(FrameWork.Application):
 					self._scripts[(menu.id, item.item)] = path
 			done[path] = 1
 		os.chdir(savedir)
+		return True
 	
 	def domenu_script(self, id, item, window, event):
 		(what, message, when, where, modifiers) = event
