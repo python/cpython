@@ -16,7 +16,9 @@
 
 #include <ctype.h>
 
-#ifdef WITH_TSC
+#ifndef WITH_TSC 
+#define rdtscll(var)
+#else /*WITH_TSC defined*/
 
 typedef unsigned long long uint64;
 
@@ -868,9 +870,7 @@ PyEval_EvalFrame(PyFrameObject *f)
 #endif
 
 		/* Main switch on opcode */
-#ifdef WITH_TSC
 		rdtscll(inst0);
-#endif
 
 		switch (opcode) {
 
@@ -1629,13 +1629,9 @@ PyEval_EvalFrame(PyFrameObject *f)
 			v = SECOND();
 			u = THIRD();
 			STACKADJ(-3);
-#ifdef WITH_TSC
 			rdtscll(intr0);
-#endif
 			err = exec_statement(f, u, v, w);
-#ifdef WITH_TSC
 			rdtscll(intr1);
-#endif
 			Py_DECREF(u);
 			Py_DECREF(v);
 			Py_DECREF(w);
@@ -2011,13 +2007,9 @@ PyEval_EvalFrame(PyFrameObject *f)
 				x = NULL;
 				break;
 			}
-#ifdef WITH_TSC
 			rdtscll(intr0);
-#endif
 			x = PyEval_CallObject(x, w);
-#ifdef WITH_TSC
 			rdtscll(intr1);
-#endif
 			Py_DECREF(w);
 			SET_TOP(x);
 			if (x != NULL) continue;
@@ -2031,13 +2023,9 @@ PyEval_EvalFrame(PyFrameObject *f)
 					"no locals found during 'import *'");
 				break;
 			}
-#ifdef WITH_TSC
 			rdtscll(intr0);
-#endif
 			err = import_all_from(x, v);
-#ifdef WITH_TSC
 			rdtscll(intr1);
-#endif
 			PyFrame_LocalsToFast(f, 0);
 			Py_DECREF(v);
 			if (err == 0) continue;
@@ -2046,13 +2034,9 @@ PyEval_EvalFrame(PyFrameObject *f)
 		case IMPORT_FROM:
 			w = GETITEM(names, oparg);
 			v = TOP();
-#ifdef WITH_TSC
 			rdtscll(intr0);
-#endif
 			x = import_from(v, w);
-#ifdef WITH_TSC
 			rdtscll(intr1);
-#endif
 			PUSH(x);
 			if (x != NULL) continue;
 			break;
@@ -2206,13 +2190,9 @@ PyEval_EvalFrame(PyFrameObject *f)
 		    } else
 			    Py_INCREF(func);
 		    sp = stack_pointer;
-#ifdef WITH_TSC
 		    rdtscll(intr0);
-#endif
 		    x = ext_do_call(func, &sp, flags, na, nk);
-#ifdef WITH_TSC
 		    rdtscll(intr1);
-#endif
 		    stack_pointer = sp;
 		    Py_DECREF(func);
 
@@ -2325,9 +2305,7 @@ PyEval_EvalFrame(PyFrameObject *f)
 
 	    on_error:
 
-#ifdef WITH_TSC
 		rdtscll(inst1);
-#endif
 
 		/* Quickly continue if no error occurred */
 
@@ -2340,9 +2318,7 @@ PyEval_EvalFrame(PyFrameObject *f)
 						"XXX undetected error\n");
 				else {
 #endif
-#ifdef WITH_TSC
 					rdtscll(loop1);
-#endif
 					continue; /* Normal, fast path */
 #ifdef CHECKEXC
 				}
@@ -2461,9 +2437,7 @@ fast_block_end:
 
 		if (why != WHY_NOT)
 			break;
-#ifdef WITH_TSC
 		rdtscll(loop1);
-#endif
 
 	} /* main loop */
 
@@ -3560,13 +3534,9 @@ call_function(PyObject ***pp_stack, int oparg
 		else {
 			PyObject *callargs;
 			callargs = load_args(pp_stack, na);
-#ifdef WITH_TSC
 			rdtscll(*pintr0);
-#endif
 			C_TRACE(x=PyCFunction_Call(func,callargs,NULL));
-#ifdef WITH_TSC
 			rdtscll(*pintr1);
-#endif
 			Py_XDECREF(callargs);
 		}
 	} else {
@@ -3584,16 +3554,12 @@ call_function(PyObject ***pp_stack, int oparg
 			n++;
 		} else
 			Py_INCREF(func);
-#ifdef WITH_TSC
 		rdtscll(*pintr0);
-#endif
 		if (PyFunction_Check(func))
 			x = fast_function(func, pp_stack, n, na, nk);
 		else
 			x = do_call(func, pp_stack, na, nk);
-#ifdef WITH_TSC
 		rdtscll(*pintr1);
-#endif
 		Py_DECREF(func);
 	}
 
