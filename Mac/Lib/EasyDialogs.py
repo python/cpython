@@ -55,6 +55,8 @@ def Message(msg, id=260, ok=None):
 		h = d.GetDialogItemAsControl(1)
 		h.SetControlTitle(ok)
 	d.SetDialogDefaultItem(1)
+	d.AutoSizeDialog()
+	d.ShowWindow()
 	while 1:
 		n = ModalDialog(None)
 		if n == 1:
@@ -92,6 +94,8 @@ def AskString(prompt, default = "", id=261, ok=None, cancel=None):
 		h.SetControlTitle(cancel)
 	d.SetDialogDefaultItem(1)
 	d.SetDialogCancelItem(2)
+	d.AutoSizeDialog()
+	d.ShowWindow()
 	while 1:
 		n = ModalDialog(None)
 		if n == 1:
@@ -132,6 +136,8 @@ def AskPassword(prompt,	 default='', id=264, ok=None, cancel=None):
 		h.SetControlTitle(cancel)
 	d.SetDialogDefaultItem(Dialogs.ok)
 	d.SetDialogCancelItem(Dialogs.cancel)
+	d.AutoSizeDialog()
+	d.ShowWindow()
 	while 1:
 		n = ModalDialog(None)
 		if n == 1:
@@ -183,6 +189,8 @@ def AskYesNoCancel(question, default = 0, yes=None, no=None, cancel=None, id=262
 		d.SetDialogDefaultItem(3)
 	elif default == -1:
 		d.SetDialogDefaultItem(4)
+	d.AutoSizeDialog()
+	d.ShowWindow()
 	while 1:
 		n = ModalDialog(None)
 		if n == 1: return default
@@ -206,6 +214,8 @@ class ProgressBar:
 		self.title(title)
 		self.label(label)
 		self._update(0)
+		self.d.AutoSizeDialog()
+		self.d.ShowWindow()
 		self.d.DrawDialog()
 
 	def __del__( self ):
