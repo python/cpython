@@ -102,7 +102,7 @@ MOFILE = os.path.join(LOCALEDIR, 'gettext.mo')
 
 def setup():
     os.makedirs(LOCALEDIR)
-    fp = open(MOFILE, 'w')
+    fp = open(MOFILE, 'wb')
     fp.write(base64.decodestring(GNU_MO_DATA))
     fp.close()
 
