@@ -317,18 +317,21 @@ for \var{mode} is \code{'t'}.
 \begin{funcdesc}{popen2}{cmd\optional{, mode\optional{, bufsize}}}
 Executes \var{cmd} as a sub-process.  Returns the file objects
 \code{(\var{child_stdin}, \var{child_stdout})}.
+Availability: \UNIX{}, Windows.
 \versionadded{2.0}
 \end{funcdesc}
 
 \begin{funcdesc}{popen3}{cmd\optional{, mode\optional{, bufsize}}}
 Executes \var{cmd} as a sub-process.  Returns the file objects
 \code{(\var{child_stdin}, \var{child_stdout}, \var{child_stderr})}.
+Availability: \UNIX{}, Windows.
 \versionadded{2.0}
 \end{funcdesc}
 
 \begin{funcdesc}{popen4}{cmd\optional{, mode\optional{, bufsize}}}
 Executes \var{cmd} as a sub-process.  Returns the file objects
 \code{(\var{child_stdin}, \var{child_stdout_and_stderr})}.
+Availability: \UNIX{}, Windows.
 \versionadded{2.0}
 \end{funcdesc}
 
@@ -944,7 +947,7 @@ the Visual \Cpp{} Runtime Library documentation for further
 information; the constants are exposed to the Python programmer as
 listed below.
 Availability: \UNIX{}, Windows.
-\versionadded{1.5.2}
+\versionadded{1.6}
 \end{funcdesc}
 
 \begin{funcdesc}{spawnve}{mode, path, args, env}
@@ -955,7 +958,7 @@ a tuple.  \var{mode} is a magic operational constant.  See the Visual
 \Cpp{} Runtime Library documentation for further information; the
 constants are exposed to the Python programmer as listed below.
 Availability: \UNIX{}, Windows.
-\versionadded{1.5.2}
+\versionadded{1.6}
 \end{funcdesc}
 
 \begin{datadesc}{P_WAIT}
@@ -964,7 +967,7 @@ Availability: \UNIX{}, Windows.
 Possible values for the \var{mode} parameter to \function{spawnv()}
 and \function{spawnve()}.
 Availability: \UNIX{}, Windows.
-\versionadded{1.5.2}
+\versionadded{1.6}
 \end{datadesc}
 
 \begin{datadesc}{P_OVERLAY}
@@ -973,7 +976,7 @@ Possible values for the \var{mode} parameter to \function{spawnv()}
 and \function{spawnve()}.  These are less portable than those listed
 above.
 Availability: Windows.
-\versionadded{1.5.2}
+\versionadded{1.6}
 \end{datadesc}
 
 \begin{funcdesc}{startfile}{path}
