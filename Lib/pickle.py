@@ -626,6 +626,8 @@ def whichmodule(cls, clsname):
         return classmap[cls]
 
     for name, module in sys.modules.items():
+        if module is None: 
+            continue # skip dummy package entries
         if name != '__main__' and \
             hasattr(module, clsname) and \
             getattr(module, clsname) is cls:
