@@ -250,7 +250,7 @@ class Header:
                 maxlinelen = self._firstlinelen
                 firstline = 0
             else:
-                line = line.lstrip()
+                #line = line.lstrip()
                 maxlinelen = self._maxlinelen
             # Short lines can remain unchanged
             if len(line.replace('\t', SPACE8)) <= maxlinelen:
