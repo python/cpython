@@ -280,4 +280,9 @@ DOCTYPE html [
             ])
 
 
-test_support.run_unittest(HTMLParserTestCase)
+def test_main():
+    test_support.run_unittest(HTMLParserTestCase)
+
+
+if __name__ == "__main__":
+    test_main()
