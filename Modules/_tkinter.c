@@ -806,7 +806,7 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
 
 	if (value->typePtr == app->ByteArrayType) {
 		int size;
-		char *data = Tcl_GetByteArrayFromObj(value, &size);
+		char *data = (char*)Tcl_GetByteArrayFromObj(value, &size);
 		return PyString_FromStringAndSize(data, size);
 	}
 
@@ -848,7 +848,7 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
 	}
 
 	if (value->typePtr == app->ProcBodyType) {
-		// fall through: return tcl object
+          /* fall through: return tcl object. */
 	}
 
 	if (value->typePtr == app->StringType) {
