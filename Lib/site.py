@@ -59,7 +59,28 @@ ImportError exception, it is silently ignored.
 
 import sys, os
 
+def makepath(*paths):
+    dir = os.path.join(*paths)
+    return os.path.normcase(os.path.abspath(dir))
+
+L = sys.modules.values()
+for m in L:
+    if hasattr(m, "__file__"):
+        m.__file__ = makepath(m.__file__)
+del m, L
+
+# This ensures that the initial path provided by the interpreter contains
+# only absolute pathnames, even if we're running from the build directory.
+L = []
+for dir in sys.path:
+    dir = makepath(dir)
+    if dir not in L:
+        L.append(dir)
+sys.path[:] = L
+del dir, L
+
 def addsitedir(sitedir):
+    sitedir = makepath(sitedir)
     if sitedir not in sys.path:
         sys.path.append(sitedir)        # Add path component
     try:
@@ -86,7 +107,7 @@ def addpackage(sitedir, name):
             continue
         if dir[-1] == '\n':
             dir = dir[:-1]
-        dir = os.path.join(sitedir, dir)
+        dir = makepath(sitedir, dir)
         if dir not in sys.path and os.path.exists(dir):
             sys.path.append(dir)
 
@@ -96,11 +117,11 @@ if sys.exec_prefix != sys.prefix:
 for prefix in prefixes:
     if prefix:
         if os.sep == '/':
-            sitedirs = [os.path.join(prefix,
-                                     "lib",
-                                     "python" + sys.version[:3],
-                                     "site-packages"),
-                        os.path.join(prefix, "lib", "site-python")]
+            sitedirs = [makepath(prefix,
+                                 "lib",
+                                 "python" + sys.version[:3],
+                                 "site-packages"),
+                        makepath(prefix, "lib", "site-python")]
         else:
             sitedirs = [prefix]
         for sitedir in sitedirs:
@@ -202,9 +223,11 @@ except ImportError:
 
 #
 # Remove sys.setdefaultencoding() so that users cannot change the
-# encoding after initialization.
+# encoding after initialization.  The test for presence is needed when
+# this module is run as a script, becuase this code is executed twice.
 #
-del sys.setdefaultencoding
+if hasattr(sys, "setdefaultencoding"):
+    del sys.setdefaultencoding
 
 def _test():
     print "sys.path = ["
