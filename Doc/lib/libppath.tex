@@ -90,9 +90,18 @@ between components, unless \var{p} is empty.
 \end{funcdesc}
 
 \begin{funcdesc}{normcase}{p}
-Normalize the case of a pathname.  This returns the path unchanged;
-however, a similar function in \code{macpath} converts upper case to
-lower case.
+Normalize the case of a pathname.  On \UNIX{}, this returns the path
+unchanged; on case-insensitive filesystems, it converts the path to
+lowercase.  On Windows, it also converts forward slashes to backward
+slashes.
+\end{funcdesc}
+
+\begin{funcdesc}{normpath}{p}
+Normalize a pathname.  This collapses redundant separators and
+up-level references, e.g. \code{A//B}, \code{A/./B} and
+\code{A/foo/../B} all become \code{A/B}.  It does not normalize the
+case (use \code{normcase()} for that).  On Windows, it does converts
+forward slashes to backward slashes.
 \end{funcdesc}
 
 \begin{funcdesc}{samefile}{p\, q}
