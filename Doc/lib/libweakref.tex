@@ -47,10 +47,11 @@ be made to support weak references; see section \ref{weakref-extension},
   the \var{object} was deleted, the call will raise
   \exception{TypeError}.
   
-  Weak references support test for equality, but not ordering.  If the
-  \var{object} is still alive, to references are equal if the objects
-  are equal (regardless of the \var{callback}).  If the \var{object}
-  has been deleted, they are equal iff they are identical.
+  Weak references support tests for equality, but not ordering.  If
+  the \var{object} is still alive, two references are equal if the
+  objects are equal (regardless of the \var{callback}).  If
+  \var{object} has been deleted, they are equal only if the references
+  being compared are the same reference object.
 \end{funcdesc}
 
 \begin{funcdesc}{proxy}{object\optional{, callback}}
