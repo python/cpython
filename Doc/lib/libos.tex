@@ -940,6 +940,24 @@ Availability: Windows.
 \versionadded{1.5.2}
 \end{datadesc}
 
+\begin{funcdesc}{startfile}{path}
+Start a file with its associated application.  This acts like
+double-clicking the file in Windows Explorer, or giving the file name
+as an argument to the DOS \program{start} command: the file is opened
+with whatever application (if any) its extension is associated.
+
+\function{startfile()} returns as soon as the associated application
+is launched.  There is no option to wait for the application to close,
+and no way to retrieve the application's exit status.  The \var{path}
+parameter is relative to the current directory.  If you want to use an
+absolute path, make sure the first character is not a slash
+(\character{/}); the underlying Win32 \cfunction{ShellExecute()}
+function doesn't work it is.  Use the \function{os.path.normpath()}
+function to ensure that the path is properly encoded for Win32.
+Availability: Windows.
+\versionadded{2.0}
+\end{funcdesc}
+
 \begin{funcdesc}{system}{command}
 Execute the command (a string) in a subshell.  This is implemented by
 calling the Standard C function \cfunction{system()}, and has the
