@@ -375,7 +375,7 @@ Class objects are described below.  When a class object is called as a
 function, a new class instance (also described below) is created and
 returned.  This implies a call to the class's \verb@__init__@ method
 if it has one.  Any arguments are passed on to the \verb@__init__@
-method --- if there is \verb@__init__@ method, the class must be called
+method --- if there is no \verb@__init__@ method, the class must be called
 without arguments.
 \ttindex{__init__}
 \obindex{class}
@@ -629,7 +629,7 @@ the interpreter exits.
 
 Note that \code{del x} doesn't directly call \code{x.__del__} --- the
 former decrements the reference count for \code{x} by one, but
-\code{x,__del__} is only called when its reference count reaches zero.
+\code{x.__del__} is only called when its reference count reaches zero.
 
 \item[{\tt __repr__(self)}]
 Called by the \verb@repr()@ built-in function and by string conversions
@@ -666,7 +666,7 @@ and by the built-in function
 \code{hash()}.  Should return a 32-bit integer usable as a hash value
 for dictionary operations.  The only required property is that objects
 which compare equal have the same hash value; it is advised to somehow
-mix together (e.g. using exclusing or) the hash values for the
+mix together (e.g. using exclusive or) the hash values for the
 components of the object that also play a part in comparison of
 objects.  If a class does not define a \code{__cmp__} method it should
 not define a \code{__hash__} operation either; if it defines
