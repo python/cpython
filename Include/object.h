@@ -276,6 +276,10 @@ extern int PyCallable_Check Py_PROTO((PyObject *));
 extern int PyNumber_Coerce Py_PROTO((PyObject **, PyObject **));
 extern int PyNumber_CoerceEx Py_PROTO((PyObject **, PyObject **));
 
+/* Helpers for printing recursive container types */
+extern int Py_ReprEnter Py_PROTO((PyObject *));
+extern void Py_ReprLeave Py_PROTO((PyObject *));
+
 /* Flag bits for printing: */
 #define Py_PRINT_RAW	1	/* No string quotes etc. */
 
