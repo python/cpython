@@ -43,6 +43,11 @@ Extension modules
 Library
 -------
 
+- Bug #993394.  A KeyError was being raised by Thread.__delete() for
+  dummy_threading when called by atexit if an instance of Thread was created in
+  an interpreter running in -O.  The exception was of no importance and thus is
+  now thrown away if raised.
+
 - Bug #930024: posixpath.realpath() now detects loops from symlinks and returns
   the longest path before the loop begins.
 
