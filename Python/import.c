@@ -1006,6 +1006,8 @@ check_case(char *buf, int len, int namelen, char *name)
 #endif /* macintosh */
 
 #ifdef DJGPP
+#include <dir.h>
+
 static int
 check_case(char *buf, int len, int namelen, char *name)
 {
@@ -1014,7 +1016,7 @@ check_case(char *buf, int len, int namelen, char *name)
 
 	if (getenv("PYTHONCASEOK") != NULL)
 		return 1;
-	done = findfirst(buf, &ffblk, FA_ARCH|FA_RDONLY|FA_HIDDEN);
+	done = findfirst(buf, &ffblk, FA_ARCH|FA_RDONLY|FA_HIDDEN|FA_DIREC);
 	if (done) {
 		PyErr_Format(PyExc_NameError,
 		  "Can't find file for module %.100s\n(filename %.300s)",
