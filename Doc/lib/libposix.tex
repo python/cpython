@@ -25,9 +25,11 @@ The descriptions below are very terse; refer to the corresponding
 \UNIX{} manual (or \POSIX{} documentation) entry for more information.
 Arguments called \var{path} refer to a pathname given as a string.
 
-Errors are reported as exceptions; the usual exceptions are given
-for type errors, while errors reported by the system calls raise
-\exception{error}, described below.
+Errors are reported as exceptions; the usual exceptions are given for
+type errors, while errors reported by the system calls raise
+\exception{error} (a synonym for the standard exception
+\exception{OSError}), described
+below.
 
 Module \module{posix} defines the following data items:
 
@@ -66,11 +68,14 @@ error codes defined by the underlying operating system.
 When exceptions are classes, this exception carries two attributes,
 \member{errno} and \member{strerror}.  The first holds the value of
 the \C{} \cdata{errno} variable, and the latter holds the
-corresponding error message from \cfunction{strerror()}.
+corresponding error message from \cfunction{strerror()}.  For
+exceptions that involve a file system path (e.g. \code{chdir} or
+\code{unlink}), the exception instance will contain a third attribute
+\member{filename} which is the file name passed to the
+function.
 
 When exceptions are strings, the string for the exception is
-\code{'os.error'}; this reflects the more portable access to the
-exception through the \module{os} module.
+\code{'OSError'}.
 \end{excdesc}
 
 It defines the following functions and constants:
