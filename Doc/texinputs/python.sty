@@ -6,6 +6,8 @@
 \ProvidesPackage{python}
              [1998/01/11 LaTeX package (Python markup)]
 
+\RequirePackage{longtable}
+
 % Uncomment these two lines to ignore the paper size and make the page 
 % size more like a typical published manual.
 %\renewcommand{\paperheight}{9in}
@@ -864,18 +866,38 @@
 \newenvironment{tableii}[4]{%
   \begin{center}%
     \def\lineii##1##2{\csname#2\endcsname{##1}&##2\\}%
-    \begin{tabular}{#1}\strong{#3}&\strong{#4} \\ \hline%
+    \begin{tabular}{#1}\strong{#3}&\strong{#4} \\* \hline\hline%
 }{%
     \end{tabular}%
+  \end{center}%
+}
+
+\newenvironment{longtableii}[4]{%
+  \begin{center}%
+    \def\lineii##1##2{\csname#2\endcsname{##1}&##2\\}%
+    \begin{longtable}[c]{#1}\strong{#3}&\strong{#4} \\* \hline\hline\endhead%
+}{%
+    \end{longtable}%
   \end{center}%
 }
 
 \newenvironment{tableiii}[5]{%
   \begin{center}%
     \def\lineiii##1##2##3{\csname#2\endcsname{##1}&##2&##3\\}%
-    \begin{tabular}{#1}\strong{#3}&\strong{#4}&\strong{#5} \\ \hline%
+    \begin{tabular}{#1}\strong{#3}&\strong{#4}&\strong{#5} \\%
+      \hline\hline%
 }{%
     \end{tabular}%
+  \end{center}%
+}
+
+\newenvironment{longtableiii}[5]{%
+  \begin{center}%
+    \def\lineiii##1##2##3{\csname#2\endcsname{##1}&##2&##3\\}%
+    \begin{longtable}[c]{#1}\strong{#3}&\strong{#4}&\strong{#5} \\%
+      \hline\hline\endhead%
+}{%
+    \end{longtable}%
   \end{center}%
 }
 
@@ -883,9 +905,20 @@
   \begin{center}%
     \def\lineiv##1##2##3##4{\csname#2\endcsname{##1}&##2&##3&##4\\}%
     \begin{tabular}{#1}\strong{#3}&\strong{#4}&\strong{#5}&\strong{#6} \\%
-      \hline%
+      \hline\hline%
 }{%
     \end{tabular}%
+  \end{center}%
+}
+
+\newenvironment{longtableiv}[6]{%
+  \begin{center}%
+    \def\lineiv##1##2##3##4{\csname#2\endcsname{##1}&##2&##3&##4\\}%
+    \begin{longtable}[c]{#1}\strong{#3}&\strong{#4}&\strong{#5}&\strong{#6}%
+      \\%
+      \hline\hline\endhead%
+}{%
+    \end{longtable}%
   \end{center}%
 }
 
