@@ -148,19 +148,14 @@ bz2
     must disable its "TAR file smart CR/LF conversion" feature (under
     Options -> Configuration -> Miscellaneous -> Other) for the duration.
 
-    Don't bother trying to use libbz2.dsp with MSVC.  After 10 minutes
-    of fiddling, I couldn't get it to work.  Perhaps it works with
-    MSVC 5 (I used MSVC 6).  It's better to run the by-hand makefile
-    anyway, because it runs a helpful test step at the end.
+    A custom pre-link step in the bz2 project settings should manage to
+    build bzip2-1.0.2\libbz2.lib by magic before bz2.pyd (or bz2_d.pyd) is
+    linked in PCbuild\.
+    However, the bz2 project is not smart enough to remove anything under
+    bzip2-1.0.2\ when you do a clean, so if you want to rebuild bzip2.lib
+    you need to clean up bzip2-1.0.2\ by hand.
 
-    cd into dist\bzip2-1.0.2, and run
-        nmake -f makefile.msc
-    [Note that if you're running Win9X, you'll need to run vcvars32.bat
-     before running nmake (this batch file is in your MSVC installation).
-     TODO:  make this work like zlib (in particular, MSVC runs the prelink
-     step in an enviroment that already has the correct envars set up).
-    ]
-    The make step shouldn't yield any warnings or errors, and should end
+    The build step shouldn't yield any warnings or errors, and should end
     by displaying 6 blocks each terminated with
         FC: no differences encountered
     If FC finds differences, see the warning abou WinZip above (when I
