@@ -366,6 +366,19 @@ except ValueError:
     pass
 else:
     raise TestFailed, "int(%s)" % `s[1:]` + " should raise ValueError"
+try:
+    int(1e100)
+except OverflowError:
+    pass
+else:
+    raise TestFailed("int(1e100) expected OverflowError")
+try:
+    int(-1e100)
+except OverflowError:
+    pass
+else:
+    raise TestFailed("int(-1e100) expected OverflowError")
+
 
 # SF bug 434186:  0x80000000/2 != 0x80000000>>1.
 # Worked by accident in Windows release build, but failed in debug build.
