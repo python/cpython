@@ -17,7 +17,9 @@
     \item[\code{\e begin\{{\bfseries #1}\}{%
       \let\op=\py@ltx@optparam%
       \let\p=\py@ltx@param%
-      #2}}]
+      \let\unspecified=\py@unspecified%
+      \let\moreargs=\py@moreargs%
+         #2}}]
     \item[\code{\e end\{{\bfseries #1}\}}]
     \index{#1 environment@\idxcode{#1} environment}
     \index{environments!#1@\idxcode{#1}}
@@ -28,6 +30,8 @@
     \item[\code{{\e\bfseries#1}{%
       \let\op=\py@ltx@optparam%
       \let\p=\py@ltx@param%
+      \let\unspecified=\py@unspecified%
+      \let\moreargs=\py@moreargs%
       #2}}]
     \index{#1@\idxcode{\e #1}}
 }{\end{fulllineitems}}
