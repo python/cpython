@@ -52,8 +52,6 @@ class Distribution:
                        "run quietly (turns verbosity off)"),
                       ('dry-run', 'n',
                        "don't actually do anything"),
-                      ('force', 'f',
-                       "skip dependency checking between files"),
                       ('help', 'h',
                        "show this help message"),
                      ]
@@ -76,7 +74,6 @@ class Distribution:
         # Default values for our command-line options
         self.verbose = 1
         self.dry_run = 0
-        self.force = 0
         self.help = 0
         self.help_commands = 0
 
