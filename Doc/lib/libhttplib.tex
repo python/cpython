@@ -114,7 +114,7 @@ read, using the \method{read()}, \method{readline()} or
 \subsection{Example}
 \nodename{HTTP Example}
 
-Here is an example session:
+Here is an example session that uses the \samp{GET} method:
 
 \begin{verbatim}
 >>> import httplib
@@ -128,4 +128,21 @@ Here is an example session:
 >>> f = h.getfile()
 >>> data = f.read() # Get the raw HTML
 >>> f.close()
+\end{verbatim}
+
+Here is an example session that shows how to \samp{POST} requests:
+
+\begin{verbatim}
+>>> import httplib, urllib
+>>> params = urllib.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
+>>> h = httplib.HTTP("www.musi-cal.com:80")
+>>> h.putrequest("POST", "/cgi-bin/query")
+>>> h.putheader("Content-length", "%d" % len(params))
+>>> h.putheader('Accept', 'text/plain')
+>>> h.putheader('Host', 'www.musi-cal.com')
+>>> h.endheaders()
+>>> h.send(paramstring)
+>>> reply, msg, hdrs = h.getreply()
+>>> print errcode # should be 200
+>>> data = h.getfile().read() # get the raw HTML
 \end{verbatim}
