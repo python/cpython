@@ -1,0 +1,4 @@
+include *.txt
+include idle
+include MANIFEST.in
+include MANIFEST
