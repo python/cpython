@@ -10,7 +10,6 @@ def main():
     cmd = form.getvalue("cmd", "view")
     page = form.getvalue("page", "FrontPage")
     wiki = WikiPage(page)
-    wiki.load()
     method = getattr(wiki, 'cmd_' + cmd, None) or wiki.cmd_view
     method(form)
 
