@@ -146,23 +146,9 @@ reg_search(re, args)
 	return newintobject((long)result); /* Position of the match or -1 */
 }
 
-static object *
-reg_regs(re, args)
-	regexobject *re;
-	object *args;
-{
-	if (!re->re_regs_valid) {
-		err_setstr(RegexError,
-			   "regs only valid after successful match/search");
-		return NULL;
-	}
-	return makeresult(&re->re_regs);
-}
-
 static struct methodlist reg_methods[] = {
 	{"match",	reg_match},
 	{"search",	reg_search},
-	{"regs",	reg_regs},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -171,6 +157,14 @@ reg_getattr(re, name)
 	regexobject *re;
 	char *name;
 {
+	if (strcmp(name, "regs") == 0) {
+		if (!re->re_regs_valid) {
+			err_setstr(RegexError,
+			  "regs only valid after successful match/search");
+			return NULL;
+		}
+		return makeresult(&re->re_regs);
+	}
 	return findmethod(reg_methods, (object *)re, name);
 }
 
