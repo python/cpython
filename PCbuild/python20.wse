@@ -2140,7 +2140,7 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=..\tools\compiler\README
+  Source=..\tools\compiler\readme
   Destination=%MAINDIR%\Tools\compiler\README.txt
   Description=Python compiler written in Python
   Flags=0000000000000010
@@ -2161,6 +2161,12 @@ item: Remark
 end
 item: Install File
   Source=..\tools\pynche\*.py
+  Destination=%MAINDIR%\Tools\pynche
+  Description=pynche color editor
+  Flags=0000000000000010
+end
+item: Install File
+  Source=..\tools\pynche\*.txt
   Destination=%MAINDIR%\Tools\pynche
   Description=pynche color editor
   Flags=0000000000000010
