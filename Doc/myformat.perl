@@ -21,6 +21,7 @@ sub do_cmd_ASCII{ join('', 'ASCII', @_[0]); }
 sub do_cmd_C{ join('', 'C', @_[0]); }
 sub do_cmd_Cpp{ join('', 'C++', @_[0]); }
 sub do_cmd_EOF{ join('', 'EOF', @_[0]); }
+sub do_cmd_NULL{ join('', 'NULL', @_[0]); }
 
 sub do_cmd_e{ local($_) = @_; '&#92;' . $_; }
 
