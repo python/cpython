@@ -199,7 +199,7 @@ class LongLong_TestCase(unittest.TestCase):
         self.failUnlessEqual(42, ll_convert("L", 42))
         self.failUnlessEqual(42, ll_convert("L", 42L))
         self.assertRaises(OverflowError, ll_convert, "L", VERY_LARGE)
-        
+
     def test_K(self):
         # K return 'unsigned long long', no range checking
         self.assertRaises(TypeError, ull_convert, "K", 3.14)

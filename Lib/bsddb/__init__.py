@@ -43,7 +43,7 @@ except ImportError:
     import sys
     del sys.modules[__name__]
     raise
-    
+
 # bsddb3 calls it db, but provide _db for backwards compatibility
 db = _db = _bsddb
 __version__ = db.__version__

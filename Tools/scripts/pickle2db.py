@@ -37,7 +37,7 @@ except ImportError:
 prog = sys.argv[0]
 
 def usage():
-   sys.stderr.write(__doc__ % globals())
+    sys.stderr.write(__doc__ % globals())
 
 def main(args):
     try:

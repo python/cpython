@@ -60,12 +60,12 @@ class ParserBase:
         # This is some sort of declaration; in "HTML as
         # deployed," this should only be the document type
         # declaration ("<!DOCTYPE html...>").
-        # ISO 8879:1986, however, has more complex 
+        # ISO 8879:1986, however, has more complex
         # declaration syntax for elements in <!...>, including:
         # --comment--
         # [marked section]
-        # name in the following list: ENTITY, DOCTYPE, ELEMENT, 
-        # ATTLIST, NOTATION, SHORTREF, USEMAP, 
+        # name in the following list: ENTITY, DOCTYPE, ELEMENT,
+        # ATTLIST, NOTATION, SHORTREF, USEMAP,
         # LINKTYPE, LINK, IDLINK, USELINK, SYSTEM
         rawdata = self.rawdata
         j = i + 2
@@ -151,7 +151,7 @@ class ParserBase:
             j = match.start(0)
             self.unknown_decl(rawdata[i+3: j])
         return match.end(0)
-            
+
     # Internal -- parse comment, return length or -1 if not terminated
     def parse_comment(self, i, report=1):
         rawdata = self.rawdata

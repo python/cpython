@@ -8,7 +8,7 @@ from test import test_support
 import aetools
 
 class TestScriptpackages(unittest.TestCase):
-    
+
     def _test_scriptpackage(self, package, testobject=1):
         # Check that we can import the package
         mod = __import__(package)
@@ -19,28 +19,28 @@ class TestScriptpackages(unittest.TestCase):
         if testobject:
             # Test that we can get an application object
             obj = mod.application(0)
-        
+
     def test__builtinSuites(self):
         self._test_scriptpackage('_builtinSuites', testobject=0)
-        
+
     def test_StdSuites(self):
         self._test_scriptpackage('StdSuites')
-        
+
     def test_SystemEvents(self):
         self._test_scriptpackage('SystemEvents')
-        
+
     def test_Finder(self):
         self._test_scriptpackage('Finder')
-        
+
     def test_Terminal(self):
         self._test_scriptpackage('Terminal')
-        
+
     def test_Netscape(self):
         self._test_scriptpackage('Netscape')
-        
+
     def test_Explorer(self):
         self._test_scriptpackage('Explorer')
-        
+
     def test_CodeWarrior(self):
         self._test_scriptpackage('CodeWarrior')
 

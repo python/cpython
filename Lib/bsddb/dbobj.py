@@ -192,4 +192,3 @@ class DB(DictMixin):
     if db.version() >= (4,1):
         def set_encrypt(self, *args, **kwargs):
             return apply(self._cobj.set_encrypt, args, kwargs)
-

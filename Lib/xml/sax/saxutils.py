@@ -20,7 +20,7 @@ def __dict_replace(s, d):
 
 def escape(data, entities={}):
     """Escape &, <, and > in a string of data.
-    
+
     You can escape other strings of data by passing a dictionary as
     the optional entities parameter.  The keys and values must all be
     strings; each key will be replaced with its corresponding value.

@@ -631,4 +631,3 @@ class MixinStrUserStringTest:
 
         self.checkraises(TypeError, 'xyz', 'decode', 42)
         self.checkraises(TypeError, 'xyz', 'encode', 42)
-

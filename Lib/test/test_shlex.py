@@ -166,10 +166,10 @@ class ShlexTest(unittest.TestCase):
             ret.append(tok)
             tok = lex.get_token()
         return ret
-    
+
     def testSplitPosix(self):
         """Test data splitting with posix parser"""
-        self.splitTest(self.posix_data, comments=True) 
+        self.splitTest(self.posix_data, comments=True)
 
     def testCompat(self):
         """Test compatibility interface"""

@@ -27,7 +27,7 @@ def TestThreadState():
 
     def callback():
         idents.append(thread.get_ident())
-    
+
     _testcapi._test_thread_state(callback)
     time.sleep(1)
     # Check our main thread is in the list exactly 3 times.
@@ -40,6 +40,6 @@ try:
     have_thread_state = True
 except AttributeError:
     have_thread_state = False
-    
+
 if have_thread_state:
     TestThreadState()

@@ -26,9 +26,9 @@ class Sniffer:
         """
         Takes a file-like object and returns a dialect (or None)
         """
-        
+
         self.fileobj = fileobj
-        
+
         data = fileobj.read(self.sample)
 
         quotechar, delimiter, skipinitialspace = self._guessQuoteAndDelimiter(data)
@@ -51,11 +51,11 @@ class Sniffer:
 
     def hasHeaders(self):
         return self._hasHeaders(self.fileobj, self.dialect)
-    
+
 
     def register_dialect(self, name = 'sniffed'):
         csv.register_dialect(name, self.dialect)
-    
+
 
     def _guessQuoteAndDelimiter(self, data):
         """
@@ -78,7 +78,7 @@ class Sniffer:
             matches = regexp.findall(data)
             if matches:
                 break
-        
+
         if not matches:
             return ('', None, 0) # (quotechar, delimiter, skipinitialspace)
 
@@ -117,7 +117,7 @@ class Sniffer:
             # there is *no* delimiter, it's a single column of quoted data
             delim = ''
             skipinitialspace = 0
-            
+
         return (quotechar, delim, skipinitialspace)
 
 
@@ -132,14 +132,14 @@ class Sniffer:
              e.g.  "x occurred 5 times in 10 rows, 6 times in 1000 rows,
              7 times in 2 rows"
           3) use the mode of the meta-frequency to determine the /expected/
-             frequency for that character 
-          4) find out how often the character actually meets that goal 
-          5) the character that best meets its goal is the delimiter 
+             frequency for that character
+          4) find out how often the character actually meets that goal
+          5) the character that best meets its goal is the delimiter
         For performance reasons, the data is evaluated in chunks, so it can
         try and evaluate the smallest portion of the data possible, evaluating
-        additional chunks as necessary. 
+        additional chunks as necessary.
         """
-        
+
         data = filter(None, data.split('\n'))
 
         ascii = [chr(c) for c in range(127)] # 7-bit ASCII
@@ -218,7 +218,7 @@ class Sniffer:
         # be a string in which case the length of the string is the determining factor: if
         # all of the rows except for the first are the same length, it's a header.
         # Finally, a 'vote' is taken at the end for each column, adding or subtracting from
-        # the likelihood of the first row being a header. 
+        # the likelihood of the first row being a header.
 
         def seval(item):
             """
@@ -227,7 +227,7 @@ class Sniffer:
             return eval(item.replace('(', '').replace(')', ''))
 
         fileobj.seek(0) # rewind the fileobj - this might not work for some file-like objects...
-        
+
         reader = csv.reader(fileobj,
                             delimiter = dialect.delimiter,
                             quotechar = dialect.quotechar,
@@ -284,6 +284,3 @@ class Sniffer:
                     hasHeader -= 1
 
         return hasHeader > 0
-
-
-

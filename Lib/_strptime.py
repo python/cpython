@@ -374,10 +374,10 @@ class TimeRE(dict):
 
     def pattern(self, format):
         """Return re pattern for the format string.
-        
+
         Need to make sure that any characters that might be interpreted as
         regex syntax is escaped.
-        
+
         """
         processed_format = ''
         # The sub() call escapes all characters that might be misconstrued
@@ -528,4 +528,3 @@ def _insensitiveindex(lst, findme):
             return key
     else:
         raise ValueError("value not in list")
-

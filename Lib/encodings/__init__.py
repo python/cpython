@@ -120,4 +120,3 @@ def search_function(encoding):
 
 # Register the search_function in the Python codec registry
 codecs.register(search_function)
-

@@ -146,7 +146,7 @@ class Ignore:
 
 class CoverageResults:
     def __init__(self, counts=None, calledfuncs=None, infile=None,
-                 outfile=None): 
+                 outfile=None):
         self.counts = counts
         if self.counts is None:
             self.counts = {}
@@ -164,7 +164,7 @@ class CoverageResults:
                 if type(thingie) is types.DictType:
                     # backwards compatibility for old trace.py after
                     # Zooko touched it but before calledfuncs  --Zooko
-                    # 2001-10-24 
+                    # 2001-10-24
                     self.update(self.__class__(thingie))
                 elif type(thingie) is types.TupleType and len(thingie) == 2:
                     counts, calledfuncs = thingie
@@ -173,7 +173,7 @@ class CoverageResults:
                 pass
             except pickle.UnpicklingError:
                 # backwards compatibility for old trace.py before
-                # Zooko touched it  --Zooko 2001-10-24 
+                # Zooko touched it  --Zooko 2001-10-24
                 self.update(self.__class__(marshal.load(open(self.infile))))
 
     def update(self, other):
@@ -187,7 +187,7 @@ class CoverageResults:
             if key != 'calledfuncs':
                 # backwards compatibility for abortive attempt to
                 # stuff calledfuncs into self.counts, by Zooko
-                # --Zooko 2001-10-24 
+                # --Zooko 2001-10-24
                 counts[key] = counts.get(key, 0) + other_counts[key]
 
         for key in other_calledfuncs.keys():
@@ -406,18 +406,18 @@ class Trace:
                  ignoredirs=(), infile=None, outfile=None):
         """
         @param count true iff it should count number of times each
-                     line is executed  
+                     line is executed
         @param trace true iff it should print out each line that is
-                     being counted 
+                     being counted
         @param countfuncs true iff it should just output a list of
                      (filename, modulename, funcname,) for functions
                      that were called at least once;  This overrides
-                     `count' and `trace'  
+                     `count' and `trace'
         @param ignoremods a list of the names of modules to ignore
         @param ignoredirs a list of the names of directories to ignore
-                     all of the (recursive) contents of 
+                     all of the (recursive) contents of
         @param infile file from which to read stored counts to be
-                     added into the results 
+                     added into the results
         @param outfile file in which to write the results
         """
         self.infile = infile
@@ -516,19 +516,19 @@ class Trace:
             # XXX I wish inspect offered me an optimized
             # `getfilename(frame)' to use in place of the presumably
             # heavier `getframeinfo()'.  --Zooko 2001-10-14
-            
+
             filename, lineno, funcname, context, lineindex = \
                       inspect.getframeinfo(frame, 1)
             key = filename, lineno
             self.counts[key] = self.counts.get(key, 0) + 1
-            
+
             # XXX not convinced that this memoizing is a performance
             # win -- I don't know enough about Python guts to tell.
             # --Zooko 2001-10-14
-            
+
             bname = self.pathtobasename.get(filename)
             if bname is None:
-                
+
                 # Using setdefault faster than two separate lines?
                 # --Zooko 2001-10-14
                 bname = self.pathtobasename.setdefault(filename,
@@ -553,7 +553,7 @@ class Trace:
             # heavier `getframeinfo()'.  --Zooko 2001-10-14
             filename, lineno, funcname, context, lineindex = \
                       inspect.getframeinfo(frame)
-            
+
             # XXX not convinced that this memoizing is a performance
             # win -- I don't know enough about Python guts to tell.
             # --Zooko 2001-10-14

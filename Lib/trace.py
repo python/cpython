@@ -268,7 +268,7 @@ class CoverageResults:
             coverpath = os.path.join(dir, modulename + ".cover")
             n_hits, n_lines = self.write_results_file(coverpath, source,
                                                       lnotab, count)
-            
+
             if summary and n_lines:
                 percent = int(100 * n_hits / n_lines)
                 sums[modulename] = n_lines, percent, modulename, filename
@@ -467,7 +467,7 @@ class Trace:
 
     def globaltrace_countfuncs(self, frame, why, arg):
         """Handler for call events.
-        
+
         Adds (filename, modulename, funcname) to the self._calledfuncs dict.
         """
         if why == 'call':
