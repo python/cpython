@@ -80,34 +80,34 @@ def make_parser(parser_list = []):
 
 if sys.platform[ : 4] == "java":
     def _create_parser(parser_name):
-    	from org.python.core import imp
-    	drv_module = imp.importName(parser_name, 0, globals())
-    	return drv_module.create_parser()
+        from org.python.core import imp
+        drv_module = imp.importName(parser_name, 0, globals())
+        return drv_module.create_parser()
 
 else:
     import imp as _imp
 
     def _rec_find_module(module):
-    	"Improvement over imp.find_module which finds submodules."
-    	path=""
-    	for mod in string.split(module,"."):
+        "Improvement over imp.find_module which finds submodules."
+        path=""
+        for mod in string.split(module,"."):
             if path == "":
-            	info = (mod,) + _imp.find_module(mod)
+                info = (mod,) + _imp.find_module(mod)
             else:
-            	info = (mod,) + _imp.find_module(mod, [path])
-            	
+                info = (mod,) + _imp.find_module(mod, [path])
+                
             lastmod = _imp.load_module(*info)
 
             try:
-            	path = lastmod.__path__[0]
+                path = lastmod.__path__[0]
             except AttributeError, e:
-            	pass
+                pass
 
-    	return info
+        return info
 
     def _create_parser(parser_name):
-    	info = _rec_find_module(parser_name)
-    	drv_module = _imp.load_module(*info)
-    	return drv_module.create_parser()
+        info = _rec_find_module(parser_name)
+        drv_module = _imp.load_module(*info)
+        return drv_module.create_parser()
 
 del sys
