@@ -173,14 +173,37 @@ class sdist (Command):
         reading the manifest, or just using the default file set -- it all
         depends on the user's options and the state of the filesystem.
         """
+
+        # If we have a manifest template, see if it's newer than the
+        # manifest; if so, we'll regenerate the manifest.
         template_exists = os.path.isfile (self.template)
         if template_exists:
             template_newer = newer (self.template, self.manifest)
 
+        # The contents of the manifest file almost certainly depend on the
+        # setup script as well as the manifest template -- so if the setup
+        # script is newer than the manifest, we'll regenerate the manifest
+        # from the template.  (Well, not quite: if we already have a
+        # manifest, but there's no template -- which will happen if the
+        # developer elects to generate a manifest some other way -- then we
+        # can't regenerate the manifest, so we don't.)
+        setup_newer = newer(sys.argv[0], self.manifest)
+
+        # cases:
+        #   1) no manifest, template exists: generate manifest
+        #      (covered by 2a: no manifest == template newer)
+        #   2) manifest & template exist:
+        #      2a) template or setup script newer than manifest:
+        #          regenerate manifest
+        #      2b) manifest newer than both:
+        #          do nothing (unless --force or --manifest-only)
+        #   3) manifest exists, no template:
+        #      do nothing (unless --force or --manifest-only)
+        #   4) no manifest, no template: generate w/ warning ("defaults only")
+
         # Regenerate the manifest if necessary (or if explicitly told to)
-        if ((template_exists and template_newer) or
-            self.force_manifest or
-            self.manifest_only):
+        if ((template_exists and (template_newer or setup_newer)) or
+            self.force_manifest or self.manifest_only):
 
             if not template_exists:
                 self.warn (("manifest template '%s' does not exist " +
