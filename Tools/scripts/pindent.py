@@ -77,7 +77,7 @@ STEPSIZE = 8
 TABSIZE = 8
 
 import os
-import regex
+import re
 import string
 import sys
 
@@ -100,15 +100,15 @@ class PythonIndenter:
 		self.tabsize = tabsize
 		self.lineno = 0
 		self.write = fpo.write
-		self.kwprog = regex.symcomp(
-			'^[ \t]*\(<kw>[a-z]+\)'
-			'\([ \t]+\(<id>[a-zA-Z_][a-zA-Z0-9_]*\)\)?'
-			'[^a-zA-Z0-9_]')
-		self.endprog = regex.symcomp(
-			'^[ \t]*#?[ \t]*end[ \t]+\(<kw>[a-z]+\)'
-			'\([ \t]+\(<id>[a-zA-Z_][a-zA-Z0-9_]*\)\)?'
-			'[^a-zA-Z0-9_]')
-		self.wsprog = regex.compile('^[ \t]*')
+		self.kwprog = re.compile(
+			r'^\s*(?P<kw>[a-z]+)'
+			r'(\s+(?P<id>[a-zA-Z_]\w*))?'
+			r'[^\w]')
+		self.endprog = re.compile(
+			r'^\s*#?\s*end\s+(?P<kw>[a-z]+)'
+			r'(\s+(?P<id>[a-zA-Z_]\w*))?'
+			r'[^\w]')
+		self.wsprog = re.compile(r'^[ \t]*')
 	# end def __init__
 
 	def readline(self):
@@ -142,7 +142,10 @@ class PythonIndenter:
 			return
 		# end if
 		tabs, spaces = divmod(indent*self.indentsize, self.tabsize)
-		i = max(0, self.wsprog.match(line))
+		i = 0
+		m = self.wsprog.match(line)
+		if m: i = m.end()
+		# end if
 		self.write('\t'*tabs + ' '*spaces + line[i:])
 	# end def putline
 
@@ -152,9 +155,10 @@ class PythonIndenter:
 			line = self.getline()
 			if not line: break	# EOF
 			# end if
-			if self.endprog.match(line) >= 0:
+			m = self.endprog.match(line)
+			if m:
 				kw = 'end'
-				kw2 = self.endprog.group('kw')
+				kw2 = m.group('kw')
 				if not stack:
 					self.error('unexpected end')
 				elif stack[-1][0] != kw2:
@@ -164,8 +168,9 @@ class PythonIndenter:
 				self.putline(line, len(stack))
 				continue
 			# end if
-			if self.kwprog.match(line) >= 0:
-				kw = self.kwprog.group('kw')
+			m = self.kwprog.match(line)
+			if m:
+				kw = m.group('kw')
 				if kw in start:
 					self.putline(line, len(stack))
 					stack.append((kw, kw))
@@ -195,26 +200,33 @@ class PythonIndenter:
 		current, firstkw, lastkw, topid = 0, '', '', ''
 		while 1:
 			line = self.getline()
-			i = max(0, self.wsprog.match(line))
-			if self.endprog.match(line) >= 0:
+			i = 0
+			m = self.wsprog.match(line)
+			if m: i = m.end()
+			# end if
+			m = self.endprog.match(line)
+			if m:
 				thiskw = 'end'
-				endkw = self.endprog.group('kw')
-				thisid = self.endprog.group('id')
-			elif self.kwprog.match(line) >= 0:
-				thiskw = self.kwprog.group('kw')
-				if not next.has_key(thiskw):
+				endkw = m.group('kw')
+				thisid = m.group('id')
+			else:
+				m = self.kwprog.match(line)
+				if m:
+					thiskw = m.group('kw')
+					if not next.has_key(thiskw):
+						thiskw = ''
+					# end if
+					if thiskw in ('def', 'class'):
+						thisid = m.group('id')
+					else:
+						thisid = ''
+					# end if
+				elif line[i:i+1] in ('\n', '#'):
+					todo.append(line)
+					continue
+				else:
 					thiskw = ''
 				# end if
-				if thiskw in ('def', 'class'):
-					thisid = self.kwprog.group('id')
-				else:
-					thisid = ''
-				# end if
-			elif line[i:i+1] in ('\n', '#'):
-				todo.append(line)
-				continue
-			else:
-				thiskw = ''
 			# end if
 			indent = len(string.expandtabs(line[:i], self.tabsize))
 			while indent < current:
@@ -249,7 +261,7 @@ class PythonIndenter:
 				# end if
 			# end if
 			if indent > current:
-				stack.append(current, firstkw, lastkw, topid)
+				stack.append((current, firstkw, lastkw, topid))
 				if thiskw and thiskw not in start:
 					# error
 					thiskw = ''
