@@ -224,7 +224,11 @@ if map(None, range(10)) <> [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
 	raise TestFailed, 'map(None, range(10))'
 if map(lambda x: x*x, range(1,4)) <> [1, 4, 9]:
 	raise TestFailed, 'map(lambda x: x*x, range(1,4))'
-from math import sqrt
+try:
+	from math import sqrt
+except ImportError:
+	def sqrt(x):
+		return pow(x, 0.5)
 if map(lambda x: map(sqrt,x), [[16, 4], [81, 9]]) <> [[4.0, 2.0], [9.0, 3.0]]:
 	raise TestFailed, 'map(lambda x: map(sqrt,x), [[16, 4], [81, 9]])'
 if map(lambda x, y: x+y, [1,3,2], [9,1,4]) <> [10, 4, 6]:
