@@ -44,8 +44,13 @@ def pathname2url(pathname):
     if '/' in pathname:
 	raise RuntimeError, "Cannot convert pathname containing slashes"
     components = string.split(pathname, ':')
+    # Remove empty first and/or last component
+    if components[0] == '':
+    	del components[0]
+    if components[-1] == '':
+    	del components[-1]
     # Replace empty string ('::') by .. (will result in '/../' later)
-    for i in range(1, len(components)):
+    for i in range(len(components)):
 	if components[i] == '':
 	    components[i] = '..'
     # Truncate names longer than 31 bytes

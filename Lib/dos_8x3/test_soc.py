@@ -8,7 +8,7 @@
 #	sktobj.shutdown()
 
 
-from test_support import verbose
+from test_support import verbose, TestFailed
 import socket
 import os
 import time
@@ -22,13 +22,13 @@ def missing_ok(str):
 
 print socket.error
 
-print socket.AF_INET
+socket.AF_INET
 
-print socket.SOCK_STREAM
-print socket.SOCK_DGRAM
-print socket.SOCK_RAW
-print socket.SOCK_RDM
-print socket.SOCK_SEQPACKET
+socket.SOCK_STREAM
+socket.SOCK_DGRAM
+socket.SOCK_RAW
+socket.SOCK_RDM
+socket.SOCK_SEQPACKET
 
 for optional in ("AF_UNIX",
 
@@ -65,6 +65,7 @@ for optional in ("AF_UNIX",
 		 ):
     missing_ok(optional)
 
+socktype = socket.socket_type
 hostname = socket.gethostname()
 ip = socket.gethostbyname(hostname)
 hname, aliases, ipaddrs = socket.gethostbyaddr(ip)
@@ -89,43 +90,45 @@ except socket.error:
     pass
 
 
+canfork = hasattr(os, 'fork')
 try:
     PORT = 50007
-    if os.fork():
+    if not canfork or os.fork():
 	# parent is server
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.bind(hostname, PORT)
 	s.listen(1)
 	if verbose:
 	    print 'parent accepting'
-	conn, addr = s.accept()
-	if verbose:
-	    print 'connected by', addr
-	# couple of interesting tests while we've got a live socket
-	f = conn.fileno()
-	if verbose:
-	    print 'fileno:', f
-	p = conn.getpeername()
-	if verbose:
-	    print 'peer:', p
-	n = conn.getsockname()
-	if verbose:
-	    print 'sockname:', n
-	f = conn.makefile()
-	if verbose:
-	    print 'file obj:', f
-	while 1:
-	    data = conn.recv(1024)
-	    if not data:
-		break
+	if canfork:
+	    conn, addr = s.accept()
 	    if verbose:
-		print 'received:', data
-	    conn.send(data)
-	conn.close()
+		print 'connected by', addr
+	    # couple of interesting tests while we've got a live socket
+	    f = conn.fileno()
+	    if verbose:
+		print 'fileno:', f
+	    p = conn.getpeername()
+	    if verbose:
+		print 'peer:', p
+	    n = conn.getsockname()
+	    if verbose:
+		print 'sockname:', n
+	    f = conn.makefile()
+	    if verbose:
+		print 'file obj:', f
+	    while 1:
+		data = conn.recv(1024)
+		if not data:
+		    break
+		if verbose:
+		    print 'received:', data
+		conn.send(data)
+	    conn.close()
     else:
 	try:
 	    # child is client
-	    time.sleep(1)
+	    time.sleep(5)
 	    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	    if verbose:
 		print 'child connecting'
@@ -138,5 +141,5 @@ try:
 	    s.close()
 	finally:
 	    os._exit(1)
-except socket.error:
-    pass
+except socket.error, msg:
+    raise TestFailed, msg

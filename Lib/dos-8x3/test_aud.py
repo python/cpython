@@ -171,11 +171,12 @@ def testmul(data):
 
 def testratecv(data):
     if verbose:
-	print 'ratecv'
-    state = (-8000, ((256, 512),))
-    if audioop.ratecv(data[0], 1, 1, 8000, 16000, state) != \
-       ('\001\000\000\001\001\002', state):
-	return 0
+        print 'ratecv'
+    state = None
+    d1, state = audioop.ratecv(data[0], 1, 1, 8000, 16000, state)
+    d2, state = audioop.ratecv(data[0], 1, 1, 8000, 16000, state)
+    if d1 + d2 != '\000\000\001\001\002\001\000\000\001\001\002':
+        return 0
     return 1
 
 def testreverse(data):

@@ -1,128 +1,72 @@
-#! /usr/bin/env python
-
-# Sanity checker for time.strftime
-
-import time, calendar, sys, string, os
 from test_support import verbose
+import strop, sys
 
-def main():
-    global verbose
-    now = time.time()
-    strftest(now)
-    verbose = 0
-    # Try a bunch of dates and times,  chosen to vary through time of
-    # day and daylight saving time
-    for j in range(-5, 5):
-	for i in range(25):
-	    strftest(now + (i + j*100)*23*3603)
-
-def strftest(now):
+def test(name, input, output, *args):
     if verbose:
-	print "strftime test for", time.ctime(now)
-    nowsecs = int(now)
-    gmt = time.gmtime(now)
-    now = time.localtime(now)
+	print 'string.%s%s =? %s... ' % (name, (input,) + args, output),
+    f = getattr(strop, name)
+    try:
+	value = apply(f, (input,) + args)
+    except:
+	 value = sys.exc_type
+    if value != output:
+	if verbose:
+	    print 'no'
+	print f, `input`, `output`, `value`
+    else:
+	if verbose:
+	    print 'yes'
 
-    if now[3] < 12: ampm='AM'
-    else: ampm='PM'
+test('atoi', " 1 ", 1)
+test('atoi', " 1x", ValueError)
+test('atoi', " x1 ", ValueError)
+test('atol', "  1  ", 1L)
+test('atol', "  1x ", ValueError)
+test('atol', "  x1 ", ValueError)
+test('atof', "  1  ", 1.0)
+test('atof', "  1x ", ValueError)
+test('atof', "  x1 ", ValueError)
 
-    jan1 = time.localtime(time.mktime((now[0], 1, 1) + (0,)*6))
+test('capitalize', ' hello ', ' hello ')
+test('capitalize', 'hello ', 'Hello ')
+test('find', 'abcdefghiabc', 0, 'abc')
+test('find', 'abcdefghiabc', 9, 'abc', 1)
+test('find', 'abcdefghiabc', -1, 'def', 4)
+test('rfind', 'abcdefghiabc', 9, 'abc')
+test('lower', 'HeLLo', 'hello')
+test('upper', 'HeLLo', 'HELLO')
 
-    if now[8]: tz = time.tzname[1]
-    else: tz = time.tzname[0]
+transtable = '\000\001\002\003\004\005\006\007\010\011\012\013\014\015\016\017\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037 !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`xyzdefghijklmnopqrstuvwxyz{|}~\177\200\201\202\203\204\205\206\207\210\211\212\213\214\215\216\217\220\221\222\223\224\225\226\227\230\231\232\233\234\235\236\237\240\241\242\243\244\245\246\247\250\251\252\253\254\255\256\257\260\261\262\263\264\265\266\267\270\271\272\273\274\275\276\277\300\301\302\303\304\305\306\307\310\311\312\313\314\315\316\317\320\321\322\323\324\325\326\327\330\331\332\333\334\335\336\337\340\341\342\343\344\345\346\347\350\351\352\353\354\355\356\357\360\361\362\363\364\365\366\367\370\371\372\373\374\375\376\377'
 
-    if now[3] > 12: clock12 = now[3] - 12
-    elif now[3] > 0: clock12 = now[3]
-    else: clock12 = 12
+test('maketrans', 'abc', transtable, 'xyz')
+test('maketrans', 'abc', ValueError, 'xyzq')
 
-    expectations = (
-	('%A', calendar.day_name[now[6]], 'full weekday name'),
-	('%a', calendar.day_abbr[now[6]], 'abbreviated weekday name'),
-	('%B', calendar.month_name[now[1]], 'full month name'),
-	('%b', calendar.month_abbr[now[1]], 'abbreviated month name'),
-	('%h', calendar.month_abbr[now[1]], 'abbreviated month name'),
-	('%c', fixasctime(time.asctime(now)), 'near-asctime() format'),
-	('%D', '%02d/%02d/%02d' % (now[1], now[2], (now[0]%100)), 'mm/dd/yy'),
-	('%d', '%02d' % now[2], 'day of month as number (00-31)'),
-	('%e', '%2d' % now[2], 'day of month as number, blank padded ( 0-31)'),
-	('%H', '%02d' % now[3], 'hour (00-23)'),
-	('%I', '%02d' % clock12, 'hour (01-12)'),
-	('%j', '%03d' % now[7], 'julian day (001-366)'),
-	('%M', '%02d' % now[4], 'minute, (00-59)'),
-	('%m', '%02d' % now[1], 'month as number (01-12)'),
-	('%p', ampm, 'AM or PM as appropriate'),
-	('%R', '%02d:%02d' % (now[3], now[4]), '%H:%M'),
-	('%r', '%02d:%02d:%02d %s' % (clock12, now[4], now[5], ampm),
-	 '%I:%M:%S %p'),
-	('%S', '%02d' % now[5], 'seconds of current time (00-60)'),
-	('%T', '%02d:%02d:%02d' % (now[3], now[4], now[5]), '%H:%M:%S'),
-	('%X', '%02d:%02d:%02d' % (now[3], now[4], now[5]), '%H:%M:%S'),
-	('%U', '%02d' % ((now[7] + jan1[6])/7),
-	 'week number of the year (Sun 1st)'),
-	('%W', '%02d' % ((now[7] + (jan1[6] - 1)%7)/7),
-	 'week number of the year (Mon 1st)'),
-	('%w', '%d' % ((1+now[6]) % 7), 'weekday as a number (Sun 1st)'),
-	('%x', '%02d/%02d/%02d' % (now[1], now[2], (now[0]%100)),
-	 '%m/%d/%y %H:%M:%S'),
-	('%Y', '%d' % now[0], 'year with century'),
-	('%y', '%02d' % (now[0]%100), 'year without century'),
-	('%Z', tz, 'time zone name'),
-	('%%', '%', 'single percent sign'),
-	)
+test('split', 'this is the split function',
+     ['this', 'is', 'the', 'split', 'function'])
+test('split', 'a|b|c|d', ['a', 'b', 'c', 'd'], '|')
+test('split', 'a|b|c|d', ['a', 'b', 'c|d'], '|', 2)
 
-    nonstandard_expectations = (
-	('%C', '%02d' % (now[0]/100), 'century'),
-	    # This is for IRIX; on Solaris, %C yields date(1) format.
-	    # Tough.
-	('%k', '%2d' % now[3], 'hour, blank padded ( 0-23)'),
-	('%s', '%d' % nowsecs, 'seconds since the Epoch in UCT'),
-	('%3y', '%03d' % (now[0]%100),
-	 'year without century rendered using fieldwidth'),
-	('%n', '\n', 'newline character'),
-	('%t', '\t', 'tab character'),
-	)
+# join now works with any sequence type
+class Sequence:
+    def __init__(self): self.seq = 'wxyz'
+    def __len__(self): return len(self.seq)
+    def __getitem__(self, i): return self.seq[i]
 
-    if verbose:
-	print "Strftime test, platform: %s, Python version: %s" % \
-	      (sys.platform, string.split(sys.version)[0])
+test('join', ['a', 'b', 'c', 'd'], 'a b c d')
+test('join', ('a', 'b', 'c', 'd'), 'abcd', '')
+test('join', Sequence(), 'w x y z')
 
-    for e in expectations:
-	try:
-	    result = time.strftime(e[0], now)
-	except ValueError, error:
-	    print "Standard '%s' format gave error:" % e[0], error
-	    continue
-	if result == e[1]: continue
-	if result[0] == '%':
-	    print "Does not support standard '%s' format (%s)" % (e[0], e[2])
-	else:
-	    print "Conflict for %s (%s):" % (e[0], e[2])
-	    print "  Expected %s, but got %s" % (e[1], result)
+# try a few long ones
+print strop.join(['x' * 100] * 100, ':')
+print strop.join(('x' * 100,) * 100, ':')
 
-    for e in nonstandard_expectations:
-	try:
-	    result = time.strftime(e[0], now)
-	except ValueError, result:
-	    if verbose:
-		print "Error for nonstandard '%s' format (%s): %s" % \
-		      (e[0], e[2], str(error))
-	    continue
-	if result == e[1]:
-	    if verbose:
-		print "Supports nonstandard '%s' format (%s)" % (e[0], e[2])
-	elif result[0] == '%':
-	    if verbose:
-		print "Does not appear to support '%s' format (%s)" % (e[0],
-								       e[2])
-	else:
-	    if verbose:
-		print "Conflict for nonstandard '%s' format (%s):" % (e[0],
-								      e[2])
-		print "  Expected %s, but got %s" % (e[1], result)
+test('strip', '   hello   ', 'hello')
+test('lstrip', '   hello   ', 'hello   ')
+test('rstrip', '   hello   ', '   hello')
 
-def fixasctime(s):
-    if s[8] == ' ':
-	s = s[:8] + '0' + s[9:]
-    return s
+test('swapcase', 'HeLLo cOmpUteRs', 'hEllO CoMPuTErS')
+test('translate', 'xyzabcdef', 'xyzxyz', transtable, 'def')
 
-main()
+strop.whitespace
+strop.lowercase
+strop.uppercase
