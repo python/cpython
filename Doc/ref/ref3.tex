@@ -217,7 +217,7 @@ and \code{z.imag}.
 These represent finite ordered sets indexed by natural numbers.
 The built-in function \function{len()}\bifuncindex{len} returns the
 number of items of a sequence.
-When the lenth of a sequence is \var{n}, the
+When the length of a sequence is \var{n}, the
 index set contains the numbers 0, 1, \ldots, \var{n}-1.  Item
 \var{i} of sequence \var{a} is selected by \code{\var{a}[\var{i}]}.
 \obindex{sequence}
@@ -310,7 +310,7 @@ parentheses.
 Mutable sequences can be changed after they are created.  The
 subscription and slicing notations can be used as the target of
 assignment and \keyword{del} (delete) statements.
-\obindex{mutable sequece}
+\obindex{mutable sequence}
 \obindex{mutable}
 \indexii{assignment}{statement}
 \index{delete}
@@ -700,7 +700,7 @@ bytecode; \member{co_names} is a tuple containing the names used by
 the bytecode; \member{co_filename} is the filename from which the code
 was compiled; \member{co_firstlineno} is the first line number of the
 function; \member{co_lnotab} is a string encoding the mapping from
-byte code offsets to line numbers (for detais see the source code of
+byte code offsets to line numbers (for details see the source code of
 the interpreter); \member{co_stacksize} is the required stack size
 (including local variables); \member{co_flags} is an integer encoding
 a number of flags for the interpreter.
@@ -815,8 +815,8 @@ or ellipses separated by commas, e.g., \code{a[i:j:step]}, \code{a[i:j,
 k:l]}, or \code{a[..., i:j])}.  They are also created by the built-in
 \function{slice()}\bifuncindex{slice} function.
 
-Special read-only attributes: \member{start} is the lowerbound;
-\member{stop} is the upperbound; \member{step} is the step value; each is
+Special read-only attributes: \member{start} is the lower bound;
+\member{stop} is the upper bound; \member{step} is the step value; each is
 \code{None} if omitted. These attributes can have any type.
 \withsubitem{(slice object attribute)}{
   \ttindex{start}

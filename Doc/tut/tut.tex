@@ -741,7 +741,7 @@ The built-in function \function{len()} returns the length of a string:
 Starting with Python 2.0 a new data type for storing text data is
 available to the programmer: the Unicode object. It can be used to
 store and manipulate Unicode data (see \url{http://www.unicode.org})
-and intergrates well with the existing string objects providing
+and integrates well with the existing string objects providing
 auto-conversions where necessary.
 
 Unicode has the advantage of providing one ordinal for every character
@@ -798,7 +798,7 @@ The raw mode is most useful when you have to enter lots of backslashes
 e.g. in regular expressions.
 
 Apart from these standard encodings, Python provides a whole set of
-other ways of creating Unicod strings on the basis of a known
+other ways of creating Unicode strings on the basis of a known
 encoding. 
 
 The builtin \function{unicode()}\bifuncindex{unicode} provides access
@@ -807,7 +807,7 @@ more well known encodings which these codecs can convert are
 \emph{Latin-1}, \emph{ASCII}, \emph{UTF-8} and \emph{UTF-16}. The latter two
 are variable length encodings which permit to store Unicode characters
 in 8 or 16 bits. Python uses UTF-8 as default encoding. This becomes
-noticable when printing Unicode strings or writing them to files.
+noticeable when printing Unicode strings or writing them to files.
 
 \begin{verbatim}
 >>> u"הצü"
@@ -3019,7 +3019,7 @@ by the \keyword{try} \ldots\ \keyword{except} statement.
 
 
 When an exception occurs, it may have an associated value, also known as
-the exceptions's \emph{argument}.
+the exception's \emph{argument}.
 The presence and type of the argument depend on the exception type.
 For exception types which have an argument, the except clause may
 specify a variable after the exception name (or list) to receive the
