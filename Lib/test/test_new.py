@@ -71,10 +71,10 @@ func()
 verify(g['c'] == 3,
        'Could not create a proper function object')
 
+print 'new.code()'
 # bogus test of new.code()
 # Note: Jython will never have new.code()
 if hasattr(new, 'code'):
-    print 'new.code()'
     d = new.code(3, 3, 3, 3, codestr, (), (), (),
                  "<string>", "<name>", 1, "", (), ())
     # test backwards-compatibility version with no freevars or cellvars
