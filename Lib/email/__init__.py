@@ -32,8 +32,8 @@ __all__ = ['Charset',
 from email.Parser import Parser as _Parser
 from email.Message import Message as _Message
 
-def message_from_string(s, _class=_Message, strict=1):
+def message_from_string(s, _class=_Message, strict=0):
     return _Parser(_class, strict=strict).parsestr(s)
 
-def message_from_file(fp, _class=_Message, strict=1):
+def message_from_file(fp, _class=_Message, strict=0):
     return _Parser(_class, strict=strict).parse(fp)
