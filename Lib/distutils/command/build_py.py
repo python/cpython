@@ -93,12 +93,7 @@ class build_py (Command):
            distribution, where package 'package' should be found
            (at least according to the 'package_dir' option, if any)."""
 
-        if type (package) is StringType:
-            path = string.split (package, '.')
-        elif type (package) in (TupleType, ListType):
-            path = list (package)
-        else:
-            raise TypeError, "'package' must be a string, list, or tuple"
+        path = string.split (package, '.')
 
         if not self.package_dir:
             if path:
@@ -220,7 +215,7 @@ class build_py (Command):
 
         for module in self.py_modules:
             path = string.split (module, '.')
-            package = tuple (path[0:-1])
+            package = string.join(path[0:-1], '.')
             module_base = path[-1]
 
             try:
