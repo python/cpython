@@ -128,11 +128,40 @@ fcntl_ioctl(self, args)
 }
 
 
+/* flock(fd, operation) */
+
+static object *
+fcntl_flock(self, args)
+	object *self; /* Not used */
+	object *args;
+{
+	int fd;
+	int code;
+	int ret;
+	FILE *f;
+
+	if (!getargs(args, "(ii)", &fd, &code))
+		return NULL;
+
+	BGN_SAVE
+	ret = flock(fd, code);
+	END_SAVE
+	if (ret < 0) {
+		err_errno(IOError);
+		return NULL;
+	}
+	INCREF(None);
+	return None;
+}
+
+
+
 /* List of functions */
 
 static struct methodlist fcntl_methods[] = {
 	{"fcntl",	fcntl_fcntl},
 	{"ioctl",	fcntl_ioctl},
+	{"flock",	fcntl_flock},
 	{NULL,		NULL}		/* sentinel */
 };
 
