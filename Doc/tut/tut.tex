@@ -2765,9 +2765,9 @@ resulting from this formatting operation.
 
 One question remains, of course: how do you convert values to strings?
 Luckily, Python has ways to convert any value to a string: pass it to
-the \function{repr()}  or \function{str()} functions, or just write
-the value between reverse quotes (\code{``}, equivalent to
-\function{repr()}).
+the \function{repr()}  or \function{str()} functions.  Reverse quotes
+(\code{``}) are equivalent to \function{repr()}, but their use is
+discouraged.
 
 The \function{str()} function is meant to return representations of
 values which are fairly human-readable, while \function{repr()} is
@@ -2786,28 +2786,26 @@ Some examples:
 >>> s = 'Hello, world.'
 >>> str(s)
 'Hello, world.'
->>> `s`
+>>> repr(s)
 "'Hello, world.'"
 >>> str(0.1)
 '0.1'
->>> `0.1`
+>>> repr(0.1)
 '0.10000000000000001'
 >>> x = 10 * 3.25
 >>> y = 200 * 200
->>> s = 'The value of x is ' + `x` + ', and y is ' + `y` + '...'
+>>> s = 'The value of x is ' + repr(x) + ', and y is ' + repr(y) + '...'
 >>> print s
 The value of x is 32.5, and y is 40000...
->>> # Reverse quotes work on other types besides numbers:
-... p = [x, y]
->>> ps = repr(p)
->>> ps
-'[32.5, 40000]'
->>> # Converting a string adds string quotes and backslashes:
+>>> # The repr() of a string adds string quotes and backslashes:
 ... hello = 'hello, world\n'
->>> hellos = `hello`
+>>> hellos = repr(hello)
 >>> print hellos
 'hello, world\n'
->>> # The argument of reverse quotes may be a tuple:
+>>> # The argument to repr() may be any Python object:
+... repr(x, y, ('spam', 'eggs'))
+"(32.5, 40000, ('spam', 'eggs'))"
+>>> # reverse quotes are convenient in interactive sessions:
 ... `x, y, ('spam', 'eggs')`
 "(32.5, 40000, ('spam', 'eggs'))"
 \end{verbatim}
@@ -2817,9 +2815,9 @@ Here are two ways to write a table of squares and cubes:
 \begin{verbatim}
 >>> import string
 >>> for x in range(1, 11):
-...     print string.rjust(`x`, 2), string.rjust(`x*x`, 3),
+...     print string.rjust(repr(x), 2), string.rjust(repr(x*x), 3),
 ...     # Note trailing comma on previous line
-...     print string.rjust(`x*x*x`, 4)
+...     print string.rjust(repr(x*x*x), 4)
 ...
  1   1    1
  2   4    8
@@ -3357,7 +3355,7 @@ example:
 ...     def __init__(self, value):
 ...         self.value = value
 ...     def __str__(self):
-...         return `self.value`
+...         return repr(self.value)
 ... 
 >>> try:
 ...     raise MyError(2*2)
