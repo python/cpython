@@ -271,6 +271,46 @@ audioop_rms(self, args)
 }
 
 static object *
+audioop_rms2(self, args)
+    object *self;
+    object *args;
+{
+    signed char *cp1, *cp2;
+    int len1, len2, size, val1, val2;
+    int i;
+    float sum_squares = 0.0;
+
+    if ( !getargs(args, "(s#s#i)", &cp1, &len1, &cp2, &len2, &size) )
+      return 0;
+    if ( size != 1 && size != 2 && size != 4 ) {
+	err_setstr(AudioopError, "Size should be 1, 2 or 4");
+	return 0;
+    }
+    if ( len1 != len2 ) {
+	err_setstr(AudioopError, "Samples should be same size");
+	return 0;
+    }
+    for ( i=0; i<len1; i+= size) {
+	if ( size == 1 ) {
+	    val1 = (int)*CHARP(cp1, i);
+	    val2 = (int)*CHARP(cp2, i);
+	} else if ( size == 2 ) {
+	    val1 = (int)*SHORTP(cp1, i);
+	    val2 = (int)*SHORTP(cp2, i);
+	} else if ( size == 4 ) {
+	    val1 = (int)*LONGP(cp1, i);
+	    val2 = (int)*LONGP(cp2, i);
+	}
+	sum_squares += (float)val1*(float)val2;
+    }
+    if ( len1 == 0 )
+      val1 = 0;
+    else
+      val1 = (int)sqrt(sum_squares / (float)(len1/size));
+    return newintobject(val1);
+}
+
+static object *
 audioop_avgpp(self, args)
     object *self;
     object *args;
@@ -731,6 +771,11 @@ audioop_lin2adpcm3(self, args)
 	return 0;
     }
     
+    str = newsizedstringobject(NULL, len/size);
+    if ( str == 0 )
+      return 0;
+    ncp = (signed char *)getstringvalue(str);
+
     /* Decode state, should have (value, step) */
     if ( state == None ) {
 	/* First time, it seems. Set defaults */
@@ -738,11 +783,6 @@ audioop_lin2adpcm3(self, args)
 	step = 4;	/* The '4' is magic. Dunno it's significance */
     } else if ( !getargs(state, "(ii)", &valprev, &step) )
       return 0;
-
-    str = newsizedstringobject(NULL, len/size);
-    if ( str == 0 )
-      return 0;
-    ncp = (signed char *)getstringvalue(str);
 
     for ( i=0; i < len; i += size ) {
 	if ( size == 1 )      val = ((int)*CHARP(cp, i)) << 8;
@@ -861,6 +901,11 @@ audioop_lin2adpcm(self, args)
 	return 0;
     }
     
+    str = newsizedstringobject(NULL, len/(size*2));
+    if ( str == 0 )
+      return 0;
+    ncp = (signed char *)getstringvalue(str);
+
     /* Decode state, should have (value, step) */
     if ( state == None ) {
 	/* First time, it seems. Set defaults */
@@ -869,11 +914,6 @@ audioop_lin2adpcm(self, args)
 	index = 0;
     } else if ( !getargs(state, "(ii)", &valpred, &index) )
       return 0;
-
-    str = newsizedstringobject(NULL, len/(size*2));
-    if ( str == 0 )
-      return 0;
-    ncp = (signed char *)getstringvalue(str);
 
     step = stepsizeTable[index];
     bufferstep = 1;
@@ -1048,6 +1088,7 @@ static struct methodlist audioop_methods[] = {
     { "maxpp", audioop_maxpp },
     { "avgpp", audioop_avgpp },
     { "rms", audioop_rms },
+    { "rms2", audioop_rms2 },
     { "cross", audioop_cross },
     { "mul", audioop_mul },
     { "add", audioop_add },
