@@ -503,6 +503,35 @@ strop_atof(self, args)
 }
 
 
+static object *
+strop_translate(self, args)
+	object *self;
+	object *args;
+{
+	char *input, *table, *output;
+	int inlen, tablen;
+	object *result;
+	int i;
+
+	if (!newgetargs(args, "s#s#", &input, &inlen, &table, &tablen))
+		return NULL;
+	if (tablen != 256) {
+		err_setstr(ValueError,
+			   "translation table must be 256 characters long");
+		return NULL;
+	}
+	result = newsizedstringobject((char *)NULL, inlen);
+	if (result == NULL)
+		return NULL;
+	output = getstringvalue(result);
+	for (i = 0; i < inlen; i++) {
+		int c = Py_CHARMASK(*input++);
+		*output++ = table[c];
+	}
+	return result;
+}
+
+
 /* List of functions defined in the module */
 
 static struct methodlist strop_methods[] = {
@@ -518,6 +547,7 @@ static struct methodlist strop_methods[] = {
 	{"splitfields",	strop_splitfields, 1},
 	{"strip",	strop_strip},
 	{"swapcase",	strop_swapcase},
+	{"translate",	strop_translate, 1},
 	{"upper",	strop_upper},
 	{NULL,		NULL}	/* sentinel */
 };
