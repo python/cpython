@@ -1987,40 +1987,43 @@ bltin_exc[] = {
 };
 
 
-/* import exceptions module to extract class exceptions */
-static void
+/* import exceptions module to extract class exceptions.  on success,
+ * return 1. on failure return 0 which signals _PyBuiltin_Init_2 to fall
+ * back to using old-style string based exceptions.
+ */
+static int
 init_class_exc(dict)
 	PyObject *dict;
 {
 	int i;
 	PyObject *m = PyImport_ImportModule("exceptions");
-	PyObject *d;
-	PyObject *args;
+	PyObject *args = NULL;
+	PyObject *d = NULL;
 
+	/* make sure we got the module and its dictionary */
 	if (m == NULL ||
 	    (d = PyModule_GetDict(m)) == NULL)
 	{
-		/* XXX Should use PySys_WriteStderr here */
-		PyObject *f = PySys_GetObject("stderr");
+		PySys_WriteStderr("'import exceptions' failed; ");
 		if (Py_VerboseFlag) {
-			PyFile_WriteString(
-				"'import exceptions' failed; traceback:\n", f);
+			PySys_WriteStderr("traceback:\n");
 			PyErr_Print();
 		}
 		else {
-			PyFile_WriteString(
-		      "'import exceptions' failed; use -v for traceback\n", f);
-			PyErr_Clear();
+			PySys_WriteStderr("use -v for traceback\n");
 		}
-		PyFile_WriteString("defaulting to old style exceptions\n", f);
-		return;
+		goto finally;
 	}
 	for (i = 0; bltin_exc[i].name; i++) {
 		/* dig the exception out of the module */
 		PyObject *exc = PyDict_GetItemString(d, bltin_exc[i].name);
-		if (!exc)
-		     Py_FatalError("built-in exception cannot be initialized");
-		
+		if (!exc) {
+			PySys_WriteStderr(
+		"Built-in exception class not found: %s.  Library mismatch?\n",
+		bltin_exc[i].name);
+			goto finally;
+		}
+		/* free the old-style exception string object */
 		Py_XDECREF(*bltin_exc[i].exc);
 
 		/* squirrel away a pointer to the exception */
@@ -2028,22 +2031,44 @@ init_class_exc(dict)
 		*bltin_exc[i].exc = exc;
 
 		/* and insert the name in the __builtin__ module */
-		PyDict_SetItemString(dict, bltin_exc[i].name, exc);
+		if (PyDict_SetItemString(dict, bltin_exc[i].name, exc)) {
+			PySys_WriteStderr(
+			      "Cannot insert exception into __builtin__: %s\n",
+			      bltin_exc[i].name);
+			goto finally;
+		}
 	}
 
 	/* we need one pre-allocated instance */
 	args = Py_BuildValue("()");
-	if (args) {
-		PyExc_MemoryErrorInst =
-			PyEval_CallObject(PyExc_MemoryError, args);
-		Py_DECREF(args);
+	if (!args ||
+	    !(PyExc_MemoryErrorInst =
+	      PyEval_CallObject(PyExc_MemoryError, args)))
+	{
+	       PySys_WriteStderr("Cannot pre-allocate MemoryError instance\n");
+	       goto finally;
 	}
+	Py_DECREF(args);
 
 	/* we're done with the exceptions module */
 	Py_DECREF(m);
 
-	if (PyErr_Occurred())
-		Py_FatalError("can't instantiate standard exceptions");
+	if (PyErr_Occurred()) {
+	    PySys_WriteStderr("Cannot initialize standard class exceptions; ");
+	    if (Py_VerboseFlag) {
+		    PySys_WriteStderr("traceback:\n");
+		    PyErr_Print();
+	    }
+	    else
+		    PySys_WriteStderr("use -v for traceback\n");
+	    goto finally;
+	}
+	return 1;
+  finally:
+	Py_XDECREF(m);
+	Py_XDECREF(args);
+	PyErr_Clear();
+	return 0;
 }
 
 
@@ -2062,7 +2087,7 @@ newstdexception(dict, name)
 {
 	PyObject *v = PyString_FromString(name);
 	if (v == NULL || PyDict_SetItemString(dict, name, v) != 0)
-		Py_FatalError("no mem for new standard exception");
+		Py_FatalError("Cannot create string-based exceptions");
 	return v;
 }
 
@@ -2073,6 +2098,7 @@ initerrors(dict)
 	int i;
 	int exccnt = 0;
 	for (i = 0; bltin_exc[i].name; i++, exccnt++) {
+		Py_XDECREF(*bltin_exc[i].exc);
 		if (bltin_exc[i].leaf_exc)
 			*bltin_exc[i].exc =
 				newstdexception(dict, bltin_exc[i].name);
@@ -2166,8 +2192,17 @@ _PyBuiltin_Init_2(dict)
 	PyObject *dict;
 {
 	/* if Python was started with -X, initialize the class exceptions */
-	if (Py_UseClassExceptionsFlag)
-		init_class_exc(dict);
+	if (Py_UseClassExceptionsFlag) {
+		if (!init_class_exc(dict)) {
+			/* class based exceptions could not be
+			 * initialized. Fall back to using string based
+			 * exceptions.
+			 */
+			PySys_WriteStderr(
+			"Warning!  Falling back to string-based exceptions\n");
+			initerrors(dict);
+		}
+	}
 }
 
 
