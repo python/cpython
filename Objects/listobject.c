@@ -399,6 +399,8 @@ list_concat(PyListObject *a, PyObject *bb)
 	}
 #define b ((PyListObject *)bb)
 	size = a->ob_size + b->ob_size;
+	if (size < 0)
+		return PyErr_NoMemory();
 	np = (PyListObject *) PyList_New(size);
 	if (np == NULL) {
 		return NULL;
@@ -427,6 +429,8 @@ list_repeat(PyListObject *a, int n)
 	if (n < 0)
 		n = 0;
 	size = a->ob_size * n;
+	if (size/a->ob_size != n)
+		return PyErr_NoMemory();
 	np = (PyListObject *) PyList_New(size);
 	if (np == NULL)
 		return NULL;
