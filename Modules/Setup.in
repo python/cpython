@@ -66,18 +66,22 @@
 DESTLIB=$(LIBDEST)
 MACHDESTLIB=$(BINLIBDEST)
 
+# NOTE: all the paths are now relative to the prefix that is computed
+# at run time!
+
 # Standard path -- don't edit.
-# No leading colon since this is the first entry
-DESTPATH=$(DESTLIB)
+# No leading colon since this is the first entry.
+# Empty since this is now just the runtime prefix.
+DESTPATH=
 
 # Site specific path components -- should begin with : if non-empty
 SITEPATH=
 
 # Standard path components for test modules
-TESTPATH=:$(DESTLIB)/test
+TESTPATH=:test
 
 # Path components for machine- or system-dependent modules and shared libraries
-MACHDEPPATH=:$(DESTLIB)/$(MACHDEP):$(MACHDESTLIB)/sharedmodules
+MACHDEPPATH=:$(MACHDEP):sharedmodules
 
 COREPYTHONPATH=$(DESTPATH)$(SITEPATH)$(TESTPATH)$(MACHDEPPATH)$(STDWINPATH)$(TKPATH)
 PYTHONPATH=$(COREPYTHONPATH)
@@ -168,7 +172,7 @@ rgbimg rgbimgmodule.c   # Read SGI RGB image files (but coded portably)
 #STDWIN=/ufs/guido/src/stdwin
 
 # Uncomment these lines:
-#STDWINPATH=:$(DESTLIB)/stdwin
+#STDWINPATH=:stdwin
 #LIBTEXTEDIT=$(STDWIN)/$(MACHDEP)/Packs/textedit/libtextedit.a
 #LIBX11STDWIN=$(STDWIN)/$(MACHDEP)/Ports/x11/libstdwin.a
 #stdwin stdwinmodule.c -I$(STDWIN)/H $(LIBTEXTEDIT) $(LIBX11STDWIN) -lX11
@@ -253,7 +257,7 @@ md5 md5module.c md5c.c
 # Change the -l arguments to use Tcl 7.4 and Tk 4.0!
 
 # *** ALWAYS enable this line:
-#TKPATH=:$(DESTLIB)/tkinter
+#TKPATH=:tkinter
 
 # *** Enable *one* of the following lines:
 # For Solaris:
