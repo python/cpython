@@ -212,7 +212,7 @@ def betavariate(alpha, beta):
 	z = expovariate(1.0/beta)
 	return z/(y+z)
 
-# -------------------- pareto --------------------
+# -------------------- Pareto --------------------
 
 def paretovariate(alpha):
 	# Jain, pg. 495
@@ -220,7 +220,7 @@ def paretovariate(alpha):
 	u = random()
 	return 1.0 / pow(u, 1.0/alpha)
 
-# -------------------- pareto --------------------
+# -------------------- Weibull --------------------
 
 def weibullvariate(alpha, beta):
 	# Jain, pg. 499; bug fix courtesy Bill Arms
