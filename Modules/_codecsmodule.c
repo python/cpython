@@ -97,8 +97,8 @@ codecs.register_error that can handle ValueErrors.");
 static PyObject *
 codec_encode(PyObject *self, PyObject *args)
 {
-    char *encoding = NULL;
-    char *errors = NULL;
+    const char *encoding = NULL;
+    const char *errors = NULL;
     PyObject *v;
     
     if (!PyArg_ParseTuple(args, "O|ss:encode", &v, &encoding, &errors))
@@ -130,8 +130,8 @@ able to handle ValueErrors.");
 static PyObject *
 codec_decode(PyObject *self, PyObject *args)
 {
-    char *encoding = NULL;
-    char *errors = NULL;
+    const char *encoding = NULL;
+    const char *errors = NULL;
     PyObject *v;
     
     if (!PyArg_ParseTuple(args, "O|ss:decode", &v, &encoding, &errors))
@@ -835,8 +835,10 @@ static PyMethodDef _codecs_functions[] = {
         register__doc__},
     {"lookup",			codec_lookup, 			METH_VARARGS,
         lookup__doc__},
-    {"encode",			codec_encode,			METH_VARARGS},
-    {"decode",			codec_decode,			METH_VARARGS},
+    {"encode",			codec_encode,			METH_VARARGS,
+	encode__doc__},
+    {"decode",			codec_decode,			METH_VARARGS,
+	decode__doc__},
     {"escape_encode",		escape_encode,			METH_VARARGS},
     {"escape_decode",		escape_decode,			METH_VARARGS},
 #ifdef Py_USING_UNICODE
