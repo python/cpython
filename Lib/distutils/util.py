@@ -37,14 +37,14 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
     # the creation of the whole path? (quite easy to do the latter since
     # we're not using a recursive algorithm)
 
+    name = os.path.normpath (name)
+
     if os.path.isdir (name):
         return
     if PATH_CREATED.get (name):
         return
 
     (head, tail) = os.path.split (name)
-    if not tail:                        # in case 'name' has trailing slash
-        (head, tail) = os.path.split (head)
     tails = [tail]                      # stack of lone dirs to create
     
     while head and tail and not os.path.isdir (head):
@@ -100,7 +100,6 @@ def newer (source, target):
 
 
 def newer_pairwise (sources, targets):
-
     """Walk two filename lists in parallel, testing if each 'target' is
        up-to-date relative to its corresponding 'source'.  If so, both
        are deleted from their respective lists.  Return a list of tuples
@@ -147,6 +146,9 @@ def newer_group (sources, target):
 # newer_group ()
 
 
+# XXX this isn't used anywhere, and worse, it has the same name as a method
+# in Command with subtly different semantics.  (This one just has one
+# source -> one dest; that one has many sources -> one dest.)  Nuke it?
 def make_file (src, dst, func, args,
                verbose=0, update_message=None, noupdate_message=None):
     """Makes 'dst' from 'src' (both filenames) by calling 'func' with
@@ -288,7 +290,7 @@ def copy_tree (src, dst,
     """Copy an entire directory tree 'src' to a new location 'dst'.  Both
        'src' and 'dst' must be directory names.  If 'src' is not a
        directory, raise DistutilsFileError.  If 'dst' does not exist, it
-       is created with 'mkpath'.  The end result of the copy is that
+       is created with 'mkpath()'.  The end result of the copy is that
        every file in 'src' is copied to 'dst', and directories under
        'src' are recursively copied to 'dst'.  Return the list of files
        copied (under their output names) -- note that if 'update' is true,
@@ -413,7 +415,7 @@ def move_file (src, dst,
 
 
 def write_file (filename, contents):
-    """Create a file with the specified naem and write 'contents' (a
+    """Create a file with the specified name and write 'contents' (a
        sequence of strings without line terminators) to it."""
 
     f = open (filename, "w")
