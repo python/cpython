@@ -18,6 +18,10 @@ else:
 
 has_textmode = (tempfile._text_openflags != tempfile._bin_openflags)
 
+# TEST_FILES may need to be tweaked for systems depending on the maximum
+# number of files that can be opened at one time (see ulimit -n)
+TEST_FILES = 100
+
 # This is organized as one test for each chunk of code in tempfile.py,
 # in order of their appearance in the file.  Testing which requires
 # threads is not done here.
@@ -156,7 +160,7 @@ class test__RandomNameSequence(TC):
 
         dict = {}
         r = self.r
-        for i in xrange(100):
+        for i in xrange(TEST_FILES):
             s = r.next()
             self.nameCheck(s, '', '', '')
             self.failIf(s in dict)
@@ -290,7 +294,7 @@ class test__mkstemp_inner(TC):
 
     def test_basic_many(self):
         """_mkstemp_inner can create many files (stochastic)"""
-        extant = range(1000)
+        extant = range(TEST_FILES)
         for i in extant:
             extant[i] = self.do_create(pre="aa")
 
@@ -494,7 +498,7 @@ class test_mkdtemp(TC):
 
     def test_basic_many(self):
         """mkdtemp can create many directories (stochastic)"""
-        extant = range(1000)
+        extant = range(TEST_FILES)
         try:
             for i in extant:
                 extant[i] = self.do_create(pre="aa")
@@ -582,7 +586,7 @@ class test_mktemp(TC):
 
     def test_many(self):
         """mktemp can choose many usable file names (stochastic)"""
-        extant = range(1000)
+        extant = range(TEST_FILES)
         for i in extant:
             extant[i] = self.do_create(pre="aa")
 
