@@ -366,6 +366,7 @@ TT { font-family: lucida console, lucida typewriter, courier }
         here = 0
         pattern = re.compile(r'\b((http|ftp)://\S+[\w/]|'
                                 r'RFC[- ]?(\d+)|'
+                                r'PEP[- ]?(\d+)|'
                                 r'(self\.)?(\w+))\b')
         while 1:
             match = pattern.search(text, here)
@@ -373,11 +374,14 @@ TT { font-family: lucida console, lucida typewriter, courier }
             start, end = match.span()
             results.append(escape(text[here:start]))
 
-            all, scheme, rfc, selfdot, name = match.groups()
+            all, scheme, rfc, pep, selfdot, name = match.groups()
             if scheme:
                 results.append('<a href="%s">%s</a>' % (all, escape(all)))
             elif rfc:
-                url = 'http://www.rfc-editor.org/rfc/rfc%s.txt' % rfc
+                url = 'http://www.rfc-editor.org/rfc/rfc%d.txt' % int(rfc)
+                results.append('<a href="%s">%s</a>' % (url, escape(all)))
+            elif pep:
+                url = 'http://www.python.org/peps/pep-%04d.html' % int(pep)
                 results.append('<a href="%s">%s</a>' % (url, escape(all)))
             elif text[end:end+1] == '(':
                 results.append(self.namelink(name, methods, funcs, classes))
@@ -1031,8 +1035,9 @@ def freshimport(name, cache={}):
             file = module.__file__
             if os.path.exists(file):
                 info = (file, os.path.getmtime(file), os.path.getsize(file))
-            if cache.has_key(path) and cache[path] != info:
-                module = reload(module)
+                if cache.get(path) == info:
+                    continue
+            module = reload(module)
             file = module.__file__
             if os.path.exists(file):
                 info = (file, os.path.getmtime(file), os.path.getsize(file))
@@ -1138,9 +1143,11 @@ def writedocs(dir, pkgpath='', done={}):
 
 class Helper:
     def __repr__(self):
-        return '''To get help on a Python object, call help(object).
+        return '''Welcome to Python %s!
+
+To get help on a Python object, call help(object).
 To get help on a module or package, either import it before calling
-help(module) or call help('modulename').'''
+help(module) or call help('modulename').''' % sys.version[:3]
 
     def __call__(self, *args):
         if args:
@@ -1516,6 +1523,9 @@ def cli():
     class BadUsage: pass
 
     # Scripts don't get the current directory in their path by default.
+    scriptdir = os.path.dirname(sys.argv[0])
+    if scriptdir in sys.path:
+        sys.path.remove(scriptdir)
     sys.path.insert(0, '.')
 
     try:
