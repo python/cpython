@@ -856,9 +856,9 @@ def load_module(theMod, ty, theFile, fromMod):
 		sys.modules[name] = theMod
 	except:
 	    # Provide import-nesting info, including signs of circularity:
-	    raise sys.exc_type, import_trail_msg(str(sys.exc_value),# ==X
-						 sys.exc_traceback,
-						 name)
+		raise sys.exc_type, import_trail_msg(str(sys.exc_value),# ==X
+						     sys.exc_traceback,
+						     name)
     elif ty == PY_PACKAGE:
 	# Load package constituents, doing the controlling module *if* it
 	# exists *and* it isn't already in process:
@@ -1224,7 +1224,7 @@ def normalize_pathname(path):
     # We do a lot more when we have posix-style paths, eg os.sep == '/'.
 
     if os.sep != '/':
-	return os.path.join(os.getcwd(), path)				# ==>
+	return os.path.join(os.getcwd, path)				# ==>
 
     outwards, inwards = 0, []
     for nm in string.splitfields(path, os.sep):
@@ -1358,7 +1358,6 @@ def testExec(msg, execList, locals, globals):
     else:
 	print ''
     for stmt in execList:
-	if VERBOSE: print "\t%s" % `stmt`
 	exec stmt in locals, globals
 
 def test(number=0, leaveHiers=0):
