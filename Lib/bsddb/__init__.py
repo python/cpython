@@ -154,6 +154,15 @@ class _DBWithCursor(UserDict.DictMixin):
         except _bsddb.DBNotFoundError:
             return
 
+    def iteritems(self):
+        try:
+            yield self.first()
+            next = self.next
+            while 1:
+                yield next()
+        except _bsddb.DBNotFoundError:
+            return
+
 #----------------------------------------------------------------------
 # Compatibility object factory functions
 
