@@ -124,8 +124,13 @@ Build issues
 - Darwin (Mac OS X):  Initial support for static builds on this
   platform. 
 
-- BeOS: Many changes were made to support compilation on BeOS 4.5 and
-  5.0. 
+- BeOS: A number of changes were made to the build and installation
+  process.  ar-fake now operates on a directory of object files.
+  dl_export.h is gone, and its macros now appear on the mwcc command
+  line during build on PPC BeOS.
+
+  Platform directory in lib/python2.0 is "plat-beos5" (or
+  "plat-beos4", if building on BeOS 4.5), rather than "plat-beos".
 
 - Cygwin: Support for shared libraries, Tkinter, and sockets.
 
