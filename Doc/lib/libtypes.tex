@@ -35,6 +35,12 @@ The type of type objects (such as returned by
 \function{type()}\bifuncindex{type}).
 \end{datadesc}
 
+\begin{datadesc}{BooleanType}
+The type of the \class{bool} values \code{True} and \code{False}; this
+is an alias of the built-in \function{bool()} function.
+\versionadded{2.3}
+\end{datadesc}
+
 \begin{datadesc}{IntType}
 The type of integers (e.g. \code{1}).
 \end{datadesc}
@@ -165,4 +171,5 @@ portable than using a sequence of the two string types constructed
 elsewhere since it only contains \code{UnicodeType} if it has been
 built in the running version of Python.  For example:
 \code{isinstance(s, types.StringTypes)}.
+\versionadded{2.2}
 \end{datadesc}
