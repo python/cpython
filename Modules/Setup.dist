@@ -321,7 +321,8 @@ rotor rotormodule.c		# enigma-inspired encryption
 # -L/usr/5lib before -lcurses).
 
 #_curses _cursesmodule.c -lcurses -ltermcap
-
+# Wrapper for the panel library that's part of ncurses and SYSV curses.
+#_curses_panel _curses_panel.c -lpanel -lncurses 
 
 
 # Tommy Burnette's 'new' module (creates new empty objects of certain kinds):
