@@ -11,9 +11,9 @@ if test -f /usr/lib/NextStep/software_version; then
 	AC_ARG_WITH(next-archs,
 	 [--with-next-archs='arch1 arch2 ..'   build MAB binary], [
 		if test -n "$withval"; then
-			ac_arch_flags=`/usr/lib/arch_tool -archify_list $withval`
-        	        # GCC does not currently support multi archs on the NeXT
-                	with_gcc=no
+		    ac_arch_flags=`/usr/lib/arch_tool -archify_list $withval`
+		    # GCC does not currently support multi archs on the NeXT
+		    with_gcc=no
 		fi
 		AC_MSG_RESULT($with_next_archs)
 	], [AC_MSG_RESULT(none: using `arch`)])
