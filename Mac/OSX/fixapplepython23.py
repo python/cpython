@@ -18,7 +18,7 @@ import gestalt
 MAKEFILE='/System/Library/Frameworks/Python.framework/Versions/2.3/lib/python2.3/config/Makefile'
 OLD_LDSHARED='LDSHARED=\t$(CC) $(LDFLAGS) -bundle -framework $(PYTHONFRAMEWORK)\n'
 OLD_BLDSHARED='B' + OLD_LDSHARED
-NEW_LDSHARED='LDSHARED=\t$(CC) $(LDFLAGS) -bundle -undefined dynamic_lookup\n'
+NEW_LDSHARED='LDSHARED=\tenv MACOSX_DEPLOYMENT_TARGET=10.3 $(CC) $(LDFLAGS) -bundle -undefined dynamic_lookup\n'
 NEW_BLDSHARED='B' + NEW_LDSHARED
 
 def findline(lines, start):
