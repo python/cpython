@@ -511,6 +511,7 @@ _expectations = {
         test_socketserver
         test_sunaudiodev
         test_timing
+        test_univnewlines
         """,
     'linux2':
         """
