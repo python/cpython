@@ -571,6 +571,9 @@ posix_popen(self, args)
 	fp = popen(getstringvalue(name), getstringvalue(mode));
 	if (fp == NULL)
 		return posix_error();
+	/* From now on, ignore SIGPIPE and let the error checking
+	   do the work. */
+	(void) signal(SIGPIPE, SIG_IGN);
 	return newopenfileobject(fp, name, mode, pclose);
 }
 
