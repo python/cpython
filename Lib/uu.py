@@ -16,7 +16,12 @@
 # WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-
+#
+# Modified by Jack Jansen, CWI, July 1995:
+# - Use binascii module to do the actual line-by-line conversion
+#   between ascii and binary. This results in a 1000-fold speedup. The C
+#   version is still 5 times faster, though.
+#
 # This file implements the UUencode and UUdecode functions.
 
 # encode(filename, mode, in_file, out_file)
@@ -24,102 +29,18 @@
 # decode(in_file, out_file)
 # decode(in_file)
 
-# encode a single char to always be printable
-def _ENC(ch):
-    if type(ch) == type(''):
-	a = ch[:1] # only 1 char
-	if len(a) == 0:
-	    raise ValueError, 'need to pass in at least 1 char'
-	a = ord(a)
-    elif type(ch) == type(0):
-	a = ch
-    else:
-	raise TypeError, 'must pass in an integer or single character'
-    return chr((a & 077) + ord(' '))
+import binascii
 
-# input 3 chars, output 4 encoded chars
-def _outenc(str):
-    if len(str) > 3:
-	raise ValueError, 'can only accept strings of 3 chars'
-    p0, p1, p2 = 0, 0, 0
-    if len(str) > 2:
-	p2 = ord(str[2])
-    if len(str) > 1:
-	p1 = ord(str[1])
-    if len(str) > 0:
-	p0 = ord(str[0])
-    c1 = p0 >> 2
-    c2 = (p0 << 4) & 060 | (p1 >> 4) & 017
-    c3 = (p1 << 2) & 074 | (p2 >> 6) & 03
-    c4 = p2 & 077
-    rtn = _ENC(c1)
-    rtn = rtn + _ENC(c2)
-    rtn = rtn + _ENC(c3)
-    rtn = rtn + _ENC(c4)
-    return rtn
-
-# pass in 45 bytes max, returns 62 bytes encoded
-def _encode(str):
-    if len(str) > 45:
-	raise ValueError, 'cannot handle more than 45 chars at once'
-    length = len(str)
-    rtn = _ENC(length)
-    i = 0
-    while i < length:
-	rtn = rtn + _outenc(str[i:(i+3)])
-	i = i + 3
-    rtn = rtn + '\n'
-    return rtn
-    
 # encode a fileobject and write out to a file object
 def encode(filename, mode, in_file, out_file):
     out_file.write('begin %o %s\n' % ((mode&0777),filename))
     str = in_file.read(45)
     while len(str) > 0:
-	out_file.write(_encode(str))
+	out_file.write(binascii.b2a_uu(str))
 	str = in_file.read(45)
     out_file.write(' \nend\n')
     return None
 
-# def decode a single char from printable to possibly non-printable
-def _DEC(ch):
-    if type(ch) != type('') or len(ch) != 1:
-	raise ValueError, 'need to pass in a single char'
-    a = ord(ch[0:1])
-    return (a - ord(' '))
-
-# input 4 chars encoded, output 3 chars unencoded
-def _outdec(str):
-    if len(str) > 4:
-	raise ValueError, 'can only accept strings of 4 chars'
-    p0, p1, p2, p3 = 0, 0, 0, 0
-    if len(str) > 3:
-	p3 = _DEC(str[3])
-    if len(str) > 2:
-	p2 = _DEC(str[2])
-    if len(str) > 1:
-	p1 = _DEC(str[1])
-    if len(str) > 0:
-	p0 = _DEC(str[0])
-    c1 = p0 << 2 | (p1 & 060) >> 4
-    c2 = (p1 & 017) << 4 | (p2 & 074) >> 2
-    c3 = (p2 & 03) << 6 | (p3 & 077)
-    rtn = chr(c1)
-    rtn = rtn + chr(c2)
-    rtn = rtn + chr(c3)
-    return rtn
-
-# pass in 62 bytes and return 45 bytes unencoded
-def _decode(str):
-    if len(str) > 62:
-	raise ValueError, 'cannot handle more than 62 chars at once'
-    length = _DEC(str[0])
-    i = 1
-    rtn = ''
-    while len(rtn) < length:
-	rtn = rtn + _outdec(str[i:(i+4)])
-	i = i + 4
-    return rtn[0:length]
 
 # decode(filename, mode, in_file)
 # decode(in_file, out_file)
@@ -183,7 +104,7 @@ def decode(*args):
     out_file, _out_file_orig = _setup(out_file, args)
     str = in_file.readline()
     while len(str) > 0 and str != ' \n' and str != 'end\n':
-	out_file.write(_decode(str))
+	out_file.write(binascii.a2b_uu(str))
 	str = in_file.readline()
     if _out_file_orig == 0:
 	out_file.close()
