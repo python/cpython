@@ -1,3 +1,4 @@
+# !/usr/bin/env python
 """Guess which db package to use to open a db file."""
 
 import os
@@ -110,3 +111,7 @@ def whichdb(filename):
 
     # Unknown
     return ""
+
+if __name__ == "__main__":
+    for filename in sys.argv[1:]:
+        print whichdb(filename) or "UNKNOWN", filename

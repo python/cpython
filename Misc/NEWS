@@ -22,6 +22,8 @@ Extension Modules
 Library
 -------
 
+- The whichdb module can now be run from the command line.
+
 - Bug #1045381: time.strptime() can now infer the date using %U or %W (week of
   the year) when the day of the week and year are also specified.
 
