@@ -81,8 +81,9 @@ class module(writer):
 	for fn in self.methodlist:
 	    self.method = fn
 	    self.addcode('module_method', fp)
-	    new_ml = new_ml + ('{"%s",\t%s_%s,\t1,\t%s_%s__doc__},\n'
-			       %(fn, self.abbrev, fn, self.abbrev, fn))
+	    new_ml = new_ml + (
+		      '{"%s",\t(PyCFunction)%s_%s,\tMETH_VARARGS,\t%s_%s__doc__},\n'
+		      %(fn, self.abbrev, fn, self.abbrev, fn))
 	self.methodlist = new_ml
 	self.addcode('module_tail', fp)
 
@@ -107,8 +108,9 @@ class object(writer):
 	for fn in self.methodlist:
 	    self.method = fn
 	    self.addcode('object_method', fp)
-	    new_ml = new_ml + ('{"%s",\t%s_%s,\t1,\t%s_%s__doc__},\n'
-			       %(fn, self.abbrev, fn, self.abbrev, fn))
+	    new_ml = new_ml + (
+		      '{"%s",\t(PyCFunction)%s_%s,\tMETH_VARARGS,\t%s_%s__doc__},\n'
+		      %(fn, self.abbrev, fn, self.abbrev, fn))
 	self.methodlist = new_ml
 	self.addcode('object_mlist', fp)
 
