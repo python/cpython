@@ -454,6 +454,7 @@ verify(u"%c" % (u"a",) == u'a')
 verify(u"%c" % ("a",) == u'a')
 verify(u"%c" % (34,) == u'"')
 verify(u"%c" % (36,) == u'$')
+verify(u"%d".__mod__(10) == u'10')
 if sys.platform[:4] != 'java':
     value = u"%r, %r" % (u"abc", "abc")
     if value != u"u'abc', 'abc'":
