@@ -350,8 +350,8 @@ Extension modules
 Library
 -------
 
-- Bug #981299: rsync is now a recognized protocol that uses a "netloc" portion
-  of a URL.
+- Bug #981299: rsync is now a recognized protocol in urlparse that uses a
+  "netloc" portion of a URL.
 
 - Bug #919012: shutil.move() will not try to move a directory into itself.
   Thanks Johannes Gijsbers.
