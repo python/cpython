@@ -19,8 +19,13 @@ arithmetic routines.  Only the interfaces to the \emph{integer}
 (\function{mpz_*()}) routines are provided. If not stated
 otherwise, the description in the GNU MP documentation can be applied.
 
+Support for rational numbers\index{rational numbers} can be
+implemented in Python.  For an example, see the \module{Rat}%
+\withsubitem{(demo module)}{\ttindex{Rat}} module, provided as
+\file{Demos/classes/Rat.py} in the Python source distribution.
+
 In general, \dfn{mpz}-numbers can be used just like other standard
-Python numbers, e.g.\ you can use the built-in operators like \code{+},
+Python numbers, e.g., you can use the built-in operators like \code{+},
 \code{*}, etc., as well as the standard built-in functions like
 \function{abs()}, \function{int()}, \ldots, \function{divmod()},
 \function{pow()}.  \strong{Please note:} the \emph{bitwise-xor}
