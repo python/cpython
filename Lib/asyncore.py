@@ -110,8 +110,9 @@ def poll2 (timeout=0.0, map=None):
     import poll
     if map is None:
         map=socket_map
-    # timeout is in milliseconds
-    timeout = int(timeout*1000)
+    if timeout is not None:
+        # timeout is in milliseconds
+        timeout = int(timeout*1000)
     if map:
         l = []
         for fd, obj in map.items():
@@ -142,8 +143,9 @@ def poll3 (timeout=0.0, map=None):
     # Use the poll() support added to the select module in Python 2.0
     if map is None:
         map=socket_map
-    # timeout is in milliseconds
-    timeout = int(timeout*1000)
+    if timeout is not None:
+        # timeout is in milliseconds
+        timeout = int(timeout*1000)
     pollster = select.poll()
     if map:
         for fd, obj in map.items():
