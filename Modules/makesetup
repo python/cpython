@@ -114,7 +114,9 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			noobjects=yes;
 			continue;;
 		'*doconfig*')	doconfig=yes; continue;;
+		'*static*')	doconfig=yes; continue;;
 		'*noconfig*')	doconfig=no; continue;;
+		'*shared*')	doconfig=no; continue;;
 		esac
 		srcs=
 		cpps=
