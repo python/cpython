@@ -57,9 +57,10 @@ the implementation classes, all defined in this module.
 
 \begin{tableiii}{l|l|c}{code}{Type Name}{Class Name}{Notes}
   \lineiii{'netscape'}{\class{Netscape}}{}
+  \lineiii{'kfm'}{\class{Konquerer}}{(1)}
   \lineiii{'grail'}{\class{Grail}}{}
-  \lineiii{'windows-default'}{\class{WindowsDefault}}{(1)}
-  \lineiii{'internet-config'}{\class{InternetConfig}}{(2)}
+  \lineiii{'windows-default'}{\class{WindowsDefault}}{(2)}
+  \lineiii{'internet-config'}{\class{InternetConfig}}{(3)}
   \lineiii{'command-line'}{\class{CommandLineBrowser}}{}
 \end{tableiii}
 
@@ -68,10 +69,14 @@ Notes:
 
 \begin{description}
 \item[(1)]
+``Konquerer'' is the file manager for the KDE desktop environment, and
+only makes sense to use if KDE is running.
+
+\item[(2)]
 Only on Windows platforms; requires the common
 extension modules \module{win32api} and \module{win32con}.
 
-\item[(2)]
+\item[(3)]
 Only on MacOS platforms; requires the standard MacPython \module{ic}
 module, described in the \citetitle[../mac/module-ic.html]{Macintosh
 Library Modules} manual.
