@@ -1531,6 +1531,20 @@ class DocTestRunner:
             print "Test passed."
         return totalf, totalt
 
+    #/////////////////////////////////////////////////////////////////
+    # Backward compatibility cruft to maintain doctest.master.
+    #/////////////////////////////////////////////////////////////////
+    def merge(self, other):
+        d = self._name2ft
+        for name, (f, t) in other._name2ft.items():
+            if name in d:
+                print "*** DocTestRunner.merge: '" + name + "' in both" \
+                    " testers; summing outcomes."
+                f2, t2 = d[name]
+                f = f + f2
+                t = t + t2
+            d[name] = f, t
+
 class OutputChecker:
     """
     A class used to check the whether the actual output from a doctest
@@ -1810,6 +1824,10 @@ class DebugRunner(DocTestRunner):
 ######################################################################
 # These should be backwards compatible.
 
+# For backward compatibility, a global instance of a DocTestRunner
+# class, updated by testmod.
+master = None
+
 def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
             report=True, optionflags=0, extraglobs=None,
             raise_on_error=False):
@@ -1883,6 +1901,8 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
     displaying a summary.  Invoke doctest.master.summarize(verbose)
     when you're done fiddling.
     """
+    global master
+
     if isprivate is not None:
         warnings.warn("the isprivate argument is deprecated; "
                       "examine DocTestFinder.find() lists instead",
@@ -1916,6 +1936,11 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
 
     if report:
         runner.summarize()
+
+    if master is None:
+        master = runner
+    else:
+        master.merge(runner)
 
     return runner.failures, runner.tries
 
@@ -2007,15 +2032,7 @@ class Tester:
         return self.testrunner.summarize(verbose)
 
     def merge(self, other):
-        d = self.testrunner._name2ft
-        for name, (f, t) in other.testrunner._name2ft.items():
-            if name in d:
-                print "*** Tester.merge: '" + name + "' in both" \
-                    " testers; summing outcomes."
-                f2, t2 = d[name]
-                f = f + f2
-                t = t + t2
-            d[name] = f, t
+        self.testrunner.merge(other.testrunner)
 
 ######################################################################
 ## 8. Unittest Support
