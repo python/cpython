@@ -13,6 +13,7 @@ from distutils.core import Command
 from distutils.util import get_platform
 from distutils.dir_util import create_tree, remove_tree
 from distutils.errors import *
+from distutils.sysconfig import get_python_version
 from distutils import log
 
 class bdist_wininst (Command):
