@@ -28,6 +28,8 @@
 # XXX instead of having to define a module or class just to hold
 # XXX the global state of your particular time and delay functtions.
 
+import bisect
+
 class scheduler:
 	#
 	# Initialize a new instance, passing the time and delay functions
@@ -43,16 +45,7 @@ class scheduler:
 	# to remove it, if necessary.
 	#
 	def enterabs(self, event):
-		time, priority, action, argument = event
-		q = self.queue
-		# XXX Could use bisection or linear interpolation?
-		for i in range(len(q)):
-			qtime, qpri, qact, qarg = q[i]
-			if time < qtime: break
-			if time == qtime and priority < qpri: break
-		else:
-			i = len(q)
-		q.insert(i, event)
+		bisect.insort(self.queue, event)
 		return event # The ID
 	#
 	# A variant that specifies the time as a relative time.

@@ -254,6 +254,9 @@ def run(statement):
 def runctx(statement, globals, locals):
 	Pdb().init().runctx(statement, globals, locals)
 
+def runcall(*args):
+	apply(Pdb().init().runcall, args)
+
 TESTCMD = 'import x; x.main()'
 
 def test():
