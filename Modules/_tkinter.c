@@ -1456,14 +1456,15 @@ static PyInterpreterState *event_interp = NULL;
 static int
 EventHook()
 {
-	PyThreadState *tstate;
+	PyThreadState *tstate, *save_tstate;
 
 	if (Tk_GetNumMainWindows() == 0)
 		return 0;
 	if (event_interp == NULL)
 		return 0;
 	tstate = PyThreadState_New(event_interp);
-	PyEval_AcquireThread(tstate);
+	save_tstate = PyThreadState_Swap(NULL);
+	PyEval_RestoreThread(tstate);
 	if (!errorInCmd)
 		Tcl_DoOneEvent(TCL_DONT_WAIT);
 	if (errorInCmd) {
@@ -1473,7 +1474,8 @@ EventHook()
 		PyErr_Print();
 	}
 	PyThreadState_Clear(tstate);
-	PyEval_ReleaseThread(tstate);
+	PyEval_SaveThread();
+	PyThreadState_Swap(save_tstate);
 	PyThreadState_Delete(tstate);
 	return 0;
 }
@@ -1536,7 +1538,6 @@ init_tkinter()
 	PyDict_SetItemString(d, "TkttType", (PyObject *)&Tktt_Type);
 
 	if (PyOS_InputHook == NULL) {
-		PyEval_InitThreads();
 		event_interp = PyThreadState_Get()->interp;
 		PyOS_InputHook = EventHook;
 	}
