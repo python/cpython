@@ -273,6 +273,11 @@ Evaluate the \var{expression} in the current context and print its
 value.  (Note: \samp{print} can also be used, but is not a debugger
 command --- this executes the Python \keyword{print} statement.)
 
+\item[pp \var{expression}]
+
+Like the \samp{p} command, except the value of the exception is
+pretty-printed using the \module{pprint} module.
+
 \item[alias \optional{\var{name} \optional{command}}]
 
 Creates an alias called \var{name} that executes \var{command}.  The
