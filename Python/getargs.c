@@ -408,7 +408,10 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 	
 	case 'b': { /* unsigned byte -- very short int */
 		char *p = va_arg(*p_va, char *);
-		long ival = PyInt_AsLong(arg);
+		long ival;
+		if (PyFloat_Check(arg))
+			return converterr("integer", arg, msgbuf, bufsize);
+		ival = PyInt_AsLong(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<b>", arg, msgbuf, bufsize);
 		else if (ival < 0) {
@@ -429,7 +432,10 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 	case 'B': {/* byte sized bitfield - both signed and unsigned
 		      values allowed */  
 		char *p = va_arg(*p_va, char *);
-		long ival = PyInt_AsLong(arg);
+		long ival;
+		if (PyFloat_Check(arg))
+			return converterr("integer", arg, msgbuf, bufsize);
+		ival = PyInt_AsLong(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<b>", arg, msgbuf, bufsize);
 		else if (ival < SCHAR_MIN) {
@@ -449,7 +455,10 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 	
 	case 'h': {/* signed short int */
 		short *p = va_arg(*p_va, short *);
-		long ival = PyInt_AsLong(arg);
+		long ival;
+		if (PyFloat_Check(arg))
+			return converterr("integer", arg, msgbuf, bufsize);
+		ival = PyInt_AsLong(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<h>", arg, msgbuf, bufsize);
 		else if (ival < SHRT_MIN) {
@@ -470,7 +479,10 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 	case 'H': { /* short int sized bitfield, both signed and
 		       unsigned allowed */ 
 		unsigned short *p = va_arg(*p_va, unsigned short *);
-		long ival = PyInt_AsLong(arg);
+		long ival;
+		if (PyFloat_Check(arg))
+			return converterr("integer", arg, msgbuf, bufsize);
+		ival = PyInt_AsLong(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<H>", arg, msgbuf, bufsize);
 		else if (ival < SHRT_MIN) {
@@ -490,7 +502,10 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 	
 	case 'i': {/* signed int */
 		int *p = va_arg(*p_va, int *);
-		long ival = PyInt_AsLong(arg);
+		long ival;
+		if (PyFloat_Check(arg))
+			return converterr("integer", arg, msgbuf, bufsize);
+		ival = PyInt_AsLong(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<i>", arg, msgbuf, bufsize);
 		else if (ival > INT_MAX) {
@@ -510,7 +525,10 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 
 	case 'l': {/* long int */
 		long *p = va_arg(*p_va, long *);
-		long ival = PyInt_AsLong(arg);
+		long ival;
+		if (PyFloat_Check(arg))
+			return converterr("integer", arg, msgbuf, bufsize);
+		ival = PyInt_AsLong(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<l>", arg, msgbuf, bufsize);
 		else
