@@ -90,7 +90,7 @@ NEWLINE = '\n'
 EMPTYSTRING = ''
 
 
-
+
 def usage(code, msg=''):
     print >> sys.stderr, __doc__ % globals()
     if msg:
@@ -98,7 +98,7 @@ def usage(code, msg=''):
     sys.exit(code)
 
 
-
+
 class SMTPChannel(asynchat.async_chat):
     COMMAND = 0
     DATA = 1
@@ -263,7 +263,7 @@ class SMTPChannel(asynchat.async_chat):
         self.push('354 End data with <CR><LF>.<CR><LF>')
 
 
-
+
 class SMTPServer(asyncore.dispatcher):
     def __init__(self, localaddr, remoteaddr):
         self._localaddr = localaddr
@@ -310,7 +310,7 @@ class SMTPServer(asyncore.dispatcher):
         """
         raise UnimplementedError
 
-
+
 class DebuggingServer(SMTPServer):
     # Do something with the gathered message
     def process_message(self, peer, mailfrom, rcpttos, data):
@@ -326,7 +326,7 @@ class DebuggingServer(SMTPServer):
         print '------------ END MESSAGE ------------'
 
 
-
+
 class PureProxy(SMTPServer):
     def process_message(self, peer, mailfrom, rcpttos, data):
         lines = data.split('\n')
@@ -367,7 +367,7 @@ class PureProxy(SMTPServer):
         return refused
 
 
-
+
 class MailmanProxy(PureProxy):
     def process_message(self, peer, mailfrom, rcpttos, data):
         from cStringIO import StringIO
@@ -405,7 +405,7 @@ class MailmanProxy(PureProxy):
         # since we don't expect a large number of recipients.
         for rcpt, listname, command in listnames:
             rcpttos.remove(rcpt)
-        # If there's any non-list destined recipients left, 
+        # If there's any non-list destined recipients left,
         print >> DEBUGSTREAM, 'forwarding recips:', ' '.join(rcpttos)
         if rcpttos:
             refused = self._deliver(mailfrom, rcpttos, data)
@@ -447,7 +447,7 @@ class MailmanProxy(PureProxy):
                 msg.Enqueue(mlist, torequest=1)
 
 
-
+
 class Options:
     setuid = 1
     classname = 'PureProxy'
@@ -502,7 +502,7 @@ def parseargs():
     return options
 
 
-
+
 if __name__ == '__main__':
     options = parseargs()
     # Become nobody

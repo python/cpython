@@ -346,7 +346,7 @@ def normpath(path):
     initial_slashes = path.startswith('/')
     # POSIX allows one or two initial slashes, but treats three or more
     # as single slash.
-    if (initial_slashes and 
+    if (initial_slashes and
         path.startswith('//') and not path.startswith('///')):
         initial_slashes = 2
     comps = path.split('/')
