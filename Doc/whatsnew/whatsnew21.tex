@@ -1,0 +1,253 @@
+\documentclass{howto}
+
+% $Id$
+
+\title{What's New in Python 2.1}
+\release{0.01}
+\author{A.M. Kuchling}
+\authoraddress{\email{amk1@bigfoot.com}}
+\begin{document}
+\maketitle\tableofcontents
+
+\section{Introduction}
+
+It's that time again... time for a new Python release, version 2.1.
+One recent goal of the Python development team has been to accelerate
+the pace of new releases, with a new release coming every 6 to 9
+months. 2.1 is the first release to come out at this faster pace, with
+the first alpha appearing in January, 3 months after the final version
+of 2.0 was released.
+
+This article explains the new features in 2.1.  While there aren't as
+many changes in 2.1 as there were in Python 2.0, there are still some
+pleasant surprises in store.  2.1 is the first release to be steered
+through the use of Python Enhancement Proposals, or PEPs, so most of
+the sizable changes have accompanying PEPs that provide more complete
+documentation and a design rationale for the change.  This article
+doesn't attempt to document the new features completely, but simply
+provides an overview of the new features for Python programmers.
+Refer to the Python 2.1 documentation, or to the specific PEP, for
+more details about any new feature that particularly interests you.
+
+Currently 2.1 is available in an alpha release, but the release
+schedule calls for a beta release by late February 2001, and a final
+release in April 2001.
+
+% ======================================================================
+\section{PEP 232: Function Attributes}
+
+In Python 2.1, functions can have arbitrary attributes assigned to
+them.  We noticed that people were often using docstrings to hold
+information about functions and methods, because the \code{__doc__}
+attribute was the only way of attaching any information to a function.
+For example, in the Zope Web application server, functions are marked
+as safe for public access by having a docstring, and in John Aycock's
+SPARK parsing framework, docstrings hold parts of the BNF grammar to
+be parsed.  This overloading is unfortunate, since docstrings are
+really intended to hold a function's documentation, and means you
+can't properly document functions intended for private use in Zope.
+
+XXX example here
+
+% ======================================================================
+\section{PEP 207: Rich Comparisons}
+
+xxx
+
+% ======================================================================
+\section{XXX Nested Scopes ?}
+
+xxx
+
+% ======================================================================
+\section{PEP 230: Warning Framework}
+
+Over its 10 years of existence, Python has accumulated a certain
+number of obsolete modules and features along the way.  It's difficult
+to know when a feature is safe to remove, since there's no way of
+knowing how much code uses it -- perhaps no programs depend on the
+feature, or perhaps many do.  To enable removing old features in a
+more structured way, a warning framework was added.  When the Python
+developers want to get rid of a feature, it will first trigger a
+warning in the next version of Python.  The following Python version
+can then drop the feature, and users will have had a full release
+cycle to remove uses of the old feature.  
+
+Python 2.1 adds the warning framework to be used in this scheme.  It
+adds a \module{warnings} module that provide functions to issue
+warnings, and to filter out warnings that you don't want to be
+displayed. Third-party modules can also use this framework to
+deprecate old features that they no longer wish to support.
+
+For example, in Python 2.1 the \module{regex} module is deprecated,
+so importing it causes a warning to be printed:
+
+\begin{verbatim}
+>>> import regex
+xxx
+\end{verbatim}
+
+Warnings can be issued by calling the \function{warnings.warn} function:
+
+\begin{verbatim}
+warnings.warn("feature X no longer supported")              
+\end{verbatim}
+
+The first parameter is the warning message; an additional optional
+parameters can be used to specify a particular warning category.
+
+Filters can be added to disable certain warnings; a regular expression
+pattern can be applied to the message or to the module name in order
+to suppress a warning.  For example, you may have a program that uses
+the \module{regex} module and not want to spare the time to convert it
+to use the \module{re} module right now.  The warning can be suppressed by calling
+
+\begin{verbatim}
+XXX is this correct?
+warnings.filterwarnings(module = 'regex')
+\end{verbatim}
+
+Functions were also added to Python's C API for issuing warnings;
+refer to the PEP or to Python's API documentation for the details.
+
+\seepep{5}{Guidelines for Language Evolution}{Written by Paul Prescod.}
+
+\seepep{230}{Warning Framework}{Written and implemented by GvR.}
+    
+% ======================================================================
+\section{PEP 229: New Build System}
+
+When compiling Python, the user had to go in and edit the
+\file{Modules/Setup} file in order to enable various additional
+modules; the default set is relatively small and limited to modules
+that compile on most Unix platforms.  This means that on Unix
+platforms with many more features, most notably Linux, Python
+installations often don't contain all useful modules they could.
+
+Python 2.0 added the Distutils, a set of modules for distributing and
+installing extensions.  In Python 2.1, the Distutils are used to
+compile much of the standard library of extension modules,
+autodetecting which ones are supported on the current machine.  
+It's hoped that this will make Python installations easier and more featureful.
+
+\seepep{229}{xxx}{Written and implemented by A.M. Kuchling.}
+
+% ======================================================================
+\section{PEP 217: Interactive Display Hook}
+
+When using the Python interpreter interactively, the output of
+commands is displayed using the built-in \function{repr()} function.
+In Python 2.1, the variable \module{sys.displayhook} can be set to a
+callable object which will be called instead of \function{repr()}.
+For example, you can set it to a special pretty-printing function:
+
+\begin{verbatim}
+xxx sample transcript
+\end{verbatim}
+
+\seepep{217}{Display Hook for Interactive Use}{Written and implemented by Moshe Zadka.}
+
+% ======================================================================
+\section{PEP 208: New Coercion Model}
+
+How numeric coercion is done at the C level was significantly
+modified.  This will only affect the authors of C extensions to
+Python, allowing them more flexibility in writing extension types that
+support numeric operations.
+
+Extension types can now set the type flag
+\code{Py_TPFLAGS_NEWSTYLENUMBER} in their \code{PyTypeObject}
+structure to indicate that they support the new coercion model.  In
+such extension types, the numeric slot functions can no longer assume
+that they'll be passed two arguments of the same type; instead they
+may be passed two arguments of differing types, and can then perform
+their own internal coercion.  If the slot function is passed a type it
+can't handle, it can indicate the failure by returning a reference to
+the \code{Py_NotImplemented} singleton value.  The numeric functions
+of the other type will then be tried, and perhaps they can handle the
+operation; if the other type also returns \code{Py_NotImplemented},
+then a \exception{TypeError} will be raised.
+
+\seepep{208}{Reworking the Coercion Model}{Written and implemented by
+Neil Schemenauer, heavily based upon earlier work by Marc-Andr\'e
+Lemburg.  Read this to understand the fine points of how numeric
+operations will now be processed at the C level.}
+
+
+% ======================================================================
+\section{Minor Changes and Fixes}
+
+There were relatively few smaller changes made in Python 2.1 due to
+the shorter release cycle.  A search through the CVS change logs turns
+up 57 patches applied, and 86 bugs fixed; both figures are likely to
+be underestimates.  Some of the more notable changes are:
+
+\begin{itemize}
+
+
+\item The speed of line-oriented file I/O has been improved because
+people often complain about its lack of speed, and because it's often
+been used as a na\"ive benchmark.  The \method{readline()} method of
+file objects has therefore been rewritten to be much faster.  The
+exact amount of the speedup will vary from platform to platform
+depending on how slow the C library's \function{getc()} was, but is
+around 66\%, and potentially much faster on some particular operating
+systems.
+
+A new module and method for file objects was also added, contributed
+by Jeff Epler. The new method, \method{xreadlines()}, is similar to
+the existing \function{xrange()} built-in.  \function{xreadlines()}
+returns an opaque sequence object that only supports being iterated
+over, reading a line on every iteration but not reading the entire file into memory as
+the existing \method{readline()} method.  You'd use it like this:
+
+\begin{verbatim}
+for line in sys.stdin.xreadlines():
+    # ... do something for each line ...
+    ...
+\end{verbatim}
+
+For a fuller discussion of the line I/O changes, see the python-dev summary for January 1-15, 2001.
+ 
+\item \module{curses.panel}, a wrapper for the panel library, part of
+ncurses and of SYSV curses, was contributed by Thomas Gellekum.  The
+panel library provides windows with the additional feature of depth.
+Windows can be moved higher or lower in the depth ordering, and the
+panel library figures out where panels overlap and which sections are
+visible.
+XXX who contributed this?
+
+\item Modules can now control which names are imported when \code{from
+\var{module} import *} is used, by defining a \code{__all__} attribute
+containing a list of names that will be imported.  One common
+complaint is that if the module imports other modules such as
+\module{sys} or \module{string}, \code{from \var{module} import *}
+will add them to the importing module's namespace.  To fix this,
+simply list the public names in \code{__all__}:
+
+\begin{verbatim}
+# List public names
+__all__ = ['Database', 'open']
+\end{verbatim}
+
+\item The \module{ftplib} module now defaults to retrieving files in passive mode,
+because passive mode is more likely to work from behind a firewall.
+If passive mode is unsuitable for your application or network setup, call
+\method{set_pasv(0)} on FTP objects to disable passive mode.
+
+XXX check bug 126851 for arguments.
+
+\end{itemize}
+
+And there's the usual list of bugfixes, minor memory leaks, docstring
+edits, and other tweaks, too lengthy to be worth itemizing; see the
+CVS logs for the full details if you want them.
+
+
+% ======================================================================
+\section{Acknowledgements}
+
+The author would like to thank the following people for offering
+suggestions on various drafts of this article: no one yet!
+
+\end{document}
