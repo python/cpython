@@ -188,12 +188,6 @@ These macros are used in the definition of \ctype{PyObject} and
 
 PyObject_HEAD_INIT
 
-Typedefs:
-unaryfunc, binaryfunc, ternaryfunc, inquiry, coercion, intargfunc,
-intintargfunc, intobjargproc, intintobjargproc, objobjargproc,
-destructor, printfunc, getattrfunc, getattrofunc, setattrfunc,
-setattrofunc, cmpfunc, reprfunc, hashfunc
-
 \begin{ctypedesc}{PyCFunction}
   Type of the functions used to implement most Python callables in C.
   Functions of this type take two \ctype{PyObject*} parameters and
@@ -309,6 +303,268 @@ may be set for any given method.
   \member{tp_getattro} or \member{tp_getattr} handler that does not
   use the \cfunction{PyObject_GenericGetAttr()} function.
 \end{cfuncdesc}
+
+
+\section{Type Objects \label{type-structs}}
+
+Perhaps one of the most important structures of the Python object
+system is the structure that defines a new type: the
+\ctype{PyTypeObject} structure.  Type objects can be handled using any
+of the \cfunction{PyObject_*()} or \cfunction{PyType_*()} functions,
+but do not offer much that's interesting to most Python applications.
+These objects are fundamental to how objects behave, so they are very
+important to the interpreter itself and to any extension module that
+implements new types.
+
+Type objects are fairly large compared to most of the standard types.
+The reason for the size is that each type object stores a large number
+of values, mostly C function pointers, each of which implements a
+small part of the type's functionality.  The fields of the type object
+are examined in detail in this section.  The fields will be described
+in the order in which they occur in the structure.
+
+Typedefs:
+unaryfunc, binaryfunc, ternaryfunc, inquiry, coercion, intargfunc,
+intintargfunc, intobjargproc, intintobjargproc, objobjargproc,
+destructor, freefunc, printfunc, getattrfunc, getattrofunc, setattrfunc,
+setattrofunc, cmpfunc, reprfunc, hashfunc
+
+The structure definition for \ctype{PyTypeObject} can be found in
+\file{Include/object.h}.  For convenience of reference, this repeats
+the definition found there:
+
+\verbatiminput{typestruct.h}
+
+The type object structure extends the \ctype{PyVarObject} structure,
+though it does not actually need the the \member{ob_size} field.  The
+inclusion of this field is a historical accident that must be
+maintained to ensure binary compatibility between new versions of
+Python and older compiled extensions.
+
+\begin{cmemberdesc}{PyObject}{PyObject*}{_ob_next}
+\cmemberline{PyObject}{PyObject*}{_ob_prev}
+  These fields are only present when the macro \code{Py_TRACE_REFS} is
+  defined.  Their initialization to \NULL{} is taken care of by the
+  \code{PyObject_HEAD_INIT} macro.  For statically allocated objects,
+  these fields always remain \NULL.  For dynamically allocated
+  objects, these two fields are used to link the object into a
+  doubly-linked list of \emph{all} live objects on the heap.  This
+  could be used for various debugging purposes; currently the only use
+  is to print the objects that are still alive at the end of a run
+  when the environment variable \envvar{PYTHONDUMPREFS} is set.
+
+  These fields are not inherited by subtypes.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyObject}{int}{ob_refcnt}
+  This is the type object's reference count, initialized to \code{1}
+  by the \code{PyObject_HEAD_INIT} macro.  Note that for statically
+  allocated type objects, the type's instances (objects whose
+  \member{ob_type} points back to the type) do \emph{not} count as
+  references.  But for dynamically allocated type objects, the
+  instances \emph{do} count as references.
+
+  This field is not inherited by subtypes.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyObject}{PyTypeObject*}{ob_type}
+  This is the type's type, in other words its metatype.  It is
+  initialized by the argument to the \code{PyObject_HEAD_INIT} macro,
+  and its value should normally be \code{\&PyType_Type}.  However, for
+  dynamically loadable extension modules that must be usable on
+  Windows (at least), the compiler complains that this is not a valid
+  initializer.  Therefore, the convention is to pass \NULL{} to the
+  \code{PyObject_HEAD_INIT} macro and to initialize this field
+  explicitly at the start of the module's initialization function,
+  before doing anything else.  This is typically done like this:
+
+\begin{verbatim}
+Foo_Type.ob_type = &PyType_Type;
+\end{verbatim}
+
+  This should be done before any instances of the type are created.
+  \cfunction{PyType_Ready()} checks if \member{ob_type} is \NULL, and
+  if so, initializes it: in Python 2.2, it is set to
+  \code{\&PyType_Type}; in Python 2.2.1 and later it will be
+  initialized to the \member{ob_type} field of the base class.
+  \cfunction{PyType_Ready()} will not change this field if it is
+  nonzero.
+
+  In Python 2.2, this field is not inherited by subtypes.  In 2.2.1,
+  and in 2.3 and beyond, it is inherited by subtypes.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyVarObject}{int}{ob_size}
+  For statically allocated type objects, this should be initialized
+  to zero.  For dynamically allocated type objects, this field has a
+  special internal meaning.
+
+  This field is not inherited by subtypes.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{char*}{tp_name}
+  Pointer to a NUL-terminated string containing the name of the type.
+  For types that are accessible as module globals, the string should
+  be the full module name, followed by a dot, followed by the type
+  name; for built-in types, it should be just the type name.  If the
+  module is a submodule of a package, the full package name is part of
+  the full module name.  For example, a type named \class{T} defined
+  in module \module{M} in subpackage \module{Q} in package \module{P}
+  should have the \member{tp_name} initializer \code{"P.Q.M.T"}.
+
+  For dynamically allocated type objects, this may be just the type
+  name, if the module name is explicitly stored in the type dict as
+  the value for key \code{'__module__'}.
+
+  If the tp_name field contains a dot, everything before the last dot
+  is made accessible as the \member{__module__} attribute, and
+  everything after the last dot is made accessible as the
+  \member{__name__} attribute.  If no dot is present, the entire
+  \member{tp_name} field is made accessible as the \member{__name__}
+  attribute, and the \member{__module__} attribute is undefined
+  (unless explicitly set in the dictionary, as explained above).
+
+  This field is not inherited by subtypes.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{int}{tp_basicsize}
+\cmemberline{PyTypeObject}{int}{tp_itemsize}
+  These fields allow calculating the size in byte of instances of
+  the type.
+
+  There are two kinds of types: types with fixed-length instances have
+  a zero \member{tp_itemsize} field, types with variable-length
+  instances have a non-zero \member{tp_itemsize} field.  For a type
+  with fixed-length instances, all instances have the same size,
+  given in \member{tp_basicsize}.
+
+  For a type with variable-length instances, the instances must have
+  an \member{ob_size} field, and the instance size is
+  \member{tp_basicsize} plus N times \member{tp_itemsize}, where N is
+  the ``length'' of the object.  The value of N is typically stored in
+  the instance's \member{ob_size} field.  There are exceptions:  for
+  example, long ints use a negative \member{ob_size} to indicate a
+  negative number, and N is \code{abs(\member{ob_size})} there.  Also,
+  the presence of an \member{ob_size} field in the instance layout
+  doesn't mean that the type is variable-length (for example, the list
+  type has fixed-length instances, yet those instances have a
+  meaningful \member{ob_size} field).
+
+  The basic size includes the fields in the instance declared by the
+  macro \csimplemacro{PyObject_HEAD} or
+  \csimplemacro{PyObject_VAR_HEAD} (whichever is used to declare the
+  instance struct) and this in turn includes the \member{_ob_prev} and
+  \member{_ob_next} fields if they are present.  This means that the
+  only correct way to get an initializer for the \member{tp_basicsize}
+  is to use the \keyword{sizeof} operator on the struct used to
+  declare the instance layout.  The basic size does not include the GC
+  header size (this is new in Python 2.2; in 2.1 and 2.0, the GC
+  header size was included in \member{tp_basicsize}).
+
+  These fields are inherited by subtypes.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{destructor}{tp_dealloc}
+  A pointer to the instance destructor function.  This function must
+  be defined unless the type guarantees that its instances will never
+  be deallocated (as is the case for the singletons \code{None} and
+  \code{Ellipsis}).
+
+  The destructor function is called by the \cfunction{Py_DECREF()} and
+  \cfunction{Py_XDECREF()} macros when the new reference count is
+  zero.  At this point, the instance is still in existance, but there
+  are no references to it.  The destructor function should free all
+  references which the instance owns, free all memory buffers owned by
+  the instance (using the freeing function corresponding to the
+  allocation function used to allocate the buffer), and finally (as
+  its last action) call the type's \member{tp_free} slot.  If the type
+  is not subtypable (doesn't have the \constant{Py_TPFLAGS_BASETYPE}
+  flag bit set), it is permissible to call the object deallocator
+  directly instead of via \member{tp_free}.  The object deallocator
+  should be the one used to allocate the instance; this is normally
+  \cfunction{PyObject_Del()} if the instance was allocated using
+  \cfunction{PyObject_New()} or \cfunction{PyOject_VarNew()}, or
+  \cfunction{PyObject_GC_Del()} if the instance was allocated using
+  \cfunction{PyObject_GC_New()} or \cfunction{PyObject_GC_VarNew()}.
+
+  This field is inherited by subtypes.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{printfunc}{tp_print}
+  An optional pointer to the instance print function.
+
+  The print function is only called when the instance is printed to a
+  \emph{real} file; when it is printed to a pseudo-file (like a
+  \class{StringIO} instance), the instance's \member{tp_repr} or
+  \member{tp_str} function is called to convert it to a string.  These
+  are also called when the type's \member{tp_print} field is \NULL.
+
+  The print function is called with the same signature as
+  \cfunction{PyObject_Print()}: \code{tp_print(PyObject *self, FILE
+  *file, int flags)}.  The \var{self} argument is the instance to be
+  printed.  The \var{file} argument is the stdio file to which it is
+  to be printed.  The \var{flags} argument is composed of flag bits.
+  The only flag bit currently defined is \constant{Py_PRINT_RAW}.
+  When the \constant{Py_PRINT_RAW} flag bit is set, the instance
+  should be printed the same way as \member{tp_str} would format it;
+  when the \constant{Py_PRINT_RAW} flag bit is clear, the instance
+  should be printed the same was as \member{tp_repr} would format it.
+
+  It is possible that the \member{tp_print} field will be deprecated.
+  In any case, it is recommended not to define \member{tp_print}, but
+  instead to rely on \member{tp_repr} and \member{tp_str} for
+  printing.
+
+  This field is inherited by subtypes.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{getattrfunc}{tp_getattr}
+  An optional pointer to the get-attribute-string function.
+
+  This field is deprecated.  When it is defined, it should point to a
+  function that acts the same as the \member{tp_getattro} function,
+  but taking a C string instead of a Python string object to give the
+  attribute name.  The signature is the same as for
+  \cfunction{PyObject_GetAttrString()}.
+
+  This field is inherited by subtypes together with
+  \member{tp_getattro}: a subtype inherits both \member{tp_getattr}
+  and \member{tp_getattro} from its base type when the subtype's
+  \member{tp_getattr} and \member{tp_getattro} are both \NULL.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{setattrfunc}{tp_setattr}
+  An optional pointer to the set-attribute-string function.
+
+  This field is deprecated.  When it is defined, it should point to a
+  function that acts the same as the \member{tp_setattro} function,
+  but taking a C string instead of a Python string object to give the
+  attribute name.  The signature is the same as for
+  \cfunction{PyObject_SetAttrString()}.
+
+  This field is inherited by subtypes together with
+  \member{tp_setattro}: a subtype inherits both \member{tp_setattr}
+  and \member{tp_setattro} from its base type when the subtype's
+  \member{tp_setattr} and \member{tp_setattro} are both \NULL.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{cmpfunc}{tp_compare}
+  An optional pointer to the three-way comparison function.
+
+  The signature is the same as for \cfunction{PyObject_Compare()}.
+  The function should return \code{1} if \var{self} greater than
+  \var{other}, \code{0} if \var{self} is equal to \var{other}, and
+  \code{-1} if \var{self} less than \var{other}.  It should return
+  \code{-1} and set an exception condition when an error occurred
+  during the comparison.
+
+  This field is inherited by subtypes together with
+  \member{tp_richcompare} and \member{tp_hash}: a subtypes inherits
+  all three of \member{tp_compare}, \member{tp_richcompare}, and
+  \member{tp_hash} when the subtype's \member{tp_compare},
+  \member{tp_richcompare}, and \member{tp_hash} are all \NULL.
+\end{cmemberdesc}
+
 
 
 \section{Mapping Object Structures \label{mapping-structs}}
