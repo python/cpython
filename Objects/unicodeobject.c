@@ -4670,6 +4670,7 @@ formatint(Py_UNICODE *buf,
        + 1 + 1 = 24*/
     char fmt[64]; /* plenty big enough! */
     long x;
+    int use_native_c_format = 1;
 
     x = PyInt_AsLong(v);
     if (x == -1 && PyErr_Occurred())
@@ -4686,11 +4687,21 @@ formatint(Py_UNICODE *buf,
     /* When converting 0 under %#x or %#X, C leaves off the base marker,
      * but we want it (for consistency with other %#x conversions, and
      * for consistency with Python's hex() function).
+     * BUG 28-Apr-2001 tim:  At least two platform Cs (Metrowerks &
+     * Compaq Tru64) violate the std by converting 0 w/ leading 0x anyway.
+     * So add it only if the platform doesn't already.
      */
-    if (x == 0 && (flags & F_ALT) && (type == 'x' || type == 'X'))
-        sprintf(fmt, "0%c%%%s.%dl%c", type, "#", prec, type);
-    else
-        sprintf(fmt, "%%%s.%dl%c", (flags & F_ALT) ? "#" : "", prec, type);
+    if (x == 0 && (flags & F_ALT) && (type == 'x' || type == 'X')) {
+        /* Only way to know what the platform does is to try it. */
+        sprintf(fmt, type == 'x' ? "%#x" : "%#X", 0);
+        if (fmt[1] != (char)type) {
+            /* Supply our own leading 0x/0X -- needed under std C */
+            use_native_c_format = 0;
+            sprintf(fmt, "0%c%%#.%dl%c", type, prec, type);
+        }
+    }
+    if (use_native_c_format)
+         sprintf(fmt, "%%%s.%dl%c", (flags & F_ALT) ? "#" : "", prec, type);
     return usprintf(buf, fmt, x);
 }
 
