@@ -1,0 +1,10 @@
+test_bastion
+b.total() = 99
+b.sum = inaccessible
+b._add = inaccessible
+b._get_.func_defaults = [<type 'function'>] accessible
+==================== Using rexec: ====================
+b.total() = 198
+b.sum = inaccessible
+b._add = inaccessible
+b._get_.func_defaults = inaccessible
