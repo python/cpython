@@ -6,7 +6,7 @@ Type/class unification and new-style classes
 
 - Assignment to __class__ is disallowed if either the old and the new
   class is a statically allocated type object (such as defined by an
-  extenson module).  This prevents anomalies like 2.__class__ = bool.
+  extension module).  This prevents anomalies like 2.__class__ = bool.
 
 - New-style object creation and deallocation have been sped up
   significantly; they are now faster than classic instance creation
@@ -159,7 +159,7 @@ Core and builtins
 
 - Ctrl+C handling on Windows has been made more consistent with
   other platforms.  KeyboardInterrupt can now reliably be caught,
-  and Ctrl+C at an interative prompt no longer terminates the
+  and Ctrl+C at an interactive prompt no longer terminates the
   process under NT/2k/XP (it never did under Win9x).  Ctrl+C will
   interrupt time.sleep() in the main thread, and any child processes
   created via the popen family (on win2k; we can't make win9x work
@@ -297,6 +297,8 @@ Extension modules
   been added where available.
 
 Library
+
+- Added operator.pow(a,b) which is equivalent to a**b.
 
 - random.randrange(-sys.maxint-1, sys.maxint) no longer raises
   OverflowError.  That is, it now accepts any combination of 'start'
@@ -1759,7 +1761,7 @@ Core
   with Python 2.2a1 is to test backwards compatibility.  It is
   possible, though not likely, that a decision is made not to release
   this code as part of 2.2 final, if any serious backwards
-  incompapatibilities are found during alpha testing that cannot be
+  incompatibilities are found during alpha testing that cannot be
   repaired.
 
 - Generators were added; this is a new way to create an iterator (see
@@ -1909,7 +1911,7 @@ Core
 Library
 
 - The constants ascii_letters, ascii_lowercase. and ascii_uppercase
-  were added to the string module.  These a locale-indenpendent
+  were added to the string module.  These a locale-independent
   constants, unlike letters, lowercase, and uppercase.  These are now
   use in appropriate locations in the standard library.
 
@@ -1956,11 +1958,11 @@ Library
 Tests
 
 - New test_mutants.py runs dict comparisons where the key and value
-  comparison operators mutute the dicts randomly during comparison.  This
+  comparison operators mutate the dicts randomly during comparison.  This
   rapidly causes Python to crash under earlier releases (not for the faint
   of heart:  it can also cause Win9x to freeze or reboot!).
 
-- New test_pprint.py verfies that pprint.isrecursive() and
+- New test_pprint.py verifies that pprint.isrecursive() and
   pprint.isreadable() return sensible results.  Also verifies that simple
   cases produce correct output.
 
@@ -2402,7 +2404,7 @@ Windows changes
   B. Else search sys.path for the first case-sensitive match; raise
      ImportError if none found.
 
-  The same rules have been implented on other platforms with case-
+  The same rules have been implemented on other platforms with case-
   insensitive but case-preserving filesystems too (including Cygwin, and
   several flavors of Macintosh operating systems).
 
