@@ -53,21 +53,16 @@ ALIASES = {
     'ascii':   'us-ascii',
     }
 
-# Map charsets to their Unicode codec strings.  Note that the Japanese
-# examples included below do not (yet) come with Python!  They are available
-# from http://pseudo.grad.sccs.chukyo-u.ac.jp/~kajiyama/python/
+# Map charsets to their Unicode codec strings.  Note that Python doesn't come
+# with any Asian codecs by default.  Here's where to get them:
+#
+# Japanese -- http://www.asahi-net.or.jp/~rd6t-kjym/python
+# Korean   -- http://sf.net/projects/koco
+# Chinese  -- http://sf.net/projects/python-codecs
+#
+# Note that these codecs have their own lifecycle and may be in varying states
+# of stability and useability.
 
-# The Chinese and Korean codecs are available from SourceForge:
-#
-#     http://sourceforge.net/projects/python-codecs/
-#
-# although you'll need to check them out of cvs since they haven't been file
-# released yet.  You might also try to use
-#
-#     http://www.freshports.org/port-description.php3?port=6702
-#
-# if you can get logged in.  AFAICT, both the Chinese and Korean codecs are
-# fairly experimental at this point.
 CODEC_MAP = {
     'euc-jp':      'japanese.euc-jp',
     'iso-2022-jp': 'japanese.iso-2022-jp',
