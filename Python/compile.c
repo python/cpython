@@ -509,10 +509,8 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 	if (memchr(lineno, 255, tabsiz) != NULL)
 		goto exitUnchanged;
 
-	if (!PyString_Check(code))
-		goto exitUnchanged;
-
 	/* Avoid situations where jump retargeting could overflow */
+	assert(PyString_Check(code));
 	codelen = PyString_Size(code);
 	if (codelen > 32700)
 		goto exitUnchanged;
