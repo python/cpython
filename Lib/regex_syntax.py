@@ -51,9 +51,3 @@ RE_SYNTAX_GREP = (RE_BK_PLUS_QM | RE_NEWLINE_OR)
 RE_SYNTAX_EMACS = 0
 
 # (Python's obsolete "regexp" module used a syntax similar to awk.)
-
-__all__ = locals().keys()
-for _i in range(len(__all__)-1,-1,-1):
-    if __all__[_i][0] == "_":
-        del __all__[_i]
-del _i

@@ -1,7 +1,5 @@
 """HTML character entity references."""
 
-__all__ = ["entitydefs"]
-
 entitydefs = {
     'AElig':    '\306',         # latin capital letter AE = latin capital ligature AE, U+00C6 ISOlat1
     'Aacute':   '\301',         # latin capital letter A with acute, U+00C1 ISOlat1

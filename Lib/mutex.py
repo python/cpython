@@ -12,8 +12,6 @@ Of course, no multi-threading is implied -- hence the funny interface
 for lock, where a function is called once the lock is aquired.
 """
 
-__all__ = ["mutex"]
-
 class mutex:
     def __init__(self):
         """Create a new mutex -- initially unlocked."""

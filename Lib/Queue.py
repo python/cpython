@@ -1,7 +1,5 @@
 """A multi-producer, multi-consumer queue."""
 
-__all__ = ["Queue","Empty","Full"]
-
 class Empty(Exception):
     "Exception raised by Queue.get(block=0)/get_nowait()."
     pass

@@ -1,7 +1,5 @@
 """A more or less complete user-defined wrapper around list objects."""
 
-__all__ = ["UserList"]
-
 class UserList:
     def __init__(self, initlist=None):
         self.data = []

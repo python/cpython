@@ -48,8 +48,6 @@ specifies whether or not chunks are aligned on 2-byte boundaries.  The
 default is 1, i.e. aligned.
 """
 
-__all__ = ["Chunk"]
-
 class Chunk:
     def __init__(self, file, align = 1, bigendian = 1, inclheader = 0):
         import struct
