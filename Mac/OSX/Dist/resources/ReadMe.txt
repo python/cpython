@@ -1,6 +1,6 @@
-This package will install MacPython 2.3.2 for Mac OS X
-10.2. Installation on the Panther preview may work, on
-10.1 or earlier will not work.
+This package will install MacPython 2.4.1 for Mac OS X
+10.3. Separate installers are available for older versions
+of MacOSX, see the homepage, below.
 
 Installation requires approximately 20 MB of disk
 space, ignore the message that it will take zero bytes.
@@ -27,6 +27,6 @@ you started quickly with MacPython and contains
 references to other documentation.
 
 More information on MacPython can be found at
-http://www.cwi.nl/~jack/macpython.html, more
+http://www.cwi.nl/~jack/macpython, more
 information on Python in general at
 http://www.python.org.

@@ -1,11 +1,11 @@
 #!/bin/sh -e
 #----------------------------------------------------------------------
-# Build MacPython 2.3 and make an Installer package of it
+# Build MacPython 2.4 and make an Installer package of it
 
 # TODO:  Parameterize the versions, builddirs, etc...
 
 # Script configs
-PYVERSION=2.4a0
+PYVERSION=2.4.1
 PYVER=2.4
 BUILDNUM=1
 DOCLEANUP=no
@@ -19,6 +19,16 @@ x/*) ;;
    ;;
 esac
 
+if [ ! -e /usr/bin/python ]; then
+	echo "No /usr/bin/python; this script expects to be run on 10.3 only"
+	exit 1
+fi
+vers=`/usr/bin/python -V 2>&1`
+if [ "$vers" != "Python 2.3" ]; then
+    echo "/usr/bin/python is not version 2.3; this script expects to be run on 10.3 only"
+    exit 1
+fi
+
 TMPDIR=/tmp/_py
 #TMPDIR=/projects/_py
 
@@ -28,6 +38,20 @@ RESOURCEDIR=$PROGDIR/resources
 DESTDIR=$TMPDIR/dist
 PYTHONSRC=$PROGDIR/../../..
 WASTEDIR=$PYTHONSRC/../waste
+
+# Check that the Apple Python 2.3 Makefile fixes have been applied on this
+# machine
+if python $PYTHONSRCDIR/Mac/OSX/fixapplepython23.py -n; then
+    :
+else
+    echo
+    echo This installer will also install a fix to Apple-installed 2.3
+    echo to make building extensions work in the face of other Pythons.
+    echo But this system needs to have that fix to be able to put it in the installer.
+    echo
+    echo Please run $PYTHONSRCDIR/Mac/OSX/fixapplepython23.py to install the fix.
+    exit
+fi
 
 case x$1 in
 x)
@@ -66,12 +90,6 @@ if [ "$welcome" = "n" -o "$welcome" = "N" ]; then
 	exit
 fi
 
-# Check if we should build and install the docs, but only if it
-# doesn't appear to be done already.  TODO: fix this path to be version independent
-if [ ! -e "build/temp.darwin-6.3-Power Macintosh-2.3/build-html/build-html idx" ]; then
-    read -p "Build the Python docs? (y/N)? " builddocs
-fi
-
 # If the filesystem is case-sensitive then "python" will be built, but
 # some parts of the install expect "python.exe which is what is built
 # on a case-insensitive filesystem.  Make a link just in case it is
@@ -90,6 +108,10 @@ $PYTHONSRC/configure -C --enable-framework LDFLAGS=-Wl,-x
 make
 make DIRMODE=775 EXEMODE=775 FILEMODE=664 DESTDIR=$INSTALLROOT frameworkinstall
 make DIRMODE=775 EXEMODE=775 FILEMODE=664 DESTDIR=$INSTALLROOT frameworkinstallextras
+
+# Install the Makefile fixes
+config=System/Library/Frameworks/Python.framework/Versions/2.3/lib/python2.3/config
+(cd / ; tar cf - $config/Makefile $config/PantherPythonFix) | (cd $INSTALLROOT; tar xf -)
 
 # Unfortunately all the ...MODE arguments above still don't do the trick.
 # Cop out, and recursively set everything group-writeable.
@@ -121,7 +143,7 @@ rm -rf MacPython-OSX.pkg
 python $PYTHONSRC/Mac/scripts/buildpkg.py \
     --Title=MacPython-OSX \
     --Version=$PYVERSION-$BUILDNUM \
-    --Description="Python $PYVERSION for Mac OS X, framework based" \
+    --Description="Python $PYVERSION for Mac OS X 10.3, framework based" \
     --NeedsAuthorization="YES" \
     --Relocatable="NO" \
     --InstallOnly="YES" \
