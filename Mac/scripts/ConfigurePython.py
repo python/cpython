@@ -94,7 +94,6 @@ def buildcopy(top, dummy, list):
 	for src, dst in list:
 		src = os.path.join(top, src)
 		dst = os.path.join(top, dst)
-		import pdb ; pdb.set_trace()
 		macostools.copy(src, dst)
 
 def main():
