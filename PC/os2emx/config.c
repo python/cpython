@@ -80,6 +80,7 @@ extern void inittime();
 extern void inittiming();
 extern void initunicodedata();
 extern void initxreadlines();
+extern void initxxsubtype();
 extern void initzlib();
 
 /* -- ADDMODULE MARKER 1 -- */
@@ -91,7 +92,6 @@ struct _inittab _PyImport_Inittab[] = {
 
 	{"gc", initgc},
         {"os2", initos2},
-        {"_sre", init_sre},
         {"signal", initsignal},
 #ifdef WITH_THREAD
         {"thread", initthread},
@@ -102,6 +102,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"_curses_panel", init_curses_panel},
 	{"_hotshot", init_hotshot},
 	{"_locale", init_locale},
+        {"_sre", init_sre},
 	{"_testcapi", init_testcapi},
 	{"_weakref", init_weakref},
 	{"array", initarray},
@@ -134,6 +135,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"timing", inittiming},
 	{"unicodedata", initunicodedata},
 	{"xreadlines", initxreadlines},
+	{"xxsubtype", initxxsubtype},
 	{"zlib", initzlib},
 #ifdef USE_SOCKET
         {"_socket", init_socket},
