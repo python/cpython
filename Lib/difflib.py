@@ -161,8 +161,6 @@ class SequenceMatcher:
         # b2j
         #      for x in b, b2j[x] is a list of the indices (into b)
         #      at which x appears; junk elements do not appear
-        # b2jhas
-        #      b2j.has_key
         # fullbcount
         #      for x in b, fullbcount[x] == the number of times x
         #      appears in b; only materialized if really needed (used
@@ -188,6 +186,10 @@ class SequenceMatcher:
         #      for x in b, isbjunk(x) == isjunk(x) but much faster;
         #      it's really the has_key method of a hidden dict.
         #      DOES NOT WORK for x in a!
+        # isbpopular
+        #      for x in b, isbpopular(x) is true iff b is reasonably long
+        #      (at least 200 elements) and x accounts for more than 1% of
+        #      its elements.  DOES NOT WORK for x in a!
 
         self.isjunk = isjunk
         self.a = self.b = None
@@ -266,6 +268,12 @@ class SequenceMatcher:
     # map at all, which stops the central find_longest_match method
     # from starting any matching block at a junk element ...
     # also creates the fast isbjunk function ...
+    # b2j also does not contain entries for "popular" elements, meaning
+    # elements that account for more than 1% of the total elements, and
+    # when the sequence is reasonably large (>= 200 elements); this can
+    # be viewed as an adaptive notion of semi-junk, and yields an enormous
+    # speedup when, e.g., comparing program files with hundreds of
+    # instances of "return NULL;" ...
     # note that this is only called when b changes; so for cross-product
     # kinds of matches, it's best to call set_seq2 once, then set_seq1
     # repeatedly
@@ -282,25 +290,36 @@ class SequenceMatcher:
         # out the junk later is much cheaper than building b2j "right"
         # from the start.
         b = self.b
+        n = len(b)
         self.b2j = b2j = {}
-        self.b2jhas = b2jhas = b2j.has_key
-        for i in xrange(len(b)):
-            elt = b[i]
-            if b2jhas(elt):
-                b2j[elt].append(i)
+        populardict = {}
+        for i, elt in enumerate(b):
+            if elt in b2j:
+                indices = b2j[elt]
+                if n >= 200 and len(indices) * 100 > n:
+                    populardict[elt] = 1
+                    del indices[:]
+                else:
+                    indices.append(i)
             else:
                 b2j[elt] = [i]
+
+        # Purge leftover indices for popular elements.
+        for elt in populardict:
+            del b2j[elt]
 
         # Now b2j.keys() contains elements uniquely, and especially when
         # the sequence is a string, that's usually a good deal smaller
         # than len(string).  The difference is the number of isjunk calls
         # saved.
-        isjunk, junkdict = self.isjunk, {}
+        isjunk = self.isjunk
+        junkdict = {}
         if isjunk:
-            for elt in b2j.keys():
-                if isjunk(elt):
-                    junkdict[elt] = 1   # value irrelevant; it's a set
-                    del b2j[elt]
+            for d in populardict, b2j:
+                for elt in d.keys():
+                    if isjunk(elt):
+                        junkdict[elt] = 1
+                        del d[elt]
 
         # Now for x in b, isjunk(x) == junkdict.has_key(x), but the
         # latter is much faster.  Note too that while there may be a
@@ -308,6 +327,7 @@ class SequenceMatcher:
         # elements is probably small.  So the memory burden of keeping
         # this dict alive is likely trivial compared to the size of b2j.
         self.isbjunk = junkdict.has_key
+        self.isbpopular = populardict.has_key
 
     def find_longest_match(self, alo, ahi, blo, bhi):
         """Find longest matching block in a[alo:ahi] and b[blo:bhi].
@@ -387,6 +407,19 @@ class SequenceMatcher:
                 if k > bestsize:
                     besti, bestj, bestsize = i-k+1, j-k+1, k
             j2len = newj2len
+
+        # Extend the best by non-junk elements on each end.  In particular,
+        # "popular" non-junk elements aren't in b2j, which greatly speeds
+        # the inner loop above, but also means "the best" match so far
+        # doesn't contain any junk *or* popular non-junk elements.
+        while besti > alo and bestj > blo and \
+              not isbjunk(b[bestj-1]) and \
+              a[besti-1] == b[bestj-1]:
+            besti, bestj, bestsize = besti-1, bestj-1, bestsize+1
+        while besti+bestsize < ahi and bestj+bestsize < bhi and \
+              not isbjunk(b[bestj+bestsize]) and \
+              a[besti+bestsize] == b[bestj+bestsize]:
+            bestsize += 1
 
         # Now that we have a wholly interesting match (albeit possibly
         # empty!), we may as well suck up the matching junk on each
@@ -736,12 +769,16 @@ class Differ:
         - `linejunk`: A function that should accept a single string argument,
           and return true iff the string is junk. The module-level function
           `IS_LINE_JUNK` may be used to filter out lines without visible
-          characters, except for at most one splat ('#').
+          characters, except for at most one splat ('#').  It is recommended
+          to leave linejunk None; as of Python 2.3, the underlying
+          SequenceMatcher class has grown an adaptive notion of "noise" lines
+          that's better than any static definition the author has ever been
+          able to craft.
 
         - `charjunk`: A function that should accept a string of length 1. The
           module-level function `IS_CHARACTER_JUNK` may be used to filter out
           whitespace characters (a blank or tab; **note**: bad idea to include
-          newline in this!).
+          newline in this!).  Use of IS_CHARACTER_JUNK is recommended.
         """
 
         self.linejunk = linejunk
@@ -1005,7 +1042,7 @@ def IS_CHARACTER_JUNK(ch, ws=" \t"):
 
 del re
 
-def ndiff(a, b, linejunk=IS_LINE_JUNK, charjunk=IS_CHARACTER_JUNK):
+def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
     r"""
     Compare `a` and `b` (lists of strings); return a `Differ`-style delta.
 
@@ -1013,9 +1050,9 @@ def ndiff(a, b, linejunk=IS_LINE_JUNK, charjunk=IS_CHARACTER_JUNK):
     functions (or None):
 
     - linejunk: A function that should accept a single string argument, and
-      return true iff the string is junk. The default is module-level function
-      IS_LINE_JUNK, which filters out lines without visible characters, except
-      for at most one splat ('#').
+      return true iff the string is junk.  The default is None, and is
+      recommended; as of Python 2.3, an adaptive notion of "noise" lines is
+      used that does a good job on its own.
 
     - charjunk: A function that should accept a string of length 1. The
       default is module-level function IS_CHARACTER_JUNK, which filters out

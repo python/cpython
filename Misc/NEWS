@@ -72,9 +72,9 @@ Core and builtins
 
 Extension modules
 
-- The bsddb.*open functions can now take 'None' as a filename. 
+- The bsddb.*open functions can now take 'None' as a filename.
   This will create a temporary in-memory bsddb that won't be
-  written to disk. 
+  written to disk.
 
 - posix.mknod was added.
 
@@ -98,6 +98,15 @@ Extension modules
   is called.
 
 Library
+
+- difflib's SequenceMatcher class now does a dynamic analysis of
+  which elements are so frequent as to constitute noise.  For
+  comparing files as sequences of lines, this generally works better
+  than the IS_LINE_JUNK function, and function ndiff's linejunk
+  argument defaults to None now as a result.  A happy benefit is
+  that SequenceMatcher may run much faster now when applied
+  to large files with many duplicate lines (for example, C program
+  text with lots of repeated "}" and "return NULL;" lines).
 
 - New Text.dump() method in Tkinter module.
 

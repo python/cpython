@@ -90,13 +90,19 @@
   Optional keyword parameters \var{linejunk} and \var{charjunk} are
   for filter functions (or \code{None}):
 
-  \var{linejunk}: A function that should accept a single string
-  argument, and return true if the string is junk (or false if it is
-  not). The default is module-level function
+  \var{linejunk}: A function that accepts a single string
+  argument, and returns true if the string is junk, or false if not.
+  The default is (\code{None}), starting with Python 2.3.  Before then,
+  the default was the module-level function
   \function{IS_LINE_JUNK()}, which filters out lines without visible
   characters, except for at most one pound character (\character{\#}).
+  As of Python 2.3, the underlying \class{SequenceMatcher} class
+  does a dynamic analysis of which lines are so frequent as to
+  constitute noise, and this usually works better than the pre-2.3
+  default.
 
-  \var{charjunk}: A function that should accept a string of length 1.
+  \var{charjunk}: A function that accepts a character (a string of
+  length 1), and returns if the character is junk, or false if not.
   The default is module-level function \function{IS_CHARACTER_JUNK()},
   which filters out whitespace characters (a blank or tab; note: bad
   idea to include newline in this!).
@@ -150,7 +156,7 @@ emu
   Return true for ignorable lines.  The line \var{line} is ignorable
   if \var{line} is blank or contains a single \character{\#},
   otherwise it is not ignorable.  Used as a default for parameter
-  \var{linejunk} in \function{ndiff()}.
+  \var{linejunk} in \function{ndiff()} before Python 2.3.
 \end{funcdesc}
 
 
@@ -443,16 +449,14 @@ The \class{Differ} class has this constructor:
   Optional keyword parameters \var{linejunk} and \var{charjunk} are
   for filter functions (or \code{None}):
 
-  \var{linejunk}: A function that should accept a single string
-  argument, and return true if the string is junk.  The default is
-  module-level function \function{IS_LINE_JUNK()}, which filters out
-  lines without visible characters, except for at most one pound
-  character (\character{\#}).
+  \var{linejunk}: A function that accepts a single string
+  argument, and returns true if the string is junk.  The default is
+  \code{None}, meaning that no line is considered junk.
 
-  \var{charjunk}: A function that should accept a string of length 1.
-  The default is module-level function \function{IS_CHARACTER_JUNK()},
-  which filters out whitespace characters (a blank or tab; note: bad
-  idea to include newline in this!).
+  \var{charjunk}: A function that accepts a single character argument
+  (a string of length 1), and returns true if the character is junk.
+  The default is \code{None}, meaning that no character is
+  considered junk.
 \end{classdesc}
 
 \class{Differ} objects are used (deltas generated) via a single
