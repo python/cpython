@@ -1621,7 +1621,7 @@ AC_MSG_RESULT(MACHDEP_OBJS)
 # checks for library functions
 AC_CHECK_FUNCS(alarm chown chroot clock confstr ctermid ctermid_r execv \
  fchdir flock fork fsync fdatasync fpathconf ftime ftruncate \
- gai_strerror getgroups getlogin getpeername getpid getpwent getwd \
+ gai_strerror getgroups getlogin getpeername getpgid getpid getpwent getwd \
  hstrerror inet_pton kill killpg link lstat mkfifo mknod mktime mremap \
  nice pathconf pause plock poll pthread_init \
  putenv readlink \

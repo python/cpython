@@ -2117,6 +2117,25 @@ posix_getgroups(PyObject *self, PyObject *args)
 }
 #endif
 
+#ifdef HAVE_GETPGID
+static char posix_getpgid__doc__[] =
+"getpgid(pid) -> pgid\n\
+Call the system call getpgid().";
+
+static PyObject *
+posix_getpgid(PyObject *self, PyObject *args)
+{
+	int pid, pgid;
+	if (!PyArg_ParseTuple(args, "i:getpgid", &pid))
+		return NULL;
+	pgid = getpgid(pid);
+	if (pgid < 0)
+		return posix_error();
+	return PyInt_FromLong((long)pgid);
+}
+#endif /* HAVE_GETPGID */
+
+
 #ifdef HAVE_GETPGRP
 PyDoc_STRVAR(posix_getpgrp__doc__,
 "getpgrp() -> pgrp\n\
@@ -6406,6 +6425,9 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_SETGROUPS
 	{"setgroups",	posix_setgroups, METH_VARARGS, posix_setgroups__doc__},
 #endif /* HAVE_SETGROUPS */
+#ifdef HAVE_GETPGID
+	{"getpgid",	posix_getpgid, METH_VARARGS, posix_getpgid__doc__},
+#endif /* HAVE_GETPGID */
 #ifdef HAVE_SETPGRP
 	{"setpgrp",	posix_setpgrp, METH_VARARGS, posix_setpgrp__doc__},
 #endif /* HAVE_SETPGRP */

@@ -144,6 +144,12 @@ are multiple login names which map to the same user id.
 Availability: \UNIX.
 \end{funcdesc}
 
+\begin{funcdesc}{getpgid}{pid}
+Return the process group id of the process with process id \var{pid}.
+If \var{pid} is 0, the process group id of the current process is
+returned. Availability: \UNIX.
+\end{funcdesc}
+
 \begin{funcdesc}{getpgrp}{}
 \index{process!group}
 Return the id of the current process group.

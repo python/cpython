@@ -114,7 +114,8 @@ Extension modules
   This will create a temporary in-memory bsddb that won't be
   written to disk.
 
-- posix.killpg and posix.mknod have been added where available.
+- posix.killpg, posix.mknod, and posix.getpgid have been added where
+  available.
 
 - The locale module now exposes the C library's gettext interface.
 

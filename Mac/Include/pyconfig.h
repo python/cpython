@@ -451,6 +451,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define HAVE_GETPEERNAME
 #endif
 
+/* Define if you have the getpgid function.  */
+#undef HAVE_GETPGID
+
 /* Define if you have the getpgrp function.  */
 #undef HAVE_GETPGRP
 
