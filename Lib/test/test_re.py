@@ -474,6 +474,16 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match('(a)((?!(b)*))*', 'abb').groups(),
                          ('a', None, None))
 
+    def test_bug_764548(self):
+        # bug 764548, re.compile() barfs on str/unicode subclasses
+        try:
+            unicode
+        except NameError:
+            return  # no problem if we have no unicode
+        class my_unicode(unicode): pass
+        pat = re.compile(my_unicode("abc"))
+        self.assertEqual(pat.match("xyz"), None)
+
     def test_finditer(self):
         iter = re.finditer(r":+", "a:b::c:::d")
         self.assertEqual([item.group(0) for item in iter],
