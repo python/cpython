@@ -85,6 +85,10 @@ Core language, builtins, and interpreter
 
 Standard library
 
+- The module site now treats .pth files not only for path configuration,
+  but also supports extensions to the initialization code: Lines starting
+  with import are executed.
+
 - There's a new module, warnings, which implements a mechanism for
   issuing and filtering warnings.  There are some new built-in
   exceptions that serve as warning categories, and a new command line
