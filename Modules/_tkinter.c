@@ -68,7 +68,7 @@ PERFORMANCE OF THIS SOFTWARE.
 	#error "Tk 4.0 or 3.x are not supported -- use 4.1 or higher"
 #endif
 
-#if TKMAJORMINOR < 8000 || !defined(MS_WINDOWS) && !defined(macintosh)
+#if TKMAJORMINOR < 8000 || !defined(MS_WINDOWS)
 #define HAVE_CREATEFILEHANDLER
 #endif
 
