@@ -39,7 +39,7 @@ COMMONPERL= $(TOPDIR)/perl/manual.perl \
 	$(TOPDIR)/perl/l2hinit.perl
 
 
-all:	$(INDEXFILES)
+all:	$(INDEXFILES) icons
 
 .PHONY: api ext lib mac ref tut
 
@@ -53,6 +53,10 @@ tut: tut/tut.html
 
 $(INDEXFILES): $(COMMONPERL) \
 	       $(TOPDIR)/html/about.dat
+
+icons:	../html/icons
+	if [ ! -d icons ] ; then mkdir icons; fi
+	cp ../html/icons/*.* icons/
 
 api/api.html:  $(PAPERDIR)/api.aux $(BUILDINDEX) $(TOOLSDIR)/mkhtml.sh
 	$(MKHTML) api $(L2HARGS) -split 3
