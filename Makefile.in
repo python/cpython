@@ -119,6 +119,9 @@ DESTSHARED=	$(BINLIBDEST)/lib-dynload
 # Shell used by make (some versions default to the login shell, which is bad)
 SHELL=		/bin/sh
 
+# Use ``EXE=.exe'' for Unix emulations on DOS/Windows (e.g. GNUWIN32)
+EXE=
+
 # Portable install script (configure doesn't always guess right)
 INSTALL=	@srcdir@/install-sh -c
 INSTALL_PROGRAM=${INSTALL} -m 755
@@ -220,7 +223,7 @@ bininstall:	altbininstall
 		then rm -f $(BINDIR)/python; \
 		else true; \
 		fi
-		(cd $(BINDIR); ln python$(VERSION) python)
+		(cd $(BINDIR); ln python$(VERSION)$(EXE) python$(EXE))
 
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
@@ -234,7 +237,7 @@ altbininstall:	python
 			else	true; \
 			fi; \
 		done
-		$(INSTALL_PROGRAM) python $(BINDIR)/python$(VERSION)
+		$(INSTALL_PROGRAM) python$(EXE) $(BINDIR)/python$(VERSION)$(EXE)
 
 # Install the manual page
 maninstall:
