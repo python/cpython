@@ -193,7 +193,8 @@ maninstall:
 
 # Install the library
 LIBDEST=	$(SCRIPTDIR)/python$(VERSION)
-LIBSUBDIRS=	stdwin tkinter test $(MACHDEP)
+MACHDEPS=	$(MACHDEP)
+LIBSUBDIRS=	stdwin tkinter test $(MACHDEPS)
 libinstall:	python $(srcdir)/Lib/$(MACHDEP)
 		@for i in $(SCRIPTDIR) $(LIBDEST); \
 		do \
