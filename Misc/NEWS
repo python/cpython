@@ -67,12 +67,15 @@ Library
   ``codecs.StreamReader.readlines()`` have a new argument ``keepends``.
   Trailing "\n"s will be stripped from the lines if ``keepends`` is false.
 
+- The documentation for doctest is greatly expanded, and now covers all
+  the new public features (of which there are many).
+
 - ``doctest.master`` was put back in, and ``doctest.testmod()`` once again
   updates it.  This isn't good, because every ``testmod()`` call
   contributes to bloating the "hidden" state of ``doctest.master``, but
   some old code apparently relies on it.  For now, all we can do is
   encourage people to stitch doctests together via doctest's unittest
-  integration features instead.  It would help if those were documented.
+  integration features instead.
 
 - httplib now handles ipv6 address/port pairs.
 
