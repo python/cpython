@@ -226,7 +226,7 @@ Lowest  lambda args: expr                 anonymous function
 Alternate names are defined in module operator (e.g. __add__ and add for +)
 Most operators are overridable.
 
-Many of binary operators support augmented assignment:
+Many binary operators also support augmented assignment:
         x += 1                            # Same as x = x + 1
 
 
@@ -249,7 +249,7 @@ Notes :
     Comparison behavior can be overridden for a given class by defining special
 method __cmp__.
     The above comparisions return True or False which are of type bool
-(a subclass of int) and behave exactly as 1 or 0 except their type and
+(a subclass of int) and behave exactly as 1 or 0 except for their type and
 that they print as True or False instead of 1 or 0.
     (1) X < Y < Z < W has expected meaning, unlike C
     (2) Compare object identities (i.e. id(object)), not object values.
@@ -508,7 +508,7 @@ s.title()         uppercase characters, all remaining cased characters
 s.translate(table return a copy of s mapped through translation table     (12)
 [,deletechars])   table.
 s.upper()         return a copy of s converted to uppercase.
-s.zfill(width)    return a string padded with zeroes on the left and
+s.zfill(width)    return a string padded with zeroes on the left side and
                   sliding a minus sign left if necessary.  never truncates.
 
 Notes :
@@ -1804,13 +1804,13 @@ Bastion          "Bastionification" utility (control access to instance vars)
 bdb              A generic Python debugger base class.
 binhex           Macintosh binhex compression/decompression.
 bisect           List bisection algorithms.
+bz2		 Support for bz2 compression/decompression.									
 calendar         Calendar printing functions.
 cgi              Wraps the WWW Forms Common Gateway Interface (CGI).
+cgitb		 Utility for handling CGI tracebacks.									
 CGIHTTPServer    CGI http services.
 cmd              A generic class to build line-oriented command interpreters.
-[DEL:cmp:DEL]    [DEL:Efficiently compare files, boolean outcome only.:DEL]
-[DEL:cmpcache:   [DEL:Same, but caches 'stat' results for speed.:DEL]
-DEL]
+datetime	 Basic date and time types.
 code             Utilities needed to emulate Python's interactive interpreter
 codecs           Lookup existing Unicode encodings and register new ones.
 colorsys         Conversion functions between RGB and other color systems.
@@ -1822,11 +1822,14 @@ copy_reg         Helper to provide extensibility for pickle/cPickle.
 dbhash           (g)dbm-compatible interface to bsdhash.hashopen.
 dircache         Sorted list of files in a dir, using a cache.
 [DEL:dircmp:DEL] [DEL:Defines a class to build directory diff tools on.:DEL]
+difflib		 Tool for creating delta between sequences.
 dis              Bytecode disassembler.
 distutils        Package installation system.
+doctest		 Tool for running and verifying tests inside doc strings.
 dospath          Common operations on DOS pathnames.
 dumbdbm          A dumb and slow but simple dbm clone.
 [DEL:dump:DEL]   [DEL:Print python code that reconstructs a variable.:DEL]
+email            Comprehensive support for internet email.									
 exceptions       Class based built-in exception hierarchy.
 filecmp          File comparison.
 fileinput        Helper class to quickly write a loop over all standard input
@@ -1845,19 +1848,24 @@ glob             filename globbing.
 gopherlib        Gopher protocol client interface.
 [DEL:grep:DEL]   [DEL:'grep' utilities.:DEL]
 gzip             Read & write gzipped files.
+heapq		 Priority queue implemented using lists organized as heaps.
+HMAC		 Keyed-Hashing for Message Authentication -- RFC 2104.
 htmlentitydefs   Proposed entity definitions for HTML.
 htmllib          HTML parsing utilities.
+HTMLParser	 A parser for HTML and XHTML.									
 httplib          HTTP client class.
 ihooks           Hooks into the "import" mechanism.
 imaplib          IMAP4 client.Based on RFC 2060.
 imghdr           Recognizing image files based on their first few bytes.
 imputil          Privides a way of writing customised import hooks.
+inspect		 Tool for probing live Python objects.									
 keyword          List of Python keywords.
 knee             A Python re-implementation of hierarchical module import.
 linecache        Cache lines from files.
 linuxaudiodev    Lunix /dev/audio support.
 locale           Support for number formatting using the current locale
                  settings.
+logging		 Python logging facility.									
 macpath          Pathname (or related) operations for the Macintosh.
 macurl2path      Mac specific module for conversion between pathnames and URLs.
 mailbox          A class to handle a unix-style or mmdf-style mailbox.
@@ -1875,6 +1883,7 @@ netrc
 nntplib          An NNTP client class. Based on RFC 977.
 ntpath           Common operations on DOS pathnames.
 nturl2path       Mac specific module for conversion between pathnames and URLs.
+optparse	 A comprehensive tool for processing command line options.									
 os               Either mac, dos or posix depending system.
 [DEL:packmail:   [DEL:Create a self-unpacking shell archive.:DEL]
 DEL]
@@ -1882,7 +1891,7 @@ pdb              A Python debugger.
 pickle           Pickling (save and restore) of Python objects (a faster
                  Cimplementation exists in built-in module: cPickle).
 pipes            Conversion pipeline templates.
-[DEL:poly:DEL]   [DEL:Polynomials.:DEL]
+pkgunil		 Utilities for working with Python packages.
 popen2           variations on pipe open.
 poplib           A POP3 client class. Based on the J. Myers POP3 draft.
 posixfile        Extended (posix) file operations.
@@ -1891,6 +1900,7 @@ pprint           Support to pretty-print lists, tuples, & dictionaries
                  recursively.
 profile          Class for profiling python code.
 pstats           Class for printing reports on profiled python code.
+pydoc		 Utility for generating documentation from source files.									
 pty              Pseudo terminal utilities.
 pyexpat          Interface to the Expay XML parser.
 py_compile       Routine to "compile" a .py file to a .pyc file.
@@ -1898,19 +1908,17 @@ pyclbr           Parse a Python file and retrieve classes and methods.
 Queue            A multi-producer, multi-consumer queue.
 quopri           Conversions to/from quoted-printable transport encoding.
 rand             Don't use unless you want compatibility with C's rand().
-random           Random variable generators (obsolete, use whrandom)
+random           Random variable generators
 re               Regular Expressions.
 reconvert        Convert old ("regex") regular expressions to new syntax
                  ("re").
-regex_syntax     Flags for regex.set_syntax().
-regexp           Backward compatibility for module "regexp" using "regex".
-regsub           Regular expression subroutines.
 repr             Redo repr() but with limits on most sizes.
 rexec            Restricted execution facilities ("safe" exec, eval, etc).
 rfc822           RFC-822 message manipulation class.
 rlcompleter      Word completion for GNU readline 2.0.
 robotparser      Parse robot.txt files, useful for web spiders.
 sched            A generally useful event scheduler class.
+sets		 Module for a set datatype.									
 sgmllib          A parser for SGML.
 shelve           Manage shelves of pickled objects.
 shlex            Lexical analyzer class for simple shell-like syntaxes.
@@ -1932,8 +1940,10 @@ sunau            Stuff to parse Sun and NeXT audio files.
 sunaudio         Interpret sun audio headers.
 symbol           Non-terminal symbols of Python grammar (from "graminit.h").
 tabnanny,/font>  Check Python source for ambiguous indentation.
+tarfile		 Facility for reading and writing to the *nix tarfile format.									
 telnetlib        TELNET client class. Based on RFC 854.
 tempfile         Temporary file name allocation.
+textwrap	 Object for wrapping and filling text.									
 threading        Proposed new higher-level threading interfaces
 threading_api    (doc of the threading module)
 toaiff           Convert "arbitrary" sound files to AIFF files .
@@ -1953,17 +1963,19 @@ UserList         A wrapper to allow subclassing of built-in list class.
 UserString       A wrapper to allow subclassing of built-in string class.
 [DEL:util:DEL]   [DEL:some useful functions that don't fit elsewhere !!:DEL]
 uu               UUencode/UUdecode.
+unittest	 Utilities for implementing unit testing.		  
 wave             Stuff to parse WAVE files.
+weakref		 Tools for creating and managing weakly referenced objects.		  
 webbrowser       Platform independent URL launcher.
 [DEL:whatsound:  [DEL:Several routines that help recognizing sound files.:DEL]
 DEL]
 whichdb          Guess which db package to use to open a db file.
-whrandom         Wichmann-Hill random number generator.
 xdrlib           Implements (a subset of) Sun XDR (eXternal Data
                  Representation)
 xmllib           A parser for XML, using the derived class as static DTD.
 xml.dom          Classes for processing XML using the Document Object Model.
 xml.sax          Classes for processing XML using the SAX API.
+xmlrpclib	 Support for remote procedure calls using XML.		  
 zipfile          Read & write PK zipped files.
 [DEL:zmod:DEL]   [DEL:Demonstration of abstruse mathematical concepts.:DEL]
 
