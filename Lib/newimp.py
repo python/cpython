@@ -954,3 +954,6 @@ def test(number=0):
 	    __builtin__.__import__ = wasImport
 	else:
 	    del __builtin__.__import__
+
+if __name__ == '__main__':
+	test()
