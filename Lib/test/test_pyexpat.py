@@ -311,3 +311,18 @@ parser.Parse("<a>1<b/>2<c></c>3<!--abc-->4<!--def-->5</a> ", 1)
 handler.check(["<a>", "1", "<b>", "</b>", "2", "<c>", "</c>", "3",
                "<!--abc-->", "4", "<!--def-->", "5", "</a>"],
               "buffered text not properly split")
+
+# Test handling of exception from callback:
+def StartElementHandler(name, attrs):
+    raise RuntimeError(name)
+
+parser = expat.ParserCreate()
+parser.StartElementHandler = StartElementHandler
+
+try:
+    parser.Parse("<a><b><c/></b></a>", 1)
+except RuntimeError, e:
+    if e.args[0] != "a":
+        print "Expected RuntimeError for element 'a'; found %r" % e.args[0]
+else:
+    print "Expected RuntimeError for 'a'"
