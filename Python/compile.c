@@ -651,7 +651,7 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 		        "if a and b:"
 			"if a or b:"
 		        "a and b or c"
-			"a and b and c"
+			"(a and b) and c"
 		   x:JUMP_IF_FALSE y   y:JUMP_IF_FALSE z  -->  x:JUMP_IF_FALSE z
 		   x:JUMP_IF_FALSE y   y:JUMP_IF_TRUE z  -->  x:JUMP_IF_FALSE y+3
 			where y+3 is the instruction following the second test.
@@ -749,6 +749,9 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 		while (adj--)
 			codestr[h++] = codestr[i++];
 	}
+	/* The following assertion detects the presence of NOPs in the input
+	   bytecode.  The compiler never produces NOPs so far; if one day it
+	   does, the way 'nops' is counted above must be changed. */
 	assert(h + nops == codelen);
 
 	code = PyString_FromStringAndSize((char *)codestr, h);
