@@ -921,7 +921,7 @@ class PimpInstaller:
         prereqs = package.prerequisites()
         for pkg, descr in prereqs:
             if pkg:
-                self._prepareInstall(pkg, force, recursive)
+                self._prepareInstall(pkg, False, recursive)
             else:
                 self._curmessages.append("Problem with dependency: %s" % descr)
                 
