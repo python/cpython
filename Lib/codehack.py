@@ -10,6 +10,8 @@ import linecache
 # XXX The functions getcodename() and getfuncname() are now obsolete
 # XXX as code and function objects now have a name attribute --
 # XXX co.co_name and f.func_name.
+# XXX getlineno() is now also obsolete because of the new attribute
+# XXX of code objects, co.co_firstlineno.
 
 # Extract the function or class name from a code object.
 # This is a bit of a hack, since a code object doesn't contain
@@ -34,6 +36,10 @@ identchars = string.letters + string.digits + '_' # Identifier characters
 _namecache = {} # The cache
 
 def getcodename(co):
+	try:
+		return co.co_name
+	except AttributeError:
+		pass
 	key = `co` # arbitrary but uniquely identifying string
 	if _namecache.has_key(key): return _namecache[key]
 	filename = co.co_filename
@@ -55,11 +61,19 @@ def getcodename(co):
 # Use the above routine to find a function's name.
 
 def getfuncname(func):
+	try:
+		return func.func_name
+	except AttributeError:
+		pass
 	return getcodename(func.func_code)
 
 # A part of the above code to extract just the line number from a code object.
 
 def getlineno(co):
+	try:
+		return co.co_firstlineno
+	except AttributeError:
+		pass
 	code = co.co_code
 	if ord(code[0]) == SET_LINENO:
 		return ord(code[1]) | ord(code[2]) << 8
