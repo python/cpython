@@ -625,6 +625,13 @@ PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
 #define Py_XDECREF(op) if ((op) == NULL) ; else Py_DECREF(op)
 
 /*
+These are provided as conveniences to Python runtime embedders, so that
+they can have object code that is not dependent on Python compilation flags.
+*/
+PyAPI_FUNC(void) Py_IncRef(PyObject *);
+PyAPI_FUNC(void) Py_DecRef(PyObject *);
+
+/*
 _Py_NoneStruct is an object of undefined type which can be used in contexts
 where NULL (nil) is not suitable (since NULL often means 'error').
 

@@ -146,6 +146,18 @@ _Py_NegativeRefcount(const char *fname, int lineno, PyObject *op)
 
 #endif /* Py_REF_DEBUG */
 
+void
+Py_IncRef(PyObject *o)
+{
+    Py_XINCREF(o);
+}
+
+void
+Py_DecRef(PyObject *o)
+{
+    Py_XDECREF(o);
+}
+
 PyObject *
 PyObject_Init(PyObject *op, PyTypeObject *tp)
 {

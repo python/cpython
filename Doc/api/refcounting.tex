@@ -42,6 +42,11 @@ of Python objects.
   applies.
 \end{cfuncdesc}
 
+The following functions are for runtime dynamic embedding of Python:
+\cfunction{Py_IncRef(PyObject *o)}, \cfunction{Py_DecRef(PyObject *o)}.
+They are simply exported function versions of \cfunction{Py_XINCREF()} and 
+\cfunction{Py_XDECREF()}, respectively.
+
 The following functions or macros are only for use within the
 interpreter core: \cfunction{_Py_Dealloc()},
 \cfunction{_Py_ForgetReference()}, \cfunction{_Py_NewReference()}, as
