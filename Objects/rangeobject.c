@@ -2,6 +2,8 @@
 /* Range object implementation */
 
 #include "Python.h"
+#include "structmember.h"
+#include <string.h>
 
 typedef struct {
 	PyObject_HEAD
@@ -193,21 +195,29 @@ range_contains(rangeobject *r, PyObject *obj)
 	if (num < 0 && PyErr_Occurred())
 		return -1;
 
-	if (num < r->start || (num - r->start) % r->step)
-		return 0;
-	if (num > (r->start + (r->len * r->step)))
-		return 0;
+	if (r->step > 0) {
+		if ((num < r->start) || ((num - r->start) % r->step))
+			return 0;
+		if (num >= (r->start + (r->len * r->step)))
+			return 0;
+	}
+	else {
+		if ((num > r->start) || ((num - r->start) % r->step))
+			return 0;
+		if (num <= (r->start + (r->len * r->step)))
+			return 0;
+	}
 	return 1;
 }
 
 static PySequenceMethods range_as_sequence = {
-	(inquiry)range_length, /*sq_length*/
+	(inquiry)range_length,	/*sq_length*/
 	(binaryfunc)range_concat, /*sq_concat*/
 	(intargfunc)range_repeat, /*sq_repeat*/
 	(intargfunc)range_item, /*sq_item*/
 	(intintargfunc)range_slice, /*sq_slice*/
-	0,		/*sq_ass_item*/
-	0,		/*sq_ass_slice*/
+	0,			/*sq_ass_item*/
+	0,			/*sq_ass_slice*/
 	(objobjproc)range_contains, /*sq_contains*/
 };
 

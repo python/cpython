@@ -31,6 +31,8 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 - #119622:  compile errors due to redundant atof decls. Removed from
   Python/compile.c and Python/marshal.c
 
+- #121965 -- fixing containment in xrange() objects
+
 
 What's New in Python 2.0?
 =========================
