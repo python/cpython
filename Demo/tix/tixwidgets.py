@@ -294,7 +294,7 @@ def spin_validate(w):
 
     try:
 	i = states.index(demo_spintxt.get())
-    except:
+    except ValueError:
 	return states[0]
     return states[i]
     # why this procedure works as opposed to the previous one beats me.
