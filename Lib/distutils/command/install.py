@@ -8,7 +8,7 @@ __revision__ = "$Id$"
 
 import sys, os, string
 from types import *
-from distutils.core import Command
+from distutils.core import Command, DEBUG
 from distutils import sysconfig
 from distutils.util import write_file, native_path, subst_vars, change_root
 from distutils.errors import DistutilsOptionError
@@ -240,9 +240,10 @@ class install (Command):
         self.config_vars['base'] = self.install_base
         self.config_vars['platbase'] = self.install_platbase
 
-        from pprint import pprint
-        print "config vars:"
-        pprint (self.config_vars)
+        if DEBUG:
+            from pprint import pprint
+            print "config vars:"
+            pprint (self.config_vars)
 
         # Expand "~" and configuration variables in the installation
         # directories.
@@ -289,17 +290,17 @@ class install (Command):
     # finalize_options ()
 
 
-    # hack for debugging output
     def dump_dirs (self, msg):
-        from distutils.fancy_getopt import longopt_xlate
-        print msg + ":"
-        for opt in self.user_options:
-            opt_name = opt[0]
-            if opt_name[-1] == "=":
-                opt_name = opt_name[0:-1]
-            opt_name = string.translate (opt_name, longopt_xlate)
-            val = getattr (self, opt_name)
-            print "  %s: %s" % (opt_name, val)
+        if DEBUG:
+            from distutils.fancy_getopt import longopt_xlate
+            print msg + ":"
+            for opt in self.user_options:
+                opt_name = opt[0]
+                if opt_name[-1] == "=":
+                    opt_name = opt_name[0:-1]
+                opt_name = string.translate (opt_name, longopt_xlate)
+                val = getattr (self, opt_name)
+                print "  %s: %s" % (opt_name, val)
 
 
     def finalize_unix (self):
