@@ -56,18 +56,25 @@ class HelperFunctionsTests(unittest.TestCase):
                             "%s from sys.path not found in set returned "
                             "by _init_pathinfo(): %s" % (entry, dir_set))
 
+    def pth_file_tests(self, pth_file):
+        """Contain common code for testing results of reading a .pth file"""
+        self.failUnless(pth_file.imported in sys.modules,
+                "%s not in sys.path" % pth_file.imported)
+        self.failUnless(site.makepath(pth_file.good_dir_path)[0] in sys.path)
+        self.failUnless(not os.path.exists(pth_file.bad_dir_path))
+
     def test_addpackage(self):
         # Make sure addpackage() imports if the line starts with 'import',
         # adds directories to sys.path for any line in the file that is not a
         # comment or import that is a valid directory name for where the .pth
         # file resides; invalid directories are not added
         pth_file = PthFile()
-        pth_file.cleanup()  # to make sure that nothing is pre-existing that
-                            # shouldn't be
+        pth_file.cleanup(prep=True)  # to make sure that nothing is
+                                      # pre-existing that shouldn't be
         try:
             pth_file.create()
             site.addpackage(pth_file.base_dir, pth_file.filename, set())
-            unittest.FunctionTestCase(pth_file.test)
+            self.pth_file_tests(pth_file)
         finally:
             pth_file.cleanup()
 
@@ -75,11 +82,12 @@ class HelperFunctionsTests(unittest.TestCase):
         # Same tests for test_addpackage since addsitedir() essentially just
         # calls addpackage() for every .pth file in the directory
         pth_file = PthFile()
-        pth_file.cleanup() # Make sure that nothing is pre-existing that is
-                           # tested for
+        pth_file.cleanup(prep=True) # Make sure that nothing is pre-existing
+                                    # that is tested for
         try:
+            pth_file.create()
             site.addsitedir(pth_file.base_dir, set())
-            unittest.FunctionTestCase(pth_file.test)
+            self.pth_file_tests(pth_file)
         finally:
             pth_file.cleanup()
 
@@ -92,7 +100,7 @@ class PthFile(object):
         self.filename = filename_base + ".pth"
         self.base_dir = os.path.abspath('')
         self.file_path = os.path.join(self.base_dir, self.filename)
-        self.imported = "time"
+        self.imported = imported
         self.good_dirname = good_dirname
         self.bad_dirname = bad_dirname
         self.good_dir_path = os.path.join(self.base_dir, self.good_dirname)
@@ -120,34 +128,23 @@ class PthFile(object):
             FILE.close()
         os.mkdir(self.good_dir_path)
 
-    def cleanup(self):
+    def cleanup(self, prep=False):
         """Make sure that the .pth file is deleted, self.imported is not in
         sys.modules, and that both self.good_dirname and self.bad_dirname are
         not existing directories."""
-        try:
+        if os.path.exists(self.file_path):
             os.remove(self.file_path)
-        except OSError:
-            pass
-        try:
-            del sys.modules[self.imported]
-        except KeyError:
-            pass
-        try:
+        if prep:
+            self.imported_module = sys.modules.get(self.imported)
+            if self.imported_module:
+                del sys.modules[self.imported]
+        else:
+            if self.imported_module:
+                sys.modules[self.imported] = self.imported_module
+        if os.path.exists(self.good_dir_path):
             os.rmdir(self.good_dir_path)
-        except OSError:
-            pass
-        try:
+        if os.path.exists(self.bad_dir_path):
             os.rmdir(self.bad_dir_path)
-        except OSError:
-            pass
-
-    def test(self):
-        """Test to make sure that was and was not supposed to be created by
-        using the .pth file occurred"""
-        assert site.makepath(self.good_dir_path)[0] in sys.path
-        assert self.imported in sys.modules
-        assert not os.path.exists(self.bad_dir_path)
-
 
 class ImportSideEffectTests(unittest.TestCase):
     """Test side-effects from importing 'site'."""
