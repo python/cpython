@@ -36,6 +36,9 @@
 # Adapted to Python 1.1 (where some hacks to overcome coercion are unnecessary)
 # by Guido van Rossum
 
+# Note that as of Python 2.3, a datetime module is included in the stardard
+# library.
+
 # vi:set tabsize=8:
 
 _MONTH_NAMES = [ 'January', 'February', 'March', 'April', 'May',
