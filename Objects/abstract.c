@@ -1220,7 +1220,7 @@ PySequence_Tuple(PyObject *v)
 				n += 10;
 			else
 				n += 100;
-			if (_PyTuple_Resize(&result, n, 0) != 0) {
+			if (_PyTuple_Resize(&result, n) != 0) {
 				Py_DECREF(item);
 				goto Fail;
 			}
@@ -1230,7 +1230,7 @@ PySequence_Tuple(PyObject *v)
 
 	/* Cut tuple back if guess was too large. */
 	if (j < n &&
-	    _PyTuple_Resize(&result, j, 0) != 0)
+	    _PyTuple_Resize(&result, j) != 0)
 		goto Fail;
 
 	Py_DECREF(it);

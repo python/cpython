@@ -488,11 +488,10 @@ PyTypeObject PyTuple_Type = {
    is only one module referencing the object.  You can also think of it
    as creating a new tuple object and destroying the old one, only more
    efficiently.  In any case, don't use this if the tuple may already be
-   known to some other part of the code.  The last_is_sticky is not used
-   and must always be false. */
+   known to some other part of the code. */
 
 int
-_PyTuple_Resize(PyObject **pv, int newsize, int last_is_sticky)
+_PyTuple_Resize(PyObject **pv, int newsize)
 {
 	register PyTupleObject *v;
 	register PyTupleObject *sv;
@@ -500,7 +499,7 @@ _PyTuple_Resize(PyObject **pv, int newsize, int last_is_sticky)
 	int sizediff;
 
 	v = (PyTupleObject *) *pv;
-	if (v == NULL || !PyTuple_Check(v) || last_is_sticky ||
+	if (v == NULL || !PyTuple_Check(v) ||
 	    (v->ob_size != 0 && v->ob_refcnt != 1)) {
 		*pv = 0;
 		Py_XDECREF(v);
