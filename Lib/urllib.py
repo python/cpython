@@ -87,6 +87,7 @@ class URLopener:
 	def __init__(self, proxies=None):
 		if proxies is None:
 			proxies = getproxies()
+		assert hasattr(proxies, 'has_key'), "proxies must be a mapping"
 		self.proxies = proxies
 		server_version = "Python-urllib/%s" % __version__
 		self.addheaders = [('User-agent', server_version)]
