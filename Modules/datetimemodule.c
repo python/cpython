@@ -822,6 +822,34 @@ classify_utcoffset(PyObject *op, int *offset)
 	return none ? OFFSET_NAIVE : OFFSET_AWARE;
 }
 
+/* Classify two objects as to whether they're naive or offset-aware.
+ * This isn't quite the same as calling classify_utcoffset() twice:  for
+ * binary operations (comparison and subtraction), we generally want to
+ * ignore the tzinfo members if they're identical.  This is by design,
+ * so that results match "naive" expectations when mixing objects from a
+ * single timezone.  So in that case, this sets both offsets to 0 and
+ * both naiveties to OFFSET_NAIVE.
+ * The function returns 0 if everything's OK, and -1 on error.
+ */
+static int
+classify_two_utcoffsets(PyObject *o1, int *offset1, naivety *n1,
+			PyObject *o2, int *offset2, naivety *n2)
+{
+	if (get_tzinfo_member(o1) == get_tzinfo_member(o2)) {
+		*offset1 = *offset2 = 0;
+		*n1 = *n2 = OFFSET_NAIVE;
+	}
+	else {
+		*n1 = classify_utcoffset(o1, offset1);
+		if (*n1 == OFFSET_ERROR)
+			return -1;
+		*n2 = classify_utcoffset(o2, offset2);
+		if (*n2 == OFFSET_ERROR)
+			return -1;
+	}
+	return 0;
+}
+
 /* repr is like "someclass(arg1, arg2)".  If tzinfo isn't None,
  * stuff
  *     ", tzinfo=" + repr(tzinfo)
@@ -3136,27 +3164,10 @@ datetime_richcompare(PyDateTime_DateTime *self, PyObject *other, int op)
 			     other->ob_type->tp_name);
 		return NULL;
 	}
-	/* Ignore utcoffsets if they have identical tzinfo members.  This
-	 * isn't an optimization, it's design.  If utcoffset() doesn't ignore
-	 * its argument, it may return different results for self and other
-	 * even if they have identical tzinfo members, and we're deliberately
-	 * suppressing that (possible) difference.
-	 */
-	if (get_tzinfo_member((PyObject *)self) == get_tzinfo_member(other)) {
-		offset1 = offset2 = 0;
-		n1 = n2 = OFFSET_NAIVE;
-	}
-	else {
-		n1 = classify_utcoffset((PyObject *)self, &offset1);
-		assert(n1 != OFFSET_UNKNOWN);
-		if (n1 == OFFSET_ERROR)
-			return NULL;
 
-		n2 = classify_utcoffset(other, &offset2);
-		assert(n2 != OFFSET_UNKNOWN);
-		if (n2 == OFFSET_ERROR)
-			return NULL;
-	}
+	if (classify_two_utcoffsets((PyObject *)self, &offset1, &n1,
+				     other, &offset2, &n2) < 0)
+		return NULL;
  	/* If they're both naive, or both aware and have the same offsets,
 	 * we get off cheap.  Note that if they're both naive, offset1 ==
 	 * offset2 == 0 at this point.
@@ -3667,28 +3678,9 @@ time_richcompare(PyDateTime_Time *self, PyObject *other, int op)
 			     other->ob_type->tp_name);
 		return NULL;
 	}
-	/* Ignore utcoffsets if they have identical tzinfo members.  This
-	 * isn't an optimization, it's design.  If utcoffset() doesn't ignore
-	 * its argument, it may return different results for self and other
-	 * even if they have identical tzinfo members, and we're deliberately
-	 * suppressing that (possible) difference.
-	 */
-	if (get_tzinfo_member((PyObject *)self) == get_tzinfo_member(other)) {
-		offset1 = offset2 = 0;
-		n1 = n2 = OFFSET_NAIVE;
-	}
-	else {
-		n1 = classify_utcoffset((PyObject *)self, &offset1);
-		assert(n1 != OFFSET_UNKNOWN);
-		if (n1 == OFFSET_ERROR)
-			return NULL;
-
-		n2 = classify_utcoffset(other, &offset2);
-		assert(n2 != OFFSET_UNKNOWN);
-		if (n2 == OFFSET_ERROR)
-			return NULL;
-	}
-
+	if (classify_two_utcoffsets((PyObject *)self, &offset1, &n1,
+				     other, &offset2, &n2) < 0)
+		return NULL;
 	/* If they're both naive, or both aware and have the same offsets,
 	 * we get off cheap.  Note that if they're both naive, offset1 ==
 	 * offset2 == 0 at this point.
@@ -4624,30 +4616,9 @@ datetimetz_subtract(PyObject *left, PyObject *right)
 			int offset1, offset2;
 			PyDateTime_Delta *delta;
 
-			/* Ignore utcoffsets if they have identical tzinfo
-			 * members.  This isn't an optimization, it's design.
-			 * If utcoffset() doesn't ignore its argument, it may
-			 * return different results for self and other even
-			 * if they have identical tzinfo members, and we're
-			 * deliberately suppressing that (possible) difference.
-			 */
-			if (get_tzinfo_member(left) ==
-			    get_tzinfo_member(right)) {
-				offset1 = offset2 = 0;
-				n1 = n2 = OFFSET_NAIVE;
-			}
-			else {
-				n1 = classify_utcoffset(left, &offset1);
-				assert(n1 != OFFSET_UNKNOWN);
-				if (n1 == OFFSET_ERROR)
-					return NULL;
-
-				n2 = classify_utcoffset(right, &offset2);
-				assert(n2 != OFFSET_UNKNOWN);
-				if (n2 == OFFSET_ERROR)
-					return NULL;
-			}
-
+			if (classify_two_utcoffsets(left, &offset1, &n1,
+						    right, &offset2, &n2) < 0)
+				return NULL;
 			if (n1 != n2) {
 				PyErr_SetString(PyExc_TypeError,
 					"can't subtract offset-naive and "
