@@ -19,7 +19,7 @@ class _Environ:
         else:
             raise KeyError
     def __setitem__(self, key, item):
-        riscos.setenv(key, item)
+        riscos.putenv(key, item)
     def __delitem__(self, key):
         riscos.delenv(key)
     def clear(self):
