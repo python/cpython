@@ -1,10 +1,12 @@
 \section{Standard Modules \sectcode{anydbm} and \sectcode{dumbdbm}}
+\label{module-anydbm}
+\label{module-dumbdbm}
 \stmodindex{anydbm}
 \stmodindex{dumbdbm}
 
-\code{anydbm} is a generic interface to variants of the DBM
+\module{anydbm} is a generic interface to variants of the DBM
 database--DBM, GDBM, or dbhash.  If none of these modules is
-installed, the slow-but-simple implementation in module \code{dumbdbm}
+installed, the slow-but-simple implementation in module \module{dumbdbm}
 will be used.   Both modules provide the same interface:
 
 % not the best solution, but it's what you get for documenting both
@@ -12,7 +14,7 @@ will be used.   Both modules provide the same interface:
 \setindexsubitem{(in modules anydbm, dumbdbm)}
 
 \begin{funcdesc}{open}{filename\optional{\, flag\, mode}}
-Open the database file \var{filename} and return a corresponding object.  
+Open the database file \var{filename} and return a corresponding object.
 The optional \var{flag} argument can be
 \code{'r'} to open an existing database for reading only,
 \code{'w'} to open an existing database for reading and writing,
@@ -25,13 +27,13 @@ only when the database has to be created.  It defaults to octal
 \code{0666} (and will be modified by the prevailing umask).
 \end{funcdesc}
 
-The object returned by \code{open()} supports most of the same
+The object returned by \function{open()} supports most of the same
 functionality as dictionaries; keys and their corresponding values can
-be stored, retrieved, and deleted, and the \code{has_key()} and
-\code{keys()} methods are available.  Keys and values must always be
+be stored, retrieved, and deleted, and the \method{has_key()} and
+\method{keys()} methods are available.  Keys and values must always be
 strings.
 
-Both modules also export the exception \code{error}, which is raised
-for various problems.  The \code{anydbm.error} exception is simply a
-different name for the \code{error} exception of the underlying
-implementation module used.
+Both modules also export the exception \exception{error}, which is
+raised for various problems.  The \exception{anydbm.error} exception
+is simply a different name for the \exception{error} exception of the
+underlying implementation module used.
