@@ -38,6 +38,10 @@ class FixedOffset(tzinfo):
     def dst(self, dt):
         return self.__dstoffset
 
+class PicklableFixedOffset(FixedOffset):
+    def __init__(self, offset=None, name=None, dstoffset=None):
+        FixedOffset.__init__(self, offset, name, dstoffset)
+
 class TestTZInfo(unittest.TestCase):
 
     def test_non_abstractness(self):
@@ -90,9 +94,9 @@ class TestTZInfo(unittest.TestCase):
         import pickle, cPickle
 
         # Make sure we can pickle/unpickle an instance of a subclass.
-        orig = FixedOffset(-300, 'cookie')
+        orig = PicklableFixedOffset(-300, 'cookie')
         self.failUnless(isinstance(orig, tzinfo))
-        self.failUnless(type(orig) is FixedOffset)
+        self.failUnless(type(orig) is PicklableFixedOffset)
         self.assertEqual(orig.utcoffset(None), -300)
         self.assertEqual(orig.tzname(None), 'cookie')
         for pickler in pickle, cPickle:
@@ -100,7 +104,7 @@ class TestTZInfo(unittest.TestCase):
                 green = pickler.dumps(orig, binary)
                 derived = pickler.loads(green)
                 self.failUnless(isinstance(derived, tzinfo))
-                self.failUnless(type(derived) is FixedOffset)
+                self.failUnless(type(derived) is PicklableFixedOffset)
                 self.assertEqual(derived.utcoffset(None), -300)
                 self.assertEqual(derived.tzname(None), 'cookie')
 
@@ -1606,13 +1610,13 @@ class TestTimeTZ(TestTime):
                 self.assertEqual(orig, derived)
 
         # Try one with a tzinfo.
-        tinfo = FixedOffset(-300, 'cookie')
+        tinfo = PicklableFixedOffset(-300, 'cookie')
         orig = self.theclass(5, 6, 7, tzinfo=tinfo)
         state = orig.__getstate__()
         derived = self.theclass()
         derived.__setstate__(state)
         self.assertEqual(orig, derived)
-        self.failUnless(isinstance(derived.tzinfo, FixedOffset))
+        self.failUnless(isinstance(derived.tzinfo, PicklableFixedOffset))
         self.assertEqual(derived.utcoffset(), -300)
         self.assertEqual(derived.tzname(), 'cookie')
 
@@ -1621,7 +1625,8 @@ class TestTimeTZ(TestTime):
                 green = pickler.dumps(orig, binary)
                 derived = pickler.loads(green)
                 self.assertEqual(orig, derived)
-                self.failUnless(isinstance(derived.tzinfo, FixedOffset))
+                self.failUnless(isinstance(derived.tzinfo,
+                                PicklableFixedOffset))
                 self.assertEqual(derived.utcoffset(), -300)
                 self.assertEqual(derived.tzname(), 'cookie')
 
@@ -1767,13 +1772,13 @@ class TestDateTimeTZ(TestDateTime):
                 self.assertEqual(orig, derived)
 
         # Try one with a tzinfo.
-        tinfo = FixedOffset(-300, 'cookie')
+        tinfo = PicklableFixedOffset(-300, 'cookie')
         orig = self.theclass(*args, **{'tzinfo': tinfo})
         state = orig.__getstate__()
         derived = self.theclass(1, 1, 1)
         derived.__setstate__(state)
         self.assertEqual(orig, derived)
-        self.failUnless(isinstance(derived.tzinfo, FixedOffset))
+        self.failUnless(isinstance(derived.tzinfo, PicklableFixedOffset))
         self.assertEqual(derived.utcoffset(), -300)
         self.assertEqual(derived.tzname(), 'cookie')
 
@@ -1782,7 +1787,8 @@ class TestDateTimeTZ(TestDateTime):
                 green = pickler.dumps(orig, binary)
                 derived = pickler.loads(green)
                 self.assertEqual(orig, derived)
-                self.failUnless(isinstance(derived.tzinfo, FixedOffset))
+                self.failUnless(isinstance(derived.tzinfo,
+                                PicklableFixedOffset))
                 self.assertEqual(derived.utcoffset(), -300)
                 self.assertEqual(derived.tzname(), 'cookie')
 
