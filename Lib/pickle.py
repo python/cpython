@@ -288,7 +288,7 @@ class Pickler:
 
         # Check for a class with a custom metaclass; treat as regular class
         try:
-            issc = issubclass(t, type)
+            issc = issubclass(t, TypeType)
         except TypeError: # t is not a class (old Boost; see SF #502085)
             issc = 0
         if issc:
@@ -313,12 +313,12 @@ class Pickler:
                                         (t.__name__, obj))
 
         # Check for string returned by reduce(), meaning "save as global"
-        if type(rv) is str:
+        if type(rv) is StringType:
             self.save_global(obj, rv)
             return
 
         # Assert that reduce() returned a tuple
-        if type(rv) is not tuple:
+        if type(rv) is not TupleType:
             raise PicklingError("%s must return string or tuple" % reduce)
 
         # Assert that it returned an appropriately sized tuple
@@ -347,7 +347,7 @@ class Pickler:
         # This API is called by some subclasses
 
         # Assert that args is a tuple or None
-        if not isinstance(args, tuple):
+        if not isinstance(args, TupleType):
             raise PicklingError("args from reduce() should be a tuple")
 
         # Assert that func is callable
@@ -425,7 +425,7 @@ class Pickler:
 
     def save_none(self, obj):
         self.write(NONE)
-    dispatch[type(None)] = save_none
+    dispatch[NoneType] = save_none
 
     def save_bool(self, obj):
         if self.proto >= 2:
@@ -456,7 +456,7 @@ class Pickler:
                 return
         # Text pickle, or int too big to fit in signed 4-byte format.
         self.write(INT + repr(obj) + '\n')
-    dispatch[int] = save_int
+    dispatch[IntType] = save_int
 
     def save_long(self, obj, pack=struct.pack):
         if self.proto >= 2:
@@ -468,14 +468,14 @@ class Pickler:
                 self.write(LONG4 + pack("<i", n) + bytes)
             return
         self.write(LONG + repr(obj) + '\n')
-    dispatch[long] = save_long
+    dispatch[LongType] = save_long
 
     def save_float(self, obj, pack=struct.pack):
         if self.bin:
             self.write(BINFLOAT + pack('>d', obj))
         else:
             self.write(FLOAT + repr(obj) + '\n')
-    dispatch[float] = save_float
+    dispatch[FloatType] = save_float
 
     def save_string(self, obj, pack=struct.pack):
         if self.bin:
@@ -487,7 +487,7 @@ class Pickler:
         else:
             self.write(STRING + repr(obj) + '\n')
         self.memoize(obj)
-    dispatch[str] = save_string
+    dispatch[StringType] = save_string
 
     def save_unicode(self, obj, pack=struct.pack):
         if self.bin:
@@ -501,7 +501,7 @@ class Pickler:
         self.memoize(obj)
     dispatch[UnicodeType] = save_unicode
 
-    if str == UnicodeType:
+    if StringType == UnicodeType:
         # This is true for Jython
         def save_string(self, obj, pack=struct.pack):
             unicode = obj.isunicode()
@@ -527,7 +527,7 @@ class Pickler:
                 else:
                     self.write(STRING + repr(obj) + '\n')
             self.memoize(obj)
-        dispatch[str] = save_string
+        dispatch[StringType] = save_string
 
     def save_tuple(self, obj):
         write = self.write
@@ -580,7 +580,7 @@ class Pickler:
         self.write(TUPLE)
         self.memoize(obj)
 
-    dispatch[tuple] = save_tuple
+    dispatch[TupleType] = save_tuple
 
     # save_empty_tuple() isn't used by anything in Python 2.3.  However, I
     # found a Pickler subclass in Zope3 that calls it, so it's not harmless
@@ -599,7 +599,7 @@ class Pickler:
         self.memoize(obj)
         self._batch_appends(iter(obj))
 
-    dispatch[list] = save_list
+    dispatch[ListType] = save_list
 
     # Keep in synch with cPickle's BATCHSIZE.  Nothing will break if it gets
     # out of synch, though.
@@ -648,7 +648,7 @@ class Pickler:
         self.memoize(obj)
         self._batch_setitems(obj.iteritems())
 
-    dispatch[dict] = save_dict
+    dispatch[DictionaryType] = save_dict
     if not PyStringMap is None:
         dispatch[PyStringMap] = save_dict
 
@@ -770,7 +770,7 @@ class Pickler:
     dispatch[ClassType] = save_global
     dispatch[FunctionType] = save_global
     dispatch[BuiltinFunctionType] = save_global
-    dispatch[type] = save_global
+    dispatch[TypeType] = save_global
 
 # Pickling helpers
 
