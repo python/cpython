@@ -1,7 +1,10 @@
 # Implement (a subset of) Sun XDR -- RFC1014.
 
 
-import struct
+try:
+	import struct
+except ImportError:
+	struct = None
 
 
 Long = type(0L)
@@ -23,7 +26,7 @@ class Packer:
 		self.buf = self.buf + \
 			(chr(int(x>>24 & 0xff)) + chr(int(x>>16 & 0xff)) + \
 			 chr(int(x>>8 & 0xff)) + chr(int(x & 0xff)))
-	if struct.pack('l', 1) == '\0\0\0\1':
+	if struct and struct.pack('l', 1) == '\0\0\0\1':
 		def pack_uint(self, x):
 			if type(x) == Long:
 				x = int((x + 0x80000000L) % 0x100000000L \
@@ -92,7 +95,7 @@ class Unpacker:
 		# as a nonnegative Python int
 		if x < 0x80000000L: x = int(x)
 		return x
-	if struct.unpack('l', '\0\0\0\1') == 1:
+	if struct and struct.unpack('l', '\0\0\0\1') == 1:
 		def unpack_uint(self):
 			i = self.pos
 			self.pos = j = i+4
