@@ -48,7 +48,7 @@ def testimage(name):
 
         parts = ourname.split(os.sep)
         parts[-1] = name
-        name = os.sep.joinfields(parts)
+        name = os.sep.join(parts)
         sizes = imgfile.getsizes(name)
     if verbose:
         print 'Opening test image: %s, sizes: %s' % (name, str(sizes))
