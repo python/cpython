@@ -90,7 +90,6 @@ __all__ = [
     'script_from_examples',
     'testsource',
     'debug_src',
-    'debug_script',
     'debug',
 ]
 
