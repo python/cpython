@@ -119,7 +119,7 @@ new_function(unused, args)
 }
 
 static char new_code_doc[] =
-"Create a code object from (ARGCOUNT, NLOCALS, STACKSIZE, FLAGS, CODESTRING, CONSTANTS, NAMES, VARNAMES, FILENAME, NAME).";
+"Create a code object from (ARGCOUNT, NLOCALS, STACKSIZE, FLAGS, CODESTRING, CONSTANTS, NAMES, VARNAMES, FILENAME, NAME, FIRSTLINENO, LNOTAB).";
 
 static PyObject *
 new_code(unused, args)
@@ -136,18 +136,21 @@ new_code(unused, args)
 	PyObject* varnames;
 	PyObject* filename;
 	PyObject* name;
+	int firstlineno;
+	PyObject* lnotab;
   
-	if (!PyArg_ParseTuple(args, "iiiiSO!O!O!SS",
+	if (!PyArg_ParseTuple(args, "iiiiSO!O!O!SSiS",
 			      &argcount, &nlocals, &stacksize, &flags,
 			      &code,
 			      &PyTuple_Type, &consts,
 			      &PyTuple_Type, &names,
 			      &PyTuple_Type, &varnames,
-			      &filename, &name))
+			      &filename, &name,
+			      &firstlineno, &lnotab))
 		return NULL;
 	return (PyObject *)PyCode_New(argcount, nlocals, stacksize, flags,
 				      code, consts, names, varnames,
-				      filename, name);
+				      filename, name, firstlineno, lnotab);
 }
 
 static char new_module_doc[] =
