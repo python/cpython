@@ -63,9 +63,9 @@ class CarbonEvents_Scanner(Scanner_OSX):
 		return [
 			"sHandler",
 			"MacCreateEvent",
-			"TrackMouseLocationWithOptions",
-			"TrackMouseLocation",
-			"TrackMouseRegion",
+#			"TrackMouseLocationWithOptions",
+#			"TrackMouseLocation",
+#			"TrackMouseRegion",
 			"RegisterToolboxObjectClass",
 			"UnregisterToolboxObjectClass",
 			"ProcessHICommand",

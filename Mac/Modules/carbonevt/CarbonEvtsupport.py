@@ -68,6 +68,11 @@ class EventHandlerRefMethod(OSErrMethodGenerator):
 		OutRbrace()
 
 
+RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
+GrafPtr = OpaqueByValueType("GrafPtr", "GrafObj")
+MouseTrackingResult = UInt16
+
+
 includestuff = r"""
 #ifdef WITHOUT_FRAMEWORKS
 #include <CarbonEvents.h>
