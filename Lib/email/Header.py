@@ -205,11 +205,12 @@ class Header:
         s may be a byte string or a Unicode string.  If it is a byte string
         (i.e. isinstance(s, StringType) is true), then charset is the encoding
         of that byte string, and a UnicodeError will be raised if the string
-        cannot be decoded with that charset.  If `s' is a Unicode string, then
+        cannot be decoded with that charset.  If s is a Unicode string, then
         charset is a hint specifying the character set of the characters in
         the string.  In this case, when producing an RFC 2822 compliant header
         using RFC 2047 rules, the Unicode string will be encoded using the
-        following charsets in order: us-ascii, the charset hint, utf-8.
+        following charsets in order: us-ascii, the charset hint, utf-8.  The
+        first character set not to provoke a UnicodeError is used.
         """
         if charset is None:
             charset = self._charset
@@ -376,7 +377,7 @@ class Header:
         return joiner.join(chunks)
 
     def encode(self):
-        """Encode a message header, possibly converting charset and encoding.
+        """Encode a message header into an RFC-compliant format.
 
         There are many issues involved in converting a given string for use in
         an email header.  Only certain character sets are readable in most
