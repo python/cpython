@@ -471,7 +471,6 @@ class Window:
 		self.parent.appendwindow(self.wid, self)
 		
 	def close(self):
-		pass
 		self.do_postclose()
 			
 	def do_postclose(self):
@@ -540,6 +539,7 @@ class Window:
 	
 	def do_rawupdate(self, window, event):
 		if DEBUG: print "raw update for", window
+		SetPort(window)
 		window.BeginUpdate()
 		self.do_update(window, event)
 		window.EndUpdate()
@@ -565,6 +565,7 @@ class ControlsWindow(Window):
 
 	def do_inContent(self, partcode, window, event):
 		(what, message, when, where, modifiers) = event
+		SetPort(window)  # XXXX Needed?
 		local = GlobalToLocal(where)
 		ctltype, control = FindControl(local, window)
 		if ctltype and control:
