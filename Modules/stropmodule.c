@@ -33,13 +33,23 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <errno.h>
 
+/* The lstrip(), rstrip() and strip() functions are implemented
+   in do_strip(), which uses an additional parameter to indicate what
+   type of strip should occur. */
+
+#define LEFTSTRIP 0
+#define RIGHTSTRIP 1
+#define BOTHSTRIP 2
+
 
 static object *
-split_whitespace(s, len)
+split_whitespace(s, len, maxsplit)
 	char *s;
 	int len;
+	int maxsplit;
 {
 	int i, j, err;
+	int countsplit;
 	object *list, *item;
 
 	list = newlistobject(0);
@@ -47,6 +57,8 @@ split_whitespace(s, len)
 		return NULL;
 
 	i = 0;
+	countsplit = 0;
+
 	while (i < len) {
 		while (i < len && isspace(Py_CHARMASK(s[i]))) {
 			i = i+1;
@@ -67,6 +79,23 @@ split_whitespace(s, len)
 				DECREF(list);
 				return NULL;
 			}
+
+			countsplit++;
+			if (maxsplit && (countsplit >= maxsplit)) {
+				item = newsizedstringobject(s+i, (int)(len - i));
+				if (item == NULL) {
+					DECREF(list);
+					return NULL;
+				}
+				err = addlistitem(list, item);
+				DECREF(item);
+				if (err < 0) {
+					DECREF(list);
+					return NULL;
+				}
+				i = len;
+			}
+	
 		}
 	}
 
@@ -80,15 +109,18 @@ strop_splitfields(self, args)
 	object *args;
 {
 	int len, n, i, j, err;
+	int splitcount, maxsplit;
 	char *s, *sub;
 	object *list, *item;
 
 	sub = NULL;
 	n = 0;
-	if (!newgetargs(args, "s#|z#", &s, &len, &sub, &n))
+	splitcount = 0;
+	maxsplit = 0;
+	if (!newgetargs(args, "s#|z#i", &s, &len, &sub, &n, &maxsplit))
 		return NULL;
 	if (sub == NULL)
-		return split_whitespace(s, len);
+		return split_whitespace(s, len, maxsplit);
 	if (n == 0) {
 		err_setstr(ValueError, "empty separator");
 		return NULL;
@@ -109,6 +141,9 @@ strop_splitfields(self, args)
 			if (err < 0)
 				goto fail;
 			i = j = i + n;
+			splitcount++;
+			if (maxsplit && (splitcount >= maxsplit))
+				break;
 		}
 		else
 			i++;
@@ -265,6 +300,42 @@ strop_rfind(self, args)
 	return newintobject(-1L);
 }
 
+static object *
+do_strip(args, striptype)
+	object *args;
+	int striptype;
+{
+	char *s;
+	int len, i, j;
+
+
+	if (!getargs(args, "s#", &s, &len))
+		return NULL;
+
+	i = 0;
+	if (striptype != RIGHTSTRIP) {
+		while (i < len && isspace(Py_CHARMASK(s[i]))) {
+			i++;
+		}
+	}
+	
+
+	j = len;
+	if (striptype != LEFTSTRIP) {
+		do {
+			j--;
+		} while (j >= i && isspace(Py_CHARMASK(s[j])));
+		j++;
+	}
+
+	if (i == 0 && j == len) {
+		INCREF(args);
+		return args;
+	}
+	else
+		return newsizedstringobject(s+i, j-i);
+}
+
 
 static object *
 strop_strip(self, args)
@@ -274,26 +345,29 @@ strop_strip(self, args)
 	char *s;
 	int len, i, j;
 
-	if (!getargs(args, "s#", &s, &len))
-		return NULL;
+	return do_strip(args, BOTHSTRIP);
+}
 
-	i = 0;
-	while (i < len && isspace(Py_CHARMASK(s[i]))) {
-		i++;
-	}
+static object *
+strop_lstrip(self, args)
+	object *self; /* Not used */
+	object *args;
+{
+	char *s;
+	int len, i, j;
 
-	j = len;
-	do {
-		j--;
-	} while (j >= i && isspace(Py_CHARMASK(s[j])));
-	j++;
+	return do_strip(args, LEFTSTRIP);
+}
 
-	if (i == 0 && j == len) {
-		INCREF(args);
-		return args;
-	}
-	else
-		return newsizedstringobject(s+i, j-i);
+static object *
+strop_rstrip(self, args)
+	object *self; /* Not used */
+	object *args;
+{
+	char *s;
+	int len, i, j;
+
+	return do_strip(args, RIGHTSTRIP);
 }
 
 
@@ -557,7 +631,7 @@ strop_maketrans(self, args)
 
 	if (PyTuple_Size(args)!=0) {
 		if (!PyArg_ParseTuple(args, "s#s#", &from, &fromlen, 
-			         &to, &tolen)) 
+				      &to, &tolen)) 
 			return NULL;	
 	}
 
@@ -604,7 +678,7 @@ strop_translate(self, args)
 	if (result == NULL)
 		return NULL;
 	output_start = output = PyString_AsString(result);
-        if (delete!=NULL && dellen!=0) {
+	if (delete!=NULL && dellen!=0) {
 		for (i = 0; i < inlen; i++) {
 			int c = Py_CHARMASK(*input++);
 			if (trans_table[c]!=-1) 
@@ -614,11 +688,11 @@ strop_translate(self, args)
 		if (inlen > 0 &&_PyString_Resize(&result, output-output_start))
 			return NULL; 
 	} else {
-                /* If no deletions are required, use a faster loop */
+		/* If no deletions are required, use a faster loop */
 		for (i = 0; i < inlen; i++) {
 			int c = Py_CHARMASK(*input++);
-                        *output++ = (char)trans_table[c];
-                }
+			*output++ = (char)trans_table[c];
+		}
 	}
 	return result;
 }
@@ -634,8 +708,10 @@ static struct methodlist strop_methods[] = {
 	{"find",	strop_find},
 	{"join",	strop_joinfields, 1},
 	{"joinfields",	strop_joinfields, 1},
+	{"lstrip",	strop_lstrip},
 	{"lower",	strop_lower},
 	{"rfind",	strop_rfind},
+	{"rstrip",	strop_rstrip},
 	{"split",	strop_splitfields, 1},
 	{"splitfields",	strop_splitfields, 1},
 	{"strip",	strop_strip},
