@@ -2120,8 +2120,6 @@ dump(Picklerobject *self, PyObject *args)
 static PyObject *
 Pickle_clear_memo(Picklerobject *self, PyObject *args) 
 {
-	if (!PyArg_ParseTuple(args,":clear_memo")) 
-		return NULL;
 	if (self->memo) 
 		PyDict_Clear(self->memo);
 	Py_INCREF(Py_None);
@@ -2290,9 +2288,8 @@ static struct PyMethodDef Pickler_methods[] =
 {
   {"dump",          (PyCFunction)Pickler_dump,  METH_VARARGS,
    "dump(object) --"
-   "Write an object in pickle format to the object's pickle stream\n"
-  },
-  {"clear_memo",  (PyCFunction)Pickle_clear_memo,  METH_VARARGS,
+   "Write an object in pickle format to the object's pickle stream"},
+  {"clear_memo",  (PyCFunction)Pickle_clear_memo,  METH_NOARGS,
    "clear_memo() -- Clear the picklers memo"},
   {"getvalue",  (PyCFunction)Pickle_getvalue,  METH_VARARGS,
    "getvalue() -- Finish picking a list-based pickle"},
