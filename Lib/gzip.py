@@ -141,9 +141,6 @@ class GzipFile:
             self.fileobj.write( self.compress.compress(data) )
             self.offset += len(data)
 
-    def writelines(self,lines):
-        self.write(" ".join(lines))
-
     def read(self, size=-1):
         if self.extrasize <= 0 and self.fileobj is None:
             return ''
@@ -305,7 +302,6 @@ class GzipFile:
     def readline(self, size=-1):
         if size < 0: size = sys.maxint
         bufs = []
-        orig_size = size
         readsize = min(100, size)    # Read from the file in small chunks
         while 1:
             if size == 0:
@@ -352,7 +348,6 @@ def _test():
     # Act like gzip; with -d, act like gunzip.
     # The input file is not deleted, however, nor are any other gzip
     # options or features supported.
-    import sys
     args = sys.argv[1:]
     decompress = args and args[0] == "-d"
     if decompress:
