@@ -468,7 +468,7 @@ ternary_op(PyObject *v,
 	if (mv != NULL && NEW_STYLE_NUMBER(v))
 		slotv = NB_TERNOP(mv, op_slot);
 	if (w->ob_type != v->ob_type &&
-	    mv != NULL && NEW_STYLE_NUMBER(w)) {
+	    mw != NULL && NEW_STYLE_NUMBER(w)) {
 		slotw = NB_TERNOP(mw, op_slot);
 		if (slotw == slotv)
 			slotw = NULL;
