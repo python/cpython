@@ -639,12 +639,12 @@ Win32 MS routine to get next line.
 
 Under MSVC 6:
 
-+ MS threadsafe getc is very slow (multiple layers of function calls
-  before+after each character, to lock+unlock the stream).
-+ The stream-locking functions are MS-internal -- can't access them
-  from user code.
-+ There's nothing Tim could find in the MS C or platform SDK libraries
-  that can worm around this.
++ MS threadsafe getc is very slow (multiple layers of function calls before+
+  after each character, to lock+unlock the stream).
++ The stream-locking functions are MS-internal -- can't access them from user
+  code.
++ There's nothing Tim could find in the MS C or platform SDK libraries that
+  can worm around this.
 + MS fgets locks/unlocks only once per line; it's the only hook we have.
 
 So we use fgets for speed(!), despite that it's painful.
@@ -731,12 +731,11 @@ ms_getline_hack(FILE *fp)
 	}
 	/* yuck:  fgets overwrote all the newlines, i.e. the entire buffer.
 	 * So this line isn't over yet, or maybe it is but we're exactly at
-	 *EOF; in either case, we're tired <wink>.
+	 * EOF; in either case, we're tired <wink>.
 	 */
 	assert(msbuf[INITBUFSIZE-1] == '\0');
 	total_v_size = INITBUFSIZE + INCBUFSIZE;
-	v = PyString_FromStringAndSize((char*)NULL,
-		(int)total_v_size);
+	v = PyString_FromStringAndSize((char*)NULL, (int)total_v_size);
 	if (v == NULL)
 		return v;
 	/* copy over everything except the last null byte */
