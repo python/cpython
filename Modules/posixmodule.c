@@ -424,6 +424,162 @@ posix_utime(self, args)
 #undef MTIME
 }
 
+
+#ifndef MSDOS
+
+/* Process Primitives */
+
+static object *
+posix__exit(self, args)
+	object *self;
+	object *args;
+{
+	int sts;
+	if (!getintarg(args, &sts))
+		return NULL;
+	_exit(sts);
+	/* NOTREACHED */
+}
+
+/* XXX To do: exece, execp */
+
+static object *
+posix_exec(self, args)
+	object *self;
+	object *args;
+{
+	object *path, *argv;
+	char **argvlist;
+	int i, argc;
+	object *(*getitem) PROTO((object *, int));
+
+	/* exec has two arguments: (path, argv), where
+	   argv is a list or tuple of strings. */
+
+	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 2) {
+ badarg:
+		err_badarg();
+		return NULL;
+	}
+	if (!getstrarg(gettupleitem(args, 0), &path))
+		return NULL;
+	argv = gettupleitem(args, 1);
+	if (argv == NULL)
+		goto badarg;
+	if (is_listobject(argv)) {
+		argc = getlistsize(argv);
+		getitem = getlistitem;
+	}
+	else if (is_tupleobject(argv)) {
+		argc = gettuplesize(argv);
+		getitem = gettupleitem;
+	}
+	else
+		goto badarg;
+
+	argvlist = NEW(char *, argc+1);
+	if (argvlist == NULL)
+		return NULL;
+	for (i = 0; i < argc; i++) {
+		object *arg;
+		if (!getstrarg((*getitem)(argv, i), &arg)) {
+			DEL(argvlist);
+			goto badarg;
+		}
+		argvlist[i] = getstringvalue(arg);
+	}
+	argvlist[argc] = NULL;
+
+	execv(getstringvalue(path), argvlist);
+	
+	/* If we get here it's definitely an error */
+
+	DEL(argvlist);
+	return posix_error();
+}
+
+static object *
+posix_fork(self, args)
+	object *self;
+	object *args;
+{
+	int pid;
+	pid = fork();
+	if (pid == -1)
+		return posix_error();
+	return newintobject((long)pid);
+}
+
+static object *
+posix_getpid(self, args)
+	object *self;
+	object *args;
+{
+	if (!getnoarg())
+		return NULL;
+	return newintobject((long)getpid());
+}
+
+static object *
+posix_getppid(self, args)
+	object *self;
+	object *args;
+{
+	if (!getnoarg())
+		return NULL;
+	return newintobject((long)getppid());
+}
+
+static object *
+posix_kill(self, args)
+	object *self;
+	object *args;
+{
+	int pid, sig;
+	if (!getintintarg(args, &pid, &sig))
+		return NULL;
+	if (kill(pid, sig) == -1)
+		return posix_error();
+	INCREF(None);
+	return None;
+}
+
+static object *
+posix_wait(self, args) /* Also waitpid() */
+	object *self;
+	object *args;
+{
+	object *v;
+	int pid, sts;
+	if (args == NULL)
+		pid = wait(&sts);
+	else {
+#ifdef NO_WAITPID
+		err_setstr(RuntimeError,
+		"posix.wait(pid, options) not supported on this system");
+#else
+		int options;
+		if (!getintintarg(args, &pid, &options))
+			return NULL;
+		pid = waitpid(pid, &sts, options);
+#endif
+	}
+	if (pid == -1)
+		return posix_error();
+	v = newtupleobject(2);
+	if (v != NULL) {
+		settupleitem(v, 0, newintobject((long)pid));
+		settupleitem(v, 1, newintobject((long)sts));
+		if (err_occurred()) {
+			DECREF(v);
+			v = NULL;
+		}
+	}
+	return v;
+}
+
+#endif /* MSDOS */
+
 #ifndef NO_LSTAT
 
 static object *
@@ -481,7 +637,15 @@ static struct methodlist posix_methods[] = {
 #endif
 	{"unlink",	posix_unlink},
 	{"utime",	posix_utime},
-	{"utimes",	posix_utime},	/* XXX for compatibility only */
+#ifndef MSDOS
+	{"_exit",	posix__exit},
+	{"exec",	posix_exec},
+	{"fork",	posix_fork},
+	{"getpid",	posix_getpid},
+	{"getppid",	posix_getppid},
+	{"kill",	posix_kill},
+	{"wait",	posix_wait},
+#endif
 #ifndef NO_LSTAT
 	{"lstat",	posix_lstat},
 	{"readlink",	posix_readlink},
