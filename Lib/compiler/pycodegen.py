@@ -1129,9 +1129,9 @@ class CodeGenerator:
                 self.emit('SET_LINENO', lineno2)
                 lineno = lineno2
             self.emit('DUP_TOP')
-            self.visit(v)
-            self.emit('ROT_TWO')
             self.visit(k)
+            self.visit(v)
+            self.emit('ROT_THREE')
             self.emit('STORE_SUBSCR')
 
 class NestedScopeMixin:
