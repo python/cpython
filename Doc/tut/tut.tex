@@ -2708,7 +2708,7 @@ useful to place code that must be executed if the try clause does not
 raise an exception.  For example:
 
 \begin{verbatim}
-for arg in sys.argv:
+for arg in sys.argv[1:]:
     try:
         f = open(arg, 'r')
     except IOError:
