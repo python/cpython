@@ -3,6 +3,20 @@ from Tkinter import *
 import Pmw
 import ColorDB
 
+# Load this script into the Tcl interpreter and call it in
+# StripWidget.set_color().  This is about as fast as it can be with the
+# current _tkinter.c interface, which doesn't support Tcl Objects.
+TCLPROC = '''\
+proc setcolor {canv colors} {
+    set i 1
+    foreach c $colors {
+        $canv itemconfigure $i -fill $c -outline $c
+	incr i
+    }
+}
+'''
+
+
 
 class LeftArrow:
     _ARROWWIDTH = 30
@@ -113,6 +127,10 @@ class StripWidget(Pmw.MegaWidget):
 	self.__canvas.bind('<B1-Motion>',
 			   self.__select_chip)
 
+	# Load a proc into the Tcl interpreter.  This is used in the
+	# set_color() method to speed up setting the chip colors.
+	self.__canvas.tk.eval(TCLPROC)
+
 	# create the color strip
 	chips = self.__chips = []
 	x = 1
@@ -187,27 +205,31 @@ class StripWidget(Pmw.MegaWidget):
 	chip = 0
 	chips = self.__chips = []
 	tclcmd = []
+	tk = self.__canvas.tk
 	for t in self.__generator(self.__numchips, rgbtuple):
 	    rrggbb = ColorDB.triplet_to_rrggbb(t)
 	    chips.append(rrggbb)
 ## 	    self.__canvas.itemconfigure(i,
 ## 					fill=rrggbb,
 ## 					outline=rrggbb)
-	    tclcmd.append(self.__canvas._w)
-	    tclcmd.append('itemconfigure')
-	    tclcmd.append(`i`)
-	    tclcmd.append('-fill')
-	    tclcmd.append(rrggbb)
-	    tclcmd.append('-outline')
-	    tclcmd.append(rrggbb)
-	    tclcmd.append('\n')
+## 	    tclcmd.append(self.__canvas._w)
+## 	    tclcmd.append('itemconfigure')
+## 	    tclcmd.append(`i`)
+## 	    tclcmd.append('-fill')
+## 	    tclcmd.append(rrggbb)
+## 	    tclcmd.append('-outline')
+## 	    tclcmd.append(rrggbb)
+## 	    tclcmd.append('\n')
 	    tred, tgreen, tblue = t
 	    if tred <= red and tgreen <= green and tblue <= blue:
 		chip = i
 	    i = i + 1
 	# call the raw tcl script
-	script = string.join(tclcmd, ' ')
-	self.__canvas.tk.eval(script)
+## 	script = string.join(tclcmd, ' ')
+## 	self.__canvas.tk.eval(script)
+## 	colors = tk.merge(chips)
+	colors = string.join(chips)
+ 	tk.eval('setcolor %s {%s}' % (self.__canvas._w, colors))
 
 	# get the arrow's text
 	coloraxis = rgbtuple[self.__axis]
