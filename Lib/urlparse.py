@@ -68,6 +68,7 @@ def urlparse(url, scheme = '', allow_framents = 1):
 # states that these are equivalent).
 def urlunparse((scheme, netloc, url, params, query, fragment)):
 	if netloc:
+		if url[:1] != '/': url = '/' + url
 		url = '//' + netloc + url
 	if scheme:
 		url = scheme + ':' + url
@@ -118,9 +119,8 @@ def urljoin(base, url, allow_framents = 1):
 		return urlunparse((scheme, netloc, path,
 				   params, query, fragment))
 	i = string.rfind(bpath, '/')
-	if i < 0:
-		i = len(bpath)
-	path = bpath[:i] + '/' + path
+	if i >= 0:
+		path = bpath[:i] + '/' + path
 	segments = string.splitfields(path, '/')
 	if segments[-1] == '.':
 		segments[-1] = ''
