@@ -50,8 +50,7 @@ newlockobject()
 }
 
 static void
-lock_dealloc(self)
-	lockobject *self;
+lock_dealloc(lockobject *self)
 {
 	/* Unlock the lock so it's safe to free it */
 	PyThread_acquire_lock(self->lock_lock, 0);
@@ -62,9 +61,7 @@ lock_dealloc(self)
 }
 
 static PyObject *
-lock_PyThread_acquire_lock(self, args)
-	lockobject *self;
-	PyObject *args;
+lock_PyThread_acquire_lock(lockobject *self, PyObject *args)
 {
 	int i;
 
@@ -99,9 +96,7 @@ and the return value reflects whether the lock is acquired.\n\
 The blocking operation is not interruptible.";
 
 static PyObject *
-lock_PyThread_release_lock(self, args)
-	lockobject *self;
-	PyObject *args;
+lock_PyThread_release_lock(lockobject *self, PyObject *args)
 {
 	if (!PyArg_NoArgs(args))
 		return NULL;
@@ -127,9 +122,7 @@ the lock to acquire the lock.  The lock must be in the locked state,\n\
 but it needn't be locked by the same thread that unlocks it.";
 
 static PyObject *
-lock_locked_lock(self, args)
-	lockobject *self;
-	PyObject *args;
+lock_locked_lock(lockobject *self, PyObject *args)
 {
 	if (!PyArg_NoArgs(args))
 		return NULL;
@@ -158,9 +151,7 @@ static PyMethodDef lock_methods[] = {
 };
 
 static PyObject *
-lock_getattr(self, name)
-	lockobject *self;
-	char *name;
+lock_getattr(lockobject *self, char *name)
 {
 	return Py_FindMethod(lock_methods, (PyObject *)self, name);
 }
@@ -191,8 +182,7 @@ struct bootstate {
 };
 
 static void
-t_bootstrap(boot_raw)
-	void *boot_raw;
+t_bootstrap(void *boot_raw)
 {
 	struct bootstate *boot = (struct bootstate *) boot_raw;
 	PyThreadState *tstate;
@@ -223,9 +213,7 @@ t_bootstrap(boot_raw)
 }
 
 static PyObject *
-thread_PyThread_start_new_thread(self, fargs)
-	PyObject *self; /* Not used */
-	PyObject *fargs;
+thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 {
 	PyObject *func, *args = NULL, *keyw = NULL;
 	struct bootstate *boot;
@@ -282,9 +270,7 @@ unhandled exception; a stack trace will be printed unless the exception is\n\
 SystemExit.";
 
 static PyObject *
-thread_PyThread_exit_thread(self, args)
-	PyObject *self; /* Not used */
-	PyObject *args;
+thread_PyThread_exit_thread(PyObject *self, PyObject *args)
 {
 	if (!PyArg_NoArgs(args))
 		return NULL;
@@ -301,9 +287,7 @@ thread to exit silently unless the exception is caught.";
 
 #ifndef NO_EXIT_PROG
 static PyObject *
-thread_PyThread_exit_prog(self, args)
-	PyObject *self; /* Not used */
-	PyObject *args;
+thread_PyThread_exit_prog(PyObject *self, PyObject *args)
 {
 	int sts;
 	if (!PyArg_Parse(args, "i", &sts))
@@ -314,9 +298,7 @@ thread_PyThread_exit_prog(self, args)
 #endif
 
 static PyObject *
-thread_PyThread_allocate_lock(self, args)
-	PyObject *self; /* Not used */
-	PyObject *args;
+thread_PyThread_allocate_lock(PyObject *self, PyObject *args)
 {
 	if (!PyArg_NoArgs(args))
 		return NULL;
@@ -330,9 +312,7 @@ static char allocate_doc[] =
 Create a new lock object.  See LockType.__doc__ for information about locks.";
 
 static PyObject *
-thread_get_ident(self, args)
-	PyObject *self; /* Not used */
-	PyObject *args;
+thread_get_ident(PyObject *self, PyObject *args)
 {
 	long ident;
 	if (!PyArg_NoArgs(args))
