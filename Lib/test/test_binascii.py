@@ -110,3 +110,7 @@ except TypeError:
     pass
 else:
     print 'expected TypeError not raised'
+
+# Verify the treatment of Unicode strings
+verify(binascii.hexlify(u'a') == '61', "hexlify failed for Unicode")
+
