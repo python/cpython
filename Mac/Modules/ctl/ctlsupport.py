@@ -225,6 +225,8 @@ DataBrowserListViewColumnDesc_Convert(PyObject *v, DataBrowserListViewColumnDesc
 static PyObject *tracker;
 static ControlActionUPP mytracker_upp;
 static ControlActionUPP myactionproc_upp;
+static ControlUserPaneKeyDownUPP mykeydownproc_upp;
+static ControlUserPaneFocusUPP myfocusproc_upp;
 static ControlUserPaneDrawUPP mydrawproc_upp;
 static ControlUserPaneIdleUPP myidleproc_upp;
 static ControlUserPaneHitTestUPP myhittestproc_upp;
@@ -313,6 +315,10 @@ setcallback(PyObject *myself, OSType which, PyObject *callback, UniversalProcPtr
 	
 	if ( which == kMyControlActionProcTag )
 		*uppp = (UniversalProcPtr)myactionproc_upp;
+	else if ( which == kControlUserPaneKeyDownProcTag )
+		*uppp = (UniversalProcPtr)mykeydownproc_upp;
+	else if ( which == kControlUserPaneFocusProcTag )
+		*uppp = (UniversalProcPtr)myfocusproc_upp;
 	else if ( which == kControlUserPaneDrawProcTag )
 		*uppp = (UniversalProcPtr)mydrawproc_upp;
 	else if ( which == kControlUserPaneIdleProcTag )
@@ -370,6 +376,42 @@ myactionproc(ControlHandle control, SInt16 part)
 	Py_XDECREF(rv);
 }
 
+static pascal ControlPartCode
+mykeydownproc(ControlHandle control, SInt16 keyCode, SInt16 charCode, SInt16 modifiers)
+{
+	ControlObject *ctl_obj;
+	PyObject *arglist, *rv;
+	short c_rv = 0;
+	
+	ctl_obj = (ControlObject *)CtlObj_WhichControl(control);
+	arglist = Py_BuildValue("Ohhh", ctl_obj, keyCode, charCode, modifiers);
+	rv = callcallback(ctl_obj, kControlUserPaneKeyDownProcTag, arglist);
+	Py_XDECREF(arglist);
+	if ( rv )
+		if (!PyArg_Parse(rv, "h", &c_rv))
+			PyErr_Clear();
+	Py_XDECREF(rv);
+	return (ControlPartCode)c_rv;
+}
+
+static pascal ControlPartCode
+myfocusproc(ControlHandle control, ControlPartCode part)
+{
+	ControlObject *ctl_obj;
+	PyObject *arglist, *rv;
+	short c_rv = kControlFocusNoPart;
+	
+	ctl_obj = (ControlObject *)CtlObj_WhichControl(control);
+	arglist = Py_BuildValue("Oh", ctl_obj, part);
+	rv = callcallback(ctl_obj, kControlUserPaneFocusProcTag, arglist);
+	Py_XDECREF(arglist);
+	if ( rv )
+		if (!PyArg_Parse(rv, "h", &c_rv))
+			PyErr_Clear();
+	Py_XDECREF(rv);
+	return (ControlPartCode)c_rv;
+}
+
 static pascal void
 mydrawproc(ControlHandle control, SInt16 part)
 {
@@ -409,7 +451,8 @@ myhittestproc(ControlHandle control, Point where)
 	Py_XDECREF(arglist);
 	/* Ignore errors, nothing we can do about them */
 	if ( rv )
-		PyArg_Parse(rv, "h", &c_rv);
+		if (!PyArg_Parse(rv, "h", &c_rv))
+			PyErr_Clear();
 	Py_XDECREF(rv);
 	return (ControlPartCode)c_rv;
 }
@@ -427,7 +470,8 @@ mytrackingproc(ControlHandle control, Point startPt, ControlActionUPP actionProc
 	rv = callcallback(ctl_obj, kControlUserPaneTrackingProcTag, arglist);
 	Py_XDECREF(arglist);
 	if ( rv )
-		PyArg_Parse(rv, "h", &c_rv);
+		if (!PyArg_Parse(rv, "h", &c_rv))
+			PyErr_Clear();
 	Py_XDECREF(rv);
 	return (ControlPartCode)c_rv;
 }
@@ -436,6 +480,8 @@ mytrackingproc(ControlHandle control, Point startPt, ControlActionUPP actionProc
 initstuff = initstuff + """
 mytracker_upp = NewControlActionUPP(mytracker);
 myactionproc_upp = NewControlActionUPP(myactionproc);
+mykeydownproc_upp = NewControlUserPaneKeyDownUPP(mykeydownproc);
+myfocusproc_upp = NewControlUserPaneFocusUPP(myfocusproc);
 mydrawproc_upp = NewControlUserPaneDrawUPP(mydrawproc);
 myidleproc_upp = NewControlUserPaneIdleUPP(myidleproc);
 myhittestproc_upp = NewControlUserPaneHitTestUPP(myhittestproc);
