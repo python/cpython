@@ -771,6 +771,7 @@ class AbstractHTTPHandler(BaseHandler):
         sel_host, sel_path = splithost(sel)
         h.putheader('Host', sel_host or host)
         for args in self.parent.addheaders:
+            name, value = args
             if name not in req.headers:
                 h.putheader(*args)
         for k, v in req.headers.items():
