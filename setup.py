@@ -3,7 +3,7 @@
 
 __version__ = "$Revision$"
 
-import sys, os, getopt
+import sys, os, getopt, imp
 from distutils import sysconfig
 from distutils import text_file
 from distutils.errors import *
@@ -168,8 +168,11 @@ class PyBuildExt(build_ext):
                 'WARNING: skipping import check for Carbon-based "%s"' %
                 ext.name)
             return
+        ext_filename = os.path.join(
+            self.build_lib,
+            self.get_ext_filename(self.get_ext_fullname(ext.name)))
         try:
-            __import__(ext.name)
+            imp.load_dynamic(ext.name, ext_filename)
         except ImportError:
             self.announce('WARNING: removing "%s" since importing it failed' %
                           ext.name)
