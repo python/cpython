@@ -162,14 +162,14 @@ Move the current frame one level down in the stack trace
 Move the current frame one level up in the stack trace
 (to a newer frame).
 
-\item[b(reak) [\var{lineno}\code{|}\var{function}] [, "condition"]]
+\item[b(reak) [\var{lineno}\code{|}\var{function}] [, "\var{condition}"]]
 
 With a \var{lineno} argument, set a break there in the current
 file.  With a \var{function} argument, set a break at the entry of
 that function.  Without argument, list all breaks.
-If a second argument is present, it is a string specifying an
-expression which must evaluate to true before the breakpoint is
-honored.
+If a second argument is present, it is a string (included in string
+quotes!) specifying an expression which must evaluate to true before
+the breakpoint is honored.
 
 \item[cl(ear) [\var{lineno}]]
 
