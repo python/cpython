@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.260 
+# From configure.in Revision: 1.261 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -3047,11 +3047,11 @@ then
 	case $ac_sys_system/$ac_sys_release in
 	AIX*)
 		BLDSHARED="\$(srcdir)/Modules/ld_so_aix \$(CC) -bI:Modules/python.exp"
-		LDSHARED="\$(BINLIBDEST)/ld_so_aix \$(CC) -bI:\$(BINLIBDEST)/python.exp"
+		LDSHARED="\$(BINLIBDEST)/config/ld_so_aix \$(CC) -bI:\$(BINLIBDEST)/config/python.exp"
 		;;
 	BeOS*)
 		BLDSHARED="\$(srcdir)/Modules/ld_so_beos $LDLIBRARY"
-		LDSHARED="\$(BINLIBDEST)/ld_so_beos \$(LIBDIR)/$LDLIBRARY"
+		LDSHARED="\$(BINLIBDEST)/config/ld_so_beos \$(LIBDIR)/$LDLIBRARY"
 		;;
 	IRIX/5*) LDSHARED="ld -shared";;
 	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared -all";;
