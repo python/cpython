@@ -28,7 +28,7 @@ ConfigParser -- responsible for for parsing a list of
                                dictionary of intrinsic defaults.  The
                                keys must be strings, the values must
                                be appropriate for %()s string
-                               interpolation.  Note that `name' is
+                               interpolation.  Note that `__name__' is
                                always an intrinsic default; it's value
                                is the section's name.
 
@@ -87,10 +87,14 @@ class NoOptionError(Error):
         self.section = section
 
 class InterpolationError(Error):
-    def __init__(self, reference, option, section):
+    def __init__(self, reference, option, section, rawval):
         Error.__init__(self,
-                       "Bad value substitution: sect `%s', opt `%s', ref `%s'"
-                       % (section, option, reference))
+                       "Bad value substitution:\n"
+                       "\tsection: [%s]\n"
+                       "\toption : %s\n"
+                       "\tkey    : %s\n"
+                       "\trawval : %s\n"
+                       % (section, option, reference, rawval))
         self.reference = reference
         self.option = option
         self.section = section
@@ -198,7 +202,7 @@ class ConfigParser:
         try:
             return rawval % d
         except KeyError, key:
-            raise InterpolationError(key, option, section)
+            raise InterpolationError(key, option, section, rawval)
 
     def __get(self, section, conv, option):
         return conv(self.get(section, option))
@@ -275,7 +279,7 @@ class ConfigParser:
                     elif sectname == DEFAULTSECT:
                         cursect = self.__defaults
                     else:
-                        cursect = {}
+                        cursect = {'__name__': sectname}
                         self.__sections[sectname] = cursect
                     # So sections can't start with a continuation line
                     optname = None
