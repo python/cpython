@@ -79,6 +79,8 @@
 ;;; Code:
 
 (require 'custom)
+(eval-when-compile
+  (require 'cl))
 
 
 ;; user definable variables
