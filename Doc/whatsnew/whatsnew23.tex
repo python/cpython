@@ -1266,7 +1266,14 @@ The old version of the module has been renamed to
 have to edit \file{Modules/Setup} to enable it.  Note that the new
 \module{bsddb} package is intended to be compatible with the 
 old module, so be sure to file bugs if you discover any
-incompatibilities.
+incompatibilities.  When upgrading to Python 2.3, if you also change
+the underlying BerkeleyDB library, you will almost certainly have to
+convert your database files to the new version.  You can do this
+fairly easily with the new scripts \file{db2pickle.py} and
+\file{pickle2db.py} which you will find in the distribution's
+Tools/scripts directory.  If you've already been using the PyBSDDB
+package, importing it as \module{bsddb3}, you will have to change your
+\code{import} statements.
  
 \item The Distutils \class{Extension} class now supports
 an extra constructor argument named \var{depends} for listing
