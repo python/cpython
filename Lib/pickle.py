@@ -471,14 +471,17 @@ class Pickler:
                 if proto >= 2:
                     for element in object:
                         save(element)
-                    # Subtle.  Same as in the big comment below
+                    # Subtle.  Same as in the big comment below.
                     if id(object) in memo:
                         get = self.get(memo[id(object)][0])
-                        write(POP_MARK + get)
+                        write(POP * n + get)
                     else:
                         write(_tuplesize2code[n])
+                        self.memoize(object)
                     return
 
+        # proto 0, or proto 1 and tuple isn't empty, or proto > 1 and tuple
+        # has more than 3 elements.
         write(MARK)
         for element in object:
             save(element)
