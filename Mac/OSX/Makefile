@@ -134,6 +134,7 @@ install_PackageManager:
 			--resource $(srcdir)/Mac/Tools/IDE/PythonIDE.rsrc \
 			--mainprogram $(srcdir)/Mac/Tools/IDE/PackageManager.py \
 			--iconfile $(srcdir)/Mac/Tools/IDE/PackageManager.icns \
+			--plist $(srcdir)/Mac/Tools/IDE/PackageManager.plist \
 			--creator Pimp build; \
 		$(BUILDPYTHON) $(bundlebuilder) \
 			--builddir $(DESTDIR)$(PYTHONAPPSDIR)/ \
@@ -141,6 +142,7 @@ install_PackageManager:
 			--resource $(srcdir)/Mac/Tools/IDE/PythonIDE.rsrc \
 			--mainprogram $(srcdir)/Mac/Tools/IDE/PackageManager.py \
 			--iconfile $(srcdir)/Mac/Tools/IDE/PackageManager.icns \
+			--plist $(srcdir)/Mac/Tools/IDE/PackageManager.plist \
 			--creator Pimp build; \
 	fi
 
