@@ -400,7 +400,7 @@ PyMac_GetPythonDir()
     static char name[256];
     AliasHandle handle;
     FSSpec dirspec;
-    int ok = 0, exists = 0;
+    int ok = 0;
     Boolean modified = 0, cannotmodify = 0;
     short oldrh, prefrh;
     short prefdirRefNum;
@@ -425,6 +425,7 @@ PyMac_GetPythonDir()
 			FSpCreateResFile(&dirspec, 'PYTH', 'pref', 0);
 	  		prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
 			if ( prefrh == -1 ) {
+				/* This is strange, what should we do now? */
 				cannotmodify = 1;
 			} else {
 				UseResFile(prefrh);
@@ -435,9 +436,9 @@ PyMac_GetPythonDir()
     handle = (AliasHandle)Get1Resource('alis', 128);
     if ( handle ) {
     	/* It exists. Resolve it (possibly updating it) */
-    	if ( ResolveAlias(NULL, handle, &dirspec, &modified) == noErr )
+    	if ( ResolveAlias(NULL, handle, &dirspec, &modified) == noErr ) {
     		ok = 1;
-    		exists = 1;
+    	}
     }
     if ( !ok ) {
     	/* No luck, so far. ask the user for help */
@@ -456,10 +457,14 @@ PyMac_GetPythonDir()
 	    		}
 	    	}
 	    }
+	    if ( handle ) {
+	    	/* Set the (old, invalid) alias record to the new data */
+	    	UpdateAlias(NULL, &dirspec, handle, &modified);
+	    }
     }
     if ( ok && modified && !cannotmodify) {
     	/* We have a new, valid fsspec and we can update the preferences file. Do so. */
-    	if ( !exists ) {
+    	if ( !handle ) {
     		if (NewAlias(NULL, &dirspec, &handle) == 0 )
     			AddResource((Handle)handle, 'alis', 128, "\p");
     	} else {
@@ -879,9 +884,9 @@ PyMac_InitApplication()
 		endp = strrchr(curwd, ':');
 		if ( endp && endp > curwd ) {
 			*endp = '\0';
+
 			chdir(curwd);
 		}
 	}
 	Py_Main(argc, argv);
 }
-
