@@ -51,6 +51,12 @@ extern PyObject *_PyMac_BuildFSRef(FSRef *);
 #endif
 static PyObject *ErrorObject;
 
+#ifdef TARGET_API_MAC_OSX
+#define PATHNAMELEN 1024
+#else
+#define PATHNAMELEN 256
+#endif
+
 /* ----------------------------------------------------- */
 /* Declarations for objects of type Alias */
 
@@ -449,22 +455,17 @@ PyMac_SetFileDates(FSSpec *fss, unsigned long crdat, unsigned long mddat,
 static PyObject *
 mfss_as_pathname(mfssobject *self, PyObject *args)
 {
-#if TARGET_API_MAC_OSX
-	PyErr_SetString(PyExc_NotImplementedError, "FSSpec.as_pathname not supported on this platform");
-	return 0;
-#else
-	char strbuf[257];
+	char strbuf[PATHNAMELEN];
 	OSErr err;
 
 	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
-	err = PyMac_GetFullPath(&self->fsspec, strbuf);
+	err = PyMac_GetFullPathname(&self->fsspec, strbuf, PATHNAMELEN);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
 	}
 	return PyString_FromString(strbuf);
-#endif
 }
 
 static PyObject *

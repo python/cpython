@@ -93,7 +93,7 @@ PyObject *PyMac_OSErrException;
 
 /* Initialize and return PyMac_OSErrException */
 PyObject *
-PyMac_GetOSErrException()
+PyMac_GetOSErrException(void)
 {
 	if (PyMac_OSErrException == NULL)
 		PyMac_OSErrException = PyString_FromString("MacOS.Error");
@@ -127,6 +127,46 @@ PyMac_Error(OSErr err)
 	return PyErr_Mac(PyMac_GetOSErrException(), err);
 }
 
+
+#if TARGET_API_MAC_OSX
+OSErr
+PyMac_GetFullPathname(FSSpec *fss, char *path, int len)
+{
+	FSRef fsr;
+	OSErr err;
+	
+	*path = '\0';
+	err = FSpMakeFSRef(fss, &fsr);
+	if ( err == fnfErr ) {
+		/* FSSpecs can point to non-existing files, fsrefs can't. */
+		FSSpec fss2;
+		int tocopy;
+		
+		err = FSMakeFSSpec(fss->vRefNum, fss->parID, "", &fss2);
+		if ( err ) return err;
+		err = FSpMakeFSRef(&fss2, &fsr);
+		if ( err ) return err;
+		err = (OSErr)FSRefMakePath(&fsr, path, len-1);
+		if ( err ) return err;
+		/* This part is not 100% safe: we append the filename part, but
+		** I'm not sure that we don't run afoul of the various 8bit
+		** encodings here. Will have to look this up at some point...
+		*/
+		strcat(path, "/");
+		tocopy = fss->name[0];
+		if ( strlen(path) + tocopy >= len )
+			tocopy = len - strlen(path) - 1;
+		if ( tocopy > 0 )
+			strncat(path, fss->name+1, tocopy);
+	} else {
+		if ( err ) return err;
+		err = (OSErr)FSRefMakePath(&fsr, path, len);
+		if ( err ) return err;
+	}
+	return 0;
+}
+
+#endif /* TARGET_API_MAC_OSX */
 /* Convert a 4-char string object argument to an OSType value */
 int
 PyMac_GetOSType(PyObject *v, OSType *pr)
