@@ -168,6 +168,20 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
   performed.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{unsigned long}{PyInt_AsUnsignedLongMask}{PyObject *io}
+  Will first attempt to cast the object to a \ctype{PyIntObject} or
+  \ctypes{PyLongObject}, if it is not already one, and then return its
+  value as unsigned long.  This function does not check for overflow.
+  \versionadded{2.3}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{unsigned long}{PyInt_AsUnsignedLongLongMask}{PyObject *io}
+  Will first attempt to cast the object to a \ctype{PyIntObject} or
+  \ctypes{PyLongObject}, if it is not already one, and then return its
+  value as unsigned long long, without checking for overflow.
+  \versionadded{2.3}
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{long}{PyInt_GetMax}{}
   Returns the system's idea of the largest integer it can handle
   (\constant{LONG_MAX}\ttindex{LONG_MAX}, as defined in the system
@@ -291,6 +305,18 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
   positive, or a \exception{TypeError} will be raised if the value is
   negative.
   \versionadded{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{unsigned long}{PyLong_AsUnsignedLongMask}{PyObject *io}
+  Return a C \ctype{unsigned long} from a Python long integer, without
+  checking for overflow.
+  \versionadded{2.3}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{unsigned long}{PyLong_AsUnsignedLongLongMask}{PyObject *io}
+  Return a C \ctype{unsigned long long} from a Python long integer, without
+  checking for overflow.
+  \versionadded{2.3}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{PyLong_AsDouble}{PyObject *pylong}
