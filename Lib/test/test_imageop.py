@@ -7,10 +7,13 @@ from test_support import verbose
 
 import imageop
 
-def main():
-    
-    image, width, height = getimage('test.rgb')
+def main(use_rgbimg=1):
 
+    if use_rgbimg:
+	image, width, height = getrgbimage('test.rgb')
+    else:
+	image, width, height = getimage('test.rgb')
+	
     # Return the selected part of image, which should by width by height
     # in size and consist of pixels of psize bytes.
     if verbose:
@@ -32,17 +35,25 @@ def main():
     if verbose:
 	print 'tovideo'
     videoimage = imageop.tovideo (image, 4, width, height)
+
+    # Convert an rgb image to an 8 bit rgb (greyscale)
+    if verbose:
+	print 'rgb2rgb8'
+    greyimage = imageop.rgb2rgb8(image, width, height)
+
+    # Convert an 8 bit rgb image to a 24 bit rgb image
+    if verbose:
+	print 'rgb82rgb'
+    image = imageop.rgb82rgb(greyimage, width, height)
     
-    image, width, height = getimage('greytest.rgb')  
     # Convert a 8-bit deep greyscale image to a 1-bit deep image by
     # tresholding all the pixels. The resulting image is tightly packed
     # and is probably only useful as an argument to mono2grey. 
     if verbose:
 	print 'grey2mono'
-    monoimage = imageop.grey2mono (image, width, height, 0) 
+    monoimage = imageop.grey2mono (greyimage, width, height, 0) 
 
-    #monoimage, width, height = getimage('monotest.rgb')
-
+    # monoimage, width, height = getimage('monotest.rgb')
     # Convert a 1-bit monochrome image to an 8 bit greyscale or color image.
     # All pixels that are zero-valued on input get value p0 on output and
     # all one-value input pixels get value p1 on output. To convert a
@@ -57,7 +68,6 @@ def main():
     if verbose:
 	print 'dither2mono'
     monoimage = imageop.dither2mono (greyimage, width, height)
-
 
     # Convert an 8-bit greyscale image to a 4-bit greyscale image without
     # dithering. 
@@ -88,34 +98,58 @@ def main():
 	print 'grey22grey'
     image = imageop.grey22grey (grey2image, width, height) 
 
+def getrgbimage(name):
+    """return a tuple consisting of image (in 'imgfile' format but
+    using rgbimg instead) width and height"""
+
+    import rgbimg
+
+    try:
+	sizes = rgbimg.sizeofimage(name)
+    except rgbimg.error:
+	name = get_qualified_path(name)
+	sizes = rgbimg.sizeofimage(name)
+    if verbose:
+	print 'rgbimg opening test image: %s, sizes: %s' % (name, str(sizes))
+
+    image = rgbimg.longimagedata(name)
+    return (image, sizes[0], sizes[1])
+  
 def getimage(name):
     """return a tuple consisting of
        image (in 'imgfile' format) width and height
     """
 
-    import sys
-    import os
     import imgfile
-    import string
-
-    # try opening the name directly
+  
     try:
 	sizes = imgfile.getsizes(name)
     except imgfile.error:
-	# get a more qualified path component of the script...
-	if __name__ == '__main__':
-	    ourname = sys.argv[0]
-	else: # ...or the full path of the module
-	    ourname = sys.modules[__name__].__file__
-
-	parts = string.splitfields(ourname, os.sep)
-	parts[-1] = name
-	name = string.joinfields(parts, os.sep)
+	name = get_qualified_path(name)
 	sizes = imgfile.getsizes(name)
     if verbose:
-	print 'Opening test image: %s, sizes: %s' % (name, str(sizes))
+	print 'imgfile opening test image: %s, sizes: %s' % (name, str(sizes))
 
     image = imgfile.read(name)
     return (image, sizes[0], sizes[1])
 
-main()
+def get_qualified_path(name):
+    """ return a more qualified path to name contructed from argv[1]"""
+    import sys
+    import os
+    import string
+    
+   # get a more qualified path component of the script...
+    if __name__ == '__main__':
+	ourname = sys.argv[0]
+    else: # ...or the full path of the module
+	ourname = sys.modules[__name__].__file__
+
+    parts = string.splitfields(ourname, os.sep)
+    parts[-1] = name
+    name = string.joinfields(parts, os.sep)
+    return name
+
+# rgbimg (unlike imgfile) is portable to platforms other than SGI.  So we prefer to use it.
+main(use_rgbimg=1)
+
