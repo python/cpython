@@ -235,8 +235,8 @@ md5 md5module.c md5c.c
 # See the section "The Tk interface" in ../README for more info.
 
 # *** Use ONE of the following two lines, see previous comments ***
-#tkinter tkintermodule.c -I/usr/local/include -L/usr/local/lib -ltk -ltcl -lX11
-#tkinter tkintermodule.c tkappinit.c -DWITH_APPINIT -I/usr/local/include -L/usr/local/lib -ltk -ltcl -lX11
+#_tkinter _tkinter.c -I/usr/local/include -L/usr/local/lib -ltk -ltcl -lX11
+#_tkinter _tkinter.c tkappinit.c -DWITH_APPINIT -I/usr/local/include -L/usr/local/lib -ltk -ltcl -lX11
 
 # *** ALWAYS use this line as well ***
 #TKPATH=:$(DESTLIB)/tkinter
