@@ -120,6 +120,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			self.curindex = self.curindex - 1
 			self.curframe = self.stack[self.curindex][0]
 			self.print_stack_entry(self.stack[self.curindex])
+			self.lineno = None
 	do_u = do_up
 	
 	def do_down(self, arg):
@@ -129,6 +130,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			self.curindex = self.curindex + 1
 			self.curframe = self.stack[self.curindex][0]
 			self.print_stack_entry(self.stack[self.curindex])
+			self.lineno = None
 	do_d = do_down
 	
 	def do_step(self, arg):
@@ -193,7 +195,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 						# Assume it's a count
 						last = first + last
 				else:
-					first = int(x)
+					first = max(1, int(x) - 5)
 			except:
 				print '*** Error in argument:', `arg`
 				return
@@ -201,7 +203,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			first = max(1, self.curframe.f_lineno - 5)
 		else:
 			first = self.lineno + 1
-		if last is None:
+		if last == None:
 			last = first + 10
 		filename = self.curframe.f_code.co_filename
 		breaklist = self.get_file_breaks(filename)
