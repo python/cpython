@@ -313,8 +313,6 @@ static enum why_code do_raise Py_PROTO((PyObject *, PyObject *, PyObject *));
 static int unpack_sequence Py_PROTO((PyObject *, int, PyObject **));
 
 
-/* Backward compatible interface */
-
 PyObject *
 PyEval_EvalCode(co, globals, locals)
 	PyCodeObject *co;
