@@ -995,9 +995,13 @@ following functions. Support is optimized if Python's own
                                              wchar_t *w,
                                              int size}
   Copies the Unicode object contents into the \ctype{wchar_t} buffer
-  \var{w}.  At most \var{size} \ctype{wchar_t} characters are copied.
-  Returns the number of \ctype{wchar_t} characters copied or -1 in
-  case of an error.
+  \var{w}.  At most \var{size} \ctype{wchar_t} characters are copied
+  (excluding a possibly trailing 0-termination character).  Returns
+  the number of \ctype{wchar_t} characters copied or -1 in case of an
+  error.  Note that the resulting \ctype{wchar_t} string may or may
+  not be 0-terminated.  It is the responsibility of the caller to make
+  sure that the \ctype{wchar_t} string is 0-terminated in case this is
+  required by the application.
 \end{cfuncdesc}
 
 

@@ -305,7 +305,6 @@ PyLocale_strcoll(PyObject* self, PyObject* args)
     }
     /* Convert the unicode strings to wchar[]. */
     len1 = PyUnicode_GET_SIZE(os1) + 1;
-    len2 = PyUnicode_GET_SIZE(os2) + 1;
     ws1 = PyMem_MALLOC(len1 * sizeof(wchar_t));
     if (!ws1) {
         PyErr_NoMemory();
@@ -313,6 +312,8 @@ PyLocale_strcoll(PyObject* self, PyObject* args)
     }
     if (PyUnicode_AsWideChar((PyUnicodeObject*)os1, ws1, len1) == -1)
         goto done;
+    ws1[len1 - 1] = 0;
+    len2 = PyUnicode_GET_SIZE(os2) + 1;
     ws2 = PyMem_MALLOC(len2 * sizeof(wchar_t));
     if (!ws2) {
         PyErr_NoMemory();
@@ -320,6 +321,7 @@ PyLocale_strcoll(PyObject* self, PyObject* args)
     }
     if (PyUnicode_AsWideChar((PyUnicodeObject*)os2, ws2, len2) == -1)
         goto done;
+    ws2[len2 - 1] = 0;
     /* Collate the strings. */
     result = PyInt_FromLong(wcscoll(ws1, ws2));
   done:
