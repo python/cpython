@@ -496,7 +496,7 @@ def _binsplit(splittable, charset, maxlinelen):
             # m is acceptable, so is a new lower bound.
             i = m
         else:
-            # m is not acceptable, so final i must be < j.
+            # m is not acceptable, so final i must be < m.
             j = m - 1
     # i == j.  Invariant #1 implies that splittable[:i] fits, and
     # invariant #2 implies that splittable[:i+1] does not fit, so i
