@@ -3,7 +3,7 @@
 % $Id$
 
 \title{What's New in Python 2.2}
-\release{0.01}
+\release{0.02}
 \author{A.M. Kuchling}
 \authoraddress{\email{akuchlin@mems-exchange.org}}
 \begin{document}
@@ -317,8 +317,42 @@ Schemenauer, with fixes from the Python Labs crew.}
 %======================================================================
 \section{Unicode Changes}
 
-XXX I have to figure out what the changes mean to users.
-(--enable-unicode configure switch)
+Python's Unicode support has been enhanced a bit in 2.2.  Unicode
+strings are usually stored as UCS-2, as 16-bit unsigned integers.
+Python 2.2 can also be compiled to use UCS-4, 32-bit unsigned integers
+by supplying \code{--enable-unicode=ucs4} to the configure script.
+
+XXX explain surrogates?  I have to figure out what the changes mean to users.
+
+Since their introduction, Unicode strings (XXX and regular strings in
+2.1?)  have supported an \method{encode()} method to convert the
+string to a selected encoding such as UTF-8 or Latin-1.  A symmetric
+\method{decode(\optional{\var{encoding}})} method has been added to
+both 8-bit and Unicode strings in 2.2, which assumes that the string
+is in the specified encoding and decodes it. This means that
+\method{encode()} and \method{decode()} can be called on both types of
+strings, and can be used for tasks not directly related to Unicode.
+For example, codecs have been added for UUencoding, MIME's base-64
+encoding, and compression with the \module{zlib} module.
+
+\begin{verbatim}
+>>> s = """Here is a lengthy piece of redundant, overly verbose,
+... and repetitive text.
+... """
+>>> data = s.encode('zlib')
+>>> data
+'x\x9c\r\xc9\xc1\r\x80 \x10\x04\xc0?Ul...'
+>>> data.decode('zlib')
+'Here is a lengthy piece of redundant, overly verbose,\nand repetitive text.\n'
+>>> print s.encode('uu')
+begin 666 <data>
+M2&5R92!I<R!A(&QE;F=T:'D@<&EE8V4@;V8@<F5D=6YD86YT+"!O=F5R;'D@
+>=F5R8F]S92P*86YD(')E<&5T:71I=F4@=&5X="X*
+
+end
+>>> "sheesh".encode('rot-13')
+'furrfu'
+\end{verbatim}
 
 References: http://mail.python.org/pipermail/i18n-sig/2001-June/001107.html  
 and following thread.
@@ -510,59 +544,54 @@ changes are:
 
 \begin{itemize}
 
+  \item Keyword arguments passed to builtin functions that don't take them
+  now cause a \exception{TypeError} exception to be raised, with the
+  message "\var{function} takes no keyword arguments".
+  
+  \item The code for the MacOS port for Python, maintained by Jack
+  Jansen, is now kept in the main Python CVS tree.
+
+  \item The new license introduced with Python 1.6 wasn't
+  GPL-compatible.  This is fixed by some minor textual changes to the
+  2.2 license, so Python can now be embedded inside a GPLed program
+  again.  The license changes were also applied to the Python 2.0.1
+  and 2.1.1 releases.
+
+\item Profiling and tracing functions can now be implemented in C,
+which can operate at much higher speeds than Python-based functions
+and should reduce the overhead of enabling profiling and tracing, so
+it will be of interest to authors of development environments for
+Python.  Two new C functions were added to Python's API,
+\cfunction{PyEval_SetProfile()} and \cfunction{PyEval_SetTrace()}.
+The existing \function{sys.setprofile()} and \function{sys.settrace()}
+functions still exist, and have simply been changed to use the new
+C-level interface.
+
+
+  \item The \file{Tools/scripts/ftpmirror.py} script
+  now parses a \file{.netrc} file, if you have one.
+  (Contributed by XXX.) Patch \#430754: Makes ftpmirror.py .netrc aware
+
+\item Some features of the object returned by the \function{xrange()}
+function are now deprecated, and trigger warnings when they're
+accessed; they'll disappear in Python 2.3.  \class{xrange} objects
+tried to pretend they were full sequence types by supporting slicing,
+sequence multiplication, and the \keyword{in} operator, but these
+features were rarely used and therefore buggy.  (The implementation of
+the \keyword{in} operator had an off-by-one error introduced in Python
+XXX that no one noticed until XXX, XXX years later.  The
+\method{tolist()} method and the \member{start}, \member{stop}, and
+\member{step} attributes are also being deprecated.  At the C level,
+the fourth argument to the \cfunction{PyRange_New()} function,
+\samp{repeat}, has also been deprecated.  
+
   \item XXX C API: Reorganization of object calling 
 
-  \item XXX .encode(), .decode() string methods.  Interesting new codecs such
-as zlib.   
+The call_object()
+function, originally in ceval.c, begins a new life as the official
+API PyObject_Call().  It is also much simplified: all it does is call
+the tp_call slot, or raise an exception if that's NULL.
 
-  \item MacOS code now in main CVS tree.
-
-  \item SF patch \#418147 Fixes to allow compiling w/ Borland, from Stephen Hansen.
-
-   \item Add support for Windows using "mbcs" as the default Unicode encoding when dealing with the file system.  As discussed on python-dev and in patch 410465.
-
-\item Lots of patches to dictionaries; measure performance improvement, if any.
-
-  \item Patch \#430754: Makes ftpmirror.py .netrc aware
-
-\item Fix bug reported by Tim Peters on python-dev:
-
-Keyword arguments passed to builtin functions that don't take them are
-ignored.
-
->>> {}.clear(x=2)
->>>
-
-instead of
-
->>> {}.clear(x=2)
-Traceback (most recent call last):
-  File "<stdin>", line 1, in ?
-TypeError: clear() takes no keyword arguments
-
-\item Make the license GPL-compatible.
-
-\item This change adds two new C-level APIs:  PyEval_SetProfile() and
-PyEval_SetTrace().  These can be used to install profile and trace
-functions implemented in C, which can operate at much higher speeds
-than Python-based functions.  The overhead for calling a C-based
-profile function is a very small fraction of a percent of the overhead
-involved in calling a Python-based function.
-
-The machinery required to call a Python-based profile or trace
-function been moved to sysmodule.c, where sys.setprofile() and
-sys.setprofile() simply become users of the new interface.
-
-\item 'Advanced' xrange() features now deprecated: repeat, slice,
-contains, tolist(), and the start/stop/step attributes.  This includes
-removing the 4th ('repeat') argument to PyRange_New().
-
-
-\item The call_object() function, originally in ceval.c, begins a new life
-%as the official API PyObject_Call().  It is also much simplified: all
-%it does is call the tp_call slot, or raise an exception if that's
-%NULL.
- 
 %The subsidiary functions (call_eval_code2(), call_cfunction(),
 %call_instance(), and call_method()) have all been moved to the file
 %implementing their particular object type, renamed according to the
@@ -575,6 +604,12 @@ removing the 4th ('repeat') argument to PyRange_New().
 %helpers in ceval.c that are now needed outside: PyEval_GetFuncName(),
 %PyEval_GetFuncDesc(), PyEval_EvalCodeEx() (formerly get_func_name(),
 %get_func_desc(), and eval_code2().
+
+  \item XXX SF patch \#418147 Fixes to allow compiling w/ Borland, from Stephen Hansen.
+
+   \item XXX Add support for Windows using "mbcs" as the default Unicode encoding when dealing with the file system.  As discussed on python-dev and in patch 410465.
+
+  \item XXX Lots of patches to dictionaries; measure performance improvement, if any.
 
 \end{itemize}
 
