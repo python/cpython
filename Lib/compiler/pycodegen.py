@@ -326,7 +326,7 @@ class CodeGenerator:
         self.nextBlock(loop)
         self.loops.push(loop)
 
-        self.set_lineno(node)
+        self.set_lineno(node, force=1)
         self.visit(node.test)
         self.emit('JUMP_IF_FALSE', else_ or after)
 
@@ -338,9 +338,9 @@ class CodeGenerator:
         self.startBlock(else_) # or just the POPs if not else clause
         self.emit('POP_TOP')
         self.emit('POP_BLOCK')
+        self.loops.pop()
         if node.else_:
             self.visit(node.else_)
-        self.loops.pop()
         self.nextBlock(after)
 
     def visitFor(self, node):
@@ -354,7 +354,7 @@ class CodeGenerator:
         self.visit(node.list)
         self.visit(ast.Const(0))
         self.nextBlock(start)
-        self.set_lineno(node)
+        self.set_lineno(node, force=1)
         self.emit('FOR_LOOP', anchor)
         self.nextBlock()
         self.visit(node.assign)
@@ -362,9 +362,9 @@ class CodeGenerator:
         self.emit('JUMP_ABSOLUTE', start)
         self.startBlock(anchor)
         self.emit('POP_BLOCK')
+        self.loops.pop()
         if node.else_:
             self.visit(node.else_)
-        self.loops.pop()
         self.nextBlock(after)
 
     def visitBreak(self, node):
