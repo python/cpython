@@ -23,16 +23,20 @@ browsers (TP)
 multi-line statements (TP)
 
 - Call tip window pops up when you type the name of a known function
-followed by an open parenthesis (MH)
+followed by an open parenthesis.  Hit ESC or click elsewhere in the
+window to close the tip window (MH)
 
 - Comment out region now inserts ## to make it stand out more (TP)
 
 - New path and class browsers based on a tree widget that looks
 familiar to Windows users
 
-- Reworked script running commands to be more intuitive
-
-- XXX much more?!
+- Reworked script running commands to be more intuitive: I/O now
+always goes to the *Python Shell* window, and raw_input() works
+correctly.  You use F5 to import/reload a module: this adds the module
+name to the __main__ namespace.  You use Control-F5 to run a script:
+this runs the script *in* the __main__ namespace.  The latter also
+sets sys.argv[] to the script name
 
 New in IDLE 0.4 (4/7/99)
 ------------------------
