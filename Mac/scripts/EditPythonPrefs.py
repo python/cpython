@@ -15,6 +15,7 @@ import sys
 import Res # For Res.Error
 import pythonprefs
 import EasyDialogs
+import Help
 
 # resource IDs in our own resources (dialogs, etc)
 MESSAGE_ID = 256
@@ -26,6 +27,7 @@ CANCEL_ITEM = 3
 DIR_ITEM = 4
 TITLE_ITEM = 5
 OPTIONS_ITEM = 7
+HELP_ITEM = 9
 
 # The options dialog. There is a correspondence between
 # the dialog item numbers and the option.
@@ -43,7 +45,10 @@ opt_dialog_map = [
 	"keeperror",
 	"nointopt",
 	"noargs",
-	"delayconsole"]
+	"delayconsole",
+	None, None, None, None, None, None, None, None, # 11-18 are different
+	"oldexc",
+	"nosite"]
 opt_dialog_dict = {}
 for i in range(len(opt_dialog_map)):
 	if opt_dialog_map[i]:
@@ -54,6 +59,7 @@ OD_CREATOR_ITEM = 11
 OD_TYPE_ITEM = 12
 OD_OK_ITEM = 13
 OD_CANCEL_ITEM = 14
+OD_HELP_ITEM = 22
 
 def optinteract(options):
 	"""Let the user interact with the options dialog"""
@@ -86,6 +92,9 @@ def optinteract(options):
 			return
 		elif n in (OD_CREATOR_ITEM, OD_TYPE_ITEM):
 			pass
+		elif n == OD_HELP_ITEM:
+			onoff = Help.HMGetBalloons()
+			Help.HMSetBalloons(not onoff)
 		elif 1 <= n <= len(opt_dialog_map):
 			options[opt_dialog_map[n]] = (not options[opt_dialog_map[n]])
 
@@ -121,6 +130,9 @@ def interact(options, title):
 			fss, ok = macfs.GetDirectory('Select python home folder:')
 			if ok:
 				options['dir'] = fss
+		elif n == HELP_ITEM:
+			onoff = Help.HMGetBalloons()
+			Help.HMSetBalloons(not onoff)
 		if n == OPTIONS_ITEM:
 			noptions = options
 			for k in options.keys():
