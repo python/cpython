@@ -155,9 +155,10 @@ class URLError(IOError):
 
 class HTTPError(URLError, addinfourl):
     """Raised when HTTP error occurs, but also acts like non-error return"""
+    __super_init = addinfourl.__init__
 
     def __init__(self, url, code, msg, hdrs, fp):
-        addinfourl.__init__(self, fp, hdrs, url)
+        self.__super_init(fp, hdrs, url)
         self.code = code
         self.msg = msg
         self.hdrs = hdrs
@@ -171,7 +172,8 @@ class HTTPError(URLError, addinfourl):
     def __del__(self):
         # XXX is this safe? what if user catches exception, then
         # extracts fp and discards exception?
-        self.fp.close()
+        if self.fp:
+            self.fp.close()
 
 class GopherError(URLError):
     pass
@@ -215,6 +217,7 @@ class Request:
     def get_type(self):
         if self.type is None:
             self.type, self.__r_type = splittype(self.__original)
+            assert self.type is not None, self.__original
         return self.type
 
     def get_host(self):
@@ -297,7 +300,8 @@ class OpenerDirector:
         handlers = chain.get(kind, ())
         for handler in handlers:
             func = getattr(handler, meth_name)
-            result = apply(func, args)
+
+            result = func(*args)
             if result is not None:
                 return result
 
@@ -318,7 +322,7 @@ class OpenerDirector:
 
         type_ = req.get_type()
         result = self._call_chain(self.handle_open, type_, type_ + \
-                                  '_open', req) 
+                                  '_open', req)
         if result:
             return result
 
@@ -338,13 +342,13 @@ class OpenerDirector:
             meth_name = proto + '_error'
             http_err = 0
         args = (dict, proto, meth_name) + args
-        result = apply(self._call_chain, args)
+        result = self._call_chain(*args)
         if result:
             return result
 
         if http_err:
             args = (dict, 'default', 'http_error_default') + orig_args
-            return apply(self._call_chain, args)
+            return self._call_chain(*args)
 
 def is_callable(obj):
     # not quite like builtin callable (which I didn't know existed),
@@ -439,6 +443,8 @@ class HTTPRedirectHandler(BaseHandler):
             return
         nil = fp.read()
         fp.close()
+
+        newurl = urlparse.urljoin(req.get_full_url(), newurl)
 
         # XXX Probably want to forget about the state of the current
         # request, although that might interact poorly with other
@@ -727,19 +733,23 @@ class HTTPHandler(BaseHandler):
         if not host:
             raise URLError('no host given')
 
-        h = httplib.HTTP(host) # will parse host:port
-##      h.set_debuglevel(1)
-        if req.has_data():
-            data = req.get_data()
-            h.putrequest('POST', req.get_selector())
-            h.putheader('Content-type', 'application/x-www-form-urlencoded')
-            h.putheader('Content-length', '%d' % len(data))
-        else:
-            h.putrequest('GET', req.get_selector())
+        try:
+            h = httplib.HTTP(host) # will parse host:port
+            if req.has_data():
+                data = req.get_data()
+                h.putrequest('POST', req.get_selector())
+                h.putheader('Content-type',
+                            'application/x-www-form-urlencoded')
+                h.putheader('Content-length', '%d' % len(data))
+            else:
+                h.putrequest('GET', req.get_selector())
+        except socket.error, err:
+            raise URLError(err)
+            
         # XXX proxies would have different host here
         h.putheader('Host', host)
         for args in self.parent.addheaders:
-            apply(h.putheader, args)
+            h.putheader(*args)
         for k, v in req.headers.items():
             h.putheader(k, v)
         h.endheaders()
@@ -751,12 +761,6 @@ class HTTPHandler(BaseHandler):
         if code == 200:
             return addinfourl(fp, hdrs, req.get_full_url())
         else:
-            # want to make sure the socket is closed, even if error
-            # handling doesn't return immediately.  the socket won't
-            # actually be closed until fp is also closed.
-            if h.sock:
-                h.sock.close()
-                h.sock = None
             return self.parent.error('http', req, fp, code, msg, hdrs)
 
 class UnknownHandler(BaseHandler):
@@ -859,7 +863,10 @@ class FTPHandler(BaseHandler):
         if not host:
             raise IOError, ('ftp error', 'no host given')
         # XXX handle custom username & password
-        host = socket.gethostbyname(host)
+        try:
+            host = socket.gethostbyname(host)
+        except socket.error, msg:
+            raise URLError(msg)
         host, port = splitport(host)
         if port is None:
             port = ftplib.FTP_PORT
@@ -988,7 +995,7 @@ if __name__ == "__main__":
     # right authentication configuration for test purposes.
     if socket.gethostname() == 'bitdiddle':
         localhost = 'bitdiddle.cnri.reston.va.us'
-    elif socket.gethostname() == 'walden':
+    elif socket.gethostname() == 'bitdiddle.concentric.net':
         localhost = 'localhost'
     else:
         localhost = None
