@@ -39,26 +39,12 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 static PyObject *Evt_Error;
 
-static PyObject *Evt_GetDblTime(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	long _rv;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = GetDblTime();
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
 static PyObject *Evt_GetCaretTime(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long _rv;
+	UInt32 _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetCaretTime();
@@ -72,7 +58,7 @@ static PyObject *Evt_SetEventMask(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short value;
+	MacOSEventMask value;
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &value))
 		return NULL;
@@ -82,13 +68,27 @@ static PyObject *Evt_SetEventMask(_self, _args)
 	return _res;
 }
 
+static PyObject *Evt_GetDblTime(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	UInt32 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetDblTime();
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
 static PyObject *Evt_GetNextEvent(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
-	short eventMask;
+	MacOSEventMask eventMask;
 	EventRecord theEvent;
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &eventMask))
@@ -107,9 +107,9 @@ static PyObject *Evt_WaitNextEvent(_self, _args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
-	short eventMask;
+	MacOSEventMask eventMask;
 	EventRecord theEvent;
-	unsigned long sleep;
+	UInt32 sleep;
 	if (!PyArg_ParseTuple(_args, "hl",
 	                      &eventMask,
 	                      &sleep))
@@ -130,7 +130,7 @@ static PyObject *Evt_EventAvail(_self, _args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
-	short eventMask;
+	MacOSEventMask eventMask;
 	EventRecord theEvent;
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &eventMask))
@@ -219,7 +219,7 @@ static PyObject *Evt_TickCount(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	unsigned long _rv;
+	UInt32 _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = TickCount();
@@ -234,8 +234,8 @@ static PyObject *Evt_PostEvent(_self, _args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
-	short eventNum;
-	long eventMsg;
+	MacOSEventKind eventNum;
+	UInt32 eventMsg;
 	if (!PyArg_ParseTuple(_args, "hl",
 	                      &eventNum,
 	                      &eventMsg))
@@ -254,7 +254,7 @@ static PyObject *Evt_OSEventAvail(_self, _args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
-	short mask;
+	MacOSEventMask mask;
 	EventRecord theEvent;
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &mask))
@@ -273,7 +273,7 @@ static PyObject *Evt_GetOSEvent(_self, _args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
-	short mask;
+	MacOSEventMask mask;
 	EventRecord theEvent;
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &mask))
@@ -291,8 +291,8 @@ static PyObject *Evt_FlushEvents(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short whichMask;
-	short stopMask;
+	MacOSEventMask whichMask;
+	MacOSEventMask stopMask;
 	if (!PyArg_ParseTuple(_args, "hh",
 	                      &whichMask,
 	                      &stopMask))
@@ -352,18 +352,18 @@ static PyObject *Evt_SystemEvent(_self, _args)
 }
 
 static PyMethodDef Evt_methods[] = {
-	{"GetDblTime", (PyCFunction)Evt_GetDblTime, 1,
-	 "() -> (long _rv)"},
 	{"GetCaretTime", (PyCFunction)Evt_GetCaretTime, 1,
-	 "() -> (long _rv)"},
+	 "() -> (UInt32 _rv)"},
 	{"SetEventMask", (PyCFunction)Evt_SetEventMask, 1,
-	 "(short value) -> None"},
+	 "(MacOSEventMask value) -> None"},
+	{"GetDblTime", (PyCFunction)Evt_GetDblTime, 1,
+	 "() -> (UInt32 _rv)"},
 	{"GetNextEvent", (PyCFunction)Evt_GetNextEvent, 1,
-	 "(short eventMask) -> (Boolean _rv, EventRecord theEvent)"},
+	 "(MacOSEventMask eventMask) -> (Boolean _rv, EventRecord theEvent)"},
 	{"WaitNextEvent", (PyCFunction)Evt_WaitNextEvent, 1,
-	 "(short eventMask, unsigned long sleep) -> (Boolean _rv, EventRecord theEvent)"},
+	 "(MacOSEventMask eventMask, UInt32 sleep) -> (Boolean _rv, EventRecord theEvent)"},
 	{"EventAvail", (PyCFunction)Evt_EventAvail, 1,
-	 "(short eventMask) -> (Boolean _rv, EventRecord theEvent)"},
+	 "(MacOSEventMask eventMask) -> (Boolean _rv, EventRecord theEvent)"},
 	{"GetMouse", (PyCFunction)Evt_GetMouse, 1,
 	 "() -> (Point mouseLoc)"},
 	{"Button", (PyCFunction)Evt_Button, 1,
@@ -375,15 +375,15 @@ static PyMethodDef Evt_methods[] = {
 	{"GetKeys", (PyCFunction)Evt_GetKeys, 1,
 	 "() -> (KeyMap theKeys)"},
 	{"TickCount", (PyCFunction)Evt_TickCount, 1,
-	 "() -> (unsigned long _rv)"},
+	 "() -> (UInt32 _rv)"},
 	{"PostEvent", (PyCFunction)Evt_PostEvent, 1,
-	 "(short eventNum, long eventMsg) -> None"},
+	 "(MacOSEventKind eventNum, UInt32 eventMsg) -> None"},
 	{"OSEventAvail", (PyCFunction)Evt_OSEventAvail, 1,
-	 "(short mask) -> (Boolean _rv, EventRecord theEvent)"},
+	 "(MacOSEventMask mask) -> (Boolean _rv, EventRecord theEvent)"},
 	{"GetOSEvent", (PyCFunction)Evt_GetOSEvent, 1,
-	 "(short mask) -> (Boolean _rv, EventRecord theEvent)"},
+	 "(MacOSEventMask mask) -> (Boolean _rv, EventRecord theEvent)"},
 	{"FlushEvents", (PyCFunction)Evt_FlushEvents, 1,
-	 "(short whichMask, short stopMask) -> None"},
+	 "(MacOSEventMask whichMask, MacOSEventMask stopMask) -> None"},
 	{"SystemClick", (PyCFunction)Evt_SystemClick, 1,
 	 "(EventRecord theEvent, WindowPtr theWindow) -> None"},
 	{"SystemTask", (PyCFunction)Evt_SystemTask, 1,

@@ -30,7 +30,7 @@ except ImportError:
 #CREATOR = 'KAHL'		# Guido's favorite text editor on the Mac
 #INCLUDEDIR = "D:Development:THINK C:Mac #includes:Apple #includes:"
 CREATOR = 'MPCC'		# Jack's favorite text editor on the Mac
-INCLUDEDIR = "Moes:CW5 GOLD Ä:Metrowerks C/C++ Ä:Headers Ä:Universal Headers 2.0a3 Ä:"
+INCLUDEDIR = "Moes:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:"
 
 
 Error = "scantools.Error"
@@ -309,7 +309,10 @@ class Scanner:
 				except IOError:
 					pass
 		# If not on the path, or absolute, try default open()
-		return open(filename, 'r')
+		try:
+			return open(filename, 'r')
+		except IOError, arg:
+			raise IOError, (arg, filename)
 
 	def getline(self):
 		if not self.scanfile:

@@ -29,6 +29,8 @@ ControlRef = ControlHandle
 ExistingControlHandle = OpaqueByValueType(OBJECTTYPE, "CtlObj_WhichControl", "BUG")
 
 RgnHandle = FakeType("theWindow->visRgn") # XXX
+ControlPartCode = Type("ControlPartCode", "h")
+DragConstraint = Type("DragConstraint", "h")
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """

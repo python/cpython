@@ -1,4 +1,4 @@
-# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:QuickDraw.h'
+# Generated from 'Moes:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:QuickDraw.h'
 
 f = Function(void, 'OpenPort',
     (GrafPtr, 'port', InMode),
@@ -713,7 +713,7 @@ f = Function(short, 'QDError',
 )
 functions.append(f)
 
-# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:QuickDrawText.h'
+# Generated from 'Moes:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:QuickDrawText.h'
 
 f = Function(void, 'TextFont',
     (short, 'font', InMode),

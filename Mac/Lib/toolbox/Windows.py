@@ -1,5 +1,11 @@
-# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:Windows.h'
+# Generated from 'Moes:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Windows.h'
 
+kStandardWindowDefinition = 0
+kRoundWindowDefinition = 1
+kFloatingWindowDefinition = 124
+kModalDialogVariantCode = 1
+kMovableModalDialogVariantCode = 5
+kSideFloaterVariantCode = 8
 documentProc = 0
 dBoxProc = 1
 plainDBox = 2
@@ -19,6 +25,8 @@ floatSideZoomProc = 1997
 floatSideZoomGrowProc = 1999
 dialogKind = 2
 userKind = 8
+kDialogWindowKind = 2
+kApplicationWindowKind = 8
 inDesk = 0
 inMenuBar = 1
 inSysWindow = 2
@@ -36,11 +44,6 @@ wDispose = 4
 wGrow = 5
 wDrawGIcon = 6
 deskPatID = 16
-wContentColor = 0
-wFrameColor = 1
-wTextColor = 2
-wHiliteColor = 3
-wTitleBarColor = 4
 wNoHit = 0
 wInContent = 1
 wInDrag = 2
@@ -48,3 +51,8 @@ wInGrow = 3
 wInGoAway = 4
 wInZoomIn = 5
 wInZoomOut = 6
+wContentColor = 0
+wFrameColor = 1
+wTextColor = 2
+wHiliteColor = 3
+wTitleBarColor = 4

@@ -1,4 +1,4 @@
-# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:QuickDraw.h'
+# Generated from 'Moes:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:QuickDraw.h'
 
 invalColReq = -1
 srcCopy = 0
@@ -18,6 +18,7 @@ notPatOr = 13
 notPatXor = 14
 notPatBic = 15
 grayishTextOr = 49
+hilitetransfermode = 50
 blend = 32
 addPin = 33
 addOver = 34
@@ -28,6 +29,12 @@ subOver = 38
 adMin = 39
 ditherCopy = 64
 transparent = 36
+italicBit = 1
+ulineBit = 2
+outlineBit = 3
+shadowBit = 4
+condenseBit = 5
+extendBit = 6
 normalBit = 0
 inverseBit = 1
 redBit = 4
@@ -75,7 +82,7 @@ allDevices = 1 << allDevicesBit
 kNoConstraint = 0
 kVerticalConstraint = 1
 kHorizontalConstraint = 2
-# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:QuickDrawText.h'
+# Generated from 'Moes:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:QuickDrawText.h'
 
 leftCaret = 0
 rightCaret = -1

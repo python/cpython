@@ -81,7 +81,8 @@ SndCompletionUPP = SndCompletionProcPtr
 
 NumVersion = OpaqueByValueType('NumVersion', 'NumVer')
 
-InOutBuf128 = FixedInputOutputBufferType(128)
+##InOutBuf128 = FixedInputOutputBufferType(128)
+StateBlock = StructInputOutputBufferType('StateBlock')
 
 AudioSelectionPtr = FakeType('0') # XXX
 

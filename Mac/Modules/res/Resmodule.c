@@ -1183,25 +1183,6 @@ static PyObject *Res_FSpCreateResFile(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_TempInsertROMMap(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	Boolean tempResLoad;
-	if (!PyArg_ParseTuple(_args, "b",
-	                      &tempResLoad))
-		return NULL;
-	TempInsertROMMap(tempResLoad);
-	{
-		OSErr _err = ResError();
-		if (_err != noErr) return PyMac_Error(_err);
-	}
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
 static PyObject *Res_Resource(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -1293,8 +1274,6 @@ static PyMethodDef Res_methods[] = {
 	 "(FSSpec spec, SignedByte permission) -> (short _rv)"},
 	{"FSpCreateResFile", (PyCFunction)Res_FSpCreateResFile, 1,
 	 "(FSSpec spec, OSType creator, OSType fileType, ScriptCode scriptTag) -> None"},
-	{"TempInsertROMMap", (PyCFunction)Res_TempInsertROMMap, 1,
-	 "(Boolean tempResLoad) -> None"},
 	{"Resource", (PyCFunction)Res_Resource, 1,
 	 "Convert a string to a resource object.\n\nThe created resource object is actually just a handle.\nApply AddResource() to write it to a resource file.\n"},
 	{NULL, NULL, 0}

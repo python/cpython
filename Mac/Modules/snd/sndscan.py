@@ -43,6 +43,9 @@ class SoundScanner(Scanner):
 			'GetSoundPreference',
 			'SetSoundPreference',
 			'GetCompressionInfo',
+			# And 3.1 calls, ditto...
+			'SndGetInfo',
+			'SndSetInfo',
 
 			]
 
@@ -89,8 +92,11 @@ class SoundScanner(Scanner):
 			 [("InOutBuffer", "buffer", "InOutMode")]),
 			
 			# Ditto
-			([("void_ptr", "inState", "InMode"), ("void", "outState", "OutMode")],
-			 [("InOutBuf128", "state", "InOutMode")]),
+##			([("void_ptr", "inState", "InMode"), ("void", "outState", "OutMode")],
+##			 [("InOutBuf128", "state", "InOutMode")]),
+			([("StateBlockPtr", "inState", "InMode"), ("StateBlockPtr", "outState", "InMode")],
+			 [("StateBlock", "state", "InOutMode")]),
+
 			]
 
 if __name__ == "__main__":

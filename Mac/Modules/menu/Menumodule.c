@@ -382,7 +382,7 @@ static PyObject *MenuObj_GetItemStyle(_self, _args)
 {
 	PyObject *_res = NULL;
 	short item;
-	unsigned char chStyle;
+	Style chStyle;
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &item))
 		return NULL;
@@ -558,7 +558,7 @@ static PyMethodDef MenuObj_methods[] = {
 	{"SetItemStyle", (PyCFunction)MenuObj_SetItemStyle, 1,
 	 "(short item, short chStyle) -> None"},
 	{"GetItemStyle", (PyCFunction)MenuObj_GetItemStyle, 1,
-	 "(short item) -> (unsigned char chStyle)"},
+	 "(short item) -> (Style chStyle)"},
 	{"CalcMenuSize", (PyCFunction)MenuObj_CalcMenuSize, 1,
 	 "() -> None"},
 	{"CountMItems", (PyCFunction)MenuObj_CountMItems, 1,
