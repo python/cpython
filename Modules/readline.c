@@ -270,7 +270,7 @@ set_completer_delims(PyObject *self, PyObject *args)
 	if(!PyArg_ParseTuple(args, "s:set_completer_delims", &break_chars)) {
 		return NULL;
 	}
-	free(rl_completer_word_break_characters);
+	free((void*)rl_completer_word_break_characters);
 	rl_completer_word_break_characters = strdup(break_chars);
 	Py_INCREF(Py_None);
 	return Py_None;
