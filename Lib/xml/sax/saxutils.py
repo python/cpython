@@ -232,7 +232,7 @@ class XMLFilterBase(xmlreader.XMLReader):
     # EntityResolver methods
 
     def resolveEntity(self, publicId, systemId):
-        self._ent_handler.resolveEntity(publicId, systemId)
+        return self._ent_handler.resolveEntity(publicId, systemId)
 
     # XMLReader methods
 
