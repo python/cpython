@@ -10,46 +10,67 @@
 */
 
 static PyObject *
-make_new_set(PyTypeObject *type, PyObject *iterable)
+set_update(PySetObject *so, PyObject *other)
 {
-	PyObject *data = NULL;
-	PyObject *it = NULL;
-	PyObject *item;
-	PySetObject *so = NULL;
+	PyObject *item, *data, *it;
 
-	/* Get iterator. */
-	if (iterable != NULL) {
-		it = PyObject_GetIter(iterable);
-		if (it == NULL)
-			goto done;
+	if (PyAnySet_Check(other)) {
+		if (PyDict_Merge(so->data, ((PySetObject *)other)->data, 0) == -1) 
+			return NULL;
+		Py_RETURN_NONE;
 	}
 
-	data = PyDict_New();
-	if (data == NULL) 
-		goto done;
+	it = PyObject_GetIter(other);
+	if (it == NULL)
+		return NULL;
+	data = so->data;
 
-	while (it != NULL && (item = PyIter_Next(it)) != NULL) {
+	while ((item = PyIter_Next(it)) != NULL) {
                 if (PyDict_SetItem(data, item, Py_True) == -1) {
+			Py_DECREF(it);
 			Py_DECREF(item);
-			goto done;
+			return NULL;
                 } 
 		Py_DECREF(item);
 	}
+	Py_DECREF(it);
 	if (PyErr_Occurred())
-		goto done;
+		return NULL;
+	Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(update_doc, 
+"Update a set with the union of itself and another.");
+
+static PyObject *
+make_new_set(PyTypeObject *type, PyObject *iterable)
+{
+	PyObject *data = NULL;
+	PyObject *tmp;
+	PySetObject *so = NULL;
+
+	data = PyDict_New();
+	if (data == NULL) 
+		return NULL;
 
 	/* create PySetObject structure */
 	so = (PySetObject *)type->tp_alloc(type, 0);
-	if (so == NULL) 
-		goto done;
-
-	Py_INCREF(data);
+	if (so == NULL) {
+		Py_DECREF(data);
+		return NULL;
+	}
 	so->data = data;
 	so->hash = -1;
 
-done:
-	Py_XDECREF(data);
-	Py_XDECREF(it);
+	if (iterable != NULL) {
+		tmp = set_update(so, iterable);
+		if (tmp == NULL) {
+			Py_DECREF(so);
+			return NULL;
+		}
+		Py_DECREF(tmp);
+	}
+
 	return (PyObject *)so;
 }
 
@@ -123,7 +144,7 @@ set_contains(PySetObject *so, PyObject *key)
 	int result;
 
 	result = PySequence_Contains(so->data, key);
-	if (result == -1 && PyType_IsSubtype(key->ob_type, &PySet_Type)) {
+	if (result == -1 && PyAnySet_Check(key)) {
 		PyErr_Clear();
 		tmp = frozenset_dict_wrapper(((PySetObject *)(key))->data);
 		if (tmp == NULL)
@@ -137,21 +158,7 @@ set_contains(PySetObject *so, PyObject *key)
 static PyObject *
 set_copy(PySetObject *so)
 {
-	PyObject *data;
-	PySetObject *newso;
-
-	data = PyDict_Copy(so->data);
-	if (data == NULL)
-		return NULL;
-
-	newso = (PySetObject *)(so->ob_type->tp_alloc(so->ob_type, 0));
-	if (newso == NULL) {
-		Py_DECREF(data);
-		return NULL;
-	}
-	newso->data = data;
-	newso->hash = so->hash;
-	return (PyObject *)newso;
+	return make_new_set(so->ob_type, (PyObject *)so);
 }
 
 static PyObject *
@@ -167,39 +174,6 @@ frozenset_copy(PySetObject *so)
 PyDoc_STRVAR(copy_doc, "Return a shallow copy of a set.");
 
 static PyObject *
-set_union_update(PySetObject *so, PyObject *other)
-{
-	PyObject *item, *data, *it;
-
-	if (PyAnySet_Check(other)) {
-		if (PyDict_Merge(so->data, ((PySetObject *)other)->data, 0) == -1) 
-			return NULL;
-		Py_RETURN_NONE;
-	}
-
-	it = PyObject_GetIter(other);
-	if (it == NULL)
-		return NULL;
-	data = so->data;
-
-	while ((item = PyIter_Next(it)) != NULL) {
-                if (PyDict_SetItem(data, item, Py_True) == -1) {
-			Py_DECREF(it);
-			Py_DECREF(item);
-			return NULL;
-                } 
-		Py_DECREF(item);
-	}
-	Py_DECREF(it);
-	if (PyErr_Occurred())
-		return NULL;
-	Py_RETURN_NONE;
-}
-
-PyDoc_STRVAR(union_update_doc, 
-"Update a set with the union of itself and another.");
-
-static PyObject *
 set_union(PySetObject *so, PyObject *other)
 {
 	PySetObject *result;
@@ -208,7 +182,7 @@ set_union(PySetObject *so, PyObject *other)
 	result = (PySetObject *)set_copy(so);
 	if (result == NULL)
 		return NULL;
-	rv = set_union_update(result, other);
+	rv = set_update(result, other);
 	if (rv == NULL) {
 		Py_DECREF(result);
 		return NULL;
@@ -241,7 +215,7 @@ set_ior(PySetObject *so, PyObject *other)
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
 	}
-	result = set_union_update(so, other);
+	result = set_update(so, other);
 	if (result == NULL)
 		return NULL;
 	Py_DECREF(result);
@@ -968,7 +942,7 @@ set_init(PySetObject *self, PyObject *args, PyObject *kwds)
 	self->hash = -1;
 	if (iterable == NULL)
 		return 0;
-	result = set_union_update(self, iterable);
+	result = set_update(self, iterable);
 	if (result != NULL) {
 		Py_DECREF(result);
 		return 0;
@@ -1024,8 +998,8 @@ static PyMethodDef set_methods[] = {
 	 symmetric_difference_update_doc},
 	{"union",	(PyCFunction)set_union,		METH_O,
 	 union_doc},
-	{"update",	(PyCFunction)set_union_update,	METH_O,
-	 union_update_doc},
+	{"update",	(PyCFunction)set_update,	METH_O,
+	 update_doc},
 	{NULL,		NULL}	/* sentinel */
 };
 
