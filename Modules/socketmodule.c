@@ -227,7 +227,7 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #	define snprintf _snprintf
 #endif
 
-#if defined(PYOS_OS2)
+#if defined(PYOS_OS2) && !defined(PYCC_GCC)
 #define SOCKETCLOSE soclose
 #define NO_DUP /* Sockets are Not Actual File Handles under OS/2 */
 #endif
@@ -352,7 +352,7 @@ PySocket_Err(void)
 	else
 #endif
 
-#if defined(PYOS_OS2)
+#if defined(PYOS_OS2) && !defined(PYCC_GCC)
     if (sock_errno() != NO_ERROR) {
         APIRET rc;
         ULONG  msglen;
@@ -931,7 +931,7 @@ PySocketSock_setblocking(PySocketSockObject *s, PyObject *arg)
 #else
 #ifndef RISCOS
 #ifndef MS_WINDOWS
-#ifdef PYOS_OS2
+#if defined(PYOS_OS2) && !defined(PYCC_GCC)
 	block = !block;
 	ioctl(s->sock_fd, FIONBIO, (caddr_t)&block, sizeof(block));
 #else /* !PYOS_OS2 */
@@ -1441,7 +1441,7 @@ PySocketSock_recvfrom(PySocketSockObject *s, PyObject *args)
 	memset(addrbuf, 0, addrlen);
 	n = recvfrom(s->sock_fd, PyString_AS_STRING(buf), len, flags,
 #ifndef MS_WINDOWS
-#if defined(PYOS_OS2)
+#if defined(PYOS_OS2) && !defined(PYCC_GCC)
 		     (struct sockaddr *)addrbuf, &addrlen
 #else
 		     (void *)addrbuf, &addrlen
@@ -2633,6 +2633,7 @@ OS2cleanup(void)
 static int
 OS2init(void)
 {
+#if !defined(PYCC_GCC)
     char reason[64];
     int rc = sock_init();
 
@@ -2646,6 +2647,10 @@ OS2init(void)
     PyErr_SetString(PyExc_ImportError, reason);
 
     return 0;  /* Indicate Failure */
+#else
+    /* no need to initialise sockets with GCC/EMX */
+    return 1;
+#endif
 }
 
 #endif /* PYOS_OS2 */
@@ -2695,10 +2700,10 @@ init_socket(void)
 	if (!NTinit())
 		return;
 #else
-#if defined(__TOS_OS2__)
+#if defined(PYOS_OS2)
 	if (!OS2init())
 		return;
-#endif /* __TOS_OS2__ */
+#endif /* PYOS_OS2 */
 #endif /* MS_WINDOWS */
 #endif /* RISCOS */
 	PySocketSock_Type.ob_type = &PyType_Type;
