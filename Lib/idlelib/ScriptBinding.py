@@ -147,8 +147,6 @@ class ScriptBinding:
         flist = self.editwin.flist
         shell = flist.open_shell()
         interp = shell.interp
-        # clear the subprocess environment before every Run/F5 invocation
-        interp.rpcclt.remotecall("exec", "clear_the_environment", (), {})
         # XXX Too often this discards arguments the user just set...
         interp.runcommand("""if 1:
             _filename = %s
