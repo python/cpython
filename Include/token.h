@@ -66,10 +66,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define CIRCUMFLEX	33
 #define LEFTSHIFT	34
 #define RIGHTSHIFT	35
+#define DOUBLESTAR	36
 /* Don't forget to update the table _PyParser_TokenNames in tokenizer.c! */
-#define OP		36
-#define ERRORTOKEN	37
-#define N_TOKENS	38
+#define OP		37
+#define ERRORTOKEN	38
+#define N_TOKENS	39
 
 /* Special definitions for cooperation with parser */
 
