@@ -134,6 +134,10 @@ class URLopener:
 	# Use URLopener().open(file) instead of open(file, 'r')
 	def open(self, fullurl, data=None):
 		fullurl = unwrap(fullurl)
+		if self.tempcache and self.tempcache.has_key(fullurl):
+			filename, headers = self.tempcache[fullurl]
+			fp = open(filename, 'rb')
+			return addinfourl(fp, headers, fullurl)
 		type, url = splittype(fullurl)
  		if not type: type = 'file'
 		self.openedurl = '%s:%s' % (type, url)
@@ -168,14 +172,11 @@ class URLopener:
 	# retrieve(url) returns (filename, None) for a local object
 	# or (tempfilename, headers) for a remote object
 	def retrieve(self, url, filename=None):
+		url = unwrap(url)
+		self.openedurl = url
 		if self.tempcache and self.tempcache.has_key(url):
 			return self.tempcache[url]
-		url1 = unwrap(url)
-		self.openedurl = url1
-		if self.tempcache and self.tempcache.has_key(url1):
-			self.tempcache[url] = self.tempcache[url1]
-			return self.tempcache[url1]
-		type, url1 = splittype(url1)
+		type, url1 = splittype(url)
 		if not filename and (not type or type == 'file'):
 			try:
 				fp = self.open_local_file(url1)
