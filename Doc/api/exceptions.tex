@@ -178,8 +178,8 @@ for each thread.
   \cfunction{PyErr_CheckSignals()}, and if that set the error
   indicator, leaves it set to that.  The function always returns
   \NULL, so a wrapper function around a system call can write
-  \samp{return PyErr_SetFromErrno();} when  the system call returns an
-  error.
+  \samp{return PyErr_SetFromErrno(\var{type});} when the system call
+  returns an error.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyErr_SetFromErrnoWithFilename}{PyObject *type,
