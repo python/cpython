@@ -7,6 +7,11 @@ import pythoncom, pywintypes
 from win32com.client import constants
 import re, string, os, sets, glob, popen2, sys, _winreg
 
+try:
+    basestring
+except NameError:
+    basestring = (str, unicode)
+
 Win64 = 0
 
 # Partially taken from Wine
