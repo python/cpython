@@ -58,7 +58,16 @@ int Py_OptimizeFlag = 0;
 #define CELL 5
 
 #define DEL_CLOSURE_ERROR \
-"can not delete variable '%s' referenced in nested scope"
+"can not delete variable '%.400s' referenced in nested scope"
+
+#define DUPLICATE_ARGUMENT \
+"duplicate argument '%s' in function definition"
+
+#define ILLEGAL_IMPORT_STAR \
+"'from ... import *' may only occur in a module scope"
+
+#define ILLEGAL_IMPORT_GLOBAL \
+"may not import name '%.400s' because it is declared global"
 
 #define MANGLE_LEN 256
 
@@ -429,6 +438,7 @@ struct symtable {
 #define DEF_FREE 2<<6          /* name used by not defined in nested scope */
 #define DEF_FREE_GLOBAL 2<<7   /* free variable is actually implicit global */
 #define DEF_FREE_CLASS 2<<8    /* free variable from class's method */
+#define DEF_IMPORT 2<<9        /* assignment occurred via import */
 
 int is_free(int v)
 {
@@ -563,7 +573,7 @@ static void symtable_params(struct symtable *, node *);
 static void symtable_params_fplist(struct symtable *, node *n);
 static void symtable_global(struct symtable *, node *);
 static void symtable_import(struct symtable *, node *);
-static void symtable_assign(struct symtable *, node *);
+static void symtable_assign(struct symtable *, node *, int);
 static void symtable_list_comprehension(struct symtable *, node *);
 
 static int symtable_update_free_vars(struct symtable *);
@@ -907,22 +917,14 @@ mangle(char *p, char *name, char *buffer, size_t maxlen)
 	return 1;
 }
 
-static int
-com_mangle(struct compiling *c, char *name, char *buffer, size_t maxlen)
-{
-	return mangle(c->c_private, name, buffer, maxlen);
-}
-
 static void
 com_addop_name(struct compiling *c, int op, char *name)
 {
 	PyObject *v;
 	int i;
 	char buffer[MANGLE_LEN];
-/*	fprintf(stderr, "com_addop_name(%s, %d, %s)\n",
-		c->c_name, op, name);
-*/
-	if (com_mangle(c, name, buffer, sizeof(buffer)))
+
+	if (mangle(c->c_private, name, buffer, sizeof(buffer)))
 		name = buffer;
 	if (name == NULL || (v = PyString_InternFromString(name)) == NULL) {
 		c->c_errors++;
@@ -959,7 +961,7 @@ com_addop_varname(struct compiling *c, int kind, char *name)
 	int op = STOP_CODE;
 	char buffer[MANGLE_LEN];
 
-	if (com_mangle(c, name, buffer, sizeof(buffer)))
+	if (mangle(c->c_private, name, buffer, sizeof(buffer)))
 		name = buffer;
 	if (name == NULL || (v = PyString_InternFromString(name)) == NULL) {
 		c->c_errors++;
@@ -1045,7 +1047,7 @@ com_addop_varname(struct compiling *c, int kind, char *name)
 			op = DELETE_NAME;
 			break;
 		case NAME_CLOSURE: {
-			char buf[256];
+			char buf[500];
 			sprintf(buf, DEL_CLOSURE_ERROR, name);
 			com_error(c, PyExc_SyntaxError, buf);
 			i = 255;
@@ -4007,6 +4009,8 @@ symtable_build(struct compiling *c, node *n)
 	if (symtable_enter_scope(c->c_symtable, TOP, TYPE(n)) < 0)
 		return -1;
 	symtable_node(c->c_symtable, n);
+	if (c->c_symtable->st_errors > 0)
+		return -1;
 	/* reset for second pass */
 	c->c_symtable->st_scopes = 1;
 	c->c_symtable->st_pass = 2;
@@ -4109,6 +4113,13 @@ symtable_load_symbols(struct compiling *c)
 				char buf[500];
 				sprintf(buf, 
 					"name '%.400s' is local and global",
+					PyString_AS_STRING(name));
+				com_error(c, PyExc_SyntaxError, buf);
+				goto fail;
+			}
+			if (info & DEF_IMPORT) {
+				char buf[500];
+				sprintf(buf, ILLEGAL_IMPORT_GLOBAL,
 					PyString_AS_STRING(name));
 				com_error(c, PyExc_SyntaxError, buf);
 				goto fail;
@@ -4334,7 +4345,7 @@ symtable_check_global(struct symtable *st, PyObject *child, PyObject *name)
 	if (o == NULL)
 		return symtable_undo_free(st, child, name);
 	v = PyInt_AS_LONG(o);
-	if (is_free(v)) 
+	if (is_free(v) || (v & DEF_GLOBAL)) 
 		return symtable_undo_free(st, child, name);
 	else
 		return symtable_add_def_o(st, st->st_cur, name, DEF_FREE);
@@ -4493,18 +4504,12 @@ symtable_update_cur(struct symtable *st)
 }
 
 static int
-symtable_mangle(struct symtable *st, char *name, char *buffer, size_t maxlen)
-{
-	return mangle(st->st_private, name, buffer, maxlen);
-}
-
-static int
 symtable_add_def(struct symtable *st, char *name, int flag)
 {
 	PyObject *s;
 	char buffer[MANGLE_LEN];
 
-	if (symtable_mangle(st, name, buffer, sizeof(buffer)))
+	if (mangle(st->st_private, name, buffer, sizeof(buffer)))
 		name = buffer;
 	if ((s = PyString_InternFromString(name)) == NULL)
 		return -1;
@@ -4520,12 +4525,10 @@ symtable_add_def_o(struct symtable *st, PyObject *dict,
 	PyObject *o;
 	int val;
 
-/*	fprintf(stderr, "def(%s, %d)\n", REPR(name), flag);  */
 	if ((o = PyDict_GetItem(dict, name))) {
 	    val = PyInt_AS_LONG(o);
 	    if ((flag & DEF_PARAM) && (val & DEF_PARAM)) {
-		    PyErr_Format(PyExc_SyntaxError,
-			 "duplicate argument '%s' in function definition",
+		    PyErr_Format(PyExc_SyntaxError, DUPLICATE_ARGUMENT,
 				 name);
 		    return -1;
 	    }
@@ -4634,27 +4637,27 @@ symtable_node(struct symtable *st, node *n)
 		break;
 	case except_clause:
 		if (NCH(n) == 4)
-			symtable_assign(st, CHILD(n, 3));
+			symtable_assign(st, CHILD(n, 3), 0);
 		if (NCH(n) > 1) {
 			n = CHILD(n, 1);
 			goto loop;
 		}
 		break;
 	case del_stmt:
-		symtable_assign(st, CHILD(n, 1));
+		symtable_assign(st, CHILD(n, 1), 0);
 		break;
 	case expr_stmt:
 		if (NCH(n) == 1)
 			n = CHILD(n, 0);
 		else {
 			if (TYPE(CHILD(n, 1)) == augassign) {
-				symtable_assign(st, CHILD(n, 0));
+				symtable_assign(st, CHILD(n, 0), 0);
 				symtable_node(st, CHILD(n, 2));
 				break;
 			} else {
 				int i;
 				for (i = 0; i < NCH(n) - 2; i += 2) 
-					symtable_assign(st, CHILD(n, i));
+					symtable_assign(st, CHILD(n, i), 0);
 				n = CHILD(n, NCH(n) - 1);
 			}
 		}
@@ -4678,7 +4681,7 @@ symtable_node(struct symtable *st, node *n)
 		}
 	case for_stmt:
 		if (TYPE(n) == for_stmt) {
-			symtable_assign(st, CHILD(n, 1));
+			symtable_assign(st, CHILD(n, 1), 0);
 			start = 3;
 		}
 	default:
@@ -4834,7 +4837,7 @@ symtable_list_comprehension(struct symtable *st, node *n)
 
 	sprintf(tmpname, "[%d]", ++st->st_tmpname);
 	symtable_add_def(st, tmpname, DEF_LOCAL);
-	symtable_assign(st, CHILD(n, 1));
+	symtable_assign(st, CHILD(n, 1), 0);
 	symtable_node(st, CHILD(n, 3));
 	if (NCH(n) == 5)
 		symtable_node(st, CHILD(n, 4));
@@ -4854,6 +4857,12 @@ symtable_import(struct symtable *st, node *n)
 
 	if (STR(CHILD(n, 0))[0] == 'f') {  /* from */
 		if (TYPE(CHILD(n, 3)) == STAR) {
+			if (st->st_cur_type != TYPE_MODULE) {
+				PyErr_SetString(PyExc_SyntaxError,
+						ILLEGAL_IMPORT_STAR);
+				st->st_errors++;
+				return;
+			}
 			if (PyDict_SetItemString(st->st_cur, NOOPT,
 						 Py_None) < 0)
 				st->st_errors++;
@@ -4861,20 +4870,22 @@ symtable_import(struct symtable *st, node *n)
 			for (i = 3; i < NCH(n); i += 2) {
 				node *c = CHILD(n, i);
 				if (NCH(c) > 1) /* import as */
-					symtable_assign(st, CHILD(c, 2));
+					symtable_assign(st, CHILD(c, 2),
+							DEF_IMPORT);
 				else
-					symtable_assign(st, CHILD(c, 0));
+					symtable_assign(st, CHILD(c, 0),
+							DEF_IMPORT);
 			}
 		}
 	} else {
 		for (i = 1; i < NCH(n); i += 2) {
-			symtable_assign(st, CHILD(n, i));
+			symtable_assign(st, CHILD(n, i), DEF_IMPORT);
 		}
 	}
 }
 
 static void 
-symtable_assign(struct symtable *st, node *n)
+symtable_assign(struct symtable *st, node *n, int flag)
 {
 	node *tmp;
 	int i;
@@ -4882,8 +4893,8 @@ symtable_assign(struct symtable *st, node *n)
  loop:
 	switch (TYPE(n)) {
 	case lambdef:
-		/* invalid assignment, e.g. lambda x:x=2 */
-		st->st_errors++;
+		/* invalid assignment, e.g. lambda x:x=2.  The next
+		   pass will catch this error. */
 		return;
 	case power:
 		if (NCH(n) > 2) {
@@ -4904,7 +4915,7 @@ symtable_assign(struct symtable *st, node *n)
 			symtable_list_comprehension(st, CHILD(n, 1));
 		else {
 			for (i = 0; i < NCH(n); i += 2)
-				symtable_assign(st, CHILD(n, i));
+				symtable_assign(st, CHILD(n, i), flag);
 		}
 		return;
 	case exprlist:
@@ -4916,7 +4927,7 @@ symtable_assign(struct symtable *st, node *n)
 		else {
 			int i;
 			for (i = 0; i < NCH(n); i += 2)
-				symtable_assign(st, CHILD(n, i));
+				symtable_assign(st, CHILD(n, i), flag);
 			return;
 		}
 		goto loop;
@@ -4926,23 +4937,23 @@ symtable_assign(struct symtable *st, node *n)
 			n = CHILD(n, 1);
 			goto loop;
 		} else if (TYPE(tmp) == NAME)
-			symtable_add_def(st, STR(tmp), DEF_LOCAL);
+			symtable_add_def(st, STR(tmp), DEF_LOCAL | flag);
 		return;
 	case dotted_as_name:
 		if (NCH(n) == 3)
 			symtable_add_def(st, STR(CHILD(n, 2)),
-					 DEF_LOCAL);
+					 DEF_LOCAL | flag);
 		else
 			symtable_add_def(st,
 					 STR(CHILD(CHILD(n,
 							 0), 0)),
-					 DEF_LOCAL);
+					 DEF_LOCAL | flag);
 		return;
 	case dotted_name:
-		symtable_add_def(st, STR(CHILD(n, 0)), DEF_LOCAL);
+		symtable_add_def(st, STR(CHILD(n, 0)), DEF_LOCAL | flag);
 		return;
 	case NAME:
-		symtable_add_def(st, STR(n), DEF_LOCAL);
+		symtable_add_def(st, STR(n), DEF_LOCAL | flag);
 		return;
 	default:
 		if (NCH(n) == 0)
