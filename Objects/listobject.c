@@ -525,6 +525,7 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 		if (list_resize(a, s+d) == -1) {
 			if (recycle != NULL)
 				PyMem_DEL(recycle);
+			return -1;
 		}
 		item = a->ob_item;
 		for (k = s; --k >= ihigh; )
