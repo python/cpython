@@ -1530,7 +1530,7 @@ class TarFile(object):
         """Set modification time of targetpath according to tarinfo.
         """
         if not hasattr(os, 'utime'):
-	    return
+            return
         if sys.platform == "win32" and tarinfo.isdir():
             # According to msdn.microsoft.com, it is an error (EACCES)
             # to use utime() on directories.
