@@ -572,6 +572,7 @@ the first line above could also have been written \samp{word = 'Help'
 expressions:
 
 \begin{verbatim}
+>>> import string
 >>> 'str' 'ing'                   #  <-  This is ok
 'string'
 >>> string.strip('str') + 'ing'   #  <-  This is ok
@@ -2387,6 +2388,7 @@ numeric string on the left with zeros.  It understands about plus and
 minus signs:
 
 \begin{verbatim}
+>>> import string
 >>> string.zfill('12', 5)
 '00012'
 >>> string.zfill('-3.14', 7)
