@@ -1,4 +1,4 @@
-#! /usr/local/python
+#! /usr/local/bin/python
 
 # Use Gouraud shading to mix colors.  Requires Z-buffer.
 # It changes the color assignments so fast that you see white.
