@@ -228,7 +228,10 @@ It is always available.
       according to the result of nl_langinfo(CODESET), or None if
       the nl_langinfo(CODESET) failed.
 \item On Windows NT+, file names are Unicode natively, so no conversion
-      is performed.
+      is performed. \code{getfilesystemencoding} still returns ``mbcs'',
+      as this is the encoding that applications should use when they
+      explicitly want to convert Unicode strings to byte strings that
+      are equivalent when used as file names.
 \end{itemize}
   \versionadded{2.3}
 \end{funcdesc}
