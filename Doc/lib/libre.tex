@@ -51,10 +51,11 @@ matches a particular string, which comes down to the same thing).
 
 Regular expressions can be concatenated to form new regular
 expressions; if \emph{A} and \emph{B} are both regular expressions,
-then \emph{AB} is also a regular expression.  If a string \emph{p}
-matches A and another string \emph{q} matches B, the string \emph{pq}
-will match AB if \emph{A} and \emph{B} do no specify boundary
-conditions that are no longer satisfied by \emph{pq}.  Thus, complex
+then \emph{AB} is also a regular expression.  In general, if a string
+\emph{p} matches \emph{A} and another string \emph{q} matches \emph{B},
+the string \emph{pq} will match AB.  This holds unless \emph{A} or
+\emph{B} contain low precedence operations; boundary conditions between
+\emph{A} and \emph{B}; or have numbered group references.  Thus, complex
 expressions can easily be constructed from simpler primitive
 expressions like the ones described here.  For details of the theory
 and implementation of regular expressions, consult the Friedl book
