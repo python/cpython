@@ -40,8 +40,9 @@ libgdbm.tex libgetopt.tex libgl.tex libgopherlib.tex libgrp.tex \
 libhtmllib.tex libhttplib.tex \
 libimageop.tex libimgfile.tex libintro.tex \
 libjpeg.tex \
-libmac.tex libmacconsole.tex libmacfs.tex libmactcp.tex libmacspeech.tex \
-	 libmain.tex libmarshal.tex libmath.tex \
+libmac.tex libmacconsole.tex libmacdnr.tex \
+	libmacfs.tex libmactcp.tex libmacspeech.tex \
+	libmain.tex libmarshal.tex libmath.tex \
 	libmd5.tex libmimetools.tex libmm.tex libmods.tex libmpz.tex \
 libnntplib.tex \
 libobjs.tex libos.tex \
