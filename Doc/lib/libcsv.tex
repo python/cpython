@@ -319,6 +319,15 @@ for row in reader:
     print row
 \end{verbatim}
 
+To print just the first and last columns of each row try
+
+\begin{verbatim}
+import csv
+reader = csv.reader(file("some.csv", "rb"))
+for row in reader:
+    print row[0], row[-1]
+\end{verbatim}
+
 The corresponding simplest possible writing example is
 
 \begin{verbatim}
