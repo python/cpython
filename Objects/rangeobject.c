@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
-Amsterdam, The Netherlands.
+Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
+Netherlands.
 
                         All Rights Reserved
 
@@ -31,18 +31,21 @@ typedef struct {
 	long	start;
 	long	step;
 	long	len;
+	int	reps;
 } rangeobject;
 
 
 object *
-newrangeobject(start, len, step)
+newrangeobject(start, len, step, reps)
 	long start, len, step;
+	int reps;
 {
 	rangeobject *obj = (rangeobject *) newobject(&Rangetype);
 
 	obj->start = start;
 	obj->len   = len;
 	obj->step  = step;
+	obj->reps  = reps;
 
 	return (object *) obj;
 }
@@ -59,19 +62,42 @@ range_item(r, i)
 	rangeobject *r;
 	int i;
 {
-	if (i < 0 || i >= r->len) {
+	if (i < 0 || i >= r->len * r->reps) {
 		err_setstr(IndexError, "range object index out of range");
 		return NULL;
 	}
 
-	return newintobject(r->start + i * r->step);
+	return newintobject(r->start + (i % r->len) * r->step);
 }
 
 static int
 range_length(r)
 	rangeobject *r;
 {
-	return r->len;
+	return r->len * r->reps;
+}
+
+static int
+range_print(r, fp, flags)
+	rangeobject *r;
+	FILE *fp;
+	int flags;
+{
+	int i, j;
+
+	fprintf(fp, "(");
+	for (i = 0; i < r->reps; ++i)
+		for (j = 0; j < r->len; ++j) {
+			if (j > 0 || i > 0)
+				fprintf(fp, ", ");
+
+			fprintf(fp, "%d", r->start + j * r->step);
+		}
+
+	if (r->len == 1 && r->reps == 1)
+		fprintf(fp, ",");
+	fprintf(fp, ")");
+	return 0;
 }
 
 static object *
@@ -79,9 +105,42 @@ range_repr(r)
 	rangeobject *r;
 {
 	char buf[80];
-	sprintf(buf, "xrange(%ld, %ld, %ld)",
-		r->start, r->start + r->len * r->step, r->step);
+	sprintf(buf, "(range(%ld, %ld, %ld) * %d)",
+			r->start,
+			r->start + r->len * r->step,
+			r->step,
+			r->reps);
 	return newstringobject(buf);
+}
+
+object *
+range_concat(r, obj)
+	rangeobject *r;
+	object *obj;
+{
+	err_setstr(TypeError, "cannot concatenate range objects");
+	return NULL;
+}
+
+object *
+range_repeat(r, n)
+	rangeobject *r;
+	int n;
+{
+	if (n < 0)
+		return (object *) newrangeobject(0, 0, 1, 1);
+
+	else if (n == 1) {
+		INCREF(r);
+		return (object *) r;
+	}
+
+	else
+		return (object *) newrangeobject(
+						r->start,
+						r->len,
+						r->step,
+						r->reps * n);
 }
 
 static int
@@ -96,33 +155,78 @@ range_compare(r1, r2)
 
 	else if (r1->len != r2->len)
 		return r1->len - r2->len;
+
+	else
+		return r1->reps - r2->reps;
 }
 
 static object *
-range_concat(r, s)
+range_slice(r, low, high)
 	rangeobject *r;
-	object *s;
+	int low, high;
 {
-	err_setstr(TypeError, "concat not supported by xrange object");
-	return NULL;
+	if (r->reps != 1) {
+		err_setstr(TypeError, "cannot slice a replicated range");
+		return NULL;
+	}
+	if (low < 0)
+		low = 0;
+	else if (low > r->len)
+		low = r->len;
+	if (high < 0)
+		high = 0;
+	if (high < low)
+		high = low;
+	else if (high > r->len)
+		high = r->len;
+
+	if (low == 0 && high == r->len) {
+		INCREF(r);
+		return (object *) r;
+	}
+
+	return (object *) newrangeobject(
+				low * r->step + r->start,
+				high - low,
+				r->step,
+				1);
 }
 
 static object *
-range_repeat(r, n)
-	rangeobject *r;
-	int n;
+range_tolist(self, args)
+rangeobject *self;
+object *args;
 {
-	err_setstr(TypeError, "repeat not supported by xrange object");
-	return NULL;
+	object *thelist;
+	int j;
+	int len = self->len * self->reps;
+
+	if (! getargs(args, ""))
+		return NULL;
+
+	if ((thelist = newlistobject(len)) == NULL)
+		return NULL;
+
+	for (j = 0; j < len; ++j)
+		if ((setlistitem(thelist, j,
+					(object *) newintobject(
+						self->start + (j % self->len) * self->step))) < 0)
+			return NULL;
+
+	return thelist;
 }
 
 static object *
-range_slice(r, i, j)
+range_getattr(r, name)
 	rangeobject *r;
-	int i, j;
+	char *name;
 {
-	err_setstr(TypeError, "slice not supported by xrange object");
-	return NULL;
+	static struct methodlist range_methods[] = {
+		{"tolist",	range_tolist},
+		{NULL,		NULL}
+	};
+
+	return findmethod(range_methods, (object *) r, name);
 }
 
 static sequence_methods range_as_sequence = {
@@ -142,8 +246,8 @@ typeobject Rangetype = {
 	sizeof(rangeobject),	/* Basic object size */
 	0,			/* Item size for varobject */
 	range_dealloc,		/*tp_dealloc*/
-	0,			/*tp_print*/
-	0,			/*tp_getattr*/
+	range_print,		/*tp_print*/
+	range_getattr,		/*tp_getattr*/
 	0,			/*tp_setattr*/
 	range_compare,		/*tp_compare*/
 	range_repr,		/*tp_repr*/
