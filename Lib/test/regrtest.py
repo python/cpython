@@ -14,7 +14,7 @@ Command line options:
 -x: exclude   -- arguments are tests to *exclude*
 -s: single    -- run only a single test (see below)
 -r: random    -- randomize test execution order
--l: leakdebug -- if cycle garbage collection is enabled, run with DEBUG_LEAK
+-l: findleaks -- if GC is available detect and print cyclic garbage
 --have-resources   -- run tests that require large resources (time/space)
 
 If non-option arguments are present, they are names for tests to run,
@@ -41,7 +41,7 @@ import random
 import test_support
 
 def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
-         exclude=0, single=0, randomize=0, leakdebug=0,
+         exclude=0, single=0, randomize=0, findleaks=0,
          use_large_resources=0):
     """Execute a test suite.
 
@@ -60,7 +60,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
     files beginning with test_ will be used.
 
     The other seven default arguments (verbose, quiet, generate, exclude,
-    single, randomize, and leakdebug) allow programmers calling main()
+    single, randomize, and findleaks) allow programmers calling main()
     directly to set the values that would normally be set by flags on the
     command line.
 
@@ -79,7 +79,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         if o == '-x': exclude = 1
         if o == '-s': single = 1
         if o == '-r': randomize = 1
-        if o == '-l': leakdebug = 1
+        if o == '-l': findleaks = 1
         if o == '--have-resources': use_large_resources = 1
     if generate and verbose:
         print "-g and -v don't go together!"
@@ -88,13 +88,15 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
     bad = []
     skipped = []
 
-    if leakdebug:
+    if findleaks:
         try:
             import gc
         except ImportError:
             print 'cycle garbage collection not available'
+            findleaks = 0
         else:
-            gc.set_debug(gc.DEBUG_LEAK)
+            gc.set_debug(gc.DEBUG_SAVEALL)
+            found_garbage = []
 
     if single:
         from tempfile import gettempdir
@@ -136,6 +138,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
             bad.append(test)
         else:
             skipped.append(test)
+        if findleaks:
+            gc.collect()
+            if gc.garbage:
+                print "garbage:", repr(gc.garbage)
+                found_garbage.extend(gc.garbage)
+                del gc.garbage[:]
         # Unload the newly imported modules (best effort finalization)
         for module in sys.modules.keys():
             if module not in save_modules and module.startswith("test."):
