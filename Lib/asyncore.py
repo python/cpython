@@ -107,11 +107,14 @@ def poll(timeout=0.0, map=None):
     if map:
         r = []; w = []; e = []
         for fd, obj in map.items():
-            e.append(fd)
-            if obj.readable():
+            is_r = obj.readable()
+            is_w = obj.writable()
+            if is_r:
                 r.append(fd)
-            if obj.writable():
+            if is_w:
                 w.append(fd)
+            if is_r or is_w:
+                e.append(fd)
         if [] == r == w == e:
             time.sleep(timeout)
         else:
@@ -151,12 +154,15 @@ def poll2(timeout=0.0, map=None):
     pollster = select.poll()
     if map:
         for fd, obj in map.items():
-            flags = select.POLLERR | select.POLLHUP | select.POLLNVAL
+            flags = 0
             if obj.readable():
                 flags |= select.POLLIN | select.POLLPRI
             if obj.writable():
                 flags |= select.POLLOUT
             if flags:
+                # Only check for exceptions if object was either readable
+                # or writable.
+                flags |= select.POLLERR | select.POLLHUP | select.POLLNVAL
                 pollster.register(fd, flags)
         try:
             r = pollster.poll(timeout)
