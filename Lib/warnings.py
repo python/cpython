@@ -107,7 +107,10 @@ def showwarning(message, category, filename, lineno, file=None):
     """Hook to write a warning to a file; replace if you like."""
     if file is None:
         file = sys.stderr
-    file.write(formatwarning(message, category, filename, lineno))
+    try:
+        file.write(formatwarning(message, category, filename, lineno))
+    except IOError:
+        pass # the file (probably stderr) is invalid - this warning gets lost.
 
 def formatwarning(message, category, filename, lineno):
     """Function to format a warning the standard way."""
