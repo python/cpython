@@ -2,6 +2,10 @@
 \usepackage{distutils}
 % $Id$
 
+% Don't write extensive text for new sections; I'll do that.  
+% Feel free to add commented-out reminders of things that need
+% to be covered.  --amk
+
 \title{What's New in Python 2.4}
 \release{0.0}
 \author{A.M.\ Kuchling}
@@ -89,73 +93,61 @@ Greg Wilson and ultimately implemented by Raymond Hettinger.}
 XXX write this.
 
 %======================================================================
-\section{PEP 229: Generator Expressions}
+\section{PEP 289: Generator Expressions}
 
-Now, simple generators can be coded succinctly as expressions using a syntax
-like list comprehensions but with parentheses instead of brackets.  These
-expressions are designed for situations where the generator is used right
-away by an enclosing function.  Generator expressions are more compact but
-less versatile than full generator definitions and they tend to be more memory
-friendly than equivalent list comprehensions.
-       
-\begin{verbatim}
-       g = (tgtexp  for var1 in exp1  for var2 in exp2 if exp3)
-\end{verbatim}
-       
-is equivalent to:
+The iterator feature introduced in Python 2.2 makes it easier to write
+programs that loop through large data sets without having the entire
+data set in memory at one time.  Programmers can use iterators and the
+\module{itertools} module to write code in a fairly functional style.
+
+The fly in the ointment has been list comprehensions, because they
+produce a Python list object containing all of the items, unavoidably
+pulling them all into memory.  When trying to write a program using the functional approach, it would be natural to write something like:
 
 \begin{verbatim}
-    def __gen(exp):
-        for var1 in exp:
-            for var2 in exp2:
-                if exp3:
-                    yield tgtexp
-    g = __gen(iter(exp1))
-    del __gen
+links = [link for link in get_all_links() if not link.followed]
+for link in links:
+    ...
 \end{verbatim}
 
-The advantage over full generator definitions is in economy of
-expression.  Their advantage over list comprehensions is in saving
-memory by creating data only when it is needed rather than forming
-a whole list is memory all at once.  Applications using memory
-friendly generator expressions may scale-up to high volumes of data
-more readily than with list comprehensions.
-
-Generator expressions are best used in functions that consume their
-data all at once and would not benefit from having a full list instead
-of a generator as an input:
+instead of 
 
 \begin{verbatim}
->>> sum(i*i for i in range(10))
-285
+for link in get_all_links():
+    if link.followed:
+        continue
+    ...
+\end{verbatim}
 
->>> sorted(set(i*i for i in xrange(-20, 20) if i%2==1)) # odd squares
-[1, 9, 25, 49, 81, 121, 169, 225, 289, 361]
+The first form is more concise and perhaps more readable, but if
+you're dealing with a large number of link objects the second form
+would have to be used.
 
->>> from itertools import izip
->>> xvec = [10, 20, 30]
->>> yvec = [7, 5, 3]
->>> sum(x*y for x,y in izip(xvec, yvec))                # dot product
-260
+Generator expressions work similarly to list comprehensions but don't
+materialize the entire list; instead they create a generator that will
+return elements one by one.  The above example could be written as:
 
->>> from math import pi, sin
->>> sine_table = dict((x, sin(x*pi/180)) for x in xrange(0, 91))
+\begin{verbatim}
+links = (link for link in get_all_links() if not link.followed)
+for link in links:
+    ...
+\end{verbatim}
 
->>> unique_words = set(word  for line in page  for word in line.split())
+Generator expressions always have to be written inside parentheses, as
+in the above example.  The parentheses signalling a function call also
+count, so if you want to create a iterator that will be immediately
+passed to a function you could write:
 
->>> valedictorian = max((student.gpa, student.name) for student in graduates)
+\begin{verbatim}
+print sum(obj.count for obj in list_all_objects())
+\end{verbatim}
 
-\end{verbatim}     
-
-For more complex uses of generators, it is strongly recommended that
-the traditional full generator definitions be used instead.  In a
-generator expression, the first for-loop expression is evaluated
-as soon as the expression is defined while the other expressions do
-not get evaluated until the generator is run.  This nuance is never
-an issue when the generator is used immediately; however, if it is not
-used right away, a full generator definition would be much more clear
-about when the sub-expressions are evaluated and would be more obvious
-about the visibility and lifetime of the variables.
+There are some small differences from list comprehensions.  Most
+notably, the loop variable (\var{obj} in the above example) is not
+accessible outside of the generator expression.  List comprehensions
+leave the variable assigned to its last value; future versions of
+Python will change this, making list comprehensions match generator
+expressions in this respect.
 
 \begin{seealso}
 \seepep{289}{Generator Expressions}{Proposed by Raymond Hettinger and
@@ -203,62 +195,222 @@ root:*:0:0:System Administrator:/var/root:/bin/tcsh
 %======================================================================
 \section{PEP 327: Decimal Data Type}
 
-A new module, \module{decimal}, offers a \class{Decimal} data type for
-decimal floating point arithmetic.  Compared to the built-in \class{float}
-type implemented with binary floating point, the new class is especially
-useful for financial applications and other uses which require exact
-decimal representation, control over precision, control over rounding
-to meet legal or regulatory requirements, tracking of significant
-decimal places, or for applications where the user expects the results
-to match hand calculations done the way they were taught in school.
+Python has always supported floating-point (FP) numbers as a data
+type, based on the underlying C \ctype{double} type.  However, while
+most programming languages provide a floating-point type, most people
+(even programmers) are unaware that computing with floating-point
+numbers entails certain unavoidable inaccuracies.  The new decimal
+type provides a way to avoid these inaccuracies.
 
-For example, calculating a 5% tax on a 70 cent phone charge gives
-different results in decimal floating point and binary floating point
-with the difference being significant when rounding to the nearest
-cent:
+\subsection{Why is Decimal needed?}
 
+The limitations arise from the representation used for floating-point numbers.
+FP numbers are made up of three components:
+
+\begin{itemize}
+\item The sign, which is -1 or +1.
+\item The mantissa, which is a single-digit binary number  
+followed by a fractional part.  For example, \code{1.01} in base-2 notation
+is \code{1 + 0/2 + 1/4}, or 1.25 in decimal notation.
+\item The exponent, which tells where the decimal point is located in the number represented.  
+\end{itemize}
+
+For example, the number 1.25 has sign +1, mantissa 1.01 (in binary),
+and exponent of 0 (the decimal point doesn't need to be shifted).  The
+number 5 has the same sign and mantissa, but the exponent is 2
+because the mantissa is multiplied by 4 (2 to the power of the exponent 2).
+
+Modern systems usually provide floating-point support that conforms to
+a relevant standard called IEEE 754.  C's \ctype{double} type is
+usually implemented as a 64-bit IEEE 754 number, which uses 52 bits of
+space for the mantissa.  This means that numbers can only be specified
+to 52 bits of precision.  If you're trying to represent numbers whose
+expansion repeats endlessly, the expansion is cut off after 52 bits.
+Unfortunately, most software needs to produce output in base 10, and
+base 10 often gives rise to such repeating decimals.  For example, 1.1
+decimal is binary \code{1.0001100110011 ...}; .1 = 1/16 + 1/32 + 1/256
+plus an infinite number of additional terms.  IEEE 754 has to chop off
+that infinitely repeated decimal after 52 digits, so the
+representation is slightly inaccurate.  
+
+Sometimes you can see this inaccuracy when the number is printed:
 \begin{verbatim}
->>> from decimal import *       
->>> Decimal('0.70') * Decimal('1.05')
-Decimal("0.7350")
->>> .70 * 1.05
-0.73499999999999999       
+>>> 1.1
+1.1000000000000001
 \end{verbatim}
 
-Note that the \class{Decimal} result keeps a trailing zero, automatically
-inferring four place significance from two digit mulitiplicands.  A key
-goal is to reproduce the mathematics we do by hand and avoid the tricky
-issues that arise when decimal numbers cannot be represented exactly in
-binary floating point.
+The inaccuracy isn't always visible when you print the number because
+the FP-to-decimal-string conversion is provided by the C library, and
+most C libraries try to produce sensible output, but the inaccuracy is
+still there and subsequent operations can magnify the error.
 
-Exact representation enables the \class{Decimal} class to perform
-modulo calculations and equality tests that would fail in binary
-floating point:
+For many applications this doesn't matter.  If I'm plotting points and
+displaying them on my monitor, the difference between 1.1 and
+1.1000000000000001 is too small to be visible.  Reports often limit
+output to a certain number of decimal places, and if you round the
+number to two or three or even eight decimal places, the error is
+never apparent.  However, for applications where it does matter, 
+it's a lot of work to implement your own custom arithmetic routines.
 
-\begin{verbatim}
->>> Decimal('1.00') % Decimal('.10')
-Decimal("0.00")
->>> 1.00 % 0.10
-0.09999999999999995
-       
->>> sum([Decimal('0.1')]*10) == Decimal('1.0')
-True
->>> sum([0.1]*10) == 1.0
-False      
-\end{verbatim}
+\subsection{The \class{Decimal} type}
 
-The \module{decimal} module also allows arbitrarily large precisions to be
-set for calculation:
+A new module, \module{decimal}, was added to Python's standard library.
+It contains two classes, \class{Decimal} and \class{Context}.
+\class{Decimal} instances represent numbers, and
+\class{Context} instances are used to wrap up various settings such as the precision and default rounding mode.
+
+\class{Decimal} instances, like regular Python integers and FP numbers, are immutable; once they've been created, you can't change the value it represents.  
+\class{Decimal} instances can be created from integers or strings:
 
 \begin{verbatim}
->>> getcontext().prec = 24
->>> Decimal(1) / Decimal(7)
-Decimal("0.142857142857142857142857")
+>>> import decimal
+>>> decimal.Decimal(1972)
+Decimal("1972")
+>>> decimal.Decimal("1.1")
+Decimal("1.1")
 \end{verbatim}
+
+You can also provide tuples containing the sign, mantissa represented 
+as a tuple of decimal digits, and exponent:
+
+\begin{verbatim}
+>>> decimal.Decimal((1, (1, 4, 7, 5), -2))
+Decimal("-14.75")
+\end{verbatim}
+
+Cautionary note: the sign bit is a Boolean value, so 0 is positive and 1 is negative.
+
+Floating-point numbers posed a bit of a problem: should the FP number
+representing 1.1 turn into the decimal number for exactly 1.1, or for
+1.1 plus whatever inaccuracies are introduced?  The decision was to
+leave such a conversion out of the API.  Instead, you should convert
+the floating-point number into a string using the desired precision and 
+pass the string to the \class{Decimal} constructor:
+
+\begin{verbatim}
+>>> f = 1.1
+>>> decimal.Decimal(str(f))
+Decimal("1.1")
+>>> decimal.Decimal(repr(f))
+Decimal("1.1000000000000001")
+\end{verbatim}
+
+Once you have \class{Decimal} instances, you can perform the usual
+mathematical operations on them.  One limitation: exponentiation
+requires an integer exponent:
+
+\begin{verbatim}
+>>> a = decimal.Decimal('35.72')
+>>> b = decimal.Decimal('1.73')
+>>> a+b
+Decimal("37.45")
+>>> a-b
+Decimal("33.99")
+>>> a*b
+Decimal("61.7956")
+>>> a/b
+Decimal("20.6473988")
+>>> a ** 2
+Decimal("1275.9184")
+>>> a ** b
+Decimal("NaN")
+\end{verbatim}
+
+You can combine \class{Decimal} instances with integers, but not with
+floating-point numbers:
+
+\begin{verbatim}
+>>> a + 4
+Decimal("39.72")
+>>> a + 4.5
+Traceback (most recent call last):
+  ...
+TypeError: You can interact Decimal only with int, long or Decimal data types.
+>>>
+\end{verbatim}
+
+\class{Decimal} numbers can be used with the \module{math} and
+\module{cmath} modules, though you'll get back a regular
+floating-point number and not a \class{Decimal}.  Instances also have a \method{sqrt()} method:
+
+\begin{verbatim}
+>>> import math, cmath
+>>> d = decimal.Decimal('123456789012.345')
+>>> math.sqrt(d)
+351364.18288201344
+>>> cmath.sqrt(-d)
+351364.18288201344j
+>>> d.sqrt()
+Decimal(``351364.1828820134592177245001'')
+\end{verbatim}
+
+
+\subsection{The \class{Context} type}
+
+Instances of the \class{Context} class encapsulate several settings for 
+decimal operations:
+
+\begin{itemize}
+ \item \member{prec} is the precision, the number of decimal places.
+ \item \member{rounding} specifies the rounding mode.  The \module{decimal}
+       module has constants for the various possibilities:
+       \constant{ROUND_DOWN}, \constant{ROUND_CEILING}, \constant{ROUND_HALF_EVEN}, and various others.
+ \item \member{trap_enablers} is a dictionary specifying what happens on
+encountering certain error conditions: either  an exception is raised or 
+a value is returned.  Some examples of error conditions are
+division by zero, loss of precision, and overflow.
+\end{itemize}
+
+There's a thread-local default context available by calling
+\function{getcontext()}; you can change the properties of this context
+to alter the default precision, rounding, or trap handling.
+
+\begin{verbatim}
+>>> decimal.getcontext().prec
+28
+>>> decimal.Decimal(1) / decimal.Decimal(7)
+Decimal(``0.1428571428571428571428571429'')
+>>> decimal.getcontext().prec = 9 
+>>> decimal.Decimal(1) / decimal.Decimal(7)
+Decimal(``0.142857143'')
+\end{verbatim}
+
+The default action for error conditions is to return a special value
+such as infinity or not-a-number, but you can request that exceptions
+be raised:
+
+\begin{verbatim}
+>>> decimal.Decimal(1) / decimal.Decimal(0)
+Decimal(``Infinity'')
+>>> decimal.getcontext().trap_enablers[decimal.DivisionByZero] = True
+>>> decimal.Decimal(1) / decimal.Decimal(0)
+Traceback (most recent call last):
+  ...
+decimal.DivisionByZero: x / 0
+>>> 
+\end{verbatim}
+
+The \class{Context} instance also has various methods for formatting 
+numbers such as \method{to_eng_string()} and \method{to_sci_string()}.
+
        
 \begin{seealso}
 \seepep{327}{Decimal Data Type}{Written by Facundo Batista and implemented
-  by Eric Price, Facundo Bastista, Raymond Hettinger, Aahz, and Tim Peters.}
+  by Facundo Batista, Eric Price, Raymond Hettinger, Aahz, and Tim Peters.}
+
+\seeurl{http://research.microsoft.com/~hollasch/cgindex/coding/ieeefloat.html}
+{A more detailed overview of the IEEE-754 representation.}
+
+\seeurl{http://www.lahey.com/float.htm}
+{The article uses Fortran code to illustrate many of the problems
+that floating-point inaccuracy can cause.}
+
+\seeurl{http://www2.hursley.ibm.com/decimal/}
+{A description of a decimal-based representation.  This representation
+is being proposed as a standard, and underlies the new Python decimal
+type.  Much of this material was written by Mike Cowlishaw, designer of the
+REXX language.}
+
 \end{seealso}      
 
 
