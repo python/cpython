@@ -126,24 +126,9 @@ class PyclbrTest(unittest.TestCase):
                              'getproxies_registry',    # set with =
                              'open_https'))            # not on all platforms
 
-        #XXXX bad example
-        #cm('urllib2', ignore=('at_cnri',    # defined inside __main__
-        #                     '__super_init', # set with =.
-        #                     '_HTTPError__super_init', # set with =.
-        #                     'http_error_301', # set with =.
-        #                     ))
-
-
-
         cm('pickle', ignore=('g',))       # deleted declaration
 
         cm('aifc', ignore=('openfp',))    # set with =
-
-        cm('httplib', ignore=('error',    # set with =
-                              'sendall',  # set with =
-                              '_closedsocket', # it's a nested class
-                              'HTTPS',
-                              'HTTP11'))   # not on all platforms
 
         cm('Cookie', ignore=('__str__', 'Cookie')) # set with =
 
