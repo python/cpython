@@ -247,7 +247,7 @@ class IndentedHelpFormatter (HelpFormatter):
     def __init__ (self,
                   indent_increment=2,
                   max_help_position=24,
-                  width=80,
+                  width=79,
                   short_first=1):
         HelpFormatter.__init__(
             self, indent_increment, max_help_position, width, short_first)
@@ -266,7 +266,7 @@ class TitledHelpFormatter (HelpFormatter):
     def __init__ (self,
                   indent_increment=0,
                   max_help_position=24,
-                  width=80,
+                  width=79,
                   short_first=0):
         HelpFormatter.__init__ (
             self, indent_increment, max_help_position, width, short_first)
