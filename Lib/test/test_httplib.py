@@ -29,3 +29,13 @@ except httplib.BadStatusLine:
     print "BadStatusLine raised as expected"
 else:
     print "Expect BadStatusLine"
+
+# Check invalid host_port
+
+for hp in ("www.python.org:abc", "www.python.org:"):
+    try:
+        h = httplib.HTTP(hp)
+    except httplib.InvalidURL:
+        print "InvalidURL raised as expected"
+    else:
+        print "Expect InvalidURL"
