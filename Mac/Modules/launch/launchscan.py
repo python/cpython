@@ -42,6 +42,8 @@ class MyScanner(Scanner):
 		self.defsfile.write("from Carbon.Files import *\n")
 		self.defsfile.write("kLSRequestAllInfo = -1\n")
 		self.defsfile.write("kLSRolesAll = -1\n")
+		self.defsfile.write("kLSUnknownType = FOUR_CHAR_CODE('\\0\\0\\0\\0')\n")
+		self.defsfile.write("kLSUnknownCreator = FOUR_CHAR_CODE('\\0\\0\\0\\0')\n")
 		self.defsfile.write("kLSInvalidExtensionIndex = -1\n")
 
 	def makeblacklistnames(self):
@@ -51,6 +53,8 @@ class MyScanner(Scanner):
 			"kLSRequestAllInfo",
 			"kLSRolesAll",
 			"kLSInvalidExtensionIndex",
+			"kLSUnknownType",
+			"kLSUnknownCreator"
 			]
 
 	def makeblacklisttypes(self):
