@@ -73,17 +73,15 @@ def test(condition, true, false):
 
 
 def c2py(plural):
-    """
-    Gets a C expression as used in PO files for plural forms and
-    returns a Python lambda function that implements an equivalent
-    expression.
+    """Gets a C expression as used in PO files for plural forms and returns a
+    Python lambda function that implements an equivalent expression.
     """
     # Security check, allow only the "n" identifier
     from StringIO import StringIO
     import token, tokenize
     tokens = tokenize.generate_tokens(StringIO(plural).readline)
     try:
-        danger = [ x for x in tokens if x[0] == token.NAME and x[1] != 'n' ]
+        danger = [x for x in tokens if x[0] == token.NAME and x[1] != 'n']
     except tokenize.TokenError:
         raise ValueError, \
               'plural forms expression error, maybe unbalanced parenthesis'
@@ -218,7 +216,7 @@ class NullTranslations:
     def charset(self):
         return self._charset
 
-    def install(self, unicode=0):
+    def install(self, unicode=False):
         import __builtin__
         __builtin__.__dict__['_'] = unicode and self.ugettext or self.gettext
 
@@ -227,12 +225,6 @@ class GNUTranslations(NullTranslations):
     # Magic number of .mo files
     LE_MAGIC = 0x950412deL
     BE_MAGIC = 0xde120495L
-
-    def __init__(self, fp=None, coerce=False):
-        # Set this attribute before calling the base class constructor, since
-        # the latter calls _parse() which depends on self._coerce.
-        self._coerce = coerce
-        NullTranslations.__init__(self, fp)
 
     def _parse(self, fp):
         """Override this method to support alternative .mo formats."""
@@ -281,21 +273,28 @@ class GNUTranslations(NullTranslations):
                         self._charset = v.split('charset=')[1]
                     elif k == 'plural-forms':
                         v = v.split(';')
-##                        nplurals = v[0].split('nplurals=')[1]
-##                        nplurals = int(nplurals.strip())
                         plural = v[1].split('plural=')[1]
                         self.plural = c2py(plural)
+            # Note: we unconditionally convert both msgids and msgstrs to
+            # Unicode using the character encoding specified in the charset
+            # parameter of the Content-Type header.  The gettext documentation
+            # strongly encourages msgids to be us-ascii, but some appliations
+            # require alternative encodings (e.g. Zope's ZCML and ZPT).  For
+            # traditional gettext applications, the msgid conversion will
+            # cause no problems since us-ascii should always be a subset of
+            # the charset encoding.  We may want to fall back to 8-bit msgids
+            # if the Unicode conversion fails.
             if msg.find('\x00') >= 0:
                 # Plural forms
                 msgid1, msgid2 = msg.split('\x00')
                 tmsg = tmsg.split('\x00')
-                if self._coerce:
+                if self._charset:
                     msgid1 = unicode(msgid1, self._charset)
                     tmsg = [unicode(x, self._charset) for x in tmsg]
                 for i in range(len(tmsg)):
                     catalog[(msgid1, i)] = tmsg[i]
             else:
-                if self._coerce:
+                if self._charset:
                     msg = unicode(msg, self._charset)
                     tmsg = unicode(tmsg, self._charset)
                 catalog[msg] = tmsg
@@ -304,16 +303,23 @@ class GNUTranslations(NullTranslations):
             transidx += 8
 
     def gettext(self, message):
-        try:
-            return self._catalog[message]
-        except KeyError:
+        missing = object()
+        tmsg = self._catalog.get(message, missing)
+        if tmsg is missing:
             if self._fallback:
                 return self._fallback.gettext(message)
             return message
+        # Encode the Unicode tmsg back to an 8-bit string, if possible
+        if self._charset:
+            return tmsg.encode(self._charset)
+        return tmsg
 
     def ngettext(self, msgid1, msgid2, n):
         try:
-            return self._catalog[(msgid1, self.plural(n))]
+            tmsg = self._catalog[(msgid1, self.plural(n))]
+            if self._charset:
+                return tmsg.encode(self._charset)
+            return tmsg
         except KeyError:
             if self._fallback:
                 return self._fallback.ngettext(msgid1, msgid2, n)
@@ -328,10 +334,7 @@ class GNUTranslations(NullTranslations):
         if tmsg is missing:
             if self._fallback:
                 return self._fallback.ugettext(message)
-            tmsg = message
-        if not self._coerce:
-            return unicode(tmsg, self._charset)
-        # The msgstr is already coerced to Unicode
+            return unicode(message)
         return tmsg
 
     def ungettext(self, msgid1, msgid2, n):
@@ -341,12 +344,9 @@ class GNUTranslations(NullTranslations):
             if self._fallback:
                 return self._fallback.ungettext(msgid1, msgid2, n)
             if n == 1:
-                tmsg = msgid1
+                tmsg = unicode(msgid1)
             else:
-                tmsg = msgid2
-        if not self._coerce:
-            return unicode(tmsg, self._charset)
-        # The msgstr is already coerced to Unicode
+                tmsg = unicode(msgid2)
         return tmsg
 
 
@@ -392,11 +392,11 @@ def find(domain, localedir=None, languages=None, all=0):
 _translations = {}
 
 def translation(domain, localedir=None, languages=None,
-                class_=None, fallback=0):
+                class_=None, fallback=False):
     if class_ is None:
         class_ = GNUTranslations
     mofiles = find(domain, localedir, languages, all=1)
-    if len(mofiles)==0:
+    if not mofiles:
         if fallback:
             return NullTranslations()
         raise IOError(ENOENT, 'No translation file found for domain', domain)
@@ -419,8 +419,8 @@ def translation(domain, localedir=None, languages=None,
     return result
 
 
-def install(domain, localedir=None, unicode=0):
-    translation(domain, localedir, fallback=1).install(unicode)
+def install(domain, localedir=None, unicode=False):
+    translation(domain, localedir, fallback=True).install(unicode)
 
 
 
