@@ -404,21 +404,12 @@ def normpath(path):
 # Return an absolute path.
 def abspath(path):
     """Return the absolute version of a path"""
-    try:
-        import win32api
-    except ImportError:
-        global abspath
-        def _abspath(path):
-            if not isabs(path):
-                path = join(os.getcwd(), path)
-            return normpath(path)
-        abspath = _abspath
-        return _abspath(path)
     if path: # Empty path must return current working directory.
+        from nt import _getfullpathname
         try:
-            path = win32api.GetFullPathName(path)
-        except win32api.error:
-            pass # Bad path - return unchanged.
+            path = _getfullpathname(path)
+        except WindowsError:
+                pass # Bad path - return unchanged.
     else:
         path = os.getcwd()
     return normpath(path)

@@ -13,6 +13,8 @@
 #include <unistd.h>
 #endif
 
+extern const char *Py_FileSystemDefaultEncoding;
+
 /* Forward */
 static PyObject *filterstring(PyObject *, PyObject *);
 static PyObject *filtertuple (PyObject *, PyObject *);
@@ -1530,14 +1532,16 @@ Return the octal representation of an integer or long integer.";
 static PyObject *
 builtin_open(PyObject *self, PyObject *args)
 {
-	char *name;
+	char *name = NULL;
 	char *mode = "r";
 	int bufsize = -1;
 	PyObject *f;
 
-	if (!PyArg_ParseTuple(args, "s|si:open", &name, &mode, &bufsize))
+	if (!PyArg_ParseTuple(args, "et|si:open", Py_FileSystemDefaultEncoding, 
+	                      &name, &mode, &bufsize))
 		return NULL;
 	f = PyFile_FromString(name, mode);
+	PyMem_Free(name); /* free the encoded string */
 	if (f != NULL)
 		PyFile_SetBufSize(f, bufsize);
 	return f;
