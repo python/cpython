@@ -759,9 +759,9 @@ def skip_leading_nodes(children, start=0):
 
 
 def fixup_rfc_references(doc, fragment):
-    for rfcnode in find_all_elements(fragment, "rfc"):
+    for rfcnode in find_all_elements_from_set(fragment, ("pep", "rfc")):
         rfcnode.appendChild(doc.createTextNode(
-            "RFC " + rfcnode.getAttribute("num")))
+            rfcnode.tagName.upper() + " " + rfcnode.getAttribute("num")))
 
 
 def fixup_signatures(doc, fragment):
@@ -1026,10 +1026,9 @@ def convert(ifp, ofp):
     d = {}
     for gi in events.parser.get_empties():
         d[gi] = gi
-    if d.has_key("author"):
-        del d["author"]
-    if d.has_key("rfc"):
-        del d["rfc"]
+    for key in ("author", "pep", "rfc"):
+        if d.has_key(key):
+            del d[key]
     knownempty = d.has_key
     #
     try:
