@@ -430,6 +430,7 @@ types_map = {
     '.src'    : 'application/x-wais-source',
     '.sv4cpio': 'application/x-sv4cpio',
     '.sv4crc' : 'application/x-sv4crc',
+    '.swf'    : 'application/x-shockwave-flash',
     '.t'      : 'application/x-troff',
     '.tar'    : 'application/x-tar',
     '.tcl'    : 'application/x-tcl',
