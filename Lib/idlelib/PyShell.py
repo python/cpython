@@ -353,6 +353,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt.register("stdout", self.tkconsole.stdout)
         self.rpcclt.register("stderr", self.tkconsole.stderr)
         self.rpcclt.register("flist", self.tkconsole.flist)
+        self.rpcclt.register("linecache", linecache)
         self.transfer_path()
         self.poll_subprocess()
 
@@ -404,23 +405,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 if what is not None:
                     print >>console, `what`
             elif how == "EXCEPTION":
-                mod, name, args, tb = what
-                print >>console, 'Traceback (most recent call last):'
-                exclude = ("run.py", "rpc.py", "RemoteDebugger.py", "bdb.py")
-                self.cleanup_traceback(tb, exclude, console)
-                traceback.print_list(tb, file=console)
-                # try to reinstantiate the exception, stuff in the args:
-                try:
-                    etype = eval(mod + '.' + name)
-                    val = etype()
-                    val.args = args
-                except TypeError:  # string exception!
-                    etype = name
-                    val = args
-                lines = traceback.format_exception_only(etype, val)
-                for line in lines[:-1]:
-                    traceback._print(console, line, '')
-                traceback._print(console, lines[-1], '')
                 if self.tkconsole.getvar("<<toggle-jit-stack-viewer>>"):
                     self.remote_stack_viewer()
             elif how == "ERROR":
@@ -429,36 +413,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 print >>console, errmsg, what
             # we received a response to the currently active seq number:
             self.tkconsole.endexecuting()
-
-    def cleanup_traceback(self, tb, exclude, console):
-        "Remove excluded traces from beginning/end of tb; get cached lines"
-        orig_tb = tb[:]
-        while tb:
-            for rpcfile in exclude:
-                if tb[0][0].count(rpcfile):
-                    break    # found an exclude, break for: and delete tb[0]
-            else:
-                break        # no excludes, have left RPC code, break while:
-            del tb[0]
-        while tb:
-            for rpcfile in exclude:
-                if tb[-1][0].count(rpcfile):
-                    break
-            else:
-                break
-            del tb[-1]
-        if len(tb) == 0:
-            # error was in IDLE internals, don't prune!
-            tb[:] = orig_tb[:]
-            print>>sys.__stderr__, "** IDLE Internal Error: ", tb
-            print>>console, "** IDLE Internal Error **"
-        for i in range(len(tb)):
-            fn, ln, nm, line = tb[i]
-            if nm == '?':
-                nm = "-toplevel-"
-            if not line and fn.startswith("<pyshell#"):
-                line = linecache.getline(fn, ln)
-            tb[i] = fn, ln, nm, line
 
     def kill_subprocess(self):
         clt = self.rpcclt
