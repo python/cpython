@@ -1314,6 +1314,10 @@ stdwin_getevent(sw, args)
 	}
 	if (e.window == NULL && (e.type == WE_COMMAND || e.type == WE_CHAR))
 		goto again;
+	if (e.type == WE_COMMAND && e.u.command == WC_CLOSE) {
+		/* Turn WC_CLOSE commands into WE_CLOSE events */
+		e.type = WE_CLOSE;
+	}
 	v = newtupleobject(3);
 	if (v == NULL)
 		return NULL;
@@ -1511,15 +1515,8 @@ stdwin_setcutbuffer(self, args)
 {
 	int i;
 	object *str;
-	/* Compatibility hack: setcutbuffer(str) === setcutbuffer(0, str) */
-	if (args != NULL && !is_tupleobject(args)) {
-		if (!getstrarg(args, &str))
-			return NULL;
-	}
-	else {
-		if (!getintstrarg(args, &i, &str))
-			return NULL;
-	}
+	if (!getintstrarg(args, &i, &str))
+		return NULL;
 	wsetcutbuffer(i, getstringvalue(str), getstringsize(str));
 	INCREF(None);
 	return None;
@@ -1533,10 +1530,7 @@ stdwin_getcutbuffer(self, args)
 	int i;
 	char *str;
 	int len;
-	/* Compatibility hack: getcutbuffer() === getcutbuffer(0) */
-	if (args == NULL)
-		i = 0;
-	else if (!getintarg(args, &i))
+	if (!getintarg(args, &i))
 		return NULL;
 	str = wgetcutbuffer(i, &len);
 	if (str == NULL) {
