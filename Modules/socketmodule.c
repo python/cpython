@@ -613,12 +613,14 @@ setipaddr(char* name, struct sockaddr * addr_ret, int af)
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = af;
 	error = getaddrinfo(name, NULL, &hints, &res);
+#if defined(__digital__) && defined(__unix__)
         if (error == EAI_NONAME && af == AF_UNSPEC) {
-          /* On OSF/1 V5.1, numeric-to-addr conversion
+          /* On Tru64 V5.1, numeric-to-addr conversion
              fails if no address family is given. Assume IPv4 for now.*/
           hints.ai_family = AF_INET;
           error = getaddrinfo(name, NULL, &hints, &res);
         }
+#endif
 	if (error) {
 		PyGAI_Err(error);
 		return -1;
