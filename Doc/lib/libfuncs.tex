@@ -669,6 +669,7 @@ integer \var{i}, e.g., \code{unichr(97)} returns the string
 \code{u'a'}.  This is the inverse of \function{ord()} for Unicode
 strings.  The argument must be in the range [0..65535], inclusive.
 \exception{ValueError} is raised otherwise.
+\versionadded{1.6}
 \end{funcdesc}
 
 \begin{funcdesc}{unicode}{string\optional{, encoding='utf-8'\optional{, errors='strict'}}}
@@ -676,6 +677,7 @@ Decodes \var{string} using the codec for \var{encoding}.  Error
 handling is done according to \var{errors}.  The default behavior is
 to decode UTF-8 in strict mode, meaning that encoding errors raise
 \exception{ValueError}.
+\versionadded{1.6}
 \end{funcdesc}
 
 \begin{funcdesc}{vars}{\optional{object}}
