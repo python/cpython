@@ -213,8 +213,7 @@ static PyMappingMethods dbm_as_mapping = {
 
 static char dbm_close__doc__[] = "\
 close() -> None\n\
-Closes the database.
-";
+Closes the database.";
 
 static PyObject *
 dbm_close(dp, args)
