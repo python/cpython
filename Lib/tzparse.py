@@ -48,7 +48,7 @@ def isdst(time):
 	import calendar
 	(tzname, delta, dstname, daystart, hourstart, dayend, hourend) = \
 		tzparams
-	year, month, days, hours, mins, secs, yday, wday = \
+	year, month, days, hours, mins, secs, yday, wday, isdst = \
 		calendar.gmtime(time - delta*3600)
 	return (daystart, hourstart) <= (yday+1, hours) < (dayend, hourend)
 

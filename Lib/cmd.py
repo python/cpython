@@ -8,11 +8,13 @@ PROMPT = '(Cmd) '
 IDENTCHARS = string.letters + string.digits + '_'
 
 class Cmd:
-	
-	def init(self):
+
+	def __init__(self):
 		self.prompt = PROMPT
 		self.identchars = IDENTCHARS
 		self.lastcmd = ''
+	
+	def init(self):
 		return self
 
 	def cmdloop(self):
@@ -56,7 +58,7 @@ class Cmd:
 			func()
 		else:
 			import newdir
-			names = newdir.dir(self)
+			names = newdir.dir(self.__class__)
 			cmds = []
 			for name in names:
 				if name[:3] == 'do_':

@@ -563,11 +563,20 @@ class Aifc_read:
 
 	def _readmark(self, chunk):
 		nmarkers = _read_short(chunk)
-		for i in range(nmarkers):
-			id = _read_short(chunk)
-			pos = _read_long(chunk)
-			name = _read_string(chunk)
-			self._markers.append((id, pos, name))
+		# Some files appear to contain invalid counts.
+		# Cope with this by testing for EOF.
+		try:
+			for i in range(nmarkers):
+				id = _read_short(chunk)
+				pos = _read_long(chunk)
+				name = _read_string(chunk)
+				self._markers.append((id, pos, name))
+		except EOFError:
+			print 'Warning: MARK chunk contains only',
+			print len(self._markers),
+			if len(self._markers) == 1: print 'marker',
+			else: print 'markers',
+			print 'instead of', nmarkers
 
 class Aifc_write:
 	# Variables used in this class:
