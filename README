@@ -386,16 +386,16 @@ Reliant UNIX: The thread support does not compile on Reliant UNIX, and
         platform as well.  This should be resolved in time for a
         future release.
 
-Mac OS X: You need to add the "-traditional-cpp" option to the
-        compiler command line for the Mac OS X Public Beta.  This is
-        appearantly a bug in the default pre-processor, and is
-        expected not to be a problem with future versions.  Run
-        configure with "OPT='-g -traditional-cpp' ./configure
-        --with-suffix=.exe --with-dyld" to add this
-        option.  One of the regular expression tests fails due to the
-        small stack size used by default (how to change this?), and
-        the test_largefile test is only expected to work on a Unix UFS
-        filesystem (how to check for this on Mac OS X?).
+Mac OS X 10.0: Run configure with "OPT='-no-cpp-precomp' ./configure
+        --with-suffix=.exe --with-dyld".  This generates executable
+        file: 'python.exe' (it cannot be named 'python' on an HFS or
+        HFS+ disk as the file name clashes with directory 'Python').
+        The '-no-cpp-precomp' option prevents a large number of
+        compilation warnings.  One of the regular expression tests
+        fails with a SEGV due to the small stack size used by default
+        (how to change this?), and the test_largefile test is only
+        expected to work on a Unix UFS filesystem (how to check for
+        this on Mac OS X?).
 
 Cygwin: Cygwin Python builds OOTB when configured as follows:
 
