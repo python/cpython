@@ -88,10 +88,7 @@ class MyFile(File):
 			print "%s: conflict resolution not yet implemented" % \
 			      self.file
 		elif code == 'D':
-			try:
-				os.unlink(self.file)
-			except os.error:
-				pass
+			remove(self.file)
 			self.eseen = 0
 		elif code == 'r':
 			self.eseen = 0
@@ -114,6 +111,26 @@ class MyFile(File):
 		elif code == 'C':
 			print "%s: conflict resolution not yet implemented" % \
 			      self.file
+
+	def diff(self, opts = []):
+		import tempfile
+		flags = ''
+		for o, a in opts:
+			flags = flags + ' ' + o + a
+		flags = flags[1:]
+		fn = self.file
+		data = self.proxy.get(fn)
+		tfn = tempfile.mktemp()
+		try:
+			tf = open(tfn, 'w')
+			tf.write(data)
+			tf.close()
+			print 'diff %s -r%s %s' % (flags, self.rrev, fn)
+			sts = os.system('diff %s %s %s' % (flags, tfn, fn))
+			if sts:
+				print '='*70
+		finally:
+			remove(tfn)
 
 	def commitcheck(self):
 		return self.action() != 'C'
@@ -207,6 +224,7 @@ class rcvs(CommandFrameWork):
 			else:
 				self.cvs.entries[file].update()
 		self.cvs.putentries()
+	do_up = do_update
 
 	def do_commit(self, opts, files):
 		"""commit [file] ..."""
@@ -222,6 +240,24 @@ class rcvs(CommandFrameWork):
 		for file in files:
 			self.cvs.entries[file].commit(message)
 		self.cvs.putentries()
+	do_com = do_commit
+
+	def do_diff(self, opts, files):
+		"""diff [difflags] [file] ..."""
+		if self.cvs.checkfiles(files):
+			return 1
+		for file in files:
+			self.cvs.entries[file].diff(opts)
+	do_dif = do_diff
+	flags_diff = 'cbitwcefhnlrsD:S:'
+
+
+
+def remove(fn):
+	try:
+		os.unlink(fn)
+	except os.error:
+		pass
 
 
 def main():
