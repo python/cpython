@@ -143,28 +143,28 @@ If it is another kind of object, it will be printed and the system\n\
 exit status will be one (i.e., failure).";
 
 static PyObject *
-sys_get_string_encoding(self, args)
+sys_getdefaultencoding(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	if (!PyArg_ParseTuple(args, ":get_string_encoding"))
+	if (!PyArg_ParseTuple(args, ":getdefaultencoding"))
 		return NULL;
 	return PyString_FromString(PyUnicode_GetDefaultEncoding());
 }
 
-static char get_string_encoding_doc[] =
-"get_string_encoding() -> string\n\
+static char getdefaultencoding_doc[] =
+"getdefaultencoding() -> string\n\
 \n\
 Return the current default string encoding used by the Unicode \n\
 implementation.";
 
 static PyObject *
-sys_set_string_encoding(self, args)
+sys_setdefaultencoding(self, args)
 	PyObject *self;
 	PyObject *args;
 {
 	char *encoding;
-	if (!PyArg_ParseTuple(args, "s:set_string_encoding", &encoding))
+	if (!PyArg_ParseTuple(args, "s:setdefaultencoding", &encoding))
 		return NULL;
 	if (PyUnicode_SetDefaultEncoding(encoding))
 	    	return NULL;
@@ -172,8 +172,8 @@ sys_set_string_encoding(self, args)
 	return Py_None;
 }
 
-static char set_string_encoding_doc[] =
-"set_string_encoding(encoding)\n\
+static char setdefaultencoding_doc[] =
+"setdefaultencoding(encoding)\n\
 \n\
 Set the current default string encoding used by the Unicode implementation.";
 
@@ -301,7 +301,7 @@ static PyMethodDef sys_methods[] = {
 	/* Might as well keep this in alphabetic order */
 	{"exc_info",	sys_exc_info, 1, exc_info_doc},
 	{"exit",	sys_exit, 0, exit_doc},
-	{"get_string_encoding", sys_get_string_encoding, 1, get_string_encoding_doc},
+	{"getdefaultencoding", sys_getdefaultencoding, 1, getdefaultencoding_doc},
 #ifdef COUNT_ALLOCS
 	{"getcounts",	sys_getcounts, 1},
 #endif
@@ -315,7 +315,7 @@ static PyMethodDef sys_methods[] = {
 #ifdef USE_MALLOPT
 	{"mdebug",	sys_mdebug, 1},
 #endif
-	{"set_string_encoding", sys_set_string_encoding, 1, set_string_encoding_doc},
+	{"setdefaultencoding", sys_setdefaultencoding, 1, setdefaultencoding_doc},
 	{"setcheckinterval",	sys_setcheckinterval, 1, setcheckinterval_doc},
 	{"setprofile",	sys_setprofile, 0, setprofile_doc},
 	{"settrace",	sys_settrace, 0, settrace_doc},
