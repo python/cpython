@@ -44,6 +44,7 @@ struct _node *parse_file PROTO((FILE *, char *, int));
 
 object *run_string PROTO((char *, int, object *, object *));
 object *run_file PROTO((FILE *, char *, int, object *, object *));
+object *run_pyc_file PROTO((FILE *, char *, object *, object *));
 
 object *compile_string PROTO((char *, char *, int));
 
