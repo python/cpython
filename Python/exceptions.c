@@ -727,7 +727,7 @@ SyntaxError__str__(PyObject* self, PyObject* args)
 
 PyMethodDef SyntaxError_methods[] = {
     {"__init__", SyntaxError__init__, 1},
-    {"__str__",  SyntaxError__str__,},
+    {"__str__",  SyntaxError__str__, 1},
     {NULL, NULL}
 };
 
