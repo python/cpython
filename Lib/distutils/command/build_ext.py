@@ -84,7 +84,7 @@ class build_ext (Command):
     help_options = [
         ('help-compiler', None,
          "list available compilers", show_compilers),
-	]
+        ]
 
     def initialize_options (self):
         self.extensions = None
@@ -282,7 +282,9 @@ class build_ext (Command):
 
             # Medium-easy stuff: same syntax/semantics, different names.
             ext.runtime_library_dirs = build_info.get('rpath')
-            ext.export_symbol_file = build_info.get('def_file')
+            if build_info.has_key('def_file'):
+                self.warn("'def_file' element of build info dict "
+                          "no longer supported")
 
             # Non-trivial stuff: 'macros' split into 'define_macros'
             # and 'undef_macros'.
@@ -420,16 +422,14 @@ class build_ext (Command):
                 objects.extend (ext.extra_objects)
             extra_args = ext.extra_link_args or []
 
-            # Bunch of fixing-up we have to do for Microsoft's linker.
-            if self.compiler.compiler_type == 'msvc':
-                self.msvc_prelink_hack(sources, ext, extra_args)
 
             self.compiler.link_shared_object (
                 objects, ext_filename, 
-                libraries=ext.libraries,
+                libraries=self.get_libraries(ext),
                 library_dirs=ext.library_dirs,
                 runtime_library_dirs=ext.runtime_library_dirs,
                 extra_postargs=extra_args,
+                export_symbols=self.get_export_symbols(ext), 
                 debug=self.debug,
                 build_temp=self.build_temp)
 
@@ -511,44 +511,6 @@ class build_ext (Command):
 
     # find_swig ()
     
-
-    # -- Hooks 'n hacks ------------------------------------------------
-
-    def msvc_prelink_hack (self, sources, ext, extra_args):
-
-        # XXX this is a kludge!  Knowledge of specific compilers or
-        # platforms really doesn't belong here; in an ideal world, the
-        # CCompiler interface would provide access to everything in a
-        # compiler/linker system needs to build Python extensions, and
-        # we would just do everything nicely and cleanly through that
-        # interface.  However, this is a not an ideal world and the
-        # CCompiler interface doesn't handle absolutely everything.
-        # Thus, kludges like this slip in occasionally.  (This is no
-        # excuse for committing more platform- and compiler-specific
-        # kludges; they are to be avoided if possible!)
-
-        def_file = ext.export_symbol_file
-
-        if def_file is not None:
-            extra_args.append ('/DEF:' + def_file)
-        else:
-            modname = string.split (ext.name, '.')[-1]
-            extra_args.append('/export:init%s' % modname)
-
-        # The MSVC linker generates .lib and .exp files, which cannot be
-        # suppressed by any linker switches. The .lib files may even be
-        # needed! Make sure they are generated in the temporary build
-        # directory. Since they have different names for debug and release
-        # builds, they can go into the same directory.
-        implib_file = os.path.join (
-            self.implib_dir,
-            self.get_ext_libname (ext.name))
-        extra_args.append ('/IMPLIB:' + implib_file)
-        self.mkpath (os.path.dirname (implib_file))
-
-    # msvc_prelink_hack ()
-
-
     # -- Name generators -----------------------------------------------
     # (extension names, filenames, whatever)
 
@@ -578,5 +540,40 @@ class build_ext (Command):
         if os.name == 'nt' and self.debug:
             return apply (os.path.join, ext_path) + '_d.lib'
         return apply (os.path.join, ext_path) + '.lib'
+
+
+    def get_export_symbols (self, ext):
+        """Return the list of symbols that a shared extension has to
+        export.  This either uses 'ext.export_symbols' or, if it's not
+        provided, "init" + module_name.  Only relevant on Windows, where
+        the .pyd file (DLL) must export the module "init" function.
+        """
+
+        # XXX what if 'export_symbols' defined but it doesn't contain
+        # "init" + module_name?  Should we add it? warn? or just carry
+        # on doing nothing?
+
+        if ext.export_symbols is None:
+            return ["init" + string.split(ext.name,'.')[-1]]
+        else:
+            return ext.export_symbols
+
+    def get_libraries (self, ext):
+        """Return the list of libraries to link against when building a
+        shared extension.  On most platforms, this is just 'ext.libraries';
+        on Windows, we add the Python library (eg. python20.dll).
+        """
+        # The python library is always needed on Windows.  For MSVC, this
+        # is redundant, since the library is mentioned in a pragma in
+        # config.h that MSVC groks.  The other Windows compilers all seem
+        # to need it mentioned explicitly, though, so that's what we do.
+        if sys.platform == "win32": 
+            pythonlib = ("python%d%d" %
+                 (sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff))
+            # don't extend ext.libraries, it may be shared with other
+            # extensions, it is a reference to the original list
+            return ext.libraries + [pythonlib]
+        else:
+            return ext.libraries
 
 # class build_ext
