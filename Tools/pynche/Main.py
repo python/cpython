@@ -1,4 +1,8 @@
-"""Pynche: The PYthon Natural Color and Hue Editor.
+"""Pynche -- The PYthon Natural Color and Hue Editor.
+
+Author:  Barry Warsaw
+Email:   bwarsaw@python.org
+Version: %(__version__)s
 
 Pynche is based largely on a similar color editor I wrote years ago for the
 Sunview window system.  That editor was called ICE: the Interactive Color
@@ -12,7 +16,7 @@ This program currently requires Python 1.5 with Tkinter.  It has only been
 tested on Solaris 2.6.  Feedback is greatly appreciated.  Send email to
 bwarsaw@python.org
 
-Usage: %(PROGRAM)s [-d file] [-i file] [-X] [-h] [initialcolor]
+Usage: %(PROGRAM)s [-d file] [-i file] [-X] [-v] [-h] [initialcolor]
 
 Where:
     --database file
@@ -31,6 +35,10 @@ Where:
     -X
         Ignore the initialization file when starting up.  Pynche will still
         write the current option settings to this file when it quits.
+
+    --version
+    -v
+        print the version number
 
     --help
     -h
@@ -71,7 +79,7 @@ RGB_TXT = [
 def usage(status, msg=''):
     print __doc__ % globals()
     if msg:
-	print msg
+        print msg
     sys.exit(status)
 
 
@@ -156,8 +164,8 @@ def main():
     try:
 	opts, args = getopt.getopt(
             sys.argv[1:],
-            'hd:i:X',
-            ['database=', 'initfile=', 'ignore', 'help'])
+            'hd:i:Xv',
+            ['database=', 'initfile=', 'ignore', 'help', 'version'])
     except getopt.error, msg:
 	usage(1, msg)
 
@@ -173,6 +181,13 @@ def main():
     for opt, arg in opts:
 	if opt in ('-h', '--help'):
 	    usage(0)
+        elif opt in ('-v', '--version'):
+            print '''\
+Pynche -- The PYthon Natural Color and Hue Editor.
+Author:  Barry Warsaw
+Email:   bwarsaw@python.org
+Version: %s''' % __version__
+            sys.exit(0)
 	elif opt in ('-d', '--database'):
 	    RGB_TXT.insert(0, arg)
         elif opt in ('-X', '--ignore'):
