@@ -972,6 +972,7 @@ special operations.  There is exactly one ellipsis object, named
 
 It is written as \code{Ellipsis}.
 
+
 \subsubsection{File Objects\obindex{file}
                \label{bltin-file-objects}}
 
@@ -995,8 +996,8 @@ Files have the following methods:
 
 \begin{methoddesc}[file]{close}{}
   Close the file.  A closed file cannot be read or written anymore.
-  Any operation which requires that the file be open will raise an
-  \exception{IOError} after the file has been closed.  Calling
+  Any operation which requires that the file be open will raise a
+  \exception{ValueError} after the file has been closed.  Calling
   \method{close()} more than once is allowed.
 \end{methoddesc}
 
@@ -1137,6 +1138,7 @@ implemented in C will have to provide a writable
 \keyword{print} to keep track of its internal state.
 \end{memberdesc}
 
+
 \subsubsection{Internal Objects \label{typesinternal}}
 
 See the \citetitle[../ref/ref.html]{Python Reference Manual} for this
@@ -1149,26 +1151,28 @@ slice objects.
 The implementation adds a few special read-only attributes to several
 object types, where they are relevant:
 
-\begin{memberdescni}{__dict__}
-A dictionary of some sort used to store an
+\begin{memberdesc}[object]{__dict__}
+A dictionary or other mapping object used to store an
 object's (writable) attributes.
-\end{memberdescni}
+\end{memberdesc}
 
-\begin{memberdescni}{__methods__}
+\begin{memberdesc}[object]{__methods__}
 List of the methods of many built-in object types,
 e.g., \code{[].__methods__} yields
 \code{['append', 'count', 'index', 'insert', 'pop', 'remove',
-'reverse', 'sort']}.
-\end{memberdescni}
+'reverse', 'sort']}.  This usually does not need to be explicitly
+provided by the object.
+\end{memberdesc}
 
-\begin{memberdescni}{__members__}
-Similar to \member{__methods__}, but lists data attributes.
-\end{memberdescni}
+\begin{memberdesc}[object]{__members__}
+Similar to \member{__methods__}, but lists data attributes.  This
+usually does not need to be explicitly provided by the object.
+\end{memberdesc}
 
-\begin{memberdescni}{__class__}
+\begin{memberdesc}[instance]{__class__}
 The class to which a class instance belongs.
-\end{memberdescni}
+\end{memberdesc}
 
-\begin{memberdescni}{__bases__}
+\begin{memberdesc}[class]{__bases__}
 The tuple of base classes of a class object.
-\end{memberdescni}
+\end{memberdesc}
