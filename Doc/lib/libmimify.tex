@@ -1,7 +1,7 @@
 \section{\module{mimify} ---
-         Mimification and unmimification of mail messages.}
-\declaremodule{standard}{mimify}
+         MIME processing of mail messages}
 
+\declaremodule{standard}{mimify}
 \modulesynopsis{Mimification and unmimification of mail messages.}
 
 
@@ -10,7 +10,7 @@ and from MIME format.  The mail message can be either a simple message
 or a so-called multipart message.  Each part is treated separately.
 Mimifying (a part of) a message entails encoding the message as
 quoted-printable if it contains any characters that cannot be
-represented using 7-bit ASCII.  Unmimifying (a part of) a message
+represented using 7-bit \ASCII.  Unmimifying (a part of) a message
 entails undoing the quoted-printable encoding.  Mimify and unmimify
 are especially useful when a message has to be edited before being
 sent.  Typical use would be:
@@ -29,17 +29,17 @@ user-settable variables:
 Copy the message in \var{infile} to \var{outfile}, converting parts to
 quoted-printable and adding MIME mail headers when necessary.
 \var{infile} and \var{outfile} can be file objects (actually, any
-object that has a \code{readline} method (for \var{infile}) or a
-\code{write} method (for \var{outfile})) or strings naming the files.
+object that has a \method{readline()} method (for \var{infile}) or a
+\method{write()} method (for \var{outfile})) or strings naming the files.
 If \var{infile} and \var{outfile} are both strings, they may have the
 same value.
 \end{funcdesc}
 
-\begin{funcdesc}{unmimify}{infile, outfile, decode_base64 = 0} 
+\begin{funcdesc}{unmimify}{infile, outfile\optional{, decode_base64}}
 Copy the message in \var{infile} to \var{outfile}, decoding all
 quoted-printable parts.  \var{infile} and \var{outfile} can be file
-objects (actually, any object that has a \code{readline} method (for
-\var{infile}) or a \code{write} method (for \var{outfile})) or strings
+objects (actually, any object that has a \method{readline()} method (for
+\var{infile}) or a \method{write()} method (for \var{outfile})) or strings
 naming the files.  If \var{infile} and \var{outfile} are both strings,
 they may have the same value.
 If the \var{decode_base64} argument is provided and tests true, any
@@ -56,14 +56,14 @@ Return a MIME-encoded version of the header line in \var{line}.
 
 \begin{datadesc}{MAXLEN}
 By default, a part will be encoded as quoted-printable when it
-contains any non-ASCII characters (i.e., characters with the 8th bit
-set), or if there are any lines longer than \code{MAXLEN} characters
+contains any non-\ASCII{} characters (i.e., characters with the 8th bit
+set), or if there are any lines longer than \constant{MAXLEN} characters
 (default value 200).  
 \end{datadesc}
 
 \begin{datadesc}{CHARSET}
 When not specified in the mail headers, a character set must be filled
-in.  The string used is stored in \code{CHARSET}, and the default
+in.  The string used is stored in \constant{CHARSET}, and the default
 value is ISO-8859-1 (also known as Latin1 (latin-one)).
 \end{datadesc}
 
@@ -77,10 +77,10 @@ to encode (mimify) and decode (unmimify) respectively.  \var{infile}
 defaults to standard input, \var{outfile} defaults to standard output.
 The same file can be specified for input and output.
 
-If the \code{-l} option is given when encoding, if there are any lines
+If the \strong{-l} option is given when encoding, if there are any lines
 longer than the specified \var{length}, the containing part will be
 encoded.
 
-If the \code{-b} option is given when decoding, any base64 parts will
+If the \strong{-b} option is given when decoding, any base64 parts will
 be decoded as well.
 
