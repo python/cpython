@@ -214,10 +214,10 @@ extern DL_IMPORT(void) _PyObject_Del(PyObject *);
 
 /* To make a new object participate in garbage collection use
    PyObject_{New, VarNew, Del} to manage the memory.  Set the type flag
-   Py_TPFLAGS_GC and define the type method tp_recurse.  You should also
+   Py_TPFLAGS_GC and define the type method tp_traverse.  You should also
    add the method tp_clear if your object is mutable.  Include
    PyGC_HEAD_SIZE in the calculation of tp_basicsize.  Call
-   PyObject_GC_Init after the pointers followed by tp_recurse become
+   PyObject_GC_Init after the pointers followed by tp_traverse become
    valid (usually just before returning the object from the allocation
    method.  Call PyObject_GC_Fini before those pointers become invalid
    (usually at the top of the deallocation method).  */
