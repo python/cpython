@@ -44,7 +44,7 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
     created_dirs = []
     if os.path.isdir(name) or name == '':
         return created_dirs
-    if _path_created.get(name):
+    if _path_created.get(os.path.abspath(name)):
         return created_dirs
 
     (head, tail) = os.path.split(name)
@@ -64,7 +64,9 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
     for d in tails:
         #print "head = %s, d = %s: " % (head, d),
         head = os.path.join(head, d)
-        if _path_created.get(head):
+        abs_head = os.path.abspath(head)
+
+        if _path_created.get(abs_head):
             continue
 
         if verbose:
@@ -78,7 +80,7 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
                 raise DistutilsFileError, \
                       "could not create '%s': %s" % (head, exc[-1])
 
-        _path_created[head] = 1
+        _path_created[abs_head] = 1
     return created_dirs
 
 # mkpath ()
@@ -208,8 +210,9 @@ def remove_tree (directory, verbose=0, dry_run=0):
         try:
             apply(cmd[0], (cmd[1],))
             # remove dir from cache if it's already there
-            if _path_created.has_key(cmd[1]):
-                del _path_created[cmd[1]]
+            abspath = os.path.abspath(cmd[1])
+            if _path_created.has_key(abspath):
+                del _path_created[abspath]
         except (IOError, OSError), exc:
             if verbose:
                 print grok_environment_error(
