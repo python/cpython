@@ -10,19 +10,19 @@ NoneType = type(None)
 TypeType = type
 ObjectType = object
 
-IntType = type(0)
-LongType = type(0L)
-FloatType = type(0.0)
+IntType = int
+LongType = long
+FloatType = float
 try:
-    ComplexType = type(complex(0,1))
+    ComplexType = complex
 except NameError:
     pass
 
-StringType = type('')
-UnicodeType = type(u'')
+StringType = str
+UnicodeType = unicode
 BufferType = type(buffer(''))
 
-TupleType = type(())
+TupleType = tuple
 ListType = list
 DictType = DictionaryType = dictionary
 
