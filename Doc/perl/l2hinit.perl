@@ -26,8 +26,7 @@ $BOTTOM_NAVIGATION = 1;
 $AUTO_NAVIGATION = 0;
 
 # these exactly match the python.org colors
-$BODYTEXT = ('bgcolor="#ffffff" text="#000000"'
-	     . ' link="#0000bb"  vlink="#551a8b" alink="#ff0000"');
+$BODYTEXT = '';
 $CHILDLINE = "\n<p><hr>\n";
 $VERBOSITY = 0;
 
@@ -506,6 +505,7 @@ sub set_depth_levels {
 # content of the page.
 sub make_head_and_body {
     my($title, $body) = @_;
+    $body = " $body" unless ($body eq '');
     my $DTDcomment = '';
     my($version, $isolanguage) = ($HTML_VERSION, 'EN');
     my %isolanguages = (  'english',  'EN'   , 'USenglish', 'EN.US'
@@ -541,7 +541,7 @@ sub make_head_and_body {
 	, ($BASE ? "<base href=\"$BASE\">\n" : "" )
 	, "<link rel=\"STYLESHEET\" href=\"$STYLESHEET\">"
 	, $more_links_mark
-	, "\n</head>\n<body $body>\n");
+	, "\n</head>\n<body$body>");
 }
 
 1;	# This must be the last line
