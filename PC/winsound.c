@@ -59,7 +59,7 @@ static char sound_beep_doc[] =
 static char sound_module_doc[] =
 "PlaySound(sound, flags) - play a sound\n"
 "SND_FILENAME - sound is a wav file name\n"
-"SND_ALIAS - sound is a control panel sound association name\n"
+"SND_ALIAS - sound is a registry sound association name\n"
 "SND_LOOP - Play the sound repeatedly; must also specify SND_ASYNC\n"
 "SND_MEMORY - sound is a memory image of a wav file\n"
 "SND_PURGE - stop all instances of the specified sound\n"
