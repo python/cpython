@@ -3,6 +3,7 @@ initCtl
 initDlg
 initEvt
 initFm
+initHelp
 initMenu
 initList
 initQd
@@ -21,6 +22,8 @@ MenuObj_Convert
 WinObj_Convert
 GrafObj_New
 GrafObj_Convert
+BMObj_New
+BMObj_Convert
 FMRec_New
 ListObj_New
 ListObj_Convert
