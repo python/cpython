@@ -5,6 +5,14 @@ from _tkinter import TclError
 from types import *
 from Tkconstants import *
 
+# XXXX Not really correct.
+# The following code disables all python  mainloop event handling,
+# but what we really want is to disable it only for tk windows...
+import os
+if os.name == 'mac':
+	import MacOS
+	MacOS.EnableAppswitch(0)
+
 CallableTypes = (FunctionType, MethodType,
 		 BuiltinFunctionType, BuiltinMethodType)
 
