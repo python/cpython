@@ -20,8 +20,6 @@
 
 #include <ctype.h>
 
-#define REPR(O) PyString_AS_STRING(PyObject_Repr(O))
-
 /* Turn this on if your compiler chokes on the big switch: */
 /* #define CASE_TOO_BIG 1 */
 
