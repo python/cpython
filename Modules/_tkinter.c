@@ -604,6 +604,10 @@ Tkapp_Call(self, args)
 
 		for (i = 0; i < objc; i++) {
 			PyObject *v = PyTuple_GetItem(args, i);
+			if (v == Py_None) {
+				objc = i;
+				break;
+			}
 			objv[i] = AsObj(v);
 			if (!objv[i])
 				goto finally;
