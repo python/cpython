@@ -157,8 +157,10 @@ class EditorWindow:
             menu.configure(postcommand=self.postwindowsmenu)
 
     def wakeup(self):
-        self.top.tkraise()
-        self.top.wm_deiconify()
+        if self.top.wm_state() == "iconic":
+            self.top.wm_deiconify()
+        else:
+            self.top.tkraise()
         self.text.focus_set()
 
     menu_specs = [
