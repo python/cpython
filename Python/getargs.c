@@ -12,6 +12,9 @@ int PyArg_VaParse(PyObject *, char *, va_list);
 
 int PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
 				char *, char **, ...);
+int PyArg_VaParseTupleAndKeywords(PyObject *, PyObject *,
+				char *, char **, va_list);
+
 
 /* Forward */
 static int vgetargs1(PyObject *, char *, va_list *, int);
@@ -1149,6 +1152,39 @@ PyArg_ParseTupleAndKeywords(PyObject *args,
 	va_start(va, kwlist);
 	retval = vgetargskeywords(args, keywords, format, kwlist, &va);	
 	va_end(va);
+	return retval;
+}
+
+
+int
+PyArg_VaParseTupleAndKeywords(PyObject *args,
+			    PyObject *keywords,
+			    char *format, 
+			    char **kwlist, va_list va)
+{
+	int retval;
+	va_list lva;
+
+	if ((args == NULL || !PyTuple_Check(args)) ||
+	    (keywords != NULL && !PyDict_Check(keywords)) ||
+	    format == NULL ||
+	    kwlist == NULL)
+	{
+		PyErr_BadInternalCall();
+		return 0;
+	}
+
+#ifdef VA_LIST_IS_ARRAY
+	memcpy(lva, va, sizeof(va_list));
+#else
+#ifdef __va_copy
+	__va_copy(lva, va);
+#else
+	lva = va;
+#endif
+#endif
+
+	retval = vgetargskeywords(args, keywords, format, kwlist, &lva);	
 	return retval;
 }
 
