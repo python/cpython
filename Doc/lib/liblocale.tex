@@ -7,8 +7,8 @@
 
 
 The \code{locale} module opens access to the \POSIX{} locale database
-and functionality. The \POSIX{} locale mechanism allows applications
-to integrate certain cultural aspects into an applications, without
+and functionality. The \POSIX{} locale mechanism allows programmers
+to deal with certain cultural issues in an application, without
 requiring the programmer to know all the specifics of each country
 where the software is executed.
 
@@ -270,7 +270,7 @@ settings to what the user requests, extract the relevant
 characteristics, and then restore the \samp{C} numeric locale.
 
 When Python code uses the \module{locale} module to change the locale,
-this also affect the embedding application.  If the embedding
+this also affects the embedding application.  If the embedding
 application doesn't want this to happen, it should remove the
 \module{_locale} extension module (which does all the work) from the
 table of built-in modules in the \file{config.c} file, and make sure

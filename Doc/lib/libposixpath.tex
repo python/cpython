@@ -54,9 +54,11 @@ unchanged.  On the Macintosh, this always returns \var{path}
 unchanged.
 \end{funcdesc}
 
-\begin{funcdesc}{getsize}{path}
-Return the size, in bytes, of \var{filename}.  Raise
-\exception{os.error} if the file does not exist or is inaccessible.
+\begin{funcdesc}{getatime}{path}
+Return the time of last access of \var{filename}.  The return
+value is integer giving the number of seconds since the epoch (see the 
+\refmodule{time} module).  Raise \exception{os.error} if the file does
+not exist or is inaccessible.
 \versionadded{1.5.2}
 \end{funcdesc}
 
@@ -68,11 +70,9 @@ not exist or is inaccessible.
 \versionadded{1.5.2}
 \end{funcdesc}
 
-\begin{funcdesc}{getatime}{path}
-Return the time of last access of \var{filename}.  The return
-value is integer giving the number of seconds since the epoch (see the 
-\refmodule{time} module).  Raise \exception{os.error} if the file does
-not exist or is inaccessible.
+\begin{funcdesc}{getsize}{path}
+Return the size, in bytes, of \var{filename}.  Raise
+\exception{os.error} if the file does not exist or is inaccessible.
 \versionadded{1.5.2}
 \end{funcdesc}
 
