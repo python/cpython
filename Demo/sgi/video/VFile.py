@@ -155,6 +155,10 @@ class VinFile:
 		if not self.hascache:
 			raise Error, 'Cannot warm cache'
 
+	def close(self):
+		self.fp.close()
+		self.fp = None
+
 
 	#
 	# getinfo returns all info pertaining to a film. The returned tuple
@@ -421,7 +425,7 @@ class VoutFile:
 
 	def close(self):
 		self.fp.close()
-		self = self.initfp(None, None)
+		x = self.initfp(None, None)
 
 	def setinfo(self, values):
 		self.format, self.width, self.height, self.packfactor,\
