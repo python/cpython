@@ -463,6 +463,10 @@ r_object(p)
 	
 	case TYPE_STRING:
 		n = r_long(p);
+		if (n < 0) {
+			PyErr_SetString(PyExc_ValueError, "bad marshal data");
+			return NULL;
+		}
 		v = PyString_FromStringAndSize((char *)NULL, n);
 		if (v != NULL) {
 			if (r_string(PyString_AsString(v), (int)n, p) != n) {
@@ -476,6 +480,10 @@ r_object(p)
 	
 	case TYPE_TUPLE:
 		n = r_long(p);
+		if (n < 0) {
+			PyErr_SetString(PyExc_ValueError, "bad marshal data");
+			return NULL;
+		}
 		v = PyTuple_New((int)n);
 		if (v == NULL)
 			return v;
@@ -492,6 +500,10 @@ r_object(p)
 	
 	case TYPE_LIST:
 		n = r_long(p);
+		if (n < 0) {
+			PyErr_SetString(PyExc_ValueError, "bad marshal data");
+			return NULL;
+		}
 		v = PyList_New((int)n);
 		if (v == NULL)
 			return v;
@@ -571,8 +583,8 @@ r_object(p)
 	default:
 		/* Bogus data got written, which isn't ideal.
 		   This will let you keep working and recover. */
-		Py_INCREF(Py_None);
-		return Py_None;
+		PyErr_SetString(PyExc_ValueError, "bad marshal data");
+		return NULL;
 	
 	}
 }
