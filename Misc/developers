@@ -1,0 +1,30 @@
+Developer Log
+=============
+
+This file is a running log of developers given permissions on SourceForge.
+
+The purpose is to provide some institutional memory of who was given access
+and why.
+
+The first entry starts in April 2005.  In keeping with the style of
+Misc/NEWS, newer entries should be added to the top.  Any markup should
+be in the form of ReST.  Entries should include the initials of the
+project admin who made the change or granted access.  Feel free to revise
+the format to accommodate documentation needs as they arise.
+
+
+
+Permissions History
+-------------------
+
+- Nick Coghlan was given SF tracker permissions on 5 Apr 2005 by RDH.
+  For several months, he has been active in reviewing and contributing
+  patches.  The added permissions give him greater flexibility in
+  working with the tracker.
+
+
+
+Initials of Project Admins
+--------------------------
+
+RDH:  Raymond Hettinger
