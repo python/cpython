@@ -59,6 +59,9 @@ Library
 
 - Bug #1017553: fix bug in tarfile.filemode()
 
+- Bug #737473: fix bug that old source code is shown in tracebacks even if
+  the source code is updated and reloaded.
+
 Build
 -----
 

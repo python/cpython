@@ -31,9 +31,10 @@ Clear the cache.  Use this function if you no longer need lines from
 files previously read using \function{getline()}.
 \end{funcdesc}
 
-\begin{funcdesc}{checkcache}{}
+\begin{funcdesc}{checkcache}{\optional{filename}}
 Check the cache for validity.  Use this function if files in the cache 
-may have changed on disk, and you require the updated version.
+may have changed on disk, and you require the updated version.  If
+\var{filename} is omitted, it will check the whole cache entries.
 \end{funcdesc}
 
 Example:
