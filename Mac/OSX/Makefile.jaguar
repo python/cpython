@@ -19,8 +19,9 @@ datadir=$(PYTHONAPPSDIR)/python-additions
 MACLIBDEST=$(datadir)/Lib
 MACDYNLIBDEST=$(datadir)/lib-dynload
 MACTOOLSDEST=$(datadir)/Tools
-APPINSTALLDIR=$(datadir)/Python.app
-INSTALLED_PYTHONW=$(APPINSTALLDIR)/Contents/MacOS/python
+APPNAME=Python
+APPBUNDLENAME=$(APPNAME).app
+INSTALLED_PYTHONW=$(datadir)/$(APPBUNDLENAME)/Contents/MacOS/$(APPNAME)
 
 # The usual stuff
 DIRMODE=755
@@ -66,11 +67,13 @@ install_dynlib:
 	touch $(MACDYNLIBDEST)/OverrideFrom23/__init__.py
 		
 install_Python:
-	$(PYTHON) $(srcdir)/Mac/scripts/buildappbundle.py -l \
-		-o $(APPINSTALLDIR) \
+	$(PYTHON) $(srcdir)/Mac/Lib/bundlebuilder.py -q --link-exec \
+		-b $(datadir) \
+		-n $(APPBUNDLENAME) \
 		-r $(srcdir)/Mac/OSXResources/app/Resources/Applet-Info.plist \
 		-r $(srcdir)/Mac/OSXResources/app/Resources/PythonApplet.icns \
-		$(PYTHON)
+		-e $(PYTHON) \
+		build
 		
 install_IDE:
 	$(MAKE) -f $(osxdir)/Makefile install_IDE \
