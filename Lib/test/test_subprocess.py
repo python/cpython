@@ -44,6 +44,22 @@ class ProcessTestCase(unittest.TestCase):
                               "import sys; sys.exit(47)"])
         self.assertEqual(rc, 47)
 
+    def test_check_call_zero(self):
+        # check_call() function with zero return code
+        rc = subprocess.check_call([sys.executable, "-c",
+                                    "import sys; sys.exit(0)"])
+        self.assertEqual(rc, 0)
+
+    def test_check_call_nonzero(self):
+        # check_call() function with non-zero return code
+        try:
+            subprocess.check_call([sys.executable, "-c",
+                                   "import sys; sys.exit(47)"])
+        except subprocess.CalledProcessError, e:
+            self.assertEqual(e.errno, 47)
+        else:
+            self.fail("Expected CalledProcessError")
+
     def test_call_kwargs(self):
         # call() function with keyword args
         newenv = os.environ.copy()

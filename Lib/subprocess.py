@@ -133,6 +133,15 @@ call(*popenargs, **kwargs):
 
     retcode = call(["ls", "-l"])
 
+check_call(*popenargs, **kwargs):
+    Run command with arguments.  Wait for command to complete.  If the
+    exit code was zero then return, otherwise raise
+    CalledProcessError.  The CalledProcessError object will have the
+    return code in the errno attribute.
+
+    The arguments are the same as for the Popen constructor.  Example:
+
+    check_call(["ls", "-l"])
 
 Exceptions
 ----------
@@ -147,6 +156,9 @@ example, when trying to execute a non-existent file.  Applications
 should prepare for OSErrors.
 
 A ValueError will be raised if Popen is called with invalid arguments.
+
+check_call() will raise CalledProcessError, which is a subclass of
+OSError, if the called process returns a non-zero return code.
 
 
 Security
@@ -363,6 +375,13 @@ import os
 import types
 import traceback
 
+# Exception classes used by this module.
+class CalledProcessError(OSError):
+    """This exception is raised when a process run by check_call() returns
+    a non-zero exit status.  The exit status will be stored in the
+    errno attribute.  This exception is a subclass of
+    OSError."""
+
 if mswindows:
     import threading
     import msvcrt
@@ -393,7 +412,7 @@ else:
     import fcntl
     import pickle
 
-__all__ = ["Popen", "PIPE", "STDOUT", "call"]
+__all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "CalledProcessError"]
 
 try:
     MAXFD = os.sysconf("SC_OPEN_MAX")
@@ -426,6 +445,25 @@ def call(*popenargs, **kwargs):
     retcode = call(["ls", "-l"])
     """
     return Popen(*popenargs, **kwargs).wait()
+
+
+def check_call(*popenargs, **kwargs):
+    """Run command with arguments.  Wait for command to complete.  If
+    the exit code was zero then return, otherwise raise
+    CalledProcessError.  The CalledProcessError object will have the
+    return code in the errno attribute.
+
+    The arguments are the same as for the Popen constructor.  Example:
+
+    check_call(["ls", "-l"])
+    """
+    retcode = call(*popenargs, **kwargs)
+    cmd = kwargs.get("args")
+    if cmd is None:
+        cmd = popenargs[0]
+    if retcode:
+        raise CalledProcessError(retcode, "Command %s returned non-zero exit status" % cmd)
+    return retcode
 
 
 def list2cmdline(seq):

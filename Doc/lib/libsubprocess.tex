@@ -120,7 +120,7 @@ process.  (Windows only)
 
 \subsubsection{Convenience Functions}
 
-This module also defines one shortcut function:
+This module also defines two shortcut functions:
 
 \begin{funcdesc}{call}{*popenargs, **kwargs}
 Run command with arguments.  Wait for command to complete, then
@@ -133,6 +133,18 @@ The arguments are the same as for the Popen constructor.  Example:
 \end{verbatim}
 \end{funcdesc}
 
+\begin{funcdesc}{check_call}{*popenargs, **kwargs}
+Run command with arguments.  Wait for command to complete. If the exit
+code was zero then return, otherwise raise CalledProcessError.  The
+CalledProcessError object will have the return code in the
+\member{errno} attribute.
+
+The arguments are the same as for the Popen constructor.  Example:
+
+\begin{verbatim}
+    check_call(["ls", "-l"])
+\end{verbatim}
+\end{funcdesc}
 
 \subsubsection{Exceptions}
 
@@ -148,6 +160,10 @@ should prepare for \exception{OSError} exceptions.
 
 A \exception{ValueError} will be raised if \class{Popen} is called
 with invalid arguments.
+
+check_call() will raise \exception{CalledProcessError}, which is a
+subclass of \exception{OSError}, if the called process returns a
+non-zero return code.
 
 
 \subsubsection{Security}
