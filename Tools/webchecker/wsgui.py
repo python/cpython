@@ -12,12 +12,11 @@ import string
 import websucker
 import sys
 import os
-try:
-	import threading
-except ImportError:
-	threading = None
+import threading
+import Queue
+import time		
 
-VERBOSE = 1
+VERBOSE = 2
 
 
 try:
@@ -27,27 +26,74 @@ except:
 	Canceled = __name__ + ".Canceled"
 
 
-class App(websucker.Sucker):
+class SuckerThread(websucker.Sucker):
 
-	def __init__(self, top=None):
+	stopit = 0
+	savedir = None
+	rootdir = None
+
+	def __init__(self, msgq):
+		self.msgq = msgq
 		websucker.Sucker.__init__(self)
 		self.setflags(verbose=VERBOSE)
 		self.urlopener.addheaders = [
 			('User-agent', 'websucker/%s' % websucker.__version__),
-			##('Accept', 'text/html'),
-			##('Accept', 'text/plain'),
-			##('Accept', 'text/*'),
-			##('Accept', 'image/gif'),
-			##('Accept', 'image/jpeg'),
-			##('Accept', 'image/*'),
-			##('Accept', '*/*'),
 		]
+	
+	def message(self, format, *args):
+		if args:
+			format = format%args
+		##print format
+		self.msgq.put(format)
 
-		if not top:
-			top = Tk()
-			top.title("websucker GUI")
-			top.iconname("wsgui")
-			top.wm_protocol('WM_DELETE_WINDOW', self.exit)
+	def run1(self, url):
+		try:
+			try:
+				self.reset()
+				self.addroot(url)
+				self.run()
+			except Canceled:
+				self.message("[canceled]")
+			else:
+				self.message("[done]")
+		finally:
+			self.msgq.put(None)
+
+	def savefile(self, text, path):
+		if self.stopit:
+			raise Canceled
+		websucker.Sucker.savefile(self, text, path)
+	
+	def getpage(self, url):
+		if self.stopit:
+			raise Canceled
+		return websucker.Sucker.getpage(self, url)
+	
+	def savefilename(self, url):
+		path = websucker.Sucker.savefilename(self, url)
+		if self.savedir:
+			n = len(self.rootdir)
+			if path[:n] == self.rootdir:
+				path = path[n:]
+				while path[:1] == os.sep:
+					path = path[1:]
+				path = os.path.join(self.savedir, path)
+		return path
+
+	def XXXaddrobot(self, *args):
+		pass
+
+	def XXXisallowed(self, *args):
+		return 1
+
+
+
+class App:
+
+	sucker = None
+	msgq = None
+
+	def __init__(self, top):
 		self.top = top
 		top.columnconfigure(99, weight=1)
 		self.url_label = Label(top, text="URL:")
@@ -56,13 +102,12 @@ class App(websucker.Sucker):
 		self.url_entry.grid(row=0, column=1, sticky='we',
 				    columnspan=99)
 		self.url_entry.focus_set()
+		self.url_entry.bind("<Key-Return>", self.go)
 		self.dir_label = Label(top, text="Directory:")
 		self.dir_label.grid(row=1, column=0, sticky='e')
 		self.dir_entry = Entry(top)
 		self.dir_entry.grid(row=1, column=1, sticky='we',
 				    columnspan=99)
-		self.exit_button = Button(top, text="Exit", command=self.exit)
-		self.exit_button.grid(row=2, column=0, sticky='w')
 		self.go_button = Button(top, text="Go", command=self.go)
 		self.go_button.grid(row=2, column=1, sticky='w')
 		self.cancel_button = Button(top, text="Cancel",
@@ -74,41 +119,35 @@ class App(websucker.Sucker):
 		self.auto_button.grid(row=2, column=3, sticky='w')
 		self.status_label = Label(top, text="[idle]")
 		self.status_label.grid(row=2, column=4, sticky='w')
-		sys.stdout = self
 		self.top.update_idletasks()
 		self.top.grid_propagate(0)
 
-	def mainloop(self):
-		self.top.mainloop()
-	
-	def exit(self):
-		self.stopit = 1
-		self.message("[exiting...]")
-		self.top.update_idletasks()
-		self.top.quit()
-	
-	buffer = ""
-	
-	def write(self, text):
-		self.top.update()
-		if self.stopit:
-			raise Canceled
-		sys.stderr.write(text)
-		lines = string.split(text, "\n")
-		if len(lines) > 1:
-			self.buffer = ""
-		self.buffer = self.buffer + lines[-1]
-		if string.strip(self.buffer):
-			self.message(self.buffer)
-	
 	def message(self, text, *args):
 		if args:
 			text = text % args
-		self.status_label.config(text=text)		
-	stopit = 0
+		self.status_label.config(text=text)
 
-	def go(self):
-		if self.stopit:
+	def check_msgq(self):
+		while not self.msgq.empty():
+			msg = self.msgq.get()
+			if msg is None:
+				self.go_button.configure(state=NORMAL)
+				self.auto_button.configure(state=NORMAL)
+				self.cancel_button.configure(state=DISABLED)
+				if self.sucker:
+					self.sucker.stopit = 0
+				self.top.bell()
+			else:
+				self.message(msg)
+		self.top.after(100, self.check_msgq)
+
+	def go(self, event=None):
+		if not self.msgq:
+			self.msgq = Queue.Queue(0)
+			self.check_msgq()
+		if not self.sucker:
+			self.sucker = SuckerThread(self.msgq)
+		if self.sucker.stopit:
 			return
 		self.url_entry.selection_range(0, END)
 		url = self.url_entry.get()
@@ -120,42 +159,22 @@ class App(websucker.Sucker):
 		self.rooturl = url
 		dir = string.strip(self.dir_entry.get())
 		if not dir:
-			self.savedir = None
+			self.sucker.savedir = None
 		else:
-			self.savedir = dir
-			self.rootdir = os.path.dirname(
+			self.sucker.savedir = dir
+			self.sucker.rootdir = os.path.dirname(
 				websucker.Sucker.savefilename(self, url))
 		self.go_button.configure(state=DISABLED)
 		self.auto_button.configure(state=DISABLED)
 		self.cancel_button.configure(state=NORMAL)
-		self.status_label['text'] = '[running...]'
-		self.top.update_idletasks()
-		if threading:
-			t = threading.Thread(target=self.run1, args=(url,))
-			t.start()
-		else:
-			self.run1(url)
-
-	def run1(self, url):
-		self.reset()
-		self.addroot(url)
-		self.stopit = 0
-		try:
-			try:
-				self.run()
-			except Canceled:
-				self.message("[canceled]")
-			else:
-				self.message("[done]")
-				self.top.bell()
-		finally:
-			self.go_button.configure(state=NORMAL)
-			self.auto_button.configure(state=NORMAL)
-			self.cancel_button.configure(state=DISABLED)
-			self.stopit = 0
+		self.message( '[running...]')
+		self.sucker.stopit = 0
+		t = threading.Thread(target=self.sucker.run1, args=(url,))
+		t.start()
 	
 	def cancel(self):
-		self.stopit = 1
+		if self.sucker:
+			self.sucker.stopit = 1
 		self.message("[canceling...]")
 	
 	def auto(self):
@@ -175,32 +194,51 @@ class App(websucker.Sucker):
 			return
 		self.url_entry.delete(0, END)
 		self.url_entry.insert(0, text)
-		self.top.update_idletasks()
 		self.go()
-	
-	def savefile(self, text, path):
-		self.top.update()
-		if self.stopit:
-			raise Canceled
-		websucker.Sucker.savefile(self, text, path)
-	
-	def getpage(self, url):
-		self.top.update()
-		if self.stopit:
-			raise Canceled
-		return websucker.Sucker.getpage(self, url)
-	
-	def savefilename(self, url):
-		path = websucker.Sucker.savefilename(self, url)
-		if self.savedir:
-			n = len(self.rootdir)
-			if path[:n] == self.rootdir:
-				path = path[n:]
-				while path[:1] == os.sep:
-					path = path[1:]
-				path = os.path.join(self.savedir, path)
-		return path
 
+
+class AppArray:
+
+	def __init__(self, top=None):
+		if not top:
+			top = Tk()
+			top.title("websucker GUI")
+			top.iconname("wsgui")
+			top.wm_protocol('WM_DELETE_WINDOW', self.exit)
+		self.top = top
+		self.appframe = Frame(self.top)
+		self.appframe.pack(fill='both')
+		self.applist = []
+		self.exit_button = Button(top, text="Exit", command=self.exit)
+		self.exit_button.pack(side=RIGHT)
+		self.new_button = Button(top, text="New", command=self.addsucker)
+		self.new_button.pack(side=LEFT)
+		self.addsucker()
+		##self.applist[0].url_entry.insert(END, "http://www.python.org/doc/essays/")
+
+	def addsucker(self):
+		self.top.geometry("")
+		frame = Frame(self.appframe, borderwidth=2, relief=GROOVE)
+		frame.pack(fill='x')
+		app = App(frame)
+		self.applist.append(app)
+
+	done = 0
+
+	def mainloop(self):
+		while not self.done:
+			time.sleep(0.1)
+			self.top.update()
+	
+	def exit(self):
+		for app in self.applist:
+			app.cancel()
+			app.message("[exiting...]")
+		self.done = 1
+
+
+def main():
+	AppArray().mainloop()
 
 if __name__ == '__main__':
-	App().mainloop()
+    main()
