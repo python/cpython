@@ -3037,10 +3037,8 @@ Returns the number of items in the dictionary.  This is equivalent to
 \samp{len(\var{p})} on a dictionary.\bifuncindex{len}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyDict_Next}{PyDictObject *p,
-            int ppos,
-            PyObject **pkey,
-            PyObject **pvalue}
+\begin{cfuncdesc}{int}{PyDict_Next}{PyDictObject *p, int *ppos,
+                                    PyObject **pkey, PyObject **pvalue}
 
 \end{cfuncdesc}
 
@@ -4216,18 +4214,13 @@ The following function sets, modeled after the ANSI C standard, are
 available for allocating and releasing memory from the Python heap:
 
 
-\begin{ctypedesc}{ANY*}
-The type used to represent arbitrary blocks of memory.  Values of this 
-type should be cast to the specific type that is needed.
-\end{ctypedesc}
-
-\begin{cfuncdesc}{ANY*}{PyMem_Malloc}{size_t n}
-Allocates \var{n} bytes and returns a pointer of type \ctype{ANY*} to
+\begin{cfuncdesc}{void*}{PyMem_Malloc}{size_t n}
+Allocates \var{n} bytes and returns a pointer of type \ctype{void*} to
 the allocated memory, or \NULL{} if the request fails. Requesting zero
 bytes returns a non-\NULL{} pointer.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{ANY*}{PyMem_Realloc}{ANY *p, size_t n}
+\begin{cfuncdesc}{void*}{PyMem_Realloc}{void *p, size_t n}
 Resizes the memory block pointed to by \var{p} to \var{n} bytes. The
 contents will be unchanged to the minimum of the old and the new
 sizes. If \var{p} is \NULL{}, the call is equivalent to
@@ -4237,7 +4230,7 @@ Unless \var{p} is \NULL{}, it must have been returned by a previous
 call to \cfunction{PyMem_Malloc()} or \cfunction{PyMem_Realloc()}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{void}{PyMem_Free}{ANY *p}
+\begin{cfuncdesc}{void}{PyMem_Free}{void *p}
 Frees the memory block pointed to by \var{p}, which must have been
 returned by a previous call to \cfunction{PyMem_Malloc()} or
 \cfunction{PyMem_Realloc()}.  Otherwise, or if
@@ -4245,17 +4238,17 @@ returned by a previous call to \cfunction{PyMem_Malloc()} or
 occurs. If \var{p} is \NULL{}, no operation is performed.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{ANY*}{Py_Malloc}{size_t n}
+\begin{cfuncdesc}{void*}{Py_Malloc}{size_t n}
 Same as \cfunction{PyMem_Malloc()}, but calls
 \cfunction{PyErr_NoMemory()} on failure.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{ANY*}{Py_Realloc}{ANY *p, size_t n}
+\begin{cfuncdesc}{void*}{Py_Realloc}{void *p, size_t n}
 Same as \cfunction{PyMem_Realloc()}, but calls
 \cfunction{PyErr_NoMemory()} on failure.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{void}{Py_Free}{ANY *p}
+\begin{cfuncdesc}{void}{Py_Free}{void *p}
 Same as \cfunction{PyMem_Free()}.
 \end{cfuncdesc}
 
@@ -4268,13 +4261,13 @@ sizeof(\var{TYPE}))} bytes of memory.  Returns a pointer cast to
 \ctype{\var{TYPE}*}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{\var{TYPE}*}{PyMem_RESIZE}{ANY *p, TYPE, size_t n}
+\begin{cfuncdesc}{\var{TYPE}*}{PyMem_RESIZE}{void *p, TYPE, size_t n}
 Same as \cfunction{PyMem_Realloc()}, but the memory block is resized
 to \code{(\var{n} * sizeof(\var{TYPE}))} bytes.  Returns a pointer
 cast to \ctype{\var{TYPE}*}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{void}{PyMem_DEL}{ANY *p}
+\begin{cfuncdesc}{void}{PyMem_DEL}{void *p}
 Same as \cfunction{PyMem_Free()}.
 \end{cfuncdesc}
 
