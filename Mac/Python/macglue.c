@@ -70,13 +70,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* The ID of the Sioux apple menu */
 #define SIOUX_APPLEID	32000
 
-#ifndef HAVE_UNIVERSAL_HEADERS
-#define GetResourceSizeOnDisk(x) SizeResource(x)
-typedef DlgHookYDProcPtr DlgHookYDUPP;
-#define NewDlgHookYDProc(userRoutine) ((DlgHookYDUPP) (userRoutine))
-typedef FileFilterYDProcPtr FileFilterYDUPP;
-#endif
-
 #include <signal.h>
 #include <stdio.h>
 
@@ -113,8 +106,29 @@ extern FSSpec *mfs_GetFSSpecFSSpec();
 static int interrupted;			/* Set to true when cmd-. seen */
 static RETSIGTYPE intcatcher Py_PROTO((int));
 
-static void PyMac_DoYield Py_PROTO((int));
+static void PyMac_DoYield Py_PROTO((int, int));
 
+/*
+** These are the real scheduling parameters that control what we check
+** in the event loop, and how often we check. The values are initialized
+** from pyMac_SchedParamStruct.
+*/
+
+struct real_sched_param_struct {
+	int		check_interrupt;	/* if true check for command-dot */
+	int		process_events;		/* if nonzero enable evt processing, this mask */
+	int		besocial;		/* if nonzero be a little social with CPU */
+	unsigned long	check_interval;		/* how often to check, in ticks */
+	unsigned long	bg_yield;		/* yield so long when in background */
+	/* these are computed from previous and clock and such */
+	int		enabled;		/* check_interrupt OR process_event OR yield */
+	unsigned long	next_check;		/* when to check/yield next, in ticks */
+};
+
+static struct real_sched_param_struct schedparams =
+	{ 1, MAINLOOP_EVENTMASK, 1, 15, 15, 1, 0};
+
+#if 0
 /*
 ** We attempt to be a good citizen by giving up the CPU periodically.
 ** When in the foreground we do this less often and for shorter periods
@@ -129,7 +143,7 @@ static long interval_fg = 12;
 static long interval_bg = 6;
 static long yield_fg = 1;
 static long yield_bg = 2;
-static long lastyield;
+static unsigned long lastyield;
 static int in_foreground;
 
 /* 
@@ -138,6 +152,7 @@ static int in_foreground;
 ** when < 0, don't do any event scanning 
 */
 int PyMac_DoYieldEnabled = 1;
+#endif
 
 /*
 ** Workaround for sioux/gusi combo: set when we are exiting
@@ -189,8 +204,8 @@ void SpinCursor(short x) { /* Dummy */ }
 static int
 PyMac_GUSISpin(spin_msg msg, long arg)
 {
-	static Boolean			inForeground	=	true;
-	int						maysleep;
+	static Boolean	inForeground = true;
+	int		maxsleep = 6;	/* 6 ticks is "normal" sleeptime */
 
 	if (PyMac_ConsoleIsDead) return 0;
 #if 0
@@ -200,12 +215,12 @@ PyMac_GUSISpin(spin_msg msg, long arg)
 
 	if (interrupted) return -1;
 
-	if ( msg == SP_AUTO_SPIN || ((msg==SP_SLEEP||msg==SP_SELECT) && arg <= yield_fg))
-		maysleep = 0;
-	else
-		maysleep = 0;
+	if ( msg == SP_AUTO_SPIN )
+		maxsleep = 0;
+	if ( msg==SP_SLEEP||msg==SP_SELECT )
+		maxsleep = arg;
 
-	PyMac_DoYield(maysleep);
+	PyMac_DoYield(maxsleep, 0); /* XXXX or is it safe to call python here? */
 
 	return 0;
 }
@@ -405,25 +420,21 @@ scan_event_queue(flush)
 int
 PyOS_InterruptOccurred()
 {
-	static unsigned long nextticktime;
-	unsigned long curticktime;
-
-	if (PyMac_DoYieldEnabled < 0)
-		return 0;
-	curticktime = (unsigned long)LMGetTicks();
-	if ( curticktime < nextticktime )
-		return 0;
-	nextticktime = curticktime + TICKCOUNT;
-#ifdef THINK_C
-	scan_event_queue(1);
-#endif
-	PyMac_Yield();
-	if (interrupted) {
-		interrupted = 0;
-		return 1;
+	if (schedparams.enabled) {
+		if ( (unsigned long)LMGetTicks() > schedparams.next_check ) {
+			PyMac_Yield();
+			schedparams.next_check = (unsigned long)LMGetTicks()
+					 + schedparams.check_interval;
+			if (interrupted) {
+				interrupted = 0;
+				return 1;
+			}
+		}
 	}
 	return 0;
 }
+
+#if 0
 
 /* intrpeek() is like intrcheck(), but it doesn't flush the events. The
 ** idea is that you call intrpeek() somewhere in a busy-wait loop, and return
@@ -438,6 +449,7 @@ intrpeek()
 #endif
 	return interrupted;
 }
+#endif
 
 /* Check whether we are in the foreground */
 int
@@ -448,9 +460,10 @@ PyMac_InForeground()
 	ProcessSerialNumber curfg;
 	Boolean eq;
 	
-	if ( inited == 0 )
+	if ( inited == 0 ) {
 		(void)GetCurrentProcess(&ours);
-	inited = 1;
+		inited = 1;
+	}
 	if ( GetFrontProcess(&curfg) < 0 )
 		eq = 1;
 	else if ( SameProcess(&ours, &curfg, &eq) < 0 )
@@ -460,26 +473,18 @@ PyMac_InForeground()
 }
 
 /*
-** Set yield timeouts
-*/
-void
-PyMac_SetYield(long fgi, long fgy, long bgi, long bgy)
-{
-	interval_fg = fgi;
-	yield_fg = fgy;
-	interval_bg = bgi;
-	yield_bg = bgy;
-}
-
-/*
 ** Handle an event, either one found in the mainloop eventhandler or
 ** one passed back from the python program.
 */
 void
-PyMac_HandleEvent(evp)
+PyMac_HandleEvent(evp, maycallpython)
 	EventRecord *evp;
+	int maycallpython;
 {
-			
+	
+	if ( maycallpython ) {
+		/* To be implemented */
+	}		
 #ifdef __MWERKS__
 	{
 		int siouxdidit;
@@ -503,83 +508,94 @@ PyMac_HandleEvent(evp)
 }
 
 /*
-** Yield the CPU to other tasks.
+** Yield the CPU to other tasks without processing events.
 */
 static void
-PyMac_DoYield(int maysleep)
+PyMac_DoYield(int maxsleep, int maycallpython)
 {
 	EventRecord ev;
-	long yield;
-	static int no_waitnextevent = -1;
 	int gotone;
+	long latest_time_ready;
 	
-	if ( no_waitnextevent < 0 ) {
-		no_waitnextevent = (NGetTrapAddress(_WaitNextEvent, ToolTrap) ==
-							NGetTrapAddress(_Unimplemented, ToolTrap));
-	}
-
-	lastyield = TickCount();
-#ifndef THINK_C
-	/* Under think this has been done before in intrcheck() or intrpeek() */
-	if (PyMac_DoYieldEnabled >= 0)
+	/*
+	** First check for interrupts, if wanted.
+	** This sets a flag that will be picked up at an appropriate
+	** moment in the mainloop.
+	*/
+	if (schedparams.check_interrupt)
 		scan_event_queue(0);
-#endif
-	if (PyMac_DoYieldEnabled == 0)
-		return;
+	
+	/* XXXX Implementing an idle routine goes here */
 		
-	in_foreground = PyMac_InForeground();
-	if ( maysleep ) {
-		if ( in_foreground )
-			yield = yield_fg;
-		else
-			yield = yield_bg;
-	} else {
-		yield = 0;
-	}
-		
-	while ( 1 ) {
-		if ( no_waitnextevent ) {
+	/*
+	** Check which of the eventloop cases we have:
+	** - process events
+	** - don't process events but do yield
+	** - do neither
+	*/
+	if( !schedparams.process_events ) {
+		if ( maxsleep >= 0 ) {
 			SystemTask();
-			gotone = GetNextEvent(MAINLOOP_EVENTMASK, &ev);
-		} else {
-			gotone = WaitNextEvent(MAINLOOP_EVENTMASK, &ev, yield, NULL);
-		}	
-		/* Get out quickly if nothing interesting is happening */
-		if ( !gotone || ev.what == nullEvent )
-			break;
-		PyMac_HandleEvent(&ev);
+		}
+	} else {
+		latest_time_ready = LMGetTicks() + maxsleep;
+		while ( maxsleep >= 0 ) {
+			gotone = WaitNextEvent(schedparams.process_events, &ev, 0 /*maxsleep*/, NULL);	
+			/* Get out quickly if nothing interesting is happening */
+			if ( !gotone || ev.what == nullEvent )
+				break;
+			PyMac_HandleEvent(&ev, maycallpython);
+			maxsleep = latest_time_ready - LMGetTicks();
+		}
 	}
 }
 
 /*
-** Yield the CPU to other tasks if opportune
+** Process events and/or yield the CPU to other tasks if opportune
 */
 void
 PyMac_Yield() {
-	long iv;
+	unsigned long maxsleep;
 	
-	if ( in_foreground )
-		iv = interval_fg;
+	if( PyMac_InForeground() )
+		maxsleep = 0;
 	else
-		iv = interval_bg;
-	if ( TickCount() > lastyield + iv )
-		PyMac_DoYield(1);
+		maxsleep = schedparams.bg_yield;
+
+	PyMac_DoYield(maxsleep, 1);
 }
 
-#ifdef USE_MACTCP
 /*
-** Idle routine for busy-wait loops.
-** Gives up CPU, handles events and returns true if an interrupt is pending
-** (but not actually handled yet).
+** Return current scheduler parameters
 */
-int
-PyMac_Idle()
+void
+PyMac_GetSchedParams(PyMacSchedParams *sp)
 {
-	PyMac_DoYield(1);
-	return intrpeek();
+	sp->check_interrupt = schedparams.check_interrupt;
+	sp->process_events = schedparams.process_events;
+	sp->besocial = schedparams.besocial;
+	sp->check_interval = schedparams.check_interval / 60.0;
+	sp->bg_yield = schedparams.bg_yield / 60.0;
 }
-#endif
 
+/*
+** Set current scheduler parameters
+*/
+void
+PyMac_SetSchedParams(PyMacSchedParams *sp)
+{
+	schedparams.check_interrupt = sp->check_interrupt;
+	schedparams.process_events = sp->process_events;
+	schedparams.besocial = sp->besocial;
+	schedparams.check_interval = (unsigned long)(sp->check_interval*60);
+	schedparams.bg_yield = (unsigned long)(sp->bg_yield*60);
+	if ( schedparams.check_interrupt || schedparams.process_events ||
+	     schedparams.besocial )
+	     	schedparams.enabled = 1;
+	else
+		schedparams.enabled = 0;
+	schedparams.next_check = 0;	/* Check immedeately */
+}
 /*
 ** Install our menu bar.
 */
