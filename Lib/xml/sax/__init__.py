@@ -22,7 +22,8 @@ expatreader -- Driver that allows use of the Expat parser with SAX.
 from xmlreader import InputSource
 from handler import ContentHandler, ErrorHandler
 from _exceptions import SAXException, SAXNotRecognizedException, \
-                        SAXParseException, SAXNotSupportedException
+                        SAXParseException, SAXNotSupportedException, \
+                        SAXReaderNotAvailable
 
 
 def parse(source, handler, errorHandler=ErrorHandler()):
@@ -74,9 +75,17 @@ def make_parser(parser_list = []):
         try:
             return _create_parser(parser_name)
         except ImportError,e:
+            import sys
+            if sys.modules.has_key(parser_name):
+                # The parser module was found, but importing it
+                # failed unexpectedly, pass this exception through
+                raise
+        except SAXReaderNotAvailable:
+            # The parser module detected that it won't work properly,
+            # so try the next one
             pass
 
-    raise SAXException("No parsers found", None)  
+    raise SAXReaderNotAvailable("No parsers found", None)  
     
 # --- Internal utility methods used by make_parser
 

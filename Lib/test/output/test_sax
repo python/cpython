@@ -14,6 +14,7 @@ Passed test_expat_inpsource_sysid
 Passed test_expat_nsattrs_empty
 Passed test_expat_nsattrs_wattr
 Passed test_filter_basic
+Passed test_make_parser
 Passed test_nsattrs_empty
 Passed test_nsattrs_wattr
 Passed test_xmlgen_basic
@@ -22,4 +23,4 @@ Passed test_xmlgen_content_escape
 Passed test_xmlgen_ignorable
 Passed test_xmlgen_ns
 Passed test_xmlgen_pi
-23 tests, 0 failures
+24 tests, 0 failures

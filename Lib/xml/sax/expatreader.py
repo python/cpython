@@ -6,7 +6,10 @@ pyexpat.__version__ == '2.22'.
 version = "0.20"
 
 from xml.sax._exceptions import *
-from xml.parsers import expat
+try:
+    from xml.parsers import expat
+except ImportError:
+    raise SAXReaderNotAvailable("expat not supported",None) 
 from xml.sax import xmlreader, saxutils, handler
 
 AttributesImpl = xmlreader.AttributesImpl
