@@ -597,6 +597,15 @@ parameter.  The available start symbols are \constant{Py_eval_input},
 \constant{Py_file_input}, and \constant{Py_single_input}.  These are
 described following the functions which accept them as parameters.
 
+Note also that several of these functions take \ctype{FILE*}
+parameters.  On particular issue which needs to be handled carefully
+is that the \ctype{FILE} structure for different C libraries can be
+different and incompatible.  Under Windows (at least), it is possible
+for dynamically linked extensions to actually use different libraries,
+so care should be taken that \ctype{FILE*} parameters are only passed
+to these functions if it is certain that they were created by the same
+library that the Python runtime is using.
+
 \begin{cfuncdesc}{int}{PyRun_AnyFile}{FILE *fp, char *filename}
   If \var{fp} refers to a file associated with an interactive device
   (console or terminal input or \UNIX{} pseudo-terminal), return the
