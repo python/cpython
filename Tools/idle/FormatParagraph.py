@@ -36,6 +36,9 @@ class FormatParagraph:
     def __init__(self, editwin):
         self.editwin = editwin
 
+    def close(self):
+        self.editwin = None
+
     def format_paragraph_event(self, event):
         text = self.editwin.text
         first, last = self.editwin.get_selection_indices()

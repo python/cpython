@@ -24,10 +24,23 @@ class IOBinding:
     def __init__(self, editwin):
         self.editwin = editwin
         self.text = editwin.text
-        self.text.bind("<<open-window-from-file>>", self.open)
-        self.text.bind("<<save-window>>", self.save)
-        self.text.bind("<<save-window-as-file>>", self.save_as)
-        self.text.bind("<<save-copy-of-window-as-file>>", self.save_a_copy)
+        self.__id_open = self.text.bind("<<open-window-from-file>>", self.open)
+        self.__id_save = self.text.bind("<<save-window>>", self.save)
+        self.__id_saveas = self.text.bind("<<save-window-as-file>>",
+                                          self.save_as)
+        self.__id_savecopy = self.text.bind("<<save-copy-of-window-as-file>>",
+                                            self.save_a_copy)
+
+    def close(self):
+        # Undo command bindings
+        self.text.unbind("<<open-window-from-file>>", self.__id_open)
+        self.text.unbind("<<save-window>>", self.__id_save)
+        self.text.unbind("<<save-window-as-file>>",self.__id_saveas)
+        self.text.unbind("<<save-copy-of-window-as-file>>", self.__id_savecopy)
+        # Break cycles
+        self.editwin = None
+        self.text = None
+        self.filename_change_hook = None
 
     def get_saved(self):
         return self.editwin.get_saved()

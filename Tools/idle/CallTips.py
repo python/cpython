@@ -32,6 +32,9 @@ class CallTips:
         else:
             self._make_calltip_window = self._make_tk_calltip_window
 
+    def close(self):
+        self._make_calltip_window = None
+
     # Makes a Tk based calltip window.  Used by IDLE, but not Pythonwin.
     # See __init__ above for how this is used.
     def _make_tk_calltip_window(self):
