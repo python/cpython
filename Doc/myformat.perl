@@ -196,6 +196,36 @@ sub do_env_cfuncdesc{
     "(<VAR>$arg_list</VAR>)\n<DD>$'\n</DL>"
 }
 
+sub do_env_ctypedesc{
+  local($_) = @_;
+  local($type_name) = ('');
+  local($cfuncdesc_rx) =
+    "$next_pair_rx";
+  $* = 1;
+  if (/$cfuncdesc_rx/o) {
+    $type_name = "$2";
+    &make_index_entry($1,"<TT>$var_name</TT> " . &get_indexsubitem);
+  }
+  $* = 0;
+  "<DL><DT><STRONG><A NAME=\"$1\">$type_name</A></STRONG>\n<DD>$'\n</DL>"
+}
+
+sub do_env_cvardesc{
+  local($_) = @_;
+  local($var_type,$var_name) = ('', '');
+  local($cfuncdesc_rx) =
+    "$next_pair_rx$any_next_pair_rx3";
+  $* = 1;
+  if (/$cfuncdesc_rx/o) {
+    $var_type = "$2";
+    $var_name = "$4";
+    &make_index_entry($3,"<TT>$var_name</TT> " . &get_indexsubitem);
+  }
+  $* = 0;
+  "<DL><DT>$var_type <STRONG><A NAME=\"$3\">$var_name</A></STRONG>\n" .
+    "<DD>$'\n</DL>"
+}
+
 sub do_env_funcdesc{
   local($_) = @_;
   local($function_name,$arg_list) = ('', '');
@@ -226,5 +256,22 @@ sub do_env_datadesc{
 }
 
 sub do_env_excdesc{ &do_env_datadesc(@_); }
+
+sub do_env_seealso{
+  local($_) = @_;
+  "<P><B>See Also:</B></P>\n" . $_;
+}
+
+sub do_cmd_seemodule{
+  local($_) = @_;
+  local($any_next_pair_pr_rx3) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
+  s/$next_pair_pr_rx$any_next_pair_pr_rx3/<P><CODE><B>\2<\/B><\/CODE> (\4)<\/P>/;
+  $_;
+}
+
+sub do_cmd_seetext{
+  local($_) = @_;
+  "<p>" . $_;
+}
 
 1;				# This must be the last line
