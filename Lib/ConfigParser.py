@@ -538,3 +538,51 @@ class ConfigParser(RawConfigParser):
         if value.find("%(") != -1:
             raise InterpolationDepthError(option, section, rawval)
         return value
+
+
+class SafeConfigParser(ConfigParser):
+
+    def _interpolate(self, section, option, rawval, vars):
+        # do the string interpolation
+        L = []
+        self._interpolate_some(option, L, rawval, section, vars, 1)
+        return ''.join(L)
+
+    _interpvar_match = re.compile(r"%\(([^)]+)\)s").match
+
+    def _interpolate_some(self, option, accum, rest, section, map, depth):
+        if depth > MAX_INTERPOLATION_DEPTH:
+            raise InterpolationDepthError(option, section, rest)
+        while rest:
+            p = rest.find("%")
+            if p < 0:
+                accum.append(rest)
+                return
+            if p > 0:
+                accum.append(rest[:p])
+                rest = rest[p:]
+            # p is no longer used
+            c = rest[1:2]
+            if c == "%":
+                accum.append("%")
+                rest = rest[2:]
+            elif c == "(":
+                m = self._interpvar_match(rest)
+                if m is None:
+                    raise InterpolationSyntaxError(
+                        "bad interpolation variable syntax at: %r" % rest)
+                var = m.group(1)
+                rest = rest[m.end():]
+                try:
+                    v = map[var]
+                except KeyError:
+                    raise InterpolationError(
+                        "no value found for %r" % var)
+                if "%" in v:
+                    self._interpolate_some(option, accum, v,
+                                           section, map, depth + 1)
+                else:
+                    accum.append(v)
+            else:
+                raise InterpolationSyntaxError(
+                    "'%' must be followed by '%' or '('")
