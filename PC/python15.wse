@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=5.0
-  Title=Python 1.5 (beta 2) Installation
+  Title=Python 1.5 Installation
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -55,7 +55,7 @@ item: Check Configuration
 end
 item: Set Variable
   Variable=APPTITLE
-  Value=Python 1.5 (beta 2)
+  Value=Python 1.5
 end
 item: Set Variable
   Variable=GROUP
@@ -721,6 +721,21 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=%_SRC_%\pcbuild\Release\zlib.pyd
+  Destination=%MAINDIR%\zlib.pyd
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\..\zlibvc104dll\zlib.dll
+  Destination=%MAINDIR%\zlib.dll
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\pcbuild\Release\bsddb.pyd
+  Destination=%MAINDIR%\bsddb.pyd
+  Flags=0000000000000010
+end
+item: Install File
   Source=%_SRC_%\pcbuild\Release\python15.dll
   Destination=%SYS32%\python15.dll
   Flags=0000000000000010
@@ -914,7 +929,6 @@ end
 item: Edit Registry
   Key=Python.NoConFile\shell\open\command
   New Value=%MAINDIR%\pythonw.exe "%%1" %%*
-  New Value=
 end
 item: Edit Registry
   Key=Python.NoConFile\DefaultIcon
