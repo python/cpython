@@ -44,8 +44,10 @@ def hex_decode(input,errors='strict'):
 
 class Codec(codecs.Codec):
 
-    encode = hex_encode
-    decode = hex_decode
+    def encode(self, input,errors='strict'):
+        return hex_encode(input,errors)
+    def decode(self, input,errors='strict'):
+        return hex_decode(input,errors)
 
 class StreamWriter(Codec,codecs.StreamWriter):
     pass

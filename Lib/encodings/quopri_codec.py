@@ -41,8 +41,10 @@ def quopri_decode(input, errors='strict'):
 
 class Codec(codecs.Codec):
 
-    encode = quopri_encode
-    decode = quopri_decode
+    def encode(self, input,errors='strict'):
+        return quopri_encode(input,errors)
+    def decode(self, input,errors='strict'):
+        return quopri_decode(input,errors)
 
 class StreamWriter(Codec, codecs.StreamWriter):
     pass

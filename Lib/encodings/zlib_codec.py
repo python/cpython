@@ -45,8 +45,10 @@ def zlib_decode(input,errors='strict'):
 
 class Codec(codecs.Codec):
 
-    encode = zlib_encode
-    decode = zlib_decode
+    def encode(self, input, errors='strict'):
+        return zlib_encode(input, errors)
+    def decode(self, input, errors='strict'):
+        return zlib_decode(input, errors)
 
 class StreamWriter(Codec,codecs.StreamWriter):
     pass
