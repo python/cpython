@@ -27,14 +27,6 @@
 #include <limits.h>
 #endif
 
-/* pyconfig.h may or may not define DL_IMPORT */
-#ifndef DL_IMPORT	/* declarations for DLL import/export */
-#define DL_IMPORT(RTYPE) RTYPE
-#endif
-#ifndef DL_EXPORT	/* declarations for DLL import/export */
-#define DL_EXPORT(RTYPE) RTYPE
-#endif
-
 #if defined(__sgi) && defined(WITH_THREAD) && !defined(_SGI_MP_SOURCE)
 #define _SGI_MP_SOURCE
 #endif
@@ -60,6 +52,14 @@
 #include <assert.h>
 
 #include "pyport.h"
+
+/* pyconfig.h or pyport.h may or may not define DL_IMPORT */
+#ifndef DL_IMPORT	/* declarations for DLL import/export */
+#define DL_IMPORT(RTYPE) RTYPE
+#endif
+#ifndef DL_EXPORT	/* declarations for DLL import/export */
+#define DL_EXPORT(RTYPE) RTYPE
+#endif
 
 /* Debug-mode build with pymalloc implies PYMALLOC_DEBUG.
  *  PYMALLOC_DEBUG is in error if pymalloc is not in use.
