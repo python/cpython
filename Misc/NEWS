@@ -340,6 +340,12 @@ Extension modules
 Library
 -------
 
+- Encoding name normalization was generalized to not only
+  replace hyphens with underscores, but also all other non-alphanumeric
+  characters (with the exception of the dot which is used for Python
+  package names during lookup). The aliases.py mapping was updated
+  to the new standard.
+
 - mimetypes has two new functions: guess_all_extensions() which
   returns a list of all known extensions for a mime type, and
   add_type() which adds one mapping between a mime type and
