@@ -61,8 +61,12 @@ newdbmobject(file, flags, mode)
 	if (dp == NULL)
 		return NULL;
 	dp->di_size = -1;
+	errno = 0;
 	if ( (dp->di_dbm = gdbm_open(file, 0, flags, mode, NULL)) == 0 ) {
-	    err_errno(DbmError);
+	    if (errno != 0)
+	        err_errno(DbmError);
+	    else
+	        err_setstr(DbmError, (char *) gdbm_strerror(gdbm_errno));
 	    DECREF(dp);
 	    return 0;
 	}
@@ -117,7 +121,9 @@ dbm_subscript(dp, key)
 	    err_setstr(KeyError, GETSTRINGVALUE((stringobject *)key));
 	    return 0;
 	}
-	return newsizedstringobject(drec.dptr, drec.dsize);
+	v = newsizedstringobject(drec.dptr, drec.dsize);
+	free(drec.dptr);
+	return v;
 }
 
 static int
@@ -143,8 +149,12 @@ dbm_ass_sub(dp, v, w)
 			   "gdbm mappings have string elements only");
 		return -1;
 	    }
+	    errno = 0;
 	    if ( gdbm_store(dp->di_dbm, krec, drec, GDBM_REPLACE) < 0 ) {
-		err_setstr(DbmError, "Cannot add item to database");
+	        if (errno != 0)
+	            err_errno(DbmError);
+	        else
+	            err_setstr(DbmError, (char *) gdbm_strerror(gdbm_errno));
 		return -1;
 	    }
 	}
@@ -192,12 +202,11 @@ dbm_has_key(dp, args)
 	register dbmobject *dp;
 	object *args;
 {
-	datum key, val;
+	datum key;
 	
 	if (!getargs(args, "s#", &key.dptr, &key.dsize))
 		return NULL;
-	val = gdbm_fetch(dp->di_dbm, key);
-	return newintobject(val.dptr != NULL);
+	return newintobject((long) gdbm_exists(dp->di_dbm, key));
 }
 
 static struct methodlist dbm_methods[] = {
@@ -254,7 +263,7 @@ dbmopen(self, args)
 	  iflags = GDBM_NEWDB;
 	else {
 	    err_setstr(DbmError,
-		       "Flags should be one of 'r', or 'w'");
+		       "Flags should be one of 'r', 'w', 'c' or 'n'");
 	    return 0;
 	}
         return newdbmobject(name, iflags, mode);
@@ -275,5 +284,3 @@ initgdbm() {
     if ( DbmError == NULL || dictinsert(d, "error", DbmError) )
       fatal("can't define gdbm.error");
 }
-
-	
