@@ -49,7 +49,11 @@ class DirCompareTestCase(unittest.TestCase):
         data = 'Contents of file go here.\n'
         for dir in [self.dir, self.dir_same, self.dir_diff]:
             os.mkdir(dir)
-            output = open(os.path.join(dir, 'file'), 'w')
+            if dir is self.dir_same:
+                fn = 'FiLe'     # Verify case-insensitive comparison
+            else:
+                fn = 'file'
+            output = open(os.path.join(dir, fn), 'w')
             output.write(data)
             output.close()
 
@@ -93,7 +97,7 @@ class DirCompareTestCase(unittest.TestCase):
     def test_dircmp(self):
         # Check attributes for comparison of two identical directories
         d = filecmp.dircmp(self.dir, self.dir_same)
-        self.failUnless(d.left_list == d.right_list == ['file'])
+        self.assertEqual([d.left_list, d.right_list],[['file'], ['FiLe']])
         self.failUnless(d.common == ['file'])
         self.failUnless(d.left_only == d.right_only == [])
         self.failUnless(d.same_files == ['file'])

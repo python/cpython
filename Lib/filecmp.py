@@ -12,7 +12,7 @@ Functions:
 import os
 import stat
 import warnings
-from itertools import ifilter, ifilterfalse
+from itertools import ifilter, ifilterfalse, imap, izip
 
 __all__ = ["cmp","dircmp","cmpfiles"]
 
@@ -135,11 +135,11 @@ class dircmp:
         self.right_list.sort()
 
     def phase1(self): # Compute common names
-        b = dict.fromkeys(self.right_list)
-        common = dict.fromkeys(ifilter(b.has_key, self.left_list))
-        self.left_only = list(ifilterfalse(common.has_key, self.left_list))
-        self.right_only = list(ifilterfalse(common.has_key, self.right_list))
-        self.common = common.keys()
+        a = dict(izip(imap(os.path.normcase, self.left_list), self.left_list))
+        b = dict(izip(imap(os.path.normcase, self.right_list), self.right_list))
+        self.common = map(a.__getitem__, ifilter(b.has_key, a))
+        self.left_only = map(a.__getitem__, ifilterfalse(b.has_key, a))
+        self.right_only = map(b.__getitem__, ifilterfalse(a.has_key, b))
 
     def phase2(self): # Distinguish files, directories, funnies
         self.common_dirs = []
