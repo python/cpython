@@ -70,7 +70,7 @@ def make_parser(parser_list = []):
 
     for parser_name in parser_list + default_parser_list:
         try:
-	    return _create_parser(parser_name)
+            return _create_parser(parser_name)
         except ImportError,e:
             pass
 
@@ -86,7 +86,7 @@ if sys.platform[ : 4] == "java":
 
 else:
     import imp as _imp
-    
+
     def _rec_find_module(module):
     	"Improvement over imp.find_module which finds submodules."
     	path=""
@@ -97,14 +97,14 @@ else:
             	info = (mod,) + _imp.find_module(mod, [path])
             	
             lastmod = _imp.load_module(*info)
-    
+
             try:
             	path = lastmod.__path__[0]
             except AttributeError, e:
             	pass
-    
+
     	return info
-    	
+
     def _create_parser(parser_name):
     	info = _rec_find_module(parser_name)
     	drv_module = _imp.load_module(*info)
