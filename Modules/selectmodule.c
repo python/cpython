@@ -208,12 +208,17 @@ select_select(PyObject *self, PyObject *args)
 
 	if (tout == Py_None)
 		tvp = (struct timeval *)0;
-	else if (!PyArg_Parse(tout, "d", &timeout)) {
+	else if (!PyNumber_Check(tout)) {
 		PyErr_SetString(PyExc_TypeError,
 				"timeout must be a float or None");
 		return NULL;
 	}
 	else {
+		tout = PyNumber_Float(tout);
+		if (!tout)
+			return NULL;
+		timeout = PyFloat_AS_DOUBLE(tout);
+		Py_DECREF(tout);
 		if (timeout > (double)LONG_MAX) {
 			PyErr_SetString(PyExc_OverflowError,
 					"timeout period too long");
@@ -450,10 +455,17 @@ poll_poll(pollObject *self, PyObject *args)
 	/* Check values for timeout */
 	if (tout == NULL || tout == Py_None)
 		timeout = -1;
-	else if (!PyArg_Parse(tout, "i", &timeout)) {
+	else if (!PyNumber_Check(tout)) {
 		PyErr_SetString(PyExc_TypeError,
 				"timeout must be an integer or None");
 		return NULL;
+	}
+	else {
+		tout = PyNumber_Int(tout);
+		if (!tout)
+			return NULL;
+		timeout = PyInt_AS_LONG(tout);
+		Py_DECREF(tout);
 	}
 
 	/* Ensure the ufd array is up to date */
