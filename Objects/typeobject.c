@@ -759,9 +759,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	   1) in the class dict
 	   2) in the module dict (globals)
 	   The first variable that is an int >= 0 is used.
-	   Otherwise, a default is calculated from the base classes:
-	   if any base class is dynamic, this class is dynamic; otherwise
-	   it is static. */
+	   Otherwise, the default is dynamic. */
 	dynamic = -1; /* Not yet determined */
 	/* Look in the class */
 	tmp = PyDict_GetItemString(dict, "__dynamic__");
@@ -783,19 +781,9 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		}
 	}
 	if (dynamic < 0) {
-		/* Make a new class dynamic if any of its bases is
-		   dynamic.  This is not always the same as inheriting
-		   the __dynamic__ class attribute! */
-		dynamic = 0;
-		for (i = 0; i < nbases; i++) {
-			tmptype = (PyTypeObject *)
-				PyTuple_GET_ITEM(bases, i);
-			if (tmptype->tp_flags &
-			    Py_TPFLAGS_DYNAMICTYPE) {
-				dynamic = 1;
-				break;
-			}
-		}
+		/* Default to dynamic */
+		dynamic = 1;
+
 	}
 
 	/* Check for a __slots__ sequence variable in dict, and count it */
