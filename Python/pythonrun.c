@@ -373,8 +373,9 @@ initmain()
 		Py_FatalError("can't create __main__ module");
 	d = PyModule_GetDict(m);
 	if (PyDict_GetItemString(d, "__builtins__") == NULL) {
-		if (PyDict_SetItemString(d, "__builtins__",
-					 PyEval_GetBuiltins()))
+		PyObject *bimod = PyImport_ImportModule("__builtin__");
+		if (bimod == NULL ||
+		    PyDict_SetItemString(d, "__builtins__", bimod) != 0)
 			Py_FatalError("can't add __builtins__ to __main__");
 	}
 }
@@ -1060,45 +1061,12 @@ Py_Exit(sts)
 #endif
 }
 
-#ifdef HAVE_SIGNAL_H
-static RETSIGTYPE
-sighandler(sig)
-	int sig;
-{
-	signal(sig, SIG_DFL); /* Don't catch recursive signals */
-	/* Do essential exit processing only */
-	call_sys_exitfunc();
-	call_ll_exitfuncs();
-#ifdef HAVE_KILL
-	kill(getpid(), sig); /* Pretend the signal killed us */
-#else
-	exit(1);
-#endif
-	/*NOTREACHED*/
-}
-#endif
-
 static void
 initsigs()
 {
-	RETSIGTYPE (*t)();
 #ifdef HAVE_SIGNAL_H
 #ifdef SIGPIPE
 	signal(SIGPIPE, SIG_IGN);
-#endif
-#ifdef SIGHUP
-	t = signal(SIGHUP, SIG_IGN);
-	if (t == SIG_DFL)
-		signal(SIGHUP, sighandler);
-	else
-		signal(SIGHUP, t);
-#endif              
-#ifdef SIGTERM
-	t = signal(SIGTERM, SIG_IGN);
-	if (t == SIG_DFL)
-		signal(SIGTERM, sighandler);
-	else
-		signal(SIGTERM, t);
 #endif
 #endif /* HAVE_SIGNAL_H */
 	PyOS_InitInterrupts(); /* May imply initsignal() */
