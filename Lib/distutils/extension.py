@@ -104,6 +104,6 @@ class Extension:
         self.extra_objects = extra_objects or []
         self.extra_compile_args = extra_compile_args or []
         self.extra_link_args = extra_link_args or []
-        self.export_symbols = export_symbols
+        self.export_symbols = export_symbols or []
 
 # class Extension
