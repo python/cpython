@@ -8,12 +8,12 @@
 
 This module implements the interface to NIST's\index{NIST} secure hash 
 algorithm,\index{Secure Hash Algorithm} known as SHA.  It is used in
-the same way as the \refmodule{md5} module:\ use the \function{new()}
+the same way as the \refmodule{md5} module:\ use \function{new()}
 to create an sha object, then feed this object with arbitrary strings
 using the \method{update()} method, and at any point you can ask it
 for the \dfn{digest} of the concatenation of the strings fed to it
-so far.\index{checksum!SHA}  SHA digests are 160 bits instead of 128
-bits.
+so far.\index{checksum!SHA}  SHA digests are 160 bits instead of
+MD5's 128 bits.
 
 
 \begin{funcdesc}{new}{\optional{string}}
@@ -37,14 +37,33 @@ attributes of the sha objects returned by \function{new()}:
 \end{datadesc}
 
 
-A sha object has all the methods the md5 objects have, plus one:
+An sha object has the same methods as md5 objects:
 
-\begin{methoddesc}[sha]{hexdigest}{}
-  Return the digest value as a string of hexadecimal digits.  This may 
-  be used to exchange the value safely in email or other non-binary
-  environments.
+\begin{methoddesc}[sha]{update}{arg}
+Update the sha object with the string \var{arg}.  Repeated calls are
+equivalent to a single call with the concatenation of all the
+arguments, i.e.\ \code{m.update(a); m.update(b)} is equivalent to
+\code{m.update(a+b)}.
 \end{methoddesc}
 
+\begin{methoddesc}[sha]{digest}{}
+Return the digest of the strings passed to the \method{update()}
+method so far.  This is a 20-byte string which may contain
+non-\ASCII{} characters, including null bytes.
+\end{methoddesc}
+
+\begin{methoddesc}[sha]{hexdigest}{}
+Like \method{digest()} except the digest is returned as a string of
+length 40, containing only hexadecimal digits.  This may 
+be used to exchange the value safely in email or other non-binary
+environments.
+\end{methoddesc}
+
+\begin{methoddesc}[sha]{copy}{}
+Return a copy (``clone'') of the sha object.  This can be used to
+efficiently compute the digests of strings that share a common initial
+substring.
+\end{methoddesc}
 
 \begin{seealso}
   \seetitle[http://csrc.nist.gov/fips/fip180-1.txt]{Secure Hash Standard}{

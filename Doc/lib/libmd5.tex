@@ -8,7 +8,7 @@
 This module implements the interface to RSA's MD5 message digest
 \index{message digest, MD5}
 algorithm (see also Internet \rfc{1321}).  Its use is quite
-straightforward:\ use the \function{new()} to create an md5 object.
+straightforward:\ use \function{new()} to create an md5 object.
 You can now feed this object with arbitrary strings using the
 \method{update()} method, and at any point you can ask it for the
 \dfn{digest} (a strong kind of 128-bit checksum,
@@ -56,13 +56,15 @@ arguments, i.e.\ \code{m.update(a); m.update(b)} is equivalent to
 
 \begin{methoddesc}[md5]{digest}{}
 Return the digest of the strings passed to the \method{update()}
-method so far.  This is an 16-byte string which may contain
+method so far.  This is a 16-byte string which may contain
 non-\ASCII{} characters, including null bytes.
 \end{methoddesc}
 
 \begin{methoddesc}[md5]{hexdigest}{}
 Like \method{digest()} except the digest is returned as a string of
-length 32, containing only hexadecimal digits.
+length 32, containing only hexadecimal digits.  This may 
+be used to exchange the value safely in email or other non-binary
+environments.
 \end{methoddesc}
 
 \begin{methoddesc}[md5]{copy}{}
