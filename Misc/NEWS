@@ -12,6 +12,8 @@ What's New in Python 2.3.1?
 Core and builtins
 -----------------
 
+- Bug #789402, fixed memory leak when opening a file object.
+
 - Fixed a leak when new code objects are instantiated.
 
 - Bug #800796: slice(1).__hash__() now raises a TypeError, unhashable type.

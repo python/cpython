@@ -99,6 +99,7 @@ dircheck(PyFileObject* f)
 		PyObject *exc = PyObject_CallFunction(PyExc_IOError, "(is)", 
 						      EISDIR, msg);
 		PyErr_SetObject(PyExc_IOError, exc);
+		Py_XDECREF(exc);
 		return NULL;
 	}
 #endif
