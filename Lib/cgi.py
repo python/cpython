@@ -128,7 +128,7 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
             If false (the default), errors are silently ignored.
             If true, errors raise a ValueError exception.
     """
-    if not fp:
+    if fp is None:
         fp = sys.stdin
     if not environ.has_key('REQUEST_METHOD'):
         environ['REQUEST_METHOD'] = 'GET'       # For testing stand-alone
