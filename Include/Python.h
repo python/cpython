@@ -12,14 +12,19 @@ See the file "Misc/COPYRIGHT" for information on usage and
 redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 ******************************************************************/
 
-/* Enable compiler features including SUSv2 compatibility; switching
-   on C lib defines doesn't work here, because the symbols haven't
-   necessarily been defined yet. */
+/* Enable compiler features; switching on C lib defines doesn't work
+   here, because the symbols haven't necessarily been defined yet. */
 #ifndef _GNU_SOURCE
 # define _GNU_SOURCE	1
 #endif
+
+/* Forcing SUSv2 compatibility still produces problems on some
+   platforms, True64 and SGI IRIX begin two of them, so for now the
+   define is switched off. */
+#if 0
 #ifndef _XOPEN_SOURCE
 # define _XOPEN_SOURCE	500
+#endif
 #endif
 
 /* Include nearly all Python header files */
