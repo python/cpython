@@ -151,7 +151,7 @@ class UnixMailbox(_Mailbox):
         return self._regexp.match(line)
 
     def _portable_isrealfromline(self, line):
-        return 1
+        return True
 
     _isrealfromline = _strict_isrealfromline
 

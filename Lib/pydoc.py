@@ -148,7 +148,8 @@ def ispackage(path):
     if os.path.isdir(path):
         for ext in ['.py', '.pyc', '.pyo']:
             if os.path.isfile(os.path.join(path, '__init__' + ext)):
-                return 1
+                return True
+    return False
 
 def synopsis(filename, cache={}):
     """Get the one-line summary out of a module file."""

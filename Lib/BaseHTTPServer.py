@@ -222,7 +222,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
         are in self.command, self.path, self.request_version and
         self.headers.
 
-        Return value is 1 for success, 0 for failure; on failure, an
+        Return True for success, False for failure; on failure, an
         error is sent back.
 
         """
@@ -239,30 +239,30 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
             [command, path, version] = words
             if version[:5] != 'HTTP/':
                 self.send_error(400, "Bad request version (%s)" % `version`)
-                return 0
+                return False
             try:
                 version_number = float(version.split('/', 1)[1])
             except ValueError:
                 self.send_error(400, "Bad request version (%s)" % `version`)
-                return 0
+                return False
             if version_number >= 1.1 and self.protocol_version >= "HTTP/1.1":
                 self.close_connection = 0
             if version_number >= 2.0:
                 self.send_error(505,
                                 "Invalid HTTP Version (%f)" % version_number)
-                return 0
+                return False
         elif len(words) == 2:
             [command, path] = words
             self.close_connection = 1
             if command != 'GET':
                 self.send_error(400,
                                 "Bad HTTP/0.9 request type (%s)" % `command`)
-                return 0
+                return False
         elif not words:
-            return 0
+            return False
         else:
             self.send_error(400, "Bad request syntax (%s)" % `requestline`)
-            return 0
+            return False
         self.command, self.path, self.request_version = command, path, version
 
         # Deal with pipelining
@@ -283,7 +283,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
         elif (conntype.lower() == 'keep-alive' and
               self.protocol_version >= "HTTP/1.1"):
             self.close_connection = 0
-        return 1
+        return True
 
     def handle_one_request(self):
         """Handle a single HTTP request.

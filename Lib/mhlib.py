@@ -850,8 +850,8 @@ class IntSet:
 
     def contains(self, x):
         for lo, hi in self.pairs:
-            if lo <= x <= hi: return 1
-        return 0
+            if lo <= x <= hi: return True
+        return False
 
     def append(self, x):
         for i in range(len(self.pairs)):

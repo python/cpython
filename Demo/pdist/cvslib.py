@@ -289,10 +289,10 @@ class CVS:
 			os.rename(file, bfile)
 
 	def ignored(self, file):
-		if os.path.isdir(file): return 1
+		if os.path.isdir(file): return True
 		for pat in self.IgnoreList:
-			if fnmatch.fnmatch(file, pat): return 1
-		return 0
+			if fnmatch.fnmatch(file, pat): return True
+		return Falso
 
 
 # hexify and unhexify are useful to print MD5 checksums in hex format

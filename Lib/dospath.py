@@ -151,8 +151,8 @@ def exists(path):
     try:
         st = os.stat(path)
     except os.error:
-        return 0
-    return 1
+        return False
+    return True
 
 
 def isdir(path):
@@ -161,7 +161,7 @@ def isdir(path):
     try:
         st = os.stat(path)
     except os.error:
-        return 0
+        return False
     return stat.S_ISDIR(st[stat.ST_MODE])
 
 
@@ -171,7 +171,7 @@ def isfile(path):
     try:
         st = os.stat(path)
     except os.error:
-        return 0
+        return False
     return stat.S_ISREG(st[stat.ST_MODE])
 
 

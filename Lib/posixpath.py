@@ -166,12 +166,12 @@ def islink(path):
 # This is false for dangling symbolic links.
 
 def exists(path):
-    """Test whether a path exists.  Returns false for broken symbolic links"""
+    """Test whether a path exists.  Returns False for broken symbolic links"""
     try:
         st = os.stat(path)
     except os.error:
-        return 0
-    return 1
+        return False
+    return True
 
 
 # Is a path a directory?
@@ -237,16 +237,16 @@ def ismount(path):
         s1 = os.stat(path)
         s2 = os.stat(join(path, '..'))
     except os.error:
-        return 0 # It doesn't exist -- so not a mount point :-)
+        return False # It doesn't exist -- so not a mount point :-)
     dev1 = s1[stat.ST_DEV]
     dev2 = s2[stat.ST_DEV]
     if dev1 != dev2:
-        return 1        # path/.. on a different device as path
+        return True     # path/.. on a different device as path
     ino1 = s1[stat.ST_INO]
     ino2 = s2[stat.ST_INO]
     if ino1 == ino2:
-        return 1        # path/.. is the same i-node as path
-    return 0
+        return True     # path/.. is the same i-node as path
+    return False
 
 
 # Directory tree walk.

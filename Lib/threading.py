@@ -174,9 +174,9 @@ class _Condition(_Verbose):
     def _is_owned(self):
         if self.__lock.acquire(0):
             self.__lock.release()
-            return 0
+            return False
         else:
-            return 1
+            return True
 
     def wait(self, timeout=None):
         me = currentThread()

@@ -445,9 +445,9 @@ else:
 def _exists(name):
     try:
         eval(name)
-        return 1
+        return True
     except NameError:
-        return 0
+        return False
 
 # Supply spawn*() (probably only for Unix)
 if _exists("fork") and not _exists("spawnv") and _exists("execv"):

@@ -246,8 +246,8 @@ def exists(path):
     try:
         st = os.stat(path)
     except os.error:
-        return 0
-    return 1
+        return False
+    return True
 
 
 # Is a path a dos directory?

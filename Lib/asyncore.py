@@ -281,7 +281,7 @@ class dispatcher:
     # ==================================================
 
     def readable (self):
-        return 1
+        return True
 
     if os.name == 'mac':
         # The macintosh will select a listening socket for
@@ -290,7 +290,7 @@ class dispatcher:
             return not self.accepting
     else:
         def writable (self):
-            return 1
+            return True
 
     # ==================================================
     # socket object methods.

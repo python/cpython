@@ -92,7 +92,7 @@ class IOBinding:
             f.close()
         except IOError, msg:
             tkMessageBox.showerror("I/O Error", str(msg), master=self.text)
-            return 0
+            return False
         self.text.delete("1.0", "end")
         self.set_filename(None)
         self.text.insert("1.0", chars)
@@ -100,7 +100,7 @@ class IOBinding:
         self.set_filename(filename)
         self.text.mark_set("insert", "1.0")
         self.text.see("insert")
-        return 1
+        return True
 
     def maybesave(self):
         if self.get_saved():
@@ -154,11 +154,11 @@ class IOBinding:
             f.write(chars)
             f.close()
             ## print "saved to", `filename`
-            return 1
+            return True
         except IOError, msg:
             tkMessageBox.showerror("I/O Error", str(msg),
                                    master=self.text)
-            return 0
+            return False
 
     def fixlastline(self):
         c = self.text.get("end-2c")

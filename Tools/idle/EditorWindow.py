@@ -375,16 +375,16 @@ class EditorWindow:
 
     def ispythonsource(self, filename):
         if not filename:
-            return 1
+            return True
         base, ext = os.path.splitext(os.path.basename(filename))
         if os.path.normcase(ext) in (".py", ".pyw"):
-            return 1
+            return True
         try:
             f = open(filename)
             line = f.readline()
             f.close()
         except IOError:
-            return 0
+            return False
         return line[:2] == '#!' and string.find(line, 'python') >= 0
 
     def close_hook(self):
