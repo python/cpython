@@ -23,7 +23,6 @@ Options:
 """
 
 import re
-import sets
 import sys
 import getopt
 from itertools import izip, count, islice
@@ -87,7 +86,7 @@ def checkit(source, opts, morecmds=[]):
     texcmd = re.compile(r'\\[A-Za-z]+')
     falsetexcmd = re.compile(r'\/([A-Za-z]+)') # Mismarked with forward slash
 
-    validcmds = sets.Set(cmdstr.split())
+    validcmds = set(cmdstr.split())
     for cmd in morecmds:
         validcmds.add('\\' + cmd)
 
@@ -95,7 +94,7 @@ def checkit(source, opts, morecmds=[]):
         pairmap = {']':'[(', ')':'(['}      # Munged openers
     else:
         pairmap = {']':'[', ')':'('}        # Normal opener for a given closer
-    openpunct = sets.Set('([')              # Set of valid openers
+    openpunct = set('([')                   # Set of valid openers
 
     delimiters = re.compile(r'\\(begin|end){([_a-zA-Z]+)}|([()\[\]])')
     braces = re.compile(r'({)|(})')
