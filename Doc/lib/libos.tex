@@ -980,7 +980,9 @@ Availability: Some flavors of \UNIX.
 \begin{funcdesc}{kill}{pid, sig}
 \index{process!killing}
 \index{process!signalling}
-Kill the process \var{pid} with signal \var{sig}.
+Kill the process \var{pid} with signal \var{sig}.  Constants for the
+specific signals available on the host platform are defined in the
+\refmodule{signal} module.
 Availability: \UNIX.
 \end{funcdesc}
 
