@@ -26,7 +26,7 @@ the private heap.
 
 It is important to understand that the management of the Python heap
 is performed by the interpreter itself and that the user has no
-control on it, even if she regularly manipulates object pointers to
+control over it, even if she regularly manipulates object pointers to
 memory blocks inside that heap.  The allocation of heap space for
 Python objects and other internal buffers is performed on demand by
 the Python memory manager through the Python/C API functions listed in
@@ -79,14 +79,16 @@ the I/O buffer escapes completely the Python memory manager.
 
 \section{Memory Interface \label{memoryInterface}}
 
-The following function sets, modeled after the ANSI C standard, are
-available for allocating and releasing memory from the Python heap:
+The following function sets, modeled after the ANSI C standard,
+but specifying  behavior when requesting zero bytes,
+are available for allocating and releasing memory from the Python heap:
 
 
 \begin{cfuncdesc}{void*}{PyMem_Malloc}{size_t n}
   Allocates \var{n} bytes and returns a pointer of type \ctype{void*}
   to the allocated memory, or \NULL{} if the request fails.
-  Requesting zero bytes returns a non-\NULL{} pointer.
+  Requesting zero bytes returns a distinct non-\NULL{} pointer if
+  possible, as if \cfunction{PyMem_Malloc(1)} had been called instead.
   The memory will not have been initialized in any way.
 \end{cfuncdesc}
 
@@ -94,7 +96,7 @@ available for allocating and releasing memory from the Python heap:
   Resizes the memory block pointed to by \var{p} to \var{n} bytes.
   The contents will be unchanged to the minimum of the old and the new
   sizes. If \var{p} is \NULL, the call is equivalent to
-  \cfunction{PyMem_Malloc(\var{n})}; if \var{n} is equal to zero, the
+  \cfunction{PyMem_Malloc(\var{n})}; else if \var{n} is equal to zero, the
   memory block is resized but is not freed, and the returned pointer
   is non-\NULL.  Unless \var{p} is \NULL, it must have been
   returned by a previous call to \cfunction{PyMem_Malloc()} or
@@ -106,7 +108,7 @@ available for allocating and releasing memory from the Python heap:
   returned by a previous call to \cfunction{PyMem_Malloc()} or
   \cfunction{PyMem_Realloc()}.  Otherwise, or if
   \cfunction{PyMem_Free(p)} has been called before, undefined
-  behaviour occurs. If \var{p} is \NULL, no operation is performed.
+  behavior occurs. If \var{p} is \NULL, no operation is performed.
 \end{cfuncdesc}
 
 The following type-oriented macros are provided for convenience.  Note 
