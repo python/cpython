@@ -449,8 +449,7 @@ class Displayer(VideoParams):
 		# This only works on an Entry-level Indigo from IRIX 4.0.5
 		if self.format == 'rgb8' and is_entry_indigo() and \
 			  gl.gversion() == 'GL4DLG-4.0.': # Note trailing '.'!
-			gl.RGBmode()
-			gl.gconfig()
+			self.set_rgbmode()
 			gl.RGBcolor(200, 200, 200) # XXX rather light grey
 			gl.clear()
 			gl.pixmode(GL.PM_SIZE, 8)
@@ -514,6 +513,7 @@ class Displayer(VideoParams):
 	# by clear() and clearto()
 
 	def _initcmap(self):
+		map = []
 		if self.format in ('mono', 'grey4') and self.mustunpack:
 			convcolor = conv_grey
 		else:
@@ -564,12 +564,22 @@ class Displayer(VideoParams):
 						r, g, b = int(rv*255.0), \
 							  int(gv*255.0), \
 							  int(bv*255.0)
-						gl.mapcolor(index, r, g, b)
+						map.append(index, r, g, b)
 						if self.color0 == None:
 							self.color0 = \
 								index, r, g, b
+		self.install_colormap(map)
 		# Permanently make the first color index current
 		gl.color(self.color0[0])
+
+	# Install the colormap in the window (may be overridden for Glx window)
+
+	def install_colormap(self, map):
+		if not self.quiet:
+			sys.stderr.write(' Installing ' + `len(map)` + \
+				  ' entries...')
+		for irgb in map:
+			gl.mapcolor(irgb)
 		gl.gflush() # send the colormap changes to the X server
 
 
