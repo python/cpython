@@ -87,7 +87,7 @@ extern long PyOS_GetLastModificationTime(); /* In getmtime.c */
 #define MAGIC (50428 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
-   value of this global to accomodate for alterations of how the
+   value of this global to accommodate for alterations of how the
    compiler works which are enabled by command line switches. */
 static long pyc_magic = MAGIC;
 
