@@ -1,8 +1,12 @@
 # Test the atexit module.
-from test.test_support import TESTFN, vereq
+from test.test_support import TESTFN, vereq, is_jython
 import atexit
 from os import popen, unlink
 import sys
+
+executable = sys.executable
+if is_jython:
+    executable = "jython"
 
 input = """\
 import atexit
@@ -23,7 +27,7 @@ f = file(fname, "w")
 f.write(input)
 f.close()
 
-p = popen("%s %s" % (sys.executable, fname))
+p = popen("%s %s" % (executable, fname))
 output = p.read()
 p.close()
 vereq(output, """\
@@ -51,7 +55,7 @@ f = file(fname, "w")
 f.write(input)
 f.close()
 
-p = popen("%s %s" % (sys.executable, fname))
+p = popen("%s %s" % (executable, fname))
 output = p.read()
 p.close()
 vereq(output, """\
