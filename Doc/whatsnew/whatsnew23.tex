@@ -492,7 +492,27 @@ strings \samp{True} and \samp{False} instead of \samp{1} and \samp{0}.
 %======================================================================
 \section{PEP 293: Codec Error Handling Callbacks}
 
-XXX write this section
+When encoding a Unicode string into a byte string, unencodable
+characters may be encountered. So far, Python allowed to specify the
+error processing as either ``strict'' (raise \code{UnicodeError},
+default), ``ignore'' (skip the character), or ``replace'' (with
+question mark). It may be desirable to specify an alternative
+processing of the error, e.g. by inserting an XML character reference
+or HTML entity reference into the converted string.
+
+Python now has a flexible framework to add additional processing
+strategies; new error handlers can be added with
+\function{codecs.register_error}. Codecs then can access the error
+handler with \code{codecs.lookup_error}. An equivalent C API has been
+added for codecs written in C. The error handler gets various state
+information, such as the string being converted, the position in the
+string where the error was detected, and the target encoding. It can
+then either raise an exception, or return a replacement string.
+
+Two additional error handlers have been implemented using this
+framework: ``backslashreplace'' using Python backslash quoting to
+represent the unencodable character, and ``xmlcharrefreplace'' emits
+XML character references.
 
 \begin{seealso}
 
