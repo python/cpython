@@ -1272,7 +1272,7 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 			if (Py_VerboseFlag > 1)
 				PySys_WriteStderr("# trying %s\n", buf);
 			filemode = fdp->mode;
-			if (filemode[0] == 'U') 
+			if (filemode[0] == 'U')
 				filemode = "r" PY_STDIOTEXTMODE;
 			fp = fopen(buf, filemode);
 			if (fp != NULL) {
@@ -2520,7 +2520,7 @@ get_file(char *pathname, PyObject *fob, char *mode)
 {
 	FILE *fp;
 	if (fob == NULL) {
-		if (mode[0] == 'U') 
+		if (mode[0] == 'U')
 			mode = "r" PY_STDIOTEXTMODE;
 		fp = fopen(pathname, mode);
 		if (fp == NULL)
