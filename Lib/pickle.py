@@ -92,7 +92,7 @@ To pickle an object x onto a file f, open for writing:
 To unpickle an object x from a file f, open for reading:
 
 	u = pickle.Unpickler(f)
-	x = u.load(x)
+	x = u.load()
 
 The Pickler class only calls the method f.write with a string argument
 (XXX possibly the interface should pass f.write instead of f).
