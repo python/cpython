@@ -25,7 +25,6 @@ def copymodule(src, dst, exceptions = [], only = None):
 safe_path = ['/ufs/guido/lib/python']
 safe_modules = ['array', 'math', 'regex', 'strop', 'time']
 unsafe_builtin_names = ['open', 'reload', '__import__',
-			'eval', 'execfile', 'dir', 'vars',
 			'raw_input', 'input']
 safe_posix_names = ['error', 'fstat', 'listdir', 'lstat', 'readlink', 'stat',
 		    'times', 'uname', 'getpid', 'getppid', 'getcwd',
@@ -87,23 +86,12 @@ def safe_open(file, mode = 'r'):
 		raise TypeError, 'open argument(s) must be string(s)'
 	if mode not in ('r', 'rb'):
 		raise IOError, 'open for writing not allowed'
-	if '/' in file:
-		raise IOError, 'open pathname not allowed'
+	file = os.path.join(os.getcwd(), file)
+	file = os.path.normpath(file)
+	if file[:2] == '//' or file[:5] == '/etc/' or file[:4] == '/../':
+		raise IOError, 'this path not allowed for reading'
 	return open(file, mode)
 safe_builtin.open = safe_open
-
-def safe_dir(object = safe_main):
-	keys = object.__dict__.keys()
-	keys.sort()
-	return keys
-safe_builtin.dir = safe_dir
-
-def safe_vars(object = safe_main):
-	keys = safe_dir(object)
-	dict = {}
-	copydict(object.__dict__, dict, None, keys)
-	return dict
-safe_builtin.vars = safe_vars
 
 
 def exterior():
