@@ -71,9 +71,6 @@ extern "C" {
 #define INPLACE_OR	79
 #define BREAK_LOOP	80
 
-#define RETURN_NONE	81 /* *only* for function epilogues 
-			      -- see comments in 
-			      ceval.c:maybe_call_line_trace for why */
 #define LOAD_LOCALS	82
 #define RETURN_VALUE	83
 #define IMPORT_STAR	84
