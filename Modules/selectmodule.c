@@ -49,10 +49,12 @@ list2set(list, set, fd2obj)
 	    v = getintvalue(o);
 	} else if ( (filenomethod = getattr(o, "fileno")) != NULL ) {
 	    fno = call_object(filenomethod, NULL);
+	    DECREF(filenomethod);
 	    if ( fno == NULL )
 		return -1;
 	    if ( !is_intobject(fno) ) {
 		err_badarg();
+		DECREF(fno);
 		return -1;
 	    }
 	    v = getintvalue(fno);
