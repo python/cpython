@@ -38,6 +38,9 @@ compiler specific".  Therefore, these should be very rare.
 #define HAVE_LIMITS_H
 #define HAVE_SYS_UTIME_H
 #define HAVE_HYPOT
+#define HAVE_TEMPNAM
+#define HAVE_TMPFILE
+#define HAVE_TMPNAM
 #define DONT_HAVE_SIG_ALARM
 #define DONT_HAVE_SIG_PAUSE
 #define LONG_BIT	32
