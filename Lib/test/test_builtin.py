@@ -6,6 +6,8 @@ from test.test_support import fcmp, have_unicode, TESTFN, unlink
 import sys, warnings, cStringIO
 warnings.filterwarnings("ignore", "hex../oct.. of negative int",
                         FutureWarning, __name__)
+warnings.filterwarnings("ignore", "integer argument expected",
+                        DeprecationWarning, "unittest")
 
 class Squares:
 
@@ -925,9 +927,42 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(range(1, 10, 3), [1, 4, 7])
         self.assertEqual(range(5, -5, -3), [5, 2, -1, -4])
 
+        # Now test range() with longs
+        self.assertEqual(range(-2**100), [])
+        self.assertEqual(range(0, -2**100), [])
+        self.assertEqual(range(0, 2**100, -1), [])
+        self.assertEqual(range(0, 2**100, -1), [])
+
+        a = long(10 * sys.maxint)
+        b = long(100 * sys.maxint)
+        c = long(50 * sys.maxint)
+
+        self.assertEqual(range(a, a+2), [a, a+1])
+        self.assertEqual(range(a+2, a, -1L), [a+2, a+1])
+        self.assertEqual(range(a+4, a, -2), [a+4, a+2])
+
+        seq = range(a, b, c)
+        self.assert_(a in seq)
+        self.assert_(b not in seq)
+        self.assertEqual(len(seq), 2)
+
+        seq = range(b, a, -c)
+        self.assert_(b in seq)
+        self.assert_(a not in seq)
+        self.assertEqual(len(seq), 2)
+
+        seq = range(-a, -b, -c)
+        self.assert_(-a in seq)
+        self.assert_(-b not in seq)
+        self.assertEqual(len(seq), 2)
+
         self.assertRaises(TypeError, range)
         self.assertRaises(TypeError, range, 1, 2, 3, 4)
         self.assertRaises(ValueError, range, 1, 2, 0)
+
+        # Reject floats when it would require PyLongs to represent.
+        # (smaller floats still accepted, but deprecated)
+        self.assertRaises(ValueError, range, 1e100, 1e101, 1e101)
 
     def test_input_and_raw_input(self):
         self.write_testfile()

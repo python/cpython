@@ -12,6 +12,11 @@ What's New in Python 2.3 beta 1?
 Core and builtins
 -----------------
 
+- range() now works even if the arguments are longs with magnitude
+  larger than sys.maxint, as long as the total length of the sequence
+  fits.  E.g., range(2**100, 2**101, 2**100) is the following list:
+  [1267650600228229401496703205376L].  (SF patch #707427.)
+
 - Some horridly obscure problems were fixed involving interaction
   between garbage collection and old-style classes with "ambitious"
   getattr hooks.  If an old-style instance didn't have a __del__ method,

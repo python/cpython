@@ -1252,6 +1252,186 @@ With two arguments, equivalent to x**y.  With three arguments,\n\
 equivalent to (x**y) % z, but may be more efficient (e.g. for longs).");
 
 
+
+/* Return number of items in range (lo, hi, step), when arguments are
+ * PyInt or PyLong objects.  step > 0 required.  Return a value < 0 if
+ * & only if the true value is too large to fit in a signed long.
+ * Arguments MUST return 1 with either PyInt_Check() or
+ * PyLong_Check().  Return -1 when there is an error.
+ */
+static long
+get_len_of_range_longs(PyObject *lo, PyObject *hi, PyObject *step)
+{
+	/* -------------------------------------------------------------
+	Algorithm is equal to that of get_len_of_range(), but it operates
+	on PyObjects (which are assumed to be PyLong or PyInt objects).
+	---------------------------------------------------------------*/
+	long n;
+	PyObject *diff = NULL;
+	PyObject *one = NULL;
+	PyObject *tmp1 = NULL, *tmp2 = NULL, *tmp3 = NULL;
+		/* holds sub-expression evaluations */
+
+	/* if (lo >= hi), return length of 0. */
+	if (PyObject_Compare(lo, hi) >= 0)
+		return 0;
+
+	if ((one = PyLong_FromLong(1L)) == NULL)
+		goto Fail;
+
+	if ((tmp1 = PyNumber_Subtract(hi, lo)) == NULL)
+		goto Fail;
+
+	if ((diff = PyNumber_Subtract(tmp1, one)) == NULL)
+		goto Fail;
+
+	if ((tmp2 = PyNumber_FloorDivide(diff, step)) == NULL)
+		goto Fail;
+
+	if ((tmp3 = PyNumber_Add(tmp2, one)) == NULL)
+		goto Fail;
+
+	n = PyLong_AsLong(tmp3);
+	if (PyErr_Occurred()) {  /* Check for Overflow */
+		PyErr_Clear();
+		goto Fail;
+	}
+
+	Py_DECREF(tmp3);
+	Py_DECREF(tmp2);
+	Py_DECREF(diff);
+	Py_DECREF(tmp1);
+	Py_DECREF(one);
+	return n;
+
+  Fail:
+	Py_XDECREF(tmp3);
+	Py_XDECREF(tmp2);
+	Py_XDECREF(diff);
+	Py_XDECREF(tmp1);
+	Py_XDECREF(one);
+	return -1;
+}
+
+/* An extension of builtin_range() that handles the case when PyLong
+ * arguments are given. */
+static PyObject *
+handle_range_longs(PyObject *self, PyObject *args)
+{
+	PyObject *ilow;
+	PyObject *ihigh;
+	PyObject *zero = NULL;
+	PyObject *istep = NULL;
+	PyObject *curnum = NULL;
+	PyObject *v = NULL;
+	long bign;
+	int i, n;
+	int cmp_result;
+
+	zero = PyLong_FromLong(0L);
+	if (zero == NULL)
+		return NULL;
+
+	ilow = zero; /* Default lower bound */
+	if (!PyArg_ParseTuple(args, "O", &ihigh, &istep)) {
+		PyErr_Clear();
+		if (!PyArg_ParseTuple(args,
+			      "OO|O;range() requires 1-3 int arguments",
+			      &ilow, &ihigh, &istep))
+		goto Fail;
+	}
+
+	if (!PyInt_Check(ilow) && !PyLong_Check(ilow)) {
+		PyErr_SetString(PyExc_ValueError,
+				"integer start argument expected, got float.");
+		goto Fail;
+		return NULL;
+	}
+
+	if (!PyInt_Check(ihigh) && !PyLong_Check(ihigh)) {
+		PyErr_SetString(PyExc_ValueError,
+				"integer end argument expected, got float.");
+		goto Fail;
+		return NULL;
+	}
+
+	/* If no istep was supplied, default to 1. */
+	if (istep == NULL) {
+		istep = PyLong_FromLong(1L);
+		if (istep == NULL)
+			goto Fail;
+	}
+	else {
+		if (!PyInt_Check(istep) && !PyLong_Check(istep)) {
+			PyErr_SetString(PyExc_ValueError,
+				"integer step argument expected, got float.");
+			goto Fail;
+		}
+		Py_INCREF(istep);
+	}
+
+	if (PyObject_Cmp(istep, zero, &cmp_result) == -1) {
+		goto Fail;
+	}
+
+	if (cmp_result == 0) {
+		PyErr_SetString(PyExc_ValueError,
+				"range() arg 3 must not be zero");
+		goto Fail;
+	}
+
+	if (cmp_result > 0)
+		bign = get_len_of_range_longs(ilow, ihigh, istep);
+	else {
+		PyObject *neg_istep = PyNumber_Negative(istep);
+		if (neg_istep == NULL)
+			goto Fail;
+		bign = get_len_of_range_longs(ihigh, ilow, neg_istep);
+		Py_DECREF(neg_istep);
+	}
+
+	n = (int)bign;
+	if (bign < 0 || (long)n != bign) {
+		PyErr_SetString(PyExc_OverflowError,
+				"range() result has too many items");
+		goto Fail;
+	}
+
+	v = PyList_New(n);
+	if (v == NULL)
+		goto Fail;
+
+	curnum = ilow;
+	Py_INCREF(curnum);
+
+	for (i = 0; i < n; i++) {
+		PyObject *w = PyNumber_Long(curnum);
+		PyObject *tmp_num;
+		if (w == NULL)
+			goto Fail;
+
+		PyList_SET_ITEM(v, i, w);
+
+		tmp_num = PyNumber_Add(curnum, istep);
+		if (tmp_num == NULL)
+			goto Fail;
+
+		Py_DECREF(curnum);
+		curnum = tmp_num;
+	}
+	Py_DECREF(curnum);
+	Py_DECREF(istep);
+	Py_DECREF(zero);
+	return v;
+
+  Fail:
+	Py_XDECREF(curnum);
+	Py_XDECREF(istep);
+	Py_XDECREF(zero);
+	Py_XDECREF(v);
+	return NULL;
+}
+
 /* Return number of items in range/xrange (lo, hi, step).  step > 0
  * required.  Return a value < 0 if & only if the true value is too
  * large to fit in a signed long.
@@ -1293,17 +1473,22 @@ builtin_range(PyObject *self, PyObject *args)
 	if (PyTuple_Size(args) <= 1) {
 		if (!PyArg_ParseTuple(args,
 				"l;range() requires 1-3 int arguments",
-				&ihigh))
-			return NULL;
+				&ihigh)) {
+			PyErr_Clear();
+			return handle_range_longs(self, args);
+		}
 	}
 	else {
 		if (!PyArg_ParseTuple(args,
 				"ll|l;range() requires 1-3 int arguments",
-				&ilow, &ihigh, &istep))
-			return NULL;
+				&ilow, &ihigh, &istep)) {
+			PyErr_Clear();
+			return handle_range_longs(self, args);
+		}
 	}
 	if (istep == 0) {
-		PyErr_SetString(PyExc_ValueError, "range() arg 3 must not be zero");
+		PyErr_SetString(PyExc_ValueError,
+				"range() arg 3 must not be zero");
 		return NULL;
 	}
 	if (istep > 0)
