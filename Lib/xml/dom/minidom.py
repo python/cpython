@@ -30,36 +30,36 @@ except AttributeError:
 del types
 
 import xml.dom
-_Node = xml.dom.Node
 
 
 if list is type([]):
     class NodeList(list):
+        __dynamic__ = 0
+
         def item(self, index):
             if 0 <= index < len(self):
                 return self[index]
 
-        def __getattr__(self, name):
-            if name == "length":
-                return len(self)
-            raise AttributeError, name
+        length = property(lambda self: len(self),
+                          doc="The number of nodes in the NodeList.")
 
 else:
     def NodeList():
         return []
     
 
-class Node(_Node):
+class Node(xml.dom.Node):
     allnodes = {}
     _debug = 0
     _makeParentNodes = 1
     debug = None
     childNodeTypes = ()
     namespaceURI = None # this is non-null only for elements and attributes
+    parentNode = None
+    ownerDocument = None
 
     def __init__(self):
         self.childNodes = NodeList()
-        self.parentNode = self.ownerDocument = None
         if Node._debug:
             index = repr(id(self)) + repr(self.__class__)
             Node.allnodes[index] = repr(self.__dict__)
