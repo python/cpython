@@ -1702,6 +1702,11 @@ PyObject_Dir(PyObject *arg)
 	}
 
 	assert(result);
+	if (!PyList_Check(result)) {
+		PyErr_SetString(PyExc_TypeError, 
+			"Expected keys() to be a list.");
+		goto error;
+	}
 	if (PyList_Sort(result) != 0)
 		goto error;
 	else
