@@ -14,11 +14,14 @@
 #include <Controls.h>
 
 extern PyObject *ResObj_New(Handle);
-extern PyObject *ResObj_OptNew(Handle);
 extern int ResObj_Convert(PyObject *, Handle *);
+extern PyObject *OptResObj_New(Handle);
+extern int OptResObj_Convert(PyObject *, Handle *);
 
 extern PyObject *WinObj_New(WindowPtr);
 extern int WinObj_Convert(PyObject *, WindowPtr *);
+extern PyTypeObject Window_Type;
+#define WinObj_Check(x) ((x)->ob_type == &Window_Type)
 
 extern PyObject *DlgObj_New(DialogPtr);
 extern int DlgObj_Convert(PyObject *, DialogPtr *);
@@ -30,6 +33,12 @@ extern int MenuObj_Convert(PyObject *, MenuHandle *);
 
 extern PyObject *CtlObj_New(ControlHandle);
 extern int CtlObj_Convert(PyObject *, ControlHandle *);
+
+extern PyObject *GrafObj_New(GrafPtr);
+extern int GrafObj_Convert(PyObject *, GrafPtr *);
+
+extern PyObject *BMObj_New(BitMapPtr);
+extern int BMObj_Convert(PyObject *, BitMapPtr *);
 
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 
@@ -1333,7 +1342,7 @@ static PyMethodDef Res_methods[] = {
 
 
 /* Alternative version of ResObj_New, which returns None for null argument */
-PyObject *ResObj_OptNew(itself)
+PyObject *OptResObj_New(itself)
 	Handle itself;
 {
 	ResourceObject *it;
@@ -1342,6 +1351,23 @@ PyObject *ResObj_OptNew(itself)
 		return Py_None;
 	}
 	return ResObj_New(itself);
+}
+
+OptResObj_Convert(v, p_itself)
+	PyObject *v;
+	Handle *p_itself;
+{
+	if ( v == Py_None ) {
+		*p_itself = NULL;
+		return 1;
+	}
+	if (!ResObj_Check(v))
+	{
+		PyErr_SetString(PyExc_TypeError, "Resource required");
+		return 0;
+	}
+	*p_itself = ((ResourceObject *)v)->ob_itself;
+	return 1;
 }
 
 

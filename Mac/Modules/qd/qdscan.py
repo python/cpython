@@ -127,6 +127,10 @@ class MyScanner(Scanner):
 			  [('Rect', 'r', 'InOutMode'),
 			 	('Rect_ptr', 'srcRect', 'InMode'),
 			 	('Rect_ptr', 'dstRect', 'InMode')]),
+			 	
+			 # CopyBits and friends
+			 ([('RgnHandle', 'maskRgn', 'InMode')],
+			  [('OptRgnHandle', 'maskRgn', 'InMode')]),
 			
 			]
 

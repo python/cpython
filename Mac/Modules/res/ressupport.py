@@ -32,7 +32,7 @@ includestuff = includestuff + """
 finalstuff = finalstuff + """
 
 /* Alternative version of ResObj_New, which returns None for null argument */
-PyObject *ResObj_OptNew(itself)
+PyObject *OptResObj_New(itself)
 	Handle itself;
 {
 	ResourceObject *it;
@@ -41,6 +41,23 @@ PyObject *ResObj_OptNew(itself)
 		return Py_None;
 	}
 	return ResObj_New(itself);
+}
+
+OptResObj_Convert(v, p_itself)
+	PyObject *v;
+	Handle *p_itself;
+{
+	if ( v == Py_None ) {
+		*p_itself = NULL;
+		return 1;
+	}
+	if (!ResObj_Check(v))
+	{
+		PyErr_SetString(PyExc_TypeError, "Resource required");
+		return 0;
+	}
+	*p_itself = ((ResourceObject *)v)->ob_itself;
+	return 1;
 }
 
 """

@@ -33,6 +33,7 @@ TextThingie = TextThingieClass(None)
 
 # These are temporary!
 RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
+OptRgnHandle = OpaqueByValueType("RgnHandle", "OptResObj")
 PicHandle = OpaqueByValueType("PicHandle", "ResObj")
 PolyHandle = OpaqueByValueType("PolyHandle", "ResObj")
 PixMapHandle = OpaqueByValueType("PixMapHandle", "ResObj")
@@ -101,8 +102,15 @@ class MyGRObjectDefinition(GlobalObjectDefinition):
 	def outputGetattrHook(self):
 		Output("""if ( strcmp(name, "device") == 0 )
 			return PyInt_FromLong((long)self->ob_itself->device);
-		if ( strcmp(name, "portBits") == 0 )
-			return BMObj_New(&self->ob_itself->portBits);
+		if ( strcmp(name, "portBits") == 0 ) {
+			CGrafPtr itself_color = (CGrafPtr)self->ob_itself;
+			
+			if ( (itself_color->portVersion&0xc000) == 0xc000 )
+				/* XXXX Do we need HLock() stuff here?? */
+				return BMObj_New((BitMapPtr)*itself_color->portPixMap);
+			else
+				return BMObj_New(&self->ob_itself->portBits);
+		}
 		if ( strcmp(name, "portRect") == 0 )
 			return Py_BuildValue("O&", PyMac_BuildRect, &self->ob_itself->portRect);
 		/* XXXX Add more, as needed */
@@ -132,6 +140,10 @@ class MyBMObjectDefinition(GlobalObjectDefinition):
 		if ( strcmp(name, "bounds") == 0 )
 			return Py_BuildValue("O&", PyMac_BuildRect, &self->ob_itself->bounds);
 		/* XXXX Add more, as needed */
+		if ( strcmp(name, "bitmap_data") == 0 )
+			return PyString_FromStringAndSize((char *)self->ob_itself, sizeof(BitMap));
+		if ( strcmp(name, "pixmap_data") == 0 )
+			return PyString_FromStringAndSize((char *)self->ob_itself, sizeof(PixMap));
 		""")
 
 # Create the generator groups and link them
@@ -193,6 +205,32 @@ return _res;
 	
 f = ManualGenerator("BitMap", BitMap_body)
 f.docstring = lambda: """Take (string, int, Rect) argument and create BitMap"""
+module.add(f)
+
+#
+# And again, for turning a correctly-formatted structure into the object
+#
+RawBitMap_body = """
+BitMap *ptr;
+PyObject *source;
+
+if ( !PyArg_ParseTuple(_args, "O!", &PyString_Type, &source) )
+	return NULL;
+if ( PyString_Size(source) != sizeof(BitMap) && PyString_Size(source) != sizeof(PixMap) ) {
+	PyErr_BadArgument();
+	return NULL;
+}
+ptr = (BitMapPtr)PyString_AsString(source);
+if ( (_res = BMObj_New(ptr)) == NULL ) {
+	return NULL;
+}
+((BitMapObject *)_res)->referred_object = source;
+Py_INCREF(source);
+return _res;
+"""
+	
+f = ManualGenerator("RawBitMap", RawBitMap_body)
+f.docstring = lambda: """Take string BitMap and turn into BitMap object"""
 module.add(f)
 
 # generate output (open the output file as late as possible)

@@ -99,8 +99,9 @@ includestuff = """
 #include <Controls.h>
 
 extern PyObject *ResObj_New(Handle);
-extern PyObject *ResObj_OptNew(Handle);
 extern int ResObj_Convert(PyObject *, Handle *);
+extern PyObject *OptResObj_New(Handle);
+extern int OptResObj_Convert(PyObject *, Handle *);
 
 extern PyObject *WinObj_New(WindowPtr);
 extern int WinObj_Convert(PyObject *, WindowPtr *);
