@@ -3625,9 +3625,28 @@ shopkeeper : Michael Palin
 sketch : Cheese Shop Sketch
 \end{verbatim}
 
-Side effects of this change include:
+Consequences of this change include:
 
 \begin{itemize}
+
+\item
+The built-in function \code{apply()} now has an optional third
+argument, which is a dictionary specifying any keyword arguments to be
+passed.  For example,
+\begin{verbatim}
+apply(parrot, (), {'voltage': 20, 'action': 'voomm'})
+\end{verbatim}
+is equivalent to
+\begin{verbatim}
+parrot(voltage=20, action='voomm')
+\end{verbatim}
+
+\item
+There is also a mechanism for functions and methods defined in an
+extension module (i.e., implemented in C or C++) to receive a
+dictionary of their keyword arguments.  By default, such functions do
+not accept keyword arguments, since the argument names are not
+available to the interpreter.
 
 \item
 In the effort of implementing keyword arguments, function and
@@ -3747,6 +3766,17 @@ output of expression statements that evaluate to something else than
 \section{Library Changes}
 
 \begin{itemize}
+
+\item
+There are new module \code{ni} and \code{ihooks} that support
+importing modules with hierarchical names such as \code{A.B.C}.  This
+is enabled by writing \code{import ni; ni.ni()} at the very top of the
+main program.  These modules are amply documented in the Python
+source.
+
+\item
+The module \code{rexec} has been rewritten (incompatibly) to define a
+class and to use \code{ihooks}.
 
 \item
 The \code{string.split()} and \code{string.splitfields()} functions
