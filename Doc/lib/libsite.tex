@@ -33,7 +33,7 @@ per line) to be added to \code{sys.path}.  Non-existing items are
 never added to \code{sys.path}, but no check is made that the item
 refers to a directory (rather than a file).  No item is added to
 \code{sys.path} more than once.  Blank lines and lines beginning with
-\code{\#} are skipped.
+\code{\#} are skipped.  Lines starting with \code{import} are executed.
 \index{package}
 \indexiii{path}{configuration}{file}
 
