@@ -117,6 +117,9 @@ def is_constant_false(node):
             return 1
     return 0
 
+def mangle(name):
+    return name
+
 class CodeGenerator:
     """Defines basic code generator for Python bytecode
 
@@ -694,6 +697,7 @@ class CodeGenerator:
     # augmented assignment
 
     def visitAugAssign(self, node):
+        self.set_lineno(node)
         aug_node = wrap_aug(node.node)
         self.visit(aug_node, "load")
         self.visit(node.expr)
