@@ -775,7 +775,7 @@ class Message:
                 newparams.append((pk, pv))
         if not foundp:
             # The original Content-Type header had no boundary attribute.
-            # Tack one one the end.  BAW: should we raise an exception
+            # Tack one on the end.  BAW: should we raise an exception
             # instead???
             newparams.append(('boundary', '"%s"' % boundary))
         # Replace the existing Content-Type header with the new value

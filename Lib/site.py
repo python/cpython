@@ -10,7 +10,7 @@ somewhere near the top of their code.  Because of the automatic
 import, this is no longer necessary (but code that does it still
 works).
 
-This will append site-specific paths to to the module search path.  On
+This will append site-specific paths to the module search path.  On
 Unix, it starts with sys.prefix and sys.exec_prefix (if different) and
 appends lib/python<version>/site-packages as well as lib/site-python.
 On other platforms (mainly Mac and Windows), it uses just sys.prefix

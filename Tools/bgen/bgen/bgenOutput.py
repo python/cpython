@@ -58,7 +58,7 @@ def Output(format = "", *args):
     VaOutput(format, args)
 
 def VaOutput(format, args):
-    """Call this with a format string and and argument tuple for the format.
+    """Call this with a format string and argument tuple for the format.
 
     A newline is always added.  Each line in the output is indented
     to the proper indentation level -- even if the result of the

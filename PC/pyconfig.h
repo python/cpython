@@ -4,7 +4,7 @@
 /* pyconfig.h.  NOT Generated automatically by configure.
 
 This is a manually maintained version used for the Watcom,
-Borland and and Microsoft Visual C++ compilers.  It is a
+Borland and Microsoft Visual C++ compilers.  It is a
 standard part of the Python distribution.
 
 WINDOWS DEFINES:

@@ -994,7 +994,7 @@ def dumps(params, methodname=None, methodresponse=None, encoding=None,
 # represents a fault condition, this function raises a Fault exception.
 #
 # @param data An XML-RPC packet, given as an 8-bit string.
-# @return A tuple containing the the unpacked data, and the method name
+# @return A tuple containing the unpacked data, and the method name
 #     (None if not present).
 # @see Fault
 

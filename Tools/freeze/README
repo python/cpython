@@ -135,7 +135,7 @@ under Windows, or libtcl8.2.so and libtcl8.2.so under Unix) are required
 at program load time, and are searched by the operating system loader
 before Python can be started. Under Windows, the environment
 variable PATH is consulted, and under Unix, it may be the
-the environment variable LD_LIBRARY_PATH and/or the system
+environment variable LD_LIBRARY_PATH and/or the system
 shared library cache (ld.so). An additional preferred directory for
 finding the dynamic libraries is built into the .dll or .so files at
 compile time - see the LIB_RUNTIME_DIR variable in the Tcl makefile. 

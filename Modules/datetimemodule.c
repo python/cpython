@@ -899,7 +899,7 @@ offset_as_timedelta(PyObject *tzinfo, char *name, PyObject *tzinfoarg) {
  * result.  tzinfo must be an instance of the tzinfo class.  If dst()
  * returns None, call_dst returns 0 and sets *none to 1.  If dst()
  & doesn't return None or timedelta, TypeError is raised and this
- * returns -1.  If dst() returns an invalid timedelta for for a UTC offset,
+ * returns -1.  If dst() returns an invalid timedelta for a UTC offset,
  * ValueError is raised and this returns -1.  Else *none is set to 0 and
  * the offset is returned (as an int # of minutes east of UTC).
  */
@@ -4818,7 +4818,7 @@ z' = z + z.d = 1:MM then, and z'.d=0, and z'.d - z.d = -60 != 0 so [8]
 
 Because we know z.d said z was in daylight time (else [5] would have held and
 we would have stopped then), and we know z.d != z'.d (else [8] would have held
-and we we have stopped then), and there are only 2 possible values dst() can
+and we would have stopped then), and there are only 2 possible values dst() can
 return in Eastern, it follows that z'.d must be 0 (which it is in the example,
 but the reasoning doesn't depend on the example -- it depends on there being
 two possible dst() outcomes, one zero and the other non-zero).  Therefore

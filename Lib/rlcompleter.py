@@ -117,7 +117,7 @@ class Completer:
         Assuming the text is of the form NAME.NAME....[NAME], and is
         evaluatable in self.namespace, it will be evaluated and its attributes
         (as revealed by dir()) are used as possible completions.  (For class
-        instances, class members are are also considered.)
+        instances, class members are also considered.)
 
         WARNING: this can still invoke arbitrary C code, if an object
         with a __getattr__ hook is evaluated.

@@ -18,7 +18,7 @@ One hooks class is defined (Hooks), which uses the interface provided
 by standard modules os and os.path.  It should be used as the base
 class for other hooks classes.
 
-2) A "module loader" class provides an interface to to search for a
+2) A "module loader" class provides an interface to search for a
 module in a search path and to load it.  It defines a method which
 searches for a module in a single directory; by overriding this method
 one can redefine the details of the search.  If the directory is None,

@@ -56,7 +56,7 @@ Here are the possible messages on stdout (N stands for a line number):
 - 'No conclusive evidence on line N', line marked by '*':
 
   A / operator was found for which no warnings were seen.  This could
-  be code that was never executed, or code that was only executed with
+  be code that was never executed, or code that was only executed
   with user-defined objects as arguments.  You will have to
   investigate further.  Note that // can be overloaded separately from
   /, using __floordiv__.  True division can also be separately

@@ -8482,7 +8482,7 @@ separate file pyimenu.el is no longer needed, imenu support is folded
 into python-mode.el.
 
 - The configure script can finally correctly find the readline library in a 
-non-standard location.  The LDFLAGS variable is passed on the the Makefiles 
+non-standard location.  The LDFLAGS variable is passed on the Makefiles 
 from the configure script.
 
 - Shared libraries are now installed as programs (i.e. with executable 
@@ -10707,7 +10707,7 @@ passed are system-dependent.  You can generate a version for your own
 system by running the script demo/scripts/h2py.py with
 /usr/include/sys/socket.h as input.
 
-cddb: interface to the database used the the CD player
+cddb: interface to the database used by the CD player
 
 torgb: convert various image file types to rgb format (requires pbmplus)
 
