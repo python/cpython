@@ -691,7 +691,11 @@ class CCompiler:
                                     depends, extra_postargs)
         cc_args = self._get_cc_args(pp_opts, debug, extra_preargs)
 
-        for obj, (src, ext) in build.items():
+        for obj in objects:
+            try:
+                src, ext = build[obj]
+            except KeyError:
+                continue
             self._compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
 
         # Return *all* object filenames, not just the ones we just built.
