@@ -44,6 +44,12 @@
 # 2002-05-15 fl  Added error constants (from Andrew Kuchling)
 # 2002-06-27 fl  Merged with Python CVS version
 # 2002-10-22 fl  Added basic authentication (based on code from Phillip Eby)
+# 2003-01-22 sm  Add support for the bool type
+# 2003-02-27 gvr Remove apply calls
+# 2003-04-24 sm  Use cStringIO if available
+# 2003-04-25 ak  Add support for nil
+# 2003-06-15 gn  Add support for time.struct_time
+# 2003-07-12 gp  Correct marshalling of Faults
 #
 # Copyright (c) 1999-2002 by Secret Labs AB.
 # Copyright (c) 1999-2002 by Fredrik Lundh.
@@ -581,7 +587,9 @@ class Marshaller:
         if isinstance(values, Fault):
             # fault instance
             write("<fault>\n")
-            dump(vars(values), write)
+            dump({'faultCode': values.faultCode,
+                  'faultString': values.faultString},
+                 write)
             write("</fault>\n")
         else:
             # parameter block
