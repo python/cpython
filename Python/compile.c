@@ -481,13 +481,14 @@ parsestr(s)
 	char *buf;
 	char *p;
 	int c;
-	if (*s != '\'') {
+	int quote = *s;
+	if (quote != '\'' && quote != '\"') {
 		err_badcall();
 		return NULL;
 	}
 	s++;
 	len = strlen(s);
-	if (s[--len] != '\'') {
+	if (s[--len] != quote) {
 		err_badcall();
 		return NULL;
 	}
@@ -505,6 +506,7 @@ parsestr(s)
 		/* XXX This assumes ASCII! */
 		case '\\': *p++ = '\\'; break;
 		case '\'': *p++ = '\''; break;
+		case '\"': *p++ = '\"'; break;
 		case 'b': *p++ = '\b'; break;
 		case 'f': *p++ = '\014'; break; /* FF */
 		case 't': *p++ = '\t'; break;

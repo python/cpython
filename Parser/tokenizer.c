@@ -564,7 +564,7 @@ tok_get(tok, p_start, p_end)
 		return NUMBER;
 	}
 	
-	/* String */
+	/* String (single quotes) */
 	if (c == '\'') {
 		for (;;) {
 			c = tok_nextc(tok);
@@ -584,6 +584,32 @@ tok_get(tok, p_start, p_end)
 				continue;
 			}
 			if (c == '\'')
+				break;
+		}
+		*p_end = tok->cur;
+		return STRING;
+	}
+	
+	/* String (double quotes) */
+	if (c == '\"') {
+		for (;;) {
+			c = tok_nextc(tok);
+			if (c == '\n' || c == EOF) {
+				tok->done = E_TOKEN;
+				tok->cur = tok->inp;
+				return ERRORTOKEN;
+			}
+			if (c == '\\') {
+				c = tok_nextc(tok);
+				*p_end = tok->cur;
+				if (c == '\n' || c == EOF) {
+					tok->done = E_TOKEN;
+					tok->cur = tok->inp;
+					return ERRORTOKEN;
+				}
+				continue;
+			}
+			if (c == '\"')
 				break;
 		}
 		*p_end = tok->cur;
