@@ -102,16 +102,7 @@ class BaseSet(object):
         """
         return self._data.iterkeys()
 
-    # Comparisons.  Ordering is determined by the ordering of the
-    # underlying dicts (which is consistent though unpredictable).
-
-    def __lt__(self, other):
-        self._binary_sanity_check(other)
-        return self._data < other._data
-
-    def __le__(self, other):
-        self._binary_sanity_check(other)
-        return self._data <= other._data
+    # Equality comparisons using the underlying dicts
 
     def __eq__(self, other):
         self._binary_sanity_check(other)
@@ -120,14 +111,6 @@ class BaseSet(object):
     def __ne__(self, other):
         self._binary_sanity_check(other)
         return self._data != other._data
-
-    def __gt__(self, other):
-        self._binary_sanity_check(other)
-        return self._data > other._data
-
-    def __ge__(self, other):
-        self._binary_sanity_check(other)
-        return self._data >= other._data
 
     # Copying operations
 
