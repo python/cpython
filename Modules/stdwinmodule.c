@@ -87,11 +87,11 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "pythread.h"
 
-static type_lock StdwinLock; /* Lock held when interpreter not locked */
+static PyThread_type_lock StdwinLock; /* Lock held when interpreter not locked */
 
-#define BGN_STDWIN Py_BEGIN_ALLOW_THREADS acquire_lock(StdwinLock, 1);
-#define RET_STDWIN release_lock(StdwinLock); Py_BLOCK_THREADS
-#define END_STDWIN release_lock(StdwinLock); Py_END_ALLOW_THREADS
+#define BGN_STDWIN Py_BEGIN_ALLOW_THREADS PyThread_acquire_lock(StdwinLock, 1);
+#define RET_STDWIN PyThread_release_lock(StdwinLock); Py_BLOCK_THREADS
+#define END_STDWIN PyThread_release_lock(StdwinLock); Py_END_ALLOW_THREADS
 
 #else
 
@@ -2659,6 +2659,6 @@ initstdwin()
 	    PyDict_SetItemString(d, "error", StdwinError) != 0)
 		return;
 #ifdef WITH_THREAD
-	StdwinLock = allocate_lock();
+	StdwinLock = PyThread_allocate_lock();
 #endif
 }

@@ -125,7 +125,7 @@ static void _noop()
 {
 }
 
-static void _init_thread _P0()
+static void PyThread__init_thread _P0()
 {
 	/* DO AN INIT BY STARTING THE THREAD */
 	static int dummy = 0;
@@ -136,7 +136,7 @@ static void _init_thread _P0()
 
 #else /* !_HAVE_BSDI */
 
-static void _init_thread _P0()
+static void PyThread__init_thread _P0()
 {
 #if defined(_AIX) && defined(__GNUC__)
 	pthread_init();
@@ -150,13 +150,13 @@ static void _init_thread _P0()
  */
 
 
-int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
+int PyThread_start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 {
 	pthread_t th;
 	int success;
-	dprintf(("start_new_thread called\n"));
+	dprintf(("PyThread_start_new_thread called\n"));
 	if (!initialized)
-		init_thread();
+		PyThread_init_thread();
 
 	success = pthread_create(&th, 
 #if defined(PY_PTHREAD_D4)
@@ -188,19 +188,19 @@ int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 	return success < 0 ? 0 : 1;
 }
 
-long get_thread_ident _P0()
+long PyThread_get_thread_ident _P0()
 {
 	volatile pthread_t threadid;
 	if (!initialized)
-		init_thread();
+		PyThread_init_thread();
 	/* Jump through some hoops for Alpha OSF/1 */
 	threadid = pthread_self();
 	return (long) *(long *) &threadid;
 }
 
-static void do_exit_thread _P1(no_cleanup, int no_cleanup)
+static void do_PyThread_exit_thread _P1(no_cleanup, int no_cleanup)
 {
-	dprintf(("exit_thread called\n"));
+	dprintf(("PyThread_exit_thread called\n"));
 	if (!initialized) {
 		if (no_cleanup)
 			_exit(0);
@@ -209,20 +209,20 @@ static void do_exit_thread _P1(no_cleanup, int no_cleanup)
 	}
 }
 
-void exit_thread _P0()
+void PyThread_exit_thread _P0()
 {
-	do_exit_thread(0);
+	do_PyThread_exit_thread(0);
 }
 
-void _exit_thread _P0()
+void PyThread__exit_thread _P0()
 {
-	do_exit_thread(1);
+	do_PyThread_exit_thread(1);
 }
 
 #ifndef NO_EXIT_PROG
-static void do_exit_prog _P2(status, int status, no_cleanup, int no_cleanup)
+static void do_PyThread_exit_prog _P2(status, int status, no_cleanup, int no_cleanup)
 {
-	dprintf(("exit_prog(%d) called\n", status));
+	dprintf(("PyThread_exit_prog(%d) called\n", status));
 	if (!initialized)
 		if (no_cleanup)
 			_exit(status);
@@ -230,28 +230,28 @@ static void do_exit_prog _P2(status, int status, no_cleanup, int no_cleanup)
 			exit(status);
 }
 
-void exit_prog _P1(status, int status)
+void PyThread_exit_prog _P1(status, int status)
 {
-	do_exit_prog(status, 0);
+	do_PyThread_exit_prog(status, 0);
 }
 
-void _exit_prog _P1(status, int status)
+void PyThread__exit_prog _P1(status, int status)
 {
-	do_exit_prog(status, 1);
+	do_PyThread_exit_prog(status, 1);
 }
 #endif /* NO_EXIT_PROG */
 
 /*
  * Lock support.
  */
-type_lock allocate_lock _P0()
+PyThread_type_lock PyThread_allocate_lock _P0()
 {
 	pthread_lock *lock;
 	int status, error = 0;
 
-	dprintf(("allocate_lock called\n"));
+	dprintf(("PyThread_allocate_lock called\n"));
 	if (!initialized)
-		init_thread();
+		PyThread_init_thread();
 
 	lock = (pthread_lock *) malloc(sizeof(pthread_lock));
 	memset((void *)lock, '\0', sizeof(pthread_lock));
@@ -272,16 +272,16 @@ type_lock allocate_lock _P0()
 		}
 	}
 
-	dprintf(("allocate_lock() -> %lx\n", (long)lock));
-	return (type_lock) lock;
+	dprintf(("PyThread_allocate_lock() -> %lx\n", (long)lock));
+	return (PyThread_type_lock) lock;
 }
 
-void free_lock _P1(lock, type_lock lock)
+void PyThread_free_lock _P1(lock, PyThread_type_lock lock)
 {
 	pthread_lock *thelock = (pthread_lock *)lock;
 	int status, error = 0;
 
-	dprintf(("free_lock(%lx) called\n", (long)lock));
+	dprintf(("PyThread_free_lock(%lx) called\n", (long)lock));
 
 	status = pthread_mutex_destroy( &thelock->mut );
 	CHECK_STATUS("pthread_mutex_destroy");
@@ -292,13 +292,13 @@ void free_lock _P1(lock, type_lock lock)
 	free((void *)thelock);
 }
 
-int acquire_lock _P2(lock, type_lock lock, waitflag, int waitflag)
+int PyThread_acquire_lock _P2(lock, PyThread_type_lock lock, waitflag, int waitflag)
 {
 	int success;
 	pthread_lock *thelock = (pthread_lock *)lock;
 	int status, error = 0;
 
-	dprintf(("acquire_lock(%lx, %d) called\n", (long)lock, waitflag));
+	dprintf(("PyThread_acquire_lock(%lx, %d) called\n", (long)lock, waitflag));
 
 	status = pthread_mutex_lock( &thelock->mut );
 	CHECK_STATUS("pthread_mutex_lock[1]");
@@ -325,16 +325,16 @@ int acquire_lock _P2(lock, type_lock lock, waitflag, int waitflag)
 		success = 1;
 	}
 	if (error) success = 0;
-	dprintf(("acquire_lock(%lx, %d) -> %d\n", (long)lock, waitflag, success));
+	dprintf(("PyThread_acquire_lock(%lx, %d) -> %d\n", (long)lock, waitflag, success));
 	return success;
 }
 
-void release_lock _P1(lock, type_lock lock)
+void PyThread_release_lock _P1(lock, PyThread_type_lock lock)
 {
 	pthread_lock *thelock = (pthread_lock *)lock;
 	int status, error = 0;
 
-	dprintf(("release_lock(%lx) called\n", (long)lock));
+	dprintf(("PyThread_release_lock(%lx) called\n", (long)lock));
 
 	status = pthread_mutex_lock( &thelock->mut );
 	CHECK_STATUS("pthread_mutex_lock[3]");
@@ -359,14 +359,14 @@ struct semaphore {
 	int value;
 };
 
-type_sema allocate_sema _P1(value, int value)
+PyThread_type_sema PyThread_allocate_sema _P1(value, int value)
 {
 	struct semaphore *sema;
 	int status, error = 0;
 
-	dprintf(("allocate_sema called\n"));
+	dprintf(("PyThread_allocate_sema called\n"));
 	if (!initialized)
-		init_thread();
+		PyThread_init_thread();
 
 	sema = (struct semaphore *) malloc(sizeof(struct semaphore));
 	if (sema != NULL) {
@@ -382,16 +382,16 @@ type_sema allocate_sema _P1(value, int value)
 			sema = NULL;
 		}
 	}
-	dprintf(("allocate_sema() -> %lx\n", (long) sema));
-	return (type_sema) sema;
+	dprintf(("PyThread_allocate_sema() -> %lx\n", (long) sema));
+	return (PyThread_type_sema) sema;
 }
 
-void free_sema _P1(sema, type_sema sema)
+void PyThread_free_sema _P1(sema, PyThread_type_sema sema)
 {
 	int status, error = 0;
 	struct semaphore *thesema = (struct semaphore *) sema;
 
-	dprintf(("free_sema(%lx) called\n", (long) sema));
+	dprintf(("PyThread_free_sema(%lx) called\n", (long) sema));
 	status = pthread_cond_destroy(&thesema->cond);
 	CHECK_STATUS("pthread_cond_destroy");
 	status = pthread_mutex_destroy(&thesema->mutex);
@@ -399,12 +399,12 @@ void free_sema _P1(sema, type_sema sema)
 	free((void *) thesema);
 }
 
-int down_sema _P2(sema, type_sema sema, waitflag, int waitflag)
+int PyThread_down_sema _P2(sema, PyThread_type_sema sema, waitflag, int waitflag)
 {
 	int status, error = 0, success;
 	struct semaphore *thesema = (struct semaphore *) sema;
 
-	dprintf(("down_sema(%lx, %d) called\n", (long) sema, waitflag));
+	dprintf(("PyThread_down_sema(%lx, %d) called\n", (long) sema, waitflag));
 	status = pthread_mutex_lock(&thesema->mutex);
 	CHECK_STATUS("pthread_mutex_lock");
 	if (waitflag) {
@@ -424,16 +424,16 @@ int down_sema _P2(sema, type_sema sema, waitflag, int waitflag)
 		success = 0;
 	status = pthread_mutex_unlock(&thesema->mutex);
 	CHECK_STATUS("pthread_mutex_unlock");
-	dprintf(("down_sema(%lx) return\n", (long) sema));
+	dprintf(("PyThread_down_sema(%lx) return\n", (long) sema));
 	return success;
 }
 
-void up_sema _P1(sema, type_sema sema)
+void PyThread_up_sema _P1(sema, PyThread_type_sema sema)
 {
 	int status, error = 0;
 	struct semaphore *thesema = (struct semaphore *) sema;
 
-	dprintf(("up_sema(%lx)\n", (long) sema));
+	dprintf(("PyThread_up_sema(%lx)\n", (long) sema));
 	status = pthread_mutex_lock(&thesema->mutex);
 	CHECK_STATUS("pthread_mutex_lock");
 	thesema->value++;

@@ -35,7 +35,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <limits.h>
 #include <process.h>
 
-long get_thread_ident(void);
+long PyThread_get_thread_ident(void);
 
 /*
  * Change all headers to pure ANSI as no one will use K&R style on an
@@ -45,27 +45,27 @@ long get_thread_ident(void);
 /*
  * Initialization of the C package, should not be needed.
  */
-static void _init_thread(void)
+static void PyThread__init_thread(void)
 {
 }
 
 /*
  * Thread support.
  */
-int start_new_thread(void (*func)(void *), void *arg)
+int PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
 	long rv;
 	int success = 0;
 
-	dprintf(("%ld: start_new_thread called\n", get_thread_ident()));
+	dprintf(("%ld: PyThread_start_new_thread called\n", PyThread_get_thread_ident()));
 	if (!initialized)
-		init_thread();
+		PyThread_init_thread();
 
 	rv = _beginthread(func, 0, arg); /* use default stack size */
  
 	if (rv != -1) {
 		success = 1;
-		dprintf(("%ld: start_new_thread succeeded: %ld\n", get_thread_ident(), aThreadId));
+		dprintf(("%ld: PyThread_start_new_thread succeeded: %ld\n", PyThread_get_thread_ident(), aThreadId));
 	}
 
 	return success;
@@ -75,17 +75,17 @@ int start_new_thread(void (*func)(void *), void *arg)
  * Return the thread Id instead of an handle. The Id is said to uniquely identify the
  * thread in the system
  */
-long get_thread_ident(void)
+long PyThread_get_thread_ident(void)
 {
 	if (!initialized)
-		init_thread();
+		PyThread_init_thread();
         
 	return GetCurrentThreadId();
 }
 
-static void do_exit_thread(int no_cleanup)
+static void do_PyThread_exit_thread(int no_cleanup)
 {
-	dprintf(("%ld: exit_thread called\n", get_thread_ident()));
+	dprintf(("%ld: PyThread_exit_thread called\n", PyThread_get_thread_ident()));
 	if (!initialized)
 		if (no_cleanup)
 			_exit(0);
@@ -94,20 +94,20 @@ static void do_exit_thread(int no_cleanup)
 	_endthread();
 }
 
-void exit_thread(void)
+void PyThread_exit_thread(void)
 {
-	do_exit_thread(0);
+	do_PyThread_exit_thread(0);
 }
 
-void _exit_thread(void)
+void PyThread__exit_thread(void)
 {
-	do_exit_thread(1);
+	do_PyThread_exit_thread(1);
 }
 
 #ifndef NO_EXIT_PROG
-static void do_exit_prog(int status, int no_cleanup)
+static void do_PyThread_exit_prog(int status, int no_cleanup)
 {
-	dprintf(("exit_prog(%d) called\n", status));
+	dprintf(("PyThread_exit_prog(%d) called\n", status));
 	if (!initialized)
 		if (no_cleanup)
 			_exit(status);
@@ -115,14 +115,14 @@ static void do_exit_prog(int status, int no_cleanup)
 			exit(status);
 }
 
-void exit_prog(int status)
+void PyThread_exit_prog(int status)
 {
-	do_exit_prog(status, 0);
+	do_PyThread_exit_prog(status, 0);
 }
 
-void _exit_prog _P1(int status)
+void PyThread__exit_prog _P1(int status)
 {
-	do_exit_prog(status, 1);
+	do_PyThread_exit_prog(status, 1);
 }
 #endif /* NO_EXIT_PROG */
 
@@ -131,13 +131,13 @@ void _exit_prog _P1(int status)
  * I [Dag] tried to implement it with mutex but I could find a way to
  * tell whether a thread already own the lock or not.
  */
-type_lock allocate_lock(void)
+PyThread_type_lock PyThread_allocate_lock(void)
 {
 	HANDLE aLock;
 
-	dprintf(("allocate_lock called\n"));
+	dprintf(("PyThread_allocate_lock called\n"));
 	if (!initialized)
-		init_thread();
+		PyThread_init_thread();
 
 		aLock = CreateSemaphore(NULL,           /* Security attributes          */
                          1,                     /* Initial value                */
@@ -145,14 +145,14 @@ type_lock allocate_lock(void)
                          NULL);       
   /* Name of semaphore            */
 
-	dprintf(("%ld: allocate_lock() -> %lx\n", get_thread_ident(), (long)aLock));
+	dprintf(("%ld: PyThread_allocate_lock() -> %lx\n", PyThread_get_thread_ident(), (long)aLock));
 
-	return (type_lock) aLock;
+	return (PyThread_type_lock) aLock;
 }
 
-void free_lock(type_lock aLock)
+void PyThread_free_lock(PyThread_type_lock aLock)
 {
-	dprintf(("%ld: free_lock(%lx) called\n", get_thread_ident(),(long)aLock));
+	dprintf(("%ld: PyThread_free_lock(%lx) called\n", PyThread_get_thread_ident(),(long)aLock));
 
 	CloseHandle((HANDLE) aLock);
 }
@@ -163,12 +163,12 @@ void free_lock(type_lock aLock)
  * and 0 if the lock was not acquired. This means a 0 is returned
  * if the lock has already been acquired by this thread!
  */
-int acquire_lock(type_lock aLock, int waitflag)
+int PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
 {
 	int success = 1;
 	DWORD waitResult;
 
-	dprintf(("%ld: acquire_lock(%lx, %d) called\n", get_thread_ident(),(long)aLock, waitflag));
+	dprintf(("%ld: PyThread_acquire_lock(%lx, %d) called\n", PyThread_get_thread_ident(),(long)aLock, waitflag));
 
 	waitResult = WaitForSingleObject((HANDLE) aLock, (waitflag == 1 ? INFINITE : 0));
 
@@ -176,48 +176,48 @@ int acquire_lock(type_lock aLock, int waitflag)
 		success = 0;    /* We failed */
 	}
 
-	dprintf(("%ld: acquire_lock(%lx, %d) -> %d\n", get_thread_ident(),(long)aLock, waitflag, success));
+	dprintf(("%ld: PyThread_acquire_lock(%lx, %d) -> %d\n", PyThread_get_thread_ident(),(long)aLock, waitflag, success));
 
 	return success;
 }
 
-void release_lock(type_lock aLock)
+void PyThread_release_lock(PyThread_type_lock aLock)
 {
-	dprintf(("%ld: release_lock(%lx) called\n", get_thread_ident(),(long)aLock));
+	dprintf(("%ld: PyThread_release_lock(%lx) called\n", PyThread_get_thread_ident(),(long)aLock));
 
 	if (!ReleaseSemaphore(
                         (HANDLE) aLock,                         /* Handle of semaphore                          */
                         1,                                      /* increment count by one                       */
                         NULL))                                  /* not interested in previous count             */
 		{
-		dprintf(("%ld: Could not release_lock(%lx) error: %l\n", get_thread_ident(), (long)aLock, GetLastError()));
+		dprintf(("%ld: Could not PyThread_release_lock(%lx) error: %l\n", PyThread_get_thread_ident(), (long)aLock, GetLastError()));
 		}
 }
 
 /*
  * Semaphore support.
  */
-type_sema allocate_sema(int value)
+PyThread_type_sema PyThread_allocate_sema(int value)
 {
 	HANDLE aSemaphore;
 
-	dprintf(("%ld: allocate_sema called\n", get_thread_ident()));
+	dprintf(("%ld: PyThread_allocate_sema called\n", PyThread_get_thread_ident()));
 	if (!initialized)
-		init_thread();
+		PyThread_init_thread();
 
 	aSemaphore = CreateSemaphore( NULL,           /* Security attributes          */
                                   value,          /* Initial value                */
                                   INT_MAX,        /* Maximum value                */
                                   NULL);          /* Name of semaphore            */
 
-	dprintf(("%ld: allocate_sema() -> %lx\n", get_thread_ident(), (long)aSemaphore));
+	dprintf(("%ld: PyThread_allocate_sema() -> %lx\n", PyThread_get_thread_ident(), (long)aSemaphore));
 
-	return (type_sema) aSemaphore;
+	return (PyThread_type_sema) aSemaphore;
 }
 
-void free_sema(type_sema aSemaphore)
+void PyThread_free_sema(PyThread_type_sema aSemaphore)
 {
-	dprintf(("%ld: free_sema(%lx) called\n", get_thread_ident(), (long)aSemaphore));
+	dprintf(("%ld: PyThread_free_sema(%lx) called\n", PyThread_get_thread_ident(), (long)aSemaphore));
 
 	CloseHandle((HANDLE) aSemaphore);
 }
@@ -225,24 +225,24 @@ void free_sema(type_sema aSemaphore)
 /*
   XXX must do something about waitflag
  */
-int down_sema(type_sema aSemaphore, int waitflag)
+int PyThread_down_sema(PyThread_type_sema aSemaphore, int waitflag)
 {
 	DWORD waitResult;
 
-	dprintf(("%ld: down_sema(%lx) called\n", get_thread_ident(), (long)aSemaphore));
+	dprintf(("%ld: PyThread_down_sema(%lx) called\n", PyThread_get_thread_ident(), (long)aSemaphore));
 
 	waitResult = WaitForSingleObject( (HANDLE) aSemaphore, INFINITE);
 
-	dprintf(("%ld: down_sema(%lx) return: %l\n", get_thread_ident(),(long) aSemaphore, waitResult));
+	dprintf(("%ld: PyThread_down_sema(%lx) return: %l\n", PyThread_get_thread_ident(),(long) aSemaphore, waitResult));
 	return 0;
 }
 
-void up_sema(type_sema aSemaphore)
+void PyThread_up_sema(PyThread_type_sema aSemaphore)
 {
 	ReleaseSemaphore(
                 (HANDLE) aSemaphore,            /* Handle of semaphore                          */
                 1,                              /* increment count by one                       */
                 NULL);                          /* not interested in previous count             */
                                                 
-	dprintf(("%ld: up_sema(%lx)\n", get_thread_ident(), (long)aSemaphore));
+	dprintf(("%ld: PyThread_up_sema(%lx)\n", PyThread_get_thread_ident(), (long)aSemaphore));
 }

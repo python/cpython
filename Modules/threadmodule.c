@@ -49,7 +49,7 @@ static PyObject *ThreadError;
 
 typedef struct {
 	PyObject_HEAD
-	type_lock lock_lock;
+	PyThread_type_lock lock_lock;
 } lockobject;
 
 staticforward PyTypeObject Locktype;
@@ -61,7 +61,7 @@ newlockobject()
 	self = PyObject_NEW(lockobject, &Locktype);
 	if (self == NULL)
 		return NULL;
-	self->lock_lock = allocate_lock();
+	self->lock_lock = PyThread_allocate_lock();
 	if (self->lock_lock == NULL) {
 		PyMem_DEL(self);
 		self = NULL;
@@ -75,15 +75,15 @@ lock_dealloc(self)
 	lockobject *self;
 {
 	/* Unlock the lock so it's safe to free it */
-	acquire_lock(self->lock_lock, 0);
-	release_lock(self->lock_lock);
+	PyThread_acquire_lock(self->lock_lock, 0);
+	PyThread_release_lock(self->lock_lock);
 	
-	free_lock(self->lock_lock);
+	PyThread_free_lock(self->lock_lock);
 	PyMem_DEL(self);
 }
 
 static PyObject *
-lock_acquire_lock(self, args)
+lock_PyThread_acquire_lock(self, args)
 	lockobject *self;
 	PyObject *args;
 {
@@ -97,7 +97,7 @@ lock_acquire_lock(self, args)
 		i = 1;
 
 	Py_BEGIN_ALLOW_THREADS
-	i = acquire_lock(self->lock_lock, i);
+	i = PyThread_acquire_lock(self->lock_lock, i);
 	Py_END_ALLOW_THREADS
 
 	if (args == NULL) {
@@ -110,7 +110,7 @@ lock_acquire_lock(self, args)
 
 static char acquire_doc[] =
 "acquire([wait]) -> None or Boolean\n\
-(acquire_lock() is an obsolete synonym)\n\
+(PyThread_acquire_lock() is an obsolete synonym)\n\
 \n\
 Lock the lock.  Without argument, this blocks if the lock is already\n\
 locked (even by the same thread), waiting for another thread to release\n\
@@ -120,7 +120,7 @@ and the return value reflects whether the lock is acquired.\n\
 The blocking operation is not interruptible.";
 
 static PyObject *
-lock_release_lock(self, args)
+lock_PyThread_release_lock(self, args)
 	lockobject *self;
 	PyObject *args;
 {
@@ -128,20 +128,20 @@ lock_release_lock(self, args)
 		return NULL;
 
 	/* Sanity check: the lock must be locked */
-	if (acquire_lock(self->lock_lock, 0)) {
-		release_lock(self->lock_lock);
+	if (PyThread_acquire_lock(self->lock_lock, 0)) {
+		PyThread_release_lock(self->lock_lock);
 		PyErr_SetString(ThreadError, "release unlocked lock");
 		return NULL;
 	}
 
-	release_lock(self->lock_lock);
+	PyThread_release_lock(self->lock_lock);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
 static char release_doc[] =
 "release()\n\
-(release_lock() is an obsolete synonym)\n\
+(PyThread_release_lock() is an obsolete synonym)\n\
 \n\
 Release the lock, allowing another thread that is blocked waiting for\n\
 the lock to acquire the lock.  The lock must be in the locked state,\n\
@@ -155,8 +155,8 @@ lock_locked_lock(self, args)
 	if (!PyArg_NoArgs(args))
 		return NULL;
 
-	if (acquire_lock(self->lock_lock, 0)) {
-		release_lock(self->lock_lock);
+	if (PyThread_acquire_lock(self->lock_lock, 0)) {
+		PyThread_release_lock(self->lock_lock);
 		return PyInt_FromLong(0L);
 	}
 	return PyInt_FromLong(1L);
@@ -169,10 +169,10 @@ static char locked_doc[] =
 Return whether the lock is in the locked state.";
 
 static PyMethodDef lock_methods[] = {
-	{"acquire_lock", (PyCFunction)lock_acquire_lock, 0, acquire_doc},
-	{"acquire",      (PyCFunction)lock_acquire_lock, 0, acquire_doc},
-	{"release_lock", (PyCFunction)lock_release_lock, 0, release_doc},
-	{"release",      (PyCFunction)lock_release_lock, 0, release_doc},
+	{"acquire_lock", (PyCFunction)lock_PyThread_acquire_lock, 0, acquire_doc},
+	{"acquire",      (PyCFunction)lock_PyThread_acquire_lock, 0, acquire_doc},
+	{"release_lock", (PyCFunction)lock_PyThread_release_lock, 0, release_doc},
+	{"release",      (PyCFunction)lock_PyThread_release_lock, 0, release_doc},
 	{"locked_lock",  (PyCFunction)lock_locked_lock,  0, locked_doc},
 	{"locked",       (PyCFunction)lock_locked_lock,  0, locked_doc},
 	{NULL,           NULL}		/* sentinel */
@@ -240,18 +240,11 @@ t_bootstrap(boot_raw)
 	PyThreadState_Clear(tstate);
 	PyEval_ReleaseThread(tstate);
 	PyThreadState_Delete(tstate);
-#ifdef __BEOS__
-	/* Dunno if this will cause problems with other ports; the BeOS thread
-	 * support features only 100% renamed functions. [cjh]
-	 */
 	PyThread_exit_thread();
-#else
-	exit_thread();
-#endif
 }
 
 static PyObject *
-thread_start_new_thread(self, fargs)
+thread_PyThread_start_new_thread(self, fargs)
 	PyObject *self; /* Not used */
 	PyObject *fargs;
 {
@@ -286,7 +279,7 @@ thread_start_new_thread(self, fargs)
 	Py_INCREF(args);
 	Py_XINCREF(keyw);
 	PyEval_InitThreads(); /* Start the interpreter's thread-awareness */
-	if (!start_new_thread(t_bootstrap, (void*) boot)) {
+	if (!PyThread_start_new_thread(t_bootstrap, (void*) boot)) {
 		PyErr_SetString(ThreadError, "can't start new thread\n");
 		Py_DECREF(func);
 		Py_DECREF(args);
@@ -310,7 +303,7 @@ unhandled exception; a stack trace will be printed unless the exception is\n\
 SystemExit.";
 
 static PyObject *
-thread_exit_thread(self, args)
+thread_PyThread_exit_thread(self, args)
 	PyObject *self; /* Not used */
 	PyObject *args;
 {
@@ -322,27 +315,27 @@ thread_exit_thread(self, args)
 
 static char exit_doc[] =
 "exit()\n\
-(exit_thread() is an obsolete synonym)\n\
+(PyThread_exit_thread() is an obsolete synonym)\n\
 \n\
 This is synonymous to ``raise SystemExit''.  It will cause the current\n\
 thread to exit silently unless the exception is caught.";
 
 #ifndef NO_EXIT_PROG
 static PyObject *
-thread_exit_prog(self, args)
+thread_PyThread_exit_prog(self, args)
 	PyObject *self; /* Not used */
 	PyObject *args;
 {
 	int sts;
 	if (!PyArg_Parse(args, "i", &sts))
 		return NULL;
-	Py_Exit(sts); /* Calls exit_prog(sts) or _exit_prog(sts) */
+	Py_Exit(sts); /* Calls PyThread_exit_prog(sts) or _PyThread_exit_prog(sts) */
 	for (;;) { } /* Should not be reached */
 }
 #endif
 
 static PyObject *
-thread_allocate_lock(self, args)
+thread_PyThread_allocate_lock(self, args)
 	PyObject *self; /* Not used */
 	PyObject *args;
 {
@@ -365,7 +358,7 @@ thread_get_ident(self, args)
 	long ident;
 	if (!PyArg_NoArgs(args))
 		return NULL;
-	ident = get_thread_ident();
+	ident = PyThread_get_thread_ident();
 	if (ident == -1) {
 		PyErr_SetString(ThreadError, "no current thread ident");
 		return NULL;
@@ -385,22 +378,22 @@ be relied upon, and the number should be seen purely as a magic cookie.\n\
 A thread's identity may be reused for another thread after it exits.";
 
 static PyMethodDef thread_methods[] = {
-	{"start_new_thread",	(PyCFunction)thread_start_new_thread, 1,
+	{"start_new_thread",	(PyCFunction)thread_PyThread_start_new_thread, 1,
 				start_new_doc},
-	{"start_new",		(PyCFunction)thread_start_new_thread, 1,
+	{"start_new",		(PyCFunction)thread_PyThread_start_new_thread, 1,
 				start_new_doc},
-	{"allocate_lock",	(PyCFunction)thread_allocate_lock, 0,
+	{"allocate_lock",	(PyCFunction)thread_PyThread_allocate_lock, 0,
 				allocate_doc},
-	{"allocate",		(PyCFunction)thread_allocate_lock, 0,
+	{"allocate",		(PyCFunction)thread_PyThread_allocate_lock, 0,
 				allocate_doc},
-	{"exit_thread",		(PyCFunction)thread_exit_thread, 0,
+	{"exit_thread",		(PyCFunction)thread_PyThread_exit_thread, 0,
 				exit_doc},
-	{"exit",		(PyCFunction)thread_exit_thread, 0,
+	{"exit",		(PyCFunction)thread_PyThread_exit_thread, 0,
 				exit_doc},
 	{"get_ident",		(PyCFunction)thread_get_ident, 0,
 				get_ident_doc},
 #ifndef NO_EXIT_PROG
-	{"exit_prog",		(PyCFunction)thread_exit_prog},
+	{"exit_prog",		(PyCFunction)thread_PyThread_exit_prog},
 #endif
 	{NULL,			NULL}		/* sentinel */
 };
@@ -414,7 +407,7 @@ The 'threading' module provides a more convenient interface.";
 
 static char lock_doc[] =
 "A lock object is a synchronization primitive.  To create a lock,\n\
-call the allocate_lock() function.  Methods are:\n\
+call the PyThread_allocate_lock() function.  Methods are:\n\
 \n\
 acquire() -- lock the lock, possibly blocking until it can be obtained\n\
 release() -- unlock of the lock\n\
@@ -441,5 +434,5 @@ initthread()
 	PyDict_SetItemString(d, "LockType", (PyObject *)&Locktype);
 
 	/* Initialize the C thread library */
-	init_thread();
+	PyThread_init_thread();
 }
