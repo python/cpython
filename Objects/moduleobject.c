@@ -109,8 +109,12 @@ module_getattr(m, name)
 	res = dictlookup(m->md_dict, name);
 	if (res == NULL)
 		err_setstr(AttributeError, name);
-	else
-		INCREF(res);
+	else {
+		if (is_accessobject(res))
+			res = getaccessvalue(res, (object *)NULL);
+		else
+			INCREF(res);
+	}
 	return res;
 }
 
@@ -120,10 +124,17 @@ module_setattr(m, name, v)
 	char *name;
 	object *v;
 {
-	if (strcmp(name, "__dict__") == 0 || strcmp(name, "__name__") == 0) {
-		err_setstr(TypeError, "read-only special attribute");
-		return -1;
+	object *ac;
+	if (name[0] == '_' && name[1] == '_') {
+		int n = strlen(name);
+		if (name[n-1] == '_' && name[n-2] == '_') {
+			err_setstr(TypeError, "read-only special attribute");
+			return -1;
+		}
 	}
+	ac = dictlookup(m->md_dict, name);
+	if (ac != NULL && is_accessobject(ac))
+		return setaccessvalue(ac, (object *)NULL, v);
 	if (v == NULL) {
 		int rv = dictremove(m->md_dict, name);
 		if (rv < 0)

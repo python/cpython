@@ -1408,6 +1408,65 @@ com_global_stmt(c, n)
 	}
 }
 
+#define strequ(a, b) (strcmp((a), (b)) == 0)
+
+static void
+com_access_stmt(c, n)
+	struct compiling *c;
+	node *n;
+{
+	int i, j, k, mode, imode;
+	object *vmode;
+	REQ(n, access_stmt);
+	/* 'access' NAME (',' NAME)* ':' accesstype (',' accesstype)*
+	   accesstype: NAME+ */
+
+	/* Find where the colon is */
+	i = 1;
+	while (TYPE(CHILD(n,i-1)) != COLON)
+		i += 1;
+
+	/* Calculate the mode mask */
+	mode = 0;
+	for (j = i; j < NCH(n); j += 2) {
+		int r=0,w=0,p=0;
+		for (k=0; k<NCH(CHILD(n,j)); k++) {
+			if (strequ(STR(CHILD(CHILD(n,j),k)), "public"))
+				p = 0;
+			else if (strequ(STR(CHILD(CHILD(n,j),k)), "protected"))
+				p = 1;
+			else if (strequ(STR(CHILD(CHILD(n,j),k)), "private"))
+				p = 2;
+			else if (strequ(STR(CHILD(CHILD(n,j),k)), "read"))
+				r = 1;
+			else if (strequ(STR(CHILD(CHILD(n,j),k)), "write"))
+				w = 1;
+			else /* XXX should make this an exception */
+				fprintf(stderr, "bad access type %s\n",
+					STR(CHILD(CHILD(n,j),k)));
+		}
+		if (r == 0 && w == 0)
+			r =w = 1;
+		if (p == 0) {
+			if (r == 1) mode |= AC_R_PUBLIC;
+			if (w == 1) mode |= AC_W_PUBLIC;
+		} else if (p == 1) {
+			if (r == 1) mode |= AC_R_PROTECTED;
+			if (w == 1) mode |= AC_W_PROTECTED;
+		} else {
+			if (r == 1) mode |= AC_R_PRIVATE;
+			if (w == 1) mode |= AC_W_PRIVATE;
+		}
+	}
+	vmode = newintobject((long)mode);
+	imode = com_addconst(c, vmode);
+	XDECREF(vmode);
+	for (i = 1; TYPE(CHILD(n,i-1)) != COLON; i+=2) {
+		com_addoparg(c, LOAD_CONST, imode);
+		com_addopname(c, ACCESS_MODE, CHILD(n, i));
+	}
+}
+
 static void
 com_if_stmt(c, n)
 	struct compiling *c;
@@ -1726,23 +1785,7 @@ com_funcdef(c, n)
 }
 
 static void
-com_oldbases(c, n)
-	struct compiling *c;
-	node *n;
-{
-	int i;
-	REQ(n, baselist);
-	/*
-	baselist: atom arguments (',' atom arguments)*
-	arguments: '(' ')'
-	*/
-	for (i = 0; i < NCH(n); i += 3)
-		com_node(c, CHILD(n, i));
-	com_addoparg(c, BUILD_TUPLE, (NCH(n)+1) / 3);
-}
-
-static void
-com_newbases(c, n)
+com_bases(c, n)
 	struct compiling *c;
 	node *n;
 {
@@ -1759,46 +1802,28 @@ com_classdef(c, n)
 	struct compiling *c;
 	node *n;
 {
+	int i;
 	object *v;
 	REQ(n, classdef);
-	/*
-	classdef: 'class' NAME
-		['(' testlist ')' |'(' ')' ['=' baselist]] ':' suite
-	baselist: atom arguments (',' atom arguments)*
-	arguments: '(' ')'
-	*/
-	/* This piece of code must push a tuple on the stack (the bases) */
-	if (TYPE(CHILD(n, 2)) != LPAR) {
-		/* New syntax without base classes:
-		class NAME ':' suite
-		___________^
-		*/
+	/* classdef: class NAME ['(' testlist ')'] ':' suite */
+	if ((v = newstringobject(STR(CHILD(n, 1)))) == NULL) {
+		c->c_errors++;
+		return;
+	}
+	/* Push the class name on the stack */
+	i = com_addconst(c, v);
+	com_addoparg(c, LOAD_CONST, i);
+	DECREF(v);
+	/* Push the tuple of base classes on the stack */
+	if (TYPE(CHILD(n, 2)) != LPAR)
 		com_addoparg(c, BUILD_TUPLE, 0);
-	}
-	else {
-		if (TYPE(CHILD(n, 3)) == RPAR) {
-			/* Old syntax with or without base classes:
-			class NAME '(' ')' ['=' baselist] ':' suite
-			_______________^....^...^
-			*/
-			if (TYPE(CHILD(n, 4)) == EQUAL)
-				com_oldbases(c, CHILD(n, 5));
-			else
-				com_addoparg(c, BUILD_TUPLE, 0);
-		}
-		else {
-			/* New syntax with base classes:
-			class NAME '(' testlist ')' ':' suite
-			_______________^
-			*/
-			com_newbases(c, CHILD(n, 3));
-		}
-	}
+	else
+		com_bases(c, CHILD(n, 3));
 	v = (object *)compile(n, c->c_filename);
 	if (v == NULL)
 		c->c_errors++;
 	else {
-		int i = com_addconst(c, v);
+		i = com_addconst(c, v);
 		com_addoparg(c, LOAD_CONST, i);
 		com_addbyte(c, BUILD_FUNCTION);
 		com_addbyte(c, UNARY_CALL);
@@ -1881,6 +1906,9 @@ com_node(c, n)
 		break;
 	case global_stmt:
 		com_global_stmt(c, n);
+		break;
+	case access_stmt:
+		com_access_stmt(c, n);
 		break;
 	case if_stmt:
 		com_if_stmt(c, n);
@@ -2084,9 +2112,8 @@ compile_node(c, n)
 		break;
 	
 	case classdef: /* A class definition */
-		/* classdef: 'class' NAME
-			['(' testlist ')' |'(' ')' ['=' baselist]]
-			':' suite */
+		/* classdef: 'class' NAME ['(' testlist ')'] ':' suite */
+		c->c_name = STR(CHILD(n, 1));
 		com_node(c, CHILD(n, NCH(n)-1)); /* The suite */
 		com_addbyte(c, LOAD_LOCALS);
 		com_addbyte(c, RETURN_VALUE);
@@ -2114,8 +2141,8 @@ compile_node(c, n)
    
    There is one problem: 'from foo import *' introduces local variables
    that we can't know while compiling.  If this is the case, wo don't
-   optimize at all (this rarely happens, since import is mostly used
-   at the module level).
+   optimize at all (this rarely happens, since this form of import
+   statement is mostly used at the module level).
 
    Note that, because of this optimization, code like the following
    won't work:

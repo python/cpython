@@ -796,7 +796,9 @@ getbuiltin(name)
 
 /* Predefined exceptions */
 
+object *AccessError;
 object *AttributeError;
+object *ConflictError;
 object *EOFError;
 object *IOError;
 object *ImportError;
@@ -827,7 +829,9 @@ newstdexception(name)
 static void
 initerrors()
 {
+	AccessError = newstdexception("AccessError");
 	AttributeError = newstdexception("AttributeError");
+	ConflictError = newstdexception("ConflictError");
 	EOFError = newstdexception("EOFError");
 	IOError = newstdexception("IOError");
 	ImportError = newstdexception("ImportError");

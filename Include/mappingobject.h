@@ -22,22 +22,19 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/*
-Mapping object type -- mapping from object to object.
-These functions set errno for errors.  Functions mappingremove() and
-mappinginsert() return nonzero for errors, getmappingsize() returns -1,
-the others NULL.  A successful call to mappinginsert() calls INCREF()
-for the inserted item.
-*/
+/* Mapping object type -- mapping from hashable object to object */
 
 extern typeobject Mappingtype;
 
 #define is_mappingobject(op) ((op)->ob_type == &Mappingtype)
 
 extern object *newmappingobject PROTO((void));
-extern object *mappinglookup PROTO((object *dp, object *key));
-extern int mappinginsert PROTO((object *dp, object *key, object *item));
-extern int mappingremove PROTO((object *dp, object *key));
-extern int getmappingsize PROTO((object *dp));
-extern object *getmappingkey PROTO((object *dp, int i));
-extern object *getmappingkeys PROTO((object *dp));
+extern object *mappinglookup PROTO((object *mp, object *key));
+extern int mappinginsert PROTO((object *mp, object *key, object *item));
+extern int mappingremove PROTO((object *mp, object *key));
+extern void mappingclear PROTO((object *mp));
+extern int mappinggetnext
+	PROTO((object *mp, int *pos, object **key, object **value));
+extern object *getmappingkeys PROTO((object *mp));
+extern object *getmappingvalues PROTO((object *mp));
+extern object *getmappingitems PROTO((object *mp));

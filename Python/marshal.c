@@ -174,17 +174,14 @@ w_object(v, p)
 		}
 	}
 	else if (is_dictobject(v)) {
+		int pos;
+		object *key, *value;
 		w_byte(TYPE_DICT, p);
 		/* This one is NULL object terminated! */
-		n = getdictsize(v);
-		for (i = 0; i < n; i++) {
-			object *key, *val;
-			key = getdict2key(v, (int)i);
-			if (key != NULL) {
-				val = dict2lookup(v, key); /* Can't be NULL */
-				w_object(key, p);
-				w_object(val, p);
-			}
+		pos = 0;
+		while (mappinggetnext(v, &pos, &key, &value)) {
+			w_object(key, p);
+			w_object(value, p);
 		}
 		w_object((object *)NULL, p);
 	}

@@ -33,7 +33,9 @@ void err_clear PROTO((void));
 
 /* Predefined exceptions */
 
+extern object *AccessError;
 extern object *AttributeError;
+extern object *ConflictError;
 extern object *EOFError;
 extern object *IOError;
 extern object *ImportError;
@@ -59,3 +61,5 @@ extern object *err_errno PROTO((object *));
 extern void err_input PROTO((int));
 
 extern void err_badcall PROTO((void));
+
+extern object *err_getexc PROTO((void));
