@@ -227,7 +227,7 @@ typedef struct _typeobject {
 	PySequenceMethods *tp_as_sequence;
 	PyMappingMethods *tp_as_mapping;
 
-	/* More standard operations (at end for binary compatibility) */
+	/* More standard operations (here for binary compatibility) */
 
 	hashfunc tp_hash;
 	ternaryfunc tp_call;
