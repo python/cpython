@@ -115,7 +115,7 @@ class FTP:
 		if port: self.port = port
 		self.passiveserver = 0
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.sock.connect(self.host, self.port)
+		self.sock.connect((self.host, self.port))
 		self.file = self.sock.makefile('rb')
 		self.welcome = self.getresp()
 		return self.welcome
@@ -265,7 +265,7 @@ class FTP:
 		if self.passiveserver:
 			host, port = parse227(self.sendcmd('PASV'))
 			conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			conn.connect(host, port)
+			conn.connect((host, port))
 			resp = self.sendcmd(cmd)
 			if resp[0] <> '1':
 				raise error_reply, resp
