@@ -12,7 +12,7 @@ import sys, os, string, re
 from types import *
 from distutils.core import Command
 from distutils.errors import *
-
+from distutils.dep_util import newer_group
 
 # An extension name is just a dot-separated list of Python NAMEs (ie.
 # the same as a fully-qualified module name).
@@ -285,7 +285,29 @@ class build_ext (Command):
                        "a list of source filenames") % extension_name
             sources = list (sources)
 
-            self.announce ("building '%s' extension" % extension_name)
+            fullname = self.get_ext_fullname (extension_name)
+            if self.inplace:
+                # ignore build-lib -- put the compiled extension into
+                # the source tree along with pure Python modules
+
+                modpath = string.split (fullname, '.')
+                package = string.join (modpath[0:-1], '.')
+                base = modpath[-1]
+
+                build_py = self.find_peer ('build_py')
+                package_dir = build_py.get_package_dir (package)
+                ext_filename = os.path.join (package_dir,
+                                             self.get_ext_filename(base))
+            else:
+                ext_filename = os.path.join (self.build_lib,
+                                             self.get_ext_filename(fullname))
+
+	    if not newer_group(sources, ext_filename, 'newer'):
+	    	self.announce ("skipping '%s' extension (up-to-date)" %
+                               extension_name)
+		continue # 'for' loop over all extensions
+	    else:
+        	self.announce ("building '%s' extension" % extension_name)
 
             # First step: compile the source code to object files.  This
             # drops the object files in the current directory, regardless
@@ -356,23 +378,6 @@ class build_ext (Command):
                 extra_args.append ('/IMPLIB:' + implib_file)
                 self.mkpath (os.path.dirname (implib_file))
             # if MSVC
-
-            fullname = self.get_ext_fullname (extension_name)
-            if self.inplace:
-                # ignore build-lib -- put the compiled extension into
-                # the source tree along with pure Python modules
-
-                modpath = string.split (fullname, '.')
-                package = string.join (modpath[0:-1], '.')
-                base = modpath[-1]
-
-                build_py = self.find_peer ('build_py')
-                package_dir = build_py.get_package_dir (package)
-                ext_filename = os.path.join (package_dir,
-                                             self.get_ext_filename(base))
-            else:
-                ext_filename = os.path.join (self.build_lib,
-                                             self.get_ext_filename(fullname))
 
             self.compiler.link_shared_object (objects, ext_filename, 
                                               libraries=libraries,
