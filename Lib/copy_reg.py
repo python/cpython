@@ -58,6 +58,9 @@ def _reduce(self):
     try:
         getstate = self.__getstate__
     except AttributeError:
+        if getattr(self, "__slots__", None):
+            raise TypeError("a class that defines __slots__ without "
+                            "defining __getstate__ cannot be pickled")
         try:
             dict = self.__dict__
         except AttributeError:
@@ -83,16 +86,8 @@ def _better_reduce(obj):
         args = ()
     getstate = getattr(obj, "__getstate__", None)
     if getstate:
-        try:
-            state = getstate()
-        except TypeError, err:
-            # XXX Catch generic exception caused by __slots__
-            if str(err) != ("a class that defines __slots__ "
-                            "without defining __getstate__ "
-                            "cannot be pickled"):
-                raise # Not that specific exception
-            getstate = None
-    if not getstate:
+        state = getstate()
+    else:
         state = getattr(obj, "__dict__", None)
         names = _slotnames(cls)
         if names:
