@@ -851,6 +851,7 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
   (setq major-mode             'python-mode
 	mode-name              "Python"
 	local-abbrev-table     python-mode-abbrev-table
+	font-lock-defaults     '(python-font-lock-keywords)
 	paragraph-separate     "^[ \t]*$"
 	paragraph-start        "^[ \t]*$"
 	require-final-newline  t
