@@ -21,6 +21,10 @@ Extension modules
 
 Library
 
+- socket module: the SSL support was broken out of the main
+  _socket module C helper and placed into a new _ssl helper
+  which now gets imported by socket.py if available and working.
+
 - encodings package: added aliases for all supported IANA character
   sets
 

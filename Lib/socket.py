@@ -39,6 +39,10 @@ the setsockopt() and getsockopt() methods.
 """
 
 from _socket import *
+try:
+    from _ssl import *
+except ImportError:
+    pass
 
 import os, sys
 
@@ -56,7 +60,7 @@ if (sys.platform.lower().startswith("win")
         return _socketobject(_realsocketcall(family, type, proto))
 
     try:
-        _realsslcall = _socket.ssl
+        _realsslcall = _ssl.ssl
     except AttributeError:
         pass # No ssl
     else:
