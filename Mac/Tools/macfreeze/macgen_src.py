@@ -15,7 +15,7 @@ PROJECT_TEMPLATE=os.path.join(TEMPLATEDIR, ':frozen.prj')
 CONFIG_TEMPLATE=os.path.join(TEMPLATEDIR, ':templatefrozenconfig.c')
 BUNDLE_TEMPLATE=os.path.join(TEMPLATEDIR, ':frozenbundle.rsrc')
 
-def generate(output, module_dict, debug=0):
+def generate(output, module_dict, debug=0, with_ifdef=0):
 	problems = 0
 	output_created=0
 	if not os.path.exists(output):
@@ -91,7 +91,7 @@ def generate(output, module_dict, debug=0):
 				c_modules.append(module)
 		ifp = open(CONFIG_TEMPLATE)
 		ofp = open(config_name, 'w')
-		makeconfig.makeconfig(ifp, ofp, c_modules)
+		makeconfig.makeconfig(ifp, ofp, c_modules, with_ifdef)
 		ifp.close()
 		ofp.close()
 		MacOS.SetCreatorAndType(config_name, 'CWIE', 'TEXT')

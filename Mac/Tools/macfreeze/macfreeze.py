@@ -38,7 +38,7 @@ def main():
 	if mustwait:
 		sys.exit(1)
 
-def process(gentype, program, output, modules=[], module_files=[], debug=0):
+def process(gentype, program, output, modules=[], module_files=[], debug=0, with_ifdef=0):
 	try:
 		module_dict = macmodulefinder.process(program, modules, module_files, debug)
 	except macmodulefinder.Missing, arg:
@@ -54,7 +54,7 @@ def process(gentype, program, output, modules=[], module_files=[], debug=0):
 		return 1		# So the user can inspect it
 	elif gentype == 'source':
 		import macgen_src
-		warnings = macgen_src.generate(output, module_dict, debug)
+		warnings = macgen_src.generate(output, module_dict, debug, with_ifdef)
 		return warnings
 	elif gentype == 'resource':
 		import macgen_rsrc
