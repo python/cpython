@@ -135,7 +135,7 @@ Iterator support has been added to some of Python's basic types.  The
 \keyword{in} operator now works on dictionaries, so \code{\var{key} in
 dict} is now equivalent to \code{dict.has_key(\var{key})}.
 Calling \function{iter()} on a dictionary will return an iterator
-which loops over their keys:
+which loops over its keys:
 
 \begin{verbatim}
 >>> m = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
@@ -639,6 +639,7 @@ slot, or raise an exception if that's \NULL.
 \section{Acknowledgements}
 
 The author would like to thank the following people for offering
-suggestions on various drafts of this article: Tim Peters, Neil Schemenauer.
+suggestions and corrections to various drafts of this article: Fred
+L. Drake, Tim Peters, Neil Schemenauer.  
 
 \end{document}
