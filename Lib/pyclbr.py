@@ -324,7 +324,7 @@ def readmodule_ex(module, path=[], inpackage=0):
                     # Python does internally)
                     # also don't add names that
                     # start with _
-                    for n in d.keys():
+                    for n in d:
                         if n[0] != '_' and \
                            not n in dict:
                             dict[n] = d[n]

@@ -228,8 +228,8 @@ class dircmp:
 
     def phase4_closure(self): # Recursively call phase4() on subdirectories
         self.phase4()
-        for x in self.subdirs.keys():
-            self.subdirs[x].phase4_closure()
+        for sd in self.subdirs.itervalues():
+            sd.phase4_closure()
 
     def report(self): # Print a report on the differences between a and b
         # Output format is purposely lousy
@@ -258,15 +258,15 @@ class dircmp:
 
     def report_partial_closure(self): # Print reports on self and on subdirs
         self.report()
-        for x in self.subdirs.keys():
+        for sd in self.subdirs.itervalues():
             print
-            self.subdirs[x].report()
+            sd.report()
 
     def report_full_closure(self): # Report on self and subdirs recursively
         self.report()
-        for x in self.subdirs.keys():
+        for sd in self.subdirs.itervalues():
             print
-            self.subdirs[x].report_full_closure()
+            sd.report_full_closure()
 
 
 def cmpfiles(a, b, common, shallow=1, use_statcache=0):

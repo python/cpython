@@ -386,12 +386,11 @@ class Profile:
 
     def snapshot_stats(self):
         self.stats = {}
-        for func in self.timings.keys():
-            cc, ns, tt, ct, callers = self.timings[func]
+        for func, (cc, ns, tt, ct, callers) in self.timings.iteritems():
             callers = callers.copy()
             nc = 0
-            for func_caller in callers.keys():
-                nc = nc + callers[func_caller]
+            for callcnt in callers.itervalues():
+                nc += callcnt
             self.stats[func] = cc, nc, tt, ct, callers
 
 

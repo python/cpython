@@ -163,7 +163,7 @@ class Class(SymbolTable):
             d = {}
             for st in self._table.children:
                 d[st.name] = 1
-            self.__methods = tuple(d.keys())
+            self.__methods = tuple(d)
         return self.__methods
 
 class Symbol:
