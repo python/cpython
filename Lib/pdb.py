@@ -96,27 +96,39 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			print self.get_all_breaks() # XXX
 			return
 		# Try line number as argument
+		try:
+			arg = eval(arg, self.curframe.f_globals,
+				   self.curframe.f_locals)
+		except:
+			print '*** Could not eval argument:', arg
+			return
+
+		# Check for condition
+		try: arg, cond = arg
+		except: arg, cond = arg, None
+
 		try:	
-			lineno = int(eval(arg))
+			lineno = int(arg)
 			filename = self.curframe.f_code.co_filename
 		except:
 			# Try function name as the argument
 			import codehack
 			try:
-				func = eval(arg, self.curframe.f_globals,
-					    self.curframe.f_locals)
+				func = arg
 				if hasattr(func, 'im_func'):
 					func = func.im_func
 				code = func.func_code
 			except:
-				print '*** Could not eval argument:', arg
+				print '*** The specified object',
+				print 'is not a function', arg
 				return
 			lineno = codehack.getlineno(code)
 			filename = code.co_filename
 
 		# now set the break point
-		err = self.set_break(filename, lineno)
+		err = self.set_break(filename, lineno, cond)
 		if err: print '***', err
+
 	do_b = do_break
 	
 	def do_clear(self, arg):
@@ -352,10 +364,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		self.help_b()
 
 	def help_b(self):
-		print """b(reak) [lineno | function]
+		print """b(reak) [lineno | function] [, "condition"]
 	With a line number argument, set a break there in the current
 	file.  With a function name, set a break at the entry of that
-	function.  Without argument, list all breaks."""
+	function.  Without argument, list all breaks.  If a second
+	argument is present, it is a string specifying an expression
+	which must evaluate to true before the breakpoint is honored.
+	"""
 
 	def help_clear(self):
 		self.help_cl()
