@@ -543,6 +543,7 @@ _expectations = {
         test_largefile
         test_nis
         test_ntpath
+        test_pep277
         test_socket_ssl
         test_socketserver
         test_sunaudiodev
