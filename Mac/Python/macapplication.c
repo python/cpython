@@ -22,15 +22,24 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* Macintosh Applet Python main program */
+/* Macintosh Python main program for both applets and interpreter */
 
-#ifdef SYMANTEC__CFM68K__
+#include <Resources.h>
+
+#ifdef __CFM68K__
 #pragma lib_export on
 #endif
 
+extern void PyMac_InitApplet();
 extern void PyMac_InitApplication();
 
 void
 main() {
-	PyMac_InitApplication();
+        Handle mainpyc;
+
+        mainpyc = Get1NamedResource('PYC ', "\p__main__");
+        if (mainpyc != NULL)
+                PyMac_InitApplet();
+        else
+                PyMac_InitApplication();
 }
