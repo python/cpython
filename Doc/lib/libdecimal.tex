@@ -1,0 +1,882 @@
+\section{\module{decimal} ---
+         Decimal floating point arithmetic}
+
+\declaremodule{standard}{decimal}
+\modulesynopsis{Implementation of the General Decimal Arithmetic 
+Specification.}
+
+\moduleauthor{Eric Price}{eprice at tjhsst.edu}
+\moduleauthor{Facundo Batista}{facundo at taniquetil.com.ar}
+\moduleauthor{Raymond Hettinger}{python at rcn.com}
+\moduleauthor{Aahz}{aahz at pobox.com}
+\moduleauthor{Tim Peters}{tim.one at comcast.net}
+
+\sectionauthor{Raymond D. Hettinger}{python at rcn.com}
+
+\versionadded{2.4}
+
+The decimal \module{module} provides support for decimal floating point
+arithmetic.  It offers several advantages over the \class{float()} datatype:
+
+\begin{itemize}
+
+\item Decimal numbers can be represented exactly.  In contrast, numbers like
+\constant{1.1} do not have an exact representations in binary floating point.
+End users typically wound not expect \constant{1.1} to display as
+\constant{1.1000000000000001} as it does with binary floating point.
+
+\item The exactness carries over into arithmetic.  In decimal floating point,
+\samp{0.1 + 0.1 + 0.1 - 0.3} is exactly equal to zero.  In binary floating
+point, result is \constant{5.5511151231257827e-017}.  While near to zero, the
+differences prevent reliable equality testing and differences can accumulate.
+For this reason, decimal would be preferred in accounting applications which
+have strict equality invariants.
+
+\item The decimal module incorporates notion of significant places so that
+\samp{1.30 + 1.20} is \constant{2.50}.  The trailing zero is kept to indicate
+significance.  This is the customary presentation for monetary applications. For
+multiplication, the ``schoolbook'' approach uses all the figures in the
+multiplicands.  For instance, \samp{1.3 * 1.2} gives \constant{1.56} while
+\samp{1.30 * 1.20} gives \constant{1.5600}.
+
+\item Unlike hardware based binary floating point, the decimal module has a user
+settable precision (defaulting to 28 places) which can be as large as needed for
+a given problem:
+
+\begin{verbatim}
+>>> getcontext().prec = 6
+>>> Decimal(1) / Decimal(7)
+Decimal("0.142857")
+>>> getcontext().prec = 28
+>>> Decimal(1) / Decimal(7)
+Decimal("0.1428571428571428571428571429")
+\end{verbatim}
+
+\item Both binary and decimal floating point are implemented in terms of published
+standards.  While the built-in float type exposes only a modest portion of its
+capabilities, the decimal module exposes all required parts of the standard.
+When needed, the programmer has full control over rounding and signal handling.
+
+\end{itemize}
+
+
+The module design is centered around three concepts:  the decimal number, the
+context for arithmetic, and signals.
+
+A decimal number is immutable.  It has a sign, coefficient digits, and an
+exponent.  To preserve significance, the coefficient digits do not truncate
+trailing zeroes.  Decimals also include special values such as
+\constant{Infinity} (the result of \samp{1 / 0}), \constant{-Infinity},
+(the result of \samp{-1 / 0}), and \constant{NaN} (the result of
+\samp{0 / 0}).  The standard also differentiates \constant{-0} from
+\constant{+0}.
+                                                   
+The context for arithmetic is an environment specifying precision, rounding
+rules, limits on exponents, flags that indicate the results of operations,
+and trap enablers which determine whether signals are to be treated as
+exceptions.  Rounding options include \constant{ROUND_CEILING},
+\constant{ROUND_DOWN}, \constant{ROUND_FLOOR}, \constant{ROUND_HALF_DOWN},
+\constant{ROUND_HALF_EVEN}, \constant{ROUND_HALF_UP}, and \constant{ROUND_UP}.
+
+Signals are types of information that arise during the course of a
+computation.  Depending on the needs of the application, some signals may be
+ignored, considered as informational, or treated as exceptions. The signals in
+the decimal module are: \constant{Clamped}, \constant{InvalidOperation},
+\constant{ConversionSyntax}, \constant{DivisionByZero},
+\constant{DivisionImpossible}, \constant{DivisionUndefined},
+\constant{Inexact}, \constant{InvalidContext}, \constant{Rounded},
+\constant{Subnormal}, \constant{Overflow}, and \constant{Underflow}.
+
+For each signal there is a flag and a trap enabler.  When a signal is
+encountered, its flag incremented from zero and, then, if the trap enabler
+is set to one, an exception is raised.
+
+
+\begin{seealso}
+  \seetext{IBM's General Decimal Arithmetic Specification,
+           \citetitle[http://www2.hursley.ibm.com/decimal/decarith.html]
+           {The General Decimal Arithmetic Specification}.}
+
+  \seetext{IEEE standard 854-1987,
+           \citetitle[http://www.cs.berkeley.edu/~ejr/projects/754/private/drafts/854-1987/dir.html]
+           {Unofficial IEEE 854 Text}.} 
+\end{seealso}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Quick-start Tutorial \label{decimal-tutorial}}
+
+The normal start to using decimals is to import the module, and then use
+\function{getcontext()} to view the context and, if necessary, set the context
+precision, rounding, or trap enablers:
+
+\begin{verbatim}
+>>> from decimal import *
+>>> getcontext()
+Context(prec=28, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
+        setflags=[], settraps=[])
+
+>>> getcontext().prec = 7
+\end{verbatim}
+
+Decimal instances can be constructed from integers or strings.  To create a
+Decimal from a \class{float}, first convert it to a string.  This serves as an
+explicit reminder of the details of the conversion (including representation
+error).  Malformed strings signal \constant{ConversionSyntax} and return a
+special kind of Decimal called a \constant{NaN} which stands for ``Not a
+number''. Positive and negative \constant{Infinity} is yet another special
+kind of Decimal.             
+
+\begin{verbatim}
+>>> Decimal(10)
+Decimal("10")
+>>> Decimal('3.14')
+Decimal("3.14")
+>>> Decimal(str(2.0 ** 0.5))
+Decimal("1.41421356237")
+>>> Decimal('Mickey Mouse')
+Decimal("NaN")
+>>> Decimal('-Infinity')
+Decimal("-Infinity")
+\end{verbatim}
+
+Creating decimals is unaffected by context precision.  Their level of
+significance is completely determined by the number of digits input.  It is
+the arithmetic operations that are governed by context.
+
+\begin{verbatim}
+>>> getcontext().prec = 6
+>>> Decimal('3.0000')
+Decimal("3.0000")
+>>> Decimal('3.0')
+Decimal("3.0")
+>>> Decimal('3.1415926535')
+Decimal("3.1415926535")
+>>> Decimal('3.1415926535') + Decimal('2.7182818285')
+Decimal("5.85987")
+>>> getcontext().rounding = ROUND_UP
+>>> Decimal('3.1415926535') + Decimal('2.7182818285')
+Decimal("5.85988")
+\end{verbatim}
+
+Decimals interact well with much of the rest of python.  Here is a small
+decimal floating point flying circus:
+    
+\begin{verbatim}    
+>>> data = map(Decimal, '1.34 1.87 3.45 2.35 1.00 0.03 9.25'.split())
+>>> max(data)
+Decimal("9.25")
+>>> min(data)
+Decimal("0.03")
+>>> sorted(data)
+[Decimal("0.03"), Decimal("1.00"), Decimal("1.34"), Decimal("1.87"),
+ Decimal("2.35"), Decimal("3.45"), Decimal("9.25")]
+>>> sum(data)
+Decimal("19.29")
+>>> a,b,c = data[:3]
+>>> str(a)
+'1.34'
+>>> float(a)
+1.3400000000000001
+>>> round(a, 1)
+1.3
+>>> int(a)
+1
+>>> a * 5
+Decimal("6.70")
+>>> a * b
+Decimal("2.5058")
+>>> c % a
+Decimal("0.77")
+\end{verbatim}
+
+The \function{getcontext()} function accesses the current context.  This one
+context is sufficient for many applications; however, for more advanced work,
+multiple contexts can be created using the Context() constructor.  To make a
+new context active, use the \function{setcontext()} function.
+
+In accordance with the standard, the \module{Decimal} module provides two
+ready to use standard contexts, \constant{BasicContext} and
+\constant{ExtendedContext}. The former is especially useful for debugging
+because many of the traps are enabled:
+
+\begin{verbatim}
+>>> myothercontext = Context(prec=60, rounding=ROUND_HALF_DOWN)
+>>> myothercontext
+Context(prec=60, rounding=ROUND_HALF_DOWN, Emin=-999999999, Emax=999999999,
+        setflags=[], settraps=[])
+>>> ExtendedContext
+Context(prec=9, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
+        setflags=[], settraps=[])
+>>> setcontext(myothercontext)
+>>> Decimal(1) / Decimal(7)
+Decimal("0.142857142857142857142857142857142857142857142857142857142857")
+>>> setcontext(ExtendedContext)
+>>> Decimal(1) / Decimal(7)
+Decimal("0.142857143")
+>>> Decimal(42) / Decimal(0)
+Decimal("Infinity")
+>>> setcontext(BasicContext)
+>>> Decimal(42) / Decimal(0)
+Traceback (most recent call last):
+  File "<pyshell#143>", line 1, in -toplevel-
+    Decimal(42) / Decimal(0)
+DivisionByZero: x / 0
+\end{verbatim}
+
+Besides using contexts to control precision, rounding, and trapping signals,
+they can be used to monitor flags which give information collected during
+computation.  The flags remain set until explicitly cleared, so it is best to
+clear the flags before each set of monitored computations by using the
+\method{clear_flags()} method.
+
+\begin{verbatim}
+>>> setcontext(ExtendedContext)
+>>> getcontext().clear_flags()
+>>> Decimal(355) / Decimal(113)
+Decimal("3.14159292")
+>>> getcontext()
+Context(prec=9, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
+        setflags=['Inexact', 'Rounded'], settraps=[])
+\end{verbatim}
+
+The \var{setflags} entry shows that the rational approximation to
+\constant{Pi} was rounded (digits beyond the context precision were thrown
+away) and that the result is inexact (some of the discarded digits were
+non-zero).
+
+Individual traps are set using the dictionary in the \member{trap_enablers}
+field of a context:
+
+\begin{verbatim}
+>>> Decimal(1) / Decimal(0)
+Decimal("Infinity")
+>>> getcontext().trap_enablers[DivisionByZero] = 1
+>>> Decimal(1) / Decimal(0)
+
+Traceback (most recent call last):
+  File "<pyshell#112>", line 1, in -toplevel-
+    Decimal(1) / Decimal(0)
+DivisionByZero: x / 0
+\end{verbatim}
+
+To turn all the traps on or off all at once, use a loop.  Also, the
+\method{dict.update()} method is useful for changing a handfull of values.
+
+\begin{verbatim}
+>>> getcontext.clear_flags()
+>>> for sig in getcontext().trap_enablers:
+...     getcontext().trap_enablers[sig] = 1
+
+>>> getcontext().trap_enablers.update({Rounded:0, Inexact:0, Subnormal:0})
+>>> getcontext()
+Context(prec=9, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
+        setflags=[], settraps=['Underflow', 'DecimalException', 'Clamped',
+        'InvalidContext', 'InvalidOperation', 'ConversionSyntax',
+        'DivisionByZero', 'DivisionImpossible', 'DivisionUndefined',
+        'Overflow'])
+\end{verbatim}
+
+Applications typically set the context once at the beginning of a program
+and no further changes are needed.  For many applications, the data resides
+in a resource external to the program and is converted to \class{Decimal} with
+a single cast inside a loop.  Afterwards, decimals are as easily manipulated
+as other Python numeric types.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Decimal objects \label{decimal-decimal}}
+
+\begin{classdesc}{Decimal}{\optional{value \optional{, context}}}
+  Constructs a new \class{Decimal} object based from \var{value}.
+
+  \var{value} can be an integer, string, or another \class{Decimal} object.
+  If no \var{value} is given, returns \code{Decimal("0")}.  If \var{value} is
+  a string, it should conform to the decimal numeric string syntax:
+    
+  \begin{verbatim}
+    sign           ::=  '+' | '-'
+    digit          ::=  '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+    indicator      ::=  'e' | 'E'
+    digits         ::=  digit [digit]...
+    decimal-part   ::=  digits '.' [digits] | ['.'] digits
+    exponent-part  ::=  indicator [sign] digits
+    infinity       ::=  'Infinity' | 'Inf'
+    nan            ::=  'NaN' [digits] | 'sNaN' [digits]
+    numeric-value  ::=  decimal-part [exponent-part] | infinity
+    numeric-string ::=  [sign] numeric-value | [sign] nan  
+  \end{verbatim}
+
+  The supplied \var{context} or, if not specified, the current context
+  governs only the handling of mal-formed strings not conforming to the
+  numeric string syntax.  If the context traps \constant{ConversionSyntax},
+  an exception is raised; otherwise, the constructor returns a new Decimal
+  with the value of \constant{NaN}.
+
+  The context serves no other purpose.  The number of significant digits
+  recorded is determined solely by the \var{value} and the var{context}
+  precision is not a factor.  For example, \samp{Decimal("3.0000")} records
+  all four zeroes even if the context precision is only three.
+
+  Once constructed, \class{Decimal} objects are immutable.
+\end{classdesc}
+
+Decimal floating point objects share many properties with the other builtin
+numeric types such as \class{float} and \class{int}.  All of the usual
+math operations and special methods apply.  Likewise, decimal objects can
+be copied, pickled, printed, used as dictionary keys, used as set elements,
+compared, sorted, and coerced to another type (such as \class{float}
+or \class{long}).
+
+In addition to the standard numeric properties, decimal floating point objects
+have a number of more specialized methods:
+
+\begin{methoddesc}{adjusted}{}
+  Return the number's adjusted exponent that results from shifting out the
+  coefficients rightmost digits until only the lead digit remains:
+  \code{Decimal("321e+5").adjusted()} returns seven.  Used for determining
+  the place value of the most significant digit.
+\end{methoddesc}
+
+\begin{methoddesc}{as_tuple}{}
+  Returns a tuple representation of the number:
+  \samp{(sign, digittuple, exponent)}.
+\end{methoddesc}
+
+\begin{methoddesc}{compare}{other\optional{, context}}
+  Compares like \method{__cmp__()} but returns a decimal instance:
+  \begin{verbatim}
+        a or b is a NaN ==> Decimal("NaN")
+        a < b           ==> Decimal("-1")
+        a == b          ==> Decimal("0")
+        a > b           ==> Decimal("1")
+  \end{verbatim}
+\end{methoddesc}
+
+\begin{methoddesc}{max}{other\optional{, context}}
+  Like \samp{max(self, other)} but returns \constant{NaN} if either is a
+  \constant{NaN}.  Applies the context rounding rule before returning.
+\end{methoddesc}
+
+\begin{methoddesc}{min}{other\optional{, context}}
+  Like \samp{min(self, other)} but returns \constant{NaN} if either is a
+  \constant{NaN}.  Applies the context rounding rule before returning.
+\end{methoddesc}
+
+\begin{methoddesc}{normalize}{\optional{context}}
+  Normalize the number by striping the rightmost trailing zeroes and
+  converting any result equal to \constant{Decimal("0")} to Decimal("0e0").
+  Used for producing a canonical value for members of an equivalence class.
+  For example, \code{Decimal("32.100")} and \code{Decimal("0.321000e+2")}
+  both normalize to the equivalent value \code{Decimal("32.1")}
+\end{methoddesc}                                              
+
+\begin{methoddesc}{quantize}
+  {\optional{exp \optional{, rounding\optional{, context\optional{, watchexp}}}}}
+  Quantize makes the exponent the same as \var{exp}.  Searches for a
+  rounding method in \var{rounding}, then in \var{context}, and then
+  in the current context.
+
+  Of \var{watchexp} is set (default), then an error is returned if
+  the resulting exponent is greater than \member{Emax} or less than
+  \member{Etiny}.
+\end{methoddesc} 
+
+\begin{methoddesc}{remainder_near}{other\optional{, context}}
+  Computed the modulo as either a positive or negative value depending
+  on which is closest to zero.  For instance,
+  \samp{Decimal(10).remainder_near(6)} returns \code{Decimal("-2")}
+  which is closer to zero than \code{Decimal("4")}.
+
+  If both are equally close, the one chosen will have the same sign
+  as \var{self}.
+\end{methoddesc}  
+
+\begin{methoddesc}{same_quantum{other\optional{, context}}}
+  Test whether self and other have the same exponent or whether both
+  are \constant{NaN}.
+\end{methoddesc}
+
+\begin{methoddesc}{sqrt}{\optional{context}}
+  Return the square root to full precision.
+\end{methoddesc}                    
+ 
+\begin{methoddesc}{to_eng_string}{\optional{context}}
+  Convert to engineering-type string.
+
+  Engineering notation has an exponent which is a multiple of 3, so there
+  are up to 3 digits left of the decimal place.  For example, converts
+  \code{Decimal('123E+1')} to \code{Decimal("1.23E+3")}
+\end{methoddesc}  
+
+\begin{methoddesc}{to_integral}{\optional{rounding\optional{, context}}}                   
+  Rounds to the nearest integer, without signaling \constant{Inexact}
+  or \constant{Rounded}.  If given, applies \var{rounding}; otherwise,
+  uses the rounding method in either the supplied \var{context} or the
+  current context.
+\end{methoddesc} 
+
+    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%            
+\subsection{Context objects \label{decimal-decimal}}
+
+Contexts are environments for arithmetic operations.  They govern the precision,
+rules for rounding, determine which signals are treated as exceptions, and set limits
+on the range for exponents.
+
+Each thread has its own current context which is accessed or changed using
+the \function{getcontext()} and \function{setcontext()} functions:
+
+\begin{funcdesc}{getcontext}{}
+  Return the current context for the active thread.                                          
+\end{funcdesc}            
+
+\begin{funcdesc}{setcontext}{c}
+  Set the current context for the active thread to \var{c}.                                          
+\end{funcdesc}  
+
+New contexts can formed using the \class{Context} constructor described below.
+In addition, the module provides three pre-made contexts:                                          
+
+
+\begin{classdesc*}{BasicContext}
+  This is a standard context defined by the General Decimal Arithmetic
+  Specification.  Precision is set to nine.  Rounding is set to
+  \constant{ROUND_HALF_UP}.  All flags are cleared.  All traps are enabled
+  (treated as exceptions) except \constant{Inexact}, \constant{Rounded}, and
+  \constant{Subnormal}.
+
+  Because many of the traps are enabled, this context is useful for debugging.
+\end{classdesc*}
+
+\begin{classdesc*}{ExtendedContext}
+  This is a standard context defined by the General Decimal Arithmetic
+  Specification.  Precision is set to nine.  Rounding is set to
+  \constant{ROUND_HALF_EVEN}.  All flags are cleared.  No traps are enabled
+  (so that exceptions are not raised during computations).
+\end{classdesc*}
+
+\begin{classdesc*}{DefaultContext}
+  This class is used by the \class{Context} constructor as a prototype for
+  new contexts.  Changing a field (such a precision) has the effect of
+  changing the default for new contexts creating by the \class{Context}
+  constructor.
+
+  This context is most useful in multi-threaded environments.  Changing one of
+  the fields before threads are started has the effect of setting system-wide
+  defaults.  Changing the fields after threads have started is not recommended
+  as it would require thread synchronization to prevent race conditions.
+
+  In single threaded environments, it is preferable to not use this context
+  at all.  Instead, simply create contexts explicitly.  This is especially
+  important because the default values context may change between releases
+  (with initial release having precision=28, rounding=ROUND_HALF_EVEN,
+  cleared flags, and no traps enabled).
+\end{classdesc*}
+                                          
+
+\begin{classdesc}{Context}{prec=None, rounding=None, trap_enablers=None,
+        flags=None, Emin=None, Emax=None, capitals=1}
+  Creates a new context.  If a field is not specified or is \constant{None},
+  the default values are copied from the \constant{DefaultContext}.  If the
+  \var{flags} field is not specified or is \constant{None}, all flags are
+  cleared.
+
+  The \var{prec} field in an positive integer that sets the precision for
+  arithmetic operations in the context.
+
+  The \var{rounding} option is one of: \constant{ROUND_CEILING},
+  \constant{ROUND_DOWN}, \constant{ROUND_FLOOR}, \constant{ROUND_HALF_DOWN},
+  \constant{ROUND_HALF_EVEN}, \constant{ROUND_HALF_UP}, or
+  \constant{ROUND_UP}.
+
+  The \var{trap_enablers} and \var{flags} fields are mappings from signals
+  to either \constant{0} or \constant{1}.
+
+  The \var{Emin} and \var{Emax} fields are integers specifying the outer
+  limits allowable for exponents.
+
+  The \var{capitals} field is either \constant{0} or \constant{1} (the
+  default). If set to \constant{1}, exponents are printed with a capital
+  \constant{E}; otherwise, lowercase is used:  \constant{Decimal('6.02e+23')}.
+\end{classdesc}
+
+The \class{Context} class defines several general methods as well as a
+large number of methods for doing arithmetic directly from the context.
+
+\begin{methoddesc}{clear_flags}{}
+  Sets all of the flags to \constant{0}.
+\end{methoddesc}  
+
+\begin{methoddesc}{copy}{}
+  Returns a duplicate of the context.
+\end{methoddesc}  
+
+\begin{methoddesc}{create_decimal}{num}
+  Creates a new Decimal instance but using \var{self} as context.
+  Unlike the \class{Decimal} constructor, context precision,
+  rounding method, flags, and traps are applied to the conversion.
+
+  This is useful because constants are often given to a greater
+  precision than is needed by the application.
+\end{methoddesc} 
+
+\begin{methoddesc}{Etiny}{}
+  Returns a value equal to \samp{Emin - prec + 1} which is the minimum
+  exponent value for subnormal results.  When underflow occurs, the
+  exponont is set to \constant{Etiny}.
+\end{methoddesc} 
+
+The usual approach to working with decimals is to create Decimal
+instances and then apply arithmetic operations which take place
+within the current context for the active thread.  An alternate
+approach is to use a context method to perform a particular
+computation within the given context rather than the current context.
+
+Those methods parallel those for the \class{Decimal} class and are
+only briefed recounted here.
+
+
+\begin{methoddesc}{abs}{x}
+  Returns the absolute value of \var{x}.
+\end{methoddesc}
+
+\begin{methoddesc}{add}{x, y}
+  Return the sum of \var{x} and \var{y}.
+\end{methoddesc}
+   
+\begin{methoddesc}{compare}{x, y}
+  Compares values numerically.
+  
+  Like \method{__cmp__()} but returns a decimal instance:
+  \begin{verbatim}
+        a or b is a NaN ==> Decimal("NaN")
+        a < b           ==> Decimal("-1")
+        a == b          ==> Decimal("0")
+        a > b           ==> Decimal("1")
+  \end{verbatim}                                          
+\end{methoddesc}
+
+\begin{methoddesc}{divide}{x, y}
+  Return \var{x} divided by \var{y}.
+\end{methoddesc}   
+  
+\begin{methoddesc}{divide}{x, y}
+  Divides two numbers and returns the integer part of the result.
+\end{methoddesc} 
+
+\begin{methoddesc}{max}{x, y}
+  Compare two values numerically and returns the maximum.
+
+  If they are numerically equal then the left-hand operand is chosen as the
+  result.
+\end{methoddesc} 
+ 
+\begin{methoddesc}{min}{x, y}
+  Compare two values numerically and returns the minimum.
+
+  If they are numerically equal then the left-hand operand is chosen as the
+  result.
+\end{methoddesc}
+
+\begin{methoddesc}{minus}{x}
+  Minus corresponds to unary prefix minus in Python.
+\end{methoddesc}
+
+\begin{methoddesc}{multiply}{x, y}
+  Return the product of \var{x} and \var{y}.
+\end{methoddesc}
+
+\begin{methoddesc}{normalize}{x}
+  Normalize reduces an operand to its simplest form.
+
+  Essentially a plus operation with all trailing zeros removed from the
+  result.
+\end{methoddesc}
+  
+\begin{methoddesc}{plus}{x}
+  Minus corresponds to unary prefix plus in Python.
+\end{methoddesc}
+
+\begin{methoddesc}{power}{x, y\optional{, modulo}}
+  Return \samp{x ** y} to the \var{modulo} if given.
+
+  The right-hand operand must be a whole number whose integer part (after any
+  exponent has been applied) has no more than 9 digits and whose fractional
+  part (if any) is all zeros before any rounding. The operand may be positive,
+  negative, or zero; if negative, the absolute value of the power is used, and
+  the left-hand operand is inverted (divided into 1) before use.
+
+  If the increased precision needed for the intermediate calculations exceeds
+  the capabilities of the implementation then an Invalid operation condition
+  is raised.
+
+  If, when raising to a negative power, an underflow occurs during the
+  division into 1, the operation is not halted at that point but continues. 
+\end{methoddesc}
+
+\begin{methoddesc}{quantize}{x, y}
+  Returns a value equal to \var{x} after rounding and having the
+  exponent of v\var{y}.
+
+  Unlike other operations, if the length of the coefficient after the quantize
+  operation would be greater than precision then an
+  \constant{InvalidOperation} is signaled. This guarantees that, unless there
+  is an error condition, the exponent of the result of a quantize is always
+  equal to that of the right-hand operand.
+
+  Also unlike other operations, quantize never signals Underflow, even
+  if the result is subnormal and inexact.  
+\end{methoddesc} 
+
+\begin{methoddesc}{remainder}{x, y}
+  Returns the remainder from integer division.
+
+  The sign of the result, if non-zero, is the same as that of the original
+  dividend. 
+\end{methoddesc}
+ 
+\begin{methoddesc}{remainder_near}{x, y}
+  Computed the modulo as either a positive or negative value depending
+  on which is closest to zero.  For instance,
+  \samp{Decimal(10).remainder_near(6)} returns \code{Decimal("-2")}
+  which is closer to zero than \code{Decimal("4")}.
+
+  If both are equally close, the one chosen will have the same sign
+  as \var{self}.
+\end{methoddesc}
+
+\begin{methoddesc}{same_quantum}{x, y}
+  Test whether \var{x} and \var{y} have the same exponent or whether both are
+  \constant{NaN}.
+\end{methoddesc}
+
+\begin{methoddesc}{sqrt}{}
+  Return the square root to full precision.
+\end{methoddesc}                    
+
+\begin{methoddesc}{substract}{x, y}
+  Return the difference of \var{x} and \var{y}.
+\end{methoddesc}
+ 
+\begin{methoddesc}{to_eng_string}{}
+  Convert to engineering-type string.
+
+  Engineering notation has an exponent which is a multiple of 3, so there
+  are up to 3 digits left of the decimal place.  For example, converts
+  \code{Decimal('123E+1')} to \code{Decimal("1.23E+3")}
+\end{methoddesc}  
+
+\begin{methoddesc}{to_integral}{x}                  
+  Rounds to the nearest integer, without signaling \constant{Inexact}
+  or \constant{Rounded}.                                        
+\end{methoddesc} 
+
+\begin{methoddesc}{to_sci_string}{}
+  Converts a number to a string, using scientific notation.
+\end{methoddesc} 
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%            
+\subsection{Signals \label{decimal-signals}}
+
+Signals represent conditions that arise during computation.
+Each corresponds to one context flag and one context trap enabler.
+
+The context flag is incremented whenever the condition is encountered.
+After the computation, flags may be checked for informational
+purposed (for instance, to determine whether a computation was exact).
+After checking the flags, be sure to clear all flags before starting
+the next computation.
+
+If the context's trap enabler is set for the signal, then the condition
+causes a Python exception to be raised.  For example, if the
+\class{DivisionByZero} trap is set, the a \exception{DivisionByZero}
+exception is raised upon encountering the condition.
+
+
+\begin{classdesc*}{Clamped}
+    Altered an exponent to fit representation constraints.
+
+    Typically, clamping occurs when an exponent falls outside the context's
+    \member{Emin} and \member{Emax} limits.  If possible, the exponent is
+    reduced to fit by adding zeroes to the coefficient.
+\end{classdesc*}
+
+
+\begin{classdesc*}{ConversionSyntax}
+    Trying to convert a mal-formed string such as:  \code{Decimal('jump')}.
+
+    Decimal converts only strings conforming to the numeric string
+    syntax.  If this signal is not trapped, returns \constant{NaN}.
+\end{classdesc*}
+
+
+\begin{classdesc*}{DecimalException}
+    Base class for other signals.
+\end{classdesc*}
+
+
+\begin{classdesc*}{DivisionByZero}
+    Signals the division of a non-infinite number by zero.
+
+    Can occur with division, modulo division, or when raising a number to
+    a negative power.  If this signal is not trapped, return
+    \constant{Infinity} or \constant{-Infinity} with sign determined by
+    the inputs to the calculation.
+\end{classdesc*}
+
+
+\begin{classdesc*}{DivisionImpossible}
+    Error performing a division operation.  Caused when an intermediate result
+    has more digits that the allowed by the current precision.  If not trapped,
+    returns \constant{NaN}.
+\end{classdesc*}
+
+
+\begin{classdesc*}{DivisionUndefined}
+    This is a subclass of \class{DivisionByZero}.
+
+    It occurs only in the context of division operations.
+\end{classdesc*}
+
+
+\begin{classdesc*}{Inexact}
+    Indicates that rounding occurred and the result is not exact.
+
+    Signals whenever non-zero digits were discarded during rounding.
+    The rounded result is returned.  The signal flag or trap is used
+    to detect when results are inexact.
+\end{classdesc*}
+
+
+\begin{classdesc*}{InvalidContext}
+    This is a subclass of \class{InvalidOperation}.
+
+    Indicates an error within the Context object such as an unknown
+    rounding operation.  If not trapped, returns \constant{NaN}.
+\end{classdesc*}
+
+
+\begin{classdesc*}{InvalidOperation}
+    An invalid operation was performed.
+
+    Indicates that an operation was requested that does not make sense.
+    If not trapped, returns \constant{NaN}.  Possible causes include:
+
+    \begin{verbatim}
+        Infinity - Infinity
+        0 * Infinity
+        Infinity / Infinity
+        x % 0
+        Infinity % x
+        x._rescale( non-integer )
+        sqrt(-x) and x > 0
+        0 ** 0
+        x ** (non-integer)
+        x ** Infinity      
+    \end{verbatim}    
+\end{classdesc*}
+
+
+\begin{classdesc*}{Overflow}
+    Numerical overflow.
+
+    Indicates the exponent is larger than \member{Emax} after rounding has
+    occurred.  If not trapped, the result depends on the rounding mode, either
+    pulling inward to the largest representable finite number or rounding
+    outward to \constant{Infinity}.  In either case, \class{Inexact} and
+    \class{Rounded} are also signaled.   
+\end{classdesc*}
+
+
+\begin{classdesc*}{Rounded}
+    Rounding occurred though possibly not information was lost.
+
+    Signaled whenever rounding discards digits; even if those digits are
+    zero (such as rounding \constant{5.00} to \constant{5.0}).   If not
+    trapped, returns the result unchanged.  This signal is used to detect
+    loss of significant digits.
+\end{classdesc*}
+
+
+\begin{classdesc*}{Subnormal}
+    Exponent was lower than \member{Emin} prior to rounding.
+          
+    Occurs when an operation result is subnormal (the exponent is too small).
+    If not trapped, returns the result unchanged.
+\end{classdesc*}
+
+
+\begin{classdesc*}{Underflow}
+    Numerical underflow with result rounded to zero.
+
+    Occurs when a subnormal result is pushed to zero by rounding.
+    \class{Inexact} and \class{Subnormal} are also signaled.
+\end{classdesc*}
+
+
+The following table summarizes the hierarchy of signals:
+
+\begin{verbatim}    
+    exceptions.ArithmeticError(exceptions.StandardError)
+        DecimalException
+            Clamped
+            DivisionByZero(DecimalException, exceptions.ZeroDivisionError)
+            Inexact
+                Overflow(Inexact, Rounded)
+                Underflow(Inexact, Rounded, Subnormal)
+            InvalidOperation
+                ConversionSyntax
+                DivisionImpossible
+                DivisionUndefined(InvalidOperation, exceptions.ZeroDivisionError)
+                InvalidContext
+            Rounded
+            Subnormal
+\end{verbatim}            
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Working with threads \label{decimal-threads}}
+
+The \function{getcontext()} function accesses a different \class{Context}
+object for each thread.  Having separate contexts means that threads may make
+changes (such as \code{getcontext.prec=10}) without interfering with other
+threads and without needing mutexes.
+
+Likewise, the \function{setcontext()} function automatically assigns its target
+to the current thread.
+
+If \function{setcontext()} has not been called before \function{getcontext()},
+then \function{getcontext()} will automatically create a new context for use
+in the current thread.
+
+The new context is copied from a prototype context called \var{DefaultContext}.
+To control the defaults so that each thread will use the same values
+throughout the application, directly modify the \var{DefaultContext} object.
+This should be done \emph{before} any threads are started so that there won't
+be a race condition with threads calling \function{getcontext()}. For example:
+
+\begin{verbatim}
+# Set application wide defaults for all threads about to be launched
+DefaultContext.prec=12
+DefaultContext.rounding=ROUND_DOWN
+DefaultContext.trap_enablers=dict.fromkeys(Signals, 0)
+setcontext(DefaultContext)
+
+# Now start all of the threads
+t1.start()
+t2.start()
+t3.start()
+ . . .
+\end{verbatim}
+ 
+
+
+
+
+
+
+                                                  
