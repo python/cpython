@@ -79,8 +79,8 @@ Without the optional argument, this method acquires the lock
 unconditionally, if necessary waiting until it is released by another
 thread (only one thread at a time can acquire a lock --- that's their
 reason for existence), and returns \code{None}.  If the integer
-\var{waitflag} argument is present, the action depends on its value:\
-if it is zero, the lock is only acquired if it can be acquired
+\var{waitflag} argument is present, the action depends on its
+value: if it is zero, the lock is only acquired if it can be acquired
 immediately without waiting, while if it is nonzero, the lock is
 acquired unconditionally as before.  If an argument is present, the
 return value is \code{1} if the lock is acquired successfully,
