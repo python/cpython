@@ -658,7 +658,7 @@ builtin_map(self, args)
 		if (! (sqp->sqf = sqp->seq->ob_type->tp_as_sequence)) {
 			static char errmsg[] =
 			    "argument %d to map() must be a sequence object";
-			char errbuf[sizeof(errmsg) + 3];
+			char errbuf[sizeof(errmsg) + 25];
 
 			sprintf(errbuf, errmsg, i+2);
 			PyErr_SetString(PyExc_TypeError, errbuf);
