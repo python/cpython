@@ -2005,101 +2005,19 @@ static char vars_doc[] =
 Without arguments, equivalent to locals().\n\
 With an argument, equivalent to object.__dict__.";
 
-static int
-abstract_issubclass(PyObject *derived, PyObject *cls, int first)
-{
-	static PyObject *__bases__ = NULL;
-	PyObject *bases;
-	int i, n;
-	int r = 0;
-
-	if (__bases__ == NULL) {
-		__bases__ = PyString_FromString("__bases__");
-		if (__bases__ == NULL)
-			return -1;
-	}
-
-	if (first) {
-		bases = PyObject_GetAttr(cls, __bases__);
-		if (bases == NULL || !PyTuple_Check(bases)) {
-			Py_XDECREF(bases);
-			PyErr_SetString(PyExc_TypeError,
-					"issubclass() arg 2 must be a class");
-			return -1;
-		}
-		Py_DECREF(bases);
-	}
-
-	if (derived == cls)
-		return 1;
-
-	bases = PyObject_GetAttr(derived, __bases__);
-	if (bases == NULL || !PyTuple_Check(bases)) {
-	        Py_XDECREF(bases);
-		PyErr_SetString(PyExc_TypeError,
-				"issubclass() arg 1 must be a class");
-		return -1;
-	}
-
-	n = PyTuple_GET_SIZE(bases);
-	for (i = 0; i < n; i++) {
-		r = abstract_issubclass(PyTuple_GET_ITEM(bases, i), cls, 0);
-		if (r != 0)
-			break;
-	}
-
-	Py_DECREF(bases);
-
-	return r;
-}
-
 static PyObject *
 builtin_isinstance(PyObject *self, PyObject *args)
 {
 	PyObject *inst;
 	PyObject *cls;
-	PyObject *icls;
-	static PyObject *__class__ = NULL;
-	int retval = 0;
+	int retval;
 
 	if (!PyArg_ParseTuple(args, "OO:isinstance", &inst, &cls))
 		return NULL;
 
-        if (PyClass_Check(cls)) {
-		if (PyInstance_Check(inst)) {
-			PyObject *inclass =
-				(PyObject*)((PyInstanceObject*)inst)->in_class;
-			retval = PyClass_IsSubclass(inclass, cls);
-		}
-	}
-	else if (PyType_Check(cls)) {
-		retval = ((PyObject *)(inst->ob_type) == cls);
-	}
-	else if (!PyInstance_Check(inst)) {
-		if (__class__ == NULL) {
-			__class__ = PyString_FromString("__class__");
-			if (__class__ == NULL)
-				return NULL;
-		}
-		icls = PyObject_GetAttr(inst, __class__);
-		if (icls != NULL) {
-			retval = abstract_issubclass(icls, cls, 1);
-			Py_DECREF(icls);
-			if (retval < 0 &&
-			    !PyErr_ExceptionMatches(PyExc_TypeError))
-				return NULL;
-		}
-		else
-			retval = -1;
-	}
-	else
-		retval = -1;
-
-	if (retval < 0) {
-		PyErr_SetString(PyExc_TypeError,
-				"isinstance() arg 2 must be a class or type");
+	retval = PyObject_IsInstance(inst, cls);
+	if (retval < 0)
 		return NULL;
-	}
 	return PyInt_FromLong(retval);
 }
 
@@ -2120,17 +2038,9 @@ builtin_issubclass(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "OO:issubclass", &derived, &cls))
 		return NULL;
 
-	if (!PyClass_Check(derived) || !PyClass_Check(cls)) {
-		retval = abstract_issubclass(derived, cls, 1);
-		if (retval < 0)
-			return NULL;
-	}
-	else {
-		/* shortcut */
-	  	if (!(retval = (derived == cls)))
-			retval = PyClass_IsSubclass(derived, cls);
-	}
-
+	retval = PyObject_IsSubclass(derived, cls);
+	if (retval < 0)
+		return NULL;
 	return PyInt_FromLong(retval);
 }
 
