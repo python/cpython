@@ -44,16 +44,19 @@ cygwin in no-cygwin mode).
 
 __revision__ = "$Id$"
 
-import os,sys
+import os,sys,copy
 from distutils.unixccompiler import UnixCCompiler
 from distutils.file_util import write_file
 
 class CygwinCCompiler (UnixCCompiler):
 
     compiler_type = 'cygwin'
-    gcc_version = None
-    dllwrap_version = None
-    ld_version = None
+    obj_extension = ".o"
+    static_lib_extension = ".a"
+    shared_lib_extension = ".dll"
+    static_lib_format = "lib%s%s"
+    shared_lib_format = "%s%s"
+    exe_extension = ".exe"
    
     def __init__ (self,
                   verbose=0,
@@ -62,14 +65,16 @@ class CygwinCCompiler (UnixCCompiler):
 
         UnixCCompiler.__init__ (self, verbose, dry_run, force)
 
-        if check_config_h()<=0:
+        check_result = check_config_h()
+        self.debug_print("Python's GCC status: %s" % check_result)
+        if check_result[:2] <> "OK":
             self.warn(
                 "Python's config.h doesn't seem to support your compiler. "
                 "Compiling may fail because of undefined preprocessor macros.")
         
         (self.gcc_version, self.ld_version, self.dllwrap_version) = \
             get_versions()
-        sys.stderr.write(self.compiler_type + ": gcc %s, ld %s, dllwrap %s\n" %
+        self.debug_print(self.compiler_type + ": gcc %s, ld %s, dllwrap %s\n" %
                          (self.gcc_version, 
                           self.ld_version, 
                           self.dllwrap_version) )
@@ -117,9 +122,9 @@ class CygwinCCompiler (UnixCCompiler):
                             extra_postargs=None,
                             build_temp=None):
         
-        # use separate copies, so can modify the lists
-        extra_preargs = list(extra_preargs or [])
-        libraries = list(libraries or [])
+        # use separate copies, so we can modify the lists
+        extra_preargs = copy.copy(extra_preargs or [])
+        libraries = copy.copy(libraries or [])
         
         # Additional libraries
         libraries.extend(self.dll_libraries)
@@ -241,11 +246,11 @@ def check_config_h():
        compiling probably doesn't work.
     """
     # return values
-    #  2: OK, python was compiled with GCC
-    #  1: OK, python's config.h mentions __GCC__
-    #  0: uncertain, because we couldn't check it
-    # -1: probably not OK, because we didn't found it in config.h
-    # You could check check_config_h()>0 => OK
+    #  "OK, python was compiled with GCC"
+    #  "OK, python's config.h mentions __GCC__"
+    #  "uncertain, because we couldn't check it"
+    #  "not OK, because we didn't found __GCC__ in config.h"
+    # You could check check_config_h()[:2] == "OK"
 
     from distutils import sysconfig
     import string,sys
@@ -254,7 +259,7 @@ def check_config_h():
     if -1 == string.find(sys.version,"GCC"):
         pass # go to the next test
     else:
-        return 2
+        return "OK, python was compiled with GCC"
     
     try:
         # It would probably better to read single lines to search.
@@ -265,14 +270,14 @@ def check_config_h():
         
         # is somewhere a #ifdef __GNUC__ or something similar
         if -1 == string.find(s,"__GNUC__"):
-            return -1  
+            return "not OK, because we didn't found __GCC__ in config.h"
         else:
-            return 1
+            return "OK, python's config.h mentions __GCC__"
     except IOError:
         # if we can't read this file, we cannot say it is wrong
         # the compiler will complain later about this file as missing
         pass
-    return 0
+    return "uncertain, because we couldn't check it"
 
 def get_versions():
     """ Try to find out the versions of gcc, ld and dllwrap.
