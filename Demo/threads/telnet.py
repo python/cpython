@@ -28,6 +28,9 @@ WONT = chr(252)
 WILL = chr(251)
 
 def main():
+	if len(sys.argv) != 2:
+		sys.stderr.write('usage: telnet hostname\n')
+		sys.exit(2)
 	host = sys.argv[1]
 	try:
 		hostaddr = gethostbyname(host)
@@ -74,7 +77,7 @@ def parent(s):
 		for c in data:
 			if opt:
 				print ord(c)
-				print '(replying: ' + `opt+c` + ')'
+##				print '(replying: ' + `opt+c` + ')'
 				s.send(opt + c)
 				opt = ''
 			elif iac:
