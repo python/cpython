@@ -158,7 +158,7 @@ PyObject_SetItem(o, key, value)
   if(PyInt_Check(key))
     return PySequence_SetItem(o,PyInt_AsLong(key),value);
 
-  PyErr_SetString(PyExc_TypeError,"expeced integer index");
+  PyErr_SetString(PyExc_TypeError,"expected integer index");
   return -1;
 }
 
@@ -176,7 +176,7 @@ PyObject_DelItem(o, key)
   if(PyInt_Check(key))
     return PySequence_SetItem(o,PyInt_AsLong(key),(PyObject*)NULL);
 
-  PyErr_SetString(PyExc_TypeError,"expeced integer index");
+  PyErr_SetString(PyExc_TypeError,"expected integer index");
   return -1;
 }
 
@@ -202,7 +202,7 @@ PyNumber_Or(v, w)
 
 	BINOP("__or__", "__ror__", PyNumber_Or);
 	if (v->ob_type->tp_as_number != NULL) {
-		PyObject *x;
+		PyObject *x = NULL;
 		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
@@ -225,7 +225,7 @@ PyNumber_Xor(v, w)
 
 	BINOP("__xor__", "__rxor__", PyNumber_Xor);
 	if (v->ob_type->tp_as_number != NULL) {
-		PyObject *x;
+		PyObject *x = NULL;
 		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
@@ -246,7 +246,7 @@ PyNumber_And(v, w)
 {
 	BINOP("__and__", "__rand__", PyNumber_And);
 	if (v->ob_type->tp_as_number != NULL) {
-		PyObject *x;
+		PyObject *x = NULL;
 		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
@@ -267,7 +267,7 @@ PyNumber_Lshift(v, w)
 {
 	BINOP("__lshift__", "__rlshift__", PyNumber_Lshift);
 	if (v->ob_type->tp_as_number != NULL) {
-		PyObject *x;
+		PyObject *x = NULL;
 		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
@@ -288,7 +288,7 @@ PyNumber_Rshift(v, w)
 {
 	BINOP("__rshift__", "__rrshift__", PyNumber_Rshift);
 	if (v->ob_type->tp_as_number != NULL) {
-		PyObject *x;
+		PyObject *x = NULL;
 		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
@@ -802,7 +802,7 @@ PySequence_Tuple(s)
 
   for(i=0; i < l; i++)
     {
-      if(item=PySequence_GetItem(s,i))
+      if((item=PySequence_GetItem(s,i)))
 	{
 	  if(PyTuple_SetItem(t,i,item) == -1)
 	    {
@@ -820,6 +820,35 @@ PySequence_Tuple(s)
   return t;
 }
 
+PyObject *
+PySequence_List(s)
+  PyObject *s;
+{
+  int l, i;
+  PyObject *t, *item;
+  if(! s) return Py_ReturnNullError();
+  Py_TRY((l=PySequence_Length(s)) != -1);
+  Py_TRY(t=PyList_New(l));
+  for(i=0; i < l; i++)
+    {
+      if((item=PySequence_GetItem(s,i)))
+      {
+        if(PyList_SetItem(t,i,item) == -1)
+          {
+            Py_DECREF(item);
+            Py_DECREF(t);
+            return NULL;
+          }
+      }
+      else
+      {
+        Py_DECREF(t);
+        return NULL;
+      }
+    }
+  return t;
+}
+
 int 
 PySequence_Count(s, o)
   PyObject *s;
@@ -829,11 +858,11 @@ PySequence_Count(s, o)
   PyObject *item;
 
   if(! s || ! o) return Py_ReturnNullError(), -1;
-  Py_TRY((l=PySequence_Length(s)) != -1),-1;
+  if((l=PySequence_Length(s)) == -1) return -1;
 
   for(i=0; i < l; i++)
     {
-      Py_TRY(item=PySequence_GetItem(s,i)),-1;
+      if((item=PySequence_GetItem(s,i)) == NULL) return -1;
       err=PyObject_Cmp(item,o,&not_equal) == -1;
       Py_DECREF(item);
       if(err) return -1;
@@ -851,11 +880,11 @@ PySequence_In(s, o)
   PyObject *item;
 
   if(! o || ! s) return Py_ReturnNullError(), -1;
-  Py_TRY((l=PySequence_Length(s)) != -1),-1;
+  if((l=PySequence_Length(s)) == -1) return -1;
 
   for(i=0; i < l; i++)
     {
-      Py_TRY(item=PySequence_GetItem(s,i)),-1;
+      if((item=PySequence_GetItem(s,i)) == NULL) return -1;
       err=PyObject_Cmp(item,o,&not_equal) == -1;
       Py_DECREF(item);
       if(err) return -1;
@@ -869,15 +898,15 @@ PySequence_Index(s, o)
   PyObject *s;
   PyObject *o;
 {
-  int l, i, n=0, not_equal, err;
+  int l, i, not_equal, err;
   PyObject *item;
 
   if(! s || ! o) return Py_ReturnNullError(), -1;
-  Py_TRY((l=PySequence_Length(s)) != -1),-1;
+  if((l=PySequence_Length(s)) == -1) return -1;
 
   for(i=0; i < l; i++)
     {
-      Py_TRY(item=PySequence_GetItem(s,i)),-1;
+      if((item=PySequence_GetItem(s,i)) == NULL) return -1;
       err=PyObject_Cmp(item,o,&not_equal) == -1;
       Py_DECREF(item);
       if(err) return -1;
