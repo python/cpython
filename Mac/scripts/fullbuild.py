@@ -67,7 +67,7 @@ def buildapplet(top, dummy, list):
 # The build instructions. Entries are (routine, arg, list-of-files)
 # XXXX We could also include the builds for stdwin and such here...
 INSTRUCTIONS=[
-	(buildmwproject, "MPCC", [
+	(buildmwproject, "CWIE", [
 		":build.macppc.shared:PythonCore.µ",
 		":build.macppc.shared:PythonPPC.µ",
 		":build.macppc.shared:PythonApplet.µ",
@@ -78,14 +78,14 @@ INSTRUCTIONS=[
 		":PlugIns:mactcpmodules.µ",
 		":PlugIns:stdwinmodule.µ",
 		":PlugIns:toolboxmodules.µ",
-	]),
-	(buildmwproject, "MMCC", [
+
 		":build.mac68k.stand:Python68K.µ",
 	]),
 	(buildapplet, None, [
 		":Mac:scripts:EditPythonPrefs.py",
 		":Mac:scripts:mkapplet.py",
-		":Mac:scripts:RunLibScript.py"
+		":Mac:scripts:RunLibScript.py",
+		":Mac:scripts:MkPluginAliases.py"
 	])
 ]
 				
