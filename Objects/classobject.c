@@ -759,6 +759,27 @@ instance_getattr(register PyInstanceObject *inst, PyObject *name)
 	return res;
 }
 
+/* See classobject.h comments:  this only does dict lookups, and is always
+ * safe to call.
+ */
+PyObject *
+_PyInstance_Lookup(PyObject *pinst, PyObject *name)
+{
+	PyObject *v;
+	PyClassObject *class;
+	PyInstanceObject *inst;	/* pinst cast to the right type */
+
+	assert(PyInstance_Check(pinst));
+	inst = (PyInstanceObject *)pinst;
+
+	assert(PyString_Check(name));
+
+ 	v = PyDict_GetItem(inst->in_dict, name);
+	if (v == NULL)
+		v = class_lookup(inst->in_class, name, &class);
+	return v;
+}
+
 static int
 instance_setattr1(PyInstanceObject *inst, PyObject *name, PyObject *v)
 {
