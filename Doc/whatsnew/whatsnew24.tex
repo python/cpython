@@ -449,7 +449,10 @@ improved performance:  \module{Queue}, \module{mutex}, \module{shlex}
 
 \item The \module{heapq} module has been converted to C.  The resulting
    tenfold improvement in speed makes the module suitable for handling
-   high volumes of data.
+   high volumes of data.  In addition, the module has two new functions
+   \function{nlargest()} and \function{nsmallest()} that use heaps to
+   find the largest or smallest n values in a dataset without the
+   expense of a full sort.
 
 \item The \module{imaplib} module now supports IMAP's THREAD command.
 (Contributed by Yves Dionne.)

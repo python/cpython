@@ -30,7 +30,7 @@ without surprises: heap[0] is the smallest item, and heap.sort()
 maintains the heap invariant!
 """
 
-# Original code by Kevin O'Connor, augmented by Tim Peters
+# Original code by Kevin O'Connor, augmented by Tim Peters and Raymond Hettinger
 
 __about__ = """Heap queues
 
@@ -126,7 +126,10 @@ Believe me, real good tape sorts were quite spectacular to watch!
 From all times, sorting has always been a Great Art! :-)
 """
 
-__all__ = ['heappush', 'heappop', 'heapify', 'heapreplace']
+__all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'nlargest',
+           'nsmallest']
+
+from itertools import islice, repeat
 
 def heappush(heap, item):
     """Push item onto heap, maintaining the heap invariant."""
@@ -167,6 +170,35 @@ def heapify(x):
     # (2*j+1-1)/2 = j so j-1 is the largest, and that's again n//2-1.
     for i in reversed(xrange(n//2)):
         _siftup(x, i)
+
+def nlargest(iterable, n):
+    """Find the n largest elements in a dataset.
+
+    Equivalent to:  sorted(iterable, reverse=True)[:n]
+    """
+    it = iter(iterable)
+    result = list(islice(it, n))
+    if not result:
+        return result
+    heapify(result)
+    _heapreplace = heapreplace
+    sol = result[0]         # sol --> smallest of the nlargest
+    for elem in it:
+        if elem <= sol:
+            continue
+        _heapreplace(result, elem)
+        sol = result[0]
+    result.sort(reverse=True)
+    return result
+
+def nsmallest(iterable, n):
+    """Find the n smallest elements in a dataset.
+
+    Equivalent to:  sorted(iterable)[:n]
+    """
+    h = list(iterable)
+    heapify(h)
+    return map(heappop, repeat(h, min(n, len(h))))
 
 # 'heap' is a heap at all indices >= startpos, except possibly for pos.  pos
 # is the index of a leaf with a possibly out-of-order value.  Restore the

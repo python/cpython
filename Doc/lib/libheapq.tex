@@ -83,6 +83,30 @@ True
 >>>
 \end{verbatim}
 
+The module also offers two general purpose functions based on heaps.
+
+\begin{funcdesc}{nlargest}{iterable, n}
+Return a list with the \var{n} largest elements from the dataset defined
+by \var{iterable}. Equivalent to:  \code{sorted(iterable, reverse=True)[:n]}
+\versionadded{2.4}              
+\end{funcdesc}
+
+\begin{funcdesc}{nsmallest}{iterable, n}
+Return a list with the \var{n} smallest elements from the dataset defined
+by \var{iterable}. Equivalent to:  \code{sorted(iterable)[:n]}
+\versionadded{2.4}              
+\end{funcdesc}
+
+Though the above functions appear symmetrical, they each have different
+speed and space requirements.  In particular, \function{nsmallest()}
+operates on a full copy of the dataset.  In contrast, \function{nlargest()}
+only requires storage space for \var{n} elements.
+
+Both functions perform best for smaller values of \var{n}.  For larger
+values, it is more efficient to use the \function{sorted()} function.  Also,
+when \code{n==1}, it is more efficient to use the builtin \function{min()}
+and \function{max()} functions.
+
 
 \subsection{Theory}
 
