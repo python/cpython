@@ -482,8 +482,8 @@ scan_event_queue(flush)
 	int flush;
 {
 #if TARGET_API_MAC_CARBON
-	/* CARBONXXXX To be implemented */
-	return;
+	if ( CheckEventQueueForUserCancel() )
+		interrupted = 1;
 #else
 	register EvQElPtr q;
 	
