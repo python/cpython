@@ -148,7 +148,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 
 def test(HandlerClass = SimpleHTTPRequestHandler,
-         ServerClass = SocketServer.TCPServer):
+         ServerClass = BaseHTTPServer.HTTPServer):
     BaseHTTPServer.test(HandlerClass, ServerClass)
 
 
