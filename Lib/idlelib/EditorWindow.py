@@ -534,11 +534,14 @@ class EditorWindow:
 
     def maybesave(self):
         if self.io:
+            if not self.get_saved():
+                if self.top.state()!='normal': 
+                    self.top.deiconify()
+                self.top.lower()
+                self.top.lift()
             return self.io.maybesave()
 
     def close(self):
-        self.top.wm_deiconify()
-        self.top.tkraise()
         reply = self.maybesave()
         if reply != "cancel":
             self._close()
