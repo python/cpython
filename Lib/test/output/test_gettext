@@ -1,0 +1,4 @@
+test_gettext
+gettext installed
+calling bindtextdomain with localdir Lib/test
+calling textdomain
