@@ -154,7 +154,8 @@ class Demo:
                     text += line + '\n'
                 try: tkMessageBox.showerror ('Error', text)
                 except: pass
-                tkinspect_quit (1)
+                self.exit = 1
+                raise SystemExit, 1
 
     def destroy (self):
         self.root.destroy()
@@ -420,9 +421,13 @@ def MkFileEnt(w):
     ent.pack(side=Tix.TOP, fill=Tix.X, padx=3, pady=3)
 
 def MkFileBox(w):
+    """The FileSelectBox is a Motif-style box with various enhancements.
+    For example, you can adjust the size of the two listboxes
+    and your past selections are recorded.
+    """
     msg = Tix.Message(w, 
 		      relief=Tix.FLAT, width=240, anchor=Tix.N,
-		      text='The TixFileSelectBox is a Motif-style box with various enhancements. For example, you can adjust the size of the two listboxes and your past selections are recorded.')
+		      text='The Tix FileSelectBox is a Motif-style box with various enhancements. For example, you can adjust the size of the two listboxes and your past selections are recorded.')
     box = Tix.FileSelectBox(w)
     msg.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH, padx=3, pady=3)
     box.pack(side=Tix.TOP, fill=Tix.X, padx=3, pady=3)
