@@ -5,6 +5,7 @@
 
 import unittest
 from test import test_support
+from weakref import proxy
 import array, cStringIO, math
 
 tests = [] # list to accumulate all tests
@@ -614,6 +615,13 @@ class BaseTest(unittest.TestCase):
         b = buffer(a)
         self.assertEqual(b[0], a.tostring()[0])
 
+    def test_weakref(self):
+        s = array.array(self.typecode, self.example)
+        p = proxy(s)
+        self.assertEqual(p.tostring(), s.tostring())
+        s = None
+        self.assertRaises(ReferenceError, len, p)
+
     def test_bug_782369(self):
         import sys
         if hasattr(sys, "getrefcount"):
@@ -623,6 +631,8 @@ class BaseTest(unittest.TestCase):
             for i in range(10):
                 b = array.array('B', range(64))
             self.assertEqual(rc, sys.getrefcount(10))
+
+
 
 class StringTest(BaseTest):
 

@@ -4,6 +4,7 @@
    The item type is restricted to simple C types like int or float */
 
 #include "Python.h"
+#include "structmember.h"
 
 #ifdef STDC_HEADERS
 #include <stddef.h>
@@ -32,6 +33,7 @@ typedef struct arrayobject {
 	char *ob_item;
 	int allocated;
 	struct arraydescr *ob_descr;
+	PyObject *weakreflist; /* List of weak references */
 } arrayobject;
 
 static PyTypeObject Arraytype;
@@ -442,6 +444,7 @@ newarrayobject(PyTypeObject *type, int size, struct arraydescr *descr)
 	}
 	op->ob_descr = descr;
 	op->allocated = size;
+	op->weakreflist = NULL;
 	return (PyObject *) op;
 }
 
@@ -490,6 +493,8 @@ ins1(arrayobject *self, int where, PyObject *v)
 static void
 array_dealloc(arrayobject *op)
 {
+	if (op->weakreflist != NULL)
+		PyObject_ClearWeakRefs((PyObject *) op);
 	if (op->ob_item != NULL)
 		PyMem_DEL(op->ob_item);
 	op->ob_type->tp_free((PyObject *)op);
@@ -1950,12 +1955,12 @@ static PyTypeObject Arraytype = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	&array_as_buffer,			/* tp_as_buffer*/
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_WEAKREFS,  /* tp_flags */
 	arraytype_doc,				/* tp_doc */
  	0,					/* tp_traverse */
 	0,					/* tp_clear */
 	array_richcompare,			/* tp_richcompare */
-	0,					/* tp_weaklistoffset */
+	offsetof(arrayobject, weakreflist),	/* tp_weaklistoffset */
 	(getiterfunc)array_iter,		/* tp_iter */
 	0,					/* tp_iternext */
 	array_methods,				/* tp_methods */
