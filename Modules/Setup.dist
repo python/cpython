@@ -97,9 +97,6 @@ PYTHONPATH=$(COREPYTHONPATH)
 posix posixmodule.c		# posix (UNIX) system calls
 _sre _sre.c			# Fredrik Lundh's new regular expressions
 
-# The signal module can't be compiled as a dynamically linked module.
-signal signalmodule.c           # signal(2)
-
 # The rest of the modules listed in this file are all commented out by
 # default.  Usually they can be detected and built as dynamically
 # loaded modules by the new setup.py script added in Python 2.1.  If
