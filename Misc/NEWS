@@ -1,3 +1,23 @@
+What's New in Python 2.1 alpha 1?
+=================================
+
+Core language, builtins, and interpreter
+
+- %[duxXo] formats of negative Python longs now produce a sign
+  character.  In 1.6 and earlier, they never produced a sign,
+  and raised an error if the value of the long was too large
+  to fit in a Python int.  In 2.0, they produced a sign if and
+  only if too large to fit in an int.  This was inconsistent
+  across platforms (because the size of an int varies across
+  platforms), and inconsistent with hex() and oct().  Example:
+
+  >>> "%x" % -0x42L
+  '-42'  # in 2.1
+  'ffffffbe' # in 2.0 and before, on 32-bit machines
+  >>> hex(-0x42L)
+  '-0x42L'   # in all versions of Python
+
+
 What's New in Python 2.0?
 =========================
 
@@ -79,7 +99,7 @@ Build issues
   --with-pydebug flag.  The expected warning is for getopt() in
   Modules/main.c.  This warning will be fixed for Python 2.1.
 
-- Fixed configure to add -threads argument during linking on OSF1. 
+- Fixed configure to add -threads argument during linking on OSF1.
 
 Tools and other miscellany
 
@@ -88,7 +108,7 @@ Tools and other miscellany
   comprehensions, and augmented assignments.  The new compiler should
   also be backwards compatible with Python 1.5.2; the compiler will
   always generate code for the version of the interpreter it runs
-  under. 
+  under.
 
 What's new in 2.0 release candidate 1 (since beta 2)?
 =====================================================
@@ -143,15 +163,15 @@ Standard library
   the file-like object interface and with StringIO.  If operations are
   performed on a closed object, an exception is raised.  The truncate
   method now accepts a position argument and readline accepts a size
-  argument. 
+  argument.
 
 - There were many changes made to the linuxaudiodev module and its
   test suite; as a result, a short, unexpected audio sample should now
-  play when the regression test is run.  
+  play when the regression test is run.
 
   Note that this module is named poorly, because it should work
   correctly on any platform that supports the Open Sound System
-  (OSS). 
+  (OSS).
 
   The module now raises exceptions when errors occur instead of
   crashing.  It also defines the AFMT_A_LAW format (logarithmic A-law
@@ -200,7 +220,7 @@ Build issues
 
 - configure now accepts a --with-suffix option that specifies the
   executable suffix.  This is useful for builds on Cygwin and Mac OS
-  X, for example. 
+  X, for example.
 
 - The mmap.PAGESIZE constant is now initialized using sysconf when
   possible, which eliminates a dependency on -lucb for Reliant UNIX.
@@ -211,7 +231,7 @@ Build issues
   POLLRDNORM and related constants.
 
 - Darwin (Mac OS X):  Initial support for static builds on this
-  platform. 
+  platform.
 
 - BeOS: A number of changes were made to the build and installation
   process.  ar-fake now operates on a directory of object files.
@@ -254,7 +274,7 @@ Core language, builtins, and interpreter
   string is too long."
 
 - Better error message when continue is found in try statement in a
-  loop. 
+  loop.
 
 
 Standard library and extensions
@@ -345,7 +365,7 @@ Standard library and extensions
   use buffer interface on Unicode strings.  Does not hang if group id
   is followed by whitespace.
 
-- StringIO: Size hint in readlines() is now supported as documented. 
+- StringIO: Size hint in readlines() is now supported as documented.
 
 - struct: Check ranges for bytes and shorts.
 
@@ -419,7 +439,7 @@ C API
   PyArg_ParseTupleAndKeywords() now accepts "es#" and "es".
   PyArg_Parse() special cases "s#" for Unicode objects; it returns a
   pointer to the default encoded string data instead of to the raw
-  UTF-16. 
+  UTF-16.
 
 - Py_BuildValue accepts B format (for bgen-generated code).
 
@@ -448,7 +468,7 @@ Internals
   registry key.
 
 - On Unix, create .pyc/.pyo files with O_EXCL flag to avoid a race
-  condition. 
+  condition.
 
 
 Build and platform-specific issues
@@ -475,7 +495,7 @@ Tools and other miscellany
 
 - freeze: The modulefinder now works with 2.0 opcodes.
 
-- IDLE: 
+- IDLE:
   Move hackery of sys.argv until after the Tk instance has been
   created, which allows the application-specific Tkinter
   initialization to be executed if present; also pass an explicit
