@@ -4,6 +4,20 @@
 #include "graminit.h"
 #include "structmember.h"
 
+/* The compiler uses this function to load a PySymtableEntry object
+   for a code block.  Each block is loaded twice, once during the
+   symbol table pass and once during the code gen pass.  Entries
+   created during the first pass are cached for the second pass, using
+   the st_symbols dictionary.  
+
+   The cache is keyed by st_nscopes.  Each code block node in a
+   module's parse tree can be assigned a unique id based on the order
+   in which the nodes are visited by the compiler.  This strategy
+   works so long as the symbol table and codegen passes visit the same
+   nodes in the same order.
+*/
+
+
 PyObject *
 PySymtableEntry_New(struct symtable *st, char *name, int type, int lineno)
 {
@@ -14,7 +28,7 @@ PySymtableEntry_New(struct symtable *st, char *name, int type, int lineno)
 	if (k == NULL)
 		goto fail;
 	v = PyDict_GetItem(st->st_symbols, k);
-	if (v) /* XXX could check that name, type, lineno match */ {
+	if (v) {
 		Py_DECREF(k);
 		Py_INCREF(v);
 		return v;
