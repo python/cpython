@@ -37,6 +37,9 @@ Extension modules
 Library
 -------
 
+- Bug #919012: shutil.move() raises an exception when you try to move a
+  directory into itself.
+
 - Bug #934282: make pydoc.stripid() be case-insensitive.
 
 What's New in Python 2.3.4 (final)?
