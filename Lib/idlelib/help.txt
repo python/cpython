@@ -153,15 +153,16 @@ Automatic indentation:
 
 Python Shell window:
 
-	^C interrupts executing command
-	^D sends end-of-file; closes window if typed at >>> prompt
+	Control-c interrupts executing command
+	Control-d sends end-of-file; closes window if typed at >>> prompt
 
     Command history:
 
 	Alt-p retrieves previous command matching what you have typed
 	Alt-n retrieves next
-	Return while on any previous command retrieves that command
-	Alt-/ (Expand word) is also useful here
+	      (These are Control-p, Control-n on the Mac)      
+	Return while cursor is on a previous command retrieves that command
+	Expand word is also useful to reduce typing
 
     Syntax colors:
 

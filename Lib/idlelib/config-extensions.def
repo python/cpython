@@ -1,5 +1,5 @@
 # IDLE reads several config files to determine user preferences.  This
-# file is the default config file for idle extensions settings.
+# file is the default configuration file for IDLE extensions settings.
 #
 # Each extension must have at least one section, named after the extension
 # module. This section must contain an 'enable' item (=1 to enable the
@@ -10,6 +10,10 @@
 # event bindings for the extension that are not sensibly re-configurable. If
 # present, ExtensionName_cfgBindings defines virtual event bindings for the
 # extension that may be sensibly re-configured.
+
+# Currently it is necessary to manually modify this file to change extension
+# key bindings.  Note: If a keybinding is already in use when the extension is
+# loaded, the extension's virtual event's keybinding will be set to ''.
 
 # See config-keys.def for notes on specifying keys.
 

@@ -1,7 +1,28 @@
-What's New in IDLE 0.9b1+?
+What's New in IDLE 1.0rc1?
 ===================================
 
-*Release date: XX-XXX-2003*
+*Release date: 17-Jul-2003*
+
+- Updated extend.txt, help.txt, and config-extensions.def to correctly
+  reflect the current status of the configuration system.  Python Bug 768469
+
+- Fixed: Call Tip Trimming May Loop Forever. Python Patch 769142 (Daniels)
+
+- Replaced apply(f, args, kwds) with f(*args, **kwargs) to improve performance
+  Python Patch 768187
+
+- Break or continue statements outside a loop were causing IDLE crash
+  Python Bug 767794
+
+- Convert Unicode strings from readline to IOBinding.encoding.  Also set
+  sys.std{in|out|err}.encoding, for both the local and the subprocess case.
+  SF IDLEfork patch 682347.
+
+
+What's New in IDLE 1.0b2?
+===================================
+
+*Release date: 29-Jun-2003*
 
 - (Created the .../Lib/idlelib directory in the Python CVS, which is a clone of
   IDLEfork modified to install in the Python environment.  The code in the
