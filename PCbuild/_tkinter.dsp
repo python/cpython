@@ -23,8 +23,8 @@ CFG=_tkinter - Win32 Debug
 !MESSAGE 
 
 # Begin Project
-# PROP Scc_ProjName ""
-# PROP Scc_LocalPath ""
+# PROP Scc_ProjName "_tkinter"
+# PROP Scc_LocalPath "..\..\.."
 CPP=cl.exe
 MTL=midl.exe
 RSC=rc.exe
@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "..\Include" /I "..\PC" /I "C:\Program Files\Tcl\include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "WITH_APPINIT" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "..\Include" /I "..\PC" /I "C:\Program Files\Tcl\include" /I "D:\tcl" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "WITH_APPINIT" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o NUL /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o NUL /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 user32.lib kernel32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib python15.lib /nologo /subsystem:windows /dll /machine:I386 /out:"./_tkinter.pyd" /libpath:"Release" /export:init_tkinter
+# ADD LINK32 user32.lib kernel32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib python15.lib tcl80.lib tk80.lib /nologo /base:"0x1e190000" /subsystem:windows /dll /debug /machine:I386 /out:"./_tkinter.pyd" /libpath:"D:\tcl" /export:init_tkinter
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "_tkinter - Win32 Debug"
@@ -70,7 +70,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "..\Include" /I "..\PC" /I "C:\Program Files\Tcl\include" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "WITH_APPINIT" /YX /FD /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "..\Include" /I "..\PC" /I "C:\Program Files\Tcl\include" /I "D:\tcl" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "WITH_APPINIT" /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o NUL /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o NUL /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -80,7 +80,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 user32.lib kernel32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib python15_d.lib /nologo /subsystem:windows /dll /debug /machine:I386 /out:"./_tkinter_d.pyd" /pdbtype:sept /libpath:"Debug" /export:init_tkinter
+# ADD LINK32 user32.lib kernel32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib python15_d.lib tcl80.lib tk80.lib /nologo /base:"0x1e190000" /subsystem:windows /dll /debug /machine:I386 /out:"./_tkinter_d.pyd" /pdbtype:sept /libpath:"D:\tcl" /export:init_tkinter
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
@@ -92,14 +92,6 @@ LINK32=link.exe
 # Begin Source File
 
 SOURCE=..\Modules\_tkinter.c
-# End Source File
-# Begin Source File
-
-SOURCE="..\..\..\..\..\Program Files\Tcl\lib\tcl80vc.lib"
-# End Source File
-# Begin Source File
-
-SOURCE="..\..\..\..\..\Program Files\Tcl\lib\tk80vc.lib"
 # End Source File
 # Begin Source File
 
