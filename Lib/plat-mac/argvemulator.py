@@ -101,8 +101,8 @@ class ArgvCollector:
 		
 	def open_file(self, _object=None, **args):
 		for alias in _object:
-			fss = alias.Resolve()[0]
-			pathname = fss.as_pathname()
+			fsr = alias.FSResolveAlias(None)[0]
+			pathname = fsr.as_pathname()
 			sys.argv.append(pathname)
 		self._quit()
 		
