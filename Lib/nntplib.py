@@ -34,14 +34,46 @@ import socket
 import string
 
 
-# Exception raised when an error or invalid response is received
-error_reply = 'nntplib.error_reply'	# unexpected [123]xx reply
-error_temp = 'nntplib.error_temp'	# 4xx errors
-error_perm = 'nntplib.error_perm'	# 5xx errors
-error_proto = 'nntplib.error_proto'	# response does not begin with [1-5]
-error_data = 'nntplib.error_data'	# error in response data
+
+# Exceptions raised when an error or invalid response is received
+class NNTPError(Exception):
+	"""Base class for all nntplib exceptions"""
+	def __init__(self, *args):
+		apply(Exception.__init__, (self,)+args)
+		try:
+			self.response = args[0]
+		except IndexError:
+			self.response = 'No response given'
+
+class NNTPReplyError(NNTPError):
+	"""Unexpected [123]xx reply"""
+	pass
+
+class NNTPTemporaryError(NNTPError):
+	"""4xx errors"""
+	pass
+
+class NNTPPermanentError(NNTPError):
+	"""5xx errors"""
+	pass
+
+class NNTPProtocolError(NNTPError):
+	"""Response does not begin with [1-5]"""
+	pass
+
+class NNTPDataError(NNTPError):
+	"""Error in response data"""
+	pass
+
+# for backwards compatibility
+error_reply = NNTPReplyError
+error_temp = NNTPTemporaryError
+error_perm = NNTPPermanentError
+error_proto = NNTPProtocolError
+error_data = NNTPDataError
 
 
+
 # Standard port used by NNTP servers
 NNTP_PORT = 119
 
@@ -54,15 +86,25 @@ LONGRESP = ['100', '215', '220', '221', '222', '224', '230', '231', '282']
 CRLF = '\r\n'
 
 
+
 # The class itself
-
 class NNTP:
-
-	def __init__(self, host, port = NNTP_PORT, user=None, password=None):
+	def __init__(self, host, port=NNTP_PORT, user=None, password=None,
+		     readermode=None):
 		"""Initialize an instance.  Arguments:
 		- host: hostname to connect to
-		- port: port to connect to (default the standard NNTP port)"""
+		- port: port to connect to (default the standard NNTP port)
+		- user: username to authenticate with
+		- password: password to use with username
+		- readermode: if true, send 'mode reader' command after
+		              connecting.
 
+	        readermode is sometimes necessary if you are connecting to an
+	        NNTP server on the local machine and intend to call
+	        reader-specific comamnds, such as `group'.  If you get
+	        unexpected NNTPPermanentErrors, you might need to set
+	        readermode.
+		"""
 		self.host = host
 		self.port = port
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -70,16 +112,27 @@ class NNTP:
 		self.file = self.sock.makefile('rb')
 		self.debugging = 0
 		self.welcome = self.getresp()
+		if readermode:
+			try:
+				self.welcome = self.shortcmd('mode reader')
+			except NNTPPermanentError:
+				# error 500, probably 'not implemented'
+				pass
 		if user:
 			resp = self.shortcmd('authinfo user '+user)
 			if resp[:3] == '381':
 				if not password:
-					raise error_reply, resp
+					raise NNTPReplyError(resp)
 				else:
 					resp = self.shortcmd(
 						'authinfo pass '+password)
 					if resp[:3] != '281':
-						raise error_perm, resp
+						raise NNTPPermanentError(resp)
+
+	# Get the welcome message from the server
+	# (this is read and squirreled away by __init__()).
+	# If the response code is 200, posting is allowed;
+	# if it 201, posting is not allowed
 
 	def getwelcome(self):
 		"""Get the welcome message from the server
@@ -128,11 +181,11 @@ class NNTP:
 		if self.debugging: print '*resp*', `resp`
 		c = resp[:1]
 		if c == '4':
-			raise error_temp, resp
+			raise NNTPTemporaryError(resp)
 		if c == '5':
-			raise error_perm, resp
+			raise NNTPPermanentError(resp)
 		if c not in '123':
-			raise error_proto, resp
+			raise NNTPProtocolError(resp)
 		return resp
 
 	def getlongresp(self):
@@ -140,7 +193,7 @@ class NNTP:
 		Raise various errors if the response indicates an error."""
 		resp = self.getresp()
 		if resp[:3] not in LONGRESP:
-			raise error_reply, resp
+			raise NNTPReplyError(resp)
 		list = []
 		while 1:
 			line = self.getline()
@@ -206,7 +259,7 @@ class NNTP:
 
 		resp = self.shortcmd('GROUP ' + name)
 		if resp[:3] <> '211':
-			raise error_reply, resp
+			raise NNTPReplyError(resp)
 		words = string.split(resp)
 		count = first = last = 0
 		n = len(words)
@@ -230,7 +283,7 @@ class NNTP:
 	def statparse(self, resp):
 		"""Internal: parse the response of a STAT, NEXT or LAST command."""
 		if resp[:2] <> '22':
-			raise error_reply, resp
+			raise NNTPReplyError(resp)
 		words = string.split(resp)
 		nr = 0
 		id = ''
@@ -349,7 +402,7 @@ class NNTP:
 						    elem[6],
 						    elem[7]))
 			except IndexError:
-				raise error_data,line
+				raise NNTPDataError(line)
 		return resp,xover_lines
 
 	def xgtitle(self, group):
@@ -377,11 +430,11 @@ class NNTP:
 
 		resp = self.shortcmd("XPATH " + id)
 		if resp[:3] <> '223':
-			raise error_reply, resp
+			raise NNTPReplyError(resp)
 		try:
 			[resp_num, path] = string.split(resp)
 		except ValueError:
-			raise error_reply, resp
+			raise NNTPReplyError(resp)
 		else:
 			return resp, path
 
@@ -395,14 +448,14 @@ class NNTP:
 
 		resp = self.shortcmd("DATE")
 		if resp[:3] <> '111':
-			raise error_reply, resp
+			raise NNTPReplyError(resp)
 		elem = string.split(resp)
 		if len(elem) != 2:
-			raise error_data, resp
+			raise NNTPDataError(resp)
 		date = elem[1][2:8]
 		time = elem[1][-6:]
 		if len(date) != 6 or len(time) != 6:
-			raise error_data, resp
+			raise NNTPDataError(resp)
 		return resp, date, time
 
 
@@ -415,7 +468,7 @@ class NNTP:
 		resp = self.shortcmd('POST')
 		# Raises error_??? if posting is not allowed
 		if resp[0] <> '3':
-			raise error_reply, resp
+			raise NNTPReplyError(resp)
 		while 1:
 			line = f.readline()
 			if not line:
@@ -439,7 +492,7 @@ class NNTP:
 		resp = self.shortcmd('IHAVE ' + id)
 		# Raises error_??? if the server already has it
 		if resp[0] <> '3':
-			raise error_reply, resp
+			raise NNTPReplyError(resp)
 		while 1:
 			line = f.readline()
 			if not line:
@@ -465,7 +518,7 @@ class NNTP:
 
 def _test():
 	"""Minimal test function."""
-	s = NNTP('news')
+	s = NNTP('news', readermode='reader')
 	resp, count, first, last, name = s.group('comp.lang.python')
 	print resp
 	print 'Group', name, 'has', count, 'articles, range', first, 'to', last
