@@ -305,7 +305,8 @@ imp_acquire_lock(PyObject *self, PyObject *args)
 #ifdef WITH_THREAD
 	lock_import();
 #endif
-    return Py_None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 static PyObject *
@@ -320,7 +321,8 @@ imp_release_lock(PyObject *self, PyObject *args)
 		return NULL;
 	}
 #endif
-    return Py_None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 /* Helper for sys */
@@ -2778,8 +2780,9 @@ On platforms without threads, return 0.");
 
 PyDoc_STRVAR(doc_acquire_lock,
 "acquire_lock() -> None\n\
-Acquires the interpreter's import lock for the current thread.  This lock
-should be used by import hooks to ensure thread-safety when importing modules.
+Acquires the interpreter's import lock for the current thread.\n\
+This lock should be used by import hooks to ensure thread-safety\n\
+when importing modules.\n\
 On platforms without threads, this function does nothing.");
 
 PyDoc_STRVAR(doc_release_lock,
