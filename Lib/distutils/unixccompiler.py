@@ -20,7 +20,6 @@ __revision__ = "$Id$"
 import string, re, os
 from types import *
 from copy import copy
-from distutils import sysconfig
 from distutils.dep_util import newer
 from distutils.ccompiler import \
      CCompiler, gen_preprocess_options, gen_lib_options
@@ -45,64 +44,41 @@ from distutils.errors import \
 
 class UnixCCompiler (CCompiler):
 
-    # XXX perhaps there should really be *three* kinds of include
-    # directories: those built in to the preprocessor, those from Python's
-    # Makefiles, and those supplied to {add,set}_include_dirs().  Currently
-    # we make no distinction between the latter two at this point; it's all
-    # up to the client class to select the include directories to use above
-    # and beyond the compiler's defaults.  That is, both the Python include
-    # directories and any module- or package-specific include directories
-    # are specified via {add,set}_include_dirs(), and there's no way to
-    # distinguish them.  This might be a bug.
-
     compiler_type = 'unix'
 
-    # Needed for the filename generation methods provided by the
-    # base class, CCompiler.
+    # These are used by CCompiler in two places: the constructor sets
+    # instance attributes 'preprocessor', 'compiler', etc. from them, and
+    # 'set_executable()' allows any of these to be set.  The defaults here
+    # are pretty generic; they will probably have to be set by an outsider
+    # (eg. using information discovered by the sysconfig about building
+    # Python extensions).
+    executables = {'preprocessor' : None,
+                   'compiler'     : ["cc"],
+                   'compiler_so'  : ["cc"],
+                   'linker_so'    : ["cc", "-shared"],
+                   'linker_exe'   : ["cc"],
+                   'archiver'     : ["ar", "-cr"],
+                   'ranlib'       : None,
+                  }
+
+    # Needed for the filename generation methods provided by the base
+    # class, CCompiler.  NB. whoever instantiates/uses a particular
+    # UnixCCompiler instance should set 'shared_lib_ext' -- we set a
+    # reasonable common default here, but it's not necessarily used on all
+    # Unices!
+
     src_extensions = [".c",".C",".cc",".cxx",".cpp"]
     obj_extension = ".o"
     static_lib_extension = ".a"
-    shared_lib_extension = sysconfig.SO
+    shared_lib_extension = ".so"
     static_lib_format = shared_lib_format = "lib%s%s"
-
-    # Command to create a static library: seems to be pretty consistent
-    # across the major Unices.  Might have to move down into the
-    # constructor if we need platform-specific guesswork.
-    archiver = sysconfig.AR
-    archiver_options = "-cr"
-    ranlib = sysconfig.RANLIB
 
 
     def __init__ (self,
                   verbose=0,
                   dry_run=0,
                   force=0):
-
         CCompiler.__init__ (self, verbose, dry_run, force)
-
-        self.preprocess_options = None
-        self.compile_options = None
-
-        # Munge CC and OPT together in case there are flags stuck in CC.
-        # Note that using these variables from sysconfig immediately makes
-        # this module specific to building Python extensions and
-        # inappropriate as a general-purpose C compiler front-end.  So sue
-        # me.  Note also that we use OPT rather than CFLAGS, because CFLAGS
-        # is the flags used to compile Python itself -- not only are there
-        # -I options in there, they are the *wrong* -I options.  We'll
-        # leave selection of include directories up to the class using
-        # UnixCCompiler!
-
-        (self.cc, self.ccflags) = \
-            _split_command (sysconfig.CC + ' ' + sysconfig.OPT)
-        self.ccflags_shared = string.split (sysconfig.CCSHARED)
-
-        (self.ld_shared, self.ldflags_shared) = \
-            _split_command (sysconfig.LDSHARED)
-
-        self.ld_exec = self.cc
-
-    # __init__ ()
 
 
     def preprocess (self,
@@ -116,11 +92,11 @@ class UnixCCompiler (CCompiler):
         (_, macros, include_dirs) = \
             self._fix_compile_args (None, macros, include_dirs)
         pp_opts = gen_preprocess_options (macros, include_dirs)
-        cc_args = ['-E'] + pp_opts
+        pp_args = self.preprocessor + pp_opts
         if output_file:
-            cc_args.extend(['-o', output_file])
+            pp_args.extend(['-o', output_file])
         if extra_preargs:
-            cc_args[:0] = extra_preargs
+            pp_args[:0] = extra_preargs
         if extra_postargs:
             extra_postargs.extend(extra_postargs)
 
@@ -131,7 +107,7 @@ class UnixCCompiler (CCompiler):
             if output_file:
                 self.mkpath(os.path.dirname(output_file))
             try:
-                self.spawn ([self.cc] + cc_args)
+                self.spawn (pp_args)
             except DistutilsExecError, msg:
                 raise CompileError, msg
 
@@ -151,7 +127,7 @@ class UnixCCompiler (CCompiler):
 
         # Figure out the options for the compiler command line.
         pp_opts = gen_preprocess_options (macros, include_dirs)
-        cc_args = ['-c'] + pp_opts + self.ccflags + self.ccflags_shared
+        cc_args = pp_opts + ['-c']
         if debug:
             cc_args[:0] = ['-g']
         if extra_preargs:
@@ -168,7 +144,7 @@ class UnixCCompiler (CCompiler):
             else:
                 self.mkpath (os.path.dirname (obj))
                 try:
-                    self.spawn ([self.cc] + cc_args +
+                    self.spawn (self.compiler_so + cc_args +
                                 [src, '-o', obj] +
                                 extra_postargs)
                 except DistutilsExecError, msg:
@@ -193,9 +169,8 @@ class UnixCCompiler (CCompiler):
 
         if self._need_link (objects, output_filename):
             self.mkpath (os.path.dirname (output_filename))
-            self.spawn ([self.archiver,
-                         self.archiver_options,
-                         output_filename] +
+            self.spawn (self.archiver +
+                        [output_filename] +
                         objects + self.objects)
 
             # Not many Unices required ranlib anymore -- SunOS 4.x is, I
@@ -203,9 +178,9 @@ class UnixCCompiler (CCompiler):
             # platform intelligence here to skip ranlib if it's not
             # needed -- or maybe Python's configure script took care of
             # it for us, hence the check for leading colon.
-            if self.ranlib[0] != ':':
+            if self.ranlib:
                 try:
-                    self.spawn ([self.ranlib, output_filename])
+                    self.spawn (self.ranlib + [output_filename])
                 except DistutilsExecError, msg:
                     raise LibError, msg
         else:
@@ -263,7 +238,7 @@ class UnixCCompiler (CCompiler):
             output_filename = os.path.join (output_dir, output_filename)
 
         if self._need_link (objects, output_filename):
-            ld_args = (self.ldflags_shared + objects + self.objects + 
+            ld_args = (objects + self.objects + 
                        lib_opts + ['-o', output_filename])
             if debug:
                 ld_args[:0] = ['-g']
@@ -273,7 +248,7 @@ class UnixCCompiler (CCompiler):
                 ld_args.extend (extra_postargs)
             self.mkpath (os.path.dirname (output_filename))
             try:
-                self.spawn ([self.ld_shared] + ld_args)
+                self.spawn (self.linker_so + ld_args)
             except DistutilsExecError, msg:
                 raise LinkError, msg
         else:
@@ -314,7 +289,7 @@ class UnixCCompiler (CCompiler):
                 ld_args.extend (extra_postargs)
             self.mkpath (os.path.dirname (output_filename))
             try:
-                self.spawn ([self.ld_exec] + ld_args)
+                self.spawn (self.linker_exe + ld_args)
             except DistutilsExecError, msg:
                 raise LinkError, msg
         else:
@@ -359,10 +334,3 @@ class UnixCCompiler (CCompiler):
     # find_library_file ()
 
 # class UnixCCompiler
-
-
-def _split_command (cmd):
-    """Split a command string up into the progam to run (a string) and
-       the list of arguments; return them as (cmd, arglist)."""
-    args = string.split (cmd)
-    return (args[0], args[1:])
