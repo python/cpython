@@ -219,7 +219,7 @@ spam2(ge,__ge__, "ge(a, b) -- Same as a>=b.")
 
 /* Initialization function for the module (*must* be called initoperator) */
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initoperator(void)
 {
         /* Create the module and add the functions */

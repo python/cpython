@@ -1369,7 +1369,7 @@ static PyMethodDef audioop_methods[] = {
 	{ 0,          0 }
 };
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initaudioop(void)
 {
 	PyObject *m, *d;

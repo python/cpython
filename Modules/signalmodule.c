@@ -469,7 +469,7 @@ SIGINT, SIGTERM, etc. -- signal numbers\n\
 A signal handler function is called with two arguments:\n\
 the first is the signal number, the second is the interrupted stack frame.");
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initsignal(void)
 {
 	PyObject *m, *d, *x;

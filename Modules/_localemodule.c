@@ -649,7 +649,7 @@ static struct PyMethodDef PyLocale_Methods[] = {
   {NULL, NULL}
 };
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 init_locale(void)
 {
     PyObject *m, *d, *x;

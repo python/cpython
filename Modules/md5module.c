@@ -253,7 +253,7 @@ static PyMethodDef md5_functions[] = {
 
 /* Initialize this module. */
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initmd5(void)
 {
 	PyObject *m, *d;

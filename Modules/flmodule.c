@@ -2126,7 +2126,7 @@ static PyMethodDef forms_methods[] = {
 	{NULL,			NULL}		/* sentinel */
 };
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initfl(void)
 {
 	Py_InitModule("fl", forms_methods);

@@ -652,7 +652,7 @@ call_readline(char *prompt)
 PyDoc_STRVAR(doc_module,
 "Importing this module enables command line editing using GNU readline.");
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initreadline(void)
 {
 	PyObject *m;

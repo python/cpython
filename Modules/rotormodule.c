@@ -615,7 +615,7 @@ rotor_methods[] = {
 };
 
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initrotor(void)
 {
 	Rotor_Type.ob_type = &PyType_Type;

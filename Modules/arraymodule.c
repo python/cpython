@@ -1908,7 +1908,7 @@ static PyMethodDef a_methods[] = {
 };
 
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initarray(void)
 {
 	PyObject *m;

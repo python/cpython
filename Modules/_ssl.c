@@ -473,7 +473,7 @@ PyDoc_STRVAR(module_doc,
 "Implementation module for SSL socket operations.  See the socket module\n\
 for documentation.");
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 init_ssl(void)
 {
 	PyObject *m, *d;

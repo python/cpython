@@ -263,7 +263,7 @@ static PyMethodDef xxsubtype_functions[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initxxsubtype(void)
 {
 	PyObject *m;

@@ -44,7 +44,7 @@
 #include "Python.h"
 
 static PyObject *fpe_error;
-DL_EXPORT(void) initfpetest(void);
+PyMODINIT_FUNC initfpetest(void);
 static PyObject *test(PyObject *self,PyObject *args);
 static double db0(double);
 static double overflow(double);
@@ -172,7 +172,7 @@ static double overflow(double b)
   return a;
 }
 
-DL_EXPORT(void) initfpetest(void)
+PyMODINIT_FUNC initfpetest(void)
 {
     PyObject *m, *d;
 

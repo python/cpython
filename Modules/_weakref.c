@@ -109,7 +109,7 @@ weakref_functions[] =  {
 };
 
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 init_weakref(void)
 {
     PyObject *m;

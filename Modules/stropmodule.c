@@ -1203,7 +1203,7 @@ strop_methods[] = {
 };
 
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initstrop(void)
 {
 	PyObject *m, *s;

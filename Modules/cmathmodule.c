@@ -391,7 +391,7 @@ static PyMethodDef cmath_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initcmath(void)
 {
 	PyObject *m;

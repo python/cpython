@@ -78,6 +78,9 @@ DL_IMPORT(void) Py_Exit(int);
 
 DL_IMPORT(int) Py_FdIsInteractive(FILE *, char *);
 
+/* Bootstrap */
+PyAPI_FUNC(int) Py_Main(int argc, char **argv);
+
 /* In getpath.c */
 PyAPI_FUNC(char *) Py_GetProgramFullPath(void);
 PyAPI_FUNC(char *) Py_GetPrefix(void);

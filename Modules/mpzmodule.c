@@ -1644,7 +1644,7 @@ void mp_free(void *ptr, size_t size)
 
 /* Initialize this module. */
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initmpz(void)
 {
 	PyObject *module;

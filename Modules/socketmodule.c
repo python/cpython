@@ -3008,7 +3008,7 @@ PyDoc_STRVAR(socket_doc,
 "Implementation module for socket operations.  See the socket module\n\
 for documentation.");
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 init_socket(void)
 {
 	PyObject *m;

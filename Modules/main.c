@@ -105,7 +105,7 @@ usage(int exitcode, char* program)
 
 /* Main program */
 
-DL_EXPORT(int)
+int
 Py_Main(int argc, char **argv)
 {
 	int c;

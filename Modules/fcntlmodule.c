@@ -462,7 +462,7 @@ all_ins(PyObject* d)
 	return 0;
 }
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initfcntl(void)
 {
 	PyObject *m, *d;
