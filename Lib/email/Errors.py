@@ -5,7 +5,7 @@
 """
 
 
-
+
 class MessageError(Exception):
     """Base class for errors in this module."""
 

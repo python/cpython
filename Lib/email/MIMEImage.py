@@ -12,7 +12,7 @@ import Errors
 import Encoders
 
 
-
+
 class MIMEImage(MIMEBase.MIMEBase):
     """Class for generating image/* type MIME documents."""
 

@@ -7,7 +7,7 @@
 import Message
 
 
-
+
 class MIMEBase(Message.Message):
     """Base class for MIME specializations."""
 

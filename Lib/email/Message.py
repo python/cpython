@@ -20,7 +20,7 @@ SEMISPACE = '; '
 paramre = re.compile(r';\s*')
 
 
-
+
 class Message:
     """Basic message object for use inside the object tree.
 
