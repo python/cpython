@@ -973,6 +973,14 @@ The standard module \refmodule{stat}\refstmodindex{stat} defines
 functions and constants that are useful for extracting information
 from a \ctype{stat} structure.
 (On Windows, some items are filled with dummy values.)
+
+\note{The exact meaning and resolution of the \member{st_atime},
+ \member{st_mtime}, and \member{st_ctime} members depends on the
+ operating system and the file system.  For example, on Windows systems
+ using the FAT or FAT32 file systems, \member{st_mtime} has 2-second
+ resolution, and \member{st_atime} has only 1-day resolution.  See
+ your operating system documentation for details.}
+
 Availability: Macintosh, \UNIX, Windows.
 
 \versionchanged
@@ -1090,6 +1098,12 @@ If \var{times} is \code{None}, then the file's access and modified
 times are set to the current time.  Otherwise, \var{times} must be a
 2-tuple of numbers, of the form \code{(\var{atime}, \var{mtime})}
 which is used to set the access and modified times, respectively.
+Whether a directory can be given for \var{path} depends on whether the
+operating system implements directories as files (for example, Windows
+does not).  Note that the exact times you set here may not be returned
+by a subsequent \function{stat()} call, depending on the resolution
+with which your operating system records access and modification times;
+see \function{stat()}.
 \versionchanged[Added support for \code{None} for \var{times}]{2.0}
 Availability: Macintosh, \UNIX, Windows.
 \end{funcdesc}
@@ -1839,11 +1853,11 @@ Also available via \module{os.path}.
 \begin{funcdesc}{urandom}{n}
 Return a string of \var{n} random bytes suitable for cryptographic use.
 
-This function returns random bytes from an OS-specific 
-randomness source.  The returned data should be unpredictable enough for 
-cryptographic applications, though its exact quality depends on the OS 
-implementation.  On a UNIX-like system this will query /dev/urandom, and 
-on Windows it will use CryptGenRandom.  If a randomness source is not 
+This function returns random bytes from an OS-specific
+randomness source.  The returned data should be unpredictable enough for
+cryptographic applications, though its exact quality depends on the OS
+implementation.  On a UNIX-like system this will query /dev/urandom, and
+on Windows it will use CryptGenRandom.  If a randomness source is not
 found, \exception{NotImplementedError} will be raised.
 \versionadded{2.4}
 \end{funcdesc}
