@@ -233,12 +233,9 @@ class Distribution:
         self.commands = []
         parser = FancyGetopt (self.global_options + self.display_options)
         parser.set_negative_aliases (self.negative_opt)
+        parser.set_aliases ({'license': 'licence'})
         args = parser.getopt (object=self)
         option_order = parser.get_option_order()
-
-        # Handle aliases (license == licence)
-        if self.license:
-            self.licence = 1
 
         # for display options we return immediately
         if self.handle_display_options(option_order):
