@@ -420,8 +420,8 @@ Availability: \UNIX.
 \end{funcdesc}
 
 \begin{funcdesc}{isatty}{fd}
-Return \code{1} if the file descriptor \var{fd} is open and connected to a
-tty(-like) device, else \code{0}.
+Return \code{True} if the file descriptor \var{fd} is open and
+connected to a tty(-like) device, else \code{False}.
 Availability: \UNIX.
 \end{funcdesc}
 
@@ -1225,24 +1225,56 @@ process status is available immediately.
 Availability: \UNIX.
 \end{datadesc}
 
+\begin{datadesc}{WCONTINUED}
+This option causes child processes to be reported if they have been
+continued from a job control stop since their status was last
+reported.
+Availability: Some \UNIX{} systems.
+\versionadded{2.3}
+\end{datadesc}
+
+\begin{datadesc}{WUNTRACED}
+This option causes child processes to be reported if they have been
+stopped but their current state has not been reported since they were
+stopped.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{datadesc}
+
 The following functions take a process status code as returned by
 \function{system()}, \function{wait()}, or \function{waitpid()} as a
 parameter.  They may be used to determine the disposition of a
 process.
 
+\begin{funcdesc}{WCOREDUMP}{status}
+Returns \code{True} if a core dump was generated for the process,
+otherwise it returns \code{False}.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{WIFCONTINUED}{status}
+Returns \code{True} if the process has been continued from a job
+control stop, otherwise it returns \code{False}.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{funcdesc}
+
 \begin{funcdesc}{WIFSTOPPED}{status}
-Return true if the process has been stopped.
+Returns \code{True} if the process has been stopped, otherwise it
+returns \code{False}.
 Availability: \UNIX.
 \end{funcdesc}
 
 \begin{funcdesc}{WIFSIGNALED}{status}
-Return true if the process exited due to a signal.
+Returns \code{True} if the process exited due to a signal, otherwise
+it returns \code{False}.
 Availability: \UNIX.
 \end{funcdesc}
 
 \begin{funcdesc}{WIFEXITED}{status}
-Return true if the process exited using the \manpage{exit}{2} system
-call.
+Returns \code{True} if the process exited using the \manpage{exit}{2}
+system call, otherwise it returns \code{False}.
 Availability: \UNIX.
 \end{funcdesc}
 
