@@ -55,6 +55,16 @@ def module_enabled(extlist, modname):
     extlist = [ext for ext in extlist if ext.name == modname]
     return len(extlist)
 
+def find_module_file(module, dirlist):
+    """Find a module in a set of possible folders. If it is not found
+    return the unadorned filename"""
+    list = find_file(module, [], dirlist)
+    if not list:
+        return module
+    if len(list) > 1:
+        self.announce("WARNING: multiple copies of %s found"%module)
+    return os.path.join(list[0], module)
+    
 class PyBuildExt(build_ext):
 
     def build_extensions(self):
@@ -76,16 +86,28 @@ class PyBuildExt(build_ext):
         srcdir, tail = os.path.split(moddir)
         srcdir = os.path.normpath(srcdir)
         moddir = os.path.normpath(moddir)
+        
+        moddirlist = [moddir]
+        incdirlist = ['./Include']
+        
+        # Platform-dependent module source and include directories
+        platform = self.get_platform()
+        if platform == 'darwin1':
+            # Mac OS X also includes some mac-specific modules
+            macmoddir = os.path.join(os.getcwd(), srcdir, 'Mac/Modules')
+            moddirlist.append(macmoddir)
+            incdirlist.append('./Mac/Include')
 
         # Fix up the paths for scripts, too
         self.distribution.scripts = [os.path.join(srcdir, filename)
                                      for filename in self.distribution.scripts]
 
         for ext in self.extensions[:]:
-            ext.sources = [ os.path.join(moddir, filename)
+            ext.sources = [ find_module_file(filename, moddirlist)
                             for filename in ext.sources ]
-            ext.include_dirs.append( '.' ) # to get pyconfig.h
-            ext.include_dirs.append( os.path.join(srcdir, './Include') )
+            ext.include_dirs.append( '.' ) # to get config.h
+            for incdir in incdirlist:
+                ext.include_dirs.append( os.path.join(srcdir, incdir) )
 
             # If a module has already been built statically,
             # don't build it here
@@ -173,7 +195,7 @@ class PyBuildExt(build_ext):
         math_libs = ['m']
         if platform in ['Darwin1.2', 'beos']:
             math_libs = []
-
+        
         # XXX Omitted modules: gl, pure, dl, SGI-specific modules
 
         #
@@ -516,7 +538,42 @@ class PyBuildExt(build_ext):
         if platform == 'sunos5':
             # SunOS specific modules
             exts.append( Extension('sunaudiodev', ['sunaudiodev.c']) )
-
+        
+        if platform == 'darwin1':
+            # Mac OS X specific modules. These are ported over from MacPython
+            # and still experimental. Some (such as gestalt or icglue) are
+            # already generally useful, some (the GUI ones) really need to
+            # be used from a framework.
+            exts.append( Extension('gestalt', ['gestaltmodule.c']) )
+            exts.append( Extension('MacOS', ['macosmodule.c']) )
+            exts.append( Extension('icglue', ['icgluemodule.c']) )
+            exts.append( Extension('macfs', ['macfsmodule.c', '../Python/getapplbycreator.c']) )
+            exts.append( Extension('Nav', ['Nav.c']) )
+            exts.append( Extension('AE', ['ae/AEmodule.c']) )
+            exts.append( Extension('App', ['app/Appmodule.c']) )
+            exts.append( Extension('CF', ['cf/CFmodule.c'],
+            		extra_link_args=['-framework', 'CoreFoundation']) )
+            exts.append( Extension('Cm', ['cm/Cmmodule.c']) )
+            exts.append( Extension('Ctl', ['ctl/Ctlmodule.c']) )
+            exts.append( Extension('Dlg', ['dlg/Dlgmodule.c']) )
+            exts.append( Extension('Drag', ['drag/Dragmodule.c']) )
+            exts.append( Extension('Evt', ['evt/Evtmodule.c']) )
+            exts.append( Extension('Fm', ['fm/Fmmodule.c']) )
+            exts.append( Extension('Icn', ['icn/Icnmodule.c']) )
+            exts.append( Extension('List', ['list/Listmodule.c']) )
+            exts.append( Extension('Menu', ['menu/Menumodule.c']) )
+            exts.append( Extension('Mlte', ['mlte/Mltemodule.c']) )
+            exts.append( Extension('Qd', ['qd/Qdmodule.c']) )
+            exts.append( Extension('Qdoffs', ['qdoffs/Qdoffsmodule.c']) )
+            exts.append( Extension('Qt', ['qt/Qtmodule.c'],
+            		extra_link_args=['-framework', 'QuickTime']) )
+            exts.append( Extension('Res', ['res/Resmodule.c'] ) )
+##            exts.append( Extension('Scrap', ['scrap/Scrapmodule.c']) )
+            exts.append( Extension('Snd', ['snd/Sndmodule.c']) )
+            exts.append( Extension('TE', ['te/TEmodule.c']) )
+##            exts.append( Extension('waste', ['waste/wastemodule.c']) )
+            exts.append( Extension('Win', ['win/Winmodule.c']) )
+            
         self.extensions.extend(exts)
 
         # Call the method for detecting whether _tkinter can be compiled
