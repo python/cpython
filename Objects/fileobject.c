@@ -282,25 +282,37 @@ PyFile_FromString(char *name, char *mode)
 void
 PyFile_SetBufSize(PyObject *f, int bufsize)
 {
+	PyFileObject *file = (PyFileObject *)f;
 	if (bufsize >= 0) {
-#ifdef HAVE_SETVBUF
 		int type;
 		switch (bufsize) {
 		case 0:
 			type = _IONBF;
 			break;
+#ifdef HAVE_SETVBUF
 		case 1:
 			type = _IOLBF;
 			bufsize = BUFSIZ;
 			break;
+#endif
 		default:
 			type = _IOFBF;
+#ifndef HAVE_SETVBUF
+			bufsize = BUFSIZ;
+#endif
+			break;
 		}
-		setvbuf(((PyFileObject *)f)->f_fp, (char *)NULL,
-			type, bufsize);
+		fflush(file->f_fp);
+		if (type == _IONBF) {
+			PyMem_Free(file->f_setbuf);
+			file->f_setbuf = NULL;
+		} else {
+			file->f_setbuf = PyMem_Realloc(file->f_setbuf, bufsize);
+		}
+#ifdef HAVE_SETVBUF
+		setvbuf(file->f_fp, file->f_setbuf, type, bufsize);
 #else /* !HAVE_SETVBUF */
-		if (bufsize <= 1)
-			setbuf(((PyFileObject *)f)->f_fp, (char *)NULL);
+		setbuf(file->f_fp, file->f_setbuf);
 #endif /* !HAVE_SETVBUF */
 	}
 }
@@ -375,6 +387,7 @@ static PyObject *
 file_close(PyFileObject *f)
 {
 	int sts = 0;
+	PyMem_Free(f->f_setbuf);
 	if (f->f_fp != NULL) {
 		if (f->f_close != NULL) {
 			Py_BEGIN_ALLOW_THREADS
@@ -1927,6 +1940,7 @@ file_init(PyObject *self, PyObject *args, PyObject *kwds)
 	}
 	if (open_the_file(foself, name, mode) == NULL)
 		goto Error;
+	foself->f_setbuf = NULL;
 	PyFile_SetBufSize(self, bufsize);
 	goto Done;
 
