@@ -228,6 +228,19 @@
 \newcommand{\refexmodindex}[1]{\py@refmodule{#1}{extension }}
 \newcommand{\refstmodindex}[1]{\py@refmodule{#1}{standard }}
 
+% Refer to a module's documentation using a hyperlink of the module's
+% name, at least if we're building PDF:
+\@ifundefined{pdfannotlink}{%
+  \newcommand{\refmodule}[2][\py@modulebadkey]{\module{#2}}
+}{\newcommand{\refmodule}[2][\py@modulebadkey]{%
+    \ifx\py@modulebadkey#1\def\py@modulekey{#2}\else\def\py@modulekey{#1}\fi%
+    {\pdfannotlink attr{/Border [0 0 0]} goto name{label-module-\py@modulekey}%
+     \py@LinkColor\module{#2}\py@NormalColor%
+     \pdfendlink%
+    }%
+  }
+}
+
 % support for the module index
 \newif\ifpy@UseModuleIndex
 \py@UseModuleIndexfalse
@@ -784,12 +797,14 @@
 
 \@ifundefined{pdfannotlink}{%
   \newcommand{\py@seemodule}[3][\py@modulebadkey]{%
+    \par%
     \ifx\py@modulebadkey#1\def\py@modulekey{#2}\else\def\py@modulekey{#1}\fi%
     \ref{module-\py@modulekey}:\quad %
     Module \module{#2}%
     \quad (#3)%
   }
 }{\newcommand{\py@seemodule}[3][\py@modulebadkey]{%
+    \par%
     \ifx\py@modulebadkey#1\def\py@modulekey{#2}\else\def\py@modulekey{#1}\fi%
     \ref{module-\py@modulekey}:\quad %
     {\pdfannotlink attr{/Border [0 0 0]} goto name{label-module-\py@modulekey}%
