@@ -4,7 +4,7 @@ Example Python extension for Windows NT
 This directory contains everything needed (except for the Python
 distribution!) to build a Python extension module using Microsoft VC++
 ("Developer Studio") version 6.  It has been tested with VC++ 6.0 on Python
-2.1a1.  You can also use earlier versions of VC to build Python extensions,
+2.2c1.  You can also use earlier versions of VC to build Python extensions,
 but the sample VC project file (example.dsw in this directory) is in VC 6
 format.
 
@@ -54,13 +54,13 @@ debug output from Python may not match this screen dump exactly):
     C>..\..\PCbuild\python_d
     Adding parser accelerators ...
     Done.
-    Python 2.1a1 (#9, Jan 17 2001, 23:26:37) [MSC 32 bit (Intel)] on win32
-    Type "copyright", "credits" or "license" for more information.
+    Python 2.2c1+ (#28, Dec 14 2001, 18:06:39) [MSC 32 bit (Intel)] on win32
+    Type "help", "copyright", "credits" or "license" for more information.
     >>> import example
-    [4897 refs]
+    [7052 refs]
     >>> example.foo()
     Hello, world
-    [4903 refs]
+    [7052 refs]
     >>>
 
 TESTING THE RELEASE-MODE DLL
@@ -70,8 +70,8 @@ example_nt\Release.  You should now be able to repeat the following session
 ("C>" is the DOS prompt, ">>>" is the Python prompt):
 
     C>..\..\PCbuild\python
-    Python 2.1a1 (#9, Jan 17 2001, 23:26:37) [MSC 32 bit (Intel)] on win32
-    Type "copyright", "credits" or "license" for more information.
+    Python 2.2c1+ (#28, Dec 14 2001, 18:06:04) [MSC 32 bit (Intel)] on win32
+    Type "help", "copyright", "credits" or "license" for more information.
     >>> import example
     >>> example.foo()
     Hello, world
@@ -144,11 +144,11 @@ in the "Additional library path:" box.
 Now you need to add some mode-specific settings:
 
 Select "Win32 Release" in the "Settings for:" dropdown list.  Click the
-"Link" tab, choose the "Input" Category, and append "python21.lib" to the
+"Link" tab, choose the "Input" Category, and append "python22.lib" to the
 list in the "Object/library modules:" box.
 
 Select "Win32 Debug" in the "Settings for:" dropdown list, and append
-"python21_d.lib" to the list in the "Object/library modules:" box.  Then
+"python22_d.lib" to the list in the "Object/library modules:" box.  Then
 click on the C/C++ tab, select "Code Generation" from the "Category:"
 dropdown list, and select "Debug Multithreaded DLL" from the "Use run-time
 library:" dropdown list.
