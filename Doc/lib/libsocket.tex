@@ -233,7 +233,9 @@ above.)
 
 \begin{methoddesc}[socket]{connect_ex}{address}
 Like \code{connect(\var{address})}, but return an error indicator
-instead of raising an exception.  The error indicator is 0 if the
+instead of raising an exception for errors returned by the C-level
+\cfunction{connect()} call (other problems, such as ``host not found,''
+can still raise exceptions).  The error indicator is \code{0} if the
 operation succeeded, otherwise the value of the \cdata{errno}
 variable.  This is useful, e.g., for asynchronous connects.
 \end{methoddesc}
