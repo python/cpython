@@ -121,3 +121,22 @@ if name == 'nt':
 				list.append(line[:-1])
 				line = f.readline()
 			return list
+
+
+# Change environ to automatically call putenv() if it exists
+try:
+	_putenv = putenv
+except NameError:
+	_putenv = None
+if _putenv:
+	import UserDict
+
+	class _Environ(UserDict.UserDict):
+		def __init__(self, environ):
+			UserDict.UserDict.__init__(self)
+			self.data = environ
+		def __setitem__(self, key, item):
+			putenv(key, item)
+			self.data[key] = item
+
+	environ = _Environ(environ)
