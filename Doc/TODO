@@ -31,6 +31,8 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 
 * Straighten out random/whrandom.
 
+* Update the filecmp documentation (Moshe?).
+
 
 NOT WORTH THE TROUBLE
 ---------------------
