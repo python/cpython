@@ -1,4 +1,3 @@
-# -*- shell-script -*-
 # The file Setup is used by the makesetup script to construct the files
 # Makefile and config.c, from Makefile.pre and config.c.in,
 # respectively.  The file Setup itself is initially copied from
