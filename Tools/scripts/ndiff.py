@@ -73,9 +73,8 @@ def fcompare(f1name, f2name):
 
     a = f1.readlines(); f1.close()
     b = f2.readlines(); f2.close()
-
-    diff = difflib.ndiff(a, b)
-    sys.stdout.writelines(diff)
+    for line in difflib.ndiff(a, b):
+        print line,
 
     return 1
 

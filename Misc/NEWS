@@ -30,7 +30,7 @@ Core
 
 - In 2.2a3, __new__ would only see sequential arguments passed to the
   type in a constructor call; __init__ would see both sequential and
-  positional arguments.  This made no sense whatsoever any more, so
+  keyword arguments.  This made no sense whatsoever any more, so
   now both __new__ and __init__ see all arguments.
 
 - In 2.2a3, hash() applied to an instance of a subclass of str or unicode
@@ -53,6 +53,10 @@ Core
   to let other runnable threads be scheduled.
 
 Library
+
+- difflib.ndiff() and difflib.Differ.compare() are generators now.  This
+  restores the ability of Tools/scripts/ndiff.py to start producing output
+  before the entire comparison is complete.
 
 - StringIO.StringIO instances and cStringIO.StringIO instances support
   iteration just like file objects (i.e. their .readline() method is
@@ -124,10 +128,25 @@ New platforms
 
 Tests
 
+- The "classic" standard tests, which work by comparing stdout to
+  an expected-output file under Lib/test/output/, no longer stop at
+  the first mismatch.  Instead the test is run to completion, and a
+  variant of ndiff-style comparison is used to report all differences.
+  This is much easier to understand than the previous style of reporting.
+
+- The unittest-based standard tests now use regrtest's test_main()
+  convention, instead of running as a side-effect of merely being
+  imported.  This allows these tests to be run in more natural and
+  flexible ways as unittests, outside the regrtest framework.
+
+- regrtest.py is much better integrated with unittest and doctest now,
+  especially in regard to reporting errors.
+
 Windows
 
 - Large file support now also works for files > 4GB, on filesystems
-  that support it (NTFS under Windows 2000).
+  that support it (NTFS under Windows 2000).  See "What's New in
+  Python 2.2a3" for more detail.
 
 
 What's New in Python 2.2a3?

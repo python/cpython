@@ -32,7 +32,7 @@
 
 \begin{classdesc*}{Differ}
   This is a class for comparing sequences of lines of text, and
-  producing human-readable differences or deltas. Differ uses
+  producing human-readable differences or deltas.  Differ uses
   \class{SequenceMatcher} both to compare sequences of lines, and to
   compare sequences of characters within similar (near-matching)
   lines.
@@ -85,7 +85,7 @@
 \begin{funcdesc}{ndiff}{a, b\optional{, linejunk\optional{,
                  charjunk}}}
   Compare \var{a} and \var{b} (lists of strings); return a
-  \class{Differ}-style delta.
+  \class{Differ}-style delta (a generator generating the delta lines).
 
   Optional keyword parameters \var{linejunk} and \var{charjunk} are
   for filter functions (or \code{None}):
@@ -109,12 +109,12 @@
 ...              'ore\ntree\nemu\n'.splitlines(1)))
 >>> print ''.join(diff),
 - one
-?  ^  
+?  ^
 + ore
-?  ^  
+?  ^
 - two
 - three
-?  -    
+?  -
 + tree
 + emu
 \end{verbatim}
@@ -132,6 +132,7 @@
 \begin{verbatim}
 >>> diff = ndiff('one\ntwo\nthree\n'.splitlines(1),
 ...              'ore\ntree\nemu\n'.splitlines(1))
+>>> diff = list(diff) # materialize the generated delta into a list
 >>> print ''.join(restore(diff, 1)),
 one
 two
@@ -226,7 +227,7 @@ of the other sequences.
   If \var{isjunk} was omitted or \code{None},
   \method{get_longest_match()} returns \code{(\var{i}, \var{j},
   \var{k})} such that \code{\var{a}[\var{i}:\var{i}+\var{k}]} is equal
-  to \code{\var{b}[\var{j}:\var{j}+\var{k}]}, where 
+  to \code{\var{b}[\var{j}:\var{j}+\var{k}]}, where
       \code{\var{alo} <= \var{i} <= \var{i}+\var{k} <= \var{ahi}} and
       \code{\var{blo} <= \var{j} <= \var{j}+\var{k} <= \var{bhi}}.
   For all \code{(\var{i'}, \var{j'}, \var{k'})} meeting those
@@ -303,7 +304,7 @@ of the other sequences.
                     deleted.  Note that \code{\var{j1} == \var{j2}} in
                     this case.}
   \lineii{'insert'}{\code{\var{b}[\var{j1}:\var{j2}]} should be
-                    inserted at \code{\var{a}[\var{i1}:\var{i1}]}. 
+                    inserted at \code{\var{a}[\var{i1}:\var{i1}]}.
                     Note that \code{\var{i1} == \var{i2}} in this
                     case.}
   \lineii{'equal'}{\code{\var{a}[\var{i1}:\var{i2}] ==
@@ -459,13 +460,14 @@ The \class{Differ} class has this constructor:
 method:
 
 \begin{methoddesc}{compare}{a, b}
-  Compare two sequences of lines; return the resulting delta (list).
+  Compare two sequences of lines, and generate the delta (a sequence
+  of lines).
 
   Each sequence must contain individual single-line strings ending
   with newlines. Such sequences can be obtained from the
-  \method{readlines()} method of file-like objects. The list returned
-  is also made up of newline-terminated strings, and ready to be used
-  with the \method{writelines()} method of a file-like object.
+  \method{readlines()} method of file-like objects.  The delta generated
+  also consists of newline-terminated strings, ready to be printed as-is
+  via the \method{writeline()} method of a file-like object.
 \end{methoddesc}
 
 
@@ -506,7 +508,7 @@ functions to filter out line and character ``junk.''  See the
 Finally, we compare the two:
 
 \begin{verbatim}
->>> result = d.compare(text1, text2)
+>>> result = list(d.compare(text1, text2))
 \end{verbatim}
 
 \code{result} is a list of strings, so let's pretty-print it:
