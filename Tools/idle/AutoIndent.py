@@ -38,6 +38,8 @@ TK_TABWIDTH_DEFAULT = 8
 ###$ win <Alt-Key-6>
 ###$ unix <Alt-Key-6>
 
+import PyParse
+
 class AutoIndent:
 
     menudefs = [
@@ -98,6 +100,20 @@ class AutoIndent:
     usetabs = 0
     indentwidth = 4
     tabwidth = TK_TABWIDTH_DEFAULT
+
+    # When searching backwards for the closest preceding def or class,
+    # first start num_context_lines[0] lines back, then
+    # num_context_lines[1] lines back if that didn't work, and so on.
+    # The last value should be huge (larger than the # of lines in a
+    # conceivable file).
+    # Making the initial values larger slows things down more often.
+    # OTOH, if you happen to find a line that looks like a def or class
+    # in a multiline string, and the start of the string isn't in the
+    # chunk, the parsing is utterly hosed.  Can't think of a way to
+    # stop that without always reparsing from the start of the file.
+    # doctest.py is a killer example of this (IDLE is useless for
+    # editing that!).
+    num_context_lines = 50, 500, 5000000
 
     def __init__(self, editwin):
         self.text = editwin.text
@@ -218,47 +234,69 @@ class AutoIndent:
             i, n = 0, len(line)
             while i < n and line[i] in " \t":
                 i = i+1
+            if i == n:
+                # the cursor is in or at leading indentation; just inject
+                # an empty line at the start
+                text.insert("insert linestart", '\n')
+                return "break"
             indent = line[:i]
             # strip trailing whitespace
             i = 0
             while line and line[-1] in " \t":
                 line = line[:-1]
-                i = i + 1
+                i = i+1
             if i:
                 text.delete("insert - %d chars" % i, "insert")
-            # XXX this reproduces the current line's indentation,
-            # without regard for usetabs etc; could instead insert
-            # "\n" + self._make_blanks(classifyws(indent)[1]).
-            text.insert("insert", "\n" + indent)
-
+            text.insert("insert", '\n')
             # adjust indentation for continuations and block open/close
-            x = LineStudier(line)
-            if x.is_block_opener():
-                self.smart_indent_event(event)
-            elif x.is_bracket_continued():
-                # if there's something interesting after the last open
-                # bracket, line up with it; else just indent one level
-                i = x.last_open_bracket_index() + 1
-                while i < n and line[i] in " \t":
-                    i = i + 1
-                if i < n and line[i] not in "#\n\\":
-                    effective = len(string.expandtabs(line[:i],
-                                                      self.tabwidth))
+            lno = index2line(text.index('insert'))
+            y = PyParse.Parser(self.indentwidth, self.tabwidth)
+            for context in self.num_context_lines:
+                startat = max(lno - context, 1)
+                rawtext = text.get(`startat` + ".0", "insert")
+                y.set_str(rawtext)
+                bod = y.find_last_def_or_class()
+                if bod is not None or startat == 1:
+                    break
+            y.set_lo(bod or 0)
+            c = y.get_continuation_type()
+            if c != PyParse.C_NONE:
+                # The current stmt hasn't ended yet.
+                if c == PyParse.C_STRING:
+                    # inside a string; just mimic the current indent
+                    text.insert("insert", indent)
+                elif c == PyParse.C_BRACKET:
+                    # line up with the first (if any) element of the
+                    # last open bracket structure; else indent one
+                    # level beyond the indent of the line with the last
+                    # open bracket
+                    self.reindent_to(y.compute_bracket_indent())
+                elif c == PyParse.C_BACKSLASH:
+                    # if more than one line in this stmt already, just
+                    # mimic the current indent; else if initial line has
+                    # a start on an assignment stmt, indent to beyond
+                    # leftmost =; else to beyond first chunk of non-
+                    # whitespace on initial line
+                    if y.get_num_lines_in_stmt() > 1:
+                        text.insert("insert", indent)
+                    else:
+                        self.reindent_to(y.compute_backslash_indent())
                 else:
-                    raw, effective = classifyws(indent, self.tabwidth)
-                    effective = effective + self.indentwidth
-                self.reindent_to(effective)
-            elif x.is_backslash_continued():
-                # local info isn't enough to do anything intelligent here;
-                # e.g., if it's the 2nd line a backslash block we want to
-                # indent extra, but if it's the 3rd we don't want to indent
-                # at all; rather than make endless mistakes, leave it alone
-                pass
-            elif indent and x.is_block_closer():
+                    assert 0, "bogus continuation type " + `c`
+                return "break"
+
+            # This line starts a brand new stmt; indent relative to
+            # indentation of initial line of closest preceding interesting
+            # stmt.
+            indent = y.get_base_indent_string()
+            text.insert("insert", indent)
+            if y.is_block_opener():
+                self.smart_indent_event(event)
+            elif indent and y.is_block_closer():
                 self.smart_backspace_event(event)
-            text.see("insert")
             return "break"
         finally:
+            text.see("insert")
             text.undo_block_stop()
 
     auto_indent = newline_and_indent_event
@@ -392,7 +430,8 @@ class AutoIndent:
     def reindent_to(self, column):
         text = self.text
         text.undo_block_start()
-        text.delete("insert linestart", "insert")
+        if text.compare("insert linestart", "!=", "insert"):
+            text.delete("insert linestart", "insert")
         if column:
             text.insert("insert", self._make_blanks(column))
         text.undo_block_stop()
@@ -441,142 +480,6 @@ def classifyws(s, tabwidth):
         else:
             break
     return raw, effective
-
-class LineStudier:
-
-    # set to false by self.study(); the other vars retain default values
-    # until then
-    needstudying = 1
-
-    # line ends with an unescaped backslash not in string or comment?
-    backslash_continued = 0
-
-    # line ends with an unterminated string?
-    string_continued = 0
-
-    # the last "interesting" character on a line: the last non-ws char
-    # before an optional trailing comment; if backslash_continued, lastch
-    # precedes the final backslash; if string_continued, the required
-    # string-closer (", """, ', ''')
-    lastch = ""
-
-    # index of rightmost unmatched ([{ not in a string or comment
-    lastopenbrackpos = -1
-
-    import re
-    _is_block_closer_re = re.compile(r"""
-        \s*
-        ( return
-        | break
-        | continue
-        | raise
-        | pass
-        )
-        \b
-    """, re.VERBOSE).match
-
-    # colon followed by optional comment
-    _looks_like_opener_re = re.compile(r":\s*(#.*)?$").search
-    del re
-
-
-    def __init__(self, line):
-        if line[-1:] == '\n':
-            line = line[:-1]
-        self.line = line
-        self.stack = []
-
-    def is_continued(self):
-        return self.is_block_opener() or \
-               self.is_backslash_continued() or \
-               self.is_bracket_continued() or \
-               self.is_string_continued()
-
-    def is_block_opener(self):
-        if not self._looks_like_opener_re(self.line):
-            return 0
-        # Looks like an opener, but possible we're in a comment
-        #     x = 3 # and then:
-        # or a string
-        #     x = ":#"
-        # If no comment character, we're not in a comment <duh>, and the
-        # colon is the last non-ws char on the line so it's not in a
-        # (single-line) string either.
-        if string.find(self.line, '#') < 0:
-            return 1
-        self.study()
-        return self.lastch == ":"
-
-    def is_backslash_continued(self):
-        self.study()
-        return self.backslash_continued
-
-    def is_bracket_continued(self):
-        self.study()
-        return self.lastopenbrackpos >= 0
-
-    def is_string_continued(self):
-        self.study()
-        return self.string_continued
-
-    def is_block_closer(self):
-        return self._is_block_closer_re(self.line)
-
-    def last_open_bracket_index(self):
-        assert self.stack
-        return self.lastopenbrackpos
-
-    def study(self):
-        if not self.needstudying:
-            return
-        self.needstudying = 0
-        line = self.line
-        i, n = 0, len(line)
-        while i < n:
-            ch = line[i]
-            if ch == '\\':
-                i = i+1
-                if i == n:
-                    self.backslash_continued = 1
-                else:
-                    self.lastch = ch + line[i]
-                    i = i+1
-
-            elif ch in "\"'":
-                # consume string
-                w = 1   # width of string quote
-                if line[i:i+3] in ('"""', "'''"):
-                    w = 3
-                    ch = ch * 3
-                i = i+w
-                self.lastch = ch
-                while i < n:
-                    if line[i] == '\\':
-                        i = i+2
-                    elif line[i:i+w] == ch:
-                        i = i+w
-                        break
-                    else:
-                        i = i+1
-                else:
-                    self.string_continued = 1
-
-            elif ch == '#':
-                break
-
-            else:
-                if ch not in string.whitespace:
-                    self.lastch = ch
-                    if ch in "([(":
-                        self.stack.append(i)
-                    elif ch in ")]}" and self.stack:
-                        if line[self.stack[-1]] + ch in ("()", "[]", "{}"):
-                            del self.stack[-1]
-                i = i+1
-        # end while i < n:
-
-        if self.stack:
-            self.lastopenbrackpos = self.stack[-1]
 
 import tokenize
 _tokenize = tokenize
