@@ -1740,45 +1740,46 @@ PyObject_CallMethod(PyObject *o, char *name, char *format, ...)
 
 /* isinstance(), issubclass() */
 
-static int
-abstract_issubclass(PyObject *derived, PyObject *cls, int first)
+static PyObject *
+abstract_get_bases(PyObject *cls)
 {
 	static PyObject *__bases__ = NULL;
 	PyObject *bases;
-	int i, n;
-	int r = 0;
 
 	if (__bases__ == NULL) {
 		__bases__ = PyString_FromString("__bases__");
 		if (__bases__ == NULL)
-			return -1;
+			return NULL;
 	}
 
-	if (first) {
-		bases = PyObject_GetAttr(cls, __bases__);
-		if (bases == NULL || !PyTuple_Check(bases)) {
-			Py_XDECREF(bases);
-			PyErr_SetString(PyExc_TypeError,
-					"issubclass() arg 2 must be a class");
-			return -1;
-		}
-		Py_DECREF(bases);
+	bases = PyObject_GetAttr(cls, __bases__);
+	if (bases == NULL || !PyTuple_Check(bases)) {
+	        Py_XDECREF(bases);
+		return NULL;
 	}
+
+	return bases;
+}
+
+
+static int
+abstract_issubclass(PyObject *derived, PyObject *cls)
+{
+	PyObject *bases;
+	int i, n;
+	int r = 0;
+
 
 	if (derived == cls)
 		return 1;
 
-	bases = PyObject_GetAttr(derived, __bases__);
-	if (bases == NULL || !PyTuple_Check(bases)) {
-	        Py_XDECREF(bases);
-		PyErr_SetString(PyExc_TypeError,
-				"issubclass() arg 1 must be a class");
-		return -1;
-	}
+	bases = abstract_get_bases(derived);
+	if (bases == NULL)
+		return 0;
 
 	n = PyTuple_GET_SIZE(bases);
 	for (i = 0; i < n; i++) {
-		r = abstract_issubclass(PyTuple_GET_ITEM(bases, i), cls, 0);
+		r = abstract_issubclass(PyTuple_GET_ITEM(bases, i), cls);
 		if (r != 0)
 			break;
 	}
@@ -1795,12 +1796,10 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 	static PyObject *__class__ = NULL;
 	int retval = 0;
 
-        if (PyClass_Check(cls)) {
-		if (PyInstance_Check(inst)) {
-			PyObject *inclass =
-				(PyObject*)((PyInstanceObject*)inst)->in_class;
-			retval = PyClass_IsSubclass(inclass, cls);
-		}
+	if (PyClass_Check(cls) && PyInstance_Check(inst)) {
+		PyObject *inclass =
+			(PyObject*)((PyInstanceObject*)inst)->in_class;
+		retval = PyClass_IsSubclass(inclass, cls);
 	}
 	else if (PyType_Check(cls)) {
 		retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
@@ -1819,31 +1818,30 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 		}
 		return retval;
 	}
-	else if (!PyInstance_Check(inst)) {
+	else {
+		PyObject *cls_bases = abstract_get_bases(cls);
+		if (cls_bases == NULL) {
+			PyErr_SetString(PyExc_TypeError, 
+				"isinstance() arg 2 must be a class or type");
+			return -1;
+		} 
+		Py_DECREF(cls_bases);
 		if (__class__ == NULL) {
 			__class__ = PyString_FromString("__class__");
 			if (__class__ == NULL)
 				return -1;
 		}
 		icls = PyObject_GetAttr(inst, __class__);
-		if (icls != NULL) {
-			retval = abstract_issubclass(icls, cls, 1);
-			Py_DECREF(icls);
-			if (retval < 0 &&
-			    !PyErr_ExceptionMatches(PyExc_TypeError))
-				return -1;
+		if (icls == NULL) {
+			PyErr_Clear();
+			retval = 0;
 		}
-		else
-			retval = -1;
+		else {
+			retval = abstract_issubclass(icls, cls);
+			Py_DECREF(icls);
+		}
 	}
-	else
-		retval = -1;
 
-	if (retval < 0) {
-		PyErr_SetString(PyExc_TypeError,
-				"isinstance() arg 2 must be a class or type "
-				"or tuple of those");
-	}
 	return retval;
 }
 
@@ -1853,7 +1851,26 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 	int retval;
 
 	if (!PyClass_Check(derived) || !PyClass_Check(cls)) {
-		retval = abstract_issubclass(derived, cls, 1);
+		PyObject *derived_bases;
+		PyObject *cls_bases;
+	       
+		derived_bases = abstract_get_bases(derived);
+		if (derived_bases == NULL) {
+			PyErr_SetString(PyExc_TypeError, 
+					"issubclass() arg 1 must be a class");
+			return -1;
+		}
+		Py_DECREF(derived_bases);
+
+		cls_bases = abstract_get_bases(cls);
+		if (cls_bases == NULL) {
+			PyErr_SetString(PyExc_TypeError, 
+					"issubclass() arg 2 must be a class");
+			return -1;
+		}
+		Py_DECREF(cls_bases);
+
+		retval = abstract_issubclass(derived, cls);
 	}
 	else {
 		/* shortcut */
