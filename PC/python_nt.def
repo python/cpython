@@ -15,7 +15,7 @@ EXPORTS
 	Py_VerboseFlag DATA
 	PyExc_Exception DATA
 	PyExc_StandardError DATA
-	PyExc_NumberError DATA
+	PyExc_ArithmeticError DATA
 	PyExc_LookupError DATA
 	PyExc_AttributeError DATA
 	PyExc_EOFError DATA
