@@ -38,11 +38,22 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 char *PyMac_getscript()
 {
 #if TARGET_API_MAC_OSX
-    /* We cannot use GetSysFont because it requires the window manager
-    ** There are other APIs to query the default 8 bit encoding, but
-    ** I don't know about them (yet).
-    */
-    return "ascii";
+    CFStringEncoding enc = CFStringGetSystemEncoding();
+    static CFStringRef name = NULL;
+    /* Return the code name for the encodings for which we have codecs. */
+    switch(enc) {
+    case kCFStringEncodingMacRoman: return "mac-roman";
+    case kCFStringEncodingMacGreek: return "mac-greek";
+    case kCFStringEncodingMacCyrillic: return "mac-cyrillic";
+    case kCFStringEncodingMacTurkish: return "mac-turkish";
+    case kCFStringEncodingMacIcelandic: return "mac-icelandic";
+    /* XXX which one is mac-latin2? */
+    }
+    if (!name) {
+        /* This leaks a an object. */
+        name = CFStringConvertEncodingToIANACharSetName(enc);
+    }
+    return CFStringGetCStringPtr(name, 0); 
 #else
    int font, script, lang;
     font = 0;
