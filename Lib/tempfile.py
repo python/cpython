@@ -72,10 +72,7 @@ if hasattr(_os, 'TMP_MAX'):
 else:
     TMP_MAX = 10000
 
-if _os.name == 'nt':
-    template = '~t' # cater to eight-letter limit
-else:
-    template = "tmp"
+template = "tmp"
 
 tempdir = None
 
