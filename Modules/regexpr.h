@@ -19,6 +19,11 @@ Last modified: Mon Nov  4 15:49:46 1991 ylo
 #ifndef REGEXPR_H
 #define REGEXPR_H
 
+#if defined(__STDC__) || defined(THINK_C)
+#undef HAVE_PROTOTYPES
+#define HAVE_PROTOTYPES
+#endif
+
 #define RE_NREGS	10  /* number of registers available */
 
 typedef struct re_pattern_buffer
@@ -56,7 +61,7 @@ typedef struct re_registers
 #define RE_SYNTAX_GREP	(RE_BK_PLUS_QM|RE_NEWLINE_OR)
 #define RE_SYNTAX_EMACS	0
 
-#ifdef __STDC__
+#ifdef HAVE_PROTOTYPES
 
 int re_set_syntax(int syntax);
 /* This sets the syntax to use and returns the previous syntax.  The
@@ -116,7 +121,7 @@ int re_exec(char *s);
    matches the regular expression (that is, a matching part is found
    anywhere in the string). */
 
-#else /* __STDC__ */
+#else /* HAVE_PROTOTYPES */
 
 int re_set_syntax();
 char *re_compile_pattern();
@@ -128,7 +133,7 @@ void re_compile_fastmap();
 char *re_comp();
 int re_exec();
 
-#endif /* __STDC__ */
+#endif /* HAVE_PROTOTYPES */
 
 #endif /* REGEXPR_H */
 
