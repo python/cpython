@@ -20,8 +20,6 @@
 
 (-) modules should be able to define a module destructor hook
 
-(-) goaway() / cleanup() should call AtExit funcs *after* doneimport()
-
 (-) destroy modules in reverse order of importation
 
 (-) make array a standard built-in object

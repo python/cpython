@@ -28,13 +28,11 @@ DECREF can cause recursive calls to methods of the object being
 modified.  Other files too.  [Only partially fixed -- listobject.c is
 still suspect.]
 
-(-) struct module aligns doubles wrongly when compiled with -DDEBUG on
-sparc
-
 (-) if __getattr__ prints something, calling repr(x) from cmd line
 forgets a newline
 
-(-) doneimport() should be called *before* the Py_AtExit code is called
+(-) doneimport() should be called *before* the Py_AtExit code is
+called [problem: what if other threads are still active?]
 
 Environmental bugs
 ------------------
@@ -55,11 +53,14 @@ Environmental bugs
 doesn't create it
 
 (-) HP doesn't compile out of the box (needs LIBS=-ldld or
-LIBS=/usr/lib/libdld.sl)
+LIBS=/usr/lib/libdld.sl) [hard to test without a HP machine handy]
 
 ======================================================================
 BUGS present in 1.1.1 and fixed in 1.2
 --------------------------------------
+
+(*) struct module aligns doubles wrongly when compiled with -DDEBUG on
+sparc
 
 (*) memory leak (namebuf) in initmodule2
 

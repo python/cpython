@@ -1,3 +1,98 @@
+Mon Jan  9 14:20:16 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Python/thread_pthread.h: Alpha OSF/1 fix
+
+	* Python/importdl.c (load_dynamic_module): removed bogus check for
+	reloading of dynamically loaded modules (tested uninitialized
+	local variable)
+
+	* Include/{frameobject.h,ceval.h,bltinmodule.h,rename1},
+	Python/{ceval.c,import.c,pythonrun.c,bltinmodule.c},
+	Object/frameobject.c: changed handling of builtins.  Each frame
+	now has a pointer to the dictionary of builtins to be used in that
+	frame, initialized from __builtins__ in the globals passed to the
+	frame.  Only run_node() and exec_code_module() initialize
+	__builtins__ to the dictionary of the real __builtin__ module.
+	Furthermore, a frame is in "restricted" mode if its builtins are
+	not the real __builtin__ module.  In restricted mode, some other
+	modules and object types restrict their interfaces.  Subtle
+	change: eval_code() no longer automatically fills in the default
+	globals; this must be done by the caller (who can then also
+	explicitly stick in the builtins if needed).  bltinmodule.c no
+	longer exports {get,set}builtin() but instead exports
+	getbuiltindict().  ceval.c export getbuiltins() and
+	getrestricted() in analogy of getglobals().
+
+	* Include/sysmodule.h, Python/{sysmodule.c,ceval.c},
+	Doc/libsys.tex: change sys.check_interval Python variable into
+	Python function sys.setcheckinterval(interval) and C variable
+	sys_checkinterval
+
+	* Mac/macosmodule.c: use new getargs interface; add
+	{Get,Set}FileInfo
+
+Sat Jan  7 09:40:24 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Python/compile.c: support import A.B...Z; added doc strings to
+	modules, classes and function
+
+	* Python/ceval.c: use new instancebinop interface
+
+	* Python/bltinmodule.c: restructured coerce(), divmod(), pow() to
+	use new instancebinop interface
+
+	* Objects/classobject.c: added 5th (function) parameter to
+	instancebinop, to support things like Rational * float; added
+	documentation strings to classes and methods
+
+	* Objects/methodobject.c: changed drastically, the object now
+	contains a pointer to the struct methodlist (which must be
+	static); added attributes __name__, __doc__ and __self__
+
+	* Objects/funcobject.c: added __doc__ attribute (alias func_doc),
+	initialized from first constand in code object if it is a string,
+	else to None
+
+	* Objects/moduleobject.c: initialize __doc__ to None
+
+	* Objects/typeobject.c: added getattr(), supporting __doc__ and
+	__name__
+
+	* Objects/object.c: raise AttributeError, not TypeError for object
+	without attributes
+
+	* Python/modsupport.c, Include/modsupport.h: add doc string
+        parameter to initmodule3 (renamed from initmodule2); new
+	newmethodobject() interface
+
+	* Modules/signalmodule.c (initsignal): don't call
+	newmethodobject() directly -- rely on initmodule()
+
+	* Modules/newmodule.c: rationalize argument checking, redo
+	lay-out, add __doc__ strings
+
+	* Include/object.h: added tp_str (to implement str()), tp_doc, and
+	some dummy fields
+
+	* Include/methodobject.h: added ml_doc member to struct methodlist
+	and renamed ml_varargs to ml_flags; changed newmethodobject() to
+	take a struct methodlist * argument instead of individual parts;
+	got rid of ML_FREENAME again
+
+	* Include/funcobject.h: added func_doc struct member
+
+	* Include/classobject.h: added 5th (function) parameter to
+	instancebinop, to support things like Rational * float
+
+	* Grammar/Grammar: changed import to support NAME.NAME...NAME
+
+	* Python/importdl.c (load_dynamic_module): NT dlls have extension
+	.pyd, not .dll
+
+Thu Jan  5 11:00:13 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Demo/scripts/mboxconvert.py: invent Message-ID if none present
+
 Wed Jan  4 18:23:09 1995  Guido van Rossum  <guido@voorn.cwi.nl>
 
 	* Python/modsupport.c (initmodule2), Include/methodobject.h,
