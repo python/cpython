@@ -30,43 +30,42 @@ This module provides an interface to Berkeley socket IPC.
 Limitations:
 
 - only AF_INET and AF_UNIX address families are supported
-- no asynchronous I/O (but you can use select() on sockets)
 - no read/write operations (use send/recv or makefile instead)
-- setsockopt() and getsockopt() only support integer options
 
-Interface:
+Module interface:
 
-- socket.gethostname() --> host name (string)
+- socket.error: exception raised for socket specific errors
 - socket.gethostbyname(hostname) --> host IP address (string: 'dd.dd.dd.dd')
 - socket.gethostbyaddr(IP address) --> (hostname, [alias, ...], [IP addr, ...])
-- socket.getservbyname(servername, protocolname) --> port number
+- socket.gethostname() --> host name (string: 'spam' or 'spam.domain.com')
+- socket.getservbyname(servicename, protocolname) --> port number
 - socket.socket(family, type [, proto]) --> new socket object
-- family and type constants from <socket.h> are accessed as socket.AF_INET etc.
-- errors are reported as the exception socket.error
+- socket.AF_INET, socket.SOCK_STREAM, etc.: constants from <socket.h>
 - an Internet socket address is a pair (hostname, port)
   where hostname can be anything recognized by gethostbyname()
   (including the dd.dd.dd.dd notation) and port is in host byte order
 - where a hostname is returned, the dd.dd.dd.dd notation is used
-- a UNIX domain socket is a string specifying the pathname
+- a UNIX domain socket address is a string specifying the pathname
 
 Socket methods:
 
 - s.accept() --> new socket object, sockaddr
-- s.setsockopt(level, optname, flag) --> Py_None
-- s.getsockopt(level, optname) --> flag
-- s.bind(sockaddr) --> Py_None
-- s.connect(sockaddr) --> Py_None
-- s.getsockname() --> sockaddr
+- s.bind(sockaddr) --> None
+- s.close() --> None
+- s.connect(sockaddr) --> None
+- s.fileno() --> file descriptor
 - s.getpeername() --> sockaddr
-- s.listen(n) --> Py_None
+- s.getsockname() --> sockaddr
+- s.getsockopt(level, optname[, buflen]) --> int or string
+- s.listen(backlog) --> None
 - s.makefile([mode[, bufsize]]) --> file object
-- s.recv(nbytes [,flags]) --> string
-- s.recvfrom(nbytes [,flags]) --> string, sockaddr
+- s.recv(buflen [,flags]) --> string
+- s.recvfrom(buflen [,flags]) --> string, sockaddr
 - s.send(string [,flags]) --> nbytes
 - s.sendto(string, [flags,] sockaddr) --> nbytes
-- s.setblocking(1 | 0) --> Py_None
-- s.shutdown(how) --> Py_None
-- s.close() --> Py_None
+- s.setblocking(0 | 1) --> None
+- s.setsockopt(level, optname, value) --> None
+- s.shutdown(how) --> None
 - repr(s) --> "<socket object, fd=%d, family=%d, type=%d, protocol=%d>"
 
 */
