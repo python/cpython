@@ -13,20 +13,19 @@ stack frame.  It also supports post-mortem debugging and can be called
 under program control.
 
 The debugger is extensible --- it is actually defined as a class
-\code{Pdb}.  This is currently undocumented but easily understood by
-reading the source.  The extension interface uses the (also
-undocumented) modules \code{bdb} and \code{cmd}.
-\ttindex{Pdb}
-\ttindex{bdb}
-\ttindex{cmd}
+\class{Pdb}.
+\withsubitem{(class in pdb)}{\ttindex{Pdb}}
+This is currently undocumented but easily understood by reading the
+source.  The extension interface uses the (also undocumented) modules
+\module{bdb}\refstmodindex{bdb} and \module{cmd}\refstmodindex{cmd}.
 
 A primitive windowing version of the debugger also exists --- this is
-module \code{wdb}, which requires STDWIN (see the chapter on STDWIN
-specific modules).
-\index{stdwin}
-\ttindex{wdb}
+module \module{wdb}, which requires \module{stdwin} (see the chapter
+on STDWIN specific modules).
+\refbimodindex{stdwin}
+\refstmodindex{wdb}
 
-The debugger's prompt is ``\code{(Pdb) }''.
+The debugger's prompt is \samp{(Pdb) }.
 Typical usage to run a program under control of the debugger is:
 
 \begin{verbatim}
@@ -41,10 +40,13 @@ NameError: 'spam'
 > <string>(1)?()
 (Pdb) 
 \end{verbatim}
-%
-\code{pdb.py} can also be invoked as
+
+\file{pdb.py} can also be invoked as
 a script to debug other scripts.  For example:
-\code{python /usr/local/lib/python1.4/pdb.py myscript.py}
+
+\begin{verbatim}
+python /usr/local/lib/python1.5/pdb.py myscript.py
+\end{verbatim}
 
 Typical usage to inspect a crashed program is:
 
@@ -64,7 +66,7 @@ NameError: spam
 -> print spam
 (Pdb) 
 \end{verbatim}
-%
+
 The module defines the following functions; each enters the debugger
 in a slightly different way:
 
@@ -224,11 +226,12 @@ The exclamation point can be omitted unless the first word
 of the statement resembles a debugger command.
 To set a global variable, you can prefix the assignment
 command with a ``\code{global}'' command on the same line, e.g.:
+
 \begin{verbatim}
 (Pdb) global list_options; list_options = ['-l']
 (Pdb)
 \end{verbatim}
-%
+
 \item[q(uit)]
 
 Quit from the debugger.
@@ -245,18 +248,10 @@ Some changes were made to the interpreter:
 \item there can also a local trace function (see later)
 \end{itemize}
 
-Trace functions have three arguments: (\var{frame}, \var{event}, \var{arg})
-
-\begin{description}
-
-\item[\var{frame}] is the current stack frame
-
-\item[\var{event}] is a string: \code{'call'}, \code{'line'}, \code{'return'}
-or \code{'exception'}
-
-\item[\var{arg}] is dependent on the event type
-
-\end{description}
+Trace functions have three arguments: \var{frame}, \var{event}, and
+\var{arg}. \var{frame} is the current stack frame.  \var{event} is a
+string: \code{'call'}, \code{'line'}, \code{'return'} or
+\code{'exception'}.  \var{arg} depends on the event type.
 
 The global trace function is invoked (with \var{event} set to
 \code{'call'}) whenever a new local scope is entered; it should return
