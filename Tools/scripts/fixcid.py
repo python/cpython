@@ -194,7 +194,7 @@ def fix(filename):
 
 # Tokenizing ANSI C (partly)
 
-Identifier = '[a-zA-Z_][a-zA-Z0-9_]+'
+Identifier = '\(struct \)?[a-zA-Z_][a-zA-Z0-9_]+'
 String = '"\([^\n\\"]\|\\\\.\)*"'
 Char = '\'\([^\n\\\']\|\\\\.\)*\''
 CommentStart = '/\*'
@@ -246,6 +246,7 @@ def fixline(line):
 			if Program is InsideCommentProgram:
 				if not Docomments:
 					print 'Found in comment:', found
+					i = i + n
 					continue
 				if NotInComment.has_key(found):
 ##					print 'Ignored in comment:',
@@ -290,7 +291,9 @@ def addsubst(substfile):
 			i = -1		# Happens to delete trailing \n
 		words = string.split(line[:i])
 		if not words: continue
-		if len(words) <> 2:
+		if len(words) == 3 and words[0] == 'struct':
+			words[:2] == [words[0] + ' ' + words[1]]
+		elif len(words) <> 2:
 			err(substfile + ':' + `lineno` +
 				  ': warning: bad line: ' + line)
 			continue
