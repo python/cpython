@@ -654,7 +654,11 @@ Tkapp_Call(self, args)
 		else {
 			/* Convert UTF-8 to Unicode string */
 			p = strchr(p, '\0');
-			res = PyUnicode_DecodeUTF8(s, (int)(p-s), "ignore");
+			res = PyUnicode_DecodeUTF8(s, (int)(p-s), "strict");
+			if (res == NULL) {
+				PyErr_Clear();
+				res = PyString_FromStringAndSize(s, (int)(p-s));
+			}
 		}
 	}
 
