@@ -607,15 +607,11 @@ False
 >>> dotproduct([1,2,3], [4,5,6])
 32
 
->>> def irange(start, stop):
-...     for i in range(start, stop):
-...         yield i
-
->>> x, y = tee(irange(2,10))
+>>> x, y = tee(chain(xrange(2,10)))
 >>> list(x), list(y)
 ([2, 3, 4, 5, 6, 7, 8, 9], [2, 3, 4, 5, 6, 7, 8, 9])
 
->>> x, y = tee(irange(2,10))
+>>> x, y = tee(chain(xrange(2,10)))
 >>> zip(x, y)
 [(2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7), (8, 8), (9, 9)]
 
