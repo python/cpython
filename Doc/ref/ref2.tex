@@ -28,10 +28,12 @@ though the current implementation appears to favor Latin-1.  This
 applies both to the source character set and the run-time character
 set.
 
+
 \section{Line structure\label{line-structure}}
 
 A Python program is divided into a number of \emph{logical lines}.
 \index{line structure}
+
 
 \subsection{Logical lines\label{logical}}
 
@@ -46,6 +48,7 @@ by following the explicit or implicit \emph{line joining} rules.
 \index{line joining}
 \index{NEWLINE token}
 
+
 \subsection{Physical lines\label{physical}}
 
 A physical line ends in whatever the current platform's convention is
@@ -53,6 +56,7 @@ for terminating lines.  On \UNIX{}, this is the \ASCII{} LF (linefeed)
 character.  On DOS/Windows, it is the \ASCII{} sequence CR LF (return
 followed by linefeed).  On Macintosh, it is the \ASCII{} CR (return)
 character.
+
 
 \subsection{Comments\label{comments}}
 
@@ -63,6 +67,7 @@ rules are invoked.
 Comments are ignored by the syntax; they are not tokens.
 \index{comment}
 \index{hash character}
+
 
 \subsection{Explicit line joining\label{explicit-joining}}
 
@@ -203,6 +208,7 @@ The following example shows various indentation errors:
 last error is found by the lexical analyzer --- the indentation of
 \code{return r} does not match a level popped off the stack.)
 
+
 \subsection{Whitespace between tokens\label{whitespace}}
 
 Except at the beginning of a logical line or in string literals, the
@@ -210,6 +216,7 @@ whitespace characters space, tab and formfeed can be used
 interchangeably to separate tokens.  Whitespace is needed between two
 tokens only if their concatenation could otherwise be interpreted as a
 different token (e.g., ab is one token, but a b is two tokens).
+
 
 \section{Other tokens\label{other-tokens}}
 
@@ -221,6 +228,7 @@ are not tokens, but serve to delimit tokens.
 Where
 ambiguity exists, a token comprises the longest possible string that
 forms a legal token, when read from left to right.
+
 
 \section{Identifiers and keywords\label{identifiers}}
 
@@ -239,6 +247,7 @@ digit:          "0"..."9"
 
 Identifiers are unlimited in length.  Case is significant.
 
+
 \subsection{Keywords\label{keywords}}
 
 The following identifiers are used as reserved words, or
@@ -251,12 +260,13 @@ identifiers.  They must be spelled exactly as written here:%
 and       del       for       is        raise    
 assert    elif      from      lambda    return   
 break     else      global    not       try      
-class     except    if        or        while    
-continue  exec      import    pass               
+class     except    if        or        yeild    
+continue  exec      import    pass      while
 def       finally   in        print              
 \end{verbatim}
 
 % When adding keywords, use reswords.py for reformatting
+
 
 \subsection{Reserved classes of identifiers\label{id-classes}}
 
@@ -286,6 +296,7 @@ in the \module{__builtin__} module.  When not in interactive mode,
 Literals are notations for constant values of some built-in types.
 \index{literal}
 \index{constant}
+
 
 \subsection{String literals\label{strings}}
 
@@ -384,6 +395,7 @@ escape the following quote character).  Note also that a single
 backslash followed by a newline is interpreted as those two characters
 as part of the string, \emph{not} as a line continuation.
 
+
 \subsection{String literal concatenation\label{string-catenation}}
 
 Multiple adjacent string literals (delimited by whitespace), possibly
@@ -434,6 +446,7 @@ Note that numeric literals do not include a sign; a phrase like
 \code{-1} is actually an expression composed of the unary operator
 `\code{-}' and the literal \code{1}.
 
+
 \subsection{Integer and long integer literals\label{integers}}
 
 Integer and long integer literals are described by the following
@@ -468,6 +481,7 @@ Some examples of plain and long integer literals:
 3L    79228162514264337593543950336L    0377L   0x100000000L
 \end{verbatim}
 
+
 \subsection{Floating point literals\label{floating}}
 
 Floating point literals are described by the following lexical
@@ -497,6 +511,7 @@ Some examples of floating point literals:
 Note that numeric literals do not include a sign; a phrase like
 \code{-1} is actually an expression composed of the operator
 \code{-} and the literal \code{1}.
+
 
 \subsection{Imaginary literals\label{imaginary}}
 
@@ -531,6 +546,7 @@ The following tokens are operators:
 The comparison operators \code{<>} and \code{!=} are alternate
 spellings of the same operator.  \code{!=} is the preferred spelling;
 \code{<>} is obsolescent.
+
 
 \section{Delimiters\label{delimiters}}
 
