@@ -526,7 +526,7 @@ PyTokenizer_Get(tok, p_start, p_end)
 					tok->indent--;
 				}
 				if (col != tok->indstack[tok->indent]) {
-					fprintf(stderr,
+					PySys_WriteStderr(
 						"inconsistent dedent\n");
 					tok->done = E_TOKEN;
 					tok->cur = tok->inp;
