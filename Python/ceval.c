@@ -298,6 +298,20 @@ Py_MakePendingCalls(void)
 }
 
 
+/* The interpreter's recursion limit */
+
+static int recursion_limit = 2500;
+
+int Py_GetRecursionLimit(void)
+{
+	return recursion_limit;
+}
+
+void Py_SetRecursionLimit(int new_limit)
+{
+	recursion_limit = new_limit;
+}
+
 /* Status code for main loop (reason for stack unwind) */
 
 enum why_code {
@@ -325,10 +339,6 @@ PyEval_EvalCode(PyCodeObject *co, PyObject *globals, PyObject *locals)
 
 
 /* Interpreter main loop */
-
-#ifndef MAX_RECURSION_DEPTH
-#define MAX_RECURSION_DEPTH 10000
-#endif
 
 static PyObject *
 eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
@@ -565,7 +575,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		}
 	}
 
-	if (++tstate->recursion_depth > MAX_RECURSION_DEPTH) {
+	if (++tstate->recursion_depth > recursion_limit) {
 		--tstate->recursion_depth;
 		PyErr_SetString(PyExc_RuntimeError,
 				"Maximum recursion depth exceeded");
