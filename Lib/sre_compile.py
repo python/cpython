@@ -333,14 +333,16 @@ def _optimize_unicode(charset, fixup):
             block = block + 1
             data = data + _mk_bitmap(chunk)
     header = [block]
-    if MAXCODE == 65535:
+    if _sre.CODESIZE == 2:
         code = 'H'
     else:
-        code = 'L'
+        code = 'I'
     # Convert block indices to byte array of 256 bytes
     mapping = array.array('b', mapping).tostring()
     # Convert byte array to word array
-    header = header + array.array(code, mapping).tolist()
+    mapping = array.array(code, mapping)
+    assert mapping.itemsize == _sre.CODESIZE
+    header = header + mapping.tolist()
     data[0:0] = header
     return [(BIGCHARSET, data)]
 
