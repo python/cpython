@@ -695,3 +695,28 @@ class MixinStrUserStringTest:
 
         self.checkraises(TypeError, 'xyz', 'decode', 42)
         self.checkraises(TypeError, 'xyz', 'encode', 42)
+
+
+class MixinUnicodeUserStringTest:
+    # Additional tests that only work with
+    # unicode compatible object, i.e. unicode and UserString
+
+    def test_iswide(self):
+        self.checkequal(False, u'', 'iswide')
+        self.checkequal(False, u'\x1f', 'iswide') # Neutral
+        self.checkequal(False, u'\x20', 'iswide') # Narrow
+        self.checkequal(True, u'\u2329', 'iswide') # Wide
+        self.checkequal(False, u'\uff64', 'iswide') # Half
+        self.checkequal(True, u'\u3000', 'iswide') # Full
+        self.checkequal(False, u'\u2460', 'iswide') # Ambiguous
+        self.checkequal(True, u'\ud55c\uae00', 'iswide')
+        self.checkequal(False, u'\ud55c\u2606\uae00', 'iswide')
+
+    def test_width(self):
+        self.checkequal(0, u'', 'width')
+        self.checkequal(4, u'abcd', 'width')
+        self.checkequal(2, u'\u0187\u01c9', 'width')
+        self.checkequal(3, u'\u2460\u2329', 'width')
+        self.checkequal(3, u'\u2329\u2460', 'width')
+        self.checkequal(4, u'\ud55c\uae00', 'width')
+        self.checkequal(5, u'\ud55c\u2606\uae00', 'width')
