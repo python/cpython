@@ -79,7 +79,8 @@ Returns a 3-column calendar for an entire year as a multi-line string.
 Optional parameters \var{w}, \var{l}, and \var{c} are for date column
 width, lines per week, and number of spaces between month columns,
 respectively. Depends on the first weekday as set by
-\function{setfirstweekday()}.
+\function{setfirstweekday()}.  The earliest year for which a calendar can
+be generated is platform-dependent.
 \end{funcdesc}
 
 \begin{funcdesc}{timegm}{tuple}
