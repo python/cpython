@@ -313,7 +313,7 @@ class TestMessageAPI(TestEmailBase):
         msg.del_param("report-type")
         eq(msg.get_params(),
            [('multipart/report', ''),
-            ('boundary', 'D1690A7AC1.996856090/mail.example.com')]) 
+            ('boundary', 'D1690A7AC1.996856090/mail.example.com')])
         msg.set_param("report-type", old_val)
         eq(msg.get_params(),
            [('multipart/report', ''),
@@ -331,7 +331,7 @@ class TestMessageAPI(TestEmailBase):
         msg.set_type('text/html')
         eq(msg['content-type'], 'text/html; charset="us-ascii"')
 
-           
+
 
 # Test the email.Encoders module
 class TestEncoders(unittest.TestCase):
@@ -409,7 +409,7 @@ Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 X-Foobar-Spoink-Defrobnit: wasnipoop; giraffes="very-long-necked-animals";
-	spooge="yummy"; hippos="gargantuan"; marshmallows="gooey"
+\tspooge="yummy"; hippos="gargantuan"; marshmallows="gooey"
 
 ''')
 
@@ -450,22 +450,22 @@ Test""")
         msg = Message()
         msg['Received'] = """\
 from babylon.socal-raves.org (localhost [127.0.0.1]); by babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81; for <mailman-admin@babylon.socal-raves.org>; Sat, 2 Feb 2002 17:00:06 -0800 (PST)
-	from babylon.socal-raves.org (localhost [127.0.0.1]); by babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81; for <mailman-admin@babylon.socal-raves.org>; Sat, 2 Feb 2002 17:00:06 -0800 (PST)
-	from babylon.socal-raves.org (localhost [127.0.0.1]); by babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81; for <mailman-admin@babylon.socal-raves.org>; Sat, 2 Feb 2002 17:00:06 -0800 (PST)
+\tfrom babylon.socal-raves.org (localhost [127.0.0.1]); by babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81; for <mailman-admin@babylon.socal-raves.org>; Sat, 2 Feb 2002 17:00:06 -0800 (PST)
+\tfrom babylon.socal-raves.org (localhost [127.0.0.1]); by babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81; for <mailman-admin@babylon.socal-raves.org>; Sat, 2 Feb 2002 17:00:06 -0800 (PST)
 """
         self.assertEqual(msg.as_string(), """\
 Received: from babylon.socal-raves.org (localhost [127.0.0.1]);
-	by babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81;
-	for <mailman-admin@babylon.socal-raves.org>;
-	Sat, 2 Feb 2002 17:00:06 -0800 (PST)
-	from babylon.socal-raves.org (localhost [127.0.0.1]);
-	by babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81;
-	for <mailman-admin@babylon.socal-raves.org>;
-	Sat, 2 Feb 2002 17:00:06 -0800 (PST)
-	from babylon.socal-raves.org (localhost [127.0.0.1]);
-	by babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81;
-	for <mailman-admin@babylon.socal-raves.org>;
-	Sat, 2 Feb 2002 17:00:06 -0800 (PST)
+\tby babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81;
+\tfor <mailman-admin@babylon.socal-raves.org>;
+\tSat, 2 Feb 2002 17:00:06 -0800 (PST)
+\tfrom babylon.socal-raves.org (localhost [127.0.0.1]);
+\tby babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81;
+\tfor <mailman-admin@babylon.socal-raves.org>;
+\tSat, 2 Feb 2002 17:00:06 -0800 (PST)
+\tfrom babylon.socal-raves.org (localhost [127.0.0.1]);
+\tby babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81;
+\tfor <mailman-admin@babylon.socal-raves.org>;
+\tSat, 2 Feb 2002 17:00:06 -0800 (PST)
 
 
 """)
@@ -721,7 +721,7 @@ From: bperson@dom.ain
 
 
 --BOUNDARY--
-''')        
+''')
 
     def test_one_part_in_a_multipart(self):
         outer = MIMEBase('multipart', 'mixed')
@@ -748,7 +748,7 @@ Content-Transfer-Encoding: 7bit
 hello world
 
 --BOUNDARY--
-''')        
+''')
 
     def test_seq_parts_in_a_multipart(self):
         outer = MIMEBase('multipart', 'mixed')
@@ -775,7 +775,7 @@ Content-Transfer-Encoding: 7bit
 hello world
 
 --BOUNDARY--
-''')        
+''')
 
 
 
@@ -1163,11 +1163,11 @@ class TestMiscellaneous(unittest.TestCase):
         module = __import__('email')
         all = module.__all__
         all.sort()
-        self.assertEqual(all, ['Charset', 'Encoders', 'Errors', 'Generator', 
-                               'Header', 'Iterators', 'MIMEAudio', 
-                               'MIMEBase', 'MIMEImage', 'MIMEMessage', 
+        self.assertEqual(all, ['Charset', 'Encoders', 'Errors', 'Generator',
+                               'Header', 'Iterators', 'MIMEAudio',
+                               'MIMEBase', 'MIMEImage', 'MIMEMessage',
                                'MIMEText', 'Message', 'Parser',
-                               'Utils', 'base64MIME', 
+                               'Utils', 'base64MIME',
                                'message_from_file', 'message_from_string',
                                'quopriMIME'])
 
@@ -1313,7 +1313,7 @@ class TestParsers(unittest.TestCase):
 From: aperson@dom.ain
 To: bperson@dom.ain
 Subject: the next line has a space on it
- 
+\x20
 Date: Mon, 8 Apr 2002 15:09:19 -0400
 Message-ID: spam
 
@@ -1367,7 +1367,7 @@ eHh4eCB4eHh4IHh4eHggeHh4eCB4eHh4IHh4eHgg\r
 eHh4eCB4eHh4IHh4eHggeHh4eCB4eHh4IHh4eHgg\r
 eHh4eCB4eHh4IA==\r
 """)
-        
+
     def test_header_encode(self):
         eq = self.assertEqual
         he = base64MIME.header_encode
@@ -1504,7 +1504,7 @@ two line"""), """\
 one line
 
 two line""")
-        
+
 
 
 # Test the Charset class
