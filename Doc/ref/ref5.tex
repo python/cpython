@@ -152,7 +152,8 @@ A list display is a possibly empty series of expressions enclosed in
 square brackets:
 
 \begin{verbatim}
-list_display:   "[" [expression_list [list_iter]] "]"
+list_display:   "[" [listmaker] "]"
+listmaker:   expression_list ( list_iter | ( "," expression)* [","] )
 list_iter:   list_for | list_if
 list_for:    "for" expression_list "in" testlist [list_iter]
 list_if:     "if" test [list_iter]
