@@ -94,27 +94,80 @@ Freezing Tkinter programs
 -------------------------
 
 Unfortunately, it is currently not possible to freeze programs that
-use Tkinter.  It *seems* to work, but when you ship the frozen program 
-to a site without a Tcl/Tk installation, it will fail with a complaint 
-about missing Tcl/Tk initialization files.
+use Tkinter without a Tcl/Tk installation. The best way to ship a
+frozen Tkinter program is to decide in advance where you are going
+to place the Tcl and Tk library files in the distributed setup, and
+then declare these directories in your frozen Python program using
+the TCL_LIBRARY, TK_LIBRARY and TIX_LIBRARY environment variables.
 
-A workaround would be possible, in which the Tcl/Tk library files are
+For example, assume you will ship your frozen program in the directory 
+<root>/bin/windows-x86 and will place your Tcl library files 
+in <root>/lib/tcl8.2 and your Tk library files in <root>/lib/tk8.2. Then
+placing the following lines in your frozen Python script before importing
+Tkinter or Tix would set the environment correctly for Tcl/Tk/Tix:
+
+import os
+import os.path
+RootDir = os.path.dirname(os.path.dirname(os.getcwd()))
+
+import sys
+if sys.platform == "win32":
+   sys.path = ['', '..\\..\\lib\\python-2.0']
+   os.environ['TCL_LIBRARY'] = RootDir + '\\lib\\tcl8.2'
+   os.environ['TK_LIBRARY'] = RootDir + '\\lib\\tk8.2'
+   os.environ['TIX_LIBRARY'] = RootDir + '\\lib\\tix8.1'
+elif sys.platform == "linux2":
+   sys.path = ['', '../../lib/python-2.0']
+   os.environ['TCL_LIBRARY'] = RootDir + '/lib/tcl8.2'
+   os.environ['TK_LIBRARY'] = RootDir + '/lib/tk8.2'
+   os.environ['TIX_LIBRARY'] = RootDir + '/lib/tix8.1'
+elif sys.platform == "solaris":
+   sys.path = ['', '../../lib/python-2.0']
+   os.environ['TCL_LIBRARY'] = RootDir + '/lib/tcl8.2'
+   os.environ['TK_LIBRARY'] = RootDir + '/lib/tk8.2'
+   os.environ['TIX_LIBRARY'] = RootDir + '/lib/tix8.1'
+
+This also adds <root>/lib/python-2.0 to your Python path
+for any Python files such as _tkinter.pyd you may need.
+
+Note that the dynamic libraries (such as tcl82.dll tk82.dll python20.dll
+under Windows, or libtcl8.2.so and libtcl8.2.so under Unix) are required
+at program load time, and are searched by the operating system loader
+before Python can be started. Under Windows, the environment
+variable PATH is consulted, and under Unix, it may be the
+the environment variable LD_LIBRARY_PATH and/or the system
+shared library cache (ld.so). An additional preferred directory for
+finding the dynamic libraries is built into the .dll or .so files at
+compile time - see the LIB_RUNTIME_DIR variable in the Tcl makefile. 
+The OS must find the dynamic libraries or your frozen program won't start. 
+Usually I make sure that the .so or .dll files are in the same directory
+as the executable, but this may not be foolproof.
+
+A workaround to installing your Tcl library files with your frozen
+executable would be possible, in which the Tcl/Tk library files are
 incorporated in a frozen Python module as string literals and written
 to a temporary location when the program runs; this is currently left
-as an exercise for the reader.  (If you implement this, please post to
-the Python newsgroup!)
+as an exercise for the reader.  An easier approach is to freeze the
+Tcl/Tk/Tix code into the dynamic libraries using the Tcl ET code,
+or the Tix Stand-Alone-Module code. Of course, you can also simply 
+require that Tcl/Tk is required on the target installation, but be 
+careful that the version corresponds.
 
-Of course, you can also simply require that Tcl/Tk is required on the
-target installation.
+There are some caveats using frozen Tkinter applications:
+	Under Windows if you use the -s windows option, writing
+to stdout or stderr is an error.
+	The Tcl [info nameofexecutable] will be set to where the
+program was frozen, not where it is run from.
+	The global variables argc and argv do not exist.
 
 
-A warning against shared library modules
-----------------------------------------
+A warning about shared library modules
+--------------------------------------
 
-When your Python installation uses shared library modules, these will
-not be incorporated in the frozen program.  Again, the frozen program
-will work when you test it, but it won't work when you ship it to a
-site without a Python installation.
+When your Python installation uses shared library modules such as 
+_tkinter.pyd, these will not be incorporated in the frozen program.
+ Again, the frozen program will work when you test it, but it won't
+ work when you ship it to a site without a Python installation.
 
 Freeze prints a warning when this is the case at the end of the
 freezing process:
@@ -122,7 +175,9 @@ freezing process:
 	Warning: unknown modules remain: ...
 
 When this occurs, the best thing to do is usually to rebuild Python
-using static linking only.
+using static linking only. Or use the approach described in the previous
+section to declare a library path using sys.path, and place the modules
+such as _tkinter.pyd there.
 
 
 Troubleshooting
@@ -164,10 +219,78 @@ winmakemakefile.py (e.g., if you are using the 4.2 compiler, the
 python20.lib file is generated in the subdirectory vc40 of the Python
 source tree).
 
-You can freeze programs that use Tkinter, but Tcl/Tk must be installed
-on the target system.
-
 It is possible to create frozen programs that don't have a console
-window, by specifying the option '-s windows'.
+window, by specifying the option '-s windows'. See the Usage below.
+
+Usage
+-----
+
+Here is a list of all of the options (taken from freeze.__doc__):
+
+usage: freeze [options...] script [module]...
+
+Options:
+-p prefix:    This is the prefix used when you ran ``make install''
+              in the Python build directory.
+              (If you never ran this, freeze won't work.)
+              The default is whatever sys.prefix evaluates to.
+              It can also be the top directory of the Python source
+              tree; then -P must point to the build tree.
+
+-P exec_prefix: Like -p but this is the 'exec_prefix', used to
+                install objects etc.  The default is whatever sys.exec_prefix
+                evaluates to, or the -p argument if given.
+                If -p points to the Python source tree, -P must point
+                to the build tree, if different.
+
+-e extension: A directory containing additional .o files that
+              may be used to resolve modules.  This directory
+              should also have a Setup file describing the .o files.
+              On Windows, the name of a .INI file describing one
+              or more extensions is passed.
+              More than one -e option may be given.
+
+-o dir:       Directory where the output files are created; default '.'.
+
+-m:           Additional arguments are module names instead of filenames.
+
+-a package=dir: Additional directories to be added to the package's
+                __path__.  Used to simulate directories added by the
+                package at runtime (eg, by OpenGL and win32com).
+                More than one -a option may be given for each package.
+
+-l file:      Pass the file to the linker (windows only)
+
+-d:           Debugging mode for the module finder.
+
+-q:           Make the module finder totally quiet.
+
+-h:           Print this help message.
+
+-x module     Exclude the specified module.
+
+-i filename:  Include a file with additional command line options.  Used
+              to prevent command lines growing beyond the capabilities of
+              the shell/OS.  All arguments specified in filename
+              are read and the -i option replaced with the parsed
+              params (note - quoting args in this file is NOT supported)
+
+-s subsystem: Specify the subsystem (For Windows only.); 
+              'console' (default), 'windows', 'service' or 'com_dll'
+              
+-w:           Toggle Windows (NT or 95) behavior.
+              (For debugging only -- on a win32 platform, win32 behavior
+              is automatic.)
+
+Arguments:
+
+script:       The Python script to be executed by the resulting binary.
+
+module ...:   Additional Python modules (referenced by pathname)
+              that will be included in the resulting binary.  These
+              may be .py or .pyc files.  If -m is specified, these are
+              module names that are search in the path instead.
+
+
 
 --Guido van Rossum (home page: http://www.python.org/~guido/)
