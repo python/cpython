@@ -51,6 +51,14 @@ for \var{domain} is returned.\footnote{
         the start of your application.}
 \end{funcdesc}
 
+\begin{funcdesc}{bind_textdomain_codeset}{domain\optional{, codeset}}
+Bind the \var{domain} to \var{codeset}, changing the encoding of
+strings returned by the \function{gettext()} family of functions.
+If \var{codeset} is omitted, then the current binding is returned.
+
+\versionadded{2.4}
+\end{funcdesc}
+
 \begin{funcdesc}{textdomain}{\optional{domain}}
 Change or query the current global domain.  If \var{domain} is
 \code{None}, then the current global domain is returned, otherwise the
@@ -64,9 +72,25 @@ is usually aliased as \function{_} in the local namespace (see
 examples below).
 \end{funcdesc}
 
+\begin{funcdesc}{lgettext}{message}
+Equivalent to \function{gettext()}, but the translation is returned
+in the preferred system encoding, if no other encoding was explicitly
+set with \function{bind_textdomain_codeset()}.
+
+\versionadded{2.4}
+\end{funcdesc}
+
 \begin{funcdesc}{dgettext}{domain, message}
 Like \function{gettext()}, but look the message up in the specified
 \var{domain}.
+\end{funcdesc}
+
+\begin{funcdesc}{ldgettext}{domain, message}
+Equivalent to \function{dgettext()}, but the translation is returned
+in the preferred system encoding, if no other encoding was explicitly
+set with \function{bind_textdomain_codeset()}.
+
+\versionadded{2.4}
 \end{funcdesc}
 
 \begin{funcdesc}{ngettext}{singular, plural, n}
@@ -87,12 +111,29 @@ formulas for a variety of languages.
 
 \end{funcdesc}
 
+\begin{funcdesc}{lngettext}{singular, plural, n}
+Equivalent to \function{ngettext()}, but the translation is returned
+in the preferred system encoding, if no other encoding was explicitly
+set with \function{bind_textdomain_codeset()}.
+
+\versionadded{2.4}
+\end{funcdesc}
+
 \begin{funcdesc}{dngettext}{domain, singular, plural, n}
 Like \function{ngettext()}, but look the message up in the specified
 \var{domain}.
 
 \versionadded{2.3}
 \end{funcdesc}
+
+\begin{funcdesc}{ldngettext}{domain, singular, plural, n}
+Equivalent to \function{dngettext()}, but the translation is returned
+in the preferred system encoding, if no other encoding was explicitly
+set with \function{bind_textdomain_codeset()}.
+
+\versionadded{2.4}
+\end{funcdesc}
+
 
 
 Note that GNU \program{gettext} also defines a \function{dcgettext()}
@@ -152,8 +193,8 @@ they appear in the languages list or the environment variables.
 \end{funcdesc}
 
 \begin{funcdesc}{translation}{domain\optional{, localedir\optional{,
-                              languages\optional{, 
-                              class_,\optional{fallback}}}}}
+                              languages\optional{, class_\optional{,
+			      fallback\optional{, codeset}}}}}}
 Return a \class{Translations} instance based on the \var{domain},
 \var{localedir}, and \var{languages}, which are first passed to
 \function{find()} to get a list of the
@@ -161,7 +202,8 @@ associated \file{.mo} file paths.  Instances with
 identical \file{.mo} file names are cached.  The actual class instantiated
 is either \var{class_} if provided, otherwise
 \class{GNUTranslations}.  The class's constructor must take a single
-file object argument.  
+file object argument. If provided, \var{codeset} will change the
+charset used to encode translated strings.
 
 If multiple files are found, later files are used as fallbacks for
 earlier ones. To allow setting the fallback, \function{copy.copy}
@@ -172,13 +214,17 @@ If no \file{.mo} file is found, this function raises
 \exception{IOError} if \var{fallback} is false (which is the default),
 and returns a \class{NullTranslations} instance if \var{fallback} is
 true.
+
+\versionchanged[Added the \var{codeset} parameter]{2.4}
 \end{funcdesc}
 
-\begin{funcdesc}{install}{domain\optional{, localedir\optional{, unicode}}}
+\begin{funcdesc}{install}{domain\optional{, localedir\optional{, unicode
+			  \optional{, codeset}}}}
 This installs the function \function{_} in Python's builtin namespace,
-based on \var{domain}, and \var{localedir} which are passed to the
-function \function{translation()}.  The \var{unicode} flag is passed to
-the resulting translation object's \method{install} method.
+based on \var{domain}, \var{localedir}, and \var{codeset} which are
+passed to the function \function{translation()}.  The \var{unicode}
+flag is passed to the resulting translation object's \method{install}
+method.
 
 As seen below, you usually mark the strings in your application that are
 candidates for translation, by wrapping them in a call to the
@@ -191,6 +237,8 @@ print _('This string will be translated.')
 For convenience, you want the \function{_()} function to be installed in
 Python's builtin namespace, so it is easily accessible in all modules
 of your application.  
+
+\versionchanged[Added the \var{codeset} parameter]{2.4}
 \end{funcdesc}
 
 \subsubsection{The \class{NullTranslations} class}
@@ -223,25 +271,39 @@ provide a translation for a given message.
 \end{methoddesc}
 
 \begin{methoddesc}[NullTranslations]{gettext}{message}
-If a fallback has been set, forward \method{gettext} to the fallback.
+If a fallback has been set, forward \method{gettext()} to the fallback.
 Otherwise, return the translated message.  Overridden in derived classes.
 \end{methoddesc}
 
+\begin{methoddesc}[NullTranslations]{lgettext}{message}
+If a fallback has been set, forward \method{lgettext()} to the fallback.
+Otherwise, return the translated message.  Overridden in derived classes.
+
+\versionadded{2.4}
+\end{methoddesc}
+
 \begin{methoddesc}[NullTranslations]{ugettext}{message}
-If a fallback has been set, forward \method{ugettext} to the fallback.
+If a fallback has been set, forward \method{ugettext()} to the fallback.
 Otherwise, return the translated message as a Unicode string.
 Overridden in derived classes.
 \end{methoddesc}
 
 \begin{methoddesc}[NullTranslations]{ngettext}{singular, plural, n}
-If a fallback has been set, forward \method{ngettext} to the fallback.
+If a fallback has been set, forward \method{ngettext()} to the fallback.
 Otherwise, return the translated message.  Overridden in derived classes.
 
 \versionadded{2.3}
 \end{methoddesc}
 
+\begin{methoddesc}[NullTranslations]{lngettext}{singular, plural, n}
+If a fallback has been set, forward \method{ngettext()} to the fallback.
+Otherwise, return the translated message.  Overridden in derived classes.
+
+\versionadded{2.4}
+\end{methoddesc}
+
 \begin{methoddesc}[NullTranslations]{ungettext}{singular, plural, n}
-If a fallback has been set, forward \method{ungettext} to the fallback.
+If a fallback has been set, forward \method{ungettext()} to the fallback.
 Otherwise, return the translated message as a Unicode string.
 Overridden in derived classes.
 
@@ -254,6 +316,20 @@ Return the ``protected'' \member{_info} variable.
 
 \begin{methoddesc}[NullTranslations]{charset}{}
 Return the ``protected'' \member{_charset} variable.
+\end{methoddesc}
+
+\begin{methoddesc}[NullTranslations]{output_charset}{}
+Return the ``protected'' \member{_output_charset} variable, which
+defines the encoding used to return translated messages.
+
+\versionadded{2.4}
+\end{methoddesc}
+
+\begin{methoddesc}[NullTranslations]{set_output_charset}{charset}
+Change the ``protected'' \member{_output_charset} variable, which
+defines the encoding used to return translated messages.
+
+\versionadded{2.4}
 \end{methoddesc}
 
 \begin{methoddesc}[NullTranslations]{install}{\optional{unicode}}
@@ -323,6 +399,14 @@ look up is forwarded to the fallback's \method{gettext()} method.
 Otherwise, the \var{message} id is returned.
 \end{methoddesc}
 
+\begin{methoddesc}[GNUTranslations]{lgettext}{message}
+Equivalent to \method{gettext()}, but the translation is returned
+in the preferred system encoding, if no other encoding was explicitly
+set with \method{set_output_charset()}.
+
+\versionadded{2.4}
+\end{methoddesc}
+
 \begin{methoddesc}[GNUTranslations]{ugettext}{message}
 Look up the \var{message} id in the catalog and return the
 corresponding message string, as a Unicode string.  If there is no
@@ -344,6 +428,14 @@ specified, the request is forwarded to the fallback's
 returned, and \var{plural} is returned in all other cases.
 
 \versionadded{2.3}
+\end{methoddesc}
+
+\begin{methoddesc}[GNUTranslations]{lngettext}{singular, plural, n}
+Equivalent to \method{gettext()}, but the translation is returned
+in the preferred system encoding, if no other encoding was explicitly
+set with \method{set_output_charset()}.
+
+\versionadded{2.4}
 \end{methoddesc}
 
 \begin{methoddesc}[GNUTranslations]{ungettext}{singular, plural, n}
@@ -495,7 +587,7 @@ you would put at the top of your module:
 \begin{verbatim}
 import gettext
 t = gettext.translation('spam', '/usr/share/locale')
-_ = t.gettext
+_ = t.lgettext
 \end{verbatim}
 
 If your translators were providing you with Unicode strings in their
@@ -633,6 +725,21 @@ program to look for translatable strings marked with \function{N_()}.
 \program{pygettext} and \program{xpot} both support this through the
 use of command line switches.
 
+\subsubsection{\function{gettext()} vs. \function{lgettext()}}
+In Python 2.4 the \function{lgettext()} family of functions were
+introduced. The intention of these functions is to provide an
+alternative which is more compliant with the current
+implementation of GNU gettext. Unlike \function{gettext()}, which
+returns strings encoded with the same codeset used in the
+translation file, \function{lgettext()} will return strings
+encoded with the preferred system encoding, as returned by
+\function{locale.getpreferredencoding()}. Also notice that
+Python 2.4 introduces new functions to explicitly choose
+the codeset used in translated strings. If a codeset is explicitly
+set, even \function{lgettext()} will return translated strings in
+the requested codeset, as would be expected in the GNU gettext
+implementation.
+
 \subsection{Acknowledgements}
 
 The following people contributed code, feedback, design suggestions,
@@ -647,4 +754,5 @@ this module:
     \item Martin von L\"owis
     \item Fran\c cois Pinard
     \item Barry Warsaw
+    \item Gustavo Niemeyer
 \end{itemize}

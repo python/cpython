@@ -46,7 +46,7 @@ internationalized, to the local language and cultural habits.
 #   find this format documented anywhere.
 
 
-import copy, os, re, struct, sys
+import locale, copy, os, re, struct, sys
 from errno import ENOENT
 
 
@@ -171,6 +171,7 @@ class NullTranslations:
     def __init__(self, fp=None):
         self._info = {}
         self._charset = None
+        self._output_charset = None
         self._fallback = None
         if fp is not None:
             self._parse(fp)
@@ -189,9 +190,22 @@ class NullTranslations:
             return self._fallback.gettext(message)
         return message
 
+    def lgettext(self, message):
+        if self._fallback:
+            return self._fallback.lgettext(message)
+        return message
+
     def ngettext(self, msgid1, msgid2, n):
         if self._fallback:
             return self._fallback.ngettext(msgid1, msgid2, n)
+        if n == 1:
+            return msgid1
+        else:
+            return msgid2
+
+    def lngettext(self, msgid1, msgid2, n):
+        if self._fallback:
+            return self._fallback.lngettext(msgid1, msgid2, n)
         if n == 1:
             return msgid1
         else:
@@ -215,6 +229,12 @@ class NullTranslations:
 
     def charset(self):
         return self._charset
+
+    def output_charset(self):
+        return self._output_charset
+
+    def set_output_charset(self, charset):
+        self._output_charset = charset
 
     def install(self, unicode=False):
         import __builtin__
@@ -315,19 +335,48 @@ class GNUTranslations(NullTranslations):
                 return self._fallback.gettext(message)
             return message
         # Encode the Unicode tmsg back to an 8-bit string, if possible
-        if self._charset:
+        if self._output_charset:
+            return tmsg.encode(self._output_charset)
+        elif self._charset:
             return tmsg.encode(self._charset)
         return tmsg
+
+    def lgettext(self, message):
+        missing = object()
+        tmsg = self._catalog.get(message, missing)
+        if tmsg is missing:
+            if self._fallback:
+                return self._fallback.lgettext(message)
+            return message
+        if self._output_charset:
+            return tmsg.encode(self._output_charset)
+        return tmsg.encode(locale.getpreferredencoding())
 
     def ngettext(self, msgid1, msgid2, n):
         try:
             tmsg = self._catalog[(msgid1, self.plural(n))]
-            if self._charset:
+            if self._output_charset:
+                return tmsg.encode(self._output_charset)
+            elif self._charset:
                 return tmsg.encode(self._charset)
             return tmsg
         except KeyError:
             if self._fallback:
                 return self._fallback.ngettext(msgid1, msgid2, n)
+            if n == 1:
+                return msgid1
+            else:
+                return msgid2
+
+    def lngettext(self, msgid1, msgid2, n):
+        try:
+            tmsg = self._catalog[(msgid1, self.plural(n))]
+            if self._output_charset:
+                return tmsg.encode(self._output_charset)
+            return tmsg.encode(locale.getpreferredencoding())
+        except KeyError:
+            if self._fallback:
+                return self._fallback.lngettext(msgid1, msgid2, n)
             if n == 1:
                 return msgid1
             else:
@@ -397,7 +446,7 @@ def find(domain, localedir=None, languages=None, all=0):
 _translations = {}
 
 def translation(domain, localedir=None, languages=None,
-                class_=None, fallback=False):
+                class_=None, fallback=False, codeset=None):
     if class_ is None:
         class_ = GNUTranslations
     mofiles = find(domain, localedir, languages, all=1)
@@ -414,9 +463,12 @@ def translation(domain, localedir=None, languages=None,
         t = _translations.get(key)
         if t is None:
             t = _translations.setdefault(key, class_(open(mofile, 'rb')))
-        # Copy the translation object to allow setting fallbacks.
-        # All other instance data is shared with the cached object.
+        # Copy the translation object to allow setting fallbacks and
+        # output charset. All other instance data is shared with the
+        # cached object.
         t = copy.copy(t)
+        if codeset:
+            t.set_output_charset(codeset)
         if result is None:
             result = t
         else:
@@ -424,13 +476,16 @@ def translation(domain, localedir=None, languages=None,
     return result
 
 
-def install(domain, localedir=None, unicode=False):
-    translation(domain, localedir, fallback=True).install(unicode)
+def install(domain, localedir=None, unicode=False, codeset=None):
+    t = translation(domain, localedir, fallback=True, codeset=codeset)
+    t.install(unicode)
 
 
 
 # a mapping b/w domains and locale directories
 _localedirs = {}
+# a mapping b/w domains and codesets
+_localecodesets = {}
 # current global domain, `messages' used for compatibility w/ GNU gettext
 _current_domain = 'messages'
 
@@ -449,17 +504,33 @@ def bindtextdomain(domain, localedir=None):
     return _localedirs.get(domain, _default_localedir)
 
 
+def bind_textdomain_codeset(domain, codeset=None):
+    global _localecodesets
+    if codeset is not None:
+        _localecodesets[domain] = codeset
+    return _localecodesets.get(domain)
+
+
 def dgettext(domain, message):
     try:
-        t = translation(domain, _localedirs.get(domain, None))
+        t = translation(domain, _localedirs.get(domain, None),
+                        codeset=_localecodesets.get(domain))
     except IOError:
         return message
     return t.gettext(message)
 
+def ldgettext(domain, message):
+    try:
+        t = translation(domain, _localedirs.get(domain, None),
+                        codeset=_localecodesets.get(domain))
+    except IOError:
+        return message
+    return t.lgettext(message)
 
 def dngettext(domain, msgid1, msgid2, n):
     try:
-        t = translation(domain, _localedirs.get(domain, None))
+        t = translation(domain, _localedirs.get(domain, None),
+                        codeset=_localecodesets.get(domain))
     except IOError:
         if n == 1:
             return msgid1
@@ -467,14 +538,28 @@ def dngettext(domain, msgid1, msgid2, n):
             return msgid2
     return t.ngettext(msgid1, msgid2, n)
 
+def ldngettext(domain, msgid1, msgid2, n):
+    try:
+        t = translation(domain, _localedirs.get(domain, None),
+                        codeset=_localecodesets.get(domain))
+    except IOError:
+        if n == 1:
+            return msgid1
+        else:
+            return msgid2
+    return t.lngettext(msgid1, msgid2, n)
 
 def gettext(message):
     return dgettext(_current_domain, message)
 
+def lgettext(message):
+    return ldgettext(_current_domain, message)
 
 def ngettext(msgid1, msgid2, n):
     return dngettext(_current_domain, msgid1, msgid2, n)
 
+def lngettext(msgid1, msgid2, n):
+    return ldngettext(_current_domain, msgid1, msgid2, n)
 
 # dcgettext() has been deemed unnecessary and is not implemented.
 

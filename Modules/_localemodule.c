@@ -649,6 +649,24 @@ PyIntl_bindtextdomain(PyObject* self,PyObject*args)
 	return PyString_FromString(dirname);
 }
 
+#ifdef HAVE_BIND_TEXTDOMAIN_CODESET
+PyDoc_STRVAR(bind_textdomain_codeset__doc__,
+"bind_textdomain_codeset(domain, codeset) -> string\n"
+"Bind the C library's domain to codeset.");
+
+static PyObject*
+PyIntl_bind_textdomain_codeset(PyObject* self,PyObject*args)
+{
+	char *domain,*codeset;
+	if (!PyArg_ParseTuple(args, "sz", &domain, &codeset))
+		return NULL;
+	codeset = bind_textdomain_codeset(domain, codeset);
+	if (codeset)
+		return PyString_FromString(codeset);
+	Py_RETURN_NONE;
+}
+#endif
+
 #endif
 
 static struct PyMethodDef PyLocale_Methods[] = {
@@ -678,6 +696,10 @@ static struct PyMethodDef PyLocale_Methods[] = {
    textdomain__doc__},
   {"bindtextdomain",(PyCFunction)PyIntl_bindtextdomain,METH_VARARGS,
    bindtextdomain__doc__},
+#ifdef HAVE_BIND_TEXTDOMAIN_CODESET
+  {"bind_textdomain_codeset",(PyCFunction)PyIntl_bind_textdomain_codeset,
+   METH_VARARGS, bind_textdomain_codeset__doc__},
+#endif
 #endif  
   {NULL, NULL}
 };

@@ -2044,8 +2044,8 @@ fi
 AC_MSG_RESULT(MACHDEP_OBJS)
 
 # checks for library functions
-AC_CHECK_FUNCS(alarm chown clock confstr ctermid execv \
- fork fpathconf ftime ftruncate \
+AC_CHECK_FUNCS(alarm bind_textdomain_codeset chown clock confstr ctermid \
+ execv fork fpathconf ftime ftruncate \
  gai_strerror getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getpwent getsid getwd \
  kill killpg lchown lstat mkfifo mknod mktime \
