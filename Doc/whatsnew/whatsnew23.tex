@@ -1791,6 +1791,27 @@ Tkinter.wantobjects = 0
 
 Any breakage caused by this change should be reported as a bug.
 
+\item Support for internationalized domain names (RFCs 3454, 3490,
+3491, and 3492) has been added. The ``idna'' encoding can be used
+to convert between a Unicode domain name and the ASCII-compatible
+encoding (ACE).
+
+\begin{verbatim}
+>>> u"www.Alliancefran\,caise.nu".encode("idna")
+'www.xn--alliancefranaise-npb.nu'
+\end{verbatim}
+
+In addition, the \module{socket} has been extended to transparently
+convert Unicode hostnames to the ACE before passing them to the C
+library. In turn, modules that pass hostnames ``through'' (such as
+\module{httplib}, \module{ftplib}) also support Unicode host names
+(httplib also sends ACE Host: headers). \module{urllib} supports
+Unicode URLs with non-ASCII host names as long as the \code{path} part
+of the URL is ASCII only.
+
+To implement this change, the module \module{stringprep}, the tool
+\code{mkstringprep} and the \code{punycode} encoding have been added.
+
 \end{itemize}
 
 
