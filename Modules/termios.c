@@ -358,7 +358,9 @@ static struct constant {
 	{"INLCR", INLCR},
 	{"IGNCR", IGNCR},
 	{"ICRNL", ICRNL},
+#ifdef IUCLC
 	{"IUCLC", IUCLC},
+#endif
 	{"IXON", IXON},
 	{"IXANY", IXANY},
 	{"IXOFF", IXOFF},
@@ -366,40 +368,96 @@ static struct constant {
 
 	/* struct termios.c_oflag constants */
 	{"OPOST", OPOST},
+#ifdef OLCUC
 	{"OLCUC", OLCUC},
+#endif
 	{"ONLCR", ONLCR},
+#ifdef OCRNL
 	{"OCRNL", OCRNL},
+#endif
+#ifdef ONOCR
 	{"ONOCR", ONOCR},
+#endif
+#ifdef ONLRET
 	{"ONLRET", ONLRET},
+#endif
+#ifdef OFILL
 	{"OFILL", OFILL},
+#endif
+#ifdef OFDEL
 	{"OFDEL", OFDEL},
+#endif
+#ifdef NLDLY
 	{"NLDLY", NLDLY},
+#endif
+#ifdef CRDLY
 	{"CRDLY", CRDLY},
+#endif
+#ifdef TABDLY
 	{"TABDLY", TABDLY},
+#endif
+#ifdef BSDLY
 	{"BSDLY", BSDLY},
+#endif
+#ifdef VTDLY
 	{"VTDLY", VTDLY},
+#endif
+#ifdef FFDLY
 	{"FFDLY", FFDLY},
+#endif
 
 	/* struct termios.c_oflag-related values (delay mask) */
+#ifdef NL0
 	{"NL0", NL0},
+#endif
+#ifdef NL1
 	{"NL1", NL1},
+#endif
+#ifdef CR0
 	{"CR0", CR0},
+#endif
+#ifdef CR1
 	{"CR1", CR1},
+#endif
+#ifdef CR2
 	{"CR2", CR2},
+#endif
+#ifdef CR3
 	{"CR3", CR3},
+#endif
+#ifdef TAB0
 	{"TAB0", TAB0},
+#endif
+#ifdef TAB1
 	{"TAB1", TAB1},
+#endif
+#ifdef TAB2
 	{"TAB2", TAB2},
+#endif
+#ifdef TAB3
 	{"TAB3", TAB3},
+#endif
 #ifdef XTABS
 	{"XTABS", XTABS},
 #endif
+#ifdef BS0
 	{"BS0", BS0},
+#endif
+#ifdef BS1
 	{"BS1", BS1},
+#endif
+#ifdef VT0
 	{"VT0", VT0},
+#endif
+#ifdef VT1
 	{"VT1", VT1},
+#endif
+#ifdef FF0
 	{"FF0", FF0},
+#endif
+#ifdef FF1
 	{"FF1", FF1},
+#endif
 
 	/* struct termios.c_cflag constants */
 	{"CSIZE", CSIZE},
