@@ -353,7 +353,6 @@ class _Stream:
         if self.mode == "w" and self.buf:
             if self.type != "tar":
                 self.buf += self.cmp.flush()
-            self.__write("")            # Write remaining blocks to output
             self.fileobj.write(self.buf)
             self.buf = ""
             if self.type == "gz":
@@ -1775,6 +1774,8 @@ class TarFile(object):
            of the longname as size, followed by data blocks,
            which contain the longname as a null terminated string.
         """
+        name += NUL
+
         tarinfo = TarInfo()
         tarinfo.name = "././@LongLink"
         tarinfo.type = type
@@ -1783,6 +1784,7 @@ class TarFile(object):
 
         # write extended header
         self.fileobj.write(tarinfo.tobuf())
+        self.offset += BLOCKSIZE
         # write name blocks
         self.fileobj.write(name)
         blocks, remainder = divmod(tarinfo.size, BLOCKSIZE)

@@ -39,6 +39,9 @@ Extension modules
 Library
 -------
 
+- Patch #846659.  Fix an error in tarfile.py when using
+  GNU longname/longlink creation. 
+
 - The obsolete FCNTL.py has been deleted.  The builtin fcntl module
   has been available (on platforms that support fcntl) since Python
   1.5a3, and all FCNTL.py did is export fcntl's names, after generating
