@@ -661,7 +661,9 @@ AC_ARG_WITH(threads,
 [  --with(out)-threads[=DIRECTORY] disable/enable thread support])
 
 # --with-thread is deprecated, but check for it anyway
-AC_ARG_WITH(thread,,[with_threads=$with_thread])
+AC_ARG_WITH(thread,
+[  --with(out)-thread[=DIRECTORY]  deprecated; use --with(out)-threads],[
+with_threads=$with_thread])
 
 if test -z "$with_threads"
 then with_threads="yes"
