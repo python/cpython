@@ -73,7 +73,7 @@ import os
 import getopt
 import traceback
 import random
-import StringIO
+import cStringIO
 import warnings
 from sets import Set
 
@@ -379,7 +379,7 @@ def runtest(test, generate, verbose, quiet, testdir = None):
     if verbose:
         cfp = None
     else:
-        cfp = StringIO.StringIO()
+        cfp = cStringIO.StringIO()
     try:
         save_stdout = sys.stdout
         try:
