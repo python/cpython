@@ -37,10 +37,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <unistd.h>
 #endif
 
-#ifdef HAVE_LOCALE_H
-#include <locale.h>
-#endif
-
 #ifdef MS_WINDOWS
 #include <fcntl.h>
 #endif
@@ -104,10 +100,6 @@ Py_Main(argc, argv)
 	int inspect = 0;
 	int unbuffered = 0;
 	int stdin_is_interactive = 0;
-
-#ifdef HAVE_SETLOCALE
-	setlocale(LC_ALL, "");
-#endif
 
 	orig_argc = argc;	/* For Py_GetArgcArgv() */
 	orig_argv = argv;
