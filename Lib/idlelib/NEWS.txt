@@ -7,6 +7,9 @@ What's New in IDLE 1.0+?
   Raphael suggested correcting this so pdb's postmortem pm() would work. 
   IDLEfork Patch 844675
 
+- IDLE now does not fail to save the file anymore if the Tk buffer is not a
+  Unicode string, yet eol_convention is.  Python Bugs 774680, 788378
+
 - IDLE didn't start correctly when Python was installed in "Program Files" on
   W2K and XP.  Python Bugs 780451, 784183
 
@@ -56,6 +59,16 @@ What's New in IDLE 1.0b2?
 ===================================
 
 *Release date: 29-Jun-2003*
+
+- Extend AboutDialog.ViewFile() to support file encodings.  Make the CREDITS
+  file Latin-1.
+
+- Updated the About dialog to reflect re-integration into Python.  Provide
+  buttons to display Python's NEWS, License, and Credits, plus additional
+  buttons for IDLE's README and NEWS.
+
+- TextViewer() now has a third parameter which allows inserting text into the
+  viewer instead of reading from a file.
 
 - (Created the .../Lib/idlelib directory in the Python CVS, which is a clone of
   IDLEfork modified to install in the Python environment.  The code in the
