@@ -1,3 +1,4 @@
+
 /***********************************************************
 Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
 The Netherlands.
@@ -461,7 +462,9 @@ eval_code2(co, globals, locals,
 			}
 			if (j >= co->co_argcount) {
 				if (kwdict == NULL) {
-					err_setval(TypeError, keyword);
+					PyErr_Format(TypeError,
+					"unexpected keyword argument: %.400s",
+						     getstringvalue(keyword));
 					goto fail;
 				}
 				mappinginsert(kwdict, keyword, value);
