@@ -102,6 +102,21 @@ class Unpacker(xdr.Unpacker):
 		# Caller must get procedure-specific part of reply
 
 
+# Subroutines to create opaque authentication objects
+
+def make_auth_null():
+	return ''
+
+def make_auth_unix(seed, host, uid, gid, groups):
+	p = Packer().init()
+	p.pack_auth_unix(seed, host, uid, gid, groups)
+	return p.get_buf()
+
+def make_auth_unix_default():
+	return make_auth_unix(0, socket.gethostname(), \
+		os.getuid(), os.getgid(), [])
+
+
 # Common base class for clients
 
 class Client:
@@ -136,14 +151,13 @@ class Client:
 
 	def mkcred(self, proc):
 		if self.cred == None:
-			p = Packer().init()
-			p.pack_auth_unix(0, socket.gethostname(), \
-				os.getuid(), os.getgid(), [])
-			self.cred = p.get_buf()
-		return (AUTH_UNIX, self.cred)
+			self.cred = (AUTH_NULL, make_auth_null())
+		return self.cred
 
 	def mkverf(self, proc):
-		return (AUTH_NULL, '')
+		if self.verf == None:
+			self.verf = (AUTH_NULL, make_auth_null())
+		return self.verf
 
 
 # Record-Marking standard support
