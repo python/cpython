@@ -30,8 +30,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <stdio.h>
 #include <errno.h>
 
-extern int errno;
-
 #ifndef NO_GETWD
 
 /* Default: Version for BSD systems -- use getwd() */

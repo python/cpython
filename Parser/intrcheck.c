@@ -131,7 +131,20 @@ static SIGTYPE
 intcatcher(sig)
 	int sig; /* Not used by required by interface */
 {
-	interrupted = 1;
+	extern void goaway PROTO((int));
+	static char message[] =
+"python: to interrupt a truly hanging Python program, interrupt once more.\n";
+	switch (interrupted++) {
+	case 0:
+		break;
+	case 1:
+		write(2, message, strlen(message));
+		break;
+	case 2:
+		interrupted = 0;
+		goaway(1);
+		break;
+	}
 	signal(SIGINT, intcatcher);
 }
 

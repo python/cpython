@@ -38,7 +38,6 @@ main(argc, argv)
 {
 	char *p;
 	int n, inspect, sts;
-	int n;
 
 	if ((p = getenv("PYTHONDEBUG")) && *p != '\0')
 		debugging = 1;
@@ -63,8 +62,7 @@ main(argc, argv)
 	else
 		sts = 0;
 
-	if (inspect && isatty((int)fileno(stdin)) &&
-	    (filename != NULL || command != NULL))
+	if (inspect && isatty((int)fileno(stdin)))
 		sts = run(stdin, "<stdin>") != 0;
 
 	goaway(sts);

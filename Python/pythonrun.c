@@ -284,7 +284,7 @@ run_file(fp, filename, start, globals, locals)
 	return run_err_node(err, n, filename, globals, locals);
 }
 
-object *
+static object *
 run_err_node(err, n, filename, globals, locals)
 	int err;
 	node *n;
@@ -298,7 +298,7 @@ run_err_node(err, n, filename, globals, locals)
 	return run_node(n, filename, globals, locals);
 }
 
-object *
+static object *
 run_node(n, filename, globals, locals)
 	node *n;
 	char *filename;
@@ -307,7 +307,7 @@ run_node(n, filename, globals, locals)
 	return eval_node(n, filename, globals, locals);
 }
 
-object *
+static object *
 eval_node(n, filename, globals, locals)
 	node *n;
 	char *filename;
@@ -392,7 +392,7 @@ fatal(msg)
 extern int threads_started;
 #endif
 
-void
+static void
 cleanup()
 {
 	object *exitfunc = sysget("exitfunc");
@@ -461,7 +461,7 @@ goaway(sts)
 }
 
 #ifdef HANDLE_SIGNALS
-SIGTYPE
+static SIGTYPE
 sighandler(sig)
 	int sig;
 {
@@ -472,7 +472,7 @@ sighandler(sig)
 }
 #endif
 
-void
+static void
 initsigs()
 {
 	initintr();

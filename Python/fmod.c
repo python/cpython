@@ -27,8 +27,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <math.h>
 #include <errno.h>
 
-extern int errno;
-
 double
 fmod(x, y)
 	double x, y;

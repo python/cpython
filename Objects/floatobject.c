@@ -31,10 +31,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 
 #include <errno.h>
-#ifndef errno
-extern int errno;
-#endif
-
 #include <ctype.h>
 #include <math.h>
 

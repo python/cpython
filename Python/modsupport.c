@@ -314,6 +314,8 @@ int getargs(va_alist) va_dcl
 	return ok;
 }
 
+#ifdef UNUSED
+
 int
 getlongtuplearg(args, a, n)
 	object *args;
@@ -393,6 +395,8 @@ getshortlistarg(args, a, n)
 	}
 	return 1;
 }
+
+#endif /* UNUSED */
 
 
 /* Generic function to create a value -- the inverse of getargs() */
