@@ -579,83 +579,41 @@ parser_tuple2ast(PyAST_Object *self, PyObject *args, PyObject *kw)
 {
     NOTE(ARGUNUSED(self))
     PyObject *ast = 0;
-    PyObject *tuple = 0;
-    PyObject *temp = 0;
-    int ok;
-    int start_sym = 0;
+    PyObject *tuple;
+    node *tree;
 
     static char *keywords[] = {"sequence", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "O:tuple2ast", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "O:sequence2ast", keywords,
                                      &tuple))
         return (0);
     if (!PySequence_Check(tuple)) {
         PyErr_SetString(PyExc_ValueError,
-                        "tuple2ast() requires a single sequence argument");
+                        "sequence2ast() requires a single sequence argument");
         return (0);
     }
     /*
-     *  This mess of tests is written this way so we can use the abstract
-     *  object interface (AOI).  Unfortunately, the AOI increments reference
-     *  counts, which requires that we store a pointer to retrieved object
-     *  so we can DECREF it after the check.  But we really should accept
-     *  lists as well as tuples at the very least.
+     *  Convert the tree to the internal form before checking it.
      */
-    ok = PyObject_Size(tuple) >= 2;
-    if (ok) {
-        temp = PySequence_GetItem(tuple, 0);
-        ok = (temp != NULL) && PyInt_Check(temp);
-        if (ok)
-            /* this is used after the initial checks: */
-            start_sym = PyInt_AS_LONG(temp);
-        Py_XDECREF(temp);
-    }
-    if (ok) {
-        temp = PySequence_GetItem(tuple, 1);
-        ok = (temp != NULL) && PySequence_Check(temp);
-        Py_XDECREF(temp);
-    }
-    if (ok) {
-        temp = PySequence_GetItem(tuple, 1);
-        ok = (temp != NULL) && PyObject_Size(temp) >= 2;
-        if (ok) {
-            PyObject *temp2 = PySequence_GetItem(temp, 0);
-            if (temp2 != NULL) {
-                ok = PyInt_Check(temp2);
-                Py_DECREF(temp2);
-            }
+    tree = build_node_tree(tuple);
+    if (tree != 0) {
+        int start_sym = TYPE(tree);
+        if (start_sym == eval_input) {
+            /*  Might be an eval form.  */
+            if (validate_expr_tree(tree))
+                ast = parser_newastobject(tree, PyAST_EXPR);
         }
-        Py_XDECREF(temp);
+        else if (start_sym == file_input) {
+            /*  This looks like an exec form so far.  */
+            if (validate_file_input(tree))
+                ast = parser_newastobject(tree, PyAST_SUITE);
+        }
+        else {
+            /*  This is a fragment, at best. */
+            PyNode_Free(tree);
+            err_string("Parse tree does not use a valid start symbol.");
+        }
     }
-    /* If we've failed at some point, get out of here. */
-    if (!ok) {
-        err_string("malformed sequence for tuple2ast()");
-        return (0);
-    }
-    /*
-     *  This might be a valid parse tree, but let's do a quick check
-     *  before we jump the gun.
-     */
-    if (start_sym == eval_input) {
-        /*  Might be an eval form.  */
-        node* expression = build_node_tree(tuple);
-
-        if ((expression != 0) && validate_expr_tree(expression))
-            ast = parser_newastobject(expression, PyAST_EXPR);
-    }
-    else if (start_sym == file_input) {
-        /*  This looks like an exec form so far.  */
-        node* suite_tree = build_node_tree(tuple);
-
-        if ((suite_tree != 0) && validate_file_input(suite_tree))
-            ast = parser_newastobject(suite_tree, PyAST_SUITE);
-    }
-    else
-        /*  This is a fragment, and is not yet supported.  Maybe they
-         *  will be if I find a use for them.
-         */
-        err_string("Fragmentary parse trees not supported.");
-
     /*  Make sure we throw an exception on all errors.  We should never
      *  get this, but we'd do well to be sure something is done.
      */
@@ -663,51 +621,6 @@ parser_tuple2ast(PyAST_Object *self, PyObject *args, PyObject *kw)
         err_string("Unspecified ast error occurred.");
 
     return (ast);
-}
-
-
-/*  int check_terminal_tuple()
- *
- *  Check a tuple to determine that it is indeed a valid terminal
- *  node.  The node is known to be required as a terminal, so we throw
- *  an exception if there is a failure.
- *
- *  The format of an acceptable terminal tuple is "(is[i])": the fact
- *  that elem is a tuple and the integer is a valid terminal symbol
- *  has been established before this function is called.  We must
- *  check the length of the tuple and the type of the second element
- *  and optional third element.  We do *NOT* check the actual text of
- *  the string element, which we could do in many cases.  This is done
- *  by the validate_*() functions which operate on the internal
- *  representation.
- */
-static int
-check_terminal_tuple(PyObject *elem)
-{
-    int   len = PyObject_Size(elem);
-    int   res = 1;
-    char* str = "Illegal terminal symbol; bad node length.";
-
-    if ((len == 2) || (len == 3)) {
-        PyObject *temp = PySequence_GetItem(elem, 1);
-        res = PyString_Check(temp);
-        str = "Illegal terminal symbol; expected a string.";
-        if (res && (len == 3)) {
-            PyObject* third = PySequence_GetItem(elem, 2);
-            res = PyInt_Check(third);
-            str = "Invalid third element of terminal node.";
-            Py_XDECREF(third);
-        }
-        Py_XDECREF(temp);
-    }
-    else {
-        res = 0;
-    }
-    if (!res) {
-        elem = Py_BuildValue("(os)", elem, str);
-        PyErr_SetObject(parser_error, elem);
-    }
-    return (res);
 }
 
 
@@ -726,7 +639,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
     int i;
 
     for (i = 1; i < len; ++i) {
-        /* elem must always be a tuple, however simple */
+        /* elem must always be a sequence, however simple */
         PyObject* elem = PySequence_GetItem(tuple, i);
         int ok = elem != NULL;
         long  type = 0;
@@ -747,31 +660,52 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
         }
         if (!ok) {
             PyErr_SetObject(parser_error,
-                            Py_BuildValue("(os)", elem,
+                            Py_BuildValue("os", elem,
                                           "Illegal node construct."));
             Py_XDECREF(elem);
             return (0);
         }
         if (ISTERMINAL(type)) {
-            if (check_terminal_tuple(elem)) {
-                PyObject *temp = PySequence_GetItem(elem, 1);
+            int len = PyObject_Size(elem);
+            PyObject *temp;
 
-                /* check_terminal_tuple() already verified it's a string */
-                strn = (char *)PyMem_MALLOC(PyString_GET_SIZE(temp) + 1);
-                if (strn != NULL)
-                    (void) strcpy(strn, PyString_AS_STRING(temp));
+            if ((len != 2) && (len != 3)) {
+                err_string("Terminal nodes must have 2 or 3 entries.");
+                return 0;
+            }
+            temp = PySequence_GetItem(elem, 1);
+            if (temp == NULL)
+                return 0;
+            if (!PyString_Check(temp)) {
+                PyErr_Format(parser_error,
+                             "Second item in terminal node must be a string,"
+                             " found %s.",
+                             ((PyTypeObject*)PyObject_Type(temp))->tp_name);
                 Py_DECREF(temp);
-
-                if (PyObject_Size(elem) == 3) {
-                    PyObject* temp = PySequence_GetItem(elem, 2);
-                    *line_num = PyInt_AsLong(temp);
-                    Py_DECREF(temp);
+                return 0;
+            }
+            if (len == 3) {
+                PyObject *o = PySequence_GetItem(elem, 2);
+                if (o != NULL) {
+                    if (PyInt_Check(o))
+                        *line_num = PyInt_AS_LONG(o);
+                    else {
+                        PyErr_Format(parser_error,
+                                     "Third item in terminal node must be an"
+                                     " integer, found %s.",
+                                ((PyTypeObject*)PyObject_Type(temp))->tp_name);
+                        Py_DECREF(o);
+                        Py_DECREF(temp);
+                        return 0;
+                    }
+                    Py_DECREF(o);
                 }
             }
-            else {
-                Py_XDECREF(elem);
-                return (0);
-            }
+            len = PyString_GET_SIZE(temp) + 1;
+            strn = (char *)PyMem_MALLOC(len);
+            if (strn != NULL)
+                (void) memcpy(strn, PyString_AS_STRING(temp), len);
+            Py_DECREF(temp);
         }
         else if (!ISNONTERMINAL(type)) {
             /*
@@ -779,8 +713,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
              *  Throw an exception.
              */
             PyErr_SetObject(parser_error,
-                            Py_BuildValue("(os)", elem,
-                                          "Unknown node type."));
+                            Py_BuildValue("os", elem, "Unknown node type."));
             Py_XDECREF(elem);
             return (0);
         }
@@ -808,7 +741,7 @@ build_node_tree(PyObject *tuple)
 {
     node* res = 0;
     PyObject *temp = PySequence_GetItem(tuple, 0);
-    long  num = -1;
+    long num = -1;
 
     if (temp != NULL)
         num = PyInt_AsLong(temp);
@@ -818,8 +751,8 @@ build_node_tree(PyObject *tuple)
          *  The tuple is simple, but it doesn't start with a start symbol.
          *  Throw an exception now and be done with it.
          */
-        tuple = Py_BuildValue("(os)", tuple,
-                    "Illegal ast tuple; cannot start with terminal symbol.");
+        tuple = Py_BuildValue("os", tuple,
+                      "Illegal ast tuple; cannot start with terminal symbol.");
         PyErr_SetObject(parser_error, tuple);
     }
     else if (ISNONTERMINAL(num)) {
@@ -836,17 +769,15 @@ build_node_tree(PyObject *tuple)
     }
     else
         /*  The tuple is illegal -- if the number is neither TERMINAL nor
-         *  NONTERMINAL, we can't use it.
+         *  NONTERMINAL, we can't use it.  Not sure the implementation
+         *  allows this condition, but the API doesn't preclude it.
          */
         PyErr_SetObject(parser_error,
-                        Py_BuildValue("(os)", tuple,
+                        Py_BuildValue("os", tuple,
                                       "Illegal component tuple."));
 
     return (res);
 }
-
-
-#define VALIDATER(n)    static int validate_##n(node *tree)
 
 
 /*
@@ -870,6 +801,8 @@ staticforward int validate_terminal(node *terminal, int type, char *string);
 #define validate_doublestar(ch) validate_terminal(ch, DOUBLESTAR, "**")
 #define validate_dot(ch)        validate_terminal(ch,        DOT, ".")
 #define validate_name(ch, str)  validate_terminal(ch,       NAME, str)
+
+#define VALIDATER(n)    static int validate_##n(node *tree)
 
 VALIDATER(node);                VALIDATER(small_stmt);
 VALIDATER(class);               VALIDATER(node);
@@ -899,6 +832,7 @@ VALIDATER(exprlist);            VALIDATER(dictmaker);
 VALIDATER(arglist);             VALIDATER(argument);
 VALIDATER(listmaker);
 
+#undef VALIDATER
 
 #define is_even(n)      (((n) & 1) == 0)
 #define is_odd(n)       (((n) & 1) == 1)
@@ -907,14 +841,12 @@ VALIDATER(listmaker);
 static int
 validate_ntype(node *n, int t)
 {
-    int res = (TYPE(n) == t);
-
-    if (!res) {
-        char buffer[128];
-        (void) sprintf(buffer, "Expected node type %d, got %d.", t, TYPE(n));
-        err_string(buffer);
+    if (TYPE(n) != t) {
+        PyErr_Format(parser_error, "Expected node type %d, got %d.",
+                     t, TYPE(n));
+        return 0;
     }
-    return (res);
+    return 1;
 }
 
 
@@ -929,11 +861,11 @@ static int
 validate_numnodes(node *n, int num, const char *const name)
 {
     if (NCH(n) != num) {
-        char buff[60];
-        (void) sprintf(buff, "Illegal number of children for %s node.", name);
-        err_string(buff);
+        PyErr_Format(parser_error,
+                     "Illegal number of children for %s node.", name);
+        return 0;
     }
-    return (NCH(n) == num);
+    return 1;
 }
 
 
@@ -944,9 +876,8 @@ validate_terminal(node *terminal, int type, char *string)
                && ((string == 0) || (strcmp(string, STR(terminal)) == 0)));
 
     if (!res && !PyErr_Occurred()) {
-        char buffer[60];
-        (void) sprintf(buffer, "Illegal terminal: expected \"%s\"", string);
-        err_string(buffer);
+        PyErr_Format(parser_error,
+                     "Illegal terminal: expected \"%s\"", string);
     }
     return (res);
 }
@@ -1395,24 +1326,31 @@ static int
 validate_small_stmt(node *tree)
 {
     int nch = NCH(tree);
-    int res = (validate_numnodes(tree, 1, "small_stmt")
-               && ((TYPE(CHILD(tree, 0)) == expr_stmt)
-                   || (TYPE(CHILD(tree, 0)) == print_stmt)
-                   || (TYPE(CHILD(tree, 0)) == del_stmt)
-                   || (TYPE(CHILD(tree, 0)) == pass_stmt)
-                   || (TYPE(CHILD(tree, 0)) == flow_stmt)
-                   || (TYPE(CHILD(tree, 0)) == import_stmt)
-                   || (TYPE(CHILD(tree, 0)) == global_stmt)
-                   || (TYPE(CHILD(tree, 0)) == assert_stmt)
-                   || (TYPE(CHILD(tree, 0)) == exec_stmt)));
+    int res = validate_numnodes(tree, 1, "small_stmt");
 
-    if (res)
-        res = validate_node(CHILD(tree, 0));
+    if (res) {
+        int ntype = TYPE(CHILD(tree, 0));
+
+        if (  (ntype == expr_stmt)
+              || (ntype == print_stmt)
+              || (ntype == del_stmt)
+              || (ntype == pass_stmt)
+              || (ntype == flow_stmt)
+              || (ntype == import_stmt)
+              || (ntype == global_stmt)
+              || (ntype == assert_stmt)
+              || (ntype == exec_stmt))
+            res = validate_node(CHILD(tree, 0));
+        else {
+            res = 0;
+            err_string("illegal small_stmt child type");
+        }
+    }
     else if (nch == 1) {
-        char buffer[60];
-        (void) sprintf(buffer, "Unrecognized child node of small_stmt: %d.",
-                       TYPE(CHILD(tree, 0)));
-        err_string(buffer);
+        res = 0;
+        PyErr_Format(parser_error,
+                     "Unrecognized child node of small_stmt: %d.",
+                     TYPE(CHILD(tree, 0)));
     }
     return (res);
 }
@@ -1426,24 +1364,24 @@ validate_compound_stmt(node *tree)
 {
     int res = (validate_ntype(tree, compound_stmt)
                && validate_numnodes(tree, 1, "compound_stmt"));
+    int ntype;
 
     if (!res)
         return (0);
 
     tree = CHILD(tree, 0);
-    res = ((TYPE(tree) == if_stmt)
-           || (TYPE(tree) == while_stmt)
-           || (TYPE(tree) == for_stmt)
-           || (TYPE(tree) == try_stmt)
-           || (TYPE(tree) == funcdef)
-           || (TYPE(tree) == classdef));
-    if (res)
+    ntype = TYPE(tree);
+    if (  (ntype == if_stmt)
+          || (ntype == while_stmt)
+          || (ntype == for_stmt)
+          || (ntype == try_stmt)
+          || (ntype == funcdef)
+          || (ntype == classdef))
         res = validate_node(tree);
     else {
-        char buffer[60];
-        (void) sprintf(buffer, "Illegal compound statement type: %d.",
-                       TYPE(tree));
-        err_string(buffer);
+        res = 0;
+        PyErr_Format(parser_error,
+                     "Illegal compound statement type: %d.", TYPE(tree));
     }
     return (res);
 }
@@ -1814,14 +1752,13 @@ validate_try(node *tree)
                && validate_suite(CHILD(tree, 2))
                && validate_colon(CHILD(tree, nch - 2))
                && validate_suite(CHILD(tree, nch - 1)));
-    else {
+    else if (!PyErr_Occurred()) {
         const char* name = "except";
-        char buffer[60];
         if (TYPE(CHILD(tree, nch - 3)) != except_clause)
             name = STR(CHILD(tree, nch - 3));
-        (void) sprintf(buffer,
-                       "Illegal number of children for try/%s node.", name);
-        err_string(buffer);
+
+        PyErr_Format(parser_error,
+                     "Illegal number of children for try/%s node.", name);
     }
     /*  Skip past except_clause sections:  */
     while (res && (TYPE(CHILD(tree, pos)) == except_clause)) {
@@ -1974,9 +1911,8 @@ validate_comp_op(node *tree)
               res = ((strcmp(STR(tree), "in") == 0)
                      || (strcmp(STR(tree), "is") == 0));
               if (!res) {
-                  char buff[128];
-                  (void) sprintf(buff, "Illegal operator: '%s'.", STR(tree));
-                  err_string(buff);
+                  PyErr_Format(parser_error,
+                               "Illegal operator: '%s'.", STR(tree));
               }
               break;
           default:
@@ -2582,7 +2518,7 @@ validate_node(node *tree)
             break;
           case small_stmt:
             /*
-             *  expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt
+             *  expr_stmt | print_stmt | del_stmt | pass_stmt | flow_stmt
              *  | import_stmt | global_stmt | exec_stmt | assert_stmt
              */
             res = validate_small_stmt(tree);
