@@ -11,6 +11,7 @@ lib1.texi
 *.idx
 *.ilg
 *.pdf
+*.out
 api
 ext
 lib
