@@ -15,8 +15,8 @@ The \module{macostools} module defines the following functions:
 \begin{funcdesc}{copy}{src, dst\optional{, createpath\optional{, copytimes}}}
 Copy file \var{src} to \var{dst}. The files can be specified as
 pathnames or \pytype{FSSpec} objects. If \var{createpath} is non-zero
-\var{dst} must be a pathname and the folders leading to the
-destination are created if necessary.  The method copies data and
+the folders leading to \var{dst} are created if necessary.
+The method copies data and
 resource fork and some finder information (creator, type, flags) and
 optionally the creation, modification and backup times (default is to
 copy them). Custom icons, comments and icon position are not copied.
