@@ -153,7 +153,7 @@ class _posixfile_:
 	import struct, fcntl, FCNTL
 
 	if 'w' in how: l_type = FCNTL.F_WRLCK
-	elif 'r' in how: l_type = FCNTL.F_WRLCK
+	elif 'r' in how: l_type = FCNTL.F_RDLCK
 	elif 'u' in how: l_type = FCNTL.F_UNLCK
 	else: raise TypeError, 'no type of lock specified'
 
