@@ -211,9 +211,9 @@ PyTypeObject PyCallIter_Type = {
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
- 	0,					/* tp_doc */
- 	(traverseproc)calliter_traverse,	/* tp_traverse */
- 	0,					/* tp_clear */
+	0,					/* tp_doc */
+	(traverseproc)calliter_traverse,	/* tp_traverse */
+	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	PyObject_SelfIter,			/* tp_iter */
