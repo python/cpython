@@ -29,7 +29,7 @@ Core language, builtins, and interpreter
   numerical operators without having to use coercion), but
   occasionally, in boundary cases the coercion semantics have changed
   subtly.  Since this was a terrible gray area of the language, this
-  is considered an improvement.  Also not that __rcmp__ is no longer
+  is considered an improvement.  Also note that __rcmp__ is no longer
   supported -- instead of calling __rcmp__, __cmp__ is called with
   reversed arguments.
 
