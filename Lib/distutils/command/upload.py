@@ -89,6 +89,8 @@ class upload(Command):
                 comment = 'built for %s %s' % (dist, version)
         elif command == 'bdist_dumb':
             comment = 'built for %s' % platform.platform(terse=1)
+        elif command == 'sdist':
+            data['pyversion'] = ''
         data['comment'] = comment
 
         if self.sign:
