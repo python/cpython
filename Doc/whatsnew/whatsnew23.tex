@@ -688,10 +688,113 @@ SourceForge CVS browser.}
 \section{New and Improved Modules}
 
 As usual, Python's standard modules had a number of enhancements and
-bug fixes.  Here's a partial list; consult the \file{Misc/NEWS} file
-in the source tree, or the CVS logs, for a more complete list.
+bug fixes.  Here's a partial list of the most notable changes, sorted
+alphabetically by module name. Consult the
+\file{Misc/NEWS} file in the source tree for a more
+complete list of changes, or look through the CVS logs for all the
+details.
 
 \begin{itemize}
+
+\item The \module{array} module now supports arrays of Unicode
+characters using the \samp{u} format character.  Arrays also now
+support using the \code{+=} assignment operator to add another array's
+contents, and the \code{*=} assignment operator to repeat an array.
+(Contributed by Jason Orendorff.)
+
+\item The Distutils \class{Extension} class now supports 
+an extra constructor argument named \samp{depends} for listing
+additional source files that an extension depends on.  This lets
+Distutils recompile the module if any of the dependency files are
+modified.  For example, if \samp{sampmodule.c} includes the header
+file \file{sample.h}, you would create the \class{Extension} object like
+this:
+
+\begin{verbatim}
+ext = Extension("samp",
+                sources=["sampmodule.c"],
+                depends=["sample.h"])
+\end{verbatim}
+
+Modifying \file{sample.h} would then cause the module to be recompiled.
+(Contributed by Jeremy Hylton.)
+
+\item Two new binary packagers were added to the Distutils.
+\code{bdist_pkgtool} builds \file{.pkg} files to use with Solaris
+\program{pkgtool}, and \code{bdist_sdux} builds \program{swinstall}
+packages for use on HP-UX.  
+An abstract binary packager class, 
+\module{distutils.command.bdist_packager}, was added; this may make it
+easier to write binary packaging commands.  (Contributed by Mark
+Alexander.)
+
+\item The \module{getopt} module gained a new function,
+\function{gnu_getopt()}, that supports the same arguments as the existing
+\function{getopt()} function but uses GNU-style scanning mode. 
+The existing \function{getopt()} stops processing options as soon as a
+non-option argument is encountered, but in GNU-style mode processing
+continues, meaning that options and arguments can be mixed.  For
+example:
+
+\begin{verbatim}
+>>> getopt.getopt(['-f', 'filename', 'output', '-v'], 'f:v')
+([('-f', 'filename')], ['output', '-v'])
+>>> getopt.gnu_getopt(['-f', 'filename', 'output', '-v'], 'f:v')
+([('-f', 'filename'), ('-v', '')], ['output'])
+\end{verbatim}
+
+(Contributed by Peter \AA{strand}.)
+
+\item The \module{grp}, \module{pwd}, and \module{resource} modules
+now return enhanced tuples: 
+
+\begin{verbatim}
+>>> import grp
+>>> g = grp.getgrnam('amk')
+>>> g.gr_name, g.gr_gid
+('amk', 500)
+\end{verbatim}
+
+
+\item Two new functions in the \module{math} module, 
+\function{degrees(\var{rads})} and \function{radians(\var{degs})},
+convert between radians and degrees.  Other functions in the 
+\module{math} module such as
+\function{math.sin()} and \function{math.cos()} have always required
+input values measured in radians. (Contributed by Raymond Hettinger.)
+
+\item Three new functions, \function{getpgid()}, \function{killpg()},
+and \function{mknod()}, were added to the \module{posix} module that
+underlies the \module{os} module.  (Contributed by Gustavo Niemeyer
+and Geert Jansen.)
+
+\item The parser objects provided by the \module{pyexpat} module 
+can now optionally buffer character data, resulting in fewer calls to
+your character data handler and therefore faster performance.  Setting
+the parser object's \member{buffer_text} attribute to \constant{True} 
+will enable buffering.
+
+\item The \module{readline} module also gained a number of new
+functions: \function{get_history_item()},
+\function{get_current_history_length()}, and \function{redisplay()}.
+
+\item Support for more advanced POSIX signal handling was added
+to the \module{signal} module by adding the \function{sigpending},
+\function{sigprocmask} and \function{sigsuspend} functions, where supported
+by the platform.  These functions make it possible to avoid some previously
+unavoidable race conditions.
+
+\item The \module{socket} module now supports timeouts.  You
+can call the \method{settimeout(\var{t})} method on a socket object to
+set a timeout of \var{t} seconds.  Subsequent socket operations that
+take longer than \var{t} seconds to complete will abort and raise a
+\exception{socket.error} exception.  
+
+The original timeout implementation was by Tim O'Malley.  Michael
+Gilfix integrated it into the Python \module{socket} module, after the
+patch had undergone a lengthy review.  After it was checked in, Guido
+van~Rossum rewrote parts of it.  This is a good example of the free
+software development process in action.
 
 \item The new \module{textwrap} module contains functions for wrapping
 strings containing paragraphs of text.  The \function{wrap(\var{text},
@@ -728,109 +831,10 @@ documentation for details.
 % XXX add a link to the module docs?
 (Contributed by Greg Ward.)
 
-\item Two new functions in the \module{math} module, 
-\function{degrees(\var{rads})} and \function{radians(\var{degs})},
-convert between radians and degrees.  Other functions in the 
-\module{math} module such as
-\function{math.sin()} and \function{math.cos()} have always required
-input values measured in radians. (Contributed by Raymond Hettinger.)
-
-\item Three new functions, \function{getpgid()}, \function{killpg()},
-and \function{mknod()}, were added to the \module{posix} module that
-underlies the \module{os} module.  (Contributed by Gustavo Niemeyer
-and Geert Jansen.)
-
-\item The \module{socket} module now supports timeouts.  You
-can call the \method{settimeout(\var{t})} method on a socket object to
-set a timeout of \var{t} seconds.  Subsequent socket operations that
-take longer than \var{t} seconds to complete will abort and raise a
-\exception{socket.error} exception.  
-
-(The original timeout implementation was by Tim O'Malley.  Michael
-Gilfix integrated it into the Python \module{socket} module, after the
-patch had undergone a lengthy review.  After it was checked in, Guido
-van~Rossum rewrote parts of it.  This is a good example of the free
-software development process.)
-
-\item The \module{getopt} module gained a new function,
-\function{gnu_getopt()}, that supports the same arguments as the existing
-\function{getopt()} function but uses GNU-style scanning mode. 
-The existing \function{getopt()} stops processing options as soon as a
-non-option argument is encountered, but in GNU-style mode processing
-continues, meaning that options and arguments can be mixed.  For
-example:
-
-\begin{verbatim}
->>> getopt.getopt(['-f', 'filename', 'output', '-v'], 'f:v')
-([('-f', 'filename')], ['output', '-v'])
->>> getopt.gnu_getopt(['-f', 'filename', 'output', '-v'], 'f:v')
-([('-f', 'filename'), ('-v', '')], ['output'])
-\end{verbatim}
-
-(Contributed by Peter \AA{strand}.)
-
-\item Two new binary packagers were added to the Distutils.
-\code{bdist_pkgtool} builds \file{.pkg} files to use with Solaris
-\program{pkgtool}, and \code{bdist_sdux} builds \program{swinstall}
-packages for use on HP-UX.  
-An abstract binary packager class, 
-\module{distutils.command.bdist_packager}, was added; this may make it
-easier to write binary packaging commands.  (Contributed by Mark
-Alexander.)
-
-\item The Distutils \class{Extension} class now supports 
-an extra constructor argument named \samp{depends} for listing
-additional source files that an extension depends on.  This lets
-Distutils recompile the module if any of the dependency files are
-modified.  For example, if \samp{sampmodule.c} includes the header
-file \file{sample.h}, you would create the \class{Extension} object like
-this:
-
-\begin{verbatim}
-ext = Extension("samp",
-                sources=["sampmodule.c"],
-                depends=["sample.h"])
-\end{verbatim}
-
-Modifying \file{sample.h} would then cause the module to be recompiled.
-(Contributed by Jeremy Hylton.)
-
-\item The \module{array} module now supports arrays of Unicode
-characters using the \samp{u} format character.  Arrays also now
-support using the \code{+=} assignment operator to add another array's
-contents, and the \code{*=} assignment operator to repeat an array.
-(Contributed by Jason Orendorff.)
-
-\item The \module{grp}, \module{pwd}, and \module{resource} modules
-now return enhanced tuples: 
-
-\begin{verbatim}
->>> import grp
->>> g = grp.getgrnam('amk')
->>> g.gr_name, g.gr_gid
-('amk', 500)
-\end{verbatim}
-
-\item The \module{readline} module also gained a number of new
-functions: \function{get_history_item()},
-\function{get_current_history_length()}, and \function{redisplay()}.
-
-\item Support for more advanced POSIX signal handling was added
-to the \module{signal} module by adding the \function{sigpending},
-\function{sigprocmask} and \function{sigsuspend} functions, where supported
-by the platform.  These functions make it possible to avoid some previously
-unavoidable race conditions.
-
 \item The DOM implementation
 in \module{xml.dom.minidom} can now generate XML output in a
 particular encoding, by specifying an optional encoding argument to
 the \method{toxml()} and \method{toprettyxml()} methods of DOM nodes.
-
-\item The parser objects provided by the \module{pyexpat} module 
-can now optionally buffer character data, resulting in fewer calls to
-your character data handler and therefore faster performance.  Setting
-the parser object's \member{buffer_text} attribute to \constant{True} 
-will enable buffering.
 
 \end{itemize}
 
