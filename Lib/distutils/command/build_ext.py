@@ -63,6 +63,8 @@ class BuildExt (Command):
     def set_default_options (self):
         self.extensions = None
         self.dir = None
+        self.package = None
+
         self.include_dirs = None
         self.define = None
         self.undef = None
@@ -73,6 +75,9 @@ class BuildExt (Command):
 
     def set_final_options (self):
         self.set_undefined_options ('build', ('platdir', 'dir'))
+
+        if self.package is None:
+            self.package = ''
 
         # Make sure Python's include directories (for Python.h, config.h,
         # etc.) are in the include search path.  We have to roll our own
@@ -91,12 +96,6 @@ class BuildExt (Command):
     def run (self):
 
         self.set_final_options ()
-
-        # XXX we should care about the package we compile extensions
-        # into! 
-
-        #(extensions, package) = \
-        #    self.distribution.get_options ('ext_modules', 'package')
 
         # 'self.extensions', as supplied by setup.py, is a list of 2-tuples.
         # Each tuple is simple:
@@ -187,8 +186,12 @@ class BuildExt (Command):
             libraries = build_info.get ('libraries')
             library_dirs = build_info.get ('library_dirs')
             ext_filename = self.extension_filename (extension_name)
-            self.compiler.link_shared_object (objects, ext_filename,
-                                              libraries, library_dirs, build_info)
+            dest = os.path.dirname (
+                os.path.join (self.dir, self.package, ext_filename))
+            self.mkpath (dest)
+            self.compiler.link_shared_object (objects, ext_filename, dest,
+                                              libraries, library_dirs,
+                                              build_info=build_info)  # XXX hack!
 
     # build_extensions ()
 
