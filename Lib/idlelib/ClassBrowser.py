@@ -98,7 +98,7 @@ class ModuleBrowserTreeItem(TreeItem):
         for key, cl in dict.items():
             if cl.module == name:
                 s = key
-                if cl.super:
+                if hasattr(cl, 'super') and cl.super:
                     supers = []
                     for sup in cl.super:
                         if type(sup) is type(''):
