@@ -1378,4 +1378,4 @@ if __name__ == "__main__":
     import sys
 
     for file in sys.argv[1:]:
-        compile(file)
+        compileFile(file)
