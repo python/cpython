@@ -1,3 +1,4 @@
+import getopt
 from gl import *
 from GL import *
 from DEVICE import *
@@ -72,20 +73,35 @@ def playsound(af, spkr):
     spkr.writesamps(data)
 
 def main():
-	foreground()
-	if len(sys.argv) > 1:
-		filename = sys.argv[1]
+	looping = 0
+	packfactor = 0
+	opts, args = getopt.getopt(sys.argv[1:], 'p:l')
+	for opt, arg in opts:
+		if opt = '-p':
+			packfactor = int(eval(arg))
+		elif opt = '-l':
+			looping = 1
+	if args:
+		filename = args[0]
 	else:
 		filename = 'film.video'
 	f, w, h, pf = openvideo(filename)
-	if len(sys.argv) > 2:
-		audiofilename = sys.argv[2]
+	if 0 < packfactor <> pf:
+		w = w/pf*packfactor
+		h = h/pf*packfactor
+		pf = packfactor
+	if args[1:]:
+		audiofilename = args[1]
 		af = open(audiofilename, 'r')
 		spkr = openspkr()
+		afskip = 0
 		if len(sys.argv) > 3:
-			af.seek(eval(sys.argv[3]))
+			afskip = eval(sys.argv[3])
+		if afskip > 0:
+			af.seek(afskip)
 	else:
 		af, spkr = None, None
+	foreground()
 	prefsize(w,h)
 	win = winopen(filename)
 	RGBmode()
@@ -98,6 +114,8 @@ def main():
 	epoch.epoch = time.millitimer()
 	nframe = 0
 	tijd = 1
+	if looping:
+		looping = f.tell()
 	try:
 	    while 1:
 		if running:
@@ -114,6 +132,13 @@ def main():
 			print 'Played', nframe, 'frames at',
 			print 0.1 * int(nframe * 10000.0 / (t-epoch.epoch)),
 			print 'frames/sec'
+			if looping:
+				f.seek(looping)
+				epoch.epoch = time.millitimer()
+				nframe = 0
+				running = 1
+				if af <> None:
+					af.seek(afskip)
 		if af <> None:
 			playsound(af,spkr)
 		if not running or qtest():
