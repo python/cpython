@@ -253,7 +253,14 @@ move_root_reachable(PyGC_Head *reachable)
 	}
 }
 
-/* return true if object has a finalization method */
+/* Return true if object has a finalization method.
+ * CAUTION:  class instances have to be checked for a __del__ method, and
+ * earlier versions of this used to call PyObject_HasAttr, which in turn
+ * could call the class's __getattr__ hook (if any).  That could invoke
+ * arbitrary Python code, mutating the object graph in arbitrary ways, and
+ * that was the source of some excruciatingly subtle bugs.
+ * XXX This is still broken for new-style classes.
+ */
 static int
 has_finalizer(PyObject *op)
 {
@@ -263,9 +270,14 @@ has_finalizer(PyObject *op)
 		if (delstr == NULL)
 			Py_FatalError("PyGC: can't initialize __del__ string");
 	}
-	return (PyInstance_Check(op) ||
-	        PyType_HasFeature(op->ob_type, Py_TPFLAGS_HEAPTYPE))
-	       && PyObject_HasAttr(op, delstr);
+
+	if (PyInstance_Check(op))
+		return _PyInstance_Lookup(op, delstr) != NULL;
+	else if (PyType_HasFeature(op->ob_type, Py_TPFLAGS_HEAPTYPE))
+		/* XXX This path is still Evil. */
+		return PyObject_HasAttr(op, delstr);
+	else
+		return 0;
 }
 
 /* Move all objects with finalizers (instances with __del__) */
@@ -276,7 +288,7 @@ move_finalizers(PyGC_Head *unreachable, PyGC_Head *finalizers)
 	PyGC_Head *gc = unreachable->gc.gc_next;
 	for (; gc != unreachable; gc=next) {
 		PyObject *op = FROM_GC(gc);
-		/* has_finalizer() may result in arbitrary Python
+		/* XXX has_finalizer() may result in arbitrary Python
 		   code being run. */
 		if (has_finalizer(op)) {
 			next = gc->gc.gc_next;

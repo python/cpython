@@ -61,7 +61,7 @@ extern DL_IMPORT(PyObject *) PyMethod_Class(PyObject *);
  * can't fail, never sets an exception, and NULL is not an error (it just
  * means "not found").
  */
-PyAPI_FUNC(PyObject *) _PyInstance_Lookup(PyObject *pinst, PyObject *name);
+extern DL_IMPORT(PyObject *) _PyInstance_Lookup(PyObject *pinst, PyObject *name);
 
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
