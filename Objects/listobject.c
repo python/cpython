@@ -33,6 +33,20 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <sys/types.h>		/* For size_t */
 #endif
 
+#define ROUNDUP(n, block) ((((n)+(block)-1)/(block))*(block))
+
+static int
+roundup(n)
+	int n;
+{
+	if (n < 500)
+		return ROUNDUP(n, 10);
+	else
+		return ROUNDUP(n, 100);
+}
+
+#define NRESIZE(var, type, nitems) RESIZE(var, type, roundup(nitems))
+
 object *
 newlistobject(size)
 	int size;
@@ -135,7 +149,7 @@ ins1(self, where, v)
 		return -1;
 	}
 	items = self->ob_item;
-	RESIZE(items, object *, self->ob_size+1);
+	NRESIZE(items, object *, self->ob_size+1);
 	if (items == NULL) {
 		err_nomem();
 		return -1;
@@ -421,12 +435,12 @@ list_ass_slice(a, ilow, ihigh, v)
 			for (/*k = ihigh*/; k < a->ob_size; k++)
 				item[k+d] = item[k];
 			a->ob_size += d;
-			RESIZE(item, object *, a->ob_size); /* Can't fail */
+			NRESIZE(item, object *, a->ob_size); /* Can't fail */
 			a->ob_item = item;
 		}
 	}
 	else { /* Insert d items; recycle ihigh-ilow items */
-		RESIZE(item, object *, a->ob_size + d);
+		NRESIZE(item, object *, a->ob_size + d);
 		if (item == NULL) {
 			XDEL(recycle);
 			err_nomem();
