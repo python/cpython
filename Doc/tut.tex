@@ -1925,7 +1925,7 @@ variable.
 For example:
 
 \bcode\begin{verbatim}
->>> my_exc = 'nobody likes me!'
+>>> my_exc = 'Nobody likes me'
 >>> try:
 ...     raise my_exc, 2*2
 ... except my_exc, val:
@@ -1933,7 +1933,7 @@ For example:
 ... 
 My exception occured, value: 4
 >>> raise my_exc, 1
-Unhandled exception: nobody likes me!: 1
+Nobody likes me: 1
 Stack backtrace (innermost last):
   File "<stdin>", line 7
 >>> 
@@ -1961,15 +1961,15 @@ Stack backtrace (innermost last):
 >>> 
 \end{verbatim}\ecode
 %
-The
-{\em finally\ clause}
-must follow the except clauses(s), if any.
-It is executed whether or not an exception occurred,
-or whether or not an exception is handled.
-If the exception is handled, the finally clause is executed after the
-handler (and even if another exception occurred in the handler).
-It is also executed when the {\tt try} statement is left via a
-{\tt break} or {\tt return} statement.
+A {\tt finally} clause is executed whether or not an exception has
+occurred in the {\tt try} clause.  When an exception has occurred, it
+is re-raised after the {\tt finally} clauses is executed.  The
+{\tt finally} clause is also executed ``on the way out'' when the
+{\tt try} statement is left via a {\tt break} or {\tt return}
+statement.
+
+A {\tt try} statement must either have one or more {\tt except}
+clauses or one {\tt finally} clause, but not both.
 
 
 \chapter{Classes}
