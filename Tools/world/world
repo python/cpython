@@ -1,4 +1,4 @@
-#! /usr/bin/env python1.5
+#! /usr/bin/env python
 
 """Print the long name of an Internet domain.
 
@@ -51,11 +51,6 @@ __source__ = '<url:http://www.python.org/~bwarsaw/pyware/>'
 import sys
 import string
 import getopt
-try:
-    import re
-except ImportError:
-    print 'Python 1.5 is required!'
-    sys.exit(1)
 
 
 
@@ -80,6 +75,12 @@ def resolve(rawaddr):
 
 
 def parse(file, normalize):
+    try:
+	import re
+    except ImportError:
+	print 'Parsing requires Python 1.5'
+	sys.exit(1)
+
     try:
 	fp = open(file)
     except IOError, (err, msg):
