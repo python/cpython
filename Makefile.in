@@ -166,13 +166,12 @@ Modules: Parser Python Objects
 			prefix="$(prefix)" exec_prefix="$(exec_prefix)" all
 
 # Test the interpreter (twice, once without .pyc files, once with)
-TESTPATH=	$(srcdir)/Lib:$(srcdir)/Lib/$(MACHDEP):$(srcdir)/Lib/test:./Modules
 TESTOPTS=	
 TESTPROG=	$(srcdir)/Lib/test/regrtest.py
 test:		python
 		-rm -f $(srcdir)/Lib/test/*.pyc
-		PYTHONPATH=$(TESTPATH) ./python $(TESTPROG) $(TESTOPTS)
-		PYTHONPATH=$(TESTPATH) ./python $(TESTPROG) $(TESTOPTS)
+		./python $(TESTPROG) $(TESTOPTS)
+		./python $(TESTPROG) $(TESTOPTS)
 
 # Install everything
 install:	altinstall bininstall maninstall
