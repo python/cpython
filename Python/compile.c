@@ -1879,44 +1879,77 @@ com_invert_constant(struct compiling *c, node *n)
 		com_addbyte(c, UNARY_INVERT);
 }
 
+static int
+is_float_zero(const char *p)
+{
+	int found_radix_point = 0;
+	int ch;
+	while ((ch = Py_CHARMASK(*p++)) != '\0') {
+		switch (ch) {
+		case '0':
+			/* no reason to believe it's not 0 -- continue */
+			break;
+
+		case 'e': case 'E': case 'j': case 'J':
+			/* If this was a hex constant, we already would have
+			   returned 0 due to the 'x' or 'X', so 'e' or 'E'
+			   must be an exponent marker, and we haven't yet
+			   seen a non-zero digit, and it doesn't matter what
+			   the exponent is then.  For 'j' or 'J' similarly,
+			   except that this is an imaginary 0 then. */
+			return 1;
+
+		case '.':
+			found_radix_point = 1;
+			break;
+
+		default:
+			return 0;
+		}
+	}
+	return found_radix_point;
+}
+
 static void
 com_factor(struct compiling *c, node *n)
 {
 	int childtype = TYPE(CHILD(n, 0));
+	node *pfactor, *ppower, *patom, *pnum;
 	REQ(n, factor);
 	/* If the unary +, -, or ~ operator is applied to a constant,
-	   don't generate a UNARY_xxx opcode. Just store the
+	   don't generate a UNARY_xxx opcode.  Just store the
 	   approriate value as a constant.  If the value is negative,
 	   extend the string containing the constant and insert a
-	   negative in the 0th position. 
+	   negative in the 0th position -- unless we're doing unary minus
+	   of a floating zero!  In that case the sign is significant, but
+	   the const dict can't distinguish +0.0 from -0.0.
 	 */
 	if ((childtype == PLUS || childtype == MINUS || childtype == TILDE)
 	    && NCH(n) == 2
-	    && TYPE(CHILD(n, 1)) == factor
- 	    && NCH(CHILD(n, 1)) == 1
-	    && TYPE(CHILD(CHILD(n, 1), 0)) == power
- 	    && NCH(CHILD(CHILD(n, 1), 0)) == 1
-	    && TYPE(CHILD(CHILD(CHILD(n, 1), 0), 0)) == atom
-	    && TYPE(CHILD(CHILD(CHILD(CHILD(n, 1), 0), 0), 0)) == NUMBER) {
-		node *constant = CHILD(CHILD(CHILD(n, 1), 0), 0);
+	    && TYPE((pfactor = CHILD(n, 1))) == factor
+ 	    && NCH(pfactor) == 1
+	    && TYPE((ppower = CHILD(pfactor, 0))) == power
+ 	    && NCH(ppower) == 1
+	    && TYPE((patom = CHILD(ppower, 0))) == atom
+	    && TYPE((pnum = CHILD(patom, 0))) == NUMBER
+	    && !(childtype == MINUS && is_float_zero(STR(pnum)))) {
 		if (childtype == TILDE) {
-			com_invert_constant(c, CHILD(constant, 0));
+			com_invert_constant(c, pnum);
 			return;
 		}
 		if (childtype == MINUS) {
-			node *numnode = CHILD(constant, 0);
-			char *s = malloc(strlen(STR(numnode)) + 2);
+			char *s = malloc(strlen(STR(pnum)) + 2);
 			if (s == NULL) {
 				com_error(c, PyExc_MemoryError, "");
 				com_addbyte(c, 255);
 				return;
 			}
 			s[0] = '-';
-			strcpy(s + 1, STR(numnode));
-			free(STR(numnode));
-			STR(numnode) = s;
+			strcpy(s + 1, STR(pnum));
+			free(STR(pnum));
+			STR(pnum) = s;
 		}
-		com_atom(c, constant);
+		com_atom(c, patom);
 	}
 	else if (childtype == PLUS) {
 		com_factor(c, CHILD(n, 1));
