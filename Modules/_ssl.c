@@ -220,6 +220,7 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 	Py_BEGIN_ALLOW_THREADS
 	SSL_CTX_set_verify(self->ctx,
 			   SSL_VERIFY_NONE, NULL); /* set verify lvl */
+	SSL_CTX_set_options(self->ctx, SSL_OP_ALL); /* ssl compatibility */
 	self->ssl = SSL_new(self->ctx); /* New ssl struct */
 	Py_END_ALLOW_THREADS
 	SSL_set_fd(self->ssl, Sock->sock_fd);	/* Set the socket for SSL */

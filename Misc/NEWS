@@ -37,6 +37,9 @@ Extension modules
 - Bug #954364: inspect.getframeinfo() sometimes produces incorrect traceback
   line numbers
 
+- Patch #909007: Enable a bunch of safe bug workarounds in OpenSSL, for
+  the sake of compatibility with various broken SSL implementations.
+
 Library
 -------
 
