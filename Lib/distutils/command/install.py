@@ -48,6 +48,7 @@ class Install (Command):
                ('optimize-py', None, "compile .py to .pyo (optimized)"),
               ]
 
+
     def set_default_options (self):
 
         self.build_base = None
@@ -83,6 +84,29 @@ class Install (Command):
 
     def set_final_options (self):
 
+        # XXX this method is where the default installation directories
+        # for modules and extension modules are determined.  (Someday,
+        # the default installation directories for scripts,
+        # documentation, and whatever else the Distutils can build and
+        # install will also be determined here.)  Thus, this is a pretty
+        # important place to fiddle with for anyone interested in
+        # installation schemes for the Python library.  Issues that
+        # are not yet resolved to my satisfaction:
+        #   * how much platform dependence should be here, and
+        #     how much can be pushed off to sysconfig (or, better, the
+        #     Makefiles parsed by sysconfig)?
+        #   * how independent of Python version should this be -- ie.
+        #     should we have special cases to handle Python 1.5 and
+        #     older, and then do it "the right way" for 1.6?  Or should
+        #     we install a site.py along with Distutils under pre-1.6
+        #     Python to take care of the current deficiencies in
+        #     Python's library installation scheme?
+        #
+        # Currently, this method has hacks to distinguish POSIX from
+        # non-POSIX systems (for installation of site-local modules),
+        # and assumes the Python 1.5 installation tree with no site.py
+        # to fix things.
+
         # Figure out the build directories, ie. where to install from
         self.set_peer_option ('build', 'basedir', self.build_base)
         self.set_undefined_options ('build',
@@ -114,15 +138,37 @@ class Install (Command):
             self.install_platlib = \
                 self.replace_sys_prefix ('BINLIBDEST', ('lib','python1.5'), 1)
 
+
+        # Here is where we decide where to install most library files:
+        # on POSIX systems, they go to 'site-packages' under the
+        # install_lib (determined above -- typically
+        # /usr/local/lib/python1.x).  Unfortunately, both
+        # platform-independent (.py*) and platform-specific (.so) files
+        # go to this directory, since there is no site-packages under
+        # $exec_prefix in the usual way that Python builds sys.path.  On
+        # non-POSIX systems, the situation is even worse: everything
+        # gets dumped right into $exec_prefix, not even a lib
+        # subdirectory!  But apparently that's what needs to be done to
+        # make it work under Python 1.5 -- hope we can get this fixed
+        # for 1.6!
+
         if self.install_site_lib is None:
-            self.install_site_lib = \
-                os.path.join (self.install_lib, 'site-packages')
+            if os.name == 'posix':
+                self.install_site_lib = \
+                    os.path.join (self.install_lib, 'site-packages')
+            else:
+                self.install_site_lib = self.exec_prefix
+
         if self.install_site_platlib is None:
-            # XXX ugh! this puts platform-specific files in with shared files,
-            # with no nice way to override it! (this might be a Python
-            # problem, though, not a Distutils problem...)
-            self.install_site_platlib = \
-                os.path.join (self.install_lib, 'site-packages')
+            if os.name == 'posix':
+                # XXX ugh! this puts platform-specific files in with
+                # shared files, with no nice way to override it! (this
+                # might be a Python problem, though, not a Distutils
+                # problem...)
+                self.install_site_platlib = \
+                    os.path.join (self.install_lib, 'site-packages')
+            else:
+                self.install_site_platlib = self.exec_prefix
 
         #if self.install_scheme == 'site':
         #    install_lib = self.install_site_lib
@@ -180,6 +226,9 @@ class Install (Command):
     def run (self):
 
         self.set_final_options ()
+
+        # Obviously have to build before we can install
+        self.run_peer ('build')
 
         # Install modules in two steps: "platform-shared" files (ie. pure
         # python modules) and platform-specific files (compiled C
