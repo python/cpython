@@ -319,6 +319,7 @@ class dispatcher:
             raise socket.error, err
 
     def accept (self):
+        # XXX can return either an address pair or None
         try:
             conn, addr = self.socket.accept()
             return conn, addr
@@ -521,10 +522,10 @@ if os.name == 'posix':
             self.fd = fd
 
         def recv (self, *args):
-            return apply (os.read, (self.fd,)+args)
+            return os.read(self.fd, *args)
 
         def send (self, *args):
-            return apply (os.write, (self.fd,)+args)
+            return os.write(self.fd, *args)
 
         read = recv
         write = send
