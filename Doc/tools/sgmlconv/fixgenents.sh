@@ -30,6 +30,7 @@ s|<e/>|\\|g
 s|<geq/>|\&ge;|g
 s|<ldots/>|\&hellip|g
 s|<leq/>|\&le;|g
+s|<version/>|\&version;|g
 s|<ABC>|ABC|g
 s|<ASCII>|ASCII|g
 s|<C>|C|g
@@ -43,5 +44,6 @@ s|<e>|\\|g
 s|<geq>|\&ge;|g
 s|<ldots>|\&hellip|g
 s|<leq>|\&le;|g
+s|<version>|\&version;|g
 s|---|\&mdash;|g
 ' || exit $?
