@@ -543,7 +543,7 @@ ControlEvent = [
 (u'MaintenanceTypeDlg', u'RepairButton', u'NewDialog', u'VerifyRepairDlg', u'1', 4),
 (u'MaintenanceTypeDlg', u'RepairButton', u'[InstallMode]', u'Repair', u'1', 1),
 (u'MaintenanceTypeDlg', u'RepairButton', u'[Progress1]', u'Repairing', u'1', 2),
-(u'MaintenanceTypeDlg', u'RepairButton', u'[Progress2]', u'repaires', u'1', 3),
+(u'MaintenanceTypeDlg', u'RepairButton', u'[Progress2]', u'repairs', u'1', 3),
 (u'MaintenanceWelcomeDlg', u'Cancel', u'SpawnDialog', u'CancelDlg', u'1', None),
 (u'MaintenanceWelcomeDlg', u'Next', u'NewDialog', u'MaintenanceTypeDlg', u'1', 2),
 (u'MaintenanceWelcomeDlg', u'Next', u'SpawnWaitDialog', u'WaitForCostingDlg', u'CostingComplete = 1', 1),
