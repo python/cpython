@@ -223,8 +223,8 @@ installmacsubtree:
 	
 
 	$(BUILDPYTHON) $(CACHERSRC) -v $(DESTDIR)$(MACLIBDEST) $(DESTDIR)$(MACTOOLSDEST)
-	$(BUILDPYTHON) -Wi -tt $(compileall) -x badsyntax $(DESTDIR)$(MACTOOLSDEST)
-	$(BUILDPYTHON) -O -Wi -tt $(compileall) -x badsyntax $(DESTDIR)$(MACTOOLSDEST)
+	$(BUILDPYTHON) -Wi -tt $(compileall) -d $(MACTOOLSDEST) -x badsyntax $(DESTDIR)$(MACTOOLSDEST)
+	$(BUILDPYTHON) -O -Wi -tt $(compileall) -d $(MACTOOLSDEST) -x badsyntax $(DESTDIR)$(MACTOOLSDEST)
 
 #
 # We use the full name here in stead of $(INSTALLED_PYTHONW), because
