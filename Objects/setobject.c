@@ -158,18 +158,9 @@ set_contains(PySetObject *so, PyObject *key)
 static PyObject *
 set_direct_contains(PySetObject *so, PyObject *key)
 {
-	PyObject *tmp;
 	long result;
 
-	result = PyDict_Contains(so->data, key);
-	if (result == -1 && PyAnySet_Check(key)) {
-		PyErr_Clear();
-		tmp = frozenset_dict_wrapper(((PySetObject *)(key))->data);
-		if (tmp == NULL)
-			return NULL;
-		result = PyDict_Contains(so->data, tmp);
-		Py_DECREF(tmp);
-	}
+	result = set_contains(so, key);
 	if (result == -1)
 		return NULL;
 	return PyBool_FromLong(result);
@@ -655,8 +646,8 @@ frozenset_hash(PyObject *self)
 	PySetObject *so = (PySetObject *)self;
 	PyObject *key, *value;
 	int pos = 0;
-
 	long hash = 0;
+
 	if (so->hash != -1)
 		return so->hash;
 
@@ -728,11 +719,13 @@ static int
 set_tp_print(PySetObject *so, FILE *fp, int flags)
 {
 	PyObject *key, *value;
-	int pos = 0;
+	int pos=0, firstpass=1;
 
 	fprintf(fp, "%s([", so->ob_type->tp_name);
 	while (PyDict_Next(so->data, &pos, &key, &value)) {
-		if (pos)
+		if (firstpass)
+			firstpass = 0;
+		else
 			fprintf(fp, ", ");
 		if (PyObject_Print(key, fp, 0) != 0)
 			return -1;
@@ -746,8 +739,7 @@ set_clear(PySetObject *so)
 {
 	PyDict_Clear(so->data);
 	so->hash = -1;
-	Py_INCREF(Py_None);
-	return Py_None;
+	Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(clear_doc, "Remove all elements from this set.");
@@ -765,8 +757,7 @@ set_add(PySetObject *so, PyObject *item)
 {
 	if (PyDict_SetItem(so->data, item, Py_True) == -1)
 		return NULL;
-	Py_INCREF(Py_None);
-	return Py_None;
+	Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(add_doc, 
@@ -790,8 +781,7 @@ set_remove(PySetObject *so, PyObject *item)
 
 	if (PyDict_DelItem(so->data, item) == -1) 
 		return NULL;
-	Py_INCREF(Py_None);
-	return Py_None;
+	Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(remove_doc,
@@ -818,8 +808,7 @@ set_discard(PySetObject *so, PyObject *item)
 			return NULL;
 		PyErr_Clear();
 	}
-	Py_INCREF(Py_None);
-	return Py_None;
+	Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(discard_doc,
