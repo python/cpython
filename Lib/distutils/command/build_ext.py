@@ -167,6 +167,11 @@ class build_ext (Command):
             else:
                 self.build_temp = os.path.join(self.build_temp, "Release")
 
+            # Append the source distribution include and library directories,
+            # this allows distutils on windows to work in the source tree
+            self.include_dirs.append(os.path.join(sys.exec_prefix, 'PC'))
+            self.library_dirs.append(os.path.join(sys.exec_prefix, 'PCBuild'))
+
         # OS/2 (EMX) doesn't support Debug vs Release builds, but has the 
         # import libraries in its "Config" subdirectory
         if os.name == 'os2':
@@ -177,7 +182,9 @@ class build_ext (Command):
         if sys.platform[:6] == 'cygwin':
             if string.find(sys.executable, sys.exec_prefix) != -1:
                 # building third party extensions
-                self.library_dirs.append(os.path.join(sys.prefix, "lib", "python" + sys.version[:3], "config"))
+                self.library_dirs.append(os.path.join(sys.prefix, "lib",
+                                                      "python" + sys.version[:3],
+                                                      "config"))
             else:
                 # building python standard extensions
                 self.library_dirs.append('.')
