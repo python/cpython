@@ -260,6 +260,13 @@ float_abs(v)
 		return float_pos(v);
 }
 
+static int
+float_nonzero(v)
+	floatobject *v;
+{
+	return v->ob_fval != 0.0;
+}
+
 static number_methods float_as_number = {
 	float_add,	/*nb_add*/
 	float_sub,	/*nb_subtract*/
@@ -271,6 +278,7 @@ static number_methods float_as_number = {
 	float_neg,	/*nb_negative*/
 	float_pos,	/*nb_positive*/
 	float_abs,	/*nb_absolute*/
+	float_nonzero,	/*nb_nonzero*/
 };
 
 typeobject Floattype = {
