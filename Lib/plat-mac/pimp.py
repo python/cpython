@@ -25,6 +25,7 @@ import md5
 import tarfile
 import tempfile
 import shutil
+import time
 
 __all__ = ["PimpPreferences", "PimpDatabase", "PimpPackage", "main", 
     "PIMP_VERSION", "main"]
@@ -47,49 +48,49 @@ DEFAULT_INSTALLDIR=distutils.sysconfig.get_python_lib()
 DEFAULT_PIMPDATABASE_FMT="http://www.python.org/packman/version-%s/%s-%s-%s-%s-%s.plist"
 
 def getDefaultDatabase(experimental=False):
-	if experimental:
-		status = "exp"
-	else:
-		status = "prod"
-		
-	major, minor, micro, state, extra = sys.version_info
-	pyvers = '%d.%d' % (major, minor)
-	if state != 'final':
-		pyvers = pyvers + '%s%d' % (state, extra)
-		
-	longplatform = distutils.util.get_platform()
-	osname, release, machine = longplatform.split('-')
-	# For some platforms we may want to differentiate between
-	# installation types
-	if osname == 'darwin':
-		if sys.prefix.startswith('/System/Library/Frameworks/Python.framework'):
-			osname = 'darwin_apple'
-		elif sys.prefix.startswith('/Library/Frameworks/Python.framework'):
-			osname = 'darwin_macpython'
-		# Otherwise we don't know...
-	# Now we try various URLs by playing with the release string.
-	# We remove numbers off the end until we find a match.
-	rel = release
-	while True:
-		url = DEFAULT_PIMPDATABASE_FMT % (PIMP_VERSION, status, pyvers, osname, rel, machine)
-		try:
-			urllib2.urlopen(url)
-		except urllib2.HTTPError, arg:
-			pass
-		else:
-			break
-		if not rel:
-			# We're out of version numbers to try. Use the
-			# full release number, this will give a reasonable
-			# error message later
-			url = DEFAULT_PIMPDATABASE_FMT % (PIMP_VERSION, status, pyvers, osname, release, machine)
-			break
-		idx = rel.rfind('.')
-		if idx < 0:
-			rel = ''
-		else:
-			rel = rel[:idx]
-	return url
+    if experimental:
+        status = "exp"
+    else:
+        status = "prod"
+        
+    major, minor, micro, state, extra = sys.version_info
+    pyvers = '%d.%d' % (major, minor)
+    if state != 'final':
+        pyvers = pyvers + '%s%d' % (state, extra)
+        
+    longplatform = distutils.util.get_platform()
+    osname, release, machine = longplatform.split('-')
+    # For some platforms we may want to differentiate between
+    # installation types
+    if osname == 'darwin':
+        if sys.prefix.startswith('/System/Library/Frameworks/Python.framework'):
+            osname = 'darwin_apple'
+        elif sys.prefix.startswith('/Library/Frameworks/Python.framework'):
+            osname = 'darwin_macpython'
+        # Otherwise we don't know...
+    # Now we try various URLs by playing with the release string.
+    # We remove numbers off the end until we find a match.
+    rel = release
+    while True:
+        url = DEFAULT_PIMPDATABASE_FMT % (PIMP_VERSION, status, pyvers, osname, rel, machine)
+        try:
+            urllib2.urlopen(url)
+        except urllib2.HTTPError, arg:
+            pass
+        else:
+            break
+        if not rel:
+            # We're out of version numbers to try. Use the
+            # full release number, this will give a reasonable
+            # error message later
+            url = DEFAULT_PIMPDATABASE_FMT % (PIMP_VERSION, status, pyvers, osname, release, machine)
+            break
+        idx = rel.rfind('.')
+        if idx < 0:
+            rel = ''
+        else:
+            rel = rel[:idx]
+    return url
 
 def _cmd(output, dir, *cmditems):
     """Internal routine to run a shell command in a given directory."""
@@ -109,6 +110,68 @@ def _cmd(output, dir, *cmditems):
             output.write(line)
     return child.wait()
 
+class PimpDownloader:
+    """Abstract base class - Downloader for archives"""
+    
+    def __init__(self, argument,
+            dir="",
+            watcher=None):
+        self.argument = argument
+        self._dir = dir
+        self._watcher = watcher
+                
+    def download(self, url, filename, output=None):
+        return None
+        
+    def update(self, str):
+        if self._watcher:
+            return self._watcher.update(str)
+        return True
+            
+class PimpCurlDownloader(PimpDownloader):
+
+    def download(self, url, filename, output=None):
+        self.update("Downloading %s..." % url)
+        exitstatus = _cmd(output, self._dir,
+                    "curl",
+                    "--output", filename,
+                    url)
+        self.update("Downloading %s: finished" % url)
+        return (not exitstatus)
+            
+class PimpUrllibDownloader(PimpDownloader):
+
+    def download(self, url, filename, output=None):
+        output = open(filename, 'wb')
+        self.update("Downloading %s: opening connection" % url)
+        keepgoing = True
+        download = urllib2.urlopen(url)
+        if download.headers.has_key("content-length"):
+            length = long(download.headers['content-length'])
+        else:
+            length = -1
+        
+        data = download.read(4096) #read 4K at a time
+        dlsize = 0
+        lasttime = 0
+        while keepgoing:
+            dlsize = dlsize + len(data)
+            if len(data) == 0: 
+                #this is our exit condition
+                break
+            output.write(data)
+            if int(time.time()) != lasttime:
+                # Update at most once per second
+                lasttime = int(time.time())
+                if length == -1:
+                    keepgoing = self.update("Downloading %s: %d bytes..." % (url, dlsize))
+                else:
+                    keepgoing = self.update("Downloading %s: %d%% (%d bytes)..." % (url, int(100.0*dlsize/length), dlsize))
+            data = download.read(4096)
+        if keepgoing:
+            self.update("Downloading %s: finished" % url)
+        return keepgoing
+        
 class PimpUnpacker:
     """Abstract base class - Unpacker for archives"""
     
@@ -116,15 +179,22 @@ class PimpUnpacker:
     
     def __init__(self, argument,
             dir="",
-            renames=[]):
+            renames=[],
+            watcher=None):
         self.argument = argument
         if renames and not self._can_rename:
             raise RuntimeError, "This unpacker cannot rename files"
         self._dir = dir
         self._renames = renames
+        self._watcher = watcher
                 
     def unpack(self, archive, output=None, package=None):
         return None
+        
+    def update(self, str):
+        if self._watcher:
+            return self._watcher.update(str)
+        return True
         
 class PimpCommandUnpacker(PimpUnpacker):
     """Unpack archives by calling a Unix utility"""
@@ -173,7 +243,9 @@ class PimpTarUnpacker(PimpUnpacker):
                     #print '????', member.name
         for member in members:
             if member in skip:
+                self.update("Skipping %s" % member.name)
                 continue
+            self.update("Extracting %s" % member.name)
             tf.extract(member, self._dir)
         if skip:
             names = [member.name for member in skip if member.name[-1] != '/']
@@ -214,6 +286,10 @@ class PimpPreferences:
         self.downloadDir = downloadDir
         self.buildDir = buildDir
         self.pimpDatabase = pimpDatabase
+        self.watcher = None
+        
+    def setWatcher(self, watcher):
+        self.watcher = watcher
         
     def setInstallDir(self, installDir=None):
         if installDir:
@@ -582,10 +658,10 @@ class PimpPackage:
         if not self._archiveOK():
             if scheme == 'manual':
                 return "Please download package manually and save as %s" % self.archiveFilename
-            if _cmd(output, self._db.preferences.downloadDir,
-                    "curl",
-                    "--output", self.archiveFilename,
-                    self._dict['Download-URL']):
+            downloader = PimpUrllibDownloader(None, self._db.preferences.downloadDir, 
+                watcher=self._db.preferences.watcher)
+            if not downloader.download(self._dict['Download-URL'],
+                    self.archiveFilename, output):
                 return "download command failed"
         if not os.path.exists(self.archiveFilename) and not NO_EXECUTE:
             return "archive not found after download"
@@ -614,7 +690,8 @@ class PimpPackage:
         else:
             return "unknown extension for archive file: %s" % filename
         self.basename = filename[:-len(ext)]
-        unpacker = unpackerClass(arg, dir=self._db.preferences.buildDir)
+        unpacker = unpackerClass(arg, dir=self._db.preferences.buildDir, 
+                watcher=self._db.preferences.watcher)
         rv = unpacker.unpack(self.archiveFilename, output=output)
         if rv:
             return rv
@@ -879,10 +956,12 @@ class PimpInstaller:
         
         
     
-def _run(mode, verbose, force, args, prefargs):
+def _run(mode, verbose, force, args, prefargs, watcher):
     """Engine for the main program"""
     
     prefs = PimpPreferences(**prefargs)
+    if watcher:
+        prefs.setWatcher(watcher)
     rv = prefs.check()
     if rv:
         sys.stdout.write(rv)
@@ -979,6 +1058,11 @@ def main():
         print "       -u url URL for database"
         sys.exit(1)
         
+    class _Watcher:
+        def update(self, msg):
+            sys.stderr.write(msg + '\r')
+            return 1
+        
     try:
         opts, args = getopt.getopt(sys.argv[1:], "slifvdD:Vu:")
     except getopt.GetoptError:
@@ -989,6 +1073,7 @@ def main():
     force = 0
     verbose = 0
     prefargs = {}
+    watcher = None
     for o, a in opts:
         if o == '-s':
             if mode:
@@ -1012,6 +1097,7 @@ def main():
             force = 1
         if o == '-v':
             verbose = 1
+            watcher = _Watcher()
         if o == '-D':
             prefargs['installDir'] = a
         if o == '-u':
@@ -1021,7 +1107,7 @@ def main():
     if mode == 'version':
         print 'Pimp version %s; module name is %s' % (PIMP_VERSION, __name__)
     else:
-        _run(mode, verbose, force, args, prefargs)
+        _run(mode, verbose, force, args, prefargs, watcher)
 
 # Finally, try to update ourselves to a newer version.
 # If the end-user updates pimp through pimp the new version
