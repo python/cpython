@@ -22,19 +22,9 @@ pickle_choices = [(pickler, unpickler, proto)
                   for proto in range(3)]
 assert len(pickle_choices) == 2*2*3
 
-# XXX The test suite uncovered a bug in Python 2.2.2:  if x and y are
-# XXX instances of new-style classes (like date and time) that both
-# XXX define __cmp__, and x is compared to y, and one of the __cmp__
-# XXX implementations raises an exception, the exception can get dropped
-# XXX on the floor when it occurs, and pop up again at some "random" time
-# XXX later (it depends on when the next opcode gets executed that
-# XXX bothers to check).  There isn't a workaround for this, so instead
-# XXX we disable the parts of the tests that trigger it unless
-# XXX CMP_BUG_FIXED is true.  The bug is still there, we simply avoid
-# XXX provoking it here.
-# XXX Guido checked into a fix that will go into 2.2.3.  The bug was
-# XXX already fixed in 2.3 CVS via a different means.
-CMP_BUG_FIXED = sys.version_info >= (2, 2, 3)
+# An arbitrary collection of objects of non-datetime types, for testing
+# mixed-type comparisons.
+OTHERSTUFF = (10, 10L, 34.5, "abc", {}, [], ())
 
 
 #############################################################################
@@ -343,14 +333,12 @@ class TestTimeDelta(HarmlessMixedComparison):
             self.assertEqual(cmp(t1, t2), -1)
             self.assertEqual(cmp(t2, t1), 1)
 
-        badargs = 10, 10L, 34.5, "abc", {}, [], ()
-        for badarg in badargs:
+        for badarg in OTHERSTUFF:
             self.assertEqual(t1 == badarg, False)
             self.assertEqual(t1 != badarg, True)
             self.assertEqual(badarg == t1, False)
             self.assertEqual(badarg != t1, True)
 
-        for badarg in badargs:
             self.assertRaises(TypeError, lambda: t1 <= badarg)
             self.assertRaises(TypeError, lambda: t1 < badarg)
             self.assertRaises(TypeError, lambda: t1 > badarg)
@@ -898,14 +886,12 @@ class TestDate(HarmlessMixedComparison):
             self.assertEqual(cmp(t1, t2), -1)
             self.assertEqual(cmp(t2, t1), 1)
 
-        badargs = 10, 10L, 34.5, "abc", {}, [], ()
-        for badarg in badargs:
+        for badarg in OTHERSTUFF:
             self.assertEqual(t1 == badarg, False)
             self.assertEqual(t1 != badarg, True)
             self.assertEqual(badarg == t1, False)
             self.assertEqual(badarg != t1, True)
 
-        for badarg in badargs:
             self.assertRaises(TypeError, lambda: t1 < badarg)
             self.assertRaises(TypeError, lambda: t1 > badarg)
             self.assertRaises(TypeError, lambda: t1 >= badarg)
@@ -1475,17 +1461,12 @@ class TestTime(HarmlessMixedComparison):
             self.assertEqual(cmp(t1, t2), -1)
             self.assertEqual(cmp(t2, t1), 1)
 
-        badargs = (10, 10L, 34.5, "abc", {}, [], ())
-        if CMP_BUG_FIXED:
-            badargs += (date(1, 1, 1), datetime(1, 1, 1, 1, 1), timedelta(9))
-
-        for badarg in badargs:
+        for badarg in OTHERSTUFF:
             self.assertEqual(t1 == badarg, False)
             self.assertEqual(t1 != badarg, True)
             self.assertEqual(badarg == t1, False)
             self.assertEqual(badarg != t1, True)
 
-        for badarg in badargs:
             self.assertRaises(TypeError, lambda: t1 <= badarg)
             self.assertRaises(TypeError, lambda: t1 < badarg)
             self.assertRaises(TypeError, lambda: t1 > badarg)
@@ -2007,9 +1988,8 @@ class TestTimeTZ(TestTime, TZInfoBase):
         self.assertEqual(t1, t2)
         t2 = t2.replace(tzinfo=FixedOffset(None, ""))
         self.assertEqual(t1, t2)
-        if CMP_BUG_FIXED:
-            t2 = t2.replace(tzinfo=FixedOffset(0, ""))
-            self.assertRaises(TypeError, lambda: t1 == t2)
+        t2 = t2.replace(tzinfo=FixedOffset(0, ""))
+        self.assertRaises(TypeError, lambda: t1 == t2)
 
         # In time w/ identical tzinfo objects, utcoffset is ignored.
         class Varies(tzinfo):
@@ -2591,9 +2571,8 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
         self.assertEqual(t1, t2)
         t2 = t2.replace(tzinfo=FixedOffset(None, ""))
         self.assertEqual(t1, t2)
-        if CMP_BUG_FIXED:
-            t2 = t2.replace(tzinfo=FixedOffset(0, ""))
-            self.assertRaises(TypeError, lambda: t1 == t2)
+        t2 = t2.replace(tzinfo=FixedOffset(0, ""))
+        self.assertRaises(TypeError, lambda: t1 == t2)
 
         # In datetime w/ identical tzinfo objects, utcoffset is ignored.
         class Varies(tzinfo):
