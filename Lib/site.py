@@ -145,7 +145,7 @@ def addpackage(sitedir, name, known_paths):
         known_paths = None
     return known_paths
 
-def addsitedir(sitedir, known_paths):
+def addsitedir(sitedir, known_paths=None):
     """Add 'sitedir' argument to sys.path if missing and handle .pth files in
     'sitedir'"""
     if known_paths is None:
