@@ -262,8 +262,14 @@ initsignal()
 	PySignal_SignalHandlerArray[0].tripped = 0;
 	for (i = 1; i < NSIG; i++) {
 		RETSIGTYPE (*t)();
+#ifdef HAVE_SIGACTION
+		struct sigaction act;
+		sigaction(i,  0, &act);
+		t = act.sa_flags;
+#else
 		t = signal(i, SIG_IGN);
 		signal(i, t);
+#endif
 		PySignal_SignalHandlerArray[i].tripped = 0;
 		if (t == SIG_DFL)
 			PySignal_SignalHandlerArray[i].func =
