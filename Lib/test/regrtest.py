@@ -132,7 +132,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
                     break
                 if r not in RESOURCE_NAMES:
                     usage(1, 'Invalid -u/--use option: ' + a)
-            use_resources.extend(u)
+                if r not in use_resources:
+                    use_resources.extend(r)
     if generate and verbose:
         usage(2, "-g and -v don't go together!")
 
