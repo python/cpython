@@ -6,7 +6,7 @@ from StripChart import StripChart
 K = 1024
 Rates = [0, 32*K, 16*K, 8*K]
 
-class VUMeter() = StripChart():
+class VUMeter(StripChart):
 	#
 	# Override define() and timer() methods
 	#

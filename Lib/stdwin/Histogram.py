@@ -4,7 +4,7 @@ from Buttons import *
 
 # A Histogram displays a histogram of numeric data.
 #
-class HistogramAppearance() = LabelAppearance(), Define():
+class HistogramAppearance(LabelAppearance, Define):
 	#
 	def define(self, parent):
 		Define.define(self, (parent, ''))
@@ -33,4 +33,4 @@ class HistogramAppearance() = LabelAppearance(), Define():
 			d.paint((h0, v0), (h1, v1))
 	#
 
-class Histogram() = NoReactivity(), HistogramAppearance(): pass
+class Histogram(NoReactivity, HistogramAppearance): pass

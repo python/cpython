@@ -7,7 +7,7 @@
 from math import pi, sin, cos
 from Split import Split
 
-class CSplit() = Split():
+class CSplit(Split):
 	#
 	def getminsize(self, (m, (width, height))):
 		# Since things look best if the children are spaced evenly

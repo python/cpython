@@ -13,7 +13,7 @@
 
 from Split import Split
 
-class FormSplit() = Split():
+class FormSplit(Split):
 	#
 	def create(self, parent):
 		self.next_left = self.next_top = 0

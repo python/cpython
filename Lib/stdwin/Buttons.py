@@ -22,7 +22,7 @@ _MASK = 3
 # disabled --> crossed out
 # hilited  --> inverted
 #
-class LabelAppearance():
+class LabelAppearance:
 	#
 	# Initialization
 	#
@@ -143,7 +143,7 @@ class LabelAppearance():
 
 # A Strut is a label with no width of its own.
 
-class StrutAppearance() = LabelAppearance():
+class StrutAppearance(LabelAppearance):
 	#
 	def getminsize(self, (m, (width, height))):
 		height = max(height, m.lineheight() + 6)
@@ -156,7 +156,7 @@ class StrutAppearance() = LabelAppearance():
 # disabled --> crossed out
 # hilited  --> inverted
 #
-class ButtonAppearance() = LabelAppearance():
+class ButtonAppearance(LabelAppearance):
 	#
 	def drawpict(self, d):
 		d.box(_rect.inset(self.bounds, (1, 1)))
@@ -173,7 +173,7 @@ class ButtonAppearance() = LabelAppearance():
 # disabled --> whole button crossed out
 # hilited  --> box is inverted
 #
-class CheckAppearance() = LabelAppearance():
+class CheckAppearance(LabelAppearance):
 	#
 	def getminsize(self, (m, (width, height))):
 		minwidth = m.textwidth(self.text) + 6
@@ -207,7 +207,7 @@ class CheckAppearance() = LabelAppearance():
 # disabled --> whole button crossed out
 # hilited  --> indicator is inverted
 #
-class RadioAppearance() = CheckAppearance():
+class RadioAppearance(CheckAppearance):
 	#
 	def drawpict(self, d):
 		(left, top), (right, bottom) = self.boxbounds
@@ -221,7 +221,7 @@ class RadioAppearance() = CheckAppearance():
 
 # NoReactivity ignores mouse events.
 #
-class NoReactivity():
+class NoReactivity:
 	def init_reactivity(self): pass
 
 
@@ -237,7 +237,7 @@ class NoReactivity():
 # There are usually extra conditions, e.g., hooks are only called
 # when the button is enabled, or active, or selected (on).
 #
-class BaseReactivity():
+class BaseReactivity:
 	#
 	def init_reactivity(self):
 		self.down_hook = self.move_hook = self.up_hook = \
@@ -279,7 +279,7 @@ class BaseReactivity():
 # ToggleReactivity acts like a simple pushbutton.
 # It toggles its hilite state on mouse down events.
 #
-class ToggleReactivity() = BaseReactivity():
+class ToggleReactivity(BaseReactivity):
 	#
 	def mouse_down(self, detail):
 		if self.enabled and self.mousetest(detail[_HV]):
@@ -308,7 +308,7 @@ class ToggleReactivity() = BaseReactivity():
 # TriggerReactivity acts like a fancy pushbutton.
 # It hilites itself while the mouse is down within its bounds.
 #
-class TriggerReactivity() = BaseReactivity():
+class TriggerReactivity(BaseReactivity):
 	#
 	def mouse_down(self, detail):
 		if self.enabled and self.mousetest(detail[_HV]):
@@ -336,7 +336,7 @@ class TriggerReactivity() = BaseReactivity():
 # CheckReactivity handles mouse events like TriggerReactivity,
 # It overrides the up_trigger method to flip its selected state.
 #
-class CheckReactivity() = TriggerReactivity():
+class CheckReactivity(TriggerReactivity):
 	#
 	def up_trigger(self):
 		self.select(not self.selected)
@@ -350,7 +350,7 @@ class CheckReactivity() = TriggerReactivity():
 # RadioReactivity turns itself on and the other buttons in its group
 # off when its up_trigger method is called.
 #
-class RadioReactivity() = TriggerReactivity():
+class RadioReactivity(TriggerReactivity):
 	#
 	def init_reactivity(self):
 		TriggerReactivity.init_reactivity(self)
@@ -370,7 +370,7 @@ class RadioReactivity() = TriggerReactivity():
 # Auxiliary class for 'define' method.
 # Call the initializers in the right order.
 #
-class Define():
+class Define:
 	#
 	def define(self, parent):
 		self.parent = parent
@@ -403,9 +403,9 @@ def _xorcross(d, bounds):
 
 # Ready-made button classes.
 #
-class Label() = NoReactivity(), LabelAppearance(), Define(): pass
-class Strut() = NoReactivity(), StrutAppearance(), Define(): pass
-class PushButton() = TriggerReactivity(), ButtonAppearance(), Define(): pass
-class CheckButton() = CheckReactivity(), CheckAppearance(), Define(): pass
-class RadioButton() = RadioReactivity(), RadioAppearance(), Define(): pass
-class ToggleButton() = ToggleReactivity(), ButtonAppearance(), Define(): pass
+class Label(NoReactivity, LabelAppearance, Define): pass
+class Strut(NoReactivity, StrutAppearance, Define): pass
+class PushButton(TriggerReactivity, ButtonAppearance, Define): pass
+class CheckButton(CheckReactivity, CheckAppearance, Define): pass
+class RadioButton(RadioReactivity, RadioAppearance, Define): pass
+class ToggleButton(ToggleReactivity, ButtonAppearance, Define): pass

@@ -10,7 +10,7 @@
 # For historical reasons, button creation methods are called
 # define() while split creation methods are called create().
 
-class AbstractParent():
+class AbstractParent:
 	#
 	# Upcalls from child to parent
 	#
@@ -33,7 +33,7 @@ class AbstractParent():
 	def scroll(self, (area, (dh, dv))): unimpl()
 	def settimer(self, itimer): unimpl()
 
-class AbstractChild():
+class AbstractChild:
 	#
 	# Downcalls from parent to child
 	#
@@ -59,5 +59,5 @@ class AbstractChild():
 # Certain upcalls and downcalls can be handled transparently, but
 # for others (e.g., all geometry related calls) this is not possible.
 
-class AbstractSplit() = AbstractChild(), AbstractParent():
+class AbstractSplit(AbstractChild, AbstractParent):
 	pass

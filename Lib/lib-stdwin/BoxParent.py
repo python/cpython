@@ -1,6 +1,6 @@
 from TransParent import TransParent
 
-class BoxParent() = TransParent():
+class BoxParent(TransParent):
 	#
 	def create(self, (parent, (dh, dv))):
 		self = TransParent.create(self, parent)

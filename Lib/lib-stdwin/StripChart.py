@@ -6,7 +6,7 @@ from Buttons import LabelAppearance, NoReactivity
 # A StripChart doesn't really look like a label but it needs a base class.
 # LabelAppearance allows it to be disabled and hilited.
 
-class StripChart() = LabelAppearance(), NoReactivity():
+class StripChart(LabelAppearance, NoReactivity):
 	#
 	def define(self, (parent, scale)):
 		self.parent = parent

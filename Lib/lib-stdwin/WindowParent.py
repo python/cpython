@@ -12,7 +12,7 @@ from TransParent import ManageOneChild
 
 Error = 'WindowParent.Error'	# Exception
 
-class WindowParent() = ManageOneChild():
+class WindowParent(ManageOneChild):
 	#
 	def create(self, (title, size)):
 		self.title = title

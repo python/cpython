@@ -7,7 +7,7 @@
 
 from Split import Split
 
-class HVSplit() = Split():
+class HVSplit(Split):
 	#
 	def create(self, (parent, hv)):
 		# hv is 0 for HSplit, 1 for VSplit
@@ -53,10 +53,10 @@ class HVSplit() = Split():
 			# XXX too-small
 	#
 
-class HSplit() = HVSplit():
+class HSplit(HVSplit):
 	def create(self, parent):
 		return HVSplit.create(self, (parent, 0))
 
-class VSplit() = HVSplit():
+class VSplit(HVSplit):
 	def create(self, parent):
 		return HVSplit.create(self, (parent, 1))
