@@ -5,11 +5,15 @@ MYDIR=`dirname $0`
 # DEFAULT_FORMAT must be upper case...
 DEFAULT_FORMAT=PDF
 USE_DEFAULT_FORMAT=true
+DISCARD_TEMPS=true
 
 # This is needed to support kpathsea based TeX installations.  Others are
 # not supported.  ;-)
-TEXINPUTS=$MYDIR/../texinputs:
+TEXINPUTS=`dirname $MYDIR`/texinputs:$TEXINPUTS
 export TEXINPUTS
+
+LOGFILE=/usr/tmp/mkhowto-$LOGNAME-$$.how
+LOGGING=''
 
 usage() {
     echo "usage: $0 [options...] file ..."
@@ -38,6 +42,8 @@ build_dvi() {
 }
 
 build_ps() {
+    # note weird sequence of redirects is used to get stderr to the old stdout
+    # and the new stdout goes to a file
     dvips -N0 -f $1 >$1.ps || exit $?
 }
 
@@ -81,6 +87,18 @@ while [ "$1" ] ; do
 	    ADDRESS="$2"
 	    shift 2
 	    ;;
+	-l|--logging|--loggin|--loggi|--logg|--log|--lo|--l)
+	    LOGGING=true
+	    shift 1
+	    ;;
+	-D|--debugging|--debuggin|--debuggi|--debugg|--debug|--debu|--deb|--de)
+	    DEBUGGING=true
+	    shift 1
+	    ;;
+	-k|--keep|--kee|--ke|--k)
+	    DISCARD_TEMPS=''
+	    shift 1
+	    ;;
 	-*)
 	    usage
 	    ;;
@@ -97,26 +115,38 @@ if [ $USE_DEFAULT_FORMAT = true ] ; then
     eval "BUILD_$DEFAULT_FORMAT=true"
 fi
 
+if [ "$DEBUGGING" ] ; then
+    set -x
+fi
+
 for FILE in $@ ; do
     FILE=${FILE%.tex}
     if [ "$BUILD_DVI" -o "$BUILD_PS" ] ; then
-	build_dvi $FILE
+	build_dvi $FILE 2>&1 | tee -a $LOGFILE
     fi
     if [ "$BUILD_PDF" ] ; then
-	build_pdf $FILE
+	build_pdf $FILE 2>&1 | tee -a $LOGFILE
     fi
     if [ "$BUILD_PS" ] ; then
-	build_ps $FILE
+	build_ps $FILE 2>&1 | tee -a $LOGFILE
     fi
     if [ "$BUILD_HTML" ] ; then
 	if [ ! "$BUILD_DVI" -o ! "$BUILD_PDF" ] ; then
 	    # need to get aux file
-	    build_dvi $FILE
+	    build_dvi $FILE 2>&1 | tee -a $LOGFILE
 	fi
-	build_html $FILE
+	build_html $FILE 2>&1 | tee -a $LOGFILE
     fi
-    rm -f $FILE.aux $FILE.log $FILE.out $FILE.toc $FILE.bkm
-    if [ ! "$BUILD_DVI" ] ; then
-	rm -f $FILE.dvi
+    if [ "$DISCARD_TEMPS" ] ; then
+	rm -f $FILE.aux $FILE.log $FILE.out $FILE.toc $FILE.bkm 2>&1 \
+	 | tee -a $LOGFILE
+	if [ ! "$BUILD_DVI" ] ; then
+	    rm -f $FILE.dvi 2>&1 | tee -a $LOGFILE
+	fi
     fi
+    # the the logfile around
+    if [ "$LOGGING" ] ; then
+	cp $LOGFILE $FILE.how
+    fi
+    rm -f $LOGFILE
 done
