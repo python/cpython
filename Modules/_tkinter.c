@@ -1543,7 +1543,10 @@ init_tkinter()
 	}
 
 	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module _tkinter");
+		return;
+
+	Py_AtExit(Tcl_Finalize);
+
 #ifdef macintosh
 	/*
 	** Part of this code is stolen from MacintoshInit in tkMacAppInit.
