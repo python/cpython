@@ -653,6 +653,22 @@ each, are:
 \subsection{Installing modules: the \protect\command{install} command family}
 \label{install-cmd}
 
+The install command ensures that the build commands have been run and then
+runs the subcommands \command{install\_lib},
+\command{install\_data} and
+\command{install\_scripts}.
+
+\subsubsection{\protect\command{install\_lib}}
+\label{sec:install-lib-cmd}
+
+\subsubsection{\protect\command{install\_data}}
+\label{sec:install-data-cmd}
+This command installs all data files provided with the distribution.
+
+\subsubsection{\protect\command{install\_scripts}}
+\label{sec:install-scripts-cmd}
+This command installs all (Python) scripts in the distribution.
+
 
 \subsection{Cleaning up: the \protect\command{clean} command}
 \label{clean-cmd}
