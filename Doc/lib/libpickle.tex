@@ -515,8 +515,8 @@ time \method{__reduce__()} will be called with no arguments, and it
 must return either a string or a tuple.
 
 If a string is returned, it names a global variable whose contents are
-pickled as normal.  When a tuple is returned, it must be of length two
-or three, with the following semantics:
+pickled as normal.  When a tuple is returned, it must be between two
+and five elements long, with the following semantics:
 
 \begin{itemize}
 
@@ -530,13 +530,29 @@ or three, with the following semantics:
 
 \item A tuple of arguments for the callable object, or \code{None}.
 \deprecated{2.3}{Use the tuple of arguments instead}								
-
 \item Optionally, the object's state, which will be passed to
       the object's \method{__setstate__()} method as described in
       section~\ref{pickle-inst}.  If the object has no
       \method{__setstate__()} method, then, as above, the value must
       be a dictionary and it will be added to the object's
       \member{__dict__}.
+
+\item Optionally, an iterator (and not a sequence) yielding successive
+list items.  These list items will be pickled, and appended to the
+object using either \code{obj.append(\var{item})} or
+\code{obj.extend(\var{list_of_items})}.  This is primarily used for
+list subclasses, but may be used by other classes as long as they have
+\method{append()} and \method{extend()} methods with the appropriate
+signature.  (Whether \method{append()} or \method{extend()} is used
+depends on which pickle protocol version is used as well as the number
+of items to append, so both must be supported.)
+
+\item Optionally, an iterator (not a sequence)
+yielding successive dictionary items, which should be tuples of the
+form \code{(\var{key}, \var{value})}.  These items will be pickled
+and stored to the object using \code{obj[\var{key}] = \var{value}}.
+This is primarily used for dictionary subclasses, but may be used by
+other classes as long as they implement \method{__setitem__}.
 
 \end{itemize}
 
@@ -559,7 +575,22 @@ interface as the \method{__reduce__()} method described above, except
 that they are called with a single argument, the object to be pickled.
 
 The registered constructor is deemed a ``safe constructor'' for purposes
-of unpickling as described above.
+
+It is sometimes useful to know the protocol version when implementing
+\method{__reduce__}.  This can be done by implementing a method named
+\method{__reduce_ex__} instead of \method{__reduce__}.
+\method{__reduce_ex__}, when it exists, is called in preference over
+\method{__reduce__} (you may still provide \method{__reduce__} for
+backwards compatibility).  The \method{__reduce_ex__} method will be
+called with a single integer argument, the protocol version.
+
+The \class{object} class implements both \method{__reduce__} and
+\method{__reduce_ex__}; however, if a subclass overrides
+\method{__reduce__} but not \method{__reduce_ex__}, the
+\method{__reduce_ex__} implementation detects this and calls
+\method{__reduce__}.
+
+
 
 \subsubsection{Pickling and unpickling external objects}
 
