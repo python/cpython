@@ -3,24 +3,26 @@
 
 \declaremodule{standard}{imaplib}
 \modulesynopsis{IMAP4 protocol client (requires sockets).}
-\moduleauthor{Piers Lauder}{piers@staff.cs.usyd.edu.au}
-\sectionauthor{Piers Lauder}{piers@staff.cs.usyd.edu.au}
+\moduleauthor{Piers Lauder}{piers@communitysolutions.com.au}
+\sectionauthor{Piers Lauder}{piers@communitysolutions.com.au}
 
-% Based on HTML documentation by Piers Lauder <piers@staff.cs.usyd.edu.au>;
+% Based on HTML documentation by Piers Lauder <piers@communitysolutions.com.au>;
 % converted by Fred L. Drake, Jr. <fdrake@acm.org>.
 % Revised by ESR, January 2000.
 % Changes for IMAP4_SSL by Tino Lange <Tino.Lange@isg.de>, March 2002 
+% Changes for IMAP4_stream by Piers Lauder <piers@communitysolutions.com.au>, November 2002 
 
 \indexii{IMAP4}{protocol}
 \indexii{IMAP4_SSL}{protocol}
+\indexii{IMAP4_stream}{protocol}
 
-This module defines two classes, \class{IMAP4} and \class{IMAP4_SSL}, which encapsulate a
+This module defines three classes, \class{IMAP4}, \class{IMAP4_SSL} and \class{IMAP4_stream}, which encapsulate a
 connection to an IMAP4 server and implement a large subset of the
 IMAP4rev1 client protocol as defined in \rfc{2060}. It is backward
 compatible with IMAP4 (\rfc{1730}) servers, but note that the
 \samp{STATUS} command is not supported in IMAP4.
 
-Two classes are provided by the \module{imaplib} module, \class{IMAP4} is the base class:
+Three classes are provided by the \module{imaplib} module, \class{IMAP4} is the base class:
 
 \begin{classdesc}{IMAP4}{\optional{host\optional{, port}}}
 This class implements the actual IMAP4 protocol.  The connection is
@@ -30,7 +32,7 @@ If \var{host} is not specified, \code{''} (the local host) is used.
 If \var{port} is omitted, the standard IMAP4 port (143) is used.
 \end{classdesc}
 
-Two exceptions are defined as attributes of the \class{IMAP4} class:
+Three exceptions are defined as attributes of the \class{IMAP4} class:
 
 \begin{excdesc}{IMAP4.error}
 Exception raised on any errors.  The reason for the exception is
@@ -59,6 +61,13 @@ If \var{host} is not specified, \code{''} (the local host) is used.
 If \var{port} is omitted, the standard IMAP4-over-SSL port (993) is used.
 \var{keyfile} and \var{certfile} are also optional - they can contain a PEM formatted
 private key and certificate chain file for the SSL connection. 
+\end{classdesc}
+
+The second subclass allows for connections created by a child process:
+
+\begin{classdesc}{IMAP4_stream}{command}
+This is a subclass derived from \class{IMAP4} that connects
+to the \code{stdin/stdout} file descriptors created by passing \var{command} to \code{os.popen2()}.
 \end{classdesc}
 
 The following utility functions are defined:
@@ -119,7 +128,10 @@ parentheses (eg: \code{r'(\e Deleted)'}).
 Each command returns a tuple: \code{(\var{type}, [\var{data},
 ...])} where \var{type} is usually \code{'OK'} or \code{'NO'},
 and \var{data} is either the text from the command response, or
-mandated results from the command.
+mandated results from the command. Each \var{data}
+is either a string, or a tuple. If a tuple, then the first part
+is the header of the response, and the second part contains
+the data (ie: 'literal' value).
 
 An \class{IMAP4} instance has the following methods:
 
@@ -198,6 +210,11 @@ An \class{IMAP4} instance has the following methods:
   The \var{password} will be quoted.
 \end{methoddesc}
 
+\begin{methoddesc}{login_cram_md5}{user, password}
+  Force use of \samp{CRAM-MD5} authentication when identifying the client to protect the password.
+  Will only work if the server \samp{CAPABILITY} response includes the phrase \samp{AUTH=CRAM-MD5}.
+\end{methoddesc}
+
 \begin{methoddesc}{logout}{}
   Shutdown connection to server. Returns server \samp{BYE} response.
 \end{methoddesc}
@@ -223,6 +240,11 @@ An \class{IMAP4} instance has the following methods:
 \begin{methoddesc}{partial}{message_num, message_part, start, length}
   Fetch truncated part of a message.
   Returned data is a tuple of message part envelope and data.
+\end{methoddesc}
+
+\begin{methoddesc}{proxyauth}{user}
+  Assume authentication as \var{user}.
+  Allows an authorised administrator to proxy into any user's mailbox.
 \end{methoddesc}
 
 \begin{methoddesc}{read}{size}
