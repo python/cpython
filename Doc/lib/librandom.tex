@@ -208,8 +208,8 @@ these equations can be found in any statistics text.
   \code{\var{mean} - \var{arc}/2} and \code{\var{mean} +
   \var{arc}/2} and are normalized to between 0 and \emph{pi}.
 
-  \deprecated{2.3}{Instead, use (mean + arc * (Random.random()
-  - 0.5)) % Math.pi}
+  \deprecated{2.3}{Instead, use \code{(\var{mean} + \var{arc} *
+                   (random.random() - 0.5)) \% math.pi}.}
 \end{funcdesc}
 
 \begin{funcdesc}{expovariate}{lambd}
