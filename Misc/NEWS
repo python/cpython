@@ -4,6 +4,28 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.3.2 (final)?
+===================================
+
+*Release date: XX-XXX-XXXX*
+
+Core and builtins
+-----------------
+
+- A workaround for an OpenBSD compiler bug that meant python failed to
+  detect floating point overflow in some cases.
+
+Tools/Demos
+-----------
+
+- Tools/scripts/md5sum.py opens files in binary mode by default. Opening
+  in text mode is almost certainly not what you want.
+
+Extension modules
+-----------------
+
+- The documentation for bsddb now warns strongly about using the legacy
+  API in multi-threaded applications.
 
 What's New in Python 2.3.2c1?
 =============================
