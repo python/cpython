@@ -887,7 +887,7 @@ PySequence_SetItem(s, i, o)
 			if (m->sq_length) {
 				int l = (*m->sq_length)(s);
 				if (l < 0)
-					return NULL;
+					return -1;
 				i += l;
 			}
 		}
@@ -916,7 +916,7 @@ PySequence_DelItem(s, i)
 			if (m->sq_length) {
 				int l = (*m->sq_length)(s);
 				if (l < 0)
-					return NULL;
+					return -1;
 				i += l;
 			}
 		}
@@ -947,7 +947,7 @@ PySequence_SetSlice(s, i1, i2, o)
 			if (m->sq_length) {
 				int l = (*m->sq_length)(s);
 				if (l < 0)
-					return NULL;
+					return -1;
 				if (i1 < 0)
 					i1 += l;
 				if (i2 < 0)
@@ -979,7 +979,7 @@ PySequence_DelSlice(s, i1, i2)
 			if (m->sq_length) {
 				int l = (*m->sq_length)(s);
 				if (l < 0)
-					return NULL;
+					return -1;
 				if (i1 < 0)
 					i1 += l;
 				if (i2 < 0)
@@ -1280,7 +1280,7 @@ PyMapping_SetItemString(o, key, value)
 
 	okey = PyString_FromString(key);
 	if (okey == NULL)
-		return NULL;
+		return -1;
 	r = PyObject_SetItem(o, okey, value);
 	Py_DECREF(okey);
 	return r;
