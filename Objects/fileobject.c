@@ -440,7 +440,7 @@ filegetline(f, n)
 					resizestring(&result, len-1);
 				else {
 					object *v;
-					v == newsizedstringobject(s, len-1);
+					v = newsizedstringobject(s, len-1);
 					DECREF(result);
 					result = v;
 				}
