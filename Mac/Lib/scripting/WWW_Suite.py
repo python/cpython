@@ -1,7 +1,7 @@
 """Suite WorldWideWeb suite, as defined in Spyglass spec.: 
 Level 1, version 1
 
-Generated from flap:Programma's:Netscape NavigatorÅ Folder:Netscape NavigatorÅ 3.0
+Generated from flap:Programma's:Netscape NavigatorÅ Folder:Netscape NavigatorÅ 3.01
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -10,7 +10,7 @@ import MacOS
 
 _code = 'WWW!'
 
-class WWW_Suite:
+class WorldWideWeb_suite_2c__as_defined_in_Spyglass_spec_2e_:
 
 	_argmap_OpenURL = {
 		'to' : 'INTO',
@@ -409,3 +409,18 @@ class WWW_Suite:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
+
+#
+# Indices of types declared in this module
+#
+_classdeclarations = {
+}
+
+_propdeclarations = {
+}
+
+_compdeclarations = {
+}
+
+_enumdeclarations = {
+}

@@ -1,9 +1,10 @@
 """Suite 7.0 Finder Suite: This is the original Finder suite. These events will be supported in the future, but the syntax may be changed in a future Finder release.
 Level 1, version 1
 
-Generated from flap:Systeemmap:Finder
+Generated from flap:System Folder:Finder
 AETE/AEUT resource version 0/149, language 0, script 0
 """
+# XXXX Hand edited to change the classname
 
 import aetools
 import MacOS
@@ -308,3 +309,18 @@ class Finder_7_0_Suite:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
+
+#
+# Indices of types declared in this module
+#
+_classdeclarations = {
+}
+
+_propdeclarations = {
+}
+
+_compdeclarations = {
+}
+
+_enumdeclarations = {
+}
