@@ -612,6 +612,7 @@ class Pickler:
 
     dispatch[ListType] = save_list
 
+    # Keep in synch with cPickle's BATCHSIZE.
     _BATCHSIZE = 1000
 
     def _batch_appends(self, items):
