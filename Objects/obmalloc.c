@@ -724,35 +724,13 @@ write4(void *p, ulong n)
 	q[3] = (uchar)( n        & 0xff);
 }
 
-static void
-check_family(const void *p, int family)
-{
-	const uchar *q = (const uchar *)p;
-	int original_family;
-	char buf[200];
-
-	assert(p != NULL);
-	original_family = (int)*(q-4);
-	if (family != original_family) {
-		/* XXX better msg */
-		PyOS_snprintf(buf, sizeof(buf),
-			"free or realloc from family #%d called, "
-			"but block was allocated by family #%d",
-			family, original_family);
-		_PyMalloc_DebugDumpAddress(p);
-		Py_FatalError(buf);
-	}
-}
-
 /* The debug malloc asks for 16 extra bytes and fills them with useful stuff,
    here calling the underlying malloc's result p:
 
 p[0:4]
     Number of bytes originally asked for.  4-byte unsigned integer,
     big-endian (easier to read in a memory dump).
-p[4]
-    The API "family" this malloc call belongs to.  XXX todo XXX
-p[5:8]
+p[4:8]
     Copies of PYMALLOC_FORBIDDENBYTE.  Used to catch under- writes
     and reads.
 p[8:8+n]
@@ -773,13 +751,11 @@ p[8+n+4:8+n+8]
 */
 
 void *
-_PyMalloc_DebugMalloc(size_t nbytes, int family)
+_PyMalloc_DebugMalloc(size_t nbytes)
 {
 	uchar *p;	/* base address of malloc'ed block */
 	uchar *tail;	/* p + 8 + nbytes == pointer to tail pad bytes */
 	size_t total;	/* nbytes + 16 */
-
-	assert(family == 0);
 
 	bumpserialno();
 	total = nbytes + 16;
@@ -792,13 +768,12 @@ _PyMalloc_DebugMalloc(size_t nbytes, int family)
 		return NULL;
 	}
 
-	p = _PyMalloc_Malloc(total);	/* XXX derive from family */
+	p = _PyMalloc_Malloc(total);
 	if (p == NULL)
 		return NULL;
 
 	write4(p, nbytes);
-	p[4] = (uchar)family;
-	p[5] = p[6] = p[7] = PYMALLOC_FORBIDDENBYTE;
+	p[4] = p[5] = p[6] = p[7] = PYMALLOC_FORBIDDENBYTE;
 
 	if (nbytes > 0)
 		memset(p+8, PYMALLOC_CLEANBYTE, nbytes);
@@ -816,38 +791,31 @@ _PyMalloc_DebugMalloc(size_t nbytes, int family)
    Then calls the underlying free.
 */
 void
-_PyMalloc_DebugFree(void *p, int family)
+_PyMalloc_DebugFree(void *p)
 {
 	uchar *q = (uchar *)p;
 	size_t nbytes;
 
-	assert(family == 0);
-
 	if (p == NULL)
 		return;
-	check_family(p, family);
 	_PyMalloc_DebugCheckAddress(p);
 	nbytes = read4(q-8);
 	if (nbytes > 0)
 		memset(q, PYMALLOC_DEADBYTE, nbytes);
-	_PyMalloc_Free(q-8);	/* XXX derive from family */
+	_PyMalloc_Free(q-8);
 }
 
 void *
-_PyMalloc_DebugRealloc(void *p, size_t nbytes, int family)
+_PyMalloc_DebugRealloc(void *p, size_t nbytes)
 {
 	uchar *q = (uchar *)p;
 	size_t original_nbytes;
 	void *fresh;	/* new memory block, if needed */
 
-	assert(family == 0);
-
 	if (p == NULL)
-		return _PyMalloc_DebugMalloc(nbytes, family);
+		return _PyMalloc_DebugMalloc(nbytes);
 
-	check_family(p, family);
 	_PyMalloc_DebugCheckAddress(p);
-
 	original_nbytes = read4(q-8);
 	if (nbytes == original_nbytes) {
 		/* note that this case is likely to be common due to the
@@ -864,19 +832,19 @@ _PyMalloc_DebugRealloc(void *p, size_t nbytes, int family)
 		bumpserialno();
 		write4(q-8, nbytes);
 		/* kill the excess bytes plus the trailing 8 pad bytes */
-		memset(q + nbytes, PYMALLOC_DEADBYTE, excess + 8);
 		q += nbytes;
 		q[0] = q[1] = q[2] = q[3] = PYMALLOC_FORBIDDENBYTE;
 		write4(q+4, serialno);
+		memset(q+8, PYMALLOC_DEADBYTE, excess);
 		return p;
 	}
 
 	/* More memory is needed:  get it, copy over the first original_nbytes
 	   of the original data, and free the original memory. */
-	fresh = _PyMalloc_DebugMalloc(nbytes, family);
+	fresh = _PyMalloc_DebugMalloc(nbytes);
 	if (fresh != NULL && original_nbytes > 0)
 		memcpy(fresh, p, original_nbytes);
-	_PyMalloc_DebugFree(p, family);
+	_PyMalloc_DebugFree(p);
 	return fresh;
 }
 
@@ -884,32 +852,37 @@ void
 _PyMalloc_DebugCheckAddress(const void *p)
 {
 	const uchar *q = (const uchar *)p;
-	char *msg = NULL;
+	char *msg;
+	int i;
 
-	if (p == NULL)
+	if (p == NULL) {
 		msg = "didn't expect a NULL pointer";
+		goto error;
+	}
 
-	else if (*(q-3) != PYMALLOC_FORBIDDENBYTE ||
-	    	 *(q-2) != PYMALLOC_FORBIDDENBYTE ||
-	    	 *(q-1) != PYMALLOC_FORBIDDENBYTE)
-	    	msg = "bad leading pad byte";
+	for (i = 4; i >= 1; --i) {
+		if (*(q-i) != PYMALLOC_FORBIDDENBYTE) {
+			msg = "bad leading pad byte";
+			goto error;
+		}
+	}
 
-	else {
+	{
 		const ulong nbytes = read4(q-8);
 		const uchar *tail = q + nbytes;
-		int i;
 		for (i = 0; i < 4; ++i) {
 			if (tail[i] != PYMALLOC_FORBIDDENBYTE) {
 				msg = "bad trailing pad byte";
-				break;
+				goto error;
 			}
 		}
 	}
 
-	if (msg != NULL) {
-		_PyMalloc_DebugDumpAddress(p);
-		Py_FatalError(msg);
-	}
+	return;
+
+error:
+	_PyMalloc_DebugDumpAddress(p);
+	Py_FatalError(msg);
 }
 
 void
@@ -918,6 +891,7 @@ _PyMalloc_DebugDumpAddress(const void *p)
 	const uchar *q = (const uchar *)p;
 	const uchar *tail;
 	ulong nbytes, serial;
+	int i;
 
 	fprintf(stderr, "Debug memory block at address p=%p:\n", p);
 	if (p == NULL)
@@ -925,22 +899,21 @@ _PyMalloc_DebugDumpAddress(const void *p)
 
 	nbytes = read4(q-8);
 	fprintf(stderr, "    %lu bytes originally allocated\n", nbytes);
-	fprintf(stderr, "    from API family #%d\n", *(q-4));
 
 	/* In case this is nuts, check the pad bytes before trying to read up
 	   the serial number (the address deref could blow up). */
 
-	fputs("    the 3 pad bytes at p-3 are ", stderr);
-	if (*(q-3) == PYMALLOC_FORBIDDENBYTE &&
+	fputs("    the 4 pad bytes at p-4 are ", stderr);
+	if (*(q-4) == PYMALLOC_FORBIDDENBYTE &&
+	    *(q-3) == PYMALLOC_FORBIDDENBYTE &&
 	    *(q-2) == PYMALLOC_FORBIDDENBYTE &&
 	    *(q-1) == PYMALLOC_FORBIDDENBYTE) {
 		fputs("PYMALLOC_FORBIDDENBYTE, as expected\n", stderr);
 	}
 	else {
-		int i;
 		fprintf(stderr, "not all PYMALLOC_FORBIDDENBYTE (0x%02x):\n",
 			PYMALLOC_FORBIDDENBYTE);
-		for (i = 3; i >= 1; --i) {
+		for (i = 4; i >= 1; --i) {
 			const uchar byte = *(q-i);
 			fprintf(stderr, "        at p-%d: 0x%02x", i, byte);
 			if (byte != PYMALLOC_FORBIDDENBYTE)
@@ -958,7 +931,6 @@ _PyMalloc_DebugDumpAddress(const void *p)
 		fputs("PYMALLOC_FORBIDDENBYTE, as expected\n", stderr);
 	}
 	else {
-		int i;
 		fprintf(stderr, "not all PYMALLOC_FORBIDDENBYTE (0x%02x):\n",
 			PYMALLOC_FORBIDDENBYTE);
 		for (i = 0; i < 4; ++i) {
