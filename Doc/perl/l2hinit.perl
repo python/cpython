@@ -418,11 +418,15 @@ sub do_cmd_textohtmlinfopage {
 	    $the_version .= ", Release $PACKAGE_VERSION$RELEASE_INFO";
 	}
     }
+    my $about;
+    open(ABOUT, "<$ABOUT_FILE") || die "\n$!\n";
+    sysread(ABOUT, $about, 1024*1024);
+    close(ABOUT);
     $_ = (($INFO == 1)
           ? join('',
                  $close_all,
                  "<strong>$t_title</strong>$the_version\n",
-                 `cat $ABOUT_FILE`,
+                 $about,
                  $open_all, $_)
           : join('', $close_all, $INFO,"\n", $open_all, $_));
     $_;
