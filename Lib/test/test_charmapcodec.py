@@ -13,7 +13,7 @@ def check(a, b):
     if a != b:
         print '*** check failed: %s != %s' % (repr(a), repr(b))
     else:
-        print '%s == %s: OK' % (repr(a), repr(b))
+        print '%s == %s: OK' % (a, b)
 
 # test codec's full path name (see test/testcodec.py)
 codecname = 'test.testcodec'
