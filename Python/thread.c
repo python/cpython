@@ -88,6 +88,10 @@ extern char *getenv();
 #define SUN_LWP
 #endif
 
+#ifdef __MWERKS__
+#define _POSIX_THREADS
+#endif
+
 #endif /* _POSIX_THREADS */
 
 #ifdef __STDC__
