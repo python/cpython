@@ -1,0 +1,1010 @@
+/*
+Input used to generate the Python module "glmodule.c".
+The stub generator is a Python script called "cgen".
+
+Each definition must be contained on one line:
+
+<returntype> <name> <type> <arg> <type> <arg>
+
+<returntype> can be: void, short, long (XXX maybe others?)
+
+<type> can be: char, string, short, float, long, or double
+	string indicates a null terminated string;
+	if <type> is char and <arg> begins with a *, the * is stripped
+	and <type> is changed into string
+
+<arg> has the form <mode> or <mode>[<subscript>]
+	where <mode> can be
+		s: arg is sent
+		r: arg is received		(arg is a pointer)
+	and <subscript> can be (N and I are numbers):
+		N
+		argI
+		retval
+		N*argI
+		N*retval
+*/
+
+#include <stdio.h>
+#include <gl.h>
+#include <device.h>
+#include "PROTO.h"
+#include "object.h"
+#include "intobject.h"
+#include "floatobject.h"
+#include "listobject.h"
+#include "tupleobject.h"
+#include "dictobject.h"
+#include "methodobject.h"
+#include "moduleobject.h"
+#include "objimpl.h"
+#include "import.h"
+#include "sigtype.h"
+#include "modsupport.h"
+#include "cgensupport.h"
+#include "errors.h"
+
+/*
+Some stubs are too complicated for the stub generator.
+We can include manually written versions of them here.
+A line starting with '%' gives the name of the function so the stub
+generator can include it in the table of functions.
+*/
+
+/*
+varray -- an array of v.. calls.
+The argument is an array (maybe list or tuple) of points.
+Each point must be a tuple or list of coordinates (x, y, z).
+The points may be 2- or 3-dimensional but must all have the
+same dimension.  Float and int values may be mixed however.
+The points are always converted to 3D double precision points
+by assuming z=0.0 if necessary (as indicated in the man page),
+and for each point v3d() is called.
+*/
+
+% varray
+
+static object *
+gl_varray(self, args)
+	object *self;
+	object *args;
+{
+	object *v, *w;
+	int i, n, width;
+	double vec[3];
+	object * (*getitem) FPROTO((object *, int));
+	
+	if (!getiobjectarg(args, 1, 0, &v))
+		return NULL;
+	
+	if (is_listobject(v)) {
+		n = getlistsize(v);
+		getitem = getlistitem;
+	}
+	else if (is_tupleobject(v)) {
+		n = gettuplesize(v);
+		getitem = gettupleitem;
+	}
+	else {
+		err_badarg();
+		return NULL;
+	}
+	
+	if (n == 0) {
+		INCREF(None);
+		return None;
+	}
+	if (n > 0)
+		w = (*getitem)(v, 0);
+	
+	width = 0;
+	if (w == NULL) {
+	}
+	else if (is_listobject(w)) {
+		width = getlistsize(w);
+	}
+	else if (is_tupleobject(w)) {
+		width = gettuplesize(w);
+	}
+	
+	switch (width) {
+	case 2:
+		vec[2] = 0.0;
+		/* Fall through */
+	case 3:
+		break;
+	default:
+		err_badarg();
+		return NULL;
+	}
+	
+	for (i = 0; i < n; i++) {
+		w = (*getitem)(v, i);
+		if (!getidoublearray(w, 1, 0, width, vec))
+			return NULL;
+		v3d(vec);
+	}
+	
+	INCREF(None);
+	return None;
+}
+
+/*
+vnarray, nvarray -- an array of n3f and v3f calls.
+The argument is an array (list or tuple) of pairs of points and normals.
+Each pair is a tuple (NOT a list) of a point and a normal for that point.
+Each point or normal must be a tuple (NOT a list) of coordinates (x, y, z).
+Three coordinates must be given.  Float and int values may be mixed.
+For each pair, n3f() is called for the normal, and then v3f() is called
+for the vector.
+
+vnarray and nvarray differ only in the order of the vector and normal in
+the pair: vnarray expects (v, n) while nvarray expects (n, v).
+*/
+
+static object *gen_nvarray(); /* Forward */
+
+% nvarray
+
+static object *
+gl_nvarray(self, args)
+	object *self;
+	object *args;
+{
+	return gen_nvarray(args, 0);
+}
+
+% vnarray
+
+static object *
+gl_vnarray(self, args)
+	object *self;
+	object *args;
+{
+	return gen_nvarray(args, 1);
+}
+
+/* Generic, internal version of {nv,nv}array: inorm indicates the
+   argument order, 0: normal first, 1: vector first. */
+
+static object *
+gen_nvarray(args, inorm)
+	object *args;
+	int inorm;
+{
+	object *v, *w, *wnorm, *wvec;
+	int i, n;
+	float norm[3], vec[3];
+	object * (*getitem) FPROTO((object *, int));
+	
+	if (!getiobjectarg(args, 1, 0, &v))
+		return NULL;
+	
+	if (is_listobject(v)) {
+		n = getlistsize(v);
+		getitem = getlistitem;
+	}
+	else if (is_tupleobject(v)) {
+		n = gettuplesize(v);
+		getitem = gettupleitem;
+	}
+	else {
+		err_badarg();
+		return NULL;
+	}
+	
+	for (i = 0; i < n; i++) {
+		w = (*getitem)(v, i);
+		if (!is_tupleobject(w) || gettuplesize(w) != 2) {
+			err_badarg();
+			return NULL;
+		}
+		wnorm = gettupleitem(w, inorm);
+		wvec = gettupleitem(w, 1 - inorm);
+		if (!getifloatarray(wnorm, 1, 0, 3, norm) ||
+			!getifloatarray(wvec, 1, 0, 3, vec))
+			return NULL;
+		n3f(norm);
+		v3f(vec);
+	}
+	
+	INCREF(None);
+	return None;
+}
+
+/* nurbssurface(s_knots[], t_knots[], ctl[][], s_order, t_order, type).
+   The dimensions of ctl[] are computed as follows:
+   [len(s_knots) - s_order], [len(t_knots) - t_order]
+*/
+
+% nurbssurface
+
+static object *
+gl_nurbssurface(self, args)
+	object *self;
+	object *args;
+{
+	long arg1 ;
+	double * arg2 ;
+	long arg3 ;
+	double * arg4 ;
+	double *arg5 ;
+	long arg6 ;
+	long arg7 ;
+	long arg8 ;
+	long ncoords;
+	long s_byte_stride, t_byte_stride;
+	long s_nctl, t_nctl;
+	long s, t;
+	object *v, *w, *pt;
+	double *pnext;
+	if (!getilongarraysize(args, 6, 0, &arg1))
+		return NULL;
+	if ((arg2 = NEW(double, arg1 )) == NULL) {
+		return err_nomem();
+	}
+	if (!getidoublearray(args, 6, 0, arg1 , arg2))
+		return NULL;
+	if (!getilongarraysize(args, 6, 1, &arg3))
+		return NULL;
+	if ((arg4 = NEW(double, arg3 )) == NULL) {
+		return err_nomem();
+	}
+	if (!getidoublearray(args, 6, 1, arg3 , arg4))
+		return NULL;
+	if (!getilongarg(args, 6, 3, &arg6))
+		return NULL;
+	if (!getilongarg(args, 6, 4, &arg7))
+		return NULL;
+	if (!getilongarg(args, 6, 5, &arg8))
+		return NULL;
+	if (arg8 == N_XYZ)
+		ncoords = 3;
+	else if (arg8 == N_XYZW)
+		ncoords = 4;
+	else {
+		err_badarg();
+		return NULL;
+	}
+	s_nctl = arg1 - arg6;
+	t_nctl = arg3 - arg7;
+	if (!getiobjectarg(args, 6, 2, &v))
+		return NULL;
+	if (!is_listobject(v) || getlistsize(v) != s_nctl) {
+		err_badarg();
+		return NULL;
+	}
+	if ((arg5 = NEW(double, s_nctl*t_nctl*ncoords )) == NULL) {
+		return err_nomem();
+	}
+	pnext = arg5;
+	for (s = 0; s < s_nctl; s++) {
+		w = getlistitem(v, s);
+		if (w == NULL || !is_listobject(w) ||
+					getlistsize(w) != t_nctl) {
+			err_badarg();
+			return NULL;
+		}
+		for (t = 0; t < t_nctl; t++) {
+			pt = getlistitem(w, t);
+			if (!getidoublearray(pt, 1, 0, ncoords, pnext))
+				return NULL;
+			pnext += ncoords;
+		}
+	}
+	s_byte_stride = sizeof(double) * ncoords;
+	t_byte_stride = s_byte_stride * s_nctl;
+	nurbssurface( arg1 , arg2 , arg3 , arg4 ,
+		s_byte_stride , t_byte_stride , arg5 , arg6 , arg7 , arg8 );
+	DEL(arg2);
+	DEL(arg4);
+	DEL(arg5);
+	INCREF(None);
+	return None;
+}
+
+/* nurbscurve(knots, ctlpoints, order, type).
+   The length of ctlpoints is len(knots)-order. */
+
+%nurbscurve
+
+static object *
+gl_nurbscurve(self, args)
+	object *self;
+	object *args;
+{
+	long arg1 ;
+	double * arg2 ;
+	long arg3 ;
+	double * arg4 ;
+	long arg5 ;
+	long arg6 ;
+	int ncoords, npoints;
+	int i;
+	object *v;
+	double *pnext;
+	if (!getilongarraysize(args, 4, 0, &arg1))
+		return NULL;
+	if ((arg2 = NEW(double, arg1 )) == NULL) {
+		return err_nomem();
+	}
+	if (!getidoublearray(args, 4, 0, arg1 , arg2))
+		return NULL;
+	if (!getilongarg(args, 4, 2, &arg5))
+		return NULL;
+	if (!getilongarg(args, 4, 3, &arg6))
+		return NULL;
+	if (arg6 == N_ST)
+		ncoords = 2;
+	else if (arg6 == N_STW)
+		ncoords = 3;
+	else {
+		err_badarg();
+		return NULL;
+	}
+	npoints = arg1 - arg5;
+	if (!getiobjectarg(args, 4, 1, &v))
+		return NULL;
+	if (!is_listobject(v) || getlistsize(v) != npoints) {
+		err_badarg();
+		return NULL;
+	}
+	if ((arg4 = NEW(double, npoints*ncoords )) == NULL) {
+		return err_nomem();
+	}
+	pnext = arg4;
+	for (i = 0; i < npoints; i++) {
+		if (!getidoublearray(getlistitem(v, i), 1, 0, ncoords, pnext))
+			return NULL;
+		pnext += ncoords;
+	}
+	arg3 = (sizeof(double)) * ncoords;
+	nurbscurve( arg1 , arg2 , arg3 , arg4 , arg5 , arg6 );
+	DEL(arg2);
+	DEL(arg4);
+	INCREF(None);
+	return None;
+}
+
+/* pwlcurve(points, type).
+   Points is a list of points. Type must be N_ST. */
+
+%pwlcurve
+
+static object *
+gl_pwlcurve(self, args)
+	object *self;
+	object *args;
+{
+	object *v;
+	long type;
+	double *data, *pnext;
+	long npoints, ncoords;
+	int i;
+	if (!getiobjectarg(args, 2, 0, &v))
+		return NULL;
+	if (!getilongarg(args, 2, 1, &type))
+		return NULL;
+	if (!is_listobject(v)) {
+		err_badarg();
+		return NULL;
+	}
+	npoints = getlistsize(v);
+	if (type == N_ST)
+		ncoords = 2;
+	else {
+		err_badarg();
+		return NULL;
+	}
+	if ((data = NEW(double, npoints*ncoords)) == NULL) {
+		return err_nomem();
+	}
+	pnext = data;
+	for (i = 0; i < npoints; i++) {
+		if (!getidoublearray(getlistitem(v, i), 1, 0, ncoords, pnext))
+			return NULL;
+		pnext += ncoords;
+	}
+	pwlcurve(npoints, data, sizeof(double)*ncoords, type);
+	DEL(data);
+	INCREF(None);
+	return None;
+}
+
+
+/* Picking and Selecting */
+
+static short *pickbuffer = NULL;
+static long pickbuffersize;
+
+static object *
+pick_select(args, func)
+	object *args;
+	void (*func)();
+{
+	if (!getilongarg(args, 1, 0, &pickbuffersize))
+		return NULL;
+	if (pickbuffer != NULL) {
+		err_setstr(RuntimeError,
+			"pick/gselect: already picking/selecting");
+		return NULL;
+	}
+	if ((pickbuffer = NEW(short, pickbuffersize)) == NULL) {
+		return err_nomem();
+	}
+	(*func)(pickbuffer, pickbuffersize);
+	INCREF(None);
+	return None;
+}
+
+static object *
+endpick_select(args, func)
+	object *args;
+	long (*func)();
+{
+	object *v, *w;
+	int i, nhits, n;
+	if (!getnoarg(args))
+		return NULL;
+	if (pickbuffer == NULL) {
+		err_setstr(RuntimeError,
+			"endpick/endselect: not in pick/select mode");
+		return NULL;
+	}
+	nhits = (*func)(pickbuffer);
+	if (nhits < 0) {
+		nhits = -nhits; /* How to report buffer overflow otherwise? */
+	}
+	/* Scan the buffer to see how many integers */
+	n = 0;
+	for (; nhits > 0; nhits--) {
+		n += 1 + pickbuffer[n];
+	}
+	v = newlistobject(n);
+	if (v == NULL)
+		return NULL;
+	/* XXX Could do it nicer and interpret the data structure here,
+	   returning a list of lists. But this can be done in Python... */
+	for (i = 0; i < n; i++) {
+		w = newintobject((long)pickbuffer[i]);
+		if (w == NULL) {
+			DECREF(v);
+			return NULL;
+		}
+		setlistitem(v, i, w);
+	}
+	DEL(pickbuffer);
+	pickbuffer = NULL;
+	return v;
+}
+
+extern void pick(), gselect();
+extern long endpick(), endselect();
+
+%pick
+static object *gl_pick(self, args) object *self, *args; {
+	return pick_select(args, pick);
+}
+
+%endpick
+static object *gl_endpick(self, args) object *self, *args; {
+	return endpick_select(args, endpick);
+}
+
+%gselect
+static object *gl_gselect(self, args) object *self, *args; {
+	return pick_select(args, gselect);
+}
+
+%endselect
+static object *gl_endselect(self, args) object *self, *args; {
+	return endpick_select(args, endselect);
+}
+
+
+/* XXX The generator botches this one.  Here's a quick hack to fix it. */
+
+% getmatrix float r[16]
+
+static object *
+gl_getmatrix(self, args)
+	object *self;
+	object *args;
+{
+	float arg1 [ 16 ] ;
+	object *v, *w;
+	int i;
+	getmatrix( arg1 );
+	v = newlistobject(16);
+	if (v == NULL) {
+		return err_nomem();
+	}
+	for (i = 0; i < 16; i++) {
+		w = mknewfloatobject(arg1[i]);
+		if (w == NULL) {
+			DECREF(v);
+			return NULL;
+		}
+		setlistitem(v, i, w);
+	}
+	return v;
+}
+
+/* End of manually written stubs */
+
+%%
+
+long 	getshade
+void 	devport 	short s long s
+void 	rdr2i 		long s long s
+void	rectfs 		short s short s short s short s
+void 	rects 		short s short s short s short s
+void 	rmv2i 		long s long s
+void	noport
+void	popviewport
+void	clear
+void	clearhitcode
+void	closeobj
+void	cursoff
+void	curson
+void	doublebuffer
+void 	finish
+void	gconfig
+void	ginit
+void	greset
+void	multimap
+void	onemap
+void	popattributes
+void	popmatrix
+void	pushattributes
+void	pushmatrix
+void	pushviewport
+void	qreset
+void	RGBmode
+void	singlebuffer
+void	swapbuffers
+void	gsync
+void	tpon
+void	tpoff
+void	clkon
+void	clkoff
+void	ringbell
+#void	callfunc
+void	gbegin
+void	textinit
+void	initnames
+void	pclos
+void	popname
+void	spclos
+void	zclear
+void	screenspace
+void	reshapeviewport
+void	winpush
+void	winpop
+void	foreground
+void	endfullscrn
+void	endpupmode
+void	fullscrn
+void	pupmode
+void	winconstraints
+void	pagecolor 	short s
+void	textcolor 	short s
+void 	color 	  	short s
+void	curveit		short s
+void	font		short s
+void 	linewidth	short s
+void    setlinestyle	short s
+void	setmap		short s
+void	swapinterval	short s
+void	writemask	short s
+void	textwritemask	short s
+void	qdevice		short s
+void	unqdevice	short s
+void	curvebasis	short s
+void	curveprecision	short s
+void	loadname	short s
+void	passthrough	short s
+void	pushname	short s
+void	setmonitor	short s
+void	setshade	short s
+void	setpattern	short s
+void	pagewritemask	short s
+#
+void	callobj		long s
+void	delobj		long s
+void 	editobj		long s
+void	makeobj		long s
+void	maketag		long s
+void	chunksize	long s
+void	compactify	long s
+void	deltag		long s
+void	lsrepeat	long s
+void	objinsert	long s
+void 	objreplace	long s
+void	winclose	long s
+void	blanktime	long s
+void 	freepup		long s
+# This is not in the library!?
+###void	pupcolor	long s
+#
+void	backbuffer	long s
+void 	frontbuffer	long s
+void	lsbackup	long s
+void	resetls		long s
+void	lampon		long s
+void	lampoff		long s
+void	setbell		long s
+void	blankscreen	long s
+void 	depthcue	long s
+void	zbuffer		long s
+void	backface	long s
+#
+void 	cmov2i		long s long s
+void 	draw2i		long s long s
+void	move2i		long s long s
+void	pnt2i		long s long s
+void 	patchbasis	long s long s
+void 	patchprecision	long s long s
+void	pdr2i		long s long s
+void	pmv2i		long s long s
+void	rpdr2i		long s long s
+void	rpmv2i		long s long s
+void	xfpt2i		long s long s
+void	objdelete	long s long s
+void	patchcurves	long s long s
+void	minsize		long s long s
+void 	maxsize		long s long s
+void	keepaspect	long s long s
+void	prefsize	long s long s
+void	stepunit	long s long s
+void 	fudge		long s long s
+void 	winmove		long s long s
+#
+void 	attachcursor	short s short s
+void 	deflinestyle	short s short s
+void 	noise		short s short s
+void 	picksize	short s short s
+void 	qenter		short s short s
+void 	setdepth	short s short s
+void 	cmov2s		short s short s
+void 	draw2s		short s	short s
+void 	move2s		short s short s
+void 	pdr2s		short s short s
+void 	pmv2s		short s short s
+void 	pnt2s		short s short s
+void 	rdr2s		short s short s
+void 	rmv2s		short s short s
+void 	rpdr2s		short s short s
+void 	rpmv2s		short s short s
+void 	xfpt2s		short s short s
+#
+void cmov2		float s float s
+void draw2		float s float s
+void move2		float s float s
+void pnt2		float s float s
+void pdr2		float s float s
+void pmv2		float s float s
+void rdr2		float s float s
+void rmv2		float s float s
+void rpdr2		float s float s
+void rpmv2		float s float s
+void xfpt2		float s float s
+#
+void loadmatrix		float s[16]
+void multmatrix		float s[16]
+void crv			float s[16]
+void rcrv			float s[16]
+#
+# Methods that have strings.  
+#
+void addtopup		long s char *s long s
+void charstr		char *s
+void getport	 	char *s
+long strwidth		char *s
+long winopen		char *s
+void wintitle		char *s
+#
+# Methods that have 1 long (# of elements) and an array 
+#
+void polf		long s float s[3*arg1]
+void polf2		long s float s[2*arg1]
+void poly		long s float s[3*arg1]
+void poly2		long s float s[2*arg1]
+void crvn		long s float s[3*arg1]
+void rcrvn		long s float s[4*arg1]
+#
+void polf2i		long s long s[2*arg1]
+void polfi		long s long s[3*arg1]
+void poly2i		long s long s[2*arg1]
+void polyi		long s long s[3*arg1]
+#
+void polf2s		long s short s[2*arg1]
+void polfs		long s short s[3*arg1]
+void polys		long s short s[3*arg1]
+void poly2s		long s short s[2*arg1]
+#
+void defcursor		short s short s[16]
+void writepixels	short s short s[arg1]
+void defbasis		long s float s[16]
+void gewrite		short s short s[arg1]
+#
+void rotate		short s char s
+# This is not in the library!?
+###void setbutton		short s char s
+void rot		float s char s
+#
+void circfi		long s long s long s
+void circi		long s long s long s
+void cmovi		long s long s long s
+void drawi		long s long s long s
+void movei		long s long s long s
+void pnti 		long s long s long s
+void newtag		long s long s long s
+void pdri  		long s long s long s
+void pmvi  		long s long s long s
+void rdri  		long s long s long s
+void rmvi  		long s long s long s
+void rpdri 		long s long s long s
+void rpmvi 		long s long s long s
+void xfpti 		long s long s long s
+#
+void circ		float s float s float s
+void circf		float s float s float s
+void cmov		float s float s float s
+void draw		float s float s float s
+void move		float s float s float s
+void pnt		float s float s float s
+void scale		float s float s float s
+void translate		float s float s float s
+void pdr		float s float s float s
+void pmv		float s float s float s
+void rdr		float s float s float s
+void rmv		float s float s float s
+void rpdr		float s float s float s
+void rpmv		float s float s float s
+void xfpt		float s float s float s
+#
+void RGBcolor		short s short s short s
+void RGBwritemask	short s short s short s
+void setcursor		short s short s short s
+void tie		short s short s short s
+void circfs		short s short s short s
+void circs		short s short s short s
+void cmovs		short s short s short s
+void draws		short s short s short s
+void moves		short s short s short s
+void pdrs		short s short s short s
+void pmvs		short s short s short s
+void pnts		short s short s short s
+void rdrs		short s short s short s
+void rmvs		short s short s short s
+void rpdrs		short s short s short s
+void rpmvs		short s short s short s
+void xfpts		short s short s short s
+void curorigin		short s short s short s
+void cyclemap		short s short s short s
+#
+void patch		float s[16] float s[16] float s[16]
+void splf		long s float s[3*arg1] short s[arg1]
+void splf2		long s float s[2*arg1] short s[arg1]
+void splfi		long s long s[3*arg1] short s[arg1]
+void splf2i		long s long s[2*arg1] short s[arg1]
+void splfs		long s short s[3*arg1] short s[arg1]
+void splf2s		long s short s[2*arg1] short s[arg1]
+void defpattern		short s short s short s[arg2*arg2/16]
+#
+void rpatch		float s[16] float s[16] float s[16] float s[16]
+#
+# routines that send 4 floats
+#
+void ortho2		float s float s float s float s
+void rect		float s float s float s float s
+void rectf		float s float s float s float s
+void xfpt4		float s float s float s float s
+#
+void textport		short s short s short s short s
+void mapcolor		short s short s short s short s
+void scrmask		short s short s short s short s
+void setvaluator	short s short s short s short s
+void viewport		short s short s short s short s
+void shaderange		short s short s short s short s
+void xfpt4s		short s short s short s short s
+void rectfi		long s long s long s long s
+void recti		long s long s long s long s
+void xfpt4i		long s long s long s long s
+void prefposition	long s long s long s long s
+#
+void arc		float s float s float s short s short s
+void arcf		float s float s float s short s short s
+void arcfi		long s long s long s short s short s
+void arci		long s long s long s short s short s
+#
+void bbox2		short s short s float s float s float s float s
+void bbox2i		short s short s long s long s long s long s
+void bbox2s		short s short s short s short s short s short s
+void blink		short s short s short s short s short s
+void ortho		float s float s float s float s float s float s
+void window		float s float s float s float s float s float s
+void lookat		float s float s float s float s float s float s short s
+#
+void perspective	short s float s float s float s
+void polarview		float s short s short s short s
+# XXX getichararray not supported
+#void writeRGB		short s char s[arg1] char s[arg1] char s[arg1]
+#
+void arcfs		short s short s short s short s short s
+void arcs		short s short s short s short s short s
+void rectcopy		short s short s short s short s short s short s
+void RGBcursor		short s short s short s short s short s short s short s
+#
+long getbutton		short s
+long getcmmode
+long getlsbackup
+long getresetls
+long getdcm
+long getzbuffer
+long ismex
+long isobj		long s
+long isqueued		short s
+long istag		long s
+#
+long genobj
+long gentag
+long getbuffer
+long getcolor
+long getdisplaymode
+long getfont
+long getheight
+long gethitcode
+long getlstyle
+long getlwidth
+long getmap
+long getplanes
+long getwritemask
+long qtest
+long getlsrepeat
+long getmonitor
+long getopenobj
+long getpattern
+long winget
+long winattach
+long getothermonitor
+long newpup
+#
+long getvaluator	short s
+void winset		long s
+long dopup		long s
+void getdepth		short r short r
+void getcpos		short r short r
+void getsize		long r long r
+void getorigin		long r long r
+void getviewport	short r short r short r short r
+void gettp		short r short r short r short r
+void getgpos		float r float r float r float r
+void winposition	long s long s long s long s
+void gRGBcolor		short r short r short r
+void gRGBmask		short r short r short r
+void getscrmask	short r short r short r short r
+void gRGBcursor	short r short r short r short r short r short r short r short r long *
+void getmcolor		short s short r short r short r
+void mapw		long s short s short s float r float r float r float r float r float r
+void mapw2		long s short s short s float r float r
+void defrasterfont	short s short s short s Fontchar s[arg3] short s short s[4*arg5]
+long qread		short r
+void getcursor		short r short r short r long r
+#
+#   For these we receive arrays of stuff
+#
+void getdev 		long s short s[arg1] short r[arg1]
+#XXX not generated correctly yet
+#void getmatrix		float r[16]
+long readpixels		short s short r[retval]
+long readRGB		short s char r[retval] char r[retval] char r[retval]
+long blkqread		short s short r[arg1]
+#
+#   New 4D routines
+#
+void cmode
+void concave		long s
+void curstype		long s
+void drawmode		long s
+void gammaramp		short s[256] short s[256] short s[256]
+long getbackface
+long getdescender
+long getdrawmode
+long getmmode
+long getsm
+long getvideo		long s
+void imakebackground
+void lmbind		short s short s
+void lmdef		long s long s long s float s[arg3]
+void mmode		long s
+void normal		float s[3]
+void overlay		long s
+void RGBrange		short s short s short s short s short s short s short s short s
+void setvideo 		long s long s
+void shademodel		long s
+void underlay		long s
+#
+# New Personal Iris/GT Routines
+#
+void bgnclosedline
+void bgnline
+void bgnpoint
+void bgnpolygon
+void bgnsurface
+void bgntmesh
+void bgntrim
+void endclosedline
+void endline
+void endpoint
+void endpolygon
+void endsurface
+void endtmesh
+void endtrim
+void blendfunction	long s long s
+void c3f		float s[3]
+void c3i		long  s[3]
+void c3s		short s[3]
+void c4f		float s[4]
+void c4i		long  s[4]
+void c4s		short s[4]
+void colorf		float s
+void cpack		long s
+void czclear		long s long s
+void dglclose		long s
+long dglopen		char *s long s
+long getgdesc		long s
+void getnurbsproperty	long s float r
+void glcompat		long s long s
+void iconsize 		long s long s
+void icontitle		char *s
+void lRGBrange		short s short s short s short s short s short s long s long s
+void linesmooth		long s
+void lmcolor		long s
+void logicop		long s
+long lrectread	 	short s short s short s short s long r[retval]
+void lrectwrite		short s short s short s short s long s[(arg2-arg1+1)*(arg4-arg3+1)]
+long rectread	 	short s short s short s short s short r[retval]
+void rectwrite		short s short s short s short s short s[(arg2-arg1+1)*(arg4-arg3+1)]
+void lsetdepth		long s long s
+void lshaderange	short s short s long s long s
+void n3f		float s[3]
+void noborder
+void pntsmooth		long s
+void readsource		long s
+void rectzoom		float s float s
+void sbox		float s float s float s float s
+void sboxi		long s long s long s long s
+void sboxs		short s short s short s short s
+void sboxf		float s float s float s float s
+void sboxfi		long s long s long s long s
+void sboxfs		short s short s short s short s
+void setnurbsproperty	long s float s
+void setpup 		long s long s long s
+void smoothline		long s
+void subpixel		long s
+void swaptmesh
+long swinopen		long s
+void v2f		float s[2]
+void v2i		long  s[2]
+void v2s		short s[2]
+void v3f		float s[3]
+void v3i		long  s[3]
+void v3s		short s[3]
+void v4f		float s[4]
+void v4i		long  s[4]
+void v4s		short s[4]
+void videocmd		long s
+long windepth		long s
+void wmpack		long s
+void zdraw		long s
+void zfunction		long s
+void zsource		long s
+void zwritemask		long s
+#
+#   uses doubles
+#
+void v2d		double s[2]
+void v3d		double s[3]
+void v4d		double s[4]

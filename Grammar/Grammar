@@ -1,0 +1,71 @@
+# Grammar for Python, version 3
+
+# Changes compared to version 2:
+#	The syntax of Boolean operations is changed to use more
+#	conventional priorities: or < and < not.
+
+# Changes compared to version 1:
+#	modules and scripts are unified;
+#	'quit' is gone (use ^D);
+#	empty_stmt is gone, replaced by explicit NEWLINE where appropriate;
+#	'import' and 'def' aren't special any more;
+#	added 'from' NAME option on import clause, and '*' to import all;
+#	added class definition.
+# TO DO:
+#	replace 'dir' by something more general?
+
+# Start symbols for the grammar:
+#	single_input is a single interactive statement;
+#	file_input is a module or sequence of commands read from an input file;
+#	expr_input is the input for the input() function;
+#	eval_input is the input for the eval() function.
+
+# NB: compound_stmt in single_input is followed by extra NEWLINE!
+single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
+file_input: (NEWLINE | stmt)* ENDMARKER
+expr_input: testlist NEWLINE
+eval_input: testlist ENDMARKER
+
+funcdef: 'def' NAME parameters ':' suite
+parameters: '(' [fplist] ')'
+fplist: fpdef (',' fpdef)*
+fpdef: NAME | '(' fplist ')'
+
+stmt: simple_stmt | compound_stmt
+simple_stmt: expr_stmt | print_stmt  | pass_stmt | del_stmt | dir_stmt | flow_stmt | import_stmt
+expr_stmt: (exprlist '=')* exprlist NEWLINE
+# For assignments, additional restrictions enforced by the interpreter
+print_stmt: 'print' (test ',')* [test] NEWLINE
+del_stmt: 'del' exprlist NEWLINE
+dir_stmt: 'dir' [expr] NEWLINE
+pass_stmt: 'pass' NEWLINE
+flow_stmt: break_stmt | return_stmt | raise_stmt
+break_stmt: 'break' NEWLINE
+return_stmt: 'return' [testlist] NEWLINE
+raise_stmt: 'raise' expr [',' expr] NEWLINE
+import_stmt: 'import' NAME (',' NAME)* NEWLINE | 'from' NAME 'import' ('*' | NAME (',' NAME)*) NEWLINE
+compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
+if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
+while_stmt: 'while' test ':' suite ['else' ':' suite]
+for_stmt: 'for' exprlist 'in' exprlist ':' suite ['else' ':' suite]
+try_stmt: 'try' ':' suite (except_clause ':' suite)* ['finally' ':' suite]
+except_clause: 'except' [expr [',' expr]]
+suite: simple_stmt | NEWLINE INDENT NEWLINE* (stmt NEWLINE*)+ DEDENT
+
+test: and_test ('or' and_test)*
+and_test: not_test ('and' not_test)*
+not_test: 'not' not_test | comparison
+comparison: expr (comp_op expr)*
+comp_op: '<'|'>'|'='|'>' '='|'<' '='|'<' '>'|'in'|'not' 'in'|'is'|'is' 'not'
+expr: term (('+'|'-') term)*
+term: factor (('*'|'/'|'%') factor)*
+factor: ('+'|'-') factor | atom trailer*
+atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' '}' | '`' testlist '`' | NAME | NUMBER | STRING
+trailer: '(' [exprlist] ')' | '[' subscript ']' | '.' NAME
+subscript: expr | [expr] ':' [expr]
+exprlist: expr (',' expr)* [',']
+testlist: test (',' test)* [',']
+
+classdef: 'class' NAME parameters ['=' baselist] ':' suite
+baselist: atom arguments (',' atom arguments)*
+arguments: '(' [testlist] ')'
