@@ -228,6 +228,18 @@ tupleslice(a, ilow, ihigh)
 	return (object *)np;
 }
 
+object *
+gettupleslice(op, i, j)
+	object *op;
+	int i, j;
+{
+	if (op == NULL || !is_tupleobject(op)) {
+		err_badcall();
+		return NULL;
+	}
+	return tupleslice((tupleobject *)op, i, j);
+}
+
 static object *
 tupleconcat(a, bb)
 	register tupleobject *a;
