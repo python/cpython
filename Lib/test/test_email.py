@@ -4,8 +4,10 @@
 import unittest
 # The specific tests now live in Lib/email/test
 from email.test.test_email import suite
+from test.test_support import run_suite
 
+def test_main():
+    run_suite(suite())
 
-
 if __name__ == '__main__':
-    unittest.main(defaultTest='suite')
+    test_main()
