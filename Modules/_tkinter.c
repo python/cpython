@@ -325,11 +325,11 @@ Tcl_AppInit(interp)
 
 	main = Tk_MainWindow(interp);
 	if (Tcl_Init(interp) == TCL_ERROR) {
-		fprintf(stderr, "Tcl_Init error: %s\n", interp->result);
+		PySys_WriteStderr("Tcl_Init error: %s\n", interp->result);
 		return TCL_ERROR;
 	}
 	if (Tk_Init(interp) == TCL_ERROR) {
-		fprintf(stderr, "Tk_Init error: %s\n", interp->result);
+		PySys_WriteStderr("Tk_Init error: %s\n", interp->result);
 		return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -464,7 +464,7 @@ Tkapp_Call(self, args)
 	   to Tcl_SplitList() inside Tcl_Eval()...  It can save a bundle! */
 	if (Py_VerboseFlag >= 2) {
 		for (i = 0; i < argc; i++)
-			fprintf(stderr, "%s ", argv[i]);
+			PySys_WriteStderr("%s ", argv[i]);
 	}
 	if (argc < 1 ||
 	    !Tcl_GetCommandInfo(interp, argv[0], &info) ||
@@ -472,7 +472,7 @@ Tkapp_Call(self, args)
 	{
 		char *cmd;
 		if (Py_VerboseFlag >= 2)
-			fprintf(stderr, "... use TclEval ");
+			PySys_WriteStderr("... use TclEval ");
 		cmd = Tcl_Merge(argc, argv);
 		i = Tcl_Eval(interp, cmd);
 		ckfree(cmd);
@@ -483,13 +483,13 @@ Tkapp_Call(self, args)
 	}
 	if (i == TCL_ERROR) {
 		if (Py_VerboseFlag >= 2)
-			fprintf(stderr, "... error: '%s'\n",
+			PySys_WriteStderr("... error: '%s'\n",
 				interp->result);
 		Tkinter_Error(self);
 	}
 	else {
 		if (Py_VerboseFlag >= 2)
-			fprintf(stderr, "-> '%s'\n", interp->result);
+			PySys_WriteStderr("-> '%s'\n", interp->result);
 		res = PyString_FromString(interp->result);
 	}
 
@@ -1714,7 +1714,7 @@ panic(char * format, ...)
 	
 	va_start(varg, format);
 	
-	vfprintf(stderr, format, varg);
+	vPySys_WriteStderr(format, varg);
 	(void) fflush(stderr);
 	
 	va_end(varg);
