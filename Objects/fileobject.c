@@ -342,7 +342,8 @@ getline(f, n)
 			}
 			if (n < 0 && buf == BUF(v)) {
 				DECREF(v);
-				err_set(EOFError);
+				err_setstr(EOFError,
+					   "EOF when reading a line");
 				return NULL;
 			}
 			break;
