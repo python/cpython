@@ -18,6 +18,14 @@ def opcode_in_pickle(code, pickle):
             return True
     return False
 
+# Return the number of times opcode code appears in pickle.
+def count_opcode(code, pickle):
+    n = 0
+    for op, dummy, dummy in pickletools.genops(pickle):
+        if op.code == code:
+            n += 1
+    return n
+
 # We can't very well test the extension registry without putting known stuff
 # in it, but we have to be careful to restore its original state.  Code
 # should do this:
@@ -664,7 +672,6 @@ class AbstractPickleTests(unittest.TestCase):
         self.produce_global_ext(0x7fffffff, pickle.EXT4)  # largest EXT4 code
         self.produce_global_ext(0x12abcdef, pickle.EXT4)  # check endianness
 
-
 # XXX Temporary hack, so long as the C implementation of pickle protocol
 # XXX 2 isn't ready.  When it is, move the methods in TempAbstractPickleTests
 # XXX into AbstractPickleTests above, and get rid of TempAbstractPickleTests
@@ -682,6 +689,49 @@ class TempAbstractPickleTests(unittest.TestCase):
         self.assertEqual(x.foo, y.foo)
         self.assertEqual(x.bar, y.bar)
 
+    def test_list_chunking(self):
+        n = 10  # too small to chunk
+        x = range(n)
+        for proto in protocols:
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            self.assertEqual(x, y)
+            num_appends = count_opcode(pickle.APPENDS, s)
+            self.assertEqual(num_appends, proto > 0)
+
+        n = 2500  # expect at least two chunks when proto > 0
+        x = range(n)
+        for proto in protocols:
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            self.assertEqual(x, y)
+            num_appends = count_opcode(pickle.APPENDS, s)
+            if proto == 0:
+                self.assertEqual(num_appends, 0)
+            else:
+                self.failUnless(num_appends >= 2)
+
+    def test_dict_chunking(self):
+        n = 10  # too small to chunk
+        x = dict.fromkeys(range(n))
+        for proto in protocols:
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            self.assertEqual(x, y)
+            num_setitems = count_opcode(pickle.SETITEMS, s)
+            self.assertEqual(num_setitems, proto > 0)
+
+        n = 2500  # expect at least two chunks when proto > 0
+        x = dict.fromkeys(range(n))
+        for proto in protocols:
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            self.assertEqual(x, y)
+            num_setitems = count_opcode(pickle.SETITEMS, s)
+            if proto == 0:
+                self.assertEqual(num_setitems, 0)
+            else:
+                self.failUnless(num_setitems >= 2)
 
 class MyInt(int):
     sample = 1
