@@ -49,6 +49,14 @@ h1, h2, h3, h4, h5, h6  { font-family: avantgarde, sans-serif;
 h1                      { font-size: 180%; }
 h2                      { font-size: 150%; }
 h3, h4                  { font-size: 120%; }
+
+/* LaTeX2HTML insists on inserting <br> elements into headers which
+ * are marked with \label.  This little bit of CSS magic ensures that
+ * these elements don't cause spurious whitespace to be added.
+ */
+h1>br, h2>br, h3>br,
+h4>br, h5>br, h6>br     { display: none; }
+
 code, tt                { font-family: "lucida typewriter", lucidatypewriter,
                                        monospace; }
 var                     { font-family: times, serif;
