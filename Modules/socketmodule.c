@@ -165,7 +165,9 @@ int shutdown( int, int );
 #ifdef __BEOS__
 #include <net/netdb.h>
 #else
+#ifndef macintosh
 #include <arpa/inet.h>
+#endif
 #endif
 
 #include <fcntl.h>
@@ -1829,8 +1831,11 @@ BUILD_FUNC_DEF_2(PySocket_inet_aton, PyObject *, self, PyObject *, args)
 	if (!PyArg_Parse(args, "s", &ip_addr)) {
 		return NULL;
 	}
-	
+#ifdef macintosh
+	packed_addr = (long)inet_addr(ip_addr).s_addr;
+#else
 	packed_addr = inet_addr(ip_addr);
+#endif
 
 	if (packed_addr == INADDR_NONE) {	/* invalid address */
 		PyErr_SetString(PySocket_Error,
