@@ -161,6 +161,8 @@ Py_Initialize(void)
 	/* phase 2 of builtins */
 	_PyImport_FixupExtension("__builtin__", "__builtin__");
 
+	_PyImportHooks_Init();
+
 	initsigs(); /* Signal handling stuff, including initintr() */
 
 	initmain(); /* Module __main__ */

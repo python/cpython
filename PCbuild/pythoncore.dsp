@@ -549,5 +549,9 @@ SOURCE=..\Modules\xxsubtype.c
 
 SOURCE=..\Modules\yuvconvert.c
 # End Source File
+# Begin Source File
+
+SOURCE=..\Modules\zipimport.c
+# End Source File
 # End Target
 # End Project

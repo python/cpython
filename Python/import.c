@@ -153,6 +153,72 @@ _PyImport_Init(void)
 }
 
 void
+_PyImportHooks_Init(void)
+{
+	PyObject *v, *path_hooks = NULL, *zimpimport;
+	int err = 0;
+
+	/* adding sys.path_hooks and sys.path_importer_cache, setting up
+	   zipimport */
+
+	if (Py_VerboseFlag)
+		PySys_WriteStderr("# installing zipimport hook\n");
+
+	v = PyList_New(0);
+	if (v == NULL)
+		goto error;
+	err = PySys_SetObject("meta_path", v);
+	Py_DECREF(v);
+	if (err)
+		goto error;
+	v = PyDict_New();
+	if (v == NULL)
+		goto error;
+	err = PySys_SetObject("path_importer_cache", v);
+	Py_DECREF(v);
+	if (err)
+		goto error;
+	path_hooks = PyList_New(0);
+	if (path_hooks == NULL)
+		goto error;
+	err = PySys_SetObject("path_hooks", path_hooks);
+	if (err) {
+  error:
+		PyErr_Print();
+		Py_FatalError("initializing sys.meta_path, sys.path_hooks or "
+			      "path_importer_cache failed");
+	}
+	zimpimport = PyImport_ImportModule("zipimport");
+	if (zimpimport == NULL) {
+		PyErr_Clear(); /* No zip import module -- okay */
+		if (Py_VerboseFlag)
+			PySys_WriteStderr("# can't import zipimport\n");
+	}
+	else {
+		PyObject *zipimporter = PyObject_GetAttrString(zimpimport,
+							       "zipimporter");
+		Py_DECREF(zimpimport);
+		if (zipimporter == NULL) {
+			PyErr_Clear(); /* No zipimporter object -- okay */
+			if (Py_VerboseFlag)
+				PySys_WriteStderr(
+				    "# can't import zipimport.zimimporter\n");
+		}
+		else {
+			/* sys.path_hooks.append(zipimporter) */
+			err = PyList_Append(path_hooks, zipimporter);
+			Py_DECREF(zipimporter);
+			if (err)
+				goto error;
+			if (Py_VerboseFlag)
+				PySys_WriteStderr(
+					"# installed zipimport hook\n");
+		}
+	}
+	Py_DECREF(path_hooks);
+}
+
+void
 _PyImport_Fini(void)
 {
 	Py_XDECREF(extensions);
@@ -246,6 +312,7 @@ static char* sys_deletes[] = {
 	"path", "argv", "ps1", "ps2", "exitfunc",
 	"exc_type", "exc_value", "exc_traceback",
 	"last_type", "last_value", "last_traceback",
+	"path_hooks", "path_importer_cache", "meta_path",
 	NULL
 };
 
@@ -808,9 +875,9 @@ load_source_module(char *name, char *pathname, FILE *fp)
 
 
 /* Forward */
-static PyObject *load_module(char *, FILE *, char *, int);
-static struct filedescr *find_module(char *, PyObject *,
-				     char *, size_t, FILE **);
+static PyObject *load_module(char *, FILE *, char *, int, PyObject *);
+static struct filedescr *find_module(char *, char *, PyObject *,
+				     char *, size_t, FILE **, PyObject **);
 static struct _frozen *find_frozen(char *name);
 
 /* Load a package and return its module object WITH INCREMENTED
@@ -848,7 +915,7 @@ load_package(char *name, char *pathname)
 		goto cleanup;
 	}
 	buf[0] = '\0';
-	fdp = find_module("__init__", path, buf, sizeof(buf), &fp);
+	fdp = find_module(name, "__init__", path, buf, sizeof(buf), &fp, NULL);
 	if (fdp == NULL) {
 		if (PyErr_ExceptionMatches(PyExc_ImportError)) {
 			PyErr_Clear();
@@ -857,7 +924,7 @@ load_package(char *name, char *pathname)
 			m = NULL;
 		goto cleanup;
 	}
-	m = load_module(name, fp, buf, fdp->type);
+	m = load_module(name, fp, buf, fdp->type, NULL);
 	if (fp != NULL)
 		fclose(fp);
   cleanup:
@@ -885,6 +952,61 @@ is_builtin(char *name)
 }
 
 
+/* Return an importer object for a sys.path/pkg.__path__ item 'p',
+   possibly by fetching it from the path_importer_cache dict. If it
+   wasn't yet cached, traverse path_hooks until it a hook is found
+   that can handle the path item. Return None if no hook could;
+   this tells our caller it should fall back to the builtin
+   import mechanism. Cache the result in path_importer_cache.
+   Returns a borrowed reference. */
+
+static PyObject *
+get_path_importer(PyObject *path_importer_cache, PyObject *path_hooks,
+		  PyObject *p)
+{
+	PyObject *importer;
+	int j, nhooks;
+
+	/* These conditions are the caller's responsibility: */
+	assert(PyList_Check(path_hooks));
+	assert(PyDict_Check(path_importer_cache));
+
+	nhooks = PyList_Size(path_hooks);
+	if (nhooks < 0)
+		return NULL; /* Shouldn't happen */
+
+	importer = PyDict_GetItem(path_importer_cache, p);
+	if (importer != NULL)
+		return importer;
+
+	/* set path_importer_cache[p] to None to avoid recursion */
+	if (PyDict_SetItem(path_importer_cache, p, Py_None) != 0)
+		return NULL;
+
+	for (j = 0; j < nhooks; j++) {
+		PyObject *hook = PyList_GetItem(path_hooks, j);
+		if (hook == NULL)
+			return NULL;
+		importer = PyObject_CallFunction(hook, "O", p);
+		if (importer != NULL)
+			break;
+
+		if (!PyErr_ExceptionMatches(PyExc_ImportError)) {
+			return NULL;
+		}
+		PyErr_Clear();
+	}
+	if (importer == NULL)
+		importer = Py_None;
+	else if (importer != Py_None) {
+		int err = PyDict_SetItem(path_importer_cache, p, importer);
+		Py_DECREF(importer);
+		if (err != 0)
+			return NULL;
+	}
+	return importer;
+}
+
 /* Search the path (default sys.path) for a module.  Return the
    corresponding filedescr struct, and (via return arguments) the
    pathname and an open file.  Return NULL if the module is not found. */
@@ -896,16 +1018,18 @@ extern FILE *PyWin_FindRegisteredModule(const char *, struct filedescr **,
 
 static int case_ok(char *, int, int, char *);
 static int find_init_module(char *); /* Forward */
+static struct filedescr importhookdescr = {"", "", IMP_HOOK};
 
 static struct filedescr *
-find_module(char *realname, PyObject *path, char *buf, size_t buflen,
-	    FILE **p_fp)
+find_module(char *fullname, char *subname, PyObject *path, char *buf,
+	    size_t buflen, FILE **p_fp, PyObject **p_loader)
 {
 	int i, npath;
 	size_t len, namelen;
 	struct filedescr *fdp = NULL;
 	char *filemode;
 	FILE *fp = NULL;
+	PyObject *path_hooks, *path_importer_cache;
 #ifndef RISCOS
 	struct stat statbuf;
 #endif
@@ -918,13 +1042,50 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 	size_t saved_namelen;
 	char *saved_buf = NULL;
 #endif
+	if (p_loader != NULL)
+		*p_loader = NULL;
 
-	if (strlen(realname) > MAXPATHLEN) {
+	if (strlen(subname) > MAXPATHLEN) {
 		PyErr_SetString(PyExc_OverflowError,
 				"module name is too long");
 		return NULL;
 	}
-	strcpy(name, realname);
+	strcpy(name, subname);
+
+	/* sys.meta_path import hook */
+	if (p_loader != NULL) {
+		PyObject *meta_path;
+
+		meta_path = PySys_GetObject("meta_path");
+		if (meta_path == NULL || !PyList_Check(meta_path)) {
+			PyErr_SetString(PyExc_ImportError,
+					"sys.meta_path must be a list of "
+					"import hooks");
+			return NULL;
+		}
+		Py_INCREF(meta_path);  /* zap guard */
+		npath = PyList_Size(meta_path);
+		for (i = 0; i < npath; i++) {
+			PyObject *loader;
+			PyObject *hook = PyList_GetItem(meta_path, i);
+			loader = PyObject_CallMethod(hook, "find_module",
+						     "sO", fullname,
+						     path != NULL ?
+						     path : Py_None);
+			if (loader == NULL) {
+				Py_DECREF(meta_path);
+				return NULL;  /* true error */
+			}
+			if (loader != Py_None) {
+				/* a loader was found */
+				*p_loader = loader;
+				Py_DECREF(meta_path);
+				return &importhookdescr;
+			}
+			Py_DECREF(loader);
+		}
+		Py_DECREF(meta_path);
+	}
 
 	if (path != NULL && PyString_Check(path)) {
 		/* The only type of submodule allowed inside a "frozen"
@@ -978,6 +1139,22 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 				"sys.path must be a list of directory names");
 		return NULL;
 	}
+
+	path_hooks = PySys_GetObject("path_hooks");
+	if (path_hooks == NULL || !PyList_Check(path_hooks)) {
+		PyErr_SetString(PyExc_ImportError,
+				"sys.path_hooks must be a list of "
+				"import hooks");
+		return NULL;
+	}
+	path_importer_cache = PySys_GetObject("path_importer_cache");
+	if (path_importer_cache == NULL ||
+	    !PyDict_Check(path_importer_cache)) {
+		PyErr_SetString(PyExc_ImportError,
+				"sys.path_importer_cache must be a dict");
+		return NULL;
+	}
+
 	npath = PyList_Size(path);
 	namelen = strlen(name);
 	for (i = 0; i < npath; i++) {
@@ -1005,6 +1182,33 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 			Py_XDECREF(copy);
 			continue; /* v contains '\0' */
 		}
+
+		/* sys.path_hooks import hook */
+		if (p_loader != NULL) {
+			PyObject *importer;
+
+			importer = get_path_importer(path_importer_cache,
+						     path_hooks, v);
+			if (importer == NULL)
+				return NULL;
+			/* Note: importer is a borrowed reference */
+			if (importer != Py_None) {
+				PyObject *loader;
+				loader = PyObject_CallMethod(importer,
+							     "find_module",
+							     "s", fullname);
+				if (loader == NULL)
+					return NULL;  /* error */
+				if (loader != Py_None) {
+					/* a loader was found */
+					*p_loader = loader;
+					return &importhookdescr;
+				}
+				Py_DECREF(loader);
+			}
+			/* no hook was successful, use builtin import */
+		}
+
 #ifdef macintosh
 		/*
 		** Speedup: each sys.path item is interned, and
@@ -1079,7 +1283,7 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 			 * dynamically loaded module we're going to try,
 			 * truncate the name before trying
 			 */
-			if (strlen(realname) > 8) {
+			if (strlen(subname) > 8) {
 				/* is this an attempt to load a C extension? */
 				const struct filedescr *scan;
 				scan = _PyImport_DynLoadFiletab;
@@ -1092,7 +1296,7 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 				if (scan->suffix != NULL) {
 					/* yes, so truncate the name */
 					namelen = 8;
-					len -= strlen(realname) - namelen;
+					len -= strlen(subname) - namelen;
 					buf[len] = '\0';
 				}
 			}
@@ -1444,7 +1648,7 @@ static int init_builtin(char *); /* Forward */
    its module object WITH INCREMENTED REFERENCE COUNT */
 
 static PyObject *
-load_module(char *name, FILE *fp, char *buf, int type)
+load_module(char *name, FILE *fp, char *buf, int type, PyObject *loader)
 {
 	PyObject *modules;
 	PyObject *m;
@@ -1522,6 +1726,16 @@ load_module(char *name, FILE *fp, char *buf, int type)
 		}
 		Py_INCREF(m);
 		break;
+
+	case IMP_HOOK: {
+		if (loader == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"import hook without loader");
+			return NULL;
+		}
+		m = PyObject_CallMethod(loader, "load_module", "s", name);
+		break;
+	}
 
 	default:
 		PyErr_Format(PyExc_ImportError,
@@ -1978,7 +2192,7 @@ import_submodule(PyObject *mod, char *subname, char *fullname)
 		Py_INCREF(m);
 	}
 	else {
-		PyObject *path;
+		PyObject *path, *loader = NULL;
 		char buf[MAXPATHLEN+1];
 		struct filedescr *fdp;
 		FILE *fp = NULL;
@@ -1995,7 +2209,8 @@ import_submodule(PyObject *mod, char *subname, char *fullname)
 		}
 
 		buf[0] = '\0';
-		fdp = find_module(subname, path, buf, MAXPATHLEN+1, &fp);
+		fdp = find_module(fullname, subname, path, buf, MAXPATHLEN+1,
+				  &fp, &loader);
 		Py_XDECREF(path);
 		if (fdp == NULL) {
 			if (!PyErr_ExceptionMatches(PyExc_ImportError))
@@ -2004,7 +2219,8 @@ import_submodule(PyObject *mod, char *subname, char *fullname)
 			Py_INCREF(Py_None);
 			return Py_None;
 		}
-		m = load_module(fullname, fp, buf, fdp->type);
+		m = load_module(fullname, fp, buf, fdp->type, loader);
+		Py_XDECREF(loader);
 		if (fp)
 			fclose(fp);
 		if (mod != Py_None) {
@@ -2080,11 +2296,11 @@ PyImport_ReloadModule(PyObject *m)
 			PyErr_Clear();
 	}
 	buf[0] = '\0';
-	fdp = find_module(subname, path, buf, MAXPATHLEN+1, &fp);
+	fdp = find_module(name, subname, path, buf, MAXPATHLEN+1, &fp, NULL);
 	Py_XDECREF(path);
 	if (fdp == NULL)
 		return NULL;
-	m = load_module(name, fp, buf, fdp->type);
+	m = load_module(name, fp, buf, fdp->type, NULL);
 	if (fp)
 		fclose(fp);
 	return m;
@@ -2228,7 +2444,7 @@ call_find_module(char *name, PyObject *path)
 	pathname[0] = '\0';
 	if (path == Py_None)
 		path = NULL;
-	fdp = find_module(name, path, pathname, MAXPATHLEN+1, &fp);
+	fdp = find_module(NULL, name, path, pathname, MAXPATHLEN+1, &fp, NULL);
 	if (fdp == NULL)
 		return NULL;
 	if (fp != NULL) {
@@ -2465,7 +2681,7 @@ imp_load_module(PyObject *self, PyObject *args)
 		if (fp == NULL)
 			return NULL;
 	}
-	return load_module(name, fp, pathname, type);
+	return load_module(name, fp, pathname, type, NULL);
 }
 
 static PyObject *
@@ -2579,6 +2795,7 @@ initimp(void)
 	if (setint(d, "C_BUILTIN", C_BUILTIN) < 0) goto failure;
 	if (setint(d, "PY_FROZEN", PY_FROZEN) < 0) goto failure;
 	if (setint(d, "PY_CODERESOURCE", PY_CODERESOURCE) < 0) goto failure;
+	if (setint(d, "IMP_HOOK", IMP_HOOK) < 0) goto failure;
 
   failure:
 	;

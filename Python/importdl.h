@@ -16,7 +16,8 @@ enum filetype {
 	PKG_DIRECTORY,
 	C_BUILTIN,
 	PY_FROZEN,
-	PY_CODERESOURCE /* Mac only */
+	PY_CODERESOURCE, /* Mac only */
+	IMP_HOOK
 };
 
 struct filedescr {

@@ -99,6 +99,7 @@ PyAPI_FUNC(PyObject *) _PyBuiltin_Init(void);
 PyAPI_FUNC(PyObject *) _PySys_Init(void);
 PyAPI_FUNC(void) _PyImport_Init(void);
 PyAPI_FUNC(void) _PyExc_Init(void);
+PyAPI_FUNC(void) _PyImportHooks_Init(void);
 
 /* Various internal finalizers */
 PyAPI_FUNC(void) _PyExc_Fini(void);

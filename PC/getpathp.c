@@ -81,6 +81,7 @@
 
 static char prefix[MAXPATHLEN+1];
 static char progpath[MAXPATHLEN+1];
+static char dllpath[MAXPATHLEN+1];
 static char *module_search_path = NULL;
 
 
@@ -350,6 +351,7 @@ get_progpath(void)
 	char *prog = Py_GetProgramName();
 
 #ifdef MS_WINDOWS
+	extern HANDLE PyWin_DLLhModule;
 #ifdef UNICODE
 	WCHAR wprogpath[MAXPATHLEN+1];
 	/* Windows documents that GetModuleFileName() will "truncate",
@@ -357,6 +359,14 @@ get_progpath(void)
 	   PLUS Windows itself defines MAX_PATH as the same, but anyway...
 	*/
 	wprogpath[MAXPATHLEN]=_T('\0');
+	if (PyWin_DLLhModule &&
+	    GetModuleFileName(PyWin_DLLhModule, wprogpath, MAXPATHLEN)) {
+		WideCharToMultiByte(CP_ACP, 0, 
+		                    wprogpath, -1, 
+		                    dllpath, MAXPATHLEN+1, 
+		                    NULL, NULL);
+	}
+	wprogpath[MAXPATHLEN]=_T('\0')';
 	if (GetModuleFileName(NULL, wprogpath, MAXPATHLEN)) {
 		WideCharToMultiByte(CP_ACP, 0, 
 		                    wprogpath, -1, 
@@ -366,6 +376,9 @@ get_progpath(void)
 	}
 #else
 	/* static init of progpath ensures final char remains \0 */
+	if (PyWin_DLLhModule)
+		if (!GetModuleFileName(PyWin_DLLhModule, dllpath, MAXPATHLEN))
+			dllpath[0] = 0;
 	if (GetModuleFileName(NULL, progpath, MAXPATHLEN))
 		return;
 #endif
@@ -427,6 +440,8 @@ calculate_path(void)
 	int skiphome, skipdefault;
 	char *machinepath = NULL;
 	char *userpath = NULL;
+	char zip_path[MAXPATHLEN+1];
+	size_t len;
 #endif
 
 	get_progpath();
@@ -447,6 +462,21 @@ calculate_path(void)
 
 
 #ifdef MS_WINDOWS
+	/* Calculate zip archive path */
+	if (dllpath[0])		/* use name of python DLL */
+		strncpy(zip_path, dllpath, MAXPATHLEN);
+	else			/* use name of executable program */
+		strncpy(zip_path, progpath, MAXPATHLEN);
+	len = strlen(zip_path);
+	if (len > 4) {
+		zip_path[len-3] = 'z';	/* change ending to "zip" */
+		zip_path[len-2] = 'i';
+		zip_path[len-1] = 'p';
+	}
+	else {
+		zip_path[0] = 0;
+	}
+ 
 	skiphome = pythonhome==NULL ? 0 : 1;
 	machinepath = getpythonregpath(HKEY_LOCAL_MACHINE, skiphome);
 	userpath = getpythonregpath(HKEY_CURRENT_USER, skiphome);
@@ -458,14 +488,15 @@ calculate_path(void)
 
 	/* We need to construct a path from the following parts.
 	   (1) the PYTHONPATH environment variable, if set;
-	   (2) for Win32, the machinepath and userpath, if set;
-	   (3) the PYTHONPATH config macro, with the leading "."
+	   (2) for Win32, the zip archive file path;
+	   (3) for Win32, the machinepath and userpath, if set;
+	   (4) the PYTHONPATH config macro, with the leading "."
 	       of each component replaced with pythonhome, if set;
-	   (4) the directory containing the executable (argv0_path).
-	   The length calculation calculates #3 first.
+	   (5) the directory containing the executable (argv0_path).
+	   The length calculation calculates #4 first.
 	   Extra rules:
-	   - If PYTHONHOME is set (in any way) item (2) is ignored.
-	   - If registry values are used, (3) and (4) are ignored.
+	   - If PYTHONHOME is set (in any way) item (3) is ignored.
+	   - If registry values are used, (4) and (5) are ignored.
 	*/
 
 	/* Calculate size of return buffer */
@@ -487,6 +518,7 @@ calculate_path(void)
 		bufsz += strlen(userpath) + 1;
 	if (machinepath)
 		bufsz += strlen(machinepath) + 1;
+	bufsz += strlen(zip_path) + 1;
 #endif
 	if (envpath != NULL)
 		bufsz += strlen(envpath) + 1;
@@ -518,6 +550,11 @@ calculate_path(void)
 		*buf++ = DELIM;
 	}
 #ifdef MS_WINDOWS
+	if (zip_path[0]) {
+		strcpy(buf, zip_path);
+		buf = strchr(buf, '\0');
+		*buf++ = DELIM;
+	}
 	if (userpath) {
 		strcpy(buf, userpath);
 		buf = strchr(buf, '\0');

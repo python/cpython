@@ -113,6 +113,10 @@ errno errnomodule.c		# posix (UNIX) errno values
 _sre _sre.c			# Fredrik Lundh's new regular expressions
 _codecs _codecsmodule.c		# access to the builtin codecs and codec registry
 
+# The zipimport module is always imported at startup. Having it as a
+# builtin module avoids some bootstrapping problems and reduces overhead.
+zipimport zipimport.c
+
 # The rest of the modules listed in this file are all commented out by
 # default.  Usually they can be detected and built as dynamically
 # loaded modules by the new setup.py script added in Python 2.1.  If
