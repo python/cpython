@@ -134,6 +134,19 @@ if 0*[1,2,3] <> []: raise TestFailed, 'list repetition 0*'
 if min([1,2]) <> 1 or max([1,2]) <> 2: raise TestFailed, 'min/max list'
 if 0 in [0,1,2] and 1 in [0,1,2] and 2 in [0,1,2] and 3 not in [0,1,2]: pass
 else: raise TestFailed, 'in/not in list'
+a = [1, 2, 3, 4, 5]
+a[:-1] = a
+if a != [1, 2, 3, 4, 5, 5]:
+	raise TestFailed, "list self-slice-assign (head)"
+a = [1, 2, 3, 4, 5]
+a[1:] = a
+if a != [1, 1, 2, 3, 4, 5]:
+	raise TestFailed, "list self-slice-assign (tail)"
+a = [1, 2, 3, 4, 5]
+a[1:-1] = a
+if a != [1, 1, 2, 3, 4, 5, 5]:
+	raise TestFailed, "list self-slice-assign (center)"
+
 
 print '6.5.3a Additional list operations'
 a = [0,1,2,3,4]
