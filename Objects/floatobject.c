@@ -150,7 +150,8 @@ PyFloat_FromString(PyObject *v, char **pend)
 	if (end > last)
 		end = last;
 	if (end == s) {
-		sprintf(buffer, "invalid literal for float(): %.200s", s);
+		PyOS_snprintf(buffer, sizeof(buffer),
+			      "invalid literal for float(): %.200s", s);
 		PyErr_SetString(PyExc_ValueError, buffer);
 		return NULL;
 	}
@@ -159,7 +160,8 @@ PyFloat_FromString(PyObject *v, char **pend)
 	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;
 	if (*end != '\0') {
-		sprintf(buffer, "invalid literal for float(): %.200s", s);
+		PyOS_snprintf(buffer, sizeof(buffer),
+			      "invalid literal for float(): %.200s", s);
 		PyErr_SetString(PyExc_ValueError, buffer);
 		return NULL;
 	}
