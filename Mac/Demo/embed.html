@@ -1,0 +1,36 @@
+<HTML>
+<HEAD>
+<TITLE>Embedding Python on the Mac</TITLE>
+</HEAD>
+<BODY>
+<H1>Embedding Python on the Mac</H1>
+<HR>
+
+Embedding Python on the mac is pretty similar to embedding it on other
+platforms, but a few points need mentioning:
+
+<UL>
+<LI> You call <CODE>PyMac_Initialize()</CODE> in stead of
+<CODE>Py_Initialize()</CODE>. The prototype is in <CODE>macglue.h</CODE>.
+This call initializes the toolbox, GUSI (if needed), sets up the correct
+resource files and calls Py_Initialize.
+
+<LI> You have to be consequent in your use of GUSI. If the library uses
+it so should your program and vice versa.
+
+<LI> The console-behaviour (close-on-exit, etc) is controlled by Python,
+but you are of course free to change that after calling PyMac_Initialize().
+</UL>
+
+The Python environment is started with a dummy argc and argv, and initial
+startup options are obtained through the usual means, except that the
+user pression the option-key will not result in an interactive dialog.
+You can, however, set startup options on your program in the same way as you
+do for applets, by dragging your application to <code>EditPythonPrefs</code>. <p>
+
+The most logical way to embed Python is to link it against the shared library
+<code>PythonCorePPC</code> or <code>PythonCoreCFM68K</code>. An example project
+and source can be found in the <a href="embed">embed</a> folder.
+
+</BODY>
+</HTML>
