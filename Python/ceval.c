@@ -36,21 +36,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 
-#include "import.h"
-#include "sysmodule.h"
-#include "bltinmodule.h"
 #include "compile.h"
 #include "frameobject.h"
 #include "eval.h"
-#include "ceval.h"
 #include "opcode.h"
-#include "traceback.h"
 #include "graminit.h"
-#include "pythonrun.h"
 
 #include <ctype.h>
-
-extern int suppress_print; /* Declared in pythonrun.c, set in pythonmain.c */
 
 /* Turn this on if your compiler chokes on the big switch: */
 /* #define CASE_TOO_BIG 1 */
