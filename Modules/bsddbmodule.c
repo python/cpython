@@ -470,18 +470,16 @@ bsddb_has_key(bsddbobject *dp, PyObject *args)
 	recno_t recno;
 
 	if (dp->di_type == DB_RECNO) {
-		if (!PyArg_Parse(args, "i", &recno)) {
-			PyErr_SetString(PyExc_TypeError,
-					"key type must be integer");
+		if (!PyArg_ParseTuple(args, "i;key type must be integer",
+				      &recno)) {
 			return NULL;
 		}
 		krec.data = &recno;
 		krec.size = sizeof(recno);
 	}
 	else {
-		if (!PyArg_Parse(args, "s#", &data, &size)) {
-			PyErr_SetString(PyExc_TypeError,
-					"key type must be string");
+		if (!PyArg_ParseTuple(args, "s#;key type must be string",
+				      &data, &size)) {
 			return NULL;
 		}
 		krec.data = data;
@@ -511,18 +509,16 @@ bsddb_set_location(bsddbobject *dp, PyObject *key)
 	recno_t recno;
 
 	if (dp->di_type == DB_RECNO) {
-		if (!PyArg_Parse(key, "i", &recno)) {
-			PyErr_SetString(PyExc_TypeError,
-					"key type must be integer");
+		if (!PyArg_ParseTuple(key, "i;key type must be integer",
+				      &recno)) {
 			return NULL;
 		}
 		krec.data = &recno;
 		krec.size = sizeof(recno);
 	}
 	else {
-		if (!PyArg_Parse(key, "s#", &data, &size)) {
-			PyErr_SetString(PyExc_TypeError,
-					"key type must be string");
+		if (!PyArg_ParseTuple(key, "s#;key type must be string",
+				      &data, &size)) {
 			return NULL;
 		}
 		krec.data = data;
@@ -644,8 +640,8 @@ bsddb_sync(bsddbobject *dp)
 static PyMethodDef bsddb_methods[] = {
 	{"close",		(PyCFunction)bsddb_close, METH_NOARGS},
 	{"keys",		(PyCFunction)bsddb_keys, METH_NOARGS},
-	{"has_key",		(PyCFunction)bsddb_has_key, METH_OLDARGS},
-	{"set_location",	(PyCFunction)bsddb_set_location, METH_OLDARGS},
+	{"has_key",		(PyCFunction)bsddb_has_key, METH_VARARGS},
+	{"set_location",	(PyCFunction)bsddb_set_location, METH_VARARGS},
 	{"next",		(PyCFunction)bsddb_next, METH_NOARGS},
 	{"previous",	(PyCFunction)bsddb_previous, METH_NOARGS},
 	{"first",		(PyCFunction)bsddb_first, METH_NOARGS},
