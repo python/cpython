@@ -31,7 +31,6 @@ def show_formats ():
     pretty_printer.print_help(
         "List of available source distribution formats:")
 
-
 class sdist (Command):
 
     description = "create a source distribution (tarball, zip file, etc.)"
@@ -439,8 +438,9 @@ class sdist (Command):
                 dest = os.path.join(base_dir, file)
                 self.copy_file(file, dest, link=link)
 
+        self.distribution.metadata.write_pkg_info(base_dir)
+        
     # make_release_tree ()
-
 
     def make_distribution (self):
         """Create the source distribution(s).  First, we create the release
