@@ -1,5 +1,3 @@
-#  pprint.py
-#
 #  Author:	Fred L. Drake, Jr.
 #		fdrake@cnri.reston.va.us, fdrake@acm.org
 #
@@ -103,7 +101,7 @@ class PrettyPrinter:
 	level = level + 1
 	if context.has_key(id(object)):
 	    object = _Recursion(object)
-	rep = self__repr(object, context, level - 1)
+	rep = self.__repr(object, context, level - 1)
 	objid = id(object)
 	context[objid] = 1
 	typ = type(object)
@@ -115,7 +113,8 @@ class PrettyPrinter:
 	    length = len(object)
 	    if length:
 		indent = indent + self.__indent_per_level
-		pprint(object[0], stream, indent, allowance + 1)
+		self.__format(object[0], stream, indent, allowance + 1,
+			      context, level)
 		if len(object) > 1:
 		    for ent in object[1:]:
 			stream.write(',\n' + ' '*indent)
