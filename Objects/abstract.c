@@ -174,6 +174,24 @@ PyObject_DelItem(PyObject *o, PyObject *key)
 	return -1;
 }
 
+int
+PyObject_DelItemString(PyObject *o, char *key)
+{
+	PyObject *okey;
+	int ret;
+
+	if (o == NULL || key == NULL) {
+		null_error();
+		return -1;
+	}
+	okey = PyString_FromString(key);
+	if (okey == NULL)
+		return -1;
+	ret = PyObject_DelItem(o, okey);
+	Py_DECREF(okey);
+	return ret;
+}
+
 int PyObject_AsCharBuffer(PyObject *obj,
 			  const char **buffer,
 			  int *buffer_len)

@@ -445,6 +445,14 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 statement: o[key]=v.
        */
 
+     DL_IMPORT(int) PyObject_DelItemString(PyObject *o, char *key);
+
+       /*
+         Remove the mapping for object, key, from the object *o.
+         Returns -1 on failure.  This is equivalent to
+         the Python statement: del o[key].
+       */
+
      DL_IMPORT(int) PyObject_DelItem(PyObject *o, PyObject *key);
 
        /*
