@@ -1,12 +1,11 @@
 \section{\module{locale} ---
-         Internationalization services.}
+         Internationalization services}
+
 \declaremodule{standard}{locale}
-
-
 \modulesynopsis{Internationalization services.}
 
 
-The \code{locale} module opens access to the \POSIX{} locale database
+The \module{locale} module opens access to the \POSIX{} locale database
 and functionality. The \POSIX{} locale mechanism allows programmers
 to deal with certain cultural issues in an application, without
 requiring the programmer to know all the specifics of each country
@@ -14,7 +13,7 @@ where the software is executed.
 
 The \module{locale} module is implemented on top of the
 \module{_locale}\refbimodindex{_locale} module, which in turn uses an
-ANSI \C{} locale implementation if available.
+ANSI C locale implementation if available.
 
 The \module{locale} module defines the following exception and
 functions:
@@ -38,8 +37,8 @@ import locale
 locale.setlocale(locale.LC_ALL,"")
 \end{verbatim}
 This sets the locale for all categories to the user's default setting
-(typically specified in the \code{LANG} environment variable). If the
-locale is not changed thereafter, using multithreading should not
+(typically specified in the \envvar{LANG} environment variable). If
+the locale is not changed thereafter, using multithreading should not
 cause problems.
 \end{funcdesc}
 
@@ -52,16 +51,16 @@ Returns the database of of the local conventions as a dictionary. This
 dictionary has the following strings as keys:
 \begin{itemize}
 \item \code{decimal_point} specifies the decimal point used in
-floating point number representations for the \code{LC_NUMERIC}
+floating point number representations for the \constant{LC_NUMERIC}
 category.
 \item \code{grouping} is a sequence of numbers specifying at which
 relative positions the \code{thousands_sep} is expected. If the
-sequence is terminated with \code{locale.CHAR_MAX}, no further
+sequence is terminated with \constant{CHAR_MAX}, no further
 grouping is performed. If the sequence terminates with a \code{0}, the last
 group size is repeatedly used.
 \item \code{thousands_sep} is the character used between groups.
 \item \code{int_curr_symbol} specifies the international currency
-symbol from the \code{LC_MONETARY} category.
+symbol from the \constant{LC_MONETARY} category.
 \item \code{currency_symbol} is the local currency symbol.
 \item \code{mon_decimal_point} is the decimal point used in monetary
 values.
@@ -84,8 +83,8 @@ the currency symbol.
 sign should be placed for positive and negative monetary values. 
 \end{itemize}
 
-The possible values for \code{p_sign_posn} and \code{n_sign_posn}
-are given below.
+The possible values for \code{p_sign_posn} and
+\code{n_sign_posn} are given below.
 
 \begin{tableii}{c|l}{code}{Value}{Explanation}
 \lineii{0}{Currency and value are surrounded by parentheses.}
@@ -138,7 +137,7 @@ conventions.
 \begin{datadesc}{LC_CTYPE}
 \refstmodindex{string}
 Locale category for the character type functions. Depending on the
-settings of this category, the functions of module \module{string}
+settings of this category, the functions of module \refmodule{string}
 dealing with case change their behaviour.
 \end{datadesc}
 
@@ -226,7 +225,7 @@ should you document that your module is not compatible with
 non-\samp{C} locale settings.
 
 The case conversion functions in the
-\module{string}\refstmodindex{string} and
+\refmodule{string}\refstmodindex{string} and
 \module{strop}\refbimodindex{strop} modules are affected by the locale
 settings.  When a call to the \function{setlocale()} function changes
 the \constant{LC_CTYPE} settings, the variables
@@ -258,8 +257,8 @@ generally okay, and Python will use whatever locale is set,
 
 The \function{setlocale()} function in the \module{locale} module contains
 gives the Python progammer the impression that you can manipulate the
-\constant{LC_NUMERIC} locale setting, but this not the case at the \C{}
-level: \C{} code will always find that the \constant{LC_NUMERIC} locale
+\constant{LC_NUMERIC} locale setting, but this not the case at the C
+level: C code will always find that the \constant{LC_NUMERIC} locale
 setting is \samp{C}.  This is because too much would break when the
 decimal point character is set to something else than a period
 (e.g. the Python parser would break).  Caveat: threads that run
