@@ -2,6 +2,7 @@ import sys
 import os
 import re
 import imp
+from itertools import count
 from Tkinter import *
 import tkSimpleDialog
 import tkMessageBox
@@ -78,10 +79,10 @@ class EditorWindow:
         self.top = top = self.Toplevel(root, menu=self.menubar)
         if flist:
             self.vars = flist.vars
-            #self.top.instanceDict makes flist.inversedict avalable to
+            #self.top.instance_dict makes flist.inversedict avalable to
             #configDialog.py so it can access all EditorWindow instaces
-            self.top.instanceDict=flist.inversedict
-        self.recentFilesPath=os.path.join(idleConf.GetUserCfgDir(),
+            self.top.instance_dict=flist.inversedict
+        self.recent_files_path=os.path.join(idleConf.GetUserCfgDir(),
                 'recent-files.lst')
         self.vbar = vbar = Scrollbar(top, name='vbar')
         self.text_frame = text_frame = Frame(top)
@@ -178,11 +179,12 @@ class EditorWindow:
         self.io = io = self.IOBinding(self)
         io.set_filename_change_hook(self.filename_change_hook)
 
-        #create the Recent Files submenu
-        self.menuRecentFiles=Menu(self.menubar)
-        self.menudict['file'].insert_cascade(3,label='Recent Files',
-                underline=0,menu=self.menuRecentFiles)
-        self.UpdateRecentFilesList()
+        # Create the recent files submenu
+        self.recent_files_menu = Menu(self.menubar)
+        self.menudict['file'].insert_cascade(3, label='Recent Files',
+                                             underline=0,
+                                             menu=self.recent_files_menu)
+        self.update_recent_files_list()
 
         if filename:
             if os.path.exists(filename) and not os.path.isdir(filename):
@@ -579,66 +581,48 @@ class EditorWindow:
             self.display_docs(helpfile)
         return display_extra_help
 
-    def UpdateRecentFilesList(self,newFile=None):
-        "Load or update the recent files list, and menu if required"
-        rfList=[]
-        if os.path.exists(self.recentFilesPath):
-            RFfile=open(self.recentFilesPath,'r')
+    def update_recent_files_list(self, new_file=None):
+        "Load and update the recent files list and menus"
+        rf_list = []
+        if os.path.exists(self.recent_files_path):
+            rf_list_file = open(self.recent_files_path,'r')
             try:
-                rfList=RFfile.readlines()
+                rf_list = rf_list_file.readlines()
             finally:
-                RFfile.close()
-        if newFile:
-            newFile=os.path.abspath(newFile)+'\n'
-            if newFile in rfList:
-                rfList.remove(newFile)
-            rfList.insert(0,newFile)
-        rfList=self.__CleanRecentFiles(rfList)
-        #print self.flist.inversedict
-        #print self.top.instanceDict
-        #print self
-        ullist = "1234567890ABCDEFGHIJ"
-        if rfList:
-            for instance in self.top.instanceDict.keys():
-                menu = instance.menuRecentFiles
-                menu.delete(1,END)
-                i = 0 ; ul = 0; ullen = len(ullist)
-                for file in rfList:
-                    fileName=file[0:-1]
-                    callback = instance.__RecentFileCallback(fileName)
-                    if i > ullen: # don't underline menuitems
-                        ul=None
-                    menu.add_command(label=ullist[i] + " " + fileName,
-                                     command=callback,
-                                     underline=ul)
-                    i += 1
-
-    def __CleanRecentFiles(self,rfList):
-        origRfList=rfList[:]
-        count=0
-        nonFiles=[]
-        for path in rfList:
-            if not os.path.exists(path[0:-1]):
-                nonFiles.append(count)
-            count=count+1
-        if nonFiles:
-            nonFiles.reverse()
-            for index in nonFiles:
-                del(rfList[index])
-        if len(rfList)>19:
-            rfList=rfList[0:19]
-        #if rfList != origRfList:
-        RFfile=open(self.recentFilesPath,'w')
+                rf_list_file.close()
+        if new_file:
+            new_file = os.path.abspath(new_file) + '\n'
+            if new_file in rf_list:
+                rf_list.remove(new_file)  # move to top
+            rf_list.insert(0, new_file)
+        # clean and save the recent files list
+        bad_paths = []
+        for path in rf_list:
+            if '\0' in path or not os.path.exists(path[0:-1]):
+                bad_paths.append(path)
+        rf_list = [path for path in rf_list if path not in bad_paths]
+        ulchars = "1234567890ABCDEFGHIJK"
+        rf_list = rf_list[0:len(ulchars)]
+        rf_file = open(self.recent_files_path, 'w')
         try:
-            RFfile.writelines(rfList)
+            rf_file.writelines(rf_list)
         finally:
-            RFfile.close()
-        return rfList
+            rf_file.close()
+        # for each edit window instance, construct the recent files menu
+        for instance in self.top.instance_dict.keys():
+            menu = instance.recent_files_menu
+            menu.delete(1, END)  # clear, and rebuild:
+            for i, file in zip(count(), rf_list):
+                file_name = file[0:-1]  # zap \n
+                callback = instance.__recent_file_callback(file_name)
+                menu.add_command(label=ulchars[i] + " " + file_name,
+                                 command=callback,
+                                 underline=0)
 
-    def __RecentFileCallback(self,fileName):
-        def OpenRecentFile(fileName=fileName):
-            self.io.open(editFile=fileName)
-        return OpenRecentFile
+    def __recent_file_callback(self, file_name):
+        def open_recent_file(fn_closure=file_name):
+            self.io.open(editFile=fn_closure)
+        return open_recent_file
 
     def saved_change_hook(self):
         short = self.short_title()
@@ -729,7 +713,7 @@ class EditorWindow:
     def _close(self):
         #print self.io.filename
         if self.io.filename:
-            self.UpdateRecentFilesList(newFile=self.io.filename)
+            self.update_recent_files_list(new_file=self.io.filename)
         WindowList.unregister_callback(self.postwindowsmenu)
         if self.close_hook:
             self.close_hook()

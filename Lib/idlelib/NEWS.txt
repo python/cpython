@@ -3,8 +3,11 @@ What's New in IDLE 1.1a0?
 
 *Release date: XX-XXX-2004*
 
+- If nulls somehow got into the strings in recent-files.lst
+  EditorWindow.update_recent_files_list() was failing.  Python Bug 931336.
+
 - If the normal background is changed via Configure/Highlighting, it will update 
-  immediately, thanks to the previously mentioned patch.
+  immediately, thanks to the previously mentioned patch by Nigel Rowe.
 
 - Add a highlight theme for builtin keywords.  Python Patch 805830 Nigel Rowe
   This also fixed IDLEfork bug [ 693418 ] Normal text background color not refreshed

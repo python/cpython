@@ -1157,7 +1157,7 @@ class ConfigDialog(Toplevel):
         #update theme and repaint
         #update keybindings and re-bind
         #update user help sources menu
-        winInstances=self.parent.instanceDict.keys()
+        winInstances=self.parent.instance_dict.keys()
         for instance in winInstances:
             instance.ResetColorizer()
             instance.ResetFont()
@@ -1183,5 +1183,5 @@ if __name__ == '__main__':
     root=Tk()
     Button(root,text='Dialog',
             command=lambda:ConfigDialog(root,'Settings')).pack()
-    root.instanceDict={}
+    root.instance_dict={}
     root.mainloop()
