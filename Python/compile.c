@@ -313,7 +313,6 @@ com_backpatch(c, anchor)
 {
 	unsigned char *code = (unsigned char *) getstringvalue(c->c_code);
 	int target = c->c_nexti;
-	int lastanchor = 0;
 	int dist;
 	int prev;
 	for (;;) {
@@ -324,7 +323,6 @@ com_backpatch(c, anchor)
 		code[anchor+1] = dist >> 8;
 		if (!prev)
 			break;
-		lastanchor = anchor;
 		anchor -= prev;
 	}
 }
@@ -408,18 +406,16 @@ static object *
 parsenumber(s)
 	char *s;
 {
-	extern long strtol();
-	extern unsigned long strtoul();
-	extern double strtod();
+	extern long strtol PROTO((const char *, char **, int));
+	extern unsigned long strtoul PROTO((const char *, char **, int));
+	extern double strtod PROTO((const char *, char **));
 	char *end;
 	long x;
 	double xx;
 	errno = 0;
 	end = s + strlen(s) - 1;
-	if (*end == 'l' || *end == 'L') {
-		extern object *long_scan();
+	if (*end == 'l' || *end == 'L')
 		return long_scan(s, 0);
-	}
 	if (s[0] == '0')
 		x = (long) strtoul(s, &end, 0);
 	else
@@ -524,7 +520,6 @@ com_list_constructor(c, n)
 {
 	int len;
 	int i;
-	object *v, *w;
 	if (TYPE(n) != testlist)
 		REQ(n, exprlist);
 	/* exprlist: expr (',' expr)* [',']; likewise for testlist */
@@ -669,7 +664,6 @@ com_call_function(c, n)
 		com_addbyte(c, BINARY_CALL);
 	}
 	else {
-		int i;
 		REQ(n, testlist);
 		com_list(c, n, 1);
 		com_addbyte(c, BINARY_CALL);
@@ -914,7 +908,6 @@ cmp_type(n)
 		}
 	}
 	else if (NCH(n) == 2) {
-		int t2 = TYPE(CHILD(n, 1));
 		switch (TYPE(CHILD(n, 0))) {
 		case NAME:	if (strcmp(STR(CHILD(n, 1)), "in") == 0)
 					return NOT_IN;
@@ -1119,7 +1112,6 @@ com_assign_trailer(c, n, assigning)
 	node *n;
 	int assigning;
 {
-	char *name;
 	REQ(n, trailer);
 	switch (TYPE(CHILD(n, 0))) {
 	case LPAR: /* '(' [exprlist] ')' */
@@ -1381,7 +1373,6 @@ com_global_stmt(c, n)
 	node *n;
 {
 	int i;
-	object *v;
 	REQ(n, global_stmt);
 	/* 'global' NAME (',' NAME)* */
 	for (i = 1; i < NCH(n); i += 2) {
@@ -1666,10 +1657,11 @@ com_suite(c, n)
 	}
 }
 
+/* ARGSUSED */
 static void
 com_continue_stmt(c, n)
 	struct compiling *c;
-	node *n;
+	node *n; /* Not used, but passed for consistency */
 {
 	int i = c->c_nblocks;
 	if (i-- > 0 && c->c_block[i] == SETUP_LOOP) {
@@ -1707,7 +1699,7 @@ com_oldbases(c, n)
 	struct compiling *c;
 	node *n;
 {
-	int i, nbases;
+	int i;
 	REQ(n, baselist);
 	/*
 	baselist: atom arguments (',' atom arguments)*
@@ -1723,7 +1715,7 @@ com_newbases(c, n)
 	struct compiling *c;
 	node *n;
 {
-	int i, nbases;
+	int i;
 	REQ(n, testlist);
 	/* testlist: test (',' test)* [','] */
 	for (i = 0; i < NCH(n); i += 2)
