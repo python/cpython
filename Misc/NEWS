@@ -140,6 +140,21 @@ Extension modules
   datetime objects (e.g., mxDateTime) a chance to intercept the
   comparison.
 
+  date, time, datetime and timedelta comparison:  When the exception
+  for mixed-type comparisons in the last paragraph doesn't apply, if
+  the comparison is == then False is returned, and if the comparison is
+  != then True is returned.  Because dict lookup and the "in" operator
+  only invoke __eq__, this allows, for example,
+
+      if some_datetime in some_sequence:
+  and
+      some_dict[some_timedelta] = whatever
+
+  to work as expected, without raising TypeError just because the
+  sequence is heterogeneous, or the dict has mixed-type keys.  [This
+  seems like a good idea to implement for all mixed-type comparisons
+  that don't want to allow falling back to address comparison.]
+
   The constructors building a datetime from a timestamp could raise
   ValueError if the platform C localtime()/gmtime() inserted "leap
   seconds".  Leap seconds are ignored now.  On such platforms, it's
@@ -271,7 +286,7 @@ Mac
 
 - There are new dialogs EasyDialogs.AskFileForOpen, AskFileForSave
   and AskFolder. The old macfs.StandardGetFile and friends are deprecated.
-  
+
 - Most of the standard library now uses pathnames or FSRefs in preference
   of FSSpecs, and use the underlying Carbon.File and Carbon.Folder modules
   in stead of macfs. macfs will probably be deprecated in the future.

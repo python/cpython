@@ -134,9 +134,51 @@ class TestTZInfo(unittest.TestCase):
                 self.assertEqual(derived.tzname(None), 'cookie')
 
 #############################################################################
+# Base clase for testing a particular aspect of timedelta, time, date and
+# datetime comparisons.
+
+class HarmlessMixedComparison(unittest.TestCase):
+    # Test that __eq__ and __ne__ don't complain for mixed-type comparisons.
+
+    # Subclasses must define 'theclass', and theclass(1, 1, 1) must be a
+    # legit constructor.
+
+    def test_harmless_mixed_comparison(self):
+        me = self.theclass(1, 1, 1)
+
+        self.failIf(me == ())
+        self.failUnless(me != ())
+        self.failIf(() == me)
+        self.failUnless(() != me)
+
+        self.failUnless(me in [1, 20L, [], me])
+        self.failIf(me not in [1, 20L, [], me])
+
+        self.failUnless([] in [me, 1, 20L, []])
+        self.failIf([] not in [me, 1, 20L, []])
+
+    def test_harmful_mixed_comparison(self):
+        me = self.theclass(1, 1, 1)
+
+        self.assertRaises(TypeError, lambda: me < ())
+        self.assertRaises(TypeError, lambda: me <= ())
+        self.assertRaises(TypeError, lambda: me > ())
+        self.assertRaises(TypeError, lambda: me >= ())
+
+        self.assertRaises(TypeError, lambda: () < me)
+        self.assertRaises(TypeError, lambda: () <= me)
+        self.assertRaises(TypeError, lambda: () > me)
+        self.assertRaises(TypeError, lambda: () >= me)
+
+        self.assertRaises(TypeError, cmp, (), me)
+        self.assertRaises(TypeError, cmp, me, ())
+
+#############################################################################
 # timedelta tests
 
-class TestTimeDelta(unittest.TestCase):
+class TestTimeDelta(HarmlessMixedComparison):
+
+    theclass = timedelta
 
     def test_constructor(self):
         eq = self.assertEqual
@@ -301,15 +343,18 @@ class TestTimeDelta(unittest.TestCase):
             self.assertEqual(cmp(t1, t2), -1)
             self.assertEqual(cmp(t2, t1), 1)
 
-        for badarg in 10, 10L, 34.5, "abc", {}, [], ():
-            self.assertRaises(TypeError, lambda: t1 == badarg)
-            self.assertRaises(TypeError, lambda: t1 != badarg)
+        badargs = 10, 10L, 34.5, "abc", {}, [], ()
+        for badarg in badargs:
+            self.assertEqual(t1 == badarg, False)
+            self.assertEqual(t1 != badarg, True)
+            self.assertEqual(badarg == t1, False)
+            self.assertEqual(badarg != t1, True)
+
+        for badarg in badargs:
             self.assertRaises(TypeError, lambda: t1 <= badarg)
             self.assertRaises(TypeError, lambda: t1 < badarg)
             self.assertRaises(TypeError, lambda: t1 > badarg)
             self.assertRaises(TypeError, lambda: t1 >= badarg)
-            self.assertRaises(TypeError, lambda: badarg == t1)
-            self.assertRaises(TypeError, lambda: badarg != t1)
             self.assertRaises(TypeError, lambda: badarg <= t1)
             self.assertRaises(TypeError, lambda: badarg < t1)
             self.assertRaises(TypeError, lambda: badarg > t1)
@@ -446,7 +491,7 @@ class TestDateOnly(unittest.TestCase):
         dt2 = dt - delta
         self.assertEqual(dt2, dt - days)
 
-class TestDate(unittest.TestCase):
+class TestDate(HarmlessMixedComparison):
     # Tests here should pass for both dates and datetimes, except for a
     # few tests that TestDateTime overrides.
 
@@ -853,15 +898,17 @@ class TestDate(unittest.TestCase):
             self.assertEqual(cmp(t1, t2), -1)
             self.assertEqual(cmp(t2, t1), 1)
 
-        for badarg in 10, 10L, 34.5, "abc", {}, [], ():
-            self.assertRaises(TypeError, lambda: t1 == badarg)
-            self.assertRaises(TypeError, lambda: t1 != badarg)
-            self.assertRaises(TypeError, lambda: t1 <= badarg)
+        badargs = 10, 10L, 34.5, "abc", {}, [], ()
+        for badarg in badargs:
+            self.assertEqual(t1 == badarg, False)
+            self.assertEqual(t1 != badarg, True)
+            self.assertEqual(badarg == t1, False)
+            self.assertEqual(badarg != t1, True)
+
+        for badarg in badargs:
             self.assertRaises(TypeError, lambda: t1 < badarg)
             self.assertRaises(TypeError, lambda: t1 > badarg)
             self.assertRaises(TypeError, lambda: t1 >= badarg)
-            self.assertRaises(TypeError, lambda: badarg == t1)
-            self.assertRaises(TypeError, lambda: badarg != t1)
             self.assertRaises(TypeError, lambda: badarg <= t1)
             self.assertRaises(TypeError, lambda: badarg < t1)
             self.assertRaises(TypeError, lambda: badarg > t1)
@@ -1361,7 +1408,7 @@ class TestDateTime(TestDate):
         alsobog = AlsoBogus()
         self.assertRaises(ValueError, dt.astimezone, alsobog) # also naive
 
-class TestTime(unittest.TestCase):
+class TestTime(HarmlessMixedComparison):
 
     theclass = time
 
@@ -1431,15 +1478,18 @@ class TestTime(unittest.TestCase):
         badargs = (10, 10L, 34.5, "abc", {}, [], ())
         if CMP_BUG_FIXED:
             badargs += (date(1, 1, 1), datetime(1, 1, 1, 1, 1), timedelta(9))
+
         for badarg in badargs:
-            self.assertRaises(TypeError, lambda: t1 == badarg)
-            self.assertRaises(TypeError, lambda: t1 != badarg)
+            self.assertEqual(t1 == badarg, False)
+            self.assertEqual(t1 != badarg, True)
+            self.assertEqual(badarg == t1, False)
+            self.assertEqual(badarg != t1, True)
+
+        for badarg in badargs:
             self.assertRaises(TypeError, lambda: t1 <= badarg)
             self.assertRaises(TypeError, lambda: t1 < badarg)
             self.assertRaises(TypeError, lambda: t1 > badarg)
             self.assertRaises(TypeError, lambda: t1 >= badarg)
-            self.assertRaises(TypeError, lambda: badarg == t1)
-            self.assertRaises(TypeError, lambda: badarg != t1)
             self.assertRaises(TypeError, lambda: badarg <= t1)
             self.assertRaises(TypeError, lambda: badarg < t1)
             self.assertRaises(TypeError, lambda: badarg > t1)

@@ -1224,6 +1224,16 @@ diff_to_bool(int diff, int op)
 	return result;
 }
 
+/* Raises a "can't compare" TypeError and returns NULL. */
+static PyObject *
+cmperror(PyObject *a, PyObject *b)
+{
+	PyErr_Format(PyExc_TypeError,
+		     "can't compare %s to %s",
+		     a->ob_type->tp_name, b->ob_type->tp_name);
+	return NULL;
+}
+
 /* ---------------------------------------------------------------------------
  * Basic object allocation.  These allocate Python objects of the right
  * size and type, and do the Python object-initialization bit.  If there's
@@ -1654,21 +1664,23 @@ delta_subtract(PyObject *left, PyObject *right)
 static PyObject *
 delta_richcompare(PyDateTime_Delta *self, PyObject *other, int op)
 {
-	int diff;
+	int diff = 42;	/* nonsense */
 
-	if (! PyDelta_CheckExact(other)) {
-		PyErr_Format(PyExc_TypeError,
-			     "can't compare %s to %s instance",
-			     self->ob_type->tp_name, other->ob_type->tp_name);
-		return NULL;
+	if (PyDelta_CheckExact(other)) {
+		diff = GET_TD_DAYS(self) - GET_TD_DAYS(other);
+		if (diff == 0) {
+			diff = GET_TD_SECONDS(self) - GET_TD_SECONDS(other);
+			if (diff == 0)
+				diff = GET_TD_MICROSECONDS(self) -
+				       GET_TD_MICROSECONDS(other);
+		}
 	}
-	diff = GET_TD_DAYS(self) - GET_TD_DAYS(other);
-	if (diff == 0) {
-		diff = GET_TD_SECONDS(self) - GET_TD_SECONDS(other);
-		if (diff == 0)
-			diff = GET_TD_MICROSECONDS(self) -
-			       GET_TD_MICROSECONDS(other);
-	}
+	else if (op == Py_EQ || op == Py_NE)
+		diff = 1;	/* any non-zero value will do */
+
+	else /* stop this from falling back to address comparison */
+		return cmperror((PyObject *)self, other);
+
 	return diff_to_bool(diff, op);
 }
 
@@ -2443,23 +2455,23 @@ date_isocalendar(PyDateTime_Date *self)
 static PyObject *
 date_richcompare(PyDateTime_Date *self, PyObject *other, int op)
 {
-	int diff;
+	int diff = 42;	/* nonsense */
 
-	if (! PyDate_Check(other)) {
-		if (PyObject_HasAttrString(other, "timetuple")) {
-			/* A hook for other kinds of date objects. */
-			Py_INCREF(Py_NotImplemented);
-			return Py_NotImplemented;
-		}
-		/* Stop this from falling back to address comparison. */
-		PyErr_Format(PyExc_TypeError,
-			     "can't compare '%s' to '%s'",
-			     self->ob_type->tp_name,
-			     other->ob_type->tp_name);
-		return NULL;
+	if (PyDate_Check(other))
+		diff = memcmp(self->data, ((PyDateTime_Date *)other)->data,
+			      _PyDateTime_DATE_DATASIZE);
+
+	else if (PyObject_HasAttrString(other, "timetuple")) {
+		/* A hook for other kinds of date objects. */
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
 	}
-	diff = memcmp(self->data, ((PyDateTime_Date *)other)->data,
-		      _PyDateTime_DATE_DATASIZE);
+	else if (op == Py_EQ || op == Py_NE)
+		diff = 1;	/* any non-zero value will do */
+
+	else /* stop this from falling back to address comparison */
+		return cmperror((PyObject *)self, other);
+
 	return diff_to_bool(diff, op);
 }
 
@@ -3173,12 +3185,13 @@ time_richcompare(PyDateTime_Time *self, PyObject *other, int op)
 	int offset1, offset2;
 
 	if (! PyTime_Check(other)) {
+		if (op == Py_EQ || op == Py_NE) {
+			PyObject *result = op == Py_EQ ? Py_False : Py_True;
+			Py_INCREF(result);
+			return result;
+		}
 		/* Stop this from falling back to address comparison. */
-		PyErr_Format(PyExc_TypeError,
-			     "can't compare '%s' to '%s'",
-			     self->ob_type->tp_name,
-			     other->ob_type->tp_name);
-		return NULL;
+		return cmperror((PyObject *)self, other);
 	}
 	if (classify_two_utcoffsets((PyObject *)self, &offset1, &n1, Py_None,
 				     other, &offset2, &n2, Py_None) < 0)
@@ -4011,12 +4024,13 @@ datetime_richcompare(PyDateTime_DateTime *self, PyObject *other, int op)
 			Py_INCREF(Py_NotImplemented);
 			return Py_NotImplemented;
 		}
+		if (op == Py_EQ || op == Py_NE) {
+			PyObject *result = op == Py_EQ ? Py_False : Py_True;
+			Py_INCREF(result);
+			return result;
+		}
 		/* Stop this from falling back to address comparison. */
-		PyErr_Format(PyExc_TypeError,
-			     "can't compare '%s' to '%s'",
-			     self->ob_type->tp_name,
-			     other->ob_type->tp_name);
-		return NULL;
+		return cmperror((PyObject *)self, other);
 	}
 
 	if (classify_two_utcoffsets((PyObject *)self, &offset1, &n1,
