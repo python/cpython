@@ -140,10 +140,6 @@ FUNC1(math_sqrt, sqrt)
 FUNC1(math_tan, tan)
 FUNC1(math_tanh, tanh)
 
-#ifndef macintosh
-
-
-#endif
 
 static object *
 math_frexp(self, args)
