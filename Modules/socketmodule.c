@@ -2165,17 +2165,14 @@ static PyObject *SSL_SSLread(SSLObject *self, PyObject *args)
 	res = SSL_get_error(self->ssl, count);
 
 	switch (res) {
-	case 0:			/* Good return value! */
+	case SSL_ERROR_NONE:
+		assert(count > 0);
 		break;
-	case 6:
-		PyErr_SetString(SSLErrorObject, "EOF");
-		Py_DECREF(buf);
-		return NULL;
+	case SSL_ERROR_ZERO_RETURN: /* normal EOF */
+		assert(count == 0);
 		break;
-	case 5:
 	default:
 		return PyErr_SetFromErrno(SSLErrorObject);
-		break;
 	}
   
 	fflush(stderr);

@@ -575,13 +575,16 @@ class FakeSocket:
         if mode != 'r' and mode != 'rb':
             raise UnimplementedFileMode()
 
-        msgbuf = ""
+        msgbuf = []
         while 1:
             try:
-                msgbuf = msgbuf + self.__ssl.read()
+                buf = self.__ssl.read()
             except socket.sslerror, msg:
                 break
-        return StringIO(msgbuf)
+            if buf == '':
+                break
+            msgbuf.append(buf)
+        return StringIO("".join(msgbuf))
 
     def send(self, stuff, flags = 0):
         return self.__ssl.write(stuff)
@@ -809,6 +812,7 @@ def test():
 
     if hasattr(socket, 'ssl'):
         host = 'sourceforge.net'
+        selector = '/projects/python'
         hs = HTTPS()
         hs.connect(host)
         hs.putrequest('GET', selector)
