@@ -32,4 +32,4 @@ extern DL_IMPORT(PyObject *) PyDictProxy_New(PyObject *);
 extern DL_IMPORT(PyObject *) PyWrapper_New(PyObject *, PyObject *);
 
 
-extern DL_IMPORT(PyTypeObject) PyGetSet_Type;
+extern DL_IMPORT(PyTypeObject) PyProperty_Type;

@@ -1869,8 +1869,8 @@ _PyBuiltin_Init(void)
 	if (PyDict_SetItemString(dict, "float",
 				 (PyObject *) &PyFloat_Type) < 0)
 		return NULL;
-	if (PyDict_SetItemString(dict, "getset",
-				 (PyObject *) &PyGetSet_Type) < 0)
+	if (PyDict_SetItemString(dict, "property",
+				 (PyObject *) &PyProperty_Type) < 0)
 		return NULL;
 	if (PyDict_SetItemString(dict, "int", (PyObject *) &PyInt_Type) < 0)
 		return NULL;

@@ -578,8 +578,8 @@ def metaclass():
             return "E" + self.__super.meth()
     verify(E().meth() == "EBCA")
 
-    class autogetset(type):
-        # Automatically create getset attributes when methods
+    class autoproperty(type):
+        # Automatically create property attributes when methods
         # named _get_x and/or _set_x are found
         def __new__(metaclass, name, bases, dict):
             hits = {}
@@ -595,11 +595,11 @@ def metaclass():
                     set = val
                     hits[key] = get, set
             for key, (get, set) in hits.iteritems():
-                dict[key] = getset(get, set)
-            return super(autogetset, metaclass).__new__(metaclass,
+                dict[key] = property(get, set)
+            return super(autoproperty, metaclass).__new__(metaclass,
                                                         name, bases, dict)
     class A:
-        __metaclass__ = autogetset
+        __metaclass__ = autoproperty
         def _get_x(self):
             return -self.__x
         def _set_x(self, x):
@@ -610,7 +610,7 @@ def metaclass():
     verify(a.x == 12)
     verify(a._A__x == -12)
 
-    class multimetaclass(autogetset, autosuper):
+    class multimetaclass(autoproperty, autosuper):
         # Merge of multiple cooperating metaclasses
         pass
     class A:
@@ -1274,8 +1274,8 @@ def weakrefs():
     verify(r() is None)
     del r
 
-def getsets():
-    if verbose: print "Testing getset..."
+def properties():
+    if verbose: print "Testing property..."
     class C(object):
         def getx(self):
             return self.__x
@@ -1283,7 +1283,7 @@ def getsets():
             self.__x = value
         def delx(self):
             del self.__x
-        x = getset(getx, setx, delx)
+        x = property(getx, setx, delx)
     a = C()
     verify(not hasattr(a, "x"))
     a.x = 42
@@ -1445,7 +1445,7 @@ def all():
     methods()
     specials()
     weakrefs()
-    getsets()
+    properties()
     supers()
     inherits()
 

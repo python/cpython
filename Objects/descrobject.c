@@ -840,10 +840,10 @@ PyWrapper_New(PyObject *d, PyObject *self)
 }
 
 
-/* A built-in 'getset' type */
+/* A built-in 'property' type */
 
 /*
-    class getset(object):
+    class property(object):
 
 	def __init__(self, get=None, set=None):
 	    self.__get = get
@@ -867,12 +867,12 @@ typedef struct {
 	PyObject *get;
 	PyObject *set;
 	PyObject *del;
-} getsetobject;
+} propertyobject;
 
 static void
-getset_dealloc(PyObject *self)
+property_dealloc(PyObject *self)
 {
-	getsetobject *gs = (getsetobject *)self;
+	propertyobject *gs = (propertyobject *)self;
 
 	Py_XDECREF(gs->get);
 	Py_XDECREF(gs->set);
@@ -881,9 +881,9 @@ getset_dealloc(PyObject *self)
 }
 
 static PyObject *
-getset_descr_get(PyObject *self, PyObject *obj, PyObject *type)
+property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
-	getsetobject *gs = (getsetobject *)self;
+	propertyobject *gs = (propertyobject *)self;
 
 	if (gs->get == NULL) {
 		PyErr_SetString(PyExc_AttributeError, "unreadable attribute");
@@ -897,9 +897,9 @@ getset_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 static int
-getset_descr_set(PyObject *self, PyObject *obj, PyObject *value)
+property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
 {
-	getsetobject *gs = (getsetobject *)self;
+	propertyobject *gs = (propertyobject *)self;
 	PyObject *func, *res;
 
 	if (value == NULL)
@@ -924,12 +924,12 @@ getset_descr_set(PyObject *self, PyObject *obj, PyObject *value)
 }
 
 static int
-getset_init(PyObject *self, PyObject *args, PyObject *kwds)
+property_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	PyObject *get = NULL, *set = NULL, *del = NULL;
-	getsetobject *gs = (getsetobject *)self;
+	propertyobject *gs = (propertyobject *)self;
 
-	if (!PyArg_ParseTuple(args, "|OOO:getset", &get, &set, &del))
+	if (!PyArg_ParseTuple(args, "|OOO:property", &get, &set, &del))
 		return -1;
 	if (get == Py_None)
 		get = NULL;
@@ -944,23 +944,23 @@ getset_init(PyObject *self, PyObject *args, PyObject *kwds)
 	return 0;
 }
 
-static char getset_doc[] =
-"getset([getfunc[, setfunc[, delfunc]]]) -> getset attribute\n"
+static char property_doc[] =
+"property([getfunc[, setfunc[, delfunc]]]) -> property attribute\n"
 "Typical use to define a managed attribute x of C instances:\n"
 "class C(object):\n"
 "    def getx(self): return self.__x\n"
 "    def setx(self, value): self.__x = value\n"
 "    def delx(self): del self.__x\n"
-"    x = getset(getx, setx, delx)";
+"    x = property(getx, setx, delx)";
 
-PyTypeObject PyGetSet_Type = {
+PyTypeObject PyProperty_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
-	"getset",				/* tp_name */
-	sizeof(getsetobject),			/* tp_basicsize */
+	"property",				/* tp_name */
+	sizeof(propertyobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */
-	getset_dealloc,		 		/* tp_dealloc */
+	property_dealloc,	 		/* tp_dealloc */
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
@@ -976,7 +976,7 @@ PyTypeObject PyGetSet_Type = {
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
- 	getset_doc,				/* tp_doc */
+ 	property_doc,				/* tp_doc */
  	0,					/* tp_traverse */
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
@@ -988,10 +988,10 @@ PyTypeObject PyGetSet_Type = {
 	0,					/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
-	getset_descr_get,			/* tp_descr_get */
-	getset_descr_set,			/* tp_descr_set */
+	property_descr_get,			/* tp_descr_get */
+	property_descr_set,			/* tp_descr_set */
 	0,					/* tp_dictoffset */
-	getset_init,				/* tp_init */
+	property_init,				/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	PyType_GenericNew,			/* tp_new */
 	_PyObject_Del,				/* tp_free */

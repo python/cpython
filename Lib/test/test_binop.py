@@ -48,12 +48,12 @@ class Rat(object):
     def _get_num(self):
         """Accessor function for read-only 'num' attribute of Rat."""
         return self.__num
-    num = getset(_get_num, None)
+    num = property(_get_num, None)
 
     def _get_den(self):
         """Accessor function for read-only 'den' attribute of Rat."""
         return self.__den
-    den = getset(_get_den, None)
+    den = property(_get_den, None)
 
     def __repr__(self):
         """Convert a Rat to an string resembling a Rat constructor call."""
