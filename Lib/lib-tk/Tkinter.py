@@ -450,7 +450,9 @@ class Misc:
 		else:
 			self.tk.call('bindtags', self._w, tagList)
 	def _bind(self, what, sequence, func, add, needcleanup=1):
-		if func:
+		if type(func) is StringType:
+			self.tk.call(what + (sequence, func))
+		elif func:
 			funcid = self._register(func, self._substitute,
 						needcleanup)
 			cmd = ('%sif {"[%s %s]" == "break"} break\n'
@@ -460,8 +462,6 @@ class Misc:
 				_string.join(self._subst_format)))
 			self.tk.call(what + (sequence, cmd))
 			return funcid
-		elif func == '':
-			self.tk.call(what + (sequence, func))
 		else:
 			return self.tk.call(what + (sequence,))
 	def bind(self, sequence=None, func=None, add=None):
