@@ -139,6 +139,8 @@ class InterpolationError(Error):
         self.option = option
         self.section = section
 
+class InterpolationSyntaxError(Error): pass
+
 class InterpolationDepthError(Error):
     def __init__(self, option, section, rawval):
         Error.__init__(self,
