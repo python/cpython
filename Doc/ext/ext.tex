@@ -129,9 +129,9 @@ spam_system(self, args)
 \end{verbatim}
 
 There is a straightforward translation from the argument list in
-Python (e.g.\ the single expression \code{"ls -l"}) to the arguments
-passed to the C function.  The C function always has two arguments,
-conventionally named \var{self} and \var{args}.
+Python (for example, the single expression \code{"ls -l"}) to the
+arguments passed to the C function.  The C function always has two
+arguments, conventionally named \var{self} and \var{args}.
 
 The \var{self} argument is only used when the C function implements a
 built-in method, not a function. In the example, \var{self} will
@@ -200,7 +200,7 @@ function call, since you should be able to tell from the return value.
 
 When a function \var{f} that calls another function \var{g} detects
 that the latter fails, \var{f} should itself return an error value
-(e.g.\ \NULL{} or \code{-1}).  It should \emph{not} call one of the
+(usually \NULL{} or \code{-1}).  It should \emph{not} call one of the
 \cfunction{PyErr_*()} functions --- one has already been called by \var{g}.
 \var{f}'s caller is then supposed to also return an error indication
 to \emph{its} caller, again \emph{without} calling \cfunction{PyErr_*()},
@@ -220,8 +220,8 @@ To ignore an exception set by a function call that failed, the exception
 condition must be cleared explicitly by calling \cfunction{PyErr_Clear()}. 
 The only time C code should call \cfunction{PyErr_Clear()} is if it doesn't
 want to pass the error on to the interpreter but wants to handle it
-completely by itself (e.g.\ by trying something else or pretending
-nothing happened).
+completely by itself (possibly by trying something else, or pretending
+nothing went wrong).
 
 Every failing \cfunction{malloc()} call must be turned into an
 exception --- the direct caller of \cfunction{malloc()} (or
@@ -241,8 +241,8 @@ you have already created) when you return an error indicator!
 
 The choice of which exception to raise is entirely yours.  There are
 predeclared C objects corresponding to all built-in Python exceptions,
-e.g.\ \cdata{PyExc_ZeroDivisionError}, which you can use directly.  Of
-course, you should choose exceptions wisely --- don't use
+such as \cdata{PyExc_ZeroDivisionError}, which you can use directly.
+Of course, you should choose exceptions wisely --- don't use
 \cdata{PyExc_TypeError} to mean that a file couldn't be opened (that
 should probably be \cdata{PyExc_IOError}).  If something's wrong with
 the argument list, the \cfunction{PyArg_ParseTuple()} function usually
@@ -252,14 +252,14 @@ must be in a particular range or must satisfy other conditions,
 
 You can also define a new exception that is unique to your module.
 For this, you usually declare a static object variable at the
-beginning of your file, e.g.
+beginning of your file:
 
 \begin{verbatim}
 static PyObject *SpamError;
 \end{verbatim}
 
 and initialize it in your module's initialization function
-(\cfunction{initspam()}) with an exception object, e.g.\ (leaving out
+(\cfunction{initspam()}) with an exception object (leaving out
 the error checking for now):
 
 \begin{verbatim}
@@ -1316,7 +1316,7 @@ of it.
 A borrowed reference can be changed into an owned reference by calling
 \cfunction{Py_INCREF()}.  This does not affect the status of the owner from
 which the reference was borrowed --- it creates a new owned reference,
-and gives full owner responsibilities (i.e., the new owner must
+and gives full owner responsibilities (the new owner must
 dispose of the reference properly, as well as the previous owner).
 
 
@@ -1329,7 +1329,7 @@ transferred with the reference or not.
 
 Most functions that return a reference to an object pass on ownership
 with the reference.  In particular, all functions whose function it is
-to create a new object, e.g.\ \cfunction{PyInt_FromLong()} and
+to create a new object, such as \cfunction{PyInt_FromLong()} and
 \cfunction{Py_BuildValue()}, pass ownership to the receiver.  Even if in
 fact, in some cases, you don't receive a reference to a brand new
 object, you still receive ownership of the reference.  For instance,
@@ -1467,8 +1467,8 @@ other function --- if each function were to test for \NULL{},
 there would be a lot of redundant tests and the code would run more
 slowly.
 
-It is better to test for \NULL{} only at the ``source'', i.e.\ when a
-pointer that may be \NULL{} is received, e.g.\ from
+It is better to test for \NULL{} only at the ``source:'' when a
+pointer that may be \NULL{} is received, for example, from
 \cfunction{malloc()} or from a function that may raise an exception.
 
 The macros \cfunction{Py_INCREF()} and \cfunction{Py_DECREF()}
@@ -1535,11 +1535,11 @@ interpreter. When modules are used as shared libraries, however, the
 symbols defined in one module may not be visible to another module.
 The details of visibility depend on the operating system; some systems
 use one global namespace for the Python interpreter and all extension
-modules (e.g.\ Windows), whereas others require an explicit list of
-imported symbols at module link time (e.g.\ AIX), or offer a choice of
-different strategies (most Unices). And even if symbols are globally
-visible, the module whose functions one wishes to call might not have
-been loaded yet!
+modules (Windows, for example), whereas others require an explicit
+list of imported symbols at module link time (AIX is one example), or
+offer a choice of different strategies (most Unices). And even if
+symbols are globally visible, the module whose functions one wishes to
+call might not have been loaded yet!
 
 Portability therefore requires not to make any assumptions about
 symbol visibility. This means that all symbols in extension modules
@@ -1549,8 +1549,8 @@ extension modules (as discussed in section~\ref{methodTable}). And it
 means that symbols that \emph{should} be accessible from other
 extension modules must be exported in a different way.
 
-Python provides a special mechanism to pass C-level information (i.e.
-pointers) from one extension module to another one: CObjects.
+Python provides a special mechanism to pass C-level information
+(pointers) from one extension module to another one: CObjects.
 A CObject is a Python data type which stores a pointer (\ctype{void
 *}).  CObjects can only be created and accessed via their C API, but
 they can be passed around like any other Python object. In particular, 
@@ -1904,7 +1904,7 @@ Almost always, you create objects with a call of the form:
 PyObject_New(<type>, &<type object>);
 \end{verbatim}
 
-This allocates the memory and then initializes the object (i.e.\ sets
+This allocates the memory and then initializes the object (sets
 the reference count to one, makes the \cdata{ob_type} pointer point at
 the right place and maybe some other stuff, depending on build options).
 You \emph{can} do these steps separately if you have some reason to
