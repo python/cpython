@@ -28,6 +28,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "macglue.h"
 
 #include <Windows.h>
+#include <Files.h>
 
 static PyObject *MacOS_Error; /* Exception MacOS.Error */
 
@@ -35,6 +36,274 @@ static PyObject *MacOS_Error; /* Exception MacOS.Error */
 #define bufferIsSmall -607	/*error returns from Post and Accept */
 #endif
 
+static PyObject *ErrorObject;
+
+/* ----------------------------------------------------- */
+
+/* Declarations for objects of type Resource fork */
+
+typedef struct {
+	PyObject_HEAD
+	short fRefNum;
+	int isclosed;
+} rfobject;
+
+staticforward PyTypeObject Rftype;
+
+
+
+/* ---------------------------------------------------------------- */
+
+static void
+do_close(self)
+	rfobject *self;
+{
+	if (self->isclosed ) return;
+	(void)FSClose(self->fRefNum);
+	self->isclosed = 1;
+}
+
+static char rf_read__doc__[] = 
+"Read data from resource fork"
+;
+
+static PyObject *
+rf_read(self, args)
+	rfobject *self;
+	PyObject *args;
+{
+	long n;
+	PyObject *v;
+	OSErr err;
+	
+	if (self->isclosed) {
+		PyErr_SetString(PyExc_ValueError, "Operation on closed file");
+		return NULL;
+	}
+	
+	if (!PyArg_ParseTuple(args, "l", &n))
+		return NULL;
+		
+	v = PyString_FromStringAndSize((char *)NULL, n);
+	if (v == NULL)
+		return NULL;
+		
+	err = FSRead(self->fRefNum, &n, PyString_AsString(v));
+	if (err && err != eofErr) {
+		PyMac_Error(err);
+		Py_DECREF(v);
+		return NULL;
+	}
+	_PyString_Resize(&v, n);
+	return v;
+}
+
+
+static char rf_write__doc__[] = 
+"Write to resource fork"
+;
+
+static PyObject *
+rf_write(self, args)
+	rfobject *self;
+	PyObject *args;
+{
+	char *buffer;
+	long size;
+	OSErr err;
+	
+	if (self->isclosed) {
+		PyErr_SetString(PyExc_ValueError, "Operation on closed file");
+		return NULL;
+	}
+	if (!PyArg_ParseTuple(args, "s#", &buffer, &size))
+		return NULL;
+	err = FSWrite(self->fRefNum, &size, buffer);
+	if (err) {
+		PyMac_Error(err);
+		return NULL;
+	}
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+
+static char rf_seek__doc__[] = 
+"Set file position"
+;
+
+static PyObject *
+rf_seek(self, args)
+	rfobject *self;
+	PyObject *args;
+{
+	long amount, pos;
+	int whence = SEEK_SET;
+	long eof;
+	OSErr err;
+	
+	if (self->isclosed) {
+		PyErr_SetString(PyExc_ValueError, "Operation on closed file");
+		return NULL;
+	}
+	if (!PyArg_ParseTuple(args, "l|i", &amount, &whence))
+		return NULL;
+	
+	if ( err = GetEOF(self->fRefNum, &eof))
+		goto ioerr;
+	
+	switch (whence) {
+	case SEEK_CUR:
+		if (err = GetFPos(self->fRefNum, &pos))
+			goto ioerr; 
+		break;
+	case SEEK_END:
+		pos = eof;
+		break;
+	case SEEK_SET:
+		pos = 0;
+		break;
+	default:
+		PyErr_BadArgument();
+		return NULL;
+	}
+	
+	pos += amount;
+	
+	/* Don't bother implementing seek past EOF */
+	if (pos > eof || pos < 0) {
+		PyErr_BadArgument();
+		return NULL;
+	}
+	
+	if ( err = SetFPos(self->fRefNum, fsFromStart, pos) ) {
+ioerr:
+		PyMac_Error(err);
+		return NULL;
+	}
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+
+static char rf_tell__doc__[] = 
+"Get file position"
+;
+
+static PyObject *
+rf_tell(self, args)
+	rfobject *self;
+	PyObject *args;
+{
+	long where;
+	OSErr err;
+	
+	if (self->isclosed) {
+		PyErr_SetString(PyExc_ValueError, "Operation on closed file");
+		return NULL;
+	}
+	if (!PyArg_ParseTuple(args, ""))
+		return NULL;
+	if ( err = GetFPos(self->fRefNum, &where) ) {
+		PyMac_Error(err);
+		return NULL;
+	}
+	return PyInt_FromLong(where);
+}
+
+static char rf_close__doc__[] = 
+"Close resource fork"
+;
+
+static PyObject *
+rf_close(self, args)
+	rfobject *self;
+	PyObject *args;
+{
+	long where;
+	OSErr err;
+	
+	if (!PyArg_ParseTuple(args, ""))
+		return NULL;
+	do_close(self);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+
+static struct PyMethodDef rf_methods[] = {
+	{"read",	rf_read,	1,	rf_read__doc__},
+ {"write",	rf_write,	1,	rf_write__doc__},
+ {"seek",	rf_seek,	1,	rf_seek__doc__},
+ {"tell",	rf_tell,	1,	rf_tell__doc__},
+ {"close",	rf_close,	1,	rf_close__doc__},
+ 
+	{NULL,		NULL}		/* sentinel */
+};
+
+/* ---------- */
+
+
+static rfobject *
+newrfobject()
+{
+	rfobject *self;
+	
+	self = PyObject_NEW(rfobject, &Rftype);
+	if (self == NULL)
+		return NULL;
+	self->isclosed = 1;
+	return self;
+}
+
+
+static void
+rf_dealloc(self)
+	rfobject *self;
+{
+	do_close(self);
+	PyMem_DEL(self);
+}
+
+static PyObject *
+rf_getattr(self, name)
+	rfobject *self;
+	char *name;
+{
+	return Py_FindMethod(rf_methods, (PyObject *)self, name);
+}
+
+static char Rftype__doc__[] = 
+"Resource fork file object"
+;
+
+static PyTypeObject Rftype = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,				/*ob_size*/
+	"Resource fork",			/*tp_name*/
+	sizeof(rfobject),		/*tp_basicsize*/
+	0,				/*tp_itemsize*/
+	/* methods */
+	(destructor)rf_dealloc,	/*tp_dealloc*/
+	(printfunc)0,		/*tp_print*/
+	(getattrfunc)rf_getattr,	/*tp_getattr*/
+	(setattrfunc)0,	/*tp_setattr*/
+	(cmpfunc)0,		/*tp_compare*/
+	(reprfunc)0,		/*tp_repr*/
+	0,			/*tp_as_number*/
+	0,		/*tp_as_sequence*/
+	0,		/*tp_as_mapping*/
+	(hashfunc)0,		/*tp_hash*/
+	(ternaryfunc)0,		/*tp_call*/
+	(reprfunc)0,		/*tp_str*/
+
+	/* Space for future expansion */
+	0L,0L,0L,0L,
+	Rftype__doc__ /* Documentation string */
+};
+
+/* End of code for Resource fork objects */
+/* -------------------------------------------------------- */
 
 /*----------------------------------------------------------------------*/
 /* Miscellaneous File System Operations */
@@ -229,6 +498,66 @@ MacOS_GetErrorString(PyObject *self, PyObject *args)
 	return Py_BuildValue("s", PyMac_StrError(errn));
 }
 
+static char openrf_doc[] = "Open resource fork of a file";
+
+static PyObject *
+MacOS_openrf(PyObject *self, PyObject *args)
+{
+	OSErr err;
+	char *mode = "r";
+	FSSpec fss;
+	SignedByte permission = 1;
+	rfobject *fp;
+		
+	if (!PyArg_ParseTuple(args, "O&|s", PyMac_GetFSSpec, &fss, &mode))
+		return NULL;
+	while (*mode) {
+		switch (*mode++) {
+		case '*': break;
+		case 'r': permission = 1; break;
+		case 'w': permission = 2; break;
+		case 'b': break;
+		default:
+			PyErr_BadArgument();
+			return NULL;
+		}
+	}
+	
+	if ( (fp = newrfobject()) == NULL )
+		return NULL;
+		
+	err = HOpenRF(fss.vRefNum, fss.parID, fss.name, permission, &fp->fRefNum);
+	
+	if ( err == fnfErr ) {
+		/* In stead of doing complicated things here to get creator/type
+		** correct we let the standard i/o library handle it
+		*/
+		FILE *tfp;
+		char pathname[257];
+		
+		if ( err=nfullpath(&fss, &pathname) ) {
+			PyMac_Error(err);
+			Py_DECREF(fp);
+			return NULL;
+		}
+		
+		if ( (tfp = fopen(pathname, "w")) == NULL ) {
+			PyMac_Error(fnfErr); /* What else... */
+			Py_DECREF(fp);
+			return NULL;
+		}
+		fclose(tfp);
+		err = HOpenRF(fss.vRefNum, fss.parID, fss.name, permission, &fp->fRefNum);
+	}
+	if ( err ) {
+		Py_DECREF(fp);
+		PyMac_Error(err);
+		return NULL;
+	}
+	fp->isclosed = 0;
+	return (PyObject *)fp;
+}
+
 static PyMethodDef MacOS_Methods[] = {
 	{"AcceptHighLevelEvent",	MacOS_AcceptHighLevelEvent, 1},
 	{"GetCreatorAndType",		MacOS_GetCreatorAndType, 1},
@@ -240,6 +569,7 @@ static PyMethodDef MacOS_Methods[] = {
 	{"EnableAppswitch",		MacOS_EnableAppswitch, 1},
 	{"HandleEvent",			MacOS_HandleEvent, 1},
 	{"GetErrorString",		MacOS_GetErrorString, 1},
+	{"openrf",				MacOS_openrf, 1, 	openrf_doc},
 	{NULL,				NULL}		 /* Sentinel */
 };
 
