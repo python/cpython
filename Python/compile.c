@@ -1926,6 +1926,48 @@ com_expr_stmt(c, n)
 }
 
 static void
+com_assert_stmt(c, n)
+	struct compiling *c;
+	node *n;
+{
+	int a = 0, b = 0;
+	int i;
+	REQ(n, assert_stmt); /* 'assert' test [',' test] */
+	/* Generate code like for
+	   
+	   if __debug__:
+	      if not <test>:
+	         raise AssertionError [, <message>]
+
+	   where <message> is the second test, if present.
+	*/
+	if (Py_OptimizeFlag)
+		return;
+	com_addopnamestr(c, LOAD_GLOBAL, "__debug__");
+	com_push(c, 1);
+	com_addfwref(c, JUMP_IF_FALSE, &a);
+	com_addbyte(c, POP_TOP);
+	com_pop(c, 1);
+	com_node(c, CHILD(n, 1));
+	com_addfwref(c, JUMP_IF_TRUE, &b);
+	com_addbyte(c, POP_TOP);
+	com_pop(c, 1);
+	/* Raise that exception! */
+	com_addopnamestr(c, LOAD_GLOBAL, "AssertionError");
+	com_push(c, 1);
+	i = NCH(n)/2; /* Either 2 or 4 */
+	if (i > 1)
+		com_node(c, CHILD(n, 3));
+	com_addoparg(c, RAISE_VARARGS, i);
+	com_pop(c, i);
+	/* The interpreter does not fall through */
+	/* All jumps converge here */
+	com_backpatch(c, a);
+	com_backpatch(c, b);
+	com_addbyte(c, POP_TOP);
+}
+
+static void
 com_print_stmt(c, n)
 	struct compiling *c;
 	node *n;
@@ -2865,6 +2907,9 @@ com_node(c, n)
 #endif
 	case exec_stmt:
 		com_exec_stmt(c, n);
+		break;
+	case assert_stmt:
+		com_assert_stmt(c, n);
 		break;
 	case if_stmt:
 		com_if_stmt(c, n);
