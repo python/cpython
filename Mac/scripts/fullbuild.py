@@ -100,7 +100,6 @@ def buildapplet(top, dummy, list):
 		if src[-3:] != '.py':
 			raise 'Should end in .py', src
 		base = os.path.basename(src)
-		#dst = os.path.join(top, base)[:-3]
 		src = os.path.join(top, src)
 		dst = os.path.join(top, dst)
 		try:
