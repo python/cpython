@@ -6,7 +6,7 @@ this file as a string constant.
 
 XXX TO DO
 
-- generic error handler
+- next/prev/index links in do_show?
 - should have files containing section headers
 - customize rcs command pathnames
 - recognize urls and email addresses and turn them into <A> tags
@@ -60,11 +60,12 @@ class FAQServer:
 		item = form[key]
 	    except TypeError, msg:
 		raise KeyError, msg, sys.exc_traceback
-	    value = self.form[key].value
-	    setattr(self, key, value)
-	    return value
 	except KeyError:
 	    return ''
+	value = self.form[key].value
+	value = string.strip(value)
+	setattr(self, key, value)
+	return value
 
     def do_frontpage(self):
 	self.prologue("Python FAQ (alpha) Front Page")
@@ -75,6 +76,7 @@ class FAQServer:
 	<LI><A HREF="faq.py?req=roulette">FAQ roulette</A>
 	<LI><A HREF="faq.py?req=recent">Recently changed FAQ entries</A>
 	<LI><A HREF="faq.py?req=add">Add a new FAQ entry</A>
+	<LI><A HREF="faq.py?req=delete">Delete a FAQ entry</A>
 	</UL>
 
 	<H2>Search the FAQ</H2>
@@ -124,10 +126,12 @@ class FAQServer:
 	    print "No FAQ entries?!?!"
 
     def do_show(self):
+	self.prologue("Python FAQ Entry")
+	print "<HR>"
 	name = self.name
 	headers, text = self.read(name)
 	if not headers:
-	    print "Invalid file name", name
+	    self.error("Invalid file name", name)
 	    return
 	self.show(name, headers['title'], text)
 
@@ -201,12 +205,12 @@ class FAQServer:
 	    print "No FAQ entries?!?!"
 
     def do_query(self):
-	import regex
-	self.prologue("Python FAQ Query Results")
 	query = self.query
 	if not query:
-	    print "No query string"
+	    self.error("No query string")
 	    return
+	import regex
+	self.prologue("Python FAQ Query Results")
 	p = regex.compile(query, regex.casefold)
 	names = os.listdir(os.curdir)
 	names.sort()
@@ -248,7 +252,7 @@ class FAQServer:
 		    if n2 > max:
 			max = n2
 	if not max:
-	    print "Can't add new sections yet."
+	    self.error("Can't add new sections yet.")
 	    return
 	num = max+1
 	name = "faq%02d.%03d.htp" % (nsec, num)
@@ -257,11 +261,23 @@ class FAQServer:
 	self.number = str(num)
 	self.do_edit()
 
+    def do_delete(self):
+	self.prologue("How to delete a FAQ entry")
+	print """
+	At the moment, there's no direct way to delete entries.
+	This is because the entry numbers are also their
+	unique identifiers -- it's a bad idea to renumber entries.
+	<P>
+	If you really think an entry needs to be deleted,
+	change the title to "(deleted)" and make the body
+	empty (keep the entry number in the title though).
+	"""
+
     def do_edit(self):
 	name = self.name
 	headers, text = self.read(name)
 	if not headers:
-	    print "Invalid file name", name
+	    self.error("Invalid file name", name)
 	    return
 	self.prologue("Python FAQ Edit Form")
 	title = headers['title']
@@ -293,8 +309,10 @@ class FAQServer:
 	title = self.title
 	headers, oldtext = self.read(name)
 	if not headers:
-	    print "Invalid file name", name
+	    self.error("Invalid file name", name)
 	    return
+	if self.author and '@' in self.email:
+	    self.set_cookie(self.author, self.email)
 	self.prologue("Python FAQ Review Form")
 	print "<HR>"
 	self.show(name, title, text, edit=0)
@@ -336,7 +354,7 @@ class FAQServer:
 	name = self.name
 	headers, text = self.read(name)
 	if not headers:
-	    print "Invalid file name", name
+	    self.error("Invalid file name", name)
 	    return
 	print '<PRE>'
 	sys.stdout.flush()
@@ -348,7 +366,7 @@ class FAQServer:
 	name = self.name
 	headers, text = self.read(name)
 	if not headers:
-	    print "Invalid file name", name
+	    self.error("Invalid file name", name)
 	    return
 	print '<PRE>'
 	sys.stdout.flush()
@@ -361,15 +379,15 @@ class FAQServer:
 
 	headers, oldtext = self.read(name)
 	if not headers:
-	    print "Invalid file name", name
+	    self.error("Invalid file name", name)
 	    return
 	version = self.version
 	curversion = self.getversion(name)
 	if version != curversion:
-	    print "Version conflict."
-	    print "You edited version %s but current version is %s." % (
-		version, curversion)
-	    print '<A HREF="faq.py?req=show&name=%s">Reload.</A>' % name
+	    self.error("Version conflict.",
+		       "You edited version %s but current version is %s." % (
+			   version, curversion),
+		       '<A HREF="faq.py?req=show&name=%s">Reload.</A>' % name)
 	    return
 	text = self.text
 	title = self.title
@@ -386,13 +404,11 @@ class FAQServer:
 	text = string.strip(text)
 	oldtext = string.strip(oldtext)
 	if text == oldtext and title == oldtitle:
-	    print "No changes."
-	    # XXX Should exit more ceremoniously
+	    self.error("No changes.")
 	    return
 	# Check that the FAQ entry number didn't change
 	if string.split(title)[:1] != string.split(oldtitle)[:1]:
-	    print "Don't change the FAQ entry number please."
-	    # XXX Should exit more ceremoniously
+	    self.error("Don't change the FAQ entry number please.")
 	    return
 	remhost = os.environ["REMOTE_HOST"]
 	remaddr = os.environ["REMOTE_ADDR"]
@@ -411,8 +427,7 @@ class FAQServer:
 	try:
 	    f = open(name, "w")
 	except IOError, msg:
-	    print "Can't open", name, "for writing:", cgi.escape(str(msg))
-	    # XXX Should exit more ceremoniously
+	    self.error("Can't open", name, "for writing:", cgi.escape(str(msg)))
 	    return
 	now = time.ctime(time.time())
 	f.write("Title: %s\n" % title)
@@ -453,22 +468,56 @@ class FAQServer:
 	output = p.read()
 	sts = p.close()
 	if not sts:
+	    self.set_cookie(author, email)
 	    self.prologue("Python FAQ Entry Edited")
 	    print "<HR>"
 	    self.show(name, title, text)
 	    if output:
 		print "<PRE>%s</PRE>" % cgi.escape(output)
 	else:
-	    print """
-	    <H1>Python FAQ Entry Commit Failed</H1>
-	    Exit status 0x%04x
-	    """ % sts
+	    self.error("Python FAQ Entry Commit Failed",
+		       "Exit status 0x%04x" % sts)
 	    if output:
 		print "<PRE>%s</PRE>" % cgi.escape(output)
 	print '<HR>'
 	print '<A HREF="faq.py?req=show&name=%s">Reload this entry.</A>' % name
 
+    def set_cookie(self, author, email):
+	name = "Python-FAQ-ID"
+	value = "%s;%s" % (author, email)
+	import urllib
+	value = urllib.quote(value)
+	print "Set-Cookie: %s=%s; path=/cgi-bin/;" % (name, value),
+	print "domain=%s;" % os.environ['HTTP_HOST'],
+	print "expires=Sat, 01-Jan-2000 00:00:00 GMT"
+
+    def get_cookie(self):
+	if not os.environ.has_key('HTTP_COOKIE'):
+	    return "", ""
+	raw = os.environ['HTTP_COOKIE']
+	words = string.split(raw, ';')
+	cookies = {}
+	for word in words:
+	    i = string.find(word, '=')
+	    if i >= 0:
+		key, value = word[:i], word[i+1:]
+		cookies[key] = value
+	if not cookies.has_key('Python-FAQ-ID'):
+	    return "", ""
+	value = cookies['Python-FAQ-ID']
+	import urllib
+	value = urllib.unquote(value)
+	i = string.rfind(value, ';')
+	author, email = value[:i], value[i+1:]
+	return author, email
+
     def showedit(self, name, title, text):
+	author = self.author
+	email = self.email
+	if not author or not email:
+	    a, e = self.get_cookie()
+	    author = author or a
+	    email = email or e
 	print """
 	Title: <INPUT TYPE=text SIZE=70 NAME=title VALUE="%s"><BR>
 	<TEXTAREA COLS=80 ROWS=20 NAME=text>""" % title
@@ -482,8 +531,8 @@ class FAQServer:
 	<CODE>Email: </CODE><INPUT TYPE=text SIZE=40 NAME=email VALUE="%s">
 	<BR>
 	Log message (reason for the change):<BR>
-	<TEXTAREA COLS=80 ROWS=5 NAME=log>\n%s\n</TEXTAREA>
-	""" % (self.author, self.email, self.log)
+	<TEXTAREA COLS=80 ROWS=5 NAME=log>%s\n</TEXTAREA>
+	""" % (author, email, self.log)
 
     def showheaders(self, headers):
 	print "<UL>"
@@ -577,7 +626,7 @@ class FAQServer:
 
     def prologue(self, title):
 	title = cgi.escape(title)
-	print '''\
+	print '''
 	<HTML>
 	<HEAD>
 	<TITLE>%s</TITLE>
@@ -590,6 +639,13 @@ class FAQServer:
 	<H1>%s</H1>
 	''' % (title, title)
 
+    def error(self, *messages):
+	self.prologue("Python FAQ error")
+	print "Sorry, an error occurred:<BR>"
+	for message in messages:
+	    print message,
+	print
+
     def epilogue(self):
 	print '''
 	<P>
@@ -601,7 +657,7 @@ class FAQServer:
 	</HTML>
 	'''
 
-print "Content-type: text/html\n"
+print "Content-type: text/html"
 dt = 0
 try:
     import time
@@ -612,7 +668,7 @@ try:
     t2 = time.time()
     dt = t2-t1
 except:
-    print "<HR>Sorry, an error occurred"
+    print "\n<HR>Sorry, an error occurred"
     cgi.print_exception()
 print "<P>(running time = %s seconds)" % str(round(dt, 3))
 
