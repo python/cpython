@@ -68,15 +68,15 @@ def convert_path (pathname):
        absolute (starts with '/') or contains local directory separators
        (unless the local separator is '/', of course)."""
 
+    if os.sep == '/':
+        return pathname
     if pathname[0] == '/':
         raise ValueError, "path '%s' cannot be absolute" % pathname
     if pathname[-1] == '/':
         raise ValueError, "path '%s' cannot end with '/'" % pathname
-    if os.sep != '/':
-        paths = string.split (pathname, '/')
-        return apply (os.path.join, paths)
-    else:
-        return pathname
+
+    paths = string.split(pathname, '/')
+    return apply(os.path.join, paths)
 
 # convert_path ()
 
