@@ -2,7 +2,7 @@
 
 from test.test_support import verify, vereq, verbose, TestFailed
 
-from heapq import heappush, heappop
+from heapq import heappush, heappop, heapify
 import random
 
 def check_invariant(heap):
@@ -37,6 +37,24 @@ def test_main():
     for item in data:
         heappush(heap, item)
         if len(heap) > 10:
+            heappop(heap)
+    heap.sort()
+    vereq(heap, data_sorted[-10:])
+    # 4) Test heapify.
+    for size in range(30):
+        heap = [random.random() for dummy in range(size)]
+        heapify(heap)
+        check_invariant(heap)
+    # 5) Less-naive "N-best" algorithm, much faster (if len(data) is big
+    #    enough <wink>) than sorting all of data.  However, if we had a max
+    #    heap instead of a min heap, it would go much faster still via
+    #    heapify'ing all of data (linear time), then doing 10 heappops
+    #    (10 log-time steps).
+    heap = data[:10]
+    heapify(heap)
+    for item in data[10:]:
+        if item > heap[0]:  # this gets rarer and rarer the longer we run
+            heappush(heap, item)
             heappop(heap)
     heap.sort()
     vereq(heap, data_sorted[-10:])

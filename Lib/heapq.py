@@ -13,6 +13,7 @@ heap = []            # creates an empty heap
 heappush(heap, item) # pushes a new item on the heap
 item = heappop(heap) # pops the smallest item from the heap
 item = heap[0]       # smallest item on the heap without popping it
+heapify(heap)        # transform list into a heap, in-place, in linear time
 
 Our API differs from textbook heap algorithms as follows:
 
@@ -136,15 +137,13 @@ def heappush(heap, item):
         pos = parentpos
     heap[pos] = item
 
-def heappop(heap):
-    """Pop the smallest item off the heap, maintaining the heap invariant."""
-    endpos = len(heap) - 1
-    if endpos <= 0:
-        return heap.pop()
-    returnitem = heap[0]
-    item = heap.pop()
-    pos = 0
-    # Sift item into position, down from the root, moving the smaller
+# The child indices of heap index pos are already heaps, and we want to make
+# a heap at index pos too.
+def _siftdown(heap, pos):
+    endpos = len(heap)
+    assert pos < endpos
+    item = heap[pos]
+    # Sift item into position, down from pos, moving the smaller
     # child up, until finding pos such that item <= pos's children.
     childpos = 2*pos + 1    # leftmost child position
     while childpos < endpos:
@@ -164,7 +163,28 @@ def heappop(heap):
         pos = childpos
         childpos = 2*pos + 1
     heap[pos] = item
+
+def heappop(heap):
+    """Pop the smallest item off the heap, maintaining the heap invariant."""
+    lastelt = heap.pop()    # raises appropriate IndexError if heap is empty
+    if heap:
+        returnitem = heap[0]
+        heap[0] = lastelt
+        _siftdown(heap, 0)
+    else:
+        returnitem = lastelt
     return returnitem
+
+def heapify(heap):
+    """Transform list heap into a heap, in-place, in O(len(heap)) time."""
+    n = len(heap)
+    # Transform bottom-up.  The largest index there's any point to looking at
+    # is the largest with a child index in-range, so must have 2*i + 1 < n,
+    # or i < (n-1)/2.  If n is even = 2*j, this is (2*j-1)/2 = j-1/2 so
+    # j-1 is the largest, which is n//2 - 1.  If n is odd = 2*j+1, this is
+    # (2*j+1-1)/2 = j so j-1 is the largest, and that's again n//2-1.
+    for i in xrange(n//2 - 1, -1, -1):
+        _siftdown(heap, i)
 
 if __name__ == "__main__":
     # Simple sanity test
