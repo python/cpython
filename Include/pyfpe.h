@@ -66,9 +66,10 @@ extern "C" {
  * 1) Add the *_PROTECT macros to your C code as required to protect
  *    dangerous floating point sections.
  * 
- * 2) Turn on the inclusion of the code by #defining WANT_SIGFPE_HANDLER in
- *    config.h.in before you configure, compile, and install Python, and the
- *    fpectl module, and any other modules which may have conditional code.
+ * 2) Turn on the inclusion of the code by adding the ``--with-fpectl''
+ *    flag at the time you run configure.  If the fpectl or other modules
+ *    which use the *_PROTECT macros are to be dynamically loaded, be
+ *    sure they are compiled with WANT_SIGFPE_HANDLER defined.
  * 
  * 3) When python is built and running, import fpectl, and execute
  *    fpectl.turnon_sigfpe(). This sets up the signal handler and enables
@@ -76,11 +77,11 @@ extern "C" {
  *    on, any properly trapped SIGFPE should result in the Python
  *    FloatingPointError exception.
  * 
- * Step 1 has been done already for the Python kernel code, and will be
- * done soon for Hugunin's NumPy array package and my Gist graphics module.
- * Step 2 is usually done once at python install time. Python's behavior
- * with respect to SIGFPE is not changed unless you also do step 3. Thus
- * you can control this new facility at compile time, or run time, or both.
+ * Step 1 has been done already for the Python kernel code, and should be
+ * done soon for the NumPy array package.  Step 2 is usually done once at
+ * python install time. Python's behavior with respect to SIGFPE is not
+ * changed unless you also do step 3. Thus you can control this new
+ * facility at compile time, or run time, or both.
  * 
  ******************************** 
  * Using the macros in your code:
@@ -89,17 +90,16 @@ extern "C" {
  * {
  *     ....
  *     PyFPE_START_PROTECT("Error in foobar", return 0)
- *     dangerous_op(somearg1, somearg2, ...);
- *     PyFPE_END_PROTECT
+ *     result = dangerous_op(somearg1, somearg2, ...);
+ *     PyFPE_END_PROTECT(result)
  *     ....
  * }
  * 
- * If a floating point error occurs in dangerous_op, foobar returns 0
- * (NULL), after setting the associated value of the FloatingPointError
- * exception to "Error in foobar". ``Dangerous_op'' can be a single
- * operation, or a block, or function calls, or any combination, so long as
- * no alternate return is possible before the PyFPE_END_PROTECT macro is
- * reached.
+ * If a floating point error occurs in dangerous_op, foobar returns 0 (NULL),
+ * after setting the associated value of the FloatingPointError exception to
+ * "Error in foobar". ``Dangerous_op'' can be a single operation, or a block
+ * of code, function calls, or any combination, so long as no alternate
+ * return is possible before the PyFPE_END_PROTECT macro is reached.
  * 
  * The macros can only be used in a function context where an error return
  * can be recognized as signaling a Python exception. (Generally, most
@@ -121,7 +121,7 @@ extern "C" {
  * I therefore decided on a more limited form of nesting, using a counter
  * variable (PyFPE_counter) to keep track of any recursion.  If an exception
  * occurs in an ``inner'' pair of macros, the return will apparently
- * come from the top level.
+ * come from the outermost level.
  * 
  */
 
@@ -131,23 +131,35 @@ extern "C" {
 #include <math.h>
 extern jmp_buf PyFPE_jbuf;
 extern int PyFPE_counter;
-extern double PyFPE_dummy();
+extern double PyFPE_dummy(void *);
 
 #define PyFPE_START_PROTECT(err_string, leave_stmt) \
 if (!PyFPE_counter++ && setjmp(PyFPE_jbuf)) { \
-	PyFPE_counter = 0; \
 	PyErr_SetString(PyExc_FloatingPointError, err_string); \
+	PyFPE_counter = 0; \
 	leave_stmt; \
 }
 
 /*
  * This (following) is a heck of a way to decrement a counter. However,
- * code optimizers will sometimes move this statement so that it gets
- * executed *before* the unsafe expression which we're trying to protect.
- * This pretty well messes things up, of course. So the best I've been able
- * to do is to put a (hopefully fast) function call into the expression
- * which counts down PyFPE_counter, and thereby monkey wrench the overeager
- * optimizer. Better solutions are welcomed....
+ * unless the macro argument is provided, code optimizers will sometimes move
+ * this statement so that it gets executed *before* the unsafe expression
+ * which we're trying to protect.  That pretty well messes things up,
+ * of course.
+ * 
+ * If the expression(s) you're trying to protect don't happen to return a
+ * value, you will need to manufacture a dummy result just to preserve the
+ * correct ordering of statements.  Note that the macro passes the address
+ * of its argument (so you need to give it something which is addressable).
+ * If your expression returns multiple results, pass the last such result
+ * to PyFPE_END_PROTECT.
+ * 
+ * Note that PyFPE_dummy returns a double, which is cast to int.
+ * This seeming insanity is to tickle the Floating Point Unit (FPU).
+ * If an exception has occurred in a preceding floating point operation,
+ * some architectures (notably Intel 80x86) will not deliver the interrupt
+ * until the *next* floating point operation.  This is painful if you've
+ * already decremented PyFPE_counter.
  */
 #define PyFPE_END_PROTECT(v) PyFPE_counter -= (int)PyFPE_dummy(&(v));
 
