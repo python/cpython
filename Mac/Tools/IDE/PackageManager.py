@@ -227,7 +227,7 @@ class PimpInterface:
 			self.pimpdb.appendURL(url)
 		except IOError, arg:
 			return "Cannot open %s: %s" % (url, arg)
-		return None
+		return self.pimpprefs.check()
 		
 	def closepimp(self):
 		self.pimpdb.close()
