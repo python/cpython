@@ -966,19 +966,6 @@ long_compare(PyLongObject *a, PyLongObject *b)
 	return sign < 0 ? -1 : sign > 0 ? 1 : 0;
 }
 
-/* Needed for the new style number compare slots */
-static PyObject *
-long_cmp(PyObject *v, PyObject *w)
-{
-	PyLongObject *a, *b;
-	int c;
-	CONVERT_BINOP(v, w, &a, &b);
-	c = long_compare(a, b);
-	Py_DECREF(a);
-	Py_DECREF(b);
-	return PyInt_FromLong(c);
-}
-
 static long
 long_hash(PyLongObject *v)
 {
@@ -1860,9 +1847,6 @@ static PyNumberMethods long_as_number = {
 	0,				/*nb_inplace_and*/
 	0,				/*nb_inplace_xor*/
 	0,				/*nb_inplace_or*/
-
-	/* New style slots */
-	(binaryfunc)	long_cmp,	/*nb_cmp*/
 };
 
 PyTypeObject PyLong_Type = {
@@ -1886,5 +1870,5 @@ PyTypeObject PyLong_Type = {
 	0,				/*tp_getattro*/
 	0,				/*tp_setattro*/
 	0,				/*tp_as_buffer*/
-	Py_TPFLAGS_NEWSTYLENUMBER 	/*tp_flags*/
+	Py_TPFLAGS_CHECKTYPES		/*tp_flags*/
 };
