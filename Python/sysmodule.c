@@ -896,6 +896,13 @@ settrace() -- set the global debug tracing function\n\
 )
 /* end of sys_doc */ ;
 
+static int
+_check_and_flush (FILE *stream)
+{
+  int prev_fail = ferror (stream);
+  return fflush (stream) || prev_fail ? EOF : 0;
+}
+
 PyObject *
 _PySys_Init(void)
 {
@@ -909,9 +916,9 @@ _PySys_Init(void)
 	m = Py_InitModule3("sys", sys_methods, sys_doc);
 	sysdict = PyModule_GetDict(m);
 
-	sysin = PyFile_FromFile(stdin, "<stdin>", "r", NULL);
-	sysout = PyFile_FromFile(stdout, "<stdout>", "w", NULL);
-	syserr = PyFile_FromFile(stderr, "<stderr>", "w", NULL);
+	sysin = PyFile_FromFile(stdin, "<stdin>", "r", _check_and_flush);
+	sysout = PyFile_FromFile(stdout, "<stdout>", "w", _check_and_flush);
+	syserr = PyFile_FromFile(stderr, "<stderr>", "w", _check_and_flush);
 	if (PyErr_Occurred())
 		return NULL;
 #ifdef MS_WINDOWS
