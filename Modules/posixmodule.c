@@ -1426,6 +1426,7 @@ static struct methodlist posix_methods[] = {
 	{"uname",	posix_uname},
 #endif /* HAVE_UNAME */
 	{"unlink",	posix_unlink},
+	{"remove",	posix_unlink},
 	{"utime",	posix_utime},
 #ifdef HAVE_TIMES
 	{"times",	posix_times},
