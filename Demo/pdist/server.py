@@ -109,3 +109,36 @@ class Server:
 			basenames = filter(lambda x, names=names: x not in names, basenames)
 			names[len(names):] = basenames
 		return names
+
+
+from security import Security
+
+
+class SecureServer(Server, Security):
+
+	def __init__(self, *args):
+		apply(Server.__init__, (self,) + args)
+		Security.__init__(self)
+
+	def _verify(self, conn, address):
+		challenge = self._generate_challenge()
+		conn.send("%d\n" % challenge)
+		response = ""
+		while "\n" not in response and len(response) < 100:
+			data = conn.recv(100)
+			if not data:
+				break
+			response = response + data
+		try:
+			response = string.atol(string.strip(response))
+		except string.atol_error:
+			if self._verbose > 0:
+				print "Invalid response syntax", `response`
+			return 0
+		if not self._compare_challenge_response(challenge, response):
+			if self._verbose > 0:
+				print "Invalid response value", `response`
+			return 0
+		if self._verbose > 1:
+			print "Response matches challenge.  Go ahead!"
+		return 1
