@@ -2925,7 +2925,7 @@ PyObject *split_substring(PyUnicodeObject *self,
     int sublen = substring->length;
     PyObject *str;
 
-    for (i = j = 0; i < len - sublen; ) {
+    for (i = j = 0; i <= len - sublen; ) {
 	if (Py_UNICODE_MATCH(self, i, substring)) {
 	    if (maxcount-- <= 0)
 		break;
