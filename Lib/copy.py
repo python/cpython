@@ -111,14 +111,13 @@ def _copy_inst(x):
 		args = ()
 	y = apply(x.__class__, args)
 	if hasattr(x, '__getstate__'):
-			state = x.__getstate__()
+		state = x.__getstate__()
 	else:
-			state = x.__dict__
+		state = x.__dict__
 	if hasattr(y, '__setstate__'):
-			y.__setstate__(state)
+		y.__setstate__(state)
 	else:
-			for key in state.keys():
-				setattr(y, key, state[key])
+		y.__dict__.update(state)
 	return y
 d[types.InstanceType] = _copy_inst
 
@@ -225,16 +224,15 @@ def _deepcopy_inst(x, memo):
 	y = apply(x.__class__, args)
 	memo[id(x)] = y
 	if hasattr(x, '__getstate__'):
-			state = x.__getstate__()
-			_keep_alive(state, memo)
+		state = x.__getstate__()
+		_keep_alive(state, memo)
 	else:
-			state = x.__dict__
+		state = x.__dict__
 	state = deepcopy(state, memo)
 	if hasattr(y, '__setstate__'):
-			y.__setstate__(state)
+		y.__setstate__(state)
 	else:
-			for key in state.keys():
-				setattr(y, key, state[key])
+		y.__dict__.update(state)
 	return y
 d[types.InstanceType] = _deepcopy_inst
 
