@@ -72,7 +72,7 @@ var                     { font-family: times, serif;
 
 div.warning             { background-color: #fffaf0;
                           border: thin solid black;
-                          padding: 1em 1em 0em 1em;
+                          padding: 1em;
                           margin-left: 2em;
                           margin-right: 2em; }
 
