@@ -80,18 +80,18 @@ class build (Command):
 
         # Invoke the 'build_py' command to "build" pure Python modules
         # (ie. copy 'em into the build tree)
-        if self.distribution.packages or self.distribution.py_modules:
+        if self.distribution.has_pure_modules():
             self.run_peer ('build_py')
 
         # Build any standalone C libraries next -- they're most likely to
         # be needed by extension modules, so obviously have to be done
         # first!
-        if self.distribution.libraries:
+        if self.distribution.has_c_libraries():
             self.run_peer ('build_clib')
 
         # And now 'build_ext' -- compile extension modules and put them
         # into the build tree
-        if self.distribution.ext_modules:
+        if self.distribution.has_ext_modules():
             self.run_peer ('build_ext')
 
 # end class Build
