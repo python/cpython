@@ -8,7 +8,7 @@
 ;; Created:    Feb 1992
 ;; Keywords:   python languages oop
 
-(defconst py-version "4.1"
+(defconst py-version "$Revision$"
   "`python-mode' version number.")
 
 ;; This software is provided as-is, without express or implied
@@ -310,7 +310,7 @@ support for features needed by `python-mode'.")
 			  "from"     "global"   "if"      "import"
 			  "in"       "is"       "lambda"  "not"
 			  "or"       "pass"     "print"   "raise"
-			  "return"   "while"
+			  "return"   "while"    "yield"
 			  )
 			"\\|"))
 	(kw2 (mapconcat 'identity
