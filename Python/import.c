@@ -70,6 +70,9 @@ static const struct filedescr _PyImport_StandardFiletab[] = {
 #else
 static const struct filedescr _PyImport_StandardFiletab[] = {
 	{".py", "r", PY_SOURCE},
+#ifdef MS_WIN32
+	{".pyw", "r", PY_SOURCE},
+#endif	
 	{".pyc", "rb", PY_COMPILED},
 	{0, 0}
 };
@@ -513,13 +516,19 @@ PyImport_ExecCodeModuleEx(char *name, PyObject *co, char *pathname)
 static char *
 make_compiled_pathname(char *pathname, char *buf, size_t buflen)
 {
-	size_t len;
-
-	len = strlen(pathname);
+	size_t len = strlen(pathname);
 	if (len+2 > buflen)
 		return NULL;
-	strcpy(buf, pathname);
-	strcpy(buf+len, Py_OptimizeFlag ? "o" : "c");
+
+#ifdef MS_WIN32
+	/* Treat .pyw as if it were .py.  The case of ".pyw" must match
+	   that used in _PyImport_StandardFiletab. */
+	if (len >= 4 && strcmp(&pathname[len-4], ".pyw") == 0)
+		--len;	/* pretend 'w' isn't there */
+#endif
+	memcpy(buf, pathname, len);
+	buf[len] = Py_OptimizeFlag ? 'o' : 'c';
+	buf[len+1] = '\0';
 
 	return buf;
 }
