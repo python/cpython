@@ -208,12 +208,13 @@ non-standard options to the \samp{NLST} command.
 \end{methoddesc}
 
 \begin{methoddesc}{dir}{argument\optional{, \ldots}}
-Return a directory listing as returned by the \samp{LIST} command, as
-a list of lines.  The optional \var{argument} is a directory to list
-(default is the current server directory).  Multiple arguments can be
-used to pass non-standard options to the \samp{LIST} command.  If the
-last argument is a function, it is used as a \var{callback} function
-as for \method{retrlines()}.
+Produce a directory listing as returned by the \samp{LIST} command,
+printing it to standard output.  The optional \var{argument} is a
+directory to list (default is the current server directory).  Multiple
+arguments can be used to pass non-standard options to the \samp{LIST}
+command.  If the last argument is a function, it is used as a
+\var{callback} function as for \method{retrlines()}; the default
+prints to \code{sys.stdout}.  This method returns \code{None}.
 \end{methoddesc}
 
 \begin{methoddesc}{rename}{fromname, toname}
