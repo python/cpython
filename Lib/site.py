@@ -14,7 +14,7 @@ This will append site-specific paths to to the module search path.  On
 Unix, it starts with sys.prefix and sys.exec_prefix (if different) and
 appends lib/python<version>/site-packages as well as lib/site-python.
 On other platforms (mainly Mac and Windows), it uses just sys.prefix
-(and sys.exec_prefix, if different, but this is unlikely).  The
+\(and sys.exec_prefix, if different, but this is unlikely).  The
 resulting directories, if they exist, are appended to sys.path, and
 also inspected for path configuration files.
 
@@ -71,7 +71,7 @@ def makepath(*paths):
 
 L = sys.modules.values()
 for m in L:
-    if hasattr(m, "__file__"):
+    if hasattr(m, "__file__") and m.__file__:
         m.__file__ = makepath(m.__file__)
 del m, L
 
@@ -233,7 +233,7 @@ here = os.path.dirname(os.__file__)
 __builtin__.license = _Printer(
     "license", "See http://www.pythonlabs.com/products/python2.0/license.html",
     ["LICENSE.txt", "LICENSE"],
-    [here, os.path.join(here, os.pardir), os.curdir])
+    [os.path.join(here, os.pardir), here, os.curdir])
 
 
 # Set the string encoding used by the Unicode implementation.  The
