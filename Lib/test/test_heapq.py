@@ -1,101 +1,105 @@
 """Unittests for heapq."""
 
-from test.test_support import verify, vereq, verbose, TestFailed
-
 from heapq import heappush, heappop, heapify, heapreplace, nlargest, nsmallest
 import random
+import unittest
+from test import test_support
 
-def check_invariant(heap):
-    # Check the heap invariant.
-    for pos, item in enumerate(heap):
-        if pos: # pos 0 has no parent
-            parentpos = (pos-1) >> 1
-            verify(heap[parentpos] <= item)
 
-# An iterator returning a heap's elements, smallest-first.
-class heapiter(object):
-    def __init__(self, heap):
-        self.heap = heap
+def heapiter(heap):
+    # An iterator returning a heap's elements, smallest-first.
+    try:
+        while 1:
+            yield heappop(heap)
+    except IndexError:
+        pass
 
-    def next(self):
-        try:
-            return heappop(self.heap)
-        except IndexError:
-            raise StopIteration
+class TestHeap(unittest.TestCase):
 
-    def __iter__(self):
-        return self
+    def test_push_pop(self):
+        # 1) Push 256 random numbers and pop them off, verifying all's OK.
+        heap = []
+        data = []
+        self.check_invariant(heap)
+        for i in range(256):
+            item = random.random()
+            data.append(item)
+            heappush(heap, item)
+            self.check_invariant(heap)
+        results = []
+        while heap:
+            item = heappop(heap)
+            self.check_invariant(heap)
+            results.append(item)
+        data_sorted = data[:]
+        data_sorted.sort()
+        self.assertEqual(data_sorted, results)
+        # 2) Check that the invariant holds for a sorted array
+        self.check_invariant(results)
+
+    def check_invariant(self, heap):
+        # Check the heap invariant.
+        for pos, item in enumerate(heap):
+            if pos: # pos 0 has no parent
+                parentpos = (pos-1) >> 1
+                self.assert_(heap[parentpos] <= item)
+
+    def test_heapify(self):
+        for size in range(30):
+            heap = [random.random() for dummy in range(size)]
+            heapify(heap)
+            self.check_invariant(heap)
+
+    def test_naive_nbest(self):
+        data = [random.randrange(2000) for i in range(1000)]
+        heap = []
+        for item in data:
+            heappush(heap, item)
+            if len(heap) > 10:
+                heappop(heap)
+        heap.sort()
+        self.assertEqual(heap, sorted(data)[-10:])
+
+    def test_nbest(self):
+        # Less-naive "N-best" algorithm, much faster (if len(data) is big
+        # enough <wink>) than sorting all of data.  However, if we had a max
+        # heap instead of a min heap, it could go faster still via
+        # heapify'ing all of data (linear time), then doing 10 heappops
+        # (10 log-time steps).
+        data = [random.randrange(2000) for i in range(1000)]
+        heap = data[:10]
+        heapify(heap)
+        for item in data[10:]:
+            if item > heap[0]:  # this gets rarer the longer we run
+                heapreplace(heap, item)
+        self.assertEqual(list(heapiter(heap)), sorted(data)[-10:])
+
+    def test_heapsort(self):
+        # Exercise everything with repeated heapsort checks
+        for trial in xrange(100):
+            size = random.randrange(50)
+            data = [random.randrange(25) for i in range(size)]
+            if trial & 1:     # Half of the time, use heapify
+                heap = data[:]
+                heapify(heap)
+            else:             # The rest of the time, use heappush
+                heap = []
+                for item in data:
+                    heappush(heap, item)
+            heap_sorted = [heappop(heap) for i in range(size)]
+            self.assertEqual(heap_sorted, sorted(data))
+
+    def test_nsmallest(self):
+        data = [random.randrange(2000) for i in range(1000)]
+        self.assertEqual(nsmallest(data, 400), sorted(data)[:400])
+
+    def test_largest(self):
+        data = [random.randrange(2000) for i in range(1000)]
+        self.assertEqual(nlargest(data, 400), sorted(data, reverse=True)[:400])
 
 def test_main():
-    # 1) Push 100 random numbers and pop them off, verifying all's OK.
-    heap = []
-    data = []
-    check_invariant(heap)
-    for i in range(256):
-        item = random.random()
-        data.append(item)
-        heappush(heap, item)
-        check_invariant(heap)
-    results = []
-    while heap:
-        item = heappop(heap)
-        check_invariant(heap)
-        results.append(item)
-    data_sorted = data[:]
-    data_sorted.sort()
-    vereq(data_sorted, results)
-    # 2) Check that the invariant holds for a sorted array
-    check_invariant(results)
-    # 3) Naive "N-best" algorithm
-    heap = []
-    for item in data:
-        heappush(heap, item)
-        if len(heap) > 10:
-            heappop(heap)
-    heap.sort()
-    vereq(heap, data_sorted[-10:])
-    # 4) Test heapify.
-    for size in range(30):
-        heap = [random.random() for dummy in range(size)]
-        heapify(heap)
-        check_invariant(heap)
-    # 5) Less-naive "N-best" algorithm, much faster (if len(data) is big
-    #    enough <wink>) than sorting all of data.  However, if we had a max
-    #    heap instead of a min heap, it could go faster still via
-    #    heapify'ing all of data (linear time), then doing 10 heappops
-    #    (10 log-time steps).
-    heap = data[:10]
-    heapify(heap)
-    for item in data[10:]:
-        if item > heap[0]:  # this gets rarer the longer we run
-            heapreplace(heap, item)
-    vereq(list(heapiter(heap)), data_sorted[-10:])
-    # 6)  Exercise everything with repeated heapsort checks
-    for trial in xrange(100):
-        size = random.randrange(50)
-        data = [random.randrange(25) for i in range(size)]
-        if trial & 1:     # Half of the time, use heapify
-            heap = data[:]
-            heapify(heap)
-        else:             # The rest of the time, use heappush
-            heap = []
-            for item in data:
-                heappush(heap,item)
-        data.sort()
-        sorted = [heappop(heap) for i in range(size)]
-        vereq(data, sorted)
-
-    # 7) Check nlargest() and nsmallest()
-    data = [random.randrange(2000) for i in range(1000)]
-    copy = data[:]
-    copy.sort(reverse=True)
-    vereq(nlargest(data, 400), copy[:400])
-    copy.sort()
-    vereq(nsmallest(data, 400), copy[:400])
-
-    # Make user happy
-    if verbose:
-        print "All OK"
+    test_support.run_unittest(TestHeap)
 
 if __name__ == "__main__":
     test_main()
+
