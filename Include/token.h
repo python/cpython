@@ -81,6 +81,7 @@ extern "C" {
 extern DL_IMPORT(char *) _PyParser_TokenNames[]; /* Token names */
 extern DL_IMPORT(int) PyToken_OneChar(int);
 extern DL_IMPORT(int) PyToken_TwoChars(int, int);
+extern DL_IMPORT(int) PyToken_ThreeChars(int, int, int);
 
 #ifdef __cplusplus
 }
