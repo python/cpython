@@ -2499,7 +2499,7 @@ fast_yield:
 
 /* this is gonna seem *real weird*, but if you put some other code between
    PyEval_EvalFrame() and PyEval_EvalCodeEx() you will need to adjust
-	the test in the if statement in Misc/gdbinit:ppystack */
+	the test in the if statement in Misc/gdbinit:pystack* */
 
 PyObject *
 PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
