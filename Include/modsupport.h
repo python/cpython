@@ -18,6 +18,10 @@ extern DL_IMPORT(PyObject *) Py_BuildValue(char *, ...);
 extern DL_IMPORT(int) PyArg_VaParse(PyObject *, char *, va_list);
 extern DL_IMPORT(PyObject *) Py_VaBuildValue(char *, va_list);
 
+extern DL_IMPORT(int) PyModule_AddObject(PyObject *, char *, PyObject *);
+extern DL_IMPORT(int) PyModule_AddIntConstant(PyObject *, char *, long);
+extern DL_IMPORT(int) PyModule_AddStringConstant(PyObject *, char *, char *);
+
 #define PYTHON_API_VERSION 1009
 #define PYTHON_API_STRING "1009"
 /* The API version is maintained (independently from the Python version)

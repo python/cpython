@@ -459,3 +459,30 @@ PyEval_CallMethod(PyObject *obj, char *methodname, char *format, ...)
 
 	return res;
 }
+
+int
+PyModule_AddObject(PyObject *m, char *name, PyObject *o)
+{
+	PyObject *dict;
+        if (!PyModule_Check(m) || o == NULL)
+                return -1;
+	dict = PyModule_GetDict(m);
+	if (dict == NULL)
+		return -1;
+        if (PyDict_SetItemString(dict, name, o))
+                return -1;
+        Py_DECREF(o);
+        return 0;
+}
+
+int 
+PyModule_AddIntConstant(PyObject *m, char *name, long value)
+{
+	return PyModule_AddObject(m, name, PyInt_FromLong(value));
+}
+
+int 
+PyModule_AddStringConstant(PyObject *m, char *name, char *value)
+{
+	return PyModule_AddObject(m, name, PyString_FromString(value));
+}
