@@ -344,6 +344,7 @@ class HTTPResponse:
             self.will_close = 1
 
     def _check_close(self):
+        conn = self.msg.getheader('connection')
         if self.version == 11:
             # An HTTP/1.1 proxy is assumed to stay open unless
             # explicitly closed.
@@ -352,11 +353,16 @@ class HTTPResponse:
                 return True
             return False
 
-        # An HTTP/1.0 response with a Connection header is probably
-        # the result of a confused proxy.  Ignore it.
+        # Some HTTP/1.0 implementations have support for persistent
+        # connections, using rules different than HTTP/1.1.
 
         # For older HTTP, Keep-Alive indiciates persistent connection.
         if self.msg.getheader('keep-alive'):
+            return False
+
+        # At least Akamai returns a "Connection: Keep-Alive" header,
+        # which was supposed to be sent by the client.
+        if conn and "keep-alive" in conn.lower():
             return False
 
         # Proxy-Connection is a netscape hack.
@@ -380,6 +386,8 @@ class HTTPResponse:
         # IMPLIES: if will_close is FALSE, then self.close() will ALWAYS be
         #          called, meaning self.isclosed() is meaningful.
         return self.fp is None
+
+    # XXX It would be nice to have readline and __iter__ for this, too.
 
     def read(self, amt=None):
         if self.fp is None:
@@ -728,15 +736,17 @@ class HTTPConnection:
             self._send_request(method, url, body, headers)
 
     def _send_request(self, method, url, body, headers):
-        # If headers already contains a host header, then define the
-        # optional skip_host argument to putrequest().  The check is
-        # harder because field names are case insensitive.
-        if 'host' in [k.lower() for k in headers]:
-            self.putrequest(method, url, skip_host=1)
-        else:
-            self.putrequest(method, url)
+        # honour explicitly requested Host: and Accept-Encoding headers
+        header_names = dict.fromkeys([k.lower() for k in headers])
+        skips = {}
+        if 'host' in header_names:
+            skips['skip_host'] = 1
+        if 'accept-encoding' in header_names:
+            skips['skip_accept_encoding'] = 1
 
-        if body:
+        self.putrequest(method, url, **skips)
+
+        if body and ('content-length' not in header_names):
             self.putheader('Content-Length', str(len(body)))
         for hdr, value in headers.iteritems():
             self.putheader(hdr, value)
