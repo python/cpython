@@ -2057,7 +2057,7 @@ sock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 /*ARGSUSED*/
 static int
-sock_init(PyObject *self, PyObject *args, PyObject *kwds)
+sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	PySocketSockObject *s = (PySocketSockObject *)self;
 	SOCKET_T fd;
@@ -2133,7 +2133,7 @@ static PyTypeObject sock_type = {
 	0,					/* tp_descr_get */
 	0,					/* tp_descr_set */
 	0,					/* tp_dictoffset */
-	sock_init,				/* tp_init */
+	sock_initobj,				/* tp_init */
 	0,	/* set below */			/* tp_alloc */
 	sock_new,				/* tp_new */
 	0,	/* set below */			/* tp_free */
