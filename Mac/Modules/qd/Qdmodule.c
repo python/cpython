@@ -8,7 +8,11 @@
 #include "macglue.h"
 #include "pymactoolbox.h"
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <QuickDraw.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_GrafObj_New(GrafPtr);
@@ -100,16 +104,13 @@ staticforward PyObject *BMObj_NewCopied(BitMapPtr);
 /*
 ** Parse/generate RGB records
 */
-PyObject *QdRGB_New(itself)
-	RGBColorPtr itself;
+PyObject *QdRGB_New(RGBColorPtr itself)
 {
 
 	return Py_BuildValue("lll", (long)itself->red, (long)itself->green, (long)itself->blue);
 }
 
-QdRGB_Convert(v, p_itself)
-	PyObject *v;
-	RGBColorPtr p_itself;
+QdRGB_Convert(PyObject *v, RGBColorPtr p_itself)
 {
 	long red, green, blue;
 	
@@ -125,8 +126,7 @@ QdRGB_Convert(v, p_itself)
 ** Generate FontInfo records
 */
 static
-PyObject *QdFI_New(itself)
-	FontInfo *itself;
+PyObject *QdFI_New(FontInfo *itself)
 {
 
 	return Py_BuildValue("hhhh", itself->ascent, itself->descent,
@@ -146,8 +146,7 @@ typedef struct GrafPortObject {
 	GrafPtr ob_itself;
 } GrafPortObject;
 
-PyObject *GrafObj_New(itself)
-	GrafPtr itself;
+PyObject *GrafObj_New(GrafPtr itself)
 {
 	GrafPortObject *it;
 	if (itself == NULL) return PyMac_Error(resNotFound);
@@ -156,9 +155,7 @@ PyObject *GrafObj_New(itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-GrafObj_Convert(v, p_itself)
-	PyObject *v;
-	GrafPtr *p_itself;
+GrafObj_Convert(PyObject *v, GrafPtr *p_itself)
 {
 #if 1
 	{
@@ -190,8 +187,7 @@ GrafObj_Convert(v, p_itself)
 	return 1;
 }
 
-static void GrafObj_dealloc(self)
-	GrafPortObject *self;
+static void GrafObj_dealloc(GrafPortObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
 	PyMem_DEL(self);
@@ -203,9 +199,7 @@ static PyMethodDef GrafObj_methods[] = {
 
 PyMethodChain GrafObj_chain = { GrafObj_methods, NULL };
 
-static PyObject *GrafObj_getattr(self, name)
-	GrafPortObject *self;
-	char *name;
+static PyObject *GrafObj_getattr(GrafPortObject *self, char *name)
 {
 #if !ACCESSOR_CALLS_ARE_FUNCTIONS
 
@@ -401,8 +395,7 @@ typedef struct BitMapObject {
 	BitMap *referred_bitmap;
 } BitMapObject;
 
-PyObject *BMObj_New(itself)
-	BitMapPtr itself;
+PyObject *BMObj_New(BitMapPtr itself)
 {
 	BitMapObject *it;
 	if (itself == NULL) return PyMac_Error(resNotFound);
@@ -413,9 +406,7 @@ PyObject *BMObj_New(itself)
 	it->referred_bitmap = NULL;
 	return (PyObject *)it;
 }
-BMObj_Convert(v, p_itself)
-	PyObject *v;
-	BitMapPtr *p_itself;
+BMObj_Convert(PyObject *v, BitMapPtr *p_itself)
 {
 	if (!BMObj_Check(v))
 	{
@@ -426,17 +417,14 @@ BMObj_Convert(v, p_itself)
 	return 1;
 }
 
-static void BMObj_dealloc(self)
-	BitMapObject *self;
+static void BMObj_dealloc(BitMapObject *self)
 {
 	Py_XDECREF(self->referred_object);
 	if (self->referred_bitmap) free(self->referred_bitmap);
 	PyMem_DEL(self);
 }
 
-static PyObject *BMObj_getdata(_self, _args)
-	BitMapObject *_self;
-	PyObject *_args;
+static PyObject *BMObj_getdata(BitMapObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -450,9 +438,7 @@ static PyObject *BMObj_getdata(_self, _args)
 
 }
 
-static PyObject *BMObj_putdata(_self, _args)
-	BitMapObject *_self;
-	PyObject *_args;
+static PyObject *BMObj_putdata(BitMapObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -478,9 +464,7 @@ static PyMethodDef BMObj_methods[] = {
 
 PyMethodChain BMObj_chain = { BMObj_methods, NULL };
 
-static PyObject *BMObj_getattr(self, name)
-	BitMapObject *self;
-	char *name;
+static PyObject *BMObj_getattr(BitMapObject *self, char *name)
 {
 	if ( strcmp(name, "baseAddr") == 0 )
 				return PyInt_FromLong((long)self->ob_itself->baseAddr);
@@ -545,8 +529,7 @@ static PyObject *QDGA_New()
 	return (PyObject *)it;
 }
 
-static void QDGA_dealloc(self)
-	QDGlobalsAccessObject *self;
+static void QDGA_dealloc(QDGlobalsAccessObject *self)
 {
 	PyMem_DEL(self);
 }
@@ -557,9 +540,7 @@ static PyMethodDef QDGA_methods[] = {
 
 static PyMethodChain QDGA_chain = { QDGA_methods, NULL };
 
-static PyObject *QDGA_getattr(self, name)
-	QDGlobalsAccessObject *self;
-	char *name;
+static PyObject *QDGA_getattr(QDGlobalsAccessObject *self, char *name)
 {
 #if !ACCESSOR_CALLS_ARE_FUNCTIONS
 
@@ -658,9 +639,7 @@ staticforward PyTypeObject QDGlobalsAccess_Type = {
 /* ---------------- End object type QDGlobalsAccess ----------------- */
 
 
-static PyObject *Qd_MacSetPort(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacSetPort(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GrafPtr port;
@@ -673,9 +652,7 @@ static PyObject *Qd_MacSetPort(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPort(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPort(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GrafPtr port;
@@ -687,9 +664,7 @@ static PyObject *Qd_GetPort(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GrafDevice(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GrafDevice(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short device;
@@ -702,9 +677,7 @@ static PyObject *Qd_GrafDevice(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetPortBits(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetPortBits(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	BitMapPtr bm;
@@ -717,9 +690,7 @@ static PyObject *Qd_SetPortBits(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_PortSize(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_PortSize(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short width;
@@ -735,9 +706,7 @@ static PyObject *Qd_PortSize(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MovePortTo(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MovePortTo(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short leftGlobal;
@@ -753,9 +722,7 @@ static PyObject *Qd_MovePortTo(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetOrigin(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetOrigin(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short h;
@@ -771,9 +738,7 @@ static PyObject *Qd_SetOrigin(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetClip(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetClip(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -786,9 +751,7 @@ static PyObject *Qd_SetClip(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetClip(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetClip(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -801,9 +764,7 @@ static PyObject *Qd_GetClip(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_ClipRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_ClipRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -816,9 +777,7 @@ static PyObject *Qd_ClipRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_BackPat(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_BackPat(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Pattern *pat__in__;
@@ -838,9 +797,7 @@ static PyObject *Qd_BackPat(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_InitCursor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_InitCursor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -851,9 +808,7 @@ static PyObject *Qd_InitCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacSetCursor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacSetCursor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Cursor *crsr__in__;
@@ -873,9 +828,7 @@ static PyObject *Qd_MacSetCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_HideCursor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_HideCursor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -886,9 +839,7 @@ static PyObject *Qd_HideCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacShowCursor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacShowCursor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -899,9 +850,7 @@ static PyObject *Qd_MacShowCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_ObscureCursor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_ObscureCursor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -912,9 +861,7 @@ static PyObject *Qd_ObscureCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_HidePen(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_HidePen(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -925,9 +872,7 @@ static PyObject *Qd_HidePen(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_ShowPen(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_ShowPen(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -938,9 +883,7 @@ static PyObject *Qd_ShowPen(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPen(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPen(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Point pt;
@@ -952,9 +895,7 @@ static PyObject *Qd_GetPen(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPenState(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPenState(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PenState pnState__out__;
@@ -967,9 +908,7 @@ static PyObject *Qd_GetPenState(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetPenState(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetPenState(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PenState *pnState__in__;
@@ -989,9 +928,7 @@ static PyObject *Qd_SetPenState(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_PenSize(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_PenSize(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short width;
@@ -1007,9 +944,7 @@ static PyObject *Qd_PenSize(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_PenMode(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_PenMode(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short mode;
@@ -1022,9 +957,7 @@ static PyObject *Qd_PenMode(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_PenPat(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_PenPat(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Pattern *pat__in__;
@@ -1044,9 +977,7 @@ static PyObject *Qd_PenPat(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_PenNormal(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_PenNormal(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -1057,9 +988,7 @@ static PyObject *Qd_PenNormal(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MoveTo(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MoveTo(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short h;
@@ -1075,9 +1004,7 @@ static PyObject *Qd_MoveTo(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_Move(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_Move(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short dh;
@@ -1093,9 +1020,7 @@ static PyObject *Qd_Move(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacLineTo(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacLineTo(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short h;
@@ -1111,9 +1036,7 @@ static PyObject *Qd_MacLineTo(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_Line(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_Line(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short dh;
@@ -1129,9 +1052,7 @@ static PyObject *Qd_Line(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_ForeColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_ForeColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long color;
@@ -1144,9 +1065,7 @@ static PyObject *Qd_ForeColor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_BackColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_BackColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long color;
@@ -1159,9 +1078,7 @@ static PyObject *Qd_BackColor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_ColorBit(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_ColorBit(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short whichBit;
@@ -1174,9 +1091,7 @@ static PyObject *Qd_ColorBit(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacSetRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacSetRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1200,9 +1115,7 @@ static PyObject *Qd_MacSetRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacOffsetRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacOffsetRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1221,9 +1134,7 @@ static PyObject *Qd_MacOffsetRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacInsetRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacInsetRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1242,9 +1153,7 @@ static PyObject *Qd_MacInsetRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SectRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SectRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -1264,9 +1173,7 @@ static PyObject *Qd_SectRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacUnionRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacUnionRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect src1;
@@ -1284,9 +1191,7 @@ static PyObject *Qd_MacUnionRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacEqualRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacEqualRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -1303,9 +1208,7 @@ static PyObject *Qd_MacEqualRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_EmptyRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_EmptyRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -1319,9 +1222,7 @@ static PyObject *Qd_EmptyRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacFrameRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacFrameRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1334,9 +1235,7 @@ static PyObject *Qd_MacFrameRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_PaintRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_PaintRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1349,9 +1248,7 @@ static PyObject *Qd_PaintRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_EraseRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_EraseRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1364,9 +1261,7 @@ static PyObject *Qd_EraseRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacInvertRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacInvertRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1379,9 +1274,7 @@ static PyObject *Qd_MacInvertRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacFillRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacFillRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1404,9 +1297,7 @@ static PyObject *Qd_MacFillRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FrameOval(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_FrameOval(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1419,9 +1310,7 @@ static PyObject *Qd_FrameOval(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_PaintOval(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_PaintOval(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1434,9 +1323,7 @@ static PyObject *Qd_PaintOval(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_EraseOval(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_EraseOval(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1449,9 +1336,7 @@ static PyObject *Qd_EraseOval(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_InvertOval(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_InvertOval(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1464,9 +1349,7 @@ static PyObject *Qd_InvertOval(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FillOval(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_FillOval(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1489,9 +1372,7 @@ static PyObject *Qd_FillOval(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FrameRoundRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_FrameRoundRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1510,9 +1391,7 @@ static PyObject *Qd_FrameRoundRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_PaintRoundRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_PaintRoundRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1531,9 +1410,7 @@ static PyObject *Qd_PaintRoundRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_EraseRoundRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_EraseRoundRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1552,9 +1429,7 @@ static PyObject *Qd_EraseRoundRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_InvertRoundRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_InvertRoundRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1573,9 +1448,7 @@ static PyObject *Qd_InvertRoundRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FillRoundRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_FillRoundRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1604,9 +1477,7 @@ static PyObject *Qd_FillRoundRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FrameArc(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_FrameArc(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1625,9 +1496,7 @@ static PyObject *Qd_FrameArc(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_PaintArc(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_PaintArc(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1646,9 +1515,7 @@ static PyObject *Qd_PaintArc(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_EraseArc(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_EraseArc(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1667,9 +1534,7 @@ static PyObject *Qd_EraseArc(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_InvertArc(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_InvertArc(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1688,9 +1553,7 @@ static PyObject *Qd_InvertArc(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FillArc(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_FillArc(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -1719,9 +1582,7 @@ static PyObject *Qd_FillArc(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_NewRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_NewRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
@@ -1733,9 +1594,7 @@ static PyObject *Qd_NewRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_OpenRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_OpenRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -1746,9 +1605,7 @@ static PyObject *Qd_OpenRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_CloseRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_CloseRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle dstRgn;
@@ -1761,9 +1618,7 @@ static PyObject *Qd_CloseRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_BitMapToRegion(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_BitMapToRegion(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1781,9 +1636,7 @@ static PyObject *Qd_BitMapToRegion(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_DisposeRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_DisposeRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -1796,9 +1649,7 @@ static PyObject *Qd_DisposeRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacCopyRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacCopyRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle srcRgn;
@@ -1814,9 +1665,7 @@ static PyObject *Qd_MacCopyRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetEmptyRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetEmptyRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -1829,9 +1678,7 @@ static PyObject *Qd_SetEmptyRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacSetRectRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacSetRectRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -1856,9 +1703,7 @@ static PyObject *Qd_MacSetRectRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_RectRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_RectRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -1874,9 +1719,7 @@ static PyObject *Qd_RectRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacOffsetRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacOffsetRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -1895,9 +1738,7 @@ static PyObject *Qd_MacOffsetRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_InsetRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_InsetRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -1916,9 +1757,7 @@ static PyObject *Qd_InsetRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SectRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SectRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle srcRgnA;
@@ -1937,9 +1776,7 @@ static PyObject *Qd_SectRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacUnionRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacUnionRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle srcRgnA;
@@ -1958,9 +1795,7 @@ static PyObject *Qd_MacUnionRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_DiffRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_DiffRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle srcRgnA;
@@ -1979,9 +1814,7 @@ static PyObject *Qd_DiffRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacXorRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacXorRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle srcRgnA;
@@ -2000,9 +1833,7 @@ static PyObject *Qd_MacXorRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_RectInRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_RectInRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -2019,9 +1850,7 @@ static PyObject *Qd_RectInRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacEqualRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacEqualRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -2038,9 +1867,7 @@ static PyObject *Qd_MacEqualRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_EmptyRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_EmptyRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -2054,9 +1881,7 @@ static PyObject *Qd_EmptyRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacFrameRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacFrameRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -2069,9 +1894,7 @@ static PyObject *Qd_MacFrameRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacPaintRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacPaintRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -2084,9 +1907,7 @@ static PyObject *Qd_MacPaintRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_EraseRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_EraseRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -2099,9 +1920,7 @@ static PyObject *Qd_EraseRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacInvertRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacInvertRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -2114,9 +1933,7 @@ static PyObject *Qd_MacInvertRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacFillRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacFillRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -2139,9 +1956,7 @@ static PyObject *Qd_MacFillRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_ScrollRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_ScrollRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -2163,9 +1978,7 @@ static PyObject *Qd_ScrollRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_CopyBits(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_CopyBits(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	BitMapPtr srcBits;
@@ -2193,9 +2006,7 @@ static PyObject *Qd_CopyBits(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_CopyMask(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_CopyMask(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	BitMapPtr srcBits;
@@ -2223,9 +2034,7 @@ static PyObject *Qd_CopyMask(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_OpenPicture(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_OpenPicture(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PicHandle _rv;
@@ -2239,9 +2048,7 @@ static PyObject *Qd_OpenPicture(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_PicComment(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_PicComment(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short kind;
@@ -2260,9 +2067,7 @@ static PyObject *Qd_PicComment(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_ClosePicture(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_ClosePicture(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -2273,9 +2078,7 @@ static PyObject *Qd_ClosePicture(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_DrawPicture(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_DrawPicture(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PicHandle myPicture;
@@ -2291,9 +2094,7 @@ static PyObject *Qd_DrawPicture(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_KillPicture(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_KillPicture(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PicHandle myPicture;
@@ -2306,9 +2107,7 @@ static PyObject *Qd_KillPicture(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_OpenPoly(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_OpenPoly(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PolyHandle _rv;
@@ -2320,9 +2119,7 @@ static PyObject *Qd_OpenPoly(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_ClosePoly(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_ClosePoly(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -2333,9 +2130,7 @@ static PyObject *Qd_ClosePoly(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_KillPoly(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_KillPoly(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PolyHandle poly;
@@ -2348,9 +2143,7 @@ static PyObject *Qd_KillPoly(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_OffsetPoly(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_OffsetPoly(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PolyHandle poly;
@@ -2369,9 +2162,7 @@ static PyObject *Qd_OffsetPoly(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FramePoly(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_FramePoly(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PolyHandle poly;
@@ -2384,9 +2175,7 @@ static PyObject *Qd_FramePoly(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_PaintPoly(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_PaintPoly(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PolyHandle poly;
@@ -2399,9 +2188,7 @@ static PyObject *Qd_PaintPoly(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_ErasePoly(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_ErasePoly(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PolyHandle poly;
@@ -2414,9 +2201,7 @@ static PyObject *Qd_ErasePoly(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_InvertPoly(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_InvertPoly(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PolyHandle poly;
@@ -2429,9 +2214,7 @@ static PyObject *Qd_InvertPoly(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FillPoly(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_FillPoly(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PolyHandle poly;
@@ -2454,9 +2237,7 @@ static PyObject *Qd_FillPoly(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetPt(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetPt(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Point pt;
@@ -2474,9 +2255,7 @@ static PyObject *Qd_SetPt(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_LocalToGlobal(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_LocalToGlobal(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Point pt;
@@ -2489,9 +2268,7 @@ static PyObject *Qd_LocalToGlobal(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GlobalToLocal(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GlobalToLocal(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Point pt;
@@ -2504,9 +2281,7 @@ static PyObject *Qd_GlobalToLocal(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_Random(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_Random(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -2518,9 +2293,7 @@ static PyObject *Qd_Random(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacGetPixel(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacGetPixel(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -2537,9 +2310,7 @@ static PyObject *Qd_MacGetPixel(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_ScalePt(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_ScalePt(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Point pt;
@@ -2558,9 +2329,7 @@ static PyObject *Qd_ScalePt(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MapPt(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MapPt(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Point pt;
@@ -2579,9 +2348,7 @@ static PyObject *Qd_MapPt(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MapRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MapRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -2600,9 +2367,7 @@ static PyObject *Qd_MapRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MapRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MapRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -2621,9 +2386,7 @@ static PyObject *Qd_MapRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MapPoly(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MapPoly(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PolyHandle poly;
@@ -2642,9 +2405,7 @@ static PyObject *Qd_MapPoly(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_StdBits(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_StdBits(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	BitMapPtr srcBits;
@@ -2669,9 +2430,7 @@ static PyObject *Qd_StdBits(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_AddPt(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_AddPt(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Point src;
@@ -2687,9 +2446,7 @@ static PyObject *Qd_AddPt(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_EqualPt(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_EqualPt(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -2706,9 +2463,7 @@ static PyObject *Qd_EqualPt(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacPtInRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacPtInRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -2725,9 +2480,7 @@ static PyObject *Qd_MacPtInRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_Pt2Rect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_Pt2Rect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Point pt1;
@@ -2745,9 +2498,7 @@ static PyObject *Qd_Pt2Rect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_PtToAngle(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_PtToAngle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -2765,9 +2516,7 @@ static PyObject *Qd_PtToAngle(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SubPt(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SubPt(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Point src;
@@ -2783,9 +2532,7 @@ static PyObject *Qd_SubPt(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_PtInRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_PtInRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -2802,9 +2549,7 @@ static PyObject *Qd_PtInRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_NewPixMap(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_NewPixMap(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle _rv;
@@ -2816,9 +2561,7 @@ static PyObject *Qd_NewPixMap(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_DisposePixMap(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_DisposePixMap(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle pm;
@@ -2831,9 +2574,7 @@ static PyObject *Qd_DisposePixMap(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_CopyPixMap(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_CopyPixMap(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle srcPM;
@@ -2849,9 +2590,7 @@ static PyObject *Qd_CopyPixMap(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_NewPixPat(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_NewPixPat(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixPatHandle _rv;
@@ -2863,9 +2602,7 @@ static PyObject *Qd_NewPixPat(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_DisposePixPat(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_DisposePixPat(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixPatHandle pp;
@@ -2878,9 +2615,7 @@ static PyObject *Qd_DisposePixPat(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_CopyPixPat(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_CopyPixPat(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixPatHandle srcPP;
@@ -2896,9 +2631,7 @@ static PyObject *Qd_CopyPixPat(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_PenPixPat(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_PenPixPat(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixPatHandle pp;
@@ -2911,9 +2644,7 @@ static PyObject *Qd_PenPixPat(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_BackPixPat(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_BackPixPat(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixPatHandle pp;
@@ -2926,9 +2657,7 @@ static PyObject *Qd_BackPixPat(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPixPat(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPixPat(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixPatHandle _rv;
@@ -2942,9 +2671,7 @@ static PyObject *Qd_GetPixPat(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MakeRGBPat(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MakeRGBPat(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixPatHandle pp;
@@ -2960,9 +2687,7 @@ static PyObject *Qd_MakeRGBPat(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FillCRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_FillCRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -2978,9 +2703,7 @@ static PyObject *Qd_FillCRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FillCOval(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_FillCOval(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -2996,9 +2719,7 @@ static PyObject *Qd_FillCOval(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FillCRoundRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_FillCRoundRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -3020,9 +2741,7 @@ static PyObject *Qd_FillCRoundRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FillCArc(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_FillCArc(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -3044,9 +2763,7 @@ static PyObject *Qd_FillCArc(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FillCRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_FillCRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -3062,9 +2779,7 @@ static PyObject *Qd_FillCRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FillCPoly(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_FillCPoly(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PolyHandle poly;
@@ -3080,9 +2795,7 @@ static PyObject *Qd_FillCPoly(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_RGBForeColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_RGBForeColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RGBColor color;
@@ -3095,9 +2808,7 @@ static PyObject *Qd_RGBForeColor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_RGBBackColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_RGBBackColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RGBColor color;
@@ -3110,9 +2821,7 @@ static PyObject *Qd_RGBBackColor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetCPixel(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetCPixel(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short h;
@@ -3131,9 +2840,7 @@ static PyObject *Qd_SetCPixel(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetPortPix(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetPortPix(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle pm;
@@ -3146,9 +2853,7 @@ static PyObject *Qd_SetPortPix(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetCPixel(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetCPixel(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short h;
@@ -3166,9 +2871,7 @@ static PyObject *Qd_GetCPixel(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetForeColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetForeColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RGBColor color;
@@ -3180,9 +2883,7 @@ static PyObject *Qd_GetForeColor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetBackColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetBackColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RGBColor color;
@@ -3194,9 +2895,7 @@ static PyObject *Qd_GetBackColor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_OpColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_OpColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RGBColor color;
@@ -3209,9 +2908,7 @@ static PyObject *Qd_OpColor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_HiliteColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_HiliteColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RGBColor color;
@@ -3224,9 +2921,7 @@ static PyObject *Qd_HiliteColor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_DisposeCTable(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_DisposeCTable(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CTabHandle cTable;
@@ -3239,9 +2934,7 @@ static PyObject *Qd_DisposeCTable(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetCTable(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetCTable(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CTabHandle _rv;
@@ -3255,9 +2948,7 @@ static PyObject *Qd_GetCTable(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetCCursor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetCCursor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CCrsrHandle _rv;
@@ -3271,9 +2962,7 @@ static PyObject *Qd_GetCCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetCCursor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetCCursor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CCrsrHandle cCrsr;
@@ -3286,9 +2975,7 @@ static PyObject *Qd_SetCCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_AllocCursor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_AllocCursor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -3299,9 +2986,7 @@ static PyObject *Qd_AllocCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_DisposeCCursor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_DisposeCCursor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CCrsrHandle cCrsr;
@@ -3314,9 +2999,7 @@ static PyObject *Qd_DisposeCCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetMaxDevice(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetMaxDevice(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GDHandle _rv;
@@ -3330,9 +3013,7 @@ static PyObject *Qd_GetMaxDevice(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetCTSeed(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetCTSeed(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -3344,9 +3025,7 @@ static PyObject *Qd_GetCTSeed(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetDeviceList(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetDeviceList(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GDHandle _rv;
@@ -3358,9 +3037,7 @@ static PyObject *Qd_GetDeviceList(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetMainDevice(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetMainDevice(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GDHandle _rv;
@@ -3372,9 +3049,7 @@ static PyObject *Qd_GetMainDevice(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetNextDevice(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetNextDevice(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GDHandle _rv;
@@ -3388,9 +3063,7 @@ static PyObject *Qd_GetNextDevice(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_TestDeviceAttribute(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_TestDeviceAttribute(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -3407,9 +3080,7 @@ static PyObject *Qd_TestDeviceAttribute(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetDeviceAttribute(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetDeviceAttribute(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GDHandle gdh;
@@ -3428,9 +3099,7 @@ static PyObject *Qd_SetDeviceAttribute(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_InitGDevice(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_InitGDevice(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short qdRefNum;
@@ -3449,9 +3118,7 @@ static PyObject *Qd_InitGDevice(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_NewGDevice(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_NewGDevice(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GDHandle _rv;
@@ -3468,9 +3135,7 @@ static PyObject *Qd_NewGDevice(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_DisposeGDevice(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_DisposeGDevice(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GDHandle gdh;
@@ -3483,9 +3148,7 @@ static PyObject *Qd_DisposeGDevice(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetGDevice(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetGDevice(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GDHandle gd;
@@ -3498,9 +3161,7 @@ static PyObject *Qd_SetGDevice(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetGDevice(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetGDevice(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GDHandle _rv;
@@ -3512,9 +3173,7 @@ static PyObject *Qd_GetGDevice(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_Color2Index(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_Color2Index(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -3528,9 +3187,7 @@ static PyObject *Qd_Color2Index(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_Index2Color(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_Index2Color(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long index;
@@ -3545,9 +3202,7 @@ static PyObject *Qd_Index2Color(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_InvertColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_InvertColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RGBColor myColor;
@@ -3559,9 +3214,7 @@ static PyObject *Qd_InvertColor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_RealColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_RealColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -3575,9 +3228,7 @@ static PyObject *Qd_RealColor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetSubTable(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetSubTable(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CTabHandle myColors;
@@ -3596,9 +3247,7 @@ static PyObject *Qd_GetSubTable(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MakeITable(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MakeITable(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CTabHandle cTabH;
@@ -3617,9 +3266,7 @@ static PyObject *Qd_MakeITable(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetClientID(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetClientID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short id;
@@ -3632,9 +3279,7 @@ static PyObject *Qd_SetClientID(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_ProtectEntry(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_ProtectEntry(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short index;
@@ -3650,9 +3295,7 @@ static PyObject *Qd_ProtectEntry(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_ReserveEntry(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_ReserveEntry(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short index;
@@ -3668,9 +3311,7 @@ static PyObject *Qd_ReserveEntry(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_QDError(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_QDError(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -3682,9 +3323,7 @@ static PyObject *Qd_QDError(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_CopyDeepMask(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_CopyDeepMask(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	BitMapPtr srcBits;
@@ -3718,9 +3357,7 @@ static PyObject *Qd_CopyDeepMask(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPattern(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPattern(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PatHandle _rv;
@@ -3734,9 +3371,7 @@ static PyObject *Qd_GetPattern(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacGetCursor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacGetCursor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CursHandle _rv;
@@ -3750,9 +3385,7 @@ static PyObject *Qd_MacGetCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPicture(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPicture(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PicHandle _rv;
@@ -3766,9 +3399,7 @@ static PyObject *Qd_GetPicture(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_DeltaPoint(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_DeltaPoint(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -3785,9 +3416,7 @@ static PyObject *Qd_DeltaPoint(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_ShieldCursor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_ShieldCursor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect shieldRect;
@@ -3803,9 +3432,7 @@ static PyObject *Qd_ShieldCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_ScreenRes(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_ScreenRes(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short scrnHRes;
@@ -3820,9 +3447,7 @@ static PyObject *Qd_ScreenRes(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetIndPattern(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetIndPattern(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Pattern thePat__out__;
@@ -3841,9 +3466,7 @@ static PyObject *Qd_GetIndPattern(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SlopeFromAngle(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SlopeFromAngle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Fixed _rv;
@@ -3857,9 +3480,7 @@ static PyObject *Qd_SlopeFromAngle(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_AngleFromSlope(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_AngleFromSlope(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -3873,9 +3494,7 @@ static PyObject *Qd_AngleFromSlope(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortPixMap(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortPixMap(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle _rv;
@@ -3889,9 +3508,7 @@ static PyObject *Qd_GetPortPixMap(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortBitMapForCopyBits(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortBitMapForCopyBits(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	const BitMap * _rv;
@@ -3905,9 +3522,7 @@ static PyObject *Qd_GetPortBitMapForCopyBits(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortBounds(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortBounds(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -3922,9 +3537,7 @@ static PyObject *Qd_GetPortBounds(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortForeColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortForeColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -3939,9 +3552,7 @@ static PyObject *Qd_GetPortForeColor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortBackColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortBackColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -3956,9 +3567,7 @@ static PyObject *Qd_GetPortBackColor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortOpColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortOpColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -3973,9 +3582,7 @@ static PyObject *Qd_GetPortOpColor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortHiliteColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortHiliteColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -3990,9 +3597,7 @@ static PyObject *Qd_GetPortHiliteColor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortTextFont(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortTextFont(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -4006,9 +3611,7 @@ static PyObject *Qd_GetPortTextFont(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortTextFace(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortTextFace(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Style _rv;
@@ -4022,9 +3625,7 @@ static PyObject *Qd_GetPortTextFace(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortTextMode(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortTextMode(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -4038,9 +3639,7 @@ static PyObject *Qd_GetPortTextMode(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortTextSize(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortTextSize(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -4054,9 +3653,7 @@ static PyObject *Qd_GetPortTextSize(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortChExtra(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortChExtra(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -4070,9 +3667,7 @@ static PyObject *Qd_GetPortChExtra(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortFracHPenLocation(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortFracHPenLocation(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -4086,9 +3681,7 @@ static PyObject *Qd_GetPortFracHPenLocation(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortSpExtra(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortSpExtra(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Fixed _rv;
@@ -4102,9 +3695,7 @@ static PyObject *Qd_GetPortSpExtra(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortPenVisibility(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortPenVisibility(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -4118,9 +3709,7 @@ static PyObject *Qd_GetPortPenVisibility(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortVisibleRegion(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortVisibleRegion(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
@@ -4137,9 +3726,7 @@ static PyObject *Qd_GetPortVisibleRegion(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortClipRegion(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortClipRegion(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
@@ -4156,9 +3743,7 @@ static PyObject *Qd_GetPortClipRegion(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortBackPixPat(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortBackPixPat(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixPatHandle _rv;
@@ -4175,9 +3760,7 @@ static PyObject *Qd_GetPortBackPixPat(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortPenPixPat(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortPenPixPat(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixPatHandle _rv;
@@ -4194,9 +3777,7 @@ static PyObject *Qd_GetPortPenPixPat(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortFillPixPat(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortFillPixPat(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixPatHandle _rv;
@@ -4213,9 +3794,7 @@ static PyObject *Qd_GetPortFillPixPat(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortPenSize(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortPenSize(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -4231,9 +3810,7 @@ static PyObject *Qd_GetPortPenSize(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortPenMode(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortPenMode(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
@@ -4247,9 +3824,7 @@ static PyObject *Qd_GetPortPenMode(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPortPenLocation(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPortPenLocation(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -4265,9 +3840,7 @@ static PyObject *Qd_GetPortPenLocation(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_IsPortRegionBeingDefined(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_IsPortRegionBeingDefined(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -4281,9 +3854,7 @@ static PyObject *Qd_IsPortRegionBeingDefined(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_IsPortPictureBeingDefined(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_IsPortPictureBeingDefined(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -4299,9 +3870,7 @@ static PyObject *Qd_IsPortPictureBeingDefined(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Qd_IsPortOffscreen(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_IsPortOffscreen(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -4318,9 +3887,7 @@ static PyObject *Qd_IsPortOffscreen(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Qd_IsPortColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_IsPortColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -4335,9 +3902,7 @@ static PyObject *Qd_IsPortColor(_self, _args)
 }
 #endif
 
-static PyObject *Qd_SetPortBounds(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetPortBounds(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -4353,9 +3918,7 @@ static PyObject *Qd_SetPortBounds(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetPortOpColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetPortOpColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -4371,9 +3934,7 @@ static PyObject *Qd_SetPortOpColor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetPortVisibleRegion(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetPortVisibleRegion(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -4389,9 +3950,7 @@ static PyObject *Qd_SetPortVisibleRegion(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetPortClipRegion(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetPortClipRegion(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -4407,9 +3966,7 @@ static PyObject *Qd_SetPortClipRegion(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetPortPenPixPat(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetPortPenPixPat(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -4425,9 +3982,7 @@ static PyObject *Qd_SetPortPenPixPat(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetPortBackPixPat(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetPortBackPixPat(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -4443,9 +3998,7 @@ static PyObject *Qd_SetPortBackPixPat(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetPortPenSize(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetPortPenSize(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -4461,9 +4014,7 @@ static PyObject *Qd_SetPortPenSize(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetPortPenMode(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetPortPenMode(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -4479,9 +4030,7 @@ static PyObject *Qd_SetPortPenMode(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetPortFracHPenLocation(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetPortFracHPenLocation(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -4497,9 +4046,7 @@ static PyObject *Qd_SetPortFracHPenLocation(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPixBounds(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPixBounds(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle pixMap;
@@ -4514,9 +4061,7 @@ static PyObject *Qd_GetPixBounds(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPixDepth(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPixDepth(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -4530,9 +4075,7 @@ static PyObject *Qd_GetPixDepth(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetQDGlobalsRandomSeed(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetQDGlobalsRandomSeed(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -4544,9 +4087,7 @@ static PyObject *Qd_GetQDGlobalsRandomSeed(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetQDGlobalsScreenBits(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetQDGlobalsScreenBits(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	BitMap screenBits;
@@ -4558,9 +4099,7 @@ static PyObject *Qd_GetQDGlobalsScreenBits(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetQDGlobalsArrow(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetQDGlobalsArrow(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Cursor arrow__out__;
@@ -4573,9 +4112,7 @@ static PyObject *Qd_GetQDGlobalsArrow(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetQDGlobalsDarkGray(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetQDGlobalsDarkGray(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Pattern dkGray__out__;
@@ -4588,9 +4125,7 @@ static PyObject *Qd_GetQDGlobalsDarkGray(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetQDGlobalsLightGray(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetQDGlobalsLightGray(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Pattern ltGray__out__;
@@ -4603,9 +4138,7 @@ static PyObject *Qd_GetQDGlobalsLightGray(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetQDGlobalsGray(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetQDGlobalsGray(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Pattern gray__out__;
@@ -4618,9 +4151,7 @@ static PyObject *Qd_GetQDGlobalsGray(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetQDGlobalsBlack(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetQDGlobalsBlack(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Pattern black__out__;
@@ -4633,9 +4164,7 @@ static PyObject *Qd_GetQDGlobalsBlack(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetQDGlobalsWhite(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetQDGlobalsWhite(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Pattern white__out__;
@@ -4648,9 +4177,7 @@ static PyObject *Qd_GetQDGlobalsWhite(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetQDGlobalsThePort(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetQDGlobalsThePort(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr _rv;
@@ -4662,9 +4189,7 @@ static PyObject *Qd_GetQDGlobalsThePort(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetQDGlobalsRandomSeed(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetQDGlobalsRandomSeed(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long randomSeed;
@@ -4677,9 +4202,7 @@ static PyObject *Qd_SetQDGlobalsRandomSeed(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetQDGlobalsArrow(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetQDGlobalsArrow(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Cursor *arrow__in__;
@@ -4699,9 +4222,7 @@ static PyObject *Qd_SetQDGlobalsArrow(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetRegionBounds(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetRegionBounds(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle region;
@@ -4718,9 +4239,7 @@ static PyObject *Qd_GetRegionBounds(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Qd_IsRegionRectangular(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_IsRegionRectangular(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -4737,9 +4256,7 @@ static PyObject *Qd_IsRegionRectangular(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Qd_CreateNewPort(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_CreateNewPort(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr _rv;
@@ -4754,9 +4271,7 @@ static PyObject *Qd_CreateNewPort(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Qd_DisposePort(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_DisposePort(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -4772,9 +4287,7 @@ static PyObject *Qd_DisposePort(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Qd_SetQDError(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetQDError(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr err;
@@ -4788,9 +4301,7 @@ static PyObject *Qd_SetQDError(_self, _args)
 }
 #endif
 
-static PyObject *Qd_QDIsPortBuffered(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_QDIsPortBuffered(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -4804,9 +4315,7 @@ static PyObject *Qd_QDIsPortBuffered(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_QDIsPortBufferDirty(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_QDIsPortBufferDirty(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -4820,9 +4329,7 @@ static PyObject *Qd_QDIsPortBufferDirty(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_QDFlushPortBuffer(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_QDFlushPortBuffer(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -4838,9 +4345,7 @@ static PyObject *Qd_QDFlushPortBuffer(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_TextFont(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_TextFont(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short font;
@@ -4853,9 +4358,7 @@ static PyObject *Qd_TextFont(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_TextFace(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_TextFace(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	StyleParameter face;
@@ -4868,9 +4371,7 @@ static PyObject *Qd_TextFace(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_TextMode(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_TextMode(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short mode;
@@ -4883,9 +4384,7 @@ static PyObject *Qd_TextMode(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_TextSize(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_TextSize(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short size;
@@ -4898,9 +4397,7 @@ static PyObject *Qd_TextSize(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SpaceExtra(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SpaceExtra(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Fixed extra;
@@ -4913,9 +4410,7 @@ static PyObject *Qd_SpaceExtra(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_DrawChar(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_DrawChar(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CharParameter ch;
@@ -4928,9 +4423,7 @@ static PyObject *Qd_DrawChar(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_DrawString(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_DrawString(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Str255 s;
@@ -4943,9 +4436,7 @@ static PyObject *Qd_DrawString(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_MacDrawText(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_MacDrawText(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	char *textBuf__in__;
@@ -4967,9 +4458,7 @@ static PyObject *Qd_MacDrawText(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_CharWidth(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_CharWidth(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -4983,9 +4472,7 @@ static PyObject *Qd_CharWidth(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_StringWidth(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_StringWidth(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -4999,9 +4486,7 @@ static PyObject *Qd_StringWidth(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_TextWidth(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_TextWidth(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -5024,9 +4509,7 @@ static PyObject *Qd_TextWidth(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetFontInfo(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetFontInfo(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	FontInfo info;
@@ -5038,9 +4521,7 @@ static PyObject *Qd_GetFontInfo(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_CharExtra(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_CharExtra(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Fixed extra;
@@ -5053,9 +4534,7 @@ static PyObject *Qd_CharExtra(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetPort(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetPort(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GrafPtr thePort;
@@ -5068,9 +4547,7 @@ static PyObject *Qd_SetPort(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetCursor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetCursor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CursHandle _rv;
@@ -5084,9 +4561,7 @@ static PyObject *Qd_GetCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetCursor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetCursor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Cursor *crsr__in__;
@@ -5106,9 +4581,7 @@ static PyObject *Qd_SetCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_ShowCursor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_ShowCursor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -5119,9 +4592,7 @@ static PyObject *Qd_ShowCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_LineTo(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_LineTo(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short h;
@@ -5137,9 +4608,7 @@ static PyObject *Qd_LineTo(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -5163,9 +4632,7 @@ static PyObject *Qd_SetRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_OffsetRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_OffsetRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -5184,9 +4651,7 @@ static PyObject *Qd_OffsetRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_InsetRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_InsetRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -5205,9 +4670,7 @@ static PyObject *Qd_InsetRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_UnionRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_UnionRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect src1;
@@ -5225,9 +4688,7 @@ static PyObject *Qd_UnionRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_EqualRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_EqualRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -5244,9 +4705,7 @@ static PyObject *Qd_EqualRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FrameRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_FrameRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -5259,9 +4718,7 @@ static PyObject *Qd_FrameRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_InvertRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_InvertRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -5274,9 +4731,7 @@ static PyObject *Qd_InvertRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FillRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_FillRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -5299,9 +4754,7 @@ static PyObject *Qd_FillRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_CopyRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_CopyRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle srcRgn;
@@ -5317,9 +4770,7 @@ static PyObject *Qd_CopyRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetRectRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_SetRectRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -5344,9 +4795,7 @@ static PyObject *Qd_SetRectRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_OffsetRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_OffsetRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -5365,9 +4814,7 @@ static PyObject *Qd_OffsetRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_UnionRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_UnionRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle srcRgnA;
@@ -5386,9 +4833,7 @@ static PyObject *Qd_UnionRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_XorRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_XorRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle srcRgnA;
@@ -5407,9 +4852,7 @@ static PyObject *Qd_XorRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_EqualRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_EqualRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -5426,9 +4869,7 @@ static PyObject *Qd_EqualRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FrameRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_FrameRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -5441,9 +4882,7 @@ static PyObject *Qd_FrameRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_PaintRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_PaintRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -5456,9 +4895,7 @@ static PyObject *Qd_PaintRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_InvertRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_InvertRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -5471,9 +4908,7 @@ static PyObject *Qd_InvertRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FillRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_FillRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle rgn;
@@ -5496,9 +4931,7 @@ static PyObject *Qd_FillRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPixel(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_GetPixel(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -5515,9 +4948,7 @@ static PyObject *Qd_GetPixel(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_PtInRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_PtInRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -5534,9 +4965,7 @@ static PyObject *Qd_PtInRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_DrawText(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_DrawText(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	char *textBuf__in__;
@@ -5558,9 +4987,7 @@ static PyObject *Qd_DrawText(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_BitMap(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_BitMap(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -5590,9 +5017,7 @@ static PyObject *Qd_BitMap(_self, _args)
 
 }
 
-static PyObject *Qd_RawBitMap(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qd_RawBitMap(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -6198,8 +5623,7 @@ static PyMethodDef Qd_methods[] = {
 /* Like BMObj_New, but the original bitmap data structure is copied (and
 ** released when the object is released)
 */
-PyObject *BMObj_NewCopied(itself)
-	BitMapPtr itself;
+PyObject *BMObj_NewCopied(BitMapPtr itself)
 {
 	BitMapObject *it;
 	BitMapPtr itself_copy;
@@ -6214,19 +5638,19 @@ PyObject *BMObj_NewCopied(itself)
 
 
 
-void initQd()
+void initQd(void)
 {
 	PyObject *m;
 	PyObject *d;
 
 
 
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(BMObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(BMObj_Convert);
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(GrafObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(GrafObj_Convert);
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(QdRGB_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(QdRGB_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(BitMapPtr, BMObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(BitMapPtr, BMObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(GrafPtr, GrafObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(GrafPtr, GrafObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(RGBColorPtr, QdRGB_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(RGBColorPtr, QdRGB_Convert);
 
 
 	m = Py_InitModule("Qd", Qd_methods);

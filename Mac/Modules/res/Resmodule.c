@@ -8,8 +8,12 @@
 #include "macglue.h"
 #include "pymactoolbox.h"
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <Resources.h>
 #include <string.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_ResObj_New(Handle);
@@ -43,8 +47,7 @@ typedef struct ResourceObject {
 	void (*ob_freeit)(Handle ptr);
 } ResourceObject;
 
-PyObject *ResObj_New(itself)
-	Handle itself;
+PyObject *ResObj_New(Handle itself)
 {
 	ResourceObject *it;
 	if (itself == NULL) return PyMac_Error(resNotFound);
@@ -54,9 +57,7 @@ PyObject *ResObj_New(itself)
 	it->ob_freeit = NULL;
 	return (PyObject *)it;
 }
-ResObj_Convert(v, p_itself)
-	PyObject *v;
-	Handle *p_itself;
+ResObj_Convert(PyObject *v, Handle *p_itself)
 {
 	if (!ResObj_Check(v))
 	{
@@ -78,8 +79,7 @@ ResObj_Convert(v, p_itself)
 	return 1;
 }
 
-static void ResObj_dealloc(self)
-	ResourceObject *self;
+static void ResObj_dealloc(ResourceObject *self)
 {
 	if (self->ob_freeit && self->ob_itself)
 	{
@@ -89,9 +89,7 @@ static void ResObj_dealloc(self)
 	PyMem_DEL(self);
 }
 
-static PyObject *ResObj_HomeResFile(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_HomeResFile(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -107,9 +105,7 @@ static PyObject *ResObj_HomeResFile(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_MacLoadResource(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_MacLoadResource(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -124,9 +120,7 @@ static PyObject *ResObj_MacLoadResource(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_ReleaseResource(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_ReleaseResource(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -141,9 +135,7 @@ static PyObject *ResObj_ReleaseResource(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_DetachResource(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_DetachResource(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -158,9 +150,7 @@ static PyObject *ResObj_DetachResource(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_GetResAttrs(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_GetResAttrs(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -176,9 +166,7 @@ static PyObject *ResObj_GetResAttrs(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_GetResInfo(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_GetResInfo(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short theID;
@@ -201,9 +189,7 @@ static PyObject *ResObj_GetResInfo(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_SetResInfo(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_SetResInfo(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short theID;
@@ -224,9 +210,7 @@ static PyObject *ResObj_SetResInfo(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_AddResource(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_AddResource(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ResType theType;
@@ -250,9 +234,7 @@ static PyObject *ResObj_AddResource(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_GetResourceSizeOnDisk(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_GetResourceSizeOnDisk(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -268,9 +250,7 @@ static PyObject *ResObj_GetResourceSizeOnDisk(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_GetMaxResourceSize(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_GetMaxResourceSize(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -286,11 +266,9 @@ static PyObject *ResObj_GetMaxResourceSize(_self, _args)
 	return _res;
 }
 
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 
-static PyObject *ResObj_RsrcMapEntry(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_RsrcMapEntry(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -307,9 +285,7 @@ static PyObject *ResObj_RsrcMapEntry(_self, _args)
 }
 #endif
 
-static PyObject *ResObj_SetResAttrs(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_SetResAttrs(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short attrs;
@@ -327,9 +303,7 @@ static PyObject *ResObj_SetResAttrs(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_ChangedResource(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_ChangedResource(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -344,9 +318,7 @@ static PyObject *ResObj_ChangedResource(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_RemoveResource(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_RemoveResource(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -361,9 +333,7 @@ static PyObject *ResObj_RemoveResource(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_WriteResource(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_WriteResource(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -378,9 +348,7 @@ static PyObject *ResObj_WriteResource(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_SetResourceSize(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_SetResourceSize(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long newSize;
@@ -398,9 +366,7 @@ static PyObject *ResObj_SetResourceSize(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_GetNextFOND(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_GetNextFOND(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle _rv;
@@ -416,9 +382,7 @@ static PyObject *ResObj_GetNextFOND(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_as_Control(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_as_Control(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -426,9 +390,7 @@ static PyObject *ResObj_as_Control(_self, _args)
 
 }
 
-static PyObject *ResObj_as_Menu(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_as_Menu(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -436,9 +398,7 @@ static PyObject *ResObj_as_Menu(_self, _args)
 
 }
 
-static PyObject *ResObj_LoadResource(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_LoadResource(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -453,9 +413,7 @@ static PyObject *ResObj_LoadResource(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_AutoDispose(_self, _args)
-	ResourceObject *_self;
-	PyObject *_args;
+static PyObject *ResObj_AutoDispose(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -494,7 +452,7 @@ static PyMethodDef ResObj_methods[] = {
 	{"GetMaxResourceSize", (PyCFunction)ResObj_GetMaxResourceSize, 1,
 	 "() -> (long _rv)"},
 
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 	{"RsrcMapEntry", (PyCFunction)ResObj_RsrcMapEntry, 1,
 	 "() -> (long _rv)"},
 #endif
@@ -523,9 +481,7 @@ static PyMethodDef ResObj_methods[] = {
 
 PyMethodChain ResObj_chain = { ResObj_methods, NULL };
 
-static PyObject *ResObj_getattr(self, name)
-	ResourceObject *self;
-	char *name;
+static PyObject *ResObj_getattr(ResourceObject *self, char *name)
 {
 
 	if (strcmp(name, "size") == 0)
@@ -549,10 +505,7 @@ static PyObject *ResObj_getattr(self, name)
 }
 
 static int
-ResObj_setattr(self, name, value)
-	ResourceObject *self;
-	char *name;
-	PyObject *value;
+ResObj_setattr(ResourceObject *self, char *name, PyObject *value)
 {
 	char *data;
 	long size;
@@ -603,11 +556,9 @@ PyTypeObject Resource_Type = {
 /* -------------------- End object type Resource -------------------- */
 
 
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 
-static PyObject *Res_InitResources(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_InitResources(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -624,11 +575,9 @@ static PyObject *Res_InitResources(_self, _args)
 }
 #endif
 
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 
-static PyObject *Res_RsrcZoneInit(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_RsrcZoneInit(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -644,9 +593,7 @@ static PyObject *Res_RsrcZoneInit(_self, _args)
 }
 #endif
 
-static PyObject *Res_CloseResFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_CloseResFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short refNum;
@@ -663,9 +610,7 @@ static PyObject *Res_CloseResFile(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_ResError(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_ResError(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _rv;
@@ -681,9 +626,7 @@ static PyObject *Res_ResError(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_CurResFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_CurResFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -699,11 +642,9 @@ static PyObject *Res_CurResFile(_self, _args)
 	return _res;
 }
 
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 
-static PyObject *Res_CreateResFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_CreateResFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Str255 fileName;
@@ -721,11 +662,9 @@ static PyObject *Res_CreateResFile(_self, _args)
 }
 #endif
 
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 
-static PyObject *Res_OpenResFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_OpenResFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -744,9 +683,7 @@ static PyObject *Res_OpenResFile(_self, _args)
 }
 #endif
 
-static PyObject *Res_UseResFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_UseResFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short refNum;
@@ -763,9 +700,7 @@ static PyObject *Res_UseResFile(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_CountTypes(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_CountTypes(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -781,9 +716,7 @@ static PyObject *Res_CountTypes(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_Count1Types(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_Count1Types(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -799,9 +732,7 @@ static PyObject *Res_Count1Types(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_GetIndType(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_GetIndType(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ResType theType;
@@ -820,9 +751,7 @@ static PyObject *Res_GetIndType(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_Get1IndType(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_Get1IndType(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ResType theType;
@@ -841,9 +770,7 @@ static PyObject *Res_Get1IndType(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_SetResLoad(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_SetResLoad(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean load;
@@ -860,9 +787,7 @@ static PyObject *Res_SetResLoad(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_CountResources(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_CountResources(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -880,9 +805,7 @@ static PyObject *Res_CountResources(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_Count1Resources(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_Count1Resources(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -900,9 +823,7 @@ static PyObject *Res_Count1Resources(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_GetIndResource(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_GetIndResource(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle _rv;
@@ -923,9 +844,7 @@ static PyObject *Res_GetIndResource(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_Get1IndResource(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_Get1IndResource(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle _rv;
@@ -946,9 +865,7 @@ static PyObject *Res_Get1IndResource(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_GetResource(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_GetResource(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle _rv;
@@ -969,9 +886,7 @@ static PyObject *Res_GetResource(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_Get1Resource(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_Get1Resource(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle _rv;
@@ -992,9 +907,7 @@ static PyObject *Res_Get1Resource(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_GetNamedResource(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_GetNamedResource(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle _rv;
@@ -1015,9 +928,7 @@ static PyObject *Res_GetNamedResource(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_Get1NamedResource(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_Get1NamedResource(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle _rv;
@@ -1038,9 +949,7 @@ static PyObject *Res_Get1NamedResource(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_UniqueID(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_UniqueID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -1058,9 +967,7 @@ static PyObject *Res_UniqueID(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_Unique1ID(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_Unique1ID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -1078,9 +985,7 @@ static PyObject *Res_Unique1ID(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_UpdateResFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_UpdateResFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short refNum;
@@ -1097,9 +1002,7 @@ static PyObject *Res_UpdateResFile(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_SetResPurge(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_SetResPurge(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean install;
@@ -1116,9 +1019,7 @@ static PyObject *Res_SetResPurge(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_GetResFileAttrs(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_GetResFileAttrs(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -1136,9 +1037,7 @@ static PyObject *Res_GetResFileAttrs(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_SetResFileAttrs(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_SetResFileAttrs(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short refNum;
@@ -1158,9 +1057,7 @@ static PyObject *Res_SetResFileAttrs(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_OpenRFPerm(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_OpenRFPerm(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -1184,11 +1081,9 @@ static PyObject *Res_OpenRFPerm(_self, _args)
 	return _res;
 }
 
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 
-static PyObject *Res_RGetResource(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_RGetResource(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle _rv;
@@ -1210,9 +1105,7 @@ static PyObject *Res_RGetResource(_self, _args)
 }
 #endif
 
-static PyObject *Res_HOpenResFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_HOpenResFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -1239,9 +1132,7 @@ static PyObject *Res_HOpenResFile(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_HCreateResFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_HCreateResFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short vRefNum;
@@ -1264,9 +1155,7 @@ static PyObject *Res_HCreateResFile(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_FSpOpenResFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_FSpOpenResFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -1287,9 +1176,7 @@ static PyObject *Res_FSpOpenResFile(_self, _args)
 	return _res;
 }
 
-static PyObject *Res_FSpCreateResFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_FSpCreateResFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	FSSpec spec;
@@ -1317,9 +1204,7 @@ static PyObject *Res_FSpCreateResFile(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Res_InsertResourceFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_InsertResourceFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _rv;
@@ -1343,9 +1228,7 @@ static PyObject *Res_InsertResourceFile(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Res_DetachResourceFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_DetachResourceFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _rv;
@@ -1366,9 +1249,7 @@ static PyObject *Res_DetachResourceFile(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Res_FSpResourceFileAlreadyOpen(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_FSpResourceFileAlreadyOpen(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -1395,9 +1276,7 @@ static PyObject *Res_FSpResourceFileAlreadyOpen(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Res_FSpOpenOrphanResFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_FSpOpenOrphanResFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _rv;
@@ -1424,9 +1303,7 @@ static PyObject *Res_FSpOpenOrphanResFile(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Res_GetTopResourceFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_GetTopResourceFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _rv;
@@ -1447,9 +1324,7 @@ static PyObject *Res_GetTopResourceFile(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Res_GetNextResourceFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_GetNextResourceFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _rv;
@@ -1471,9 +1346,7 @@ static PyObject *Res_GetNextResourceFile(_self, _args)
 }
 #endif
 
-static PyObject *Res_Resource(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_Resource(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -1495,9 +1368,7 @@ static PyObject *Res_Resource(_self, _args)
 
 }
 
-static PyObject *Res_Handle(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Res_Handle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -1524,12 +1395,12 @@ static PyObject *Res_Handle(_self, _args)
 
 static PyMethodDef Res_methods[] = {
 
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 	{"InitResources", (PyCFunction)Res_InitResources, 1,
 	 "() -> (short _rv)"},
 #endif
 
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 	{"RsrcZoneInit", (PyCFunction)Res_RsrcZoneInit, 1,
 	 "() -> None"},
 #endif
@@ -1540,12 +1411,12 @@ static PyMethodDef Res_methods[] = {
 	{"CurResFile", (PyCFunction)Res_CurResFile, 1,
 	 "() -> (short _rv)"},
 
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 	{"CreateResFile", (PyCFunction)Res_CreateResFile, 1,
 	 "(Str255 fileName) -> None"},
 #endif
 
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 	{"OpenResFile", (PyCFunction)Res_OpenResFile, 1,
 	 "(Str255 fileName) -> (short _rv)"},
 #endif
@@ -1592,7 +1463,7 @@ static PyMethodDef Res_methods[] = {
 	{"OpenRFPerm", (PyCFunction)Res_OpenRFPerm, 1,
 	 "(Str255 fileName, short vRefNum, SignedByte permission) -> (short _rv)"},
 
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 	{"RGetResource", (PyCFunction)Res_RGetResource, 1,
 	 "(ResType theType, short theID) -> (Handle _rv)"},
 #endif
@@ -1645,8 +1516,7 @@ static PyMethodDef Res_methods[] = {
 
 
 /* Alternative version of ResObj_New, which returns None for null argument */
-PyObject *OptResObj_New(itself)
-	Handle itself;
+PyObject *OptResObj_New(Handle itself)
 {
 	if (itself == NULL) {
 		Py_INCREF(Py_None);
@@ -1655,9 +1525,7 @@ PyObject *OptResObj_New(itself)
 	return ResObj_New(itself);
 }
 
-OptResObj_Convert(v, p_itself)
-	PyObject *v;
-	Handle *p_itself;
+OptResObj_Convert(PyObject *v, Handle *p_itself)
 {
 	PyObject *tmp;
 	
@@ -1682,17 +1550,17 @@ OptResObj_Convert(v, p_itself)
 }
 
 
-void initRes()
+void initRes(void)
 {
 	PyObject *m;
 	PyObject *d;
 
 
 
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(ResObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ResObj_Convert);
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(OptResObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(OptResObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(Handle, ResObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Handle, ResObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(Handle, OptResObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Handle, OptResObj_Convert);
 
 
 	m = Py_InitModule("Res", Res_methods);

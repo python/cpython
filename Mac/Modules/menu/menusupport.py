@@ -36,8 +36,13 @@ FMFontFamily = Type("FMFontFamily", "h")
 FMFontStyle = Type("FMFontStyle", "h")
 
 includestuff = includestuff + """
+#ifdef WITHOUT_FRAMEWORKS
 #include <Devices.h> /* Defines OpenDeskAcc in universal headers */
-#include <%s>""" % MACHEADERFILE + """
+#include <Menus.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
+
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 
@@ -63,8 +68,8 @@ extern int _MenuObj_Convert(PyObject *, MenuHandle *);
 """
 
 initstuff = initstuff + """
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(MenuObj_New);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MenuObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(MenuHandle, MenuObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MenuHandle, MenuObj_Convert);
 """
 
 class MyObjectDefinition(GlobalObjectDefinition):

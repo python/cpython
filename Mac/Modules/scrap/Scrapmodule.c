@@ -8,7 +8,11 @@
 #include "macglue.h"
 #include "pymactoolbox.h"
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <Scrap.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 
 /*
 ** Generate ScrapInfo records

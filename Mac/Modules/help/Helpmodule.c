@@ -12,9 +12,7 @@
 
 static PyObject *Help_Error;
 
-static PyObject *Help_HMGetHelpMenuHandle(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Help_HMGetHelpMenuHandle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -28,9 +26,7 @@ static PyObject *Help_HMGetHelpMenuHandle(_self, _args)
 	return _res;
 }
 
-static PyObject *Help_HMRemoveBalloon(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Help_HMRemoveBalloon(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -43,9 +39,7 @@ static PyObject *Help_HMRemoveBalloon(_self, _args)
 	return _res;
 }
 
-static PyObject *Help_HMIsBalloon(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Help_HMIsBalloon(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -57,9 +51,7 @@ static PyObject *Help_HMIsBalloon(_self, _args)
 	return _res;
 }
 
-static PyObject *Help_HMGetBalloons(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Help_HMGetBalloons(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -71,9 +63,7 @@ static PyObject *Help_HMGetBalloons(_self, _args)
 	return _res;
 }
 
-static PyObject *Help_HMSetBalloons(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Help_HMSetBalloons(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -88,9 +78,7 @@ static PyObject *Help_HMSetBalloons(_self, _args)
 	return _res;
 }
 
-static PyObject *Help_HMSetFont(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Help_HMSetFont(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -105,9 +93,7 @@ static PyObject *Help_HMSetFont(_self, _args)
 	return _res;
 }
 
-static PyObject *Help_HMSetFontSize(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Help_HMSetFontSize(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -122,9 +108,7 @@ static PyObject *Help_HMSetFontSize(_self, _args)
 	return _res;
 }
 
-static PyObject *Help_HMGetFont(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Help_HMGetFont(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -138,9 +122,7 @@ static PyObject *Help_HMGetFont(_self, _args)
 	return _res;
 }
 
-static PyObject *Help_HMGetFontSize(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Help_HMGetFontSize(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -154,9 +136,7 @@ static PyObject *Help_HMGetFontSize(_self, _args)
 	return _res;
 }
 
-static PyObject *Help_HMSetDialogResID(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Help_HMSetDialogResID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -171,9 +151,7 @@ static PyObject *Help_HMSetDialogResID(_self, _args)
 	return _res;
 }
 
-static PyObject *Help_HMSetMenuResID(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Help_HMSetMenuResID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -191,9 +169,7 @@ static PyObject *Help_HMSetMenuResID(_self, _args)
 	return _res;
 }
 
-static PyObject *Help_HMScanTemplateItems(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Help_HMScanTemplateItems(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -214,9 +190,7 @@ static PyObject *Help_HMScanTemplateItems(_self, _args)
 	return _res;
 }
 
-static PyObject *Help_HMGetDialogResID(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Help_HMGetDialogResID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -230,9 +204,7 @@ static PyObject *Help_HMGetDialogResID(_self, _args)
 	return _res;
 }
 
-static PyObject *Help_HMGetMenuResID(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Help_HMGetMenuResID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -249,9 +221,7 @@ static PyObject *Help_HMGetMenuResID(_self, _args)
 	return _res;
 }
 
-static PyObject *Help_HMGetBalloonWindow(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Help_HMGetBalloonWindow(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -302,7 +272,7 @@ static PyMethodDef Help_methods[] = {
 
 
 
-void initHelp()
+void initHelp(void)
 {
 	PyObject *m;
 	PyObject *d;

@@ -19,14 +19,18 @@ from macsupport import *
 # Create the type objects
 
 includestuff = includestuff + """
-#include <%s>""" % MACHEADERFILE + """
+#ifdef WITHOUT_FRAMEWORKS
+#include <Fonts.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
+
 
 /*
 ** Parse/generate ComponentDescriptor records
 */
 static PyObject *
-FMRec_New(itself)
-	FMetricRec *itself;
+FMRec_New(FMetricRec *itself)
 {
 
 	return Py_BuildValue("O&O&O&O&O&", 
@@ -40,9 +44,7 @@ FMRec_New(itself)
 #if 0
 /* Not needed... */
 static int
-FMRec_Convert(v, p_itself)
-	PyObject *v;
-	FMetricRec *p_itself;
+FMRec_Convert(PyObject *v, FMetricRec *p_itself)
 {
 	return PyArg_ParseTuple(v, "O&O&O&O&O&",
 		PyMac_GetFixed, &itself->ascent,

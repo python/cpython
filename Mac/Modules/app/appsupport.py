@@ -69,7 +69,12 @@ ThemeMetric = Type("ThemeMetric", "l")
 RGBColor = OpaqueType("RGBColor", "QdRGB")
 
 includestuff = includestuff + """
-#include <%s>""" % MACHEADERFILE + """
+#ifdef WITHOUT_FRAMEWORKS
+#include <Appearance.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
+
 """
 
 ## class MyObjectDefinition(GlobalObjectDefinition):

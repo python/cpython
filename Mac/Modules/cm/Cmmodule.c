@@ -8,7 +8,12 @@
 #include "macglue.h"
 #include "pymactoolbox.h"
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <Components.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
+
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_CmpObj_New(Component);
 extern int _CmpObj_Convert(PyObject *, Component *);
@@ -25,8 +30,7 @@ extern int _CmpInstObj_Convert(PyObject *, ComponentInstance *);
 ** Parse/generate ComponentDescriptor records
 */
 static PyObject *
-CmpDesc_New(itself)
-	ComponentDescription *itself;
+CmpDesc_New(ComponentDescription *itself)
 {
 
 	return Py_BuildValue("O&O&O&ll", 
@@ -37,9 +41,7 @@ CmpDesc_New(itself)
 }
 
 static int
-CmpDesc_Convert(v, p_itself)
-	PyObject *v;
-	ComponentDescription *p_itself;
+CmpDesc_Convert(PyObject *v, ComponentDescription *p_itself)
 {
 	return PyArg_ParseTuple(v, "O&O&O&ll",
 		PyMac_GetOSType, &p_itself->componentType,
@@ -62,8 +64,7 @@ typedef struct ComponentInstanceObject {
 	ComponentInstance ob_itself;
 } ComponentInstanceObject;
 
-PyObject *CmpInstObj_New(itself)
-	ComponentInstance itself;
+PyObject *CmpInstObj_New(ComponentInstance itself)
 {
 	ComponentInstanceObject *it;
 	if (itself == NULL) {
@@ -75,9 +76,7 @@ PyObject *CmpInstObj_New(itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-CmpInstObj_Convert(v, p_itself)
-	PyObject *v;
-	ComponentInstance *p_itself;
+CmpInstObj_Convert(PyObject *v, ComponentInstance *p_itself)
 {
 	if (!CmpInstObj_Check(v))
 	{
@@ -88,16 +87,13 @@ CmpInstObj_Convert(v, p_itself)
 	return 1;
 }
 
-static void CmpInstObj_dealloc(self)
-	ComponentInstanceObject *self;
+static void CmpInstObj_dealloc(ComponentInstanceObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
 	PyMem_DEL(self);
 }
 
-static PyObject *CmpInstObj_CloseComponent(_self, _args)
-	ComponentInstanceObject *_self;
-	PyObject *_args;
+static PyObject *CmpInstObj_CloseComponent(ComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -110,9 +106,7 @@ static PyObject *CmpInstObj_CloseComponent(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpInstObj_GetComponentInstanceError(_self, _args)
-	ComponentInstanceObject *_self;
-	PyObject *_args;
+static PyObject *CmpInstObj_GetComponentInstanceError(ComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -125,9 +119,7 @@ static PyObject *CmpInstObj_GetComponentInstanceError(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpInstObj_SetComponentInstanceError(_self, _args)
-	ComponentInstanceObject *_self;
-	PyObject *_args;
+static PyObject *CmpInstObj_SetComponentInstanceError(ComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr theError;
@@ -141,9 +133,7 @@ static PyObject *CmpInstObj_SetComponentInstanceError(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpInstObj_GetComponentInstanceStorage(_self, _args)
-	ComponentInstanceObject *_self;
-	PyObject *_args;
+static PyObject *CmpInstObj_GetComponentInstanceStorage(ComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle _rv;
@@ -155,9 +145,7 @@ static PyObject *CmpInstObj_GetComponentInstanceStorage(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpInstObj_SetComponentInstanceStorage(_self, _args)
-	ComponentInstanceObject *_self;
-	PyObject *_args;
+static PyObject *CmpInstObj_SetComponentInstanceStorage(ComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle theStorage;
@@ -173,9 +161,7 @@ static PyObject *CmpInstObj_SetComponentInstanceStorage(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *CmpInstObj_GetComponentInstanceA5(_self, _args)
-	ComponentInstanceObject *_self;
-	PyObject *_args;
+static PyObject *CmpInstObj_GetComponentInstanceA5(ComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -190,9 +176,7 @@ static PyObject *CmpInstObj_GetComponentInstanceA5(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *CmpInstObj_SetComponentInstanceA5(_self, _args)
-	ComponentInstanceObject *_self;
-	PyObject *_args;
+static PyObject *CmpInstObj_SetComponentInstanceA5(ComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long theA5;
@@ -207,9 +191,7 @@ static PyObject *CmpInstObj_SetComponentInstanceA5(_self, _args)
 }
 #endif
 
-static PyObject *CmpInstObj_ComponentFunctionImplemented(_self, _args)
-	ComponentInstanceObject *_self;
-	PyObject *_args;
+static PyObject *CmpInstObj_ComponentFunctionImplemented(ComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -224,9 +206,7 @@ static PyObject *CmpInstObj_ComponentFunctionImplemented(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpInstObj_GetComponentVersion(_self, _args)
-	ComponentInstanceObject *_self;
-	PyObject *_args;
+static PyObject *CmpInstObj_GetComponentVersion(ComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -238,9 +218,7 @@ static PyObject *CmpInstObj_GetComponentVersion(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpInstObj_ComponentSetTarget(_self, _args)
-	ComponentInstanceObject *_self;
-	PyObject *_args;
+static PyObject *CmpInstObj_ComponentSetTarget(ComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -287,9 +265,7 @@ static PyMethodDef CmpInstObj_methods[] = {
 
 PyMethodChain CmpInstObj_chain = { CmpInstObj_methods, NULL };
 
-static PyObject *CmpInstObj_getattr(self, name)
-	ComponentInstanceObject *self;
-	char *name;
+static PyObject *CmpInstObj_getattr(ComponentInstanceObject *self, char *name)
 {
 	return Py_FindMethodInChain(&CmpInstObj_chain, (PyObject *)self, name);
 }
@@ -335,8 +311,7 @@ typedef struct ComponentObject {
 	Component ob_itself;
 } ComponentObject;
 
-PyObject *CmpObj_New(itself)
-	Component itself;
+PyObject *CmpObj_New(Component itself)
 {
 	ComponentObject *it;
 	if (itself == NULL) {
@@ -349,9 +324,7 @@ PyObject *CmpObj_New(itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-CmpObj_Convert(v, p_itself)
-	PyObject *v;
-	Component *p_itself;
+CmpObj_Convert(PyObject *v, Component *p_itself)
 {
 	if ( v == Py_None ) {
 						*p_itself = 0;
@@ -366,16 +339,13 @@ CmpObj_Convert(v, p_itself)
 	return 1;
 }
 
-static void CmpObj_dealloc(self)
-	ComponentObject *self;
+static void CmpObj_dealloc(ComponentObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
 	PyMem_DEL(self);
 }
 
-static PyObject *CmpObj_UnregisterComponent(_self, _args)
-	ComponentObject *_self;
-	PyObject *_args;
+static PyObject *CmpObj_UnregisterComponent(ComponentObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -388,9 +358,7 @@ static PyObject *CmpObj_UnregisterComponent(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpObj_GetComponentInfo(_self, _args)
-	ComponentObject *_self;
-	PyObject *_args;
+static PyObject *CmpObj_GetComponentInfo(ComponentObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -414,9 +382,7 @@ static PyObject *CmpObj_GetComponentInfo(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpObj_OpenComponent(_self, _args)
-	ComponentObject *_self;
-	PyObject *_args;
+static PyObject *CmpObj_OpenComponent(ComponentObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentInstance _rv;
@@ -428,9 +394,7 @@ static PyObject *CmpObj_OpenComponent(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpObj_GetComponentRefcon(_self, _args)
-	ComponentObject *_self;
-	PyObject *_args;
+static PyObject *CmpObj_GetComponentRefcon(ComponentObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -442,9 +406,7 @@ static PyObject *CmpObj_GetComponentRefcon(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpObj_SetComponentRefcon(_self, _args)
-	ComponentObject *_self;
-	PyObject *_args;
+static PyObject *CmpObj_SetComponentRefcon(ComponentObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long theRefcon;
@@ -458,9 +420,7 @@ static PyObject *CmpObj_SetComponentRefcon(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpObj_OpenComponentResFile(_self, _args)
-	ComponentObject *_self;
-	PyObject *_args;
+static PyObject *CmpObj_OpenComponentResFile(ComponentObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -472,9 +432,7 @@ static PyObject *CmpObj_OpenComponentResFile(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpObj_GetComponentResource(_self, _args)
-	ComponentObject *_self;
-	PyObject *_args;
+static PyObject *CmpObj_GetComponentResource(ComponentObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -495,9 +453,7 @@ static PyObject *CmpObj_GetComponentResource(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpObj_GetComponentIndString(_self, _args)
-	ComponentObject *_self;
-	PyObject *_args;
+static PyObject *CmpObj_GetComponentIndString(ComponentObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -519,9 +475,7 @@ static PyObject *CmpObj_GetComponentIndString(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpObj_ResolveComponentAlias(_self, _args)
-	ComponentObject *_self;
-	PyObject *_args;
+static PyObject *CmpObj_ResolveComponentAlias(ComponentObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Component _rv;
@@ -533,9 +487,7 @@ static PyObject *CmpObj_ResolveComponentAlias(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpObj_CountComponentInstances(_self, _args)
-	ComponentObject *_self;
-	PyObject *_args;
+static PyObject *CmpObj_CountComponentInstances(ComponentObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -547,9 +499,7 @@ static PyObject *CmpObj_CountComponentInstances(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpObj_SetDefaultComponent(_self, _args)
-	ComponentObject *_self;
-	PyObject *_args;
+static PyObject *CmpObj_SetDefaultComponent(ComponentObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -565,9 +515,7 @@ static PyObject *CmpObj_SetDefaultComponent(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpObj_CaptureComponent(_self, _args)
-	ComponentObject *_self;
-	PyObject *_args;
+static PyObject *CmpObj_CaptureComponent(ComponentObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Component _rv;
@@ -582,9 +530,7 @@ static PyObject *CmpObj_CaptureComponent(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpObj_UncaptureComponent(_self, _args)
-	ComponentObject *_self;
-	PyObject *_args;
+static PyObject *CmpObj_UncaptureComponent(ComponentObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -597,9 +543,7 @@ static PyObject *CmpObj_UncaptureComponent(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpObj_GetComponentIconSuite(_self, _args)
-	ComponentObject *_self;
-	PyObject *_args;
+static PyObject *CmpObj_GetComponentIconSuite(ComponentObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -648,9 +592,7 @@ static PyMethodDef CmpObj_methods[] = {
 
 PyMethodChain CmpObj_chain = { CmpObj_methods, NULL };
 
-static PyObject *CmpObj_getattr(self, name)
-	ComponentObject *self;
-	char *name;
+static PyObject *CmpObj_getattr(ComponentObject *self, char *name)
 {
 	return Py_FindMethodInChain(&CmpObj_chain, (PyObject *)self, name);
 }
@@ -685,9 +627,7 @@ PyTypeObject Component_Type = {
 /* ------------------- End object type Component -------------------- */
 
 
-static PyObject *Cm_RegisterComponentResource(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Cm_RegisterComponentResource(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Component _rv;
@@ -704,9 +644,7 @@ static PyObject *Cm_RegisterComponentResource(_self, _args)
 	return _res;
 }
 
-static PyObject *Cm_FindNextComponent(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Cm_FindNextComponent(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Component _rv;
@@ -723,9 +661,7 @@ static PyObject *Cm_FindNextComponent(_self, _args)
 	return _res;
 }
 
-static PyObject *Cm_CountComponents(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Cm_CountComponents(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -739,9 +675,7 @@ static PyObject *Cm_CountComponents(_self, _args)
 	return _res;
 }
 
-static PyObject *Cm_GetComponentListModSeed(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Cm_GetComponentListModSeed(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -753,9 +687,7 @@ static PyObject *Cm_GetComponentListModSeed(_self, _args)
 	return _res;
 }
 
-static PyObject *Cm_CloseComponentResFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Cm_CloseComponentResFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -770,9 +702,7 @@ static PyObject *Cm_CloseComponentResFile(_self, _args)
 	return _res;
 }
 
-static PyObject *Cm_OpenDefaultComponent(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Cm_OpenDefaultComponent(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentInstance _rv;
@@ -789,9 +719,7 @@ static PyObject *Cm_OpenDefaultComponent(_self, _args)
 	return _res;
 }
 
-static PyObject *Cm_RegisterComponentResourceFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Cm_RegisterComponentResourceFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -829,17 +757,17 @@ static PyMethodDef Cm_methods[] = {
 
 
 
-void initCm()
+void initCm(void)
 {
 	PyObject *m;
 	PyObject *d;
 
 
 
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(CmpObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CmpObj_Convert);
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(CmpInstObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CmpInstObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(Component, CmpObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Component, CmpObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(ComponentInstance, CmpInstObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ComponentInstance, CmpInstObj_Convert);
 
 
 	m = Py_InitModule("Cm", Cm_methods);

@@ -24,7 +24,13 @@ from macsupport import *
 # Create the type objects
 
 includestuff = includestuff + """
-#include <%s>""" % MACHEADERFILE + """
+#ifdef WITHOUT_FRAMEWORKS
+#include <Movies.h>
+#else
+/* #include <Carbon/Carbon.h> */
+#include <QuickTime/QuickTime.h>
+#endif
+
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_TrackObj_New(Track);
@@ -62,8 +68,7 @@ extern int _MediaObj_Convert(PyObject *, Media *);
 ** Parse/generate time records
 */
 static PyObject *
-QtTimeRecord_New(itself)
-	TimeRecord *itself;
+QtTimeRecord_New(TimeRecord *itself)
 {
 	if (itself->base)
 		return Py_BuildValue("O&lO&", PyMac_Buildwide, &itself->value, itself->scale, 
@@ -74,9 +79,7 @@ QtTimeRecord_New(itself)
 }
 
 static int
-QtTimeRecord_Convert(v, p_itself)
-	PyObject *v;
-	TimeRecord *p_itself;
+QtTimeRecord_Convert(PyObject *v, TimeRecord *p_itself)
 {
 	PyObject *base = NULL;
 	if( !PyArg_ParseTuple(v, "O&l|O", PyMac_Getwide, &p_itself->value, &p_itself->scale,
@@ -95,18 +98,18 @@ QtTimeRecord_Convert(v, p_itself)
 """
 
 initstuff = initstuff + """
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(TrackObj_New);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(TrackObj_Convert);
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(MovieObj_New);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MovieObj_Convert);
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(MovieCtlObj_New);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MovieCtlObj_Convert);
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(TimeBaseObj_New);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(TimeBaseObj_Convert);
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(UserDataObj_New);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(UserDataObj_Convert);
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(MediaObj_New);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MediaObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(Track, TrackObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Track, TrackObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(Movie, MovieObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Movie, MovieObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(MovieController, MovieCtlObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MovieController, MovieCtlObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(TimeBase, TimeBaseObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(TimeBase, TimeBaseObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(UserData, UserDataObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(UserData, UserDataObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(Media, MediaObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Media, MediaObj_Convert);
 """
 
 # Our (opaque) objects

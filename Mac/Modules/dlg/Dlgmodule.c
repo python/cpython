@@ -8,7 +8,12 @@
 #include "macglue.h"
 #include "pymactoolbox.h"
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <Dialogs.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
+
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_DlgObj_New(DialogRef);
 extern PyObject *_DlgObj_WhichDialog(DialogRef);
@@ -135,8 +140,7 @@ typedef struct DialogObject {
 	DialogPtr ob_itself;
 } DialogObject;
 
-PyObject *DlgObj_New(itself)
-	DialogPtr itself;
+PyObject *DlgObj_New(DialogPtr itself)
 {
 	DialogObject *it;
 	if (itself == NULL) return Py_None;
@@ -146,9 +150,7 @@ PyObject *DlgObj_New(itself)
 	SetWRefCon(GetDialogWindow(itself), (long)it);
 	return (PyObject *)it;
 }
-DlgObj_Convert(v, p_itself)
-	PyObject *v;
-	DialogPtr *p_itself;
+DlgObj_Convert(PyObject *v, DialogPtr *p_itself)
 {
 	if (v == Py_None) { *p_itself = NULL; return 1; }
 	if (PyInt_Check(v)) { *p_itself = (DialogPtr)PyInt_AsLong(v);
@@ -162,16 +164,13 @@ DlgObj_Convert(v, p_itself)
 	return 1;
 }
 
-static void DlgObj_dealloc(self)
-	DialogObject *self;
+static void DlgObj_dealloc(DialogObject *self)
 {
 	DisposeDialog(self->ob_itself);
 	PyMem_DEL(self);
 }
 
-static PyObject *DlgObj_DrawDialog(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_DrawDialog(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -182,9 +181,7 @@ static PyObject *DlgObj_DrawDialog(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_UpdateDialog(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_UpdateDialog(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle updateRgn;
@@ -198,9 +195,7 @@ static PyObject *DlgObj_UpdateDialog(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_HideDialogItem(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_HideDialogItem(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	DialogItemIndex itemNo;
@@ -214,9 +209,7 @@ static PyObject *DlgObj_HideDialogItem(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_ShowDialogItem(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_ShowDialogItem(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	DialogItemIndex itemNo;
@@ -230,9 +223,7 @@ static PyObject *DlgObj_ShowDialogItem(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_FindDialogItem(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_FindDialogItem(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	DialogItemIndexZeroBased _rv;
@@ -247,9 +238,7 @@ static PyObject *DlgObj_FindDialogItem(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_DialogCut(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_DialogCut(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -260,9 +249,7 @@ static PyObject *DlgObj_DialogCut(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_DialogPaste(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_DialogPaste(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -273,9 +260,7 @@ static PyObject *DlgObj_DialogPaste(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_DialogCopy(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_DialogCopy(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -286,9 +271,7 @@ static PyObject *DlgObj_DialogCopy(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_DialogDelete(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_DialogDelete(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -299,9 +282,7 @@ static PyObject *DlgObj_DialogDelete(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_GetDialogItem(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_GetDialogItem(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	DialogItemIndex itemNo;
@@ -323,9 +304,7 @@ static PyObject *DlgObj_GetDialogItem(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_SetDialogItem(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_SetDialogItem(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	DialogItemIndex itemNo;
@@ -348,9 +327,7 @@ static PyObject *DlgObj_SetDialogItem(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_SelectDialogItemText(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_SelectDialogItemText(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	DialogItemIndex itemNo;
@@ -370,9 +347,7 @@ static PyObject *DlgObj_SelectDialogItemText(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_AppendDITL(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_AppendDITL(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle theHandle;
@@ -389,9 +364,7 @@ static PyObject *DlgObj_AppendDITL(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_CountDITL(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_CountDITL(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	DialogItemIndex _rv;
@@ -403,9 +376,7 @@ static PyObject *DlgObj_CountDITL(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_ShortenDITL(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_ShortenDITL(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	DialogItemIndex numberItems;
@@ -421,9 +392,7 @@ static PyObject *DlgObj_ShortenDITL(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *DlgObj_InsertDialogItem(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_InsertDialogItem(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -451,9 +420,7 @@ static PyObject *DlgObj_InsertDialogItem(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *DlgObj_RemoveDialogItems(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_RemoveDialogItems(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -476,9 +443,7 @@ static PyObject *DlgObj_RemoveDialogItems(_self, _args)
 }
 #endif
 
-static PyObject *DlgObj_StdFilterProc(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_StdFilterProc(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -496,9 +461,7 @@ static PyObject *DlgObj_StdFilterProc(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_SetDialogDefaultItem(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_SetDialogDefaultItem(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -514,9 +477,7 @@ static PyObject *DlgObj_SetDialogDefaultItem(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_SetDialogCancelItem(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_SetDialogCancelItem(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -532,9 +493,7 @@ static PyObject *DlgObj_SetDialogCancelItem(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_SetDialogTracksCursor(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_SetDialogTracksCursor(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -550,9 +509,7 @@ static PyObject *DlgObj_SetDialogTracksCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_AutoSizeDialog(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_AutoSizeDialog(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -565,9 +522,7 @@ static PyObject *DlgObj_AutoSizeDialog(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_GetDialogItemAsControl(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_GetDialogItemAsControl(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -585,9 +540,7 @@ static PyObject *DlgObj_GetDialogItemAsControl(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_MoveDialogItem(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_MoveDialogItem(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -609,9 +562,7 @@ static PyObject *DlgObj_MoveDialogItem(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_SizeDialogItem(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_SizeDialogItem(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -633,9 +584,7 @@ static PyObject *DlgObj_SizeDialogItem(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_AppendDialogItemList(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_AppendDialogItemList(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -654,9 +603,7 @@ static PyObject *DlgObj_AppendDialogItemList(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_SetDialogTimeout(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_SetDialogTimeout(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -675,9 +622,7 @@ static PyObject *DlgObj_SetDialogTimeout(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_GetDialogTimeout(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_GetDialogTimeout(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -698,9 +643,7 @@ static PyObject *DlgObj_GetDialogTimeout(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_SetModalDialogEventMask(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_SetModalDialogEventMask(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -716,9 +659,7 @@ static PyObject *DlgObj_SetModalDialogEventMask(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_GetModalDialogEventMask(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_GetModalDialogEventMask(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -733,9 +674,7 @@ static PyObject *DlgObj_GetModalDialogEventMask(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_GetDialogWindow(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_GetDialogWindow(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	WindowPtr _rv;
@@ -747,9 +686,7 @@ static PyObject *DlgObj_GetDialogWindow(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_GetDialogTextEditHandle(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_GetDialogTextEditHandle(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TEHandle _rv;
@@ -761,9 +698,7 @@ static PyObject *DlgObj_GetDialogTextEditHandle(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_GetDialogDefaultItem(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_GetDialogDefaultItem(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 _rv;
@@ -775,9 +710,7 @@ static PyObject *DlgObj_GetDialogDefaultItem(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_GetDialogCancelItem(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_GetDialogCancelItem(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 _rv;
@@ -789,9 +722,7 @@ static PyObject *DlgObj_GetDialogCancelItem(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_GetDialogKeyboardFocusItem(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_GetDialogKeyboardFocusItem(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 _rv;
@@ -803,9 +734,7 @@ static PyObject *DlgObj_GetDialogKeyboardFocusItem(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_SetPortDialogPort(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_SetPortDialogPort(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -816,9 +745,7 @@ static PyObject *DlgObj_SetPortDialogPort(_self, _args)
 	return _res;
 }
 
-static PyObject *DlgObj_GetDialogPort(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_GetDialogPort(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr _rv;
@@ -832,9 +759,7 @@ static PyObject *DlgObj_GetDialogPort(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *DlgObj_SetGrafPortOfDialog(_self, _args)
-	DialogObject *_self;
-	PyObject *_args;
+static PyObject *DlgObj_SetGrafPortOfDialog(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -937,17 +862,14 @@ static PyMethodDef DlgObj_methods[] = {
 
 PyMethodChain DlgObj_chain = { DlgObj_methods, NULL };
 
-static PyObject *DlgObj_getattr(self, name)
-	DialogObject *self;
-	char *name;
+static PyObject *DlgObj_getattr(DialogObject *self, char *name)
 {
 	return Py_FindMethodInChain(&DlgObj_chain, (PyObject *)self, name);
 }
 
 #define DlgObj_setattr NULL
 
-static int DlgObj_compare(self, other)
-	DialogObject *self, *other;
+static int DlgObj_compare(DialogObject *self, DialogObject *other)
 {
 	if ( self->ob_itself > other->ob_itself ) return 1;
 	if ( self->ob_itself < other->ob_itself ) return -1;
@@ -956,8 +878,7 @@ static int DlgObj_compare(self, other)
 
 #define DlgObj_repr NULL
 
-static int DlgObj_hash(self)
-	DialogObject *self;
+static int DlgObj_hash(DialogObject *self)
 {
 	return (int)self->ob_itself;
 }
@@ -984,9 +905,7 @@ PyTypeObject Dialog_Type = {
 /* --------------------- End object type Dialog --------------------- */
 
 
-static PyObject *Dlg_NewDialog(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_NewDialog(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	DialogPtr _rv;
@@ -1022,9 +941,7 @@ static PyObject *Dlg_NewDialog(_self, _args)
 	return _res;
 }
 
-static PyObject *Dlg_GetNewDialog(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_GetNewDialog(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	DialogPtr _rv;
@@ -1042,9 +959,7 @@ static PyObject *Dlg_GetNewDialog(_self, _args)
 	return _res;
 }
 
-static PyObject *Dlg_NewColorDialog(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_NewColorDialog(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	DialogPtr _rv;
@@ -1080,9 +995,7 @@ static PyObject *Dlg_NewColorDialog(_self, _args)
 	return _res;
 }
 
-static PyObject *Dlg_ModalDialog(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_ModalDialog(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PyObject* modalFilter;
@@ -1097,9 +1010,7 @@ static PyObject *Dlg_ModalDialog(_self, _args)
 	return _res;
 }
 
-static PyObject *Dlg_IsDialogEvent(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_IsDialogEvent(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -1113,9 +1024,7 @@ static PyObject *Dlg_IsDialogEvent(_self, _args)
 	return _res;
 }
 
-static PyObject *Dlg_DialogSelect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_DialogSelect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -1135,9 +1044,7 @@ static PyObject *Dlg_DialogSelect(_self, _args)
 	return _res;
 }
 
-static PyObject *Dlg_Alert(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_Alert(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	DialogItemIndex _rv;
@@ -1154,9 +1061,7 @@ static PyObject *Dlg_Alert(_self, _args)
 	return _res;
 }
 
-static PyObject *Dlg_StopAlert(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_StopAlert(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	DialogItemIndex _rv;
@@ -1173,9 +1078,7 @@ static PyObject *Dlg_StopAlert(_self, _args)
 	return _res;
 }
 
-static PyObject *Dlg_NoteAlert(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_NoteAlert(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	DialogItemIndex _rv;
@@ -1192,9 +1095,7 @@ static PyObject *Dlg_NoteAlert(_self, _args)
 	return _res;
 }
 
-static PyObject *Dlg_CautionAlert(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_CautionAlert(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	DialogItemIndex _rv;
@@ -1211,9 +1112,7 @@ static PyObject *Dlg_CautionAlert(_self, _args)
 	return _res;
 }
 
-static PyObject *Dlg_ParamText(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_ParamText(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Str255 param0;
@@ -1235,9 +1134,7 @@ static PyObject *Dlg_ParamText(_self, _args)
 	return _res;
 }
 
-static PyObject *Dlg_GetDialogItemText(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_GetDialogItemText(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle item;
@@ -1252,9 +1149,7 @@ static PyObject *Dlg_GetDialogItemText(_self, _args)
 	return _res;
 }
 
-static PyObject *Dlg_SetDialogItemText(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_SetDialogItemText(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle item;
@@ -1270,9 +1165,7 @@ static PyObject *Dlg_SetDialogItemText(_self, _args)
 	return _res;
 }
 
-static PyObject *Dlg_GetAlertStage(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_GetAlertStage(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 _rv;
@@ -1284,9 +1177,7 @@ static PyObject *Dlg_GetAlertStage(_self, _args)
 	return _res;
 }
 
-static PyObject *Dlg_SetDialogFont(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_SetDialogFont(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 fontNum;
@@ -1299,9 +1190,7 @@ static PyObject *Dlg_SetDialogFont(_self, _args)
 	return _res;
 }
 
-static PyObject *Dlg_ResetAlertStage(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_ResetAlertStage(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -1314,9 +1203,7 @@ static PyObject *Dlg_ResetAlertStage(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Dlg_GetParamText(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_GetParamText(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Str255 param0;
@@ -1339,9 +1226,7 @@ static PyObject *Dlg_GetParamText(_self, _args)
 }
 #endif
 
-static PyObject *Dlg_NewFeaturesDialog(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_NewFeaturesDialog(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	DialogPtr _rv;
@@ -1380,9 +1265,7 @@ static PyObject *Dlg_NewFeaturesDialog(_self, _args)
 	return _res;
 }
 
-static PyObject *Dlg_GetDialogFromWindow(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_GetDialogFromWindow(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	DialogPtr _rv;
@@ -1396,9 +1279,7 @@ static PyObject *Dlg_GetDialogFromWindow(_self, _args)
 	return _res;
 }
 
-static PyObject *Dlg_SetUserItemHandler(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Dlg_SetUserItemHandler(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -1419,7 +1300,7 @@ static PyObject *Dlg_SetUserItemHandler(_self, _args)
 			Py_INCREF(Py_None);
 		} else {
 			Py_INCREF(new);
-			_res = Py_BuildValue("O&", ResObj_New, (Handle)NewUserItemProc(Dlg_UnivUserItemProc));
+			_res = Py_BuildValue("O&", ResObj_New, (Handle)NewUserItemUPP(Dlg_UnivUserItemProc));
 		}
 		
 		Dlg_UserItemProc_callback = new;
@@ -1479,8 +1360,7 @@ static PyMethodDef Dlg_methods[] = {
 /* Return the WindowPtr corresponding to a DialogObject */
 #if 0
 WindowPtr
-DlgObj_ConvertToWindow(self)
-	PyObject *self;
+DlgObj_ConvertToWindow(PyObject *self)
 {
 	if ( DlgObj_Check(self) )
 		return GetDialogWindow(((DialogObject *)self)->ob_itself);
@@ -1490,8 +1370,7 @@ DlgObj_ConvertToWindow(self)
 /* Return the object corresponding to the dialog, or None */
 
 PyObject *
-DlgObj_WhichDialog(d)
-	DialogPtr d;
+DlgObj_WhichDialog(DialogPtr d)
 {
 	PyObject *it;
 	
@@ -1519,16 +1398,16 @@ DlgObj_WhichDialog(d)
 }
 
 
-void initDlg()
+void initDlg(void)
 {
 	PyObject *m;
 	PyObject *d;
 
 
 
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(DlgObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(DlgObj_WhichDialog);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(DlgObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(DialogPtr, DlgObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(DialogPtr, DlgObj_WhichDialog);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(DialogPtr, DlgObj_Convert);
 
 
 	m = Py_InitModule("Dlg", Dlg_methods);

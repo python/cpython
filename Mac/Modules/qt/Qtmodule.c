@@ -8,7 +8,13 @@
 #include "macglue.h"
 #include "pymactoolbox.h"
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <Movies.h>
+#else
+/* #include <Carbon/Carbon.h> */
+#include <QuickTime/QuickTime.h>
+#endif
+
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_TrackObj_New(Track);
@@ -45,8 +51,7 @@ extern int _MediaObj_Convert(PyObject *, Media *);
 ** Parse/generate time records
 */
 static PyObject *
-QtTimeRecord_New(itself)
-	TimeRecord *itself;
+QtTimeRecord_New(TimeRecord *itself)
 {
 	if (itself->base)
 		return Py_BuildValue("O&lO&", PyMac_Buildwide, &itself->value, itself->scale, 
@@ -57,9 +62,7 @@ QtTimeRecord_New(itself)
 }
 
 static int
-QtTimeRecord_Convert(v, p_itself)
-	PyObject *v;
-	TimeRecord *p_itself;
+QtTimeRecord_Convert(PyObject *v, TimeRecord *p_itself)
 {
 	PyObject *base = NULL;
 	if( !PyArg_ParseTuple(v, "O&l|O", PyMac_Getwide, &p_itself->value, &p_itself->scale,
@@ -89,8 +92,7 @@ typedef struct MovieControllerObject {
 	MovieController ob_itself;
 } MovieControllerObject;
 
-PyObject *MovieCtlObj_New(itself)
-	MovieController itself;
+PyObject *MovieCtlObj_New(MovieController itself)
 {
 	MovieControllerObject *it;
 	if (itself == NULL) {
@@ -102,9 +104,7 @@ PyObject *MovieCtlObj_New(itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-MovieCtlObj_Convert(v, p_itself)
-	PyObject *v;
-	MovieController *p_itself;
+MovieCtlObj_Convert(PyObject *v, MovieController *p_itself)
 {
 	if (!MovieCtlObj_Check(v))
 	{
@@ -115,16 +115,13 @@ MovieCtlObj_Convert(v, p_itself)
 	return 1;
 }
 
-static void MovieCtlObj_dealloc(self)
-	MovieControllerObject *self;
+static void MovieCtlObj_dealloc(MovieControllerObject *self)
 {
 	DisposeMovieController(self->ob_itself);
 	PyMem_DEL(self);
 }
 
-static PyObject *MovieCtlObj_MCSetMovie(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCSetMovie(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -145,9 +142,7 @@ static PyObject *MovieCtlObj_MCSetMovie(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCGetIndMovie(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCGetIndMovie(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Movie _rv;
@@ -162,9 +157,7 @@ static PyObject *MovieCtlObj_MCGetIndMovie(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCRemoveAllMovies(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCRemoveAllMovies(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -176,9 +169,7 @@ static PyObject *MovieCtlObj_MCRemoveAllMovies(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCRemoveAMovie(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCRemoveAMovie(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -193,9 +184,7 @@ static PyObject *MovieCtlObj_MCRemoveAMovie(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCRemoveMovie(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCRemoveMovie(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -207,9 +196,7 @@ static PyObject *MovieCtlObj_MCRemoveMovie(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCIsPlayerEvent(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCIsPlayerEvent(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -224,9 +211,7 @@ static PyObject *MovieCtlObj_MCIsPlayerEvent(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCDoAction(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCDoAction(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -244,9 +229,7 @@ static PyObject *MovieCtlObj_MCDoAction(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCSetControllerAttached(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCSetControllerAttached(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -261,9 +244,7 @@ static PyObject *MovieCtlObj_MCSetControllerAttached(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCIsControllerAttached(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCIsControllerAttached(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -275,9 +256,7 @@ static PyObject *MovieCtlObj_MCIsControllerAttached(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCSetControllerPort(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCSetControllerPort(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -292,9 +271,7 @@ static PyObject *MovieCtlObj_MCSetControllerPort(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCGetControllerPort(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCGetControllerPort(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr _rv;
@@ -306,9 +283,7 @@ static PyObject *MovieCtlObj_MCGetControllerPort(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCSetVisible(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCSetVisible(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -323,9 +298,7 @@ static PyObject *MovieCtlObj_MCSetVisible(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCGetVisible(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCGetVisible(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -337,9 +310,7 @@ static PyObject *MovieCtlObj_MCGetVisible(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCGetControllerBoundsRect(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCGetControllerBoundsRect(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -354,9 +325,7 @@ static PyObject *MovieCtlObj_MCGetControllerBoundsRect(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCSetControllerBoundsRect(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCSetControllerBoundsRect(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -371,9 +340,7 @@ static PyObject *MovieCtlObj_MCSetControllerBoundsRect(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCGetControllerBoundsRgn(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCGetControllerBoundsRgn(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
@@ -385,9 +352,7 @@ static PyObject *MovieCtlObj_MCGetControllerBoundsRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCGetWindowRgn(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCGetWindowRgn(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
@@ -402,9 +367,7 @@ static PyObject *MovieCtlObj_MCGetWindowRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCMovieChanged(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCMovieChanged(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -419,9 +382,7 @@ static PyObject *MovieCtlObj_MCMovieChanged(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCSetDuration(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCSetDuration(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -436,9 +397,7 @@ static PyObject *MovieCtlObj_MCSetDuration(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCGetCurrentTime(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCGetCurrentTime(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue _rv;
@@ -453,9 +412,7 @@ static PyObject *MovieCtlObj_MCGetCurrentTime(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCNewAttachedController(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCNewAttachedController(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -476,9 +433,7 @@ static PyObject *MovieCtlObj_MCNewAttachedController(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCDraw(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCDraw(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -493,9 +448,7 @@ static PyObject *MovieCtlObj_MCDraw(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCActivate(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCActivate(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -513,9 +466,7 @@ static PyObject *MovieCtlObj_MCActivate(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCIdle(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCIdle(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -527,9 +478,7 @@ static PyObject *MovieCtlObj_MCIdle(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCKey(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCKey(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -547,9 +496,7 @@ static PyObject *MovieCtlObj_MCKey(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCClick(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCClick(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -573,9 +520,7 @@ static PyObject *MovieCtlObj_MCClick(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCEnableEditing(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCEnableEditing(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -590,9 +535,7 @@ static PyObject *MovieCtlObj_MCEnableEditing(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCIsEditingEnabled(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCIsEditingEnabled(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -604,9 +547,7 @@ static PyObject *MovieCtlObj_MCIsEditingEnabled(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCCopy(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCCopy(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Movie _rv;
@@ -618,9 +559,7 @@ static PyObject *MovieCtlObj_MCCopy(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCCut(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCCut(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Movie _rv;
@@ -632,9 +571,7 @@ static PyObject *MovieCtlObj_MCCut(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCPaste(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCPaste(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -649,9 +586,7 @@ static PyObject *MovieCtlObj_MCPaste(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCClear(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCClear(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -663,9 +598,7 @@ static PyObject *MovieCtlObj_MCClear(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCUndo(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCUndo(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -677,9 +610,7 @@ static PyObject *MovieCtlObj_MCUndo(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCPositionController(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCPositionController(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -700,9 +631,7 @@ static PyObject *MovieCtlObj_MCPositionController(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCGetControllerInfo(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCGetControllerInfo(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -717,9 +646,7 @@ static PyObject *MovieCtlObj_MCGetControllerInfo(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCSetClip(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCSetClip(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -737,9 +664,7 @@ static PyObject *MovieCtlObj_MCSetClip(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCGetClip(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCGetClip(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -757,9 +682,7 @@ static PyObject *MovieCtlObj_MCGetClip(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCDrawBadge(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCDrawBadge(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -777,9 +700,7 @@ static PyObject *MovieCtlObj_MCDrawBadge(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCSetUpEditMenu(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCSetUpEditMenu(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -797,9 +718,7 @@ static PyObject *MovieCtlObj_MCSetUpEditMenu(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCGetMenuString(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCGetMenuString(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -820,9 +739,7 @@ static PyObject *MovieCtlObj_MCGetMenuString(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCPtInController(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCPtInController(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -840,9 +757,7 @@ static PyObject *MovieCtlObj_MCPtInController(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCInvalidate(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCInvalidate(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -860,9 +775,7 @@ static PyObject *MovieCtlObj_MCInvalidate(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCAdjustCursor(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCAdjustCursor(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -883,9 +796,7 @@ static PyObject *MovieCtlObj_MCAdjustCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieCtlObj_MCGetInterfaceElement(_self, _args)
-	MovieControllerObject *_self;
-	PyObject *_args;
+static PyObject *MovieCtlObj_MCGetInterfaceElement(MovieControllerObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -997,9 +908,7 @@ static PyMethodDef MovieCtlObj_methods[] = {
 
 PyMethodChain MovieCtlObj_chain = { MovieCtlObj_methods, NULL };
 
-static PyObject *MovieCtlObj_getattr(self, name)
-	MovieControllerObject *self;
-	char *name;
+static PyObject *MovieCtlObj_getattr(MovieControllerObject *self, char *name)
 {
 	return Py_FindMethodInChain(&MovieCtlObj_chain, (PyObject *)self, name);
 }
@@ -1045,8 +954,7 @@ typedef struct TimeBaseObject {
 	TimeBase ob_itself;
 } TimeBaseObject;
 
-PyObject *TimeBaseObj_New(itself)
-	TimeBase itself;
+PyObject *TimeBaseObj_New(TimeBase itself)
 {
 	TimeBaseObject *it;
 	if (itself == NULL) {
@@ -1058,9 +966,7 @@ PyObject *TimeBaseObj_New(itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-TimeBaseObj_Convert(v, p_itself)
-	PyObject *v;
-	TimeBase *p_itself;
+TimeBaseObj_Convert(PyObject *v, TimeBase *p_itself)
 {
 	if (!TimeBaseObj_Check(v))
 	{
@@ -1071,16 +977,13 @@ TimeBaseObj_Convert(v, p_itself)
 	return 1;
 }
 
-static void TimeBaseObj_dealloc(self)
-	TimeBaseObject *self;
+static void TimeBaseObj_dealloc(TimeBaseObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
 	PyMem_DEL(self);
 }
 
-static PyObject *TimeBaseObj_DisposeTimeBase(_self, _args)
-	TimeBaseObject *_self;
-	PyObject *_args;
+static PyObject *TimeBaseObj_DisposeTimeBase(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -1091,9 +994,7 @@ static PyObject *TimeBaseObj_DisposeTimeBase(_self, _args)
 	return _res;
 }
 
-static PyObject *TimeBaseObj_GetTimeBaseTime(_self, _args)
-	TimeBaseObject *_self;
-	PyObject *_args;
+static PyObject *TimeBaseObj_GetTimeBaseTime(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue _rv;
@@ -1111,9 +1012,7 @@ static PyObject *TimeBaseObj_GetTimeBaseTime(_self, _args)
 	return _res;
 }
 
-static PyObject *TimeBaseObj_SetTimeBaseTime(_self, _args)
-	TimeBaseObject *_self;
-	PyObject *_args;
+static PyObject *TimeBaseObj_SetTimeBaseTime(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeRecord tr;
@@ -1127,9 +1026,7 @@ static PyObject *TimeBaseObj_SetTimeBaseTime(_self, _args)
 	return _res;
 }
 
-static PyObject *TimeBaseObj_SetTimeBaseValue(_self, _args)
-	TimeBaseObject *_self;
-	PyObject *_args;
+static PyObject *TimeBaseObj_SetTimeBaseValue(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue t;
@@ -1146,9 +1043,7 @@ static PyObject *TimeBaseObj_SetTimeBaseValue(_self, _args)
 	return _res;
 }
 
-static PyObject *TimeBaseObj_GetTimeBaseRate(_self, _args)
-	TimeBaseObject *_self;
-	PyObject *_args;
+static PyObject *TimeBaseObj_GetTimeBaseRate(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Fixed _rv;
@@ -1160,9 +1055,7 @@ static PyObject *TimeBaseObj_GetTimeBaseRate(_self, _args)
 	return _res;
 }
 
-static PyObject *TimeBaseObj_SetTimeBaseRate(_self, _args)
-	TimeBaseObject *_self;
-	PyObject *_args;
+static PyObject *TimeBaseObj_SetTimeBaseRate(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Fixed r;
@@ -1176,9 +1069,7 @@ static PyObject *TimeBaseObj_SetTimeBaseRate(_self, _args)
 	return _res;
 }
 
-static PyObject *TimeBaseObj_GetTimeBaseStartTime(_self, _args)
-	TimeBaseObject *_self;
-	PyObject *_args;
+static PyObject *TimeBaseObj_GetTimeBaseStartTime(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue _rv;
@@ -1196,9 +1087,7 @@ static PyObject *TimeBaseObj_GetTimeBaseStartTime(_self, _args)
 	return _res;
 }
 
-static PyObject *TimeBaseObj_SetTimeBaseStartTime(_self, _args)
-	TimeBaseObject *_self;
-	PyObject *_args;
+static PyObject *TimeBaseObj_SetTimeBaseStartTime(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeRecord tr;
@@ -1212,9 +1101,7 @@ static PyObject *TimeBaseObj_SetTimeBaseStartTime(_self, _args)
 	return _res;
 }
 
-static PyObject *TimeBaseObj_GetTimeBaseStopTime(_self, _args)
-	TimeBaseObject *_self;
-	PyObject *_args;
+static PyObject *TimeBaseObj_GetTimeBaseStopTime(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue _rv;
@@ -1232,9 +1119,7 @@ static PyObject *TimeBaseObj_GetTimeBaseStopTime(_self, _args)
 	return _res;
 }
 
-static PyObject *TimeBaseObj_SetTimeBaseStopTime(_self, _args)
-	TimeBaseObject *_self;
-	PyObject *_args;
+static PyObject *TimeBaseObj_SetTimeBaseStopTime(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeRecord tr;
@@ -1248,9 +1133,7 @@ static PyObject *TimeBaseObj_SetTimeBaseStopTime(_self, _args)
 	return _res;
 }
 
-static PyObject *TimeBaseObj_GetTimeBaseFlags(_self, _args)
-	TimeBaseObject *_self;
-	PyObject *_args;
+static PyObject *TimeBaseObj_GetTimeBaseFlags(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -1262,9 +1145,7 @@ static PyObject *TimeBaseObj_GetTimeBaseFlags(_self, _args)
 	return _res;
 }
 
-static PyObject *TimeBaseObj_SetTimeBaseFlags(_self, _args)
-	TimeBaseObject *_self;
-	PyObject *_args;
+static PyObject *TimeBaseObj_SetTimeBaseFlags(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long timeBaseFlags;
@@ -1278,9 +1159,7 @@ static PyObject *TimeBaseObj_SetTimeBaseFlags(_self, _args)
 	return _res;
 }
 
-static PyObject *TimeBaseObj_SetTimeBaseMasterTimeBase(_self, _args)
-	TimeBaseObject *_self;
-	PyObject *_args;
+static PyObject *TimeBaseObj_SetTimeBaseMasterTimeBase(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeBase master;
@@ -1297,9 +1176,7 @@ static PyObject *TimeBaseObj_SetTimeBaseMasterTimeBase(_self, _args)
 	return _res;
 }
 
-static PyObject *TimeBaseObj_GetTimeBaseMasterTimeBase(_self, _args)
-	TimeBaseObject *_self;
-	PyObject *_args;
+static PyObject *TimeBaseObj_GetTimeBaseMasterTimeBase(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeBase _rv;
@@ -1311,9 +1188,7 @@ static PyObject *TimeBaseObj_GetTimeBaseMasterTimeBase(_self, _args)
 	return _res;
 }
 
-static PyObject *TimeBaseObj_SetTimeBaseMasterClock(_self, _args)
-	TimeBaseObject *_self;
-	PyObject *_args;
+static PyObject *TimeBaseObj_SetTimeBaseMasterClock(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Component clockMeister;
@@ -1330,9 +1205,7 @@ static PyObject *TimeBaseObj_SetTimeBaseMasterClock(_self, _args)
 	return _res;
 }
 
-static PyObject *TimeBaseObj_GetTimeBaseMasterClock(_self, _args)
-	TimeBaseObject *_self;
-	PyObject *_args;
+static PyObject *TimeBaseObj_GetTimeBaseMasterClock(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentInstance _rv;
@@ -1344,9 +1217,7 @@ static PyObject *TimeBaseObj_GetTimeBaseMasterClock(_self, _args)
 	return _res;
 }
 
-static PyObject *TimeBaseObj_GetTimeBaseStatus(_self, _args)
-	TimeBaseObject *_self;
-	PyObject *_args;
+static PyObject *TimeBaseObj_GetTimeBaseStatus(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -1361,9 +1232,7 @@ static PyObject *TimeBaseObj_GetTimeBaseStatus(_self, _args)
 	return _res;
 }
 
-static PyObject *TimeBaseObj_SetTimeBaseZero(_self, _args)
-	TimeBaseObject *_self;
-	PyObject *_args;
+static PyObject *TimeBaseObj_SetTimeBaseZero(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeRecord zero;
@@ -1377,9 +1246,7 @@ static PyObject *TimeBaseObj_SetTimeBaseZero(_self, _args)
 	return _res;
 }
 
-static PyObject *TimeBaseObj_GetTimeBaseEffectiveRate(_self, _args)
-	TimeBaseObject *_self;
-	PyObject *_args;
+static PyObject *TimeBaseObj_GetTimeBaseEffectiveRate(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Fixed _rv;
@@ -1435,9 +1302,7 @@ static PyMethodDef TimeBaseObj_methods[] = {
 
 PyMethodChain TimeBaseObj_chain = { TimeBaseObj_methods, NULL };
 
-static PyObject *TimeBaseObj_getattr(self, name)
-	TimeBaseObject *self;
-	char *name;
+static PyObject *TimeBaseObj_getattr(TimeBaseObject *self, char *name)
 {
 	return Py_FindMethodInChain(&TimeBaseObj_chain, (PyObject *)self, name);
 }
@@ -1483,8 +1348,7 @@ typedef struct UserDataObject {
 	UserData ob_itself;
 } UserDataObject;
 
-PyObject *UserDataObj_New(itself)
-	UserData itself;
+PyObject *UserDataObj_New(UserData itself)
 {
 	UserDataObject *it;
 	if (itself == NULL) {
@@ -1496,9 +1360,7 @@ PyObject *UserDataObj_New(itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-UserDataObj_Convert(v, p_itself)
-	PyObject *v;
-	UserData *p_itself;
+UserDataObj_Convert(PyObject *v, UserData *p_itself)
 {
 	if (!UserDataObj_Check(v))
 	{
@@ -1509,16 +1371,13 @@ UserDataObj_Convert(v, p_itself)
 	return 1;
 }
 
-static void UserDataObj_dealloc(self)
-	UserDataObject *self;
+static void UserDataObj_dealloc(UserDataObject *self)
 {
 	DisposeUserData(self->ob_itself);
 	PyMem_DEL(self);
 }
 
-static PyObject *UserDataObj_GetUserData(_self, _args)
-	UserDataObject *_self;
-	PyObject *_args;
+static PyObject *UserDataObj_GetUserData(UserDataObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1540,9 +1399,7 @@ static PyObject *UserDataObj_GetUserData(_self, _args)
 	return _res;
 }
 
-static PyObject *UserDataObj_AddUserData(_self, _args)
-	UserDataObject *_self;
-	PyObject *_args;
+static PyObject *UserDataObj_AddUserData(UserDataObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1561,9 +1418,7 @@ static PyObject *UserDataObj_AddUserData(_self, _args)
 	return _res;
 }
 
-static PyObject *UserDataObj_RemoveUserData(_self, _args)
-	UserDataObject *_self;
-	PyObject *_args;
+static PyObject *UserDataObj_RemoveUserData(UserDataObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1582,9 +1437,7 @@ static PyObject *UserDataObj_RemoveUserData(_self, _args)
 	return _res;
 }
 
-static PyObject *UserDataObj_CountUserDataType(_self, _args)
-	UserDataObject *_self;
-	PyObject *_args;
+static PyObject *UserDataObj_CountUserDataType(UserDataObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -1599,9 +1452,7 @@ static PyObject *UserDataObj_CountUserDataType(_self, _args)
 	return _res;
 }
 
-static PyObject *UserDataObj_GetNextUserDataType(_self, _args)
-	UserDataObject *_self;
-	PyObject *_args;
+static PyObject *UserDataObj_GetNextUserDataType(UserDataObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -1616,9 +1467,7 @@ static PyObject *UserDataObj_GetNextUserDataType(_self, _args)
 	return _res;
 }
 
-static PyObject *UserDataObj_AddUserDataText(_self, _args)
-	UserDataObject *_self;
-	PyObject *_args;
+static PyObject *UserDataObj_AddUserDataText(UserDataObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1643,9 +1492,7 @@ static PyObject *UserDataObj_AddUserDataText(_self, _args)
 	return _res;
 }
 
-static PyObject *UserDataObj_GetUserDataText(_self, _args)
-	UserDataObject *_self;
-	PyObject *_args;
+static PyObject *UserDataObj_GetUserDataText(UserDataObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1670,9 +1517,7 @@ static PyObject *UserDataObj_GetUserDataText(_self, _args)
 	return _res;
 }
 
-static PyObject *UserDataObj_RemoveUserDataText(_self, _args)
-	UserDataObject *_self;
-	PyObject *_args;
+static PyObject *UserDataObj_RemoveUserDataText(UserDataObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1694,9 +1539,7 @@ static PyObject *UserDataObj_RemoveUserDataText(_self, _args)
 	return _res;
 }
 
-static PyObject *UserDataObj_PutUserDataIntoHandle(_self, _args)
-	UserDataObject *_self;
-	PyObject *_args;
+static PyObject *UserDataObj_PutUserDataIntoHandle(UserDataObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1736,9 +1579,7 @@ static PyMethodDef UserDataObj_methods[] = {
 
 PyMethodChain UserDataObj_chain = { UserDataObj_methods, NULL };
 
-static PyObject *UserDataObj_getattr(self, name)
-	UserDataObject *self;
-	char *name;
+static PyObject *UserDataObj_getattr(UserDataObject *self, char *name)
 {
 	return Py_FindMethodInChain(&UserDataObj_chain, (PyObject *)self, name);
 }
@@ -1784,8 +1625,7 @@ typedef struct MediaObject {
 	Media ob_itself;
 } MediaObject;
 
-PyObject *MediaObj_New(itself)
-	Media itself;
+PyObject *MediaObj_New(Media itself)
 {
 	MediaObject *it;
 	if (itself == NULL) {
@@ -1797,9 +1637,7 @@ PyObject *MediaObj_New(itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-MediaObj_Convert(v, p_itself)
-	PyObject *v;
-	Media *p_itself;
+MediaObj_Convert(PyObject *v, Media *p_itself)
 {
 	if (!MediaObj_Check(v))
 	{
@@ -1810,16 +1648,13 @@ MediaObj_Convert(v, p_itself)
 	return 1;
 }
 
-static void MediaObj_dealloc(self)
-	MediaObject *self;
+static void MediaObj_dealloc(MediaObject *self)
 {
 	DisposeTrackMedia(self->ob_itself);
 	PyMem_DEL(self);
 }
 
-static PyObject *MediaObj_LoadMediaIntoRam(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_LoadMediaIntoRam(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1841,9 +1676,7 @@ static PyObject *MediaObj_LoadMediaIntoRam(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaTrack(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaTrack(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Track _rv;
@@ -1855,9 +1688,7 @@ static PyObject *MediaObj_GetMediaTrack(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaCreationTime(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaCreationTime(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	unsigned long _rv;
@@ -1869,9 +1700,7 @@ static PyObject *MediaObj_GetMediaCreationTime(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaModificationTime(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaModificationTime(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	unsigned long _rv;
@@ -1883,9 +1712,7 @@ static PyObject *MediaObj_GetMediaModificationTime(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaTimeScale(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaTimeScale(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeScale _rv;
@@ -1897,9 +1724,7 @@ static PyObject *MediaObj_GetMediaTimeScale(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_SetMediaTimeScale(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_SetMediaTimeScale(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeScale timeScale;
@@ -1913,9 +1738,7 @@ static PyObject *MediaObj_SetMediaTimeScale(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaDuration(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaDuration(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue _rv;
@@ -1927,9 +1750,7 @@ static PyObject *MediaObj_GetMediaDuration(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaLanguage(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaLanguage(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -1941,9 +1762,7 @@ static PyObject *MediaObj_GetMediaLanguage(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_SetMediaLanguage(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_SetMediaLanguage(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short language;
@@ -1957,9 +1776,7 @@ static PyObject *MediaObj_SetMediaLanguage(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaQuality(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaQuality(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -1971,9 +1788,7 @@ static PyObject *MediaObj_GetMediaQuality(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_SetMediaQuality(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_SetMediaQuality(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short quality;
@@ -1987,9 +1802,7 @@ static PyObject *MediaObj_SetMediaQuality(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaHandlerDescription(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaHandlerDescription(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSType mediaType;
@@ -2008,9 +1821,7 @@ static PyObject *MediaObj_GetMediaHandlerDescription(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaUserData(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaUserData(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UserData _rv;
@@ -2022,9 +1833,7 @@ static PyObject *MediaObj_GetMediaUserData(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaHandler(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaHandler(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	MediaHandler _rv;
@@ -2036,9 +1845,7 @@ static PyObject *MediaObj_GetMediaHandler(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_SetMediaHandler(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_SetMediaHandler(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2054,9 +1861,7 @@ static PyObject *MediaObj_SetMediaHandler(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_BeginMediaEdits(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_BeginMediaEdits(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2069,9 +1874,7 @@ static PyObject *MediaObj_BeginMediaEdits(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_EndMediaEdits(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_EndMediaEdits(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2084,9 +1887,7 @@ static PyObject *MediaObj_EndMediaEdits(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_SetMediaDefaultDataRefIndex(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_SetMediaDefaultDataRefIndex(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2102,9 +1903,7 @@ static PyObject *MediaObj_SetMediaDefaultDataRefIndex(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaDataHandlerDescription(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaDataHandlerDescription(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short index;
@@ -2126,9 +1925,7 @@ static PyObject *MediaObj_GetMediaDataHandlerDescription(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaDataHandler(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaDataHandler(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	DataHandler _rv;
@@ -2143,9 +1940,7 @@ static PyObject *MediaObj_GetMediaDataHandler(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_SetMediaDataHandler(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_SetMediaDataHandler(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2164,9 +1959,7 @@ static PyObject *MediaObj_SetMediaDataHandler(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaSampleDescriptionCount(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaSampleDescriptionCount(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -2178,9 +1971,7 @@ static PyObject *MediaObj_GetMediaSampleDescriptionCount(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaSampleDescription(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaSampleDescription(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long index;
@@ -2197,9 +1988,7 @@ static PyObject *MediaObj_GetMediaSampleDescription(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_SetMediaSampleDescription(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_SetMediaSampleDescription(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2218,9 +2007,7 @@ static PyObject *MediaObj_SetMediaSampleDescription(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaSampleCount(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaSampleCount(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -2232,9 +2019,7 @@ static PyObject *MediaObj_GetMediaSampleCount(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaSyncSampleCount(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaSyncSampleCount(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -2246,9 +2031,7 @@ static PyObject *MediaObj_GetMediaSyncSampleCount(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_SampleNumToMediaTime(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_SampleNumToMediaTime(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long logicalSampleNum;
@@ -2267,9 +2050,7 @@ static PyObject *MediaObj_SampleNumToMediaTime(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_MediaTimeToSampleNum(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_MediaTimeToSampleNum(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue time;
@@ -2291,9 +2072,7 @@ static PyObject *MediaObj_MediaTimeToSampleNum(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_AddMediaSample(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_AddMediaSample(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2329,9 +2108,7 @@ static PyObject *MediaObj_AddMediaSample(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_AddMediaSampleReference(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_AddMediaSampleReference(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2364,9 +2141,7 @@ static PyObject *MediaObj_AddMediaSampleReference(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaSample(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaSample(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2411,9 +2186,7 @@ static PyObject *MediaObj_GetMediaSample(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaSampleReference(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaSampleReference(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2455,9 +2228,7 @@ static PyObject *MediaObj_GetMediaSampleReference(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_SetMediaPreferredChunkSize(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_SetMediaPreferredChunkSize(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2473,9 +2244,7 @@ static PyObject *MediaObj_SetMediaPreferredChunkSize(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaPreferredChunkSize(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaPreferredChunkSize(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2490,9 +2259,7 @@ static PyObject *MediaObj_GetMediaPreferredChunkSize(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_SetMediaShadowSync(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_SetMediaShadowSync(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2511,9 +2278,7 @@ static PyObject *MediaObj_SetMediaShadowSync(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaShadowSync(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaShadowSync(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2531,9 +2296,7 @@ static PyObject *MediaObj_GetMediaShadowSync(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaDataSize(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaDataSize(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -2551,9 +2314,7 @@ static PyObject *MediaObj_GetMediaDataSize(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaDataSize64(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaDataSize64(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2574,9 +2335,7 @@ static PyObject *MediaObj_GetMediaDataSize64(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaNextInterestingTime(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaNextInterestingTime(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short interestingTimeFlags;
@@ -2601,9 +2360,7 @@ static PyObject *MediaObj_GetMediaNextInterestingTime(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaDataRef(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaDataRef(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2627,9 +2384,7 @@ static PyObject *MediaObj_GetMediaDataRef(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_SetMediaDataRef(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_SetMediaDataRef(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2651,9 +2406,7 @@ static PyObject *MediaObj_SetMediaDataRef(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_SetMediaDataRefAttributes(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_SetMediaDataRefAttributes(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2672,9 +2425,7 @@ static PyObject *MediaObj_SetMediaDataRefAttributes(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_AddMediaDataRef(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_AddMediaDataRef(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2695,9 +2446,7 @@ static PyObject *MediaObj_AddMediaDataRef(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaDataRefCount(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaDataRefCount(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2712,9 +2461,7 @@ static PyObject *MediaObj_GetMediaDataRefCount(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_SetMediaPlayHints(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_SetMediaPlayHints(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long flags;
@@ -2731,9 +2478,7 @@ static PyObject *MediaObj_SetMediaPlayHints(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaPlayHints(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaPlayHints(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long flags;
@@ -2746,9 +2491,7 @@ static PyObject *MediaObj_GetMediaPlayHints(_self, _args)
 	return _res;
 }
 
-static PyObject *MediaObj_GetMediaNextInterestingTimeOnly(_self, _args)
-	MediaObject *_self;
-	PyObject *_args;
+static PyObject *MediaObj_GetMediaNextInterestingTimeOnly(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short interestingTimeFlags;
@@ -2870,9 +2613,7 @@ static PyMethodDef MediaObj_methods[] = {
 
 PyMethodChain MediaObj_chain = { MediaObj_methods, NULL };
 
-static PyObject *MediaObj_getattr(self, name)
-	MediaObject *self;
-	char *name;
+static PyObject *MediaObj_getattr(MediaObject *self, char *name)
 {
 	return Py_FindMethodInChain(&MediaObj_chain, (PyObject *)self, name);
 }
@@ -2918,8 +2659,7 @@ typedef struct TrackObject {
 	Track ob_itself;
 } TrackObject;
 
-PyObject *TrackObj_New(itself)
-	Track itself;
+PyObject *TrackObj_New(Track itself)
 {
 	TrackObject *it;
 	if (itself == NULL) {
@@ -2931,9 +2671,7 @@ PyObject *TrackObj_New(itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-TrackObj_Convert(v, p_itself)
-	PyObject *v;
-	Track *p_itself;
+TrackObj_Convert(PyObject *v, Track *p_itself)
 {
 	if (!TrackObj_Check(v))
 	{
@@ -2944,16 +2682,13 @@ TrackObj_Convert(v, p_itself)
 	return 1;
 }
 
-static void TrackObj_dealloc(self)
-	TrackObject *self;
+static void TrackObj_dealloc(TrackObject *self)
 {
 	DisposeMovieTrack(self->ob_itself);
 	PyMem_DEL(self);
 }
 
-static PyObject *TrackObj_LoadTrackIntoRam(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_LoadTrackIntoRam(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2975,9 +2710,7 @@ static PyObject *TrackObj_LoadTrackIntoRam(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackPict(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackPict(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PicHandle _rv;
@@ -2992,9 +2725,7 @@ static PyObject *TrackObj_GetTrackPict(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackClipRgn(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackClipRgn(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
@@ -3006,9 +2737,7 @@ static PyObject *TrackObj_GetTrackClipRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_SetTrackClipRgn(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_SetTrackClipRgn(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle theClip;
@@ -3022,9 +2751,7 @@ static PyObject *TrackObj_SetTrackClipRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackDisplayBoundsRgn(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackDisplayBoundsRgn(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
@@ -3036,9 +2763,7 @@ static PyObject *TrackObj_GetTrackDisplayBoundsRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackMovieBoundsRgn(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackMovieBoundsRgn(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
@@ -3050,9 +2775,7 @@ static PyObject *TrackObj_GetTrackMovieBoundsRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackBoundsRgn(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackBoundsRgn(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
@@ -3064,9 +2787,7 @@ static PyObject *TrackObj_GetTrackBoundsRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackMatte(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackMatte(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle _rv;
@@ -3078,9 +2799,7 @@ static PyObject *TrackObj_GetTrackMatte(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_SetTrackMatte(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_SetTrackMatte(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle theMatte;
@@ -3094,9 +2813,7 @@ static PyObject *TrackObj_SetTrackMatte(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackID(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackID(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -3108,9 +2825,7 @@ static PyObject *TrackObj_GetTrackID(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackMovie(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackMovie(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Movie _rv;
@@ -3122,9 +2837,7 @@ static PyObject *TrackObj_GetTrackMovie(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackCreationTime(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackCreationTime(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	unsigned long _rv;
@@ -3136,9 +2849,7 @@ static PyObject *TrackObj_GetTrackCreationTime(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackModificationTime(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackModificationTime(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	unsigned long _rv;
@@ -3150,9 +2861,7 @@ static PyObject *TrackObj_GetTrackModificationTime(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackEnabled(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackEnabled(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -3164,9 +2873,7 @@ static PyObject *TrackObj_GetTrackEnabled(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_SetTrackEnabled(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_SetTrackEnabled(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean isEnabled;
@@ -3180,9 +2887,7 @@ static PyObject *TrackObj_SetTrackEnabled(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackUsage(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackUsage(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -3194,9 +2899,7 @@ static PyObject *TrackObj_GetTrackUsage(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_SetTrackUsage(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_SetTrackUsage(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long usage;
@@ -3210,9 +2913,7 @@ static PyObject *TrackObj_SetTrackUsage(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackDuration(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackDuration(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue _rv;
@@ -3224,9 +2925,7 @@ static PyObject *TrackObj_GetTrackDuration(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackOffset(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackOffset(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue _rv;
@@ -3238,9 +2937,7 @@ static PyObject *TrackObj_GetTrackOffset(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_SetTrackOffset(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_SetTrackOffset(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue movieOffsetTime;
@@ -3254,9 +2951,7 @@ static PyObject *TrackObj_SetTrackOffset(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackLayer(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackLayer(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -3268,9 +2963,7 @@ static PyObject *TrackObj_GetTrackLayer(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_SetTrackLayer(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_SetTrackLayer(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short layer;
@@ -3284,9 +2977,7 @@ static PyObject *TrackObj_SetTrackLayer(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackAlternate(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackAlternate(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Track _rv;
@@ -3298,9 +2989,7 @@ static PyObject *TrackObj_GetTrackAlternate(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_SetTrackAlternate(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_SetTrackAlternate(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Track alternateT;
@@ -3314,9 +3003,7 @@ static PyObject *TrackObj_SetTrackAlternate(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackVolume(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackVolume(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -3328,9 +3015,7 @@ static PyObject *TrackObj_GetTrackVolume(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_SetTrackVolume(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_SetTrackVolume(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short volume;
@@ -3344,9 +3029,7 @@ static PyObject *TrackObj_SetTrackVolume(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackDimensions(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackDimensions(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Fixed width;
@@ -3362,9 +3045,7 @@ static PyObject *TrackObj_GetTrackDimensions(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_SetTrackDimensions(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_SetTrackDimensions(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Fixed width;
@@ -3381,9 +3062,7 @@ static PyObject *TrackObj_SetTrackDimensions(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackUserData(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackUserData(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UserData _rv;
@@ -3395,9 +3074,7 @@ static PyObject *TrackObj_GetTrackUserData(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackSoundLocalizationSettings(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackSoundLocalizationSettings(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -3412,9 +3089,7 @@ static PyObject *TrackObj_GetTrackSoundLocalizationSettings(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_SetTrackSoundLocalizationSettings(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_SetTrackSoundLocalizationSettings(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -3430,9 +3105,7 @@ static PyObject *TrackObj_SetTrackSoundLocalizationSettings(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_NewTrackMedia(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_NewTrackMedia(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Media _rv;
@@ -3456,9 +3129,7 @@ static PyObject *TrackObj_NewTrackMedia(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackMedia(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackMedia(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Media _rv;
@@ -3470,9 +3141,7 @@ static PyObject *TrackObj_GetTrackMedia(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_InsertMediaIntoTrack(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_InsertMediaIntoTrack(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -3497,9 +3166,7 @@ static PyObject *TrackObj_InsertMediaIntoTrack(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_InsertTrackSegment(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_InsertTrackSegment(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -3524,9 +3191,7 @@ static PyObject *TrackObj_InsertTrackSegment(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_InsertEmptyTrackSegment(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_InsertEmptyTrackSegment(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -3545,9 +3210,7 @@ static PyObject *TrackObj_InsertEmptyTrackSegment(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_DeleteTrackSegment(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_DeleteTrackSegment(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -3566,9 +3229,7 @@ static PyObject *TrackObj_DeleteTrackSegment(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_ScaleTrackSegment(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_ScaleTrackSegment(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -3590,9 +3251,7 @@ static PyObject *TrackObj_ScaleTrackSegment(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_IsScrapMovie(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_IsScrapMovie(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Component _rv;
@@ -3604,9 +3263,7 @@ static PyObject *TrackObj_IsScrapMovie(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_CopyTrackSettings(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_CopyTrackSettings(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -3622,9 +3279,7 @@ static PyObject *TrackObj_CopyTrackSettings(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_AddEmptyTrackToMovie(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_AddEmptyTrackToMovie(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -3648,9 +3303,7 @@ static PyObject *TrackObj_AddEmptyTrackToMovie(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_AddTrackReference(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_AddTrackReference(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -3671,9 +3324,7 @@ static PyObject *TrackObj_AddTrackReference(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_DeleteTrackReference(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_DeleteTrackReference(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -3692,9 +3343,7 @@ static PyObject *TrackObj_DeleteTrackReference(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_SetTrackReference(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_SetTrackReference(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -3716,9 +3365,7 @@ static PyObject *TrackObj_SetTrackReference(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackReference(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackReference(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Track _rv;
@@ -3736,9 +3383,7 @@ static PyObject *TrackObj_GetTrackReference(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetNextTrackReferenceType(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetNextTrackReferenceType(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSType _rv;
@@ -3753,9 +3398,7 @@ static PyObject *TrackObj_GetNextTrackReferenceType(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackReferenceCount(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackReferenceCount(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -3770,9 +3413,7 @@ static PyObject *TrackObj_GetTrackReferenceCount(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackEditRate(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackEditRate(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Fixed _rv;
@@ -3787,9 +3428,7 @@ static PyObject *TrackObj_GetTrackEditRate(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackDataSize(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackDataSize(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -3807,9 +3446,7 @@ static PyObject *TrackObj_GetTrackDataSize(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackDataSize64(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackDataSize64(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -3830,9 +3467,7 @@ static PyObject *TrackObj_GetTrackDataSize64(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_PtInTrack(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_PtInTrack(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -3847,9 +3482,7 @@ static PyObject *TrackObj_PtInTrack(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackNextInterestingTime(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackNextInterestingTime(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short interestingTimeFlags;
@@ -3874,9 +3507,7 @@ static PyObject *TrackObj_GetTrackNextInterestingTime(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackSegmentDisplayBoundsRgn(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackSegmentDisplayBoundsRgn(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
@@ -3894,9 +3525,7 @@ static PyObject *TrackObj_GetTrackSegmentDisplayBoundsRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackStatus(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackStatus(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -3908,9 +3537,7 @@ static PyObject *TrackObj_GetTrackStatus(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_SetTrackLoadSettings(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_SetTrackLoadSettings(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue preloadTime;
@@ -3933,9 +3560,7 @@ static PyObject *TrackObj_SetTrackLoadSettings(_self, _args)
 	return _res;
 }
 
-static PyObject *TrackObj_GetTrackLoadSettings(_self, _args)
-	TrackObject *_self;
-	PyObject *_args;
+static PyObject *TrackObj_GetTrackLoadSettings(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue preloadTime;
@@ -4075,9 +3700,7 @@ static PyMethodDef TrackObj_methods[] = {
 
 PyMethodChain TrackObj_chain = { TrackObj_methods, NULL };
 
-static PyObject *TrackObj_getattr(self, name)
-	TrackObject *self;
-	char *name;
+static PyObject *TrackObj_getattr(TrackObject *self, char *name)
 {
 	return Py_FindMethodInChain(&TrackObj_chain, (PyObject *)self, name);
 }
@@ -4123,8 +3746,7 @@ typedef struct MovieObject {
 	Movie ob_itself;
 } MovieObject;
 
-PyObject *MovieObj_New(itself)
-	Movie itself;
+PyObject *MovieObj_New(Movie itself)
 {
 	MovieObject *it;
 	if (itself == NULL) {
@@ -4136,9 +3758,7 @@ PyObject *MovieObj_New(itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-MovieObj_Convert(v, p_itself)
-	PyObject *v;
-	Movie *p_itself;
+MovieObj_Convert(PyObject *v, Movie *p_itself)
 {
 	if (!MovieObj_Check(v))
 	{
@@ -4149,16 +3769,13 @@ MovieObj_Convert(v, p_itself)
 	return 1;
 }
 
-static void MovieObj_dealloc(self)
-	MovieObject *self;
+static void MovieObj_dealloc(MovieObject *self)
 {
 	DisposeMovie(self->ob_itself);
 	PyMem_DEL(self);
 }
 
-static PyObject *MovieObj_MoviesTask(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_MoviesTask(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long maxMilliSecToUse;
@@ -4172,9 +3789,7 @@ static PyObject *MovieObj_MoviesTask(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_PrerollMovie(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_PrerollMovie(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -4193,9 +3808,7 @@ static PyObject *MovieObj_PrerollMovie(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_AbortPrePrerollMovie(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_AbortPrePrerollMovie(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr err;
@@ -4209,9 +3822,7 @@ static PyObject *MovieObj_AbortPrePrerollMovie(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_LoadMovieIntoRam(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_LoadMovieIntoRam(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -4233,9 +3844,7 @@ static PyObject *MovieObj_LoadMovieIntoRam(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMovieActive(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMovieActive(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean active;
@@ -4249,9 +3858,7 @@ static PyObject *MovieObj_SetMovieActive(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieActive(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieActive(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -4263,9 +3870,7 @@ static PyObject *MovieObj_GetMovieActive(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_StartMovie(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_StartMovie(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -4276,9 +3881,7 @@ static PyObject *MovieObj_StartMovie(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_StopMovie(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_StopMovie(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -4289,9 +3892,7 @@ static PyObject *MovieObj_StopMovie(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GoToBeginningOfMovie(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GoToBeginningOfMovie(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -4302,9 +3903,7 @@ static PyObject *MovieObj_GoToBeginningOfMovie(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GoToEndOfMovie(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GoToEndOfMovie(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -4315,9 +3914,7 @@ static PyObject *MovieObj_GoToEndOfMovie(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_IsMovieDone(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_IsMovieDone(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -4329,9 +3926,7 @@ static PyObject *MovieObj_IsMovieDone(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMoviePreviewMode(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMoviePreviewMode(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -4343,9 +3938,7 @@ static PyObject *MovieObj_GetMoviePreviewMode(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMoviePreviewMode(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMoviePreviewMode(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean usePreview;
@@ -4359,9 +3952,7 @@ static PyObject *MovieObj_SetMoviePreviewMode(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_ShowMoviePoster(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_ShowMoviePoster(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -4372,9 +3963,7 @@ static PyObject *MovieObj_ShowMoviePoster(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieTimeBase(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieTimeBase(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeBase _rv;
@@ -4386,9 +3975,7 @@ static PyObject *MovieObj_GetMovieTimeBase(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMovieMasterTimeBase(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMovieMasterTimeBase(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeBase tb;
@@ -4405,9 +3992,7 @@ static PyObject *MovieObj_SetMovieMasterTimeBase(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMovieMasterClock(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMovieMasterClock(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Component clockMeister;
@@ -4424,9 +4009,7 @@ static PyObject *MovieObj_SetMovieMasterClock(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieGWorld(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieGWorld(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -4442,9 +4025,7 @@ static PyObject *MovieObj_GetMovieGWorld(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMovieGWorld(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMovieGWorld(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -4461,9 +4042,7 @@ static PyObject *MovieObj_SetMovieGWorld(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieNaturalBoundsRect(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieNaturalBoundsRect(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect naturalBounds;
@@ -4476,9 +4055,7 @@ static PyObject *MovieObj_GetMovieNaturalBoundsRect(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetNextTrackForCompositing(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetNextTrackForCompositing(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Track _rv;
@@ -4493,9 +4070,7 @@ static PyObject *MovieObj_GetNextTrackForCompositing(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetPrevTrackForCompositing(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetPrevTrackForCompositing(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Track _rv;
@@ -4510,9 +4085,7 @@ static PyObject *MovieObj_GetPrevTrackForCompositing(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMoviePict(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMoviePict(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PicHandle _rv;
@@ -4527,9 +4100,7 @@ static PyObject *MovieObj_GetMoviePict(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMoviePosterPict(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMoviePosterPict(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PicHandle _rv;
@@ -4541,9 +4112,7 @@ static PyObject *MovieObj_GetMoviePosterPict(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_UpdateMovie(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_UpdateMovie(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -4556,9 +4125,7 @@ static PyObject *MovieObj_UpdateMovie(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_InvalidateMovieRegion(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_InvalidateMovieRegion(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -4574,9 +4141,7 @@ static PyObject *MovieObj_InvalidateMovieRegion(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieBox(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieBox(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect boxRect;
@@ -4589,9 +4154,7 @@ static PyObject *MovieObj_GetMovieBox(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMovieBox(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMovieBox(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect boxRect;
@@ -4605,9 +4168,7 @@ static PyObject *MovieObj_SetMovieBox(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieDisplayClipRgn(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieDisplayClipRgn(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
@@ -4619,9 +4180,7 @@ static PyObject *MovieObj_GetMovieDisplayClipRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMovieDisplayClipRgn(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMovieDisplayClipRgn(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle theClip;
@@ -4635,9 +4194,7 @@ static PyObject *MovieObj_SetMovieDisplayClipRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieClipRgn(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieClipRgn(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
@@ -4649,9 +4206,7 @@ static PyObject *MovieObj_GetMovieClipRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMovieClipRgn(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMovieClipRgn(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle theClip;
@@ -4665,9 +4220,7 @@ static PyObject *MovieObj_SetMovieClipRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieDisplayBoundsRgn(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieDisplayBoundsRgn(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
@@ -4679,9 +4232,7 @@ static PyObject *MovieObj_GetMovieDisplayBoundsRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieBoundsRgn(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieBoundsRgn(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
@@ -4693,9 +4244,7 @@ static PyObject *MovieObj_GetMovieBoundsRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_PutMovieIntoHandle(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_PutMovieIntoHandle(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -4711,9 +4260,7 @@ static PyObject *MovieObj_PutMovieIntoHandle(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_PutMovieIntoDataFork(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_PutMovieIntoDataFork(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -4735,9 +4282,7 @@ static PyObject *MovieObj_PutMovieIntoDataFork(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_PutMovieIntoDataFork64(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_PutMovieIntoDataFork64(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -4759,9 +4304,7 @@ static PyObject *MovieObj_PutMovieIntoDataFork64(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieCreationTime(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieCreationTime(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	unsigned long _rv;
@@ -4773,9 +4316,7 @@ static PyObject *MovieObj_GetMovieCreationTime(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieModificationTime(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieModificationTime(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	unsigned long _rv;
@@ -4787,9 +4328,7 @@ static PyObject *MovieObj_GetMovieModificationTime(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieTimeScale(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieTimeScale(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeScale _rv;
@@ -4801,9 +4340,7 @@ static PyObject *MovieObj_GetMovieTimeScale(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMovieTimeScale(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMovieTimeScale(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeScale timeScale;
@@ -4817,9 +4354,7 @@ static PyObject *MovieObj_SetMovieTimeScale(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieDuration(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieDuration(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue _rv;
@@ -4831,9 +4366,7 @@ static PyObject *MovieObj_GetMovieDuration(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieRate(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieRate(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Fixed _rv;
@@ -4845,9 +4378,7 @@ static PyObject *MovieObj_GetMovieRate(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMovieRate(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMovieRate(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Fixed rate;
@@ -4861,9 +4392,7 @@ static PyObject *MovieObj_SetMovieRate(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMoviePreferredRate(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMoviePreferredRate(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Fixed _rv;
@@ -4875,9 +4404,7 @@ static PyObject *MovieObj_GetMoviePreferredRate(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMoviePreferredRate(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMoviePreferredRate(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Fixed rate;
@@ -4891,9 +4418,7 @@ static PyObject *MovieObj_SetMoviePreferredRate(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMoviePreferredVolume(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMoviePreferredVolume(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -4905,9 +4430,7 @@ static PyObject *MovieObj_GetMoviePreferredVolume(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMoviePreferredVolume(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMoviePreferredVolume(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short volume;
@@ -4921,9 +4444,7 @@ static PyObject *MovieObj_SetMoviePreferredVolume(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieVolume(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieVolume(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -4935,9 +4456,7 @@ static PyObject *MovieObj_GetMovieVolume(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMovieVolume(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMovieVolume(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short volume;
@@ -4951,9 +4470,7 @@ static PyObject *MovieObj_SetMovieVolume(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMoviePreviewTime(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMoviePreviewTime(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue previewTime;
@@ -4969,9 +4486,7 @@ static PyObject *MovieObj_GetMoviePreviewTime(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMoviePreviewTime(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMoviePreviewTime(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue previewTime;
@@ -4988,9 +4503,7 @@ static PyObject *MovieObj_SetMoviePreviewTime(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMoviePosterTime(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMoviePosterTime(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue _rv;
@@ -5002,9 +4515,7 @@ static PyObject *MovieObj_GetMoviePosterTime(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMoviePosterTime(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMoviePosterTime(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue posterTime;
@@ -5018,9 +4529,7 @@ static PyObject *MovieObj_SetMoviePosterTime(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieSelection(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieSelection(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue selectionTime;
@@ -5036,9 +4545,7 @@ static PyObject *MovieObj_GetMovieSelection(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMovieSelection(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMovieSelection(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue selectionTime;
@@ -5055,9 +4562,7 @@ static PyObject *MovieObj_SetMovieSelection(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMovieActiveSegment(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMovieActiveSegment(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue startTime;
@@ -5074,9 +4579,7 @@ static PyObject *MovieObj_SetMovieActiveSegment(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieActiveSegment(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieActiveSegment(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue startTime;
@@ -5092,9 +4595,7 @@ static PyObject *MovieObj_GetMovieActiveSegment(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieTime(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieTime(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue _rv;
@@ -5109,9 +4610,7 @@ static PyObject *MovieObj_GetMovieTime(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMovieTime(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMovieTime(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeRecord newtime;
@@ -5125,9 +4624,7 @@ static PyObject *MovieObj_SetMovieTime(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMovieTimeValue(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMovieTimeValue(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue newtime;
@@ -5141,9 +4638,7 @@ static PyObject *MovieObj_SetMovieTimeValue(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieUserData(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieUserData(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UserData _rv;
@@ -5155,9 +4650,7 @@ static PyObject *MovieObj_GetMovieUserData(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieTrackCount(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieTrackCount(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -5169,9 +4662,7 @@ static PyObject *MovieObj_GetMovieTrackCount(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieTrack(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieTrack(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Track _rv;
@@ -5186,9 +4677,7 @@ static PyObject *MovieObj_GetMovieTrack(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieIndTrack(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieIndTrack(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Track _rv;
@@ -5203,9 +4692,7 @@ static PyObject *MovieObj_GetMovieIndTrack(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieIndTrackType(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieIndTrackType(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Track _rv;
@@ -5226,9 +4713,7 @@ static PyObject *MovieObj_GetMovieIndTrackType(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_NewMovieTrack(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_NewMovieTrack(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Track _rv;
@@ -5249,9 +4734,7 @@ static PyObject *MovieObj_NewMovieTrack(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetAutoTrackAlternatesEnabled(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetAutoTrackAlternatesEnabled(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean enable;
@@ -5265,9 +4748,7 @@ static PyObject *MovieObj_SetAutoTrackAlternatesEnabled(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SelectMovieAlternates(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SelectMovieAlternates(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -5278,9 +4759,7 @@ static PyObject *MovieObj_SelectMovieAlternates(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_InsertMovieSegment(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_InsertMovieSegment(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -5305,9 +4784,7 @@ static PyObject *MovieObj_InsertMovieSegment(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_InsertEmptyMovieSegment(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_InsertEmptyMovieSegment(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -5326,9 +4803,7 @@ static PyObject *MovieObj_InsertEmptyMovieSegment(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_DeleteMovieSegment(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_DeleteMovieSegment(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -5347,9 +4822,7 @@ static PyObject *MovieObj_DeleteMovieSegment(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_ScaleMovieSegment(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_ScaleMovieSegment(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -5371,9 +4844,7 @@ static PyObject *MovieObj_ScaleMovieSegment(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_CutMovieSelection(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_CutMovieSelection(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Movie _rv;
@@ -5385,9 +4856,7 @@ static PyObject *MovieObj_CutMovieSelection(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_CopyMovieSelection(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_CopyMovieSelection(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Movie _rv;
@@ -5399,9 +4868,7 @@ static PyObject *MovieObj_CopyMovieSelection(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_PasteMovieSelection(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_PasteMovieSelection(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Movie src;
@@ -5415,9 +4882,7 @@ static PyObject *MovieObj_PasteMovieSelection(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_AddMovieSelection(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_AddMovieSelection(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Movie src;
@@ -5431,9 +4896,7 @@ static PyObject *MovieObj_AddMovieSelection(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_ClearMovieSelection(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_ClearMovieSelection(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -5444,9 +4907,7 @@ static PyObject *MovieObj_ClearMovieSelection(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_PutMovieIntoTypedHandle(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_PutMovieIntoTypedHandle(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -5480,9 +4941,7 @@ static PyObject *MovieObj_PutMovieIntoTypedHandle(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_CopyMovieSettings(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_CopyMovieSettings(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -5498,9 +4957,7 @@ static PyObject *MovieObj_CopyMovieSettings(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_ConvertMovieToFile(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_ConvertMovieToFile(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -5536,9 +4993,7 @@ static PyObject *MovieObj_ConvertMovieToFile(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieDataSize(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieDataSize(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -5556,9 +5011,7 @@ static PyObject *MovieObj_GetMovieDataSize(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieDataSize64(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieDataSize64(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -5579,9 +5032,7 @@ static PyObject *MovieObj_GetMovieDataSize64(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_PtInMovie(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_PtInMovie(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -5596,9 +5047,7 @@ static PyObject *MovieObj_PtInMovie(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMovieLanguage(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMovieLanguage(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long language;
@@ -5612,9 +5061,7 @@ static PyObject *MovieObj_SetMovieLanguage(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieNextInterestingTime(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieNextInterestingTime(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short interestingTimeFlags;
@@ -5645,9 +5092,7 @@ static PyObject *MovieObj_GetMovieNextInterestingTime(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_AddMovieResource(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_AddMovieResource(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -5668,9 +5113,7 @@ static PyObject *MovieObj_AddMovieResource(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_UpdateMovieResource(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_UpdateMovieResource(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -5692,9 +5135,7 @@ static PyObject *MovieObj_UpdateMovieResource(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_HasMovieChanged(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_HasMovieChanged(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -5706,9 +5147,7 @@ static PyObject *MovieObj_HasMovieChanged(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_ClearMovieChanged(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_ClearMovieChanged(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -5719,9 +5158,7 @@ static PyObject *MovieObj_ClearMovieChanged(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMovieDefaultDataRef(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMovieDefaultDataRef(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -5740,9 +5177,7 @@ static PyObject *MovieObj_SetMovieDefaultDataRef(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieDefaultDataRef(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieDefaultDataRef(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -5762,9 +5197,7 @@ static PyObject *MovieObj_GetMovieDefaultDataRef(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *MovieObj_SetMovieAnchorDataRef(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMovieAnchorDataRef(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -5786,9 +5219,7 @@ static PyObject *MovieObj_SetMovieAnchorDataRef(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *MovieObj_GetMovieAnchorDataRef(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieAnchorDataRef(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -5810,9 +5241,7 @@ static PyObject *MovieObj_GetMovieAnchorDataRef(_self, _args)
 }
 #endif
 
-static PyObject *MovieObj_SetMovieColorTable(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMovieColorTable(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -5828,9 +5257,7 @@ static PyObject *MovieObj_SetMovieColorTable(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieColorTable(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieColorTable(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -5845,9 +5272,7 @@ static PyObject *MovieObj_GetMovieColorTable(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_FlattenMovie(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_FlattenMovie(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long movieFlattenFlags;
@@ -5878,9 +5303,7 @@ static PyObject *MovieObj_FlattenMovie(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_FlattenMovieData(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_FlattenMovieData(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Movie _rv;
@@ -5907,9 +5330,7 @@ static PyObject *MovieObj_FlattenMovieData(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_MovieSearchText(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_MovieSearchText(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -5939,9 +5360,7 @@ static PyObject *MovieObj_MovieSearchText(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetPosterBox(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetPosterBox(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect boxRect;
@@ -5954,9 +5373,7 @@ static PyObject *MovieObj_GetPosterBox(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetPosterBox(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetPosterBox(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect boxRect;
@@ -5970,9 +5387,7 @@ static PyObject *MovieObj_SetPosterBox(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieSegmentDisplayBoundsRgn(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieSegmentDisplayBoundsRgn(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
@@ -5990,9 +5405,7 @@ static PyObject *MovieObj_GetMovieSegmentDisplayBoundsRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMovieStatus(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieStatus(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -6009,9 +5422,7 @@ static PyObject *MovieObj_GetMovieStatus(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *MovieObj_GetMovieLoadState(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMovieLoadState(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -6024,9 +5435,7 @@ static PyObject *MovieObj_GetMovieLoadState(_self, _args)
 }
 #endif
 
-static PyObject *MovieObj_NewMovieController(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_NewMovieController(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	MovieController _rv;
@@ -6044,9 +5453,7 @@ static PyObject *MovieObj_NewMovieController(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_PutMovieOnScrap(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_PutMovieOnScrap(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6062,9 +5469,7 @@ static PyObject *MovieObj_PutMovieOnScrap(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_SetMoviePlayHints(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_SetMoviePlayHints(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long flags;
@@ -6081,9 +5486,7 @@ static PyObject *MovieObj_SetMoviePlayHints(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_GetMaxLoadedTimeInMovie(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_GetMaxLoadedTimeInMovie(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6098,9 +5501,7 @@ static PyObject *MovieObj_GetMaxLoadedTimeInMovie(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_QTMovieNeedsTimeTable(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_QTMovieNeedsTimeTable(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6115,9 +5516,7 @@ static PyObject *MovieObj_QTMovieNeedsTimeTable(_self, _args)
 	return _res;
 }
 
-static PyObject *MovieObj_QTGetDataRefMaxFileOffset(_self, _args)
-	MovieObject *_self;
-	PyObject *_args;
+static PyObject *MovieObj_QTGetDataRefMaxFileOffset(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6373,9 +5772,7 @@ static PyMethodDef MovieObj_methods[] = {
 
 PyMethodChain MovieObj_chain = { MovieObj_methods, NULL };
 
-static PyObject *MovieObj_getattr(self, name)
-	MovieObject *self;
-	char *name;
+static PyObject *MovieObj_getattr(MovieObject *self, char *name)
 {
 	return Py_FindMethodInChain(&MovieObj_chain, (PyObject *)self, name);
 }
@@ -6412,9 +5809,7 @@ PyTypeObject Movie_Type = {
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Qt_CheckQuickTimeRegistration(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_CheckQuickTimeRegistration(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	void * registrationKey;
@@ -6431,9 +5826,7 @@ static PyObject *Qt_CheckQuickTimeRegistration(_self, _args)
 }
 #endif
 
-static PyObject *Qt_EnterMovies(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_EnterMovies(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6446,9 +5839,7 @@ static PyObject *Qt_EnterMovies(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_ExitMovies(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_ExitMovies(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -6459,9 +5850,7 @@ static PyObject *Qt_ExitMovies(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_GetMoviesError(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_GetMoviesError(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6474,9 +5863,7 @@ static PyObject *Qt_GetMoviesError(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_ClearMoviesStickyError(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_ClearMoviesStickyError(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -6487,9 +5874,7 @@ static PyObject *Qt_ClearMoviesStickyError(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_GetMoviesStickyError(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_GetMoviesStickyError(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6502,9 +5887,7 @@ static PyObject *Qt_GetMoviesStickyError(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_DisposeMatte(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_DisposeMatte(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle theMatte;
@@ -6517,9 +5900,7 @@ static PyObject *Qt_DisposeMatte(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_NewMovie(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_NewMovie(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Movie _rv;
@@ -6533,9 +5914,7 @@ static PyObject *Qt_NewMovie(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_GetDataHandler(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_GetDataHandler(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Component _rv;
@@ -6557,9 +5936,7 @@ static PyObject *Qt_GetDataHandler(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Qt_OpenADataHandler(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_OpenADataHandler(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6592,9 +5969,7 @@ static PyObject *Qt_OpenADataHandler(_self, _args)
 }
 #endif
 
-static PyObject *Qt_PasteHandleIntoMovie(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_PasteHandleIntoMovie(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6621,9 +5996,7 @@ static PyObject *Qt_PasteHandleIntoMovie(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_GetMovieImporterForDataRef(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_GetMovieImporterForDataRef(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6646,9 +6019,7 @@ static PyObject *Qt_GetMovieImporterForDataRef(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_TrackTimeToMediaTime(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_TrackTimeToMediaTime(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue _rv;
@@ -6665,9 +6036,7 @@ static PyObject *Qt_TrackTimeToMediaTime(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_NewUserData(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_NewUserData(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6681,9 +6050,7 @@ static PyObject *Qt_NewUserData(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_NewUserDataFromHandle(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_NewUserDataFromHandle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6700,9 +6067,7 @@ static PyObject *Qt_NewUserDataFromHandle(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_CreateMovieFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_CreateMovieFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6731,9 +6096,7 @@ static PyObject *Qt_CreateMovieFile(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_OpenMovieFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_OpenMovieFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6753,9 +6116,7 @@ static PyObject *Qt_OpenMovieFile(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_CloseMovieFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_CloseMovieFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6770,9 +6131,7 @@ static PyObject *Qt_CloseMovieFile(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_DeleteMovieFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_DeleteMovieFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6787,9 +6146,7 @@ static PyObject *Qt_DeleteMovieFile(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_NewMovieFromFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_NewMovieFromFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6817,9 +6174,7 @@ static PyObject *Qt_NewMovieFromFile(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_NewMovieFromHandle(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_NewMovieFromHandle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6842,9 +6197,7 @@ static PyObject *Qt_NewMovieFromHandle(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_NewMovieFromDataFork(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_NewMovieFromDataFork(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6870,9 +6223,7 @@ static PyObject *Qt_NewMovieFromDataFork(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_NewMovieFromDataFork64(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_NewMovieFromDataFork64(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6898,9 +6249,7 @@ static PyObject *Qt_NewMovieFromDataFork64(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_NewMovieFromDataRef(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_NewMovieFromDataRef(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6926,9 +6275,7 @@ static PyObject *Qt_NewMovieFromDataRef(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_RemoveMovieResource(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_RemoveMovieResource(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6946,9 +6293,7 @@ static PyObject *Qt_RemoveMovieResource(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_CreateShortcutMovieFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_CreateShortcutMovieFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -6978,9 +6323,7 @@ static PyObject *Qt_CreateShortcutMovieFile(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_NewMovieFromScrap(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_NewMovieFromScrap(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Movie _rv;
@@ -6994,9 +6337,7 @@ static PyObject *Qt_NewMovieFromScrap(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_QTNewAlias(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_QTNewAlias(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -7016,9 +6357,7 @@ static PyObject *Qt_QTNewAlias(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_EndFullScreen(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_EndFullScreen(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -7036,9 +6375,7 @@ static PyObject *Qt_EndFullScreen(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_AddSoundDescriptionExtension(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_AddSoundDescriptionExtension(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -7059,9 +6396,7 @@ static PyObject *Qt_AddSoundDescriptionExtension(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_GetSoundDescriptionExtension(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_GetSoundDescriptionExtension(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -7081,9 +6416,7 @@ static PyObject *Qt_GetSoundDescriptionExtension(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_RemoveSoundDescriptionExtension(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_RemoveSoundDescriptionExtension(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -7101,9 +6434,7 @@ static PyObject *Qt_RemoveSoundDescriptionExtension(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_QTIsStandardParameterDialogEvent(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_QTIsStandardParameterDialogEvent(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -7120,9 +6451,7 @@ static PyObject *Qt_QTIsStandardParameterDialogEvent(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_QTDismissStandardParameterDialog(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_QTDismissStandardParameterDialog(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -7137,9 +6466,7 @@ static PyObject *Qt_QTDismissStandardParameterDialog(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_QTStandardParameterDialogDoAction(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_QTStandardParameterDialogDoAction(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -7160,9 +6487,7 @@ static PyObject *Qt_QTStandardParameterDialogDoAction(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_QTRegisterAccessKey(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_QTRegisterAccessKey(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -7183,9 +6508,7 @@ static PyObject *Qt_QTRegisterAccessKey(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_QTUnregisterAccessKey(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_QTUnregisterAccessKey(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -7206,9 +6529,7 @@ static PyObject *Qt_QTUnregisterAccessKey(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_QTTextToNativeText(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_QTTextToNativeText(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -7229,9 +6550,7 @@ static PyObject *Qt_QTTextToNativeText(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_VideoMediaResetStatistics(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_VideoMediaResetStatistics(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7245,9 +6564,7 @@ static PyObject *Qt_VideoMediaResetStatistics(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_VideoMediaGetStatistics(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_VideoMediaGetStatistics(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7261,9 +6578,7 @@ static PyObject *Qt_VideoMediaGetStatistics(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_VideoMediaGetStallCount(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_VideoMediaGetStallCount(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7280,9 +6595,7 @@ static PyObject *Qt_VideoMediaGetStallCount(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_VideoMediaSetCodecParameter(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_VideoMediaSetCodecParameter(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7311,9 +6624,7 @@ static PyObject *Qt_VideoMediaSetCodecParameter(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_VideoMediaGetCodecParameter(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_VideoMediaGetCodecParameter(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7336,9 +6647,7 @@ static PyObject *Qt_VideoMediaGetCodecParameter(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_TextMediaAddTextSample(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_TextMediaAddTextSample(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7400,9 +6709,7 @@ static PyObject *Qt_TextMediaAddTextSample(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_TextMediaAddTESample(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_TextMediaAddTESample(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7449,9 +6756,7 @@ static PyObject *Qt_TextMediaAddTESample(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_TextMediaAddHiliteSample(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_TextMediaAddHiliteSample(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7480,9 +6785,7 @@ static PyObject *Qt_TextMediaAddHiliteSample(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_TextMediaDrawRaw(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_TextMediaDrawRaw(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7511,9 +6814,7 @@ static PyObject *Qt_TextMediaDrawRaw(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_TextMediaSetTextProperty(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_TextMediaSetTextProperty(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7539,9 +6840,7 @@ static PyObject *Qt_TextMediaSetTextProperty(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_TextMediaRawSetup(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_TextMediaRawSetup(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7573,9 +6872,7 @@ static PyObject *Qt_TextMediaRawSetup(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_TextMediaRawIdle(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_TextMediaRawIdle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7604,9 +6901,7 @@ static PyObject *Qt_TextMediaRawIdle(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_TextMediaFindNextText(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_TextMediaFindNextText(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7641,9 +6936,7 @@ static PyObject *Qt_TextMediaFindNextText(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_TextMediaHiliteTextSample(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_TextMediaHiliteTextSample(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7669,9 +6962,7 @@ static PyObject *Qt_TextMediaHiliteTextSample(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_TextMediaSetTextSampleData(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_TextMediaSetTextSampleData(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7691,9 +6982,7 @@ static PyObject *Qt_TextMediaSetTextSampleData(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SpriteMediaSetProperty(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaSetProperty(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7716,9 +7005,7 @@ static PyObject *Qt_SpriteMediaSetProperty(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SpriteMediaGetProperty(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaGetProperty(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7741,9 +7028,7 @@ static PyObject *Qt_SpriteMediaGetProperty(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SpriteMediaHitTestSprites(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaHitTestSprites(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7766,9 +7051,7 @@ static PyObject *Qt_SpriteMediaHitTestSprites(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SpriteMediaCountSprites(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaCountSprites(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7785,9 +7068,7 @@ static PyObject *Qt_SpriteMediaCountSprites(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SpriteMediaCountImages(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaCountImages(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7804,9 +7085,7 @@ static PyObject *Qt_SpriteMediaCountImages(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SpriteMediaGetIndImageDescription(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaGetIndImageDescription(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7826,9 +7105,7 @@ static PyObject *Qt_SpriteMediaGetIndImageDescription(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SpriteMediaGetDisplayedSampleNumber(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaGetDisplayedSampleNumber(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7845,9 +7122,7 @@ static PyObject *Qt_SpriteMediaGetDisplayedSampleNumber(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SpriteMediaGetSpriteName(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaGetSpriteName(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7867,9 +7142,7 @@ static PyObject *Qt_SpriteMediaGetSpriteName(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SpriteMediaGetImageName(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaGetImageName(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7889,9 +7162,7 @@ static PyObject *Qt_SpriteMediaGetImageName(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SpriteMediaSetSpriteProperty(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaSetSpriteProperty(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7914,9 +7185,7 @@ static PyObject *Qt_SpriteMediaSetSpriteProperty(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SpriteMediaGetSpriteProperty(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaGetSpriteProperty(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7939,9 +7208,7 @@ static PyObject *Qt_SpriteMediaGetSpriteProperty(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SpriteMediaHitTestAllSprites(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaHitTestAllSprites(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7964,9 +7231,7 @@ static PyObject *Qt_SpriteMediaHitTestAllSprites(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SpriteMediaHitTestOneSprite(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaHitTestOneSprite(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -7992,9 +7257,7 @@ static PyObject *Qt_SpriteMediaHitTestOneSprite(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SpriteMediaSpriteIndexToID(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaSpriteIndexToID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8014,9 +7277,7 @@ static PyObject *Qt_SpriteMediaSpriteIndexToID(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SpriteMediaSpriteIDToIndex(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaSpriteIDToIndex(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8036,9 +7297,7 @@ static PyObject *Qt_SpriteMediaSpriteIDToIndex(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SpriteMediaSetActionVariable(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaSetActionVariable(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8058,9 +7317,7 @@ static PyObject *Qt_SpriteMediaSetActionVariable(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SpriteMediaGetActionVariable(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaGetActionVariable(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8082,9 +7339,7 @@ static PyObject *Qt_SpriteMediaGetActionVariable(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Qt_SpriteMediaGetIndImageProperty(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaGetIndImageProperty(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8108,9 +7363,7 @@ static PyObject *Qt_SpriteMediaGetIndImageProperty(_self, _args)
 }
 #endif
 
-static PyObject *Qt_SpriteMediaDisposeSprite(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaDisposeSprite(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8127,9 +7380,7 @@ static PyObject *Qt_SpriteMediaDisposeSprite(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SpriteMediaSetActionVariableToString(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaSetActionVariableToString(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8149,9 +7400,7 @@ static PyObject *Qt_SpriteMediaSetActionVariableToString(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SpriteMediaGetActionVariableAsString(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SpriteMediaGetActionVariableAsString(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8171,9 +7420,7 @@ static PyObject *Qt_SpriteMediaGetActionVariableAsString(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_FlashMediaSetPan(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_FlashMediaSetPan(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8193,9 +7440,7 @@ static PyObject *Qt_FlashMediaSetPan(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_FlashMediaSetZoom(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_FlashMediaSetZoom(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8212,9 +7457,7 @@ static PyObject *Qt_FlashMediaSetZoom(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_FlashMediaSetZoomRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_FlashMediaSetZoomRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8240,9 +7483,7 @@ static PyObject *Qt_FlashMediaSetZoomRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_FlashMediaGetRefConBounds(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_FlashMediaGetRefConBounds(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8271,9 +7512,7 @@ static PyObject *Qt_FlashMediaGetRefConBounds(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_FlashMediaGetRefConID(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_FlashMediaGetRefConID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8293,9 +7532,7 @@ static PyObject *Qt_FlashMediaGetRefConID(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_FlashMediaIDToRefCon(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_FlashMediaIDToRefCon(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8315,9 +7552,7 @@ static PyObject *Qt_FlashMediaIDToRefCon(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_FlashMediaGetDisplayedFrameNumber(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_FlashMediaGetDisplayedFrameNumber(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8334,9 +7569,7 @@ static PyObject *Qt_FlashMediaGetDisplayedFrameNumber(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_FlashMediaFrameNumberToMovieTime(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_FlashMediaFrameNumberToMovieTime(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8356,9 +7589,7 @@ static PyObject *Qt_FlashMediaFrameNumberToMovieTime(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_FlashMediaFrameLabelToMovieTime(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_FlashMediaFrameLabelToMovieTime(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8380,9 +7611,7 @@ static PyObject *Qt_FlashMediaFrameLabelToMovieTime(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Qt_MovieMediaGetCurrentMovieProperty(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_MovieMediaGetCurrentMovieProperty(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8405,9 +7634,7 @@ static PyObject *Qt_MovieMediaGetCurrentMovieProperty(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Qt_MovieMediaGetCurrentTrackProperty(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_MovieMediaGetCurrentTrackProperty(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8433,9 +7660,7 @@ static PyObject *Qt_MovieMediaGetCurrentTrackProperty(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Qt_MovieMediaGetChildMovieDataReference(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_MovieMediaGetChildMovieDataReference(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8470,9 +7695,7 @@ static PyObject *Qt_MovieMediaGetChildMovieDataReference(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Qt_MovieMediaSetChildMovieDataReference(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_MovieMediaSetChildMovieDataReference(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8498,9 +7721,7 @@ static PyObject *Qt_MovieMediaSetChildMovieDataReference(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Qt_MovieMediaLoadChildMovieFromDataReference(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_MovieMediaLoadChildMovieFromDataReference(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8518,9 +7739,7 @@ static PyObject *Qt_MovieMediaLoadChildMovieFromDataReference(_self, _args)
 }
 #endif
 
-static PyObject *Qt_Media3DGetCurrentGroup(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_Media3DGetCurrentGroup(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8537,9 +7756,7 @@ static PyObject *Qt_Media3DGetCurrentGroup(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_Media3DTranslateNamedObjectTo(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_Media3DTranslateNamedObjectTo(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8565,9 +7782,7 @@ static PyObject *Qt_Media3DTranslateNamedObjectTo(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_Media3DScaleNamedObjectTo(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_Media3DScaleNamedObjectTo(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8593,9 +7808,7 @@ static PyObject *Qt_Media3DScaleNamedObjectTo(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_Media3DRotateNamedObjectTo(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_Media3DRotateNamedObjectTo(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8621,9 +7834,7 @@ static PyObject *Qt_Media3DRotateNamedObjectTo(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_Media3DSetCameraData(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_Media3DSetCameraData(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8640,9 +7851,7 @@ static PyObject *Qt_Media3DSetCameraData(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_Media3DGetCameraData(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_Media3DGetCameraData(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8659,9 +7868,7 @@ static PyObject *Qt_Media3DGetCameraData(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_Media3DSetCameraAngleAspect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_Media3DSetCameraAngleAspect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8681,9 +7888,7 @@ static PyObject *Qt_Media3DSetCameraAngleAspect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_Media3DGetCameraAngleAspect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_Media3DGetCameraAngleAspect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8703,9 +7908,7 @@ static PyObject *Qt_Media3DGetCameraAngleAspect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_Media3DSetCameraRange(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_Media3DSetCameraRange(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8722,9 +7925,7 @@ static PyObject *Qt_Media3DSetCameraRange(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_Media3DGetCameraRange(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_Media3DGetCameraRange(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8743,9 +7944,7 @@ static PyObject *Qt_Media3DGetCameraRange(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Qt_Media3DGetViewObject(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_Media3DGetViewObject(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8763,9 +7962,7 @@ static PyObject *Qt_Media3DGetViewObject(_self, _args)
 }
 #endif
 
-static PyObject *Qt_NewTimeBase(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_NewTimeBase(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeBase _rv;
@@ -8777,9 +7974,7 @@ static PyObject *Qt_NewTimeBase(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_ConvertTime(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_ConvertTime(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeRecord inout;
@@ -8795,9 +7990,7 @@ static PyObject *Qt_ConvertTime(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_ConvertTimeScale(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_ConvertTimeScale(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeRecord inout;
@@ -8813,9 +8006,7 @@ static PyObject *Qt_ConvertTimeScale(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_AddTime(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_AddTime(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeRecord dst;
@@ -8831,9 +8022,7 @@ static PyObject *Qt_AddTime(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_SubtractTime(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_SubtractTime(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeRecord dst;
@@ -8849,9 +8038,7 @@ static PyObject *Qt_SubtractTime(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_MusicMediaGetIndexedTunePlayer(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_MusicMediaGetIndexedTunePlayer(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
@@ -8871,9 +8058,7 @@ static PyObject *Qt_MusicMediaGetIndexedTunePlayer(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_AlignWindow(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_AlignWindow(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	WindowPtr wp;
@@ -8891,9 +8076,7 @@ static PyObject *Qt_AlignWindow(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_DragAlignedWindow(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_DragAlignedWindow(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	WindowPtr wp;
@@ -8914,9 +8097,7 @@ static PyObject *Qt_DragAlignedWindow(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_MoviesTask(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qt_MoviesTask(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long maxMilliSecToUse;
@@ -9180,25 +8361,25 @@ static PyMethodDef Qt_methods[] = {
 
 
 
-void initQt()
+void initQt(void)
 {
 	PyObject *m;
 	PyObject *d;
 
 
 
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(TrackObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(TrackObj_Convert);
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(MovieObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MovieObj_Convert);
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(MovieCtlObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MovieCtlObj_Convert);
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(TimeBaseObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(TimeBaseObj_Convert);
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(UserDataObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(UserDataObj_Convert);
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(MediaObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MediaObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(Track, TrackObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Track, TrackObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(Movie, MovieObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Movie, MovieObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(MovieController, MovieCtlObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MovieController, MovieCtlObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(TimeBase, TimeBaseObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(TimeBase, TimeBaseObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(UserData, UserDataObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(UserData, UserDataObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(Media, MediaObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Media, MediaObj_Convert);
 
 
 	m = Py_InitModule("Qt", Qt_methods);

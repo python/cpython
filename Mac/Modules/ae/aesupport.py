@@ -82,8 +82,12 @@ AEMethod = OSErrMethodGenerator
 
 
 includestuff = includestuff + """
+#ifdef WITHOUT_FRAMEWORKS
 #include <AppleEvents.h>
 #include <AEObjects.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_AEDesc_New(AEDesc *);
@@ -144,10 +148,10 @@ GenericEventHandler(const AppleEvent *request, AppleEvent *reply, unsigned long 
 """
 
 initstuff = initstuff + """
-	upp_AEIdleProc = NewAEIdleProc(AEIdleProc);
-	upp_GenericEventHandler = NewAEEventHandlerProc(GenericEventHandler);
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(AEDesc_New);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(AEDesc_Convert);
+	upp_AEIdleProc = NewAEIdleUPP(AEIdleProc);
+	upp_GenericEventHandler = NewAEEventHandlerUPP(GenericEventHandler);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(AEDesc *, AEDesc_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(AEDesc, AEDesc_Convert);
 """
 
 module = MacModule('AE', 'AE', includestuff, finalstuff, initstuff)

@@ -61,7 +61,11 @@ PenState = StructOutputBufferType('PenState')
 PenState_ptr = StructInputBufferType('PenState')
 
 includestuff = includestuff + """
-#include <%s>""" % MACHEADERFILE + """
+#ifdef WITHOUT_FRAMEWORKS
+#include <QuickDraw.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_GrafObj_New(GrafPtr);
@@ -153,16 +157,13 @@ staticforward PyObject *BMObj_NewCopied(BitMapPtr);
 /*
 ** Parse/generate RGB records
 */
-PyObject *QdRGB_New(itself)
-	RGBColorPtr itself;
+PyObject *QdRGB_New(RGBColorPtr itself)
 {
 
 	return Py_BuildValue("lll", (long)itself->red, (long)itself->green, (long)itself->blue);
 }
 
-QdRGB_Convert(v, p_itself)
-	PyObject *v;
-	RGBColorPtr p_itself;
+QdRGB_Convert(PyObject *v, RGBColorPtr p_itself)
 {
 	long red, green, blue;
 	
@@ -178,8 +179,7 @@ QdRGB_Convert(v, p_itself)
 ** Generate FontInfo records
 */
 static
-PyObject *QdFI_New(itself)
-	FontInfo *itself;
+PyObject *QdFI_New(FontInfo *itself)
 {
 
 	return Py_BuildValue("hhhh", itself->ascent, itself->descent,
@@ -191,8 +191,7 @@ finalstuff = finalstuff + """
 /* Like BMObj_New, but the original bitmap data structure is copied (and
 ** released when the object is released)
 */
-PyObject *BMObj_NewCopied(itself)
-	BitMapPtr itself;
+PyObject *BMObj_NewCopied(BitMapPtr itself)
 {
 	BitMapObject *it;
 	BitMapPtr itself_copy;
@@ -218,12 +217,12 @@ variablestuff = """
 """
 
 initstuff = initstuff + """
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(BMObj_New);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(BMObj_Convert);
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(GrafObj_New);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(GrafObj_Convert);
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(QdRGB_New);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(QdRGB_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(BitMapPtr, BMObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(BitMapPtr, BMObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(GrafPtr, GrafObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(GrafPtr, GrafObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(RGBColorPtr, QdRGB_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(RGBColorPtr, QdRGB_Convert);
 """
 
 ## not yet...

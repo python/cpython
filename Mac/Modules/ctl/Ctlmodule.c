@@ -8,9 +8,11 @@
 #include "macglue.h"
 #include "pymactoolbox.h"
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <Controls.h>
-#ifndef kControlCheckBoxUncheckedValue
 #include <ControlDefinitions.h>
+#else
+#include <Carbon/Carbon.h>
 #endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
@@ -36,8 +38,7 @@ staticforward PyObject *CtlObj_WhichControl(ControlHandle);
 */
 #if 0 /* Not needed */
 static PyObject *
-ControlFontStyle_New(itself)
-	ControlFontStyleRec *itself;
+ControlFontStyle_New(ControlFontStyleRec *itself)
 {
 
 	return Py_BuildValue("hhhhhhO&O&", itself->flags, itself->font,
@@ -47,9 +48,7 @@ ControlFontStyle_New(itself)
 #endif
 
 static int
-ControlFontStyle_Convert(v, itself)
-	PyObject *v;
-	ControlFontStyleRec *itself;
+ControlFontStyle_Convert(PyObject *v, ControlFontStyleRec *itself)
 {
 	return PyArg_ParseTuple(v, "hhhhhhO&O&", &itself->flags,
 		&itself->font, &itself->size, &itself->style, &itself->mode,
@@ -61,17 +60,14 @@ ControlFontStyle_Convert(v, itself)
 ** Parse/generate ControlID records
 */
 static PyObject *
-PyControlID_New(itself)
-	ControlID *itself;
+PyControlID_New(ControlID *itself)
 {
 
 	return Py_BuildValue("O&l", PyMac_BuildOSType, itself->signature, itself->id);
 }
 
 static int
-PyControlID_Convert(v, itself)
-	PyObject *v;
-	ControlID *itself;
+PyControlID_Convert(PyObject *v, ControlID *itself)
 {
 	return PyArg_ParseTuple(v, "O&l", PyMac_GetOSType, &itself->signature, &itself->id);
 }
@@ -103,8 +99,7 @@ typedef struct ControlObject {
 	PyObject *ob_callbackdict;
 } ControlObject;
 
-PyObject *CtlObj_New(itself)
-	ControlHandle itself;
+PyObject *CtlObj_New(ControlHandle itself)
 {
 	ControlObject *it;
 	if (itself == NULL) return PyMac_Error(resNotFound);
@@ -115,9 +110,7 @@ PyObject *CtlObj_New(itself)
 	it->ob_callbackdict = NULL;
 	return (PyObject *)it;
 }
-CtlObj_Convert(v, p_itself)
-	PyObject *v;
-	ControlHandle *p_itself;
+CtlObj_Convert(PyObject *v, ControlHandle *p_itself)
 {
 	if (!CtlObj_Check(v))
 	{
@@ -128,17 +121,14 @@ CtlObj_Convert(v, p_itself)
 	return 1;
 }
 
-static void CtlObj_dealloc(self)
-	ControlObject *self;
+static void CtlObj_dealloc(ControlObject *self)
 {
 	Py_XDECREF(self->ob_callbackdict);
 	if (self->ob_itself)SetControlReference(self->ob_itself, (long)0); /* Make it forget about us */
 	PyMem_DEL(self);
 }
 
-static PyObject *CtlObj_HiliteControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_HiliteControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ControlPartCode hiliteState;
@@ -152,9 +142,7 @@ static PyObject *CtlObj_HiliteControl(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_ShowControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_ShowControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -165,9 +153,7 @@ static PyObject *CtlObj_ShowControl(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_HideControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_HideControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -178,9 +164,7 @@ static PyObject *CtlObj_HideControl(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_IsControlActive(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_IsControlActive(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -192,9 +176,7 @@ static PyObject *CtlObj_IsControlActive(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_IsControlVisible(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_IsControlVisible(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -206,9 +188,7 @@ static PyObject *CtlObj_IsControlVisible(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_ActivateControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_ActivateControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -221,9 +201,7 @@ static PyObject *CtlObj_ActivateControl(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_DeactivateControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_DeactivateControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -236,9 +214,7 @@ static PyObject *CtlObj_DeactivateControl(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetControlVisibility(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControlVisibility(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -257,9 +233,7 @@ static PyObject *CtlObj_SetControlVisibility(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_Draw1Control(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_Draw1Control(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -270,9 +244,7 @@ static PyObject *CtlObj_Draw1Control(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_GetBestControlRect(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetBestControlRect(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -290,9 +262,7 @@ static PyObject *CtlObj_GetBestControlRect(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetControlFontStyle(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControlFontStyle(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -308,9 +278,7 @@ static PyObject *CtlObj_SetControlFontStyle(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_DrawControlInCurrentPort(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_DrawControlInCurrentPort(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -321,9 +289,7 @@ static PyObject *CtlObj_DrawControlInCurrentPort(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetUpControlBackground(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetUpControlBackground(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -342,9 +308,7 @@ static PyObject *CtlObj_SetUpControlBackground(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetUpControlTextColor(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetUpControlTextColor(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -363,9 +327,7 @@ static PyObject *CtlObj_SetUpControlTextColor(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_DragControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_DragControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Point startPoint;
@@ -388,9 +350,7 @@ static PyObject *CtlObj_DragControl(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_TestControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_TestControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ControlPartCode _rv;
@@ -407,9 +367,7 @@ static PyObject *CtlObj_TestControl(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *CtlObj_HandleControlContextualMenuClick(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_HandleControlContextualMenuClick(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -430,9 +388,7 @@ static PyObject *CtlObj_HandleControlContextualMenuClick(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *CtlObj_GetControlClickActivation(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlClickActivation(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -454,9 +410,7 @@ static PyObject *CtlObj_GetControlClickActivation(_self, _args)
 }
 #endif
 
-static PyObject *CtlObj_HandleControlKey(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_HandleControlKey(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 _rv;
@@ -479,9 +433,7 @@ static PyObject *CtlObj_HandleControlKey(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *CtlObj_HandleControlSetCursor(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_HandleControlSetCursor(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -503,9 +455,7 @@ static PyObject *CtlObj_HandleControlSetCursor(_self, _args)
 }
 #endif
 
-static PyObject *CtlObj_MoveControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_MoveControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 h;
@@ -522,9 +472,7 @@ static PyObject *CtlObj_MoveControl(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SizeControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SizeControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 w;
@@ -541,9 +489,7 @@ static PyObject *CtlObj_SizeControl(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetControlTitle(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControlTitle(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Str255 title;
@@ -557,9 +503,7 @@ static PyObject *CtlObj_SetControlTitle(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_GetControlTitle(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlTitle(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Str255 title;
@@ -572,9 +516,7 @@ static PyObject *CtlObj_GetControlTitle(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_GetControlValue(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlValue(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 _rv;
@@ -586,9 +528,7 @@ static PyObject *CtlObj_GetControlValue(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetControlValue(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControlValue(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 newValue;
@@ -602,9 +542,7 @@ static PyObject *CtlObj_SetControlValue(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_GetControlMinimum(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlMinimum(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 _rv;
@@ -616,9 +554,7 @@ static PyObject *CtlObj_GetControlMinimum(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetControlMinimum(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControlMinimum(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 newMinimum;
@@ -632,9 +568,7 @@ static PyObject *CtlObj_SetControlMinimum(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_GetControlMaximum(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlMaximum(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 _rv;
@@ -646,9 +580,7 @@ static PyObject *CtlObj_GetControlMaximum(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetControlMaximum(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControlMaximum(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 newMaximum;
@@ -662,9 +594,7 @@ static PyObject *CtlObj_SetControlMaximum(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_GetControlViewSize(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlViewSize(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
@@ -676,9 +606,7 @@ static PyObject *CtlObj_GetControlViewSize(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetControlViewSize(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControlViewSize(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 newViewSize;
@@ -692,9 +620,7 @@ static PyObject *CtlObj_SetControlViewSize(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_GetControl32BitValue(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControl32BitValue(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
@@ -706,9 +632,7 @@ static PyObject *CtlObj_GetControl32BitValue(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetControl32BitValue(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControl32BitValue(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 newValue;
@@ -722,9 +646,7 @@ static PyObject *CtlObj_SetControl32BitValue(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_GetControl32BitMaximum(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControl32BitMaximum(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
@@ -736,9 +658,7 @@ static PyObject *CtlObj_GetControl32BitMaximum(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetControl32BitMaximum(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControl32BitMaximum(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 newMaximum;
@@ -752,9 +672,7 @@ static PyObject *CtlObj_SetControl32BitMaximum(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_GetControl32BitMinimum(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControl32BitMinimum(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
@@ -766,9 +684,7 @@ static PyObject *CtlObj_GetControl32BitMinimum(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetControl32BitMinimum(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControl32BitMinimum(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 newMinimum;
@@ -782,9 +698,7 @@ static PyObject *CtlObj_SetControl32BitMinimum(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_IsValidControlHandle(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_IsValidControlHandle(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -798,9 +712,7 @@ static PyObject *CtlObj_IsValidControlHandle(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *CtlObj_SetControlID(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControlID(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -819,9 +731,7 @@ static PyObject *CtlObj_SetControlID(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *CtlObj_GetControlID(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlID(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -837,9 +747,7 @@ static PyObject *CtlObj_GetControlID(_self, _args)
 }
 #endif
 
-static PyObject *CtlObj_RemoveControlProperty(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_RemoveControlProperty(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -860,9 +768,7 @@ static PyObject *CtlObj_RemoveControlProperty(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *CtlObj_GetControlPropertyAttributes(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlPropertyAttributes(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -886,9 +792,7 @@ static PyObject *CtlObj_GetControlPropertyAttributes(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *CtlObj_ChangeControlPropertyAttributes(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_ChangeControlPropertyAttributes(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -914,9 +818,7 @@ static PyObject *CtlObj_ChangeControlPropertyAttributes(_self, _args)
 }
 #endif
 
-static PyObject *CtlObj_GetControlRegion(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlRegion(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -935,9 +837,7 @@ static PyObject *CtlObj_GetControlRegion(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_GetControlVariant(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlVariant(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ControlVariant _rv;
@@ -949,9 +849,7 @@ static PyObject *CtlObj_GetControlVariant(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetControlReference(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControlReference(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 data;
@@ -965,9 +863,7 @@ static PyObject *CtlObj_SetControlReference(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_GetControlReference(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlReference(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
@@ -981,9 +877,7 @@ static PyObject *CtlObj_GetControlReference(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *CtlObj_GetAuxiliaryControlRecord(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetAuxiliaryControlRecord(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -1001,9 +895,7 @@ static PyObject *CtlObj_GetAuxiliaryControlRecord(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *CtlObj_SetControlColor(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControlColor(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CCTabHandle newColorTable;
@@ -1018,9 +910,7 @@ static PyObject *CtlObj_SetControlColor(_self, _args)
 }
 #endif
 
-static PyObject *CtlObj_SendControlMessage(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SendControlMessage(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
@@ -1038,9 +928,7 @@ static PyObject *CtlObj_SendControlMessage(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_EmbedControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_EmbedControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1056,9 +944,7 @@ static PyObject *CtlObj_EmbedControl(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_AutoEmbedControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_AutoEmbedControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1074,9 +960,7 @@ static PyObject *CtlObj_AutoEmbedControl(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_GetSuperControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetSuperControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1091,9 +975,7 @@ static PyObject *CtlObj_GetSuperControl(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_CountSubControls(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_CountSubControls(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1108,9 +990,7 @@ static PyObject *CtlObj_CountSubControls(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_GetIndexedSubControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetIndexedSubControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1128,9 +1008,7 @@ static PyObject *CtlObj_GetIndexedSubControl(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetControlSupervisor(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControlSupervisor(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1146,9 +1024,7 @@ static PyObject *CtlObj_SetControlSupervisor(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_GetControlFeatures(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlFeatures(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1163,9 +1039,7 @@ static PyObject *CtlObj_GetControlFeatures(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_GetControlDataSize(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlDataSize(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1188,9 +1062,7 @@ static PyObject *CtlObj_GetControlDataSize(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *CtlObj_HandleControlDragTracking(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_HandleControlDragTracking(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -1214,9 +1086,7 @@ static PyObject *CtlObj_HandleControlDragTracking(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *CtlObj_HandleControlDragReceive(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_HandleControlDragReceive(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -1235,9 +1105,7 @@ static PyObject *CtlObj_HandleControlDragReceive(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *CtlObj_SetControlDragTrackingEnabled(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControlDragTrackingEnabled(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -1256,9 +1124,7 @@ static PyObject *CtlObj_SetControlDragTrackingEnabled(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *CtlObj_IsControlDragTrackingEnabled(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_IsControlDragTrackingEnabled(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -1276,9 +1142,7 @@ static PyObject *CtlObj_IsControlDragTrackingEnabled(_self, _args)
 
 #if ACCESSOR_CALLS_ARE_FUNCTIONS
 
-static PyObject *CtlObj_GetControlBounds(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlBounds(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect bounds;
@@ -1294,9 +1158,7 @@ static PyObject *CtlObj_GetControlBounds(_self, _args)
 
 #if ACCESSOR_CALLS_ARE_FUNCTIONS
 
-static PyObject *CtlObj_IsControlHilited(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_IsControlHilited(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -1311,9 +1173,7 @@ static PyObject *CtlObj_IsControlHilited(_self, _args)
 
 #if ACCESSOR_CALLS_ARE_FUNCTIONS
 
-static PyObject *CtlObj_GetControlHilite(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlHilite(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UInt16 _rv;
@@ -1328,9 +1188,7 @@ static PyObject *CtlObj_GetControlHilite(_self, _args)
 
 #if ACCESSOR_CALLS_ARE_FUNCTIONS
 
-static PyObject *CtlObj_GetControlOwner(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlOwner(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	WindowPtr _rv;
@@ -1345,9 +1203,7 @@ static PyObject *CtlObj_GetControlOwner(_self, _args)
 
 #if ACCESSOR_CALLS_ARE_FUNCTIONS
 
-static PyObject *CtlObj_GetControlDataHandle(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlDataHandle(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle _rv;
@@ -1362,9 +1218,7 @@ static PyObject *CtlObj_GetControlDataHandle(_self, _args)
 
 #if ACCESSOR_CALLS_ARE_FUNCTIONS
 
-static PyObject *CtlObj_GetControlPopupMenuHandle(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlPopupMenuHandle(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	MenuHandle _rv;
@@ -1379,9 +1233,7 @@ static PyObject *CtlObj_GetControlPopupMenuHandle(_self, _args)
 
 #if ACCESSOR_CALLS_ARE_FUNCTIONS
 
-static PyObject *CtlObj_GetControlPopupMenuID(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlPopupMenuID(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -1396,9 +1248,7 @@ static PyObject *CtlObj_GetControlPopupMenuID(_self, _args)
 
 #if ACCESSOR_CALLS_ARE_FUNCTIONS
 
-static PyObject *CtlObj_SetControlDataHandle(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControlDataHandle(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle dataHandle;
@@ -1415,9 +1265,7 @@ static PyObject *CtlObj_SetControlDataHandle(_self, _args)
 
 #if ACCESSOR_CALLS_ARE_FUNCTIONS
 
-static PyObject *CtlObj_SetControlBounds(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControlBounds(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect bounds;
@@ -1434,9 +1282,7 @@ static PyObject *CtlObj_SetControlBounds(_self, _args)
 
 #if ACCESSOR_CALLS_ARE_FUNCTIONS
 
-static PyObject *CtlObj_SetControlPopupMenuHandle(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControlPopupMenuHandle(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	MenuHandle popupMenu;
@@ -1453,9 +1299,7 @@ static PyObject *CtlObj_SetControlPopupMenuHandle(_self, _args)
 
 #if ACCESSOR_CALLS_ARE_FUNCTIONS
 
-static PyObject *CtlObj_SetControlPopupMenuID(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControlPopupMenuID(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short menuID;
@@ -1470,9 +1314,7 @@ static PyObject *CtlObj_SetControlPopupMenuID(_self, _args)
 }
 #endif
 
-static PyObject *CtlObj_GetBevelButtonMenuValue(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetBevelButtonMenuValue(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1487,9 +1329,7 @@ static PyObject *CtlObj_GetBevelButtonMenuValue(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetBevelButtonMenuValue(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetBevelButtonMenuValue(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1505,9 +1345,7 @@ static PyObject *CtlObj_SetBevelButtonMenuValue(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_GetBevelButtonMenuHandle(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetBevelButtonMenuHandle(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1522,9 +1360,7 @@ static PyObject *CtlObj_GetBevelButtonMenuHandle(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetBevelButtonTransform(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetBevelButtonTransform(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1540,9 +1376,7 @@ static PyObject *CtlObj_SetBevelButtonTransform(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetDisclosureTriangleLastValue(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetDisclosureTriangleLastValue(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1558,9 +1392,7 @@ static PyObject *CtlObj_SetDisclosureTriangleLastValue(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_GetTabContentRect(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetTabContentRect(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1575,9 +1407,7 @@ static PyObject *CtlObj_GetTabContentRect(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetTabEnabled(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetTabEnabled(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1596,9 +1426,7 @@ static PyObject *CtlObj_SetTabEnabled(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetImageWellTransform(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetImageWellTransform(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1614,9 +1442,7 @@ static PyObject *CtlObj_SetImageWellTransform(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_as_Resource(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_as_Resource(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle _rv;
@@ -1628,9 +1454,7 @@ static PyObject *CtlObj_as_Resource(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_GetControlRect(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlRect(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect rect;
@@ -1643,9 +1467,7 @@ static PyObject *CtlObj_GetControlRect(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_DisposeControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_DisposeControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -1662,9 +1484,7 @@ static PyObject *CtlObj_DisposeControl(_self, _args)
 
 }
 
-static PyObject *CtlObj_TrackControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_TrackControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -1694,9 +1514,7 @@ static PyObject *CtlObj_TrackControl(_self, _args)
 
 }
 
-static PyObject *CtlObj_HandleControlClick(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_HandleControlClick(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -1730,9 +1548,7 @@ static PyObject *CtlObj_HandleControlClick(_self, _args)
 
 }
 
-static PyObject *CtlObj_SetControlData(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControlData(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -1761,9 +1577,7 @@ static PyObject *CtlObj_SetControlData(_self, _args)
 
 }
 
-static PyObject *CtlObj_GetControlData(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlData(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -1807,9 +1621,7 @@ static PyObject *CtlObj_GetControlData(_self, _args)
 
 }
 
-static PyObject *CtlObj_SetControlData_Handle(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControlData_Handle(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -1837,9 +1649,7 @@ static PyObject *CtlObj_SetControlData_Handle(_self, _args)
 
 }
 
-static PyObject *CtlObj_GetControlData_Handle(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetControlData_Handle(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -1880,9 +1690,7 @@ static PyObject *CtlObj_GetControlData_Handle(_self, _args)
 
 }
 
-static PyObject *CtlObj_SetControlData_Callback(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetControlData_Callback(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -1915,9 +1723,7 @@ static PyObject *CtlObj_SetControlData_Callback(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *CtlObj_GetPopupData(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_GetPopupData(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -1938,9 +1744,7 @@ static PyObject *CtlObj_GetPopupData(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *CtlObj_SetPopupData(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
+static PyObject *CtlObj_SetPopupData(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -2235,17 +2039,14 @@ static PyMethodDef CtlObj_methods[] = {
 
 PyMethodChain CtlObj_chain = { CtlObj_methods, NULL };
 
-static PyObject *CtlObj_getattr(self, name)
-	ControlObject *self;
-	char *name;
+static PyObject *CtlObj_getattr(ControlObject *self, char *name)
 {
 	return Py_FindMethodInChain(&CtlObj_chain, (PyObject *)self, name);
 }
 
 #define CtlObj_setattr NULL
 
-static int CtlObj_compare(self, other)
-	ControlObject *self, *other;
+static int CtlObj_compare(ControlObject *self, ControlObject *other)
 {
 	unsigned long v, w;
 
@@ -2266,8 +2067,7 @@ static int CtlObj_compare(self, other)
 
 #define CtlObj_repr NULL
 
-static long CtlObj_hash(self)
-	ControlObject *self;
+static long CtlObj_hash(ControlObject *self)
 {
 	return (long)self->ob_itself;
 }
@@ -2294,9 +2094,7 @@ PyTypeObject Control_Type = {
 /* -------------------- End object type Control --------------------- */
 
 
-static PyObject *Ctl_NewControl(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Ctl_NewControl(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ControlHandle _rv;
@@ -2334,9 +2132,7 @@ static PyObject *Ctl_NewControl(_self, _args)
 	return _res;
 }
 
-static PyObject *Ctl_GetNewControl(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Ctl_GetNewControl(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ControlHandle _rv;
@@ -2353,9 +2149,7 @@ static PyObject *Ctl_GetNewControl(_self, _args)
 	return _res;
 }
 
-static PyObject *Ctl_DrawControls(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Ctl_DrawControls(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	WindowPtr theWindow;
@@ -2368,9 +2162,7 @@ static PyObject *Ctl_DrawControls(_self, _args)
 	return _res;
 }
 
-static PyObject *Ctl_UpdateControls(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Ctl_UpdateControls(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	WindowPtr theWindow;
@@ -2386,9 +2178,7 @@ static PyObject *Ctl_UpdateControls(_self, _args)
 	return _res;
 }
 
-static PyObject *Ctl_FindControl(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Ctl_FindControl(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ControlPartCode _rv;
@@ -2408,9 +2198,7 @@ static PyObject *Ctl_FindControl(_self, _args)
 	return _res;
 }
 
-static PyObject *Ctl_FindControlUnderMouse(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Ctl_FindControlUnderMouse(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ControlHandle _rv;
@@ -2430,9 +2218,7 @@ static PyObject *Ctl_FindControlUnderMouse(_self, _args)
 	return _res;
 }
 
-static PyObject *Ctl_IdleControls(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Ctl_IdleControls(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	WindowPtr inWindow;
@@ -2447,9 +2233,7 @@ static PyObject *Ctl_IdleControls(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Ctl_GetControlByID(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Ctl_GetControlByID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -2470,9 +2254,7 @@ static PyObject *Ctl_GetControlByID(_self, _args)
 }
 #endif
 
-static PyObject *Ctl_DumpControlHierarchy(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Ctl_DumpControlHierarchy(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2490,9 +2272,7 @@ static PyObject *Ctl_DumpControlHierarchy(_self, _args)
 	return _res;
 }
 
-static PyObject *Ctl_CreateRootControl(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Ctl_CreateRootControl(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2509,9 +2289,7 @@ static PyObject *Ctl_CreateRootControl(_self, _args)
 	return _res;
 }
 
-static PyObject *Ctl_GetRootControl(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Ctl_GetRootControl(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2528,9 +2306,7 @@ static PyObject *Ctl_GetRootControl(_self, _args)
 	return _res;
 }
 
-static PyObject *Ctl_GetKeyboardFocus(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Ctl_GetKeyboardFocus(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2547,9 +2323,7 @@ static PyObject *Ctl_GetKeyboardFocus(_self, _args)
 	return _res;
 }
 
-static PyObject *Ctl_SetKeyboardFocus(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Ctl_SetKeyboardFocus(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2570,9 +2344,7 @@ static PyObject *Ctl_SetKeyboardFocus(_self, _args)
 	return _res;
 }
 
-static PyObject *Ctl_AdvanceKeyboardFocus(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Ctl_AdvanceKeyboardFocus(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2587,9 +2359,7 @@ static PyObject *Ctl_AdvanceKeyboardFocus(_self, _args)
 	return _res;
 }
 
-static PyObject *Ctl_ReverseKeyboardFocus(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Ctl_ReverseKeyboardFocus(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2604,9 +2374,7 @@ static PyObject *Ctl_ReverseKeyboardFocus(_self, _args)
 	return _res;
 }
 
-static PyObject *Ctl_ClearKeyboardFocus(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Ctl_ClearKeyboardFocus(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -2623,9 +2391,7 @@ static PyObject *Ctl_ClearKeyboardFocus(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Ctl_SetAutomaticControlDragTrackingEnabledForWindow(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Ctl_SetAutomaticControlDragTrackingEnabledForWindow(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -2646,9 +2412,7 @@ static PyObject *Ctl_SetAutomaticControlDragTrackingEnabledForWindow(_self, _arg
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Ctl_IsAutomaticControlDragTrackingEnabledForWindow(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Ctl_IsAutomaticControlDragTrackingEnabledForWindow(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -2666,9 +2430,7 @@ static PyObject *Ctl_IsAutomaticControlDragTrackingEnabledForWindow(_self, _args
 }
 #endif
 
-static PyObject *Ctl_as_Control(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Ctl_as_Control(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ControlHandle _rv;
@@ -2736,8 +2498,7 @@ static PyMethodDef Ctl_methods[] = {
 
 
 static PyObject *
-CtlObj_NewUnmanaged(itself)
-	ControlHandle itself;
+CtlObj_NewUnmanaged(ControlHandle itself)
 {
 	ControlObject *it;
 	if (itself == NULL) return PyMac_Error(resNotFound);
@@ -2769,8 +2530,7 @@ CtlObj_WhichControl(ControlHandle c)
 }
 
 static int
-settrackfunc(obj)
-	PyObject *obj;
+settrackfunc(PyObject *obj)
 {
 	if (tracker) {
 		PyErr_SetString(Ctl_Error, "Tracker function in use");
@@ -2781,7 +2541,7 @@ settrackfunc(obj)
 }
 
 static void
-clrtrackfunc()
+clrtrackfunc(void)
 {
 	Py_XDECREF(tracker);
 	tracker = 0;
@@ -2804,11 +2564,7 @@ mytracker(ControlHandle ctl, short part)
 }
 
 static int
-setcallback(myself, which, callback, uppp)
-	PyObject *myself;
-	OSType which;
-	PyObject *callback;
-	UniversalProcPtr *uppp;
+setcallback(PyObject *myself, OSType which, PyObject *callback, UniversalProcPtr *uppp)
 {
 	ControlObject *self = (ControlObject *)myself;
 	char keybuf[9];
@@ -2838,10 +2594,7 @@ setcallback(myself, which, callback, uppp)
 }
 
 static PyObject *
-callcallback(self, which, arglist)
-	ControlObject *self;
-	OSType which;
-	PyObject *arglist;
+callcallback(ControlObject *self, OSType which, PyObject *arglist)
 {
 	char keybuf[9];
 	PyObject *func, *rv;
@@ -2921,20 +2674,20 @@ mytrackingproc(ControlHandle control, Point startPt, ControlActionUPP actionProc
 }
 
 
-void initCtl()
+void initCtl(void)
 {
 	PyObject *m;
 	PyObject *d;
 
 
 
-	mytracker_upp = NewControlActionProc(mytracker);
-	mydrawproc_upp = NewControlUserPaneDrawProc(mydrawproc);
-	myidleproc_upp = NewControlUserPaneIdleProc(myidleproc);
-	myhittestproc_upp = NewControlUserPaneHitTestProc(myhittestproc);
-	mytrackingproc_upp = NewControlUserPaneTrackingProc(mytrackingproc);
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(CtlObj_New);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CtlObj_Convert);
+	mytracker_upp = NewControlActionUPP(mytracker);
+	mydrawproc_upp = NewControlUserPaneDrawUPP(mydrawproc);
+	myidleproc_upp = NewControlUserPaneIdleUPP(myidleproc);
+	myhittestproc_upp = NewControlUserPaneHitTestUPP(myhittestproc);
+	mytrackingproc_upp = NewControlUserPaneTrackingUPP(mytrackingproc);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(ControlHandle, CtlObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ControlHandle, CtlObj_Convert);
 
 
 	m = Py_InitModule("Ctl", Ctl_methods);
