@@ -623,6 +623,72 @@ class ReferencesTestCase(TestBase):
         finally:
             gc.set_threshold(*thresholds)
 
+
+class SubclassableWeakrefTestCase(unittest.TestCase):
+
+    def test_subclass_refs(self):
+        class MyRef(weakref.ref):
+            def __init__(self, ob, callback=None, value=42):
+                self.value = value
+                super(MyRef, self).__init__(ob, callback)
+            def __call__(self):
+                self.called = True
+                return super(MyRef, self).__call__()
+        o = Object("foo")
+        mr = MyRef(o, value=24)
+        self.assert_(mr() is o)
+        self.assert_(mr.called)
+        self.assertEqual(mr.value, 24)
+        del o
+        self.assert_(mr() is None)
+        self.assert_(mr.called)
+
+    def test_subclass_refs_dont_replace_standard_refs(self):
+        class MyRef(weakref.ref):
+            pass
+        o = Object(42)
+        r1 = MyRef(o)
+        r2 = weakref.ref(o)
+        self.assert_(r1 is not r2)
+        self.assertEqual(weakref.getweakrefs(o), [r2, r1])
+        self.assertEqual(weakref.getweakrefcount(o), 2)
+        r3 = MyRef(o)
+        self.assertEqual(weakref.getweakrefcount(o), 3)
+        refs = weakref.getweakrefs(o)
+        self.assertEqual(len(refs), 3)
+        self.assert_(r2 is refs[0])
+        self.assert_(r1 in refs[1:])
+        self.assert_(r3 in refs[1:])
+
+    def test_subclass_refs_dont_conflate_callbacks(self):
+        class MyRef(weakref.ref):
+            pass
+        o = Object(42)
+        r1 = MyRef(o, id)
+        r2 = MyRef(o, str)
+        self.assert_(r1 is not r2)
+        refs = weakref.getweakrefs(o)
+        self.assert_(r1 in refs)
+        self.assert_(r2 in refs)
+
+    def test_subclass_refs_with_slots(self):
+        class MyRef(weakref.ref):
+            __slots__ = "slot1", "slot2"
+            def __new__(type, ob, callback, slot1, slot2):
+                return weakref.ref.__new__(type, ob, callback)
+            def __init__(self, ob, callback, slot1, slot2):
+                self.slot1 = slot1
+                self.slot2 = slot2
+            def meth(self):
+                return self.slot1 + self.slot2
+        o = Object(42)
+        r = MyRef(o, None, "abc", "def")
+        self.assertEqual(r.slot1, "abc")
+        self.assertEqual(r.slot2, "def")
+        self.assertEqual(r.meth(), "abcdef")
+        self.failIf(hasattr(r, "__dict__"))
+
+
 class Object:
     def __init__(self, arg):
         self.arg = arg

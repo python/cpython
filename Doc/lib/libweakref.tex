@@ -68,7 +68,7 @@ Extension types can easily be made to support weak references; see section
 information.
 
 
-\begin{funcdesc}{ref}{object\optional{, callback}}
+\begin{classdesc}{ref}{object\optional{, callback}}
   Return a weak reference to \var{object}.  The original object can be
   retrieved by calling the reference object if the referent is still
   alive; if the referent is no longer alive, calling the reference
@@ -100,7 +100,11 @@ information.
   \var{callback}).  If either referent has been deleted, the
   references are equal only if the reference objects are the same
   object.
-\end{funcdesc}
+
+  \versionchanged[This is now a subclassable type rather than a
+                  factory function; it derives from \class{object}]
+                  {2.4}
+\end{classdesc}
 
 \begin{funcdesc}{proxy}{object\optional{, callback}}
   Return a proxy to \var{object} which uses a weak reference.  This
@@ -235,6 +239,41 @@ threaded applications; another thread can cause a weak reference to
 become invalidated before the weak reference is called; the
 idiom shown above is safe in threaded applications as well as
 single-threaded applications.
+
+Specialized versions of \class{ref} objects can be created through
+subclassing.  This is used in the implementation of the
+\class{WeakValueDictionary} to reduce the memory overhead for each
+entry in the mapping.  This may be most useful to associate additional
+information with a reference, but could also be used to insert
+additional processing on calls to retrieve the referent.
+
+This example shows how a subclass of \class{ref} can be used to store
+additional information about an object and affect the value that's
+returned when the referent is accessed:
+
+\begin{verbatim}
+import weakref
+
+class ExtendedRef(weakref.ref):
+    def __new__(cls, ob, callback=None, **annotations):
+        weakref.ref.__new__(cls, ob, callback)
+        self.__counter = 0
+
+    def __init__(self, ob, callback=None, **annotations):
+        super(ExtendedRef, self).__init__(ob, callback)
+        for k, v in annotations:
+            setattr(self, k, v)
+
+    def __call__(self):
+        """Return a pair containing the referent and the number of
+        times the reference has been called.
+        """
+        ob = super(ExtendedRef, self)()
+        if ob is not None:
+            self.__counter += 1
+            ob = (ob, self.__counter)
+        return ob
+\end{verbatim}
 
 
 \subsection{Example \label{weakref-example}}

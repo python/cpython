@@ -12,6 +12,11 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- weakref.ref is now the type object also known as
+  weakref.ReferenceType; it can be subclassed like any other new-style
+  class.  There's less per-entry overhead in WeakValueDictionary
+  objects now (one object instead of three).
+
 - Bug #951851: Python crashed when reading import table of certain
   Windows DLLs.
 
