@@ -90,7 +90,7 @@ class ListViewer:
             bboxes.append(boxid)
             if textend+3 > widest:
                 widest = textend+3
-            row = row + 1
+            row += 1
         canvheight = (row-1)*20 + 25
         canvas.config(scrollregion=(0, 0, 150, canvheight))
         for box in bboxes:
