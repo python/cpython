@@ -21,7 +21,7 @@ Decode the contents of the \var{input} file and write the resulting
 decoded binary data to the \var{output} file.
 \var{input} and \var{output} must either be file objects or objects that
 mimic the file object interface. \var{input} will be read until
-\code{\var{input}.read()} returns an empty string.
+\code{\var{input}.readline()} returns an empty string.
 \end{funcdesc}
 
 \begin{funcdesc}{encode}{input, output, quotetabs}
@@ -29,10 +29,27 @@ Encode the contents of the \var{input} file and write the resulting
 quoted-printable data to the \var{output} file.
 \var{input} and \var{output} must either be file objects or objects that
 mimic the file object interface. \var{input} will be read until
-\code{\var{input}.read()} returns an empty string.
+\code{\var{input}.readline()} returns an empty string.
+\var{quotetabs} is a flag which controls whether to encode embedded
+spaces and tabs; when true it encodes such embedded whitespace, and
+when false it leaves them unencoded.  Note that spaces and tabs
+appearing at the end of lines are always encoded, as per \rfc{1521}.
+\end{funcdesc}
+
+\begin{funcdesc}{decodestring}{s}
+Like \function{decode()}, except that it accepts a source string and
+returns the corresponding decoded string.
+\end{funcdesc}
+
+\begin{funcdesc}{encodestring}{s\optional{, quotetabs}}
+Like \function{encode()}, except that it accepts a source string and
+returns the corresponding encoded string.  \var{quotetabs} is optional
+(defaulting to 0), and is passed straight through to
+\function{encode()}.
 \end{funcdesc}
 
 
 \begin{seealso}
   \seemodule{mimify}{General utilities for processing of MIME messages.}
+  \seemodule{base64}{Encode and decode MIME base64 data}
 \end{seealso}
