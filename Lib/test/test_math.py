@@ -152,3 +152,32 @@ testit('tan(-pi/4)', math.tan(-math.pi/4), -1)
 print 'tanh'
 testit('tanh(0)', math.tanh(0), 0)
 testit('tanh(1)+tanh(-1)', math.tanh(1)+math.tanh(-1), 0)
+
+print 'exceptions'  # oooooh, *this* is a x-platform gamble!  good luck
+
+try:
+    x = math.exp(-1000000000)
+except:
+    # mathmodule.c is failing to weed out underflows from libm, or
+    # we've got an fp format with huge dynamic range
+    raise TestFailed("underflowing exp() should not have rasied an exception")
+if x != 0:
+    raise TestFailed("underflowing exp() should have returned 0")
+
+# If this fails, probably using a strict IEEE-754 conforming libm, and x
+# is +Inf afterwards.  But Python wants overflows detected by default.
+try:
+    x = math.exp(1000000000)
+except OverflowError:
+    pass
+else:
+    raise TestFailed("overflowing exp() didn't trigger OverflowError")
+
+# If this fails, it could be a puzzle.  One odd possibility is that
+# mathmodule.c's CHECK() macro is getting confused while comparing
+# Inf (HUGE_VAL) to a NaN, and artificially setting errno to ERANGE
+# as a result (and so raising OverflowError instead).
+try:
+    x = math.sqrt(-1.0)
+except ValueError:
+    pass
