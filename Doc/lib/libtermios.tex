@@ -16,8 +16,9 @@ that support \POSIX{} \emph{termios} style tty I/O control (and then
 only if configured at installation time).
 
 All functions in this module take a file descriptor \var{fd} as their
-first argument.  This must be an integer file descriptor, such as
-returned by \code{sys.stdin.fileno()}.
+first argument.  This can be an integer file descriptor, such as
+returned by \code{sys.stdin.fileno()}, or a file object, such as
+\code{sys.stdin} itself.
 
 This module also defines all the constants needed to work with the
 functions provided here; these have the same name as their
