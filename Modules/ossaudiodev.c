@@ -291,13 +291,22 @@ static PyObject *
 _do_ioctl_0(int fd, PyObject *args, char *fname, int cmd)
 {
     char argfmt[32] = ":";
+    int rv;
 
     assert(strlen(fname) <= 30);
     strcat(argfmt, fname);
     if (!PyArg_ParseTuple(args, argfmt))
         return NULL;
 
-    if (ioctl(fd, cmd, 0) == -1)
+    /* According to hannu@opensound.com, all three of the ioctls that
+       use this function can block, so release the GIL.  This is
+       especially important for SYNC, which can block for several
+       seconds. */
+    Py_BEGIN_ALLOW_THREADS
+    rv = ioctl(fd, cmd, 0);
+    Py_END_ALLOW_THREADS
+
+    if (rv == -1)
         return PyErr_SetFromErrno(PyExc_IOError);
     Py_INCREF(Py_None);
     return Py_None;
@@ -353,12 +362,7 @@ oss_speed(oss_audio_t *self, PyObject *args)
 static PyObject *
 oss_sync(oss_audio_t *self, PyObject *args)
 {
-    int rv;
-
-    Py_BEGIN_ALLOW_THREADS
-    rv = _do_ioctl_0(self->fd, args, "sync", SNDCTL_DSP_SYNC);
-    Py_END_ALLOW_THREADS
-    return rv;
+    return _do_ioctl_0(self->fd, args, "sync", SNDCTL_DSP_SYNC);
 }
     
 static PyObject *
