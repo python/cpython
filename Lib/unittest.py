@@ -283,14 +283,16 @@ class TestCase:
            operator.
         """
         if first != second:
-            raise self.failureException, (msg or '%s != %s' % (first, second))
+            raise self.failureException, \
+                  (msg or '%s != %s' % (`first`, `second`))
 
     def failIfEqual(self, first, second, msg=None):
         """Fail if the two objects are equal as determined by the '=='
            operator.
         """
         if first == second:
-            raise self.failureException, (msg or '%s == %s' % (first, second))
+            raise self.failureException, \
+                  (msg or '%s == %s' % (`first`, `second`))
 
     assertEqual = assertEquals = failUnlessEqual
 
@@ -567,8 +569,6 @@ class _TextTestResult(TestResult):
             self.stream.writeln("ERROR")
         elif self.dots:
             self.stream.write('E')
-        if err[0] is KeyboardInterrupt:
-            self.shouldStop = 1
 
     def addFailure(self, test, err):
         TestResult.addFailure(self, test, err)
