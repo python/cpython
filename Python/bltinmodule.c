@@ -1299,7 +1299,7 @@ static struct methodlist builtin_methods[] = {
 	{"oct",		builtin_oct},
 	{"open",	builtin_open},
 	{"ord",		builtin_ord},
-	{"pow",		builtin_pow},
+	{"pow",		builtin_pow, 1},
 	{"range",	builtin_range},
 	{"raw_input",	builtin_raw_input},
 	{"reduce",	builtin_reduce},
