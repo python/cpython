@@ -69,13 +69,12 @@ int_from_string(v)
 		s++;
 	errno = 0;
 	x = PyOS_strtol(s, &end, 10);
-	if (end == s || !isdigit(end[-1])) {
-		PyErr_SetString(PyExc_ValueError, "no digits in int constant");
-		return NULL;
-	}
+	if (end == s || !isdigit(end[-1]))
+		goto bad;
 	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;
 	if (*end != '\0') {
+  bad:
 		sprintf(buffer, "invalid literal for int(): %.200s", s);
 		PyErr_SetString(PyExc_ValueError, buffer);
 		return NULL;
@@ -105,14 +104,18 @@ long_from_string(v)
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
 	x = PyLong_FromString(s, &end, 10);
-	if (x == NULL)
+	if (x == NULL) {
+		if (PyErr_ExceptionMatches(PyExc_ValueError))
+			goto bad;
 		return NULL;
+	}
 	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;
 	if (*end != '\0') {
+  bad:
 		sprintf(buffer, "invalid literal for long(): %.200s", s);
 		PyErr_SetString(PyExc_ValueError, buffer);
-		Py_DECREF(x);
+		Py_XDECREF(x);
 		return NULL;
 	}
 	else if (end != PyString_AS_STRING(v) + PyString_GET_SIZE(v)) {
