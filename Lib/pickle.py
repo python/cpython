@@ -164,7 +164,11 @@ class Pickler:
         try:
             f = self.dispatch[t]
         except KeyError:
-            if issubclass(t, TypeType):
+            try:
+                issc = issubclass(t, TypeType)
+            except TypeError: # t is not a class
+                issc = 0
+            if issc:
                 self.save_global(object)
                 return
 
