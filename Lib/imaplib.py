@@ -1100,21 +1100,24 @@ class IMAP4_SSL(IMAP4):
     def read(self, size):
         """Read 'size' bytes from remote."""
         # sslobj.read() sometimes returns < size bytes
-        data = self.sslobj.read(size)
-        while len(data) < size:
-            data += self.sslobj.read(size-len(data))
+        chunks = []
+        read = 0
+        while read < size:
+            data = self.sslobj.read(size-read)
+            read += len(data)
+            chunks.append(size)
 
-        return data
+        return ''.join(chunks)
 
 
     def readline(self):
         """Read line from remote."""
         # NB: socket.ssl needs a "readline" method, or perhaps a "makefile" method.
-        line = ""
+        line = []
         while 1:
             char = self.sslobj.read(1)
-            line += char
-            if char == "\n": return line
+            line.append(char)
+            if char == "\n": return ''.join(line)
 
 
     def send(self, data):
