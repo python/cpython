@@ -500,7 +500,7 @@ def testSAX2DOM():
 names = globals().keys()
 names.sort()
 
-works = 1
+failed = []
 
 for name in names:
     if name.startswith("test"):
@@ -519,18 +519,21 @@ for name in names:
                     # are needed
                     print len(Node.allnodes)
             Node.allnodes = {}
-        except Exception, e:
-            works = 0
+        except:
+            failed.append(name)
             print "Test Failed: ", name
             sys.stdout.flush()
             traceback.print_exception(*sys.exc_info())
-            print `e`
+            print `sys.exc_info()[1]`
             Node.allnodes = {}
 
-if works:
-    print "All tests succeeded"
+if failed:
+    print "\n\n\n**** Check for failures in these tests:"
+    for name in failed:
+        print "  " + name
+    print
 else:
-    print "\n\n\n\n************ Check for failures!"
+    print "All tests succeeded"
 
 Node.debug = None # Delete debug output collected in a StringIO object
 Node._debug = 0   # And reset debug mode
