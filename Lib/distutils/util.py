@@ -359,11 +359,18 @@ def byte_compile (py_files,
     # "Indirect" byte-compilation: write a temporary script and then
     # run it with the appropriate flags.
     if not direct:
-        from tempfile import mkstemp
-        (script_fd, script_name) = mkstemp(".py")
+        try:
+            from tempfile import mkstemp
+            (script_fd, script_name) = mkstemp(".py")
+        except ImportError:
+            from tempfile import mktemp
+            (script_fd, script_name) = None, mktemp(".py")
         log.info("writing byte-compilation script '%s'", script_name)
         if not dry_run:
-            script = os.fdopen(script_fd, "w")
+            if script_fd is not None:
+                script = os.fdopen(script_fd, "w")
+            else:
+                script = open(script_name, "w")
 
             script.write("""\
 from distutils.util import byte_compile
