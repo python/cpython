@@ -182,12 +182,13 @@ def gauss(mu, sigma):
 	# When x and y are two variables from [0, 1), uniformly
 	# distributed, then
 	#
-	#    cos(2*pi*x)*log(1-y)
-	#    sin(2*pi*x)*log(1-y)
+	#    cos(2*pi*x)*sqrt(-2*log(1-y))
+	#    sin(2*pi*x)*sqrt(-2*log(1-y))
 	#
 	# are two *independent* variables with normal distribution
 	# (mu = 0, sigma = 1).
 	# (Lambert Meertens)
+	# (corrected version; bug discovered by Mike Miller, fixed by LM)
 
 	global gauss_next
 
@@ -196,9 +197,9 @@ def gauss(mu, sigma):
 		gauss_next = None
 	else:
 		x2pi = random() * TWOPI
-		log1_y = log(1.0 - random())
-		z = cos(x2pi) * log1_y
-		gauss_next = sin(x2pi) * log1_y
+		g2rad = sqrt(-2.0 * log(1.0 - random()))
+		z = cos(x2pi) * g2rad
+		gauss_next = sin(x2pi) * g2rad
 
 	return mu + z*sigma
 
