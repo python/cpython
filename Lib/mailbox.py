@@ -157,11 +157,10 @@ class MHMailbox:
         import re
         pat = re.compile('^[1-9][0-9]*$')
         self.dirname = dirname
-        files = os.listdir(self.dirname)
-        list = []
-        for f in files:
-            if pat.match(f):
-                list.append(f)
+        # the three following lines could be combined into:
+        # list = map(long, filter(pat.match, os.listdir(self.dirname)))
+        list = os.listdir(self.dirname)
+        list = filter(pat.match, list)
         list = map(long, list)
         list.sort()
         # This only works in Python 1.6 or later;
