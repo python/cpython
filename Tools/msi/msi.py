@@ -812,8 +812,10 @@ def add_files(db):
     root.add_file("PCBuild/python.exe")
     root.start_component("pythonw.exe", keyfile="pythonw.exe")
     root.add_file("PCBuild/pythonw.exe")
-    root.start_component("launcher.exe", feature=ext_feature, keyfile="launcher.exe")
-    root.add_file("PCBuild/launcher.exe")
+    root.start_component("extpy.exe", feature=ext_feature, keyfile="extpy.exe")
+    root.add_file("extpy.exe", src="PCBuild/python.exe")
+    root.start_component("extpyw.exe", feature=ext_feature, keyfile="extpyw.exe")
+    root.add_file("extpyw.exe", src="PCBuild/pythonw.exe")
 
     # msidbComponentAttributesSharedDllRefCount = 8, see "Component Table"
     dlldir = PyDirectory(db, cab, root, srcdir, "DLLDIR", ".")
@@ -1017,16 +1019,16 @@ def add_registry(db):
     pat3 = r"Software\Classes\%sPython.%sFile"
     # Advertised extensions
     add_data(db, "Extension",
-            [("py", "launcher.exe", "Python.File", None, ext_feature.id),
-            ("pyw", "launcher.exe", "Python.NoConFile", None, ext_feature.id),
-            ("pyc", "launcher.exe", "Python.CompiledFile", None, ext_feature.id),
-            ("pyo", "launcher.exe", "Python.CompiledFile", None, ext_feature.id)])
+            [("py", "extpy.exe", "Python.File", None, ext_feature.id),
+            ("pyw", "extpyw.exe", "Python.NoConFile", None, ext_feature.id),
+            ("pyc", "extpy.exe", "Python.CompiledFile", None, ext_feature.id),
+            ("pyo", "extpy.exe", "Python.CompiledFile", None, ext_feature.id)])
     # add_data(db, "MIME") XXX
     add_data(db, "Verb",
-            [("py", "open", 1, None, r'-console "%1"'),
+            [("py", "open", 1, None, r'"%1"'),
             ("pyw", "open", 1, None, r'"%1"'),
-            ("pyc", "open", 1, None, r'-console "%1"'),
-            ("pyo", "open", 1, None, r'-console "%1"')])
+            ("pyc", "open", 1, None, r'"%1"'),
+            ("pyo", "open", 1, None, r'"%1"')])
     add_data(db, "ProgId",
             [("Python.File", None, None, "Python File", "python_icon.exe", 0),
              ("Python.NoConFile", None, None, "Python File (no console)", "python_icon.exe", 0),
