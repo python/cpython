@@ -1141,7 +1141,6 @@ case_ok(char *buf, int len, int namelen, char *name)
 	}
 	(void)closedir(dirp);
 	return 0 ; /* Not found */
-}
 
 /* assuming it's a case-sensitive filesystem, so there's nothing to do! */
 #else
