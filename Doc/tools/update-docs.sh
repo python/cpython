@@ -28,4 +28,4 @@ fi
 mv $TMPDIR/Python-Docs-* $DOCTYPE
 rmdir $TMPDIR
 rm -rf $DOCTYPE-temp || exit $?
-rm "$UPDATES" || exit $?
+mv "$UPDATES" python-docs-$DOCTYPE.tar.bz2 || exit $?
