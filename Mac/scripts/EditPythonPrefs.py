@@ -6,6 +6,7 @@
 from Dlg import *
 from Events import *
 from Res import *
+import Controls
 import string
 import struct
 import macfs
@@ -64,24 +65,24 @@ OD_HELP_ITEM = 22
 def optinteract(options):
 	"""Let the user interact with the options dialog"""
 	d = GetNewDialog(OPT_DIALOG_ID, -1)
-	tp, h, rect = d.GetDialogItem(OD_CREATOR_ITEM)
-	SetDialogItemText(h, options['creator'])
-	tp, h, rect = d.GetDialogItem(OD_TYPE_ITEM)
-	SetDialogItemText(h, options['type'])
+	htext = d.GetDialogItemAsControl(OD_CREATOR_ITEM)
+	SetDialogItemText(htext, options['creator'])
+	htext = d.GetDialogItemAsControl(OD_TYPE_ITEM)
+	SetDialogItemText(htext, options['type'])
 	d.SetDialogDefaultItem(OD_OK_ITEM)
 	d.SetDialogCancelItem(OD_CANCEL_ITEM)
 	
 	while 1:
 		for name in opt_dialog_dict.keys():
 			num = opt_dialog_dict[name]
-			tp, h, rect = d.GetDialogItem(num)
-			h.as_Control().SetControlValue(options[name])
+			ctl = d.GetDialogItemAsControl(num)
+			ctl.SetControlValue(options[name])
 		n = ModalDialog(None)
 		if n == OD_OK_ITEM:
-			tp, h, rect = d.GetDialogItem(OD_CREATOR_ITEM)
-			ncreator = GetDialogItemText(h)
-			tp, h, rect = d.GetDialogItem(OD_TYPE_ITEM)
-			ntype = GetDialogItemText(h)
+			htext = d.GetDialogItemAsControl(OD_CREATOR_ITEM)
+			ncreator = GetDialogItemText(htext)
+			htext = d.GetDialogItemAsControl(OD_TYPE_ITEM)
+			ntype = GetDialogItemText(htext)
 			if len(ncreator) == 4 and len(ntype) == 4:
 				options['creator'] = ncreator
 				options['type'] = ntype
@@ -107,11 +108,12 @@ def interact(options, title):
 	except os.error:
 		pass
 	d = GetNewDialog(DIALOG_ID, -1)
-	tp, h, rect = d.GetDialogItem(TITLE_ITEM)
-	SetDialogItemText(h, title)
-	tp, h, rect = d.GetDialogItem(TEXT_ITEM)
-##	SetDialogItemText(h, string.joinfields(list, '\r'))
-	h.data = string.joinfields(options['path'], '\r')
+	htext = d.GetDialogItemAsControl(TITLE_ITEM)
+	SetDialogItemText(htext, title)
+	ctl = d.GetDialogItemAsControl(TEXT_ITEM)
+	data = string.joinfields(options['path'], '\r')
+	ctl.SetControlData(Controls.kControlEditTextPart, Controls.kControlEditTextTextTag, data)
+
 	d.SelectDialogItemText(TEXT_ITEM, 0, 32767)
 	d.SelectDialogItemText(TEXT_ITEM, 0, 0)
 ##	d.SetDialogDefaultItem(OK_ITEM)
