@@ -1,51 +1,3 @@
-/*
- * cPickle.c,v 1.71 1999/07/11 13:30:34 jim Exp
- *
- * Copyright (c) 1996-1998, Digital Creations, Fredericksburg, VA, USA.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *   o Redistributions of source code must retain the above copyright
- *     notice, this list of conditions, and the disclaimer that follows.
- *
- *   o Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions, and the following disclaimer in
- *     the documentation and/or other materials provided with the
- *     distribution.
- *
- *   o Neither the name of Digital Creations nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
- *
- *
- * THIS SOFTWARE IS PROVIDED BY DIGITAL CREATIONS AND CONTRIBUTORS *AS
- * IS* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
- * PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL DIGITAL
- * CREATIONS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
- * TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
- * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
- * DAMAGE.
- *
- #
- # If you have questions regarding this software, contact:
- #
- #   Digital Creations, L.C.
- #   910 Princess Ann Street
- #   Fredericksburge, Virginia  22401
- #
- #   info@digicool.com
- #
- #   (540) 371-6909
- */
-
 static char cPickle_module_documentation[] =
 "C implementation and optimization of the Python pickle module\n"
 "\n"
@@ -2302,7 +2254,7 @@ static Picklerobject *
 newPicklerobject(PyObject *file, int bin) {
     Picklerobject *self;
 
-    UNLESS (self = PyObject_New(Picklerobject, &Picklertype))
+    UNLESS (self = PyObject_GC_New(Picklerobject, &Picklertype))
         return NULL;
 
     self->fp = NULL;
@@ -2403,6 +2355,7 @@ get_Pickler(PyObject *self, PyObject *args) {
 
 static void
 Pickler_dealloc(Picklerobject *self) {
+    PyObject_GC_UnTrack(self);
     Py_XDECREF(self->write);
     Py_XDECREF(self->memo);
     Py_XDECREF(self->fast_memo);
@@ -2416,7 +2369,45 @@ Pickler_dealloc(Picklerobject *self) {
         free(self->write_buf);
     }
 
-    PyObject_Del(self);
+    PyObject_GC_Del(self);
+}
+
+static int
+Pickler_traverse(Picklerobject *self, visitproc visit, void *arg)
+{
+	int err;
+#define VISIT(SLOT) \
+	if (SLOT) { \
+		err = visit((PyObject *)(SLOT), arg); \
+		if (err) \
+			return err; \
+	}
+	VISIT(self->write);
+	VISIT(self->memo);
+	VISIT(self->fast_memo);
+	VISIT(self->arg);
+	VISIT(self->file);
+	VISIT(self->pers_func);
+	VISIT(self->inst_pers_func);
+	VISIT(self->dispatch_table);
+#undef VISIT
+	return 0;
+}
+
+static int
+Pickler_clear(Picklerobject *self)
+{
+#define CLEAR(SLOT) Py_XDECREF(SLOT); SLOT = NULL;
+	CLEAR(self->write);
+	CLEAR(self->memo);
+	CLEAR(self->fast_memo);
+	CLEAR(self->arg);
+	CLEAR(self->file);
+	CLEAR(self->pers_func);
+	CLEAR(self->inst_pers_func);
+	CLEAR(self->dispatch_table);
+#undef CLEAR
+	return 0;
 }
 
 static PyObject *
@@ -2532,10 +2523,10 @@ static PyTypeObject Picklertype = {
     0,	/* set below */			/* tp_getattro */
     0,	/* set below */			/* tp_setattro */
     0,					/* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     Picklertype__doc__,			/* tp_doc */
-    0,					/* tp_traverse */
-    0,					/* tp_clear */
+    (traverseproc)Pickler_traverse,	/* tp_traverse */
+    (inquiry)Pickler_clear,		/* tp_clear */
     0,					/* tp_richcompare */
     0,					/* tp_weaklistoffset */
     0,					/* tp_iter */
@@ -4221,7 +4212,7 @@ static Unpicklerobject *
 newUnpicklerobject(PyObject *f) {
     Unpicklerobject *self;
 
-    UNLESS (self = PyObject_New(Unpicklerobject, &Unpicklertype))
+    UNLESS (self = PyObject_GC_New(Unpicklerobject, &Unpicklertype))
         return NULL;
 
     self->file = NULL;
@@ -4308,6 +4299,7 @@ get_Unpickler(PyObject *self, PyObject *args) {
 
 static void
 Unpickler_dealloc(Unpicklerobject *self) {
+    PyObject_GC_UnTrack((PyObject *)self);
     Py_XDECREF(self->readline);
     Py_XDECREF(self->read);
     Py_XDECREF(self->file);
@@ -4326,9 +4318,47 @@ Unpickler_dealloc(Unpicklerobject *self) {
         free(self->buf);
     }
 
-    PyObject_Del(self);
+    PyObject_GC_Del(self);
 }
 
+static int
+Unpickler_traverse(Unpicklerobject *self, visitproc visit, void *arg)
+{
+	int err;
+
+#define VISIT(SLOT) \
+	if (SLOT) { \
+		err = visit((PyObject *)(SLOT), arg); \
+		if (err) \
+			return err; \
+	}
+	VISIT(self->readline);
+	VISIT(self->read);
+	VISIT(self->file);
+	VISIT(self->memo);
+	VISIT(self->stack);
+	VISIT(self->pers_func);
+	VISIT(self->arg);
+	VISIT(self->last_string);
+#undef VISIT
+	return 0;
+}
+
+static int
+Unpickler_clear(Unpicklerobject *self)
+{
+#define CLEAR(SLOT) Py_XDECREF(SLOT); SLOT = NULL
+	CLEAR(self->readline);
+	CLEAR(self->read);
+	CLEAR(self->file);
+	CLEAR(self->memo);
+	CLEAR(self->stack);
+	CLEAR(self->pers_func);
+	CLEAR(self->arg);
+	CLEAR(self->last_string);
+#undef CLEAR
+	return 0;
+}
 
 static PyObject *
 Unpickler_getattr(Unpicklerobject *self, char *name) {
@@ -4512,27 +4542,29 @@ static char Unpicklertype__doc__[] =
 
 static PyTypeObject Unpicklertype = {
     PyObject_HEAD_INIT(NULL)
-    0,                            /*ob_size*/
-    "cPickle.Unpickler",                  /*tp_name*/
-    sizeof(Unpicklerobject),              /*tp_basicsize*/
-    0,                            /*tp_itemsize*/
-    /* methods */
-    (destructor)Unpickler_dealloc,        /*tp_dealloc*/
-    (printfunc)0,         /*tp_print*/
-    (getattrfunc)Unpickler_getattr,       /*tp_getattr*/
-    (setattrfunc)Unpickler_setattr,       /*tp_setattr*/
-    (cmpfunc)0,           /*tp_compare*/
-    (reprfunc)0,          /*tp_repr*/
-    0,                    /*tp_as_number*/
-    0,            /*tp_as_sequence*/
-    0,            /*tp_as_mapping*/
-    (hashfunc)0,          /*tp_hash*/
-    (ternaryfunc)0,               /*tp_call*/
-    (reprfunc)0,          /*tp_str*/
-
-    /* Space for future expansion */
-    0L,0L,0L,0L,
-    Unpicklertype__doc__ /* Documentation string */
+    0,                          	 /*ob_size*/
+    "cPickle.Unpickler", 	         /*tp_name*/
+    sizeof(Unpicklerobject),             /*tp_basicsize*/
+    0,
+    (destructor)Unpickler_dealloc,	/* tp_dealloc */
+    0,					/* tp_print */
+    (getattrfunc)Unpickler_getattr,	/* tp_getattr */
+    (setattrfunc)Unpickler_setattr,	/* tp_setattr */
+    0,					/* tp_compare */
+    0,		 			/* tp_repr */
+    0,					/* tp_as_number */
+    0,					/* tp_as_sequence */
+    0,					/* tp_as_mapping */
+    0,					/* tp_hash */
+    0,					/* tp_call */
+    0,					/* tp_str */
+    0,					/* tp_getattro */
+    0,					/* tp_setattro */
+    0,					/* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    Unpicklertype__doc__,		/* tp_doc */
+    (traverseproc)Unpickler_traverse,	/* tp_traverse */
+    (inquiry)Unpickler_clear,		/* tp_clear */
 };
 
 static struct PyMethodDef cPickle_methods[] = {

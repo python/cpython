@@ -88,6 +88,9 @@ Release date: XX-XXX-2003
 
 - Fixed sundry memory leaks.
 
+- More objects participate in garbage collection: classmethod,
+  staticmethod, and cPickle Pickler and Unpickler. (SF #735247)
+
 - Improve the robustness of the methods for random distributions so
   they can work with generators producing a full range of values
   (unlike the Wichmann-Hill generator which never produces a zero).

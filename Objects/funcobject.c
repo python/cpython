@@ -460,8 +460,26 @@ typedef struct {
 static void
 cm_dealloc(classmethod *cm)
 {
+	_PyObject_GC_UNTRACK((PyObject *)cm);
 	Py_XDECREF(cm->cm_callable);
 	cm->ob_type->tp_free((PyObject *)cm);
+}
+
+static int
+cm_traverse(classmethod *cm, visitproc visit, void *arg)
+{
+	if (!cm->cm_callable)
+		return 0;
+	return visit(cm->cm_callable, arg);
+}
+
+static int
+cm_clear(classmethod *cm)
+{
+	Py_XDECREF(cm->cm_callable);
+	cm->cm_callable = NULL;
+
+	return 0;
 }
 
 static PyObject *
@@ -535,10 +553,10 @@ PyTypeObject PyClassMethod_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
 	classmethod_doc,			/* tp_doc */
-	0,					/* tp_traverse */
-	0,					/* tp_clear */
+	(traverseproc)cm_traverse,		/* tp_traverse */
+	(inquiry)cm_clear,			/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
@@ -554,7 +572,7 @@ PyTypeObject PyClassMethod_Type = {
 	cm_init,				/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	PyType_GenericNew,			/* tp_new */
-	_PyObject_Del,				/* tp_free */
+	_PyObject_GC_Del,			/* tp_free */
 };
 
 PyObject *
@@ -594,8 +612,26 @@ typedef struct {
 static void
 sm_dealloc(staticmethod *sm)
 {
+	_PyObject_GC_UNTRACK((PyObject *)sm);
 	Py_XDECREF(sm->sm_callable);
 	sm->ob_type->tp_free((PyObject *)sm);
+}
+
+static int
+sm_traverse(staticmethod *sm, visitproc visit, void *arg)
+{
+	if (!sm->sm_callable)
+		return 0;
+	return visit(sm->sm_callable, arg);
+}
+
+static int
+sm_clear(staticmethod *sm)
+{
+	Py_XDECREF(sm->sm_callable);
+	sm->sm_callable = NULL;
+
+	return 0;
 }
 
 static PyObject *
@@ -664,10 +700,10 @@ PyTypeObject PyStaticMethod_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
 	staticmethod_doc,			/* tp_doc */
-	0,					/* tp_traverse */
-	0,					/* tp_clear */
+	(traverseproc)sm_traverse,		/* tp_traverse */
+	(inquiry)sm_clear,			/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
@@ -683,7 +719,7 @@ PyTypeObject PyStaticMethod_Type = {
 	sm_init,				/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	PyType_GenericNew,			/* tp_new */
-	_PyObject_Del,				/* tp_free */
+	_PyObject_GC_Del,			/* tp_free */
 };
 
 PyObject *
