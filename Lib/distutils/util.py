@@ -13,11 +13,49 @@ from distutils.spawn import spawn
 
 
 def get_platform ():
-    """Return a string (suitable for tacking onto directory names) that
-    identifies the current platform.  Currently, this is just
-    'sys.platform'.
+    """Return a string that identifies the current platform.  This is used
+    mainly to distinguish platform-specific build directories and
+    platform-specific built distributions.  Typically includes the OS name
+    and version and the architecture (as supplied by 'os.uname()'),
+    although the exact information included depends on the OS; eg. for IRIX
+    the architecture isn't particularly important (IRIX only runs on SGI
+    hardware), but for Linux the kernel version isn't particularly
+    important.
+
+    Examples of returned values:
+       linux-i586
+       linux-alpha (?)
+       solaris-2.6-sun4u
+       irix-5.3
+       irix64-6.2
+       
+    For non-POSIX platforms, currently just returns 'sys.platform'.
     """
-    return sys.platform
+    if os.name != "posix":
+        # XXX what about the architecture? NT is Intel or Alpha,
+        # Mac OS is M68k or PPC, etc.
+        return sys.platform
+
+    # Try to distinguish various flavours of Unix
+
+    (osname, host, release, version, machine) = os.uname()
+    osname = string.lower(osname)
+    if osname[:5] == "linux":
+        # At least on Linux/Intel, 'machine' is the processor --
+        # i386, etc.
+        # XXX what about Alpha, SPARC, etc?
+        return  "%s-%s" % (osname, machine)
+    elif osname[:5] == "sunos":
+        if release[0] >= "5":           # SunOS 5 == Solaris 2
+            osname = "solaris"
+            release = "%d.%s" % (int(release[0]) - 3, release[2:])
+        # fall through to standard osname-release-machine representation
+    elif osname[:4] == "irix":              # could be "irix64"!
+        return "%s-%s" % (osname, release)
+            
+    return "%s-%s-%s" % (osname, release, machine)
+
+# get_platform ()
 
 
 def convert_path (pathname):
