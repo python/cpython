@@ -228,7 +228,7 @@ PyLong_AsLong(PyObject *vv)
 	return -1;
 }
 
-/* Get a C long int from a long int object.
+/* Get a C unsigned long int from a long int object.
    Returns -1 and sets an error condition if overflow occurs. */
 
 unsigned long
