@@ -150,7 +150,7 @@ malloc(nbytes)
 	size_t nbytes;
 {
   	register union overhead *op;
-  	register long bucket, n;
+  	register long bucket;
 	register unsigned amt;
 
 	/*
