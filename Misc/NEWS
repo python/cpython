@@ -122,6 +122,9 @@ TBD
 Windows
 -------
 
+- sys.path[0], if it contains a directory name, is now always an
+  absolute pathname.
+
 - The new logging package is now installed by the Windows installer.  It
   wasn't in 2.3a1 due to oversight.
 
