@@ -145,9 +145,14 @@ expect_same("000000000000009.", 9.)
 # Verify treatment of unary minus on negative numbers SF bug #660455
 import warnings
 warnings.filterwarnings("ignore", "hex/oct constants", FutureWarning)
+warnings.filterwarnings("ignore", "hex.* of negative int", FutureWarning)
 # XXX Of course the following test will have to be changed in Python 2.4
 # This test is in a <string> so the filterwarnings() can affect it
+import sys
+all_one_bits = '0xffffffff'
+if sys.maxint != 2147483647:
+    all_one_bits = '0xffffffffffffffff'
 exec """
-expect_same("0xffffffff", -1)
-expect_same("-0xffffffff", 1)
+expect_same(all_one_bits, -1)
+expect_same("-" + all_one_bits, 1)
 """
