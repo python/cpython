@@ -3126,8 +3126,27 @@ basestring_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	return NULL;
 }
 
+static PyObject *
+string_mod(PyObject *v, PyObject *w)
+{
+	if (!PyString_Check(v)) {
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+	return PyString_Format(v, w);
+}
+
 PyDoc_STRVAR(basestring_doc,
 "Type basestring cannot be instantiated; it is the base for str and unicode.");
+
+static PyNumberMethods string_as_number = {
+	0,			/*nb_add*/
+	0,			/*nb_subtract*/
+	0,			/*nb_multiply*/
+	0, 			/*nb_divide*/
+	string_mod,		/*nb_remainder*/
+};
+
 
 PyTypeObject PyBaseString_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -3190,7 +3209,7 @@ PyTypeObject PyString_Type = {
 	0,					/* tp_setattr */
 	0,					/* tp_compare */
 	(reprfunc)string_repr, 			/* tp_repr */
-	0,					/* tp_as_number */
+	&string_as_number,			/* tp_as_number */
 	&string_as_sequence,			/* tp_as_sequence */
 	&string_as_mapping,			/* tp_as_mapping */
 	(hashfunc)string_hash, 			/* tp_hash */
@@ -3199,7 +3218,8 @@ PyTypeObject PyString_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	&string_as_buffer,			/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES | 
+		Py_TPFLAGS_BASETYPE,		/* tp_flags */
 	string_doc,				/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
