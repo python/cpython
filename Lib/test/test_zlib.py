@@ -41,6 +41,12 @@ buf = buf * 16
 co = zlib.compressobj(8, 8, -15)
 x1 = co.compress(buf)
 x2 = co.flush()
+try:
+    co.flush()
+    print "Oops - second flush worked when it should not have!"
+except zlib.error:
+    pass
+
 x = x1 + x2
 
 dc = zlib.decompressobj(-15)
