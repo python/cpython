@@ -1161,7 +1161,7 @@ file_write(PyFileObject *f, PyObject *args)
 	int n, n2;
 	if (f->f_fp == NULL)
 		return err_closed();
-	if (!PyArg_Parse(args, f->f_binary ? "s#" : "t#", &s, &n))
+	if (!PyArg_ParseTuple(args, f->f_binary ? "s#" : "t#", &s, &n))
 		return NULL;
 	f->f_softspace = 0;
 	Py_BEGIN_ALLOW_THREADS
@@ -1378,7 +1378,7 @@ static char isatty_doc[] =
 static PyMethodDef file_methods[] = {
 	{"readline",	(PyCFunction)file_readline,   METH_VARARGS, readline_doc},
 	{"read",	(PyCFunction)file_read,       METH_VARARGS, read_doc},
-	{"write",	(PyCFunction)file_write,      METH_OLDARGS, write_doc},
+	{"write",	(PyCFunction)file_write,      METH_VARARGS, write_doc},
 	{"fileno",	(PyCFunction)file_fileno,     METH_NOARGS,  fileno_doc},
 	{"seek",	(PyCFunction)file_seek,       METH_VARARGS, seek_doc},
 #ifdef HAVE_FTRUNCATE
