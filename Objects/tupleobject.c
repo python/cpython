@@ -330,6 +330,8 @@ tupleconcat(register PyTupleObject *a, register PyObject *bb)
 	}
 #define b ((PyTupleObject *)bb)
 	size = a->ob_size + b->ob_size;
+	if (size < 0)
+		return PyErr_NoMemory();
 	np = (PyTupleObject *) PyTuple_New(size);
 	if (np == NULL) {
 		return NULL;
