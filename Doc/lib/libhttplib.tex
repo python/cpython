@@ -214,7 +214,7 @@ Here is an example session that shows how to \samp{POST} requests:
 ...            "Accept": "text/plain"}
 >>> conn = httplib.HTTPConnection("musi-cal.mojam.com:80")
 >>> conn.request("POST", "/cgi-bin/query", params, headers)
->>> response = h.getresponse()
+>>> response = conn.getresponse()
 >>> print response.status, response.reason
 200 OK
 >>> data = response.read()
