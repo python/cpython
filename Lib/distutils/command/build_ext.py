@@ -12,7 +12,7 @@ import sys, os, string, re
 from types import *
 from distutils.core import Command
 from distutils.errors import *
-from distutils.sysconfig import customize_compiler
+from distutils.sysconfig import customize_compiler, get_python_version
 from distutils.dep_util import newer_group
 from distutils.extension import Extension
 from distutils import log
@@ -184,7 +184,7 @@ class build_ext (Command):
             if string.find(sys.executable, sys.exec_prefix) != -1:
                 # building third party extensions
                 self.library_dirs.append(os.path.join(sys.prefix, "lib",
-                                                      "python" + sys.version[:3],
+                                                      "python" + get_python_version(),
                                                       "config"))
             else:
                 # building python standard extensions
