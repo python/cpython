@@ -445,7 +445,7 @@ import logging
 
 logging.debug('Debugging information')
 logging.info('Informational message')
-logging.warn('Warning:config file %s not found', 'server.conf')
+logging.warning('Warning:config file %s not found', 'server.conf')
 logging.error('Error occurred')
 logging.critical('Critical error -- shutting down')
 \end{verbatim}
@@ -453,7 +453,7 @@ logging.critical('Critical error -- shutting down')
 This produces the following output:
 
 \begin{verbatim}
-WARN:root:Warning:config file server.conf not found
+WARNING:root:Warning:config file server.conf not found
 ERROR:root:Error occurred
 CRITICAL:root:Critical error -- shutting down
 \end{verbatim}
@@ -463,7 +463,7 @@ suppressed and the output is sent to standard error.  You can enable
 the display of information and debugging messages by calling the
 \method{setLevel()} method on the root logger.
 
-Notice the \function{warn()} call's use of string formatting
+Notice the \function{warning()} call's use of string formatting
 operators; all of the functions for logging messages take the
 arguments \code{(\var{msg}, \var{arg1}, \var{arg2}, ...)} and log the
 string resulting from \code{\var{msg} \% (\var{arg1}, \var{arg2},
