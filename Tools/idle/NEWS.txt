@@ -7,6 +7,11 @@ New in IDLE 0.5 (2/14/2000)
 
 Tons of stuff, much of it contributed by Tim Peters and Mark Hammond:
 
+- Status bar, displaying current line/column (Moshe Zadka).
+
+- Better stack viewer, using tree widget.  (XXX Only used by Stack
+Viewer menu, not by the debugger.)
+
 - Format paragraph now recognizes Python block comments and reformats
 them correctly (MH)
 
