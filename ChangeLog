@@ -1,3 +1,59 @@
+Wed Jun 29 10:01:17 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/packmail.py: applied patch from Lance to remove '.' and '..'
+
+Tue Jun 28 00:57:35 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/ref1.tex: grammar notation can use single or double quotes now
+
+	* configure.in (termcap): hack around conflict about clear() on
+	IRIX 5 in shared libraries gl and termcap
+
+	* Python/bltinmodule.c: added callable() predicate
+
+Wed May 18 15:01:13 1994  Donald Beaudry  (don@zippy.vicorp.com)
+
+	* modsupport.c (do_arg): Changed all of the int getting things to
+	just try to get and int, instead of explicitly checking for an int
+	first.
+
+	(do_arg): Added the "O&" option to allow using a user supplied
+	conversion function. 
+
+Wed May 18 14:10:49 1994  Donald Beaudry  (don@zippy.vicorp.com)
+
+	* intobject.c (getintvalue): Changed to allow automatic conversion
+	from any type that supports the nb_int method.
+
+	* floatobject.c (getfloatvalue): Changed to allow automatic
+	conversion from any numeric type that supports the nb_float
+	method.
+
+Wed May  4 22:56:15 1994  Donald Beaudry  (don@scooter.vicorp.com)
+
+	* object.h -- Added tp_call member to the typeobject struct
+	This along with a minor change to the ceval.c allows overloading
+	of the function call operator for any class.
+
+Wed May  4 22:23:48 1994  Donald Beaudry  (don@scooter.vicorp.com)
+
+	* modsupport.c -- replace the part of getargs that processes "O!",
+	it had a minor problem with comparing the types.
+
+	* ceval.c -- changed call_object to make use of the tp_call
+	field.
+
+Fri Jun 27 17:22:00 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/pythonmain.c: On MPW (3.2) unbuffered seems to hang, so
+	use setvbuf ... _IOLBF for -s option.
+
+	* Python/mystrtoul.c: MPW hack (overflow check doesn't seem to work)
+
+Thu Jun 23 14:46:34 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/Makefile.pre.in (clobber): delete config.c and glmodule.c
+
 Thu Jun 23 00:17:16 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Doc/ref4.tex: clarify that global name space is almost always
