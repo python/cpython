@@ -1102,7 +1102,7 @@ _PyObject_DebugDumpAddress(const void *p)
 		return;
 
 	nbytes = read4(q-8);
-	fprintf(stderr, "    %lu bytes originally allocated\n", nbytes);
+	fprintf(stderr, "    %lu bytes originally requested\n", nbytes);
 
 	/* In case this is nuts, check the pad bytes before trying to read up
 	   the serial number (the address deref could blow up). */
