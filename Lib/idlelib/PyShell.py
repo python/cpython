@@ -834,8 +834,8 @@ class PyShell(OutputWindow):
     closing = False
 
     def set_warning_stream(self, stream):
-	global warning_stream
-	warning_stream = stream
+        global warning_stream
+        warning_stream = stream
 
     def get_warning_stream(self):
         return warning_stream
