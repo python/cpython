@@ -32,6 +32,11 @@ aliases = {
     # ASCII
     'us_ascii': 'ascii',
 
+    # EBCDIC
+    'ebcdic_cp_us': 'cp037',
+    'ibm039': 'cp037',
+    'ibm1140': 'cp1140',
+    
     # ISO
     '8859': 'latin_1',
     'iso8859': 'latin_1',
