@@ -433,8 +433,8 @@ instances fall under the \samp{server} \class{Logger} in the
 hierarchy.  This means that if you turn up the verbosity for
 \samp{server} or direct \samp{server} messages to a different handler,
 the changes will also apply to records logged to \samp{server.auth}
-and \samp{server.network}.  There's also a root \class{Logger} with
-the name \samp{root} that's the parent of all other loggers.
+and \samp{server.network}.  There's also a root \class{Logger} that's
+the parent of all other loggers.
 
 For simple uses, the \module{logging} package contains some
 convenience functions that always use the root log:
@@ -444,7 +444,7 @@ import logging
 
 logging.debug('Debugging information')
 logging.info('Informational message')
-logging.warn('Warning: config file %s not found', 'server.conf')
+logging.warn('Warning:config file %s not found', 'server.conf')
 logging.error('Error occurred')
 logging.critical('Critical error -- shutting down')
 \end{verbatim}
@@ -452,7 +452,7 @@ logging.critical('Critical error -- shutting down')
 This produces the following output:
 
 \begin{verbatim}
-WARN:root:Warning: config file not found
+WARN:root:Warning:config file server.conf not found
 ERROR:root:Error occurred
 CRITICAL:root:Critical error -- shutting down
 \end{verbatim}
@@ -492,7 +492,9 @@ ZeroDivisionError: integer division or modulo by zero
 
 Slightly more advanced programs will use a logger other than the root
 logger.  The \function{getLogger(\var{name})} is used to get a
-particular log, creating it if it doesn't exist yet.
+particular log, creating it if it doesn't exist yet; 
+\function{getLogger(None)} returns the root logger.
+
 
 \begin{verbatim}
 log = logging.getLogger('server')
@@ -1710,6 +1712,6 @@ suggestions, corrections and assistance with various drafts of this
 article: Simon Brunning, Michael Chermside, Scott David Daniels,
 Fred~L. Drake, Jr., Michael Hudson, Detlef Lannert, Martin von
 L\"owis, Andrew MacIntyre, Lalo Martins, Gustavo Niemeyer, Neal
-Norwitz, Chris Reedy, Neil Schemenauer, Jason Tishler.
+Norwitz, Chris Reedy, Vinay Sajip, Neil Schemenauer, Jason Tishler.
 
 \end{document}
