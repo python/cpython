@@ -88,7 +88,6 @@ PyImport_Inittab
 PyImport_AppendInittab
 PyImport_ExtendInittab
 initimp
-setint
 PyImport_Import
 PyImport_ReloadModule
 PyImport_ImportModuleEx
