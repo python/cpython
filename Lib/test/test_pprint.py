@@ -96,6 +96,27 @@ class QueryTestCase(unittest.TestCase):
  'write_io_runtime_us': 43690}"""
         self.assertEqual(pprint.pformat(o), exp)
 
+    def test_subclassing(self):
+        o = {'names with spaces': 'should be presented using repr()',
+             'others.should.not.be': 'like.this'}
+        exp = """\
+{'names with spaces': 'should be presented using repr()',
+ others.should.not.be: like.this}"""
+        self.assertEqual(DottedPrettyPrinter().pformat(o), exp)
+
+
+class DottedPrettyPrinter(pprint.PrettyPrinter):
+    def format(self, object, context, maxlevels, level):
+        if isinstance(object, str):
+            if ' ' in object:
+                return `object`, 1, 0
+            else:
+                return object, 0, 0
+        else:
+            return pprint.PrettyPrinter.format(
+                self, object, context, maxlevels, level)
+
+
 def test_main():
     test_support.run_unittest(QueryTestCase)
 
