@@ -1,6 +1,6 @@
 # Test the Unicode versions of normal file functions
 # open, os.open, os.stat. os.listdir, os.rename, os.remove, os.mkdir, os.chdir, os.rmdir
-import os, unittest
+import sys, os, unittest
 from test import test_support
 if not os.path.supports_unicode_filenames:
     raise test_support.TestSkipped, "test works only on NT+"
@@ -79,7 +79,8 @@ class UnicodeFileTests(unittest.TestCase):
     def test_listdir(self):
         f1 = os.listdir(test_support.TESTFN)
         f1.sort()
-        f2 = os.listdir(unicode(test_support.TESTFN,"mbcs"))
+        f2 = os.listdir(unicode(test_support.TESTFN,
+                                sys.getfilesystemencoding()))
         f2.sort()
         print f1
         print f2
