@@ -199,7 +199,9 @@ class SocketIO(object):
         except socket.error:
             raise
         except:
-            self.debug("localcall:EXCEPTION")
+            msg = "*** Internal Error: rpc.py:SocketIO.localcall()\n\n"\
+                  " Object: %s \n Method: %s \n Args: %s\n"
+            print>>sys.__stderr__, msg % (oid, method, args)
             traceback.print_exc(file=sys.__stderr__)
             return ("EXCEPTION", None)
 
