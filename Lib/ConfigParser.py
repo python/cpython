@@ -292,11 +292,11 @@ class ConfigParser:
     # of \w, _ is allowed in section header names.
     SECTCRE = re.compile(
         r'\['                                 # [
-        r'(?P<header>[-\w_.*,(){}]+)'         # `-', `_' or any alphanum
+        r'(?P<header>[-\w_.*,(){}]+)'         # a lot of stuff found by IvL
         r'\]'                                 # ]
         )
     OPTCRE = re.compile(
-        r'(?P<option>[-\w_.*,(){}]+)'         # - . _ alphanum
+        r'(?P<option>[-\w_.*,(){}]+)'         # a lot of stuff found by IvL
         r'[ \t]*(?P<vi>[:=])[ \t]*'           # any number of space/tab,
                                               # followed by separator
                                               # (either : or =), followed
