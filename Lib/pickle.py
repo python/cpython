@@ -454,21 +454,26 @@ class Pickler:
         save  = self.save
         memo  = self.memo
 
-        d = id(object)
-
         write(MARK)
-
         for element in object:
             save(element)
 
-        if len(object) and d in memo:
+        if object and id(object) in memo:
+            # Subtle.  d was not in memo when we entered save_tuple(), so
+            # the process of saving the tuple's elements must have saved
+            # the tuple itself:  the tuple is recursive.  The proper action
+            # now is to throw away everything we put on the stack, and
+            # simply GET the tuple (it's already constructed).  This check
+            # could have been done in the "for element" loop instead, but
+            # recursive tuples are a rare thing.
+            get = self.get(memo[id(object)][0])
             if self.bin:
-                write(POP_MARK + self.get(memo[d][0]))
-                return
-
-            write(POP * (len(object) + 1) + self.get(memo[d][0]))
+                write(POP_MARK + get)
+            else:   # proto 0 -- POP_MARK not available
+                write(POP * (len(object) + 1) + get)
             return
 
+        # No recursion (including the empty-tuple case).
         self.write(TUPLE)
         self.memoize(object)
 
