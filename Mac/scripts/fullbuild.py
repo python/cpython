@@ -89,6 +89,8 @@ PLUGIN_INSTRUCTIONS=[
 		":PlugIns:mactcpmodules.µ",
 		":PlugIns:stdwinmodule.µ",
 		":PlugIns:toolboxmodules.µ",
+		":PlugIns:wastemodule.µ",
+		":PlugIns:_tkintermodule.µ",
 	])
 ]
 M68K_INSTRUCTIONS=[
