@@ -1314,6 +1314,106 @@ static char gethostbyname_doc[] =
 Return the IP address (a string of the form '255.255.255.255') for a host.";
 
 
+/* Convenience function common to gethostbyname_ex and gethostbyaddr */
+
+static PyObject *
+gethost_common(h, addr)
+	struct hostent *h;
+	struct sockaddr_in *addr;
+{
+	char **pch;
+	PyObject *rtn_tuple = (PyObject *)NULL;
+	PyObject *name_list = (PyObject *)NULL;
+	PyObject *addr_list = (PyObject *)NULL;
+	PyObject *tmp;
+	if (h == NULL) {
+#ifdef HAVE_HSTRERROR
+	        /* Let's get real error message to return */
+	        extern int h_errno;
+		PyErr_SetString(PySocket_Error, (char *)hstrerror(h_errno));
+#else
+		PyErr_SetString(PySocket_Error, "host not found");
+#endif
+		return NULL;
+	}
+	if ((name_list = PyList_New(0)) == NULL)
+		goto err;
+	if ((addr_list = PyList_New(0)) == NULL)
+		goto err;
+	for (pch = h->h_aliases; *pch != NULL; pch++) {
+		int status;
+		tmp = PyString_FromString(*pch);
+		if (tmp == NULL)
+			goto err;
+		status = PyList_Append(name_list, tmp);
+		Py_DECREF(tmp);
+		if (status)
+			goto err;
+	}
+	for (pch = h->h_addr_list; *pch != NULL; pch++) {
+		int status;
+		memcpy((char *) &addr->sin_addr, *pch, h->h_length);
+		tmp = makeipaddr(addr);
+		if (tmp == NULL)
+			goto err;
+		status = PyList_Append(addr_list, tmp);
+		Py_DECREF(tmp);
+		if (status)
+			goto err;
+	}
+	rtn_tuple = Py_BuildValue("sOO", h->h_name, name_list, addr_list);
+ err:
+	Py_XDECREF(name_list);
+	Py_XDECREF(addr_list);
+	return rtn_tuple;
+}
+
+
+/* Python interface to gethostbyname_ex(name). */
+
+/*ARGSUSED*/
+static PyObject *
+BUILD_FUNC_DEF_2(PySocket_gethostbyname_ex,PyObject *,self, PyObject *,args)
+{
+	char *name;
+	struct hostent *h;
+	struct sockaddr_in addr;
+	PyObject *addr_list = (PyObject *)NULL;
+	char **pch;
+	PyObject *tmp;
+#ifdef HAVE_GETHOSTBYNAME_R
+	struct hostent hp_allocated;
+	char buf[16384];
+	int buf_len = (sizeof buf) - 1;
+	int errnop;
+#endif /* HAVE_GETHOSTBYNAME_R */
+	if (!PyArg_Parse(args, "s", &name))
+		return NULL;
+	if (setipaddr(name, &addr) < 0)
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_GETHOSTBYNAME_R
+	h = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
+#else /* not HAVE_GETHOSTBYNAME_R */
+#if defined(WITH_THREAD) && !defined(MS_WINDOWS)
+	acquire_lock(gethostbyname_lock,1);
+#endif
+	h = gethostbyname(name);
+#if defined(WITH_THREAD) && !defined(MS_WINDOWS)
+	release_lock(gethostbyname_lock);
+#endif
+#endif /* HAVE_GETHOSTBYNAME_R */
+	Py_END_ALLOW_THREADS
+	return gethost_common(h,&addr);
+}
+
+static char ghbn_ex_doc[] =
+"gethostbyname_ex(host) -> (name, aliaslist, addresslist)\n\
+\n\
+Return the true host name, a list of aliases, and a list of IP addresses,\n\
+for a host.  The host argument is a string giving a host name or IP number.";
+
+
 /* Python interface to gethostbyaddr(IP). */
 
 /*ARGSUSED*/
@@ -1357,46 +1457,7 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyaddr,PyObject *,self, PyObject *, args)
 #endif
 #endif /* HAVE_GETHOSTBYNAME_R */
 	Py_END_ALLOW_THREADS
-	if (h == NULL) {
-#ifdef HAVE_HSTRERROR
-	        /* Let's get real error message to return */
-	        extern int h_errno;
-		PyErr_SetString(PySocket_Error, (char *)hstrerror(h_errno));
-#else
-		PyErr_SetString(PySocket_Error, "host not found");
-#endif
-		return NULL;
-	}
-	if ((name_list = PyList_New(0)) == NULL)
-		goto err;
-	if ((addr_list = PyList_New(0)) == NULL)
-		goto err;
-	for (pch = h->h_aliases; *pch != NULL; pch++) {
-		int status;
-		tmp = PyString_FromString(*pch);
-		if (tmp == NULL)
-			goto err;
-		status = PyList_Append(name_list, tmp);
-		Py_DECREF(tmp);
-		if (status)
-			goto err;
-	}
-	for (pch = h->h_addr_list; *pch != NULL; pch++) {
-		int status;
-		memcpy((char *) &addr.sin_addr, *pch, h->h_length);
-		tmp = makeipaddr(&addr);
-		if (tmp == NULL)
-			goto err;
-		status = PyList_Append(addr_list, tmp);
-		Py_DECREF(tmp);
-		if (status)
-			goto err;
-	}
-	rtn_tuple = Py_BuildValue("sOO", h->h_name, name_list, addr_list);
- err:
-	Py_XDECREF(name_list);
-	Py_XDECREF(addr_list);
-	return rtn_tuple;
+	return gethost_common(h,&addr);
 }
 
 static char gethostbyaddr_doc[] =
@@ -1623,6 +1684,7 @@ Convert a 32-bit integer from host to network byte order.";
 
 static PyMethodDef PySocket_methods[] = {
 	{"gethostbyname",	PySocket_gethostbyname, 0, gethostbyname_doc},
+	{"gethostbyname_ex",	PySocket_gethostbyname_ex, 0, ghbn_ex_doc},
 	{"gethostbyaddr",	PySocket_gethostbyaddr, 0, gethostbyaddr_doc},
 	{"gethostname",		PySocket_gethostname, 0, gethostname_doc},
 	{"getservbyname",	PySocket_getservbyname, 0, getservbyname_doc},
