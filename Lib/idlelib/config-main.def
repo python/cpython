@@ -17,7 +17,6 @@
 #     ~/.idlerc/idle-extensions.cfg      the user extension config file
 #     ~/.idlerc/idle-highlight.cfg       the user highlighting config file
 #     ~/.idlerc/idle-keys.cfg            the user keybinding config file
-# XXX what about Windows?
 #
 # Any options the user saves through the config dialog will be saved to
 # the relevant user config file. Reverting any general setting to the 
@@ -29,8 +28,25 @@
 
 [General]
 run-in-separate-process= 1
+help-browser= ""
+
+[HelpFiles]
+idle="IDLE _Help",""
+python="_Python Documentation",""
+#additional help sources
+1=
+2=
+3=
+4=
+5=
+6=
+7=
+8=
+9=
+10=
 
 [EditorWindow]
+editor-on-startup= 0
 width= 80
 height= 24
 font= courier

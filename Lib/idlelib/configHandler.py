@@ -21,29 +21,31 @@ class IdleConfParser(ConfigParser):
         self.file=cfgFile
         ConfigParser.__init__(self,defaults=cfgDefaults)
     
-    def GetInt(self, section, option):
-        """
-        Get an option value as an integer
-        """
-        return self.Get(section, option, type='int')
-
-    def GetBool(self, section, option):
-        """
-        Get an option value as a boolean
-        """
-        return self.Get(section, option, type='bool')
+#     def GetInt(self, section, option, *kw):
+#         """
+#         Get an option value as an integer
+#         """
+#         return self.Get(section, option, type='int', *kw)
+# 
+#     def GetBool(self, section, option, **kw):
+#         """
+#         Get an option value as a boolean
+#         """
+#         return self.Get(section, option, type='bool', *kw)
         
-    def Get(self, section, option, raw=0, vars=None, default=None, 
-            type=None):
+#    def Get(self, section, option, raw=0, vars=None, default=None, 
+#            type=None):
+    def Get(self, section, option, default=None, type=None):
         """
         Get an option value for given section/option or return default.
         If type is specified, return as type.
         """
-        if type=='bool': getVal=self.getbool
+        if type=='bool': getVal=self.getboolean
         elif type=='int': getVal=self.getint
         else: getVal=self.get
         if self.has_option(section,option):
-            return getVal(section, option, raw, vars)
+            #return getVal(section, option, raw, vars)
+            return getVal(section, option)
         else:
             return default
 
@@ -135,6 +137,23 @@ class IdleConf:
         for cfgType in configTypes: #create config parsers
             self.defaultCfg[cfgType]=IdleConfParser(defCfgFiles[cfgType])
             self.userCfg[cfgType]=IdleUserConfParser(usrCfgFiles[cfgType])
+    
+    def GetDefault(self, configType, section, option, default=None, type=None):
+        """
+        Get an option value for given config type and given general 
+        configuration section/option or return a default. If type is specified,
+        return as type. Firstly the user configuration is checked, with a 
+        fallback to the default configuration, and a final 'catch all' 
+        fallback to a useable passed-in default if the option isn't present in 
+        either the user or the default configuration.
+        configType must be one of ('main','extensions','highlight','keys')
+        """
+        if self.userCfg[configType].has_option(section,option):
+            return self.userCfg[configType].Get(section, option, type=type)
+        elif self.defaultCfg[configType].has_option(section,option):
+            return self.defaultCfg[configType].Get(section, option, type=type)
+        else:
+            return default
     
     def LoadCfgFiles(self):
         """ 

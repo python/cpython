@@ -43,6 +43,9 @@ class ConfigDialog(Toplevel):
         self.bind('<Alt-k>',self.ChangePageBinding)
         self.bind('<Alt-g>',self.ChangePageBinding)
         #self.LoadOptMenuHighlightTarget()
+        
+        self.LoadConfigs()
+        
         self.wait_window()
         
     def Cancel(self):
@@ -121,8 +124,11 @@ class ConfigDialog(Toplevel):
             self.frameHighlightSample.update() #redraw after dialog
             self.labelTestSample.update()
 
-    def SetFontSample(self,event):
-        self.newFont.config(size=self.fontSize.get(),weight=NORMAL,
+    def SetFontSampleBinding(self,event):
+        self.SetFontSample()
+        
+    def SetFontSample(self):
+        self.editFont.config(size=self.fontSize.get(),weight=NORMAL,
             family=self.listFontName.get(self.listFontName.curselection()[0]))
     
     def CreateWidgets(self):
@@ -179,7 +185,7 @@ class ConfigDialog(Toplevel):
         self.spaceNum=IntVar()
         self.tabCols=IntVar()
         self.indentType=IntVar() 
-        self.newFont=tkFont.Font(self,('courier',12,'normal'))
+        self.editFont=tkFont.Font(self,('courier',12,'normal'))
         ##widget creation
         #body frame
         frame=Frame(self.framePages,borderwidth=2,relief=RAISED)
@@ -194,21 +200,21 @@ class ConfigDialog(Toplevel):
                 text='Font :')
         self.listFontName=Listbox(frameFontName,height=5,takefocus=FALSE,
                 exportselection=FALSE)
-        self.listFontName.bind('<<ListboxSelect>>',self.SetFontSample)
+        self.listFontName.bind('<<ListboxSelect>>',self.SetFontSampleBinding)
         scrollFont=Scrollbar(frameFontName)
-        self.LoadFontList()
+        #self.LoadFontList()
         scrollFont.config(command=self.listFontName.yview)
         self.listFontName.config(yscrollcommand=scrollFont.set)
         labelFontSizeTitle=Label(frameFontSize,text='Size :')
         sizes=('10','11','12','13','14','16','18','20','22')
         args=(frameFontSize,self.fontSize)+sizes
-        keyArgs={'command':self.SetFontSample}
+        keyArgs={'command':self.SetFontSampleBinding}
         optFontSize=apply(OptionMenu,args,keyArgs)
         #optFontSize.bind('<<MenuSelect>>',self.SetFontSample)
         frameFontSample=Frame(frameFont,relief=SOLID,borderwidth=1)
         self.labelFontSample=Label(frameFontSample,
                 text='AaBbCcDdEe\nFfGgHhIiJjK\n1234567890\n#:+=(){}[]',
-                justify=LEFT,font=self.newFont)
+                justify=LEFT,font=self.editFont)
         #frameIndent
         labelIndentTitle=Label(frameIndent,text='Set Indentation Defaults')
         frameIndentType=Frame(frameIndent)
@@ -216,9 +222,9 @@ class ConfigDialog(Toplevel):
         labelIndentTypeTitle=Label(frameIndentType,
                 text='Choose indentation type :')
         radioUseSpaces=Radiobutton(frameIndentType,variable=self.indentType,
-            value=0,text='Tab key inserts spaces')
+            value=1,text='Tab key inserts spaces')
         radioUseTabs=Radiobutton(frameIndentType,variable=self.indentType,
-            value=1,text='Tab key inserts tabs')
+            value=0,text='Tab key inserts tabs')
         labelIndentSizeTitle=Label(frameIndentSize,
                 text='Choose indentation size :')
         labelSpaceNumTitle=Label(frameIndentSize,justify=LEFT,
@@ -503,15 +509,36 @@ class ConfigDialog(Toplevel):
 
         return frame
 
-    def LoadFontList(self):
+    def LoadFontCfg(self):
+        ##base editor font selection list
         fonts=list(tkFont.families(self))
         fonts.sort()
         for font in fonts:
             self.listFontName.insert(END,font)
-        currentFontIndex=fonts.index('courier')
-        self.listFontName.see(currentFontIndex)
-        self.listFontName.select_set(currentFontIndex)
-        self.fontSize.set('12')
+        configuredFont=idleConf.GetDefault('main','EditorWindow','font',
+                default='courier')
+        if configuredFont in fonts:
+            currentFontIndex=fonts.index(configuredFont)
+            self.listFontName.see(currentFontIndex)
+            self.listFontName.select_set(currentFontIndex)
+        ##font size dropdown
+        fontSize=idleConf.GetDefault('main','EditorWindow','font-size',default='12')
+        self.fontSize.set(fontSize)
+        ##font sample 
+        self.SetFontSample()
+    
+    def LoadTabCfg(self):
+        ##indent type radibuttons
+        spaceIndent=idleConf.GetDefault('main','Indent','use-spaces',
+                default=1,type='bool')
+        self.indentType.set(spaceIndent)
+        ##indent sizes
+        spaceNum=idleConf.GetDefault('main','Indent','num-spaces',
+                default=4,type='int')
+        tabCols=idleConf.GetDefault('main','Indent','tab-cols',
+                default=4,type='int')
+        self.spaceNum.set(spaceNum)
+        self.tabCols.set(tabCols)
     
     #def LoadOptionMenu(self, optMenu, optList, optVar, optVal=None, 
     #            command=None):
@@ -562,7 +589,23 @@ class ConfigDialog(Toplevel):
         elif optList:
             optVar.set(optList[0])
 
+    def LoadConfigs(self):
+        """
+        load configuration from default and user config files and populate
+        the widgets on the config dialog pages.
+        """
+        ### fonts / tabs page
+        self.LoadFontCfg()        
+        self.LoadTabCfg()        
+        ### highlighting page
+        ### keys page
+        ### help page
+        ### general page
+        
     def SaveConfigs(self):
+        """
+        save configuration changes to user config files.
+        """
         pass
 
 if __name__ == '__main__':
