@@ -175,6 +175,11 @@ class BugsTestCase(unittest.TestCase):
         # Simple-minded check for SF 588452: Debug build crashes
         marshal.dumps([128] * 1000)
 
+    def test_patch_873224(self):
+        self.assertRaises(Exception, marshal.loads, '0')
+        self.assertRaises(Exception, marshal.loads, 'f')
+        self.assertRaises(Exception, marshal.loads, marshal.dumps(5L)[:-1])
+
 def test_main():
     test_support.run_unittest(IntTestCase,
                               FloatTestCase,
