@@ -183,9 +183,14 @@ PyBuffer_New(size)
 {
 	PyBufferObject * b;
 
+	if (size < 0) {
+		PyErr_SetString(PyExc_ValueError,
+				"size must be zero or positive");
+		return NULL;
+	}
 	b = (PyBufferObject *)malloc(sizeof(*b) + size);
 	if ( b == NULL )
-		return NULL;
+		return PyErr_NoMemory();
 	b->ob_type = &PyBuffer_Type;
 	_Py_NewReference((PyObject *)b);
 
