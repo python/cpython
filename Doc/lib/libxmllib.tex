@@ -16,7 +16,18 @@ This module defines a class \class{XMLParser} which serves as the basis
 for parsing text files formatted in XML (Extensible Markup Language).
 
 \begin{classdesc}{XMLParser}{}
-The \class{XMLParser} class must be instantiated without arguments.
+The \class{XMLParser} class must be instantiated without
+arguments.\footnote{Actually, a number of keyword arguments are
+recognized which influence the parser to accept certain non-standard
+constructs.  The following keyword arguments are currently
+recognized.  The defaults for all of these is \code{0} (false).
+\var{accept_unquoted_attributes} (accept certain attribute values
+without requiring quotes), \var{accept_missing_endtag_name} (accept
+end tags that look like \code{</>}), \var{map_case} (map upper case to
+lower case in tags and attributes), \var{accept_utf8} (allow UTF-8
+characters in input; this is required according to the XML standard,
+but Python does not as yet deal properly with these characters, so
+this is not the default).}
 \end{classdesc}
 
 This class provides the following interface methods and instance variables:
@@ -140,19 +151,6 @@ subclass must override this method to provide support for character
 references outside of the \ASCII{} range.
 \end{methoddesc}
 
-\begin{methoddesc}{handle_entityref}{ref}
-This method is called to process a general entity reference of the
-form \samp{\&\var{ref};} where \var{ref} is an general entity
-reference.  It looks for \var{ref} in the instance (or class)
-variable \member{entitydefs} which should be a mapping from entity
-names to corresponding translations.
-If a translation is found, it calls the method \method{handle_data()}
-with the translation; otherwise, it calls the method
-\code{unknown_entityref(\var{ref})}.  The default \member{entitydefs}
-defines translations for \code{\&amp;}, \code{\&apos}, \code{\&gt;},
-\code{\&lt;}, and \code{\&quot;}.
-\end{methoddesc}
-
 \begin{methoddesc}{handle_comment}{comment}
 This method is called when a comment is encountered.  The
 \var{comment} argument is a string containing the text between the
@@ -223,7 +221,7 @@ base class implementation does nothing.
 \begin{methoddesc}{unknown_entityref}{ref}
 This method is called to process an unknown entity reference.  It is
 intended to be overridden by a derived class; the base class
-implementation does nothing.
+implementation calls \method{syntax_error()} to signal an error.
 \end{methoddesc}
 
 
