@@ -18,6 +18,7 @@ import string
 import socket
 import regex
 import os
+import sys
 
 
 __version__ = '1.5'
@@ -130,7 +131,7 @@ class URLopener:
 		try:
 			return getattr(self, name)(url)
 		except socket.error, msg:
-			raise IOError, ('socket error', msg)
+			raise IOError, ('socket error', msg), sys.exc_traceback
 
 	# Overridable interface to open unknown URL type
 	def open_unknown(self, fullurl):
@@ -296,7 +297,7 @@ class URLopener:
 			return addinfourl(self.ftpcache[key].retrfile(file, type),
 				  noheaders(), self.openedurl)
 		except ftperrors(), msg:
-			raise IOError, ('ftp error', msg)
+			raise IOError, ('ftp error', msg), sys.exc_traceback
 
 
 # Derived class with handlers for errors we can handle (perhaps)
@@ -465,7 +466,8 @@ class ftpwrapper:
 				conn = self.ftp.transfercmd(cmd)
 			except ftplib.error_perm, reason:
 				if reason[:3] != '550':
-					raise IOError, ('ftp error', reason)
+					raise IOError, ('ftp error', reason), \
+					      sys.exc_traceback
 		if not conn:
 			# Try a directory listing
 			if file: cmd = 'LIST ' + file
