@@ -171,19 +171,20 @@ def format_exception_only(etype, value):
                 if not filename: filename = "<string>"
                 list.append('  File "%s", line %d\n' %
                             (filename, lineno))
-                i = 0
-                while i < len(line) and line[i].isspace():
-                    i = i+1
-                list.append('    %s\n' % line.strip())
-                if offset is not None:
-                    s = '    '
-                    for c in line[i:offset-1]:
-                        if c.isspace():
-                            s = s + c
-                        else:
-                            s = s + ' '
-                    list.append('%s^\n' % s)
-                value = msg
+                if line is not None:
+                    i = 0
+                    while i < len(line) and line[i].isspace():
+                        i = i+1
+                    list.append('    %s\n' % line.strip())
+                    if offset is not None:
+                        s = '    '
+                        for c in line[i:offset-1]:
+                            if c.isspace():
+                                s = s + c
+                            else:
+                                s = s + ' '
+                        list.append('%s^\n' % s)
+                    value = msg
         s = _some_str(value)
         if s:
             list.append('%s: %s\n' % (str(stype), s))
