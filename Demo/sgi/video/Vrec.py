@@ -6,14 +6,15 @@
 
 # Usage:
 #
-# makemovie [-a] [-q queuesize] [-r n/d] [moviefile [audiofile]]
+# makemovie [-a] [-q queuesize] [-r rate] [-w width] [moviefile [audiofile]]
 
 
 # Options:
 #
 # -a            : record audio as well
 # -q queuesize  : set the capture queue size (default 2)
-# -r rate       : capture 1 out of every n frames (default and min 2)
+# -r rate       : capture 1 out of every 'rate' frames (default and min 2)
+# -w width      : initial window width (default interactive placement)
 # 
 # moviefile     : here goes the movie data (default film.video);
 #                 the format is documented in cmif-film.ms
@@ -55,8 +56,9 @@ def main():
 	qsize = 2
 	audio = 0
 	rate = 2
+	width = 0
 
-	opts, args = getopt.getopt(sys.argv[1:], 'aq:r:')
+	opts, args = getopt.getopt(sys.argv[1:], 'aq:r:w:')
 	for opt, arg in opts:
 		if opt == '-a':
 			audio = 1
@@ -67,6 +69,8 @@ def main():
 			if rate < 2:
 				sys.stderr.write('-r rate must be >= 2\n')
 				sys.exit(2)
+		elif opt == '-w':
+			width = string.atoi(arg)
 
 	if args[2:]:
 		sys.stderr.write('usage: Vrec [options] [file [audiofile]]\n')
@@ -89,22 +93,35 @@ def main():
 	else:
 		audiofilename = None
 
+	v = sv.OpenVideo()
+	# Determine maximum window size based on signal standard
+	param = [SV.BROADCAST, 0]
+	v.GetParam(param)
+	if param[1] == SV.PAL:
+		x = SV.PAL_XMAX
+		y = SV.PAL_YMAX
+	elif param[1] == SV.NTSC:
+		x = SV.NTSC_XMAX
+		y = SV.NTSC_YMAX
+	else:
+		print 'Unknown video standard', param[1]
+		sys.exit(1)
+
 	gl.foreground()
-
-	# XXX should remove PAL dependencies
-
-	x, y = SV.PAL_XMAX / 4, SV.PAL_YMAX / 4
-	print x, 'x', y
-
-	gl.minsize(40, 30)
+	gl.maxsize(x, y)
+	gl.keepaspect(x, y)
 	gl.stepunit(8, 6)
-	gl.maxsize(SV.PAL_XMAX, SV.PAL_YMAX)
-	gl.keepaspect(SV.PAL_XMAX, SV.PAL_YMAX)
+	if width:
+		gl.prefsize(width, width*3/4)
 	win = gl.winopen(filename)
+	if width:
+		gl.maxsize(x, y)
+		gl.keepaspect(x, y)
+		gl.stepunit(8, 6)
+		gl.winconstraints()
 	x, y = gl.getsize()
 	print x, 'x', y
 
-	v = sv.OpenVideo()
 	v.SetSize(x, y)
 	v.BindGLWindow(win, SV.IN_REPLACE)
 
