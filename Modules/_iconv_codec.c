@@ -122,7 +122,7 @@ iconvcodec_encode(iconvcodecObject *self, PyObject *args, PyObject *kwargs)
     out_top = PyString_AS_STRING(outputobj);                \
 }
     while (inplen > 0) {
-        if (iconv(self->enchdl, &inp, &inplen, &out, &outlen) == -1) {
+        if (iconv(self->enchdl, (char**)&inp, &inplen, &out, &outlen) == -1) {
             char         reason[128];
             int          errpos;
 
@@ -319,7 +319,7 @@ iconvcodec_decode(iconvcodecObject *self, PyObject *args, PyObject *kwargs)
     out_top = (char *)PyUnicode_AS_UNICODE(outputobj);                      \
 }
     while (inplen > 0) {
-        if (iconv(self->dechdl, &inp, &inplen, &out, &outlen) == -1) {
+        if (iconv(self->dechdl, (char**)&inp, &inplen, &out, &outlen) == -1) {
             char         reason[128], *reasonpos = (char *)reason;
             int          errpos;
 
