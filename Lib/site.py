@@ -177,7 +177,7 @@ for prefix in prefixes:
             # locations. Currently only per-user, but /Library and
             # /Network/Library could be added too
             if 'Python.framework' in prefix:
-                home = os.environ['HOME']
+                home = os.environ.get('HOME')
                 if home:
                     sitedirs.append(
                         os.path.join(home,
