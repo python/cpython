@@ -267,19 +267,15 @@ Finding Tests in Functions
 For a function whose docstring contains examples, DocTestFinder.find()
 will return a single test (for that function's docstring):
 
-    >>> # Allow ellipsis in the following examples (since the filename
-    >>> # and line number in the traceback can vary):
-    >>> doctest: +ELLIPSIS
-
     >>> finder = doctest.DocTestFinder()
     >>> tests = finder.find(sample_func)
-    >>> print tests
+    
+    >>> print tests  # doctest: +ELLIPSIS
     [<DocTest sample_func from ...:12 (1 example)>]
+    
     >>> e = tests[0].examples[0]
     >>> (e.source, e.want, e.lineno)
     ('print sample_func(22)\n', '44\n', 3)
-
-    >>> doctest: -ELLIPSIS # Turn ellipsis back off
 
 If an object has no docstring, then a test is not created for it:
 
@@ -638,10 +634,6 @@ message is raised, then it is reported as a failure:
 If an exception is raised but not expected, then it is reported as an
 unexpected exception:
 
-    >>> # Allow ellipsis in the following examples (since the filename
-    >>> # and line number in the traceback can vary):
-    >>> doctest: +ELLIPSIS
-
     >>> def f(x):
     ...     r'''
     ...     >>> 1/0
@@ -649,6 +641,7 @@ unexpected exception:
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
     **********************************************************************
     Failure in example: 1/0
     from line #1 of f
@@ -657,8 +650,6 @@ unexpected exception:
           ...
         ZeroDivisionError: integer division or modulo by zero
     (1, 1)
-
-    >>> doctest: -ELLIPSIS # Turn ellipsis back off:
 """
     def optionflags(): r"""
 Tests of `DocTestRunner`'s option flag handling.
@@ -863,20 +854,57 @@ and actual outputs to be displayed using a context diff:
     def option_directives(): r"""
 Tests of `DocTestRunner`'s option directive mechanism.
 
-Option directives can be used to turn option flags on or off from
-within a DocTest case.  The following example shows how a flag can be
-turned on and off.  Note that comments on the same line as the option
-directive are ignored.
+Option directives can be used to turn option flags on or off for a
+single example.  To turn an option on for an example, follow that
+example with a comment of the form ``# doctest: +OPTION``:
 
+    >>> def f(x): r'''
+    ...     >>> print range(10)       # should fail: no ellipsis
+    ...     [0, 1, ..., 9]
+    ...
+    ...     >>> print range(10)       # doctest: +ELLIPSIS
+    ...     [0, 1, ..., 9]
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    **********************************************************************
+    Failure in example: print range(10)       # should fail: no ellipsis
+    from line #1 of f
+    Expected: [0, 1, ..., 9]
+    Got: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    (1, 2)
+
+To turn an option off for an example, follow that example with a
+comment of the form ``# doctest: -OPTION``:
+
+    >>> def f(x): r'''
+    ...     >>> print range(10)
+    ...     [0, 1, ..., 9]
+    ...
+    ...     >>> # should fail: no ellipsis
+    ...     >>> print range(10)       # doctest: -ELLIPSIS
+    ...     [0, 1, ..., 9]
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False,
+    ...                       optionflags=doctest.ELLIPSIS).run(test)
+    **********************************************************************
+    Failure in example: print range(10)       # doctest: -ELLIPSIS
+    from line #6 of f
+    Expected: [0, 1, ..., 9]
+    Got: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    (1, 2)
+
+Option directives affect only the example that they appear with; they
+do not change the options for surrounding examples:
+    
     >>> def f(x): r'''
     ...     >>> print range(10)       # Should fail: no ellipsis
     ...     [0, 1, ..., 9]
     ...
-    ...     >>> doctest: +ELLIPSIS    # turn ellipsis on.
-    ...     >>> print range(10)       # Should succeed
+    ...     >>> print range(10)       # doctest: +ELLIPSIS
     ...     [0, 1, ..., 9]
     ...
-    ...     >>> doctest: -ELLIPSIS    # turn ellipsis back off.
     ...     >>> print range(10)       # Should fail: no ellipsis
     ...     [0, 1, ..., 9]
     ...     '''
@@ -889,18 +917,19 @@ directive are ignored.
     Got: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     **********************************************************************
     Failure in example: print range(10)       # Should fail: no ellipsis
-    from line #9 of f
+    from line #7 of f
     Expected: [0, 1, ..., 9]
     Got: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     (2, 3)
 
-Multiple flags can be toggled by a single option directive:
+Multiple options may be modified by a single option directive.  They
+may be separated by whitespace, commas, or both:
 
     >>> def f(x): r'''
     ...     >>> print range(10)       # Should fail
     ...     [0, 1,  ...,   9]
-    ...     >>> doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
     ...     >>> print range(10)       # Should succeed
+    ...     ... # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
     ...     [0, 1,  ...,   9]
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
@@ -911,6 +940,104 @@ Multiple flags can be toggled by a single option directive:
     Expected: [0, 1,  ...,   9]
     Got: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     (1, 2)
+
+    >>> def f(x): r'''
+    ...     >>> print range(10)       # Should fail
+    ...     [0, 1,  ...,   9]
+    ...     >>> print range(10)       # Should succeed
+    ...     ... # doctest: +ELLIPSIS,+NORMALIZE_WHITESPACE
+    ...     [0, 1,  ...,   9]
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    **********************************************************************
+    Failure in example: print range(10)       # Should fail
+    from line #1 of f
+    Expected: [0, 1,  ...,   9]
+    Got: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    (1, 2)
+
+    >>> def f(x): r'''
+    ...     >>> print range(10)       # Should fail
+    ...     [0, 1,  ...,   9]
+    ...     >>> print range(10)       # Should succeed
+    ...     ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     [0, 1,  ...,   9]
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    **********************************************************************
+    Failure in example: print range(10)       # Should fail
+    from line #1 of f
+    Expected: [0, 1,  ...,   9]
+    Got: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    (1, 2)
+
+The option directive may be put on the line following the source, as
+long as a continuation prompt is used:
+
+    >>> def f(x): r'''
+    ...     >>> print range(10)
+    ...     ... # doctest: +ELLIPSIS
+    ...     [0, 1, ..., 9]
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    (0, 1)
+    
+For examples with multi-line source, the option directive may appear
+at the end of any line:
+
+    >>> def f(x): r'''
+    ...     >>> for x in range(10): # doctest: +ELLIPSIS
+    ...     ...     print x,
+    ...     0 1 2 ... 9
+    ...
+    ...     >>> for x in range(10):
+    ...     ...     print x,        # doctest: +ELLIPSIS
+    ...     0 1 2 ... 9
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    (0, 2)
+
+If more than one line of an example with multi-line source has an
+option directive, then they are combined:
+
+    >>> def f(x): r'''
+    ...     Should fail (option directive not on the last line):
+    ...         >>> for x in range(10): # doctest: +ELLIPSIS
+    ...         ...     print x,        # doctest: +NORMALIZE_WHITESPACE
+    ...         0  1    2...9
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    (0, 1)
+
+It is an error to have a comment of the form ``# doctest:`` that is
+*not* followed by words of the form ``+OPTION`` or ``-OPTION``, where
+``OPTION`` is an option that has been registered with
+`register_option`:
+
+    >>> # Error: Option not registered
+    >>> s = '>>> print 12   #doctest: +BADOPTION'
+    >>> test = doctest.DocTestParser().get_doctest(s, {}, 's', 's.py', 0)
+    Traceback (most recent call last):
+    ValueError: line 1 of the doctest for s has an invalid option: '+BADOPTION'
+
+    >>> # Error: No + or - prefix
+    >>> s = '>>> print 12   #doctest: ELLIPSIS'
+    >>> test = doctest.DocTestParser().get_doctest(s, {}, 's', 's.py', 0)
+    Traceback (most recent call last):
+    ValueError: line 1 of the doctest for s has an invalid option: 'ELLIPSIS'
+
+It is an error to use an option directive on a line that contains no
+source:
+
+    >>> s = '>>> # doctest: +ELLIPSIS'
+    >>> test = doctest.DocTestParser().get_doctest(s, {}, 's', 's.py', 0)
+    Traceback (most recent call last):
+    ValueError: line 0 of the doctest for s has an option directive on a line with no example: '# doctest: +ELLIPSIS'
 """
 
 def test_testsource(): r"""
@@ -971,12 +1098,12 @@ Create some fake stdin input, to feed to the debugger:
 
 Run the debugger on the docstring, and then restore sys.stdin.
 
-    >>> doctest: +NORMALIZE_WHITESPACE
     >>> try:
     ...     doctest.debug_src(s)
     ... finally:
     ...      sys.stdin = real_stdin
     ...      fake_stdin.close()
+    ... # doctest: +NORMALIZE_WHITESPACE
     > <string>(1)?()
     (Pdb) 12
     --Return--
@@ -1019,8 +1146,7 @@ def test_pdb_set_trace():
       >>> real_stdin = sys.stdin
       >>> sys.stdin = fake_stdin
 
-      >>> doctest: +ELLIPSIS
-      >>> runner.run(test)
+      >>> runner.run(test) # doctest: +ELLIPSIS
       --Return--
       > ...set_trace()->None
       -> Pdb().set_trace()
@@ -1057,7 +1183,7 @@ def test_pdb_set_trace():
       >>> real_stdin = sys.stdin
       >>> sys.stdin = fake_stdin
 
-      >>> runner.run(test)
+      >>> runner.run(test) # doctest: +ELLIPSIS
       --Return--
       > ...set_trace()->None
       -> Pdb().set_trace()
@@ -1068,8 +1194,6 @@ def test_pdb_set_trace():
       (Pdb) > <string>(1)?()
       (Pdb) 1
       (Pdb) (0, 2)
-
-      >>> doctest: -ELLIPSIS
       """
 
 def test_DocTestSuite():
