@@ -113,4 +113,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "rename2.h"
 #endif
 
+#include "pyfpe.h"
+
 #endif /* !Py_ALLOBJECTS_H */

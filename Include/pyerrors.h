@@ -51,6 +51,7 @@ extern DL_IMPORT(PyObject *) PyExc_AccessError;
 extern DL_IMPORT(PyObject *) PyExc_AttributeError;
 extern DL_IMPORT(PyObject *) PyExc_ConflictError;
 extern DL_IMPORT(PyObject *) PyExc_EOFError;
+extern DL_IMPORT(PyObject *) PyExc_FloatingPointError;
 extern DL_IMPORT(PyObject *) PyExc_IOError;
 extern DL_IMPORT(PyObject *) PyExc_ImportError;
 extern DL_IMPORT(PyObject *) PyExc_IndexError;
