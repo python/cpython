@@ -15,8 +15,6 @@ Library
 - quopri's encode and decode methods take an optional header parameter,
   which indicates whether output is intended for the header 'Q' encoding.
 
-- Tkinter.Listbox now exposes itemcget and itemconfigure.
-
 Tools
 
 Build
