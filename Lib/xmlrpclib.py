@@ -33,6 +33,7 @@
 # 2001-09-10 fl  Lazy import of urllib, cgi, xmllib (20x import speedup)
 # 2001-10-01 fl  Remove containers from memo cache when done with them
 # 2001-10-01 fl  Use faster escape method (80% dumps speedup)
+# 2001-10-10 sm  Allow long ints to be passed as ints if they don't overflow
 #
 # Copyright (c) 1999-2001 by Secret Labs AB.
 # Copyright (c) 1999-2001 by Fredrik Lundh.
@@ -463,6 +464,11 @@ class Marshaller:
     def dump_int(self, value):
         self.write("<value><int>%s</int></value>\n" % value)
     dispatch[IntType] = dump_int
+
+    def dump_long(self, value):
+        val = int(value)
+        self.write("<value><int>%s</int></value>\n" % val)
+    dispatch[LongType] = dump_long
 
     def dump_double(self, value):
         self.write("<value><double>%s</double></value>\n" % value)
