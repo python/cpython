@@ -694,6 +694,12 @@ to decode UTF-8 in strict mode, meaning that encoding errors raise
 \versionadded{2.0}
 \end{funcdesc}
 
+\begin{funcdesc}{unistr}{object}
+Return a Unicode string containing a nicely printable representation of an
+object.  For Unicode, this returns the Unicode string itself.  For
+all other objects, it tries to convert \code{str(\var{object})] to Unicode.
+\end{funcdesc}
+
 \begin{funcdesc}{vars}{\optional{object}}
 Without arguments, return a dictionary corresponding to the current
 local symbol table.  With a module, class or class instance object as
