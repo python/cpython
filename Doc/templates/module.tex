@@ -4,18 +4,27 @@
 
 % ==== 1. ====
 % Choose one of the following section headers and index entries;
-% \section{} generates the section header,
-% \bimodindex{} or \stmodindex{} generates an index entry for this
+% \section generates the section header,
+% \bimodindex or \stmodindex generates an index entry for this
 % module.  Note that these should only be used for the defining entry
 % for the module.  Other references to the module should use
-% \refbimodindex{} or \refstmodindex{}.
-% The \label{module-spam} line is for the \seealso{} command.
+% \refbimodindex, \refstmodindex, \refexmodindex or \refmodindex, as
+% appropriate.  (Just prepend "ref" to the csname of the \*modindex
+% macro used in the module definition.)
+%
+% The \label{module-spam} line is for the \seealso command.
 
-\section{Built-in Module \sectcode{spam}}	% If implemented in C
-\bimodindex{spam}
+\section{Built-in Module \module{spam}}	% If implemented in C, in
+\bimodindex{spam}			% standard library
 
-\section{Standard Module \sectcode{spam}}	% If implemented in Python
-\stmodindex{spam}
+\section{Standard Module \module{spam}}	% If implemented in Python, in
+\stmodindex{spam}			% standard library
+
+\section{Extension Module \module{spam}}% If implemented in C, but not 
+\exmodindex{spam}			% in standard library
+
+\section{Module \module{spam}}		% If implemented in Python, but not 
+\modindex{spam}				% in standard library
 
 \label{module-spam}
 
@@ -42,12 +51,6 @@ is only available on genuine \UNIX{} systems.
 The \module{spam} module defines the following functions:
 
 % ---- 3.1. ----
-% Redefine the ``indexsubitem'' macro to point to this module
-% (alternatively, you can put this at the top of the file):
-
-\setindexsubitem{(in module spam)}
-
-% ---- 3.2. ----
 % For each function, use a ``funcdesc'' block.  This has exactly two
 % parameters (each parameters is contained in a set of curly braces):
 % the first parameter is the function name (this automatically
@@ -61,14 +64,14 @@ The \module{spam} module defines the following functions:
 % least once in the description; each usage (even inside \code{...})
 % should be enclosed in \var{...}.
 
-\begin{funcdesc}{open}{filename\optional{, mode, buffersize}}
+\begin{funcdesc}{open}{filename\optional{, mode\optional{, buffersize}}}
 Open the file \var{filename} as a can of Spam.  The optional
 \var{mode} and \var{buffersize} arguments specify the read-write mode
 (\code{'r'} (default) or \code{'w'}) and the buffer size (default:
 system dependent).
 \end{funcdesc}
 
-% ---- 3.3. ----
+% ---- 3.2. ----
 % Data items are described using a ``datadesc'' block.  This has only
 % one parameter: the item's name.
 
@@ -78,7 +81,7 @@ default varies per supermarket.  This variable should not be changed
 once the \function{open()} function has been called.
 \end{datadesc}
 
-% --- 3.4. ---
+% --- 3.3. ---
 % Exceptions are described using a ``excdesc'' block.  This has only
 % one parameter: the exception name.
 
@@ -88,10 +91,19 @@ The exception argument is a string describing the reason of the
 failure.
 \end{excdesc}
 
-% ---- 3.5. ----
-% There is no standard block type for classes.  I generally use
-% ``funcdesc'' blocks, since class instantiation looks very much like
-% a function call.
+% ---- 3.4. ----
+% Other standard environments:
+%
+%  classdesc	- Python classes; same arguments are funcdesc
+%  methoddesc	- methods, like funcdesc but has an optional parameter 
+%		  to give the type name: \begin{methoddesc}[mytype]{name}{args}
+%		  By default, the type name will be the name of the
+%		  last class defined using classdesc.  The type name
+%		  is required if the type is implemented in C (because 
+%		  there's no classdesc) or if the class isn't directly 
+%		  documented (if it's private).
+%  memberdesc	- data members, like datadesc, but with an optional
+%		  type name like methoddesc.
 
 
 % ==== 4. ====
@@ -107,21 +119,22 @@ Example:
 >>> can.empty()
 >>> can.close()
 \end{verbatim}
-%
+% Note that there is no trailing ">>> " prompt shown.
+
 % ==== 5. ====
 % If your module defines new object types (for a built-in module) or
 % classes (for a module written in Python), you should list the
 % methods and instance variables (if any) of each type or class in a
-% separate subsection.  It is important to redefine ``indexsubitem''
-% for each subsection.
+% separate subsection.
 
 \subsection{Spam Objects}
+\label{spam-objects}
+% This label is generally useful for referencing this section, but is
+% also used to give a filename when generating HTML.
 
-Spam objects (returned by \function{open()} above) have the following
-methods.
+Spam objects, as returned by \function{open()} above, have the
+following methods:
 
-\setindexsubitem{(spam method)}
-
-\begin{funcdesc}{empty}{}
+\begin{methoddesc}[spam]{empty}{}
 Empty the can into the trash.
-\end{funcdesc}
+\end{methoddesc}
