@@ -148,7 +148,8 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 			break;
 		}
 		if (errString == NULL) {
-			newModule = NSLinkModule(image, pathname, TRUE);
+			newModule = NSLinkModule(image, pathname,
+				NSLINKMODULE_OPTION_BINDNOW|NSLINKMODULE_OPTION_RETURN_ON_ERROR);
 			if (!newModule)
 				errString = "Failure linking new module";
 		}
