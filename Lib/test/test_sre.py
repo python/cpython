@@ -1,4 +1,4 @@
-# FIXME: this is basically test_re.py, with a few 
+# FIXME: this is basically test_re.py, with a few minor changes
 
 import sys
 sys.path=['.']+sys.path
@@ -337,7 +337,7 @@ for t in tests:
                     print repr(repl)+' should be '+repr(expected)
             else:
                 print '=== Failed incorrectly', t
-		continue
+                continue
 
             # Try the match on a unicode string, and check that it
             # still succeeds.
@@ -359,9 +359,9 @@ for t in tests:
             
             if pattern[:2]!='\\B' and pattern[-2:]!='\\B':
                 obj=sre.compile(pattern)
-		result=obj.search(s, result.start(0), result.end(0)+1)
-		if result==None:
-		    print '=== Failed on range-limited match', t
+                result=obj.search(s, result.start(0), result.end(0)+1)
+                if result==None:
+                    print '=== Failed on range-limited match', t
 
             # Try the match with IGNORECASE enabled, and check that it
             # still succeeds.

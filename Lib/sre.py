@@ -98,7 +98,7 @@ def _subn(pattern, template, string, count=0):
     if callable(template):
         filter = template
     else:
-	template = sre_parse.parse_template(template, pattern)
+        template = sre_parse.parse_template(template, pattern)
         def filter(match, template=template):
             return sre_parse.expand_template(template, match)
     n = i = 0
@@ -109,11 +109,11 @@ def _subn(pattern, template, string, count=0):
         m = c.search()
         if not m:
             break
-	b, e = m.span()
+        b, e = m.span()
         if i < b:
             append(string[i:b])
         append(filter(m))
-	i = e
+        i = e
         n = n + 1
     append(string[i:])
     return string[:0].join(s), n
@@ -130,15 +130,15 @@ def _split(pattern, string, maxsplit=0):
         m = c.search()
         if not m:
             break
-	b, e = m.span()
-	if b == e:
-	    if i >= len(string):
-		break
-	    continue
+        b, e = m.span()
+        if b == e:
+            if i >= len(string):
+                break
+            continue
         append(string[i:b])
-	if g and b != e:
-	    extend(m.groups())
-	i = e
+        if g and b != e:
+            extend(m.groups())
+        i = e
         n = n + 1
     append(string[i:])
     return s
