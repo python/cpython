@@ -5132,7 +5132,7 @@ unicode_buffer_getwritebuf(PyUnicodeObject *self, int index,
 			   const void **ptr)
 {
     PyErr_SetString(PyExc_TypeError,
-		    "cannot use unicode as modifyable buffer");
+		    "cannot use unicode as modifiable buffer");
     return -1;
 }
 
