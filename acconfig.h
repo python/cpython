@@ -151,6 +151,9 @@
 /* The number of bytes in an off_t. */
 #undef SIZEOF_OFF_T
 
+/* The number of bytes in a time_t. */
+#undef SIZEOF_TIME_T
+
 /* Defined to enable large file support when an off_t is bigger than a long
    and long long is available and at least as big as an off_t. You may need
    to add some flags for configuration and compilation to enable this mode.

@@ -241,23 +241,45 @@ typedef int pid_t;
 
 /* End of compilers - finish up */
 
+/* define the ANSI intptr_t type for portable use of a pointer sized
+   integer */
+#include <basetsd.h>
+#if defined(MS_WINDOWS) && !defined(MS_WIN64)
+typedef long intptr_t;
+#endif
+
 #if defined(MS_WIN64)
 /* maintain "win32" sys.platform for backward compatibility of Python code,
    the Win64 API should be close enough to the Win32 API to make this
    preferable */
-#define PLATFORM "win32"
-#define SIZEOF_VOID_P 8
+#	define PLATFORM "win32"
+#	define SIZEOF_VOID_P 8
+#	define SIZEOF_TIME_T 8
+#	define SIZEOF_OFF_T 4
+#	define SIZEOF_FPOS_T 8
+#	define SIZEOF_HKEY 8
+/* configure.in defines HAVE_LARGEFILE_SUPPORT iff HAVE_LONG_LONG,
+   sizeof(off_t) > sizeof(long), and sizeof(LONG_LONG) >= sizeof(off_t).
+   On Win64 the second condition is not true, but if fpos_t replaces off_t
+   then this is true. The uses of HAVE_LARGEFILE_SUPPORT imply that Win64
+   should define this. */
+#	define HAVE_LARGEFILE_SUPPORT
 #elif defined(MS_WIN32)
-#define PLATFORM "win32"
-#ifdef _M_ALPHA
-#define SIZEOF_VOID_P 8
-#else
-#define SIZEOF_VOID_P 4
-#endif
+#	define PLATFORM "win32"
+#	ifdef _M_ALPHA
+#		define SIZEOF_VOID_P 8
+#		define SIZEOF_TIME_T 8
+#	else
+#		define SIZEOF_VOID_P 4
+#		define SIZEOF_TIME_T 4
+#		define SIZEOF_OFF_T 4
+#		define SIZEOF_FPOS_T 8
+#		define SIZEOF_HKEY 4
+#	endif
 #elif defined(MS_WIN16)
-#define PLATFORM "win16"
+#	define PLATFORM "win16"
 #else
-#define PLATFORM "dos"
+#	define PLATFORM "dos"
 #endif
 
 

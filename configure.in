@@ -389,6 +389,7 @@ AC_CHECK_SIZEOF(char)
 AC_CHECK_SIZEOF(short)
 AC_CHECK_SIZEOF(float)
 AC_CHECK_SIZEOF(double)
+AC_CHECK_SIZEOF(fpos_t)
 
 AC_MSG_CHECKING(for long long support)
 have_long_long=no
@@ -423,6 +424,22 @@ if test "$have_long_long" = yes -a \
 else
   AC_MSG_RESULT(no)
 fi
+
+# AC_CHECK_SIZEOF() doesn't include <time.h>.
+AC_MSG_CHECKING(size of time_t)
+AC_CACHE_VAL(ac_cv_sizeof_time_t,
+[AC_TRY_RUN([#include <stdio.h>
+#include <time.h>
+main()
+{
+  FILE *f=fopen("conftestval", "w");
+  if (!f) exit(1);
+  fprintf(f, "%d\n", sizeof(time_t));
+  exit(0);
+}], ac_cv_sizeof_time_t=`cat conftestval`, ac_cv_sizeof_time_t=0)
+])
+AC_MSG_RESULT($ac_cv_sizeof_time_t)
+AC_DEFINE_UNQUOTED(SIZEOF_TIME_T, $ac_cv_sizeof_time_t)
 
 
 # Minor variations in building a framework between NextStep versions 4 and 5
