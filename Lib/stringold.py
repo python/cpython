@@ -287,8 +287,8 @@ def capitalize(s):
 
 # Capitalize the words in a string, e.g. " aBc  dEf " -> "Abc Def".
 # See also regsub.capwords().
-def capwords(s):
-	return join(map(capitalize, split(s)))
+def capwords(s, sep=None):
+	return join(map(capitalize, split(s, sep)))
 
 # Construct a translation string
 _idmapL = None
