@@ -90,10 +90,6 @@ LINK32=link.exe
 # Name "bsddb - Win32 Debug"
 # Begin Source File
 
-SOURCE=..\PC\bsddb.txt
-# End Source File
-# Begin Source File
-
 SOURCE=..\Modules\bsddbmodule.c
 # End Source File
 # End Target
