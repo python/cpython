@@ -59,6 +59,8 @@ HAVE_NCURSES=	no
 HAVE_GDBM=	no
 # Do you have the BZ2 compression library installed?
 HAVE_BZ2=	no
+# Do you have the OpenSSL libraries installed
+HAVE_OPENSSL=	no
 
 # === install locations ===
 # default value of PYTHONHOME
@@ -476,6 +478,9 @@ endif
 ifeq ($(HAVE_BZ2),yes)
   HARDEXTMODULES+=	bz2
 endif
+ifeq ($(HAVE_OPENSSL),yes)
+  HARDEXTMODULES+=	_ssl
+endif
 
 # Expat is now distributed with the Python source
 HARDEXTMODULES+=	pyexpat
@@ -670,6 +675,9 @@ zlib$(MODULE.EXT): $(OUT)zlibmodule$O $(OUT)zlib_m.def $(PYTHON.IMPLIB)
 
 bz2$(MODULE.EXT): $(OUT)bz2module$O $(OUT)bz2_m.def $(PYTHON.IMPLIB)
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS) -lbz2
+
+_ssl$(MODULE.EXT): $(OUT)_ssl$O $(OUT)_ssl_m.def $(PYTHON.IMPLIB)
+	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS) -lssl -lcrypto
 
 # the test target
 test:
