@@ -485,6 +485,9 @@ Tools/Demos
 Build
 -----
 
+- In order to find libraries, setup.py now also looks in /lib64, for use
+  on AMD64.
+
 - Bug #934635: Fixed a bug where the configure script couldn't detect
   getaddrinfo() properly if the KAME stack had SCTP support.
 
