@@ -236,6 +236,20 @@ __builtin__.license = _Printer(
     [os.path.join(here, os.pardir), here, os.curdir])
 
 
+# Define new built-in 'help'.
+# This is a wrapper around pydoc.help (with a twist).
+
+class _Helper:
+    def __repr__(self):
+        return "Type help() for interactive help, " \
+               "or help(object) for help about object."
+    def __call__(self, *args, **kwds):
+        import pydoc
+        return pydoc.help(*args, **kwds)
+
+__builtin__.help = _Helper()
+
+
 # Set the string encoding used by the Unicode implementation.  The
 # default is 'ascii', but if you're willing to experiment, you can
 # change this.
