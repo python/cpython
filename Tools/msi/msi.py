@@ -982,8 +982,9 @@ def add_files(db):
         if f == "pynche":
             x = PyDirectory(db, cab, lib, "X", "X", "X|X")
             x.glob("*.txt")
-        if f == 'Scripts':
+        if os.path.exists(os.path.join(lib.absolute, "README")):
             lib.add_file("README.txt", src="README")
+        if f == 'Scripts':
             if have_tcl:
                 lib.start_component("pydocgui.pyw", tcltk, keyfile="pydocgui.pyw")
                 lib.add_file("pydocgui.pyw")
