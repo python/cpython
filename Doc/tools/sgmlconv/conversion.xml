@@ -1,0 +1,631 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<conversion>
+  <!-- Miscellaneous. -->
+  <macro name="declaremodule">
+    <attribute name="id" optional="yes"/>
+    <attribute name="type"/>
+    <attribute name="name"/>
+    </macro>
+  <macro name="modulesynopsis">
+    <content/>
+    </macro>
+  <macro name="platform">
+    <content/>
+    </macro>
+  <macro name="deprecated">
+    <attribute name="version"/>
+    <content/>
+    </macro>
+  <macro name="label">
+    <attribute name="id"/>
+    </macro>
+  <macro name="nodename" outputname="label">
+    <attribute name="id"/>
+    </macro>
+  <macro name="localmoduletable"/>
+  <macro name="manpage">
+    <attribute name="name"/>
+    <attribute name="section"/>
+    </macro>
+  <macro name="module">
+    <content/>
+    </macro>
+  <macro name="moduleauthor">
+    <attribute name="name"/>
+    <attribute name="email"/>
+    </macro>
+  <macro name="rfc">
+    <attribute name="num"/>
+    </macro>
+  <macro name="sectionauthor">
+    <attribute name="name"/>
+    <attribute name="email"/>
+    </macro>
+  <macro name="versionadded">
+    <attribute name="version"/>
+    </macro>
+  <macro name="versionchanged">
+    <attribute name="version"/>
+    </macro>
+
+  <!-- Module referencing. -->
+  <macro name="refmodule" outputname="module">
+    <attribute name="" optional="yes"/>
+    <attribute name="link">yes</attribute>
+    <content/>
+    </macro>
+
+  <!-- Information units. -->
+  <!-- C things. -->
+  <environment name="cfuncdesc">
+    <attribute name="type"/>
+    <attribute name="name"/>
+    <child name="args"/>
+    </environment>
+  <environment name="ctypedesc">
+    <attribute name="name"/>
+    </environment>
+  <environment name="cvardesc">
+    <attribute name="type"/>
+    <attribute name="name"/>
+    </environment>
+
+  <!-- Python things. -->
+  <macro name="optional">
+    <content/>
+    </macro>
+  <environment name="classdesc">
+    <attribute name="name"/>
+    <child name="args"/>
+    </environment>
+  <environment name="datadesc">
+    <attribute name="name"/>
+    </environment>
+  <environment name="excdesc">
+    <attribute name="name"/>
+    </environment>
+
+  <environment name="funcdesc">
+    <attribute name="name"/>
+    <child name="args"/>
+    </environment>
+  <macro name="funcline">
+    <attribute name="name"/>
+    <child name="args"/>
+    </macro>
+  <environment name="funcdescni" outputname="funcdesc">
+    <attribute name="index">no</attribute>
+    <attribute name="name"/>
+    <child name="args"/>
+    </environment>
+  <macro name="funclineni" outputname="funcline">
+    <attribute name="index">no</attribute>
+    <attribute name="name"/>
+    <child name="args"/>
+    </macro>
+
+  <environment name="memberdesc">
+    <attribute name="class" optional="yes"/>
+    <attribute name="name"/>
+    </environment>
+  <environment name="memberdescni" outputname="memberdesc">
+    <attribute name="index">no</attribute>
+    <attribute name="class" optional="yes"/>
+    <attribute name="name"/>
+    </environment>
+
+  <environment name="methoddesc">
+    <attribute name="class" optional="yes"/>
+    <attribute name="name"/>
+    <child name="args"/>
+    </environment>
+  <macro name="methodline">
+    <attribute name="class" optional="yes"/>
+    <attribute name="name"/>
+    <child name="args"/>
+    </macro>
+  <environment name="methoddescni">
+    <attribute name="index">no</attribute>
+    <attribute name="class" optional="yes"/>
+    <attribute name="name"/>
+    <child name="args"/>
+    </environment>
+  <macro name="methodlineni" outputname="methodline">
+    <attribute name="index">no</attribute>
+    <attribute name="class" optional="yes"/>
+    <attribute name="name"/>
+    <child name="args"/>
+    </macro>
+
+  <environment name="opcodedesc">
+    <attribute name="name"/>
+    <attribute name="var"/>
+    </environment>
+
+  <!-- "See also:" sections. -->
+  <macro name="seemodule">
+    <attribute name="ref" optional="yes"/>
+    <attribute name="name"/>
+    <content/>
+    </macro>
+  <macro name="seetext">
+    <content/>
+    </macro>
+
+  <!-- Index-generating markup. -->
+  <macro name="index" outputname="indexterm">
+    <attribute name="term1"/>
+    </macro>
+  <macro name="indexii" outputname="indexterm">
+    <attribute name="term1"/>
+    <attribute name="term2"/>
+    </macro>
+  <macro name="indexiii" outputname="indexterm">
+    <attribute name="term1"/>
+    <attribute name="term2"/>
+    <attribute name="term3"/>
+    </macro>
+  <macro name="indexiv" outputname="indexterm">
+    <attribute name="term1"/>
+    <attribute name="term2"/>
+    <attribute name="term3"/>
+    <attribute name="term4"/>
+    </macro>
+
+  <macro name="ttindex" outputname="indexterm">
+    <attribute name="style">tt</attribute>
+    <attribute name="term1"/>
+    </macro>
+
+  <macro name="refmodindex">
+    <attribute name="module"/>
+    </macro>
+  <macro name="stmodindex">
+    <attribute name="module"/>
+    </macro>
+  <macro name="refbimodindex" outputname="refmodindex">
+    <attribute name="module"/>
+    </macro>
+  <macro name="refexmodindex" outputname="refmodindex">
+    <attribute name="module"/>
+    </macro>
+  <macro name="refstmodindex" outputname="refmodindex">
+    <attribute name="module"/>
+    </macro>
+
+  <macro name="bifuncindex">
+    <attribute name="name"/>
+    </macro>
+  <macro name="exindex">
+    <attribute name="name"/>
+    </macro>
+  <macro name="obindex">
+    <attribute name="name"/>
+    </macro>
+  <macro name="kwindex">
+    <attribute name="name"/>
+    </macro>
+  <macro name="opindex">
+    <attribute name="type"/>
+    </macro>
+  <macro name="stindex">
+    <attribute name="type"/>
+    </macro>
+  <macro name="withsubitem">
+    <attribute name="text"/>
+    <content/>
+    </macro>
+  <macro name="setindexsubitem">
+    <attribute name="text"/>
+    </macro>
+
+  <!-- Entity management. -->
+  <macro name="include">
+    <attribute name="source"/>
+    </macro>
+  <macro name="input">
+    <attribute name="source"/>
+    </macro>
+
+  <!-- Large-scale document structure. -->
+  <macro name="documentclass">
+    <attribute name="classname"/>
+    </macro>
+
+  <environment name="document"
+               endcloses="chapter chapter* section section*
+                          subsection subsection*
+                          subsubsection subsubsection*
+                          paragraph paragraph* subparagraph subparagraph*"/>
+
+  <macro name="chapter"
+         closes="chapter chapter* section section* subsection subsection*
+                 subsubsection subsubsection*
+                 paragraph paragraph* subparagraph subparagraph*">
+    <text>
+  </text>
+    <child name="title"/>
+    <content implied="yes"/>
+    </macro>
+  <macro name="chapter*" outputname="chapter"
+         closes="chapter chapter* section section* subsection subsection*
+                 subsubsection subsubsection*
+                 paragraph paragraph* subparagraph subparagraph*">
+    <attribute name="numbered">no</attribute>
+    <text>
+  </text>
+    <child name="title"/>
+    <content implied="yes"/>
+    </macro>
+
+  <macro name="section"
+         closes="section section* subsection subsection*
+                 subsubsection subsubsection*
+                 paragraph paragraph* subparagraph subparagraph*">
+    <text>
+  </text>
+    <child name="title"/>
+    <content implied="yes"/>
+    </macro>
+  <macro name="section*" outputname="section"
+         closes="section section* subsection subsection*
+                 subsubsection subsubsection*
+                 paragraph paragraph* subparagraph subparagraph*">
+    <attribute name="numbered">no</attribute>
+    <text>
+  </text>
+    <child name="title"/>
+    <content implied="yes"/>
+    </macro>
+
+  <macro name="subsection"
+         closes="subsection subsection* subsubsection subsubsection*
+                 paragraph paragraph* subparagraph subparagraph*">
+    <text>
+  </text>
+    <child name="title"/>
+    <content implied="yes"/>
+    </macro>
+  <macro name="subsection*" outputname="subsection"
+         closes="subsection subsection* subsubsection subsubsection*
+                 paragraph paragraph* subparagraph subparagraph*">
+    <attribute name="numbered">no</attribute>
+    <text>
+  </text>
+    <child name="title"/>
+    <content implied="yes"/>
+    </macro>
+
+  <macro name="subsubsection"
+         closes="subsubsection subsubsection*
+                 paragraph paragraph* subparagraph subparagraph*">
+    <text>
+  </text>
+    <child name="title"/>
+    <content implied="yes"/>
+    </macro>
+  <macro name="subsubsection*" outputname="subsubsection"
+         closes="subsubsection subsubsection*
+                 paragraph paragraph* subparagraph subparagraph*">
+    <attribute name="numbered">no</attribute>
+    <text>
+  </text>
+    <child name="title"/>
+    <content implied="yes"/>
+    </macro>
+
+  <macro name="paragraph"
+         closes="paragraph paragraph* subparagraph subparagraph*">
+    <text>
+  </text>
+    <child name="title"/>
+    <content implied="yes"/>
+    </macro>
+  <macro name="paragraph*" outputname="paragraph"
+         closes="paragraph paragraph* subparagraph subparagraph*">
+    <attribute name="numbered">no</attribute>
+    <text>
+  </text>
+    <child name="title"/>
+    <content implied="yes"/>
+    </macro>
+
+  <macro name="subparagraph"
+         closes="subparagraph subparagraph*">
+    <text>
+  </text>
+    <child name="title"/>
+    <content implied="yes"/>
+    </macro>
+  <macro name="subparagraph*" outputname="subparagraph"
+         closes="subparagraph subparagraph*">
+    <attribute name="numbered">no</attribute>
+    <text>
+  </text>
+    <child name="title"/>
+    <content implied="yes"/>
+    </macro>
+  <macro name="title">
+    <content/>
+    </macro>
+
+  <macro name="appendix" outputname="back-matter"
+         closes="chapter chapter* section subsection subsubsection
+                 paragraph subparagraph"/>
+
+  <environment name="list"
+               endcloses="item">
+    <attribute name="bullet"/>
+    <attribute name="init"/>
+    </environment>
+  <macro name="item" closes="item">
+    <child name="leader" optional="yes"/>
+    <content implied="yes"/>
+    </macro>
+
+  <macro name="ref">
+    <attribute name="ref"/>
+    </macro>
+
+  <environment name="description" outputname="descriptionlist"
+               endcloses="item"/>
+
+  <environment name="enumerate" outputname="enumeration"
+               endcloses="item"/>
+
+  <environment name="fulllineitems"
+               endcloses="item"/>
+
+  <environment name="itemize"
+               endcloses="item"/>
+
+  <environment name="definitions" outputname="definitionlist"
+               encloses="term"/>
+  <macro name="term" closes="definition">
+    <!-- not really optional, but uses the [] syntax -->
+    <child name="term" optional="yes"/>
+    <child name="definition" implied="yes"/>
+    </macro>
+
+  <environment name="comment" verbatim="yes"/>
+  <environment name="verbatim" verbatim="yes"/>
+  <environment name="verbatim*" verbatim="yes">
+    <!-- not used anywhere, but it's a standard LaTeXism -->
+    <attribute name="spaces">visible</attribute>
+    </environment>
+
+  <!-- Table markup. -->
+  <macro name="hline"/>
+  <environment name="tableii">
+    <attribute name="colspec"/>
+    <attribute name="style"/>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    </environment>
+  <macro name="lineii">
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    </macro>
+
+  <environment name="tableiii">
+    <attribute name="colspec"/>
+    <attribute name="style"/>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    </environment>
+  <macro name="lineiii">
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    </macro>
+
+  <environment name="tableiv">
+    <attribute name="colspec"/>
+    <attribute name="style"/>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    </environment>
+  <macro name="lineiv">
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    </macro>
+
+  <!-- These are handled at a later translation stage, at least for now. -->
+  <macro name="Cpp"/>
+  <macro name="geq"/>
+  <macro name="LaTeX"/>
+  <macro name="ldots"/>
+  <macro name="leq"/>
+  <macro name="TeX"/>
+  <macro name="version"/>
+
+  <!-- Misc. -->
+  <macro name="emph">
+    <content/>
+    </macro>
+  <macro name="strong">
+    <content/>
+    </macro>
+  <macro name="textrm">
+    <content/>
+    </macro>
+  <macro name="texttt">
+    <content/>
+    </macro>
+  <macro name="code">
+    <content/>
+    </macro>
+  <macro name="exception">
+    <content/>
+    </macro>
+  <macro name="keyword">
+    <content/>
+    </macro>
+  <macro name="samp">
+    <content/>
+    </macro>
+  <macro name="class">
+    <content/>
+    </macro>
+  <macro name="cdata">
+    <content/>
+    </macro>
+  <macro name="cfunction">
+    <content/>
+    </macro>
+  <macro name="ctype">
+    <content/>
+    </macro>
+  <macro name="pytype">
+    <content/>
+    </macro>
+  <macro name="character">
+    <content/>
+    </macro>
+  <macro name="constant">
+    <content/>
+    </macro>
+  <macro name="envvar">
+    <content/>
+    </macro>
+  <macro name="file" outputname="filename">
+    <content/>
+    </macro>
+  <macro name="function">
+    <content/>
+    </macro>
+  <macro name="kbd">
+    <content/>
+    </macro>
+  <macro name="makevar">
+    <content/>
+    </macro>
+  <macro name="method">
+    <content/>
+    </macro>
+  <macro name="member">
+    <content/>
+    </macro>
+  <macro name="mimetype">
+    <content/>
+    </macro>
+  <macro name="newsgroup">
+    <content/>
+    </macro>
+  <macro name="program">
+    <content/>
+    </macro>
+  <macro name="regexp">
+    <content/>
+    </macro>
+  <macro name="var">
+    <content/>
+    </macro>
+  <macro name="email">
+    <content/>
+    </macro>
+  <macro name="url">
+    <content/>
+    </macro>
+  <macro name="footnote">
+    <content/>
+    </macro>
+  <macro name="dfn" outputname="definedterm">
+    <content/>
+    </macro>
+
+  <macro name="mbox">
+    <content/>
+    </macro>
+
+  <!-- minimal math stuff to get by -->
+  <macro name="sqrt">
+    <content/>
+    </macro>
+  <macro name="frac" outputname="fraction">
+    <child name="numerator"/>
+    <child name="denominator"/>
+    </macro>
+  <macro name="sum">
+    <content/>
+    </macro>
+
+  <!-- Conversions to text; perhaps could be different?  There's -->
+  <!-- no way for a style sheet to work with these this way.	 -->
+  <macro name="ABC" outputname=""
+    <text>ABC</text>
+    </macro>
+  <macro name="ASCII" outputname="">
+    <text>ASCII</text>
+    </macro>
+  <macro name="C" outputname="">
+    <text>C</text>
+    </macro>
+  <macro name="EOF" outputname="">
+    <text>EOF</text>
+    </macro>
+  <macro name="e" outputname="">
+    <text>\</text>
+    </macro>
+  <macro name="NULL" outputname="">
+    <text>NULL</text>
+    </macro>
+  <macro name="POSIX" outputname="">
+    <text>POSIX</text>
+    </macro>
+  <macro name="UNIX" outputname="">
+    <text>Unix</text>
+    </macro>
+
+  <!-- These will end up disappearing as well! -->
+  <macro name="catcode" outputname=""/>
+  <macro name="fi" outputname=""/>
+  <macro name="ifhtml" outputname=""/>
+  <macro name="indexname" outputname=""/>
+  <macro name="labelwidth" outputname=""/>
+  <macro name="large" outputname=""/>
+  <macro name="leftmargin" outputname=""/>
+  <macro name="makeindex" outputname=""/>
+  <macro name="makemodindex" outputname=""/>
+  <macro name="maketitle" outputname=""/>
+  <macro name="noindent" outputname=""/>
+  <macro name="protect" outputname=""/>
+  <macro name="renewcommand">
+    <attribute name="macro"/>
+    <attribute name="nargs" optional="yes"/>
+    <content/>
+    </macro>
+  <macro name="tableofcontents" outputname=""/>
+  <macro name="vspace">
+    <attribute name="size"/>
+    </macro>
+</conversion>
