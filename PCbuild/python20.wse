@@ -416,7 +416,7 @@ item: Custom Dialog Set
     Font Name=Helv
     Font Size=8
     item: Push Button
-      Rectangle=172 185 214 199
+      Rectangle=150 185 192 199
       Variable=DIRECTION
       Value=N
       Create Flags=01010000000000010000000000000001
@@ -432,7 +432,7 @@ item: Custom Dialog Set
       Text Swedish=&Nästa >
     end
     item: Push Button
-      Rectangle=130 185 172 199
+      Rectangle=105 185 147 199
       Variable=DIRECTION
       Value=B
       Create Flags=01010000000000010000000000000000
