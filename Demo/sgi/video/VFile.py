@@ -190,6 +190,7 @@ class VideoParams:
 		self.width = 0		# width of frame
 		self.height = 0		# height of frame
 		self.packfactor = 1, 1	# expansion using rectzoom
+		# Colormap info
 		self.c0bits = 8		# bits in first color dimension
 		self.c1bits = 0		# bits in second color dimension
 		self.c2bits = 0		# bits in third color dimension
@@ -224,6 +225,22 @@ class VideoParams:
 		self.realwidth = self.width / self.xpf
 		self.realheight = self.height / self.ypf
 
+	# Set colormap info
+
+	def setcmapinfo(self):
+		stuff = 0, 0, 0, 0, 0
+		if self.format in ('rgb8', 'grey'):
+			stuff = 8, 0, 0, 0, 0
+		if self.format == 'grey4':
+			stuff = 4, 0, 0, 0, 0
+		if self.format == 'grey2':
+			stuff = 2, 0, 0, 0, 0
+		if self.format == 'mono':
+			stuff = 1, 0, 0, 0, 0
+		print 'setcmapinfo:', stuff
+		self.c0bits, self.c1bits, self.c2bits, \
+			  self.offset, self.chrompack = stuff
+
 	# Set the frame width and height (e.g. from gl.getsize())
 
 	def setsize(self, width, height):
@@ -242,9 +259,9 @@ class VideoParams:
 
 	def setformat(self, format):
 		if self.frozen: raise CallError
-		if format <> self.format:
-			self.format = format
-			self.setderived()
+		self.format = format
+		self.setderived()
+		self.setcmapinfo()
 
 	# Get the format
 

@@ -255,17 +255,17 @@ def record(v, info, filename, audiofilename, mono, grey, greybits, \
 	if filename:
 		vout = VFile.VoutFile().init(filename)
 		if mono:
-			vout.format = 'mono'
+			format = 'mono'
 		elif grey and greybits == 8:
-			vout.format = 'grey'
+			format = 'grey'
 		elif grey:
-			vout.format = 'grey'+`abs(greybits)`
+			format = 'grey'+`abs(greybits)`
 		else:
-			vout.format = 'rgb8'
-		vout.width = x
-		vout.height = y
+			format = 'rgb8'
+		vout.setformat(format)
+		vout.setsize(x, y)
 		if fields:
-			vout.packfactor = (1,-2)
+			vout.setpf(1, -2))
 		vout.writeheader()
 		if preallocspace:
 			print 'Preallocating space...'
