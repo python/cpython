@@ -222,8 +222,6 @@ def _init_posix():
 def _init_nt():
     """Initialize the module as appropriate for NT"""
     g = globals()
-    # load config.h, though I don't know how useful this is
-    parse_config_h(open(get_config_h_filename()), g)
     # set basic install directories
     g['LIBDEST'] = get_python_lib(plat_specific=0, standard_lib=1)
     g['BINLIBDEST'] = get_python_lib(plat_specific=1, standard_lib=1)
@@ -238,10 +236,6 @@ def _init_nt():
 def _init_mac():
     """Initialize the module as appropriate for Macintosh systems"""
     g = globals()
-    # load the installed config.h (what if not installed? - still need to
-    # be able to install packages which don't require compilation)
-    parse_config_h(open(
-            os.path.join(EXEC_PREFIX, "Mac", "Include", "config.h")), g)
     # set basic install directories
     g['LIBDEST'] = get_python_lib(plat_specific=0, standard_lib=1)
     g['BINLIBDEST'] = get_python_lib(plat_specific=1, standard_lib=1)
