@@ -31,6 +31,7 @@ tests = ['test_grammar',
 	 'test_grp',
 	 'test_operator',
 	 'test_imageop',
+	 'test_imgfile',
 	 ]
 
 if __name__ == '__main__':
