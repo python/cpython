@@ -2,8 +2,7 @@ import macfs
 import marshal
 import types
 
-kOnSystemDisk = 0x8000
-
+from MACFS import kOnSystemDisk
 
 class PrefObject:
 	
