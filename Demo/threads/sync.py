@@ -4,6 +4,7 @@
 #    condition()   # a POSIX-like condition-variable object
 #    barrier(n)    # an n-thread barrier
 #    event()       # an event object
+#    semaphore(n=1)# a semaphore object, with initial count n
 #
 # CONDITIONS
 #
@@ -35,7 +36,7 @@
 #      threads are .wait'ing, this is a nop.
 #
 #      Note that if a thread does a .wait *while* a signal/broadcast is
-#      in progress, it's guaranteeed to block until a subsequenct
+#      in progress, it's guaranteeed to block until a subsequent
 #      signal/broadcast.
 #
 #      Secret feature:  `broadcast' actually takes an integer argument,
@@ -184,8 +185,30 @@
 # see the event get around to .wait'ing on it.  But so long as you don't
 # need to .clear an event, events are easy to use safely.
 #
-# Tim Peters   tim@ksr.com
-# not speaking for Kendall Square Research Corp
+# SEMAPHORES
+#
+# A semaphore object is created via
+#   import this_module
+#   your_semaphore = this_module.semaphore(count=1)
+#
+# A semaphore has an integer count associated with it.  The initial value
+# of the count is specified by the optional argument (which defaults to
+# 1) passed to the semaphore constructor.
+#
+# Methods:
+#
+#   .p()
+#      If the semaphore's count is greater than 0, decrements the count
+#      by 1 and returns.
+#      Else if the semaphore's count is 0, blocks the calling thread
+#      until a subsequent .v() increases the count.  When that happens,
+#      the count will be decremented by 1 and the calling thread resumed.
+#
+#   .v()
+#      Increments the semaphore's count by 1, and wakes up a thread (if
+#      any) blocked by a .p().  It's an (detected) error for a .v() to
+#      increase the semaphore's count to a value larger than the initial
+#      count.
 
 import thread
 
@@ -306,9 +329,33 @@ class event:
 
     def wait(self):
         self.posted.acquire()
-        while not self.state:
+        if not self.state:
             self.posted.wait()
         self.posted.release()
+
+class semaphore:
+    def __init__(self, count=1):
+        if count <= 0:
+            raise ValueError, 'semaphore count %d; must be >= 1' % count
+        self.count = count
+        self.maxcount = count
+        self.nonzero = condition()
+
+    def p(self):
+        self.nonzero.acquire()
+        while self.count == 0:
+            self.nonzero.wait()
+        self.count = self.count - 1
+        self.nonzero.release()
+
+    def v(self):
+        self.nonzero.acquire()
+        if self.count == self.maxcount:
+            raise ValueError, '.v() tried to raise semaphore count above ' \
+                  'initial value ' + `maxcount`
+        self.count = self.count + 1
+        self.nonzero.signal()
+        self.nonzero.release()
 
 # The rest of the file is a test case, that runs a number of parallelized
 # quicksorts in parallel.  If it works, you'll get about 600 lines of
