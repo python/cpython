@@ -326,8 +326,8 @@ simply haven't yet gotten to one of the higher-address blocks.  The offset
 from the pool_header to the start of "the next" virgin block is stored in
 the pool_header nextoffset member, and the largest value of nextoffset that
 makes sense is stored in the maxnextoffset member when a pool is initialized.
-All the blocks in a pool have been passed out at least when and only when
-nextoffset > maxnextoffset.
+All the blocks in a pool have been passed out at least once when and only
+when nextoffset > maxnextoffset.
 
 
 Major obscurity:  While the usedpools vector is declared to have poolp
