@@ -143,7 +143,7 @@ mpz_format(objp, base, withname)
 {
 	mpzobject *mpzp = (mpzobject *)objp;
 	PyStringObject *strobjp;
-	int i;
+	size_t i;
 	int cmpres;
 	int taglong;
 	char *cp;
