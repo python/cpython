@@ -4518,7 +4518,10 @@ DL_EXPORT(void) init_bsddb(void)
     ADD_INT(d, ENOENT);
     ADD_INT(d, EPERM);
 
-
+#if (DBVER >= 40)
+    ADD_INT(d, DB_SET_LOCK_TIMEOUT);
+    ADD_INT(d, DB_SET_TXN_TIMEOUT);
+#endif
 
     /* The base exception class is DBError */
     DBError = PyErr_NewException("bsddb._db.DBError", NULL, NULL);
