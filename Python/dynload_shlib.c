@@ -113,7 +113,8 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 #endif
 
 	if (Py_VerboseFlag)
-		printf("dlopen(\"%s\", %x);\n", pathname, dlopenflags);
+		PySys_WriteStderr("dlopen(\"%s\", %x);\n", pathname, 
+				  dlopenflags);
 
 #ifdef __VMS
 	/* VMS currently don't allow a pathname, use a logical name instead */
