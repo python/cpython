@@ -489,6 +489,27 @@ convertsimple1(arg, p_format, p_va)
 			break;
 		}
 	
+	case 'H': /* unsigned short int */
+		{
+			unsigned short *p = va_arg(*p_va, unsigned short *);
+			long ival = PyInt_AsLong(arg);
+			if (ival == -1 && PyErr_Occurred())
+				return "integer<H>";
+			else if (ival < 0) {
+				PyErr_SetString(PyExc_OverflowError,
+			      "unsigned short integer is less than minimum");
+				return "integer<H>";
+			}
+			else if (ival > USHRT_MAX) {
+				PyErr_SetString(PyExc_OverflowError,
+			      "unsigned short integer is greater than maximum");
+				return "integer<H>";
+			}
+			else
+				*p = (unsigned short) ival;
+			break;
+		}
+	
 	case 'i': /* signed int */
 		{
 			int *p = va_arg(*p_va, int *);
@@ -509,7 +530,6 @@ convertsimple1(arg, p_format, p_va)
 				*p = ival;
 			break;
 		}
-	
 	case 'l': /* long int */
 		{
 			long *p = va_arg(*p_va, long *);
@@ -1204,6 +1224,12 @@ skipitem(p_format, p_va)
 	case 'h': /* short int */
 		{
 			(void) va_arg(*p_va, short *);
+			break;
+		}
+	
+	case 'H': /* unsigned short int */
+		{
+			(void) va_arg(*p_va, unsigned short *);
 			break;
 		}
 	
