@@ -14,7 +14,7 @@ except AttributeError:
     pass
 else:
     raise TestFailed, "__name__ = %s" % repr(s)
-vereq(foo.__doc__, None)
+vereq(foo.__doc__, module.__doc__)
 
 # Regularly initialized module, no docstring
 foo = module("foo")
