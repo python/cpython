@@ -28,6 +28,8 @@
 srcdir=		@srcdir@
 VPATH=		@srcdir@
 INSTALL=	@INSTALL@
+INSTALL_PROGRAM=@INSTALL_PROGRAM@
+INSTALL_DATA=	@INSTALL_DATA@
 RANLIB=		@RANLIB@
 
 # Machine-dependent subdirectories
@@ -94,7 +96,7 @@ test:		python
 
 # Install the interpreter
 install:	python
-		$(INSTALL) python $(BINDIR)/python
+		$(INSTALL_PROGRAM) python $(BINDIR)/python
 		@echo If this is your first time, consider make libinstall...
 
 # Install the library.
@@ -108,11 +110,11 @@ libinstall:
 		cp -r $(srcdir)/Lib/* $(LIBDEST)
 		PYTHONPATH=$(LIBDEST) \
 			./python $(LIBDEST)/compileall.py $(LIBDEST)
-		cd Modules; make sharedinstall
+		$(MAKE) sharedinstall
 
 # install the manual page
 maninstall:
-		$(INSTALL) $(srcdir)/Misc/python.man \
+		$(INSTALL_DATA) $(srcdir)/Misc/python.man \
 			$(MANDIR)/man1/python.1
 
 # install the include files
@@ -121,7 +123,7 @@ inclinstall:
 		-if test ! -d $(INCLUDEPY); \
 		then mkdir $(INCLUDEPY); \
 		fi
-		cp $(srcdir)/Include/*.h $(INCLUDEPY)
+		$(INSTALL_DATA) $(srcdir)/Include/*.h $(INCLUDEPY)
 
 # install the lib*.a files and miscellaneous stuff needed by extensions
 LIBP=		$(LIBDIR)/python
@@ -134,16 +136,16 @@ libainstall:	all
 		then mkdir $(LIBPL); \
 		fi
 		for i in $(SUBDIRS); do \
-			echo $$i; $(INSTALL) $$i/lib$$i.a $(LIBPL)/lib$$i.a; \
+			echo $$i; $(INSTALL_DATA) $$i/lib$$i.a $(LIBPL)/lib$$i.a; \
 			$(RANLIB) $(LIBPL)/lib$$i.a; \
 		done
-		$(INSTALL) Modules/config.c $(LIBPL)/config.c
-		$(INSTALL) $(srcdir)/Modules/config.c.in $(LIBPL)/config.c.in
-		$(INSTALL) Modules/Makefile $(LIBPL)/Makefile
-		$(INSTALL) Modules/Setup $(LIBPL)/Setup
-		$(INSTALL) $(srcdir)/Modules/makesetup $(LIBPL)/makesetup
-		$(INSTALL) config.h $(LIBPL)/config.h
-		$(INSTALL) $(srcdir)/Python/frozenmain.c $(LIBPL)/frozenmain.c
+		$(INSTALL_DATA) Modules/config.c $(LIBPL)/config.c
+		$(INSTALL_DATA) $(srcdir)/Modules/config.c.in $(LIBPL)/config.c.in
+		$(INSTALL_DATA) Modules/Makefile $(LIBPL)/Makefile
+		$(INSTALL_DATA) Modules/Setup $(LIBPL)/Setup
+		$(INSTALL_DATA) $(srcdir)/Modules/makesetup $(LIBPL)/makesetup
+		$(INSTALL_DATA) config.h $(LIBPL)/config.h
+		$(INSTALL_DATA) $(srcdir)/Python/frozenmain.c $(LIBPL)/frozenmain.c
 
 # install the dynamically loadable modules
 sharedinstall:
