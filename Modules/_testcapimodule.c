@@ -95,9 +95,71 @@ test_list_api(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
+static int
+test_dict_inner(int count)
+{
+	int pos = 0, iterations = 0, i;
+	PyObject *dict = PyDict_New();
+	PyObject *v, *k;
+
+	if (dict == NULL)
+		return -1;
+
+	for (i = 0; i < count; i++) {
+		v = PyInt_FromLong(i);
+		PyDict_SetItem(dict, v, v);
+		Py_DECREF(v);
+	}
+
+	while (PyDict_Next(dict, &pos, &k, &v)) {
+		PyObject *o;
+		iterations++;
+
+		i = PyInt_AS_LONG(v) + 1;
+		o = PyInt_FromLong(i);
+		if (o == NULL)
+			return -1;
+		if (PyDict_SetItem(dict, k, o) < 0) {
+			Py_DECREF(o);
+			return -1;
+		}
+		Py_DECREF(o);
+	}
+
+	Py_DECREF(dict);
+
+	if (iterations != count) {
+		PyErr_SetString(
+			TestError,
+			"test_dict_iteration: dict iteration went wrong ");
+		return -1;
+	} else {
+		return 0;
+	}
+}
+
+static PyObject*
+test_dict_iteration(PyObject* self, PyObject* args)
+{
+	int i;
+
+        if (!PyArg_ParseTuple(args, ":test_dict_iteration"))
+                return NULL;
+	
+	for (i = 0; i < 200; i++) {
+		if (test_dict_inner(i) < 0) {
+			return NULL;
+		}
+	}
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 static PyMethodDef TestMethods[] = {
 	{"test_config", test_config, METH_VARARGS},
 	{"test_list_api", test_list_api, METH_VARARGS},
+	{"test_dict_iteration", test_dict_iteration, METH_VARARGS},
 	{NULL, NULL} /* sentinel */
 };
 
