@@ -92,13 +92,13 @@ class TestHeap(unittest.TestCase):
 
     def test_nsmallest(self):
         data = [random.randrange(2000) for i in range(1000)]
-        for i in (0, 1, 2, 10, 100, 400, 999, 1000, 1100):
-            self.assertEqual(nsmallest(data, i), sorted(data)[:i])
+        for n in (0, 1, 2, 10, 100, 400, 999, 1000, 1100):
+            self.assertEqual(nsmallest(n, data), sorted(data)[:n])
 
     def test_largest(self):
         data = [random.randrange(2000) for i in range(1000)]
-        for i in (0, 1, 2, 10, 100, 400, 999, 1000, 1100):
-            self.assertEqual(nlargest(data, i), sorted(data, reverse=True)[:i])
+        for n in (0, 1, 2, 10, 100, 400, 999, 1000, 1100):
+            self.assertEqual(nlargest(n, data), sorted(data, reverse=True)[:n])
 
 def test_main(verbose=None):
     test_classes = [TestHeap]

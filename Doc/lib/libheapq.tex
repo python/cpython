@@ -85,13 +85,13 @@ True
 
 The module also offers two general purpose functions based on heaps.
 
-\begin{funcdesc}{nlargest}{iterable, n}
+\begin{funcdesc}{nlargest}{n, iterable}
 Return a list with the \var{n} largest elements from the dataset defined
 by \var{iterable}. Equivalent to:  \code{sorted(iterable, reverse=True)[:n]}
 \versionadded{2.4}              
 \end{funcdesc}
 
-\begin{funcdesc}{nsmallest}{iterable, n}
+\begin{funcdesc}{nsmallest}{n, iterable}
 Return a list with the \var{n} smallest elements from the dataset defined
 by \var{iterable}. Equivalent to:  \code{sorted(iterable)[:n]}
 \versionadded{2.4}              

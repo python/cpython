@@ -222,7 +222,7 @@ nlargest(PyObject *self, PyObject *args)
 	PyObject *heap=NULL, *elem, *iterable, *sol, *it, *oldelem;
 	int i, n;
 
-	if (!PyArg_ParseTuple(args, "Oi:nlargest", &iterable, &n))
+	if (!PyArg_ParseTuple(args, "iO:nlargest", &n, &iterable))
 		return NULL;
 
 	it = PyObject_GetIter(iterable);
@@ -381,7 +381,7 @@ nsmallest(PyObject *self, PyObject *args)
 	PyObject *heap=NULL, *elem, *iterable, *los, *it, *oldelem;
 	int i, n;
 
-	if (!PyArg_ParseTuple(args, "Oi:nsmallest", &iterable, &n))
+	if (!PyArg_ParseTuple(args, "iO:nsmallest", &n, &iterable))
 		return NULL;
 
 	it = PyObject_GetIter(iterable);
