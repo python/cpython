@@ -31,15 +31,15 @@ class DircacheTests(unittest.TestCase):
             os.rmdir(fname)
         else:
             os.unlink(fname)
-    
+
     def test_listdir(self):
         ## SUCCESSFUL CASES
         entries = dircache.listdir(self.tempdir)
         self.assertEquals(entries, [])
 
         # Check that cache is actually caching, not just passing through.
-        self.assert_(dircache.listdir(self.tempdir) is entries) 
-        
+        self.assert_(dircache.listdir(self.tempdir) is entries)
+
         # Sadly, dircache has the same granularity as stat.mtime, and so
         # can't notice any changes that occured within 1 sec of the last
         # time it examined a directory.
@@ -48,7 +48,7 @@ class DircacheTests(unittest.TestCase):
         entries = dircache.listdir(self.tempdir)
         self.assertEquals(entries, ['test1'])
         self.assert_(dircache.listdir(self.tempdir) is entries)
-        
+
         ## UNSUCCESSFUL CASES
         self.assertEquals(dircache.listdir(self.tempdir+"_nonexistent"), [])
 
