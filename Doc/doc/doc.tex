@@ -787,8 +787,13 @@ This \UNIX\ is also followed by a space.
     \begin{macrodesc}{kbd}{\p{key sequence}}
       Mark a sequence of keystrokes.  What form \var{key sequence}
       takes may depend on platform- or application-specific
-      conventions.  For example, an \program{xemacs} key sequence
-      may be marked like \code{\e kbd\{C-x C-f\}}.
+      conventions.  When there are no relevant conventions, the names
+      of modifier keys should be spelled out, to improve accessibility
+      for new users and non-native speakers.  For example, an
+      \program{xemacs} key sequence may be marked like
+      \code{\e kbd\{C-x C-f\}}, but without reference to a specific
+      application or platform, the same sequence should be marked as
+      \code{\e kbd\{Control-x Control-f\}}.
     \end{macrodesc}
 
     \begin{macrodesc}{keyword}{\p{name}}
