@@ -1334,7 +1334,7 @@ def changeit(buf, pp):
 			  chunk(GROUP, ch.where, [])]
 		length, i = length+2, i+2
 
-	    elif envname in ('itemize', 'list'):
+	    elif envname in ('itemize', 'list', 'fulllineitems'):
 		if hist.itemizenesting > len(itemizesymbols):
 		    raise error, 'too deep itemize nesting'
 		if envname == 'list':
@@ -1419,12 +1419,11 @@ def changeit(buf, pp):
 		if length != len(pp):
 		    raise 'STILL, SOMETHING wrong', `i`
 
-
-	    elif envname in ('funcdesc', 'funcdescni'):
+	    elif envname in ('funcdesc', 'funcdescni', 'classdesc'):
 		pp.insert(i, chunk(PLAIN, ch.where, ''))
 		i, length = i+1, length+1
 		length, i = do_funcdesc(length, buf, pp, i,
-					envname=="funcdesc")
+					envname[-2:] != "ni")
 
 	    elif envname == 'excdesc':
 		pp.insert(i, chunk(PLAIN, ch.where, ''))
@@ -1435,7 +1434,7 @@ def changeit(buf, pp):
 		pp.insert(i, chunk(PLAIN, ch.where, ''))
 		i, length = i+1, length+1
 		length, i = do_datadesc(length, buf, pp, i,
-					envname=="datadesc")
+					envname[-2:] != "ni")
 
 	    elif envname == 'opcodedesc':
 		pp.insert(i, chunk(PLAIN, ch.where, ''))
@@ -1472,7 +1471,7 @@ def changeit(buf, pp):
 			   chunk(GROUP, ch.where, [
 			       chunk(PLAIN, ch.where, 'example')])]
 		i, length = i+2, length+2
-	    elif envname in ('itemize', 'list'):
+	    elif envname in ('itemize', 'list', 'fulllineitems'):
 		hist.itemizenesting = hist.itemizenesting - 1
 		pp[i:i] = [chunk(CSLINE, ch.where, 'end'),
 			   chunk(GROUP, ch.where, [
@@ -1497,7 +1496,7 @@ def changeit(buf, pp):
 		pp.insert(i, chunk(DENDLINE, ch.where, '\n'))
 		i, length = i+1, length+1
 
-	    elif envname in ('funcdesc', 'excdesc', 'datadesc',
+	    elif envname in ('funcdesc', 'excdesc', 'datadesc', 'classdesc',
 			     'funcdescni', 'datadescni'):
 		pp[i:i] = [chunk(CSLINE, ch.where, 'end'),
 			   chunk(GROUP, ch.where, [
@@ -1596,10 +1595,6 @@ def changeit(buf, pp):
 
 	    elif s_buf_data == 'program':
 		ch.data = "strong"
-
-	    elif s_buf_data == "fulllineitems":
-		del pp[i-1]
-		i, length = i-1, length-1
 
 	    elif s_buf_data == 'item':
 		ch.chtype = chunk_type[CSLINE]
@@ -2093,7 +2088,7 @@ def changeit(buf, pp):
 
 	    elif s_buf_data in ('url', 'module', 'function', 'cfunction',
 				'keyword', 'method', 'exception', 'constant',
-				'email', 'class'):
+				'email', 'class', 'member', 'cdata', 'ctype'):
 		ch.data = "code"
 
 	    elif s_buf_data == 'label':
