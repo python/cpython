@@ -984,7 +984,6 @@ end
 item: Edit Registry
   Key=Software\Python\PythonCore\CurrentVersion
   New Value=%PY_FULLVERSION%
-  New Value=
   Root=2
 end
 item: Edit Registry
@@ -1000,7 +999,6 @@ end
 item: Edit Registry
   Key=Software\Python\PythonCore\%PY_VERSION%\PythonPath
   New Value=%MAINDIR%\Lib\plat-win;%MAINDIR%\Lib;%MAINDIR%\DLLs;%MAINDIR%\Lib\lib-tk
-  New Value=
   Root=2
 end
 item: Edit Registry
