@@ -6,7 +6,7 @@ Utility functions for manipulating directories and directory trees."""
 
 __revision__ = "$Id$"
 
-import os
+import os, sys
 from types import *
 from distutils.errors import DistutilsFileError, DistutilsInternalError
 from distutils import log
@@ -212,3 +212,17 @@ def remove_tree (directory, verbose=0, dry_run=0):
         except (IOError, OSError), exc:
             log.warn(grok_environment_error(
                     exc, "error removing %s: " % directory))
+
+
+def ensure_relative (path):
+    """Take the full path 'path', and make it a relative path so
+    it can be the second argument to os.path.join().
+    """
+    drive, path = os.path.splitdrive(path)
+    if sys.platform == 'mac':
+        return os.sep + path
+    else:
+        if path[0:1] == os.sep:
+            path = drive + path[1:]
+        return path
+
