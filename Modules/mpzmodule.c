@@ -1477,13 +1477,8 @@ mpz_coerce(PyObject **pv, PyObject **pw)
 		*pw = z;
 	}
 	else {
-#ifdef MPZ_CONVERSIONS_AS_METHODS
-		if ((z = mpz_float((mpzobject *)(*pv), NULL)) == NULL)
-			return -1;
-#else /* def MPZ_CONVERSIONS_AS_METHODS */
 		if ((z = mpz_float((mpzobject *)(*pv))) == NULL)
 			return -1;
-#endif /* def MPZ_CONVERSIONS_AS_METHODS else */
 
 		Py_INCREF(*pw);
 		*pv = z;
