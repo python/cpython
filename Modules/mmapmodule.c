@@ -26,6 +26,13 @@
 
 #ifdef MS_WIN32
 #include <windows.h>
+static int
+my_getpagesize(void)
+{
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    return si.dwPageSize;
+}
 #endif
 
 #ifdef UNIX
@@ -36,6 +43,16 @@
 #ifndef MS_SYNC
 /* This is missing e.g. on SunOS 4.1.4 */
 #define MS_SYNC 0
+#endif
+
+#if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
+static int
+my_getpagesize(void)
+{
+    return sysconf(_SC_PAGESIZE);
+}
+#else
+#define my_getpagesize getpagesize
 #endif
 
 #endif /* UNIX */
@@ -981,18 +998,7 @@ initmmap(void)
 			      PyInt_FromLong(MAP_ANON) );
 #endif
 
-#ifdef UNIX
 	PyDict_SetItemString (dict, "PAGESIZE",
-			      PyInt_FromLong( (long)getpagesize() ) );
-#endif
-#ifdef MS_WIN32
-	{
-	    SYSTEM_INFO si;
-	    GetSystemInfo(&si);
-	    PyDict_SetItemString (dict, "PAGESIZE",
-				  PyInt_FromLong( si.dwPageSize ) );
-	}
-#endif /* MS_WIN32 */
-
+			      PyInt_FromLong( (long)my_getpagesize() ) );
 }
 
