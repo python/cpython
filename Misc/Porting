@@ -1,0 +1,42 @@
+Q. I want to port Python to a new platform.  How do I begin?
+
+A. I guess the two things to start with is to familiarize yourself
+with are the development system for your target platform and the
+generic build process for Python.  Make sure you can compile and run a
+simple hello-world program on your target platform.  Make sure you can
+compile and run the Python interpreter on a platform to which it has
+already been ported (preferably Unix, but Mac or Windows will do,
+too).
+
+I also would never start something like this without at least
+medium-level understanding of your target platform (i.e. how it is
+generally used, how to write platform specific apps etc.) and Python
+(or else you'll never know how to test the results).
+
+The build process for Python, in particular the Makefiles in the
+source distribution, will give you a hint on which files to compile
+for Python.  Not all source files are relevant -- some are platform
+specific, others are only used in emergencies (e.g. getopt.c).  The
+Makefiles tell the story.
+
+You'll also need a config.h file tailored for your platform.  You can
+start with config.h.in, read the comments and turn on definitions that
+apply to your platform.
+
+And you'll need a config.c file, which lists the built-in modules you
+support.  Start with Modules/config.c.in.
+
+Finally, you'll run into some things that aren't supported on your
+target platform.  Forget about the posix module for now -- simply take 
+it out of the config.c file.
+
+Bang on it until you get a >>> prompt.  (You may have to disable the
+importing of "site.py" and "exceptions.py" by passing -X and -S
+options.
+
+Then bang on it until it executes very simple Python statements.
+
+Now bang on it some more.  At some point you'll want to use the os
+module; this is the time to start thinking about what to to with the
+posix module.  It's okay to simply #ifdef out those functions that
+cause problems; the remaining ones will be quite useful.
