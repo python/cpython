@@ -469,8 +469,8 @@ class C:
 \end{funcdesc}
 
 \begin{funcdesc}{hasattr}{object, name}
-  The arguments are an object and a string.  The result is 1 if the
-  string is the name of one of the object's attributes, 0 if not.
+  The arguments are an object and a string.  The result is \code{True} if the
+  string is the name of one of the object's attributes, \code{False} if not.
   (This is implemented by calling \code{getattr(\var{object},
   \var{name})} and seeing whether it raises an exception or not.)
 \end{funcdesc}
