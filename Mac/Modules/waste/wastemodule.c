@@ -43,12 +43,16 @@ extern int BMObj_Convert(PyObject *, BitMapPtr *);
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <WASTE.h>
-#include <WEObjectHandlers.h>
 #include <WETabs.h>
+#include <WEObjectHandlers.h>
 
 /* Exported by Qdmodule.c: */
 extern PyObject *QdRGB_New(RGBColor *);
 extern int QdRGB_Convert(PyObject *, RGBColor *);
+
+/* Exported by AEModule.c: */
+extern PyObject *AEDesc_New(AppleEvent *);
+extern int AEDesc_Convert(PyObject *, AppleEvent *);
 
 /* Forward declaration */
 staticforward PyObject *WEOObj_New(WEObjectReference);

@@ -3,9 +3,9 @@
 import addpack
 addpack.addpack(':tools:bgen:bgen')
 from scantools import Scanner
-from bgenlocations import TOOLBOXDIR
+from bgenlocations import MWERKSDIR, TOOLBOXDIR
 
-WASTEDIR=":::::Waste 1.2 distribution:"
+WASTEDIR=":::::Waste 1.2 Distribution:WASTE C/C++ Headers:"
 
 OBJECT = "TEHandle"
 SHORT = "waste"
@@ -13,7 +13,7 @@ OBJECT = "WEReference"
 OBJECT2 = "WEObjectReference"
 
 def main():
-	input = WASTEDIR + "WASTE C/C++ Headers:WASTE.h"
+	input = WASTEDIR + "WASTE.h"
 	output = SHORT + "gen.py"
 	defsoutput = TOOLBOXDIR + "WASTEconst.py"
 	scanner = MyScanner(input, output, defsoutput)
@@ -54,6 +54,8 @@ class MyScanner(Scanner):
 		return [
 			"DragReference",	# For now...
 			"UniversalProcPtr",
+			"WEFontIDToNameUPP",
+			"WEFontNameToIDUPP",
 			]
 
 	def makerepairinstructions(self):

@@ -39,8 +39,14 @@ WEStyleMode = Type("WEStyleMode", "h")
 WEActionKind = Type("WEActionKind", "h")
 WEAlignment = Type("WEAlignment", "b")
 WEEdge = Type("WEEdge", "b")
+WEDirection = Type("WEDirection", "h")
 WESoupHandle = OpaqueByValueType("WESoupHandle", "ResObj")
+WEFontTableHandle = OpaqueByValueType("WEFontTableHandle", "ResObj")
+WEFontTableHandle
 WERunInfo = OpaqueType("WERunInfo", "RunInfo")
+
+AppleEvent = OpaqueType('AppleEvent', 'AEDesc')
+AppleEvent_ptr = OpaqueType('AppleEvent', 'AEDesc')
 
 TextStyle = OpaqueType("TextStyle", "TextStyle")
 TextStyle_ptr = TextStyle
@@ -57,6 +63,10 @@ includestuff = includestuff + """
 /* Exported by Qdmodule.c: */
 extern PyObject *QdRGB_New(RGBColor *);
 extern int QdRGB_Convert(PyObject *, RGBColor *);
+
+/* Exported by AEModule.c: */
+extern PyObject *AEDesc_New(AppleEvent *);
+extern int AEDesc_Convert(PyObject *, AppleEvent *);
 
 /* Forward declaration */
 staticforward PyObject *WEOObj_New(WEObjectReference);
