@@ -1,4 +1,4 @@
-from test.test_support import verify, verbose, TestFailed
+from test.test_support import verify, verbose, TestFailed, vereq
 import sys
 import gc
 
@@ -168,6 +168,12 @@ def test_frame():
 def test_saveall():
     # Verify that cyclic garbage like lists show up in gc.garbage if the
     # SAVEALL option is enabled.
+
+    # First make sure we don't save away other stuff that just happens to
+    # be waiting for collection.
+    gc.collect()
+    vereq(gc.garbage, []) # if this fails, someone else created immortal trash
+
     debug = gc.get_debug()
     gc.set_debug(debug | gc.DEBUG_SAVEALL)
     l = []
@@ -175,6 +181,7 @@ def test_saveall():
     id_l = id(l)
     del l
     gc.collect()
+    vereq(len(gc.garbage), 1)
     try:
         for obj in gc.garbage:
             if id(obj) == id_l:
