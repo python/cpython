@@ -78,8 +78,7 @@ REFFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	ref/ref5.tex \
 	ref/ref6.tex \
 	ref/ref7.tex \
-	ref/ref8.tex \
-	ref/refa1.tex
+	ref/ref8.tex 
 
 # LaTeX source files for the Python Library Reference
 LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
@@ -125,6 +124,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libparser.tex \
 	lib/libbltin.tex \
 	lib/libmain.tex \
+	lib/libfuture.tex \
 	lib/libstrings.tex \
 	lib/libstring.tex \
 	lib/libtextwrap.tex \
