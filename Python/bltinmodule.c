@@ -974,7 +974,7 @@ builtin_delattr(self, args)
 }
 
 static char delattr_doc[] =
-"setattr(object, name, value)\n\
+"delattr(object, name)\n\
 \n\
 Delete a named attribute on an object; delattr(x, 'y') is equivalent to\n\
 ``del x.y''.";
