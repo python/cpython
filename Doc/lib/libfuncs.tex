@@ -60,6 +60,32 @@ def my_import(name):
   complex number, its magnitude is returned.
 \end{funcdesc}
 
+\begin{funcdesc}{all}{iterable}
+  Return True if all elements of the \var{iterable} are true.
+  Equivalent to:
+  \begin{verbatim}
+     def all(iterable):
+         for element in iterable:
+             if not element:
+                 return False
+         return True
+  \end{verbatim}
+  \versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{any}{iterable}
+  Return True if any element of the \var{iterable} is true.
+  Equivalent to:
+  \begin{verbatim}
+     def any(iterable):
+         for element in iterable:
+             if element:
+                 return True
+         return False
+  \end{verbatim}
+  \versionadded{2.5}
+\end{funcdesc}
+
 \begin{funcdesc}{basestring}{}
   This abstract type is the superclass for \class{str} and \class{unicode}.
   It cannot be called or instantiated, but it can be used to test whether

@@ -10,6 +10,8 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Added two new builtins, any() and all().
+
 - Defining a class with empty parentheses is now allowed
   (e.g., ``class C(): pass`` is no longer a syntax error)
 
