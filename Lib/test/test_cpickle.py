@@ -72,4 +72,24 @@ def dotest():
     if x2 == x: print "ok"
     else: print "bad"
 
+    # Test protection against closed files
+    import tempfile, os
+    fn = tempfile.mktemp()
+    f = open(fn, "w")
+    f.close()
+    try:
+        cPickle.dump(123, f)
+    except IOError:
+        pass
+    else:
+        print "dump to closed file should raise IOError"
+    f = open(fn, "r")
+    f.close()
+    try:
+        cPickle.load(f)
+    except IOError:
+        pass
+    else:
+        print "load from closed file should raise IOError"
+
 dotest()
