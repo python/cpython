@@ -272,10 +272,16 @@ modes, the correct protocol is chosen automatically if the protocol is
 omitted or zero.
 \end{funcdesc}
 
-\begin{funcdesc}{getservbyname}{servicename, protocolname}
+\begin{funcdesc}{getservbyname}{servicename\optional{, protocolname}}
 Translate an Internet service name and protocol name to a port number
-for that service.  The protocol name should be \code{'tcp'} or
-\code{'udp'}.
+for that service.  The optional protocol name, if given, should be
+\code{'tcp'} or \code{'udp'}, otherwise any protocol will match.
+\end{funcdesc}
+
+\begin{funcdesc}{getservbyport}{port\optional{, protocolname}}
+Translate an Internet port number and protocol name to a service name
+for that service.  The optional protocol name, if given, should be
+\code{'tcp'} or \code{'udp'}, otherwise any protocol will match.
 \end{funcdesc}
 
 \begin{funcdesc}{socket}{\optional{family\optional{,
