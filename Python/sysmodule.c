@@ -45,6 +45,7 @@ Data members:
 #include "osdefs.h"
 
 object *sys_trace, *sys_profile;
+int sys_checkinterval;
 
 static object *sysdict;
 
@@ -124,6 +125,17 @@ sys_setprofile(self, args)
 	return None;
 }
 
+static object *
+sys_setcheckinterval(self, args)
+	object *self;
+	object *args;
+{
+	if (!newgetargs(args, "i", &sys_checkinterval))
+		return NULL;
+	INCREF(None);
+	return None;
+}
+
 #ifdef USE_MALLOPT
 /* Link with -lmalloc (or -lmpc) on an SGI */
 #include <malloc.h>
@@ -149,6 +161,7 @@ static struct methodlist sys_methods[] = {
 #endif
 	{"setprofile",	sys_setprofile},
 	{"settrace",	sys_settrace},
+	{"setcheckinterval",	sys_setcheckinterval},
 	{NULL,		NULL}		/* sentinel */
 };
 

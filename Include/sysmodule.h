@@ -36,6 +36,7 @@ FILE *sysgetfile PROTO((char *, FILE *));
 void initsys PROTO((void));
 
 extern DL_IMPORT object *sys_trace, *sys_profile;
+extern DL_IMPORT int sys_checkinterval;
 
 #ifdef __cplusplus
 }
