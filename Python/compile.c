@@ -444,12 +444,16 @@ tuple_of_constants(unsigned char *codestr, int n, PyObject *consts)
    The consts table must still be in list form so that the
        new constant can be appended.
    Called with codestr pointing to the first LOAD_CONST. 
-   Abandons the transformation if the folding fails (i.e.  1+'a').  */
+   Abandons the transformation if the folding fails (i.e.  1+'a').  
+   If the new constant is a sequence, only folds when the size
+	is below a threshold value.  That keeps pyc files from
+	becoming large in the presence of code like:  (None,)*1000.
+*/
 static int
 fold_binops_on_constants(unsigned char *codestr, PyObject *consts)
 {
 	PyObject *newconst, *v, *w;
-	int len_consts, opcode;
+	int len_consts, opcode, size;
 
 	/* Pre-conditions */
 	assert(PyList_CheckExact(consts));
@@ -468,8 +472,8 @@ fold_binops_on_constants(unsigned char *codestr, PyObject *consts)
 		newconst = PyNumber_Multiply(v, w);
 		break;
 	case BINARY_DIVIDE:
-		/* XXX care is needed to fold this operation statically:
-		the result might depend on the run-time presence of the -Qnew flag */
+		/* Cannot fold this operation statically since
+		the result can depend on the run-time presence of the -Qnew flag */
 		return 0;
 	case BINARY_TRUE_DIVIDE:
 		newconst = PyNumber_TrueDivide(v, w);
@@ -511,6 +515,13 @@ fold_binops_on_constants(unsigned char *codestr, PyObject *consts)
 	}
 	if (newconst == NULL) {
 		PyErr_Clear();
+		return 0;
+	}
+	size = PyObject_Size(newconst);
+	if (size == -1)
+		PyErr_Clear();
+	else if (size > 20) {
+		Py_DECREF(newconst);
 		return 0;
 	}
 
@@ -733,7 +744,6 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 		   LOAD_CONST c1 LOAD_CONST c2 BINOP -->  LOAD_CONST binop(c1,c2) */
 		case BINARY_POWER:
 		case BINARY_MULTIPLY:
-		case BINARY_DIVIDE:
 		case BINARY_TRUE_DIVIDE:
 		case BINARY_FLOOR_DIVIDE:
 		case BINARY_MODULO:
