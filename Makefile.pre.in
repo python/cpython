@@ -653,7 +653,7 @@ $(srcdir)/Lib/$(PLATDIR):
 	export PATH; PATH="`pwd`:$$PATH"; \
 	export PYTHONPATH; PYTHONPATH="`pwd`/Lib"; \
 	export DYLD_FRAMEWORK_PATH; DYLD_FRAMEWORK_PATH="`pwd`"; \
-	export EXE; EXE="$(EXE)"; \
+	export EXE; EXE="$(BUILDEXE)"; \
 	cd $(srcdir)/Lib/$(PLATDIR); ./regen
 
 # Install the include files
