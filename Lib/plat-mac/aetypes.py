@@ -521,6 +521,8 @@ class ComponentItem(SelectableItem):
 	
 	def __init__(self, which, fr = None):
 		SelectableItem.__init__(self, self.want, which, fr)
+		self._propdict = {}
+		self._elemdict = {}
 	
 	def __repr__(self):
 		if not self.fr:
