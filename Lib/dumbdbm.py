@@ -39,7 +39,7 @@ class _Database(UserDict.DictMixin):
     # gets called.  One place _commit() gets called is from __del__(),
     # and if that occurs at program shutdown time, module globals may
     # already have gotten rebound to None.  Since it's crucial that
-    # _commit() finish sucessfully, we can't ignore shutdown races
+    # _commit() finish successfully, we can't ignore shutdown races
     # here, and _commit() must not reference any globals.
     _os = _os       # for _commit()
     _open = _open   # for _commit()

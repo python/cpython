@@ -42,7 +42,7 @@ Library
   on-disk data and directory files can be left in mutually inconsistent
   states.  dumbdbm.py's _Database.__del__() method attempted to close
   the database properly, but a shutdown race in _Database._commit()
-  could prevent this form working, so that a program trusting __del__()
+  could prevent this from working, so that a program trusting __del__()
   to get the on-disk files in synch could be badly surprised.  The race
   has been repaired.
 
