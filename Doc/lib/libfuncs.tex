@@ -363,14 +363,16 @@ consisting of tuples containing the corresponding items from all lists
 any kind of sequence; the result is always a list.
 \end{funcdesc}
 
-\begin{funcdesc}{max}{s}
-  Return the largest item of a non-empty sequence (string, tuple or
-  list).
+\begin{funcdesc}{max}{s\optional{, args...}}
+With a single argument \var{s}, return the largest item of a
+non-empty sequence (e.g., a string, tuple or list).  With more than
+one argument, return the largest of the arguments.
 \end{funcdesc}
 
-\begin{funcdesc}{min}{s}
-  Return the smallest item of a non-empty sequence (string, tuple or
-  list).
+\begin{funcdesc}{min}{s\optional{, args...}}
+With a single argument \var{s}, return the smallest item of a
+non-empty sequence (e.g., a string, tuple or list).  With more than
+one argument, return the smallest of the arguments.
 \end{funcdesc}
 
 \begin{funcdesc}{oct}{x}
