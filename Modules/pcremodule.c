@@ -165,7 +165,7 @@ PyPcre_getattr(self, name)
 
 
 staticforward PyTypeObject Pcre_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0,			/*ob_size*/
 	"Pcre",			/*tp_name*/
 	sizeof(PcreObject),	/*tp_basicsize*/
@@ -663,6 +663,8 @@ DL_EXPORT(void)
 initpcre()
 {
 	PyObject *m, *d;
+
+        Pcre_Type.ob_type = &PyType_Type;
 
 	/* Create the module and add the functions */
 	m = Py_InitModule("pcre", pcre_methods);
