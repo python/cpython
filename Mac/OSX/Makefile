@@ -157,12 +157,12 @@ install_IDLE:
 			--python $(INSTALLED_PYTHONW) \
 			--output $(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app \
 			--extra $(srcdir)/Lib/idlelib \
-			$(srcdir)/Lib/idlelib/idle ; \
+			$(srcdir)/Tools/scripts/idle ; \
 		$(BUILDPYTHON) $(srcdir)/Mac/scripts/BuildApplet.py \
 			--python $(INSTALLED_PYTHONW) \
 			--output $(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app \
 			--extra $(srcdir)/Lib/idlelib:Contents/Resources/idlelib \
-			$(srcdir)/Lib/idlelib/idle ; \
+			$(srcdir)/Tools/scripts/idle ; \
 	fi
 
 
