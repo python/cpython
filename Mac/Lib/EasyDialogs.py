@@ -10,7 +10,7 @@ bar.inc( *amount ) -- increment value by amount (default=1)
 bar.label( *newlabel ) -- get or set text label. 
 
 More documentation in each function.
-This module uses DLOG resources 256, 257 and 258.
+This module uses DLOG resources 260 and on.
 Based upon STDWIN dialogs with the same names and functions.
 """
 
@@ -35,7 +35,7 @@ def lf2cr(text):
 		text = text[:253] + '\311'
 	return text
 
-def Message(msg, id=256, ok=None):
+def Message(msg, id=260, ok=None):
 	"""Display a MESSAGE string.
 	
 	Return when the user clicks the OK button or presses Return.
@@ -47,11 +47,11 @@ def Message(msg, id=256, ok=None):
 	if not d:
 		print "Can't get DLOG resource with id =", id
 		return
-	tp, h, rect = d.GetDialogItem(2)
+	h = d.GetDialogItemAsControl(2)
 	SetDialogItemText(h, lf2cr(msg))
 	if ok != None:
-		tp, h, rect = d.GetDialogItem(1)
-		h.as_Control().SetControlTitle(ok)
+		h = d.GetDialogItemAsControl(1)
+		h.SetControlTitle(ok)
 	d.SetDialogDefaultItem(1)
 	while 1:
 		n = ModalDialog(None)
@@ -59,7 +59,7 @@ def Message(msg, id=256, ok=None):
 			return
 
 
-def AskString(prompt, default = "", id=257, ok=None, cancel=None):
+def AskString(prompt, default = "", id=261, ok=None, cancel=None):
 	"""Display a PROMPT string and a text entry field with a DEFAULT string.
 	
 	Return the contents of the text entry field when the user clicks the
@@ -76,28 +76,28 @@ def AskString(prompt, default = "", id=257, ok=None, cancel=None):
 	if not d:
 		print "Can't get DLOG resource with id =", id
 		return
-	tp, h, rect = d.GetDialogItem(3)
+	h = d.GetDialogItemAsControl(3)
 	SetDialogItemText(h, lf2cr(prompt))
-	tp, h, rect = d.GetDialogItem(4)
+	h = d.GetDialogItemAsControl(4)
 	SetDialogItemText(h, lf2cr(default))
 	d.SelectDialogItemText(4, 0, 999)
 #	d.SetDialogItem(4, 0, 255)
 	if ok != None:
-		tp, h, rect = d.GetDialogItem(1)
-		h.as_Control().SetControlTitle(ok)
+		h = d.GetDialogItemAsControl(1)
+		h.SetControlTitle(ok)
 	if cancel != None:
-		tp, h, rect = d.GetDialogItem(2)
-		h.as_Control().SetControlTitle(cancel)
+		h = d.GetDialogItemAsControl(2)
+		h.SetControlTitle(cancel)
 	d.SetDialogDefaultItem(1)
 	d.SetDialogCancelItem(2)
 	while 1:
 		n = ModalDialog(None)
 		if n == 1:
-			tp, h, rect = d.GetDialogItem(4)
+			h = d.GetDialogItemAsControl(4)
 			return cr2lf(GetDialogItemText(h))
 		if n == 2: return None
 
-def AskPassword(prompt,	 default='', id=257):	
+def AskPassword(prompt,	 default='', id=264):	
 	"""Display a PROMPT string and a text entry field with a DEFAULT string.
 	The string is displayed as bullets only.
 	
@@ -114,9 +114,9 @@ def AskPassword(prompt,	 default='', id=257):
 	if not d:
 		print "Can't get DLOG resource with id =", id
 		return
-	tp, h, rect = d.GetDialogItem(3)	# STATIC TEXT ITEM <= prompt 
+	h = d.GetDialogItemAsControl(3)	# STATIC TEXT ITEM <= prompt 
 	SetDialogItemText(h, lf2cr(prompt))	
-	tp, h, rect = d.GetDialogItem(4)	# EDIT TEXT ITEM 
+	h = d.GetDialogItemAsControl(4)	# EDIT TEXT ITEM 
 	bullets = '\245'*len(default)
 	SetDialogItemText(h, bullets )
 	d.SelectDialogItemText(4, 999, 999)
@@ -167,7 +167,7 @@ def AskPassword(prompt,	 default='', id=257):
 	apply(MacOS.SchedParams, oldschedparams)
 	return string
 
-def AskYesNoCancel(question, default = 0, yes=None, no=None, cancel=None, id=258):
+def AskYesNoCancel(question, default = 0, yes=None, no=None, cancel=None, id=262):
 	"""Display a QUESTION string which can be answered with Yes or No.
 	
 	Return 1 when the user clicks the Yes button.
@@ -190,20 +190,20 @@ def AskYesNoCancel(question, default = 0, yes=None, no=None, cancel=None, id=258
 	# 3 = No
 	# 4 = Cancel
 	# The question string is item 5
-	tp, h, rect = d.GetDialogItem(5)
+	h = d.GetDialogItemAsControl(5)
 	SetDialogItemText(h, lf2cr(question))
 	if yes != None:
-		tp, h, rect = d.GetDialogItem(2)
-		h.as_Control().SetControlTitle(yes)
+		h = d.GetDialogItemAsControl(2)
+		h.SetControlTitle(yes)
 	if no != None:
-		tp, h, rect = d.GetDialogItem(3)
-		h.as_Control().SetControlTitle(no)
+		h = d.GetDialogItemAsControl(3)
+		h.SetControlTitle(no)
 	if cancel != None:
 		if cancel == '':
 			d.HideDialogItem(4)
 		else:
-			tp, h, rect = d.GetDialogItem(4)
-			h.as_Control().SetControlTitle(cancel)
+			h = d.GetDialogItemAsControl(4)
+			h.SetControlTitle(cancel)
 	d.SetDialogCancelItem(4)
 	if default == 1:
 		d.SetDialogDefaultItem(2)
@@ -227,13 +227,14 @@ screenbounds = screenbounds[0]+4, screenbounds[1]+4, \
 
 				
 class ProgressBar:
-	def __init__(self, title="Working...", maxval=100, label="", id=259):
+	def __init__(self, title="Working...", maxval=100, label="", id=263):
 		self.maxval = maxval
 		self.curval = -1
 		self.d = GetNewDialog(id, -1)
 		self.title(title)
 		self.label(label)
 		self._update(0)
+		self.d.DrawDialog()
 
 	def __del__( self ):
 		self.d.BringToFront()
@@ -251,7 +252,7 @@ class ProgressBar:
 		self.d.BringToFront()
 		if newstr:
 			self._label = lf2cr(newstr[0])
-		tp, text_h, rect = self.d.GetDialogItem(2)
+		text_h = self.d.GetDialogItemAsControl(2)
 		SetDialogItemText(text_h, self._label)		
 				
 	def _update(self, value):
@@ -260,27 +261,12 @@ class ProgressBar:
 			# XXXX Quick fix. Should probably display an unknown duration
 			value = 0
 			maxval = 1
-		self.d.BringToFront()
-		tp, h, bar_rect = self.d.GetDialogItem(3)
-		Qd.SetPort(self.d)
-		
-		Qd.FrameRect(bar_rect)	# Draw outline
-		
-		inner_rect = Qd.InsetRect(bar_rect, 1, 1)
-		l, t, r, b = inner_rect
-
-		Qd.ForeColor(QuickDraw.blackColor)
-		Qd.BackColor(QuickDraw.blackColor)
-		Qd.PaintRect((l, t, int(l + (r-l)*value/maxval), b))	# Draw bar
-
-		Qd.ForeColor(QuickDraw.whiteColor)
-		Qd.BackColor(QuickDraw.whiteColor)
-		Qd.PaintRect((int(l + (r-l)*value/maxval), t, r, b))	# Clear rest
-				
-		# Restore settings
-		Qd.ForeColor(QuickDraw.blackColor)
-		Qd.BackColor(QuickDraw.whiteColor)
-		
+		if maxval > 32767:
+			value = int(value/(maxval/32767.0))
+			maxval = 32767
+		progbar = self.d.GetDialogItemAsControl(3)
+		progbar.SetControlMaximum(maxval)
+		progbar.SetControlValue(value)	
 		# Test for cancel button
 		
 		ready, ev = Evt.WaitNextEvent( Events.mDownMask, 1  )
