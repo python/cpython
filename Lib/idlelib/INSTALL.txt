@@ -1,58 +1,39 @@
-IDLEfork INSTALL notes
-======================
+IDLEfork Installation Notes
+===========================
 
-The emphasis in IDLEfork is now for the project to be able to be run
-directly from the unpacked source directory. This is to enable easy testing
-of (and hacking on) IDLEfork, and will also prevent interfering with the 
-stable Python IDLE set up in any way.
+IDLEfork requires Python Version 2.2 or later.
 
-To install IDLEfork just unpack the archive into its own directory wherever
-you like. To run IDLEfork just go to the directory you unpacked IDLEfork
-into and then run 'python idle.py' in an xterm under unix/linux, or 
-'idle.pyw' under windows 98/2000. Remember that IDLEfork 0.8.1 and greater 
-require python 2.1 or greater.
+There are several distribution files (where xx is the subversion):
 
-See README.txt and NEWS.txt for more details on this version of IDLEfork. 
+IDLEfork-0.9xx.win32.exe
+	This is a Windows installer which will install IDLEfork in 
+	..../site-packages/idleforklib/ and place the idefork startup script
+	at ..../scripts/idlefork.  Rename this to idlefork.pyw and
+	point your launcher icons at it.  Installation is as idlefork
+	to avoid conflict with the original Python IDLE.
+
+IDLEfork-0.9xx-1.noarch.rpm 
+	This is an rpm which is designed to install as idleforklib in the
+	/usr/lib/python2.2 tree created by the Python2 rpm.  It requires
+	python2 and python2-tkinter rpms.  It installs as idlefork to avoid
+	conflict with Python IDLE.
+
+IDLEfork-0.9xx.tar.gz
+	This is a distutils sdist (source) tarfile which can be used to make 
+	installations on platforms not supported by the above files.
+	It is configured to install as IDLE, not IDLEfork.
+
+	Unpack in ..../Tools/, cd to the IDLEfork directory created, and
+	<python setup.py install> to install as IDLE.  If you don't want to
+	step on Python IDLE, it is also possible to simply run <python idle.py>
+	to test in the IDLEfork source directory without installation.  In this
+	case, IDLEfork will not be on your PATH unless you are in the source
+	directory.
+
+See README.txt for more details on this version of IDLEfork. 
 
 
-INSTALLATION notes from IDLE fork 0.7.1 :
-=========================================
 
-IDLE Fork Installation on Linux:
 
-Until the tarball is released, you must download a CVS copy.  An excellent
-place for it is
 
-/usr/local/src/PythonX.X/Tools/idlefork, assuming that's where your Python
-source is located. Put the correct version in for X.X .
 
-# cd /usr/local/src/PythonX.X/Tools
-
-Now do the CVS login and checkout:
-
-# cvs -d:pserver:anonymous@cvs.idlefork.sourceforge.net:/cvsroot/idlefork login
-
-Type an <enter> for the password.
-
-# cvs -z3 -d:pserver:anonymous@cvs.idlefork.sourceforge.net:/cvsroot/idlefork \
-      -d idlefork checkout idle
-
-The -d option to checkout puts the files in an idlefork directory, so you don't
-step on "official" idle.
-
-# cd idlefork
-# su      to root
-
-# python setup.py install
-
-# echo  idlelib >> /usr/local/lib/pythonX.X/site-packages/site-packages.pth
-
-This last is necessary so idle can find itself.  I hope we can create/append
-this file via setup.py at some point, but it needs to be done manually now, and
-it only needs to be done once (unless you totally remove and reinstall python
-itself).  (Replace X.X with the correct version for your Python.)
-
-# exit    from root
-
-NOTE that the above procedure will install idlefork IDLE on top of any
-"official" IDLE that may be already installed.
