@@ -124,6 +124,30 @@ def test_finalizer():
         raise TestFailed, "didn't find obj in garbage (finalizer)"
     gc.garbage.remove(obj)
 
+def test_finalizer_newclass():
+    # A() is uncollectable if it is part of a cycle, make sure it shows up
+    # in gc.garbage.
+    class A(object):
+        def __del__(self): pass
+    class B(object):
+        pass
+    a = A()
+    a.a = a
+    id_a = id(a)
+    b = B()
+    b.b = b
+    gc.collect()
+    del a
+    del b
+    expect_nonzero(gc.collect(), "finalizer")
+    for obj in gc.garbage:
+        if id(obj) == id_a:
+            del obj.a
+            break
+    else:
+        raise TestFailed, "didn't find obj in garbage (finalizer)"
+    gc.garbage.remove(obj)
+
 def test_function():
     # Tricky: f -> d -> f, code should call d.clear() after the exec to
     # break the cycle.
@@ -169,6 +193,21 @@ def test_del():
     gc.set_threshold(1)
 
     class A:
+        def __del__(self):
+            dir(self)
+    a = A()
+    del a
+
+    gc.disable()
+    apply(gc.set_threshold, thresholds)
+
+def test_del_newclass():
+    # __del__ methods can trigger collection, make this to happen
+    thresholds = gc.get_threshold()
+    gc.enable()
+    gc.set_threshold(1)
+
+    class A(object):
         def __del__(self):
             dir(self)
     a = A()
@@ -225,7 +264,9 @@ def test_all():
     run_test("functions", test_function)
     run_test("frames", test_frame)
     run_test("finalizers", test_finalizer)
+    run_test("finalizers (new class)", test_finalizer_newclass)
     run_test("__del__", test_del)
+    run_test("__del__ (new class)", test_del_newclass)
     run_test("saveall", test_saveall)
     run_test("trashcan", test_trashcan)
 
