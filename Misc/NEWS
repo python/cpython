@@ -39,7 +39,7 @@ Core and builtins
 
 - Assignment to __debug__ raises SyntaxError at compile-time.  This
   was promised when 2.1c1 was released as "What's New in Python 2.1c1"
-  (below) says.
+  (see below) says.
 
 - Clarified the error messages for unsupported operands to an operator
   (like 1 + '').
@@ -78,8 +78,12 @@ Library
 - Symbolic group names in regular expressions must be unique.  For
   example, the regexp r'(?P<abc>)(?P<abc>)' is not allowed, because a
   single name can't mean both "group 1" and "group 2" simultaneously.
-  Python 2.2 detects this error at regexp compilation time; previously,
-  the error went undetected, and results were unpredictable.
+  Python 2.2 detects this error at regexp compilation time;
+  previously, the error went undetected, and results were
+  unpredictable.  Also in sre, the pattern.split(), pattern.sub(), and
+  pattern.subn() methods have been rewritten in C.  Also, an
+  experimental function/method finditer() has been added, which works
+  like findall() but returns an iterator.
 
 - Tix exposes more commands through the classes DirSelectBox,
   DirSelectDialog, ListNoteBook, Meter, CheckList, and the
@@ -95,15 +99,52 @@ Library
   RISCOS, where it is '/'.  There is no need to use this variable
   unless you have a masochistic desire to port your code to RISCOS.
 
+- mimetypes.py has optional support for non-standard, but commonly
+  found types.  guess_type() and guess_extension() now accept an
+  optional `strict' flag, defaulting to true, which controls whether
+  recognize non-standard types or not.  A few non-standard types we
+  know about have been added.  Also, when run as a script, there are
+  new -l and -e options.
+
+- statcache is now deprecated.
+
+- email.Utils.formatdate() now produces the preferred RFC 2822 style
+  dates with numeric timezones (it used to produce obsolete dates
+  hard coded to "GMT" timezone).  An optional `localtime' flag is
+  added to produce dates in the local timezone, with daylight savings
+  time properly taken into account.
+
+- In pickle and cPickle, instead of masking errors in load() by
+  transforming them into SystemError, we let the original exception
+  propagate out.  Also, implement support for __safe_for_unpickling__
+  in pickle, as it already was supported in cPickle.
+
 Tools/Demos
 
 Build
+
+- The dbm module is built using libdb1 if available.  The bsddb module
+  is built with libdb3 if available.
+
+- Misc/Makefile.pre.in has been removed by BDFL pronouncement.
 
 C API
 
 - New function PySequence_Fast_GET_SIZE() returns the size of a non-
   NULL result from PySequence_Fast(), more quickly than calling
   PySequence_Size().
+
+- New argument unpacking function PyArg_UnpackTuple() added.
+
+- New functions PyObject_CallFunctionObjArgs() and
+  PyObject_CallMethodObjArgs() have been added to make it more
+  convenient and efficient to call functions and methods from C.
+
+- PyArg_ParseTupleAndKeywords() no longer masks errors, so it's
+  possible that this will propagate errors it didn't before.
+
+- New function PyObject_CheckReadBuffer(), which returns true if its
+  argument supports the single-segment readable buffer interface.
 
 New platforms
 
@@ -121,6 +162,19 @@ Tests
   regrtest.py must be run with '-u curses' to enable it.
 
 Windows
+
+Mac
+
+- PythonScript has been moved to unsupported and is slated to be
+  removed completely in the next release.
+
+- It should now be possible to build applets that work on both OS9 and
+  OSX.
+
+- The core is now linked with CoreServices not Carbon; as a side
+  result, default 8bit encoding on OSX is now ASCII.
+
+- Python should now build on OSX 10.1.1
 
 
 What's New in Python 2.2b1?
