@@ -119,14 +119,18 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 		NSObjectFileImage image;
 		NSModule newModule;
 		NSSymbol theSym;
-		void *symaddr;
 		const char *errString;
 	
+		if (NSIsSymbolNameDefined(funcname)) {
+			theSym = NSLookupAndBindSymbol(funcname);
+			p = (dl_funcptr)NSAddressOfSymbol(theSym);
+			return p;
+		}
 		rc = NSCreateObjectFileImageFromFile(pathname, &image);
 		switch(rc) {
 		    default:
 		    case NSObjectFileImageFailure:
-		    NSObjectFileImageFormat:
+		    case NSObjectFileImageFormat:
 		    /* for these a message is printed on stderr by dyld */
 			errString = "Can't create object file image";
 			break;
@@ -139,7 +143,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 		    case NSObjectFileImageArch:
 			errString = "Wrong CPU type in object file";
 			break;
-		    NSObjectFileImageAccess:
+		    case NSObjectFileImageAccess:
 			errString = "Can't read object file (no access)";
 			break;
 		}
