@@ -10,7 +10,8 @@ import sys, os, string
 from types import *
 from distutils.core import Command, DEBUG
 from distutils import sysconfig
-from distutils.util import write_file, convert_path, subst_vars, change_root
+from distutils.file_util import write_file
+from distutils.util import convert_path, subst_vars, change_root
 from distutils.errors import DistutilsOptionError
 from glob import glob
 

@@ -10,9 +10,7 @@ import sys, os, string
 from types import *
 from glob import glob
 from distutils.core import Command
-from distutils.util import \
-     create_tree, remove_tree, newer, write_file, \
-     check_archive_formats
+from distutils import dir_util, dep_util, file_util, archive_util
 from distutils.text_file import TextFile
 from distutils.errors import *
 from distutils.filelist import FileList
@@ -117,7 +115,7 @@ class sdist (Command):
                       "don't know how to create source distributions " + \
                       "on platform %s" % os.name
 
-        bad_format = check_archive_formats (self.formats)
+        bad_format = archive_util.check_archive_formats (self.formats)
         if bad_format:
             raise DistutilsOptionError, \
                   "unknown archive format '%s'" % bad_format
@@ -195,7 +193,7 @@ class sdist (Command):
         # manifest; if so, we'll regenerate the manifest.
         template_exists = os.path.isfile(self.template)
         if template_exists:
-            template_newer = newer(self.template, self.manifest)
+            template_newer = dep_util.newer(self.template, self.manifest)
 
         # The contents of the manifest file almost certainly depend on the
         # setup script as well as the manifest template -- so if the setup
@@ -204,7 +202,7 @@ class sdist (Command):
         # manifest, but there's no template -- which will happen if the
         # developer elects to generate a manifest some other way -- then we
         # can't regenerate the manifest, so we don't.)
-        setup_newer = newer(sys.argv[0], self.manifest)
+        setup_newer = dep_util.newer(sys.argv[0], self.manifest)
 
         # cases:
         #   1) no manifest, template exists: generate manifest
@@ -368,7 +366,7 @@ class sdist (Command):
         by 'add_defaults()' and 'read_template()') to the manifest file
         named by 'self.manifest'.
         """
-        self.execute(write_file,
+        self.execute(file_util.write_file,
                      (self.manifest, self.filelist.files),
                      "writing manifest file '%s'" % self.manifest)
 
@@ -404,8 +402,8 @@ class sdist (Command):
         """
         # Create all the directories under 'base_dir' necessary to
         # put 'files' there.
-        create_tree (base_dir, files,
-                     verbose=self.verbose, dry_run=self.dry_run)
+        dir_util.create_tree (base_dir, files,
+                              verbose=self.verbose, dry_run=self.dry_run)
 
         # And walk over the list of files, either making a hard link (if
         # os.link exists) to each one that doesn't already exist in its
@@ -453,7 +451,7 @@ class sdist (Command):
         self.archive_files = archive_files
 
         if not self.keep_tree:
-            remove_tree (base_dir, self.verbose, self.dry_run)
+            dir_util.remove_tree (base_dir, self.verbose, self.dry_run)
 
     def get_archive_files (self):
         """Return the list of archive files created when the command
