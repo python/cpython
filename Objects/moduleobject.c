@@ -92,8 +92,10 @@ static void
 module_dealloc(m)
 	moduleobject *m;
 {
-	if (m->md_dict != NULL)
+	if (m->md_dict != NULL) {
+		mappingclear(m->md_dict);
 		DECREF(m->md_dict);
+	}
 	free((char *)m);
 }
 
