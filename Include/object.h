@@ -556,7 +556,7 @@ times.
 	} \
 
 extern DL_IMPORT(void) _PyTrash_deposit_object(PyObject*);
-extern DL_IMPORT(void) _PyTrash_destroy_chain();
+extern DL_IMPORT(void) _PyTrash_destroy_chain(void);
 
 extern DL_IMPORT(int) _PyTrash_delete_nesting;
 extern DL_IMPORT(PyObject *) _PyTrash_delete_later;
