@@ -322,5 +322,12 @@ parser parsermodule.c
 cStringIO cStringIO.c
 cPickle cPickle.c
 
+# Lee Busby's SIGFPE modules.
+# The library to link fpectl with is platform specific.
+# See instructions in fpectlmodule.c.
+
+#fpectl fpectlmodule.c
+#fpetest fpetestmodule.c
+
 # Example -- included for reference only:
 # xx xxmodule.c
