@@ -330,6 +330,7 @@ class ConfigParser:
         elif not self.has_section(section):
             return 0
         else:
+            option = self.optionxform(option)
             return self.__sections[section].has_key(option)
 
     def set(self, section, option, value):
@@ -341,6 +342,7 @@ class ConfigParser:
                 sectdict = self.__sections[section]
             except KeyError:
                 raise NoSectionError(section)
+        option = self.optionxform(option)
         sectdict[option] = value
 
     def write(self, fp):
@@ -368,6 +370,7 @@ class ConfigParser:
                 sectdict = self.__sections[section]
             except KeyError:
                 raise NoSectionError(section)
+        option = self.optionxform(option)
         existed = sectdict.has_key(option)
         if existed:
             del sectdict[option]
