@@ -23,6 +23,9 @@
    (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
 #undef HAVE_STDARG_PROTOTYPES
 
+/* Define if you have POSIX threads */
+#undef _POSIX_THREADS
+
 /* Define to empty if the keyword does not work.  */
 #undef signed
 
