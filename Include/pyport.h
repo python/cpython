@@ -387,7 +387,7 @@ typedef	struct fd_set {
  * rather than waiting for integer multiplication to trigger bogus
  * overflows.
  */
-#error "LONG_BIT definition appears wrong for platform (bad gcc config?)."
+#error "LONG_BIT definition appears wrong for platform (bad gcc/glibc config?)."
 #endif
 
 #ifdef __NeXT__
