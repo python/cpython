@@ -83,6 +83,9 @@ VPATH=		.
 
 # === Variables that you may want to customize (rarely) ===
 
+# (Static) build target
+TARGET=		python
+
 # Add more -I and -D options here
 CFLAGS=		$(OPT) -I$(INCLUDEPY) -I$(LIBPL) $(DEFS)
 
@@ -159,15 +162,17 @@ ADDOBJS=	$(LIBPL)/main.o getpath.o config.o
 default:	sharedmods
 
 # Build everything
-all:		python sharedmods
+all:		static sharedmods
 
 # Build shared libraries from our extension modules
 sharedmods:	$(SHAREDMODS)
 
 # Build a static Python binary containing our extension modules
-python:		$(ADDOBJS) lib.a $(PYTHONLIBS) Makefile $(BASELIB)
+static:		$(TARGET)
+$(TARGET):	$(ADDOBJS) lib.a $(PYTHONLIBS) Makefile $(BASELIB)
 		$(CC) $(LDFLAGS) $(ADDOBJS) lib.a $(PYTHONLIBS) \
-		 $(LINKPATH) $(BASELIB) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python
+		 $(LINKPATH) $(BASELIB) $(MODLIBS) $(LIBS) $(SYSLIBS) \
+		 -o $(TARGET)
 
 # Build the library containing our extension modules
 lib.a:		$(MODOBJS)
