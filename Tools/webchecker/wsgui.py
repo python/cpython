@@ -162,7 +162,7 @@ class App:
         else:
             self.sucker.savedir = dir
             self.sucker.rootdir = os.path.dirname(
-                websucker.Sucker.savefilename(self, url))
+                websucker.Sucker.savefilename(self.sucker, url))
         self.go_button.configure(state=DISABLED)
         self.auto_button.configure(state=DISABLED)
         self.cancel_button.configure(state=NORMAL)

@@ -3,6 +3,8 @@ What's New in Python 2.2.4?
 - SF #746304: Builtin functions are now copy.[deep]copyable.
   Classes are now also deepcopyable.
 
+- SF #753592: webchecker/wsgui now handles user supplied directories.
+
 What's New in Python 2.2.3 (final) ?
 Release date: 30-May-2003
 ====================================
