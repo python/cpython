@@ -1,3 +1,11 @@
+Tue Jan 25 20:11:49 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/ext.tex: revamped, finally ready for release
+
+	* Doc/{Makefile,myformat.perl}: support latex2html (0.5.1)
+
+	* README: correct typo on DL_DIRECTORY
+
 ========================================================================
 Release of 1.0.0 BETA 6 (Jan 24 1994)
 ========================================================================
