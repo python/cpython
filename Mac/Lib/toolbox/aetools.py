@@ -154,9 +154,33 @@ class TalkTo:
 		"""Send an appleevent given code/subcode/pars/attrs and unpack the reply"""
 		return self.sendevent(self.newevent(code, subcode, parameters, attributes))
 	
+	#
+	# The following events are somehow "standard" and don't seem to appear in any
+	# suite...
+	#
 	def activate(self):
 		"""Send 'activate' command"""
 		self.send('misc', 'actv')
+
+	def get(self, _object, _attributes={}):
+		"""get: get data from an object
+		Required argument: the object
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: the data
+		"""
+		_code = 'core'
+		_subcode = 'getd'
+
+		_arguments = {'----':_object}
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, decodeerror(_arguments)
+
+		if _arguments.has_key('----'):
+			return _arguments['----']
 	
 	
 # Test program
