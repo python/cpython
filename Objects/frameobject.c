@@ -273,7 +273,7 @@ map_to_dict(PyObject *map, int nmap, PyObject *dict, PyObject **values,
 	}
 }
 
-void
+static void
 dict_to_map(PyObject *map, int nmap, PyObject *dict, PyObject **values,
 	    int deref, int clear)
 {
