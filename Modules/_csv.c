@@ -352,8 +352,9 @@ dialect_init(DialectObj * self, PyObject * args, PyObject * kwargs)
                 }
                 /* And extract the attributes */
                 for (i = 0; i < PyList_GET_SIZE(dir_list); ++i) {
+			char *s;
                         name_obj = PyList_GET_ITEM(dir_list, i);
-			char *s = PyString_AsString(name_obj);
+			s = PyString_AsString(name_obj);
 			if (s == NULL)
 				return -1;
                         if (s[0] == '_')
