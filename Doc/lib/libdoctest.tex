@@ -944,6 +944,36 @@ sections \ref{doctest-simple-testmod} and
                   and \var{exclude_empty} were added]{2.4}
 \end{funcdesc}
 
+There's also a function to run the doctests associated with a single object.
+This function is provided for backward compatibility.  There are no plans
+to deprecate it, but it's rarely useful:
+
+\begin{funcdesc}{run_docstring_examples}{f, globs\optional{,
+                            verbose}\optional{, name}\optional{,
+                            compileflags}\optional{, optionflags}}
+
+  Test examples associated with object \var{f}; for example, \var{f} may
+  be a module, function, or class object.
+
+  A shallow copy of dictionary argument \var{globs} is used for the
+  execution context.
+
+  Optional argument \var{name} is used in failure messages, and defaults
+  to \code{"NoName"}.
+
+  If optional argument \var{verbose} is true, output is generated even
+  if there are no failures.  By default, output is generated only in case
+  of an example failure.
+
+  Optional argument \var{compileflags} gives the set of flags that should
+  be used by the Python compiler when running the examples.  By default, or
+  if \code{None}, flags are deduced corresponding to the set of future
+  features found in \var{globs}.
+
+  Optional argument \var{optionflags} works as for function
+  \function{testfile()} above.
+\end{funcdesc}
+
 \subsection{Unittest API\label{doctest-unittest-api}}
 
 As your collection of doctest'ed modules grows, you'll want a way to run
