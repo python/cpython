@@ -1,0 +1,106 @@
+\documentclass{howto}
+
+% $Id$
+
+\title{What's New in Python 2.2}
+\release{0.01}
+\author{A.M. Kuchling}
+\authoraddress{\email{amk1@bigfoot.com}}
+\begin{document}
+\maketitle\tableofcontents
+
+\section{Introduction}
+
+{\large This document is a draft, and is subject to change until the
+final version of Python 2.2 is released.  Currently it's not up to
+date at all.  Please send any comments, bug reports, or questions, no
+matter how minor, to \email{amk1@bigfoot.com}.  }
+
+This article explains the new features in Python 2.2.  
+Python 2.2 includes some significant changes that go far toward cleaning up
+the language's darkest corners.
+
+This article doesn't attempt to provide a complete specification for
+the new features, but instead provides a convenient overview of the
+new features.  For full details, you should refer to 2.2 documentation
+such as the Library Reference and the Reference Guide, or to the PEP
+for a particular new feature.
+
+The final release of Python 2.2 is planned for October 2001.
+
+%======================================================================
+\section{PEP 234: Iterators}
+
+XXX
+
+\begin{seealso}
+
+\seepep{234}{Iterators}{Written by Ka-Ping Yee and GvR; implemented 
+by the Python Labs crew, mostly by GvR and Tim Peters.}
+
+\end{seealso}
+
+%======================================================================
+\section{PEP 252: Type and Class Changes}
+
+XXX
+
+\begin{seealso}
+
+\seepep{252}{Making Types Look More Like Classes}{Written and implemented 
+by GvR.}
+
+\end{seealso}
+
+%======================================================================
+\section{New and Improved Modules}
+
+\begin{itemize}
+
+  \item XXX
+
+\end{itemize}
+
+
+%======================================================================
+\section{Other Changes and Fixes}
+
+XXX
+
+\begin{itemize}
+
+  \item XXX Nested scoping enabled by default
+
+  \item XXX C API: Reorganization of object calling 
+
+%Original log message:
+ 
+%The call_object() function, originally in ceval.c, begins a new life
+%as the official API PyObject_Call().  It is also much simplified: all
+%it does is call the tp_call slot, or raise an exception if that's
+%NULL.
+ 
+%The subsidiary functions (call_eval_code2(), call_cfunction(),
+%call_instance(), and call_method()) have all been moved to the file
+%implementing their particular object type, renamed according to the
+%local convention, and added to the type's tp_call slot.  Note that
+%call_eval_code2() became function_call(); the tp_slot for class
+%objects now simply points to PyInstance_New(), which already has the
+%correct signature.
+ 
+%Because of these moves, there are some more new APIs that expose
+%helpers in ceval.c that are now needed outside: PyEval_GetFuncName(),
+%PyEval_GetFuncDesc(), PyEval_EvalCodeEx() (formerly get_func_name(),
+%get_func_desc(), and eval_code2().
+
+\end{itemize}
+
+
+
+%======================================================================
+\section{Acknowledgements}
+
+The author would like to thank the following people for offering
+suggestions on various drafts of this article: No one yet.
+
+\end{document}
