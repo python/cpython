@@ -3508,12 +3508,17 @@ that an unqualified reference to a name attempts to find the name in
 the namespace.
 
 Although scopes are determined statically, they are used dynamically.
-At any time during execution, exactly three nested scopes are in use
-(exactly three namespaces are directly accessible): the
-innermost scope, which is searched first, contains the local names,
-the middle scope, searched next, contains the current module's global
-names, and the outermost scope (searched last) is the namespace
-containing built-in names.
+At any time during execution, there are at least three nested scopes whose
+namespaces are directly accessible: the innermost scope, which is searched
+first, contains the local names; the namespaces of any enclosing code
+blocks (a module, function, or class definition) which are searched starting
+with the nearest enclosing scope; the middle scope, searched next, contains
+the current module's global names; and the outermost scope (searched last)
+is the namespace containing built-in names.
+
+If a name is declared global, then all references and assignments go
+directly to the middle scope containing the module's global names.
+Otherwise, all variables found outside of the innermost scope are read-only.
 
 Usually, the local scope references the local names of the (textually)
 current function.  Outside of functions, the local scope references
