@@ -499,27 +499,39 @@ MacOS_EnableAppswitch(PyObject *self, PyObject *args)
 	return Py_BuildValue("i", old);
 }
 
+static char setevh_doc[] = "Set python event handler to be called in mainloop";
+
+static PyObject *
+MacOS_SetEventHandler(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	PyObject *evh = NULL;
+	
+	if (!PyArg_ParseTuple(args, "|O", &evh))
+		return NULL;
+	if (evh == Py_None)
+		evh = NULL;
+	if ( evh && !PyCallable_Check(evh) ) {
+		PyErr_SetString(PyExc_ValueError, "SetEventHandler argument must be callable");
+		return NULL;
+	}
+	if ( !PyMac_SetEventHandler(evh) )
+		return NULL;
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 static char handleev_doc[] = "Pass event to other interested parties like sioux";
 
 static PyObject *
 MacOS_HandleEvent(PyObject *self, PyObject *args)
 {
 	EventRecord ev;
-	static int inhere;
 	
-	/*
-	** With HandleEvent and SetEventHandler we have a chance of recursive
-	** calls. We check that here (for lack of a better place)
-	*/
-	if ( inhere ) {
-		PyErr_SetString(PyExc_RuntimeError, "Recursive call to MacOS.HandleEvent");
-		return NULL;
-	}
 	if (!PyArg_ParseTuple(args, "O&", PyMac_GetEventRecord, &ev))
 		return NULL;
-	inhere = 1;
-	PyMac_HandleEvent(&ev, 1);
-	inhere = 0;
+	PyMac_HandleEventIntern(&ev);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -658,6 +670,7 @@ static PyMethodDef MacOS_Methods[] = {
 #endif
 	{"SchedParams",			MacOS_SchedParams,	1,	schedparams_doc},
 	{"EnableAppswitch",		MacOS_EnableAppswitch,	1,	appswitch_doc},
+	{"SetEventHandler",		MacOS_SetEventHandler,	1,	setevh_doc},
 	{"HandleEvent",			MacOS_HandleEvent,	1,	handleev_doc},
 	{"GetErrorString",		MacOS_GetErrorString,	1,	geterr_doc},
 	{"openrf",			MacOS_openrf, 		1, 	openrf_doc},
