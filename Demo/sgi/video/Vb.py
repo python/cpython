@@ -118,7 +118,7 @@ class VideoBagOfTricks:
 		self.in_maxmem.set_input('1.0')
 		self.in_nframes.set_input('0')
 		self.in_nframes_vcr.set_input('1')
-		self.in_sleeptime.set_input('1.0')
+		self.in_rate_vcr.set_input('1')
 		# Audio defaults
 		self.aout = None
 		self.aport = None
@@ -200,6 +200,13 @@ class VideoBagOfTricks:
 	def reset(self):
 		self.close_video()
 		self.close_audio()
+		if self.vcr:
+			try:
+				ok = self.vcr.still()
+			except VCR.error:
+				pass
+			self.vcr = None
+		self.b_capture.set_button(0)
 
 	# Event handler (catches resize of video window)
 
@@ -277,7 +284,7 @@ class VideoBagOfTricks:
 	def cb_nframes_vcr(self, *args):
 		pass
 
-	def cb_sleeptime(self, *args):
+	def cb_rate_vcr(self, *args):
 		pass
 
 	# Audio controls: format, file
@@ -319,6 +326,7 @@ class VideoBagOfTricks:
 		self.reset()
 
 	def cb_play(self, *args):
+		self.reset()
 		sts = os.system('Vplay -q ' + self.vfile + ' &')
 
 	def cb_quit(self, *args):
@@ -411,7 +419,9 @@ class VideoBagOfTricks:
 		self.stop_audio()
 		self.capturing = 0
 		self.end_cont()
-		self.reset()
+		if self.aout:
+			# If recording audio, can't capture multiple sequences
+			self.reset()
 		self.b_capture.label = saved_label
 
 	def single_capture(self):
@@ -436,22 +446,66 @@ class VideoBagOfTricks:
 			try:
 				self.vcr = VCR.VCR().init()
 				self.vcr.wait()
-				self.vcr.fmmode('dnr')
+				if not (self.vcr.fmmode('dnr') and \
+					  self.vcr.dmcontrol('digital slow')):
+					self.vcr_error('digital slow failed')
+					return
 			except VCR.error, msg:
 				self.vcr = None
-				self.b_capture.set_button(0)
-				fl.show_message('VCR error', str(msg), '')
+				self.vcr_error(msg)
 				return
-		count = self.getint(self.in_nframes_vcr, 1)
-		if count <= 0: count = 1
-		sleeptime = self.getfloat(self.in_sleeptime, 1.0)
-		for i in range(count):
-			if i > 0:
-				time.sleep(sleeptime)
-			if not self.single_capture():
+		if not self.vcr.still():
+			self.vcr_error('still failed')
+			return
+		# XXX for some reason calling where() too often hangs the VCR,
+		# XXX so we insert sleep(0.1) before every sense() call.
+		self.open_if_closed()
+		rate = self.getint(self.in_rate_vcr, 1)
+		rate = max(rate, 1)
+		self.speed_factor = rate
+		addr = self.vcr.sense()
+		if not self.single_capture():
+			return
+		print 'captured %02d:%02d:%02d:%02d' % self.vcr.addr2tc(addr)
+		count = self.getint(self.in_nframes_vcr, 1) - 1
+		if count <= 0:
+			while rate > 0:
+				if not self.vcr.step():
+					self.vcr_error('step failed')
+				here = self.vcr.sense()
+				if here > addr:
+					rate = rate - (here - addr)
+				addr = here
+			return
+		if not self.vcr.fwdshuttle(2):	# one tenth speed
+			self.vcr_error('fwd shuttle failed')
+			return
+		cycle = 0
+		while count > 0:
+			time.sleep(0.1)
+			try:
+				here = self.vcr.sense()
+			except VCR.error, msg:
+				self.vcr_error(msg)
 				break
-			if not self.vcr.step():
-				break
+			if here <> addr:
+				if here <> addr+1:
+					print 'Missed', here-addr-1,
+					print 'frame' + 's'*(here-addr-1 <> 1)
+				cycle = (cycle+1) % rate
+				if cycle == 0:
+					if not self.single_capture():
+						break
+					print 'captured %02d:%02d:%02d:%02d' \
+						  % self.vcr.addr2tc(here)
+					count = count -1
+				addr = here
+		if self.vcr and not self.vcr.still():
+			self.vcr_error('still failed')
+
+	def vcr_error(self, msg):
+		self.reset()
+		fl.show_message('VCR error:', str(msg), '')
 
 	# Init/end continuous capture mode
 
@@ -551,12 +605,14 @@ class VideoBagOfTricks:
 		vout.writeheader()
 		self.vout = vout
 		self.nframes = 0
+		self.speed_factor = 1
 		self.t_nframes.label = `self.nframes`
 
 	def write_frame(self, t, data):
+		t = t * self.speed_factor
 		if not self.vout:
 			gl.ringbell()
-			return
+			return 0
 		if self.convertor:
 			data = self.convertor(data, len(data), 1)
 		elif self.mono:
@@ -570,6 +626,7 @@ class VideoBagOfTricks:
 		try:
 			self.vout.writeframe(int(t), data, None)
 		except IOError, msg:
+			self.reset()
 			if msg == (0, 'Error 0'):
 				msg = 'disk full??'
 			fl.show_message('IOError', str(msg), '')
