@@ -1133,8 +1133,9 @@ Electric behavior is inhibited inside a string or comment."
       (set-buffer curbuf))))
 
 (defun py-postprocess-output-buffer (buf)
-  ;; Highlight exceptions found in BUF
-  (let (line file bol)
+  ;; Highlight exceptions found in BUF.  If an exception occurred
+  ;; return t, otherwise return nil.  BUF must exist.
+  (let (line file bol err-p)
     (save-excursion
       (set-buffer buf)
       (beginning-of-buffer)
@@ -1142,11 +1143,12 @@ Electric behavior is inhibited inside a string or comment."
 	(setq file (match-string 1)
 	      line (string-to-int (match-string 2))
 	      bol (py-point 'bol))
-	(py-highlight-line bol (py-point 'eol) file line))
-      (when (and py-jump-on-exception line)
-	(beep)
-	(py-jump-to-exception file line))
-      )))
+	(py-highlight-line bol (py-point 'eol) file line)))
+    (when (and py-jump-on-exception line)
+      (beep)
+      (py-jump-to-exception file line)
+      (setq err-p t))
+    err-p))
 
 
 
@@ -1263,8 +1265,10 @@ is inserted at the end.  See also the command `py-clear-queue'."
       (if (not (get-buffer py-output-buffer))
 	  (message "No output.")
 	(setq py-exception-buffer (current-buffer))
-	(py-postprocess-output-buffer py-output-buffer)
-	(pop-to-buffer py-output-buffer)
+	(let ((err-p (py-postprocess-output-buffer py-output-buffer)))
+	  (pop-to-buffer py-output-buffer)
+	  (if err-p
+	      (pop-to-buffer py-exception-buffer)))
 	))
      )))
 
