@@ -2397,45 +2397,39 @@ static struct
 {
 	char* name;
 	PyObject** exc;
-	int leaf_exc;
 }
 bltin_exc[] = {
-	{"Exception",          &PyExc_Exception,          0},
-	{"StandardError",      &PyExc_StandardError,      0},
-	{"ArithmeticError",    &PyExc_ArithmeticError,    0},
-	{"LookupError",        &PyExc_LookupError,        0},
-	{"AssertionError",     &PyExc_AssertionError,     1},
-	{"AttributeError",     &PyExc_AttributeError,     1},
-	{"EOFError",           &PyExc_EOFError,           1},
-	{"FloatingPointError", &PyExc_FloatingPointError, 1},
-	{"EnvironmentError",   &PyExc_EnvironmentError,   0},
-	{"IOError",            &PyExc_IOError,            1},
-	{"OSError",            &PyExc_OSError,            1},
-	{"ImportError",        &PyExc_ImportError,        1},
-	{"IndexError",         &PyExc_IndexError,         1},
-	{"KeyError",           &PyExc_KeyError,           1},
-	{"KeyboardInterrupt",  &PyExc_KeyboardInterrupt,  1},
-	{"MemoryError",        &PyExc_MemoryError,        1},
-	/* Note: NameError is not a leaf in exceptions.py, but unlike
-	   the other non-leafs NameError is meant to be raised directly
-	   at times -- the leaf_exc member really seems to mean something
-	   like "this is an abstract base class" when false.
-	*/
-	{"NameError",          &PyExc_NameError,          1},
-	{"OverflowError",      &PyExc_OverflowError,      1},
-	{"RuntimeError",       &PyExc_RuntimeError,       1},
- 	{"NotImplementedError",&PyExc_NotImplementedError,1},
-	{"SyntaxError",        &PyExc_SyntaxError,        1},
-	{"SystemError",        &PyExc_SystemError,        1},
-	{"SystemExit",         &PyExc_SystemExit,         1},
-	{"UnboundLocalError",  &PyExc_UnboundLocalError,  1},
-	{"UnicodeError",       &PyExc_UnicodeError,       1},
-	{"TypeError",          &PyExc_TypeError,          1},
-	{"ValueError",         &PyExc_ValueError,         1},
+	{"Exception",          &PyExc_Exception},
+	{"StandardError",      &PyExc_StandardError},
+	{"ArithmeticError",    &PyExc_ArithmeticError},
+	{"LookupError",        &PyExc_LookupError},
+	{"AssertionError",     &PyExc_AssertionError},
+	{"AttributeError",     &PyExc_AttributeError},
+	{"EOFError",           &PyExc_EOFError},
+	{"FloatingPointError", &PyExc_FloatingPointError},
+	{"EnvironmentError",   &PyExc_EnvironmentError},
+	{"IOError",            &PyExc_IOError},
+	{"OSError",            &PyExc_OSError},
+	{"ImportError",        &PyExc_ImportError},
+	{"IndexError",         &PyExc_IndexError},
+	{"KeyError",           &PyExc_KeyError},
+	{"KeyboardInterrupt",  &PyExc_KeyboardInterrupt},
+	{"MemoryError",        &PyExc_MemoryError},
+	{"NameError",          &PyExc_NameError},
+	{"OverflowError",      &PyExc_OverflowError},
+	{"RuntimeError",       &PyExc_RuntimeError},
+ 	{"NotImplementedError",&PyExc_NotImplementedError},
+	{"SyntaxError",        &PyExc_SyntaxError},
+	{"SystemError",        &PyExc_SystemError},
+	{"SystemExit",         &PyExc_SystemExit},
+	{"UnboundLocalError",  &PyExc_UnboundLocalError},
+	{"UnicodeError",       &PyExc_UnicodeError},
+	{"TypeError",          &PyExc_TypeError},
+	{"ValueError",         &PyExc_ValueError},
 #ifdef MS_WINDOWS
-	{"WindowsError",       &PyExc_WindowsError,       1},
+	{"WindowsError",       &PyExc_WindowsError},
 #endif
-	{"ZeroDivisionError",  &PyExc_ZeroDivisionError,  1},
+	{"ZeroDivisionError",  &PyExc_ZeroDivisionError},
 	{NULL, NULL}
 };
 
