@@ -25,7 +25,7 @@ install_IDE:
 		DESTDIR=$(DESTDIR) PYTHONAPPSDIR=$(PYTHONAPPSDIR)
 	# Add the extra file to the resources. This is to work around a bugs in
 	# PythonIDEMain.py in the original 2.3.
-	cp ../Tools/IDE/PythonIDEMain.py $(DESDIR)$(PYTHONAPPSDIR)/PythonIDE.app/Contents/Resources
+	cp ../Tools/IDE/PythonIDEMain.py $(DESTDIR)$(PYTHONAPPSDIR)/PythonIDE.app/Contents/Resources
 
 install_PackageManager:
 	$(MAKE) -f Makefile install_PackageManager \
