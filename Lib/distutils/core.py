@@ -120,9 +120,10 @@ class Distribution:
     # 'options' dictionary.  These aliases are for those common, essential
     # options.
     alias_options = { 'py_modules': ('build_py', 'modules'),
-                      'ext_modules': ('build_ext', 'modules'),
+                      'ext_modules': ('build_ext', 'extensions'),
                       'package': [('build_py', 'package',),
                                   ('build_ext', 'package')],
+                      'include_dirs': ('build_ext', 'include_dirs'),
 
                     }
 
@@ -624,7 +625,7 @@ class Command:
 
         if not hasattr (self, option):
             raise DistutilsOptionError, \
-                  "command %s: no such option %s" % \
+                  "command '%s': no such option '%s'" % \
                   (self.get_command_name(), option)
         if value is not None:
             setattr (self, option, value)
@@ -701,6 +702,11 @@ class Command:
         cmd_obj.set_final_options ()
 
 
+    def get_peer_option (self, command, option):
+        cmd_obj = self.distribution.find_command_obj (command)
+        return cmd_obj.get_option (option)
+
+
     def run_peer (self, command):
         """Run some other command: uses the 'run_command()' method of
            Distribution, which creates the command object if necessary
@@ -764,6 +770,13 @@ class Command:
         return util.copy_tree (infile, outfile, 
                                preserve_mode,preserve_times,preserve_symlinks,
                                update, self.distribution.verbose >= level,
+                               self.distribution.dry_run)
+
+
+    def move_file (self, src, dst, level=1):
+        """Move a file respecting verbose and dry-run flags."""
+        return util.move_file (src, dst,
+                               self.distribution.verbose >= level,
                                self.distribution.dry_run)
 
 
