@@ -93,6 +93,24 @@ PyModule_GetName(m)
 	return PyString_AsString(nameobj);
 }
 
+char *
+PyModule_GetFilename(m)
+        PyObject *m;
+{
+	PyObject *fileobj;
+	if (!PyModule_Check(m)) {
+		PyErr_BadArgument();
+		return NULL;
+	}
+	fileobj = PyDict_GetItemString(((PyModuleObject *)m)->md_dict,
+				       "__file__");
+	if (fileobj == NULL || !PyString_Check(fileobj)) {
+		PyErr_SetString(PyExc_SystemError, "module filename missing");
+		return NULL;
+	}
+	return PyString_AsString(fileobj);
+}
+
 void
 _PyModule_Clear(m)
 	PyObject *m;
@@ -159,13 +177,22 @@ static PyObject *
 module_repr(m)
 	PyModuleObject *m;
 {
-	char buf[100];
-	char *name = PyModule_GetName((PyObject *)m);
+	char buf[400];
+	char *name;
+	char *filename;
+	name = PyModule_GetName((PyObject *)m);
 	if (name == NULL) {
 		PyErr_Clear();
 		name = "?";
 	}
-	sprintf(buf, "<module '%.80s'>", name);
+	filename = PyModule_GetFilename((PyObject *)m);
+	if (filename == NULL) {
+		PyErr_Clear();
+		sprintf(buf, "<module '%.80s' (built-in)>", name);
+	} else {
+		sprintf(buf, "<module '%.80s' from '%.255s'>", name, filename);
+	}
+
 	return PyString_FromString(buf);
 }
 
