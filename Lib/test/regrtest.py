@@ -14,7 +14,7 @@ Command line options:
 -x: exclude   -- arguments are tests to *exclude*
 -s: single    -- run only a single test (see below)
 -r: random    -- randomize test execution order
--l: findleaks -- if GC is available detect and print cyclic garbage
+-l: findleaks -- if GC is available detect tests that leak memory
 --have-resources   -- run tests that require large resources (time/space)
 
 If non-option arguments are present, they are names for tests to run,
@@ -92,10 +92,13 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         try:
             import gc
         except ImportError:
-            print 'cycle garbage collection not available'
+            print 'No GC available, disabling findleaks.'
             findleaks = 0
         else:
-            gc.set_debug(gc.DEBUG_SAVEALL)
+            # Uncomment the line below to report garbage that is not
+            # freeable by reference counting alone.  By default only
+            # garbage that is not collectable by the GC is reported.
+            #gc.set_debug(gc.DEBUG_SAVEALL)
             found_garbage = []
 
     if single:
@@ -141,7 +144,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         if findleaks:
             gc.collect()
             if gc.garbage:
-                print "garbage:", repr(gc.garbage)
+                print "Warning: test created", len(gc.garbage),
+                print "uncollectable object(s)."
+                # move the uncollectable objects somewhere so we don't see
+                # them again
                 found_garbage.extend(gc.garbage)
                 del gc.garbage[:]
         # Unload the newly imported modules (best effort finalization)
