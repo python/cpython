@@ -4,6 +4,8 @@
 
 XXX TO DO
 
+- customize rcs command pathnames
+- recognize urls and email addresses and turn them into <A> tags
 - use cookies to keep Name/email the same
 - explanation of editing somewhere
 - various embellishments, GIFs, crosslinks, hints, etc.
@@ -23,7 +25,7 @@ XXX TO DO
 
 """
 
-import cgi, string, os
+import cgi, string, os, sys
 
 NAMEPAT = "faq??.???.htp"
 NAMEREG = "^faq\([0-9][0-9]\)\.\([0-9][0-9][0-9]\)\.htp$"
@@ -50,8 +52,9 @@ class FAQServer:
 	if key not in self.KEYS:
 	    raise AttributeError
 	try:
-	    item = self.form[key]
-	    return item.value
+	    value = self.form[key].value
+	    setattr(self, key, value)
+	    return value
 	except KeyError:
 	    return ''
 
@@ -339,6 +342,29 @@ class FAQServer:
 	<HR>
 	""" % name
 
+    def do_info(self):
+	name = self.name
+	headers, text = self.read(name)
+	if not headers:
+	    print "Invalid file name", name
+	    return
+	print '<PRE>'
+	sys.stdout.flush()
+	os.system("/depot/gnu/plat/bin/rlog -r %s </dev/null 2>&1" % self.name)
+	print '</PRE>'
+	print '<A HREF="faq.py?req=rlog&name=%s">View full rcs log</A>' % name
+
+    def do_rlog(self):
+	name = self.name
+	headers, text = self.read(name)
+	if not headers:
+	    print "Invalid file name", name
+	    return
+	print '<PRE>'
+	sys.stdout.flush()
+	os.system("/depot/gnu/plat/bin/rlog %s </dev/null 2>&1" % self.name)
+	print '</PRE>'
+
     def checkin(self):
 	import regsub, time, tempfile
 	name = self.name
@@ -517,7 +543,10 @@ class FAQServer:
 	    pre = 0
 	print '<P>'
 	if edit:
-	    print '<A HREF="faq.py?req=edit&name=%s">Edit this entry</A>' %name
+	    print """
+	    <A HREF="faq.py?req=edit&name=%s">Edit this entry</A> /
+	    <A HREF="faq.py?req=info&name=%s" TARGET=_blank>Log info</A>
+	    """ % (name, name)
 	    print '<P>'
 	print "<HR>"
 
