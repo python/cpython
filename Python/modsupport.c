@@ -28,17 +28,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 #include "import.h"
 
-#ifdef HAVE_PROTOTYPES
-#define USE_STDARG
-#endif
-
-#ifdef USE_STDARG
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-
 object *
 initmodule(name, methods)
 	char *name;
@@ -454,7 +443,7 @@ do_mkvalue(p_format, p_va)
 	case '(':
 		return do_mktuple(p_format, p_va, ')',
 				  countformat(*p_format, ')'));
-
+		
 	case 'b':
 	case 'h':
 	case 'i':
@@ -466,7 +455,7 @@ do_mkvalue(p_format, p_va)
 	case 'f':
 	case 'd':
 		return newfloatobject((double)va_arg(*p_va, double));
-
+		
 	case 'c':
 		{
 			char p[1];
@@ -532,32 +521,34 @@ object *mkvalue(char *format, ...)
 object *mkvalue(va_alist) va_dcl
 #endif
 {
-	int n;
-	char *f;
 	va_list va;
 	object* retval;
 #ifdef USE_STDARG
 	va_start(va, format);
 #else
 	char *format;
-	
 	va_start(va);
 	format = va_arg(va, char *);
 #endif
-	f = format;
-	n = countformat(f, '\0');
-	if (n < 0)
-		retval = NULL; /* Error in the format */
-	else if (n == 0) {
-		retval = None;
-		INCREF(retval);
-	}
-	else if (n == 1)
-		retval = do_mkvalue(&f, &va);
-	else
-		retval = do_mktuple(&f, &va, '\0', n);
+	retval = vmkvalue(format, va);
 	va_end(va);
-	if (retval == NULL)
-		fprintf(stderr, "format \"%s\", f \"%s\"\n", format, f);
 	return retval;
+}
+
+object *
+vmkvalue(format, va)
+	char *format;
+	va_list va;
+{
+	char *f = format;
+	int n = countformat(f, '\0');
+	if (n < 0)
+		return NULL;
+	if (n == 0) {
+		INCREF(None);
+		return None;
+	}
+	if (n == 1)
+		return do_mkvalue(&f, &va);
+	return do_mktuple(&f, &va, '\0', n);
 }

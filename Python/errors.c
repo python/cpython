@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -56,6 +56,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include "allobjects.h"
+#include "modsupport.h"
 
 #include <errno.h>
 #ifndef errno
@@ -153,13 +154,11 @@ err_errno(exc)
 		err_set(KeyboardInterrupt);
 		return NULL;
 	}
-	v = newtupleobject(2);
+	v = mkvalue("(is)", errno, strerror(errno));
 	if (v != NULL) {
-		settupleitem(v, 0, newintobject((long)errno));
-		settupleitem(v, 1, newstringobject(strerror(errno)));
+		err_setval(exc, v);
+		DECREF(v);
 	}
-	err_setval(exc, v);
-	XDECREF(v);
 	return NULL;
 }
 

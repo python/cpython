@@ -844,8 +844,10 @@ l_divmod(v, w, pdiv, pmod)
 		    (temp = (longobject *) long_sub(div, one)) == NULL) {
 			DECREF(mod);
 			DECREF(div);
+			XDECREF(one);
 			return -1;
 		}
+		DECREF(one);
 		DECREF(div);
 		div = temp;
 	}

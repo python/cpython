@@ -216,26 +216,17 @@ posix_do_stat(self, args, statfunc)
 	END_SAVE
 	if (res != 0)
 		return posix_error();
-	v = newtupleobject(10);
-	if (v == NULL)
-		return NULL;
-#define SET(i, st_member) settupleitem(v, i, newintobject((long)st.st_member))
-	SET(0, st_mode);
-	SET(1, st_ino);
-	SET(2, st_dev);
-	SET(3, st_nlink);
-	SET(4, st_uid);
-	SET(5, st_gid);
-	SET(6, st_size);
-	SET(7, st_atime);
-	SET(8, st_mtime);
-	SET(9, st_ctime);
-#undef SET
-	if (err_occurred()) {
-		DECREF(v);
-		return NULL;
-	}
-	return v;
+	v = mkvalue("(llllllllll)",
+		    (long)st.st_mode,
+		    (long)st.st_ino,
+		    (long)st.st_dev,
+		    (long)st.st_nlink,
+		    (long)st.st_uid,
+		    (long)st.st_gid,
+		    (long)st.st_size,
+		    (long)st.st_atime,
+		    (long)st.st_mtime,
+		    (long)st.st_ctime);
 }
 
 
@@ -477,21 +468,12 @@ posix_uname(self, args)
 	END_SAVE
 	if (res < 0)
 		return posix_error();
-	v = newtupleobject(5);
-	if (v == NULL)
-		return NULL;
-#define SET(i, member) settupleitem(v, i, newstringobject(u.member))
-	SET(0, sysname);
-	SET(1, nodename);
-	SET(2, release);
-	SET(3, version);
-	SET(4, machine);
-#undef SET
-	if (err_occurred()) {
-		DECREF(v);
-		return NULL;
-	}
-	return v;
+	return mkvalue("(sssss)",
+		       u.sysname,
+		       u.nodename,
+		       u.release,
+		       u.version,
+		       u.machine);
 }
 #endif /* NO_UNAME */
 

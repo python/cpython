@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -38,25 +38,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 static object *mkpwent(p)
 	struct passwd *p;
 {
-	object *v;
-	if ((v = newtupleobject(7)) == NULL)
-		return NULL;
-#define ISET(i, member) settupleitem(v, i, newintobject((long)p->member))
-#define SSET(i, member) settupleitem(v, i, newstringobject(p->member))
-	SSET(0, pw_name);
-	SSET(1, pw_passwd);
-	ISET(2, pw_uid);
-	ISET(3, pw_gid);
-	SSET(4, pw_gecos);
-	SSET(5, pw_dir);
-	SSET(6, pw_shell);
-#undef SSET
-#undef ISET
-	if (err_occurred()) {
-		DECREF(v);
-		return NULL;
-	}
-	return v;
+	return mkvalue("(ssllsss)",
+		       p->pw_name,
+		       p->pw_passwd,
+		       (long)p->pw_uid,
+		       (long)p->pw_gid,
+		       p->pw_gecos,
+		       p->pw_dir,
+		       p->pw_shell);
 }
 
 static object *pwd_getpwuid(self, args)
@@ -130,32 +119,24 @@ static object *mkgrent(p)
 {
 	object *v, *w;
 	char **member;
-	if ((v = newtupleobject(4)) == NULL)
-		return NULL;
-#define ISET(i, member) settupleitem(v, i, newintobject((long)p->member))
-#define SSET(i, member) settupleitem(v, i, newstringobject(p->member))
-	SSET(0, gr_name);
-	SSET(1, gr_passwd);
-	ISET(2, gr_gid);
-#undef SSET
-#undef ISET
-	if (err_occurred()) {
-		DECREF(v);
-		return NULL;
-	}
 	if ((w = newlistobject(0)) == NULL) {
 		DECREF(v);
 		return NULL;
 	}
-	(void) settupleitem(v, 3, w); /* Cannot fail; eats refcnt */
 	for (member = p->gr_mem; *member != NULL; member++) {
 		object *x = newstringobject(*member);
 		if (x == NULL || addlistitem(w, x) != 0) {
 			XDECREF(x);
-			DECREF(v);
+			DECREF(w);
 			return NULL;
 		}
 	}
+	v = mkvalue("(sslO)",
+		       p->gr_name,
+		       p->gr_passwd,
+		       (long)p->gr_gid,
+		       w);
+	DECREF(w);
 	return v;
 }
 

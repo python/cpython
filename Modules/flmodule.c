@@ -1,6 +1,6 @@
 /**********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -614,18 +614,12 @@ call_forms_OUTfOUTf (func, obj, args)
 	object *args;
 {
 	float f1, f2;
-	object *arg;
 	
 	if (!getnoarg(args)) return NULL;
 	
 	(*func) (obj, &f1, &f2);
-	
-	arg = newtupleobject (2);
-	if (arg == NULL) return NULL;
 
-	settupleitem (arg, 0, newfloatobject (f1));
-	settupleitem (arg, 1, newfloatobject (f2));
-	return arg;
+	return mkvalue("(ff)", f1, f2);
 }
 
 #ifdef UNUSED
@@ -966,20 +960,13 @@ get_clock(g, args)
 	object *args;
 {
 	int i0, i1, i2;
-	object *arg;
 
 	if (!getnoarg(args))
 		return NULL;
 
 	fl_get_clock (g->ob_generic, &i0, &i1, &i2);
 
-	arg = newtupleobject (3);
-	if (arg == NULL) return NULL;
-
-	settupleitem (arg, 0, newintobject (i0));
-	settupleitem (arg, 1, newintobject (i1));
-	settupleitem (arg, 2, newintobject (i2));
-	return arg;
+	return mkvalue("(iii)", i0, i1, i2);
 }
 
 static struct methodlist clock_methods[] = {
@@ -2064,11 +2051,9 @@ forms_do_or_check_forms(dummy, args, func)
 			if (my_event_callback == NULL)
 				return newintobject(-1L);
 			dev = fl_qread(&val);
-			arg = newtupleobject(2);
+			arg = mkvalue("(ih)", dev, val);
 			if (arg == NULL)
 				return NULL;
-			settupleitem(arg, 0, newintobject((long)dev));
-			settupleitem(arg, 1, newintobject((long)val));
 			res = call_object(my_event_callback, arg);
 			XDECREF(res);
 			DECREF(arg);
@@ -2085,11 +2070,9 @@ forms_do_or_check_forms(dummy, args, func)
 			INCREF(g);
 			return ((object *) g);
 		}
-		arg = newtupleobject(2);
-		INCREF(g);
-		settupleitem(arg, 0, (object *)g);
-		INCREF(g->ob_callback_arg);
-		settupleitem(arg, 1, g->ob_callback_arg);
+		arg = mkvalue("(OO)", (object *)g, g->ob_callback_arg);
+		if (arg == NULL)
+			return NULL;
 		res = call_object(g->ob_callback, arg);
 		XDECREF(res);
 		DECREF(arg);
@@ -2259,18 +2242,12 @@ forms_qread(self, args)
 	object *self;
 	object *args;
 {
-	long retval;
-	short arg1;
+	int dev;
+	short val;
 	BGN_SAVE
-	retval = fl_qread(&arg1);
+	dev = fl_qread(&val);
 	END_SAVE
-	{
-		object *v = newtupleobject(2);
-		if (v == NULL) return NULL;
-		settupleitem(v, 0, newintobject(retval));
-		settupleitem(v, 1, newintobject((long)arg1));
-		return v;
-	}
+	return mkvalue("(ih)", dev, val);
 }
 
 static object *
@@ -2336,21 +2313,12 @@ forms_getmcolor(self, args)
 {
 	int arg;
 	short r, g, b;
-	object *v;
 
 	if (!getintarg(args, &arg)) return NULL;
 
 	fl_getmcolor(arg, &r, &g, &b);
 
-	v = newtupleobject(3);
-
-	if (v == NULL) return NULL;
-
-	settupleitem(v, 0, newintobject((long)r));
-	settupleitem(v, 1, newintobject((long)g));
-	settupleitem(v, 2, newintobject((long)b));
-
-	return v;
+	return mkvalue("(hhh)", r, g, b);
 }
 
 static object *
@@ -2358,21 +2326,13 @@ forms_get_mouse(self, args)
 	object *self;
 	object *args;
 {
-	float x, y ;
-	object *v;
+	float x, y;
 
 	if (!getnoarg(args)) return NULL;
 	
 	fl_get_mouse(&x, &y);
 
-	v = newtupleobject(2);
-
-	if (v == NULL) return NULL;
-
-	settupleitem(v, 0, newfloatobject(x));
-	settupleitem(v, 1, newfloatobject(y));
-
-	return v;
+	return mkvalue("(ff)", x, y);
 }
 
 static object *

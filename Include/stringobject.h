@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -58,6 +58,7 @@ extern unsigned int getstringsize PROTO((object *));
 extern char *getstringvalue PROTO((object *));
 extern void joinstring PROTO((object **, object *));
 extern int resizestring PROTO((object **, int));
+extern object *formatstring PROTO((object *, object *));
 
 /* Macro, trading safety for speed */
 #define GETSTRINGVALUE(op) ((op)->ob_sval)
