@@ -45,6 +45,8 @@ the various releases.
     2.3             2.2.2       2002-2003   PSF         yes
     2.3.1           2.3         2002-2003   PSF         yes
     2.3.2           2.3.1       2002-2003   PSF         yes
+    2.3.3           2.3.2       2002-2003   PSF         yes
+    2.3.4           2.3.3       2004        PSF         yes
 
 Footnotes:
 
@@ -80,9 +82,9 @@ license to reproduce, analyze, test, perform and/or display publicly,
 prepare derivative works, distribute, and otherwise use Python 2.3
 alone or in any derivative version, provided, however, that PSF's
 License Agreement and PSF's notice of copyright, i.e., "Copyright (c)
-2001, 2002, 2003 Python Software Foundation; All Rights Reserved" are
-retained in Python 2.3 alone or in any derivative version prepared by
-Licensee.
+2001, 2002, 2003, 2004 Python Software Foundation; All Rights Reserved"
+are retained in Python 2.3 alone or in any derivative version prepared
+by Licensee.
 
 3. In the event Licensee prepares a derivative work that is based on
 or incorporates Python 2.3 or any part thereof, and wants to make
