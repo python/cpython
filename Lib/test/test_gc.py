@@ -272,8 +272,9 @@ def test_boom():
     # the internal "attr" attributes as a side effect.  That causes the
     # trash cycle to get reclaimed via refcounts falling to 0, thus mutating
     # the trash graph as a side effect of merely asking whether __del__
-    # exists.  This used to (before 2.3b1) crash Python.
-    expect(gc.collect(), 0, "boom")
+    # exists.  This used to (before 2.3b1) crash Python.  Now __getattr__
+    # isn't called.
+    expect(gc.collect(), 4, "boom")
     expect(len(gc.garbage), garbagelen, "boom")
 
 class Boom2:

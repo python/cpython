@@ -12,6 +12,14 @@ What's New in Python 2.3 beta 1?
 Core and builtins
 -----------------
 
+- Some horridly obscure problems were fixed involving interaction
+  between garbage collection and old-style classes with "ambitious"
+  getattr hooks.  If an old-style instance didn't have a __del__ method,
+  but did have a __getattr__ hook, and the instance became reachable
+  only from an unreachable cycle, and the hook resurrected or deleted
+  unreachable objects when asked to resolve "__del__", anything up to
+  a segfault could happen.  That's been repaired.
+
 - dict.pop now takes an optional argument specifying a default
   value to return if the key is not in the dict.  If a default is not
   given and the key is not found, a KeyError will still be raised.
@@ -77,7 +85,7 @@ Library
   return 'not a == b' rather than 'a != b'.  This gives the desired
   result for classes that define __eq__ without defining __ne__.
 
-- sgmllib now supports SGML marked sections, in particular the 
+- sgmllib now supports SGML marked sections, in particular the
   MS Office extensions.
 
 - The urllib module now offers support for the iterator protocol.
@@ -154,10 +162,10 @@ Mac
 - EasyDialogs dialogs are now movable-modal, and if the application is
   currently in the background they will ask to be moved to the foreground
   before displaying.
-  
+
 - OSA Scripting support has improved a lot, and gensuitemodule.py can now
   be used by mere mortals.
-  
+
 - The IDE (in a framework build) now includes introductory documentation
   in Apple Help Viewer format.
 
