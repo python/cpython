@@ -5170,16 +5170,14 @@ supercheck(PyTypeObject *type, PyObject *obj)
 	   This will allow using super() with a proxy for obj.
 	*/
 
-	if (PyType_Check(obj)) {
-		/* It's a new-style class */
-		if (PyType_IsSubtype((PyTypeObject *)obj, type)) {
-			Py_INCREF(obj);
-			return (PyTypeObject *)obj;
-		}
-		else
-			goto fail;
+	/* Check for first bullet above (special case) */
+	if (PyType_Check(obj) && PyType_IsSubtype((PyTypeObject *)obj, type)) {
+		Py_INCREF(obj);
+		return (PyTypeObject *)obj;
 	}
-	else if (PyType_IsSubtype(obj->ob_type, type)) {
+
+	/* Normal case */
+	if (PyType_IsSubtype(obj->ob_type, type)) {
 		Py_INCREF(obj->ob_type);
 		return obj->ob_type;
 	}
