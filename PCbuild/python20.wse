@@ -12,13 +12,17 @@ item: Global
   Log Pathname=%MAINDIR%\INSTALL.LOG
   Message Font=MS Sans Serif
   Font Size=8
-  Pages Modified=00000000001101000000000100000010
+  Pages Modified=00010000001101000000000100000010
   Extra Pages=00000000000000000000000010110010
   Disk Filename=SETUP
   Patch Flags=0000000000000001
   Patch Threshold=85
   Patch Memory=4000
   EXE Filename=Python-2.2a1.exe
+  Version File=2.2a1
+  Version Description=Python Programming Language
+  Version Copyright=©2001 Python Software Foundation
+  Version Company=PythonLabs at Zope Corporation
   Crystal Format=10111100101100000010001001001001
   Step View=&All
   Variable Name1=_WISE_
@@ -118,7 +122,7 @@ end
 item: Remark
 end
 item: Remark
-  Text=Wizard boilerplate; thpe "stop" on the next line is actually "pause"
+  Text=Wizard boilerplate; the "stop" on the next line is actually "pause"
 end
 item: Open/Close INSTALL.LOG
   Flags=00000001
