@@ -437,7 +437,9 @@ sub add_bbl_and_idx_dummy_commands {
           . "([\\\\]begin\\s*$O\\d+$C\\s*theindex)";
         s/$rx/\\textohtmlmoduleindex \1 \\textohtmlindex \2/o;
         # Add a button to the navigation areas:
-        $CUSTOM_BUTTONS .= $my_icons{'modules'};
+        $CUSTOM_BUTTONS .= ('<a href="modindex.html" title="Module Index">'
+                            . $my_icons{'modules'}
+                            . '</a>');
     }
     else {
         $CUSTOM_BUTTONS .= $BLANK_ICON;
