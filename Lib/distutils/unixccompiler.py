@@ -17,7 +17,7 @@ the "typical" Unix-style command-line C compiler:
 
 __rcsid__ = "$Id$"
 
-import string
+import string, re
 from types import *
 from sysconfig import \
      CC, CCSHARED, CFLAGS, OPT, LDSHARED, LDFLAGS, RANLIB, AR, SO
@@ -42,25 +42,35 @@ from ccompiler import CCompiler
 
 class UnixCCompiler (CCompiler):
 
-    # XXX any -I and -D options that we get from Makefile (via sysconfig)
-    # are preserved, but not treated specially: that is, they are not put
-    # in the self.include_dirs and self.macros, etc. lists that we inherit
-    # from CCompiler.  I'm not sure if this is right, wrong or indifferent,
-    # but it should probably be a documented part of the CCompiler API:
-    # ie. there are *three* kinds of include directories, those from the
-    # compiler, those from Python's Makefiles, and those supplied to
-    # {add,set}_include_dirs() -- and 'set_include_dirs()' only overrides
-    # the last kind!  I suspect the same applies to libraries and library
-    # directories -- anything else?
+    # XXX perhaps there should really be *three* kinds of include
+    # directories: those built in to the preprocessor, those from Python's
+    # Makefiles, and those supplied to {add,set}_include_dirs().  Currently
+    # we make no distinction between the latter two at this point; it's all
+    # up to the client class to select the include directories to use above
+    # and beyond the compiler's defaults.  That is, both the Python include
+    # directories and any module- or package-specific include directories
+    # are specified via {add,set}_include_dirs(), and there's no way to
+    # distinguish them.  This might be a bug.
+    
+    def __init__ (self,
+                  verbose=0,
+                  dry_run=0):
 
-    def __init__ (self):
-
-        CCompiler.__init__ (self)
+        CCompiler.__init__ (self, verbose, dry_run)
 
         self.preprocess_options = None
         self.compile_options = None
 
-        # munge CC and OPT together in case there are flags stuck in CC
+        # Munge CC and OPT together in case there are flags stuck in CC.
+        # Note that using these variables from sysconfig immediately makes
+        # this module specific to building Python extensions and
+        # inappropriate as a general-purpose C compiler front-end.  So sue
+        # me.  Note also that we use OPT rather than CFLAGS, because CFLAGS
+        # is the flags used to compile Python itself -- not only are there
+        # -I options in there, they are the *wrong* -I options.  We'll
+        # leave selection of include directories up to the class using
+        # UnixCCompiler!
+
         (self.cc, self.ccflags) = \
             _split_command (CC + ' ' + OPT)
         self.ccflags_shared = string.split (CCSHARED)
@@ -71,8 +81,13 @@ class UnixCCompiler (CCompiler):
 
     def compile (self,
                  sources,
-                 macros=[],
-                 includes=[]):
+                 macros=None,
+                 includes=None):
+
+        if macros is None:
+            macros = []
+        if includes is None:
+            includes = []
 
         if type (macros) is not ListType:
             raise TypeError, \
@@ -92,7 +107,8 @@ class UnixCCompiler (CCompiler):
                   sources
 
         # this will change to 'spawn' when I have it!
-        print string.join ([self.cc] + cc_args, ' ')
+        #print string.join ([self.cc] + cc_args, ' ')
+        self.spawn ([self.cc] + cc_args)
 
 
     # XXX punting on 'link_static_lib()' for now -- it might be better for
@@ -114,17 +130,39 @@ class UnixCCompiler (CCompiler):
     def link_shared_object (self,
                             objects,
                             output_filename,
-                            libraries=[],
-                            library_dirs=[]):
+                            libraries=None,
+                            library_dirs=None):
+
+        if libraries is None:
+            libraries = []
+        if library_dirs is None:
+            library_dirs = []
 
         lib_opts = _gen_lib_options (self.libraries + libraries,
                                      self.library_dirs + library_dirs)
         ld_args = self.ldflags_shared + lib_opts + \
                   objects + ['-o', output_filename]
 
-        print string.join ([self.ld_shared] + ld_args, ' ')
-        
-                                        
+        #print string.join ([self.ld_shared] + ld_args, ' ')
+        self.spawn ([self.ld_shared] + ld_args)
+
+
+    def object_filenames (self, source_filenames):
+        outnames = []
+        for inname in source_filenames:
+            outnames.append (re.sub (r'\.(c|C|cc|cxx)$', '.o', inname))
+        return outnames
+
+    def shared_object_filename (self, source_filename):
+        return re.sub (r'\.(c|C|cc|cxx)$', SO)
+
+    def library_filename (self, libname):
+        return "lib%s.a" % libname
+
+    def shared_library_filename (self, libname):
+        return "lib%s.so" % libname
+
+
 # class UnixCCompiler
 
 
