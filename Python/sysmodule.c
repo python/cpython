@@ -54,6 +54,8 @@ Data members:
 
 #ifdef MS_COREDLL
 extern void *PyWin_DLLhModule;
+/* A string loaded from the DLL at startup: */
+extern const char *PyWin_DLLVersionString;
 #endif
 
 PyObject *
@@ -319,7 +321,7 @@ _PySys_Init()
 			     v = PyInt_FromLong((int)PyWin_DLLhModule));
 	Py_XDECREF(v);
 	PyDict_SetItemString(sysdict, "winver",
-			     v = PyString_FromString(MS_DLL_ID));
+			     v = PyString_FromString(PyWin_DLLVersionString));
 	Py_XDECREF(v);
 #endif
 	if (PyErr_Occurred())
