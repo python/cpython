@@ -10,7 +10,3 @@ If you wish, I have no objections to redistributing it in whole or in part, modi
 
 Christopher Stern
 cistern@earthlink.net
-
-Note by Jack:
-	Also check out the BBPy contributed software, which allows you to execute
-	Python code from within BBEdit.
