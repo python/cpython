@@ -867,9 +867,9 @@ def unquote(s):
 				myappend(mychr(myatoi(item[:2], 16))
 					 + item[2:])
 			except:
-				myappend(item)
+				myappend('%' + item)
 		else:
-			myappend(item)
+			myappend('%' + item)
 	return string.join(res, "")
 
 def unquote_plus(s):
