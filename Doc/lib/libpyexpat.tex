@@ -257,6 +257,26 @@ Column number at which an error occurred.
 Line number at which an error occurred.
 \end{memberdesc}
 
+The following attributes contain values relating to the current parse
+location in an \class{xmlparser} object.  During a callback reporting
+a parse event they indicate the location of the first of the sequence
+of characters that generated the event.  When called outside of a
+callback, the position indicated will be just past the last parse
+event (regardless of whether there was an associated callback).
+\versionadded{2.4}
+
+\begin{memberdesc}[xmlparser]{CurrentByteIndex} 
+Current byte index in the parser input.
+\end{memberdesc} 
+
+\begin{memberdesc}[xmlparser]{CurrentColumnNumber} 
+Current column number in the parser input.
+\end{memberdesc}
+
+\begin{memberdesc}[xmlparser]{CurrentLineNumber}
+Current line number in the parser input.
+\end{memberdesc}
+
 Here is the list of handlers that can be set.  To set a handler on an
 \class{xmlparser} object \var{o}, use
 \code{\var{o}.\var{handlername} = \var{func}}.  \var{handlername} must

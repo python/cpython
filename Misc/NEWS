@@ -54,6 +54,9 @@ Extension modules
 
 - Added socket.socketpair().
 
+- Added CurrentByteIndex, CurrentColumnNumber, CurrentLineNumber
+  members to xml.parsers.expat.XMLParser object.
+
 Library
 -------
 
