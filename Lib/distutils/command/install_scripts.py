@@ -49,7 +49,7 @@ class install_scripts (Command):
             # all the scripts we just installed.
             for file in self.get_outputs():
                 if self.dry_run:
-                    log.info("changing mode of %s to %o", file, mode)
+                    log.info("changing mode of %s", file)
                 else:
                     mode = ((os.stat(file)[ST_MODE]) | 0111) & 07777
                     log.info("changing mode of %s to %o", file, mode)
