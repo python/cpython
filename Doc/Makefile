@@ -155,9 +155,7 @@ LIBFILES = lib.tex \
     libhtmllib.tex libsgmllib.tex librfc822.tex libmimetools.tex \
     libbinascii.tex libmm.tex libaudioop.tex libimageop.tex libaifc.tex \
     libjpeg.tex librgbimg.tex libcrypto.tex libmd5.tex libmpz.tex \
-    librotor.tex libmac.tex libctb.tex libmacconsole.tex libmacdnr.tex \
-    libmacfs.tex libmacos.tex libmacostools.tex libmactcp.tex \
-    libmacspeech.tex libmacui.tex libstdwin.tex libsgi.tex libal.tex \
+    librotor.tex libstdwin.tex libsgi.tex libal.tex \
     libcd.tex libfl.tex libfm.tex libgl.tex libimgfile.tex libsun.tex \
     libxdrlib.tex libimghdr.tex \
     librestricted.tex librexec.tex libbastion.tex \
@@ -166,11 +164,15 @@ LIBFILES = lib.tex \
     libuser.tex libanydbm.tex librandom.tex libsite.tex libwhichdb.tex \
     libbase64.tex libfnmatch.tex libquopri.tex libzlib.tex libsocksvr.tex \
     libmailbox.tex libcommands.tex libcmath.tex libni.tex libgzip.tex \
-    libpprint.tex libcode.tex libmimify.tex libre.tex libmacic.tex \
+    libpprint.tex libcode.tex libmimify.tex libre.tex \
     libuserdict.tex libdis.tex libxmllib.tex libqueue.tex \
     liblocale.tex libbasehttp.tex libcopyreg.tex libsymbol.tex libtoken.tex \
     libframework.tex libminiae.tex libbinhex.tex libuu.tex libsunaudio.tex \
     libfileinput.tex libimaplib.tex
+
+MACLIBFILES = mac.tex libmac.tex libctb.tex libmacconsole.tex \
+    libmacdnr.tex libmacfs.tex libmacos.tex libmacostools.tex \
+    libmactcp.tex libmacspeech.tex libmacui.tex libmacic.tex 
 
 # Library document
 lib.dvi: tools/indfix.py $(LIBFILES)
@@ -208,7 +210,7 @@ tut.dvi: tut.tex
 # and makeinfo can't handle a group without a leading @command.  But at
 # least the info file gets generated.
 
-lib1.texi: $(LIBFILES) texipre.dat texipost.dat $(PARTPARSEOBJ)
+lib1.texi: $(LIBFILES) texipre.dat texipost.dat tools/partparse.py
 	$(PARTPARSE) -o $@ `tools/whichlibs`
 	sed 's/"{\\}n{\\}n/"\\n\\n/' $@ >temp.texi
 	mv temp.texi $@
