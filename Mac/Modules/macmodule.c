@@ -411,6 +411,37 @@ mac_stat(self, args)
 }
 
 static object *
+mac_xstat(self, args)
+	object *self;
+	object *args;
+{
+	struct macstat st;
+	char *path;
+	int res;
+	if (!getargs(args, "s", &path))
+		return NULL;
+	BGN_SAVE
+	res = macstat(path, &st);
+	END_SAVE
+	if (res != 0)
+		return mac_error();
+	return mkvalue("(llllllllllls#s#)",
+		    (long)st.st_mode,
+		    (long)st.st_ino,
+		    (long)st.st_dev,
+		    (long)st.st_nlink,
+		    (long)st.st_uid,
+		    (long)st.st_gid,
+		    (long)st.st_size,
+		    (long)st.st_atime,
+		    (long)st.st_mtime,
+		    (long)st.st_ctime,
+		    (long)st.st_rsize,
+		    st.st_creator, 4,
+		    st.st_type, 4);
+}
+
+static object *
 mac_sync(self, args)
 	object *self;
 	object *args;
@@ -454,7 +485,6 @@ mac_write(self, args)
 }
 #endif /* !__MWERKS__ */
 
-#undef MALLOC_DEBUG
 #ifdef MALLOC_DEBUG
 static object *
 mac_mstats(self, args)
@@ -492,6 +522,7 @@ static struct methodlist mac_methods[] = {
 	{"rename",	mac_rename},
 	{"rmdir",	mac_rmdir},
 	{"stat",	mac_stat},
+	{"xstat",	mac_xstat},
 	{"sync",	mac_sync},
 	{"unlink",	mac_unlink},
 #ifndef CW4
