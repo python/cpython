@@ -1,7 +1,10 @@
 % Format this file with latex.
 
-%\documentstyle[11pt,myformat]{article}
-\documentstyle[palatino,11pt,myformat]{article}
+\documentstyle[myformat]{report}		% To preview with xdvi
+
+% Support to leave changebars in...
+\newcommand{\cbstart}{}
+\newcommand{\cbend}{}
 
 % A command to force the text after an item to start on a new line
 \newcommand{\itembreak}{
@@ -57,8 +60,10 @@ gives a more formal definition of the language.
 
 \pagenumbering{arabic}
 
-\input{mod1.tex}
-\input{mod2.tex}
-\input{mod3.tex}
+\input{lib1.tex}	% intro; built-in types, functions and exceptions
+\input{lib2.tex}	% built-in modules
+\input{lib3.tex}	% standard modules
+\input{lib4.tex}	% OS-dependent appendixes
+\input{lib5.tex}	% Graphics appendixes
 
 \end{document}
