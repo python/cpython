@@ -329,6 +329,7 @@ libainstall:	all
 		$(INSTALL_DATA) $(LIBRARY) $(LIBPL)/$(LIBRARY)
 		$(RANLIB) $(LIBPL)/$(LIBRARY)
 		$(INSTALL_DATA) Modules/config.c $(LIBPL)/config.c
+		$(INSTALL_DATA) Modules/python.o $(LIBPL)/python.o
 		$(INSTALL_DATA) $(srcdir)/Modules/config.c.in $(LIBPL)/config.c.in
 		$(INSTALL_DATA) Modules/Makefile $(LIBPL)/Makefile
 		$(INSTALL_DATA) Modules/Setup $(LIBPL)/Setup
