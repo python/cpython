@@ -80,7 +80,8 @@ class ConfigDialog(Toplevel):
     
     def ChangePage(self):
         self.pages[self.pageNum.get()].lift()
-        self.title('Settings - '+self.pageButtons[self.pageNum.get()].cget('text'))
+        self.title('Settings - '+
+                self.pageButtons[self.pageNum.get()].cget('text'))
 
     def ChangePageBinding(self,event):
         pageKeys=('f','h','k','g')
@@ -406,8 +407,78 @@ class ConfigDialog(Toplevel):
         return frame
 
     def CreatePageGeneral(self):
+        #tkVars        
+        self.runType=IntVar()       
+        self.winWidth=StringVar()       
+        self.winHeight=StringVar()
+        self.extState=IntVar()       
+        #widget creation
+        #body
         frame=Frame(self.framePages,borderwidth=2,relief=SUNKEN)
-        Button(frame,text='general page test').pack(padx=110,pady=110)
+        #body section frames        
+        frameRun=Frame(frame,borderwidth=2,relief=GROOVE)
+        frameWinSize=Frame(frame,borderwidth=2,relief=GROOVE)
+        frameExt=Frame(frame,borderwidth=2,relief=GROOVE)
+        #frameRun
+        labelRunTitle=Label(frameRun,text='Run Preferences')
+        labelRunChoiceTitle=Label(frameRun,text='Run code : ')
+        radioRunInternal=Radiobutton(frameRun,variable=self.runType,
+            value=0,command=self.SetKeysType,text="in IDLE's Process")
+        radioRunSeparate=Radiobutton(frameRun,variable=self.runType,
+            value=1,command=self.SetKeysType,text='in a Separate Process')
+        #frameWinSize
+        labelWinSizeTitle=Label(frameWinSize,text='Initial Window Size')
+        buttonWinSizeSet=Button(frameWinSize,text='Set to current window size')
+        labelWinWidthTitle=Label(frameWinSize,text='Width')
+        entryWinWidth=Entry(frameWinSize,textvariable=self.winWidth,
+                width=3)
+        labelWinHeightTitle=Label(frameWinSize,text='Height')
+        entryWinHeight=Entry(frameWinSize,textvariable=self.winHeight,
+                width=3)
+        #frameExt
+        frameExtList=Frame(frameExt)
+        frameExtSet=Frame(frameExt)
+        labelExtTitle=Label(frameExt,text='Configure IDLE Extensions')
+        labelExtListTitle=Label(frameExtList,text='Extension')
+        scrollExtList=Scrollbar(frameExtList)
+        listExt=Listbox(frameExtList,height=5)
+        labelExtSetTitle=Label(frameExtSet,text='Settings')
+        radioEnableExt=Radiobutton(frameExtSet,variable=self.extState,
+            value=1,text="enable")
+        radioDisableExt=Radiobutton(frameExtSet,variable=self.extState,
+            value=0,text="disable")
+        self.extState.set(1)
+        buttonExtConfig=Button(frameExtSet,text='Configure')
+        
+        #widget packing
+        #body
+        frameRun.pack(side=TOP,padx=5,pady=5,fill=X)
+        frameWinSize.pack(side=TOP,padx=5,pady=5,fill=X)
+        frameExt.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=BOTH)
+        #frameRun
+        labelRunTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
+        labelRunChoiceTitle.pack(side=LEFT,anchor=W,padx=5,pady=5)
+        radioRunInternal.pack(side=LEFT,anchor=W,padx=5,pady=5)
+        radioRunSeparate.pack(side=LEFT,anchor=W,padx=5,pady=5)     
+        #frameWinSize
+        labelWinSizeTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
+        buttonWinSizeSet.pack(side=LEFT,anchor=W,padx=5,pady=5)
+        labelWinWidthTitle.pack(side=LEFT,anchor=W,padx=5,pady=5)
+        entryWinWidth.pack(side=LEFT,anchor=W,padx=5,pady=5)
+        labelWinHeightTitle.pack(side=LEFT,anchor=W,padx=5,pady=5)
+        entryWinHeight.pack(side=LEFT,anchor=W,padx=5,pady=5)
+        #frameExt
+        labelExtTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
+        frameExtSet.pack(side=RIGHT,padx=5,pady=5,fill=Y)
+        frameExtList.pack(side=RIGHT,padx=5,pady=5,expand=TRUE,fill=BOTH)
+        labelExtListTitle.pack(side=TOP,anchor=W)
+        scrollExtList.pack(side=RIGHT,anchor=W,fill=Y)
+        listExt.pack(side=LEFT,anchor=E,expand=TRUE,fill=BOTH)
+        labelExtSetTitle.pack(side=TOP,anchor=W)
+        radioEnableExt.pack(side=TOP,anchor=W)
+        radioDisableExt.pack(side=TOP,anchor=W)
+        buttonExtConfig.pack(side=TOP,anchor=W,pady=5)
+
         return frame
 
 if __name__ == '__main__':
