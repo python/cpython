@@ -537,8 +537,7 @@ class install (Command):
     # -- Reporting methods ---------------------------------------------
 
     def get_outputs (self):
-        # This command doesn't have any outputs of its own, so just
-        # get the outputs of all its sub-commands.
+        # Assemble the outputs of all the sub-commands.
         outputs = []
         for cmd_name in self.get_sub_commands():
             cmd = self.get_finalized_command(cmd_name)
@@ -548,6 +547,10 @@ class install (Command):
                 if filename not in outputs:
                     outputs.append(filename)
 
+        if self.path_file and self.install_path_file:
+            outputs.append(os.path.join(self.install_libbase,
+                                        self.path_file + ".pth"))
+            
         return outputs
 
     def get_inputs (self):
