@@ -1,3 +1,14 @@
+What's Fixed in Python 2.0.1
+============================
+
+Critical Patches (from MoinMoin)
+
+- Core dumps in _tkinter
+
+Fixes to bugs reported on SourceForge
+
+- #117278, #117167: _tkinter
+
 What's New in Python 2.0?
 =========================
 
