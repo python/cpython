@@ -2,9 +2,10 @@
 
 import unittest
 import macostools
+import macfs
 import MacOS
 import os
-import tempfile
+import sys
 from test import test_support
 
 TESTFN2 = test_support.TESTFN + '2'
@@ -59,6 +60,24 @@ class TestMacostools(unittest.TestCase):
             pass
         macostools.copy(test_support.TESTFN, TESTFN2)
         self.assertEqual(self.compareData(), '')
+        
+    def test_mkalias(self):
+        try:
+            os.unlink(TESTFN2)
+        except:
+            pass
+        macostools.mkalias(test_support.TESTFN, TESTFN2)
+        fss, _, _ = macfs.ResolveAliasFile(TESTFN2)
+        self.assertEqual(fss.as_pathname(), os.path.abspath(test_support.TESTFN))
+        
+    def test_mkalias_relative(self):
+        try:
+            os.unlink(TESTFN2)
+        except:
+            pass
+        macostools.mkalias(test_support.TESTFN, TESTFN2, sys.prefix)
+        fss, _, _ = macfs.ResolveAliasFile(TESTFN2)
+        self.assertEqual(fss.as_pathname(), os.path.abspath(test_support.TESTFN))
         
     
 def test_main():
