@@ -162,10 +162,10 @@ initstuff = initstuff + """
 
 module = MacModule('AE', 'AE', includestuff, finalstuff, initstuff)
 
-class AEDescDefiniton(ObjectDefinition):
+class AEDescDefinition(GlobalObjectDefinition):
 
 	def __init__(self, name, prefix = None, itselftype = None):
-		ObjectDefinition.__init__(self, name, prefix or name, itselftype or name)
+		GlobalObjectDefinition.__init__(self, name, prefix or name, itselftype or name)
 		self.argref = "*"
 
 	def outputFreeIt(self, name):
@@ -192,7 +192,7 @@ if (strcmp(name, "__members__") == 0)
 """)
 
 
-aedescobject = AEDescDefiniton('AEDesc')
+aedescobject = AEDescDefinition('AEDesc')
 module.addobject(aedescobject)
 
 functions = []
