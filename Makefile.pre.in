@@ -366,10 +366,10 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 		$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/Resources/version.plist
 	$(INSTALL_DATA) $(RESSRCDIR)/English.lproj/InfoPlist.strings \
 		$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/Resources/English.lproj/InfoPlist.strings
-	$(LN) -fsh $(VERSION) $(PYTHONFRAMEWORKDIR)/Versions/Current
-	$(LN) -fsh Versions/Current/Python $(PYTHONFRAMEWORKDIR)/Python
-	$(LN) -fsh Versions/Current/Headers $(PYTHONFRAMEWORKDIR)/Headers
-	$(LN) -fsh Versions/Current/Resources $(PYTHONFRAMEWORKDIR)/Resources
+	$(LN) -fsn $(VERSION) $(PYTHONFRAMEWORKDIR)/Versions/Current
+	$(LN) -fsn Versions/Current/Python $(PYTHONFRAMEWORKDIR)/Python
+	$(LN) -fsn Versions/Current/Headers $(PYTHONFRAMEWORKDIR)/Headers
+	$(LN) -fsn Versions/Current/Resources $(PYTHONFRAMEWORKDIR)/Resources
 
 # This rule builds the Cygwin Python DLL
 libpython$(VERSION).dll.a: $(LIBRARY_OBJS)
@@ -785,15 +785,15 @@ frameworkinfrastructureinstall:	$(LDLIBRARY)
 		else	true; \
 		fi; \
 	done
-	$(LN) -sf $(INCLUDEPY) $(FRAMEWORKFINALDEST)/Headers
+	$(LN) -fsn include/python$(VERSION) $(FRAMEWORKFINALDEST)/Headers
 	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist $(FRAMEWORKFINALDEST)/Resources/Info.plist
 	$(INSTALL_DATA) $(RESSRCDIR)/version.plist $(FRAMEWORKFINALDEST)/Resources/version.plist
 	$(INSTALL_DATA) $(RESSRCDIR)/English.lproj/InfoPlist.strings \
 		$(FRAMEWORKFINALDEST)/Resources/English.lproj/InfoPlist.strings
-	$(LN) -fsh $(VERSION) $(PYTHONFRAMEWORKINSTALLDIR)/Versions/Current
-	$(LN) -fsh Versions/Current/Python $(PYTHONFRAMEWORKINSTALLDIR)/Python
-	$(LN) -fsh Versions/Current/Headers $(PYTHONFRAMEWORKINSTALLDIR)/Headers
-	$(LN) -fsh Versions/Current/Resources $(PYTHONFRAMEWORKINSTALLDIR)/Resources
+	$(LN) -fsn $(VERSION) $(PYTHONFRAMEWORKINSTALLDIR)/Versions/Current
+	$(LN) -fsn Versions/Current/Python $(PYTHONFRAMEWORKINSTALLDIR)/Python
+	$(LN) -fsn Versions/Current/Headers $(PYTHONFRAMEWORKINSTALLDIR)/Headers
+	$(LN) -fsn Versions/Current/Resources $(PYTHONFRAMEWORKINSTALLDIR)/Resources
 	$(INSTALL_DATA) $(LDLIBRARY) $(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
 
 # Build Python executable that can run GUI code. Another MacOSX pseudo
