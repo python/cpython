@@ -17,9 +17,17 @@ AC_PROG_RANLIB
 AC_SUBST(AR)
 AC_CHECK_PROGS(AR, ar aal, ar)
 AC_SUBST(INSTALL)
+AC_SUBST(INSTALL_PROGRAM)
+AC_SUBST(INSTALL_DATA)
 # Install just never works :-(
 if test -z "$INSTALL"
-then INSTALL=cp
+then
+	INSTALL=cp
+	INSTALL_PROGRAM=cp
+	INSTALL_DATA=cp
+else
+	INSTALL_PROGRAM="$INSTALL"
+	INSTALL_DATA="$INSTALL -m 644"
 fi
 AC_SUBST(OPT)
 # Optimizer/debugger flags passed between Makefiles
@@ -96,6 +104,7 @@ then
 	SunOS/4*) LDSHARED="ld";;
 	SunOS/5*) LDSHARED="ld -G";;
 	hp*|HP*) LDSHARED="ld -b";;
+	DYNIX/ptx*) LDSHARED="ld -G";;
 	*)	LDSHARED="ld";;
 	esac
 fi
@@ -302,6 +311,22 @@ LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
 AC_CHECK_FUNCS(hypot)
 LIBS=$LIBS_SAVE
+
+# check for getopt
+AC_MSG_CHECKING(for genuine getopt)
+AC_CACHE_VAL(ac_cv_func_getopt,
+[AC_TRY_RUN([#include <stdio.h>
+extern int optind, opterr, getopt();
+extern char* optarg;
+int main() {
+	char* av[] = { "testprog", "parameter", "-fFlag", NULL };
+	opterr = 0;
+	if (getopt(3, av, "f:") == 'f') { exit(1); }
+	exit(0);
+}], ac_cv_func_getopt=yes, ac_cv_func_getopt=no, ac_cv_func_getopt=no)])dnl
+AC_MSG_RESULT($ac_cv_func_getopt)
+test $ac_cv_func_getopt = no && LIBOBJS="$LIBOBJS getopt.o"
+AC_SUBST(LIBOBJS)dnl
 
 # generate output files
 AC_OUTPUT(Makefile Objects/Makefile Parser/Makefile Python/Makefile Modules/Makefile.pre)
