@@ -709,17 +709,19 @@ class PseudoFile:
         return 1
 
 usage_msg = """\
-usage: idle.py [-c command] [-d] [-e] [-s] [-t title] [arg] ...
+usage: idle.py [-c command] [-d] [-i] [-r script] [-s] [-t title] [arg] ...
 
--c command  run this command
--d          enable debugger
--e          edit mode; arguments are files to be edited
--s          run $IDLESTARTUP or $PYTHONSTARTUP before anything else
--t title    set title of shell window
+idle file(s)    (without options) edit the file(s)
 
-When neither -c nor -e is used, and there are arguments, and the first
-argument is not '-', the first argument is run as a script.  Remaining
-arguments are arguments to the script or to the command run by -c.
+-c cmd     run the command in a shell
+-d         enable the debugger
+-i         open an interactive shell
+-i file(s) open a shell and also an editor window for each file
+-r script  run a file as a script in a shell
+-s         run $IDLESTARTUP or $PYTHONSTARTUP before anything else
+-t title   set title of shell window
+
+Remaining arguments are applied to the command (-c) or script (-r).
 """
 
 class usageError:
@@ -781,29 +783,34 @@ class main:
         cmd = None
         edit = 0
         debug = 0
+        interactive = 0
+        script = None
         startup = 0
     
         try:
-            opts, args = getopt.getopt(argv, "c:deist:")
+            opts, args = getopt.getopt(argv, "c:dir:st:")
         except getopt.error, msg:
             sys.stderr.write("Error: %s\n" % str(msg))
             sys.stderr.write(usage_msg)
             sys.exit(2)
     
         for o, a in opts:
-            noshell = 0
+            noshell = 0    # There are options, bring up a shell
             if o == '-c':
                 cmd = a
             if o == '-d':
                 debug = 1
-            if o == '-e':
-                edit = 1
+            if o == '-i':
+                interactive = 1
+            if o == '-r':
+                script = a
             if o == '-s':
                 startup = 1
             if o == '-t':
                 PyShell.shell_title = a
     
         if noshell: edit=1
+        if interactive and args and args[0] != "-": edit = 1
     
         for i in range(len(sys.path)):
             sys.path[i] = os.path.abspath(sys.path[i])
@@ -860,9 +867,11 @@ class main:
               shell.open_debugger()
           if cmd:
               interp.execsource(cmd)
-          elif not edit and args and args[0] != "-":
-              interp.execfile(args[0])
-      
+          elif script:
+             if os.path.isfile(script):
+                 interp.execfile(script)
+             else:
+                 print "No script file: ", script
           shell.begin()
 
         self.idle()
