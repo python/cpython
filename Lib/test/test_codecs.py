@@ -332,13 +332,18 @@ class NameprepTest(unittest.TestCase):
                 except Exception,e:
                     raise test_support.TestFailed("Test 3.%d: %s" % (pos+1, str(e)))
 
+class CodecTest(unittest.TestCase):
+    def test_builtin(self):
+        self.assertEquals(unicode("python.org", "idna"), u"python.org")
+
 def test_main():
     test_support.run_unittest(
         UTF16Test,
         EscapeDecodeTest,
         RecodingTest,
         PunycodeTest,
-        NameprepTest
+        NameprepTest,
+	CodecTest
     )
 
 
