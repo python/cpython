@@ -37,16 +37,16 @@ test_1 = """
 Here's the new type at work:
 
     >>> print defaultdict               # show our type
-    <type 'test_descrtut.defaultdict'>
+    <type 'test.test_descrtut.defaultdict'>
     >>> print type(defaultdict)         # its metatype
     <type 'type'>
     >>> a = defaultdict(default=0.0)    # create an instance
     >>> print a                         # show the instance
     {}
     >>> print type(a)                   # show its type
-    <type 'test_descrtut.defaultdict'>
+    <type 'test.test_descrtut.defaultdict'>
     >>> print a.__class__               # show its class
-    <type 'test_descrtut.defaultdict'>
+    <type 'test.test_descrtut.defaultdict'>
     >>> print type(a) is a.__class__    # its type is its class
     1
     >>> a[1] = 3.25                     # modify the instance
@@ -269,19 +269,19 @@ implicit first argument that is the *class* for which they are invoked.
     ...     foo = classmethod(foo)
 
     >>> C.foo(1)
-    classmethod test_descrtut.C 1
+    classmethod test.test_descrtut.C 1
     >>> c = C()
     >>> c.foo(1)
-    classmethod test_descrtut.C 1
+    classmethod test.test_descrtut.C 1
 
     >>> class D(C):
     ...     pass
 
     >>> D.foo(1)
-    classmethod test_descrtut.D 1
+    classmethod test.test_descrtut.D 1
     >>> d = D()
     >>> d.foo(1)
-    classmethod test_descrtut.D 1
+    classmethod test.test_descrtut.D 1
 
 This prints "classmethod __main__.D 1" both times; in other words, the
 class passed as the first argument of foo() is the class involved in the
@@ -297,11 +297,11 @@ But notice this:
 
     >>> E.foo(1)
     E.foo() called
-    classmethod test_descrtut.C 1
+    classmethod test.test_descrtut.C 1
     >>> e = E()
     >>> e.foo(1)
     E.foo() called
-    classmethod test_descrtut.C 1
+    classmethod test.test_descrtut.C 1
 
 In this example, the call to C.foo() from E.foo() will see class C as its
 first argument, not class E. This is to be expected, since the call
@@ -485,14 +485,8 @@ __test__ = {"tut1": test_1,
 # Note that doctest and regrtest both look in sys.argv for a "-v" argument,
 # so this works as expected in both ways of running regrtest.
 def test_main():
-    import doctest, test_descrtut
-    if 0:   # change to 1 to run forever (to check for leaks)
-        while 1:
-            doctest.master = None
-            doctest.testmod(test_descrtut)
-            print ".",
-    else:
-        doctest.testmod(test_descrtut)
+    import doctest, test.test_descrtut
+    doctest.testmod(test.test_descrtut)
 
 # This part isn't needed for regrtest, but for running the test directly.
 if __name__ == "__main__":
