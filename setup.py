@@ -510,6 +510,7 @@ class PyBuildExt(build_ext):
                             dblibs = [dblib]
                             raise found
         except found:
+            dblibs = [dblib]
             # A default source build puts Berkeley DB in something like
             # /usr/local/Berkeley.3.3 and the lib dir under that isn't
             # normally on ld.so's search path, unless the sysadmin has hacked
@@ -524,33 +525,42 @@ class PyBuildExt(build_ext):
                                       runtime_library_dirs=[dblib_dir],
                                       include_dirs=db_incs,
                                       define_macros=[('HAVE_DB_185_H',1)],
-                                      libraries=[dblib]))
+                                      libraries=dblibs))
             else:
                 exts.append(Extension('bsddb', ['bsddbmodule.c'],
                                       library_dirs=[dblib_dir],
                                       runtime_library_dirs=[dblib_dir],
                                       include_dirs=db_incs,
-                                      libraries=[dblib]))
+                                      libraries=dblibs))
         else:
             db_incs = None
             dblibs = []
             dblib_dir = None
 
         # The standard Unix dbm module:
-        if platform not in ['cygwin', 'mac']:
-            if (self.compiler.find_library_file(lib_dirs, 'ndbm')):
+        if platform not in ['cygwin']:
+            if (self.compiler.find_library_file(lib_dirs, 'ndbm')
+                and find_file("ndbm.h", inc_dirs, []) is not None):
                 exts.append( Extension('dbm', ['dbmmodule.c'],
+                                       define_macros=[('HAVE_NDBM_H',None)],
                                        libraries = ['ndbm'] ) )
-            elif self.compiler.find_library_file(lib_dirs, 'gdbm'):
+            elif (platform in ['darwin']
+                and find_file("ndbm.h", inc_dirs, []) is not None):
+                # Darwin has ndbm in libc
                 exts.append( Extension('dbm', ['dbmmodule.c'],
+                                       define_macros=[('HAVE_NDBM_H',None)]) )
+            elif (self.compiler.find_library_file(lib_dirs, 'gdbm')
+                  and find_file("gdbm/ndbm.h", inc_dirs, []) is not None):
+                exts.append( Extension('dbm', ['dbmmodule.c'],
+                                       define_macros=[('HAVE_GDBM_NDBM_H',None)],
                                        libraries = ['gdbm'] ) )
             elif db_incs is not None:
                 exts.append( Extension('dbm', ['dbmmodule.c'],
-                                       library_dirs=dblib_dir,
+                                       library_dirs=[dblib_dir],
                                        include_dirs=db_incs,
+                                       define_macros=[('HAVE_BERKDB_H',None),
+                                                      ('DB_DBM_HSEARCH',None)],
                                        libraries=dblibs))
-            else:
-                exts.append( Extension('dbm', ['dbmmodule.c']) )
 
         # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
         if (self.compiler.find_library_file(lib_dirs, 'gdbm')):
@@ -712,32 +722,34 @@ class PyBuildExt(build_ext):
             exts.append( Extension('sunaudiodev', ['sunaudiodev.c']) )
 
         if platform == 'darwin':
-            # Mac OS X specific modules. These are ported over from MacPython
-            # and still experimental. Some (such as gestalt or icglue) are
-            # already generally useful, some (the GUI ones) really need to
-            # be used from a framework.
+            # Mac OS X specific modules. Modules linked against the Carbon
+            # framework are only built for framework-enabled Pythons. As
+            # of MacOSX 10.1 importing the Carbon framework from a non-windowing
+            # application (MacOSX server, not logged in on the console) may
+            # result in Python crashing.
             #
             # I would like to trigger on WITH_NEXT_FRAMEWORK but that isn't
             # available here. This Makefile variable is also what the install
             # procedure triggers on.
-            frameworkdir = sysconfig.get_config_var('PYTHONFRAMEWORKDIR')
-            exts.append( Extension('gestalt', ['gestaltmodule.c'],
-                    	extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('MacOS', ['macosmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('icglue', ['icgluemodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('macfs',
-                                   ['macfsmodule.c',
-                                    '../Python/getapplbycreator.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('_CF', ['cf/_CFmodule.c', 'cf/pycfbridge.c'],
                         extra_link_args=['-framework', 'CoreFoundation']) )
-            exts.append( Extension('_Res', ['res/_Resmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Snd', ['snd/_Sndmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-            if frameworkdir:
+
+            framework = sysconfig.get_config_var('PYTHONFRAMEWORK')
+            if framework:
+                exts.append( Extension('gestalt', ['gestaltmodule.c'],
+                            extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('MacOS', ['macosmodule.c'],
+                            extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('icglue', ['icgluemodule.c'],
+                            extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('macfs',
+                                       ['macfsmodule.c',
+                                        '../Python/getapplbycreator.c'],
+                            extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_Res', ['res/_Resmodule.c'],
+                            extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_Snd', ['snd/_Sndmodule.c'],
+                            extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('Nav', ['Nav.c'],
                         extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_AE', ['ae/_AEmodule.c'],
@@ -789,7 +801,7 @@ class PyBuildExt(build_ext):
                 waste_incs = find_file("WASTE.h", [], 
                         ['../'*n + 'waste/C_C++ Headers' for n in (0,1,2,3,4)])
                 waste_libs = find_library_file(self.compiler, "WASTE", [],
-			["../"*n + "waste/Static Libraries" for n in (0,1,2,3,4)])
+            [           "../"*n + "waste/Static Libraries" for n in (0,1,2,3,4)])
                 if waste_incs != None and waste_libs != None:
                     (srcdir,) = sysconfig.get_config_vars('srcdir')
                     exts.append( Extension('waste',
