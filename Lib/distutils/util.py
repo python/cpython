@@ -62,24 +62,73 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
 # mkpath ()
 
 
-def newer (file1, file2):
-    """Return true if file1 exists and is more recently modified than
-       file2, or if file1 exists and file2 doesn't.  Return false if both
-       exist and file2 is the same age or younger than file1.  Raises
-       DistutilsFileError if file1 does not exist."""
+def newer (source, target):
+    """Return true if 'source' exists and is more recently modified than
+       'target', or if 'source' exists and 'target' doesn't.  Return
+       false if both exist and 'target' is the same age or younger than
+       'source'.  Raise DistutilsFileError if 'source' does not
+       exist."""
 
-    if not os.path.exists (file1):
-        raise DistutilsFileError, "file '%s' does not exist" % file1
-    if not os.path.exists (file2):
+    if not os.path.exists (source):
+        raise DistutilsFileError, "file '%s' does not exist" % source
+    if not os.path.exists (target):
         return 1
 
-    from stat import *
-    mtime1 = os.stat(file1)[ST_MTIME]
-    mtime2 = os.stat(file2)[ST_MTIME]
+    from stat import ST_MTIME
+    mtime1 = os.stat(source)[ST_MTIME]
+    mtime2 = os.stat(target)[ST_MTIME]
 
     return mtime1 > mtime2
 
 # newer ()
+
+
+def newer_pairwise (sources, targets):
+
+    """Walk two filename lists in parallel, testing if each 'target' is
+       up-to-date relative to its corresponding 'source'.  If so, both
+       are deleted from their respective lists.  Return a list of tuples
+       containing the deleted (source,target) pairs."""
+
+    if len (sources) != len (targets):
+        raise ValueError, "'sources' and 'targets' must be same length"
+
+    goners = []
+    for i in range (len (sources)-1, -1, -1):
+        if not newer (sources[i], targets[i]):
+            goners.append ((sources[i], targets[i]))
+            del sources[i]
+            del targets[i]
+    goners.reverse()
+    return goners
+
+# newer_pairwise ()
+
+
+def newer_group (sources, target):
+    """Return true if 'target' is out-of-date with respect to any
+       file listed in 'sources'.  In other words, if 'target' exists and
+       is newer than every file in 'sources', return false; otherwise
+       return true."""
+
+    # If the target doesn't even exist, then it's definitely out-of-date.
+    if not os.path.exists (target):
+        return 1
+   
+    # Otherwise we have to find out the hard way: if *any* source file
+    # is more recent than 'target', then 'target' is out-of-date and
+    # we can immediately return true.  If we fall through to the end
+    # of the loop, then 'target' is up-to-date and we return false.
+    from stat import ST_MTIME
+    target_mtime = os.stat (target)[ST_MTIME]
+    for source in sources:
+        source_mtime = os.stat(source)[ST_MTIME]
+        if source_mtime > target_mtime:
+            return 1
+    else:
+        return 0
+
+# newer_group ()
 
 
 def make_file (src, dst, func, args,
@@ -176,7 +225,7 @@ def copy_file (src, dst,
 
     if not os.path.isfile (src):
         raise DistutilsFileError, \
-              "can't copy %s:not a regular file" % src
+              "can't copy %s: not a regular file" % src
 
     if os.path.isdir (dst):
         dir = dst
@@ -237,14 +286,17 @@ def copy_tree (src, dst,
        (the default), the destination of the symlink will be copied.
        'update' and 'verbose' are the same as for 'copy_file'."""
 
-    if not os.path.isdir (src):
+    if not dry_run and not os.path.isdir (src):
         raise DistutilsFileError, \
               "cannot copy tree %s: not a directory" % src    
     try:
         names = os.listdir (src)
     except os.error, (errno, errstr):
-        raise DistutilsFileError, \
-              "error listing files in %s: %s" % (src, errstr)
+        if dry_run:
+            names = []
+        else:
+            raise DistutilsFileError, \
+                  "error listing files in %s: %s" % (src, errstr)
 
     if not dry_run:
         mkpath (dst, verbose=verbose)
@@ -277,3 +329,68 @@ def copy_tree (src, dst,
     return outputs
 
 # copy_tree ()
+
+
+# XXX I suspect this is Unix-specific -- need porting help!
+def move_file (src, dst,
+               verbose=0,
+               dry_run=0):
+
+    """Move a file 'src' to 'dst'.  If 'dst' is a directory, the file
+       will be moved into it with the same name; otherwise, 'src' is
+       just renamed to 'dst'.  Return the new full name of the file.
+
+       Handles cross-device moves on Unix using
+       'copy_file()'.  What about other systems???"""
+
+    from os.path import exists, isfile, isdir, basename, dirname
+
+    if verbose:
+        print "moving %s -> %s" % (src, dst)
+
+    if dry_run:
+        return dst
+
+    if not isfile (src):
+        raise DistutilsFileError, \
+              "can't move '%s': not a regular file" % src
+
+    if isdir (dst):
+        dst = os.path.join (dst, basename (src))
+    elif exists (dst):
+        raise DistutilsFileError, \
+              "can't move '%s': destination '%s' already exists" % \
+              (src, dst)
+
+    if not isdir (dirname (dst)):
+        raise DistutilsFileError, \
+              "can't move '%s': destination '%s' not a valid path" % \
+              (src, dst)
+
+    copy_it = 0
+    try:
+        os.rename (src, dst)
+    except os.error, (num, msg):
+        if num == errno.EXDEV:
+            copy_it = 1
+        else:
+            raise DistutilsFileError, \
+                  "couldn't move '%s' to '%s': %s" % (src, dst, msg)
+
+    if copy_it:
+        copy_file (src, dst)
+        try:
+            os.unlink (src)
+        except os.error, (num, msg):
+            try:
+                os.unlink (dst)
+            except os.error:
+                pass
+            raise DistutilsFileError, \
+                  ("couldn't move '%s' to '%s' by copy/delete: " + 
+                   "delete '%s' failed: %s") % \
+                  (src, dst, src, msg)
+
+    return dst
+
+# move_file ()
