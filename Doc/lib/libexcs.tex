@@ -7,14 +7,17 @@
 Exceptions can be class objects or string objects.  While
 traditionally, most exceptions have been string objects, in Python
 1.5, all standard exceptions have been converted to class objects,
-and users are encouraged to the the same.  The source code for those
+and users are encouraged to do the same.  The source code for those
 exceptions is present in the standard library module
 \module{exceptions}; this module never needs to be imported explicitly.
 
 For backward compatibility, when Python is invoked with the \code{-X}
-option, the standard exceptions are strings.  This may be needed to
-run some code that breaks because of the different semantics of class
-based exceptions.  The \code{-X} option will become obsolete in future
+option, most of the standard exceptions are strings\footnote{For
+forward-compatibility the new exceptions \code{LookupError},
+\code{ArithmeticError}, \code{EnvironmentError}, and
+\code{StandardError} are tuples.}.  This option may be used to
+run code that breaks because of the different semantics of class based
+exceptions.  The \code{-X} option will become obsolete in future
 Python versions, so the recommended solution is to fix the code.
 
 Two distinct string objects with the same value are considered different
@@ -41,11 +44,11 @@ information (e.g., an error code and a string explaining the code).
 The associated value is the second argument to the \keyword{raise}
 statement.  For string exceptions, the associated value itself will be
 stored in the variable named as the second argument of the
-\keyword{except} clause (if any).  For class exceptions derived from
-the root class \exception{Exception}, that variable receives the exception
-instance, and the associated value is present as the exception
-instance's \member{args} attribute; this is a tuple even if the second
-argument to \keyword{raise} was not (then it is a singleton tuple).
+\keyword{except} clause (if any).  For class exceptions, that variable
+receives the exception instance.  If the exception class is derived
+from the standard root class \exception{Exception}, the associated
+value is present as the exception instance's \member{args} attribute,
+and possibly on other attributes as well.
 \stindex{raise}
 
 User code can raise built-in exceptions.  This can be used to test an
@@ -68,7 +71,8 @@ function, when applied to an instance of this class (or most derived
 classes) returns the string value of the argument or arguments, or an
 empty string if no arguments were given to the constructor.  When used
 as a sequence, this accesses the arguments given to the constructor
-(handy for backward compatibility with old code).
+(handy for backward compatibility with old code).  The arguments are
+also available on the instance's \code{args} attribute, as a tuple.
 \end{excdesc}
 
 \begin{excdesc}{StandardError}
@@ -84,9 +88,32 @@ various arithmetic errors: \exception{OverflowError},
 \end{excdesc}
 
 \begin{excdesc}{LookupError}
-The base class for thise exceptions that are raised when a key or
+The base class for the exceptions that are raised when a key or
 index used on a mapping or sequence is invalid: \exception{IndexError},
 \exception{KeyError}.
+\end{excdesc}
+
+\begin{excdesc}{EnvironmentError}
+The base class for exceptions that
+can occur outside the Python system: \exception{IOError},
+\exception{OSError}.  When exceptions of this type are created with a
+2-tuple, the first item is available on the instance's \member{errno}
+attribute (it is assumed to be an error number), and the second item
+is available on the \member{strerror} attribute (it is usually the
+associated error message).  The tuple itself is also available on the
+\member{args} attribute.
+
+When an \exception{EnvironmentError} exception is instantiated with a
+3-tuple, the first two items are available as above, while the third
+item is available on the \member{filename} attribute.  However, for
+backwards compatibility, the \member{args} attribute contains only a
+2-tuple of the first two constructor arguments.
+
+The \member{filename} attribute is \code{None} when this exception is
+created with other than 3 arguments.  The \member{errno} and
+\member{strerror} attributes are also \code{None} when the instance was
+created with other than 2 or 3 arguments.  In this last case,
+\member{args} contains the verbatim constructor arguments as a tuple.
 \end{excdesc}
 
 \setindexsubitem{(built-in exception)}
@@ -114,7 +141,7 @@ Raised when an \keyword{assert} statement fails.
   reading any data.
 % XXXJH xrefs here
   (N.B.: the \method{read()} and \method{readline()} methods of file
-  objects return an empty string when they hit \EOF{}.)  No associated value.
+  objects return an empty string when they hit \EOF{}.)
 \end{excdesc}
 
 \begin{excdesc}{FloatingPointError}
@@ -126,15 +153,13 @@ symbol is defined in the \file{config.h} file.
 
 \begin{excdesc}{IOError}
 % XXXJH xrefs here
+<<<<<<< libexcs.tex
   Raised when an I/O operation (such as a \keyword{print} statement, the
   built-in \function{open()} function or a method of a file object) fails
   for an I/O-related reason, e.g., ``file not found'' or ``disk full''.
 
-When class exceptions are used, and this exception is instantiated as
-\code{IOError(errno, strerror)}, the instance has two additional
-attributes \member{errno} and \member{strerror} set to the error code and
-the error message, respectively.  These attributes default to
-\code{None}.
+This class is derived \exception{EnvironmentError}.  See the discussion
+above for more information on exception instance attributes.
 \end{excdesc}
 
 \begin{excdesc}{ImportError}
@@ -164,7 +189,7 @@ the error message, respectively.  These attributes default to
 % XXXJH xrefs here
   Interrupts typed when a built-in function \function{input()} or
   \function{raw_input()}) is waiting for input also raise this
-  exception.  This exception has no associated value.
+  exception.
 \end{excdesc}
 
 \begin{excdesc}{MemoryError}
@@ -182,6 +207,14 @@ the error message, respectively.  These attributes default to
   Raised when a local or global name is not found.  This applies only
   to unqualified names.  The associated value is the name that could
   not be found.
+\end{excdesc}
+
+\begin{excdesc}{OSError}
+  %xref for os module
+  This class is derived from \begin{EnvironmentError} and is used
+  primarily as the by the \code{os} module's \code{os.error}
+  exception.  See the \begin{EnvironmentError} above for a description
+  of the possible associated values.
 \end{excdesc}
 
 \begin{excdesc}{OverflowError}
