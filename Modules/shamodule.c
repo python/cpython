@@ -422,14 +422,22 @@ SHA_hexdigest(SHAobject *self, PyObject *args)
 
     /* Create a new string */
     retval = PyString_FromStringAndSize(NULL, sizeof(digest) * 2);
+    if (!retval)
+	    return NULL;
     hex_digest = PyString_AsString(retval);
+    if (!hex_digest) {
+	    Py_DECREF(retval);
+	    return NULL;
+    }
 
     /* Make hex version of the digest */
     for(i=j=0; i<sizeof(digest); i++) {
         char c;
-        c = digest[i] / 16; c = (c>9) ? c+'a'-10 : c + '0';
+        c = (digest[i] >> 4) & 0xf;
+	c = (c>9) ? c+'a'-10 : c + '0';
         hex_digest[j++] = c;
-        c = digest[i] % 16; c = (c>9) ? c+'a'-10 : c + '0';
+        c = (digest[i] & 0xf);
+	c = (c>9) ? c+'a'-10 : c + '0';
         hex_digest[j++] = c;
     }
     return retval;
