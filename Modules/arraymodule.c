@@ -935,8 +935,15 @@ array_fromfile(self, args)
 		char *item = self->ob_item;
 		int itemsize = self->ob_descr->itemsize;
 		int nread;
-		PyMem_RESIZE(item, char, (self->ob_size + n) * itemsize);
+		int newlength;
+		size_t newbytes;
+		/* Be careful here about overflow */
+		if ((newlength = self->ob_size + n) <= 0 ||
+		    (newbytes = newlength * itemsize) / itemsize != newlength)
+			goto nomem;
+		PyMem_RESIZE(item, char, newbytes);
 		if (item == NULL) {
+		  nomem:
 			PyErr_NoMemory();
 			return NULL;
 		}
