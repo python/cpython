@@ -153,6 +153,8 @@ class Header:
         """
         if charset is None:
             charset = USASCII
+        if not isinstance(charset, Charset):
+            charset = Charset(charset)
         self._charset = charset
         self._continuation_ws = continuation_ws
         cws_expanded_len = len(continuation_ws.replace('\t', SPACE8))
@@ -233,14 +235,21 @@ class Header:
         self._chunks.append((s, charset))
 
     def _split(self, s, charset, firstline=False):
-        # Split up a header safely for use with encode_chunks.  BAW: this
-        # appears to be a private convenience method.
+        # Split up a header safely for use with encode_chunks.
         splittable = charset.to_splittable(s)
         encoded = charset.from_splittable(splittable)
         elen = charset.encoded_header_len(encoded)
 
         if elen <= self._maxlinelen:
             return [(encoded, charset)]
+        # If we have undetermined raw 8bit characters sitting in a byte
+        # string, we really don't know what the right thing to do is.  We
+        # can't really split it because it might be multibyte data which we
+        # could break if we split it between pairs.  The least harm seems to
+        # be to not split the header at all, but that means they could go out
+        # longer than maxlinelen.
+        elif charset == '8bit':
+            return [(s, charset)]
         # BAW: I'm not sure what the right test here is.  What we're trying to
         # do is be faithful to RFC 2822's recommendation that ($2.2.3):
         #
