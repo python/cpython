@@ -281,7 +281,7 @@ PyLocale_strxfrm(self,args)
   PyObject* args;
 {
   char *s,*buf;
-  int n1,n2;
+  size_t n1,n2;
   PyObject *result;
   if(!PyArg_ParseTuple(args,"s:strxfrm",&s))
      return NULL;
