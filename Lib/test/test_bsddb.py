@@ -5,8 +5,7 @@
 import os
 import bsddb
 import dbhash # Just so we know it's imported
-import tempfile
-from test.test_support import verbose, verify
+from test.test_support import verbose, verify, TESTFN
 
 def test(openmethod, what, ondisk=1):
 
@@ -14,7 +13,7 @@ def test(openmethod, what, ondisk=1):
         print '\nTesting: ', what, (ondisk and "on disk" or "in memory")
 
     if ondisk:
-        fname = tempfile.mktemp()
+        fname = TESTFN
     else:
         fname = None
     f = openmethod(fname, 'c')

@@ -11,7 +11,7 @@ import anydbm
 import tempfile
 import glob
 
-_fname = tempfile.mktemp()
+_fname = test.test_support.TESTFN
 
 def _delete_files():
     # we don't know the precise name the underlying database uses

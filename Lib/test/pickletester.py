@@ -1,5 +1,5 @@
 import unittest
-from test.test_support import TestFailed, have_unicode
+from test.test_support import TestFailed, have_unicode, TESTFN
 
 class C:
     def __cmp__(self, other):
@@ -269,17 +269,19 @@ class AbstractPickleTests(unittest.TestCase):
 class AbstractPickleModuleTests(unittest.TestCase):
 
     def test_dump_closed_file(self):
-        import tempfile, os
-        fn = tempfile.mktemp()
-        f = open(fn, "w")
-        f.close()
-        self.assertRaises(ValueError, self.module.dump, 123, f)
-        os.remove(fn)
+        import os
+        f = open(TESTFN, "w")
+        try:
+            f.close()
+            self.assertRaises(ValueError, self.module.dump, 123, f)
+        finally:
+            os.remove(TESTFN)
 
     def test_load_closed_file(self):
-        import tempfile, os
-        fn = tempfile.mktemp()
-        f = open(fn, "w")
-        f.close()
-        self.assertRaises(ValueError, self.module.dump, 123, f)
-        os.remove(fn)
+        import os
+        f = open(TESTFN, "w")
+        try:
+            f.close()
+            self.assertRaises(ValueError, self.module.dump, 123, f)
+        finally:
+            os.remove(TESTFN)

@@ -1203,8 +1203,8 @@ def getpager():
         return lambda text: pipepager(text, 'less')
 
     import tempfile
-    filename = tempfile.mktemp()
-    open(filename, 'w').close()
+    (fd, filename) = tempfile.mkstemp()
+    os.close(fd)
     try:
         if hasattr(os, 'system') and os.system('more %s' % filename) == 0:
             return lambda text: pipepager(text, 'more')
@@ -1229,8 +1229,8 @@ def pipepager(text, cmd):
 def tempfilepager(text, cmd):
     """Page through text by invoking a program on a temporary file."""
     import tempfile
-    filename = tempfile.mktemp()
-    file = open(filename, 'w')
+    (fd, filename) = tempfile.mkstemp()
+    file = os.fdopen(fd, 'w')
     file.write(text)
     file.close()
     try:

@@ -24,10 +24,17 @@ class CommandTests(unittest.TestCase):
         self.assertEquals(getoutput('echo xyzzy'), 'xyzzy')
         self.assertEquals(getstatusoutput('echo xyzzy'), (0, 'xyzzy'))
 
-        # we use mktemp in the next line to get a filename which we
-        # _know_ won't exist.  This is guaranteed to fail.
-        status, output = getstatusoutput('cat ' + tempfile.mktemp())
-        self.assertNotEquals(status, 0)
+        # we use mkdtemp in the next line to create an empty directory
+        # under our exclusive control; from that, we can invent a pathname
+        # that we _know_ won't exist.  This is guaranteed to fail.
+        try:
+            dir = tempfile.mkdtemp()
+            name = os.path.join(dir, "foo")
+
+            status, output = getstatusoutput('cat ' + name)
+            self.assertNotEquals(status, 0)
+        finally:
+            os.rmdir(dir)
 
     def test_getstatus(self):
         # This pattern should match 'ls -ld /.' on any posix

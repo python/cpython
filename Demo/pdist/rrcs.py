@@ -102,17 +102,13 @@ def diff(x, copts, fn):
 		flags = flags + ' ' + o + a
 	flags = flags[1:]
 	data = x.get(fn)
-	tfn = tempfile.mktemp()
-	try:
-		tf = open(tfn, 'w')
-		tf.write(data)
-		tf.close()
-		print 'diff %s -r%s %s' % (flags, x.head(fn), fn)
-		sts = os.system('diff %s %s %s' % (flags, tfn, fn))
-		if sts:
-			print '='*70
-	finally:
-		remove(tfn)
+	tf = tempfile.NamedTemporaryFile()
+	tf.write(data)
+	tf.flush()
+	print 'diff %s -r%s %s' % (flags, x.head(fn), fn)
+	sts = os.system('diff %s %s %s' % (flags, tf.name, fn))
+	if sts:
+		print '='*70
 
 def same(x, copts, fn, data = None):
 	if data is None:

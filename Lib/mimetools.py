@@ -202,8 +202,8 @@ def pipeto(input, command):
     pipe.close()
 
 def pipethrough(input, command, output):
-    tempname = tempfile.mktemp()
-    temp = open(tempname, 'w')
+    (fd, tempname) = tempfile.mkstemp()
+    temp = os.fdopen(fd, 'w')
     copyliteral(input, temp)
     temp.close()
     pipe = os.popen(command + ' <' + tempname, 'r')

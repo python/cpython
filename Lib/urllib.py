@@ -212,19 +212,21 @@ class URLopener:
                 pass
         fp = self.open(url, data)
         headers = fp.info()
-        if not filename:
+        if filename:
+            tfp = open(filename, 'wb')
+        else:
             import tempfile
             garbage, path = splittype(url)
             garbage, path = splithost(path or "")
             path, garbage = splitquery(path or "")
             path, garbage = splitattr(path or "")
             suffix = os.path.splitext(path)[1]
-            filename = tempfile.mktemp(suffix)
+            (fd, filename) = tempfile.mkstemp(suffix)
             self.__tempfiles.append(filename)
+            tfp = os.open(fd, 'wb')
         result = filename, headers
         if self.tempcache is not None:
             self.tempcache[url] = result
-        tfp = open(filename, 'wb')
         bs = 1024*8
         size = -1
         blocknum = 1

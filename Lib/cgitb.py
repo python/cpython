@@ -193,10 +193,10 @@ class Hook:
 
         if self.logdir is not None:
             import os, tempfile
-            name = tempfile.mktemp(['.html', '.txt'][text])
-            path = os.path.join(self.logdir, os.path.basename(name))
+            (fd, name) = tempfile.mkstemp(suffix=['.html', '.txt'][text],
+                                          dir=self.logdir)
             try:
-                file = open(path, 'w')
+                file = os.fdopen(fd, 'w')
                 file.write(doc)
                 file.close()
                 msg = '<p> %s contains the description of this error.' % path

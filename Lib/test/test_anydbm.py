@@ -6,11 +6,10 @@
 import os
 import unittest
 import anydbm
-import tempfile
 import glob
 from test import test_support
 
-_fname = tempfile.mktemp()
+_fname = test_support.TESTFN
 
 def _delete_files():
     # we don't know the precise name the underlying database uses

@@ -8,12 +8,10 @@ import test.pystone
 
 if sys.argv[1:]:
     logfile = sys.argv[1]
-    cleanup = 0
 else:
     import tempfile
-    logfile = tempfile.mktemp()
-    cleanup = 1
-
+    logf = tempfile.NamedTemporaryFile()
+    logfile = logf.name
 
 p = hotshot.Profile(logfile)
 benchtime, stones = p.runcall(test.pystone.pystones)
@@ -24,8 +22,6 @@ print "Pystone(%s) time for %d passes = %g" % \
 print "This machine benchmarks at %g pystones/second" % stones
 
 stats = hotshot.stats.load(logfile)
-if cleanup:
-    os.unlink(logfile)
 stats.strip_dirs()
 stats.sort_stats('time', 'calls')
 try:
