@@ -41,9 +41,13 @@ PERFORMANCE OF THIS SOFTWARE.
 ** routine, origin unknown.
 */
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <Types.h>
 #include <Files.h>
 #include <Errors.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 #include "getapplbycreator.h"
 
 
