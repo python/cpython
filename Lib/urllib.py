@@ -452,7 +452,7 @@ def unquote(s):
 		i = j+3
 	return res
 
-always_safe = string.letters + string.digits + '_,.+-'
+always_safe = string.letters + string.digits + '_,.-'
 def quote(s, safe = '/'):
 	safe = always_safe + safe
 	res = ''

@@ -1,3 +1,5 @@
+# THIS IS OBSOLETE -- USE MODULE 'compileall' INSTEAD!
+
 # Utility module to import all modules in the path, in the hope
 # that this will update their ".pyc" files.
 
