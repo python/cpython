@@ -1132,6 +1132,9 @@ zero.  This will be automatic for most classes implemented in Python
 (care may be needed for objects that override attribute access); types
 implemented in C will have to provide a writable
 \member{softspace} attribute.
+\strong{Note:}  This attribute is not used to control the
+\keyword{print} statement, but to allow the implementation of
+\keyword{print} to keep track of its internal state.
 \end{memberdesc}
 
 \subsubsection{Internal Objects \label{typesinternal}}
