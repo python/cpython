@@ -53,6 +53,11 @@ def parseString(string, handler, errorHandler=ErrorHandler()):
 
 default_parser_list = ["xml.sax.expatreader"]
 
+# tell modulefinder that importing sax potentially imports expatreader
+_false = 0
+if _false:
+    import xml.sax.expatreader
+
 import os, string, sys
 if os.environ.has_key("PY_SAX_PARSER"):
     default_parser_list = string.split(os.environ["PY_SAX_PARSER"], ",")

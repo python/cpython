@@ -575,6 +575,12 @@ def make_encoding_map(decoding_map):
             m[v] = None
     return m
 
+# Tell modulefinder that using codecs probably needs the encodings
+# package
+_false = 0
+if _false:
+    import encodings
+
 ### Tests
 
 if __name__ == '__main__':
