@@ -213,6 +213,7 @@ typedef int pid_t;
 #ifndef USE_DL_EXPORT
 /* So nobody needs to specify the .lib in their Makefile any more */
 #ifdef _DEBUG
+#define Py_DEBUG
 #pragma comment(lib,"python15_d.lib")
 #else
 #pragma comment(lib,"python15.lib")
@@ -377,6 +378,9 @@ typedef int pid_t;
 
 /* Define if you have clock.  */
 /* #define HAVE_CLOCK */
+
+/* Define when any dynamic module loading is enabled */
+#define HAVE_DYNAMIC_LOADING
 
 /* Define if you have ftime.  */
 #define HAVE_FTIME
