@@ -396,9 +396,10 @@ def NamedTemporaryFile(mode='w+b', bufsize=-1, suffix="",
     closed.
     """
 
-    bin = 'b' in mode
-    if bin: flags = _bin_openflags
-    else:   flags = _text_openflags
+    if 'b' in mode:
+        flags = _bin_openflags
+    else:
+        flags = _text_openflags
 
     # Setting O_TEMPORARY in the flags causes the OS to delete
     # the file when it is closed.  This is only supported by Windows.
@@ -428,9 +429,10 @@ else:
         exist when it is closed.
         """
 
-        bin = 'b' in mode
-        if bin: flags = _bin_openflags
-        else:   flags = _text_openflags
+        if 'b' in mode:
+            flags = _bin_openflags
+        else:
+            flags = _text_openflags
 
         (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags)
         try:
