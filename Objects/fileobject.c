@@ -239,8 +239,14 @@ _portable_fseek(FILE *fp, Py_off_t offset, int whence)
 	fpos_t pos;
 	switch (whence) {
 	case SEEK_END:
+#ifdef MS_WINDOWS
+		fflush(fp);
+		if (_lseeki64(fileno(fp), 0, 2) == -1)
+			return -1;
+#else
 		if (fseek(fp, 0, SEEK_END) != 0)
 			return -1;
+#endif
 		/* fall through */
 	case SEEK_CUR:
 		if (fgetpos(fp, &pos) != 0)
