@@ -79,7 +79,7 @@ the following operations:
          {test whether every element in \var{t} is in \var{s}}
 
   \hline
-  \lineiii{\var{s}.union(\var{t})}{\var{s} | \var{t}}
+  \lineiii{\var{s}.union(\var{t})}{\var{s} \textbar{} \var{t}}
          {new set with elements from both \var{s} and \var{t}}
   \lineiii{\var{s}.intersection(\var{t})}{\var{s} \&\ \var{t}}
          {new set with elements common to \var{s} and \var{t}}
@@ -131,7 +131,7 @@ but not found in \class{ImmutableSet}:
 
 \begin{tableiii}{c|c|l}{code}{Operation}{Equivalent}{Result}
   \lineiii{\var{s}.union_update(\var{t})}
-         {\var{s} |= \var{t}}
+         {\var{s} \textbar= \var{t}}
          {return set \var{s} with elements added from \var{t}}
   \lineiii{\var{s}.intersection_update(\var{t})}
          {\var{s} \&= \var{t}}
