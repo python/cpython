@@ -321,7 +321,7 @@ class SymbolVisitor:
             self.visit(n, scope, 0)
 
     def visitSlice(self, node, scope, assign=0):
-        self.visit(node.expr, scope, assign)
+        self.visit(node.expr, scope, 0)
         if node.lower:
             self.visit(node.lower, scope, 0)
         if node.upper:
@@ -353,7 +353,7 @@ class SymbolVisitor:
     # a yield statement signals a generator
 
     def visitYield(self, node, scope):
-        self.generator = 1
+        scope.generator = 1
         self.visit(node.value, scope)
 
 def sort(l):
