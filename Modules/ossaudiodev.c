@@ -58,29 +58,6 @@ typedef struct {
     int      fd;                      /* The open mixer device */
 } oss_mixer_t;
 
-/* XXX several format defined in soundcard.h are not supported,
-   including _NE (native endian) options and S32 options
-*/
-
-static struct {
-    int         a_bps;
-    uint32_t    a_fmt;
-    char       *a_name;
-} audio_types[] = {
-    {  8,       AFMT_MU_LAW, "logarithmic mu-law 8-bit audio" },
-    {  8,       AFMT_A_LAW,  "logarithmic A-law 8-bit audio" },
-    {  8,       AFMT_U8,     "linear unsigned 8-bit audio" },
-    {  8,       AFMT_S8,     "linear signed 8-bit audio" },
-    { 16,       AFMT_U16_BE, "linear unsigned 16-bit big-endian audio" },
-    { 16,       AFMT_U16_LE, "linear unsigned 16-bit little-endian audio" },
-    { 16,       AFMT_S16_BE, "linear signed 16-bit big-endian audio" },
-    { 16,       AFMT_S16_LE, "linear signed 16-bit little-endian audio" },
-#ifdef AFMT_S16_NE
-    { 16,       AFMT_S16_NE, "linear signed 16-bit native-endian audio" },
-#endif
-};
-
-static int n_audio_types = sizeof(audio_types) / sizeof(audio_types[0]);
 
 static PyTypeObject OSSAudioType;
 static PyTypeObject OSSMixerType;
@@ -228,6 +205,10 @@ oss_mixer_dealloc(oss_mixer_t *self)
 */
 
 
+/* ----------------------------------------------------------------------
+ * Helper functions
+ */
+
 /* _do_ioctl_1() is a private helper function used for the OSS ioctls --
    SNDCTL_DSP_{SETFMT,CHANNELS,SPEED} -- that that are called from C
    like this:
@@ -254,10 +235,6 @@ _do_ioctl_1(int fd, PyObject *args, char *fname, int cmd)
 }
 
 
-/* ----------------------------------------------------------------------
- * Helper functions
- */
-
 /* _do_ioctl_1_internal() is a wrapper for ioctls that take no inputs
    but return an output -- ie. we need to pass a pointer to a local C
    variable so the driver can write its output there, but from Python
@@ -266,7 +243,6 @@ _do_ioctl_1(int fd, PyObject *args, char *fname, int cmd)
    devices, but does not use the value of the parameter passed-in in any
    way.
 */
-
 static PyObject *
 _do_ioctl_1_internal(int fd, PyObject *args, char *fname, int cmd)
 {
@@ -511,66 +487,57 @@ oss_fileno(oss_audio_t *self, PyObject *args)
 static PyObject *
 oss_setparameters(oss_audio_t *self, PyObject *args)
 {
-    int rate, ssize, nchannels, n, fmt, emulate=0;
+    int wanted_fmt, wanted_channels, wanted_rate, strict=0;
+    int fmt, channels, rate;
+    PyObject * rv;                    /* return tuple (fmt, channels, rate) */
 
-    if (!PyArg_ParseTuple(args, "iiii|i:setparameters",
-                          &rate, &ssize, &nchannels, &fmt, &emulate))
+    if (!PyArg_ParseTuple(args, "iii|i:setparameters",
+                          &wanted_fmt, &wanted_channels, &wanted_rate,
+                          &strict))
         return NULL;
-  
-    if (rate < 0) {
-        PyErr_Format(PyExc_ValueError, "expected rate >= 0, not %d",
-                     rate); 
-        return NULL;
+
+    fmt = wanted_fmt;
+    if (ioctl(self->fd, SNDCTL_DSP_SETFMT, &fmt) == -1) {
+        return PyErr_SetFromErrno(PyExc_IOError);
     }
-    if (ssize < 0) {
-        PyErr_Format(PyExc_ValueError, "expected sample size >= 0, not %d",
-                     ssize);
-        return NULL;
-    }
-    if (nchannels != 1 && nchannels != 2) {
-        PyErr_Format(PyExc_ValueError, "nchannels must be 1 or 2, not %d",
-                     nchannels);
-        return NULL;
+    if (strict && fmt != wanted_fmt) {
+        return PyErr_Format
+            (OSSAudioError,
+             "unable to set requested format (wanted %d, got %d)",
+             wanted_fmt, fmt);
     }
 
-    for (n = 0; n < n_audio_types; n++)
-        if (fmt == audio_types[n].a_fmt)
-            break;
-    if (n == n_audio_types) {
-        PyErr_Format(PyExc_ValueError, "unknown audio encoding: %d", fmt);
-        return NULL;
+    channels = wanted_channels;
+    if (ioctl(self->fd, SNDCTL_DSP_CHANNELS, &channels) == -1) {
+        return PyErr_SetFromErrno(PyExc_IOError);
     }
-    if (audio_types[n].a_bps != ssize) {
-        PyErr_Format(PyExc_ValueError, 
-                     "for %s, expected sample size %d, not %d",
-                     audio_types[n].a_name, audio_types[n].a_bps, ssize);
-        return NULL;
+    if (strict && channels != wanted_channels) {
+        return PyErr_Format
+            (OSSAudioError,
+             "unable to set requested channels (wanted %d, got %d)",
+             wanted_channels, channels);
     }
 
-    if (emulate == 0) {
-        if ((self->afmts & audio_types[n].a_fmt) == 0) {
-            PyErr_Format(PyExc_ValueError, 
-                         "%s format not supported by device",
-                         audio_types[n].a_name);
-            return NULL;
-        }
-    }
-    if (ioctl(self->fd, SNDCTL_DSP_SETFMT, 
-              &audio_types[n].a_fmt) == -1) {
-        PyErr_SetFromErrno(PyExc_IOError);
-        return NULL;
-    }
-    if (ioctl(self->fd, SNDCTL_DSP_CHANNELS, &nchannels) == -1) {
-        PyErr_SetFromErrno(PyExc_IOError);
-        return NULL;
-    }
+    rate = wanted_rate;
     if (ioctl(self->fd, SNDCTL_DSP_SPEED, &rate) == -1) {
-        PyErr_SetFromErrno(PyExc_IOError);
-        return NULL;
+        return PyErr_SetFromErrno(PyExc_IOError);
     }
-
-    Py_INCREF(Py_None);
-    return Py_None;
+    if (strict && rate != wanted_rate) {
+        return PyErr_Format
+            (OSSAudioError,
+             "unable to set requested rate (wanted %d, got %d)",
+             wanted_rate, rate);
+    }
+    
+    /* Construct the return value: a (fmt, channels, rate) tuple that
+       tells what the audio hardware was actually set to. */
+    rv = PyTuple_New(3);
+    if (rv == NULL)
+        return NULL;
+    PyTuple_SET_ITEM(rv, 0, PyInt_FromLong(fmt));
+    PyTuple_SET_ITEM(rv, 1, PyInt_FromLong(channels));
+    PyTuple_SET_ITEM(rv, 2, PyInt_FromLong(rate));
+    return rv;
 }
 
 static int
@@ -969,9 +936,11 @@ initossaudiodev(void)
   
     m = Py_InitModule("ossaudiodev", ossaudiodev_methods);
 
-    OSSAudioError = PyErr_NewException("ossaudiodev.error", NULL, NULL);
-    if (OSSAudioError)
+    OSSAudioError = PyErr_NewException("ossaudiodev.OSSAudioError", NULL, NULL);
+    if (OSSAudioError) {
         PyModule_AddObject(m, "error", OSSAudioError);
+        PyModule_AddObject(m, "OSSAudioError", OSSAudioError);
+    }
 
     /* Build 'control_labels' and 'control_names' lists and add them
        to the module. */
