@@ -302,6 +302,16 @@ PyAPI_FUNC(void) PyObject_GC_Del(void *);
 		( (type *) _PyObject_GC_NewVar((typeobj), (n)) )
 
 
+/* Utility macro to help write tp_traverse functions */
+#define Py_VISIT(op)					\
+        do { 						\
+                if (op) {				\
+                        int vret = visit((op), arg);	\
+                        if (vret)			\
+                                return vret;		\
+                }					\
+        } while (0)
+
 /* This is here for the sake of backwards compatibility.  Extensions that
  * use the old GC API will still compile but the objects will not be
  * tracked by the GC. */
