@@ -96,23 +96,29 @@ extern void initmacdnr();
 extern void initmactcp();
 #endif
 #ifdef USE_TOOLBOX
+#ifndef USE_CORE_TOOLBOX
+#define USE_CORE_TOOLBOX
+#endif
 extern void initAE();
-extern void initCtl();
-extern void initDlg();
 extern void initEvt();
 extern void initFm();
 extern void initHelp();
+extern void initIcn();
 extern void initList();
-extern void initMenu();
-extern void initQd();
-extern void initRes();
 extern void initSnd();
 extern void initSndihooks();
 extern void initScrap();
 extern void initTE();
-extern void initWin();
 extern void initColorPicker();
 extern void initPrinting();
+#endif
+#ifdef USE_CORE_TOOLBOX
+extern void initCtl();
+extern void initDlg();
+extern void initMenu();
+extern void initQd();
+extern void initRes();
+extern void initWin();
 #endif
 #ifdef USE_QT
 extern void initCm();
@@ -205,22 +211,25 @@ struct _inittab _PyImport_Inittab[] = {
 	{"macdnr", initmacdnr},
 	{"mactcp", initmactcp},
 #endif
-#ifdef USE_TOOLBOX
-	{"AE", initAE},
+#ifdef USE_CORE_TOOLBOX
 	{"Ctl", initCtl},
 	{"Dlg", initDlg},
+	{"Menu", initMenu},
+	{"Qd", initQd},
+	{"Win", initWin},
+	{"Res", initRes},
+#endif
+#ifdef USE_TOOLBOX
+	{"AE", initAE},
 	{"Evt", initEvt},
 	{"Fm", initFm},
 	{"Help", initHelp},
-	{"Menu", initMenu},
+	{"Icn", initIcn},
 	{"List", initList},
-	{"Qd", initQd},
 	{"Snd", initSnd},
 	{"Sndihooks", initSndihooks},
 	{"Scrap", initScrap},
 	{"TE", initTE},
-	{"Win", initWin},
-	{"Res", initRes},
 	{"ColorPicker", initColorPicker},
 	{"Printing", initPrinting},
 #endif
