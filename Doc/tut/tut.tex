@@ -5066,7 +5066,7 @@ class is especially helpful for financial applications and other uses which
 require exact decimal representation, control over precision, control over
 rounding to meet legal or regulatory requirements, tracking of significant
 decimal places, or for applications where the user expects the results to
-calculations done by hand.
+match calculations done by hand.
 
 For example, calculating a 5\%{} tax on a 70 cent phone charge gives
 different results in decimal floating point and binary floating point.
@@ -5081,10 +5081,10 @@ Decimal("0.7350")
 0.73499999999999999       
 \end{verbatim}
 
-Note that the \class{Decimal} result keeps a trailing zero, automatically
-inferring four place significance from two digit mulitiplicands.  Decimal
-reproduces mathematics as done by hand and avoids issues that can arise
-when binary floating point cannot exactly represent decimal quantities.
+The \class{Decimal} result keeps a trailing zero, automatically inferring four
+place significance from the two digit multiplicands.  Decimal reproduces
+mathematics as done by hand and avoids issues that can arise when binary
+floating point cannot exactly represent decimal quantities.
 
 Exact representation enables the \class{Decimal} class to perform
 modulo calculations and equality tests that are unsuitable for binary
@@ -5102,8 +5102,8 @@ True
 False      
 \end{verbatim}
 
-The \module{decimal} module also allows arbitrarily large precisions to be
-set for calculation:
+The \module{decimal} module provides arithmetic with as much precision as
+needed:
 
 \begin{verbatim}
 >>> getcontext().prec = 36
