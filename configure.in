@@ -792,6 +792,37 @@ CC="$ac_save_cc"])
 AC_MSG_RESULT($ac_cv_kthread)
 fi
 
+if test $ac_cv_kthread = no
+then
+# -pthread, if available, provides the right #defines
+# and linker options to make pthread_create available
+# Some compilers won't report that they do not support -pthread,
+# so we need to run a program to see whether it really made the
+# function available.
+AC_MSG_CHECKING(whether $CC accepts -pthread)
+AC_CACHE_VAL(ac_cv_thread,
+[ac_save_cc="$CC"
+CC="$CC -pthread"
+AC_TRY_RUN([
+#include <pthread.h>
+
+void* routine(void* p){return NULL;}
+
+int main(){
+  pthread_t p;
+  if(pthread_create(&p,NULL,routine,NULL)!=0)
+    return 1;
+  (void)pthread_detach(p);
+  return 0;
+}
+],
+  ac_cv_pthread=yes,
+  ac_cv_pthread=no,
+  ac_cv_pthread=no)
+CC="$ac_save_cc"])
+AC_MSG_RESULT($ac_cv_pthread)
+fi
+
 dnl # check for ANSI or K&R ("traditional") preprocessor
 dnl AC_MSG_CHECKING(for C preprocessor type)
 dnl AC_TRY_COMPILE([
@@ -982,6 +1013,8 @@ if test "$ac_cv_kpthread" = "yes"
 then CC="$CC -Kpthread"
 elif test "$ac_cv_kthread" = "yes"
 then CC="$CC -Kthread"
+elif test "$ac_cv_pthread" = "yes"
+then CC="$CC -pthread"
 fi
 AC_MSG_CHECKING(for pthread_t)
 have_pthread_t=no
@@ -1415,6 +1448,12 @@ then
     AC_DEFINE(WITH_THREAD)
     posix_threads=yes
     THREADOBJ="Python/thread.o"
+elif test "$ac_cv_pthread" = "yes"
+then
+    CC="$CC -pthread"
+    AC_DEFINE(WITH_THREAD)
+    posix_threads=yes
+    THREADOBJ="Python/thread.o"
 else
     if test ! -z "$with_threads" -a -d "$with_threads"
     then LDFLAGS="$LDFLAGS -L$with_threads"
@@ -1510,7 +1549,29 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
     USE_THREAD_MODULE="#"])
     ])])])])])])])])])])])
 
-    if test "$posix_threads" = "yes"; then
+    AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
+    LIBS="$LIBS -lmpc"
+    THREADOBJ="Python/thread.o"
+    USE_THREAD_MODULE=""])
+
+    if test "$posix_threads" != "yes"; then     
+      AC_CHECK_LIB(thread, thr_create, [AC_DEFINE(WITH_THREAD)
+      LIBS="$LIBS -lthread"
+      THREADOBJ="Python/thread.o"
+      USE_THREAD_MODULE=""])
+    fi
+
+    if test "$USE_THREAD_MODULE" != "#"
+    then
+        # If the above checks didn't disable threads, (at least) OSF1
+        # needs this '-threads' argument during linking.
+        case $ac_sys_system in
+        OSF1) LDLAST=-threads;;
+        esac
+    fi
+fi
+
+if test "$posix_threads" = "yes"; then
       if test "$unistd_defines_pthreads" = "no"; then
          AC_DEFINE(_POSIX_THREADS, 1,
          [Define if you have POSIX threads, 
@@ -1519,8 +1580,12 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
 
       # Bug 662787: Using semaphores causes unexplicable hangs on Solaris 8.
       case  $ac_sys_system/$ac_sys_release in
+  SunOS/5.6) AC_DEFINE(HAVE_PTHREAD_DESTRUCTOR, 1,
+                       Defined for Solaris 2.6 bug in pthread header.)
+		       ;;
       SunOS/5.8) AC_DEFINE(HAVE_BROKEN_POSIX_SEMAPHORES, 1,
-                           Define if the Posix semaphores do not work on your system);;
+		       Define if the Posix semaphores do not work on your system)
+		       ;;
       esac
 
       AC_MSG_CHECKING(if PTHREAD_SCOPE_SYSTEM is supported)
@@ -1546,37 +1611,8 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
         AC_DEFINE(PTHREAD_SYSTEM_SCHED_SUPPORTED, 1, [Defined if PTHREAD_SCOPE_SYSTEM supported.])
       fi
       AC_CHECK_FUNCS(pthread_sigmask)
-    fi
-
-    AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
-    LIBS="$LIBS -lmpc"
-    THREADOBJ="Python/thread.o"
-    USE_THREAD_MODULE=""])
-
-    if test "$posix_threads" != "yes"; then     
-      AC_CHECK_LIB(thread, thr_create, [AC_DEFINE(WITH_THREAD)
-      LIBS="$LIBS -lthread"
-      THREADOBJ="Python/thread.o"
-      USE_THREAD_MODULE=""])
-    fi
-
-    if test "$USE_THREAD_MODULE" != "#"
-    then
-        # If the above checks didn't disable threads, (at least) OSF1
-        # needs this '-threads' argument during linking.
-        case $ac_sys_system in
-        OSF1) LDLAST=-threads;;
-        esac
-    fi
-
-    if test "$posix_threads" = yes -a \
-		"$ac_sys_system" = "SunOS" -a \
-		"$ac_sys_release" = "5.6"; then
-		AC_DEFINE(HAVE_PTHREAD_DESTRUCTOR, 1,
-		[Defined for Solaris 2.6 bug in pthread header.])
-	fi
-
 fi
+
 
 # Check for enable-ipv6
 AH_TEMPLATE(ENABLE_IPV6, [Define if --enable-ipv6 is specified])
@@ -1977,9 +2013,12 @@ AC_TRY_COMPILE([
   AC_MSG_RESULT(no)
 )
 
+dnl check for true
+AC_CHECK_PROGS(TRUE, true, /bin/true)
+
 dnl On some systems (e.g. Solaris 9), hstrerror and inet_aton are in -lresolv
 dnl On others, they are in the C library, so we to take no action
-AC_CHECK_LIB(c, inet_aton, [/bin/true],
+AC_CHECK_LIB(c, inet_aton, [$ac_cv_prog_TRUE],
   AC_CHECK_LIB(resolv, inet_aton)
 )
 
