@@ -50,6 +50,25 @@ def test(method, input, output, *args):
         exc = sys.exc_info()[:2]
     else:
         exc = None
+    if value == output and type(value) is type(output):
+        # if the original is returned make sure that
+        # this doesn't happen with subclasses
+        if value is input:
+            class usub(unicode):
+                def __repr__(self):
+                    return 'usub(%r)' % unicode.__repr__(self)
+            input = usub(input)
+            try:
+                f = getattr(input, method)
+                value = apply(f, args)
+            except:
+                value = sys.exc_type
+                exc = sys.exc_info()[:2]
+            if value is input:
+                if verbose:
+                    print 'no'
+                print '*',f, `input`, `output`, `value`
+                return
     if value != output or type(value) is not type(output):
         if verbose:
             print 'no'
@@ -186,6 +205,8 @@ test('replace', u'one!two!three!', u'one!two!three!', u'!', u'@', 0)
 test('replace', u'one!two!three!', u'one@two@three@', u'!', u'@')
 test('replace', u'one!two!three!', u'one!two!three!', u'x', u'@')
 test('replace', u'one!two!three!', u'one!two!three!', u'x', u'@', 2)
+test('replace', u'abc', u'abc', u'ab', u'--', 0)
+test('replace', u'abc', u'abc', u'xy', u'--')
 
 test('startswith', u'hello', 1, u'he')
 test('startswith', u'hello', 1, u'hello')
