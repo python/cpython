@@ -149,6 +149,7 @@ GLHACK=-Dclear=__GLclear
 #operator operator.c	# operator.add() and similar goodies
 #_weakref _weakref.c	# basic weak reference support
 #_codecs _codecsmodule.c	# access to the builtin codecs and codec registry
+#_test _testmodule.c    # Python C API test module
 
 #unicodedata unicodedata.c unicodedatabase.c
                         # static Unicode character database
