@@ -5,30 +5,37 @@
 # Note that the .dvi files must already be built and TEXINPUTS must include the
 # directory where latex's working files (esp. *.aux) are kept.
 
-TEXINPUTS=..:../texinputs
+TOPDIR=..
+
+TEXINPUTS=$(TOPDIR):$(TOPDIR)/texinputs:
+
+
+SUBMAKE=$(MAKE) srcdir=$(TOPDIR) VPATH=$(TOPDIR) TEXINPUTS=$(TEXINPUTS) \
+	-f ../Makefile
+
 
 all:	icons l2h
 
 l2h:	l2hapi l2hext l2hlib l2hmac l2href l2htut
 
 l2hapi:	icons
-	$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) -f ../Makefile l2hapi
+	$(SUBMAKE) l2hapi
 
 l2hext:	icons
-	$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) -f ../Makefile l2hext
+	$(SUBMAKE) l2hext
 
 l2hlib:	icons
-	$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) -f ../Makefile l2hlib
+	$(SUBMAKE) l2hlib
 
 l2hmac:	icons
-	$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) -f ../Makefile l2hmac
+	$(SUBMAKE) l2hmac
 
 l2href:	icons
-	$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) -f ../Makefile l2href
+	$(SUBMAKE) l2href
 
 l2htut:	icons
-	$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) -f ../Makefile l2htut
+	$(SUBMAKE) l2htut
 
 icons:
 	mkdir icons
-	cp ../icons/*.gif icons/
+	cp $(TOPDIR)/icons/*.gif icons/
