@@ -5,6 +5,7 @@ import time
 import locale
 import re
 import sets
+import sys
 from test import test_support
 
 import _strptime
@@ -258,6 +259,9 @@ class StrptimeTests(unittest.TestCase):
         self.failUnlessEqual(strp_output.tm_isdst, 0)
         strp_output = _strptime.strptime("GMT", "%Z")
         self.failUnlessEqual(strp_output.tm_isdst, 0)
+        if sys.platform == "mac":
+            # Timezones don't really work on MacOS9
+            return
         time_tuple = time.localtime()
         strf_output = time.strftime("%Z")  #UTC does not have a timezone
         strp_output = _strptime.strptime(strf_output, "%Z")
@@ -270,6 +274,22 @@ class StrptimeTests(unittest.TestCase):
             self.failUnless(strp_output[8] == -1,
                             "LocaleTime().timezone has duplicate values and "
                              "time.daylight but timezone value not set to -1")
+
+    def test_bad_timezone(self):
+        # Explicitly test possibility of bad timezone;
+        # when time.tzname[0] == time.tzname[1] and time.daylight
+        if sys.platform == "mac":
+            return #MacOS9 has severely broken timezone support.
+        try:
+            original_tzname = time.tzname
+            original_daylight = time.daylight
+            time.tzname = ("PDT", "PDT")
+            time.daylight = 1
+            tz_value = _strptime.strptime("PDT", "%Z")[8]
+            self.failUnlessEqual(tz_value, -1)
+        finally:
+            time.tzname = original_tzname
+            time.daylight = original_daylight
 
     def test_date_time(self):
         # Test %c directive

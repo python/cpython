@@ -64,6 +64,10 @@ class LocaleTime(object):
         locks to prevent changing the locale while locale-dependent code is
         running.  The check here is done in case someone does not think about
         doing this.
+
+        Only other possible issue is if someone changed the timezone and did
+        not call tz.tzset .  That is an issue for the programmer, though,
+        since changing the timezone is worthless without that call.
         
         """
         self.lang = _getlang()
@@ -155,6 +159,8 @@ class LocaleTime(object):
 
     def __calc_timezone(self):
         # Set self.timezone by using time.tzname.
+        # Do not worry about possibility of time.tzname[0] == timetzname[1]
+        # and time.daylight; handle that in strptime .
         try:
             time.tzset()
         except AttributeError:
@@ -237,7 +243,7 @@ class TimeRE(dict):
         """Return regex pattern for the format string.
 
         Need to make sure that any characters that might be interpreted as
-        regex syntax is escaped.
+        regex syntax are escaped.
 
         """
         processed_format = ''
@@ -263,11 +269,11 @@ _cache_lock = _thread_allocate_lock()
 # DO NOT modify _TimeRE_cache or _regex_cache without acquiring the cache lock
 # first!
 _TimeRE_cache = TimeRE()
-_CACHE_MAX_SIZE = 5
+_CACHE_MAX_SIZE = 5 # Max number of regexes stored in _regex_cache
 _regex_cache = {}
 
 def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
-    """Return a time struct based on the input data and the format string."""
+    """Return a time struct based on the input string and the format string."""
     global _TimeRE_cache
     _cache_lock.acquire()
     try:
@@ -355,14 +361,17 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             # Since -1 is default value only need to worry about setting tz if
             # it can be something other than -1.
             found_zone = found_dict['Z'].lower()
-            if locale_time.timezone[0] == locale_time.timezone[1] and \
-               time.daylight:
-                pass #Deals with bad locale setup where timezone info is
-                     # the same; first found on FreeBSD 4.4.
-            else:
-                for value, tz_values in enumerate(locale_time.timezone):
-                    if found_zone in tz_values:
+            for value, tz_values in enumerate(locale_time.timezone):
+                if found_zone in tz_values:
+                    # Deal with bad locale setup where timezone names are the
+                    # same and yet time.daylight is true; too ambiguous to
+                    # be able to tell what timezone has daylight savings
+                    if time.tzname[0] == time.tzname[1] and \
+                       time.daylight:
+                            break
+                    else:
                         tz = value
+                        break
     # Cannot pre-calculate datetime_date() since can change in Julian
     #calculation and thus could have different value for the day of the week
     #calculation
