@@ -1,13 +1,15 @@
 # test for xml.dom.minidom
 
-from xml.dom.minidom import parse, Node, Document, parseString
-from xml.dom import HierarchyRequestErr
-import xml.parsers.expat
-
 import os
 import sys
 import traceback
+
 from test_support import verbose
+
+import xml.dom
+import xml.parsers.expat
+
+from xml.dom.minidom import parse, Node, Document, parseString
 
 if __name__ == "__main__":
     base = sys.argv[0]
@@ -17,9 +19,7 @@ tstfile = os.path.join(os.path.dirname(base), "test"+os.extsep+"xml")
 del base
 
 def confirm(test, testname = "Test"):
-    if test:
-        print "Passed " + testname
-    else:
+    if not test:
         print "Failed " + testname
         raise Exception
 
@@ -137,29 +137,29 @@ def testLegalChildren():
     text = dom.createTextNode('text')
 
     try: dom.appendChild(text)
-    except HierarchyRequestErr: pass
+    except xml.dom.HierarchyRequestErr: pass
     else:
         print "dom.appendChild didn't raise HierarchyRequestErr"
 
     dom.appendChild(elem)
     try: dom.insertBefore(text, elem)
-    except HierarchyRequestErr: pass
+    except xml.dom.HierarchyRequestErr: pass
     else:
         print "dom.appendChild didn't raise HierarchyRequestErr"
 
     try: dom.replaceChild(text, elem)
-    except HierarchyRequestErr: pass
+    except xml.dom.HierarchyRequestErr: pass
     else:
         print "dom.appendChild didn't raise HierarchyRequestErr"
 
     nodemap = elem.attributes
     try: nodemap.setNamedItem(text)
-    except HierarchyRequestErr: pass
+    except xml.dom.HierarchyRequestErr: pass
     else:
         print "NamedNodeMap.setNamedItem didn't raise HierarchyRequestErr"
 
     try: nodemap.setNamedItemNS(text)
-    except HierarchyRequestErr: pass
+    except xml.dom.HierarchyRequestErr: pass
     else:
         print "NamedNodeMap.setNamedItemNS didn't raise HierarchyRequestErr"
 
@@ -388,8 +388,8 @@ def testTooManyDocumentElements():
     elem = doc.createElement("extra")
     try:
         doc.appendChild(elem)
-    except HierarchyRequestErr:
-        print "Caught expected exception when adding extra document element."
+    except xml.dom.HierarchyRequestErr:
+        pass
     else:
         print "Failed to catch expected exception when" \
               " adding extra document element."
@@ -626,7 +626,6 @@ for name in names:
         func = globals()[name]
         try:
             func()
-            print "Test Succeeded", name
             confirm(len(Node.allnodes) == 0,
                     "assertion: len(Node.allnodes) == 0")
             if len(Node.allnodes):
@@ -650,9 +649,3 @@ if failed:
     print "\n\n\n**** Check for failures in these tests:"
     for name in failed:
         print "  " + name
-    print
-else:
-    print "All tests succeeded"
-
-Node.debug = None # Delete debug output collected in a StringIO object
-Node._debug = 0   # And reset debug mode
