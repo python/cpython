@@ -18,6 +18,9 @@ Extension modules
 Library
 -------
 
+- Fixed socket speed loss caused by use of the _socketobject wrapper class
+  in socket.py.
+
 Tools/Demos
 -----------
 
