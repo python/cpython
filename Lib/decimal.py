@@ -9,7 +9,7 @@
 
 
 # Todo:
-#    Provide a clean way of attaching monetary format representations
+#    Add rich comparisons for equality testing with other types
 
 
 """
@@ -2969,6 +2969,7 @@ DefaultContext = Context(
         Emin=DEFAULT_MIN_EXPONENT,
         capitals=1
 )
+DefaultContext.trap_enablers.update({ConversionSyntax : 1})
 
 # Pre-made alternate contexts offered by the specification
 # Don't change these; the user should be able to select these
