@@ -2,7 +2,7 @@
 IDLEfork NEWS
 +++++++++++++
 
-What's New in IDLEfork?
+What's New in IDLEfork 0.9b1?
 ===================================
 
 *Release date: 25-Apr-2003*
