@@ -258,9 +258,7 @@ class BabylMailbox(_Mailbox):
 
 
 def _test():
-    import time
     import sys
-    import os
 
     args = sys.argv[1:]
     if not args:
