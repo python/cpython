@@ -85,11 +85,10 @@ class ColorDB:
 	except KeyError:
 	    raise BadColor(name)
 
-    def nearest(self, rgbtuple):
+    def nearest(self, red, green, blue):
 	# TBD: use Voronoi diagrams, Delaunay triangulation, or octree for
 	# speeding up the locating of nearest point.  Exhaustive search is
 	# inefficient, but may be fast enough.
-	red, green, blue = rgbtuple
 	nearest = -1
 	nearest_name = ''
 	for name, aliases in self.__byrgb.values():
