@@ -14,7 +14,22 @@ if 0:   # for throwaway debugging output
 _synchre = re.compile(r"""
     ^
     [ \t]*
-    (?: if | else | elif | while | def | class )
+    (?: if
+    |   for
+    |   while
+    |   else
+    |   def
+    |   return
+    |   assert
+    |   break
+    |   class
+    |   continue
+    |   elif
+    |   try
+    |   except
+    |   raise
+    |   import
+    )
     \b
 """, re.VERBOSE | re.MULTILINE).search
 
@@ -105,11 +120,14 @@ class Parser:
 
     # Return index of a good place to begin parsing, as close to the
     # end of the string as possible.  This will be the start of some
-    # popular stmt like "if" or "def".  Return None if none found.
+    # popular stmt like "if" or "def".  Return None if none found:
+    # the caller should pass more prior context then, if possible, or
+    # if not (the entire program text up until the point of interest
+    # has already been tried) pass 0 to set_lo.
     #
     # This will be reliable iff given a reliable is_char_in_string
-    # function, meaning that when it says "no", it's absolutely guaranteed
-    # that the char is not in a string.
+    # function, meaning that when it says "no", it's absolutely
+    # guaranteed that the char is not in a string.
     #
     # Ack, hack: in the shell window this kills us, because there's
     # no way to tell the differences between output, >>> etc and
@@ -117,28 +135,66 @@ class Parser:
     # look like it's in an unclosed paren!:
     # Python 1.5.2 (#0, Apr 13 1999, ...
 
-    def find_good_parse_start(self, use_ps1,
-                              is_char_in_string=None,
+    def find_good_parse_start(self, use_ps1, is_char_in_string=None,
+                              _rfind=string.rfind,
                               _synchre=_synchre):
         str, pos = self.str, None
         if use_ps1:
-            # hack for shell window
+            # shell window
             ps1 = '\n' + sys.ps1
-            i = string.rfind(str, ps1)
+            i = _rfind(str, ps1)
             if i >= 0:
                 pos = i + len(ps1)
+                # make it look like there's a newline instead
+                # of ps1 at the start -- hacking here once avoids
+                # repeated hackery later
                 self.str = str[:pos-1] + '\n' + str[pos:]
-        elif is_char_in_string:
-            # otherwise we can't be sure, so leave pos at None
-            i = 0
-            while 1:
-                m = _synchre(str, i)
-                if m:
-                    s, i = m.span()
-                    if not is_char_in_string(s):
-                        pos = s
-                else:
-                    break
+            return pos
+
+        # File window -- real work.
+        if not is_char_in_string:
+            # no clue -- make the caller pass everything
+            return None
+
+        # Peek back from the end for a good place to start,
+        # but don't try too often; pos will be left None, or
+        # bumped to a legitimate synch point.
+        limit = len(str)
+        for tries in range(5):
+            i = _rfind(str, ":\n", 0, limit)
+            if i < 0:
+                break
+            i = _rfind(str, '\n', 0, i) + 1  # start of colon line
+            m = _synchre(str, i, limit)
+            if m and not is_char_in_string(m.start()):
+                pos = m.start()
+                break
+            limit = i
+        if pos is None:
+            # Nothing looks like a block-opener, or stuff does
+            # but is_char_in_string keeps returning true; most likely
+            # we're in or near a giant string, the colorizer hasn't
+            # caught up enough to be helpful, or there simply *aren't*
+            # any interesting stmts.  In any of these cases we're
+            # going to have to parse the whole thing to be sure, so
+            # give it one last try from the start, but stop wasting
+            # time here regardless of the outcome.
+            m = _synchre(str)
+            if m and not is_char_in_string(m.start()):
+                pos = m.start()
+            return pos
+
+        # Peeking back worked; look forward until _synchre no longer
+        # matches.
+        i = pos + 1
+        while 1:
+            m = _synchre(str, i)
+            if m:
+                s, i = m.span()
+                if not is_char_in_string(s):
+                    pos = s
+            else:
+                break
         return pos
 
     # Throw away the start of the string.  Intended to be called with
