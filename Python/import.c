@@ -564,6 +564,9 @@ load_package(name, pathname)
 	m = PyImport_AddModule(name);
 	if (m == NULL)
 		return NULL;
+	if (Py_VerboseFlag)
+		fprintf(stderr, "import %s # directory %s\n",
+			name, pathname);
 	d = PyModule_GetDict(m);
 	file = PyString_FromString(pathname);
 	if (file == NULL)
@@ -981,8 +984,32 @@ PyObject *
 PyImport_ImportModule(name)
 	char *name;
 {
-	return PyImport_ImportModuleEx(name, NULL, NULL, NULL);
+	static PyObject *fromlist = NULL;
+	if (fromlist == NULL && strchr(name, '.') != NULL) {
+		fromlist = Py_BuildValue("[s]", "*");
+		if (fromlist == NULL)
+			return NULL;
+	}
+	return PyImport_ImportModuleEx(name, NULL, NULL, fromlist);
 }
+
+/* Forward declarations for helper routines */
+static PyObject *get_parent Py_PROTO((PyObject *globals,
+				      char *buf, int *p_buflen));
+static PyObject *load_next Py_PROTO((PyObject *mod, PyObject *altmod,
+				     char **p_name, char *buf, int *p_buflen));
+static int ensure_fromlist Py_PROTO((PyObject *mod, PyObject *fromlist,
+				     char *buf, int buflen));
+static PyObject * import_submodule Py_PROTO((PyObject *mod,
+					     char *name, char *fullname));
+
+/* The Magnum Opus of dotted-name import :-) */
+
+/* XXX TO DO:
+   - Remember misses in package directories so package submodules
+     that all import the same toplevel module don't keep hitting on the
+     package directory first
+*/
 
 PyObject *
 PyImport_ImportModuleEx(name, globals, locals, fromlist)
@@ -991,25 +1018,280 @@ PyImport_ImportModuleEx(name, globals, locals, fromlist)
 	PyObject *locals;
 	PyObject *fromlist;
 {
+	char buf[MAXPATHLEN+1];
+	int buflen = 0;
+	PyObject *parent, *head, *next, *tail;
+
+	parent = get_parent(globals, buf, &buflen);
+	if (parent == NULL)
+		return NULL;
+
+	head = load_next(parent, Py_None, &name, buf, &buflen);
+	if (head == NULL)
+		return NULL;
+
+	tail = head;
+	Py_INCREF(tail);
+	while (name) {
+		next = load_next(tail, tail, &name, buf, &buflen);
+		Py_DECREF(tail);
+		if (next == NULL) {
+			Py_DECREF(head);
+			return NULL;
+		}
+		tail = next;
+	}
+
+	if (fromlist != NULL) {
+		if (fromlist == Py_None || !PyObject_IsTrue(fromlist))
+			fromlist = NULL;
+	}
+
+	if (fromlist == NULL) {
+		Py_DECREF(tail);
+		return head;
+	}
+
+	Py_DECREF(head);
+	if (!ensure_fromlist(tail, fromlist, buf, buflen)) {
+		Py_DECREF(tail);
+		return NULL;
+	}
+
+	return tail;
+}
+
+static PyObject *
+get_parent(globals, buf, p_buflen)
+	PyObject *globals;
+	char *buf;
+	int *p_buflen;
+{
+	static PyObject *namestr = NULL;
+	static PyObject *pathstr = NULL;
+	PyObject *modname, *modpath, *modules, *parent;
+
+	if (globals == NULL || !PyDict_Check(globals))
+		return Py_None;
+
+	if (namestr == NULL) {
+		namestr = PyString_InternFromString("__name__");
+		if (namestr == NULL)
+			return NULL;
+	}
+	if (pathstr == NULL) {
+		pathstr = PyString_InternFromString("__path__");
+		if (pathstr == NULL)
+			return NULL;
+	}
+
+	*buf = '\0';
+	*p_buflen = 0;
+	modname = PyDict_GetItem(globals, namestr);
+	if (modname == NULL || !PyString_Check(modname))
+		return Py_None;
+
+	modpath = PyDict_GetItem(globals, pathstr);
+	if (modpath != NULL) {
+		int len = PyString_GET_SIZE(modname);
+		if (len > MAXPATHLEN) {
+			PyErr_SetString(PyExc_ValueError,
+					"Module name too long");
+			return NULL;
+		}
+		strcpy(buf, PyString_AS_STRING(modname));
+		*p_buflen = len;
+	}
+	else {
+		char *start = PyString_AS_STRING(modname);
+		char *lastdot = strrchr(start, '.');
+		int len;
+		if (lastdot == NULL)
+			return Py_None;
+		len = lastdot - start;
+		if (len >= MAXPATHLEN) {
+			PyErr_SetString(PyExc_ValueError,
+					"Module name too long");
+			return NULL;
+		}
+		strncpy(buf, start, len);
+		buf[len] = '\0';
+		*p_buflen = len;
+	}
+
+	modules = PyImport_GetModuleDict();
+	parent = PyDict_GetItemString(modules, buf);
+	if (parent == NULL)
+		parent = Py_None;
+	return parent;
+	/* We expect, but can't guarantee, if parent != None, that:
+	   - parent.__name__ == buf
+	   - parent.__dict__ is globals
+	   If this is violated...  Who cares? */
+}
+
+static PyObject *
+load_next(mod, altmod, p_name, buf, p_buflen)
+	PyObject *mod;
+	PyObject *altmod; /* Either None or same as mod */
+	char **p_name;
+	char *buf;
+	int *p_buflen;
+{
+	char *name = *p_name;
+	char *dot = strchr(name, '.');
+	int len;
+	char *p;
+	PyObject *result;
+
+	if (dot == NULL) {
+		*p_name = NULL;
+		len = strlen(name);
+	}
+	else {
+		*p_name = dot+1;
+		len = dot-name;
+	}
+
+	p = buf + *p_buflen;
+	if (p != buf)
+		*p++ = '.';
+	if (p+len-buf >= MAXPATHLEN) {
+		PyErr_SetString(PyExc_ValueError,
+				"Module name too long");
+		return NULL;
+	}
+	strncpy(p, name, len);
+	p[len] = '\0';
+	*p_buflen = p+len-buf;
+
+	result = import_submodule(mod, p, buf);
+	if (result == Py_None && altmod != mod) {
+		Py_DECREF(result);
+		/* Here, altmod must be None */
+		strncpy(buf, name, len);
+		buf[len] = '\0';
+		*p_buflen = len;
+		result = import_submodule(altmod, buf, buf);
+	}
+	if (result == NULL)
+		return NULL;
+
+	if (result == Py_None) {
+		Py_DECREF(result);
+		PyErr_Format(PyExc_ImportError,
+			     "No module named %.200s", name);
+		return NULL;
+	}
+
+	return result;
+}
+
+static int
+ensure_fromlist(mod, fromlist, buf, buflen)
+	PyObject *mod;
+	PyObject *fromlist;
+	char *buf;
+	int buflen;
+{
+	int i;
+
+	if (!PyObject_HasAttrString(mod, "__path__"))
+		return 1;
+
+	for (i = 0; ; i++) {
+		PyObject *item = PySequence_GetItem(fromlist, i);
+		int hasit;
+		if (item == NULL) {
+			if (PyErr_ExceptionMatches(PyExc_IndexError)) {
+				PyErr_Clear();
+				return 1;
+			}
+			return 0;
+		}
+		if (!PyString_Check(item)) {
+			PyErr_SetString(PyExc_TypeError,
+					"Item in ``from list'' not a string");
+			Py_DECREF(item);
+			return 0;
+		}
+		if (PyString_AS_STRING(item)[0] == '*') {
+			Py_DECREF(item);
+			continue;
+		}
+		hasit = PyObject_HasAttr(mod, item);
+		if (!hasit) {
+			char *subname = PyString_AS_STRING(item);
+			PyObject *submod;
+			char *p;
+			if (buflen + strlen(subname) >= MAXPATHLEN) {
+				PyErr_SetString(PyExc_ValueError,
+						"Module name too long");
+				Py_DECREF(item);
+				return 0;
+			}
+			p = buf + buflen;
+			*p++ = '.';
+			strcpy(p, subname);
+			submod = import_submodule(mod, subname, buf);
+			Py_XDECREF(submod);
+			if (submod == NULL) {
+				Py_DECREF(item);
+				return 0;
+			}
+		}
+		Py_DECREF(item);
+	}
+
+	return 1;
+}
+
+static PyObject *
+import_submodule(mod, subname, fullname)
+	PyObject *mod; /* May be None */
+	char *subname;
+	char *fullname;
+{
 	PyObject *modules = PyImport_GetModuleDict();
 	PyObject *m;
 
-	if ((m = PyDict_GetItemString(modules, name)) != NULL) {
+	/* Require:
+	   if mod == None: subname == fullname
+	   else: mod.__name__ + "." + subname == fullname
+	*/
+
+	if ((m = PyDict_GetItemString(modules, fullname)) != NULL) { 
 		Py_INCREF(m);
 	}
 	else {
+		PyObject *path;
 		char buf[MAXPATHLEN+1];
 		struct filedescr *fdp;
 		FILE *fp = NULL;
 
+		path = PyObject_GetAttrString(mod, "__path__");
+		if (path == NULL)
+			PyErr_Clear();
+
 		buf[0] = '\0';
-		fdp = find_module(name, (PyObject *)NULL,
+		fdp = find_module(subname, path,
 				  buf, MAXPATHLEN+1, &fp);
-		if (fdp == NULL)
-			return NULL;
-		m = load_module(name, fp, buf, fdp->type);
+		if (fdp == NULL) {
+			if (!PyErr_ExceptionMatches(PyExc_ImportError))
+				return NULL;
+			PyErr_Clear();
+			Py_INCREF(Py_None);
+			return Py_None;
+		}
+		m = load_module(fullname, fp, buf, fdp->type);
 		if (fp)
 			fclose(fp);
+		if (m != NULL && mod != Py_None) {
+			if (PyObject_SetAttrString(mod, subname, m) < 0) {
+				Py_DECREF(m);
+				m = NULL;
+			}
+		}
 	}
 
 	return m;
@@ -1186,7 +1468,7 @@ imp_get_suffixes(self, args)
 static PyObject *
 call_find_module(name, path)
 	char *name;
-	PyObject *path; /* list or NULL */
+	PyObject *path; /* list or None or NULL */
 {
 	extern int fclose Py_PROTO((FILE *));
 	PyObject *fob, *ret;
@@ -1195,6 +1477,8 @@ call_find_module(name, path)
 	FILE *fp = NULL;
 
 	pathname[0] = '\0';
+	if (path == Py_None)
+		path = NULL;
 	fdp = find_module(name, path, pathname, MAXPATHLEN+1, &fp);
 	if (fdp == NULL)
 		return NULL;
@@ -1222,7 +1506,7 @@ imp_find_module(self, args)
 {
 	char *name;
 	PyObject *path = NULL;
-	if (!PyArg_ParseTuple(args, "s|O!", &name, &PyList_Type, &path))
+	if (!PyArg_ParseTuple(args, "s|O", &name, &path))
 		return NULL;
 	return call_find_module(name, path);
 }
@@ -1474,18 +1758,16 @@ imp_find_module_in_package(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	PyObject *name;
+	char *name;
 	PyObject *packagename = NULL;
 	PyObject *package;
 	PyObject *modules;
 	PyObject *path;
 
-	if (!PyArg_ParseTuple(args, "S|S", &name, &packagename))
+	if (!PyArg_ParseTuple(args, "s|S", &name, &packagename))
 		return NULL;
 	if (packagename == NULL || PyString_GET_SIZE(packagename) == 0) {
-		return call_find_module(
-			PyString_AS_STRING(name),
-			(PyObject *)NULL);
+		return call_find_module(name, (PyObject *)NULL);
 	}
 	modules = PyImport_GetModuleDict();
 	package = PyDict_GetItem(modules, packagename);
@@ -1502,7 +1784,7 @@ imp_find_module_in_package(self, args)
 			     PyString_AS_STRING(packagename));
 		return NULL;
 	}
-	return call_find_module(PyString_AS_STRING(name), path);
+	return call_find_module(name, path);
 }
 
 static PyObject *
@@ -1510,16 +1792,16 @@ imp_find_module_in_directory(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	PyObject *name;
+	char *name;
 	PyObject *directory;
 	PyObject *path;
 
-	if (!PyArg_ParseTuple(args, "SS", &name, &directory))
+	if (!PyArg_ParseTuple(args, "sS", &name, &directory))
 		return NULL;
 	path = Py_BuildValue("[O]", directory);
 	if (path == NULL)
 		return NULL;
-	return call_find_module(PyString_AS_STRING(name), path);
+	return call_find_module(name, path);
 }
 
 static PyMethodDef imp_methods[] = {
