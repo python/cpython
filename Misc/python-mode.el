@@ -287,17 +287,17 @@ source code of the innermost frame.")
 ;; Not customizable
 (defvar py-master-file nil
   "If non-nil, execute the named file instead of the buffer's file.
-The intent is to allow someone to set this variable file local
+The intent is to allow you to set this variable in the file's local
 variable section, e.g.:
 
     # Local Variables:
     # py-master-file: \"master.py\"
     # End:
 
-so that hitting \\[py-execute-buffer] in that buffer executes the
+so that typing \\[py-execute-buffer] in that buffer executes the
 named master file instead of the buffer's file.  Note that if the file
-name has a relative path, the `default-directory' for the file is
-prepended to come up with a buffer name.")
+name has a relative path, the `default-directory' for the buffer is
+prepended to come up with a file name.")
 (make-variable-buffer-local 'py-master-file)
 
 
