@@ -16,15 +16,15 @@ data2 = """/* zlibmodule.c -- gzip-compatible data compression */
 /* See http://www.winimage.com/zLibDll for Windows */
 """
 
-f = gzip.GzipFile(filename, 'w') ; f.write(data1) ; f.close()
+f = gzip.GzipFile(filename, 'wb') ; f.write(data1) ; f.close()
 
-f = gzip.GzipFile(filename, 'r') ; d = f.read() ; f.close()
+f = gzip.GzipFile(filename, 'rb') ; d = f.read() ; f.close()
 assert d == data1
 
 # Append to the previous file
-f = gzip.GzipFile(filename, 'a') ; f.write(data2) ; f.close()
+f = gzip.GzipFile(filename, 'ab') ; f.write(data2) ; f.close()
 
-f = gzip.GzipFile(filename, 'r') ; d = f.read() ; f.close()
+f = gzip.GzipFile(filename, 'rb') ; d = f.read() ; f.close()
 assert d == data1+data2
 
 os.unlink( filename )
