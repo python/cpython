@@ -68,6 +68,8 @@ class MyScanner(Scanner):
 				'IsValidWindowPtr', # I think this is useless for Python, but not sure...
 				'GetWindowZoomFlag',	# Not available in Carbon
 				'GetWindowTitleWidth',	# Ditto
+				'GetWindowGoAwayFlag',
+				'GetWindowSpareFlag',
 			]),
 			('#if TARGET_API_MAC_CARBON', [
 				'IsWindowUpdatePending',
