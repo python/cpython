@@ -17,7 +17,6 @@ static PyMemberDef frame_memberlist[] = {
 	{"f_globals",	T_OBJECT,	OFF(f_globals),	RO},
 	{"f_lasti",	T_INT,		OFF(f_lasti),	RO},
 	{"f_restricted",T_INT,		OFF(f_restricted),RO},
-	{"f_trace",	T_OBJECT,	OFF(f_trace)},
 	{"f_exc_type",	T_OBJECT,	OFF(f_exc_type)},
 	{"f_exc_value",	T_OBJECT,	OFF(f_exc_value)},
 	{"f_exc_traceback", T_OBJECT,	OFF(f_exc_traceback)},
@@ -37,14 +36,49 @@ frame_getlineno(PyFrameObject *f, void *closure)
 {
 	int lineno;
 
-	lineno = PyCode_Addr2Line(f->f_code, f->f_lasti);
+	if (f->f_trace)
+		lineno = f->f_lineno;
+	else
+		lineno = PyCode_Addr2Line(f->f_code, f->f_lasti);
 
 	return PyInt_FromLong(lineno);
+}
+
+static PyObject *
+frame_gettrace(PyFrameObject *f, void *closure)
+{
+	PyObject* trace = f->f_trace;
+
+	if (trace == NULL)
+		trace = Py_None;
+
+	Py_INCREF(trace);
+
+	return trace;
+}
+
+static int
+frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
+{
+	/* We rely on f_lineno being accurate when f_trace is set. */
+
+	PyObject* old_value = f->f_trace;
+
+	Py_XINCREF(v);
+	f->f_trace = v;
+	
+	if (v != NULL)
+		f->f_lineno = PyCode_Addr2Line(f->f_code, f->f_lasti);
+
+	Py_XDECREF(old_value);
+
+	return 0;
 }
 
 static PyGetSetDef frame_getsetlist[] = {
 	{"f_locals",	(getter)frame_getlocals, NULL, NULL},
 	{"f_lineno",	(getter)frame_getlineno, NULL, NULL},
+	{"f_trace",	(getter)frame_gettrace, (setter)frame_settrace, NULL},
 	{0}
 };
 

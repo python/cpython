@@ -57,7 +57,7 @@ no_pop_tops.events = [(0, 'call'),
                       (3, 'line'),
                       (4, 'line'),
                       (2, 'line'),
-                      (6, 'return')]
+                      (2, 'return')]
 
 def no_pop_blocks():
     while 0:
