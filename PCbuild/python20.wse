@@ -300,20 +300,23 @@ item: Remark
   Text=COMPONENTS values:
 end
 item: Remark
-  Text=A: interpreter, libraries and IDLE
+  Text=A: interpreter and libraries
 end
 item: Remark
-  Text=B: docs
+  Text=B: Tcl/Tk
 end
 item: Remark
-  Text=C: tools
+  Text=C: docs
 end
 item: Remark
-  Text=D: test suite
+  Text=D: tools
+end
+item: Remark
+  Text=E: test suite
 end
 item: Set Variable
   Variable=COMPONENTS
-  Value=ABCD
+  Value=ABCDE
 end
 item: Remark
 end
@@ -407,7 +410,7 @@ item: If/While Statement
 end
 item: Set Variable
   Variable=SUMMARY
-  Value=    Python interpreter, libraries and IDLE%CRLF%
+  Value=    Python interpreter and libraries%CRLF%
   Flags=00000001
 end
 item: End Block
@@ -419,7 +422,7 @@ item: If/While Statement
 end
 item: Set Variable
   Variable=SUMMARY
-  Value=    Python documentation%CRLF%
+  Value=    Tcl/Tk (Tkinter, IDLE, pydoc)%CRLF%
   Flags=00000001
 end
 item: End Block
@@ -431,7 +434,7 @@ item: If/While Statement
 end
 item: Set Variable
   Variable=SUMMARY
-  Value=    Tool and utility scripts%CRLF%
+  Value=    Python documentation%CRLF%
   Flags=00000001
 end
 item: End Block
@@ -439,6 +442,18 @@ end
 item: If/While Statement
   Variable=COMPONENTS
   Value=D
+  Flags=00000010
+end
+item: Set Variable
+  Variable=SUMMARY
+  Value=    Tool and utility scripts%CRLF%
+  Flags=00000001
+end
+item: End Block
+end
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=E
   Flags=00000010
 end
 item: Set Variable
@@ -936,7 +951,8 @@ item: Custom Dialog Set
       Variable=COMPONENTS
       Create Flags=01010000000000010000000000000011
       Flags=0000000000000110
-      Text=Python interpreter, library and IDLE
+      Text=Python interpreter and libraries
+      Text=Tcl/Tk (Tkinter, IDLE, pydoc)
       Text=Python HTML docs
       Text=Python utility scripts (Tools/)
       Text=Python test suite (Lib/test/)
@@ -1029,6 +1045,49 @@ item: Custom Dialog Set
       Rectangle=108 158 320 196
       Action=1
       Create Flags=01010000000000000000000000000111
+    end
+    item: If/While Statement
+      Variable=DLG_EVENT_TYPE
+      Value=VERIFY
+    end
+    item: Remark
+      Text=If they're installing Tcl/Tk, Tools, or the test suite, doesn't make much sense unless they're installing Python too.
+    end
+    item: If/While Statement
+      Variable=COMPONENTS
+      Value=BDE
+      Flags=00001010
+    end
+    item: If/While Statement
+      Variable=COMPONENTS
+      Value=A
+      Flags=00000011
+    end
+    item: Display Message
+      Title=Are you sure?
+      Text=Installing Tcl/Tk, Tools or the test suite doesn't make much sense unless you install the Python interpreter and libraries too.
+      Text=
+      Text=Click Yes if that's really what you want.
+      Flags=00101101
+    end
+    item: Remark
+      Text=Nothing -- just proceed to the next dialog.
+    end
+    item: Else Statement
+    end
+    item: Remark
+      Text=Return to the dialog.
+    end
+    item: Set Variable
+      Variable=DLG_EVENT_TYPE
+    end
+    item: End Block
+    end
+    item: End Block
+    end
+    item: End Block
+    end
+    item: End Block
     end
   end
   item: Dialog
@@ -1585,7 +1644,7 @@ end
 item: Remark
 end
 item: Remark
-  Text=A: interpreter, libraries and IDLE
+  Text=A: interpreter and libraries
 end
 item: If/While Statement
   Variable=COMPONENTS
@@ -1900,6 +1959,33 @@ end
 item: Remark
 end
 item: Remark
+  Text=Microsoft C runtime libraries
+end
+item: Install File
+  Source=%_SYS_%\MSVCIRT.DLL
+  Destination=%DLLDEST%\MSVCIRT.DLL
+  Description=Visual C++ Runtime DLLs
+  Flags=0000011000010011
+end
+item: Install File
+  Source=%_SYS_%\MSVCRT.DLL
+  Destination=%DLLDEST%\MSVCRT.DLL
+  Description=Visual C++ Runtime DLLs
+  Flags=0000011000010011
+end
+item: End Block
+end
+item: Remark
+end
+item: Remark
+  Text=B: Tcl/Tk (Tkinter, IDLE, pydoc)
+end
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=B
+  Flags=00000010
+end
+item: Remark
   Text=Tcl/Tk
 end
 item: Install File
@@ -1952,30 +2038,24 @@ end
 item: Remark
 end
 item: Remark
-  Text=Microsoft C runtime libraries
+  Text=Windows pydoc driver
 end
 item: Install File
-  Source=%_SYS_%\MSVCIRT.DLL
-  Destination=%DLLDEST%\MSVCIRT.DLL
-  Description=Visual C++ Runtime DLLs
-  Flags=0000011000010011
-end
-item: Install File
-  Source=%_SYS_%\MSVCRT.DLL
-  Destination=%DLLDEST%\MSVCRT.DLL
-  Description=Visual C++ Runtime DLLs
-  Flags=0000011000010011
+  Source=..\tools\scripts\*.pyw
+  Destination=%MAINDIR%\Tools\Scripts
+  Description=Windows pydoc driver
+  Flags=0000000000000010
 end
 item: End Block
 end
 item: Remark
 end
 item: Remark
-  Text=B: docs
+  Text=C: docs
 end
 item: If/While Statement
   Variable=COMPONENTS
-  Value=B
+  Value=C
   Flags=00000010
 end
 item: Install File
@@ -1989,11 +2069,11 @@ end
 item: Remark
 end
 item: Remark
-  Text=C: tools
+  Text=D: tools
 end
 item: If/While Statement
   Variable=COMPONENTS
-  Value=C
+  Value=D
   Flags=00000010
 end
 item: Install File
@@ -2105,11 +2185,11 @@ end
 item: Remark
 end
 item: Remark
-  Text=D: test suite
+  Text=E: test suite
 end
 item: If/While Statement
   Variable=COMPONENTS
-  Value=D
+  Value=E
   Flags=00000010
 end
 item: Install File
@@ -2148,24 +2228,6 @@ item: Install File
   Source=..\lib\test\output\*.*
   Destination=%MAINDIR%\Lib\test\output
   Description=Python Test output files
-  Flags=0000000000000010
-end
-item: End Block
-end
-item: Remark
-end
-item: Remark
-  Text=Windows pydoc driver
-end
-item: If/While Statement
-  Variable=COMPONENTS
-  Value=AC
-  Flags=00001010
-end
-item: Install File
-  Source=..\tools\scripts\*.pyw
-  Destination=%MAINDIR%\Tools\Scripts
-  Description=Windows pydoc driver
   Flags=0000000000000010
 end
 item: End Block
@@ -2530,7 +2592,7 @@ item: Remark
 end
 item: If/While Statement
   Variable=COMPONENTS
-  Value=B
+  Value=C
   Flags=00000010
 end
 item: If/While Statement
@@ -2660,19 +2722,15 @@ item: If/While Statement
   Value=B
   Flags=00000010
 end
-item: If/While Statement
-  Variable=COMPONENTS
-  Value=B
-  Flags=00000010
+item: Remark
+  Text=Shortcut to installer no matter what.
 end
 item: Create Shortcut
-  Source=%MAINDIR%\Doc\index.html
-  Destination=%GROUP%\Python Manuals.lnk
+  Source=%MAINDIR%\unwise.exe
+  Destination=%GROUP%\Uninstall Python.lnk
   Working Directory=%MAINDIR%
   Key Type=1536
   Flags=00000001
-end
-item: End Block
 end
 item: Remark
 end
@@ -2688,6 +2746,15 @@ item: Create Shortcut
   Icon Pathname=%MAINDIR%\pycon.ico
   Key Type=1536
   Flags=00000001
+end
+item: End Block
+end
+item: Remark
+end
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=B
+  Flags=00000010
 end
 item: Create Shortcut
   Source=%MAINDIR%\pythonw.exe
@@ -2709,12 +2776,19 @@ item: End Block
 end
 item: Remark
 end
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=C
+  Flags=00000010
+end
 item: Create Shortcut
-  Source=%MAINDIR%\unwise.exe
-  Destination=%GROUP%\Uninstall Python.lnk
+  Source=%MAINDIR%\Doc\index.html
+  Destination=%GROUP%\Python Manuals.lnk
   Working Directory=%MAINDIR%
   Key Type=1536
   Flags=00000001
+end
+item: End Block
 end
 item: End Block
 end
