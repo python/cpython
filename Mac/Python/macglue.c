@@ -22,24 +22,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-#ifdef __CFM68K__
-/* cfm68k InterfaceLib exports GetEventQueue, but Events.h doesn't know this
-** and defines it as GetEvQHdr (which is correct for PPC). This fix is for
-** CW9, check that the workaround is still needed for the next release.
-*/
-#define GetEvQHdr GetEventQueue
-#endif /* __CFM68K__ */
-
-#include <Events.h>
-
-#if !TARGET_API_MAC_OS8
-/* Unfortunately this call is probably slower... */
-#define LMGetTicks() TickCount()
-#endif
-
-#ifdef __CFM68K__
-#undef GetEventQueue
-#endif /* __CFM68K__ */
 
 #include "Python.h"
 
@@ -50,6 +32,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "pythonresources.h"
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <OSUtils.h> /* for Set(Current)A5 */
 #include <Files.h>
 #include <StandardFile.h>
@@ -61,6 +44,29 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Fonts.h>
 #include <Menus.h>
 #include <TextUtils.h>
+#include <LowMem.h>
+#ifdef __CFM68K__
+/* cfm68k InterfaceLib exports GetEventQueue, but Events.h doesn't know this
+** and defines it as GetEvQHdr (which is correct for PPC). This fix is for
+** CW9, check that the workaround is still needed for the next release.
+*/
+#define GetEvQHdr GetEventQueue
+#endif /* __CFM68K__ */
+
+#include <Events.h>
+
+#ifdef __CFM68K__
+#undef GetEventQueue
+#endif /* __CFM68K__ */
+#else
+#include <Carbon/Carbon.h>
+#endif
+
+#if !TARGET_API_MAC_OS8
+/* Unfortunately this call is probably slower... */
+#define LMGetTicks() TickCount()
+#endif
+
 #ifdef __MWERKS__
 #include <SIOUX.h>
 extern void SIOUXSetupMenus(void);
@@ -80,7 +86,6 @@ extern pascal unsigned char *PLstrrchr(unsigned char *, unsigned char);
 #include <TFileSpec.h> /* For Path2FSSpec */
 #include <GUSI.h>
 #endif
-#include <LowMem.h>
 
 /* The ID of the Sioux apple menu */
 #define SIOUX_APPLEID	32000
@@ -132,7 +137,9 @@ extern PyObject *newmfssobject(FSSpec *);
 static int interrupted;			/* Set to true when cmd-. seen */
 static RETSIGTYPE intcatcher(int);
 
+#if !TARGET_API_MAC_OSX
 static int PyMac_Yield(void);
+#endif
 
 /*
 ** These are the real scheduling parameters that control what we check
@@ -466,6 +473,7 @@ PyOS_CheckStack()
 }
 #endif /* USE_STACKCHECK */
 
+#if !TARGET_API_MAC_OSX
 /* The catcher routine (which may not be used for all compilers) */
 static RETSIGTYPE
 intcatcher(sig)
@@ -539,31 +547,13 @@ PyErr_CheckSignals()
 	return 0;
 }
 
-#if 0
-/*
-** This routine is called if we know that an external library yielded
-** to background tasks, so we shouldn't count that time in our computation
-** of how much CPU we used.
-** This happens with SIOUX, and the routine is called from our modified
-** GUSISIOUX.
-*/
-void
-PyMac_LibraryDidYield(int howlong)
-{
-	unsigned long maxnextcheck = (unsigned long)LMGetTicks() + schedparams.check_interval;
-	
-	schedparams.next_check = schedparams.next_check + howlong;
-	if (schedparams.next_check > maxnextcheck )
-		schedparams.next_check = maxnextcheck;
-}
-#endif
-
 int
 PyOS_InterruptOccurred()
 {
 	scan_event_queue(1);
 	return interrupted;
 }
+
 /* Check whether we are in the foreground */
 static int
 PyMac_InForeground(void)
@@ -582,8 +572,8 @@ PyMac_InForeground(void)
 	else if ( SameProcess(&ours, &curfg, &eq) < 0 )
 		eq = 1;
 	return (int)eq;
-
 }
+#endif
 
 int
 PyMac_SetEventHandler(PyObject *evh)
@@ -655,6 +645,7 @@ PyMac_HandleEvent(evp)
 	return 0;
 }
 
+#if !TARGET_API_MAC_OSX
 /*
 ** Yield the CPU to other tasks without processing events.
 */
@@ -845,18 +836,9 @@ SIOUXDoAboutBox(void)
 	DisposeDialog(theDialog);
 }
 
-#if 0
-int
-PyMac_FileExists(char *name)
-{
-	FSSpec fss;
-	
-	if ( FSMakeFSSpec(0, 0, Pstring(name), &fss) == noErr )
-		return 1;
-	return 0;
-}
-#endif
+#endif /* !TARGET_API_MAC_OSX */
 
+#if TARGET_API_MAC_OS8
 /*
 ** Helper routine for GetDirectory
 */
@@ -878,7 +860,7 @@ myhook_proc(short item, DialogPtr theDialog, struct hook_args *dataptr)
 	}
 	return item;
 }	
-#if TARGET_API_MAC_OS8
+
 /*
 ** Ask the user for a directory. I still can't understand
 ** why Apple doesn't provide a standard solution for this...
@@ -1016,12 +998,15 @@ PyMac_GetFSSpec(PyObject *v, FSSpec *fs)
 	OSErr err;
 	FSSpec *fs2;
 
+#if !TARGET_API_MAC_OSX
+	/* XXX This #if is temporary */
 	/* first check whether it already is an FSSpec */
 	fs2 = mfs_GetFSSpecFSSpec(v);
 	if ( fs2 ) {
 		(void)FSMakeFSSpec(fs2->vRefNum, fs2->parID, fs2->name, fs);
 		return 1;
 	}
+#endif
 	if ( PyString_Check(v) ) {
 		/* It's a pathname */
 		if( !PyArg_Parse(v, "O&", PyMac_GetStr255, &path) )
@@ -1045,7 +1030,12 @@ PyMac_GetFSSpec(PyObject *v, FSSpec *fs)
 /* Convert FSSpec to PyObject */
 PyObject *PyMac_BuildFSSpec(FSSpec *v)
 {
+#if TARGET_API_MAC_OSX
+	PyErr_SetString(PyExc_NotImplementedError, "FSSpec not yet done for OSX");
+	return NULL;
+#else
 	return newmfssobject(v);
+#endif
 }
 
 /* Convert a Python object to a Rect.
