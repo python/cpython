@@ -43,12 +43,16 @@ define pylocals
     end
 end
 
-# print the current frame
-define pyframe
-    set $__fn = PyString_AsString(co->co_filename)
-    set $__n = PyString_AsString(co->co_name)
-    printf "%s (%d): %s\n",  $__fn, f->f_lineno, $__n
+# print the current frame - verbose
+define pyframev
+    pyframe
     pylocals
+end
+
+define pyframe
+    set $__fn = (char *)((PyStringObject *)co->co_filename)->ob_sval
+    set $__n = (char *)((PyStringObject *)co->co_name)->ob_sval
+    printf "%s (%d): %s\n",  $__fn, f->f_lineno, $__n
 end
 
 # Here's a somewhat fragile way to print the entire Python stack from gdb.
@@ -67,6 +71,17 @@ define pystack
     while $pc < Py_Main || $pc > Py_GetArgcArgv
         if $pc > PyEval_EvalFrame && $pc < PyEval_EvalCodeEx
 	    pyframe
+        end
+        up-silently 1
+    end
+    select-frame 0
+end
+
+# print the entire Python call stack - verbose mode
+define pystackv
+    while $pc < Py_Main || $pc > Py_GetArgcArgv
+        if $pc > PyEval_EvalFrame && $pc < PyEval_EvalCodeEx
+	    pyframev
         end
         up-silently 1
     end
