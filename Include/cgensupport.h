@@ -44,11 +44,34 @@ typedef char *string;
 #define mknewfloatobject(x) PyFloat_FromDouble(x)
 #define mknewcharobject(ch) Py_BuildValue("c", ch)
 
-extern int PyArg_GetObject Py_PROTO((PyObject *args, int nargs, int i, PyObject **p_a));
-extern int PyArg_GetLong Py_PROTO((PyObject *args, int nargs, int i, long *p_a));
-extern int PyArg_GetShort Py_PROTO((PyObject *args, int nargs, int i, short *p_a));
-extern int PyArg_GetFloat Py_PROTO((PyObject *args, int nargs, int i, float *p_a));
-extern int PyArg_GetString Py_PROTO((PyObject *args, int nargs, int i, string *p_a));
+extern int PyArg_GetObject Py_PROTO((PyObject *args, int nargs,
+				     int i, PyObject **p_a));
+extern int PyArg_GetLong Py_PROTO((PyObject *args, int nargs,
+				   int i, long *p_a));
+extern int PyArg_GetShort Py_PROTO((PyObject *args, int nargs,
+				    int i, short *p_a));
+extern int PyArg_GetFloat Py_PROTO((PyObject *args, int nargs,
+				    int i, float *p_a));
+extern int PyArg_GetString Py_PROTO((PyObject *args, int nargs,
+				     int i, string *p_a));
+extern int PyArg_GetChar Py_PROTO((PyObject *args, int nargs,
+				   int i, char *p_a));
+extern int PyArg_GetLongArray Py_PROTO((PyObject *args, int nargs,
+					int i, int n, long *p_a));
+extern int PyArg_GetShortArray Py_PROTO((PyObject *args, int nargs,
+					 int i, int n, short *p_a));
+extern int PyArg_GetDoubleArray Py_PROTO((PyObject *args, int nargs,
+					  int i, int n, double *p_a));
+extern int PyArg_GetFloatArray Py_PROTO((PyObject *args, int nargs,
+					 int i, int n, float *p_a));
+extern int PyArg_GetLongArraySize Py_PROTO((PyObject *args, int nargs,
+					    int i, long *p_a));
+extern int PyArg_GetShortArraySize Py_PROTO((PyObject *args, int nargs,
+					     int i, short *p_a));
+extern int PyArg_GetDoubleArraySize Py_PROTO((PyObject *args, int nargs,
+					      int i, double *p_a));
+extern int PyArg_GetFloatArraySize Py_PROTO((PyObject *args, int nargs,
+					 int i, float *p_a));
 
 #ifdef __cplusplus
 }
