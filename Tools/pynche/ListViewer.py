@@ -15,7 +15,6 @@ You can turn off Update On Click if all you want to see is the alias for a
 given name, without selecting the color.
 """
 
-import sys
 from Tkinter import *
 import ColorDB
 
@@ -123,7 +122,7 @@ class ListViewer:
             self.__sb.update_views(self.__red, self.__green, self.__blue)
 
     def __quit(self, event=None):
-        sys.exit(0)
+        self.__root.quit()
 
     def __withdraw(self, event=None):
         self.__root.withdraw()

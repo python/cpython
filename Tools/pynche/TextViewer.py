@@ -15,7 +15,6 @@ button and drag it through some text.  The Insertion is the insertion cursor
 in the text window (which only has a background).
 """
 
-import sys
 from Tkinter import *
 import ColorDB
 
@@ -89,7 +88,7 @@ textual displays.''')
         self.__toggletrack()
 
     def __quit(self, event=None):
-        sys.exit(0)
+        self.__root.quit()
 
     def __withdraw(self, event=None):
         self.__root.withdraw()
