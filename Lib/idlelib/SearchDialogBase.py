@@ -51,18 +51,18 @@ class SearchDialogBase:
 
     def make_entry(self, label, var):
         l = Label(self.top, text=label)
-        l.grid(row=self.row, col=0, sticky="nw")
+        l.grid(row=self.row, column=0, sticky="nw")
         e = Entry(self.top, textvariable=var, exportselection=0)
-        e.grid(row=self.row, col=1, sticky="nwe")
+        e.grid(row=self.row, column=1, sticky="nwe")
         self.row = self.row + 1
         return e
 
     def make_frame(self,labeltext=None):
         if labeltext:
             l = Label(self.top, text=labeltext)
-            l.grid(row=self.row, col=0, sticky="nw")
+            l.grid(row=self.row, column=0, sticky="nw")
         f = Frame(self.top)
-        f.grid(row=self.row, col=1, columnspan=1, sticky="nwe")
+        f.grid(row=self.row, column=1, columnspan=1, sticky="nwe")
         self.row = self.row + 1
         return f
 
@@ -134,7 +134,7 @@ class SearchDialogBase:
         #
         # place button frame on the right
         f = self.buttonframe = Frame(self.top)
-        f.grid(row=0,col=2,padx=2,pady=2,ipadx=2,ipady=2)
+        f.grid(row=0,column=2,padx=2,pady=2,ipadx=2,ipady=2)
 
         b = self.make_button("close", self.close)
         b.lower()
