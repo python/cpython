@@ -4,6 +4,7 @@ These are mostly "proof of concept" type applications:
 
 Generator.py	Generator class implemented with threads.
 bug.py		Demonstrate a bug with importing modules in threads.
+condition.py	Appears to be an earlier version of sync.py.
 find.py		Parallelized "find(1)" (looks for directories).
 sync.py		Condition variables primitives by Tim Peters.
 telnet.py	Version of ../sockets/telnet.py using threads.
