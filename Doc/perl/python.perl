@@ -36,15 +36,20 @@ sub make_icon_filename($){
     return "$mydir$dd$myname$myext";
 }
 
-$OFF_SITE_LINK_ICON = '';
-
 sub get_link_icon($){
     my $url = @_[0];
     if ($OFF_SITE_LINK_ICON && ($url =~ /^[-a-zA-Z0-9.]+:/)) {
         # absolute URL; assume it points off-site
         my $icon = make_icon_filename($OFF_SITE_LINK_ICON);
         return (" <img src='$icon'\n"
-                . "  height='12' width='15' border='0' alt='[off-site link]'\n"
+                . "  border='0' class='offsitelink'"
+                . ($OFF_SITE_LINK_ICON_HEIGHT
+                   ? " height='$OFF_SITE_LINK_ICON_HEIGHT'"
+                   : '')
+                . ($OFF_SITE_LINK_ICON_WIDTH
+                   ? " width='$OFF_SITE_LINK_ICON_WIDTH'"
+                   : '')
+                . " alt='[off-site link]'\n"
                 . "  >");
     }
     return '';
@@ -769,7 +774,6 @@ sub do_env_funcdesc{
     my $arg_list = convert_args(next_argument());
     my $idx = make_str_index_entry("<tt class='function'>$function_name()</tt>"
 				   . get_indexsubitem());
-    print "\n--- funcdesc arg_list:\n$arg_list\n===";
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)<\/tt>/<\/tt>/;
     return "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
@@ -1293,7 +1297,7 @@ sub make_my_titlegraphic() {
       if ($TITLE_PAGE_GRAPHIC_WIDTH);
     $graphic .= " height=\"$TITLE_PAGE_GRAPHIC_HEIGHT\""
       if ($TITLE_PAGE_GRAPHIC_HEIGHT);
-    $graphic .= "\n  src=\"$mydir/$myname$myext\"></td>\n";
+    $graphic .= "\n  src=\"$filename\"></td>\n";
     return $graphic;
 }
 
@@ -1480,7 +1484,7 @@ sub handle_rfclike_reference{
     return '<dl compact class="seerfc">'
       . "\n    <dt><a href=\"$url\""
       . "\n        title=\"$title\""
-      . "\n        >$what $rfcnum, <em>$title</em>$icon</a>:"
+      . "\n        >$what $rfcnum, <em>$title</em>$icon</a>"
       . "\n    <dd>$text\n  </dl>"
       . $_;
 }
@@ -1498,8 +1502,8 @@ sub do_cmd_seetitle{
     my $url = next_optional_argument();
     my $title = next_argument();
     my $text = next_argument();
-    my $icon = get_link_icon($url);
     if ($url) {
+        my $icon = get_link_icon($url);
         return '<dl compact class="seetitle">'
           . "\n    <dt><em class=\"citetitle\"><a href=\"$url\""
           . "\n        >$title$icon</a></em>"
