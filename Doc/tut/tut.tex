@@ -1,5 +1,6 @@
 \documentclass{manual}
 \usepackage[T1]{fontenc}
+\usepackage{textcomp}
 
 % Things to do:
 % Should really move the Python startup file info to an appendix
@@ -326,16 +327,29 @@ It is possible to use encodings different than \ASCII{} in Python source
 files. The best way to do it is to put one more special comment line
 right after the \code{\#!} line to define the source file encoding:
 
-\begin{verbatim}
-# -*- coding: iso-8859-1 -*- 
-\end{verbatim}
+\begin{alltt}
+# -*- coding: \var{encoding} -*- 
+\end{alltt}
 
 With that declaration, all characters in the source file will be treated as
-{}\code{iso-8859-1}, and it will be
+having the encoding \var{encoding}, and it will be
 possible to directly write Unicode string literals in the selected
 encoding.  The list of possible encodings can be found in the
 \citetitle[../lib/lib.html]{Python Library Reference}, in the section
 on \ulink{\module{codecs}}{../lib/module-codecs.html}.
+
+For example, to write Unicode literals including the Euro currency
+symbol, the ISO-8859-15 encoding can be used, with the Euro symbol
+having the ordinal value 164.  This script will print the value 8364
+(the Unicode codepoint corresponding to the Euro symbol) and then
+exit:
+
+\begin{alltt}
+# -*- coding: iso-8859-15 -*-
+
+currency = u"\texteuro"
+print ord(currency)
+\end{alltt}
 
 If your editor supports saving files as \code{UTF-8} with a UTF-8
 \emph{byte order mark} (aka BOM), you can use that instead of an
@@ -343,11 +357,11 @@ encoding declaration. IDLE supports this capability if
 \code{Options/General/Default Source Encoding/UTF-8} is set. Notice
 that this signature is not understood in older Python releases (2.2
 and earlier), and also not understood by the operating system for
-\code{\#!} files.
+script files with \code{\#!} lines (only used on \UNIX{} systems).
 
 By using UTF-8 (either through the signature or an encoding
 declaration), characters of most languages in the world can be used
-simultaneously in string literals and comments. Using non-\ASCII
+simultaneously in string literals and comments.  Using non-\ASCII{}
 characters in identifiers is not supported. To display all these
 characters properly, your editor must recognize that the file is
 UTF-8, and it must use a font that supports all the characters in the
