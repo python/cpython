@@ -111,6 +111,10 @@ extern PyObject *Py_InitModule4 Py_PROTO((char *, PyMethodDef *,
 	Py_InitModule4(name, methods, (char *)NULL, (PyObject *)NULL, \
 		       PYTHON_API_VERSION)
 
+#define Py_InitModule3(name, methods, doc) \
+	Py_InitModule4(name, methods, doc, (PyObject *)NULL, \
+		       PYTHON_API_VERSION)
+
 extern char *_Py_PackageContext;
 
 #ifdef __cplusplus
