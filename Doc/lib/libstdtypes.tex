@@ -315,7 +315,7 @@ division by \code{pow(2, \var{n})} without overflow check.
 
 \subsection{Iterator Types \label{typeiter}}
 
-\versionadded{2.1}
+\versionadded{2.2}
 \index{iterator protocol}
 \index{protocol!iterator}
 \index{sequence!iteration}
@@ -351,7 +351,7 @@ two methods, which together form the \dfn{iterator protocol}:
   the Python/C API.
 \end{methoddesc}
 
-\begin{methoddesc}[iteratpr]{next}{}
+\begin{methoddesc}[iterator]{next}{}
   Return the next item from the container.  If there are no further
   items, raise the \exception{StopIteration} exception.  This method
   corresponds to the \member{tp_iternext} slot of the type structure
