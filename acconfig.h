@@ -144,6 +144,9 @@
 /* Define if you want to compile in rudimentary thread support */
 #undef WITH_THREAD
 
+/* Define if you want to compile in cycle garbage collection */
+#undef WITH_CYCLE_GC
+
 /* Define if you want to produce an OpenStep/Rhapsody framework
    (shared library plus accessory files). */
 #undef WITH_NEXT_FRAMEWORK
