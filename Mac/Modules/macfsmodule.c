@@ -979,7 +979,7 @@ initmacfs()
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
-	ErrorObject = PyString_FromString("macfs.error");
+	ErrorObject = PyErr_NewException("macfs.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", ErrorObject);
 
 	Mfsatype.ob_type = &PyType_Type;
@@ -992,8 +992,4 @@ initmacfs()
 	Py_INCREF(&Mfsitype);
 	PyDict_SetItemString(d, "FInfoType", (PyObject *)&Mfsitype);
 	/* XXXX Add constants here */
-	
-	/* Check for errors */
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module macfs");
 }
