@@ -13,8 +13,12 @@ parseFile(path) -> AST
 walk(ast, visitor, verbose=None)
     Does a pre-order walk over the ast using the visitor instance.
     See compiler.visitor for details.
+
+compile(filename)
+    Generates a .pyc file by compilining filename.
 """
 
 from transformer import parse, parseFile
 from visitor import walk
+from pycodegen import compile
 
