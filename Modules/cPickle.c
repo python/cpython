@@ -378,12 +378,12 @@ write_file(Picklerobject *self, char *s, int  n)
 	}
 
 	Py_BEGIN_ALLOW_THREADS
-		nbyteswritten = fwrite(s, sizeof(char), n, self->fp);
+	nbyteswritten = fwrite(s, sizeof(char), n, self->fp);
 	Py_END_ALLOW_THREADS
-		if (nbyteswritten != (size_t)n) {
-			PyErr_SetFromErrno(PyExc_IOError);
-			return -1;
-		}
+	if (nbyteswritten != (size_t)n) {
+		PyErr_SetFromErrno(PyExc_IOError);
+		return -1;
+	}
 
 	return n;
 }
