@@ -141,22 +141,29 @@ class ScriptBinding:
         interp.runcode(code)
 
     def getfilename(self):
-        # Logic to make sure we have a saved filename
-        # XXX Better logic would offer to save!
+        """Get source filename.  If not saved, offer to save (or create) file
+
+        The debugger requires a source file.  Make sure there is one, and that
+        the current version of the source buffer has been saved.  If the user
+        declines to save or cancels the Save As dialog, return None.
+        """
         if not self.editwin.get_saved():
-            name = (self.editwin.short_title() or
-                    self.editwin.long_title() or
-                    "Untitled")
-            self.errorbox("Not saved",
-                          "The buffer for %s is not saved.\n" % name +
-                          "Please save it first!")
-            self.editwin.text.focus_set()
-            return
+            msg = """Source Must Be Saved
+     OK to Save?"""
+            mb = tkMessageBox.Message(
+                                title="Save Before Run or Check",
+                                message=msg,
+                                icon=tkMessageBox.QUESTION,
+                                type=tkMessageBox.OKCANCEL,
+                                master=self.editwin.text)
+            reply = mb.show()
+            if reply == "ok":
+                self.editwin.io.save(None)
+            else:
+                return None
+        # filename is None if file doesn't exist
         filename = self.editwin.io.filename
-        if not filename:
-            self.errorbox("No file name",
-                          "This window has no file name")
-            return
+        self.editwin.text.focus_set()
         return filename
 
     def errorbox(self, title, message):
