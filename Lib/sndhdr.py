@@ -1,83 +1,43 @@
-# This module contains several routines that help recognizing sound
-# files.
-#
-# Function whathdr() recognizes various types of sound file headers.
-# It understands almost all headers that SOX can decode.
-#
-# The return tuple contains the following items, in this order:
-# - file type (as SOX understands it)
-# - sampling rate (0 if unknown or hard to decode)
-# - number of channels (0 if unknown or hard to decode)
-# - number of frames in the file (-1 if unknown or hard to decode)
-# - number of bits/sample, or 'U' for U-LAW, or 'A' for A-LAW
-#
-# If the file doesn't have a recognizable type, it returns None.
-# If the file can't be opened, IOError is raised.
-#
-# To compute the total time, divide the number of frames by the
-# sampling rate (a frame contains a sample for each channel).
-#
-# Function whatraw() calls the "whatsound" program and interprets its
-# output.  You'll have to guess the sampling rate by listening though!
-#
-# Function what() calls whathdr() and if it doesn't recognize the file
-# then calls whatraw().
-#
-# Finally, the function test() is a simple main program that calls
-# what() for all files mentioned on the argument list.  For directory
-# arguments it calls what() for all files in that directory.  Default
-# argument is "." (testing all files in the current directory).  The
-# option -r tells it to recurse down directories found inside
-# explicitly given directories.
-#
+"""Routines to help recognizing sound files.
+
+Function whathdr() recognizes various types of sound file headers.
+It understands almost all headers that SOX can decode.
+
+The return tuple contains the following items, in this order:
+- file type (as SOX understands it)
+- sampling rate (0 if unknown or hard to decode)
+- number of channels (0 if unknown or hard to decode)
+- number of frames in the file (-1 if unknown or hard to decode)
+- number of bits/sample, or 'U' for U-LAW, or 'A' for A-LAW
+
+If the file doesn't have a recognizable type, it returns None.
+If the file can't be opened, IOError is raised.
+
+To compute the total time, divide the number of frames by the
+sampling rate (a frame contains a sample for each channel).
+
+Function what() calls whathdr().  (It used to also use some
+heuristics for raw data, but this doesn't work very well.)
+
+Finally, the function test() is a simple main program that calls
+what() for all files mentioned on the argument list.  For directory
+arguments it calls what() for all files in that directory.  Default
+argument is "." (testing all files in the current directory).  The
+option -r tells it to recurse down directories found inside
+explicitly given directories.
+"""
+
 # The file structure is top-down except that the test program and its
 # subroutine come last.
 
 
-#------------------------------------------------------#
-# Guess the type of any sound file, raw or with header #
-#------------------------------------------------------#
+#--------------------------------#
+# Guess the type of a sound file #
+#--------------------------------#
 
 def what(filename):
 	res = whathdr(filename)
-	if not res:
-		res = whatraw(filename)
 	return res
-
-
-#-----------------------------#
-# Guess the type of raw sound #
-#-----------------------------#
-
-def whatraw(filename):
-	# Assume it's always 1 channel, byte-sized samples
-	# Don't assume anything about the rate
-	import os
-	from stat import ST_SIZE
-	# XXX "whatsound" should be part of the distribution somehow...
-	cmd = 'whatsound ' + filename + ' 2>/dev/null'
-	cmd = 'PATH=$PATH:/ufs/guido/bin/sgi\n' + cmd
-	pipe = os.popen(cmd, 'r')
-	data = pipe.read()
-	sts = pipe.close()
-	if sts:
-		return None
-	if data[:13] == '-t raw -b -s ':
-		type = 'sb'
-		sample_size = 8
-	elif data[:13] == '-t raw -b -u ':
-		type = 'ub'
-		sample_size = 8
-	elif data[:13] == '-t raw -b -U ':
-		type = 'ul'
-		sample_size = 'U'
-	else:
-		return None
-	try:
-		frame_count = os.stat(filename)[ST_SIZE]
-	except IOError:
-		frame_count = -1
-	return type, 0, 1, frame_count, sample_size
 
 
 #-------------------------#
@@ -268,3 +228,6 @@ def testall(list, recursive, toplevel):
 				print what(filename)
 			except IOError:
 				print '*** not found ***'
+
+if __name__ == '__main__':
+	test()
