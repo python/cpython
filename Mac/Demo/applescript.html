@@ -31,20 +31,29 @@ will tell Eudora to send queued mail, retrieve mail or quit. <p>
 There is a tool in the standard distribution that looks through a file
 for an 'AETE' or 'AEUT' resource, the internal representation of the
 AppleScript dictionary. This tool is called
-<CODE>gensuitemodule.py</CODE>, and lives in
-<CODE>Mac:scripts</CODE>. When we start it, it asks us for an input
-file and we point it to the Eudora Light executable. It starts parsing
-the AETE resource, and for each AppleEvent suite it finds it prompts
-us for the filename of the resulting python module. Remember to change
-folders for the first module, you don't want to clutter up the Eudora
-folder with your python interfaces. If you want to skip a suite you
-press cancel and the process continues with the next suite. In the
-case of Eudora, you do <EM>not</EM> want to generate the Required
-suite, because it will be empty. AppleScript understands that an empty
-suite means "incorporate the whole standard suite by this name",
+<CODE>gensuitemodule.py</CODE>, and lives in <CODE>Mac:scripts</CODE>.
+When we start it, it asks us for an input file and we point it to the
+Eudora Light executable. It starts parsing the AETE resource, and for
+each AppleEvent suite it finds it prompts us for the filename of the
+resulting python module. Remember to change folders for the first
+module, you don't want to clutter up the Eudora folder with your python
+interfaces. If you want to skip a suite you press cancel and the process
+continues with the next suite. In the case of Eudora, you do
+<EM>not</EM> want to generate the Required and Standard suites, because
+they are identical to the standard ones which are pregenerated (and
+empty in the eudora binary). AppleScript understands that an empty suite
+means "incorporate the whole standard suite by this name",
 gensuitemodule does not currently understand this. Creating the empty
 <CODE>Required_Suite.py</CODE> would hide the correct module of that
 name from our application. <p>
+
+Gensuitemodule may ask you questions like "Where is enum 'xyz ' declared?".
+For the first time, cancel out of this dialog after taking down the
+enum (or class or prop) name. After you've created all the suites look
+for these codes, in the suites generated here and in the standard suites.
+If you've found them all run gensuitemodule again and point it to the right
+file for each declaration. Gensuitemodule will generate the imports to make the
+reference work. <p>
 
 <BLOCKQUOTE>
 Time for a sidebar. If you want to re-create
@@ -61,19 +70,9 @@ Let's glance at the <A
 HREF="scripting/Eudora_Suite.py">Eudora_Suite.py</A> just created. You
 may want to open Script Editor alongside, and have a look at how it
 interprets the dictionary. EudoraSuite.py starts with some
-boilerplate, then come some dictionaries implementing the OSA
-Enumerations, then a big class definition with methods for each
-AppleScript Verb and finally some comments. The Enumerations we will
-skip, it suffices to know that whenever you have to pass an enumerator
-to a method you can pass the english name and don't have to bother
-with the 4-letter type code. So, you can say
-<CODE><PRE>
-	eudora.notice(occurrence="mail_arrives")
-</PRE></CODE>
-instead of the rather more cryptic
-<CODE><PRE>
-	eudora.notice(occurrence="wArv")
-</PRE></CODE>
+boilerplate, then a big class definition with methods for each
+AppleScript Verb, then some small class definitions and then some dictionary
+initializations. <p>
 
 The <CODE>Eudora_Suite</CODE> class is the bulk of the code
 generated. For each verb it contains a method. Each method knows what
@@ -90,16 +89,38 @@ The other thing you notice is that each method calls
 to provide it by subclassing or multiple inheritance, as we shall see
 later. <p>
 
-The module ends with some comments. Sadly, gensuitemodule is not yet
-able to turn the Object Specifiers into reasonable Python code. For
-now, if you need object specifiers, you will have to use the routines
-defined in <CODE>aetools.py</CODE> (and <CODE>aetypes.py</CODE>, which
-it incorporates). You use these in the form <CODE>aetools.Word(10,
+After the big class we get a number of little class declarations. These
+declarations are for the (appleevent) classes and properties in the suite.
+They allow you to create object IDs, which can then be passed to the verbs.
+For instance, to get the name of the sender of the first message in mailbox
+inbox you would use <code>mailbox("inbox").message(1).sender</code>. It is
+also possible to specify this as <code>sender(message(1, mailbox("inbox")))</code>,
+which is sometimes needed because these classes don't inherit correctly
+from baseclasses, so you may have to use a class or property from another suite. <p>
+
+<blockquote>
+There are also some older object specifiers for standard objects in aetools.
+You use these in the form <CODE>aetools.Word(10,
 aetools.Document(1))</CODE> where the corresponding AppleScript
 terminology would be <CODE>word 10 of the first
 document</CODE>. Examine the two modules mentioned above along with
 the comments at the end of your suite module if you need to create
-more than the standard object specifiers. <p>
+more than the standard object specifiers.
+</blockquote>
+
+Next we get the enumeration dictionaries, which allow you to pass
+english names as arguments to verbs, so you don't have to bother with the 4-letter
+type code. So, you can say
+<CODE><PRE>
+	eudora.notice(occurrence="mail_arrives")
+</PRE></CODE>
+instead of the rather more cryptic
+<CODE><PRE>
+	eudora.notice(occurrence="wArv")
+</PRE></CODE><p>
+
+Finally, we get the "table of contents" of the module, listing all classes and such
+by code, which is used by gensuitemodule. <p>
 
 <H2>Using a Python suite module</H2>
 
@@ -119,8 +140,8 @@ all, the heart of our program looks like this:
 <CODE><PRE>
 	import Eudora_Suite, Required_Suite, aetools
 	
-	class Eudora(aetools.TalkTo, Required_Suite.Required_Suite, \
-				Eudora_Suite.Eudora_Suite):
+	class Eudora(Eudora_Suite.Eudora_Suite, Required_Suite.Required_Suite, \
+				aetools.TalkTo):
 		pass
 </PRE></CODE>
 
