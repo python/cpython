@@ -720,7 +720,15 @@ PyMac_InitMenuBar()
 	MenuHandle applemenu;
 	
 	if ( sioux_mbar ) return;
+#if 0
+	/* This code does not seem to work anymore: apparently
+	** we now always have a menubar (since MacOS9?).
+	** So we simply always setup the Sioux menus here.
+	*/
 	if ( (sioux_mbar=GetMenuBar()) == NULL )  {
+#else
+	{
+#endif
 		/* Sioux menu not installed yet. Do so */
 		SIOUXSetupMenus();
 		if ( (sioux_mbar=GetMenuBar()) == NULL )
