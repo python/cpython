@@ -48,11 +48,7 @@ void GUSISetupFactories()
 #ifdef GUSISetupFactories_BeginHook
 	GUSISetupFactories_BeginHook
 #endif
-#if 1 || TARGET_API_MAC_CARBON
 	GUSIwithInetSockets();
-#else
-	GUSIwithMTInetSockets();
-#endif
 #ifdef GUSISetupFactories_EndHook
 	GUSISetupFactories_EndHook
 #endif
