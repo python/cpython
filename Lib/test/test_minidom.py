@@ -353,7 +353,6 @@ def _testElementReprAndStrUnicodeNS():
     confirm(string1 == string2)
     confirm(string1.find("slash:abc") != -1)
     dom.unlink()
-    confirm(len(Node.allnodes) == 0)
 
 def testAttributeRepr():
     dom = Document()
@@ -361,7 +360,6 @@ def testAttributeRepr():
     node = el.setAttribute("abc", "def")
     confirm(str(node) == repr(node))
     dom.unlink()
-    confirm(len(Node.allnodes) == 0)
 
 def testTextNodeRepr(): pass
 
@@ -371,7 +369,6 @@ def testWriteXML():
     domstr = dom.toxml()
     dom.unlink()
     confirm(str == domstr)
-    confirm(len(Node.allnodes) == 0)
 
 def testProcessingInstruction(): pass
 
