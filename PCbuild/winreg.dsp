@@ -71,7 +71,7 @@ LINK32=link.exe
 # PROP Target_Dir ""
 F90=df.exe
 # ADD BASE CPP /nologo /MTd /W3 /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "winreg_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /GX /ZI /Od /I "..\Include" /I "..\PC" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /GX /Zi /Od /I "..\Include" /I "..\PC" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc09 /d "_DEBUG"

@@ -76,7 +76,7 @@ LINK32=link.exe
 F90=df.exe
 CPP=cl.exe
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "..\Include" /I "..\PC" /D "_DEBUG" /D "USE_DL_EXPORT" /D "WIN32" /D "_WINDOWS" /YX /FD /Zm200 /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "..\Include" /I "..\PC" /D "_DEBUG" /D "USE_DL_EXPORT" /D "WIN32" /D "_WINDOWS" /YX /FD /Zm200 /c
 MTL=midl.exe
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o /win32 "NUL"
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o /win32 "NUL"
@@ -659,6 +659,7 @@ SOURCE=..\Objects\funcobject.c
 
 # End Source File
 # Begin Source File
+
 SOURCE=..\Modules\gcmodule.c
 
 !IF  "$(CFG)" == "python20 - Win32 Release"
