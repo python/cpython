@@ -26,7 +26,9 @@ Library
   arbitrary shell code can't be executed because a bogus URL was
   passed in.
 
-- gettext.translation has an optional fallback argument.
+- gettext.translation has an optional fallback argument, and 
+  gettext.find an optional all argument. Translations will now fallback
+  on a per-message basis.
 
 Tools/Demos
 
