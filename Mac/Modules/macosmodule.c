@@ -26,6 +26,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 #include "macglue.h"
+#include "pythonresources.h"
 
 #include <Windows.h>
 #include <Files.h>
@@ -676,6 +677,20 @@ MacOS_CompactMem(PyObject *self, PyObject *args)
 	return Py_BuildValue("l", rv);
 }
 
+static char KeepConsole_doc[] = "(flag) Keep console open 0:never, 1:on output 2:on error, 3:always";
+
+static PyObject *
+MacOS_KeepConsole(PyObject *self, PyObject *args)
+{
+	int value;
+	
+	if (!PyArg_ParseTuple(args, "i", &value))
+		return NULL;
+	PyMac_options.keep_console = value;
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 static PyMethodDef MacOS_Methods[] = {
 #if !TARGET_API_MAC_CARBON
 	{"AcceptHighLevelEvent",	MacOS_AcceptHighLevelEvent, 1,	accepthle_doc},
@@ -695,6 +710,7 @@ static PyMethodDef MacOS_Methods[] = {
 	{"FreeMem",			MacOS_FreeMem,		1,	FreeMem_doc},
 	{"MaxBlock",		MacOS_MaxBlock,		1,	MaxBlock_doc},
 	{"CompactMem",		MacOS_CompactMem,	1,	CompactMem_doc},
+	{"KeepConsole",		MacOS_KeepConsole,	1,	KeepConsole_doc},
 	{NULL,				NULL}		 /* Sentinel */
 };
 
