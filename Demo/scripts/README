@@ -31,6 +31,7 @@ lpwatch.py		Watch BSD line printer queues
 markov.py		Markov chain simulation of words or characters
 methfix.py		Fix old method syntax def f(self, (a1, ..., aN)):
 mkreal.py		Turn a symbolic link into a real file or directory
+mpzpi.py		test mpz -- print digits of pi (compare pi.py)
 objgraph.py		Print object graph from nm output on a library
 pathfix.py		Change #!/usr/local/bin/python into something else
 pdeps.py		Print dependencies between Python modules
