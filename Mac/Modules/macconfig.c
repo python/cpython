@@ -94,35 +94,35 @@ extern void initicglue();
 #ifndef USE_CORE_TOOLBOX
 #define USE_CORE_TOOLBOX
 #endif
-extern void initApp();
-extern void initFm();
-extern void initHelp();
-extern void initIcn();
-extern void initList();
-extern void initMlte();
-extern void initQdoffs();
-extern void initSnd();
-extern void initSndihooks();
-extern void initScrap();
-extern void initTE();
+extern void init_App();
+extern void init_Fm();
+extern void init_Help();
+extern void init_Icn();
+extern void init_List();
+extern void init_Mlte();
+extern void init_Qdoffs();
+extern void init_Snd();
+extern void init_Sndihooks();
+extern void init_Scrap();
+extern void init_TE();
 extern void initColorPicker();
 extern void initPrinting();
-extern void initCF();
+extern void init_CF();
 #endif
 #ifdef USE_CORE_TOOLBOX
-extern void initAE();
-extern void initCtl();
-extern void initDlg();
-extern void initDrag();
-extern void initEvt();
-extern void initMenu();
-extern void initQd();
-extern void initRes();
-extern void initWin();
+extern void init_AE();
+extern void init_Ctl();
+extern void init_Dlg();
+extern void init_Drag();
+extern void init_Evt();
+extern void init_Menu();
+extern void init_Qd();
+extern void init_Res();
+extern void init_Win();
 #endif
 #ifdef USE_QT
-extern void initCm();
-extern void initQt();
+extern void init_Cm();
+extern void init_Qt();
 #endif
 
 #ifdef USE_IMG
@@ -217,40 +217,40 @@ struct _inittab _PyImport_Inittab[] = {
 	{"icglue", initicglue},
 #endif
 #ifdef USE_CORE_TOOLBOX
-	{"AE", initAE},
-	{"Ctl", initCtl},
-	{"Dlg", initDlg},
-	{"Drag", initDrag},
-	{"Evt", initEvt},
-	{"Menu", initMenu},
-	{"Qd", initQd},
-	{"Win", initWin},
-	{"Res", initRes},
+	{"_AE", init_AE},
+	{"_Ctl", init_Ctl},
+	{"_Dlg", init_Dlg},
+	{"_Drag", init_Drag},
+	{"_Evt", init_Evt},
+	{"_Menu", init_Menu},
+	{"_Qd", init_Qd},
+	{"_Win", init_Win},
+	{"_Res", init_Res},
 #endif
 #ifdef USE_TOOLBOX
-	{"App", initApp},
-	{"Fm", initFm},
-	{"Icn", initIcn},
-	{"List", initList},
-	{"Mlte", initMlte},
-	{"Qdoffs", initQdoffs},
-	{"Snd", initSnd},
-	{"Sndihooks", initSndihooks},
+	{"_App", init_App},
+	{"_Fm", init_Fm},
+	{"_Icn", init_Icn},
+	{"_List", init_List},
+	{"_Mlte", init_Mlte},
+	{"_Qdoffs", init_Qdoffs},
+	{"_Snd", init_Snd},
+	{"_Sndihooks", init_Sndihooks},
 	/* Carbon scrap manager is completely different */
-	{"Scrap", initScrap},
-	{"TE", initTE},
+	{"_Scrap", init_Scrap},
+	{"_TE", init_TE},
 	{"ColorPicker", initColorPicker},
 #if !TARGET_API_MAC_CARBON
-	{"Help", initHelp},
+	{"_Help", init_Help},
 	{"Printing", initPrinting},
 #endif
 #if TARGET_API_MAC_CARBON
-	{"CF", initCF},
+	{"_CF", init_CF},
 #endif
 #endif
 #ifdef USE_QT
-	{"Cm", initCm},
-	{"Qt", initQt},
+	{"_Cm", init_Cm},
+	{"_Qt", init_Qt},
 #endif
 #ifdef USE_IMG
 	{"imgcolormap",	initimgcolormap},

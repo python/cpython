@@ -164,7 +164,7 @@ initstuff = initstuff + """
 	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(AEDesc, AEDesc_Convert);
 """
 
-module = MacModule('AE', 'AE', includestuff, finalstuff, initstuff)
+module = MacModule('_AE', 'AE', includestuff, finalstuff, initstuff)
 
 class AEDescDefinition(GlobalObjectDefinition):
 
@@ -222,5 +222,5 @@ execfile('aegen.py')
 for f in functions: module.add(f)
 for f in aedescmethods: aedescobject.add(f)
 
-SetOutputFileName('AEmodule.c')
+SetOutputFileName('_AEmodule.c')
 module.generate()
