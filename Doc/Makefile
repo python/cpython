@@ -3,8 +3,9 @@
 #
 # See also the README file.
 #
-# This is a bit of a mess.  The main documents are:
+# This is a bit of a mess.  The documents are identified by short names:
 #   api -- Python/C API Reference Manual
+#   doc -- Documenting Python
 #   ext -- Extending and Embedding the Python Interpreter
 #   lib -- Library Reference Manual
 #   mac -- Macintosh Library Modules
@@ -56,7 +57,7 @@ HTMLDIR=	html
 INFODIR=	info
 TOOLSDIR=	tools
 
-RELEASE=1.5.2b2
+RELEASE=1.5.2
 VERSION=1.5
 
 # These must be declared phony since there
