@@ -1103,9 +1103,10 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
       }
       main() {
         pthread_attr_t attr;
+        pthread_t id;
         if (pthread_attr_init(&attr)) exit(-1);
         if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) exit(-1);
-        if (pthread_create(NULL, &attr, foo, NULL)) exit(-1);
+        if (pthread_create(&id, &attr, foo, NULL)) exit(-1);
         exit(0);
       }],
       ac_cv_pthread_system_supported=yes,
