@@ -38,6 +38,18 @@ class MimeTypesTestCase(unittest.TestCase):
         self.assertEqual(self.db.guess_extension("x-application/x-unittest"),
                          ".pyunit")
 
+    def test_non_standard_types(self):
+        # First try strict 
+        self.assertEqual(self.db.guess_type('foo.xul', strict=1),
+                         (None, None))
+        self.assertEqual(self.db.guess_extension('image/jpg', strict=1),
+                         None)
+        # And then non-strict
+        self.assertEqual(self.db.guess_type('foo.xul', strict=0),
+                         ('text/xul', None))
+        self.assertEqual(self.db.guess_extension('image/jpg', strict=0),
+                         '.jpg')
+
 
 def test_main():
     test_support.run_unittest(MimeTypesTestCase)

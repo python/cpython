@@ -8,10 +8,10 @@
 
 \indexii{MIME}{content type}
 
-The \module{mimetypes} converts between a filename or URL and the MIME
-type associated with the filename extension.  Conversions are provided 
-from filename to MIME type and from MIME type to filename extension;
-encodings are not supported for the later conversion.
+The \module{mimetypes} module converts between a filename or URL and
+the MIME type associated with the filename extension.  Conversions are
+provided from filename to MIME type and from MIME type to filename
+extension; encodings are not supported for the latter conversion.
 
 The module provides one class and a number of convenience functions.
 The functions are the normal interface to this module, but some
@@ -23,22 +23,31 @@ module.  If the module has not been initialized, they will call
 sets up.
 
 
-\begin{funcdesc}{guess_type}{filename}
+\begin{funcdesc}{guess_type}{filename\optional{, strict}}
 Guess the type of a file based on its filename or URL, given by
 \var{filename}.  The return value is a tuple \code{(\var{type},
 \var{encoding})} where \var{type} is \code{None} if the type can't be
-guessed (no or unknown suffix) or a string of the form
+guessed (missing or unknown suffix) or a string of the form
 \code{'\var{type}/\var{subtype}'}, usable for a MIME
-\mailheader{content-type} header\indexii{MIME}{headers}; and encoding
-is \code{None} for no encoding or the name of the program used to
-encode (e.g. \program{compress} or \program{gzip}).  The encoding is
-suitable for use as a \mailheader{Content-Encoding} header, \emph{not}
-as a \mailheader{Content-Transfer-Encoding} header.  The mappings are
-table driven.  Encoding suffixes are case sensitive; type suffixes are
-first tried case sensitive, then case insensitive.
+\mailheader{content-type} header\indexii{MIME}{headers}.
+
+\var{encoding} is \code{None} for no encoding or the name of the
+program used to encode (e.g. \program{compress} or \program{gzip}).
+The encoding is suitable for use as a \mailheader{Content-Encoding}
+header, \emph{not} as a \mailheader{Content-Transfer-Encoding} header.
+The mappings are table driven.  Encoding suffixes are case sensitive;
+type suffixes are first tried case sensitively, then case
+insensitively.
+
+Optional \var{strict} is a flag specifying whether the list of known
+MIME types is limited to only the official types \ulink{registered
+with IANA}{http://www.isi.edu/in-notes/iana/assignments/media-types}
+are recognized.  When \var{strict} is true (the default), only the
+IANA types are supported; when \var{strict} is false, some additional
+non-standard but commonly used MIME types are also recognized.
 \end{funcdesc}
 
-\begin{funcdesc}{guess_extension}{type}
+\begin{funcdesc}{guess_extension}{type\optional{, strict}}
 Guess the extension for a file based on its MIME type, given by
 \var{type}.
 The return value is a string giving a filename extension, including the
@@ -46,6 +55,9 @@ leading dot (\character{.}).  The extension is not guaranteed to have been
 associated with any particular data stream, but would be mapped to the 
 MIME type \var{type} by \function{guess_type()}.  If no extension can
 be guessed for \var{type}, \code{None} is returned.
+
+Optional \var{strict} has the same meaning as with the
+\function{guess_type()} function.
 \end{funcdesc}
 
 
@@ -98,6 +110,11 @@ Dictionary mapping filename extensions to encoding types.
 Dictionary mapping filename extensions to MIME types.
 \end{datadesc}
 
+\begin{datadesc}{common_types}
+Dictionary mapping filename extensions to non-standard, but commonly
+found MIME types.
+\end{datadesc}
+
 
 The \class{MimeTypes} class may be useful for applications which may
 want more than one MIME-type database:
@@ -144,12 +161,18 @@ that of the \refmodule{mimetypes} module.
   module.
 \end{datadesc}
 
-\begin{methoddesc}{guess_extension}{type}
+\begin{datadesc}{common_types}
+  Dictionary mapping filename extensions to non-standard, but commonly
+  found MIME types.  This is initially a copy of the global
+  \code{common_types} defined in the module.
+\end{datadesc}
+
+\begin{methoddesc}{guess_extension}{type\optional{, strict}}
   Similar to the \function{guess_extension()} function, using the
   tables stored as part of the object.
 \end{methoddesc}
 
-\begin{methoddesc}{guess_type}{url}
+\begin{methoddesc}{guess_type}{url\optional{, strict}}
   Similar to the \function{guess_type()} function, using the tables
   stored as part of the object.
 \end{methoddesc}
