@@ -3529,4 +3529,194 @@ the buffer in bytes.
 \end{itemize}
 
 
+\chapter{New in Release 1.3}
+
+
+This chapter describes yet more recent additions to the Python
+language and library.
+
+
+\section{New Keyword Arguments}
+
+Functions and methods written in Python can now be called using
+keyword arguments of the form \code{\var{keyword} = \var{value}}.  For
+instance, the following function:
+
+\begin{verbatim}
+def parrot(voltage, state='a stiff', action='voom', type='Norwegian Blue'):
+    print "-- This parrot wouldn't", action,
+    print "if you put", voltage, "Volts through it."
+    print "-- Lovely plumage, the", type
+    print "-- It's", state, "!"
+\end{verbatim}
+
+could be called in any of the following ways:
+
+\begin{verbatim}
+parrot(1000)
+parrot(action = 'VOOOOOM', voltage = 1000000)
+parrot('a thousand', state = 'pushing up the daisies')
+parrot('a million', 'bereft of life', 'jump')
+\end{verbatim}
+
+but the following calls would all be invalid:
+
+\begin{verbatim}
+parrot()                     # required argument missing
+parrot(voltage=5.0, 'dead')  # non-keyword argument following keyword
+parrot(110, voltage=220)     # duplicate value for argument
+parrot(actor='John Cleese')  # unknown keyword
+\end{verbatim}
+
+In general, an argument list must have the form: zero or more
+positional arguments followed by zero or more keyword arguments, where
+the keywords must be chosen from the formal parameter names.  It's not
+important whether a formal parameter has a default value or not.  No
+argument must receive a value more than once -- formal parameter names
+corresponding to positional arguments cannot be used as keywords in
+the same calls.
+
+Note that no special syntax is required to allow a function to be
+called with keyword arguments.  The additional costs incurred by
+keyword arguments are only present when a call uses them.
+
+(As far as I know, these rules are exactly the same as used by
+Modula-3, even if they are enforced by totally different means.  This
+is intentional.)
+
+When a final formal parameter of the form \code{**\var{name}} is
+present, it receives a dictionary containing all keyword arguments
+whose keyword doesn't correspond to a formal parameter.  This may be
+combined with a formal parameter of the form \code{*\var{name}} which
+receives a tuple containing the positional arguments beyond the formal
+parameter list.  (\code{*\var{name}} must occur before
+\code{**\var{name}}.)  For example, if we define a function like this:
+
+\begin{verbatim}
+def cheeseshop(kind, *arguments, **keywords):
+    print "-- Do you have any", kind, '?'
+    print "-- I'm sorry, we're all out of", kind
+    for arg in arguments: print arg
+    print '-'*40
+    for kw in keywords.keys(): print kw, ':', keywords[kw]
+\end{verbatim}
+
+It could be called like this:
+
+\begin{verbatim}
+cheeseshop('Limburger', "It's very runny, sir.",
+           "It's really very, VERY runny, sir.",
+           client='John Cleese',
+           shopkeeper='Michael Palin',
+           sketch='Cheese Shop Sketch')
+\end{verbatim}
+
+and of course it would print:
+
+\begin{verbatim}
+-- Do you have any Limburger ?
+-- I'm sorry, we're all out of Limburger
+It's very runny, sir.
+It's really very, VERY runny, sir.
+----------------------------------------
+client : John Cleese
+shopkeeper : Michael Palin
+sketch : Cheese Shop Sketch
+\end{verbatim}
+
+Side effects of this change include:
+
+\begin{itemize}
+
+\item
+In the effort of implementing keyword arguments, function and
+especially method calls have been sped up significantly -- for a
+method with ten formal parameters, the call overhead has been cut in
+half; for a function with one formal parameters, the overhead has been
+reduced by a third.
+
+\item
+The format of \code{.pyc} files has changed (again).
+
+\end{itemize}
+
+\section{Minor Changes}
+
+\begin{itemize}
+
+\item
+For file objects, \code{\var{f}.read(0)} and
+\code{\var{f}.readline(0)} now return an empty string rather than
+reading an unlimited number of bytes.  For the latter, omit the
+argument altogether or pass a negative value.
+
+\item
+A new system variable, \code{sys.platform}, has been added.  It
+specifies the current platform, e.g. \code{sunos5} or \code{linux1}.
+
+\item
+The built-in functions \code{input()} and \code{raw_input()} now use
+the GNU readline library when it has been configured (formerly, only
+interactive input to the interpreter itself was read using GNU
+readline).  The GNU readline library provides elaborate line editing
+and history.  The Python debugger (\code{pdb}) is the first
+beneficiary of this change.
+
+\item
+Two new built-in functions, \code{globals()} and \code{locals()},
+provide access to dictionaries containming current global and local
+variables, respectively.  (These augment rather than replace
+\code{vars()}, which returns the current local variables when called
+without an argument, and a module's global variables when called with
+an argument of type module.)
+
+\item
+The optional built-in modules \code{dbm} and \code{gdbm} are more
+coordinated --- their \code{open()} functions now take the same values
+for their \var{flag} argument, and the \var{flag} and \var{mode}
+argument have default values (to open the database for reading only,
+and to create the database with mode \code{0666} minuse the umask,
+respectively).
+
+\item
+A new dbm-like module, \code{dbhash}, has been added, which uses the
+BSD DB package's hash method.
+
+\item
+The \code{raise} statement now takes an optional argument which
+specifies the traceback to be used when printing the exception's stack
+trace.  This must be a traceback object, such as found in
+\code{sys.exc_traceback}.  When omitted or given as \code{None}, the
+old behavior (to generate a stack trace entry for the current stack
+frame) is used.
+
+\item
+The built-in function \code{compile()} now takes a third possible
+value for the kind of code to be compiled: specifying \code{'single'}
+generates code for a single interactive statement, which prints the
+output of expression statements that evaluate to something else than
+\code{None}.
+
+\item
+The tokenizer is now more tolerant of alien whitespace.  Control-L in
+the leading whitespace of a line resets the column number to zero,
+while Control-R just before the end of the line is ignored.
+
+\item
+The dynamic module loader recognizes the fact that different filenames
+point to the same shared library and loads the library only once, so
+you can have a single shared library that defines multiple modules.
+(SunOS / SVR4 style shared libraries only.)
+
+\item
+Jim Fulton's ``abstract object interface'' has been incorporated into
+the run-time API.  For more detailes, read the files
+\code{Include/abstract.h} and \code{Objects/abstract.c}.
+
+\item
+Numerous things I have forgotten or that are so obscure no-one will
+notice them anyway :-)
+
+\end{itemize}
+
 \end{document}
