@@ -39,16 +39,18 @@ intobject TrueObject = {
 };
 
 static object *
-err_ovf()
+err_ovf(msg)
+	char *msg;
 {
-	err_setstr(OverflowError, "integer overflow");
+	err_setstr(OverflowError, msg);
 	return NULL;
 }
 
 static object *
-err_zdiv()
+err_zdiv(msg)
+	char *msg;
 {
-	err_setstr(ZeroDivisionError, "integer division by zero");
+	err_setstr(ZeroDivisionError, msg);
 	return NULL;
 }
 
@@ -162,7 +164,7 @@ int_add(v, w)
 	b = ((intobject *)w) -> ob_ival;
 	x = a + b;
 	if ((x^a) < 0 && (x^b) < 0)
-		return err_ovf();
+		return err_ovf("integer addition");
 	return newintobject(x);
 }
 
@@ -180,7 +182,7 @@ int_sub(v, w)
 	b = ((intobject *)w) -> ob_ival;
 	x = a - b;
 	if ((x^a) < 0 && (x^~b) < 0)
-		return err_ovf();
+		return err_ovf("integer subtraction");
 	return newintobject(x);
 }
 
@@ -199,7 +201,7 @@ int_mul(v, w)
 	b = ((intobject *)w) -> ob_ival;
 	x = (double)a * (double)b;
 	if (x > 0x7fffffff || x < (double) (long) 0x80000000)
-		return err_ovf();
+		return err_ovf("integer multiplication");
 	return newintobject(a * b);
 }
 
@@ -214,7 +216,7 @@ int_div(v, w)
 		return NULL;
 	}
 	if (((intobject *)w) -> ob_ival == 0)
-		return err_zdiv();
+		return err_zdiv("integer division");
 	a = v->ob_ival;
 	b = ((intobject *)w) -> ob_ival;
 	/* Make sure we always truncate towards zero */
@@ -244,7 +246,7 @@ int_rem(v, w)
 		return NULL;
 	}
 	if (((intobject *)w) -> ob_ival == 0)
-		return err_zdiv();
+		return err_zdiv("integer remainder");
 	/* XXX Need to fix this similar to int_div */
 	return newintobject(v->ob_ival % ((intobject *)w) -> ob_ival);
 }
@@ -263,7 +265,7 @@ int_divmod(x, y)
 	xi = x->ob_ival;
 	yi = getintvalue(y);
 	if (yi == 0)
-		return err_zdiv();
+		return err_zdiv("integer divmod()");
 	if (yi < 0) {
 		xdivy = -xi / -yi;
 	}
@@ -302,7 +304,7 @@ int_pow(v, w)
 	iv = v->ob_ival;
 	iw = ((intobject *)w)->ob_ival;
 	if (iw < 0) {
-		err_setstr(RuntimeError, "integer to the negative power");
+		err_setstr(ValueError, "integer to the negative power");
 		return NULL;
 	}
 	ix = 1;
@@ -312,7 +314,7 @@ int_pow(v, w)
 		if (iv == 0)
 			break; /* 0 to some power -- avoid ix / 0 */
 		if (ix / iv != prev)
-			return err_ovf();
+			return err_ovf("integer pow()");
 	}
 	return newintobject(ix);
 }
@@ -325,7 +327,7 @@ int_neg(v)
 	a = v->ob_ival;
 	x = -a;
 	if (a < 0 && x < 0)
-		return err_ovf();
+		return err_ovf("integer negation");
 	return newintobject(x);
 }
 
