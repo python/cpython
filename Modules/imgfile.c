@@ -490,11 +490,11 @@ imgfile_write(PyObject *self, PyObject *args)
 
 
 static PyMethodDef imgfile_methods[] = {
-	{ "getsizes",	imgfile_getsizes },
-	{ "read",	imgfile_read },
-	{ "readscaled",	imgfile_readscaled, 1},
-	{ "write",	imgfile_write },
-	{ "ttob",	imgfile_ttob },
+	{ "getsizes",	imgfile_getsizes, METH_OLDARGS },
+	{ "read",	imgfile_read, METH_OLDARGS },
+	{ "readscaled",	imgfile_readscaled, METH_VARARGS},
+	{ "write",	imgfile_write, METH_OLDARGS },
+	{ "ttob",	imgfile_ttob, METH_OLDARGS },
 	{ NULL,		NULL } /* Sentinel */
 };
 

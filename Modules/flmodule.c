@@ -252,18 +252,18 @@ generic_set_object_shortcut(genericobject *g, PyObject *args)
 }
 
 static PyMethodDef generic_methods[] = {
-	{"set_call_back",	(PyCFunction)generic_set_call_back},
-	{"delete_object",	(PyCFunction)generic_delete_object},
-	{"show_object",		(PyCFunction)generic_show_object},
-	{"hide_object",		(PyCFunction)generic_hide_object},
-	{"redraw_object",	(PyCFunction)generic_redraw_object},
+	{"set_call_back",	(PyCFunction)generic_set_call_back, METH_OLDARGS},
+	{"delete_object",	(PyCFunction)generic_delete_object, METH_OLDARGS},
+	{"show_object",		(PyCFunction)generic_show_object, METH_OLDARGS},
+	{"hide_object",		(PyCFunction)generic_hide_object, METH_OLDARGS},
+	{"redraw_object",	(PyCFunction)generic_redraw_object, METH_OLDARGS},
 #ifdef OBSOLETE_FORMS_CALLS
-	{"freeze_object",	(PyCFunction)generic_freeze_object},
-	{"unfreeze_object",	(PyCFunction)generic_unfreeze_object},
+	{"freeze_object",	(PyCFunction)generic_freeze_object, METH_OLDARGS},
+	{"unfreeze_object",	(PyCFunction)generic_unfreeze_object, METH_OLDARGS},
 #endif
-	{"activate_object",	(PyCFunction)generic_activate_object},
-	{"deactivate_object",	(PyCFunction)generic_deactivate_object},
-	{"set_object_shortcut",	(PyCFunction)generic_set_object_shortcut},
+	{"activate_object",	(PyCFunction)generic_activate_object, METH_OLDARGS},
+	{"deactivate_object",	(PyCFunction)generic_deactivate_object, METH_OLDARGS},
+	{"set_object_shortcut",	(PyCFunction)generic_set_object_shortcut, METH_OLDARGS},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -2081,44 +2081,44 @@ forms_get_filename(PyObject *f, PyObject *args)
 
 static PyMethodDef forms_methods[] = {
 /* adm */
-	{"make_form",		forms_make_form},
-	{"activate_all_forms",	forms_activate_all_forms},
-	{"deactivate_all_forms",forms_deactivate_all_forms},
+	{"make_form",		forms_make_form, METH_OLDARGS},
+	{"activate_all_forms",	forms_activate_all_forms, METH_OLDARGS},
+	{"deactivate_all_forms",forms_deactivate_all_forms, METH_OLDARGS},
 /* gl support wrappers */
-	{"qdevice",		forms_qdevice},
-	{"unqdevice",		forms_unqdevice},
-	{"isqueued",		forms_isqueued},
-	{"qtest",		forms_qtest},
-	{"qread",		forms_qread},
-/*	{"blkqread",		forms_blkqread}, */
-	{"qreset",		forms_qreset},
-	{"qenter",		forms_qenter},
-	{"get_mouse",		forms_get_mouse},
-	{"tie",			forms_tie},
-/*	{"new_events",		forms_new_events}, */
-	{"color",		forms_color},
-	{"mapcolor",		forms_mapcolor},
-	{"getmcolor",		forms_getmcolor},
+	{"qdevice",		forms_qdevice, METH_OLDARGS},
+	{"unqdevice",		forms_unqdevice, METH_OLDARGS},
+	{"isqueued",		forms_isqueued, METH_OLDARGS},
+	{"qtest",		forms_qtest, METH_OLDARGS},
+	{"qread",		forms_qread, METH_OLDARGS},
+/*	{"blkqread",		forms_blkqread, METH_OLDARGS}, */
+	{"qreset",		forms_qreset, METH_OLDARGS},
+	{"qenter",		forms_qenter, METH_OLDARGS},
+	{"get_mouse",		forms_get_mouse, METH_OLDARGS},
+	{"tie",			forms_tie, METH_OLDARGS},
+/*	{"new_events",		forms_new_events, METH_OLDARGS}, */
+	{"color",		forms_color, METH_OLDARGS},
+	{"mapcolor",		forms_mapcolor, METH_OLDARGS},
+	{"getmcolor",		forms_getmcolor, METH_OLDARGS},
 /* interaction */
-	{"do_forms",		forms_do_forms},
-	{"do_only_forms",	forms_do_only_forms},
-	{"check_forms",		forms_check_forms},
-	{"check_only_forms",	forms_check_only_forms},
-	{"set_event_call_back",	forms_set_event_call_back},
+	{"do_forms",		forms_do_forms, METH_OLDARGS},
+	{"do_only_forms",	forms_do_only_forms, METH_OLDARGS},
+	{"check_forms",		forms_check_forms, METH_OLDARGS},
+	{"check_only_forms",	forms_check_only_forms, METH_OLDARGS},
+	{"set_event_call_back",	forms_set_event_call_back, METH_OLDARGS},
 /* goodies */
-	{"show_message",	forms_show_message},
-	{"show_question",	forms_show_question},
-	{"show_choice",		forms_show_choice},
-	{"show_input",		forms_show_input},
-	{"show_file_selector",	forms_file_selector},
-	{"file_selector",	forms_file_selector}, /* BW compat */
-	{"get_directory",	forms_get_directory},
-	{"get_pattern",		forms_get_pattern},
-	{"get_filename",	forms_get_filename},
-	{"set_graphics_mode",	forms_set_graphics_mode},
-	{"get_rgbmode",		forms_get_rgbmode},
-	{"show_errors",		forms_show_errors},
-	{"set_font_name",	forms_set_font_name},
+	{"show_message",	forms_show_message, METH_OLDARGS},
+	{"show_question",	forms_show_question, METH_OLDARGS},
+	{"show_choice",		forms_show_choice, METH_OLDARGS},
+	{"show_input",		forms_show_input, METH_OLDARGS},
+	{"show_file_selector",	forms_file_selector, METH_OLDARGS},
+	{"file_selector",	forms_file_selector, METH_OLDARGS}, /* BW compat */
+	{"get_directory",	forms_get_directory, METH_OLDARGS},
+	{"get_pattern",		forms_get_pattern, METH_OLDARGS},
+	{"get_filename",	forms_get_filename, METH_OLDARGS},
+	{"set_graphics_mode",	forms_set_graphics_mode, METH_OLDARGS},
+	{"get_rgbmode",		forms_get_rgbmode, METH_OLDARGS},
+	{"show_errors",		forms_show_errors, METH_OLDARGS},
+	{"set_font_name",	forms_set_font_name, METH_OLDARGS},
 	{NULL,			NULL}		/* sentinel */
 };
 

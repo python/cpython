@@ -246,9 +246,9 @@ regobj_group(regexobject *re, PyObject *args)
 
 
 static struct PyMethodDef reg_methods[] = {
-	{"match",	(PyCFunction)regobj_match, 1},
-	{"search",	(PyCFunction)regobj_search, 1},
-	{"group",	(PyCFunction)regobj_group, 1},
+	{"match",	(PyCFunction)regobj_match, METH_VARARGS},
+	{"search",	(PyCFunction)regobj_search, METH_VARARGS},
+	{"group",	(PyCFunction)regobj_group, METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -638,12 +638,12 @@ regex_get_syntax(PyObject *self, PyObject *args)
 
 
 static struct PyMethodDef regex_global_methods[] = {
-	{"compile",	regex_compile, 1},
-	{"symcomp",	regex_symcomp, 1},
-	{"match",	regex_match, 0},
-	{"search",	regex_search, 0},
-	{"set_syntax",	regex_set_syntax, 0},
-	{"get_syntax",  regex_get_syntax, 0},
+	{"compile",	regex_compile, METH_VARARGS},
+	{"symcomp",	regex_symcomp, METH_VARARGS},
+	{"match",	regex_match, METH_OLDARGS},
+	{"search",	regex_search, METH_OLDARGS},
+	{"set_syntax",	regex_set_syntax, METH_OLDARGS},
+	{"get_syntax",  regex_get_syntax, METH_OLDARGS},
 	{NULL,		NULL}		     /* sentinel */
 };
 

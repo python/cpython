@@ -54,7 +54,7 @@ static double nest3(double);
 static void printerr(double);
 
 static PyMethodDef fpetest_methods[] = {
-    {"test",		 (PyCFunction) test,		 1},
+    {"test",		 (PyCFunction) test,		 METH_VARARGS},
     {0,0}
 };
 

@@ -652,15 +652,15 @@ bsddb_sync(bsddbobject *dp, PyObject *args)
 	return PyInt_FromLong(status = 0);
 }
 static PyMethodDef bsddb_methods[] = {
-	{"close",		(PyCFunction)bsddb_close},
-	{"keys",		(PyCFunction)bsddb_keys},
-	{"has_key",		(PyCFunction)bsddb_has_key},
-	{"set_location",	(PyCFunction)bsddb_set_location},
-	{"next",		(PyCFunction)bsddb_next},
-	{"previous",	(PyCFunction)bsddb_previous},
-	{"first",		(PyCFunction)bsddb_first},
-	{"last",		(PyCFunction)bsddb_last},
-	{"sync",		(PyCFunction)bsddb_sync},
+	{"close",		(PyCFunction)bsddb_close, METH_OLDARGS},
+	{"keys",		(PyCFunction)bsddb_keys, METH_OLDARGS},
+	{"has_key",		(PyCFunction)bsddb_has_key, METH_OLDARGS},
+	{"set_location",	(PyCFunction)bsddb_set_location, METH_OLDARGS},
+	{"next",		(PyCFunction)bsddb_next, METH_OLDARGS},
+	{"previous",	(PyCFunction)bsddb_previous, METH_OLDARGS},
+	{"first",		(PyCFunction)bsddb_first, METH_OLDARGS},
+	{"last",		(PyCFunction)bsddb_last, METH_OLDARGS},
+	{"sync",		(PyCFunction)bsddb_sync, METH_OLDARGS},
 	{NULL,	       	NULL}		/* sentinel */
 };
 
@@ -849,9 +849,9 @@ bsdrnopen(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef bsddbmodule_methods[] = {
-	{"hashopen",	(PyCFunction)bsdhashopen, 1},
-	{"btopen",	(PyCFunction)bsdbtopen, 1},
-	{"rnopen",	(PyCFunction)bsdrnopen, 1},
+	{"hashopen",	(PyCFunction)bsdhashopen, METH_VARARGS},
+	{"btopen",	(PyCFunction)bsdbtopen, METH_VARARGS},
+	{"rnopen",	(PyCFunction)bsdrnopen, METH_VARARGS},
 	{0,		0},
 };
 

@@ -91,8 +91,8 @@ static PyObject *turnon_sigfpe            (PyObject *self,PyObject *args);
 static PyObject *turnoff_sigfpe           (PyObject *self,PyObject *args);
 
 static PyMethodDef fpectl_methods[] = {
-    {"turnon_sigfpe",		 (PyCFunction) turnon_sigfpe,		 1},
-    {"turnoff_sigfpe",		 (PyCFunction) turnoff_sigfpe, 	         1},
+    {"turnon_sigfpe",		 (PyCFunction) turnon_sigfpe,		 METH_VARARGS},
+    {"turnoff_sigfpe",		 (PyCFunction) turnoff_sigfpe, 	         METH_VARARGS},
     {0,0}
 };
 
