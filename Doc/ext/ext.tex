@@ -676,36 +676,97 @@ reference count!
 
 \begin{description}
 
-\item[\samp{s} (string) {[char *]}]
-Convert a Python string to a C pointer to a character string.  You
-must not provide storage for the string itself; a pointer to an
-existing string is stored into the character pointer variable whose
-address you pass.  The C string is null-terminated.  The Python string
-must not contain embedded null bytes; if it does, a \exception{TypeError}
-exception is raised.
+\item[\samp{s} (string or Unicode object) {[char *]}]
+Convert a Python string or Unicode object to a C pointer to a
+character string.  You must not provide storage for the string
+itself; a pointer to an existing string is stored into the character
+pointer variable whose address you pass.  The C string is
+null-terminated.  The Python string must not contain embedded null
+bytes; if it does, a \exception{TypeError} exception is raised.
+Unicode objects are converted to C strings using the default
+encoding. If this conversion fails, an \exception{UnicodeError} is
+raised.
 
-\item[\samp{s\#} (string) {[char *, int]}]
-This variant on \samp{s} stores into two C variables, the first one
-a pointer to a character string, the second one its length.  In this
-case the Python string may contain embedded null bytes.
+\item[\samp{s\#} (string, Unicode or any read buffer compatible object) 
+{[char *, int]}]
+This variant on \samp{s} stores into two C variables, the first one a
+pointer to a character string, the second one its length.  In this
+case the Python string may contain embedded null bytes.  Unicode
+objects and all other read buffer compatible objects pass back a
+reference to the raw internal data representation. In case of Unicode
+objects the pointer points to a null-terminated buffer of 16-bit
+Py_UNICODE (UTF-16) data.
 
 \item[\samp{z} (string or \code{None}) {[char *]}]
 Like \samp{s}, but the Python object may also be \code{None}, in which
 case the C pointer is set to \NULL{}.
 
-\item[\samp{z\#} (string or \code{None}) {[char *, int]}]
+\item[\samp{z\#} (string or \code{None} or any read buffer compatible object) 
+{[char *, int]}]
 This is to \samp{s\#} as \samp{z} is to \samp{s}.
 
-\item[\samp{u} (Unicode string) {[Py_UNICODE *]}]
+\item[\samp{u} (Unicode object) {[Py_UNICODE *]}]
 Convert a Python Unicode object to a C pointer to a null-terminated
-buffer of Unicode (UCS-2) data.  As with \samp{s}, there is no need
+buffer of 16-bit Unicode (UTF-16) data.  As with \samp{s}, there is no need
 to provide storage for the Unicode data buffer; a pointer to the
 existing Unicode data is stored into the Py_UNICODE pointer variable whose
 address you pass.  
 
-\item[\samp{u\#} (Unicode string) {[Py_UNICODE *, int]}]
+\item[\samp{u\#} (Unicode object) {[Py_UNICODE *, int]}]
 This variant on \samp{u} stores into two C variables, the first one
 a pointer to a Unicode data buffer, the second one its length.
+
+\item[\samp{es} (string, Unicode object or character buffer compatible
+object) {[const char *encoding, char **buffer]}]
+This variant on \samp{s} is used for encoding Unicode and objects
+convertible to Unicode into a character buffer. It only works for
+encoded data without embedded \NULL{} bytes.
+
+The variant reads one C variable and stores into two C variables, the
+first one a pointer to an encoding name string (\var{encoding}), the
+second a pointer to a pointer to a character buffer (\var{**buffer},
+the buffer used for storing the encoded data) and the third one a
+pointer to an integer (\var{*buffer_length}, the buffer length).
+
+The encoding name must map to a registered codec. If set to \NULL{},
+the default encoding is used.
+
+\cfuntion{PyArg_ParseTuple()} will allocate a buffer of the needed
+size using \cfunction{PyMem_NEW()}, copy the encoded data into this
+buffer and adjust \var{*buffer} to reference the newly allocated
+storage. The caller is responsible for calling
+\cfunction{PyMem_Free()} to free the allocated buffer after usage.
+
+\item[\samp{es\#} (string, Unicode object or character buffer compatible
+object) {[const char *encoding, char **buffer, int *buffer_length]}]
+This variant on \samp{s\#} is used for encoding Unicode and objects
+convertible to Unicode into a character buffer. It reads one C
+variable and stores into two C variables, the first one a pointer to
+an encoding name string (\var{encoding}), the second a pointer to a
+pointer to a character buffer (\var{**buffer}, the buffer used for
+storing the encoded data) and the third one a pointer to an integer
+(\var{*buffer_length}, the buffer length).
+
+The encoding name must map to a registered codec. If set to \NULL{},
+the default encoding is used.
+
+There are two modes of operation: 
+
+If \var{*buffer} points a \NULL{} pointer,
+\cfuntion{PyArg_ParseTuple()} will allocate a buffer of the needed
+size using \cfunction{PyMem_NEW()}, copy the encoded data into this
+buffer and adjust \var{*buffer} to reference the newly allocated
+storage. The caller is responsible for calling
+\cfunction{PyMem_Free()} to free the allocated buffer after usage.
+
+If \var{*buffer} points to a non-\NULL{} pointer (an already allocated
+buffer), \cfuntion{PyArg_ParseTuple()} will use this location as
+buffer and interpret \var{*buffer_length} as buffer size. It will then
+copy the encoded data into the buffer and 0-terminate it. Buffer
+overflow is signalled with an exception.
+
+In both cases, \var{*buffer_length} is set to the length of the
+encoded data without the trailing 0-byte.
 
 \item[\samp{b} (integer) {[char]}]
 Convert a Python integer to a tiny int, stored in a C \ctype{char}.
