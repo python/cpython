@@ -58,7 +58,12 @@ mkgrent(struct group *p)
 
 #define SET(i,val) PyStructSequence_SET_ITEM(v, i, val)
     SET(setIndex++, PyString_FromString(p->gr_name));
-    SET(setIndex++, PyString_FromString(p->gr_passwd));
+    if (p->gr_passwd)
+	    SET(setIndex++, PyString_FromString(p->gr_passwd));
+    else {
+	    SET(setIndex++, Py_None);
+	    Py_INCREF(Py_None);
+    }
     SET(setIndex++, PyInt_FromLong((long) p->gr_gid));
     SET(setIndex++, w);
 #undef SET
