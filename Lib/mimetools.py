@@ -12,8 +12,8 @@ import tempfile
 
 class Message(rfc822.Message):
 
-	def __init__(self, fp):
-		rfc822.Message.__init__(self, fp)
+	def __init__(self, fp, seekable = 1):
+		rfc822.Message.__init__(self, fp, seekable)
 		self.encodingheader = \
 			self.getheader('content-transfer-encoding')
 		self.typeheader = \
