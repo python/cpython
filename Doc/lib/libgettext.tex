@@ -123,7 +123,8 @@ If no such file is found, then \code{None} is returned.
 \end{funcdesc}
 
 \begin{funcdesc}{translation}{domain\optional{, localedir\optional{,
-                              languages\optional{, class_}}}}
+                              languages\optional{, 
+                              class_,\optional{fallback}}}}}
 Return a \class{Translations} instance based on the \var{domain},
 \var{localedir}, and \var{languages}, which are first passed to
 \function{find()} to get the
@@ -132,7 +133,9 @@ identical \file{.mo} file names are cached.  The actual class instantiated
 is either \var{class_} if provided, otherwise
 \class{GNUTranslations}.  The class's constructor must take a single
 file object argument.  If no \file{.mo} file is found, this
-function raises \exception{IOError}.
+function raises \exception{IOError} if \var{fallback} is false
+(which is the default), and returns a \class{NullTranslations} instance
+if \var{fallback} is true.
 \end{funcdesc}
 
 \begin{funcdesc}{install}{domain\optional{, localedir\optional{, unicode}}}

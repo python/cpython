@@ -230,11 +230,14 @@ def find(domain, localedir=None, languages=None):
 # a mapping between absolute .mo file path and Translation object
 _translations = {}
 
-def translation(domain, localedir=None, languages=None, class_=None):
+def translation(domain, localedir=None, languages=None,
+                class_=None, fallback=0):
     if class_ is None:
         class_ = GNUTranslations
     mofile = find(domain, localedir, languages)
     if mofile is None:
+        if fallback:
+            return NullTranslations()
         raise IOError(ENOENT, 'No translation file found for domain', domain)
     key = os.path.abspath(mofile)
     # TBD: do we need to worry about the file pointer getting collected?
@@ -248,7 +251,7 @@ def translation(domain, localedir=None, languages=None, class_=None):
 
 
 def install(domain, localedir=None, unicode=0):
-    translation(domain, localedir).install(unicode)
+    translation(domain, localedir, fallback=1).install(unicode)
 
 
 
