@@ -977,7 +977,7 @@ audioop_ratecv(self, args)
 	char *cp, *ncp;
 	int len, size, nchannels, inrate, outrate, weightA, weightB;
 	int chan, d, *prev_i, *cur_i, cur_o;
-	PyObject *state, *samps, *str, *rv;
+	PyObject *state, *samps, *str, *rv = NULL;
 
 	weightA = 1;
 	weightB = 0;
@@ -1013,6 +1013,10 @@ audioop_ratecv(self, args)
 	prev_i = (int *) malloc(nchannels * sizeof(int));
 	cur_i = (int *) malloc(nchannels * sizeof(int));
 	len /= size * nchannels;	/* # of frames */
+	if (prev_i == NULL || cur_i == NULL) {
+		(void) PyErr_NoMemory();
+		goto exit;
+	}
 
 	if (state == Py_None) {
 		d = -outrate;
@@ -1022,22 +1026,22 @@ audioop_ratecv(self, args)
 		if (!PyArg_ParseTuple(state,
 				"iO!;audioop.ratecv: illegal state argument",
 				&d, &PyTuple_Type, &samps))
-			return NULL;
+			goto exit;
 		if (PyTuple_Size(samps) != nchannels) {
 			PyErr_SetString(AudioopError,
 					"illegal state argument");
-			return NULL;
+			goto exit;
 		}
 		for (chan = 0; chan < nchannels; chan++) {
 			if (!PyArg_ParseTuple(PyTuple_GetItem(samps, chan),
 					      "ii",&prev_i[chan],&cur_i[chan]))
-				return NULL;
+				goto exit;
 		}
 	}
 	str = PyString_FromStringAndSize(
 	      NULL, size * nchannels * (len * outrate + inrate - 1) / inrate);
 	if (str == NULL)
-		return NULL;
+		goto exit;
 	ncp = PyString_AsString(str);
 
 	for (;;) {
@@ -1050,7 +1054,7 @@ audioop_ratecv(self, args)
 							      prev_i[chan],
 							      cur_i[chan]));
 				if (PyErr_Occurred())
-					return NULL;
+					goto exit;
 				len = ncp - PyString_AsString(str);
 				if (len == 0) {
 					/*don't want to resize to zero length*/
@@ -1058,11 +1062,11 @@ audioop_ratecv(self, args)
 					Py_DECREF(str);
 					str = rv;
 				} else if (_PyString_Resize(&str, len) < 0)
-					return NULL;
+					goto exit;
 				rv = Py_BuildValue("(O(iO))", str, d, samps);
 				Py_DECREF(samps);
 				Py_DECREF(str);
-				return rv;
+				goto exit; /* return rv */
 			}
 			for (chan = 0; chan < nchannels; chan++) {
 				prev_i[chan] = cur_i[chan];
@@ -1098,6 +1102,12 @@ audioop_ratecv(self, args)
 			d -= inrate;
 		}
 	}
+  exit:
+	if (prev_i != NULL)
+		free(prev_i);
+	if (cur_i != NULL)
+		free(cur_i);
+	return rv;
 }
 
 static PyObject *
