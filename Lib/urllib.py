@@ -20,7 +20,7 @@ import regex
 import os
 
 
-__version__ = '1.2' # XXXX Should I update this number? -- jack
+__version__ = '1.3'
 
 # Helper for non-unix systems
 if os.name == 'mac':
@@ -33,6 +33,7 @@ if os.name == 'mac':
 		if tp and tp <> 'file':
 			raise RuntimeError, 'Cannot convert non-local URL to pathname'
 		components = string.split(pathname, '/')
+		# Remove . and embedded ..
 		i = 0
 		while i < len(components):
 			if components[i] == '.':
@@ -45,13 +46,16 @@ if os.name == 'mac':
 				del components[i]
 			else:
 				i = i+1
-		if not components or '..' in components or '.' in components or '' in components[1:-1]:
-			raise RuntimeError, 'Cannot normalize URL containing ., .. or // to pathname'
 		if not components[0]:
 			# Absolute unix path, don't start with colon
 			return string.join(components[1:], ':')
 		else:
-			# relative unix path, start with colon
+			# relative unix path, start with colon. First replace
+			# leading .. by empty strings (giving ::file)
+			i = 0
+			while i < len(components) and components[i] == '..':
+				components[i] = ''
+				i = i + 1
 			return ':' + string.join(components, ':')
 			
 	def pathname2url(pathname):
@@ -59,8 +63,10 @@ if os.name == 'mac':
 		if '/' in pathname:
 			raise RuntimeError, "Cannot convert pathname containing slashes"
 		components = string.split(pathname, ':')
-		if '' in components[1:-1]:
-			raise RuntimeError, "Cannot convert pathname containing ::"
+		# Replace empty string ('::') by .. (will result in '/../' later)
+		for i in range(1, len(components)):
+			if components[i] == '':
+				components[i] = '..'
 		# Truncate names longer than 31 bytes
 		components = map(lambda x: x[:31], components)
 		
@@ -108,7 +114,10 @@ ftpcache = {}
 class URLopener:
 
 	# Constructor
-	def __init__(self):
+	def __init__(self, proxies=None):
+		if proxies is None:
+			proxies = getproxies()
+		self.proxies = proxies
 		server_version = "Python-urllib/%s" % __version__
 		self.addheaders = [('User-agent', server_version)]
 		self.tempcache = None
@@ -150,6 +159,11 @@ class URLopener:
 		fullurl = unwrap(fullurl)
 		type, url = splittype(fullurl)
  		if not type: type = 'file'
+		if self.proxies.has_key(type):
+			proxy = self.proxies[type]
+			type, proxy = splittype(proxy)
+			host, selector = splithost(proxy)
+			url = (host, fullurl) # Signal special case to open_*()
 		name = 'open_' + type
 		if '-' in name:
 			import regsub
@@ -206,7 +220,11 @@ class URLopener:
 	# Use HTTP protocol
 	def open_http(self, url):
 		import httplib
-		host, selector = splithost(url)
+		if type(url) is type(""):
+			host, selector = splithost(url)
+		else:
+			host, selector = url
+			print "proxy via http:", host, selector
 		if not host: raise IOError, ('http error', 'no host given')
 		i = string.find(host, '@')
 		if i >= 0:
@@ -671,6 +689,24 @@ def quote(s, safe = '/'):
 		else:
 			res = res + '%%%02x' % ord(c)
 	return res
+
+
+# Proxy handling
+def getproxies():
+	"""Return a dictionary of protocol scheme -> proxy server URL mappings.
+
+	Scan the environment for variables named <scheme>_proxy;
+	this seems to be the standard convention.  If you need a
+	different way, you can pass a proxies dictionary to the
+	[Fancy]URLopener constructor.
+
+	"""
+	proxies = {}
+	for name, value in os.environ.items():
+		if value and name[-6:] == '_proxy':
+			proxies[name[:-6]] = value
+	return proxies
+
 
 # Test and time quote() and unquote()
 def test1():
