@@ -105,7 +105,14 @@ def test_both():
         pass
     else:
         # resize() is supported
-        pass
+	assert len(m) == 512, "len(m) is %d, but expecting 512" % (len(m),)
+	# Check that we can no longer seek beyond the new size.
+	try:
+		m.seek(513,0)
+	except ValueError:
+		pass
+	else:
+	        assert 0, 'Could seek beyond the new size'
     
     m.close()
     os.unlink("foo")
