@@ -224,7 +224,7 @@ int
 PyErr_BadArgument(void)
 {
 	PyErr_SetString(PyExc_TypeError,
-			"illegal argument type for built-in operation");
+			"bad argument type for built-in operation");
 	return 0;
 }
 

@@ -173,7 +173,7 @@ PyLong_AsLong(PyObject *vv)
 
  overflow:
 	PyErr_SetString(PyExc_OverflowError,
-			"long int too long to convert");
+			"long int too large to convert");
 	return -1;
 }
 
@@ -204,7 +204,7 @@ PyLong_AsUnsignedLong(PyObject *vv)
 		x = (x << SHIFT) + v->ob_digit[i];
 		if ((x >> SHIFT) != prev) {
 			PyErr_SetString(PyExc_OverflowError,
-				"long int too long to convert");
+				"long int too large to convert");
 			return (unsigned long) -1;
 		}
 	}
@@ -653,7 +653,7 @@ PyLong_FromString(char *str, char **pend, int base)
 	
 	if ((base != 0 && base < 2) || base > 36) {
 		PyErr_SetString(PyExc_ValueError,
-				"invalid base for long literal");
+				"long() arg 2 must be >= 2 and <= 36");
 		return NULL;
 	}
 	while (*str != '\0' && isspace(Py_CHARMASK(*str)))
@@ -751,7 +751,7 @@ long_divrem(PyLongObject *a, PyLongObject *b,
 	
 	if (size_b == 0) {
 		PyErr_SetString(PyExc_ZeroDivisionError,
-				"long division or modulo");
+				"long division or modulo by zero");
 		return -1;
 	}
 	if (size_a < size_b ||

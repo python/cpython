@@ -1226,7 +1226,7 @@ posix_utime(PyObject *self, PyObject *args)
 	}
 	else if (!PyArg_Parse(arg, "(ll)", &atime, &mtime)) {
 		PyErr_SetString(PyExc_TypeError,
-			      "Second argument must be a 2-tuple of numbers.");
+				"utime() arg 2 must be a tuple (atime, mtime)");
 		return NULL;
 	}
 	else {
@@ -1294,12 +1294,12 @@ posix_execv(PyObject *self, PyObject *args)
 		getitem = PyTuple_GetItem;
 	}
 	else {
-		PyErr_SetString(PyExc_TypeError, "argv must be tuple or list");
+		PyErr_SetString(PyExc_TypeError, "execv() arg 2 must be a tuple or list");
 		return NULL;
 	}
 
 	if (argc == 0) {
-		PyErr_SetString(PyExc_ValueError, "empty argument list");
+		PyErr_SetString(PyExc_ValueError, "execv() arg 2 must not be empty");
 		return NULL;
 	}
 
@@ -1310,7 +1310,7 @@ posix_execv(PyObject *self, PyObject *args)
 		if (!PyArg_Parse((*getitem)(argv, i), "s", &argvlist[i])) {
 			PyMem_DEL(argvlist);
 			PyErr_SetString(PyExc_TypeError, 
-					"all arguments must be strings");
+					"execv() arg 2 must contain only strings");
 			return NULL;
 			
 		}
@@ -1364,17 +1364,17 @@ posix_execve(PyObject *self, PyObject *args)
 		getitem = PyTuple_GetItem;
 	}
 	else {
-		PyErr_SetString(PyExc_TypeError, "argv must be tuple or list");
+		PyErr_SetString(PyExc_TypeError, "execve() arg 2 must be a tuple or list");
 		return NULL;
 	}
 	if (!PyMapping_Check(env)) {
-		PyErr_SetString(PyExc_TypeError, "env must be mapping object");
+		PyErr_SetString(PyExc_TypeError, "execve() arg 3 must be a mapping object");
 		return NULL;
 	}
 
 	if (argc == 0) {
 		PyErr_SetString(PyExc_ValueError, 
-				"empty argument list");
+				"execve() arg 2 must not be empty");
 		return NULL;
 	}
 
@@ -1385,7 +1385,7 @@ posix_execve(PyObject *self, PyObject *args)
 	}
 	for (i = 0; i < argc; i++) {
 		if (!PyArg_Parse((*getitem)(argv, i),
-				 "s;argv must be list of strings",
+				 "s;execve() arg 2 must contain only strings",
 				 &argvlist[i]))
 		{
 			goto fail_1;
@@ -1413,8 +1413,8 @@ posix_execve(PyObject *self, PyObject *args)
 		if (!key || !val)
 			goto fail_2;
 		
-		if (!PyArg_Parse(key, "s;non-string key in env", &k) ||
-		    !PyArg_Parse(val, "s;non-string value in env", &v))
+		if (!PyArg_Parse(key, "s;execve() arg 3 contains a non-string key", &k) ||
+		    !PyArg_Parse(val, "s;execve() arg 3 contains a non-string value", &v))
 		{
 			goto fail_2;
 		}
@@ -1493,7 +1493,7 @@ posix_spawnv(PyObject *self, PyObject *args)
 		getitem = PyTuple_GetItem;
 	}
 	else {
-		PyErr_SetString(PyExc_TypeError, "argv must be tuple or list");
+		PyErr_SetString(PyExc_TypeError, "spawmv() arg 2 must be a tuple or list");
 		return NULL;
 	}
 
@@ -1504,7 +1504,7 @@ posix_spawnv(PyObject *self, PyObject *args)
 		if (!PyArg_Parse((*getitem)(argv, i), "s", &argvlist[i])) {
 			PyMem_DEL(argvlist);
 			PyErr_SetString(PyExc_TypeError, 
-					"all arguments must be strings");
+					"spawnv() arg 2 must contain only strings");
 			return NULL;
 		}
 	}
@@ -1563,11 +1563,11 @@ posix_spawnve(PyObject *self, PyObject *args)
 		getitem = PyTuple_GetItem;
 	}
 	else {
-		PyErr_SetString(PyExc_TypeError, "argv must be tuple or list");
+		PyErr_SetString(PyExc_TypeError, "spawnve() arg 2 must be a tuple or list");
 		return NULL;
 	}
 	if (!PyMapping_Check(env)) {
-		PyErr_SetString(PyExc_TypeError, "env must be mapping object");
+		PyErr_SetString(PyExc_TypeError, "spawnve() arg 3 must be a mapping object");
 		return NULL;
 	}
 
@@ -1578,7 +1578,7 @@ posix_spawnve(PyObject *self, PyObject *args)
 	}
 	for (i = 0; i < argc; i++) {
 		if (!PyArg_Parse((*getitem)(argv, i),
-				 "s;argv must be list of strings",
+				 "s;spawnve() arg 2 must contain only strings",
 				 &argvlist[i]))
 		{
 			goto fail_1;
@@ -1606,8 +1606,8 @@ posix_spawnve(PyObject *self, PyObject *args)
 		if (!key || !val)
 			goto fail_2;
 		
-		if (!PyArg_Parse(key, "s;non-string key in env", &k) ||
-		    !PyArg_Parse(val, "s;non-string value in env", &v))
+		if (!PyArg_Parse(key, "s;spawnve() arg 3 contains a non-string key", &k) ||
+		    !PyArg_Parse(val, "s;spawnve() arg 3 contains a non-string value", &v))
 		{
 			goto fail_2;
 		}
@@ -2150,13 +2150,13 @@ posix_popen(PyObject *self, PyObject *args)
 	if (*mode == 'r')
 		tm = _O_RDONLY;
 	else if (*mode != 'w') {
-		PyErr_SetString(PyExc_ValueError, "mode must be 'r' or 'w'");
+		PyErr_SetString(PyExc_ValueError, "popen() arg 2 must be 'r' or 'w'");
 		return NULL;
 	} else
 		tm = _O_WRONLY;
 	 
 	if (bufsize != -1) {
-		PyErr_SetString(PyExc_ValueError, "bufsize must be -1");
+		PyErr_SetString(PyExc_ValueError, "popen() arg 3 must be -1");
 		return NULL;
 	}
 
@@ -2191,13 +2191,13 @@ win32_popen2(PyObject *self, PyObject  *args)
 	if (*mode == 't')
 		tm = _O_TEXT;
 	else if (*mode != 'b') {
-		PyErr_SetString(PyExc_ValueError, "mode must be 't' or 'b'");
+		PyErr_SetString(PyExc_ValueError, "popen2() arg 2 must be 't' or 'b'");
 		return NULL;
 	} else
 		tm = _O_BINARY;
   
 	if (bufsize != -1) {
-		PyErr_SetString(PyExc_ValueError, "bufsize must be -1");
+		PyErr_SetString(PyExc_ValueError, "popen2() arg 3 must be -1");
 		return NULL;
 	}
 
@@ -2228,13 +2228,13 @@ win32_popen3(PyObject *self, PyObject *args)
 	if (*mode == 't')
 		tm = _O_TEXT;
 	else if (*mode != 'b') {
-		PyErr_SetString(PyExc_ValueError, "mode must be 't' or 'b'");
+		PyErr_SetString(PyExc_ValueError, "popen3() arg 2 must be 't' or 'b'");
 		return NULL;
 	} else
 		tm = _O_BINARY;
   
 	if (bufsize != -1) {
-		PyErr_SetString(PyExc_ValueError, "bufsize must be -1");
+		PyErr_SetString(PyExc_ValueError, "popen3() arg 3 must be -1");
 		return NULL;
 	}
 
@@ -2265,13 +2265,13 @@ win32_popen4(PyObject *self, PyObject  *args)
 	if (*mode == 't')
 		tm = _O_TEXT;
 	else if (*mode != 'b') {
-		PyErr_SetString(PyExc_ValueError, "mode must be 't' or 'b'");
+		PyErr_SetString(PyExc_ValueError, "popen4() arg 2 must be 't' or 'b'");
 		return NULL;
 	} else
 		tm = _O_BINARY;
 
 	if (bufsize != -1) {
-		PyErr_SetString(PyExc_ValueError, "bufsize must be -1");
+		PyErr_SetString(PyExc_ValueError, "popen4() arg 3 must be -1");
 		return NULL;
 	}
 
@@ -2727,13 +2727,13 @@ static int _PyPclose(FILE *file)
 		 * an exception.  Just die.
 		 */
 		 Py_FatalError("unable to allocate interpreter state "
-		 	       "when closing popen object.");
+		 	       "when closing popen object");
 		 return -1;  /* unreachable */
 	}
 	pThreadState = PyThreadState_New(pInterpreterState);
 	if (!pThreadState) {
 		 Py_FatalError("unable to allocate thread state "
-		 	       "when closing popen object.");
+		 	       "when closing popen object");
 		 return -1;  /* unreachable */
 	}
 	/* Grab the global lock.  Note that this will deadlock if the
@@ -3761,7 +3761,7 @@ posix_strerror(PyObject *self, PyObject *args)
 	message = strerror(code);
 	if (message == NULL) {
 		PyErr_SetString(PyExc_ValueError,
-				"strerror code out of range");
+				"strerror() argument out of range");
 		return NULL;
 	}
 	return PyString_FromString(message);

@@ -171,7 +171,7 @@ PyInt_FromString(char *s, char **pend, int base)
 	char buffer[256]; /* For errors */
 
 	if ((base != 0 && base < 2) || base > 36) {
-		PyErr_SetString(PyExc_ValueError, "invalid base for int()");
+		PyErr_SetString(PyExc_ValueError, "int() base must be >= 2 and <= 36");
 		return NULL;
 	}
 
@@ -417,7 +417,7 @@ i_divmod(register PyIntObject *x, register PyIntObject *y,
 	
 	if (yi == 0) {
 		PyErr_SetString(PyExc_ZeroDivisionError,
-				"integer division or modulo");
+				"integer division or modulo by zero");
 		return -1;
 	}
 	if (yi < 0) {
@@ -485,17 +485,17 @@ int_pow(PyIntObject *v, PyIntObject *w, PyIntObject *z)
 	if (iw < 0) {
 		if (iv)
 			PyErr_SetString(PyExc_ValueError,
-					"integer to a negative power");
+					"cannot raise integer to a negative power");
 		else
 			PyErr_SetString(PyExc_ZeroDivisionError,
-					"0 to a negative power");
+					"cannot raise 0 to a negative power");
 		return NULL;
 	}
  	if ((PyObject *)z != Py_None) {
 		iz = z->ob_ival;
 		if (iz == 0) {
 			PyErr_SetString(PyExc_ValueError,
-					"pow(x, y, z) with z==0");
+					"pow() arg 3 cannot be 0");
 			return NULL;
 		}
 	}

@@ -175,7 +175,7 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
 		return -1;
 #ifdef USE_STACKCHECK
 	if (PyOS_CheckStack()) {
-		PyErr_SetString(PyExc_MemoryError, "Stack overflow");
+		PyErr_SetString(PyExc_MemoryError, "stack overflow");
 		return -1;
 	}
 #endif
@@ -227,7 +227,7 @@ PyObject_Repr(PyObject *v)
 		return NULL;
 #ifdef USE_STACKCHECK
 	if (PyOS_CheckStack()) {
-		PyErr_SetString(PyExc_MemoryError, "Stack overflow");
+		PyErr_SetString(PyExc_MemoryError, "stack overflow");
 		return NULL;
 	}
 #endif

@@ -173,7 +173,9 @@ class_getattr(register PyClassObject *op, PyObject *name)
 	}
 	v = class_lookup(op, name, &class);
 	if (v == NULL) {
-		PyErr_SetObject(PyExc_AttributeError, name);
+		PyErr_Format(PyExc_AttributeError,
+			     "class %.50s has no attribute '%.400s'",
+			     PyString_AS_STRING(op->cl_name), sname);
 		return NULL;
 	}
 	Py_INCREF(v);
@@ -285,8 +287,9 @@ class_setattr(PyClassObject *op, PyObject *name, PyObject *v)
 	if (v == NULL) {
 		int rv = PyDict_DelItem(op->cl_dict, name);
 		if (rv < 0)
-			PyErr_SetString(PyExc_AttributeError,
-				   "delete non-existing class attribute");
+			PyErr_Format(PyExc_AttributeError,
+				     "class %.50s has no attribute '%.400s'",
+				     PyString_AS_STRING(op->cl_name), sname);
 		return rv;
 	}
 	else
@@ -578,7 +581,8 @@ instance_getattr1(register PyInstanceObject *inst, PyObject *name)
 	}
 	v = instance_getattr2(inst, name);
 	if (v == NULL) {
-		PyErr_Format(PyExc_AttributeError,"'%.50s' instance has no attribute '%.400s'",
+		PyErr_Format(PyExc_AttributeError,
+			     "%.50s instance has no attribute '%.400s'",
 			     PyString_AS_STRING(inst->in_class->cl_name), sname);
 	}
 	return v;
@@ -642,8 +646,10 @@ instance_setattr1(PyInstanceObject *inst, PyObject *name, PyObject *v)
 	if (v == NULL) {
 		int rv = PyDict_DelItem(inst->in_dict, name);
 		if (rv < 0)
-			PyErr_SetString(PyExc_AttributeError,
-				   "delete non-existing instance attribute");
+			PyErr_Format(PyExc_AttributeError,
+				     "%.50s instance has no attribute '%.400s'",
+				     PyString_AS_STRING(inst->in_class->cl_name),
+				     PyString_AS_STRING(name));
 		return rv;
 	}
 	else

@@ -188,7 +188,7 @@ get_self(PyObject *args)
 	/* Watch out for being called to early in the bootstrapping process */
 	if (PyExc_TypeError) {
 	    PyErr_SetString(PyExc_TypeError,
-	     "unbound method must be called with class instance 1st argument");
+	     "unbound method must be called with instance as first argument");
 	}
         return NULL;
     }
