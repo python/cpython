@@ -110,6 +110,7 @@ Passed assertion: len(Node.allnodes) == 0
 Passed Test
 Test Succeeded testGetElementsByTagName
 Passed assertion: len(Node.allnodes) == 0
+Passed Test
 Test Succeeded testGetElementsByTagNameNS
 Passed assertion: len(Node.allnodes) == 0
 Test Succeeded testGetEmptyNodeListFromElementsByTagNameNS
