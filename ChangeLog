@@ -1,4 +1,8 @@
-Wed May  4 00:53:11 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+========================================================================
+Release 1.0.2 (4 May 1994)
+========================================================================
+
+Wed May  4 13:12:00 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* README: version 1.0.2
 
@@ -128,11 +132,6 @@ Sun Apr 17 21:52:52 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Python/compile.c (com_atom), Grammar/Grammar (atom): string
 	literal concatenation -- "abc" 'def' is equivalent to 'abcdef'
-
-Fri Apr 15 10:10:17 1994  Guido van Rossum  (guido@voorn.cwi.nl)
-
-	* Doc/libtypes.tex (subsubsection{File Objects}): documented
-	file.setbufsize
 
 Thu Apr 14 12:36:25 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
