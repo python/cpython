@@ -146,6 +146,7 @@ I_PPC_PLUGINS : (buildmwproject, "CWIE", [
 		":PlugIns:waste.ppc.µ",
 		":PlugIns:_tkinter.ppc.µ",
 		":PlugIns:calldll.ppc.µ",
+		":PlugIns:zlib.ppc.µ",
 	]),
 
 I_68K_PLUGINS : (buildmwproject, "CWIE", [
@@ -157,6 +158,7 @@ I_68K_PLUGINS : (buildmwproject, "CWIE", [
 		":PlugIns:imgmodules.CFM68K.µ",
 		":PlugIns:waste.CFM68K.µ",
 		":PlugIns:_tkinter.CFM68K.µ",
+		":PlugIns:zlib.CFM68K.µ",
 	]),
 
 I_68K_FULL : (buildmwproject, "CWIE", [
