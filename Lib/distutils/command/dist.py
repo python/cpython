@@ -129,7 +129,7 @@ from distutils.text_file import TextFile
 
 class Dist (Command):
 
-    options = [('formats=', 'f',
+    options = [('formats=', None,
                 "formats for source distribution (tar, ztar, gztar, or zip)"),
                ('manifest=', 'm',
                 "name of manifest file"),
@@ -385,17 +385,23 @@ class Dist (Command):
     # make_release_tree ()
 
 
-    def make_tarball (self, base_dir):
+    def make_tarball (self, base_dir, compress="gzip"):
 
         # XXX GNU tar 1.13 has a nifty option to add a prefix directory.
-        # It's pretty new, though, so we certainly can't require it -- but
-        # it would be nice to take advantage of it to skip the "create a
-        # tree of hardlinks" step!
+        # It's pretty new, though, so we certainly can't require it --
+        # but it would be nice to take advantage of it to skip the
+        # "create a tree of hardlinks" step!  (Would also be nice to
+        # detect GNU tar to use its 'z' option and save a step.)
 
-        # But I am a lazy bastard, so I require GNU tar anyways.
+        if compress is not None and compress not in ('gzip', 'compress'):
+            raise ValueError, \
+                  "if given, 'compress' must be 'gzip' or 'compress'"
 
-        archive_name = base_dir + ".tar.gz"
-        self.spawn (["tar", "-czf", archive_name, base_dir])
+        archive_name = base_dir + ".tar"
+        self.spawn (["tar", "-cf", archive_name, base_dir])
+
+        if compress:
+            self.spawn ([compress, archive_name])
 
 
     def make_zipfile (self, base_dir):
@@ -425,10 +431,15 @@ class Dist (Command):
         self.exclude_files (base_dir + "*")
  
         self.make_release_tree (base_dir, self.files)
-        if 'gztar' in self.formats:
-            self.make_tarball (base_dir)
-        if 'zip' in self.formats:
-            self.make_zipfile (base_dir)
+        for fmt in self.formats:
+            if fmt == 'gztar':
+                self.make_tarball (base_dir, compress='gzip')
+            elif fmt == 'ztar':
+                self.make_tarball (base_dir, compress='compress')
+            elif fmt == 'tar':
+                self.make_tarball (base_dir, compress=None)
+            elif fmt == 'zip':
+                self.make_zipfile (base_dir)
 
 # class Dist
 
