@@ -1006,7 +1006,7 @@ class TestMIMEText(unittest.TestCase):
 
 
 # Test a more complicated multipart/mixed type message
-class TestMultipartMixed(unittest.TestCase):
+class TestMultipartMixed(TestEmailBase):
     def setUp(self):
         fp = openfile('PyBanner048.gif')
         try:
