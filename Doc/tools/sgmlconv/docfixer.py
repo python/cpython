@@ -227,20 +227,104 @@ def cleanup_trailing_parens(doc, element_names):
                     queue.append(child)
 
 
+def contents_match(left, right):
+    left_children = left.childNodes
+    right_children = right.childNodes
+    if len(left_children) != len(right_children):
+        return 0
+    for l, r in map(None, left_children, right_children):
+        nodeType = l.nodeType
+        if nodeType != r.nodeType:
+            return 0
+        if nodeType == xml.dom.core.ELEMENT:
+            if l.tagName != r.tagName:
+                return 0
+            # should check attributes, but that's not a problem here
+            if not contents_match(l, r):
+                return 0
+        elif nodeType == xml.dom.core.TEXT:
+            if l.data != r.data:
+                return 0
+        else:
+            # not quite right, but good enough
+            return 0
+    return 1
+
+
+def create_module_info(doc, section):
+    # Heavy.
+    node = extract_first_element(section, "modulesynopsis")
+    if node is None:
+        return
+    node._node.name = "synopsis"
+    lastchild = node.childNodes[-1]
+    if lastchild.nodeType == xml.dom.core.TEXT \
+       and lastchild.data[-1:] == ".":
+        lastchild.data = lastchild.data[:-1]
+    if section.tagName == "section":
+        modinfo_pos = 2
+        modinfo = doc.createElement("moduleinfo")
+        moddecl = extract_first_element(section, "declaremodule")
+        name = None
+        if moddecl:
+            modinfo.appendChild(doc.createTextNode("\n    "))
+            name = moddecl.attributes["name"].value
+            namenode = doc.createElement("name")
+            namenode.appendChild(doc.createTextNode(name))
+            modinfo.appendChild(namenode)
+            type = moddecl.attributes.get("type")
+            if type:
+                type = type.value
+                modinfo.appendChild(doc.createTextNode("\n    "))
+                typenode = doc.createElement("type")
+                typenode.appendChild(doc.createTextNode(type))
+                modinfo.appendChild(typenode)
+        title = get_first_element(section, "title")
+        if title:
+            children = title.childNodes
+            if len(children) >= 2 \
+               and children[0].nodeType == xml.dom.core.ELEMENT \
+               and children[0].tagName == "module" \
+               and children[0].childNodes[0].data == name:
+                # this is it; morph the <title> into <short-synopsis>
+                first_data = children[1]
+                if first_data.data[:4] == " ---":
+                    first_data.data = string.lstrip(first_data.data[4:])
+                title._node.name = "short-synopsis"
+                if children[-1].data[-1:] == ".":
+                    children[-1].data = children[-1].data[:-1]
+                section.removeChild(title)
+                section.removeChild(section.childNodes[0])
+                title.removeChild(children[0])
+                modinfo_pos = 0
+            else:
+                sys.stderr.write(
+                    "module name in title doesn't match"
+                    " <declaremodule>; no <short-synopsis>\n")
+        else:
+            sys.stderr.write(
+                "Unexpected condition: <section> without <title>\n")
+        modinfo.appendChild(doc.createTextNode("\n    "))
+        modinfo.appendChild(node)
+        if title and not contents_match(title, node):
+            # The short synopsis is actually different,
+            # and needs to be stored:
+            modinfo.appendChild(doc.createTextNode("\n    "))
+            modinfo.appendChild(title)
+        modinfo.appendChild(doc.createTextNode("\n  "))
+        section.insertBefore(modinfo, section.childNodes[modinfo_pos])
+        section.insertBefore(doc.createTextNode("\n  "), modinfo)
+
+
 def cleanup_synopses(doc):
-    # Actually, this should build a "moduleinfo" element from various
-    # parts of the meta-information in the section.  <moduleinfo> needs
-    # some design work before we can really do anything real.
-    synopses = doc.getElementsByTagName("modulesynopsis")
-    for node in synopses:
-        node._node.name = "synopsis"
-        parent = node.parentNode
-        if parent.tagName == "section":
-            children = parent.childNodes
-            parent.removeChild(node)
-            parent.insertBefore(node, children[2])
-            text = doc.createTextNode("\n  ")
-            parent.insertBefore(text, node)
+    for node in doc.childNodes:
+        if node.nodeType == xml.dom.core.ELEMENT \
+           and node.tagName == "section":
+            create_module_info(doc, node)
+
+
+def fixup_paras(doc):
+    pass
 
 
 _token_rx = re.compile(r"[a-zA-Z][a-zA-Z0-9.-]*$")
@@ -292,6 +376,8 @@ def convert(ifp, ofp):
     cleanup_root_text(doc)
     cleanup_trailing_parens(doc, ["function", "method", "cfunction"])
     cleanup_synopses(doc)
+    normalize(doc)
+    fixup_paras(doc)
     #
     d = {}
     for gi in p.get_empties():
