@@ -16,7 +16,7 @@ import sys
 import macfs
 import MacOS
 import EasyDialogs
-import regex
+import re
 import string
 
 import aetools
@@ -278,11 +278,11 @@ def incbuildno(filename):
 	line = fp.readline()
 	fp.close()
 	
-	pat = regex.compile('#define BUILD \([0-9][0-9]*\)')
-	pat.match(line)
-	buildno = pat.group(1)
-	if not buildno:
+	pat = re.compile('#define BUILD ([0-9]+)')
+	m = pat.search(line)
+	if not m or not m.group(1):
 		raise 'Incorrect macbuildno.h line', line
+	buildno = m.group(1)
 	new = string.atoi(buildno) + 1
 	fp = open(filename, 'w')
 	fp.write('#define BUILD %d\n'%new)
