@@ -54,6 +54,7 @@ class Message(rfc822.Message):
 				f = string.lower(string.strip(f[:i])) + \
 					'=' + string.strip(f[i+1:])
 			self.plist.append(string.strip(f))
+			str = str[end:]
 
 	def getplist(self):
 		return self.plist
