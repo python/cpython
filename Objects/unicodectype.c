@@ -32,16 +32,17 @@ typedef struct {
 #include "unicodetype_db.h"
 
 static const _PyUnicode_TypeRecord *
-gettyperecord(int code)
+gettyperecord(Py_UNICODE code)
 {
     int index;
 
-    if (code < 0 || code >= 65536)
+    if (code >= 65536)
         index = 0;
     else {
         index = index1[(code>>SHIFT)];
         index = index2[(index<<SHIFT)+(code&((1<<SHIFT)-1))];
     }
+
     return &_PyUnicode_TypeRecords[index];
 }
 
