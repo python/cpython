@@ -157,13 +157,17 @@ class HTTPError(URLError, addinfourl):
     __super_init = addinfourl.__init__
 
     def __init__(self, url, code, msg, hdrs, fp):
-        self.__super_init(fp, hdrs, url)
         self.code = code
         self.msg = msg
         self.hdrs = hdrs
         self.fp = fp
-        # XXX
         self.filename = url
+        # The addinfourl classes depend on fp being a valid file
+        # object.  In some cases, the HTTPError may not have a valid
+        # file object.  If this happens, the simplest workaround is to
+        # not initialize the base classes.  
+        if fp is not None:
+            self.__super_init(fp, hdrs, url)
 
     def __str__(self):
         return 'HTTP Error %s: %s' % (self.code, self.msg)
