@@ -411,15 +411,14 @@ class EditorWindow:
             name = ""
         else:
             name = name.strip()
+        name = tkSimpleDialog.askstring("Module",
+                 "Enter the name of a Python module\n"
+                 "to search on sys.path and open:",
+                 parent=self.text, initialvalue=name)
+        if name:
+            name = name.strip()
         if not name:
-            name = tkSimpleDialog.askstring("Module",
-                     "Enter the name of a Python module\n"
-                     "to search on sys.path and open:",
-                     parent=self.text)
-            if name:
-                name = name.strip()
-            if not name:
-                return
+            return
         # XXX Ought to insert current file's directory in front of path
         try:
             (f, file, (suffix, mode, type)) = _find_module(name)
