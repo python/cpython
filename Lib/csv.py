@@ -148,6 +148,11 @@ class DictWriter:
             rows.append(self._dict_to_list(rowdict))
         return self.writer.writerows(rows)
 
+# Guard Sniffer's type checking against builds that exclude complex()
+try:
+    complex
+except NameError:
+    complex = float
 
 class Sniffer:
     '''
@@ -360,13 +365,6 @@ class Sniffer:
         # Finally, a 'vote' is taken at the end for each column, adding or
         # subtracting from the likelihood of the first row being a header.
 
-        def seval(item):
-            """
-            Strips parens from item prior to calling eval in an
-            attempt to make it safer
-            """
-            return eval(item.replace('(', '').replace(')', ''))
-
         rdr = reader(StringIO(sample), self.sniff(sample))
 
         header = rdr.next() # assume first row is header
@@ -386,17 +384,20 @@ class Sniffer:
                 continue # skip rows that have irregular number of columns
 
             for col in columnTypes.keys():
-                try:
+
+                for thisType in [int, long, float, complex]:
                     try:
-                        # is it a built-in type (besides string)?
-                        thisType = type(seval(row[col]))
-                    except OverflowError:
-                        # a long int?
-                        thisType = type(seval(row[col] + 'L'))
-                        thisType = type(0) # treat long ints as int
-                except:
+                        thisType(row[col])
+                        break
+                    except ValueError, OverflowError:
+                        pass
+                else:
                     # fallback to length of string
                     thisType = len(row[col])
+
+                # treat longs as ints
+                if thisType == long:
+                    thisType = int
 
                 if thisType != columnTypes[col]:
                     if columnTypes[col] is None: # add new column type
@@ -417,8 +418,8 @@ class Sniffer:
                     hasHeader -= 1
             else: # attempt typecast
                 try:
-                    eval("%s(%s)" % (colType.__name__, header[col]))
-                except:
+                    colType(header[col])
+                except ValueError, TypeError:
                     hasHeader += 1
                 else:
                     hasHeader -= 1
