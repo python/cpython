@@ -13,18 +13,25 @@ import tokenize
 
 verbose = 0
 
+def errprint(*args):
+    sep = ""
+    for arg in args:
+        sys.stderr.write(sep + str(arg))
+        sep = " "
+    sys.stderr.write("\n")
+
 def main():
     global verbose
     try:
         opts, args = getopt.getopt(sys.argv[1:], "v")
     except getopt.error, msg:
-        print msg
+        errprint(msg)
         return
     for o, a in opts:
         if o == '-v':
             verbose = verbose + 1
     if not args:
-        print "Usage:", sys.argv[0], "[-v] file_or_directory ..."
+        errprint("Usage:", sys.argv[0], "[-v] file_or_directory ...")
         return
     for arg in args:
         check(arg)
@@ -55,7 +62,7 @@ def check(file):
     try:
         f = open(file)
     except IOError, msg:
-        print "%s: I/O Error: %s" % (`file`, str(msg))
+        errprint("%s: I/O Error: %s" % (`file`, str(msg)))
         return
 
     if verbose > 1:
@@ -66,7 +73,7 @@ def check(file):
         tokenize.tokenize(f.readline, tokeneater)
 
     except tokenize.TokenError, msg:
-        print "%s: Token Error: %s" % (`file`, str(msg))
+        errprint("%s: Token Error: %s" % (`file`, str(msg)))
         return
 
     except NannyNag, nag:
