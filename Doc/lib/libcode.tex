@@ -6,9 +6,7 @@
 
 
 The \code{code} module defines operations pertaining to Python code
-objects.
-
-The \code{code} module defines the following functions:
+objects.  It defines the following function:
 
 
 \begin{funcdesc}{compile_command}{source, \optional{filename\optional{, symbol}}}
@@ -21,14 +19,12 @@ the same decision as the real interpreter main loop.
 
 Arguments: \var{source} is the source string; \var{filename} is the
 optional filename from which source was read, defaulting to
-\code{"<input>"}; and \var{symbol} is the optional grammar start
-symbol, which should be either \code{"single"} (the default) or
-\code{"eval"}.
+\code{'<input>'}; and \var{symbol} is the optional grammar start
+symbol, which should be either \code{'single'} (the default) or
+\code{'eval'}.
 
 Return a code object (the same as \code{compile(\var{source},
 \var{filename}, \var{symbol})}) if the command is complete and valid;
 return \code{None} if the command is incomplete; raise
-\code{SyntaxError} if the command is a syntax error.
-
-
+\exception{SyntaxError} if the command is a syntax error.
 \end{funcdesc}
