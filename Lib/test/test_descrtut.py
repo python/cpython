@@ -106,8 +106,8 @@ just like classic classes:
     >>> d = dir(a)
     >>> 'default' in d and 'x1' in d and 'x2' in d
     True
-    >>> print a.__dict__
-    {'default': -1000, 'x2': 200, 'x1': 100}
+    >>> print sortdict(a.__dict__)
+    {'default': -1000, 'x1': 100, 'x2': 200}
     >>>
 """
 
