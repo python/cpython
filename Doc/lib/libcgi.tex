@@ -76,16 +76,16 @@ instantiated only once.
 
 The \class{FieldStorage} instance can be indexed like a Python
 dictionary, and also supports the standard dictionary methods
-\function{has_key()} and \function{keys()}.
-Form fields containing empty strings are ignored
+\method{has_key()} and \method{keys()}.  The built-in \function{len()}
+is also supported.  Form fields containing empty strings are ignored
 and do not appear in the dictionary; to keep such values, provide
-the optional \samp{keep_blank_values} argument when creating the
-\class {FieldStorage} instance.
+a true value for the the optional \var{keep_blank_values} keyword
+parameter when creating the \class{FieldStorage} instance.
 
 For instance, the following code (which assumes that the 
-\code{Content-Type} header and blank line have already been printed)
-checks that the fields \code{name} and \code{addr} are both set to a
-non-empty string:
+\mailheader{Content-Type} header and blank line have already been
+printed) checks that the fields \code{name} and \code{addr} are both
+set to a non-empty string:
 
 \begin{verbatim}
 form = cgi.FieldStorage()
@@ -102,7 +102,7 @@ Here the fields, accessed through \samp{form[\var{key}]}, are
 themselves instances of \class{FieldStorage} (or
 \class{MiniFieldStorage}, depending on the form encoding).
 The \member{value} attribute of the instance yields the string value
-of the field.  The \function{getvalue()} method returns this string value
+of the field.  The \method{getvalue()} method returns this string value
 directly; it also accepts an optional second argument as a default to
 return if the requested key is not present.
 
@@ -112,15 +112,17 @@ name, the object retrieved by \samp{form[\var{key}]} is not a
 instance but a list of such instances.  Similarly, in this situation,
 \samp{form.getvalue(\var{key})} would return a list of strings.
 If you expect this possibility
-(when your HTML form contains multiple fields with the same
-name), use the \function{type()} function to determine whether you
-have a single instance or a list of instances.  For example, here's
-code that concatenates any number of username fields, separated by
+(when your HTML form contains multiple fields with the same name), use
+the \function{type()} built-in function to determine whether you
+have a single instance or a list of instances.  For example, this
+code concatenates any number of username fields, separated by
 commas:
 
 \begin{verbatim}
+ListType = type([])
+
 value = form.getvalue("username", "")
-if type(value) is type([]):
+if isinstance(value, ListType):
     # Multiple username fields specified
     usernames = ",".join(value)
 else:
@@ -237,7 +239,7 @@ exception.
 Parse input of type \mimetype{multipart/form-data} (for 
 file uploads).  Arguments are \var{fp} for the input file and
 \var{pdict} for a dictionary containing other parameters in
-the \code{Content-Type} header.
+the \mailheader{Content-Type} header.
 
 Returns a dictionary just like \function{parse_qs()} keys are the
 field names, each value is a list of values for that field.  This is
@@ -250,7 +252,7 @@ Note that this does not parse nested multipart parts --- use
 \end{funcdesc}
 
 \begin{funcdesc}{parse_header}{string}
-Parse a MIME header (such as \code{Content-Type}) into a main
+Parse a MIME header (such as \mailheader{Content-Type}) into a main
 value and a dictionary of parameters.
 \end{funcdesc}
 
@@ -282,9 +284,12 @@ Convert the characters
 \character{\&}, \character{<} and \character{>} in string \var{s} to
 HTML-safe sequences.  Use this if you need to display text that might
 contain such characters in HTML.  If the optional flag \var{quote} is
-true, the double quote character (\character{"}) is also translated;
+true, the double-quote character (\character{"}) is also translated;
 this helps for inclusion in an HTML attribute value, as in \code{<A
-HREF="...">}.
+HREF="...">}.  If the value to be qouted might include single- or
+double-quote characters, or both, consider using the
+\function{quoteattr()} function in the \refmodule{xml.sax.saxutils}
+module instead.
 \end{funcdesc}
 
 
