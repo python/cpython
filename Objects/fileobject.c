@@ -654,9 +654,10 @@ MS realloc is also slow.
 In the usual case, we have one pleasantly small line already sitting in a
 stdio buffer, and we optimize heavily for that case.
 
-CAUTION:  This routine cheats, relying on how MSVC 6 works internally.
-They seem to be relatively safe cheats, but we should expect this code
-to break someday.
+CAUTION:  This routine cheats, relying on that MSVC 6 fgets doesn't overwrite
+any buffer positions to the right of the terminating null byte.  Seems
+unlikely that will change in the future, but ... std test test_bufio should
+catch it if that changes.
 **************************************************************************/
 
 /* if Win32 and MS's compiler */
@@ -668,82 +669,84 @@ to break someday.
 static PyObject*
 ms_getline_hack(FILE *fp)
 {
-#define INITBUFSIZE 100
+/* INITBUFSIZE is the maximum line length that lets us get away with the fast
+ * no-realloc path.  get_line uses 100 for its initial size, but isn't trying
+ * to avoid reallocs.  Under MSVC 6, and using files with lines all under 100
+ * chars long, dropping this from 200 to 100 bought less than 1% speedup.
+ * Since many kinds of log files have lines exceeding 100 chars, the tiny
+ * slowdown from using 200 is more than offset by the large speedup for such
+ * log files.
+ * INCBUFSIZE is the amount by which we grow the buffer, if INITBUFSIZE isn't
+ * enough.  It doesn't much matter what this set to.
+ */
+#define INITBUFSIZE 200
 #define INCBUFSIZE 1000
 	PyObject* v;	/* the string object result */
 	size_t total_v_size;  /* total # chars in v's buffer */
 	char* pvfree;	/* address of next free slot */
 	char* pvend;    /* address one beyond last free slot */
 	char* p;	/* temp */
+	char msbuf[INITBUFSIZE];
 
-	if (fp->_cnt > 0) { /* HACK: "_cnt" isn't advertised */
-		/* optimize for normal case:  something sitting in the
-		 * buffer ready to go; avoid thread fiddling & realloc
-		 * if possible
+	/* Optimize for normal case:  avoid _PyString_Resize if at all
+	 * possible via first reading into auto msbuf.
+	 */
+	Py_BEGIN_ALLOW_THREADS
+	memset(msbuf, '\n', INITBUFSIZE);
+	p = fgets(msbuf, INITBUFSIZE, fp);
+	Py_END_ALLOW_THREADS
+
+	if (p == NULL) {
+		clearerr(fp);
+		if (PyErr_CheckSignals())
+			return NULL;
+		v = PyString_FromStringAndSize("", 0);
+		return v;
+	}
+	/* fgets read *something* */
+	p = memchr(msbuf, '\n', INITBUFSIZE);
+	if (p != NULL) {
+		/* Did the \n come from fgets or from us?
+		 * Since fgets stops at the first \n, and then writes \0, if
+		 * it's from fgets a \0 must be next.  But if that's so, it
+		 * could not have come from us, since the \n's we filled the
+		 * buffer with have only more \n's to the right.
 		 */
-		char msbuf[INITBUFSIZE];
-		memset(msbuf, '\n', INITBUFSIZE);
-		p = fgets(msbuf, INITBUFSIZE, fp);
-		/* since we didn't lock the file, there's no guarantee
-		 * anything was still in the buffer
-		 */
-		if (p == NULL) {
-			clearerr(fp);
-			if (PyErr_CheckSignals())
-				return NULL;
-			v = PyString_FromStringAndSize("", 0);
+		pvend = msbuf + INITBUFSIZE;
+		if (p+1 < pvend && *(p+1) == '\0') {
+			/* It's from fgets:  we win!  In particular, we
+			 * haven't done any mallocs yet, and can build the
+			 * final result on the first try.
+			 */
+			v = PyString_FromStringAndSize(msbuf, p - msbuf + 1);
 			return v;
 		}
-		/* fgets read *something* */
-		p = memchr(msbuf, '\n', INITBUFSIZE);
-		if (p != NULL) {
-			/* Did the \n come from fgets or from us?
-			 * Since fgets stops at the first \n, and then
-			 * writes \0, if it's from fgets a \0 must be next.
-			 * But if that's so, it could not have come from us,
-			 * since the \n's we filled the buffer with have only
-			 * more \n's to the right.
-			 */
-			pvend = msbuf + INITBUFSIZE;
-			if (p+1 < pvend && *(p+1) == '\0') {
-				/* it's from fgets:  we win! */
-				v = PyString_FromStringAndSize(msbuf,
-					p - msbuf + 1);
-				return v;
-			}
-			/* Must be from us:  fgets didn't fill the buffer
-			 * and didn't find a newline, so it must be the
-			 * last and newline-free line of the file.
-			 */
-			assert(p > msbuf && *(p-1) == '\0');
-			v = PyString_FromStringAndSize(msbuf, p - msbuf - 1);
-			return v;
-		}
-		/* yuck:  fgets overwrote all the newlines, i.e. the entire
-		 * buffer.  So this line isn't over yet, or maybe it is but
-		 * we're exactly at EOF; in either case, we're tired <wink>.
+		/* Must be from us:  fgets didn't fill the buffer and didn't
+		 * find a newline, so it must be the last and newline-free
+		 * line of the file.
 		 */
-		assert(msbuf[INITBUFSIZE-1] == '\0');
-		total_v_size = INITBUFSIZE + INCBUFSIZE;
-		v = PyString_FromStringAndSize((char*)NULL,
-			(int)total_v_size);
-		if (v == NULL)
-			return v;
-		/* copy over everything except the last null byte */
-		memcpy(BUF(v), msbuf, INITBUFSIZE-1);
-		pvfree = BUF(v) + INITBUFSIZE - 1;
+		assert(p > msbuf && *(p-1) == '\0');
+		v = PyString_FromStringAndSize(msbuf, p - msbuf - 1);
+		return v;
 	}
-	else {
-		/* The stream isn't ready or isn't buffered. */
-		v = PyString_FromStringAndSize((char*)NULL, INITBUFSIZE);
-		if (v == NULL)
-			return v;
-		total_v_size = INITBUFSIZE;
-		pvfree = BUF(v);
-	}
+	/* yuck:  fgets overwrote all the newlines, i.e. the entire buffer.
+	 * So this line isn't over yet, or maybe it is but we're exactly at
+	 *EOF; in either case, we're tired <wink>.
+	 */
+	assert(msbuf[INITBUFSIZE-1] == '\0');
+	total_v_size = INITBUFSIZE + INCBUFSIZE;
+	v = PyString_FromStringAndSize((char*)NULL,
+		(int)total_v_size);
+	if (v == NULL)
+		return v;
+	/* copy over everything except the last null byte */
+	memcpy(BUF(v), msbuf, INITBUFSIZE-1);
+	pvfree = BUF(v) + INITBUFSIZE - 1;
 
 	/* Keep reading stuff into v; if it ever ends successfully, break
-	 * after setting p one beyond the end of the line.
+	 * after setting p one beyond the end of the line.  The code here is
+	 * very much like the code above, except reads into v's buffer; see
+	 * the code above for detailed comments about the logic.
 	 */
 	for (;;) {
 		size_t nfree;
@@ -764,7 +767,6 @@ ms_getline_hack(FILE *fp)
 			p = pvfree;
 			break;
 		}
-		/* See the "normal case" comments above for details. */
 		p = memchr(pvfree, '\n', nfree);
 		if (p != NULL) {
 			if (p+1 < pvend && *(p+1) == '\0') {
