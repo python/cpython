@@ -844,8 +844,9 @@ parsenumber(co, s)
 		PyFPE_END_PROTECT(c)
 		return PyComplex_FromCComplex(c);
 	}
-	else {
+	else
 #endif
+	{
 		PyFPE_START_PROTECT("atof", return 0)
 		dx = atof(s);
 		PyFPE_END_PROTECT(dx)
