@@ -42,6 +42,10 @@ Core and builtins
 Library
 -------
 
+- Bug #950057: itertools.chain() and itertools.cycle() now handle
+               exceptions immediately instead of waiting until the
+               input source is updated.
+
 - Bug #931848: Fix _sre.CODESIZE on 64-bit machines in UCS-4 mode.
 
 - Bug #938076: Consider output encoding in XMLGenerator.
