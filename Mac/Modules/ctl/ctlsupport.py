@@ -94,6 +94,24 @@ ControlBevelButtonMenuBehavior = UInt16
 ControlBevelButtonMenuPlacement = UInt16
 ControlPushButtonIconAlignment = UInt16
 
+class ControlActionDefinition(Type):
+	def declare(self, name):
+		Output("%s %s;", self.typeName, name)
+		Output("UniversalProcPtr c_callback;")
+	def passInput(self, name):
+		return "myactionproc_upp"
+	def cleanup(self, name):
+		Output("setcallback((PyObject*)_self, kMyControlActionProcTag, actionProc, &c_callback);")
+
+class ControlActionDefinitionNewControl(ControlActionDefinition):
+	def cleanup(self, name):
+		Output("setcallback(_res, kMyControlActionProcTag, liveTrackingProc, &c_callback);")
+
+ControlActionUPP = ControlActionDefinition("PyObject*", "O")
+ControlActionUPPNewControl = ControlActionDefinitionNewControl("PyObject*", "O")
+ControlSliderOrientation = UInt16
+
+
 includestuff = includestuff + """
 #ifdef WITHOUT_FRAMEWORKS
 #include <Controls.h>
@@ -203,8 +221,10 @@ DataBrowserListViewColumnDesc_Convert(PyObject *v, DataBrowserListViewColumnDesc
 }
 
 /* TrackControl and HandleControlClick callback support */
+#define kMyControlActionProcTag 'ACTN'  /* not an official tag, only for internal use */
 static PyObject *tracker;
 static ControlActionUPP mytracker_upp;
+static ControlActionUPP myactionproc_upp;
 static ControlUserPaneDrawUPP mydrawproc_upp;
 static ControlUserPaneIdleUPP myidleproc_upp;
 static ControlUserPaneHitTestUPP myhittestproc_upp;
@@ -279,8 +299,10 @@ mytracker(ControlHandle ctl, short part)
 	}
 	if (rv)
 		Py_DECREF(rv);
-	else
+	else {
 		PySys_WriteStderr("TrackControl or HandleControlClick: exception in tracker function\\n");
+		PyErr_Print();
+	}
 }
 
 static int
@@ -289,7 +311,9 @@ setcallback(PyObject *myself, OSType which, PyObject *callback, UniversalProcPtr
 	ControlObject *self = (ControlObject *)myself;
 	char keybuf[9];
 	
-	if ( which == kControlUserPaneDrawProcTag )
+	if ( which == kMyControlActionProcTag )
+		*uppp = (UniversalProcPtr)myactionproc_upp;
+	else if ( which == kControlUserPaneDrawProcTag )
 		*uppp = (UniversalProcPtr)mydrawproc_upp;
 	else if ( which == kControlUserPaneIdleProcTag )
 		*uppp = (UniversalProcPtr)myidleproc_upp;
@@ -326,9 +350,24 @@ callcallback(ControlObject *self, OSType which, PyObject *arglist)
 		return NULL;
 	}
 	rv = PyEval_CallObject(func, arglist);
-	if ( rv == NULL )
+	if ( rv == NULL ) {
 		PySys_WriteStderr("Exception in control callback %x handler\\n", (unsigned)which);
+		PyErr_Print();
+	}
 	return rv;
+}
+
+static pascal void
+myactionproc(ControlHandle control, SInt16 part)
+{
+	ControlObject *ctl_obj;
+	PyObject *arglist, *rv;
+	
+	ctl_obj = (ControlObject *)CtlObj_WhichControl(control);
+	arglist = Py_BuildValue("Oh", ctl_obj, part);
+	rv = callcallback(ctl_obj, kMyControlActionProcTag, arglist);
+	Py_XDECREF(arglist);
+	Py_XDECREF(rv);
 }
 
 static pascal void
@@ -396,6 +435,7 @@ mytrackingproc(ControlHandle control, Point startPt, ControlActionUPP actionProc
 
 initstuff = initstuff + """
 mytracker_upp = NewControlActionUPP(mytracker);
+myactionproc_upp = NewControlActionUPP(myactionproc);
 mydrawproc_upp = NewControlUserPaneDrawUPP(mydrawproc);
 myidleproc_upp = NewControlUserPaneIdleUPP(myidleproc);
 myhittestproc_upp = NewControlUserPaneHitTestUPP(myhittestproc);
