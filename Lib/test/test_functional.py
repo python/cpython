@@ -133,7 +133,13 @@ class TestPartial(unittest.TestCase):
         f = None
         self.assertRaises(ReferenceError, getattr, p, 'func')
 
-
+    def test_with_bound_and_unbound_methods(self):
+        data = map(str, range(10))
+        join = self.thetype(str.join, '')
+        self.assertEqual(join(data), '0123456789')
+        join = self.thetype(''.join)
+        self.assertEqual(join(data), '0123456789')
+    
 class PartialSubclass(functional.partial):
     pass
 
