@@ -30,6 +30,10 @@ class Misc:
 		return self.tk.getvar(name)
 	def getint(self, s):
 		return self.tk.getint(s)
+	def getdouble(self, s):
+		return self.tk.getdouble(s)
+	def getboolean(self, s):
+		return self.tk.getboolean(s)
 	def focus(self):
 		self.tk.call('focus', self._w)
 	def focus_default(self):
@@ -183,19 +187,16 @@ class Misc:
 	def update_idletasks(self):
 		self.tk.call('update', 'idletasks')
 	def bind(self, sequence, func, add=''):
-		global _substitute, _subst_prefix
 		if add: add = '+'
 		name = self._register(func, _substitute)
 		self.tk.call('bind', self._w, sequence, 
 			     (add + name,) + _subst_prefix)
 	def bind_all(self, sequence, func, add=''):
-		global _substitute, _subst_prefix
 		if add: add = '+'
 		name = self._register(func, _substitute)
 		self.tk.call('bind', 'all' , sequence, 
 			     (add + `name`,) + _subst_prefix)
 	def bind_class(self, className, sequence, func, add=''):
-		global _substitute, _subst_prefix
 		if add: add = '+'
 		name = self._register(func, _substitute)
 		self.tk.call('bind', className , sequence, 
@@ -216,8 +217,7 @@ class Misc:
 	def _getboolean(self, string):
 		if string:
 			return self.tk.getboolean(string)
-		else:
-			return string
+		# else return None
 	def _options(self, cnf):
 		res = ()
 		for k, v in cnf.items():
@@ -242,8 +242,6 @@ _subst_prefix = ('%#', '%b', '%f', '%h', '%k',
 		 '%A', '%E', '%K', '%N', '%T', '%X', '%Y')
 
 def _substitute(*args):
-	global default_root
-	global _subst_prefix
 	tk = default_root.tk
 	if len(args) != len(_subst_prefix): return args
 	nsign, b, f, h, k, s, t, w, x, y, A, E, K, N, T, X, Y = args
@@ -503,8 +501,11 @@ class Button(Widget):
 # Indices:
 def AtEnd():
 	return 'end'
-def AtInsert():
-	return 'insert'
+def AtInsert(*args):
+	s = 'insert'
+	for a in args:
+		if a: s = s + (' ' + a)
+	return s
 def AtSelFirst():
 	return 'sel.first'
 def AtSelLast():
@@ -523,7 +524,6 @@ class Canvas(Widget):
 	def bbox(self, *args):
 		return self._getints(self._do('bbox', args))
 	def bind(self, tagOrId, sequence, func, add=''):
-		global _substitute, _subst_prefix
 		if add: add='+'
 		name = self._register(func, _substitute)
 		self.tk.call(self._w, 'bind', tagOrId, sequence, 
@@ -844,7 +844,6 @@ class Text(Widget):
 		self.tk.call(
 			self._w, 'tag', 'add', tagName, index1, index2)
 	def tag_bind(self, tagName, sequence, func, add=''):
-		global _substitute, _subst_prefix
 		if add: add='+'
 		name = self._register(func, _substitute)
 		self.tk.call(self._w, 'tag', 'bind', 
