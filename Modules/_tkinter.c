@@ -171,29 +171,29 @@ PERFORMANCE OF THIS SOFTWARE.
 
 */
 
-static type_lock tcl_lock = 0;
+static PyThread_type_lock tcl_lock = 0;
 static PyThreadState *tcl_tstate = NULL;
 
 #define ENTER_TCL \
 	{ PyThreadState *tstate = PyThreadState_Get(); Py_BEGIN_ALLOW_THREADS \
-	    acquire_lock(tcl_lock, 1); tcl_tstate = tstate;
+	    PyThread_acquire_lock(tcl_lock, 1); tcl_tstate = tstate;
 
 #define LEAVE_TCL \
-	tcl_tstate = NULL; release_lock(tcl_lock); Py_END_ALLOW_THREADS}
+	tcl_tstate = NULL; PyThread_release_lock(tcl_lock); Py_END_ALLOW_THREADS}
 
 #define ENTER_OVERLAP \
 	Py_END_ALLOW_THREADS
 
 #define LEAVE_OVERLAP_TCL \
-	tcl_tstate = NULL; release_lock(tcl_lock); }
+	tcl_tstate = NULL; PyThread_release_lock(tcl_lock); }
 
 #define ENTER_PYTHON \
 	{ PyThreadState *tstate = tcl_tstate; tcl_tstate = NULL; \
-            release_lock(tcl_lock); PyEval_RestoreThread((tstate)); }
+            PyThread_release_lock(tcl_lock); PyEval_RestoreThread((tstate)); }
 
 #define LEAVE_PYTHON \
 	{ PyThreadState *tstate = PyEval_SaveThread(); \
-            acquire_lock(tcl_lock, 1); tcl_tstate = tstate; }
+            PyThread_acquire_lock(tcl_lock, 1); tcl_tstate = tstate; }
 
 #else
 
@@ -1679,11 +1679,11 @@ Tkapp_MainLoop(self, args)
 
 #ifdef WITH_THREAD
 		Py_BEGIN_ALLOW_THREADS
-		acquire_lock(tcl_lock, 1);
+		PyThread_acquire_lock(tcl_lock, 1);
 		tcl_tstate = tstate;
 		result = Tcl_DoOneEvent(TCL_DONT_WAIT);
 		tcl_tstate = NULL;
-		release_lock(tcl_lock);
+		PyThread_release_lock(tcl_lock);
 		if (result == 0)
 			Sleep(20);
 		Py_END_ALLOW_THREADS
@@ -1921,13 +1921,13 @@ EventHook()
 #endif
 #if defined(WITH_THREAD) || defined(MS_WINDOWS)
 		Py_BEGIN_ALLOW_THREADS
-		acquire_lock(tcl_lock, 1);
+		PyThread_acquire_lock(tcl_lock, 1);
 		tcl_tstate = event_tstate;
 
 		result = Tcl_DoOneEvent(TCL_DONT_WAIT);
 
 		tcl_tstate = NULL;
-		release_lock(tcl_lock);
+		PyThread_release_lock(tcl_lock);
 		if (result == 0)
 			Sleep(20);
 		Py_END_ALLOW_THREADS
@@ -2014,7 +2014,7 @@ init_tkinter()
 	Tkapp_Type.ob_type = &PyType_Type;
 
 #ifdef WITH_THREAD
-	tcl_lock = allocate_lock();
+	tcl_lock = PyThread_allocate_lock();
 #endif
 
 	m = Py_InitModule("_tkinter", moduleMethods);

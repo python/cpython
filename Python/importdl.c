@@ -196,7 +196,7 @@ typedef void (*dl_funcptr)(void);
 
 #ifdef WITH_THREAD
 #include "pythread.h"
-static type_lock beos_dyn_lock;
+static PyThread_type_lock beos_dyn_lock;
 #endif
 
 static PyObject *beos_dyn_images = NULL;

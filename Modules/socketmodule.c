@@ -313,7 +313,7 @@ BUILD_FUNC_DEF_4(PySocketSock_New,int,fd, int,family, int,type, int,proto)
 /* Lock to allow python interpreter to continue, but only allow one 
    thread to be in gethostbyname */
 #if defined(WITH_THREAD) && !defined(HAVE_GETHOSTBYNAME_R) && !defined(MS_WINDOWS)
-type_lock gethostbyname_lock;
+PyThread_type_lock gethostbyname_lock;
 #endif
 
 
@@ -358,11 +358,11 @@ BUILD_FUNC_DEF_2(setipaddr, char*,name, struct sockaddr_in *,addr_ret)
 	hp = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
 #else /* not HAVE_GETHOSTBYNAME_R */
 #if defined(WITH_THREAD) && !defined(MS_WINDOWS)
-	acquire_lock(gethostbyname_lock,1);
+	PyThread_acquire_lock(gethostbyname_lock,1);
 #endif
 	hp = gethostbyname(name);
 #if defined(WITH_THREAD) && !defined(MS_WINDOWS)
-	release_lock(gethostbyname_lock);
+	PyThread_release_lock(gethostbyname_lock);
 #endif
 #endif /* HAVE_GETHOSTBYNAME_R */
 	Py_END_ALLOW_THREADS
@@ -1417,11 +1417,11 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyname_ex,PyObject *,self, PyObject *,args)
 	h = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
 #else /* not HAVE_GETHOSTBYNAME_R */
 #if defined(WITH_THREAD) && !defined(MS_WINDOWS)
-	acquire_lock(gethostbyname_lock,1);
+	PyThread_acquire_lock(gethostbyname_lock,1);
 #endif
 	h = gethostbyname(name);
 #if defined(WITH_THREAD) && !defined(MS_WINDOWS)
-	release_lock(gethostbyname_lock);
+	PyThread_release_lock(gethostbyname_lock);
 #endif
 #endif /* HAVE_GETHOSTBYNAME_R */
 	Py_END_ALLOW_THREADS
@@ -1463,13 +1463,13 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyaddr,PyObject *,self, PyObject *, args)
 			    &hp_allocated, buf, buf_len, &errnop);
 #else /* not HAVE_GETHOSTBYNAME_R */
 #if defined(WITH_THREAD) && !defined(MS_WINDOWS)
-	acquire_lock(gethostbyname_lock,1);
+	PyThread_acquire_lock(gethostbyname_lock,1);
 #endif
 	h = gethostbyaddr((char *)&addr.sin_addr,
 			  sizeof(addr.sin_addr),
 			  AF_INET);
 #if defined(WITH_THREAD) && !defined(MS_WINDOWS)
-	release_lock(gethostbyname_lock);
+	PyThread_release_lock(gethostbyname_lock);
 #endif
 #endif /* HAVE_GETHOSTBYNAME_R */
 	Py_END_ALLOW_THREADS
@@ -2188,6 +2188,6 @@ initsocket()
 
 	/* Initialize gethostbyname lock */
 #if defined(WITH_THREAD) && !defined(HAVE_GETHOSTBYNAME_R) && !defined(MS_WINDOWS)
-	gethostbyname_lock = allocate_lock();
+	gethostbyname_lock = PyThread_allocate_lock();
 #endif
 }

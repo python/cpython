@@ -129,7 +129,7 @@ static status_t benaphore_unlock( benaphore_t *ben )
 /* ----------------------------------------------------------------------
  * Initialization.
  */
-static void _init_thread( void )
+static void PyThread__init_thread( void )
 {
 	/* Do nothing. */
 	return;
@@ -151,7 +151,7 @@ int PyThread_start_new_thread( void (*func)(void *), void *arg )
 	char name[B_OS_NAME_LENGTH];
 	int32 this_thread;
 
-	dprintf(("start_new_thread called\n"));
+	dprintf(("PyThread_start_new_thread called\n"));
 
 	/* We are so very thread-safe... */
 	this_thread = atomic_add( &thread_count, 1 );
@@ -175,11 +175,11 @@ long PyThread_get_thread_ident( void )
 	return ( tid != B_NAME_NOT_FOUND ? tid : -1 );
 }
 
-static void do_exit_thread( int no_cleanup )
+static void do_PyThread_exit_thread( int no_cleanup )
 {
 	int32 threads;
 
-	dprintf(("exit_thread called\n"));
+	dprintf(("PyThread_exit_thread called\n"));
 
 	/* Thread-safe way to read a variable without a mutex: */
 	threads = atomic_add( &thread_count, 0 );
@@ -199,18 +199,18 @@ static void do_exit_thread( int no_cleanup )
 
 void PyThread_exit_thread( void )
 {
-	do_exit_thread(0);
+	do_PyThread_exit_thread(0);
 }
 
 void PyThread__exit_thread( void )
 {
-	do_exit_thread(1);
+	do_PyThread_exit_thread(1);
 }
 
 #ifndef NO_EXIT_PROG
-static void do_exit_prog( int status, int no_cleanup )
+static void do_PyThread_exit_prog( int status, int no_cleanup )
 {
-	dprintf(("exit_prog(%d) called\n", status));
+	dprintf(("PyThread_exit_prog(%d) called\n", status));
 
 	/* No need to do anything, the threads get torn down if main() exits. */
 
@@ -223,12 +223,12 @@ static void do_exit_prog( int status, int no_cleanup )
 
 void PyThread_exit_prog( int status )
 {
-	do_exit_prog(status, 0);
+	do_PyThread_exit_prog(status, 0);
 }
 
 void PyThread__exit_prog( int status )
 {
-	do_exit_prog(status, 1);
+	do_PyThread_exit_prog(status, 1);
 }
 #endif /* NO_EXIT_PROG */
 
@@ -238,19 +238,19 @@ void PyThread__exit_prog( int status )
 
 static int32 lock_count = 0;
 
-type_lock PyThread_allocate_lock( void )
+PyThread_type_lock PyThread_allocate_lock( void )
 {
 	benaphore_t *lock;
 	status_t retval;
 	char name[B_OS_NAME_LENGTH];
 	int32 this_lock;
 	
-	dprintf(("allocate_lock called\n"));
+	dprintf(("PyThread_allocate_lock called\n"));
 
 	lock = (benaphore_t *)malloc( sizeof( benaphore_t ) );
 	if( lock == NULL ) {
 		/* TODO: that's bad, raise MemoryError */
-		return (type_lock)NULL;
+		return (PyThread_type_lock)NULL;
 	}
 
 	this_lock = atomic_add( &lock_count, 1 );
@@ -259,18 +259,18 @@ type_lock PyThread_allocate_lock( void )
 	retval = benaphore_create( name, lock );
 	if( retval != EOK ) {
 		/* TODO: that's bad, raise an exception */
-		return (type_lock)NULL;
+		return (PyThread_type_lock)NULL;
 	}
 
-	dprintf(("allocate_lock() -> %lx\n", (long)lock));
-	return (type_lock) lock;
+	dprintf(("PyThread_allocate_lock() -> %lx\n", (long)lock));
+	return (PyThread_type_lock) lock;
 }
 
-void PyThread_free_lock( type_lock lock )
+void PyThread_free_lock( PyThread_type_lock lock )
 {
 	status_t retval;
 
-	dprintf(("free_lock(%lx) called\n", (long)lock));
+	dprintf(("PyThread_free_lock(%lx) called\n", (long)lock));
 	
 	retval = benaphore_destroy( (benaphore_t *)lock );
 	if( retval != EOK ) {
@@ -279,12 +279,12 @@ void PyThread_free_lock( type_lock lock )
 	}
 }
 
-int PyThread_acquire_lock( type_lock lock, int waitflag )
+int PyThread_acquire_lock( PyThread_type_lock lock, int waitflag )
 {
 	int success;
 	status_t retval;
 
-	dprintf(("acquire_lock(%lx, %d) called\n", (long)lock, waitflag));
+	dprintf(("PyThread_acquire_lock(%lx, %d) called\n", (long)lock, waitflag));
 
 	if( waitflag ) {
 		retval = benaphore_lock( (benaphore_t *)lock );
@@ -300,15 +300,15 @@ int PyThread_acquire_lock( type_lock lock, int waitflag )
 		/* TODO: that's bad, raise an exception */
 	}
 
-	dprintf(("acquire_lock(%lx, %d) -> %d\n", (long)lock, waitflag, success));
+	dprintf(("PyThread_acquire_lock(%lx, %d) -> %d\n", (long)lock, waitflag, success));
 	return success;
 }
 
-void PyThread_release_lock( type_lock lock )
+void PyThread_release_lock( PyThread_type_lock lock )
 {
 	status_t retval;
 	
-	dprintf(("release_lock(%lx) called\n", (long)lock));
+	dprintf(("PyThread_release_lock(%lx) called\n", (long)lock));
 	
 	retval = benaphore_unlock( (benaphore_t *)lock );
 	if( retval != EOK ) {
@@ -324,11 +324,11 @@ void PyThread_release_lock( type_lock lock )
  * I'll do it anyway, you never know when it might be handy, and it's
  * easy...
  */
-type_sema PyThread_allocate_sema( int value )
+PyThread_type_sema PyThread_allocate_sema( int value )
 {
 	sem_id sema;
 	
-	dprintf(("allocate_sema called\n"));
+	dprintf(("PyThread_allocate_sema called\n"));
 
 	sema = create_sem( value, "python semaphore" );
 	if( sema < B_NO_ERROR ) {
@@ -336,15 +336,15 @@ type_sema PyThread_allocate_sema( int value )
 		return 0;
 	}
 
-	dprintf(("allocate_sema() -> %lx\n", (long) sema));
-	return (type_sema) sema;
+	dprintf(("PyThread_allocate_sema() -> %lx\n", (long) sema));
+	return (PyThread_type_sema) sema;
 }
 
-void PyThread_free_sema( type_sema sema )
+void PyThread_free_sema( PyThread_type_sema sema )
 {
 	status_t retval;
 	
-	dprintf(("free_sema(%lx) called\n", (long) sema));
+	dprintf(("PyThread_free_sema(%lx) called\n", (long) sema));
 	
 	retval = delete_sem( (sem_id)sema );
 	if( retval != B_NO_ERROR ) {
@@ -353,11 +353,11 @@ void PyThread_free_sema( type_sema sema )
 	}
 }
 
-int PyThread_down_sema( type_sema sema, int waitflag )
+int PyThread_down_sema( PyThread_type_sema sema, int waitflag )
 {
 	status_t retval;
 
-	dprintf(("down_sema(%lx, %d) called\n", (long) sema, waitflag));
+	dprintf(("PyThread_down_sema(%lx, %d) called\n", (long) sema, waitflag));
 
 	if( waitflag ) {
 		retval = acquire_sem( (sem_id)sema );
@@ -370,15 +370,15 @@ int PyThread_down_sema( type_sema sema, int waitflag )
 		return 0;
 	}
 
-	dprintf(("down_sema(%lx) return\n", (long) sema));
+	dprintf(("PyThread_down_sema(%lx) return\n", (long) sema));
 	return -1;
 }
 
-void PyThread_up_sema( type_sema sema )
+void PyThread_up_sema( PyThread_type_sema sema )
 {
 	status_t retval;
 	
-	dprintf(("up_sema(%lx)\n", (long) sema));
+	dprintf(("PyThread_up_sema(%lx)\n", (long) sema));
 	
 	retval = release_sem( (sem_id)sema );
 	if( retval != B_NO_ERROR ) {

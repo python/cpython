@@ -113,7 +113,7 @@ static long dxp[256];
 
 extern int _PyThread_Started; /* Flag for Py_Exit */
 
-static type_lock interpreter_lock = 0;
+static PyThread_type_lock interpreter_lock = 0;
 static long main_thread = 0;
 
 void
@@ -122,21 +122,21 @@ PyEval_InitThreads()
 	if (interpreter_lock)
 		return;
 	_PyThread_Started = 1;
-	interpreter_lock = allocate_lock();
-	acquire_lock(interpreter_lock, 1);
-	main_thread = get_thread_ident();
+	interpreter_lock = PyThread_allocate_lock();
+	PyThread_acquire_lock(interpreter_lock, 1);
+	main_thread = PyThread_get_thread_ident();
 }
 
 void
 PyEval_AcquireLock()
 {
-	acquire_lock(interpreter_lock, 1);
+	PyThread_acquire_lock(interpreter_lock, 1);
 }
 
 void
 PyEval_ReleaseLock()
 {
-	release_lock(interpreter_lock);
+	PyThread_release_lock(interpreter_lock);
 }
 
 void
@@ -145,7 +145,7 @@ PyEval_AcquireThread(tstate)
 {
 	if (tstate == NULL)
 		Py_FatalError("PyEval_AcquireThread: NULL new thread state");
-	acquire_lock(interpreter_lock, 1);
+	PyThread_acquire_lock(interpreter_lock, 1);
 	if (PyThreadState_Swap(tstate) != NULL)
 		Py_FatalError(
 			"PyEval_AcquireThread: non-NULL old thread state");
@@ -159,7 +159,7 @@ PyEval_ReleaseThread(tstate)
 		Py_FatalError("PyEval_ReleaseThread: NULL thread state");
 	if (PyThreadState_Swap(NULL) != tstate)
 		Py_FatalError("PyEval_ReleaseThread: wrong thread state");
-	release_lock(interpreter_lock);
+	PyThread_release_lock(interpreter_lock);
 }
 #endif
 
@@ -175,7 +175,7 @@ PyEval_SaveThread()
 		Py_FatalError("PyEval_SaveThread: NULL tstate");
 #ifdef WITH_THREAD
 	if (interpreter_lock)
-		release_lock(interpreter_lock);
+		PyThread_release_lock(interpreter_lock);
 #endif
 	return tstate;
 }
@@ -189,7 +189,7 @@ PyEval_RestoreThread(tstate)
 #ifdef WITH_THREAD
 	if (interpreter_lock) {
 		int err = errno;
-		acquire_lock(interpreter_lock, 1);
+		PyThread_acquire_lock(interpreter_lock, 1);
 		errno = err;
 	}
 #endif
@@ -269,7 +269,7 @@ Py_MakePendingCalls()
 {
 	static int busy = 0;
 #ifdef WITH_THREAD
-	if (main_thread && get_thread_ident() != main_thread)
+	if (main_thread && PyThread_get_thread_ident() != main_thread)
 		return 0;
 #endif
 	if (busy)
@@ -622,11 +622,11 @@ eval_code2(co, globals, locals,
 
 				if (PyThreadState_Swap(NULL) != tstate)
 					Py_FatalError("ceval: tstate mix-up");
-				release_lock(interpreter_lock);
+				PyThread_release_lock(interpreter_lock);
 
 				/* Other threads may run now */
 
-				acquire_lock(interpreter_lock, 1);
+				PyThread_acquire_lock(interpreter_lock, 1);
 				if (PyThreadState_Swap(tstate) != NULL)
 					Py_FatalError("ceval: orphan tstate");
 			}

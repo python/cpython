@@ -109,9 +109,9 @@ static int thread_debug = 0;
 
 static int initialized;
 
-static void _init_thread(); /* Forward */
+static void PyThread__init_thread(); /* Forward */
 
-void init_thread _P0()
+void PyThread_init_thread _P0()
 {
 #ifdef Py_DEBUG
 	char *p = getenv("THREADDEBUG");
@@ -126,8 +126,8 @@ void init_thread _P0()
 	if (initialized)
 		return;
 	initialized = 1;
-	dprintf(("init_thread called\n"));
-	_init_thread();
+	dprintf(("PyThread_init_thread called\n"));
+	PyThread__init_thread();
 }
 
 #ifdef SGI_THREADS

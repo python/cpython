@@ -57,7 +57,7 @@ typedef struct {
 	DB *di_bsddb;
 	int di_size;	/* -1 means recompute */
 #ifdef WITH_THREAD
-	type_lock di_lock;
+	PyThread_type_lock di_lock;
 #endif
 } bsddbobject;
 
@@ -113,7 +113,7 @@ newdbhashobject(file, flags, mode,
 
 	dp->di_size = -1;
 #ifdef WITH_THREAD
-	dp->di_lock = allocate_lock();
+	dp->di_lock = PyThread_allocate_lock();
 	if (dp->di_lock == NULL) {
 		PyErr_SetString(BsddbError, "can't allocate lock");
 		Py_DECREF(dp);
@@ -169,7 +169,7 @@ newdbbtobject(file, flags, mode,
 
 	dp->di_size = -1;
 #ifdef WITH_THREAD
-	dp->di_lock = allocate_lock();
+	dp->di_lock = PyThread_allocate_lock();
 	if (dp->di_lock == NULL) {
 		PyErr_SetString(BsddbError, "can't allocate lock");
 		Py_DECREF(dp);
@@ -225,7 +225,7 @@ newdbrnobject(file, flags, mode,
 
 	dp->di_size = -1;
 #ifdef WITH_THREAD
-	dp->di_lock = allocate_lock();
+	dp->di_lock = PyThread_allocate_lock();
 	if (dp->di_lock == NULL) {
 		PyErr_SetString(BsddbError, "can't allocate lock");
 		Py_DECREF(dp);
@@ -242,9 +242,9 @@ bsddb_dealloc(dp)
 {
 #ifdef WITH_THREAD
 	if (dp->di_lock) {
-		acquire_lock(dp->di_lock, 0);
-		release_lock(dp->di_lock);
-		free_lock(dp->di_lock);
+		PyThread_acquire_lock(dp->di_lock, 0);
+		PyThread_release_lock(dp->di_lock);
+		PyThread_free_lock(dp->di_lock);
 		dp->di_lock = NULL;
 	}
 #endif
@@ -262,8 +262,8 @@ bsddb_dealloc(dp)
 }
 
 #ifdef WITH_THREAD
-#define BSDDB_BGN_SAVE(_dp) Py_BEGIN_ALLOW_THREADS acquire_lock(_dp->di_lock,1);
-#define BSDDB_END_SAVE(_dp) release_lock(_dp->di_lock); Py_END_ALLOW_THREADS
+#define BSDDB_BGN_SAVE(_dp) Py_BEGIN_ALLOW_THREADS PyThread_acquire_lock(_dp->di_lock,1);
+#define BSDDB_END_SAVE(_dp) PyThread_release_lock(_dp->di_lock); Py_END_ALLOW_THREADS
 #else
 #define BSDDB_BGN_SAVE(_dp) Py_BEGIN_ALLOW_THREADS 
 #define BSDDB_END_SAVE(_dp) Py_END_ALLOW_THREADS

@@ -121,25 +121,25 @@ _PyImport_Fini()
 
 #include "pythread.h"
 
-static type_lock import_lock = 0;
+static PyThread_type_lock import_lock = 0;
 static long import_lock_thread = -1;
 static int import_lock_level = 0;
 
 static void
 lock_import()
 {
-	long me = get_thread_ident();
+	long me = PyThread_get_thread_ident();
 	if (me == -1)
 		return; /* Too bad */
 	if (import_lock == NULL)
-		import_lock = allocate_lock();
+		import_lock = PyThread_allocate_lock();
 	if (import_lock_thread == me) {
 		import_lock_level++;
 		return;
 	}
-	if (import_lock_thread != -1 || !acquire_lock(import_lock, 0)) {
+	if (import_lock_thread != -1 || !PyThread_acquire_lock(import_lock, 0)) {
 		PyThreadState *tstate = PyEval_SaveThread();
-		acquire_lock(import_lock, 1);
+		PyThread_acquire_lock(import_lock, 1);
 		PyEval_RestoreThread(tstate);
 	}
 	import_lock_thread = me;
@@ -149,7 +149,7 @@ lock_import()
 static void
 unlock_import()
 {
-	long me = get_thread_ident();
+	long me = PyThread_get_thread_ident();
 	if (me == -1)
 		return; /* Too bad */
 	if (import_lock_thread != me)
@@ -157,7 +157,7 @@ unlock_import()
 	import_lock_level--;
 	if (import_lock_level == 0) {
 		import_lock_thread = -1;
-		release_lock(import_lock);
+		PyThread_release_lock(import_lock);
 	}
 }
 

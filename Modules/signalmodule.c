@@ -221,7 +221,7 @@ signal_signal(self, args)
 	if (!PyArg_Parse(args, "(iO)", &sig_num, &obj))
 		return NULL;
 #ifdef WITH_THREAD
-	if (get_thread_ident() != main_thread) {
+	if (PyThread_get_thread_ident() != main_thread) {
 		PyErr_SetString(PyExc_ValueError,
 				"signal only works in main thread");
 		return NULL;
@@ -346,7 +346,7 @@ initsignal()
 	int i;
 
 #ifdef WITH_THREAD
-	main_thread = get_thread_ident();
+	main_thread = PyThread_get_thread_ident();
 	main_pid = getpid();
 #endif
 
@@ -619,7 +619,7 @@ PyErr_CheckSignals()
 	if (!is_tripped)
 		return 0;
 #ifdef WITH_THREAD
-	if (get_thread_ident() != main_thread)
+	if (PyThread_get_thread_ident() != main_thread)
 		return 0;
 #endif
 	if (!(f = PyEval_GetFrame()))
@@ -676,7 +676,7 @@ PyOS_InterruptOccurred()
 {
 	if (Handlers[SIGINT].tripped) {
 #ifdef WITH_THREAD
-		if (get_thread_ident() != main_thread)
+		if (PyThread_get_thread_ident() != main_thread)
 			return 0;
 #endif
 		Handlers[SIGINT].tripped = 0;
@@ -689,7 +689,7 @@ void
 PyOS_AfterFork()
 {
 #ifdef WITH_THREAD
-	main_thread = get_thread_ident();
+	main_thread = PyThread_get_thread_ident();
 	main_pid = getpid();
 #endif
 }
