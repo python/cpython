@@ -11,7 +11,7 @@ usage: ftpmirror [-v] [-q] [-i] [-m] [-n] [-r] [-s pat]
 -m: macintosh server (NCSA telnet 2.4) (implies -n -s '*.o')
 -n: don't log in
 -r: remove local files/directories no longer pertinent
--l username [-p passwd [-a account]]: login info (default anonymous ftp)
+-l username [-p passwd [-a account]]: login info (default .netrc or anonymous)
 -s pat: skip files matching pattern
 hostname: remote host
 remotedir: remote directory (default initial)
@@ -24,6 +24,7 @@ import time
 import getopt
 import string
 import ftplib
+import netrc
 from fnmatch import fnmatch
 
 # Print usage message and exit
@@ -50,6 +51,14 @@ def main():
     login = ''
     passwd = ''
     account = ''
+    if not args: usage('hostname missing')
+    host = args[0]
+    try:
+        auth = netrc.netrc().authenticators(host)
+        if auth is not None:
+            login, account, passwd = auth
+    except (netrc.NetrcParseError, IOError):
+        pass
     for o, a in opts:
         if o == '-l': login = a
         if o == '-p': passwd = a
@@ -61,8 +70,6 @@ def main():
         if o == '-n': nologin = 1
         if o == '-r': rmok = 1
         if o == '-s': skippats.append(a)
-    if not args: usage('hostname missing')
-    host = args[0]
     remotedir = ''
     localdir = ''
     if args[1:]:
