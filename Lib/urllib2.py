@@ -808,7 +808,7 @@ class AbstractHTTPHandler(BaseHandler):
             h.putheader(k, v)
         h.endheaders()
         if req.has_data():
-            h.send(data + '\r\n')
+            h.send(data)
 
         code, msg, hdrs = h.getreply()
         fp = h.getfile()

@@ -286,7 +286,7 @@ class URLopener:
         for args in self.addheaders: apply(h.putheader, args)
         h.endheaders()
         if data is not None:
-            h.send(data + '\r\n')
+            h.send(data)
         errcode, errmsg, headers = h.getreply()
         fp = h.getfile()
         if errcode == 200:
@@ -364,7 +364,7 @@ class URLopener:
             for args in self.addheaders: apply(h.putheader, args)
             h.endheaders()
             if data is not None:
-                h.send(data + '\r\n')
+                h.send(data)
             errcode, errmsg, headers = h.getreply()
             fp = h.getfile()
             if errcode == 200:
