@@ -5,14 +5,14 @@
 	<key>BuildVersion</key>
 	<string>1</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.2a1</string>
+	<string>2.2</string>
 	<key>CFBundleVersion</key>
-	<string>Python 2.2a1</string>
+	<string>Python 2.2</string>
 	<key>ProjectName</key>
 	<string>Python</string>
 	<key>ReleaseStatus</key>
-	<string>alfa</string>
+	<string>final</string>
 	<key>SourceVersion</key>
-	<string>2.2a1</string>
+	<string>2.2</string>
 </dict>
 </plist>
