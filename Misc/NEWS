@@ -12,6 +12,10 @@ What's New in Python 2.3 alpha 2?
 Core and builtins
 -----------------
 
+- sys.path[0] (the directory from which the script is loaded) is now
+  turned into an absolute pathname, unless it is the empty string.
+  (SF patch #664376.)
+
 - Finally fixed the bug in compile() and exec where a string ending
   with an indented code block but no newline would raise SyntaxError.
   This would have been a four-line change in parsetok.c...  Except
