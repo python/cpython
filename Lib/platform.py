@@ -449,7 +449,7 @@ def win32_ver(release='',version='',csd='',ptype=''):
         means the OS version uses debugging code, i.e. code that
         checks arguments, ranges, etc. (Thomas Heller).
 
-        Note: this functions only works if Mark Hammond's win32
+        Note: this function only works if Mark Hammond's win32
         package is installed and obviously only runs on Win32
         compatible platforms.
 
