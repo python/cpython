@@ -2,6 +2,7 @@
 
 from compiler import ast
 from compiler.consts import SC_LOCAL, SC_GLOBAL, SC_FREE, SC_CELL, SC_UNKNOWN
+from compiler.misc import mangle
 import types
 
 import sys
@@ -36,13 +37,7 @@ class Scope:
     def mangle(self, name):
         if self.klass is None:
             return name
-        if not name.startswith('__'):
-            return name
-        if len(name) + 2 >= MANGLE_LEN:
-            return name
-        if name.endswith('__'):
-            return name
-        return "_%s%s" % (self.klass, name)
+        return mangle(name, self.klass)
 
     def add_def(self, name):
         self.defs[self.mangle(name)] = 1
@@ -162,12 +157,12 @@ class Scope:
                     child_globals.append(name)
                 elif isinstance(self, FunctionScope) and sc == SC_LOCAL:
                     self.cells[name] = 1
-                else:
+                elif sc != SC_CELL:
                     child_globals.append(name)
             else:
                 if sc == SC_LOCAL:
                     self.cells[name] = 1
-                else:
+                elif sc != SC_CELL:
                     child_globals.append(name)
         return child_globals
 
@@ -295,8 +290,44 @@ class SymbolVisitor:
                 name = name[:i]
             scope.add_def(asname or name)
 
+    def visitGlobal(self, node, scope):
+        for name in node.names:
+            scope.add_global(name)
+
+    def visitAssign(self, node, scope):
+        """Propagate assignment flag down to child nodes.
+
+        The Assign node doesn't itself contains the variables being
+        assigned to.  Instead, the children in node.nodes are visited
+        with the assign flag set to true.  When the names occur in
+        those nodes, they are marked as defs.
+
+        Some names that occur in an assignment target are not bound by
+        the assignment, e.g. a name occurring inside a slice.  The
+        visitor handles these nodes specially; they do not propagate
+        the assign flag to their children.
+        """
+        for n in node.nodes:
+            self.visit(n, scope, 1)
+        self.visit(node.expr, scope)
+
     def visitAssName(self, node, scope, assign=1):
         scope.add_def(node.name)
+
+    def visitAssAttr(self, node, scope, assign=0):
+        self.visit(node.expr, scope, 0)
+
+    def visitSubscript(self, node, scope, assign=0):
+        self.visit(node.expr, scope, 0)
+        for n in node.subs:
+            self.visit(n, scope, 0)
+
+    def visitSlice(self, node, scope, assign=0):
+        self.visit(node.expr, scope, 0)
+        if node.lower:
+            self.visit(node.lower, scope, 0)
+        if node.upper:
+            self.visit(node.upper, scope, 0)
 
     def visitAugAssign(self, node, scope):
         # If the LHS is a name, then this counts as assignment.
@@ -305,15 +336,6 @@ class SymbolVisitor:
         if isinstance(node.node, ast.Name):
             self.visit(node.node, scope, 1) # XXX worry about this
         self.visit(node.expr, scope)
-
-    def visitAssign(self, node, scope):
-        for n in node.nodes:
-            self.visit(n, scope, 1)
-        self.visit(node.expr, scope)
-
-    def visitGlobal(self, node, scope):
-        for name in node.names:
-            scope.add_global(name)
 
     # prune if statements if tests are false
 
