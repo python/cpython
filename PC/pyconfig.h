@@ -61,6 +61,28 @@ MS_CORE_DLL.
 /* Microsoft C defines _MSC_VER */
 #ifdef _MSC_VER
 
+/* We want COMPILER to expand to a string containing _MSC_VER's *value*.
+ * This is horridly tricky, because the stringization operator only works
+ * on macro arguments, and doesn't evaluate macros passed *as* arguments.
+ * Attempts simpler than the following appear doomed to produce "_MSC_VER"
+ * literally in the string.
+ */
+#define _Py_PASTE_VERSION(SUFFIX) \
+	("[MSC v." _Py_STRINGIZE(_MSC_VER) " " SUFFIX "]")
+/* e.g., this produces, after compile-time string catenation,
+ * 	("[MSC v.1200 32 bit (Intel)]")
+ *
+ * _Py_STRINGIZE(_MSC_VER) expands to
+ * _Py_STRINGIZE1((_MSC_VER)) expands to
+ * _Py_STRINGIZE2(_MSC_VER) but as this call is the result of token-pasting
+ *      it's scanned again for macros and so further expands to (under MSVC 6)
+ * _Py_STRINGIZE2(1200) which then expands to
+ * "1200"
+ */
+#define _Py_STRINGIZE(X) _Py_STRINGIZE1((X))
+#define _Py_STRINGIZE1(X) _Py_STRINGIZE2 ## X
+#define _Py_STRINGIZE2(X) #X
+
 /* MSVC defines _WINxx to differentiate the windows platform types
 
    Note that for compatibility reasons _WIN32 is defined on Win32
@@ -76,21 +98,17 @@ MS_CORE_DLL.
 /* set the COMPILER */
 #ifdef MS_WIN64
 #ifdef _M_IX86
-#define COMPILER "[MSC 64 bit (Intel)]"
-#elif defined(_M_ALPHA)
-#define COMPILER "[MSC 64 bit (Alpha)]"
+#define COMPILER _Py_PASTE_VERSION("64 bit (Intel)"
 #else
-#define COMPILER "[MSC 64 bit (Unknown)]"
+#define COMPILER _Py_PASTE_VERSION("64 bit (Unknown)")
 #endif
 #endif /* MS_WIN64 */
 
 #if defined(MS_WIN32) && !defined(MS_WIN64)
 #ifdef _M_IX86
-#define COMPILER "[MSC 32 bit (Intel)]"
-#elif defined(_M_ALPHA)
-#define COMPILER "[MSC 32 bit (Alpha)]"
+#define COMPILER _Py_PASTE_VERSION("32 bit (Intel)")
 #else
-#define COMPILER "[MSC (Unknown)]"
+#define COMPILER _Py_PASTE_VERSION("32 bit (Unknown)")
 #endif
 #endif /* MS_WIN32 && !MS_WIN64 */
 
@@ -177,7 +195,7 @@ typedef int pid_t;
 #	define LONG_LONG __int64
 #endif
 
-/* For Windows the Python core is in a DLL by default.  Test 
+/* For Windows the Python core is in a DLL by default.  Test
 Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #if !defined(MS_NO_COREDLL) && !defined(Py_NO_ENABLE_SHARED)
 #	define Py_ENABLE_SHARED 1 /* standard symbol for shared library */
@@ -196,7 +214,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #ifdef MS_COREDLL
 #	ifndef Py_BUILD_CORE /* not building the core - must be an ext */
 #		if defined(_MSC_VER)
-			/* So MSVC users need not specify the .lib file in 
+			/* So MSVC users need not specify the .lib file in
 			their Makefile (other compilers are generally
 			taken care of by distutils.) */
 #			ifdef _DEBUG
@@ -227,16 +245,11 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #elif defined(MS_WIN32)
 #	define PLATFORM "win32"
 #	define HAVE_LARGEFILE_SUPPORT
-#	ifdef _M_ALPHA
-#		define SIZEOF_VOID_P 8
-#		define SIZEOF_TIME_T 8
-#	else
-#		define SIZEOF_VOID_P 4
-#		define SIZEOF_TIME_T 4
-#		define SIZEOF_OFF_T 4
-#		define SIZEOF_FPOS_T 8
-#		define SIZEOF_HKEY 4
-#	endif
+#	define SIZEOF_VOID_P 4
+#	define SIZEOF_TIME_T 4
+#	define SIZEOF_OFF_T 4
+#	define SIZEOF_FPOS_T 8
+#	define SIZEOF_HKEY 4
 #endif
 
 #ifdef _DEBUG
