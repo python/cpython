@@ -64,7 +64,7 @@ def mkcgifilename(filename):
 def buildone(template, wrapper, src, dst):
 	buildtools.process(template, wrapper, dst, 1)
 	# write source as a PYC resource into dst
-	ref = Res.FSpOpenResFile(dst, 1)
+	ref = Res.FSpOpenResFile(dst, 2)
 	try:
 		Res.UseResFile(ref)
 		py_resource.frompyfile(src, "CGI_MAIN", preload=1)
