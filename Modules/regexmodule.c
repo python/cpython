@@ -398,6 +398,11 @@ symcomp(pattern, gdict)
 	object *npattern;
 	int require_escape = re_syntax & RE_NO_BK_PARENS ? 0 : 1;
 
+	if (oend == opat) {
+		INCREF(pattern);
+		return pattern;
+	}
+
 	npattern = newsizedstringobject((char*)NULL, getstringsize(pattern));
 	if (npattern == NULL)
 		return NULL;
@@ -466,7 +471,6 @@ symcomp(pattern, gdict)
 	if (resizestring(&npattern, n - getstringvalue(npattern)) == 0)
 		return npattern;
 	else {
-		DECREF(npattern);
 		return NULL;
 	}
 
