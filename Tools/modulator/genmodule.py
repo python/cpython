@@ -28,7 +28,7 @@ error = 'genmodule.error'
 # Names of functions in the object-description struct.
 #
 FUNCLIST = ['new', 'tp_dealloc', 'tp_print', 'tp_getattr', 'tp_setattr',
-	    'tp_compare', 'tp_repr', 'tp_hash']
+	    'tp_compare', 'tp_repr', 'tp_hash', 'tp_call', 'tp_str']
 TYPELIST = ['tp_as_number', 'tp_as_sequence', 'tp_as_mapping', 'structure']
 
 #
@@ -81,7 +81,8 @@ class module(writer):
 	for fn in self.methodlist:
 	    self.method = fn
 	    self.addcode('module_method', fp)
-	    new_ml = new_ml + ('{"%s",\t%s_%s,\t1},\n'%(fn, self.abbrev, fn))
+	    new_ml = new_ml + ('{"%s",\t%s_%s,\t1,\t%s_%s__doc__},\n'
+			       %(fn, self.abbrev, fn, self.abbrev, fn))
 	self.methodlist = new_ml
 	self.addcode('module_tail', fp)
 
@@ -106,7 +107,8 @@ class object(writer):
 	for fn in self.methodlist:
 	    self.method = fn
 	    self.addcode('object_method', fp)
-	    new_ml = new_ml + ('{"%s",\t%s_%s,\t1},\n'%(fn, self.abbrev, fn))
+	    new_ml = new_ml + ('{"%s",\t%s_%s,\t1,\t%s_%s__doc__},\n'
+			       %(fn, self.abbrev, fn, self.abbrev, fn))
 	self.methodlist = new_ml
 	self.addcode('object_mlist', fp)
 
