@@ -1009,7 +1009,7 @@ cdll_getlibrary(self, args)
 		return NULL;
 
 	/* Find the library connection ID */
-	err = GetSharedLibrary(frag_name, kCurrentCFragArch, kLoadCFrag, &conn_id, &main_addr, 
+	err = GetSharedLibrary(frag_name, kCompiledCFragArch, kLoadCFrag, &conn_id, &main_addr, 
 			errMessage);
 	if ( err ) {
 		sprintf(buf, "%.*s: %s", errMessage[0], errMessage+1, PyMac_StrError(err));
