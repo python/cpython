@@ -78,6 +78,9 @@ extern void initsyslog();
 extern void initgestalt();
 extern void initmacfs();
 extern void initbinascii();
+extern void initsoundex();
+extern void initoperator();
+extern void initerrno();
 #ifdef THINK
 extern void initmacconsole();
 #endif
@@ -171,6 +174,9 @@ struct _inittab inittab[] = {
 	{"gestalt", initgestalt},
 	{"macfs", initmacfs},
 	{"binascii", initbinascii},
+	{"soundex", initsoundex},
+	{"operator", initoperator},
+	{"errno", initerrno},
 #ifdef THINK_C
 /* This is an interface to the Think runtime */
 	{"macconsole", initmacconsole},
@@ -230,7 +236,7 @@ struct _inittab inittab[] = {
 #endif
 #ifdef USE_GDBM
 	{"gdbm",	initgdbm},
-#endif USE_GDBM
+#endif /* USE_GDBM */
 
 /* -- ADDMODULE MARKER 2 -- */
 
