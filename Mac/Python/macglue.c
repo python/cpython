@@ -186,8 +186,6 @@ static int
 PyMac_GUSISpin(spin_msg msg, long arg)
 {
 	static Boolean			inForeground	=	true;
-	WindowPtr				win;
-	EventRecord				ev;
 	int						maysleep;
 
 	if (PyMac_ConsoleIsDead) return 0;
