@@ -41,7 +41,8 @@ def gettempdir():
             filename = os.path.join(dir, testfile)
             if os.name == 'posix':
                 try:
-                    fd = os.open(filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700)
+                    fd = os.open(filename,
+                                 os.O_RDWR | os.O_CREAT | os.O_EXCL, 0700)
                 except OSError:
                     pass
                 else:
