@@ -11,13 +11,16 @@ class SearchDialogBase:
         self.engine = engine
         self.top = None
 
-    def open(self, text):
+    def open(self, text, searchphrase=None):
         self.text = text
         if not self.top:
             self.create_widgets()
         else:
             self.top.deiconify()
             self.top.tkraise()
+        if searchphrase:
+            self.ent.delete(0,"end")
+            self.ent.insert("end",searchphrase)
         self.ent.focus_set()
         self.ent.selection_range(0, "end")
         self.ent.icursor(0)

@@ -11,7 +11,8 @@ def _setup(text):
     return engine._searchdialog
 
 def find(text):
-    return _setup(text).open(text)
+    pat = text.get("sel.first", "sel.last")
+    return _setup(text).open(text,pat)
 
 def find_again(text):
     return _setup(text).find_again(text)
