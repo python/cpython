@@ -1,60 +1,27 @@
-# Makefile for Python documentation.
-# Actually, it is easier to just do:
-#	latex tut
-#	latex tut
-#	latex lib
-#	latex lib
-#	latex ref
-#	latex ref
-# (Doing everything twice so the table of contents comes out right!)
+all:	tut ref lib # qua
 
-LATEX=		latex
-DVIPS=		dvips
-TEXPREVIEW=	xdvi
+tut:
+	latex tut
+	latex tut
 
-PRINT=		lpr
+ref:
+	touch ref.ind
+	latex ref
+	makeindex ref
+	latex ref
 
-ALL=		tut.ps lib.ps ref.ps
+lib:
+	touch lib.ind
+	latex lib
+	makeindex lib
+	latex lib
 
-all:		$(ALL)
-
-tut:		tut.dvi
-		$(TEXPREVIEW) tut
-
-tut.dvi tut.ps:	tut.toc tut.tex myformat.sty
-
-lib:		lib.dvi
-		$(TEXPREVIEW) lib
-
-lib.dvi lib.ps:	lib.toc lib.tex lib1.tex lib2.tex lib3.tex myformat.sty
-
-ref:		ref.dvi
-		$(TEXPREVIEW) ref
-
-ref.dvi ref.ps:	ref.toc ref.tex myformat.sty
-
-print:		$(ALL)
-		$(PRINT) $(ALL)
+qua:
+	latex qua
+	latex qua
+	bibtex qua
+	latex qua
 
 clean:
-		rm -f *.dvi *.aux *.toc *.log *.ps core [#@,]* *~
-
-.SUFFIXES:	# Remove default suffixes
-
-.SUFFIXES:	.tex .aux .toc .dvi .ps
-
-.tex.aux:
-		$(LATEX) $*
-
-.tex.toc:
-		$(LATEX) $*
-
-.tex.dvi:
-		$(LATEX) $*
-
-.dvi.ps:
-		$(DVIPS) $* >$*.ps
-
-.tex.ps:
-		$(LATEX) $*
-		$(DVIPS) $* >$*.ps
+	rm -f *~ *.aux *.dvi *.idx *.ilg *.ind *.log *.ps *.toc
+	# Keep: .tex, .bib, .sty!
