@@ -10,8 +10,6 @@
 \maketitle
 \tableofcontents
 
-% Optik (or whatever it gets called)
-%
 % MacOS framework-related changes (section of its own, probably)
 %
 % xreadlines obsolete; files are their own iterator
@@ -417,31 +415,31 @@ by Raymond D. Hettinger.}
 %======================================================================
 \section{PEP 282: The \module{logging} Package}
 
-A standard package for writing logs, the \module{logging} package, was
-added.  It provides a powerful and flexible way for components to
-generate logging output which can then be filtered and processed in
-various ways.  The logging system can parse a configuration file to
-control its behaviour.  Logs can be written to standard error, a file
-or a socket, sent to the system log, e-mailed to a particular address,
-or buffered in memory.  It's also possible to write your own handler
-classes, of course.
+A standard package for writing logs called \module{logging} has been
+added to Python 2.3.  It provides a powerful and flexible way for
+components to generate logging output which can then be filtered and
+processed in various ways.  A standard configuration file format can
+be used to control the logging behaviour of a program.  Python comes
+with handlers that will write log records to standard error or to a
+file or socket, send them to the system log, or even e-mail them to a
+particular address, and of course it's also possible to write your own
+handler classes.
 
-You can have multiple \class{Logger} objects, each one used by a
-particular subsystem of your code.  Each \class{Logger} is identified
-by a name, and names are organized into a hierarchy using \samp{.}  as
-the component separator.  For example, you might have \class{Logger}
-instances named \samp{server}, \samp{server.auth} and
-\samp{server.network}.  The latter two instances fall under the
-\samp{server} \class{Logger} in the hierarchy.  This means that if you 
-turn up the verbosity for \samp{server}, or direct 
-\samp{server} messages to a different handler, 
-the changes will also apply to \samp{server.auth} and
-\samp{server.network}.
-There's also a root \class{Logger} with the name \samp{root}, 
-parent of all other instances.
+Most application code will deal with one or more \class{Logger}
+objects, each one used by a particular subsystem of the application.
+Each \class{Logger} is identified by a name, and names are organized
+into a hierarchy using \samp{.}  as the component separator.  For
+example, you might have \class{Logger} instances named \samp{server},
+\samp{server.auth} and \samp{server.network}.  The latter two
+instances fall under the \samp{server} \class{Logger} in the
+hierarchy.  This means that if you turn up the verbosity for
+\samp{server} or direct \samp{server} messages to a different handler,
+the changes will also apply to records logged to \samp{server.auth}
+and \samp{server.network}.  There's also a root \class{Logger} with
+the name \samp{root} that's the parent of all other loggers.
 
-The \module{logging} package contains some convenience functions
-that always use the root log:
+For simple uses, the \module{logging} package contains some
+convenience functions that always use the root log:
 
 \begin{verbatim}
 import logging
@@ -462,16 +460,19 @@ CRITICAL:root:Critical error -- shutting down
 \end{verbatim}
 
 In the default configuration, informational and debugging messages are
-suppressed and the output is sent to standard error.  Note the
-\function{warn()} call's use of string formatting operators; all of
-the functions for logging messages take the arguments 
-\code{(\var{msg}, \var{arg1}, \var{arg2}, ...)} and log the string resulting from
-\code{\var{msg} \% (\var{arg1}, \var{arg2}, ...)}.
+suppressed and the output is sent to standard error; you can change
+this by calling the \method{setLevel()} method on the root logger.
+
+Notice the \function{warn()} call's use of string formatting
+operators; all of the functions for logging messages take the
+arguments \code{(\var{msg}, \var{arg1}, \var{arg2}, ...)} and log the
+string resulting from \code{\var{msg} \% (\var{arg1}, \var{arg2},
+...)}.
 
 There's also an \function{exception()} function that records the most
 recent traceback.  Any of the other functions will also record the
-traceback by specifying the keyword argument \code{exc_info} as
-\code{True}.
+traceback if you specify a true value for the keyword argument
+\code{exc_info}.
 
 \begin{verbatim}
 def f():
@@ -491,7 +492,9 @@ Traceback (most recent call last):
 ZeroDivisionError: integer division or modulo by zero
 \end{verbatim}
 
-The \function{getLogger(\var{name})} is used to get a particular log.
+Slightly more advanced programs will use a logger other than the root
+logger.  The \function{getLogger(\var{name})} is used to get a
+particular log, creating it if it doesn't exist yet.
 
 \begin{verbatim}
 log = logging.getLogger('server')
@@ -502,12 +505,26 @@ log.critical('Disk full')
  ...
 \end{verbatim}
 
-XXX finish this section
+There are more classes that can be customized.  When a \class{Logger}
+instance is told to log a message, it creates a \class{LogRecord}
+instance that is sent to any number of different \class{Handler}
+instances.  Loggers and handlers can also have an attached list of
+filters, and each filter can cause the \class{LogRecord} to be ignored
+or can modify the record before passing it along.  \class{LogRecord}
+instances are converted to text by a \class{Formatter} class.  
 
-This is only a partial overview of the \module{logging} package's
-features; see the
+Log records are usually propagated up the hierarchy, so a message
+logged to \samp{server.auth} is also seen by \samp{server} and
+\samp{root}, but a handler can prevent this by setting its
+\member{propagate} attribute to \code{True}.
+
+With all of these features the \module{logging} package should provide
+enough flexibility for even the most complicated applications.  This
+is only a partial overview of the \module{logging} package's features,
+so please see the
 \citetitle[http://www.python.org/dev/doc/devel/lib/module-logging.html]{\module{logging}
-package's reference documentation} for all of the details.
+package's reference documentation} for all of the details.  Reading
+\pep{282} will also be helpful.
 
 
 \begin{seealso}
@@ -866,6 +883,7 @@ In 2.3, you get this:
 \end{itemize}
 
 
+%======================================================================
 \subsection{String Changes}
 
 \begin{itemize}
@@ -944,6 +962,7 @@ Oren Tirosh.)
 \end{itemize}
 
 
+%======================================================================
 \subsection{Optimizations}
 
 \begin{itemize}
@@ -1187,7 +1206,7 @@ implements the text wrapping strategy.   Both the
 \function{fill()} functions support a number of additional keyword
 arguments for fine-tuning the formatting; consult the module's
 documentation for details.
-% XXX add a link to the module docs?
+%XXX add a link to the module docs?
 (Contributed by Greg Ward.)
 
 \item The \module{time} module's \function{strptime()} function has
@@ -1231,6 +1250,12 @@ activated on an application level instead of trying to enable it on a
 per-use basis.
 
 \end{itemize}
+
+
+%======================================================================
+\subsection{Optik: The \module{optparse} Module}
+
+XXX write this section
 
 
 %======================================================================
@@ -1387,6 +1412,12 @@ char *\var{key})} was added
 as shorthand for
 \code{PyObject_DelItem(\var{mapping}, PyString_New(\var{key})}.
 
+\item The \method{xreadlines()} method of file objects, introduced in
+Python 2.1, is no longer necessary because files now behave as their
+own iterator.  \method{xreadlines()} was originally introduced as a
+faster way to loop over all the lines in a file, but now you can
+simply write \code{for line in file_obj}.
+
 \item File objects now manage their internal string buffer
 differently by increasing it exponentially when needed.
 This results in the benchmark tests in \file{Lib/test/test_bufio.py}
@@ -1404,6 +1435,8 @@ Expat.
 
 \end{itemize}
 
+
+%======================================================================
 \subsection{Port-Specific Changes}
 
 Support for a port to IBM's OS/2 using the EMX runtime environment was
@@ -1511,9 +1544,9 @@ ext = Extension(**kw)
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Simon Brunning, Michael Chermside, Scott David Daniels, Fred~L. Drake, Jr.,
-Michael Hudson, Detlef Lannert, Martin von L\"owis, Andrew MacIntyre,
-Lalo Martins, Gustavo Niemeyer, Neal Norwitz, Neil Schemenauer, Jason
-Tishler.
+article: Simon Brunning, Michael Chermside, Scott David Daniels,
+Fred~L. Drake, Jr., Michael Hudson, Detlef Lannert, Martin von
+L\"owis, Andrew MacIntyre, Lalo Martins, Gustavo Niemeyer, Neal
+Norwitz, Neil Schemenauer, Jason Tishler.
 
 \end{document}
