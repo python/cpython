@@ -134,6 +134,11 @@ ins1(PyListObject *self, int where, PyObject *v)
 		PyErr_BadInternalCall();
 		return -1;
 	}
+	if (self->ob_size == INT_MAX) {
+		PyErr_SetString(PyExc_OverflowError,
+			"cannot add more objects to list");
+		return -1;
+	}
 	items = self->ob_item;
 	NRESIZE(items, PyObject *, self->ob_size+1);
 	if (items == NULL) {
