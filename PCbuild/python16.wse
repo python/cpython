@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=5.0
-  Title=Python 1.6 alpha 0
+  Title=Python 1.6 alpha 1
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -53,7 +53,7 @@ item: Check Configuration
 end
 item: Set Variable
   Variable=APPTITLE
-  Value=Python 1.6 alpha 0
+  Value=Python 1.6 alpha 1
 end
 item: Set Variable
   Variable=GROUP
@@ -96,6 +96,9 @@ item: Set Variable
   Value=C:\%MAINDIR%
 end
 item: End Block
+end
+item: Remark
+  Text=Where system DLLs are installed (choose one of the following):
 end
 item: Set Variable
   Variable=DLLDEST
@@ -443,7 +446,7 @@ item: Custom Dialog Set
       Text=Python Help Files
       Text=Python test suite
       Text=Python interpreter and library
-      Text=Tcl/Tk installation
+      Text=Tcl/Tk support
       Text=
       Text French=Python Utility Scripts
       Text French=Python Help Files
@@ -691,6 +694,11 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=%_SRC_%\pcbuild\mmap.pyd
+  Destination=%MAINDIR%\DLLs\mmap.pyd
+  Flags=0000000000000010
+end
+item: Install File
   Source=%_SRC_%\pcbuild\python16.dll
   Destination=%DLLDEST%\python16.dll
   Flags=0000000000000010
@@ -795,36 +803,6 @@ item: Install File
   Source=%_SRC_%\Tools\scripts\README
   Destination=%MAINDIR%\Tools\Scripts\README.txt
   Description=Utility Scripts
-  Flags=0000000000000010
-end
-remarked item: Install File
-  Source=%_SRC_%\Tools\freeze\*.py
-  Destination=%MAINDIR%\Tools\freeze
-  Description=Freeze tool
-  Flags=0000000000000010
-end
-remarked item: Install File
-  Source=%_SRC_%\Tools\freeze\*.ini
-  Destination=%MAINDIR%\Tools\freeze
-  Description=Freeze tool
-  Flags=0000000000000010
-end
-remarked item: Install File
-  Source=%_SRC_%\Tools\freeze\*.html
-  Destination=%MAINDIR%\Tools\freeze
-  Description=Freeze tool
-  Flags=0000000000000010
-end
-remarked item: Install File
-  Source=%_SRC_%\Tools\freeze\README
-  Destination=%MAINDIR%\Tools\freeze\README.txt
-  Description=Freeze tool
-  Flags=0000000000000010
-end
-remarked item: Install File
-  Source=%_SRC_%\Python\frozenmain.c
-  Destination=%MAINDIR%\Tools\freeze\frozenmain.c
-  Description=Freeze tool
   Flags=0000000000000010
 end
 item: Install File
@@ -1192,7 +1170,7 @@ item: If/While Statement
   Value=B
   Flags=00001010
 end
-item: Create Shortcut
+remarked item: Create Shortcut
   Source=%MAINDIR%\Doc\index.html
   Destination=%GROUP%\Python Manuals.lnk
   Working Directory=%MAINDIR%
@@ -1235,7 +1213,7 @@ item: If/While Statement
   Value=B
   Flags=00001010
 end
-item: Add ProgMan Icon
+remarked item: Add ProgMan Icon
   Group=%GROUP%
   Icon Name=Python Manuals
   Command Line=%MAINDIR%\Doc\index.html
