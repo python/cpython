@@ -84,8 +84,13 @@ def testtype(type, example):
     f = open(TESTFN, 'w')
     a.tofile(f)
     f.close()
+
+    # This block is just to verify that the operations don't blow up.
     a.tolist()
     a.tostring()
+    repr(a)
+    str(a)
+
     if verbose:
         print 'array of %s converted to a list: ' % a.typecode, a.tolist()
     if verbose:
