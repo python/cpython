@@ -265,6 +265,7 @@ MACFILES= $(HOWTOSTYLES) $(COMMONTEX) \
 	mac/using.tex \
 	mac/toolbox.tex \
 	mac/undoc.tex \
+	mac/libcolorpicker.tex \
 	mac/libmac.tex \
 	mac/libaepack.tex \
 	mac/libaetypes.tex \
