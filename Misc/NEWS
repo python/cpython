@@ -58,6 +58,9 @@ Core and builtins
 Extension modules
 -----------------
 
+- the socket module has a new exception, socket.timeout, to allow
+  timeouts to be handled separately from other socket errors.
+
 - mimetools.choose_boundary() could return duplicate strings at times,
   especially likely on Windows.  The strings returned are now guaranteed
   unique within a single program run.
