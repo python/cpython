@@ -407,7 +407,7 @@ initsignal()
 }
 
 int
-sigcheck()
+PyErr_CheckSignals()
 {
 	int i;
 	PyObject *f;
