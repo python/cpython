@@ -140,9 +140,6 @@ class _socketobject:
         # Avoid referencing globals here
         self._sock = self.__class__._closedsocket()
 
-    def __del__(self):
-        self.close()
-
     def accept(self):
         sock, addr = self._sock.accept()
         return _socketobject(sock), addr
