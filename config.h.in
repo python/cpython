@@ -396,6 +396,3 @@
 
 /* Define if you have the ieee library (-lieee).  */
 #undef HAVE_LIBIEEE
-
-/* Define if you have the sun library (-lsun).  */
-#undef HAVE_LIBSUN
