@@ -509,14 +509,12 @@ class ExFileObject(object):
             nl = min(nl, size)
         else:
             size -= len(self.linebuffer)
-            while nl < 0:
+            while (nl < 0 and size > 0):
                 buf = self.read(min(size, 100))
                 if not buf:
                     break
                 self.linebuffer += buf
                 size -= len(buf)
-                if size <= 0:
-                    break
                 nl = self.linebuffer.find("\n")
             if nl == -1:
                 s = self.linebuffer
