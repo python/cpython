@@ -441,6 +441,7 @@ sub do_cmd_withsubitem{
     my $stuff = next_argument();
     my $br_id = ++$globals{'max_id'};
     my $marker = "$O$br_id$C";
+    $stuff =~ s/^\s+//;
     return
       $stuff
       . "\\setindexsubitem$marker$oldsubitem$marker"
