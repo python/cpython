@@ -1910,8 +1910,8 @@ Return 1 if there are only whitespace characters in S,\n\
 static PyObject*
 string_isspace(PyStringObject *self, PyObject *args)
 {
-    register const char *p = PyString_AS_STRING(self);
-    register const char *e;
+    register const unsigned char *p = (unsigned char *) PyString_AS_STRING(self);
+    register const unsigned char *e;
 
     if (!PyArg_NoArgs(args))
         return NULL;
@@ -1939,8 +1939,8 @@ Return 1 if there are only digit characters in S,\n\
 static PyObject*
 string_isdigit(PyStringObject *self, PyObject *args)
 {
-    register const char *p = PyString_AS_STRING(self);
-    register const char *e;
+    register const unsigned char *p = (unsigned char *) PyString_AS_STRING(self);
+    register const unsigned char *e;
 
     if (!PyArg_NoArgs(args))
         return NULL;
@@ -1968,8 +1968,8 @@ at least one cased character in S, 0 otherwise.";
 static PyObject*
 string_islower(PyStringObject *self, PyObject *args)
 {
-    register const char *p = PyString_AS_STRING(self);
-    register const char *e;
+    register const unsigned char *p = (unsigned char *) PyString_AS_STRING(self);
+    register const unsigned char *e;
     int cased;
 
     if (!PyArg_NoArgs(args))
@@ -2000,8 +2000,8 @@ at least one cased character in S, 0 otherwise.";
 static PyObject*
 string_isupper(PyStringObject *self, PyObject *args)
 {
-    register const char *p = PyString_AS_STRING(self);
-    register const char *e;
+    register const unsigned char *p = (unsigned char *) PyString_AS_STRING(self);
+    register const unsigned char *e;
     int cased;
 
     if (!PyArg_NoArgs(args))
@@ -2033,8 +2033,8 @@ ones. Return 0 otherwise.";
 static PyObject*
 string_istitle(PyStringObject *self, PyObject *args)
 {
-    register const char *p = PyString_AS_STRING(self);
-    register const char *e;
+    register const unsigned char *p = (unsigned char *) PyString_AS_STRING(self);
+    register const unsigned char *e;
     int cased, previous_is_cased;
 
     if (!PyArg_NoArgs(args))
@@ -2048,7 +2048,7 @@ string_istitle(PyStringObject *self, PyObject *args)
     cased = 0;
     previous_is_cased = 0;
     for (; p < e; p++) {
-	register const char ch = *p;
+	register const unsigned char ch = *p;
 
 	if (isupper(ch)) {
 	    if (previous_is_cased)
