@@ -131,7 +131,7 @@ class PrettyPrinter:
         write = stream.write
 
         if sepLines:
-            r = typ.__repr__
+            r = getattr(typ, "__repr__", None)
             if issubclass(typ, dict) and r is dict.__repr__:
                 write('{')
                 if self._indent_per_level > 1:
@@ -229,7 +229,7 @@ def _safe_repr(object, context, maxlevels, level):
                 write(qget(char, repr(char)[1:-1]))
         return ("%s%s%s" % (closure, sio.getvalue(), closure)), True, False
 
-    r = typ.__repr__
+    r = getattr(typ, "__repr__", None)
     if issubclass(typ, dict) and r is dict.__repr__:
         if not object:
             return "{}", True, False
