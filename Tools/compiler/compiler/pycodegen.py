@@ -49,7 +49,7 @@ def compile(filename, display=0):
     try:
         mod.compile(display)
     except SyntaxError, err:
-        print "SyntaxError:", err
+        raise
     else:
         f = open(filename + "c", "wb")
         mod.dump(f)

@@ -943,6 +943,10 @@ class Transformer:
     def com_assign_list(self, node, assigning):
         assigns = []
         for i in range(1, len(node), 2):
+            if i + 1 < len(node):
+                if node[i + 1][0] == symbol.list_for:
+                    raise SyntaxError, "can't assign to list comprehension"
+                assert node[i + 1][0] == token.COMMA, node[i + 1]
             assigns.append(self.com_assign(node[i], assigning))
         return AssList(assigns)
 
