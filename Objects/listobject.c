@@ -61,27 +61,23 @@ PyList_New(int size)
 	if (nbytes / sizeof(PyObject *) != (size_t)size) {
 		return PyErr_NoMemory();
 	}
-	/* PyObject_NewVar is inlined */
-	op = (PyListObject *) PyObject_MALLOC(sizeof(PyListObject)
-						+ PyGC_HEAD_SIZE);
+	op = PyObject_GC_New(PyListObject, &PyList_Type);
 	if (op == NULL) {
-		return PyErr_NoMemory();
+		return NULL;
 	}
-	op = (PyListObject *) PyObject_FROM_GC(op);
 	if (size <= 0) {
 		op->ob_item = NULL;
 	}
 	else {
 		op->ob_item = (PyObject **) PyMem_MALLOC(nbytes);
 		if (op->ob_item == NULL) {
-			PyObject_FREE(PyObject_AS_GC(op));
 			return PyErr_NoMemory();
 		}
 	}
-	PyObject_INIT_VAR(op, &PyList_Type, size);
+	op->ob_size = size;
 	for (i = 0; i < size; i++)
 		op->ob_item[i] = NULL;
-	PyObject_GC_Init(op);
+	_PyObject_GC_TRACK(op);
 	return (PyObject *) op;
 }
 
@@ -200,7 +196,7 @@ list_dealloc(PyListObject *op)
 {
 	int i;
 	Py_TRASHCAN_SAFE_BEGIN(op)
-	PyObject_GC_Fini(op);
+	_PyObject_GC_UNTRACK(op);
 	if (op->ob_item != NULL) {
 		/* Do it backwards, for Christian Tismer.
 		   There's a simple test case where somehow this reduces
@@ -212,8 +208,7 @@ list_dealloc(PyListObject *op)
 		}
 		PyMem_FREE(op->ob_item);
 	}
-	op = (PyListObject *) PyObject_AS_GC(op);
-	PyObject_DEL(op);
+	PyObject_GC_Del(op);
 	Py_TRASHCAN_SAFE_END(op)
 }
 
@@ -1675,7 +1670,7 @@ PyTypeObject PyList_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"list",
-	sizeof(PyListObject) + PyGC_HEAD_SIZE,
+	sizeof(PyListObject),
 	0,
 	(destructor)list_dealloc,		/* tp_dealloc */
 	(printfunc)list_print,			/* tp_print */
@@ -1692,7 +1687,7 @@ PyTypeObject PyList_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC |
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_BASETYPE,		/* tp_flags */
  	list_doc,				/* tp_doc */
  	(traverseproc)list_traverse,		/* tp_traverse */
@@ -1762,7 +1757,7 @@ static PyTypeObject immutable_list_type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"list (immutable, during sort)",
-	sizeof(PyListObject) + PyGC_HEAD_SIZE,
+	sizeof(PyListObject),
 	0,
 	0, /* Cannot happen */			/* tp_dealloc */
 	(printfunc)list_print,			/* tp_print */
@@ -1779,7 +1774,7 @@ static PyTypeObject immutable_list_type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
  	list_doc,				/* tp_doc */
  	(traverseproc)list_traverse,		/* tp_traverse */
 	0,					/* tp_clear */

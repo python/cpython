@@ -81,7 +81,7 @@ PyClass_New(PyObject *bases, PyObject *dict, PyObject *name)
 		}
 		Py_INCREF(bases);
 	}
-	op = PyObject_NEW(PyClassObject, &PyClass_Type);
+	op = PyObject_GC_New(PyClassObject, &PyClass_Type);
 	if (op == NULL) {
 		Py_DECREF(bases);
 		return NULL;
@@ -102,7 +102,7 @@ PyClass_New(PyObject *bases, PyObject *dict, PyObject *name)
 	Py_XINCREF(op->cl_getattr);
 	Py_XINCREF(op->cl_setattr);
 	Py_XINCREF(op->cl_delattr);
-	PyObject_GC_Init(op);
+	_PyObject_GC_TRACK(op);
 	return (PyObject *) op;
 }
 
@@ -123,15 +123,14 @@ class_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 class_dealloc(PyClassObject *op)
 {
-	PyObject_GC_Fini(op);
+	_PyObject_GC_UNTRACK(op);
 	Py_DECREF(op->cl_bases);
 	Py_DECREF(op->cl_dict);
 	Py_XDECREF(op->cl_name);
 	Py_XDECREF(op->cl_getattr);
 	Py_XDECREF(op->cl_setattr);
 	Py_XDECREF(op->cl_delattr);
-	op = (PyClassObject *) PyObject_AS_GC(op);
-	PyObject_DEL(op);
+	PyObject_GC_Del(op);
 }
 
 static PyObject *
@@ -394,7 +393,7 @@ PyTypeObject PyClass_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"class",
-	sizeof(PyClassObject) + PyGC_HEAD_SIZE,
+	sizeof(PyClassObject),
 	0,
 	(destructor)class_dealloc,		/* tp_dealloc */
 	0,					/* tp_print */
@@ -411,7 +410,7 @@ PyTypeObject PyClass_Type = {
 	(getattrofunc)class_getattr,		/* tp_getattro */
 	(setattrofunc)class_setattr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
 	0,					/* tp_doc */
 	(traverseproc)class_traverse,		/* tp_traverse */
  	0,					/* tp_clear */
@@ -474,7 +473,7 @@ PyInstance_NewRaw(PyObject *klass, PyObject *dict)
 		}
 		Py_INCREF(dict);
 	}
-	inst = PyObject_NEW(PyInstanceObject, &PyInstance_Type);
+	inst = PyObject_GC_New(PyInstanceObject, &PyInstance_Type);
 	if (inst == NULL) {
 		Py_DECREF(dict);
 		return NULL;
@@ -483,7 +482,7 @@ PyInstance_NewRaw(PyObject *klass, PyObject *dict)
 	Py_INCREF(klass);
 	inst->in_class = (PyClassObject *)klass;
 	inst->in_dict = dict;
-	PyObject_GC_Init(inst);
+	_PyObject_GC_TRACK(inst);
 	return (PyObject *)inst;
 }
 
@@ -542,7 +541,7 @@ instance_dealloc(register PyInstanceObject *inst)
 #ifdef Py_REF_DEBUG
 	extern long _Py_RefTotal;
 #endif
-
+	_PyObject_GC_UNTRACK(inst);
 	PyObject_ClearWeakRefs((PyObject *) inst);
 
 	/* Temporarily resurrect the object. */
@@ -592,6 +591,7 @@ instance_dealloc(register PyInstanceObject *inst)
 #ifdef COUNT_ALLOCS
 		inst->ob_type->tp_frees--;
 #endif
+		_PyObject_GC_TRACK(inst);
 		return; /* __del__ added a reference; don't delete now */
 	}
 #ifdef Py_TRACE_REFS
@@ -604,11 +604,9 @@ instance_dealloc(register PyInstanceObject *inst)
 	inst->ob_type = NULL;
 #endif
 #endif
-	PyObject_GC_Fini(inst);
 	Py_DECREF(inst->in_class);
 	Py_XDECREF(inst->in_dict);
-	inst = (PyInstanceObject *) PyObject_AS_GC(inst);
-	PyObject_DEL(inst);
+	PyObject_GC_Del(inst);
 }
 
 static PyObject *
@@ -1896,7 +1894,7 @@ PyTypeObject PyInstance_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"instance",
-	sizeof(PyInstanceObject) + PyGC_HEAD_SIZE,
+	sizeof(PyInstanceObject),
 	0,
 	(destructor)instance_dealloc,		/* tp_dealloc */
 	0,					/* tp_print */
@@ -1913,7 +1911,7 @@ PyTypeObject PyInstance_Type = {
 	(getattrofunc)instance_getattr,		/* tp_getattro */
 	(setattrofunc)instance_setattr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC | Py_TPFLAGS_CHECKTYPES,/*tp_flags*/
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_CHECKTYPES,/*tp_flags*/
 	0,					/* tp_doc */
 	(traverseproc)instance_traverse,	/* tp_traverse */
 	0,					/* tp_clear */
@@ -1946,7 +1944,7 @@ PyMethod_New(PyObject *func, PyObject *self, PyObject *class)
 		PyObject_INIT(im, &PyMethod_Type);
 	}
 	else {
-		im = PyObject_NEW(PyMethodObject, &PyMethod_Type);
+		im = PyObject_GC_New(PyMethodObject, &PyMethod_Type);
 		if (im == NULL)
 			return NULL;
 	}
@@ -1957,7 +1955,7 @@ PyMethod_New(PyObject *func, PyObject *self, PyObject *class)
 	im->im_self = self;
 	Py_XINCREF(class);
 	im->im_class = class;
-	PyObject_GC_Init(im);
+	_PyObject_GC_TRACK(im);
 	return (PyObject *)im;
 }
 
@@ -2018,8 +2016,8 @@ instancemethod_getattro(register PyMethodObject *im, PyObject *name)
 static void
 instancemethod_dealloc(register PyMethodObject *im)
 {
+	_PyObject_GC_UNTRACK(im);
 	PyObject_ClearWeakRefs((PyObject *)im);
-	PyObject_GC_Fini(im);
 	Py_DECREF(im->im_func);
 	Py_XDECREF(im->im_self);
 	Py_XDECREF(im->im_class);
@@ -2244,7 +2242,7 @@ PyTypeObject PyMethod_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"instance method",
-	sizeof(PyMethodObject) + PyGC_HEAD_SIZE,
+	sizeof(PyMethodObject),
 	0,
 	(destructor)instancemethod_dealloc,	/* tp_dealloc */
 	0,					/* tp_print */
@@ -2261,7 +2259,7 @@ PyTypeObject PyMethod_Type = {
 	(getattrofunc)instancemethod_getattro,	/* tp_getattro */
 	(setattrofunc)instancemethod_setattro,	/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,     /* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
 	0,					/* tp_doc */
 	(traverseproc)instancemethod_traverse,	/* tp_traverse */
 	0,					/* tp_clear */
@@ -2287,7 +2285,6 @@ PyMethod_Fini(void)
 	while (free_list) {
 		PyMethodObject *im = free_list;
 		free_list = (PyMethodObject *)(im->im_self);
-		im = (PyMethodObject *) PyObject_AS_GC(im);
-		PyObject_DEL(im);
+		PyObject_GC_Del(im);
 	}
 }

@@ -7,11 +7,11 @@ PyCell_New(PyObject *obj)
 {
 	PyCellObject *op;
 
-	op = (PyCellObject *)PyObject_New(PyCellObject, &PyCell_Type);
+	op = (PyCellObject *)PyObject_GC_New(PyCellObject, &PyCell_Type);
 	op->ob_ref = obj;
 	Py_XINCREF(obj);
 
-	PyObject_GC_Init(op);
+	_PyObject_GC_TRACK(op);
 	return (PyObject *)op;
 }
 
@@ -42,9 +42,9 @@ PyCell_Set(PyObject *op, PyObject *obj)
 static void
 cell_dealloc(PyCellObject *op)
 {
-	PyObject_GC_Fini(op);
+	_PyObject_GC_UNTRACK(op);
 	Py_XDECREF(op->ob_ref);
-	PyObject_Del(op);
+	PyObject_GC_Del(op);
 }
 
 static int
@@ -90,7 +90,7 @@ PyTypeObject PyCell_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"cell",
-	sizeof(PyCellObject) + PyGC_HEAD_SIZE,
+	sizeof(PyCellObject),
 	0,
 	(destructor)cell_dealloc,               /* tp_dealloc */
 	0,                                      /* tp_print */
@@ -107,7 +107,7 @@ PyTypeObject PyCell_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
  	0,					/* tp_doc */
  	(traverseproc)cell_traverse,		/* tp_traverse */
  	(inquiry)cell_clear,			/* tp_clear */

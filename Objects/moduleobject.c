@@ -19,12 +19,11 @@ PyModule_New(char *name)
 {
 	PyModuleObject *m;
 	PyObject *nameobj;
-	m = PyObject_NEW(PyModuleObject, &PyModule_Type);
+	m = PyObject_GC_New(PyModuleObject, &PyModule_Type);
 	if (m == NULL)
 		return NULL;
 	nameobj = PyString_FromString(name);
 	m->md_dict = PyDict_New();
-	PyObject_GC_Init(m);
 	if (m->md_dict == NULL || nameobj == NULL)
 		goto fail;
 	if (PyDict_SetItemString(m->md_dict, "__name__", nameobj) != 0)
@@ -32,6 +31,7 @@ PyModule_New(char *name)
 	if (PyDict_SetItemString(m->md_dict, "__doc__", Py_None) != 0)
 		goto fail;
 	Py_DECREF(nameobj);
+	PyObject_GC_Track(m);
 	return (PyObject *)m;
 
  fail:
@@ -146,12 +146,12 @@ module_init(PyModuleObject *m, PyObject *args, PyObject *kw)
 static void
 module_dealloc(PyModuleObject *m)
 {
-	PyObject_GC_Fini(m);
+	PyObject_GC_UnTrack(m);
 	if (m->md_dict != NULL) {
 		_PyModule_Clear((PyObject *)m);
 		Py_DECREF(m->md_dict);
 	}
-	PyObject_DEL(PyObject_AS_GC(m));
+	PyObject_GC_Del(m);
 }
 
 static PyObject *
@@ -188,7 +188,7 @@ PyTypeObject PyModule_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
 	"module",				/* tp_name */
-	sizeof(PyModuleObject) + PyGC_HEAD_SIZE, /* tp_size */
+	sizeof(PyModuleObject),			/* tp_size */
 	0,					/* tp_itemsize */
 	(destructor)module_dealloc,		/* tp_dealloc */
 	0,					/* tp_print */
@@ -205,7 +205,7 @@ PyTypeObject PyModule_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	PyObject_GenericSetAttr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC |
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_BASETYPE,		/* tp_flags */
 	0,					/* tp_doc */
 	(traverseproc)module_traverse,		/* tp_traverse */
