@@ -20,6 +20,10 @@ import xml.dom.core
 import xml.dom.esis_builder
 
 
+class ConversionError(Exception):
+    pass
+
+
 DEBUG_PARA_FIXER = 0
 
 
@@ -326,6 +330,105 @@ def cleanup_synopses(doc):
             create_module_info(doc, node)
 
 
+def remap_element_names(root, name_map):
+    queue = []
+    for child in root.childNodes:
+        if child.nodeType == xml.dom.core.ELEMENT:
+            queue.append(child)
+    while queue:
+        node = queue.pop()
+        tagName = node.tagName
+        if name_map.has_key(tagName):
+            name, attrs = name_map[tagName]
+            node._node.name = name
+            for attr, value in attrs.items():
+                node.setAttribute(attr, value)
+        for child in node.childNodes:
+            if child.nodeType == xml.dom.core.ELEMENT:
+                queue.append(child)
+
+
+def fixup_table_structures(doc):
+    # must be done after remap_element_names(), or the tables won't be found
+    for child in doc.childNodes:
+        if child.nodeType == xml.dom.core.ELEMENT:
+            tables = child.getElementsByTagName("table")
+            for table in tables:
+                fixup_table(doc, table)
+
+def fixup_table(doc, table):
+    # create the table head
+    thead = doc.createElement("thead")
+    row = doc.createElement("row")
+    move_elements_by_name(doc, table, row, "entry")
+    thead.appendChild(doc.createTextNode("\n    "))
+    thead.appendChild(row)
+    thead.appendChild(doc.createTextNode("\n    "))
+    # create the table body
+    tbody = doc.createElement("tbody")
+    prev_row = None
+    last_was_hline = 0
+    children = table.childNodes
+    for child in children:
+        if child.nodeType == xml.dom.core.ELEMENT:
+            tagName = child.tagName
+            if tagName == "hline" and prev_row is not None:
+                prev_row.setAttribute("rowsep", "1")
+            elif tagName == "row":
+                prev_row = child
+    # save the rows:
+    tbody.appendChild(doc.createTextNode("\n    "))
+    move_elements_by_name(doc, table, tbody, "row", sep="\n    ")
+    # and toss the rest:
+    while children:
+        child = children[0]
+        nodeType = child.nodeType
+        if nodeType == xml.dom.core.TEXT:
+            if string.strip(child.data):
+                raise ConversionError("unexpected free data in table")
+            table.removeChild(child)
+            continue
+        if nodeType == xml.dom.core.ELEMENT:
+            if child.tagName != "hline":
+                raise ConversionError(
+                    "unexpected <%s> in table" % child.tagName)
+            table.removeChild(child)
+            continue
+        raise ConversionError(
+            "unexpected %s node in table" % child.__class__.__name__)
+    # nothing left in the <table>; add the <thead> and <tbody>
+    tgroup = doc.createElement("tgroup")
+    tgroup.appendChild(doc.createTextNode("\n  "))
+    tgroup.appendChild(thead)
+    tgroup.appendChild(doc.createTextNode("\n  "))
+    tgroup.appendChild(tbody)
+    tgroup.appendChild(doc.createTextNode("\n  "))
+    table.appendChild(tgroup)
+    # now make the <entry>s look nice:
+    for row in table.getElementsByTagName("row"):
+        fixup_row(doc, row)
+
+
+def fixup_row(doc, row):
+    entries = []
+    map(entries.append, row.childNodes[1:])
+    for entry in entries:
+        row.insertBefore(doc.createTextNode("\n         "), entry)
+#    row.appendChild(doc.createTextNode("\n      "))
+
+
+def move_elements_by_name(doc, source, dest, name, sep=None):
+    nodes = []
+    for child in source.childNodes:
+        if child.nodeType == xml.dom.core.ELEMENT and child.tagName == name:
+            nodes.append(child)
+    for node in nodes:
+        source.removeChild(node)
+        dest.appendChild(node)
+        if sep:
+            dest.appendChild(doc.createTextNode(sep))
+
+
 FIXUP_PARA_ELEMENTS = (
     "chapter",
     "section", "subsection", "subsubsection",
@@ -526,6 +629,15 @@ def convert(ifp, ofp):
     cleanup_synopses(doc)
     normalize(doc)
     fixup_paras(doc)
+    remap_element_names(doc, {
+        "tableii": ("table", {"cols": "2"}),
+        "tableiii": ("table", {"cols": "3"}),
+        "tableiv": ("table", {"cols": "4"}),
+        "lineii": ("row", {}),
+        "lineiii": ("row", {}),
+        "lineiv": ("row", {}),
+        })
+    fixup_table_structures(doc)
     #
     d = {}
     for gi in p.get_empties():
