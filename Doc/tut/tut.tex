@@ -1535,19 +1535,17 @@ Here's a function that returns the sum of its two arguments:
 objects are required.  They are syntactically restricted to a single
 expression.  Semantically, they are just syntactic sugar for a normal
 function definition.  Like nested function definitions, lambda forms
-cannot reference variables from the containing scope, but this can be
-overcome through the judicious use of default argument values:
+can reference variables from the containing scope:
 
 \begin{verbatim}
 >>> def make_incrementor(n):
-...     return lambda x, incr=n: x+incr
+...     return lambda x: x + n
 ...
 >>> f = make_incrementor(42)
 >>> f(0)
 42
 >>> f(1)
 43
->>>
 \end{verbatim}
 
 
