@@ -57,6 +57,44 @@ PyCObject_FromVoidPtr(cobj, destr)
 	return (PyObject *)self;
 }
 
+void *
+PyCObject_AsVoidPtr(self)
+	PyObject *self;
+{
+        if(self)
+	  {
+	    if(self->ob_type == &PyCObject_Type)
+	      return ((PyCObject *)self)->cobject;
+	    PyErr_SetString(PyExc_TypeError,
+			    "PyCObject_AsVoidPtr with non-C-object");
+	  }
+	if(! PyErr_Occurred())
+	    PyErr_SetString(PyExc_TypeError,
+			    "PyCObject_AsVoidPtr called with null pointer");
+	return NULL;
+}
+
+void *
+PyCObject_Import(module_name, name)
+     char *module_name;
+     char *name;
+{
+  PyObject *m, *c;
+  void *r=NULL;
+  
+  if(m=PyImport_ImportModule(module_name))
+    {
+      if(c=PyObject_GetAttrString(m,name))
+	{
+	  r=PyCObject_AsVoidPtr(c);
+	  Py_DECREF(c);
+	}
+      Py_DECREF(m);
+    }
+
+  return r;
+}
+
 static void
 PyCObject_dealloc(self)
 	PyCObject *self;
@@ -64,6 +102,7 @@ PyCObject_dealloc(self)
         if(self->destructor) (self->destructor)(self->cobject);
 	PyMem_DEL(self);
 }
+
 
 static char PyCObject_Type__doc__[] = 
 "C objects to be exported from one extension module to another\n\
@@ -98,21 +137,3 @@ PyTypeObject PyCObject_Type = {
 	0L,0L,0L,0L,
 	PyCObject_Type__doc__ /* Documentation string */
 };
-
-void *
-PyCObject_AsVoidPtr(self)
-	PyObject *self;
-{
-        if(self)
-	  {
-	    if(self->ob_type == &PyCObject_Type)
-	      return ((PyCObject *)self)->cobject;
-	    PyErr_SetString(PyExc_TypeError,
-			    "PyCObject_AsVoidPtr with non-C-object");
-	  }
-	if(! PyErr_Occurred())
-	    PyErr_SetString(
-               PyExc_TypeError,
-	       "PyCObject_AsVoidPtr called with null pointer");
-	return NULL;
-}

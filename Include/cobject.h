@@ -62,6 +62,10 @@ PyCObject_FromVoidPtr Py_PROTO((void *cobj, void (*destruct)(void*)));
 extern void *
 PyCObject_AsVoidPtr Py_PROTO((PyObject *));
 
+/* Import a pointer to a C object from a module using a PyCObject. */
+extern void *
+PyCObject_Import Py_PROTO((char *module_name, char *cobject_name));
+
 #ifdef __cplusplus
 }
 #endif
