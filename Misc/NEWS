@@ -100,7 +100,8 @@ Core
     map(), filter(), reduce(), zip()
     list(), tuple() (PySequence_Tuple() and PySequence_Fast() in C API)
     max(), min()
-    .join() method of strings
+    join() method of strings
+    extend() method of lists
     'x in y' and 'x not in y' (PySequence_Contains() in C API)
     operator.countOf() (PySequence_Count() in C API)
 
