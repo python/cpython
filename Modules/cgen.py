@@ -1,5 +1,5 @@
 # Python script to parse cstubs file for gl and generate C stubs.
-# usage: python cgen <cstubs >glmodule.c
+# usage: python cgen.py <cstubs >glmodule.c
 #
 # XXX BUG return arrays generate wrong code
 # XXX need to change error returns into gotos to free mallocked arrays
