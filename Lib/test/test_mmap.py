@@ -102,7 +102,7 @@ def test_both():
         # Try resizing map
         print '  Attempting resize()'
         try:
-            m.resize( 512 )
+            m.resize(512)
         except SystemError:
             # resize() not supported
             # No messages are printed, since the output of this test suite
@@ -196,14 +196,22 @@ def test_both():
             m = mmap.mmap(f.fileno(), mapsize+1)
         except ValueError:
             # we do not expect a ValueError on Windows
+            # CAUTION:  This also changes the size of the file on disk, and
+            # later tests assume that the length hasn't changed.  We need to
+            # repair that.
             if sys.platform.startswith('win'):
                 verify(0, "Opening mmap with size+1 should work on Windows.")
         else:
             # we expect a ValueError on Unix, but not on Windows
             if not sys.platform.startswith('win'):
                 verify(0, "Opening mmap with size+1 should raise ValueError.")
-            del m
-        del f
+        m.close()
+        f.close()
+        if sys.platform.startswith('win'):
+            # Repair damage from the resizing test.
+            f = open(TESTFN, 'r+b')
+            f.truncate(mapsize)
+            f.close()
 
         print "  Opening mmap with access=ACCESS_WRITE"
         f = open(TESTFN, "r+b")
@@ -214,7 +222,10 @@ def test_both():
                "Write-through memory map memory not updated properly.")
         m.flush()
         del m, f
-        verify(open(TESTFN).read() == 'c'*mapsize,
+        f = open(TESTFN, 'rb')
+        stuff = f.read()
+        f.close()
+        verify(open(TESTFN, 'rb').read() == 'c'*mapsize,
                "Write-through memory map data file not updated properly.")
 
         print "  Opening mmap with access=ACCESS_COPY"
