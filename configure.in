@@ -374,8 +374,6 @@ else
 fi
 
 # Check for enable-ipv6
-# XXX definition of ss_family disabled until author clarifies rationale.
-# DEFS="$DEFS -Dss_family=__ss_family -Dss_len=__ss_len"
 AC_MSG_CHECKING([whether to enable ipv6])
 AC_ARG_ENABLE(ipv6,
 [  --enable-ipv6                   Enable ipv6 (with ipv4) support

@@ -1894,6 +1894,7 @@ PySocket_gethostbyname_ex(PyObject *self, PyObject *args)
 	char *name;
 	struct hostent *h;
 	struct sockaddr_storage addr;
+	struct sockaddr *sa;
 	PyObject *ret;
 #ifdef HAVE_GETHOSTBYNAME_R
 	struct hostent hp_allocated;
@@ -1931,7 +1932,10 @@ PySocket_gethostbyname_ex(PyObject *self, PyObject *args)
 	h = gethostbyname(name);
 #endif /* HAVE_GETHOSTBYNAME_R */
 	Py_END_ALLOW_THREADS
-	ret = gethost_common(h, (struct sockaddr *)&addr, sizeof(addr), addr.ss_family);
+	/* Some C libraries would require addr.__ss_family instead of addr.ss_family.
+           Therefore, we cast the sockaddr_storage into sockaddr to access sa_family. */
+	sa = (struct sockaddr*)&addr;
+	ret = gethost_common(h, (struct sockaddr *)&addr, sizeof(addr), sa->sa_family);
 #ifdef USE_GETHOSTBYNAME_LOCK
 	PyThread_release_lock(gethostbyname_lock);
 #endif
