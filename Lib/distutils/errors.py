@@ -78,6 +78,9 @@ class DistutilsInternalError (DistutilsError):
 class CCompilerError (Exception):
     """Some compile/link operation failed."""
 
+class PreprocessError (CCompilerError):
+    """Failure to preprocess one or more C/C++ files."""
+
 class CompileError (CCompilerError):
     """Failure to compile one or more C/C++ source files."""
 
@@ -89,4 +92,5 @@ class LinkError (CCompilerError):
     """Failure to link one or more C/C++ object files into an executable
     or shared library file."""
 
-
+class UnknownFileError (CCompilerError):
+    """Attempt to process an unknown file type."""
