@@ -106,7 +106,7 @@ text mode pickles, and sometimes faster too; e.g., BININT represents a 4-byte
 int as 4 bytes following the opcode, which is cheaper to unpickle than the
 (perhaps) 11-character decimal string attached to INT.  Protocol 1 also added
 a number of opcodes that operate on many stack elements at once (like APPENDS
-and SETITEMS).
+and SETITEMS), and "shortcut" opcodes (like EMPTY_DICT and EMPTY_TUPLE).
 
 The third major set of additions came in Python 2.3, and is called "protocol
 2".  This added:
@@ -1148,6 +1148,8 @@ opcodes = [
 
       Stack before:  ... pylist anyobject
       Stack after:   ... pylist+[anyobject]
+
+      although pylist is really extended in-place.
       """),
 
     I(name='APPENDS',
@@ -1160,6 +1162,8 @@ opcodes = [
 
       Stack before:  ... pylist markobject stackslice
       Stack after:   ... pylist+stackslice
+
+      although pylist is really extended in-place.
       """),
 
     I(name='LIST',
