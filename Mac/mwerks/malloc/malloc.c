@@ -57,6 +57,7 @@ static char *rcsid = "$Id$";
 #define DEBUG2
 #define MSTATS
 #define RCHECK
+#define VCHECK
 
 typedef unsigned char u_char;
 typedef unsigned long u_long;
@@ -222,6 +223,9 @@ malloc(nbytes)
 	op->ov_rmagic = RMAGIC;
   	*(u_short *)((caddr_t)(op + 1) + op->ov_size) = RMAGIC;
 #endif
+#ifdef VCHECK
+	memset((char *)(op+1), 0x41, nbytes);
+#endif
   	return ((char *)(op + 1));
 }
 
@@ -286,6 +290,9 @@ free(cp)
 #ifdef RCHECK
   	ASSERT(op->ov_rmagic == RMAGIC);
 	ASSERT(*(u_short *)((caddr_t)(op + 1) + op->ov_size) == RMAGIC);
+#endif
+#ifdef VCHECK
+	memset(cp, 43, op->ov_size);
 #endif
   	size = op->ov_index;
   	if ( size == 0xff ) {
