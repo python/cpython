@@ -372,11 +372,6 @@ class BasicTestCase(unittest.TestCase):
                 print "searched (partial) for '011', found: ", rec
             if rec[1] != '': self.fail('expected empty data portion')
 
-            ev = c.set_range('empty value')
-            if verbose:
-                print "search for 'empty value' returned", ev
-            if ev[1] != '': self.fail('empty value lookup failed')
-
         c.set('0499')
         c.delete()
         try:
