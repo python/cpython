@@ -514,9 +514,6 @@
 /* Define if you have the strftime function.  */
 #define HAVE_STRFTIME 1
 
-/* Define if you have the strptime function.  */
-#undef HAVE_STRPTIME
-
 /* Define if you have the symlink function.  */
 #undef HAVE_SYMLINK
 

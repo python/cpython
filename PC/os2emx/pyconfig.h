@@ -239,9 +239,6 @@ typedef long intptr_t;
 /* Define if you have the strftime function. */
 #define HAVE_STRFTIME 1
 
-/* Define if you have the strptime function. */
-#define HAVE_STRPTIME 1
-
 /* Define if you have the tcgetpgrp function. */
 #define HAVE_TCGETPGRP 1
 
