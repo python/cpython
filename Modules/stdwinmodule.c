@@ -546,7 +546,7 @@ drawing_text(dp, args)
 {
 	int h, v, size;
 	char *text;
-	if (!PyArg_Parse(args, "((ii)s#)", &h, &v, &text, &size))
+	if (!PyArg_Parse(args, "((ii)t#)", &h, &v, &text, &size))
 		return NULL;
 	wdrawtext(h, v, text, size);
 	Py_INCREF(Py_None);
@@ -582,7 +582,7 @@ drawing_textwidth(dp, args)
 {
 	char *text;
 	int size;
-	if (!PyArg_Parse(args, "s#", &text, &size))
+	if (!PyArg_Parse(args, "t#", &text, &size))
 		return NULL;
 	return PyInt_FromLong((long)wtextwidth(text, size));
 }
@@ -594,7 +594,7 @@ drawing_textbreak(dp, args)
 {
 	char *text;
 	int size, width;
-	if (!PyArg_Parse(args, "(s#i)", &text, &size, &width))
+	if (!PyArg_Parse(args, "(t#i)", &text, &size, &width))
 		return NULL;
 	return PyInt_FromLong((long)wtextbreak(text, size, width));
 }
@@ -1056,7 +1056,7 @@ text_settext(self, args)
 	char *text;
 	char *buf;
 	int size;
-	if (!PyArg_Parse(args, "s#", &text, &size))
+	if (!PyArg_Parse(args, "t#", &text, &size))
 		return NULL;
 	if ((buf = PyMem_NEW(char, size)) == NULL) {
 		return PyErr_NoMemory();
@@ -1809,7 +1809,7 @@ window_setselection(self, args)
 {
 	int sel, size, ok;
 	char *text;
-	if (!PyArg_Parse(args, "(is#)", &sel, &text, &size))
+	if (!PyArg_Parse(args, "(it#)", &sel, &text, &size))
 		return NULL;
 	ok = wsetselection(self->w_win, sel, text, size);
 	return PyInt_FromLong(ok);
@@ -2320,7 +2320,7 @@ stdwin_setcutbuffer(self, args)
 {
 	int i, size;
 	char *str;
-	if (!PyArg_Parse(args, "(is#)", &i, &str, &size))
+	if (!PyArg_Parse(args, "(it#)", &i, &str, &size))
 		return NULL;
 	wsetcutbuffer(i, str, size);
 	Py_INCREF(Py_None);

@@ -121,7 +121,7 @@ regobj_match(re, args)
 
 	if (!PyArg_ParseTuple(args, "O|i", &argstring, &offset))
 		return NULL;
-	if (!PyArg_Parse(argstring, "s#", &buffer, &size))
+	if (!PyArg_Parse(argstring, "t#", &buffer, &size))
 		return NULL;
 
 	if (offset < 0 || offset > size) {
@@ -160,7 +160,7 @@ regobj_search(re, args)
 	
 	if (!PyArg_ParseTuple(args, "O|i", &argstring, &offset))
 		return NULL;
-	if (!PyArg_Parse(argstring, "s#", &buffer, &size))
+	if (!PyArg_Parse(argstring, "t#", &buffer, &size))
 		return NULL;
 
 	if (offset < 0 || offset > size) {
@@ -410,7 +410,7 @@ newregexobject(pattern, translate, givenpat, groupindex)
 	char *pat;
 	int size;
 
-	if (!PyArg_Parse(pattern, "s#", &pat, &size))
+	if (!PyArg_Parse(pattern, "t#", &pat, &size))
 		return NULL;
 	
 	if (translate != NULL && PyString_Size(translate) != 256) {

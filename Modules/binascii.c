@@ -213,7 +213,7 @@ binascii_a2b_uu(self, args)
 	PyObject *rv;
 	int ascii_len, bin_len;
 	
-	if ( !PyArg_ParseTuple(args, "s#", &ascii_data, &ascii_len) )
+	if ( !PyArg_ParseTuple(args, "t#", &ascii_data, &ascii_len) )
 		return NULL;
 
 	/* First byte: binary data length (in bytes) */
@@ -343,7 +343,7 @@ binascii_a2b_base64(self, args)
 	PyObject *rv;
 	int ascii_len, bin_len;
 	
-	if ( !PyArg_ParseTuple(args, "s#", &ascii_data, &ascii_len) )
+	if ( !PyArg_ParseTuple(args, "t#", &ascii_data, &ascii_len) )
 		return NULL;
 
 	bin_len = ((ascii_len+3)/4)*3; /* Upper bound, corrected later */
@@ -457,7 +457,7 @@ binascii_a2b_hqx(self, args)
 	int len;
 	int done = 0;
 	
-	if ( !PyArg_ParseTuple(args, "s#", &ascii_data, &len) )
+	if ( !PyArg_ParseTuple(args, "t#", &ascii_data, &len) )
 		return NULL;
 
 	/* Allocate a string that is too big (fixed later) */

@@ -111,11 +111,11 @@ PyPcre_exec(self, args)
 	int offsets[100*2]; 
 	PyObject *list;
 
-	if (!PyArg_ParseTuple(args, "s#|iiii", &string, &stringlen, &pos, &endpos, &options))
+	if (!PyArg_ParseTuple(args, "t#|iiii", &string, &stringlen, &pos, &endpos, &options))
 		return NULL;
 	if (endpos == -1) {endpos = stringlen;}
 	count = pcre_exec(self->regex, self->regex_extra, 
-			  (char *)string, endpos, pos, options,
+			  string, endpos, pos, options,
 			  offsets, sizeof(offsets)/sizeof(int) );
 	/* If an error occurred during the match, and an exception was raised,
 	   just return NULL and leave the exception alone.  The most likely

@@ -472,7 +472,7 @@ getsockaddrarg,PySocketSockObject *,s, PyObject *,args, struct sockaddr **,addr_
 		char *path;
 		int len;
 		addr = (struct sockaddr_un* )&(s->sock_addr).un;
-		if (!PyArg_Parse(args, "s#", &path, &len))
+		if (!PyArg_Parse(args, "t#", &path, &len))
 			return 0;
 		if (len > sizeof addr->sun_path) {
 			PyErr_SetString(PySocket_Error,

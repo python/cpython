@@ -106,7 +106,7 @@ nis_match (self, args)
 	int err;
 	PyObject *res;
 
-	if (!PyArg_Parse(args, "(s#s)", &key, &keylen, &map))
+	if (!PyArg_Parse(args, "(t#s)", &key, &keylen, &map))
 		return NULL;
 	if ((err = yp_get_default_domain(&domain)) != 0)
 		return nis_error(err);

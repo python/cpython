@@ -141,7 +141,7 @@ strop_splitfields(self, args)
 	n = 0;
 	splitcount = 0;
 	maxsplit = 0;
-	if (!PyArg_ParseTuple(args, "s#|z#i", &s, &len, &sub, &n, &maxsplit))
+	if (!PyArg_ParseTuple(args, "t#|z#i", &s, &len, &sub, &n, &maxsplit))
 		return NULL;
 	if (sub == NULL)
 		return split_whitespace(s, len, maxsplit);
@@ -211,7 +211,7 @@ strop_joinfields(self, args)
 	char* p = NULL;
 	intargfunc getitemfunc;
 
-	if (!PyArg_ParseTuple(args, "O|s#", &seq, &sep, &seplen))
+	if (!PyArg_ParseTuple(args, "O|t#", &seq, &sep, &seplen))
 		return NULL;
 	if (sep == NULL) {
 		sep = " ";
@@ -337,7 +337,7 @@ strop_find(self, args)
 	char *s, *sub;
 	int len, n, i = 0, last = INT_MAX;
 
-	if (!PyArg_ParseTuple(args, "s#s#|ii", &s, &len, &sub, &n, &i, &last))
+	if (!PyArg_ParseTuple(args, "t#t#|ii", &s, &len, &sub, &n, &i, &last))
 		return NULL;
 
 	if (last > len)
@@ -382,7 +382,7 @@ strop_rfind(self, args)
 	int len, n, j;
 	int i = 0, last = INT_MAX;
 
-	if (!PyArg_ParseTuple(args, "s#s#|ii", &s, &len, &sub, &n, &i, &last))
+	if (!PyArg_ParseTuple(args, "t#t#|ii", &s, &len, &sub, &n, &i, &last))
 		return NULL;
 
 	if (last > len)
@@ -417,7 +417,7 @@ do_strip(args, striptype)
 	int len, i, j;
 
 
-	if (!PyArg_Parse(args, "s#", &s, &len))
+	if (!PyArg_Parse(args, "t#", &s, &len))
 		return NULL;
 
 	i = 0;
@@ -502,7 +502,7 @@ strop_lower(self, args)
 	PyObject *new;
 	int changed;
 
-	if (!PyArg_Parse(args, "s#", &s, &n))
+	if (!PyArg_Parse(args, "t#", &s, &n))
 		return NULL;
 	new = PyString_FromStringAndSize(NULL, n);
 	if (new == NULL)
@@ -542,7 +542,7 @@ strop_upper(self, args)
 	PyObject *new;
 	int changed;
 
-	if (!PyArg_Parse(args, "s#", &s, &n))
+	if (!PyArg_Parse(args, "t#", &s, &n))
 		return NULL;
 	new = PyString_FromStringAndSize(NULL, n);
 	if (new == NULL)
@@ -583,7 +583,7 @@ strop_capitalize(self, args)
 	PyObject *new;
 	int changed;
 
-	if (!PyArg_Parse(args, "s#", &s, &n))
+	if (!PyArg_Parse(args, "t#", &s, &n))
 		return NULL;
 	new = PyString_FromStringAndSize(NULL, n);
 	if (new == NULL)
@@ -634,7 +634,7 @@ strop_count(self, args)
 	int i = 0, last = INT_MAX;
 	int m, r;
 
-	if (!PyArg_ParseTuple(args, "s#s#|ii", &s, &len, &sub, &n, &i, &last))
+	if (!PyArg_ParseTuple(args, "t#t#|ii", &s, &len, &sub, &n, &i, &last))
 		return NULL;
 	if (last > len)
 		last = len;
@@ -679,7 +679,7 @@ strop_swapcase(self, args)
 	PyObject *new;
 	int changed;
 
-	if (!PyArg_Parse(args, "s#", &s, &n))
+	if (!PyArg_Parse(args, "t#", &s, &n))
 		return NULL;
 	new = PyString_FromStringAndSize(NULL, n);
 	if (new == NULL)
@@ -877,7 +877,7 @@ strop_maketrans(self, args)
 	int i, fromlen=0, tolen=0;
 	PyObject *result;
 
-	if (!PyArg_ParseTuple(args, "s#s#", &from, &fromlen, &to, &tolen))
+	if (!PyArg_ParseTuple(args, "t#t#", &from, &fromlen, &to, &tolen))
 		return NULL;
 
 	if (fromlen != tolen) {
@@ -920,7 +920,7 @@ strop_translate(self, args)
 	PyObject *result;
 	int trans_table[256];
 
-	if (!PyArg_ParseTuple(args, "Ss#|s#", &input_obj,
+	if (!PyArg_ParseTuple(args, "St#|t#", &input_obj,
 			      &table1, &tablen, &del_table, &dellen))
 		return NULL;
 	if (tablen != 256) {
@@ -1134,7 +1134,7 @@ strop_replace(self, args)
 	int count = 0;
 	PyObject *new;
 
-	if (!PyArg_ParseTuple(args, "s#s#s#|i",
+	if (!PyArg_ParseTuple(args, "t#t#t#|i",
 			      &str, &len, &pat, &pat_len, &sub, &sub_len,
 			      &count))
 		return NULL;
