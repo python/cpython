@@ -96,7 +96,7 @@ class Message:
 			elif headerseen and line[0] in ' \t':
 				# It's a continuation line.
 				list.append(line)
-			elif regex.match('^[!-9;-~]+:', line):
+			elif regex.match('^[!-9;-~]+:', line) >= 0:
 				# It's a header line.
 				list.append(line)
 				headerseen = 1
@@ -157,11 +157,11 @@ class Message:
 		list = []
 		hit = 0
 		for line in self.headers:
-			if string.lower(line[:n]) == name:
-				hit = 1
-			elif line[:1] not in string.whitespace:
-				if hit:
+			if hit:
+				if line[:1] not in string.whitespace:
 					break
+			elif string.lower(line[:n]) == name:
+				hit = 1
 			if hit:
 				list.append(line)
 		return list
