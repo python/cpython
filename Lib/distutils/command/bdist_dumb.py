@@ -11,7 +11,7 @@ __revision__ = "$Id$"
 import os
 from distutils.core import Command
 from distutils.util import get_platform, create_tree, remove_tree
-
+from distutils.errors import *
 
 class bdist_dumb (Command):
 
