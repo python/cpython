@@ -838,6 +838,12 @@ If the separation is large, then you might as well use
 another, \function{tee()} is ideal.  Possible applications include
 bookmarking, windowing, or lookahead iterators.
 
+\item  A number of functions were added to the \module{locale} 
+module, such as \function{bind_textdomain_codeset()} to specify a
+particular encoding, and a family of \function{l*gettext()} functions
+that return messages in the chosen encoding.
+(Contributed by Gustavo Niemeyer.)
+
 \item The \module{logging} package's \function{basicConfig} function 
 gained some keyword arguments to simplify log configuration.  The
 default behavior is to log messages to standard error, but
@@ -857,6 +863,11 @@ a timed interval.  The module already had \class{RotatingFileHandler},
 which rotated logs once the file exceeded a certain size.  Both
 classes derive from a new \class{BaseRotatingHandler} class that can
 be used to implement other rotating handlers.
+
+\item The \module{nntplib} module's \class{NNTP} class gained
+\method{description()} and \method{descriptions()} methods to retrieve 
+newsgroup descriptions for a single group or for a range of groups.
+(Contributed by J\"urgen A. Erhard.)
 
 \item The \module{operator} module gained two new functions, 
 \function{attrgetter(\var{attr})} and \function{itemgetter(\var{index})}.
@@ -958,6 +969,10 @@ Changes to Python's build process and to the C API include:
   \item Three new convenience macros were added for common return
   values from extension functions: \csimplemacro{Py_RETURN_NONE},
   \csimplemacro{Py_RETURN_TRUE}, and \csimplemacro{Py_RETURN_FALSE}.
+
+  \item Another new macro, \csimplemacro{Py_CLEAR(\var{obj})}, 
+  decreases the reference count of \var{obj} and sets \var{obj} to the
+  null pointer.
 
   \item A new function, \cfunction{PyTuple_Pack(\var{N}, \var{obj1},
   \var{obj2}, ..., \var{objN})}, constructs tuples from a variable
