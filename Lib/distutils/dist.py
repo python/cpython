@@ -16,6 +16,7 @@ from distutils.errors import *
 from distutils.fancy_getopt import FancyGetopt, translate_longopt
 from distutils.util import check_environ, strtobool, rfc822_escape
 from distutils import log
+from distutils.core import DEBUG
 
 # Regex to define acceptable Distutils command names.  This is not *quite*
 # the same as a Python NAME -- I don't allow leading underscores.  The fact
@@ -305,7 +306,6 @@ class Distribution:
     def parse_config_files (self, filenames=None):
 
         from ConfigParser import ConfigParser
-        from distutils.core import DEBUG
 
         if filenames is None:
             filenames = self.find_config_files()
@@ -771,7 +771,6 @@ class Distribution:
         object for 'command' is in the cache, then we either create and
         return it (if 'create' is true) or return None.
         """
-        from distutils.core import DEBUG
         cmd_obj = self.command_obj.get(command)
         if not cmd_obj and create:
             if DEBUG:
@@ -802,8 +801,6 @@ class Distribution:
         supplied, uses the standard option dictionary for this command
         (from 'self.command_options').
         """
-        from distutils.core import DEBUG
-
         command_name = command_obj.get_command_name()
         if option_dict is None:
             option_dict = self.get_option_dict(command_name)
