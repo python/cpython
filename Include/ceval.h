@@ -32,10 +32,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 object *call_object PROTO((object *, object *));
 
+object *getbuiltins PROTO((void));
 object *getglobals PROTO((void));
 object *getlocals PROTO((void));
 object *getowner PROTO((void));
 object *getframe PROTO((void));
+int getrestricted PROTO((void));
 
 void flushline PROTO((void));
 

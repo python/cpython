@@ -40,6 +40,7 @@ typedef struct _frame {
 	OB_HEAD
 	struct _frame *f_back;	/* previous frame, or NULL */
 	codeobject *f_code;	/* code segment */
+	object *f_builtins;	/* builtin symbol table (dictobject) */
 	object *f_globals;	/* global symbol table (dictobject) */
 	object *f_locals;	/* local symbol table (dictobject) */
 	object *f_owner;	/* owner (e.g. class or module) or NULL */
@@ -52,6 +53,7 @@ typedef struct _frame {
 	int f_iblock;		/* index in f_blockstack */
 	int f_lasti;		/* Last instruction if called */
 	int f_lineno;		/* Current line number */
+	int f_restricted;	/* Flag set if restricted operations in this scope */
 	object *f_trace;	/* Trace function */
 } frameobject;
 

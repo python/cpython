@@ -33,7 +33,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "eval.h"
 #include "ceval.h"
 #include "opcode.h"
-#include "bltinmodule.h"
 #include "traceback.h"
 #include "graminit.h"
 #include "pythonrun.h"
@@ -285,7 +284,6 @@ eval_code(co, globals, locals, owner, arg)
 	char *name;		/* Name used by some instructions */
 	int needmerge = 0;	/* Set if need to merge locals back at end */
 	int defmode = 0;	/* Default access mode for new variables */
-	int ticker_count = 10;	/* Check for intr every Nth instruction */
 #ifdef LLTRACE
 	int lltrace;
 #endif
@@ -325,16 +323,9 @@ eval_code(co, globals, locals, owner, arg)
 #define POP()		BASIC_POP()
 #endif
 
-	if (globals == NULL) {
-		globals = getglobals();
-		if (locals == NULL) {
-			locals = getlocals();
-			needmerge = 1;
-		}
-	}
-	else {
-		if (locals == NULL)
-			locals = globals;
+	if (globals == NULL || locals == NULL) {
+		err_setstr(SystemError, "eval_code: NULL globals or locals");
+		return NULL;
 	}
 
 #ifdef LLTRACE
@@ -385,10 +376,6 @@ eval_code(co, globals, locals, owner, arg)
 		}
 	}
 
-	x = sysget("check_interval");
-	if (x != NULL && is_intobject(x))
-		ticker_count = getintvalue(x);
-	
 	next_instr = GETUSTRINGVALUE(f->f_code->co_code);
 	stack_pointer = f->f_valuestack;
 	
@@ -417,7 +404,7 @@ eval_code(co, globals, locals, owner, arg)
 		}
 		
 		if (--ticker < 0) {
-			ticker = ticker_count;
+			ticker = sys_checkinterval;
 			if (sigcheck()) {
 				why = WHY_EXCEPTION;
 				goto on_error;
@@ -745,7 +732,7 @@ eval_code(co, globals, locals, owner, arg)
 			/* Print value except if procedure result */
 			/* Before printing, also assign to '_' */
 			if (v != None &&
-			    (err = setbuiltin("_", v)) == 0 &&
+			    (err = dictinsert(f->f_builtins, "_", v)) == 0 &&
 			    !suppress_print) {
 				flushline();
 				x = sysget("stdout");
@@ -1157,7 +1144,7 @@ eval_code(co, globals, locals, owner, arg)
 				x = dict2lookup(f->f_globals, w);
 				if (x == NULL) {
 					err_clear();
-					x = getbuiltin(w);
+					x = dict2lookup(f->f_builtins, w);
 					if (x == NULL) {
 						err_setval(NameError, w);
 						break;
@@ -1179,7 +1166,7 @@ eval_code(co, globals, locals, owner, arg)
 			x = dict2lookup(f->f_globals, w);
 			if (x == NULL) {
 				err_clear();
-				x = getbuiltin(w);
+				x = dict2lookup(f->f_builtins, w);
 				if (x == NULL) {
 					err_setval(NameError, w);
 					break;
@@ -1324,7 +1311,7 @@ eval_code(co, globals, locals, owner, arg)
 		
 		case IMPORT_NAME:
 			w = GETNAMEV(oparg);
-			x = getbuiltins("__import__");
+			x = dictlookup(f->f_builtins, "__import__");
 			if (x == NULL) {
 				err_setstr(ImportError,
 					   "__import__ not found");
@@ -1701,6 +1688,15 @@ call_trace(p_trace, p_newtrace, f, msg, arg)
 }
 
 object *
+getbuiltins()
+{
+	if (current_frame == NULL)
+		return NULL;
+	else
+		return current_frame->f_builtins;
+}
+
+object *
 getlocals()
 {
 	if (current_frame == NULL)
@@ -1731,6 +1727,12 @@ object *
 getframe()
 {
 	return (object *)current_frame;
+}
+
+int
+getrestricted()
+{
+	return current_frame == NULL ? 0 : current_frame->f_restricted;
 }
 
 void
@@ -2660,6 +2662,8 @@ exec_statement(prog, globals, locals)
 		    "exec 2nd/3rd args must be dict or None");
 		return -1;
 	}
+	if (dictlookup(globals, "__builtins__") == NULL)
+		dictinsert(globals, "__builtins__", current_frame->f_builtins);
 	if (is_codeobject(prog)) {
 		if (eval_code((codeobject *) prog, globals, locals,
 				 (object *)NULL, (object *)NULL) == NULL)

@@ -32,6 +32,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "import.h"
 #include "errcode.h"
 #include "sysmodule.h"
+#include "bltinmodule.h"
 #include "pythonrun.h"
 #include "marshal.h"
 #include "compile.h"
@@ -147,6 +148,10 @@ exec_code_module(name, co)
 	if (m == NULL)
 		return NULL;
 	d = getmoduledict(m);
+	if (dictlookup(d, "__builtins__") == NULL) {
+		if (dictinsert(d, "__builtins__", getbuiltindict()) != 0)
+			return NULL;
+	}
 	v = eval_code((codeobject *)co, d, d, d, (object *)NULL);
 	if (v == NULL)
 		return NULL;
