@@ -1,0 +1,294 @@
+\section{\module{xml.dom.minidom} ---
+         Lightweight DOM implementation}
+
+\declaremodule{standard}{xml.dom.minidom}
+\modulesynopsis{Lightweight Document Object Model (DOM) implementation.}
+\moduleauthor{Paul Prescod}{paul@prescod.net}
+\sectionauthor{Paul Prescod}{paul@prescod.net}
+\sectionauthor{Martin v. L\"owis}{loewis@informatik.hu-berlin.de}
+
+\versionadded{2.0}
+
+\module{xml.dom.minidom} is a light-weight implementation of the
+Document Object Model interface.  It is intended to be
+simpler than the full DOM and also significantly smaller.
+
+DOM applications typically start by parsing some XML into a DOM.  With
+\module{xml.dom.minidom}, this is done through the parse functions:
+
+\begin{verbatim}
+from xml.dom.minidom import parse, parseString
+
+dom1 = parse('c:\\temp\\mydata.xml') # parse an XML file by name
+
+datasource = open('c:\\temp\\mydata.xml')
+dom2 = parse(datasource)   # parse an open file
+
+dom3 = parseString('<myxml>Some data<empty/> some more data</myxml>')
+\end{verbatim}
+
+The parse function can take either a filename or an open file object. 
+
+\begin{funcdesc}{parse}{filename_or_file{, parser}}
+  Return a \class{Document} from the given input. \var{filename_or_file}
+  may be either a file name, or a file-like object. \var{parser}, if
+  given, must be a SAX2 parser object. This function will change the
+  document handler of the parser and activate namespace support; other
+  parser configuration (like setting an entity resolver) must have been
+  done in advance.
+\end{funcdesc}
+
+If you have XML in a string, you can use the
+\function{parseString()} function instead:
+
+\begin{funcdesc}{parseString}{string\optional{, parser}}
+  Return a \class{Document} that represents the \var{string}. This
+  method creates a \class{StringIO} object for the string and passes
+  that on to \function{parse}.
+\end{funcdesc}
+
+Both functions return a \class{Document} object representing the
+content of the document.
+
+You can also create a \class{Document} node merely by instantiating a 
+document object.  Then you could add child nodes to it to populate
+the DOM:
+
+\begin{verbatim}
+from xml.dom.minidom import Document
+
+newdoc = Document()
+newel = newdoc.createElement("some_tag")
+newdoc.appendChild(newel)
+\end{verbatim}
+
+Once you have a DOM document object, you can access the parts of your
+XML document through its properties and methods.  These properties are
+defined in the DOM specification.  The main property of the document
+object is the \member{documentElement} property.  It gives you the
+main element in the XML document: the one that holds all others.  Here
+is an example program:
+
+\begin{verbatim}
+dom3 = parseString("<myxml>Some data</myxml>")
+assert dom3.documentElement.tagName == "myxml"
+\end{verbatim}
+
+When you are finished with a DOM, you should clean it up.  This is
+necessary because some versions of Python do not support garbage
+collection of objects that refer to each other in a cycle.  Until this
+restriction is removed from all versions of Python, it is safest to
+write your code as if cycles would not be cleaned up.
+
+The way to clean up a DOM is to call its \method{unlink()} method:
+
+\begin{verbatim}
+dom1.unlink()
+dom2.unlink()
+dom3.unlink()
+\end{verbatim}
+
+\method{unlink()} is a \module{xml.dom.minidom}-specific extension to
+the DOM API.  After calling \method{unlink()} on a node, the node and
+its descendents are essentially useless.
+
+\begin{seealso}
+  \seetitle[http://www.w3.org/TR/REC-DOM-Level-1/]{Document Object
+            Model (DOM) Level 1 Specification}
+           {The W3C recommendation for the
+            DOM supported by \module{xml.dom.minidom}.}
+\end{seealso}
+
+
+\subsection{DOM objects \label{dom-objects}}
+
+The definition of the DOM API for Python is given as part of the
+\refmodule{xml.dom} module documentation.  This section lists the
+differences between the API and \refmodule{xml.dom.minidom}.
+
+
+\begin{methoddesc}{unlink}{}
+Break internal references within the DOM so that it will be garbage
+collected on versions of Python without cyclic GC.  Even when cyclic
+GC is available, using this can make large amounts of memory available
+sooner, so calling this on DOM objects as soon as they are no longer
+needed is good practice.  This only needs to be called on the
+\class{Document} object, but may be called on child nodes to discard
+children of that node.
+\end{methoddesc}
+
+\begin{methoddesc}{writexml}{writer}
+Write XML to the writer object.  The writer should have a
+\method{write()} method which matches that of the file object
+interface.
+\end{methoddesc}
+
+\begin{methoddesc}{toxml}{}
+Return the XML that the DOM represents as a string.
+\end{methoddesc}
+
+The following standard DOM methods have special considerations with
+\refmodule{xml.dom.minidom}:
+
+\begin{methoddesc}{cloneNode}{deep}
+Although this method was present in the version of
+\refmodule{xml.dom.minidom} packaged with Python 2.0, it was seriously
+broken.  This has been corrected for subsequent releases.
+\end{methoddesc}
+
+
+\subsection{DOM Example \label{dom-example}}
+
+This example program is a fairly realistic example of a simple
+program. In this particular case, we do not take much advantage
+of the flexibility of the DOM.
+
+\begin{verbatim}
+import xml.dom.minidom
+
+document = """\
+<slideshow>
+<title>Demo slideshow</title>
+<slide><title>Slide title</title>
+<point>This is a demo</point>
+<point>Of a program for processing slides</point>
+</slide>
+
+<slide><title>Another demo slide</title>
+<point>It is important</point>
+<point>To have more than</point>
+<point>one slide</point>
+</slide>
+</slideshow>
+"""
+
+dom = xml.dom.minidom.parseString(document)
+
+space = " "
+def getText(nodelist):
+    rc = ""
+    for node in nodelist:
+        if node.nodeType == node.TEXT_NODE:
+            rc = rc + node.data
+    return rc
+
+def handleSlideshow(slideshow):
+    print "<html>"
+    handleSlideshowTitle(slideshow.getElementsByTagName("title")[0])
+    slides = slideshow.getElementsByTagName("slide")
+    handleToc(slides)
+    handleSlides(slides)
+    print "</html>"
+
+def handleSlides(slides):
+    for slide in slides:
+       handleSlide(slide)
+
+def handleSlide(slide):
+    handleSlideTitle(slide.getElementsByTagName("title")[0])
+    handlePoints(slide.getElementsByTagName("point"))
+
+def handleSlideshowTitle(title):
+    print "<title>%s</title>" % getText(title.childNodes)
+
+def handleSlideTitle(title):
+    print "<h2>%s</h2>" % getText(title.childNodes)
+
+def handlePoints(points):
+    print "<ul>"
+    for point in points:
+        handlePoint(point)
+    print "</ul>"
+
+def handlePoint(point):
+    print "<li>%s</li>" % getText(point.childNodes)
+
+def handleToc(slides):
+    for slide in slides:
+        title = slide.getElementsByTagName("title")[0]
+        print "<p>%s</p>" % getText(title.childNodes)
+
+handleSlideshow(dom)
+\end{verbatim}
+
+
+\subsection{minidom and the DOM standard \label{minidom-and-dom}}
+
+\refmodule{xml.dom.minidom} is basically a DOM 1.0-compatible DOM with
+some DOM 2 features (primarily namespace features). 
+
+Usage of the DOM interface in Python is straight-forward.  The
+following mapping rules apply:
+
+\begin{itemize}
+\item Interfaces are accessed through instance objects. Applications
+      should not instantiate the classes themselves; they should use
+      the creator functions available on the \class{Document} object.
+      Derived interfaces support all operations (and attributes) from
+      the base interfaces, plus any new operations.
+
+\item Operations are used as methods. Since the DOM uses only
+      \keyword{in} parameters, the arguments are passed in normal
+      order (from left to right).   There are no optional
+      arguments. \keyword{void} operations return \code{None}.
+
+\item IDL attributes map to instance attributes. For compatibility
+      with the OMG IDL language mapping for Python, an attribute
+      \code{foo} can also be accessed through accessor methods
+      \method{_get_foo()} and \method{_set_foo()}.  \keyword{readonly}
+      attributes must not be changed; this is not enforced at
+      runtime.
+
+\item The types \code{short int}, \code{unsigned int}, \code{unsigned
+      long long}, and \code{boolean} all map to Python integer
+      objects.
+
+\item The type \code{DOMString} maps to Python strings.
+      \refmodule{xml.dom.minidom} supports either byte or Unicode
+      strings, but will normally produce Unicode strings.  Attributes
+      of type \code{DOMString} may also be \code{None}.
+
+\item \keyword{const} declarations map to variables in their
+      respective scope
+      (e.g. \code{xml.dom.minidom.Node.PROCESSING_INSTRUCTION_NODE});
+      they must not be changed.
+
+\item \code{DOMException} is currently not supported in
+      \refmodule{xml.dom.minidom}.  Instead,
+      \refmodule{xml.dom.minidom} uses standard Python exceptions such
+      as \exception{TypeError} and \exception{AttributeError}.
+
+\item \class{NodeList} objects are implemented as Python's built-in
+      list type, so don't support the official API, but are much more
+      ``Pythonic.''
+
+\item \class{NamedNodeMap} is implemented by the class
+      \class{AttributeList}.  This should not impact user code.
+\end{itemize}
+
+
+The following interfaces have no implementation in
+\refmodule{xml.dom.minidom}:
+
+\begin{itemize}
+\item DOMTimeStamp
+
+\item DocumentType (added for Python 2.1)
+
+\item DOMImplementation (added for Python 2.1)
+
+\item CharacterData
+
+\item CDATASection
+
+\item Notation
+
+\item Entity
+
+\item EntityReference
+
+\item DocumentFragment
+\end{itemize}
+
+Most of these reflect information in the XML document that is not of
+general utility to most DOM users.
