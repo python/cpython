@@ -432,10 +432,9 @@ def metaclass():
             dict["__dynamic__"] = 1
             cls = super(autosuper, metaclass).__new__(metaclass,
                                                       name, bases, dict)
+            # Name mangling for __super removes leading underscores
             while name[:1] == "_":
                 name = name[1:]
-            while name[-1:] == "_":
-                name = name[:-1]
             if name:
                 name = "_%s__super" % name
             else:
