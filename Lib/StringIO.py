@@ -215,21 +215,22 @@ class StringIO:
         # Force s to be a string or unicode
         if not isinstance(s, basestring):
             s = str(s)
-        if self.pos == self.len:
+        spos = self.pos
+        slen = self.len
+        if spos == slen:
             self.buflist.append(s)
-            self.len = self.pos = self.pos + len(s)
+            self.len = self.pos = slen = spos = spos + len(s)
             return
-        if self.pos > self.len:
-            self.buflist.append('\0'*(self.pos - self.len))
-            self.len = self.pos
-        newpos = self.pos + len(s)
-        if self.pos < self.len:
+        if spos > slen:
+            self.buflist.append('\0'*(spos - slen))
+            slen = spos
+        newpos = spos + len(s)
+        if spos < slen:
             if self.buflist:
                 self.buf += ''.join(self.buflist)
-                self.buflist = []
-            self.buflist = [self.buf[:self.pos], s, self.buf[newpos:]]
+            self.buflist = [self.buf[:spos], s, self.buf[newpos:]]
             self.buf = ''
-            if newpos > self.len:
+            if newpos > slen:
                 self.len = newpos
         else:
             self.buflist.append(s)
