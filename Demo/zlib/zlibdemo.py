@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 import zlib, sys
 if len(sys.argv)>1: filename=sys.argv[1]
