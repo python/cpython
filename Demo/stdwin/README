@@ -7,8 +7,9 @@ TestDirList.py		Test DirList widget (lists directory contents)
 TestFormSplit.py	Test FormSplit widget (arbitrary grouping)
 TestSched.py		Test WindowSched widget (event scheduling)
 TestTextEdit.py		Test TextEdit widget (probably doen't work any more)
-ibrowse/		An Emacs info file browser
 clock.py		A simple clock, with alarm
+ibrowse/		An Emacs info file browser
+jukebox.py		Play audio files (SGI only, needs SOX and SFPLAY)
 lpwin.py		Watch line printer queues
 microedit.py		The smallest window editor
 miniedit.py		A small multi-window editor
