@@ -10,6 +10,7 @@ from dynOptionMenuWidget import DynOptionMenu
 from tabpage import TabPageSet
 from keybindingDialog import GetKeysDialog
 from configSectionNameDialog import GetCfgSectionNameDialog
+from configHelpSourceEdit import GetHelpSourceDialog
 class ConfigDialog(Toplevel):
     """
     configuration dialog for idle
@@ -213,7 +214,7 @@ class ConfigDialog(Toplevel):
             value=0,text='Background',command=self.SetColourSampleBinding)
         self.fgHilite.set(1)
         buttonSaveCustomTheme=Button(frameCustom, 
-            text='Save as New Custom Theme')
+            text='Save as New Custom Theme',command=self.SaveAsNewTheme)
         #frameTheme
         labelThemeTitle=Label(frameTheme,text='Select a Highlighting Theme')
         labelTypeTitle=Label(frameTheme,text='Select : ')
@@ -270,7 +271,8 @@ class ConfigDialog(Toplevel):
         labelTargetTitle=Label(frameTarget,text='Action - Key(s)')
         scrollTargetY=Scrollbar(frameTarget)
         scrollTargetX=Scrollbar(frameTarget,orient=HORIZONTAL)
-        self.listBindings=Listbox(frameTarget)
+        self.listBindings=Listbox(frameTarget,takefocus=FALSE,
+                exportselection=FALSE)
         self.listBindings.bind('<ButtonRelease-1>',self.KeyBindingSelected)
         scrollTargetY.config(command=self.listBindings.yview)
         scrollTargetX.config(command=self.listBindings.xview)
@@ -278,7 +280,8 @@ class ConfigDialog(Toplevel):
         self.listBindings.config(xscrollcommand=scrollTargetX.set)
         self.buttonNewKeys=Button(frameCustom,text='Get New Keys for Selection',
             command=self.GetNewKeys,state=DISABLED)
-        buttonSaveCustomKeys=Button(frameCustom,text='Save as New Custom Key Set')
+        buttonSaveCustomKeys=Button(frameCustom,
+                text='Save as New Custom Key Set',command=self.SaveAsNewKeySet)
         #frameKeySets
         labelKeysTitle=Label(frameKeySets,text='Select a Key Set')
         labelTypeTitle=Label(frameKeySets,text='Select : ')
@@ -322,14 +325,15 @@ class ConfigDialog(Toplevel):
         self.winWidth=StringVar(self)       
         self.winHeight=StringVar(self)
         self.startupEdit=IntVar(self)       
-        self.extEnabled=IntVar(self)       
+        self.userHelpBrowser=BooleanVar(self)
+        self.helpBrowser=StringVar(self)
         #widget creation
         #body
         frame=self.tabPages.pages['General']['page']
         #body section frames        
         frameRun=Frame(frame,borderwidth=2,relief=GROOVE)
         frameWinSize=Frame(frame,borderwidth=2,relief=GROOVE)
-        frameExt=Frame(frame,borderwidth=2,relief=GROOVE)
+        frameHelp=Frame(frame,borderwidth=2,relief=GROOVE)
         #frameRun
         labelRunTitle=Label(frameRun,text='Startup Preferences')
         labelRunChoiceTitle=Label(frameRun,text='On startup : ')
@@ -346,29 +350,33 @@ class ConfigDialog(Toplevel):
         labelWinHeightTitle=Label(frameWinSize,text='Height')
         entryWinHeight=Entry(frameWinSize,textvariable=self.winHeight,
                 width=3)
-        #frameExt
-        frameExtList=Frame(frameExt)
-        frameExtSet=Frame(frameExt)
-        labelExtTitle=Label(frameExt,text='Configure IDLE Extensions')
-        labelExtListTitle=Label(frameExtList,text='Extension')
-        scrollExtList=Scrollbar(frameExtList)
-        self.listExt=Listbox(frameExtList,height=5)
-        scrollExtList.config(command=self.listExt.yview)
-        self.listExt.config(yscrollcommand=scrollExtList.set)
-        self.listExt.bind('<ButtonRelease-1>',self.ExtensionSelected)
-        labelExtSetTitle=Label(frameExtSet,text='Settings')
-        self.radioEnableExt=Radiobutton(frameExtSet,variable=self.extEnabled,
-            value=1,text="enabled",state=DISABLED,
-            command=self.ExtensionStateToggled)
-        self.radioDisableExt=Radiobutton(frameExtSet,variable=self.extEnabled,
-            value=0,text="disabled",state=DISABLED,
-            command=self.ExtensionStateToggled)
-        self.buttonExtConfig=Button(frameExtSet,text='Configure',state=DISABLED)
+        #frameHelp
+        labelHelpTitle=Label(frameHelp,text='Help Options')
+        frameHelpList=Frame(frameHelp)
+        frameHelpListButtons=Frame(frameHelpList)
+        labelHelpListTitle=Label(frameHelpList,text='Additional (html) Help Sources:')
+        scrollHelpList=Scrollbar(frameHelpList)
+        self.listHelp=Listbox(frameHelpList,height=5,takefocus=FALSE,
+                exportselection=FALSE)
+        scrollHelpList.config(command=self.listHelp.yview)
+        self.listHelp.config(yscrollcommand=scrollHelpList.set)
+        self.listHelp.bind('<ButtonRelease-1>',self.HelpSourceSelected)
+        self.buttonHelpListEdit=Button(frameHelpListButtons,text='Edit',
+                state=DISABLED,width=8,command=self.HelpListItemEdit)
+        self.buttonHelpListAdd=Button(frameHelpListButtons,text='Add',
+                width=8,command=self.HelpListItemAdd)
+        self.buttonHelpListRemove=Button(frameHelpListButtons,text='Remove',
+                state=DISABLED,width=8,command=self.HelpListItemRemove)
+        checkHelpBrowser=Checkbutton(frameHelp,variable=self.userHelpBrowser,
+            onvalue=1,offvalue=0,text='user specified (html) help browser:',
+            command=self.OnCheckUserHelpBrowser)
+        self.entryHelpBrowser=Entry(frameHelp,textvariable=self.helpBrowser,
+                width=40)
         #widget packing
         #body
         frameRun.pack(side=TOP,padx=5,pady=5,fill=X)
         frameWinSize.pack(side=TOP,padx=5,pady=5,fill=X)
-        frameExt.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=BOTH)
+        frameHelp.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=BOTH)
         #frameRun
         labelRunTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
         labelRunChoiceTitle.pack(side=LEFT,anchor=W,padx=5,pady=5)
@@ -380,17 +388,18 @@ class ConfigDialog(Toplevel):
         labelWinHeightTitle.pack(side=RIGHT,anchor=E,pady=5)
         entryWinWidth.pack(side=RIGHT,anchor=E,padx=10,pady=5)
         labelWinWidthTitle.pack(side=RIGHT,anchor=E,pady=5)
-        #frameExt
-        labelExtTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
-        frameExtSet.pack(side=RIGHT,padx=5,pady=5,fill=Y)
-        frameExtList.pack(side=RIGHT,padx=5,pady=5,expand=TRUE,fill=BOTH)
-        labelExtListTitle.pack(side=TOP,anchor=W)
-        scrollExtList.pack(side=RIGHT,anchor=W,fill=Y)
-        self.listExt.pack(side=LEFT,anchor=E,expand=TRUE,fill=BOTH)
-        labelExtSetTitle.pack(side=TOP,anchor=W)
-        self.radioEnableExt.pack(side=TOP,anchor=W)
-        self.radioDisableExt.pack(side=TOP,anchor=W)
-        self.buttonExtConfig.pack(side=TOP,anchor=W,pady=5)
+        #frameHelp
+        labelHelpTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
+        frameHelpListButtons.pack(side=RIGHT,padx=5,pady=5,fill=Y)
+        frameHelpList.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=BOTH)
+        labelHelpListTitle.pack(side=TOP,anchor=W)
+        scrollHelpList.pack(side=RIGHT,anchor=W,fill=Y)
+        self.listHelp.pack(side=LEFT,anchor=E,expand=TRUE,fill=BOTH)
+        self.buttonHelpListEdit.pack(side=TOP,anchor=W,pady=5)
+        self.buttonHelpListAdd.pack(side=TOP,anchor=W)
+        self.buttonHelpListRemove.pack(side=TOP,anchor=W,pady=5)
+        checkHelpBrowser.pack(side=TOP,anchor=W,padx=5)
+        self.entryHelpBrowser.pack(side=TOP,anchor=W,padx=5,pady=5)
         return frame
 
     def AttachVarCallbacks(self):
@@ -475,6 +484,7 @@ class ConfigDialog(Toplevel):
         self.changedItems={'main':{},'highlight':{},'keys':{},'extensions':{}}
 
     def AddChangedItem(self,type,section,item,value):
+        print type,section,item,value
         value=str(value) #make sure we use a string
         if not self.changedItems[type].has_key(section):
             self.changedItems[type][section]={}    
@@ -519,30 +529,40 @@ class ConfigDialog(Toplevel):
         binding=self.listBindings.get(listIndex)
         bindName=binding.split()[0] #first part, up to first space
         currentKeySequences=idleConf.GetCurrentKeySet().values()
-        newKeys=GetKeysDialog(self,'Get New Keys',bindName,currentKeySequences)
-        if newKeys.result: #new keys were specified
+        newKeys=GetKeysDialog(self,'Get New Keys',bindName,
+                currentKeySequences).result
+        if newKeys: #new keys were specified
             if self.keysAreDefault.get(): #current key set is a built-in
                 message=('Your changes will be saved as a new Custom Key Set. '+
                         'Enter a name for your new Custom Key Set below.')
-                usedNames=idleConf.GetSectionList('user','keys')
-                for newName in self.changedItems['keys'].keys():
-                    if newName not in usedNames: usedNames.append(newName)
-                newKeySet=GetCfgSectionNameDialog(self,'New Custom Key Set',
-                        message,usedNames)
-                if not newKeySet.result: #user cancelled custom key set creation
+                newKeySet=self.GetNewKeysName(message)
+                if not newKeySet: #user cancelled custom key set creation
                     self.listBindings.select_set(listIndex)
                     self.listBindings.select_anchor(listIndex)
                     return
                 else: #create new custom key set based on previously active key set 
-                    self.CreateNewKeySet(newKeySet.result)    
+                    self.CreateNewKeySet(newKeySet)    
             self.listBindings.delete(listIndex)
-            self.listBindings.insert(listIndex,bindName+' - '+newKeys.result)
+            self.listBindings.insert(listIndex,bindName+' - '+newKeys)
             self.listBindings.select_set(listIndex)
             self.listBindings.select_anchor(listIndex)
             self.keyBinding.set(newKeys.result)
         else:
             self.listBindings.select_set(listIndex)
             self.listBindings.select_anchor(listIndex)
+
+    def GetNewKeysName(self,message):
+        usedNames=idleConf.GetSectionList('user','keys')
+        for newName in self.changedItems['keys'].keys():
+            if newName not in usedNames: usedNames.append(newName)
+        newKeySet=GetCfgSectionNameDialog(self,'New Custom Key Set',
+                message,usedNames).result
+        return newKeySet
+    
+    def SaveAsNewKeySet(self):
+        newKeysName=self.GetNewKeysName('New Key Set Name:')
+        if newKeysName:
+            self.CreateNewKeySet(newKeysName)
 
     def KeyBindingSelected(self,event):
         self.buttonNewKeys.config(state=NORMAL)
@@ -578,15 +598,11 @@ class ConfigDialog(Toplevel):
             if self.themeIsBuiltin.get(): #current theme is a built-in
                 message=('Your changes will be saved as a new Custom Theme. '+
                         'Enter a name for your new Custom Theme below.')
-                usedNames=idleConf.GetSectionList('user','highlight')
-                for newName in self.changedItems['highlight'].keys():
-                    if newName not in usedNames: usedNames.append(newName)
-                newTheme=GetCfgSectionNameDialog(self,'New Custom Theme',
-                        message,usedNames)
-                if not newTheme.result: #user cancelled custom theme creation
+                newTheme=self.GetNewThemeName(message)
+                if not newTheme: #user cancelled custom theme creation
                     return
                 else: #create new custom theme based on previously active theme 
-                    self.CreateNewTheme(newTheme.result)    
+                    self.CreateNewTheme(newTheme)    
             self.colour.set(colourString)
             self.frameColourSet.config(bg=colourString)#set sample
             if self.fgHilite.get(): plane='foreground'
@@ -594,6 +610,19 @@ class ConfigDialog(Toplevel):
             apply(self.textHighlightSample.tag_config,
                 (self.themeElements[target][0],),{plane:colourString})
     
+    def GetNewThemeName(self,message):
+        usedNames=idleConf.GetSectionList('user','highlight')
+        for newName in self.changedItems['highlight'].keys():
+            if newName not in usedNames: usedNames.append(newName)
+        newTheme=GetCfgSectionNameDialog(self,'New Custom Theme',
+                message,usedNames).result
+        return newTheme
+    
+    def SaveAsNewTheme(self):
+        newThemeName=self.GetNewThemeName('New Theme Name:')
+        if newThemeName:
+            self.CreateNewTheme(newThemeName)
+
     def CreateNewTheme(self,newThemeName):
         #creates new custom theme based on the previously active theme,
         #and makes the new theme active
@@ -665,6 +694,63 @@ class ConfigDialog(Toplevel):
                         'normal', fgBg='bg')
             apply(self.textHighlightSample.tag_config,
                 (self.themeElements[element][0],),colours)
+    
+    def OnCheckUserHelpBrowser(self):
+        if self.userHelpBrowser.get():
+            self.entryHelpBrowser.config(state=NORMAL)
+        else:
+            self.entryHelpBrowser.config(state=DISABLED)
+    
+    def HelpSourceSelected(self,event):
+        self.SetHelpListButtonStates()
+    
+    def SetHelpListButtonStates(self):
+        if self.listHelp.size()<1: #no entries in list
+            self.buttonHelpListEdit.config(state=DISABLED)
+            self.buttonHelpListRemove.config(state=DISABLED)
+        else: #there are some entries
+            if self.listHelp.curselection(): #there currently is a selection
+                self.buttonHelpListEdit.config(state=NORMAL)
+                self.buttonHelpListRemove.config(state=NORMAL)
+            else:  #there currently is not a selection
+                self.buttonHelpListEdit.config(state=DISABLED)
+                self.buttonHelpListRemove.config(state=DISABLED)
+
+    def HelpListItemAdd(self):
+        helpSource=GetHelpSourceDialog(self,'New Help Source').result
+        if helpSource:
+            self.userHelpList.append( (helpSource[0],helpSource[1]) )
+            self.listHelp.insert(END,helpSource[0]+'  '+helpSource[1])
+            self.UpdateUserHelpChangedItems()
+        self.SetHelpListButtonStates()
+    
+    def HelpListItemEdit(self):
+        itemIndex=self.listHelp.index(ANCHOR)
+        helpSource=self.userHelpList[itemIndex]
+        newHelpSource=GetHelpSourceDialog(self,'New Help Source',
+                menuItem=helpSource[0],filePath=helpSource[1]).result
+        if (not newHelpSource) or (newHelpSource==helpSource):
+            return #no changes
+        self.userHelpList[itemIndex]=newHelpSource
+        self.listHelp.delete(itemIndex)
+        self.listHelp.insert(itemIndex,newHelpSource[0]+'  '+newHelpSource[1])
+        self.UpdateUserHelpChangedItems()
+        self.SetHelpListButtonStates()
+    
+    def HelpListItemRemove(self):
+        itemIndex=self.listHelp.index(ANCHOR)
+        del(self.userHelpList[itemIndex])
+        self.listHelp.delete(itemIndex)
+        self.UpdateUserHelpChangedItems()
+        self.SetHelpListButtonStates()
+    
+    def UpdateUserHelpChangedItems(self):
+        #clear and rebuild the HelpFiles secion in self.changedItems
+        if self.changedItems['main'].has_key('HelpFiles'):
+            del(self.changedItems['main']['HelpFiles'])
+        for num in range(1,len(self.userHelpList)+1):
+            self.AddChangedItem('main','HelpFiles',str(num),
+                    string.join(self.userHelpList[num-1],';'))
     
     def LoadFontCfg(self):
         ##base editor font selection list
@@ -784,17 +870,16 @@ class ConfigDialog(Toplevel):
         #initial window size
         self.winWidth.set(idleConf.GetOption('main','EditorWindow','width'))       
         self.winHeight.set(idleConf.GetOption('main','EditorWindow','height'))
-        #extensions    
-        extns=idleConf.GetExtensions(activeOnly=0)
-        apply(self.listExt.insert,(END,)+tuple(extns))
-    
-    def ExtensionSelected(self,event):
-        self.radioEnableExt.config(state=NORMAL)
-        self.radioDisableExt.config(state=NORMAL)
-        self.buttonExtConfig.config(state=NORMAL)
-        extn=self.listExt.get(ANCHOR)
-        self.extEnabled.set(idleConf.GetOption('extensions',extn,'enable',
-                default=1,type='bool'))
+        #help browsing
+        self.userHelpList=idleConf.GetExtraHelpSourceList('user')
+        for helpItem in self.userHelpList:
+            self.listHelp.insert(END,helpItem[0]+'  '+helpItem[1])
+        self.SetHelpListButtonStates()
+        self.userHelpBrowser.set(idleConf.GetOption('main','General',
+                'user-help-browser',default=0,type='bool'))
+        self.helpBrowser.set(idleConf.GetOption('main','General',
+                'user-help-browser-command',default=''))
+        self.OnCheckUserHelpBrowser()
     
     def LoadConfigs(self):
         """
@@ -808,7 +893,6 @@ class ConfigDialog(Toplevel):
         self.LoadThemeCfg()
         ### keys page
         self.LoadKeyCfg()
-        ### help page
         ### general page
         self.LoadGeneralCfg()
         
@@ -824,6 +908,9 @@ class ConfigDialog(Toplevel):
         """
         save configuration changes to user config files.
         """
+        if self.changedItems['main'].has_key('HelpFiles'):
+            #this section gets completely replaced
+            idleConf.userCfg['main'].remove_section('HelpFiles')
         for configType in self.changedItems.keys():
             cfgTypeHasChanges=0
             for section in self.changedItems[configType].keys():

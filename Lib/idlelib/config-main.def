@@ -28,23 +28,8 @@
 
 [General]
 editor-on-startup= 1
-#run-in-separate-process= 1
-#help-browser= ""
-
-[HelpFiles]
-#idle="IDLE _Help",""
-#python="_Python Documentation",""
-#additional help sources
-1=
-2=
-3=
-4=
-5=
-6=
-7=
-8=
-9=
-10=
+user-help-browser= 0
+user-help-browser-command= 
 
 [EditorWindow]
 width= 80
@@ -66,15 +51,23 @@ name= IDLE Classic
 default= 1  
 name= IDLE Classic Windows
 
-[RecentFiles]
-1=
-2=
-3=
-4=
-5=
-6=
-7=
-8=
-9=
-10=
+[HelpFiles]
+#additional help sources, must be viewable by an html browser
+#will be listed on the Help/Other Help menu
+#option names are the sequence number of the option
+#values take the form: menu item;/path/to/help/source
+#obviously you can't use a semi-colon in a menu item or path and the path will 
+#be platform specific because of path separators, drive specs etc. 
+#eg.:
+#1= My Extra Help Source;/usr/share/doc/foo/index.html
+#2= Another Help Source;/path/to/another.html
 
+#[RecentFiles]
+#this section will only be present in the user config file idle-main.cfg
+#where it will record the most recently openned files in the form
+#IndexNum= /full/path/of/file  , for display on the File/Recent Files menu
+#it is present here for reference only
+#eg.:
+#1=/most/recently/openned/file
+#2=/next/most/recently/openned/file
+#etc.
