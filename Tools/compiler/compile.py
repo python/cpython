@@ -1,7 +1,7 @@
 import sys
 import getopt
 
-from compiler import compile, visitor
+from compiler import compileFile, visitor
 
 import profile
 
@@ -35,14 +35,16 @@ def main():
                 print filename
             try:
                 if PROFILE:
-                    profile.run('compile(%s, %s)' % (`filename`, `DISPLAY`),
+                    profile.run('compileFile(%s, %s)' % (`filename`,
+                                                         `DISPLAY`),
                                 filename + ".prof")
                 else:
-                    compile(filename, DISPLAY)
+                    compileFile(filename, DISPLAY)
                     
             except SyntaxError, err:
                 print err
-                print err.lineno
+                if err.lineno is not None:
+                    print err.lineno
                 if not CONTINUE:
                     sys.exit(-1)
 

@@ -7,7 +7,7 @@ The regression test is run with the interpreter in verbose mode so
 that import problems can be observed easily.
 """
 
-from compiler import compile
+from compiler import compileFile
 
 import os
 import sys
@@ -25,12 +25,13 @@ def copy_library():
     dest = tempfile.mktemp()
     os.mkdir(dest)
     libdir = os.path.split(test.__path__[0])[0]
-    os.system("cp -r %s/* %s" % (libdir, dest))
+    print "Found standard library in", libdir
     print "Creating copy of standard library in", dest
+    os.system("cp -r %s/* %s" % (libdir, dest))
     return dest
 
 def compile_files(dir):
-    print "Compiling", dir
+    print "Compiling", dir, "\n\t",
     line_len = 10
     for file in os.listdir(dir):
         base, ext = os.path.splitext(file)
@@ -42,7 +43,7 @@ def compile_files(dir):
                 line_len = len(source) + 9
             print file,
             try:
-                compile(source)
+                compileFile(source)
             except SyntaxError, err:
                 print err
                 continue
@@ -52,13 +53,16 @@ def compile_files(dir):
             path = os.path.join(dir, file)
             if os.path.isdir(path):
                 print
+                print
                 compile_files(path)
+                print "\t",
+                line_len = 10
     print
 
 def run_regrtest(lib_dir):
     test_dir = os.path.join(lib_dir, "test")
     os.chdir(test_dir)
-    os.system("PYTHONPATH=%s %s -v regrtest.py -r" % (lib_dir, sys.executable))
+    os.system("PYTHONPATH=%s %s -v regrtest.py" % (lib_dir, sys.executable))
 
 def cleanup(dir):
     os.system("rm -rf %s" % dir)
