@@ -80,7 +80,7 @@ builtin_apply(self, args)
 	object *self;
 	object *args;
 {
-	object *func, *alist, *kwdict = NULL;
+	object *func, *alist = NULL, *kwdict = NULL;
 
 	if (!newgetargs(args, "O|OO:apply", &func, &alist, &kwdict))
 		return NULL;
