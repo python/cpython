@@ -16,6 +16,8 @@
 
 import sys, string, regex, getopt, os
 
+from types import IntType, ListType, StringType, TupleType
+
 # Different parse modes for phase 1
 MODE_REGULAR = 0
 MODE_VERBATIM = 1
@@ -53,11 +55,10 @@ def lle(lvl, buf, where):
 	
 # This class is only needed for _symbolic_ representation of the parse mode.
 class Mode:
-	def init(self, arg):
+	def __init__(self, arg):
 		if arg not in the_modes:
 			raise ValueError, 'mode not in the_modes'
 		self.mode = arg
-		return self
 
 	def __cmp__(self, other):
 		if type(self) != type(other):
@@ -83,8 +84,7 @@ class Mode:
 			raise ValueError, 'mode not in the_modes'
 
 # just a wrapper around a class initialisation
-def mode(arg):
-	return Mode().init(arg)
+mode = Mode
 
 
 # After phase 1, the text consists of chunks, with a certain type
@@ -118,11 +118,10 @@ the_types = PLAIN, GROUP, CSNAME, COMMENT, DMATH, MATH, OTHER, ACTIVE, \
 
 # class, just to display symbolic name
 class ChunkType:
-	def init(self, chunk_type):
+	def __init__(self, chunk_type):
 		if chunk_type not in the_types:
-			raise 'ValueError', 'chunk_type not in the_types'
+			raise ValueError, 'chunk_type not in the_types'
 		self.chunk_type = chunk_type
-		return self
 
 	def __cmp__(self, other):
 		if type(self) != type(other):
@@ -166,32 +165,32 @@ class ChunkType:
 			raise ValueError, 'chunk_type not in the_types'
 
 # ...and the wrapper
-def chunk_type(type):
-	return ChunkType().init(type)
+_all_chunk_types = {}
+for t in the_types:
+	_all_chunk_types[t] = ChunkType(t)
+
+def chunk_type(t):
+	return _all_chunk_types[t]
 
 # store a type object of the ChunkType-class-instance...
 chunk_type_type = type(chunk_type(0))
-	
+
 # this class contains a part of the parsed buffer
 class Chunk:
-	def init(self, chtype, where, data):
+	def __init__(self, chtype, where, data):
 		if type(chtype) != chunk_type_type:
 			chtype = chunk_type(chtype)
 		self.chtype = chtype
-		if type(where) != type(0):
+		if type(where) != IntType:
 			raise TypeError, '\'where\' is not a number'
 		self.where = where
 		self.data = data
-		##print 'CHUNK', self
-		return self
 
 	def __repr__(self):
 		return 'chunk' + `self.chtype, self.where, self.data`
 
 # and the wrapper
-def chunk(chtype, where, data):
-	 return Chunk().init(chtype, where, data)
-	 
+chunk = Chunk
 
 
 error = 'partparse.error'
@@ -637,14 +636,14 @@ def handlecs(buf, where, curpmode, lvl, result, end):
 				raise error, `endverbstr` + ' not found.' + lle(lvl, buf, where)
 			result.append(chunk(ENV, where, (envname, [chunk(PLAIN, newpos, (newpos, pos))])))
 			newpos = pos + len(endverbstr)
-			
+
 		elif s(buf, saveddata) == 'begin':
 			# start parsing recursively... If that parse returns
 			# from an '\end{...}', then should the last item of
 			# the returned data be a string containing the ended
 			# environment
 			newpos, data = parseit(buf, curpmode, newpos, lvl)
-			if not data or type(data[-1]) != type(''):
+			if not data or type(data[-1]) is not StringType:
 				raise error, 'missing \'end\'' + lle(lvl, buf, where) + epsilon(buf, newpos)
 			retenv = data[-1]
 			del data[-1]
@@ -721,32 +720,25 @@ def handlecs(buf, where, curpmode, lvl, result, end):
 
 # this is just a function to get the string value if the possible data-tuple
 def s(buf, data):
-	if type(data) == type(''):
+	if type(data) is StringType:
 		return data
-	if len(data) != 2 or not (type(data[0]) == type(data[1]) == type(0)):
+	if len(data) != 2 or not (type(data[0]) is type(data[1]) is IntType):
 		raise TypeError, 'expected tuple of 2 integers'
 	x1, x2 = data
 	return buf[x1:x2]
-	
+
 
 ##length, data1, i = getnextarg(length, buf, pp, i + 1)
 
 # make a deep-copy of some chunks
 def crcopy(r):
-	result = []
-	for x in r:
-		result.append(chunkcopy(x))
-	return result
-	
-		
+	return map(chunkcopy, r)
+
 
 # copy a chunk, would better be a method of class Chunk...
 def chunkcopy(ch):
 	if ch.chtype == chunk_type(GROUP):
-		listc = ch.data[:]
-		for i in range(len(listc)):
-			listc[i] = chunkcopy(listc[i])
-		return chunk(GROUP, ch.where, listc)
+		return chunk(GROUP, ch.where, map(chunkcopy, ch.data))
 	else:
 		return chunk(ch.chtype, ch.where, ch.data)
 
@@ -755,7 +747,7 @@ def chunkcopy(ch):
 # or return Command Sequence token, or give back one character
 def getnextarg(length, buf, pp, item):
 
-	##wobj = Wobj().init()
+	##wobj = Wobj()
 	##dumpit(buf, wobj.write, pp[item:min(length, item + 5)])
 	##print 'GETNEXTARG, (len, item) =', `length, item` + ' ---> ' + wobj.data + ' <---'
 
@@ -773,7 +765,7 @@ def getnextarg(length, buf, pp, item):
 		pp[item:item] = newpp
 		item = item + len(newpp)
 		if len(newpp) < 10:
-			wobj = Wobj().init()
+			wobj = Wobj()
 			dumpit(buf, wobj.write, newpp)
 			##print 'GETNEXTARG: inserted ' + `wobj.data`
 		return length, item
@@ -806,7 +798,7 @@ re_endopt = regex.compile(']')
 # get a LaTeX-optional argument, you know, the square braces '[' and ']'
 def getoptarg(length, buf, pp, item):
 
-	wobj = Wobj().init()
+	wobj = Wobj()
 	dumpit(buf, wobj.write, pp[item:min(length, item + 5)])
 	##print 'GETOPTARG, (len, item) =', `length, item` + ' ---> ' + wobj.data + ' <---'
 
@@ -848,9 +840,8 @@ def getoptarg(length, buf, pp, item):
 
 # Wobj just add write-requests to the ``data'' attribute
 class Wobj:
-	def init(self):
-		self.data = ''
-		return self
+	data = ''
+
 	def write(self, data):
 		self.data = self.data + data
 
@@ -879,7 +870,7 @@ for_texi = ('emph', 'var', 'strong', 'code', 'kbd', 'key', 'dfn', 'samp',
 def flattext(buf, pp):
 	pp = crcopy(pp)
 	##print '---> FLATTEXT ' + `pp`
-	wobj = Wobj().init()
+	wobj = Wobj()
 
 	i, length = 0, len(pp)
 	while 1:
@@ -917,7 +908,7 @@ def flattext(buf, pp):
 				ch.chtype = chunk_type(PLAIN)
 				markcmd = s(buf, ch.data)
 				x = markcmds[markcmd]
-				if type(x) == type(()):
+				if type(x) == TupleType:
 					pre, after = x
 					str = pre+str+after
 				elif x == 1:
@@ -1247,7 +1238,7 @@ def changeit(buf, pp):
 		ch = pp[i]
 		i = i + 1
 
-		if type(ch) == type(''):
+		if type(ch) is StringType:
 			#normally, only chunks are present in pp,
 			# but in some cases, some extra info
 			# has been inserted, e.g., the \end{...} clauses
@@ -1603,7 +1594,7 @@ def changeit(buf, pp):
 				pass
 
 			elif s(buf, ch.data) == 'e':
-				# \e --> \
+				# "\e" --> "\"
 				ch.data = '\\'
 				ch.chtype = chunk_type(PLAIN)
 			elif (s(buf, ch.data) == 'lineiii') or\
@@ -1614,7 +1605,7 @@ def changeit(buf, pp):
 				#  a2 [ -- a3]
 				#
 				##print 'LINEIIIIII!!!!!!!'
-##				wobj = Wobj().init()
+##				wobj = Wobj()
 ##				dumpit(buf, wobj.write, pp[i-1:i+5])
 ##				print '--->' + wobj.data + '<----'
 				if not hist.inenv:
@@ -1636,7 +1627,7 @@ def changeit(buf, pp):
 				del pp[i:newi]
 				length = length - (newi-i)
 ##				print 'ITEM ARG: --->',
-##				wobj = Wobj().init()
+##				wobj = Wobj()
 ##				dumpit(buf, wobj.write, ingroupch)
 ##				print wobj.data, '<---'
 				pp.insert(i, chunk(GROUP, ch.where, ingroupch))
@@ -2061,17 +2052,17 @@ def dumpit(buf, wm, pp):
 				  (chunk_type(ENDLINE), chunk_type(DENDLINE)) \
 				  and (pp[i-2].chtype != chunk_type(PLAIN) \
 				  or s(buf, pp[i-2].data)[-1] != '\n'):
-				  
+
 				wm('\n')
 			wm('@' + s(buf, ch.data))
 			if i == length:
 				raise error, 'CSLINE expected another chunk'
 			if pp[i].chtype != chunk_type(GROUP):
 				raise error, 'CSLINE expected GROUP'
-			if type(pp[i].data) != type([]):
+			if type(pp[i].data) != ListType:
 				raise error, 'GROUP chould contain []-data'
-			
-			wobj = Wobj().init()
+
+			wobj = Wobj()
 			dumpit(buf, wobj.write, pp[i].data)
 			i = i + 1
 			text = wobj.data
@@ -2162,4 +2153,5 @@ def main():
 
 	outf.close()
 
-main()
+if __name__ == "__main__":
+    main()
