@@ -38,22 +38,6 @@ TK_TABWIDTH_DEFAULT = 8
 ###$ win <Alt-Key-6>
 ###$ unix <Alt-Key-6>
 
-import re
-_is_block_closer = re.compile(r"""
-    \s*
-    ( return
-    | break
-    | continue
-    | raise
-    | pass
-    )
-    \b
-""", re.VERBOSE).match
-
-# colon followed by optional comment
-_looks_like_opener = re.compile(r":\s*(#.*)?$").search
-del re
-
 class AutoIndent:
 
     menudefs = [
@@ -66,7 +50,6 @@ class AutoIndent:
             ('Tabify region', '<<tabify-region>>'),
             ('Untabify region', '<<untabify-region>>'),
             ('Toggle tabs', '<<toggle-tabs>>'),
-            ('New tab width', '<<change-tabwidth>>'),
             ('New indent width', '<<change-indentwidth>>'),
         ]),
     ]
@@ -85,8 +68,7 @@ class AutoIndent:
         '<<tabify-region>>': ['<Alt-Key-5>'],
         '<<untabify-region>>': ['<Alt-Key-6>'],
         '<<toggle-tabs>>': ['<Alt-Key-t>'],
-        '<<change-tabwidth>>': ['<Alt-Key-u>'],
-        '<<change-indentwidth>>': ['<Alt-Key-v>'],
+        '<<change-indentwidth>>': ['<Alt-Key-u>'],
     }
 
     unix_keydefs = {
@@ -107,11 +89,15 @@ class AutoIndent:
     #                  indentwidth is not a multiple of tabwidth
     #         false -> tab characters are converted to spaces by indent
     #                  and dedent cmds, and ditto TAB keystrokes
-    # indentwidth is the number of characters per logical indent level
-    # tabwidth is the display width of a literal tab character
+    # indentwidth is the number of characters per logical indent level.
+    # tabwidth is the display width of a literal tab character.
+    # CAUTION:  telling Tk to use anything other than its default
+    # tab setting causes it to use an entirely different tabbing algorithm,
+    # treating tab stops as fixed distances from the left margin.
+    # Nobody expects this, so for now tabwidth should never be changed.
     usetabs = 0
     indentwidth = 4
-    tabwidth = 8
+    tabwidth = TK_TABWIDTH_DEFAULT
 
     def __init__(self, editwin):
         self.text = editwin.text
@@ -138,8 +124,6 @@ class AutoIndent:
 
         if guess and ispythonsource:
             i = self.guess_indent()
-            ##import sys
-            ##sys.__stdout__.write("indent %d\n" % i)
             if 2 <= i <= 8:
                 self.indentwidth = i
             if self.indentwidth != self.tabwidth:
@@ -246,9 +230,31 @@ class AutoIndent:
             # without regard for usetabs etc; could instead insert
             # "\n" + self._make_blanks(classifyws(indent)[1]).
             text.insert("insert", "\n" + indent)
-            if _is_block_opener(line):
+
+            # adjust indentation for continuations and block open/close
+            x = LineStudier(line)
+            if x.is_block_opener():
                 self.smart_indent_event(event)
-            elif indent and _is_block_closer(line) and line[-1] != "\\":
+            elif x.is_bracket_continued():
+                # if there's something interesting after the last open
+                # bracket, line up with it; else just indent one level
+                i = x.last_open_bracket_index() + 1
+                while i < n and line[i] in " \t":
+                    i = i + 1
+                if i < n and line[i] not in "#\n\\":
+                    effective = len(string.expandtabs(line[:i],
+                                                      self.tabwidth))
+                else:
+                    raw, effective = classifyws(indent, self.tabwidth)
+                    effective = effective + self.indentwidth
+                self.reindent_to(effective)
+            elif x.is_backslash_continued():
+                # local info isn't enough to do anything intelligent here;
+                # e.g., if it's the 2nd line a backslash block we want to
+                # indent extra, but if it's the 3rd we don't want to indent
+                # at all; rather than make endless mistakes, leave it alone
+                pass
+            elif indent and x.is_block_closer():
                 self.smart_backspace_event(event)
             text.see("insert")
             return "break"
@@ -302,44 +308,46 @@ class AutoIndent:
 
     def tabify_region_event(self, event):
         head, tail, chars, lines = self.get_region()
+        tabwidth = self._asktabwidth()
         for pos in range(len(lines)):
             line = lines[pos]
             if line:
-                raw, effective = classifyws(line, self.tabwidth)
-                ntabs, nspaces = divmod(effective, self.tabwidth)
+                raw, effective = classifyws(line, tabwidth)
+                ntabs, nspaces = divmod(effective, tabwidth)
                 lines[pos] = '\t' * ntabs + ' ' * nspaces + line[raw:]
         self.set_region(head, tail, chars, lines)
 
     def untabify_region_event(self, event):
         head, tail, chars, lines = self.get_region()
+        tabwidth = self._asktabwidth()
         for pos in range(len(lines)):
-            lines[pos] = string.expandtabs(lines[pos], self.tabwidth)
+            lines[pos] = string.expandtabs(lines[pos], tabwidth)
         self.set_region(head, tail, chars, lines)
 
     def toggle_tabs_event(self, event):
-        if tkMessageBox.askyesno("Toggle tabs",
+        if tkMessageBox.askyesno(
+              "Toggle tabs",
               "Turn tabs " + ("on", "off")[self.usetabs] + "?",
               parent=self.text):
             self.usetabs = not self.usetabs
         return "break"
 
+    # XXX this isn't bound to anything -- see class tabwidth comments
     def change_tabwidth_event(self, event):
-        new = tkSimpleDialog.askinteger("Tab width",
-            "New tab width (2-16)",
-            parent=self.text,
-            initialvalue=self.tabwidth,
-            minvalue=2, maxvalue=16)
-        if new and new != self.tabwidth:
+        new = self._asktabwidth()
+        if new != self.tabwidth:
             self.tabwidth = new
             self.set_indentation_params(0, guess=0)
         return "break"
 
     def change_indentwidth_event(self, event):
-        new = tkSimpleDialog.askinteger("Indent width",
-            "New indent width (1-16)",
-            parent=self.text,
-            initialvalue=self.indentwidth,
-            minvalue=1, maxvalue=16)
+        new = tkSimpleDialog.askinteger(
+                  "Indent width",
+                  "New indent width (1-16)",
+                  parent=self.text,
+                  initialvalue=self.indentwidth,
+                  minvalue=1,
+                  maxvalue=16)
         if new and new != self.indentwidth:
             self.indentwidth = new
         return "break"
@@ -389,6 +397,15 @@ class AutoIndent:
             text.insert("insert", self._make_blanks(column))
         text.undo_block_stop()
 
+    def _asktabwidth(self):
+        return tkSimpleDialog.askinteger(
+            "Tab width",
+            "Spaces per tab?",
+            parent=self.text,
+            initialvalue=self.tabwidth,
+            minvalue=1,
+            maxvalue=16) or self.tabwidth
+
     # Guess indentwidth from text content.
     # Return guessed indentwidth.  This should not be believed unless
     # it's in a reasonable range (e.g., it will be 0 if no indented
@@ -425,53 +442,141 @@ def classifyws(s, tabwidth):
             break
     return raw, effective
 
-# Return true iff line probably opens a block.  This is a limited
-# analysis based on whether the line's last "interesting" character
-# is a colon.
+class LineStudier:
 
-def _is_block_opener(line):
-    if not _looks_like_opener(line):
-        return 0
-    # Looks like an opener, but possible we're in a comment
-    #     x = 3 # and then:
-    # or a string
-    #     x = ":#"
-    # If no comment character, we're not in a comment <duh>, and the
-    # colon is the last non-ws char on the line so it's not in a
-    # (single-line) string either.
-    if string.find(line, '#') < 0:
-        return 1
-    # Now it's hard: There's a colon and a comment char.  Brute force
-    # approximation.
-    lastch, i, n = 0, 0, len(line)
-    while i < n:
-        ch = line[i]
-        if ch == '\\':
-            lastch = ch
-            i = i+2
-        elif ch in "\"'":
-            # consume string
-            w = 1   # width of string quote
-            if line[i:i+3] in ('"""', "'''"):
-                w = 3
-                ch = ch * 3
-            i = i+w
-            while i < n:
-                if line[i] == '\\':
-                    i = i+2
-                elif line[i:i+w] == ch:
-                    i = i+w
-                    break
+    # set to false by self.study(); the other vars retain default values
+    # until then
+    needstudying = 1
+
+    # line ends with an unescaped backslash not in string or comment?
+    backslash_continued = 0
+
+    # line ends with an unterminated string?
+    string_continued = 0
+
+    # the last "interesting" character on a line: the last non-ws char
+    # before an optional trailing comment; if backslash_continued, lastch
+    # precedes the final backslash; if string_continued, the required
+    # string-closer (", """, ', ''')
+    lastch = ""
+
+    # index of rightmost unmatched ([{ not in a string or comment
+    lastopenbrackpos = -1
+
+    import re
+    _is_block_closer_re = re.compile(r"""
+        \s*
+        ( return
+        | break
+        | continue
+        | raise
+        | pass
+        )
+        \b
+    """, re.VERBOSE).match
+
+    # colon followed by optional comment
+    _looks_like_opener_re = re.compile(r":\s*(#.*)?$").search
+    del re
+
+
+    def __init__(self, line):
+        if line[-1:] == '\n':
+            line = line[:-1]
+        self.line = line
+        self.stack = []
+
+    def is_continued(self):
+        return self.is_block_opener() or \
+               self.is_backslash_continued() or \
+               self.is_bracket_continued() or \
+               self.is_string_continued()
+
+    def is_block_opener(self):
+        if not self._looks_like_opener_re(self.line):
+            return 0
+        # Looks like an opener, but possible we're in a comment
+        #     x = 3 # and then:
+        # or a string
+        #     x = ":#"
+        # If no comment character, we're not in a comment <duh>, and the
+        # colon is the last non-ws char on the line so it's not in a
+        # (single-line) string either.
+        if string.find(self.line, '#') < 0:
+            return 1
+        self.study()
+        return self.lastch == ":"
+
+    def is_backslash_continued(self):
+        self.study()
+        return self.backslash_continued
+
+    def is_bracket_continued(self):
+        self.study()
+        return self.lastopenbrackpos >= 0
+
+    def is_string_continued(self):
+        self.study()
+        return self.string_continued
+
+    def is_block_closer(self):
+        return self._is_block_closer_re(self.line)
+
+    def last_open_bracket_index(self):
+        assert self.stack
+        return self.lastopenbrackpos
+
+    def study(self):
+        if not self.needstudying:
+            return
+        self.needstudying = 0
+        line = self.line
+        i, n = 0, len(line)
+        while i < n:
+            ch = line[i]
+            if ch == '\\':
+                i = i+1
+                if i == n:
+                    self.backslash_continued = 1
                 else:
+                    self.lastch = ch + line[i]
                     i = i+1
-            lastch = ch
-        elif ch == '#':
-            break
-        else:
-            if ch not in string.whitespace:
-                lastch = ch
-            i = i+1
-    return lastch == ':'
+
+            elif ch in "\"'":
+                # consume string
+                w = 1   # width of string quote
+                if line[i:i+3] in ('"""', "'''"):
+                    w = 3
+                    ch = ch * 3
+                i = i+w
+                self.lastch = ch
+                while i < n:
+                    if line[i] == '\\':
+                        i = i+2
+                    elif line[i:i+w] == ch:
+                        i = i+w
+                        break
+                    else:
+                        i = i+1
+                else:
+                    self.string_continued = 1
+
+            elif ch == '#':
+                break
+
+            else:
+                if ch not in string.whitespace:
+                    self.lastch = ch
+                    if ch in "([(":
+                        self.stack.append(i)
+                    elif ch in ")]}" and self.stack:
+                        if line[self.stack[-1]] + ch in ("()", "[]", "{}"):
+                            del self.stack[-1]
+                i = i+1
+        # end while i < n:
+
+        if self.stack:
+            self.lastopenbrackpos = self.stack[-1]
 
 import tokenize
 _tokenize = tokenize
