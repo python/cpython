@@ -1720,6 +1720,11 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=.\bz2.pyd
+  Destination=%MAINDIR%\DLLs\bz2.pyd
+  Flags=0000000000000010
+end
+item: Install File
   Source=.\mmap.pyd
   Destination=%MAINDIR%\DLLs\mmap.pyd
   Flags=0000000000000010
@@ -1794,6 +1799,11 @@ end
 item: Install File
   Source=.\bsddb.lib
   Destination=%MAINDIR%\libs\bsddb.lib
+  Flags=0000000000000010
+end
+item: Install File
+  Source=.\bz2.lib
+  Destination=%MAINDIR%\libs\bz2.lib
   Flags=0000000000000010
 end
 item: Install File
