@@ -263,8 +263,17 @@ def getdoc(object):
     All tabs are expanded to spaces.  To clean up docstrings that are
     indented to line up with blocks of code, any whitespace than can be
     uniformly removed from the second line onwards is removed."""
-    if hasattr(object, '__doc__') and object.__doc__:
-        lines = string.split(string.expandtabs(object.__doc__), '\n')
+    try:
+        doc = object.__doc__
+    except AttributeError:
+        return None
+    if not isinstance(doc, (str, unicode)):
+        return None
+    try:
+        lines = string.split(string.expandtabs(doc), '\n')
+    except UnicodeError:
+        return None
+    else:
         margin = None
         for line in lines[1:]:
             content = len(string.lstrip(line))
