@@ -1,3 +1,4 @@
+import datetime
 import sys
 import unittest
 import xmlrpclib
@@ -12,6 +13,11 @@ alist = [{'astring': 'foo@bar.baz.spam',
           'boolean': xmlrpclib.False,
           'unicode': u'\u4000\u6000\u8000',
           u'ukey\u4000': 'regular value',
+          'datetime1': xmlrpclib.DateTime('20050210T11:41:23'),
+          'datetime2': xmlrpclib.DateTime(
+                        (2005, 02, 10, 11, 41, 23, 0, 1, -1)),
+          'datetime3': xmlrpclib.DateTime(
+                        datetime.datetime(2005, 02, 10, 11, 41, 23)),
           }]
 
 class XMLRPCTestCase(unittest.TestCase):
@@ -19,6 +25,17 @@ class XMLRPCTestCase(unittest.TestCase):
     def test_dump_load(self):
         self.assertEquals(alist,
                           xmlrpclib.loads(xmlrpclib.dumps((alist,)))[0][0])
+
+    def test_dump_bare_datetime(self):
+        # This checks that an unwrapped datetime object can be handled
+        # by the marshalling code.  This can't be done via
+        # test_dump_load() since the unmarshaller doesn't produce base
+        # datetime instances.
+        dt = datetime.datetime(2005, 02, 10, 11, 41, 23)
+        s = xmlrpclib.dumps((dt,))
+        r, m = xmlrpclib.loads(s)
+        self.assertEquals(r, (xmlrpclib.DateTime('20050210T11:41:23'),))
+        self.assertEquals(m, None)
 
     def test_dump_big_long(self):
         self.assertRaises(OverflowError, xmlrpclib.dumps, (2L**99,))
