@@ -11,30 +11,123 @@ functions:
 
 \begin{funcdesc}{get_magic}{}
 Return the magic string value used to recognize byte-compiled code
-files (``\code{.pyc} files'').
+files (``\code{.pyc} files'').  (This value may be different for each
+Python version.)
 \end{funcdesc}
 
 \begin{funcdesc}{get_suffixes}{}
-Return a list of triples, each describing a particular type of file.
+Return a list of triples, each describing a particular type of module.
 Each triple has the form \code{(\var{suffix}, \var{mode},
 \var{type})}, where \var{suffix} is a string to be appended to the
 module name to form the filename to search for, \var{mode} is the mode
 string to pass to the built-in \code{open} function to open the file
 (this can be \code{'r'} for text files or \code{'rb'} for binary
 files), and \var{type} is the file type, which has one of the values
-\code{PY_SOURCE}, \code{PY_COMPILED} or \code{C_EXTENSION}, defined
-below.  (System-dependent values may also be returned.)
+\code{PY_SOURCE}, \code{PY_COMPILED}, or \code{C_EXTENSION}, defined
+below.
 \end{funcdesc}
 
 \begin{funcdesc}{find_module}{name\, \optional{path}}
-Try to find the module \var{name} on the search path \var{path}.  The
-default \var{path} is \code{sys.path}.  The return value is a triple
+Try to find the module \var{name} on the search path \var{path}.  If
+\var{path} is a list of directory names, each directory is searched
+for files with any of the suffixes returned by \code{get_suffixes()}
+above.  Invalid names in the list are silently ignored (but all list
+items must be strings).  If \var{path} is omitted or \code{None}, the
+list of directory names given by \code{sys.path} is searched, but
+first it searches a few special places: it tries to find a built-in
+module with the given name (\code{C_BUILTIN}), then a frozen module
+(\code{PY_FROZEN}), and on some systems some other places are looked
+in as well (on the Mac, it looks for a resource (\code{PY_RESOURCE});
+on Windows, it looks in the registry which may point to a specific
+file).
+
+If search is successful, the return value is a triple
 \code{(\var{file}, \var{pathname}, \var{description})} where
 \var{file} is an open file object positioned at the beginning,
 \var{pathname} is the pathname of the
 file found, and \var{description} is a triple as contained in the list
-returned by \code{get_suffixes} describing the kind of file found.
+returned by \code{get_suffixes} describing the kind of module found.
+If the module does not live in a file, the returned \var{file} is
+\code{None}, \var{filename} is the empty string, and the
+\var{description} tuple contains empty strings for its suffix and
+mode; the module type is as indicate in parentheses dabove.  If the
+search is unsuccessful, \code{ImportError} is raised.  Other
+exceptions indicate problems with the arguments or environment.
+
+This function does not handle hierarchical module names (names
+containing dots).  In order to find var{P}.\var{M}, i.e., submodule
+\var{M} of package \var{P}, use \code{find_module()} and
+\code{load_module()} to find and load package \var{P}, and then use
+\code{find_module()} with the \var{path} argument set to
+\code{\var{P}.__path__}.  When \var{P} itself has a dotted name, apply
+this recipe recursively.
 \end{funcdesc}
+
+\begin{funcdesc}{load_module}{name, file, filename, description}
+Load a module that was previously found by \code{find_module()} (or by
+an otherwise conducted search yielding compatible results).  This
+function does more than importing the module: if the module was
+already imported, it is equivalent to a \code{reload()}!  The
+\var{name} argument indicates the full module name (including the
+package name, if this is a submodule of a package).  The \var{file}
+argument is an open file, and \var{filename} is the corresponding
+file name; these can be \code{None} and \code{""}, respectively, when
+the module is not being loaded from a file.  The \var{description}
+argument is a tuple as returned by \code{find_module()} describing what
+kind of module must be loaded.
+
+If the load is successful, the return value is the module object;
+otherwise, an exception (usually \code{ImportError}) is raised.
+
+\strong{Important:} the caller is responsible for closing the
+\var{file} argument, if it was not \code{None}, even when an exception
+is raised.  This is best done using a try-finally statement.
+\end{funcdesc}
+
+\begin{funcdesc}{new_module}{name}
+Return a new empty module object called \var{name}.  This object is
+{\em not} inserted in \code{sys.modules}.
+\end{funcdesc}
+
+The following constants with integer values, defined in this module,
+are used to indicate the search result of \code{find_module()}.
+
+\begin{datadesc}{PY_SOURCE}
+The module was found as a source file.
+\end{datadesc}
+
+\begin{datadesc}{PY_COMPILED}
+The module was found as a compiled code object file.
+\end{datadesc}
+
+\begin{datadesc}{C_EXTENSION}
+The module was found as dynamically loadable shared library.
+\end{datadesc}
+
+\begin{datadesc}{PY_RESOURCE}
+The module was found as a Macintosh resource.  This value can only be
+returned on a Macintosh.
+\end{datadesc}
+
+\begin{datadesc}{PKG_DIRECTORY}
+The module was found as a package directory.
+\end{datadesc}
+
+\begin{datadesc}{C_BUILTIN}
+The module was found as a built-in module.
+\end{datadesc}
+
+\begin{datadesc}{PY_FROZEN}
+The module was found as a frozen module (see \code{init_frozen}).
+\end{datadesc}
+
+The following constant and functions are obsolete; their functionality
+is available through \code{find_module()} or \code{load_module()}.
+They are kept around for backward compatibility:
+
+\begin{datadesc}{SEARCH_ERROR}
+Unused.
+\end{datadesc}
 
 \begin{funcdesc}{init_builtin}{name}
 Initialize the built-in module called \var{name} and return its module
@@ -106,70 +199,37 @@ properly matching byte-compiled file (with suffix \code{.pyc}) exists,
 it will be used instead of parsing the given source file.
 \end{funcdesc}
 
-\begin{funcdesc}{new_module}{name}
-Return a new empty module object called \var{name}.  This object is
-{\em not} inserted in \code{sys.modules}.
-\end{funcdesc}
-
-The following constants with integer values, defined in the module,
-are used to indicate the search result of \code{imp.find_module}.
-
-\begin{datadesc}{SEARCH_ERROR}
-The module was not found.
-\end{datadesc}
-
-\begin{datadesc}{PY_SOURCE}
-The module was found as a source file.
-\end{datadesc}
-
-\begin{datadesc}{PY_COMPILED}
-The module was found as a compiled code object file.
-\end{datadesc}
-
-\begin{datadesc}{C_EXTENSION}
-The module was found as dynamically loadable shared library.
-\end{datadesc}
-
 \subsection{Examples}
-The following function emulates the default import statement:
+The following function emulates what was the standard import statement
+up to Python 1.4 (i.e., no hierarchical module names).  (This
+\emph{implementation} wouldn't work in that version, since
+\code{imp.find_module()} has been extended and
+\code{imp.load_module()} has been added in 1.4.)
 
 \bcode\begin{verbatim}
-import imp
-import sys
+import imp import sys
 
 def __import__(name, globals=None, locals=None, fromlist=None):
     # Fast path: see if the module has already been imported.
-    if sys.modules.has_key(name):
+    try:
         return sys.modules[name]
+    except KeyError:
+        pass
 
     # If any of the following calls raises an exception,
     # there's a problem we can't handle -- let the caller handle it.
 
-    # See if it's a built-in module.
-    m = imp.init_builtin(name)
-    if m:
-        return m
-
-    # See if it's a frozen module.
-    m = imp.init_frozen(name)
-    if m:
-        return m
-
-    # Search the default path (i.e. sys.path).
-    fp, pathname, (suffix, mode, type) = imp.find_module(name)
-
-    # See what we got.
+    fp, pathname, description = imp.find_module(name)
+    
     try:
-        if type == imp.C_EXTENSION:
-            return imp.load_dynamic(name, pathname)
-        if type == imp.PY_SOURCE:
-            return imp.load_source(name, pathname, fp)
-        if type == imp.PY_COMPILED:
-            return imp.load_compiled(name, pathname, fp)
-
-        # Shouldn't get here at all.
-        raise ImportError, '%s: unknown module type (%d)' % (name, type)
+        return imp.load_module(name, fp, pathname, description)
     finally:
         # Since we may exit via an exception, close fp explicitly.
-        fp.close()
+        if fp:
+            fp.close()
 \end{verbatim}\ecode
+
+A more complete example that implements hierarchical module names and
+includes a \code{reload()} function can be found in the standard
+module \code{knee} (which is intended as an example only -- don't rely
+on any part of it being a standard interface).
