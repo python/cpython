@@ -99,6 +99,7 @@ signal signalmodule.c		# signal(2)
 # Modules that should always be present (non UNIX dependent):
 
 array arraymodule.c	# array objects
+cmath cmathmodule.c	# complex math library functions
 math mathmodule.c -lm	# math library functions, e.g. sin()
 regex regexmodule.c regexpr.c	# Regular expressions, GNU Emacs style
 strop stropmodule.c	# fast string operations implemented in C
@@ -235,7 +236,7 @@ md5 md5module.c md5c.c
 # See the section "The Tk interface" in ../README for more info.
 
 # *** Use ONE of the following two lines, see previous comments ***
-#_tkinter _tkinter.c -I/usr/local/include -L/usr/local/lib -ltk -ltcl -lX11
+#_tkinter _tkinter.c -I/usr/local/include -L/usr/local/lib -ltk4.0 -ltcl7.4 -lX11
 #_tkinter _tkinter.c tkappinit.c -DWITH_APPINIT -I/usr/local/include -L/usr/local/lib -ltk -ltcl -lX11
 
 # *** ALWAYS use this line as well ***
