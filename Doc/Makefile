@@ -100,7 +100,7 @@ MKHOWTO=   TEXINPUTS=$(TEXINPUTS) $(PYTHON) $(PWD)/tools/mkhowto
 
 MKDVI=	   $(MKHOWTO) --paper=$(PAPER) --dvi
 MKHTML=	   $(MKHOWTO) --html --about html/stdabout.dat \
-		--iconserver ../icons --favicon ../icons/pyfav.gif \
+		--iconserver ../icons --favicon ../icons/pyfav.png \
 		--address $(PYTHONDOCS) --up-link ../index.html \
 		--up-title "Python Documentation Index" \
 		--global-module-index "../modindex.html" --dvips-safe
@@ -345,7 +345,7 @@ $(INDEXFILES): $(COMMONPERL) html/stdabout.dat tools/node2label.pl
 
 html/acks.html: ACKS $(TOOLSDIR)/support.py $(TOOLSDIR)/mkackshtml
 	$(PYTHON) $(TOOLSDIR)/mkackshtml --address $(PYTHONDOCS) \
-		--favicon icons/pyfav.gif \
+		--favicon icons/pyfav.png \
 		--output html/acks.html <ACKS
 
 
@@ -367,7 +367,7 @@ html/modindex.html: html/lib/lib.html html/mac/mac.html
 	cd html && \
 	 $(PYTHON) ../$(TOOLSDIR)/mkmodindex --columns 3 \
 		--output modindex.html --address $(PYTHONDOCS) \
-		--favicon icons/pyfav.gif \
+		--favicon icons/pyfav.png \
 		dist/modindex.html \
 		lib/modindex.html mac/modindex.html
 
