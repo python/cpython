@@ -15,6 +15,7 @@ INSTALLED_PYTHON=$(INSTALLDIR)/bin/python
 INSTALLED_PYTHONW=$(APPINSTALLDIR)/Contents/MacOS/python
 
 # Items more-or-less copied from the main Makefile
+VERSION=2.3
 DIRMODE=755
 INSTALL=/usr/bin/install -c
 INSTALL_SYMLINK=/usr/bin/install -l as
@@ -204,7 +205,7 @@ installmacsubtree:
 		done; \
 	done
 
-	$(INSTALL_DATA) $(PYTHONSRCDIR)/Mac/OSX/Mac.pth $(INSTALLDIR)/lib/python2.3/site-packages/
+	$(INSTALL_DATA) $(PYTHONSRCDIR)/Mac/OSX/Mac.pth $(INSTALLDIR)/lib/python$(VERSION)/site-packages/
 	
 # Put symlinks "python" and "pythonw" in the standard place
 installunixprograms: $(INSTALLED_PYTHON) pythonw.sh
@@ -212,13 +213,12 @@ installunixprograms: $(INSTALLED_PYTHON) pythonw.sh
 	$(INSTALL_SYMLINK) $(INSTALLED_PYTHON) $(UNIXBINDIR)/python
 	$(INSTALL) pythonw.sh $(UNIXBINDIR)/pythonw
 	
-# This is for development purposes: put a symlink to the Mac source subtree in the
-# framework
-symlinkmacsubtree:
-	ln -sf `cd $(PYTHONBUILDDIR)/Mac; pwd` $(INSTALLDIR)/Mac
-
-	@echo '** Copy the contents of sample_sitecustomize.py (or similar code) into'
-	@echo '**' $(INSTALLDIR)/lib/python2.3/sitecustomize.py
+# This is for development purposes: create a Mac.pth that refers to the source
+# directories
+dontinstallmacsubtree:
+	l=`cd $(PYTHONSRCDIR)/Mac/Lib; pwd`; \
+	echo $$l > $(INSTALLDIR)/lib/python$(VERSION)/site-packages/Mac.pth ; \
+	echo $$l/lib-scriptpackages >> $(INSTALLDIR)/lib/python$(VERSION)/site-packages/Mac.pth
 
 
 # Rules to build each file in OBJECTS - is there a better way?
