@@ -1191,7 +1191,6 @@ array_print(arrayobject *a, FILE *fp, int flags)
 {
 	int ok = 0;
 	int i, len;
-	PyObject *t_empty = PyTuple_New(0);
 	PyObject *v;
 	len = a->ob_size;
 	if (len == 0) {
@@ -1199,9 +1198,10 @@ array_print(arrayobject *a, FILE *fp, int flags)
 		return ok;
 	}
 	if (a->ob_descr->typecode == 'c') {
+		PyObject *t_empty = PyTuple_New(0);
 		fprintf(fp, "array('c', ");
 		v = array_tostring(a, t_empty);
-		Py_DECREF(t_empty);;
+		Py_DECREF(t_empty);
 		ok = PyObject_Print(v, fp, 0);
 		Py_XDECREF(v);
 		fprintf(fp, ")");
@@ -1231,9 +1231,11 @@ array_repr(arrayobject *a)
 		return PyString_FromString(buf);
 	}
 	if (a->ob_descr->typecode == 'c') {
+		PyObject *t_empty = PyTuple_New(0);
 		sprintf(buf, "array('c', ");
 		s = PyString_FromString(buf);
-		v = array_tostring(a, (PyObject *)NULL);
+		v = array_tostring(a, t_empty);
+		Py_DECREF(t_empty);
 		t = PyObject_Repr(v);
 		Py_XDECREF(v);
 		PyString_ConcatAndDel(&s, t);
