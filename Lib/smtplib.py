@@ -523,7 +523,7 @@ if __name__ == '__main__':
         return sys.stdin.readline().strip()
 
     fromaddr = prompt("From")
-    toaddrs  = ','.split(prompt("To"))
+    toaddrs  = prompt("To").split(',')
     print "Enter message, end with ^D:"
     msg = ''
     while 1:
