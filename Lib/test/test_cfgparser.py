@@ -97,6 +97,11 @@ def case_sensitivity():
     verify(cf.options("MySection") == ["option"])
     verify(cf.get("MySection", "Option") == "first line\nsecond line")
 
+    # SF bug #561822:
+    cf = ConfigParser.ConfigParser(defaults={"key":"value"})
+    cf.readfp(StringIO.StringIO("[section]\nnekey=nevalue\n"))
+    verify(cf.has_option("section", "Key"))
+
 
 def boolean(src):
     print "Testing interpretation of boolean Values..."
