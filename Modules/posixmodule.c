@@ -72,7 +72,7 @@ static object *PosixError; /* Exception posix.error */
 
 /* Set a POSIX-specific error from errno, and return NULL */
 
-extern object *
+static object *
 posix_error()
 {
 	return err_errno(PosixError);
