@@ -222,7 +222,7 @@ class Form:
     See Tix documentation for complete details"""
 
     def config(self, cnf={}, **kw):
-        apply(self.tk.call, ('tixForm', self._w) + self._options(cnf, kw))
+        self.tk.call('tixForm', self._w, *self._options(cnf, kw))
 
     form = config
 
@@ -292,7 +292,7 @@ class TixWidget(Tkinter.Widget):
             static_options.append('options')
         else:
             static_options = ['options']
-            
+
         for k,v in cnf.items()[:]:
             if k in static_options:
                 extra = extra + ('-' + k, v)
@@ -304,7 +304,7 @@ class TixWidget(Tkinter.Widget):
         # If widgetName is None, this is a dummy creation call where the
         # corresponding Tk widget has already been created by Tix
         if widgetName:
-            apply(self.tk.call, (widgetName, self._w) + extra)
+            self.tk.call(widgetName, self._w, *extra)
 
         # Non-static options - to be done via a 'config' command
         if cnf:
@@ -474,8 +474,8 @@ class DisplayStyle:
         elif not master and kw.has_key('refwindow'):  master= kw['refwindow']
         elif not master: raise RuntimeError, "Too early to create display style: no root window"
         self.tk = master.tk
-        self.stylename = apply(self.tk.call, ('tixDisplayStyle', itemtype) +
-                            self._options(cnf,kw) )
+        self.stylename = self.tk.call('tixDisplayStyle', itemtype,
+                            *self._options(cnf,kw) )
 
     def __str__(self):
         return self.stylename
@@ -499,8 +499,8 @@ class DisplayStyle:
     def config(self, cnf={}, **kw):
         return _lst2dict(
             self.tk.split(
-            apply(self.tk.call,
-                  (self.stylename, 'configure') + self._options(cnf,kw))))
+            self.tk.call(
+                  self.stylename, 'configure', *self._options(cnf,kw))))
 
     def __getitem__(self,key):
         return self.tk.call(self.stylename, 'cget', '-%s'%key)
@@ -532,8 +532,7 @@ class Balloon(TixWidget):
     def bind_widget(self, widget, cnf={}, **kw):
         """Bind balloon widget to another.
         One balloon widget may be bound to several widgets at the same time"""
-        apply(self.tk.call,
-              (self._w, 'bind', widget._w) + self._options(cnf, kw))
+        self.tk.call(self._w, 'bind', widget._w, *self._options(cnf, kw))
 
     def unbind_widget(self, widget):
         self.tk.call(self._w, 'unbind', widget._w)
@@ -549,8 +548,7 @@ class ButtonBox(TixWidget):
     def add(self, name, cnf={}, **kw):
         """Add a button with given name to box."""
 
-        btn = apply(self.tk.call,
-                    (self._w, 'add', name) + self._options(cnf, kw))
+        btn = self.tk.call(self._w, 'add', name, *self._options(cnf, kw))
         self.subwidget_list[name] = _dummyButton(self, name)
         return btn
 
@@ -589,7 +587,7 @@ class ComboBox(TixWidget):
             pass
 
     # align
-    
+
     def add_history(self, str):
         self.tk.call(self._w, 'addhistory', str)
 
@@ -862,14 +860,13 @@ class HList(TixWidget):
                            ['columns', 'options'], cnf, kw)
 
     def add(self, entry, cnf={}, **kw):
-        return apply(self.tk.call,
-                     (self._w, 'add', entry) + self._options(cnf, kw))
+        return self.tk.call(self._w, 'add', entry, *self._options(cnf, kw))
 
     def add_child(self, parent=None, cnf={}, **kw):
         if not parent:
             parent = ''
-        return apply(self.tk.call,
-                     (self._w, 'addchild', parent) + self._options(cnf, kw))
+        return self.tk.call(
+                     self._w, 'addchild', parent, *self._options(cnf, kw))
 
     def anchor_set(self, entry):
         self.tk.call(self._w, 'anchor', 'set', entry)
@@ -909,16 +906,15 @@ class HList(TixWidget):
         self.tk.call(self._w, 'dropsite', 'clear')
 
     def header_create(self, col, cnf={}, **kw):
-        apply(self.tk.call,
-              (self._w, 'header', 'create', col) + self._options(cnf, kw))
+        self.tk.call(self._w, 'header', 'create', col, *self._options(cnf, kw))
 
     def header_configure(self, col, cnf={}, **kw):
         if cnf is None:
             return _lst2dict(
                 self.tk.split(
                 self.tk.call(self._w, 'header', 'configure', col)))
-        apply(self.tk.call, (self._w, 'header', 'configure', col)
-              + self._options(cnf, kw))
+        self.tk.call(self._w, 'header', 'configure', col,
+                     *self._options(cnf, kw))
 
     def header_cget(self,  col, opt):
         return self.tk.call(self._w, 'header', 'cget', col, opt)
@@ -936,16 +932,16 @@ class HList(TixWidget):
         self.tk.call(self._w, 'hide', 'entry', entry)
 
     def indicator_create(self, entry, cnf={}, **kw):
-        apply(self.tk.call,
-              (self._w, 'indicator', 'create', entry) + self._options(cnf, kw))
+        self.tk.call(
+              self._w, 'indicator', 'create', entry, *self._options(cnf, kw))
 
     def indicator_configure(self, entry, cnf={}, **kw):
         if cnf is None:
             return _lst2dict(
                 self.tk.split(
                 self.tk.call(self._w, 'indicator', 'configure', entry)))
-        apply(self.tk.call,
-              (self._w, 'indicator', 'configure', entry) + self._options(cnf, kw))
+        self.tk.call(
+              self._w, 'indicator', 'configure', entry, *self._options(cnf, kw))
 
     def indicator_cget(self,  entry, opt):
         return self.tk.call(self._w, 'indicator', 'cget', entry, opt)
@@ -996,12 +992,12 @@ class HList(TixWidget):
             return _lst2dict(
                 self.tk.split(
                 self.tk.call(self._w, 'item', 'configure', entry, col)))
-        apply(self.tk.call, (self._w, 'item', 'configure', entry, col) +
-              self._options(cnf, kw))
+        self.tk.call(self._w, 'item', 'configure', entry, col,
+              *self._options(cnf, kw))
 
     def item_create(self, entry, col, cnf={}, **kw):
-        apply(self.tk.call,
-              (self._w, 'item', 'create', entry, col) + self._options(cnf, kw))
+        self.tk.call(
+              self._w, 'item', 'create', entry, col, *self._options(cnf, kw))
 
     def item_exists(self, entry, col):
         return self.tk.call(self._w, 'item', 'exists', entry, col)
@@ -1016,8 +1012,7 @@ class HList(TixWidget):
         self.tk.call(self._w, 'see', entry)
 
     def selection_clear(self, cnf={}, **kw):
-        apply(self.tk.call,
-              (self._w, 'selection', 'clear') + self._options(cnf, kw))
+        self.tk.call(self._w, 'selection', 'clear', *self._options(cnf, kw))
 
     def selection_includes(self, entry):
         return self.tk.call(self._w, 'selection', 'includes', entry)
@@ -1029,10 +1024,10 @@ class HList(TixWidget):
         return self.tk.call(self._w, 'show', 'entry', entry)
 
     def xview(self, *args):
-        apply(self.tk.call, (self._w, 'xview') + args)
+        self.tk.call(self._w, 'xview', *args)
 
     def yview(self, *args):
-        apply(self.tk.call, (self._w, 'yview') + args)
+        self.tk.call(self._w, 'yview', *args)
 
 class InputOnly(TixWidget):
     """InputOnly - Invisible widget. Unix only.
@@ -1093,8 +1088,7 @@ class ListNoteBook(TixWidget):
         self.subwidget_list['shlist'] = _dummyScrolledHList(self, 'shlist')
 
     def add(self, name, cnf={}, **kw):
-        apply(self.tk.call,
-              (self._w, 'add', name) + self._options(cnf, kw))
+        self.tk.call(self._w, 'add', name, *self._options(cnf, kw))
         self.subwidget_list[name] = TixSubWidget(self, name)
         return self.subwidget_list[name]
 
@@ -1135,8 +1129,7 @@ class NoteBook(TixWidget):
                                                       destroy_physically=0)
 
     def add(self, name, cnf={}, **kw):
-        apply(self.tk.call,
-              (self._w, 'add', name) + self._options(cnf, kw))
+        self.tk.call(self._w, 'add', name, *self._options(cnf, kw))
         self.subwidget_list[name] = TixSubWidget(self, name)
         return self.subwidget_list[name]
 
@@ -1180,12 +1173,10 @@ class OptionMenu(TixWidget):
         self.subwidget_list['menu'] = _dummyMenu(self, 'menu')
 
     def add_command(self, name, cnf={}, **kw):
-        apply(self.tk.call,
-              (self._w, 'add', 'command', name) + self._options(cnf, kw))
+        self.tk.call(self._w, 'add', 'command', name, *self._options(cnf, kw))
 
     def add_separator(self, name, cnf={}, **kw):
-        apply(self.tk.call,
-              (self._w, 'add', 'separator', name) + self._options(cnf, kw))
+        self.tk.call(self._w, 'add', 'separator', name, *self._options(cnf, kw))
 
     def delete(self, name):
         self.tk.call(self._w, 'delete', name)
@@ -1212,8 +1203,7 @@ class PanedWindow(TixWidget):
 
     # add delete forget panecget paneconfigure panes setsize
     def add(self, name, cnf={}, **kw):
-        apply(self.tk.call,
-              (self._w, 'add', name) + self._options(cnf, kw))
+        self.tk.call(self._w, 'add', name, *self._options(cnf, kw))
         self.subwidget_list[name] = TixSubWidget(self, name,
                                                  check_intermediate=0)
         return self.subwidget_list[name]
@@ -1234,8 +1224,7 @@ class PanedWindow(TixWidget):
             return _lst2dict(
                 self.tk.split(
                 self.tk.call(self._w, 'paneconfigure', entry)))
-        apply(self.tk.call,
-              (self._w, 'paneconfigure', entry) + self._options(cnf, kw))
+        self.tk.call(self._w, 'paneconfigure', entry, *self._options(cnf, kw))
 
     def panes(self):
         names = self.tk.call(self._w, 'panes')
@@ -1361,8 +1350,7 @@ class Select(TixWidget):
         self.subwidget_list['label'] = _dummyLabel(self, 'label')
 
     def add(self, name, cnf={}, **kw):
-        apply(self.tk.call,
-              (self._w, 'add', name) + self._options(cnf, kw))
+        self.tk.call(self._w, 'add', name, *self._options(cnf, kw))
         self.subwidget_list[name] = _dummyButton(self, name)
         return self.subwidget_list[name]
 
@@ -1458,8 +1446,7 @@ class TList(TixWidget):
         self.tk.call(self._w, 'dropsite', 'clear')
 
     def insert(self, index, cnf={}, **kw):
-        apply(self.tk.call,
-              (self._w, 'insert', index) + self._options(cnf, kw))
+        self.tk.call(self._w, 'insert', index, *self._options(cnf, kw))
 
     def info_active(self):
         return self.tk.call(self._w, 'info', 'active')
@@ -1493,8 +1480,7 @@ class TList(TixWidget):
         self.tk.call(self._w, 'see', index)
 
     def selection_clear(self, cnf={}, **kw):
-        apply(self.tk.call,
-              (self._w, 'selection', 'clear') + self._options(cnf, kw))
+        self.tk.call(self._w, 'selection', 'clear', *self._options(cnf, kw))
 
     def selection_includes(self, index):
         return self.tk.call(self._w, 'selection', 'includes', index)
@@ -1503,10 +1489,10 @@ class TList(TixWidget):
         self.tk.call(self._w, 'selection', 'set', first, last)
 
     def xview(self, *args):
-        apply(self.tk.call, (self._w, 'xview') + args)
+        self.tk.call(self._w, 'xview', *args)
 
     def yview(self, *args):
-        apply(self.tk.call, (self._w, 'yview') + args)
+        self.tk.call(self._w, 'yview', *args)
 
 class Tree(TixWidget):
     """Tree - The tixTree widget can be used to display hierachical
@@ -1807,7 +1793,7 @@ class Grid(TixWidget):
     # def unset x y
     # def xview
     # def yview
-    
+
 class ScrolledGrid(TixWidget):
     '''Scrolled Grid widgets'''
 

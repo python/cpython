@@ -55,7 +55,7 @@ class CanvasItem:
     def coords(self, pts = ()):
         flat = ()
         for x, y in pts: flat = flat + (x, y)
-        return apply(self.canvas.coords, (self.id,) + flat)
+        return self.canvas.coords(self.id, *flat)
     def dchars(self, first, last=None):
         self.canvas.dchars(self.id, first, last)
     def dtag(self, ttd):
@@ -84,40 +84,40 @@ class CanvasItem:
 
 class Arc(CanvasItem):
     def __init__(self, canvas, *args, **kw):
-        apply(CanvasItem.__init__, (self, canvas, 'arc') + args, kw)
+        CanvasItem.__init__(self, canvas, 'arc', *args, **kw)
 
 class Bitmap(CanvasItem):
     def __init__(self, canvas, *args, **kw):
-        apply(CanvasItem.__init__, (self, canvas, 'bitmap') + args, kw)
+        CanvasItem.__init__(self, canvas, 'bitmap', *args, **kw)
 
 class ImageItem(CanvasItem):
     def __init__(self, canvas, *args, **kw):
-        apply(CanvasItem.__init__, (self, canvas, 'image') + args, kw)
+        CanvasItem.__init__(self, canvas, 'image', *args, **kw)
 
 class Line(CanvasItem):
     def __init__(self, canvas, *args, **kw):
-        apply(CanvasItem.__init__, (self, canvas, 'line') + args, kw)
+        CanvasItem.__init__(self, canvas, 'line', *args, **kw)
 
 class Oval(CanvasItem):
     def __init__(self, canvas, *args, **kw):
-        apply(CanvasItem.__init__, (self, canvas, 'oval') + args, kw)
+        CanvasItem.__init__(self, canvas, 'oval', *args, **kw)
 
 class Polygon(CanvasItem):
     def __init__(self, canvas, *args, **kw):
-        apply(CanvasItem.__init__, (self, canvas, 'polygon') + args,kw)
+        CanvasItem.__init__(self, canvas, 'polygon', *args, **kw)
 
 class Rectangle(CanvasItem):
     def __init__(self, canvas, *args, **kw):
-        apply(CanvasItem.__init__, (self, canvas, 'rectangle')+args,kw)
+        CanvasItem.__init__(self, canvas, 'rectangle', *args, **kw)
 
 # XXX "Text" is taken by the Text widget...
 class CanvasText(CanvasItem):
     def __init__(self, canvas, *args, **kw):
-        apply(CanvasItem.__init__, (self, canvas, 'text') + args, kw)
+        CanvasItem.__init__(self, canvas, 'text', *args, **kw)
 
 class Window(CanvasItem):
     def __init__(self, canvas, *args, **kw):
-        apply(CanvasItem.__init__, (self, canvas, 'window') + args, kw)
+        CanvasItem.__init__(self, canvas, 'window', *args, **kw)
 
 class Group:
     def __init__(self, canvas, tag=None):

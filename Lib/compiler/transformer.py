@@ -72,7 +72,7 @@ def Node(*args):
     kind = args[0]
     if nodes.has_key(kind):
         try:
-            return apply(nodes[kind], args[1:])
+            return nodes[kind](*args[1:])
         except TypeError:
             print nodes[kind], len(args), args
             raise

@@ -26,7 +26,7 @@ def window_funcs(stdscr):
     for meth in [stdscr.addch, stdscr.addstr]:
         for args in [('a'), ('a', curses.A_BOLD),
                      (4,4, 'a'), (5,5, 'a', curses.A_BOLD)]:
-            apply(meth, args)
+            meth(*args)
 
     for meth in [stdscr.box, stdscr.clear, stdscr.clrtobot,
                  stdscr.clrtoeol, stdscr.cursyncup, stdscr.delch,

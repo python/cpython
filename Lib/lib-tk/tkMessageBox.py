@@ -72,37 +72,37 @@ def _show(title=None, message=None, icon=None, type=None, **options):
     if type:    options["type"] = type
     if title:   options["title"] = title
     if message: options["message"] = message
-    return apply(Message, (), options).show()
+    return Message(**options).show()
 
 def showinfo(title=None, message=None, **options):
     "Show an info message"
-    return apply(_show, (title, message, INFO, OK), options)
+    return _show(title, message, INFO, OK, **options)
 
 def showwarning(title=None, message=None, **options):
     "Show a warning message"
-    return apply(_show, (title, message, WARNING, OK), options)
+    return _show(title, message, WARNING, OK, **options)
 
 def showerror(title=None, message=None, **options):
     "Show an error message"
-    return apply(_show, (title, message, ERROR, OK), options)
+    return _show(title, message, ERROR, OK, **options)
 
 def askquestion(title=None, message=None, **options):
     "Ask a question"
-    return apply(_show, (title, message, QUESTION, YESNO), options)
+    return _show(title, message, QUESTION, YESNO, **options)
 
 def askokcancel(title=None, message=None, **options):
     "Ask if operation should proceed; return true if the answer is ok"
-    s = apply(_show, (title, message, QUESTION, OKCANCEL), options)
+    s = _show(title, message, QUESTION, OKCANCEL, **options)
     return s == OK
 
 def askyesno(title=None, message=None, **options):
     "Ask a question; return true if the answer is yes"
-    s = apply(_show, (title, message, QUESTION, YESNO), options)
+    s = _show(title, message, QUESTION, YESNO, **options)
     return s == YES
 
 def askretrycancel(title=None, message=None, **options):
     "Ask if operation should be retried; return true if the answer is yes"
-    s = apply(_show, (title, message, WARNING, RETRYCANCEL), options)
+    s = _show(title, message, WARNING, RETRYCANCEL, **options)
     return s == RETRY
 
 

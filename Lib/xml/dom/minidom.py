@@ -1902,7 +1902,7 @@ def _get_StringIO():
     return StringIO()
 
 def _do_pulldom_parse(func, args, kwargs):
-    events = apply(func, args, kwargs)
+    events = func(*args, **kwargs)
     toktype, rootNode = events.getEvent()
     events.expandNode(rootNode)
     events.clear()
@@ -1915,7 +1915,7 @@ def parse(file, parser=None, bufsize=None):
         return expatbuilder.parse(file)
     else:
         from xml.dom import pulldom
-        return _do_pulldom_parse(pulldom.parse, (file,), 
+        return _do_pulldom_parse(pulldom.parse, (file,),
             {'parser': parser, 'bufsize': bufsize})
 
 def parseString(string, parser=None):

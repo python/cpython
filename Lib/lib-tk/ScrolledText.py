@@ -24,11 +24,11 @@ class ScrolledText(Text):
             if type(k) == ClassType or k == 'name':
                 fcnf[k] = cnf[k]
                 del cnf[k]
-        self.frame = apply(Frame, (master,), fcnf)
+        self.frame = Frame(master, **fcnf)
         self.vbar = Scrollbar(self.frame, name='vbar')
         self.vbar.pack(side=RIGHT, fill=Y)
         cnf['name'] = 'text'
-        apply(Text.__init__, (self, self.frame), cnf)
+        Text.__init__(self, self.frame, **cnf)
         self.pack(side=LEFT, fill=BOTH, expand=1)
         self['yscrollcommand'] = self.vbar.set
         self.vbar['command'] = self.yview

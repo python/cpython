@@ -49,7 +49,7 @@ class Dialog:
 
         try:
 
-            s = apply(w.tk.call, (self.command,) + w._options(self.options))
+            s = w.tk.call(self.command, *w._options(self.options))
 
             s = self._fixresult(w, s)
 

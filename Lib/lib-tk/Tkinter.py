@@ -4,10 +4,10 @@ Tkinter provides classes which allow the display, positioning and
 control of widgets. Toplevel widgets are Tk and Toplevel. Other
 widgets are Frame, Label, Entry, Text, Canvas, Button, Radiobutton,
 Checkbutton, Scale, Listbox, Scrollbar, OptionMenu, Spinbox
-LabelFrame and PanedWindow. 
+LabelFrame and PanedWindow.
 
-Properties of the widgets are specified with keyword arguments.  
-Keyword arguments have the same name as the corresponding resource 
+Properties of the widgets are specified with keyword arguments.
+Keyword arguments have the same name as the corresponding resource
 under Tk.
 
 Widgets are positioned with one of the geometry managers Place, Pack
@@ -444,7 +444,7 @@ class Misc:
             tmp = []
             def callit(func=func, args=args, self=self, tmp=tmp):
                 try:
-                    apply(func, args)
+                    func(*args)
                 finally:
                     try:
                         self.deletecommand(tmp[0])
@@ -459,7 +459,7 @@ class Misc:
 
         Return an identifier to cancel the scheduling with
         after_cancel."""
-        return apply(self.after, ('idle', func) + args)
+        return self.after('idle', func, *args)
     def after_cancel(self, id):
         """Cancel scheduling of function identified with ID.
 
@@ -1182,7 +1182,7 @@ class Misc:
             args = args + (column, row)
         if col2 is not None and row2 is not None:
             args = args + (col2, row2)
-        return self._getints(apply(self.tk.call, args)) or None
+        return self._getints(self.tk.call(*args)) or None
 
     bbox = grid_bbox
     def _grid_configure(self, command, index, cnf, kw):
@@ -1324,8 +1324,8 @@ class CallWrapper:
         """Apply first function SUBST to arguments, than FUNC."""
         try:
             if self.subst:
-                args = apply(self.subst, args)
-            return apply(self.func, args)
+                args = self.subst(*args)
+            return self.func(*args)
         except SystemExit, msg:
             raise SystemExit, msg
         except:
@@ -1334,7 +1334,7 @@ class CallWrapper:
 
 class Wm:
     """Provides functions for the communication with the window manager."""
-    
+
     def wm_aspect(self,
               minNumer=None, minDenom=None,
               maxNumer=None, maxDenom=None):
@@ -1346,29 +1346,29 @@ class Wm:
                      minNumer, minDenom,
                      maxNumer, maxDenom))
     aspect = wm_aspect
-    
+
     def wm_attributes(self, *args):
         """This subcommand returns or sets platform specific attributes
-        
-        The first form returns a list of the platform specific flags and 
-        their values. The second form returns the value for the specific 
+
+        The first form returns a list of the platform specific flags and
+        their values. The second form returns the value for the specific
         option. The third form sets one or more of the values. The values
         are as follows:
-        
-        On Windows, -disabled gets or sets whether the window is in a 
+
+        On Windows, -disabled gets or sets whether the window is in a
         disabled state. -toolwindow gets or sets the style of the window
-        to toolwindow (as defined in the MSDN). -topmost gets or sets 
-        whether this is a topmost window (displays above all other 
+        to toolwindow (as defined in the MSDN). -topmost gets or sets
+        whether this is a topmost window (displays above all other
         windows).
-        
-        On Macintosh, XXXXX 
-        
+
+        On Macintosh, XXXXX
+
         On Unix, there are currently no special attribute values.
         """
         args = ('wm', 'attributes', self._w) + args
         return self.tk.call(args)
     attributes=wm_attributes
-    
+
     def wm_client(self, name=None):
         """Store NAME in WM_CLIENT_MACHINE property of this widget. Return
         current value."""
@@ -1868,56 +1868,56 @@ class Button(Widget):
     """Button widget."""
     def __init__(self, master=None, cnf={}, **kw):
         """Construct a button widget with the parent MASTER.
-        
+
         STANDARD OPTIONS
-        
+
             activebackground, activeforeground, anchor,
             background, bitmap, borderwidth, cursor,
-            disabledforeground, font, foreground 
+            disabledforeground, font, foreground
             highlightbackground, highlightcolor,
-            highlightthickness, image, justify, 
+            highlightthickness, image, justify,
             padx, pady, relief, repeatdelay,
-            repeatinterval, takefocus, text, 
+            repeatinterval, takefocus, text,
             textvariable, underline, wraplength
-        
+
         WIDGET-SPECIFIC OPTIONS
-        
+
             command, compound, default, height,
             overrelief, state, width
         """
         Widget.__init__(self, master, 'button', cnf, kw)
-        
+
     def tkButtonEnter(self, *dummy):
         self.tk.call('tkButtonEnter', self._w)
-        
+
     def tkButtonLeave(self, *dummy):
         self.tk.call('tkButtonLeave', self._w)
-        
+
     def tkButtonDown(self, *dummy):
         self.tk.call('tkButtonDown', self._w)
-        
+
     def tkButtonUp(self, *dummy):
         self.tk.call('tkButtonUp', self._w)
-        
+
     def tkButtonInvoke(self, *dummy):
         self.tk.call('tkButtonInvoke', self._w)
-        
+
     def flash(self):
-        """Flash the button. 
-        
-        This is accomplished by redisplaying 
-        the button several times, alternating between active and 
-        normal colors. At the end of the flash the button is left 
-        in the same normal/active state as when the command was 
-        invoked. This command is ignored if the button's state is 
+        """Flash the button.
+
+        This is accomplished by redisplaying
+        the button several times, alternating between active and
+        normal colors. At the end of the flash the button is left
+        in the same normal/active state as when the command was
+        invoked. This command is ignored if the button's state is
         disabled.
         """
         self.tk.call(self._w, 'flash')
-        
+
     def invoke(self):
-        """Invoke the command associated with the button. 
-        
-        The return value is the return value from the command, 
+        """Invoke the command associated with the button.
+
+        The return value is the return value from the command,
         or an empty string if there is no command associated with
         the button. This command is ignored if the button's state
         is disabled.
@@ -2028,10 +2028,9 @@ class Canvas(Widget):
             args = args[:-1]
         else:
             cnf = {}
-        return getint(apply(
-            self.tk.call,
-            (self._w, 'create', itemType)
-            + args + self._options(cnf, kw)))
+        return getint(self.tk.call(
+            self._w, 'create', itemType,
+            *(args + self._options(cnf, kw))))
     def create_arc(self, *args, **kw):
         """Create arc shaped region with coordinates x1,y1,x2,y2."""
         return self._create('arc', args, kw)
@@ -2334,21 +2333,21 @@ class Label(Widget):
     """Label widget which can display text and bitmaps."""
     def __init__(self, master=None, cnf={}, **kw):
         """Construct a label widget with the parent MASTER.
-        
+
         STANDARD OPTIONS
-        
-            activebackground, activeforeground, anchor, 
-            background, bitmap, borderwidth, cursor, 
+
+            activebackground, activeforeground, anchor,
+            background, bitmap, borderwidth, cursor,
             disabledforeground, font, foreground,
-            highlightbackground, highlightcolor, 
-            highlightthickness, image, justify, 
-            padx, pady, relief, takefocus, text, 
+            highlightbackground, highlightcolor,
+            highlightthickness, image, justify,
+            padx, pady, relief, takefocus, text,
             textvariable, underline, wraplength
-        
+
         WIDGET-SPECIFIC OPTIONS
-        
+
             height, state, width
-            
+
         """
         Widget.__init__(self, master, 'label', cnf, kw)
 
@@ -2686,33 +2685,33 @@ class Scrollbar(Widget):
         """Set the fractional values of the slider position (upper and
         lower ends as value between 0 and 1)."""
         self.tk.call((self._w, 'set') + args)
-        
-        
-        
+
+
+
 class Text(Widget):
     """Text widget which can display text in various forms."""
     def __init__(self, master=None, cnf={}, **kw):
         """Construct a text widget with the parent MASTER.
-        
+
         STANDARD OPTIONS
-        
+
             background, borderwidth, cursor,
             exportselection, font, foreground,
             highlightbackground, highlightcolor,
             highlightthickness, insertbackground,
             insertborderwidth, insertofftime,
             insertontime, insertwidth, padx, pady,
-            relief, selectbackground, 
+            relief, selectbackground,
             selectborderwidth, selectforeground,
-            setgrid, takefocus, 
+            setgrid, takefocus,
             xscrollcommand, yscrollcommand,
 
         WIDGET-SPECIFIC OPTIONS
-        
+
             autoseparators, height, maxundo,
-            spacing1, spacing2, spacing3, 
+            spacing1, spacing2, spacing3,
             state, tabs, undo, width, wrap,
-        
+
         """
         Widget.__init__(self, master, 'text', cnf, kw)
     def bbox(self, *args):
@@ -2748,13 +2747,13 @@ class Text(Widget):
         return self._getints(self.tk.call(self._w, 'dlineinfo', index))
     def dump(self, index1, index2=None, command=None, **kw):
         """Return the contents of the widget between index1 and index2.
-        
+
         The type of contents returned in filtered based on the keyword
         parameters; if 'all', 'image', 'mark', 'tag', 'text', or 'window' are
         given and true, then the corresponding items are returned. The result
         is a list of triples of the form (key, value, index). If none of the
         keywords are true then 'all' is used by default.
-        
+
         If the 'command' argument is given, it is called once for each element
         of the list of triples, with the values of each triple serving as the
         arguments to the function. In this case the list is not returned."""
@@ -2784,68 +2783,68 @@ class Text(Widget):
         finally:
             if func_name:
                 self.deletecommand(func_name)
-                
+
     ## new in tk8.4
     def edit(self, *args):
         """Internal method
-        
-        This method controls the undo mechanism and 
-        the modified flag. The exact behavior of the 
-        command depends on the option argument that 
-        follows the edit argument. The following forms 
+
+        This method controls the undo mechanism and
+        the modified flag. The exact behavior of the
+        command depends on the option argument that
+        follows the edit argument. The following forms
         of the command are currently supported:
-        
+
         edit_modified, edit_redo, edit_reset, edit_separator
         and edit_undo
-        
+
         """
         return self._getints(
             self.tk.call((self._w, 'edit') + args)) or ()
 
     def edit_modified(self, arg=None):
         """Get or Set the modified flag
-        
+
         If arg is not specified, returns the modified
-        flag of the widget. The insert, delete, edit undo and 
-        edit redo commands or the user can set or clear the 
-        modified flag. If boolean is specified, sets the 
+        flag of the widget. The insert, delete, edit undo and
+        edit redo commands or the user can set or clear the
+        modified flag. If boolean is specified, sets the
         modified flag of the widget to arg.
         """
         return self.edit("modified", arg)
-        
+
     def edit_redo(self):
         """Redo the last undone edit
-                
-        When the undo option is true, reapplies the last 
-        undone edits provided no other edits were done since 
+
+        When the undo option is true, reapplies the last
+        undone edits provided no other edits were done since
         then. Generates an error when the redo stack is empty.
         Does nothing when the undo option is false.
         """
         return self.edit("redo")
-        
+
     def edit_reset(self):
         """Clears the undo and redo stacks
         """
         return self.edit("reset")
-        
+
     def edit_separator(self):
-        """Inserts a separator (boundary) on the undo stack. 
-        
+        """Inserts a separator (boundary) on the undo stack.
+
         Does nothing when the undo option is false
         """
         return self.edit("separator")
-        
+
     def edit_undo(self):
-        """Undoes the last edit action 
-        
-        If the undo option is true. An edit action is defined 
-        as all the insert and delete commands that are recorded 
-        on the undo stack in between two separators. Generates 
-        an error when the undo stack is empty. Does nothing 
+        """Undoes the last edit action
+
+        If the undo option is true. An edit action is defined
+        as all the insert and delete commands that are recorded
+        on the undo stack in between two separators. Generates
+        an error when the undo stack is empty. Does nothing
         when the undo option is false
         """
         return self.edit("undo")
-                        
+
     def get(self, index1, index2=None):
         """Return the text from INDEX1 to INDEX2 (not included)."""
         return self.tk.call(self._w, 'get', index1, index2)
@@ -2862,9 +2861,9 @@ class Text(Widget):
         return self._configure(('image', 'configure', index), cnf, kw)
     def image_create(self, index, cnf={}, **kw):
         """Create an embedded image at INDEX."""
-        return apply(self.tk.call,
-                 (self._w, "image", "create", index)
-                 + self._options(cnf, kw))
+        return self.tk.call(
+                 self._w, "image", "create", index,
+                 *self._options(cnf, kw))
     def image_names(self):
         """Return all names of embedded images in this widget."""
         return self.tk.call(self._w, "image", "names")
@@ -3050,7 +3049,7 @@ class _setit:
     def __call__(self, *args):
         self.__var.set(self.__value)
         if self.__callback:
-            apply(self.__callback, (self.__value,)+args)
+            self.__callback(self.__value, *args)
 
 class OptionMenu(Menubutton):
     """OptionMenu which allows the user to select a value from a menu."""
@@ -3156,7 +3155,7 @@ class PhotoImage(Image):
 
         Valid resource names: data, format, file, gamma, height, palette,
         width."""
-        apply(Image.__init__, (self, 'photo', name, cnf, master), kw)
+        Image.__init__(self, 'photo', name, cnf, master, **kw)
     def blank(self):
         """Display a transparent image."""
         self.tk.call(self.name, 'blank')
@@ -3215,7 +3214,7 @@ class BitmapImage(Image):
         """Create a bitmap with NAME.
 
         Valid resource names: background, data, file, foreground, maskdata, maskfile."""
-        apply(Image.__init__, (self, 'bitmap', name, cnf, master), kw)
+        Image.__init__(self, 'bitmap', name, cnf, master, **kw)
 
 def image_names(): return _default_root.tk.call('image', 'names')
 def image_types(): return _default_root.tk.call('image', 'types')
@@ -3225,154 +3224,154 @@ class Spinbox(Widget):
     """spinbox widget."""
     def __init__(self, master=None, cnf={}, **kw):
         """Construct a spinbox widget with the parent MASTER.
-        
+
         STANDARD OPTIONS
-        
+
             activebackground, background, borderwidth,
             cursor, exportselection, font, foreground,
             highlightbackground, highlightcolor,
             highlightthickness, insertbackground,
             insertborderwidth, insertofftime,
-            insertontime, insertwidth, justify, relief, 
-            repeatdelay, repeatinterval, 
+            insertontime, insertwidth, justify, relief,
+            repeatdelay, repeatinterval,
             selectbackground, selectborderwidth
             selectforeground, takefocus, textvariable
             xscrollcommand.
-            
+
         WIDGET-SPECIFIC OPTIONS
-        
-            buttonbackground, buttoncursor, 
-            buttondownrelief, buttonuprelief, 
-            command, disabledbackground, 
-            disabledforeground, format, from, 
-            invalidcommand, increment, 
-            readonlybackground, state, to, 
+
+            buttonbackground, buttoncursor,
+            buttondownrelief, buttonuprelief,
+            command, disabledbackground,
+            disabledforeground, format, from,
+            invalidcommand, increment,
+            readonlybackground, state, to,
             validate, validatecommand values,
             width, wrap,
         """
         Widget.__init__(self, master, 'spinbox', cnf, kw)
-        
+
     def bbox(self, index):
-        """Return a tuple of X1,Y1,X2,Y2 coordinates for a 
-        rectangle which encloses the character given by index. 
-        
-        The first two elements of the list give the x and y 
-        coordinates of the upper-left corner of the screen 
-        area covered by the character (in pixels relative 
-        to the widget) and the last two elements give the 
-        width and height of the character, in pixels. The 
-        bounding box may refer to a region outside the 
+        """Return a tuple of X1,Y1,X2,Y2 coordinates for a
+        rectangle which encloses the character given by index.
+
+        The first two elements of the list give the x and y
+        coordinates of the upper-left corner of the screen
+        area covered by the character (in pixels relative
+        to the widget) and the last two elements give the
+        width and height of the character, in pixels. The
+        bounding box may refer to a region outside the
         visible area of the window.
         """
         return self.tk.call(self._w, 'bbox', index)
-        
+
     def delete(self, first, last=None):
         """Delete one or more elements of the spinbox.
-        
-        First is the index of the first character to delete, 
-        and last is the index of the character just after 
-        the last one to delete. If last isn't specified it 
-        defaults to first+1, i.e. a single character is 
+
+        First is the index of the first character to delete,
+        and last is the index of the character just after
+        the last one to delete. If last isn't specified it
+        defaults to first+1, i.e. a single character is
         deleted.  This command returns an empty string.
         """
         return self.tk.call(self._w, 'delete', first, last)
-        
+
     def get(self):
         """Returns the spinbox's string"""
         return self.tk.call(self._w, 'get')
-        
+
     def icursor(self, index):
         """Alter the position of the insertion cursor.
-        
-        The insertion cursor will be displayed just before 
+
+        The insertion cursor will be displayed just before
         the character given by index. Returns an empty string
         """
         return self.tk.call(self._w, 'icursor', index)
-        
+
     def identify(self, x, y):
-        """Returns the name of the widget at position x, y 
-        
+        """Returns the name of the widget at position x, y
+
         Return value is one of: none, buttondown, buttonup, entry
         """
         return self.tk.call(self._w, 'identify', x, y)
-        
+
     def index(self, index):
         """Returns the numerical index corresponding to index
         """
         return self.tk.call(self._w, 'index', index)
-        
+
     def insert(self, index, s):
-        """Insert string s at index 
-        
+        """Insert string s at index
+
          Returns an empty string.
         """
         return self.tk.call(self._w, 'insert', index, s)
-        
+
     def invoke(self, element):
         """Causes the specified element to be invoked
-        
+
         The element could be buttondown or buttonup
         triggering the action associated with it.
         """
         return self.tk.call(self._w, 'invoke', element)
-    
+
     def scan(self, *args):
         """Internal function."""
         return self._getints(
             self.tk.call((self._w, 'scan') + args)) or ()
-            
+
     def scan_mark(self, x):
-        """Records x and the current view in the spinbox window; 
-        
-        used in conjunction with later scan dragto commands. 
-        Typically this command is associated with a mouse button 
+        """Records x and the current view in the spinbox window;
+
+        used in conjunction with later scan dragto commands.
+        Typically this command is associated with a mouse button
         press in the widget. It returns an empty string.
         """
         return self.scan("mark", x)
-        
+
     def scan_dragto(self, x):
-        """Compute the difference between the given x argument 
+        """Compute the difference between the given x argument
         and the x argument to the last scan mark command
-        
-        It then adjusts the view left or right by 10 times the 
-        difference in x-coordinates. This command is typically 
-        associated with mouse motion events in the widget, to 
+
+        It then adjusts the view left or right by 10 times the
+        difference in x-coordinates. This command is typically
+        associated with mouse motion events in the widget, to
         produce the effect of dragging the spinbox at high speed
         through the window. The return value is an empty string.
         """
         return self.scan("dragto", x)
-        
+
     def selection(self, *args):
         """Internal function."""
         return self._getints(
             self.tk.call((self._w, 'selection') + args)) or ()
-    
+
     def selection_adjust(self, index):
         """Locate the end of the selection nearest to the character
-        given by index, 
-        
-        Then adjust that end of the selection to be at index 
-        (i.e including but not going beyond index). The other 
+        given by index,
+
+        Then adjust that end of the selection to be at index
+        (i.e including but not going beyond index). The other
         end of the selection is made the anchor point for future
-        select to commands. If the selection isn't currently in 
-        the spinbox, then a new selection is created to include 
-        the characters between index and the most recent selection 
+        select to commands. If the selection isn't currently in
+        the spinbox, then a new selection is created to include
+        the characters between index and the most recent selection
         anchor point, inclusive. Returns an empty string.
         """
         return self.selection("adjust", index)
-            
+
     def selection_clear(self):
-        """Clear the selection 
-        
-        If the selection isn't in this widget then the 
+        """Clear the selection
+
+        If the selection isn't in this widget then the
         command has no effect. Returns an empty string.
         """
         return self.selection("clear")
-    
+
     def selection_element(self, element=None):
-        """Sets or gets the currently selected element. 
-        
-        If a spinbutton element is specified, it will be 
+        """Sets or gets the currently selected element.
+
+        If a spinbutton element is specified, it will be
         displayed depressed
         """
         return self.selection("element", element)
@@ -3383,198 +3382,198 @@ class LabelFrame(Widget):
     """labelframe widget."""
     def __init__(self, master=None, cnf={}, **kw):
         """Construct a labelframe widget with the parent MASTER.
-           
+
         STANDARD OPTIONS
-        
-            borderwidth, cursor, font, foreground, 
-            highlightbackground, highlightcolor, 
-            highlightthickness, padx, pady, relief, 
+
+            borderwidth, cursor, font, foreground,
+            highlightbackground, highlightcolor,
+            highlightthickness, padx, pady, relief,
             takefocus, text
-            
+
         WIDGET-SPECIFIC OPTIONS
-        
-            background, class, colormap, container, 
-            height, labelanchor, labelwidget, 
+
+            background, class, colormap, container,
+            height, labelanchor, labelwidget,
             visual, width
         """
         Widget.__init__(self, master, 'labelframe', cnf, kw)
-        
+
 ########################################################################
 
 class PanedWindow(Widget):
     """panedwindow widget."""
     def __init__(self, master=None, cnf={}, **kw):
         """Construct a panedwindow widget with the parent MASTER.
-        
+
         STANDARD OPTIONS
-            
+
             background, borderwidth, cursor, height,
             orient, relief, width
-            
+
         WIDGET-SPECIFIC OPTIONS
-            
-            handlepad, handlesize, opaqueresize, 
-            sashcursor, sashpad, sashrelief, 
+
+            handlepad, handlesize, opaqueresize,
+            sashcursor, sashpad, sashrelief,
             sashwidth, showhandle,
         """
         Widget.__init__(self, master, 'panedwindow', cnf, kw)
 
     def add(self, child, **kw):
-        """Add a child widget to the panedwindow in a new pane. 
-        
-        The child argument is the name of the child widget 
-        followed by pairs of arguments that specify how to 
-        manage the windows. Options may have any of the values 
+        """Add a child widget to the panedwindow in a new pane.
+
+        The child argument is the name of the child widget
+        followed by pairs of arguments that specify how to
+        manage the windows. Options may have any of the values
         accepted by the configure subcommand.
         """
         self.tk.call((self._w, 'add', child) + self._options(kw))
-        
+
     def remove(self, child):
         """Remove the pane containing child from the panedwindow
-        
+
         All geometry management options for child will be forgotten.
         """
         self.tk.call(self._w, 'forget', child)
     forget=remove
-        
+
     def identify(self, x, y):
         """Identify the panedwindow component at point x, y
-        
-        If the point is over a sash or a sash handle, the result 
+
+        If the point is over a sash or a sash handle, the result
         is a two element list containing the index of the sash or
-        handle, and a word indicating whether it is over a sash 
-        or a handle, such as {0 sash} or {2 handle}. If the point 
-        is over any other part of the panedwindow, the result is 
+        handle, and a word indicating whether it is over a sash
+        or a handle, such as {0 sash} or {2 handle}. If the point
+        is over any other part of the panedwindow, the result is
         an empty list.
         """
         return self.tk.call(self._w, 'identify', x, y)
-        
+
     def proxy(self, *args):
         """Internal function."""
         return self._getints(
-            self.tk.call((self._w, 'proxy') + args)) or ()          
-        
+            self.tk.call((self._w, 'proxy') + args)) or ()
+
     def proxy_coord(self):
         """Return the x and y pair of the most recent proxy location
         """
         return self.proxy("coord")
-        
+
     def proxy_forget(self):
         """Remove the proxy from the display.
         """
         return self.proxy("forget")
-        
+
     def proxy_place(self, x, y):
-        """Place the proxy at the given x and y coordinates. 
+        """Place the proxy at the given x and y coordinates.
         """
         return self.proxy("place", x, y)
-        
+
     def sash(self, *args):
         """Internal function."""
         return self._getints(
             self.tk.call((self._w, 'sash') + args)) or ()
-        
+
     def sash_coord(self, index):
-        """Return the current x and y pair for the sash given by index. 
-        
-        Index must be an integer between 0 and 1 less than the 
-        number of panes in the panedwindow. The coordinates given are 
-        those of the top left corner of the region containing the sash. 
-        pathName sash dragto index x y This command computes the 
-        difference between the given coordinates and the coordinates 
-        given to the last sash coord command for the given sash. It then 
-        moves that sash the computed difference. The return value is the 
+        """Return the current x and y pair for the sash given by index.
+
+        Index must be an integer between 0 and 1 less than the
+        number of panes in the panedwindow. The coordinates given are
+        those of the top left corner of the region containing the sash.
+        pathName sash dragto index x y This command computes the
+        difference between the given coordinates and the coordinates
+        given to the last sash coord command for the given sash. It then
+        moves that sash the computed difference. The return value is the
         empty string.
         """
         return self.sash("coord", index)
-        
+
     def sash_mark(self, index):
-        """Records x and y for the sash given by index; 
-        
+        """Records x and y for the sash given by index;
+
         Used in conjunction with later dragto commands to move the sash.
         """
         return self.sash("mark", index)
-        
+
     def sash_place(self, index, x, y):
         """Place the sash given by index at the given coordinates
         """
         return self.sash("place", index, x, y)
-        
+
     def panecget(self, child, option):
-        """Query a management option for window. 
-        
+        """Query a management option for window.
+
         Option may be any value allowed by the paneconfigure subcommand
         """
         return self.tk.call(
             (self._w, 'panecget') + (child, '-'+option))
-        
+
     def paneconfigure(self, tagOrId, cnf=None, **kw):
-        """Query or modify the management options for window. 
-        
+        """Query or modify the management options for window.
+
         If no option is specified, returns a list describing all
-        of the available options for pathName.  If option is 
-        specified with no value, then the command returns a list 
-        describing the one named option (this list will be identical 
-        to the corresponding sublist of the value returned if no 
-        option is specified). If one or more option-value pairs are 
-        specified, then the command modifies the given widget 
-        option(s) to have the given value(s); in this case the 
-        command returns an empty string. The following options 
+        of the available options for pathName.  If option is
+        specified with no value, then the command returns a list
+        describing the one named option (this list will be identical
+        to the corresponding sublist of the value returned if no
+        option is specified). If one or more option-value pairs are
+        specified, then the command modifies the given widget
+        option(s) to have the given value(s); in this case the
+        command returns an empty string. The following options
         are supported:
-        
+
         after window
-            Insert the window after the window specified. window 
+            Insert the window after the window specified. window
             should be the name of a window already managed by pathName.
         before window
-            Insert the window before the window specified. window 
+            Insert the window before the window specified. window
             should be the name of a window already managed by pathName.
         height size
-            Specify a height for the window. The height will be the 
-            outer dimension of the window including its border, if 
-            any. If size is an empty string, or if -height is not 
-            specified, then the height requested internally by the 
-            window will be used initially; the height may later be 
-            adjusted by the movement of sashes in the panedwindow. 
+            Specify a height for the window. The height will be the
+            outer dimension of the window including its border, if
+            any. If size is an empty string, or if -height is not
+            specified, then the height requested internally by the
+            window will be used initially; the height may later be
+            adjusted by the movement of sashes in the panedwindow.
             Size may be any value accepted by Tk_GetPixels.
         minsize n
-            Specifies that the size of the window cannot be made 
-            less than n. This constraint only affects the size of 
-            the widget in the paned dimension -- the x dimension 
-            for horizontal panedwindows, the y dimension for 
-            vertical panedwindows. May be any value accepted by 
+            Specifies that the size of the window cannot be made
+            less than n. This constraint only affects the size of
+            the widget in the paned dimension -- the x dimension
+            for horizontal panedwindows, the y dimension for
+            vertical panedwindows. May be any value accepted by
             Tk_GetPixels.
         padx n
-            Specifies a non-negative value indicating how much 
-            extra space to leave on each side of the window in 
-            the X-direction. The value may have any of the forms 
+            Specifies a non-negative value indicating how much
+            extra space to leave on each side of the window in
+            the X-direction. The value may have any of the forms
             accepted by Tk_GetPixels.
         pady n
             Specifies a non-negative value indicating how much
-            extra space to leave on each side of the window in 
-            the Y-direction. The value may have any of the forms 
+            extra space to leave on each side of the window in
+            the Y-direction. The value may have any of the forms
             accepted by Tk_GetPixels.
         sticky style
-            If a window's pane is larger than the requested 
-            dimensions of the window, this option may be used 
-            to position (or stretch) the window within its pane. 
-            Style is a string that contains zero or more of the 
-            characters n, s, e or w. The string can optionally 
-            contains spaces or commas, but they are ignored. Each 
-            letter refers to a side (north, south, east, or west) 
-            that the window will "stick" to. If both n and s 
-            (or e and w) are specified, the window will be 
-            stretched to fill the entire height (or width) of 
+            If a window's pane is larger than the requested
+            dimensions of the window, this option may be used
+            to position (or stretch) the window within its pane.
+            Style is a string that contains zero or more of the
+            characters n, s, e or w. The string can optionally
+            contains spaces or commas, but they are ignored. Each
+            letter refers to a side (north, south, east, or west)
+            that the window will "stick" to. If both n and s
+            (or e and w) are specified, the window will be
+            stretched to fill the entire height (or width) of
             its cavity.
         width size
-            Specify a width for the window. The width will be 
-            the outer dimension of the window including its 
-            border, if any. If size is an empty string, or 
+            Specify a width for the window. The width will be
+            the outer dimension of the window including its
+            border, if any. If size is an empty string, or
             if -width is not specified, then the width requested
-            internally by the window will be used initially; the 
-            width may later be adjusted by the movement of sashes 
-            in the panedwindow. Size may be any value accepted by 
+            internally by the window will be used initially; the
+            width may later be adjusted by the movement of sashes
+            in the panedwindow. Size may be any value accepted by
             Tk_GetPixels.
-                
+
         """
         if cnf is None and not kw:
             cnf = {}
