@@ -79,14 +79,14 @@ zlib_error(z_stream zst, int err, char *msg)
 }
 
 static char compressobj__doc__[] =
-"compressobj() -- Return a compressor object.\n"
-"compressobj(level) -- Return a compressor object, using the given compression level.\n"
-;
+"compressobj([level]) -- Return a compressor object.\n"
+"\n"
+"Optional arg level is the compression level, in 1-9.";
 
 static char decompressobj__doc__[] =
-"decompressobj() -- Return a decompressor object.\n"
-"decompressobj(wbits) -- Return a decompressor object, setting the window buffer size to wbits.\n"
-;
+"decompressobj([wbits]) -- Return a decompressor object.\n"
+"\n"
+"Optional arg wbits is the window buffer size.";
 
 static compobject *
 newcompobject(PyTypeObject *type)
@@ -110,11 +110,9 @@ newcompobject(PyTypeObject *type)
 }
 
 static char compress__doc__[] =
-"compress(string) -- Compress string using the default compression level, "
-"returning a string containing compressed data.\n"
-"compress(string, level) -- Compress string, using the chosen compression "
-"level (from 1 to 9).  Return a string containing the compressed data.\n"
-;
+"compress(string[, level]) -- Returned compressed string.\n"
+"\n"
+"Optional arg level is the compression level, in 1-9.";
 
 static PyObject *
 PyZlib_compress(PyObject *self, PyObject *args)
@@ -188,10 +186,10 @@ PyZlib_compress(PyObject *self, PyObject *args)
 }
 
 static char decompress__doc__[] =
-"decompress(string) -- Decompress the data in string, returning a string containing the decompressed data.\n"
-"decompress(string, wbits) -- Decompress the data in string with a window buffer size of wbits.\n"
-"decompress(string, wbits, bufsize) -- Decompress the data in string with a window buffer size of wbits and an initial output buffer size of bufsize.\n"
-;
+"decompress(string[, wbits[, bufsize]]) -- Return decompressed string.\n"
+"\n"
+"Optional arg wbits is the window buffer size.  Optional arg bufsize is\n"
+"the initial output buffer size.";
 
 static PyObject *
 PyZlib_decompress(PyObject *self, PyObject *args)
@@ -380,11 +378,11 @@ Decomp_dealloc(compobject *self)
 }
 
 static char comp_compress__doc__[] =
-"compress(data) -- Return a string containing a compressed version of the data.\n\n"
+"compress(data) -- Return a string containing data compressed.\n"
+"\n"
 "After calling this function, some of the input data may still\n"
 "be stored in internal buffers for later processing.\n"
-"Call the flush() method to clear these buffers."
-;
+"Call the flush() method to clear these buffers.";
 
 
 static PyObject *
@@ -450,15 +448,15 @@ PyZlib_objcompress(compobject *self, PyObject *args)
 }
 
 static char decomp_decompress__doc__[] =
-"decompress(data, max_length) -- Return a string containing\n"
-"the decompressed version of the data.\n\n"
-"After calling this function, some of the input data may still\n"
-"be stored in internal buffers for later processing.\n"
+"decompress(data, max_length) -- Return a string containing the decompressed\n"
+"version of the data.\n"
+"\n"
+"After calling this function, some of the input data may still be stored in\n"
+"internal buffers for later processing.\n"
 "Call the flush() method to clear these buffers.\n"
 "If the max_length parameter is specified then the return value will be\n"
 "no longer than max_length.  Unconsumed input data will be stored in\n"
-"the unconsumed_tail attribute."
-;
+"the unconsumed_tail attribute.";
 
 static PyObject *
 PyZlib_objdecompress(compobject *self, PyObject *args)
@@ -574,11 +572,11 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
 
 static char comp_flush__doc__[] =
 "flush( [mode] ) -- Return a string containing any remaining compressed data.\n"
-"mode can be one of the constants Z_SYNC_FLUSH, Z_FULL_FLUSH, Z_FINISH; the \n"
+"\n"
+"mode can be one of the constants Z_SYNC_FLUSH, Z_FULL_FLUSH, Z_FINISH; the\n"
 "default value used when mode is not specified is Z_FINISH.\n"
 "If mode == Z_FINISH, the compressor object can no longer be used after\n"
-"calling the flush() method.  Otherwise, more data can still be compressed.\n"
-;
+"calling the flush() method.  Otherwise, more data can still be compressed.\n";
 
 static PyObject *
 PyZlib_flush(compobject *self, PyObject *args)
@@ -662,9 +660,9 @@ PyZlib_flush(compobject *self, PyObject *args)
 }
 
 static char decomp_flush__doc__[] =
-"flush() -- Return a string containing any remaining decompressed data.  "
-"The decompressor object can no longer be used after this call."
-;
+"flush() -- Return a string containing any remaining decompressed data.\n"
+"\n"
+"The decompressor object can no longer be used after this call.";
 
 static PyObject *
 PyZlib_unflush(compobject *self, PyObject *args)
@@ -743,11 +741,10 @@ Decomp_getattr(compobject *self, char *name)
 }
 
 static char adler32__doc__[] =
-"adler32(string) -- Compute an Adler-32 checksum of string, using "
-"a default starting value, and returning an integer value.\n"
-"adler32(string, value) -- Compute an Adler-32 checksum of string, using "
-"the starting value provided, and returning an integer value\n"
-;
+"adler32(string[, start]) -- Compute an Adler-32 checksum of string.\n"
+"\n"
+"An optional starting value can be specified.  The returned checksum is\n"
+"an integer.";
 
 static PyObject *
 PyZlib_adler32(PyObject *self, PyObject *args)
@@ -763,11 +760,10 @@ PyZlib_adler32(PyObject *self, PyObject *args)
 }
 
 static char crc32__doc__[] =
-"crc32(string) -- Compute a CRC-32 checksum of string, using "
-"a default starting value, and returning an integer value.\n"
-"crc32(string, value) -- Compute a CRC-32 checksum of string, using "
-"the starting value provided, and returning an integer value.\n"
-;
+"crc32(string[, start]) -- Compute a CRC-32 checksum of string.\n"
+"\n"
+"An optional starting value can be specified.  The returned checksum is\n"
+"an integer.";
 
 static PyObject *
 PyZlib_crc32(PyObject *self, PyObject *args)
@@ -853,20 +849,19 @@ insint(PyObject *d, char *name, int value)
 }
 
 static char zlib_module_documentation[]=
-"The functions in this module allow compression and decompression "
-"using the zlib library, which is based on GNU zip.  \n\n"
-"adler32(string) -- Compute an Adler-32 checksum.\n"
-"adler32(string, start) -- Compute an Adler-32 checksum using a given starting value.\n"
-"compress(string) -- Compress a string.\n"
-"compress(string, level) -- Compress a string with the given level of compression (1--9).\n"
+"The functions in this module allow compression and decompression using the\n"
+"zlib library, which is based on GNU zip.\n"
+"\n"
+"adler32(string[, start]) -- Compute an Adler-32 checksum.\n"
+"compress(string[, level]) -- Compress string, with compression level in 1-9.\n"
 "compressobj([level]) -- Return a compressor object.\n"
-"crc32(string) -- Compute a CRC-32 checksum.\n"
-"crc32(string, start) -- Compute a CRC-32 checksum using a given starting value.\n"
+"crc32(string[, start]) -- Compute a CRC-32 checksum.\n"
 "decompress(string,[wbits],[bufsize]) -- Decompresses a compressed string.\n"
-"decompressobj([wbits]) -- Return a decompressor object (wbits=window buffer size).\n\n"
-"Compressor objects support compress() and flush() methods; decompressor \n"
-"objects support decompress() and flush()."
-;
+"decompressobj([wbits]) -- Return a decompressor object.\n"
+"\n"
+"'wbits' is window buffer size.\n"
+"Compressor objects support compress() and flush() methods; decompressor\n"
+"objects support decompress() and flush().";
 
 DL_EXPORT(void)
 PyInit_zlib(void)
