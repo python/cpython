@@ -149,8 +149,6 @@ def run(app, s):
 	app.start()
     except KeyboardInterrupt:
 	pass
-    # save the option database
-    s.save_views()
 
 
 
@@ -182,7 +180,11 @@ def main():
         elif opt in ('-i', '--initfile'):
             initfile = arg
 
-    run()
+    app, sb = build(initialcolor=initialcolor,
+                    initfile=initfile,
+                    ignore=ignore)
+    run(app, sb)
+    sb.save_views()
 
 
 if __name__ == '__main__':
