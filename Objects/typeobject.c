@@ -2915,6 +2915,8 @@ PyType_Ready(PyTypeObject *type)
 			type->tp_as_sequence = base->tp_as_sequence;
 		if (type->tp_as_mapping == NULL)
 			type->tp_as_mapping = base->tp_as_mapping;
+		if (type->tp_as_buffer == NULL)
+			type->tp_as_buffer = base->tp_as_buffer;
 	}
 
 	/* Link into each base class's list of subclasses */

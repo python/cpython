@@ -258,6 +258,10 @@ Build
 C API
 -----
 
+- A C type that inherits from a base type that defines tp_as_buffer
+  will now inherit the tp_as_buffer pointer if it doesn't define one.
+  (SF #681367)
+
 - The PyArg_Parse functions now issue a DeprecationWarning if a float
   argument is provided when an integer is specified (this affects the 'b',
   'B', 'h', 'H', 'i', and 'l' codes).  Future versions of Python will
