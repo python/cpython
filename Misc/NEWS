@@ -46,6 +46,17 @@ Build
 
 - term.h is now properly detected again.
 
+Windows
+-------
+
+- Bug #1076861: The IDLE shortcut is now correct even if the target
+  directory contains a space.
+
+- Bug #1085208 and similar: The installer does not fail anymore if
+  VBScript is not available on the target machine, not installed
+  properly, or outdated; the MSI package now does not rely on VB
+  anymore.
+
 
 What's New in Python 2.4 final?
 ===============================
