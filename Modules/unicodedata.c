@@ -311,12 +311,14 @@ nfd_nfkd(PyObject *input, int k)
         stack[stackptr++] = *i++;
         while(stackptr) {
             Py_UNICODE code = stack[--stackptr];
-            if (!space) {
-                space = PyString_GET_SIZE(result) + 10;
-                if (PyUnicode_Resize(&result, space) == -1)
+            /* Hangul Decomposition adds three characters in
+               a single step, so we need atleast that much room. */
+            if (space < 3) {
+                int newsize = PyString_GET_SIZE(result) + 10;
+                space += 10;
+                if (PyUnicode_Resize(&result, newsize) == -1)
                     return NULL;
-                o = PyUnicode_AS_UNICODE(result) + space - 10;
-                space = 10;
+                o = PyUnicode_AS_UNICODE(result) + newsize - space;
             }
             /* Hangul Decomposition. */
             if (SBase <= code && code < (SBase+SCount)) {
