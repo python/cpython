@@ -482,6 +482,10 @@ Build
 
 C API
 
+- The Py_InitModule*() functions now accept NULL for the 'methods'
+  argument.  Modules without global functions are becoming more common
+  now that factories can be types rather than functions.
+
 - New C API PyUnicode_FromOrdinal() which exposes unichr() at C
   level.
 
