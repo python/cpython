@@ -395,14 +395,15 @@ actually be smaller than the old one.
 static int
 dictresize(dictobject *mp, int minused)
 {
-	register int newsize, newpoly;
-	register dictentry *oldtable = mp->ma_table;
-	register dictentry *newtable;
-	register dictentry *ep;
-	register int i;
+	int newsize, newpoly;
+	dictentry *oldtable, *newtable, *ep;
+	int i;
+	int is_oldtable_malloced;
+	dictentry small_copy[MINSIZE];
 
 	assert(minused >= 0);
-	assert(oldtable != NULL);
+
+	/* Find the smallest table size > minused, and its poly[] entry. */
 	newpoly = 0;
 	newsize = MINSIZE;
 	for (i = 0; i < sizeof(polys)/sizeof(polys[0]); ++i) {
@@ -419,10 +420,26 @@ dictresize(dictobject *mp, int minused)
 		PyErr_NoMemory();
 		return -1;
 	}
+
+	/* Get space for a new table. */
+	oldtable = mp->ma_table;
+	assert(oldtable != NULL);
+	is_oldtable_malloced = oldtable != mp->ma_smalltable;
+
 	if (newsize == MINSIZE) {
+		/* Either a large table is shrinking, or we can't get any
+		   smaller. */
 		newtable = mp->ma_smalltable;
-		if (newtable == oldtable)
-			return 0;
+		if (newtable == oldtable) {
+			if (mp->ma_fill < mp->ma_size)
+				return 0;
+			/* The small table is entirely full.  We're not
+			   going to resise it, but need to rebuild it
+			   anyway to purge old dummy entries. */
+			assert(mp->ma_fill > mp->ma_used); /* a dummy exists */
+			memcpy(small_copy, oldtable, sizeof(small_copy));
+			oldtable = small_copy;
+		}
 	}
 	else {
 		newtable = PyMem_NEW(dictentry, newsize);
@@ -431,6 +448,8 @@ dictresize(dictobject *mp, int minused)
 			return -1;
 		}
 	}
+
+	/* Make the dict empty, using the new table. */
 	assert(newtable != oldtable);
 	mp->ma_table = newtable;
 	mp->ma_size = newsize;
@@ -455,7 +474,7 @@ dictresize(dictobject *mp, int minused)
 		/* else key == value == NULL:  nothing to do */
 	}
 
-	if (oldtable != mp->ma_smalltable)
+	if (is_oldtable_malloced)
 		PyMem_DEL(oldtable);
 	return 0;
 }
