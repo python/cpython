@@ -142,6 +142,10 @@ would allow us to map names to signatures). The other alternative,
 <CODE>ChooseApplication</CODE> from the program-to-program toolbox, is
 also not available from Python at the moment. <p>
 
+If you specify the application by creator you can specify an optional
+<CODE>start</CODE> parameter, which will cause the application to be
+started if it is not running.  <P>
+
 The main program itself is a wonder of simplicity. We create the
 object that talks to Eudora (passing the signature as argument), ask
 the user what she wants and call the appropriate method of the talker
