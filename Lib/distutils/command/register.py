@@ -233,6 +233,7 @@ Your selection [default 1]: ''',
             'keywords': meta.get_keywords(),
             'platform': meta.get_platforms(),
             'classifiers': meta.get_classifiers(),
+            'download_url': meta.get_download_url(),
         }
         return data
 
