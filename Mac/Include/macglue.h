@@ -51,6 +51,8 @@ extern int PyMac_ConsoleIsDead;			/* True when exiting */
 extern void PyMac_SetGUSISpin(void);	/* Install our private GUSI spin routine */
 #endif
 
+extern short PyMac_AppRefNum;			/* RefNum of application rsrcfork (from macmain.c) */
+
 extern PyObject *PyMac_OSErrException;		/* Exception for OSErr */
 PyObject *PyMac_GetOSErrException(void);	/* Initialize & return it */
 

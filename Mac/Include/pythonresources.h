@@ -62,9 +62,16 @@
 /*
 ** The following are valid both in the binary (or shared library)
 ** and in the Preferences file.
-** For all three the override is tried first, through all current
-** resource files. This allows an applet to override standard settings
-** by providing a resource of the correct type.
+** For all these the override is tried first, in the application resource fork
+** only, this allows an applet to override standard settings.
+** If there is no override resource the preferences file is added to the head
+** of the resource file chain and the non-override version of the resource is
+** searched in any resource file.
+**
+** The effect of this is that, for example, a 'Popt' of 128 in the application or
+** shared library provides default options for use when no preferences are set,
+** while a 'Popt' of 129 (in the application *only*) overrides any options in the
+** preferences file.
 */
 
 /* The STR# resource for sys.path initialization */
@@ -85,9 +92,12 @@
 #define POPT_DEBUGGING	4
 #define POPT_KEEPNORM	5
 #define POPT_KEEPERR	6
+#define POPT_NOINTOPT	7	/* Not settable interactively */
+#define POPT_NOARGS		8	/* Not settable interactively */
 
-/* Our menu bar */
-#define MENUBAR_ID 128
+/* The GUSI options resources */
+#define GUSIOPTIONS_ID	10240
+#define GUSIOPTIONSOVERRIDE_ID 10241
 
 /* From macgetpath.c: */
 void PyMac_PreferenceOptions Py_PROTO((int *inspect, int *verbose, int *suppress_print, 
