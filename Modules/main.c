@@ -228,6 +228,16 @@ Py_Main(argc, argv)
 
 	PySys_SetArgv(argc-optind, argv+optind);
 
+	if ((inspect || (command == NULL && filename == NULL)) &&
+	    isatty(fileno(stdin))) {
+		PyObject *v;
+		v = PyImport_ImportModule("readline");
+		if (v == NULL)
+			PyErr_Clear();
+		else
+			Py_DECREF(v);
+	}
+
 	if (command) {
 		sts = PyRun_SimpleString(command) != 0;
 		free(command);
@@ -242,14 +252,6 @@ Py_Main(argc, argv)
 					PyErr_Clear();
 					fclose(fp);
 				}
-			}
-			if (isatty(fileno(stdin))) {
-				PyObject *v;
-				v = PyImport_ImportModule("readline");
-				if (v == NULL)
-					PyErr_Clear();
-				else
-					Py_DECREF(v);
 			}
 		}
 		sts = PyRun_AnyFile(
