@@ -5,6 +5,85 @@ Tests common to tuple, list and UserList.UserList
 import unittest
 from test import test_support
 
+# Various iterables
+# This is used for checking the constructor (here and in test_deque.py)
+def iterfunc(seqn):
+    'Regular generator'
+    for i in seqn:
+        yield i
+
+class Sequence:
+    'Sequence using __getitem__'
+    def __init__(self, seqn):
+        self.seqn = seqn
+    def __getitem__(self, i):
+        return self.seqn[i]
+
+class IterFunc:
+    'Sequence using iterator protocol'
+    def __init__(self, seqn):
+        self.seqn = seqn
+        self.i = 0
+    def __iter__(self):
+        return self
+    def next(self):
+        if self.i >= len(self.seqn): raise StopIteration
+        v = self.seqn[self.i]
+        self.i += 1
+        return v
+
+class IterGen:
+    'Sequence using iterator protocol defined with a generator'
+    def __init__(self, seqn):
+        self.seqn = seqn
+        self.i = 0
+    def __iter__(self):
+        for val in self.seqn:
+            yield val
+
+class IterNextOnly:
+    'Missing __getitem__ and __iter__'
+    def __init__(self, seqn):
+        self.seqn = seqn
+        self.i = 0
+    def next(self):
+        if self.i >= len(self.seqn): raise StopIteration
+        v = self.seqn[self.i]
+        self.i += 1
+        return v
+
+class IterNoNext:
+    'Iterator missing next()'
+    def __init__(self, seqn):
+        self.seqn = seqn
+        self.i = 0
+    def __iter__(self):
+        return self
+
+class IterGenExc:
+    'Test propagation of exceptions'
+    def __init__(self, seqn):
+        self.seqn = seqn
+        self.i = 0
+    def __iter__(self):
+        return self
+    def next(self):
+        3 // 0
+
+class IterFuncStop:
+    'Test immediate stop'
+    def __init__(self, seqn):
+        pass
+    def __iter__(self):
+        return self
+    def next(self):
+        raise StopIteration
+
+from itertools import chain, imap
+def itermulti(seqn):
+    'Test multiple tiers of iterators'
+    return chain(imap(lambda x:x, iterfunc(IterGen(Sequence(seqn)))))
+
 class CommonTest(unittest.TestCase):
     # The type to be tested
     type2test = None
@@ -39,6 +118,17 @@ class CommonTest(unittest.TestCase):
         s = "this is also a sequence"
         vv = self.type2test(s)
         self.assertEqual(len(vv), len(s))
+
+        # Create from various iteratables
+        for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
+            for g in (Sequence, IterFunc, IterGen,
+                      itermulti, iterfunc):
+                self.assertEqual(self.type2test(g(s)), self.type2test(s))
+            self.assertEqual(self.type2test(IterFuncStop(s)), self.type2test())
+            self.assertEqual(self.type2test(c for c in "123"), self.type2test("123"))
+            self.assertRaises(TypeError, self.type2test, IterNextOnly(s))
+            self.assertRaises(TypeError, self.type2test, IterNoNext(s))
+            self.assertRaises(ZeroDivisionError, self.type2test, IterGenExc(s))
 
     def test_truth(self):
         self.assert_(not self.type2test())
