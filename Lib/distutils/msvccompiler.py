@@ -291,7 +291,11 @@ class MSVCCompiler (CCompiler) :
         else:
             compile_opts.extend(self.compile_options)
 
-        for obj, (src, ext) in build.items():
+        for obj in objects:
+            try:
+                src, ext = build[obj]
+            except KeyError:
+                continue
             if debug:
                 # pass the full pathname to MSVC in debug mode,
                 # this allows the debugger to find the source file
