@@ -90,16 +90,8 @@ extern int ftime();
 #undef HAVE_CLOCK /* We have our own version down below */
 #endif /* MS_WIN32 */
 
-#if defined(PYOS_OS2)
-#define  INCL_DOS
-#define  INCL_DOSERRORS
-#define  INCL_NOPMAPI
-#include <os2.h>
-#endif
-
 #if defined(PYCC_VACPP)
-#include <time.h>
-#define timezone _timezone
+#include <sys/time.h>
 #endif
 
 #ifdef __BEOS__
@@ -611,11 +603,19 @@ inittime()
 	d = PyModule_GetDict(m);
 #ifdef HAVE_TZNAME
 	tzset();
+#ifdef PYOS_OS2
+	ins(d, "timezone", PyInt_FromLong((long)_timezone));
+#else /* !PYOS_OS2 */
 	ins(d, "timezone", PyInt_FromLong((long)timezone));
+#endif /* PYOS_OS2 */
 #ifdef HAVE_ALTZONE
 	ins(d, "altzone", PyInt_FromLong((long)altzone));
 #else
+#ifdef PYOS_OS2
+	ins(d, "altzone", PyInt_FromLong((long)_timezone-3600));
+#else /* !PYOS_OS2 */
 	ins(d, "altzone", PyInt_FromLong((long)timezone-3600));
+#endif /* PYOS_OS2 */
 #endif
 	ins(d, "daylight", PyInt_FromLong((long)daylight));
 	ins(d, "tzname", Py_BuildValue("(zz)", tzname[0], tzname[1]));
