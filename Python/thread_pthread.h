@@ -29,7 +29,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef FLORIDA_HACKS
 /* Hacks for Florida State Posix threads implementation */
 #undef _POSIX_THREADS
-#include "/ufs/guido/src/python/Contrib/pthreads/pthreads/pthread.h"
+#include "/ufs/guido/src/python/Contrib/pthreads/src/pthread.h"
 #define pthread_attr_default ((pthread_attr_t *)0)
 #define pthread_mutexattr_default ((pthread_mutexattr_t *)0)
 #define pthread_condattr_default ((pthread_condattr_t *)0)
@@ -40,25 +40,29 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif /* FLORIDA_HACKS */
 #include <stdlib.h>
 
-/* A pthread mutex isn't sufficient to model the Python lock type (at
- * least not the way KSR did 'em -- haven't dug thru the docs to verify),
- * because a thread that locks a mutex can't then do a pthread_mutex_lock
- * on it (to wait for another thread to unlock it).
- * In any case, pthread mutexes are designed for serializing threads over
- * short pieces of code, so wouldn't be an appropriate implementation of
+/* A pthread mutex isn't sufficient to model the Python lock type
+ * because, according to Draft 5 of the docs (P1003.4a/D5), both of the
+ * following are undefined:
+ *  -> a thread tries to lock a mutex it already has locked
+ *  -> a thread tries to unlock a mutex locked by a different thread
+ * pthread mutexes are designed for serializing threads over short pieces
+ * of code anyway, so wouldn't be an appropriate implementation of
  * Python's locks regardless.
- * The pthread_lock struct below implements a Python lock as a pthread
- * mutex and a <condition, mutex> pair.  In general, if the mutex can be
- * be acquired instantly, it is, else the pair is used to block the
- * thread until the mutex is released.  7 May 1994  tim@ksr.com
+ *
+ * The pthread_lock struct implements a Python lock as a "locked?" bit
+ * and a <condition, mutex> pair.  In general, if the bit can be acquired
+ * instantly, it is, else the pair is used to block the thread until the
+ * bit is cleared.     9 May 1994 tim@ksr.com
  */
+
 typedef struct {
-	/* the lock */
-	pthread_mutex_t  mutex;
-	/* a <cond, mutex> pair to handle an acquire of a locked mutex */
-	pthread_cond_t   cond;
-	pthread_mutex_t  cmutex;
+	char             locked; /* 0=unlocked, 1=locked */
+	/* a <cond, mutex> pair to handle an acquire of a locked lock */
+	pthread_cond_t   lock_released;
+	pthread_mutex_t  mut;
 } pthread_lock;
+
+#define CHECK_STATUS(name)  if (status < 0) { perror(name); error=1; }
 
 /*
  * Initialization.
@@ -70,6 +74,8 @@ static void _init_thread _P0()
 /*
  * Thread support.
  */
+
+
 int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 {
 #if defined(SGI_THREADS) && defined(USE_DL)
@@ -135,30 +141,25 @@ void _exit_prog _P1(status, int status)
 type_lock allocate_lock _P0()
 {
 	pthread_lock *lock;
+	int status, error = 0;
 
 	dprintf(("allocate_lock called\n"));
 	if (!initialized)
 		init_thread();
 
 	lock = (pthread_lock *) malloc(sizeof(pthread_lock));
-	{
-		int err = 0;
-		if ( pthread_mutex_init(&lock->mutex,
-				       pthread_mutexattr_default) ) {
-			perror("pthread_mutex_init");
-			err = 1;
-		}
-		if ( pthread_cond_init(&lock->cond,
-				      pthread_condattr_default) ) {
-			perror("pthread_cond_init");
-			err = 1;
-		} 
-		if ( pthread_mutex_init(&lock->cmutex,
-					pthread_mutexattr_default)) {
-			perror("pthread_mutex_init");
-			err = 1;
-		}
-		if (err) {
+	if (lock) {
+		lock->locked = 0;
+
+		status = pthread_mutex_init(&lock->mut,
+					    pthread_mutexattr_default);
+		CHECK_STATUS("pthread_mutex_init");
+
+		status = pthread_cond_init(&lock->lock_released,
+					   pthread_condattr_default);
+		CHECK_STATUS("pthread_cond_init");
+
+		if (error) {
 			free((void *)lock);
 			lock = 0;
 		}
@@ -170,80 +171,82 @@ type_lock allocate_lock _P0()
 
 void free_lock _P1(lock, type_lock lock)
 {
+	pthread_lock *thelock = (pthread_lock *)lock;
+	int status, error = 0;
+
 	dprintf(("free_lock(%lx) called\n", (long)lock));
-	if ( pthread_mutex_destroy(&((pthread_lock *)lock)->mutex) )
-		perror("pthread_mutex_destroy");
-	if ( pthread_cond_destroy(&((pthread_lock *)lock)->cond) )
-		perror("pthread_cond_destroy");
-	if ( pthread_mutex_destroy(&((pthread_lock *)lock)->cmutex) )
-		perror("pthread_mutex_destroy");
-	free((void *)lock);
+
+	status = pthread_mutex_destroy( &thelock->mut );
+	CHECK_STATUS("pthread_mutex_destroy");
+
+	status = pthread_cond_destroy( &thelock->lock_released );
+	CHECK_STATUS("pthread_cond_destroy");
+
+	free((void *)thelock);
 }
 
 int acquire_lock _P2(lock, type_lock lock, waitflag, int waitflag)
 {
 	int success;
+	pthread_lock *thelock = (pthread_lock *)lock;
+	int status, error = 0;
 
 	dprintf(("acquire_lock(%lx, %d) called\n", (long)lock, waitflag));
-	{
-		pthread_lock *thelock = (pthread_lock *)lock;
-		success = TRYLOCK_OFFSET +
-			pthread_mutex_trylock( &thelock->mutex );
-		if (success < 0) {
-			perror("pthread_mutex_trylock [1]");
-			success = 0;
-		} else if ( success == 0 && waitflag ) {
-			/* continue trying until we get the lock */
 
-			/* cmutex must be locked by me -- part of the condition
-			 * protocol */
-			if ( pthread_mutex_lock( &thelock->cmutex ) )
-				perror("pthread_mutex_lock");
-			while ( 0 == (success = TRYLOCK_OFFSET +
-				      pthread_mutex_trylock(&thelock->mutex)) ) {
-				if ( pthread_cond_wait(&thelock->cond,
-						       &thelock->cmutex) )
-					perror("pthread_cond_wait");
-			}
-			if (success < 0)
-				perror("pthread_mutex_trylock [2]");
-			/* now ->mutex & ->cmutex are both locked by me */
-			if ( pthread_mutex_unlock( &thelock->cmutex ) )
-				perror("pthread_mutex_unlock");
+	status = pthread_mutex_lock( &thelock->mut );
+	CHECK_STATUS("pthread_mutex_lock[1]");
+	success = thelock->locked == 0;
+	if (success) thelock->locked = 1;
+	status = pthread_mutex_unlock( &thelock->mut );
+	CHECK_STATUS("pthread_mutex_unlock[1]");
+
+	if ( !success && waitflag ) {
+		/* continue trying until we get the lock */
+
+		/* mut must be locked by me -- part of the condition
+		 * protocol */
+		status = pthread_mutex_lock( &thelock->mut );
+		CHECK_STATUS("pthread_mutex_lock[2]");
+		while ( thelock->locked ) {
+			status = pthread_cond_wait(&thelock->lock_released,
+						   &thelock->mut);
+			CHECK_STATUS("pthread_cond_wait");
 		}
+		thelock->locked = 1;
+		status = pthread_mutex_unlock( &thelock->mut );
+		CHECK_STATUS("pthread_mutex_unlock[2]");
+		success = 1;
 	}
+	if (error) success = 0;
 	dprintf(("acquire_lock(%lx, %d) -> %d\n", (long)lock, waitflag, success));
 	return success;
 }
 
 void release_lock _P1(lock, type_lock lock)
 {
+	pthread_lock *thelock = (pthread_lock *)lock;
+	int status, error = 0;
+
 	dprintf(("release_lock(%lx) called\n", (long)lock));
-	{
-		pthread_lock *thelock = (pthread_lock *)lock;
 
-		/* tricky:  if the release & signal occur between the
-		 *    pthread_mutex_trylock(&thelock->mutex))
-		 * and pthread_cond_wait during the acquire, the acquire
-		 * will miss the signal it's waiting for; locking cmutex
-		 * around the release prevents that
-		 */
-		if (pthread_mutex_lock( &thelock->cmutex ))
-			perror("pthread_mutex_lock");
-		if (pthread_mutex_unlock( &thelock->mutex ))
-			perror("pthread_mutex_unlock");
-		if (pthread_mutex_unlock( &thelock->cmutex ))
-			perror("pthread_mutex_unlock");
+	status = pthread_mutex_lock( &thelock->mut );
+	CHECK_STATUS("pthread_mutex_lock[3]");
 
-		/* wake up someone (anyone, if any) waiting on the lock */
-		if (pthread_cond_signal( &thelock->cond ))
-			perror("pthread_cond_signal");
-	}
+	thelock->locked = 0;
+
+	status = pthread_mutex_unlock( &thelock->mut );
+	CHECK_STATUS("pthread_mutex_unlock[3]");
+
+	/* wake up someone (anyone, if any) waiting on the lock */
+	status = pthread_cond_signal( &thelock->lock_released );
+	CHECK_STATUS("pthread_cond_signal");
 }
 
 /*
  * Semaphore support.
  */
+/* NOTE: 100% non-functional at this time - tim */
+
 type_sema allocate_sema _P1(value, int value)
 {
 	char *sema = 0;

@@ -38,10 +38,6 @@ static void _init_thread _P0()
  */
 int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 {
-#if defined(SGI_THREADS) && defined(USE_DL)
-	long addr, size;
-	static int local_initialized = 0;
-#endif /* SGI_THREADS and USE_DL */
 	int success = 0;	/* init not needed when SOLARIS_THREADS and */
 				/* C_THREADS implemented properly */
 
