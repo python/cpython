@@ -186,7 +186,7 @@ referent to be obtained, if it still exists, by calling it:
 >>> r = weakref.ref(o)
 >>> o2 = r()
 >>> o is o2
-1
+True
 \end{verbatim}
 
 If the referent no longer exists, calling the reference object returns
