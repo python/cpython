@@ -456,11 +456,11 @@ class PyBuildExt(build_ext):
         # *** Uncomment these for TOGL extension only:
         #	-lGL -lGLU -lXext -lXmu \
 
-        self.extensions = exts
+        self.extensions.extend(exts)
 
 def main():
     setup(name = 'Python standard library',
-          version = '2.0',
+          version = '%d.%d' % sys.version_info[:2],
           cmdclass = {'build_ext':PyBuildExt},
           # The struct module is defined here, because build_ext won't be
           # called unless there's at least one extension module defined.
