@@ -531,7 +531,9 @@ typedef	struct fd_set {
 #if (!defined(__GNUC__) || __GNUC__ < 2 || \
      (__GNUC__ == 2 && __GNUC_MINOR__ < 7) ) && \
     !defined(RISCOS)
-#define __attribute__(__x)
+#define Py_GCC_ATTRIBUTE(x)
+#else
+#define Py_GCC_ATTRIBUTE(x) __attribute__(x)
 #endif
 
 #endif /* Py_PYPORT_H */

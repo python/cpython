@@ -83,7 +83,7 @@ PyAPI_FUNC(PyObject *) PyErr_NoMemory(void);
 PyAPI_FUNC(PyObject *) PyErr_SetFromErrno(PyObject *);
 PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithFilename(PyObject *, char *);
 PyAPI_FUNC(PyObject *) PyErr_Format(PyObject *, const char *, ...)
-			__attribute__((format(printf, 2, 3)));
+			Py_GCC_ATTRIBUTE((format(printf, 2, 3)));
 #ifdef MS_WINDOWS
 PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithFilename(int, const char *);
 PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErr(int);
@@ -195,9 +195,9 @@ PyAPI_FUNC(int) PyUnicodeTranslateError_SetReason(
 
 #include <stdarg.h>
 PyAPI_FUNC(int) PyOS_snprintf(char *str, size_t size, const char  *format, ...)
-			__attribute__((format(printf, 3, 4)));
+			Py_GCC_ATTRIBUTE((format(printf, 3, 4)));
 PyAPI_FUNC(int) PyOS_vsnprintf(char *str, size_t size, const char  *format, va_list va)
-			__attribute__((format(printf, 3, 0)));
+			Py_GCC_ATTRIBUTE((format(printf, 3, 0)));
 
 #ifdef __cplusplus
 }

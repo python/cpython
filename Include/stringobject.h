@@ -52,9 +52,9 @@ PyAPI_DATA(PyTypeObject) PyString_Type;
 PyAPI_FUNC(PyObject *) PyString_FromStringAndSize(const char *, int);
 PyAPI_FUNC(PyObject *) PyString_FromString(const char *);
 PyAPI_FUNC(PyObject *) PyString_FromFormatV(const char*, va_list)
-				__attribute__((format(printf, 1, 0)));
+				Py_GCC_ATTRIBUTE((format(printf, 1, 0)));
 PyAPI_FUNC(PyObject *) PyString_FromFormat(const char*, ...)
-				__attribute__((format(printf, 1, 2)));
+				Py_GCC_ATTRIBUTE((format(printf, 1, 2)));
 PyAPI_FUNC(int) PyString_Size(PyObject *);
 PyAPI_FUNC(char *) PyString_AsString(PyObject *);
 PyAPI_FUNC(PyObject *) PyString_Repr(PyObject *, int);
