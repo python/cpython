@@ -60,6 +60,8 @@ def gettempprefix():
 	if template == None:
 		if os.name == 'posix':
 			template = '@' + `os.getpid()` + '.'
+		elif os.name == 'nt':
+			template = '~' + `os.getpid()` + '-'
 		elif os.name == 'mac':
 			template = 'Python-Tmp-'
 		else:
