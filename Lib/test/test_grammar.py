@@ -661,6 +661,11 @@ def test_in_func(l):
 
 print test_in_func(nums)
 
+def test_nested_front():
+    print [[y for y in [x, x + 1]] for x in [1,3,5]]
+
+test_nested_front()
+
 check_syntax("[i, s for i in nums for s in strs]")
 check_syntax("[x if y]")
 
