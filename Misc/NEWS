@@ -628,6 +628,10 @@ Library
   the config file, including the contents of the referred filename in
   the "%verifyscript" section of the rpm spec file.
 
+- Fixed bug #495695: webbrowser module would run graphic browsers in a
+  unix environment even if DISPLAY was not set. Also, support for
+  skipstone browser was included.
+
 Tools/Demos
 -----------
 
