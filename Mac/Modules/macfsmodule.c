@@ -101,9 +101,7 @@ staticforward mfsrobject *newmfsrobject(FSRef *fsr); /* Forward */
 /* ---------------------------------------------------------------- */
 
 static PyObject *
-mfsa_Resolve(self, args)
-	mfsaobject *self;
-	PyObject *args;
+mfsa_Resolve(mfsaobject *self, PyObject *args)
 {
 	FSSpec from, *fromp, result;
 	Boolean changed;
@@ -125,9 +123,7 @@ mfsa_Resolve(self, args)
 }
 
 static PyObject *
-mfsa_GetInfo(self, args)
-	mfsaobject *self;
-	PyObject *args;
+mfsa_GetInfo(mfsaobject *self, PyObject *args)
 {
 	Str63 value;
 	int i;
@@ -144,9 +140,7 @@ mfsa_GetInfo(self, args)
 }
 
 static PyObject *
-mfsa_Update(self, args)
-	mfsaobject *self;
-	PyObject *args;
+mfsa_Update(mfsaobject *self, PyObject *args)
 {
 	FSSpec target, fromfile, *fromfilep;
 	OSErr err;
@@ -179,9 +173,7 @@ static struct PyMethodDef mfsa_methods[] = {
 /* ---------- */
 
 static PyObject *
-mfsa_getattr(self, name)
-	mfsaobject *self;
-	char *name;
+mfsa_getattr(mfsaobject *self, char *name)
 {
 	if ( strcmp(name, "data") == 0 ) {
 		int size;
@@ -210,8 +202,7 @@ newmfsaobject(AliasHandle alias)
 
 
 static void
-mfsa_dealloc(self)
-	mfsaobject *self;
+mfsa_dealloc(mfsaobject *self)
 {
 #if 0
 	if ( self->alias ) {
@@ -254,7 +245,7 @@ static struct PyMethodDef mfsi_methods[] = {
 /* ---------- */
 
 static mfsiobject *
-newmfsiobject()
+newmfsiobject(void)
 {
 	mfsiobject *self;
 	
@@ -266,16 +257,13 @@ newmfsiobject()
 }
 
 static void
-mfsi_dealloc(self)
-	mfsiobject *self;
+mfsi_dealloc(mfsiobject *self)
 {
 	PyMem_DEL(self);
 }
 
 static PyObject *
-mfsi_getattr(self, name)
-	mfsiobject *self;
-	char *name;
+mfsi_getattr(mfsiobject *self, char *name)
 {
 	if ( strcmp(name, "Type") == 0 )
 		return PyMac_BuildOSType(self->finfo.fdType);
@@ -293,10 +281,7 @@ mfsi_getattr(self, name)
 
 
 static int
-mfsi_setattr(self, name, v)
-	mfsiobject *self;
-	char *name;
-	PyObject *v;
+mfsi_setattr(mfsiobject *self, char *name, PyObject *v)
 {
 	int rv;
 	int i;
@@ -413,9 +398,8 @@ _mfs_GetFSRefFromFSSpec(PyObject *self, FSRef *fsrp)
 ** Two generally useful routines
 */
 static OSErr
-PyMac_GetFileDates(fss, crdat, mddat, bkdat)
-	FSSpec *fss;
-	unsigned long *crdat, *mddat, *bkdat;
+PyMac_GetFileDates(FSSpec *fss, unsigned long *crdat, unsigned long *mddat, 
+		unsigned long *bkdat)
 {
 	CInfoPBRec pb;
 	OSErr error;
@@ -433,9 +417,8 @@ PyMac_GetFileDates(fss, crdat, mddat, bkdat)
 }	
 
 static OSErr
-PyMac_SetFileDates(fss, crdat, mddat, bkdat)
-	FSSpec *fss;
-	unsigned long crdat, mddat, bkdat;
+PyMac_SetFileDates(FSSpec *fss, unsigned long crdat, unsigned long mddat, 
+		unsigned long bkdat)
 {
 	CInfoPBRec pb;
 	OSErr error;
@@ -458,10 +441,12 @@ PyMac_SetFileDates(fss, crdat, mddat, bkdat)
 }
 
 static PyObject *
-mfss_as_pathname(self, args)
-	mfssobject *self;
-	PyObject *args;
+mfss_as_pathname(mfssobject *self, PyObject *args)
 {
+#if TARGET_API_MAC_OSX
+	PyErr_SetString(PyExc_NotImplementedError, "FSSpec.as_pathname not supported on this platform");
+	return 0;
+#else
 	char strbuf[257];
 	OSErr err;
 
@@ -473,12 +458,11 @@ mfss_as_pathname(self, args)
 		return NULL;
 	}
 	return PyString_FromString(strbuf);
+#endif
 }
 
 static PyObject *
-mfss_as_tuple(self, args)
-	mfssobject *self;
-	PyObject *args;
+mfss_as_tuple(mfssobject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
@@ -487,9 +471,7 @@ mfss_as_tuple(self, args)
 }
 
 static PyObject *
-mfss_NewAlias(self, args)
-	mfssobject *self;
-	PyObject *args;
+mfss_NewAlias(mfssobject *self, PyObject *args)
 {
 	FSSpec src, *srcp;
 	OSErr err;
@@ -512,9 +494,7 @@ mfss_NewAlias(self, args)
 }
 
 static PyObject *
-mfss_NewAliasMinimal(self, args)
-	mfssobject *self;
-	PyObject *args;
+mfss_NewAliasMinimal(mfssobject *self, PyObject *args)
 {
 	OSErr err;
 	AliasHandle alias;
@@ -530,9 +510,7 @@ mfss_NewAliasMinimal(self, args)
 }
 
 static PyObject *
-mfss_FSpMakeFSRef(self, args)
-	mfssobject *self;
-	PyObject *args;
+mfss_FSpMakeFSRef(mfssobject *self, PyObject *args)
 {
 #if TARGET_API_MAC_OS8
 	PyErr_SetString(PyExc_NotImplementedError, "FSRef objects not supported on this platform");
@@ -554,9 +532,7 @@ mfss_FSpMakeFSRef(self, args)
 
 /* XXXX These routines should be replaced by a wrapper to the *FInfo routines */
 static PyObject *
-mfss_GetCreatorType(self, args)
-	mfssobject *self;
-	PyObject *args;
+mfss_GetCreatorType(mfssobject *self, PyObject *args)
 {
 	OSErr err;
 	FInfo info;
@@ -573,9 +549,7 @@ mfss_GetCreatorType(self, args)
 }
 
 static PyObject *
-mfss_SetCreatorType(self, args)
-	mfssobject *self;
-	PyObject *args;
+mfss_SetCreatorType(mfssobject *self, PyObject *args)
 {
 	OSErr err;
 	OSType creator, type;
@@ -600,9 +574,7 @@ mfss_SetCreatorType(self, args)
 }
 
 static PyObject *
-mfss_GetFInfo(self, args)
-	mfssobject *self;
-	PyObject *args;
+mfss_GetFInfo(mfssobject *self, PyObject *args)
 {
 	OSErr err;
 	mfsiobject *fip;
@@ -622,9 +594,7 @@ mfss_GetFInfo(self, args)
 }
 
 static PyObject *
-mfss_SetFInfo(self, args)
-	mfssobject *self;
-	PyObject *args;
+mfss_SetFInfo(mfssobject *self, PyObject *args)
 {
 	OSErr err;
 	mfsiobject *fip;
@@ -641,9 +611,7 @@ mfss_SetFInfo(self, args)
 }
 
 static PyObject *
-mfss_GetDates(self, args)
-	mfssobject *self;
-	PyObject *args;
+mfss_GetDates(mfssobject *self, PyObject *args)
 {
 	OSErr err;
 	unsigned long crdat, mddat, bkdat;
@@ -659,9 +627,7 @@ mfss_GetDates(self, args)
 }
 
 static PyObject *
-mfss_SetDates(self, args)
-	mfssobject *self;
-	PyObject *args;
+mfss_SetDates(mfssobject *self, PyObject *args)
 {
 	OSErr err;
 	double crdat, mddat, bkdat;
@@ -698,9 +664,7 @@ static struct PyMethodDef mfss_methods[] = {
 /* ---------- */
 
 static PyObject *
-mfss_getattr(self, name)
-	mfssobject *self;
-	char *name;
+mfss_getattr(mfssobject *self, char *name)
 {
 	if ( strcmp(name, "data") == 0)
 		return PyString_FromStringAndSize((char *)&self->fsspec, sizeof(FSSpec));	
@@ -708,8 +672,7 @@ mfss_getattr(self, name)
 }
 
 mfssobject *
-newmfssobject(fss)
-	FSSpec *fss;
+newmfssobject(FSSpec *fss)
 {
 	mfssobject *self;
 	
@@ -721,19 +684,17 @@ newmfssobject(fss)
 }
 
 static void
-mfss_dealloc(self)
-	mfssobject *self;
+mfss_dealloc(mfssobject *self)
 {
 	PyMem_DEL(self);
 }
 
 static PyObject *
-mfss_repr(self)
-	mfssobject *self;
+mfss_repr(mfssobject *self)
 {
 	char buf[512];
 
-	sprintf(buf, "FSSpec((%d, %d, '%.*s'))",
+	sprintf(buf, "FSSpec((%d, %ld, '%.*s'))",
 		self->fsspec.vRefNum, 
 		self->fsspec.parID,
 		self->fsspec.name[0], self->fsspec.name+1);
@@ -741,8 +702,7 @@ mfss_repr(self)
 }
 
 static int
-mfss_compare(v, w)
-	mfssobject *v, *w;
+mfss_compare(mfssobject *v, mfssobject *w)
 {
 	int minlen;
 	int res;
@@ -783,9 +743,7 @@ statichere PyTypeObject Mfsstype = {
 /* -------------------------------------------------------- */
 #if !TARGET_API_MAC_OS8
 static PyObject *
-mfsr_as_fsspec(self, args)
-	mfsrobject *self;
-	PyObject *args;
+mfsr_as_fsspec(mfsrobject *self, PyObject *args)
 {
 	OSErr err;
 	FSSpec fss;
@@ -822,9 +780,7 @@ static struct PyMethodDef mfsr_methods[] = {
 /* ---------- */
 
 static PyObject *
-mfsr_getattr(self, name)
-	mfsrobject *self;
-	char *name;
+mfsr_getattr(mfsrobject *self, char *name)
 {
 	if ( strcmp(name, "data") == 0)
 		return PyString_FromStringAndSize((char *)&self->fsref, sizeof(FSRef));	
@@ -832,8 +788,7 @@ mfsr_getattr(self, name)
 }
 
 mfsrobject *
-newmfsrobject(fsr)
-	FSRef *fsr;
+newmfsrobject(FSRef *fsr)
 {
 	mfsrobject *self;
 	
@@ -845,8 +800,7 @@ newmfsrobject(fsr)
 }
 
 static int
-mfsr_compare(v, w)
-	mfsrobject *v, *w;
+mfsr_compare(mfsrobject *v, mfsrobject *w)
 {
 	OSErr err;
 	
@@ -860,8 +814,7 @@ mfsr_compare(v, w)
 }
 
 static void
-mfsr_dealloc(self)
-	mfsrobject *self;
+mfsr_dealloc(mfsrobject *self)
 {
 	PyMem_DEL(self);
 }
@@ -890,9 +843,7 @@ statichere PyTypeObject Mfsrtype = {
 /* -------------------------------------------------------- */
 
 static PyObject *
-mfs_ResolveAliasFile(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
+mfs_ResolveAliasFile(PyObject *self, PyObject *args)
 {
 	FSSpec fss;
 	Boolean chain = 1, isfolder, wasaliased;
@@ -910,9 +861,7 @@ mfs_ResolveAliasFile(self, args)
 
 #if !TARGET_API_MAC_CARBON
 static PyObject *
-mfs_StandardGetFile(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
+mfs_StandardGetFile(PyObject *self, PyObject *args)
 {
 	SFTypeList list;
 	short numtypes;
@@ -934,9 +883,7 @@ mfs_StandardGetFile(self, args)
 }
 
 static PyObject *
-mfs_PromptGetFile(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
+mfs_PromptGetFile(PyObject *self, PyObject *args)
 {
 	SFTypeList list;
 	short numtypes;
@@ -959,9 +906,7 @@ mfs_PromptGetFile(self, args)
 }
 
 static PyObject *
-mfs_StandardPutFile(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
+mfs_StandardPutFile(PyObject *self, PyObject *args)
 {
 	Str255 prompt, dft;
 	StandardFileReply reply;
@@ -976,9 +921,7 @@ mfs_StandardPutFile(self, args)
 /*
 ** Set initial directory for file dialogs */
 static PyObject *
-mfs_SetFolder(self, args)
-	PyObject *self;
-	PyObject *args;
+mfs_SetFolder(PyObject *self, PyObject *args)
 {
 	FSSpec spec;
 	FSSpec ospec;
@@ -1002,9 +945,7 @@ mfs_SetFolder(self, args)
 #endif
 
 static PyObject *
-mfs_FSSpec(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
+mfs_FSSpec(PyObject *self, PyObject *args)
 {
 	FSSpec fss;
 
@@ -1014,9 +955,7 @@ mfs_FSSpec(self, args)
 }
 
 static PyObject *
-mfs_FSRef(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
+mfs_FSRef(PyObject *self, PyObject *args)
 {
 #if TARGET_API_MAC_OS8
 	PyErr_SetString(PyExc_NotImplementedError, "FSRef objects not supported on this platform");
@@ -1031,9 +970,7 @@ mfs_FSRef(self, args)
 }
 
 static PyObject *
-mfs_RawFSSpec(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
+mfs_RawFSSpec(PyObject *self, PyObject *args)
 {
 	FSSpec *fssp;
 	int size;
@@ -1048,9 +985,7 @@ mfs_RawFSSpec(self, args)
 }
 
 static PyObject *
-mfs_RawAlias(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
+mfs_RawAlias(PyObject *self, PyObject *args)
 {
 	char *dataptr;
 	Handle h;
@@ -1071,9 +1006,7 @@ mfs_RawAlias(self, args)
 
 #if !TARGET_API_MAC_CARBON
 static PyObject *
-mfs_GetDirectory(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
+mfs_GetDirectory(PyObject *self, PyObject *args)
 {
 	FSSpec fsdir;
 	int ok;
@@ -1088,9 +1021,7 @@ mfs_GetDirectory(self, args)
 #endif
 
 static PyObject *
-mfs_FindFolder(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
+mfs_FindFolder(PyObject *self, PyObject *args)
 {
 	OSErr err;
 	short where;
@@ -1110,9 +1041,7 @@ mfs_FindFolder(self, args)
 }
 
 static PyObject *
-mfs_FindApplication(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
+mfs_FindApplication(PyObject *self, PyObject *args)
 {
 	OSErr err;
 	OSType which;
@@ -1129,17 +1058,13 @@ mfs_FindApplication(self, args)
 }
 
 static PyObject *
-mfs_FInfo(self, args)
-	PyObject *self;
-	PyObject *args;
+mfs_FInfo(PyObject *self, PyObject *args)
 {	
 	return (PyObject *)newmfsiobject();
 }
 
 static PyObject *
-mfs_NewAliasMinimalFromFullPath(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
+mfs_NewAliasMinimalFromFullPath(PyObject *self, PyObject *args)
 {
 	OSErr err;
 	char *fullpath;
@@ -1277,7 +1202,7 @@ PyObject *PyMac_BuildFSSpec(FSSpec *v)
 /* Initialization function for the module (*must* be called initmacfs) */
 
 void
-initmacfs()
+initmacfs(void)
 {
 	PyObject *m, *d;
 
