@@ -82,7 +82,7 @@ int PyCodec_Register(PyObject *search_function)
 static
 PyObject *normalizestring(const char *string)
 {
-    register int i;
+    register size_t i;
     size_t len = strlen(string);
     char *p;
     PyObject *v;
