@@ -11,26 +11,6 @@ import sys, os, string, re, shutil
 from distutils.errors import *
 from distutils.spawn import spawn
 
-# for backwards compatibility:
-from distutils.file_util import *
-from distutils.dir_util import *
-from distutils.dep_util import *
-from distutils.archive_util import *
-
-
-# More backwards compatibility hacks
-def extend (list, new_list):
-    """Appends the list 'new_list' to 'list', just like the 'extend()'
-       list method does in Python 1.5.2 -- but this works on earlier
-       versions of Python too."""
-
-    if hasattr (list, 'extend'):
-        list.extend (new_list)
-    else:
-        list[len(list):] = new_list
-
-# extend ()
-
 
 def get_platform ():
     """Return a string (suitable for tacking onto directory names) that
