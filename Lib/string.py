@@ -57,7 +57,8 @@ def strip(s):
 
 # Split a string into a list of space/tab-separated words
 # NB: split(s) is NOT the same as splitfields(s, ' ')!
-def split(s):
+def split(s, sep=None):
+	if sep is not None: return splitfields(s, sep)
 	res = []
 	i, n = 0, len(s)
 	while i < n:
@@ -72,7 +73,8 @@ def split(s):
 # Split a list into fields separated by a given string
 # NB: splitfields(s, ' ') is NOT the same as split(s)!
 # splitfields(s, '') returns [s] (in analogy with split() in nawk)
-def splitfields(s, sep):
+def splitfields(s, sep=None):
+	if sep is None: return split(s)
 	res = []
 	nsep = len(sep)
 	if nsep == 0:
@@ -89,11 +91,11 @@ def splitfields(s, sep):
 	return res
 
 # Join words with spaces between them
-def join(words):
-	return joinfields(words, ' ')
+def join(words, sep = ' '):
+	return joinfields(words, sep)
 
-# Join fields with separator
-def joinfields(words, sep):
+# Join fields with optional separator
+def joinfields(words, sep = ' '):
 	res = ''
 	for w in words:
 		res = res + (sep + w)
