@@ -12,7 +12,10 @@ TEXINPUTS=$(TOPDIR)/paper-$(PAPER):$(TOPDIR)/texinputs:
 # Where are the various programs?
 PYTHON=	   python
 WEBCHECKER=$(PYTHON) $(TOPDIR)/../Tools/webchecker/webchecker.py
-MKHOWTO=   $(TOOLSDIR)/mkhowto
+MKHOWTO=   $(TOOLSDIR)/mkhowto --about $(TOPDIR)/html/stdabout.dat \
+		--up-link ../index.html --up-title "Document Index" \
+		--address $(PYTHONDOCS)
+MKHTML=	   $(MKHOWTO) --html
 
 BUILDINDEX=$(TOOLSDIR)/buildindex.py
 
@@ -62,41 +65,32 @@ modindex.html: lib/lib.html mac/mac.html $(TOOLSDIR)/mkmodindex
 		lib/modindex.html mac/modindex.html
 
 api/api.html:  $(APIFILES) $(BUILDINDEX)
-	$(MKHOWTO) --about stdabout.dat --address $(PYTHONDOCS) \
-		--html $(TOPDIR)/api/api.tex
+	$(MKHTML) $(TOPDIR)/api/api.tex
 
 doc/doc.html:  $(DOCFILES) $(BUILDINDEX)
-	$(MKHOWTO) --about stdabout.dat --address $(PYTHONDOCS) \
-		--html $(TOPDIR)/doc/doc.tex
+	$(MKHTML) $(TOPDIR)/doc/doc.tex
 
 ext/ext.html:  $(EXTFILES)
 	echo $(EXTFILES)
-	$(MKHOWTO) --about stdabout.dat --address $(PYTHONDOCS) \
-		--html $(TOPDIR)/ext/ext.tex
+	$(MKHTML) $(TOPDIR)/ext/ext.tex
 
 lib/lib.html:  $(LIBFILES) $(BUILDINDEX)
-	$(MKHOWTO) --about stdabout.dat --address $(PYTHONDOCS) \
-		--html $(TOPDIR)/lib/lib.tex
+	$(MKHTML) $(TOPDIR)/lib/lib.tex
 
 mac/mac.html:  $(MACFILES) $(BUILDINDEX)
-	$(MKHOWTO) --about stdabout.dat --address $(PYTHONDOCS) \
-		--html $(TOPDIR)/mac/mac.tex
+	$(MKHTML) $(TOPDIR)/mac/mac.tex
 
 ref/ref.html:  $(REFFILES) $(BUILDINDEX)
-	$(MKHOWTO) --about stdabout.dat --address $(PYTHONDOCS) \
-		--html $(TOPDIR)/ref/ref.tex
+	$(MKHTML) $(TOPDIR)/ref/ref.tex
 
 tut/tut.html:  $(TUTFILES) $(TOOLSDIR)/mkhowto
-	$(MKHOWTO) --about stdabout.dat --address $(PYTHONDOCS) \
-		--html --numeric --split 3 $(TOPDIR)/tut/tut.tex
+	$(MKHTML) --numeric --split 3 $(TOPDIR)/tut/tut.tex
 
 inst/inst.html: $(INSTFILES) $(TOPDIR)/perl/distutils.perl
-	$(MKHOWTO) --about stdabout.dat --address $(PYTHONDOCS) \
-		--html $(TOPDIR)/inst/inst.tex
+	$(MKHTML) $(TOPDIR)/inst/inst.tex
 
 dist/dist.html:$(DISTFILES) $(TOPDIR)/perl/distutils.perl
-	$(MKHOWTO) --about stdabout.dat --address $(PYTHONDOCS) \
-		--html $(TOPDIR)/dist/dist.tex
+	$(MKHTML) $(TOPDIR)/dist/dist.tex
 
 webcheck: all
 	$(WEBCHECKER) $(HTMLBASE)/api/
