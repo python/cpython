@@ -304,6 +304,8 @@ time_strftime(self, args)
 	char *outbuf = 0;
 	int i;
 
+	memset((ANY *) &buf, '\0', sizeof(buf));
+
 	if (!PyArg_ParseTuple(args, "s(iiiiiiiii)",
 			      &fmt,
 			      &(buf.tm_year),
@@ -321,12 +323,6 @@ time_strftime(self, args)
 	buf.tm_mon--;
 	buf.tm_wday = (buf.tm_wday + 1) % 7;
 	buf.tm_yday--;
-#ifdef HAVE_MKTIME
-	/* This call is only there to adjust the numbers to be within
-	   bounds.  When we don't have mktime(), we say the caller is
-	   responsible for that... */
-	(void) mktime(&buf);
-#endif
 	/* I hate these functions that presume you know how big the output
 	 * will be ahead of time...
 	 */
