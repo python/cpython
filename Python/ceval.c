@@ -3089,48 +3089,72 @@ cmp_outcome(int op, register PyObject *v, register PyObject *w)
 static PyObject *
 import_from(PyObject *v, PyObject *name)
 {
-	PyObject *w, *x;
-	if (!PyModule_Check(v)) {
-		PyErr_SetString(PyExc_TypeError,
-				"import-from requires a module object");
-		return NULL;
-	}
-	w = PyModule_GetDict(v); /* TDB: can this not fail ? */
-	x = PyDict_GetItem(w, name);
-	if (x == NULL) {
+	PyObject *x;
+
+	x = PyObject_GetAttr(v, name);
+	if (x == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
 		PyErr_Format(PyExc_ImportError,
 			     "cannot import name %.230s",
 			     PyString_AsString(name));
-	} else
-		Py_INCREF(x);
+	}
 	return x;
 }
-
+ 
 static int
 import_all_from(PyObject *locals, PyObject *v)
 {
-	int pos = 0, err;
-	PyObject *name, *value;
-	PyObject *w;
+	PyObject *all = PyObject_GetAttrString(v, "__all__");
+	PyObject *dict, *name, *value;
+	int skip_leading_underscores = 0;
+	int pos, err;
 
-	if (!PyModule_Check(v)) {
-		PyErr_SetString(PyExc_TypeError,
-				"import-from requires a module object");
-		return -1;
-	}
-	w = PyModule_GetDict(v); /* TBD: can this not fail ? */
-
-	while (PyDict_Next(w, &pos, &name, &value)) {
-		if (!PyString_Check(name) ||
-			PyString_AsString(name)[0] == '_')
-				continue;
-		Py_INCREF(value);
-		err = PyDict_SetItem(locals, name, value);
-		Py_DECREF(value);
-		if (err != 0)
+	if (all == NULL) {
+		if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+			return -1; /* Unexpected error */
+		PyErr_Clear();
+		dict = PyObject_GetAttrString(v, "__dict__");
+		if (dict == NULL) {
+			if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+				return -1;
+			PyErr_SetString(PyExc_ImportError,
+			"from-import-* object has no __dict__ and no __all__");
 			return -1;
+		}
+		all = PyMapping_Keys(dict);
+		Py_DECREF(dict);
+		if (all == NULL)
+			return -1;
+		skip_leading_underscores = 1;
 	}
-	return 0;
+
+	for (pos = 0, err = 0; ; pos++) {
+		name = PySequence_GetItem(all, pos);
+		if (name == NULL) {
+			if (!PyErr_ExceptionMatches(PyExc_IndexError))
+				err = -1;
+			else
+				PyErr_Clear();
+			break;
+		}
+		if (skip_leading_underscores &&
+		    PyString_Check(name) &&
+		    PyString_AS_STRING(name)[0] == '_')
+		{
+			Py_DECREF(name);
+			continue;
+		}
+		value = PyObject_GetAttr(v, name);
+		if (value == NULL)
+			err = -1;
+		else
+			err = PyDict_SetItem(locals, name, value);
+		Py_DECREF(name);
+		Py_XDECREF(value);
+		if (err != 0)
+			break;
+	}
+	Py_DECREF(all);
+	return err;
 }
 
 static PyObject *
