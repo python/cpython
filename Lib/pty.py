@@ -16,9 +16,37 @@ STDERR_FILENO = 2
 
 CHILD = 0
 
+def openpty():
+	"""openpty() -> (master_fd, slave_fd)
+	Open a pty master/slave pair, using os.openpty() if possible."""
+
+	try:
+		return os.openpty()
+	except (AttributeError, OSError):
+		pass
+	master_fd, slave_name = _open_terminal()
+	slave_fd = _slave_open(slave_name)
+	return master_fd, slave_fd
+
 def master_open():
+	"""master_open() -> (master_fd, slave_name)
+	Open a pty master and return the fd, and the filename of the slave end.
+	Deprecated, use openpty() instead."""
+
+	try:
+		master_fd, slave_fd = os.openpty()
+	except (AttributeError, OSError):
+		pass
+	else:
+		slave_name = os.ttyname(slave_fd)
+		os.close(slave_fd)
+		return master_fd, slave_name
+
+	return _open_terminal()
+
+def _open_terminal():
 	"""Open pty master and return (master_fd, tty_name).
-	SGI and Linux/BSD version."""
+	SGI and generic BSD version, for when openpty() fails."""
 	try:
 		import sgi
 	except ImportError:
@@ -40,22 +68,35 @@ def master_open():
 	raise os.error, 'out of pty devices'
 
 def slave_open(tty_name):
-	"""Open the pty slave and acquire the controlling terminal.
-	Return the file descriptor.  Linux version."""
-	# (Should be universal? --Guido)
+	"""slave_open(tty_name) -> slave_fd
+	Open the pty slave and acquire the controlling terminal, returning
+	opened filedescriptor.
+	Deprecated, use openpty() instead."""
+
 	return os.open(tty_name, FCNTL.O_RDWR)
 
 def fork():
-	"""Fork and make the child a session leader with a controlling terminal.
-	Return (pid, master_fd)."""
-	master_fd, tty_name = master_open() 
+	"""fork() -> (pid, master_fd)
+	Fork and make the child a session leader with a controlling terminal."""
+
+	try:
+		pid, fd = os.forkpty()
+	except (AttributeError, OSError):
+		pass
+	else:
+		if pid == CHILD:
+			try:
+				os.setsid()
+			except OSError:
+				# os.forkpty() already set us session leader
+				pass
+		return pid, fd
+
+	master_fd, slave_fd = openpty() 
 	pid = os.fork()
 	if pid == CHILD:
 		# Establish a new session.
 		os.setsid()
-
-		# Acquire controlling terminal.
-		slave_fd = slave_open(tty_name)
 		os.close(master_fd)
 
 		# Slave becomes stdin/stdout/stderr of child.
@@ -68,17 +109,17 @@ def fork():
 	# Parent and child process.
 	return pid, master_fd
 
-def writen(fd, data):
+def _writen(fd, data):
 	"""Write all the data to a descriptor."""
 	while data != '':
 		n = os.write(fd, data)
 		data = data[n:]
 
-def read(fd):
+def _read(fd):
 	"""Default read function."""
 	return os.read(fd, 1024)
 
-def copy(master_fd, master_read=read, stdin_read=read):
+def _copy(master_fd, master_read=_read, stdin_read=_read):
 	"""Parent copy loop.
 	Copies  
 	  	pty master -> standard output	(master_read)
@@ -91,9 +132,9 @@ def copy(master_fd, master_read=read, stdin_read=read):
 			os.write(STDOUT_FILENO, data)
 		if STDIN_FILENO in rfds:
 			data = stdin_read(STDIN_FILENO)
-			writen(master_fd, data)
+			_writen(master_fd, data)
 
-def spawn(argv, master_read=read, stdin_read=read):
+def spawn(argv, master_read=_read, stdin_read=_read):
 	"""Create a spawned process."""
 	if type(argv) == type(''):
 		argv = (argv,)
@@ -103,6 +144,6 @@ def spawn(argv, master_read=read, stdin_read=read):
 	mode = tty.tcgetattr(STDIN_FILENO)
 	tty.setraw(STDIN_FILENO)
 	try:
-		copy(master_fd, master_read, stdin_read)
+		_copy(master_fd, master_read, stdin_read)
 	except:
 		tty.tcsetattr(STDIN_FILENO, tty.TCSAFLUSH, mode)
