@@ -125,7 +125,7 @@ class build_ext (Command):
         self.extensions = self.distribution.ext_modules
         
 
-        # Make sure Python's include directories (for Python.h, config.h,
+        # Make sure Python's include directories (for Python.h, pyconfig.h,
         # etc.) are in the include search path.
         py_include = sysconfig.get_python_inc()
         plat_py_include = sysconfig.get_python_inc(plat_specific=1)
@@ -592,7 +592,7 @@ class build_ext (Command):
         """
         # The python library is always needed on Windows.  For MSVC, this
         # is redundant, since the library is mentioned in a pragma in
-        # config.h that MSVC groks.  The other Windows compilers all seem
+        # pyconfig.h that MSVC groks.  The other Windows compilers all seem
         # to need it mentioned explicitly, though, so that's what we do.
         # Append '_d' to the python import library on debug builds.
         from distutils.msvccompiler import MSVCCompiler

@@ -1,7 +1,7 @@
 #ifndef Py_PYPORT_H
 #define Py_PYPORT_H
 
-#include "config.h" /* include for defines */
+#include "pyconfig.h" /* include for defines */
 
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to basic

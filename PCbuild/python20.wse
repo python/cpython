@@ -926,9 +926,9 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\PC\config.h
-  Destination=%MAINDIR%\include\config.h
-  Description=Header files (config.h)
+  Source=%_SRC_%\PC\pyconfig.h
+  Destination=%MAINDIR%\include\pyconfig.h
+  Description=Header files (pyconfig.h)
   Flags=0000000000000010
 end
 item: Install File

@@ -2,7 +2,7 @@ dnl Process this file with autoconf 2.0 or later to make a configure script.
 AC_REVISION($Revision$)
 AC_PREREQ(2.0)
 AC_INIT(Include/object.h)
-AC_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADER(pyconfig.h)
 
 # Set VERSION so we only need to edit in one place (i.e., here)
 AC_SUBST(VERSION)

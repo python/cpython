@@ -25,7 +25,7 @@ raiseTestError(const char* test_name, const char* msg)
 	return NULL;
 }
 
-/* Test #defines from config.h (particularly the SIZEOF_* defines).
+/* Test #defines from pyconfig.h (particularly the SIZEOF_* defines).
 
    The ones derived from autoconf on the UNIX-like OSes can be relied
    upon (in the absence of sloppy cross-compiling), but the Windows

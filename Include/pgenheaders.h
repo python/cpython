@@ -7,7 +7,7 @@ extern "C" {
 
 /* Include files and extern declarations used by most of the parser. */
 
-#include "config.h"
+#include "pyconfig.h"
 
 /* config.h may or may not define DL_IMPORT */
 #ifndef DL_IMPORT	/* declarations for DLL import/export */

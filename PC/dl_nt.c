@@ -10,7 +10,7 @@ forgotten) from the programmer.
 #include "windows.h"
 
 /* NT and Python share these */
-#include "config.h"
+#include "pyconfig.h"
 #include "Python.h"
 
 char dllVersionBuffer[16] = ""; // a private buffer

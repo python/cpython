@@ -19,8 +19,8 @@ for Python.  Not all source files are relevant -- some are platform
 specific, others are only used in emergencies (e.g. getopt.c).  The
 Makefiles tell the story.
 
-You'll also need a config.h file tailored for your platform.  You can
-start with config.h.in, read the comments and turn on definitions that
+You'll also need a pyconfig.h file tailored for your platform.  You can
+start with pyconfig.h.in, read the comments and turn on definitions that
 apply to your platform.
 
 And you'll need a config.c file, which lists the built-in modules you
