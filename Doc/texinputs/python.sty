@@ -6,13 +6,6 @@
 \ProvidesPackage{python}
              [1998/01/11 LaTeX package (Python markup)]
 
-% The "fncychap" package is used to get the nice chapter headers.  The
-% .sty file is distributed with Python, so you should not need to disable
-% it.  You'd also end up with a mixed page style; uglier than stock LaTeX!
-%
-\RequirePackage[Bjarne]{fncychap}\typeout{Using fancy chapter headings.}
-
-
 % for PDF output, use maximal compression & a lot of other stuff
 % (test for PDF recommended by Tanmoy Bhattacharya <tanmoy@qcd.lanl.gov>)
 %
@@ -406,6 +399,8 @@
 
 \let\nodename=\label
 
+\newcommand{\sectcode}[1]{{\sectcodefont{#1}}}
+
 % For these commands, use \command{} to get the typography right, not 
 % {\command}.  This works better with the texinfo translation.
 \newcommand{\ABC}{{\sc abc}}
@@ -415,7 +410,7 @@
 \newcommand{\Cpp}{C\protect\raisebox{.18ex}{++}}
 \newcommand{\C}{C}
 \newcommand{\EOF}{{\sc eof}}
-\newcommand{\NULL}{\code{NULL}}
+\newcommand{\NULL}{\sectcode{NULL}}
 
 % code is the most difficult one...
 \newcommand{\code}[1]{{\@vobeyspaces\@noligs\def\{{\char`\{}\def\}{\char`\}}\def\~{\char`\~}\def\^{\char`\^}\def\e{\char`\\}\def\${\char`\$}\def\#{\char`\#}\def\&{\char`\&}\def\%{\char`\%}%
@@ -463,17 +458,17 @@
 % For now, don't do anything really fancy with them; just use them as
 % logical markup.  This might change in the future.
 %
-\let\module=\code
-\let\keyword=\code
-\let\exception=\code
-\let\class=\code
-\let\function=\code
-\let\member=\code
-\let\method=\code
+\let\module=\sectcode
+\let\keyword=\sectcode
+\let\exception=\sectcode
+\let\class=\sectcode
+\let\function=\sectcode
+\let\member=\sectcode
+\let\method=\sectcode
 
-\let\cfunction=\code
-\let\ctype=\code
-\let\cdata=\code
+\let\cfunction=\sectcode
+\let\ctype=\sectcode
+\let\cdata=\sectcode
 
 \newcommand{\mimetype}[1]{{\small\textsf{#1}}}
 % The \! is a "negative thin space" in math mode.
@@ -537,8 +532,6 @@
   \@tempdima\linewidth%
   \advance\@tempdima \leftmargin\makebox[\@tempdima][l]{#1}%
 }
-
-\newcommand{\sectcode}[1]{{\sectcodefont{#1}}}
 
 % Cross-referencing (AMK)
 % Sample usage:
