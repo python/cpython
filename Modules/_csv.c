@@ -647,7 +647,7 @@ Reader_iternext(ReaderObj *self)
                         Py_DECREF(lineobj);
                         return NULL;
                 }
-		if (strlen(line) < PyString_GET_SIZE(lineobj)) {
+		if (strlen(line) < (size_t)PyString_GET_SIZE(lineobj)) {
 			self->had_parse_error = 1;
 			Py_DECREF(lineobj);
 			return PyErr_Format(error_obj,
