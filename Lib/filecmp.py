@@ -12,6 +12,7 @@ Functions:
 import os
 import stat
 import warnings
+from itertools import ifilter, ifilterfalse
 
 __all__ = ["cmp","dircmp","cmpfiles"]
 
@@ -69,13 +70,13 @@ def _do_cmp(f1, f2):
     bufsize = BUFSIZE
     fp1 = open(f1, 'rb')
     fp2 = open(f2, 'rb')
-    while 1:
+    while True:
         b1 = fp1.read(bufsize)
         b2 = fp2.read(bufsize)
         if b1 != b2:
-            return 0
+            return False
         if not b1:
-            return 1
+            return True
 
 # Directory comparison class.
 #
@@ -133,46 +134,12 @@ class dircmp:
         self.left_list.sort()
         self.right_list.sort()
 
-    __p4_attrs = ('subdirs',)
-    __p3_attrs = ('same_files', 'diff_files', 'funny_files')
-    __p2_attrs = ('common_dirs', 'common_files', 'common_funny')
-    __p1_attrs = ('common', 'left_only', 'right_only')
-    __p0_attrs = ('left_list', 'right_list')
-
-    def __getattr__(self, attr):
-        if attr in self.__p4_attrs:
-            self.phase4()
-        elif attr in self.__p3_attrs:
-            self.phase3()
-        elif attr in self.__p2_attrs:
-            self.phase2()
-        elif attr in self.__p1_attrs:
-            self.phase1()
-        elif attr in self.__p0_attrs:
-            self.phase0()
-        else:
-            raise AttributeError, attr
-        return getattr(self, attr)
-
     def phase1(self): # Compute common names
-        a_only, b_only = [], []
-        common = {}
-        b = {}
-        for fnm in self.right_list:
-            b[fnm] = 1
-        for x in self.left_list:
-            if b.get(x, 0):
-                common[x] = 1
-            else:
-                a_only.append(x)
-        for x in self.right_list:
-            if common.get(x, 0):
-                pass
-            else:
-                b_only.append(x)
+        b = dict.fromkeys(self.right_list)
+        common = dict.fromkeys(ifilter(b.has_key, self.left_list))
+        self.left_only = list(ifilterfalse(common.has_key, self.left_list))
+        self.right_only = list(ifilterfalse(common.has_key, self.right_list))
         self.common = common.keys()
-        self.left_only = a_only
-        self.right_only = b_only
 
     def phase2(self): # Distinguish files, directories, funnies
         self.common_dirs = []
@@ -265,6 +232,17 @@ class dircmp:
             print
             sd.report_full_closure()
 
+    methodmap = dict(subdirs=phase4,
+                     same_files=phase3, diff_files=phase3, funny_files=phase3,
+                     common_dirs = phase2, common_files=phase2, common_funny=phase2,
+                     common=phase1, left_only=phase1, right_only=phase1,
+                     left_list=phase0, right_list=phase0)
+
+    def __getattr__(self, attr):
+        if attr not in self.methodmap:
+            raise AttributeError, attr
+        self.methodmap[attr](self)
+        return getattr(self, attr)
 
 def cmpfiles(a, b, common, shallow=1, use_statcache=None):
     """Compare common files in two directories.
@@ -297,7 +275,7 @@ def cmpfiles(a, b, common, shallow=1, use_statcache=None):
 #       1 for different
 #       2 for funny cases (can't stat, etc.)
 #
-def _cmp(a, b, sh):
+def _cmp(a, b, sh, abs=abs, cmp=cmp):
     try:
         return not abs(cmp(a, b, sh))
     except os.error:
@@ -306,11 +284,8 @@ def _cmp(a, b, sh):
 
 # Return a copy with items that occur in skip removed.
 #
-def _filter(list, skip):
-    result = []
-    for item in list:
-        if item not in skip: result.append(item)
-    return result
+def _filter(flist, skip):
+    return list(ifilterfalse(skip.__contains__, flist))
 
 
 # Demonstration and testing.
