@@ -964,8 +964,5 @@ initNav()
 	my_previewProcUPP = NewNavPreviewProc(my_previewProc);
 	my_filterProcUPP = NewNavObjectFilterProc(my_filterProc);
 	
-	/* Check for errors */
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module Nav");
 }
 

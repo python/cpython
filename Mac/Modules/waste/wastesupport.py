@@ -292,7 +292,7 @@ class WEOObjectDefinition(GlobalObjectDefinition):
 variablestuff = """
 	callbackdict = PyDict_New();
 	if (callbackdict == NULL || PyDict_SetItemString(d, "callbacks", callbackdict) != 0)
-		Py_FatalError("can't initialize Waste.callbackdict");
+		return;
 	upp_new_handler = NewWENewObjectProc(my_new_handler);
 	upp_dispose_handler = NewWEDisposeObjectProc(my_dispose_handler);
 	upp_draw_handler = NewWEDrawObjectProc(my_draw_handler);

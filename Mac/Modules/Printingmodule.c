@@ -461,8 +461,5 @@ initPrinting()
 
 	/* XXXX Add constants here */
 	
-	/* Check for errors */
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module Printing");
 }
 

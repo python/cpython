@@ -103,7 +103,7 @@ variablestuff = """
  	
 	o = QDGA_New();
 	if (o == NULL || PyDict_SetItemString(d, "qd", o) != 0)
-		Py_FatalError("can't initialize Qd.qd");
+		return;
 }
 """
 
