@@ -1090,7 +1090,7 @@ check doctest examples:
       they match.
 \end{itemize}
 
-The relationship between these processing classes is summarized in the
+The relationships among these processing classes are summarized in the
 following diagram:
 
 \begin{verbatim}
@@ -1099,7 +1099,7 @@ following diagram:
 |module| --DocTestFinder-> | DocTest | --DocTestRunner-> results
 +------+    |        ^     +---------+     |       ^    (printed)
             |        |     | Example |     |       |
-            V        |     |   ...   |     V       |
+            v        |     |   ...   |     v       |
            DocTestParser   | Example |   OutputChecker
                            +---------+
 \end{verbatim}
@@ -1196,7 +1196,7 @@ initialized by the constructor, and should not be modified directly.
 \end{memberdesc}
 
 \begin{memberdesc}{indent}
-    The example's indentation in the containing string.  I.e., the
+    The example's indentation in the containing string, i.e., the
     number of space characters that preceed the example's first
     prompt.
 \end{memberdesc}
@@ -1206,8 +1206,8 @@ initialized by the constructor, and should not be modified directly.
     \code{False}, which is used to override default options for this
     example.  Any option flags not contained in this dictionary are
     left at their default value (as specified by the
-    \class{DocTestRunner}'s
-\member{optionflags}).  By default, no options are set.
+    \class{DocTestRunner}'s \member{optionflags}).
+    By default, no options are set.
 \end{memberdesc}
 
 \subsubsection{DocTestFinder objects\label{doctest-DocTestFinder}}
@@ -1250,7 +1250,7 @@ initialized by the constructor, and should not be modified directly.
     The optional argument \var{name} specifies the object's name; this
     name will be used to construct names for the returned
     \class{DocTest}s.  If \var{name} is not specified, then
-    \code{var.__name__} is used.
+    \code{\var{obj}.__name__} is used.
 
     The optional parameter \var{module} is the module that contains
     the given object.  If the module is not specified or is None, then
@@ -1258,7 +1258,7 @@ initialized by the constructor, and should not be modified directly.
     correct module.  The object's module is used:
 
     \begin{itemize}
-    \item As a default namespace, if `globs` is not specified.
+    \item As a default namespace, if \var{globs} is not specified.
     \item To prevent the DocTestFinder from extracting DocTests
           from objects that are imported from other modules.  (Contained
           objects with modules other than \var{module} are ignored.)
@@ -1275,7 +1275,7 @@ initialized by the constructor, and should not be modified directly.
 
     The globals for each \class{DocTest} is formed by combining
     \var{globs} and \var{extraglobs} (bindings in \var{extraglobs}
-    override bindings in \var{globs}).  A new copy of the globals
+    override bindings in \var{globs}).  A new shallow copy of the globals
     dictionary is created for each \class{DocTest}.  If \var{globs} is
     not specified, then it defaults to the module's \var{__dict__}, if
     specified, or \code{\{\}} otherwise.  If \var{extraglobs} is not
@@ -1577,15 +1577,16 @@ Doctest provides three mechanisms for debugging doctest examples:
 
 \subsection{Soapbox\label{doctest-soapbox}}
 
-As mentioned in the introduction, \module{doctest} has two primary
-uses:
+As mentioned in the introduction, \module{doctest} has grown to have
+three primary uses:
 
 \begin{enumerate}
 \item Checking examples in docstrings.
 \item Regression testing.
+\item Executable documentation / literate testing.
 \end{enumerate}
 
-These two uses have different requirements, and it is important to
+These uses have different requirements, and it is important to
 distinguish them.  In particular, filling your docstrings with obscure
 test cases makes for bad documentation.
 
@@ -1593,39 +1594,44 @@ When writing a docstring, choose docstring examples with care.
 There's an art to this that needs to be learned---it may not be
 natural at first.  Examples should add genuine value to the
 documentation.  A good example can often be worth many words.
-% [edloper] I think this may be excessive for many cases; let's
-% just leave it to the user's judgement:
-%% If possible, show just a few normal cases, show endcases, show
-%% interesting subtle cases, and show an example of each kind of
-%% exception that can be raised.  You're probably testing for endcases
-%% and subtle cases anyway in an interactive shell:
-%% \refmodule{doctest} wants to make it as easy as possible to capture
-%% those sessions, and will verify they continue to work as designed
-%% forever after.
 If done with care, the examples will be invaluable for your users, and
 will pay back the time it takes to collect them many times over as the
 years go by and things change.  I'm still amazed at how often one of
-my \refmodule{doctest} examples stops working after a ``harmless''
+my \refmodule{doctest} examples stops working after a "harmless"
 change.
 
-Doctest also makes an excellent tool for writing regression testing.
-By interleaving prose and examples, it becomes much easier to keep
-track of what's actually being tested, and why.  When a test fails,
-the prose descriptions makes it much easier to figure out what the
-problem is, and how it should be fixed.  Regression testing is best
-confined to dedicated objects or files.  There are several options for
-organizing regressions:
+Doctest also makes an excellent tool for regression testing, especially if
+you don't skimp on explanatory text.  By interleaving prose and examples,
+it becomes much easier to keep track of what's actually being tested, and
+why.  When a test fails, good prose can make it much easier to figure out
+what the problem is, and how it should be fixed.  It's true that you could
+write extensive comments in code-based testing, but few programmers do.
+Many have found that using doctest approaches instead leads to much clearer
+tests.  Perhaps this is simply because doctest makes writing prose a little
+easier than writing code, while writing comments in code is a little
+harder.  I think it goes deeper than just that:  the natural attitude
+when writing a doctest-based test is that you want to explain the fine
+points of your software, and illustrate them with examples.  This in
+turn naturally leads to test files that start with the simplest features,
+and logically progress to complications and edge cases.  A coherent
+narrative is the result, instead of a collection of isolated functions
+that test isolated bits of functionality seemingly at random.  It's
+a different attitude, and produces different results, blurring the
+distinction between testing and explaining.
+
+Regression testing is best confined to dedicated objects or files.  There
+are several options for organizing tests:
 
 \begin{itemize}
+\item Write text files containing test cases as interactive examples,
+      and test the files using \function{testfile()} or
+      \function{DocFileSuite()}.  This is recommended, although is
+      easiest to do for new projects, designed from the start to use
+      doctest.
 \item Define functions named \code{_regrtest_\textit{topic}} that
       consist of single docstrings, containing test cases for the
       named topics.  These functions can be included in the same file
       as the module, or separated out into a separate test file.
 \item Define a \code{__test__} dictionary mapping from regression test
       topics to docstrings containing test cases.
-\item Write a text file containing test cases as interactive examples,
-      and test that file using \function{testfunc()}.
 \end{itemize}
-
-
-
