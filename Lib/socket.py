@@ -52,7 +52,7 @@ if (sys.platform.lower().startswith("win")
 
     _realsocketcall = _socket.socket
 
-    def socket(family, type, proto=0):
+    def socket(family=AF_INET, type=SOCK_STREAM, proto=0):
         return _socketobject(_realsocketcall(family, type, proto))
 
     try:
