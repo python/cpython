@@ -380,6 +380,7 @@ r_object(p)
 			XDECREF(consts);
 			XDECREF(names);
 			XDECREF(filename);
+			XDECREF(name);
 
 		}
 		return v;
