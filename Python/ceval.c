@@ -1230,7 +1230,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 
 		case PRINT_ITEM:
 			v = POP();
-			if (stream == NULL) {
+			if (stream == NULL || stream == Py_None) {
 				w = PySys_GetObject("stdout");
 				if (w == NULL) {
 					PyErr_SetString(PyExc_RuntimeError,
@@ -1263,7 +1263,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			/* fall through to PRINT_NEWLINE */
 
 		case PRINT_NEWLINE:
-			if (stream == NULL) {
+			if (stream == NULL || stream == Py_None) {
 				w = PySys_GetObject("stdout");
 				if (w == NULL)
 					PyErr_SetString(PyExc_RuntimeError,
