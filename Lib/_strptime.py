@@ -27,18 +27,14 @@ __all__ = ['strptime']
 
 def _getlang():
     # Figure out what the current language is set to.
-    current_lang = locale.getlocale(locale.LC_TIME)[0]
-    if current_lang:
-        return current_lang
-    else:
-        current_lang = locale.getdefaultlocale()[0]
-        if current_lang:
-            return current_lang
-        else:
-            return ''
+    return locale.getlocale(locale.LC_TIME)
 
 class LocaleTime(object):
     """Stores and handles locale-specific information related to time.
+
+    This is not thread-safe!  Attributes are lazily calculated and no
+    precaution is taken to check to see if the locale information has changed
+    since the creation of the instance in use.
 
     ATTRIBUTES (all read-only after instance creation! Instance variables that
                 store the values have mangled names):
@@ -103,7 +99,10 @@ class LocaleTime(object):
                 raise TypeError("timezone names must contain 2 items")
             else:
                 self.__timezone = self.__pad(timezone, False)
-        self.__lang = lang
+        if lang:
+            self.__lang = lang
+        else:
+            self.__lang = _getlang()
 
     def __pad(self, seq, front):
         # Add '' to seq to either front (is True), else the back.
@@ -196,13 +195,7 @@ class LocaleTime(object):
     LC_time = property(__get_LC_time, __set_nothing,
         doc="Format string for locale's time representation ('%X' format)")
 
-    def __get_lang(self):
-        # Fetch self.lang.
-        if not self.__lang:
-            self.__calc_lang()
-        return self.__lang
-
-    lang = property(__get_lang, __set_nothing,
+    lang = property(lambda self: self.__lang, __set_nothing,
                     doc="Language used for instance")
 
     def __calc_weekday(self):
@@ -294,11 +287,6 @@ class LocaleTime(object):
         else:
             time_zones.append(time.tzname[0])
         self.__timezone = self.__pad(time_zones, 0)
-
-    def __calc_lang(self):
-        # Set self.__lang by using __getlang().
-        self.__lang = _getlang()
-
 
 
 class TimeRE(dict):
@@ -406,28 +394,12 @@ class TimeRE(dict):
         """Return a compiled re object for the format string."""
         return re_compile(self.pattern(format), IGNORECASE)
 
-# Cached TimeRE; probably only need one instance ever so cache it for performance
-_locale_cache = TimeRE()
-# Cached regex objects; same reason as for TimeRE cache
-_regex_cache = dict()
 
 def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a time struct based on the input data and the format string."""
-    global _locale_cache
-    global _regex_cache
-    locale_time = _locale_cache.locale_time
-    # If the language changes, caches are invalidated, so clear them
-    if locale_time.lang != _getlang():
-        _locale_cache = TimeRE()
-        _regex_cache.clear()
-    format_regex = _regex_cache.get(format)
-    if not format_regex:
-        # Limit regex cache size to prevent major bloating of the module;
-        # The value 5 is arbitrary
-        if len(_regex_cache) > 5:
-            _regex_cache.clear()
-        format_regex = _locale_cache.compile(format)
-        _regex_cache[format] = format_regex
+    time_re = TimeRE()
+    locale_time = time_re.locale_time
+    format_regex = time_re.compile(format)
     found = format_regex.match(data_string)
     if not found:
         raise ValueError("time data did not match format:  data=%s  fmt=%s" %
