@@ -12,9 +12,9 @@ def test_main():
     else:
         import _threading_local
         local_orig = _threading_local.local
-        def setUp():
+        def setUp(test):
             _threading_local.local = _local
-        def tearDown():
+        def tearDown(test):
             _threading_local.local = local_orig
         suite.addTest(DocTestSuite('_threading_local',
                                    setUp=setUp, tearDown=tearDown)
