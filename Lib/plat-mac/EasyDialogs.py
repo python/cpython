@@ -768,7 +768,7 @@ def AskFolder(
 	
 
 def test():
-	import time, macfs
+	import time
 
 	Message("Testing EasyDialogs.")
 	optionlist = (('v', 'Verbose'), ('verbose', 'Verbose as long option'), 
@@ -789,9 +789,9 @@ def test():
 			Message("Hello everybody!!\nThe secret nickname of %s is %s!!!"%(s, s2))
 	else:
 		s = 'Anonymous'
-	rv = AskFileForOpen(message="Gimme a file, %s"%s, wanted=macfs.FSSpec)
+	rv = AskFileForOpen(message="Gimme a file, %s"%s, wanted=Carbon.File.FSSpec)
 	Message("rv: %s"%rv)
-	rv = AskFileForSave(wanted=macfs.FSSpec, savedFileName="%s.txt"%s)
+	rv = AskFileForSave(wanted=Carbon.File.FSRef, savedFileName="%s.txt"%s)
 	Message("rv.as_pathname: %s"%rv.as_pathname())
 	rv = AskFolder()
 	Message("Folder name: %s"%rv)
