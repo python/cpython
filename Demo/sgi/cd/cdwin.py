@@ -1,6 +1,7 @@
 # Window interface to (some of) the CD player's vital audio functions
 
 import cd
+import CD
 import stdwin
 from stdwinevents import *
 import mainloop
@@ -42,7 +43,13 @@ def but1(win):
 	update(win)
 
 def but2(win):
-	win.player.togglepause()
+	state = win.player.getstatus()[0]
+	if state == CD.READY:
+		win.player.play(1, 1)
+	elif state in (CD.PLAYING, CD.PAUSED):
+		win.player.togglepause()
+	else:
+		stdwin.fleep()
 	update(win)
 
 def but3(win):
@@ -67,13 +74,13 @@ def draw(win):
 
 def drawstatus(win, d):
 	left, top, right, bottom, v1, v2 = getgeo(win)
-	status = win.player.getstatus()
-	state = status[0]
+	state, track, curtime, abstime, totaltime, first, last, \
+		scsi_audio, cur_block, dummy = win.player.getstatus()
 	if 0 <= state < len(statedict):
 		message = statedict[state]
 	else:
 		message = `status`
-	message = message + ' track ' + `status[1]` + ' of ' + `status[12]`
+	message = message + ' track ' + `track` + ' of ' + `last`
 	d.erase((left, top), (right, v1))
 	box(d, left, top, right, v1, message)
 
