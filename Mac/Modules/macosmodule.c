@@ -27,6 +27,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 #include "macglue.h"
 
+#include <Windows.h>
+
 static PyObject *MacOS_Error; /* Exception MacOS.Error */
 
 
@@ -188,6 +190,18 @@ MacOS_SetScheduleTimes(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
+static PyObject *
+MacOS_EnableAppswitch(PyObject *self, PyObject *args)
+{
+	int enable;
+	
+	if (!PyArg_ParseTuple(args, "i", &enable))
+		return NULL;
+	PyMac_DoYieldEnabled = enable;
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 static PyMethodDef MacOS_Methods[] = {
 	{"AcceptHighLevelEvent",	MacOS_AcceptHighLevelEvent, 1},
 	{"GetCreatorAndType",		MacOS_GetCreatorAndType, 1},
@@ -196,6 +210,7 @@ static PyMethodDef MacOS_Methods[] = {
 	{"SetHighLevelEventHandler",	MacOS_SetHighLevelEventHandler, 1},
 #endif
 	{"SetScheduleTimes",	MacOS_SetScheduleTimes, 1},
+	{"EnableAppswitch",		MacOS_EnableAppswitch, 1},
 	{NULL,				NULL}		 /* Sentinel */
 };
 

@@ -33,9 +33,24 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Windows.h>
 #include <Desk.h>
 #include <Traps.h>
+#include <Processes.h>
+
+#include <signal.h>
 
 #ifdef __MWERKS__
+/* 
+** With MW we can pass the event off to the console window, so
+** we might as well handle all events.
+*/
 #include <SIOUX.h>
+#define MAINLOOP_EVENTMASK everyEvent
+#else
+/*
+** For other compilers we're more careful, since we can't handle
+** things like updates (and they'll keep coming back if we don't
+** handle them)
+*/
+#define MAINLOOP_EVENTMASK (mDownMask|keyDownMask|osMask)
 #endif /* __MWERKS__ */
 
 #include <signal.h>
@@ -47,11 +62,15 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Declared in macfsmodule.c: */
 extern FSSpec *mfs_GetFSSpecFSSpec();
 
+/* Interrupt code variables: */
+static int interrupted;			/* Set to true when cmd-. seen */
+static RETSIGTYPE intcatcher Py_PROTO((int));
+
 /*
 ** We attempt to be a good citizen by giving up the CPU periodically.
 ** When in the foreground we do this less often and for shorter periods
 ** than when in the background. At this time we also check for events and
-** pass them off to stdwin (or SIOUX, if compiling with mwerks).
+** pass them off to SIOUX, if compiling with mwerks.
 ** The counts here are in ticks of 1/60th second.
 ** XXXX The initial values here are not based on anything.
 ** FG-python gives up the cpu for 1/60th 5 times per second,
@@ -61,7 +80,11 @@ static long interval_fg = 12;
 static long interval_bg = 6;
 static long yield_fg = 1;
 static long yield_bg = 12;
-static long lastyield, in_background;
+static long lastyield;
+static int in_foreground;
+
+int PyMac_DoYieldEnabled = 1;	/* Don't do eventloop when false */
+
 
 /* Convert C to Pascal string. Returns pointer to static buffer. */
 unsigned char *
@@ -137,6 +160,97 @@ PyMac_Error(OSErr err)
 	return PyErr_Mac(PyMac_GetOSErrException(), err);
 }
 
+/* The catcher routine (which may not be used for all compilers) */
+static RETSIGTYPE
+intcatcher(sig)
+	int sig;
+{
+	interrupted = 1;
+	signal(SIGINT, intcatcher);
+}
+
+void
+PyOS_InitInterrupts()
+{
+	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
+		signal(SIGINT, intcatcher);
+}
+
+/*
+** This routine scans the event queue looking for cmd-.
+** This is the only way to get an interrupt under THINK (since it
+** doesn't do SIGINT handling), but is also used under MW, when
+** the full-fledged event loop is disabled. This way, we can at least
+** interrupt a runaway python program.
+*/
+static void
+scan_event_queue(flush)
+	int flush;
+{
+	register EvQElPtr q;
+	
+	q = (EvQElPtr) GetEvQHdr()->qHead;
+	
+	for (; q; q = (EvQElPtr)q->qLink) {
+		if (q->evtQWhat == keyDown &&
+				(char)q->evtQMessage == '.' &&
+				(q->evtQModifiers & cmdKey) != 0) {
+			if ( flush )
+				FlushEvents(keyDownMask, 0);
+			interrupted = 1;
+			break;
+		}
+	}
+}
+
+int
+PyOS_InterruptOccurred()
+{
+#ifdef THINK_C
+	scan_event_queue(1);
+#endif
+	PyMac_Yield();
+	if (interrupted) {
+		interrupted = 0;
+		return 1;
+	}
+	return 0;
+}
+
+/* intrpeek() is like intrcheck(), but it doesn't flush the events. The
+** idea is that you call intrpeek() somewhere in a busy-wait loop, and return
+** None as soon as it returns 1. The mainloop will then pick up the cmd-. soon
+** thereafter.
+*/
+static int
+intrpeek()
+{
+#ifdef THINK_C
+	scan_event_queue(0);
+#endif
+	return interrupted;
+}
+
+/* Check whether we are in the foreground */
+int
+PyMac_InForeground()
+{
+	static ProcessSerialNumber ours;
+	static inited;
+	ProcessSerialNumber curfg;
+	Boolean eq;
+	
+	if ( inited == 0 )
+		(void)GetCurrentProcess(&ours);
+	inited = 1;
+	if ( GetFrontProcess(&curfg) < 0 )
+		eq = 1;
+	else if ( SameProcess(&ours, &curfg, &eq) < 0 )
+		eq = 1;
+	return (int)eq;
+
+}
+
 /*
 ** Set yield timeouts
 */
@@ -158,7 +272,6 @@ PyMac_DoYield()
 	EventRecord ev;
 	WindowPtr wp;
 	long yield;
-	extern int StdwinIsActive;
 	static int no_waitnextevent = -1;
 	int gotone;
 	
@@ -167,33 +280,30 @@ PyMac_DoYield()
 							NGetTrapAddress(_Unimplemented, ToolTrap));
 	}
 
-	if ( StdwinIsActive )
+	if ( !PyMac_DoYieldEnabled ) {
+#ifndef THINK_C
+		/* Under think this has been done before in intrcheck() or intrpeek() */
+		scan_event_queue(0);
+#endif
 		return;
+	}
 		
-	if ( in_background )
-		yield = yield_bg;
-	else
+	in_foreground = PyMac_InForeground();
+	if ( in_foreground )
 		yield = yield_fg;
+	else
+		yield = yield_bg;
 	while ( 1 ) {
 		if ( no_waitnextevent ) {
 			SystemTask();
-			gotone = GetNextEvent(0xffff, &ev);
+			gotone = GetNextEvent(MAINLOOP_EVENTMASK, &ev);
 		} else {
-			gotone = WaitNextEvent(everyEvent, &ev, yield, NULL);
+			gotone = WaitNextEvent(MAINLOOP_EVENTMASK, &ev, yield, NULL);
 		}	
 		/* Get out quickly if nothing interesting is happening */
 		if ( !gotone || ev.what == nullEvent )
 			break;
 			
-		/* Check whether we've moved to foreground or background */
-		if ( ev.what == osEvt &&
-		         (ev.message & osEvtMessageMask) == (suspendResumeMessage<<24)) {
-			if ( ev.message & resumeFlag ) {
-				in_background = 0;
-			} else {
-				in_background = 1;
-			}
-		}
 #ifdef __MWERKS__
 		/* If SIOUX wants it we're done too */
 		(void)SIOUXHandleOneEvent(&ev);
@@ -215,10 +325,10 @@ void
 PyMac_Yield() {
 	long iv;
 	
-	if ( in_background )
-		iv = interval_bg;
-	else
+	if ( in_foreground )
 		iv = interval_fg;
+	else
+		iv = interval_bg;
 	if ( TickCount() > lastyield + iv )
 		PyMac_DoYield();
 }

@@ -28,6 +28,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 char *macstrerror(int);				/* strerror with mac errors */
 
+extern int PyMac_DoYieldEnabled;	/* Don't do eventloop when false */
+
 extern PyObject *PyMac_OSErrException;		/* Exception for OSErr */
 PyObject *PyMac_GetOSErrException(void);	/* Initialize & return it */
 
