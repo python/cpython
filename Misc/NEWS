@@ -29,6 +29,7 @@ Core
   ----------------------------------------------------------------------
   uu       | string    | string    | UU codec (e.g. for email)
   base64   | string    | string    | base64 codec
+  quopri   | string    | string    | quoted-printable codec
   zlib     | string    | string    | zlib compression
   hex      | string    | string    | 2-byte hex codec
   rot-13   | string    | Unicode   | ROT-13 Unicode charmap codec
