@@ -12,12 +12,20 @@ from bgen import *
 # Simple types
 Boolean = Type("Boolean", "b")
 SignedByte = Type("SignedByte", "b")
-ScriptCode = Type("ScriptCode", "h")
 Size = Type("Size", "l")
 Style = Type("Style", "b")
 StyleParameter = Type("StyleParameter", "h")
 CharParameter = Type("CharParameter", "h")
 TextEncoding = Type("TextEncoding", "l")
+ByteCount = Type("ByteCount", "l")
+Duration = Type("Duration", "l")
+ByteOffset = Type("ByteOffset", "l")
+OptionBits = Type("OptionBits", "l")
+ItemCount = Type("ItemCount", "l")
+PBVersion = Type("PBVersion", "l")
+ScriptCode = Type("ScriptCode", "h")
+LangCode = Type("LangCode", "h")
+RegionCode = Type("RegionCode", "h")
 
 UInt8 = Type("UInt8", "b")
 SInt8 = Type("SInt8", "b")
@@ -25,10 +33,15 @@ UInt16 = Type("UInt16", "H")
 SInt16 = Type("SInt16", "h")
 UInt32 = Type("UInt32", "l")
 SInt32 = Type("SInt32", "l")
+Float32 = Type("Float32", "f")
+
+wide = OpaqueByValueType("wide", "PyMac_Buildwide", "PyMac_Getwide")
+wide_ptr = OpaqueType("wide", "PyMac_Buildwide", "PyMac_Getwide")
 
 # Pascal strings
 ConstStr255Param = OpaqueArrayType("Str255", "PyMac_BuildStr255", "PyMac_GetStr255")
 Str255 = OpaqueArrayType("Str255", "PyMac_BuildStr255", "PyMac_GetStr255")
+StringPtr = OpaqueByValueType("StringPtr", "PyMac_BuildStr255", "BUG")
 
 # File System Specifications
 FSSpec_ptr = OpaqueType("FSSpec", "PyMac_BuildFSSpec", "PyMac_GetFSSpec")
@@ -39,6 +52,7 @@ def OSTypeType(typename):
 	return OpaqueByValueType(typename, "PyMac_BuildOSType", "PyMac_GetOSType")
 OSType = OSTypeType("OSType")
 ResType = OSTypeType("ResType")
+FourCharCode = OSTypeType("FourCharCode")
 
 # Version numbers
 NumVersion = OpaqueByValueType("NumVersion", "PyMac_BuildNumVersion", "BUG")
@@ -56,6 +70,7 @@ WindowRef = WindowPtr
 DialogPtr = OpaqueByValueType("DialogPtr", "DlgObj")
 DialogRef = DialogPtr
 ExistingWindowPtr = OpaqueByValueType("WindowPtr", "WinObj_WhichWindow", "BUG")
+# XXX This is incorrect: it returns a Window, not a Dialog!
 ExistingDialogPtr = OpaqueByValueType("DialogPtr", "WinObj_WhichWindow", "BUG")
 
 # NULL pointer passed in as optional storage -- not present in Python version
