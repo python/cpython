@@ -196,11 +196,11 @@ code_compare(PyCodeObject *co, PyCodeObject *cp)
 	cmp = PyObject_Compare(co->co_name, cp->co_name);
 	if (cmp) return cmp;
 	cmp = co->co_argcount - cp->co_argcount;
-	if (cmp) return cmp;
+	if (cmp) return (cmp<0)?-1:1;
 	cmp = co->co_nlocals - cp->co_nlocals;
-	if (cmp) return cmp;
+	if (cmp) return (cmp<0)?-1:1;
 	cmp = co->co_flags - cp->co_flags;
-	if (cmp) return cmp;
+	if (cmp) return (cmp<0)?-1:1;
 	cmp = PyObject_Compare(co->co_code, cp->co_code);
 	if (cmp) return cmp;
 	cmp = PyObject_Compare(co->co_consts, cp->co_consts);
