@@ -585,7 +585,7 @@ int_pow(PyIntObject *v, PyIntObject *w, PyIntObject *z)
 				return PyLong_Type.tp_as_number->nb_power(
 					(PyObject *)v,
 					(PyObject *)w,
-					(PyObject *)w);
+					(PyObject *)z);
 			}
 		}
 	 	iw >>= 1;	/* Shift exponent down by 1 bit */
