@@ -3071,6 +3071,34 @@ def string_exceptions():
     except:
         raise TestFailed, "string subclass allowed as exception"
 
+def copy_setstate():
+    if verbose:
+        print "Testing that copy.*copy() correctly uses __setstate__..."
+    import copy
+    class C(object):
+        def __init__(self, foo=None):
+            self.foo = foo
+            self.__foo = foo
+        def setfoo(self, foo=None):
+            self.foo = foo
+        def getfoo(self):
+            return self.__foo
+        def __getstate__(self):
+            return [self.foo]
+        def __setstate__(self, lst):
+            assert len(lst) == 1
+            self.__foo = self.foo = lst[0]
+    a = C(42)
+    a.setfoo(24)
+    vereq(a.foo, 24)
+    vereq(a.getfoo(), 42)
+    b = copy.copy(a)
+    vereq(b.foo, 24)
+    vereq(b.getfoo(), 24)
+    b = copy.deepcopy(a)
+    vereq(b.foo, 24)
+    vereq(b.getfoo(), 24)
+
 def do_this_first():
     if verbose:
         print "Testing SF bug 551412 ..."
@@ -3153,6 +3181,7 @@ def test_main():
     imulbug()
     docdescriptor()
     string_exceptions()
+    copy_setstate()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
