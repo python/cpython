@@ -4325,6 +4325,8 @@ symtable_params(struct symtable *st, node *n)
 			symtable_add_def(st, STR(CHILD(n, i)), 
 					 DEF_PARAM | DEF_STAR);
 			i += 2;
+			if (i >= NCH(n))
+				return;
 			c = CHILD(n, i);
 		}
 		if (TYPE(c) == DOUBLESTAR) {
