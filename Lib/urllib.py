@@ -1011,7 +1011,9 @@ def unquote_plus(s):
         s = string.join(string.split(s, '+'), ' ')
     return unquote(s)
 
-always_safe = string.letters + string.digits + '_,.-'
+always_safe = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ' 
+               'abcdefghijklmnopqrstuvwxyz'
+               '0123456789' '_,.-')
 def quote(s, safe = '/'):
     """quote('abc def') -> 'abc%20def'."""
     # XXX Can speed this up an order of magnitude
@@ -1042,7 +1044,6 @@ def urlencode(dict):
         v = quote_plus(str(v))
         l.append(k + '=' + v)
     return string.join(l, '&')
-
 
 # Proxy handling
 def getproxies_environment():
