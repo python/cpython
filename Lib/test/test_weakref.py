@@ -520,8 +520,15 @@ class MappingTestCase(TestBase):
         d = weakref.WeakKeyDictionary()
         o = Object('1')
         # An attempt to delete an object that isn't there should raise
-        # KetError.  It didn't before 2.3.
+        # KeyError.  It didn't before 2.3.
         self.assertRaises(KeyError, d.__delitem__, o)
+        self.assertRaises(KeyError, d.__getitem__, o)
+
+        # If a key isn't of a weakly referencable type, __getitem__ and
+        # __setitem__ raise TypeError.  __delitem__ should too.
+        self.assertRaises(TypeError, d.__delitem__,  13)
+        self.assertRaises(TypeError, d.__getitem__,  13)
+        self.assertRaises(TypeError, d.__setitem__,  13, 13)
 
     def test_weak_keyed_cascading_deletes(self):
         # SF bug 742860.  For some reason, before 2.3 __delitem__ iterated
@@ -552,12 +559,13 @@ class MappingTestCase(TestBase):
         # Reverse it, so that the iteration implementation of __delitem__
         # has to keep looping to find the first object we delete.
         objs.reverse()
+
         # Turn on mutation in C.__eq__.  The first time thru the loop,
         # under the iterkeys() business the first comparison will delete
         # the last item iterkeys() would see, and that causes a
         #     RuntimeError: dictionary changed size during iteration
         # when the iterkeys() loop goes around to try comparing the next
-        # key.  After ths was fixed, it just deletes the last object *our*
+        # key.  After this was fixed, it just deletes the last object *our*
         # "for o in obj" loop would have gotten to.
         mutate = True
         count = 0
