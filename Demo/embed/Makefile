@@ -22,6 +22,7 @@ LIBPYTHON=	$(blddir)/libpython$(VERSION).a
 
 # XXX edit LIBS (in particular) to match $(blddir)/Modules/Makefile
 LIBS=		-lnsl -ldl -lreadline -ltermcap -lieee -lpthread -lutil
+LDFLAGS=	-Xlinker -export-dynamic
 SYSLIBS=	-lm
 MODLIBS=	
 ALLLIBS=	$(LIBPYTHON) $(MODLIBS) $(LIBS) $(SYSLIBS)
@@ -29,7 +30,7 @@ ALLLIBS=	$(LIBPYTHON) $(MODLIBS) $(LIBS) $(SYSLIBS)
 # Build the demo application
 all:		demo
 demo:		demo.o
-		$(CC) demo.o $(ALLLIBS) -o demo
+		$(CC) $(LDFLAGS) demo.o $(ALLLIBS) -o demo
 
 # Administrative targets
 
