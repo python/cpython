@@ -76,7 +76,9 @@ LONG            Long (unbounded) integer; repr(i), then newline.
 #define TUPLE       't'
 #define EMPTY_TUPLE ')'
 #define SETITEMS    'u'
+#undef TRUE
 #define TRUE        "I01\n"
+#undef FALSE
 #define FALSE       "I00\n"
 
 
