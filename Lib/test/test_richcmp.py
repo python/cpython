@@ -194,38 +194,31 @@ def recursion():
     b = UserList(); b.append(b)
     def check(s, a=a, b=b):
         if verbose:
-            print "trying", s, "..."
-        verify(eval(s))
+            print "check", s
+        try:
+            if not eval(s):
+                raise TestFailed, s + " was false but expected to be true"
+        except RuntimeError, msg:
+            raise TestFailed, str(msg)
     if verbose:
         print "recursion tests: a=%s, b=%s" % (a, b)
     check('a==b')
-    check('a<=b')
-    check('a>=b')
-    check('not a<b')
-    check('not a>b')
     check('not a!=b')
-    check('cmp(a,b) == 0')
     a.append(1)
+    if verbose:
+        print "recursion tests: a=%s, b=%s" % (a, b)
+    check('a!=b')
+    check('not a==b')
     b.append(0)
     if verbose:
         print "recursion tests: a=%s, b=%s" % (a, b)
-    check('a>b')
-    check('a>=b')
     check('a!=b')
-    check('not a<b')
-    check('not a<=b')
     check('not a==b')
-    check('cmp(a,b) == 1')
     a[1] = -1
     if verbose:
         print "recursion tests: a=%s, b=%s" % (a, b)
-    check('a<b')
-    check('a<=b')
     check('a!=b')
-    check('not a>b')
-    check('not a>=b')
     check('not a==b')
-    check('cmp(a,b) == -1')
     if verbose: print "recursion tests ok"
 
 def main():
