@@ -6,12 +6,14 @@ class Module(GeneratorGroup):
 	def __init__(self, name, prefix = None,
 		     includestuff = None,
 		     finalstuff = None,
-		     initstuff = None):
+		     initstuff = None,
+		     variablestuff = None):
 		GeneratorGroup.__init__(self, prefix or name)
 		self.name = name
 		self.includestuff = includestuff
 		self.initstuff = initstuff
 		self.finalstuff = finalstuff
+		self.variablestuff = variablestuff
 
 	def addobject(self, od):
 		self.generators.append(od)
@@ -64,6 +66,9 @@ class Module(GeneratorGroup):
 		Output("""Py_FatalError("can't initialize %s.Error");""",
 		                                           self.name)
 		DedentLevel()
+		if self.variablestuff:
+			Output("%s", self.variablestuff)
+			Output()
 
 	def exceptionInitializer(self):
 		return """PyString_FromString("%s.Error")""" % self.name
