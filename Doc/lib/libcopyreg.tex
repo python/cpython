@@ -22,9 +22,11 @@ functions or class instances.
 
 \begin{funcdesc}{pickle}{type, function\optional{, constructor}}
   Declares that \var{function} should be used as a ``reduction''
-  function for objects of type \var{type}; \var{type} should not a
-  class object.  \var{function} should return either a string or a
-  tuple containing two or three elements.
+  function for objects of type \var{type}; \var{type} must not be a
+  ``classic'' class object.  (Classic classes are handled differently;
+  see the documentation for the \refmodule{pickle} module for
+  details.)  \var{function} should return either a string or a tuple
+  containing two or three elements.
 
   The optional \var{constructor} parameter, if provided, is a
   callable object which can be used to reconstruct the object when
