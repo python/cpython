@@ -69,3 +69,29 @@ def unshar(fp, verbose=0, overwrite=0):
 			file = None
 			continue
 		if verbose: print "...", `line`
+		
+def main():
+	import sys
+	import os
+	if len(sys.argv) > 1:
+		for fname in sys.argv[1:]:
+			fp = open(fname, 'r')
+			dir, fn = os.path.split(fname)
+			if dir:
+				os.chdir(dir)
+			unshar(fp)
+	else:
+		import macfs
+		fss, ok = macfs.StandardGetFile('TEXT')
+		if not ok:
+			sys.exit(0)
+		fname = fss.as_pathname()
+		fp = open(fname, 'r')
+		fss, ok = macfs.GetDirectory('Folder to save files in:')
+		if not ok:
+			sys.exit(0)
+		os.chdir(fss.as_pathname())
+		unshar(fp)
+		
+if __name__ == '__main__':
+	main()
