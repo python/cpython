@@ -498,7 +498,7 @@ multipart message structure:
 
 \begin{verbatim}
 >>> for part in msg.walk():
->>>     print part.get_content_type()
+...     print part.get_content_type()
 multipart/report
 text/plain
 message/delivery-status
