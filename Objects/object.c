@@ -296,39 +296,50 @@ PyObject_Unicode(PyObject *v)
 	
 	if (v == NULL)
 		res = PyString_FromString("<NULL>");
-	else if (PyUnicode_Check(v)) {
+	if (PyUnicode_CheckExact(v)) {
 		Py_INCREF(v);
 		return v;
 	}
-	else if (PyString_Check(v)) {
+	if (PyUnicode_Check(v)) {
+		/* For a Unicode subtype that's not a Unicode object,
+		   return a true Unicode object with the same data. */
+		return PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(v),
+					     PyUnicode_GET_SIZE(v));
+	}
+	if (PyString_Check(v)) {
 		Py_INCREF(v);
 	    	res = v;
     	}
-	else if (v->ob_type->tp_str != NULL)
-		res = (*v->ob_type->tp_str)(v);
 	else {
 		PyObject *func;
-		static PyObject *strstr;
-		if (strstr == NULL) {
-			strstr= PyString_InternFromString("__str__");
-			if (strstr == NULL)
+		static PyObject *unicodestr;
+		/* XXX As soon as we have a tp_unicode slot, we should
+		       check this before trying the __unicode__
+		       method. */
+		if (unicodestr == NULL) {
+			unicodestr= PyString_InternFromString(
+						       "__unicode__");
+			if (unicodestr == NULL)
 				return NULL;
 		}
-		if (!PyInstance_Check(v) ||
-		    (func = PyObject_GetAttr(v, strstr)) == NULL) {
-			PyErr_Clear();
-			res = PyObject_Repr(v);
-		}
-		else {
+		func = PyObject_GetAttr(v, unicodestr);
+		if (func != NULL) {
 		    	res = PyEval_CallObject(func, (PyObject *)NULL);
 			Py_DECREF(func);
+		}
+		else {
+			PyErr_Clear();
+			if (v->ob_type->tp_str != NULL)
+				res = (*v->ob_type->tp_str)(v);
+			else
+				res = PyObject_Repr(v);
 		}
 	}
 	if (res == NULL)
 		return NULL;
 	if (!PyUnicode_Check(res)) {
-		PyObject* str;
-		str = PyUnicode_FromObject(res);
+		PyObject *str;
+		str = PyUnicode_FromEncodedObject(res, NULL, "strict");
 		Py_DECREF(res);
 		if (str)
 			res = str;

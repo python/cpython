@@ -395,6 +395,18 @@ int PyUnicode_AsWideChar(PyUnicodeObject *unicode,
 
 PyObject *PyUnicode_FromObject(register PyObject *obj)
 {
+    /* XXX Perhaps we should make this API an alias of
+           PyObject_Unicode() instead ?! */
+    if (PyUnicode_CheckExact(obj)) {
+	Py_INCREF(obj);
+	return obj;
+    }
+    if (PyUnicode_Check(obj)) {
+	/* For a Unicode subtype that's not a Unicode object,
+	   return a true Unicode object with the same data. */
+	return PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(obj),
+				     PyUnicode_GET_SIZE(obj));
+    }
     return PyUnicode_FromEncodedObject(obj, NULL, "strict");
 }
 
@@ -406,69 +418,49 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
     int len;
     int owned = 0;
     PyObject *v;
-    int reclevel;
     
     if (obj == NULL) {
 	PyErr_BadInternalCall();
 	return NULL;
     }
 
-    /* Coerce object */
-    for (reclevel = 0; reclevel < 2; reclevel++) {
+#if 0
+    /* For b/w compatibility we also accept Unicode objects provided
+       that no encodings is given and then redirect to PyObject_Unicode() 
+       which then applies the additional logic for Unicode subclasses.
 
+       NOTE: This API should really only be used for object which
+             represent *encoded* Unicode !
+
+    */
 	if (PyUnicode_Check(obj)) {
 	    if (encoding) {
 		PyErr_SetString(PyExc_TypeError,
 				"decoding Unicode is not supported");
-		goto onError;
+	    return NULL;
 	    }
-	    if (PyUnicode_CheckExact(obj)) {
-		Py_INCREF(obj);
-		v = obj;
+	return PyObject_Unicode(obj);
 	    }
-	    else {
-		/* For a subclass of unicode, return a true unicode object
-		   with the same string value. */
-		v = PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(obj),
-					  PyUnicode_GET_SIZE(obj));
-	    }
-	    goto done;
+#else
+    if (PyUnicode_Check(obj)) {
+	PyErr_SetString(PyExc_TypeError,
+			"decoding Unicode is not supported");
+	return NULL;
 	}
-	else if (PyString_Check(obj)) {
+#endif
+
+    /* Coerce object */
+    if (PyString_Check(obj)) {
 	    s = PyString_AS_STRING(obj);
 	    len = PyString_GET_SIZE(obj);
-	    break;
-	}
-	else {
-	    PyObject *w;
-
-	    /* Try char buffer interface */
-            if (PyObject_AsCharBuffer(obj, &s, &len))
-		PyErr_Clear();
-	    else
-		break;
-    
-	    /* Mimic the behaviour of str(object) if everything else
-    	       fails (see PyObject_Str()); this also covers instances
-    	       which implement __str__. */
-	    if (obj->ob_type->tp_str == NULL)
-		w = PyObject_Repr(obj);
-	    else
-		w = (*obj->ob_type->tp_str)(obj);
-	    if (w == NULL)
-		goto onError;
-	    if (owned) {
-		Py_DECREF(obj);
 	    }
-	    obj = w;
-	    owned = 1;
-	}
-    }
-
-    if (s == NULL) {
+    else if (PyObject_AsCharBuffer(obj, &s, &len)) {
+	/* Overwrite the error message with something more useful in
+	   case of a TypeError. */
+	if (PyErr_ExceptionMatches(PyExc_TypeError))
 	PyErr_Format(PyExc_TypeError,
-		     "coercing to Unicode: __str__ recursion limit exceeded "
-		     "(last type: %.80s)",
+			 "coercing to Unicode: need string or buffer, "
+			 "%.80s found",
 		     obj->ob_type->tp_name);
 	goto onError;
     }
@@ -481,7 +473,6 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
     else 
 	v = PyUnicode_Decode(s, len, encoding, errors);
 
- done:
     if (owned) {
 	Py_DECREF(obj);
     }
@@ -5653,6 +5644,9 @@ unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	    return NULL;
 	if (x == NULL)
 		return (PyObject *)_PyUnicode_New(0);
+	if (encoding == NULL && errors == NULL)
+	    return PyObject_Unicode(x);
+	else
 	return PyUnicode_FromEncodedObject(x, encoding, errors);
 }
 
