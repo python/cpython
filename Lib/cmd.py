@@ -214,13 +214,13 @@ class Cmd:
             # XXX check arg syntax
             try:
                 func = getattr(self, 'help_' + arg)
-            except:
+            except AttributeError:
                 try:
                     doc=getattr(self, 'do_' + arg).__doc__
                     if doc:
                         print doc
                         return
-                except:
+                except AttributeError:
                     pass
                 print self.nohelp % (arg,)
                 return
