@@ -111,10 +111,25 @@ What if Times fonts are not available?
 As distributed, the LaTeX documents use PostScript Times fonts.  This
 is done since they are much better looking and produce smaller
 PostScript files.  If, however, your TeX installation does not support 
-them, they may be easily disabled.  Edit the file manual.cls and
-comment out the line that starts "\RequirePackage{times}" using a "%"
-character at the beginning of the line.  An alternative is to install
-the right fonts and LaTeX style file.
+them, they may be easily disabled.  Edit the file
+texiinputs/manual.cls and comment out the line that starts
+"\RequirePackage{times}" using a "%" character at the beginning of the
+line.  An alternative is to install the right fonts and LaTeX style
+file.
+
+
+What if I want to use A4 paper?
+-------------------------------
+
+Edit the file texinputs/manual.cls.  Change the line that reads:
+
+    \LoadClass[twoside,openright]{report}
+
+to say:
+
+    \LoadClass[a4paper,twoside,openright]{report}
+
+Now do a "make clean all" to generate PostScript files.
 
 
 Making HTML files
@@ -127,3 +142,40 @@ l2h" should do the trick.
 For the reference manual, we use Harlequin's webmaker.  We're not very 
 happy with it and hope that eventually FrameMaker will be able to
 produce HTML without third party help.
+
+
+Copyright notice
+================
+
+The Python source is copyrighted, but you can freely use and copy it
+as long as you don't change or remove the copyright notice:
+
+----------------------------------------------------------------------
+Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+The Netherlands.
+
+                        All Rights Reserved
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in
+supporting documentation, and that the names of Stichting Mathematisch
+Centrum or CWI or Corporation for National Research Initiatives or
+CNRI not be used in advertising or publicity pertaining to
+distribution of the software without specific, written prior
+permission.
+
+While CWI is the initial source for this software, a modified version
+is made available by the Corporation for National Research Initiatives
+(CNRI) at the Internet address ftp://ftp.python.org.
+
+STICHTING MATHEMATISCH CENTRUM AND CNRI DISCLAIM ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL STICHTING MATHEMATISCH
+CENTRUM OR CNRI BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL
+DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+----------------------------------------------------------------------
