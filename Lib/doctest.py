@@ -348,7 +348,7 @@ Test passed.
 # 0,9,7    9-Feb-2001
 #    string method conversion
 
-__version__ = 0, 9, 6
+__version__ = 0, 9, 7
 
 import types
 _FunctionType = types.FunctionType
