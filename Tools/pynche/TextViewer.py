@@ -41,7 +41,12 @@ class TextViewer:
 Insert some stuff here and play
 with the buttons below to see
 how the colors interact in
-textual displays.''')
+textual displays.
+
+See how the selection can also
+be affected by tickling the buttons
+and choosing a color.''')
+        self.__text.tag_add(SEL, 6.0, END)
         #
         # variables
         self.__trackp = BooleanVar()
