@@ -115,6 +115,7 @@ Media = OpaqueByValueType('Media', 'MediaObj')
 UserData = OpaqueByValueType('UserData', 'UserDataObj')
 TimeBase = OpaqueByValueType('TimeBase', 'TimeBaseObj')
 MovieController = OpaqueByValueType('MovieController', 'MovieCtlObj')
+IdleManager = OpaqueByValueType('IdleManager', 'IdleManagerObj')
 
 # Other opaque objects
 Component = OpaqueByValueType('Component', 'CmpObj')
@@ -230,6 +231,13 @@ class MovieCtlObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
 	def outputFreeIt(self, itselfname):
 		Output("DisposeMovieController(%s);", itselfname)
 
+class IdleManagerObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
+	def outputCheckNewArg(self):
+		Output("""if (itself == NULL) {
+					PyErr_SetString(Qt_Error,"Cannot create null IdleManager");
+					return NULL;
+				}""")
+
 # From here on it's basically all boiler plate...
 
 # Create the generator groups and link them
@@ -240,7 +248,9 @@ Media_object = MediaObjectDefinition('Media', 'MediaObj', 'Media')
 UserData_object = UserDataObjectDefinition('UserData', 'UserDataObj', 'UserData')
 TimeBase_object = TimeBaseObjectDefinition('TimeBase', 'TimeBaseObj', 'TimeBase')
 MovieController_object = MovieCtlObjectDefinition('MovieController', 'MovieCtlObj', 'MovieController')
+IdleManager_object = IdleManagerObjectDefinition('IdleManager', 'IdleManagerObj', 'IdleManager')
 
+module.addobject(IdleManager_object)
 module.addobject(MovieController_object)
 module.addobject(TimeBase_object)
 module.addobject(UserData_object)
@@ -254,6 +264,7 @@ Method = OSErrWeakLinkMethodGenerator
 
 # Create and populate the lists
 functions = []
+IdleManager_methods = []
 MovieController_methods = []
 TimeBase_methods = []
 UserData_methods = []
