@@ -252,6 +252,15 @@ if 1:
         for stmt in fail:
             self.assertRaises(SyntaxError, compile, stmt, 'tmp', 'exec')
 
+    def test_for_distinct_code_objects(self):
+        # SF bug 1048870
+        def f():
+            f1 = lambda x=1: x
+            f2 = lambda x=2: x
+            return f1, f2
+        f1, f2 = f()
+        self.assertNotEqual(id(f1.func_code), id(f2.func_code))
+
 def test_main():
     test_support.run_unittest(TestSpecifics)
 
