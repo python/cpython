@@ -230,6 +230,77 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
 	return 0;
 }
 
+staticforward PyObject *lookup_maybe(PyObject *, char *, PyObject **);
+
+static int
+call_finalizer(PyObject *self)
+{
+	static PyObject *del_str = NULL;
+	PyObject *del, *res;
+	PyObject *error_type, *error_value, *error_traceback;
+
+	/* Temporarily resurrect the object. */
+#ifdef Py_TRACE_REFS
+#ifndef Py_REF_DEBUG
+#   error "Py_TRACE_REFS defined but Py_REF_DEBUG not."
+#endif
+	/* much too complicated if Py_TRACE_REFS defined */
+	_Py_NewReference((PyObject *)self);
+#ifdef COUNT_ALLOCS
+	/* compensate for boost in _Py_NewReference; note that
+	 * _Py_RefTotal was also boosted; we'll knock that down later.
+	 */
+	self->ob_type->tp_allocs--;
+#endif
+#else /* !Py_TRACE_REFS */
+	/* Py_INCREF boosts _Py_RefTotal if Py_REF_DEBUG is defined */
+	Py_INCREF(self);
+#endif /* !Py_TRACE_REFS */
+
+	/* Save the current exception, if any. */
+	PyErr_Fetch(&error_type, &error_value, &error_traceback);
+
+	/* Execute __del__ method, if any. */
+	del = lookup_maybe(self, "__del__", &del_str);
+	if (del != NULL) {
+		res = PyEval_CallObject(del, NULL);
+		if (res == NULL)
+			PyErr_WriteUnraisable(del);
+		else
+			Py_DECREF(res);
+		Py_DECREF(del);
+	}
+
+	/* Restore the saved exception. */
+	PyErr_Restore(error_type, error_value, error_traceback);
+
+	/* Undo the temporary resurrection; can't use DECREF here, it would
+	 * cause a recursive call.
+	 */
+#ifdef Py_REF_DEBUG
+	/* _Py_RefTotal was boosted either by _Py_NewReference or
+	 * Py_INCREF above.
+	 */
+	_Py_RefTotal--;
+#endif
+	if (--self->ob_refcnt > 0) {
+#ifdef COUNT_ALLOCS
+		self->ob_type->tp_frees--;
+#endif
+		_PyObject_GC_TRACK(self);
+		return -1; /* __del__ added a reference; don't delete now */
+	}
+#ifdef Py_TRACE_REFS
+	_Py_ForgetReference((PyObject *)self);
+#ifdef COUNT_ALLOCS
+	/* compensate for increment in _Py_ForgetReference */
+	self->ob_type->tp_frees--;
+#endif
+#endif
+
+	return 0;
+}
+
 static void
 subtype_dealloc(PyObject *self)
 {
@@ -237,6 +308,9 @@ subtype_dealloc(PyObject *self)
 	destructor f;
 
 	/* This exists so we can DECREF self->ob_type */
+
+	if (call_finalizer(self) < 0)
+		return;
 
 	/* Find the nearest base with a different tp_dealloc */
 	type = self->ob_type;
