@@ -5,8 +5,12 @@
 
 
 
+#ifdef _WIN32
+#include "pywintoolbox.h"
+#else
 #include "macglue.h"
 #include "pymactoolbox.h"
+#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -822,6 +826,36 @@ static PyObject *MovieCtlObj_MCGetInterfaceElement(MovieControllerObject *_self,
 	return _res;
 }
 
+static PyObject *MovieCtlObj_MCAddMovieSegment(MovieControllerObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	Movie srcMovie;
+	Boolean scaled;
+	if (!PyArg_ParseTuple(_args, "O&b",
+	                      MovieObj_Convert, &srcMovie,
+	                      &scaled))
+		return NULL;
+	_rv = MCAddMovieSegment(_self->ob_itself,
+	                        srcMovie,
+	                        scaled);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCTrimMovieSegment(MovieControllerObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = MCTrimMovieSegment(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
 static PyMethodDef MovieCtlObj_methods[] = {
 	{"MCSetMovie", (PyCFunction)MovieCtlObj_MCSetMovie, 1,
 	 "(Movie theMovie, WindowPtr movieWindow, Point where) -> (ComponentResult _rv)"},
@@ -911,6 +945,10 @@ static PyMethodDef MovieCtlObj_methods[] = {
 	 "(WindowPtr w, Point where, long modifiers) -> (ComponentResult _rv)"},
 	{"MCGetInterfaceElement", (PyCFunction)MovieCtlObj_MCGetInterfaceElement, 1,
 	 "(MCInterfaceElement whichElement, void * element) -> (ComponentResult _rv)"},
+	{"MCAddMovieSegment", (PyCFunction)MovieCtlObj_MCAddMovieSegment, 1,
+	 "(Movie srcMovie, Boolean scaled) -> (ComponentResult _rv)"},
+	{"MCTrimMovieSegment", (PyCFunction)MovieCtlObj_MCTrimMovieSegment, 1,
+	 "() -> (ComponentResult _rv)"},
 	{NULL, NULL, 0}
 };
 
@@ -3311,6 +3349,27 @@ static PyObject *TrackObj_AddEmptyTrackToMovie(TrackObject *_self, PyObject *_ar
 	return _res;
 }
 
+static PyObject *TrackObj_AddClonedTrackToMovie(TrackObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	Movie dstMovie;
+	long flags;
+	Track dstTrack;
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      MovieObj_Convert, &dstMovie,
+	                      &flags))
+		return NULL;
+	_err = AddClonedTrackToMovie(_self->ob_itself,
+	                             dstMovie,
+	                             flags,
+	                             &dstTrack);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     TrackObj_New, dstTrack);
+	return _res;
+}
+
 static PyObject *TrackObj_AddTrackReference(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -3673,6 +3732,8 @@ static PyMethodDef TrackObj_methods[] = {
 	 "(Track dstTrack) -> None"},
 	{"AddEmptyTrackToMovie", (PyCFunction)TrackObj_AddEmptyTrackToMovie, 1,
 	 "(Movie dstMovie, Handle dataRef, OSType dataRefType) -> (Track dstTrack)"},
+	{"AddClonedTrackToMovie", (PyCFunction)TrackObj_AddClonedTrackToMovie, 1,
+	 "(Movie dstMovie, long flags) -> (Track dstTrack)"},
 	{"AddTrackReference", (PyCFunction)TrackObj_AddTrackReference, 1,
 	 "(Track refTrack, OSType refType) -> (long addedIndex)"},
 	{"DeleteTrackReference", (PyCFunction)TrackObj_DeleteTrackReference, 1,
@@ -4249,6 +4310,20 @@ static PyObject *MovieObj_GetMovieBoundsRgn(MovieObject *_self, PyObject *_args)
 	_rv = GetMovieBoundsRgn(_self->ob_itself);
 	_res = Py_BuildValue("O&",
 	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *MovieObj_SetMovieVideoOutput(MovieObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentInstance vout;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &vout))
+		return NULL;
+	SetMovieVideoOutput(_self->ob_itself,
+	                    vout);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -5614,6 +5689,8 @@ static PyMethodDef MovieObj_methods[] = {
 	 "() -> (RgnHandle _rv)"},
 	{"GetMovieBoundsRgn", (PyCFunction)MovieObj_GetMovieBoundsRgn, 1,
 	 "() -> (RgnHandle _rv)"},
+	{"SetMovieVideoOutput", (PyCFunction)MovieObj_SetMovieVideoOutput, 1,
+	 "(ComponentInstance vout) -> None"},
 	{"PutMovieIntoHandle", (PyCFunction)MovieObj_PutMovieIntoHandle, 1,
 	 "(Handle publicMovie) -> None"},
 	{"PutMovieIntoDataFork", (PyCFunction)MovieObj_PutMovieIntoDataFork, 1,
@@ -6027,6 +6104,32 @@ static PyObject *Qt_GetMovieImporterForDataRef(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *Qt_QTGetMIMETypeInfo(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	char* mimeStringStart;
+	short mimeStringLength;
+	OSType infoSelector;
+	void * infoDataPtr;
+	long infoDataSize;
+	if (!PyArg_ParseTuple(_args, "shO&s",
+	                      &mimeStringStart,
+	                      &mimeStringLength,
+	                      PyMac_GetOSType, &infoSelector,
+	                      &infoDataPtr))
+		return NULL;
+	_err = QTGetMIMETypeInfo(mimeStringStart,
+	                         mimeStringLength,
+	                         infoSelector,
+	                         infoDataPtr,
+	                         &infoDataSize);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     infoDataSize);
+	return _res;
+}
+
 static PyObject *Qt_TrackTimeToMediaTime(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -6328,6 +6431,67 @@ static PyObject *Qt_CreateShortcutMovieFile(PyObject *_self, PyObject *_args)
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qt_CanQuickTimeOpenFile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	FSSpec fileSpec;
+	OSType fileType;
+	OSType fileNameExtension;
+	Boolean outCanOpenWithGraphicsImporter;
+	Boolean outCanOpenAsMovie;
+	Boolean outPreferGraphicsImporter;
+	UInt32 inFlags;
+	if (!PyArg_ParseTuple(_args, "O&O&O&l",
+	                      PyMac_GetFSSpec, &fileSpec,
+	                      PyMac_GetOSType, &fileType,
+	                      PyMac_GetOSType, &fileNameExtension,
+	                      &inFlags))
+		return NULL;
+	_err = CanQuickTimeOpenFile(&fileSpec,
+	                            fileType,
+	                            fileNameExtension,
+	                            &outCanOpenWithGraphicsImporter,
+	                            &outCanOpenAsMovie,
+	                            &outPreferGraphicsImporter,
+	                            inFlags);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("bbb",
+	                     outCanOpenWithGraphicsImporter,
+	                     outCanOpenAsMovie,
+	                     outPreferGraphicsImporter);
+	return _res;
+}
+
+static PyObject *Qt_CanQuickTimeOpenDataRef(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	Handle dataRef;
+	OSType dataRefType;
+	Boolean outCanOpenWithGraphicsImporter;
+	Boolean outCanOpenAsMovie;
+	Boolean outPreferGraphicsImporter;
+	UInt32 inFlags;
+	if (!PyArg_ParseTuple(_args, "O&O&l",
+	                      ResObj_Convert, &dataRef,
+	                      PyMac_GetOSType, &dataRefType,
+	                      &inFlags))
+		return NULL;
+	_err = CanQuickTimeOpenDataRef(dataRef,
+	                               dataRefType,
+	                               &outCanOpenWithGraphicsImporter,
+	                               &outCanOpenAsMovie,
+	                               &outPreferGraphicsImporter,
+	                               inFlags);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("bbb",
+	                     outCanOpenWithGraphicsImporter,
+	                     outCanOpenAsMovie,
+	                     outPreferGraphicsImporter);
 	return _res;
 }
 
@@ -6906,6 +7070,32 @@ static PyObject *Qt_TextMediaRawIdle(PyObject *_self, PyObject *_args)
 	_res = Py_BuildValue("ll",
 	                     _rv,
 	                     flagsOut);
+	return _res;
+}
+
+static PyObject *Qt_TextMediaGetTextProperty(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	TimeValue atMediaTime;
+	long propertyType;
+	void * data;
+	long dataSize;
+	if (!PyArg_ParseTuple(_args, "O&llsl",
+	                      CmpInstObj_Convert, &mh,
+	                      &atMediaTime,
+	                      &propertyType,
+	                      &data,
+	                      &dataSize))
+		return NULL;
+	_rv = TextMediaGetTextProperty(mh,
+	                               atMediaTime,
+	                               propertyType,
+	                               data,
+	                               dataSize);
+	_res = Py_BuildValue("l",
+	                     _rv);
 	return _res;
 }
 
@@ -7617,6 +7807,95 @@ static PyObject *Qt_FlashMediaFrameLabelToMovieTime(PyObject *_self, PyObject *_
 	return _res;
 }
 
+static PyObject *Qt_FlashMediaGetFlashVariable(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	char path;
+	char name;
+	Handle theVariableCStringOut;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = FlashMediaGetFlashVariable(mh,
+	                                 &path,
+	                                 &name,
+	                                 &theVariableCStringOut);
+	_res = Py_BuildValue("lccO&",
+	                     _rv,
+	                     path,
+	                     name,
+	                     ResObj_New, theVariableCStringOut);
+	return _res;
+}
+
+static PyObject *Qt_FlashMediaSetFlashVariable(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	char path;
+	char name;
+	char value;
+	Boolean updateFocus;
+	if (!PyArg_ParseTuple(_args, "O&b",
+	                      CmpInstObj_Convert, &mh,
+	                      &updateFocus))
+		return NULL;
+	_rv = FlashMediaSetFlashVariable(mh,
+	                                 &path,
+	                                 &name,
+	                                 &value,
+	                                 updateFocus);
+	_res = Py_BuildValue("lccc",
+	                     _rv,
+	                     path,
+	                     name,
+	                     value);
+	return _res;
+}
+
+static PyObject *Qt_FlashMediaDoButtonActions(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	char path;
+	long buttonID;
+	long transition;
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      CmpInstObj_Convert, &mh,
+	                      &buttonID,
+	                      &transition))
+		return NULL;
+	_rv = FlashMediaDoButtonActions(mh,
+	                                &path,
+	                                buttonID,
+	                                transition);
+	_res = Py_BuildValue("lc",
+	                     _rv,
+	                     path);
+	return _res;
+}
+
+static PyObject *Qt_FlashMediaGetSupportedSwfVersion(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	UInt8 swfVersion;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = FlashMediaGetSupportedSwfVersion(mh,
+	                                       &swfVersion);
+	_res = Py_BuildValue("lb",
+	                     _rv,
+	                     swfVersion);
+	return _res;
+}
+
 #if !TARGET_API_MAC_CARBON
 
 static PyObject *Qt_MovieMediaGetCurrentMovieProperty(PyObject *_self, PyObject *_args)
@@ -7985,32 +8264,30 @@ static PyObject *Qt_NewTimeBase(PyObject *_self, PyObject *_args)
 static PyObject *Qt_ConvertTime(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	TimeRecord inout;
+	TimeRecord theTime;
 	TimeBase newBase;
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      QtTimeRecord_Convert, &inout,
+	if (!PyArg_ParseTuple(_args, "O&",
 	                      TimeBaseObj_Convert, &newBase))
 		return NULL;
-	ConvertTime(&inout,
+	ConvertTime(&theTime,
 	            newBase);
 	_res = Py_BuildValue("O&",
-	                     QtTimeRecord_New, &inout);
+	                     QtTimeRecord_New, &theTime);
 	return _res;
 }
 
 static PyObject *Qt_ConvertTimeScale(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	TimeRecord inout;
+	TimeRecord theTime;
 	TimeScale newScale;
-	if (!PyArg_ParseTuple(_args, "O&l",
-	                      QtTimeRecord_Convert, &inout,
+	if (!PyArg_ParseTuple(_args, "l",
 	                      &newScale))
 		return NULL;
-	ConvertTimeScale(&inout,
+	ConvertTimeScale(&theTime,
 	                 newScale);
 	_res = Py_BuildValue("O&",
-	                     QtTimeRecord_New, &inout);
+	                     QtTimeRecord_New, &theTime);
 	return _res;
 }
 
@@ -8150,6 +8427,8 @@ static PyMethodDef Qt_methods[] = {
 	 "(Handle h, OSType handleType, Movie theMovie, long flags, ComponentInstance userComp) -> None"},
 	{"GetMovieImporterForDataRef", (PyCFunction)Qt_GetMovieImporterForDataRef, 1,
 	 "(OSType dataRefType, Handle dataRef, long flags) -> (Component importer)"},
+	{"QTGetMIMETypeInfo", (PyCFunction)Qt_QTGetMIMETypeInfo, 1,
+	 "(char* mimeStringStart, short mimeStringLength, OSType infoSelector, void * infoDataPtr) -> (long infoDataSize)"},
 	{"TrackTimeToMediaTime", (PyCFunction)Qt_TrackTimeToMediaTime, 1,
 	 "(TimeValue value, Track theTrack) -> (TimeValue _rv)"},
 	{"NewUserData", (PyCFunction)Qt_NewUserData, 1,
@@ -8178,6 +8457,10 @@ static PyMethodDef Qt_methods[] = {
 	 "(short resRefNum, short resId) -> None"},
 	{"CreateShortcutMovieFile", (PyCFunction)Qt_CreateShortcutMovieFile, 1,
 	 "(FSSpec fileSpec, OSType creator, ScriptCode scriptTag, long createMovieFileFlags, Handle targetDataRef, OSType targetDataRefType) -> None"},
+	{"CanQuickTimeOpenFile", (PyCFunction)Qt_CanQuickTimeOpenFile, 1,
+	 "(FSSpec fileSpec, OSType fileType, OSType fileNameExtension, UInt32 inFlags) -> (Boolean outCanOpenWithGraphicsImporter, Boolean outCanOpenAsMovie, Boolean outPreferGraphicsImporter)"},
+	{"CanQuickTimeOpenDataRef", (PyCFunction)Qt_CanQuickTimeOpenDataRef, 1,
+	 "(Handle dataRef, OSType dataRefType, UInt32 inFlags) -> (Boolean outCanOpenWithGraphicsImporter, Boolean outCanOpenAsMovie, Boolean outPreferGraphicsImporter)"},
 	{"NewMovieFromScrap", (PyCFunction)Qt_NewMovieFromScrap, 1,
 	 "(long newMovieFlags) -> (Movie _rv)"},
 	{"QTNewAlias", (PyCFunction)Qt_QTNewAlias, 1,
@@ -8226,6 +8509,8 @@ static PyMethodDef Qt_methods[] = {
 	 "(MediaHandler mh, GWorldPtr gw, GDHandle gd, void * data, long dataSize, TextDescriptionHandle tdh, TimeValue sampleDuration) -> (ComponentResult _rv)"},
 	{"TextMediaRawIdle", (PyCFunction)Qt_TextMediaRawIdle, 1,
 	 "(MediaHandler mh, GWorldPtr gw, GDHandle gd, TimeValue sampleTime, long flagsIn) -> (ComponentResult _rv, long flagsOut)"},
+	{"TextMediaGetTextProperty", (PyCFunction)Qt_TextMediaGetTextProperty, 1,
+	 "(MediaHandler mh, TimeValue atMediaTime, long propertyType, void * data, long dataSize) -> (ComponentResult _rv)"},
 	{"TextMediaFindNextText", (PyCFunction)Qt_TextMediaFindNextText, 1,
 	 "(MediaHandler mh, Ptr text, long size, short findFlags, TimeValue startTime) -> (ComponentResult _rv, TimeValue foundTime, TimeValue foundDuration, long offset)"},
 	{"TextMediaHiliteTextSample", (PyCFunction)Qt_TextMediaHiliteTextSample, 1,
@@ -8295,6 +8580,14 @@ static PyMethodDef Qt_methods[] = {
 	 "(MediaHandler mh, long flashFrameNumber) -> (ComponentResult _rv, TimeValue movieTime)"},
 	{"FlashMediaFrameLabelToMovieTime", (PyCFunction)Qt_FlashMediaFrameLabelToMovieTime, 1,
 	 "(MediaHandler mh, Ptr theLabel) -> (ComponentResult _rv, TimeValue movieTime)"},
+	{"FlashMediaGetFlashVariable", (PyCFunction)Qt_FlashMediaGetFlashVariable, 1,
+	 "(MediaHandler mh) -> (ComponentResult _rv, char path, char name, Handle theVariableCStringOut)"},
+	{"FlashMediaSetFlashVariable", (PyCFunction)Qt_FlashMediaSetFlashVariable, 1,
+	 "(MediaHandler mh, Boolean updateFocus) -> (ComponentResult _rv, char path, char name, char value)"},
+	{"FlashMediaDoButtonActions", (PyCFunction)Qt_FlashMediaDoButtonActions, 1,
+	 "(MediaHandler mh, long buttonID, long transition) -> (ComponentResult _rv, char path)"},
+	{"FlashMediaGetSupportedSwfVersion", (PyCFunction)Qt_FlashMediaGetSupportedSwfVersion, 1,
+	 "(MediaHandler mh) -> (ComponentResult _rv, UInt8 swfVersion)"},
 
 #if !TARGET_API_MAC_CARBON
 	{"MovieMediaGetCurrentMovieProperty", (PyCFunction)Qt_MovieMediaGetCurrentMovieProperty, 1,
@@ -8348,9 +8641,9 @@ static PyMethodDef Qt_methods[] = {
 	{"NewTimeBase", (PyCFunction)Qt_NewTimeBase, 1,
 	 "() -> (TimeBase _rv)"},
 	{"ConvertTime", (PyCFunction)Qt_ConvertTime, 1,
-	 "(TimeRecord inout, TimeBase newBase) -> (TimeRecord inout)"},
+	 "(TimeBase newBase) -> (TimeRecord theTime)"},
 	{"ConvertTimeScale", (PyCFunction)Qt_ConvertTimeScale, 1,
-	 "(TimeRecord inout, TimeScale newScale) -> (TimeRecord inout)"},
+	 "(TimeScale newScale) -> (TimeRecord theTime)"},
 	{"AddTime", (PyCFunction)Qt_AddTime, 1,
 	 "(TimeRecord dst, TimeRecord src) -> (TimeRecord dst)"},
 	{"SubtractTime", (PyCFunction)Qt_SubtractTime, 1,

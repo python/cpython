@@ -5,8 +5,12 @@
 
 
 
+#ifdef _WIN32
+#include "pywintoolbox.h"
+#else
 #include "macglue.h"
 #include "pymactoolbox.h"
+#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -1644,6 +1648,25 @@ static PyObject *Qd_BitMapToRegion(PyObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Qd_RgnToHandle(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	RgnHandle region;
+	Handle flattenedRgnDataHdl;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      ResObj_Convert, &region,
+	                      ResObj_Convert, &flattenedRgnDataHdl))
+		return NULL;
+	RgnToHandle(region,
+	            flattenedRgnDataHdl);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
 
 static PyObject *Qd_DisposeRgn(PyObject *_self, PyObject *_args)
 {
@@ -3502,6 +3525,23 @@ static PyObject *Qd_AngleFromSlope(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Qd_IsValidPort(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	CGrafPtr port;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      GrafObj_Convert, &port))
+		return NULL;
+	_rv = IsValidPort(port);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+#endif
+
 static PyObject *Qd_GetPortPixMap(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -3878,6 +3918,23 @@ static PyObject *Qd_IsPortPictureBeingDefined(PyObject *_self, PyObject *_args)
 
 #if TARGET_API_MAC_CARBON
 
+static PyObject *Qd_IsPortPolyBeingDefined(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	CGrafPtr port;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      GrafObj_Convert, &port))
+		return NULL;
+	_rv = IsPortPolyBeingDefined(port);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
 static PyObject *Qd_IsPortOffscreen(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -3985,6 +4042,22 @@ static PyObject *Qd_SetPortPenPixPat(PyObject *_self, PyObject *_args)
 		return NULL;
 	SetPortPenPixPat(port,
 	                 penPattern);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_SetPortFillPixPat(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CGrafPtr port;
+	PixPatHandle penPattern;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      GrafObj_Convert, &port,
+	                      ResObj_Convert, &penPattern))
+		return NULL;
+	SetPortFillPixPat(port,
+	                  penPattern);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -4347,6 +4420,398 @@ static PyObject *Qd_QDFlushPortBuffer(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Qd_QDGetDirtyRegion(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	CGrafPtr port;
+	RgnHandle rgn;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      GrafObj_Convert, &port,
+	                      ResObj_Convert, &rgn))
+		return NULL;
+	_err = QDGetDirtyRegion(port,
+	                        rgn);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Qd_QDSetDirtyRegion(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	CGrafPtr port;
+	RgnHandle rgn;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      GrafObj_Convert, &port,
+	                      ResObj_Convert, &rgn))
+		return NULL;
+	_err = QDSetDirtyRegion(port,
+	                        rgn);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
+static PyObject *Qd_LMGetScrVRes(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	SInt16 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = LMGetScrVRes();
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qd_LMSetScrVRes(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	SInt16 value;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &value))
+		return NULL;
+	LMSetScrVRes(value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_LMGetScrHRes(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	SInt16 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = LMGetScrHRes();
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qd_LMSetScrHRes(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	SInt16 value;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &value))
+		return NULL;
+	LMSetScrHRes(value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_LMGetMainDevice(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	GDHandle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = LMGetMainDevice();
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Qd_LMSetMainDevice(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	GDHandle value;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &value))
+		return NULL;
+	LMSetMainDevice(value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_LMGetDeviceList(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	GDHandle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = LMGetDeviceList();
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Qd_LMSetDeviceList(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	GDHandle value;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &value))
+		return NULL;
+	LMSetDeviceList(value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_LMGetQDColors(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Handle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = LMGetQDColors();
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Qd_LMSetQDColors(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Handle value;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &value))
+		return NULL;
+	LMSetQDColors(value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_LMGetWidthListHand(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Handle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = LMGetWidthListHand();
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Qd_LMSetWidthListHand(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Handle value;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &value))
+		return NULL;
+	LMSetWidthListHand(value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_LMGetHiliteMode(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	UInt8 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = LMGetHiliteMode();
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qd_LMSetHiliteMode(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	UInt8 value;
+	if (!PyArg_ParseTuple(_args, "b",
+	                      &value))
+		return NULL;
+	LMSetHiliteMode(value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_LMGetWidthTabHandle(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Handle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = LMGetWidthTabHandle();
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Qd_LMSetWidthTabHandle(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Handle value;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &value))
+		return NULL;
+	LMSetWidthTabHandle(value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_LMGetLastSPExtra(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	SInt32 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = LMGetLastSPExtra();
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qd_LMSetLastSPExtra(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	SInt32 value;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &value))
+		return NULL;
+	LMSetLastSPExtra(value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_LMGetLastFOND(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Handle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = LMGetLastFOND();
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Qd_LMSetLastFOND(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Handle value;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &value))
+		return NULL;
+	LMSetLastFOND(value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_LMGetFractEnable(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	UInt8 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = LMGetFractEnable();
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qd_LMSetFractEnable(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	UInt8 value;
+	if (!PyArg_ParseTuple(_args, "b",
+	                      &value))
+		return NULL;
+	LMSetFractEnable(value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_LMGetTheGDevice(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	GDHandle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = LMGetTheGDevice();
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Qd_LMSetTheGDevice(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	GDHandle value;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &value))
+		return NULL;
+	LMSetTheGDevice(value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_LMGetHiliteRGB(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	RGBColor hiliteRGBValue;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	LMGetHiliteRGB(&hiliteRGBValue);
+	_res = Py_BuildValue("O&",
+	                     QdRGB_New, &hiliteRGBValue);
+	return _res;
+}
+
+static PyObject *Qd_LMSetHiliteRGB(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	RGBColor hiliteRGBValue;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      QdRGB_Convert, &hiliteRGBValue))
+		return NULL;
+	LMSetHiliteRGB(&hiliteRGBValue);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_LMGetCursorNew(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = LMGetCursorNew();
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qd_LMSetCursorNew(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean value;
+	if (!PyArg_ParseTuple(_args, "b",
+	                      &value))
+		return NULL;
+	LMSetCursorNew(value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *Qd_TextFont(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -4533,6 +4998,26 @@ static PyObject *Qd_CharExtra(PyObject *_self, PyObject *_args)
 	CharExtra(extra);
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_TruncString(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	short _rv;
+	short width;
+	Str255 theString;
+	TruncCode truncWhere;
+	if (!PyArg_ParseTuple(_args, "hO&h",
+	                      &width,
+	                      PyMac_GetStr255, theString,
+	                      &truncWhere))
+		return NULL;
+	_rv = TruncString(width,
+	                  theString,
+	                  truncWhere);
+	_res = Py_BuildValue("h",
+	                     _rv);
 	return _res;
 }
 
@@ -5169,6 +5654,11 @@ static PyMethodDef Qd_methods[] = {
 	 "(RgnHandle dstRgn) -> None"},
 	{"BitMapToRegion", (PyCFunction)Qd_BitMapToRegion, 1,
 	 "(RgnHandle region, BitMapPtr bMap) -> None"},
+
+#if TARGET_API_MAC_CARBON
+	{"RgnToHandle", (PyCFunction)Qd_RgnToHandle, 1,
+	 "(RgnHandle region, Handle flattenedRgnDataHdl) -> None"},
+#endif
 	{"DisposeRgn", (PyCFunction)Qd_DisposeRgn, 1,
 	 "(RgnHandle rgn) -> None"},
 	{"MacCopyRgn", (PyCFunction)Qd_MacCopyRgn, 1,
@@ -5403,6 +5893,11 @@ static PyMethodDef Qd_methods[] = {
 	 "(short angle) -> (Fixed _rv)"},
 	{"AngleFromSlope", (PyCFunction)Qd_AngleFromSlope, 1,
 	 "(Fixed slope) -> (short _rv)"},
+
+#if TARGET_API_MAC_CARBON
+	{"IsValidPort", (PyCFunction)Qd_IsValidPort, 1,
+	 "(CGrafPtr port) -> (Boolean _rv)"},
+#endif
 	{"GetPortPixMap", (PyCFunction)Qd_GetPortPixMap, 1,
 	 "(CGrafPtr port) -> (PixMapHandle _rv)"},
 	{"GetPortBitMapForCopyBits", (PyCFunction)Qd_GetPortBitMapForCopyBits, 1,
@@ -5455,6 +5950,11 @@ static PyMethodDef Qd_methods[] = {
 	 "(CGrafPtr port) -> (Boolean _rv)"},
 
 #if TARGET_API_MAC_CARBON
+	{"IsPortPolyBeingDefined", (PyCFunction)Qd_IsPortPolyBeingDefined, 1,
+	 "(CGrafPtr port) -> (Boolean _rv)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
 	{"IsPortOffscreen", (PyCFunction)Qd_IsPortOffscreen, 1,
 	 "(CGrafPtr port) -> (Boolean _rv)"},
 #endif
@@ -5472,6 +5972,8 @@ static PyMethodDef Qd_methods[] = {
 	{"SetPortClipRegion", (PyCFunction)Qd_SetPortClipRegion, 1,
 	 "(CGrafPtr port, RgnHandle clipRgn) -> None"},
 	{"SetPortPenPixPat", (PyCFunction)Qd_SetPortPenPixPat, 1,
+	 "(CGrafPtr port, PixPatHandle penPattern) -> None"},
+	{"SetPortFillPixPat", (PyCFunction)Qd_SetPortFillPixPat, 1,
 	 "(CGrafPtr port, PixPatHandle penPattern) -> None"},
 	{"SetPortBackPixPat", (PyCFunction)Qd_SetPortBackPixPat, 1,
 	 "(CGrafPtr port, PixPatHandle backPattern) -> None"},
@@ -5535,6 +6037,72 @@ static PyMethodDef Qd_methods[] = {
 	 "(CGrafPtr port) -> (Boolean _rv)"},
 	{"QDFlushPortBuffer", (PyCFunction)Qd_QDFlushPortBuffer, 1,
 	 "(CGrafPtr port, RgnHandle region) -> None"},
+
+#if TARGET_API_MAC_CARBON
+	{"QDGetDirtyRegion", (PyCFunction)Qd_QDGetDirtyRegion, 1,
+	 "(CGrafPtr port, RgnHandle rgn) -> None"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"QDSetDirtyRegion", (PyCFunction)Qd_QDSetDirtyRegion, 1,
+	 "(CGrafPtr port, RgnHandle rgn) -> None"},
+#endif
+	{"LMGetScrVRes", (PyCFunction)Qd_LMGetScrVRes, 1,
+	 "() -> (SInt16 _rv)"},
+	{"LMSetScrVRes", (PyCFunction)Qd_LMSetScrVRes, 1,
+	 "(SInt16 value) -> None"},
+	{"LMGetScrHRes", (PyCFunction)Qd_LMGetScrHRes, 1,
+	 "() -> (SInt16 _rv)"},
+	{"LMSetScrHRes", (PyCFunction)Qd_LMSetScrHRes, 1,
+	 "(SInt16 value) -> None"},
+	{"LMGetMainDevice", (PyCFunction)Qd_LMGetMainDevice, 1,
+	 "() -> (GDHandle _rv)"},
+	{"LMSetMainDevice", (PyCFunction)Qd_LMSetMainDevice, 1,
+	 "(GDHandle value) -> None"},
+	{"LMGetDeviceList", (PyCFunction)Qd_LMGetDeviceList, 1,
+	 "() -> (GDHandle _rv)"},
+	{"LMSetDeviceList", (PyCFunction)Qd_LMSetDeviceList, 1,
+	 "(GDHandle value) -> None"},
+	{"LMGetQDColors", (PyCFunction)Qd_LMGetQDColors, 1,
+	 "() -> (Handle _rv)"},
+	{"LMSetQDColors", (PyCFunction)Qd_LMSetQDColors, 1,
+	 "(Handle value) -> None"},
+	{"LMGetWidthListHand", (PyCFunction)Qd_LMGetWidthListHand, 1,
+	 "() -> (Handle _rv)"},
+	{"LMSetWidthListHand", (PyCFunction)Qd_LMSetWidthListHand, 1,
+	 "(Handle value) -> None"},
+	{"LMGetHiliteMode", (PyCFunction)Qd_LMGetHiliteMode, 1,
+	 "() -> (UInt8 _rv)"},
+	{"LMSetHiliteMode", (PyCFunction)Qd_LMSetHiliteMode, 1,
+	 "(UInt8 value) -> None"},
+	{"LMGetWidthTabHandle", (PyCFunction)Qd_LMGetWidthTabHandle, 1,
+	 "() -> (Handle _rv)"},
+	{"LMSetWidthTabHandle", (PyCFunction)Qd_LMSetWidthTabHandle, 1,
+	 "(Handle value) -> None"},
+	{"LMGetLastSPExtra", (PyCFunction)Qd_LMGetLastSPExtra, 1,
+	 "() -> (SInt32 _rv)"},
+	{"LMSetLastSPExtra", (PyCFunction)Qd_LMSetLastSPExtra, 1,
+	 "(SInt32 value) -> None"},
+	{"LMGetLastFOND", (PyCFunction)Qd_LMGetLastFOND, 1,
+	 "() -> (Handle _rv)"},
+	{"LMSetLastFOND", (PyCFunction)Qd_LMSetLastFOND, 1,
+	 "(Handle value) -> None"},
+	{"LMGetFractEnable", (PyCFunction)Qd_LMGetFractEnable, 1,
+	 "() -> (UInt8 _rv)"},
+	{"LMSetFractEnable", (PyCFunction)Qd_LMSetFractEnable, 1,
+	 "(UInt8 value) -> None"},
+	{"LMGetTheGDevice", (PyCFunction)Qd_LMGetTheGDevice, 1,
+	 "() -> (GDHandle _rv)"},
+	{"LMSetTheGDevice", (PyCFunction)Qd_LMSetTheGDevice, 1,
+	 "(GDHandle value) -> None"},
+	{"LMGetHiliteRGB", (PyCFunction)Qd_LMGetHiliteRGB, 1,
+	 "() -> (RGBColor hiliteRGBValue)"},
+	{"LMSetHiliteRGB", (PyCFunction)Qd_LMSetHiliteRGB, 1,
+	 "(RGBColor hiliteRGBValue) -> None"},
+	{"LMGetCursorNew", (PyCFunction)Qd_LMGetCursorNew, 1,
+	 "() -> (Boolean _rv)"},
+	{"LMSetCursorNew", (PyCFunction)Qd_LMSetCursorNew, 1,
+	 "(Boolean value) -> None"},
 	{"TextFont", (PyCFunction)Qd_TextFont, 1,
 	 "(short font) -> None"},
 	{"TextFace", (PyCFunction)Qd_TextFace, 1,
@@ -5561,6 +6129,8 @@ static PyMethodDef Qd_methods[] = {
 	 "() -> (FontInfo info)"},
 	{"CharExtra", (PyCFunction)Qd_CharExtra, 1,
 	 "(Fixed extra) -> None"},
+	{"TruncString", (PyCFunction)Qd_TruncString, 1,
+	 "(short width, Str255 theString, TruncCode truncWhere) -> (short _rv)"},
 	{"SetPort", (PyCFunction)Qd_SetPort, 1,
 	 "(GrafPtr thePort) -> None"},
 	{"GetCursor", (PyCFunction)Qd_GetCursor, 1,

@@ -5,8 +5,12 @@
 
 
 
+#ifdef _WIN32
+#include "pywintoolbox.h"
+#else
 #include "macglue.h"
 #include "pymactoolbox.h"
+#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -241,23 +245,23 @@ static PyObject *TXNObj_TXNClick(TXNObjectObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if 0
+#if TARGET_API_MAC_OS8
 
 static PyObject *TXNObj_TXNTSMCheck(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
-	EventRecord iEvent;
+	EventRecord ioEvent;
 #ifndef TXNTSMCheck
 	PyMac_PRECHECK(TXNTSMCheck);
 #endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      PyMac_GetEventRecord, &iEvent))
+	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = TXNTSMCheck(_self->ob_itself,
-	                  &iEvent);
-	_res = Py_BuildValue("b",
-	                     _rv);
+	                  &ioEvent);
+	_res = Py_BuildValue("bO&",
+	                     _rv,
+	                     PyMac_BuildEventRecord, &ioEvent);
 	return _res;
 }
 #endif
@@ -606,8 +610,8 @@ static PyObject *TXNObj_TXNCountRunsInRange(TXNObjectObject *_self, PyObject *_a
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
-	UInt32 iStartOffset;
-	UInt32 iEndOffset;
+	TXNOffset iStartOffset;
+	TXNOffset iEndOffset;
 	ItemCount oRunCount;
 #ifndef TXNCountRunsInRange
 	PyMac_PRECHECK(TXNCountRunsInRange);
@@ -773,7 +777,7 @@ static PyObject *TXNObj_TXNSave(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
-	OSType iType;
+	TXNFileType iType;
 	OSType iResType;
 	TXNPermanentTextEncodingType iPermanentEncoding;
 	FSSpec iFileSpecification;
@@ -864,6 +868,23 @@ static PyObject *TXNObj_TXNGetViewRect(TXNObjectObject *_self, PyObject *_args)
 	               &oViewRect);
 	_res = Py_BuildValue("O&",
 	                     PyMac_BuildRect, &oViewRect);
+	return _res;
+}
+
+static PyObject *TXNObj_TXNSetViewRect(TXNObjectObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Rect iViewRect;
+#ifndef TXNSetViewRect
+	PyMac_PRECHECK(TXNSetViewRect);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetRect, &iViewRect))
+		return NULL;
+	TXNSetViewRect(_self->ob_itself,
+	               &iViewRect);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -1029,6 +1050,111 @@ static PyObject *TXNObj_TXNPrepareFontMenu(TXNObjectObject *_self, PyObject *_ar
 	return _res;
 }
 
+static PyObject *TXNObj_TXNPointToOffset(TXNObjectObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Point iPoint;
+	TXNOffset oOffset;
+#ifndef TXNPointToOffset
+	PyMac_PRECHECK(TXNPointToOffset);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetPoint, &iPoint))
+		return NULL;
+	_err = TXNPointToOffset(_self->ob_itself,
+	                        iPoint,
+	                        &oOffset);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     oOffset);
+	return _res;
+}
+
+static PyObject *TXNObj_TXNOffsetToPoint(TXNObjectObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	TXNOffset iOffset;
+	Point oPoint;
+#ifndef TXNOffsetToPoint
+	PyMac_PRECHECK(TXNOffsetToPoint);
+#endif
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &iOffset))
+		return NULL;
+	_err = TXNOffsetToPoint(_self->ob_itself,
+	                        iOffset,
+	                        &oPoint);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildPoint, oPoint);
+	return _res;
+}
+
+static PyObject *TXNObj_TXNGetLineCount(TXNObjectObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	ItemCount oLineTotal;
+#ifndef TXNGetLineCount
+	PyMac_PRECHECK(TXNGetLineCount);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = TXNGetLineCount(_self->ob_itself,
+	                       &oLineTotal);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     oLineTotal);
+	return _res;
+}
+
+static PyObject *TXNObj_TXNGetLineMetrics(TXNObjectObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	UInt32 iLineNumber;
+	Fixed oLineWidth;
+	Fixed oLineHeight;
+#ifndef TXNGetLineMetrics
+	PyMac_PRECHECK(TXNGetLineMetrics);
+#endif
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &iLineNumber))
+		return NULL;
+	_err = TXNGetLineMetrics(_self->ob_itself,
+	                         iLineNumber,
+	                         &oLineWidth,
+	                         &oLineHeight);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&O&",
+	                     PyMac_BuildFixed, oLineWidth,
+	                     PyMac_BuildFixed, oLineHeight);
+	return _res;
+}
+
+static PyObject *TXNObj_TXNIsObjectAttachedToSpecificWindow(TXNObjectObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr iWindow;
+	Boolean oAttached;
+#ifndef TXNIsObjectAttachedToSpecificWindow
+	PyMac_PRECHECK(TXNIsObjectAttachedToSpecificWindow);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      WinObj_Convert, &iWindow))
+		return NULL;
+	_err = TXNIsObjectAttachedToSpecificWindow(_self->ob_itself,
+	                                           iWindow,
+	                                           &oAttached);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("b",
+	                     oAttached);
+	return _res;
+}
+
 static PyMethodDef TXNObj_methods[] = {
 	{"TXNDeleteObject", (PyCFunction)TXNObj_TXNDeleteObject, 1,
 	 "() -> None"},
@@ -1043,9 +1169,9 @@ static PyMethodDef TXNObj_methods[] = {
 	{"TXNClick", (PyCFunction)TXNObj_TXNClick, 1,
 	 "(EventRecord iEvent) -> None"},
 
-#if 0
+#if TARGET_API_MAC_OS8
 	{"TXNTSMCheck", (PyCFunction)TXNObj_TXNTSMCheck, 1,
-	 "(EventRecord iEvent) -> (Boolean _rv)"},
+	 "() -> (Boolean _rv, EventRecord ioEvent)"},
 #endif
 	{"TXNSelectAll", (PyCFunction)TXNObj_TXNSelectAll, 1,
 	 "() -> None"},
@@ -1090,7 +1216,7 @@ static PyMethodDef TXNObj_methods[] = {
 	{"TXNSetSelection", (PyCFunction)TXNObj_TXNSetSelection, 1,
 	 "(TXNOffset iStartOffset, TXNOffset iEndOffset) -> None"},
 	{"TXNCountRunsInRange", (PyCFunction)TXNObj_TXNCountRunsInRange, 1,
-	 "(UInt32 iStartOffset, UInt32 iEndOffset) -> (ItemCount oRunCount)"},
+	 "(TXNOffset iStartOffset, TXNOffset iEndOffset) -> (ItemCount oRunCount)"},
 	{"TXNDataSize", (PyCFunction)TXNObj_TXNDataSize, 1,
 	 "() -> (ByteCount _rv)"},
 	{"TXNGetData", (PyCFunction)TXNObj_TXNGetData, 1,
@@ -1104,7 +1230,7 @@ static PyMethodDef TXNObj_methods[] = {
 	{"TXNGetChangeCount", (PyCFunction)TXNObj_TXNGetChangeCount, 1,
 	 "() -> (ItemCount _rv)"},
 	{"TXNSave", (PyCFunction)TXNObj_TXNSave, 1,
-	 "(OSType iType, OSType iResType, TXNPermanentTextEncodingType iPermanentEncoding, FSSpec iFileSpecification, SInt16 iDataReference, SInt16 iResourceReference) -> None"},
+	 "(TXNFileType iType, OSType iResType, TXNPermanentTextEncodingType iPermanentEncoding, FSSpec iFileSpecification, SInt16 iDataReference, SInt16 iResourceReference) -> None"},
 	{"TXNRevert", (PyCFunction)TXNObj_TXNRevert, 1,
 	 "() -> None"},
 	{"TXNPageSetup", (PyCFunction)TXNObj_TXNPageSetup, 1,
@@ -1113,6 +1239,8 @@ static PyMethodDef TXNObj_methods[] = {
 	 "() -> None"},
 	{"TXNGetViewRect", (PyCFunction)TXNObj_TXNGetViewRect, 1,
 	 "() -> (Rect oViewRect)"},
+	{"TXNSetViewRect", (PyCFunction)TXNObj_TXNSetViewRect, 1,
+	 "(Rect iViewRect) -> None"},
 	{"TXNAttachObjectToWindow", (PyCFunction)TXNObj_TXNAttachObjectToWindow, 1,
 	 "(GWorldPtr iWindow, Boolean iIsActualWindow) -> None"},
 	{"TXNIsObjectAttachedToWindow", (PyCFunction)TXNObj_TXNIsObjectAttachedToWindow, 1,
@@ -1127,6 +1255,16 @@ static PyMethodDef TXNObj_methods[] = {
 	 "(TXNFontMenuObject iTXNFontMenuObject, SInt16 iMenuID, SInt16 iMenuItem) -> None"},
 	{"TXNPrepareFontMenu", (PyCFunction)TXNObj_TXNPrepareFontMenu, 1,
 	 "(TXNFontMenuObject iTXNFontMenuObject) -> None"},
+	{"TXNPointToOffset", (PyCFunction)TXNObj_TXNPointToOffset, 1,
+	 "(Point iPoint) -> (TXNOffset oOffset)"},
+	{"TXNOffsetToPoint", (PyCFunction)TXNObj_TXNOffsetToPoint, 1,
+	 "(TXNOffset iOffset) -> (Point oPoint)"},
+	{"TXNGetLineCount", (PyCFunction)TXNObj_TXNGetLineCount, 1,
+	 "() -> (ItemCount oLineTotal)"},
+	{"TXNGetLineMetrics", (PyCFunction)TXNObj_TXNGetLineMetrics, 1,
+	 "(UInt32 iLineNumber) -> (Fixed oLineWidth, Fixed oLineHeight)"},
+	{"TXNIsObjectAttachedToSpecificWindow", (PyCFunction)TXNObj_TXNIsObjectAttachedToSpecificWindow, 1,
+	 "(WindowPtr iWindow) -> (Boolean oAttached)"},
 	{NULL, NULL, 0}
 };
 

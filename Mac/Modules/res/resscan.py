@@ -46,6 +46,11 @@ class ResourcesScanner(Scanner):
 ##			"MaxSizeRsrc",		# GetMaxResourceSize
 			]
 			
+	def makeblacklisttypes(self):
+		return [
+			"UniCharCount", #TBD
+			]
+			
 	def makegreylist(self):
 		return [
 			('#if TARGET_API_MAC_OS8', [

@@ -5,6 +5,7 @@
 
 from macsupport import *
 
+FSRef_ptr = OpaqueType("FSRef", "PyMac_BuildFSRef", "PyMac_GetFSRef")
 
 class ResMixIn:
 

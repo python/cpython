@@ -71,7 +71,7 @@ class MyScanner(Scanner):
 				'GetWindowGoAwayFlag',
 				'GetWindowSpareFlag',
 			]),
-			('#if TARGET_API_MAC_CARBON', [
+			('#if !TARGET_API_MAC_OS8', [
 				'IsWindowUpdatePending',
 				'FindWindowOfClass',
 				'GetFrontWindowOfClass',
@@ -82,6 +82,28 @@ class MyScanner(Scanner):
 				'ScrollWindowRect',
 				'ChangeWindowAttributes',
 				'ReshapeCustomWindow',
+				'EnableScreenUpdates',
+				'DisableScreenUpdates',
+				'GetAvailableWindowPositioningBounds',
+				'CreateStandardWindowMenu',
+				'GetSheetWindowParent',
+				'HideSheetWindow',
+				'ShowSheetWindow',
+				'ConstrainWindowToScreen',
+				'GetWindowGreatestAreaDevice',
+				'CopyWindowTitleAsCFString',
+				'SetWindowTitleWithCFString',
+				'CopyWindowAlternateTitle',
+				'SetWindowAlternateTitle',
+				'GetWindowModality',
+				'SetWindowModality',
+				'SetWindowClass',
+				'ReleaseWindow',
+				'RetainWindow',
+				'GetWindowRetainCount',
+			]),
+			('#if TARGET_API_MAC_OSX', [
+				'TransitionWindowAndParent',
 			])]
 			
 	def makeblacklisttypes(self):
@@ -92,6 +114,7 @@ class MyScanner(Scanner):
 			'Collection',		# For now, to be done later
 			'WindowDefSpec',	# Too difficult for now
 			'WindowDefSpec_ptr',
+			'EventRef', #TBD
 			]
 
 	def makerepairinstructions(self):

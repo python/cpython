@@ -77,7 +77,7 @@ MovieFileType = FOUR_CHAR_CODE('moov')
 
 	def makegreylist(self):
 		return [
-			('#if !TARGET_API_MAC_OSX', [
+			('#if TARGET_API_MAC_OS8', [
 				'TXNTSMCheck',
 			])]
 
@@ -94,7 +94,14 @@ MovieFileType = FOUR_CHAR_CODE('moov')
 			"TXNMatchTextRecord", #TBD
 			"TXNBackground", #TBD
 			"UniChar", #TBD
+			"UniCharCount", #TBD
+			"UniChar_ptr", #TBD
 			"TXNFindUPP", 
+			"ATSUStyle", #TBD
+			"TXNActionKeyMapperProcPtr",
+			"TXNActionKeyMapperUPP",
+			"TXNTextBoxOptionsData",
+			"TXNCountOptions",
 			]
 
 	def makerepairinstructions(self):
