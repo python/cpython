@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist SYSTEM "file://localhost/System/Library/DTDs/PropertyList.dtd">
+<plist version="0.9">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>py</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>PythonSource.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>Python Module</string>
+			<key>CFBundleTypeOSTypes</key>
+			<array>
+				<string>TEXT</string>
+			</array>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+		</dict>
+	</array>
+	<key>CFBundleExecutable</key>
+	<string>python</string>
+
+	<key>CFBundleGetInfoString</key>
+	<string>Python IDE version 2.3, (c) 2002 Python Software Foundation.</string>
+	<key>CFBundleLongVersionString</key>
+	<string>2.3, (c) 2002 Python Software Foundation.</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright 2002 Python Software Foundation.</string>
+	<key>CFBundleShortVersionString</key>
+	<string>2.3</string>
+
+	<key>CFBundleIconFile</key>
+	<string>PythonIDE.icns</string>
+	<key>CFBundleIdentifier</key>
+	<string>org.python.pythonide</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>PythonIDE</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleSignature</key>
+	<string>Pide</string>
+	<key>CFBundleVersion</key>
+	<string>2.3</string>
+	<key>LSRequiresCarbon</key>
+    <true/>
+	<key>CSResourcesFileMapped</key>
+	<true/>
+</dict>
+</plist>
