@@ -16,7 +16,7 @@
 #endif
 #endif
 
-#ifdef __OpenBSD__
+#if defined(__OpenBSD__) && !defined(__ELF__)
 #define LEAD_UNDERSCORE "_"
 #else
 #define LEAD_UNDERSCORE ""
