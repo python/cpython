@@ -34,6 +34,7 @@ mkreal.py		Turn a symbolic link into a real file or directory
 objgraph.py		Print object graph from nm output on a library
 pdeps.py		Print dependencies between Python modules
 pi.py			Print all digits of pi -- given enough time and memory
+pindent.py		Indent Python code, giving block-closing comments
 pp.py			Emulate some Perl command line options
 primes.py		Print prime numbers
 ptags.py		Create vi tags file for Python modules
