@@ -15,17 +15,24 @@ The \module{binhex} module defines the following functions:
 \begin{funcdesc}{binhex}{input, output}
 Convert a binary file with filename \var{input} to binhex file
 \var{output}. The \var{output} parameter can either be a filename or a
-file-like object (any object supporting a \var{write} and \var{close}
-method).
+file-like object (any object supporting a \method{write()} and
+\method{close()} method).
 \end{funcdesc}
 
 \begin{funcdesc}{hexbin}{input\optional{, output}}
 Decode a binhex file \var{input}. \var{input} may be a filename or a
-file-like object supporting \var{read} and \var{close} methods.
+file-like object supporting \method{read()} and \method{close()} methods.
 The resulting file is written to a file named \var{output}, unless the
-argument is empty in which case the output filename is read from the
+argument is omitted in which case the output filename is read from the
 binhex file.
 \end{funcdesc}
+
+
+\begin{seealso}
+  \seemodule{binascii}{support module containing \ASCII{}-to-binary
+                       and binary-to-\ASCII{} conversions}
+\end{seealso}
+
 
 \subsection{Notes \label{binhex-notes}}
 
