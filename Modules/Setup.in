@@ -134,6 +134,10 @@ strop stropmodule.c	# fast string operations implemented in C
 struct structmodule.c	# binary structure packing/unpacking
 time timemodule.c # -lm # time operations and variables
 operator operator.c	# operator.add() and similar goodies
+_codecs _codecsmodule.c	# access to the builtin codecs and codec registry
+
+unicodedata unicodedata.c unicodedatabase.c
+                        # static Unicode character database
 
 #_locale _localemodule.c  # access to ISO C locale support
 
