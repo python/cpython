@@ -31,13 +31,13 @@ check(0 not in c, "0 in seq(1)")
 try:
     1 in a
     check(0, "in base_set did not raise error")
-except AttributeError:
+except TypeError:
     pass
 
 try:
     1 not in a
     check(0, "not in base_set did not raise error")
-except AttributeError:
+except TypeError:
     pass
 
 # Test char in string

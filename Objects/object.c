@@ -835,6 +835,7 @@ PyObject_RichCompare(PyObject *v, PyObject *w, int op)
 	return res;
 }
 
+/* Return -1 if error; 1 if v op w; 0 if not (v op w). */
 int
 PyObject_RichCompareBool(PyObject *v, PyObject *w, int op)
 {

@@ -472,4 +472,59 @@ class TestCase(unittest.TestCase):
             except OSError:
                 pass
 
+    # Test iterators with 'x in y' and 'x not in y'.
+    def test_in_and_not_in(self):
+        sc5 = IteratingSequenceClass(5)
+        for i in range(5):
+            self.assert_(i in sc5)
+        # CAUTION:  This test fails on 3-12j if sc5 is SequenceClass(5)
+        # instead, with:
+        #     TypeError: cannot compare complex numbers using <, <=, >, >=
+        # The trail leads back to instance_contains() in classobject.c,
+        # under comment:
+        #     /* fall back to previous behavior */
+        # IteratingSequenceClass(5) avoids the same problem only because
+        # it lacks __getitem__:  instance_contains *tries* to do a wrong
+        # thing with it too, but aborts with an AttributeError the first
+        # time it calls instance_item(); PySequence_Contains() then catches
+        # that and clears it, and tries the iterator-based "contains"
+        # instead.  But this is hanging together by a thread.
+        for i in "abc", -1, 5, 42.42, (3, 4), [], {1: 1}, 3-12j, sc5:
+            self.assert_(i not in sc5)
+        del sc5
+
+        self.assertRaises(TypeError, lambda: 3 in 12)
+        self.assertRaises(TypeError, lambda: 3 not in map)
+
+        d = {"one": 1, "two": 2, "three": 3, 1j: 2j}
+        for k in d:
+            self.assert_(k in d)
+            self.assert_(k not in d.itervalues())
+        for v in d.values():
+            self.assert_(v in d.itervalues())
+            self.assert_(v not in d)
+        for k, v in d.iteritems():
+            self.assert_((k, v) in d.iteritems())
+            self.assert_((v, k) not in d.iteritems())
+        del d
+
+        f = open(TESTFN, "w")
+        try:
+            f.write("a\n" "b\n" "c\n")
+        finally:
+            f.close()
+        f = open(TESTFN, "r")
+        try:
+            for chunk in "abc":
+                f.seek(0, 0)
+                self.assert_(chunk not in f)
+                f.seek(0, 0)
+                self.assert_((chunk + "\n") in f)
+        finally:
+            f.close()
+            try:
+                unlink(TESTFN)
+            except OSError:
+                pass
+
 run_unittest(TestCase)
