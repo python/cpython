@@ -40,12 +40,7 @@ class MyScanner(Scanner):
 			"DisposeUserData",		# ditto
 			"DisposeTimeBase",		# ditto
 			"DisposeMovieController", # ditto
-#			"GetMovieCreationTime",	# type "unsigned long" in C, inparseable
-#			"GetMovieModificationTime",	# Ditto
-#			"GetTrackCreationTime",		# ditto
-#			"GetTrackModificationTime",	# Ditto
-#			"GetMediaCreationTime",		# ditto
-#			"GetMediaModificationTime",	# Ditto
+
 			# The following 4 use 'void *' in an uncontrolled way
 			# TBD when I've read the manual...
 			"GetUserDataItem",
@@ -101,13 +96,7 @@ class MyScanner(Scanner):
 			"MatrixRecord",
 			"MatrixRecord_ptr",
 			"SampleReferencePtr",
-#			"SampleDescription",
-#			"SoundDescription",
-#			"TextDescription",
-#			"MusicDescription",
-			# I dont know yet how to do these.
-#			"CGrafPtr",
-#			"GDHandle",
+
 			# Routine pointers, not yet.
 			"MoviesErrorUPP",
 			"MoviePreviewCallOutUPP",
