@@ -6,9 +6,8 @@
 <H1>Embedding Python on the Mac</H1>
 <HR>
 <B>Note</B>: if you have a binary-only release of MacPython you will not
-have this demo installed. Install the developer option (in the standard installer) or go to
-<a href="http://www.cwi.nl/~jack/macpython.html">Jack's MacPython Page</a>
-to download either a source release if you want to embed
+have this demo installed. Install the developer option (in the standard installer) or 
+a source release if you want to embed
 Python in other applications. <p>
 
 Embedding Python on the mac is pretty similar to embedding it on other
@@ -23,8 +22,8 @@ resource files and calls Py_Initialize.
 <LI> You have to be consequent in your use of GUSI. If the library uses
 it so should your program and vice versa.
 
-<LI> The console-behaviour (close-on-exit, etc) is controlled by Python,
-but you are of course free to change that after calling PyMac_Initialize().
+<LI> The console-behaviour (close-on-exit, etc) is controlled by Python
+but you can overwrite this with <code>PyMac_SetConsoleHandler()</code>.
 </UL>
 
 The Python environment is started with a dummy argc and argv, and initial
@@ -37,10 +36,9 @@ The most logical way to embed Python is to link it against the shared
 library <code>PythonCore</code>. An example project and source can be
 found in the <a href="embed">embed</a> folder. <p>
 
-<b>Note</b>: you may think that you do not have the project file
-<code>PythonCore</code> but actually you do: the standard installation
-process deposits it in the <code>Extensions</code> folder in the system
-folder under the name <code>PythonCore <i>version</i></code>. Add that file
-to the project replacing <code>PythonCore</code>. <p>
+This example code also shows how to override the console: if you pass the
+<code>-q</code> argument in the argument box output is thrown away. If you
+pass the <code>-d</code> option the output is sent to <code>DebugStr</code>
+(so be sure to use this only when running the example under a debugger).
 </BODY>
 </HTML>
