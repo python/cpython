@@ -67,77 +67,76 @@ import sys
 if sys.version >= '2.3':
     exec """
 import UserDict
+from weakref import ref
 class _iter_mixin(UserDict.DictMixin):
+    def _make_iter_cursor(self):
+        cur = self.db.cursor()
+        key = id(cur)
+        self._cursor_refs[key] = ref(cur, self._gen_cref_cleaner(key))
+        return cur
+
+    def _gen_cref_cleaner(self, key):
+        # use generate the function for the weakref callback here
+        # to ensure that we do not hold a strict reference to cur
+        # in the callback.
+        return lambda ref: self._cursor_refs.pop(key, None)
+
     def __iter__(self):
         try:
-            cur = self.db.cursor()
-            self._iter_cursors[str(cur)] = cur
+            cur = self._make_iter_cursor()
+
+            # FIXME-20031102-greg: race condition.  cursor could
+            # be closed by another thread before this call.
 
             # since we're only returning keys, we call the cursor
             # methods with flags=0, dlen=0, dofs=0
-            curkey = cur.first(0,0,0)[0]
-            yield curkey
+            key = cur.first(0,0,0)[0]
+            yield key
 
             next = cur.next
             while 1:
                 try:
-                    curkey = next(0,0,0)[0]
-                    yield curkey
+                    key = next(0,0,0)[0]
+                    yield key
                 except _bsddb.DBCursorClosedError:
-                    # our cursor object was closed since we last yielded
-                    # create a new one and attempt to reposition to the
-                    # right place
-                    cur = self.db.cursor()
-                    self._iter_cursors[str(cur)] = cur
+                    cur = self._make_iter_cursor()
                     # FIXME-20031101-greg: race condition.  cursor could
-                    # be closed by another thread before this set call.
-                    try:
-                        cur.set(curkey,0,0,0)
-                    except _bsddb.DBCursorClosedError:
-                        # halt iteration on race condition...
-                        raise _bsddb.DBNotFoundError
+                    # be closed by another thread before this call.
+                    cur.set(key,0,0,0)
                     next = cur.next
         except _bsddb.DBNotFoundError:
-            try:
-                del self._iter_cursors[str(cur)]
-            except KeyError:
-                pass
+            return
+        except _bsddb.DBCursorClosedError:
+            # the database was modified during iteration.  abort.
             return
 
     def iteritems(self):
         try:
-            cur = self.db.cursor()
-            self._iter_cursors[str(cur)] = cur
+            cur = self._make_iter_cursor()
+
+            # FIXME-20031102-greg: race condition.  cursor could
+            # be closed by another thread before this call.
 
             kv = cur.first()
-            curkey = kv[0]
+            key = kv[0]
             yield kv
 
             next = cur.next
             while 1:
                 try:
                     kv = next()
-                    curkey = kv[0]
+                    key = kv[0]
                     yield kv
                 except _bsddb.DBCursorClosedError:
-                    # our cursor object was closed since we last yielded
-                    # create a new one and attempt to reposition to the
-                    # right place
-                    cur = self.db.cursor()
-                    self._iter_cursors[str(cur)] = cur
+                    cur = self._make_iter_cursor()
                     # FIXME-20031101-greg: race condition.  cursor could
-                    # be closed by another thread before this set call.
-                    try:
-                        cur.set(curkey,0,0,0)
-                    except _bsddb.DBCursorClosedError:
-                        # halt iteration on race condition...
-                        raise _bsddb.DBNotFoundError
+                    # be closed by another thread before this call.
+                    cur.set(key,0,0,0)
                     next = cur.next
         except _bsddb.DBNotFoundError:
-            try:
-                del self._iter_cursors[str(cur)]
-            except KeyError:
-                pass
+            return
+        except _bsddb.DBCursorClosedError:
+            # the database was modified during iteration.  abort.
             return
 """
 else:
@@ -159,7 +158,7 @@ class _DBWithCursor(_iter_mixin):
         # thread while doing a put or delete in another thread.  The
         # reason is that _checkCursor and _closeCursors are not atomic
         # operations.  Doing our own locking around self.dbc,
-        # self.saved_dbc_key and self._iter_cursors could prevent this.
+        # self.saved_dbc_key and self._cursor_refs could prevent this.
         # TODO: A test case demonstrating the problem needs to be written.
 
         # self.dbc is a DBCursor object used to implement the
@@ -169,14 +168,10 @@ class _DBWithCursor(_iter_mixin):
 
         # a collection of all DBCursor objects currently allocated
         # by the _iter_mixin interface.
-        self._iter_cursors = {}
-
+        self._cursor_refs = {}
 
     def __del__(self):
         self.close()
-
-    def _get_dbc(self):
-        return self.dbc
 
     def _checkCursor(self):
         if self.dbc is None:
@@ -197,7 +192,10 @@ class _DBWithCursor(_iter_mixin):
                 self.saved_dbc_key = c.current(0,0,0)[0]
             c.close()
             del c
-        map(lambda c: c.close(), self._iter_cursors.values())
+        for cref in self._cursor_refs.values():
+            c = cref()
+            if c is not None:
+                c.close()
 
     def _checkOpen(self):
         if self.db is None:
