@@ -56,6 +56,9 @@ PyDoc_STRVAR(sound_beep_doc,
 "code doing direct port manipulation is used; it's unknown whether that\n"
 "will work on all systems.");
 
+PyDoc_STRVAR(sound_msgbeep_doc,
+"MessageBeep(x) - call Windows MessageBeep(x). x defaults to MB_OK.");
+
 PyDoc_STRVAR(sound_module_doc,
 "PlaySound(sound, flags) - play a sound\n"
 "SND_FILENAME - sound is a wav file name\n"
@@ -173,10 +176,22 @@ sound_beep(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
+static PyObject *
+sound_msgbeep(PyObject *self, PyObject *args)
+{
+	int x = MB_OK;
+	if (!PyArg_ParseTuple(args, "|i:MessageBeep", &x))
+		return NULL;
+	MessageBeep(x);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 static struct PyMethodDef sound_methods[] =
 {
     {"PlaySound", sound_playsound, METH_VARARGS, sound_playsound_doc},
     {"Beep",      sound_beep,      METH_VARARGS, sound_beep_doc},
+    {"MessageBeep", sound_msgbeep, METH_VARARGS, sound_msgbeep_doc},
     {NULL,  NULL}
 };
 
@@ -215,6 +230,12 @@ initwinsound(void)
 	ADD_DEFINE(SND_PURGE);
 	ADD_DEFINE(SND_LOOP);
 	ADD_DEFINE(SND_APPLICATION);
+
+	ADD_DEFINE(MB_OK);
+	ADD_DEFINE(MB_ICONASTERISK);
+	ADD_DEFINE(MB_ICONEXCLAMATION);
+	ADD_DEFINE(MB_ICONHAND);
+	ADD_DEFINE(MB_ICONQUESTION);
 
 	version.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx(&version);
