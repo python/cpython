@@ -859,7 +859,7 @@ class AbstractDigestAuthHandler:
             entdig = None
 
         A1 = "%s:%s:%s" % (user, realm, pw)
-        A2 = "%s:%s" % (req.has_data() and 'POST' or 'GET',
+        A2 = "%s:%s" % (req.get_method(),
                         # XXX selector: what about proxies and full urls
                         req.get_selector())
         if qop == 'auth':
