@@ -137,6 +137,21 @@ Generators can call other generators:
 
 pep_tests = """
 
+Specification:  Yield
+
+    Restriction:  A generator cannot be resumed while it is actively
+    running:
+
+    >>> def g():
+    ...     i = me.next()
+    ...     yield i
+    >>> me = g()
+    >>> me.next()
+    Traceback (most recent call last):
+     ...
+      File "<string>", line 2, in g
+    ValueError: generator already executing
+
 Specification: Return
 
     Note that return isn't always equivalent to raising StopIteration:  the
@@ -309,18 +324,6 @@ in try/except, not like a return.
 ...     yield 3
 >>> list(g())
 [1, 2, 3]
-
-A generator can't be resumed while it's already running.
-
->>> def g():
-...     i = me.next()
-...     yield i
->>> me = g()
->>> me.next()
-Traceback (most recent call last):
- ...
-  File "<string>", line 2, in g
-ValueError: generator already executing
 
 Next one was posted to c.l.py.
 
