@@ -441,10 +441,8 @@ def pymods():
     a.foo = 12
     x = a.foo
     del a.foo
-    verify(log == [('getattr', '__setattr__'),
-                   ("setattr", "foo", 12),
+    verify(log == [("setattr", "foo", 12),
                    ("getattr", "foo"),
-                   ('getattr', '__delattr__'),
                    ("delattr", "foo")], log)
 
 def multi():
