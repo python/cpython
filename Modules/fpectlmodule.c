@@ -211,12 +211,6 @@ static void fpe_reset(Sigfunc *handler)
 #endif
     PyOS_setsig(SIGFPE, handler);
 
-/*-- NeXT -----------------------------------------------------------------*/
-#elif defined(NeXT) && defined(m68k) && defined(__GNUC__)
-    /* NeXT needs explicit csr set to generate SIGFPE */
-    asm("fmovel     #0x1400,fpcr");   /* set OVFL and ZD bits */
-    PyOS_setsig(SIGFPE, handler);
-
 /*-- Microsoft Windows, NT ------------------------------------------------*/
 #elif defined(_MSC_VER)
     /* Reference: Visual C++ Books Online 4.2,

@@ -118,15 +118,6 @@ extern int lstat(const char *, struct stat *);
 extern int symlink(const char *, const char *);
 #endif
 
-#ifdef NeXT
-/* NeXT's <unistd.h> and <utime.h> aren't worth much */
-#undef HAVE_UNISTD_H
-#undef HAVE_UTIME_H
-#define HAVE_WAITPID
-/* #undef HAVE_GETCWD */
-#define UNION_WAIT /* This should really be checked for by autoconf */
-#endif
-
 #ifndef HAVE_UNISTD_H
 #if defined(PYCC_VACPP)
 extern int mkdir(char *);
@@ -3323,11 +3314,7 @@ posix_waitpid(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "ii:waitpid", &pid, &options))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-#ifdef NeXT
-	pid = wait4(pid, &status, options, NULL);
-#else
 	pid = waitpid(pid, &status, options);
-#endif
 	Py_END_ALLOW_THREADS
 	if (pid == -1)
 		return posix_error();
@@ -3969,85 +3956,6 @@ posix_ftruncate(PyObject *self, PyObject *args)
 	return Py_None;
 }
 #endif
-
-#ifdef NeXT
-#define HAVE_PUTENV
-/* Steve Spicklemire got this putenv from NeXTAnswers */
-static int
-putenv(char *newval)
-{
-	extern char **environ;
-
-	static int firstTime = 1;
-	char **ep;
-	char *cp;
-	int esiz;
-	char *np;
-
-	if (!(np = strchr(newval, '=')))
-		return 1;
-	*np = '\0';
-
-	/* look it up */
-	for (ep=environ ; *ep ; ep++)
-	{
-		/* this should always be true... */
-		if (cp = strchr(*ep, '='))
-		{
-			*cp = '\0';
-			if (!strcmp(*ep, newval))
-			{
-				/* got it! */
-				*cp = '=';
-				break;
-			}
-			*cp = '=';
-		}
-		else
-		{
-			*np = '=';
-			return 1;
-		}
-	}
-
-	*np = '=';
-	if (*ep)
-	{
-		/* the string was already there:
-		   just replace it with the new one */
-		*ep = newval;
-		return 0;
-	}
-
-	/* expand environ by one */
-	for (esiz=2, ep=environ ; *ep ; ep++)
-		esiz++;
-	if (firstTime)
-	{
-		char **epp;
-		char **newenv;
-		if (!(newenv = malloc(esiz * sizeof(char *))))
-			return 1;
-
-		for (ep=environ, epp=newenv ; *ep ;)
-			*epp++ = *ep++;
-		*epp++ = newval;
-		*epp = (char *) 0;
-		environ = newenv;
-	}
-	else
-	{
-		if (!(environ = realloc(environ, esiz * sizeof(char *))))
-			return 1;
-		environ[esiz - 2] = newval;
-		environ[esiz - 1] = (char *) 0;
-		firstTime = 0;
-	}
-
-	return 0;
-}
-#endif /* NeXT */
-
 
 #ifdef HAVE_PUTENV
 static char posix_putenv__doc__[] =
