@@ -1,7 +1,12 @@
 dnl Process this file with autoconf 2.0 or later to make a configure script.
+
+# Set VERSION so we only need to edit in one place (i.e., here)
+m4_define(PYTHON_VERSION, 2.3)
+
 AC_REVISION($Revision$)
 AC_PREREQ(2.53)
-AC_INIT(Include/object.h)
+AC_INIT(python, PYTHON_VERSION)
+AC_CONFIG_SRCDIR([Include/object.h])
 AC_CONFIG_HEADER(pyconfig.h)
 
 # This is for stuff that absolutely must end up in pyconfig.h.
@@ -13,9 +18,8 @@ AH_BOTTOM([
 #endif
 ])
 
-# Set VERSION so we only need to edit in one place (i.e., here)
 AC_SUBST(VERSION)
-VERSION=2.3
+VERSION=PYTHON_VERSION
 
 AC_SUBST(SOVERSION)
 SOVERSION=1.0
@@ -2397,7 +2401,8 @@ done
 AC_MSG_RESULT(done)
 
 # generate output files
-AC_OUTPUT(Makefile.pre Modules/Setup.config)
+AC_CONFIG_FILES(Makefile.pre Modules/Setup.config)
+AC_OUTPUT
 
 echo "creating Setup"
 if test ! -f Modules/Setup
