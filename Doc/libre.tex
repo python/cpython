@@ -28,6 +28,7 @@ Usually patterns will be expressed in Python code using this raw
 string notation.
 
 \subsection{Regular Expression Syntax}
+\label{re-syntax}
 
 A regular expression (or RE) specifies a set of strings that matches
 it; the functions in this module let you check if a particular string
@@ -275,6 +276,7 @@ for the current locale.
 
 \end{list}
 
+
 \subsection{Module Contents}
 \nodename{Contents of Module re}
 
@@ -458,7 +460,10 @@ Perform the same operation as \function{sub()}, but return a tuple
   never an error if a string contains no match for a pattern.
 \end{excdesc}
 
+
 \subsection{Regular Expression Objects}
+\label{re-objects}
+
 Compiled regular expression objects support the following methods and
 attributes:
 
@@ -522,7 +527,9 @@ symbolic groups were used in the pattern.
 The pattern string from which the regex object was compiled.
 \end{memberdesc}
 
+
 \subsection{Match Objects}
+\label{match-objects}
 
 \class{MatchObject} instances support the following methods and attributes:
 
