@@ -15,6 +15,9 @@ Tests
 
 Windows
 
++ The w9xpopen hack is now used on Windows NT and 2000 too when COMPSPEC
+  points to command.com (patch from Brian Quinlan).
+
 
 What's New in Python 2.2a2?
 ===========================
