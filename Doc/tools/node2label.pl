@@ -41,7 +41,7 @@ while (<>) {
       if (defined($nodes{$node})) {
 	$label = $nodes{$node};
 	if (s/(HREF|href)=\"$node([\#\"])/$1=\"$label.html$2/g) {
-	  s/(HREF|href)=\"$label.html#l2h-\d+/$1=\"$label.html/g;
+	  s/(HREF|href)=\"$label.html#(l2h-)?SECTION\d+/$1=\"$label.html/g;
 	  $newnames{$node} = "$label.html";
 	}
       }
