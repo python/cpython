@@ -367,6 +367,26 @@ Next one was posted to c.l.py.
 4-combs of [1, 2, 3, 4]:
     [1, 2, 3, 4]
 5-combs of [1, 2, 3, 4]:
+
+# From the Iterators list, about the types of these things.
+
+>>> def g():
+...     yield 1
+...
+>>> type(g)
+<type 'function'>
+>>> i = g()
+>>> type(i)
+<type 'generator'>
+>>> dir(i)
+['next']
+>>> print i.next.__doc__
+next() -- get the next value, or raise StopIteration
+>>> iter(i) is i
+1
+>>> import types
+>>> isinstance(i, types.GeneratorType)
+1
 """
 
 # Fun tests (for sufficiently warped notions of "fun").
