@@ -42,7 +42,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 #ifdef WITH_THREAD
-#include "thread.h"
+#include "pythread.h"
 #endif
 
 #include <sys/types.h>

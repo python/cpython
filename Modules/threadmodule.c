@@ -40,7 +40,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #error "Then run `make clean' followed by `make'."
 #endif
 
-#include "thread.h"
+#include "pythread.h"
 
 static PyObject *ThreadError;
 

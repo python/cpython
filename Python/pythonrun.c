@@ -1031,7 +1031,7 @@ Py_FatalError(msg)
 /* Clean up and exit */
 
 #ifdef WITH_THREAD
-#include "thread.h"
+#include "pythread.h"
 int _PyThread_Started = 0; /* Set by threadmodule.c and maybe others */
 #endif
 
