@@ -43,9 +43,21 @@ bjsgY2hhcnNldD11dGYtOApDb250ZW50LVRyYW5zZmVyLUVuY29kaW5nOiA3Yml0CkdlbmVyYXRl
 ZC1CeTogbWFudWFsbHkKAMKkeXoA
 '''
 
+MMO_DATA = '''\
+3hIElQAAAAABAAAAHAAAACQAAAADAAAALAAAAAAAAAA4AAAAeAEAADkAAAABAAAAAAAAAAAAAAAA
+UHJvamVjdC1JZC1WZXJzaW9uOiBObyBQcm9qZWN0IDAuMApQT1QtQ3JlYXRpb24tRGF0ZTogV2Vk
+IERlYyAxMSAwNzo0NDoxNSAyMDAyClBPLVJldmlzaW9uLURhdGU6IDIwMDItMDgtMTQgMDE6MTg6
+NTgrMDA6MDAKTGFzdC1UcmFuc2xhdG9yOiBKb2huIERvZSA8amRvZUBleGFtcGxlLmNvbT4KSmFu
+ZSBGb29iYXIgPGpmb29iYXJAZXhhbXBsZS5jb20+Ckxhbmd1YWdlLVRlYW06IHh4IDx4eEBleGFt
+cGxlLmNvbT4KTUlNRS1WZXJzaW9uOiAxLjAKQ29udGVudC1UeXBlOiB0ZXh0L3BsYWluOyBjaGFy
+c2V0PWlzby04ODU5LTE1CkNvbnRlbnQtVHJhbnNmZXItRW5jb2Rpbmc6IHF1b3RlZC1wcmludGFi
+bGUKR2VuZXJhdGVkLUJ5OiBweWdldHRleHQucHkgMS4zCgA=
+'''
+
 LOCALEDIR = os.path.join('xx', 'LC_MESSAGES')
 MOFILE = os.path.join(LOCALEDIR, 'gettext.mo')
 UMOFILE = os.path.join(LOCALEDIR, 'ugettext.mo')
+MMOFILE = os.path.join(LOCALEDIR, 'metadata.mo')
 try:
     LANG = os.environ['LANGUAGE']
 except:
@@ -61,6 +73,9 @@ class GettextBaseTest(unittest.TestCase):
         fp = open(UMOFILE, 'wb')
         fp.write(base64.decodestring(UMO_DATA))
         fp.close()
+        fp = open(MMOFILE, 'wb')
+        fp.write(base64.decodestring(MMO_DATA))
+        fp.close()
         os.environ['LANGUAGE'] = 'xx'
 
     def tearDown(self):
@@ -74,9 +89,6 @@ class GettextTestCase1(GettextBaseTest):
         self.localedir = os.curdir
         self.mofile = MOFILE
         gettext.install('gettext', self.localedir)
-
-    def tearDown(self):
-        GettextBaseTest.tearDown(self)
 
     def test_some_translations(self):
         eq = self.assertEqual
@@ -144,9 +156,6 @@ class GettextTestCase2(GettextBaseTest):
         # For convenience
         self._ = gettext.gettext
 
-    def tearDown(self):
-        GettextBaseTest.tearDown(self)
-
     def test_bindtextdomain(self):
         self.assertEqual(gettext.bindtextdomain('gettext'), self.localedir)
 
@@ -200,9 +209,6 @@ class PluralFormsTestCase(GettextBaseTest):
     def setUp(self):
         GettextBaseTest.setUp(self)
         self.mofile = MOFILE
-
-    def tearDown(self):
-        GettextBaseTest.tearDown(self)
 
     def test_plural_forms1(self):
         eq = self.assertEqual
@@ -292,9 +298,6 @@ class UnicodeTranslationsTest(GettextBaseTest):
             fp.close()
         self._ = self.t.ugettext
 
-    def tearDown(self):
-        GettextBaseTest.tearDown(self)
-
     def test_unicode_msgid(self):
         unless = self.failUnless
         unless(isinstance(self._(''), unicode))
@@ -305,12 +308,32 @@ class UnicodeTranslationsTest(GettextBaseTest):
         eq(self._(u'ab\xde'), u'\xa4yz')
 
 
+class WeirdMetadataTest(GettextBaseTest):
+    def setUp(self):
+        GettextBaseTest.setUp(self)
+        fp = open(MMOFILE, 'rb')
+        try:
+            try:
+                self.t = gettext.GNUTranslations(fp)
+            except:
+                self.tearDown()
+                raise
+        finally:
+            fp.close()
+
+    def test_weird_metadata(self):
+        info = self.t.info()
+        self.assertEqual(info['last-translator'],
+           'John Doe <jdoe@example.com>\nJane Foobar <jfoobar@example.com>')
+
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(GettextTestCase1))
     suite.addTest(unittest.makeSuite(GettextTestCase2))
     suite.addTest(unittest.makeSuite(PluralFormsTestCase))
     suite.addTest(unittest.makeSuite(UnicodeTranslationsTest))
+    suite.addTest(unittest.makeSuite(WeirdMetadataTest))
     return suite
 
 
@@ -406,4 +429,21 @@ msgstr ""
 #: nofile:0
 msgid "ab\xc3\x9e"
 msgstr "\xc2\xa4yz"
+'''
+
+# Here's the third example po file, used to generate MMO_DATA
+
+'''
+msgid ""
+msgstr ""
+"Project-Id-Version: No Project 0.0\n"
+"POT-Creation-Date: Wed Dec 11 07:44:15 2002\n"
+"PO-Revision-Date: 2002-08-14 01:18:58+00:00\n"
+"Last-Translator: John Doe <jdoe@example.com>\n"
+"Jane Foobar <jfoobar@example.com>\n"
+"Language-Team: xx <xx@example.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=iso-8859-15\n"
+"Content-Transfer-Encoding: quoted-printable\n"
+"Generated-By: pygettext.py 1.3\n"
 '''
