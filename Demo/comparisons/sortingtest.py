@@ -23,15 +23,16 @@
 # - Outputs the sorted fields with exactly one space between them
 # - Handles blank input lines correctly
 
-import regex
+import re
 import string
 import sys
 
 def main():
-    prog = regex.compile('^\(.*\)=\([-+]?[0-9]+\)')
+    prog = re.compile('^(.*)=([-+]?[0-9]+)')
     def makekey(item, prog=prog):
-        if prog.match(item) >= 0:
-            var, num = prog.group(1, 2)
+        match = prog.match(item)
+        if match:
+            var, num = match.group(1, 2)
             return string.atoi(num), var
         else:
             # Bad input -- pretend it's a var with value 0
@@ -40,7 +41,7 @@ def main():
         line = sys.stdin.readline()
         if not line:
             break
-        items = string.split(line)
+        items = line.split()
         items = map(makekey, items)
         items.sort()
         for num, var in items:
