@@ -173,6 +173,10 @@ returns a list of \code{(\var{full name}, \var{email address})} pairs
 (even if there was only one address in the header).  If there is no
 header matching \var{name}, return an empty list.
 
+If multiple headers exist that match the named header (e.g. if there
+are several \code{Cc} headers), all are parsed for addresses.  Any
+continuation lines the named headers contain are also parsed.
+
 XXX The current version of this function is not really correct.  It
 yields bogus results if a full name contains a comma.
 \end{methoddesc}
