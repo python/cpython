@@ -25,6 +25,6 @@ resource 'vers' (1) {
 	PY_RELEASE_SERIAL,
 	0,
 	PY_VERSION,
-	$$Format("%s, © Stichting Mathematisch Centrum %s",
+	$$Format("%s, © Python Software Foundation %s",
 			PY_VERSION, $$Date)
 };
