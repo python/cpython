@@ -470,7 +470,7 @@ enum why_code {
 		WHY_RETURN,	/* 'return' statement */
 		WHY_BREAK,	/* 'break' statement */
 		WHY_CONTINUE,	/* 'continue' statement */
-		WHY_YIELD,	/* 'yield' operator */
+		WHY_YIELD	/* 'yield' operator */
 };
 
 static enum why_code do_raise(PyObject *, PyObject *, PyObject *);
