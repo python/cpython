@@ -14,7 +14,6 @@ only exists as a base for the \refmodule{htmllib} module.  Another
 HTML parser which supports XHTML and offers a somewhat different
 interface is available in the \refmodule{HTMLParser} module.
 
-
 \begin{classdesc}{SGMLParser}{}
 The \class{SGMLParser} class is instantiated without arguments.
 The parser is hardcoded to recognize the following
@@ -40,7 +39,16 @@ spaces, tabs, and newlines are allowed between the trailing
 \end{itemize}
 \end{classdesc}
 
-\class{SGMLParser} instances have the following interface methods:
+A single exception is defined as well:
+
+\begin{excdesc}{SGMLParseError}
+Exception raised by the \class{SGMLParser} class when it encounters an
+error while parsing.
+\versionadded{2.1}
+\end{excdesc}
+
+
+\class{SGMLParser} instances have the following methods:
 
 
 \begin{methoddesc}{reset}{}

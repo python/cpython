@@ -35,8 +35,8 @@ The interface to feed data to an instance is through the \method{feed()}
 method, which takes a string argument.  This can be called with as
 little or as much text at a time as desired; \samp{p.feed(a);
 p.feed(b)} has the same effect as \samp{p.feed(a+b)}.  When the data
-contains complete HTML tags, these are processed immediately;
-incomplete elements are saved in a buffer.  To force processing of all
+contains complete HTML markup constructs, these are processed immediately;
+incomplete constructs are saved in a buffer.  To force processing of all
 unprocessed data, call the \method{close()} method.
 
 For example, to parse the entire contents of a file, use:
@@ -60,13 +60,19 @@ should define the \method{do_\var{tag}()} method.
 
 \end{itemize}
 
-The module defines a single class:
+The module defines a parser class and an exception:
 
 \begin{classdesc}{HTMLParser}{formatter}
 This is the basic HTML parser class.  It supports all entity names
 required by the XHTML 1.0 Recommendation (\url{http://www.w3.org/TR/xhtml1}).  
 It also defines handlers for all HTML 2.0 and many HTML 3.0 and 3.2 elements.
 \end{classdesc}
+
+\begin{excdesc}{HTMLParseError}
+Exception raised by the \class{HTMLParser} class when it encounters an
+error while parsing.
+\versionadded{2.4}
+\end{excdesc}
 
 
 \begin{seealso}
@@ -118,7 +124,8 @@ implementation adds a textual footnote marker using an index into the
 list of hyperlinks created by \method{anchor_bgn()}.
 \end{methoddesc}
 
-\begin{methoddesc}{handle_image}{source, alt\optional{, ismap\optional{, align\optional{, width\optional{, height}}}}}
+\begin{methoddesc}{handle_image}{source, alt\optional{, ismap\optional{,
+                                 align\optional{, width\optional{, height}}}}}
 This method is called to handle images.  The default implementation
 simply passes the \var{alt} value to the \method{handle_data()}
 method.
