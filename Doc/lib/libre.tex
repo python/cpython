@@ -271,36 +271,39 @@ The module defines the following functions and constants, and an exception:
   \var{flags} value.  Values can be any of the following variables,
   combined using bitwise OR (the \code{|} operator).
 
-\begin{tableii}{|l|l|}{code}{Flag}{Meaning}
+\begin{itemize}
 
-\lineii{I or IGNORECASE}{Perform case-insensitive matching;
-  expressions like [A-Z] will match lowercase letters, too.} 
+\item[I ] or IGNORECASE:
+Perform case-insensitive matching; expressions like [A-Z] will match
+lowercase letters, too.
 
-\lineii{L or LOCALE}{Make  \code{\e w}, \code{\e W}, \code{\e b},
-\code{\e B}, dependent on the current locale. 
-}
+\item[L ] or LOCALE:
+Make \code{\e w}, \code{\e W}, \code{\e b}, \code{\e B}, dependent on
+the current locale.
 
-\lineii{M or MULTILINE}{When specified, the pattern character \code{\^}
-  matches at the beginning of the string and at the beginning of each
-line (immediately following each newline); and the pattern character
-\code{\$} matches at the end of the string and at the end of each line
-(immediately preceding each newline).
+\item[M ] or MULTILINE:
+When specified, the pattern character \code{\^} matches at the
+beginning of the string and at the beginning of each line (immediately
+following each newline); and the pattern character \code{\$} matches
+at the end of the string and at the end of each line (immediately
+preceding each newline).
+
 By default, \code{\^} matches only at the beginning of the string, and
 \code{\$} only at the end of the string and immediately before the
 newline (if any) at the end of the string. 
-}
 
-\lineii{S or DOTALL}{Make the \code{.} special character match a newline; without this flag, \code{.} will match anything \emph{except} a newline.} 
+\item[S ] or DOTALL:
+Make the \code{.} special character match a newline; without this
+flag, \code{.} will match anything \emph{except} a newline.
 
-\lineii{X or VERBOSE}{When specified, whitespace within the pattern
-string is ignored except when in a character class or preceded by an
-unescaped backslash, and, when a line contains a \code{\#} not in a
-character class or preceded by an unescaped backslash, all characters
-from the leftmost such \code{\#} through the end of the line are
-ignored. 
-}
+\item[X ] or VERBOSE:
+When specified, whitespace within the pattern string is ignored except
+when in a character class or preceded by an unescaped backslash, and,
+when a line contains a \code{\#} not in a character class or preceded
+by an unescaped backslash, all characters from the leftmost such
+\code{\#} through the end of the line are ignored.
 
-\end{tableii}
+\end{itemize}
 
   The sequence
 %
