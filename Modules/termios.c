@@ -5,7 +5,10 @@
 #define PyInit_termios inittermios
 
 #include <termios.h>
+/* XXX Some systems need this to get all the symbols, while
+       this breaks for others.
 #include <sys/ioctl.h>
+*/
 
 static char termios__doc__[] = "\
 This module provides an interface to the Posix calls for tty I/O control.\n\
