@@ -5,14 +5,14 @@
  *
  * partial history:
  * 1999-10-24 fl  created (based on existing template matcher code)
- * 2000-03-06 fl  first alpha, sort of (0.5)
- * 2000-06-30 fl  added fast search optimization (0.9.3)
- * 2000-06-30 fl  added assert (lookahead) primitives, etc (0.9.4)
- * 2000-07-02 fl  added charset optimizations, etc (0.9.5)
+ * 2000-03-06 fl  first alpha, sort of
+ * 2000-06-30 fl  added fast search optimization
+ * 2000-06-30 fl  added assert (lookahead) primitives, etc
+ * 2000-07-02 fl  added charset optimizations, etc
  * 2000-07-03 fl  store code in pattern object, lookbehind, etc
  * 2000-07-08 fl  added regs attribute
- * 2000-07-21 fl  reset lastindex in scanner methods (0.9.6)
- * 2000-08-01 fl  fixes for 1.6b1 (0.9.8)
+ * 2000-07-21 fl  reset lastindex in scanner methods
+ * 2000-08-01 fl  fixes for 1.6b1
  * 2000-08-03 fl  added recursion limit
  * 2000-08-07 fl  use PyOS_CheckStack() if available
  * 2000-08-08 fl  changed findall to return empty strings instead of None
@@ -21,6 +21,7 @@
  * 2000-09-20 fl  added expand method
  * 2000-09-21 fl  don't use the buffer interface for unicode strings
  * 2000-10-03 fl  fixed assert_not primitive; support keyword arguments
+ * 2000-10-24 fl  really fixed assert_not; reset groups in findall
  *
  * Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
  *
@@ -35,7 +36,7 @@
 
 #ifndef SRE_RECURSIVE
 
-char copyright[] = " SRE 0.9.8 Copyright (c) 1997-2000 by Secret Labs AB ";
+char copyright[] = " SRE 0.9.9 Copyright (c) 1997-2000 by Secret Labs AB ";
 
 #include "Python.h"
 
@@ -783,13 +784,13 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
             /* <ASSERT_NOT> <skip> <back> <pattern> */
             TRACE(("|%p|%p|ASSERT_NOT %d\n", pattern, ptr, pattern[1]));
             state->ptr = ptr - pattern[1];
-            if (state->ptr < state->beginning)
-                return 0;
-            i = SRE_MATCH(state, pattern + 2, level + 1);
-            if (i < 0)
-                return i;
-            if (i)
-                return 0;
+            if (state->ptr >= state->beginning) {
+                i = SRE_MATCH(state, pattern + 2, level + 1);
+                if (i < 0)
+                    return i;
+                if (i)
+                    return 0;
+            }
             pattern += pattern[0];
             break;
 
@@ -1199,7 +1200,7 @@ _compile(PyObject* self_, PyObject* args)
     n = PySequence_Length(code);
 #endif
 
-    self = PyObject_NEW_VAR(PatternObject, &Pattern_Type, 100*n);
+    self = PyObject_NEW_VAR(PatternObject, &Pattern_Type, n);
     if (!self) {
         Py_DECREF(code);
         return NULL;
@@ -1680,6 +1681,8 @@ pattern_findall(PatternObject* self, PyObject* args, PyObject* kw)
 
         PyObject* item;
         
+        state_reset(&state);
+
         state.ptr = state.start;
 
         if (state.charsize == 1) {
