@@ -66,6 +66,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		if line[:1] == '!': line = line[1:]
 		locals = self.curframe.f_locals
 		globals = self.curframe.f_globals
+		globals['__privileged__'] = 1
 		try:
 			exec(line + '\n', globals, locals)
 		except:
@@ -175,12 +176,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 	do_rv = do_retval
 	
 	def do_p(self, arg):
+		self.curframe.f_globals['__privileged__'] = 1
 		try:
 			value = eval(arg, self.curframe.f_globals, \
 					self.curframe.f_locals)
 		except:
 			print '***', sys.exc_type + ':', `sys.exc_value`
 			return
+
 		print `value`
 
 	def do_list(self, arg):
