@@ -1155,18 +1155,15 @@ eval_frame(PyFrameObject *f)
 				long i = PyInt_AsLong(w);
 				if (i < 0)
 					i += PyList_GET_SIZE(v);
-				if (i < 0 ||
-				    i >= PyList_GET_SIZE(v)) {
-					PyErr_SetString(PyExc_IndexError,
-						"list index out of range");
-					x = NULL;
-				}
-				else {
+				if (i >= 0 && i < PyList_GET_SIZE(v)) {
 					x = PyList_GET_ITEM(v, i);
 					Py_INCREF(x);
 				}
+				else
+					goto slow_get;
 			}
 			else
+			  slow_get:
 				x = PyObject_GetItem(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
@@ -1608,13 +1605,12 @@ eval_frame(PyFrameObject *f)
 			break;
 
 		case LOAD_LOCALS:
-			if ((x = f->f_locals) == NULL) {
-				PyErr_SetString(PyExc_SystemError,
-						"no locals");
-				break;
+			if ((x = f->f_locals) != NULL) {
+				Py_INCREF(x);
+				PUSH(x);
+				continue;
 			}
-			Py_INCREF(x);
-			PUSH(x);
+			PyErr_SetString(PyExc_SystemError, "no locals");
 			break;
 
 		case RETURN_VALUE:
@@ -1687,27 +1683,27 @@ eval_frame(PyFrameObject *f)
 		case STORE_NAME:
 			w = GETITEM(names, oparg);
 			v = POP();
-			if ((x = f->f_locals) == NULL) {
-				PyErr_Format(PyExc_SystemError,
-					     "no locals found when storing %s",
-					     PyObject_REPR(w));
+			if ((x = f->f_locals) != NULL) {
+				err = PyDict_SetItem(x, w, v);
+				Py_DECREF(v);
 				break;
 			}
-			err = PyDict_SetItem(x, w, v);
-			Py_DECREF(v);
+			PyErr_Format(PyExc_SystemError,
+				     "no locals found when storing %s",
+				     PyObject_REPR(w));
 			break;
 
 		case DELETE_NAME:
 			w = GETITEM(names, oparg);
-			if ((x = f->f_locals) == NULL) {
-				PyErr_Format(PyExc_SystemError,
-					     "no locals when deleting %s",
-					     PyObject_REPR(w));
+			if ((x = f->f_locals) != NULL) {
+				if ((err = PyDict_DelItem(x, w)) != 0)
+					format_exc_check_arg(PyExc_NameError,
+								NAME_ERROR_MSG ,w);
 				break;
 			}
-			if ((err = PyDict_DelItem(x, w)) != 0)
-				format_exc_check_arg(PyExc_NameError,
-							NAME_ERROR_MSG ,w);
+			PyErr_Format(PyExc_SystemError,
+				     "no locals when deleting %s",
+				     PyObject_REPR(w));
 			break;
 
 		PREDICTED_WITH_ARG(UNPACK_SEQUENCE);
@@ -1794,7 +1790,7 @@ eval_frame(PyFrameObject *f)
 			}
 			Py_INCREF(x);
 			PUSH(x);
-			break;
+			continue;
 
 		case LOAD_GLOBAL:
 			w = GETITEM(names, oparg);
@@ -1840,16 +1836,16 @@ eval_frame(PyFrameObject *f)
 
 		case DELETE_FAST:
 			x = GETLOCAL(oparg);
-			if (x == NULL) {
-				format_exc_check_arg(
-					PyExc_UnboundLocalError,
-					UNBOUNDLOCAL_ERROR_MSG,
-					PyTuple_GetItem(co->co_varnames, oparg)
-					);
-				break;
+			if (x != NULL) {
+				SETLOCAL(oparg, NULL);
+				continue;
 			}
-			SETLOCAL(oparg, NULL);
-			continue;
+			format_exc_check_arg(
+				PyExc_UnboundLocalError,
+				UNBOUNDLOCAL_ERROR_MSG,
+				PyTuple_GetItem(co->co_varnames, oparg)
+				);
+			break;
 
 		case LOAD_CLOSURE:
 			x = freevars[oparg];
@@ -1860,30 +1856,30 @@ eval_frame(PyFrameObject *f)
 		case LOAD_DEREF:
 			x = freevars[oparg];
 			w = PyCell_Get(x);
-			if (w == NULL) {
-				err = -1;
-				/* Don't stomp existing exception */
-				if (PyErr_Occurred())
-					break;
-				if (oparg < f->f_ncells) {
-					v = PyTuple_GetItem(co->co_cellvars,
-							       oparg);
-				       format_exc_check_arg(
-					       PyExc_UnboundLocalError,
-					       UNBOUNDLOCAL_ERROR_MSG,
-					       v);
-				} else {
-				       v = PyTuple_GetItem(
-						      co->co_freevars,
-						      oparg - f->f_ncells);
-				       format_exc_check_arg(
-					       PyExc_NameError,
-					       UNBOUNDFREE_ERROR_MSG,
-					       v);
-				}
-				break;
+			if (w != NULL) {
+				PUSH(w);
+				continue;
 			}
-			PUSH(w);
+			err = -1;
+			/* Don't stomp existing exception */
+			if (PyErr_Occurred())
+				break;
+			if (oparg < f->f_ncells) {
+				v = PyTuple_GetItem(co->co_cellvars,
+						       oparg);
+			       format_exc_check_arg(
+				       PyExc_UnboundLocalError,
+				       UNBOUNDLOCAL_ERROR_MSG,
+				       v);
+			} else {
+			       v = PyTuple_GetItem(
+					      co->co_freevars,
+					      oparg - f->f_ncells);
+			       format_exc_check_arg(
+				       PyExc_NameError,
+				       UNBOUNDFREE_ERROR_MSG,
+				       v);
+			}
 			break;
 
 		case STORE_DEREF:
