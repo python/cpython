@@ -235,68 +235,63 @@ Traceback (most recent call last):
 ValueError: list.remove(x): x not in list
 \end{verbatim}
 
-That doctest succeeds if, and only if, \exception{ValueError} is raised,
-with the \samp{list.remove(x): x not in list} detail as shown.
+That doctest succeeds if \exception{ValueError} is raised, with the
+\samp{list.remove(x): x not in list} detail as shown.\footnote{The
+  doctest also succeeds if it prints the exact text of the traceback
+  message; otherwise, it fails.}
 
-The expected output for an exception is divided into four parts.
-First, an example may produce some normal output before an exception
-is raised, although that's unusual.  The "normal output" is taken to
-be everything until the first "Traceback" line, and is usually an
-empty string.  Next, the traceback line must be one of these two, and
-indented the same as the first line in the example:
+The expected output for an exception must start with a traceback
+header, which may be either of the following two lines, indented the
+same as the first line of the example:
 
 \begin{verbatim}
 Traceback (most recent call last):
 Traceback (innermost last):
 \end{verbatim}
 
-The most interesting part is the last part:  the line(s) starting with the
-exception type and detail.  This is usually the last line of a traceback,
-but can extend across any number of lines.  After the "Traceback" line,
-doctest simply ignores everything until the first line indented the same as
-the first line of the example, \emph{and} starting with an alphanumeric
-character.  This example illustrates the complexities that are possible:
+The traceback header is followed by an optional traceback stack, whose
+contents are ignored by doctest.  Each line of the traceback stack
+must be indented further than the first line of the example, \emph{or}
+start with a non-alphanumeric character.  Typically, the traceback
+stack is either omitted or copied verbatim from an interactive
+session.
+
+The traceback stack is followed by the most interesting part: the
+line(s) containing the exception type and detail.  This is usually the
+last line of a traceback, but can extend across multiple lines if the
+exception has a multi-line detail, as illustrated in the following
+example:
 
 \begin{verbatim}
->>> print 1, 2; raise ValueError('printed 1\nand 2\n  but not 3')
-1 2
+>>> raise ValueError('multi\n   line\ndetail')
 Traceback (most recent call last):
-... indented the same, but doesn't start with an alphanumeric
-  not indented the same, so ignored too
-  File "/Python23/lib/doctest.py", line 442, in _run_examples_inner
-    compileflags, 1) in globs
-  File "<string>", line 1, in ?   # and all these are ignored
-ValueError: printed 1
-and 2
-  but not 3
+  File "<stdin>", line 1, in ?
+ValueError: multi
+    line
+detail
 \end{verbatim}
 
-The first (\samp{1 2}) and last three (starting with
-\exception{ValueError}) lines are compared, and the rest are ignored.
+The last three (starting with \exception{ValueError}) lines are
+compared against the exception's type and detail, and the rest are
+ignored.
 
-Best practice is to omit the ``File'' lines, unless they add
+Best practice is to omit the traceback stack, unless it adds
 significant documentation value to the example.  So the example above
 is probably better as:
 
 \begin{verbatim}
->>> print 1, 2; raise ValueError('printed 1\nand 2\n  but not 3')
-1 2
+>>> raise ValueError('multi\n   line\ndetail')
 Traceback (most recent call last):
-   ...
-ValueError: printed 1
-and 2
-  but not 3
+    ...
+ValueError: multi
+    line
+detail
 \end{verbatim}
 
 Note the tracebacks are treated very specially.  In particular, in the
 rewritten example, the use of \samp{...} is independent of doctest's
 \constant{ELLIPSIS} option.  The ellipsis in that example could
 be left out, or could just as well be three (or three hundred) commas.
-
-\versionchanged[The abilities to check both normal output and an
-                exception in a single example, and to have a multi-line
-                exception detail, were added]{2.4}
-
 
 \subsection{Option Flags and Directives\label{doctest-options}}
 
@@ -634,7 +629,7 @@ Backslashes in a raw docstring: m\n
 \end{verbatim}
 
   Otherwise, the backslash will be interpreted as part of the string.
-  E.g., the "\textbackslash" above would be interpreted as a newline
+  E.g., the "{\textbackslash}" above would be interpreted as a newline
   character.  Alternatively, you can double each backslash in the
   doctest version (and not use a raw string):
 
