@@ -98,10 +98,9 @@ class CollectingParser(HTMLParser):
 				self.handle_data('[' + `self.inanchor` + ']')
 		self.inanchor = 0
 	#
-	def start_header(self, attrs): pass
-	def end_header(self): pass
+	def start_html(self, attrs): pass
+	def end_html(self): pass
 	#
-	# (head is the same as header)
 	def start_head(self, attrs): pass
 	def end_head(self): pass
 	#
