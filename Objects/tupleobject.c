@@ -522,10 +522,10 @@ tuple_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static char tuple_doc[] =
-"tuple(sequence) -> tuple\n\
-\n\
-Return a tuple whose items are the same as those of the argument sequence.\n\
-If the argument is a tuple, the return value is the same object.";
+"tuple() -> an empty tuple\n"
+"tuple(sequence) -> tuple initialized from sequence's items\n"
+"\n"
+"If the argument is a tuple, the return value is the same object.";
 
 static PySequenceMethods tuple_as_sequence = {
 	(inquiry)tuplelength,			/* sq_length */
