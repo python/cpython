@@ -431,6 +431,10 @@ PyList_New
 PyLong_Type
 PyLong_FromUnicode
 PyLong_FromString
+PyLong_AsUnsignedLongLong
+PyLong_AsLongLong
+PyLong_FromUnsignedLongLong
+PyLong_FromLongLong
 PyLong_AsVoidPtr
 PyLong_FromVoidPtr
 PyLong_AsDouble
