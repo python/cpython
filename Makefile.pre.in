@@ -71,6 +71,13 @@ CFLAGS=		$(OPT) -I. -I$(srcdir)/Include $(DEFS)
 LDFLAGS=	@LDFLAGS@
 LDLAST=		@LDLAST@
 SGI_ABI=	@SGI_ABI@
+CCSHARED=	@CCSHARED@
+LINKFORSHARED=	@LINKFORSHARED@
+# Extra C flags added for building the interpreter object files.
+CFLAGSFORSHARED=@CFLAGSFORSHARED@
+# C flags used for building the interpreter object files
+PY_CFLAGS=	$(CFLAGS) $(CFLAGSFORSHARED)
+
 
 # Machine-dependent subdirectories
 MACHDEP=	@MACHDEP@
@@ -99,8 +106,6 @@ LIBP=		$(LIBDIR)/python$(VERSION)
 # Symbols used for using shared libraries
 SO=		@SO@
 LDSHARED=	@LDSHARED@
-CCSHARED=	@CCSHARED@
-LINKFORSHARED=	@LINKFORSHARED@
 DESTSHARED=	$(BINLIBDEST)/lib-dynload
 
 # Executable suffix (.exe on Windows and Mac OS X)
@@ -131,7 +136,7 @@ DISTDIRS=	$(SUBDIRS) $(SUBDIRSTOO) Ext-dummy
 DIST=		$(DISTFILES) $(DISTDIRS)
 
 
-LIBRARY=	libpython$(VERSION).a
+LIBRARY=	@LIBRARY@
 LDLIBRARY=      @LDLIBRARY@
 DLLLIBRARY=	@DLLLIBRARY@
 
@@ -356,31 +361,24 @@ Modules/Setup: $(srcdir)/Modules/Setup.dist
 		echo "check to make sure you have all the updates you"; \
 		echo "need in your Modules/Setup file."; \
 		echo "-----------------------------------------------"; \
-	else cp $(srcdir)/Modules/Setup.dist Modules/Setup; fi
-
-
-Modules/Setup.local:
-	@echo "# Edit this file for local setup changes" >Modules/Setup.local
-
+	fi
 
 ############################################################################
 # Special rules for object files
 
 Modules/getbuildinfo.o: $(srcdir)/Modules/getbuildinfo.c buildno
-	$(CC) -c $(CFLAGS) -DBUILD=`cat buildno` \
-		$(srcdir)/Modules/getbuildinfo.c \
-		-o Modules/getbuildinfo.o
+	$(CC) -c $(PY_CFLAGS) -DBUILD=`cat buildno` -o $@ $<
 	
 Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
-	$(CC) -c $(CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
-	-DPREFIX='"$(prefix)"' \
-	-DEXEC_PREFIX='"$(exec_prefix)"' \
-	-DVERSION='"$(VERSION)"' \
-	-DVPATH='"$(VPATH)"' \
-	$(srcdir)/Modules/getpath.c -o $@
+	$(CC) -c $(PY_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
+		-DPREFIX='"$(prefix)"' \
+		-DEXEC_PREFIX='"$(exec_prefix)"' \
+		-DVERSION='"$(VERSION)"' \
+		-DVPATH='"$(VPATH)"' \
+		-o $@ $<
 
 Modules/ccpython.o: Modules/ccpython.cc
-	$(CXX) $(CFLAGS) -c $< -o $@
+	$(CXX) -c $(PY_CFLAGS) -o $@ $<
 
 
 $(GRAMMAR_H) $(GRAMMAR_C): $(PGEN) $(GRAMMAR_INPUT)
@@ -399,12 +397,10 @@ Parser/metagrammar.o:	$(srcdir)/Parser/metagrammar.c
 
 
 Python/getplatform.o: $(srcdir)/Python/getplatform.c
-		$(CC) -c $(CFLAGS) -DPLATFORM='"$(MACHDEP)"' \
-			-o Python/getplatform.o $(srcdir)/Python/getplatform.c
+		$(CC) -c $(CFLAGS) -DPLATFORM='"$(MACHDEP)"' -o $@ $<
 
 Python/importdl.o: $(srcdir)/Python/importdl.c
-		$(CC) -c $(CFLAGS) -I$(DLINCLDIR) \
-			-o Python/importdl.o $(srcdir)/Python/importdl.c
+		$(CC) -c $(CFLAGS) -I$(DLINCLDIR) -o $@ $<
 
 
 Objects/unicodectype.o:	$(srcdir)/Objects/unicodectype.c \
@@ -717,7 +713,7 @@ config.status:	$(srcdir)/configure
 
 # Some make's put the object file in the current directory
 .c.o:
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) -o $@ $<
+	$(CC) -c $(PY_CFLAGS) -o $@ $<
 
 # Rerun configure with the same options as it was run last time,
 # provided the config.status script exists
@@ -758,18 +754,15 @@ clean:
 	-rm -f $(MODOBJS) $(MAINOBJ) $(PGOBJS)
 
 clobber: clean
-	-rm -f tags TAGS $(PYTHON) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY)
-	-rm -f Makefile.pre config.log config.cache config.h setup.cfg
-	-rm -f Modules/*.so Modules/*.sl
+	-rm -f tags TAGS $(PYTHON) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
+		Modules/*.so Modules/*.sl
 
 # Make things extra clean, before making a distribution:
 # remove all generated files, even Makefile[.pre]
 distclean: clobber
-	-$(MAKE) -f $(srcdir)/Makefile.pre.in \
-		SUBDIRS="$(SUBDIRSTOO)" clobber
-	-rm -f config.status config.log config.cache config.h Makefile
-	-rm -f buildno Modules/Setup Modules/Setup.local Modules/Setup.config
-	-rm -f Modules/config.c
+	-rm -f Makefile Makefile.pre buildno config.status config.log \
+		config.cache config.h setup.cfg Modules/config.c \
+		Modules/Setup Modules/Setup.local Modules/Setup.config
 	-for i in $(SUBDIRSTOO); do \
 		 for f in $$i/*.in; do \
 			f=`basename "$$f" .in`; \
