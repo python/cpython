@@ -829,25 +829,6 @@ statichere PyTypeObject Decomptype = {
     0,                              /*tp_as_mapping*/
 };
 
-/* The following insint() routine was blatantly ripped off from
-   socketmodule.c */
-
-/* Convenience routine to export an integer value.
-   For simplicity, errors (which are unlikely anyway) are ignored. */
-static void
-insint(PyObject *d, char *name, int value)
-{
-	PyObject *v = PyInt_FromLong((long) value);
-	if (v == NULL) {
-		/* Don't bother reporting this error */
-		PyErr_Clear();
-	}
-	else {
-		PyDict_SetItemString(d, name, v);
-		Py_DECREF(v);
-	}
-}
-
 static char zlib_module_documentation[]=
 "The functions in this module allow compression and decompression using the\n"
 "zlib library, which is based on GNU zip.\n"
