@@ -25,6 +25,7 @@ echo "latex2html -init_file $srcdir/perl/l2hinit.perl -dir $part" \
  "${1:+$@} $srcdir/$part/$part.tex"
 latex2html \
  -init_file $srcdir/perl/l2hinit.perl \
+ -address '<hr>Send comments to <a href="mailto:python-docs@python.org">python-docs@python.org</a>.' \
  -dir $part \
  ${1:+$@} \
  $srcdir/$part/$part.tex
