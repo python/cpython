@@ -540,6 +540,47 @@ fold_binops_on_constants(unsigned char *codestr, PyObject *consts)
 	return 1;
 }
 
+/* Replace LOAD_CONST tuple with LOAD_CONST frozenset in the context
+   of a single-use constant for "in" and "not in" tests.
+*/
+int
+try_set_conversion(unsigned char *codestr, PyObject *consts)
+{
+	PyObject *newconst, *constant;
+	int arg, len_consts;
+
+	/* Pre-conditions */
+	assert(PyList_CheckExact(consts));
+	assert(codestr[0] == LOAD_CONST);
+	assert(codestr[3] == COMPARE_OP);
+	assert(GETARG(codestr, 3) == 6 || GETARG(codestr, 3) == 7);
+
+	/* Attempt to convert constant to a frozenset.  Bail-out with no
+	   changes if the tuple contains unhashable values. */
+	arg = GETARG(codestr, 0);
+	constant = PyList_GET_ITEM(consts, arg);
+	if (constant->ob_type != &PyTuple_Type)
+		return 0;
+	newconst = PyObject_CallFunctionObjArgs(
+			(PyObject *)&PyFrozenSet_Type, constant, NULL);
+	if (newconst == NULL) {
+		PyErr_Clear();
+		return 0;
+	}
+
+	/* Append new constant onto consts list.*/
+	len_consts = PyList_GET_SIZE(consts);
+	if (PyList_Append(consts, newconst)) {
+		Py_DECREF(newconst);
+		return 0;
+	}
+	Py_DECREF(newconst);
+
+	/* Write new LOAD_CONST newconst on top of LOAD_CONST oldconst */
+	SETARG(codestr, 0, len_consts);
+	return 1;
+}
+
 static unsigned int *
 markblocks(unsigned char *code, int len)
 {
@@ -665,9 +706,15 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 		/* not a is b -->  a is not b
 		   not a in b -->  a not in b
 		   not a is not b -->  a is b
-		   not a not in b -->  a in b */
+		   not a not in b -->  a in b 
+		   
+		   a in c --> a in frozenset(c)
+			where c is a constant tuple of hashable values
+		*/
 		case COMPARE_OP:
 			j = GETARG(codestr, i);
+			if (lastlc >= 1 && (j == 6 || j == 7) && ISBASICBLOCK(blocks,i-3,6))
+				try_set_conversion(&codestr[i-3], consts);
 			if (j < 6  ||  j > 9  ||
 			    codestr[i+3] != UNARY_NOT  || 
 			    !ISBASICBLOCK(blocks,i,4))
