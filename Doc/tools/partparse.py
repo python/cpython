@@ -1047,7 +1047,7 @@ def do_funcdesc(length, buf, pp, i):
     hist.inargs = save
     del save
     the_args = [chunk(PLAIN, wh, '()'[0])] + pp[i:newi] + \
-	      [chunk(PLAIN, wh, '()'[1])]
+	       [chunk(PLAIN, wh, '()'[1])]
     del pp[i:newi]
     length = length - (newi-i)
 
@@ -1157,9 +1157,9 @@ def do_datadesc(length, buf, pp, i):
 	cat_class = 'data'
 	class_class = string.join(idxsi[2:])
 
-
     if not command:
-	raise error, 'don\'t know what to do with indexsubitem ' + `idxsi`
+	return length, i
+	#raise error, 'don\'t know what to do with indexsubitem ' + `idxsi` *)
 
     ch.chtype = chunk_type[CSLINE]
     ch.data = command
@@ -1522,8 +1522,11 @@ def changeit(buf, pp):
 		elif len(idxsi) >= 2 and idxsi[1] in \
 			  ('exception', 'object'):
 		    command = 'vindex'
+		elif len(idxsi) == 3 and idxsi[:2] == ['in', 'module']:
+		    command = 'cindex'
 		else:
-		    print 'WARNING: can\'t categorize ' + `idxsi` + ' for \'ttindex\' command'
+		    print 'WARNING: can\'t categorize ' + `idxsi` \
+			  + ' for \'ttindex\' command'
 		    command = 'cindex'
 
 		if not cat_class:
