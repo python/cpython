@@ -8,7 +8,7 @@ import sys, os, traceback
 
 # Misc tests from Tim Peters' re.doc
 
-# WARNING: Don't change deteails in these tests if you don't know
+# WARNING: Don't change details in these tests if you don't know
 # what you're doing. Some of these tests were carefuly modeled to
 # cover most of the code.
 
