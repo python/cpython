@@ -1010,8 +1010,10 @@ chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	/* create chainobject structure */
 	lz = (chainobject *)type->tp_alloc(type, 0);
-	if (lz == NULL)
+	if (lz == NULL) {
+		Py_DECREF(ittuple);
 		return NULL;
+	}
 
 	lz->ittuple = ittuple;
 	lz->iternum = 0;
