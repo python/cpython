@@ -60,13 +60,17 @@ I_PPC_EXTENSIONS=13
 I_CARBON_CORE=15
 I_CARBON_PLUGINS=16
 I_CARBON_EXTENSIONS=17
-# label 18
-I_PPC_FULL=19
-I_PPC_SMALL=20
-# label 21
-I_APPLETS=22
+I_INTERPRETER=18
+# label 19
+I_PPC_FULL=20
+I_PPC_SMALL=21
+# label 22
+I_CARBON_FULL=23
+I_CARBON_SMALL=24
+# label 25
+I_APPLETS=26
 
-N_BUTTONS=23
+N_BUTTONS=27
 
 if OLDAESUPPORT:
 	class MwShell(Metrowerks_Shell_Suite, CodeWarrior_suite, Metrowerks_Standard_Suite,
@@ -146,9 +150,6 @@ def buildprojectfile(top, arg, list):
 		r(arg)
 		del sys.path[0]
 		
-def buildcarbonnotyet(top, arg, list):
-	print "No carbon builds yet"
-		
 def buildfat(top, dummy, list):
 	"""Build fat binaries"""
 	for dst, src1, src2 in list:
@@ -157,6 +158,13 @@ def buildfat(top, dummy, list):
 		src2 = os.path.join(top, src2)
 		print 'Building fat binary', dst
 		cfmfile.mergecfmfiles((src1, src2), dst)
+		
+def buildcopy(top, dummy, list):
+	import macostools
+	for src, dst in list:
+		src = os.path.join(top, src)
+		dst = os.path.join(top, dst)
+		macostools.copy(src, dst)
 		
 def handle_dialog(filename):
 	"""Handle selection dialog, return list of selected items"""
@@ -203,9 +211,13 @@ I_GEN_IMGPROJECTS_FORCE : (buildprojectfile, 1, [
 	(":Extensions:img:Mac", "genimgprojects", "genallprojects")
 	]),
 	
+I_INTERPRETER : (buildcopy, None, [
+		("PythonInterpreterCarbon", "PythonInterpreter"),
+	]),
+
 I_PPC_CORE : (buildmwproject, "CWIE", [
 		(":Mac:Build:PythonCore.mcp", "PythonCore"),
-		(":Mac:Build:PythonInterpreter.mcp", "PythonInterpreter"),
+		(":Mac:Build:PythonInterpreter.mcp", "PythonInterpreterClassic"),
 	]),
 
 I_CARBON_CORE : (buildmwproject, "CWIE", [
@@ -219,6 +231,9 @@ I_PPC_EXTLIBS : (buildmwproject, "CWIE", [
 	]),
 	
 I_PPC_PLUGINS : (buildmwproject, "CWIE", [
+	(":Mac:Build:_weakref.mcp", "_weakref.ppc"),
+	(":Mac:Build:_symtable.mcp", "_symtable.ppc"),
+	(":Mac:Build:_testcapi.mcp", "_testcapi.ppc"),
 	(":Mac:Build:pyexpat.mcp", "pyexpat.ppc"),
 	(":Mac:Build:calldll.mcp", "calldll.ppc"),
 	(":Mac:Build:ctb.mcp", "ctb.ppc"),
@@ -246,6 +261,9 @@ I_PPC_PLUGINS : (buildmwproject, "CWIE", [
 	]),
 
 I_CARBON_PLUGINS :  (buildmwproject, "CWIE", [
+	(":Mac:Build:_weakref.carbon.mcp", "_weakref.carbon"),
+	(":Mac:Build:_symtable.carbon.mcp", "_symtable.carbon"),
+	(":Mac:Build:_testcapi.carbon.mcp", "_testcapi.carbon"),
 	(":Mac:Build:pyexpat.carbon.mcp", "pyexpat.carbon"),
 	(":Mac:Build:calldll.carbon.mcp", "calldll.carbon"),
 	(":Mac:Build:gdbm.carbon.mcp", "gdbm.carbon"),
@@ -274,6 +292,14 @@ I_PPC_FULL : (buildmwproject, "CWIE", [
 
 I_PPC_SMALL : (buildmwproject, "CWIE", [
 		(":Mac:Build:PythonStandSmall.mcp", "PythonStandSmall"),
+	]),
+
+I_CARBON_FULL : (buildmwproject, "CWIE", [
+		(":Mac:Build:PythonStandalone.mcp", "PythonCarbonStandalone"),
+	]),
+
+I_CARBON_SMALL : (buildmwproject, "CWIE", [
+		(":Mac:Build:PythonStandSmall.mcp", "PythonStandSmallCarbon"),
 	]),
 
 I_PPC_EXTENSIONS : (buildmwproject, "CWIE", [
