@@ -186,7 +186,7 @@ attempted.
 See \file{docstring.py} for all the details.  They're unsurprising:  the
 module docstring, and all function, class and method docstrings are
 searched, with the exception of docstrings attached to objects with private
-names.
+names.  Objects imported into the module are not searched.
 
 In addition, if \code{M.__test__} exists and "is true", it must be a
 dict, and each entry maps a (string) name to a function object, class
@@ -211,9 +211,7 @@ By default, each time testmod finds a docstring to test, it uses a
 doesn't change the module's real globals, and so that one test in
 \module{M} can't leave behind crumbs that accidentally allow another test
 to work.  This means examples can freely use any names defined at top-level
-in \module{M}, and names defined earlier in the docstring being run.  It
-also means that sloppy imports (see below) can cause examples in external
-docstrings to use globals inappropriate for them.
+in \module{M}, and names defined earlier in the docstring being run.
 
 You can force use of your own dict as the execution context by passing
 \code{globs=your_dict} to \function{testmod()} instead.  Presumably this
@@ -319,27 +317,6 @@ that triggered it.
 \subsection{Warnings}
 
 \begin{enumerate}
-
-\item Sloppy imports can cause trouble; e.g., if you do
-
-\begin{verbatim}
-from XYZ import XYZclass
-\end{verbatim}
-
-then \class{XYZclass} is a name in \code{M.__dict__} too, and doctest
-has no way to know that \class{XYZclass} wasn't \emph{defined} in
-\module{M}.  So it may try to execute the examples in
-\class{XYZclass}'s docstring, and those in turn may require a
-different set of globals to work correctly.  I prefer to do
-``\code{import *}''-friendly imports, a la
-
-\begin{verbatim}
-from XYZ import XYZclass as _XYZclass
-\end{verbatim}
-
-and then the leading underscore makes \class{_XYZclass} a private name so
-testmod skips it by default.  Other approaches are described in
-\file{doctest.py}.
 
 \item \module{doctest} is serious about requiring exact matches in expected
   output.  If even a single character doesn't match, the test fails.  This
