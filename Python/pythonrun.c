@@ -500,10 +500,8 @@ PyRun_InteractiveOne(fp, filename)
 		else if (PyString_Check(w))
 			ps2 = PyString_AsString(w);
 	}
-	Py_BEGIN_ALLOW_THREADS
 	n = PyParser_ParseFile(fp, filename, &_PyParser_Grammar,
 			       Py_single_input, ps1, ps2, &err);
-	Py_END_ALLOW_THREADS
 	Py_XDECREF(v);
 	Py_XDECREF(w);
 	if (n == NULL) {
@@ -942,10 +940,8 @@ PyParser_SimpleParseFile(fp, filename, start)
 {
 	node *n;
 	perrdetail err;
-	Py_BEGIN_ALLOW_THREADS
 	n = PyParser_ParseFile(fp, filename, &_PyParser_Grammar, start,
 				(char *)0, (char *)0, &err);
-	Py_END_ALLOW_THREADS
 	if (n == NULL)
 		err_input(&err);
 	return n;
