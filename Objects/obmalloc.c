@@ -252,9 +252,8 @@ typedef struct pool_header *poolp;
 /* Round pointer P down to the closest pool-aligned address <= P, as a poolp */
 #define POOL_ADDR(P) ((poolp)((uptr)(P) & ~(uptr)POOL_SIZE_MASK))
 
-/* Return total number of blocks in poolp P, as a uint. */
-#define NUMBLOCKS(P)	\
-	((uint)(POOL_SIZE - POOL_OVERHEAD) / INDEX2SIZE((P)->szidx))
+/* Return total number of blocks in pool of size index I, as a uint. */
+#define NUMBLOCKS(I) ((uint)(POOL_SIZE - POOL_OVERHEAD) / INDEX2SIZE(I))
 
 /*==========================================================================*/
 
@@ -1195,24 +1194,48 @@ _PyMalloc_DebugDumpAddress(const void *p)
 	}
 }
 
+static ulong
+printone(const char* msg, ulong value)
+{
+	const size_t len = strlen(msg);
+	size_t i;
+
+	fputs(msg, stderr);
+	for (i = len; i < 40; ++i)
+		fputc(' ', stderr);
+	fprintf(stderr, "= %15lu\n", value);
+	return value;
+}
+
 /* Print summary info to stderr about the state of pymalloc's structures. */
 void
 _PyMalloc_DebugDumpStats(void)
 {
 	uint i;
 	const uint numclasses = SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT;
-	uint numfreepools = 0;
-	/* # of pools per class index */
+	/* # of pools, allocated blocks, and free blocks per class index */
 	ulong numpools[SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT];
-	/* # of allocated blocks per class index */
 	ulong numblocks[SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT];
-	/* # of free blocks per class index */
 	ulong numfreeblocks[SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT];
-	ulong grandtotal;	/* total # of allocated bytes */
-	ulong freegrandtotal;	/* total # of available bytes in used pools */
+	/* total # of allocated bytes in used and full pools */
+	ulong allocated_bytes = 0;
+	/* total # of available bytes in used pools */
+	ulong available_bytes = 0;
+	/* # of free pools + pools not yet carved out of current arena */
+	uint numfreepools = 0;
+	/* # of bytes for arena alignment padding */
+	uint arena_alignment = 0;
+	/* # of bytes in used and full pools used for pool_headers */
+	ulong pool_header_bytes = 0;
+	/* # of bytes in used and full pools wasted due to quantization,
+	 * i.e. the necessarily leftover space at the ends of used and
+	 * full pools.
+	 */
+	ulong quantization = 0;
+	/* running total -- should equal narenas * ARENA_SIZE */
+	ulong total;
+	char buf[128];
 
-	fprintf(stderr, "%u arenas * %d bytes/arena = %lu total bytes.\n",
-		narenas, ARENA_SIZE, narenas * (ulong)ARENA_SIZE);
 	fprintf(stderr, "Small block threshold = %d, in %u size classes.\n",
 		SMALL_REQUEST_THRESHOLD, numclasses);
 	fprintf(stderr, "pymalloc malloc+realloc called %lu times.\n",
@@ -1234,6 +1257,7 @@ _PyMalloc_DebugDumpStats(void)
 		poolsinarena = ARENA_SIZE / POOL_SIZE;
 		if (base & (uptr)POOL_SIZE_MASK) {
 			--poolsinarena;
+			arena_alignment += POOL_SIZE;
 			base &= ~(uptr)POOL_SIZE_MASK;
 			base += POOL_SIZE;
 		}
@@ -1254,18 +1278,16 @@ _PyMalloc_DebugDumpStats(void)
 			}
 			++numpools[p->szidx];
 			numblocks[p->szidx] += p->ref.count;
-			numfreeblocks[p->szidx] += NUMBLOCKS(p) - p->ref.count;
+			numfreeblocks[p->szidx] += NUMBLOCKS(p->szidx) -
+						   p->ref.count;
 		}
 	}
 
-	fputc('\n', stderr);
-	fprintf(stderr, "Number of unused pools: %u\n", numfreepools);
 	fputc('\n', stderr);
 	fputs("class   num bytes   num pools   blocks in use  avail blocks\n"
 	      "-----   ---------   ---------   -------------  ------------\n",
 		stderr);
 
-	grandtotal = freegrandtotal = 0;
 	for (i = 0; i < numclasses; ++i) {
 		ulong p = numpools[i];
 		ulong b = numblocks[i];
@@ -1277,14 +1299,29 @@ _PyMalloc_DebugDumpStats(void)
 		}
 		fprintf(stderr, "%5u %11u %11lu %15lu %13lu\n",
 			i, size, p, b, f);
-		grandtotal += b * size;
-		freegrandtotal += f * size;
+		allocated_bytes += b * size;
+		available_bytes += f * size;
+		pool_header_bytes += p * POOL_OVERHEAD;
+		quantization += p * ((POOL_SIZE - POOL_OVERHEAD) % size);
 	}
 	fputc('\n', stderr);
-	fprintf(stderr, "Total bytes in allocated blocks: %lu\n",
-		grandtotal);
-	fprintf(stderr, "Total free bytes in used pools:  %lu\n",
-		freegrandtotal);
+
+	PyOS_snprintf(buf, sizeof(buf),
+		"%u arenas * %d bytes/arena", narenas, ARENA_SIZE);
+	(void)printone(buf, (ulong)narenas * ARENA_SIZE);
+
+	fputc('\n', stderr);
+
+	PyOS_snprintf(buf, sizeof(buf),
+		"%u unused pools * %d bytes", numfreepools, POOL_SIZE);
+	total  = printone(buf, (ulong)numfreepools * POOL_SIZE);
+
+	total += printone("# bytes in allocated blocks", allocated_bytes);
+	total += printone("# bytes in available blocks", available_bytes);
+	total += printone("# bytes lost to pool headers", pool_header_bytes);
+	total += printone("# bytes lost to quantization", quantization);
+	total += printone("# bytes lost to arena alignment", arena_alignment);
+	(void)printone("Total", total);
 }
 
 #endif	/* PYMALLOC_DEBUG */
