@@ -39,6 +39,10 @@
 #include <bluetooth/sco.h>
 #endif
 
+#ifdef HAVE_BLUETOOTH_H
+#include <bluetooth.h>
+#endif
+
 #ifdef HAVE_NETPACKET_PACKET_H
 # include <sys/ioctl.h>
 # include <net/if.h>
