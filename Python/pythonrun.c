@@ -238,19 +238,22 @@ PyRun_SimpleFile(fp, filename)
 		return -1;
 	d = PyModule_GetDict(m);
 	ext = filename + strlen(filename) - 4;
+	if (strcmp(ext, ".pyc") == 0 || strcmp(ext, ".pyo") == 0
 #ifdef macintosh
 	/* On a mac, we also assume a pyc file for types 'PYC ' and 'APPL' */
-	if ( strcmp(ext, ".pyc") == 0 || getfiletype(filename) == 'PYC ' ||
-					getfiletype(filename) == 'APPL' ) {
-#else
-	if ( strcmp(ext, ".pyc") == 0 ) {
+	    || getfiletype(filename) == 'PYC '
+	    || getfiletype(filename) == 'APPL'
 #endif /* macintosh */
+		) {
 		/* Try to run a pyc file. First, re-open in binary */
 		/* Don't close, done in main: fclose(fp); */
 		if( (fp = fopen(filename, "rb")) == NULL ) {
 			fprintf(stderr, "python: Can't reopen .pyc file\n");
 			return -1;
 		}
+		/* Turn on optimization if a .pyo file is given */
+		if (strcmp(ext, ".pyo") == 0)
+			Py_OptimizeFlag = 1;
 		v = run_pyc_file(fp, filename, d, d);
 	} else {
 		v = PyRun_File(fp, filename, file_input, d, d);
@@ -291,7 +294,7 @@ PyErr_Print()
 	Py_FlushLine();
 	fflush(stdout);
 	if (exception == NULL)
-		Py_FatalError("print_error called but no exception");
+		Py_FatalError("PyErr_Print called but no exception");
 	if (exception == PyExc_SystemExit) {
 		if (v == NULL || v == Py_None)
 			Py_Exit(0);
