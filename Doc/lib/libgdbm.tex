@@ -20,7 +20,7 @@
 % this; it's just a little annoying.  The warning can be ignored, but
 % the index produced uses the non-bold version.
 
-This module is quite similar to the \module{dbm}\refbimodindex{dbm}
+This module is quite similar to the \refmodule{dbm}\refbimodindex{dbm}
 module, but uses \code{gdbm} instead to provide some additional
 functionality.  Please note that the file formats created by
 \code{gdbm} and \code{dbm} are incompatible.
@@ -97,3 +97,9 @@ When the database has been opened in fast mode, this method forces any
 unwritten data to be written to the disk.
 \end{funcdesc}
 
+
+\begin{seealso}
+  \seemodule{anydbm}{Generic interface to \code{dbm}-style databases.}
+  \seemodule{whichdb}{Utility module used to determine the type of an
+                      existing database.}
+\end{seealso}
