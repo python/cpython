@@ -2524,7 +2524,7 @@ validate_node(node *tree)
     int   res  = 1;                     /* result value                   */
     node* next = 0;                     /* node to process after this one */
 
-    while (res & (tree != 0)) {
+    while (res && (tree != 0)) {
         nch  = NCH(tree);
         next = 0;
         switch (TYPE(tree)) {
