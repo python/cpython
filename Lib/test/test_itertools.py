@@ -151,7 +151,7 @@ def test_main(verbose=None):
         counts = []
         for i in xrange(5):
             test_support.run_suite(suite)
-            counts.append(sys.gettotalrefcount())
+            counts.append(sys.gettotalrefcount()-i)
         print counts
 
 if __name__ == "__main__":
