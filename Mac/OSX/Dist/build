@@ -5,9 +5,9 @@
 # TODO:  Parameterize the versions, builddirs, etc...
 
 # Script configs
-PYVERSION=2.3rc1plus
+PYVERSION=2.3
 PYVER=2.3
-BUILDNUM=8
+BUILDNUM=1
 DOCLEANUP=no
 
 PROGDIR="`dirname \"$0\"`"
@@ -133,7 +133,7 @@ python $PYTHONSRC/Mac/scripts/buildpkg.py \
 
 # ...and then make a disk image containing the package.
 mv MacPython-OSX.pkg $DMGDIR/root
-cp $RESOURCEDIR/Welcome.txt $DMGDIR/root/README.txt
+cp $RESOURCEDIR/ReadMe.txt $DMGDIR/root/ReadMe.txt
 $PROGDIR/makedmg $DMGDIR/root $DMGDIR MacPython-OSX-$PYVERSION-$BUILDNUM
 
 echo Moving $DMGDIR/MacPython-OSX-$PYVERSION-$BUILDNUM to $DESTDIR

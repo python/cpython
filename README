@@ -1,5 +1,5 @@
-This is Python version 2.3 release candidate 2
-==============================================
+This is Python version 2.3 (final)
+==================================
 
 Copyright (c) 2001, 2002, 2003 Python Software Foundation.
 All rights reserved.
@@ -34,6 +34,7 @@ What's new in this release?
 ---------------------------
 
 See the file "Misc/NEWS".
+
 
 If you don't read instructions
 ------------------------------
@@ -224,6 +225,7 @@ old K&R-C-only compilers is no longer possible.  ANSI C compilers are
 available for all modern systems, either in the form of updated
 compilers from the vendor, or one of the free compilers (gcc).
 
+
 Unsupported systems
 -------------------
 
@@ -246,6 +248,7 @@ longer:
   or PY_PTHREAD_D7 in thread_pthread.h
 - Systems using --with-dl-dld
 - Systems using --without-universal-newlines
+
 
 Platform specific notes
 -----------------------

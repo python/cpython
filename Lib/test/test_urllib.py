@@ -106,7 +106,8 @@ class urlretrieve_FileTests(unittest.TestCase):
         # Make sure that a local file just gets its own location returned and
         # a headers value is returned.
         result = urllib.urlretrieve("file:%s" % test_support.TESTFN)
-        self.assertEqual(result[0], test_support.TESTFN)
+        self.assertEqual(os.path.normpath(result[0]), 
+                         os.path.normpath(test_support.TESTFN))
         self.assert_(isinstance(result[1], mimetools.Message),
                      "did not get a mimetools.Message instance as second "
                      "returned value")

@@ -34,7 +34,7 @@ def walktree(name, change):
 				if curcrtp <> (cr, tp):
 					if change:
 						MacOS.SetCreatorAndType(name, cr, tp)
-						macostools.touched(fs)
+						#macostools.touched(fs)
 						print 'Fixed ', name
 					else:
 						print 'Wrong', curcrtp, name
@@ -51,6 +51,6 @@ def run(change):
 	walktree(pathname, change)
 	
 if __name__ == '__main__':
-	run(0)
+	run(1)
 	
 	

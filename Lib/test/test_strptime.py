@@ -4,6 +4,7 @@ import unittest
 import time
 import locale
 import re
+import sys
 from test import test_support
 
 import _strptime
@@ -306,6 +307,9 @@ class StrptimeTests(unittest.TestCase):
         strf_output = time.strftime("%Z")  #UTC does not have a timezone
         strp_output = _strptime.strptime(strf_output, "%Z")
         locale_time = _strptime.LocaleTime()
+        if sys.platform == 'mac':
+            # Timezones don't really work on MacOS9
+            return
         if time.tzname[0] != time.tzname[1] or not time.daylight:
             self.failUnless(strp_output[8] == time_tuple[8],
                             "timezone check failed; '%s' -> %s != %s" %

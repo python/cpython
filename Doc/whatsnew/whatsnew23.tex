@@ -1055,7 +1055,7 @@ class FakeSeq:
     def __getitem__(self, item):
         if isinstance(item, slice):
             indices = item.indices(len(self))
-            return FakeSeq([self.calc_item(i) in range(*indices)])
+            return FakeSeq([self.calc_item(i) for i in range(*indices)])
         else:
             return self.calc_item(i)
 \end{verbatim}
@@ -2386,7 +2386,8 @@ name.
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Jeff Bauer, Simon Brunning, Brett Cannon, Michael Chermside,
-Andrew Dalke, Scott David Daniels, Fred~L. Drake, Jr., Kelly Gerber,
+Andrew Dalke, Scott David Daniels, Fred~L. Drake, Jr., David Fraser,
+Kelly Gerber,
 Raymond Hettinger, Michael Hudson, Chris Lambert, Detlef Lannert,
 Martin von~L\"owis, Andrew MacIntyre, Lalo Martins, Chad Netzer,
 Gustavo Niemeyer, Neal Norwitz, Hans Nowak, Chris Reedy, Francesco

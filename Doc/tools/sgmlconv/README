@@ -13,7 +13,7 @@ To convert one document to XML:
 	cd Doc/<document-dir>
 	make -f ../tools/sgmlconv/make.rules TOOLSDIR=../tools
 
-Please send comments and bug reports to python-docs@python.org.
+Please send comments and bug reports to docs@python.org.
 
 
 What do the tools do?

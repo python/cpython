@@ -142,7 +142,7 @@ class UUFileTest(unittest.TestCase):
             uu.decode(f)
             f.close()
 
-            f = open(self.tmpout, 'r')
+            f = open(self.tmpout, 'rU')
             s = f.read()
             f.close()
             self.assertEqual(s, plaintext)

@@ -326,6 +326,8 @@ class PosixPathTest(unittest.TestCase):
         self.assertRaises(TypeError, posixpath.samestat)
 
     def test_ismount(self):
+        if os.name in ('mac',):
+            return
         self.assertIs(posixpath.ismount("/"), True)
 
         self.assertRaises(TypeError, posixpath.ismount)

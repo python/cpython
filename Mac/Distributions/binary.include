@@ -185,7 +185,6 @@
 (':Tools:framer', '')
 (':Tools:freeze', '')
 (':Tools:i18n', '')
-(':Tools:idle', '')
 (':Tools:modulator', None)
 (':Tools:pynche', '')
 (':Tools:scripts', '')
@@ -205,3 +204,5 @@
 (':pystone.py', None)
 (':setup.py', None)
 (':site-packages', None)
+(':Tools:unicode:mkstringprep.py', '')
+(':Objects:dictnotes.txt', None)
