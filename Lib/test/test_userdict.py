@@ -75,6 +75,10 @@ m2 = MyUserDict(u2)
 m2a = m2.copy()
 verify(m2a == m2)
 
+# SF bug #476616 -- copy() of UserDict subclass shared data
+m2['foo'] = 'bar'
+verify(m2a != m2)
+
 # Test keys, items, values
 
 verify(u2.keys() == d2.keys())
