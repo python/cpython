@@ -356,10 +356,18 @@ From the viewpoint of of C access to Python services, we have:
 
 
      \begin{cfuncdesc}{PyObject*}{PyNumber_Coerce}{PyObject *o1, PyObject *o2}
-         On success, returns a tuple containing \code{o1} and \code{o2} converted to
-	 a common numeric type, or None if no conversion is possible.
-	 Returns -1 on failure. This is equivalent to the Python
-	 expression: \code{coerce(o1,o2)}.
+	 This function takes the addresses of two variables of type
+         \code{PyObject*}.
+
+         If the objects pointed to by \code{*p1} and \code{*p2} have the same type,
+         increment their reference count and return 0 (success).
+         If the objects can be converted to a common numeric type,
+         replace \code{*p1} and \code{*p2} by their converted value (with 'new'
+         reference counts), and return 0.
+         If no conversion is possible, or if some other error occurs,
+         return -1 (failure) and don't increment the reference counts.
+         The call \code{PyNumber_Coerce(&o1, &o2)} is equivalent to the Python
+         statement \code{o1, o2 = coerce(o1, o2)}.
      \end{cfuncdesc}
 
 
