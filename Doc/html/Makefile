@@ -24,6 +24,7 @@ BUILDINDEX=$(TOOLSDIR)/buildindex.py
 # make it clear to l2h, since our support only generates HTML 4.0
 L2HARGS=   -html_version 4.0
 
+PYTHONDOCS='<hr>Send comments to <a href="mailto:python-docs@python.org">python-docs@python.org</a>.'
 HTMLBASE=  file:`pwd`
 
 INDEXFILES=api/api.html \
@@ -53,6 +54,7 @@ $(INDEXFILES): $(COMMONPERL) $(TOPDIR)/html/about.dat
 
 modindex.html: lib/lib.html mac/mac.html $(TOOLSDIR)/mkmodindex
 	$(TOOLSDIR)/mkmodindex --columns 4 --output modindex.html \
+		--address $(PYTHONDOCS) \
 		lib/modindex.html mac/modindex.html
 
 api/api.html:  $(PAPERDIR)/api.aux $(BUILDINDEX)
@@ -67,7 +69,8 @@ lib/lib.html:  $(PAPERDIR)/lib.aux $(BUILDINDEX)
 	$(MKHTML) lib $(L2HARGS)
 
 mac/mac.html:  $(MACFILES) $(BUILDINDEX)
-	$(TOOLSDIR)/mkhowto --address '<hr>Send comments to <a href="mailto:python-docs@python.org">python-docs@python.org</a>.' --html $(TOPDIR)/mac/mac.tex
+	$(TOOLSDIR)/mkhowto --address $(PYTHONDOCS) --html \
+		$(TOPDIR)/mac/mac.tex
 
 ref/ref.html:  $(PAPERDIR)/ref.aux $(BUILDINDEX)
 	$(MKHTML) ref $(L2HARGS)
