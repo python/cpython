@@ -27,26 +27,52 @@ intrcheck()
 
 #ifdef THINK_C
 
+/* This is for THINK C 4.0.
+   For 3.0, you may have to remove the signal stuff. */
+
 #include <MacHeaders>
+#include <signal.h>
+#include "sigtype.h"
+
+static int interrupted;
+
+static SIGTYPE
+intcatcher(sig)
+	int sig;
+{
+	interrupted = 1;
+	signal(SIGINT, intcatcher);
+}
 
 void
 initintr()
 {
+	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
+		signal(SIGINT, intcatcher);
 }
 
 int
 intrcheck()
 {
-	/* Static to make it faster only */
-	static EventRecord e;
+	register EvQElPtr q;
 	
-	/* XXX This fails if the user first types ahead and then
-	   decides to interrupt -- repeating Command-. until the
-	   event queue overflows may work though. */
-	if (EventAvail(keyDownMask|autoKeyMask, &e) &&
-				(e.modifiers & cmdKey) &&
-				(e.message & charCodeMask) == '.') {
-		(void) GetNextEvent(keyDownMask|autoKeyMask, &e);
+	/* This is like THINK C 4.0's <console.h>.
+	   I'm not sure why FlushEvents must be called from asm{}. */
+	for (q = (EvQElPtr)EventQueue.qHead; q; q = (EvQElPtr)q->qLink) {
+		if (q->evtQWhat == keyDown &&
+				(char)q->evtQMessage == '.' &&
+				(q->evtQModifiers & cmdKey) != 0) {
+			
+			asm {
+				moveq	#keyDownMask,d0
+				_FlushEvents
+			}
+			interrupted = 1;
+			break;
+		}
+	}
+	if (interrupted) {
+		interrupted = 0;
 		return 1;
 	}
 	return 0;
@@ -63,7 +89,6 @@ intrcheck()
 
 #include <stdio.h>
 #include <signal.h>
-
 #include "sigtype.h"
 
 static int interrupted;
