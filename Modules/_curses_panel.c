@@ -474,11 +474,11 @@ init_curses_panel(void)
 {
     PyObject *m, *d, *v;
 
-	/* Initialize object type */
-	PyCursesPanel_Type.ob_type = &PyType_Type;
+    /* Initialize object type */
+    PyCursesPanel_Type.ob_type = &PyType_Type;
 
     import_curses();
-        
+
     /* Create the module and add the functions */
     m = Py_InitModule("_curses_panel", PyCurses_methods);
     d = PyModule_GetDict(m);
@@ -492,6 +492,4 @@ init_curses_panel(void)
     PyDict_SetItemString(d, "version", v);
     PyDict_SetItemString(d, "__version__", v);
     Py_DECREF(v);
-
 }
-
