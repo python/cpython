@@ -222,28 +222,34 @@ class Raise(Node):
   def __repr__(self):
     return "Raise(%s,%s,%s)" % self._children[1:]
 
-class Tryfinally(Node):
-  nodes['tryfinally'] = 'Tryfinally'
+class TryFinally(Node):
+  nodes['tryfinally'] = 'TryFinally'
 
-  def __init__(self, try_, fin):
-    self.try_ = try_
-    self.fin = fin
-    self._children = ('tryfinally', try_, fin)
+  def __init__(self, body, final):
+    self.body = body
+    self.final = final
+    self._children = ('tryfinally', body, final)
 
   def __repr__(self):
-    return "Tryfinally(%s,%s)" % self._children[1:]
+    return "TryFinally(%s,%s)" % self._children[1:]
 
-class Tryexcept(Node):
-  nodes['tryexcept'] = 'Tryexcept'
+class TryExcept(Node):
+  """Try/Except body and handlers
 
-  def __init__(self, try_, excs, else_):
-    self.try_ = try_
-    self.excs = excs
+  The handlers attribute is a sequence of tuples.  The elements of the
+  tuple are the exception name, the name to bind the exception to, and
+  the body of the except clause.
+  """
+  nodes['tryexcept'] = 'TryExcept'
+
+  def __init__(self, body, handlers, else_):
+    self.body = body
+    self.handlers = handlers
     self.else_ = else_
-    self._children = ('tryexcept', try_, excs, else_)
+    self._children = ('tryexcept', body, handlers, else_)
 
   def __repr__(self):
-    return "Tryexcept(%s,%s,%s)" % self._children[1:]
+    return "TryExcept(%s,%s,%s)" % self._children[1:]
 
 class Return(Node):
   nodes['return'] = 'Return'
