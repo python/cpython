@@ -30,8 +30,9 @@ by using the \method{poll()} or \method{wait()} methods on the
 \UNIX.  This information is not available when using the
 \function{popen2()}, \function{popen3()}, and \function{popen4()}
 functions, or the equivalent functions in the \refmodule{os} module.
-(Note that the tuples returned by the \module{os} module's functions
-are in a different order from the ones returned by the \module{popen2} module.)
+(Note that the tuples returned by the \refmodule{os} module's functions
+are in a different order from the ones returned by the \module{popen2}
+module.)
 
 \begin{funcdesc}{popen2}{cmd\optional{, bufsize\optional{, mode}}}
 Executes \var{cmd} as a sub-process.  Returns the file objects
