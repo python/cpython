@@ -44,6 +44,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patches #925152, #1118602: Avoid reading after the end of the buffer
+  in pyexpat.GetInputContext.
+
 - Patches #749830, #1144555: allow UNIX mmap size to default to current 
   file size.
 

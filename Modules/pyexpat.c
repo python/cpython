@@ -1082,7 +1082,7 @@ xmlparse_GetInputContext(xmlparseobject *self, PyObject *args)
                 = XML_GetInputContext(self->itself, &offset, &size);
 
             if (buffer != NULL)
-                result = PyString_FromStringAndSize(buffer + offset, size);
+                result = PyString_FromStringAndSize(buffer + offset, size - offset);
             else {
                 result = Py_None;
                 Py_INCREF(result);
