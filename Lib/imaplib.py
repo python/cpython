@@ -12,7 +12,7 @@ Public functions:	Internaldate2tuple
 			Time2Internaldate
 """
 
-import os, re, socket, string, time
+import re, socket, string, time, whrandom
 
 #	Globals
 
@@ -87,7 +87,6 @@ class IMAP4:
 
 	class error(Exception): pass	# Logical errors - debug required
 	class abort(error): pass	# Service errors - close and retry
-	COUNT = [0]			# Count instantiations
 
 
 	def __init__(self, host = '', port = IMAP4_PORT):
@@ -109,8 +108,7 @@ class IMAP4:
 		# Create unique tag for this session,
 		# and compile tagged response matcher.
 
-		self.COUNT[0] = self.COUNT[0] + 1
-		self.tagpre = Int2AP((os.getpid()<<8)+self.COUNT[0])
+		self.tagpre = Int2AP(whrandom.random()*32000)
 		self.tagre = re.compile(r'(?P<tag>'
 				+ self.tagpre
 				+ r'\d+) (?P<type>[A-Z]+) (?P<data>.*)')
@@ -188,6 +186,7 @@ class IMAP4:
 
 	def close(self):
 		"""Close currently selected mailbox.
+
 		Deleted messages are removed from writable mailbox.
 		This is the recommended command before 'LOGOUT'.
 
@@ -227,6 +226,7 @@ class IMAP4:
 
 	def expunge(self):
 		"""Permanently remove deleted items from selected mailbox.
+
 		Generates 'EXPUNGE' response for each deleted message.
 
 		(typ, [data]) = <instance>.expunge()
@@ -406,8 +406,7 @@ class IMAP4:
 
 
 	def uid(self, command, args):
-		"""Execute "command args" with messages identified by UID,
-		rather than message number.
+		"""Execute "command args" with messages identified by UID, rather than message number.
 
 		(typ, [data]) = <instance>.uid(command, args)
 
@@ -433,8 +432,7 @@ class IMAP4:
 
 
 	def xatom(self, name, arg1=None, arg2=None):
-		"""Allow simple extension commands
-		notified by server in CAPABILITY response.
+		"""Allow simple extension commands notified by server in CAPABILITY response.
 
 		(typ, [data]) = <instance>.xatom(name, arg1=None, arg2=None)
 		"""
@@ -650,10 +648,9 @@ Mon2num = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
 
 def Internaldate2tuple(resp):
 
-	"""
-		Convert IMAP4 INTERNALDATE to UT.
+	"""Convert IMAP4 INTERNALDATE to UT.
 
-		Returns Python time module tuple.
+	Returns Python time module tuple.
 	"""
 
 	mo = InternalDate.match(resp)
@@ -691,9 +688,10 @@ def Internaldate2tuple(resp):
 
 def Int2AP(num):
 
-	"""Convert integer to A-P string representation. """
+	"""Convert integer to A-P string representation."""
 
 	val = ''; AP = 'ABCDEFGHIJKLMNOP'
+	num = int(abs(num))
 	while num:
 		num, mod = divmod(num, 16)
 		val = AP[mod] + val
@@ -703,7 +701,7 @@ def Int2AP(num):
 
 def ParseFlags(resp):
 
-	"""Convert IMAP4 flags response to python tuple. """
+	"""Convert IMAP4 flags response to python tuple."""
 
 	mo = Flags.match(resp)
 	if not mo:
