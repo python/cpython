@@ -43,280 +43,103 @@
 # The formatted output is located in subdirectories.  For PDF and
 # PostScript, look in the paper-$(PAPER)/ directory.  For HTML, look in
 # the html/ directory.  If you want to fix the GNU info process, look
-# in the info/ directory.
+# in the info/ directory; please send patches to python-docs@python.org.
 
 # Customizations -- you *may* have to edit these
 
 # you could set this to a4
 PAPER=letter
 
-# Where are the various programs?
-LATEX=		latex
-PDFLATEX=	pdflatex
-DVIPS=		dvips -N0 -t $(PAPER)
-KPSEWHICH=	TEXINPUTS=$(TEXINPUTS) kpsewhich tex
-MAKEINDEX=	makeindex -s $(srcdir)/texinputs/myindex.ist
-ACROREAD=	acroread
-L2HARGS=
-# HTMLDIR should not be '.'!
-HTMLDIR=	html
-PYTHON=		python
-WEBCHECKER=	$(PYTHON) $(srcdir)/../Tools/webchecker/webchecker.py
-
-# Install destination -- not used now but might be useful some time...
-DESTDIR=	/usr/local
-LIBDESTDIR=	$DESTDIR/lib
-LIBDEST=	$LIBDESTDIR/python$(VERSION)
-DOCDESTDIR=	$LIBDEST/doc
-
-INFODIR=	info
-
-srcdir=.
-VPATH=.
-
 # Ideally, you shouldn't need to edit beyond this point
+
+HTMLDIR=	html
+INFODIR=	info
+TOOLSDIR=	tools
 
 RELEASE=1.5.2a1
 VERSION=1.5
 
-MANDVIFILES=	api.dvi ext.dvi lib.dvi ref.dvi tut.dvi
-HOWTODVIFILES=	mac.dvi
+# These must be declared phony since there
+# are directories with matching names:
+.PHONY: api ext lib mac ref tut
+.PHONY: html info
 
-MANPDFFILES=	api.pdf ext.pdf lib.pdf ref.pdf tut.pdf
-HOWTOPDFFILES=	mac.pdf
-
-MANPSFILES=	api.ps ext.ps lib.ps ref.ps tut.ps
-HOWTOPSFILES=	mac.ps
-
-DVIFILES=	$(MANDVIFILES) $(HOWTODVIFILES)
-PDFFILES=	$(MANPDFFILES) $(HOWTOPDFFILES)
-PSFILES=	$(MANPSFILES) $(HOWTOPSFILES)
-
-# Be careful when messing with this one!
-TEXINPUTS=	.:../texinputs:
-
-MKDVI=		TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkdvi.sh
-MKHOWTO=	$(srcdir)/tools/mkhowto.sh --keep
-MKHTML=		PAPER=$(PAPER) $(srcdir)/tools/mkhtml.sh
-MKPDF=		TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkdvi.sh --pdf
 
 # Main target
 all:	ps
 
 dvi:
-	(cd paper-$(PAPER); \
-		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
-		-f ../Makefile do-dvi)
+	(cd paper-$(PAPER); $(MAKE) dvi)
 
 pdf:
-	(cd paper-$(PAPER); \
-		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
-		-f ../Makefile do-pdf)
+	(cd paper-$(PAPER); $(MAKE) pdf)
 
 ps:
-	(cd paper-$(PAPER); \
-		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
-		-f ../Makefile do-ps)
+	(cd paper-$(PAPER); $(MAKE) ps)
 
 world:	ps pdf html tarballs
 
 
 # Targets for each document:
-.PHONY: api ext lib mac ref tut
+api api.ps:
+	(cd paper-$(PAPER); $(MAKE) api.ps)
 
-api:
-	(cd paper-$(PAPER); \
-		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
-		-f ../Makefile api.ps)
+ext ext.ps:
+	(cd paper-$(PAPER); $(MAKE) ext.ps)
 
-ext:
-	(cd paper-$(PAPER); \
-		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
-		-f ../Makefile ext.ps)
+lib lib.ps:
+	(cd paper-$(PAPER); $(MAKE) lib.ps)
 
-lib:
-	(cd paper-$(PAPER); \
-		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
-		-f ../Makefile lib.ps)
+mac mac.ps:
+	(cd paper-$(PAPER); $(MAKE) mac.ps)
 
-mac:
-	(cd paper-$(PAPER); \
-		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
-		-f ../Makefile mac.ps)
+ref ref.ps:
+	(cd paper-$(PAPER); $(MAKE) ref.ps)
 
-ref:
-	(cd paper-$(PAPER); \
-		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
-		-f ../Makefile ref.ps)
-
-tut:
-	(cd paper-$(PAPER); \
-		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
-		-f ../Makefile tut.ps)
+tut tut.ps:
+	(cd paper-$(PAPER); $(MAKE) tut.ps)
 
 
-# Internal targets:
+api.dvi:
+	(cd paper-$(PAPER); $(MAKE) api.dvi)
 
-do-dvi: $(DVIFILES)
-do-pdf: $(PDFFILES)
-do-ps:	$(PSFILES)
+ext.dvi:
+	(cd paper-$(PAPER); $(MAKE) ext.dvi)
 
-# This target gets both the PDF and PS files updated.
-#
-all-formats:  $(PSFILES) $(PDFFILES)
+lib.dvi:
+	(cd paper-$(PAPER); $(MAKE) lib.dvi)
 
+mac.dvi:
+	(cd paper-$(PAPER); $(MAKE) mac.dvi)
 
-# Rules to build PostScript and PDF formats
-.SUFFIXES: .dvi .ps .pdf
+ref.dvi:
+	(cd paper-$(PAPER); $(MAKE) ref.dvi)
 
-.dvi.ps:
-	$(DVIPS) -o $@ $<
-
-#.pdf.ps:
-#	$(ACROREAD) -toPostScript $<
+tut.dvi:
+	(cd paper-$(PAPER); $(MAKE) tut.dvi)
 
 
-# Dependencies
-# We really need some support of dependency generator for this...
+api.pdf:
+	(cd paper-$(PAPER); $(MAKE) api.pdf)
 
-COMMONSTYLES=texinputs/python.sty texinputs/pypaper.sty texinputs/myindex.ist
-COMMONTEX=texinputs/copyright.tex texinputs/boilerplate.tex
+ext.pdf:
+	(cd paper-$(PAPER); $(MAKE) ext.pdf)
 
-MANSTYLES=texinputs/fncychap.sty texinputs/manual.cls $(COMMONSTYLES)
-HOWTOSTYLES=texinputs/howto.cls $(COMMONSTYLES)
+lib.pdf:
+	(cd paper-$(PAPER); $(MAKE) lib.pdf)
 
+mac.pdf:
+	(cd paper-$(PAPER); $(MAKE) mac.pdf)
 
-$(DVIFILES):	  tools/fix_hack tools/mkdvi.sh $(COMMONTEX)
-$(PDFFILES):	  tools/fix_hack tools/mkdvi.sh $(COMMONTEX)
+ref.pdf:
+	(cd paper-$(PAPER); $(MAKE) ref.pdf)
 
-$(MANDVIFILES):	  $(MANSTYLES)
-$(MANPDFFILES):	  $(MANSTYLES)
-
-$(HOWTODVIFILES): tools/mkhowto.sh $(HOWTOSTYLES)
-$(HOWTOPDFFILES): tools/mkhowto.sh $(HOWTOSTYLES)
-
-
-REFFILES = ref/ref1.tex ref/ref2.tex ref/ref3.tex ref/ref4.tex \
-	   ref/ref5.tex ref/ref6.tex ref/ref7.tex ref/ref8.tex \
-	   ref/ref.tex
-
-# LaTeX source files for the Python Library Reference
-LIBFILES = lib/lib.tex \
-    lib/libintro.tex lib/libobjs.tex lib/libstdtypes.tex \
-    lib/libexcs.tex lib/libfuncs.tex lib/libpython.tex lib/libsys.tex \
-    lib/libtypes.tex lib/libtraceback.tex lib/libpickle.tex \
-    lib/libshelve.tex lib/libcopy.tex lib/libmarshal.tex \
-    lib/libimp.tex lib/libparser.tex lib/libbltin.tex lib/libmain.tex \
-    lib/libstrings.tex lib/libstring.tex lib/libregex.tex \
-    lib/libregsub.tex lib/libstruct.tex lib/libmisc.tex \
-    lib/libmath.tex lib/librand.tex lib/libwhrandom.tex \
-    lib/libarray.tex lib/liballos.tex lib/libos.tex lib/libtime.tex \
-    lib/libgetopt.tex lib/libtempfile.tex lib/liberrno.tex \
-    lib/libsomeos.tex lib/libsignal.tex lib/libsocket.tex \
-    lib/libselect.tex lib/libthread.tex lib/libunix.tex \
-    lib/libposix.tex lib/libposixpath.tex lib/libpwd.tex \
-    lib/libgrp.tex lib/libcrypt.tex lib/libdbm.tex lib/libgdbm.tex \
-    lib/libtermios.tex lib/libfcntl.tex lib/libposixfile.tex \
-    lib/libsyslog.tex lib/libpdb.tex lib/libprofile.tex \
-    lib/libcgi.tex lib/liburllib.tex lib/libhttplib.tex \
-    lib/libftplib.tex lib/libgopherlib.tex lib/libnntplib.tex \
-    lib/liburlparse.tex lib/libhtmllib.tex lib/libsgmllib.tex \
-    lib/librfc822.tex lib/libmimetools.tex lib/libbinascii.tex \
-    lib/libmm.tex lib/libaudioop.tex lib/libimageop.tex \
-    lib/libaifc.tex lib/libjpeg.tex lib/librgbimg.tex \
-    lib/libcrypto.tex lib/libmd5.tex lib/libmpz.tex lib/librotor.tex \
-    lib/libstdwin.tex lib/libsgi.tex lib/libal.tex lib/libcd.tex \
-    lib/libfl.tex lib/libfm.tex lib/libgl.tex lib/libimgfile.tex \
-    lib/libsun.tex lib/libxdrlib.tex lib/libimghdr.tex \
-    lib/librestricted.tex lib/librexec.tex lib/libbastion.tex \
-    lib/libformatter.tex lib/liboperator.tex lib/libsoundex.tex \
-    lib/libresource.tex lib/libstat.tex lib/libstringio.tex \
-    lib/libtoken.tex lib/libundoc.tex lib/libmailcap.tex \
-    lib/libglob.tex lib/libuser.tex lib/libanydbm.tex \
-    lib/librandom.tex lib/libsite.tex lib/libwhichdb.tex \
-    lib/libbase64.tex lib/libfnmatch.tex lib/libquopri.tex \
-    lib/libzlib.tex lib/libsocksvr.tex lib/libmailbox.tex \
-    lib/libcommands.tex lib/libcmath.tex lib/libgzip.tex \
-    lib/libpprint.tex lib/libcode.tex lib/libmimify.tex lib/libre.tex \
-    lib/libuserdict.tex lib/libdis.tex lib/libxmllib.tex \
-    lib/libqueue.tex lib/liblocale.tex lib/libbasehttp.tex \
-    lib/libcopyreg.tex lib/libsymbol.tex lib/libbinhex.tex \
-    lib/libuu.tex lib/libsunaudio.tex lib/libfileinput.tex \
-    lib/libimaplib.tex lib/libpoplib.tex lib/libcalendar.tex \
-    lib/libpopen2.tex lib/libbisect.tex lib/libmimetypes.tex \
-    lib/libsmtplib.tex lib/libcmd.tex lib/libmultifile.tex \
-    lib/libthreading.tex lib/internet.tex lib/netdata.tex \
-    lib/libpycompile.tex lib/libcompileall.tex
-
-# LaTeX source files for Macintosh Library Modules.
-MACLIBFILES = mac/mac.tex mac/libmac.tex mac/libctb.tex \
-    mac/libmacconsole.tex mac/libmacdnr.tex mac/libmacfs.tex \
-    mac/libmacos.tex mac/libmacostools.tex mac/libmactcp.tex \
-    mac/libmacspeech.tex mac/libmacui.tex mac/libmacic.tex \
-    mac/libframework.tex mac/libminiae.tex
-
-# Python Library Reference
-lib.dvi: tools/indfix.py $(LIBFILES)
-	$(srcdir)/tools/newind.py >$*.ind
-	$(srcdir)/tools/newind.py modindex >mod$*.ind
-	TEXINPUTS=$(srcdir)/lib:$(TEXINPUTS) $(LATEX) $*
-	$(MAKEINDEX) mod$*.idx
-	$(srcdir)/tools/fix_hack $*.idx
-	$(MAKEINDEX) $*.idx
-	$(srcdir)/tools/indfix.py $*.ind
-	TEXINPUTS=$(srcdir)/lib:$(TEXINPUTS) $(LATEX) $*
-
-lib.pdf: tools/indfix.py $(LIBFILES)
-	$(srcdir)/tools/newind.py >$*.ind
-	$(srcdir)/tools/newind.py modindex >mod$*.ind
-	TEXINPUTS=$(srcdir)/lib:$(TEXINPUTS) $(PDFLATEX) $*
-	$(MAKEINDEX) mod$*.idx
-	$(srcdir)/tools/fix_hack $*.idx
-	$(MAKEINDEX) $*.idx
-	$(srcdir)/tools/indfix.py $*.ind
-	$(srcdir)/tools/toc2bkm.py $*
-	TEXINPUTS=$(srcdir)/lib:$(TEXINPUTS) $(PDFLATEX) $*
-
-# Python/C API Reference Manual
-api.dvi: api/api.tex
-	$(MKDVI) api
-
-api.pdf: api/api.tex
-	$(MKPDF) api
-
-# Extending and Embedding the Python Interpreter
-ext.dvi: ext/ext.tex
-	$(MKDVI) ext
-
-ext.pdf: ext/ext.tex
-	$(MKPDF) ext
-
-# Macintosh Library Modules
-mac.dvi: $(MACLIBFILES)
-	$(MKHOWTO) --dvi $(srcdir)/$*/$*.tex
-
-mac.pdf: $(MACLIBFILES)
-	$(MKHOWTO) --pdf $(srcdir)/$*/$*.tex
-
-# Python Reference Manual
-ref.dvi: $(REFFILES)
-	$(MKDVI) ref
-
-ref.pdf: $(REFFILES)
-	$(MKPDF) ref
-
-# Python Tutorial
-tut.dvi: tut/tut.tex
-	$(MKDVI) tut
-
-tut.pdf: tut/tut.tex
-	$(MKPDF) tut
+tut.pdf:
+	(cd paper-$(PAPER); $(MAKE) tut.pdf)
 
 
 # The remaining part of the Makefile is concerned with various
 # conversions, as described above.  See also the README file.
-
-.PHONY: html l2h info
 
 info:
 	(cd $(INFODIR); $(MAKE))
@@ -332,54 +155,51 @@ info:
 # a (trivial) index.html.  Change the definition of $ICONSERVER in
 # perl/l2hinit.perl to use a different location for the icons directory.
 
-COMMONPERL=perl/manual.perl perl/python.perl
+# If you have the standard LaTeX2HTML icons installed, the versions shipped
+# with this documentation should be stored in a separate directory and used
+# instead.  The standard set does *not* include all the icons used in the
+# Python documentation.
 
-l2h html:
-	(TOPDIR=`pwd`; cd $(HTMLDIR); \
-		$(MAKE) TOPDIR=$$TOPDIR \
-		TEXINPUTS=../paper-$(PAPER):../texinputs: \
-		-f $$TOPDIR/html/Makefile)
+html:
+	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile)
 
-l2hapi: $(COMMONPERL) api/api.tex
-	$(MKHTML) api $(L2HARGS)
+htmlapi:
+	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile api)
 
-l2hext: $(COMMONPERL) ext/ext.tex
-	$(MKHTML) ext $(L2HARGS)
+htmlext:
+	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile ext)
 
-l2hlib: $(COMMONPERL) $(LIBFILES)
-	$(srcdir)/tools/fix_libaux.sed <`$(KPSEWHICH) lib.aux` >lib1.aux
-	mv lib1.aux `$(KPSEWHICH) lib.aux`
-	$(MKHTML) lib $(L2HARGS)
+htmllib:
+	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile lib)
 
-l2hmac: $(COMMONPERL) $(MACLIBFILES)
-	$(srcdir)/tools/mkhowto.sh --html $(srcdir)/mac/mac.tex
+htmlmac:
+	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile mac)
 
-l2href: $(COMMONPERL) $(REFFILES)
-	$(MKHTML) ref $(L2HARGS)
+htmlref:
+	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile ref)
 
-l2htut: $(COMMONPERL) tut/tut.tex
-	$(MKHTML) tut $(L2HARGS)
+htmltut:
+	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile tut)
+
 
 # webchecker needs an extra flag to process the huge index from the libref
 webcheck:
-	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/api/
-	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/ext/
-	$(WEBCHECKER) -m290000 file:`pwd`/$(HTMLDIR)/lib/
-	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/mac/
-	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/ref/
-	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/tut/
+	(cd $(HTMLDIR); $(MAKE) -f ../html/Makefile webcheck)
+
+
+# Release packaging targets:
 
 lib-info-$(RELEASE).tgz: info
 	(cd $(INFODIR); tar cf - python-???.info*) | gzip -9 >$@
 
 latex-$(RELEASE).tgz:
-	$(srcdir)/tools/mktarball.sh $(RELEASE)
+	$(TOOLSDIR)/mktarball.sh $(RELEASE)
 
 pdf-$(PAPER)-$(RELEASE).tgz: pdf
-	(cd paper-$(PAPER); tar cf - $(PDFFILES)) | gzip -9 >$@
+	(cd paper-$(PAPER); tar cf - *.pdf) | gzip -9 >$@
 
 postscript-$(PAPER)-$(RELEASE).tgz: ps
-	(cd paper-$(PAPER); tar cf - $(PSFILES)) | gzip -9 >$@
+	(cd paper-$(PAPER); tar cf - *.ps) | gzip -9 >$@
 
 html-$(RELEASE).tgz: $(HTMLDIR)/api/api.html $(HTMLDIR)/ext/ext.html \
 		     $(HTMLDIR)/lib/lib.html $(HTMLDIR)/mac/mac.html \
@@ -391,17 +211,13 @@ html-$(RELEASE).tgz:
 
 # convenience targets:
 
-tarhtml:  html-$(RELEASE).tgz
+tarhtml:	html-$(RELEASE).tgz
+tarinfo:	lib-info-$(RELEASE).tgz
+tarps:		postscript-$(PAPER)-$(RELEASE).tgz
+tarpdf:		pdf-$(PAPER)-$(RELEASE).tgz
+tarlatex:	latex-$(RELEASE).tgz
 
-tarinfo:  lib-info-$(RELEASE).tgz
-
-tarps:	postscript-$(PAPER)-$(RELEASE).tgz
-
-tarpdf:	pdf-$(PAPER)-$(RELEASE).tgz
-
-tarlatex: latex-$(RELEASE).tgz
-
-tarballs:  tarpdf tarps tarhtml tarlatex
+tarballs:	tarpdf tarps tarhtml tarlatex
 
 
 # Housekeeping targets
@@ -410,20 +226,20 @@ tarballs:  tarpdf tarps tarhtml tarlatex
 # - sources: .tex, .bib, .sty, *.cls
 # - useful results: .dvi, .pdf, .ps, .texi, .info
 clean:
-	(cd paper-$(PAPER); \
-	 rm -f *~ *.aux *.idx *.ilg *.ind *.log *.toc *.bkm *.syn)
+	(cd paper-$(PAPER); $(MAKE) clean)
+	(cd $(HTMLDIR); $(MAKE) clean)
 	(cd $(INFODIR); $(MAKE) clean)
-	(cd $(HTMLDIR); rm -f @webchecker.pickle)
-	rm -f html-$(RELEASE).tgz info-$(RELEASE).tgz
-	rm -f pdf-$(RELEASE).tgz postscript-$(RELEASE).tgz
-	rm -f latex-$(RELEASE).tgz
 
 l2hclean:
 	(cd $(HTMLDIR); rm -rf api ext lib ref tut)
 
 # Remove temporaries as well as final products
-clobber: clean l2hclean
-	(cd paper-$(PAPER); rm -f $(DVIFILES) $(PSFILES) $(PDFFILES))
+clobber: l2hclean
+	rm -f html-$(RELEASE).tgz info-$(RELEASE).tgz
+	rm -f pdf-$(RELEASE).tgz postscript-$(RELEASE).tgz
+	rm -f latex-$(RELEASE).tgz
+	(cd paper-$(PAPER); $(MAKE) clobber)
+	(cd $(HTMLDIR); $(MAKE) clobber)
 	(cd $(INFODIR); $(MAKE) clobber)
 
 realclean:  clobber
