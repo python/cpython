@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=5.0
-  Title=Python 1.5 Installation
+  Title=Python 1.5 (beta 2) Installation
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -30,7 +30,7 @@ item: Global
   Variable Flags4=00001000
   Variable Name5=_SRC_
   Variable Description5=Root of Python Build Tree
-  Variable Default5=C:\src\Python-1.5b1
+  Variable Default5=C:\src\Python-1.5b2
   Variable Flags5=00001001
 end
 item: Open/Close INSTALL.LOG
@@ -55,7 +55,7 @@ item: Check Configuration
 end
 item: Set Variable
   Variable=APPTITLE
-  Value=Python 1.5
+  Value=Python 1.5 (beta 2)
 end
 item: Set Variable
   Variable=GROUP
@@ -65,13 +65,13 @@ item: Set Variable
   Variable=DISABLED
   Value=!
 end
-remarked item: Set Variable
-  Variable=MAINDIR
-  Value=Python
-end
 item: Set Variable
   Variable=PY_VERSION
   Value=1.5.0
+end
+item: Set Variable
+  Variable=MAINDIR
+  Value=Python
 end
 item: Check Configuration
   Flags=10111011
@@ -84,24 +84,20 @@ item: Get Registry Key Value
   Flags=00000100
 end
 item: Set Variable
+  Variable=MAINDIR
+  Value=%PROGRAM_FILES%\%MAINDIR%
+end
+item: Set Variable
   Variable=EXPLORER
   Value=1
 end
-item: End Block
-end
-item: Remark
-  Text=Dont use "Program Files" for Python! (why not?)
-end
-item: Get Registry Key Value
-  Variable=MAINDIR
-  Key=SOFTWARE\Microsoft\Windows\CurrentVersion
-  Default=C:
-  Value Name=ProgramFilesDir
-  Flags=00000100
+item: Else Statement
 end
 item: Set Variable
   Variable=MAINDIR
-  Value=%MAINDIR%\Python
+  Value=C:\%MAINDIR%
+end
+item: End Block
 end
 item: Set Variable
   Variable=BACKUP
@@ -710,6 +706,11 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=%_SRC_%\pcbuild\Release\pythonw.exe
+  Destination=%MAINDIR%\pythonw.exe
+  Flags=0000000000000010
+end
+item: Install File
   Source=%_SRC_%\pcbuild\Release\parser.dll
   Destination=%MAINDIR%\parser.pyd
   Flags=0000000000000010
@@ -903,6 +904,23 @@ item: Edit Registry
   New Value=%MAINDIR%\Py.ico
 end
 item: Edit Registry
+  Key=.pyw
+  New Value=Python.NoConFile
+end
+item: Edit Registry
+  Key=Python.NoConFile
+  New Value=Python File (no console)
+end
+item: Edit Registry
+  Key=Python.NoConFile\shell\open\command
+  New Value=%MAINDIR%\pythonw.exe "%%1" %%*
+  New Value=
+end
+item: Edit Registry
+  Key=Python.NoConFile\DefaultIcon
+  New Value=%MAINDIR%\Py.ico
+end
+item: Edit Registry
   Key=.pyc
   New Value=Python.CompiledFile
 end
@@ -961,7 +979,7 @@ item: If/While Statement
 end
 item: Edit Registry
   Key=Software\Python\PythonCore\%PY_VERSION%\Help\Main Python Documentation
-  New Value=%MAINDIR%\doc\index.html
+  New Value=%MAINDIR%\Doc\index.html
   Root=2
 end
 item: End Block
