@@ -4229,7 +4229,7 @@ symtable_update_free_vars(struct symtable *st)
 		if (list)
 			PyList_SetSlice(list, 0, 
 					((PyVarObject*)list)->ob_size, 0);
-		child = (PySymtableEntryObject *)\
+		child = (PySymtableEntryObject *)
 			PyList_GET_ITEM(ste->ste_children, i);
 		while (PyDict_Next(child->ste_symbols, &pos, &name, &o)) {
 			int v = PyInt_AS_LONG(o);
@@ -4319,7 +4319,7 @@ symtable_undo_free(struct symtable *st, PyObject *id,
 	
 	for (i = 0; i < PyList_GET_SIZE(ste->ste_children); ++i) {
 		PySymtableEntryObject *child;
-		child = (PySymtableEntryObject *) \
+		child = (PySymtableEntryObject *)
 			PyList_GET_ITEM(ste->ste_children, i);
 		x = symtable_undo_free(st, child->ste_id, name);
 		if (x < 0)
@@ -4358,7 +4358,7 @@ symtable_enter_scope(struct symtable *st, char *name, int type,
 			return;
 		}
 	}
-	st->st_cur = (PySymtableEntryObject *)\
+	st->st_cur = (PySymtableEntryObject *)
 		PySymtableEntry_New(st, name, type, lineno);
 	if (strcmp(name, TOP) == 0)
 		st->st_global = st->st_cur->ste_symbols;
