@@ -2199,6 +2199,24 @@ posix_kill(PyObject *self, PyObject *args)
 }
 #endif
 
+#ifdef HAVE_KILLPG
+static char posix_killpg__doc__[] =
+"killpg(pgid, sig) -> None\n\
+Kill a process group with a signal.";
+
+static PyObject *
+posix_killpg(PyObject *self, PyObject *args)
+{
+	int pgid, sig;
+	if (!PyArg_ParseTuple(args, "ii:killpg", &pgid, &sig))
+		return NULL;
+	if (killpg(pgid, sig) == -1)
+		return posix_error();
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+#endif
+
 #ifdef HAVE_PLOCK
 
 #ifdef HAVE_SYS_LOCK_H
@@ -5573,6 +5591,9 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_KILL
 	{"kill",	posix_kill, METH_VARARGS, posix_kill__doc__},
 #endif /* HAVE_KILL */
+#ifdef HAVE_KILLPG
+	{"killpg",	posix_killpg, METH_VARARGS, posix_killpg__doc__},
+#endif /* HAVE_KILLPG */
 #ifdef HAVE_PLOCK
 	{"plock",	posix_plock, METH_VARARGS, posix_plock__doc__},
 #endif /* HAVE_PLOCK */
