@@ -43,8 +43,14 @@ newclassobject(bases, dict, name)
 #endif
 	classobject *op, *dummy;
 	static object *getattrstr, *setattrstr, *delattrstr;
-	if (dictlookup(dict, "__doc__") == NULL) {
-		if (dictinsert(dict, "__doc__", None) < 0)
+	static object *docstr;
+	if (docstr == NULL) {
+		docstr= newstringobject("__doc__");
+		if (docstr == NULL)
+			return NULL;
+	}
+	if (mappinglookup(dict, docstr) == NULL) {
+		if (mappinginsert(dict, docstr, None) < 0)
 			return NULL;
 	}
 	if (bases == NULL) {
