@@ -47,7 +47,7 @@ static struct getsetlist frame_getsetlist[] = {
 	f_back		next item on free list, or NULL
 	f_nlocals	number of locals
 	f_stacksize	size of value stack
-        f_size          size of localsplus
+        ob_size         size of localsplus
    Note that the value and block stacks are preserved -- this can save
    another malloc() call or two (and two free() calls as well!).
    Also note that, unlike for integers, each frame object is a
@@ -68,7 +68,7 @@ frame_dealloc(PyFrameObject *f)
 	PyObject **p;
 
 	Py_TRASHCAN_SAFE_BEGIN(f)
-	PyObject_GC_Fini(f);
+	_PyObject_GC_UNTRACK(f);
 	/* Kill all local variables */
 	slots = f->f_nlocals + f->f_ncells + f->f_nfreevars;
 	fastlocals = f->f_localsplus;
@@ -125,7 +125,6 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
 		for (p = f->f_valuestack; p < f->f_stacktop; p++)
 			VISIT(*p);
 	}
-
 	return 0;
 }
 
@@ -171,8 +170,8 @@ PyTypeObject PyFrame_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"frame",
-	sizeof(PyFrameObject) + PyGC_HEAD_SIZE,
-	0,
+	sizeof(PyFrameObject),
+	sizeof(PyObject *),
 	(destructor)frame_dealloc, 		/* tp_dealloc */
 	0,					/* tp_print */
 	0, 					/* tp_getattr */
@@ -188,7 +187,7 @@ PyTypeObject PyFrame_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	PyObject_GenericSetAttr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
 	0,             				/* tp_doc */
  	(traverseproc)frame_traverse,		/* tp_traverse */
 	(inquiry)frame_clear,			/* tp_clear */
@@ -241,34 +240,21 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 	if (builtins != NULL && !PyDict_Check(builtins))
 		builtins = NULL;
 	if (free_list == NULL) {
-		/* PyObject_New is inlined */
-		f = (PyFrameObject *)
-			PyObject_MALLOC(sizeof(PyFrameObject) +
-					extras*sizeof(PyObject *) +
-					PyGC_HEAD_SIZE);
+		f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type, extras);
 		if (f == NULL)
-			return (PyFrameObject *)PyErr_NoMemory();
-		f = (PyFrameObject *) PyObject_FROM_GC(f);
-		PyObject_INIT(f, &PyFrame_Type);
-		f->f_size = extras;
+			return NULL;
 	}
 	else {
 		f = free_list;
 		free_list = free_list->f_back;
-		if (f->f_size < extras) {
-			f = (PyFrameObject *) PyObject_AS_GC(f);
-			f = (PyFrameObject *)
-				PyObject_REALLOC(f, sizeof(PyFrameObject) +
-						 extras*sizeof(PyObject *) +
-						 PyGC_HEAD_SIZE);
+		if (f->ob_size < extras) {
+			f = PyObject_GC_Resize(PyFrameObject, f, extras);
 			if (f == NULL)
-				return (PyFrameObject *)PyErr_NoMemory();
-			f = (PyFrameObject *) PyObject_FROM_GC(f);
-			f->f_size = extras;
+				return NULL;
 		}
 		else
-			extras = f->f_size;
-		PyObject_INIT(f, &PyFrame_Type);
+			extras = f->ob_size;
+		_Py_NewReference(f);
 	}
 	if (builtins == NULL) {
 		/* No builtins!  Make up a minimal one. */
@@ -323,8 +309,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 
 	f->f_valuestack = f->f_localsplus + (f->f_nlocals + ncells + nfrees);
 	f->f_stacktop = f->f_valuestack;
-
-	PyObject_GC_Init(f);
+	_PyObject_GC_TRACK(f);
 	return f;
 }
 
@@ -486,7 +471,6 @@ PyFrame_Fini(void)
 	while (free_list != NULL) {
 		PyFrameObject *f = free_list;
 		free_list = free_list->f_back;
-		f = (PyFrameObject *) PyObject_AS_GC(f);
-		PyObject_DEL(f);
+		PyObject_GC_Del(f);
 	}
 }
