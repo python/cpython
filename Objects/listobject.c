@@ -1876,8 +1876,15 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 			value = PyList_GET_ITEM(self, i);
 			key = PyObject_CallFunctionObjArgs(keyfunc, value, 
 							   NULL);
-			if (key == NULL)
+			if (key == NULL) {
+				for (i=i-1 ; i>=0 ; i--) {
+					kvpair = PyList_GET_ITEM(self, i);
+					value = sortwrapper_getvalue(kvpair);
+					PyList_SET_ITEM(self, i, value);
+					Py_DECREF(kvpair);
+				}
 				goto dsu_fail;
+			}
 			kvpair = build_sortwrapper(key, value);
 			if (kvpair == NULL)
 				goto dsu_fail;
@@ -1885,7 +1892,7 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 		}
 	}
 
-	/* Reverse sort stability achieved by initialially reversing the list,
+	/* Reverse sort stability achieved by initially reversing the list,
 	applying a stable forward sort, then reversing the final result. */
 	if (reverse && self->ob_size > 1)
 		reverse_slice(self->ob_item, self->ob_item + self->ob_size);
