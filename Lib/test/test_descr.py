@@ -3678,47 +3678,47 @@ def subclass_right_op():
     # Case 1: subclass of int; this tests code in abstract.c::binary_op1()
 
     class B(int):
-        def __div__(self, other):
-            return "B.__div__"
-        def __rdiv__(self, other):
-            return "B.__rdiv__"
+        def __floordiv__(self, other):
+            return "B.__floordiv__"
+        def __rfloordiv__(self, other):
+            return "B.__rfloordiv__"
 
-    vereq(B(1) / 1, "B.__div__")
-    vereq(1 / B(1), "B.__rdiv__")
+    vereq(B(1) // 1, "B.__floordiv__")
+    vereq(1 // B(1), "B.__rfloordiv__")
 
     # Case 2: subclass of object; this is just the baseline for case 3
 
     class C(object):
-        def __div__(self, other):
-            return "C.__div__"
-        def __rdiv__(self, other):
-            return "C.__rdiv__"
+        def __floordiv__(self, other):
+            return "C.__floordiv__"
+        def __rfloordiv__(self, other):
+            return "C.__rfloordiv__"
 
-    vereq(C() / 1, "C.__div__")
-    vereq(1 / C(), "C.__rdiv__")
+    vereq(C() // 1, "C.__floordiv__")
+    vereq(1 // C(), "C.__rfloordiv__")
 
     # Case 3: subclass of new-style class; here it gets interesting
 
     class D(C):
-        def __div__(self, other):
-            return "D.__div__"
-        def __rdiv__(self, other):
-            return "D.__rdiv__"
+        def __floordiv__(self, other):
+            return "D.__floordiv__"
+        def __rfloordiv__(self, other):
+            return "D.__rfloordiv__"
 
-    vereq(D() / C(), "D.__div__")
-    vereq(C() / D(), "D.__rdiv__")
+    vereq(D() // C(), "D.__floordiv__")
+    vereq(C() // D(), "D.__rfloordiv__")
 
     # Case 4: this didn't work right in 2.2.2 and 2.3a1
 
     class E(C):
         pass
 
-    vereq(E.__rdiv__, C.__rdiv__)
+    vereq(E.__rfloordiv__, C.__rfloordiv__)
 
-    vereq(E() / 1, "C.__div__")
-    vereq(1 / E(), "C.__rdiv__")
-    vereq(E() / C(), "C.__div__")
-    vereq(C() / E(), "C.__div__") # This one would fail
+    vereq(E() // 1, "C.__floordiv__")
+    vereq(1 // E(), "C.__rfloordiv__")
+    vereq(E() // C(), "C.__floordiv__")
+    vereq(C() // E(), "C.__floordiv__") # This one would fail
 
 def dict_type_with_metaclass():
     if verbose:
