@@ -28,12 +28,21 @@ from distutils.ccompiler import new_compiler
 
 class build_lib (Command):
 
+    description = "build C/C++ libraries used by Python extensions"
+
     user_options = [
+        ('build-clib', 'b',
+         "directory to build C/C++ libraries to"),
+        ('build-temp', 't',
+         "directory to put temporary build by-products"),
         ('debug', 'g',
          "compile with debugging information"),
         ]
 
     def initialize_options (self):
+        self.build_clib = None
+        self.build_temp = None
+
         # List of libraries to build
         self.libraries = None
 
@@ -45,10 +54,23 @@ class build_lib (Command):
 
     # initialize_options()
 
+
     def finalize_options (self):
+
+        # This might be confusing: both build-clib and build-temp default
+        # to build-temp as defined by the "build" command.  This is because
+        # I think that C libraries are really just temporary build
+        # by-products, at least from the point of view of building Python
+        # extensions -- but I want to keep my options open.
         self.set_undefined_options ('build',
+                                    ('build_temp', 'build_clib'),
+                                    ('build_temp', 'build_temp'),
                                     ('debug', 'debug'))
+
         self.libraries = self.distribution.libraries
+        if self.libraries:
+            self.check_library_list (self.libraries)
+
         if self.include_dirs is None:
             self.include_dirs = self.distribution.include_dirs or []
         if type (self.include_dirs) is StringType:
@@ -65,7 +87,6 @@ class build_lib (Command):
 
         if not self.libraries:
             return
-        self.check_library_list (self.libraries)
 
         # Yech -- this is cut 'n pasted from build_ext.py!
         self.compiler = new_compiler (plat=os.environ.get ('PLAT'),
@@ -110,6 +131,12 @@ class build_lib (Command):
                 raise DistutilsValueError, \
                       "first element of each tuple in 'libraries' " + \
                       "must be a string (the library name)"
+            if '/' in lib[0] or (os.sep != '/' and os.sep in lib[0]):
+                raise DistutilsValueError, \
+                      ("bad library name '%s': " + 
+                       "may not contain directory separators") % \
+                      lib[0]
+
             if type (lib[1]) is not DictionaryType:
                 raise DistutilsValueError, \
                       "second element of each tuple in 'libraries' " + \
@@ -117,6 +144,21 @@ class build_lib (Command):
         # for lib
 
     # check_library_list ()
+
+
+    def get_library_names (self):
+        # Assume the library list is valid -- 'check_library_list()' is
+        # called from 'finalize_options()', so it should be!
+
+        if not self.libraries:
+            return None
+
+        lib_names = []
+        for (lib_name, build_info) in self.libraries:
+            lib_names.append (lib_name)
+        return lib_names
+
+    # get_library_names ()
 
 
     def build_libraries (self, libraries):
@@ -134,35 +176,27 @@ class build_lib (Command):
 
             self.announce ("building '%s' library" % lib_name)
 
-            # Extract the directory the library is intended to go in --
-            # note translation from "universal" slash-separated form to
-            # current platform's pathname convention (so we can use the
-            # string for actual filesystem use).
-            path = tuple (string.split (lib_name, '/')[:-1])
-            if path:
-                lib_dir = apply (os.path.join, path)
-            else:
-                lib_dir = ''
-
             # First, compile the source code to object files in the library
             # directory.  (This should probably change to putting object
             # files in a temporary build directory.)
             macros = build_info.get ('macros')
             include_dirs = build_info.get ('include_dirs')
             objects = self.compiler.compile (sources,
+                                             output_dir=self.build_temp,
+                                             keep_dir=1,
                                              macros=macros,
                                              include_dirs=include_dirs,
-                                             output_dir=lib_dir,
                                              debug=self.debug)
 
             # Now "link" the object files together into a static library.
             # (On Unix at least, this isn't really linking -- it just
             # builds an archive.  Whatever.)
-            self.compiler.link_static_lib (objects, lib_name, debug=self.debug)
+            self.compiler.link_static_lib (objects, lib_name,
+                                           output_dir=self.build_clib,
+                                           debug=self.debug)
 
         # for libraries
 
     # build_libraries ()
-                
 
 # class BuildLib
