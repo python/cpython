@@ -29,9 +29,6 @@ class WindowList:
             list.append((title, window))
         list.sort()
         for title, window in list:
-            if title == "Python Shell":
-                # Hack -- until we have a better way to this
-                continue
             menu.add_command(label=title, command=window.wakeup)
 
     def register_callback(self, callback):
@@ -71,6 +68,9 @@ class ListedToplevel(Toplevel):
         # (Needed for clean exit on Windows 98)
         if not registry.dict:
             self.quit()
+
+    def update_windowlist_registry(self, window):
+        registry.call_callbacks()
 
     def get_title(self):
         # Subclass can override

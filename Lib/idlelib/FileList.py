@@ -61,10 +61,6 @@ class FileList:
     def new(self, filename=None):
         return self.EditorWindow(self, filename)
 
-    def new_callback(self, event):
-        self.new()
-        return "break"
-
     def close_all_callback(self, event):
         for edit in self.inversedict.keys():
             reply = edit.close()

@@ -486,6 +486,7 @@ class EditorWindow:
         if self.flist:
             self.flist.filename_changed_edit(self)
         self.saved_change_hook()
+        self.top.update_windowlist_registry(self)
         if self.ispythonsource(self.io.filename):
             self.addcolorizer()
         else:
