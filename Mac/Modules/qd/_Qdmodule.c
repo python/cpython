@@ -163,7 +163,7 @@ PyObject *GrafObj_New(GrafPtr itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-GrafObj_Convert(PyObject *v, GrafPtr *p_itself)
+int GrafObj_Convert(PyObject *v, GrafPtr *p_itself)
 {
 #if 1
 	{
@@ -414,7 +414,7 @@ PyObject *BMObj_New(BitMapPtr itself)
 	it->referred_bitmap = NULL;
 	return (PyObject *)it;
 }
-BMObj_Convert(PyObject *v, BitMapPtr *p_itself)
+int BMObj_Convert(PyObject *v, BitMapPtr *p_itself)
 {
 	if (!BMObj_Check(v))
 	{

@@ -65,7 +65,7 @@ PyObject *ResObj_New(Handle itself)
 	it->ob_freeit = NULL;
 	return (PyObject *)it;
 }
-ResObj_Convert(PyObject *v, Handle *p_itself)
+int ResObj_Convert(PyObject *v, Handle *p_itself)
 {
 	if (!ResObj_Check(v))
 	{

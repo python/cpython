@@ -82,7 +82,7 @@ PyObject *TEObj_New(TEHandle itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-TEObj_Convert(PyObject *v, TEHandle *p_itself)
+int TEObj_Convert(PyObject *v, TEHandle *p_itself)
 {
 	if (!TEObj_Check(v))
 	{

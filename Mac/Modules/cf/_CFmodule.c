@@ -55,6 +55,7 @@ PyObject *CFRange_New(CFRange *itself)
 	return Py_BuildValue("ll", (long)itself->location, (long)itself->length);
 }
 
+int
 CFRange_Convert(PyObject *v, CFRange *p_itself)
 {
 	long location, length;
@@ -102,7 +103,7 @@ PyObject *CFTypeRefObj_New(CFTypeRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
-CFTypeRefObj_Convert(PyObject *v, CFTypeRef *p_itself)
+int CFTypeRefObj_Convert(PyObject *v, CFTypeRef *p_itself)
 {
 
 	if (v == Py_None) { *p_itself = NULL; return 1; }
@@ -325,7 +326,7 @@ PyObject *CFArrayRefObj_New(CFArrayRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
-CFArrayRefObj_Convert(PyObject *v, CFArrayRef *p_itself)
+int CFArrayRefObj_Convert(PyObject *v, CFArrayRef *p_itself)
 {
 
 	if (v == Py_None) { *p_itself = NULL; return 1; }
@@ -475,7 +476,7 @@ PyObject *CFMutableArrayRefObj_New(CFMutableArrayRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
-CFMutableArrayRefObj_Convert(PyObject *v, CFMutableArrayRef *p_itself)
+int CFMutableArrayRefObj_Convert(PyObject *v, CFMutableArrayRef *p_itself)
 {
 
 	if (v == Py_None) { *p_itself = NULL; return 1; }
@@ -628,7 +629,7 @@ PyObject *CFDictionaryRefObj_New(CFDictionaryRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
-CFDictionaryRefObj_Convert(PyObject *v, CFDictionaryRef *p_itself)
+int CFDictionaryRefObj_Convert(PyObject *v, CFDictionaryRef *p_itself)
 {
 
 	if (v == Py_None) { *p_itself = NULL; return 1; }
@@ -760,7 +761,7 @@ PyObject *CFMutableDictionaryRefObj_New(CFMutableDictionaryRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
-CFMutableDictionaryRefObj_Convert(PyObject *v, CFMutableDictionaryRef *p_itself)
+int CFMutableDictionaryRefObj_Convert(PyObject *v, CFMutableDictionaryRef *p_itself)
 {
 
 	if (v == Py_None) { *p_itself = NULL; return 1; }
@@ -876,7 +877,7 @@ PyObject *CFDataRefObj_New(CFDataRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
-CFDataRefObj_Convert(PyObject *v, CFDataRef *p_itself)
+int CFDataRefObj_Convert(PyObject *v, CFDataRef *p_itself)
 {
 
 	if (v == Py_None) { *p_itself = NULL; return 1; }
@@ -1026,7 +1027,7 @@ PyObject *CFMutableDataRefObj_New(CFMutableDataRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
-CFMutableDataRefObj_Convert(PyObject *v, CFMutableDataRef *p_itself)
+int CFMutableDataRefObj_Convert(PyObject *v, CFMutableDataRef *p_itself)
 {
 
 	if (v == Py_None) { *p_itself = NULL; return 1; }
@@ -1224,7 +1225,7 @@ PyObject *CFStringRefObj_New(CFStringRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
-CFStringRefObj_Convert(PyObject *v, CFStringRef *p_itself)
+int CFStringRefObj_Convert(PyObject *v, CFStringRef *p_itself)
 {
 
 	if (v == Py_None) { *p_itself = NULL; return 1; }
@@ -1827,7 +1828,7 @@ PyObject *CFMutableStringRefObj_New(CFMutableStringRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
-CFMutableStringRefObj_Convert(PyObject *v, CFMutableStringRef *p_itself)
+int CFMutableStringRefObj_Convert(PyObject *v, CFMutableStringRef *p_itself)
 {
 
 	if (v == Py_None) { *p_itself = NULL; return 1; }
@@ -2114,7 +2115,7 @@ PyObject *CFURLRefObj_New(CFURLRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
-CFURLRefObj_Convert(PyObject *v, CFURLRef *p_itself)
+int CFURLRefObj_Convert(PyObject *v, CFURLRef *p_itself)
 {
 
 	if (v == Py_None) { *p_itself = NULL; return 1; }

@@ -81,6 +81,7 @@ PyObject *CFRange_New(CFRange *itself)
 	return Py_BuildValue("ll", (long)itself->location, (long)itself->length);
 }
 
+int
 CFRange_Convert(PyObject *v, CFRange *p_itself)
 {
 	long location, length;

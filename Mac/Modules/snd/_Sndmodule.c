@@ -80,7 +80,7 @@ static PyObject *SndCh_New(SndChannelPtr itself)
 	it->ob_A5 = SetCurrentA5();
 	return (PyObject *)it;
 }
-static SndCh_Convert(PyObject *v, SndChannelPtr *p_itself)
+static int SndCh_Convert(PyObject *v, SndChannelPtr *p_itself)
 {
 	if (!SndCh_Check(v))
 	{

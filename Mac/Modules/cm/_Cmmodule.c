@@ -84,7 +84,7 @@ PyObject *CmpInstObj_New(ComponentInstance itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-CmpInstObj_Convert(PyObject *v, ComponentInstance *p_itself)
+int CmpInstObj_Convert(PyObject *v, ComponentInstance *p_itself)
 {
 	if (!CmpInstObj_Check(v))
 	{
@@ -332,7 +332,7 @@ PyObject *CmpObj_New(Component itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-CmpObj_Convert(PyObject *v, Component *p_itself)
+int CmpObj_Convert(PyObject *v, Component *p_itself)
 {
 	if ( v == Py_None ) {
 						*p_itself = 0;

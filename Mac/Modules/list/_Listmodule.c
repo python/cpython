@@ -85,7 +85,7 @@ PyObject *ListObj_New(ListHandle itself)
 	it->ob_must_be_disposed = 1;
 	return (PyObject *)it;
 }
-ListObj_Convert(PyObject *v, ListHandle *p_itself)
+int ListObj_Convert(PyObject *v, ListHandle *p_itself)
 {
 	if (!ListObj_Check(v))
 	{

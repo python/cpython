@@ -107,7 +107,7 @@ PyObject *TXNObj_New(TXNObject itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-TXNObj_Convert(PyObject *v, TXNObject *p_itself)
+int TXNObj_Convert(PyObject *v, TXNObject *p_itself)
 {
 	if (!TXNObj_Check(v))
 	{
@@ -1094,7 +1094,7 @@ PyObject *TXNFontMenuObj_New(TXNFontMenuObject itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-TXNFontMenuObj_Convert(PyObject *v, TXNFontMenuObject *p_itself)
+int TXNFontMenuObj_Convert(PyObject *v, TXNFontMenuObject *p_itself)
 {
 	if (!TXNFontMenuObj_Check(v))
 	{

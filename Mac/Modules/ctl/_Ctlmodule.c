@@ -118,7 +118,7 @@ PyObject *CtlObj_New(ControlHandle itself)
 	it->ob_callbackdict = NULL;
 	return (PyObject *)it;
 }
-CtlObj_Convert(PyObject *v, ControlHandle *p_itself)
+int CtlObj_Convert(PyObject *v, ControlHandle *p_itself)
 {
 	if (!CtlObj_Check(v))
 	{
