@@ -31,7 +31,8 @@ static int vgetargskeywords(PyObject *, PyObject *,
 			    char *, char **, va_list *);
 static char *skipitem(char **, va_list *);
 
-int PyArg_Parse(PyObject *args, char *format, ...)
+int
+PyArg_Parse(PyObject *args, char *format, ...)
 {
 	int retval;
 	va_list va;
@@ -43,7 +44,8 @@ int PyArg_Parse(PyObject *args, char *format, ...)
 }
 
 
-int PyArg_ParseTuple(PyObject *args, char *format, ...)
+int
+PyArg_ParseTuple(PyObject *args, char *format, ...)
 {
 	int retval;
 	va_list va;
@@ -971,7 +973,8 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf)
 	return NULL;
 }
 
-int convertbuffer(PyObject *arg, void **p, char **errmsg)
+static int
+convertbuffer(PyObject *arg, void **p, char **errmsg)
 {
 	PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
 	int count;
@@ -994,10 +997,11 @@ int convertbuffer(PyObject *arg, void **p, char **errmsg)
 /* Support for keyword arguments donated by
    Geoff Philbrick <philbric@delphi.hks.com> */
 
-int PyArg_ParseTupleAndKeywords(PyObject *args,
-				PyObject *keywords,
-				char *format, 
-				char **kwlist, ...)
+int
+PyArg_ParseTupleAndKeywords(PyObject *args,
+			    PyObject *keywords,
+			    char *format, 
+			    char **kwlist, ...)
 {
 	int retval;
 	va_list va;
