@@ -17,6 +17,7 @@ tests = ['test_grammar',
 	 'test_dbm',
 	 'test_new',
 	 'test_nis',
+	 'test_pwd',
 	 ]
 
 if __name__ == '__main__':
