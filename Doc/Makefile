@@ -245,7 +245,8 @@ LIBFILES = lib/lib.tex \
     lib/libimaplib.tex lib/libpoplib.tex lib/libcalendar.tex \
     lib/libpopen2.tex lib/libbisect.tex lib/libmimetypes.tex \
     lib/libsmtplib.tex lib/libcmd.tex lib/libmultifile.tex \
-    lib/libthreading.tex lib/internet.tex lib/netdata.tex
+    lib/libthreading.tex lib/internet.tex lib/netdata.tex \
+    lib/libpycompile.tex lib/libcompileall.tex
 
 # LaTeX source files for Macintosh Library Modules.
 MACLIBFILES = mac/mac.tex mac/libmac.tex mac/libctb.tex \
@@ -335,7 +336,8 @@ COMMONPERL=perl/manual.perl perl/python.perl
 
 l2h html:
 	(TOPDIR=`pwd`; cd $(HTMLDIR); \
-		$(MAKE) TEXINPUTS=../paper-$(PAPER):../texinputs: \
+		$(MAKE) TOPDIR=$$TOPDIR \
+		TEXINPUTS=../paper-$(PAPER):../texinputs: \
 		-f $$TOPDIR/html/Makefile)
 
 l2hapi: $(COMMONPERL) api/api.tex
