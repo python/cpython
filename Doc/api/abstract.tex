@@ -310,7 +310,14 @@ determination.
 \begin{cfuncdesc}{int}{PyObject_IsTrue}{PyObject *o}
   Returns \code{1} if the object \var{o} is considered to be true, and
   \code{0} otherwise.  This is equivalent to the Python expression
-  \samp{not not \var{o}}.  This function always succeeds.
+  \samp{not not \var{o}}.  On failure, return \code{-1}. 
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{int}{PyObject_Not}{PyObject *o}
+  Returns \code{0} if the object \var{o} is considered to be true, and
+  \code{1} otherwise.  This is equivalent to the Python expression
+  \samp{not \var{o}}.  On failure, return \code{-1}. 
 \end{cfuncdesc}
 
 
