@@ -26,7 +26,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <stdio.h>
 #include <unistd.h>
 #include </usr/include/thread.h>
-#indef _POSIX_THREADS
+#undef _POSIX_THREADS
 
 
 /*
