@@ -31,6 +31,9 @@ $BODYTEXT = 'bgcolor="#ffffff"';
 $CHILDLINE = "\n<p><hr>\n";
 $VERBOSITY = 0;
 
+# default # of columns for the index
+$INDEX_COLUMNS = 2;
+
 
 # A little painful, but lets us clean up the top level directory a little,
 # and not be tied to the current directory (as far as I can tell).
@@ -192,7 +195,7 @@ sub make_index_entry {
 
 sub insert_index{
     my($mark,$datafile) = @_;
-    my $index = `$myrootdir/tools/buildindex.py $datafile`;
+    my $index = `$myrootdir/tools/buildindex.py --columns $INDEX_COLUMNS $datafile`;
     s/$mark/$index/;
 }
 
