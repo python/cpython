@@ -300,6 +300,9 @@ rotor rotormodule.c		# enigma-inspired encryption
 # Objective-C (incomplete!!!)
 #objc.c
 
+# Helper module for various ascii-encoders
+binascii binasciimodule.c
+
 
 # Example -- included for reference only:
 # xx xxmodule.c
