@@ -293,7 +293,9 @@ string_concat(a, bb)
 	if (!PyString_Check(bb)) {
 		if (PyUnicode_Check(bb))
 		    return PyUnicode_Concat((PyObject *)a, bb);
-		PyErr_BadArgument();
+		PyErr_Format(PyExc_TypeError, 
+			     "cannot add type \"%.200s\" to string",
+			     bb->ob_type->tp_name);
 		return NULL;
 	}
 #define b ((PyStringObject *)bb)
