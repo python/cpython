@@ -37,7 +37,13 @@ class LogReader:
         self._reader = _hotshot.logreader(logfn)
         self._nextitem = self._reader.next
         self._info = self._reader.info
+        if self._info.has_key('current-directory'):
+            self.cwd = self._info['current-directory']
+        else:
+            self.cwd = None
         self._stack = []
+        self._append = self._stack.append
+        self._pop = self._stack.pop
 
     def addinfo(self, key, value):
         """This method is called for each additional ADD_INFO record.
@@ -53,6 +59,28 @@ class LogReader:
         """
         pass
 
+    def get_filename(self, fileno):
+        try:
+            return self._filemap[fileno]
+        except KeyError:
+            raise ValueError, "unknown fileno"
+
+    def get_filenames(self):
+        return self._filemap.values()
+
+    def get_fileno(self, filename):
+        filename = os.path.normcase(os.path.normpath(filename))
+        for fileno, name in self._filemap.items():
+            if name == filename:
+                return fileno
+        raise ValueError, "unknown filename"
+
+    def get_funcname(self, fileno, lineno):
+        try:
+            return self._funcmap[(fileno, lineno)]
+        except KeyError:
+            raise ValueError, "unknown function location"
+
     # Iteration support:
     # This adds an optional (& ignored) parameter to next() so that the
     # same bound method can be used as the __getitem__() method -- this
@@ -66,28 +94,37 @@ class LogReader:
                 # logreader().next() returns None at the end
                 self._reader.close()
                 raise StopIteration()
+
+            # handle the most common cases first
+
+            if what == WHAT_ENTER:
+                filename, funcname = self._decode_location(fileno, lineno)
+                self._append((filename, funcname, lineno))
+                return what, (filename, lineno, funcname), tdelta
+
+            if what == WHAT_EXIT:
+                filename, funcname, lineno = self._pop()
+                return what, (filename, lineno, funcname), tdelta
+
+            if what == WHAT_LINENO:
+                filename, funcname, firstlineno = self._stack[-1]
+                return what, (filename, lineno, funcname), tdelta
+
             if what == WHAT_DEFINE_FILE:
-                self._filemap[fileno] = tdelta
-                continue
-            if what == WHAT_DEFINE_FUNC:
+                filename = os.path.normcase(os.path.normpath(tdelta))
+                self._filemap[fileno] = filename
+            elif what == WHAT_DEFINE_FUNC:
                 filename = self._filemap[fileno]
                 self._funcmap[(fileno, lineno)] = (filename, tdelta)
-                continue
-            if what == WHAT_ADD_INFO:
+            elif what == WHAT_ADD_INFO:
                 # value already loaded into self.info; call the
                 # overridable addinfo() handler so higher-level code
                 # can pick up the new value
+                if tdelta == 'current-directory':
+                    self.cwd = lineno
                 self.addinfo(tdelta, lineno)
-                continue
-            if what == WHAT_ENTER:
-                t = self._decode_location(fileno, lineno)
-                filename, funcname = t
-                self._stack.append((filename, funcname, lineno))
-            elif what == WHAT_EXIT:
-                filename, funcname, lineno = self._stack.pop()
             else:
-                filename, funcname, firstlineno = self._stack[-1]
-            return what, (filename, lineno, funcname), tdelta
+                raise ValueError, "unknown event type"
 
     if sys.version < "2.2":
         # Don't add this for newer Python versions; we only want iteration
