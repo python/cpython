@@ -17,9 +17,12 @@
 # -w width      : initial window width (default interactive placement)
 # -n            : Don't write to file, only timing info
 # -d		: drop fields if needed
-# -g		: greyscale
+# -g bits	: greyscale (2, 4 or 8 bits)
+# -G            : 2-bit greyscale dithered
 # -m		: monochrome dithered
 # -M value	: monochrome tresholded with value
+# -f		: Capture fields (in stead of frames)
+# -P frames	: preallocate space for 'frames' frames
 # 
 # moviefile     : here goes the movie data (default film.video);
 #                 the format is documented in cmif-film.ms
@@ -53,6 +56,7 @@ import posix
 import getopt
 import string
 import imageop
+import sgi
 
 # Main program
 
@@ -66,9 +70,12 @@ def main():
 	drop = 0
 	mono = 0
 	grey = 0
+	greybits = 0
 	monotreshold = -1
+	fields = 0
+	preallocspace = 0
 
-	opts, args = getopt.getopt(sys.argv[1:], 'aq:r:w:ndgmM:')
+	opts, args = getopt.getopt(sys.argv[1:], 'aq:r:w:ndg:mM:GfP:')
 	for opt, arg in opts:
 		if opt == '-a':
 			audio = 1
@@ -87,11 +94,21 @@ def main():
 			drop = 1
 		elif opt == '-g':
 			grey = 1
+			greybits = string.atoi(arg)
+			if not greybits in (2,4,8):
+				print 'Only 2, 4 or 8 bit greyscale supported'
+		elif opt == '-G':
+			grey = 1
+			greybits = -2
 		elif opt == '-m':
 			mono = 1
 		elif opt == '-M':
 			mono = 1
 			monotreshold = string.atoi(arg)
+		elif opt == '-f':
+			fields = 1
+		elif opt == '-P':
+			preallocspace = string.atoi(arg)
 
 	if args[2:]:
 		sys.stderr.write('usage: Vrec [options] [file [audiofile]]\n')
@@ -172,7 +189,8 @@ def main():
 			if val == 1:
 				info = format, x, y, qsize, rate
 				record(v, info, filename, audiofilename,\
-					  mono, grey, monotreshold)
+					  mono, grey, greybits, monotreshold, \
+					  fields, preallocspace)
 		elif dev == DEVICE.REDRAW:
 			# Window resize (or move)
 			x, y = gl.getsize()
@@ -189,7 +207,8 @@ def main():
 # Record until the mouse is released (or any other GL event)
 # XXX audio not yet supported
 
-def record(v, info, filename, audiofilename, mono, grey, monotreshold):
+def record(v, info, filename, audiofilename, mono, grey, greybits, \
+	  monotreshold, fields, preallocspace):
 	import thread
 	format, x, y, qsize, rate = info
 	fps = 59.64 # Fields per second
@@ -199,20 +218,36 @@ def record(v, info, filename, audiofilename, mono, grey, monotreshold):
 		vout = VFile.VoutFile().init(filename)
 		if mono:
 			vout.format = 'mono'
-		elif grey:
+		elif grey and greybits == 8:
 			vout.format = 'grey'
+		elif grey:
+			vout.format = 'grey'+`abs(greybits)`
 		else:
 			vout.format = 'rgb8'
 		vout.width = x
 		vout.height = y
+		if fields:
+			vout.packfactor = (1,-2)
 		vout.writeheader()
+		if preallocspace:
+			print 'Preallocating space...'
+			vout.prealloc(preallocspace)
+			print 'done.'
 		MAXSIZE = 20 # XXX should be a user option
 		import Queue
 		queue = Queue.Queue().init(MAXSIZE)
 		done = thread.allocate_lock()
 		done.acquire_lock()
+		convertor = None
+		if grey:
+			if greybits == 2:
+				convertor = imageop.grey2grey2
+			elif greybits == 4:
+				convertor = imageop.grey2grey4
+			elif greybits == -2:
+				convertor = imageop.dither2grey2
 		thread.start_new_thread(saveframes, \
-			  (vout, queue, done, mono, monotreshold))
+			  (vout, queue, done, mono, monotreshold, convertor))
 		if audiofilename:
 			audiodone = thread.allocate_lock()
 			audiodone.acquire_lock()
@@ -222,27 +257,33 @@ def record(v, info, filename, audiofilename, mono, grey, monotreshold):
 	lastid = 0
 	t0 = time.millitimer()
 	count = 0
-	timestamps = []
 	ids = []
 	v.InitContinuousCapture(info)
 	while not gl.qtest():
 		try:
 			cd, id = v.GetCaptureData()
 		except sv.error:
-			time.millisleep(10) # XXX is this necessary?
+			#time.millisleep(10) # XXX is this necessary?
+			sgi.nap(1)	# XXX Try by Jack
 			continue
-		timestamps.append(time.millitimer())
 		ids.append(id)
 		
 		id = id + 2*rate
 ##		if id <> lastid + 2*rate:
 ##			print lastid, id
 		lastid = id
-		data = cd.InterleaveFields(1)
-		cd.UnlockCaptureData()
 		count = count+1
-		if filename:
-			queue.put((data, int(id*tpf)))
+		if fields:
+			data1, data2 = cd.GetFields()
+			cd.UnlockCaptureData()
+			if filename:
+				queue.put((data1, int(id*tpf)))
+				queue.put((data2, int((id+1)*tpf)))
+		else:
+			data = cd.InterleaveFields(1)
+			cd.UnlockCaptureData()
+			if filename:
+				queue.put((data, int(id*tpf)))
 	t1 = time.millitimer()
 	gl.wintitle('(busy) ' + filename)
 	print lastid, 'fields in', t1-t0, 'msec',
@@ -252,13 +293,6 @@ def record(v, info, filename, audiofilename, mono, grey, monotreshold):
 	if lastid:
 		print count*200.0/lastid, '%,',
 		print count*rate*200.0/lastid, '% of wanted rate',
-	print
-	t0 = timestamps[0]
-	del timestamps[0]
-	print 'Times:',
-	for t1 in timestamps:
-		print t1-t0,
-		t0 = t1
 	print
 	print 'Ids:',
 	t0 = ids[0]
@@ -279,19 +313,20 @@ def record(v, info, filename, audiofilename, mono, grey, monotreshold):
 
 # Thread to save the frames to the file
 
-def saveframes(vout, queue, done, mono, monotreshold):
+def saveframes(vout, queue, done, mono, monotreshold, convertor):
 	while 1:
 		x = queue.get()
 		if not x:
 			break
 		data, t = x
-		if mono and monotreshold >= 0:
+		if convertor:
+			data = convertor(data, len(data), 1)
+		elif mono and monotreshold >= 0:
 			data = imageop.grey2mono(data, len(data), 1,\
 				  monotreshold)
 		elif mono:
 			data = imageop.dither2mono(data, len(data), 1)
 		vout.writeframe(t, data, None)
-		del data
 	sys.stderr.write('Done writing video\n')
 	vout.close()
 	done.release_lock()

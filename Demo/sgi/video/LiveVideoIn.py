@@ -43,10 +43,10 @@ class LiveVideoIn:
 		if realvw < vw:
 			realvw = vw
 		self.realwidth, self.realheight = v.QuerySize(realvw, vh)
-		if not type in ('rgb8', 'grey', 'mono'):
-			raise 'Incorrent video data type'
+		if not type in ('rgb8', 'grey', 'mono', 'grey2', 'grey4'):
+			raise 'Incorrent video data type', type
 		self.type = type
-		if type in ('grey', 'mono'):
+		if type in ('grey', 'grey4', 'grey2', 'mono'):
 			v.SetParam([SV.COLOR, SV.MONO, SV.INPUT_BYPASS, 1])
 		else:
 			v.SetParam([SV.COLOR, SV.DEFAULT_COLOR, \
@@ -116,11 +116,21 @@ class LiveVideoIn:
 			if self.type == 'mono':
 				self.data = imageop.dither2mono(self.data, \
 					  self.width, self.height)
+			elif self.type == 'grey2':
+				self.data = imageop.dither2grey2(self.data, \
+					  self.width, self.height)
+			elif self.type == 'grey4':
+				self.data = imageop.grey2grey4(self.data, \
+					  self.width, self.height)
 		data = self.data[self.dataoffset:self.dataoffset+self.pktsize]
 		lpos = self.lpos
 		self.dataoffset = self.dataoffset + self.pktsize
 		if self.type == 'mono':
 			self.lpos = self.lpos + self.lpp*8
+		elif self.type == 'grey2':
+			self.lpos = self.lpos + self.lpp*4
+		elif self.type == 'grey4':
+			self.lpos = self.lpos + self.lpp*2
 		else:
 			self.lpos = self.lpos + self.lpp
 		return lpos, data
