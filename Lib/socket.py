@@ -147,7 +147,8 @@ class _socketobject(object):
 
     __doc__ = _realsocket.__doc__
 
-    __slots__ = ["_sock", "send", "recv", "sendto", "recvfrom"]
+    __slots__ = ["_sock", "send", "recv", "sendto", "recvfrom",
+                 "__weakref__"]
 
     def __init__(self, family=AF_INET, type=SOCK_STREAM, proto=0, _sock=None):
         if _sock is None:

@@ -9,6 +9,7 @@ import time
 import thread, threading
 import Queue
 import sys
+from weakref import proxy
 
 PORT = 50007
 HOST = 'localhost'
@@ -190,6 +191,19 @@ class SocketConnectedTest(ThreadedTCPSocketTest):
 ## Begin Tests
 
 class GeneralModuleTests(unittest.TestCase):
+
+    def test_weakref(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        p = proxy(s)
+        self.assertEqual(p.fileno(), s.fileno())
+        s.close()
+        s = None
+        try:
+            p.fileno()
+        except ReferenceError:
+            pass
+        else:
+            self.fail('Socket proxy still exists')
 
     def testSocketError(self):
         # Testing socket module exceptions

@@ -5,6 +5,7 @@ from test.test_support import verbose, run_unittest
 import re
 from sre import Scanner
 import sys, os, traceback
+from weakref import proxy
 
 # Misc tests from Tim Peters' re.doc
 
@@ -15,6 +16,13 @@ import sys, os, traceback
 import unittest
 
 class ReTests(unittest.TestCase):
+
+    def test_weakref(self):
+        s = 'QabbbcR'
+        x = re.compile('ab+c')
+        y = proxy(x)
+        self.assertEqual(x.findall('QabbbcR'), y.findall('QabbbcR'))
+
     def test_search_star_plus(self):
         self.assertEqual(re.search('x*', 'axx').span(0), (0, 0))
         self.assertEqual(re.search('x*', 'axx').span(), (0, 0))
