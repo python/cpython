@@ -724,6 +724,9 @@ gc_get_objects(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, ":get_objects")) /* check no args */
 		return NULL;
 	result = PyList_New(0);
+	if (result == NULL) {
+		return NULL;
+	}
 	if (append_objects(result, &_PyGC_generation0) ||
 	    append_objects(result, &generation1) ||
 	    append_objects(result, &generation2)) {
