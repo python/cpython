@@ -2,7 +2,7 @@ error = 'audiodev.error'
 
 class Play_Audio_sgi:
 	# Private instance variables
-	access frameratelist, nchannelslist, sampwidthlist, oldparams, \
+	if 0: access frameratelist, nchannelslist, sampwidthlist, oldparams, \
 		  params, config, inited_outrate, inited_width, \
 		  inited_nchannels, port, converter, classinited: private
 
@@ -11,7 +11,7 @@ class Play_Audio_sgi:
 
 	def initclass(self):
 		import AL
-		Play_Audio_sgi.frameratelist = [
+		self.frameratelist = [
 			  (48000, AL.RATE_48000),
 			  (44100, AL.RATE_44100),
 			  (32000, AL.RATE_32000),
@@ -20,16 +20,16 @@ class Play_Audio_sgi:
 			  (11025, AL.RATE_11025),
 			  ( 8000,  AL.RATE_8000),
 			  ]
-		Play_Audio_sgi.nchannelslist = [
+		self.nchannelslist = [
 			  (1, AL.MONO),
 			  (2, AL.STEREO),
 			  ]
-		Play_Audio_sgi.sampwidthlist = [
+		self.sampwidthlist = [
 			  (1, AL.SAMPLE_8),
 			  (2, AL.SAMPLE_16),
 			  (3, AL.SAMPLE_24),
 			  ]
-		Play_Audio_sgi.classinited = 1
+		self.classinited = 1
 
 	def __init__(self):
 		import al, AL
@@ -129,14 +129,14 @@ class Play_Audio_sgi:
 			return self.config.getqueuesize()
 
 	# private methods
-	access *: private
+	if 0: access *: private
 
 	def ulaw2lin(self, data):
 		import audioop
 		return audioop.ulaw2lin(data, 2)
 
 class Play_Audio_sun:
-	access outrate, sampwidth, nchannels, inited_outrate, inited_width, \
+	if 0: access outrate, sampwidth, nchannels, inited_outrate, inited_width, \
 		  inited_nchannels, converter: private
 
 	def __init__(self):
@@ -176,11 +176,12 @@ class Play_Audio_sun:
 			info.o_channels = self.nchannels
 			if self.sampwidth == 0:
 				info.o_precision = 8
-				self.o_encoding = ENCODING_ULAW
+				self.o_encoding = SUNAUDIODEV.ENCODING_ULAW
+				# XXX Hack, hack -- leave defaults
 			else:
 				info.o_precision = 8 * self.sampwidth
 				info.o_encoding = SUNAUDIODEV.ENCODING_LINEAR
-			self.port.setinfo(info)
+				self.port.setinfo(info)
 		if self.converter:
 			data = self.converter(data)
 		self.port.write(data)
@@ -209,7 +210,6 @@ class Play_Audio_sun:
 def AudioDev():
 	try:
 		import al
-		return Play_Audio_sgi()
 	except ImportError:
 		try:
 			import sunaudiodev
@@ -217,9 +217,12 @@ def AudioDev():
 		except ImportError:
 			try:
 				import Audio_mac
-				return Audio_mac.Play_Audio_mac()
 			except ImportError:
 				raise error, 'no audio device'
+			else:
+				return Audio_mac.Play_Audio_mac()
+	else:
+		return Play_Audio_sgi()
 
 def test(fn = 'f:just samples:just.aif'):
 	import aifc
