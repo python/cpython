@@ -334,6 +334,7 @@ EXPORTS
   "PyList_Reverse"
   "PyList_AsTuple"
   "PyList_Type"
+  "PyListIter_Type"
 
 ; From python23_s.lib(longobject)
   "_PyLong_New"
@@ -465,6 +466,7 @@ EXPORTS
   "PyString_Fini"
   "_Py_ReleaseInternedStrings"
   "PyString_Type"
+  "PyBaseString_Type"
 
 ; From python23_s.lib(structseq)
   "PyStructSequence_New"
@@ -615,6 +617,7 @@ EXPORTS
   "PyExc_Warning"
   "PyExc_UserWarning"
   "PyExc_DeprecationWarning"
+  "PyExc_PendingDeprecationWarning"
   "PyExc_SyntaxWarning"
   "PyExc_OverflowWarning"
   "PyExc_RuntimeWarning"
@@ -941,6 +944,3 @@ EXPORTS
 
 ; From python23_s.lib(threadmodule)
 ;  "initthread"
-
-; From python23_s.lib(_sre)
-;  "init_sre"
