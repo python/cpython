@@ -100,6 +100,7 @@ class StackViewer(ScrolledList):
         ScrolledList.__init__(self, master)
         self.flist = flist
         self.browser = browser
+        self.stack = []
 
     def load_stack(self, stack, index=None):
         self.stack = stack
@@ -132,6 +133,10 @@ class StackViewer(ScrolledList):
         if index is not None:
             self.select(index)
 
+    def popup_event(self, event):
+        if self.stack:
+            return ScrolledList.popup_event(self, event)
+
     def fill_menu(self):
         menu = self.menu
         menu.add_command(label="Go to source line",
@@ -140,7 +145,8 @@ class StackViewer(ScrolledList):
                          command=self.show_stack_frame)
 
     def on_select(self, index):
-        self.browser.show_frame(self.stack[index])
+        if 0 <= index < len(self.stack):
+            self.browser.show_frame(self.stack[index])
 
     def on_double(self, index):
         self.show_source(index)
@@ -151,9 +157,12 @@ class StackViewer(ScrolledList):
 
     def show_stack_frame(self):
         index = self.listbox.index("active")
-        self.browser.show_frame(self.stack[index])
+        if 0 <= index < len(self.stack):
+            self.browser.show_frame(self.stack[index])
 
     def show_source(self, index):
+        if not (0 <= index < len(self.stack)):
+            return
         frame, lineno = self.stack[index]
         code = frame.f_code
         filename = code.co_filename
