@@ -92,6 +92,7 @@ char *_PyParser_TokenNames[] = {
 	"DOUBLESTAREQUAL",
 	"DOUBLESLASH",
 	"DOUBLESLASHEQUAL",
+	"AT",
 	/* This table must match the #defines in token.h! */
 	"OP",
 	"<ERRORTOKEN>",
@@ -847,6 +848,7 @@ PyToken_OneChar(int c)
 	case '}':	return RBRACE;
 	case '^':	return CIRCUMFLEX;
 	case '~':	return TILDE;
+	case '@':       return AT;
 	default:	return OP;
 	}
 }

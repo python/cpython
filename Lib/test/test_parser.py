@@ -15,8 +15,8 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         t = st1.totuple()
         try:
             st2 = parser.sequence2st(t)
-        except parser.ParserError:
-            self.fail("could not roundtrip %r" % s)
+        except parser.ParserError, why:
+            self.fail("could not roundtrip %r: %s" % (s, why))
 
         self.assertEquals(t, st2.totuple(),
                           "could not re-generate syntax tree")
@@ -118,6 +118,14 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("def f(a, b, foo=bar, *args): pass")
         self.check_suite("def f(a, b, foo=bar, *args, **kw): pass")
         self.check_suite("def f(a, b, foo=bar, **kw): pass")
+
+        self.check_suite("@staticmethod\n"
+                         "def f(): pass")
+        self.check_suite("@staticmethod\n"
+                         "@funcattrs(x, y)\n"
+                         "def f(): pass")
+        self.check_suite("@funcattrs()\n"
+                         "def f(): pass")
 
     def test_import_from_statement(self):
         self.check_suite("from sys.path import *")

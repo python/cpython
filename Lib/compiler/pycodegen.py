@@ -366,6 +366,13 @@ class CodeGenerator:
         self._visitFuncOrLambda(node, isLambda=1)
 
     def _visitFuncOrLambda(self, node, isLambda=0):
+        if not isLambda and node.decorators:
+            for decorator in reversed(node.decorators.nodes):
+                self.visit(decorator)
+            ndecorators = len(node.decorators.nodes)
+        else:
+            ndecorators = 0
+            
         gen = self.FunctionGen(node, self.scopes, isLambda,
                                self.class_name, self.get_module())
         walk(node.code, gen)
@@ -382,6 +389,9 @@ class CodeGenerator:
         else:
             self.emit('LOAD_CONST', gen)
             self.emit('MAKE_FUNCTION', len(node.defaults))
+            
+        for i in range(ndecorators):
+            self.emit('CALL_FUNCTION', 1)
 
     def visitClass(self, node):
         gen = self.ClassGen(node, self.scopes,

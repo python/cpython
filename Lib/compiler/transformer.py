@@ -185,29 +185,81 @@ class Transformer:
         ### is this sufficient?
         return Expression(self.com_node(nodelist[0]))
 
+    def decorator_name(self, nodelist):
+        listlen = len(nodelist)
+        assert listlen >= 1 and listlen % 2 == 1
+
+        item = self.atom_name(nodelist)
+        i = 1
+        while i < listlen:
+            assert nodelist[i][0] == token.DOT
+            assert nodelist[i + 1][0] == token.NAME
+            item = Getattr(item, nodelist[i + 1][1])
+            i += 2
+
+        return item
+        
+    def decorator(self, nodelist):
+        # '@' dotted_name [ '(' [arglist] ')' ]
+        assert len(nodelist) in (2, 4, 5)
+        assert nodelist[0][0] == token.AT
+
+        assert nodelist[1][0] == symbol.dotted_name
+        funcname = self.decorator_name(nodelist[1][1:])
+
+        if len(nodelist) > 2:
+            assert nodelist[2][0] == token.LPAR
+            expr = self.com_call_function(funcname, nodelist[3])
+        else:
+            expr = funcname
+            
+        return expr
+    
+    def decorators(self, nodelist):
+        # decorators: decorator ([NEWLINE] decorator)* NEWLINE
+        listlen = len(nodelist)
+        i = 0
+        items = []
+        while i < listlen:
+            assert nodelist[i][0] == symbol.decorator
+            items.append(self.decorator(nodelist[i][1:]))
+            i += 1
+
+            if i < listlen and nodelist[i][0] == token.NEWLINE:
+                i += 1
+        return Decorators(items)
+    
     def funcdef(self, nodelist):
-        # funcdef: 'def' NAME parameters ':' suite
+        #                    -6   -5    -4         -3  -2    -1
+        # funcdef: [decorators] 'def' NAME parameters ':' suite
         # parameters: '(' [varargslist] ')'
 
-        lineno = nodelist[1][2]
-        name = nodelist[1][1]
-        args = nodelist[2][2]
+        if len(nodelist) == 6:
+            assert nodelist[0][0] == symbol.decorators
+            decorators = self.decorators(nodelist[0][1:])
+        else:
+            assert len(nodelist) == 5
+            decorators = None
+            
+        lineno = nodelist[-4][2]
+        name = nodelist[-4][1]
+        args = nodelist[-3][2]
 
         if args[0] == symbol.varargslist:
             names, defaults, flags = self.com_arglist(args[1:])
         else:
             names = defaults = ()
             flags = 0
-        doc = self.get_docstring(nodelist[4])
+        doc = self.get_docstring(nodelist[-1])
 
         # code for function
-        code = self.com_node(nodelist[4])
+        code = self.com_node(nodelist[-1])
 
         if doc is not None:
             assert isinstance(code, Stmt)
             assert isinstance(code.nodes[0], Discard)
             del code.nodes[0]
-        n = Function(name, names, defaults, flags, doc, code)
+        n = Function(decorators, name, names, defaults, flags, doc, code)
         n.lineno = lineno
         return n
 

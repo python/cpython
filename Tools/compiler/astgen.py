@@ -154,19 +154,19 @@ class NodeInfo:
                 else:
                     print >> buf, "        return %s" % COMMA.join(clist)
             else:
-                print >> buf, "        nodes = []"
-                template = "        nodes.%s(%sself.%s%s)"
+                print >> buf, "        nodelist = []"
+                template = "        nodelist.%s(%sself.%s%s)"
                 for name in self.argnames:
                     if self.argprops[name] == P_NONE:
                         tmp = ("        if self.%s is not None:"
-                               "            nodes.append(self.%s)")
+                               "            nodelist.append(self.%s)")
                         print >> buf, tmp % (name, name)
                     elif self.argprops[name] == P_NESTED:
                         print >> buf, template % ("extend", "flatten_nodes(",
                                                   name, ")")
                     elif self.argprops[name] == P_NODE:
                         print >> buf, template % ("append", "", name, "")
-                print >> buf, "        return tuple(nodes)"
+                print >> buf, "        return tuple(nodelist)"
 
     def _gen_repr(self, buf):
         print >> buf, "    def __repr__(self):"
@@ -208,7 +208,7 @@ def parse_spec(file):
             # some extra code for a Node's __init__ method
             name = mo.group(1)
             cur = classes[name]
-    return classes.values()
+    return sorted(classes.values(), key=lambda n: n.name)
 
 def main():
     prologue, epilogue = load_boilerplate(sys.argv[-1])
@@ -245,9 +245,9 @@ def flatten(list):
 def flatten_nodes(list):
     return [n for n in flatten(list) if isinstance(n, Node)]
 
-def asList(nodes):
+def asList(nodearg):
     l = []
-    for item in nodes:
+    for item in nodearg:
         if hasattr(item, "asList"):
             l.append(item.asList())
         else:
@@ -273,6 +273,21 @@ class Node: # an abstract base class
 
 class EmptyNode(Node):
     pass
+
+class Expression(Node):
+    # Expression is an artificial node class to support "eval"
+    nodes["expression"] = "Expression"
+    def __init__(self, node):
+        self.node = node
+
+    def getChildren(self):
+        return self.node,
+
+    def getChildNodes(self):
+        return self.node,
+
+    def __repr__(self):
+        return "Expression(%s)" % (repr(self.node))
 
 ### EPILOGUE
 klasses = globals()

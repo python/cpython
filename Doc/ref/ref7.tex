@@ -315,8 +315,12 @@ section~\ref{types}):
 
 \begin{productionlist}
   \production{funcdef}
-             {"def" \token{funcname} "(" [\token{parameter_list}] ")"
+             {[\token{decorators}] "def" \token{funcname} "(" [\token{parameter_list}] ")"
               ":" \token{suite}}
+  \production{decorators}
+             {\token{decorator} ([NEWLINE] \token{decorator})* NEWLINE}
+  \production{decorator}
+             {"@" \token{dotted_name} ["(" [\token{argument_list} [","]] ")"]}
   \production{parameter_list}
              {(\token{defparameter} ",")*}
   \productioncont{("*" \token{identifier} [, "**" \token{identifier}]}
@@ -342,6 +346,27 @@ as the global namespace to be used when the function is called.
 
 The function definition does not execute the function body; this gets
 executed only when the function is called.
+
+A function definition may be wrapped by one or more decorator expressions.
+Decorator expressions are evaluated when the function is defined, in the scope
+that contains the function definition.  The result must be a callable,
+which is invoked with the function object as the only argument.
+The returned value is bound to the function name instead of the function
+object.  If there are multiple decorators, they are applied in reverse
+order.  For example, the following code:
+
+\begin{verbatim}
+@f1
+@f2
+def func(): pass
+\end{verbatim}
+
+is equivalent to:
+
+\begin{verbatim}
+def func(): pass
+func = f2(f1(func))
+\end{verbatim}
 
 When one or more top-level parameters have the form \var{parameter}
 \code{=} \var{expression}, the function is said to have ``default

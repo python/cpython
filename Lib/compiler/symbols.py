@@ -224,6 +224,8 @@ class SymbolVisitor:
     visitExpression = visitModule
 
     def visitFunction(self, node, parent):
+        if node.decorators:
+            self.visit(node.decorators, parent)
         parent.add_def(node.name)
         for n in node.defaults:
             self.visit(n, parent)
