@@ -447,3 +447,23 @@ def f(x):
 
 inst = f(3)()
 verify(inst.a == inst.m())
+
+print "20. interaction with trace function"
+
+import sys
+def tracer(a,b,c):
+    return tracer
+
+def adaptgetter(name, klass, getter):
+    kind, des = getter
+    if kind == 1:       # AV happens when stepping from this line to next
+        if des == "":
+            des = "_%s__%s" % (klass.__name__, name)
+        return lambda obj: getattr(obj, des)
+
+class TestClass:
+    pass
+
+sys.settrace(tracer)
+adaptgetter("foo", TestClass, (1, ""))
+sys.settrace(None)
