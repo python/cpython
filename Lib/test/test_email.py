@@ -14,7 +14,7 @@ import warnings
 import email
 
 from email.Charset import Charset
-from email.Header import Header, decode_header
+from email.Header import Header, decode_header, make_header
 from email.Parser import Parser, HeaderParser
 from email.Generator import Generator, DecodedGenerator
 from email.Message import Message
@@ -57,7 +57,9 @@ class TestEmailBase(unittest.TestCase):
         def ndiffAssertEqual(self, first, second):
             """Like failUnlessEqual except use ndiff for readable output."""
             if first <> second:
-                diff = difflib.ndiff(first.splitlines(), second.splitlines())
+                sfirst = str(first)
+                ssecond = str(second)
+                diff = difflib.ndiff(sfirst.splitlines(), ssecond.splitlines())
                 fp = StringIO()
                 print >> fp, NL, NL.join(diff)
                 raise self.failureException, fp.getvalue()
@@ -1026,7 +1028,7 @@ Here is the body of the message.
     def test_dsn(self):
         eq = self.assertEqual
         unless = self.failUnless
-        # msg 16 is a Delivery Status Notification, see RFC XXXX
+        # msg 16 is a Delivery Status Notification, see RFC 1894
         msg = self._msgobj('msg_16.txt')
         eq(msg.get_type(), 'multipart/report')
         unless(msg.is_multipart())
@@ -1878,7 +1880,7 @@ class TestHeader(TestEmailBase):
             self.failUnless(len(l) <= 76)
 
     def test_multilingual(self):
-        eq = self.assertEqual
+        eq = self.ndiffAssertEqual
         g = Charset("iso-8859-1")
         cz = Charset("iso-8859-2")
         utf8 = Charset("utf-8")
@@ -1929,6 +1931,16 @@ class TestHeader(TestEmailBase):
            'und Slotermeyer? Ja! Beiherhund das Oder die Flipperwaldt '
            'gersput.\xe3\x80\x8d\xe3\x81\xa8\xe8\xa8\x80\xe3\x81\xa3\xe3\x81'
            '\xa6\xe3\x81\x84\xe3\x81\xbe\xe3\x81\x99\xe3\x80\x82')
+        # Test make_header()
+        newh = make_header(decode_header(enc))
+        eq(newh, enc)
+
+    def test_header_ctor_default_args(self):
+        eq = self.ndiffAssertEqual
+        h = Header()
+        eq(h, '')
+        h.append('foo', Charset('iso-8859-1'))
+        eq(h, '=?iso-8859-1?q?foo?=')
 
     def test_explicit_maxlinelen(self):
         eq = self.ndiffAssertEqual
