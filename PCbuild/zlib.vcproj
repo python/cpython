@@ -41,7 +41,7 @@
 				OutputFile="./zlib_d.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				IgnoreDefaultLibraryNames="libc"
+				IgnoreDefaultLibraryNames="libc;msvcrt"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\./zlib_d.pdb"
 				SubSystem="2"
@@ -110,7 +110,7 @@ nmake -nologo -f win32\Makefile.msc zlib.lib
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\zlib-1.1.4\zlib.lib"
+				AdditionalDependencies="..\..\zlib-1.2.1\zlib.lib"
 				OutputFile="./zlib.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -136,8 +136,8 @@ nmake -nologo -f win32\Makefile.msc zlib.lib
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="Checking static zlib has been built"
-				CommandLine="cd ..\..\zlib-1.1.4
-nmake -nologo -f msdos\makefile.w32 zlib.lib
+				CommandLine="cd ..\..\zlib-1.2.1
+nmake -nologo -f win32\Makefile.msc zlib.lib
 "/>
 			<Tool
 				Name="VCResourceCompilerTool"
