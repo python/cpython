@@ -86,6 +86,7 @@ class PythonIDE(Wapplication.Application):
 		saveasappletitem = FrameWork.MenuItem(m, "Save as Applet"+ELIPSES, None, 'save_as_applet')
 		FrameWork.Separator(m)
 		instmgritem = FrameWork.MenuItem(m, "Package Manager", None, 'openpackagemanager')
+		gensuiteitem = FrameWork.MenuItem(m, "Generate OSA Suite...", None, 'gensuite')
 		if not runningOnOSX():
 			# On OSX there's a special "magic" quit menu, so we shouldn't add
 			# it to the File menu.
@@ -351,6 +352,10 @@ class PythonIDE(Wapplication.Application):
 	def domenu_openpackagemanager(self):
 		import PackageManager
 		PackageManager.PackageBrowser()
+		
+	def domenu_gensuite(self):
+		import gensuitemodule
+		gensuitemodule.main_interactive()
 		
 	def makehelpmenu(self):
 		hashelp, hasdocs = self.installdocumentation()
