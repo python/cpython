@@ -120,7 +120,7 @@ from urllib import unwrap, unquote, splittype, splithost, \
 # support for FileHandler, proxies via environment variables
 from urllib import localhost, url2pathname, getproxies
 
-__version__ = "2.1"
+__version__ = "2.4"
 
 _opener = None
 def urlopen(url, data=None):
@@ -206,6 +206,8 @@ class Request:
             return "POST"
         else:
             return "GET"
+
+    # XXX these helper methods are lame
 
     def add_data(self, data):
         self.data = data
@@ -936,10 +938,16 @@ class AbstractHTTPHandler(BaseHandler):
 
         return request
 
-    # XXX Should rewrite do_open() to use the new httplib interface,
-    # would be a little simpler.
-
     def do_open(self, http_class, req):
+        """Return an addinfourl object for the request, using http_class.
+
+        http_class must implement the HTTPConnection API from httplib.
+        The addinfourl return value is a file-like object.  It also
+        has methods and attributes including:
+            - info(): return a mimetools.Message object for the headers
+            - geturl(): return the original request URL
+            - code: HTTP status code
+        """
         host = req.get_host()
         if not host:
             raise URLError('no host given')
@@ -947,33 +955,26 @@ class AbstractHTTPHandler(BaseHandler):
         h = http_class(host) # will parse host:port
         h.set_debuglevel(self._debuglevel)
 
-        h.putrequest(req.get_method(), req.get_selector())
-        for k, v in req.headers.items():
-            h.putheader(k, v)
-        for k, v in req.unredirected_hdrs.items():
-            h.putheader(k, v)
-        # httplib will attempt to connect() here.  be prepared
-        # to convert a socket error to a URLError.
+        headers = dict(req.headers)
+        headers.update(req.unredirected_hdrs)
         try:
-            h.endheaders()
-        except socket.error, err:
+            h.request(req.get_method(), req.get_selector(), req.data, headers)
+            r = h.getresponse()
+        except socket.error, err: # XXX what error?
             raise URLError(err)
-        if req.has_data():
-            h.send(req.get_data())
 
-        code, msg, hdrs = h.getreply()
-        fp = h.getfile()
-        response = addinfourl(fp, hdrs, req.get_full_url())
-        # XXXX should these be methods, for uniformity with rest of interface?
-        response.code = code
-        response.msg = msg
-        return response
+        # Pick apart the HTTPResponse object to get the various pieces
+        # of the 
+        resp = addinfourl(r.fp, r.msg, req.get_full_url())
+        resp.code = r.status
+        resp.msg = r.reason
+        return resp
 
 
 class HTTPHandler(AbstractHTTPHandler):
 
     def http_open(self, req):
-        return self.do_open(httplib.HTTP, req)
+        return self.do_open(httplib.HTTPConnection, req)
 
     http_request = AbstractHTTPHandler.do_request
 
@@ -981,7 +982,7 @@ if hasattr(httplib, 'HTTPS'):
     class HTTPSHandler(AbstractHTTPHandler):
 
         def https_open(self, req):
-            return self.do_open(httplib.HTTPS, req)
+            return self.do_open(httplib.HTTPSConnection, req)
 
         https_request = AbstractHTTPHandler.do_request
 
