@@ -291,6 +291,10 @@ def add_ui(db):
              [("python_icon.exe", msilib.Binary(srcdir+r"\PC\python_icon.exe"))])
 
     # Scripts
+    # CheckDir sets TargetExists if TARGETDIR exists.
+    # UpdateEditIDLE sets the REGISTRY.tcl component into
+    # the installed/uninstalled state according to both the
+    # Extensions and TclTk features.
     open("inst.vbs","w").write("""
     Function CheckDir()
       Set FSO = CreateObject("Scripting.FileSystemObject")
@@ -300,10 +304,34 @@ def add_ui(db):
         Session.Property("TargetExists") = "0"
       end if
     End Function
+    Function UpdateEditIDLE()
+      Dim ext_new, tcl_new, regtcl_old
+      ext_new = Session.FeatureRequestState("Extensions")
+      tcl_new = Session.FeatureRequestState("TclTk")
+      if ext_new=-1 then
+         ext_new = Session.FeatureCurrentState("Extensions")
+      end if
+      if tcl_new=-1 then
+         tcl_new = Session.FeatureCurrentState("TclTk")
+      end if
+      regtcl_old = Session.ComponentCurrentState("REGISTRY.tcl")
+      if ext_new=3 and (tcl_new=3 or tcl_new=4) and regtcl_old<>3 then
+         Session.ComponentRequestState("REGISTRY.tcl")=3
+      end if
+      if (ext_new=2 or tcl_new=2) and regtcl_old<>2 then
+         Session.ComponentRequestState("REGISTRY.tcl")=2
+      end if      
+    End Function
     """)
+    # To add debug messages into scripts, the following fragment can be used
+    #     set objRec = Session.Installer.CreateRecord(1)
+    #     objRec.StringData(1) = "Debug message"
+    #     Session.message &H04000000, objRec
     add_data(db, "Binary", [("Script", msilib.Binary("inst.vbs"))])
     # See "Custom Action Type 6"
-    add_data(db, "CustomAction", [("CheckDir", 6, "Script", "CheckDir")])
+    add_data(db, "CustomAction", 
+        [("CheckDir", 6, "Script", "CheckDir"),
+        ("UpdateEditIDLE", 6, "Script", "UpdateEditIDLE")])
     os.unlink("inst.vbs")
 
 
@@ -363,6 +391,7 @@ def add_ui(db):
             [("InitialTargetDir", 'TARGETDIR=""', 750),
              ("SetDLLDirToSystem32", 'DLLDIR="" and ' + sys32cond, 751),
              ("SetDLLDirToTarget", 'DLLDIR="" and not ' + sys32cond, 752),
+             ("UpdateEditIDLE", None, 1050),
              ("CompilePyc", "COMPILEALL", 6800),
              ("CompilePyo", "COMPILEALL", 6801),
             ])
@@ -738,19 +767,10 @@ def add_features(db):
     default_feature = Feature(db, "DefaultFeature", "Python",
                               "Python Interpreter and Libraries",
                               1, directory = "TARGETDIR")
-    # The extensions feature is tricky wrt. advertisement and follow parent.
-    # The following combinations must be supported:
-    # default feature         extensions                       effect on extensions
-    # locally/from source     locally/from source              registered
-    # advertised              advertised/locally/from source   advertised
-    # locally/from source     not installed                    not installed
-    # advertised              not installed                    not advertised
-    #                                                          (only shortcuts are)
-    # The following combination might be considered meaningless, but cannot be excluded
-    # locally/from source     advertised                       registered
+    # We don't support advertisement of extensions
     ext_feature = Feature(db, "Extensions", "Register Extensions",
                           "Make this Python installation the default Python installation", 3,
-                         parent = default_feature)
+                         parent = default_feature, attributes=2|8)
     if have_tcl:
         tcltk = Feature(db, "TclTk", "Tcl/Tk", "Tkinter, IDLE, pydoc", 5,
                     parent = default_feature, attributes=2)
@@ -762,7 +782,6 @@ def add_features(db):
     testsuite = Feature(db, "Testsuite", "Test suite",
                         "Python test suite (Lib/test/)", 11,
                         parent = default_feature, attributes=2|8)
-
 
 def extract_msvcr71():
     import _winreg
@@ -988,9 +1007,8 @@ def add_registry(db):
     tcldata = []
     if have_tcl:
         tcldata = [
-            ("REGISTRY.tcl", msilib.gen_uuid(), "TARGETDIR", 4,
-               "&%s <> 2" % ext_feature.id, 
-               "py.IDLE")]
+            ("REGISTRY.tcl", msilib.gen_uuid(), "TARGETDIR", 4, None,
+             "py.IDLE")]
     add_data(db, "Component",
              # msidbComponentAttributesRegistryKeyPath = 4
              [("REGISTRY", msilib.gen_uuid(), "TARGETDIR", 4, None,
@@ -1003,49 +1021,65 @@ def add_registry(db):
     # shortcuts might get installed without pythonw.exe being install. This
     # is not true, since installing TclTk will install the default feature, which
     # will cause pythonw.exe to be installed.
+    # REGISTRY.tcl is not associated with any feature, as it will be requested
+    # through a custom action
     tcldata = []
     if have_tcl:
-        tcldata = [(tcltk.id, "REGISTRY.tcl"),
-                     (tcltk.id, "pythonw.exe")]
+        tcldata = [(tcltk.id, "pythonw.exe")]
     add_data(db, "FeatureComponents",
              [(default_feature.id, "REGISTRY"),
               (ext_feature.id, "REGISTRY.def")] +
               tcldata
               )
-
+    # Extensions are not advertised. For advertised extensions,
+    # we would need separate binaries that install along with the
+    # extension.
     pat = r"Software\Classes\%sPython.%sFile\shell\%s\command"
     ewi = "Edit with IDLE"
     pat2 = r"Software\Classes\%sPython.%sFile\DefaultIcon"
     pat3 = r"Software\Classes\%sPython.%sFile"
-    # Advertised extensions
-    add_data(db, "Extension",
-            [("py", "extpy.exe", "Python.File", None, ext_feature.id),
-            ("pyw", "extpyw.exe", "Python.NoConFile", None, ext_feature.id),
-            ("pyc", "extpy.exe", "Python.CompiledFile", None, ext_feature.id),
-            ("pyo", "extpy.exe", "Python.CompiledFile", None, ext_feature.id)])
-    # add_data(db, "MIME") XXX
-    add_data(db, "Verb",
-            [("py", "open", 1, None, r'"%1"'),
-            ("pyw", "open", 1, None, r'"%1"'),
-            ("pyc", "open", 1, None, r'"%1"'),
-            ("pyo", "open", 1, None, r'"%1"')])
-    add_data(db, "ProgId",
-            [("Python.File", None, None, "Python File", "python_icon.exe", 0),
-             ("Python.NoConFile", None, None, "Python File (no console)", "python_icon.exe", 0),
-             ("Python.CompiledFile", None, None, "Compiled Python File", "python_icon.exe", 1)])
-
-    # Non-advertised verbs: for advertised verbs, we would need to invoke the same
-    # executable for both open and "Edit with IDLE". This cannot work, as we want
-    # to use pythonw.exe in either case
-    if have_tcl:
-        add_data(db, "Registry",
-            [#Verbs
+    add_data(db, "Registry",
+            [# Extensions
+             ("py.ext", -1, r"Software\Classes\."+ext, "",
+              "Python.File", "REGISTRY.def"),
+             ("pyw.ext", -1, r"Software\Classes\."+ext+'w', "",
+              "Python.NoConFile", "REGISTRY.def"),
+             ("pyc.ext", -1, r"Software\Classes\."+ext+'c', "",
+              "Python.CompiledFile", "REGISTRY.def"),
+             ("pyo.ext", -1, r"Software\Classes\."+ext+'o', "",
+              "Python.CompiledFile", "REGISTRY.def"),
+             # MIME types
+             ("py.mime", -1, r"Software\Classes\."+ext, "Content Type",
+              "text/plain", "REGISTRY.def"),
+             ("pyw.mime", -1, r"Software\Classes\."+ext+'w', "Content Type",
+              "text/plain", "REGISTRY.def"),
+             #Verbs
+             ("py.open", -1, pat % (testprefix, "", "open"), "",
+              r'"[TARGETDIR]python.exe" "%1" %*', "REGISTRY.def"),
+             ("pyw.open", -1, pat % (testprefix, "NoCon", "open"), "",
+              r'"[TARGETDIR]pythonw.exe" "%1" %*', "REGISTRY.def"),
+             ("pyc.open", -1, pat % (testprefix, "Compiled", "open"), "",
+              r'"[TARGETDIR]python.exe" "%1" %*', "REGISTRY.def"),
              ("py.IDLE", -1, pat % (testprefix, "", ewi), "",
               r'"[TARGETDIR]pythonw.exe" "[TARGETDIR]Lib\idlelib\idle.pyw" -n -e "%1"',
               "REGISTRY.tcl"),
              ("pyw.IDLE", -1, pat % (testprefix, "NoCon", ewi), "",
               r'"[TARGETDIR]pythonw.exe" "[TARGETDIR]Lib\idlelib\idle.pyw" -n -e "%1"',
               "REGISTRY.tcl"),
+             #Icons
+             ("py.icon", -1, pat2 % (testprefix, ""), "",
+              r'[TARGETDIR]py.ico', "REGISTRY.def"),
+             ("pyw.icon", -1, pat2 % (testprefix, "NoCon"), "",
+              r'[TARGETDIR]py.ico', "REGISTRY.def"),
+             ("pyc.icon", -1, pat2 % (testprefix, "Compiled"), "",
+              r'[TARGETDIR]pyc.ico', "REGISTRY.def"),
+             # Descriptions
+             ("py.txt", -1, pat3 % (testprefix, ""), "",
+              "Python File", "REGISTRY.def"),
+             ("pyw.txt", -1, pat3 % (testprefix, "NoCon"), "",
+              "Python File (no console)", "REGISTRY.def"),
+             ("pyc.txt", -1, pat3 % (testprefix, "Compiled"), "",
+              "Compiled Python File", "REGISTRY.def"),
             ])
 
     # Registry keys
