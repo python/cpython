@@ -6,8 +6,8 @@
 ;;         1992-1994 Tim Peters
 ;; Maintainer:    python-mode@python.org
 ;; Created:       Feb 1992
-;; Version:       2.73
-;; Last Modified: 1996/08/20 19:57:34
+;; Version:       2.83
+;; Last Modified: 1996/10/23 20:44:59
 ;; Keywords: python languages oop
 
 ;; This software is provided as-is, without express or implied
@@ -58,7 +58,8 @@
 ;; - proper interaction with pending-del and del-sel modes.
 ;; - Better support for outdenting: py-electric-colon (:) and
 ;;   py-indent-line (TAB) improvements; one level of outdentation
-;;   added after a return, raise, break, or continue statement
+;;   added after a return, raise, break, pass, or continue statement.
+;;   Defeated by prefixing command with C-u.
 ;; - New py-electric-colon (:) command for improved outdenting  Also
 ;;   py-indent-line (TAB) should handle outdented lines better
 ;; - improved (I think) C-c > and C-c <
@@ -83,6 +84,8 @@
 ;;   hasn't been a problem... yet.
 ;; - have py-execute-region on indented code act as if the region is
 ;;   left justified. Avoids syntax errors.
+;; - Add a py-goto-error or some such that would scan an exception in
+;;   the py-shell buffer, and pop you to that line in the file.
 
 ;; If you can think of more things you'd like to see, drop me a line.
 ;; If you want to report bugs, use py-submit-bug-report (C-c C-b).
@@ -206,7 +209,7 @@ displayed in the echo area, and if `py-beep-if-tab-change' is non-nil
 the Emacs bell is also rung as a warning.")
 
 (defconst python-font-lock-keywords
-  (let* ((keywords '("access"     "and"        "break"      "class"
+  (let* ((keywords '("and"        "break"      "class"
 		     "continue"   "def"        "del"        "elif"
 		     "else:"      "except"     "except:"    "exec"
 		     "finally:"   "for"        "from"       "global"
@@ -391,6 +394,20 @@ Currently-active file is at the head of the list.")
 	  "\\)")
   "Regexp matching lines to not outdent after.")
 
+(defvar py-defun-start-re
+  "^\\([ \t]*\\)def[ \t]+\\([a-zA-Z_0-9]+\\)\\|\\(^[a-zA-Z_0-9]+\\)[ \t]*="
+  "Regexp matching a function, method or variable assignment.
+
+If you change this, you probably have to change `py-current-defun' as well.
+This is only used by `py-current-defun' to find the name for add-log.el.")
+
+(defvar py-class-start-re "^class[ \t]*\\([a-zA-Z_0-9]+\\)"
+  "Regexp for finding a class name.
+
+If you change this, you probably have to change `py-current-defun' as well.
+This is only used by `py-current-defun' to find the name for add-log.el.")
+
+
 
 ;; Menu definitions, only relevent if you have the easymenu.el package
 ;; (standard in the latest Emacs 19 and XEmacs 19 distributions).
@@ -497,8 +514,8 @@ better alternative for finding the index.")
 ;; These next two variables are used when searching for the python
 ;; class/definitions. Just saving some time in accessing the
 ;; generic-python-expression, really.
-(defvar imenu-example--python-generic-regexp)
-(defvar imenu-example--python-generic-parens)
+(defvar imenu-example--python-generic-regexp nil)
+(defvar imenu-example--python-generic-parens nil)
 
 
 ;;;###autoload
@@ -658,11 +675,35 @@ py-scroll-process-buffer\t\talways scroll Python process buffer
 py-temp-directory\t\tdirectory used for temp files (if needed)
 py-beep-if-tab-change\t\tring the bell if tab-width is changed"
   (interactive)
+  ;; set up local variables
   (kill-all-local-variables)
+  (make-local-variable 'font-lock-defaults)
+  (make-local-variable 'paragraph-separate)
+  (make-local-variable 'paragraph-start)
+  (make-local-variable 'require-final-newline)
+  (make-local-variable 'comment-start)
+  (make-local-variable 'comment-start-skip)
+  (make-local-variable 'comment-column)
+  (make-local-variable 'indent-region-function)
+  (make-local-variable 'indent-line-function)
+  (make-local-variable 'add-log-current-defun-function)
+  ;;
   (set-syntax-table py-mode-syntax-table)
-  (setq major-mode 'python-mode
-	mode-name "Python"
-	local-abbrev-table python-mode-abbrev-table)
+  (setq major-mode             'python-mode
+	mode-name              "Python"
+	local-abbrev-table     python-mode-abbrev-table
+	font-lock-defaults     '(python-font-lock-keywords)
+	paragraph-separate     "^[ \t]*$"
+	paragraph-start        "^[ \t]*$"
+	require-final-newline  t
+	comment-start          "# "
+	comment-start-skip     "# *"
+	comment-column         40
+	indent-region-function 'py-indent-region
+	indent-line-function   'py-indent-line
+	;; tell add-log.el how to find the current function/method/variable
+	add-log-current-defun-function 'py-current-defun
+	)
   (use-local-map py-mode-map)
   ;; add the menu
   (if py-menu
@@ -670,18 +711,6 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
   ;; Emacs 19 requires this
   (if (or py-this-is-lucid-emacs-p py-this-is-emacs-19-p)
       (setq comment-multi-line nil))
-  ;; BAW -- style...
-  (mapcar (function (lambda (x)
-		      (make-local-variable (car x))
-		      (set (car x) (cdr x))))
-	  '((paragraph-separate . "^[ \t]*$")
-	    (paragraph-start	 . "^[ \t]*$")
-	    (require-final-newline . t)
-	    (comment-start .		"# ")
-	    (comment-start-skip .	"# *")
-	    (comment-column . 40)
-	    (indent-region-function . py-indent-region)
-	    (indent-line-function . py-indent-line)))
   ;; hack to allow overriding the tabsize in the file (see tokenizer.c)
   ;;
   ;; not sure where the magic comment has to be; to save time
@@ -760,12 +789,12 @@ Electric behavior is inhibited inside a string or comment."
       (save-excursion
 	(let ((here (point))
 	      (outdent 0)
-	      (indent (py-compute-indentation)))
+	      (indent (py-compute-indentation t)))
 	  (if (and (not arg)
 		   (py-outdent-p)
 		   (= indent (save-excursion
 			       (py-next-statement -1)
-			       (py-compute-indentation)))
+			       (py-compute-indentation t)))
 		   )
 	      (setq outdent py-indent-offset))
 	  ;; Don't indent, only outdent.  This assumes that any lines that
@@ -782,6 +811,7 @@ Electric behavior is inhibited inside a string or comment."
 
 
 ;;; Functions that execute Python commands in a subprocess
+;;;###autoload
 (defun py-shell ()
   "Start an interactive Python interpreter in another window.
 This is like Shell mode, except that Python is running in the window
@@ -903,42 +933,47 @@ See the `\\[py-shell]' docs for additional warnings."
     ;; read_process_output has update_mode_lines++ for a similar
     ;; reason?  beats me ...
 
-    ;; BAW - we want to check to see if this still applies
-    (if (eq curbuf pbuf)		; mysterious ugly hack
-	(set-buffer (get-buffer-create "*scratch*")))
+    (unwind-protect
+	;; make sure current buffer is restored
+	;; BAW - we want to check to see if this still applies
+	(progn
+	  ;; mysterious ugly hack
+	  (if (eq curbuf pbuf)
+	      (set-buffer (get-buffer-create "*scratch*")))
 
-    (set-buffer pbuf)
-    (let* ((start (point))
-	   (goback (< start pmark))
-	   (goend (and (not goback) (= start (point-max))))
-	   (buffer-read-only nil))
-      (goto-char pmark)
-      (insert string)
-      (move-marker pmark (point))
-      (setq file-finished
-	    (and py-file-queue
-		 (equal ">>> "
-			(buffer-substring
-			 (prog2 (beginning-of-line) (point)
-				(goto-char pmark))
-			 (point)))))
-      (if goback (goto-char start)
-	;; else
-	(if py-scroll-process-buffer
-	    (let* ((pop-up-windows t)
-		   (pwin (display-buffer pbuf)))
-	      (set-window-point pwin (point)))))
-      (set-buffer curbuf)
-      (if file-finished
-	  (progn
-	    (py-delete-file-silently (car py-file-queue))
-	    (setq py-file-queue (cdr py-file-queue))
-	    (if py-file-queue
-		(py-execute-file pyproc (car py-file-queue)))))
-      (and goend
-	   (progn (set-buffer pbuf)
-		  (goto-char (point-max))))
-      )))
+	  (set-buffer pbuf)
+	  (let* ((start (point))
+		 (goback (< start pmark))
+		 (goend (and (not goback) (= start (point-max))))
+		 (buffer-read-only nil))
+	    (goto-char pmark)
+	    (insert string)
+	    (move-marker pmark (point))
+	    (setq file-finished
+		  (and py-file-queue
+		       (equal ">>> "
+			      (buffer-substring
+			       (prog2 (beginning-of-line) (point)
+				 (goto-char pmark))
+			       (point)))))
+	    (if goback (goto-char start)
+	      ;; else
+	      (if py-scroll-process-buffer
+		  (let* ((pop-up-windows t)
+			 (pwin (display-buffer pbuf)))
+		    (set-window-point pwin (point)))))
+	    (set-buffer curbuf)
+	    (if file-finished
+		(progn
+		  (py-delete-file-silently (car py-file-queue))
+		  (setq py-file-queue (cdr py-file-queue))
+		  (if py-file-queue
+		      (py-execute-file pyproc (car py-file-queue)))))
+	    (and goend
+		 (progn (set-buffer pbuf)
+			(goto-char (point-max))))
+	    ))
+      (set-buffer curbuf))))
 
 (defun py-execute-buffer ()
   "Send the contents of the buffer to a Python interpreter.
@@ -1003,12 +1038,17 @@ argument delets that many characters."
 (put 'py-delete-char 'delete-selection 'supersede)
 (put 'py-delete-char 'pending-delete   'supersede)
 
-(defun py-indent-line ()
-  "Fix the indentation of the current line according to Python rules."
-  (interactive)
+(defun py-indent-line (&optional arg)
+  "Fix the indentation of the current line according to Python rules.
+With \\[universal-argument], ignore outdenting rules for block
+closing statements (e.g. return, raise, break, continue, pass)
+
+This function is normally bound to `indent-line-function' so
+\\[indent-for-tab-command] will call it."
+  (interactive "P")
   (let* ((ci (current-indentation))
 	 (move-to-indentation-p (<= (current-column) ci))
-	 (need (py-compute-indentation)))
+	 (need (py-compute-indentation (not arg))))
     ;; see if we need to outdent
     (if (py-outdent-p)
 	(setq need (- need py-indent-offset)))
@@ -1034,7 +1074,10 @@ the new line indented."
       (insert-char ?\n 1)
       (move-to-column ci))))
 
-(defun py-compute-indentation ()
+(defun py-compute-indentation (honor-block-close-p)
+  ;; implements all the rules for indentation computation.  when
+  ;; honor-block-close-p is non-nil, statements such as return, raise,
+  ;; break, continue, and pass force one level of outdenting.
   (save-excursion
     (let ((pps (parse-partial-sexp (save-excursion
 				     (beginning-of-python-def-or-class)
@@ -1180,7 +1223,7 @@ the new line indented."
 	(+ (current-indentation)
 	   (if (py-statement-opens-block-p)
 	       py-indent-offset
-	     (if (py-statement-closes-block-p)
+	     (if (and honor-block-close-p (py-statement-closes-block-p))
 		 (- py-indent-offset)
 	       0)))
 	)))))
@@ -1340,7 +1383,7 @@ initial line; and comment lines beginning in column 1 are ignored."
 	  (target-column 0)		; column to which to indent
 	  (base-shifted-by 0)		; amount last base line was shifted
 	  (indent-base (if (looking-at "[ \t\n]")
-			   (py-compute-indentation)
+			   (py-compute-indentation t)
 			 0))
 	  ci)
       (while (< (point) end)
@@ -1786,8 +1829,7 @@ A `nomenclature' is a fancy way of saying AWordWithMixedCaseNotUnderscores."
 				 (where-is-internal func py-mode-map)
 				 ", "))))
 	 ((equal funckind "v")		; variable
-	  (setq funcdoc (substitute-command-keys
-			 (get func 'variable-documentation))
+	  (setq funcdoc (documentation-property func 'variable-documentation)
 		keys (if (assq func locals)
 			 (concat
 			  "Local/Global values: "
@@ -2190,12 +2232,12 @@ local bindings to py-newline-and-indent."))
 
 (defun py-statement-closes-block-p ()
   ;; true iff the current statement `closes' a block == the line
-  ;; starts with `return', `raise', `break' or `continue'.  doesn't
-  ;; catch embedded statements
+  ;; starts with `return', `raise', `break', `continue', and `pass'.
+  ;; doesn't catch embedded statements
   (let ((here (point)))
     (back-to-indentation)
     (prog1
-	(looking-at "\\(return\\|raise\\|break\\|continue\\)\\>")
+	(looking-at "\\(return\\|raise\\|break\\|continue\\|pass\\)\\>")
       (goto-char here))))
 
 ;; go to point right beyond final line of block begun by the current
@@ -2319,9 +2361,20 @@ local bindings to py-newline-and-indent."))
     (set-buffer cbuf))
   (sit-for 0))
 
+(defun py-current-defun ()
+  ;; tell add-log.el how to find the current function/method/variable
+  (save-excursion
+    (if (re-search-backward py-defun-start-re nil t)
+	(or (match-string 3)
+	    (let ((method (match-string 2)))
+	      (if (and (not (zerop (length (match-string 1))))
+		       (re-search-backward py-class-start-re nil t))
+		  (concat (match-string 1) "." method)
+		method)))
+      nil)))
 
 
-(defconst py-version "2.73"
+(defconst py-version "2.83"
   "`python-mode' version number.")
 (defconst py-help-address "python-mode@python.org"
   "Address accepting submission of bug reports.")
