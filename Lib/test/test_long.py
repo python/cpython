@@ -300,6 +300,10 @@ def test_auto_overflow():
                 got = x / y
                 checkit(x, '/', y)
 
+                expected = longx // longy
+                got = x // y
+                checkit(x, '//', y)
+
                 expected = divmod(longx, longy)
                 got = divmod(longx, longy)
                 checkit(x, 'divmod', y)
