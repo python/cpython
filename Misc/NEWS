@@ -4,6 +4,45 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.4 alpha 3?
+=================================
+
+*Release date: XX-XXX-2004*
+
+Core and builtins
+-----------------
+
+Extension modules
+-----------------
+
+Library
+-------
+
+Tools/Demos
+-----------
+
+Build
+-----
+
+C API
+-----
+
+Documentation
+-------------
+
+New platforms
+-------------
+
+Tests
+-----
+
+Windows
+-------
+
+Mac
+---
+
+
 What's New in Python 2.4 alpha 2?
 =================================
 
@@ -236,12 +275,6 @@ Library
     to OptionParser, just like in the 'usage' and 'version' strings.
     (This is *not* done in the 'description' passed to OptionGroup.)
 
-Tools/Demos
------------
-
-Build
------
-
 C API
 -----
 
@@ -274,9 +307,6 @@ Documentation
 
 - Major rewrite of the math module docs, to address common confusions.
 
-New platforms
--------------
-
 Tests
 -----
 
@@ -286,13 +316,6 @@ Tests
 - SF patch 995225:  The test file testtar.tar accidentally contained
   CVS keywords (like $Id$), which could cause spurious failures in
   test_tarfile.py depending on how the test file was checked out.
-
-Windows
--------
-
-Mac
----
-
 
 
 What's New in Python 2.4 alpha 1?
