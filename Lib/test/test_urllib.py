@@ -35,6 +35,7 @@ class urlopen_FileTests(unittest.TestCase):
     def tearDown(self):
         """Shut down the open object"""
         self.returned_obj.close()
+        os.remove(test_support.TESTFN)
 
     def test_interface(self):
         # Make sure object returned by urlopen() has the specified methods
@@ -87,16 +88,54 @@ class urlopen_FileTests(unittest.TestCase):
         for line in self.returned_obj.__iter__():
             self.assertEqual(line, self.text)
 
-class urlretrieve_Tests(unittest.TestCase):
+class urlretrieve_FileTests(unittest.TestCase):
     """Test urllib.urlretrieve() on local files"""
-    pass
 
-class _urlopener_Tests(unittest.TestCase):
-    """Make sure urlopen() and urlretrieve() use the class assigned to
-    _urlopener"""
-    #XXX: Maybe create a custom class here that takes in a list and modifies
-    #   it to signal that it was called?
-    pass
+    def setUp(self):
+        # Create a temporary file.
+        self.text = 'testing urllib.urlretrieve'
+        FILE = file(test_support.TESTFN, 'wb')
+        FILE.write(self.text)
+        FILE.close()
+
+    def tearDown(self):
+        # Delete the temporary file.
+        os.remove(test_support.TESTFN)
+
+    def test_basic(self):
+        # Make sure that a local file just gets its own location returned and
+        # a headers value is returned.
+        result = urllib.urlretrieve("file:%s" % test_support.TESTFN)
+        self.assertEqual(result[0], test_support.TESTFN)
+        self.assert_(isinstance(result[1], mimetools.Message),
+                     "did not get a mimetools.Message instance as second "
+                     "returned value")
+
+    def test_copy(self):
+        # Test that setting the filename argument works.
+        second_temp = "%s.2" % test_support.TESTFN
+        result = urllib.urlretrieve("file:%s" % test_support.TESTFN, second_temp)
+        self.assertEqual(second_temp, result[0])
+        self.assert_(os.path.exists(second_temp), "copy of the file was not "
+                                                  "made")
+        FILE = file(second_temp, 'rb')
+        try:
+            text = FILE.read()
+        finally:
+            FILE.close()
+        self.assertEqual(self.text, text)
+
+    def test_reporthook(self):
+        # Make sure that the reporthook works.
+        def hooktester(count, block_size, total_size, count_holder=[0]):
+            self.assert_(isinstance(count, int))
+            self.assert_(isinstance(block_size, int))
+            self.assert_(isinstance(total_size, int))
+            self.assertEqual(count, count_holder[0])
+            count_holder[0] = count_holder[0] + 1
+        second_temp = "%s.2" % test_support.TESTFN
+        urllib.urlretrieve(test_support.TESTFN, second_temp, hooktester)
+        os.remove(second_temp)
 
 class QuotingTests(unittest.TestCase):
     """Tests for urllib.quote() and urllib.quote_plus()
@@ -371,6 +410,7 @@ class Pathname_Tests(unittest.TestCase):
 def test_main():
     test_suite = unittest.TestSuite()
     test_suite.addTest(unittest.makeSuite(urlopen_FileTests))
+    test_suite.addTest(unittest.makeSuite(urlretrieve_FileTests))
     test_suite.addTest(unittest.makeSuite(QuotingTests))
     test_suite.addTest(unittest.makeSuite(UnquotingTests))
     test_suite.addTest(unittest.makeSuite(urlencode_Tests))
