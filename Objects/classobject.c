@@ -4,6 +4,9 @@
 #include "Python.h"
 #include "structmember.h"
 
+#define TP_DESCR_GET(t) \
+    (PyType_HasFeature(t, Py_TPFLAGS_HAVE_CLASS) ? (t)->tp_descr_get : NULL)
+
 
 /* Forward */
 static PyObject *class_lookup(PyClassObject *, PyObject *,
@@ -232,7 +235,7 @@ class_getattr(register PyClassObject *op, PyObject *name)
 			     PyString_AS_STRING(op->cl_name), sname);
 		return NULL;
 	}
-	f = v->ob_type->tp_descr_get;
+	f = TP_DESCR_GET(v->ob_type);
 	if (f == NULL)
 		Py_INCREF(v);
 	else
@@ -693,7 +696,7 @@ instance_getattr2(register PyInstanceObject *inst, PyObject *name)
 	v = class_lookup(inst->in_class, name, &class);
 	if (v != NULL) {
 		Py_INCREF(v);
-		f = v->ob_type->tp_descr_get;
+		f = TP_DESCR_GET(v->ob_type);
 		if (f != NULL) {
 			PyObject *w = f(v, (PyObject *)inst,
 					(PyObject *)(inst->in_class));
@@ -2054,18 +2057,20 @@ instancemethod_getattro(PyObject *obj, PyObject *name)
 {
 	PyMethodObject *im = (PyMethodObject *)obj;
 	PyTypeObject *tp = obj->ob_type;
-	PyObject *descr, *res;
-	descrgetfunc f;
+	PyObject *descr = NULL, *res;
+	descrgetfunc f = NULL;
 
-	if (tp->tp_dict == NULL) {
-		if (PyType_Ready(tp) < 0)
-			return NULL;
+	if (PyType_HasFeature(tp, Py_TPFLAGS_HAVE_CLASS)) {
+		if (tp->tp_dict == NULL) {
+			if (PyType_Ready(tp) < 0)
+				return NULL;
+		}
+		descr = _PyType_Lookup(tp, name);
 	}
 
-	descr = _PyType_Lookup(tp, name);
 	f = NULL;
 	if (descr != NULL) {
-		f = descr->ob_type->tp_descr_get;
+		f = TP_DESCR_GET(descr->ob_type);
 		if (f != NULL && PyDescr_IsData(descr))
 			return f(descr, obj, (PyObject *)obj->ob_type);
 	}
