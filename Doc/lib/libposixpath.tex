@@ -35,11 +35,10 @@ refers to an existing path.
 Return the argument with an initial component of \samp{\~} or
 \samp{\~\var{user}} replaced by that \var{user}'s home directory.  An
 initial \samp{\~{}} is replaced by the environment variable
-\code{\${}HOME}; % $  <-- bow to font-lock
-an initial \samp{\~\var{user}} is looked up in the password directory through
-the built-in module \module{pwd}\refbimodindex{pwd}.  If the expansion
-fails, or if the path does not begin with a tilde, the path is
-returned unchanged.
+\envvar{HOME}; an initial \samp{\~\var{user}} is looked up in the
+password directory through the built-in module
+\module{pwd}\refbimodindex{pwd}.  If the expansion fails, or if the
+path does not begin with a tilde, the path is returned unchanged.
 \end{funcdesc}
 
 \begin{funcdesc}{expandvars}{p}
