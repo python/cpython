@@ -619,14 +619,14 @@ class Command:
     """Abstract base class for defining command classes, the "worker bees"
        of the Distutils.  A useful analogy for command classes is to
        think of them as subroutines with local variables called
-       "options".  The options are "declared" in 'set_default_options()'
-       and "initialized" (given their real values) in
-       'set_final_options()', both of which must be defined by every
+       "options".  The options are "declared" in 'initialize_options()'
+       and "defined" (given their final values, aka "finalized") in
+       'finalize_options()', both of which must be defined by every
        command class.  The distinction between the two is necessary
        because option values might come from the outside world (command
        line, option file, ...), and any options dependent on other
        options must be computed *after* these outside influences have
-       been processed -- hence 'set_final_options()'.  The "body" of the
+       been processed -- hence 'finalize_options()'.  The "body" of the
        subroutine, where it does all its work based on the values of its
        options, is the 'run()' method, which must also be implemented by
        every command class."""
@@ -635,7 +635,7 @@ class Command:
 
     def __init__ (self, dist):
         """Create and initialize a new Command object.  Most importantly,
-           invokes the 'set_default_options()' method, which is the
+           invokes the 'initialize_options()' method, which is the
            real initializer and depends on the actual command being
            instantiated."""
 
@@ -645,7 +645,7 @@ class Command:
             raise RuntimeError, "Command is an abstract class"
 
         self.distribution = dist
-        self.set_default_options ()
+        self.initialize_options ()
 
         # Per-command versions of the global flags, so that the user can
         # customize Distutils' behaviour command-by-command and let some
@@ -662,10 +662,10 @@ class Command:
         # none of that complicated bureaucracy is needed.
         self.help = 0
 
-        # 'ready' records whether or not 'set_final_options()' has been
-        # called.  'set_final_options()' itself should not pay attention to
+        # 'ready' records whether or not 'finalize_options()' has been
+        # called.  'finalize_options()' itself should not pay attention to
         # this flag: it is the business of 'ensure_ready()', which always
-        # calls 'set_final_options()', to respect/update it.
+        # calls 'finalize_options()', to respect/update it.
         self.ready = 0
 
     # end __init__ ()
@@ -684,16 +684,16 @@ class Command:
 
     def ensure_ready (self):
         if not self.ready:
-            self.set_final_options ()
+            self.finalize_options ()
         self.ready = 1
         
 
     # Subclasses must define:
-    #   set_default_options()
+    #   initialize_options()
     #     provide default values for all options; may be overridden
     #     by Distutils client, by command-line options, or by options
     #     from option file
-    #   set_final_options()
+    #   finalize_options()
     #     decide on the final values for all options; this is called
     #     after all possible intervention from the outside world
     #     (command-line, option file, etc.) has been processed
@@ -701,12 +701,12 @@ class Command:
     #     run the command: do whatever it is we're here to do,
     #     controlled by the command's various option values
 
-    def set_default_options (self):
+    def initialize_options (self):
         """Set default values for all the options that this command
            supports.  Note that these defaults may be overridden
            by the command-line supplied by the user; thus, this is
            not the place to code dependencies between options; generally,
-           'set_default_options()' implementations are just a bunch
+           'initialize_options()' implementations are just a bunch
            of "self.foo = None" assignments.
            
            This method must be implemented by all command classes."""
@@ -714,14 +714,14 @@ class Command:
         raise RuntimeError, \
               "abstract method -- subclass %s must override" % self.__class__
         
-    def set_final_options (self):
+    def finalize_options (self):
         """Set final values for all the options that this command
            supports.  This is always called as late as possible, ie.
            after any option assignments from the command-line or from
            other commands have been done.  Thus, this is the place to to
            code option dependencies: if 'foo' depends on 'bar', then it
            is safe to set 'foo' from 'bar' as long as 'foo' still has
-           the same value it was assigned in 'set_default_options()'.
+           the same value it was assigned in 'initialize_options()'.
 
            This method must be implemented by all command classes."""
            
@@ -731,8 +731,8 @@ class Command:
     def run (self):
         """A command's raison d'etre: carry out the action it exists
            to perform, controlled by the options initialized in
-           'set_initial_options()', customized by the user and other
-           commands, and finalized in 'set_final_options()'.  All
+           'initialize_options()', customized by the user and other
+           commands, and finalized in 'finalize_options()'.  All
            terminal output and filesystem interaction should be done by
            'run()'.
 
@@ -836,7 +836,7 @@ class Command:
         # Option_pairs: list of (src_option, dst_option) tuples
 
         src_cmd_obj = self.distribution.find_command_obj (src_cmd)
-        src_cmd_obj.set_final_options ()
+        src_cmd_obj.finalize_options ()
         try:
             for (src_option, dst_option) in option_pairs:
                 if getattr (self, dst_option) is None:
@@ -851,16 +851,16 @@ class Command:
         """Attempt to simulate a command-line override of some option
            value in another command.  Finds the command object for
            'command', sets its 'option' to 'value', and unconditionally
-           calls 'set_final_options()' on it: this means that some command
-           objects may have 'set_final_options()' invoked more than once.
+           calls 'finalize_options()' on it: this means that some command
+           objects may have 'finalize_options()' invoked more than once.
            Even so, this is not entirely reliable: the other command may
            already be initialized to its satisfaction, in which case the
-           second 'set_final_options()' invocation will have little or no
+           second 'finalize_options()' invocation will have little or no
            effect."""
 
         cmd_obj = self.distribution.find_command_obj (command)
         cmd_obj.set_option (option, value)
-        cmd_obj.set_final_options ()
+        cmd_obj.finalize_options ()
 
 
     def find_peer (self, command, create=1):
