@@ -17,12 +17,14 @@ from Tkinter import *
 
 class Option:
 
-	def __init__(self, packdialog, option, varclass):
-		self.packdialog = packdialog
+	varclass = StringVar		# May be overridden
+
+	def __init__(self, dialog, option):
+		self.dialog = dialog
 		self.option = option
-		self.master = packdialog.top
-		self.default, self.klass = packdialog.options[option]
-		self.var = varclass(self.master)
+		self.master = dialog.top
+		self.default, self.klass = dialog.options[option]
+		self.var = self.varclass(self.master)
 		self.frame = Frame(self.master,
 				   {Pack: {'expand': 0, 'fill': 'x'}})
 		self.label = Label(self.frame,
@@ -30,25 +32,27 @@ class Option:
 				    Pack: {'side': 'left'},
 				    })
 		self.update()
+		self.addoption()
 
 	def refresh(self):
-		self.packdialog.refresh()
+		self.dialog.refresh()
 		self.update()
 
 	def update(self):
 		try:
-			self.current = self.packdialog.current[self.option]
+			self.current = self.dialog.current[self.option]
 		except KeyError:
 			self.current = self.default
 		self.var.set(self.current)
 
-	def set(self, e=None):
+	def set(self, e=None):		# Should be overridden
 		pass
 
 class BooleanOption(Option):
 
-	def __init__(self, packdialog, option):
-		Option.__init__(self, packdialog, option, BooleanVar)
+	varclass = BooleanVar
+
+	def addoption(self):
 		self.button = Checkbutton(self.frame,
 					 {'text': 'on/off',
 					  'onvalue': '1',
@@ -62,8 +66,7 @@ class BooleanOption(Option):
 
 class EnumOption(Option):
 
-	def __init__(self, packdialog, option):
-		Option.__init__(self, packdialog, option, StringVar)
+	def addoption(self):
 		self.button = Menubutton(self.frame,
 					 {'textvariable': self.var,
 					  'relief': 'raised',
@@ -72,11 +75,9 @@ class EnumOption(Option):
 					  })
 		self.menu = Menu(self.button)
 		self.button['menu'] = self.menu
-		for v in self.packdialog.classes[self.klass]:
-			label = v
-			if v == self.default: label = label + ' (default)'
+		for v in self.dialog.classes[self.klass]:
 			self.menu.add_radiobutton(
-				{'label': label,
+				{'label': v,
 				 'variable': self.var,
 				 'value': v,
 				 'command': self.set,
@@ -84,8 +85,7 @@ class EnumOption(Option):
 
 class StringOption(Option):
 
-	def __init__(self, packdialog, option):
-		Option.__init__(self, packdialog, option, StringVar)
+	def addoption(self):
 		self.entry = Entry(self.frame,
 				   {'textvariable': self.var,
 				    'width': 10,
@@ -96,23 +96,75 @@ class StringOption(Option):
 				    })
 		self.entry.bind('<Return>', self.set)
 
-class PackOption: # Mix-in class
+class ReadonlyOption(Option):
 
-	def set(self, e=None):
-		self.current = self.var.get()
-		try:
-			Pack.config(self.packdialog.widget,
-				    {self.option: self.current})
-		except TclError:
-			self.refresh()
+	def addoption(self):
+		self.label = Label(self.frame,
+				   {'textvariable': self.var,
+				    Pack: {'side': 'right'}})
 
-class BooleanPackOption(PackOption, BooleanOption): pass
-class EnumPackOption(PackOption, EnumOption): pass
-class StringPackOption(PackOption, StringOption): pass
+class Dialog:
 
-class PackDialog:
+	def __init__(self, master):
+		self.master = master
+		self.refresh()
+		self.top = Toplevel(self.master)
+		self.top.title(self.__class__.__name__)
+		self.top.minsize(1, 1)
+		self.addchoices()
+
+	def addchoices(self):
+		self.choices = {}
+		list = []
+		for k, dc in self.options.items():
+			list.append(k, dc)
+		list.sort()
+		for k, (d, c) in list:
+			try:
+				cl = self.classes[c]
+			except KeyError:
+				cl = 'unknown'
+			if type(cl) == TupleType:
+				cl = self.enumoption
+			elif cl == 'boolean':
+				cl = self.booleanoption
+			elif cl == 'readonly':
+				cl = self.readonlyoption
+			else:
+				cl = self.stringoption
+			self.choices[k] = cl(self, k)
+
+	booleanoption = BooleanOption
+	stringoption = StringOption
+	enumoption = EnumOption
+	readonlyoption = ReadonlyOption
+
+class PackDialog(Dialog):
+
+	def __init__(self, widget):
+		self.widget = widget
+		Dialog.__init__(self, widget)
+
+	def refresh(self):
+		self.current = self.widget.newinfo()
+		self.current['.class'] = self.widget.winfo_class()
+
+	class packoption: # Mix-in class
+		def set(self, e=None):
+			self.current = self.var.get()
+			try:
+				Pack.config(self.dialog.widget,
+					    {self.option: self.current})
+			except TclError:
+				self.refresh()
+
+	class booleanoption(packoption, BooleanOption): pass
+	class enumoption(packoption, EnumOption): pass
+	class stringoption(packoption, StringOption): pass
+	class readonlyoption(packoption, ReadonlyOption): pass
 
 	options = {
+		'.class': (None, 'Class'),
 		'after': (None, 'Widet'),
 		'anchor': ('center', 'Anchor'),
 		'before': (None, 'Widget'),
@@ -128,46 +180,101 @@ class PackDialog:
 
 	classes = {
 		'Anchor': ('n','ne', 'e','se', 's','sw', 'w','nw', 'center'),
-		'Fill': ('none', 'x', 'y', 'both'),
-		'Side': ('top', 'right', 'bottom', 'left'),
+		'Boolean': 'boolean',
+		'Class': 'readonly',
 		'Expand': 'boolean',
+		'Fill': ('none', 'x', 'y', 'both'),
 		'Pad': 'pixel',
-		'Widget': 'widget',
+		'Side': ('top', 'right', 'bottom', 'left'),
+		'Widget': 'readonly',
 		}
+
+class RemotePackDialog(PackDialog):
+
+	def __init__(self, master, app, widget):
+		self.master = master
+		self.app = app
+		self.widget = widget
+		self.refresh()
+		self.top = Toplevel(self.master)
+		self.top.title('Remote %s Pack: %s' % (self.app, self.widget))
+		self.top.minsize(1, 1) # XXX
+		self.addchoices()
+
+	def refresh(self):
+		try:
+			words = self.master.tk.splitlist(
+				self.master.send(self.app,
+						 'pack',
+						 'newinfo',
+						 self.widget))
+		except TclError, msg:
+			print 'send pack newinfo', self.widget, ':', msg
+			return
+		dict = {}
+		for i in range(0, len(words), 2):
+			key = words[i][1:]
+			value = words[i+1]
+			dict[key] = value
+		dict['.class'] = self.master.send(self.app,
+						  'winfo',
+						  'class',
+						  self.widget)
+		self.current = dict
+
+	class remotepackoption: # Mix-in class
+		def set(self, e=None):
+			self.current = self.var.get()
+			try:
+				self.dialog.master.send(
+					self.dialog.app,
+					'pack', 'config', self.dialog.widget,
+					'-'+self.option, self.current)
+			except TclError, msg:
+				print 'send pack config ... :', msg
+				self.refresh()
+
+	class booleanoption(remotepackoption, BooleanOption): pass
+	class enumoption(remotepackoption, EnumOption): pass
+	class stringoption(remotepackoption, StringOption): pass
+	class readonlyoption(remotepackoption, ReadonlyOption): pass
+
+class WidgetDialog(Dialog):
 
 	def __init__(self, widget):
 		self.widget = widget
-		self.refresh()
-		self.top = Toplevel(self.widget)
-		self.top.title('Pack: %s' % widget.widgetName)
-		self.top.minsize(1, 1) # XXX
-		self.anchor = EnumPackOption(self, 'anchor')
-		self.side = EnumPackOption(self, 'side')
-		self.fill = EnumPackOption(self, 'fill')
-		self.expand = BooleanPackOption(self, 'expand')
-		self.ipadx = StringPackOption(self, 'ipadx')
-		self.ipady = StringPackOption(self, 'ipady')
-		self.padx = StringPackOption(self, 'padx')
-		self.pady = StringPackOption(self, 'pady')
-		# XXX after, before, in
+		if self.addclasses.has_key(self.widget.widgetName):
+			classes = {}
+			for c in (self.classes,
+				  self.addclasses[self.widget.widgetName]):
+				for k in c.keys():
+					classes[k] = c[k]
+			self.classes = classes
+		Dialog.__init__(self, widget)
 
 	def refresh(self):
-		self.current = self.widget.newinfo()
+		self.configuration = self.widget.config()
+		self.current = {}
+		self.options = {}
+		options['.class'] = (None, 'Class')
+		self.current['.class'] = self.widget.winfo_class()
+		for k, v in self.configuration.items():
+			if len(v) > 4:
+				self.current[k] = v[4]
+				self.options[k] = v[3], v[2] # default, klass
 
-class WidgetOption: # Mix-in class
+	class widgetoption: # Mix-in class
+		def set(self, e=None):
+			self.current = self.var.get()
+			try:
+				self.dialog.widget[self.option] = self.current
+			except TclError:
+				self.refresh()
 
-	def set(self, e=None):
-		self.current = self.var.get()
-		try:
-			self.packdialog.widget[self.option] = self.current
-		except TclError:
-			self.refresh()
-
-class BooleanWidgetOption(WidgetOption, BooleanOption): pass
-class EnumWidgetOption(WidgetOption, EnumOption): pass
-class StringWidgetOption(WidgetOption, StringOption): pass
-
-class WidgetDialog:
+	class booleanoption(widgetoption, BooleanOption): pass
+	class enumoption(widgetoption, EnumOption): pass
+	class stringoption(widgetoption, StringOption): pass
+	class readonlyoption(widgetoption, ReadonlyOption): pass
 
 	# Universal classes
 	classes = {
@@ -176,6 +283,7 @@ class WidgetDialog:
 		'Background': 'color',
 		'Bitmap': 'bitmap',
 		'BorderWidth': 'pixel',
+		'Class': 'readonly',
 		'CloseEnough': 'double',
 		'Command': 'command',
 		'Confine': 'boolean',
@@ -231,53 +339,21 @@ class WidgetDialog:
 		}
 		
 
-	def __init__(self, widget):
-		self.widget = widget
-		if self.addclasses.has_key(self.widget.widgetName):
-			classes = {}
-			for c in (self.classes,
-				  self.addclasses[self.widget.widgetName]):
-				for k in c.keys():
-					classes[k] = c[k]
-			self.classes = classes
-		self.refresh()
-		self.top = Toplevel(self.widget)
-		self.top.title('Widget: %s' % widget.widgetName)
-		self.top.minsize(1, 1)
-		self.choices = {}
-		for k, (d, c) in self.options.items():
-			try:
-				cl = self.classes[c]
-			except KeyError:
-				cl = 'unknown'
-			if type(cl) == TupleType:
-				cl = EnumWidgetOption
-			elif cl == 'boolean':
-				cl = BooleanWidgetOption
-			else:
-				cl = StringWidgetOption
-			self.choices[k] = cl(self, k)
-
-	def refresh(self):
-		self.configuration = self.widget.config()
-		self.current = {}
-		self.options = {}
-		for k, v in self.configuration.items():
-			if len(v) > 4:
-				self.current[k] = v[4]
-				self.options[k] = v[3], v[2] # default, klass
-
 def test():
+	import sys
 	root = Tk()
 	root.minsize(1, 1)
-	frame = Frame(root, {Pack: {'expand': 1, 'fill': 'both'}})
-	button = Button(frame, {'text': 'button',
-				Pack: {'expand': 1}})
-	canvas = Canvas(frame, {Pack: {}})
-	bpd = PackDialog(button)
-	bwd = WidgetDialog(button)
-	cpd = PackDialog(canvas)
-	cwd = WidgetDialog(canvas)
+	if sys.argv[2:]:
+		pd = RemotePackDialog(root, sys.argv[1], sys.argv[2])
+	else:
+		frame = Frame(root, {Pack: {'expand': 1, 'fill': 'both'}})
+		button = Button(frame, {'text': 'button',
+					Pack: {'expand': 1}})
+		canvas = Canvas(frame, {Pack: {}})
+		bpd = PackDialog(button)
+		bwd = WidgetDialog(button)
+		cpd = PackDialog(canvas)
+		cwd = WidgetDialog(canvas)
 	root.mainloop()
 
 test()
