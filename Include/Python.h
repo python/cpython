@@ -41,6 +41,11 @@
 #include <unistd.h>
 #endif
 
+/* For uintptr_t, intptr_t */
+#ifdef HAVE_STDDEF_H
+#include <stddef.h>
+#endif
+
 /* CAUTION:  Build setups should ensure that NDEBUG is defined on the
  * compiler command line when building Python in release mode; else
  * assert() calls won't be removed.
