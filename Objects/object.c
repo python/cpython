@@ -699,8 +699,10 @@ Py_Malloc(nbytes)
 	p = malloc(nbytes);
 	if (p != NULL)
 		return p;
-	else
-		return PyErr_NoMemory();
+	else {
+		PyErr_NoMemory();
+		return NULL;
+	}
 }
 
 ANY *
@@ -715,8 +717,10 @@ Py_Realloc(p, nbytes)
 	p = realloc(p, nbytes);
 	if (p != NULL)
 		return p;
-	else
-		return PyErr_NoMemory();
+	else {
+		PyErr_NoMemory();
+		return NULL;
+	}
 }
 
 void
