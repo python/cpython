@@ -12,7 +12,15 @@ trailer = """\
 	{0, 0, 0} /* sentinel */
 };
 
-struct _frozen *PyImport_FrozenModules = _PyImport_FrozenModules;
+int
+main(argc, argv)
+	int argc;
+	char **argv;
+{
+	PyImport_FrozenModules = _PyImport_FrozenModules;
+	return Py_FrozenMain(argc, argv);
+}
+
 """
 
 def makefreeze(outfp, dict):
