@@ -20,7 +20,7 @@ struct st_zip_searchorder {
    non-package .pyc, .pyo and .py entries. The .pyc and .pyo entries
    are swapped by initzipimport() if we run in optimized mode. Also,
    '/' is replaced by SEP there. */
-struct st_zip_searchorder zip_searchorder[] = {
+static struct st_zip_searchorder zip_searchorder[] = {
 	{"/__init__.pyc", IS_PACKAGE | IS_BYTECODE},
 	{"/__init__.pyo", IS_PACKAGE | IS_BYTECODE},
 	{"/__init__.py", IS_PACKAGE | IS_SOURCE},
@@ -982,7 +982,8 @@ compile_source(char *pathname, PyObject *source)
 
 /* Convert the date/time values found in the Zip archive to a value
    that's compatible with the time stamp stored in .pyc files. */
-time_t parse_dostime(int dostime, int dosdate)
+static time_t
+parse_dostime(int dostime, int dosdate)
 {
 	struct tm stm;
 
