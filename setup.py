@@ -243,6 +243,8 @@ class PyBuildExt(build_ext):
             platform = 'darwin'
         elif platform[:6] == 'atheos':
             platform = 'atheos'
+        elif platform[:4] == 'osf1':
+            platform = 'osf1'
 
         return platform
 
@@ -286,8 +288,7 @@ class PyBuildExt(build_ext):
             inc_dirs += os.getenv('C_INCLUDE_PATH', '').split(os.pathsep)
 
         # OSF/1 has some stuff in /usr/ccs/lib (like -ldb)
-        if platform[:4] == 'osf1':
-            platform = 'osf1'
+        if platform == 'osf1':
             lib_dirs += ['/usr/ccs/lib']
 
         # Check for MacOS X, which doesn't need libm.a at all
