@@ -36,6 +36,11 @@ PyAPI_FUNC(PyObject *) PyInt_FromUnicode(Py_UNICODE*, int, int);
 #endif
 PyAPI_FUNC(PyObject *) PyInt_FromLong(long);
 PyAPI_FUNC(long) PyInt_AsLong(PyObject *);
+PyAPI_FUNC(unsigned long) PyInt_AsUnsignedLongMask(PyObject *);
+#ifdef HAVE_LONG_LONG
+PyAPI_FUNC(unsigned PY_LONG_LONG) PyInt_AsUnsignedLongLongMask(PyObject *);
+#endif
+
 PyAPI_FUNC(long) PyInt_GetMax(void);
 
 /* Macro, trading safety for speed */

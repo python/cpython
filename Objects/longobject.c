@@ -260,6 +260,34 @@ PyLong_AsUnsignedLong(PyObject *vv)
 	return x;
 }
 
+/* Get a C unsigned long int from a long int object, ignoring the high bits.
+   Returns -1 and sets an error condition if an error occurs. */
+
+unsigned long
+PyLong_AsUnsignedLongMask(PyObject *vv)
+{
+	register PyLongObject *v;
+	unsigned long x;
+	int i, sign;
+
+	if (vv == NULL || !PyLong_Check(vv)) {
+		PyErr_BadInternalCall();
+		return (unsigned long) -1;
+	}
+	v = (PyLongObject *)vv;
+	i = v->ob_size;
+	sign = 1;
+	x = 0;
+	if (i < 0) {
+		sign = -1;
+		i = -i;
+	}
+	while (--i >= 0) {
+		x = (x << SHIFT) + v->ob_digit[i];
+	}
+	return x * sign;
+}
+
 int
 _PyLong_Sign(PyObject *vv)
 {
@@ -779,6 +807,33 @@ PyLong_AsUnsignedLongLong(PyObject *vv)
 		return bytes;
 }
 
+/* Get a C unsigned long int from a long int object, ignoring the high bits.
+   Returns -1 and sets an error condition if an error occurs. */
+
+unsigned PY_LONG_LONG
+PyLong_AsUnsignedLongLongMask(PyObject *vv)
+{
+	register PyLongObject *v;
+	unsigned PY_LONG_LONG x;
+	int i, sign;
+
+	if (vv == NULL || !PyLong_Check(vv)) {
+		PyErr_BadInternalCall();
+		return (unsigned long) -1;
+	}
+	v = (PyLongObject *)vv;
+	i = v->ob_size;
+	sign = 1;
+	x = 0;
+	if (i < 0) {
+		sign = -1;
+		i = -i;
+	}
+	while (--i >= 0) {
+		x = (x << SHIFT) + v->ob_digit[i];
+	}
+	return x * sign;
+}
 #undef IS_LITTLE_ENDIAN
 
 #endif /* HAVE_LONG_LONG */

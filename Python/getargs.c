@@ -448,25 +448,15 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 		long ival;
 		if (float_argument_error(arg))
 			return NULL;
-		ival = PyInt_AsLong(arg);
+		ival = PyInt_AsUnsignedLongMask(arg);
 		if (ival == -1 && PyErr_Occurred())
-			return converterr("integer<b>", arg, msgbuf, bufsize);
-		else if (ival < SCHAR_MIN) {
-			PyErr_SetString(PyExc_OverflowError,
-			"byte-sized integer bitfield is less than minimum");
 			return converterr("integer<B>", arg, msgbuf, bufsize);
-		}
-		else if (ival > (int)UCHAR_MAX) {
-			PyErr_SetString(PyExc_OverflowError,
-			"byte-sized integer bitfield is greater than maximum");
-			return converterr("integer<B>", arg, msgbuf, bufsize);
-		}
 		else
 			*p = (unsigned char) ival;
 		break;
 	}
 	
-	case 'h': {/* signed short int */
+	case 'h': {/* unsigned short int */
 		short *p = va_arg(*p_va, short *);
 		long ival;
 		if (float_argument_error(arg))
@@ -474,14 +464,14 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 		ival = PyInt_AsLong(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<h>", arg, msgbuf, bufsize);
-		else if (ival < SHRT_MIN) {
+		else if (ival < 0) {
 			PyErr_SetString(PyExc_OverflowError,
-			"signed short integer is less than minimum");
+			"unsigned short integer is less than minimum");
 			return converterr("integer<h>", arg, msgbuf, bufsize);
 		}
-		else if (ival > SHRT_MAX) {
+		else if (ival > USHRT_MAX) {
 			PyErr_SetString(PyExc_OverflowError,
-			"signed short integer is greater than maximum");
+			"unsigned short integer is greater than maximum");
 			return converterr("integer<h>", arg, msgbuf, bufsize);
 		}
 		else
@@ -495,19 +485,9 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 		long ival;
 		if (float_argument_error(arg))
 			return NULL;
-		ival = PyInt_AsLong(arg);
+		ival = PyInt_AsUnsignedLongMask(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<H>", arg, msgbuf, bufsize);
-		else if (ival < SHRT_MIN) {
-			PyErr_SetString(PyExc_OverflowError,
-			"short integer bitfield is less than minimum");
-			return converterr("integer<H>", arg, msgbuf, bufsize);
-		}
-		else if (ival > USHRT_MAX) {
-			PyErr_SetString(PyExc_OverflowError,
-			"short integer bitfield is greater than maximum");
-			return converterr("integer<H>", arg, msgbuf, bufsize);
-		}
 		else
 			*p = (unsigned short) ival;
 		break;
@@ -536,6 +516,20 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 		break;
 	}
 
+	case 'I': { /* int sized bitfield, both signed and
+		       unsigned allowed */ 
+		unsigned int *p = va_arg(*p_va, unsigned int *);
+		unsigned int ival;
+		if (float_argument_error(arg))
+			return NULL;
+		ival = PyInt_AsUnsignedLongMask(arg);
+		if (ival == -1 && PyErr_Occurred())
+			return converterr("integer<I>", arg, msgbuf, bufsize);
+		else
+			*p = ival;
+		break;
+	}
+	
 	case 'l': {/* long int */
 		long *p = va_arg(*p_va, long *);
 		long ival;
@@ -548,6 +542,19 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 			*p = ival;
 		break;
 	}
+
+	case 'k': { /* long sized bitfield */
+		unsigned long *p = va_arg(*p_va, unsigned long *);
+		unsigned long ival;
+		if (PyInt_Check(arg))
+			ival = PyInt_AsUnsignedLongMask(arg);
+		else if (PyLong_Check(arg))
+			ival = PyLong_AsUnsignedLongMask(arg);
+		else
+			return converterr("integer<k>", arg, msgbuf, bufsize);
+		*p = ival;
+		break;
+	}
 	
 #ifdef HAVE_LONG_LONG
 	case 'L': {/* PY_LONG_LONG */
@@ -558,6 +565,21 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 		} else {
 			*p = ival;
 		}
+		break;
+	}
+
+	case 'K': { /* long long sized bitfield */
+		unsigned PY_LONG_LONG *p = va_arg(*p_va, unsigned PY_LONG_LONG *);
+		unsigned PY_LONG_LONG ival;
+		if (float_argument_error(arg))
+			return NULL;
+		if (PyInt_Check(arg))
+			ival = PyInt_AsUnsignedLongMask(arg);
+		else if (PyLong_Check(arg))
+			ival = PyLong_AsUnsignedLongLongMask(arg);
+		else
+			return converterr("integer<K>", arg, msgbuf, bufsize);
+		*p = ival;
 		break;
 	}
 #endif
