@@ -1837,6 +1837,8 @@ BINARY(rshift, "x>>y");
 BINARY(and, "x&y");
 BINARY(xor, "x^y");
 BINARY(or, "x|y");
+BINARY(floordiv, "x//y");
+BINARY(truediv, "x/y # true division");
 
 static PyObject *
 wrap_ternaryfunc(PyObject *self, PyObject *args, void *wrapped)
@@ -1915,6 +1917,8 @@ IBINARY(irshift, "x>>=y");
 IBINARY(iand, "x&=y");
 IBINARY(ixor, "x^=y");
 IBINARY(ior, "x|=y");
+IBINARY(ifloordiv, "x//=y");
+IBINARY(itruediv, "x/=y # true division");
 
 #undef ITERNARY
 #define ITERNARY(NAME, OP) \
@@ -2586,6 +2590,12 @@ add_operators(PyTypeObject *type)
 		ADD(nb->nb_inplace_and, tab_iand);
 		ADD(nb->nb_inplace_xor, tab_ixor);
 		ADD(nb->nb_inplace_or, tab_ior);
+		if (type->tp_flags & Py_TPFLAGS_CHECKTYPES) {
+			ADD(nb->nb_floor_divide, tab_floordiv);
+			ADD(nb->nb_true_divide, tab_truediv);
+			ADD(nb->nb_inplace_floor_divide, tab_ifloordiv);
+			ADD(nb->nb_inplace_true_divide, tab_itruediv);
+		}
 	}
 
 	ADD(type->tp_getattro, tab_getattr);
