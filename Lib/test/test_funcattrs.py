@@ -16,6 +16,9 @@ except AttributeError:
 else:
     raise TestFailed, 'expected AttributeError'
 
+if b.__dict__ <> None:
+    raise TestFailed, 'expected unassigned func.__dict__ to be None'
+
 b.publish = 1
 if b.publish <> 1:
     raise TestFailed, 'function attribute not set to expected value'
@@ -27,6 +30,16 @@ if b.__doc__ <> docstring:
 
 if 'publish' not in dir(b):
     raise TestFailed, 'attribute not in dir()'
+
+del b.__dict__
+if b.__dict__ <> None:
+    raise TestFailed, 'del func.__dict__ did not result in __dict__ == None'
+
+b.publish = 1
+b.__dict__ = None
+if b.__dict__ <> None:
+    raise TestFailed, 'func.__dict__ = None did not result in __dict__ == None'
+
 
 f1 = F()
 f2 = F()
@@ -45,8 +58,18 @@ except AttributeError:
 else:
     raise TestFailed, 'expected AttributeError'
 
+# In Python 2.1 beta 1, we disallowed setting attributes on unbound methods
+# (it was already disallowed on bound methods).  See the PEP for details.
+try:
+    F.a.publish = 1
+except TypeError:
+    pass
+else:
+    raise TestFailed, 'expected TypeError'
 
-F.a.publish = 1
+# But setting it explicitly on the underlying function object is okay.
+F.a.im_func.publish = 1
+
 if F.a.publish <> 1:
     raise TestFailed, 'unbound method attribute not set to expected value'
 
@@ -66,7 +89,16 @@ except TypeError:
 else:
     raise TestFailed, 'expected TypeError'
 
-F.a.myclass = F
+# See the comment above about the change in semantics for Python 2.1b1
+try:
+    F.a.myclass = F
+except TypeError:
+    pass
+else:
+    raise TestFailed, 'expected TypeError'
+
+F.a.im_func.myclass = F
+
 f1.a.myclass
 f2.a.myclass
 f1.a.myclass
@@ -84,7 +116,8 @@ except TypeError:
 else:
     raise TestFailed, 'expected TypeError'
 
-F.a.__dict__ = {'one': 11, 'two': 22, 'three': 33}
+F.a.im_func.__dict__ = {'one': 11, 'two': 22, 'three': 33}
+
 if f1.a.two <> 22:
     raise TestFailed, 'setting __dict__'
 
