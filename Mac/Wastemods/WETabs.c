@@ -10,7 +10,7 @@
 #include "WETabs.h"
 #include "WETabHooks.h"
 
-#ifndef __ERRORS__
+#if !defined(__ERRORS__) && defined(WITHOUT_FRAMEWORKS)
 #include <Errors.h>
 #endif
 

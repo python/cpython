@@ -12,6 +12,9 @@
  */
 
 
+#ifndef WITHOUT_FRAMEWORKS
+#include <Carbon/Carbon.h>
+#endif
 #ifndef _WASTE_
 #include "WASTE.h"
 #endif
