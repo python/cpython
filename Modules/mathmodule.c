@@ -128,7 +128,7 @@ FUNC1(fabs, fabs,
       "fabs(x)\n\nReturn the absolute value of the real x.")
 FUNC1(floor, floor,
       "floor(x)\n\nReturn the floor of x as a real.")
-     FUNC2(fmod, fmod,
+FUNC2(fmod, fmod,
       "fmod(x,y)\n\nReturn fmod(x, y), according to platform C."
       "  x % y may differ.")
 FUNC2(hypot, hypot,
