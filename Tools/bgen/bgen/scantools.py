@@ -470,7 +470,6 @@ if missing: raise "Missing Types"
 		mode = "InMode"
 		if self.asplit.match(part) < 0:
 			self.error("Indecipherable argument: %s", `part`)
-			import pdb ; pdb.set_trace()
 			return ("unknown", part, mode)
 		type, name, array = self.asplit.group('type', 'name', 'array')
 		if array:
