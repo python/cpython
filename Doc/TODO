@@ -2,10 +2,10 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 ===============================
 
 
-* Document native package semantics.
+* Document native package semantics.  (Where?  Guido?)
 
-* Figure out indexsubitem handling in HTML; some of them are wrong for the
-  items being indexed.
+* Figure out indexing in the HTML version.  Fix module index for Library
+  Reference.
 
 * Update the pickle documentation to describe all of the current behavior;
   only a subset is described.  __reduce__, etc.
@@ -15,9 +15,3 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 * Finish upgrade to LaTeX2HTML 98.1.  Most important: figure out a way to
   avoid image creation, & if necessary, make sure image creation at least
   doesn't fail.
-
-* Figure out the texinfo indexing and function-description markup, and make
-  partparse.py do the right thing.  Or toss the info conversion (again).
-
-* Identify all Python classes documented in the libref and make sure they're
-  marked with {classdesc} instead of {funcdesc}.
