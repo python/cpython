@@ -2070,6 +2070,12 @@ string_translate(PyStringObject *self, PyObject *args)
 	else if (PyObject_AsCharBuffer(tableobj, &table1, &tablen))
 		return NULL;
 
+	if (tablen != 256) {
+		PyErr_SetString(PyExc_ValueError,
+		  "translation table must be 256 characters long");
+		return NULL;
+	}
+
 	if (delobj != NULL) {
 		if (PyString_Check(delobj)) {
 			del_table = PyString_AS_STRING(delobj);
@@ -2084,12 +2090,6 @@ string_translate(PyStringObject *self, PyObject *args)
 #endif
 		else if (PyObject_AsCharBuffer(delobj, &del_table, &dellen))
 			return NULL;
-
-		if (tablen != 256) {
-			PyErr_SetString(PyExc_ValueError,
-			  "translation table must be 256 characters long");
-			return NULL;
-		}
 	}
 	else {
 		del_table = NULL;
