@@ -1548,7 +1548,9 @@ init_tkinter()
 	if (PyErr_Occurred())
 		return;
 
+#if TKMAJORMINOR >= 8000
 	Py_AtExit(Tcl_Finalize);
+#endif
 
 #ifdef macintosh
 	/*
