@@ -20,6 +20,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- Patch #798145: Return correct information from nl_langinfo(RADIXCHAR).
+
 - Bug #797447: Correct confusing error message for unsupported locales.
 
 - Patch #798534:  fixed memory leak in os.popen().

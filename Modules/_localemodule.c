@@ -579,6 +579,18 @@ PyLocale_nl_langinfo(PyObject* self, PyObject* args)
     /* Check whether this is a supported constant. GNU libc sometimes
        returns numeric values in the char* return value, which would
        crash PyString_FromString.  */
+#ifdef RADIXCHAR
+    if (saved_numeric) {
+	if(item == RADIXCHAR) {
+            Py_INCREF(decimal_point);
+            return decimal_point;
+        }
+        if(item == THOUSEP) {
+            Py_INCREF(thousands_sep);
+            return thousands_sep;
+        }
+    }
+#endif
     for (i = 0; langinfo_constants[i].name; i++)
 	    if (langinfo_constants[i].value == item)
 		    return PyString_FromString(nl_langinfo(item));
