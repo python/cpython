@@ -2127,6 +2127,48 @@ instancemethod_traverse(PyMethodObject *im, visitproc visit, void *arg)
 	return 0;
 }
 
+static char *
+getclassname(PyObject *class)
+{
+	PyObject *name;
+
+	if (class == NULL)
+		name = NULL;
+	else
+		name = PyObject_GetAttrString(class, "__name__");
+	if (name == NULL) {
+		PyErr_Clear();
+		return "?";
+	}
+	if (!PyString_Check(name)) {
+		Py_DECREF(name);
+		return "?";
+	}
+	PyString_InternInPlace(&name);
+	Py_DECREF(name);
+	return PyString_AS_STRING(name);
+}
+
+static char *
+getinstclassname(PyObject *inst)
+{
+	PyObject *class;
+	char *name;
+
+	if (inst == NULL)
+		return "nothing";
+
+	class = PyObject_GetAttrString(inst, "__class__");
+	if (class == NULL) {
+		PyErr_Clear();
+		class = (PyObject *)(inst->ob_type);
+		Py_INCREF(class);
+	}
+	name = getclassname(class);
+	Py_XDECREF(class);
+	return name;
+}
+
 static PyObject *
 instancemethod_call(PyObject *func, PyObject *arg, PyObject *kw)
 {
@@ -2150,10 +2192,14 @@ instancemethod_call(PyObject *func, PyObject *arg, PyObject *kw)
 		}
 		if (!ok) {
 			PyErr_Format(PyExc_TypeError,
-				     "unbound method %s%s must be "
-				     "called with instance as first argument",
+				     "unbound method %s%s must be called with "
+				     "%s instance as first argument "
+				     "(got %s%s instead)",
 				     PyEval_GetFuncName(func),
-				     PyEval_GetFuncDesc(func));
+				     PyEval_GetFuncDesc(func),
+				     getclassname(class),
+				     getinstclassname(self),
+				     self == NULL ? "" : " instance");
 			return NULL;
 		}
 		Py_INCREF(arg);
