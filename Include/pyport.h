@@ -193,7 +193,6 @@ extern double hypot(double, double);
 #undef log
 #undef log10
 #undef pow
-#undef rint
 #undef sin
 #undef sinh
 #undef sqrt
@@ -213,7 +212,6 @@ extern double hypot(double, double);
 #define log logd
 #define log10 log10d
 #define pow powd
-#define rint rintd
 #define sin sind
 #define sinh sinhd
 #define sqrt sqrtd

@@ -19,7 +19,6 @@ log
 log10
 modf
 pow
-rint
 sin
 sinh
 sqrt

@@ -390,7 +390,7 @@ class Profile:
 	# more carefully the number of events (and cumulatively, the number
 	# of events during sub functions) that are seen.  If this were
 	# done, then the arithmetic could be done after the fact (i.e., at
-	# display time).  Currintly, we track only call/return events.
+	# display time).  Currently, we track only call/return events.
 	# These values can be deduced by examining the callees and callers
 	# vectors for each functions.  Hence we *can* almost correct the
 	# internal time figure at print time (note that we currently don't
