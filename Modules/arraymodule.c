@@ -414,26 +414,90 @@ array_dealloc(arrayobject *op)
 	PyObject_Del(op);
 }
 
-static int
-array_compare(arrayobject *v, arrayobject *w)
+static PyObject *
+array_richcompare(PyObject *v, PyObject *w, int op)
 {
-	int len = (v->ob_size < w->ob_size) ? v->ob_size : w->ob_size;
-	int i;
-	for (i = 0; i < len; i++) {
-		PyObject *ai, *bi;
-		int cmp;
-		ai = getarrayitem((PyObject *)v, i);
-		bi = getarrayitem((PyObject *)w, i);
-		if (ai && bi)
-			cmp = PyObject_Compare(ai, bi);
-		else
-			cmp = -1;
-		Py_XDECREF(ai);
-		Py_XDECREF(bi);
-		if (cmp != 0)
-			return cmp;
+	arrayobject *va, *wa;
+	PyObject *vi = NULL;
+	PyObject *wi = NULL;
+	int i, k;
+	PyObject *res;
+
+	if (!is_arrayobject(v) || !is_arrayobject(w)) {
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
 	}
-	return v->ob_size - w->ob_size;
+
+	va = (arrayobject *)v;
+	wa = (arrayobject *)w;
+
+	if (va->ob_size != wa->ob_size && (op == Py_EQ || op == Py_NE)) {
+		/* Shortcut: if the lengths differ, the arrays differ */
+		if (op == Py_EQ)
+			res = Py_False;
+		else
+			res = Py_True;
+		Py_INCREF(res);
+		return res;
+	}
+
+	/* Search for the first index where items are different */
+	k = 1;
+	for (i = 0; i < va->ob_size && i < wa->ob_size; i++) {
+		vi = getarrayitem(v, i);
+		wi = getarrayitem(w, i);
+		if (vi == NULL || wi == NULL) {
+			Py_XDECREF(vi);
+			Py_XDECREF(wi);
+			return NULL;
+		}
+		k = PyObject_RichCompareBool(vi, wi, Py_EQ);
+		if (k == 0)
+			break; /* Keeping vi and wi alive! */
+		Py_DECREF(vi);
+		Py_DECREF(wi);
+		if (k < 0)
+			return NULL;
+	}
+
+	if (k) {
+		/* No more items to compare -- compare sizes */
+		int vs = va->ob_size;
+		int ws = wa->ob_size;
+		int cmp;
+		switch (op) {
+		case Py_LT: cmp = vs <  ws; break;
+		case Py_LE: cmp = ws <= ws; break;
+		case Py_EQ: cmp = vs == ws; break;
+		case Py_NE: cmp = vs != ws; break;
+		case Py_GT: cmp = vs >  ws; break;
+		case Py_GE: cmp = vs >= ws; break;
+		default: return NULL; /* cannot happen */
+		}
+		if (cmp)
+			res = Py_True;
+		else
+			res = Py_False;
+		Py_INCREF(res);
+		return res;
+	}
+
+	/* We have an item that differs.  First, shortcuts for EQ/NE */
+	if (op == Py_EQ) {
+		Py_INCREF(Py_False);
+		res = Py_False;
+	}
+	else if (op == Py_NE) {
+		Py_INCREF(Py_True);
+		res = Py_True;
+	}
+	else {
+		/* Compare the final item again using the proper operator */
+		res = PyObject_RichCompare(vi, wi, op);
+	}
+	Py_DECREF(vi);
+	Py_DECREF(wi);
+	return res;
 }
 
 static int
@@ -636,10 +700,11 @@ array_count(arrayobject *self, PyObject *args)
 		return NULL;
 	for (i = 0; i < self->ob_size; i++) {
 		PyObject *selfi = getarrayitem((PyObject *)self, i);
-		if (PyObject_Compare(selfi, v) == 0)
-			count++;
+		int cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
 		Py_DECREF(selfi);
-		if (PyErr_Occurred())
+		if (cmp > 0)
+			count++;
+		else if (cmp < 0)
 			return NULL;
 	}
 	return PyInt_FromLong((long)count);
@@ -660,12 +725,12 @@ array_index(arrayobject *self, PyObject *args)
 		return NULL;
 	for (i = 0; i < self->ob_size; i++) {
 		PyObject *selfi = getarrayitem((PyObject *)self, i);
-		if (PyObject_Compare(selfi, v) == 0) {
-			Py_DECREF(selfi);
+		int cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
+		Py_DECREF(selfi);
+		if (cmp > 0) {
 			return PyInt_FromLong((long)i);
 		}
-		Py_DECREF(selfi);
-		if (PyErr_Occurred())
+		else if (cmp < 0)
 			return NULL;
 	}
 	PyErr_SetString(PyExc_ValueError, "array.index(x): x not in list");
@@ -687,16 +752,16 @@ array_remove(arrayobject *self, PyObject *args)
 		return NULL;
 	for (i = 0; i < self->ob_size; i++) {
 		PyObject *selfi = getarrayitem((PyObject *)self,i);
-		if (PyObject_Compare(selfi, v) == 0) {
-			Py_DECREF(selfi);
+		int cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
+		Py_DECREF(selfi);
+		if (cmp > 0) {
 			if (array_ass_slice(self, i, i+1,
 					   (PyObject *)NULL) != 0)
 				return NULL;
 			Py_INCREF(Py_None);
 			return Py_None;
 		}
-		Py_DECREF(selfi);
-		if (PyErr_Occurred())
+		else if (cmp < 0)
 			return NULL;
 	}
 	PyErr_SetString(PyExc_ValueError, "array.remove(x): x not in list");
@@ -750,8 +815,8 @@ array_extend(arrayobject *self, PyObject *args)
 
 	if (!is_arrayobject(bb)) {
 		PyErr_Format(PyExc_TypeError,
-			     "can only extend array with array (not \"%.200s\")",
-			     bb->ob_type->tp_name);
+			"can only extend array with array (not \"%.200s\")",
+			bb->ob_type->tp_name);
 		return NULL;
 	}
 #define b ((arrayobject *)bb)
@@ -1137,25 +1202,44 @@ Convert the array to an array of machine values and return the string\n\
 representation.";
 
 PyMethodDef array_methods[] = {
-	{"append",	(PyCFunction)array_append, METH_VARARGS, append_doc},
-	{"buffer_info", (PyCFunction)array_buffer_info, METH_VARARGS, buffer_info_doc},
-	{"byteswap",	(PyCFunction)array_byteswap, METH_VARARGS, byteswap_doc},
-	{"count",	(PyCFunction)array_count, METH_VARARGS, count_doc},
-	{"extend",      (PyCFunction)array_extend, METH_VARARGS, extend_doc},
-	{"fromfile",	(PyCFunction)array_fromfile, METH_VARARGS, fromfile_doc},
-	{"fromlist",	(PyCFunction)array_fromlist, METH_VARARGS, fromlist_doc},
-	{"fromstring",	(PyCFunction)array_fromstring, METH_VARARGS, fromstring_doc},
-	{"index",	(PyCFunction)array_index, METH_VARARGS, index_doc},
-	{"insert",	(PyCFunction)array_insert, METH_VARARGS, insert_doc},
-	{"pop",		(PyCFunction)array_pop, METH_VARARGS, pop_doc},
-	{"read",	(PyCFunction)array_fromfile, METH_VARARGS, fromfile_doc},
-	{"remove",	(PyCFunction)array_remove, METH_VARARGS, remove_doc},
-	{"reverse",	(PyCFunction)array_reverse, METH_VARARGS, reverse_doc},
-/*	{"sort",	(PyCFunction)array_sort, METH_VARARGS, sort_doc},*/
-	{"tofile",	(PyCFunction)array_tofile, METH_VARARGS, tofile_doc},
-	{"tolist",	(PyCFunction)array_tolist, METH_VARARGS, tolist_doc},
-	{"tostring",	(PyCFunction)array_tostring, METH_VARARGS, tostring_doc},
-	{"write",	(PyCFunction)array_tofile, METH_VARARGS, tofile_doc},
+	{"append",	(PyCFunction)array_append,	METH_VARARGS,
+	 append_doc},
+	{"buffer_info", (PyCFunction)array_buffer_info, METH_VARARGS,
+	 buffer_info_doc},
+	{"byteswap",	(PyCFunction)array_byteswap,	METH_VARARGS,
+	 byteswap_doc},
+	{"count",	(PyCFunction)array_count,	METH_VARARGS,
+	 count_doc},
+	{"extend",      (PyCFunction)array_extend,	METH_VARARGS,
+	 extend_doc},
+	{"fromfile",	(PyCFunction)array_fromfile,	METH_VARARGS,
+	 fromfile_doc},
+	{"fromlist",	(PyCFunction)array_fromlist,	METH_VARARGS,
+	 fromlist_doc},
+	{"fromstring",	(PyCFunction)array_fromstring,	METH_VARARGS,
+	 fromstring_doc},
+	{"index",	(PyCFunction)array_index,	METH_VARARGS,
+	 index_doc},
+	{"insert",	(PyCFunction)array_insert,	METH_VARARGS,
+	 insert_doc},
+	{"pop",		(PyCFunction)array_pop,		METH_VARARGS,
+	 pop_doc},
+	{"read",	(PyCFunction)array_fromfile,	METH_VARARGS,
+	 fromfile_doc},
+	{"remove",	(PyCFunction)array_remove,	METH_VARARGS,
+	 remove_doc},
+	{"reverse",	(PyCFunction)array_reverse,	METH_VARARGS,
+	 reverse_doc},
+/*	{"sort",	(PyCFunction)array_sort,	METH_VARARGS,
+	sort_doc},*/
+	{"tofile",	(PyCFunction)array_tofile,	METH_VARARGS,
+	 tofile_doc},
+	{"tolist",	(PyCFunction)array_tolist,	METH_VARARGS,
+	 tolist_doc},
+	{"tostring",	(PyCFunction)array_tostring,	METH_VARARGS,
+	 tostring_doc},
+	{"write",	(PyCFunction)array_tofile,	METH_VARARGS,
+	 tofile_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -1345,9 +1429,11 @@ a_array(PyObject *self, PyObject *args)
 				}
 			}
 			if (initial != NULL && PyString_Check(initial)) {
-				PyObject *t_initial = Py_BuildValue("(O)", initial);
+				PyObject *t_initial = Py_BuildValue("(O)",
+								    initial);
 				PyObject *v =
-					array_fromstring((arrayobject *)a, t_initial);
+					array_fromstring((arrayobject *)a,
+							 t_initial);
                                 Py_DECREF(t_initial);
 				if (v == NULL) {
 					Py_DECREF(a);
@@ -1442,23 +1528,26 @@ statichere PyTypeObject Arraytype = {
 	"array",
 	sizeof(arrayobject),
 	0,
-	(destructor)array_dealloc,	/*tp_dealloc*/
-	(printfunc)array_print,		/*tp_print*/
-	(getattrfunc)array_getattr,	/*tp_getattr*/
-	0,				/*tp_setattr*/
-	(cmpfunc)array_compare,		/*tp_compare*/
-	(reprfunc)array_repr,		/*tp_repr*/
-	0,				/*tp_as_number*/
-	&array_as_sequence,		/*tp_as_sequence*/
-	0,				/*tp_as_mapping*/
-	0, 				/*tp_hash*/
-	0,				/*tp_call*/
-	0,				/*tp_str*/
-	0,				/*tp_getattro*/
-	0,				/*tp_setattro*/
-	&array_as_buffer,		/*tp_as_buffer*/
-	0,				/*tp_xxx4*/
-	arraytype_doc,			/*tp_doc*/
+	(destructor)array_dealloc,		/* tp_dealloc */
+	(printfunc)array_print,			/* tp_print */
+	(getattrfunc)array_getattr,		/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	(reprfunc)array_repr,			/* tp_repr */
+	0,					/* tp_as _number*/
+	&array_as_sequence,			/* tp_as _sequence*/
+	0,					/* tp_as _mapping*/
+	0, 					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	0,					/* tp_getattro */
+	0,					/* tp_setattro */
+	&array_as_buffer,			/* tp_as _buffer*/
+	0,					/* tp_flags */
+	arraytype_doc,				/* tp_doc */
+ 	0,					/* tp_traverse */
+	0,					/* tp_clear */
+	array_richcompare,			/* tp_richcompare */
 };
 
 DL_EXPORT(void)
