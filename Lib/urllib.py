@@ -451,6 +451,8 @@ class FancyURLopener(URLopener):
             return
         void = fp.read()
         fp.close()
+        # In case the server sent a relative URL, join with original:
+        newurl = basejoin("http:" + url, newurl)
         return self.open(newurl, data)
 
     # Error 301 -- also relocated (permanently)
