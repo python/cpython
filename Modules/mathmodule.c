@@ -196,13 +196,13 @@ math_ldexp(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	double x, y;
-	/* Cheat -- allow float as second argument */
-        if (! PyArg_Parse(args, "(dd)", &x, &y))
+	double x;
+	int exp;
+	if (! PyArg_Parse(args, "(di)", &x, &exp))
 		return NULL;
 	errno = 0;
 	PyFPE_START_PROTECT("ldexp", return 0)
-	x = ldexp(x, (int)y);
+	x = ldexp(x, exp);
 	PyFPE_END_PROTECT(x)
 	CHECK(x);
 	if (errno != 0)
