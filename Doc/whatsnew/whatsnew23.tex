@@ -1085,11 +1085,17 @@ unlikely to cause problems in practice.
 \item Built-in types now support the extended slicing syntax,
 as described in section~\ref{section-slices} of this document.
 
+\item A new built-in function, \function{sum(\var{iterable}, \var{start}=0)}, 
+adds up the numeric items in the iterable object and returns their sum. 
+\function{sum()} only accepts numbers, meaning that you can't use it
+to concatenate a bunch of strings, for example.   (Contributed by Alex
+Martelli.)
+
 \item Dictionaries have a new method, \method{pop(\var{key}\optional{,
 \var{default}})}, that returns the value corresponding to \var{key}
 and removes that key/value pair from the dictionary.  If the requested
-key isn't present in the dictionary, \var{default} is returned if
-it's specified and \exception{KeyError} raised if it isn't.
+key isn't present in the dictionary, \var{default} is returned if it's
+specified and \exception{KeyError} raised if it isn't.
 
 \begin{verbatim}
 >>> d = {1:2}
@@ -1397,6 +1403,9 @@ it now checks for the \envvar{CC}, \envvar{CFLAGS}, \envvar{CPP},
 them to override the settings in Python's configuration (contributed
 by Robert Weber).
 
+\item The new \function{gc.get_referents(\var{object})} function returns a
+list of all the objects referenced by \var{object}.
+
 \item The \module{getopt} module gained a new function,
 \function{gnu_getopt()}, that supports the same arguments as the existing
 \function{getopt()} function but uses GNU-style scanning mode.
@@ -1524,6 +1533,12 @@ used on platforms other than Linux, and the interface has also been
 tidied and brought up to date in various ways. (Contributed by Greg
 Ward and Nicholas FitzRoy-Dale.)
 
+\item The new \module{platform} module contains a number of functions
+that try to determine various properties of the platform you're
+running on.  There are functions for getting the architecture, CPU
+type, the Windows OS version, and even  the Linux distribution version.
+(Contributed by Marc-Andr\'e Lemburg.)
+
 \item The parser objects provided by the \module{pyexpat} module
 can now optionally buffer character data, resulting in fewer calls to
 your character data handler and therefore faster performance.  Setting
@@ -1576,7 +1591,7 @@ use something else.
 
 (Sticking with Python 2.2 or 2.1 will not make your applications any
 safer because there are known bugs in the \module{rexec} module in
-those versions.  I repeat, if you're using \module{rexec}, stop using
+those versions.  To repeat: if you're using \module{rexec}, stop using
 it immediately.)
 
 \item The \module{rotor} module has been deprecated because the 
