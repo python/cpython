@@ -125,7 +125,6 @@ def choose_boundary():
 
     global _prefix
     import time
-    import random
     if _prefix is None:
         import socket
         hostid = socket.gethostbyname(socket.gethostname())
