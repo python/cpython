@@ -278,7 +278,7 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
 	   8-bit bytes and (probably) 15-bit Python digits.*/
 	{
 		size_t i;
-		unsigned int carry = 1;		/* for 2's-comp calculation */
+		twodigits carry = 1;		/* for 2's-comp calculation */
 		twodigits accum = 0;		/* sliding register */
 		unsigned int accumbits = 0; 	/* number of bits in accum */
 		const unsigned char* p = pstartbyte;
