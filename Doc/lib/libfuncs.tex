@@ -494,13 +494,16 @@ the interpreter.
 \begin{funcdesc}{pow}{x, y\optional{, z}}
   Return \var{x} to the power \var{y}; if \var{z} is present, return
   \var{x} to the power \var{y}, modulo \var{z} (computed more
-  efficiently than \code{pow(\var{x}, \var{y}) \%\ \var{z}}).
-  The arguments must have
-  numeric types.  With mixed operand types, the rules for binary
-  arithmetic operators apply.  The effective operand type is also the
-  type of the result; if the result is not expressible in this type, the
-  function raises an exception; for example, \code{pow(2, -1)} or
-  \code{pow(2, 35000)} is not allowed.
+  efficiently than \code{pow(\var{x}, \var{y}) \%\ \var{z}}).  The
+  arguments must have numeric types.  With mixed operand types, the
+  coercion rules for binary arithmetic operators apply.  For int and
+  long int operands, the result has the same type as the operands
+  (after coercion) unless the second argument is negative; in that
+  case, all arguments are converted to float and a float result is
+  delivered.  For example, \code{10**2} returns \code{100}, but
+  \code{10**-2} returns \code{0.01}.  (This last feature was added in
+  Python 2.2.  In Python 2.1 and before, a negative second argument
+  would raise an exception.)
 \end{funcdesc}
 
 \begin{funcdesc}{range}{\optional{start,} stop\optional{, step}}
