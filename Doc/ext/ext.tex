@@ -400,6 +400,8 @@ initspam()
 }
 \end{verbatim}
 
+Note that for \Cpp, this method must be declared \code{extern "C"}.
+
 When the Python program imports module \module{spam} for the first
 time, \cfunction{initspam()} is called. (See below for comments about
 embedding Python.)  It calls
