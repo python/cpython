@@ -221,8 +221,11 @@ char *PyMac_getscript()
         else
             return "mac-roman";
         break;
+#if 0
+    /* We don't have a codec for this, so don't return it */
     case smJapanese:
         return "mac-japan";
+#endif
     case smGreek:
         return "mac-greek";
     case smCyrillic:
@@ -467,7 +470,7 @@ PyObject *
 PyMac_GetOSErrException()
 {
 	if (PyMac_OSErrException == NULL)
-		PyMac_OSErrException = PyString_FromString("Mac OS Error");
+		PyMac_OSErrException = PyString_FromString("MacOS.Error");
 	return PyMac_OSErrException;
 }
 
