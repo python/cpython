@@ -36,7 +36,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib"
+				AdditionalDependencies="ws2_32.lib"
 				OutputFile="./_socket_d.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -104,7 +104,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib"
+				AdditionalDependencies="ws2_32.lib"
 				OutputFile="./_socket.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -177,7 +177,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
-				AdditionalDependencies="wsock32.lib"
+				AdditionalDependencies="ws2_32.lib"
 				OutputFile="./_socket.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
