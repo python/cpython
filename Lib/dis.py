@@ -251,3 +251,30 @@ def_op('RAISE_VARARGS', 130)
 def_op('CALL_FUNCTION', 131)
 def_op('MAKE_FUNCTION', 132)
 def_op('BUILD_SLICE', 133)
+
+
+def _test():
+	"""Simple test program to disassemble a file."""
+	if sys.argv[1:]:
+		if sys.argv[2:]:
+			sys.stderr.write("usage: python dis.py [-|file]\n")
+			sys.exit(2)
+		fn = sys.argv[1]
+		if not fn or fn == "-":
+			fn = None
+	else:
+		fn = None
+	if not fn:
+		f = sys.stdin
+	else:
+		f = open(fn)
+	source = f.read()
+	if fn:
+		f.close()
+	else:
+		fn = "<stdin>"
+	code = compile(source, fn, "exec")
+	dis(code)
+
+if __name__ == "__main__":
+	_test()
