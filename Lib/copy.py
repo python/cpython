@@ -185,6 +185,7 @@ def deepcopy(x, memo = None):
     else:
         y = copierfunction(x, memo)
     memo[d] = y
+    _keep_alive(x, memo) # Make sure x lives at least as long as d
     return y
 
 _deepcopy_dispatch = d = {}
@@ -269,7 +270,6 @@ def _deepcopy_inst(x, memo):
         return x.__deepcopy__(memo)
     if hasattr(x, '__getinitargs__'):
         args = x.__getinitargs__()
-        _keep_alive(args, memo)
         args = deepcopy(args, memo)
         y = apply(x.__class__, args)
     else:
@@ -278,7 +278,6 @@ def _deepcopy_inst(x, memo):
     memo[id(x)] = y
     if hasattr(x, '__getstate__'):
         state = x.__getstate__()
-        _keep_alive(state, memo)
     else:
         state = x.__dict__
     state = deepcopy(state, memo)
