@@ -2724,7 +2724,7 @@ newPicklerobject(PyObject *file, int proto)
 		return NULL;
 	}
 
-	self = PyObject_New(Picklerobject, &Picklertype);
+	self = PyObject_GC_New(Picklerobject, &Picklertype);
 	if (self == NULL)
 		return NULL;
 	self->proto = proto;
@@ -2807,6 +2807,7 @@ newPicklerobject(PyObject *file, int proto)
 		self->dispatch_table = dispatch_table;
 		Py_INCREF(dispatch_table);
 	}
+	PyObject_GC_Track(self);
 
 	return self;
 
@@ -2842,6 +2843,7 @@ get_Pickler(PyObject *self, PyObject *args)
 static void
 Pickler_dealloc(Picklerobject *self)
 {
+	PyObject_GC_UnTrack(self);
 	Py_XDECREF(self->write);
 	Py_XDECREF(self->memo);
 	Py_XDECREF(self->fast_memo);
@@ -2851,7 +2853,45 @@ Pickler_dealloc(Picklerobject *self)
 	Py_XDECREF(self->inst_pers_func);
 	Py_XDECREF(self->dispatch_table);
 	PyMem_Free(self->write_buf);
-	PyObject_Del(self);
+	PyObject_GC_Del(self);
+}
+
+static int
+Pickler_traverse(Picklerobject *self, visitproc visit, void *arg)
+{
+	int err;
+#define VISIT(SLOT) \
+	if (SLOT) { \
+		err = visit((PyObject *)(SLOT), arg); \
+		if (err) \
+			return err; \
+	}
+	VISIT(self->write);
+	VISIT(self->memo);
+	VISIT(self->fast_memo);
+	VISIT(self->arg);
+	VISIT(self->file);
+	VISIT(self->pers_func);
+	VISIT(self->inst_pers_func);
+	VISIT(self->dispatch_table);
+#undef VISIT
+	return 0;
+}
+
+static int
+Pickler_clear(Picklerobject *self)
+{
+#define CLEAR(SLOT) Py_XDECREF(SLOT); SLOT = NULL;
+	CLEAR(self->write);
+	CLEAR(self->memo);
+	CLEAR(self->fast_memo);
+	CLEAR(self->arg);
+	CLEAR(self->file);
+	CLEAR(self->pers_func);
+	CLEAR(self->inst_pers_func);
+	CLEAR(self->dispatch_table);
+#undef CLEAR
+	return 0;
 }
 
 static PyObject *
@@ -2967,10 +3007,10 @@ static PyTypeObject Picklertype = {
     PyObject_GenericGetAttr,		/* tp_getattro */
     PyObject_GenericSetAttr,		/* tp_setattro */
     0,					/* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     Picklertype__doc__,			/* tp_doc */
-    0,					/* tp_traverse */
-    0,					/* tp_clear */
+    (traverseproc)Pickler_traverse,	/* tp_traverse */
+    (inquiry)Pickler_clear,		/* tp_clear */
     0,					/* tp_richcompare */
     0,					/* tp_weaklistoffset */
     0,					/* tp_iter */
