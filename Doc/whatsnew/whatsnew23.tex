@@ -884,6 +884,50 @@ by Kevin Altis, Dave Cole, Andrew McNamara, Skip Montanaro, Cliff Wells.
 \end{seealso}
 
 %======================================================================
+\section{PEP 307: Pickle Enhancements \label{section-pep305}}
+
+The \module{pickle} and \module{cPickle} modules received some
+attention during the 2.3 development cycle.  In 2.2, new-style classes
+could be pickled without difficult, but they weren't pickled very
+compactly; \pep{307} quotes a trivial example where a new-style class
+results in a pickled string three times longer than that for a classic
+class.
+
+The solution was to invent a new pickle protocol.  The
+\function{pickle.dumps()} function has supported a text-or-binary flag 
+for a long time.  In 2.3, this flag is redefined from a Boolean to an
+integer; 0 is the old text-mode pickle format, 1 is the old binary
+format, and now 2 is a new 2.3-specific format.  (A new constant,
+\constant{pickle.HIGHEST_PROTOCOL}, can be used to select the fanciest
+protocol available.)
+
+Unpickling is no longer considered a safe operation.  2.2's
+\module{pickle} provided hooks for trying to prevent unsafe classes
+from being unpickled (specifically, a
+\member{__safe_for_unpickling__} attribute), but none of this code
+was ever audited and therefore it's all been ripped out in 2.3.  You
+should not unpickle untrusted data in any version of Python.
+
+To reduce the pickling overhead for new-style classes, a new interface
+for customizing pickling was added using three special methods:
+\method{__getstate__}, \method{__setstate__}, and
+\method{__getnewargs__}.  Consult \pep{307} for the full semantics 
+of these methods.
+
+As a way to compress pickles yet further, it's now possible to use
+integer codes instead of long strings to identify pickled classes.
+The Python Software Foundation will maintain a list of standardized
+codes; there's also a range of codes for private use.  Currently no
+codes have been specified.
+
+\begin{seealso}
+
+\seepep{307}{Extensions to the pickle protocol}{Written and implemented 
+by Guido van Rossum and Tim Peters.}
+
+\end{seealso}
+
+%======================================================================
 \section{Extended Slices\label{section-slices}}
 
 Ever since Python 1.4, the slicing syntax has supported an optional
