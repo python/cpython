@@ -43,7 +43,7 @@ class _socketobject:
 		return _fileobject(self._sock, mode, bufsize)
 
 	_s = "def %s(self, *args): return apply(self._sock.%s, args)\n\n"
-	for _m in ('bind', 'connect', 'fileno', 'listen',
+	for _m in ('bind', 'connect', 'connect_ex', 'fileno', 'listen',
 		   'getpeername', 'getsockname',
 		   'getsockopt', 'setsockopt',
 		   'recv', 'recvfrom', 'send', 'sendto',
