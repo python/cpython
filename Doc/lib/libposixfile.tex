@@ -3,6 +3,10 @@
 \bimodindex{posixfile}
 \indexii{posix}{file object}
 
+\emph{Note:} This module will become obsolete in a future release.
+The locking operation that it provides is done better and more
+portably by the \code{fcntl.lockf()} call.
+
 This module implements some additional functionality over the built-in
 file objects.  In particular, it implements file locking, control over
 the file flags, and an easy interface to duplicate the file object.
