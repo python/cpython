@@ -2,13 +2,13 @@
 
 ;; Copyright (C) 1992,1993,1994  Tim Peters
 
-;; Author: 1995 Barry A. Warsaw
+;; Author: 1995-1996 Barry A. Warsaw
 ;;         1992-1994 Tim Peters
 ;; Maintainer:    python-mode@python.org
 ;; Created:       Feb 1992
 ;; Version:       $Revision$
 ;; Last Modified: $Date$
-;; Keywords: python editing language major-mode
+;; Keywords: python languages oop
 
 ;; This software is provided as-is, without express or implied
 ;; warranty.  Permission to use, copy, modify, distribute or sell this
@@ -21,11 +21,13 @@
 ;; This is a major mode for editing Python programs.  It was developed
 ;; by Tim Peters <tim@ksr.com> after an original idea by Michael
 ;; A. Guravage.  Tim doesn't appear to be on the 'net any longer so I
-;; have undertaken maintenance of the mode.
+;; (Barry) have undertaken maintenance of the mode.
 
 ;; At some point this mode will undergo a rewrite to bring it more in
 ;; line with GNU Emacs Lisp coding standards.  But all in all, the
-;; mode works exceedingly well.
+;; mode works exceedingly well, and I've simply been tweeking it as I
+;; go along.  Ain't it wonderful that Python has a much more sane
+;; syntax than C? (or <shudder> C++?! :-).
 
 ;; The following statements, placed in your .emacs file or
 ;; site-init.el, will cause this file to be autoloaded, and
@@ -63,9 +65,9 @@
 ;; If you can think of more things you'd like to see, drop me a line.
 ;; If you want to report bugs, use py-submit-bug-report (C-c C-b).
 ;;
-;; Note that I only test things on XEmacs (currently 19.11).  If you
-;; port stuff to FSF Emacs 19, or Emacs 18, please send me your
-;; patches.
+;; Note that I only test things on XEmacs.  If you port stuff to FSF
+;; Emacs 19, or Emacs 18, please send me your patches.  Byte compiler
+;; complaints can probably be safely ignored.
 
 ;; LCD Archive Entry:
 ;; python-mode|Barry A. Warsaw|python-mode@python.org
