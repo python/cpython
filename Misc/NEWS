@@ -65,6 +65,11 @@ Extension modules
 
 - Patch #945642: Fix non-blocking SSL sockets, which blocked on reads/writes.
 
+- Bug #1083110: ``zlib.decompress.flush()`` would segfault if called
+  immediately after creating the object, without any intervening 
+  ``.decompress()`` calls.
+
+
 Library
 -------
 
