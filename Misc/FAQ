@@ -103,19 +103,18 @@ Here's an overview of the questions per chapter:
   3.7. Q. Trouble building or linking with the GNU readline library.
   3.8. Q. Trouble with socket I/O on older Linux 1.x versions.
   3.9. Q. Trouble with prototypes on Ultrix.
-  3.10. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
-  3.11. Q. Other trouble building Python on platform X.
-  3.12. Q. How to configure dynamic loading on Linux.
-  3.13. Q. Errors when linking with a shared library containing C++ code.
-  3.14. Q. I built with tkintermodule.c enabled but get "Tkinter not found".
-  3.15. Q. I built with Tk 4.0 but Tkinter complains about the Tk version.
-  3.16. Q. Link errors for Tcl/Tk symbols when linking with Tcl/Tk.
-  3.17. Q. I configured and built Python for Tcl/Tk but "import Tkinter"
+  3.10. Q. Other trouble building Python on platform X.
+  3.11. Q. How to configure dynamic loading on Linux.
+  3.12. Q. Errors when linking with a shared library containing C++ code.
+  3.13. Q. I built with tkintermodule.c enabled but get "Tkinter not found".
+  3.14. Q. I built with Tk 4.0 but Tkinter complains about the Tk version.
+  3.15. Q. Link errors for Tcl/Tk symbols when linking with Tcl/Tk.
+  3.16. Q. I configured and built Python for Tcl/Tk but "import Tkinter"
         fails.
-  3.18. Q. Tk doesn't work right on DEC Alpha.
-  3.19. Q. Several common system calls are missing from the posix module.
-  3.20. Q. ImportError: No module named string, on MS Windows.
-  3.21. Q. Core dump on SGI when using the gl module.
+  3.17. Q. Tk doesn't work right on DEC Alpha.
+  3.18. Q. Several common system calls are missing from the posix module.
+  3.19. Q. ImportError: No module named string, on MS Windows.
+  3.20. Q. Core dump on SGI when using the gl module.
 
  4. Programming in Python
   4.1. Q. Is there a source code level debugger with breakpoints, step,
@@ -763,17 +762,7 @@ the system headers on some Linux versions.
 A. Ultrix cc seems broken -- use gcc, or edit config.h to #undef
 HAVE_PROTOTYPES.
 
-3.10. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
-
-A.  (This often manifests itself as a weird error from the
-compileall.py script run by "make libinstall".)
-
-Don't use gcc, use the Next C compiler (cc).  Even though it is
-derived from (an old version of) gcc, its interpretation of the
-"-posix" switch is different; in this particular case, cc is right and
-gcc is wrong.
-
-3.11. Q. Other trouble building Python on platform X.
+3.10. Q. Other trouble building Python on platform X.
 
 A. Please email the details to <guido@cnri.reston.va.us> and I'll look
 into it.  Please provide as many details as possible.  In particular,
@@ -782,18 +771,18 @@ if you don't tell me what type of computer and what operating system
 what is the matter.  If you get a specific error message, please email
 it to me too.
 
-3.12. Q. How to configure dynamic loading on Linux.
+3.11. Q. How to configure dynamic loading on Linux.
 
 A. This is now automatic as long as your Linux version uses the ELF
 object format (all recent Linuxes do).
 
-3.13. Q. Errors when linking with a shared library containing C++ code.
+3.12. Q. Errors when linking with a shared library containing C++ code.
 
 A. Link the main Python binary with C++.  Change the definition of
 LINKCC in Modules/Makefile to be your C++ compiler.  You may have to
 edit config.c slightly to make it compilable with C++.
 
-3.14. Q. I built with tkintermodule.c enabled but get "Tkinter not found".
+3.13. Q. I built with tkintermodule.c enabled but get "Tkinter not found".
 
 A. Tkinter.py (note: upper case T) lives in a subdirectory of Lib,
 Lib/tkinter.  If you are using the default module search path, you
@@ -801,7 +790,7 @@ probably didn't enable the line in the Modules/Setup file defining
 TKPATH; if you use the environment variable PYTHONPATH, you'll have to
 add  the proper tkinter subdirectory.
 
-3.15. Q. I built with Tk 4.0 but Tkinter complains about the Tk version.
+3.14. Q. I built with Tk 4.0 but Tkinter complains about the Tk version.
 
 A. Several things could cause this.  You most likely have a Tk 3.6
 installation that wasn't completely eradicated by the Tk 4.0
@@ -812,7 +801,7 @@ have compiled Python with the old tk.h header file (yes, this actually
 compiles!); you may actually have linked with Tk 3.6 even though Tk
 4.0 is also around.  Similar for Tcl 7.4 vs. Tcl 7.3.
 
-3.16. Q. Link errors for Tcl/Tk symbols when linking with Tcl/Tk.
+3.15. Q. Link errors for Tcl/Tk symbols when linking with Tcl/Tk.
 
 Quite possibly, there's a version mismatch between the Tcl/Tk header
 files (tcl.h and tk.h) and the tck/tk libraries you are using (the
@@ -823,13 +812,13 @@ Setup line for _tkinter in some Python distributions references
 7.4/4.0 by default.  Changing this to 7.5/4.1 should take care of
 this.
 
-3.17. Q. I configured and built Python for Tcl/Tk but "import Tkinter"
+3.16. Q. I configured and built Python for Tcl/Tk but "import Tkinter"
 fails.
 
 A. Most likely, you forgot to enable the line in Setup that says
 "TKPATH=:$(DESTLIB)/tkinter".
 
-3.18. Q. Tk doesn't work right on DEC Alpha.
+3.17. Q. Tk doesn't work right on DEC Alpha.
 
 A. You probably compiled either Tcl, Tk or Python with gcc.  Don't.
 For this platform, which has 64-bit integers, gcc is known to generate
@@ -841,7 +830,7 @@ far as we know, there are no problem with gcc on other platforms --
 the instabilities seem to be restricted to the DEC Alpha.)  See also
 question 3.6.
 
-3.19. Q. Several common system calls are missing from the posix module.
+3.18. Q. Several common system calls are missing from the posix module.
 
 A. Most likely, *all* test compilations run by the configure script
 are failing for some reason or another.  Have a look in config.log to
@@ -849,7 +838,7 @@ see what could be the reason.  A common reason is specifying a
 directory to the --with-readline option that doesn't contain the
 libreadline.a file.
 
-3.20. Q. ImportError: No module named string, on MS Windows.
+3.19. Q. ImportError: No module named string, on MS Windows.
 
 A. Most likely, your PYTHONPATH environment variable should be set to
 something like:
@@ -858,7 +847,7 @@ set PYTHONPATH=c:\python;c:\python\lib;c:\python\scripts
 
 (assuming Python was installed in c:\python)
 
-3.21. Q. Core dump on SGI when using the gl module.
+3.20. Q. Core dump on SGI when using the gl module.
 
 There are conflicts between entry points in the termcap and curses
 libraries and an entry point in the GL library.  There's a hack of a
@@ -1118,6 +1107,10 @@ sets (and a few individual widgets, like Mosaic's HTML widget and
 SGI's GL widget) available from
 <URL:ftp://ftp.python.org/pub/python/src/X-extension.tar.gz>.
 Support by Sjoerd Mullender <sjoerd@cwi.nl>.
+
+- On top of the X11 interface there's the (recently revived) vpApp
+toolkit by Per Spilling, now also maintained by Sjoerd Mullender
+<sjoerd@cwi.nl>.  See <URL:ftp://ftp.cwi.nl/pub/sjoerd/vpApp.tar.gz>.
 
 - The Mac port has a rich and ever-growing set of modules that support
 the native Mac toolbox calls.  See the documentation that comes with
