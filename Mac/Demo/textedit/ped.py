@@ -1,20 +1,20 @@
-# Test TE module.
-# Draw a window in which the user can type.
+# A minimal text editor.
 #
-# This test expects Win, Evt and FrameWork (and anything used by those)
-# to work.
-#
-# Actually, it is more a test of FrameWork by now....
+# To be done:
+# - Update viewrect after resize
+# - Handle horizontal scrollbar correctly
+# - Functionality: find, etc.
 
 from Menu import DrawMenuBar
 from FrameWork import *
 import Win
 import Qd
 import TE
+import Scrap
 import os
 import macfs
 
-class TEWindow(Window):
+class TEWindow(ScrolledWindow):
 	def open(self, path, name, data):
 		self.path = path
 		self.name = name
@@ -29,14 +29,60 @@ class TEWindow(Window):
 		self.ted.TEAutoView(1)
 		self.ted.TESetText(data)
 		w.DrawGrowIcon()
+		self.scrollbars()
 		self.changed = 0
 		self.do_postopen()
-		self.parent.updatemenubar()
+		self.do_activate(1, None)
 		
 	def do_idle(self):
 		self.ted.TEIdle()
 		
+	def getscrollbarvalues(self):
+		dr = self.ted.destRect
+		vr = self.ted.viewRect
+		height = self.ted.nLines * self.ted.lineHeight
+		vx = self.scalebarvalue(dr[0], dr[2]-dr[0], vr[0], vr[2])
+		vy = self.scalebarvalue(dr[1], dr[1]+height, vr[1], vr[3])
+		print dr, vr, height, vx, vy
+		return vx, vy
+		
+	def scrollbar_callback(self, which, what, value):
+		if which == 'y':
+			if what == 'set':
+				height = self.ted.nLines * self.ted.lineHeight
+				cur = self.getscrollbarvalues()[1]
+				delta = (cur-value)*height/32767
+			if what == '-':
+				delta = self.ted.lineHeight
+			elif what == '--':
+				delta = (self.ted.viewRect[3]-self.ted.lineHeight)
+				if delta <= 0:
+					delta = self.ted.lineHeight
+			elif what == '+':
+				delta = -self.ted.lineHeight
+			elif what == '++':
+				delta = -(self.ted.viewRect[3]-self.ted.lineHeight)
+				if delta >= 0:
+					delta = -self.ted.lineHeight
+			self.ted.TEPinScroll(0, delta)
+			print 'SCROLL Y', delta
+		else:
+			if what == 'set':
+				return # XXXX
+			if what == '-':
+				delta = self.ted.viewRect[2]/10
+			elif what == '--':
+				delta = self.ted.viewRect[2]/2
+			elif what == '+':
+				delta = +self.ted.viewRect[2]/10
+			elif what == '++':
+				delta = +self.ted.viewRect[2]/2
+			self.ted.TEPinScroll(delta, 0)
+
+		
 	def do_activate(self, onoff, evt):
+		print "ACTIVATE", onoff
+		ScrolledWindow.do_activate(self, onoff, evt)
 		if onoff:
 			self.ted.TEActivate()
 			self.parent.active = self
@@ -47,15 +93,19 @@ class TEWindow(Window):
 	def do_update(self, wid, event):
 		Qd.EraseRect(wid.GetWindowPort().portRect)
 		self.ted.TEUpdate(wid.GetWindowPort().portRect)
+		self.updatescrollbars()
 		
 	def do_contentclick(self, local, modifiers, evt):
 		shifted = (modifiers & 0x200)
 		self.ted.TEClick(local, shifted)
+		self.updatescrollbars()
 		self.parent.updatemenubar()
 
 	def do_char(self, ch, event):
+		self.ted.TESelView()
 		self.ted.TEKey(ord(ch))
 		self.changed = 1
+		self.updatescrollbars()
 		self.parent.updatemenubar()
 		
 	def close(self):
@@ -93,23 +143,39 @@ class TEWindow(Window):
 		self.menu_save()
 		
 	def menu_cut(self):
+		self.ted.TESelView()
 		self.ted.TECut()
+		Scrap.ZeroScrap()
+		TE.TEToScrap()
+		self.updatescrollbars()
 		self.parent.updatemenubar()
+		self.changed = 1
 		
 	def menu_copy(self):
 		self.ted.TECopy()
+		Scrap.ZeroScrap()
+		TE.TEToScrap()
+		self.updatescrollbars()
+		self.parent.updatemenubar()
 		
 	def menu_paste(self):
+		print 'SCRAP', Scrap.InfoScrap(), `Scrap.InfoScrap()[1].data`
+		TE.TEFromScrap()
+		self.ted.TESelView()
 		self.ted.TEPaste()
+		self.updatescrollbars()
 		self.parent.updatemenubar()
+		self.changed = 1
 		
 	def menu_clear(self):
+		self.ted.TESelView()
 		self.ted.TEDelete()
+		self.updatescrollbars()
 		self.parent.updatemenubar()
+		self.changed = 1
 		
 	def have_selection(self):
-##		return (self.ted.selStart > self.ted.selEnd)
-		return 1
+		return (self.ted.selStart < self.ted.selEnd)
 
 class Ped(Application):
 	def __init__(self):
@@ -144,6 +210,7 @@ class Ped(Application):
 		self.focusgroup = [self.cutitem, self.copyitem, self.clearitem]
 		self.windowgroup_on = -1
 		self.focusgroup_on = -1
+		self.pastegroup_on = -1
 		
 	def updatemenubar(self):
 		changed = 0
@@ -154,12 +221,18 @@ class Ped(Application):
 			self.windowgroup_on = on
 			changed = 1
 		if on:
+			# only if we have an edit menu
 			on = self.active.have_selection()
-		if on <> self.focusgroup_on:
-			for m in self.focusgroup:
-				m.enable(on)
-			self.focusgroup_on = on
-			changed = 1
+			if on <> self.focusgroup_on:
+				for m in self.focusgroup:
+					m.enable(on)
+				self.focusgroup_on = on
+				changed = 1
+			on = (Scrap.InfoScrap()[0] <> 0)
+			if on <> self.pastegroup_on:
+				self.pasteitem.enable(on)
+				self.pastegroup_on = on
+				changed = 1
 		if changed:
 			DrawMenuBar()
 
