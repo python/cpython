@@ -23,7 +23,7 @@ import os, string
 from types import *
 from distutils.core import Command
 from distutils.errors import *
-from distutils.ccompiler import new_compiler
+from distutils.ccompiler import new_compiler,show_compilers
 
 
 class build_clib (Command):
@@ -42,6 +42,10 @@ class build_clib (Command):
         ('compiler=', 'c',
          "specify the compiler type"),
         ]
+    help_options = [
+        ('help-compiler', None,
+         "lists available compilers",show_compilers),
+	]
 
     def initialize_options (self):
         self.build_clib = None

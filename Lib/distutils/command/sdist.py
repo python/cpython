@@ -13,7 +13,7 @@ from glob import glob
 from distutils.core import Command
 from distutils.util import newer, create_tree, remove_tree, convert_path, \
      write_file
-from distutils.archive_util import check_archive_formats
+from distutils.archive_util import check_archive_formats,ARCHIVE_FORMATS
 from distutils.text_file import TextFile
 from distutils.errors import DistutilsExecError, DistutilsOptionError
 
@@ -35,11 +35,26 @@ class sdist (Command):
         ('force-manifest', 'f',
          "forcibly regenerate the manifest and carry on as usual"),
         ('formats=', None,
-         "formats for source distribution (tar, ztar, gztar, bztar, or zip)"),
+         "formats for source distribution"),
         ('keep-tree', 'k',
          "keep the distribution tree around after creating " +
          "archive file(s)"),
         ]
+    # prints all possible arguments to --formats
+    def show_formats():
+	from distutils.fancy_getopt import FancyGetopt 
+	list_of_formats=[]
+	for format in ARCHIVE_FORMATS.keys():
+	    list_of_formats.append(("formats="+format,None,ARCHIVE_FORMATS[format][2]))
+	list_of_formats.sort()
+	pretty_printer=FancyGetopt(list_of_formats)
+	pretty_printer.print_help("List of available distribution formats:")
+
+    help_options = [
+        ('help-formats', None,
+         "lists available distribution formats",show_formats),
+	]
+
     negative_opts = {'use-defaults': 'no-defaults'}
 
     default_format = { 'posix': 'gztar',

@@ -9,6 +9,7 @@ __revision__ = "$Id$"
 import sys, os
 from distutils.core import Command
 from distutils.util import get_platform
+from distutils.ccompiler import show_compilers
 
 class build (Command):
 
@@ -35,6 +36,10 @@ class build (Command):
         ('force', 'f',
          "forcibly build everything (ignore file timestamps)"),
         ]
+    help_options = [
+        ('help-compiler', None,
+         "lists available compilers",show_compilers),
+	]
 
     def initialize_options (self):
         self.build_base = 'build'

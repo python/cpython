@@ -14,6 +14,7 @@ from distutils.core import Command
 from distutils.errors import *
 from distutils.dep_util import newer_group
 from distutils.extension import Extension
+from distutils.ccompiler import show_compilers
 
 # An extension name is just a dot-separated list of Python NAMEs (ie.
 # the same as a fully-qualified module name).
@@ -72,6 +73,10 @@ class build_ext (Command):
         ('compiler=', 'c',
          "specify the compiler type"),
         ]
+    help_options = [
+        ('help-compiler', None,
+         "lists available compilers",show_compilers),
+	]
 
 
     def initialize_options (self):
