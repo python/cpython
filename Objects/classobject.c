@@ -2197,9 +2197,9 @@ instancemethod_new(PyTypeObject* type, PyObject* args, PyObject *kw)
 {
 	PyObject *func;
 	PyObject *self;
-	PyObject *classObj;
+	PyObject *classObj = NULL;
 
-	if (!PyArg_UnpackTuple(args, "instancemethod", 3, 3,
+	if (!PyArg_UnpackTuple(args, "instancemethod", 2, 3,
 			      &func, &self, &classObj))
 		return NULL;
 	if (!PyCallable_Check(func)) {
