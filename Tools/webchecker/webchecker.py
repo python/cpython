@@ -70,9 +70,11 @@ default locations of Netscape and the NCSA HTTP daemon.
 links in <FORM> or <IMG> or whatever other tags might contain
 hyperlinks.  It does honor the <BASE> tag.
 
-- It could be argued that it should also check external links for
-validity.  This is true, but is is more error-prone.  I think I will
-make this an option in the future.
+- Checking external links is not done by default; use -x to enable
+this feature.  This is done because checking external links usually
+takes a lot of time.  When enabled, this check is executed during the
+report generation phase (so -x is ignored when -q is specified).  Even
+when -x is enabled, only ``http:'' URLs are checked.
 
 
 Usage: webchecker.py [option] ... [rooturl] ...
@@ -85,6 +87,7 @@ Options:
 -q        -- quiet operation (also suppresses external links report)
 -r number -- number of links processed per round (default %(ROUNDSIZE)d)
 -v        -- verbose operation; repeating -v will increase verbosity
+-x        -- check external links (during report phase)
 
 Arguments:
 
@@ -131,9 +134,10 @@ def main():
     global verbose, maxpage, roundsize
     dumpfile = DUMPFILE
     restart = 0
+    checkext = 0
 
     try:
-	opts, args = getopt.getopt(sys.argv[1:], 'Rd:m:qr:v')
+	opts, args = getopt.getopt(sys.argv[1:], 'Rd:m:qr:vx')
     except getopt.error, msg:
 	sys.stdout = sys.stderr
 	print msg
@@ -151,6 +155,8 @@ def main():
 	    roundsize = string.atoi(a)
 	if o == '-v':
 	    verbose = verbose + 1
+	if o == '-x':
+	    checkext = 1
 
     if verbose:
 	print AGENTNAME, "version", __version__
@@ -180,8 +186,12 @@ def main():
 	c.run()
     except KeyboardInterrupt:
 	if verbose > 0:
-	    print "[interrupted]"
-    c.report()
+	    print "[run interrupted]"
+    try:
+	c.report(checkext)
+    except KeyboardInterrupt:
+	if verbose > 0:
+	    print "[report interrupted]"
     if not needsave:
 	if verbose > 0:
 	    print
@@ -266,7 +276,7 @@ class Checker:
 		self.done[url] = self.todo[url]
 		del self.todo[url]
 
-    def report(self):
+    def report(self, checkext=0):
 	print
 	if not self.todo: print "Final",
 	else: print "Interim",
@@ -274,22 +284,34 @@ class Checker:
 	    len(self.todo), len(self.done),
 	    len(self.ext), len(self.bad))
 	if verbose > 0:
-	    self.report_extrefs()
+	    self.report_extrefs(checkext)
 	# Report errors last because the output may get truncated
 	self.report_errors()
 
-    def report_extrefs(self):
+    def report_extrefs(self, checkext=0):
 	if not self.ext:
 	    print
 	    print "No external URLs"
 	    return
 	print
-	print "External URLs:"
+	if checkext:
+	    print "External URLs (checking validity):"
+	else:
+	    print "External URLs (not checked):"
 	print
 	urls = self.ext.keys()
 	urls.sort()
 	for url in urls:
 	    show("HREF ", url, " from", self.ext[url])
+	    if not checkext:
+		continue
+	    if verbose > 2: print "Checking", url, "..."
+	    try:
+		f = self.urlopener.open(url)
+		f.close()
+		if verbose > 3: print "OK"
+	    except IOError, msg:
+		print "Error:", msg
 
     def report_errors(self):
 	if not self.bad:
