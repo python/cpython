@@ -19,17 +19,19 @@
 #
 # Most sound file formats recognized by SOX or SFPLAY are recognized.
 # Since conversion is costly, converted files are cached in
-# /usr/tmp/@j* until the user quits.
+# /usr/tmp/@j* until the user quits or changes the sampling rate via
+# the Rate menu.
 
 import commands
 import getopt
 import os
+from stat import *
 import rand
 import stdwin
 from stdwinevents import *
-import string
 import sys
 import tempfile
+import sndhdr
 
 from WindowParent import WindowParent
 from Buttons import PushButton
@@ -96,13 +98,17 @@ def main():
 		killchild()
 
 # Entries in Rate menu:
-rates = ['default', \
+rates = ['default', '7350', \
 	'8000', '11025', '16000', '22050', '32000', '41000', '48000']
 
 def maineventloop():
 	mouse_events = WE_MOUSE_DOWN, WE_MOUSE_MOVE, WE_MOUSE_UP
 	while G.windows:
-		type, w, detail = event = stdwin.getevent()
+		try:
+			type, w, detail = event = stdwin.getevent()
+		except KeyboardInterrupt:
+			killchild()
+			continue
 		if w == G.cw.win:
 			if type == WE_CLOSE:
 				return
@@ -185,14 +191,22 @@ def openlistwindow(dirname):
 	list.sort()
 	i = 0
 	while i < len(list):
-		if list[i] == '.' or list[i] == '..':
+		if list[i][0] == '.':
 			del list[i]
 		else:
 			i = i+1
 	for i in range(len(list)):
-		name = list[i]
-		if os.path.isdir(os.path.join(dirname, name)):
-			list[i] = list[i] + '/'
+		fullname = os.path.join(dirname, list[i])
+		if os.path.isdir(fullname):
+			info = '/'
+		else:
+			try:
+				size = os.stat(fullname)[ST_SIZE]
+				info = `(size + 1023)/1024` + 'k'
+			except IOError:
+				info = '???'
+			info = '(' + info + ')'
+		list[i] = list[i], info
 	width = maxwidth(list)
 	# width = width + stdwin.textwidth(' ')	# XXX X11 stdwin bug workaround
 	height = len(list) * stdwin.lineheight()
@@ -211,8 +225,8 @@ def openlistwindow(dirname):
 
 def maxwidth(list):
 	width = 1
-	for name in list:
-		w = stdwin.textwidth(name)
+	for name, info in list:
+		w = stdwin.textwidth(name + '  ' + info)
 		if w > width: width = w
 	return width
 
@@ -222,8 +236,12 @@ def drawlistwindow(w, area):
 	d.erase((0, 0), (1000, 10000))
 	lh = d.lineheight()
 	h, v = 0, 0
-	for name in w.list:
-		d.text((h, v), name)
+	for name, info in w.list:
+		if info == '/':
+			text = name + '/'
+		else:
+			text = name + '  ' + info
+		d.text((h, v), text)
 		v = v + lh
 	showselection(w, d)
 	d.close()
@@ -257,22 +275,17 @@ def mouselistwindow(w, type, detail):
 	d.close()
 	if type == WE_MOUSE_DOWN and clicks >= 2 and i >= 0:
 		setcursors('watch')
-		name = os.path.join(w.dirname, w.list[i])
-		if name[-1:] == '/':
+		name, info = w.list[i]
+		fullname = os.path.join(w.dirname, name)
+		if info == '/':
 			if clicks == 2:
-				G.windows.append(openlistwindow(name[:-1]))
+				G.windows.append(openlistwindow(fullname))
 		else:
-			playfile(name)
+			playfile(fullname)
 		setcursors('cross')
 
 def closelistwindow(w):
-	remove(G.windows, w)
-
-def remove(list, item):
-	for i in range(len(list)):
-		if list[i] == item:
-			del list[i]
-			break
+	G.windows.remove(w)
 
 def setcursors(cursor):
 	for w in G.windows:
@@ -298,7 +311,6 @@ validrates = (8000, 11025, 16000, 22050, 32000, 44100, 48000)
 
 def playfile(filename):
 	killchild()
-	import sndhdr
 	tuple = sndhdr.what(filename)
 	raw = 0
 	if tuple:
@@ -338,6 +350,10 @@ def playfile(filename):
 			print cmd
 			print 'Exit status', sts
 			stdwin.fleep()
+			try:
+				os.unlink(tempname)
+			except:
+				pass
 			return
 		cache[filename] = tempname
 	if raw:
@@ -352,7 +368,6 @@ def playfile(filename):
 		G.cw.win.settimer(1)
 
 def sfplayraw(filename, tuple):
-	import sndhdr
 	args = ['-i']
 	type, rate, channels, frames, bits = tuple
 	if type == 'ul':
