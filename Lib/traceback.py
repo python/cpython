@@ -7,6 +7,25 @@ import types
 
 def _print(file, str='', terminator='\n'):
 	file.write(str+terminator)
+
+
+def print_list(extracted_list, file=None):
+	if not file:
+		file = sys.stderr
+	for filename, lineno, name, line in extracted_list:
+		_print(file,
+		       '  File "%s", line %d, in %s' % (filename,lineno,name))
+		if line:
+			_print(file, '    %s' % string.strip(line))
+
+def format_list(extracted_list):
+	list = []
+	for filename, lineno, name, line in extracted_list:
+		item = '  File "%s", line %d, in %s\n' % (filename,lineno,name)
+		if line:
+			item = item + '    %s\n' % string.strip(line)
+		list.append(item)
+	return list
 	
 
 def print_tb(tb, limit=None, file=None):
@@ -30,13 +49,7 @@ def print_tb(tb, limit=None, file=None):
 		n = n+1
 
 def format_tb(tb, limit = None):
-	list = []
-	for filename, lineno, name, line in extract_tb(tb, limit):
-		item = '  File "%s", line %d, in %s\n' % (filename,lineno,name)
-		if line:
-			item = item + '    %s\n' % string.strip(line)
-		list.append(item)
-	return list
+	return format_list(extract_tb(tb, limit))
 
 def extract_tb(tb, limit = None):
 	if limit is None:
@@ -123,3 +136,48 @@ def print_last(limit=None, file=None):
 		file = sys.stderr
 	print_exception(sys.last_type, sys.last_value, sys.last_traceback,
 			limit, file)
+
+
+def print_stack(f=None, limit=None, file=None):
+	if f is None:
+		try:
+			raise ZeroDivisionError
+		except ZeroDivisionError:
+			tb = sys.exc_traceback
+			f = tb.tb_frame.f_back
+	print_list(extract_stack(f, limit), file)
+
+def format_stack(f=None, limit=None):
+	if f is None:
+		try:
+			raise ZeroDivisionError
+		except ZeroDivisionError:
+			tb = sys.exc_traceback
+			f = tb.tb_frame.f_back
+	return format_list(extract_stack(t, limit))
+
+def extract_stack(f=None, limit = None):
+	if f is None:
+		try:
+			raise ZeroDivisionError
+		except ZeroDivisionError:
+			tb = sys.exc_traceback
+			f = tb.tb_frame.f_back
+	if limit is None:
+		if hasattr(sys, 'tracebacklimit'):
+			limit = sys.tracebacklimit
+	list = []
+	n = 0
+	while f is not None and (limit is None or n < limit):
+		lineno = f.f_lineno
+		co = f.f_code
+		filename = co.co_filename
+		name = co.co_name
+		line = linecache.getline(filename, lineno)
+		if line: line = string.strip(line)
+		else: line = None
+		list.append(filename, lineno, name, line)
+		f = f.f_back
+		n = n+1
+	list.reverse()
+	return list
