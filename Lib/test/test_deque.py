@@ -218,7 +218,7 @@ class TestBasic(unittest.TestCase):
         self.assertRaises(ValueError, d.remove, 'c')
         self.assertEqual(d, deque('abdefghij'))
 
-        # Handle comparision errors
+        # Handle comparison errors
         d = deque(['a', 'b', BadCmp(), 'c'])
         e = deque(d)
         self.assertRaises(RuntimeError, d.remove, 'c')
