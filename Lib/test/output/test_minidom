@@ -127,6 +127,7 @@ Test Succeeded testNonZero
 Passed assertion: len(Node.allnodes) == 0
 Passed testNormalize -- preparation
 Passed testNormalize -- result
+Passed testNormalize -- single empty node removed
 Test Succeeded testNormalize
 Passed assertion: len(Node.allnodes) == 0
 Passed testParents

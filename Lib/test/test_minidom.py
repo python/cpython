@@ -397,6 +397,14 @@ def testNormalize():
             , "testNormalize -- result")
     doc.unlink()
 
+    doc = parseString("<doc/>")
+    root = doc.documentElement
+    root.appendChild(doc.createTextNode(""))
+    doc.normalize()
+    confirm(len(root.childNodes) == 0,
+            "testNormalize -- single empty node removed")
+    doc.unlink()
+
 def testSiblings():
     doc = parseString("<doc><?pi?>text?<elm/></doc>")
     root = doc.documentElement
