@@ -1,9 +1,8 @@
-# copyright 1997-1998 Just van Rossum, Letterror. just@letterror.com
+# copyright 1997-2000 Just van Rossum, Letterror. just@letterror.com
 
 import Splash
 
 import FrameWork
-import Win
 import Wapplication
 import W
 import os
@@ -33,7 +32,14 @@ class PythonIDE(Wapplication.Application):
 		import sys
 		for path in sys.argv[1:]:
 			self.opendoc(path)
-		self.mainloop()
+		try:
+			import uthread2
+		except ImportError:
+			self.mainloop()
+		else:
+			main = uthread2.Thread("mainloop", self.mainloop)
+			main.start()
+			uthread2.run()
 	
 	def makeusermenus(self):
 		m = Wapplication.Menu(self.menubar, "File")
