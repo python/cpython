@@ -35,7 +35,7 @@ knownfiles = [
     "/usr/local/etc/mime.types",                # Apache 1.3
     ]
 
-inited = 0
+inited = False
 
 
 class MimeTypes:
@@ -208,7 +208,7 @@ def init(files=None):
     global guess_extension, guess_type
     global suffix_map, types_map, encodings_map, common_types
     global inited
-    inited = 1
+    inited = True
     db = MimeTypes()
     if files is None:
         files = knownfiles
