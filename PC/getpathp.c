@@ -155,6 +155,9 @@ search_for_prefix(argv0_path, landmark)
 }
 
 #ifdef MS_WIN32
+#include "malloc.h" // for alloca - see comments below!
+extern const char *PyWin_DLLVersionString; // a string loaded from the DLL at startup.
+
 
 /* Load a PYTHONPATH value from the registry.
    Load from either HKEY_LOCAL_MACHINE or HKEY_CURRENT_USER.
@@ -172,9 +175,23 @@ getpythonregpath(HKEY keyBase, BOOL bWin32s)
 	LONG rc;
 	char *retval = NULL;
 	char *dataBuf;
+	const char keyPrefix[] = "Software\\Python\\PythonCore\\";
+	const char keySuffix[] = "\\PythonPath";
+	int versionLen;
+	char *keyBuf;
+
+	// Tried to use sysget("winver") but here is too early :-(
+	versionLen = strlen(PyWin_DLLVersionString);
+	// alloca == no free required, but memory only local to fn.
+	// also no heap fragmentation!  Am I being silly?
+	keyBuf = alloca(sizeof(keyPrefix)-1 + versionLen + sizeof(keySuffix)); // chars only, plus 1 NULL.
+	// lots of constants here for the compiler to optimize away :-)
+	memcpy(keyBuf, keyPrefix, sizeof(keyPrefix)-1);
+	memcpy(keyBuf+sizeof(keyPrefix)-1, PyWin_DLLVersionString, versionLen);
+	memcpy(keyBuf+sizeof(keyPrefix)-1+versionLen, keySuffix, sizeof(keySuffix)); // NULL comes with this one!
+
 	rc=RegOpenKey(keyBase,
-		      "Software\\Python\\PythonCore\\"
-		      MS_DLL_ID "\\PythonPath", 
+		      keyBuf,
 		      &newKey);
 	if (rc==ERROR_SUCCESS) {
 		RegQueryInfoKey(newKey, NULL, NULL, NULL, NULL, NULL, NULL, 
