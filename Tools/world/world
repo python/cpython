@@ -2,17 +2,18 @@
 
 """Print mappings between country names and DNS country codes.
 
-This script will take an Internet address and print out where in the
-world that message originated from, based on the top-level domain code
-found in the address.  Addresses can be in any of the following forms:
+This script will take a list of Internet addresses and print out where in the
+world those addresses originate from, based on the top-level domain country
+code found in the address.  Addresses can be in any of the following forms:
 
     xx                -- just the country code or top-level domain identifier
     host.domain.xx    -- any Internet host or network name
     somebody@where.xx -- an Internet email address
 
-If the country code is not recognizable, it will attempt a reverse lookup,
-searching for the country name and printing a list of matching country codes.
-You can force reverse mappings with the `-r' flag (see below).
+If no match is found, the address is interpreted as a regular expression [*]
+and a reverse lookup is attempted.  This script will search the country names
+and printing a list of matching entries.  You can force reverse mappings with
+the `-r' flag (see below).
 
 For example:
 
@@ -21,7 +22,16 @@ For example:
     us originated from United States
 
     % world united
+    united matches 5 countries:
+	ae: United Arab Emirates
+	um: United States Minor Outlying Islands
+	us: United States
+	tz: Tanzania, United Republic of
+	gb: United Kingdom
 
+
+[*] Note that regular expressions must conform to Python 1.5's re.py module
+syntax.  The comparison is done with the search() method.
 
 Country codes are maintained by the RIPE Network Coordination Centre,
 in coordination with the ISO 3166 Maintenance Agency at DIN Berlin.  The
@@ -34,6 +44,7 @@ The latest known change to this information was:
     Thu Aug  7 17:59:51 MET DST 1997
 
 This script also knows about non-geographic top-level domains.
+
 
 Usage: %s [-d] [-p|-P file] [-h] addr [addr ...]
 
