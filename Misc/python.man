@@ -138,11 +138,12 @@ indentation in a way that makes it depend on the worth of a tab
 expressed in spaces.  Issue an error when the option is given twice.
 .TP
 .B \-u
-Force stdin, stdout and stderr to be totally unbuffered.  Note that
-there is internal buffering in xreadlines(), readlines() and file-object
-iterators ("for line in sys.stdin") which is not influenced by this
-option.  To work around this, you will want to use "sys.stdin.readline()"
-inside a "while 1:" loop.
+Force stdin, stdout and stderr to be totally unbuffered.  On systems
+where it matters, also put stdin, stdout and stderr in binary mode.
+Note that there is internal buffering in xreadlines(), readlines() and
+file-object iterators ("for line in sys.stdin") which is not
+influenced by this option.  To work around this, you will want to use
+"sys.stdin.readline()" inside a "while 1:" loop.
 .TP
 .B \-v
 Print a message each time a module is initialized, showing the place
