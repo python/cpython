@@ -326,7 +326,8 @@ fp_readl(char *s, int size, struct tok_state *tok)
 {
 #ifndef Py_USING_UNICODE
 	/* In a non-Unicode built, this should never be called. */
-	abort();
+	Py_FatalError("fp_readl should not be called in this build.");
+	return NULL;
 #else
 	PyObject* utf8;
 	PyObject* buf = tok->decoding_buffer;
@@ -403,7 +404,7 @@ static void fp_ungetc(int c, struct tok_state *tok) {
 static char *
 decoding_fgets(char *s, int size, struct tok_state *tok)
 {
-	char *line;
+	char *line = NULL;
 	int warn = 0, badchar = 0;
 	for (;;) {
 		if (tok->decoding_state < 0) {
