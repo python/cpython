@@ -77,6 +77,10 @@ C API
 Documentation
 -------------
 
+- bug 990669: os.path.normpath may alter the meaning of a path if it contains
+symbolic links. This has been documented in a comment since 1992, but is now in
+the library reference as well.
+
 New platforms
 -------------
 
