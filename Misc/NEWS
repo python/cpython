@@ -44,6 +44,8 @@ Extension modules
 
 Library
 
+- compileall now supports quiet operation.
+
 - The BaseHTTPServer implements now optionally HTTP/1.1 persistent
   connections.
 
