@@ -24,7 +24,7 @@ class MlteWindow(Window):
 		self.path = path
 		self.name = name
 		r = windowbounds(400, 400)
-		w = Win.NewWindow(r, name, 1, 0, -1, 1, 0x55555555)
+		w = Win.NewWindow(r, name, 1, 0, -1, 1, 0)
 		self.wid = w
 		flags = MacTextEditor.kTXNDrawGrowIconMask|MacTextEditor.kTXNWantHScrollBarMask| \
 				MacTextEditor.kTXNWantVScrollBarMask
@@ -361,6 +361,8 @@ class Mlted(Application):
 	def idle(self, event):
 		if self.active:
 			self.active.do_idle(event)
+		else:
+			Qd.SetCursor(Qd.qd.arrow)
 
 def main():
 	Mlte.TXNInitTextension(0)

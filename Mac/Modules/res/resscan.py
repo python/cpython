@@ -5,7 +5,6 @@
 import sys
 import os
 import string
-import regsub
 import MacOS
 
 BGENDIR=os.path.join(sys.prefix, ':Tools:bgen:bgen')

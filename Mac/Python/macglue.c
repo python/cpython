@@ -227,7 +227,7 @@ char *PyMac_getscript()
     case smCyrillic:
         return "mac-cyrillic";
     default:
-        return "mac-roman"; /* better than nothing */
+        return "ascii"; /* better than nothing */
     }
 }
 

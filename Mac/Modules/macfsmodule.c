@@ -367,6 +367,7 @@ _mfs_GetFSSpecFromFSSpec(PyObject *self, FSSpec *fssp)
 static int
 _mfs_GetFSSpecFromFSRef(PyObject *self, FSSpec *fssp)
 {
+#if !TARGET_API_MAC_OS8
 	static FSRef *fsrp;
 	
 	if ( is_mfsrobject(self) ) {
@@ -374,6 +375,7 @@ _mfs_GetFSSpecFromFSRef(PyObject *self, FSSpec *fssp)
 		if ( FSGetCatalogInfo(&((mfsrobject *)self)->fsref, kFSCatInfoNone, NULL, NULL, fssp, NULL) == noErr )
 			return 1;
 	}
+#endif
 	return 0;
 }
 
@@ -381,10 +383,12 @@ _mfs_GetFSSpecFromFSRef(PyObject *self, FSSpec *fssp)
 static int
 _mfs_GetFSRefFromFSRef(PyObject *self, FSRef *fsrp)
 {
+#if !TARGET_API_MAC_OS8
 	if ( is_mfsrobject(self) ) {
 		*fsrp = ((mfsrobject *)self)->fsref;
 		return 1;
 	}
+#endif
 	return 0;
 }
 
@@ -392,10 +396,12 @@ _mfs_GetFSRefFromFSRef(PyObject *self, FSRef *fsrp)
 static int
 _mfs_GetFSRefFromFSSpec(PyObject *self, FSRef *fsrp)
 {
+#if !TARGET_API_MAC_OS8
 	if ( is_mfssobject(self) ) {
 		if ( FSpMakeFSRef(&((mfssobject *)self)->fsspec, fsrp) == noErr )
 			return 1;
 	}
+#endif
 	return 0;
 }
 
@@ -524,6 +530,10 @@ mfss_FSpMakeFSRef(self, args)
 	mfssobject *self;
 	PyObject *args;
 {
+#if TARGET_API_MAC_OS8
+	PyErr_SetString(PyExc_NotImplementedError, "FSRef objects not supported on this platform");
+	return 0;
+#else
 	OSErr err;
 	FSRef fsref;
 	
@@ -535,6 +545,7 @@ mfss_FSpMakeFSRef(self, args)
 		return NULL;
 	}
 	return (PyObject *)newmfsrobject(&fsref);
+#endif
 }
 
 /* XXXX These routines should be replaced by a wrapper to the *FInfo routines */
@@ -766,7 +777,7 @@ statichere PyTypeObject Mfsstype = {
 
 /* End of code for FSSpec objects */
 /* -------------------------------------------------------- */
-
+#if !TARGET_API_MAC_OS8
 static PyObject *
 mfsr_as_fsspec(self, args)
 	mfsrobject *self;
@@ -871,6 +882,7 @@ statichere PyTypeObject Mfsrtype = {
 };
 
 /* End of code for FSRef objects */
+#endif /* !TARGET_API_MAC_OS8 */
 /* -------------------------------------------------------- */
 
 static PyObject *
@@ -1002,11 +1014,16 @@ mfs_FSRef(self, args)
 	PyObject *self;	/* Not used */
 	PyObject *args;
 {
+#if TARGET_API_MAC_OS8
+	PyErr_SetString(PyExc_NotImplementedError, "FSRef objects not supported on this platform");
+	return 0;
+#else
 	FSRef fsr;
 
 	if (!PyArg_ParseTuple(args, "O&", PyMac_GetFSRef, &fsr))
 		return NULL;
 	return (PyObject *)newmfsrobject(&fsr);
+#endif
 }
 
 static PyObject *
@@ -1172,6 +1189,9 @@ static struct PyMethodDef mfs_methods[] = {
 int
 PyMac_GetFSRef(PyObject *v, FSRef *fsr)
 {
+#if TARGET_API_MAC_OS8
+	return 0;
+#else
 	OSErr err;
 
 	/* If it's an FSRef we're also okay. */
@@ -1186,12 +1206,17 @@ PyMac_GetFSRef(PyObject *v, FSRef *fsr)
 	}
 	PyErr_SetString(PyExc_TypeError, "FSRef argument should be existing FSRef, FSSpec or (OSX only) pathname");
 	return 0;
+#endif
 }
 
 /* Convert FSSpec to PyObject */
 PyObject *PyMac_BuildFSRef(FSRef *v)
 {
+#if TARGET_API_MAC_OS8
+	return NULL;
+#else
 	return (PyObject *)newmfsrobject(v);
+#endif
 }
 
 /*

@@ -19,7 +19,7 @@ class TEWindow(ScrolledWindow):
 		self.path = path
 		self.name = name
 		r = windowbounds(400, 400)
-		w = Win.NewWindow(r, name, 1, 0, -1, 1, 0x55555555)
+		w = Win.NewWindow(r, name, 1, 0, -1, 1, 0)
 		self.wid = w
 		x0, y0, x1, y1 = self.wid.GetWindowPort().portRect
 		x0 = x0 + 4
@@ -338,6 +338,8 @@ class Ped(Application):
 	def idle(self, *args):
 		if self.active:
 			self.active.do_idle()
+		else:
+			Qd.SetCursor(Qd.qd.arrow)
 
 def main():
 	App = Ped()

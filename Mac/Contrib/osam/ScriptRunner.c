@@ -21,7 +21,26 @@
 #include <script.h>
 #include <resources.h>
 
+#ifdef TARGET_API_MAC_CARBON
+static
+p2cstr(StringPtr p)
+{
+    unsigned char *c = p;
+    int len = c[0];
+    strncpy((char *)c+1, (char *)c, len);
+    c[len] = 0;
+}
 
+static c2pstr(const char *cc)
+{
+    char *c = (char *)cc; /* Ouch */
+    int len = strlen(c);
+    
+    if ( len > 255 ) len = 255;
+    strncpy(c, c+1, len);
+    c[0] = len;
+}
+#endif
 
 OSAError LoadScriptingComponent (ComponentInstance * scriptingComponent);
 
