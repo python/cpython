@@ -291,7 +291,7 @@ execfile(os.path.join(os.path.split(__file__)[0], "%(realmainprogram)s"))
 class AppBuilder(BundleBuilder):
 
 	# Override type of the bundle.
-	type = "BNDL"
+	type = "APPL"
 
 	# platform, name of the subfolder of Contents that contains the executable.
 	platform = "MacOS"
