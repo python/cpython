@@ -33,6 +33,10 @@ $VERBOSITY = 0;
 $INDEX_COLUMNS = 2;
 $MODULE_INDEX_COLUMNS = 4;
 
+$HAVE_MODULE_INDEX = 0;
+$HAVE_GENERAL_INDEX = 0;
+$HAVE_TABLE_OF_CONTENTS = 0;
+
 
 # A little painful, but lets us clean up the top level directory a little,
 # and not be tied to the current directory (as far as I can tell).  Testing
@@ -476,6 +480,9 @@ sub do_cmd_textohtmlmoduleindex {
 sub add_bbl_and_idx_dummy_commands {
     my $id = $global{'max_id'};
 
+    if (/[\\]tableofcontents/) {
+        $HAVE_TABLE_OF_CONTENTS = 1;
+    }
     s/([\\]begin\s*$O\d+$C\s*thebibliography)/$bbl_cnt++; $1/eg;
     s/([\\]begin\s*$O\d+$C\s*thebibliography)/$id++; "\\bibliography$O$id$C$O$id$C $1"/geo;
     my(@parts) = split(/\\begin\s*$O\d+$C\s*theindex/);
@@ -490,6 +497,11 @@ sub add_bbl_and_idx_dummy_commands {
         $CUSTOM_BUTTONS .= ('<a href="modindex.html" title="Module Index">'
                             . get_my_icon('modules')
                             . '</a>');
+        $HAVE_MODULE_INDEX = 1;
+        $HAVE_GENERAL_INDEX = 1;
+    }
+    elsif (scalar(@parts) == 2) {
+        $HAVE_GENERAL_INDEX = 1;
     }
     else {
         $CUSTOM_BUTTONS .= get_my_icon('blank');
@@ -554,6 +566,7 @@ sub set_depth_levels {
 # This is added to get rid of the long comment that follows the
 # doctype declaration; MSIE5 on NT4 SP4 barfs on it and drops the
 # content of the page.
+$MY_PARTIAL_HEADER = '';
 sub make_head_and_body {
     my($title, $body) = @_;
     $body = " $body" unless ($body eq '');
@@ -579,20 +592,38 @@ sub make_head_and_body {
 	$DTDcomment = "<!DOCTYPE html PUBLIC \"$DOCTYPE//"
 	    . ($ISO_LANGUAGE ? $ISO_LANGUAGE : $isolanguage) . "\">\n";
     }
+    if ($MY_PARTIAL_HEADER eq '') {
+        $STYLESHEET = $FILE.".css" unless $STYLESHEET;
+        $MY_PARTIAL_HEADER = join('',
+            ($CHARSET && $HTML_VERSION ge "2.1"
+             ? ('<meta http-equiv="Content-Type" content="text/html; '
+                . "charset=$charset\">\n")
+             : ''),
+            ($BASE ? "<base href=\"$BASE\">\n" : ''),
+            "<link rel=\"STYLESHEET\" href=\"$STYLESHEET\">\n",
+            "<link rel=\"first\" href=\"$FILE.html\">\n",
+            ($HAVE_TABLE_OF_CONTENTS
+             ? ('<link rel="contents" href="contents.html" title="Contents">'
+                . "\n")
+             : ''),
+            ($HAVE_GENERAL_INDEX
+             ? '<link rel="index" href="genindex.html" title="Index">'
+             : ''),
+            # disable for now -- Mozilla doesn't do well with multiple indexes
+            # ($HAVE_MODULE_INDEX
+            #  ? '<link rel="index" href="modindex.html" title="Module Index">'
+            #    . "\n"
+            #  : ''),
+            $more_links_mark);
+    }
 
-    $STYLESHEET = $FILE.".css" unless $STYLESHEET;
     if (!$charset && $CHARSET) { $charset = $CHARSET; $charset =~ s/_/\-/go; }
 
     join('', ($DOCTYPE ? $DTDcomment : '' )
-	,"<html>\n<head>\n<title>", $title, "</title>\n"
-	, &meta_information($title)
-	, ($CHARSET && $HTML_VERSION ge "2.1" ?
-           "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=$charset\">\n"
-           : "" )
-	, ($BASE ? "<base href=\"$BASE\">\n" : "" )
-	, "<link rel=\"STYLESHEET\" href=\"$STYLESHEET\">"
-	, $more_links_mark
-	, "\n</head>\n<body$body>");
+         , "<html>\n<head>\n<title>", $title, "</title>\n"
+         , &meta_information($title)
+         , $MY_PARTIAL_HEADER
+         , "\n</head>\n<body$body>");
 }
 
 1;	# This must be the last line
