@@ -235,7 +235,7 @@ library
 These modules are not on the standard module search path;
 \indexiii{module}{search}{path}
 but are available in the directory \file{lib-old/} installed  under
-\file{\textrm{\$prefix}/lib/python\version/}.  To use any of these
+\file{\textrm{\$prefix}/lib/python1.5/}.  To use any of these
 modules, add that directory to \code{sys.path}, possibly using
 \envvar{PYTHONPATH}.
 
@@ -264,6 +264,21 @@ pdb.pm() or traceback.py instead)
 --- extract function name or line number from a function
 code object (these are now accessible as attributes: co.co_name,
 func.func_name, co.co_firstlineno)
+\end{description}
+
+The following modules were documented in previous versions of this
+manual, but are now considered obsolete:
+
+\begin{description}
+\item[ni]
+--- Import modules in ``packages.''
+
+\item[rand]
+--- Old interface to the random number generator.
+
+\item[soundex]
+--- Algorithm for collapsing names which sound similar to a shared
+key.  (This is an extension module.)
 \end{description}
 
 
