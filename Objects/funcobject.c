@@ -172,6 +172,7 @@ func_dealloc(op)
 	Py_DECREF(op->func_name);
 	Py_XDECREF(op->func_defaults);
 	Py_XDECREF(op->func_doc);
+	op = (PyFunctionObject *) PyObject_AS_GC(op);
 	PyObject_DEL(op);
 }
 

@@ -183,6 +183,8 @@ extern DL_IMPORT(void) _PyObject_Del Py_PROTO((PyObject *));
 	(PyVarObject *) PyObject_MALLOC( _PyObject_VAR_SIZE((typeobj),(n)) ),\
 	(typeobj), (n)) )
 
+#define PyObject_DEL(op) PyObject_FREE(op)
+
 /* This example code implements an object constructor with a custom
    allocator, where PyObject_New is inlined, and shows the important
    distinction between two steps (at least):
@@ -221,7 +223,7 @@ extern DL_IMPORT(void) _PyObject_Del Py_PROTO((PyObject *));
    PyObject_{New, VarNew, Del} to manage the memory.  Set the type flag
    Py_TPFLAGS_GC and define the type method tp_recurse.  You should also
    add the method tp_clear if your object is mutable.  Include
-   PyGC_INFO_SIZE in the calculation of tp_basicsize.  Call
+   PyGC_HEAD_SIZE in the calculation of tp_basicsize.  Call
    PyObject_GC_Init after the pointers followed by tp_recurse become
    valid (usually just before returning the object from the allocation
    method.  Call PyObject_GC_Fini before those pointers become invalid
@@ -234,7 +236,6 @@ extern DL_IMPORT(void) _PyObject_Del Py_PROTO((PyObject *));
 #define PyObject_GC_Fini(op)
 #define PyObject_AS_GC(op) (op)
 #define PyObject_FROM_GC(op) (op)
-#define PyObject_DEL(op) PyObject_FREE(op)
  
 #else
 
@@ -267,10 +268,6 @@ typedef struct _gc_head {
 
 /* Get the object given the PyGC_Head */
 #define PyObject_FROM_GC(g) ((PyObject *)(((PyGC_Head *)g)+1))
-
-#define PyObject_DEL(op) PyObject_FREE( PyObject_IS_GC(op) ? \
-					(ANY *)PyObject_AS_GC(op) : \
-					(ANY *)(op) )
 
 #endif /* WITH_CYCLE_GC */
 

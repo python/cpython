@@ -128,6 +128,7 @@ class_dealloc(op)
 	Py_XDECREF(op->cl_getattr);
 	Py_XDECREF(op->cl_setattr);
 	Py_XDECREF(op->cl_delattr);
+	op = (PyClassObject *) PyObject_AS_GC(op);
 	PyObject_DEL(op);
 }
 
@@ -473,6 +474,7 @@ PyInstance_New(class, arg, kw)
 	inst->in_dict = PyDict_New();
 	PyObject_GC_Init(inst);
 	if (inst->in_dict == NULL) {
+		inst = (PyInstanceObject *) PyObject_AS_GC(inst);
 		PyObject_DEL(inst);
 		return NULL;
 	}
@@ -588,6 +590,7 @@ instance_dealloc(inst)
 #endif /* Py_TRACE_REFS */
 	Py_DECREF(inst->in_class);
 	Py_XDECREF(inst->in_dict);
+	inst = (PyInstanceObject *) PyObject_AS_GC(inst);
 	PyObject_DEL(inst);
 }
 
@@ -1763,6 +1766,7 @@ PyMethod_Fini()
 	while (free_list) {
 		PyMethodObject *im = free_list;
 		free_list = (PyMethodObject *)(im->im_self);
+		im = (PyMethodObject *) PyObject_AS_GC(im);
 		PyObject_DEL(im);
 	}
 }

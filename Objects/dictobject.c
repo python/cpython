@@ -472,6 +472,7 @@ dict_dealloc(mp)
 	}
 	if (mp->ma_table != NULL)
 		PyMem_DEL(mp->ma_table);
+	mp = (dictobject *) PyObject_AS_GC(mp);
 	PyObject_DEL(mp);
 	Py_TRASHCAN_SAFE_END(mp)
 }

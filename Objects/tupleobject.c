@@ -175,6 +175,7 @@ tupledealloc(op)
 		}
 #endif
 	}
+	op = (PyTupleObject *) PyObject_AS_GC(op);
 	PyObject_DEL(op);
 done:
 	Py_TRASHCAN_SAFE_END(op)
@@ -559,6 +560,7 @@ _PyTuple_Resize(pv, newsize, last_is_sticky)
 		*pv = (PyObject *) sv;
 		if (sv == NULL) {
 			PyObject_GC_Init((PyObject *)v);
+			v = (PyTupleObject *) PyObject_AS_GC(v);
 			PyObject_DEL(v);
 			PyErr_NoMemory();
 			return -1;
@@ -595,6 +597,7 @@ PyTuple_Fini()
 		while (p) {
 			q = p;
 			p = (PyTupleObject *)(p->ob_item[0]);
+			q = (PyTupleObject *) PyObject_AS_GC(q);
 			PyObject_DEL(q);
 		}
 	}
