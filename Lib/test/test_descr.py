@@ -98,24 +98,24 @@ def class_docstrings():
         pass
     verify(Classic2.__doc__ is None)
 
-    class NewStatic:
+    class NewStatic(object):
         "Another docstring."
         __dynamic__ = 0
     verify(NewStatic.__doc__ == "Another docstring.")
     verify(NewStatic.__dict__['__doc__'] == "Another docstring.")
 
-    class NewStatic2:
+    class NewStatic2(object):
         __dynamic__ = 0
         pass
     verify(NewStatic2.__doc__ is None)
 
-    class NewDynamic:
+    class NewDynamic(object):
         "Another docstring."
         __dynamic__ = 1
     verify(NewDynamic.__doc__ == "Another docstring.")
     verify(NewDynamic.__dict__['__doc__'] == "Another docstring.")
 
-    class NewDynamic2:
+    class NewDynamic2(object):
         __dynamic__ = 1
         pass
     verify(NewDynamic2.__doc__ is None)
