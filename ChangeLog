@@ -1,3 +1,202 @@
+Fri Dec 30 16:19:17 1994  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Parser/tokenizer.c (tok_nextc): zap tok->buf after freeing
+
+	* Include/traceback.h: added struct _frame declaration for ANSI C
+
+	* Include/bitset.h: move definition of testbit() around
+
+Thu Dec 29 10:09:25 1994  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Objects/mappingobject.c (mapping_has_key): don't call
+	lookmapping() for empty dictionary
+
+	* Modules/Makefile.pre.in: use new style @prefix@ substitution
+	(sharedinstall): fix case of loop over empty $(SHAREDMODS)
+
+	* Several files: removed redundant variables etc. (Sam Leffler)
+
+Wed Dec 28 12:09:10 1994  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Modules/threadmodule.c (t_bootstrap): XDECREF the return value;
+        (thread_exit_thread): DECREF the frame returned by save_thread()
+
+	* Modules/md5module.c, Doc/libmd5.tex: renamed md5.md5() to md5.new()
+
+Wed Dec 21 13:30:47 1994  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Python/ceval.c (build_class): add hook for Donald Beaudry
+
+Mon Dec 19 17:35:13 1994  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Doc/libposixfile.tex: the fileopen function was erroneously
+	documented as openfile
+
+Tue Dec 13 11:46:03 1994  Guido Van Rossum  <guido@tesla>
+
+	* config.h.in, configure: rewritten *by* autoconf 2.0
+
+	* configure.in: parts rewritten for autoconf 2.0; strip spaces
+	from uname output for QNX; test for some new things like
+	ftruncate, truncate and va_list as array
+
+	* acconfig.h: some reordering to get things in alphabetical order;
+	added GETTIMEOFDAY_NO_TZ and VA_LIST_IS_ARRAY
+
+	* README: Added SCO notes
+
+	* Python/thread_solaris.h (start_new_thread): create new threads
+	with THR_DETACHED option instead of THR_NEW_LWP -- else there's a
+	limit to the number of threads you can create in total, ever, per
+	process
+
+	* Python/traceback.c (tb_print): don't store in sys.last_traceback
+	(that's done in pythonrun.c:print_error() now)
+
+	* Python/pythonrun.c (print_error): use fatal() instead of
+	abort(); use err_fetch() instead of err_get(); call tb_print()
+	instead of going through ceval.c:printtraceback()
+
+	* Python/modsupport.c: fix vmkvalue() for systems where va_list is
+	an array; add support for creating lists and dcitionaries; added
+	convenience functions for calling functions/methods with format
+	and argument list
+
+	* Python/marshal.c (rd[s]_object): add trap for calls while an
+	exception condition is still set
+
+	* Python/{import.c,importdl.c}: completely restructured: moved
+	all dynamic loading stuff to importdl.c; added public interface
+	to the functionality through module 'imp' (for __import__ hack)
+
+	* Modules/threadmodule.c (t_bootstrap): fix leak of result value
+	(still a massive leak left I think)
+
+	* Python/errors.c: don't declare strerror on NT
+
+	* Python/getargs.c (vgetargs[1]): fix for systems where va_list
+	is an array
+
+	* Python/compile.c: use fatal() instead of abort(); use
+	err_{fetch,restore}
+
+	* Python/ceval.c: move some (X)DECREF's around for improved
+	re-entrancy; call built-in __import__ to implement IMPORT_NAME;
+	use err_{fetch,restore}; fix call to __rshift__ in __lshift__;
+	check for string left arg before anything else in rem()
+
+	* Python/ceval.c, Include/ceval.h: get rid of printtraceback
+
+	* Python/bltinmodule.c: added __import__ built-in function;
+	restructured argument parsing of most built-ins to use
+	newgetargs()
+
+	* Python/Makefile.in: add importdl.o to OBJS; special-case
+	compilation of importdl.c instead of import.c
+
+	* Parser/{pgen.c,parser.c,grammar.c}: use fatal() instead of abort()
+
+	* Objects/object.c: use fatal() instead of abort()
+
+	* Objects/mappingobject.c: fix re-entrancy bugs (allow ma_table
+	and ma_size to be 0)
+
+	* Objects/listobject.c: fix some re-entrancy bugs (not complete)
+
+	* Objects/frameobject.c: use err_{fetch,restore} everywhere; use
+	fatal() instead of abort()
+
+	* Objects/fileobject.c (file_truncate): new method (only of
+	ftruncate() is in libc)
+
+	* Objects/classobject.c (instance_getattr): add err_clear() when
+	retrying after failing instance_getattr1() call; use
+	err_{fetch,restore} everywhere
+
+	* Modules/tkintermodule.c: use PyErr_{Fetch,Restore} instead of
+	{GetAndClear,SetObject}; fix NULL dereference in TimerHandler
+
+	* configure.in, Modules/timemodule.c: on some systems,
+	gettimeofday() has no second argument
+
+	* Modules/socketmodule.c: if O_NDELAY undefined, use O_NONBLOCK
+	(for QNX); use gethostbyname_r if it exists (since it is
+	re-entrant); use h_error and hstrerror when they exist; other
+	changes for re-entrancy; make printable representation more
+	useful; cosmetic changes in argument lists
+
+	* Modules/signalmodule.c: if NSIG undefined, use _SIGMAX + 1
+
+	* Modules/posixmodule.c: changes for direct/dirent dictated by
+	autoconf 2.0
+
+	* Modules/config.c.in: added standard built-in module "imp"
+
+	* Modules/{Makefile.pre.in,makesetup}: change @...@ to _..._
+
+	* Makefile.in: adapted to autoconf 2.0; treat prefix in a standard
+	way, remove config caches in distclean target
+
+	* Lib/tkinter/Tkinter.py (Pack.propagate): fix calling convention
+
+	* Lib/test/test_b2.py: test reload() of built-in module (marshal)
+
+	* Lib/test/{test_b1.py,testall.out}: added test for __import__
+
+	* Include/rename1.h: change HEAD_INIT to macro with argument
+
+	* Include/import.h: added decl for get_pyc_magic()
+
+	* Include/{rename1.h,errors.h}, Python/errors.c: added err_fetch()
+	and err_restore(), get rid of err_get()
+
+	* Include/bltinmodule.h, Python/bltinmodule.c (getbuiltins): new
+	like getbuiltin() buit takes char * instead of stringobject *
+	argument (for __import__ hack)
+
+	* Doc/tut.tex: use spam, bacon and eggs instead of foo, bar, bletch
+
+	* Doc/libtypes.tex (File Objects): add footnote
+	explaining why readline() leaves the trailing newline in
+
+Sat Nov 19 15:14:02 1994  Guido Van Rossum  <guido@tesla>
+
+	* Objects/mappingobject.c: ma_table may now be NULL (when ma_size
+	== ); changes to avoid re-entering the interpreter via DECREF
+	while the mapping object is being modified
+
+	* Several other places: similar
+
+	* errors.[ch]: new functions err_fetch and err_restore
+	fetch and restore all three exception related values (plus places
+	using these)
+
+	* Makefile.in (TESTPATH): Added ./Modules to test path so
+	dynamically loaded modules are found even if not yet installed
+
+Wed Nov 16 14:19:01 1994  Guido Van Rossum  <guido@tesla>
+
+	* Python/sysmodule.c (list_builtin_module_names): stop a leak
+
+Mon Nov 14 13:21:45 1994  Guido van Rossum  <guido@tesla>
+
+	* Doc/ref[467].tex: don't use \verb{...} in footnotes; rewritten
+	using {\tt ...}
+
+	* Lib/urlparse.py (urljoin): safe version of Andy Bensky's fix to
+	urllib.py
+
+	* Lib/urllib.py (basejoin): (Andy Bensky) fix case where url has a
+	type and a path but no host -- the host from the base should be
+	inserted
+
+	* Parser/grammar.c: (Don Beaudry) initialize accelerators print
+	"Translating labels" header only if debugging
+
+	* Doc/ref[36].tex: some typos
+
+	* Doc/ref[35].tex: clarify reverse/backward quotes, add them to
+	the index
 
 ===================================
 ==> Release 1.1.1 (10 Nov 1994) <==

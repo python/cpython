@@ -6,6 +6,99 @@ nother to make an entry in this file, unless it was a serious bug
 ==> Status indicators: (-) not fixed; (*) fixed; (?) don't know what to do.
 
 ======================================================================
+Known BUGS in 1.1.1 and 1.2
+---------------------------
+
+(-) arraymodule doesn't compile under Ultrix (FPROTO macro)
+
+(-) Linux uses GNU getopt by default which is broken
+
+(-) makesetup assumes CCC is the C++ compiler -- not portable
+
+(-) "make depend" assumes mkdep exists -- not portable
+
+(-) threadmodule.c leaks LOTS of memory at thread exit
+
+(-) tkinter seems to leave an exception around sometime which breaks
+unmarshalling code objects
+
+(-) memory leak (namebuf) in initmodule2
+
+(-) regen calls h2py which isn't defined by default
+
+(-) shared install in Modules still doesn't work for empty list
+
+(-) make libinstall (or similar) references to machdep directory but
+doesn't create it
+
+(-) destroying all modules may destroy __builtin__ while destructors
+of other modules may still need it
+
+(-) hash() of float values returns suspect values
+
+(-) sockets aren't thread safe (address of static struct returned,
+some calls aren't thread safe)
+
+(-) Everything else that uses err_get() should probably use err_get_tb()
+
+(-) struct module aligns doubles wrongly when compiled with -DDEBUG on sparc
+
+(-) pow(int, int, long) (etc.) dumps core on Linux (and other Intel machines?)
+
+(-) C-level coerce() doesn't call __coerce__ when it should (and
+similar for __cmp__)
+
+(-) DECREF can cause the interpreter to be called recursively (for
+__del__ disciplines) -- so list and dict implementation calls doing
+DECREF can cause recursive calls to methods of the object being
+modified.  Other files too.  (Only partially fixed.)
+
+(-) HP doesn't compile out of the box (needs LIBS=-ldld or
+LIBS=/usr/lib/libdld.sl)
+
+(-) something fishy with softspace and print_error (flushline clears
+the error)
+
+(-) tkinter doesn't seem to see any declaration of malloc on sunos 4.1.3
+
+======================================================================
+BUGS present in 1.1.1 and fixed in 1.2
+--------------------------------------
+
+(*) threadmodule.c leaks 'res' in t_bootstrap
+
+(*) errors.c shouldn't declare strerror() on NT
+
+(*) DECREF can cause the interpreter to be called recursively (for
+__del__ disciplines) -- so list and dict implementation calls doing
+DECREF can cause recursive calls to methods of the object being
+modified.  Other files too.  (Only partially fixed.)
+
+(*) tkinter dereferences NULL if timer callback raises an exception
+
+(*) must link with -lieee for linux
+
+(*) if a timer handler routine raises an exception, the interpreter
+dereferences NULL
+
+(*) __getattr__ doesn't clear error
+
+(*) '%s' % a, where a is a class instance, fails
+
+(*) "make test" won't find freshly built dynamically loaded modules --
+should add ./Modules to TESTPATH
+
+(*) lshift calls __rshift__ instead of __rlshift__
+
+(*) memory leak in creation of sys.builtin_module_names
+
+(*) Bugs in instance_dealloc(): (a) memory leak for exception
+type+value; (2) should save+restore traceback as well
+
+(*) modsupport.c(vmkvalue): on systems where va_list is an array, the
+calls to do_mkvalue and do_mktuple don't want an "&" before va.
+
+======================================================================
 BUGS found in 1.1 and fixed in 1.1.1
 ------------------------------------
 
@@ -39,20 +132,11 @@ max is >0
 
 (*) sorting class instances broken if no __cmp__ defined
 
-BUGS found in 1.1 and not yet fixed
------------------------------------
-
-(-) HP doesn't compile out of the box (needs LIBS=-ldld or
-LIBS=/usr/lib/libdld.sl)
-
-(-) something fishy with softspace and print_error (flushline clears
-the error)
-
-(-) tkinter doesn't seem to see any declaration of malloc on sunos 4.1.3
-
 ======================================================================
 BUGS found in 1.0.3 and fixed in 1.1
 ------------------------------------
+
+(*) 2 specific leaks: 1 PYTHONPATH; 2 reading code from .pyc
 
 (*) If class C doesn't define __cmp__, cmp(a,b) will return -2 and
 [a,b].sort() will fail
@@ -65,9 +149,6 @@ involved.
 
 (*) freeze script needs major rewrite to cope with multiple extensions
 (Jack seems to have fixed it now -- where is it?)
-
-(*) various memory leaks (see purify report from anthony.baxter@aaii.oz.au)
-(several leaks fixed anyway :-)
 
 (*) unwanted entries in stack trace if err_clear() clears an error
 that also set a stack trace
@@ -157,10 +238,6 @@ end in linefeed
 ======================================================================
 Bugs found in 1.0.1 and not yet fixed
 -------------------------------------
-
-(?) modsupport.c(vmkvalue): on systems where va_list is an array, the
-calls to do_mkvalue and do_mktuple don't want an "&" before va.
-(don't know what to do about this)
 
 (?) threads are slow on Solaris 2
 (so what?)
