@@ -675,6 +675,8 @@ setup_readline(void)
 {
 #ifdef SAVE_LOCALE
 	char *saved_locale = strdup(setlocale(LC_CTYPE, NULL));
+	if (!saved_locale)
+		Py_FatalError("not enough memory to save locale");
 #endif
 
 	using_history();
@@ -823,6 +825,8 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 {
 #ifdef SAVE_LOCALE
 	char *saved_locale = strdup(setlocale(LC_CTYPE, NULL));
+	if (!saved_locale)
+		Py_FatalError("not enough memory to save locale");
 	setlocale(LC_CTYPE, "");
 #endif
 	size_t n;
