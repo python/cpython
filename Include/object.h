@@ -109,23 +109,23 @@ NB: the methods for certain type groups are now contained in separate
 method blocks.
 */
 
-typedef PyObject * (*unaryfunc) Py_PROTO((PyObject *));
-typedef PyObject * (*binaryfunc) Py_PROTO((PyObject *, PyObject *));
-typedef PyObject * (*ternaryfunc) Py_PROTO((PyObject *, PyObject *, PyObject *));
-typedef int (*inquiry) Py_PROTO((PyObject *));
-typedef int (*coercion) Py_PROTO((PyObject **, PyObject **));
-typedef PyObject *(*intargfunc) Py_PROTO((PyObject *, int));
-typedef PyObject *(*intintargfunc) Py_PROTO((PyObject *, int, int));
-typedef int(*intobjargproc) Py_PROTO((PyObject *, int, PyObject *));
-typedef int(*intintobjargproc) Py_PROTO((PyObject *, int, int, PyObject *));
-typedef int(*objobjargproc) Py_PROTO((PyObject *, PyObject *, PyObject *));
-typedef int (*getreadbufferproc) Py_PROTO((PyObject *, int, void **));
-typedef int (*getwritebufferproc) Py_PROTO((PyObject *, int, void **));
-typedef int (*getsegcountproc) Py_PROTO((PyObject *, int *));
-typedef int (*getcharbufferproc) Py_PROTO((PyObject *, int, const char **));
-typedef int (*objobjproc) Py_PROTO((PyObject *, PyObject *));
-typedef int (*visitproc) Py_PROTO((PyObject *, void *));
-typedef int (*traverseproc) Py_PROTO((PyObject *, visitproc, void *));
+typedef PyObject * (*unaryfunc)(PyObject *);
+typedef PyObject * (*binaryfunc)(PyObject *, PyObject *);
+typedef PyObject * (*ternaryfunc)(PyObject *, PyObject *, PyObject *);
+typedef int (*inquiry)(PyObject *);
+typedef int (*coercion)(PyObject **, PyObject **);
+typedef PyObject *(*intargfunc)(PyObject *, int);
+typedef PyObject *(*intintargfunc)(PyObject *, int, int);
+typedef int(*intobjargproc)(PyObject *, int, PyObject *);
+typedef int(*intintobjargproc)(PyObject *, int, int, PyObject *);
+typedef int(*objobjargproc)(PyObject *, PyObject *, PyObject *);
+typedef int (*getreadbufferproc)(PyObject *, int, void **);
+typedef int (*getwritebufferproc)(PyObject *, int, void **);
+typedef int (*getsegcountproc)(PyObject *, int *);
+typedef int (*getcharbufferproc)(PyObject *, int, const char **);
+typedef int (*objobjproc)(PyObject *, PyObject *);
+typedef int (*visitproc)(PyObject *, void *);
+typedef int (*traverseproc)(PyObject *, visitproc, void *);
 
 typedef struct {
 	binaryfunc nb_add;
@@ -178,15 +178,15 @@ typedef struct {
 } PyBufferProcs;
 	
 
-typedef void (*destructor) Py_PROTO((PyObject *));
-typedef int (*printfunc) Py_PROTO((PyObject *, FILE *, int));
-typedef PyObject *(*getattrfunc) Py_PROTO((PyObject *, char *));
-typedef PyObject *(*getattrofunc) Py_PROTO((PyObject *, PyObject *));
-typedef int (*setattrfunc) Py_PROTO((PyObject *, char *, PyObject *));
-typedef int (*setattrofunc) Py_PROTO((PyObject *, PyObject *, PyObject *));
-typedef int (*cmpfunc) Py_PROTO((PyObject *, PyObject *));
-typedef PyObject *(*reprfunc) Py_PROTO((PyObject *));
-typedef long (*hashfunc) Py_PROTO((PyObject *));
+typedef void (*destructor)(PyObject *);
+typedef int (*printfunc)(PyObject *, FILE *, int);
+typedef PyObject *(*getattrfunc)(PyObject *, char *);
+typedef PyObject *(*getattrofunc)(PyObject *, PyObject *);
+typedef int (*setattrfunc)(PyObject *, char *, PyObject *);
+typedef int (*setattrofunc)(PyObject *, PyObject *, PyObject *);
+typedef int (*cmpfunc)(PyObject *, PyObject *);
+typedef PyObject *(*reprfunc)(PyObject *);
+typedef long (*hashfunc)(PyObject *);
 
 typedef struct _typeobject {
 	PyObject_VAR_HEAD
@@ -248,33 +248,33 @@ extern DL_IMPORT(PyTypeObject) PyType_Type; /* The type of type objects */
 #define PyType_Check(op) ((op)->ob_type == &PyType_Type)
 
 /* Generic operations on objects */
-extern DL_IMPORT(int) PyObject_Print Py_PROTO((PyObject *, FILE *, int));
-extern DL_IMPORT(PyObject *) PyObject_Repr Py_PROTO((PyObject *));
-extern DL_IMPORT(PyObject *) PyObject_Str Py_PROTO((PyObject *));
-extern DL_IMPORT(int) PyObject_Compare Py_PROTO((PyObject *, PyObject *));
-extern DL_IMPORT(PyObject *) PyObject_GetAttrString Py_PROTO((PyObject *, char *));
-extern DL_IMPORT(int) PyObject_SetAttrString Py_PROTO((PyObject *, char *, PyObject *));
-extern DL_IMPORT(int) PyObject_HasAttrString Py_PROTO((PyObject *, char *));
-extern DL_IMPORT(PyObject *) PyObject_GetAttr Py_PROTO((PyObject *, PyObject *));
-extern DL_IMPORT(int) PyObject_SetAttr Py_PROTO((PyObject *, PyObject *, PyObject *));
-extern DL_IMPORT(int) PyObject_HasAttr Py_PROTO((PyObject *, PyObject *));
-extern DL_IMPORT(long) PyObject_Hash Py_PROTO((PyObject *));
-extern DL_IMPORT(int) PyObject_IsTrue Py_PROTO((PyObject *));
-extern DL_IMPORT(int) PyObject_Not Py_PROTO((PyObject *));
-extern DL_IMPORT(int) PyCallable_Check Py_PROTO((PyObject *));
-extern DL_IMPORT(int) PyNumber_Coerce Py_PROTO((PyObject **, PyObject **));
-extern DL_IMPORT(int) PyNumber_CoerceEx Py_PROTO((PyObject **, PyObject **));
+extern DL_IMPORT(int) PyObject_Print(PyObject *, FILE *, int);
+extern DL_IMPORT(PyObject *) PyObject_Repr(PyObject *);
+extern DL_IMPORT(PyObject *) PyObject_Str(PyObject *);
+extern DL_IMPORT(int) PyObject_Compare(PyObject *, PyObject *);
+extern DL_IMPORT(PyObject *) PyObject_GetAttrString(PyObject *, char *);
+extern DL_IMPORT(int) PyObject_SetAttrString(PyObject *, char *, PyObject *);
+extern DL_IMPORT(int) PyObject_HasAttrString(PyObject *, char *);
+extern DL_IMPORT(PyObject *) PyObject_GetAttr(PyObject *, PyObject *);
+extern DL_IMPORT(int) PyObject_SetAttr(PyObject *, PyObject *, PyObject *);
+extern DL_IMPORT(int) PyObject_HasAttr(PyObject *, PyObject *);
+extern DL_IMPORT(long) PyObject_Hash(PyObject *);
+extern DL_IMPORT(int) PyObject_IsTrue(PyObject *);
+extern DL_IMPORT(int) PyObject_Not(PyObject *);
+extern DL_IMPORT(int) PyCallable_Check(PyObject *);
+extern DL_IMPORT(int) PyNumber_Coerce(PyObject **, PyObject **);
+extern DL_IMPORT(int) PyNumber_CoerceEx(PyObject **, PyObject **);
 
 /* Helpers for printing recursive container types */
-extern DL_IMPORT(int) Py_ReprEnter Py_PROTO((PyObject *));
-extern DL_IMPORT(void) Py_ReprLeave Py_PROTO((PyObject *));
+extern DL_IMPORT(int) Py_ReprEnter(PyObject *);
+extern DL_IMPORT(void) Py_ReprLeave(PyObject *);
 
 /* tstate dict key for PyObject_Compare helper */
 extern PyObject *_PyCompareState_Key;
 
 /* Helpers for hash functions */
-extern DL_IMPORT(long) _Py_HashDouble Py_PROTO((double));
-extern DL_IMPORT(long) _Py_HashPointer Py_PROTO((void*));
+extern DL_IMPORT(long) _Py_HashDouble(double);
+extern DL_IMPORT(long) _Py_HashPointer(void*);
 
 /* Flag bits for printing: */
 #define Py_PRINT_RAW	1	/* No string quotes etc. */
@@ -355,11 +355,11 @@ environment the global variable trick is not safe.)
 #endif
 
 #ifdef Py_TRACE_REFS
-extern DL_IMPORT(void) _Py_Dealloc Py_PROTO((PyObject *));
-extern DL_IMPORT(void) _Py_NewReference Py_PROTO((PyObject *));
-extern DL_IMPORT(void) _Py_ForgetReference Py_PROTO((PyObject *));
-extern DL_IMPORT(void) _Py_PrintReferences Py_PROTO((FILE *));
-extern DL_IMPORT(void) _Py_ResetReferences Py_PROTO((void));
+extern DL_IMPORT(void) _Py_Dealloc(PyObject *);
+extern DL_IMPORT(void) _Py_NewReference(PyObject *);
+extern DL_IMPORT(void) _Py_ForgetReference(PyObject *);
+extern DL_IMPORT(void) _Py_PrintReferences(FILE *);
+extern DL_IMPORT(void) _Py_ResetReferences(void);
 #endif
 
 #ifndef Py_TRACE_REFS
@@ -373,7 +373,7 @@ extern DL_IMPORT(void) _Py_ResetReferences Py_PROTO((void));
 #endif /* !Py_TRACE_REFS */
 
 #ifdef COUNT_ALLOCS
-extern DL_IMPORT(void) inc_count Py_PROTO((PyTypeObject *));
+extern DL_IMPORT(void) inc_count(PyTypeObject *);
 #endif
 
 #ifdef Py_REF_DEBUG
@@ -555,8 +555,8 @@ times.
 			_PyTrash_destroy_chain(); \
 	} \
 
-extern DL_IMPORT(void) _PyTrash_deposit_object Py_PROTO((PyObject*));
-extern DL_IMPORT(void) _PyTrash_destroy_chain Py_PROTO(());
+extern DL_IMPORT(void) _PyTrash_deposit_object(PyObject*);
+extern DL_IMPORT(void) _PyTrash_destroy_chain();
 
 extern DL_IMPORT(int) _PyTrash_delete_nesting;
 extern DL_IMPORT(PyObject *) _PyTrash_delete_later;

@@ -1677,8 +1677,7 @@ static PyNumberMethods long_as_number = {
 	(binaryfunc)	long_and,	/*nb_and*/
 	(binaryfunc)	long_xor,	/*nb_xor*/
 	(binaryfunc)	long_or,	/*nb_or*/
-	(int (*) (PyObject **, PyObject **))
-		(coercion)long_coerce,	/*nb_coerce*/
+	(coercion)	long_coerce,	/*nb_coerce*/
 	(unaryfunc)	long_int,	/*nb_int*/
 	(unaryfunc)	long_long,	/*nb_long*/
 	(unaryfunc)	long_float,	/*nb_float*/
@@ -1696,14 +1695,12 @@ PyTypeObject PyLong_Type = {
 	0,				/*tp_print*/
 	0,				/*tp_getattr*/
 	0,				/*tp_setattr*/
-	(int (*) (PyObject *, PyObject *))
-		(cmpfunc)long_compare,	/*tp_compare*/
+	(cmpfunc)long_compare,		/*tp_compare*/
 	(reprfunc)long_repr,		/*tp_repr*/
 	&long_as_number,		/*tp_as_number*/
 	0,				/*tp_as_sequence*/
 	0,				/*tp_as_mapping*/
-	(long (*) (PyObject *))
-		(hashfunc)long_hash,	/*tp_hash*/
+	(hashfunc)long_hash,		/*tp_hash*/
         0,              		/*tp_call*/
         (reprfunc)long_str,		/*tp_str*/
 };
