@@ -1,21 +1,21 @@
 \section{\module{re} ---
-         Perl-style regular expression operations.}
+         Regular expression operations}
 \declaremodule{standard}{re}
 \moduleauthor{Andrew M. Kuchling}{amk1@bigfoot.com}
+\moduleauthor{Fredrik Lundh}{effbot@telia.com}
 \sectionauthor{Andrew M. Kuchling}{amk1@bigfoot.com}
 
 
-\modulesynopsis{Perl-style regular expression search and match
-operations.}
+\modulesynopsis{Regular expression search and match operations with a
+                Perl-style expression syntax.}
 
 
 This module provides regular expression matching operations similar to
-those found in Perl.  It's 8-bit clean: the strings being processed
-may contain both null bytes and characters whose high bit is set.  Regular
-expression pattern strings may not contain null bytes, but can specify
-the null byte using the \code{\e\var{number}} notation.
-Characters with the high bit set may be included.  The \module{re}
-module is always available.
+those found in Perl.  Regular expression pattern strings may not
+contain null bytes, but can specify the null byte using the
+\code{\e\var{number}} notation.  Both patterns and strings to be
+searched can be Unicode strings as well as 8-bit strings.  The
+\module{re} module is always available.
 
 Regular expressions use the backslash character (\character{\e}) to
 indicate special forms or to allow special characters to be used
@@ -33,6 +33,15 @@ two-character string containing \character{\e} and \character{n},
 while \code{"\e n"} is a one-character string containing a newline.
 Usually patterns will be expressed in Python code using this raw
 string notation.
+
+\strong{Implementation note:}
+The \module{re}\refstmodindex{pre} module has two distinct
+implementations: \module{sre} is the default implementation and
+includes Unicode support, but may run into stack limitations for some
+patterns.  Though this will be fixed for a future release of Python,
+the older implementation (without Unicode support) is still available
+as the \module{pre}\refstmodindex{pre} module.
+
 
 \subsection{Regular Expression Syntax \label{re-syntax}}
 
@@ -155,9 +164,16 @@ simply match the \character{\^} character.  For example, \regexp{[{\^}5]}
 will match any character except \character{5}.
 
 \item[\character{|}]\code{A|B}, where A and B can be arbitrary REs,
-creates a regular expression that will match either A or B.  This can
-be used inside groups (see below) as well.  To match a literal \character{|},
-use \regexp{\e|}, or enclose it inside a character class, as in  \regexp{[|]}.
+creates a regular expression that will match either A or B.  An
+arbitrary number of REs can be separated by the \character{|} in this
+way.  This can be used inside groups (see below) as well.  REs
+separated by \character{|} are tried from left to right, and the first
+one that allows the complete pattern to match is considered the
+accepted branch.  This means that if \code{A} matches, \code{B} will
+never be tested, even if it would produce a longer overall match.  In
+other words, the \character{|} operator is never greedy.  To match a
+literal \character{|}, use \regexp{\e|}, or enclose it inside a
+character class, as in \regexp{[|]}.
 
 \item[\code{(...)}] Matches whatever regular expression is inside the
 parentheses, and indicates the start and end of a group; the contents
@@ -183,6 +199,11 @@ the corresponding flags (\constant{re.I}, \constant{re.L},
 for the entire regular expression.  This is useful if you wish to
 include the flags as part of the regular expression, instead of
 passing a \var{flag} argument to the \function{compile()} function.
+
+Note that the \regexp{(?x)} flag changes how the expression is parsed.
+It should be used first in the expression string, or after one or more
+whitespace characters.  If there are non-whitespace characters before
+the flag, the results are undefined.
 
 \item[\code{(?:...)}] A non-grouping version of regular parentheses.
 Matches whatever regular expression is inside the parentheses, but the
