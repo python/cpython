@@ -1,6 +1,7 @@
 % Format this file with latex.
 
-\documentstyle[myformat]{article}
+\documentstyle[palatino,11pt,myformat]{article}
+%\documentstyle[11pt,myformat]{article}
 
 \title{\bf
 	Python Tutorial \\
@@ -26,7 +27,7 @@
 \Python\ is a simple, yet powerful programming language that bridges the
 gap between C and shell programming, and is thus ideally suited for rapid
 prototyping.
-It is put together from constructs borrowed from a variety of other
+Its syntax is put together from constructs borrowed from a variety of other
 languages; most prominent are influences from ABC, C, Modula-3 and Icon.
 
 The \Python\ interpreter is easily extended with new functions and data
@@ -42,10 +43,11 @@ features of the \Python\ language and system.
 It helps to have a \Python\ interpreter handy for hands-on experience,
 but as the examples are self-contained, the tutorial can be read
 off-line as well.
-For a description of standard objects and modules, see the Library and
-Module Reference document.
-The Language Reference document gives a more formal reference to the
-language.
+
+For a description of standard objects and modules, see the Library
+Reference document.
+The Language Reference document (XXX not yet existing)
+gives a more formal reference to the language.
 
 \end{abstract}
 
@@ -62,7 +64,7 @@ language.
 If you ever wrote a large shell script, you probably know this feeling:
 you'd love to add yet another feature, but it's already so slow, and so
 big, and so complicated; or the feature involves a system call or other
-funcion that is only accessable from C...
+funcion that is only accessible from C \ldots
 Usually the problem at hand isn't serious enough to warrant rewriting
 the script in C; perhaps because the problem requires variable-length
 strings or other data types (like sorted lists of file names) that
@@ -74,14 +76,14 @@ In all such cases, \Python\ is just the language for you.
 much more structure and support for large programs than the shell has.
 On the other hand, it also offers much more error checking than C, and,
 being a
-{\it very-high-level language},
+{\em very-high-level language},
 it has high-level data types built in, such as flexible arrays and
 dictionaries that would cost you days to implement efficiently in C.
 Because of its more general data types \Python\ is applicable to a
 much larger problem domain than
-{\it Awk}
+{\em Awk}
 or even
-{\it Perl},
+{\em Perl},
 yet most simple things are at least as easy in \Python\ as in those
 languages.
 
@@ -110,7 +112,7 @@ brackets; and the high-level data types allow you to express complex
 operations in a single statement.
 
 \Python\ is
-{\it extensible}:
+{\em extensible}:
 if you know how to program in C it is easy to add a new built-in module
 to the interpreter, either to perform critical operations at maximum
 speed, or to link \Python\ programs to libraries that may be only available
@@ -157,8 +159,8 @@ administrator.%
 	On the Amoeba Ultrix machines, use the standard path,
 	{\tt /usr/local/python}.
 	On the Sun file servers, use
-	{\tt /ufs/guido/bin/}{\it arch}{\tt /python},
-	where {\it arch} can be {\tt sgi} or {\tt sun4}.
+	{\tt /ufs/guido/bin/}{\em arch}{\tt /python},
+	where {\em arch} can be {\tt sgi} or {\tt sun4}.
 	On piring, use {\tt /userfs3/amoeba/bin/python}.
 	(If you can't find a binary advertised here, get in touch with me.)
 }
@@ -167,15 +169,15 @@ The interpreter operates somewhat like the \UNIX\ shell: when called with
 standard input connected to a tty device, it reads and executes commands
 interactively; when called with a file name argument or with a file as
 standard input, it reads and executes a
-{\it script}
+{\em script}
 from that file.%
 \footnote{
 	There is a difference between ``{\tt python file}'' and
 	``{\tt python $<$file}''.  In the latter case {\tt input()} and
-	{\tt raw\_input()} are satisfied from {\it file}, which has
+	{\tt raw\_input()} are satisfied from {\em file}, which has
 	already been read until the end by the parser, so they will read
-	EOF immediately.  In the former case (which is usually what was
-	intended) they are satisfied from whatever file or device is
+	EOF immediately.  In the former case (which is usually what
+	you want) they are satisfied from whatever file or device is
 	connected to standard input of the \Python\ interpreter.
 }
 If available, the script name and additional arguments thereafter are
@@ -184,19 +186,19 @@ passed to the script in the variable
 which is a list of strings.
 
 When standard input is a tty, the interpreter is said to be in
-{\it interactive\ mode}.
+{\em interactive\ mode}.
 In this mode it prompts for the next command with the
-{\it primary\ prompt},
+{\em primary\ prompt},
 usually three greater-than signs ({\tt >>>}); for continuation lines
 it prompts with the
-{\it secondary\ prompt},
+{\em secondary\ prompt},
 by default three dots ({\tt ...}).
-Typing an EOF (\^{}D) at the primary prompt causes the interpreter to exit
-with a zero exit status.
+Typing an EOF (Control-D) at the primary prompt causes the interpreter
+to exit with a zero exit status.
 
 When an error occurs in interactive mode, the interpreter prints a
-message and returns to the primary prompt; with input from a file, it
-exits with a nonzero exit status.
+message and a stack trace and returns to the primary prompt; with input
+from a file, it exits with a nonzero exit status.
 (Exceptions handled by an
 {\tt except}
 clause in a
@@ -233,7 +235,7 @@ is not set, an installation-dependent default path is used, usually
 	Modules are really searched in the list of directories given by
 	the variable {\tt sys.path} which is initialized from
 	{\tt PYTHONPATH} or from the installation-dependent default.
-	See the section on Standard Modules below.
+	See the section on Standard Modules later.
 }
 The built-in module
 {\tt stdwin},
@@ -270,7 +272,7 @@ Some versions of the \Python\ interpreter support editing of the current
 input line and history substitution, similar to facilities found in the
 Korn shell and the GNU Bash shell.
 This is implemented using the
-{\it GNU\ Readline}
+{\em GNU\ Readline}
 library, which supports Emacs-style and vi-style editing.
 This library has its own documentation which I won't duplicate here;
 however, the basics are easily explained.
@@ -280,15 +282,10 @@ If supported,%
 	Perhaps the quickest check to see whether command line editing
 	is supported is typing Control-P to the first \Python\ prompt
 	you get.  If it beeps, you have command line editing.
-	If not, you can forget about the rest of this section.
+	If not, you can skip the rest of this section.
 }
 input line editing is active whenever the interpreter prints a primary
-or secondary prompt (yes, you can turn it off by deleting
-{\tt sys.ps1},
-and no, it is not provided for
-{\tt input()}
-and
-{\tt raw\_input()}).
+or secondary prompt.
 The current line can be edited using the conventional Emacs control
 characters.
 The most important of these are:
@@ -298,16 +295,16 @@ Backspace erases the character to the left of the cursor, C-D the
 character to its right.
 C-K kills (erases) the rest of the line to the right of the cursor, C-Y
 yanks back the last killed string.
-C-\_ undoes the last change you made; it can be repeated for cumulative
-effect.
+C-underscore undoes the last change you made; it can be repeated for
+cumulative effect.
 
 History substitution works as follows.
-All non-empty input lines issued so far are saved in a history buffer,
+All non-empty input lines issued are saved in a history buffer,
 and when a new prompt is given you are positioned on a new line at the
 bottom of this buffer.
 C-P moves one line up (back) in the history buffer, C-N moves one down.
-The current line in the history buffer can be edited; in this case an
-asterisk appears in front of the prompt to mark it as modified.
+Any line in the history buffer can be edited; an asterisk appears in
+front of the prompt to mark a line as modified.
 Pressing the Return key passes the current line to the interpreter.
 C-R starts an incremental reverse search; C-S starts a forward search.
 
@@ -340,7 +337,7 @@ TAB: complete
 \end{verbatim}\end{code}
 in your
 {\tt \$HOME/.inputrc}.
-Of course, this makes it hard to type indented continuation lines.
+(Of course, this makes it hard to type indented continuation lines.)
 
 This facility is an enormous step forward compared to previous versions of
 the interpreter; however, some wishes are left:
@@ -398,13 +395,13 @@ The value of an assignment is not written:
 900
 >>> 
 \end{verbatim}\end{code}
-There is some support for floating point:
+There is some support for floating point, but you can't mix floating
+point and integral numbers in expression (yet):
 \begin{code}\begin{verbatim}
 >>> 10.0 / 3.3
 3.0303030303
 >>> 
 \end{verbatim}\end{code}
-But you can't mix floating point and integral numbers in expression (yet).
 
 Besides numbers, \Python\ can also manipulate strings, enclosed in single
 quotes:
@@ -435,7 +432,7 @@ subscript 0.
 There is no separate character type; a character is simply a string of
 size one.
 As in Icon, substrings can be specified with the
-{\it slice}
+{\em slice}
 notation: two subscripts (indices) separated by a colon.
 \begin{code}\begin{verbatim}
 >>> word[4]
@@ -447,7 +444,7 @@ notation: two subscripts (indices) separated by a colon.
 >>> # Slice indices have useful defaults:
 >>> word[:2]    # Take first two characters
 'He'
->>> word[2:]    # Skip first two characters
+>>> word[2:]    # Drop first two characters
 'lpA'
 >>> # A useful invariant: s[:i] + s[i:] = s
 >>> word[:3] + word[3:]
@@ -472,7 +469,7 @@ For example:
 \begin{code}\begin{verbatim}
 >>> word[-2:]    # Take last two characters
 'pA'
->>> word[:-2]    # Skip last two characters
+>>> word[:-2]    # Drop last two characters
 'Hel'
 >>> # But -0 does not count from the right!
 >>> word[-0:]    # (since -0 equals 0)
@@ -481,7 +478,7 @@ For example:
 \end{verbatim}\end{code}
 The best way to remember how slices work is to think of the indices as
 pointing
-{\it between}
+{\em between}
 characters, with the left edge of the first character numbered 0.
 Then the right edge of the last character of a string of
 {\tt n}
@@ -499,7 +496,7 @@ The first row of numbers gives the position of the indices 0...5 in the
 string; the second row gives the corresponding negative indices.
 For nonnegative indices, the length of a slice is the difference of the
 indices, if both are within bounds,
-{\it e.g.},
+e.g.,
 the length of
 {\tt word[1:3]}
 is 3--1 = 2.
@@ -514,10 +511,10 @@ string:
 \end{verbatim}\end{code}
 
 \Python\ knows a number of
-{\it compound}
+{\em compound}
 data types, used to group together other values.
 The most versatile is the
-{\it list},
+{\em list},
 which can be written as a list of comma-separated values between square
 brackets:
 \begin{code}\begin{verbatim}
@@ -543,7 +540,7 @@ Lists can be sliced and concatenated like strings:
 >>> 
 \end{verbatim}\end{code}
 Unlike strings, which are
-{\it immutable},
+{\em immutable},
 it is possible to change individual elements of a list:
 \begin{code}\begin{verbatim}
 >>> a
@@ -577,12 +574,16 @@ The built-in function {\tt len()} also applies to lists:
 >>> 
 \end{verbatim}\end{code}
 
-\subsection{Simple and Compound Statements}
+\subsection{Tuples and Sequences}
+
+XXX To Be Done.
+
+\subsection{First Steps Towards Programming}
 
 Of course, we can use \Python\ for more complicated tasks than adding two
 and two together.
 For instance, we can write an initial subsequence of the
-{\it Fibonacci}
+{\em Fibonacci}
 series as follows:
 \begin{code}\begin{verbatim}
 >>> # Fibonacci series:
@@ -609,7 +610,7 @@ This example introduces several new features.
 \begin{itemize}
 \item
 The first line contains a
-{\it multiple\ assignment}:
+{\em multiple\ assignment}:
 the variables
 {\tt a}
 and
@@ -621,7 +622,7 @@ assignments take place.
 \item
 The
 {\tt while}
-loop executes as long as the condition remains true.
+loop executes as long as the condition (here: $b < 100$) remains true.
 In \Python, as in C, any non-zero integer value is true; zero is false.
 The condition may also be a string or list value, in fact any sequence;
 anything with a non-zero length is true, empty sequences are false.
@@ -641,26 +642,25 @@ and
 }
 \item
 The
-{\it body}
+{\em body}
 of the loop is
-{\it indented}
-by one tab stop: indentation is \Python's way of grouping statements.
+{\em indented}: indentation is \Python's way of grouping statements.
 \Python\ does not (yet!) provide an intelligent input line editing
-facility, so you have to type a tab for each indented line.
+facility, so you have to type a tab or space(s) for each indented line.
 In practice you will prepare more complicated input for \Python\ with a
 text editor; most text editors have an auto-indent facility.
 When a compound statement is entered interactively, it must be
-followed by a blank line to indicate completion (otherwise the parser
-doesn't know that you have typed the last line).
+followed by a blank line to indicate completion (since the parser
+cannot guess when you have typed the last line).
 \item
 The
 {\tt print}
-statement writes the value of the expression(s) it is passed.
+statement writes the value of the expression(s) it is given.
 It differs from just writing the expression you want to write (as we did
 earlier in the calculator examples) in the way it handles multiple
 expressions and strings.
 Strings are written without quotes and a space is inserted between
-items, so you can do things like this:
+items, so you can format things nicely, like this:
 \begin{code}\begin{verbatim}
 >>> i = 256*256
 >>> print 'The value of i is', i
@@ -681,10 +681,11 @@ Note that the interpreter inserts a newline before it prints the next
 prompt if the last line was not completed.
 \end{itemize}
 
-\subsection{Other Control Flow Statements}
+\subsection{More Control Flow Tools}
 
-Besides {\tt while}, already introduced, \Python\ supports the usual
-control flow statements known from other languages, with some twists.
+Besides the {\tt while} statement just introduced, \Python\ knows the
+usual control flow statements known from other languages, with some
+twists.
 
 \subsubsection{If Statements}
 
@@ -704,17 +705,20 @@ For example:
 \end{verbatim}\end{code}
 There can be zero or more {\tt elif} parts, and the {\tt else} part is
 optional.
+The keyword `{\tt elif}' is short for `{\tt else if}', and is useful to
+avoid excessive indentation.
+An {\tt if...elif...elif...} sequence is a substitute for the
+{\em switch} or {\em case} statements found in other languages.
 
 \subsubsection{For Statements}
 
 The {\tt for} statement in \Python\ differs a bit from what you may be
 used to in C or Pascal.
-Rather than always iterating over an arithmetic progression of numbers,
-as in Pascal, or leaving the user completely free in the iteration test
-and step, as in C, \Python's {\tt for} iterates over the items of any
-sequence (\it e.g.\rm%
-, a list or a string).
-An example {\tt for} statement:
+Rather than always iterating over an arithmetic progression of numbers
+(as Pascal), or leaving the user completely free in the iteration test
+and step (as C), \Python's {\tt for} statement iterates over the items
+of any sequence (e.g., a list or a string).
+For example (no pun intended):
 \begin{code}\begin{verbatim}
 >>> # Measure some strings:
 >>> a = ['cat', 'window', 'defenestrate']
@@ -726,18 +730,21 @@ window 6
 defenestrate 12
 >>> 
 \end{verbatim}\end{code}
+
+\subsubsection{The {\tt range()} Function}
+
 If you do need to iterate over a sequence of numbers, the built-in
 function {\tt range()} comes in handy.
 It generates lists containing arithmetic progressions,
-{\it e.g.}:
+e.g.:
 \begin{code}\begin{verbatim}
 >>> range(10)
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 >>> 
 \end{verbatim}\end{code}
-The end point is never part of the generated list; {\tt range(10)}
-generates exactly the legal indices for items of a list or string of
-length 10.
+The given end point is never part of the generated list;
+{\tt range(10)} generates a list of 10 values,
+exactly the legal indices for items of a sequence of length 10.
 It is possible to let the range start at another number, or to specify a
 different increment (even negative):
 \begin{code}\begin{verbatim}
@@ -749,10 +756,10 @@ different increment (even negative):
 [-10, -40, -70]
 >>> 
 \end{verbatim}\end{code}
-To iterate over the indices of a list or string, combine {\tt range()}
+To iterate over the indices of a sequence, combine {\tt range()}
 and {\tt len()} as follows:
 \begin{code}\begin{verbatim}
->>> a = ['Mary', 'had', 'a', 'little', 'lamb']
+>>> a = ['Mary', 'had', 'a', 'little', 'boy']
 >>> for i in range(len(a)):
 ...     print i, a[i]
 ... 
@@ -760,7 +767,7 @@ and {\tt len()} as follows:
 1 had
 2 a
 3 little
-4 lamb
+4 boy
 >>> 
 \end{verbatim}\end{code}
 
@@ -769,28 +776,34 @@ and {\tt len()} as follows:
 The {\tt break} statement breaks out of the smallest enclosing {\tt for}
 or {\tt while} loop.
 Loop statements may have an {\tt else} clause; it is executed when the
-loop terminates through exhaustion of the list (for {\tt for}) or when
-the condition becomes false (for {\tt while}) but not when the loop is
+loop terminates through exhaustion of the list (with {\tt for}) or when
+the condition becomes false (with {\tt while}) but not when the loop is
 terminated by a {\tt break} statement.
 This is exemplified by the following loop, which searches for a list
 item of value 0:
 \begin{code}\begin{verbatim}
->>> a = [1, 10, 0, 5, 12]
->>> for i in a:
-...     if i = 0:
-...        print '*** Found a zero'
-...        break
-... else:
-...     print '*** No zero found'
+>>> for n in range(2, 10):
+...     for x in range(2, n):
+...         if n % x = 0:
+...            print n, 'equals', x, '*', n/x
+...            break
+...     else:
+...          print n, 'is a prime number'
 ... 
-*** Found a zero
+2 is a prime number
+3 is a prime number
+4 equals 2 * 2
+5 is a prime number
+6 equals 2 * 3
+7 is a prime number
+8 equals 2 * 4
+9 equals 3 * 3
 >>> 
 \end{verbatim}\end{code}
 
 \subsubsection{Pass Statements}
 
-The {\tt pass} statement does nothing, similar to {\tt skip} in Algol-68
-or an empty statement in C.
+The {\tt pass} statement does nothing.
 It can be used when a statement is required syntactically but the
 program requires no action.
 For example:
@@ -799,6 +812,10 @@ For example:
 ...       pass # Busy-wait for keyboard interrupt
 ... 
 \end{verbatim}\end{code}
+
+\subsubsection{Conditions Revisited}
+
+XXX To Be Done.
 
 \subsection{Defining Functions}
 
@@ -819,13 +836,13 @@ arbitrary boundary:
 The keyword
 {\tt def}
 introduces a function
-{\it definition}.
+{\em definition}.
 It must be followed by the function name and the parenthesized list of
 formal parameters.
 The statements that form the body of the function starts at the next
 line, indented by a tab stop.
 The
-{\it execution}
+{\em execution}
 of a function introduces a new symbol table used for the local variables
 of the function.
 More precisely, all variable assignments in a function store the value
@@ -833,16 +850,17 @@ in the local symbol table; variable references first look in the local
 symbol table, then in the global symbol table, and then in the table of
 built-in names.
 Thus, the global symbol table is
-{\it read-only}
-within a function; the built-in symbol table is always read-only.
+{\em read-only}
+within a function.
 The actual parameters (arguments) to a function call are introduced in
 the local symbol table of the called function when it is called;
 thus, arguments are passed using
-{\it call\ by\ value}.%
+{\em call\ by\ value}.%
 \footnote{
-	 Actually, {\it call  by  object reference} would be a better
-	 name, since if a mutable object is passed, the caller will see
-	 any changes the callee makes to it.
+	 Actually, {\em call  by  object reference} would be a better
+	 description, since if a mutable object is passed, the caller
+	 will see any changes the callee makes to it (e.g., items
+	 inserted into a list).
 }
 When a function calls another function, a new local symbol table is
 created for that call.
@@ -856,7 +874,7 @@ as a function.
 This serves as a general renaming mechanism:
 \begin{code}\begin{verbatim}
 >>> fib
-<user function 'fib'>
+<function object at 10042ed0>
 >>> f = fib
 >>> f(100)
 1 1 2 3 5 8 13 21 34 55 89
@@ -882,12 +900,12 @@ It is simple to write a function that returns a list of the numbers of
 the Fibonacci series, instead of printing it:
 \begin{code}\begin{verbatim}
 >>> def fib2(n): # return Fibonacci series up to n
-...     ret = []
+...     result = []
 ...     a, b = 0, 1
 ...     while b <= n:
-...           ret.append(b)    # see below
+...           result.append(b)    # see below
 ...           a, b = b, a+b
-...     return ret
+...     return result
 ... 
 >>> f100 = fib2(100)    # call it
 >>> f100                # write the result
@@ -907,7 +925,7 @@ procedure (falling off the end also returns from a proceduce).
 The statement
 {\tt ret.append(b)}
 calls a
-{\it method}
+{\em method}
 of the list object
 {\tt ret}.
 A method is a function that `belongs' to an object and is named
@@ -954,10 +972,10 @@ For example:
 >>> a
 [-1, 1, 10, 100, 1000]
 >>> # Strings are sorted according to ASCII:
->>> b = ['Mary', 'had', 'a', 'little', 'lamb']
+>>> b = ['Mary', 'had', 'a', 'little', 'boy']
 >>> b.sort()
 >>> b
-['Mary', 'a', 'had', 'lamb', 'little']
+['Mary', 'a', 'boy', 'had', 'little']
 >>> 
 \end{verbatim}\end{code}
 
@@ -969,7 +987,7 @@ Therefore, if you want to write a somewhat longer program, you are
 better off using a text editor to prepare the input for the interpreter
 and run it with that file as input instead.
 This is known as creating a
-{\it script}.
+{\em script}.
 As your program gets longer, you may want to split it into several files
 for easier maintenance.
 You may also want to use a handy function that you've written in several
@@ -977,11 +995,11 @@ programs without copying its definition into each program.
 To support this, \Python\ has a way to put definitions in a file and use
 them in a script or in an interactive instance of the interpreter.
 Such a file is called a
-{\it module};
+{\em module};
 definitions from a module can be
-{\it imported}
+{\em imported}
 into other modules or into the
-{\it main}
+{\em main}
 module (the collection of variables that you have access to in
 a script and in calculator mode).
 
@@ -1036,13 +1054,13 @@ If you intend to use a function often you can assign it to a local name:
 >>> 
 \end{verbatim}\end{code}
 
-\subsubsection{More About Modules}
+\subsubsection{More on Modules}
 
 A module can contain executable statements as well as function
 definitions.
 These statements are intended to initialize the module.
 They are executed only the
-{\it first}
+{\em first}
 time the module is imported somewhere.%
 \footnote{
 	In fact function definitions are also `statements' that are
@@ -1147,9 +1165,9 @@ You can modify it using standard list operations, e.g.:
 Until now error messages haven't yet been mentioned, but if you have
 tried out the examples you have probably seen some.
 There are (at least) two distinguishable kinds of errors:
-{\it syntax\ errors}
+{\em syntax\ errors}
 and
-{\it exceptions}.
+{\em exceptions}.
 
 \subsubsection{Syntax Errors}
 
@@ -1157,19 +1175,20 @@ Syntax errors, also known as parsing errors, are perhaps the most common
 kind of complaint you get while you are still learning \Python:
 \begin{code}\begin{verbatim}
 >>> while 1 print 'Hello world'
-Parsing error at line 1:
+Parsing error: file <stdin>, line 1:
 while 1 print 'Hello world'
-             \^
+             ^
+Unhandled exception: run-time error: syntax error
 >>> 
 \end{verbatim}\end{code}
 The parser repeats the offending line and displays a little `arrow'
 pointing at the earliest point in the line where the error was detected.
 The error is caused by (or at least detected at) the token
-{\it preceding}
+{\em preceding}
 the arrow: in the example, the error is detected at the keyword
 {\tt print}, since a colon ({\tt :}) is missing before it.
-The line number is printed so you know where to look in case the input
-came from a script.
+File name and line number are printed so you know where to look in case
+the input came from a script.
 
 \subsubsection{Exceptions}
 
@@ -1177,19 +1196,21 @@ Even if a statement or expression is syntactically correct, it may cause
 an error when an attempt is made to execute it:
 \begin{code}\begin{verbatim}
 >>> 10 * (1/0)
-Unhandled exception: run-time error: domain error or
-zero division
-Context: 1 / 0 
+Unhandled exception: run-time error: integer division by zero
+Stack backtrace (innermost last):
+  File "<stdin>", line 1
 >>> 4 + foo*3
 Unhandled exception: undefined name: foo
-Context: 4 + foo * 3 
+Stack backtrace (innermost last):
+  File "<stdin>", line 1
 >>> '2' + 2
-Unhandled exception: type error: invalid argument type
-Context: '2' + 2 
+Unhandled exception: type error: illegal argument type for built-in operation
+Stack backtrace (innermost last):
+  File "<stdin>", line 1
 >>> 
 \end{verbatim}\end{code}
 Errors detected during execution are called
-{\it exceptions}
+{\em exceptions}
 and are not unconditionally fatal: you will soon learn how to handle
 them in \Python\ programs.
 Most exceptions are not handled by programs, however, and result
@@ -1205,26 +1226,20 @@ and
 The rest of the line is a detail whose interpretation depends on the
 exception type.
 
-The second line of the error message shows the context where the
+The rest of the error message shows the context where the
 exception happened.
-As you can see, this is usually a sub-expression enclosing the actual
-failing operation.%
-\footnote{
-	The context is reconstructed from the parse tree, so it may look
-	a little odd.  A stack trace should really be printed at this
-	point; this will be implemented in a future version of the
-	interpreter.  The context is suppressed for keyboard interrupts.
-}
+In general it contains a stack backtrace listing source lines; however,
+it will not display lines read from standard input.
 
 Here is a summary of the most common exceptions:
 \begin{itemize}
 \item
-{\it Run-time\ errors}
+{\em Run-time\ errors}
 are generally caused by wrong data used by the program; this can be the
 programmer's fault or caused by bad input.
 The detail states the cause of the error in more detail.
 \item
-{\it Undefined\ name}
+{\em Undefined\ name}
 errors are more serious: these are usually caused by misspelled
 identifiers.%
 \footnote{
@@ -1234,7 +1249,7 @@ identifiers.%
 }
 The detail is the offending identifier.
 \item
-{\it Type\ errors}
+{\em Type\ errors}
 are also pretty serious: this is another case of using wrong data (or
 better, using data the wrong way), but here the error can be glanced
 from the object type(s) alone.
@@ -1265,12 +1280,12 @@ The {\tt try} statement works as follows.
 \begin{itemize}
 \item
 First, the
-{\it try\ clause}
+{\em try\ clause}
 (the statement(s) between the {\tt try} and {\tt except} keywords) is
 executed.
 \item
 If no exception occurs, the
-{\it except\ clause}
+{\em except\ clause}
 is skipped and execution of the {\tt try} statement is finished.
 \item
 If an exception occurs during execution of the try clause, and its
@@ -1281,7 +1296,7 @@ then execution continues after the {\tt try} statement.
 If an exception occurs which does not match the exception named in the
 except clause, it is passed on to outer try statements; if no handler is
 found, it is an
-{\it unhandled\ exception}
+{\em unhandled\ exception}
 and execution stops with a message as shown above.
 \end{itemize}
 A {\tt try} statement may have more than one except clause, to specify
@@ -1290,7 +1305,7 @@ At most one handler will be executed.
 Handlers only handle exceptions that occur in the corresponding try
 clause, not in other handlers of the same {\tt try} statement.
 An except clause may name multiple exceptions as a parenthesized list,
-{\it e.g.}:
+e.g.:
 \begin{code}\begin{verbatim}
 ... except (RuntimeError, TypeError, NameError):
 ...     pass
@@ -1301,7 +1316,7 @@ Use this with extreme caution!
 
 When an exception occurs, it may have an associated value, also known as
 the exceptions's
-{\it argument}.
+{\em argument}.
 The presence and type of the argument depend on the exception type.
 For exception types which have an argument, the except clause may
 specify a variable after the exception name (or list) to receive the
@@ -1310,9 +1325,9 @@ argument's value, as follows:
 >>> try:
 ...     foo()
 ... except NameError, x:
-...     print x, 'undefined'
+...     print 'name', x, 'undefined'
 ... 
-foo undefined
+name foo undefined
 >>> 
 \end{verbatim}\end{code}
 If an exception has an argument, it is printed as the third part
@@ -1321,7 +1336,7 @@ If an exception has an argument, it is printed as the third part
 Standard exception names are built-in identifiers (not reserved
 keywords).
 These are in fact string objects whose
-{\it object\ identity}
+{\em object\ identity}
 (not their value!) identifies the exceptions.%
 \footnote{
 	There should really be a separate exception type; it is pure
@@ -1366,12 +1381,10 @@ The {\tt raise} statement allows the programmer to force a specified
 exception to occur.
 For example:
 \begin{code}\begin{verbatim}
->>> raise KeyboardInterrupt
-Unhandled exception: keyboard interrupt
 >>> raise NameError, 'Hi There!'
 Unhandled exception: undefined name: Hi There!
-Context: raise NameError , 'Hi There!' 
-
+Stack backtrace (innermost last):
+  File "<stdin>", line 1
 >>> 
 \end{verbatim}\end{code}
 The first argument to {\tt raise} names the exception to be raised.
@@ -1392,8 +1405,8 @@ For example:
 My exception occured, value: 4
 >>> raise my_exc, 1
 Unhandled exception: nobody likes me!: 1
-Context: raise my_exc , 1
-
+Stack backtrace (innermost last):
+  File "<stdin>", line 7
 >>> 
 \end{verbatim}\end{code}
 Many standard modules use this to report errors that may occur in
@@ -1412,10 +1425,12 @@ For example:
 ... 
 Goodbye, world!
 Unhandled exception: keyboard interrupt
+Stack backtrace (innermost last):
+  File "<stdin>", line 2
 >>> 
 \end{verbatim}\end{code}
 The
-{\it finally\ clause}
+{\em finally\ clause}
 must follow the except clauses(s), if any.
 It is executed whether or not an exception occurred.
 If the exception is handled, the finally clause is executed after the
@@ -1444,9 +1459,9 @@ can call the method of a base class with the same name.
 Objects can contain an arbitrary amount of private data.
 
 In C++ terminology, all class members (including data members) are
-{\it public},
+{\em public},
 and all member functions (methods) are
-{\it virtual}.
+{\em virtual}.
 There are no special constructors or destructors.
 As in Modula-3, there are no shorthands for referencing the object's
 members from its methods: the method function is declared with an
@@ -1499,7 +1514,7 @@ with all the function definitons indented repective to the
 keyword.
 
 Let's assume that this
-{\it class\ definition}
+{\em class\ definition}
 is the only contents of the module file
 {\tt SetClass.py}.
 We can then use it in a \Python\ program as follows:
@@ -1528,7 +1543,7 @@ From the example we learn in the first place that the functions defined
 in the class (e.g.,
 {\tt add})
 can be called using the
-{\it member}
+{\em member}
 notation for the object
 {\tt a}.
 The member function is called with one less argument than it is defined:
@@ -1538,6 +1553,7 @@ Thus, the call
 is equivalent to
 {\tt Set.add(a, 2)}.
 
+XXX This section is not complete yet!
 
 \section{XXX P.M.}
 
