@@ -314,6 +314,7 @@ drawing_circle(dp, args)
 	INCREF(None);
 	return None;
 }
+
 static object *
 drawing_fillcircle(dp, args)
 	drawingobject *dp;
@@ -323,6 +324,19 @@ drawing_fillcircle(dp, args)
 	if (!getpointintarg(args, a))
 		return NULL;
 	wfillcircle(a[0], a[1], a[2]);
+	INCREF(None);
+	return None;
+}
+
+static object *
+drawing_xorcircle(dp, args)
+	drawingobject *dp;
+	object *args;
+{
+	int a[3];
+	if (!getpointintarg(args, a))
+		return NULL;
+	wxorcircle(a[0], a[1], a[2]);
 	INCREF(None);
 	return None;
 }
@@ -349,6 +363,19 @@ drawing_fillelarc(dp, args)
 	if (!get3pointarg(args, a))
 		return NULL;
 	wfillelarc(a[0], a[1], a[2], a[3], a[4], a[5]);
+	INCREF(None);
+	return None;
+}
+
+static object *
+drawing_xorelarc(dp, args)
+	drawingobject *dp;
+	object *args;
+{
+	int a[6];
+	if (!get3pointarg(args, a))
+		return NULL;
+	wxorelarc(a[0], a[1], a[2], a[3], a[4], a[5]);
 	INCREF(None);
 	return None;
 }
@@ -457,6 +484,21 @@ drawing_fillpoly(dp, args)
 	if (points == NULL)
 		return NULL;
 	wfillpoly(n, points);
+	DEL(points);
+	INCREF(None);
+	return None;
+}
+
+static object *
+drawing_xorpoly(dp, args)
+	drawingobject *dp;
+	object *args;
+{
+	int n;
+	POINT *points = getpointsarray(args, &n);
+	if (points == NULL)
+		return NULL;
+	wxorpoly(n, points);
 	DEL(points);
 	INCREF(None);
 	return None;
@@ -665,8 +707,8 @@ static struct methodlist drawing_methods[] = {
 	{"cliprect",	drawing_cliprect},
 	{"elarc",	drawing_elarc},
 	{"erase",	drawing_erase},
-	{"fillelarc",	drawing_fillelarc},
 	{"fillcircle",	drawing_fillcircle},
+	{"fillelarc",	drawing_fillelarc},
 	{"fillpoly",	drawing_fillpoly},
 	{"invert",	drawing_invert},
 	{"line",	drawing_line},
@@ -675,7 +717,10 @@ static struct methodlist drawing_methods[] = {
 	{"poly",	drawing_poly},
 	{"shade",	drawing_shade},
 	{"text",	drawing_text},
+	{"xorcircle",	drawing_xorcircle},
+	{"xorelarc",	drawing_xorelarc},
 	{"xorline",	drawing_xorline},
+	{"xorpoly",	drawing_xorpoly},
 	
 	/* Text measuring methods: */
 	{"baseline",	drawing_baseline},
@@ -801,17 +846,9 @@ text_draw(self, args)
 	if (a[2] > right) a[2] = right;
 	if (a[3] > bottom) a[3] = bottom;
 	if (a[0] < a[2] && a[1] < a[3]) {
-		/* Hide/show focus around draw call; these are undocumented,
-		   but required here to get the highlighting correct.
-		   The call to werase is also required for this reason.
-		   Finally, this forces us to require (above) that we are NOT
-		   already drawing. */
-		tehidefocus(tp);
 		wbegindrawing(self->t_ref->w_win);
-		werase(a[0], a[1], a[2], a[3]);
 		tedrawnew(tp, a[0], a[1], a[2], a[3]);
 		wenddrawing(self->t_ref->w_win);
-		teshowfocus(tp);
 	}
 	INCREF(None);
 	return None;
