@@ -133,6 +133,8 @@ class Dist (Command):
                 "formats for source distribution (tar, ztar, gztar, or zip)"),
                ('manifest=', 'm',
                 "name of manifest file"),
+               ('list-only', 'l',
+                "just list files that would be distributed"),
               ]
 
     default_format = { 'posix': 'gztar',
@@ -144,6 +146,7 @@ class Dist (Command):
     def set_default_options (self):
         self.formats = None
         self.manifest = None
+        self.list_only = 0
 
 
     def set_final_options (self):
@@ -169,7 +172,12 @@ class Dist (Command):
         self.find_defaults ()
         self.read_manifest ()
 
-        self.make_distribution ()
+        if self.list_only:
+            for f in self.files:
+                print f
+
+        else:
+            self.make_distribution ()
 
 
     def check_metadata (self):
