@@ -113,7 +113,7 @@ class FTP:
         - port: port to connect to (integer, default previous port)'''
         if host: self.host = host
         if port: self.port = port
-        self.passiveserver = 0
+        self.passiveserver = 1
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, self.port))
         self.file = self.sock.makefile('rb')
