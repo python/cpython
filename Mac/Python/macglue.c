@@ -245,9 +245,9 @@ PLstrcmp(s1, s2)
 	if ( res != 0 )
 		return res;
 	
-	if ( s1 < s2 )
+	if ( s1[0] < s2[0] )
 		return -1;
-	else if ( s1 > s2 )
+	else if ( s1[0] > s2[0] )
 		return 1;
 	else
 		return 0;
@@ -660,26 +660,27 @@ PyMac_RestoreMenuBar()
 /*
 ** Our replacement about box
 */
+
+#include "patchlevel.h"
+
 void
 SIOUXDoAboutBox(void)
 {
 	DialogPtr theDialog;
-	WindowRef theWindow;
-	CGrafPtr thePort;
+	WindowPtr theWindow;
 	short item;
-	short xpos, ypos, width, height, swidth, sheight;
+	short fontID;
 	
 	if( (theDialog = GetNewDialog(ABOUT_ID, NULL, (WindowPtr)-1)) == NULL )
 		return;
 	theWindow = GetDialogWindow(theDialog);
-	thePort = GetWindowPort(theWindow);
-	width = thePort->portRect.right - thePort->portRect.left;
-	height = thePort->portRect.bottom - thePort->portRect.top;
-	swidth = qd.screenBits.bounds.right - qd.screenBits.bounds.left;
-	sheight = qd.screenBits.bounds.bottom - qd.screenBits.bounds.top - LMGetMBarHeight();
-	xpos = (swidth-width)/2;
-	ypos = (sheight-height)/5 + LMGetMBarHeight();
-	MoveWindow(theWindow, xpos, ypos, 0);
+	SetPortWindowPort(theWindow);
+	GetFNum("\pPython-Sans", &fontID);
+	if (fontID == 0)
+		fontID = kFontIDGeneva;
+	TextFont(fontID);
+	TextSize(9);
+	ParamText(Pstring(PATCHLEVEL), "\p", "\p", "\p");
 	ShowWindow(theWindow);
 	ModalDialog(NULL, &item);
 	DisposeDialog(theDialog);
