@@ -8,7 +8,7 @@
 configuration dialog
 """
 from Tkinter import *
-import tkMessageBox
+import tkMessageBox, tkColorChooser
 
 import IdleConf
 
@@ -113,6 +113,19 @@ class ConfigDialog(Toplevel):
             self.optMenuKeysCustom.config(state=NORMAL)
             self.buttonDeleteCustomKeys.config(state=NORMAL)
     
+    def GetColour(self):
+        rgbTuplet, colourString = tkColorChooser.askcolor(parent=self,
+                title='Pick new colour for : '+self.highlightTarget.get(),
+                initialcolor=self.workingTestColours['Foo-Bg'])#._root()
+        if colourString: #user didn't cancel
+            self.workingTestColours['Foo-Bg']=colourString
+            self.frameColourSet.config(bg=self.workingTestColours['Foo-Bg'])
+            self.labelTestSample.config(bg=self.workingTestColours['Foo-Bg'])
+            self.frameHighlightSample.config(bg=self.workingTestColours['Foo-Bg'])
+            self.frameColourSet.update() #redraw after dialog
+            self.frameHighlightSample.update() #redraw after dialog
+            self.labelTestSample.update()
+
     def CreateWidgets(self):
         self.framePages = Frame(self)
         frameActionButtons = Frame(self)
@@ -257,24 +270,25 @@ class ConfigDialog(Toplevel):
         frameTheme=Frame(frame,borderwidth=2,relief=GROOVE)
         #frameCustom
         frameTarget=Frame(frameCustom)
-        frameSample=Frame(frameCustom,relief=SOLID,borderwidth=1,
-                bg=self.workingTestColours['Foo-Bg'])
+        self.frameHighlightSample=Frame(frameCustom,relief=SOLID,borderwidth=1,
+                bg=self.workingTestColours['Foo-Bg'],cursor='hand2')
         frameSet=Frame(frameCustom)
-        frameColourSet=Frame(frameSet,relief=SOLID,borderwidth=1,
+        self.frameColourSet=Frame(frameSet,relief=SOLID,borderwidth=1,
                 bg=self.workingTestColours['Foo-Bg'])
         frameFontSet=Frame(frameSet)
         labelCustomTitle=Label(frameCustom,text='Set Custom Highlighting')
         labelTargetTitle=Label(frameTarget,text='for : ')
         optMenuTarget=OptionMenu(frameTarget,
-            self.highlightTarget,'test target interface item','test target interface item 2')
-        self.highlightTarget.set('test target interface item')
-        buttonSetColour=Button(frameColourSet,text='Set Colour')
+            self.highlightTarget,'normal text background','test target interface item 2')
+        self.highlightTarget.set('normal text background')
+        buttonSetColour=Button(self.frameColourSet,text='Set Colour',
+                command=self.GetColour)
         labelFontTitle=Label(frameFontSet,text='Set Font Style')
         checkFontBold=Checkbutton(frameFontSet,variable=self.fontBold,
             onvalue='Bold',offvalue='',text='Bold')
         checkFontItalic=Checkbutton(frameFontSet,variable=self.fontItalic,
             onvalue='Italic',offvalue='',text='Italic')
-        labelTestSample=Label(frameSample,justify=LEFT,font=('courier',12,''),
+        self.labelTestSample=Label(self.frameHighlightSample,justify=LEFT,font=('courier',12,''),
             text='#when finished, this\n#sample area will\n#be interactive\n'+
             'def Ahem(foo,bar):\n    '+
             '"""'+'doc hazard'+'"""'+
@@ -307,9 +321,9 @@ class ConfigDialog(Toplevel):
         #frameCustom
         labelCustomTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
         frameTarget.pack(side=TOP,padx=5,pady=5,fill=X)
-        frameSample.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=BOTH)
+        self.frameHighlightSample.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=BOTH)
         frameSet.pack(side=TOP,fill=X)
-        frameColourSet.pack(side=LEFT,padx=5,pady=5,fill=BOTH)
+        self.frameColourSet.pack(side=LEFT,padx=5,pady=5,fill=BOTH)
         frameFontSet.pack(side=RIGHT,padx=5,pady=5,anchor=W)
         labelTargetTitle.pack(side=LEFT,anchor=E)
         optMenuTarget.pack(side=RIGHT,anchor=W,expand=TRUE,fill=X)
@@ -317,7 +331,7 @@ class ConfigDialog(Toplevel):
         labelFontTitle.pack(side=TOP,anchor=W)
         checkFontBold.pack(side=LEFT,anchor=W,pady=2)
         checkFontItalic.pack(side=RIGHT,anchor=W)
-        labelTestSample.pack(anchor=CENTER,expand=TRUE,fill=BOTH)
+        self.labelTestSample.pack(anchor=CENTER,expand=TRUE,fill=BOTH)
         buttonSaveCustomTheme.pack(side=BOTTOM,fill=X,padx=5,pady=5)        
         #frameTheme
         #frameDivider.pack(side=LEFT,fill=Y,padx=5,pady=5)
