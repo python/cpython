@@ -1515,5 +1515,5 @@ initstruct(void)
 			return;
 	}
 	Py_INCREF(StructError);
-	PyModule_AddObject(d, "error", StructError);
+	PyModule_AddObject(m, "error", StructError);
 }
