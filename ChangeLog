@@ -1,3 +1,36 @@
+Wed Jan  5 16:42:35 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/rgbimgmodule.c: Only include <unistd.h> if it exists
+
+	* Modules/timemodule.c: don't include sys/time.h on the Mac
+
+	* Modules/stdwinmodule.c (initstdwin): don't fuss with sys.argv on
+	the mac -- so {check,putback}stringlist aren't needed there
+
+	* Parser/intrcheck.c: Make sure <MacHeaders> is included before
+	any other include file
+
+	* Modules/audioopmodule.c: include math.h after allobjects.h (so
+	the latter can be a precompiled header file on the Mac)
+
+Wed Jan  5 15:34:26 1994  Guido van Rossum  (guido@poseidon.cwi.nl)
+
+	* Python/pythonrun.c (sighandler): only call kill(getpid()) if
+	getpid() exists; otherwise call exit(1)
+
+	* configure.in: added test for getpid()
+
+	* Modules/config.c.in: Changes for Macintosh: new default path,
+	call wargc() in main(); 1994 copyright
+
+	* Python/frozenmain.c: added declarations for getversion() and
+	getcopyright() (foei!); insert "Python " before version on banner
+
+	* Python/pythonmain.c: added declarations for getversion() and
+	getcopyright() (foei!); default startupfile to "PythonStartup" on
+	Macintosh; add fclose(fp) for startupfile; insert "Python " before
+	version on banner
+
 ========================================================================
 Release of 1.0.0 BETA 4 (Jan 5 1994)
 ========================================================================
