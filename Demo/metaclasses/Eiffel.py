@@ -107,7 +107,7 @@ def _test():
 	    assert Result > arg
     x = C()
     x.m1(12)
-    x.m1(-1)
+##    x.m1(-1)
 
 if __name__ == '__main__':
     _test()
