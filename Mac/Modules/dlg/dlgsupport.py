@@ -240,7 +240,7 @@ class MyObjectDefinition(GlobalObjectDefinition):
 		Output("DisposeDialog(%s);", itselfname)
 
 # Create the generator groups and link them
-module = MacModule('Dlg', 'Dlg', includestuff, finalstuff, initstuff)
+module = MacModule('_Dlg', 'Dlg', includestuff, finalstuff, initstuff)
 object = MyObjectDefinition('Dialog', 'DlgObj', 'DialogPtr')
 module.addobject(object)
 
@@ -300,5 +300,5 @@ f = ManualGenerator("SetUserItemHandler", setuseritembody)
 module.add(f)
 
 # generate output
-SetOutputFileName('Dlgmodule.c')
+SetOutputFileName('_Dlgmodule.c')
 module.generate()

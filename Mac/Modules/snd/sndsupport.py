@@ -334,7 +334,7 @@ class SpbObjectDefinition(ObjectDefinition):
 sndobject = SndObjectDefinition('SndChannel', 'SndCh', 'SndChannelPtr')
 spbobject = SpbObjectDefinition('SPB', 'SPBObj', 'SPBPtr')
 spbgenerator = ManualGenerator("SPB", "return SPBObj_New();")
-module = MacModule('Snd', 'Snd', includestuff, finalstuff, initstuff)
+module = MacModule('_Snd', 'Snd', includestuff, finalstuff, initstuff)
 module.addobject(sndobject)
 module.addobject(spbobject)
 module.add(spbgenerator)
@@ -359,5 +359,5 @@ for f in sndmethods: sndobject.add(f)
 
 # generate output
 
-SetOutputFileName('Sndmodule.c')
+SetOutputFileName('_Sndmodule.c')
 module.generate()

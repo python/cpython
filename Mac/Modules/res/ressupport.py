@@ -93,7 +93,7 @@ initstuff = initstuff + """
 	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Handle, OptResObj_Convert);
 """
 
-module = MacModule('Res', 'Res', includestuff, finalstuff, initstuff)
+module = MacModule('_Res', 'Res', includestuff, finalstuff, initstuff)
 
 getattrHookCode = """
 if (strcmp(name, "size") == 0)
@@ -192,5 +192,5 @@ execfile('resedit.py')
 for f in functions: module.add(f)
 for f in resmethods: resobject.add(f)
 
-SetOutputFileName('Resmodule.c')
+SetOutputFileName('_Resmodule.c')
 module.generate()
