@@ -1,0 +1,30 @@
+This directory contains some ad-hoc examples of Tkinter widget
+creation. The files named 
+
+		*-simple.py
+
+are the ones to start with if you're looking for a bare-bones usage of
+a widget. The other files are meant to show common usage patters that
+are a tad more involved. 
+
+If you have a suggestion for an example program, please send mail to 
+	
+	conway@virginia.edu
+
+and I'll include it.
+
+
+matt
+
+TODO
+-------
+The X selection
+Dialog Boxes
+More canvas examples
+Message widgets
+Text Editors
+Scrollbars
+Listboxes
+
+
+
