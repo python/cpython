@@ -580,6 +580,143 @@ and in the file you will see something like
 As you can see, the DEBUG message only shows up in the file. The other
 messages are sent to both destinations.
 
+This example uses console and file handlers, but you can use any number and
+combination of handlers you choose.
+
+\subsection{Sending and receiving logging events across a network
+\label{network-logging}}
+
+Let's say you want to send logging events across a network, and handle them
+at the receiving end. A simple way of doing this is attaching a
+\class{SocketHandler} instance to the root logger at the sending end:
+
+\begin{verbatim}
+import logging, logging.handlers
+
+rootLogger = logging.getLogger('')
+rootLogger.setLevel(logging.DEBUG)
+socketHandler = logging.handlers.SocketHandler('localhost',
+                    logging.handlers.DEFAULT_TCP_LOGGING_PORT)
+# don't bother with a formatter, since a socket handler sends the event as
+# an unformatted pickle
+rootLogger.addHandler(socketHandler)
+
+#Now, we can log to the root logger, or any other logger. First the root...
+logging.info('Jackdaws love my big sphinx of quartz.')
+
+#Now, define a couple of other loggers which might represent areas in your
+#application:
+
+logger1 = logging.getLogger('myapp.area1')
+logger2 = logging.getLogger('myapp.area2')
+
+logger1.debug('Quick zephyrs blow, vexing daft Jim.')
+logger1.info('How quickly daft jumping zebras vex.')
+logger2.warning('Jail zesty vixen who grabbed pay from quack.')
+logger2.error('The five boxing wizards jump quickly.')
+\end{verbatim}
+
+At the receiving end, you can set up a receiver using the
+\module{SocketServer} module. Here is a basic working example:
+
+\begin{verbatim}
+import struct, cPickle, logging, logging.handlers
+
+from SocketServer import ThreadingTCPServer, StreamRequestHandler
+
+class LogRecordStreamHandler(StreamRequestHandler):
+    """
+    Handler for a streaming logging request. It basically logs the record
+    using whatever logging policy is configured locally.
+    """
+
+    def handle(self):
+        """
+        Handle multiple requests - each expected to be a 4-byte length,
+        followed by the LogRecord in pickle format. Logs the record
+        according to whatever policy is configured locally.
+        """
+        while 1:
+            chunk = self.connection.recv(4)
+            if len(chunk) < 4:
+                break
+            slen = struct.unpack(">L", chunk)[0]
+            chunk = self.connection.recv(slen)
+            while len(chunk) < slen:
+                chunk = chunk + self.connection.recv(slen - len(chunk))
+            obj = self.unPickle(chunk)
+            record = logging.makeLogRecord(obj)
+            self.handleLogRecord(record)
+
+    def unPickle(self, data):
+        return cPickle.loads(data)
+
+    def handleLogRecord(self, record):
+        #if a name is specified, we use the named logger rather than the one
+        #implied by the record.
+        if self.server.logname is not None:
+            name = self.server.logname
+        else:
+            name = record.name
+        logger = logging.getLogger(name)
+        #N.B. EVERY record gets logged. This is because Logger.handle
+        #is normally called AFTER logger-level filtering. If you want
+        #to do filtering, do it at the client end to save wasting
+        #cycles and network bandwidth!
+        logger.handle(record)
+
+class LogRecordSocketReceiver(ThreadingTCPServer):
+    """
+    A simple-minded TCP socket-based logging receiver suitable for test
+    purposes.
+    """
+
+    allow_reuse_address = 1
+
+    def __init__(self, host='localhost',
+            port=logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+            handler=LogRecordStreamHandler):
+        ThreadingTCPServer.__init__(self, (host, port), handler)
+        self.abort = 0
+        self.timeout = 1
+        self.logname = None
+
+    def serve_until_stopped(self):
+        import select
+        abort = 0
+        while not abort:
+            rd, wr, ex = select.select([self.socket.fileno()],
+                                       [], [],
+                                       self.timeout)
+            if rd:
+                self.handle_request()
+            abort = self.abort
+
+def main():
+    logging.basicConfig(
+        format="%(relativeCreated)5d %(name)-15s %(levelname)-8s %(message)s",
+        datefmt="%H:%M:%S")
+    tcpserver = LogRecordSocketReceiver()
+    print "About to start TCP server..."
+    tcpserver.serve_until_stopped()
+
+if __name__ == "__main__":
+    main()
+\end{verbatim}
+
+If you first run the server, and then the client. On the client side, nothing
+is printed on the client console; on the server side, you should see something
+like this:
+
+\begin{verbatim}
+About to start TCP server...
+   59 root            INFO     Jackdaws love my big sphinx of quartz.
+   59 myapp.area1     DEBUG    Quick zephyrs blow, vexing daft Jim.
+   69 myapp.area1     INFO     How quickly daft jumping zebras vex.
+   69 myapp.area2     WARNING  Jail zesty vixen who grabbed pay from quack.
+   69 myapp.area2     ERROR    The five boxing wizards jump quickly.
+\end{verbatim}
+
 \subsection{Handler Objects}
 
 Handlers have the following attributes and methods. Note that
