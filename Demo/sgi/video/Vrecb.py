@@ -48,6 +48,7 @@ def usage():
 	print '-M value      : monochrome tresholded with value'
 	print '-f            : Capture fields (instead of frames)'
 	print '-n number     : Capture this many frames (default 60)'
+	print '-N memsize    : Capture frames fitting in this many kbytes'
 	print 'moviefile     : here goes the movie data (default film.video)'
 
 def help():
@@ -75,10 +76,11 @@ def main():
 	greybits = 0
 	monotreshold = -1
 	fields = 0
-	number = 60
+	number = 0
+	memsize = 0
 
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'ar:w:dg:mM:Gfn:')
+		opts, args = getopt.getopt(sys.argv[1:], 'ar:w:dg:mM:Gfn:N:')
 	except getopt.error, msg:
 		sys.stdout = sys.stderr
 		print 'Error:', msg, '\n'
@@ -117,10 +119,23 @@ def main():
 				fields = 1
 			elif opt == '-n':
 				number = string.atoi(arg)
+			elif opt == '-N':
+				memsize = string.atoi(arg)
+				if 0 < memsize < 1024:
+					memsize = memsize * 1024
+				if 0 < memsize < 1024*1024:
+					memsize = memsize * 1024
+				print 'memsize', memsize
 	except string.atoi_error:
 		sys.stdout = sys.stderr
 		print 'Option', opt, 'requires integer argument'
 		sys.exit(2)
+
+	if number <> 0 and memsize <> 0:
+		sys.stderr.write('-n and -N are mutually exclusive\n')
+		sys.exit(2)
+	if number == 0 and memsize == 0:
+		number = 60
 
 	if not fields:
 		print '-f option assumed until somebody fixes it'
@@ -180,7 +195,9 @@ def main():
 		gl.winconstraints()
 	x, y = gl.getsize()
 	print x, 'x', y
-
+	if memsize:
+		number = calcnumber(x, y, grey or mono, memsize)
+		print number, 'frames'
 	v.SetSize(x, y)
 
 	if drop:
@@ -215,6 +232,9 @@ def main():
 			# Window resize (or move)
 			x, y = gl.getsize()
 			print x, 'x', y
+			if memsize:
+			    number = calcnumber(x, y, grey or mono, memsize)
+			    print number, 'frames'
 			v.SetSize(x, y)
 			v.BindGLWindow(win, SV.IN_REPLACE)
 		elif dev in (DEVICE.ESCKEY, DEVICE.WINQUIT, DEVICE.WINSHUT):
@@ -222,6 +242,14 @@ def main():
 			v.CloseVideo()
 			gl.winclose(win)
 			break
+
+
+def calcnumber(x, y, grey, memsize):
+	pixels = x*y
+	pixels = pixels/2		# XXX always assume fields
+	if grey: n = memsize/pixels
+	else: n = memsize/(4*pixels)
+	return max(1, n)
 
 
 # Record until the mouse is released (or any other GL event)
@@ -318,11 +346,22 @@ def record(v, info, filename, audiofilename, \
 		nskipped = 0
 		realframeno = 0
 		tpf = 1000 / 50.0     #XXXX
+		# Trying to find the pattern in frame skipping
+		okstretch = 0
+		skipstretch = 0
 		for frameno in range(0, number*2):
 			if frameno <> 0 and \
 				  bitvec[frameno] == bitvec[frameno-1]:
 				nskipped = nskipped + 1
+				if okstretch:
+					print okstretch, 'ok',
+					okstretch = 0
+				skipstretch = skipstretch + 1
 				continue
+			if skipstretch:
+				print skipstretch, 'skipped'
+				skipstretch = 0
+			okstretch = okstretch + 1
 			#
 			# Save field.
 			# XXXX Works only for fields and top-to-bottom
@@ -337,9 +376,11 @@ def record(v, info, filename, audiofilename, \
 			elif mono:
 				field = imageop.dither2mono( \
 					  field, len(field), 1)
-			vout.writeframe(int(realframeno*tpf), field, None)
 			realframeno = realframeno + 1
-		print 'Skipped',nskipped,'duplicate frames'
+			vout.writeframe(int(realframeno*tpf), field, None)
+		print okstretch, 'ok',
+		print skipstretch, 'skipped'
+		print 'Skipped', nskipped, 'duplicate frames'
 		vout.close()
 			
 	gl.wintitle('(done) ' + filename)

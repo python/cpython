@@ -228,6 +228,8 @@ class VideoBagOfTricks:
 		self.rebindvideo()
 
 	def cb_vmode(self, *args):
+		if self.vcr:
+			self.vcr = None
 		self.vmode = self.c_vmode.get_choice()
 		self.form.freeze_form()
 		self.g_cont.hide_object()
@@ -433,7 +435,10 @@ class VideoBagOfTricks:
 			import VCR
 			try:
 				self.vcr = VCR.VCR().init()
+				self.vcr.wait()
+				self.vcr.fmmode('dnr')
 			except VCR.error, msg:
+				self.vcr = None
 				self.b_capture.set_button(0)
 				fl.show_message('VCR error', str(msg), '')
 				return
@@ -615,7 +620,7 @@ class VideoBagOfTricks:
 			value = float(eval(field.get_input()))
 		except:
 			value = float(default)
-		field.set_input(value)
+		field.set_input(`value`)
 		return value
 
 	# Audio stuff
