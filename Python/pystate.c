@@ -137,6 +137,7 @@ PyThreadState_New(PyInterpreterState *interp)
 		tstate->ticker = 0;
 		tstate->tracing = 0;
 		tstate->use_tracing = 0;
+		tstate->tick_counter = 0;
 
 		tstate->dict = NULL;
 
