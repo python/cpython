@@ -881,6 +881,24 @@ that matches for menu items labelled \code{last}, \code{active}, or
 \end{itemize}
 \end{description}
 
+\subsubsection{Images}
+
+Bitmap/Pixelmap images can be created through the subclasses of
+\class{Tkinter.Image}:
+
+\begin{itemize}
+\item  \class{BitmapImage} can be used for X11 bitmap data.
+\item  \class{PhotoImage} can be used for GIF and PPM/PGM color bitmaps.
+\end{itemize}
+
+Either type of image is created through either the \code{file} or the
+\code{data} option (other options are available as well).
+
+The image object can then be used whereever an \code{image} option is
+supported by some widget (e.g. labels, buttons, menus). In these
+cases, Tk will not keep a reference to the image. When the last Python
+reference to the image object is deleted, the image data is deleted as
+well, and Tk will display an empty box wheerever the image was used.
 
 \section{\module{Tix} ---
          Extension widgets for Tk}
