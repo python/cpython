@@ -11,7 +11,6 @@ warnings.filterwarnings("ignore", "tmpnam", RuntimeWarning, __name__)
 
 from test_support import TESTFN, run_unittest
 
-
 class TemporaryFileTests(unittest.TestCase):
     def setUp(self):
         self.files = []
@@ -61,10 +60,128 @@ class TemporaryFileTests(unittest.TestCase):
                                 "test_os")
         self.check_tempfile(os.tmpnam())
 
+# Test attributes on return values from os.*stat* family.
+class StatAttributeTests(unittest.TestCase):
+    def setUp(self):
+        os.mkdir(TESTFN)
+        self.fname = os.path.join(TESTFN, "f1")
+        f = open(self.fname, 'wb')
+        f.write("ABC")
+        f.close()
+        
+    def tearDown(self):
+        os.unlink(self.fname)
+        os.rmdir(TESTFN)
+
+    def test_stat_attributes(self):
+        if not hasattr(os, "stat"):
+            return
+
+        import stat
+        result = os.stat(self.fname)
+
+        # Make sure direct access works
+        self.assertEquals(result[stat.ST_SIZE], 3)
+        self.assertEquals(result.st_size, 3)
+
+        import sys
+
+        # Make sure all the attributes are there
+        members = dir(result)
+        for name in dir(stat):
+            if name[:3] == 'ST_':
+                attr = name.lower()
+                self.assertEquals(getattr(result, attr),
+                                  result[getattr(stat, name)])
+                self.assert_(attr in members)
+
+        try:
+            result[200]
+            self.fail("No exception thrown")
+        except IndexError:
+            pass
+
+        # Make sure that assignment fails
+        try:
+            result.st_mode = 1
+            self.fail("No exception thrown")
+        except TypeError:
+            pass
+
+        try:
+            result.st_rdev = 1
+            self.fail("No exception thrown")
+        except TypeError:
+            pass
+
+        try:
+            result.parrot = 1
+            self.fail("No exception thrown")
+        except AttributeError:
+            pass
+
+        # Use the stat_result constructor with a too-short tuple.
+        try:
+            result2 = os.stat_result((10,))
+            self.fail("No exception thrown")
+        except TypeError:
+            pass
+
+        # Use the constructr with a too-long tuple.
+        try:
+            result2 = os.stat_result((0,1,2,3,4,5,6,7,8,9,10,11,12,13,14))
+        except TypeError:
+            pass
+
+            
+    def test_statvfs_attributes(self):
+        if not hasattr(os, "statvfs"):
+            return
+
+        import statvfs
+        result = os.statvfs(self.fname)
+
+        # Make sure direct access works
+        self.assertEquals(result.f_bfree, result[statvfs.F_BFREE])
+
+        # Make sure all the attributes are there
+        members = dir(result)
+        for name in dir(statvfs):
+            if name[:2] == 'F_':
+                attr = name.lower()
+                self.assertEquals(getattr(result, attr),
+                                  result[getattr(statvfs, name)])
+                self.assert_(attr in members)
+
+        # Make sure that assignment really fails
+        try:
+            result.f_bfree = 1
+            self.fail("No exception thrown")
+        except TypeError:
+            pass
+
+        try:
+            result.parrot = 1
+            self.fail("No exception thrown")
+        except AttributeError:
+            pass
+
+        # Use the constructor with a too-short tuple.
+        try:
+            result2 = os.statvfs_result((10,))
+            self.fail("No exception thrown")
+        except TypeError:
+            pass
+
+        # Use the constructr with a too-long tuple.
+        try:
+            result2 = os.statvfs_result((0,1,2,3,4,5,6,7,8,9,10,11,12,13,14))
+        except TypeError:
+            pass
 
 def test_main():
     run_unittest(TemporaryFileTests)
-
+    run_unittest(StatAttributeTests)
 
 if __name__ == "__main__":
     test_main()

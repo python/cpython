@@ -113,8 +113,46 @@ static PyObject *riscos_listdir(PyObject *self,PyObject *args)
 	return d;
 }
 
+static char stat_result__doc__[] = 
+"stat_result: Result from stat or lstat.\n\n\
+This object may be accessed either as a tuple of\n\
+  (mode,ino,dev,nlink,uid,gid,size,atime,mtime,ctime)\n\
+or via the attributes st_mode, st_ino, st_dev, st_nlink, st_uid, and so on.\n\
+\n\
+RiscOS: The fields st_ftype, st_attrs, and st_obtype are also available.\n\
+\n\
+See os.stat for more information.\n";
+
+static PyStructSequence_Field stat_result_fields[] = {
+        { "st_mode",  "protection bits" },
+        { "st_ino",   "inode" },
+        { "st_dev",   "device" },
+        { "st_nlink", "number of hard links" },
+        { "st_uid",   "user ID of owner" },
+        { "st_gid",   "group ID of owner" },
+        { "st_size",  "total size, in bytes" },
+        { "st_atime", "time of last access" },
+        { "st_mtime", "time of last modification" },
+        { "st_ctime", "time of last change" },
+	{ "st_ftype", "file type" },
+	{ "st_attrs", "attributes" },
+	{ "st_obtype", "object type" }
+	{ 0 }
+};
+
+static PyStructSequence_Desc stat_result_desc = {
+	"stat_result",
+	stat_result__doc__,
+	stat_result_fields,
+	13
+};
+
+static PyTypeObject StatResultType;
+
 static PyObject *riscos_stat(PyObject *self,PyObject *args)
-{	char *path;
+{	
+	PyObject *v;
+	char *path;
         int ob,len;
         bits t=0;
         bits ld,ex,at,ft,mode;
@@ -130,21 +168,34 @@ static PyObject *riscos_stat(PyObject *self,PyObject *args)
 	if(ft!=-1) t=unixtime(ld,ex);
 	mode|=(at&7)<<6;
 	mode|=((at&112)*9)>>4;
-        return Py_BuildValue("(lllllllllllll)",
-		    (long)mode,/*st_mode*/
-		    0,/*st_ino*/
-		    0,/*st_dev*/
-		    0,/*st_nlink*/
-		    0,/*st_uid*/
-		    0,/*st_gid*/
-		    (long)len,/*st_size*/
-		    (long)t,/*st_atime*/
-		    (long)t,/*st_mtime*/
-		    (long)t,/*st_ctime*/
-		    (long)ft,/*file type*/
-		    (long)at,/*attributes*/
-		    (long)ob/*object type*/
-		    );
+
+	v = PyStructSequence_New(&StatResultType);
+
+	PyStructSequence_SET_ITEM(v, 0, 
+				  PyInt_FromLong((long) mode)); /*st_mode*/
+	PyStructSequence_SET_ITEM(v, 1, PyInt_FromLong((long) 0)); /*st_ino*/
+	PyStructSequence_SET_ITEM(v, 2, PyInt_FromLong((long) 0)); /*st_dev*/
+	PyStructSequence_SET_ITEM(v, 3, PyInt_FromLong((long) 0)); /*st_nlink*/
+	PyStructSequence_SET_ITEM(v, 4, PyInt_FromLong((long) 0)); /*st_uid*/
+	PyStructSequence_SET_ITEM(v, 5, PyInt_FromLong((long) 0)); /*st_gid*/
+	PyStructSequence_SET_ITEM(v, 6, 
+				  PyInt_FromLong((long) len)); /*st_size*/
+	PyStructSequence_SET_ITEM(v, 7, PyInt_FromLong((long) t)); /*st_atime*/
+	PyStructSequence_SET_ITEM(v, 8, PyInt_FromLong((long) t)); /*st_mtime*/
+	PyStructSequence_SET_ITEM(v, 9, PyInt_FromLong((long) t)); /*st_ctime*/
+	PyStructSequence_SET_ITEM(v, 10, 
+				  PyInt_FromLong((long) ft)); /*file type*/
+	PyStructSequence_SET_ITEM(v, 11, 
+				  PyInt_FromLong((long) at)); /*attributes*/
+	PyStructSequence_SET_ITEM(v, 12, 
+				  PyInt_FromLong((long) ot)); /*object type*/
+
+        if (PyErr_Occurred()) {
+                Py_DECREF(v);
+                return NULL;
+        }
+
+        return v;
 }
 
 static PyObject *riscos_chmod(PyObject *self,PyObject *args)
@@ -271,7 +322,7 @@ static PyMethodDef riscos_methods[] = {
 void
 initriscos()
 {
-	PyObject *m, *d;
+	PyObject *m, *d, *stat_m;
 
 	m = Py_InitModule("riscos", riscos_methods);
 	d = PyModule_GetDict(m);
@@ -280,4 +331,7 @@ initriscos()
 	RiscosError = PyString_FromString("riscos.error");
 	if (RiscosError == NULL || PyDict_SetItemString(d, "error", RiscosError) != 0)
 		Py_FatalError("can't define riscos.error");
+
+	PyStructSequence_InitType(&StatResultType, &stat_result_desc);
+	PyDict_SetItemString(d, "stat_result", (PyObject*) &StatResultType);
 }

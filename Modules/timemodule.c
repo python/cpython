@@ -2,6 +2,7 @@
 /* Time module */
 
 #include "Python.h"
+#include "structseq.h"
 
 #include <ctype.h>
 
@@ -210,19 +211,53 @@ static char sleep_doc[] =
 Delay execution for a given number of seconds.  The argument may be\n\
 a floating point number for subsecond precision.";
 
+static PyStructSequence_Field struct_time_type_fields[] = {
+	{"tm_year", NULL},
+	{"tm_mon", NULL},
+	{"tm_mday", NULL},
+	{"tm_hour", NULL},
+	{"tm_min", NULL},
+	{"tm_sec", NULL},
+	{"tm_wday", NULL},
+	{"tm_yday", NULL},
+	{"tm_isdst", NULL},
+	{0}
+};
+
+static PyStructSequence_Desc struct_time_type_desc = {
+	"struct_time",
+	NULL,
+	struct_time_type_fields,
+	9,
+};
+	
+static PyTypeObject StructTimeType;
+
 static PyObject *
 tmtotuple(struct tm *p)
 {
-	return Py_BuildValue("(iiiiiiiii)",
-			     p->tm_year + 1900,
-			     p->tm_mon + 1,	   /* Want January == 1 */
-			     p->tm_mday,
-			     p->tm_hour,
-			     p->tm_min,
-			     p->tm_sec,
-			     (p->tm_wday + 6) % 7, /* Want Monday == 0 */
-			     p->tm_yday + 1,	   /* Want January, 1 == 1 */
-			     p->tm_isdst);
+	PyObject *v = PyStructSequence_New(&StructTimeType);
+	if (v == NULL)
+		return NULL;
+	
+#define SET(i,val) PyStructSequence_SET_ITEM(v, i, PyInt_FromLong((long) val))
+
+	SET(0, p->tm_year + 1900);
+	SET(1, p->tm_mon + 1);	   /* Want January == 1 */
+	SET(2, p->tm_mday);
+	SET(3, p->tm_hour);
+	SET(4, p->tm_min);
+	SET(5, p->tm_sec);
+	SET(6, (p->tm_wday + 6) % 7); /* Want Monday == 0 */
+	SET(7, p->tm_yday + 1);	   /* Want January, 1 == 1 */
+	SET(8, p->tm_isdst);
+#undef SET
+	if (PyErr_Occurred()) {
+		Py_XDECREF(v);
+		return NULL;
+	}
+
+	return v;
 }
 
 static PyObject *
@@ -674,6 +709,9 @@ inittime(void)
 	ins(d, "tzname", Py_BuildValue("(zz)", _tzname[0], _tzname[1]));
 #endif /* __CYGWIN__ */
 #endif /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
+
+        PyStructSequence_InitType(&StructTimeType, &struct_time_type_desc);
+	PyDict_SetItemString(d, "struct_time", (PyObject*) &StructTimeType);
 }
 
 
@@ -852,5 +890,6 @@ floatsleep(double secs)
 #endif /* !__WATCOMC__ || __QNX__ */
 #endif /* !macintosh */
 #endif /* !HAVE_SELECT */
+
 	return 0;
 }

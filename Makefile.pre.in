@@ -263,6 +263,7 @@ OBJECT_OBJS=	\
 		Objects/rangeobject.o \
 		Objects/sliceobject.o \
 		Objects/stringobject.o \
+		Objects/structseq.o \
 		Objects/tupleobject.o \
 		Objects/typeobject.o \
 		Objects/weakrefobject.o \
@@ -465,6 +466,7 @@ PYTHON_HEADERS= \
 		Include/rangeobject.h \
 		Include/sliceobject.h \
 		Include/stringobject.h \
+		Include/structseq.h \
 		Include/structmember.h \
 		Include/symtable.h \
 		Include/sysmodule.h \

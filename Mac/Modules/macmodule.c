@@ -25,6 +25,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Mac module implementation */
 
 #include "Python.h"
+#include "structseq.h"
 #include "ceval.h"
 
 #include <stdio.h>
@@ -460,11 +461,119 @@ mac_rmdir(self, args)
 	return mac_1str(args, rmdir);
 }
 
+static char stat_result__doc__[] = 
+"stat_result: Result from stat or lstat.\n\n\
+This object may be accessed either as a tuple of\n\
+  (mode,ino,dev,nlink,uid,gid,size,atime,mtime,ctime)\n\
+or via the attributes st_mode, st_ino, st_dev, st_nlink, st_uid, and so on.\n\
+\n\
+Macintosh: The fields st_rsize, st_creator, and st_type are available from\n\
+os.xstat.\n\
+\n\
+See os.stat for more information.\n";
+
+#define COMMON_STAT_RESULT_FIELDS \
+        { "st_mode",  "protection bits" }, \
+        { "st_ino",   "inode" }, \
+        { "st_dev",   "device" }, \ 
+        { "st_nlink", "number of hard links" }, \
+        { "st_uid",   "user ID of owner" }, \ 
+        { "st_gid",   "group ID of owner" }, \ 
+        { "st_size",  "total size, in bytes" }, \
+        { "st_atime", "time of last access" }, \
+        { "st_mtime", "time of last modification" }, \
+        { "st_ctime", "time of last change" },
+
+
+
+static PyStructSequence_Field stat_result_fields[] = {
+	COMMON_STAT_RESULT_FIELDS
+	{0}
+};
+
+static PyStructSequence_Desc stat_result_desc = {
+	"stat_result",
+	stat_result__doc__,
+	stat_result_fields,
+	10
+};
+
+static PyTypeObject StatResultType;
+
+#ifdef TARGET_API_MAC_OS8
+static PyStructSequence_Field xstat_result_fields[] = {
+	COMMON_XSTAT_RESULT_FIELDS
+	{ "st_rsize" },
+	{ "st_creator" },
+	{ "st_type "},
+	{0}
+};
+
+static PyStructSequence_Desc xstat_result_desc = {
+	"xstat_result",
+	stat_result__doc__,
+	xstat_result_fields,
+	13
+};
+
+static PyTypeObject XStatResultType;
+#endif
+
+static PyObject *
+_pystat_from_struct_stat(struct stat st, void* _mst) 
+{
+	PyObject *v;
+
+#if TARGET_API_MAC_OS8
+	struct macstat *mst;
+
+	if (_mst != NULL)
+		v = PyStructSequence_New(&XStatResultType);
+	else
+#endif
+		v = PyStructSequence_New(&StatResultType);
+	PyStructSequence_SET_ITEM(v, 0, PyInt_FromLong((long)st.st_mode));
+	PyStructSequence_SET_ITEM(v, 1, PyInt_FromLong((long)st.st_ino));
+	PyStructSequence_SET_ITEM(v, 2, PyInt_FromLong((long)st.st_dev));
+	PyStructSequence_SET_ITEM(v, 3, PyInt_FromLong((long)st.st_nlink));
+	PyStructSequence_SET_ITEM(v, 4, PyInt_FromLong((long)st.st_uid));
+	PyStructSequence_SET_ITEM(v, 5, PyInt_FromLong((long)st.st_gid));
+	PyStructSequence_SET_ITEM(v, 6, PyInt_FromLong((long)st.st_size));
+	PyStructSequence_SET_ITEM(v, 7, 
+				  PyFloat_FromDouble((double)st.st_atime));
+	PyStructSequence_SET_ITEM(v, 8, 
+				  PyFloat_FromDouble((double)st.st_mtime));
+	PyStructSequence_SET_ITEM(v, 9, 
+				  PyFloat_FromDouble((double)st.st_ctime));
+#if TARGET_API_MAC_OS8
+	if (_mst != NULL) {
+		mst = (struct macstat *) _mst;
+		PyStructSequence_SET_ITEM(v, 10, 
+					  PyInt_FromLong((long)mst->st_rsize));
+		PyStructSequence_SET_ITEM(v, 11, 
+				PyString_FromStringAndSize(mst->st_creator, 
+							   4));
+		PyStructSequence_SET_ITEM(v, 12, 
+				PyString_FromStringAndSize(mst->st_type, 
+							   4));
+	}
+#endif
+
+        if (PyErr_Occurred()) {
+                Py_DECREF(v);
+                return NULL;
+        }
+
+        return v;
+}
+
+
 static PyObject *
 mac_stat(self, args)
 	PyObject *self;
 	PyObject *args;
 {
+	PyObject *v;
 	struct stat st;
 	char *path;
 	int res;
@@ -475,17 +584,8 @@ mac_stat(self, args)
 	Py_END_ALLOW_THREADS
 	if (res != 0)
 		return mac_error();
-	return Py_BuildValue("(lllllllddd)",
-		    (long)st.st_mode,
-		    (long)st.st_ino,
-		    (long)st.st_dev,
-		    (long)st.st_nlink,
-		    (long)st.st_uid,
-		    (long)st.st_gid,
-		    (long)st.st_size,
-		    (double)st.st_atime,
-		    (double)st.st_mtime,
-		    (double)st.st_ctime);
+
+	return _pystat_from_struct_stat(st, NULL);
 }
 
 #ifdef WEHAVE_FSTAT
@@ -504,17 +604,8 @@ mac_fstat(self, args)
 	Py_END_ALLOW_THREADS
 	if (res != 0)
 		return mac_error();
-	return Py_BuildValue("(lllllllddd)",
-		    (long)st.st_mode,
-		    (long)st.st_ino,
-		    (long)st.st_dev,
-		    (long)st.st_nlink,
-		    (long)st.st_uid,
-		    (long)st.st_gid,
-		    (long)st.st_size,
-		    (double)st.st_atime,
-		    (double)st.st_mtime,
-		    (double)st.st_ctime);
+
+	return _pystat_from_struct_stat(st, NULL);
 }
 #endif /* WEHAVE_FSTAT */
 
@@ -545,20 +636,8 @@ mac_xstat(self, args)
 	Py_END_ALLOW_THREADS
 	if (res != 0)
 		return mac_error();
-	return Py_BuildValue("(llllllldddls#s#)",
-		    (long)st.st_mode,
-		    (long)st.st_ino,
-		    (long)st.st_dev,
-		    (long)st.st_nlink,
-		    (long)st.st_uid,
-		    (long)st.st_gid,
-		    (long)st.st_size,
-		    (double)st.st_atime,
-		    (double)st.st_mtime,
-		    (double)st.st_ctime,
-		    (long)mst.st_rsize,
-		    mst.st_creator, 4,
-		    mst.st_type, 4);
+
+	return _pystat_from_struct_stat(st, (void*) &mst);
 }
 #endif
 
@@ -766,4 +845,12 @@ initmac()
 	/* Initialize mac.error exception */
 	MacError = PyErr_NewException("mac.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", MacError);
+
+	PyStructSequence_InitType(&StatResultType, &stat_result_desc);
+	PyDict_SetItemString(d, "stat_result", (PyObject*) &StatResultType);
+
+#if TARGET_API_MAC_OS8
+	PyStructSequence_InitType(&XStatResultType, &xstat_result_desc);
+	PyDict_SetItemString(d, "xstat_result", (PyObject*) &XStatResultType);
+#endif
 }
