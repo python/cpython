@@ -12,6 +12,14 @@ This is not hard; the code for all extension types follows a pattern,
 but there are some details that you need to understand before you can
 get started.
 
+\begin{notice}
+The way new types are defined changed dramatically (and for the
+better) in Python 2.2.  This document documents how to define new
+types for Python 2.2 and later.  If you need to support older
+versions of Python, you will need to refer to older versions of this
+documentation.
+\end{notice}
+
 \section{The Basics
     \label{dnt-basics}}
 
@@ -306,7 +314,7 @@ Noddy_dealloc(Noddy* self)
 {
     Py_XDECREF(self->first);
     Py_XDECREF(self->last);
-    self->ob_type->tp_free(self);
+    self->ob_type->tp_free((PyObject*)self);
 }
 \end{verbatim}
 
@@ -792,7 +800,7 @@ my_dealloc(PyObject *obj)
 
         Py_DECREF(self->my_callback);
     }
-    obj->ob_type->tp_free(self);
+    obj->ob_type->tp_free((PyObject*)self);
 }
 \end{verbatim}
 
