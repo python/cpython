@@ -1,0 +1,60 @@
+Windows and files:
+
+	^X ^N creates new empty text editor window
+	^X ^C closes all windows
+	Alt-F4 or ^X ^0 (that's control-x-control-zero) closes current window
+	^X ^D opens a file from dialog box
+	^X ^S saves to current file
+	^X ^W saves to file from dialog box
+	^X w save a copy to file from dialog box
+
+Navigation:
+
+	Arrow keys and Page Up/Down to move around
+	Home/End go to begin/end of line
+	Control-Home/End go to begin/end of file
+	Some Emacs bindings may also work, e.g. ^A/^E
+
+Searching: all searches are forward from the cursor without
+wrap-around, case sensitive, Perl-style regular expression matches
+
+	^S without a selection opens search dialog box
+	^S with a selection searches for selected text
+	^U ^S repeats last search
+	Alt-G opens dialog box to go to a specific line
+
+Editing:
+
+	Backspace deletes left of cursor, Delete right of cursor
+	Cut and paste use platform's conventions
+	^[ or Alt-[ left-shifts (dedents) the current line or selection
+	^] or Alt-] right-shifts (indents) the current line or selection
+	Alt-/ expands last word you type (like Emacs dabbrev)
+
+Undo:
+
+	^Z undoes last change; repeat to undo more
+	Alt-Z redoes last undone change; repeat to redo more
+
+Console window:
+
+	^C interrupts executing command
+	^D sends end-of-file; closes console if typed at >>> prompt
+
+	If you get a traceback, right-click on any line listing a
+	filename and line number and select "Go to line from
+	traceback" to open that file and go to the indicated line
+
+Python syntax colors: the coloring is applied in a background thread
+
+	Keywords	orange
+	Strings		green
+	Comments	red
+	Definitions	blue
+
+Console colors:
+
+	Console output	red
+	stdout		blue
+	stderr		dark green
+	stdin		purple
