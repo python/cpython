@@ -72,7 +72,7 @@ staticforward PyTypeObject Pcre_Type;
 #define NOT_WORD_BOUNDARY	6
 #define BEGINNING_OF_BUFFER	7
 #define END_OF_BUFFER		8
-
+#define STRING                  9
 
 static PcreObject *
 newPcreObject(arg)
@@ -191,49 +191,20 @@ PyPcre_compile(self, args)
 {
 	PcreObject *rv;
 	PyObject *dictionary;
-	char *pattern, *newpattern;
+	char *pattern;
 	const char *error;
 	int num_zeros, i, j;
 	
-	int patternlen, options, erroroffset;
-	if (!PyArg_ParseTuple(args, "s#iO!", &pattern, &patternlen, &options,
+	int options, erroroffset;
+	if (!PyArg_ParseTuple(args, "siO!", &pattern, &options,
 			      &PyDict_Type, &dictionary))
 		return NULL;
 	rv = newPcreObject(args);
 	if ( rv == NULL )
 		return NULL;
 
-	/* PCRE doesn't like having null bytes in its pattern, so we have to replace 
-	   any zeros in the string with the characters '\000'. This increases the size
-	   of the string by 3*num_zeros, plus 1 byte for the terminating \0.  */
-	num_zeros=1;      /* Start at 1; this will give 3 extra bytes of leeway */
-	for(i=0; i<patternlen; i++) {
-		if (pattern[i]==0) num_zeros++;
-	}
-	newpattern=malloc(patternlen + num_zeros*3 + 4); 
-	if (newpattern==NULL) {
-		PyErr_SetString(PyExc_MemoryError, "can't allocate memory for new pattern");
-		return NULL;
-	}
-	for (i=j=0; i<patternlen; i++, j++)
-	{
-		if (pattern[i]!=0) newpattern[j]=pattern[i];
-		else {
-			newpattern[j++] ='\\';
-			newpattern[j++] = '0';
-			newpattern[j++] = '0';
-			newpattern[j  ] = '0';
-		}
-	}
-	/* Keep purify happy; for pcre, one null byte is enough! */
-	newpattern[j++]='\0';
-	newpattern[j++]='\0';
-	newpattern[j++]='\0';
-        newpattern[j]='\0';
-
-	rv->regex = pcre_compile((char*)newpattern, options, 
+	rv->regex = pcre_compile((char*)pattern, options, 
 				 &error, &erroroffset, dictionary);
-	free(newpattern);
 	if (rv->regex==NULL) 
 	{
 		PyMem_DEL(rv);
@@ -312,6 +283,10 @@ PyPcre_expand_escape(pattern, pattern_len, indexptr, typeptr)
 		*indexptr=index;
 		return Py_BuildValue("c", (char)8);
 		break;
+	case('\\'):
+		*indexptr=index;
+		return Py_BuildValue("c", '\\');
+		break;
 
 	case('x'):
 	{
@@ -348,6 +323,8 @@ PyPcre_expand_escape(pattern, pattern_len, indexptr, typeptr)
 	case('g'):
 	{
 		int end, i;
+		int group_num = 0, is_number=0;
+
 		if (pattern_len<=index)
 		{
 			PyErr_SetString(ErrorObject, "unfinished symbolic reference");
@@ -374,16 +351,22 @@ PyPcre_expand_escape(pattern, pattern_len, indexptr, typeptr)
 			PyErr_SetString(ErrorObject, "zero-length symbolic reference");
 			return NULL;
 		}
-		if (!(pcre_ctypes[pattern[index]] & ctype_word) /* First char. not alphanumeric */
-		    || (pcre_ctypes[pattern[index]] & ctype_digit) ) /* First char. a digit */
+		if ((pcre_ctypes[pattern[index]] & ctype_digit)) /* First char. a digit */
 		{
-			/* XXX should include the text of the reference */
-			PyErr_SetString(ErrorObject, "first character of symbolic reference not a letter or _");
-			return NULL;
+		        is_number = 1;
+			group_num = pattern[index] - '0';
 		}
 
 		for(i=index+1; i<end; i++)
 		{
+		        if (is_number && 
+			    !(pcre_ctypes[pattern[i]] & ctype_digit) )
+			{
+				/* XXX should include the text of the reference */
+				PyErr_SetString(ErrorObject, "illegal non-digit character in \\g<...> starting with digit");
+				return NULL;			       
+			}
+			else {group_num = group_num * 10 + pattern[i] - '0';}
 			if (!(pcre_ctypes[pattern[i]] & ctype_word) )
 			{
 				/* XXX should include the text of the reference */
@@ -394,6 +377,9 @@ PyPcre_expand_escape(pattern, pattern_len, indexptr, typeptr)
 	    
 		*typeptr = MEMORY_REFERENCE;
 		*indexptr = end+1;
+		/* If it's a number, return the integer value of the group */
+		if (is_number) return Py_BuildValue("i", group_num);
+		/* Otherwise, return a string containing the group name */
 		return Py_BuildValue("s#", pattern+index, end-index);
 	}
 	break;
@@ -478,8 +464,11 @@ PyPcre_expand_escape(pattern, pattern_len, indexptr, typeptr)
 	break;
 
 	default:
+	  /* It's some unknown escape like \s, so return a string containing
+	     \s */
+		*typeptr = STRING;
 		*indexptr = index;
-		return Py_BuildValue("c", c);
+		return Py_BuildValue("s#", pattern+index-2, 2);
 		break;
 	}
 }
@@ -571,6 +560,12 @@ PyPcre_expand(self, args)
 				Py_DECREF(result);
 			}
 			break;
+			case(STRING):
+			  {
+			    PyList_Append(results, value);
+			    total_len += PyString_Size(value);
+			    break;
+			  }
 			default:
 				Py_DECREF(results);
 				PyErr_SetString(ErrorObject, 
