@@ -387,10 +387,10 @@ if sys.version_info[:2] < (2, 3):
 	True = bool(1)
 	False = bool(0)
 else:
-	import __builtin__
-	True = __builtin__.True
-	False = __builtin__.False
-	bool = __builtin__.bool
+	# Bind the boolean builtins to local names
+	True = True
+	False = False
+	bool = bool
 
 
 if __name__ == "__main__":
