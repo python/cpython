@@ -2537,18 +2537,17 @@ PySocket_getnameinfo(PyObject *self, PyObject *args)
 	PyObject *sa = (PyObject *)NULL;
 	int flags;
 	char *hostp;
-	int n, port, flowinfo, scope_id;
+	int port, flowinfo, scope_id;
 	char hbuf[NI_MAXHOST], pbuf[NI_MAXSERV];
 	struct addrinfo hints, *res = NULL;
 	int error;
 	PyObject *ret = (PyObject *)NULL;
 
 	flags = flowinfo = scope_id = 0;
-	if (PyArg_ParseTuple(args, "Oi:getnameinfo", &sa, &flags) == 0)
+	if (!PyArg_ParseTuple(args, "Oi:getnameinfo", &sa, &flags))
 		return NULL;
-	n = PyArg_ParseTuple(sa, "si|ii", &hostp, &port, &flowinfo, scope_id);
-	if (n == 0)
-		goto fail;
+	if  (!PyArg_ParseTuple(sa, "si|ii", &hostp, &port, &flowinfo, &scope_id))
+		return NULL;
 	PyOS_snprintf(pbuf, sizeof(pbuf), "%d", port);
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
@@ -2597,7 +2596,6 @@ PySocket_getnameinfo(PyObject *self, PyObject *args)
 fail:
 	if (res)
 		freeaddrinfo(res);
-	Py_XDECREF(sa);
 	return ret;
 }
 
