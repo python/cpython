@@ -73,8 +73,8 @@ extern PyObject *AEDesc_New(AppleEvent *);
 extern int AEDesc_Convert(PyObject *, AppleEvent *);
 
 /* Forward declaration */
-staticforward PyObject *WEOObj_New(WEObjectReference);
-staticforward PyObject *ExistingwasteObj_New(WEReference);
+static PyObject *WEOObj_New(WEObjectReference);
+static PyObject *ExistingwasteObj_New(WEReference);
 
 /*
 ** Parse/generate TextStyle records

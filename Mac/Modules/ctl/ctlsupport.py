@@ -128,7 +128,7 @@ extern int _CtlObj_Convert(PyObject *, ControlHandle *);
 #define CtlObj_Convert _CtlObj_Convert
 #endif
 
-staticforward PyObject *CtlObj_WhichControl(ControlHandle);
+static PyObject *CtlObj_WhichControl(ControlHandle);
 
 #define as_Control(h) ((ControlHandle)h)
 #define as_Resource(ctl) ((Handle)ctl)
@@ -232,9 +232,9 @@ static ControlUserPaneIdleUPP myidleproc_upp;
 static ControlUserPaneHitTestUPP myhittestproc_upp;
 static ControlUserPaneTrackingUPP mytrackingproc_upp;
 
-staticforward int settrackfunc(PyObject *); 	/* forward */
-staticforward void clrtrackfunc(void);	/* forward */
-staticforward int setcallback(PyObject *, OSType, PyObject *, UniversalProcPtr *);
+static int settrackfunc(PyObject *); 	/* forward */
+static void clrtrackfunc(void);	/* forward */
+static int setcallback(PyObject *, OSType, PyObject *, UniversalProcPtr *);
 """
 
 finalstuff = finalstuff + """
