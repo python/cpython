@@ -1,0 +1,23 @@
+These scripts and Makefile fragment are used to convert the Python
+documentation in LaTeX format to SGML.  XML is also supported as a
+target, but is unlikely to be used.
+
+This material is highly preliminary and incomplete.  The XML omnibus
+package developed by the Python XML-SIG is required.  See
+http://www.python.org/sigs/xml-sig/ for more information on the
+package.
+
+To convert a document to SGML:
+
+	cd Doc/<document-dir>
+	make -f ../tools/sgmlconv/make.rules TOOLSDIR=../tools
+
+To generate XML instead, use:
+
+	cd Doc/<document-dir>
+	make -f ../tools/sgmlconv/make.rules TOOLSDIR=../tools xml
+
+Note that building the second target format is fast because both
+conversions use the same intermediate format (an ESIS event stream).
+
+Please send comments and bug reports to python-docs@python.org.
