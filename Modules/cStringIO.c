@@ -1,6 +1,6 @@
 /*
 
-  $Id$
+  cStringIO.c,v 1.23 1997/12/04 00:12:05 jim Exp
 
   A simple fast partial StringIO replacement.
 
@@ -85,7 +85,7 @@ static char cStringIO_module_documentation[] =
 "If someone else wants to provide a more complete implementation,\n"
 "go for it. :-)  \n"
 "\n"
-"$Id$\n"
+"cStringIO.c,v 1.23 1997/12/04 00:12:05 jim Exp\n"
 ;
 
 #include "Python.h"
@@ -141,17 +141,14 @@ static PyObject *
 O_seek(Oobject *self, PyObject *args) {
   int position, mode = 0;
 
-  UNLESS(PyArg_ParseTuple(args, "i|i", &position, &mode))
-  {
+  UNLESS(PyArg_ParseTuple(args, "i|i", &position, &mode)) {
     return NULL;
   }
 
-  if (mode == 2)
-  {
+  if (mode == 2) {
     position += self->string_size;
   }
-  else if (mode == 1)
-  {
+  else if (mode == 1) {
     position += self->pos;
   }
 
@@ -171,8 +168,7 @@ O_cread(PyObject *self, char **output, int  n) {
   int l;
 
   l = ((Oobject*)self)->string_size - ((Oobject*)self)->pos;  
-  if (n < 0 || n > l)
-  {
+  if (n < 0 || n > l) {
     n = l;
   }
 
@@ -234,14 +230,12 @@ O_cwrite(PyObject *self, char *c, int  l) {
   int newl;
 
   newl=((Oobject*)self)->pos+l;
-  if(newl >= ((Oobject*)self)->buf_size)
-    {
+  if(newl >= ((Oobject*)self)->buf_size) {
       ((Oobject*)self)->buf_size*=2;
       if(((Oobject*)self)->buf_size <= newl) ((Oobject*)self)->buf_size=newl+1;
       UNLESS(((Oobject*)self)->buf=
 	     (char*)realloc(((Oobject*)self)->buf,
-			    (((Oobject*)self)->buf_size) *sizeof(char)))
-	{
+			    (((Oobject*)self)->buf_size) *sizeof(char))) {
 	  PyErr_SetString(PyExc_MemoryError,"out of memory");
 	  ((Oobject*)self)->buf_size=((Oobject*)self)->pos=0;
 	  return -1;
@@ -252,8 +246,7 @@ O_cwrite(PyObject *self, char *c, int  l) {
 
   ((Oobject*)self)->pos += l;
 
-  if (((Oobject*)self)->string_size < ((Oobject*)self)->pos)
-    {
+  if (((Oobject*)self)->string_size < ((Oobject*)self)->pos) {
       ((Oobject*)self)->string_size = ((Oobject*)self)->pos;
     }
 
@@ -340,29 +333,24 @@ O_writelines(Oobject *self, PyObject *args) {
   PyObject *string_module = 0;
   static PyObject *string_joinfields = 0;
 
-  UNLESS(PyArg_Parse(args, "O", args))
-  {
+  UNLESS(PyArg_Parse(args, "O", args)) {
     return NULL;
   }
 
-  if (!string_joinfields)
-  {
-    UNLESS(string_module = PyImport_ImportModule("string"))
-    {
+  if (!string_joinfields) {
+    UNLESS(string_module = PyImport_ImportModule("string")) {
       return NULL;
     }
 
     UNLESS(string_joinfields=
-        PyObject_GetAttrString(string_module, "joinfields"))
-    {
+        PyObject_GetAttrString(string_module, "joinfields")) {
       return NULL;
     }
 
     Py_DECREF(string_module);
   }
 
-  if (PyObject_Length(args) == -1)
-  {
+  if (PyObject_Length(args) == -1) {
     return NULL;
   }
 
@@ -462,8 +450,7 @@ newOobject(int  size) {
   self->string_size = 0;
   self->softspace = 0;
 
-  UNLESS(self->buf=malloc(size*sizeof(char)))
-    {
+  UNLESS(self->buf=malloc(size*sizeof(char))) {
       PyErr_SetString(PyExc_MemoryError,"out of memory");
       self->buf_size = 0;
       return NULL;
@@ -628,74 +615,3 @@ initcStringIO() {
   /* Check for errors */
   if (PyErr_Occurred()) Py_FatalError("can't initialize module cStringIO");
 }
-
-
-/******************************************************************************
-
-  $Log$
-  Revision 2.8  1997/09/03 18:19:38  guido
-  #Plug small memory leaks in constructors.
-
-  Revision 2.7  1997/09/03 00:09:26  guido
-  Fix the bug Jeremy was experiencing: both the close() and the
-  dealloc() functions contained code to free/DECREF the buffer
-  (there were differences between I and O objects but the logic bug was
-  the same).  Fixed this be setting the buffer pointer to NULL and
-  testing for that.  (This also makes it safe to call close() more than
-  once.)
-
-  XXX Worry: what if you try to read() or write() once the thing is
-  closed?
-
-  Revision 2.6  1997/08/13 03:14:41  guido
-  cPickle release 0.3 from Jim Fulton
-
-  Revision 1.21  1997/06/19 18:51:42  jim
-  Added ident string.
-
-  Revision 1.20  1997/06/13 20:50:50  jim
-  - Various changes to make gcc -Wall -pedantic happy, including
-    getting rid of staticforward declarations and adding pretend use
-    of two statics defined in .h file.
-
-  Revision 1.19  1997/06/02 18:15:17  jim
-  Merged in guido's changes.
-
-  Revision 1.18  1997/05/07 16:26:47  jim
-  getvalue() can nor be given an argument.  If this argument is true,
-  then getvalue returns the text upto the current position.  Otherwise
-  it returns all of the text.  The default value of the argument is
-  false.
-
-  Revision 1.17  1997/04/17 18:02:46  chris
-  getvalue() now returns entire string, not just the string up to
-  current position
-
-  Revision 2.5  1997/04/11 19:56:06  guido
-  My own patch: support writable 'softspace' attribute.
-
-  > Jim asked: What is softspace for?
-  
-  It's an old feature.  The print statement uses this to remember
-  whether it should insert a space before the next item or not.
-  Implementation is in fileobject.c.
-
-  Revision 1.11  1997/01/23 20:45:01  jim
-  ANSIfied it.
-  Changed way C API was exported.
-
-  Revision 1.10  1997/01/02 15:19:55  chris
-  checked in to be sure repository is up to date.
-
-  Revision 1.9  1996/12/27 21:40:29  jim
-  Took out some lamosities in interface, like returning self from
-  write.
-
-  Revision 1.8  1996/12/23 15:52:49  jim
-  Added ifdef to check for CObject before using it.
-
-  Revision 1.7  1996/12/23 15:22:35  jim
-  Finished implementation, adding full compatibility with StringIO, and
-  then some.
-
- *****************************************************************************/
