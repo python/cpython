@@ -165,4 +165,5 @@ sqrt
 tan
 tanh
 test_time
+test_array
 Passed all tests.
