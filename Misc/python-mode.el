@@ -300,7 +300,7 @@ Currently-active file is at the head of the list.")
 	    ("\C-c\C-p"  . py-previous-statement)
 	    ("\C-c\C-u"  . py-goto-block-up)
 	    ("\C-c\C-m"  . py-mark-block)
-	    ("\C-c#"	 . comment-region)
+	    ("\C-c#"	 . py-comment-region)
 	    ("\C-c?"	 . py-describe-mode)
 	    ("\C-c\C-hm" . py-describe-mode)
 	    ("\e\C-a"	 . beginning-of-python-def-or-class)
@@ -455,7 +455,7 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
 	  '((paragraph-separate . "^[ \t]*$")
 	    (paragraph-start	 . "^[ \t]*$")
 	    (require-final-newline . t)
-	    (comment-start .		"## ")
+	    (comment-start .		"# ")
 	    (comment-start-skip .	"# *")
 	    (comment-column . 40)
 	    (indent-region-function . py-indent-region)
@@ -886,10 +886,39 @@ the new line indented."
 	      (1+ (current-column))))))
 
        ;; not on a continuation line
+       ((bobp) (current-indentation))
 
-       ;; if at start of restriction, or on a non-indenting comment
-       ;; line, assume they intended whatever's there
-       ((or (bobp) (looking-at "[ \t]*#[^ \t\n]"))
+       ;; Dfn: "Indenting comment line".  A line containing only a
+       ;; comment, but which is treated like a statement for
+       ;; indentation calculation purposes.  Such lines are only
+       ;; treated specially by the mode; they are not treated
+       ;; specially by the Python interpreter.
+
+       ;; The rules for indenting comment lines are a line where:
+       ;;   - the first non-whitespace character is `#', and
+       ;;   - the character following the `#' is whitespace, and
+       ;;   - the line is outdented with respect to (i.e. to the left
+       ;;     of) the indentation of the preceding non-blank line.
+
+       ;; The first non-blank line following an indenting comment
+       ;; line is given the same amount of indentation as the
+       ;; indenting comment line.
+
+       ;; All other comment-only lines are ignored for indentation
+       ;; purposes.
+
+       ;; Are we looking at a comment-only line which is *not* an
+       ;; indenting comment line?  If so, we assume that its been
+       ;; placed at the desired indentation, so leave it alone.
+       ;; Indenting comment lines are aligned as statements down
+       ;; below.
+       ((and (looking-at "[ \t]*#[^ \t\n]")
+	     ;; NOTE: this test will not be performed in older Emacsen
+	     (fboundp 'forward-comment)
+	     (<= (current-indentation)
+		 (save-excursion
+		   (forward-comment (- (point-max)))
+		   (current-indentation))))
 	(current-indentation))
 
        ;; else indentation based on that of the statement that
@@ -1113,6 +1142,12 @@ initial line; and comment lines beginning in column 1 are ignored."
 	      (indent-to target-column)))
 	(forward-line 1))))
   (set-marker end nil))
+
+(defun py-comment-region (beg end &optional arg)
+  "Like `comment-region' but uses double hash (`#') comment starter."
+  (interactive "r\nP")
+  (let ((comment-start "## "))
+    (comment-region beg end arg)))
 
 
 ;; Functions for moving point
