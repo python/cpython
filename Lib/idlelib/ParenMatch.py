@@ -11,7 +11,7 @@ extensions what to capture the same event.
 """
 
 import PyParse
-from AutoIndent import AutoIndent, index2line
+from EditorWindow import EditorWindow, index2line
 from configHandler import idleConf
 
 class ParenMatch:
@@ -129,10 +129,10 @@ def keysym_type(ks):
         return "brace"
 
 class LastOpenBracketFinder:
-    num_context_lines = AutoIndent.num_context_lines
-    indentwidth = AutoIndent.indentwidth
-    tabwidth = AutoIndent.tabwidth
-    context_use_ps1 = AutoIndent.context_use_ps1
+    num_context_lines = EditorWindow.num_context_lines
+    indentwidth = EditorWindow.indentwidth
+    tabwidth = EditorWindow.tabwidth
+    context_use_ps1 = EditorWindow.context_use_ps1
 
     def __init__(self, editwin):
         self.editwin = editwin
