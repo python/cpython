@@ -56,7 +56,7 @@ HTMLDIR=	html
 INFODIR=	info
 TOOLSDIR=	tools
 
-RELEASE=1.5.2a2
+RELEASE=1.5.2b1
 VERSION=1.5
 
 # These must be declared phony since there
