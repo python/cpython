@@ -542,18 +542,18 @@ SOURCE=..\Python\errors.c
 
 SOURCE=..\python\exceptions.c
 
-!if  "$(cfg)" == "python16 - win32 release"
+!IF  "$(cfg)" == "python16 - Win32 Release"
 
-!elseif  "$(cfg)" == "python16 - win32 debug"
+!ELSEIF  "$(cfg)" == "python16 - Win32 Debug"
 
-!elseif  "$(cfg)" == "python16 - win32 alpha debug"
+!ELSEIF  "$(cfg)" == "python16 - Win32 Alpha Debug"
 
-!elseif  "$(cfg)" == "python16 - win32 alpha release"
+!ELSEIF  "$(cfg)" == "python16 - Win32 Alpha Release"
 
-!endif 
+!ENDIF 
 
-# end source file
-# begin source file
+# End Source File
+# Begin Source File
 
 SOURCE=..\Objects\fileobject.c
 
