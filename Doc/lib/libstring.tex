@@ -265,12 +265,3 @@ The functions defined in this module are:
   \var{maxsplit} is given, the first \var{maxsplit} occurrences are
   replaced.
 \end{funcdesc}
-
-This module is implemented in Python.  Much of its functionality has
-been reimplemented in the built-in module
-\module{strop}\refbimodindex{strop}.  However, you
-should \emph{never} import the latter module directly.  When
-\module{string} discovers that \module{strop} exists, it transparently
-replaces parts of itself with the implementation from \module{strop}.
-After initialization, there is \emph{no} overhead in using
-\module{string} instead of \module{strop}.
