@@ -44,7 +44,7 @@ def filefilter(name, arguments, trans_data, trans_filename=None):
         trans_data(name, "stdin", sys.stdin, sys.stdout)
     else:
         for file in arguments:
-            if file == '-':		# - is conventional for stdin
+            if file == '-':             # - is conventional for stdin
                 file = "stdin"
                 infp = sys.stdin
             else:
@@ -77,7 +77,7 @@ def line_by_line(name, file, infp, outfp, translate_line):
         line = infp.readline()
         if line == "":
             break
-        elif line:	# None returns are skipped
+        elif line:      # None returns are skipped
             outfp.write(translate_line(name, file, line))
 
 def linefilter(name, arguments, trans_data, trans_filename=None):
