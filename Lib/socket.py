@@ -197,7 +197,7 @@ class _fileobject:
             self._sock.sendall(buffer)
             self._wbuf = [ ]
 
-    def fileno (self):
+    def fileno(self):
         return self._sock.fileno()
 
     def write(self, data):
@@ -235,19 +235,19 @@ class _fileobject:
                 break
             buf_len += len(data)
             self._rbuf.append(data)
-        data = ''.join(self._rbuf)
         # Clear the rbuf at the end so we're not affected by
         # an exception during a recv
+        data = ''.join(self._rbuf)
         self._rbuf = [ ]
         if buf_len > size and size >= 0:
-           self._rbuf.append(data[size:])
-           data = data[:size]
+            self._rbuf.append(data[size:])
+            data = data[:size]
         return data
 
     def readline(self, size=-1):
         index = -1
         buf_len = self.__get_rbuf_len()
-        if len (self._rbuf):
+        if self._rbuf:
             index = min([x.find('\n') for x in self._rbuf])
         while index < 0 and (size < 0 or buf_len < size):
             recv_size = max(self._rbufsize, size - buf_len)
@@ -275,7 +275,8 @@ class _fileobject:
         list = []
         while 1:
             line = self.readline()
-            if not line: break
+            if not line:
+                break
             list.append(line)
             total += len(line)
             if sizehint and total >= sizehint:
