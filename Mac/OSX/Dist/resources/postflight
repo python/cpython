@@ -1,0 +1,67 @@
+#!/bin/sh
+#----------------------------------------------------------------------
+# Create the unix tools and compile the .py files after Python has been
+# installed.
+#----------------------------------------------------------------------
+
+PYVER=2.3
+
+PKG=$1
+DEST=$2
+
+
+# if destination is / then use usr/local/bin, otherwise just bin
+if [ "$DEST" = "/" ]; then
+    TOOLDIR=/usr/local/bin
+    DEST=
+else
+    TOOLDIR=$DEST/bin
+fi
+
+# Make sure the dir exists
+mkdir -p $TOOLDIR
+
+# Make some links to the python executable
+if [ -e $TOOLDIR/python$PYVER ]; then
+    rm $TOOLDIR/python$PYVER
+fi
+ln -fs $DEST/Library/Frameworks/Python.framework/Versions/$PYVER/bin/python $TOOLDIR/python$PYVER
+
+if [ -e $TOOLDIR/python ]; then
+    rm $TOOLDIR/python
+fi
+ln -fs python$PYVER $TOOLDIR/python
+
+
+# make the pythonw script
+cat > $TOOLDIR/pythonw <<EOF
+#!/bin/sh
+exec "$DEST/Library/Frameworks/Python.framework/Versions/$PYVER/Resources/Python.app/Contents/MacOS/python" "\$@"
+EOF
+chmod +x $TOOLDIR/pythonw
+
+
+# Compile the .py files in the Python library to .pyc's and then .pyo's
+$TOOLDIR/python -Wi -tt \
+    $DEST/Library/Frameworks/Python.framework/Versions/$PYVER/lib/python$PYVER/compileall.py \
+    -x badsyntax -x site-packages $DEST/Library/Frameworks/Python.framework/Versions/$PYVER/lib/python$PYVER
+
+$TOOLDIR/python -Wi -tt -O \
+    $DEST/Library/Frameworks/Python.framework/Versions/$PYVER/lib/python$PYVER/compileall.py \
+    -x badsyntax -x site-packages  $DEST/Library/Frameworks/Python.framework/Versions/$PYVER/lib/python$PYVER
+
+
+# Make the site-packages and other dirs writable by the admin.
+for d in $DEST/Library/Frameworks/Python.framework/Versions/$PYVER/lib/python$PYVER/site-packages \
+         $DEST/Library/Frameworks/Python.framework/Versions/$PYVER/bin \
+         $DEST/Applications/MacPython-$PYVER; do
+    chgrp -R admin $d
+    chmod -R g+w   $d
+done
+
+
+# The link in the app bundles needs updated.
+for app in BuildApplet IDLE PackageManager PythonIDE; do
+    ln -s $DEST/Library/Frameworks/Python.framework/Versions/$PYVER/Resources/Python.app/Contents/MacOS/python \
+          $DEST/Applications/MacPython-$PYVER/$app.app/Contents/MacOS
+done
