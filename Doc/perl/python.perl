@@ -607,7 +607,7 @@ sub define_module{
     }
     $word = "$word " if $word;
     $THIS_MODULE = "$name";
-    $INDEX_SUBITEM = "(in $name)";
+    $INDEX_SUBITEM = "(in module $name)";
     print "[$name]";
     return make_mod_index_entry(
         "<tt class='module'>$name</tt> (${word}module)", 'DEF');
