@@ -30,7 +30,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include <stdlib.h>
 #endif
 
-#include "pyport.h"
+#include "pymem.h"
 
 #include "pydebug.h"
 

@@ -54,6 +54,8 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #include "pyport.h"
 
+#include "pymem.h"
+
 #include "object.h"
 #include "objimpl.h"
 

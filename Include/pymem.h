@@ -8,44 +8,15 @@ See the file "Misc/COPYRIGHT" for information on usage and
 redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 ******************************************************************/
 
-/***************************************
-THIS FILE IS OBSOLETE
-USE "pyport.h" INSTEAD
-***************************************/
-
-#ifndef Py_MYMALLOC_H
-#define Py_MYMALLOC_H
-
 /* Lowest-level memory allocation interface */
 
-#define ANY void /* For API compatibility only. Obsolete, do not use. */
+#ifndef Py_PYMEM_H
+#define Py_PYMEM_H
 
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-
-#include "myproto.h"
+#include "pyport.h"
 
 #ifdef __cplusplus
-/* Move this down here since some C++ #include's don't like to be included
-   inside an extern "C" */
 extern "C" {
-#endif
-
-#ifndef DL_IMPORT       /* declarations for DLL import */
-#define DL_IMPORT(RTYPE) RTYPE
-#endif
-
-#ifndef NULL
-#define NULL ((void *)0)
-#endif
-
-#ifdef MALLOC_ZERO_RETURNS_NULL
-/* XXX Always allocate one extra byte, since some malloc's return NULL
-   XXX for malloc(0) or realloc(p, 0). */
-#define _PyMem_EXTRA 1
-#else
-#define _PyMem_EXTRA 0
 #endif
 
 /*
@@ -205,4 +176,4 @@ extern DL_IMPORT(void) PyMem_Free(void *);
 */
 
 
-#endif /* !Py_MYMALLOC_H */
+#endif /* !Py_PYMEM_H */
