@@ -731,6 +731,7 @@ libainstall:	all
 # This goes into $(exec_prefix)
 sharedinstall:
 	./$(PYTHON) -E $(srcdir)/setup.py install \
+		--install-scripts=$(BINDIR) \
 		--install-platlib=$(DESTSHARED)
 
 # Install a MacOSX framework During build (before
