@@ -11,7 +11,7 @@ Core language, builtins, and interpreter
 
   In all previous version of Python, names were resolved in exactly
   three namespaces -- the local namespace, the global namespace, and
-  the builtin namespace.  According to this old defintion, if a
+  the builtin namespace.  According to this old definition, if a
   function A is defined within a function B, the names bound in B are
   not visible in A.  The new rules make names bound in B visible in A,
   unless A contains a name binding that hides the binding in B.
@@ -36,6 +36,13 @@ Core language, builtins, and interpreter
   the argument named str and an error will occur when helper() is
   called.
 
+- The compiler will report a SyntaxError if "from ... import *" occurs
+  in a function or class scope.  The language reference has documented
+  that this case is illegal, but the compiler never checked for it.
+  The recent introduction of nested scope makes the meaning of this
+  form of name binding ambiguous.  In a future release, the compiler
+  may allow this form when there is no possibility of ambiguity.
+
 - repr(string) is easier to read, now using hex escapes instead of octal,
   and using \t, \n and \r instead of \011, \012 and \015 (respectively):
 
@@ -45,12 +52,6 @@ Core language, builtins, and interpreter
 
 - Functions are now compared and hashed by identity, not by value, since
   the func_code attribute is writable.
-
-- The compiler will report a SyntaxError if "from ... import *" occurs
-  in a function or class scope.  The language reference has documented
-  that this case is illegal, but the compiler never checked for it.
-  The recent introduction of nested scope makes the meaning of this
-  form of name binding ambiguous.
 
 - Weak references (PEP 205) have been added.  This involves a few
   changes in the core, an extension module (_weakref), and a Python
@@ -96,6 +97,10 @@ Standard library
 
 - test_capi.py is a start at running tests of the Python C API.  The tests
   are implemented by the new Modules/_testmodule.c.
+
+- A new extension module, _symtable, provides provisional access to the
+  internal symbol table used by the Python compiler.  A higher-level
+  interface will be added on top of _symtable in a future release.
 
 Windows changes
 
