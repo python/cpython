@@ -264,7 +264,7 @@ extern int lstat Py_PROTO((const char *, struct stat *));
 #endif /* MS_WIN32 */
 #endif /* _MSC_VER */
 
-#ifdef OS2
+#if defined(PYCC_VACPP) && defined(PYOS_OS2)
 #include <io.h>
 #endif /* OS2 */
 
@@ -298,6 +298,25 @@ convertenviron()
 		*p = '=';
 		Py_DECREF(v);
 	}
+#if defined(PYOS_OS2)
+    {
+        APIRET rc;
+        char   buffer[1024]; /* OS/2 Provides a Documented Max of 1024 Chars */
+
+        rc = DosQueryExtLIBPATH(buffer, BEGIN_LIBPATH);
+        if (rc == NO_ERROR) { /* (not a type, envname is NOT 'BEGIN_LIBPATH') */
+            PyObject *v = PyString_FromString(buffer);
+		    PyDict_SetItemString(d, "BEGINLIBPATH", v);
+            Py_DECREF(v);
+        }
+        rc = DosQueryExtLIBPATH(buffer, END_LIBPATH);
+        if (rc == NO_ERROR) { /* (not a typo, envname is NOT 'END_LIBPATH') */
+            PyObject *v = PyString_FromString(buffer);
+		    PyDict_SetItemString(d, "ENDLIBPATH", v);
+            Py_DECREF(v);
+        }
+    }
+#endif
 	return d;
 }
 
@@ -311,6 +330,80 @@ static PyObject * posix_error()
 	return PyErr_SetFromErrno(PosixError);
 }
 
+#if defined(PYOS_OS2)
+/**********************************************************************
+ *         Helper Function to Trim and Format OS/2 Messages
+ **********************************************************************/
+    static void
+os2_formatmsg(char *msgbuf, int msglen, char *reason)
+{
+    msgbuf[msglen] = '\0'; /* OS/2 Doesn't Guarantee a Terminator */
+
+    if (strlen(msgbuf) > 0) { /* If Non-Empty Msg, Trim CRLF */
+        char *lastc = &msgbuf[ strlen(msgbuf)-1 ];
+
+        while (lastc > msgbuf && isspace(*lastc))
+            *lastc-- = '\0'; /* Trim Trailing Whitespace (CRLF) */
+    }
+
+    /* Add Optional Reason Text */
+    if (reason) {
+        strcat(msgbuf, " : ");
+        strcat(msgbuf, reason);
+    }
+}
+
+/**********************************************************************
+ *             Decode an OS/2 Operating System Error Code
+ *
+ * A convenience function to lookup an OS/2 error code and return a
+ * text message we can use to raise a Python exception.
+ *
+ * Notes:
+ *   The messages for errors returned from the OS/2 kernel reside in
+ *   the file OSO001.MSG in the \OS2 directory hierarchy.
+ *
+ **********************************************************************/
+    static char *
+os2_strerror(char *msgbuf, int msgbuflen, int errorcode, char *reason)
+{
+    APIRET rc;
+    ULONG  msglen;
+
+    /* Retrieve Kernel-Related Error Message from OSO001.MSG File */
+    Py_BEGIN_ALLOW_THREADS
+    rc = DosGetMessage(NULL, 0, msgbuf, msgbuflen,
+                       errorcode, "oso001.msg", &msglen);
+    Py_END_ALLOW_THREADS
+
+    if (rc == NO_ERROR)
+        os2_formatmsg(msgbuf, msglen, reason);
+    else
+        sprintf(msgbuf, "unknown OS error #%d", errorcode);
+
+    return msgbuf;
+}
+
+/* Set an OS/2-specific error and return NULL.  OS/2 kernel
+   errors are not in a global variable e.g. 'errno' nor are
+   they congruent with posix error numbers. */
+
+static PyObject * os2_error(int code)
+{
+    char text[1024];
+    PyObject *v;
+
+    os2_strerror(text, sizeof(text), code, "");
+
+    v = Py_BuildValue("(is)", code, text);
+    if (v != NULL) {
+        PyErr_SetObject(PosixError, v);
+        Py_DECREF(v);
+    }
+    return NULL; /* Signal to Python that an Exception is Pending */
+}
+
+#endif /* OS2 */
 
 /* POSIX generic methods */
 
@@ -1137,6 +1230,11 @@ posix_execve(self, args)
 		{
 			goto fail_2;
 		}
+
+#if defined(PYOS_OS2)
+        /* Omit Pseudo-Env Vars that Would Confuse Programs if Passed On */
+        if (stricmp(k, "BEGINLIBPATH") != 0 && stricmp(k, "ENDLIBPATH") != 0) {
+#endif
 		p = PyMem_NEW(char, PyString_Size(key)+PyString_Size(val) + 2);
 		if (p == NULL) {
 			PyErr_NoMemory();
@@ -1144,6 +1242,9 @@ posix_execve(self, args)
 		}
 		sprintf(p, "%s=%s", k, v);
 		envlist[envc++] = p;
+#if defined(PYOS_OS2)
+    }
+#endif
 	}
 	envlist[envc] = 0;
 
@@ -1353,16 +1454,16 @@ posix_kill(self, args)
 	int pid, sig;
 	if (!PyArg_Parse(args, "(ii)", &pid, &sig))
 		return NULL;
-#if defined(__TOS_OS2__)
+#if defined(PYOS_OS2)
     if (sig == XCPT_SIGNAL_INTR || sig == XCPT_SIGNAL_BREAK) {
         APIRET rc;
         if ((rc = DosSendSignalException(pid, sig)) != NO_ERROR)
-            return posix_error();
+            return os2_error(rc);
 
     } else if (sig == XCPT_SIGNAL_KILLPROC) {
         APIRET rc;
         if ((rc = DosKillProcess(DKP_PROCESS, pid)) != NO_ERROR)
-            return posix_error();
+            return os2_error(rc);
 
     } else
         return NULL; /* Unrecognized Signal Requested */
@@ -1407,7 +1508,7 @@ static char posix_popen__doc__[] =
 Open a pipe to/from a command returning a file object.";
 
 #if defined(PYOS_OS2)
-int
+static int
 async_system(const char *command)
 {
     char        *p, errormsg[256], args[1024];
@@ -1432,15 +1533,17 @@ async_system(const char *command)
     return rc;
 }
 
-FILE *
-popen(const char *command, const char *mode, int pipesize)
+static FILE *
+popen(const char *command, const char *mode, int pipesize, int *err)
 {
     HFILE    rhan, whan;
     FILE    *retfd = NULL;
     APIRET   rc = DosCreatePipe(&rhan, &whan, pipesize);
 
-    if (rc != NO_ERROR)
+    if (rc != NO_ERROR) {
+	*err = rc;
         return NULL; /* ERROR - Unable to Create Anon Pipe */
+    }
 
     if (strchr(mode, 'r') != NULL) { /* Treat Command as a Data Source */
         int oldfd = dup(1);      /* Save STDOUT Handle in Another Handle */
@@ -1452,7 +1555,7 @@ popen(const char *command, const char *mode, int pipesize)
             DosClose(whan);            /* Close Now-Unused Pipe Write Handle */
 
             if (async_system(command) == NO_ERROR)
-                retfd = fdopen(rhan, "rb"); /* And Return Pipe Read Handle */
+                retfd = fdopen(rhan, mode); /* And Return Pipe Read Handle */
         }
 
         dup2(oldfd, 1);          /* Reconnect STDOUT to Original Handle */
@@ -1471,7 +1574,7 @@ popen(const char *command, const char *mode, int pipesize)
             DosClose(rhan);           /* Close Now-Unused Pipe Read Handle */
 
             if (async_system(command) == NO_ERROR)
-                retfd = fdopen(whan, "wb"); /* And Return Pipe Write Handle */
+                retfd = fdopen(whan, mode); /* And Return Pipe Write Handle */
         }
 
         dup2(oldfd, 0);          /* Reconnect STDIN to Original Handle */
@@ -1480,8 +1583,10 @@ popen(const char *command, const char *mode, int pipesize)
         close(oldfd);            /* And Close Saved STDIN Handle */
         return retfd;            /* Return fd of Pipe or NULL if Error */
 
-    } else
+    } else {
+	*err = ERROR_INVALID_ACCESS;
         return NULL; /* ERROR - Invalid Mode (Neither Read nor Write) */
+    }
 }
 
 static PyObject *
@@ -1491,16 +1596,17 @@ posix_popen(self, args)
 {
 	char *name;
 	char *mode = "r";
-	int   bufsize = -1;
+	int   err, bufsize = -1;
 	FILE *fp;
 	PyObject *f;
 	if (!PyArg_ParseTuple(args, "s|si", &name, &mode, &bufsize))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-	fp = popen(name, mode, (bufsize > 0) ? bufsize : 4096);
+	fp = popen(name, mode, (bufsize > 0) ? bufsize : 4096, &err);
 	Py_END_ALLOW_THREADS
 	if (fp == NULL)
-		return posix_error();
+		return os2_error(err);
+
 	f = PyFile_FromFile(fp, name, mode, fclose);
 	if (f != NULL)
 		PyFile_SetBufSize(f, bufsize);
@@ -1677,6 +1783,36 @@ static char posix_symlink__doc__[] =
 "symlink(src, dst) -> None\n\
 Create a symbolic link.";
 
+#if defined(PYCC_VACPP) && defined(PYOS_OS2)
+static long
+system_uptime()
+{
+    ULONG     value = 0;
+
+    Py_BEGIN_ALLOW_THREADS
+    DosQuerySysInfo(QSV_MS_COUNT, QSV_MS_COUNT, &value, sizeof(value));
+    Py_END_ALLOW_THREADS
+
+    return value;
+}
+
+static PyObject *
+posix_times(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	if (!PyArg_NoArgs(args))
+		return NULL;
+
+    /* Currently Only Uptime is Provided -- Others Later */
+	return Py_BuildValue("ddddd",
+			     (double)0 /* t.tms_utime / HZ */,
+			     (double)0 /* t.tms_stime / HZ */,
+			     (double)0 /* t.tms_cutime / HZ */,
+			     (double)0 /* t.tms_cstime / HZ */,
+			     (double)system_uptime() / 1000);
+}
+#else
 static PyObject *
 posix_symlink(self, args)
 	PyObject *self;
@@ -1711,6 +1847,7 @@ posix_times(self, args)
 			     (double)t.tms_cstime / HZ,
 			     (double)c / HZ);
 }
+#endif
 #endif /* HAVE_TIMES */
 #ifdef MS_WIN32
 #define HAVE_TIMES	/* so the method table will pick it up */
@@ -2077,7 +2214,7 @@ posix_pipe(self, args)
     rc = DosCreatePipe( &read, &write, 4096);
 	Py_END_ALLOW_THREADS
     if (rc != NO_ERROR)
-        return posix_error();
+        return os2_error(rc);
 
     return Py_BuildValue("(ii)", read, write);
 #else
@@ -2258,6 +2395,30 @@ posix_putenv(self, args)
 
 	if (!PyArg_ParseTuple(args, "ss", &s1, &s2))
 		return NULL;
+
+#if defined(PYOS_OS2)
+    if (stricmp(s1, "BEGINLIBPATH") == 0) {
+        APIRET rc;
+
+        if (strlen(s2) == 0)  /* If New Value is an Empty String */
+            s2 = NULL;        /* Then OS/2 API Wants a NULL to Undefine It */
+
+        rc = DosSetExtLIBPATH(s2, BEGIN_LIBPATH);
+        if (rc != NO_ERROR)
+            return os2_error(rc);
+
+    } else if (stricmp(s1, "ENDLIBPATH") == 0) {
+        APIRET rc;
+
+        if (strlen(s2) == 0)  /* If New Value is an Empty String */
+            s2 = NULL;        /* Then OS/2 API Wants a NULL to Undefine It */
+
+        rc = DosSetExtLIBPATH(s2, END_LIBPATH);
+        if (rc != NO_ERROR)
+            return os2_error(rc);
+    } else {
+#endif
+
 	/* XXX This leaks memory -- not easy to fix :-( */
 	if ((new = malloc(strlen(s1) + strlen(s2) + 2)) == NULL)
                 return PyErr_NoMemory();
@@ -2266,6 +2427,10 @@ posix_putenv(self, args)
                 posix_error();
                 return NULL;
 	}
+
+#if defined(PYOS_OS2)
+    }
+#endif
 	Py_INCREF(Py_None);
         return Py_None;
 }
@@ -2441,6 +2606,65 @@ ins(d, symbol, value)
         return 0;
 }
 
+#if defined(PYOS_OS2)
+/* Insert Platform-Specific Constant Values (Strings & Numbers) of Common Use */
+static int insertvalues(PyObject *d)
+{
+    APIRET    rc;
+    ULONG     values[QSV_MAX+1];
+    PyObject *v;
+    char     *ver, tmp[10];
+
+    Py_BEGIN_ALLOW_THREADS
+    rc = DosQuerySysInfo(1, QSV_MAX, &values[1], sizeof(values));
+    Py_END_ALLOW_THREADS
+
+    if (rc != NO_ERROR) {
+        os2_error(rc);
+        return -1;
+    }
+
+    if (ins(d, "meminstalled", values[QSV_TOTPHYSMEM])) return -1;
+    if (ins(d, "memkernel",    values[QSV_TOTRESMEM])) return -1;
+    if (ins(d, "memvirtual",   values[QSV_TOTAVAILMEM])) return -1;
+    if (ins(d, "maxpathlen",   values[QSV_MAX_PATH_LENGTH])) return -1;
+    if (ins(d, "maxnamelen",   values[QSV_MAX_COMP_LENGTH])) return -1;
+    if (ins(d, "revision",     values[QSV_VERSION_REVISION])) return -1;
+    if (ins(d, "timeslice",    values[QSV_MIN_SLICE])) return -1;
+
+    switch (values[QSV_VERSION_MINOR]) {
+    case 0:  ver = "2.00"; break;
+    case 10: ver = "2.10"; break;
+    case 11: ver = "2.11"; break;
+    case 30: ver = "3.00"; break;
+    case 40: ver = "4.00"; break;
+    case 50: ver = "5.00"; break;
+    default:
+        sprintf(tmp, "%d-%d", values[QSV_VERSION_MAJOR],
+                              values[QSV_VERSION_MINOR]);
+        ver = &tmp[0];
+    }
+
+    /* Add Indicator of the Version of the Operating System */
+    v = PyString_FromString(ver);
+    if (!v || PyDict_SetItemString(d, "version", v) < 0)
+        return -1;
+    Py_DECREF(v);
+
+    /* Add Indicator of Which Drive was Used to Boot the System */
+    tmp[0] = 'A' + values[QSV_BOOT_DRIVE] - 1;
+    tmp[1] = ':';
+    tmp[2] = '\0';
+
+    v = PyString_FromString(tmp);
+    if (!v || PyDict_SetItemString(d, "bootdrive", v) < 0)
+        return -1;
+    Py_DECREF(v);
+
+    return 0;
+}
+#endif
+
 static int
 all_ins(d)
         PyObject* d;
@@ -2492,6 +2716,10 @@ all_ins(d)
 #endif
 #ifdef O_TEXT
         if (ins(d, "O_TEXT", (long)O_TEXT)) return -1;
+#endif
+
+#if defined(PYOS_OS2)
+        if (insertvalues(d)) return -1;
 #endif
         return 0;
 }
