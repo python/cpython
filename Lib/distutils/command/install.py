@@ -12,6 +12,7 @@ from distutils.core import Command
 from distutils import sysconfig
 from distutils.util import write_file, native_path, subst_vars, change_root
 from distutils.errors import DistutilsOptionError
+from glob import glob
 
 INSTALL_SCHEMES = {
     'unix_prefix': {
@@ -87,8 +88,10 @@ class install (Command):
         #('install-man=', None, "directory for Unix man pages"),
         #('install-html=', None, "directory for HTML documentation"),
         #('install-info=', None, "directory for GNU info files"),
-        ]
 
+        ('record', None,
+         "make a record of installation"),
+        ]
 
     # 'sub_commands': a list of commands this command might have to run
     # to get its work done.  Each command is represented as a tuple
@@ -151,6 +154,7 @@ class install (Command):
         #self.install_html = None
         #self.install_info = None
 
+        self.record = None
 
     def finalize_options (self):
 
@@ -440,6 +444,22 @@ class install (Command):
                         "Python's module search path (sys.path) -- " +
                         "you'll have to change the search path yourself") %
                        self.install_lib)
+
+        # write list of installed files, if requested.
+        if self.record:
+            outputs = self.get_outputs()
+            for counter in xrange (len (outputs)): # include ".pyc" and ".pyo"
+                if outputs[counter][-3:] == ".py":
+                    byte_code = glob(outputs[counter] + '[co]')
+                    outputs.extend(byte_code)
+            outputs.sort() # just makes it look nicer
+            if self.root: # strip any package prefix
+                root_len = len(self.root)
+                for counter in xrange (len (outputs)):
+                    outputs[counter] = outputs[counter][root_len:]
+            self.execute(write_file,
+                         ("INSTALLED_FILES", outputs),
+                         "Writing list of installed files")
 
     # run ()
 
