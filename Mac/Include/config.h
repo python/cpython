@@ -1,4 +1,9 @@
-/* config.h for Macintosh THINK C 6.0.  */
+/* config.h for Macintosh THINK C 6.0 and MPW 3.2.  */
+
+#ifdef MPW
+/* This must be is MPW 3.x */
+#define MPW_3 1
+#endif
 
 /* Define if on Macintosh (THINK_C or MPW should also be defined) */
 #define macintosh
