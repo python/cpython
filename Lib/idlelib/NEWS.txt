@@ -5,7 +5,13 @@ IDLEfork NEWS
 What's New in IDLEfork 0.9b1?
 ===================================
 
-*Release date: 25-Apr-2003*
+*Release date: XX-XXX-2003*
+
+- Improved I/O response by tweaking the wait parameter in various
+  calls to signal.signal().
+
+- Implemented a threaded subprocess which allows interrupting a pass 
+  loop in user code using the 'interrupt' extension.
 
 - Implemented the 'interrupt' extension module, which allows a subthread
   to raise a KeyboardInterrupt in the main thread.
@@ -36,11 +42,10 @@ What's New in IDLEfork 0.9b1?
 
 - Known issues:
 
-  + Can't kill/restart a tight loop in the Windows version: add 
-    I/O to the loop or use the Task Manager to kill the subprocess.
   + Typing two Control-C in close succession when the subprocess is busy can
     cause IDLE to lose communication with the subprocess.  Please type one
-    only and wait for the exception to complete.
+    only and wait for the exception to complete.  If you do manage to 
+    interrupt the interrupt, simply restart the shell.
   + Printing under some versions of Linux may be problematic.
 
 

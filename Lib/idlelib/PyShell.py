@@ -35,6 +35,11 @@ import RemoteDebugger
 
 IDENTCHARS = string.ascii_letters + string.digits + "_"
 
+try:
+    from signal import SIGTERM
+except ImportError:
+    SIGTERM = 15
+
 # Change warnings module to write to sys.__stderr__
 try:
     import warnings
@@ -367,13 +372,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
             except:
                 pass
         # Kill subprocess, spawn a new one, accept connection.
-        try:
-            self.interrupt_subprocess()
-            self.shutdown_subprocess()
-            self.rpcclt.close()
-            os.wait()
-        except:
-            pass
+        self.rpcclt.close()
+        self.unix_terminate()
         self.tkconsole.executing = False
         self.spawn_subprocess()
         self.rpcclt.accept()
@@ -391,42 +391,31 @@ class ModifiedInterpreter(InteractiveInterpreter):
             # reload remote debugger breakpoints for all PyShellEditWindows
             debug.load_breakpoints()
 
-    def __signal_interrupt(self):
-        try:
-            from signal import SIGINT
-        except ImportError:
-            SIGINT = 2
-        try:
-            os.kill(self.rpcpid, SIGINT)
-        except OSError:    # subprocess may have already exited
-            pass
-
     def __request_interrupt(self):
-        try:
-            self.rpcclt.asynccall("exec", "interrupt_the_server", (), {})
-        except:
-            pass
+        self.rpcclt.remotecall("exec", "interrupt_the_server", (), {})
 
     def interrupt_subprocess(self):
-        # XXX KBK 22Mar03 Use interrupt message on all platforms for now.
-        # XXX if hasattr(os, "kill"):
-        if False:
-            self.__signal_interrupt()
-        else:
-            # Windows has no os.kill(), use an RPC message.
-            # This is async, must be done in a thread.
-            threading.Thread(target=self.__request_interrupt).start()
+        threading.Thread(target=self.__request_interrupt).start()
 
-    def __request_shutdown(self):
-        try:
-            self.rpcclt.asynccall("exec", "shutdown_the_server", (), {})
-        except:
-            pass
+    def kill_subprocess(self):
+        self.rpcclt.close()
+        self.unix_terminate()
+        self.tkconsole.executing = False
+        self.rpcclt = None
 
-    def shutdown_subprocess(self):
-        t = threading.Thread(target=self.__request_shutdown)
-        t.start()
-        t.join()
+    def unix_terminate(self):
+        "UNIX: make sure subprocess is terminated and collect status"
+        if hasattr(os, 'kill'):
+            try:
+                os.kill(self.rpcpid, SIGTERM)
+            except OSError:
+                # process already terminated:
+                return
+            else:
+                try:
+                    os.waitpid(self.rpcpid, 0)
+                except OSError:
+                    return
 
     def transfer_path(self):
         self.runcommand("""if 1:
@@ -445,21 +434,15 @@ class ModifiedInterpreter(InteractiveInterpreter):
         if clt is None:
             return
         try:
-            response = clt.pollresponse(self.active_seq)
-        except (EOFError, IOError):
-            # lost connection: subprocess terminated itself, restart
+            response = clt.pollresponse(self.active_seq, wait=0.05)
+        except (EOFError, IOError, KeyboardInterrupt):
+            # lost connection or subprocess terminated itself, restart
+            # [the KBI is from rpc.SocketIO.handle_EOF()]
             if self.tkconsole.closing:
                 return
             response = None
-            try:
-                # stake any zombie before restarting
-                os.wait()
-            except (AttributeError, OSError):
-                pass
             self.restart_subprocess()
             self.tkconsole.endexecuting()
-        # Reschedule myself in 50 ms
-        self.tkconsole.text.after(50, self.poll_subprocess)
         if response:
             self.tkconsole.resetoutput()
             self.active_seq = None
@@ -477,13 +460,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 print >>console, errmsg, what
             # we received a response to the currently active seq number:
             self.tkconsole.endexecuting()
-
-    def kill_subprocess(self):
-        clt = self.rpcclt
-        if clt is not None:
-            self.shutdown_subprocess()
-            clt.close()
-        self.rpcclt = None
+        # Reschedule myself in 50 ms
+        self.tkconsole.text.after(50, self.poll_subprocess)
 
     debugger = None
 
@@ -495,7 +473,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def remote_stack_viewer(self):
         import RemoteObjectBrowser
-        oid = self.rpcclt.remotecall("exec", "stackviewer", ("flist",), {})
+        oid = self.rpcclt.remotequeue("exec", "stackviewer", ("flist",), {})
         if oid is None:
             self.tkconsole.root.bell()
             return
@@ -628,7 +606,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             self.display_executing_dialog()
             return 0
         if self.rpcclt:
-            self.rpcclt.remotecall("exec", "runcode", (code,), {})
+            self.rpcclt.remotequeue("exec", "runcode", (code,), {})
         else:
             exec code in self.locals
         return 1
@@ -645,7 +623,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.tkconsole.beginexecuting()
         try:
             if not debugger and self.rpcclt is not None:
-                self.active_seq = self.rpcclt.asynccall("exec", "runcode",
+                self.active_seq = self.rpcclt.asyncqueue("exec", "runcode",
                                                         (code,), {})
             elif debugger:
                 debugger.run(code, self.locals)
@@ -712,7 +690,7 @@ class PyShell(OutputWindow):
         text.bind("<<beginning-of-line>>", self.home_callback)
         text.bind("<<end-of-file>>", self.eof_callback)
         text.bind("<<open-stack-viewer>>", self.open_stack_viewer)
-        text.bind("<<toggle-debugger>>", self.toggle_debugger)
+        ##text.bind("<<toggle-debugger>>", self.toggle_debugger)
         text.bind("<<open-python-shell>>", self.flist.open_shell)
         text.bind("<<toggle-jit-stack-viewer>>", self.toggle_jit_stack_viewer)
         text.bind("<<view-restart>>", self.view_restart_mark)
@@ -799,13 +777,9 @@ class PyShell(OutputWindow):
         "Helper for ModifiedInterpreter"
         self.resetoutput()
         self.executing = 1
-        ##self._cancel_check = self.cancel_check
-        ##sys.settrace(self._cancel_check)
 
     def endexecuting(self):
         "Helper for ModifiedInterpreter"
-        ##sys.settrace(None)
-        ##self._cancel_check = None
         self.executing = 0
         self.canceled = 0
         self.showprompt()
@@ -822,7 +796,6 @@ class PyShell(OutputWindow):
                 return "cancel"
             # interrupt the subprocess
             self.closing = True
-            self.cancel_callback()
             self.endexecuting()
         return EditorWindow.close(self)
 
@@ -1016,23 +989,6 @@ class PyShell(OutputWindow):
             i = i-1
         line = line[:i]
         more = self.interp.runsource(line)
-
-    def cancel_check(self, frame, what, args,
-                     dooneevent=tkinter.dooneevent,
-                     dontwait=tkinter.DONT_WAIT):
-        # Hack -- use the debugger hooks to be able to handle events
-        # and interrupt execution at any time.
-        # This slows execution down quite a bit, so you may want to
-        # disable this (by not calling settrace() in beginexecuting() and
-        # endexecuting() for full-bore (uninterruptable) speed.)
-        # XXX This should become a user option.
-        if self.canceled:
-            return
-        dooneevent(dontwait)
-        if self.canceled:
-            self.canceled = 0
-            raise KeyboardInterrupt
-        return self._cancel_check
 
     def open_stack_viewer(self, event=None):
         if self.interp.rpcclt:

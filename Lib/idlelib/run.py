@@ -1,4 +1,5 @@
 import sys
+import os
 import time
 import socket
 import traceback
@@ -20,11 +21,7 @@ import __main__
 # the socket) and the main thread (which runs user code), plus global
 # completion and exit flags:
 
-server = None                # RPCServer instance
-queue = Queue.Queue(0)
-execution_finished = False
 exit_requested = False
-
 
 def main():
     """Start the Python execution server in a subprocess
@@ -44,8 +41,6 @@ def main():
     register and unregister themselves.
 
     """
-    global queue, execution_finished, exit_requested
-
     port = 8833
     if sys.argv[1:]:
         port = int(sys.argv[1])
@@ -58,21 +53,23 @@ def main():
     while 1:
         try:
             if exit_requested:
-                sys.exit()
-            # XXX KBK 22Mar03 eventually check queue here!
-            pass
-            time.sleep(0.05)
+                os._exit(0)
+            try:
+                seq, request = rpc.request_queue.get(0)
+            except Queue.Empty:
+                time.sleep(0.05)
+                continue
+            method, args, kwargs = request
+            ret = method(*args, **kwargs)
+            rpc.response_queue.put((seq, ret))
         except KeyboardInterrupt:
-            ##execution_finished = True
             continue
 
 def manage_socket(address):
-    global server, exit_requested
-
     for i in range(6):
         time.sleep(i)
         try:
-            server = rpc.RPCServer(address, MyHandler)
+            server = MyRPCServer(address, MyHandler)
             break
         except socket.error, err:
             if i < 3:
@@ -82,8 +79,39 @@ def manage_socket(address):
                                               + err[1] + ", retrying...."
     else:
         print>>sys.__stderr__, "\nConnection to Idle failed, exiting."
+        global exit_requested
         exit_requested = True
+        return
     server.handle_request() # A single request only
+
+
+class MyRPCServer(rpc.RPCServer):
+
+    def handle_error(self, request, client_address):
+        """Override RPCServer method for IDLE
+
+        Interrupt the MainThread and exit server if link is dropped.
+
+        """
+        try:
+            raise
+        except SystemExit:
+            raise
+        except EOFError:
+            global exit_requested
+            exit_requested = True
+            interrupt.interrupt_main()
+        except:
+            erf = sys.__stderr__
+            print>>erf, '\n' + '-'*40
+            print>>erf, 'Unhandled server exception!'
+            print>>erf, 'Thread: %s' % threading.currentThread().getName()
+            print>>erf, 'Client Address: ', client_address
+            print>>erf, 'Request: ', repr(request)
+            traceback.print_exc(file=erf)
+            print>>erf, '\n*** Unrecoverable, server exiting!'
+            print>>erf, '-'*40
+            os._exit(0)
 
 
 class MyHandler(rpc.RPCHandler):
@@ -95,7 +123,20 @@ class MyHandler(rpc.RPCHandler):
         sys.stdin = self.get_remote_proxy("stdin")
         sys.stdout = self.get_remote_proxy("stdout")
         sys.stderr = self.get_remote_proxy("stderr")
-        rpc.RPCHandler.getresponse(self, myseq=None, wait=0.5)
+        rpc.RPCHandler.getresponse(self, myseq=None, wait=0.05)
+
+    def exithook(self):
+        "override SocketIO method - wait for MainThread to shut us down"
+        while 1: pass
+
+    def EOFhook(self):
+        "Override SocketIO method - terminate wait on callback and exit thread"
+        global exit_requested
+        exit_requested = True
+
+    def decode_interrupthook(self):
+        "interrupt awakened thread"
+        interrupt.interrupt_main()
 
 
 class Executive:
@@ -106,44 +147,30 @@ class Executive:
         self.calltip = CallTips.CallTips()
 
     def runcode(self, code):
-        global queue, execution_finished
-
-        execution_finished = False
-        queue.put(code)
-        # dequeue and run in subthread
-        self.runcode_from_queue()
-        while not execution_finished:
-            time.sleep(0.05)
-
-    def runcode_from_queue(self):
-        global queue, execution_finished
-
-        # poll until queue has code object, using threads, just block?
-        while True:
-            try:
-                code = queue.get(0)
-                break
-            except Queue.Empty:
-                time.sleep(0.05)
         try:
             exec code in self.locals
         except:
-            self.flush_stdout()
-            efile = sys.stderr
-            typ, val, tb = info = sys.exc_info()
-            sys.last_type, sys.last_value, sys.last_traceback = info
-            tbe = traceback.extract_tb(tb)
-            print >>efile, 'Traceback (most recent call last):'
-            exclude = ("run.py", "rpc.py", "RemoteDebugger.py", "bdb.py")
-            self.cleanup_traceback(tbe, exclude)
-            traceback.print_list(tbe, file=efile)
-            lines = traceback.format_exception_only(typ, val)
-            for line in lines:
-                print>>efile, line,
-            execution_finished = True
+            try:
+                if exit_requested:
+                    os._exit(0)
+                self.flush_stdout()
+                efile = sys.stderr
+                typ, val, tb = info = sys.exc_info()
+                sys.last_type, sys.last_value, sys.last_traceback = info
+                tbe = traceback.extract_tb(tb)
+                print >>efile, 'Traceback (most recent call last):'
+                exclude = ("run.py", "rpc.py", "threading.py",
+                           "RemoteDebugger.py", "bdb.py")
+                self.cleanup_traceback(tbe, exclude)
+                traceback.print_list(tbe, file=efile)
+                lines = traceback.format_exception_only(typ, val)
+                for line in lines:
+                    print>>efile, line,
+            except:
+                sys.stderr = sys.__stderr__
+                raise
         else:
             self.flush_stdout()
-            execution_finished = True
 
     def flush_stdout(self):
         try:
@@ -184,14 +211,7 @@ class Executive:
             tb[i] = fn, ln, nm, line
 
     def interrupt_the_server(self):
-        self.rpchandler.interrupted = True
-        ##print>>sys.__stderr__, "** Interrupt main!"
         interrupt.interrupt_main()
-
-    def shutdown_the_server(self):
-        global exit_requested
-
-        exit_requested = True
 
     def start_the_debugger(self, gui_adap_oid):
         return RemoteDebugger.start_debugger(self.rpchandler, gui_adap_oid)
