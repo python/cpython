@@ -48,9 +48,14 @@ class XrangeTest(unittest.TestCase):
         self.assertRaises(TypeError, xrange, 0, "spam")
         self.assertRaises(TypeError, xrange, 0, 42, "spam")
 
-        self.assertRaises(OverflowError, xrange, 0, sys.maxint, sys.maxint-1)
+        self.assertEqual(len(xrange(0, sys.maxint, sys.maxint-1)), 2)
+
         self.assertRaises(OverflowError, xrange, -sys.maxint, sys.maxint)
         self.assertRaises(OverflowError, xrange, 0, 2*sys.maxint)
+
+        self.assertEqual(len(xrange(-sys.maxint, sys.maxint, 2)),
+                         sys.maxint)
+        self.assertRaises(OverflowError, xrange, -sys.maxint-1, sys.maxint, 2)
 
 def test_main():
     test.test_support.run_unittest(XrangeTest)
