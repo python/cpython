@@ -553,7 +553,6 @@ string_contains(PyObject *a, PyObject *el)
 static PyObject *
 string_item(PyStringObject *a, register int i)
 {
-	int c;
 	PyObject *v;
 	char *pchar;
 	if (i < 0 || i >= a->ob_size) {
@@ -561,11 +560,11 @@ string_item(PyStringObject *a, register int i)
 		return NULL;
 	}
 	pchar = a->ob_sval + i;
-	c = *pchar & UCHAR_MAX;
-	v = (PyObject *) characters[c];
+	v = (PyObject *)characters[*pchar & UCHAR_MAX];
 	if (v == NULL)
 		v = PyString_FromStringAndSize(pchar, 1);
-	Py_XINCREF(v);
+	else
+		Py_INCREF(v);
 	return v;
 }
 
