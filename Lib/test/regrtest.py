@@ -8,7 +8,7 @@ additional facilities.
 
 Command line options:
 
--v: verbose -- print the name name of each test as it is being run
+-v: verbose -- run tests in verbose mode with output to stdout
 -q: quiet -- don't print anything except if a test fails
 -g: generate -- write the output file for a test instead of comparing it
 -x: exclude -- arguments are tests to *exclude*
@@ -17,8 +17,7 @@ If non-option arguments are present, they are names for tests to run,
 unless -x is given, in which case they are names for tests not to run.
 If no test names are given, all tests are run.
 
-If -v is given *twice*, the tests themselves are run in verbose mode.
-This is incompatible with -g and does not compare test output files.
+-v is incompatible with -g and does not compare test output files.
 """
 
 import sys
@@ -42,24 +41,28 @@ def main():
     exclude = 0
     for o, a in opts:
 	if o == '-v': verbose = verbose+1
-	if o == '-q': quiet = 1
+	if o == '-q': quiet = 1; verbose = 0
 	if o == '-g': generate = 1
 	if o == '-x': exclude = 1
-    if generate and verbose>1:
-	print "-g and more than one -v don't go together!"
+    if generate and verbose:
+	print "-g and -v don't go together!"
 	return 2
     good = []
     bad = []
     skipped = []
+    for i in range(len(args)):
+	# Strip trailing ".py" from arguments
+	if args[i][-3:] == '.py':
+	    args[i] = args[i][:-3]
     if exclude:
 	nottests[:0] = args
 	args = []
     tests = args or findtests()
-    test_support.verbose = verbose>1	# Tell tests to be moderately quiet
+    test_support.verbose = verbose	# Tell tests to be moderately quiet
     for test in tests:
-	if verbose:
+	if not quiet:
 	    print test
-	ok = runtest(test, generate, verbose>1)
+	ok = runtest(test, generate, verbose)
 	if ok > 0:
 	    good.append(test)
 	elif ok == 0:
@@ -109,7 +112,7 @@ def findtests():
     tests.sort()
     return stdtests + tests
 
-def runtest(test, generate, verbose2):
+def runtest(test, generate, verbose):
     test_support.unload(test)
     testdir = findtestdir()
     outputdir = os.path.join(testdir, "output")
@@ -117,7 +120,7 @@ def runtest(test, generate, verbose2):
     try:
 	if generate:
 	    cfp = open(outputfile, "w")
-	elif verbose2:
+	elif verbose:
 	    cfp = sys.stdout
 	else:
 	    cfp = Compare(outputfile)
@@ -140,7 +143,7 @@ def runtest(test, generate, verbose2):
 	return 0
     except:
 	print "test", test, "crashed --", sys.exc_type, ":", sys.exc_value
-	if verbose2:
+	if verbose:
 	    traceback.print_exc(file=sys.stdout)
 	return 0
     else:
