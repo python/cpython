@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=9.0
-  Title=Python 2.3.3
+  Title=Python 2.3.4c1
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -20,12 +20,12 @@ item: Global
   Patch Memory=4000
   MIF PDF Version=1.0
   MIF SMS Version=2.0
-  EXE Filename=Python-2.3.3.exe
+  EXE Filename=Python-2.3.4c1.exe
   Dialogs Version=8
-  Version File=2.3.3
+  Version File=2.3.4c1
   Version Description=Python Programming Language
-  Version Copyright=©2001-2003 Python Software Foundation
-  Version Company=PythonLabs at Zope Corporation
+  Version Copyright=©2001-2004 Python Software Foundation
+  Version Company=Python Software Foundation
   Crystal Format=10111100101100000010001001001001
   Step View=&All
   Variable Name1=_WISE_
@@ -73,10 +73,15 @@ item: Global
   Variable Flags9=00001000
   Variable Name10=_ALIASTYPE_
   Variable Flags10=00001000
+  Variable Name11=_TIXDIR_
+  Variable Default11=tix
+  Variable Flags11=00001000
+end
+item: Remark
 end
 item: Set Variable
   Variable=PYVER_STRING
-  Value=2.3.3
+  Value=2.3.4c1
 end
 item: Remark
 end
@@ -111,6 +116,12 @@ item: Remark
 end
 item: Remark
   Text=_TCLDIR_ may also need to be changed.
+end
+item: Remark
+  Text=When the version of Tix changes, the compiler vrbl
+end
+item: Remark
+  Text=_TIXDIR_ may also need to be changed.
 end
 item: Remark
 end
@@ -2164,6 +2175,23 @@ end
 item: Remark
 end
 item: Remark
+  Text=Tix
+end
+item: Install File
+  Source=..\..\%_tixdir_%\bin\*.dll
+  Destination=%MAINDIR%\DLLs
+  Description=Tix binaries and libraries
+  Flags=0000000000000010
+end
+item: Install File
+  Source=..\..\%_tixdir_%\lib\*.*
+  Destination=%MAINDIR%\tcl
+  Description=Tix binaries and libraries
+  Flags=0000000100000010
+end
+item: Remark
+end
+item: Remark
   Text=IDLE
 end
 item: Install File
@@ -2867,7 +2895,7 @@ end
 item: Edit Registry
   Total Keys=1
   Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
-  New Value=PythonLabs at Zope Corporation
+  New Value=Python Software Foundation
   Value Name=Publisher
   Root=2
 end
