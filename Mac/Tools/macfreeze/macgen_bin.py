@@ -12,7 +12,7 @@ import cfmfile
 import buildtools
 
 
-def generate(input, output, module_dict = None, architecture = 'fat', debug=0):
+def generate(input, output, module_dict=None, architecture='fat', debug=0):
 	# try to remove old file
 	try:
 		os.remove(output)
@@ -22,7 +22,14 @@ def generate(input, output, module_dict = None, architecture = 'fat', debug=0):
 	if module_dict is None:
 		import macmodulefinder
 		print "Searching for modules..."
-		module_dict = macmodulefinder.process(input, [], [], 1)
+		module_dict, missing = macmodulefinder.process(input, [], [], 1)
+		if missing:
+			import EasyDialogs
+			missing.sort()
+			answer = EasyDialogs.AskYesNoCancel("Some modules could not be found; continue anyway?\n(%s)" 
+					% string.join(missing, ", "))
+			if answer <> 1:
+				sys.exit(0)
 	
 	applettemplatepath = buildtools.findtemplate()
 	corepath = findpythoncore()
