@@ -69,7 +69,9 @@ class Debugger(bdb.Bdb):
         file = code.co_filename
         base = os.path.basename(file)
         lineno = frame.f_lineno
-        message = "%s:%s: %s()" % (base, lineno, code.co_name)
+        message = "%s:%s" % (base, lineno)
+        if code.co_name != "?":
+            message = "%s: %s()" % (message, code.co_name)
         self.status.configure(text=message)
         if info:
             type, value, tb = info
