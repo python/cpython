@@ -70,7 +70,7 @@ typedef struct {
 		struct sockaddr_ll ll;
 #endif
 	} sock_addr;
-    	PyObject *(*errorhandler)(void); /* Error handler; checks
+	PyObject *(*errorhandler)(void); /* Error handler; checks
 					    errno, returns NULL and
 					    sets a Python exception */
 } PySocketSockObject;
@@ -86,11 +86,12 @@ extern DL_IMPORT(PyTypeObject) PySocketSock_Type;
 
 /* C API for usage by other Python modules */
 typedef struct {
-	 
-    PyTypeObject *Sock_Type;
-
+	PyTypeObject *Sock_Type;
 } PySocketModule_APIObject;
-    
+
+/* XXX The net effect of the following appears to be to define a function
+   XXX named PySocketModule_APIObject in _ssl.c.  It's unclear why it isn't
+   XXX defined there directly. */
 #ifndef PySocket_BUILDING_SOCKET
 
 /* --- C API ----------------------------------------------------*/
@@ -104,10 +105,9 @@ typedef struct {
 	 		 &key_file, &cert_file))
  	 return NULL;
    ...
-
 */
 
-static 
+static
 PySocketModule_APIObject PySocketModule;
 
 /* You *must* call this before using any of the functions in
@@ -121,37 +121,37 @@ PySocketModule_APIObject PySocketModule;
 static
 int PySocketModule_ImportModuleAndAPI(void)
 {
-    PyObject *mod = 0, *v = 0;
-    char *apimodule = PySocket_MODULE_NAME;
-    char *apiname = PySocket_CAPI_NAME;
-    void *api;
-    
-    DPRINTF("Importing the %s C API...\n",apimodule);
-    mod = PyImport_ImportModule(apimodule);
-    if (mod == NULL)
-	goto onError;
-    DPRINTF(" %s package found\n",apimodule);
-    v = PyObject_GetAttrString(mod,apiname);
-    if (v == NULL)
-	goto onError;
-    Py_DECREF(mod);
-    DPRINTF(" API object %s found\n",apiname);
-    api = PyCObject_AsVoidPtr(v);
-    if (api == NULL)
-	goto onError;
-    Py_DECREF(v);
-    memcpy(&PySocketModule, api, sizeof(PySocketModule));
-    DPRINTF(" API object loaded and initialized.\n");
-    return 0;
-    
+	PyObject *mod = 0, *v = 0;
+	char *apimodule = PySocket_MODULE_NAME;
+	char *apiname = PySocket_CAPI_NAME;
+	void *api;
+
+	DPRINTF("Importing the %s C API...\n", apimodule);
+	mod = PyImport_ImportModule(apimodule);
+	if (mod == NULL)
+		goto onError;
+	DPRINTF(" %s package found\n", apimodule);
+	v = PyObject_GetAttrString(mod, apiname);
+	if (v == NULL)
+		goto onError;
+	Py_DECREF(mod);
+	DPRINTF(" API object %s found\n", apiname);
+	api = PyCObject_AsVoidPtr(v);
+	if (api == NULL)
+		goto onError;
+	Py_DECREF(v);
+	memcpy(&PySocketModule, api, sizeof(PySocketModule));
+	DPRINTF(" API object loaded and initialized.\n");
+	return 0;
+
  onError:
-    DPRINTF(" not found.\n");
-    Py_XDECREF(mod);
-    Py_XDECREF(v);
-    return -1;
+	DPRINTF(" not found.\n");
+	Py_XDECREF(mod);
+	Py_XDECREF(v);
+	return -1;
 }
 
-#endif
+#endif /* !PySocket_BUILDING_SOCKET */
 
 #ifdef __cplusplus
 }
