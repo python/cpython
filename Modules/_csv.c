@@ -496,6 +496,24 @@ static PyTypeObject Dialect_Type = {
 	0,                           		/* tp_free */
 };
 
+/*
+ * Return an instance of the dialect type, given a Python instance or kwarg
+ * description of the dialect
+ */
+static PyObject *
+_call_dialect(PyObject *dialect_inst, PyObject *kwargs)
+{
+	PyObject *ctor_args;
+	PyObject *dialect;
+
+	ctor_args = Py_BuildValue(dialect_inst ? "(O)" : "()", dialect_inst);
+	if (ctor_args == NULL)
+		return NULL;
+	dialect = PyObject_Call((PyObject *)&Dialect_Type, ctor_args, kwargs);
+	Py_DECREF(ctor_args);
+	return dialect;
+}
+
 static void
 parse_save_field(ReaderObj *self)
 {
@@ -862,7 +880,7 @@ static PyTypeObject Reader_Type = {
 static PyObject *
 csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
 {
-        PyObject * iterator, * dialect = NULL, *ctor_args;
+	PyObject * iterator, * dialect = NULL;
         ReaderObj * self = PyObject_GC_New(ReaderObj, &Reader_Type);
 
         if (!self)
@@ -890,14 +908,7 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
                 Py_DECREF(self);
                 return NULL;
         }
-        ctor_args = Py_BuildValue(dialect ? "(O)" : "()", dialect);
-        if (ctor_args == NULL) {
-                Py_DECREF(self);
-                return NULL;
-        }
-        self->dialect = (DialectObj *)PyObject_Call((PyObject *)&Dialect_Type,
-                                                    ctor_args, keyword_args);
-        Py_DECREF(ctor_args);
+	self->dialect = (DialectObj *)_call_dialect(dialect, keyword_args);
         if (self->dialect == NULL) {
                 Py_DECREF(self);
                 return NULL;
@@ -1313,7 +1324,7 @@ static PyTypeObject Writer_Type = {
 static PyObject *
 csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 {
-        PyObject * output_file, * dialect = NULL, *ctor_args;
+	PyObject * output_file, * dialect = NULL;
         WriterObj * self = PyObject_GC_New(WriterObj, &Writer_Type);
 
         if (!self)
@@ -1338,14 +1349,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
                 Py_DECREF(self);
                 return NULL;
         }
-        ctor_args = Py_BuildValue(dialect ? "(O)" : "()", dialect);
-        if (ctor_args == NULL) {
-                Py_DECREF(self);
-                return NULL;
-        }
-        self->dialect = (DialectObj *)PyObject_Call((PyObject *)&Dialect_Type,
-                                                    ctor_args, keyword_args);
-        Py_DECREF(ctor_args);
+	self->dialect = (DialectObj *)_call_dialect(dialect, keyword_args);
         if (self->dialect == NULL) {
                 Py_DECREF(self);
                 return NULL;
