@@ -88,7 +88,7 @@ for dir in sys.path:
         L.append(dir)
         _dirs_in_sys_path[dircase] = 1
 sys.path[:] = L
-del dir, L
+del dir, dircase, L
 
 # Append ./build/lib.<platform> in case we're running in the build dir
 # (especially for Guido :-)
@@ -175,6 +175,7 @@ for prefix in prefixes:
         for sitedir in sitedirs:
             if os.path.isdir(sitedir):
                 addsitedir(sitedir)
+del prefix, sitedir
 
 _dirs_in_sys_path = None
 
