@@ -3,9 +3,9 @@
 
 \declaremodule{standard}{warnings}
 \modulesynopsis{Issue warning messages and control their disposition.}
-
 \index{warnings}
 
+\versionadded{2.1}
 
 Warning messages are typically issued in situations where it is useful
 to alert the user of some condition in a program, where that condition
@@ -15,7 +15,9 @@ program uses an obsolete module.
 
 Python programmers issue warnings by calling the \function{warn()}
 function defined in this module.  (C programmers use
-\code{PyErr_Warn()}).
+\cfunction{PyErr_Warn()}; see the
+\citetitle[../api/exceptionHandling.html]{Python/C API Reference
+Manual} for details).
 
 Warning messages are normally written to \code{sys.stderr}, but their
 disposition can be changed flexibly, from ignoring all warnings to
@@ -50,7 +52,7 @@ categories.  This categorization is useful to be able to filter out
 groups of warnings.  The following warnings category classes are
 currently defined:
 
-\begin{tableii}{l|l}{code}{Class}{Description}
+\begin{tableii}{l|l}{exception}{Class}{Description}
 
 \lineii{Warning}{This is the base class of all warning category
 classes.  It itself a subclass of Exception.}
@@ -92,21 +94,21 @@ form (\var{action}, \var{message}, \var{category}, \var{module},
 
 \item \var{action} is one of the following strings:
 
-    \begin{tableii}{l|l}{code}{value}{disposition}
+    \begin{tableii}{l|l}{code}{Value}{Disposition}
 
-    \lineii{\code{"error"}}{turn matching warnings into exceptions}
+    \lineii{"error"}{turn matching warnings into exceptions}
 
-    \lineii{\code{"ignore"}}{never print matching warnings}
+    \lineii{"ignore"}{never print matching warnings}
 
-    \lineii{\code{"always"}}{always print matching warnings}
+    \lineii{"always"}{always print matching warnings}
 
-    \lineii{\code{"default"}}{print the first occurrence of matching
+    \lineii{"default"}{print the first occurrence of matching
     warnings for each location where the warning is issued}
 
-    \lineii{\code{"module"}}{print the first occurrence of matching
+    \lineii{"module"}{print the first occurrence of matching
     warnings for each module where the warning is issued}
 
-    \lineii{\code{"once"}}{print only the first occurrence of matching
+    \lineii{"once"}{print only the first occurrence of matching
     warnings, regardless of location}
 
     \end{tableii}
@@ -130,9 +132,9 @@ Since the \exception{Warning} class is derived from the built-in
 \exception{Exception} class, to turn a warning into an error we simply
 raise \code{category(message)}.
 
-The warnings filter is initialized by \samp{-W} options passed to the
-Python interpreter command line.  The interpreter saves the arguments
-for all \samp{-W} options without interpretation in
+The warnings filter is initialized by \programopt{-W} options passed
+to the Python interpreter command line.  The interpreter saves the
+arguments for all \programopt{-W} options without interpretation in
 \code{sys.warnoptions}; the \module{warnings} module parses these when
 it is first imported (invalid options are ignored, after printing a
 message to \code{sys.stderr}).
@@ -187,6 +189,6 @@ arguments default to a value that matches everything.
 
 \begin{funcdesc}{resetwarnings}{}
 Reset the warnings filter.  This discards the effect of all previous
-calls to \function{filterwarnings()}, including that of the \samp{-W}
-command line options.
+calls to \function{filterwarnings()}, including that of the
+\programopt{-W} command line options.
 \end{funcdesc}
