@@ -113,7 +113,7 @@ of the suite and goes back to testing the expression.
 \indexii{loop}{statement}
 
 The \keyword{for} statement is used to iterate over the elements of a
-sequence (string, tuple or list):
+sequence (such as a string, tuple or list) or other iterable object:
 \obindex{sequence}
 
 \begin{verbatim}
@@ -352,10 +352,6 @@ positional parameters, defaulting to the empty tuple.  If the form
 ``\code{**identifier}'' is present, it is initialized to a new
 dictionary receiving any excess keyword arguments, defaulting to a
 new empty dictionary.
-
-
-
-
 
 It is also possible to create anonymous functions (functions not bound
 to a name), for immediate use in expressions.  This uses lambda forms,
