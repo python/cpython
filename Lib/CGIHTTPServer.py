@@ -192,6 +192,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             if '=' not in decoded_query:
                 args.append(decoded_query)
             nobody = nobody_uid()
+            self.rfile.flush() # Always flush before forking
             self.wfile.flush() # Always flush before forking
             pid = os.fork()
             if pid != 0:
@@ -221,17 +222,17 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             if self.is_python(scriptfile):
                 interp = sys.executable
                 if interp.lower().endswith("w.exe"):
-                    # On Windows, use python.exe, not python.exe
-                    interp = interp[:-5] = interp[-4:]
-                cmdline = "%s %s" % (interp, cmdline)
+                    # On Windows, use python.exe, not pythonw.exe
+                    interp = interp[:-5] + interp[-4:]
+                cmdline = "%s -u %s" % (interp, cmdline)
             if '=' not in query and '"' not in query:
                 cmdline = '%s "%s"' % (cmdline, query)
-            self.log_error("command: %s", cmdline)
+            self.log_message("command: %s", cmdline)
             try:
                 nbytes = int(length)
             except:
                 nbytes = 0
-            fi, fo = os.popen2(cmdline)
+            fi, fo = os.popen2(cmdline, 'b')
             if self.command.lower() == "post" and nbytes > 0:
                 data = self.rfile.read(nbytes)
                 fi.write(data)
@@ -241,7 +242,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             if sts:
                 self.log_error("CGI script exit status %#x", sts)
             else:
-                self.log_error("CGI script exited OK")
+                self.log_message("CGI script exited OK")
 
         else:
             # Other O.S. -- execute script in this process
@@ -266,7 +267,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             except SystemExit, sts:
                 self.log_error("CGI script exit status %s", str(sts))
             else:
-                self.log_error("CGI script exited OK")
+                self.log_message("CGI script exited OK")
 
 
 nobody = None
