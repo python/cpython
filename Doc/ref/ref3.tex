@@ -1114,6 +1114,7 @@ single colon is used.  For slice operations involving extended slice
 notation, \method{__getitem__()}, \method{__setitem__()}
 or\method{__delitem__()} is called.
 
+
 \subsection{Emulating numeric types\label{numeric-types}}
 
 The following methods can be defined to emulate numeric objects.
@@ -1182,17 +1183,19 @@ Called to implement the unary arithmetic operations (\code{-}, \code{+},
 \function{abs()}\bifuncindex{abs} and \code{~}).
 \end{methoddesc}
 
-\begin{methoddesc}[numeric interface]{__int__}{self}
-\methodlineni{__long__}{self}
-\methodlineni{__float__}{self}
+\begin{methoddesc}[numeric interface]{__complex__}{self}
+\methodline{__int__}{self}
+\methodline{__long__}{self}
+\methodline{__float__}{self}
 Called to implement the built-in functions
-\function{int()}\bifuncindex{int}, \function{long()}\bifuncindex{long} 
+\function{complex()}\bifuncindex{complex},
+\function{int()}\bifuncindex{int}, \function{long()}\bifuncindex{long},
 and \function{float()}\bifuncindex{float}.  Should return a value of
 the appropriate type.
 \end{methoddesc}
 
 \begin{methoddesc}[numeric interface]{__oct__}{self}
-\methodlineni{__hex__}{self}
+\methodline{__hex__}{self}
 Called to implement the built-in functions
 \function{oct()}\bifuncindex{oct} and
 \function{hex()}\bifuncindex{hex}.  Should return a string value.
