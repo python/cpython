@@ -169,12 +169,16 @@ becomes second nature.
 \subsubsection{Reference Count Details \label{refcountDetails}}
 
 The reference count behavior of functions in the Python/C API is best 
-explained in terms of \emph{ownership of references}.  Note that we 
-talk of owning references, never of owning objects; objects are always 
-shared!  When a function owns a reference, it has to dispose of it 
-properly --- either by passing ownership on (usually to its caller) or 
-by calling \cfunction{Py_DECREF()} or \cfunction{Py_XDECREF()}.  When
-a function passes ownership of a reference on to its caller, the
+explained in terms of \emph{ownership of references}.  Ownership
+pertains to references, never to objects (objects are not owned: they
+are always shared).  "Owning a reference" means being responsible for
+calling Py_DECREF on it when the reference is no longer needed. 
+Ownership can also be transferred, meaning that the code that receives
+ownership of the reference then becomes responsible for eventually
+decref'ing it by calling \cfunction{Py_DECREF()} or
+\cfunction{Py_XDECREF()} when it's no longer needed --or passing on
+this responsibility (usually to its caller).
+When a function passes ownership of a reference on to its caller, the
 caller is said to receive a \emph{new} reference.  When no ownership
 is transferred, the caller is said to \emph{borrow} the reference.
 Nothing needs to be done for a borrowed reference.
