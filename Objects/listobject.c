@@ -1005,43 +1005,10 @@ samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
 	int n, extra, top, extraOnRight;
 	struct SamplesortStackNode stack[STACKSIZE];
 
-	/* assert lo <= hi */
+	assert(lo <= hi);
 	n = hi - lo;
-
-	/* ----------------------------------------------------------
-	 * Special cases
-	 * --------------------------------------------------------*/
-	if (n < 2)
-		return 0;
-
-	/* Set r to the largest value such that [lo,r) is sorted.
-	   This catches the already-sorted case, the all-the-same
-	   case, and the appended-a-few-elements-to-a-sorted-list case.
-	   If the array is unsorted, we're very likely to get out of
-	   the loop fast, so the test is cheap if it doesn't pay off.
-	*/
-	/* assert lo < hi */
-	for (r = lo+1; r < hi; ++r) {
-		IFLT(*r, *(r-1))
-			break;
-	}
-	/* [lo,r) is sorted, [r,hi) unknown.  Get out cheap if there are
-	   few unknowns, or few elements in total. */
-	if (hi - r <= MAXMERGE || n < MINSIZE)
-		return binarysort(lo, hi, r, compare);
-
-	/* Check for the array already being reverse-sorted.  Typical
-	   benchmark-driven silliness <wink>. */
-	/* assert lo < hi */
-	for (r = lo+1; r < hi; ++r) {
-		IFLT(*(r-1), *r)
-			break;
-	}
-	if (hi - r <= MAXMERGE) {
-		/* Reverse the reversed prefix, then insert the tail */
-		reverse_slice(lo, r);
-		return binarysort(lo, hi, r, compare);
-	}
+	if (n < MINSIZE)
+		return binarysort(lo, hi, lo, compare);
 
 	/* ----------------------------------------------------------
 	 * Normal case setup: a large array without obvious pattern.
@@ -1093,7 +1060,7 @@ samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
 	 * Partition [lo, hi), and repeat until out of work.
 	 * --------------------------------------------------------*/
 	for (;;) {
-		/* assert lo <= hi, so n >= 0 */
+		assert(lo <= hi);
 		n = hi - lo;
 
 		/* We may not want, or may not be able, to partition:
@@ -1103,8 +1070,8 @@ samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
 		*/
 		if (n < MINPARTITIONSIZE || extra == 0) {
 			if (n >= MINSIZE) {
-				/* assert extra == 0
-				   This is rare, since the average size
+				assert(extra == 0);
+				/* This is rare, since the average size
 				   of a final block is only about
 				   ln(original n). */
 				if (samplesortslice(lo, hi, compare) < 0)
@@ -1184,7 +1151,7 @@ samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
 		   duplicates later. */
 		l = lo + 1;
 		r = hi - 1;
-		/* assert lo < l < r < hi (small n weeded out above) */
+		assert(lo < l && l < r && r < hi);
 
 		do {
 			/* slide l right, looking for key >= pivot */
@@ -1208,9 +1175,8 @@ samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
 
 		} while (l < r);
 
-		/* assert lo < r <= l < hi
-		   assert r == l or r+1 == l
-		   everything to the left of l is < pivot, and
+		assert(lo < r && r <= l && l < hi);
+		/* everything to the left of l is < pivot, and
 		   everything to the right of r is >= pivot */
 
 		if (l == r) {
@@ -1219,13 +1185,12 @@ samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
 			else
 				--r;
 		}
-		/* assert lo <= r and r+1 == l and l <= hi
-		   assert r == lo or a[r] < pivot
-		   assert a[lo] is pivot
-		   assert l == hi or a[l] >= pivot
-		   Swap the pivot into "the middle", so we can henceforth
-		   ignore it.
-		*/
+		assert(lo <= r && r+1 == l && l <= hi);
+		/* assert r == lo or a[r] < pivot */
+		assert(*lo == pivot);
+		/* assert l == hi or a[l] >= pivot */
+		/* Swap the pivot into "the middle", so we can henceforth
+		   ignore it. */
 		*lo = *r;
 		*r = pivot;
 
@@ -1250,13 +1215,12 @@ samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
 				++l;
 		}
 
-		/* assert lo <= r < l <= hi
-		   Partitions are [lo, r) and [l, hi) */
-
-		/* push fattest first; remember we still have extra PPs
+		assert(lo <= r && r < l && l <= hi);
+		/* Partitions are [lo, r) and [l, hi)
+		   :ush fattest first; remember we still have extra PPs
 		   to the left of the left chunk and to the right of
 		   the right chunk! */
-		/* assert top < STACKSIZE */
+		assert(top < STACKSIZE);
 		if (r - lo <= hi - l) {
 			/* second is bigger */
 			stack[top].lo = l;
@@ -1283,32 +1247,76 @@ samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
 	return -1;
 }
 
-#undef IFLT
-
 static PyTypeObject immutable_list_type;
 
 static PyObject *
 listsort(PyListObject *self, PyObject *args)
 {
-	int err;
+	int k;
 	PyObject *compare = NULL;
+	PyObject **hi, **p;
 	PyTypeObject *savetype;
 
 	if (args != NULL) {
 		if (!PyArg_ParseTuple(args, "|O:sort", &compare))
 			return NULL;
 	}
+
 	savetype = self->ob_type;
+	if (self->ob_size < 2) {
+		k = 0;
+		goto done;
+	}
+
 	self->ob_type = &immutable_list_type;
-	err = samplesortslice(self->ob_item,
-			      self->ob_item + self->ob_size,
-			      compare);
-	self->ob_type = savetype;
-	if (err < 0)
+	hi = self->ob_item + self->ob_size;
+
+	/* Set p to the largest value such that [lo, p) is sorted.
+	   This catches the already-sorted case, the all-the-same
+	   case, and the appended-a-few-elements-to-a-sorted-list case.
+	   If the array is unsorted, we're very likely to get out of
+	   the loop fast, so the test is cheap if it doesn't pay off.
+	*/
+	for (p = self->ob_item + 1; p < hi; ++p) {
+		IFLT(*p, *(p-1))
+			break;
+	}
+	/* [lo, p) is sorted, [p, hi) unknown.  Get out cheap if there are
+	   few unknowns, or few elements in total. */
+	if (hi - p <= MAXMERGE || self->ob_size < MINSIZE) {
+		k = binarysort(self->ob_item, hi, p, compare);
+		goto done;
+	}
+
+	/* Check for the array already being reverse-sorted, or that with
+	   a few elements tacked on to the end. */
+	for (p = self->ob_item + 1; p < hi; ++p) {
+		IFLT(*(p-1), *p)
+			break;
+	}
+	/* [lo, p) is reverse-sorted, [p, hi) unknown. */
+	if (hi - p <= MAXMERGE) {
+		/* Reverse the reversed prefix, then insert the tail */
+		reverse_slice(self->ob_item, p);
+		k = binarysort(self->ob_item, hi, p, compare);
+		goto done;
+	}
+
+	/* A large array without obvious pattern. */
+	k = samplesortslice(self->ob_item, hi, compare);
+
+done: /* The IFLT macro requires a label named "fail". */;
+fail:
+ 	self->ob_type = savetype;
+	if (k >= 0) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	else
 		return NULL;
-	Py_INCREF(Py_None);
-	return Py_None;
 }
+
+#undef IFLT
 
 int
 PyList_Sort(PyObject *v)
