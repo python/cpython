@@ -183,7 +183,6 @@ class build_clib (Command):
             include_dirs = build_info.get ('include_dirs')
             objects = self.compiler.compile (sources,
                                              output_dir=self.build_temp,
-                                             keep_dir=1,
                                              macros=macros,
                                              include_dirs=include_dirs,
                                              debug=self.debug)
