@@ -3,6 +3,26 @@ What's New in Python 2.2a0?
 
 Core
 
+- Float (and complex) literals in source code were evaluated to full
+  precision only when running from a .py file; the same code loaded from a
+  .pyc (or .pyo) file could suffer numeric differences starting at about the
+  12th significant decimal digit.  For example, on a machine with IEEE-754
+  floating arithmetic,
+
+      x = 9007199254740992.0
+      print long(x)
+
+  printed 9007199254740992 if run directly from .py, but 9007199254740000
+  if from a compiled (.pyc or .pyo) file.  This was due to marshal using
+  str(float) instead of repr(float) when building code objects.  marshal
+  now uses repr(float) instead, which should reproduce floats to full
+  machine precision (assuming the platform C float<->string I/O conversion
+  functions are of good quality).
+
+  This may cause floating-point results to change in some cases, and
+  usually for the better, but may also cause numerically unstable
+  algorithms to break.
+
 - Dictionary objects now support the "in" operator: "x in dict" means
   the same as dict.has_key(x).
 
