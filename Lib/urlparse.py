@@ -128,7 +128,7 @@ def urlunparse((scheme, netloc, url, params, query, fragment)):
     return urlunsplit((scheme, netloc, url, query, fragment))
 
 def urlunsplit((scheme, netloc, url, query, fragment)):
-    if netloc or (scheme in uses_netloc and url[:2] != '//'):
+    if netloc or (scheme and scheme in uses_netloc and url[:2] != '//'):
         if url and url[:1] != '/': url = '/' + url
         url = '//' + (netloc or '') + url
     if scheme:
