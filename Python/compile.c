@@ -225,7 +225,6 @@ newcodeobject(argcount, nlocals, stacksize, flags,
 	/* Intern selected string constants */
 	for (i = gettuplesize(consts); --i >= 0; ) {
 		object *v = gettupleitem(consts, i);
-		int n;
 		char *p;
 		if (!is_stringobject(v))
 			continue;
