@@ -212,9 +212,9 @@ initxxsubtype(void)
 	if (m == NULL)
 		return;
 
-	if (PyType_InitDict(&spamlist_type) < 0)
+	if (PyType_Ready(&spamlist_type) < 0)
 		return;
-	if (PyType_InitDict(&spamdict_type) < 0)
+	if (PyType_Ready(&spamdict_type) < 0)
 		return;
 
 	d = PyModule_GetDict(m);
