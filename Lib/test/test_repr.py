@@ -208,7 +208,7 @@ class foo(object):
 ''')
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import foo
         eq(repr(foo.foo),
-               "<type 'areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation.foo.foo'>")
+               "<class 'areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation.foo.foo'>")
 
     def test_object(self):
         # XXX Test the repr of a type with a really long tp_name but with no

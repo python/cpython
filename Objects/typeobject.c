@@ -114,6 +114,7 @@ static PyObject *
 type_repr(PyTypeObject *type)
 {
 	PyObject *mod, *name, *rtn;
+	char *kind;
 
 	mod = type_module(type, NULL);
 	if (mod == NULL)
@@ -126,13 +127,19 @@ type_repr(PyTypeObject *type)
 	if (name == NULL)
 		return NULL;
 
+	if (type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+		kind = "class";
+	else
+		kind = "type";
+
 	if (mod != NULL && strcmp(PyString_AS_STRING(mod), "__builtin__")) {
-		rtn = PyString_FromFormat("<type '%s.%s'>",
+		rtn = PyString_FromFormat("<%s '%s.%s'>",
+					  kind,
 					  PyString_AS_STRING(mod),
 					  PyString_AS_STRING(name));
 	}
 	else
-		rtn = PyString_FromFormat("<type '%s'>", type->tp_name);
+		rtn = PyString_FromFormat("<%s '%s'>", kind, type->tp_name);
 
 	Py_XDECREF(mod);
 	Py_DECREF(name);
@@ -3365,12 +3372,12 @@ super_repr(PyObject *self)
 
 	if (su->obj)
 		return PyString_FromFormat(
-			"<super: <type '%s'>, <%s object>>",
+			"<super: <class '%s'>, <%s object>>",
 			su->type ? su->type->tp_name : "NULL",
 			su->obj->ob_type->tp_name);
 	else
 		return PyString_FromFormat(
-			"<super: <type '%s'>, NULL>",
+			"<super: <class '%s'>, NULL>",
 			su->type ? su->type->tp_name : "NULL");
 }
 
