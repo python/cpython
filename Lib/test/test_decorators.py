@@ -78,6 +78,12 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(C.foo(), 42)
         self.assertEqual(C().foo(), 42)
 
+    def test_staticmethod_function(self):
+        @staticmethod
+        def notamethod(x): 
+            return x
+        self.assertRaises(TypeError, notamethod, 1)
+
     def test_dotted(self):
         decorators = MiscDecorators()
         @decorators.author('Cleese')
