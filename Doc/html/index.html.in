@@ -5,6 +5,7 @@
     <meta name="description"
           content="Top-level index to the standard documentation for
                    Python @RELEASE@.">
+    <link rel="SHORTCUT ICON" href="icons/pyfav.gif" type="image/gif">
     <link rel="STYLESHEET" href="lib/lib.css" type="text/css">
     <style type="text/css">
       a.title { font-weight: bold; font-size: 110%; }
