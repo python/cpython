@@ -820,12 +820,14 @@ get_tdelta(ProfilerObject *self)
 
     GETTIMEOFDAY(&tv);
 
-    if (tv.tv_sec == self->prev_timeofday.tv_sec)
-        tdelta = tv.tv_usec - self->prev_timeofday.tv_usec;
-    else
-        tdelta = ((tv.tv_sec - self->prev_timeofday.tv_sec) * 1000000
-                  + tv.tv_usec);
+    tdelta = tv.tv_usec - self->prev_timeofday.tv_usec;
+    if (tv.tv_sec != self->prev_timeofday.tv_sec)
+        tdelta += (tv.tv_sec - self->prev_timeofday.tv_sec) * 1000000;
 #endif
+    /* time can go backwards on some multiprocessor systems or by NTP */
+    if (tdelta < 0)
+        return 0;
+
     self->prev_timeofday = tv;
     return tdelta;
 }
