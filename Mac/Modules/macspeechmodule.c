@@ -28,8 +28,20 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 
 #include <GestaltEqu.h>
-#include "pascal.h"
 #include "Speech.h"
+
+#ifdef __MWERKS__
+#include <Strings.h>
+#define c2pstr C2PStr
+#define p2cstr P2CStr
+#else
+#include "pascal.h"
+#endif /* __MWERKS__ */
+
+#ifdef __powerc
+#include <FragLoad.h>
+int lib_available;
+#endif /* __powerc */
 
 /* Somehow the Apple Fix2X and X2Fix don't do what I expect */
 #define fixed2double(x) (((double)(x))/32768.0)
@@ -37,17 +49,35 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 char *CurrentSpeech;
 object *ms_error_object;
+int speech_available;
 
-/* General error handler */
-static object *
-ms_error(num)
-	OSErr num;
-{
-	char buf[40];
-	
-	sprintf(buf, "Mac Speech Mgr error #%d", num);
-	err_setstr(ms_error_object, buf);
-	return (object *)NULL;
+static
+init_available() {
+	OSErr err;
+	long result;
+
+#ifdef __powerc
+	lib_available = ((ProcPtr)SpeakString != (ProcPtr)0);
+#endif
+	err = Gestalt(gestaltSpeechAttr, &result);
+	if ( err == noErr && (result & (1<<gestaltSpeechMgrPresent)))
+		return 1;
+	return 0;
+}
+
+static
+check_available() {
+	if ( !speech_available ) {
+		err_setstr(ms_error_object, "Speech Mgr not available");
+		return 0;
+	}
+#ifdef __powerc
+	if ( !lib_available ) {
+		err_setstr(ms_error_object, "Speech Mgr available, but shared lib missing");
+		return 0;
+	}
+#endif
+	return 1;
 }
 
 /* -------------
@@ -56,7 +86,6 @@ ms_error(num)
 */
 typedef struct {
 	OB_HEAD
-	object	*x_attr;	/* Attributes dictionary */
 	SpeechChannel chan;
 	object *curtext;	/* If non-NULL current text being spoken */
 } scobject;
@@ -69,30 +98,28 @@ static scobject *
 newscobject(arg)
 	VoiceSpec *arg;
 {
-	scobject *xp;
+	scobject *self;
 	OSErr err;
 	
-	xp = NEWOBJ(scobject, &sctype);
-	if (xp == NULL)
+	self = NEWOBJ(scobject, &sctype);
+	if (self == NULL)
 		return NULL;
-	xp->x_attr = NULL;
-	if ( (err=NewSpeechChannel(arg, &xp->chan)) != 0) {
-		DECREF(xp);
-		return (scobject *)ms_error(err);
+	if ( (err=NewSpeechChannel(arg, &self->chan)) != 0) {
+		DECREF(self);
+		return (scobject *)PyErr_Mac(ms_error_object, err);
 	}
-	xp->curtext = NULL;
-	return xp;
+	self->curtext = NULL;
+	return self;
 }
 
 /* sc methods */
 
 static void
-sc_dealloc(xp)
-	scobject *xp;
+sc_dealloc(self)
+	scobject *self;
 {
-	DisposeSpeechChannel(xp->chan);
-	XDECREF(xp->x_attr);
-	DEL(xp);
+	DisposeSpeechChannel(self->chan);
+	DEL(self);
 }
 
 static object *
@@ -104,8 +131,10 @@ sc_Stop(self, args)
 	
 	if (!getnoarg(args))
 		return NULL;
-	if ((err=StopSpeech(self->chan)) != 0)
-		return ms_error(err);
+	if ((err=StopSpeech(self->chan)) != 0) {
+		PyErr_Mac(ms_error_object, err);
+		return NULL;
+	}
 	if ( self->curtext ) {
 		DECREF(self->curtext);
 		self->curtext = NULL;
@@ -130,8 +159,10 @@ sc_SpeakText(self, args)
 		DECREF(self->curtext);
 		self->curtext = NULL;
 	}
-	if ((err=SpeakText(self->chan, (Ptr)str, (long)len)) != 0)
-		return ms_error(err);
+	if ((err=SpeakText(self->chan, (Ptr)str, (long)len)) != 0) {
+		PyErr_Mac(ms_error_object, err);
+		return 0;
+	}
 	(void)getargs(args, "O", &self->curtext);	/* Or should I check this? */
 	INCREF(self->curtext);
 	INCREF(None);
@@ -148,8 +179,10 @@ sc_GetRate(self, args)
 	
 	if (!getnoarg(args))
 		return NULL;
-	if ((err=GetSpeechRate(self->chan, &farg)) != 0)
-		return ms_error(err);
+	if ((err=GetSpeechRate(self->chan, &farg)) != 0) {
+		PyErr_Mac(ms_error_object, err);
+		return 0;
+	}
 	return newfloatobject(fixed2double(farg));
 }
 
@@ -163,8 +196,10 @@ sc_GetPitch(self, args)
 	
 	if (!getnoarg(args))
 		return NULL;
-	if ((err=GetSpeechPitch(self->chan, &farg)) != 0)
-		return ms_error(err);
+	if ((err=GetSpeechPitch(self->chan, &farg)) != 0) {
+		PyErr_Mac(ms_error_object, err);
+		return 0;
+	}
 	return newfloatobject(fixed2double(farg));
 }
 
@@ -178,8 +213,10 @@ sc_SetRate(self, args)
 	
 	if (!getargs(args, "d", &darg))
 		return NULL;
-	if ((err=SetSpeechRate(self->chan, double2fixed(darg))) != 0)
-		return ms_error(err);
+	if ((err=SetSpeechRate(self->chan, double2fixed(darg))) != 0) {
+		PyErr_Mac(ms_error_object, err);
+		return 0;
+	}
 	INCREF(None);
 	return None;
 }
@@ -194,8 +231,10 @@ sc_SetPitch(self, args)
 	
 	if (!getargs(args, "d", &darg))
 		return NULL;
-	if ((err=SetSpeechPitch(self->chan, double2fixed(darg))) != 0)
-		return ms_error(err);
+	if ((err=SetSpeechPitch(self->chan, double2fixed(darg))) != 0) {
+		PyErr_Mac(ms_error_object, err);
+		return NULL;
+	}
 	INCREF(None);
 	return None;
 }
@@ -211,40 +250,11 @@ static struct methodlist sc_methods[] = {
 };
 
 static object *
-sc_getattr(xp, name)
-	scobject *xp;
+sc_getattr(self, name)
+	scobject *self;
 	char *name;
 {
-	if (xp->x_attr != NULL) {
-		object *v = dictlookup(xp->x_attr, name);
-		if (v != NULL) {
-			INCREF(v);
-			return v;
-		}
-	}
-	return findmethod(sc_methods, (object *)xp, name);
-}
-
-static int
-sc_setattr(xp, name, v)
-	scobject *xp;
-	char *name;
-	object *v;
-{
-	if (xp->x_attr == NULL) {
-		xp->x_attr = newdictobject();
-		if (xp->x_attr == NULL)
-			return -1;
-	}
-	if (v == NULL) {
-		int rv = dictremove(xp->x_attr, name);
-		if (rv < 0)
-			err_setstr(AttributeError,
-			        "delete non-existing sc attribute");
-		return rv;
-	}
-	else
-		return dictinsert(xp->x_attr, name, v);
+	return findmethod(sc_methods, (object *)self, name);
 }
 
 static typeobject sctype = {
@@ -257,7 +267,7 @@ static typeobject sctype = {
 	(destructor)sc_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
 	(getattrfunc)sc_getattr, /*tp_getattr*/
-	(setattrfunc)sc_setattr, /*tp_setattr*/
+	0, 			/*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
 	0,			/*tp_as_number*/
@@ -272,7 +282,6 @@ static typeobject sctype = {
 */
 typedef struct {
 	OB_HEAD
-	object	*x_attr;	/* Attributes dictionary */
 	int		initialized;
 	VoiceSpec	vs;
 	VoiceDescription vd;
@@ -285,13 +294,12 @@ staticforward typeobject mvtype;
 static mvobject *
 newmvobject()
 {
-	mvobject *xp;
-	xp = NEWOBJ(mvobject, &mvtype);
-	if (xp == NULL)
+	mvobject *self;
+	self = NEWOBJ(mvobject, &mvtype);
+	if (self == NULL)
 		return NULL;
-	xp->x_attr = NULL;
-	xp->initialized = 0;
-	return xp;
+	self->initialized = 0;
+	return self;
 }
 
 static int
@@ -302,11 +310,11 @@ initmvobject(self, ind)
 	OSErr err;
 	
 	if ( (err=GetIndVoice((short)ind, &self->vs)) != 0 ) {
-		ms_error(err);
+		PyErr_Mac(ms_error_object, err);
 		return 0;
 	}
 	if ( (err=GetVoiceDescription(&self->vs, &self->vd, sizeof self->vd)) != 0) {
-		ms_error(err);
+		PyErr_Mac(ms_error_object, err);
 		return 0;
 	}
 	self->initialized = 1;
@@ -315,11 +323,10 @@ initmvobject(self, ind)
 /* mv methods */
 
 static void
-mv_dealloc(xp)
-	mvobject *xp;
+mv_dealloc(self)
+	mvobject *self;
 {
-	XDECREF(xp->x_attr);
-	DEL(xp);
+	DEL(self);
 }
 
 static object *
@@ -360,40 +367,11 @@ static struct methodlist mv_methods[] = {
 };
 
 static object *
-mv_getattr(xp, name)
-	mvobject *xp;
+mv_getattr(self, name)
+	mvobject *self;
 	char *name;
 {
-	if (xp->x_attr != NULL) {
-		object *v = dictlookup(xp->x_attr, name);
-		if (v != NULL) {
-			INCREF(v);
-			return v;
-		}
-	}
-	return findmethod(mv_methods, (object *)xp, name);
-}
-
-static int
-mv_setattr(xp, name, v)
-	mvobject *xp;
-	char *name;
-	object *v;
-{
-	if (xp->x_attr == NULL) {
-		xp->x_attr = newdictobject();
-		if (xp->x_attr == NULL)
-			return -1;
-	}
-	if (v == NULL) {
-		int rv = dictremove(xp->x_attr, name);
-		if (rv < 0)
-			err_setstr(AttributeError,
-			        "delete non-existing MacVoice attribute");
-		return rv;
-	}
-	else
-		return dictinsert(xp->x_attr, name, v);
+	return findmethod(mv_methods, (object *)self, name);
 }
 
 static typeobject mvtype = {
@@ -406,7 +384,7 @@ static typeobject mvtype = {
 	(destructor)mv_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
 	(getattrfunc)mv_getattr, /*tp_getattr*/
-	(setattrfunc)mv_setattr, /*tp_setattr*/
+	0,			/*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
 	0,			/*tp_as_number*/
@@ -428,17 +406,10 @@ ms_Available(self, args)
 	object *self; /* Not used */
 	object *args;
 {
-	OSErr err;
-	long result;
 	
 	if (!getnoarg(args))
 		return NULL;
-	err = Gestalt(gestaltSpeechAttr, &result);
-	if ( err == noErr && (result & (1<<gestaltSpeechMgrPresent)))
-		result = 1;
-	else
-		result = 0;
-	return newintobject(result);
+	return newintobject(speech_available);
 }
 
 /* Count number of busy speeches */
@@ -452,6 +423,8 @@ ms_Busy(self, args)
 	short result;
 	
 	if (!getnoarg(args))
+		return NULL;
+	if ( !check_available() )
 		return NULL;
 	result = SpeechBusy();
 	return newintobject(result);
@@ -471,6 +444,8 @@ ms_SpeakString(self, args)
 	
 	if (!getstrarg(args, &str))
 		return NULL;
+	if ( !check_available())
+		return NULL;
 	if (CurrentSpeech) {
 		/* Free the old speech, after killing it off
 		** (note that speach is async and c2pstr works inplace)
@@ -482,8 +457,10 @@ ms_SpeakString(self, args)
 	CurrentSpeech = malloc(len+1);
 	strcpy(CurrentSpeech, str);
 	err = SpeakString(c2pstr(CurrentSpeech));
-	if ( err )
-		return ms_error(err);
+	if ( err ) {
+		PyErr_Mac(ms_error_object, err);
+		return NULL;
+	}
 	INCREF(None);
 	return None;
 }
@@ -501,6 +478,8 @@ ms_CountVoices(self, args)
 	
 	if (!getnoarg(args))
 		return NULL;
+	if ( !check_available())
+		return NULL;
 	CountVoices(&result);
 	return newintobject(result);
 }
@@ -515,7 +494,9 @@ ms_GetIndVoice(self, args)
 	long ind;
 	
 	if( !getargs(args, "i", &ind))
-		return 0;
+		return NULL;
+	if ( !check_available() )
+		return NULL;
 	rv = newmvobject();
 	if ( !initmvobject(rv, ind) ) {
 		DECREF(rv);
@@ -524,6 +505,22 @@ ms_GetIndVoice(self, args)
 	return (object *)rv;
 }
 
+
+static object *
+ms_Version(self, args)
+	object *self; /* Not used */
+	object *args;
+{
+	OSErr err;
+	NumVersion v;
+	
+	if (!getnoarg(args))
+		return NULL;
+	if ( !check_available())
+		return NULL;
+	v = SpeechManagerVersion();
+	return newintobject(*(int *)&v);
+}
 
 
 /* List of functions defined in the module */
@@ -534,9 +531,9 @@ static struct methodlist ms_methods[] = {
 	{"Busy",		ms_Busy},
 	{"SpeakString",	ms_SpeakString},
 	{"GetIndVoice", ms_GetIndVoice},
+	{"Version",		ms_Version},
 	{NULL,		NULL}		/* sentinel */
 };
-
 
 /* Initialization function for the module (*must* be called initmacspeech) */
 
@@ -545,6 +542,7 @@ initmacspeech()
 {
 	object *m, *d;
 
+	speech_available = init_available();
 	/* Create the module and add the functions */
 	m = initmodule("macspeech", ms_methods);
 
