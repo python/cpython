@@ -1313,13 +1313,16 @@ def compattr():
     if verbose: print "Testing computed attributes..."
     class C(object):
         class computed_attribute(object):
-            def __init__(self, get, set=None):
+            def __init__(self, get, set=None, delete=None):
                 self.__get = get
                 self.__set = set
+                self.__delete = delete
             def __get__(self, obj, type=None):
                 return self.__get(obj)
             def __set__(self, obj, value):
                 return self.__set(obj, value)
+            def __delete__(self, obj):
+                return self.__delete(obj)
         def __init__(self):
             self.__x = 0
         def __get_x(self):
@@ -1328,13 +1331,17 @@ def compattr():
             return x
         def __set_x(self, x):
             self.__x = x
-        x = computed_attribute(__get_x, __set_x)
+        def __delete_x(self):
+            del self.__x
+        x = computed_attribute(__get_x, __set_x, __delete_x)
     a = C()
     vereq(a.x, 0)
     vereq(a.x, 1)
     a.x = 10
     vereq(a.x, 10)
     vereq(a.x, 11)
+    del a.x
+    vereq(hasattr(a, 'x'), 0)
 
 def newslot():
     if verbose: print "Testing __new__ slot override..."
@@ -1647,8 +1654,8 @@ def properties():
     verify(not hasattr(a, "_C__x"))
     C.x.__set__(a, 100)
     vereq(C.x.__get__(a), 100)
-##    C.x.__set__(a)
-##    verify(not hasattr(a, "x"))
+    C.x.__delete__(a)
+    verify(not hasattr(a, "x"))
 
     raw = C.__dict__['x']
     verify(isinstance(raw, property))
