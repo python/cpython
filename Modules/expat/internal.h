@@ -20,17 +20,20 @@
          and therefore subject to change.
 */
 
-#if defined(__GNUC__)
-/* Instability reported with egcs on a RedHat Linux 7.3.
-   Let's comment it out:
+#if defined(__GNUC__) && defined(__i386__)
+/* We'll use this version by default only where we know it helps.
+
+   regparm() generates warnings on Solaris boxes.   See SF bug #692878.
+
+   Instability reported with egcs on a RedHat Linux 7.3.
+   Let's comment out:
    #define FASTCALL __attribute__((stdcall, regparm(3)))
    and let's try this:
 */
 #define FASTCALL __attribute__((regparm(3)))
-#define PTRCALL
 #define PTRFASTCALL __attribute__((regparm(3)))
+#endif
 
-#elif defined(WIN32)
 /* Using __fastcall seems to have an unexpected negative effect under
    MS VC++, especially for function pointers, so we won't use it for
    now on that platform. It may be reconsidered for a future release
@@ -38,11 +41,8 @@
    Likely reason: __fastcall on Windows is like stdcall, therefore
    the compiler cannot perform stack optimizations for call clusters.
 */
-#define FASTCALL
-#define PTRCALL
-#define PTRFASTCALL
 
-#endif
+/* Make sure all of these are defined if they aren't already. */
 
 #ifndef FASTCALL
 #define FASTCALL

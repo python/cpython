@@ -5,34 +5,19 @@
 #include <stddef.h>
 #include <string.h>                     /* memset(), memcpy() */
 
+#define XML_BUILDING_EXPAT 1
+
 #ifdef COMPILED_FROM_DSP
-
 #include "winconfig.h"
-#define XMLPARSEAPI(type) type __cdecl
-#include "expat.h"
-#undef XMLPARSEAPI
-
 #elif defined(MACOS_CLASSIC)
-
 #include "macconfig.h"
-#include "expat.h"
-
 #else
-
-/* Unused - MvL
+#ifdef HAVE_EXPAT_CONFIG_H
 #include <expat_config.h>
-*/
-
-#ifdef __declspec
-#define XMLPARSEAPI(type) type __cdecl
-#endif
-
-#include "expat.h"
-
-#ifdef __declspec
-#undef XMLPARSEAPI
 #endif
 #endif /* ndef COMPILED_FROM_DSP */
+
+#include "expat.h"
 
 #ifdef XML_UNICODE
 #define XML_ENCODE_MAX XML_UTF16_ENCODE_MAX
@@ -83,6 +68,15 @@ typedef char ICHAR;
 /* Round up n to be a multiple of sz, where sz is a power of 2. */
 #define ROUND_UP(n, sz) (((n) + ((sz) - 1)) & ~((sz) - 1))
 
+/* Handle the case where memmove() doesn't exist. */
+#ifndef HAVE_MEMMOVE
+#ifdef HAVE_BCOPY
+#define memmove(d,s,l) bcopy((s),(d),(l))
+#else
+#error memmove does not exist on this platform, nor is a substitute available
+#endif /* HAVE_BCOPY */
+#endif /* HAVE_MEMMOVE */
+
 #include "internal.h"
 #include "xmltok.h"
 #include "xmlrole.h"
@@ -95,11 +89,36 @@ typedef struct {
 
 typedef struct {
   NAMED **v;
+  unsigned char power;
   size_t size;
   size_t used;
-  size_t usedLim;
   const XML_Memory_Handling_Suite *mem;
 } HASH_TABLE;
+
+/* Basic character hash algorithm, taken from Python's string hash:
+   h = h * 1000003 ^ character, the constant being a prime number.
+
+*/
+#ifdef XML_UNICODE
+#define CHAR_HASH(h, c) \
+  (((h) * 0xF4243) ^ (unsigned short)(c))
+#else
+#define CHAR_HASH(h, c) \
+  (((h) * 0xF4243) ^ (unsigned char)(c))
+#endif
+
+/* For probing (after a collision) we need a step size relative prime
+   to the hash table size, which is a power of 2. We use double-hashing,
+   since we can calculate a second hash value cheaply by taking those bits
+   of the first hash value that were discarded (masked out) when the table
+   index was calculated: index = hash & mask, where mask = table->size - 1.
+   We limit the maximum step size to table->size / 4 (mask >> 2) and make
+   it odd, since odd numbers are always relative prime to a power of 2.
+*/
+#define SECOND_HASH(hash, mask, power) \
+  ((((hash) & ~(mask)) >> ((power) - 1)) & ((mask) >> 2))
+#define PROBE_STEP(hash, mask, power) \
+  ((unsigned char)((SECOND_HASH(hash, mask, power)) | 1))
 
 typedef struct {
   NAMED **p;
@@ -109,6 +128,7 @@ typedef struct {
 #define INIT_TAG_BUF_SIZE 32  /* must be a multiple of sizeof(XML_Char) */
 #define INIT_DATA_BUF_SIZE 1024
 #define INIT_ATTS_SIZE 16
+#define INIT_ATTS_VERSION 0xFFFFFFFF
 #define INIT_BLOCK_SIZE 1024
 #define INIT_BUFFER_SIZE 1024
 
@@ -215,6 +235,12 @@ typedef struct {
   XML_Bool isCdata;
   const XML_Char *value;
 } DEFAULT_ATTRIBUTE;
+
+typedef struct {
+  unsigned long version;
+  unsigned long hash;
+  const XML_Char *uriName;
+} NS_ATT;
 
 typedef struct {
   const XML_Char *name;
@@ -492,11 +518,14 @@ struct XML_ParserStruct {
   int m_nSpecifiedAtts;
   int m_idAttIndex;
   ATTRIBUTE *m_atts;
+  NS_ATT *m_nsAtts;
+  unsigned long m_nsAttsVersion;
+  unsigned char m_nsAttsPower;
   POSITION m_position;
   STRING_POOL m_tempPool;
   STRING_POOL m_temp2Pool;
   char *m_groupConnector;
-  unsigned m_groupSize;
+  unsigned int m_groupSize;
   XML_Char m_namespaceSeparator;
   XML_Parser m_parentParser;
 #ifdef XML_DTD
@@ -594,6 +623,9 @@ struct XML_ParserStruct {
 #define attsSize (parser->m_attsSize)
 #define nSpecifiedAtts (parser->m_nSpecifiedAtts)
 #define idAttIndex (parser->m_idAttIndex)
+#define nsAtts (parser->m_nsAtts)
+#define nsAttsVersion (parser->m_nsAttsVersion)
+#define nsAttsPower (parser->m_nsAttsPower)
 #define tempPool (parser->m_tempPool)
 #define temp2Pool (parser->m_temp2Pool)
 #define groupConnector (parser->m_groupConnector)
@@ -606,6 +638,7 @@ struct XML_ParserStruct {
 #define paramEntityParsing (parser->m_paramEntityParsing)
 #endif /* XML_DTD */
 
+#ifdef XML_DTD
 #define parsing \
   (parentParser \
     ? \
@@ -616,14 +649,22 @@ struct XML_ParserStruct {
       (processor != externalEntityInitProcessor)) \
     : \
     (processor != prologInitProcessor))
+#else
+#define parsing \
+  (parentParser \
+    ? \
+    (processor != externalEntityInitProcessor) \
+    : \
+    (processor != prologInitProcessor))
+#endif /* XML_DTD */
 
-XML_Parser
+XML_Parser XMLCALL
 XML_ParserCreate(const XML_Char *encodingName)
 {
   return XML_ParserCreate_MM(encodingName, NULL, NULL);
 }
 
-XML_Parser
+XML_Parser XMLCALL
 XML_ParserCreateNS(const XML_Char *encodingName, XML_Char nsSep)
 {
   XML_Char tmp[2];
@@ -638,7 +679,7 @@ static const XML_Char implicitContext[] = {
   'n', 'a', 'm', 'e', 's', 'p', 'a', 'c', 'e', '\0'
 };
 
-XML_Parser
+XML_Parser XMLCALL
 XML_ParserCreate_MM(const XML_Char *encodingName,
                     const XML_Memory_Handling_Suite *memsuite,
                     const XML_Char *nameSep)
@@ -730,6 +771,10 @@ parserCreate(const XML_Char *encodingName,
   namespaceSeparator = '!';
   ns = XML_FALSE;
   ns_triplets = XML_FALSE;
+
+  nsAtts = NULL;
+  nsAttsVersion = 0;
+  nsAttsPower = 0;
 
   poolInit(&tempPool, &(parser->m_mem));
   poolInit(&temp2Pool, &(parser->m_mem));
@@ -835,7 +880,7 @@ moveToFreeBindingList(XML_Parser parser, BINDING *bindings)
   }
 }
 
-XML_Bool
+XML_Bool XMLCALL
 XML_ParserReset(XML_Parser parser, const XML_Char *encodingName)
 {
   TAG *tStk;
@@ -852,8 +897,7 @@ XML_ParserReset(XML_Parser parser, const XML_Char *encodingName)
     freeTagList = tag;
   }
   moveToFreeBindingList(parser, inheritedBindings);
-  if (unknownEncodingMem)
-    FREE(unknownEncodingMem);
+  FREE(unknownEncodingMem);
   if (unknownEncodingRelease)
     unknownEncodingRelease(unknownEncodingData);
   poolClear(&tempPool);
@@ -863,7 +907,7 @@ XML_ParserReset(XML_Parser parser, const XML_Char *encodingName)
   return setContext(parser, implicitContext);
 }
 
-enum XML_Status
+enum XML_Status XMLCALL
 XML_SetEncoding(XML_Parser parser, const XML_Char *encodingName)
 {
   /* Block after XML_Parse()/XML_ParseBuffer() has been called.
@@ -882,7 +926,7 @@ XML_SetEncoding(XML_Parser parser, const XML_Char *encodingName)
   return XML_STATUS_OK;
 }
 
-XML_Parser
+XML_Parser XMLCALL
 XML_ExternalEntityParserCreate(XML_Parser oldParser,
                                const XML_Char *context,
                                const XML_Char *encodingName)
@@ -1025,7 +1069,7 @@ destroyBindings(BINDING *bindings, XML_Parser parser)
   }
 }
 
-void
+void XMLCALL
 XML_ParserFree(XML_Parser parser)
 {
   for (;;) {
@@ -1056,25 +1100,23 @@ XML_ParserFree(XML_Parser parser)
 #endif /* XML_DTD */
     dtdDestroy(_dtd, (XML_Bool)!parentParser, &parser->m_mem);
   FREE((void *)atts);
-  if (groupConnector)
-    FREE(groupConnector);
-  if (buffer)
-    FREE(buffer);
+  FREE(groupConnector);
+  FREE(buffer);
   FREE(dataBuf);
-  if (unknownEncodingMem)
-    FREE(unknownEncodingMem);
+  FREE(nsAtts);
+  FREE(unknownEncodingMem);
   if (unknownEncodingRelease)
     unknownEncodingRelease(unknownEncodingData);
   FREE(parser);
 }
 
-void
+void XMLCALL
 XML_UseParserAsHandlerArg(XML_Parser parser)
 {
   handlerArg = parser;
 }
 
-enum XML_Error
+enum XML_Error XMLCALL
 XML_UseForeignDTD(XML_Parser parser, XML_Bool useDTD)
 {
 #ifdef XML_DTD
@@ -1088,7 +1130,7 @@ XML_UseForeignDTD(XML_Parser parser, XML_Bool useDTD)
 #endif
 }
 
-void
+void XMLCALL
 XML_SetReturnNSTriplet(XML_Parser parser, int do_nst)
 {
   /* block after XML_Parse()/XML_ParseBuffer() has been called */
@@ -1097,7 +1139,7 @@ XML_SetReturnNSTriplet(XML_Parser parser, int do_nst)
   ns_triplets = do_nst ? XML_TRUE : XML_FALSE;
 }
 
-void
+void XMLCALL
 XML_SetUserData(XML_Parser parser, void *p)
 {
   if (handlerArg == userData)
@@ -1106,7 +1148,7 @@ XML_SetUserData(XML_Parser parser, void *p)
     userData = p;
 }
 
-enum XML_Status
+enum XML_Status XMLCALL
 XML_SetBase(XML_Parser parser, const XML_Char *p)
 {
   if (p) {
@@ -1120,25 +1162,25 @@ XML_SetBase(XML_Parser parser, const XML_Char *p)
   return XML_STATUS_OK;
 }
 
-const XML_Char *
+const XML_Char * XMLCALL
 XML_GetBase(XML_Parser parser)
 {
   return curBase;
 }
 
-int
+int XMLCALL
 XML_GetSpecifiedAttributeCount(XML_Parser parser)
 {
   return nSpecifiedAtts;
 }
 
-int
+int XMLCALL
 XML_GetIdAttributeIndex(XML_Parser parser)
 {
   return idAttIndex;
 }
 
-void
+void XMLCALL
 XML_SetElementHandler(XML_Parser parser,
                       XML_StartElementHandler start,
                       XML_EndElementHandler end)
@@ -1147,40 +1189,40 @@ XML_SetElementHandler(XML_Parser parser,
   endElementHandler = end;
 }
 
-void
+void XMLCALL
 XML_SetStartElementHandler(XML_Parser parser,
                            XML_StartElementHandler start) {
   startElementHandler = start;
 }
 
-void
+void XMLCALL
 XML_SetEndElementHandler(XML_Parser parser,
                          XML_EndElementHandler end) {
   endElementHandler = end;
 }
 
-void
+void XMLCALL
 XML_SetCharacterDataHandler(XML_Parser parser,
                             XML_CharacterDataHandler handler)
 {
   characterDataHandler = handler;
 }
 
-void
+void XMLCALL
 XML_SetProcessingInstructionHandler(XML_Parser parser,
                                     XML_ProcessingInstructionHandler handler)
 {
   processingInstructionHandler = handler;
 }
 
-void
+void XMLCALL
 XML_SetCommentHandler(XML_Parser parser,
                       XML_CommentHandler handler)
 {
   commentHandler = handler;
 }
 
-void
+void XMLCALL
 XML_SetCdataSectionHandler(XML_Parser parser,
                            XML_StartCdataSectionHandler start,
                            XML_EndCdataSectionHandler end)
@@ -1189,19 +1231,19 @@ XML_SetCdataSectionHandler(XML_Parser parser,
   endCdataSectionHandler = end;
 }
 
-void
+void XMLCALL
 XML_SetStartCdataSectionHandler(XML_Parser parser,
                                 XML_StartCdataSectionHandler start) {
   startCdataSectionHandler = start;
 }
 
-void
+void XMLCALL
 XML_SetEndCdataSectionHandler(XML_Parser parser,
                               XML_EndCdataSectionHandler end) {
   endCdataSectionHandler = end;
 }
 
-void
+void XMLCALL
 XML_SetDefaultHandler(XML_Parser parser,
                       XML_DefaultHandler handler)
 {
@@ -1209,7 +1251,7 @@ XML_SetDefaultHandler(XML_Parser parser,
   defaultExpandInternalEntities = XML_FALSE;
 }
 
-void
+void XMLCALL
 XML_SetDefaultHandlerExpand(XML_Parser parser,
                             XML_DefaultHandler handler)
 {
@@ -1217,7 +1259,7 @@ XML_SetDefaultHandlerExpand(XML_Parser parser,
   defaultExpandInternalEntities = XML_TRUE;
 }
 
-void
+void XMLCALL
 XML_SetDoctypeDeclHandler(XML_Parser parser,
                           XML_StartDoctypeDeclHandler start,
                           XML_EndDoctypeDeclHandler end)
@@ -1226,33 +1268,33 @@ XML_SetDoctypeDeclHandler(XML_Parser parser,
   endDoctypeDeclHandler = end;
 }
 
-void
+void XMLCALL
 XML_SetStartDoctypeDeclHandler(XML_Parser parser,
                                XML_StartDoctypeDeclHandler start) {
   startDoctypeDeclHandler = start;
 }
 
-void
+void XMLCALL
 XML_SetEndDoctypeDeclHandler(XML_Parser parser,
                              XML_EndDoctypeDeclHandler end) {
   endDoctypeDeclHandler = end;
 }
 
-void
+void XMLCALL
 XML_SetUnparsedEntityDeclHandler(XML_Parser parser,
                                  XML_UnparsedEntityDeclHandler handler)
 {
   unparsedEntityDeclHandler = handler;
 }
 
-void
+void XMLCALL
 XML_SetNotationDeclHandler(XML_Parser parser,
                            XML_NotationDeclHandler handler)
 {
   notationDeclHandler = handler;
 }
 
-void
+void XMLCALL
 XML_SetNamespaceDeclHandler(XML_Parser parser,
                             XML_StartNamespaceDeclHandler start,
                             XML_EndNamespaceDeclHandler end)
@@ -1261,33 +1303,33 @@ XML_SetNamespaceDeclHandler(XML_Parser parser,
   endNamespaceDeclHandler = end;
 }
 
-void
+void XMLCALL
 XML_SetStartNamespaceDeclHandler(XML_Parser parser,
                                  XML_StartNamespaceDeclHandler start) {
   startNamespaceDeclHandler = start;
 }
 
-void
+void XMLCALL
 XML_SetEndNamespaceDeclHandler(XML_Parser parser,
                                XML_EndNamespaceDeclHandler end) {
   endNamespaceDeclHandler = end;
 }
 
-void
+void XMLCALL
 XML_SetNotStandaloneHandler(XML_Parser parser,
                             XML_NotStandaloneHandler handler)
 {
   notStandaloneHandler = handler;
 }
 
-void
+void XMLCALL
 XML_SetExternalEntityRefHandler(XML_Parser parser,
                                 XML_ExternalEntityRefHandler handler)
 {
   externalEntityRefHandler = handler;
 }
 
-void
+void XMLCALL
 XML_SetExternalEntityRefHandlerArg(XML_Parser parser, void *arg)
 {
   if (arg)
@@ -1296,14 +1338,14 @@ XML_SetExternalEntityRefHandlerArg(XML_Parser parser, void *arg)
     externalEntityRefHandlerArg = parser;
 }
 
-void
+void XMLCALL
 XML_SetSkippedEntityHandler(XML_Parser parser,
                             XML_SkippedEntityHandler handler)
 {
   skippedEntityHandler = handler;
 }
 
-void
+void XMLCALL
 XML_SetUnknownEncodingHandler(XML_Parser parser,
                               XML_UnknownEncodingHandler handler,
                               void *data)
@@ -1312,34 +1354,34 @@ XML_SetUnknownEncodingHandler(XML_Parser parser,
   unknownEncodingHandlerData = data;
 }
 
-void
+void XMLCALL
 XML_SetElementDeclHandler(XML_Parser parser,
                           XML_ElementDeclHandler eldecl)
 {
   elementDeclHandler = eldecl;
 }
 
-void
+void XMLCALL
 XML_SetAttlistDeclHandler(XML_Parser parser,
                           XML_AttlistDeclHandler attdecl)
 {
   attlistDeclHandler = attdecl;
 }
 
-void
+void XMLCALL
 XML_SetEntityDeclHandler(XML_Parser parser,
                          XML_EntityDeclHandler handler)
 {
   entityDeclHandler = handler;
 }
 
-void
+void XMLCALL
 XML_SetXmlDeclHandler(XML_Parser parser,
                       XML_XmlDeclHandler handler) {
   xmlDeclHandler = handler;
 }
 
-int
+int XMLCALL
 XML_SetParamEntityParsing(XML_Parser parser,
                           enum XML_ParamEntityParsing peParsing)
 {
@@ -1354,7 +1396,7 @@ XML_SetParamEntityParsing(XML_Parser parser,
 #endif
 }
 
-enum XML_Status
+enum XML_Status XMLCALL
 XML_Parse(XML_Parser parser, const char *s, int len, int isFinal)
 {
   if (len == 0) {
@@ -1429,7 +1471,7 @@ XML_Parse(XML_Parser parser, const char *s, int len, int isFinal)
   }
 }
 
-enum XML_Status
+enum XML_Status XMLCALL
 XML_ParseBuffer(XML_Parser parser, int len, int isFinal)
 {
   const char *start = bufferPtr;
@@ -1452,7 +1494,7 @@ XML_ParseBuffer(XML_Parser parser, int len, int isFinal)
   }
 }
 
-void *
+void * XMLCALL
 XML_GetBuffer(XML_Parser parser, int len)
 {
   if (len > bufferLim - bufferEnd) {
@@ -1521,13 +1563,13 @@ XML_GetBuffer(XML_Parser parser, int len)
   return bufferEnd;
 }
 
-enum XML_Error
+enum XML_Error XMLCALL
 XML_GetErrorCode(XML_Parser parser)
 {
   return errorCode;
 }
 
-long
+long XMLCALL
 XML_GetCurrentByteIndex(XML_Parser parser)
 {
   if (eventPtr)
@@ -1535,7 +1577,7 @@ XML_GetCurrentByteIndex(XML_Parser parser)
   return -1;
 }
 
-int
+int XMLCALL
 XML_GetCurrentByteCount(XML_Parser parser)
 {
   if (eventEndPtr && eventPtr)
@@ -1543,7 +1585,7 @@ XML_GetCurrentByteCount(XML_Parser parser)
   return 0;
 }
 
-const char *
+const char * XMLCALL
 XML_GetInputContext(XML_Parser parser, int *offset, int *size)
 {
 #ifdef XML_CONTEXT_BYTES
@@ -1556,7 +1598,7 @@ XML_GetInputContext(XML_Parser parser, int *offset, int *size)
   return (char *) 0;
 }
 
-int
+int XMLCALL
 XML_GetCurrentLineNumber(XML_Parser parser)
 {
   if (eventPtr) {
@@ -1566,7 +1608,7 @@ XML_GetCurrentLineNumber(XML_Parser parser)
   return position.lineNumber + 1;
 }
 
-int
+int XMLCALL
 XML_GetCurrentColumnNumber(XML_Parser parser)
 {
   if (eventPtr) {
@@ -1576,31 +1618,31 @@ XML_GetCurrentColumnNumber(XML_Parser parser)
   return position.columnNumber;
 }
 
-void
+void XMLCALL
 XML_FreeContentModel(XML_Parser parser, XML_Content *model)
 {
   FREE(model);
 }
 
-void *
+void * XMLCALL
 XML_MemMalloc(XML_Parser parser, size_t size)
 {
   return MALLOC(size);
 }
 
-void *
+void * XMLCALL
 XML_MemRealloc(XML_Parser parser, void *ptr, size_t size)
 {
   return REALLOC(ptr, size);
 }
 
-void
+void XMLCALL
 XML_MemFree(XML_Parser parser, void *ptr)
 {
   FREE(ptr);
 }
 
-void
+void XMLCALL
 XML_DefaultCurrent(XML_Parser parser)
 {
   if (defaultHandler) {
@@ -1614,7 +1656,7 @@ XML_DefaultCurrent(XML_Parser parser)
   }
 }
 
-const XML_LChar *
+const XML_LChar * XMLCALL
 XML_ErrorString(enum XML_Error code)
 {
   static const XML_LChar *message[] = {
@@ -1644,14 +1686,15 @@ XML_ErrorString(enum XML_Error code)
     XML_L("unexpected parser state - please send a bug report"),
     XML_L("entity declared in parameter entity"),
     XML_L("requested feature requires XML_DTD support in Expat"),
-    XML_L("cannot change setting once parsing has begun")
+    XML_L("cannot change setting once parsing has begun"),
+    XML_L("unbound prefix")
   };
   if (code > 0 && code < sizeof(message)/sizeof(message[0]))
     return message[code];
   return NULL;
 }
 
-const XML_LChar *
+const XML_LChar * XMLCALL
 XML_ExpatVersion(void) {
 
   /* V1 is used to string-ize the version number. However, it would
@@ -1671,7 +1714,7 @@ XML_ExpatVersion(void) {
 #undef V2
 }
 
-XML_Expat_Version
+XML_Expat_Version XMLCALL
 XML_ExpatVersionInfo(void)
 {
   XML_Expat_Version version;
@@ -1683,29 +1726,29 @@ XML_ExpatVersionInfo(void)
   return version;
 }
 
-const XML_Feature *
+const XML_Feature * XMLCALL
 XML_GetFeatureList(void)
 {
   static XML_Feature features[] = {
-    {XML_FEATURE_SIZEOF_XML_CHAR,  XML_L("sizeof(XML_Char)")},
-    {XML_FEATURE_SIZEOF_XML_LCHAR, XML_L("sizeof(XML_LChar)")},
+    {XML_FEATURE_SIZEOF_XML_CHAR,  XML_L("sizeof(XML_Char)"), 0},
+    {XML_FEATURE_SIZEOF_XML_LCHAR, XML_L("sizeof(XML_LChar)"), 0},
 #ifdef XML_UNICODE
-    {XML_FEATURE_UNICODE,          XML_L("XML_UNICODE")},
+    {XML_FEATURE_UNICODE,          XML_L("XML_UNICODE"), 0},
 #endif
 #ifdef XML_UNICODE_WCHAR_T
-    {XML_FEATURE_UNICODE_WCHAR_T,  XML_L("XML_UNICODE_WCHAR_T")},
+    {XML_FEATURE_UNICODE_WCHAR_T,  XML_L("XML_UNICODE_WCHAR_T"), 0},
 #endif
 #ifdef XML_DTD
-    {XML_FEATURE_DTD,              XML_L("XML_DTD")},
+    {XML_FEATURE_DTD,              XML_L("XML_DTD"), 0},
 #endif
 #ifdef XML_CONTEXT_BYTES
     {XML_FEATURE_CONTEXT_BYTES,    XML_L("XML_CONTEXT_BYTES"),
      XML_CONTEXT_BYTES},
 #endif
 #ifdef XML_MIN_SIZE
-    {XML_FEATURE_MIN_SIZE,         XML_L("XML_MIN_SIZE")},
+    {XML_FEATURE_MIN_SIZE,         XML_L("XML_MIN_SIZE"), 0},
 #endif
-    {XML_FEATURE_END,              NULL}
+    {XML_FEATURE_END,              NULL, 0}
   };
 
   features[0].value = sizeof(XML_Char);
@@ -2344,8 +2387,8 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
           BINDING **bindingsPtr)
 {
   DTD * const dtd = _dtd;  /* save one level of indirection */
-  ELEMENT_TYPE *elementType = NULL;
-  int nDefaultAtts = 0;
+  ELEMENT_TYPE *elementType;
+  int nDefaultAtts;
   const XML_Char **appAtts;   /* the attribute list for the application */
   int attIndex = 0;
   int prefixLen;
@@ -2393,7 +2436,10 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
                                          + XmlNameLength(enc, atts[i].name));
     if (!attId)
       return XML_ERROR_NO_MEMORY;
-    /* detect duplicate attributes */
+    /* Detect duplicate attributes by their QNames. This does not work when
+       namespace processing is turned on and different prefixes for the same
+       namespace are used. For this case we have a check further down.
+    */
     if ((attId->name)[-1]) {
       if (enc == encoding)
         eventPtr = atts[i].name;
@@ -2493,58 +2539,126 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
   }
   appAtts[attIndex] = 0;
 
+  /* expand prefixed attribute names, check for duplicates,
+     and clear flags that say whether attributes were specified */
   i = 0;
   if (nPrefixes) {
-    /* expand prefixed attribute names */
+    int j;  /* hash table index */
+    unsigned long version = nsAttsVersion;
+    int nsAttsSize = (int)1 << nsAttsPower;
+    /* size of hash table must be at least 2 * (# of prefixed attributes) */
+    if ((nPrefixes << 1) >> nsAttsPower) {  /* true for nsAttsPower = 0 */
+      NS_ATT *temp;
+      /* hash table size must also be a power of 2 and >= 8 */
+      while (nPrefixes >> nsAttsPower++);
+      if (nsAttsPower < 3)
+        nsAttsPower = 3;
+      nsAttsSize = (int)1 << nsAttsPower;
+      temp = (NS_ATT *)REALLOC(nsAtts, nsAttsSize * sizeof(NS_ATT));
+      if (!temp)
+        return XML_ERROR_NO_MEMORY;
+      nsAtts = temp;
+      version = 0;  /* force re-initialization of nsAtts hash table */
+    }
+    /* using a version flag saves us from initializing nsAtts every time */
+    if (!version) {  /* initialize version flags when version wraps around */
+      version = INIT_ATTS_VERSION;
+      for (j = nsAttsSize; j != 0; )
+        nsAtts[--j].version = version;
+    }
+    nsAttsVersion = --version;
+
+    /* expand prefixed names and check for duplicates */
     for (; i < attIndex; i += 2) {
-      if (appAtts[i][-1] == 2) {
+      const XML_Char *s = appAtts[i];
+      if (s[-1] == 2) {  /* prefixed */
         ATTRIBUTE_ID *id;
-        ((XML_Char *)(appAtts[i]))[-1] = 0;
-        id = (ATTRIBUTE_ID *)lookup(&dtd->attributeIds, appAtts[i], 0);
-        if (id->prefix->binding) {
-          int j;
-          const BINDING *b = id->prefix->binding;
-          const XML_Char *s = appAtts[i];
-          for (j = 0; j < b->uriLen; j++) {
-            if (!poolAppendChar(&tempPool, b->uri[j]))
-              return XML_ERROR_NO_MEMORY;
+        const BINDING *b;
+        unsigned long uriHash = 0;
+        ((XML_Char *)s)[-1] = 0;  /* clear flag */
+        id = (ATTRIBUTE_ID *)lookup(&dtd->attributeIds, s, 0);
+        b = id->prefix->binding;
+        if (!b)
+          return XML_ERROR_UNBOUND_PREFIX;
+
+        /* as we expand the name we also calculate its hash value */
+        for (j = 0; j < b->uriLen; j++) {
+          const XML_Char c = b->uri[j];
+          if (!poolAppendChar(&tempPool, c))
+            return XML_ERROR_NO_MEMORY;
+          uriHash = CHAR_HASH(uriHash, c);
+        }
+        while (*s++ != XML_T(':'))
+          ;
+        do {  /* copies null terminator */
+          const XML_Char c = *s;
+          if (!poolAppendChar(&tempPool, *s))
+            return XML_ERROR_NO_MEMORY;
+          uriHash = CHAR_HASH(uriHash, c);
+        } while (*s++);
+
+        { /* Check hash table for duplicate of expanded name (uriName).
+             Derived from code in lookup(HASH_TABLE *table, ...).
+          */
+          unsigned char step = 0;
+          unsigned long mask = nsAttsSize - 1;
+          j = uriHash & mask;  /* index into hash table */
+          while (nsAtts[j].version == version) {
+            /* for speed we compare stored hash values first */
+            if (uriHash == nsAtts[j].hash) {
+              const XML_Char *s1 = poolStart(&tempPool);
+              const XML_Char *s2 = nsAtts[j].uriName;
+              /* s1 is null terminated, but not s2 */
+              for (; *s1 == *s2 && *s1 != 0; s1++, s2++);
+              if (*s1 == 0)
+                return XML_ERROR_DUPLICATE_ATTRIBUTE;
+            }
+            if (!step)
+              step = PROBE_STEP(uriHash, mask, nsAttsPower);
+            j < step ? ( j += nsAttsSize - step) : (j -= step);
           }
-          while (*s++ != XML_T(':'))
-            ;
+        }
+
+        if (ns_triplets) {  /* append namespace separator and prefix */
+          tempPool.ptr[-1] = namespaceSeparator;
+          s = b->prefix->name;
           do {
             if (!poolAppendChar(&tempPool, *s))
               return XML_ERROR_NO_MEMORY;
           } while (*s++);
-          if (ns_triplets) {
-            tempPool.ptr[-1] = namespaceSeparator;
-            s = b->prefix->name;
-            do {
-              if (!poolAppendChar(&tempPool, *s))
-                return XML_ERROR_NO_MEMORY;
-            } while (*s++);
-          }
-
-          appAtts[i] = poolStart(&tempPool);
-          poolFinish(&tempPool);
         }
+
+        /* store expanded name in attribute list */
+        s = poolStart(&tempPool);
+        poolFinish(&tempPool);
+        appAtts[i] = s;
+
+        /* fill empty slot with new version, uriName and hash value */
+        nsAtts[j].version = version;
+        nsAtts[j].hash = uriHash;
+        nsAtts[j].uriName = s;
+
         if (!--nPrefixes)
           break;
       }
-      else
-        ((XML_Char *)(appAtts[i]))[-1] = 0;
+      else  /* not prefixed */
+        ((XML_Char *)s)[-1] = 0;  /* clear flag */
     }
   }
-  /* clear the flags that say whether attributes were specified */
+  /* clear flags for the remaining attributes */
   for (; i < attIndex; i += 2)
     ((XML_Char *)(appAtts[i]))[-1] = 0;
   for (binding = *bindingsPtr; binding; binding = binding->nextTagBinding)
     binding->attId->name[-1] = 0;
 
+  if (!ns)
+    return XML_ERROR_NONE;
+
   /* expand the element type name */
   if (elementType->prefix) {
     binding = elementType->prefix->binding;
     if (!binding)
-      return XML_ERROR_NONE;
+      return XML_ERROR_UNBOUND_PREFIX;
     localPart = tagNamePtr->str;
     while (*localPart++ != XML_T(':'))
       ;
@@ -2556,7 +2670,7 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
   else
     return XML_ERROR_NONE;
   prefixLen = 0;
-  if (ns && ns_triplets && binding->prefix->name) {
+  if (ns_triplets && binding->prefix->name) {
     for (; binding->prefix->name[prefixLen++];)
       ;
   }
@@ -2583,8 +2697,9 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
   uri = binding->uri + binding->uriLen;
   memcpy(uri, localPart, i * sizeof(XML_Char));
   if (prefixLen) {
-        uri = uri + (i - 1);
-    if (namespaceSeparator) { *(uri) = namespaceSeparator; }
+    uri = uri + (i - 1);
+    if (namespaceSeparator)
+      *uri = namespaceSeparator;
     memcpy(uri + 1, binding->prefix->name, prefixLen * sizeof(XML_Char));
   }
   tagNamePtr->str = binding->uri;
@@ -2639,6 +2754,7 @@ addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
   b->prefix = prefix;
   b->attId = attId;
   b->prevPrefixBinding = prefix->binding;
+  /* NULL binding when default namespace undeclared */
   if (*uri == XML_T('\0') && prefix == &_dtd->defaultPrefix)
     prefix->binding = NULL;
   else
@@ -3486,8 +3602,8 @@ doProlog(XML_Parser parser,
     case XML_ROLE_REQUIRED_ATTRIBUTE_VALUE:
       if (dtd->keepProcessing) {
         if (!defineAttribute(declElementType, declAttributeId,
-                              declAttributeIsCdata, declAttributeIsId, 0,
-                              parser))
+                             declAttributeIsCdata, declAttributeIsId,
+                             0, parser))
           return XML_ERROR_NO_MEMORY;
         if (attlistDeclHandler && declAttributeType) {
           if (*declAttributeType == XML_T('(')
@@ -3513,11 +3629,11 @@ doProlog(XML_Parser parser,
     case XML_ROLE_FIXED_ATTRIBUTE_VALUE:
       if (dtd->keepProcessing) {
         const XML_Char *attVal;
-        enum XML_Error result
-          = storeAttributeValue(parser, enc, declAttributeIsCdata,
-                                s + enc->minBytesPerChar,
-                                next - enc->minBytesPerChar,
-                                &dtd->pool);
+        enum XML_Error result =
+          storeAttributeValue(parser, enc, declAttributeIsCdata,
+                              s + enc->minBytesPerChar,
+                              next - enc->minBytesPerChar,
+                              &dtd->pool);
         if (result)
           return result;
         attVal = poolStart(&dtd->pool);
@@ -4665,7 +4781,7 @@ defineAttribute(ELEMENT_TYPE *type, ATTRIBUTE_ID *attId, XML_Bool isCdata,
   if (type->nDefaultAtts == type->allocDefaultAtts) {
     if (type->allocDefaultAtts == 0) {
       type->allocDefaultAtts = 8;
-      type->defaultAtts = (DEFAULT_ATTRIBUTE *)MALLOC(type->allocDefaultAtts 
+      type->defaultAtts = (DEFAULT_ATTRIBUTE *)MALLOC(type->allocDefaultAtts
                             * sizeof(DEFAULT_ATTRIBUTE));
       if (!type->defaultAtts)
         return 0;
@@ -4733,6 +4849,7 @@ getAttributeId(XML_Parser parser, const ENCODING *enc,
   name = poolStoreString(&dtd->pool, enc, start, end);
   if (!name)
     return NULL;
+  /* skip quotation mark - its storage will be re-used (like in name[-1]) */
   ++name;
   id = (ATTRIBUTE_ID *)lookup(&dtd->attributeIds, name, sizeof(ATTRIBUTE_ID));
   if (!id)
@@ -4758,6 +4875,7 @@ getAttributeId(XML_Parser parser, const ENCODING *enc,
     else {
       int i;
       for (i = 0; name[i]; i++) {
+        /* attributes without prefix are *not* in the default namespace */
         if (name[i] == XML_T(':')) {
           int j;
           for (j = 0; j < i; j++) {
@@ -4997,14 +5115,12 @@ dtdReset(DTD *p, const XML_Memory_Handling_Suite *ms)
   p->defaultPrefix.binding = NULL;
 
   p->in_eldecl = XML_FALSE;
-  if (p->scaffIndex) {
-    ms->free_fcn(p->scaffIndex);
-    p->scaffIndex = NULL;
-  }
-  if (p->scaffold) {
-    ms->free_fcn(p->scaffold);
-    p->scaffold = NULL;
-  }
+
+  ms->free_fcn(p->scaffIndex);
+  p->scaffIndex = NULL;
+  ms->free_fcn(p->scaffold);
+  p->scaffold = NULL;
+
   p->scaffLevel = 0;
   p->scaffSize = 0;
   p->scaffCount = 0;
@@ -5039,10 +5155,8 @@ dtdDestroy(DTD *p, XML_Bool isDocEntity, const XML_Memory_Handling_Suite *ms)
   poolDestroy(&(p->entityValuePool));
 #endif /* XML_DTD */
   if (isDocEntity) {
-    if (p->scaffIndex)
-      ms->free_fcn(p->scaffIndex);
-    if (p->scaffold)
-      ms->free_fcn(p->scaffold);
+    ms->free_fcn(p->scaffIndex);
+    ms->free_fcn(p->scaffold);
   }
   ms->free_fcn(p);
 }
@@ -5246,15 +5360,15 @@ copyEntityTable(HASH_TABLE *newTable,
   return 1;
 }
 
-#define INIT_SIZE 64
+#define INIT_POWER 6
 
-static int FASTCALL
+static XML_Bool FASTCALL
 keyeq(KEY s1, KEY s2)
 {
   for (; *s1 == *s2; s1++, s2++)
     if (*s1 == 0)
-      return 1;
-  return 0;
+      return XML_TRUE;
+  return XML_FALSE;
 }
 
 static unsigned long FASTCALL
@@ -5262,7 +5376,7 @@ hash(KEY s)
 {
   unsigned long h = 0;
   while (*s)
-    h = (h << 5) + h + (unsigned char)*s++;
+    h = CHAR_HASH(h, *s++);
   return h;
 }
 
@@ -5272,31 +5386,38 @@ lookup(HASH_TABLE *table, KEY name, size_t createSize)
   size_t i;
   if (table->size == 0) {
     size_t tsize;
-
     if (!createSize)
       return NULL;
-    tsize = INIT_SIZE * sizeof(NAMED *);
+    table->power = INIT_POWER;
+    /* table->size is a power of 2 */
+    table->size = (size_t)1 << INIT_POWER;
+    tsize = table->size * sizeof(NAMED *);
     table->v = (NAMED **)table->mem->malloc_fcn(tsize);
     if (!table->v)
       return NULL;
     memset(table->v, 0, tsize);
-    table->size = INIT_SIZE;
-    table->usedLim = INIT_SIZE / 2;
-    i = hash(name) & (table->size - 1);
+    i = hash(name) & ((unsigned long)table->size - 1);
   }
   else {
     unsigned long h = hash(name);
-    for (i = h & (table->size - 1);
-         table->v[i];
-         i == 0 ? i = table->size - 1 : --i) {
+    unsigned long mask = (unsigned long)table->size - 1;
+    unsigned char step = 0;
+    i = h & mask;
+    while (table->v[i]) {
       if (keyeq(name, table->v[i]->name))
         return table->v[i];
+      if (!step)
+        step = PROBE_STEP(h, mask, table->power);
+      i < step ? (i += table->size - step) : (i -= step);
     }
     if (!createSize)
       return NULL;
-    if (table->used == table->usedLim) {
-      /* check for overflow */
-      size_t newSize = table->size * 2;
+
+    /* check for overflow (table is half full) */
+    if (table->used >> (table->power - 1)) {
+      unsigned char newPower = table->power + 1;
+      size_t newSize = (size_t)1 << newPower;
+      unsigned long newMask = (unsigned long)newSize - 1;
       size_t tsize = newSize * sizeof(NAMED *);
       NAMED **newV = (NAMED **)table->mem->malloc_fcn(tsize);
       if (!newV)
@@ -5304,21 +5425,27 @@ lookup(HASH_TABLE *table, KEY name, size_t createSize)
       memset(newV, 0, tsize);
       for (i = 0; i < table->size; i++)
         if (table->v[i]) {
-          size_t j;
-          for (j = hash(table->v[i]->name) & (newSize - 1);
-               newV[j];
-               j == 0 ? j = newSize - 1 : --j)
-            ;
+          unsigned long newHash = hash(table->v[i]->name);
+          size_t j = newHash & newMask;
+          step = 0;
+          while (newV[j]) {
+            if (!step)
+              step = PROBE_STEP(newHash, newMask, newPower);
+            j < step ? (j += newSize - step) : (j -= step);
+          }
           newV[j] = table->v[i];
         }
       table->mem->free_fcn(table->v);
       table->v = newV;
+      table->power = newPower;
       table->size = newSize;
-      table->usedLim = newSize/2;
-      for (i = h & (table->size - 1);
-           table->v[i];
-           i == 0 ? i = table->size - 1 : --i)
-        ;
+      i = h & newMask;
+      step = 0;
+      while (table->v[i]) {
+        if (!step)
+          step = PROBE_STEP(h, newMask, newPower);
+        i < step ? (i += newSize - step) : (i -= step);
+      }
     }
   }
   table->v[i] = (NAMED *)table->mem->malloc_fcn(createSize);
@@ -5335,13 +5462,9 @@ hashTableClear(HASH_TABLE *table)
 {
   size_t i;
   for (i = 0; i < table->size; i++) {
-    NAMED *p = table->v[i];
-    if (p) {
-      table->mem->free_fcn(p);
-      table->v[i] = NULL;
-    }
+    table->mem->free_fcn(table->v[i]);
+    table->v[i] = NULL;
   }
-  table->usedLim = table->size / 2;
   table->used = 0;
 }
 
@@ -5349,20 +5472,16 @@ static void FASTCALL
 hashTableDestroy(HASH_TABLE *table)
 {
   size_t i;
-  for (i = 0; i < table->size; i++) {
-    NAMED *p = table->v[i];
-    if (p)
-      table->mem->free_fcn(p);
-  }
-  if (table->v)
-    table->mem->free_fcn(table->v);
+  for (i = 0; i < table->size; i++)
+    table->mem->free_fcn(table->v[i]);
+  table->mem->free_fcn(table->v);
 }
 
 static void FASTCALL
 hashTableInit(HASH_TABLE *p, const XML_Memory_Handling_Suite *ms)
 {
+  p->power = 0;
   p->size = 0;
-  p->usedLim = 0;
   p->used = 0;
   p->v = NULL;
   p->mem = ms;
@@ -5529,8 +5648,8 @@ poolGrow(STRING_POOL *pool)
     int blockSize = (pool->end - pool->start)*2;
     pool->blocks = (BLOCK *)
       pool->mem->realloc_fcn(pool->blocks,
-			     (offsetof(BLOCK, s)
-			      + blockSize * sizeof(XML_Char)));
+                             (offsetof(BLOCK, s)
+                              + blockSize * sizeof(XML_Char)));
     if (pool->blocks == NULL)
       return XML_FALSE;
     pool->blocks->size = blockSize;
@@ -5546,7 +5665,7 @@ poolGrow(STRING_POOL *pool)
     else
       blockSize *= 2;
     tem = (BLOCK *)pool->mem->malloc_fcn(offsetof(BLOCK, s)
-					+ blockSize * sizeof(XML_Char));
+                                        + blockSize * sizeof(XML_Char));
     if (!tem)
       return XML_FALSE;
     tem->size = blockSize;
