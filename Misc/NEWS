@@ -74,7 +74,11 @@ Library
 Build
 -----
 
-...
+- pyport.h now defines a Py_IS_NAN macro.  It works as-is when the
+  platform C computes true for ``x != x`` if and only if X is a NaN.
+  Other platforms can override the default definition with a platform-
+  specific spelling in that platform's pyconfig.h.  You can also override
+  pyport.h's default Py_IS_INFINITY definition now.
 
 C API
 -----
