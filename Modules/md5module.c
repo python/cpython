@@ -39,17 +39,15 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* MD5 objects */
 
-#include "allobjects.h"
-#include "modsupport.h"
-
+#include "Python.h"
 #include "md5.h"
 
 typedef struct {
-	OB_HEAD
+	PyObject_HEAD
         MD5_CTX	md5;		/* the context holder */
 } md5object;
 
-staticforward typeobject MD5type;
+staticforward PyTypeObject MD5type;
 
 #define is_md5object(v)		((v)->ob_type == &MD5type)
 
@@ -58,7 +56,7 @@ newmd5object()
 {
 	md5object *md5p;
 
-	md5p = NEWOBJ(md5object, &MD5type);
+	md5p = PyObject_NEW(md5object, &MD5type);
 	if (md5p == NULL)
 		return NULL;
 
@@ -73,56 +71,56 @@ static void
 md5_dealloc(md5p)
 	md5object *md5p;
 {
-	DEL(md5p);
+	PyMem_DEL(md5p);
 }
 
 
 /* MD5 methods-as-attributes */
 
-static object *
+static PyObject *
 md5_update(self, args)
 	md5object *self;
-	object *args;
+	PyObject *args;
 {
 	unsigned char *cp;
 	int len;
 
-	if (!getargs(args, "s#", &cp, &len))
+	if (!PyArg_Parse(args, "s#", &cp, &len))
 		return NULL;
 
 	MD5Update(&self->md5, cp, len);
 
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 md5_digest(self, args)
 	md5object *self;
-	object *args;
+	PyObject *args;
 {
 
 	MD5_CTX mdContext;
 	unsigned char aDigest[16];
 
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 
 	/* make a temporary copy, and perform the final */
 	mdContext = self->md5;
 	MD5Final(aDigest, &mdContext);
 
-	return newsizedstringobject((char *)aDigest, 16);
+	return PyString_FromStringAndSize((char *)aDigest, 16);
 }
 
-static object *
+static PyObject *
 md5_copy(self, args)
 	md5object *self;
-	object *args;
+	PyObject *args;
 {
 	md5object *md5p;
 
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 
 	if ((md5p = newmd5object()) == NULL)
@@ -130,53 +128,53 @@ md5_copy(self, args)
 
 	md5p->md5 = self->md5;
 
-	return (object *)md5p;
+	return (PyObject *)md5p;
 }
 
-static struct methodlist md5_methods[] = {
-	{"update",		(method)md5_update},
-	{"digest",		(method)md5_digest},
-	{"copy",		(method)md5_copy},
+static PyMethodDef md5_methods[] = {
+	{"update",		(PyCFunction)md5_update},
+	{"digest",		(PyCFunction)md5_digest},
+	{"copy",		(PyCFunction)md5_copy},
 	{NULL,			NULL}		/* sentinel */
 };
 
-static object *
+static PyObject *
 md5_getattr(self, name)
 	md5object *self;
 	char *name;
 {
-	return findmethod(md5_methods, (object *)self, name);
+	return Py_FindMethod(md5_methods, (PyObject *)self, name);
 }
 
-statichere typeobject MD5type = {
-	OB_HEAD_INIT(&Typetype)
-	0,			/*ob_size*/
-	"md5",			/*tp_name*/
-	sizeof(md5object),	/*tp_size*/
-	0,			/*tp_itemsize*/
+statichere PyTypeObject MD5type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,			  /*ob_size*/
+	"md5",			  /*tp_name*/
+	sizeof(md5object),	  /*tp_size*/
+	0,			  /*tp_itemsize*/
 	/* methods */
-	(destructor)md5_dealloc, /*tp_dealloc*/
-	0,			/*tp_print*/
+	(destructor)md5_dealloc,  /*tp_dealloc*/
+	0,			  /*tp_print*/
 	(getattrfunc)md5_getattr, /*tp_getattr*/
-	0,			/*tp_setattr*/
-	0,			/*tp_compare*/
-	0,			/*tp_repr*/
-        0,			/*tp_as_number*/
+	0,			  /*tp_setattr*/
+	0,			  /*tp_compare*/
+	0,			  /*tp_repr*/
+        0,			  /*tp_as_number*/
 };
 
 
 /* MD5 functions */
 
-static object *
+static PyObject *
 MD5_new(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	md5object *md5p;
 	unsigned char *cp = NULL;
 	int len = 0;
 
-	if (!newgetargs(args, "|s#", &cp, &len))
+	if (!PyArg_ParseTuple(args, "|s#", &cp, &len))
 		return NULL;
 
 	if ((md5p = newmd5object()) == NULL)
@@ -185,15 +183,15 @@ MD5_new(self, args)
 	if (cp)
 		MD5Update(&md5p->md5, cp, len);
 
-	return (object *)md5p;
+	return (PyObject *)md5p;
 }
 
 
 /* List of functions exported by this module */
 
-static struct methodlist md5_functions[] = {
-	{"new",		(method)MD5_new, 1},
-	{"md5",		(method)MD5_new, 1}, /* Backward compatibility */
+static PyMethodDef md5_functions[] = {
+	{"new",		(PyCFunction)MD5_new, 1},
+	{"md5",		(PyCFunction)MD5_new, 1}, /* Backward compatibility */
 	{NULL,		NULL}	/* Sentinel */
 };
 
@@ -203,5 +201,5 @@ static struct methodlist md5_functions[] = {
 void
 initmd5()
 {
-	(void)initmodule("md5", md5_functions);
+	(void)Py_InitModule("md5", md5_functions);
 }
