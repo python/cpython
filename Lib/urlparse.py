@@ -8,20 +8,20 @@ __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
            "urlsplit", "urlunsplit"]
 
 # A classification of schemes ('' means apply by default)
-uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'wais', 'file',
+uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'imap', 'wais', 'file',
                  'https', 'shttp',
                  'prospero', 'rtsp', 'rtspu', '']
-uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet', 'wais',
+uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet', 'imap', 'wais',
                'file',
                'https', 'shttp', 'snews',
                'prospero', 'rtsp', 'rtspu', '']
 non_hierarchical = ['gopher', 'hdl', 'mailto', 'news', 'telnet', 'wais',
-                    'snews', 'sip',
+                    'imap', 'snews', 'sip',
                     ]
-uses_params = ['ftp', 'hdl', 'prospero', 'http',
+uses_params = ['ftp', 'hdl', 'prospero', 'http', 'imap',
                'https', 'shttp', 'rtsp', 'rtspu', 'sip',
                '']
-uses_query = ['http', 'wais',
+uses_query = ['http', 'wais', 'imap',
               'https', 'shttp',
               'gopher', 'rtsp', 'rtspu', 'sip',
               '']
