@@ -45,7 +45,7 @@ heap invariant.
 
 \begin{funcdesc}{heappop}{heap}
 Pop and return the smallest item from the \var{heap}, maintaining the
-heap invariant.
+heap invariant.  If the heap is empty, \exception{IndexError} is raised.
 \end{funcdesc}
 
 \begin{funcdesc}{heapify}{x}
@@ -55,6 +55,7 @@ Transform list \var{x} into a heap, in-place, in linear time.
 \begin{funcdesc}{heapreplace}{heap, item}
 Pop and return the smallest item from the \var{heap}, and also push
 the new \var{item}.  The heap size doesn't change.
+If the heap is empty, \exception{IndexError} is raised.
 This is more efficient than \function{heappop()} followed
 by  \function{heappush()}, and can be more appropriate when using
 a fixed-size heap.  Note that the value returned may be larger
