@@ -40,6 +40,8 @@ class Node:
         return flatten(self._getChildren())
     def asList(self):
         return tuple(asList(self.getChildren()))
+    def getChildNodes(self):
+        return [n for n in self.getChildnre() if isinstance(n, Node)]
 
 class EmptyNode(Node):
     def __init__(self):
@@ -287,6 +289,15 @@ class Mul(Node):
     def __repr__(self):
         return "Mul(%s, %s)" % (repr(self.left), repr(self.right))
 
+class Yield(Node):
+    nodes["yield"] = "Yield"
+    def __init__(self, value):
+        self.value = value
+    def _getChildren(self):
+        return self.value,
+    def __repr__(self):
+        return "Yield(%s)" % (repr(self.value),)
+
 class List(Node):
     nodes["list"] = "List"
     def __init__(self, nodes):
@@ -454,14 +465,14 @@ class Power(Node):
     def __repr__(self):
         return "Power(%s, %s)" % (repr(self.left), repr(self.right))
 
-class Import(Node):
-    nodes["import"] = "Import"
-    def __init__(self, names):
-        self.names = names
+class Ellipsis(Node):
+    nodes["ellipsis"] = "Ellipsis"
+    def __init__(self, ):
+        pass
     def _getChildren(self):
-        return self.names,
+        return ()
     def __repr__(self):
-        return "Import(%s)" % (repr(self.names),)
+        return "Ellipsis()"
 
 class Return(Node):
     nodes["return"] = "Return"
@@ -525,14 +536,14 @@ class Subscript(Node):
     def __repr__(self):
         return "Subscript(%s, %s, %s)" % (repr(self.expr), repr(self.flags), repr(self.subs))
 
-class Ellipsis(Node):
-    nodes["ellipsis"] = "Ellipsis"
-    def __init__(self, ):
-        pass
+class Import(Node):
+    nodes["import"] = "Import"
+    def __init__(self, names):
+        self.names = names
     def _getChildren(self):
-        return ()
+        return self.names,
     def __repr__(self):
-        return "Ellipsis()"
+        return "Import(%s)" % (repr(self.names),)
 
 class Print(Node):
     nodes["print"] = "Print"
