@@ -10,7 +10,7 @@
 
 # Options:
 #
-# file ... : file(s) to inspect; default film.video
+# file ... : file(s) to modify; default film.video
 
 
 import sys
