@@ -129,7 +129,14 @@ class ModifiedInterpreter(InteractiveInterpreter):
         # Extend base class method to reset output properly
         text = self.tkconsole.text
         self.tkconsole.resetoutput()
+        self.checklinecache()
         InteractiveInterpreter.showtraceback(self)
+        
+    def checklinecache(self):
+        c = linecache.cache
+        for key in c.keys():
+            if key[:1] + key[-1:] != "<>":
+                del c[key]
 
     def runcode(self, code):
         # Override base class method
