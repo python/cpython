@@ -16,6 +16,7 @@ NE='ne'
 SE='se'
 NS='ns'
 EW='ew'
+NSEW='nsew'
 CENTER='center'
 
 # -fill
