@@ -108,7 +108,7 @@ sub do_cmd_indexiii{
 	join('', &make_index_entry($br_id1, "$str1 $str2 $str3"),
 		 &make_index_entry($br_id2, "$str2 $str3, $str1"),
 		 &make_index_entry($br_id3, "$str3, $str1 $str2"),
-		  $_);
+		 $_);
 }
 
 sub do_cmd_indexiv{
@@ -125,7 +125,7 @@ sub do_cmd_indexiv{
 		 &make_index_entry($br_id2, "$str2 $str3 $str4, $str1"),
 		 &make_index_entry($br_id3, "$str3 $str4, $str1 $str2"),
 		 &make_index_entry($br_id4, "$str4, $str1 $str2 $str3"),
-		  $_);
+		 $_);
 }
 
 sub do_cmd_ttindex{
@@ -150,14 +150,16 @@ sub my_parword_index_helper{
 	local($word, $_) = @_;
 	s/$next_pair_pr_rx//o;
 	local($br_id, $str) = ($1, $2);
-	&make_index_entry($br_id, "$str ($word)");
-	$_;
+	&make_index_entry($br_id, "$str ($word)") . $_;
 }
 
 sub do_cmd_bifuncindex{ &my_parword_index_helper('built-in function', @_); }
 sub do_cmd_bimodindex{ &my_parword_index_helper('built-in module', @_); }
 sub do_cmd_stmodindex{ &my_parword_index_helper('standard module', @_); }
 sub do_cmd_bifuncindex{ &my_parword_index_helper('standard module', @_); }
+
+sub do_cmd_refbimodindex{ &my_parword_index_helper('built-in module', @_); }
+sub do_cmd_refstmodindex{ &my_parword_index_helper('standard module', @_); }
 
 sub do_cmd_nodename{ &do_cmd_label(@_); }
 
