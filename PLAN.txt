@@ -12,8 +12,7 @@ choice would be:
     class, and trap setattr+delattr on the base class so that they
     update the tp_XXX slot in each derived class when the base class
     __XXX__ gets set or deleted.  More work, but more gain (zero waste
-    in slot_tp_XXX when __XXX__ is not overridden).  This is currently
-    awaiting Fred turning the weak ref API into a standard object API.
+    in slot_tp_XXX when __XXX__ is not overridden).
 
 Add __del__ handlers?
 
