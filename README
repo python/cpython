@@ -1,4 +1,4 @@
-This is Python version 2.0 beta 1
+This is Python version 2.0 beta 2
 =================================
 
 Copyright (c) 2000 BeOpen.com.
@@ -31,8 +31,7 @@ What's new in this release?
 ---------------------------
 
 See the file "Misc/NEWS"; see also this URL:
-http://www.pythonlabs.com/tech/python2.html
-
+http://www.pythonlabs.com/products/python2.0/
 
 If you don't read instructions
 ------------------------------
@@ -700,7 +699,7 @@ development, join the PythonMac Special Interest Group
 pythonmac-sig-request@python.org).
 
 Of course, there are also binary distributions available for these
-platforms -- see http://www.pythonlabs.com/downloads.html.
+platforms -- see http://www.pythonlabs.com/products/python2.0/.
 
 To port Python to a new non-UNIX system, you will have to fake the
 effect of running the configure script manually (for Mac and PC, this
