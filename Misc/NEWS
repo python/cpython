@@ -84,10 +84,6 @@ Type/class unification and new-style classes
 Core and builtins
 -----------------
 
-- Assignment to None has long been frowned upon.  Now there's a
-  warning message when you do this.  It also warns against assignment
-  to True or False.
-
 - A frame object's f_lineno attribute can now be written to from a
   trace function to change which line will execute next.  A command to
   exploit this from pdb has been added.  [SF patch #643835]
