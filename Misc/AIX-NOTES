@@ -1,8 +1,7 @@
-Subject: AIX-NOTES FOR 1.4
-From: Manus Hand <Manus.Hand@evolving.com>
-To: guido@CNRI.Reston.VA.US
-cc: Vladimir.Marangozov@imag.fr
-Date: Fri, 25 Oct 1996 15:19:23 -0600 (MDT)
+Subject: AIX - Misc/AIX-NOTES
+From: Vladimir Marangozov <Vladimir.Marangozov@imag.fr>
+To: guido@CNRI.Reston.Va.US (Guido van Rossum)
+Date: Wed, 6 Aug 1997 11:41:00 +0200 (EET)
 
 ==============================================================================
                               COMPILER INFORMATION
@@ -19,7 +18,6 @@ Date: Fri, 25 Oct 1996 15:19:23 -0600 (MDT)
        AIX C compiler version 3.1.2 on AIX 4.1.3 and AIX 4.1.4
        AIX C compiler version 1.3.0 on AIX 3.2.5
     If you have this problem, please report the compiler/OS version.
-    [Postscript: it has also been spotted on AIX 4.2.1 --Guido]
 
 (2) Stefan Esser (se@MI.Uni-Koeln.DE), in work done to compile Python
     1.0.0 on AIX 3.2.4, reports that AIX compilers don't like the LANG
@@ -56,8 +54,7 @@ Date: Fri, 25 Oct 1996 15:19:23 -0600 (MDT)
                                 THREAD SUPPORT
 ------------------------------------------------------------------------------
 
-AIX uses pthreads.  However, as of AIX version 4, there are two (incompatible)
-types of pthreads on AIX:
+As of AIX version 4, there are two (incompatible) types of pthreads on AIX:
         a)  AIX DCE pthreads (on AIX 3.2.5)
         b)  AIX 4 pthreads (on AIX 4.1 and up)
 Support has been added to Python to handle the distinction.
@@ -92,16 +89,15 @@ Hand (mhand@csn.net) and Vladimir Marangozov (Vladimir.Marangozov@imag.fr).
 
 Python modules may now be built as shared libraries on AIX using the normal
 process of uncommenting the "*shared*" line in Modules/Setup.in before the
-build.  There is one additional step required, and that is to also uncomment
-the line in Modules/Setup.in which reads
-    LINKCC= makexp_aix python.exp "" $(MYLIBS) $(ADDOBJS) ; $(CC)
+build.
 
 AIX shared libraries require that an "export" and "import" file be provided
 at compile time to list all extern symbols which may be shared between
-modules.  The effect of uncommenting the LINKCC line in Modules/Setup.in is
-to create the "export" file for the modules and the libraries that belong to
-the Python core.  This is done by the "makexp_aix" script, which creates a
-file named python.exp before performing the link of the python binary.
+modules.  The "export" file (named python.exp) for the modules and the
+libraries that belong to the Python core is created by the "makexp_aix"
+script before performing the link of the python binary. It lists all global
+symbols (exported during the link) of the modules and the libraries that
+make up the python executable.
 
 When shared library modules (.so files) are made, a second shell script
 is invoked.  This script is named "ld_so_aix" and is also provided with
@@ -110,16 +106,6 @@ wrapper which hides the explicit management of "export" and "import" files;
 it adds the appropriate arguments (in the appropriate order) to the link
 command that creates the shared module.  Among other things, it specifies
 that the "python.exp" file is an "import" file for the shared module.
-
-A default python.exp file is provided with the distribution.  It will be
-overwritten (by the action of the makexp_aix script) if you build with shared
-libraries.  The python.exp file which comes with the distribution contains
-all extern symbols of a completely statically built python executable.
-Any python.exp file which is created from a build of python with some of the
-modules linked as shared modules will obviously not list symbols from the now
-dynamic modules.  The distributed python.exp is provided so that, with
-assistance from the ld_so_aix and makexp_aix scripts, shared extension
-modules may be added to an otherwise completely static python build.
 
 At the time of this writing, neither the python.exp file nor the makexp_aix
 or ld_so_aix scripts are installed by the make procedure, so you should
