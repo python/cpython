@@ -151,3 +151,9 @@ meta_grammar(void)
 {
 	return &_PyParser_Grammar;
 }
+
+grammar *
+Py_meta_grammar(void)
+{
+  return meta_grammar();
+}
