@@ -93,6 +93,22 @@ file type and creator codes will not be correct.
   not be caught.
 \end{funcdesc}
 
+\begin{funcdesc}{move}{src, dst}
+Recursively move a file or directory to another location.
+
+If the destination is on our current filesystem, then simply use
+rename.  Otherwise, copy src to the dst and then remove src.
+
+\versionadded{2.3}
+\end{funcdesc}
+
+\begin{excdesc}{Error}
+This exception collects exceptions that raised during a mult-file
+operation. For \function{copytree}, the exception argument is a
+list of 3-tuples (\var{srcname}, \var{dstname}, \var{exception}).
+
+\versionadded{2.3}
+\end{excdesc}
 
 \subsection{Example \label{shutil-example}}
 

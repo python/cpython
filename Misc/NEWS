@@ -342,6 +342,9 @@ Extension modules
 Library
 -------
 
+- shutil.move was added. shutil.copytree now reports errors as an
+  exception at the end, instead of printing error messages.
+
 - Encoding name normalization was generalized to not only
   replace hyphens with underscores, but also all other non-alphanumeric
   characters (with the exception of the dot which is used for Python
