@@ -1157,15 +1157,19 @@ _PyObject_GetDictPtr(PyObject *obj)
 	if (dictoffset == 0)
 		return NULL;
 	if (dictoffset < 0) {
-		dictoffset += tp->tp_basicsize;
-		dictoffset += tp->tp_itemsize * ((PyVarObject *)obj)->ob_size;
+		/* dictoffset is positive by the time we're ready to round
+		   it, and compilers can generate faster rounding code if
+		   they know that. */
+		unsigned long udo;  /* unsigned dictoffset */
+		const long nitems = ((PyVarObject *)obj)->ob_size;
+		const long size = _PyObject_VAR_SIZE(tp, nitems);
+
+		dictoffset += size;
 		assert(dictoffset > 0); /* Sanity check */
-		/* Round up, if necessary */
-		if (dictoffset % PTRSIZE != 0) {
-			dictoffset /= PTRSIZE;
-			dictoffset += 1;
-			dictoffset *= PTRSIZE;
-		}
+		/* Round up to multiple of PTRSIZE. */
+		udo = (unsigned long)dictoffset;
+		udo = ((udo + PTRSIZE-1) / PTRSIZE) * PTRSIZE;
+		dictoffset = (long)udo;
 	}
 	return (PyObject **) ((char *)obj + dictoffset);
 }
