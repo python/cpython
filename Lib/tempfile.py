@@ -11,11 +11,9 @@ tempdir = '/usr/tmp'
 template = '@'
 
 
-# Kludge to hold mutable state
+# Counter for generating unique names
 
-class Struct: pass
-G = Struct()
-G.i = 0
+counter = 0
 
 
 # User-callable function
@@ -24,9 +22,10 @@ G.i = 0
 # XXX By all means, avoid a mess with four different functions like C...
 
 def mktemp():
+	global counter
 	while 1:
-		G.i = G.i+1
-		file = tempdir +'/'+ template + `posix.getpid()` +'.'+ `G.i`
+		counter = counter+1
+		file = tempdir+'/'+template+`posix.getpid()`+'.'+`counter`
 		if not path.exists(file):
 			break
 	return file
