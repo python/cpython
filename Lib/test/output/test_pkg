@@ -29,3 +29,10 @@ t5.string loading
 ['__builtins__', '__doc__', '__file__', '__name__', '__path__', 'foo', 'string', 't5']
 ['__builtins__', '__doc__', '__file__', '__name__', 'string']
 ['__builtins__', '__doc__', '__file__', '__name__', 'spam']
+running test t6
+['__all__', '__builtins__', '__doc__', '__file__', '__name__', '__path__']
+t6.spam loading
+t6.ham loading
+t6.eggs loading
+['__all__', '__builtins__', '__doc__', '__file__', '__name__', '__path__', 'eggs', 'ham', 'spam']
+['eggs', 'ham', 'spam', 't6']
