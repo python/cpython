@@ -609,7 +609,9 @@ init_ssl(void)
 	SSLeay_add_ssl_algorithms();
 
 	/* Add symbols to module dict */
-	PySSLErrorObject = PyErr_NewException("socket.sslerror", NULL, NULL);
+	PySSLErrorObject = PyErr_NewException("socket.sslerror",
+                                               PySocketModule.error,
+                                               NULL);
 	if (PySSLErrorObject == NULL)
 		return;
 	PyDict_SetItemString(d, "sslerror", PySSLErrorObject);

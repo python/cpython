@@ -195,6 +195,9 @@ Core and builtins
 Extension modules
 -----------------
 
+- socket.sslerror is now a subclass of socket.error .  Also added
+  socket.error to the socket module's C API.
+
 - Bug #920575: A problem that _locale module segfaults on
   nl_langinfo(ERA) caused by GNU libc's illegal NULL return is fixed.
 
