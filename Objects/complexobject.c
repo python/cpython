@@ -5,10 +5,10 @@
 
 /* Submitted by Jim Hugunin */
 
-#ifndef WITHOUT_COMPLEX
-
 #include "Python.h"
 #include "structmember.h"
+
+#ifndef WITHOUT_COMPLEX
 
 /* Precisions used by repr() and str(), respectively.
 
