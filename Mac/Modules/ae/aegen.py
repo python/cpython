@@ -41,20 +41,20 @@ f = AEMethod(OSErr, 'AECountItems',
 )
 aedescmethods.append(f)
 
-f = AEFunction(OSErr, 'AEPutPtr',
-    (AEDescList, 'theAEDescList', OutMode),
+f = AEMethod(OSErr, 'AEPutPtr',
+    (AEDescList_ptr, 'theAEDescList', InMode),
     (long, 'index', InMode),
     (DescType, 'typeCode', InMode),
     (InBuffer, 'dataPtr', InMode),
 )
-functions.append(f)
+aedescmethods.append(f)
 
-f = AEFunction(OSErr, 'AEPutDesc',
-    (AEDescList, 'theAEDescList', OutMode),
+f = AEMethod(OSErr, 'AEPutDesc',
+    (AEDescList_ptr, 'theAEDescList', InMode),
     (long, 'index', InMode),
     (AEDesc_ptr, 'theAEDesc', InMode),
 )
-functions.append(f)
+aedescmethods.append(f)
 
 f = AEMethod(OSErr, 'AEGetNthPtr',
     (AEDescList_ptr, 'theAEDescList', InMode),
@@ -83,11 +83,11 @@ f = AEMethod(OSErr, 'AESizeOfNthItem',
 )
 aedescmethods.append(f)
 
-f = AEFunction(OSErr, 'AEDeleteItem',
-    (AEDescList, 'theAEDescList', OutMode),
+f = AEMethod(OSErr, 'AEDeleteItem',
+    (AEDescList_ptr, 'theAEDescList', InMode),
     (long, 'index', InMode),
 )
-functions.append(f)
+aedescmethods.append(f)
 
 f = AEMethod(OSErr, 'AEPutParamPtr',
     (AppleEvent_ptr, 'theAppleEvent', InMode),
