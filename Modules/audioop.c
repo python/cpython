@@ -28,6 +28,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define signed
 #endif
 
+#include <math.h>
+
 #include "allobjects.h"
 #include "modsupport.h"
 
@@ -237,6 +239,147 @@ audioop_avg(self, args)
     else
       val = (int)(avg / (float)(len/size));
     return newintobject(val);
+}
+
+static object *
+audioop_rms(self, args)
+    object *self;
+    object *args;
+{
+    signed char *cp;
+    int len, size, val;
+    int i;
+    float sum_squares = 0.0;
+
+    if ( !getargs(args, "(s#i)", &cp, &len, &size) )
+      return 0;
+    if ( size != 1 && size != 2 && size != 4 ) {
+	err_setstr(AudioopError, "Size should be 1, 2 or 4");
+	return 0;
+    }
+    for ( i=0; i<len; i+= size) {
+	if ( size == 1 )      val = (int)*CHARP(cp, i);
+	else if ( size == 2 ) val = (int)*SHORTP(cp, i);
+	else if ( size == 4 ) val = (int)*LONGP(cp, i);
+	sum_squares += (float)val*(float)val;
+    }
+    if ( len == 0 )
+      val = 0;
+    else
+      val = (int)sqrt(sum_squares / (float)(len/size));
+    return newintobject(val);
+}
+
+static object *
+audioop_avgpp(self, args)
+    object *self;
+    object *args;
+{
+    signed char *cp;
+    int len, size, val, prevval, prevextremevalid = 0, prevextreme;
+    int i;
+    float avg = 0.0;
+    int diff, prevdiff, extremediff, nextreme = 0;
+
+    if ( !getargs(args, "(s#i)", &cp, &len, &size) )
+      return 0;
+    if ( size != 1 && size != 2 && size != 4 ) {
+	err_setstr(AudioopError, "Size should be 1, 2 or 4");
+	return 0;
+    }
+    /* Compute first delta value ahead. Also automatically makes us
+    ** skip the first extreme value
+    */
+    if ( size == 1 )      prevval = (int)*CHARP(cp, 0);
+    else if ( size == 2 ) prevval = (int)*SHORTP(cp, 0);
+    else if ( size == 4 ) prevval = (int)*LONGP(cp, 0);
+    if ( size == 1 )      val = (int)*CHARP(cp, size);
+    else if ( size == 2 ) val = (int)*SHORTP(cp, size);
+    else if ( size == 4 ) val = (int)*LONGP(cp, size);
+    prevdiff = val - prevval;
+    
+    for ( i=size; i<len; i+= size) {
+	if ( size == 1 )      val = (int)*CHARP(cp, i);
+	else if ( size == 2 ) val = (int)*SHORTP(cp, i);
+	else if ( size == 4 ) val = (int)*LONGP(cp, i);
+	diff = val - prevval;
+	if ( diff*prevdiff < 0 ) {
+	    /* Derivative changed sign. Compute difference to last extreme
+	    ** value and remember.
+	    */
+	    if ( prevextremevalid ) {
+		extremediff = prevval - prevextreme;
+		if ( extremediff < 0 )
+		  extremediff = -extremediff;
+		avg += extremediff;
+		nextreme++;
+	    }
+	    prevextremevalid = 1;
+	    prevextreme = prevval;
+	}
+	prevval = val;
+	if ( diff != 0 )
+	  prevdiff = diff;	
+    }
+    if ( nextreme == 0 )
+      val = 0;
+    else
+      val = (int)(avg / (float)nextreme);
+    return newintobject(val);
+}
+
+static object *
+audioop_maxpp(self, args)
+    object *self;
+    object *args;
+{
+    signed char *cp;
+    int len, size, val, prevval, prevextremevalid = 0, prevextreme;
+    int i;
+    int max = 0;
+    int diff, prevdiff, extremediff;
+
+    if ( !getargs(args, "(s#i)", &cp, &len, &size) )
+      return 0;
+    if ( size != 1 && size != 2 && size != 4 ) {
+	err_setstr(AudioopError, "Size should be 1, 2 or 4");
+	return 0;
+    }
+    /* Compute first delta value ahead. Also automatically makes us
+    ** skip the first extreme value
+    */
+    if ( size == 1 )      prevval = (int)*CHARP(cp, 0);
+    else if ( size == 2 ) prevval = (int)*SHORTP(cp, 0);
+    else if ( size == 4 ) prevval = (int)*LONGP(cp, 0);
+    if ( size == 1 )      val = (int)*CHARP(cp, size);
+    else if ( size == 2 ) val = (int)*SHORTP(cp, size);
+    else if ( size == 4 ) val = (int)*LONGP(cp, size);
+    prevdiff = val - prevval;
+
+    for ( i=size; i<len; i+= size) {
+	if ( size == 1 )      val = (int)*CHARP(cp, i);
+	else if ( size == 2 ) val = (int)*SHORTP(cp, i);
+	else if ( size == 4 ) val = (int)*LONGP(cp, i);
+	diff = val - prevval;
+	if ( diff*prevdiff < 0 ) {
+	    /* Derivative changed sign. Compute difference to last extreme
+	    ** value and remember.
+	    */
+	    if ( prevextremevalid ) {
+		extremediff = prevval - prevextreme;
+		if ( extremediff < 0 )
+		  extremediff = -extremediff;
+		if ( extremediff > max )
+		  max = extremediff;
+	    }
+	    prevextremevalid = 1;
+	    prevextreme = prevval;
+	}
+	prevval = val;
+	if ( diff != 0 )
+	  prevdiff = diff;
+    }
+    return newintobject(max);
 }
 
 static object *
@@ -869,6 +1012,9 @@ audioop_adpcm2lin(self, args)
 static struct methodlist audioop_methods[] = {
     { "max", audioop_max },
     { "avg", audioop_avg },
+    { "maxpp", audioop_maxpp },
+    { "avgpp", audioop_avgpp },
+    { "rms", audioop_rms },
     { "cross", audioop_cross },
     { "mul", audioop_mul },
     { "add", audioop_add },
