@@ -626,7 +626,7 @@ instance_getattr2(register PyInstanceObject *inst, PyObject *name)
 	if (class != NULL) {
 		if (PyFunction_Check(v)) {
 			PyObject *w = PyMethod_New(v, (PyObject *)inst,
-							    (PyObject *)class);
+						   (PyObject *)class);
 			Py_DECREF(v);
 			v = w;
 		}
