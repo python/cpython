@@ -2602,6 +2602,17 @@ else
   AC_MSG_RESULT(no)
 fi
 
+AC_MSG_CHECKING(for /dev/ptc)
+
+if test -e /dev/ptc
+then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE(HAVE_DEV_PTC, 1,
+  [Define if we have /dev/ptc.])
+else
+  AC_MSG_RESULT(no)
+fi
+
 AC_CHECK_TYPE(socklen_t,,
   AC_DEFINE(socklen_t,int,
             Define to `int' if <sys/socket.h> does not define.),[
