@@ -522,7 +522,7 @@ BUILD_FUNC_DEF_2(PySocketSock_setblocking,PySocketSockObject*,s,PyObject*,args)
 #ifndef MS_WINDOWS
 	int delay_flag;
 #endif
-	if (!PyArg_GetInt(args, &block))
+	if (!PyArg_Parse(args, "i", &block))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 #ifndef MS_WINDOWS
@@ -766,7 +766,7 @@ BUILD_FUNC_DEF_2(PySocketSock_listen,PySocketSockObject *,s, PyObject *,args)
 {
 	int backlog;
 	int res;
-	if (!PyArg_GetInt(args, &backlog))
+	if (!PyArg_Parse(args, "i", &backlog))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	if (backlog < 1)
@@ -938,7 +938,7 @@ BUILD_FUNC_DEF_2(PySocketSock_shutdown,PySocketSockObject *,s, PyObject *,args)
 {
 	int how;
 	int res;
-	if (!PyArg_GetInt(args, &how))
+	if (!PyArg_Parse(args, "i", &how))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = shutdown(s->sock_fd, how);
