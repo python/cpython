@@ -9,8 +9,7 @@ test_types
 6.4.3 Floating point numbers
 6.5 Sequence types
 6.5.1 Strings
-6.5.2 Tuples
-6.5.3 Lists
-6.5.3a Additional list operations
+6.5.2 Tuples [see test_tuple.py]
+6.5.3 Lists [see test_list.py]
 6.6 Mappings == Dictionaries
 Buffers
