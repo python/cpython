@@ -192,6 +192,40 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
   header files).
 \end{cfuncdesc}
 
+\subsubsection{Boolean Objects \label{boolObjects}}
+
+Booleans in Python are implemented as a subclass of integers.  There
+are only two booleans, \constant{Py_False} and \constant{Py_True}.  As
+such, the normal creation and deletion functions don't apply to
+booleans.  The following macros are available, however.
+
+\begin{cfuncdesc}{int}{PyBool_Check}{PyObject* o}
+  Returns true if \var{o} is of type \cdata{PyBool_Type}.
+  \versionadded{2.3}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{Py_RETURN_FALSE}
+Return Py_False from a function, properly incrementing its reference
+count.
+\versionadded{2.4}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{Py_RETURN_TRUE}
+Return Py_True from a function, properly incrementing its reference
+count.
+\versionadded{2.4}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyBool_Check}{PyObject* o}
+  Returns true if \var{o} is of type \cdata{PyBool_Type}.
+  \versionadded{2.3}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyBool_FromLong}{long v}
+Returns \constant{Py_True} or \constant{Py_False} depending on the
+truth value of \var{v}.
+\versionadded{2.3}
+\end{cfuncdesc}
 
 \subsection{Long Integer Objects \label{longObjects}}
 
