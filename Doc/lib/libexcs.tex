@@ -13,9 +13,9 @@ exceptions is present in the standard library module
 
 For backward compatibility, when Python is invoked with the \code{-X}
 option, most of the standard exceptions are strings\footnote{For
-forward-compatibility the new exceptions \code{LookupError},
-\code{ArithmeticError}, \code{EnvironmentError}, and
-\code{StandardError} are tuples.}.  This option may be used to
+forward-compatibility the new exceptions \exception{LookupError},
+\exception{ArithmeticError}, \exception{EnvironmentError}, and
+\exception{StandardError} are tuples.}.  This option may be used to
 run code that breaks because of the different semantics of class based
 exceptions.  The \code{-X} option will become obsolete in future
 Python versions, so the recommended solution is to fix the code.
@@ -72,7 +72,7 @@ classes) returns the string value of the argument or arguments, or an
 empty string if no arguments were given to the constructor.  When used
 as a sequence, this accesses the arguments given to the constructor
 (handy for backward compatibility with old code).  The arguments are
-also available on the instance's \code{args} attribute, as a tuple.
+also available on the instance's \member{args} attribute, as a tuple.
 \end{excdesc}
 
 \begin{excdesc}{StandardError}
@@ -153,7 +153,6 @@ symbol is defined in the \file{config.h} file.
 
 \begin{excdesc}{IOError}
 % XXXJH xrefs here
-<<<<<<< libexcs.tex
   Raised when an I/O operation (such as a \keyword{print} statement, the
   built-in \function{open()} function or a method of a file object) fails
   for an I/O-related reason, e.g., ``file not found'' or ``disk full''.
@@ -211,9 +210,9 @@ above for more information on exception instance attributes.
 
 \begin{excdesc}{OSError}
   %xref for os module
-  This class is derived from \begin{EnvironmentError} and is used
-  primarily as the by the \code{os} module's \code{os.error}
-  exception.  See the \begin{EnvironmentError} above for a description
+  This class is derived from \exception{EnvironmentError} and is used
+  primarily as the by the \module{os} module's \code{os.error}
+  exception.  See \exception{EnvironmentError} above for a description
   of the possible associated values.
 \end{excdesc}
 
