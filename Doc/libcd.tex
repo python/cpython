@@ -26,9 +26,10 @@ functions use the latter representation.  Positions can be both
 relative to the beginning of the CD, and to the beginning of the
 track.
 
-Module \code{cd} defines the following functions:
+Module \code{cd} defines the following functions and constants:
 
 \renewcommand{\indexsubitem}{(in module cd)}
+
 \begin{funcdesc}{createparser}{}
 Create and return an opaque parser object.  The methods of the parser
 object are described below.
@@ -97,10 +98,24 @@ The equivalent of \code{PAUSED} on older (non 3301) model Toshiba
 CD-ROM drives.  Such drives have never been shipped by SGI.
 \end{datadesc}
 
+\begin{datadesc}{audio}
+\dataline{pnum}
+\dataline{index}
+\dataline{ptime}
+\dataline{atime}
+\dataline{catalog}
+\dataline{ident}
+\dataline{control}
+Integer constants describing the various types of parser callbacks
+that can be set by the \code{addcallback()} method of CD parser
+objects (see below).
+\end{datadesc}
+
 Player objects (returned by \code{cd.open()}) have the following
 methods:
 
 \renewcommand{\indexsubitem}{(CD player object method)}
+
 \begin{funcdesc}{allowremoval}{}
 Unlocks the eject button on the CD-ROM drive permitting the user to
 eject the caddy if desired.
@@ -219,46 +234,43 @@ Pauses the CD if it is playing, and makes it play if it is paused.
 Parser objects (returned by \code{cd.createparser()}) have the
 following methods:
 
+\renewcommand{\indexsubitem}{(CD parser object method)}
+
 \begin{funcdesc}{addcallback}{type\, func\, arg}
 Adds a callback for the parser.  The parser has callbacks for eight
-different types of data in the digital audio data stream.  The
-callback is called as follows \code{func(arg, type, data)}.
+different types of data in the digital audio data stream.  Constants
+for these types are defined at the \code{cd} module level (see above).
+The callback is called as follows: \code{func(arg, type, data)}, where
 \code{arg} is the user supplied argument, \code{type} is the
 particular type of callback, and \code{data} is the data returned for
 this \code{type} of callback.  The type of the data depends on the
-\code{type} of callback as follows.
-\begin{datadesc}{audio}
+\code{type} of callback as follows:
+\begin{description}
+\item[\code{cd.audio}: ]
 The argument is a string which can be passed unmodified to
-\code{al.writesamps}
-\end{datadesc}
-\begin{datadesc}{pnum}
+\code{al.writesamps()}.
+\item[\code{cd.pnum}: ]
 The argument is an integer giving the program (track) number.
-\end{datadesc}
-\begin{datadesc}{index}
+\item[\code{cd.index}: ]
 The argument is an integer giving the index number.
-\end{datadesc}
-\begin{datadesc}{ptime}
+\item[\code{cd.ptime}: ]
 The argument is a tuple consisting of the program time in minutes,
 seconds, and frames.
-\end{datadesc}
-\begin{datadesc}{atime}
+\item[\code{cd.atime}: ]
 The argument is a tuple consisting of the absolute time in minutes,
 seconds, and frames.
-\end{datadesc}
-\begin{datadesc}{catalog}
+\item[\code{cd.catalog}: ]
 The argument is a string of 13 characters, giving the catalog number
 of the CD.
-\end{datadesc}
-\begin{datadesc}{ident}
+\item[\code{cd.ident}: ]
 The argument is a string of 12 characters, giving the ISRC
 identification number of the recording.  The string consists of two
 characters country code, three characters owner code, two characters
 giving the year, and five characters giving a serial number.
-\end{datadesc}
-\begin{datadesc}{control}
+\item[\code{cd.control}: ]
 The argument is an integer giving the control bits from the CD subcode
 data.
-\end{datadesc}
+\end{description}
 \end{funcdesc}
 
 \begin{funcdesc}{deleteparser}{}
