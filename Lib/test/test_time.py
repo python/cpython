@@ -53,6 +53,9 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(TypeError, time.asctime, 0)
 
     def test_tzset(self):
+        if not hasattr(time, "tzset"):
+            return # Can't test this; don't want the test suite to fail
+
         from os import environ
 
         # Epoch time of midnight Dec 25th 2002. Never DST in northern 
