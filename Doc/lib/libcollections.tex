@@ -67,7 +67,7 @@ Deque objects support the following methods:
 \begin{methoddesc}{rotate}{n}
    Rotate the deque \var{n} steps to the right.  If \var{n} is
    negative, rotate to the left.  Rotating one step to the right
-   is equivalent to:  \samp{d.appendleft(d.pop())}.
+   is equivalent to:  \samp{d.appendleft(d.pop())}. 
 \end{methoddesc}
 
 In addition to the above, deques support iteration, pickling, \samp{len(d)},
@@ -128,5 +128,34 @@ IndexError: pop from an empty deque
 >>> d.extendleft('abc')              # extendleft() reverses the input order
 >>> d
 deque(['c', 'b', 'a'])
+\end{verbatim}
 
-\end{verbatim}    
+
+A roundrobin task server can be built from a \class{deque} using
+\method{popleft()} to select the current task and \method{append()}
+to add it back to the tasklist if the input stream is not exhausted:
+
+\begin{verbatim}
+def roundrobin(*iterables):
+    pending = deque(iter(i) for i in iterables)
+    while pending:
+        task = pending.popleft()
+        try:
+            yield task.next()
+        except StopIteration:
+            continue
+        pending.append(task)
+
+>>> for value in roundrobin('abc', 'd', 'efgh'):
+        print value
+
+a
+d
+e
+b
+f
+c
+g
+h
+
+\end{verbatim}
