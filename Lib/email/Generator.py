@@ -120,9 +120,9 @@ class Generator:
 
     def _dispatch(self, msg):
         # Get the Content-Type: for the message, then try to dispatch to
-        # self._handle_maintype_subtype().  If there's no handler for the full
-        # MIME type, then dispatch to self._handle_maintype().  If that's
-        # missing too, then dispatch to self._writeBody().
+        # self._handle_<maintype>_<subtype>().  If there's no handler for the
+        # full MIME type, then dispatch to self._handle_<maintype>().  If
+        # that's missing too, then dispatch to self._writeBody().
         ctype = msg.get_type()
         if ctype is None:
             # No Content-Type: header so use the default type, which must be
