@@ -1,611 +1,648 @@
 !define BLANK ""
-n:\python\python1.4beta3\pc\wat_os2\arraymodule.obj : n:\python\python1.4bet&
-a3\modules\arraymodule.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\arraymodule.obj : n:\python\python-1.5.1\m&
+odules\arraymodule.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\arraymodule.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATC&
 OM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\audioop.obj : n:\python\python1.4beta3\m&
-odules\audioop.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\audioop.obj : n:\python\python-1.5.1\modul&
+es\audioop.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\audioop.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h&
 \os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\binascii.obj : n:\python\python1.4beta3\&
-modules\binascii.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\binascii.obj : n:\python\python-1.5.1\modu&
+les\binascii.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\binascii.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\&
 h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\cmathmodule.obj : n:\python\python1.4bet&
-a3\modules\cmathmodule.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\cmathmodule.obj : n:\python\python-1.5.1\m&
+odules\cmathmodule.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\cmathmodule.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATC&
 OM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\errnomodule.obj : n:\python\python1.4bet&
-a3\modules\errnomodule.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\cpickle.obj : n:\python\python-1.5.1\modul&
+es\cpickle.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
+ *wcc386 ..\..\modules\cpickle.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h&
+\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
+
+n:\python\python-1.5.1\pc\wat_os2\cstringio.obj : n:\python\python-1.5.1\mod&
+ules\cstringio.c .AUTODEPEND
+ @n:
+ cd n:\python\python-1.5.1\pc\wat_os2
+ *wcc386 ..\..\modules\cstringio.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM&
+\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
+
+n:\python\python-1.5.1\pc\wat_os2\errnomodule.obj : n:\python\python-1.5.1\m&
+odules\errnomodule.c .AUTODEPEND
+ @n:
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\errnomodule.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATC&
 OM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\getpath.obj : n:\python\python1.4beta3\m&
-odules\getpath.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\getbuildinfo.obj : n:\python\python-1.5.1\&
+modules\getbuildinfo.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
- *wcc386 ..\..\modules\getpath.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h&
-\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
+ cd n:\python\python-1.5.1\pc\wat_os2
+ *wcc386 ..\..\modules\getbuildinfo.c -i=..;..\..\Include;C:\WATCOM\h;C:\WAT&
+COM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\imageop.obj : n:\python\python1.4beta3\m&
-odules\imageop.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\imageop.obj : n:\python\python-1.5.1\modul&
+es\imageop.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\imageop.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h&
 \os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\main.obj : n:\python\python1.4beta3\modu&
-les\main.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\main.obj : n:\python\python-1.5.1\modules\&
+main.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\main.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h\os&
 2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\mathmodule.obj : n:\python\python1.4beta&
-3\modules\mathmodule.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\mathmodule.obj : n:\python\python-1.5.1\mo&
+dules\mathmodule.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\mathmodule.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCO&
 M\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\md5c.obj : n:\python\python1.4beta3\modu&
-les\md5c.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\md5c.obj : n:\python\python-1.5.1\modules\&
+md5c.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\md5c.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h\os&
 2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\md5module.obj : n:\python\python1.4beta3&
-\modules\md5module.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\md5module.obj : n:\python\python-1.5.1\mod&
+ules\md5module.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\md5module.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM&
 \h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\newmodule.obj : n:\python\python1.4beta3&
-\modules\newmodule.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\newmodule.obj : n:\python\python-1.5.1\mod&
+ules\newmodule.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\newmodule.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM&
 \h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\operator.obj : n:\python\python1.4beta3\&
-modules\operator.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\operator.obj : n:\python\python-1.5.1\modu&
+les\operator.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\operator.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\&
 h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\posixmodule.obj : n:\python\python1.4bet&
-a3\modules\posixmodule.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\pcremodule.obj : n:\python\python-1.5.1\mo&
+dules\pcremodule.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
+ *wcc386 ..\..\modules\pcremodule.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCO&
+M\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
+
+n:\python\python-1.5.1\pc\wat_os2\posixmodule.obj : n:\python\python-1.5.1\m&
+odules\posixmodule.c .AUTODEPEND
+ @n:
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\posixmodule.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATC&
 OM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\regexmodule.obj : n:\python\python1.4bet&
-a3\modules\regexmodule.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\pypcre.obj : n:\python\python-1.5.1\module&
+s\pypcre.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
+ *wcc386 ..\..\modules\pypcre.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h\&
+os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
+
+n:\python\python-1.5.1\pc\wat_os2\python.obj : n:\python\python-1.5.1\module&
+s\python.c .AUTODEPEND
+ @n:
+ cd n:\python\python-1.5.1\pc\wat_os2
+ *wcc386 ..\..\modules\python.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h\&
+os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
+
+n:\python\python-1.5.1\pc\wat_os2\regexmodule.obj : n:\python\python-1.5.1\m&
+odules\regexmodule.c .AUTODEPEND
+ @n:
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\regexmodule.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATC&
 OM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\regexpr.obj : n:\python\python1.4beta3\m&
-odules\regexpr.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\regexpr.obj : n:\python\python-1.5.1\modul&
+es\regexpr.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\regexpr.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h&
 \os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\rgbimgmodule.obj : n:\python\python1.4be&
-ta3\modules\rgbimgmodule.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\rgbimgmodule.obj : n:\python\python-1.5.1\&
+modules\rgbimgmodule.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\rgbimgmodule.c -i=..;..\..\Include;C:\WATCOM\h;C:\WAT&
 COM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\rotormodule.obj : n:\python\python1.4bet&
-a3\modules\rotormodule.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\rotormodule.obj : n:\python\python-1.5.1\m&
+odules\rotormodule.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\rotormodule.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATC&
 OM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\signalmodule.obj : n:\python\python1.4be&
-ta3\modules\signalmodule.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\signalmodule.obj : n:\python\python-1.5.1\&
+modules\signalmodule.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\signalmodule.c -i=..;..\..\Include;C:\WATCOM\h;C:\WAT&
 COM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\soundex.obj : n:\python\python1.4beta3\m&
-odules\soundex.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\soundex.obj : n:\python\python-1.5.1\modul&
+es\soundex.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\soundex.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h&
 \os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\stropmodule.obj : n:\python\python1.4bet&
-a3\modules\stropmodule.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\stropmodule.obj : n:\python\python-1.5.1\m&
+odules\stropmodule.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\stropmodule.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATC&
 OM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\structmodule.obj : n:\python\python1.4be&
-ta3\modules\structmodule.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\structmodule.obj : n:\python\python-1.5.1\&
+modules\structmodule.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\structmodule.c -i=..;..\..\Include;C:\WATCOM\h;C:\WAT&
 COM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\timemodule.obj : n:\python\python1.4beta&
-3\modules\timemodule.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\timemodule.obj : n:\python\python-1.5.1\mo&
+dules\timemodule.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\timemodule.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCO&
 M\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\yuvconvert.obj : n:\python\python1.4beta&
-3\modules\yuvconvert.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\yuvconvert.obj : n:\python\python-1.5.1\mo&
+dules\yuvconvert.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\modules\yuvconvert.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCO&
 M\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\abstract.obj : n:\python\python1.4beta3\&
-objects\abstract.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\abstract.obj : n:\python\python-1.5.1\obje&
+cts\abstract.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\objects\abstract.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\&
 h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\accessobject.obj : n:\python\python1.4be&
-ta3\objects\accessobject.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\classobject.obj : n:\python\python-1.5.1\o&
+bjects\classobject.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
- *wcc386 ..\..\objects\accessobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WAT&
-COM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
-
-n:\python\python1.4beta3\pc\wat_os2\classobject.obj : n:\python\python1.4bet&
-a3\objects\classobject.c .AUTODEPEND
- @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\objects\classobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATC&
 OM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\cobject.obj : n:\python\python1.4beta3\o&
-bjects\cobject.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\cobject.obj : n:\python\python-1.5.1\objec&
+ts\cobject.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\objects\cobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h&
 \os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\complexobject.obj : n:\python\python1.4b&
-eta3\objects\complexobject.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\complexobject.obj : n:\python\python-1.5.1&
+\objects\complexobject.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\objects\complexobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WA&
 TCOM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\fileobject.obj : n:\python\python1.4beta&
-3\objects\fileobject.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\dictobject.obj : n:\python\python-1.5.1\ob&
+jects\dictobject.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
+ *wcc386 ..\..\objects\dictobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCO&
+M\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
+
+n:\python\python-1.5.1\pc\wat_os2\fileobject.obj : n:\python\python-1.5.1\ob&
+jects\fileobject.c .AUTODEPEND
+ @n:
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\objects\fileobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCO&
 M\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\floatobject.obj : n:\python\python1.4bet&
-a3\objects\floatobject.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\floatobject.obj : n:\python\python-1.5.1\o&
+bjects\floatobject.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\objects\floatobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATC&
 OM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\frameobject.obj : n:\python\python1.4bet&
-a3\objects\frameobject.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\frameobject.obj : n:\python\python-1.5.1\o&
+bjects\frameobject.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\objects\frameobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATC&
 OM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\funcobject.obj : n:\python\python1.4beta&
-3\objects\funcobject.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\funcobject.obj : n:\python\python-1.5.1\ob&
+jects\funcobject.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\objects\funcobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCO&
 M\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\intobject.obj : n:\python\python1.4beta3&
-\objects\intobject.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\intobject.obj : n:\python\python-1.5.1\obj&
+ects\intobject.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\objects\intobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM&
 \h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\listobject.obj : n:\python\python1.4beta&
-3\objects\listobject.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\listobject.obj : n:\python\python-1.5.1\ob&
+jects\listobject.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\objects\listobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCO&
 M\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\longobject.obj : n:\python\python1.4beta&
-3\objects\longobject.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\longobject.obj : n:\python\python-1.5.1\ob&
+jects\longobject.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\objects\longobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCO&
 M\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\mappingobject.obj : n:\python\python1.4b&
-eta3\objects\mappingobject.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\methodobject.obj : n:\python\python-1.5.1\&
+objects\methodobject.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
- *wcc386 ..\..\objects\mappingobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WA&
-TCOM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
-
-n:\python\python1.4beta3\pc\wat_os2\methodobject.obj : n:\python\python1.4be&
-ta3\objects\methodobject.c .AUTODEPEND
- @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\objects\methodobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WAT&
 COM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\moduleobject.obj : n:\python\python1.4be&
-ta3\objects\moduleobject.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\moduleobject.obj : n:\python\python-1.5.1\&
+objects\moduleobject.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\objects\moduleobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WAT&
 COM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\object.obj : n:\python\python1.4beta3\ob&
-jects\object.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\object.obj : n:\python\python-1.5.1\object&
+s\object.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\objects\object.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h\&
 os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\rangeobject.obj : n:\python\python1.4bet&
-a3\objects\rangeobject.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\rangeobject.obj : n:\python\python-1.5.1\o&
+bjects\rangeobject.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\objects\rangeobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATC&
 OM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\sliceobject.obj : n:\python\python1.4bet&
-a3\objects\sliceobject.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\sliceobject.obj : n:\python\python-1.5.1\o&
+bjects\sliceobject.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\objects\sliceobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATC&
 OM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\stringobject.obj : n:\python\python1.4be&
-ta3\objects\stringobject.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\stringobject.obj : n:\python\python-1.5.1\&
+objects\stringobject.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\objects\stringobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WAT&
 COM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\tupleobject.obj : n:\python\python1.4bet&
-a3\objects\tupleobject.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\tupleobject.obj : n:\python\python-1.5.1\o&
+bjects\tupleobject.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\objects\tupleobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATC&
 OM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\typeobject.obj : n:\python\python1.4beta&
-3\objects\typeobject.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\typeobject.obj : n:\python\python-1.5.1\ob&
+jects\typeobject.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\objects\typeobject.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCO&
 M\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\acceler.obj : n:\python\python1.4beta3\p&
-arser\acceler.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\acceler.obj : n:\python\python-1.5.1\parse&
+r\acceler.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\parser\acceler.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h\&
 os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\grammar1.obj : n:\python\python1.4beta3\&
-parser\grammar1.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\grammar1.obj : n:\python\python-1.5.1\pars&
+er\grammar1.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\parser\grammar1.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h&
 \os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\myreadline.obj : n:\python\python1.4beta&
-3\parser\myreadline.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\myreadline.obj : n:\python\python-1.5.1\pa&
+rser\myreadline.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\parser\myreadline.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM&
 \h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\node.obj : n:\python\python1.4beta3\pars&
-er\node.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\node.obj : n:\python\python-1.5.1\parser\n&
+ode.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\parser\node.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h\os2&
  -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\parser.obj : n:\python\python1.4beta3\pa&
-rser\parser.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\parser.obj : n:\python\python-1.5.1\parser&
+\parser.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\parser\parser.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h\o&
 s2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\parsetok.obj : n:\python\python1.4beta3\&
-parser\parsetok.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\parsetok.obj : n:\python\python-1.5.1\pars&
+er\parsetok.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\parser\parsetok.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h&
 \os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\tokenizer.obj : n:\python\python1.4beta3&
-\parser\tokenizer.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\tokenizer.obj : n:\python\python-1.5.1\par&
+ser\tokenizer.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\parser\tokenizer.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\&
 h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\bltinmodule.obj : n:\python\python1.4bet&
-a3\python\bltinmodule.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\bltinmodule.obj : n:\python\python-1.5.1\p&
+ython\bltinmodule.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\bltinmodule.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCO&
 M\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\ceval.obj : n:\python\python1.4beta3\pyt&
-hon\ceval.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\ceval.obj : n:\python\python-1.5.1\python\&
+ceval.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\ceval.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h\os&
 2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\cgensupport.obj : n:\python\python1.4bet&
-a3\python\cgensupport.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\compile.obj : n:\python\python-1.5.1\pytho&
+n\compile.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
- *wcc386 ..\..\python\cgensupport.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCO&
-M\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
-
-n:\python\python1.4beta3\pc\wat_os2\compile.obj : n:\python\python1.4beta3\p&
-ython\compile.c .AUTODEPEND
- @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\compile.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h\&
 os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\errors.obj : n:\python\python1.4beta3\py&
-thon\errors.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\errors.obj : n:\python\python-1.5.1\python&
+\errors.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\errors.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h\o&
 s2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\frozen.obj : n:\python\python1.4beta3\py&
-thon\frozen.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\frozen.obj : n:\python\python-1.5.1\python&
+\frozen.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\frozen.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h\o&
 s2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\getargs.obj : n:\python\python1.4beta3\p&
-ython\getargs.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\getargs.obj : n:\python\python-1.5.1\pytho&
+n\getargs.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\getargs.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h\&
 os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\getcompiler.obj : n:\python\python1.4bet&
-a3\python\getcompiler.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\getcompiler.obj : n:\python\python-1.5.1\p&
+ython\getcompiler.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\getcompiler.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCO&
 M\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\getcopyright.obj : n:\python\python1.4be&
-ta3\python\getcopyright.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\getcopyright.obj : n:\python\python-1.5.1\&
+python\getcopyright.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\getcopyright.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATC&
 OM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\getmtime.obj : n:\python\python1.4beta3\&
-python\getmtime.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\getmtime.obj : n:\python\python-1.5.1\pyth&
+on\getmtime.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\getmtime.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h&
 \os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\getopt.obj : n:\python\python1.4beta3\py&
-thon\getopt.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\getopt.obj : n:\python\python-1.5.1\python&
+\getopt.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\getopt.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h\o&
 s2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\getplatform.obj : n:\python\python1.4bet&
-a3\python\getplatform.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\getplatform.obj : n:\python\python-1.5.1\p&
+ython\getplatform.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\getplatform.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCO&
 M\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\getversion.obj : n:\python\python1.4beta&
-3\python\getversion.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\getversion.obj : n:\python\python-1.5.1\py&
+thon\getversion.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\getversion.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM&
 \h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\graminit.obj : n:\python\python1.4beta3\&
-python\graminit.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\graminit.obj : n:\python\python-1.5.1\pyth&
+on\graminit.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\graminit.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h&
 \os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\import.obj : n:\python\python1.4beta3\py&
-thon\import.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\import.obj : n:\python\python-1.5.1\python&
+\import.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\import.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h\o&
 s2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\importdl.obj : n:\python\python1.4beta3\&
-python\importdl.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\importdl.obj : n:\python\python-1.5.1\pyth&
+on\importdl.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\importdl.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h&
 \os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\marshal.obj : n:\python\python1.4beta3\p&
-ython\marshal.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\marshal.obj : n:\python\python-1.5.1\pytho&
+n\marshal.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\marshal.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h\&
 os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\modsupport.obj : n:\python\python1.4beta&
-3\python\modsupport.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\modsupport.obj : n:\python\python-1.5.1\py&
+thon\modsupport.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\modsupport.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM&
 \h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\mystrtoul.obj : n:\python\python1.4beta3&
-\python\mystrtoul.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\mystrtoul.obj : n:\python\python-1.5.1\pyt&
+hon\mystrtoul.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\mystrtoul.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\&
 h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\pythonrun.obj : n:\python\python1.4beta3&
-\python\pythonrun.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\pystate.obj : n:\python\python-1.5.1\pytho&
+n\pystate.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
+ *wcc386 ..\..\python\pystate.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h\&
+os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
+
+n:\python\python-1.5.1\pc\wat_os2\pythonrun.obj : n:\python\python-1.5.1\pyt&
+hon\pythonrun.c .AUTODEPEND
+ @n:
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\pythonrun.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\&
 h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\structmember.obj : n:\python\python1.4be&
-ta3\python\structmember.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\structmember.obj : n:\python\python-1.5.1\&
+python\structmember.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\structmember.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATC&
 OM\h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\sysmodule.obj : n:\python\python1.4beta3&
-\python\sysmodule.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\sysmodule.obj : n:\python\python-1.5.1\pyt&
+hon\sysmodule.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\sysmodule.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\&
 h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\traceback.obj : n:\python\python1.4beta3&
-\python\traceback.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\traceback.obj : n:\python\python-1.5.1\pyt&
+hon\traceback.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\..\python\traceback.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\&
 h\os2 -w4 -e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\config.obj : n:\python\python1.4beta3\pc&
-\config.c .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\config.obj : n:\python\python-1.5.1\pc\con&
+fig.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
  *wcc386 ..\config.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h\os2 -w4 -e2&
 5 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
 
-n:\python\python1.4beta3\pc\wat_os2\pyth_os2.exe : n:\python\python1.4beta3\&
-pc\wat_os2\arraymodule.obj n:\python\python1.4beta3\pc\wat_os2\audioop.obj n&
-:\python\python1.4beta3\pc\wat_os2\binascii.obj n:\python\python1.4beta3\pc\&
-wat_os2\cmathmodule.obj n:\python\python1.4beta3\pc\wat_os2\errnomodule.obj &
-n:\python\python1.4beta3\pc\wat_os2\getpath.obj n:\python\python1.4beta3\pc\&
-wat_os2\imageop.obj n:\python\python1.4beta3\pc\wat_os2\main.obj n:\python\p&
-ython1.4beta3\pc\wat_os2\mathmodule.obj n:\python\python1.4beta3\pc\wat_os2\&
-md5c.obj n:\python\python1.4beta3\pc\wat_os2\md5module.obj n:\python\python1&
-.4beta3\pc\wat_os2\newmodule.obj n:\python\python1.4beta3\pc\wat_os2\operato&
-r.obj n:\python\python1.4beta3\pc\wat_os2\posixmodule.obj n:\python\python1.&
-4beta3\pc\wat_os2\regexmodule.obj n:\python\python1.4beta3\pc\wat_os2\regexp&
-r.obj n:\python\python1.4beta3\pc\wat_os2\rgbimgmodule.obj n:\python\python1&
-.4beta3\pc\wat_os2\rotormodule.obj n:\python\python1.4beta3\pc\wat_os2\signa&
-lmodule.obj n:\python\python1.4beta3\pc\wat_os2\soundex.obj n:\python\python&
-1.4beta3\pc\wat_os2\stropmodule.obj n:\python\python1.4beta3\pc\wat_os2\stru&
-ctmodule.obj n:\python\python1.4beta3\pc\wat_os2\timemodule.obj n:\python\py&
-thon1.4beta3\pc\wat_os2\yuvconvert.obj n:\python\python1.4beta3\pc\wat_os2\a&
-bstract.obj n:\python\python1.4beta3\pc\wat_os2\accessobject.obj n:\python\p&
-ython1.4beta3\pc\wat_os2\classobject.obj n:\python\python1.4beta3\pc\wat_os2&
-\cobject.obj n:\python\python1.4beta3\pc\wat_os2\complexobject.obj n:\python&
-\python1.4beta3\pc\wat_os2\fileobject.obj n:\python\python1.4beta3\pc\wat_os&
-2\floatobject.obj n:\python\python1.4beta3\pc\wat_os2\frameobject.obj n:\pyt&
-hon\python1.4beta3\pc\wat_os2\funcobject.obj n:\python\python1.4beta3\pc\wat&
-_os2\intobject.obj n:\python\python1.4beta3\pc\wat_os2\listobject.obj n:\pyt&
-hon\python1.4beta3\pc\wat_os2\longobject.obj n:\python\python1.4beta3\pc\wat&
-_os2\mappingobject.obj n:\python\python1.4beta3\pc\wat_os2\methodobject.obj &
-n:\python\python1.4beta3\pc\wat_os2\moduleobject.obj n:\python\python1.4beta&
-3\pc\wat_os2\object.obj n:\python\python1.4beta3\pc\wat_os2\rangeobject.obj &
-n:\python\python1.4beta3\pc\wat_os2\sliceobject.obj n:\python\python1.4beta3&
-\pc\wat_os2\stringobject.obj n:\python\python1.4beta3\pc\wat_os2\tupleobject&
-.obj n:\python\python1.4beta3\pc\wat_os2\typeobject.obj n:\python\python1.4b&
-eta3\pc\wat_os2\acceler.obj n:\python\python1.4beta3\pc\wat_os2\grammar1.obj&
- n:\python\python1.4beta3\pc\wat_os2\myreadline.obj n:\python\python1.4beta3&
-\pc\wat_os2\node.obj n:\python\python1.4beta3\pc\wat_os2\parser.obj n:\pytho&
-n\python1.4beta3\pc\wat_os2\parsetok.obj n:\python\python1.4beta3\pc\wat_os2&
-\tokenizer.obj n:\python\python1.4beta3\pc\wat_os2\bltinmodule.obj n:\python&
-\python1.4beta3\pc\wat_os2\ceval.obj n:\python\python1.4beta3\pc\wat_os2\cge&
-nsupport.obj n:\python\python1.4beta3\pc\wat_os2\compile.obj n:\python\pytho&
-n1.4beta3\pc\wat_os2\errors.obj n:\python\python1.4beta3\pc\wat_os2\frozen.o&
-bj n:\python\python1.4beta3\pc\wat_os2\getargs.obj n:\python\python1.4beta3\&
-pc\wat_os2\getcompiler.obj n:\python\python1.4beta3\pc\wat_os2\getcopyright.&
-obj n:\python\python1.4beta3\pc\wat_os2\getmtime.obj n:\python\python1.4beta&
-3\pc\wat_os2\getopt.obj n:\python\python1.4beta3\pc\wat_os2\getplatform.obj &
-n:\python\python1.4beta3\pc\wat_os2\getversion.obj n:\python\python1.4beta3\&
-pc\wat_os2\graminit.obj n:\python\python1.4beta3\pc\wat_os2\import.obj n:\py&
-thon\python1.4beta3\pc\wat_os2\importdl.obj n:\python\python1.4beta3\pc\wat_&
-os2\marshal.obj n:\python\python1.4beta3\pc\wat_os2\modsupport.obj n:\python&
-\python1.4beta3\pc\wat_os2\mystrtoul.obj n:\python\python1.4beta3\pc\wat_os2&
-\pythonrun.obj n:\python\python1.4beta3\pc\wat_os2\structmember.obj n:\pytho&
-n\python1.4beta3\pc\wat_os2\sysmodule.obj n:\python\python1.4beta3\pc\wat_os&
-2\traceback.obj n:\python\python1.4beta3\pc\wat_os2\config.obj .AUTODEPEND
+n:\python\python-1.5.1\pc\wat_os2\getpathp.obj : n:\python\python-1.5.1\pc\g&
+etpathp.c .AUTODEPEND
  @n:
- cd n:\python\python1.4beta3\pc\wat_os2
+ cd n:\python\python-1.5.1\pc\wat_os2
+ *wcc386 ..\getpathp.c -i=..;..\..\Include;C:\WATCOM\h;C:\WATCOM\h\os2 -w4 -&
+e25 -dHAVE_CONFIG_H -ei -zp4 -zq -otexan -d1 -5r -bt=os2 -mf
+
+n:\python\python-1.5.1\pc\wat_os2\pyth_os2.exe : n:\python\python-1.5.1\pc\w&
+at_os2\arraymodule.obj n:\python\python-1.5.1\pc\wat_os2\audioop.obj n:\pyth&
+on\python-1.5.1\pc\wat_os2\binascii.obj n:\python\python-1.5.1\pc\wat_os2\cm&
+athmodule.obj n:\python\python-1.5.1\pc\wat_os2\cpickle.obj n:\python\python&
+-1.5.1\pc\wat_os2\cstringio.obj n:\python\python-1.5.1\pc\wat_os2\errnomodul&
+e.obj n:\python\python-1.5.1\pc\wat_os2\getbuildinfo.obj n:\python\python-1.&
+5.1\pc\wat_os2\imageop.obj n:\python\python-1.5.1\pc\wat_os2\main.obj n:\pyt&
+hon\python-1.5.1\pc\wat_os2\mathmodule.obj n:\python\python-1.5.1\pc\wat_os2&
+\md5c.obj n:\python\python-1.5.1\pc\wat_os2\md5module.obj n:\python\python-1&
+.5.1\pc\wat_os2\newmodule.obj n:\python\python-1.5.1\pc\wat_os2\operator.obj&
+ n:\python\python-1.5.1\pc\wat_os2\pcremodule.obj n:\python\python-1.5.1\pc\&
+wat_os2\posixmodule.obj n:\python\python-1.5.1\pc\wat_os2\pypcre.obj n:\pyth&
+on\python-1.5.1\pc\wat_os2\python.obj n:\python\python-1.5.1\pc\wat_os2\rege&
+xmodule.obj n:\python\python-1.5.1\pc\wat_os2\regexpr.obj n:\python\python-1&
+.5.1\pc\wat_os2\rgbimgmodule.obj n:\python\python-1.5.1\pc\wat_os2\rotormodu&
+le.obj n:\python\python-1.5.1\pc\wat_os2\signalmodule.obj n:\python\python-1&
+.5.1\pc\wat_os2\soundex.obj n:\python\python-1.5.1\pc\wat_os2\stropmodule.ob&
+j n:\python\python-1.5.1\pc\wat_os2\structmodule.obj n:\python\python-1.5.1\&
+pc\wat_os2\timemodule.obj n:\python\python-1.5.1\pc\wat_os2\yuvconvert.obj n&
+:\python\python-1.5.1\pc\wat_os2\abstract.obj n:\python\python-1.5.1\pc\wat_&
+os2\classobject.obj n:\python\python-1.5.1\pc\wat_os2\cobject.obj n:\python\&
+python-1.5.1\pc\wat_os2\complexobject.obj n:\python\python-1.5.1\pc\wat_os2\&
+dictobject.obj n:\python\python-1.5.1\pc\wat_os2\fileobject.obj n:\python\py&
+thon-1.5.1\pc\wat_os2\floatobject.obj n:\python\python-1.5.1\pc\wat_os2\fram&
+eobject.obj n:\python\python-1.5.1\pc\wat_os2\funcobject.obj n:\python\pytho&
+n-1.5.1\pc\wat_os2\intobject.obj n:\python\python-1.5.1\pc\wat_os2\listobjec&
+t.obj n:\python\python-1.5.1\pc\wat_os2\longobject.obj n:\python\python-1.5.&
+1\pc\wat_os2\methodobject.obj n:\python\python-1.5.1\pc\wat_os2\moduleobject&
+.obj n:\python\python-1.5.1\pc\wat_os2\object.obj n:\python\python-1.5.1\pc\&
+wat_os2\rangeobject.obj n:\python\python-1.5.1\pc\wat_os2\sliceobject.obj n:&
+\python\python-1.5.1\pc\wat_os2\stringobject.obj n:\python\python-1.5.1\pc\w&
+at_os2\tupleobject.obj n:\python\python-1.5.1\pc\wat_os2\typeobject.obj n:\p&
+ython\python-1.5.1\pc\wat_os2\acceler.obj n:\python\python-1.5.1\pc\wat_os2\&
+grammar1.obj n:\python\python-1.5.1\pc\wat_os2\myreadline.obj n:\python\pyth&
+on-1.5.1\pc\wat_os2\node.obj n:\python\python-1.5.1\pc\wat_os2\parser.obj n:&
+\python\python-1.5.1\pc\wat_os2\parsetok.obj n:\python\python-1.5.1\pc\wat_o&
+s2\tokenizer.obj n:\python\python-1.5.1\pc\wat_os2\bltinmodule.obj n:\python&
+\python-1.5.1\pc\wat_os2\ceval.obj n:\python\python-1.5.1\pc\wat_os2\compile&
+.obj n:\python\python-1.5.1\pc\wat_os2\errors.obj n:\python\python-1.5.1\pc\&
+wat_os2\frozen.obj n:\python\python-1.5.1\pc\wat_os2\getargs.obj n:\python\p&
+ython-1.5.1\pc\wat_os2\getcompiler.obj n:\python\python-1.5.1\pc\wat_os2\get&
+copyright.obj n:\python\python-1.5.1\pc\wat_os2\getmtime.obj n:\python\pytho&
+n-1.5.1\pc\wat_os2\getopt.obj n:\python\python-1.5.1\pc\wat_os2\getplatform.&
+obj n:\python\python-1.5.1\pc\wat_os2\getversion.obj n:\python\python-1.5.1\&
+pc\wat_os2\graminit.obj n:\python\python-1.5.1\pc\wat_os2\import.obj n:\pyth&
+on\python-1.5.1\pc\wat_os2\importdl.obj n:\python\python-1.5.1\pc\wat_os2\ma&
+rshal.obj n:\python\python-1.5.1\pc\wat_os2\modsupport.obj n:\python\python-&
+1.5.1\pc\wat_os2\mystrtoul.obj n:\python\python-1.5.1\pc\wat_os2\pystate.obj&
+ n:\python\python-1.5.1\pc\wat_os2\pythonrun.obj n:\python\python-1.5.1\pc\w&
+at_os2\structmember.obj n:\python\python-1.5.1\pc\wat_os2\sysmodule.obj n:\p&
+ython\python-1.5.1\pc\wat_os2\traceback.obj n:\python\python-1.5.1\pc\wat_os&
+2\config.obj n:\python\python-1.5.1\pc\wat_os2\getpathp.obj .AUTODEPEND
+ @n:
+ cd n:\python\python-1.5.1\pc\wat_os2
  @%write pyth_os2.lk1 NAME pyth_os2
  @%append pyth_os2.lk1 FIL arraymodule.obj,audioop.obj,binascii.obj,cmathmod&
-ule.obj,errnomodule.obj,getpath.obj,imageop.obj,main.obj,mathmodule.obj,md5c&
-.obj,md5module.obj,newmodule.obj,operator.obj,posixmodule.obj,regexmodule.ob&
-j,regexpr.obj,rgbimgmodule.obj,rotormodule.obj,signalmodule.obj,soundex.obj,&
-stropmodule.obj,structmodule.obj,timemodule.obj,yuvconvert.obj,abstract.obj,&
-accessobject.obj,classobject.obj,cobject.obj,complexobject.obj,fileobject.ob&
-j,floatobject.obj,frameobject.obj,funcobject.obj,intobject.obj,listobject.ob&
-j,longobject.obj,mappingobject.obj,methodobject.obj,moduleobject.obj,object.&
-obj,rangeobject.obj,sliceobject.obj,stringobject.obj,tupleobject.obj,typeobj&
-ect.obj,acceler.obj,grammar1.obj,myreadline.obj,node.obj,parser.obj,parsetok&
-.obj,tokenizer.obj,bltinmodule.obj,ceval.obj,cgensupport.obj,compile.obj,err&
-ors.obj,frozen.obj,getargs.obj,getcompiler.obj,getcopyright.obj,getmtime.obj&
-,getopt.obj,getplatform.obj,getversion.obj,graminit.obj,import.obj,importdl.&
-obj,marshal.obj,modsupport.obj,mystrtoul.obj,pythonrun.obj,structmember.obj,&
-sysmodule.obj,traceback.obj,config.obj
+ule.obj,cpickle.obj,cstringio.obj,errnomodule.obj,getbuildinfo.obj,imageop.o&
+bj,main.obj,mathmodule.obj,md5c.obj,md5module.obj,newmodule.obj,operator.obj&
+,pcremodule.obj,posixmodule.obj,pypcre.obj,python.obj,regexmodule.obj,regexp&
+r.obj,rgbimgmodule.obj,rotormodule.obj,signalmodule.obj,soundex.obj,stropmod&
+ule.obj,structmodule.obj,timemodule.obj,yuvconvert.obj,abstract.obj,classobj&
+ect.obj,cobject.obj,complexobject.obj,dictobject.obj,fileobject.obj,floatobj&
+ect.obj,frameobject.obj,funcobject.obj,intobject.obj,listobject.obj,longobje&
+ct.obj,methodobject.obj,moduleobject.obj,object.obj,rangeobject.obj,sliceobj&
+ect.obj,stringobject.obj,tupleobject.obj,typeobject.obj,acceler.obj,grammar1&
+.obj,myreadline.obj,node.obj,parser.obj,parsetok.obj,tokenizer.obj,bltinmodu&
+le.obj,ceval.obj,compile.obj,errors.obj,frozen.obj,getargs.obj,getcompiler.o&
+bj,getcopyright.obj,getmtime.obj,getopt.obj,getplatform.obj,getversion.obj,g&
+raminit.obj,import.obj,importdl.obj,marshal.obj,modsupport.obj,mystrtoul.obj&
+,pystate.obj,pythonrun.obj,structmember.obj,sysmodule.obj,traceback.obj,conf&
+ig.obj,getpathp.obj
  @%append pyth_os2.lk1 
 !ifneq BLANK ""
  *wlib -q -n -b pyth_os2.imp 
  @%append pyth_os2.lk1 LIBR pyth_os2.imp
 !endif
- *wlink SYS os2v2 op m op st=128k op maxe=25 op q op symf @pyth_os2.lk1
+ *wlink SYS os2v2 op m op st=128k op c op maxe=25 op q op symf @pyth_os2.lk1
 !ifneq BLANK ""
  rc -i $[: -i C:\WATCOM\h -i C:\WATCOM\h\os2  pyth_os2.exe
 !endif
