@@ -481,16 +481,14 @@ static struct PyMethodDef readline_methods[] =
 /* C function to call the Python hooks. */
 
 static int
-on_hook(PyObject *func, PyThreadState *tstate)
+on_hook(PyObject *func, PyThreadState **tstate)
 {
 	int result = 0;
 	if (func != NULL) {
 		PyObject *r;
-		PyThreadState *save_tstate;
 		/* Note that readline is called with the interpreter
 		   lock released! */
-		save_tstate = PyThreadState_Swap(NULL);
-		PyEval_RestoreThread(tstate);
+		PyEval_RestoreThread(*tstate);
 		r = PyObject_CallFunction(func, NULL);
 		if (r == NULL)
 			goto error;
@@ -504,8 +502,7 @@ on_hook(PyObject *func, PyThreadState *tstate)
 		PyErr_Clear();
 		Py_XDECREF(r);
 	  done:
-		PyEval_SaveThread();
-		PyThreadState_Swap(save_tstate);
+		*tstate = PyEval_SaveThread();
 	}
 	return result;
 }
@@ -513,14 +510,14 @@ on_hook(PyObject *func, PyThreadState *tstate)
 static int
 on_startup_hook(void)
 {
-	return on_hook(startup_hook, startup_hook_tstate);
+	return on_hook(startup_hook, &startup_hook_tstate);
 }
 
 #ifdef HAVE_RL_PRE_INPUT_HOOK
 static int
 on_pre_input_hook(void)
 {
-	return on_hook(pre_input_hook, pre_input_hook_tstate);
+	return on_hook(pre_input_hook, &pre_input_hook_tstate);
 }
 #endif
 
@@ -533,10 +530,8 @@ on_completion(char *text, int state)
 	char *result = NULL;
 	if (completer != NULL) {
 		PyObject *r;
-		PyThreadState *save_tstate;
 		/* Note that readline is called with the interpreter
 		   lock released! */
-		save_tstate = PyThreadState_Swap(NULL);
 		PyEval_RestoreThread(completer_tstate);
 		/* Don't use the default filename completion if we
 		 * have a custom completion function... */
@@ -559,14 +554,13 @@ on_completion(char *text, int state)
 		PyErr_Clear();
 		Py_XDECREF(r);
 	  done:
-		PyEval_SaveThread();
-		PyThreadState_Swap(save_tstate);
+		completer_tstate = PyEval_SaveThread();
 	}
 	return result;
 }
 
 
-/* a more flexible constructor that saves the "begidx" and "endidx"
+/* A more flexible constructor that saves the "begidx" and "endidx"
  * before calling the normal completer */
 
 char **
