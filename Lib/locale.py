@@ -115,16 +115,21 @@ def format(f,val,grouping=0):
     """Formats a value in the same way that the % formatting would use,
     but takes the current locale into account.
     Grouping is applied if the third parameter is true."""
-    result = f % val
-    fields = string.split(result, ".")
+    result = f % abs(val)
+    fields = result.split(".")
     if grouping:
         fields[0]=_group(fields[0])
     if len(fields)==2:
-        return fields[0]+localeconv()['decimal_point']+fields[1]
+        res = fields[0]+localeconv()['decimal_point']+fields[1]
     elif len(fields)==1:
-        return fields[0]
+        res = fields[0]
     else:
         raise Error, "Too many decimal points in result string"
+
+    if val < 0:
+        return '-'+res
+    else:
+        return res
 
 def str(val):
     """Convert float to integer, taking the locale into account."""
