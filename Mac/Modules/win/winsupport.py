@@ -80,7 +80,7 @@ class MyObjectDefinition(GlobalObjectDefinition):
 		GlobalObjectDefinition.outputInitStructMembers(self)
 		Output("SetWRefCon(itself, (long)it);")
 	def outputCheckConvertArg(self):
-		Output("#ifndef TARGET_API_MAC_CARBON")
+		Output("#if !TARGET_API_MAC_CARBON")
 		OutLbrace("if (DlgObj_Check(v))")
 		Output("*p_itself = ((WindowObject *)v)->ob_itself;")
 		Output("return 1;")

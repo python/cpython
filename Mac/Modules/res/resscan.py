@@ -50,7 +50,7 @@ class ResourcesScanner(Scanner):
 			
 	def makegreylist(self):
 		return [
-			('#ifndef TARGET_API_MAC_CARBON', [
+			('#if !TARGET_API_MAC_CARBON', [
 				'RGetResource',
 				'OpenResFile',
 				'CreateResFile',

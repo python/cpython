@@ -271,7 +271,7 @@ event_loop()
 	
 	got_one = 0;
 	for (n = 0; n < 100 && !got_one; n++) {
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 		SystemTask();
 #endif
 		ok = GetNextEvent(everyEvent, &event);

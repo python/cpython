@@ -710,7 +710,7 @@ mfs_ResolveAliasFile(self, args)
 	return Py_BuildValue("Oii", newmfssobject(&fss), (int)isfolder, (int)wasaliased);
 }
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 static PyObject *
 mfs_StandardGetFile(self, args)
 	PyObject *self;	/* Not used */
@@ -854,7 +854,7 @@ mfs_RawAlias(self, args)
 	return (PyObject *)newmfsaobject((AliasHandle)h);
 }
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 static PyObject *
 mfs_GetDirectory(self, args)
 	PyObject *self;	/* Not used */
@@ -951,7 +951,7 @@ mfs_NewAliasMinimalFromFullPath(self, args)
 
 static struct PyMethodDef mfs_methods[] = {
 	{"ResolveAliasFile",	mfs_ResolveAliasFile,	1},
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"StandardGetFile",		mfs_StandardGetFile,	1},
 	{"PromptGetFile",		mfs_PromptGetFile,		1},
 	{"StandardPutFile",		mfs_StandardPutFile,	1},

@@ -130,7 +130,7 @@ class MyGRObjectDefinition(GlobalObjectDefinition):
 		Output("return 1;")
 		OutRbrace()
 	def outputGetattrHook(self):
-		Output("#ifndef TARGET_API_MAC_CARBON")
+		Output("#if !TARGET_API_MAC_CARBON")
 		Output("""
 		{	CGrafPtr itself_color = (CGrafPtr)self->ob_itself;
 		
@@ -259,7 +259,7 @@ class QDGlobalsAccessObjectDefinition(ObjectDefinition):
 		pass
 
 	def outputGetattrHook(self):
-		Output("#ifndef TARGET_API_MAC_CARBON")
+		Output("#if !TARGET_API_MAC_CARBON")
 		Output("""
 	if ( strcmp(name, "arrow") == 0 )
 		return PyString_FromStringAndSize((char *)&qd.arrow, sizeof(qd.arrow));

@@ -350,7 +350,7 @@ navrr_getattr(self, name)
 				PyErr_Mac(ErrorObject, err);
 				return NULL;
 			}
-#ifdef TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_CARBON
 			if (err=AEGetDescData(&desc, &fss, sizeof(FSSpec))) {
 				Py_DECREF(rv);
 				PyErr_Mac(ErrorObject, err);

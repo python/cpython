@@ -359,7 +359,7 @@ MacOS_SetCreatorAndType(PyObject *self, PyObject *args)
 #include <EPPC.h>
 #include <Events.h>
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 static char accepthle_doc[] = "Get arguments of pending high-level event";
 
 static PyObject *
@@ -677,7 +677,7 @@ MacOS_CompactMem(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef MacOS_Methods[] = {
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"AcceptHighLevelEvent",	MacOS_AcceptHighLevelEvent, 1,	accepthle_doc},
 #endif
 	{"GetCreatorAndType",		MacOS_GetCreatorAndType, 1,	getcrtp_doc},

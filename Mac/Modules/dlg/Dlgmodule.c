@@ -705,7 +705,7 @@ static PyObject *DlgObj_GetDialogKeyboardFocusItem(_self, _args)
 	return _res;
 }
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *DlgObj_SetGrafPortOfDialog(_self, _args)
 	DialogObject *_self;
@@ -787,7 +787,7 @@ static PyMethodDef DlgObj_methods[] = {
 	{"GetDialogKeyboardFocusItem", (PyCFunction)DlgObj_GetDialogKeyboardFocusItem, 1,
 	 "() -> (SInt16 _rv)"},
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"SetGrafPortOfDialog", (PyCFunction)DlgObj_SetGrafPortOfDialog, 1,
 	 "() -> None"},
 #endif

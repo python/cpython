@@ -53,7 +53,7 @@ getwd(char *cwd)
 		sprintf(cwd, "I/O error %d in PBHGetVolSync", err);
 		return NULL;
 	}
-#ifdef TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_CARBON
 	p2cstrcpy(cwd, (StringPtr)cwd);
 	ecwd = strchr(cwd, EOS);
 #else
@@ -77,7 +77,7 @@ getwd(char *cwd)
 				return NULL;
 			}
 			dirid= pb.d.ioDrParID;
-#ifdef TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_CARBON
 			p2cstrcpy(ebuf, (StringPtr)ebuf);
 			ebuf += strlen(ebuf);
 #else

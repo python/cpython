@@ -86,7 +86,7 @@ no_appearance:
 static void
 init_mac_world()
 {
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	/* These aren't needed for carbon */
 	MaxApplZone();
 	InitGraf(&qd.thePort);
@@ -162,7 +162,7 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 			DisposeDialog(dialog);
 			exit(0);
 		}
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 		if ( item == OPT_HELP ) {
 			HMSetBalloons(!HMGetBalloons());
 		}

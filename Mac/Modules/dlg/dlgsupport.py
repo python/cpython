@@ -165,7 +165,7 @@ object.add(f)
 f = Method(SInt16, 'GetDialogKeyboardFocusItem', (DialogRef, 'dialog', InMode))
 object.add(f)
 f = Method(void, 'SetGrafPortOfDialog', (DialogRef, 'dialog', InMode), 
-	condition='#ifndef TARGET_API_MAC_CARBON')
+	condition='#if !TARGET_API_MAC_CARBON')
 object.add(f)
 
 setuseritembody = """
