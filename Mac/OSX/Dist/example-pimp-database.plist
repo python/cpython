@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Description</key>
+	<string>Enter database description</string>
+	<key>Maintainer</key>
+	<string>Enter your email address</string>
+	<key>Packages</key>
+	<array>
+		<dict>
+			<key>Description</key>
+			<string>Enter package description</string>
+			<key>Download-URL</key>
+			<string>Enter URL for archive download, delete for pseudo-pkgs</string>
+			<key>Flavor</key>
+			<string>Enter binary or source</string>
+			<key>Home-page</key>
+			<string>Enter URL of human-readable webpage</string>
+			<key>Install-command</key>
+			<string>Enter shell commands to run for installation</string>
+			<key>Install-test</key>
+			<string>Enter Python code to test for already installed</string>
+			<key>MD5Sum</key>
+			<string>Enter checksum of package archive</string>
+			<key>Name</key>
+			<string>Enter name of package</string>
+			<key>Post-install-command</key>
+			<string>Enter shell command to run after install</string>
+			<key>Pre-install-command</key>
+			<string>Enter shell command to run before install</string>
+			<key>Prerequisites</key>
+			<array>
+				<string>Enter human-readable recipy for pseudo-dependencies</string>
+				<dict>
+					<key>Flavor</key>
+					<string>Enter optional flavor for real dependency</string>
+					<key>Name</key>
+					<string>Enter name for real dependency</string>
+					<key>Version</key>
+					<string></string>
+				</dict>
+			</array>
+			<key>Version</key>
+			<string>Enter version string for package</string>
+		</dict>
+	</array>
+	<key>Version</key>
+	<string>0.1</string>
+</dict>
+</plist>
