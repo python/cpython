@@ -74,6 +74,68 @@ extern "C" {
 #define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
 #endif
 
+
+
+/**************************************************************************
+Prototypes that are missing from the standard include files on some systems
+(and possibly only some versions of such systems.)
+
+Please be conservative with adding new ones, document them and enclose them
+in platform-specific #ifdefs.
+**************************************************************************/
+
+#ifdef SOLARIS
+/* Unchecked */
+extern int gethostname(char *, int);
+#endif
+
+#ifdef __BEOS__
+/* Unchecked */
+/* It's in the libs, but not the headers... - [cjh] */
+int shutdown( int, int ); 
+#endif
+
+#ifdef HAVE__GETPTY
+/* Unchecked */
+extern char * _getpty(int *, int, mode_t, int);
+#endif
+
+#if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY)
+#if !defined(HAVE_PTY_H) && !defined(HAVE_LIBUTIL_H)
+/* BSDI does not supply a prototype for the 'openpty' and 'forkpty'
+   functions, even though they are included in libutil. */
+#include <termios.h>
+extern int openpty(int *, int *, char *, struct termios *, struct winsize *);
+extern int forkpty(int *, char *, struct termios *, struct winsize *);
+#endif /* !defined(HAVE_PTY_H) && !defined(HAVE_LIBUTIL_H) */
+#endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) */
+
+
+/* These are pulled from various places. It isn't obvious on what platforms
+   they are necessary, nor what the exact prototype should look like (which
+   is likely to vary between platforms!) If you find you need one of these
+   declarations, please move them to a platform-specific block and include
+   proper prototypes. */
+#if 0
+
+/* From Modules/resource.c */
+extern int getrusage();
+extern int getpagesize();
+
+/* From Python/sysmodule.c and Modules/posixmodule.c */
+extern int fclose(FILE *);
+
+/* From Modules/posixmodule.c */
+extern int fdatasync(int);
+/* XXX These are supposedly for SunOS4.1.3 but "shouldn't hurt elsewhere" */
+extern int rename(const char *, const char *);
+extern int pclose(FILE *);
+extern int lstat(const char *, struct stat *);
+extern int symlink(const char *, const char *);
+extern int fsync(int fd);
+
+#endif /* 0 */
+
 #ifdef __cplusplus
 }
 #endif

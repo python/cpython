@@ -385,7 +385,6 @@ settrace() -- set the global debug tracing function\n\
 PyObject *
 _PySys_Init(void)
 {
-	extern int fclose(FILE *);
 	PyObject *m, *v, *sysdict;
 	PyObject *sysin, *sysout, *syserr;
 	char *s;
