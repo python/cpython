@@ -1411,14 +1411,6 @@ PyTypeObject PyInstance_Type = {
    In case (b), im_self is NULL
 */
 
-typedef struct {
-	PyObject_HEAD
-	PyObject *im_func;	/* The function implementing the method */
-	PyObject *im_self;	/* The instance it is bound to, or NULL */
-	PyObject *im_class;	/* The class that defined the method */
-} PyMethodObject;
-
-
 static PyMethodObject *free_list;
 
 PyObject *

@@ -56,6 +56,13 @@ typedef struct {
 	PyObject	*in_dict;	/* A dictionary */
 } PyInstanceObject;
 
+typedef struct {
+	PyObject_HEAD
+	PyObject *im_func;   /* The callable object implementing the method */
+	PyObject *im_self;   /* The instance it is bound to, or NULL */
+	PyObject *im_class;  /* The class that defined the method */
+} PyMethodObject;
+
 extern DL_IMPORT(PyTypeObject) PyClass_Type, PyInstance_Type, PyMethod_Type;
 
 #define PyClass_Check(op) ((op)->ob_type == &PyClass_Type)
@@ -69,6 +76,15 @@ extern PyObject *PyMethod_New Py_PROTO((PyObject *, PyObject *, PyObject *));
 extern PyObject *PyMethod_Function Py_PROTO((PyObject *));
 extern PyObject *PyMethod_Self Py_PROTO((PyObject *));
 extern PyObject *PyMethod_Class Py_PROTO((PyObject *));
+
+/* Macros for direct access to these values. Type checks are *not*
+   done, so use with care. */
+#define PyMethod_GET_FUNCTION(meth) \
+        (((PyMethodObject *)meth) -> im_func)
+#define PyMethod_GET_SELF(meth) \
+	(((PyMethodObject *)meth) -> im_self)
+#define PyMethod_GET_CLASS(meth) \
+	(((PyMethodObject *)meth) -> im_class)
 
 extern int PyClass_IsSubclass Py_PROTO((PyObject *, PyObject *));
 
