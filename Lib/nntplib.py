@@ -63,7 +63,7 @@ class NNTP:
 	# - host: hostname to connect to
 	# - port: port to connect to (default the standard NNTP port)
 
-	def __init__(self, host, port = NNTP_PORT):
+	def __init__(self, host, port = NNTP_PORT, user=None, password=None):
 		self.host = host
 		self.port = port
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -71,6 +71,15 @@ class NNTP:
 		self.file = self.sock.makefile('rb')
 		self.debugging = 0
 		self.welcome = self.getresp()
+		if user:
+		    resp = self.shortcmd('authinfo user '+user)
+		    if resp[:3] == '381':
+			if not password:
+			    raise error_reply, resp
+			else:
+			    resp = self.shortcmd('authinfo pass '+password)
+			    if resp[:3] != '281':
+				raise error_perm, resp
 
 	# Get the welcome message from the server
 	# (this is read and squirreled away by __init__()).
