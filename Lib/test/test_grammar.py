@@ -2,6 +2,7 @@
 # This just tests whether the parser accepts them all.
 
 from test_support import *
+import sys
 
 print '1. Parser'
 
@@ -149,16 +150,25 @@ def f4(two, (compound, (argument, list))): pass
 def f5((compound, first), two): pass
 verify(f2.func_code.co_varnames == ('one_argument',))
 verify(f3.func_code.co_varnames == ('two', 'arguments'))
-verify(f4.func_code.co_varnames == ('two', '.2', 'compound', 'argument',
-                                    'list'))
-verify(f5.func_code.co_varnames == ('.0', 'two', 'compound', 'first'))
+if sys.platform.startswith('java'):
+    verify(f4.func_code.co_varnames ==
+           ('two', '(compound, (argument, list))',))
+    verify(f5.func_code.co_varnames ==
+           ('(compound, first)', 'two', 'compound', 'first'))
+else:
+    verify(f4.func_code.co_varnames == ('two', '.2', 'compound',
+                                        'argument',  'list'))
+    verify(f5.func_code.co_varnames == ('.0', 'two', 'compound', 'first'))
 def a1(one_arg,): pass
 def a2(two, args,): pass
 def v0(*rest): pass
 def v1(a, *rest): pass
 def v2(a, b, *rest): pass
 def v3(a, (b, c), *rest): return a, b, c, rest
-verify(v3.func_code.co_varnames == ('a', '.2', 'rest', 'b', 'c'))
+if sys.platform.startswith('java'):
+    verify(v3.func_code.co_varnames == ('a', '(b, c)', 'rest', 'b', 'c'))
+else:
+    verify(v3.func_code.co_varnames == ('a', '.2', 'rest', 'b', 'c'))
 verify(v3(1, (2, 3), 4) == (1, 2, 3, (4,)))
 def d01(a=1): pass
 d01()
