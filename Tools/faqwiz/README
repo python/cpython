@@ -40,7 +40,7 @@ Setup Information
 -----------------
 
 This assumes you are familiar with Python, with your http server, and
-with running CGI scripts under your http server.  You need Python 1.4
+with running CGI scripts under your http server.  You need Python 1.5
 or better.
 
 Select a place where the Python modules that constitute the FAQ wizard
