@@ -617,7 +617,7 @@ static HINSTANCE LoadPythonDll(char *fname)
 	if (h)
 		return h;
 	wsprintf(subkey_name,
-		 "SOFTWARE\\Python\\PythonCore\\%s.%s\\InstallPath",
+		 "SOFTWARE\\Python\\PythonCore\\%d.%d\\InstallPath",
 		 py_major, py_minor);
 	if (ERROR_SUCCESS != RegQueryValue(HKEY_CURRENT_USER, subkey_name,
 					   fullpath, &size))
