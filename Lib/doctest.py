@@ -277,6 +277,10 @@ __all__ = [
     'run_docstring_examples',
     'is_private',
     'Tester',
+    'DocTestTestFailure',
+    'DocTestSuite',
+    'testsource',
+    'debug',
 ]
 
 import __future__
@@ -1149,6 +1153,270 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
     else:
         master.merge(tester)
     return failures, tries
+
+###########################################################################
+# Various doctest extensions, to make using doctest with unittest
+# easier, and to help debugging when a doctest goes wrong.  Original
+# code by Jim Fulton.
+
+# Utilities.
+
+# If module is None, return the calling module (the module that called
+# the routine that called _normalize_module -- this normally won't be
+# doctest!).  If module is a string, it should be the (possibly dotted)
+# name of a module, and the (rightmost) module object is returned.  Else
+# module is returned untouched; the intent appears to be that module is
+# already a module object in this case (although this isn't checked).
+
+def _normalize_module(module):
+    import sys
+
+    if module is None:
+        # Get our caller's caller's module.
+        module = sys._getframe(2).f_globals['__name__']
+        module = sys.modules[module]
+
+    elif isinstance(module, (str, unicode)):
+        # The ["*"] at the end is a mostly meaningless incantation with
+        # a crucial property:  if, e.g., module is 'a.b.c', it convinces
+        # __import__ to return c instead of a.
+        module = __import__(module, globals(), locals(), ["*"])
+
+    return module
+
+# tests is a list of (testname, docstring, filename, lineno) tuples.
+# If object has a __doc__ attr, and the __doc__ attr looks like it
+# contains a doctest (specifically, if it contains an instance of '>>>'),
+# then tuple
+#     prefix + name, object.__doc__, filename, lineno
+# is appended to tests.  Else tests is left alone.
+# There is no return value.
+
+def _get_doctest(name, object, tests, prefix, filename='', lineno=''):
+    doc = getattr(object, '__doc__', '')
+    if isinstance(doc, basestring) and '>>>' in doc:
+        tests.append((prefix + name, doc, filename, lineno))
+
+# tests is a list of (testname, docstring, filename, lineno) tuples.
+# docstrings containing doctests are appended to tests (if any are found).
+# items is a dict, like a module or class dict, mapping strings to objects.
+# mdict is the global dict of a "home" module -- only objects belonging
+# to this module are searched for docstrings.  module is the module to
+# which mdict belongs.
+# prefix is a string to be prepended to an object's name when adding a
+# tuple to tests.
+# The objects (values) in items are examined (recursively), and doctests
+# belonging to functions and classes in the home module are appended to
+# tests.
+# minlineno is a gimmick to try to guess the file-relative line number
+# at which a doctest probably begins.
+
+def _extract_doctests(items, module, mdict, tests, prefix, minlineno=0):
+
+    for name, object in items:
+        # Only interested in named objects.
+        if not hasattr(object, '__name__'):
+            continue
+
+        elif hasattr(object, 'func_globals'):
+            # Looks like a function.
+            if object.func_globals is not mdict:
+                # Non-local function.
+                continue
+            code = getattr(object, 'func_code', None)
+            filename = getattr(code, 'co_filename', '')
+            lineno = getattr(code, 'co_firstlineno', -1) + 1
+            if minlineno:
+                minlineno = min(lineno, minlineno)
+            else:
+                minlineno = lineno
+            _get_doctest(name, object, tests, prefix, filename, lineno)
+
+        elif hasattr(object, "__module__"):
+            # Maybe a class-like thing, in which case we care.
+            if object.__module__ != module.__name__:
+                # Not the same module.
+                continue
+            if not (hasattr(object, '__dict__')
+                    and hasattr(object, '__bases__')):
+                # Not a class.
+                continue
+
+            lineno = _extract_doctests(object.__dict__.items(),
+                                       module,
+                                       mdict,
+                                       tests,
+                                       prefix + name + ".")
+            # XXX "-3" is unclear.
+            _get_doctest(name, object, tests, prefix,
+                         lineno="%s (or above)" % (lineno - 3))
+
+    return minlineno
+
+# Find all the doctests belonging to the module object.
+# Return a list of
+#     (testname, docstring, filename, lineno)
+# tuples.
+
+def _find_tests(module, prefix=None):
+    if prefix is None:
+        prefix = module.__name__
+    mdict = module.__dict__
+    tests = []
+    # Get the module-level doctest (if any).
+    _get_doctest(prefix, module, tests, '', lineno="1 (or above)")
+    # Recursively search the module __dict__ for doctests.
+    if prefix:
+        prefix += "."
+    _extract_doctests(mdict.items(), module, mdict, tests, prefix)
+    return tests
+
+# unittest helpers.
+
+# A function passed to unittest, for unittest to drive.
+# tester is doctest Tester instance.  doc is the docstring whose
+# doctests are to be run.
+
+def _utest(tester, name, doc, filename, lineno):
+    import sys
+    from StringIO import StringIO
+
+    old = sys.stdout
+    sys.stdout = new = StringIO()
+    try:
+        failures, tries = tester.runstring(doc, name)
+    finally:
+        sys.stdout = old
+
+    if failures:
+        msg = new.getvalue()
+        lname = '.'.join(name.split('.')[-1:])
+        if not lineno:
+            lineno = "0 (don't know line number)"
+        # Don't change this format!  It was designed so that Emacs can
+        # parse it naturally.
+        raise DocTestTestFailure('Failed doctest test for %s\n'
+                                 '  File "%s", line %s, in %s\n\n%s' %
+                                 (name, filename, lineno, lname, msg))
+
+class DocTestTestFailure(Exception):
+    """A doctest test failed"""
+
+def DocTestSuite(module=None):
+    """Convert doctest tests for a module to a unittest TestSuite.
+
+    The returned TestSuite is to be run by the unittest framework, and
+    runs each doctest in the module.  If any of the doctests fail,
+    then the synthesized unit test fails, and an error is raised showing
+    the name of the file containing the test and a (sometimes approximate)
+    line number.
+
+    The optional module argument provides the module to be tested.  It
+    can be a module object or a (possibly dotted) module name.  If not
+    specified, the module calling DocTestSuite() is used.
+
+    Example (although note that unittest supplies many ways to use the
+    TestSuite returned; see the unittest docs):
+
+        import unittest
+        import doctest
+        import my_module_with_doctests
+
+        suite = doctest.DocTestSuite(my_module_with_doctests)
+        runner = unittest.TextTestRunner()
+        runner.run(suite)
+    """
+
+    import unittest
+
+    module = _normalize_module(module)
+    tests = _find_tests(module)
+    if not tests:
+        raise ValueError(module, "has no tests")
+
+    tests.sort()
+    suite = unittest.TestSuite()
+    tester = Tester(module)
+    for name, doc, filename, lineno in tests:
+        if not filename:
+            filename = module.__file__
+            if filename.endswith(".pyc"):
+                filename = filename[:-1]
+            elif filename.endswith(".pyo"):
+                filename = filename[:-1]
+        def runit(name=name, doc=doc, filename=filename, lineno=lineno):
+            _utest(tester, name, doc, filename, lineno)
+        suite.addTest(unittest.FunctionTestCase(
+                                    runit,
+                                    description="doctest of " + name))
+    return suite
+
+# Debugging support.
+
+def _expect(expect):
+    # Return the expected output (if any), formatted as a Python
+    # comment block.
+    if expect:
+        expect = "\n# ".join(expect.split("\n"))
+        expect = "\n# Expect:\n# %s" % expect
+    return expect
+
+def testsource(module, name):
+    """Extract the doctest examples from a docstring.
+
+    Provide the module (or dotted name of the module) containing the
+    tests to be extracted, and the name (within the module) of the object
+    with the docstring containing the tests to be extracted.
+
+    The doctest examples are returned as a string containing Python
+    code.  The expected output blocks in the examples are converted
+    to Python comments.
+    """
+
+    module = _normalize_module(module)
+    tests = _find_tests(module, "")
+    test = [doc for (tname, doc, dummy, dummy) in tests
+                if tname == name]
+    if not test:
+        raise ValueError(name, "not found in tests")
+    test = test[0]
+    examples = [source + _expect(expect)
+                for source, expect, dummy in _extract_examples(test)]
+    return '\n'.join(examples)
+
+def debug(module, name):
+    """Debug a single docstring containing doctests.
+
+    Provide the module (or dotted name of the module) containing the
+    docstring to be debugged, and the name (within the module) of the
+    object with the docstring to be debugged.
+
+    The doctest examples are extracted (see function testsource()),
+    and written to a temp file.  The Python debugger (pdb) is then
+    invoked on that file.
+    """
+
+    import os
+    import pdb
+    import tempfile
+
+    module = _normalize_module(module)
+    testsrc = testsource(module, name)
+    srcfilename = tempfile.mktemp("doctestdebug.py")
+    f = file(srcfilename, 'w')
+    f.write(testsrc)
+    f.close()
+
+    globs = {}
+    globs.update(module.__dict__)
+    try:
+        # Note that %r is vital here.  '%s' instead can, e.g., cause
+        # backslashes to get treated as metacharacters on Windows.
+        pdb.run("execfile(%r)" % srcfilename, globs, globs)
+    finally:
+        os.remove(srcfilename)
+
+
 
 class _TestClass:
     """
