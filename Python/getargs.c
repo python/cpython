@@ -1028,9 +1028,9 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	char *msg, *ks, **p;
 	int nkwds, pos, match, converted;
 	PyObject *key, *value;
-	
+
 	/* nested tuples cannot be parsed when using keyword arguments */
-	
+
 	for (;;) {
 		int c = *format++;
 		if (c == '(') {
@@ -1068,22 +1068,16 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	tplen = PyTuple_GET_SIZE(args);
 	
 	/* do a cursory check of the keywords just to see how many we got */
-	   
+
+	kwlen = 0;
 	if (keywords) { 	
 		if (!PyDict_Check(keywords)) {
-			if (keywords == NULL)
-				PyErr_SetString(PyExc_SystemError,
-		     "NULL received when keyword dictionary expected");
-			else
-				PyErr_Format(PyExc_SystemError,
-		     "%s received when keyword dictionary expected",
-					     keywords->ob_type->tp_name);
+			PyErr_Format(PyExc_SystemError,
+				"%s received when keyword dictionary expected",
+				keywords->ob_type->tp_name);
 			return 0;
 		}	
 		kwlen = PyDict_Size(keywords);
-	}
-	else {
-		kwlen = 0;
 	}
 			
 	/* make sure there are no duplicate values for an argument;
