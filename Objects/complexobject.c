@@ -208,6 +208,18 @@ PyComplex_ImagAsDouble(PyObject *op) {
   }
 }
 
+complex
+PyComplex_AsCComplex(PyObject *op) {
+	complex cv;
+	if (PyComplex_Check(op)) {
+		return ((PyComplexObject *)op)->cval;
+	} else {
+		cv.real = PyFloat_AsDouble(op);
+		cv.imag = 0.;
+		return cv;
+	}   
+}
+
 static void
 complex_dealloc(op)
 	object *op;
