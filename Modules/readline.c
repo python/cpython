@@ -460,6 +460,9 @@ on_completion(char *text, int state)
 		   lock released! */
 		save_tstate = PyThreadState_Swap(NULL);
 		PyEval_RestoreThread(completer_tstate);
+		/* Don't use the default filename completion if we
+		 * have a custom completion function... */
+		rl_attempted_completion_over = 1;
 		r = PyObject_CallFunction(completer, "si", text, state);
 		if (r == NULL)
 			goto error;
