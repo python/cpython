@@ -595,14 +595,20 @@ class DocTestParser:
             print x
             print y
         # Expected:
-        #     2
-        #     3
+        ## 2
+        ## 3
         #
-        #         Some text.
+        # Some text.
         x+y
         # Expected:
-        #     5
+        ## 5
         """
+        string = string.expandtabs()
+        # If all lines begin with the same indentation, then strip it.
+        min_indent = self._min_indent(string)
+        if min_indent > 0:
+            string = '\n'.join([l[min_indent:] for l in string.split('\n')])
+
         output = []
         charnum, lineno = 0, 0
         # Find all doctest examples in the string:
@@ -620,7 +626,7 @@ class DocTestParser:
             # Display the expected output, if any
             if want:
                 output.append('# Expected:')
-                output.extend(['#     '+l for l in want.split('\n')])
+                output.extend(['## '+l for l in want.split('\n')])
 
             # Update the line number & char number.
             lineno += string.count('\n', m.start(), m.end())
@@ -702,11 +708,19 @@ class DocTestParser:
                              (lineno, name, source))
         return options
 
+    # This regular expression finds the indentation of every non-blank
+    # line in a string.
+    _INDENT_RE = re.compile('^([ ]+)(?=\S)', re.MULTILINE)
+
+    def _min_indent(self, s):
+        "Return the minimum indentation of any non-blank line in `s`"
+        return min([len(indent) for indent in self._INDENT_RE.findall(s)])
+
     def _comment_line(self, line):
         "Return a commented form of the given line"
         line = line.rstrip()
         if line:
-            return '#  '+line
+            return '# '+line
         else:
             return '#'
 
@@ -2179,30 +2193,30 @@ def script_from_examples(s):
        ...           '''
 
        >>> print script_from_examples(text)
-       #        Here are examples of simple math.
+       # Here are examples of simple math.
        #
-       #            Python has super accurate integer addition
+       #     Python has super accurate integer addition
        #
        2 + 2
        # Expected:
-       #     5
+       ## 5
        #
-       #            And very friendly error messages:
+       #     And very friendly error messages:
        #
        1/0
        # Expected:
-       #     To Infinity
-       #     And
-       #     Beyond
+       ## To Infinity
+       ## And
+       ## Beyond
        #
-       #            You can use logic if you want:
+       #     You can use logic if you want:
        #
        if 0:
           blah
           blah
        <BLANKLINE>
        #
-       #            Ho hum
+       #     Ho hum
        """
 
     return DocTestParser().get_program(s)
