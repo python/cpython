@@ -159,6 +159,12 @@ Remove leading and trailing whitespace from the string
 Convert lower case letters to upper case and vice versa.
 \end{funcdesc}
 
+\begin{funcdesc}{translate}{s, table}
+Translate the characters from \var{s} using \var{table}, which must be
+a 256-character string giving the translation for each character
+value, indexed by its ordinal.
+\end{funcdesc}
+
 \begin{funcdesc}{upper}{s}
 Convert letters to upper case.
 \end{funcdesc}
