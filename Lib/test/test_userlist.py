@@ -18,6 +18,17 @@ uu0 = UserList(u0)
 uu1 = UserList(u1)
 uu2 = UserList(u2)
 
+v = UserList(tuple(u))
+class OtherList:
+    def __init__(self, initlist):
+        self.__data = initlist
+    def __len__(self):
+        return len(self.__data)
+    def __getitem__(self, i):
+        return self.__data[i]
+v0 = UserList(OtherList(u0))
+vv = UserList("this is also a sequence")
+
 # Test __repr__
 
 assert str(u0) == str(l0)

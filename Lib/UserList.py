@@ -1,13 +1,16 @@
 """A more or less complete user-defined wrapper around list objects."""
 
 class UserList:
-    def __init__(self, list=None):
+    def __init__(self, initlist=None):
         self.data = []
-        if list is not None:
-            if type(list) == type(self.data):
-                self.data[:] = list
+        if initlist is not None:
+            # XXX should this accept an arbitary sequence?
+            if type(initlist) == type(self.data):
+                self.data[:] = initlist
+            elif isinstance(initlist, UserList):
+                self.data[:] = initlist.data[:]
             else:
-                self.data[:] = list.data[:]
+                self.data = list(initlist)
     def __repr__(self): return repr(self.data)
     def __cmp__(self, other):
         if isinstance(other, UserList):
