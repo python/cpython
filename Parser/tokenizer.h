@@ -34,7 +34,7 @@ struct tok_state {
 	int level;	/* () [] {} Parentheses nesting level */
 			/* Used to allow free continuations inside them */
 	/* Stuff for checking on different tab sizes */
-	char *filename;	/* For error messages */
+	const char *filename;	/* For error messages */
 	int altwarning;	/* Issue warning if alternate tabs don't match */
 	int alterror;	/* Issue error if alternate tabs don't match */
 	int alttabsize;	/* Alternate tab spacing */
@@ -54,7 +54,7 @@ struct tok_state {
 	const char* str;
 };
 
-extern struct tok_state *PyTokenizer_FromString(char *);
+extern struct tok_state *PyTokenizer_FromString(const char *);
 extern struct tok_state *PyTokenizer_FromFile(FILE *, char *, char *);
 extern void PyTokenizer_Free(struct tok_state *);
 extern int PyTokenizer_Get(struct tok_state *, char **, char **);

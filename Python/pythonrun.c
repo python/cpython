@@ -32,11 +32,11 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 /* Forward */
 static void initmain(void);
 static void initsite(void);
-static PyObject *run_err_node(node *, char *, PyObject *, PyObject *,
+static PyObject *run_err_node(node *, const char *, PyObject *, PyObject *,
 			      PyCompilerFlags *);
-static PyObject *run_node(node *, char *, PyObject *, PyObject *,
+static PyObject *run_node(node *, const char *, PyObject *, PyObject *,
 			  PyCompilerFlags *);
-static PyObject *run_pyc_file(FILE *, char *, PyObject *, PyObject *,
+static PyObject *run_pyc_file(FILE *, const char *, PyObject *, PyObject *,
 			      PyCompilerFlags *);
 static void err_input(perrdetail *);
 static void initsigs(void);
@@ -458,25 +458,25 @@ initsite(void)
 /* Parse input from a file and execute it */
 
 int
-PyRun_AnyFile(FILE *fp, char *filename)
+PyRun_AnyFile(FILE *fp, const char *filename)
 {
 	return PyRun_AnyFileExFlags(fp, filename, 0, NULL);
 }
 
 int
-PyRun_AnyFileFlags(FILE *fp, char *filename, PyCompilerFlags *flags)
+PyRun_AnyFileFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
 {
 	return PyRun_AnyFileExFlags(fp, filename, 0, flags);
 }
 
 int
-PyRun_AnyFileEx(FILE *fp, char *filename, int closeit)
+PyRun_AnyFileEx(FILE *fp, const char *filename, int closeit)
 {
 	return PyRun_AnyFileExFlags(fp, filename, closeit, NULL);
 }
 
 int
-PyRun_AnyFileExFlags(FILE *fp, char *filename, int closeit, 
+PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit, 
 		     PyCompilerFlags *flags)
 {
 	if (filename == NULL)
@@ -492,13 +492,13 @@ PyRun_AnyFileExFlags(FILE *fp, char *filename, int closeit,
 }
 
 int
-PyRun_InteractiveLoop(FILE *fp, char *filename)
+PyRun_InteractiveLoop(FILE *fp, const char *filename)
 {
 	return PyRun_InteractiveLoopFlags(fp, filename, NULL);
 }
 
 int
-PyRun_InteractiveLoopFlags(FILE *fp, char *filename, PyCompilerFlags *flags)
+PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
 {
 	PyObject *v;
 	int ret;
@@ -533,7 +533,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, char *filename, PyCompilerFlags *flags)
 }
 
 int
-PyRun_InteractiveOne(FILE *fp, char *filename)
+PyRun_InteractiveOne(FILE *fp, const char *filename)
 {
 	return PyRun_InteractiveOneFlags(fp, filename, NULL);
 }
@@ -548,7 +548,7 @@ PyRun_InteractiveOne(FILE *fp, char *filename)
 #endif
 
 int
-PyRun_InteractiveOneFlags(FILE *fp, char *filename, PyCompilerFlags *flags)
+PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
 {
 	PyObject *m, *d, *v, *w;
 	node *n;
@@ -602,7 +602,7 @@ PyRun_InteractiveOneFlags(FILE *fp, char *filename, PyCompilerFlags *flags)
 }
 
 int
-PyRun_SimpleFile(FILE *fp, char *filename)
+PyRun_SimpleFile(FILE *fp, const char *filename)
 {
 	return PyRun_SimpleFileEx(fp, filename, 0);
 }
@@ -611,7 +611,7 @@ PyRun_SimpleFile(FILE *fp, char *filename)
    the file type, and, if we may close it, at the first few bytes. */
 
 static int
-maybe_pyc_file(FILE *fp, char* filename, char* ext, int closeit)
+maybe_pyc_file(FILE *fp, const char* filename, const char* ext, int closeit)
 {
 	if (strcmp(ext, ".pyc") == 0 || strcmp(ext, ".pyo") == 0)
 		return 1;
@@ -655,17 +655,17 @@ maybe_pyc_file(FILE *fp, char* filename, char* ext, int closeit)
 } 
 
 int
-PyRun_SimpleFileEx(FILE *fp, char *filename, int closeit)
+PyRun_SimpleFileEx(FILE *fp, const char *filename, int closeit)
 {
 	return PyRun_SimpleFileExFlags(fp, filename, closeit, NULL);
 }
 
 int
-PyRun_SimpleFileExFlags(FILE *fp, char *filename, int closeit,
+PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 			PyCompilerFlags *flags)
 {
 	PyObject *m, *d, *v;
-	char *ext;
+	const char *ext;
 
 	m = PyImport_AddModule("__main__");
 	if (m == NULL)
@@ -709,13 +709,13 @@ PyRun_SimpleFileExFlags(FILE *fp, char *filename, int closeit,
 }
 
 int
-PyRun_SimpleString(char *command)
+PyRun_SimpleString(const char *command)
 {
 	return PyRun_SimpleStringFlags(command, NULL);
 }
 
 int
-PyRun_SimpleStringFlags(char *command, PyCompilerFlags *flags)
+PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
 {
 	PyObject *m, *d, *v;
 	m = PyImport_AddModule("__main__");
@@ -734,8 +734,8 @@ PyRun_SimpleStringFlags(char *command, PyCompilerFlags *flags)
 }
 
 static int
-parse_syntax_error(PyObject *err, PyObject **message, char **filename,
-		   int *lineno, int *offset, char **text)
+parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
+		   int *lineno, int *offset, const char **text)
 {
 	long hold;
 	PyObject *v;
@@ -804,7 +804,7 @@ PyErr_Print(void)
 }
 
 static void
-print_error_text(PyObject *f, int offset, char *text)
+print_error_text(PyObject *f, int offset, const char *text)
 {
 	char *nl;
 	if (offset >= 0) {
@@ -936,7 +936,7 @@ void PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 		    PyObject_HasAttrString(v, "print_file_and_line"))
 		{
 			PyObject *message;
-			char *filename, *text;
+			const char *filename, *text;
 			int lineno, offset;
 			if (!parse_syntax_error(v, &message, &filename,
 						&lineno, &offset, &text))
@@ -1016,21 +1016,21 @@ void PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 }
 
 PyObject *
-PyRun_String(char *str, int start, PyObject *globals, PyObject *locals)
+PyRun_String(const char *str, int start, PyObject *globals, PyObject *locals)
 {
 	return run_err_node(PyParser_SimpleParseString(str, start),
 			    "<string>", globals, locals, NULL);
 }
 
 PyObject *
-PyRun_File(FILE *fp, char *filename, int start, PyObject *globals,
+PyRun_File(FILE *fp, const char *filename, int start, PyObject *globals,
 	   PyObject *locals)
 {
 	return PyRun_FileEx(fp, filename, start, globals, locals, 0);
 }
 
 PyObject *
-PyRun_FileEx(FILE *fp, char *filename, int start, PyObject *globals,
+PyRun_FileEx(FILE *fp, const char *filename, int start, PyObject *globals,
 	     PyObject *locals, int closeit)
 {
 	node *n = PyParser_SimpleParseFile(fp, filename, start);
@@ -1040,7 +1040,7 @@ PyRun_FileEx(FILE *fp, char *filename, int start, PyObject *globals,
 }
 
 PyObject *
-PyRun_StringFlags(char *str, int start, PyObject *globals, PyObject *locals,
+PyRun_StringFlags(const char *str, int start, PyObject *globals, PyObject *locals,
 		  PyCompilerFlags *flags)
 {
 	return run_err_node(PyParser_SimpleParseStringFlags(
@@ -1049,7 +1049,7 @@ PyRun_StringFlags(char *str, int start, PyObject *globals, PyObject *locals,
 }
 
 PyObject *
-PyRun_FileFlags(FILE *fp, char *filename, int start, PyObject *globals,
+PyRun_FileFlags(FILE *fp, const char *filename, int start, PyObject *globals,
 		PyObject *locals, PyCompilerFlags *flags)
 {
 	return PyRun_FileExFlags(fp, filename, start, globals, locals, 0,
@@ -1057,7 +1057,7 @@ PyRun_FileFlags(FILE *fp, char *filename, int start, PyObject *globals,
 }
 
 PyObject *
-PyRun_FileExFlags(FILE *fp, char *filename, int start, PyObject *globals,
+PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
 		  PyObject *locals, int closeit, PyCompilerFlags *flags)
 {
 	node *n = PyParser_SimpleParseFileFlags(fp, filename, start,
@@ -1068,7 +1068,7 @@ PyRun_FileExFlags(FILE *fp, char *filename, int start, PyObject *globals,
 }
 
 static PyObject *
-run_err_node(node *n, char *filename, PyObject *globals, PyObject *locals,
+run_err_node(node *n, const char *filename, PyObject *globals, PyObject *locals,
 	     PyCompilerFlags *flags)
 {
 	if (n == NULL)
@@ -1077,7 +1077,7 @@ run_err_node(node *n, char *filename, PyObject *globals, PyObject *locals,
 }
 
 static PyObject *
-run_node(node *n, char *filename, PyObject *globals, PyObject *locals,
+run_node(node *n, const char *filename, PyObject *globals, PyObject *locals,
 	 PyCompilerFlags *flags)
 {
 	PyCodeObject *co;
@@ -1092,7 +1092,7 @@ run_node(node *n, char *filename, PyObject *globals, PyObject *locals,
 }
 
 static PyObject *
-run_pyc_file(FILE *fp, char *filename, PyObject *globals, PyObject *locals,
+run_pyc_file(FILE *fp, const char *filename, PyObject *globals, PyObject *locals,
 	     PyCompilerFlags *flags)
 {
 	PyCodeObject *co;
@@ -1124,13 +1124,13 @@ run_pyc_file(FILE *fp, char *filename, PyObject *globals, PyObject *locals,
 }
 
 PyObject *
-Py_CompileString(char *str, char *filename, int start)
+Py_CompileString(const char *str, const char *filename, int start)
 {
 	return Py_CompileStringFlags(str, filename, start, NULL);
 }
 
 PyObject *
-Py_CompileStringFlags(char *str, char *filename, int start, 
+Py_CompileStringFlags(const char *str, const char *filename, int start, 
 		      PyCompilerFlags *flags)
 {
 	node *n;
@@ -1146,7 +1146,7 @@ Py_CompileStringFlags(char *str, char *filename, int start,
 }
 
 struct symtable *
-Py_SymtableString(char *str, char *filename, int start)
+Py_SymtableString(const char *str, const char *filename, int start)
 {
 	node *n;
 	struct symtable *st;
@@ -1162,7 +1162,7 @@ Py_SymtableString(char *str, char *filename, int start)
 /* Simplified interface to parsefile -- return node or set exception */
 
 node *
-PyParser_SimpleParseFileFlags(FILE *fp, char *filename, int start, int flags)
+PyParser_SimpleParseFileFlags(FILE *fp, const char *filename, int start, int flags)
 {
 	node *n;
 	perrdetail err;
@@ -1174,7 +1174,7 @@ PyParser_SimpleParseFileFlags(FILE *fp, char *filename, int start, int flags)
 }
 
 node *
-PyParser_SimpleParseFile(FILE *fp, char *filename, int start)
+PyParser_SimpleParseFile(FILE *fp, const char *filename, int start)
 {
 	return PyParser_SimpleParseFileFlags(fp, filename, start, 0);
 }
@@ -1182,7 +1182,7 @@ PyParser_SimpleParseFile(FILE *fp, char *filename, int start)
 /* Simplified interface to parsestring -- return node or set exception */
 
 node *
-PyParser_SimpleParseStringFlags(char *str, int start, int flags)
+PyParser_SimpleParseStringFlags(const char *str, int start, int flags)
 {
 	node *n;
 	perrdetail err;
@@ -1194,13 +1194,13 @@ PyParser_SimpleParseStringFlags(char *str, int start, int flags)
 }
 
 node *
-PyParser_SimpleParseString(char *str, int start)
+PyParser_SimpleParseString(const char *str, int start)
 {
 	return PyParser_SimpleParseStringFlags(str, start, 0);
 }
 
 node *
-PyParser_SimpleParseStringFlagsFilename(char *str, char *filename,
+PyParser_SimpleParseStringFlagsFilename(const char *str, const char *filename,
 					int start, int flags)
 {
 	node *n;
@@ -1215,7 +1215,7 @@ PyParser_SimpleParseStringFlagsFilename(char *str, char *filename,
 }
 
 node *
-PyParser_SimpleParseStringFilename(char *str, char *filename, int start)
+PyParser_SimpleParseStringFilename(const char *str, const char *filename, int start)
 {
 	return PyParser_SimpleParseStringFlagsFilename(str, filename,
 						       start, 0);
@@ -1429,7 +1429,7 @@ isatty(int fd)
  *      the descriptor is NULL or "<stdin>" or "???".
  */
 int
-Py_FdIsInteractive(FILE *fp, char *filename)
+Py_FdIsInteractive(FILE *fp, const char *filename)
 {
 	if (isatty((int)fileno(fp)))
 		return 1;

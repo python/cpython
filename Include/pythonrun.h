@@ -26,47 +26,47 @@ PyAPI_FUNC(int) Py_IsInitialized(void);
 PyAPI_FUNC(PyThreadState *) Py_NewInterpreter(void);
 PyAPI_FUNC(void) Py_EndInterpreter(PyThreadState *);
 
-PyAPI_FUNC(int) PyRun_AnyFile(FILE *, char *);
-PyAPI_FUNC(int) PyRun_AnyFileEx(FILE *, char *, int);
+PyAPI_FUNC(int) PyRun_AnyFile(FILE *, const char *);
+PyAPI_FUNC(int) PyRun_AnyFileEx(FILE *, const char *, int);
 
-PyAPI_FUNC(int) PyRun_AnyFileFlags(FILE *, char *, PyCompilerFlags *);
-PyAPI_FUNC(int) PyRun_AnyFileExFlags(FILE *, char *, int, PyCompilerFlags *);
+PyAPI_FUNC(int) PyRun_AnyFileFlags(FILE *, const char *, PyCompilerFlags *);
+PyAPI_FUNC(int) PyRun_AnyFileExFlags(FILE *, const char *, int, PyCompilerFlags *);
 
-PyAPI_FUNC(int) PyRun_SimpleString(char *);
-PyAPI_FUNC(int) PyRun_SimpleStringFlags(char *, PyCompilerFlags *);
-PyAPI_FUNC(int) PyRun_SimpleFile(FILE *, char *);
-PyAPI_FUNC(int) PyRun_SimpleFileEx(FILE *, char *, int);
-PyAPI_FUNC(int) PyRun_SimpleFileExFlags(FILE *, char *, int, PyCompilerFlags *);
-PyAPI_FUNC(int) PyRun_InteractiveOne(FILE *, char *);
-PyAPI_FUNC(int) PyRun_InteractiveOneFlags(FILE *, char *, PyCompilerFlags *);
-PyAPI_FUNC(int) PyRun_InteractiveLoop(FILE *, char *);
-PyAPI_FUNC(int) PyRun_InteractiveLoopFlags(FILE *, char *, PyCompilerFlags *);
+PyAPI_FUNC(int) PyRun_SimpleString(const char *);
+PyAPI_FUNC(int) PyRun_SimpleStringFlags(const char *, PyCompilerFlags *);
+PyAPI_FUNC(int) PyRun_SimpleFile(FILE *, const char *);
+PyAPI_FUNC(int) PyRun_SimpleFileEx(FILE *, const char *, int);
+PyAPI_FUNC(int) PyRun_SimpleFileExFlags(FILE *, const char *, int, PyCompilerFlags *);
+PyAPI_FUNC(int) PyRun_InteractiveOne(FILE *, const char *);
+PyAPI_FUNC(int) PyRun_InteractiveOneFlags(FILE *, const char *, PyCompilerFlags *);
+PyAPI_FUNC(int) PyRun_InteractiveLoop(FILE *, const char *);
+PyAPI_FUNC(int) PyRun_InteractiveLoopFlags(FILE *, const char *, PyCompilerFlags *);
 
-PyAPI_FUNC(struct _node *) PyParser_SimpleParseString(char *, int);
-PyAPI_FUNC(struct _node *) PyParser_SimpleParseFile(FILE *, char *, int);
-PyAPI_FUNC(struct _node *) PyParser_SimpleParseStringFlags(char *, int, int);
-PyAPI_FUNC(struct _node *) PyParser_SimpleParseStringFlagsFilename(char *,
-								  char *,
+PyAPI_FUNC(struct _node *) PyParser_SimpleParseString(const char *, int);
+PyAPI_FUNC(struct _node *) PyParser_SimpleParseFile(FILE *, const char *, int);
+PyAPI_FUNC(struct _node *) PyParser_SimpleParseStringFlags(const char *, int, int);
+PyAPI_FUNC(struct _node *) PyParser_SimpleParseStringFlagsFilename(const char *,
+								  const char *,
 								  int,
 								  int);
-PyAPI_FUNC(struct _node *) PyParser_SimpleParseFileFlags(FILE *, char *,
+PyAPI_FUNC(struct _node *) PyParser_SimpleParseFileFlags(FILE *, const char *,
 							int, int);
 
-PyAPI_FUNC(PyObject *) PyRun_String(char *, int, PyObject *, PyObject *);
-PyAPI_FUNC(PyObject *) PyRun_File(FILE *, char *, int, PyObject *, PyObject *);
-PyAPI_FUNC(PyObject *) PyRun_FileEx(FILE *, char *, int,
+PyAPI_FUNC(PyObject *) PyRun_String(const char *, int, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyRun_File(FILE *, const char *, int, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyRun_FileEx(FILE *, const char *, int,
 				   PyObject *, PyObject *, int);
-PyAPI_FUNC(PyObject *) PyRun_StringFlags(char *, int, PyObject *, PyObject *,
+PyAPI_FUNC(PyObject *) PyRun_StringFlags(const char *, int, PyObject *, PyObject *,
 					PyCompilerFlags *);
-PyAPI_FUNC(PyObject *) PyRun_FileFlags(FILE *, char *, int, PyObject *, 
+PyAPI_FUNC(PyObject *) PyRun_FileFlags(FILE *, const char *, int, PyObject *, 
 				      PyObject *, PyCompilerFlags *);
-PyAPI_FUNC(PyObject *) PyRun_FileExFlags(FILE *, char *, int, PyObject *, 
+PyAPI_FUNC(PyObject *) PyRun_FileExFlags(FILE *, const char *, int, PyObject *, 
 					PyObject *, int, PyCompilerFlags *);
 
-PyAPI_FUNC(PyObject *) Py_CompileString(char *, char *, int);
-PyAPI_FUNC(PyObject *) Py_CompileStringFlags(char *, char *, int,
+PyAPI_FUNC(PyObject *) Py_CompileString(const char *, const char *, int);
+PyAPI_FUNC(PyObject *) Py_CompileStringFlags(const char *, const char *, int,
 					    PyCompilerFlags *);
-PyAPI_FUNC(struct symtable *) Py_SymtableString(char *, char *, int);
+PyAPI_FUNC(struct symtable *) Py_SymtableString(const char *, const char *, int);
 
 PyAPI_FUNC(void) PyErr_Print(void);
 PyAPI_FUNC(void) PyErr_PrintEx(int);
@@ -76,7 +76,7 @@ PyAPI_FUNC(int) Py_AtExit(void (*func)(void));
 
 PyAPI_FUNC(void) Py_Exit(int);
 
-PyAPI_FUNC(int) Py_FdIsInteractive(FILE *, char *);
+PyAPI_FUNC(int) Py_FdIsInteractive(FILE *, const char *);
 
 /* Bootstrap */
 PyAPI_FUNC(int) Py_Main(int argc, char **argv);

@@ -9,7 +9,7 @@ extern "C" {
 
 typedef struct {
     int error;
-    char *filename;
+    const char *filename;
     int lineno;
     int offset;
     char *text;
@@ -21,19 +21,19 @@ typedef struct {
 #define PyPARSE_YIELD_IS_KEYWORD	0x0001
 #endif
 
-PyAPI_FUNC(node *) PyParser_ParseString(char *, grammar *, int,
+PyAPI_FUNC(node *) PyParser_ParseString(const char *, grammar *, int,
                                               perrdetail *);
-PyAPI_FUNC(node *) PyParser_ParseFile (FILE *, char *, grammar *, int,
+PyAPI_FUNC(node *) PyParser_ParseFile (FILE *, const char *, grammar *, int,
                                              char *, char *, perrdetail *);
 
-PyAPI_FUNC(node *) PyParser_ParseStringFlags(char *, grammar *, int,
+PyAPI_FUNC(node *) PyParser_ParseStringFlags(const char *, grammar *, int,
                                               perrdetail *, int);
-PyAPI_FUNC(node *) PyParser_ParseFileFlags(FILE *, char *, grammar *,
+PyAPI_FUNC(node *) PyParser_ParseFileFlags(FILE *, const char *, grammar *,
 						 int, char *, char *,
 						 perrdetail *, int);
 
-PyAPI_FUNC(node *) PyParser_ParseStringFlagsFilename(char *,
-					      char *,
+PyAPI_FUNC(node *) PyParser_ParseStringFlagsFilename(const char *,
+					      const char *,
 					      grammar *, int,
                                               perrdetail *, int);
 #ifdef __cplusplus

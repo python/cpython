@@ -15,17 +15,17 @@ int Py_TabcheckFlag;
 
 /* Forward */
 static node *parsetok(struct tok_state *, grammar *, int, perrdetail *, int);
-static void initerr(perrdetail *err_ret, char* filename);
+static void initerr(perrdetail *err_ret, const char* filename);
 
 /* Parse input coming from a string.  Return error code, print some errors. */
 node *
-PyParser_ParseString(char *s, grammar *g, int start, perrdetail *err_ret)
+PyParser_ParseString(const char *s, grammar *g, int start, perrdetail *err_ret)
 {
 	return PyParser_ParseStringFlags(s, g, start, err_ret, 0);
 }
 
 node *
-PyParser_ParseStringFlags(char *s, grammar *g, int start,
+PyParser_ParseStringFlags(const char *s, grammar *g, int start,
 		          perrdetail *err_ret, int flags)
 {
 	return PyParser_ParseStringFlagsFilename(s, NULL,
@@ -33,7 +33,7 @@ PyParser_ParseStringFlags(char *s, grammar *g, int start,
 }
 
 node *
-PyParser_ParseStringFlagsFilename(char *s, char *filename,
+PyParser_ParseStringFlagsFilename(const char *s, const char *filename,
 			  grammar *g, int start,
 		          perrdetail *err_ret, int flags)
 {
@@ -60,7 +60,7 @@ PyParser_ParseStringFlagsFilename(char *s, char *filename,
 /* Parse input coming from a file.  Return error code, print some errors. */
 
 node *
-PyParser_ParseFile(FILE *fp, char *filename, grammar *g, int start,
+PyParser_ParseFile(FILE *fp, const char *filename, grammar *g, int start,
 		   char *ps1, char *ps2, perrdetail *err_ret)
 {
 	return PyParser_ParseFileFlags(fp, filename, g, start, ps1, ps2,
@@ -68,7 +68,7 @@ PyParser_ParseFile(FILE *fp, char *filename, grammar *g, int start,
 }
 
 node *
-PyParser_ParseFileFlags(FILE *fp, char *filename, grammar *g, int start,
+PyParser_ParseFileFlags(FILE *fp, const char *filename, grammar *g, int start,
 			char *ps1, char *ps2, perrdetail *err_ret, int flags)
 {
 	struct tok_state *tok;
@@ -201,7 +201,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 }
 
 static void
-initerr(perrdetail *err_ret, char* filename)
+initerr(perrdetail *err_ret, const char* filename)
 {
 	err_ret->error = E_OK;
 	err_ret->filename = filename;
