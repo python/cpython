@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -41,6 +41,8 @@ newfuncobject(code, globals)
 		op->func_globals = globals;
 		op->func_name = ((codeobject*)(op->func_code))->co_name;
 		INCREF(op->func_name);
+		op->func_argcount = -1; /* Unknown */
+		op->func_argdefs = NULL; /* No default arguments */
 	}
 	return (object *)op;
 }
@@ -67,6 +69,44 @@ getfuncglobals(op)
 	return ((funcobject *) op) -> func_globals;
 }
 
+object *
+getfuncargstuff(op, argcount_return)
+	object *op;
+	int *argcount_return;
+{
+	if (!is_funcobject(op)) {
+		err_badcall();
+		return NULL;
+	}
+	*argcount_return = ((funcobject *) op) -> func_argcount;
+	return ((funcobject *) op) -> func_argdefs;
+}
+
+int
+setfuncargstuff(op, argcount, argdefs)
+	object *op;
+	int argcount;
+	object *argdefs;
+{
+	if (!is_funcobject(op) ||
+	    argdefs != NULL && !is_tupleobject(argdefs)) {
+		err_badcall();
+		return -1;
+	}
+	if (argdefs == None)
+		argdefs = NULL;
+	else if (is_tupleobject(argdefs))
+		XINCREF(argdefs);
+	else {
+		err_setstr(SystemError, "non-tuple default args");
+		return -1;
+	}
+	((funcobject *) op) -> func_argcount = argcount;
+	XDECREF(((funcobject *) op) -> func_argdefs);
+	((funcobject *) op) -> func_argdefs = argdefs;
+	return 0;
+}
+
 /* Methods */
 
 #define OFF(x) offsetof(funcobject, x)
@@ -75,6 +115,8 @@ static struct memberlist func_memberlist[] = {
 	{"func_code",	T_OBJECT,	OFF(func_code),		READONLY},
 	{"func_globals",T_OBJECT,	OFF(func_globals),	READONLY},
 	{"func_name",	T_OBJECT,	OFF(func_name),		READONLY},
+	{"func_argcount",T_INT,		OFF(func_argcount),	READONLY},
+	{"func_argdefs",T_OBJECT,	OFF(func_argdefs),	READONLY},
 	{NULL}	/* Sentinel */
 };
 
@@ -92,6 +134,7 @@ func_dealloc(op)
 {
 	DECREF(op->func_code);
 	DECREF(op->func_globals);
+	XDECREF(op->func_argdefs);
 	DEL(op);
 }
 
@@ -113,8 +156,15 @@ static int
 func_compare(f, g)
 	funcobject *f, *g;
 {
+	int c;
 	if (f->func_globals != g->func_globals)
 		return (f->func_globals < g->func_globals) ? -1 : 1;
+	c = f->func_argcount < g->func_argcount;
+	if (c != 0)
+		return c < 0 ? -1 : 1;
+	c = cmpobject(f->func_argdefs, g->func_argdefs);
+	if (c != 0)
+		return c;
 	return cmpobject(f->func_code, g->func_code);
 }
 
@@ -136,14 +186,14 @@ typeobject Functype = {
 	"function",
 	sizeof(funcobject),
 	0,
-	func_dealloc,	/*tp_dealloc*/
+	(destructor)func_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
-	func_getattr,	/*tp_getattr*/
+	(getattrfunc)func_getattr, /*tp_getattr*/
 	0,		/*tp_setattr*/
-	func_compare,	/*tp_compare*/
-	func_repr,	/*tp_repr*/
+	(cmpfunc)func_compare, /*tp_compare*/
+	(reprfunc)func_repr, /*tp_repr*/
 	0,		/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
-	func_hash,	/*tp_hash*/
+	(hashfunc)func_hash, /*tp_hash*/
 };

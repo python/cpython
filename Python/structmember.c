@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -142,6 +142,11 @@ setmember(addr, mlist, name, v)
 		if (strcmp(l->name, name) == 0) {
 			if (l->readonly || l->type == T_STRING) {
 				err_setstr(TypeError, "readonly attribute");
+				return -1;
+			}
+			if (v == NULL && l->type != T_OBJECT) {
+				err_setstr(TypeError,
+				  "can't delete numeric/char attribute");
 				return -1;
 			}
 			addr += l->offset;

@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -29,8 +29,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 /* Parser generator interface */
-
-extern grammar gram;
 
 extern grammar *meta_grammar PROTO((void));
 

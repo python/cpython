@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -48,5 +48,5 @@ typeobject Typetype = {
 	0,			/*tp_getattr*/
 	0,			/*tp_setattr*/
 	0,			/*tp_compare*/
-	type_repr,		/*tp_repr*/
+	(reprfunc)type_repr, /*tp_repr*/
 };
