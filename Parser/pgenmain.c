@@ -145,14 +145,12 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 	return PyMem_REALLOC(p, n+1);
 }
 
-#ifdef WITH_UNIVERSAL_NEWLINES
 /* No-nonsense fgets */
 char *
 Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
 {
 	return fgets(buf, n, stream);
 }
-#endif
 
 
 #include <stdarg.h>

@@ -73,13 +73,11 @@ static char __author__[] =
 #define RELEASE_LOCK(obj)
 #endif
 
-#ifdef WITH_UNIVERSAL_NEWLINES
 /* Bits in f_newlinetypes */
 #define NEWLINE_UNKNOWN	0	/* No newline seen, yet */
 #define NEWLINE_CR 1		/* \r newline seen */
 #define NEWLINE_LF 2		/* \n newline seen */
 #define NEWLINE_CRLF 4		/* \r\n newline seen */
-#endif
 
 /* ===================================================================== */
 /* Structure definitions. */
@@ -94,11 +92,9 @@ typedef struct {
 
 	int f_softspace;	/* Flag used by 'print' command */
 
-#ifdef WITH_UNIVERSAL_NEWLINES
 	int f_univ_newline;	/* Handle any newline convention */
 	int f_newlinetypes;	/* Types of newlines seen */
 	int f_skipnextlf;	/* Skip next \n */
-#endif
 
 	BZFILE *fp;
 	int mode;
@@ -227,11 +223,9 @@ Util_GetLine(BZ2FileObject *f, int n)
 	size_t increment;       /* amount to increment the buffer */
 	PyObject *v;
 	int bzerror;
-#ifdef WITH_UNIVERSAL_NEWLINES
 	int newlinetypes = f->f_newlinetypes;
 	int skipnextlf = f->f_skipnextlf;
 	int univ_newline = f->f_univ_newline;
-#endif
 
 	total_v_size = n > 0 ? n : 100;
 	v = PyString_FromStringAndSize((char *)NULL, total_v_size);
@@ -243,7 +237,6 @@ Util_GetLine(BZ2FileObject *f, int n)
 
 	for (;;) {
 		Py_BEGIN_ALLOW_THREADS
-#ifdef WITH_UNIVERSAL_NEWLINES
 		if (univ_newline) {
 			while (1) {
 				BZ2_bzRead(&bzerror, f->fp, &c, 1);
@@ -277,17 +270,14 @@ Util_GetLine(BZ2FileObject *f, int n)
 			if (bzerror == BZ_STREAM_END && skipnextlf)
 				newlinetypes |= NEWLINE_CR;
 		} else /* If not universal newlines use the normal loop */
-#endif
 			do {
 				BZ2_bzRead(&bzerror, f->fp, &c, 1);
 				f->pos++;
 				*buf++ = c;
 			} while (bzerror == BZ_OK && c != '\n' && buf != end);
 		Py_END_ALLOW_THREADS
-#ifdef WITH_UNIVERSAL_NEWLINES
 		f->f_newlinetypes = newlinetypes;
 		f->f_skipnextlf = skipnextlf;
-#endif
 		if (bzerror == BZ_STREAM_END) {
 			f->size = f->pos;
 			f->mode = MODE_READ_EOF;
@@ -323,9 +313,6 @@ Util_GetLine(BZ2FileObject *f, int n)
 	return v;
 }
 
-#ifndef WITH_UNIVERSAL_NEWLINES
-#define Util_UnivNewlineRead(a,b,c,d,e) BZ2_bzRead(a,b,c,d)
-#else
 /* This is a hacked version of Python's
  * fileobject.c:Py_UniversalNewlineFread(). */
 size_t
@@ -393,7 +380,6 @@ Util_UnivNewlineRead(int *bzerror, BZFILE *stream,
 	f->f_skipnextlf = skipnextlf;
 	return dst - buf;
 }
-#endif
 
 /* This is a hacked version of Python's fileobject.c:drop_readahead(). */
 static void
@@ -1190,7 +1176,6 @@ static PyMethodDef BZ2File_methods[] = {
 /* ===================================================================== */
 /* Getters and setters of BZ2File. */
 
-#ifdef WITH_UNIVERSAL_NEWLINES
 /* This is a hacked version of Python's fileobject.c:get_newlines(). */
 static PyObject *
 BZ2File_get_newlines(BZ2FileObject *self, void *closure)
@@ -1220,7 +1205,6 @@ BZ2File_get_newlines(BZ2FileObject *self, void *closure)
 		return NULL;
 	}
 }
-#endif
 
 static PyObject *
 BZ2File_get_closed(BZ2FileObject *self, void *closure)
@@ -1243,10 +1227,8 @@ BZ2File_get_name(BZ2FileObject *self, void *closure)
 static PyGetSetDef BZ2File_getset[] = {
 	{"closed", (getter)BZ2File_get_closed, NULL,
 			"True if the file is closed"},
-#ifdef WITH_UNIVERSAL_NEWLINES
 	{"newlines", (getter)BZ2File_get_newlines, NULL, 
 			"end-of-line convention used in this file"},
-#endif
 	{"mode", (getter)BZ2File_get_mode, NULL,
 			"file mode ('r', 'w', or 'U')"},
 	{"name", (getter)BZ2File_get_name, NULL,
@@ -1309,9 +1291,7 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 				break;
 
 			case 'U':
-#ifdef WITH_UNIVERSAL_NEWLINES
 				self->f_univ_newline = 1;
-#endif
 				break;
 
 			default:
@@ -1441,7 +1421,6 @@ exist, and truncated otherwise. If the buffering argument is given, 0 means\n\
 unbuffered, and larger numbers specify the buffer size. If compresslevel\n\
 is given, must be a number between 1 and 9.\n\
 ")
-#ifdef WITH_UNIVERSAL_NEWLINES
 PyDoc_STR(
 "\n\
 Add a 'U' to mode to open the file for input with universal newline\n\
@@ -1451,7 +1430,6 @@ for this attribute is one of None (no newline read yet), '\\r', '\\n',\n\
 '\\r\\n' or a tuple containing all the newline types seen. Universal\n\
 newlines are available only when reading.\n\
 ")
-#endif
 ;
 
 static PyTypeObject BZ2File_Type = {

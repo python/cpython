@@ -41,13 +41,11 @@
 #define FUNLOCKFILE(f)
 #endif
 
-#ifdef WITH_UNIVERSAL_NEWLINES
 /* Bits in f_newlinetypes */
 #define NEWLINE_UNKNOWN	0	/* No newline seen, yet */
 #define NEWLINE_CR 1		/* \r newline seen */
 #define NEWLINE_LF 2		/* \n newline seen */
 #define NEWLINE_CRLF 4		/* \r\n newline seen */
-#endif
 
 FILE *
 PyFile_AsFile(PyObject *f)
@@ -119,11 +117,9 @@ fill_file_fields(PyFileObject *f, FILE *fp, char *name, char *mode,
 	f->f_softspace = 0;
 	f->f_binary = strchr(mode,'b') != NULL;
 	f->f_buf = NULL;
-#ifdef WITH_UNIVERSAL_NEWLINES
 	f->f_univ_newline = (strchr(mode, 'U') != NULL);
 	f->f_newlinetypes = NEWLINE_UNKNOWN;
 	f->f_skipnextlf = 0;
-#endif
 	Py_INCREF(Py_None);
 	f->f_encoding = Py_None;
 
@@ -165,17 +161,8 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 	else
 #endif
 	{
-#ifdef WITH_UNIVERSAL_NEWLINES
 		if (strcmp(mode, "U") == 0 || strcmp(mode, "rU") == 0)
 			mode = "rb";
-#else
-		/* Compatibility: specifying U in a Python without universal
-		** newlines is allowed, and the file is opened as a normal text
-		** file.
-		*/
-		if (strcmp(mode, "U") == 0 || strcmp(mode, "rU") == 0)
-			mode = "r";
-#endif
 #ifdef MS_WINDOWS
 		if (PyUnicode_Check(f->f_name)) {
 			PyObject *wmode;
@@ -494,9 +481,7 @@ file_seek(PyFileObject *f, PyObject *args)
 		clearerr(f->f_fp);
 		return NULL;
 	}
-#ifdef WITH_UNIVERSAL_NEWLINES
 	f->f_skipnextlf = 0;
-#endif
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -629,7 +614,6 @@ file_tell(PyFileObject *f)
 		clearerr(f->f_fp);
 		return NULL;
 	}
-#ifdef WITH_UNIVERSAL_NEWLINES
 	if (f->f_skipnextlf) {
 		int c;
 		c = GETC(f->f_fp);
@@ -638,7 +622,6 @@ file_tell(PyFileObject *f)
 			f->f_skipnextlf = 0;
 		} else if (c != EOF) ungetc(c, f->f_fp);
 	}
-#endif
 #if !defined(HAVE_LARGEFILE_SUPPORT)
 	return PyInt_FromLong(pos);
 #else
@@ -1070,18 +1053,12 @@ get_line(PyFileObject *f, int n)
 	size_t used_v_size;	/* # used slots in buffer */
 	size_t increment;       /* amount to increment the buffer */
 	PyObject *v;
-#ifdef WITH_UNIVERSAL_NEWLINES
 	int newlinetypes = f->f_newlinetypes;
 	int skipnextlf = f->f_skipnextlf;
 	int univ_newline = f->f_univ_newline;
-#endif
 
 #if defined(USE_FGETS_IN_GETLINE)
-#ifdef WITH_UNIVERSAL_NEWLINES
 	if (n <= 0 && !univ_newline )
-#else
-	if (n <= 0)
-#endif
 		return getline_via_fgets(fp);
 #endif
 	total_v_size = n > 0 ? n : 100;
@@ -1094,7 +1071,6 @@ get_line(PyFileObject *f, int n)
 	for (;;) {
 		Py_BEGIN_ALLOW_THREADS
 		FLOCKFILE(fp);
-#ifdef WITH_UNIVERSAL_NEWLINES
 		if (univ_newline) {
 			c = 'x'; /* Shut up gcc warning */
 			while ( buf != end && (c = GETC(fp)) != EOF ) {
@@ -1123,17 +1099,14 @@ get_line(PyFileObject *f, int n)
 			if ( c == EOF && skipnextlf )
 				newlinetypes |= NEWLINE_CR;
 		} else /* If not universal newlines use the normal loop */
-#endif
 		while ((c = GETC(fp)) != EOF &&
 		       (*buf++ = c) != '\n' &&
 			buf != end)
 			;
 		FUNLOCKFILE(fp);
 		Py_END_ALLOW_THREADS
-#ifdef WITH_UNIVERSAL_NEWLINES
 		f->f_newlinetypes = newlinetypes;
 		f->f_skipnextlf = skipnextlf;
-#endif
 		if (c == '\n')
 			break;
 		if (c == EOF) {
@@ -1677,7 +1650,6 @@ get_closed(PyFileObject *f, void *closure)
 {
 	return PyBool_FromLong((long)(f->f_fp == 0));
 }
-#ifdef WITH_UNIVERSAL_NEWLINES
 static PyObject *
 get_newlines(PyFileObject *f, void *closure)
 {
@@ -1706,14 +1678,11 @@ get_newlines(PyFileObject *f, void *closure)
 		return NULL;
 	}
 }
-#endif
 
 static PyGetSetDef file_getsetlist[] = {
 	{"closed", (getter)get_closed, NULL, "True if the file is closed"},
-#ifdef WITH_UNIVERSAL_NEWLINES
 	{"newlines", (getter)get_newlines, NULL,
 	 "end-of-line convention used in this file"},
-#endif
 	{0},
 };
 
@@ -1931,7 +1900,6 @@ PyDoc_STR(
 "If the buffering argument is given, 0 means unbuffered, 1 means line\n"
 "buffered, and larger numbers specify the buffer size.\n"
 )
-#ifdef WITH_UNIVERSAL_NEWLINES
 PyDoc_STR(
 "Add a 'U' to mode to open the file for input with universal newline\n"
 "support.  Any line ending in the input file will be seen as a '\\n'\n"
@@ -1941,7 +1909,6 @@ PyDoc_STR(
 "\n"
 "'U' cannot be combined with 'w' or '+' mode.\n"
 )
-#endif /* WITH_UNIVERSAL_NEWLINES */
 PyDoc_STR(
 "\n"
 "Note:  open() is an alias for file()."
@@ -2181,7 +2148,6 @@ int PyObject_AsFileDescriptor(PyObject *o)
 	return fd;
 }
 
-#ifdef WITH_UNIVERSAL_NEWLINES
 /* From here on we need access to the real fgets and fread */
 #undef fgets
 #undef fread
@@ -2359,4 +2325,3 @@ Py_UniversalNewlineFread(char *buf, size_t n,
 	f->f_skipnextlf = skipnextlf;
 	return dst - buf;
 }
-#endif
