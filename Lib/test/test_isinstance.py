@@ -165,6 +165,13 @@ class Super:
 class Child(Super):
     pass
 
+# new-style classes
+class NewSuper(object):
+    pass
+
+class NewChild(NewSuper):
+    pass
+
 
 
 class TestIsInstanceIsSubclass(unittest.TestCase):
@@ -225,7 +232,17 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertEqual(False, issubclass(Super, (Child,)))
         self.assertEqual(True, issubclass(Super, (Child, Super)))
         self.assertEqual(False, issubclass(Child, ()))
-        self.assertRaises(TypeError, issubclass, Child, ((Child,),))
+        self.assertEqual(True, issubclass(Super, (Child, (Super,))))
+
+        self.assertEqual(True, issubclass(NewChild, (NewChild,)))
+        self.assertEqual(True, issubclass(NewChild, (NewSuper,)))
+        self.assertEqual(False, issubclass(NewSuper, (NewChild,)))
+        self.assertEqual(True, issubclass(NewSuper, (NewChild, NewSuper)))
+        self.assertEqual(False, issubclass(NewChild, ()))
+        self.assertEqual(True, issubclass(NewSuper, (NewChild, (NewSuper,))))
+
+        self.assertEqual(True, issubclass(int, (long, (float, int))))
+        self.assertEqual(True, issubclass(str, (unicode, (Child, NewChild, basestring))))
 
 
 
