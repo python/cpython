@@ -109,11 +109,25 @@ def decodestring(s):
 # Small test program, reads stdin, writes stdout.
 # no arg: encode, any arg: decode.
 def test():
-	import sys
-	if sys.argv[1:]:
-		decode(sys.stdin, sys.stdout)
+	import sys, getopt
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], 'deut')
+	except getopt.error, msg:
+		print msg
+		print """usage: basd64 [-d] [-e] [-u] [-t] [file|-]
+		-d, -u: decode
+		-e: encode (default)
+		-t: decode string 'Aladdin:open sesame'"""
+	func = encode
+	for o, a in opts:
+		if o == '-e': func = encode
+		if o == '-d': func = decode
+		if o == '-u': func = decode
+		if o == '-t': test1(); return
+	if args and args[0] != '-':
+		func(open(args[0]), sys.stdout)
 	else:
-		encode(sys.stdin, sys.stdout)
+		func(sys.stdin, sys.stdout)
 
 def test1():
 	s0 = "Aladdin:open sesame"
