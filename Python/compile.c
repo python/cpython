@@ -4205,8 +4205,8 @@ PySymtable_Free(struct symtable *st)
 static int
 symtable_update_free_vars(struct symtable *st)
 {
-	PyObject *o, *name;
-	int i, def;
+	int i, j, def;
+	PyObject *o, *name, *list = NULL;
 	PySymtableEntryObject *child, *ste = st->st_cur;
 
 	if (ste->ste_type == TYPE_CLASS)
@@ -4216,25 +4216,45 @@ symtable_update_free_vars(struct symtable *st)
 	for (i = 0; i < PyList_GET_SIZE(ste->ste_children); ++i) {
 		int pos = 0;
 
+		if (list)
+			PyList_SetSlice(list, 0, 
+					((PyVarObject*)list)->ob_size, 0);
 		child = (PySymtableEntryObject *)\
 			PyList_GET_ITEM(ste->ste_children, i);
 		while (PyDict_Next(child->ste_symbols, &pos, &name, &o)) {
 			int v = PyInt_AS_LONG(o);
 			if (!(is_free(v)))
 				continue; /* avoids indentation */
+			if (list == NULL) {
+				list = PyList_New(0);
+				if (list == NULL)
+					return -1;
+			}
 			ste->ste_child_free = 1;
+			if (PyList_Append(list, name) < 0) {
+				Py_DECREF(list);
+				return -1;
+			}
+		}
+		for (j = 0; list && j < PyList_GET_SIZE(list); j++) {
+			name = PyList_GET_ITEM(list, j);
 			if (ste->ste_nested) {
 				if (symtable_add_def_o(st, ste->ste_symbols,
-						       name, def) < 0)
-						return -1;
+						       name, def) < 0) {
+				    Py_DECREF(list);
+				    return -1;
+				}
 			} else {
 				if (symtable_check_global(st, child->ste_id, 
-							  name) < 0)
-						return -1;
+							  name) < 0) {
+				    Py_DECREF(list);
+				    return -1;
+				}
 			}
 		}
 	}
-		
+
+	Py_XDECREF(list);
 	return 0;
 }
 
