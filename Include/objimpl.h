@@ -46,5 +46,3 @@ extern varobject *newvarobject PROTO((typeobject *, unsigned int));
 
 #define NEWOBJ(type, typeobj) ((type *) newobject(typeobj))
 #define NEWVAROBJ(type, typeobj, n) ((type *) newvarobject(typeobj, n))
-
-extern int StopPrint; /* Set when printing is interrupted */
