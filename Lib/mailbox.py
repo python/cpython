@@ -85,7 +85,7 @@ class UnixMailbox(_Mailbox):
 			line = self.fp.readline()
 			if not line:
 				raise EOFError
-			if line[:5] == 'From ':
+			if line[:5] == 'From ' and self._isrealfromline(line):
 				return
 
 	def _search_end(self):
@@ -94,9 +94,25 @@ class UnixMailbox(_Mailbox):
 			line = self.fp.readline()
 			if not line:
 				return
-			if line[:5] == 'From ':
+			if line[:5] == 'From ' and self._isrealfromline(line):
 				self.fp.seek(pos)
 				return
+
+	# An overridable mechanism to test for From-line-ness.
+	# You can either specify a different regular expression
+	# or define a whole new _isrealfromline() method.
+	# Note that this only gets called for lines starting with
+	# the 5 characters "From ".
+
+	_fromlinepattern = r"From \s*[^\s]+\s+\w\w\w\s+\w\w\w\s+\d?\d\s+" \
+			   r"\d?\d:\d\d:\d\d(\s+[^\s]+)?\s+\d\d\d\d\s*$"
+	_regexp = None
+
+	def _isrealfromline(self, line):
+		if not self._regexp:
+			import re
+			self._regexp = re.compile(self._fromlinepattern)
+		return self._regexp.match(line)
 
 class MmdfMailbox(_Mailbox):
 
@@ -190,7 +206,7 @@ def _test():
 	msgs = []
 	while 1:
 		msg = mb.next()
-		if not msg:
+		if msg is None:
 			break
 		msgs.append(msg)
 		msg.fp = None
@@ -203,9 +219,9 @@ def _test():
 	else:
 		print 'Mailbox',mbox,'has',len(msgs),'messages:'
 		for msg in msgs:
-			f = msg.getheader('from')
-			s = msg.getheader('subject')
-			d = (msg.getheader('date'))
+			f = msg.getheader('from') or ""
+			s = msg.getheader('subject') or ""
+			d = msg.getheader('date') or ""
 			print '%20.20s   %18.18s   %-30.30s'%(f, d[5:], s)
 
 
