@@ -113,6 +113,8 @@ class MyFile(File):
 			      self.file
 
 	def diff(self, opts = []):
+		if self.lsum == self.rsum:
+			return
 		import tempfile
 		flags = ''
 		for o, a in opts:
@@ -188,7 +190,9 @@ class rcvs(CommandFrameWork):
 
 	GlobalFlags = 'd:h:p:qv'
 	UsageMessage = \
-  "usage: rcvs [-d directory] [-h host] [-p port] [-q] [-v] subcommand arg ..."
+"usage: rcvs [-d directory] [-h host] [-p port] [-q] [-v] [subcommand arg ...]"
+	PostUsageMessage = \
+		"If no subcommand is given, the status of all files is listed"
 
 	def __init__(self):
 		"""Constructor."""
