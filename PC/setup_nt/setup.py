@@ -1,4 +1,4 @@
-"""Setup script for Windows NT 3.5 until we have a proper installer.
+"""Setup script for Windows NT 3.5 and Windows 95.
 
 Run this with the current directory set to the Python ``root''.
 """
@@ -171,9 +171,24 @@ win32api.RegCloseKey(corehandle)
 #listtree(pythonhandle)
 win32api.RegCloseKey(pythonhandle)
 
+print "Registering uninstaller..."
+pwd = nt.getcwd()
+uninstaller = '"%s\\uninstall.bat" "%s"' % (pwd, pwd)
+uninstallkey = \
+ "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Python"+sys.winver
+try:
+    uihandle = win32api.RegOpenKey(roothandle, uninstallkey)
+except win32api.error, msg:
+    uihandle = win32api.RegCreateKey(roothandle, uninstallkey)
+win32api.RegSetValueEx(uihandle, "DisplayName", None, win32con.REG_SZ,
+		       "Python "+sys.winver)
+win32api.RegSetValueEx(uihandle, "UninstallString", None, win32con.REG_SZ,
+		       uninstaller)
+win32api.RegCloseKey(uihandle)
+
 print "Registering Python Interpreter as shell for *.py files..."
 pwd = nt.getcwd()
-interpreter = '"' + pwd + '\\Bin\\python.exe" -i %1'
+interpreter = '"%s\\Bin\\python.exe" -i "%%1"' % pwd
 print "Interpreter command is", interpreter
 root = win32con.HKEY_CLASSES_ROOT
 sz = win32con.REG_SZ
@@ -227,6 +242,8 @@ Most common functions:
         Get a handle for an existing subdirectory
     RegCreateKey(handle, keypath) -> handle
         Get a handle for a new subdirectory
+    RegDeleteKey(handle, key)
+        Delete the given subdirectory -- must be empty
     RegCloseKey(handle)
         Close a handle
     RegGetValue(handle, subkey) -> string
