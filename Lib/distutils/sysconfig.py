@@ -20,7 +20,7 @@ PREFIX = os.path.normpath(sys.prefix)
 EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 
 
-def get_python_inc(plat_specific=0):
+def get_python_inc(plat_specific=0, prefix=None):
     """Return the directory containing installed Python header files.
 
     If 'plat_specific' is false (the default), this is the path to the
@@ -28,8 +28,11 @@ def get_python_inc(plat_specific=0):
     otherwise, this is the path to platform-specific header files
     (namely config.h).
 
+    If 'prefix' is supplied, use it instead of sys.prefix or
+    sys.exec_prefix -- i.e., ignore 'plat_specific'.
     """    
-    prefix = (plat_specific and EXEC_PREFIX or PREFIX)
+    if prefix is None:
+        prefix = (plat_specific and EXEC_PREFIX or PREFIX)
     if os.name == "posix":
         return os.path.join(prefix, "include", "python" + sys.version[:3])
     elif os.name == "nt":
@@ -42,7 +45,7 @@ def get_python_inc(plat_specific=0):
                "on platform '%s'") % os.name
 
 
-def get_python_lib(plat_specific=0, standard_lib=0):
+def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
     """Return the directory containing the Python library (standard or
     site additions).
 
@@ -53,8 +56,11 @@ def get_python_lib(plat_specific=0, standard_lib=0):
     containing standard Python library modules; otherwise, return the
     directory for site-specific modules.
 
+    If 'prefix' is supplied, use it instead of sys.prefix or
+    sys.exec_prefix -- i.e., ignore 'plat_specific'.
     """
-    prefix = (plat_specific and EXEC_PREFIX or PREFIX)
+    if prefix is None:
+        prefix = (plat_specific and EXEC_PREFIX or PREFIX)
        
     if os.name == "posix":
         libpython = os.path.join(prefix,
