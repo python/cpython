@@ -286,17 +286,9 @@
   \label{\indexlabel}
 }
 
+% these should dump an error or warning to the transcript
 \newcommand{\@thismodule}{$<<$ ERROR - NO CURRENT MODULE $>>$}
-
-% Add the defining entry for a module
-\newcommand{\@modindex}[2]{%
-  \index{#1@{\idxcode{#1}} (#2module)|textbf}%
-  \setindexsubitem{(in module #1)}%
-  \if@UseModuleIndex%
-    \write\modindexfile{\protect\indexentry{#1@{\tt #1}}{\thepage}}%
-  \fi%
-  \renewcommand{\@thismodule}{#1}
-}
+\newcommand{\@thisclass}{$<<$ ERROR - NO CURRENT CLASS $>>$}
 
 \newcommand{\makemodindex}{
   \newwrite\modindexfile
@@ -306,6 +298,16 @@
 
 \newcommand{\inputindex}[1]{
   \IfFileExists{#1}{\input{#1}}{\begin{theindex}\end{theindex}}
+}
+
+% Add the defining entry for a module
+\newcommand{\@modindex}[2]{%
+  \renewcommand{\@thismodule}{#1}
+  \setindexsubitem{(in module \@thismodule)}%
+  \index{#1@{\idxcode{#1}} (#2module)|textbf}%
+  \if@UseModuleIndex%
+    \write\modindexfile{\protect\indexentry{#1@{\tt #1}}{\thepage}}%
+  \fi%
 }
 
 % built-in & Python modules in the main distribution
@@ -321,6 +323,11 @@
 \newcommand{\setindexsubitem}[1]{\renewcommand{\index@subitem}{#1}}
 \newcommand{\ttindex}[1]{\index{#1@{\idxcode{#1}} \index@subitem}}
 
+\newcommand{\withsubitem}[2]{%
+  \begingroup%
+  \def\index@subitem{#1}#2%
+  \endgroup%
+}
 
 % {fulllineitems} is used in one place in libregex.tex, but is really for
 % internal use in this file.
@@ -371,6 +378,7 @@
 }{\end{fulllineitems}}
 
 \newenvironment{classdesc}[2]{%
+  \renewcommand{\@thisclass}{#1}%
   \begin{fulllineitems}%
     \item[\code{\bfcode{#1}(\varvars{#2})}]%
     \ttindex{#1}%
@@ -430,7 +438,7 @@
 \newcommand{\dfn}[1]{\emph{#1}}
 \newcommand{\strong}[1]{{\bf #1}}
 % let's experiment with a new font:
-\newcommand{\file}[1]{\mbox{`\small\textsf{#1}'}}
+\newcommand{\file}[1]{`{\small\textsf{#1}}'}
 
 % Use this def/redef approach for \url{} since hyperref defined this already,
 % but only if we actually used hyperref:
@@ -446,7 +454,7 @@
   }%					formatting "box".
 }
 \let\url=\pythonurl
-\newcommand{\email}[1]{\mbox{\small\textsf{#1}}}
+\newcommand{\email}[1]{{\small\textsf{#1}}}
 
 \newcommand{\varvars}[1]{{\def\,{\/{\char`\,}}\var{#1}}}
 
@@ -471,6 +479,15 @@
 \let\cfunction=\code
 \let\ctype=\code
 \let\cdata=\code
+
+\newcommand{\mimetype}[1]{{\small\textsf{#1}}}
+\newcommand{\regexp}[1]{$_\lceil$#1$^\rfloor$}
+\newcommand{\envvar}[1]{%
+  \$#1%
+  \index{#1@{\$#1}}%
+  \index{environment variables!{\$#1}}%
+}
+\let\character=\samp
 
 % constants defined in Python modules or C headers, not language constants:
 \let\constant=\code
