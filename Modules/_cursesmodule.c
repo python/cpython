@@ -1096,7 +1096,7 @@ PyCursesWindow_SubWin(PyCursesWindowObject *self, PyObject *args)
     return NULL;
   }
 
-  printf("Subwin: %i %i %i %i   \n", nlines, ncols, begin_y, begin_x);
+  /* printf("Subwin: %i %i %i %i   \n", nlines, ncols, begin_y, begin_x); */
   if (self->win->_flags & _ISPAD)
     win = subpad(self->win, nlines, ncols, begin_y, begin_x);
   else
