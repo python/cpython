@@ -887,6 +887,12 @@ class PyBuildExt(build_ext):
            self.detect_tkinter_darwin(inc_dirs, lib_dirs):
           return
 
+        # Set platform specific library prefix, if any
+        if platform == 'cygwin':
+            lib_prefix = 'cyg'
+        else:
+            lib_prefix = ''
+
         # Assume we haven't found any of the libraries or include files
         # The versions with dots are used on Unix, and the versions without
         # dots on Windows, for detection by cygwin.
@@ -894,9 +900,9 @@ class PyBuildExt(build_ext):
         for version in ['8.4', '84', '8.3', '83', '8.2',
                         '82', '8.1', '81', '8.0', '80']:
             tklib = self.compiler.find_library_file(lib_dirs,
-                                                    'tk' + version )
+                                                    lib_prefix + 'tk' + version)
             tcllib = self.compiler.find_library_file(lib_dirs,
-                                                     'tcl' + version )
+                                                     lib_prefix + 'tcl' + version)
             if tklib and tcllib:
                 # Exit the loop when we've found the Tcl/Tk libraries
                 break
@@ -927,6 +933,11 @@ class PyBuildExt(build_ext):
         if platform == 'sunos5':
             include_dirs.append('/usr/openwin/include')
             added_lib_dirs.append('/usr/openwin/lib')
+        elif platform == 'cygwin':
+            # Verify that the pseudo-X headers are installed before proceeding
+            x11_inc = find_file('X11/Xlib.h', [], inc_dirs)
+            if x11_inc is None:
+                return
         elif os.path.exists('/usr/X11R6/include'):
             include_dirs.append('/usr/X11R6/include')
             added_lib_dirs.append('/usr/X11R6/lib')
@@ -937,13 +948,6 @@ class PyBuildExt(build_ext):
             # Assume default location for X11
             include_dirs.append('/usr/X11/include')
             added_lib_dirs.append('/usr/X11/lib')
-
-        # If Cygwin, then verify that X is installed before proceeding
-        if platform == 'cygwin':
-            x11_inc = find_file('X11/Xlib.h', [], inc_dirs)
-            if x11_inc is None:
-                # X header files missing, so give up
-                return
 
         # Check for BLT extension
         if self.compiler.find_library_file(lib_dirs + added_lib_dirs,
@@ -956,8 +960,8 @@ class PyBuildExt(build_ext):
             libs.append('BLT')
 
         # Add the Tcl/Tk libraries
-        libs.append('tk'+version)
-        libs.append('tcl'+version)
+        libs.append(lib_prefix + 'tk'+ version)
+        libs.append(lib_prefix + 'tcl'+ version)
 
         if platform in ['aix3', 'aix4']:
             libs.append('ld')
