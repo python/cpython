@@ -36,37 +36,38 @@ PERFORMANCE OF THIS SOFTWARE.
    XXX Python source (or in an extension) uses ridiculously long names
    XXX or riduculously deep nesting in format strings. */
 
-#include "allobjects.h"
+#include "Python.h"
 
 #include <ctype.h>
 
 
-int getargs PROTO((object *, char *, ...));
-int newgetargs PROTO((object *, char *, ...));
-int vgetargs PROTO((object *, char *, va_list));
+int PyArg_Parse Py_PROTO((PyObject *, char *, ...));
+int PyArg_ParseTuple Py_PROTO((PyObject *, char *, ...));
+int PyArgs_VaParse Py_PROTO((PyObject *, char *, va_list));
 
-int PyArg_ParseTupleAndKeywords PROTO((object *, object *,
+int PyArg_ParseTupleAndKeywords Py_PROTO((PyObject *, PyObject *,
 				       char *, char **, ...));
 
 /* Forward */
-static int vgetargs1 PROTO((object *, char *, va_list *, int));
-static void seterror PROTO((int, char *, int *, char *, char *));
-static char *convertitem PROTO((object *, char **, va_list *, int *, char *));
-static char *converttuple PROTO((object *, char **, va_list *,
+static int vgetargs1 Py_PROTO((PyObject *, char *, va_list *, int));
+static void seterror Py_PROTO((int, char *, int *, char *, char *));
+static char *convertitem Py_PROTO((PyObject *, char **, va_list *,
+				   int *, char *));
+static char *converttuple Py_PROTO((PyObject *, char **, va_list *,
 				 int *, char *, int));
-static char *convertsimple PROTO((object *, char **, va_list *, char *));
-static char *convertsimple1 PROTO((object *, char **, va_list *));
+static char *convertsimple Py_PROTO((PyObject *, char **, va_list *, char *));
+static char *convertsimple1 Py_PROTO((PyObject *, char **, va_list *));
 
-static int vgetargskeywords PROTO((object *, object *,
+static int vgetargskeywords Py_PROTO((PyObject *, PyObject *,
 				   char *, char **, va_list *));
-static char *skipitem PROTO((char **, va_list *));
+static char *skipitem Py_PROTO((char **, va_list *));
 
 #ifdef HAVE_STDARG_PROTOTYPES
 /* VARARGS2 */
-int getargs(object *args, char *format, ...)
+int PyArg_Parse(PyObject *args, char *format, ...)
 #else
 /* VARARGS */
-int getargs(va_alist) va_dcl
+int PyArg_Parse(va_alist) va_dcl
 #endif
 {
 	int retval;
@@ -75,11 +76,11 @@ int getargs(va_alist) va_dcl
 	
 	va_start(va, format);
 #else
-	object *args;
+	PyObject *args;
 	char *format;
 	
 	va_start(va);
-	args = va_arg(va, object *);
+	args = va_arg(va, PyObject *);
 	format = va_arg(va, char *);
 #endif
 	retval = vgetargs1(args, format, &va, 1);
@@ -90,10 +91,10 @@ int getargs(va_alist) va_dcl
 
 #ifdef HAVE_STDARG_PROTOTYPES
 /* VARARGS2 */
-int newgetargs(object *args, char *format, ...)
+int PyArg_ParseTuple(PyObject *args, char *format, ...)
 #else
 /* VARARGS */
-int newgetargs(va_alist) va_dcl
+int PyArg_ParseTuple(va_alist) va_dcl
 #endif
 {
 	int retval;
@@ -102,11 +103,11 @@ int newgetargs(va_alist) va_dcl
 	
 	va_start(va, format);
 #else
-	object *args;
+	PyObject *args;
 	char *format;
 	
 	va_start(va);
-	args = va_arg(va, object *);
+	args = va_arg(va, PyObject *);
 	format = va_arg(va, char *);
 #endif
 	retval = vgetargs1(args, format, &va, 0);
@@ -116,8 +117,8 @@ int newgetargs(va_alist) va_dcl
 
 
 int
-vgetargs(args, format, va)
-	object *args;
+PyArgs_VaParse(args, format, va)
+	PyObject *args;
 	char *format;
 	va_list va;
 {
@@ -135,7 +136,7 @@ vgetargs(args, format, va)
 
 static int
 vgetargs1(args, format, p_va, compat)
-	object *args;
+	PyObject *args;
 	char *format;
 	va_list *p_va;
 	int compat;
@@ -160,7 +161,7 @@ vgetargs1(args, format, p_va, compat)
 		}
 		else if (/* '(' */ c == ')') {
 			if (level == 0)
-				fatal(/* '(' */
+				Py_FatalError(/* '(' */
 				      "excess ')' in getargs format");
 			else
 				level--;
@@ -184,7 +185,7 @@ vgetargs1(args, format, p_va, compat)
 	}
 	
 	if (level != 0)
-		fatal(/* '(' */ "missing ')' in getargs format");
+		Py_FatalError(/* '(' */ "missing ')' in getargs format");
 	
 	if (min < 0)
 		min = max;
@@ -197,7 +198,7 @@ vgetargs1(args, format, p_va, compat)
 				return 1;
 			sprintf(msgbuf, "%s requires no arguments",
 				fname==NULL ? "function" : fname);
-			err_setstr(TypeError, msgbuf);
+			PyErr_SetString(PyExc_TypeError, msgbuf);
 			return 0;
 		}
 		else if (min == 1 && max == 1) {
@@ -205,7 +206,7 @@ vgetargs1(args, format, p_va, compat)
 				sprintf(msgbuf,
 					"%s requires at least one argument",
 					fname==NULL ? "function" : fname);
-				err_setstr(TypeError, msgbuf);
+				PyErr_SetString(PyExc_TypeError, msgbuf);
 				return 0;
 			}
 			msg = convertitem(args, &format, p_va, levels, msgbuf);
@@ -215,19 +216,19 @@ vgetargs1(args, format, p_va, compat)
 			return 0;
 		}
 		else {
-			err_setstr(SystemError,
+			PyErr_SetString(PyExc_SystemError,
 			    "old style getargs format uses new features");
 			return 0;
 		}
 	}
 	
-	if (!is_tupleobject(args)) {
-		err_setstr(SystemError,
+	if (!PyTuple_Check(args)) {
+		PyErr_SetString(PyExc_SystemError,
 		    "new style getargs format but argument is not a tuple");
 		return 0;
 	}
 	
-	len = gettuplesize(args);
+	len = PyTuple_Size(args);
 	
 	if (len < min || max < len) {
 		if (message == NULL) {
@@ -241,14 +242,14 @@ vgetargs1(args, format, p_va, compat)
 				len);
 			message = msgbuf;
 		}
-		err_setstr(TypeError, message);
+		PyErr_SetString(PyExc_TypeError, message);
 		return 0;
 	}
 	
 	for (i = 0; i < len; i++) {
 		if (*format == '|')
 			format++;
-		msg = convertitem(gettupleitem(args, i), &format, p_va,
+		msg = convertitem(PyTuple_GetItem(args, i), &format, p_va,
 				 levels, msgbuf);
 		if (msg) {
 			seterror(i+1, msg, levels, fname, message);
@@ -273,7 +274,7 @@ seterror(iarg, msg, levels, fname, message)
 	int i;
 	char *p = buf;
 
-	if (err_occurred())
+	if (PyErr_Occurred())
 		return;
 	if (iarg == 0 && message == NULL)
 		message = msg;
@@ -293,7 +294,7 @@ seterror(iarg, msg, levels, fname, message)
 		sprintf(p, ": expected %s found", msg);
 		message = buf;
 	}
-	err_setstr(TypeError, message);
+	PyErr_SetString(PyExc_TypeError, message);
 }
 
 
@@ -318,7 +319,7 @@ seterror(iarg, msg, levels, fname, message)
 
 static char *
 converttuple(arg, p_format, p_va, levels, msgbuf, toplevel)
-	object *arg;
+	PyObject *arg;
 	char **p_format;
 	va_list *p_va;
 	int *levels;
@@ -348,15 +349,15 @@ converttuple(arg, p_format, p_va, levels, msgbuf, toplevel)
 			n++;
 	}
 	
-	if (!is_tupleobject(arg)) {
+	if (!PyTuple_Check(arg)) {
 		levels[0] = 0;
 		sprintf(msgbuf,
 			toplevel ? "%d arguments, %s" : "%d-tuple, %s",
-			n, arg == None ? "None" : arg->ob_type->tp_name);
+			n, arg == Py_None ? "None" : arg->ob_type->tp_name);
 		return msgbuf;
 	}
 	
-	if ((i = gettuplesize(arg)) != n) {
+	if ((i = PyTuple_Size(arg)) != n) {
 		levels[0] = 0;
 		sprintf(msgbuf,
 			toplevel ? "%d arguments, %d" : "%d-tuple, %d-tuple",
@@ -367,7 +368,7 @@ converttuple(arg, p_format, p_va, levels, msgbuf, toplevel)
 	format = *p_format;
 	for (i = 0; i < n; i++) {
 		char *msg;
-		msg = convertitem(gettupleitem(arg, i), &format, p_va,
+		msg = convertitem(PyTuple_GetItem(arg, i), &format, p_va,
 				 levels+1, msgbuf);
 		if (msg != NULL) {
 			levels[0] = i+1;
@@ -384,7 +385,7 @@ converttuple(arg, p_format, p_va, levels, msgbuf, toplevel)
 
 static char *
 convertitem(arg, p_format, p_va, levels, msgbuf)
-	object *arg;
+	PyObject *arg;
 	char **p_format;
 	va_list *p_va;
 	int *levels;
@@ -415,7 +416,7 @@ convertitem(arg, p_format, p_va, levels, msgbuf)
 
 static char *
 convertsimple(arg, p_format, p_va, msgbuf)
-	object *arg;
+	PyObject *arg;
 	char **p_format;
 	va_list *p_va;
 	char *msgbuf;
@@ -423,7 +424,7 @@ convertsimple(arg, p_format, p_va, msgbuf)
 	char *msg = convertsimple1(arg, p_format, p_va);
 	if (msg != NULL) {
 		sprintf(msgbuf, "%.50s, %.50s", msg,
-			arg == None ? "None" : arg->ob_type->tp_name);
+			arg == Py_None ? "None" : arg->ob_type->tp_name);
 		msg = msgbuf;
 	}
 	return msg;
@@ -437,7 +438,7 @@ convertsimple(arg, p_format, p_va, msgbuf)
 
 static char *
 convertsimple1(arg, p_format, p_va)
-	object *arg;
+	PyObject *arg;
 	char **p_format;
 	va_list *p_va;
 {
@@ -449,8 +450,8 @@ convertsimple1(arg, p_format, p_va)
 	case 'b': /* byte -- very short int */
 		{
 			char *p = va_arg(*p_va, char *);
-			long ival = getintvalue(arg);
-			if (ival == -1 && err_occurred())
+			long ival = PyInt_AsLong(arg);
+			if (ival == -1 && PyErr_Occurred())
 				return "integer<b>";
 			else
 				*p = (char) ival;
@@ -460,8 +461,8 @@ convertsimple1(arg, p_format, p_va)
 	case 'h': /* short int */
 		{
 			short *p = va_arg(*p_va, short *);
-			long ival = getintvalue(arg);
-			if (ival == -1 && err_occurred())
+			long ival = PyInt_AsLong(arg);
+			if (ival == -1 && PyErr_Occurred())
 				return "integer<h>";
 			else
 				*p = (short) ival;
@@ -471,8 +472,8 @@ convertsimple1(arg, p_format, p_va)
 	case 'i': /* int */
 		{
 			int *p = va_arg(*p_va, int *);
-			long ival = getintvalue(arg);
-			if (ival == -1 && err_occurred())
+			long ival = PyInt_AsLong(arg);
+			if (ival == -1 && PyErr_Occurred())
 				return "integer<i>";
 			else
 				*p = ival;
@@ -482,8 +483,8 @@ convertsimple1(arg, p_format, p_va)
 	case 'l': /* long int */
 		{
 			long *p = va_arg(*p_va, long *);
-			long ival = getintvalue(arg);
-			if (ival == -1 && err_occurred())
+			long ival = PyInt_AsLong(arg);
+			if (ival == -1 && PyErr_Occurred())
 				return "integer<l>";
 			else
 				*p = ival;
@@ -493,8 +494,8 @@ convertsimple1(arg, p_format, p_va)
 	case 'f': /* float */
 		{
 			float *p = va_arg(*p_va, float *);
-			double dval = getfloatvalue(arg);
-			if (err_occurred())
+			double dval = PyFloat_AsDouble(arg);
+			if (PyErr_Occurred())
 				return "float<f>";
 			else
 				*p = (float) dval;
@@ -504,8 +505,8 @@ convertsimple1(arg, p_format, p_va)
 	case 'd': /* double */
 		{
 			double *p = va_arg(*p_va, double *);
-			double dval = getfloatvalue(arg);
-			if (err_occurred())
+			double dval = PyFloat_AsDouble(arg);
+			if (PyErr_Occurred())
 				return "float<d>";
 			else
 				*p = dval;
@@ -518,7 +519,7 @@ convertsimple1(arg, p_format, p_va)
 			Py_complex *p = va_arg(*p_va, Py_complex *);
 			Py_complex cval;
 			cval = PyComplex_AsCComplex(arg);
-			if (err_occurred())
+			if (PyErr_Occurred())
 				return "complex<D>";
 			else
 				*p = cval;
@@ -529,8 +530,8 @@ convertsimple1(arg, p_format, p_va)
 	case 'c': /* char */
 		{
 			char *p = va_arg(*p_va, char *);
-			if (is_stringobject(arg) && getstringsize(arg) == 1)
-				*p = getstringvalue(arg)[0];
+			if (PyString_Check(arg) && PyString_Size(arg) == 1)
+				*p = PyString_AsString(arg)[0];
 			else
 				return "char";
 			break;
@@ -539,16 +540,16 @@ convertsimple1(arg, p_format, p_va)
 	case 's': /* string */
 		{
 			char **p = va_arg(*p_va, char **);
-			if (is_stringobject(arg))
-				*p = getstringvalue(arg);
+			if (PyString_Check(arg))
+				*p = PyString_AsString(arg);
 			else
 				return "string";
 			if (*format == '#') {
 				int *q = va_arg(*p_va, int *);
-				*q = getstringsize(arg);
+				*q = PyString_Size(arg);
 				format++;
 			}
-			else if ((int)strlen(*p) != getstringsize(arg))
+			else if ((int)strlen(*p) != PyString_Size(arg))
 				return "string without null bytes";
 			break;
 		}
@@ -556,30 +557,30 @@ convertsimple1(arg, p_format, p_va)
 	case 'z': /* string, may be NULL (None) */
 		{
 			char **p = va_arg(*p_va, char **);
-			if (arg == None)
+			if (arg == Py_None)
 				*p = 0;
-			else if (is_stringobject(arg))
-				*p = getstringvalue(arg);
+			else if (PyString_Check(arg))
+				*p = PyString_AsString(arg);
 			else
 				return "None or string";
 			if (*format == '#') {
 				int *q = va_arg(*p_va, int *);
-				if (arg == None)
+				if (arg == Py_None)
 					*q = 0;
 				else
-					*q = getstringsize(arg);
+					*q = PyString_Size(arg);
 				format++;
 			}
 			else if (*p != NULL &&
-				 (int)strlen(*p) != getstringsize(arg))
+				 (int)strlen(*p) != PyString_Size(arg))
 				return "None or string without null bytes";
 			break;
 		}
 	
 	case 'S': /* string object */
 		{
-			object **p = va_arg(*p_va, object **);
-			if (is_stringobject(arg))
+			PyObject **p = va_arg(*p_va, PyObject **);
+			if (PyString_Check(arg))
 				*p = arg;
 			else
 				return "string";
@@ -588,15 +589,15 @@ convertsimple1(arg, p_format, p_va)
 	
 	case 'O': /* object */
 		{
-			typeobject *type;
-			object **p;
+			PyTypeObject *type;
+			PyObject **p;
 			if (*format == '!') {
 				format++;
-				type = va_arg(*p_va, typeobject*);
+				type = va_arg(*p_va, PyTypeObject*);
 				if (arg->ob_type != type)
 					return type->tp_name;
 				else {
-					p = va_arg(*p_va, object **);
+					p = va_arg(*p_va, PyObject **);
 					*p = arg;
 				}
 			}
@@ -604,13 +605,13 @@ convertsimple1(arg, p_format, p_va)
 				inquiry pred = va_arg(*p_va, inquiry);
 				format++;
 				if ((*pred)(arg)) {
-					p = va_arg(*p_va, object **);
+					p = va_arg(*p_va, PyObject **);
 					*p = arg;
 				}
 			}
 			else if (*format == '&') {
 				typedef int (*converter)
-					PROTO((object *, void *));
+					Py_PROTO((PyObject *, void *));
 				converter convert = va_arg(*p_va, converter);
 				void *addr = va_arg(*p_va, void *);
 				format++;
@@ -618,7 +619,7 @@ convertsimple1(arg, p_format, p_va)
 					return "(unspecified)";
 			}
 			else {
-				p = va_arg(*p_va, object **);
+				p = va_arg(*p_va, PyObject **);
 				*p = arg;
 			}
 			break;
@@ -639,8 +640,8 @@ convertsimple1(arg, p_format, p_va)
 
 #ifdef HAVE_STDARG_PROTOTYPES
 /* VARARGS2 */
-int PyArg_ParseTupleAndKeywords(object *args,
-				object *keywords,
+int PyArg_ParseTupleAndKeywords(PyObject *args,
+				PyObject *keywords,
 				char *format, 
 				char **kwlist, ...)
 #else
@@ -654,14 +655,14 @@ int PyArg_ParseTupleAndKeywords(va_alist) va_dcl
 	
 	va_start(va, kwlist);
 #else
-	object *args;
-	object *keywords;
+	PyObject *args;
+	PyObject *keywords;
 	char *format;
 	char **kwlist;
 	
 	va_start(va);
-	args = va_arg(va, object *);
-	keywords = va_arg(va, object *);
+	args = va_arg(va, PyObject *);
+	keywords = va_arg(va, PyObject *);
 	format = va_arg(va, char *);
 	kwlist = va_arg(va, char **);
 #endif
@@ -673,8 +674,8 @@ int PyArg_ParseTupleAndKeywords(va_alist) va_dcl
 
 static int
 vgetargskeywords(args, keywords, format, kwlist, p_va)
-	object *args;
-	object *keywords;
+	PyObject *args;
+	PyObject *keywords;
 	char *format;
 	char **kwlist;
 	va_list *p_va;
@@ -689,7 +690,7 @@ vgetargskeywords(args, keywords, format, kwlist, p_va)
 	int i, len, tplen, kwlen;
 	char *msg, *ks, **p;
 	int nkwds, pos, match, converted;
-	object *key, *value;
+	PyObject *key, *value;
 	
 	/* nested tuples cannot be parsed when using keyword arguments */
 	
@@ -830,7 +831,7 @@ vgetargskeywords(args, keywords, format, kwlist, p_va)
 	
 	converted = 0;
 	for (i = tplen; i < nkwds; i++) {
-		object *item;
+		PyObject *item;
 		if (*format == '|')
 			format++;
 		item = PyMapping_GetItemString(keywords, kwlist[i]);
@@ -961,7 +962,7 @@ skipitem(p_format, p_va)
 	
 	case 'S': /* string object */
 		{
-			(void) va_arg(*p_va, object **);
+			(void) va_arg(*p_va, PyObject **);
 			break;
 		}
 	
@@ -969,8 +970,8 @@ skipitem(p_format, p_va)
 		{
 			if (*format == '!') {
 				format++;
-				(void) va_arg(*p_va, typeobject*);
-				(void) va_arg(*p_va, object **);
+				(void) va_arg(*p_va, PyTypeObject*);
+				(void) va_arg(*p_va, PyObject **);
 			}
 #if 0
 /* I don't know what this is for */
@@ -978,19 +979,19 @@ skipitem(p_format, p_va)
 				inquiry pred = va_arg(*p_va, inquiry);
 				format++;
 				if ((*pred)(arg)) {
-					(void) va_arg(*p_va, object **);
+					(void) va_arg(*p_va, PyObject **);
 				}
 			}
 #endif
 			else if (*format == '&') {
 				typedef int (*converter)
-					PROTO((object *, void *));
+					Py_PROTO((PyObject *, void *));
 				(void) va_arg(*p_va, converter);
 				(void) va_arg(*p_va, void *);
 				format++;
 			}
 			else {
-				(void) va_arg(*p_va, object **);
+				(void) va_arg(*p_va, PyObject **);
 			}
 			break;
 		}

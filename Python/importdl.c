@@ -32,7 +32,7 @@ PERFORMANCE OF THIS SOFTWARE.
 /* Support for dynamic loading of extension modules */
 /* If no dynamic linking is supported, this file still generates some code! */
 
-#include "allobjects.h"
+#include "Python.h"
 #include "osdefs.h"
 #include "importdl.h"
 
@@ -167,7 +167,7 @@ typedef void (*dl_funcptr)();
 #ifdef USE_MAC_DYNAMIC_LOADING
 #include <Aliases.h>
 #include <CodeFragments.h>
-#ifdef SYMANTEC__CFM68K__ /* Really just an older version of Universal Headers */
+#ifdef SYMANTEC__CFM68K__ /* Really an older version of Universal Headers */
 #define CFragConnectionID ConnectionID
 #define kLoadCFrag 0x01
 #endif
@@ -184,7 +184,7 @@ typedef void (*dl_funcptr)();
 #endif
 #endif /* USE_RLD */
 
-extern char *getprogramname();
+extern char *Py_GetProgramName();
 
 #ifndef FUNCNAME_PATTERN
 #if defined(__hp9000s300) || defined(__NetBSD__) || defined(__FreeBSD__) || defined(__BORLANDC__)
@@ -207,9 +207,9 @@ extern char *getprogramname();
 #endif
 
 /* Pass it on to import.c */
-int import_maxsuffixsize = MAXSUFFIXSIZE;
+int _PyImport_MaxSuffixSize = MAXSUFFIXSIZE;
 
-struct filedescr import_filetab[] = {
+struct filedescr _PyImport_Filetab[] = {
 #ifdef SHORT_EXT
 	{SHORT_EXT, "rb", C_EXTENSION},
 #endif /* !SHORT_EXT */
@@ -225,17 +225,18 @@ struct filedescr import_filetab[] = {
 #undef DYNAMIC_LINK
 #endif
 
-object *
-load_dynamic_module(name, pathname, fp)
+PyObject *
+_PyImport_LoadDynamicModule(name, pathname, fp)
 	char *name;
 	char *pathname;
 	FILE *fp;
 {
 #ifndef DYNAMIC_LINK
-	err_setstr(ImportError, "dynamically linked modules not supported");
+	PyErr_SetString(PyExc_ImportError,
+			"dynamically linked modules not supported");
 	return NULL;
 #else
-	object *m, *d, *s;
+	PyObject *m, *d, *s;
 	char funcname[258];
 	dl_funcptr p = NULL;
 #ifdef USE_SHLIB
@@ -274,11 +275,12 @@ load_dynamic_module(name, pathname, fp)
 #endif /* USE_SHLIB */
 #ifdef USE_MAC_DYNAMIC_LOADING
 	/*
-	** Dynamic loading of CFM shared libraries on the Mac.
-	** The code has become more convoluted than it was, because we want to be able
-	** to put multiple modules in a single file. For this reason, we have to determine
-	** the fragment name, and we cannot use the library entry point but we have to locate
-	** the correct init routine "by hand".
+	** Dynamic loading of CFM shared libraries on the Mac.  The
+	** code has become more convoluted than it was, because we
+	** want to be able to put multiple modules in a single
+	** file. For this reason, we have to determine the fragment
+	** name, and we cannot use the library entry point but we have
+	** to locate the correct init routine "by hand".
 	*/
 	{
 		FSSpec libspec;
@@ -297,30 +299,35 @@ load_dynamic_module(name, pathname, fp)
 		err = ResolveAliasFile(&libspec, 1, &isfolder, &didsomething);
 		if ( err ) {
 			sprintf(buf, "%s: %s", pathname, PyMac_StrError(err));
-			err_setstr(ImportError, buf);
+			PyErr_SetString(PyExc_ImportError, buf);
 			return NULL;
 		}
-		/* Next, determine the fragment name, by stripping '.slb' and 'module' */
+		/* Next, determine the fragment name,
+		   by stripping '.slb' and 'module' */
 		memcpy(fragname+1, libspec.name+1, libspec.name[0]);
 		fragname[0] = libspec.name[0];
-		if( strncmp((char *)(fragname+1+fragname[0]-4), ".slb", 4) == 0 )
+		if( strncmp((char *)(fragname+1+fragname[0]-4),
+			    ".slb", 4) == 0 )
 			fragname[0] -= 4;
-		if ( strncmp((char *)(fragname+1+fragname[0]-6), "module", 6) == 0 )
+		if ( strncmp((char *)(fragname+1+fragname[0]-6),
+			     "module", 6) == 0 )
 			fragname[0] -= 6;
-		/* Load the fragment (or return the connID if it is already loaded */
+		/* Load the fragment
+		   (or return the connID if it is already loaded */
 		err = GetDiskFragment(&libspec, 0, 0, fragname, 
 				      kLoadCFrag, &connID, &mainAddr,
 				      errMessage);
 		if ( err ) {
-			sprintf(buf, "%.*s: %s", errMessage[0], errMessage+1, PyMac_StrError(err));
-			err_setstr(ImportError, buf);
+			sprintf(buf, "%.*s: %s", errMessage[0], errMessage+1,
+				PyMac_StrError(err));
+			PyErr_SetString(PyExc_ImportError, buf);
 			return NULL;
 		}
 		/* Locate the address of the correct init function */
 		err = FindSymbol(connID, Pstring(funcname), &symAddr, &class);
 		if ( err ) {
 			sprintf(buf, "%s: %s", funcname, PyMac_StrError(err));
-			err_setstr(ImportError, buf);
+			PyErr_SetString(PyExc_ImportError, buf);
 			return NULL;
 		}
 		p = (dl_funcptr)symAddr;
@@ -334,12 +341,12 @@ load_dynamic_module(name, pathname, fp)
 		void *handle = dlopen(pathname, RTLD_NOW);
 #else
 		void *handle;
-		if (verbose)
+		if (Py_VerboseFlag)
 			printf("dlopen(\"%s\", %d);\n", pathname, RTLD_LAZY);
 		handle = dlopen(pathname, RTLD_LAZY);
 #endif /* RTLD_NOW */
 		if (handle == NULL) {
-			err_setstr(ImportError, dlerror());
+			PyErr_SetString(PyExc_ImportError, dlerror());
 			return NULL;
 		}
 		if (fp != NULL && nhandles < 128)
@@ -382,35 +389,44 @@ load_dynamic_module(name, pathname, fp)
 			unsigned int errorCode;
 
 			/* Get an error string from Win32 error code */
-			char theInfo[256];           /* Pointer to error text from system */
-			int theLength;               /* Length of error text */
+			char theInfo[256]; /* Pointer to error text
+					      from system */
+			int theLength; /* Length of error text */
 
 			errorCode = GetLastError();
 
-			theLength = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, /* flags */
-				NULL,                              /* message source */
-				errorCode,                         /* the message (error) ID */
-				0,                                 /* default language environment */
-				(LPTSTR) theInfo,                  /* the buffer */
-				sizeof(theInfo),                   /* the buffer size */
-				NULL);                             /* no additional format args. */
+			theLength = FormatMessage(
+				FORMAT_MESSAGE_FROM_SYSTEM, /* flags */
+				NULL, /* message source */
+				errorCode, /* the message (error) ID */
+				0, /* default language environment */
+				(LPTSTR) theInfo, /* the buffer */
+				sizeof(theInfo), /* the buffer size */
+				NULL); /* no additional format args. */
 
-			/* Problem: could not get the error message. This should not happen if called correctly. */
+			/* Problem: could not get the error message.
+			   This should not happen if called correctly. */
 			if (theLength == 0) {
-				sprintf(errBuf, "DLL load failed with error code %d", errorCode);
+				sprintf(errBuf,
+					"DLL load failed with error code %d",
+					errorCode);
 			} else {
 				int len;
-				/* For some reason a \r\n is appended to the text */
-				if (theLength >= 2 && theInfo[theLength-2] == '\r' && theInfo[theLength-1] == '\n') {
+				/* For some reason a \r\n
+				   is appended to the text */
+				if (theLength >= 2 &&
+				    theInfo[theLength-2] == '\r' &&
+				    theInfo[theLength-1] == '\n') {
 					theLength -= 2;
 					theInfo[theLength] = '\0';
 				}
 				strcpy(errBuf, "DLL load failed: ");
 				len = strlen(errBuf);
-				strncpy(errBuf+len, theInfo, sizeof(errBuf)-len);
+				strncpy(errBuf+len, theInfo,
+					sizeof(errBuf)-len);
 				errBuf[sizeof(errBuf)-1] = '\0';
 			}
-			err_setstr(ImportError, errBuf);
+			PyErr_SetString(PyExc_ImportError, errBuf);
 		return NULL;
 		}
 		p = GetProcAddress(hDLL, funcname);
@@ -422,15 +438,16 @@ load_dynamic_module(name, pathname, fp)
 		hDLL = LoadLibrary(pathname);
 		if (hDLL < HINSTANCE_ERROR){
 			char errBuf[256];
-			sprintf(errBuf, "DLL load failed with error code %d", hDLL);
-			err_setstr(ImportError, errBuf);
+			sprintf(errBuf,
+				"DLL load failed with error code %d", hDLL);
+			PyErr_SetString(PyExc_ImportError, errBuf);
 			return NULL;
 		}
 		p = GetProcAddress(hDLL, funcname);
 	}
 #endif /* MS_WIN16 */
 #ifdef USE_DL
-	p =  dl_loadmod(getprogramname(), pathname, funcname);
+	p =  dl_loadmod(Py_GetProgramName(), pathname, funcname);
 #endif /* USE_DL */
 #ifdef USE_RLD
 	{
@@ -455,7 +472,7 @@ load_dynamic_module(name, pathname, fp)
 
 			NXGetMemoryBuffer(errorStream,
 				&streamBuf, &len, &maxLen);
-			err_setstr(ImportError, streamBuf);
+			PyErr_SetString(PyExc_ImportError, streamBuf);
 		}
 
 		if(ret && rld_lookup(errorStream, funcname, &ptr))
@@ -473,25 +490,26 @@ load_dynamic_module(name, pathname, fp)
 		int flags;
 
 		flags = BIND_FIRST | BIND_DEFERRED;
-		if (verbose)
+		if (Py_VerboseFlag)
                 {
-                        flags = DYNAMIC_PATH | BIND_FIRST | BIND_IMMEDIATE | BIND_NONFATAL | BIND_VERBOSE;
+                        flags = DYNAMIC_PATH | BIND_FIRST | BIND_IMMEDIATE |
+				BIND_NONFATAL | BIND_VERBOSE;
                         printf("shl_load %s\n",pathname);
                 }
                 lib = shl_load(pathname, flags, 0);
                 if (lib == NULL)
                 {
                         char buf[256];
-                        if (verbose)
+                        if (Py_VerboseFlag)
                                 perror(pathname);
                         sprintf(buf, "Failed to load %.200s", pathname);
-                        err_setstr(ImportError, buf);
+                        PyErr_SetString(PyExc_ImportError, buf);
                         return NULL;
                 }
-                if (verbose)
+                if (Py_VerboseFlag)
                         printf("shl_findsym %s\n", funcname);
                 shl_findsym(&lib, funcname, TYPE_UNDEFINED, (void *) &p);
-                if (p == NULL && verbose)
+                if (p == NULL && Py_VerboseFlag)
                         perror(funcname);
 	}
 #endif /* hpux */
@@ -499,31 +517,31 @@ load_dynamic_module(name, pathname, fp)
   got_it:
 #endif
 	if (p == NULL) {
-		err_setstr(ImportError,
+		PyErr_SetString(PyExc_ImportError,
 		   "dynamic module does not define init function");
 		return NULL;
 	}
 	(*p)();
 	/* XXX Need check for err_occurred() here */
 
-	m = dictlookup(import_modules, name);
+	m = PyDict_GetItemString(import_modules, name);
 	if (m == NULL) {
-		if (err_occurred() == NULL)
-			err_setstr(SystemError,
+		if (PyErr_Occurred() == NULL)
+			PyErr_SetString(PyExc_SystemError,
 				   "dynamic module not initialized properly");
 		return NULL;
 	}
 	/* Remember the filename as the __file__ attribute */
-	d = getmoduledict(m);
-	s = newstringobject(pathname);
-	if (s == NULL || dictinsert(d, "__file__", s) != 0)
-		err_clear(); /* Not important enough to report */
-	XDECREF(s);
-	if (verbose)
+	d = PyModule_GetDict(m);
+	s = PyString_FromString(pathname);
+	if (s == NULL || PyDict_SetItemString(d, "__file__", s) != 0)
+		PyErr_Clear(); /* Not important enough to report */
+	Py_XDECREF(s);
+	if (Py_VerboseFlag)
 		fprintf(stderr,
 			"import %s # dynamically loaded from %s\n",
 			name, pathname);
-	INCREF(m);
+	Py_INCREF(m);
 	return m;
 #endif /* DYNAMIC_LINK */
 }
@@ -555,7 +573,7 @@ aix_getoldmodules(modlistptr)
 	-- Get the list of loaded modules into ld_info structures.
 	*/
 	if ((ldibuf = malloc(bufsize)) == NULL) {
-		err_setstr(ImportError, strerror(errno));
+		PyErr_SetString(PyExc_ImportError, strerror(errno));
 		return -1;
 	}
 	while ((errflag = loadquery(L_GETINFO, ldibuf, bufsize)) == -1
@@ -563,12 +581,12 @@ aix_getoldmodules(modlistptr)
 		free(ldibuf);
 		bufsize += 1024;
 		if ((ldibuf = malloc(bufsize)) == NULL) {
-			err_setstr(ImportError, strerror(errno));
+			PyErr_SetString(PyExc_ImportError, strerror(errno));
 			return -1;
 		}
 	}
 	if (errflag == -1) {
-		err_setstr(ImportError, strerror(errno));
+		PyErr_SetString(PyExc_ImportError, strerror(errno));
 		return -1;
 	}
 	/*
@@ -578,7 +596,7 @@ aix_getoldmodules(modlistptr)
 	prevmodptr = NULL;
 	do {
 		if ((modptr = (ModulePtr)malloc(sizeof(Module))) == NULL) {
-			err_setstr(ImportError, strerror(errno));
+			PyErr_SetString(PyExc_ImportError, strerror(errno));
 			while (*modlistptr) {
 				modptr = (ModulePtr)*modlistptr;
 				*modlistptr = (void *)modptr->next;
@@ -662,7 +680,7 @@ aix_loaderror(pathname)
 		ERRBUF_APPEND("\n");
 	}
 	errbuf[strlen(errbuf)-1] = '\0';	/* trim off last newline */
-	err_setstr(ImportError, errbuf); 
+	PyErr_SetString(PyExc_ImportError, errbuf); 
 	return; 
 }
 

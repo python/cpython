@@ -36,15 +36,14 @@ PERFORMANCE OF THIS SOFTWARE.
    overridden (at link time) by a more powerful version implemented in
    signalmodule.c. */
 
-#include "allobjects.h"
-#include "intrcheck.h"
+#include "Python.h"
 
 /* ARGSUSED */
 int
-sigcheck()
+PyErr_CheckSignals()
 {
-	if (!intrcheck())
+	if (!PyOS_InterruptOccurred())
 		return 0;
-	err_set(KeyboardInterrupt);
+	PyErr_SetNone(PyExc_KeyboardInterrupt);
 	return -1;
 }

@@ -40,10 +40,11 @@ extern struct filedescr {
 	char *suffix;
 	char *mode;
 	enum filetype type;
-} import_filetab[];
+} _PyImport_Filetab[];
 
-extern object *import_modules;
+extern PyObject *import_modules;
 
-extern object *load_dynamic_module PROTO((char *name, char *pathname, FILE *));
+extern PyObject *_PyImport_LoadDynamicModule
+	Py_PROTO((char *name, char *pathname, FILE *));
 
-extern int import_maxsuffixsize;
+extern int _PyImport_MaxSuffixSize;
