@@ -60,11 +60,15 @@ class TextWrapper:
                                  % string.lowercase)
 
 
-    def __init__ (self):
-        self.expand_tabs = True
-        self.replace_whitespace = True
-        self.fix_sentence_endings = False
-        self.break_long_words = True
+    def __init__ (self,
+                  expand_tabs=True,
+                  replace_whitespace=True,
+                  fix_sentence_endings=False,
+                  break_long_words=True):
+        self.expand_tabs = expand_tabs
+        self.replace_whitespace = replace_whitespace
+        self.fix_sentence_endings = fix_sentence_endings
+        self.break_long_words = break_long_words
         
 
     # -- Private methods -----------------------------------------------
