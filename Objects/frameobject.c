@@ -307,7 +307,7 @@ locals_2_fast(f, clear)
 		return;
 	locals = f->f_locals;
 	map = f->f_code->co_varnames;
-	if (locals == NULL || fast == NULL || f->f_code->co_nlocals == 0)
+	if (locals == NULL || f->f_code->co_nlocals == 0)
 		return;
 	if (!is_dictobject(locals) || !is_tupleobject(map))
 		return;
