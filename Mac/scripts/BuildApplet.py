@@ -54,8 +54,6 @@ def findtemplate():
 	return template
 
 def main():
-	global DEBUG
-	DEBUG=1
 	
 	# Find the template
 	# (there's no point in proceeding if we can't find it)
