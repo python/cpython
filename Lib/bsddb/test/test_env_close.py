@@ -61,6 +61,8 @@ class DBEnvClosedEarlyCrash(unittest.TestCase):
                    "DB close did not raise an exception about its "\
                    "DBEnv being trashed"
 
+        # XXX This may fail when using older versions of BerkeleyDB.
+        # E.g. 3.2.9 never raised the exception.
         assert 0, "dbenv did not raise an exception about its DB being open"
 
 
