@@ -828,9 +828,23 @@ class FieldStorage:
             self.filename = pdict['filename']
 
         # Process content-type header
-        ctype, pdict = "text/plain", {}
+        #
+        # Honor any existing content-type header.  But if there is no
+        # content-type header, use some sensible defaults.  Assume
+        # outerboundary is "" at the outer level, but something non-false
+        # inside a multi-part.  The default for an inner part is text/plain,
+        # but for an outer part it should be urlencoded.  This should catch
+        # bogus clients which erroneously forget to include a content-type
+        # header.
+        #
+        # See below for what we do if there does exist a content-type header,
+        # but it happens to be something we don't understand.
         if self.headers.has_key('content-type'):
             ctype, pdict = parse_header(self.headers['content-type'])
+        elif self.outerboundary:
+            ctype, pdict = "text/plain", {}
+        else:
+            ctype, pdict = 'application/x-www-form-urlencoded', {}
         self.type = ctype
         self.type_options = pdict
         self.innerboundary = ""
@@ -853,8 +867,16 @@ class FieldStorage:
             self.read_urlencoded()
         elif ctype[:10] == 'multipart/':
             self.read_multi(environ, keep_blank_values, strict_parsing)
-        else:
+        elif self.outerboundary:
+            # we're in an inner part, but the content-type wasn't something we 
+            # understood.  default to read_single() because the resulting
+            # FieldStorage won't be a mapping (and doesn't need to be).
             self.read_single()
+        else:
+            # we're in an outer part, but the content-type wasn't something we 
+            # understood.  we still want the resulting FieldStorage to be a
+            # mapping, so parse it as if it were urlencoded
+            self.read_urlencoded()
 
     def __repr__(self):
         """Return a printable representation."""
