@@ -124,6 +124,12 @@ intrcheck()
 
 static int interrupted;
 
+void
+PyErr_SetInterrupt()
+{
+	interrupted = 1;
+}
+
 /* ARGSUSED */
 static RETSIGTYPE
 #ifdef _M_IX86
