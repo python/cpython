@@ -93,11 +93,11 @@ register_dialect("excel-tab", excel_tab)
 
 class DictReader:
     def __init__(self, f, fieldnames, restkey=None, restval=None,
-                 dialect="excel", *args):
+                 dialect="excel", *args, **kwds):
         self.fieldnames = fieldnames    # list of keys for the dict
         self.restkey = restkey          # key to catch long rows
         self.restval = restval          # default value for short rows
-        self.reader = reader(f, dialect, *args)
+        self.reader = reader(f, dialect, *args, **kwds)
 
     def __iter__(self):
         return self
@@ -122,7 +122,7 @@ class DictReader:
 
 class DictWriter:
     def __init__(self, f, fieldnames, restval="", extrasaction="raise",
-                 dialect="excel", *args):
+                 dialect="excel", *args, **kwds):
         self.fieldnames = fieldnames    # list of keys for the dict
         self.restval = restval          # for writing short dicts
         if extrasaction.lower() not in ("raise", "ignore"):
@@ -130,7 +130,7 @@ class DictWriter:
                   ("extrasaction (%s) must be 'raise' or 'ignore'" %
                    extrasaction)
         self.extrasaction = extrasaction
-        self.writer = writer(f, dialect, *args)
+        self.writer = writer(f, dialect, *args, **kwds)
 
     def _dict_to_list(self, rowdict):
         if self.extrasaction == "raise":

@@ -47,6 +47,9 @@ Extension modules
 Library
 -------
 
+- The csv module's DictReader and DictWriter classes now accept keyword
+  arguments.  This was an omission in the initial implementation.
+
 - Bug #453515:  filecmp.dircmp() can now make case insensitive
   filename comparisons.
 
