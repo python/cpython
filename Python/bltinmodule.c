@@ -1936,23 +1936,6 @@ If the argument is a string, the return value is the same object.";
 
 
 static PyObject *
-builtin_unistr(PyObject *self, PyObject *args)
-{
-	PyObject *v;
-
-	if (!PyArg_ParseTuple(args, "O:unistr", &v))
-		return NULL;
-	return PyObject_Unicode(v);
-}
-
-static char unistr_doc[] =
-"unistr(object) -> unicode\n\
-\n\
-Return a nice unicode representation of the object.\n\
-If the argument is a unicode, the return value is the same object.";
-
-
-static PyObject *
 builtin_tuple(PyObject *self, PyObject *args)
 {
 	PyObject *v;
@@ -2267,7 +2250,6 @@ static PyMethodDef builtin_methods[] = {
 	{"type",	builtin_type, 1, type_doc},
 	{"unicode",	builtin_unicode, 1, unicode_doc},
 	{"unichr",	builtin_unichr, 1, unichr_doc},
-	{"unistr",	builtin_unistr, 1, unistr_doc},
 	{"vars",	builtin_vars, 1, vars_doc},
 	{"xrange",	builtin_xrange, 1, xrange_doc},
  	{"zip",         builtin_zip, 1, zip_doc},
