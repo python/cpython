@@ -5,21 +5,13 @@
 
 
 
-#ifndef PyDoc_STR
-#define PyDoc_STR(x) (x)
-#endif
-#ifdef _WIN32
-#include "pywintoolbox.h"
-#else
-#include "macglue.h"
 #include "pymactoolbox.h"
-#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
-    	PyErr_SetString(PyExc_NotImplementedError, \
-    	"Not available in this shared library/OS version"); \
-    	return NULL; \
+        PyErr_SetString(PyExc_NotImplementedError, \
+        "Not available in this shared library/OS version"); \
+        return NULL; \
     }} while(0)
 
 
@@ -31,7 +23,7 @@ static PyObject *Scrap_Error;
 
 PyTypeObject Scrap_Type;
 
-#define ScrapObj_Check(x) ((x)->ob_type == &Scrap_Type)
+#define ScrapObj_Check(x) ((x)->ob_type == &Scrap_Type || PyObject_TypeCheck((x), &Scrap_Type))
 
 typedef struct ScrapObject {
 	PyObject_HEAD
@@ -60,7 +52,7 @@ int ScrapObj_Convert(PyObject *v, ScrapRef *p_itself)
 static void ScrapObj_dealloc(ScrapObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyObject_DEL(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *ScrapObj_GetScrapFlavorFlags(ScrapObject *_self, PyObject *_args)
@@ -208,17 +200,17 @@ static PyObject *ScrapObj_GetScrapFlavorInfoList(ScrapObject *_self, PyObject *_
 
 static PyMethodDef ScrapObj_methods[] = {
 	{"GetScrapFlavorFlags", (PyCFunction)ScrapObj_GetScrapFlavorFlags, 1,
-	 "(ScrapFlavorType flavorType) -> (ScrapFlavorFlags flavorFlags)"},
+	 PyDoc_STR("(ScrapFlavorType flavorType) -> (ScrapFlavorFlags flavorFlags)")},
 	{"GetScrapFlavorSize", (PyCFunction)ScrapObj_GetScrapFlavorSize, 1,
-	 "(ScrapFlavorType flavorType) -> (Size byteCount)"},
+	 PyDoc_STR("(ScrapFlavorType flavorType) -> (Size byteCount)")},
 	{"GetScrapFlavorData", (PyCFunction)ScrapObj_GetScrapFlavorData, 1,
-	 "(ScrapFlavorType flavorType) -> string"},
+	 PyDoc_STR("(ScrapFlavorType flavorType, Buffer destination) -> (Size byteCount)")},
 	{"PutScrapFlavor", (PyCFunction)ScrapObj_PutScrapFlavor, 1,
-	 "(ScrapFlavorType flavorType, ScrapFlavorFlags flavorFlags, Buffer flavorData) -> None"},
+	 PyDoc_STR("(ScrapFlavorType flavorType, ScrapFlavorFlags flavorFlags, Size flavorSize, Buffer flavorData) -> None")},
 	{"GetScrapFlavorCount", (PyCFunction)ScrapObj_GetScrapFlavorCount, 1,
-	 "() -> (UInt32 infoCount)"},
+	 PyDoc_STR("() -> (UInt32 infoCount)")},
 	{"GetScrapFlavorInfoList", (PyCFunction)ScrapObj_GetScrapFlavorInfoList, 1,
-	 "() -> ([(ScrapFlavorType, ScrapFlavorInfo), ...])"},
+	 PyDoc_STR("() -> ([(ScrapFlavorType, ScrapFlavorInfo), ...])")},
 	{NULL, NULL, 0}
 };
 
@@ -326,15 +318,15 @@ static PyObject *Scrap_CallInScrapPromises(PyObject *_self, PyObject *_args)
 
 static PyMethodDef Scrap_methods[] = {
 	{"LoadScrap", (PyCFunction)Scrap_LoadScrap, 1,
-	 "() -> None"},
+	 PyDoc_STR("() -> None")},
 	{"UnloadScrap", (PyCFunction)Scrap_UnloadScrap, 1,
-	 "() -> None"},
+	 PyDoc_STR("() -> None")},
 	{"GetCurrentScrap", (PyCFunction)Scrap_GetCurrentScrap, 1,
-	 "() -> (ScrapRef scrap)"},
+	 PyDoc_STR("() -> (ScrapRef scrap)")},
 	{"ClearCurrentScrap", (PyCFunction)Scrap_ClearCurrentScrap, 1,
-	 "() -> None"},
+	 PyDoc_STR("() -> None")},
 	{"CallInScrapPromises", (PyCFunction)Scrap_CallInScrapPromises, 1,
-	 "() -> None"},
+	 PyDoc_STR("() -> None")},
 	{NULL, NULL, 0}
 };
 

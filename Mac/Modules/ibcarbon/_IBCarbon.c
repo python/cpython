@@ -6,14 +6,11 @@
 
 
 #include <Carbon/Carbon.h>
-#include "macglue.h"
+#include "pymactoolbox.h"
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern int _CFStringRefObj_Convert(PyObject *, CFStringRef *);
-//#define CFStringRefObj_Convert _CFStringRefObj_Convert
 #endif
-
-//extern int CFBundleRefObj_Convert(PyObject *, CFBundleRef *);  // need to wrap CFBundle
 
 
 static PyObject *IBCarbon_Error;

@@ -84,7 +84,6 @@ class CarbonEvents_Scanner(Scanner_OSX):
 			# Wrote by hand
 			"InstallEventHandler",
 			"RemoveEventHandler",
-			"RunApplicationEventLoop",
 						
 			# Write by hand?
 			"GetEventParameter",

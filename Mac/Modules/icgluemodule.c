@@ -30,7 +30,7 @@ PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 #include "Python.h"
-#include "macglue.h"
+#include "pymactoolbox.h"
 
 extern int ResObj_Convert(PyObject *, Handle *); /* From Resmodule.c */
 

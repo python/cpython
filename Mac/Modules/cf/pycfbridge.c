@@ -5,7 +5,7 @@
 #include <CoreServices/CoreServices.h>
 
 #include "Python.h"
-#include "macglue.h"
+#include "pymactoolbox.h"
 #include "pycfbridge.h"
 
 

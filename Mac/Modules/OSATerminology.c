@@ -7,7 +7,7 @@
 ** by a full interface to OpenScripting.
 */
 #include "Python.h"
-#include "macglue.h"
+#include "pymactoolbox.h"
 
 #include <Carbon/Carbon.h>
 

@@ -5,27 +5,19 @@
 
 
 
-#ifdef _WIN32
-#include "pywintoolbox.h"
-#else
-#include "macglue.h"
 #include "pymactoolbox.h"
-#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
-    	PyErr_SetString(PyExc_NotImplementedError, \
-    	"Not available in this shared library/OS version"); \
-    	return NULL; \
+        PyErr_SetString(PyExc_NotImplementedError, \
+        "Not available in this shared library/OS version"); \
+        return NULL; \
     }} while(0)
 
 
 #include <WASTE.h>
 #include <WEObjectHandlers.h>
 #include <WETabs.h>
-#ifndef PyDoc_STR
-#define PyDoc_STR(x) (x)
-#endif
 
 /* Exported by Qdmodule.c: */
 extern PyObject *QdRGB_New(RGBColor *);

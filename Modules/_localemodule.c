@@ -29,13 +29,13 @@ This software comes with no warranty. Use at your own risk.
 #include <wchar.h>
 #endif
 
+#if defined(__APPLE__)
+#include "pymactoolbox.h"
+#endif
+
 #if defined(MS_WINDOWS)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#endif
-
-#if defined(__APPLE__)
-#include "macglue.h"
 #endif
 
 #ifdef RISCOS
