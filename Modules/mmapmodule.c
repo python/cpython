@@ -728,14 +728,11 @@ new_mmap_object (PyObject * self, PyObject * args)
 {
 	mmap_object * m_obj;
 	unsigned long map_size;
-	char * filename;
-	int namelen;
 	char * tagname = "";
 
 	DWORD dwErr = 0;
 	int fileno;
 	HFILE fh = 0;
-	OFSTRUCT file_info;
 
 	/* Patch the object type */
 	mmap_object_type.ob_type = &PyType_Type;
