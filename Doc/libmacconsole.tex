@@ -5,7 +5,7 @@
 \setindexsubitem{(in module macconsole)}
 
 This module is available on the Macintosh, provided Python has been
-built using the Think C compiler. It provides an interface to the
+built using the Think \C{} compiler. It provides an interface to the
 Think console package, with which basic text windows can be created.
 
 \begin{datadesc}{options}
@@ -17,10 +17,10 @@ see below.
 \dataline{C_NOECHO}
 \dataline{C_CBREAK}
 \dataline{C_RAW}
-Options for the \code{setmode} method. \var{C_ECHO} and \var{C_CBREAK}
-enable character echo, the other two disable it, \var{C_ECHO} and
-\var{C_NOECHO} enable line-oriented input (erase/kill processing,
-etc).
+Options for the \code{setmode} method. \constant{C_ECHO} and
+\constant{C_CBREAK} enable character echo, the other two disable it,
+\constant{C_ECHO} and \constant{C_NOECHO} enable line-oriented input
+(erase/kill processing, etc).
 \end{datadesc}
 
 \begin{funcdesc}{copen}{}
@@ -67,14 +67,14 @@ If set non-zero, the window will wait for user action before closing.
 
 \begin{datadesc}{file}
 The file object corresponding to this console window. If the file is
-buffered, you should call \code{file.flush()} between \code{write()}
-and \code{read()} calls.
+buffered, you should call \code{\var{file}.flush()} between
+\code{write()} and \code{read()} calls.
 \end{datadesc}
 
 \setindexsubitem{(console window method)}
 
 \begin{funcdesc}{setmode}{mode}
-Set the input mode of the console to \var{C_ECHO}, etc.
+Set the input mode of the console to \constant{C_ECHO}, etc.
 \end{funcdesc}
 
 \begin{funcdesc}{settabs}{n}
