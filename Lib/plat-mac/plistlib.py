@@ -253,8 +253,7 @@ class PlistWriter(DumbXMLWriter):
 
 class Dict(dict):
 
-    """Convenience dictionary subclass: it allows dict construction using
-    keyword arguments (just like dict() in 2.3) as well as attribute notation
+    """Convenience dictionary subclass: it allows attribute notation
     to retrieve values, making d.foo equivalent to d["foo"].
     """
 
@@ -277,7 +276,7 @@ class Dict(dict):
 
 class Plist(Dict):
 
-    """This class has been deprecated! Use the Dict with readPlist() and
+    """This class has been deprecated. Use the Dict with readPlist() and
     writePlist() functions instead.
     """
 
