@@ -549,14 +549,10 @@ class build_ext (Command):
         the .pyd file (DLL) must export the module "init" function.
         """
 
-        # XXX what if 'export_symbols' defined but it doesn't contain
-        # "init" + module_name?  Should we add it? warn? or just carry
-        # on doing nothing?
-
-        if ext.export_symbols is None:
-            return ["init" + string.split(ext.name,'.')[-1]]
-        else:
-            return ext.export_symbols
+        initfunc_name = "init" + string.split(ext.name,'.')[-1]
+        if initfunc_name not in ext.export_symbols:
+            ext.export_symbols.append(initfunc_name)
+        return ext.export_symbols
 
     def get_libraries (self, ext):
         """Return the list of libraries to link against when building a
