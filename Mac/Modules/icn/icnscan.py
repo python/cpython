@@ -43,6 +43,8 @@ class MyScanner(Scanner):
 			"kSelectorAllHugeData",
 			"kSelectorAllAvailableData",
 			"svAllAvailableData",
+			# Something in a comment accidentally seen as a const definition
+			"err",
 			]
 
 	def makegreylist(self):
