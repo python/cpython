@@ -1223,6 +1223,15 @@ long_mul(a, b)
 	
 	size_a = ABS(a->ob_size);
 	size_b = ABS(b->ob_size);
+	if (size_a > size_b) {
+		/* we are faster with the small object on the left */
+		int hold_sa = size_a;
+		PyLongObject *hold_a = a;
+		size_a = size_b;
+		size_b = hold_sa;
+		a = b;
+		b = hold_a;
+	}
 	z = _PyLong_New(size_a + size_b);
 	if (z == NULL)
 		return NULL;
