@@ -14,7 +14,9 @@ Release date: XX-XXX-2003
 
 - Fixed sundry memory leaks.
 
-- Correct long standing bugs in the methods for random distributions.
+- Improve the robustness of the methods for random distributions so
+  they can work with generators producing a full range of values
+  (unlike the Wichmann-Hill generator which never produces a zero).
   The range of u=random() is [0,1), so log(u) and 1/x can fail.  Fix
   by setting u=1-random() or by reselecting for a usable value.
 
