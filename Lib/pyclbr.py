@@ -29,14 +29,29 @@ are recognized and imported modules are scanned as well, this
 shouldn't happen often.
 
 BUGS
-Continuation lines are not dealt with at all.
-While triple-quoted strings won't confuse it, lines that look like
-def, class, import or "from ... import" stmts inside backslash-continued
-single-quoted strings are treated like code.  The expense of stopping
-that isn't worth it.
-Code that doesn't pass tabnanny or python -t will confuse it, unless
-you set the module TABWIDTH vrbl (default 8) to the correct tab width
-for the file.''' # ' <-- bow to font lock
+- Continuation lines are not dealt with at all.
+- While triple-quoted strings won't confuse it, lines that look like
+  def, class, import or "from ... import" stmts inside backslash-continued
+  single-quoted strings are treated like code.  The expense of stopping
+  that isn't worth it.
+- Code that doesn't pass tabnanny or python -t will confuse it, unless
+  you set the module TABWIDTH vrbl (default 8) to the correct tab width
+  for the file.
+
+PACKAGE RELATED BUGS
+- If you have a package and a module inside that or another package
+  with the same name, module caching doesn't work properly since the
+  key is the base name of the module/package.
+- The only entry that is returned when you readmodule a package is a
+  __path__ whose value is a list which confuses certain class browsers.
+- When code does:
+  from package import subpackage
+  class MyClass(subpackage.SuperClass):
+    ...
+  It can't locate the parent.  It probably needs to have the same
+  hairy logic that the import locator already does.  (This logic
+  exists coded in Python in the freeze package.)
+''' # ' <-- bow to font lock
 
 import os
 import sys
