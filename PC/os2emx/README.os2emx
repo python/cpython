@@ -1,10 +1,14 @@
-This is a port of Python 2.3.3 to OS/2 using the EMX development tools
+This is a port of Python 2.3.4 to OS/2 using the EMX development tools
 =========================================================================
 
 What's new since the previous release
 -------------------------------------
 
-Another day, another version...
+- AF_UNIX (Unix domain, or local IPC) sockets now supported.
+- a core-dump causing bug associated with file buffers has been
+  fixed.
+- added support for os.spawnvp(), os.spawnvpe(), os.spawnlp()
+  and os.spawnlpe().
 
 
 Licenses and info about Python and EMX
@@ -625,9 +629,18 @@ item 13 above), the BitTorrent curses downloader works too.  I'd
 appreciate any success or failure reports with BitTorrent, though
 I've regretfully recommended that the person who reported the failure
 take this up with eCS support.  Since this report, I have received a 
-followup which suggests that the problem may have been a buggy network 
-card driver.  I think it suffices to say that BitTorrent is a fair stress 
-test of a system's networking capability.
+followup which suggests that the problem may be due to bugs in the
+32bit TCP/IP stack (TCP/IP v4.1 and later, v4.3 in particular). 
+I think it suffices to say that BitTorrent is a fair stress test of a 
+system's networking capability.
+
+25.  AF_UNIX sockets, otherwise known as Unix domain sockets, are now 
+supported.  Unfortunately, there are some traps arising from the 
+implementation in IBM's TCP/IP stack:-
+- the path name must start with '\\socket\\' ('/socket/' won't work!), 
+  with the length of the full path name less than 108 characters;
+- unlike Unix, the socket endpoints don't exist in the filesystem;
+- by default, sockets are in binary mode.
 
 ... probably other issues that I've not encountered, or don't remember :-(
 
@@ -668,4 +681,4 @@ Andrew MacIntyre
 E-mail: andymac@bullseye.apana.org.au, or andymac@pcug.org.au
 Web:    http://www.andymac.org/
 
-2 December, 2003.
+11 April, 2004.
