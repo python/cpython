@@ -909,6 +909,42 @@ def conjoin(gs):
     for x in gen(0):
         yield x
 
+# And one more approach:  For backtracking apps like the Knight's Tour
+# solver below, the number of backtracking levels can be enormous (one
+# level per square, for the Knight's Tour, so that e.g. a 100x100 board
+# needs 10,000 levels).  In such cases Python is likely to run out of
+# stack space due to recursion.  So here's a recursion-free version of
+# conjoin too.
+# NOTE WELL:  This allows large problems to be solved with only trivial
+# demands on stack space.  Without explicitly resumable generators, this is
+# much harder to achieve.
+
+def flat_conjoin(gs):  # rename to conjoin to run tests with this instead
+    n = len(gs)
+    values = [None] * n
+    iters  = [None] * n
+    i = 0
+    while i >= 0:
+        # Need a fresh iterator.
+        if i >= n:
+            yield values
+            # Backtrack.
+            i -= 1
+        else:
+            iters[i] = gs[i]().next
+
+        # Need next value from current iterator.
+        while i >= 0:
+            try:
+                values[i] = iters[i]()
+            except StopIteration:
+                # Backtrack.
+                i -= 1
+            else:
+                # Start fresh at next level.
+                i += 1
+                break
+
 # A conjoin-based N-Queens solver.
 
 class Queens:
@@ -961,12 +997,207 @@ class Queens:
             print "|" + "|".join(squares) + "|"
             print sep
 
+# A conjoin-based Knight's Tour solver.  This is pretty sophisticated
+# (e.g., when used with flat_conjoin above, and passing hard=1 to the
+# constructor, a 200x200 Knight's Tour was found quickly -- note that we're
+# creating 10s of thousands of generators then!), so goes on at some length
+
+class Knights:
+    def __init__(self, n, hard=0):
+        self.n = n
+
+        def coords2index(i, j):
+            return i*n + j
+
+        offsets = [( 1,  2), ( 2,  1), ( 2, -1), ( 1, -2),
+                   (-1, -2), (-2, -1), (-2,  1), (-1,  2)]
+        succs = []
+        for i in range(n):
+            for j in range(n):
+                s = [coords2index(i+io, j+jo) for io, jo in offsets
+                                              if 0 <= i+io < n and
+                                                 0 <= j+jo < n]
+                succs.append(s)
+                del s
+        del offsets
+
+        free   = [0] * n**2     # 0 if occupied, 1 if visited
+        nexits = free[:]        # number of free successors
+
+        def decrexits(i0):
+            # If we remove all exits from a free square, we're dead:
+            # even if we move to it next, we can't leave it again.
+            # If we create a square with one exit, we must visit it next;
+            # else somebody else will have to visit it, and since there's
+            # only one adjacent, there won't be a way to leave it again.
+            # Finelly, if we create more than one free square with a
+            # single exit, we can only move to one of them next, leaving
+            # the other one a dead end.
+            ne0 = ne1 = 0
+            for i in succs[i0]:
+                if free[i]:
+                    e = nexits[i] - 1
+                    nexits[i] = e
+                    if e == 0:
+                        ne0 += 1
+                    elif e == 1:
+                        ne1 += 1
+            return ne0 == 0 and ne1 < 2
+
+        def increxits(i0):
+            for i in succs[i0]:
+                if free[i]:
+                    nexits[i] += 1
+
+        # Generate the first move.
+        def first():
+            if n < 1:
+                return
+
+            # Initialize board structures.
+            for i in xrange(n**2):
+                free[i] = 1
+                nexits[i] = len(succs[i])
+
+            # Since we're looking for a cycle, it doesn't matter where we
+            # start.  Starting in a corner makes the 2nd move easy.
+            corner = coords2index(0, 0)
+            free[corner] = 0
+            decrexits(corner)
+            self.lastij = corner
+            yield corner
+            increxits(corner)
+            free[corner] = 1
+
+        # Generate the second moves.
+        def second():
+            corner = coords2index(0, 0)
+            assert self.lastij == corner  # i.e., we started in the corner
+            if n < 3:
+                return
+            assert nexits[corner] == len(succs[corner]) == 2
+            assert coords2index(1, 2) in succs[corner]
+            assert coords2index(2, 1) in succs[corner]
+            # Only two choices.  Whichever we pick, the other must be the
+            # square picked on move n**2, as it's the only way to get back
+            # to (0, 0).  Save its index in self.final so that moves before
+            # the last know it must be kept free.
+            for i, j in (1, 2), (2, 1):
+                this, final = coords2index(i, j), coords2index(3-i, 3-j)
+                assert free[this] and free[final]
+                self.final = final
+                nexits[final] += 1  # it has an exit back to 0,0
+
+                free[this] = 0
+                decrexits(this)
+                self.lastij = this
+                yield this
+                increxits(this)
+                free[this] = 1
+
+                nexits[final] -= 1
+
+        # Generate moves 3 thru n**2-1.
+        def advance():
+            # If some successor has only one exit, must take it.
+            # Else favor successors with fewer exits.
+            candidates = []
+            for i in succs[self.lastij]:
+                if free[i]:
+                    e = nexits[i]
+                    assert e > 0, "else decrexits() pruning flawed"
+                    if e == 1:
+                        candidates = [(e, i)]
+                        break
+                    candidates.append((e, i))
+            else:
+                candidates.sort()
+
+            for e, i in candidates:
+                if i != self.final:
+                    if decrexits(i):
+                        free[i] = 0
+                        self.lastij = i
+                        yield i
+                        free[i] = 1
+                    increxits(i)
+
+        # Generate moves 3 thru n**2-1.  Alternative version using a
+        # stronger (but more expensive) heuristic to order successors.
+        # Since the # of backtracking levels is n**2, a poor move early on
+        # can take eons to undo.  Smallest n for which this matters a lot is
+        # n==52.
+        def advance_hard(midpoint=(n-1)/2.0):
+            # If some successor has only one exit, must take it.
+            # Else favor successors with fewer exits.
+            # Break ties via max distance from board centerpoint (favor
+            # corners and edges whenever possible).
+            candidates = []
+            for i in succs[self.lastij]:
+                if free[i]:
+                    e = nexits[i]
+                    assert e > 0, "else decrexits() pruning flawed"
+                    if e == 1:
+                        candidates = [(e, 0, i)]
+                        break
+                    i1, j1 = divmod(i, n)
+                    d = (i1 - midpoint)**2 + (j1 - midpoint)**2
+                    candidates.append((e, -d, i))
+            else:
+                candidates.sort()
+
+            for e, d, i in candidates:
+                if i != self.final:
+                    if decrexits(i):
+                        free[i] = 0
+                        self.lastij = i
+                        yield i
+                        free[i] = 1
+                    increxits(i)
+
+        # Generate the last move.
+        def last():
+            assert self.final in succs[self.lastij]
+            yield self.final
+
+        if n <= 1:
+            self.rowgenerators = [first]
+        else:
+            self.rowgenerators = [first, second] + \
+                [hard and advance_hard or advance] * (n**2 - 3) + \
+                [last]
+
+    # Generate solutions.
+    def solve(self):
+        for x in conjoin(self.rowgenerators):
+            yield x
+
+    def printsolution(self, x):
+        n = self.n
+        assert len(x) == n**2
+        w = len(str(n**2 + 1))
+        format = "%" + str(w) + "d"
+
+        squares = [[None] * n for i in range(n)]
+        k = 1
+        for i in x:
+            i1, j1 = divmod(i, n)
+            squares[i1][j1] = format % k
+            k += 1
+
+        sep = "+" + ("-" * w + "+") * n
+        print sep
+        for i in range(n):
+            row = squares[i]
+            print "|" + "|".join(row) + "|"
+            print sep
+
 conjoin_tests = """
 
 Generate the 3-bit binary numbers in order.  This illustrates dumbest-
 possible use of conjoin, just to generate the full cross-product.
 
->>> for c in conjoin([lambda: (0, 1)] * 3):
+>>> for c in conjoin([lambda: iter((0, 1))] * 3):
 ...     print c
 [0, 0, 0]
 [0, 0, 1]
@@ -986,7 +1217,7 @@ generated sequence, you need to copy its results.
 ...         yield x[:]
 
 >>> for n in range(10):
-...     all = list(gencopy(conjoin([lambda: (0, 1)] * n)))
+...     all = list(gencopy(conjoin([lambda: iter((0, 1))] * n)))
 ...     print n, len(all), all[0] == [0] * n, all[-1] == [1] * n
 0 1 1 1
 1 2 1 1
@@ -1048,6 +1279,64 @@ Solution 2
 
 >>> print count, "solutions in all."
 92 solutions in all.
+
+And run a Knight's Tour on a 10x10 board.  Note that there are about
+20,000 solutions even on a 6x6 board, so don't dare run this to exhaustion.
+
+>>> k = Knights(10)
+>>> LIMIT = 2
+>>> count = 0
+>>> for x in k.solve():
+...     count += 1
+...     if count <= LIMIT:
+...         print "Solution", count
+...         k.printsolution(x)
+...     else:
+...         break
+Solution 1
++---+---+---+---+---+---+---+---+---+---+
+|  1| 58| 27| 34|  3| 40| 29| 10|  5|  8|
++---+---+---+---+---+---+---+---+---+---+
+| 26| 35|  2| 57| 28| 33|  4|  7| 30| 11|
++---+---+---+---+---+---+---+---+---+---+
+| 59|100| 73| 36| 41| 56| 39| 32|  9|  6|
++---+---+---+---+---+---+---+---+---+---+
+| 74| 25| 60| 55| 72| 37| 42| 49| 12| 31|
++---+---+---+---+---+---+---+---+---+---+
+| 61| 86| 99| 76| 63| 52| 47| 38| 43| 50|
++---+---+---+---+---+---+---+---+---+---+
+| 24| 75| 62| 85| 54| 71| 64| 51| 48| 13|
++---+---+---+---+---+---+---+---+---+---+
+| 87| 98| 91| 80| 77| 84| 53| 46| 65| 44|
++---+---+---+---+---+---+---+---+---+---+
+| 90| 23| 88| 95| 70| 79| 68| 83| 14| 17|
++---+---+---+---+---+---+---+---+---+---+
+| 97| 92| 21| 78| 81| 94| 19| 16| 45| 66|
++---+---+---+---+---+---+---+---+---+---+
+| 22| 89| 96| 93| 20| 69| 82| 67| 18| 15|
++---+---+---+---+---+---+---+---+---+---+
+Solution 2
++---+---+---+---+---+---+---+---+---+---+
+|  1| 58| 27| 34|  3| 40| 29| 10|  5|  8|
++---+---+---+---+---+---+---+---+---+---+
+| 26| 35|  2| 57| 28| 33|  4|  7| 30| 11|
++---+---+---+---+---+---+---+---+---+---+
+| 59|100| 73| 36| 41| 56| 39| 32|  9|  6|
++---+---+---+---+---+---+---+---+---+---+
+| 74| 25| 60| 55| 72| 37| 42| 49| 12| 31|
++---+---+---+---+---+---+---+---+---+---+
+| 61| 86| 99| 76| 63| 52| 47| 38| 43| 50|
++---+---+---+---+---+---+---+---+---+---+
+| 24| 75| 62| 85| 54| 71| 64| 51| 48| 13|
++---+---+---+---+---+---+---+---+---+---+
+| 87| 98| 89| 80| 77| 84| 53| 46| 65| 44|
++---+---+---+---+---+---+---+---+---+---+
+| 90| 23| 92| 95| 70| 79| 68| 83| 14| 17|
++---+---+---+---+---+---+---+---+---+---+
+| 97| 88| 21| 78| 81| 94| 19| 16| 45| 66|
++---+---+---+---+---+---+---+---+---+---+
+| 22| 91| 96| 93| 20| 69| 82| 67| 18| 15|
++---+---+---+---+---+---+---+---+---+---+
 """
 
 __test__ = {"tut":      tutorial_tests,
