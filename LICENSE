@@ -19,7 +19,7 @@ have worked under Guido's direction to make this release possible.
 BEOPEN.COM TERMS AND CONDITIONS FOR PYTHON 2.0
 ==============================================
 
-BEOPEN OPEN SOURCE PYTHON LICENSE AGREEMENT VERSION 1
+BEOPEN PYTHON OPEN SOURCE LICENSE AGREEMENT VERSION 1
 -----------------------------------------------------
 
 1. This LICENSE AGREEMENT is between BeOpen.com ("BeOpen"), having an
@@ -73,8 +73,8 @@ agrees to be bound by the terms and conditions of this License
 Agreement.
 
 
-CNRI LICENSE AGREEMENT
-----------------------
+CNRI OPEN SOURCE LICENSE AGREEMENT
+----------------------------------
 
 Python 1.6 is made available subject to the terms and conditions in
 CNRI's License Agreement.  This Agreement together with Python 1.6 may
