@@ -13,6 +13,7 @@ import sys
 import types
 import StringIO
 import macfs
+import keyword
 
 from Carbon.Res import *
 
@@ -816,12 +817,6 @@ def compiledataflags(flags):
 				bits.append(`i`)
 	return '[%s]' % string.join(bits)
 	
-# Set of Python keywords (as of Python 2.2)
-illegal_ids = ["and", "elif", "global", "or", "assert", "else", "if", "pass", 
-	"break", "except", "import", "print", "class", "exec", "in", "raise", 
-	"continue", "finally", "is", "return", "def", "for", "lambda", "try", 
-	"del", "from", "not", "while", "yield"]
-
 def identify(str):
 	"""Turn any string into an identifier:
 	- replace space by _
@@ -841,7 +836,7 @@ def identify(str):
 		else:
 			rv = rv + '_%02.2x_'%ord(c)
 		ok = ok2
-	if rv in illegal_ids:
+	if keyword.iskeyword(rv):
 		rv = '_' + rv
 	return rv
 
@@ -850,3 +845,4 @@ def identify(str):
 if __name__ == '__main__':
 	main()
 	sys.exit(1)
+print identify('for')
