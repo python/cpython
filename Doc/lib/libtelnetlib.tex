@@ -5,13 +5,15 @@
 \modulesynopsis{Telnet client class.}
 \sectionauthor{Skip Montanaro}{skip@mojam.com}
 
+\index{protocol!Telnet}
+
 The \module{telnetlib} module provides a \class{Telnet} class that
 implements the Telnet protocol.  See \rfc{854} for details about the
 protocol.
 
 
 \begin{classdesc}{Telnet}{\optional{host\optional{, port}}}
-\class{Telnet} represents a connection to a telnet server. The
+\class{Telnet} represents a connection to a Telnet server. The
 instance is initially not connected by default; the \method{open()}
 method must be used to establish a connection.  Alternatively, the
 host name and optional port number can be passed to the constructor,
@@ -92,7 +94,7 @@ never blocks.
 \begin{methoddesc}{open}{host\optional{, port}}
 Connect to a host.
 The optional second argument is the port number, which
-defaults to the standard telnet port (23).
+defaults to the standard Telnet port (23).
 
 Do not try to reopen an already connected instance.
 \end{methoddesc}
@@ -127,7 +129,7 @@ This can block if the connection is blocked.  May raise
 \end{methoddesc}
 
 \begin{methoddesc}{interact}{}
-Interaction function, emulates a very dumb telnet client.
+Interaction function, emulates a very dumb Telnet client.
 \end{methoddesc}
 
 \begin{methoddesc}{mt_interact}{}
@@ -151,7 +153,7 @@ If end of file is found and no text was read, raise
 \code{(-1, None, \var{text})} where \var{text} is the text received so
 far (may be the empty string if a timeout happened).
 
-If a regular expression ends with a greedy match (e.g. \regexp{.*})
+If a regular expression ends with a greedy match (such as \regexp{.*})
 or if more than one expression can match the same input, the
 results are indeterministic, and may depend on the I/O timing.
 \end{methoddesc}
