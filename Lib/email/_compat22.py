@@ -26,9 +26,9 @@ def walk(self):
 
 
 # Used internally by the Header class
-def _intdiv2(i):
-    """Do an integer divide by 2."""
-    return i // 2
+def _floordiv(x, y):
+    """Do integer division."""
+    return x // y
 
 
 
