@@ -3,6 +3,7 @@
 import mac
 import macpath
 from stat import ST_MTIME
+import string
 
 # Pack one file
 def pack(outfp, file, name):
@@ -46,3 +47,28 @@ def packnotolder(outfp, dirname, oldest):
 			print 'No.'
 	todo.sort()
 	packsome(outfp, dirname, todo)
+
+# Pack a whole tree (no exceptions)
+def packtree(outfp, dirname):
+	print 'packtree', dirname
+	outfp.write('mkdir ' + unixfix(dirname) + '\n')
+	names = mac.listdir(dirname)
+	subdirs = []
+	for name in names:
+		fullname = macpath.cat(dirname, name)
+		if macpath.isdir(fullname):
+			subdirs.append(fullname)
+		else:
+			print 'pack', fullname
+			pack(outfp, fullname, unixfix(fullname))
+	for subdirname in subdirs:
+		packtree(outfp, subdirname)
+
+def unixfix(name):
+	comps = string.splitfields(name, ':')
+	res = ''
+	for comp in comps:
+		if comp:
+			if res: res = res + '/'
+			res = res + comp
+	return res
