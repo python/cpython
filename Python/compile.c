@@ -4027,8 +4027,12 @@ jcompile(node *n, char *filename, struct compiling *base,
 			com_free(&sc);
 			return NULL;
 		}
-		if (flags)
-			sc.c_future->ff_features |= flags->cf_flags;
+		if (flags) {
+			int merged = sc.c_future->ff_features |
+				flags->cf_flags;
+			sc.c_future->ff_features = merged;
+			flags->cf_flags = merged;
+		}
 		if (symtable_build(&sc, n) < 0) {
 			com_free(&sc);
 			return NULL;
