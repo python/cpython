@@ -93,6 +93,55 @@ PyModule_GetName(m)
 	return PyString_AsString(nameobj);
 }
 
+void
+_PyModule_Clear(m)
+	PyObject *m;
+{
+	/* To make the execution order of destructors for global
+	   objects a bit more predictable, we first zap all objects
+	   whose name starts with a single underscore, before we clear
+	   the entire dictionary.  We zap them by replacing them with
+	   None, rather than deleting them from the dictionary, to
+	   avoid rehashing the dictionary (to some extent). */
+
+	int pos;
+	PyObject *key, *value;
+	PyObject *d;
+
+	d = ((PyModuleObject *)m)->md_dict;
+
+	/* First, clear only names starting with a single underscore */
+	pos = 0;
+	while (PyDict_Next(d, &pos, &key, &value)) {
+		if (value != Py_None && PyString_Check(key)) {
+			char *s = PyString_AsString(key);
+			if (s[0] == '_' && s[1] != '_') {
+				if (Py_VerboseFlag > 1)
+				    fprintf(stderr, "#   clear[1] %s\n", s);
+				PyDict_SetItem(d, key, Py_None);
+			}
+		}
+	}
+
+	/* Next, clear all names except for __builtins__ */
+	pos = 0;
+	while (PyDict_Next(d, &pos, &key, &value)) {
+		if (value != Py_None && PyString_Check(key)) {
+			char *s = PyString_AsString(key);
+			if (s[0] != '_' || strcmp(s, "__builtins__") != 0) {
+				if (Py_VerboseFlag > 1)
+				    fprintf(stderr, "#   clear[2] %s\n", s);
+				PyDict_SetItem(d, key, Py_None);
+			}
+		}
+	}
+
+	/* Note: we leave __builtins__ in place, so that destructors
+	   of non-global objects defined in this module can still use
+	   builtins, in particularly 'None'. */
+
+}
+
 /* Methods */
 
 static void
@@ -100,7 +149,7 @@ module_dealloc(m)
 	PyModuleObject *m;
 {
 	if (m->md_dict != NULL) {
-		PyDict_Clear(m->md_dict);
+		_PyModule_Clear((PyObject *)m);
 		Py_DECREF(m->md_dict);
 	}
 	free((char *)m);
