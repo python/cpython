@@ -215,9 +215,44 @@ and implemented by Jack Jansen.}
 
 \end{seealso}
 
+
+%======================================================================
+\section{PEP 279: The \function{enumerate()} Built-in Function}
+
+A new built-in function, \function{enumerate()}, will make
+certain loops a bit clearer.  \code{enumerate(thing)}, where
+\var{thing} is either an iterator or a sequence, returns a iterator
+that will return \code{(0, \var{thing[0]})}, \code{(1,
+\var{thing[1]})}, \code{(2, \var{thing[2]})}, and so forth.  Fairly
+often you'll see code to change every element of a list that looks
+like this:
+
+\begin{verbatim}
+for i in range(len(L)):
+    item = L[i]
+    # ... compute some result based on item ...
+    L[i] = result
+\end{verbatim}
+
+This can be rewritten using \function{enumerate()} as:
+
+\begin{verbatim}
+for i, item in enumerate(L):
+    # ... compute some result based on item ...
+    L[i] = result
+\end{verbatim}
+
+
+\begin{seealso}
+
+\seepep{279}{The enumerate() built-in function}{Written 
+by Raymond D. Hettinger.}
+
+\end{seealso}
+
+
 %======================================================================
 \section{PEP 285: The \class{bool} Type\label{section-bool}}
-
 
 A Boolean type was added to Python 2.3.  Two new constants were added
 to the \module{__builtin__} module, \constant{True} and
@@ -292,41 +327,20 @@ strings \samp{True} and \samp{False} instead of \samp{1} and \samp{0}.
 
 
 %======================================================================
-\section{Other Language Changes}
+%\section{Other Language Changes}
 
-Here are the changes that Python 2.3 makes to the core language.
+%Here are the changes that Python 2.3 makes to the core language.
 
-\begin{itemize}
-\item The \keyword{yield} statement is now always a keyword, as
-described in section~\ref{section-generators}.
+%\begin{itemize}
+%\item The \keyword{yield} statement is now always a keyword, as
+%described in section~\ref{section-generators}.
 
-\item Two new constants, \constant{True} and \constant{False} were
-added along with the built-in \class{bool} type, as described in
-section~\ref{section-bool}.
+%\item Two new constants, \constant{True} and \constant{False} were
+%added along with the built-in \class{bool} type, as described in
+%section~\ref{section-bool}.
 
-\item A new built-in function, \function{enumerate()}, will make
-certain loops a bit clearer.  \code{enumerate(thing)}, where
-\var{thing} is either an iterator or a sequence, returns a iterator
-that will return \code{(0, \var{thing[0]})}, \code{(1,
-\var{thing[1]})}, \code{(2, \var{thing[2]})}, and so forth.  Fairly
-often you'll see code to change every element of a list that looks like this:
-
-\begin{verbatim}
-for i in range(len(L)):
-    item = L[i]
-    # ... compute some result based on item ...
-    L[i] = result
-\end{verbatim}
-
-This can be rewritten using \function{enumerate()} as:
-
-\begin{verbatim}
-for i, item in enumerate(L):
-    # ... compute some result based on item ...
-    L[i] = result
-\end{verbatim}
-
-\end{itemize}
+%\item 
+%\end{itemize}
 
 
 %======================================================================
@@ -386,7 +400,7 @@ support, turn on the Python interpreter's debugging code by running
 
 \begin{seealso}
 
-\seeurl{XXX}
+\seeurl{http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/python/python/dist/src/Objects/obmalloc.c}
 {For the full details of the pymalloc implementation, see
 the comments at the top of the file \file{Objects/obmalloc.c} in the
 Python source code.  The above link points to the file within the
@@ -491,7 +505,7 @@ packages for use on HP-UX.  (Contributed by Mark Alexander.)
 characters using the \samp{u} format character.  Arrays also 
 now support using the \code{+=} assignment operator to add another array's
 contents, and the \code{*=} assignment operator to repeat an array.
-(Contributed by XXX.)
+(Contributed by Jason Orendorff.)
 
 \item The \module{grp} module now returns enhanced tuples:
 
@@ -518,8 +532,8 @@ Changes to Python's build process, and to the C API, include:
 
 \item Python can now optionally be built as a shared library
 (\file{libpython2.3.so}) by supplying \longprogramopt{enable-shared}
-when running Python's \file{configure} script.  (Contributed by XXX
-Patch \#527027)
+when running Python's \file{configure} script.  (Contributed by Ondrej
+Palkovsky.)
 
 \item The \cfunction{PyArg_NoArgs()} macro is now deprecated, and code
 that
