@@ -356,7 +356,7 @@ get_progpath(void)
 	   but makes no mention of the null terminator.  Play it safe.
 	   PLUS Windows itself defines MAX_PATH as the same, but anyway...
 	*/
-	wprogpath[MAXPATHLEN]=_T('\0')';
+	wprogpath[MAXPATHLEN]=_T('\0');
 	if (GetModuleFileName(NULL, wprogpath, MAXPATHLEN)) {
 		WideCharToMultiByte(CP_ACP, 0, 
 		                    wprogpath, -1, 
