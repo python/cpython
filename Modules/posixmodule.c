@@ -2851,7 +2851,7 @@ posix_strerror(self, args)
 #ifdef WIFSTOPPED
 static char posix_WIFSTOPPED__doc__[] =
 "WIFSTOPPED(status) -> Boolean\n\
-See Unix documentation.";
+Return true if the process returning 'status' was stopped.";
 
 static PyObject *
 posix_WIFSTOPPED(self, args)
@@ -2879,7 +2879,7 @@ posix_WIFSTOPPED(self, args)
 #ifdef WIFSIGNALED
 static char posix_WIFSIGNALED__doc__[] =
 "WIFSIGNALED(status) -> Boolean\n\
-See Unix documentation.";
+Retrun true if the process returning 'status' was terminated by a signal.";
 
 static PyObject *
 posix_WIFSIGNALED(self, args)
@@ -2907,7 +2907,8 @@ posix_WIFSIGNALED(self, args)
 #ifdef WIFEXITED
 static char posix_WIFEXITED__doc__[] =
 "WIFEXITED(status) -> Boolean\n\
-See Unix documentation.";
+Return true if the process returning 'status' exited using the exit()\n\
+system call.";
 
 static PyObject *
 posix_WIFEXITED(self, args)
@@ -2935,7 +2936,7 @@ posix_WIFEXITED(self, args)
 #ifdef WEXITSTATUS
 static char posix_WEXITSTATUS__doc__[] =
 "WEXITSTATUS(status) -> integer\n\
-See Unix documentation.";
+Return the process return code from 'status'.";
 
 static PyObject *
 posix_WEXITSTATUS(self, args)
@@ -2963,7 +2964,8 @@ posix_WEXITSTATUS(self, args)
 #ifdef WTERMSIG
 static char posix_WTERMSIG__doc__[] =
 "WTERMSIG(status) -> integer\n\
-See Unix documentation.";
+Return the signal that terminated the process that provided the 'status'\n\
+value.";
 
 static PyObject *
 posix_WTERMSIG(self, args)
@@ -2991,7 +2993,7 @@ posix_WTERMSIG(self, args)
 #ifdef WSTOPSIG
 static char posix_WSTOPSIG__doc__[] =
 "WSTOPSIG(status) -> integer\n\
-See Unix documentation.";
+Return the signal that stopped the process that provided the 'status' value.";
 
 static PyObject *
 posix_WSTOPSIG(self, args)
