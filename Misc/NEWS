@@ -72,6 +72,9 @@ Tools/Demos
 - py-help-at-point is no longer bound to the F1 key - it's still bound to
   C-c C-h
 
+- Pynche was fixed to not crash when there is no ~/.pynche file and no
+  -d option was given.
+
 Build
 -----
 
