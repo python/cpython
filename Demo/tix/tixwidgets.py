@@ -6,14 +6,15 @@
 #
 #	For Tix, see http://tix.sourceforge.net
 #
-# 	This is a demo program of all Tix widgets available from Python. If
-#	you have installed Python & Tix properly, you can execute this as
+# 	This is a demo program of some of the Tix widgets available in Python.
+#	If you have installed Python & Tix properly, you can execute this as
 #
 #		% python tixwidgets.py
 #
 
 import os, os.path, sys, Tix
 from Tkconstants import *
+import traceback, tkMessageBox
 
 TCL_DONT_WAIT		= 1<<1
 TCL_WINDOW_EVENTS	= 1<<2
@@ -65,10 +66,6 @@ class Demo:
         hm = Tix.Menu(help, tearoff=0)
         help['menu'] = hm
 
-        if w.tk.eval ('info commands console') == "console":
-            fm.add_command(label='Console', underline=1,
-                           command=lambda w=w: w.tk.eval('console show'))
-
         fm.add_command(label='Exit', underline=1,
                      command = lambda self=self: self.quitcmd () )
         hm.add_checkbutton(label='BalloonHelp', underline=0, command=ToggleHelp,
@@ -76,14 +73,15 @@ class Demo:
         # The trace variable option doesn't seem to work, instead I use 'command'
         #apply(w.tk.call, ('trace', 'variable', self.useBalloons, 'w',
         #		      ToggleHelp))
+
         return w
 
     def MkMainNotebook(self):
         top = self.root
         w = Tix.NoteBook(top, ipadx=5, ipady=5, options="""
-        *TixNoteBook*tagPadX 6
-        *TixNoteBook*tagPadY 4
-        *TixNoteBook*borderWidth 2
+        tagPadX 6
+        tagPadY 4
+        borderWidth 2
         """)
         # This may be required if there is no *Background option
         top['bg'] = w['bg']
@@ -115,8 +113,10 @@ class Demo:
         root = self.root
         z = root.winfo_toplevel()
         z.wm_title('Tix Widget Demonstration')
-        z.geometry('790x590+10+10')
-
+        if z.winfo_screenwidth() <= 800:
+            z.geometry('790x590+10+10')
+        else:
+            z.geometry('890x640+10+10')
         demo.balloon = Tix.Balloon(root)
         frame1 = self.MkMainMenu()
         frame2 = self.MkMainNotebook()
@@ -127,27 +127,39 @@ class Demo:
         demo.balloon['statusbar'] = demo.statusbar
         z.wm_protocol("WM_DELETE_WINDOW", lambda self=self: self.quitcmd())
 
+        # To show Tcl errors - uncomment this to see the listbox bug.
+        # Tkinter defines a Tcl tkerror procedure that in effect
+        # silences all background Tcl error reporting.
+	# root.tk.eval('if {[info commands tkerror] != ""} {rename tkerror pytkerror}')
     def quitcmd (self):
         """Quit our mainloop. It is up to you to call root.destroy() after."""
         self.exit = 0
 
     def loop(self):
-        import tkMessageBox, traceback
+	"""This is an explict replacement for _tkinter mainloop()
+	It lets you catch keyboard interrupts easier, and avoids
+	the 20 msec. dead sleep() which burns a constant CPU."""
         while self.exit < 0:
+            # There are 2 whiles here. The outer one lets you continue
+            # after a ^C interrupt.
             try:
-                self.root.tk.dooneevent(TCL_ALL_EVENTS)
+                # This is the replacement for _tkinter mainloop()
+                # It blocks waiting for the next Tcl event using select.
+                while self.exit < 0:
+                    self.root.tk.dooneevent(TCL_ALL_EVENTS)
             except SystemExit:
+                # Tkinter uses SystemExit to exit
                 #print 'Exit'
                 self.exit = 1
-                break
+                return
             except KeyboardInterrupt:
                 if tkMessageBox.askquestion ('Interrupt', 'Really Quit?') == 'yes':
                     # self.tk.eval('exit')
+                    self.exit = 1
                     return
-                else:
-                    pass
                 continue
             except:
+                # Otherwise it's some other error - be nice and say why
                 t, v, tb = sys.exc_info()
                 text = ""
                 for line in traceback.format_exception(t,v,tb):
@@ -159,7 +171,7 @@ class Demo:
 
     def destroy (self):
         self.root.destroy()
-    
+
 def RunMain(root):
     global demo
 
@@ -254,19 +266,16 @@ def ToggleHelp():
 
 def MkChoosers(nb, name):
     w = nb.page(name)
-    prefix = Tix.OptionName(w)
-    if not prefix:
-	prefix = ''
-    w.option_add('*' + prefix + '*TixLabelFrame*label.padX', 4)
+    options = "label.padX 4"
 
-    til = Tix.LabelFrame(w, label='Chooser Widgets')
-    cbx = Tix.LabelFrame(w, label='tixComboBox')
-    ctl = Tix.LabelFrame(w, label='tixControl')
-    sel = Tix.LabelFrame(w, label='tixSelect')
-    opt = Tix.LabelFrame(w, label='tixOptionMenu')
-    fil = Tix.LabelFrame(w, label='tixFileEntry')
-    fbx = Tix.LabelFrame(w, label='tixFileSelectBox')
-    tbr = Tix.LabelFrame(w, label='Tool Bar')
+    til = Tix.LabelFrame(w, label='Chooser Widgets', options=options)
+    cbx = Tix.LabelFrame(w, label='tixComboBox', options=options)
+    ctl = Tix.LabelFrame(w, label='tixControl', options=options)
+    sel = Tix.LabelFrame(w, label='tixSelect', options=options)
+    opt = Tix.LabelFrame(w, label='tixOptionMenu', options=options)
+    fil = Tix.LabelFrame(w, label='tixFileEntry', options=options)
+    fbx = Tix.LabelFrame(w, label='tixFileSelectBox', options=options)
+    tbr = Tix.LabelFrame(w, label='Tool Bar', options=options)
 
     MkTitle(til.frame)
     MkCombo(cbx.frame)
@@ -293,16 +302,12 @@ def MkChoosers(nb, name):
     fbx.form(right=-1, top=0, left='%66')
 
 def MkCombo(w):
-    prefix = Tix.OptionName(w)
-    if not prefix: prefix = ''
-    w.option_add('*' + prefix + '*TixComboBox*label.width', 10)
-    w.option_add('*' + prefix + '*TixComboBox*label.anchor', Tix.E)
-    w.option_add('*' + prefix + '*TixComboBox*entry.width', 14)
+    options="label.width %d label.anchor %s entry.width %d" % (10, Tix.E, 14)
 
-    static = Tix.ComboBox(w, label='Static', editable=0)
-    editable = Tix.ComboBox(w, label='Editable', editable=1)
+    static = Tix.ComboBox(w, label='Static', editable=0, options=options)
+    editable = Tix.ComboBox(w, label='Editable', editable=1, options=options)
     history = Tix.ComboBox(w, label='History', editable=1, history=1,
-			   anchor=Tix.E)
+			   anchor=Tix.E, options=options)
     static.insert(Tix.END, 'January')
     static.insert(Tix.END, 'February')
     static.insert(Tix.END, 'March')
@@ -355,32 +360,31 @@ def spin_validate(w):
 def MkControl(w):
     global demo_spintxt
 
-    prefix = Tix.OptionName(w)
-    if not prefix: prefix = ''
-    w.option_add('*' + prefix + '*TixControl*label.width', 10)
-    w.option_add('*' + prefix + '*TixControl*label.anchor', Tix.E)
-    w.option_add('*' + prefix + '*TixControl*entry.width', 13)
+    options="label.width %d label.anchor %s entry.width %d" % (10, Tix.E, 13)
 
     demo_spintxt = Tix.StringVar()
     demo_spintxt.set(states[0])
-    simple = Tix.Control(w, label='Numbers')
-    spintxt = Tix.Control(w, label='States', variable=demo_spintxt)
+    simple = Tix.Control(w, label='Numbers', options=options)
+    spintxt = Tix.Control(w, label='States', variable=demo_spintxt,
+                          options=options)
     spintxt['incrcmd'] = lambda w=spintxt: spin_cmd(w, 1)
     spintxt['decrcmd'] = lambda w=spintxt: spin_cmd(w, -1)
     spintxt['validatecmd'] = lambda w=spintxt: spin_validate(w)
 
     simple.pack(side=Tix.TOP, padx=5, pady=3)
     spintxt.pack(side=Tix.TOP, padx=5, pady=3)
-    
-def MkSelect(w):
-    prefix = Tix.OptionName(w)
-    if not prefix: prefix = ''
-    w.option_add('*' + prefix + '*TixSelect*label.anchor', Tix.CENTER)
-    w.option_add('*' + prefix + '*TixSelect*orientation', Tix.VERTICAL)
-    w.option_add('*' + prefix + '*TixSelect*labelSide', Tix.TOP)
 
-    sel1 = Tix.Select(w, label='Mere Mortals', allowzero=1, radio=1)
-    sel2 = Tix.Select(w, label='Geeks', allowzero=1, radio=0)
+def MkSelect(w):
+    options = "label.anchor %s" % Tix.CENTER
+
+    sel1 = Tix.Select(w, label='Mere Mortals', allowzero=1, radio=1,
+                      orientation=Tix.VERTICAL,
+                      labelside=Tix.TOP,
+                      options=options)
+    sel2 = Tix.Select(w, label='Geeks', allowzero=1, radio=0,
+                      orientation=Tix.VERTICAL,
+                      labelside= Tix.TOP,
+                      options=options)
 
     sel1.add('eat', text='Eat')
     sel1.add('work', text='Work')
@@ -398,10 +402,9 @@ def MkSelect(w):
     sel2.pack(side=Tix.LEFT, padx=5, pady=3, fill=Tix.X)
 
 def MkOptMenu(w):
-    prefix = Tix.OptionName(w)
-    if not prefix: prefix = ''
-    w.option_add('*' + prefix + '*TixOptionMenu*label.anchor', Tix.E)
-    m = Tix.OptionMenu(w, label='File Format : ', options='menubutton.width 15')
+    options='menubutton.width 15 label.anchor %s' % Tix.E
+
+    m = Tix.OptionMenu(w, label='File Format : ', options=options)
     m.add_command('text', label='Plain Text')
     m.add_command('post', label='PostScript')
     m.add_command('format', label='Formatted Text')
@@ -413,7 +416,7 @@ def MkOptMenu(w):
     m.pack(fill=Tix.X, padx=5, pady=3)
 
 def MkFileEnt(w):
-    msg = Tix.Message(w, 
+    msg = Tix.Message(w,
 		      relief=Tix.FLAT, width=240, anchor=Tix.N,
 		      text='Press the "open file" icon button and a TixFileSelectDialog will popup.')
     ent = Tix.FileEntry(w, label='Select a file : ')
@@ -425,7 +428,7 @@ def MkFileBox(w):
     For example, you can adjust the size of the two listboxes
     and your past selections are recorded.
     """
-    msg = Tix.Message(w, 
+    msg = Tix.Message(w,
 		      relief=Tix.FLAT, width=240, anchor=Tix.N,
 		      text='The Tix FileSelectBox is a Motif-style box with various enhancements. For example, you can adjust the size of the two listboxes and your past selections are recorded.')
     box = Tix.FileSelectBox(w)
@@ -433,17 +436,18 @@ def MkFileBox(w):
     box.pack(side=Tix.TOP, fill=Tix.X, padx=3, pady=3)
 
 def MkToolBar(w):
+    """The Select widget is also good for arranging buttons in a tool bar.
+    """
     global demo
 
-    prefix = Tix.OptionName(w)
-    if not prefix: prefix = ''
-    w.option_add('*' + prefix + '*TixSelect*frame.borderWidth', 1)
-    msg = Tix.Message(w, 
+    options='frame.borderWidth 1'
+
+    msg = Tix.Message(w,
 		      relief=Tix.FLAT, width=240, anchor=Tix.N,
 		      text='The Select widget is also good for arranging buttons in a tool bar.')
     bar = Tix.Frame(w, bd=2, relief=Tix.RAISED)
-    font = Tix.Select(w, allowzero=1, radio=0, label='')
-    para = Tix.Select(w, allowzero=0, radio=1, label='')
+    font = Tix.Select(w, allowzero=1, radio=0, label='', options=options)
+    para = Tix.Select(w, allowzero=0, radio=1, label='', options=options)
 
     font.add('bold', bitmap='@' + demo.dir + '/bitmaps/bold.xbm')
     font.add('italic', bitmap='@' + demo.dir + '/bitmaps/italic.xbm')
@@ -461,24 +465,18 @@ def MkToolBar(w):
     para.pack({'in':bar}, side=Tix.LEFT, padx=3, pady=3)
 
 def MkTitle(w):
-    prefix = Tix.OptionName(w)
-    if not prefix: prefix = ''
-    w.option_add('*' + prefix + '*TixSelect*frame.borderWidth', 1)
-    msg = Tix.Message(w, 
+    msg = Tix.Message(w,
 		      relief=Tix.FLAT, width=240, anchor=Tix.N,
 		      text='There are many types of "chooser" widgets that allow the user to input different types of information')
     msg.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH, padx=3, pady=3)
 
 def MkScroll(nb, name):
     w = nb.page(name)
-    prefix = Tix.OptionName(w)
-    if not prefix:
-	prefix = ''
-    w.option_add('*' + prefix + '*TixLabelFrame*label.padX', 4)
+    options='label.padX 4'
 
-    sls = Tix.LabelFrame(w, label='tixScrolledListBox')
-    swn = Tix.LabelFrame(w, label='tixScrolledWindow')
-    stx = Tix.LabelFrame(w, label='tixScrolledText')
+    sls = Tix.LabelFrame(w, label='tixScrolledListBox', options=options)
+    swn = Tix.LabelFrame(w, label='tixScrolledWindow', options=options)
+    stx = Tix.LabelFrame(w, label='tixScrolledText', options=options)
 
     MkSList(sls.frame)
     MkSWindow(swn.frame)
@@ -488,10 +486,14 @@ def MkScroll(nb, name):
     swn.form(top=0, left=sls, right='%66', bottom=-1)
     stx.form(top=0, left=swn, right=-1, bottom=-1)
 
+
 def MkSList(w):
+    """This TixScrolledListBox is configured so that it uses scrollbars
+    only when it is necessary. Use the handles to resize the listbox and
+    watch the scrollbars automatically appear and disappear.  """
     top = Tix.Frame(w, width=300, height=330)
     bot = Tix.Frame(w)
-    msg = Tix.Message(top, 
+    msg = Tix.Message(top,
 		      relief=Tix.FLAT, width=200, anchor=Tix.N,
 		      text='This TixScrolledListBox is configured so that it uses scrollbars only when it is necessary. Use the handles to resize the listbox and watch the scrollbars automatically appear and disappear.')
 
@@ -522,30 +524,30 @@ def SList_reset(rh, list):
     list.update()
     rh.attach_widget(list)
 
-# See below why this is necessary.
-global image1
-image1 = None
 def MkSWindow(w):
-    global demo, image1
+    """The ScrolledWindow widget allows you to scroll any kind of Tk
+    widget. It is more versatile than a scrolled canvas widget.
+    """
+    global demo
 
-    text = 'The TixScrolledWindow widget allows you to scroll any kind of Tk widget. It is more versatile than a scrolled canvas widget.'
-    
+    text = 'The Tix ScrolledWindow widget allows you to scroll any kind of Tk widget. It is more versatile than a scrolled canvas widget.'
+
     file = os.path.join(demo.dir, 'bitmaps', 'tix.gif')
     if not os.path.isfile(file):
         text += ' (Image missing)'
 
     top = Tix.Frame(w, width=330, height=330)
     bot = Tix.Frame(w)
-    msg = Tix.Message(top, 
+    msg = Tix.Message(top,
 		      relief=Tix.FLAT, width=200, anchor=Tix.N,
 		      text=text)
 
     win = Tix.ScrolledWindow(top, scrollbar='auto')
 
-    # This image is not showing up under Python unless it is set to a
-    # global variable - no problem under Tcl. I assume it is being garbage
-    # collected some how, even though the tcl command 'image names' shows
-    # that as far as Tcl is concerned, the image exists and is called pyimage1.
+    global image1
+    # This image is not showing up in the Label unless it is set to a
+    # global variable - no problem under Tcl/Tix. It is being
+    # garbage collected at the end of this proecedure if not global
     image1 = Tix.Image('photo', file=file)
     lbl = Tix.Label(win.window, image=image1)
     lbl.pack(expand=1, fill=Tix.BOTH)
@@ -561,8 +563,6 @@ def MkSWindow(w):
     btn.pack(anchor=Tix.CENTER)
     top.pack(expand=1, fill=Tix.BOTH)
     bot.pack(fill=Tix.BOTH)
-    win.bind('<Map>', func=lambda arg=0, rh=rh, win=win:
-	     win.tk.call('tixDoWhenIdle', str(rh), 'attachwidget', str(win)))
 
 def SWindow_reset(rh, win):
     win.place(x=30, y=150, width=190, height=120)
@@ -570,11 +570,13 @@ def SWindow_reset(rh, win):
     rh.attach_widget(win)
 
 def MkSText(w):
+    """The TixScrolledWindow widget allows you to scroll any kind of Tk
+    widget. It is more versatile than a scrolled canvas widget."""
     top = Tix.Frame(w, width=330, height=330)
     bot = Tix.Frame(w)
-    msg = Tix.Message(top, 
+    msg = Tix.Message(top,
 		      relief=Tix.FLAT, width=200, anchor=Tix.N,
-		      text='The TixScrolledWindow widget allows you to scroll any kind of Tk widget. It is more versatile than a scrolled canvas widget.')
+		      text='The Tix ScrolledWindow widget allows you to scroll any kind of Tk widget. It is more versatile than a scrolled canvas widget.')
 
     win = Tix.ScrolledText(top, scrollbar='auto')
 #    win.text['wrap'] = 'none'
@@ -600,13 +602,10 @@ def SText_reset(rh, win):
 
 def MkManager(nb, name):
     w = nb.page(name)
-    prefix = Tix.OptionName(w)
-    if not prefix:
-	prefix = ''
-    w.option_add('*' + prefix + '*TixLabelFrame*label.padX', 4)
+    options='label.padX 4'
 
-    pane = Tix.LabelFrame(w, label='tixPanedWindow')
-    note = Tix.LabelFrame(w, label='tixNoteBook')
+    pane = Tix.LabelFrame(w, label='tixPanedWindow', options=options)
+    note = Tix.LabelFrame(w, label='tixNoteBook', options=options)
 
     MkPanedWindow(pane.frame)
     MkNoteBook(note.frame)
@@ -615,7 +614,11 @@ def MkManager(nb, name):
     note.form(top=0, right=-1, bottom=-1)
 
 def MkPanedWindow(w):
-    msg = Tix.Message(w, 
+    """The PanedWindow widget allows the user to interactively manipulate
+    the sizes of several panes. The panes can be arranged either vertically
+    or horizontally.
+    """
+    msg = Tix.Message(w,
 		      relief=Tix.FLAT, width=240, anchor=Tix.N,
 		      text='The PanedWindow widget allows the user to interactively manipulate the sizes of several panes. The panes can be arranged either vertically or horizontally.')
     group = Tix.LabelEntry(w, label='Newsgroup:', options='entry.width 25')
@@ -658,18 +661,15 @@ together with a bitmap, at the same time, inside a TK button widget.
     pane.pack(side=Tix.TOP, padx=3, pady=3, fill=Tix.BOTH, expand=1)
 
 def MkNoteBook(w):
-    msg = Tix.Message(w, 
+    msg = Tix.Message(w,
 		      relief=Tix.FLAT, width=240, anchor=Tix.N,
 		      text='The NoteBook widget allows you to layout a complex interface into individual pages.')
-    prefix = Tix.OptionName(w)
-    if not prefix:
-	prefix = ''
-    w.option_add('*' + prefix + '*TixControl*entry.width', 10)
-    w.option_add('*' + prefix + '*TixControl*label.width', 18)
-    w.option_add('*' + prefix + '*TixControl*label.anchor', Tix.E)
-    w.option_add('*' + prefix + '*TixNoteBook*tagPadX', 8)
+    # prefix = Tix.OptionName(w)
+    # if not prefix: prefix = ''
+    # w.option_add('*' + prefix + '*TixNoteBook*tagPadX', 8)
+    options = "entry.width %d label.width %d label.anchor %s" % (10, 18, Tix.E)
 
-    nb = Tix.NoteBook(w, ipadx=6, ipady=6)
+    nb = Tix.NoteBook(w, ipadx=6, ipady=6, options=options)
     nb.add('hard_disk', label="Hard Disk", underline=0)
     nb.add('network', label="Network", underline=0)
 
@@ -714,30 +714,33 @@ def CreateCommonButtons(f):
 
 def MkDirList(nb, name):
     w = nb.page(name)
-    prefix = Tix.OptionName(w)
-    if not prefix:
-	prefix = ''
-    w.option_add('*' + prefix + '*TixLabelFrame*label.padX', 4)
+    options = "label.padX 4"
 
-    dir = Tix.LabelFrame(w, label='tixDirList')
-    fsbox = Tix.LabelFrame(w, label='tixExFileSelectBox')
+    dir = Tix.LabelFrame(w, label='tixDirList', options=options)
+    fsbox = Tix.LabelFrame(w, label='tixExFileSelectBox', options=options)
     MkDirListWidget(dir.frame)
     MkExFileWidget(fsbox.frame)
     dir.form(top=0, left=0, right='%40', bottom=-1)
     fsbox.form(top=0, left='%40', right=-1, bottom=-1)
 
 def MkDirListWidget(w):
-    msg = Tix.Message(w, 
+    """The TixDirList widget gives a graphical representation of the file
+    system directory and makes it easy for the user to choose and access
+    directories.
+    """
+    msg = Tix.Message(w,
 		      relief=Tix.FLAT, width=240, anchor=Tix.N,
-		      text='The TixDirList widget gives a graphical representation of the file system directory and makes it easy for the user to choose and access directories.')
+		      text='The Tix DirList widget gives a graphical representation of the file system directory and makes it easy for the user to choose and access directories.')
     dirlist = Tix.DirList(w, options='hlist.padY 1 hlist.width 25 hlist.height 16')
     msg.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH, padx=3, pady=3)
     dirlist.pack(side=Tix.TOP, padx=3, pady=3)
 
 def MkExFileWidget(w):
-    msg = Tix.Message(w, 
+    """The TixExFileSelectBox widget is more user friendly than the Motif
+    style FileSelectBox.  """
+    msg = Tix.Message(w,
 		      relief=Tix.FLAT, width=240, anchor=Tix.N,
-		      text='The TixExFileSelectBox widget is more user friendly than the Motif style FileSelectBox.')
+		      text='The Tix ExFileSelectBox widget is more user friendly than the Motif style FileSelectBox.')
     # There's a bug in the ComboBoxes - the scrolledlistbox is destroyed
     box = Tix.ExFileSelectBox(w, bd=2, relief=Tix.RAISED)
     msg.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH, padx=3, pady=3)
@@ -773,24 +776,24 @@ samples = {'Balloon'		: 'Balloon',
 ##	    {d "Miscellaneous Widgets"	misc	}
 ##	    {d "Image Types"		image	}
 ##	}
-##	
+##
 ##	set image {
 ##	    {d "Compound Image"		cmpimg	}
 ##	    {d "XPM Image"		xpm	{i pixmap}}
 ##	}
-##	
+##
 ##	set cmpimg {
-##	    {f "In Buttons"		CmpImg.tcl	}
+##done	    {f "In Buttons"		CmpImg.tcl	}
 ##	    {f "In NoteBook"		CmpImg2.tcl	}
 ##	    {f "Notebook Color Tabs"	CmpImg4.tcl	}
 ##	    {f "Icons"			CmpImg3.tcl	}
 ##	}
-##	
+##
 ##	set xpm {
 ##	    {f "In Button"		Xpm.tcl		{i pixmap}}
 ##	    {f "In Menu"		Xpm1.tcl	{i pixmap}}
 ##	}
-##	
+##
 ##	set file {
 ##added	    {f DirList				DirList.tcl	}
 ##added	    {f DirTree				DirTree.tcl	}
@@ -799,7 +802,7 @@ samples = {'Balloon'		: 'Balloon',
 ##	    {f FileSelectDialog			FileDlg.tcl	}
 ##	    {f FileEntry			FileEnt.tcl	}
 ##	}
-##	
+##
 ##	set hlist {
 ##	    {f HList			HList1.tcl	}
 ##	    {f CheckList		ChkList.tcl	{c tixCheckList}}
@@ -808,7 +811,7 @@ samples = {'Balloon'		: 'Balloon',
 ##done	    {f Tree			Tree.tcl	}
 ##done	    {f "Tree (Dynamic)"		DynTree.tcl	{v win}}
 ##	}
-##	
+##
 ##	set tlist {
 ##	    {f "ScrolledTList (1)"	STList1.tcl	{c tixTList}}
 ##	    {f "ScrolledTList (2)"	STList2.tcl	{c tixTList}}
@@ -818,26 +821,26 @@ samples = {'Balloon'		: 'Balloon',
 ##	if {$tcl_platform(platform) != "windows"} {
 ##na	lappend tlist     {f "TList File Viewer"	STList3.tcl	{c tixTList}}
 ##	}
-##	
+##
 ##	set grid {
 ##na	    {f "Simple Grid"		SGrid0.tcl	{c tixGrid}}
 ##na	    {f "ScrolledGrid"		SGrid1.tcl	{c tixGrid}}
 ##na	    {f "Editable Grid"		EditGrid.tcl	{c tixGrid}}
 ##	}
-##	
+##
 ##	set scroll {
 ##	    {f ScrolledListBox		SListBox.tcl	}
 ##	    {f ScrolledText		SText.tcl	}
 ##	    {f ScrolledWindow		SWindow.tcl	}
 ##na	    {f "Canvas Object View"	CObjView.tcl	{c tixCObjView}}
 ##	}
-##	
+##
 ##	set manager {
-##na	    {f ListNoteBook		ListNBK.tcl	}
+##	    {f ListNoteBook		ListNBK.tcl	}
 ##done	    {f NoteBook			NoteBook.tcl	}
 ##done	    {f PanedWindow		PanedWin.tcl	}
 ##	}
-##	
+##
 ##	set misc {
 ##done	    {f Balloon			Balloon.tcl	}
 ##done	    {f ButtonBox		BtnBox.tcl	}
@@ -845,7 +848,7 @@ samples = {'Balloon'		: 'Balloon',
 ##done	    {f Control			Control.tcl	}
 ##	    {f LabelEntry		LabEntry.tcl	}
 ##	    {f LabelFrame		LabFrame.tcl	}
-##na	    {f Meter			Meter.tcl	{c tixMeter}}
+##	    {f Meter			Meter.tcl	{c tixMeter}}
 ##done	    {f OptionMenu		OptMenu.tcl	}
 ##done	    {f PopupMenu		PopMenu.tcl	}
 ##	    {f Select			Select.tcl	}
@@ -862,12 +865,7 @@ stypes['image'] = ['Compound Image']
 
 def MkSample(nb, name):
     w = nb.page(name)
-    prefix = Tix.OptionName(w)
-    if not prefix:
-	prefix = ''
-    else:
-	prefix = '*' + prefix
-    w.option_add(prefix + '*TixLabelFrame*label.padX', 4)
+    options = "label.padX 4"
 
     pane = Tix.PanedWindow(w, orientation='horizontal')
     pane.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH)
@@ -876,25 +874,19 @@ def MkSample(nb, name):
     f1['relief'] = 'flat'
     f2['relief'] = 'flat'
 
-    lab = Tix.Label(f1, text='Select a sample program:', anchor=Tix.W)
-    lab.pack(side=Tix.TOP, expand=0, fill=Tix.X, padx=5, pady=5)
-    lab1 = Tix.Label(f2, text='Source:', anchor=Tix.W)
-    lab1.pack(side=Tix.TOP, expand=0, fill=Tix.X, padx=5, pady=5)
+    lab = Tix.LabelFrame(f1, label='Select a sample program:')
+    lab.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH, padx=5, pady=5)
+    lab1 = Tix.LabelFrame(f2, label='Source:')
+    lab1.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH, padx=5, pady=5)
 
-    slb = Tix.Tree(f1, options='hlist.width 25')
+    slb = Tix.Tree(lab.frame, options='hlist.width 20')
     slb.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH, padx=5)
 
-    stext = Tix.ScrolledText(f2, name='stext')
+    stext = Tix.ScrolledText(lab1.frame, name='stext')
     font = root.tk.eval('tix option get fixed_font')
     stext.text.config(font=font)
-    stext.text.bind('<Up>', lambda w=stext.text: w.yview(scroll='-1 unit'))
-    stext.text.bind('<Down>', lambda w=stext.text: w.yview(scroll='1 unit'))
-    stext.text.bind('<Left>', lambda w=stext.text: w.xview(scroll='-1 unit'))
-    stext.text.bind('<Right>', lambda w=stext.text: w.xview(scroll='1 unit'))
-    stext.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH, padx=7)
 
-    frame = Tix.Frame(f2, name='frame')
-    frame.pack(side=Tix.TOP, expand=0, fill=Tix.X, padx=7)
+    frame = Tix.Frame(lab1.frame, name='frame')
 
     run = Tix.Button(frame, text='Run ...', name='run')
     view = Tix.Button(frame, text='View Source ...', name='view')
@@ -905,6 +897,9 @@ def MkSample(nb, name):
     stext.text['state'] = 'disabled'
     stext.text['wrap'] = 'none'
     stext.text['width'] = 80
+
+    frame.pack(side=Tix.BOTTOM, expand=0, fill=Tix.X, padx=7)
+    stext.pack(side=Tix.TOP, expand=0, fill=Tix.BOTH, padx=7)
 
     slb.hlist['separator'] = '.'
     slb.hlist['width'] = 25
