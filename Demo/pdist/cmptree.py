@@ -35,7 +35,7 @@ d - delete disappearing files, either remote or local
 	t2 = time.time()
 	dt = t2-t1
 	mins, secs = divmod(dt, 60)
-	print mins, "minutes and", secs, "seconds"
+	print mins, "minutes and", round(secs), "seconds"
 	raw_input("[Return to exit] ")
 
 def ask(prompt, default):
@@ -103,6 +103,18 @@ def compare(local, remote, mode):
 			common.append(name)
 		else:
 			print "Remote subdirectory", repr(name), "not found locally"
+			if 'r' in mode and 'c' in mode:
+				pr = "Create local subdirectory %s? [y] " % \
+				     repr(name)
+				if 'y' in mode:
+					ok = 'y'
+				else:
+					ok = ask(pr, "y")
+				if ok[:1] in ('y', 'Y'):
+					local.mkdir(name)
+					print "Subdirectory %s made" % \
+						repr(name)
+					common.append(name)
 	lsubdirs = local.listsubdirs()
 	for name in lsubdirs:
 		if name not in subdirs:
@@ -135,12 +147,23 @@ def sendfile(local, remote, name):
 	t2 = time.time()
 	
 	dt = t2-t1
-	print len(data), "bytes in", t2-t1, "seconds",
+	print len(data), "bytes in", round(dt), "seconds",
 	if dt:
-		print "i.e.", len(data)/dt, "bytes/sec",
+		print "i.e.", round(len(data)/dt), "bytes/sec",
 	print
 
 def recvfile(local, remote, name):
+	ok = 0
+	try:
+		rv = recvfile_real(local, remote, name)
+		ok = 1
+		return rv
+	finally:
+		if not ok:
+			print "*** recvfile of %s failed, deleting" % `name`
+			local.delete(name)
+
+def recvfile_real(local, remote, name):
 	try:
 		local.create(name)
 	except (IOError, os.error), msg:
@@ -172,7 +195,7 @@ def recvfile(local, remote, name):
 	f.close()
 	
 	dt = t2-t1
-	print size, "bytes in", dt, "seconds",
+	print size, "bytes in", round(dt), "seconds",
 	if dt:
 		print "i.e.", int(size/dt), "bytes/sec",
 	print
