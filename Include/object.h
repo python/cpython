@@ -237,7 +237,7 @@ typedef struct _typeobject {
 #endif
 } PyTypeObject;
 
-extern DL_IMPORT PyTypeObject PyType_Type; /* The type of type objects */
+extern DL_IMPORT(PyTypeObject) PyType_Type; /* The type of type objects */
 
 #define PyType_Check(op) ((op)->ob_type == &PyType_Type)
 
@@ -354,7 +354,7 @@ where NULL (nil) is not suitable (since NULL often means 'error').
 Don't forget to apply Py_INCREF() when returning this value!!!
 */
 
-extern DL_IMPORT PyObject _Py_NoneStruct; /* Don't use this directly */
+extern DL_IMPORT(PyObject) _Py_NoneStruct; /* Don't use this directly */
 
 #define Py_None (&_Py_NoneStruct)
 
