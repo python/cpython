@@ -90,6 +90,7 @@
 #include "cellobject.h"
 #include "iterobject.h"
 #include "descrobject.h"
+#include "weakrefobject.h"
 
 #include "codecs.h"
 #include "pyerrors.h"
