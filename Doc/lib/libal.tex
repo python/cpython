@@ -20,13 +20,13 @@ Symbolic constants from the C header file \code{<audio.h>} are
 defined in the standard module
 \refmodule[al-constants]{AL}\refstmodindex{AL}, see below.
 
-\strong{Warning:} the current version of the audio library may dump core
+\warning{The current version of the audio library may dump core
 when bad argument values are passed rather than returning an error
 status.  Unfortunately, since the precise circumstances under which
 this may happen are undocumented and hard to check, the Python
 interface can provide no protection against this kind of problems.
 (One example is specifying an excessive queue size --- there is no
-documented upper limit.)
+documented upper limit.)}
 
 The module defines the following functions:
 

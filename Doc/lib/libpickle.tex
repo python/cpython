@@ -30,13 +30,13 @@ store them in a database.  The module
 to pickle and unpickle objects on DBM-style database files.
 
 
-\strong{Note:} The \module{pickle} module is rather slow.  A
+\note{The \module{pickle} module is rather slow.  A
 reimplementation of the same algorithm in C, which is up to 1000 times
 faster, is available as the
 \refmodule{cPickle}\refbimodindex{cPickle} module.  This has the same
 interface except that \class{Pickler} and \class{Unpickler} are
 factory functions, not classes (so they cannot be used as base classes
-for inheritance).
+for inheritance).}
 
 Although the \module{pickle} module can use the built-in module
 \refmodule{marshal}\refbimodindex{marshal} internally, it differs from 
@@ -110,11 +110,11 @@ Furthermore, all its instance variables must be picklable.
 \setindexsubitem{(pickle protocol)}
 
 When a pickled class instance is unpickled, its \method{__init__()} method
-is normally \emph{not} invoked.  \strong{Note:} This is a deviation
+is normally \emph{not} invoked.  \note{This is a deviation
 from previous versions of this module; the change was introduced in
-Python 1.5b2.  The reason for the change is that in many cases it is
+Python 1.5.  The reason for the change is that in many cases it is
 desirable to have a constructor that requires arguments; it is a
-(minor) nuisance to have to provide a \method{__getinitargs__()} method.
+(minor) nuisance to have to provide a \method{__getinitargs__()} method.}
 
 If it is desirable that the \method{__init__()} method be called on
 unpickling, a class can define a method \method{__getinitargs__()},

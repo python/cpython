@@ -220,9 +220,9 @@ sequence \var{v}.
 
 
 The \module{operator} module also defines a few predicates to test the
-type of objects.  \strong{Note:} Be careful not to misinterpret the
+type of objects.  \note{Be careful not to misinterpret the
 results of these functions; only \function{isCallable()} has any
-measure of reliability with instance objects.  For example:
+measure of reliability with instance objects.  For example:}
 
 \begin{verbatim}
 >>> class C:
@@ -245,28 +245,28 @@ unbound methods, class objects, and instance objects which support the
 \begin{funcdesc}{isMappingType}{o}
 Returns true if the object \var{o} supports the mapping interface.
 This is true for dictionaries and all instance objects.
-\strong{Warning:} There is no reliable way to test if an instance
+\warning{There is no reliable way to test if an instance
 supports the complete mapping protocol since the interface itself is
 ill-defined.  This makes this test less useful than it otherwise might
-be.
+be.}
 \end{funcdesc}
 
 \begin{funcdesc}{isNumberType}{o}
 Returns true if the object \var{o} represents a number.  This is true
 for all numeric types implemented in C, and for all instance objects.
-\strong{Warning:}  There is no reliable way to test if an instance
+\warning{There is no reliable way to test if an instance
 supports the complete numeric interface since the interface itself is
 ill-defined.  This makes this test less useful than it otherwise might
-be.
+be.}
 \end{funcdesc}
 
 \begin{funcdesc}{isSequenceType}{o}
 Returns true if the object \var{o} supports the sequence protocol.
 This returns true for all objects which define sequence methods in C,
-and for all instance objects.  \strong{Warning:} There is no reliable
+and for all instance objects.  \warning{There is no reliable
 way to test if an instance supports the complete sequence interface
 since the interface itself is ill-defined.  This makes this test less
-useful than it otherwise might be.
+useful than it otherwise might be.}
 \end{funcdesc}
 
 

@@ -21,10 +21,10 @@ two functions and several constants.
   The \var{duration} parameter specifies the number of milliseconds the
   sound should last.  If the system is not
   able to beep the speaker, \exception{RuntimeError} is raised.
-  \strong{Note:}  Under Windows 95 and 98, the Windows \cfunction{Beep()}
+  \note{Under Windows 95 and 98, the Windows \cfunction{Beep()}
   function exists but is useless (it ignores its arguments).  In that
   case Python simulates it via direct port manipulation (added in version
-  2.1).  It's unknown whether that will work on all systems.
+  2.1).  It's unknown whether that will work on all systems.}
   \versionadded{1.6}
 \end{funcdesc}
 
@@ -85,9 +85,9 @@ winsound.PlaySound("*", winsound.SND_ALIAS)
   The \var{sound} parameter to \function{PlaySound()} is a memory
   image of a WAV file, as a string.
 
-  \strong{Note:}  This module does not support playing from a memory
+  \note{This module does not support playing from a memory
   image asynchronously, so a combination of this flag and
-  \constant{SND_ASYNC} will raise \exception{RuntimeError}.
+  \constant{SND_ASYNC} will raise \exception{RuntimeError}.}
 \end{datadesc}
 
 \begin{datadesc}{SND_PURGE}

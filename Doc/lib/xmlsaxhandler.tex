@@ -263,13 +263,13 @@ appropriate events in the input document:
   \var{content} may be a Unicode string or a byte string; the
   \code{expat} reader module produces always Unicode strings.
 
-  \strong{Note:}  The earlier SAX 1 interface provided by the Python
+  \note{The earlier SAX 1 interface provided by the Python
   XML Special Interest Group used a more Java-like interface for this
   method.  Since most parsers used from Python did not take advantage
   of the older interface, the simpler signature was chosen to replace
   it.  To convert old code to the new interface, use \var{content}
   instead of slicing content with the old \var{offset} and
-  \var{length} parameters.
+  \var{length} parameters.}
 \end{methoddesc}
 
 \begin{methoddesc}[ContentHandler]{ignorableWhitespace}{}

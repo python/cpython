@@ -103,10 +103,10 @@ also defines these utility functions:
 Open an encoded file using the given \var{mode} and return
 a wrapped version providing transparent encoding/decoding.
 
-\strong{Note:} The wrapped version will only accept the object format
+\note{The wrapped version will only accept the object format
 defined by the codecs, i.e.\ Unicode objects for most built-in
 codecs.  Output is also codec-dependent and will usually be Unicode as
-well.
+well.}
 
 \var{encoding} specifies the encoding which is to be used for the
 the file.
@@ -335,7 +335,7 @@ order to be compatible to the Python codec registry.
   Read one line from the input stream and return the
   decoded data.
 
-  Note: Unlike the \method{readlines()} method, this method inherits
+  Unlike the \method{readlines()} method, this method inherits
   the line breaking knowledge from the underlying stream's
   \method{readline()} method -- there is currently no support for line
   breaking using the codec decoder due to lack of line buffering.

@@ -100,11 +100,11 @@ The functions defined in this module are:
   this behaves identical to the built-in function
   \function{float()}\bifuncindex{float} when passed a string.
 
-  \strong{Note:} When passing in a string, values for NaN\index{NaN}
+  \note{When passing in a string, values for NaN\index{NaN}
   and Infinity\index{Infinity} may be returned, depending on the
   underlying C library.  The specific set of strings accepted which
   cause these values to be returned depends entirely on the C library
-  and is known to vary.
+  and is known to vary.}
 \end{funcdesc}
 
 \begin{funcdesc}{atoi}{s\optional{, base}}
@@ -194,10 +194,10 @@ The functions defined in this module are:
   each character in \var{from} into the character at the same position
   in \var{to}; \var{from} and \var{to} must have the same length.
 
-  \strong{Warning:} don't use strings derived from \constant{lowercase}
+  \warning{Don't use strings derived from \constant{lowercase}
   and \constant{uppercase} as arguments; in some locales, these don't have
   the same length.  For case conversions, always use
-  \function{lower()} and \function{upper()}.
+  \function{lower()} and \function{upper()}.}
 \end{funcdesc}
 
 \begin{funcdesc}{split}{s\optional{, sep\optional{, maxsplit}}}

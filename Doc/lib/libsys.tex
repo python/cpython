@@ -99,7 +99,7 @@ It is always available.
   encapsulates the call stack at the point where the exception
   originally occurred.  \obindex{traceback}
 
-  \strong{Warning:} assigning the \var{traceback} return value to a
+  \warning{Assigning the \var{traceback} return value to a
   local variable in a function that is handling an exception will
   cause a circular reference.  This will prevent anything referenced
   by a local variable in the same function or by the traceback from
@@ -109,7 +109,7 @@ It is always available.
   exception type and value.  If you do need the traceback, make sure
   to delete it after use (best done with a \keyword{try}
   ... \keyword{finally} statement) or to call \function{exc_info()} in
-  a function that does not itself handle an exception.
+  a function that does not itself handle an exception.}
 \end{funcdesc}
 
 \begin{datadesc}{exc_type}
@@ -169,9 +169,9 @@ It is always available.
   function will be called when the interpreter exits.  Only one
   function may be installed in this way; to allow multiple functions
   which will be called at termination, use the \refmodule{atexit}
-  module.  Note: the exit function is not called when the program is
+  module.  \note{The exit function is not called when the program is
   killed by a signal, when a Python fatal internal error is detected,
-  or when \code{os._exit()} is called.
+  or when \code{os._exit()} is called.}
 \end{datadesc}
 
 \begin{funcdesc}{getdefaultencoding}{}

@@ -4,7 +4,7 @@ The modules in this chapter are available only on those systems where
 the STDWIN library is available.  STDWIN runs on \UNIX{} under X11 and
 on the Macintosh.  See CWI report CS-R8817.
 
-\strong{Warning:} Using STDWIN is not recommended for new
+\warning{Using STDWIN is not recommended for new
 applications.  It has never been ported to Microsoft Windows or
 Windows NT, and for X11 or the Macintosh it lacks important
 functionality --- in particular, it has no tools for the construction
@@ -12,7 +12,7 @@ of dialogs.  For most platforms, alternative, native solutions exist
 (though none are currently documented in this manual): Tkinter for
 \UNIX{} under X11, native Xt with Motif or Athena widgets for \UNIX{}
 under X11, Win32 for Windows and Windows NT, and a collection of
-native toolkit interfaces for the Macintosh.
+native toolkit interfaces for the Macintosh.}
 
 
 \section{\module{stdwin} ---
@@ -175,8 +175,8 @@ all windows).
 Methods of menu objects are described below.
 Note: normally, menus are created locally; see the window method
 \method{menucreate()} below.
-\strong{Warning:} the menu only appears in a window as long as the object
-returned by this call exists.
+\warning{The menu only appears in a window as long as the object
+returned by this call exists.}
 \end{funcdesc}
 
 \begin{funcdesc}{newbitmap}{width, height}
@@ -337,8 +337,8 @@ left corner (relative to the upper left corner of the screen).
 Create a menu object referring to a local menu (a menu that appears
 only in this window).
 Methods of menu objects are described below.
-\strong{Warning:} the menu only appears as long as the object
-returned by this call exists.
+\warning{The menu only appears as long as the object
+returned by this call exists.}
 \end{methoddesc}
 
 \begin{methoddesc}[window]{scroll}{rect, point}
