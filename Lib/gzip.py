@@ -351,6 +351,16 @@ class GzipFile:
         for line in L:
             self.write(line)
 
+    def __iter__(self):
+        return self
+
+    def next(self):
+        line = self.readline()
+        if line:
+            return line
+        else:
+            raise StopIteration
+
 
 def _test():
     # Act like gzip; with -d, act like gunzip.
