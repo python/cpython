@@ -150,8 +150,10 @@ class Message:
             self._payload.append(payload)
 
     def get_payload(self, i=None, decode=0):
-        """Return the current payload exactly as is.
+        """Return a reference to the payload.
 
+        The payload is typically either a list object or a string.  If you
+        mutate the list object, you modify the message's payload in place.
         Optional i returns that index into the payload.
 
         Optional decode is a flag indicating whether the payload should be
@@ -179,7 +181,6 @@ class Message:
         # Everything else, including encodings with 8bit or 7bit are returned
         # unchanged.
         return payload
-
 
     def set_payload(self, payload, charset=None):
         """Set the payload to the given value.
