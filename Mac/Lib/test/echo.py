@@ -7,7 +7,7 @@ can have (without having to rely on Apple's implementation).
 """
 
 import addpack
-addpack.addpack('Demo')
+addpack.addpack('Tools')
 addpack.addpack('bgen')
 addpack.addpack('ae')
 addpack.addpack('evt')

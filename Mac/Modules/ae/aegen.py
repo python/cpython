@@ -1,4 +1,4 @@
-# Generated from 'D:Development:THINK C:Mac #includes:Apple #includes:AppleEvents.h'
+# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:AppleEvents.h'
 
 f = AEFunction(OSErr, 'AECreateDesc',
     (DescType, 'typeCode', InMode),
@@ -41,20 +41,20 @@ f = AEMethod(OSErr, 'AECountItems',
 )
 aedescmethods.append(f)
 
-f = AEMethod(OSErr, 'AEPutPtr',
-    (AEDescList_ptr, 'theAEDescList', InMode),
+f = AEFunction(OSErr, 'AEPutPtr',
+    (AEDescList, 'theAEDescList', OutMode),
     (long, 'index', InMode),
     (DescType, 'typeCode', InMode),
     (InBuffer, 'dataPtr', InMode),
 )
-aedescmethods.append(f)
+functions.append(f)
 
-f = AEMethod(OSErr, 'AEPutDesc',
-    (AEDescList_ptr, 'theAEDescList', InMode),
+f = AEFunction(OSErr, 'AEPutDesc',
+    (AEDescList, 'theAEDescList', OutMode),
     (long, 'index', InMode),
     (AEDesc_ptr, 'theAEDesc', InMode),
 )
-aedescmethods.append(f)
+functions.append(f)
 
 f = AEMethod(OSErr, 'AEGetNthPtr',
     (AEDescList_ptr, 'theAEDescList', InMode),
@@ -83,57 +83,11 @@ f = AEMethod(OSErr, 'AESizeOfNthItem',
 )
 aedescmethods.append(f)
 
-f = AEMethod(OSErr, 'AEDeleteItem',
-    (AEDescList_ptr, 'theAEDescList', InMode),
+f = AEFunction(OSErr, 'AEDeleteItem',
+    (AEDescList, 'theAEDescList', OutMode),
     (long, 'index', InMode),
 )
-aedescmethods.append(f)
-
-f = AEMethod(OSErr, 'AEPutKeyPtr',
-    (AERecord_ptr, 'theAERecord', InMode),
-    (AEKeyword, 'theAEKeyword', InMode),
-    (DescType, 'typeCode', InMode),
-    (InBuffer, 'dataPtr', InMode),
-)
-aedescmethods.append(f)
-
-f = AEMethod(OSErr, 'AEPutKeyDesc',
-    (AERecord_ptr, 'theAERecord', InMode),
-    (AEKeyword, 'theAEKeyword', InMode),
-    (AEDesc_ptr, 'theAEDesc', InMode),
-)
-aedescmethods.append(f)
-
-f = AEMethod(OSErr, 'AEGetKeyPtr',
-    (AERecord_ptr, 'theAERecord', InMode),
-    (AEKeyword, 'theAEKeyword', InMode),
-    (DescType, 'desiredType', InMode),
-    (DescType, 'typeCode', OutMode),
-    (VarVarOutBuffer, 'dataPtr', InOutMode),
-)
-aedescmethods.append(f)
-
-f = AEMethod(OSErr, 'AEGetKeyDesc',
-    (AERecord_ptr, 'theAERecord', InMode),
-    (AEKeyword, 'theAEKeyword', InMode),
-    (DescType, 'desiredType', InMode),
-    (AEDesc, 'result', OutMode),
-)
-aedescmethods.append(f)
-
-f = AEMethod(OSErr, 'AESizeOfKeyDesc',
-    (AERecord_ptr, 'theAERecord', InMode),
-    (AEKeyword, 'theAEKeyword', InMode),
-    (DescType, 'typeCode', OutMode),
-    (Size, 'dataSize', OutMode),
-)
-aedescmethods.append(f)
-
-f = AEMethod(OSErr, 'AEDeleteKeyDesc',
-    (AERecord_ptr, 'theAERecord', InMode),
-    (AEKeyword, 'theAEKeyword', InMode),
-)
-aedescmethods.append(f)
+functions.append(f)
 
 f = AEMethod(OSErr, 'AEPutParamPtr',
     (AppleEvent_ptr, 'theAppleEvent', InMode),
@@ -237,8 +191,8 @@ f = AEMethod(OSErr, 'AESend',
     (AESendMode, 'sendMode', InMode),
     (AESendPriority, 'sendPriority', InMode),
     (long, 'timeOutInTicks', InMode),
-    (IdleProcPtr, 'idleProc', InMode),
-    (EventFilterProcPtr, 'filterProc', InMode),
+    (AEIdleUPP, 'idleProc', InMode),
+    (AEFilterUPP, 'filterProc', InMode),
 )
 aedescmethods.append(f)
 
@@ -260,14 +214,15 @@ aedescmethods.append(f)
 f = AEMethod(OSErr, 'AEResumeTheCurrentEvent',
     (AppleEvent_ptr, 'theAppleEvent', InMode),
     (AppleEvent_ptr, 'reply', InMode),
-    (EventHandler, 'dispatcher', InMode),
+    (AEEventHandlerUPP, 'dispatcher', InMode),
+    (long, 'handlerRefcon', InMode),
 )
 aedescmethods.append(f)
 
-f = AEFunction(OSErr, 'AEGetTheCurrentEvent',
-    (AppleEvent, 'theAppleEvent', OutMode),
+f = AEMethod(OSErr, 'AEGetTheCurrentEvent',
+    (AppleEvent_ptr, 'theAppleEvent', InMode),
 )
-functions.append(f)
+aedescmethods.append(f)
 
 f = AEMethod(OSErr, 'AESetTheCurrentEvent',
     (AppleEvent_ptr, 'theAppleEvent', InMode),
@@ -287,14 +242,15 @@ functions.append(f)
 f = AEFunction(OSErr, 'AEInteractWithUser',
     (long, 'timeOutInTicks', InMode),
     (NMRecPtr, 'nmReqPtr', InMode),
-    (IdleProcPtr, 'idleProc', InMode),
+    (AEIdleUPP, 'idleProc', InMode),
 )
 functions.append(f)
 
 f = AEFunction(OSErr, 'AEInstallEventHandler',
     (AEEventClass, 'theAEEventClass', InMode),
     (AEEventID, 'theAEEventID', InMode),
-    (EventHandler, 'handler', InMode),
+    (AEEventHandlerUPP, 'handler', InMode),
+    (long, 'handlerRefcon', InMode),
     (AlwaysFalse, 'isSysHandler', InMode),
 )
 functions.append(f)
@@ -302,7 +258,7 @@ functions.append(f)
 f = AEFunction(OSErr, 'AERemoveEventHandler',
     (AEEventClass, 'theAEEventClass', InMode),
     (AEEventID, 'theAEEventID', InMode),
-    (EventHandlerProcPtr, 'handler', InMode),
+    (AEEventHandlerUPP, 'handler', InMode),
     (AlwaysFalse, 'isSysHandler', InMode),
 )
 functions.append(f)
