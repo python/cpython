@@ -1010,10 +1010,14 @@ implement the operation for a given pair of arguments.
 
 \begin{methoddesc}[object]{__cmp__}{self, other}
 Called by comparison operations if rich comparison (see above) is not
-defined.  Should return a negative integer if
-\code{self < other},  zero if \code{self == other}, a positive integer if
-\code{self > other}.  If no \method{__cmp__()} operation is defined, class
-instances are compared by object identity (``address'').
+defined.  Should return a negative integer if \code{self < other},
+zero if \code{self == other}, a positive integer if \code{self >
+other}.  If no \method{__cmp__()}, \method{__eq__()} or
+\method{__ne__()} operation is defined, class instances are compared
+by object identity (``address'').  See also the description of
+\method{__hash__()} for some important notes on creating objects which
+support custom comparison operations and are usable as dictionary
+keys.
 (Note: the restriction that exceptions are not propagated by
 \method{__cmp__()} has been removed in Python 1.5.)
 \bifuncindex{cmp}
@@ -1035,12 +1039,13 @@ mix together (e.g., using exclusive or) the hash values for the
 components of the object that also play a part in comparison of
 objects.  If a class does not define a \method{__cmp__()} method it should
 not define a \method{__hash__()} operation either; if it defines
-\method{__cmp__()} but not \method{__hash__()} its instances will not be
-usable as dictionary keys.  If a class defines mutable objects and
-implements a \method{__cmp__()} method it should not implement
-\method{__hash__()}, since the dictionary implementation requires that
-a key's hash value is immutable (if the object's hash value changes, it
-will be in the wrong hash bucket).
+\method{__cmp__()} or \method{__eq__()} but not \method{__hash__()},
+its instances will not be usable as dictionary keys.  If a class
+defines mutable objects and implements a \method{__cmp__()} or
+\method{__eq__()} method, it should not implement \method{__hash__()},
+since the dictionary implementation requires that a key's hash value
+is immutable (if the object's hash value changes, it will be in the
+wrong hash bucket).
 \withsubitem{(object method)}{\ttindex{__cmp__()}}
 \end{methoddesc}
 
@@ -1135,7 +1140,10 @@ multiplication (meaning repetition) by defining the methods
 \method{__add__()}, \method{__radd__()}, \method{__iadd__()},
 \method{__mul__()}, \method{__rmul__()} and \method{__imul__()} described
 below; they should not define \method{__coerce__()} or other numerical
-operators.
+operators.  It is recommended that both mappings and sequences
+implement the \method{__contains__}, to allow efficient use of the
+\code{in} operator; for mappings, \code{in} should be equivalent of
+\method{has_key()}; for sequences, it should search through the values.
 \withsubitem{(mapping object method)}{
   \ttindex{keys()}
   \ttindex{values()}
@@ -1144,7 +1152,8 @@ operators.
   \ttindex{get()}
   \ttindex{clear()}
   \ttindex{copy()}
-  \ttindex{update()}}
+  \ttindex{update()}
+  \ttindex{__contains__()}}
 \withsubitem{(sequence object method)}{
   \ttindex{append()}
   \ttindex{count()}
@@ -1159,7 +1168,8 @@ operators.
   \ttindex{__iadd__()}
   \ttindex{__mul__()}
   \ttindex{__rmul__()}
-  \ttindex{__imul__()}}
+  \ttindex{__imul__()}
+  \ttindex{__contains__()}}
 \withsubitem{(numeric object method)}{\ttindex{__coerce__()}}
 
 \begin{methoddesc}[mapping object]{__len__}{self}
