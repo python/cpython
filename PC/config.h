@@ -341,13 +341,6 @@ typedef unsigned long uintptr_t;
 #define SIZEOF_LONG 4
 #define SIZEOF_LONG_LONG 8
 
-/* EXPERIMENTAL FEATURE: When CHECK_IMPORT_CASE is defined, check case of
-   imported modules against case of file; this causes "import String" to fail
-   with a NameError exception when it finds "string.py".  Normally, you set
-   the environment variable PYTHONCASEOK (to anything) to disable this
-   feature; to permanently disable it, #undef it here.  This only works on
-   case-preserving filesystems; otherwise you definitely want it off. */
-#define CHECK_IMPORT_CASE
 #endif
 
 /* Fairly standard from here! */
