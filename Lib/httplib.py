@@ -36,10 +36,10 @@ import regsub
 import mimetools
 
 HTTP_VERSION = 'HTTP/1.0'
+HTTP_VERSIONS_ACCEPTED = 'HTTP/1\.[0-9.]+'
 HTTP_PORT = 80
 
-replypat = regsub.gsub('\\.', '\\\\.', HTTP_VERSION) + \
-	  '[ \t]+\([0-9][0-9][0-9]\)\(.*\)'
+replypat = HTTP_VERSIONS_ACCEPTED + '[ \t]+\([0-9][0-9][0-9]\)\(.*\)'
 replyprog = regex.compile(replypat)
 
 class HTTP:
