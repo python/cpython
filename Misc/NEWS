@@ -336,8 +336,10 @@ Extension modules
 Library
 -------
 
+- Bug #934282: pydoc.stripid() is now case-insensitive.  Thanks Robin Becker.
+
 - Bug #823209:  cmath.log() now takes an optional base argument so that its
-  API matches math.log().                                                                  
+  API matches math.log().
 
 - Bug #957381: distutils bdist_rpm no longer fails on recent RPM versions
   that generate a *-debuginfo.rpm.
