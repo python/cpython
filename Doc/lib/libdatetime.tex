@@ -773,7 +773,9 @@ argument of \code{None} or of type \class{timetz} or
     \method{utcoffset()} should return their sum.  If the UTC offset
     isn't known, return \code{None}.  Else the value returned must be
     an integer, in the range -1439 to 1439 inclusive (1440 = 24*60;
-    the magnitude of the offset must be less than one day).
+    the magnitude of the offset must be less than one day), or a
+    \class{timedelta} object representing a whole number of minutes
+    in the same range.
 
   - tzname(dt)
     Return the timezone name corresponding to the \class{datetime} represented
@@ -789,13 +791,14 @@ argument of \code{None} or of type \class{timetz} or
   - dst(dt)
     Return the DST offset, in minutes east of UTC, or \code{None} if
     DST information isn't known.  Return 0 if DST is not in effect.
-    If DST is in effect, return an int (or long), in the range -1439
-    to 1439 inclusive.  Note that DST offset, if applicable, has
+    If DST is in effect, return the offset as an integer or
+    \class{timedelta} object (see \method{utcoffset()} for details).
+    Note that DST offset, if applicable, has
     already been added to the UTC offset returned by
     \method{utcoffset()}, so there's no need to consult \method{dst()}
     unless you're interested in displaying DST info separately.  For
-    example, \method{datetimetz.timetuple()} calls its \class{tzinfo}
-    object's \method{dst()} method to determine how the
+    example, \method{datetimetz.timetuple()} calls its \member{tzinfo}
+    member's \method{dst()} method to determine how the
     \member{tm_isdst} flag should be set.
 
 Example \class{tzinfo} classes:
@@ -899,7 +902,8 @@ Instance methods:
 
   - utcoffset()
     If \member{tzinfo} is \code{None}, returns \code{None}, else
-    \code{tzinfo.utcoffset(self)}.
+    \code{tzinfo.utcoffset(self)} converted to a \class{timedelta}
+    object.
 
   - tzname():
     If \member{tzinfo} is \code{None}, returns \code{None}, else
@@ -907,7 +911,7 @@ Instance methods:
 
   - dst()
     If \member{tzinfo} is \code{None}, returns \code{None}, else
-    \code{tzinfo.dst(self)}.
+    \code{tzinfo.dst(self)} converted to a \class{timedelta} object.
 
 
 
@@ -1024,8 +1028,8 @@ Supported operations:
 
   \item
     If both are aware \class{datetimetz} objects, a-b acts as if a and b were
-    first converted to UTC datetimes (by subtracting a.utcoffset()
-    minutes from a, and b.utcoffset() minutes from b), and then doing
+    first converted to UTC datetimes (by subtracting \code{a.utcoffset()}
+    minutes from a, and \code{b.utcoffset()} minutes from b), and then doing
     \class{datetime} subtraction, except that the implementation never
     overflows.
 
@@ -1077,7 +1081,8 @@ Instance methods:
 
   - utcoffset()
     If \member{tzinfo} is \code{None}, returns \code{None}, else
-    \code{tzinfo.utcoffset(self)}.
+    \code{tzinfo.utcoffset(self)} converted to a \class{timedelta}
+    object.
 
   - tzname()
     If \member{tzinfo} is \code{None}, returns \code{None}, else
@@ -1085,7 +1090,8 @@ Instance methods:
 
   - dst()
     If \member{tzinfo} is \code{None}, returns \code{None}, else
-    \code{tzinfo.dst(self)}.
+    \code{tzinfo.dst(self)} converted to a \class{timedelta}
+    object.
 
   - timetuple()
     Like \function{datetime.timetuple()}, but sets the
@@ -1172,8 +1178,8 @@ For an aware object:
     the form +HHMM or -HHMM, where HH is a 2-digit string giving the
     number of UTC offset hours, and MM is a 2-digit string giving the
     number of UTC offset minutes.  For example, if
-    \method{utcoffset()} returns -180, \code{\%z} is replaced with the
-    string \code{'-0300'}.
+    \method{utcoffset()} returns \code{timedelta(hours=-3, minutes=-30}},
+    \code{\%z} is replaced with the string \code{'-0330'}.
 
   \item[\code{\%Z}]
     If \method{tzname()} returns \code{None}, \code{\%Z} is replaced
@@ -1234,7 +1240,7 @@ Accessor macros:
 All objects are immutable, so accessors are read-only.  All macros
 return ints:
 
-    For date, datetime, and \class{datetimetz} instances:
+    For \class{date}, \class{datetime}, and \class{datetimetz} instances:
         PyDateTime_GET_YEAR(o)
         PyDateTime_GET_MONTH(o)
         PyDateTime_GET_DAY(o)
@@ -1245,7 +1251,7 @@ return ints:
         PyDateTime_DATE_GET_SECOND(o)
         PyDateTime_DATE_GET_MICROSECOND(o)
 
-    For time and \class{timetz} instances:
+    For \class{time} and \class{timetz} instances:
         PyDateTime_TIME_GET_HOUR(o)
         PyDateTime_TIME_GET_MINUTE(o)
         PyDateTime_TIME_GET_SECOND(o)
