@@ -118,7 +118,6 @@ typedef struct methodlist PyMethodDef;
 #define PyObject_NEW NEWOBJ
 #define PyObject_NEW_VAR NEWVAROBJ
 #define Py_PROTO PROTO
-#define Py_FPROTO PROTO
 #define PyMem_NEW NEW
 #define PyMem_RESIZE RESIZE
 #define PyMem_DEL DEL

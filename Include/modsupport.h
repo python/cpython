@@ -35,6 +35,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <stdarg.h>
 
 extern int getargs PROTO((object *, char *, ...));
+extern int newgetargs PROTO((object *, char *, ...));
 extern object *mkvalue PROTO((char *, ...));
 
 #else
