@@ -223,6 +223,18 @@ def run_method_tests(test):
     test('startswith', 'helloworld', 1, 'lowo', 3, 7)
     test('startswith', 'helloworld', 0, 'lowo', 3, 6)
 
+    # test negative indices in startswith
+    test('startswith', 'hello', 1, 'he', 0, -1)
+    test('startswith', 'hello', 1, 'he', -53, -1)
+    test('startswith', 'hello', 0, 'hello', 0, -1)
+    test('startswith', 'hello', 0, 'hello world', -1, -10)
+    test('startswith', 'hello', 0, 'ello', -5)
+    test('startswith', 'hello', 1, 'ello', -4)
+    test('startswith', 'hello', 0, 'o', -2)
+    test('startswith', 'hello', 1, 'o', -1)
+    test('startswith', 'hello', 1, '', -3, -3)
+    test('startswith', 'hello', 0, 'lo', -9)
+
     test('endswith', 'hello', 1, 'lo')
     test('endswith', 'hello', 0, 'he')
     test('endswith', 'hello', 1, '')
@@ -237,6 +249,21 @@ def run_method_tests(test):
     test('endswith', 'helloworld', 0, 'lowo', 3, 8)
     test('endswith', 'ab', 0, 'ab', 0, 1)
     test('endswith', 'ab', 0, 'ab', 0, 0)
+
+    # test negative indices in endswith
+    test('endswith', 'hello', 1, 'lo', -2)
+    test('endswith', 'hello', 0, 'he', -2)
+    test('endswith', 'hello', 1, '', -3, -3)
+    test('endswith', 'hello', 0, 'hello world', -10, -2)
+    test('endswith', 'helloworld', 0, 'worl', -6)
+    test('endswith', 'helloworld', 1, 'worl', -5, -1)
+    test('endswith', 'helloworld', 1, 'worl', -5, 9)
+    test('endswith', 'helloworld', 1, 'world', -7, 12)
+    test('endswith', 'helloworld', 1, 'lowo', -99, -3)
+    test('endswith', 'helloworld', 1, 'lowo', -8, -3)
+    test('endswith', 'helloworld', 1, 'lowo', -7, -3)
+    test('endswith', 'helloworld', 0, 'lowo', 3, -4)
+    test('endswith', 'helloworld', 0, 'lowo', -8, -2)
 
     test('zfill', '123', '123', 2)
     test('zfill', '123', '123', 3)
