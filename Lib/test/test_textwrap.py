@@ -262,6 +262,12 @@ What a mess!
              ["Hello", " ", "there", " ", "--", " ", "you", " ", "goof-",
               "ball,", " ", "use", " ", "the", " ", "-b", " ",  "option!"])
 
+    def test_bad_width(self):
+        # Ensure that width <= 0 is caught.
+        text = "Whatever, it doesn't matter."
+        self.assertRaises(ValueError, wrap, text, 0)
+        self.assertRaises(ValueError, wrap, text, -1)
+
 
 class LongWordTestCase (BaseTestCase):
     def setUp(self):
