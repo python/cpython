@@ -5,7 +5,7 @@
 import unittest
 from test import test_support, string_tests
 
-from UserString import UserString
+from UserString import UserString, MutableString
 
 class UserStringTest(
     string_tests.CommonTest,
@@ -43,8 +43,15 @@ class UserStringTest(
         # we don't fix the arguments, because UserString can't cope with it
         getattr(object, methodname)(*args)
 
+class MutableStringTest(UserStringTest):
+    type2test = MutableString
+
+    # MutableStrings can be hashed => deactivate test
+    def test_hash(self):
+        pass
+
 def test_main():
-    test_support.run_unittest(UserStringTest)
+    test_support.run_unittest(UserStringTest, MutableStringTest)
 
 if __name__ == "__main__":
     test_main()
