@@ -52,6 +52,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #define TYPE_LIST	'['
 #define TYPE_DICT	'{'
 #define TYPE_CODE	'c'
+#define TYPE_UNICODE	'u'
 #define TYPE_UNKNOWN	'?'
 
 typedef struct {
@@ -213,9 +214,22 @@ w_object(v, p)
 #endif
 	else if (PyString_Check(v)) {
 		w_byte(TYPE_STRING, p);
-		n = PyString_Size(v);
+		n = PyString_GET_SIZE(v);
 		w_long((long)n, p);
-		w_string(PyString_AsString(v), n, p);
+		w_string(PyString_AS_STRING(v), n, p);
+	}
+	else if (PyUnicode_Check(v)) {
+	        PyObject *utf8;
+		utf8 = PyUnicode_AsUTF8String(v);
+		if (utf8 == NULL) {
+		    p->error = 1;
+		    return;
+		}
+		w_byte(TYPE_UNICODE, p);
+		n = PyString_GET_SIZE(utf8);
+		w_long((long)n, p);
+		w_string(PyString_AS_STRING(utf8), n, p);
+		Py_DECREF(utf8);
 	}
 	else if (PyTuple_Check(v)) {
 		w_byte(TYPE_TUPLE, p);
@@ -227,10 +241,10 @@ w_object(v, p)
 	}
 	else if (PyList_Check(v)) {
 		w_byte(TYPE_LIST, p);
-		n = PyList_Size(v);
+		n = PyList_GET_SIZE(v);
 		w_long((long)n, p);
 		for (i = 0; i < n; i++) {
-			w_object(PyList_GetItem(v, i), p);
+			w_object(PyList_GET_ITEM(v, i), p);
 		}
 	}
 	else if (PyDict_Check(v)) {
@@ -482,7 +496,7 @@ r_object(p)
 		}
 		v = PyString_FromStringAndSize((char *)NULL, n);
 		if (v != NULL) {
-			if (r_string(PyString_AsString(v), (int)n, p) != n) {
+			if (r_string(PyString_AS_STRING(v), (int)n, p) != n) {
 				Py_DECREF(v);
 				v = NULL;
 				PyErr_SetString(PyExc_EOFError,
@@ -491,6 +505,29 @@ r_object(p)
 		}
 		return v;
 	
+	case TYPE_UNICODE:
+	    {
+		char *buffer;
+
+		n = r_long(p);
+		if (n < 0) {
+			PyErr_SetString(PyExc_ValueError, "bad marshal data");
+			return NULL;
+		}
+		buffer = (char *)Py_Malloc(n);
+		if (buffer == NULL)
+		    return NULL;
+		if (r_string(buffer, (int)n, p) != n) {
+			free(buffer);
+			PyErr_SetString(PyExc_EOFError,
+				"EOF read where object expected");
+			return NULL;
+		}
+		v = PyUnicode_DecodeUTF8(buffer, n, NULL);
+		free(buffer);
+		return v;
+	    }
+	    
 	case TYPE_TUPLE:
 		n = r_long(p);
 		if (n < 0) {
