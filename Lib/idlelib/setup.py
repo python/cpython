@@ -1,8 +1,25 @@
-import os,glob
+import os, glob, sys
 from distutils.core import setup
 from distutils.command.build_py import build_py
 from distutils.command.install_lib import install_lib
 import idlever
+
+try:
+    pos = sys.argv.index("--check-tkinter")
+except ValueError:
+    pass
+else:
+    del sys.argv[pos]
+    try:
+        import _tkinter
+    except ImportError:
+        print >>sys.stderr, "Cannot install IDLE without _tkinter"
+        raise SystemExit
+
+try:
+    package_dir = os.path.join(os.environ["SRCDIR"], "Tools", "idle")
+except KeyError:
+    package_dir = "."
 
 # name of idle package
 idlelib = "idlelib"
@@ -24,7 +41,8 @@ class idle_build_py(build_py):
             outfile = self.get_plain_outfile(self.build_lib, [idlelib], name)
             dir = os.path.dirname(outfile)
             self.mkpath(dir)
-            self.copy_file(name, outfile, preserve_mode = 0)
+            self.copy_file(os.path.join(package_dir, name), outfile,
+                           preserve_mode = 0)
         for name in Icons:
             outfile = self.get_plain_outfile(self.build_lib,
                                              [idlelib,"Icons"], name)
@@ -35,7 +53,8 @@ class idle_build_py(build_py):
 
     def get_source_files(self):
         # returns the .py files, the .txt files, and the icons
-        icons = [os.path.join("Icons",name) for name in Icons]
+        icons = [os.path.join(package_dir, "Icons",name) for name in Icons]
+        txts = [os.path.join(package_dir, name) for name in txt_files]
         return build_py.get_source_files(self)+txt_files+icons
 
     def get_outputs(self, include_bytecode=1):
@@ -80,7 +99,7 @@ refer to idlefork.sourceforge.net.""",
 
       cmdclass = {'build_py':idle_build_py,
                   'install_lib':idle_install_lib},
-      package_dir = {idlelib:'.'},
+      package_dir = {idlelib: package_dir},
       packages = [idlelib],
-      scripts = ['idle']
+      scripts = [os.path.join(package_dir, 'idle')]
       )
