@@ -11,17 +11,23 @@ line-oriented command interpreters.  These are often useful for
 test harnesses, administrative tools, and prototypes that will
 later be wrapped in a more sophisticated interface.
 
-\begin{classdesc}{Cmd}{\optional{completekey}}
+\begin{classdesc}{Cmd}{\optional{completekey},\optional{stdin},\optional{stdout}}
 A \class{Cmd} instance or subclass instance is a line-oriented
 interpreter framework.  There is no good reason to instantiate
 \class{Cmd} itself; rather, it's useful as a superclass of an
 interpreter class you define yourself in order to inherit
 \class{Cmd}'s methods and encapsulate action methods.
 
-The optional argument is the \refmodule{readline} name of a completion
-key; it defaults to \kbd{Tab}. If \var{completekey} is not \code{None}
-and \module{readline} is available, command completion is done
-automatically.
+The optional argument \var{completekey} is the \refmodule{readline} name
+of a completion key; it defaults to \kbd{Tab}. If \var{completekey} is
+not \code{None} and \module{readline} is available, command completion
+is done automatically.
+
+The optional arguments \var{stdin} and \var{stdout} specify the 
+input and output file objects that the Cmd instance or subclass 
+instance will use for input and output. If not specified, they
+will default to \var{sys.stdin} and \var{sys.stdout}.
+
 \end{classdesc}
 
 \subsection{Cmd Objects}
