@@ -73,19 +73,28 @@ def parse_toc(fp, bigpart=None):
     return top
 
 
-hackscore_rx = re.compile(r"\\(hackscore|raisebox)\s*{[^}]*}")
-title_rx = re.compile(r"\\[a-zA-Z]+\s*")
+hackscore_rx = re.compile(r"\\hackscore\s*{[^}]*}")
+raisebox_rx = re.compile(r"\\raisebox\s*{[^}]*}")
+title_rx = re.compile(r"\\([a-zA-Z])+\s+")
 title_trans = string.maketrans("", "")
 
 def clean_title(title):
-    title = hackscore_rx.sub("_", title)
+    title = raisebox_rx.sub("", title)
+    title = hackscore_rx.sub(r"\\_", title)
+    pos = 0
     while 1:
-	m = title_rx.search(title)
+	m = title_rx.search(title, pos)
 	if m:
-	    title = title[:m.start()] + title[m.end():]
+	    start = m.start()
+	    print "found", `title[start:m.end()]`
+	    if title[start:start+15] != "\\textunderscore":
+		title = title[:start] + title[m.end():]
+	    pos = start + 1
 	else:
 	    break
-    return string.translate(title, title_trans, "{}")
+    title = string.translate(title, title_trans, "{}")
+    print `title`
+    return title
 
 
 def write_toc(toc, fp):
