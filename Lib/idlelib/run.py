@@ -62,7 +62,9 @@ def main():
             method, args, kwargs = request
             ret = method(*args, **kwargs)
             rpc.response_queue.put((seq, ret))
-        except KeyboardInterrupt:
+        except:
+            print_exception()
+            rpc.response_queue.put((seq, None))
             continue
 
 def manage_socket(address):
@@ -83,6 +85,59 @@ def manage_socket(address):
         exit_requested = True
         return
     server.handle_request() # A single request only
+
+def print_exception():
+    flush_stdout()
+    efile = sys.stderr
+    typ, val, tb = info = sys.exc_info()
+    tbe = traceback.extract_tb(tb)
+    print >>efile, 'Traceback (most recent call last):'
+    exclude = ("run.py", "rpc.py", "threading.py", "Queue.py",
+               "RemoteDebugger.py", "bdb.py")
+    cleanup_traceback(tbe, exclude)
+    traceback.print_list(tbe, file=efile)
+    lines = traceback.format_exception_only(typ, val)
+    for line in lines:
+        print>>efile, line,
+
+def cleanup_traceback(tb, exclude):
+    "Remove excluded traces from beginning/end of tb; get cached lines"
+    orig_tb = tb[:]
+    while tb:
+        for rpcfile in exclude:
+            if tb[0][0].count(rpcfile):
+                break    # found an exclude, break for: and delete tb[0]
+        else:
+            break        # no excludes, have left RPC code, break while:
+        del tb[0]
+    while tb:
+        for rpcfile in exclude:
+            if tb[-1][0].count(rpcfile):
+                break
+        else:
+            break
+        del tb[-1]
+    if len(tb) == 0:
+        # exception was in IDLE internals, don't prune!
+        tb[:] = orig_tb[:]
+        print>>sys.stderr, "** IDLE Internal Exception: "
+    rpchandler = rpc.objecttable['exec'].rpchandler
+    for i in range(len(tb)):
+        fn, ln, nm, line = tb[i]
+        if nm == '?':
+            nm = "-toplevel-"
+        if not line and fn.startswith("<pyshell#"):
+            line = rpchandler.remotecall('linecache', 'getline',
+                                              (fn, ln), {})
+        tb[i] = fn, ln, nm, line
+
+def flush_stdout():
+    try:
+        if sys.stdout.softspace:
+            sys.stdout.softspace = 0
+            sys.stdout.write("\n")
+    except (AttributeError, EOFError):
+        pass
 
 
 class MyRPCServer(rpc.RPCServer):
@@ -153,62 +208,12 @@ class Executive:
             try:
                 if exit_requested:
                     os._exit(0)
-                self.flush_stdout()
-                efile = sys.stderr
-                typ, val, tb = info = sys.exc_info()
-                sys.last_type, sys.last_value, sys.last_traceback = info
-                tbe = traceback.extract_tb(tb)
-                print >>efile, 'Traceback (most recent call last):'
-                exclude = ("run.py", "rpc.py", "threading.py",
-                           "RemoteDebugger.py", "bdb.py")
-                self.cleanup_traceback(tbe, exclude)
-                traceback.print_list(tbe, file=efile)
-                lines = traceback.format_exception_only(typ, val)
-                for line in lines:
-                    print>>efile, line,
+                print_exception()
             except:
                 sys.stderr = sys.__stderr__
                 raise
         else:
-            self.flush_stdout()
-
-    def flush_stdout(self):
-        try:
-            if sys.stdout.softspace:
-                sys.stdout.softspace = 0
-                sys.stdout.write("\n")
-        except (AttributeError, EOFError):
-            pass
-
-    def cleanup_traceback(self, tb, exclude):
-        "Remove excluded traces from beginning/end of tb; get cached lines"
-        orig_tb = tb[:]
-        while tb:
-            for rpcfile in exclude:
-                if tb[0][0].count(rpcfile):
-                    break    # found an exclude, break for: and delete tb[0]
-            else:
-                break        # no excludes, have left RPC code, break while:
-            del tb[0]
-        while tb:
-            for rpcfile in exclude:
-                if tb[-1][0].count(rpcfile):
-                    break
-            else:
-                break
-            del tb[-1]
-        if len(tb) == 0:
-            # exception was in IDLE internals, don't prune!
-            tb[:] = orig_tb[:]
-            print>>sys.stderr, "** IDLE Internal Exception: "
-        for i in range(len(tb)):
-            fn, ln, nm, line = tb[i]
-            if nm == '?':
-                nm = "-toplevel-"
-            if not line and fn.startswith("<pyshell#"):
-                line = self.rpchandler.remotecall('linecache', 'getline',
-                                                  (fn, ln), {})
-            tb[i] = fn, ln, nm, line
+            flush_stdout()
 
     def interrupt_the_server(self):
         interrupt.interrupt_main()
