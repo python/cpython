@@ -137,22 +137,30 @@ join(buffer, stuff)
 
 
 static int
+gotlandmark(landmark)
+	char *landmark;
+{
+	int n, ok;
+
+	n = strlen(prefix);
+	join(prefix, landmark);
+	ok = ismodule(prefix);
+	prefix[n] = '\0';
+	return ok;
+}
+
+
+static int
 search_for_prefix(argv0_path, landmark)
 	char *argv0_path;
 	char *landmark;
 {
-	int n;
 
-	/* Search from argv0_path, until root is found */
+	/* Search from argv0_path, until landmark is found */
 	strcpy(prefix, argv0_path);
 	do {
-		n = strlen(prefix);
-		join(prefix, landmark);
-		if (ismodule(prefix)) {
-			prefix[n] = '\0';
+		if (gotlandmark(landmark))
 			return 1;
-		}
-		prefix[n] = '\0';
 		reduce(prefix);
 	} while (prefix[0]);
 	return 0;
@@ -175,7 +183,7 @@ extern const char *PyWin_DLLVersionString; // a string loaded from the DLL at st
 */
 
 static char *
-getpythonregpath(HKEY keyBase, BOOL bWin32s)
+getpythonregpath(HKEY keyBase)
 {
 	HKEY newKey = 0;
 	DWORD nameSize = 0;
@@ -206,11 +214,6 @@ getpythonregpath(HKEY keyBase, BOOL bWin32s)
 		RegQueryInfoKey(newKey, NULL, NULL, NULL, NULL, NULL, NULL, 
 		                &numEntries, &nameSize, &dataSize, NULL, NULL);
 	}
-	if (bWin32s && numEntries==0 && dataSize==0) {
-		/* must hardcode for Win32s */
-		numEntries = 1;
-		dataSize = 511;
-	}
 	if (numEntries) {
 		/* Loop over all subkeys. */
 		/* Win32s doesnt know how many subkeys, so we do
@@ -225,7 +228,6 @@ getpythonregpath(HKEY keyBase, BOOL bWin32s)
 			if (rc) break;
 			rc = RegQueryValue(newKey, keyBuf, NULL, &reqdSize);
 			if (rc) break;
-			if (bWin32s && reqdSize==0) reqdSize = 512;
 			dataSize += reqdSize + 1; /* 1 for the ";" */
 		}
 		dataBuf = malloc(dataSize+1);
@@ -333,6 +335,7 @@ calculate_path()
 	char *envpath = getenv("PYTHONPATH");
 
 #ifdef MS_WIN32
+	int skiphome = 0;
 	char *machinepath = NULL;
 	char *userpath = NULL;
 #endif
@@ -352,15 +355,11 @@ calculate_path()
 	if (envpath && *envpath == '\0')
 		envpath = NULL;
 
+
 #ifdef MS_WIN32
-	/* Are we running under Windows 3.1(1) Win32s? */
-	if (PyWin_IsWin32s()) {
-		/* Only CLASSES_ROOT is supported */
-		machinepath = getpythonregpath(HKEY_CLASSES_ROOT, TRUE); 
-		userpath = NULL;
-	} else {
-		machinepath = getpythonregpath(HKEY_LOCAL_MACHINE, FALSE);
-		userpath = getpythonregpath(HKEY_CURRENT_USER, FALSE);
+	if (!gotlandmark(BUILD_LANDMARK)) {
+		machinepath = getpythonregpath(HKEY_LOCAL_MACHINE);
+		userpath = getpythonregpath(HKEY_CURRENT_USER);
 	}
 #endif
 
@@ -404,11 +403,11 @@ calculate_path()
 		/* We can't exit, so print a warning and limp along */
 		fprintf(stderr, "Can't malloc dynamic PYTHONPATH.\n");
 		if (envpath) {
-			fprintf(stderr, "Using default static $PYTHONPATH.\n");
+			fprintf(stderr, "Using environment $PYTHONPATH.\n");
 			module_search_path = envpath;
 		}
 		else {
-			fprintf(stderr, "Using environment $PYTHONPATH.\n");
+			fprintf(stderr, "Using default static path.\n");
 			module_search_path = PYTHONPATH;
 		}
 #ifdef MS_WIN32
@@ -431,12 +430,18 @@ calculate_path()
 		buf = strchr(buf, '\0');
 		*buf++ = DELIM;
 		free(userpath);
+		skiphome = 1;
 	}
 	if (machinepath) {
 		strcpy(buf, machinepath);
 		buf = strchr(buf, '\0');
 		*buf++ = DELIM;
 		free(machinepath);
+		skiphome = 1;
+	}
+	if (skiphome) {
+		*buf = 0;
+		return;
 	}
 #endif
 	if (pythonhome == NULL) {
