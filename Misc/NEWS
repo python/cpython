@@ -35,6 +35,10 @@ Extension modules
 Library
 -------
 
+- The bsddb module and dbhash module now support the iterator and
+  mapping protocols which make them more substitutable for dictionaries
+  and shelves.
+
 - The csv module's DictReader and DictWriter classes now accept keyword
   arguments.  This was an omission in the initial implementation.
 

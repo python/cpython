@@ -20,12 +20,24 @@ def test(openmethod, what, ondisk=1):
     verify(f.keys() == [])
     if verbose:
         print 'creation...'
-    f['0'] = ''
-    f['a'] = 'Guido'
-    f['b'] = 'van'
-    f['c'] = 'Rossum'
-    f['d'] = 'invented'
-    f['f'] = 'Python'
+    keys = ['0', 'a', 'b', 'c', 'd', 'e', 'f']
+    values = ['', 'Guido', 'van', 'Rossum', 'invented', 'Python']
+    items = zip(keys, values)
+    for k, v in items:
+        f[k] = v
+
+    # test mapping iteration methods
+    from sets import Set
+    def verifyset(s1, s2):
+        verify(Set(s1) == Set(s2))
+    verify(keys, f.keys())
+    verify(values, f.values())
+    verify(items, f.items())
+    verify(keys, f)
+    verify(keys, f.iterkeys())
+    verify(values, f.itervalues())
+    verify(items, f.iteritems())
+
     if verbose:
         print '%s %s %s' % (f['a'], f['b'], f['c'])
 

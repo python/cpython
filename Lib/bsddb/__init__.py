@@ -52,8 +52,9 @@ error = db.DBError  # So bsddb.error will mean something...
 
 #----------------------------------------------------------------------
 
+import UserDict
 
-class _DBWithCursor:
+class _DBWithCursor(UserDict.DictMixin):
     """
     A simple wrapper around DB that makes it look like the bsddbobject in
     the old module.  It uses a cursor as needed to provide DB traversal.
@@ -144,6 +145,14 @@ class _DBWithCursor:
         self._checkOpen()
         return self.db.sync()
 
+    def __iter__(self):
+        try:
+            yield self.first()[0]
+            next = self.next
+            while 1:
+                yield next()[0]
+        except _bsddb.DBNotFoundError:
+            return
 
 #----------------------------------------------------------------------
 # Compatibility object factory functions
