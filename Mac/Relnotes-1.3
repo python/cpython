@@ -1,0 +1,63 @@
+	Changes since Python 1.2 for the mac
+	------------------------------------
+These relnotes are relative to the last "official" MacPython release,
+not to the intermediate releases.
+- PPC python now uses a shared library organization. This allows the
+  creation of dynamically loadable extension modules (see XXXX) and
+  creation of python applets (see XXXX). A number of previously
+  builtin modules are now dynamically loaded. Dynamically loaded
+  modules are distributed in the PlugIns folder.
+- All python versions now use 
+- new binhex module (partially working)
+- Python now has a Preferences file, editable with
+  EditPythonPrefs. Remembered are the python 'home folder' and the
+  initial value for sys.path. If no preferences file is found a simple
+  one is created.
+  NOTE: this only works correctly if you start python the first time
+  from the correct folder.
+- new img modules, to read/write/convert images in various formats
+- new MacOS toolbox modules: AE, Ctl, Dlg, Event, List, Qd, Res, Snd
+  and Win. These provide access to various of the MacOS toolbox
+  interfaces. No documentation yet, but the __doc__ strings provide at
+  least the calling sequence (and Inside Mac will give you the
+  semantics). Minimal demos are provided for most toolbox interfaces,
+  and the 'scripts' directory has some more examples.
+- AppleEvent client interfaces can be generated from aete/aeut
+  resources. No support for objects yet, nor for server interfaces.
+- Lib:mac:FrameWork.py has an application framework (under
+  construction). 
+- (PPC Only) support for building Python applets: tiny standalone
+  python applications.
+- fp = open(filename, '*r') opens resource-fork of a file for reading
+  (and similar for writing).
+- option-dragging a file to the interpreter (or immedeately pressing
+  <option> after launching python) will bring up an Options dialog
+  allowing you to set options like import-tracing, etc.
+- MacOS module method added: GetErrorString(OSErr) -> error string
+- There is now a numbering convention for resource-ID's:
+  128-255	Resources used by the interpreter itself
+  256-511	Resources used by standard modules
+  512-		Resources for applications
+- macfs module changes:
+  - StandardGetFile without type arguments now shows all files
+  - PromptGetFile(prompt, ...) is like StandardGetFile but with a
+    prompt
+  - GetDirectory (let user select a folder) added
+  - GetFInfo and SetFInfo methods of FSSpec objects get/set finder
+    info. FInfo objects have attributes Creator, Type, etc.
+  - FindFolder (locate trash/preferences/etc) added
+- mactcp/macdnr changes: bug fix wrt idle-loop.
+- EditPythonPrefs script: change initial sys.path and python home
+  folder
+- (PPC only) MkPluginAliases: Setup aliases for dynamically loadable
+  modules that live in a single shared library
+- PackLibDir: Convert Lib directory to a single resource file
+  containing all .pyc code
+- fixfiletypes: Set file types based on file extension over a whole
+  tree.
+- RunLibScript: Run any script as main program, optionally redirecting
+  stdin/stdout, supplying arguments, etc.
+- binhextree: Binhex all files in a tree, depending on the extension.
+- (PPC only) mkapplet: Create a python applet from a sourcefile and
+  (optional) resourcefile.
+
