@@ -365,8 +365,8 @@ Backslashes in a raw docstring: m\n
 \end{verbatim}
 
   Otherwise, the backslash will be interpreted as part of the string.
-  E.g., the "{\textbackslash}" above would be interpreted as a newline
-  character.  Alternatively, you can double each backslash in the
+  For example, the "{\textbackslash}" above would be interpreted as a
+  newline character.  Alternatively, you can double each backslash in the
   doctest version (and not use a raw string):
 
 \begin{verbatim}
@@ -497,8 +497,9 @@ Some details you should read once, but won't need to remember:
 
 \end{itemize}
 
-\versionchanged[The ability to handle a multi-line exception detail
-                was added]{2.4}
+\versionchanged[The ability to handle a multi-line exception detail,
+                and the \constant{IGNORE_EXCEPTION_DETAIL} doctest option,
+                were added]{2.4}
 
 \subsubsection{Option Flags and Directives\label{doctest-options}}
 
@@ -750,6 +751,17 @@ Another bad idea is to print things that embed an object address, like
 \begin{verbatim}
 >>> id(1.0) # certain to fail some of the time
 7948648
+>>> class C: pass
+>>> C()   # the default repr() for instances embeds an address
+<__main__.C instance at 0x00AC18F0>
+\end{verbatim}
+
+The \constant{ELLIPSIS} directive gives a nice approach for the last
+example:
+
+\begin{verbatim}
+>>> C() #doctest: +ELLIPSIS
+<__main__.C instance at 0x...>
 \end{verbatim}
 
 Floating-point numbers are also subject to small output variations across
@@ -775,34 +787,6 @@ often contrive doctest examples to produce numbers of that form:
 
 Simple fractions are also easier for people to understand, and that makes
 for better documentation.
-
-\item Be careful if you have code that must only execute once.
-
-If you have module-level code that must only execute once, a more foolproof
-definition of \function{_test()} is
-
-% [XX] How is this safer??  The only difference I see is that this
-% imports (but doesn't use) sys.  -edloper
-\begin{verbatim}
-def _test():
-    import doctest, sys
-    doctest.testmod()
-\end{verbatim}
-
-\item WYSIWYG isn't always the case, starting in Python 2.3.  The
-  string form of boolean results changed from \code{'0'} and
-  \code{'1'} to \code{'False'} and \code{'True'} in Python 2.3.
-  This makes it clumsy to write a doctest showing boolean results that
-  passes under multiple versions of Python.  In Python 2.3, by default,
-  and as a special case, if an expected output block consists solely
-  of \code{'0'} and the actual output block consists solely of
-  \code{'False'}, that's accepted as an exact match, and similarly for
-  \code{'1'} versus \code{'True'}.  This behavior can be turned off by
-  passing the new (in 2.3) module constant
-  \constant{DONT_ACCEPT_TRUE_FOR_1} as the value of \function{testmod()}'s
-  new (in 2.3) optional \var{optionflags} argument.  Some years after
-  the integer spellings of booleans are history, this hack will
-  probably be removed again.
 
 \end{itemize}
 
