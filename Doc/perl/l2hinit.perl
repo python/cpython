@@ -141,23 +141,25 @@ sub get_my_icon($) {
            . " height='32'  alt='$text' width='32'>";
 }
 
-sub use_my_icon($) {
-    my $s = $_[0];
+sub use_my_icon($$) {
+    my($s,$rel) = @_;
     if ($s =~ /\<tex2html_([a-z_]+)_visible_mark\>/) {
         my $r = get_my_icon($1);
         $s =~ s/\<tex2html_[a-z_]+_visible_mark\>/$r/;
     }
+    $s =~ s/<[aA] /<a rel="$rel" /;
     return $s;
 }
 
 sub make_nav_panel() {
     my $s;
     my $BLANK_ICON = get_my_icon('blank');
-    $NEXT = $NEXT_TITLE ? use_my_icon("$NEXT") : $BLANK_ICON;
-    $UP = $UP_TITLE ? use_my_icon("$UP") : $BLANK_ICON;
-    $PREVIOUS = $PREVIOUS_TITLE ? use_my_icon("$PREVIOUS") : $BLANK_ICON;
-    $CONTENTS = use_my_icon("$CONTENTS");
-    $INDEX = $INDEX ? use_my_icon("$INDEX") : $BLANK_ICON;
+    $NEXT = $NEXT_TITLE ? use_my_icon("$NEXT", 'next') : $BLANK_ICON;
+    $UP = $UP_TITLE ? use_my_icon("$UP", 'parent') : $BLANK_ICON;
+    $PREVIOUS = ($PREVIOUS_TITLE
+                 ? use_my_icon("$PREVIOUS", 'prev') : $BLANK_ICON);
+    $CONTENTS = use_my_icon("$CONTENTS", 'contents');
+    $INDEX = $INDEX ? use_my_icon("$INDEX", 'index') : $BLANK_ICON;
     if (!$CUSTOM_BUTTONS) {
         $CUSTOM_BUTTONS = $BLANK_ICON;
     }
