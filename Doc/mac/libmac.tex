@@ -36,62 +36,14 @@ similar works.
 
 The following modules are documented here:
 
-\begin{description}
-
-\item[mac]
---- Similar interfaces to the \module{posix} module.
-
-\item[macpath]
---- Path manipulation functions; use via \code{os.path}.
-
-\item[ctb]
---- Interfaces to the Communications Tool Box.  Only the Connection
-Manager is currently supported.
-
-\item[macconsole]
---- Think C's console package is available using this module.
-
-\item[macdnr]
---- Interfaces to the Macintosh Domain Name Resolver.
-
-\item[macfs]
---- Support for FSSpec, the Alias Manager, \program{finder} aliases,
-and the Standard File package.
-
-\item[macic]
---- Internet Config.
-
-\item[MacOS]
---- Access to MacOS specific interpreter features.
-
-\item[macostools]
---- Convenience routines for file manipulation.
-
-\item[findertools]
---- Wrappers around the \program{finder}'s Apple Events interface.
-
-\item[mactcp]
---- The MacTCP interfaces.
-
-\item[macspeech]
---- Interface to the Macintosh Speech Manager.
-
-\item[EasyDialogs]
---- Basic Macintosh dialogs.
-
-\item[FrameWork]
---- Interactive application framework.
-
-\item[MiniAEFrame]
---- Support to act as an Open Scripting Architecture (OSA) server
-(``Apple Events'').
-
-\end{description}
+\localmoduletable
 
 
 \section{Built-in Module \module{mac}}
-\label{module-mac}
-\bimodindex{mac}
+\declaremodule{builtin}{mac}
+
+\modulesynopsis{Similar interfaces to the \module{posix} module.}
+
 
 This module provides a subset of the operating system dependent
 functionality provided by the optional built-in module \module{posix}.
@@ -126,9 +78,12 @@ returns the same information as \function{stat()}, but with three extra
 values appended: the size of the resource fork of the file and its
 4-character creator and type.
 
+
 \section{Standard Module \module{macpath}}
-\label{module-macpath}
-\stmodindex{macpath}
+\declaremodule{standard}{macpath}
+
+\modulesynopsis{MacOS path manipulation functions.}
+
 
 This module provides a subset of the pathname manipulation functions
 available from the optional standard module \module{posixpath}.  It is
