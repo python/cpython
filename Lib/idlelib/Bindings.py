@@ -6,7 +6,6 @@
 # Debug menu here, which is only present in the PythonShell window.
 
 import sys
-import string
 from configHandler import idleConf
 
 menudefs = [
