@@ -164,12 +164,12 @@ class OpenerDirectorTests(unittest.TestCase):
         # In fact, second mock handler defining .http_open() returns self
         # (instead of response), which becomes the OpenerDirector's return
         # value.
-        self.assert_(r == handlers[2])
+        self.assertEqual(r, handlers[2])
         calls = [(handlers[0], "http_open"), (handlers[2], "http_open")]
         for expected, got in zip(calls, o.calls):
             handler, name, args, kwds = got
-            self.assert_((handler, name) == expected)
-            self.assert_(args == (req,))
+            self.assertEqual((handler, name), expected)
+            self.assertEqual(args, (req,))
 
     def test_handler_order(self):
         o = OpenerDirector()
@@ -186,8 +186,8 @@ class OpenerDirectorTests(unittest.TestCase):
 
         r = o.open("http://example.com/")
         # handlers called in reverse order, thanks to their sort order
-        self.assert_(o.calls[0][0] == handlers[1])
-        self.assert_(o.calls[1][0] == handlers[0])
+        self.assertEqual(o.calls[0][0], handlers[1])
+        self.assertEqual(o.calls[1][0], handlers[0])
 
     def test_raise(self):
         # raising URLError stops processing of request
@@ -200,7 +200,7 @@ class OpenerDirectorTests(unittest.TestCase):
 
         req = Request("http://example.com/")
         self.assertRaises(urllib2.URLError, o.open, req)
-        self.assert_(o.calls == [(handlers[0], "http_open", (req,), {})])
+        self.assertEqual(o.calls, [(handlers[0], "http_open", (req,), {})])
 
 ##     def test_error(self):
 ##         # XXX this doesn't actually seem to be used in standard library,
@@ -226,11 +226,12 @@ class OpenerDirectorTests(unittest.TestCase):
         r = o.open(req)
         assert len(o.calls) == 2
         calls = [(handlers[0], "http_open", (req,)),
-                 (handlers[2], "http_error_302", (req, Unknown(), 302, "", {}))]
+                 (handlers[2], "http_error_302",
+                  (req, Unknown(), 302, "", {}))]
         for expected, got in zip(calls, o.calls):
             handler, method_name, args = expected
-            self.assert_((handler, method_name) == got[:2])
-            assert args == got[2]
+            self.assertEqual((handler, method_name), got[:2])
+            self.assertEqual(args, got[2])
 
     def test_processors(self):
         # *_request / *_response methods get called appropriately
@@ -247,19 +248,20 @@ class OpenerDirectorTests(unittest.TestCase):
         r = o.open(req)
         # processor methods are called on *all* handlers that define them,
         # not just the first handler that handles the request
-        calls = [(handlers[0], "http_request"), (handlers[1], "http_request"),
-                 (handlers[0], "http_response"), (handlers[1], "http_response")]
+        calls = [
+            (handlers[0], "http_request"), (handlers[1], "http_request"),
+            (handlers[0], "http_response"), (handlers[1], "http_response")]
 
         for i, (handler, name, args, kwds) in enumerate(o.calls):
             if i < 2:
                 # *_request
-                self.assert_((handler, name) == calls[i])
-                self.assert_(len(args) == 1)
+                self.assertEqual((handler, name), calls[i])
+                self.assertEqual(len(args), 1)
                 self.assert_(isinstance(args[0], Request))
             else:
                 # *_response
-                self.assert_((handler, name) == calls[i])
-                self.assert_(len(args) == 2)
+                self.assertEqual((handler, name), calls[i])
+                self.assertEqual(len(args), 2)
                 self.assert_(isinstance(args[0], Request))
                 # response from opener.open is None, because there's no
                 # handler that defines http_open to handle it
@@ -307,14 +309,14 @@ class HandlerTests(unittest.TestCase):
             r = h.ftp_open(Request(url))
             # ftp authentication not yet implemented by FTPHandler
             self.assert_(h.user == h.passwd == "")
-            self.assert_(h.host == socket.gethostbyname(host))
-            self.assert_(h.port == port)
-            self.assert_(h.dirs == dirs)
-            self.assert_(h.ftpwrapper.filename == filename)
-            self.assert_(h.ftpwrapper.filetype == type_)
+            self.assertEqual(h.host, socket.gethostbyname(host))
+            self.assertEqual(h.port, port)
+            self.assertEqual(h.dirs, dirs)
+            self.assertEqual(h.ftpwrapper.filename, filename)
+            self.assertEqual(h.ftpwrapper.filetype, type_)
             headers = r.info()
-            self.assert_(headers["Content-type"] == mimetype)
-            self.assert_(int(headers["Content-length"]) == len(data))
+            self.assertEqual(headers["Content-type"], mimetype)
+            self.assertEqual(int(headers["Content-length"]), len(data))
 
     def test_file(self):
         import time, rfc822, socket
@@ -350,9 +352,9 @@ class HandlerTests(unittest.TestCase):
                     r.close()
             finally:
                 os.remove(TESTFN)
-            self.assert_(data == towrite)
-            self.assert_(headers["Content-type"] == "text/plain")
-            self.assert_(headers["Content-length"] == "13")
+            self.assertEqual(data, towrite)
+            self.assertEqual(headers["Content-type"], "text/plain")
+            self.assertEqual(headers["Content-length"], "13")
             # Fudge Last-modified string comparison by one second to
             # prevent spurious failure on crossing a second boundary while
             # executing this test.
@@ -403,9 +405,15 @@ class HandlerTests(unittest.TestCase):
                 self.assert_(not ftp)
             else:
                 self.assert_(o.req is req)
-                self.assert_(req.type == "ftp")
+                self.assertEqual(req.type, "ftp")
 
     def test_http(self):
+        class MockHTTPResponse:
+            def __init__(self, fp, msg, status, reason):
+                self.fp = fp
+                self.msg = msg
+                self.status = status
+                self.reason = reason
         class MockHTTPClass:
             def __init__(self):
                 self.req_headers = []
@@ -414,7 +422,17 @@ class HandlerTests(unittest.TestCase):
             def __call__(self, host):
                 self.host = host
                 return self
-            def set_debuglevel(self, level): self.level = level
+            def set_debuglevel(self, level):
+                self.level = level
+            def request(self, method, url, body=None, headers={}):
+                self.method = method
+                self.selector = url
+                self.req_headers += headers.items()
+                if body:
+                    self.data = body
+                if self.raise_on_endheaders:
+                    import socket
+                    raise socket.error()
             def putrequest(self, method, selector):
                 self.method, self.selector = method, selector
             def putheader(self, key, value):
@@ -423,9 +441,14 @@ class HandlerTests(unittest.TestCase):
                 if self.raise_on_endheaders:
                     import socket
                     raise socket.error()
-            def send(self, data): self.data = data
-            def getreply(self): return 200, "OK", {}
-            def getfile(self): return MockFile()
+            def send(self, data):
+                self.data = data
+            def getreply(self):
+                return 200, "OK", {}
+            def getresponse(self):
+                return MockHTTPResponse(MockFile(), {}, 200, "OK")
+            def getfile(self):
+                return MockFile()
 
         h = urllib2.AbstractHTTPHandler()
         o = h.parent = MockOpener()
@@ -443,14 +466,15 @@ class HandlerTests(unittest.TestCase):
             r.code, r.msg == 200, "OK"  # added from MockHTTPClass.getreply()
             hdrs = r.info()
             hdrs.get; hdrs.has_key  # r.info() gives dict from .getreply()
-            self.assert_(r.geturl() == url)
+            self.assertEqual(r.geturl(), url)
 
-            self.assert_(http.host == "example.com")
-            self.assert_(http.level == 0)
-            self.assert_(http.method == method)
-            self.assert_(http.selector == "/")
-            self.assert_(http.req_headers == [("Foo", "bar"), ("Spam", "eggs")])
-            self.assert_(http.data == data)
+            self.assertEqual(http.host, "example.com")
+            self.assertEqual(http.level, 0)
+            self.assertEqual(http.method, method)
+            self.assertEqual(http.selector, "/")
+            self.assertEqual(http.req_headers,
+                             [("Foo", "bar"), ("Spam", "eggs")])
+            self.assertEqual(http.data, data)
 
         # check socket.error converted to URLError
         http.raise_on_endheaders = True
@@ -466,12 +490,12 @@ class HandlerTests(unittest.TestCase):
                 self.assert_("Content-length" not in req.unredirected_hdrs)
                 self.assert_("Content-type" not in req.unredirected_hdrs)
             else:  # POST
-                self.assert_(req.unredirected_hdrs["Content-length"] == "0")
-                self.assert_(req.unredirected_hdrs["Content-type"] ==
+                self.assertEqual(req.unredirected_hdrs["Content-length"], "0")
+                self.assertEqual(req.unredirected_hdrs["Content-type"],
                              "application/x-www-form-urlencoded")
             # XXX the details of Host could be better tested
-            self.assert_(req.unredirected_hdrs["Host"] == "example.com")
-            self.assert_(req.unredirected_hdrs["Spam"] == "eggs")
+            self.assertEqual(req.unredirected_hdrs["Host"], "example.com")
+            self.assertEqual(req.unredirected_hdrs["Spam"], "eggs")
 
             # don't clobber existing headers
             req.add_unredirected_header("Content-length", "foo")
@@ -479,10 +503,10 @@ class HandlerTests(unittest.TestCase):
             req.add_unredirected_header("Host", "baz")
             req.add_unredirected_header("Spam", "foo")
             newreq = h.do_request(req)
-            self.assert_(req.unredirected_hdrs["Content-length"] == "foo")
-            self.assert_(req.unredirected_hdrs["Content-type"] == "bar")
-            self.assert_(req.unredirected_hdrs["Host"] == "baz")
-            self.assert_(req.unredirected_hdrs["Spam"] == "foo")
+            self.assertEqual(req.unredirected_hdrs["Content-length"], "foo")
+            self.assertEqual(req.unredirected_hdrs["Content-type"], "bar")
+            self.assertEqual(req.unredirected_hdrs["Host"], "baz")
+            self.assertEqual(req.unredirected_hdrs["Spam"], "foo")
 
     def test_errors(self):
         h = urllib2.HTTPErrorProcessor()
@@ -498,8 +522,8 @@ class HandlerTests(unittest.TestCase):
         # anything else calls o.error (and MockOpener returns None, here)
         r = MockResponse(201, "Created", {}, "", url)
         self.assert_(h.http_response(req, r) is None)
-        self.assert_(o.proto == "http")  # o.error called
-        self.assert_(o.args == (req, r, 201, "Created", {}))
+        self.assertEqual(o.proto, "http")  # o.error called
+        self.assertEqual(o.args, (req, r, 201, "Created", {}))
 
     def test_redirect(self):
         from_url = "http://example.com/a.html"
@@ -519,12 +543,13 @@ class HandlerTests(unittest.TestCase):
                 except urllib2.HTTPError:
                     # 307 in response to POST requires user OK
                     self.assert_(code == 307 and data is not None)
-                self.assert_(o.req.get_full_url() == to_url)
+                self.assertEqual(o.req.get_full_url(), to_url)
                 try:
-                    self.assert_(o.req.get_method() == "GET")
+                    self.assertEqual(o.req.get_method(), "GET")
                 except AttributeError:
                     self.assert_(not o.req.has_data())
-                self.assert_(o.req.headers["Nonsense"] == "viking=withhold")
+                self.assertEqual(o.req.headers["Nonsense"],
+                                 "viking=withhold")
                 self.assert_("Spam" not in o.req.headers)
                 self.assert_("Spam" not in o.req.unredirected_hdrs)
 
@@ -559,7 +584,8 @@ class HandlerTests(unittest.TestCase):
                 redirect(h, req, 302, "http://example.com/%d" % count)
                 count = count + 1
         except urllib2.HTTPError:
-            self.assert_(count == urllib2.HTTPRedirectHandler.max_redirections)
+            self.assertEqual(count,
+                             urllib2.HTTPRedirectHandler.max_redirections)
 
 
 class MiscTests(unittest.TestCase):
