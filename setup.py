@@ -388,6 +388,8 @@ class PyBuildExt(build_ext):
             exts.append( Extension('pwd', ['pwdmodule.c']) )
             # grp(3)
             exts.append( Extension('grp', ['grpmodule.c']) )
+            # spwd, shadow passwords
+            exts.append( Extension('spwd', ['spwdmodule.c']) )
         # select(2); not on ancient System V
         exts.append( Extension('select', ['selectmodule.c']) )
 

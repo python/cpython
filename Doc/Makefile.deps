@@ -164,6 +164,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libposix.tex \
 	lib/libposixpath.tex \
 	lib/libpwd.tex \
+	lib/libspwd.tex \
 	lib/libgrp.tex \
 	lib/libcrypt.tex \
 	lib/libdbm.tex \
