@@ -367,16 +367,7 @@ import traceback
 if mswindows:
     import threading
     import msvcrt
-    try:
-        from _subprocess import *
-        class STARTUPINFO:
-            dwFlags = 0
-            hStdInput = None
-            hStdOutput = None
-            hStdError = None
-        class pywintypes:
-            error = IOError
-    except ImportError:
+    if 0: # <-- change this to use pywin32 instead of the _subprocess driver
         import pywintypes
         from win32api import GetStdHandle, STD_INPUT_HANDLE, \
                              STD_OUTPUT_HANDLE, STD_ERROR_HANDLE
@@ -388,6 +379,15 @@ if mswindows:
                                  GetExitCodeProcess, STARTF_USESTDHANDLES, \
                                  CREATE_NEW_CONSOLE
         from win32event import WaitForSingleObject, INFINITE, WAIT_OBJECT_0
+    else:
+        from _subprocess import *
+        class STARTUPINFO:
+            dwFlags = 0
+            hStdInput = None
+            hStdOutput = None
+            hStdError = None
+        class pywintypes:
+            error = IOError
 else:
     import select
     import errno
