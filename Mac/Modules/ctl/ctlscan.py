@@ -88,6 +88,7 @@ class MyScanner(Scanner):
 			'GetControlPropertySize',
 			'SendControlMessage', # Parameter changed from long to void* from UH3.3 to UH3.4
 			'CreateTabsControl',  # wrote manually
+			'GetControlAction',  # too much effort for too little usefulness
 			
 			# too lazy for now
 			'GetImageWellContentInfo',
@@ -125,6 +126,8 @@ class MyScanner(Scanner):
 				'GetControlClickActivation',
 				'HandleControlContextualMenuClick',
 				
+				"CreateScrollBarControl",
+				"CreateSliderControl",
 				"CreateBevelButtonControl",
 				"CreateImageWellControl",
 				"CreatePictureControl",
@@ -259,7 +262,7 @@ class MyScanner(Scanner):
 	def makeblacklisttypes(self):
 		return [
 			'ProcPtr',
-			'ControlActionUPP',
+#			'ControlActionUPP',
 			'Ptr',
 			'ControlDefSpec', # Don't know how to do this yet
 			'ControlDefSpec_ptr', # ditto
@@ -319,6 +322,9 @@ class MyScanner(Scanner):
 			 
 			([("ControlButtonContentInfo", '*', "OutMode")],
 			 [("ControlButtonContentInfo", '*', "InMode")]),
+			
+			([("ControlActionUPP", 'liveTrackingProc', "InMode")],
+			 [("ControlActionUPPNewControl", 'liveTrackingProc', "InMode")]),
 			]
 
 if __name__ == "__main__":
