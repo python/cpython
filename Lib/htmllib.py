@@ -227,7 +227,7 @@ class HTMLParser(SGMLParser):
         self.formatter.push_margin('blockquote')
 
     def end_blockquote(self):
-        self.formatter.end_paragraph(0)
+        self.formatter.end_paragraph(1)
         self.formatter.pop_margin()
 
     # --- List Elements
@@ -279,11 +279,11 @@ class HTMLParser(SGMLParser):
         self.end_ul()
 
     def start_dl(self, attrs):
-        self.formatter.end_paragraph(0)
+        self.formatter.end_paragraph(1)
         self.list_stack.append(['dl', '', 0])
 
     def end_dl(self):
-        self.ddpop()
+        self.ddpop(1)
         if self.list_stack: del self.list_stack[-1]
 
     def do_dt(self, attrs):
@@ -294,8 +294,8 @@ class HTMLParser(SGMLParser):
         self.formatter.push_margin('dd')
         self.list_stack.append(['dd', '', 0])
 
-    def ddpop(self):
-        self.formatter.end_paragraph(0)
+    def ddpop(self, bl=0):
+        self.formatter.end_paragraph(bl)
         if self.list_stack:
             if self.list_stack[-1][0] == 'dd':
 		del self.list_stack[-1]
@@ -320,11 +320,11 @@ class HTMLParser(SGMLParser):
     def start_samp(self, attrs): self.start_tt(attrs)
     def end_samp(self): self.end_tt()
 
-    def start_string(self, attrs): self.start_b(attrs)
-    def end_b(self): self.end_b()
+    def start_strong(self, attrs): self.start_b(attrs)
+    def end_strong(self): self.end_b()
 
     def start_var(self, attrs): self.start_i(attrs)
-    def end_var(self): self.end_var()
+    def end_var(self): self.end_i()
 
     # Typographic Elements
 
