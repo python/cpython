@@ -94,6 +94,8 @@ extern DL_IMPORT(void) PyErr_WriteUnraisable(PyObject *);
 
 /* Issue a warning or exception */
 extern DL_IMPORT(int) PyErr_Warn(PyObject *, char *);
+extern DL_IMPORT(int) PyErr_WarnExplicit(PyObject *, char *,
+					 char *, int, char *, PyObject *);
 
 /* In sigcheck.c or signalmodule.c */
 extern DL_IMPORT(int) PyErr_CheckSignals(void);
