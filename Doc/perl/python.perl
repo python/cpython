@@ -1593,4 +1593,50 @@ withsubitem # {} # {}
 _RAW_ARG_DEFERRED_CMDS_
 
 
+$alltt_start = '<dl><dd><pre class="verbatim">';
+$alltt_end = '</pre></dl>';
+
+sub do_env_alltt {
+    local ($_) = @_;
+    local($closures,$reopens,@open_block_tags);
+
+    # get the tag-strings for all open tags
+    local(@keep_open_tags) = @$open_tags_R;
+    ($closures,$reopens) = &preserve_open_tags() if (@$open_tags_R);
+
+    # get the tags for text-level tags only
+    $open_tags_R = [ @keep_open_tags ];
+    local($local_closures, $local_reopens);
+    ($local_closures, $local_reopens,@open_block_tags)
+      = &preserve_open_block_tags
+	if (@$open_tags_R);
+
+    $open_tags_R = [ @open_block_tags ];
+
+    do {
+	local($open_tags_R) = [ @open_block_tags ];
+	local(@save_open_tags) = ();
+
+	local($cnt) = ++$global{'max_id'};
+	$_ = join('',"$O$cnt$C\\tt$O", ++$global{'max_id'}, $C
+		, $_ , $O, $global{'max_id'}, "$C$O$cnt$C");
+
+	$_ = &translate_environments($_);
+	$_ = &translate_commands($_) if (/\\/);
+
+	# preserve space-runs, using &nbsp;
+	while (s/(\S) ( +)/$1$2;SPMnbsp;/g){};
+	s/(<BR>) /$1;SPMnbsp;/g;
+
+	$_ = join('', $closures, $alltt_start, $local_reopens
+		, $_
+		, &balance_tags() #, $local_closures
+		, $alltt_end, $reopens);
+	undef $open_tags_R; undef @save_open_tags;
+    };
+    $open_tags_R = [ @keep_open_tags ];
+    $_;
+}
+
+
 1;				# This must be the last line

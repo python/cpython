@@ -6,7 +6,7 @@
 package main;
 
 do_require_package("article");
-#do_require_package("verbatim");
+do_require_package("alltt");
 do_require_package("python");
 
 1;				# sheesh....
