@@ -21,8 +21,8 @@ sub do_cmd_NULL{ join('', '<tt>NULL</tt>', @_[0]); }
 
 sub do_cmd_e{ local($_) = @_; '&#92;' . $_; }
 
-$AUTHOR_ADDRESS = '(not specified)';
-$PYTHON_VERSION = '(not specified)';
+$AUTHOR_ADDRESS = '';
+$PYTHON_VERSION = '';
 
 sub do_cmd_version{ $PYTHON_VERSION . @_[0]; }
 sub do_cmd_release{
@@ -277,8 +277,9 @@ sub my_module_index_helper{
     s/$next_pair_pr_rx[\n]*//o;
     local($br_id, $str) = ($1, $2);
     local($section_tag) = join('', @curr_sec_id);
+    $word = "$word " if $word;
     &make_mod_index_entry("SECTION$section_tag",
-			  "<tt>$str</tt> ($word module)", 'DEF');
+			  "<tt>$str</tt> (${word}module)", 'DEF');
     $_;
 }
 
@@ -286,15 +287,20 @@ sub ref_module_index_helper{
     local($word, $_) = @_;
     s/$next_pair_pr_rx//o;
     local($br_id, $str) = ($1, $2);
-    &make_mod_index_entry($br_id, "<tt>$str</tt> ($word module)", 'REF') . $_;
+    $word = "$word " if $word;
+    &make_mod_index_entry($br_id, "<tt>$str</tt> (${word}module)", 'REF') . $_;
 }
 
 sub do_cmd_bifuncindex{ &my_parword_index_helper('built-in function', @_); }
+sub do_cmd_modindex{ &my_module_index_helper('', @_); }
 sub do_cmd_bimodindex{ &my_module_index_helper('built-in', @_); }
+sub do_cmd_exmodindex{ &my_module_index_helper('extension', @_); }
 sub do_cmd_stmodindex{ &my_module_index_helper('standard', @_); }
 
 # these should be adjusted a bit....
+sub do_cmd_refmodindex{ &ref_module_index_helper('', @_); }
 sub do_cmd_refbimodindex{ &ref_module_index_helper('built-in', @_); }
+sub do_cmd_refexmodindex{ &ref_module_index_helper('extension', @_); }
 sub do_cmd_refstmodindex{ &ref_module_index_helper('standard', @_); }
 
 sub do_cmd_nodename{ &do_cmd_label(@_); }
@@ -620,6 +626,45 @@ sub do_cmd_seemodule{
 sub do_cmd_seetext{
     "<p>" . @_[0];
 }
+
+
+sub do_cmd_maketitle {
+    local($_) = @_;
+    local($the_title) = '';
+    if ($t_title) {
+	$the_title .= "<h1 align=\"center\">$t_title</h1>";
+    } else { &write_warnings("\nThis document has no title."); }
+    if ($t_author) {
+	if ($t_authorURL) {
+	    local($href) = &translate_commands($t_authorURL);
+	    $href = &make_named_href('author', $href, "<strong>${t_author}</strong>");
+	    $the_title .= "\n<p align=\"center\">$href</p>";
+	} else {
+	    $the_title .= "\n<p align=\"center\"><strong>$t_author</strong></p>";
+	}
+    } else { &write_warnings("\nThere is no author for this document."); }
+    if ($t_institute) {
+        $the_title .= "\n<p align=\"center\"><small>$t_institute</small></p>";}
+    if ($AUTHOR_ADDRESS) {
+        $the_title .= "\n<p align=\"center\"><small>$AUTHOR_ADDRESS";
+	$the_title .= "</small></p>";}
+    if ($t_affil) {
+	$the_title .= "\n<p align=\"center\"><i>$t_affil</i></p>";}
+    if ($t_date) {
+	$the_title .= "\n<p align=\"center\"><strong>$t_date</strong>";
+	if ($PYTHON_VERSION) {
+	    $the_title .= "<br><strong>Release $PYTHON_VERSION</strong>";}
+	$the_title .= "</p>"
+    }
+    if ($t_address) {
+	$the_title .= "<br>\n<p align=\"left\"><small>$t_address</small></p>";
+    } else { $the_title .= "\n<p align=\"left\">"}
+    if ($t_email) {
+	$the_title .= "\n<p align=\"left\"><small>$t_email</small></p>";
+    } else { $the_title .= "</p>" }
+    $the_title . "<p><hr>\n" . $_ ;
+}
+
 
 # These are located down here since they screw up fontlock.
 
