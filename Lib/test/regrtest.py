@@ -196,6 +196,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
     good = []
     bad = []
     skipped = []
+    resource_denieds = []
 
     if findleaks:
         try:
@@ -263,6 +264,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
             bad.append(test)
         else:
             skipped.append(test)
+            if ok == -2:
+                resource_denieds.append(test)
         if findleaks:
             gc.collect()
             if gc.garbage:
@@ -299,7 +302,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         e = _ExpectedSkips()
         plat = sys.platform
         if e.isvalid():
-            surprise = Set(skipped) - e.getexpected()
+            surprise = Set(skipped) - e.getexpected() - Set(resource_denieds)
             if surprise:
                 print count(len(surprise), "skip"), \
                       "unexpected on", plat + ":"
@@ -395,6 +398,11 @@ def runtest(test, generate, verbose, quiet, testdir = None):
                 indirect_test()
         finally:
             sys.stdout = save_stdout
+    except test_support.ResourceDenied, msg:
+        if not quiet:
+            print test, "skipped --", msg
+            sys.stdout.flush()
+        return -2
     except (ImportError, test_support.TestSkipped), msg:
         if not quiet:
             print test, "skipped --", msg

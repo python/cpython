@@ -21,6 +21,14 @@ class TestSkipped(Error):
     TestFailed.
     """
 
+class ResourceDenied(TestSkipped):
+    """Test skipped because it requested a disallowed resource.
+
+    This is raised when a test calls requires() for a resource that
+    has not be enabled.  It is used to distinguish between expected
+    and unexpected skips.
+    """
+
 verbose = 1              # Flag set to 0 by regrtest.py
 use_resources = None       # Flag set to [] by regrtest.py
 
@@ -57,7 +65,7 @@ def requires(resource, msg=None):
     if not is_resource_enabled(resource):
         if msg is None:
             msg = "Use of the `%s' resource not enabled" % resource
-        raise TestSkipped(msg)
+        raise ResourceDenied(msg)
 
 FUZZ = 1e-6
 
