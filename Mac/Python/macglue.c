@@ -100,6 +100,16 @@ extern pascal unsigned char *PLstrrchr(unsigned char *, unsigned char);
 #endif
 #endif
 
+#if TARGET_API_MAC_CARBON
+/*
+** On MacOSX StackSpace() lies: it gives the distance from heap end to stack pointer,
+** but the stack cannot grow that far due to rlimit values. We cannot get at this value
+** from Carbon, so we set a maximum to the stack here that is based on the default
+** stack limit of 512K.
+*/
+#define MAXIMUM_STACK_SIZE (256*1024)
+#endif
+
 /*
 ** We have to be careful, since we can't handle
 ** things like updates (and they'll keep coming back if we don't
@@ -429,8 +439,15 @@ PyOS_CheckStack()
 	static char *sentinel = 0;
 	static PyThreadState *thread_for_sentinel = 0;
 	
-	if ( sentinel == 0 ) {		
-		sentinel = &here - StackSpace() + MINIMUM_STACK_SIZE;
+	if ( sentinel == 0 ) {
+		unsigned long stackspace = StackSpace();
+		
+#ifdef MAXIMUM_STACK_SIZE
+	/* See the comment at the definition */
+	if ( stackspace > MAXIMUM_STACK_SIZE )
+		stackspace = MAXIMUM_STACK_SIZE;
+#endif	
+		sentinel = &here - stackspace + MINIMUM_STACK_SIZE;
 	}
 	if ( thread_for_sentinel == 0 ) {
 		thread_for_sentinel = PyThreadState_Get();
