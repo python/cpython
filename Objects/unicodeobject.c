@@ -1110,10 +1110,11 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
 					const char *errors)
 {
     PyUnicodeObject *v;
-    Py_UNICODE *p = NULL, *buf = NULL;
+    Py_UNICODE *p, *buf;
     const char *end;
-    Py_UCS4 chr;
-    
+    char* message;
+    Py_UCS4 chr = 0xffffffff; /* in case 'getcode' messes up */
+
     /* Escaped strings will always be longer than the resulting
        Unicode string, so we start with size here and then reduce the
        length after conversion to the true value. */
@@ -1122,16 +1123,18 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
         goto onError;
     if (size == 0)
         return (PyObject *)v;
+
     p = buf = PyUnicode_AS_UNICODE(v);
     end = s + size;
+
     while (s < end) {
         unsigned char c;
         Py_UNICODE x;
-        int i;
+        int i, digits;
 
         /* Non-escape characters are interpreted as Unicode ordinals */
         if (*s != '\\') {
-            *p++ = (unsigned char)*s++;
+            *p++ = (unsigned char) *s++;
             continue;
         }
 
@@ -1164,60 +1167,31 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
             *p++ = x;
             break;
 
-        /* \xXX with two hex digits */
+        /* hex escapes */
+        /* \xXX */
         case 'x':
-            for (x = 0, i = 0; i < 2; i++) {
-                c = (unsigned char)s[i];
-                if (!isxdigit(c)) {
-                    if (unicodeescape_decoding_error(&s, &x, errors,
-                                                     "truncated \\xXX"))
-                        goto onError;
-                    i++;
-                    break;
-                }
-                x = (x<<4) & ~0xF;
-                if (c >= '0' && c <= '9')
-                    x += c - '0';
-                else if (c >= 'a' && c <= 'f')
-                    x += 10 + c - 'a';
-                else
-                    x += 10 + c - 'A';
-            }
-            s += i;
-            *p++ = x;
-            break;
+            digits = 2;
+            message = "truncated \\xXX escape";
+            goto hexescape;
 
-        /* \uXXXX with 4 hex digits */
+        /* \uXXXX */
         case 'u':
-            for (x = 0, i = 0; i < 4; i++) {
-                c = (unsigned char)s[i];
-                if (!isxdigit(c)) {
-                    if (unicodeescape_decoding_error(&s, &x, errors,
-                                                     "truncated \\uXXXX"))
-                        goto onError;
-                    i++;
-                    break;
-                }
-                x = (x<<4) & ~0xF;
-                if (c >= '0' && c <= '9')
-                    x += c - '0';
-                else if (c >= 'a' && c <= 'f')
-                    x += 10 + c - 'a';
-                else
-                    x += 10 + c - 'A';
-            }
-            s += i;
-            *p++ = x;
-            break;
+            digits = 4;
+            message = "truncated \\uXXXX escape";
+            goto hexescape;
 
-        /* \UXXXXXXXX with 8 hex digits */
+        /* \UXXXXXXXX */
         case 'U':
-            for (chr = 0, i = 0; i < 8; i++) {
-                c = (unsigned char)s[i];
+            digits = 8;
+            message = "truncated \\UXXXXXXXX escape";
+        hexescape:
+            chr = 0;
+            for (i = 0; i < digits; i++) {
+                c = (unsigned char) s[i];
                 if (!isxdigit(c)) {
-                    if (unicodeescape_decoding_error(&s, &x, errors,
-                                                     "truncated \\uXXXX"))
+                    if (unicodeescape_decoding_error(&s, &x, errors, message))
                         goto onError;
+                    chr = x;
                     i++;
                     break;
                 }
@@ -1230,65 +1204,7 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                     chr += 10 + c - 'A';
             }
             s += i;
-            goto store;
-
-        case 'N':
-            /* Ok, we need to deal with Unicode Character Names now,
-             * make sure we've imported the hash table data...
-             */
-            if (ucnhash_CAPI == NULL) {
-                PyObject *mod = 0, *v = 0;
-                mod = PyImport_ImportModule("unicodedata");
-                if (mod == NULL)
-                    goto ucnhashError;
-                v = PyObject_GetAttrString(mod,"ucnhash_CAPI");
-                Py_DECREF(mod);
-                if (v == NULL)
-                    goto ucnhashError;
-                ucnhash_CAPI = PyCObject_AsVoidPtr(v);
-                Py_DECREF(v);
-                if (ucnhash_CAPI == NULL)
-                    goto ucnhashError;
-            }
-                
-            if (*s == '{') {
-                const char *start = s + 1;
-                const char *endBrace = start;
-
-                /* look for the closing brace */
-                while (*endBrace != '}' && endBrace < end)
-                    endBrace++;
-                if (endBrace != end && *endBrace == '}') {
-                    if (!ucnhash_CAPI->getcode(start, endBrace-start, &chr)) {
-                        if (unicodeescape_decoding_error(
-                                &s, &x, errors,
-                                "Invalid Unicode Character Name")
-                            )
-                            goto onError;
-                        goto ucnFallthrough;
-                    }
-                    s = endBrace + 1;
-                    goto store;
-                } else {
-                    if (unicodeescape_decoding_error(
-                            &s, &x, errors,
-                            "Unicode name missing closing brace"))
-                        goto onError;
-                    goto ucnFallthrough;
-                }
-                break;                
-            }
-            if (unicodeescape_decoding_error(
-                    &s, &x, errors,
-                    "Missing opening brace for Unicode Character Name escape"))
-                goto onError;
-ucnFallthrough:
-            /* fall through on purpose */
-		default:
-            *p++ = '\\';
-            *p++ = (unsigned char)s[-1];
-            break;
-store:
+        store:
             /* when we get here, chr is a 32-bit unicode character */
             if (chr <= 0xffff)
                 /* UCS-2 character */
@@ -1301,24 +1217,67 @@ store:
             } else {
                 if (unicodeescape_decoding_error(
                     &s, &x, errors,
-                    "Illegal Unicode character")
+                    "illegal Unicode character")
                     )
                     goto onError;
+                *p++ = x; /* store replacement character */
             }
+            break;
+
+        /* \N{name} */
+        case 'N':
+            message = "malformed \\N character escape";
+            if (ucnhash_CAPI == NULL) {
+                /* load the unicode data module */
+                PyObject *m, *v;
+                m = PyImport_ImportModule("unicodedata");
+                if (m == NULL)
+                    goto ucnhashError;
+                v = PyObject_GetAttrString(m, "ucnhash_CAPI");
+                Py_DECREF(m);
+                if (v == NULL)
+                    goto ucnhashError;
+                ucnhash_CAPI = PyCObject_AsVoidPtr(v);
+                Py_DECREF(v);
+                if (ucnhash_CAPI == NULL)
+                    goto ucnhashError;
+            }
+            if (*s == '{') {
+                const char *start = s+1;
+                /* look for the closing brace */
+                while (*s != '}' && s < end)
+                    s++;
+                if (s > start && s < end && *s == '}') {
+                    /* found a name.  look it up in the unicode database */
+                    message = "unknown Unicode character name";
+                    s++;
+                    if (ucnhash_CAPI->getcode(start, s-start-1, &chr))
+                        goto store;
+                }
+            }
+            if (unicodeescape_decoding_error(&s, &x, errors, message))
+                goto onError;
+            *p++ = x;
+            break;
+
+        default:
+            *p++ = '\\';
+            *p++ = (unsigned char)s[-1];
+            break;
         }
     }
     if (_PyUnicode_Resize(v, (int)(p - buf)))
 		goto onError;
     return (PyObject *)v;
     
- ucnhashError:
+ucnhashError:
     PyErr_SetString(
         PyExc_UnicodeError,
         "\\N escapes not supported (can't load unicodedata module)"
         );
     return NULL;
 
- onError:
+onError:
     Py_XDECREF(v);
     return NULL;
 }
