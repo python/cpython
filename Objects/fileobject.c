@@ -1020,7 +1020,7 @@ file_writelines(PyFileObject *f, PyObject *args)
 				if (line == NULL)
 					goto error;
 				Py_DECREF(v);
-				PyList_SET_ITEM(list, i, v);
+				PyList_SET_ITEM(list, i, line);
 			}
 		}
 
