@@ -566,9 +566,9 @@ from UserDict import UserDict
 class mydict(dict):
     def __new__(cls, *args, **kwargs):
         return UserDict(*args, **kwargs)
-try: mydict.fromkeys('a b c'.split())
-except TypeError: pass
-else: raise TestFailed, 'dict.fromkeys() failed to detect non-dict class.'
+ud = mydict.fromkeys('ab')
+if ud != {'a':None, 'b':None} or not isinstance(ud,UserDict):
+    raise TestFailed, 'fromkeys did not instantiate using  __new__'
 # dict.copy()
 d = {1:1, 2:2, 3:3}
 if d.copy() != {1:1, 2:2, 3:3}: raise TestFailed, 'dict copy'
