@@ -431,9 +431,9 @@ class HTTPRedirectHandler(BaseHandler):
         """
         m = req.get_method()
         if (code in (301, 302, 303, 307) and m in ("GET", "HEAD")
-            or code in (302, 303) and m == "POST"):
-            # Strictly (according to RFC 2616), 302 in response to a
-            # POST MUST NOT cause a redirection without confirmation
+            or code in (301, 302, 303) and m == "POST"):
+            # Strictly (according to RFC 2616), 301 or 302 in response
+            # to a POST MUST NOT cause a redirection without confirmation
             # from the user (of urllib2, in this case).  In practice,
             # essentially all clients do redirect in this case, so we
             # do the same.
@@ -480,9 +480,9 @@ class HTTPRedirectHandler(BaseHandler):
 
     http_error_301 = http_error_303 = http_error_307 = http_error_302
 
-    inf_msg = "The HTTP server returned a redirect error that would" \
+    inf_msg = "The HTTP server returned a redirect error that would " \
               "lead to an infinite loop.\n" \
-              "The last 302 error message was:\n"
+              "The last 30x error message was:\n"
 
 class ProxyHandler(BaseHandler):
     # Proxies must be in front
