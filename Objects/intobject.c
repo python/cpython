@@ -589,8 +589,8 @@ int_pow(PyIntObject *v, PyIntObject *w, PyIntObject *z)
 	CONVERT_TO_LONG(w, iw);
 	if (iw < 0) {
 		if ((PyObject *)z != Py_None) {
-			PyErr_SetString(PyExc_TypeError, "integer pow() arg "
-			     "3 must not be specified when arg 2 is < 0");
+			PyErr_SetString(PyExc_TypeError, "pow() 2nd argument "
+			     "cannot be negative when 3rd argument specified");
 			return NULL;
 		}
 		/* Return a float.  This works because we know that
@@ -603,7 +603,7 @@ int_pow(PyIntObject *v, PyIntObject *w, PyIntObject *z)
 		CONVERT_TO_LONG(z, iz);
 		if (iz == 0) {
 			PyErr_SetString(PyExc_ValueError,
-					"pow() arg 3 cannot be 0");
+					"pow() 3rd argument cannot be 0");
 			return NULL;
 		}
 	}
