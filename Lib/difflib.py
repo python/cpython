@@ -29,6 +29,8 @@ __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
            'Differ','IS_CHARACTER_JUNK', 'IS_LINE_JUNK', 'context_diff',
            'unified_diff']
 
+import heapq
+
 def _calculate_ratio(matches, length):
     if length:
         return 2.0 * matches / length
@@ -703,9 +705,9 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
             result.append((s.ratio(), x))
 
     # Move the best scorers to head of list
-    result.sort(reverse=True)
+    result = heapq.nlargest(result, n)
     # Strip scores for the best n matches
-    return [x for score, x in result[:n]]
+    return [x for score, x in result]
 
 def _count_leading(line, ch):
     """
