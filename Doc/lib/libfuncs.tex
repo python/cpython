@@ -688,10 +688,18 @@ strings.  The argument must be in the range [0..65535], inclusive.
 \end{funcdesc}
 
 \begin{funcdesc}{unicode}{string\optional{, encoding\optional{, errors}}}
-Decodes \var{string} using the codec for \var{encoding}.  Error
-handling is done according to \var{errors}.  The default behavior is
-to decode UTF-8 in strict mode, meaning that encoding errors raise
-\exception{ValueError}.  See also the \refmodule{codecs} module.
+Create a Unicode string from an 8-bit string \var{string} using the
+codec for \var{encoding}.  The \var{encoding} parameter is a string
+giving the name of an encoding.  Error handling is done according to
+\var{errors}; this specifies the treatment of characters which are
+invalid in the input encoding.  If \var{errors} is \code{'strict'}
+(the default), a \exception{ValueError} is raised on errors, while a
+value of \code{'ignore'} causes errors to be silently ignored, and a
+value of \code{'replace'} causes the official Unicode replacement
+character, \code{U+FFFD}, to be used to replace input characters which
+cannot be decoded.  The default behavior is to decode UTF-8 in strict
+mode, meaning that encoding errors raise \exception{ValueError}.  See
+also the \refmodule{codecs} module.
 \versionadded{2.0}
 \end{funcdesc}
 
