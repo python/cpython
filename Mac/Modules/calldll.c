@@ -29,33 +29,57 @@ PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
+/* Sanity check */
+#ifndef __powerc
+#error Please port this code to your architecture first...
+#endif
+
+/*
+** Define to include testroutines (at the end)
+*/
+#define TESTSUPPORT
+
 #include "Python.h"
 #include "macglue.h"
 #include "macdefs.h"
+#include <CodeFragments.h>
 
+/* Prototypes for routines not in any include file (shame, shame) */
 extern PyObject *ResObj_New Py_PROTO((Handle));
 extern int ResObj_Convert Py_PROTO((PyObject *, Handle *));
 
-#include <CodeFragments.h>
-
 static PyObject *ErrorObject;
 
+/* Debugging macro */
+#ifdef TESTSUPPORT
 #define PARANOID(arg) \
 	if ( arg == 0 ) {PyErr_SetString(ErrorObject, "Internal error: NULL arg!"); return 0; }
-	
-/* Prototype we use for routines */
+#else
+#define PARANOID(arg) /*pass*/
+#endif
+
+/* Prototypes we use for routines and arguments */
 
 typedef long anything;
 typedef anything (*anyroutine) Py_PROTO((...));
 
+/* Other constants */
 #define MAXNAME 31	/* Maximum size of names, for printing only */
 #define MAXARG 8	/* Maximum number of arguments */
 
 /*
-** Routines to convert arguments between Python and C
+** Routines to convert arguments between Python and C.
+** Note return-value converters return NULL if this argument (or return value)
+** doesn't return anything. The call-wrapper code collects all return values,
+** and does the expected thing based on the number of return values: return None, a single
+** value or a tuple of values.
+**
+** Hence, optional return values are also implementable.
 */
 typedef anything (*py2c_converter) Py_PROTO((PyObject *));
 typedef PyObject *(*c2py_converter) Py_PROTO((anything));
+typedef PyObject *(*rv2py_converter) Py_PROTO((anything));
+
 
 /* Dummy routine for arguments that are output-only */
 static anything
@@ -85,6 +109,14 @@ c2py_dummy(arg)
 	return 0;
 }
 
+/* Dummy routine for void return value */
+static PyObject *
+rv2py_none(arg)
+	anything arg;
+{
+	return 0;
+}
+
 /* Routine to de-allocate storage for input-only arguments */
 static PyObject *
 c2py_free(arg)
@@ -96,39 +128,21 @@ c2py_free(arg)
 }
 
 /*
-** None
+** OSErr return value.
 */
 static PyObject *
-c2py_none(arg)
+rv2py_oserr(arg)
 	anything arg;
 {
-	if ( arg )
-		free((char *)arg);
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-/*
-** OSErr
-*/
-static PyObject *
-c2py_oserr(arg)
-	anything arg;
-{
-	OSErr *ptr = (OSErr *)arg;
+	OSErr err = (OSErr)arg;
 	
-	PARANOID(arg);
-	if (*ptr) {
-		PyErr_Mac(PyMac_OSErrException, *ptr);
-		free(ptr);
-		return NULL;
-	}
-	Py_INCREF(Py_None);
-	return Py_None;
+	if (err)
+		return PyMac_Error(err);
+	return 0;
 }
 
 /*
-** integers of all sizes (PPC only)
+** Input integers of all sizes (PPC only)
 */
 static anything
 py2c_in_int(arg)
@@ -137,6 +151,19 @@ py2c_in_int(arg)
 	return PyInt_AsLong(arg);
 }
 
+/*
+** Integer return values of all sizes (PPC only)
+*/
+static PyObject *
+rv2py_int(arg)
+	anything arg;
+{
+	return PyInt_FromLong((long)arg);
+}
+
+/*
+** Integer output parameters
+*/
 static PyObject *
 c2py_out_long(arg)
 	anything arg;
@@ -235,6 +262,18 @@ c2py_out_pstring(arg)
 	return rv;
 }
 
+static PyObject *
+rv2py_pstring(arg)
+	anything arg;
+{
+	unsigned char *p = (unsigned char *)arg;
+	PyObject *rv;
+	
+	if ( arg == NULL ) return NULL;
+	rv = PyString_FromStringAndSize((char *)p+1, p[0]);
+	return rv;
+}
+
 /*
 ** C objects.
 */
@@ -262,6 +301,18 @@ c2py_out_cobject(arg)
 		rv = PyCObject_FromVoidPtr(*ptr, 0);
 	}
 	free((char *)ptr);
+	return rv;
+}
+
+static PyObject *
+rv2py_cobject(arg)
+	anything arg;
+{
+	void *ptr = (void *)arg;
+	PyObject *rv;
+	
+	if ( ptr == 0 ) return NULL;
+	rv = PyCObject_FromVoidPtr(ptr, 0);
 	return rv;
 }
 
@@ -295,30 +346,55 @@ c2py_out_handle(arg)
 	return prv;
 }
 
+static PyObject *
+rv2py_handle(arg)
+	anything arg;
+{
+	Handle rv = (Handle)arg;
+	
+	if ( rv == NULL ) return NULL;
+	return ResObj_New(rv);
+}
+
 typedef struct {
 	char *name;		/* Name */
 	py2c_converter	get;	/* Get argument */
 	int	get_uses_arg;	/* True if the above consumes an argument */
 	c2py_converter	put;	/* Put result value */
-	int	put_gives_result;	/* True if above produces a result */
 } conventry;
 
 static conventry converters[] = {
-	{"OutNone",	py2c_alloc,	0,	c2py_none,	1},
-	{"OutOSErr",	py2c_alloc,	0,	c2py_oserr,	1},
-#define OSERRORCONVERTER (&converters[1])
-	{"InInt",	py2c_in_int,	1,	c2py_dummy,	0},
-	{"OutLong",	py2c_alloc,	0,	c2py_out_long,	1},
-	{"OutShort",	py2c_alloc,	0,	c2py_out_short,	1},
-	{"OutByte",	py2c_alloc,	0,	c2py_out_byte,	1},
-	{"InString",	py2c_in_string,	1,	c2py_dummy,	0},
-	{"InPstring",	py2c_in_pstring,1,	c2py_free,	0},
-	{"OutPstring",	py2c_out_pstring,0,	c2py_out_pstring,1},
-	{"InCobject",	py2c_in_cobject,1,	c2py_dummy,	0},
-	{"OutCobject",	py2c_alloc,	0,	c2py_out_cobject,0},
-	{"InHandle",	py2c_in_handle,	1,	c2py_dummy,	0},
-	{"OutHandle",	py2c_alloc,	0,	c2py_out_handle,1},
-	{0, 0, 0, 0, 0}
+	{"InByte",	py2c_in_int,	1,	c2py_dummy},
+	{"InShort",	py2c_in_int,	1,	c2py_dummy},
+	{"InLong",	py2c_in_int,	1,	c2py_dummy},
+	{"OutLong",	py2c_alloc,	0,	c2py_out_long},
+	{"OutShort",	py2c_alloc,	0,	c2py_out_short},
+	{"OutByte",	py2c_alloc,	0,	c2py_out_byte},
+	{"InString",	py2c_in_string,	1,	c2py_dummy},
+	{"InPstring",	py2c_in_pstring,1,	c2py_free},
+	{"OutPstring",	py2c_out_pstring,0,	c2py_out_pstring},
+	{"InCobject",	py2c_in_cobject,1,	c2py_dummy},
+	{"OutCobject",	py2c_alloc,	0,	c2py_out_cobject},
+	{"InHandle",	py2c_in_handle,	1,	c2py_dummy},
+	{"OutHandle",	py2c_alloc,	0,	c2py_out_handle},
+	{0, 0, 0, 0}
+};
+
+typedef struct {
+	char *name;
+	rv2py_converter rtn;
+} rvconventry;
+
+static rvconventry rvconverters[] = {
+	{"None",	rv2py_none},
+	{"OSErr",	rv2py_oserr},
+	{"Byte",	rv2py_int},
+	{"Short",	rv2py_int},
+	{"Long",	rv2py_int},
+	{"Pstring",	rv2py_pstring},
+	{"Cobject",	rv2py_cobject},
+	{"Handle",	rv2py_handle},
+	{0, 0}
 };
 
 static conventry *
@@ -336,6 +412,21 @@ getconverter(name)
 	return 0;
 }	
 
+static rvconventry *
+getrvconverter(name)
+	char *name;
+{
+	int i;
+	char buf[256];
+	
+	for(i=0; rvconverters[i].name; i++ )
+		if ( strcmp(name, rvconverters[i].name) == 0 )
+			return &rvconverters[i];
+	sprintf(buf, "Unknown return value type: %s", name);
+	PyErr_SetString(ErrorObject, buf);
+	return 0;
+}	
+
 static int
 argparse_conv(obj, ptr)
 	PyObject *obj;
@@ -348,6 +439,23 @@ argparse_conv(obj, ptr)
 	if( (name=PyString_AsString(obj)) == NULL )
 		return 0;
 	if( (item=getconverter(name)) == NULL )
+		return 0;
+	*ptr = item;
+	return 1;
+}
+
+static int
+argparse_rvconv(obj, ptr)
+	PyObject *obj;
+	rvconventry **ptr;
+{
+	char *name;
+	int i;
+	rvconventry *item;
+	
+	if( (name=PyString_AsString(obj)) == NULL )
+		return 0;
+	if( (item=getrvconverter(name)) == NULL )
 		return 0;
 	*ptr = item;
 	return 1;
@@ -385,13 +493,14 @@ staticforward PyTypeObject Cdrtype;
 
 /* Declarations for objects of type callable */
 
+
 typedef struct {
 	PyObject_HEAD
-	cdrobject *routine;	/* The routine to call */
-	int npargs;		/* Python argument count */
-	int npreturn;		/* Python return value count */
-	int ncargs;		/* C argument count + 1 */
-	conventry *argconv[MAXARG+1];	/* Value converter list */
+	cdrobject *routine;		/* The routine to call */
+	int npargs;			/* Python argument count */
+	int ncargs;			/* C argument count + 1 */
+	rvconventry *rvconv;		/* Return value converter */
+	conventry *argconv[MAXARG];	/* Value converter list */
 } cdcobject;
 
 staticforward PyTypeObject Cdctype;
@@ -491,11 +600,11 @@ static struct PyMethodDef cdc_methods[] = {
 
 
 static cdcobject *
-newcdcobject(routine, npargs, npreturn, ncargs, argconv)
+newcdcobject(routine, npargs, ncargs, rvconv, argconv)
 	cdrobject *routine;
 	int npargs;
-	int npreturn;
 	int ncargs;
+	rvconventry *rvconv;
 	conventry *argconv[];
 {
 	cdcobject *self;
@@ -507,9 +616,9 @@ newcdcobject(routine, npargs, npreturn, ncargs, argconv)
 	self->routine = routine;
 	Py_INCREF(routine);
 	self->npargs = npargs;
-	self->npreturn = npreturn;
 	self->ncargs = ncargs;
-	for(i=0; i<MAXARG+1; i++)
+	self->rvconv = rvconv;
+	for(i=0; i<MAXARG; i++)
 		if ( i < ncargs )
 			self->argconv[i] = argconv[i];
 		else
@@ -534,8 +643,8 @@ cdc_repr(self)
 	char buf[256];
 	int i;
 	
-	sprintf(buf, "<callable %s = %s(", self->argconv[0]->name, self->routine->name);
-	for(i=1; i< self->ncargs; i++) {
+	sprintf(buf, "<callable %s = %s(", self->rvconv->name, self->routine->name);
+	for(i=0; i< self->ncargs; i++) {
 		strcat(buf, self->argconv[i]->name);
 		if ( i < self->ncargs-1 )
 			strcat(buf, ", ");
@@ -557,11 +666,13 @@ cdc_call(self, args, kwargs)
 {
 	char buf[256];
 	int i, pargindex;
-	anything c_args[MAXARG+1] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+	anything c_args[MAXARG] = {0, 0, 0, 0, 0, 0, 0, 0};
+	anything c_rv;
 	conventry *cp;
 	PyObject *curarg;
 	anyroutine func;
-	PyObject *rv0, *rv;
+	PyObject *returnvalues[MAXARG+1];
+	PyObject *rv;
 	
 	if( kwargs ) {
 		PyErr_SetString(PyExc_TypeError, "Keyword args not allowed");
@@ -594,24 +705,45 @@ cdc_call(self, args, kwargs)
 		
 	/* Call function */
 	func = self->routine->rtn;
-	*(anything *)c_args[0] = (*func)(c_args[1], c_args[2], c_args[3], c_args[4],
-			c_args[5], c_args[6], c_args[7], c_args[8]);
+	c_rv = (*func)(c_args[0], c_args[1], c_args[2], c_args[3],
+			c_args[4], c_args[5], c_args[6], c_args[7]);
 
-	/* Build return tuple (always a tuple, for now */
-	if( (rv=PyTuple_New(self->npreturn)) == NULL )
-		return NULL;
+	/* Decode return value, and store into returnvalues if needed */
 	pargindex = 0;
+	curarg = (*self->rvconv->rtn)(c_rv);
+	if ( curarg )
+		returnvalues[pargindex++] = curarg;
+		
+	/* Decode returnvalue parameters and cleanup any storage allocated */
 	for(i=0; i<self->ncargs; i++) {
 		cp = self->argconv[i];
 		curarg = (*cp->put)(c_args[i]);
-		if( cp->put_gives_result )
-			PyTuple_SET_ITEM(rv, pargindex, curarg);
+		if(curarg)
+			returnvalues[pargindex++] = curarg;
 		/* NOTE: We only check errors at the end (so we free() everything) */
 	}
 	if ( PyErr_Occurred() ) {
-		Py_DECREF(rv);
+		/* An error did occur. Free the python objects created */
+		for(i=0; i<pargindex; i++)
+			Py_XDECREF(returnvalues[i]);
 		return NULL;
 	}
+	
+	/* Zero and one return values cases are special: */
+	if ( pargindex == 0 ) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	if ( pargindex == 1 )
+		return returnvalues[0];
+		
+	/* More than one return value: put in a tuple */
+	rv = PyTuple_New(pargindex);
+	for(i=0; i<pargindex; i++)
+		if(rv)
+			PyTuple_SET_ITEM(rv, i, returnvalues[i]);
+		else
+			Py_XDECREF(returnvalues[i]);
 	return rv;
 }
 
@@ -833,23 +965,23 @@ cdll_newcall(self, args)
 	PyObject *args;
 {
 	cdrobject *routine;
-	conventry *argconv[MAXARG+1] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-	int npargs, npreturn, ncargs;
+	conventry *argconv[MAXARG] = {0, 0, 0, 0, 0, 0, 0, 0};
+	rv2py_converter rvconv;
+	int npargs, ncargs;
 
-	/* Note: the next format depends on MAXARG+1 */
+	/* Note: the next format depends on MAXARG */
 	if (!PyArg_ParseTuple(args, "O!O&|O&O&O&O&O&O&O&O&", &Cdrtype, &routine,
+		argparse_rvconv, &rvconv,
 		argparse_conv, &argconv[0], argparse_conv, &argconv[1],
 		argparse_conv, &argconv[2], argparse_conv, &argconv[3],
 		argparse_conv, &argconv[4], argparse_conv, &argconv[5],
-		argparse_conv, &argconv[6], argparse_conv, &argconv[7],
-		argparse_conv, &argconv[8]))
+		argparse_conv, &argconv[6], argparse_conv, &argconv[7]))
 		return NULL;
-	npargs = npreturn = 0;
-	for(ncargs=0; ncargs < MAXARG+1 && argconv[ncargs]; ncargs++) {
+	npargs = 0;
+	for(ncargs=0; ncargs < MAXARG && argconv[ncargs]; ncargs++) {
 		if( argconv[ncargs]->get_uses_arg ) npargs++;
-		if( argconv[ncargs]->put_gives_result ) npreturn++;
 	}
-	return (PyObject *)newcdcobject(routine, npargs, npreturn, ncargs, argconv);
+	return (PyObject *)newcdcobject(routine, npargs, ncargs, rvconv, argconv);
 }
 
 /* List of methods defined in the module */
@@ -894,10 +1026,65 @@ initcalldll()
 		Py_FatalError("can't initialize module calldll");
 }
 
+#ifdef TESTSUPPORT
+
 /* Test routine */
-int calldlltester(int a1,int  a2,int  a3,int  a4,int  a5,int  a6,int  a7,int  a8)
+int cdll_b_bbbbbbbb(char a1,char  a2,char  a3,char  a4,char  a5,char  a6,char  a7,char  a8)
 {
-	printf("Tester1: %x %x %x %x %x %x %x %x\n", a1, a2, a3, a4, a5, a6, a7, a8);
-	return a1;
+	return a1+a2+a3+a4+a5+a6+a7+a8;
 }
 
+short cdll_h_hhhhhhhh(short a1,short  a2,short  a3,short  a4,short  a5,short  a6,short  a7,short  a8)
+{
+	return a1+a2+a3+a4+a5+a6+a7+a8;
+}
+
+int cdll_l_llllllll(int a1,int  a2,int  a3,int  a4,int  a5,int  a6,int  a7,int  a8)
+{
+	return a1+a2+a3+a4+a5+a6+a7+a8;
+}
+
+void cdll_N_ssssssss(char *a1,char  *a2,char  *a3,char  *a4,char  *a5,char  *a6,char  *a7,char *a8)
+{
+	printf("cdll_N_ssssssss args: %s %s %s %s %s %s %s %s\n", a1, a2, a3, a4, 
+			a5, a6, a7, a8);
+}
+
+OSErr cdll_o_l(long l)
+{
+	return (OSErr)l;
+}
+
+void cdll_N_pp(unsigned char *in, unsigned char *out)
+{
+	out[0] = in[0] + 5;
+	strcpy((char *)out+1, "Was: ");
+	memcpy(out+6, in+1, in[0]);
+}
+
+void cdll_N_bb(char a1, char *a2)
+{
+	*a2 = a1;
+}
+
+void cdll_N_hh(short a1, short *a2)
+{
+	*a2 = a1;
+}
+
+void cdll_N_ll(long a1, long *a2)
+{
+	*a2 = a1;
+}
+
+void cdll_N_sH(char *a1, Handle a2)
+{
+	int len;
+	
+	len = strlen(a1);
+	SetHandleSize(a2, len);
+	HLock(a2);
+	memcpy(*a2, a1, len);
+	HUnlock(a2);
+}
+#endif
