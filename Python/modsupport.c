@@ -379,3 +379,32 @@ getshortlistarg(args, a, n)
 	}
 	return 1;
 }
+
+int
+getdoublearg(args, px)
+	register object *args;
+	double *px;
+{
+	if (args == NULL)
+		return err_badarg();
+	if (is_floatobject(args)) {
+		*px = getfloatvalue(args);
+		return 1;
+	}
+	if (is_intobject(args)) {
+		*px = getintvalue(args);
+		return 1;
+	}
+	return err_badarg();
+}
+
+int
+get2doublearg(args, px, py)
+	register object *args;
+	double *px, *py;
+{
+	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 2)
+		return err_badarg();
+	return getdoublearg(gettupleitem(args, 0), px) &&
+		getdoublearg(gettupleitem(args, 1), py);
+}
