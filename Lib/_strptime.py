@@ -415,12 +415,19 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                     hour = int(found_dict['H'])
                 else:
                     hour = int(found_dict['I'])
-                    if found_dict.has_key('p'):
-                        if found_dict['p'] == locale_time.am_pm[1]:
+                    ampm = found_dict.get('p')
+                    if ampm == locale_time.am_pm[0]:
+                        # We're in AM so the hour is correct unless we're
+                        # looking at 12 midnight.
+                        # 12 midnight == 12 AM == hour 0
+                        if hour == 12:
+                            hour = 0
+                    elif ampm == locale_time.am_pm[1]:
+                        # We're in PM so we need to add 12 to the hour unless
+                        # we're looking at 12 noon.
+                        # 12 noon == 12 PM == hour 12
+                        if hour != 12:
                             hour += 12
-                        else:
-                            if hour is 12:
-                                hour = 0
             elif group_key is 'M':
                 minute = int(found_dict['M'])
             elif group_key is 'S':
