@@ -1,4 +1,4 @@
-.TH PYTHON "1" "20 August, 1999"
+.TH PYTHON "1" "5 September, 2000"
 .SH NAME
 python \- an interpreted, interactive, object-oriented programming language
 .SH SYNOPSIS
@@ -24,12 +24,8 @@ python \- an interpreted, interactive, object-oriented programming language
 [
 .B \-v
 ]
-.br
-       [
-.B \-x
-]
 [
-.B \-X
+.B \-x
 ]
 .br
        [
@@ -52,8 +48,8 @@ The Python Library Reference documents built-in and standard types,
 constants, functions and modules.
 Finally, the Python Reference Manual describes the syntax and
 semantics of the core language in (perhaps too) much detail.
-(Information on locating these documents is included in
-.B "SEE ALSO"
+(These documents may be located via the
+.B "INTERNET RESOURCES"
 below; they may be installed on your system as well.)
 .PP
 Python's basic power can be extended with your own modules written in
@@ -108,11 +104,6 @@ Skip the first line of the source.  This is intended for a DOS
 specific hack only.  Warning: the line numbers in error messages will
 be off by one!
 .TP
-.B \-X
-Make the standard exceptions strings instead of classes.
-Use for backward compatibility with old code only.  This is not
-necessary for most uses of string exceptions.
-.TP
 .BI "\-c " command
 Specify the command to execute (see next section).
 This terminates the option list (following options are passed as
@@ -144,8 +135,8 @@ which is a list of strings (you must first
 .I import sys
 to be able to access it).
 If no script name is given,
-.I sys.argv
-is empty; if
+.I sys.argv[0]
+is an empty string; if
 .B \-c
 is used,
 .I sys.argv[0]
@@ -244,56 +235,36 @@ the \fB\-u\fP option.
 .IP PYTHONVERBOSE
 If this is set to a non-empty string it is equivalent to specifying
 the \fB\-v\fP option.
-.SH SEE ALSO
-.IP "Python Tutorial"
-URL: http://www.python.org/doc/tut/tut.html
-.IP "Python Library Reference"
-URL: http://www.python.org/doc/lib/lib.html
-.IP "Python Reference Manual"
-URL: http://www.python.org/doc/ref/ref.html
-.IP "Extending and Embedding the Python Interpreter"
-URL: http://www.python.org/doc/ext/ext.html
-.IP "Python/C API"
-URL: http://www.python.org/doc/api/api.html
-.PP
-Downloadable versions of these documents in many formats are available
-at the Python website; see \fB\INTERNET RESOURCES\fP below.
 .SH AUTHOR
 .nf
 Guido van Rossum
-CNRI
-1895 Preston White Drive
-Reston, VA 20191
+BeOpen.com
+160 Saratoga Avenue
+Santa Clara, CA 95051
 USA
 .PP
-E-mail: guido@cnri.reston.va.us, guido@python.org
+E-mail: guido@beopen.com, guido@python.org
 .fi
 .PP
 And a cast of thousands.
 .SH INTERNET RESOURCES
-Web site: http://www.python.org
+Main website: http://www.python.org
 .br
-FTP site: ftp://ftp.python.org
+BeOpen development team: http://pythonlabs.com
+.br
+Community website: http://starship.python.net
+.br
+Developer resources:
+.br
+  http://sourceforge.net/project/?group_id=5470
+.br
+FTP: ftp://ftp.python.org/pub/python
+.br
+Module repository: http://www.vex.net/parnassus/
 .br
 Newsgroups: comp.lang.python, comp.lang.python.announce
-.PP
-There are many mirror sites; a current list is available at
-http://www.python.org/mirrors.html.
-.PP
-The \fI\Python Software Activity\fP provides many mailing lists which
-serve various special interests within the Python community;
-information on these special interest groups is available at
-http://www.python.org/sigs/.
-.SH COPYRIGHT
-Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
-The Netherlands.
-.IP " "
-All Rights Reserved
-.PP
-Copyright (c) 2000, BeOpen.com.
-Copyright (c) 1995-2000, Corporation for National Research Initiatives.
-Copyright (c) 1990-1995, Stichting Mathematisch Centrum.
-All rights reserved.
-
-See the file "Misc/COPYRIGHT" for information on usage and
-redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+.SH LICENSING
+Python is distributed under an Open Source license.  See the file
+"LICENSE" in the Python source distribution for information on terms &
+conditions for accessing and otherwise using Python and for a
+DISCLAIMER OF ALL WARRANTIES.
