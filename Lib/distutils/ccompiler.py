@@ -492,7 +492,6 @@ class CCompiler:
                  debug=0,
                  extra_preargs=None,
                  extra_postargs=None):
-
         """Compile one or more source files.  'sources' must be a list of
         filenames, most likely C/C++ files, but in reality anything that
         can be handled by a particular compiler and compiler class
@@ -572,8 +571,8 @@ class CCompiler:
                          export_symbols=None,
                          debug=0,
                          extra_preargs=None,
-                         extra_postargs=None):
-
+                         extra_postargs=None,
+                         build_temp=None):
         """Link a bunch of stuff together to create a shared library file.
         Similar semantics to 'create_static_lib()', with the addition of
         other libraries to link against and directories to search for them.
@@ -624,7 +623,8 @@ class CCompiler:
                             export_symbols=None,
                             debug=0,
                             extra_preargs=None,
-                            extra_postargs=None):
+                            extra_postargs=None,
+                            build_temp=None):
         """Link a bunch of stuff together to create a shared object file.
         Much like 'link_shared_lib()', except the output filename is
         explicitly supplied as 'output_filename'.  If 'output_dir' is
@@ -814,6 +814,8 @@ compiler_class = { 'unix':    ('unixccompiler', 'UnixCCompiler',
                                "Cygwin port of GNU C Compiler for Win32"),
                    'mingw32': ('cygwinccompiler', 'Mingw32CCompiler',
                                "Mingw32 port of GNU C Compiler for Win32"),
+                   'bcpp':    ('bcppcompiler', 'BCPPCompiler',
+                               "Borland C++ Compiler"),
                  }
 
 def show_compilers():

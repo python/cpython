@@ -74,6 +74,7 @@ class UnixCCompiler (CCompiler):
     static_lib_format = shared_lib_format = "lib%s%s"
 
 
+
     def __init__ (self,
                   verbose=0,
                   dry_run=0,
@@ -199,7 +200,9 @@ class UnixCCompiler (CCompiler):
                          export_symbols=None,
                          debug=0,
                          extra_preargs=None,
-                         extra_postargs=None):
+                         extra_postargs=None,
+                         build_temp=None):
+
         self.link_shared_object (
             objects,
             self.shared_library_filename (output_libname),
@@ -210,7 +213,8 @@ class UnixCCompiler (CCompiler):
             export_symbols,
             debug,
             extra_preargs,
-            extra_postargs)
+            extra_postargs,
+            build_temp)
         
 
     def link_shared_object (self,
@@ -223,7 +227,8 @@ class UnixCCompiler (CCompiler):
                             export_symbols=None,
                             debug=0,
                             extra_preargs=None,
-                            extra_postargs=None):
+                            extra_postargs=None,
+                            build_temp=None):
 
         (objects, output_dir) = self._fix_object_args (objects, output_dir)
         (libraries, library_dirs, runtime_library_dirs) = \
