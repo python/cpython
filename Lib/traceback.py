@@ -1,11 +1,20 @@
 # Format and print Python stack traces
+#
+# updated to take optional "file" named parameter
+#    by Tommy Burnette, 9/20/95
 
 import linecache
 import string
 import sys
 import types
 
-def print_tb(tb, limit = None):
+def _print(file, str='', terminator='\n'):
+	file.write(str+terminator)
+	
+
+def print_tb(tb, limit=None, file=None):
+	if not file:
+		file = sys.stderr
 	if limit is None:
 		if hasattr(sys, 'tracebacklimit'):
 			limit = sys.tracebacklimit
@@ -16,9 +25,10 @@ def print_tb(tb, limit = None):
 		co = f.f_code
 		filename = co.co_filename
 		name = co.co_name
-		print '  File "%s", line %d, in %s' % (filename,lineno,name)
+		_print(file,
+		       '  File "%s", line %d, in %s' % (filename,lineno,name))
 		line = linecache.getline(filename, lineno)
-		if line: print '    ' + string.strip(line)
+		if line: _print(file, '    ' + string.strip(line))
 		tb = tb.tb_next
 		n = n+1
 
@@ -52,12 +62,16 @@ def extract_tb(tb, limit = None):
 	return list
 
 
-def print_exception(etype, value, tb, limit = None):
+def print_exception(etype, value, tb, limit=None, file=None):
+	if not file:
+		file = sys.stderr
 	if tb:
-		print 'Traceback (innermost last):'
-		print_tb(tb, limit)
-	for line in format_exception_only(etype, value):
-		print line,
+		_print(file, 'Traceback (innermost last):')
+		print_tb(tb, limit, file)
+	lines = format_exception_only(etype, value)
+	for line in lines[:-1]:
+		_print(file, line, ' ')
+	_print(file, lines[-1], '')
 
 def format_exception(etype, value, tb, limit = None):
 	if tb:
@@ -101,10 +115,14 @@ def format_exception_only(etype, value):
 	return list
 
 
-def print_exc(limit = None):
+def print_exc(limit=None, file=None):
+	if not file:
+		file = sys.stderr
 	print_exception(sys.exc_type, sys.exc_value, sys.exc_traceback,
-			limit)
+			limit, file)
 
-def print_last(limit = None):
+def print_last(limit=None, file=None):
+	if not file:
+		file = sys.stderr
 	print_exception(sys.last_type, sys.last_value, sys.last_traceback,
-			limit)
+			limit, file)
