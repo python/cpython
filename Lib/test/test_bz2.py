@@ -218,6 +218,12 @@ class BZ2FileTest(BaseTest):
         self.assertEqual(bz2f.read(), self.TEXT)
         bz2f.close()
 
+    def testOpenDel(self):
+        self.createTempFile()
+        for i in xrange(10000):
+            o = BZ2File(self.filename)
+            del o
+
 class BZ2CompressorTest(BaseTest):
     def testCompress(self):
         # "Test BZ2Compressor.compress()/flush()"
