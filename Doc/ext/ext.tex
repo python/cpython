@@ -879,7 +879,7 @@ program terminates.  This is called a \dfn{memory leak}.  On the other
 hand, if a program calls \code{free()} for a block and then continues
 to use the block, it creates a conflict with re-use of the block
 through another \code{malloc()} call.  This is called \dfn{using freed
-memory} has the same bad consequences as referencing uninitialized
+memory}.  It has the same bad consequences as referencing uninitialized
 data --- core dumps, wrong results, mysterious crashes.
 
 Common causes of memory leaks are unusual paths through the code.  For
