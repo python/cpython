@@ -148,10 +148,13 @@ operator operator.c	# operator.add() and similar goodies
 fcntl fcntlmodule.c	# fcntl(2) and ioctl(2)
 pwd pwdmodule.c		# pwd(3) 
 grp grpmodule.c		# grp(3)
-crypt cryptmodule.c # -lcrypt	# crypt(3); needs -lcrypt on some systems
 select selectmodule.c	# select(2); not on ancient System V
 socket socketmodule.c	# socket(2); not on ancient System V
 errno errnomodule.c	# posix (UNIX) errno values
+
+# The crypt module is now disabled by default because it breaks builds
+# on many systems (where -lcrypt is needed), e.g. Linux (I believe).
+#crypt cryptmodule.c # -lcrypt	# crypt(3); needs -lcrypt on some systems
 
 
 # Some more UNIX dependent modules -- off by default, since these
@@ -273,7 +276,7 @@ TKPATH=:lib-tk
 
 # *** Always uncomment this (leave the leading underscore in!):
 # _tkinter _tkinter.c tkappinit.c -DWITH_APPINIT \
-# *** Uncommend and edit to reflect where your X11 header files are:
+# *** Uncomment and edit to reflect where your X11 header files are:
 #	-I/usr/X11R6/include \
 # *** Or uncomment this for Solaris:
 #	-I/usr/openwin/include \
@@ -285,8 +288,6 @@ TKPATH=:lib-tk
 #	-DWITH_BLT -I/usr/local/blt/blt8.0-unoff/include -lBLT8.0 \
 # *** Uncomment and edit for PIL (TkImaging) extension only:
 #	-DWITH_PIL -I../Extensions/Imaging/libImaging  tkImaging.c \
-# *** Uncomment and edit for Mesa (what's Mesa?):
-#	-lGL -lGLU -lMesatk -lMesaaux \
 # *** Uncomment and edit for TOGL extension only:
 #	-DWITH_TOGL togl.c \
 # *** Uncomment and edit to reflect where your Tcl/Tk libraries are:
@@ -297,9 +298,10 @@ TKPATH=:lib-tk
 #	-L/usr/X11R6/lib \
 # *** Or uncomment this for Solaris:
 #	-L/usr/openwin/lib \
+# *** Uncomment these for TOGL extension only:
+#	-lGL -lGLU -lXext -lXmu \
 # *** Always uncomment this; X11 libraries to link with:
-#	-lX11 -lXext -lXmu
-
+#	-lX11
 
 # Lance Ellinghaus's modules:
 
