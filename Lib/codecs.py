@@ -67,15 +67,22 @@ class Codec:
 
     """ Defines the interface for stateless encoders/decoders.
 
-        The .encode()/.decode() methods may implement different error
+        The .encode()/.decode() methods may use different error
         handling schemes by providing the errors argument. These
-        string values are defined:
+        string values are predefined:
 
          'strict' - raise a ValueError error (or a subclass)
          'ignore' - ignore the character and continue with the next
          'replace' - replace with a suitable replacement character;
                     Python will use the official U+FFFD REPLACEMENT
-                    CHARACTER for the builtin Unicode codecs.
+                    CHARACTER for the builtin Unicode codecs on
+                    decoding and '?' on encoding.
+         'xmlcharrefreplace' - Replace with the appropriate XML
+                               character reference (only for encoding).
+         'backslashreplace'  - Replace with backslashed escape sequences
+                               (only for encoding).
+
+        The set of allowed values can be extended via register_error.
 
     """
     def encode(self, input, errors='strict'):
@@ -136,14 +143,20 @@ class StreamWriter(Codec):
             stream must be a file-like object open for writing
             (binary) data.
 
-            The StreamWriter may implement different error handling
+            The StreamWriter may use different error handling
             schemes by providing the errors keyword argument. These
-            parameters are defined:
+            parameters are predefined:
 
              'strict' - raise a ValueError (or a subclass)
              'ignore' - ignore the character and continue with the next
              'replace'- replace with a suitable replacement character
+             'xmlcharrefreplace' - Replace with the appropriate XML
+                                   character reference.
+             'backslashreplace'  - Replace with backslashed escape
+                                   sequences (only for encoding).
 
+            The set of allowed parameter values can be extended via
+            register_error.
         """
         self.stream = stream
         self.errors = errors
@@ -192,14 +205,16 @@ class StreamReader(Codec):
             stream must be a file-like object open for reading
             (binary) data.
 
-            The StreamReader may implement different error handling
+            The StreamReader may use different error handling
             schemes by providing the errors keyword argument. These
-            parameters are defined:
+            parameters are predefined:
 
              'strict' - raise a ValueError (or a subclass)
              'ignore' - ignore the character and continue with the next
              'replace'- replace with a suitable replacement character;
 
+            The set of allowed parameter values can be extended via
+            register_error.
         """
         self.stream = stream
         self.errors = errors
