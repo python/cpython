@@ -8,6 +8,9 @@ import string
 
 version = '0.3'
 
+class Error(RuntimeError):
+    pass
+
 # Regular expressions used for parsing
 
 _S = '[ \t\r\n]+'                       # white space
@@ -309,7 +312,7 @@ class XMLParser:
                                                               'encoding',
                                                               'standalone')
                     if version[1:-1] != '1.0':
-                        raise RuntimeError, 'only XML version 1.0 supported'
+                        raise Error('only XML version 1.0 supported')
                     if encoding: encoding = encoding[1:-1]
                     if standalone: standalone = standalone[1:-1]
                     self.handle_xml(encoding, standalone)
@@ -390,7 +393,7 @@ class XMLParser:
                 i = i+1
                 continue
             else:
-                raise RuntimeError, 'neither < nor & ??'
+                raise Error('neither < nor & ??')
             # We get here only if incomplete matches but
             # nothing else
             break
@@ -419,7 +422,7 @@ class XMLParser:
     def parse_comment(self, i):
         rawdata = self.rawdata
         if rawdata[i:i+4] <> '<!--':
-            raise RuntimeError, 'unexpected call to handle_comment'
+            raise Error('unexpected call to handle_comment')
         res = commentclose.search(rawdata, i+4)
         if res is None:
             return -1
@@ -485,7 +488,7 @@ class XMLParser:
     def parse_cdata(self, i):
         rawdata = self.rawdata
         if rawdata[i:i+9] <> '<![CDATA[':
-            raise RuntimeError, 'unexpected call to parse_cdata'
+            raise Error('unexpected call to parse_cdata')
         res = cdataclose.search(rawdata, i+9)
         if res is None:
             return -1
@@ -509,7 +512,7 @@ class XMLParser:
             self.syntax_error('illegal character in processing instruction')
         res = tagfind.match(rawdata, i+2)
         if res is None:
-            raise RuntimeError, 'unexpected call to parse_proc'
+            raise Error('unexpected call to parse_proc')
         k = res.end(0)
         name = res.group(0)
         if self.__map_case:
@@ -622,9 +625,13 @@ class XMLParser:
                 nstag = prefix + ':' + nstag # undo split
             self.stack[-1] = tagname, nsdict, nstag
         # translate namespace of attributes
+        attrnamemap = {} # map from new name to old name (used for error reporting)
+        for key in attrdict.keys():
+            attrnamemap[key] = key
         if self.__use_namespaces:
             nattrdict = {}
             for key, val in attrdict.items():
+                okey = key
                 res = qname.match(key)
                 if res is not None:
                     aprefix, key = res.group('prefix', 'local')
@@ -645,12 +652,13 @@ class XMLParser:
                     elif ns is not None:
                         key = ns + ' ' + key
                 nattrdict[key] = val
+                attrnamemap[key] = okey
             attrdict = nattrdict
         attributes = self.attributes.get(nstag)
         if attributes is not None:
             for key in attrdict.keys():
                 if not attributes.has_key(key):
-                    self.syntax_error("unknown attribute `%s' in tag `%s'" % (key, tagname))
+                    self.syntax_error("unknown attribute `%s' in tag `%s'" % (attrnamemap[key], tagname))
             for key, val in attributes.items():
                 if val is not None and not attrdict.has_key(key):
                     attrdict[key] = val
@@ -783,7 +791,7 @@ class XMLParser:
 
     # Example -- handle relatively harmless syntax errors, could be overridden
     def syntax_error(self, message):
-        raise RuntimeError, 'Syntax error at line %d: %s' % (self.lineno, message)
+        raise Error('Syntax error at line %d: %s' % (self.lineno, message))
 
     # To be overridden -- handlers for unknown objects
     def unknown_starttag(self, tag, attrs): pass
@@ -906,7 +914,7 @@ def test(args = None):
             for c in data:
                 x.feed(c)
             x.close()
-    except RuntimeError, msg:
+    except Error, msg:
         t1 = time()
         print msg
         if do_time:
