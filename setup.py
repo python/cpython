@@ -327,7 +327,7 @@ class PyBuildExt(build_ext):
         # bisect
         exts.append( Extension("_bisect", ["_bisectmodule.c"]) )
         # heapq
-        exts.append( Extension("heapq", ["heapqmodule.c"]) )
+        exts.append( Extension("_heapq", ["_heapqmodule.c"]) )
         # operator.add() and similar goodies
         exts.append( Extension('operator', ['operator.c']) )
         # Python C API test module
