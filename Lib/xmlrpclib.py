@@ -386,6 +386,12 @@ def _datetime(data):
 #
 # @param data An 8-bit string containing arbitrary data.
 
+import base64
+try:
+    import cStringIO as StringIO
+except ImportError:
+    import StringIO
+
 class Binary:
     """Wrapper for binary data."""
 
@@ -406,11 +412,9 @@ class Binary:
         return cmp(self.data, other)
 
     def decode(self, data):
-        import base64
         self.data = base64.decodestring(data)
 
     def encode(self, out):
-        import base64, StringIO
         out.write("<value><base64>\n")
         base64.encode(StringIO.StringIO(self.data), out)
         out.write("</base64></value>\n")
