@@ -366,19 +366,25 @@ expression that was raised in the current scope.
 Otherwose, \keyword{raise} evaluates its first expression, which must yield
 a string, class, or instance object.  If there is a second expression,
 this is evaluated, else \code{None} is substituted.  If the first
-expression is a class object, then the second expression must be an
-instance of that class or one of its derivatives.  If the first
+expression is a class object, then the second expression may be an
+instance of that class or one of its derivatives, and then that
+instance is raised.  If the second expression is not such an instance,
+the given class is instantiated.  The argument list for the
+instantiation is determined as follows: if the second expression is a
+tuple, it is used as the argument list; if it is \code{None}, the
+argument list is empty; otherwise, the argument list consists of a
+single argument which is the second expression.  If the first
 expression is an instance object, the second expression must be
 \code{None}.
 \index{exception}
 \indexii{raising}{exception}
 
-If the first object is a class or string, it then raises the exception
+If the first object is a string, it then raises the exception
 identified by the first object, with the second one (or \code{None})
-as its parameter.  If the first object is an instance, it raises the
-exception identified by the class of the object, with the instance as
-its parameter (and there should be no second object, or the second
-object should be \code{None}).
+as its parameter.  If the first object is a class or instance,
+it raises the exception identified by the class of the instance
+determined in the previous step, with the instance as
+its parameter.
 
 If a third object is present, and it is not \code{None}, it should be
 a traceback object (see section \ref{traceback}), and it is
