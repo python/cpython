@@ -413,7 +413,7 @@ contents of the line buffer.\
 static struct PyMethodDef readline_methods[] =
 {
 	{"parse_and_bind", parse_and_bind, METH_VARARGS, doc_parse_and_bind},
-	{"get_line_buffer", get_line_buffer, 
+	{"get_line_buffer", (PyCFunction)get_line_buffer, 
 	 METH_NOARGS, doc_get_line_buffer},
 	{"insert_text", insert_text, METH_VARARGS, doc_insert_text},
 	{"redisplay", (PyCFunction)redisplay, METH_NOARGS, doc_redisplay},
@@ -424,20 +424,20 @@ static struct PyMethodDef readline_methods[] =
 	 METH_VARARGS, doc_write_history_file},
 	{"get_history_item", get_history_item,
 	 METH_VARARGS, doc_get_history_item},
-	{"get_current_history_length", get_current_history_length,
+	{"get_current_history_length", (PyCFunction)get_current_history_length,
 	 METH_NOARGS, doc_get_current_history_length},
  	{"set_history_length", set_history_length, 
 	 METH_VARARGS, set_history_length_doc},
  	{"get_history_length", get_history_length, 
 	 METH_VARARGS, get_history_length_doc},
 	{"set_completer", set_completer, METH_VARARGS, doc_set_completer},
-	{"get_begidx", get_begidx, METH_NOARGS, doc_get_begidx},
-	{"get_endidx", get_endidx, METH_NOARGS, doc_get_endidx},
+	{"get_begidx", (PyCFunction)get_begidx, METH_NOARGS, doc_get_begidx},
+	{"get_endidx", (PyCFunction)get_endidx, METH_NOARGS, doc_get_endidx},
 
 	{"set_completer_delims", set_completer_delims, 
 	 METH_VARARGS, doc_set_completer_delims},
 	{"add_history", py_add_history, METH_VARARGS, doc_add_history},
-	{"get_completer_delims", get_completer_delims, 
+	{"get_completer_delims", (PyCFunction)get_completer_delims, 
 	 METH_NOARGS, doc_get_completer_delims},
 	
 	{"set_startup_hook", set_startup_hook, METH_VARARGS, doc_set_startup_hook},
