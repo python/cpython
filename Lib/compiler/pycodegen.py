@@ -28,6 +28,11 @@ callfunc_opcode_info = {
     (1,1) : "CALL_FUNCTION_VAR_KW",
 }
 
+LOOP = 1
+EXCEPT = 2
+TRY_FINALLY = 3
+END_FINALLY = 4
+
 def compile(filename, display=0):
     f = open(filename)
     buf = f.read()
@@ -142,7 +147,7 @@ class CodeGenerator:
         self.checkClass()
         self.filename = filename
         self.locals = misc.Stack()
-        self.loops = misc.Stack()
+        self.setups = misc.Stack()
         self.curStack = 0
         self.maxStack = 0
         self.last_lineno = None
@@ -327,7 +332,7 @@ class CodeGenerator:
         self.emit('SETUP_LOOP', after)
 
         self.nextBlock(loop)
-        self.loops.push(loop)
+        self.setups.push((LOOP, loop))
 
         self.set_lineno(node, force=1)
         self.visit(node.test)
@@ -341,7 +346,7 @@ class CodeGenerator:
         self.startBlock(else_) # or just the POPs if not else clause
         self.emit('POP_TOP')
         self.emit('POP_BLOCK')
-        self.loops.pop()
+        self.setups.pop()
         if node.else_:
             self.visit(node.else_)
         self.nextBlock(after)
@@ -350,7 +355,7 @@ class CodeGenerator:
         start = self.newBlock()
         anchor = self.newBlock()
         after = self.newBlock()
-        self.loops.push(start)
+        self.setups.push((LOOP, start))
 
         self.set_lineno(node)
         self.emit('SETUP_LOOP', after)
@@ -365,26 +370,44 @@ class CodeGenerator:
         self.emit('JUMP_ABSOLUTE', start)
         self.nextBlock(anchor)
         self.emit('POP_BLOCK')
-        self.loops.pop()
+        self.setups.pop()
         if node.else_:
             self.visit(node.else_)
         self.nextBlock(after)
 
     def visitBreak(self, node):
-        if not self.loops:
+        if not self.setups:
             raise SyntaxError, "'break' outside loop (%s, %d)" % \
                   (self.filename, node.lineno)
         self.set_lineno(node)
         self.emit('BREAK_LOOP')
 
     def visitContinue(self, node):
-        if not self.loops:
+        if not self.setups:
             raise SyntaxError, "'continue' outside loop (%s, %d)" % \
                   (self.filename, node.lineno)
-        l = self.loops.top()
-        self.set_lineno(node)
-        self.emit('JUMP_ABSOLUTE', l)
-        self.nextBlock()
+        kind, block = self.setups.top()
+        if kind == LOOP:
+            self.set_lineno(node)
+            self.emit('JUMP_ABSOLUTE', block)
+            self.nextBlock()
+        elif kind == EXCEPT or kind == TRY_FINALLY:
+            self.set_lineno(node)
+            # find the block that starts the loop
+            top = len(self.setups)
+            while top > 0:
+                top = top - 1
+                kind, loop_block = self.setups[top]
+                if kind == LOOP:
+                    break
+            if kind != LOOP:
+                raise SyntaxError, "'continue' outside loop (%s, %d)" % \
+                      (self.filename, node.lineno)
+            self.emit('CONTINUE_LOOP', loop_block)
+            self.nextBlock()
+        elif kind == END_FINALLY:
+            msg = "'continue' not allowed inside 'finally' clause (%s, %d)"  
+            raise SyntaxError, msg % (self.filename, node.lineno)
 
     def visitTest(self, node, jump):
         end = self.newBlock()
@@ -529,6 +552,7 @@ class CodeGenerator:
         self.emit('RAISE_VARARGS', n)
 
     def visitTryExcept(self, node):
+        body = self.newBlock()
         handlers = self.newBlock()
         end = self.newBlock()
         if node.else_:
@@ -537,9 +561,11 @@ class CodeGenerator:
             lElse = end
         self.set_lineno(node)
         self.emit('SETUP_EXCEPT', handlers)
-        self.nextBlock()
+        self.nextBlock(body)
+        self.setups.push((EXCEPT, body))
         self.visit(node.body)
         self.emit('POP_BLOCK')
+        self.setups.pop()
         self.emit('JUMP_FORWARD', lElse)
         self.startBlock(handlers)
         
@@ -570,22 +596,28 @@ class CodeGenerator:
             if expr: # XXX
                 self.emit('POP_TOP')
         self.emit('END_FINALLY')
+        self.setups.pop()
         if node.else_:
             self.nextBlock(lElse)
             self.visit(node.else_)
         self.nextBlock(end)
     
     def visitTryFinally(self, node):
+        body = self.newBlock()
         final = self.newBlock()
         self.set_lineno(node)
         self.emit('SETUP_FINALLY', final)
-        self.nextBlock()
+        self.nextBlock(body)
+        self.setups.push((TRY_FINALLY, body))
         self.visit(node.body)
         self.emit('POP_BLOCK')
+        self.setups.pop()
         self.emit('LOAD_CONST', None)
         self.nextBlock(final)
+        self.setups.push((END_FINALLY, final))
         self.visit(node.final)
         self.emit('END_FINALLY')
+        self.setups.pop()
 
     # misc
 
