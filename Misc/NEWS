@@ -107,6 +107,8 @@ Extension modules
   this is the last release_lock() call.  You can check with
   imp.lock_held().  (SF bug #580952 and patch #683257.)
 
+- Change to cPickle to match pickle.py (see below and PEP 307).
+
 - Fix some bugs in the parser module.  SF bug #678518.
 
 - Thanks to Scott David Daniels, a subtle bug in how the zlib
@@ -133,6 +135,8 @@ Extension modules
 
 - Fix a crash on Solaris that occurred when calling close() on
   an mmap'ed file which was already closed.  (SF patch #665913)
+
+- Fixed serveral serious bugs in the zipimport implementation.
 
 - datetime changes:
 
@@ -239,6 +243,19 @@ Extension modules
 
 Library
 -------
+
+- The logging module was updated slightly; the WARN level was renamed
+  to WARNING, and the matching function/method warn() to warning().
+
+- The pickle and cPickle modules were updated with a new pickling
+  protocol (documented by pickletools.py, see below) and several
+  extensions to the pickle customization API (__reduce__, __setstate__
+  etc.).  The copy module now uses more of the pickle customization
+  API to copy objects that don't implement __copy__ or __deepcopy__.
+  See PEP 307 for details.
+
+- The distutils "register" command now uses http://www.python.org/pypi
+  as the default repository.  (See PEP 301.)
 
 - the platform dependent path related variables sep, altsep, extsep,
   pathsep, curdir, pardir and defpath are now defined in the platform
@@ -354,7 +371,16 @@ C API
 Tests
 -----
 
-- Several tests weren't being run.  Now they are.
+- Several tests weren't being run rom regrtest.py (test_timeout.py,
+  test_tarfile.py, test_netrc.py, test_multifile.py,
+  test_importhooks.py and test_imp.py).  Now they are.  (Note to
+  developers: please read Lib/test/README when creating a new test, to
+  make sure to do it right!  All tests need to use either unittest or
+  pydoc.)
+
+- Added test_posix.py, a test suite for the posix module.
+
+- Added test_hexoct.py, a test suite for hex/oct constant folding.
 
 Windows
 -------
@@ -370,7 +396,7 @@ Windows
   release without strong cryptography.
 
 - sys.path[0], if it contains a directory name, is now always an
-  absolute pathname.
+  absolute pathname. (SF patch #664376.)
 
 - The new logging package is now installed by the Windows installer.  It
   wasn't in 2.3a1 due to oversight.
