@@ -1164,55 +1164,54 @@ file_write(PyFileObject *f, PyObject *args)
 }
 
 static PyObject *
-file_writelines(PyFileObject *f, PyObject *args)
+file_writelines(PyFileObject *f, PyObject *seq)
 {
 #define CHUNKSIZE 1000
 	PyObject *list, *line;
+	PyObject *it;	/* iter(seq) */
 	PyObject *result;
 	int i, j, index, len, nwritten, islist;
 
+	assert(seq != NULL);
 	if (f->f_fp == NULL)
 		return err_closed();
-	if (args == NULL || !PySequence_Check(args)) {
-		PyErr_SetString(PyExc_TypeError,
-			   "writelines() argument must be a sequence of strings");
-		return NULL;
+
+	result = NULL;
+	list = NULL;
+	islist = PyList_Check(seq);
+	if  (islist)
+		it = NULL;
+	else {
+		it = PyObject_GetIter(seq);
+		if (it == NULL) {
+			PyErr_SetString(PyExc_TypeError,
+				"writelines() requires an iterable argument");
+			return NULL;
+		}
+		/* From here on, fail by going to error, to reclaim "it". */
+		list = PyList_New(CHUNKSIZE);
+		if (list == NULL)
+			goto error;
 	}
-	islist = PyList_Check(args);
 
 	/* Strategy: slurp CHUNKSIZE lines into a private list,
 	   checking that they are all strings, then write that list
 	   without holding the interpreter lock, then come back for more. */
-	index = 0;
-	if (islist)
-		list = NULL;
-	else {
-		list = PyList_New(CHUNKSIZE);
-		if (list == NULL)
-			return NULL;
-	}
-	result = NULL;
-
-	for (;;) {
+	for (index = 0; ; index += CHUNKSIZE) {
 		if (islist) {
 			Py_XDECREF(list);
-			list = PyList_GetSlice(args, index, index+CHUNKSIZE);
+			list = PyList_GetSlice(seq, index, index+CHUNKSIZE);
 			if (list == NULL)
-				return NULL;
+				goto error;
 			j = PyList_GET_SIZE(list);
 		}
 		else {
 			for (j = 0; j < CHUNKSIZE; j++) {
-				line = PySequence_GetItem(args, index+j);
+				line = PyIter_Next(it);
 				if (line == NULL) {
-					if (PyErr_ExceptionMatches(
-						PyExc_IndexError)) {
-						PyErr_Clear();
-						break;
-					}
-					/* Some other error occurred.
-					   XXX We may lose some output. */
-					goto error;
+					if (PyErr_Occurred())
+						goto error;
+					break;
 				}
 				PyList_SetItem(list, j, line);
 			}
@@ -1271,14 +1270,15 @@ file_writelines(PyFileObject *f, PyObject *args)
 
 		if (j < CHUNKSIZE)
 			break;
-		index += CHUNKSIZE;
 	}
 
 	Py_INCREF(Py_None);
 	result = Py_None;
   error:
 	Py_XDECREF(list);
+  	Py_XDECREF(it);
 	return result;
+#undef CHUNKSIZE
 }
 
 static char readline_doc[] =
@@ -1342,10 +1342,10 @@ static char xreadlines_doc[] =
 "often quicker, due to reading ahead internally.";
 
 static char writelines_doc[] =
-"writelines(list of strings) -> None.  Write the strings to the file.\n"
+"writelines(sequence_of_strings) -> None.  Write the strings to the file.\n"
 "\n"
-"Note that newlines are not added.  This is equivalent to calling write()\n"
-"for each string in the list.";
+"Note that newlines are not added.  The sequence can be any iterable object\n"
+"producing strings. This is equivalent to calling write() for each string.";
 
 static char flush_doc[] =
 "flush() -> None.  Flush the internal I/O buffer.";
