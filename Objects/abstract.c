@@ -1615,22 +1615,7 @@ PyMapping_HasKey(PyObject *o, PyObject *key)
 PyObject *
 PyObject_CallObject(PyObject *o, PyObject *a)
 {
-	PyObject *r;
-	PyObject *args = a;
-
-	if (args == NULL) {
-		args = PyTuple_New(0);
-		if (args == NULL)
-			return NULL;
-	}
-
-	r = PyEval_CallObject(o, args);
-
-	if (args != a) {
-		Py_DECREF(args);
-	}
-
-	return r;
+	return PyEval_CallObjectWithKeywords(o, a, NULL);
 }
 
 PyObject *
