@@ -28,10 +28,15 @@
 #ifndef DONT_HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
+
 #ifndef DONT_HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #elif defined(HAVE_STAT_H)
 #include <stat.h>
+#endif
+
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
 #endif
 
 #if defined(PYCC_VACPP)
@@ -627,6 +632,31 @@ parse_source_module(char *pathname, FILE *fp)
 }
 
 
+/* Helper to open a bytecode file for writing in exclusive mode */
+
+static FILE *
+open_exclusive(char *filename)
+{
+#if defined(O_EXCL)&&defined(O_CREAT)&&defined(O_WRONLY)&&defined(O_TRUNC)
+	/* Use O_EXCL to avoid a race condition when another process tries to
+	   write the same file.  When that happens, our open() call fails,
+	   which is just fine (since it's only a cache).
+	   XXX If the file exists and is writable but the directory is not
+	   writable, the file will never be written.  Oh well.
+	*/
+	int fd;
+	(void) unlink(filename);
+	fd = open(filename, O_EXCL|O_CREAT|O_WRONLY|O_TRUNC, 0666);
+	if (fd < 0)
+		return NULL;
+	return fdopen(fd, "wb");
+#else
+	/* Best we can do -- on Windows this can't happen anyway */
+	return fopen(filename, "wb");
+#endif
+}
+
+
 /* Write a compiled module to a file, placing the time of last
    modification of its source into the header.
    Errors are ignored, if a write error occurs an attempt is made to
@@ -637,7 +667,7 @@ write_compiled_module(PyCodeObject *co, char *cpathname, long mtime)
 {
 	FILE *fp;
 
-	fp = fopen(cpathname, "wb");
+	fp = open_exclusive(cpathname);
 	if (fp == NULL) {
 		if (Py_VerboseFlag)
 			PySys_WriteStderr(
