@@ -113,6 +113,11 @@ def contains_metastrings(s) :
 
 
 class bsdTableDB :
+
+    # Save close() from bombing out if __init__() failed
+    db = None
+    env = None
+
     def __init__(self, filename, dbhome, create=0, truncate=0, mode=0600, recover=0, dbflags=0) :
         """bsdTableDB.open(filename, dbhome, create=0, truncate=0, mode=0600)
         Open database name in the dbhome BerkeleyDB directory.
