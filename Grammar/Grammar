@@ -1,4 +1,8 @@
-# Grammar for Python, version 3
+# Grammar for Python, version 4
+
+# Changes compared to version 3:
+#	Removed 'dir' statement.
+#	Function call argument is a testlist instead of exprlist.
 
 # Changes compared to version 2:
 #	The syntax of Boolean operations is changed to use more
@@ -11,8 +15,6 @@
 #	'import' and 'def' aren't special any more;
 #	added 'from' NAME option on import clause, and '*' to import all;
 #	added class definition.
-# TO DO:
-#	replace 'dir' by something more general?
 
 # Start symbols for the grammar:
 #	single_input is a single interactive statement;
@@ -32,12 +34,11 @@ fplist: fpdef (',' fpdef)*
 fpdef: NAME | '(' fplist ')'
 
 stmt: simple_stmt | compound_stmt
-simple_stmt: expr_stmt | print_stmt  | pass_stmt | del_stmt | dir_stmt | flow_stmt | import_stmt
+simple_stmt: expr_stmt | print_stmt  | pass_stmt | del_stmt | flow_stmt | import_stmt
 expr_stmt: (exprlist '=')* exprlist NEWLINE
 # For assignments, additional restrictions enforced by the interpreter
 print_stmt: 'print' (test ',')* [test] NEWLINE
 del_stmt: 'del' exprlist NEWLINE
-dir_stmt: 'dir' [expr] NEWLINE
 pass_stmt: 'pass' NEWLINE
 flow_stmt: break_stmt | return_stmt | raise_stmt
 break_stmt: 'break' NEWLINE
@@ -61,7 +62,7 @@ expr: term (('+'|'-') term)*
 term: factor (('*'|'/'|'%') factor)*
 factor: ('+'|'-') factor | atom trailer*
 atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' '}' | '`' testlist '`' | NAME | NUMBER | STRING
-trailer: '(' [exprlist] ')' | '[' subscript ']' | '.' NAME
+trailer: '(' [testlist] ')' | '[' subscript ']' | '.' NAME
 subscript: expr | [expr] ':' [expr]
 exprlist: expr (',' expr)* [',']
 testlist: test (',' test)* [',']
