@@ -57,6 +57,7 @@ static void
 reg_dealloc(re)
 	regexobject *re;
 {
+	XDEL(re->re_patbuf.buffer);
 	XDECREF(re->re_translate);
 	XDECREF(re->re_lastok);
 	XDECREF(re->re_groupindex);
