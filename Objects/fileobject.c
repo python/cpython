@@ -982,7 +982,7 @@ PyFile_WriteObject(v, f, flags)
 		return -1;
 	}
 	args = Py_BuildValue("(O)", value);
-	if (value == NULL) {
+	if (args == NULL) {
 		Py_DECREF(value);
 		Py_DECREF(writer);
 		return -1;
