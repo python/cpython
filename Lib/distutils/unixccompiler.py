@@ -62,9 +62,10 @@ class UnixCCompiler (CCompiler):
     
     def __init__ (self,
                   verbose=0,
-                  dry_run=0):
+                  dry_run=0,
+                  force=0):
 
-        CCompiler.__init__ (self, verbose, dry_run)
+        CCompiler.__init__ (self, verbose, dry_run, force)
 
         self.preprocess_options = None
         self.compile_options = None
@@ -121,9 +122,10 @@ class UnixCCompiler (CCompiler):
         # source and object file, no deep dependency checking involving
         # header files.  Hmmm.)
         objects = self.object_filenames (sources, output_dir)
-        skipped = newer_pairwise (sources, objects)
-        for skipped_pair in skipped:
-            self.announce ("skipping %s (%s up-to-date)" % skipped_pair)
+        if not self.force:
+            skipped = newer_pairwise (sources, objects)
+            for skipped_pair in skipped:
+                self.announce ("skipping %s (%s up-to-date)" % skipped_pair)
 
         # If anything left to compile, compile it
         if sources:
@@ -202,9 +204,9 @@ class UnixCCompiler (CCompiler):
         if library_dirs is None:
             library_dirs = []
         
-        lib_opts = gen_lib_options (self.library_dirs + library_dirs,
-                                    self.libraries + libraries,
-                                    "-L%s", "-l%s")
+        lib_opts = gen_lib_options (self,
+                                    self.library_dirs + library_dirs,
+                                    self.libraries + libraries)
         if output_dir is not None:
             output_filename = os.path.join (output_dir, output_filename)
 
@@ -213,17 +215,18 @@ class UnixCCompiler (CCompiler):
         # doesn't look at any of the libraries we might be linking with.
         # Note that we have to dance around errors comparing timestamps if
         # we're in dry-run mode (yuck).
-        try:
-            newer = newer_group (objects, output_filename)
-        except OSError:
-            if self.dry_run:
-                newer = 1
-            else:
-                raise
+        if not self.force:
+            try:
+                newer = newer_group (objects, output_filename)
+            except OSError:
+                if self.dry_run:
+                    newer = 1
+                else:
+                    raise
 
-        if newer:
-            ld_args = self.ldflags_shared + lib_opts + \
-                      objects + ['-o', output_filename]
+        if self.force or newer:
+            ld_args = self.ldflags_shared + objects + \
+                      lib_opts + ['-o', output_filename]
             if extra_preargs:
                 ld_args[:0] = extra_preargs
             if extra_postargs:
@@ -232,6 +235,10 @@ class UnixCCompiler (CCompiler):
         else:
             self.announce ("skipping %s (up-to-date)" % output_filename)
 
+    # link_shared_object ()
+
+
+    # -- Filename-mangling (etc.) methods ------------------------------
 
     def object_filenames (self, source_filenames, output_dir=None):
         outnames = []
@@ -250,11 +257,41 @@ class UnixCCompiler (CCompiler):
             outname = os.path.join (output_dir, outname)
         return outname
 
+
     def library_filename (self, libname):
-        return "lib%s%s" % (libname, self._static_lib_ext )
+        return "lib%s%s" % (libname, self._static_lib_ext)
 
     def shared_library_filename (self, libname):
-        return "lib%s%s" % (libname, self._shared_lib_ext )
+        return "lib%s%s" % (libname, self._shared_lib_ext)
+
+
+    def library_dir_option (self, dir):
+        return "-L" + dir
+
+    def library_option (self, lib):
+        return "-l" + lib
+
+
+    def find_library_file (self, dirs, lib):
+
+        for dir in dirs:
+            shared = os.path.join (dir, self.shared_library_filename (lib))
+            static = os.path.join (dir, self.library_filename (lib))
+
+            # We're second-guessing the linker here, with not much hard
+            # data to go on: GCC seems to prefer the shared library, so I'm
+            # assuming that *all* Unix C compilers do.  And of course I'm
+            # ignoring even GCC's "-static" option.  So sue me.
+            if os.path.exists (shared):
+                return shared
+            elif os.path.exists (static):
+                return static
+
+        else:
+            # Oops, didn't find it in *any* of 'dirs'
+            return None
+
+    # find_library_file ()
 
 # class UnixCCompiler
 
