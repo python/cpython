@@ -36,6 +36,11 @@
 #include "pycfbridge.h"
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
+extern PyObject *_CFObj_New(CFTypeRef);
+extern int _CFObj_Convert(PyObject *, CFTypeRef *);
+#define CFObj_New _CFObj_New
+#define CFObj_Convert _CFObj_Convert
+
 extern PyObject *_CFTypeRefObj_New(CFTypeRef);
 extern int _CFTypeRefObj_Convert(PyObject *, CFTypeRef *);
 #define CFTypeRefObj_New _CFTypeRefObj_New
@@ -120,7 +125,6 @@ OptionalCFURLRefObj_Convert(PyObject *v, CFURLRef *p_itself)
     }
     return CFURLRefObj_Convert(v, p_itself);
 }
-
 
 static PyObject *CF_Error;
 
@@ -1457,7 +1461,9 @@ int CFStringRefObj_Convert(PyObject *v, CFStringRef *p_itself)
 
 	if (v == Py_None) { *p_itself = NULL; return 1; }
 	if (PyString_Check(v)) {
-	    char *cStr = PyString_AsString(v);
+	    char *cStr;
+	    if (!PyArg_Parse(v, "es", "ascii", &cStr))
+	    	return NULL;
 		*p_itself = CFStringCreateWithCString((CFAllocatorRef)NULL, cStr, kCFStringEncodingASCII);
 		return 1;
 	}
@@ -4290,6 +4296,48 @@ static PyMethodDef CF_methods[] = {
 };
 
 
+
+
+/* Routines to convert any CF type to/from the corresponding CFxxxObj */
+PyObject *CFObj_New(CFTypeRef itself)
+{
+	if (itself == NULL)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "cannot wrap NULL");
+		return NULL;
+	}
+	if (CFGetTypeID(itself) == CFArrayGetTypeID()) return CFArrayRefObj_New((CFArrayRef)itself);
+	if (CFGetTypeID(itself) == CFDictionaryGetTypeID()) return CFDictionaryRefObj_New((CFDictionaryRef)itself);
+	if (CFGetTypeID(itself) == CFDataGetTypeID()) return CFDataRefObj_New((CFDataRef)itself);
+	if (CFGetTypeID(itself) == CFStringGetTypeID()) return CFStringRefObj_New((CFStringRef)itself);
+	if (CFGetTypeID(itself) == CFURLGetTypeID()) return CFURLRefObj_New((CFURLRef)itself);
+	/* XXXX Or should we use PyCF_CF2Python here?? */
+	return CFTypeRefObj_New(itself);
+}
+int CFObj_Convert(PyObject *v, CFTypeRef *p_itself)
+{
+
+	if (v == Py_None) { *p_itself = NULL; return 1; }
+	/* Check for other CF objects here */
+
+	if (!CFTypeRefObj_Check(v) &&
+		!CFArrayRefObj_Check(v) &&
+		!CFMutableArrayRefObj_Check(v) &&
+		!CFDictionaryRefObj_Check(v) &&
+		!CFMutableDictionaryRefObj_Check(v) &&
+		!CFDataRefObj_Check(v) &&
+		!CFMutableDataRefObj_Check(v) &&
+		!CFStringRefObj_Check(v) &&
+		!CFMutableStringRefObj_Check(v) &&
+		!CFURLRefObj_Check(v) )
+	{
+		/* XXXX Or should we use PyCF_Python2CF here?? */
+		PyErr_SetString(PyExc_TypeError, "CF object required");
+		return 0;
+	}
+	*p_itself = ((CFTypeRefObject *)v)->ob_itself;
+	return 1;
+}
 
 
 void init_CF(void)
