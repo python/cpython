@@ -875,7 +875,7 @@ get_data(char *archive, PyObject *toc_entry)
 				"zlib not available");
 		goto error;
 	}
-	data = PyObject_CallFunction(decompress, "Ol", raw_data, -15);
+	data = PyObject_CallFunction(decompress, "Oi", raw_data, -15);
 error:
 	Py_DECREF(raw_data);
 	return data;
