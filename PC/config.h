@@ -229,6 +229,13 @@ typedef int pid_t;
 #define SIZEOF_VOID_P 4
 #endif
 
+/* Smaller stack size limit.  (9500 would work too, but we're conservative.) */
+
+#ifndef MAX_RECURSION_DEPTH
+#define MAX_RECURSION_DEPTH 5000
+#endif
+
+
 /* EXPERIMENTAL FEATURE: When CHECK_IMPORT_CASE is defined, check case of
    imported modules against case of file; this causes "import String" to fail
    with a NameError exception when it finds "string.py".  Normally, you set
