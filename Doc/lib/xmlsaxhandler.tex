@@ -17,32 +17,32 @@ in multiple objects. Handler implementations should inherit from the
 base classes provided in the module \module{xml.sax}, so that all
 methods get default implementations.
 
-\begin{classdesc}{ContentHandler}{}
+\begin{classdesc*}{ContentHandler}
   This is the main callback interface in SAX, and the one most
   important to applications. The order of events in this interface
   mirrors the order of the information in the document.
-\end{classdesc}
+\end{classdesc*}
 
-\begin{classdesc}{DTDHandler}{}
+\begin{classdesc*}{DTDHandler}
   Handle DTD events.
 
   This interface specifies only those DTD events required for basic
   parsing (unparsed entities and attributes).
-\end{classdesc}
+\end{classdesc*}
 
-\begin{classdesc}{EntityResolver}{}
+\begin{classdesc*}{EntityResolver}
  Basic interface for resolving entities. If you create an object
  implementing this interface, then register the object with your
  Parser, the parser will call the method in your object to resolve all
  external entities.
-\end{classdesc}
+\end{classdesc*}
 
-\begin{classdesc}{ErrorHandler}{}
+\begin{classdesc*}{ErrorHandler}
   Interface used by the parser to present error and warning messages
   to the application.  The methods of this object control whether errors
   are immediately converted to exceptions or are handled in some other
   way.
-\end{classdesc}
+\end{classdesc*}
 
 In addition to these classes, \module{xml.sax.handler} provides
 symbolic constants for the feature and property names.
@@ -52,7 +52,7 @@ symbolic constants for the feature and property names.
   true: Perform Namespace processing (default).\\
   false: Optionally do not perform Namespace processing
          (implies namespace-prefixes).\\
-  access: (parsing) read-only; (not parsing) read/write\\
+  access: (parsing) read-only; (not parsing) read/write
 \end{datadesc}
 
 \begin{datadesc}{feature_namespace_prefixes}
@@ -187,8 +187,7 @@ appropriate events in the input document:
   The information from this event is not necessary for normal
   Namespace processing: the SAX XML reader will automatically replace
   prefixes for element and attribute names when the
-  \code{http://xml.org/sax/features/namespaces} feature is true (the
-  default).
+  \code{feature_namespaces} feature is enabled (the default).
 
 %% XXX This is not really the default, is it? MvL
   
@@ -240,15 +239,15 @@ appropriate events in the input document:
   attributes of the element.
 
   Parsers may set the \var{qname} parameter to \code{None}, unless the
-  \code{http://xml.org/sax/features/namespace-prefixes} feature is
-  activated.
+  \code{feature_namespace_prefixes} feature is activated.
 \end{methoddesc}
 
 \begin{methoddesc}[ContentHandler]{endElementNS}{name, qname}
   Signals the end of an element in namespace mode.
 
   The \var{name} parameter contains the name of the element type, just
-  as with the startElementNS event, likewise the \var{qname} parameter.
+  as with the \method{startElementNS()} method, likewise the
+  \var{qname} parameter.
 \end{methoddesc}
 
 \begin{methoddesc}[ContentHandler]{characters}{content}
@@ -307,9 +306,8 @@ appropriate events in the input document:
   not seen the declarations (because, for example, the entity was
   declared in an external DTD subset). All processors may skip
   external entities, depending on the values of the
-  \code{http://xml.org/sax/features/external-general-entities} and the
-  \code{http://xml.org/sax/features/external-parameter-entities}
-  properties.
+  \code{feature_external_ges} and the
+  \code{feature_external_pes} properties.
 \end{methoddesc}
 
 
