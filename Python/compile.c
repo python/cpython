@@ -435,10 +435,15 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 	unsigned int *blocks;
 	char *name;
 
-	/* Make a modifiable copy of the code string */
 	if (!PyString_Check(code))
 		goto exitUnchanged;
+
+	/* Avoid situations where jump retargeting could overflow */
 	codelen = PyString_Size(code);
+	if (codelen > 32000)
+		goto exitUnchanged;
+
+	/* Make a modifiable copy of the code string */
 	codestr = PyMem_Malloc(codelen);
 	if (codestr == NULL)
 		goto exitUnchanged;
@@ -447,10 +452,6 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 	/* Mapping to new jump targets after NOPs are removed */
 	addrmap = PyMem_Malloc(codelen * sizeof(int));
 	if (addrmap == NULL)
-		goto exitUnchanged;
-
-	/* Avoid situations where jump retargeting could overflow */
-	if (codelen > 32000)
 		goto exitUnchanged;
 
 	blocks = markblocks(codestr, codelen);
@@ -574,7 +575,6 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 			break;
 
 		case EXTENDED_ARG:
-			PyMem_Free(codestr);
 			goto exitUnchanged;
 
 		/* Replace RETURN LOAD_CONST None RETURN with just RETURN */
@@ -590,6 +590,7 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 	}
 
 	/* Fixup linenotab */
+	/* XXX make sure this handles intervals > 256 */
 	assert(PyString_Check(lineno_obj));
 	lineno = PyString_AS_STRING(lineno_obj);
 	tabsiz = PyString_GET_SIZE(lineno_obj);
@@ -631,6 +632,7 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 		while (adj--)
 			codestr[h++] = codestr[i++];
 	}
+	assert(h + nops == codelen);
 
 	code = PyString_FromStringAndSize((char *)codestr, h);
 	PyMem_Free(addrmap);
