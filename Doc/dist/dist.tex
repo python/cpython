@@ -1904,9 +1904,8 @@ Most distutils command implementations are subclasses of the
 \class{Command} class from \refmodule{distutils.cmd}.  New commands
 may directly inherit from \class{Command}, while replacements often
 derive from \class{Command} indirectly, directly subclassing the
-command they are replacing.  Commands are not required to derive from
-\class{Command}, but must implement the interface documented as part
-of that class.
+command they are replacing.  Commands are required to derive from
+\class{Command}.
 
 
 %\section{Extending existing commands}
