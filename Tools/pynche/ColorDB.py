@@ -1,16 +1,23 @@
 """Color Database.
 
-To create a class that contains color lookup methods, use the module global
-function `get_colordb(file)'.  This function will try to examine the file to
-figure out what the format of the file is.  If it can't figure out the file
-format, or it has trouble reading the file, None is returned.  You can pass
-get_colordb() an optional filetype argument.
+This file contains one class, called ColorDB, and several utility functions.
+The class must be instantiated by the get_colordb() function in this file,
+passing it a filename to read a database out of.
+
+The get_colordb() function will try to examine the file to figure out what the
+format of the file is.  If it can't figure out the file format, or it has
+trouble reading the file, None is returned.  You can pass get_colordb() an
+optional filetype argument.
 
 Supporte file types are:
 
     X_RGB_TXT -- X Consortium rgb.txt format files.  Three columns of numbers
                  from 0 .. 255 separated by whitespace.  Arbitrary trailing
                  columns used as the color name.
+
+The utility functions are useful for converting between the various expected
+color formats, and for calculating other color values.
+
 """
 
 import sys
