@@ -67,6 +67,15 @@ test('rstrip', '   hello   ', '   hello')
 test('swapcase', 'HeLLo cOmpUteRs', 'hEllO CoMPuTErS')
 test('translate', 'xyzabcdef', 'xyzxyz', transtable, 'def')
 
+test('replace', 'one!two!three!', 'one@two!three!', '!', '@', 1)
+test('replace', 'one!two!three!', 'one@two@three!', '!', '@', 2)
+test('replace', 'one!two!three!', 'one@two@three@', '!', '@', 3)
+test('replace', 'one!two!three!', 'one@two@three@', '!', '@', 4)
+test('replace', 'one!two!three!', 'one@two@three@', '!', '@', 0)
+test('replace', 'one!two!three!', 'one@two@three@', '!', '@')
+test('replace', 'one!two!three!', 'one!two!three!', 'x', '@')
+test('replace', 'one!two!three!', 'one!two!three!', 'x', '@', 2)
+
 strop.whitespace
 strop.lowercase
 strop.uppercase
