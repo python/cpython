@@ -41,8 +41,7 @@ class HotShotTestCase(unittest.TestCase):
         return hotshot.Profile(self.logfn, lineevents, linetimings)
 
     def get_logreader(self):
-        log = UnlinkingLogReader(self.logfn)
-        return log
+        return UnlinkingLogReader(self.logfn)
 
     def get_events_wotime(self):
         L = []
@@ -67,6 +66,17 @@ class HotShotTestCase(unittest.TestCase):
         profiler.runcall(callable)
         profiler.close()
         self.check_events(events)
+
+    def test_addinfo(self):
+        def f(p):
+            p.addinfo("test-key", "test-value")
+        profiler = self.new_profiler()
+        profiler.runcall(f, profiler)
+        profiler.close()
+        log = self.get_logreader()
+        info = log._info
+        list(log)
+        self.failUnless(info["test-key"] == ["test-value"])
 
     def test_line_numbers(self):
         def f():
