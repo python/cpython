@@ -1,3 +1,32 @@
+(*) newgetargs() dumps core in compat mode when NULL is passed in but
+max is >0
+
+(-) stack frame correspondence problem (Jim Roskind)
+
+(-) invent new style (rename1.h) name for newgetargs
+
+(-) make lots of places use newgetargs
+
+(-) no tp_str member in typeobject
+
+(-) getargs has small bugs (e.g. strange error msgs)
+
+(-) sorting class instances broken if no __com__ defined
+
+(-) readline 2.0 on sequent has ^C problem (works only first time)
+
+(-) add explanatory comments to Setup (especially about SGI modules
+like 'cd')
+
+(-) Q3 ftp mail archive
+
+(-) need to add truncate() and ftruncate() to posixmodule.c (Windows:
+chsize(fd, size)
+
+======================================================================
+Release 1.1 (11 Oct 1994)
+======================================================================
+
 (*) 2 specific leaks: 1 PYTHONPATH; 2 reading code from .pyc
 
 (-) if __getattr__ prints something, calling repr(x) from cmd line

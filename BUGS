@@ -6,11 +6,32 @@ nother to make an entry in this file, unless it was a serious bug
 ==> Status indicators: (-) not fixed; (*) fixed; (?) don't know what to do.
 
 ======================================================================
+BUGS found in 1.1 and fixed in 1.1.1
+------------------------------------
+
+(*) pow() should be declared varargs since it uses newgetargs
+
+BUGS found in 1.1 and not yet fixed
+-----------------------------------
+
+(-) A built-in function using getargs() and expecting >= 1 argument
+may dump core when called without arguments
+
+BUGS found in 1.0.3 and fixed in 1.1
+------------------------------------
+
+
+(*) If class C doesn't define __cmp__, cmp(a,b) will return -2 and
+[a,b].sort() will fail
+
 BUGS found in 1.0.3 and not yet fixed
 -------------------------------------
 
 (-) print_error raises and then masks an error if softspace is not
     defined (can't reproduce this one?)
+
+BUGS found in 1.0.3 and fixed in 1.1
+------------------------------------
 
 (*) Syntax errors are reported in a silly way if multi-line tokens are
 involved.
@@ -23,9 +44,6 @@ involved.
 
 (*) various memory leaks (see purify report from anthony.baxter@aaii.oz.au)
 (several leaks fixed anyway :-)
-
-BUGS found in 1.0.3 and fixed in 1.1
-------------------------------------
 
 (*) unwanted entries in stack trace if err_clear() clears an error
 that also set a stack trace
