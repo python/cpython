@@ -62,7 +62,7 @@ class Module:
         self.starimports = {}
 
     def __repr__(self):
-        s = "Module(%r" % % (self.__name__,)
+        s = "Module(%r" % (self.__name__,)
         if self.__file__ is not None:
             s = s + ", %r" % (self.__file__,)
         if self.__path__ is not None:
