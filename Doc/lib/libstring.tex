@@ -4,11 +4,23 @@
 \declaremodule{standard}{string}
 \modulesynopsis{Common string operations.}
 
+The \module{string} package contains a number of useful constants and classes,
+as well as some deprecated legacy functions that are also available as methods
+on strings.  See the module \refmodule{re}\refstmodindex{re} for string
+functions based on regular expressions.
 
-This module defines some constants useful for checking character
-classes and some useful string functions.  See the module
-\refmodule{re}\refstmodindex{re} for string functions based on regular
-expressions.
+In general, all of these objects are exposed directly in the \module{string}
+package so users need only import the \module{string} package to begin using
+these constants, classes, and functions.
+
+\begin{notice}
+Starting with Python 2.4, the traditional \module{string} module was turned
+into a package, however backward compatibility with existing code has been
+retained.  Code using the \module{string} module that worked prior to Python
+2.4 should continue to work unchanged.
+\end{notice}
+
+\subsection{String constants}
 
 The constants defined in this module are:
 
@@ -86,11 +98,113 @@ The constants defined in this module are:
   is undefined.
 \end{datadesc}
 
+\subsection{Template strings}
 
-Many of the functions provided by this module are also defined as
-methods of string and Unicode objects; see ``String Methods'' (section
-\ref{string-methods}) for more information on those.
-The functions defined in this module are:
+Templates are Unicode strings that can be used to provide string substitutions
+as described in \pep{292}.  There is a \class{Template} class that is a
+subclass of \class{unicode}, overriding the default \method{__mod__()} method.
+Instead of the normal \samp{\%}-based substitutions, Template strings support
+\samp{\$}-based substitutions, using the following rules:
+
+\begin{itemize}
+\item \samp{\$\$} is an escape; it is replaced with a single \samp{\$}.
+
+\item \samp{\$identifier} names a substitution placeholder matching a mapping
+       key of "identifier".  By default, "identifier" must spell a Python
+       identifier.  The first non-identifier character after the \samp{\$}
+       character terminates this placeholder specification.
+
+\item \samp{\$\{identifier\}} is equivalent to \samp{\$identifier}.  It is
+      required when valid identifier characters follow the placeholder but are
+      not part of the placeholder, e.g. "\$\{noun\}ification".
+\end{itemize}
+
+Any other appearance of \samp{\$} in the string will result in a
+\exception{ValueError} being raised.
+
+Template strings are used just like normal strings, in that the modulus
+operator is used to interpolate a dictionary of values into a Template string,
+e.g.:
+
+\begin{verbatim}
+>>> from string import Template
+>>> s = Template('$who likes $what')
+>>> print s % dict(who='tim', what='kung pao')
+tim likes kung pao
+>>> Template('Give $who $100') % dict(who='tim')
+Traceback (most recent call last):
+[...]
+ValueError: Invalid placeholder at index 10
+\end{verbatim}
+
+There is also a \class{SafeTemplate} class, derived from \class{Template}
+which acts the same as \class{Template}, except that if placeholders are
+missing in the interpolation dictionary, no \exception{KeyError} will be
+raised.  Instead the original placeholder (with or without the braces, as
+appropriate) will be used:
+
+\begin{verbatim}
+>>> from string import SafeTemplate
+>>> s = SafeTemplate('$who likes $what for ${meal}')
+>>> print s % dict(who='tim')
+tim likes $what for ${meal}
+\end{verbatim}
+
+The values in the mapping will automatically be converted to Unicode strings,
+using the built-in \function{unicode()} function, which will be called without
+optional arguments \var{encoding} or \var{errors}.
+
+Advanced usage: you can derive subclasses of \class{Template} or
+\class{SafeTemplate} to use application-specific placeholder rules.  To do
+this, you override the class attribute \member{pattern}; the value must be a
+compiled regular expression object with four named capturing groups.  The
+capturing groups correspond to the rules given above, along with the invalid
+placeholder rule:
+
+\begin{itemize}
+\item \var{escaped} -- This group matches the escape sequence, i.e. \samp{\$\$}
+      in the default pattern.
+\item \var{named} -- This group matches the unbraced placeholder name; it
+      should not include the \samp{\$} in capturing group.
+\item \var{braced} -- This group matches the brace delimited placeholder name;
+      it should not include either the \samp{\$} or braces in the capturing
+      group.
+\item \var{bogus} -- This group matches any other \samp{\$}.  It usually just
+      matches a single \samp{\$} and should appear last.
+\end{itemize}
+
+\subsection{String functions}
+
+The following functions are available to operate on string and Unicode
+objects.  They are not available as string methods.
+
+\begin{funcdesc}{capwords}{s}
+  Split the argument into words using \function{split()}, capitalize
+  each word using \function{capitalize()}, and join the capitalized
+  words using \function{join()}.  Note that this replaces runs of
+  whitespace characters by a single space, and removes leading and
+  trailing whitespace.
+\end{funcdesc}
+
+\begin{funcdesc}{maketrans}{from, to}
+  Return a translation table suitable for passing to
+  \function{translate()} or \function{regex.compile()}, that will map
+  each character in \var{from} into the character at the same position
+  in \var{to}; \var{from} and \var{to} must have the same length.
+
+  \warning{Don't use strings derived from \constant{lowercase}
+  and \constant{uppercase} as arguments; in some locales, these don't have
+  the same length.  For case conversions, always use
+  \function{lower()} and \function{upper()}.}
+\end{funcdesc}
+
+\subsection{Deprecated string functions}
+
+The following list of functions are also defined as methods of string and
+Unicode objects; see ``String Methods'' (section
+\ref{string-methods}) for more information on those.  You should consider
+these functions as deprecated, although they will not be removed until Python
+3.0.  The functions defined in this module are:
 
 \begin{funcdesc}{atof}{s}
   \deprecated{2.0}{Use the \function{float()} built-in function.}
@@ -138,14 +252,6 @@ The functions defined in this module are:
   Return a copy of \var{word} with only its first character capitalized.
 \end{funcdesc}
 
-\begin{funcdesc}{capwords}{s}
-  Split the argument into words using \function{split()}, capitalize
-  each word using \function{capitalize()}, and join the capitalized
-  words using \function{join()}.  Note that this replaces runs of
-  whitespace characters by a single space, and removes leading and
-  trailing whitespace.
-\end{funcdesc}
-
 \begin{funcdesc}{expandtabs}{s\optional{, tabsize}}
   Expand tabs in a string, i.e.\ replace them by one or more spaces,
   depending on the current column and the given tab size.  The column
@@ -186,18 +292,6 @@ The functions defined in this module are:
 \begin{funcdesc}{lower}{s}
   Return a copy of \var{s}, but with upper case letters converted to
   lower case.
-\end{funcdesc}
-
-\begin{funcdesc}{maketrans}{from, to}
-  Return a translation table suitable for passing to
-  \function{translate()} or \function{regex.compile()}, that will map
-  each character in \var{from} into the character at the same position
-  in \var{to}; \var{from} and \var{to} must have the same length.
-
-  \warning{Don't use strings derived from \constant{lowercase}
-  and \constant{uppercase} as arguments; in some locales, these don't have
-  the same length.  For case conversions, always use
-  \function{lower()} and \function{upper()}.}
 \end{funcdesc}
 
 \begin{funcdesc}{split}{s\optional{, sep\optional{, maxsplit}}}

@@ -35,9 +35,115 @@ printable = digits + letters + punctuation + whitespace
 
 # Case conversion helpers
 # Use str to convert Unicode literal in case of -U
+# Note that Cookie.py bogusly uses _idmap :(
 l = map(chr, xrange(256))
 _idmap = str('').join(l)
 del l
+
+# Functions which aren't available as string methods.
+
+# Capitalize the words in a string, e.g. " aBc  dEf " -> "Abc Def".
+# See also regsub.capwords().
+def capwords(s, sep=None):
+    """capwords(s, [sep]) -> string
+
+    Split the argument into words using split, capitalize each
+    word using capitalize, and join the capitalized words using
+    join. Note that this replaces runs of whitespace characters by
+    a single space.
+
+    """
+    return (sep or ' ').join([x.capitalize() for x in s.split(sep)])
+
+
+# Construct a translation string
+_idmapL = None
+def maketrans(fromstr, tostr):
+    """maketrans(frm, to) -> string
+
+    Return a translation table (a string of 256 bytes long)
+    suitable for use in string.translate.  The strings frm and to
+    must be of the same length.
+
+    """
+    if len(fromstr) != len(tostr):
+        raise ValueError, "maketrans arguments must have same length"
+    global _idmapL
+    if not _idmapL:
+        _idmapL = map(None, _idmap)
+    L = _idmapL[:]
+    fromstr = map(ord, fromstr)
+    for i in range(len(fromstr)):
+        L[fromstr[i]] = tostr[i]
+    return ''.join(L)
+
+
+
+import re as _re
+
+class Template(unicode):
+    """A string class for supporting $-substitutions."""
+    __slots__ = []
+
+    # Search for $$, $identifier, ${identifier}, and any bare $'s
+    pattern = _re.compile(r"""
+# Match exactly two $'s -- this is the escape sequence
+(?P<escaped>\${2})|
+# Match a $ followed by a Python identifier
+\$(?P<named>[_a-z][_a-z0-9]*)|
+# Match a $ followed by a brace delimited identifier
+\${(?P<braced>[_a-z][_a-z0-9]*)}|
+# Match any other $'s
+(?P<bogus>\$)
+""", _re.IGNORECASE | _re.VERBOSE)
+
+    def __mod__(self, mapping):
+        def convert(mo):
+            groups = mo.groupdict()
+            if groups.get('escaped') is not None:
+                return '$'
+            if groups.get('bogus') is not None:
+                raise ValueError('Invalid placeholder at index %d' %
+                                 mo.start('bogus'))
+            val = mapping[groups.get('named') or groups.get('braced')]
+            return unicode(val)
+        return self.pattern.sub(convert, self)
+
+
+class SafeTemplate(Template):
+    """A string class for supporting $-substitutions.
+
+    This class is 'safe' in the sense that you will never get KeyErrors if
+    there are placeholders missing from the interpolation dictionary.  In that
+    case, you will get the original placeholder in the value string.
+    """
+    __slots__ = []
+
+    def __mod__(self, mapping):
+        def convert(mo):
+            groups = mo.groupdict()
+            if groups.get('escaped') is not None:
+                return '$'
+            if groups.get('bogus') is not None:
+                raise ValueError('Invalid placeholder at index %d' %
+                                 mo.start('bogus'))
+            named = groups.get('named')
+            if named is not None:
+                try:
+                    return unicode(mapping[named])
+                except KeyError:
+                    return '$' + named
+            braced = groups.get('braced')
+            try:
+                return unicode(mapping[braced])
+            except KeyError:
+                return '${' + braced + '}'
+        return self.pattern.sub(convert, self)
+
+
+
+# NOTE: Everything below here is deprecated.  Use string methods instead.
+# This stuff will go away in Python 3.0.
 
 # Backward compatible names for exceptions
 index_error = ValueError
@@ -335,40 +441,6 @@ def capitalize(s):
 
     """
     return s.capitalize()
-
-# Capitalize the words in a string, e.g. " aBc  dEf " -> "Abc Def".
-# See also regsub.capwords().
-def capwords(s, sep=None):
-    """capwords(s, [sep]) -> string
-
-    Split the argument into words using split, capitalize each
-    word using capitalize, and join the capitalized words using
-    join. Note that this replaces runs of whitespace characters by
-    a single space.
-
-    """
-    return join(map(capitalize, s.split(sep)), sep or ' ')
-
-# Construct a translation string
-_idmapL = None
-def maketrans(fromstr, tostr):
-    """maketrans(frm, to) -> string
-
-    Return a translation table (a string of 256 bytes long)
-    suitable for use in string.translate.  The strings frm and to
-    must be of the same length.
-
-    """
-    if len(fromstr) != len(tostr):
-        raise ValueError, "maketrans arguments must have same length"
-    global _idmapL
-    if not _idmapL:
-        _idmapL = map(None, _idmap)
-    L = _idmapL[:]
-    fromstr = map(ord, fromstr)
-    for i in range(len(fromstr)):
-        L[fromstr[i]] = tostr[i]
-    return join(L, "")
 
 # Substring replacement (global)
 def replace(s, old, new, maxsplit=-1):
