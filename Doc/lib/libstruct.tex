@@ -55,6 +55,7 @@ and Python values should be obvious given their types:
   \lineiii{f}{float}{float}
   \lineiii{d}{double}{float}
   \lineiii{s}{char[]}{string}
+  \lineiii{p}{char[]}{string}
 \end{tableiii}
 
 A format character may be preceded by an integral repeat count; e.g.\
@@ -63,7 +64,7 @@ the format string \code{'4h'} means exactly the same as \code{'hhhh'}.
 Whitespace characters between formats are ignored; a count and its
 format must not contain whitespace though.
 
-For the \code{'s'} format character, the count is interpreted as the
+For the \character{s} format character, the count is interpreted as the
 size of the string, not a repeat count like for the other format
 characters; e.g. \code{'10s'} means a single 10-byte string, while
 \code{'10c'} means 10 characters.  For packing, the string is
@@ -72,7 +73,15 @@ For unpacking, the resulting string always has exactly the specified
 number of bytes.  As a special case, \code{'0s'} means a single, empty
 string (while \code{'0c'} means 0 characters).
 
-For the \code{'I'} and \code{'L'} format characters, the return
+The \character{p} format character can be used to encode a Pascal
+string.  The first byte is the length of the stored string, with the
+bytes of the string following.  If count is given, it is used as the
+total number of bytes used, including the length byte.  If the string
+passed in to \function{pack()} is too long, the stored representation
+is truncated.  If the string is too short, padding is used to ensure
+that exactly enough bytes are used to satisfy the count.
+
+For the \character{I} and \character{L} format characters, the return
 value is a Python long integer.
 
 By default, C numbers are represented in the machine's native format
@@ -91,7 +100,7 @@ according to the following table:
   \lineiii{!}{network (= big-endian)}{standard}
 \end{tableiii}
 
-If the first character is not one of these, \code{'@'} is assumed.
+If the first character is not one of these, \character{@} is assumed.
 
 Native byte order is big-endian or little-endian, depending on the
 host system (e.g. Motorola and Sun are big-endian; Intel and DEC are
@@ -105,16 +114,16 @@ for any type (so you have to use pad bytes); short is 2 bytes; int and
 long are 4 bytes.  Float and double are 32-bit and 64-bit IEEE floating
 point numbers, respectively.
 
-Note the difference between \code{'@'} and \code{'='}: both use native
+Note the difference between \character{@} and \character{=}: both use native
 byte order, but the size and alignment of the latter is standardized.
 
-The form \code{'!'} is available for those poor souls who claim they
+The form \character{!} is available for those poor souls who claim they
 can't remember whether network byte order is big-endian or
 little-endian.
 
 There is no way to indicate non-native byte order (i.e. force
-byte-swapping); use the appropriate choice of \code{'<'} or
-\code{'>'}.
+byte-swapping); use the appropriate choice of \character{<} or
+\character{>}.
 
 Examples (all using native byte order, size and alignment, on a
 big-endian machine):
