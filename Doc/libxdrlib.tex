@@ -7,20 +7,31 @@
 \setindexsubitem{(in module xdrlib)}
 
 
-The \code{xdrlib} module supports the External Data Representation
+The \module{xdrlib} module supports the External Data Representation
 Standard as described in \rfc{1014}, written by Sun Microsystems,
 Inc. June 1987.  It supports most of the data types described in the
 RFC.
 
-The \code{xdrlib} module defines two classes, one for packing
+The \module{xdrlib} module defines two classes, one for packing
 variables into XDR representation, and another for unpacking from XDR
 representation.  There are also two exception classes.
 
+\begin{classdesc}{Packer}{}
+\class{Packer} is the class for packing data into XDR representation.
+The \class{Packer} class is instantiated with no arguments.
+\end{classdesc}
+
+\begin{classdesc}{Unpacker}{data}
+\code{Unpacker} is the complementary class which unpacks XDR data
+values from a string buffer.  The input buffer is given as
+\var{data}.
+\end{classdesc}
+
 
 \subsection{Packer Objects}
+\label{xdr-packer-objects}
 
-\code{Packer} is the class for packing data into XDR representation.
-The \code{Packer} class is instantiated with no arguments.
+\class{Packer} instances have the following methods:
 
 \begin{funcdesc}{get_buffer}{}
 Returns the current pack buffer as a string.
@@ -33,9 +44,9 @@ Resets the pack buffer to the empty string.
 In general, you can pack any of the most common XDR data types by
 calling the appropriate \code{pack_\var{type}()} method.  Each method
 takes a single argument, the value to pack.  The following simple data
-type packing methods are supported: \code{pack_uint()}, \code{pack_int()},
-\code{pack_enum()}, \code{pack_bool()}, \code{pack_uhyper()},
-and \code{pack_hyper()}.
+type packing methods are supported: \method{pack_uint()},
+\method{pack_int()}, \method{pack_enum()}, \method{pack_bool()},
+\method{pack_uhyper()}, and \method{pack_hyper()}.
 
 \begin{funcdesc}{pack_float}{value}
 Packs the single-precision floating point number \var{value}.
@@ -55,27 +66,27 @@ is padded with null bytes if necessary to guaranteed 4 byte alignment.
 
 \begin{funcdesc}{pack_fopaque}{n, data}
 Packs a fixed length opaque data stream, similarly to
-\code{pack_fstring()}.
+\method{pack_fstring()}.
 \end{funcdesc}
 
 \begin{funcdesc}{pack_string}{s}
 Packs a variable length string, \var{s}.  The length of the string is
 first packed as an unsigned integer, then the string data is packed
-with \code{pack_fstring()}.
+with \method{pack_fstring()}.
 \end{funcdesc}
 
 \begin{funcdesc}{pack_opaque}{data}
 Packs a variable length opaque data string, similarly to
-\code{pack_string()}.
+\method{pack_string()}.
 \end{funcdesc}
 
 \begin{funcdesc}{pack_bytes}{bytes}
-Packs a variable length byte stream, similarly to \code{pack_string()}.
+Packs a variable length byte stream, similarly to \method{pack_string()}.
 \end{funcdesc}
 
 The following methods support packing arrays and lists:
 
-\begin{funcdesc}{pack_list}{list\, pack_item}
+\begin{funcdesc}{pack_list}{list, pack_item}
 Packs a \var{list} of homogeneous items.  This method is useful for
 lists with an indeterminate size; i.e. the size is not available until
 the entire list has been walked.  For each item in the list, an
@@ -88,26 +99,21 @@ the individual item.  At the end of the list, an unsigned integer
 \begin{funcdesc}{pack_farray}{n\, array\, pack_item}
 Packs a fixed length list (\var{array}) of homogeneous items.  \var{n}
 is the length of the list; it is \emph{not} packed into the buffer,
-but a \code{ValueError} exception is raised if \code{len(\var{array})} is not
-equal to \var{n}.  As above, \var{pack_item} is the function used to
-pack each element.
+but a \exception{ValueError} exception is raised if
+\code{len(\var{array})} is not equal to \var{n}.  As above,
+\var{pack_item} is the function used to pack each element.
 \end{funcdesc}
 
 \begin{funcdesc}{pack_array}{list\, pack_item}
 Packs a variable length \var{list} of homogeneous items.  First, the
 length of the list is packed as an unsigned integer, then each element
-is packed as in \code{pack_farray()} above.
+is packed as in \method{pack_farray()} above.
 \end{funcdesc}
 
 \subsection{Unpacker Objects}
+\label{xdr-unpacker-objects}
 
-\code{Unpacker} is the complementary class which unpacks XDR data
-values from a string buffer, and has the following methods:
-
-\begin{funcdesc}{__init__}{data}
-Instantiates an \code{Unpacker} object with the string buffer
-\var{data}.
-\end{funcdesc}
+The \class{Unpacker} class offers the following methods:
 
 \begin{funcdesc}{reset}{data}
 Resets the string buffer with the given \var{data}.
@@ -119,7 +125,7 @@ Returns the current unpack position in the data buffer.
 
 \begin{funcdesc}{set_position}{position}
 Sets the data buffer unpack position to \var{position}.  You should be
-careful about using \code{get_position()} and \code{set_position()}.
+careful about using \method{get_position()} and \method{set_position()}.
 \end{funcdesc}
 
 \begin{funcdesc}{get_buffer}{}
@@ -127,12 +133,12 @@ Returns the current unpack data buffer as a string.
 \end{funcdesc}
 
 \begin{funcdesc}{done}{}
-Indicates unpack completion.  Raises an \code{xdrlib.Error} exception
+Indicates unpack completion.  Raises an \exception{Error} exception
 if all of the data has not been unpacked.
 \end{funcdesc}
 
-In addition, every data type that can be packed with a \code{Packer},
-can be unpacked with an \code{Unpacker}.  Unpacking methods are of the
+In addition, every data type that can be packed with a \class{Packer},
+can be unpacked with an \class{Unpacker}.  Unpacking methods are of the
 form \code{unpack_\var{type}()}, and take no arguments.  They return the
 unpacked object.
 
@@ -142,7 +148,7 @@ Unpacks a single-precision floating point number.
 
 \begin{funcdesc}{unpack_double}{}
 Unpacks a double-precision floating point number, similarly to
-\code{unpack_float()}.
+\method{unpack_float()}.
 \end{funcdesc}
 
 In addition, the following methods unpack strings, bytes, and opaque
@@ -156,23 +162,23 @@ alignment is assumed.
 
 \begin{funcdesc}{unpack_fopaque}{n}
 Unpacks and returns a fixed length opaque data stream, similarly to
-\code{unpack_fstring()}.
+\method{unpack_fstring()}.
 \end{funcdesc}
 
 \begin{funcdesc}{unpack_string}{}
 Unpacks and returns a variable length string.  The length of the
 string is first unpacked as an unsigned integer, then the string data
-is unpacked with \code{unpack_fstring()}.
+is unpacked with \method{unpack_fstring()}.
 \end{funcdesc}
 
 \begin{funcdesc}{unpack_opaque}{}
 Unpacks and returns a variable length opaque data string, similarly to
-\code{unpack_string()}.
+\method{unpack_string()}.
 \end{funcdesc}
 
 \begin{funcdesc}{unpack_bytes}{}
 Unpacks and returns a variable length byte stream, similarly to
-\code{unpack_string()}.
+\method{unpack_string()}.
 \end{funcdesc}
 
 The following methods support unpacking arrays and lists:
@@ -195,7 +201,7 @@ As above, \var{unpack_item} is the function used to unpack each element.
 \begin{funcdesc}{unpack_array}{unpack_item}
 Unpacks and returns a variable length \var{list} of homogeneous items.
 First, the length of the list is unpacked as an unsigned integer, then
-each element is unpacked as in \code{unpack_farray()} above.
+each element is unpacked as in \method{unpack_farray()} above.
 \end{funcdesc}
 
 \subsection{Exceptions}
@@ -204,12 +210,12 @@ each element is unpacked as in \code{unpack_farray()} above.
 Exceptions in this module are coded as class instances:
 
 \begin{excdesc}{Error}
-The base exception class.  \code{Error} has a single public data
-member \code{msg} containing the description of the error.
+The base exception class.  \exception{Error} has a single public data
+member \member{msg} containing the description of the error.
 \end{excdesc}
 
 \begin{excdesc}{ConversionError}
-Class derived from \code{Error}.  Contains no additional instance
+Class derived from \exception{Error}.  Contains no additional instance
 variables.
 \end{excdesc}
 
