@@ -20,6 +20,8 @@ except NameError:
     True = 1
     False = 0
 
+nlcre = re.compile('\r\n|\r|\n')
+
 
 
 class Parser:
@@ -137,7 +139,7 @@ class Parser:
         # Parse the body, but first split the payload on the content-type
         # boundary if present.
         boundary = container.get_boundary()
-        isdigest = (container.get_type() == 'multipart/digest')
+        isdigest = (container.get_content_type() == 'multipart/digest')
         # If there's a boundary, split the payload text into its constituent
         # parts and parse each separately.  Otherwise, just parse the rest of
         # the body as a single message.  Note: any exceptions raised in the
@@ -167,8 +169,7 @@ class Parser:
                 preamble = payload[0:start]
             # Find out what kind of line endings we're using
             start += len(mo.group('sep')) + len(mo.group('ws'))
-            cre = re.compile('\r\n|\r|\n')
-            mo = cre.search(payload, start)
+            mo = nlcre.search(payload, start)
             if mo:
                 start += len(mo.group(0))
             # We create a compiled regexp first because we need to be able to
@@ -209,12 +210,12 @@ class Parser:
                 payload[start:terminator])
             for part in parts:
                 if isdigest:
-                    if part[0] == linesep:
+                    if part.startswith(linesep):
                         # There's no header block so create an empty message
                         # object as the container, and lop off the newline so
                         # we can parse the sub-subobject
                         msgobj = self._class()
-                        part = part[1:]
+                        part = part[len(linesep):]
                     else:
                         parthdrs, part = part.split(linesep+linesep, 1)
                         # msgobj in this case is the "message/rfc822" container
