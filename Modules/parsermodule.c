@@ -2852,9 +2852,9 @@ static PyMethodDef parser_functions[] =  {
     };
 
 
-DL_EXPORT(void) initparser(void);  /* supply a prototype */
+PyMODINIT_FUNC initparser(void);  /* supply a prototype */
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initparser(void)
 {
     PyObject *module, *copyreg;

@@ -530,7 +530,7 @@ internal_select(PySocketSockObject *s, int writing)
 
 static double defaulttimeout = -1.0; /* Default timeout for new sockets */
 
-static void
+PyMODINIT_FUNC
 init_sockobject(PySocketSockObject *s,
 		SOCKET_T fd, int family, int type, int proto)
 {

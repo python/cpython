@@ -841,7 +841,7 @@ static PyMethodDef bsddbmodule_methods[] = {
 	{0,		0},
 };
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initbsddb(void) {
 	PyObject *m, *d;
 

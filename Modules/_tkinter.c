@@ -2109,7 +2109,7 @@ ins_string(PyObject *d, char *name, char *val)
 }
 
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 init_tkinter(void)
 {
 	PyObject *m, *d;
