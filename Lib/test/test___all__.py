@@ -114,6 +114,7 @@ class AllTest(unittest.TestCase):
         self.check_all("os2emxpath")
         self.check_all("pdb")
         self.check_all("pickle")
+        self.check_all("pickletools")
         self.check_all("pipes")
         self.check_all("popen2")
         self.check_all("poplib")

@@ -26,6 +26,8 @@ Library
   attempt is made to execute the remaining handlers.  The last exception
   raised is re-raised.
 
+- Patch 1061679: Added `__all__` to pickletools.py.
+
 Build
 -----
 

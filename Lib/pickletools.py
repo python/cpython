@@ -10,6 +10,10 @@ dis(pickle, out=None, memo=None, indentlevel=4)
    Print a symbolic disassembly of a pickle.
 '''
 
+__all__ = ['dis',
+           'genops',
+          ]
+
 # Other ideas:
 #
 # - A pickle verifier:  read a pickle and check it exhaustively for
