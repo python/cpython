@@ -102,7 +102,7 @@ All methods raise \exception{IOError} when the request fails.
 Format characters for the \method{lock()} method have the following
 meaning:
 
-\begin{tableii}{|c|l|}{samp}{Format}{Meaning}
+\begin{tableii}{c|l}{samp}{Format}{Meaning}
   \lineii{u}{unlock the specified region}
   \lineii{r}{request a read lock for the specified section}
   \lineii{w}{request a write lock for the specified section}
@@ -110,7 +110,7 @@ meaning:
 
 In addition the following modifiers can be added to the format:
 
-\begin{tableiii}{|c|l|c|}{samp}{Modifier}{Meaning}{Notes}
+\begin{tableiii}{c|l|c}{samp}{Modifier}{Meaning}{Notes}
   \lineiii{|}{wait until the lock has been granted}{}
   \lineiii{?}{return the first lock conflicting with the requested lock, or
               \code{None} if there is no conflict.}{(1)} 
@@ -126,7 +126,7 @@ request from being granted; it is for query purposes only.
 Format characters for the \method{flags()} method have the following
 meanings:
 
-\begin{tableii}{|c|l|}{samp}{Format}{Meaning}
+\begin{tableii}{c|l}{samp}{Format}{Meaning}
   \lineii{a}{append only flag}
   \lineii{c}{close on exec flag}
   \lineii{n}{no delay flag (also called non-blocking flag)}
@@ -135,7 +135,7 @@ meanings:
 
 In addition the following modifiers can be added to the format:
 
-\begin{tableiii}{|c|l|c|}{samp}{Modifier}{Meaning}{Notes}
+\begin{tableiii}{c|l|c}{samp}{Modifier}{Meaning}{Notes}
   \lineiii{!}{turn the specified flags 'off', instead of the default 'on'}{(1)}
   \lineiii{=}{replace the flags, instead of the default 'OR' operation}{(1)}
   \lineiii{?}{return a string in which the characters represent the flags that

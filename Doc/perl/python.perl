@@ -720,7 +720,7 @@ sub do_env_memberdescni{
 
 sub setup_column_alignments{
     local($_) = @_;
-    my($j1,$a1,$a2,$a3,$j4) = split(/[|]/,$_);
+    my($a1,$a2,$a3) = split(/[|]/,$_);
     my($th1,$th2,$th3) = ('<th>', '<th>', '<th>');
     $col_aligns[0] = (($a1 eq "c") ? "<td align=center>" : "<td>");
     $col_aligns[1] = (($a2 eq "c") ? "<td align=center>" : "<td>");
