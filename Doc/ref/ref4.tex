@@ -24,121 +24,136 @@ command (a command specified on the interpreter command line with the
 `\strong{-c}' option) is a code block.  The file read by the built-in
 function \function{execfile()} is a code block.  The string argument
 passed to the built-in function \function{eval()} and to the
-\keyword{exec}\stindex{exec} statement is a code block.  And finally,
-the expression read and evaluated by the built-in function
-\function{input()} is a code block.
+\keyword{exec} statement is a code block.  And finally, the expression
+read and evaluated by the built-in function \function{input()} is a
+code block.
 
 A code block is executed in an execution frame.  An \dfn{execution
 frame}\indexii{execution}{frame} contains some administrative
 information (used for debugging), determines where and how execution
 continues after the code block's execution has completed, and (perhaps
-most importantly) defines the environment in which names are resolved.
+most importantly) defines two namespaces, the local and the global
+namespace, that affect execution of the code block.
 
-A \dfn{namespace}\indexii{namespace} is a mapping from names
-(identifiers) to objects.  An \dfn{environment}\index{environment} is
-a hierarchical collection of the namespaces that are visible to a
-particular code block.  Python namespaces are statically scoped in the
-tradition of Algol, but also has \keyword{global} statement that can
-be used to access the top-level namespace on the environment.
-
-Names refers to objects.  Names are introduced by name
-\dfn{binding}\indexii{binding}{name} operations.  Each occurrence of a name
-in the program text refers to the binding of that name established in
-the innermost function namespace containing the use.  Changing the
-mapping of a name to an object is called
-\dfn{rebinding}\indexii{rebinding}{name}; removing a name is 
+A \dfn{namespace}\index{namespace} is a mapping from names
+(identifiers) to objects.  A particular namespace may be referenced by
+more than one execution frame, and from other places as well.  Adding
+a name to a namespace is called \dfn{binding}\indexii{binding}{name} a
+name (to an object); changing the mapping of a name is called
+\dfn{rebinding}\indexii{rebinding}{name}; removing a name is
 \dfn{unbinding}\indexii{unbinding}{name}.  Namespaces are functionally
 equivalent to dictionaries (and often implemented as dictionaries).
 
-When a name is bound, a mapping is created in the \dfn{local
-namespace}\indexii{local}{namespace} of the execution frame unless the
-name is declared global.  If a name binding operation occurs anywhere
-within a code block, all uses of the name within the block are treated
-as references to the local namespace.  (Note: This can lead to errors
-when a name is used within a block before it is bound.)
-
-The \dfn{global namespace}\indexii{global}{namespace} determines the
-place where names listed in \keyword{global}\stindex{global}
-statements are defined and searched.  The global namespace of a block
-is the namespace of the module in which the block was defined.
-
-If a name is used within a code block, but it is not bound there and
-is not declared global, it is a \dfn{free variable}
-\indexii{free}{variable}.  A free variable is resolved using the
-nearest enclosing function block that has a binding for the name.  If
-no such block exists, the name is resolved in the global namespace.
-
-When a name is not found at all, a
-\exception{NameError}\withsubitem{(built-in
-exception)}{\ttindex{NameError}} exception is raised.
-
-The local namespace of a class definition becomes the attribute
-dictionary of the class. If a block is contained within a class
-definition, the name bindings that occur in the containing class block
-are not visible to enclosed blocks.
-
-The following constructs bind names: formal parameters to functions,
-\keyword{import} statements, class and function definitions (these bind
-the class or function name in the defining block), and identifiers
-occurring as the target of an assignment, in a \keyword{for} loop header
-(including list comprehensions), or in the second position of an
-\keyword{except} clause.
+The \dfn{local namespace}\indexii{local}{namespace} of an execution
+frame determines the default place where names are defined and
+searched.  The
+\dfn{global namespace}\indexii{global}{namespace} determines the place
+where names listed in \keyword{global}\stindex{global} statements are
+defined and searched, and where names that are not bound anywhere in
+the current code block are searched.
 
 Whether a name is local or global in a code block is determined by
 static inspection of the source text for the code block: in the
-absence of \keyword{global}\stindex{global} statements, a name that is
-bound anywhere in the code block is local in the entire code block;
-all other names are considered global.  The \keyword{global} statement
-forces global interpretation of selected names throughout the code
-block.
-
-The following constructs bind names: formal parameters to functions,
+absence of \keyword{global} statements, a name that is bound anywhere
+in the code block is local in the entire code block; all other names
+are considered global.  The \keyword{global} statement forces global
+interpretation of selected names throughout the code block.  The
+following constructs bind names: formal parameters to functions,
 \keyword{import} statements, class and function definitions (these
 bind the class or function name in the defining block), and targets
 that are identifiers if occurring in an assignment, \keyword{for} loop
 header, or in the second position of an \keyword{except} clause
-header.  The \keyword{import} statement of the form ``\samp{from
-\ldots import *}''\stindex{from} binds all names defined in the
-imported module, except those beginning with an underscore.  This form
-may only be used at the module level.
+header.  Local names are searched only on the local namespace; global
+names are searched only in the global and built-in
+namespace.\footnote{
+  If the code block contains \keyword{exec} statements or the
+  construct ``\samp{from \ldots import *}'', the semantics of local
+  names change: local name lookup first searches the local namespace,
+  then the global namespace and the built-in namespace.}
 
 A target occurring in a \keyword{del} statement is also considered bound
-for this purpose (though the actual semantics are to unbind the
-name).  It is illegal to unbind a name that is referenced by an
-enclosing scope; the compiler will report a \exception{SyntaxError}.
+for this purpose (though the actual semantics are to ``unbind'' the
+name).
 
 When a global name is not found in the global namespace, it is
 searched in the built-in namespace (which is actually the global
-namespace of the module \module{__builtin__}\refbimodindex{__builtin__}).  
-The built-in namespace associated with the execution of a code block
-is actually found by looking up the name \code{__builtins__} in its
-global namespace; this should be a dictionary or a module (in the
-latter case the module's dictionary is used).  Normally, the
-\code{__builtins__} namespace is the dictionary of the built-in module
-\module{__builtin__} (note: no `s').  If it isn't, restricted
-execution\indexii{restricted}{execution} mode is in effect.
+namespace of the module
+\module{__builtin__}\refbimodindex{__builtin__}).  The built-in
+namespace associated with the execution of a code block is actually
+found by looking up the name \code{__builtins__} is its global
+namespace; this should be a dictionary or a module (in the latter case
+its dictionary is used).  Normally, the \code{__builtins__} namespace
+is the dictionary of the built-in module \module{__builtin__} (note:
+no `s'); if it isn't, restricted
+execution\indexii{restricted}{execution} mode is in effect.  When a 
+name is not found at all, a
+\exception{NameError}\withsubitem{(built-in
+exception)}{\ttindex{NameError}} exception is raised.
+\stindex{from}
+\stindex{exec}
+\stindex{global}
 
-The namespace for a module is automatically created the first time a
-module is imported.  The main module for a script is always called
-\module{__main__}\refbimodindex{__main__}.
+The following table lists the meaning of the local and global
+namespace for various types of code blocks.  The namespace for a
+particular module is automatically created when the module is first
+imported (i.e., when it is loaded).  Note that in almost all cases,
+the global namespace is the namespace of the containing module ---
+scopes in Python do not nest!
 
-The \function{eval()}, \function{execfile()}, and \function{input()}
-functions and the \keyword{exec} statement do not have access to the
-full environment for resolving names.  Names may be resolved in the
-local and global namespaces of the caller.  Free variables are not
-resolved in the nearest enclosing namespaces, but in the global
-namespace.\footnote{This limitation occurs because the code that is
-    executed by these operations is not available at the time the
-    module is compiled.}
-The \keyword{exec} statement and the \function{eval()} and
+\begin{tableiv}{l|l|l|l}{textrm}
+  {Code block type}{Global namespace}{Local namespace}{Notes}
+  \lineiv{Module}
+         {n.s. for this module}
+         {same as global}{}
+  \lineiv{Script (file or command)}
+         {n.s. for \module{__main__}\refbimodindex{__main__}}
+         {same as global}{(1)}
+  \lineiv{Interactive command}
+         {n.s. for \module{__main__}\refbimodindex{__main__}}
+         {same as global}{}
+  \lineiv{Class definition}
+         {global n.s. of containing block}
+         {new n.s.}{}
+  \lineiv{Function body}
+         {global n.s. of containing block}
+         {new n.s.}{(2)}
+  \lineiv{String passed to \keyword{exec} statement}
+         {global n.s. of containing block}
+         {local n.s. of containing block}{(2), (3)}
+  \lineiv{String passed to \function{eval()}}
+         {global n.s. of caller}
+         {local n.s. of caller}{(2), (3)}
+  \lineiv{File read by \function{execfile()}}
+         {global n.s. of caller}
+         {local n.s. of caller}{(2), (3)}
+  \lineiv{Expression read by \function{input()}}
+         {global n.s. of caller}
+         {local n.s. of caller}{}
+\end{tableiv}
+
+Notes:
+
+\begin{description}
+
+\item[n.s.] means \emph{namespace}
+
+\item[(1)] The main module for a script is always called
+\module{__main__}; ``the filename don't enter into it.''
+
+\item[(2)] The global and local namespace for these can be
+overridden with optional extra arguments.
+
+\item[(3)] The \keyword{exec} statement and the \function{eval()} and
 \function{execfile()} functions have optional arguments to override
 the global and local namespace.  If only one namespace is specified,
 it is used for both.
 
-The built-in functions \function{globals()} and \function{locals()}
-each return a dictionary, representing the current global and local
-namespace respectively.  The effect of modifications to these
-dictionaries on the namespace are undefined.\footnote{
+\end{description}
+
+The built-in functions \function{globals()} and \function{locals()} returns a
+dictionary representing the current global and local namespace,
+respectively.  The effect of modifications to this dictionary on the
+namespace are undefined.\footnote{
   The current implementations return the dictionary actually used to
   implement the namespace, \emph{except} for functions, where the
   optimizer may cause the local namespace to be implemented
