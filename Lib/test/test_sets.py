@@ -419,12 +419,12 @@ class TestOnlySetsInBinaryOps(unittest.TestCase):
 
     def test_cmp(self):
         try:
-            self.other < self.set
+            self.other == self.set
             assert 0, "Comparison with non-set on left"
         except TypeError:
             pass
         try:
-            self.set >= self.other
+            self.set != self.other
             assert 0, "Comparison with non-set on right"
         except TypeError:
             pass
