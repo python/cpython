@@ -1021,7 +1021,7 @@ class Transformer:
     # slice_item: expression | proper_slice | ellipsis
     ch = node[1]
     if ch[0] == token.DOT and node[2][0] == token.DOT:
-      return ('ellipsis', None)
+      return Node('ellipsis')
     if ch[0] == token.COLON or len(node) > 2:
       return self.com_sliceobj(node)
     return self.com_node(ch)
