@@ -1,4 +1,3 @@
-% LaTeXed from comments in file
 \section{\module{mutex} ---
          Mutual exclusion support}
 
@@ -6,7 +5,7 @@
 \sectionauthor{Moshe Zadka}{moshez@zadka.site.co.il}
 \modulesynopsis{Lock and queue for mutual exclusion.}
 
-The \module{mutex} defines a class that allows mutual-exclusion
+The \module{mutex} module defines a class that allows mutual-exclusion
 via acquiring and releasing locks. It does not require (or imply)
 threading or multi-tasking, though it could be useful for
 those purposes.
@@ -18,7 +17,7 @@ Create a new (unlocked) mutex.
 
 A mutex has two pieces of state --- a ``locked'' bit and a queue.
 When the mutex is not locked, the queue is empty.
-Otherwise, the queue contains 0 or more 
+Otherwise, the queue contains zero or more 
 \code{(\var{function}, \var{argument})} pairs
 representing functions (or methods) waiting to acquire the lock.
 When the mutex is unlocked while the queue is not empty,
@@ -27,7 +26,8 @@ the first queue entry is removed and its
 implying it now has the lock.
 
 Of course, no multi-threading is implied -- hence the funny interface
-for lock, where a function is called once the lock is acquired.
+for \method{lock()}, where a function is called once the lock is
+acquired.
 \end{classdesc}
 
 
