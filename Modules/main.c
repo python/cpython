@@ -205,25 +205,33 @@ Py_Main(argc, argv)
 		_setmode(fileno(stdout), O_BINARY);
 #endif
 #ifndef MPW
+#ifdef HAVE_SETVBUF
 		setvbuf(stdin,  (char *)NULL, _IONBF, BUFSIZ);
 		setvbuf(stdout, (char *)NULL, _IONBF, BUFSIZ);
 		setvbuf(stderr, (char *)NULL, _IONBF, BUFSIZ);
-#else
+#else /* !HAVE_SETVBUF */
+		setbuf(stdin,  (char *)NULL);
+		setbuf(stdout, (char *)NULL);
+		setbuf(stderr, (char *)NULL);
+#endif /* !HAVE_SETVBUF */
+#else /* MPW */
 		/* On MPW (3.2) unbuffered seems to hang */
 		setvbuf(stdin,  (char *)NULL, _IOLBF, BUFSIZ);
 		setvbuf(stdout, (char *)NULL, _IOLBF, BUFSIZ);
 		setvbuf(stderr, (char *)NULL, _IOLBF, BUFSIZ);
-#endif
+#endif /* MPW */
 	}
 	else if (Py_InteractiveFlag) {
 #ifdef MS_WINDOWS
 		/* Doesn't have to have line-buffered -- use unbuffered */
 		setvbuf(stdin,  (char *)NULL, _IONBF, BUFSIZ);
 		setvbuf(stdout, (char *)NULL, _IONBF, BUFSIZ);
-#else
+#else /* !MS_WINDOWS */
+#ifdef HAVE_SETVBUF
 		setvbuf(stdin,  (char *)NULL, _IOLBF, BUFSIZ);
 		setvbuf(stdout, (char *)NULL, _IOLBF, BUFSIZ);
-#endif
+#endif /* HAVE_SETVBUF */
+#endif /* !MS_WINDOWS */
 		/* Leave stderr alone - it should be unbuffered anyway. */
   	}
 
