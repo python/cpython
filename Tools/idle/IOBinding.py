@@ -148,9 +148,9 @@ class IOBinding:
 
     def writefile(self, filename):
         self.fixlastline()
+        chars = str(self.text.get("1.0", "end-1c"))
         try:
             f = open(filename, "w")
-            chars = self.text.get("1.0", "end-1c")
             f.write(chars)
             f.close()
             ## print "saved to", `filename`
