@@ -244,7 +244,7 @@ if missing: raise "Missing Types"
 		self.whole_pat = self.type_pat + self.name_pat + self.args_pat
 		self.sym_pat = "^[ \t]*\(<name>[a-zA-Z0-9_]+\)[ \t]*=" + \
 		               "[ \t]*\(<defn>[-0-9_a-zA-Z'\"(][^\t\n,;}]*\),?"
-		self.asplit_pat = "^\(<type>.*[^a-zA-Z0-9_]\)\(<name>[a-zA-Z0-9_]+\)$"
+		self.asplit_pat = "^\(<type>.*[^a-zA-Z0-9_]\)\(<name>[a-zA-Z0-9_]+\)\(<array>\[\]\)?$"
 		self.comment1_pat = "\(<rest>.*\)//.*"
 		# note that the next pattern only removes comments that are wholly within one line
 		self.comment2_pat = "\(<rest1>.*\)/\*.*\*/\(<rest2>.*\)"
@@ -470,8 +470,12 @@ if missing: raise "Missing Types"
 		mode = "InMode"
 		if self.asplit.match(part) < 0:
 			self.error("Indecipherable argument: %s", `part`)
+			import pdb ; pdb.set_trace()
 			return ("unknown", part, mode)
-		type, name = self.asplit.group('type', 'name')
+		type, name, array = self.asplit.group('type', 'name', 'array')
+		if array:
+			# array matches an optional [] after the argument name
+			type = type + " ptr "
 		type = regsub.gsub("\*", " ptr ", type)
 		type = string.strip(type)
 		type = regsub.gsub("[ \t]+", "_", type)
@@ -573,10 +577,7 @@ class Scanner_PreUH3(Scanner):
 	def initpatterns(self):
 		Scanner.initpatterns(self)
 		self.head_pat = "^extern pascal[ \t]+" # XXX Mac specific!
-		self.tail_pat = "[;={}]"
 		self.type_pat = "pascal[ \t\n]+\(<type>[a-zA-Z0-9_ \t]*[a-zA-Z0-9_]\)[ \t\n]+"
-		self.name_pat = "\(<name>[a-zA-Z0-9_]+\)[ \t\n]*"
-		self.args_pat = "(\(<args>\([^(;=)]+\|([^(;=)]*)\)*\))"
 		self.whole_pat = self.type_pat + self.name_pat + self.args_pat
 		self.sym_pat = "^[ \t]*\(<name>[a-zA-Z0-9_]+\)[ \t]*=" + \
 		               "[ \t]*\(<defn>[-0-9'\"][^\t\n,;}]*\),?"
@@ -585,22 +586,15 @@ class Scanner_PreUH3(Scanner):
 class Scanner_OSX(Scanner):
 	"""Scanner for modern (post UH3.3) Universal Headers """
 	def initpatterns(self):
+		Scanner.initpatterns(self)
 		self.head_pat = "^EXTERN_API_C"
-		self.tail_pat = "[;={}]"
 		self.type_pat = "EXTERN_API_C" + \
 						"[ \t\n]*([ \t\n]*" + \
 						"\(<type>[a-zA-Z0-9_* \t]*[a-zA-Z0-9_*]\)" + \
 						"[ \t\n]*)[ \t\n]*"
-		self.name_pat = "\(<name>[a-zA-Z0-9_]+\)[ \t\n]*"
-		self.args_pat = "(\(<args>\([^(;=)]+\|([^(;=)]*)\)*\))"
 		self.whole_pat = self.type_pat + self.name_pat + self.args_pat
 		self.sym_pat = "^[ \t]*\(<name>[a-zA-Z0-9_]+\)[ \t]*=" + \
 		               "[ \t]*\(<defn>[-0-9_a-zA-Z'\"(][^\t\n,;}]*\),?"
-		self.asplit_pat = "^\(<type>.*[^a-zA-Z0-9_]\)\(<name>[a-zA-Z0-9_]+\)$"
-		self.comment1_pat = "\(<rest>.*\)//.*"
-		# note that the next pattern only removes comments that are wholly within one line
-		self.comment2_pat = "\(<rest1>.*\)/\*.*\*/\(<rest2>.*\)"
-
 	
 def test():
 	input = "D:Development:THINK C:Mac #includes:Apple #includes:AppleEvents.h"
