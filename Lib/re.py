@@ -57,6 +57,11 @@ def split(pattern, string, maxsplit=0):
         pattern = _cachecompile(pattern)
     return pattern.split(string, maxsplit)
 
+def findall(pattern, string):
+    if type(pattern) == type(''):
+        pattern = _cachecompile(pattern)
+    return pattern.findall(string)
+
 def escape(pattern):
     "Escape all non-alphanumeric characters in pattern."
     result = []
@@ -80,6 +85,7 @@ def compile(pattern, flags=0):
 #
 
 class RegexObject:
+
     def __init__(self, pattern, flags, code, groupindex):
         self.code = code 
         self.flags = flags
@@ -171,7 +177,7 @@ class RegexObject:
         return (string.join(results, ''), n)
                                                                             
     def split(self, source, maxsplit=0):
-        """Split the \var{source} string by the occurrences of the pattern,
+        """Split the source string by the occurrences of the pattern,
         returning a list containing the resulting substrings."""
 
         if maxsplit < 0:
@@ -198,12 +204,37 @@ class RegexObject:
             results.append(source[lastmatch:i])
             g = m.groups()
             if g:
-                if type(g)==type( "" ): g = [g]
                 results[len(results):] = list(g)
             pos = lastmatch = j
             n = n + 1
         results.append(source[lastmatch:])
         return results
+
+    def findall(self, string):
+        """Return a list of all non-overlapping matches in the string.
+
+        If one or more groups are present in the pattern, return a
+        list of groups; this will be a list of tuples if the pattern
+        has more than one group.
+
+        Empty matches are included in the result.
+
+        """
+        pos = 0
+        n = len(string)
+        result = []
+        while pos <= n:
+            m = self.search(string, pos)
+            if not m:
+                break
+            gr = m.groups()
+            if not gr:
+                gr = m.group()
+            elif len(gr) == 1:
+                gr = gr[0]
+            result.append(gr)
+            pos = max(m.end(), pos+1)
+        return result
 
     # The following 3 functions were contributed by Mike Fletcher, and
     # allow pickling and unpickling of RegexObject instances.
@@ -221,6 +252,7 @@ class RegexObject:
         self.code = apply(pcre_compile, statetuple)
 
 class MatchObject:
+
     def __init__(self, re, string, pos, endpos, regs):
         self.re = re
         self.string = string
@@ -234,7 +266,7 @@ class MatchObject:
             try:
                 g = self.re.groupindex[g]
             except (KeyError, TypeError):
-                raise IndexError, ('group "' + g + '" is undefined')
+                raise IndexError, 'group %s is undefined' % `g`
         return self.regs[g][0]
     
     def end(self, g = 0):
@@ -243,31 +275,31 @@ class MatchObject:
             try:
                 g = self.re.groupindex[g]
             except (KeyError, TypeError):
-                raise IndexError, ('group "' + g + '" is undefined')
+                raise IndexError, 'group %s is undefined' % `g`
         return self.regs[g][1]
     
     def span(self, g = 0):
-        """Return a tuple containing the start,end of the substring 
-        matched by group g"""
+        "Return (start, end) of the substring matched by group g"
         if type(g) == type(''):
             try:
                 g = self.re.groupindex[g]
             except (KeyError, TypeError):
-                raise IndexError, ('group "' + g + '" is undefined')
+                raise IndexError, 'group %s is undefined' % `g`
         return self.regs[g]
     
-    def groups(self):
+    def groups(self, default=None):
         "Return a tuple containing all subgroups of the match object"
         result = []
         for g in range(1, self.re._num_regs):
-            if (self.regs[g][0] == -1) or (self.regs[g][1] == -1):
-                result.append(None)
+            a, b = self.regs[g]
+            if a == -1 or b == -1:
+                result.append(default)
             else:
-                result.append(self.string[self.regs[g][0]:self.regs[g][1]])
+                result.append(self.string[a:b])
         return tuple(result)
 
     def group(self, *groups):
-        "Return one or more groups of the match."
+        "Return one or more groups of the match"
         if len(groups) == 0:
             groups = (0,)
         result = []
@@ -276,15 +308,28 @@ class MatchObject:
                 try:
                     g = self.re.groupindex[g]
                 except (KeyError, TypeError):
-                    raise IndexError, ('group "' + g + '" is undefined')
-            if len(self.regs)<=g: raise IndexError, ('group "' + str(g) + '" is undefined')
-            elif (self.regs[g][0] == -1) or (self.regs[g][1] == -1):
+                    raise IndexError, 'group %s is undefined' % `g`
+            if g >= len(self.regs):
+                raise IndexError, 'group %s is undefined' % `g`
+            a, b = self.regs[g]
+            if a == -1 or b == -1:
                 result.append(None)
             else:
-                result.append(self.string[self.regs[g][0]:self.regs[g][1]])
+                result.append(self.string[a:b])
         if len(result) > 1:
             return tuple(result)
         elif len(result) == 1:
             return result[0]
         else:
             return ()
+
+    def groupdict(self, default=None):
+        "Return a dictionary containing all named subgroups of the match"
+        dict = {}
+        for name, index in self.re.groupindex.items():
+            a, b = self.regs[index]
+            if a == -1 or b == -1:
+                dict[name] = default
+            else:
+                dict[name] = self.string[a:b]
+        return dict
