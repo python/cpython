@@ -34,7 +34,7 @@ unlink(old)
 {
 	OSErr err;
 	
-	if ((err=FSDelete(c2pstr(old), 0)) == noErr)
+	if ((err=FSDelete((ConstStr255Param)Pstring(old), 0)) == noErr)
 		return 0;
 	errno= err;
 	return -1;
