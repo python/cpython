@@ -1431,6 +1431,14 @@ This can be used to determine the set of names known to the system.
 Availability: \UNIX.
 \end{datadesc}
 
+\begin{funcdesc}{getloadavg}{}
+Return the number of processes in the system run queue averaged over
+the last 1, 5, and 15 minutes or raises OSError if the load average
+was unobtainable.
+
+\versionadded{2.3}
+\end{funcdesc}
+
 \begin{funcdesc}{sysconf}{name}
 Return integer-valued system configuration values.
 If the configuration value specified by \var{name} isn't defined,

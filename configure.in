@@ -1762,7 +1762,8 @@ AC_MSG_RESULT(MACHDEP_OBJS)
 # checks for library functions
 AC_CHECK_FUNCS(alarm chown clock confstr ctermid execv \
  fchdir flock fork fsync fdatasync fpathconf ftime ftruncate \
- gai_strerror getgroups getlogin getpeername getpgid getpid getpwent getwd \
+ gai_strerror getgroups getlogin getloadavg getpeername getpgid getpid \
+ getpriority getpwent getwd \
  hstrerror inet_pton kill killpg lchown lstat mkfifo mknod mktime \
  mremap nice pathconf pause plock poll pthread_init \
  putenv readlink \
@@ -1770,7 +1771,7 @@ AC_CHECK_FUNCS(alarm chown clock confstr ctermid execv \
  setlocale setregid setreuid setsid setpgid setuid setvbuf snprintf \
  sigaction siginterrupt sigrelse strftime strptime \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
- truncate uname unsetenv utimes waitpid wcscoll _getpty getpriority)
+ truncate uname unsetenv utimes waitpid wcscoll _getpty)
 
 # For some functions, having a definition is not sufficient, since
 # we want to take their address.
