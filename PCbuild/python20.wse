@@ -50,12 +50,17 @@ item: Set Variable
 end
 item: End Block
 end
-remarked item: Check Configuration
-  Message=Sorry, but we can not install Python on your system unless you have Administrator Privileges.
-  Message=
-  Message=Please log on as an Administrator, and start the installation again.
-  Title=Must have administrator rights
-  Flags=01011111
+item: Check Configuration
+  Flags=10011111
+end
+item: Display Message
+  Title=Doing non-admin install
+  Text=The current login does not have Administrator Privileges on this machine.  Python will install its registry information into the per-user area only for the current login, instead of into the per-machine area for every account on this machine.  Some advanced uses of Python may not work as a result (for example, running a Python script as a service).
+  Text=
+  Text=If this is not what you want, please click Cancel to abort this installation, log on as an Administrator, and start the installation again.
+  Flags=00001000
+end
+item: End Block
 end
 item: Set Variable
   Variable=APPTITLE
@@ -1016,13 +1021,6 @@ item: Edit Registry
   Root=2
 end
 item: Else Statement
-end
-item: Display Message
-  Title=Doing non-admin install
-  Text=The current login does not have Administrator Privileges on this machine.  Python will install its registry information into the per-user area only for the current login, instead of into the per-machine area for every account on this machine.  Some advanced uses of Python may not work as a result (for example, running a Python script as a service).
-  Text=
-  Text=If this is not what you want, please log on as an Administrator, and start the installation again.
-  Flags=00001000
 end
 item: Edit Registry
   Key=Software\Python\PythonCore\CurrentVersion
