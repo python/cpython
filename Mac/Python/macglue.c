@@ -830,6 +830,9 @@ char *filename;
 	} else {
 		m = NULL;
 	}
+	if (Py_VerboseFlag)
+		fprintf(stderr, "import %s # pyc resource from %s\n",
+			module, filename);
 	return m;
 error:
 	{
