@@ -29,7 +29,10 @@ Library
   attempt is made to execute the remaining handlers.  The last exception
   raised is re-raised.
 
-- Patch 1061679: Added `__all__` to pickletools.py.
+- ``doctest``'s new support for adding ``pdb.set_trace()`` calls to
+  doctests was broken in a dramatic but shallow way.  Fixed.
+
+- Patch 1061679: Added ``__all__`` to pickletools.py.
 
 Build
 -----
