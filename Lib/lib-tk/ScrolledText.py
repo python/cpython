@@ -33,5 +33,5 @@ class ScrolledText(Text):
 
 		# Copy Pack methods of self.frame -- hack!
 		for m in Pack.__dict__.keys():
-			if m[0] != '_' and m != 'config':
+			if m[0] != '_' and m != 'config' and m != 'configure':
 				setattr(self, m, getattr(self.frame, m))
