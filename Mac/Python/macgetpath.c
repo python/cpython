@@ -114,7 +114,7 @@ PyMac_OpenPrefFile()
 		if ( action == NOPREFFILE_NO )
 			exit(1);
 	
-		FSpCreateResFile(&dirspec, 'PYTH', 'pref', 0);
+		FSpCreateResFile(&dirspec, 'Pyth', 'pref', 0);
 		prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
 		if ( prefrh == -1 ) {
 			/* This "cannot happen":-) */

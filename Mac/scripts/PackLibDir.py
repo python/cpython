@@ -26,7 +26,7 @@ def createoutput(dst):
 	"""Create output file. Return handle and first id to use."""
 	
 
-	FSpCreateResFile(dst, 'PYTH', 'rsrc', smAllScripts)
+	FSpCreateResFile(dst, 'Pyth', 'rsrc', smAllScripts)
 	output = FSpOpenResFile(dst, WRITE)
 	UseResFile(output)
 	num = 128
