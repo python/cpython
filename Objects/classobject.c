@@ -1435,6 +1435,8 @@ BINARY(instance_mul, "mul", PyNumber_Multiply)
 BINARY(instance_div, "div", PyNumber_Divide)
 BINARY(instance_mod, "mod", PyNumber_Remainder)
 BINARY(instance_divmod, "divmod", PyNumber_Divmod)
+BINARY(instance_floordiv, "floordiv", PyNumber_FloorDivide)
+BINARY(instance_truediv, "truediv", PyNumber_TrueDivide)
 
 BINARY_INPLACE(instance_ior, "or", PyNumber_InPlaceOr)
 BINARY_INPLACE(instance_ixor, "xor", PyNumber_InPlaceXor)
@@ -1446,6 +1448,8 @@ BINARY_INPLACE(instance_isub, "sub", PyNumber_InPlaceSubtract)
 BINARY_INPLACE(instance_imul, "mul", PyNumber_InPlaceMultiply)
 BINARY_INPLACE(instance_idiv, "div", PyNumber_InPlaceDivide)
 BINARY_INPLACE(instance_imod, "mod", PyNumber_InPlaceRemainder)
+BINARY_INPLACE(instance_ifloordiv, "floordiv", PyNumber_InPlaceFloorDivide)
+BINARY_INPLACE(instance_itruediv, "truediv", PyNumber_InPlaceTrueDivide)
 
 /* Try a 3-way comparison, returning an int; v is an instance.  Return:
    -2 for an exception;
@@ -1900,6 +1904,10 @@ static PyNumberMethods instance_as_number = {
 	(binaryfunc)instance_iand,		/* nb_inplace_and */
 	(binaryfunc)instance_ixor,		/* nb_inplace_xor */
 	(binaryfunc)instance_ior,		/* nb_inplace_or */
+	(binaryfunc)instance_floordiv,		/* nb_floor_divide */
+	(binaryfunc)instance_truediv,		/* nb_true_divide */
+	(binaryfunc)instance_ifloordiv,		/* nb_inplace_floor_divide */
+	(binaryfunc)instance_itruediv,		/* nb_inplace_true_divide */
 };
 
 PyTypeObject PyInstance_Type = {

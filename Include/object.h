@@ -161,6 +161,12 @@ typedef struct {
 	binaryfunc nb_inplace_and;
 	binaryfunc nb_inplace_xor;
 	binaryfunc nb_inplace_or;
+
+	/* The following require the Py_TPFLAGS_HAVE_CLASS flag */
+	binaryfunc nb_floor_divide;
+	binaryfunc nb_true_divide;
+	binaryfunc nb_inplace_floor_divide;
+	binaryfunc nb_inplace_true_divide;
 } PyNumberMethods;
 
 typedef struct {
@@ -396,7 +402,7 @@ given type object has a specified feature.
 /* tp_iter is defined */
 #define Py_TPFLAGS_HAVE_ITER (1L<<7)
 
-/* Experimental stuff for healing the type/class split */
+/* New members introduced by Python 2.2 exist */
 #define Py_TPFLAGS_HAVE_CLASS (1L<<8)
 
 /* Set if the type object is dynamically allocated */

@@ -1874,14 +1874,20 @@ com_term(struct compiling *c, node *n)
 			op = BINARY_MULTIPLY;
 			break;
 		case SLASH:
-			op = BINARY_DIVIDE;
+			if (c->c_flags & CO_FUTURE_DIVISION)
+				op = BINARY_TRUE_DIVIDE;
+			else
+				op = BINARY_DIVIDE;
 			break;
 		case PERCENT:
 			op = BINARY_MODULO;
 			break;
+		case DOUBLESLASH:
+			op = BINARY_FLOOR_DIVIDE;
+			break;
 		default:
 			com_error(c, PyExc_SystemError,
-				  "com_term: operator not *, / or %");
+				  "com_term: operator not *, /, // or %");
 			op = 255;
 		}
 		com_addbyte(c, op);
@@ -2475,7 +2481,14 @@ com_augassign(struct compiling *c, node *n)
 	switch (STR(CHILD(CHILD(n, 1), 0))[0]) {
 	case '+': opcode = INPLACE_ADD; break;
 	case '-': opcode = INPLACE_SUBTRACT; break;
-	case '/': opcode = INPLACE_DIVIDE; break;
+	case '/':
+		if (STR(CHILD(CHILD(n, 1), 0))[1] == '/')
+			opcode = INPLACE_FLOOR_DIVIDE;
+		else if (c->c_flags & CO_FUTURE_DIVISION)
+			opcode = INPLACE_TRUE_DIVIDE;
+		else
+			opcode = INPLACE_DIVIDE;
+		break;
 	case '%': opcode = INPLACE_MODULO; break;
 	case '<': opcode = INPLACE_LSHIFT; break;
 	case '>': opcode = INPLACE_RSHIFT; break;
@@ -3945,7 +3958,8 @@ jcompile(node *n, char *filename, struct compiling *base,
 		if (base->c_nested 
 		    || (sc.c_symtable->st_cur->ste_type == TYPE_FUNCTION))
 			sc.c_nested = 1;
-		sc.c_flags |= base->c_flags & CO_GENERATOR_ALLOWED;
+		sc.c_flags |= base->c_flags & (CO_GENERATOR_ALLOWED |
+					       CO_FUTURE_DIVISION);
 	} else {
 		sc.c_private = NULL;
 		sc.c_future = PyNode_Future(n, filename);
@@ -3963,6 +3977,11 @@ jcompile(node *n, char *filename, struct compiling *base,
 				sc.c_future->ff_generators = 1;
 			else if (sc.c_future->ff_generators)
 				flags->cf_flags |= PyCF_GENERATORS;
+
+			if (flags->cf_flags & PyCF_DIVISION)
+				sc.c_future->ff_division = 1;
+			else if (sc.c_future->ff_division)
+				flags->cf_flags |= PyCF_DIVISION;
 		}
 		if (symtable_build(&sc, n) < 0) {
 			com_free(&sc);
@@ -4437,6 +4456,8 @@ symtable_update_flags(struct compiling *c, PySymtableEntryObject *ste,
 			c->c_flags |= CO_NESTED;
 		if (c->c_future->ff_generators)
 			c->c_flags |= CO_GENERATOR_ALLOWED;
+		if (c->c_future->ff_division)
+			c->c_flags |= CO_FUTURE_DIVISION;
 	}
 	if (ste->ste_generator)
 		c->c_flags |= CO_GENERATOR;

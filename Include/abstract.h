@@ -547,6 +547,26 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
+     DL_IMPORT(PyObject *) PyNumber_FloorDivide(PyObject *o1, PyObject *o2);
+
+       /*
+	 Returns the result of dividing o1 by o2 giving an integral result,
+	 or null on failure.
+	 This is the equivalent of the Python expression: o1//o2.
+
+
+       */
+
+     DL_IMPORT(PyObject *) PyNumber_TrueDivide(PyObject *o1, PyObject *o2);
+
+       /*
+	 Returns the result of dividing o1 by o2 giving a float result,
+	 or null on failure.
+	 This is the equivalent of the Python expression: o1/o2.
+
+
+       */
+
      DL_IMPORT(PyObject *) PyNumber_Remainder(PyObject *o1, PyObject *o2);
 
        /*
@@ -738,6 +758,28 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        /*
 	 Returns the result of dividing o1 by o2, possibly in-place, or null
 	 on failure.  This is the equivalent of the Python expression:
+	 o1 /= o2.
+
+       */
+
+     DL_IMPORT(PyObject *) PyNumber_InPlaceFloorDivide(PyObject *o1,
+						       PyObject *o2);
+
+       /*
+	 Returns the result of dividing o1 by o2 giving an integral result,
+	 possibly in-place, or null on failure.
+	 This is the equivalent of the Python expression:
+	 o1 /= o2.
+
+       */
+
+     DL_IMPORT(PyObject *) PyNumber_InPlaceTrueDivide(PyObject *o1,
+						      PyObject *o2);
+
+       /*
+	 Returns the result of dividing o1 by o2 giving a float result,
+	 possibly in-place, or null on failure.
+	 This is the equivalent of the Python expression:
 	 o1 /= o2.
 
        */
