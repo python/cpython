@@ -397,6 +397,7 @@ def create_module_info(doc, section):
         modauthor.appendChild(doc.createTextNode(
             modauthor.getAttribute("name")))
         modauthor.removeAttribute("name")
+    platform = extract_first_element(section, "platform")
     if section.tagName == "section":
         modinfo_pos = 2
         modinfo = doc.createElement("moduleinfo")
@@ -454,9 +455,28 @@ def create_module_info(doc, section):
         if modauthor:
             modinfo.appendChild(doc.createTextNode("\n    "))
             modinfo.appendChild(modauthor)
+        if platform:
+            modinfo.appendChild(doc.createTextNode("\n    "))
+            modinfo.appendChild(platform)
         modinfo.appendChild(doc.createTextNode("\n  "))
         section.insertBefore(modinfo, section.childNodes[modinfo_pos])
         section.insertBefore(doc.createTextNode("\n  "), modinfo)
+        #
+        # The rest of this removes extra newlines from where we cut out
+        # a lot of elements.  A lot of code for minimal value, but keeps
+        # keeps the generated SGML from being too funny looking.
+        #
+        section.normalize()
+        children = section.childNodes
+        for i in range(len(children)):
+            node = children[i]
+            if node.nodeType == xml.dom.core.ELEMENT \
+               and node.tagName == "moduleinfo":
+                nextnode = children[i+1]
+                if nextnode.nodeType == xml.dom.core.TEXT:
+                    data = nextnode.data
+                    if len(string.lstrip(data)) < (len(data) - 4):
+                        nextnode.data = "\n\n\n" + string.lstrip(data)
 
 
 def cleanup_synopses(doc):
