@@ -1444,6 +1444,7 @@ write_header(ProfilerObject *self)
                   (self->linetimings ? "yes" : "no"));
     pack_add_info(self, "platform", Py_GetPlatform());
     pack_add_info(self, "executable", Py_GetProgramFullPath());
+    free(buffer);
     buffer = (char *) Py_GetVersion();
     if (buffer == NULL)
         PyErr_Clear();
