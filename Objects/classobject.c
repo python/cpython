@@ -2193,6 +2193,14 @@ instancemethod_call(PyObject *func, PyObject *arg, PyObject *kw)
 	return result;
 }
 
+static PyObject *
+instancemethod_descr_get(PyObject *meth, PyObject *obj, PyObject *type)
+{
+	if (obj == Py_None)
+		obj = NULL;
+	return PyMethod_New(PyMethod_GET_FUNCTION(meth), obj, type);
+}
+
 PyTypeObject PyMethod_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -2219,7 +2227,17 @@ PyTypeObject PyMethod_Type = {
 	(traverseproc)instancemethod_traverse,	/* tp_traverse */
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
- 	offsetof(PyMethodObject, im_weakreflist) /* tp_weaklistoffset */
+ 	offsetof(PyMethodObject, im_weakreflist), /* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	0,					/* tp_methods */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	instancemethod_descr_get,		/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
 };
 
 /* Clear out the free list */
