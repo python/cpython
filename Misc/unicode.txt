@@ -1,5 +1,5 @@
 =============================================================================
- Python Unicode Integration                            Proposal Version: 1.4
+ Python Unicode Integration                            Proposal Version: 1.6
 -----------------------------------------------------------------------------
 
 
@@ -41,16 +41,52 @@ General Remarks:
   case-insensitive on input (they will be converted to lower case
   by all APIs taking an encoding name as input).
 
-  Encoding names should follow the name conventions as used by the
+· Encoding names should follow the name conventions as used by the
   Unicode Consortium: spaces are converted to hyphens, e.g. 'utf 16' is
   written as 'utf-16'.
 
-  Codec modules should use the same names, but with hyphens converted
+· Codec modules should use the same names, but with hyphens converted
   to underscores, e.g. utf_8, utf_16, iso_8859_1.
 
-· The <default encoding> should be the widely used 'utf-8' format. This
-  is very close to the standard 7-bit ASCII format and thus resembles the
-  standard used programming nowadays in most aspects.
+
+Unicode Default Encoding:
+-------------------------
+
+The Unicode implementation has to make some assumption about the
+encoding of 8-bit strings passed to it for coercion and about the
+encoding to as default for conversion of Unicode to strings when no
+specific encoding is given. This encoding is called <default encoding>
+throughout this text.
+
+For this, the implementation maintains a global which can be set in
+the site.py Python startup script. Subsequent changes are not
+possible. The <default encoding> can be set and queried using the
+two sys module APIs:
+
+  sys.setdefaultencoding(encoding)
+     --> Sets the <default encoding> used by the Unicode implementation.
+	 encoding has to be an encoding which is supported by the Python
+	 installation, otherwise, a LookupError is raised.
+
+	 Note: This API is only available in site.py ! It is removed
+	 from the sys module by site.py after usage.
+
+  sys.getdefaultencoding()
+     --> Returns the current <default encoding>.
+
+If not otherwise defined or set, the <default encoding> defaults to
+'ascii'. This encoding is also the startup default of Python (and in
+effect before site.py is executed).
+
+Note that the default site.py startup module contains disabled
+optional code which can set the <default encoding> according to the
+encoding defined by the current locale. The locale module is used to
+extract the encoding from the locale default settings defined by the
+OS environment (see locale.py). If the encoding cannot be determined,
+is unkown or unsupported, the code defaults to setting the <default
+encoding> to 'ascii'. To enable this code, edit the site.py file or
+place the appropriate code into the sitecustomize.py module of your
+Python installation.
 
 
 Unicode Constructors:
@@ -159,8 +195,10 @@ other objects have been coerced to Unicode. For strings this means
 that they are interpreted as Unicode string using the <default
 encoding>.
 
-For the same reason, Unicode objects should return the same hash value
-as their UTF-8 equivalent strings.
+Unicode objects should return the same hash value as their ASCII
+equivalent strings. Unicode strings holding non-ASCII values are not
+guaranteed to return the same hash values as the default encoded
+equivalent string representation.
 
 When compared using cmp() (or PyObject_Compare()) the implementation
 should mask TypeErrors raised during the conversion to remain in synch
@@ -661,11 +699,10 @@ to the compiler's wchar_t which can be 16 or 32 bit depending on the
 compiler/libc/platform being used.
 
 Unicode objects should have a pointer to a cached Python string object
-<defencstr> holding the object's value using the current <default
-encoding>.  This is needed for performance and internal parsing (see
-Internal Argument Parsing) reasons. The buffer is filled when the
-first conversion request to the <default encoding> is issued on the
-object.
+<defenc> holding the object's value using the <default encoding>.
+This is needed for performance and internal parsing (see Internal
+Argument Parsing) reasons. The buffer is filled when the first
+conversion request to the <default encoding> is issued on the object.
 
 Interning is not needed (for now), since Python identifiers are
 defined as being ASCII only.
@@ -701,11 +738,11 @@ type).
 Buffer Interface:
 -----------------
 
-Implement the buffer interface using the <defencstr> Python string
+Implement the buffer interface using the <defenc> Python string
 object as basis for bf_getcharbuf (corresponds to the "t#" argument
 parsing marker) and the internal buffer for bf_getreadbuf (corresponds
 to the "s#" argument parsing marker). If bf_getcharbuf is requested
-and the <defencstr> object does not yet exist, it is created first.
+and the <defenc> object does not yet exist, it is created first.
 
 This has the advantage of being able to write to output streams (which
 typically use this interface) without additional specification of the
@@ -775,8 +812,8 @@ These markers are used by the PyArg_ParseTuple() APIs:
 
   "U":  Check for Unicode object and return a pointer to it
 
-  "s":  For Unicode objects: auto convert them to the <default encoding>
-        and return a pointer to the object's <defencstr> buffer.
+  "s":  For Unicode objects: return a pointer to the object's
+	<defenc> buffer (which uses the <default encoding>).
 
   "s#": Access to the Unicode object via the bf_getreadbuf buffer interface 
         (see Buffer Interface); note that the length relates to the buffer
@@ -785,8 +822,7 @@ These markers are used by the PyArg_ParseTuple() APIs:
 
   "t#": Access to the Unicode object via the bf_getcharbuf buffer interface
         (see Buffer Interface); note that the length relates to the buffer
-        length, not necessarily to the Unicode string length (this may
-        be different depending on the <default encoding>).
+        length, not necessarily to the Unicode string length.
 
   "es": 
 	Takes two parameters: encoding (const char *) and
@@ -1007,6 +1043,11 @@ Encodings:
 
 History of this Proposal:
 -------------------------
+1.6: Changed <defencstr> to <defenc> since this is the name used in the
+     implementation. Added notes about the usage of <defenc> in the
+     buffer protocol implementation.
+1.5: Added notes about setting the <default encoding>. Fixed some
+     typos (thanks to Andrew Kuchling). Changed <defencstr> to <utf8str>.
 1.4: Added note about mixed type comparisons and contains tests.
      Changed treating of Unicode objects in format strings (if used
      with '%s' % u they will now cause the format string to be
