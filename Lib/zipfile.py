@@ -92,6 +92,8 @@ class ZipInfo:
 class ZipFile:
     """Class with methods to open, read, write, close, list zip files."""
 
+    fp = None                   # Set here since __del__ checks it
+
     def __init__(self, filename, mode="r", compression=ZIP_STORED):
         """Open the ZIP file with mode read "r", write "w" or append "a"."""
         if compression == ZIP_STORED:
