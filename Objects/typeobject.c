@@ -3575,7 +3575,7 @@ wrap_cmpfunc(PyObject *self, PyObject *args, void *wrapped)
 }
 
 /* Helper to check for object.__setattr__ or __delattr__ applied to a type.
-   This is called the Verre Carlo hack after its discoverer. */
+   This is called the Carlo Verre hack after its discoverer. */
 static int
 hackcheck(PyObject *self, setattrofunc func, char *what)
 {
