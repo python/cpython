@@ -44,7 +44,7 @@ typedef struct {
 	int co_nlocals;		/* #local variables */
 	int co_stacksize;	/* #entries needed for evaluation stack */
 	int co_flags;		/* CO_..., see below */
-	PyStringObject *co_code; /* instruction opcodes */
+	PyObject *co_code;	/* instruction opcodes */
 	PyObject *co_consts;	/* list (constants used) */
 	PyObject *co_names;	/* list of strings (names used) */
 	PyObject *co_varnames;	/* tuple of strings (local variable names) */
@@ -74,6 +74,11 @@ PyCodeObject *PyCode_New Py_PROTO((
 	int, int, int, int, PyObject *, PyObject *, PyObject *, PyObject *,
 	PyObject *, PyObject *, int, PyObject *)); /* same as struct above */
 int PyCode_Addr2Line Py_PROTO((PyCodeObject *, int));
+
+/* for internal use only */
+#define _PyCode_GETCODEPTR(co, pp) \
+	((*(co)->co_code->ob_type->tp_as_buffer->bf_getreadbuffer) \
+	 ((co)->co_code, 0, (void **)(pp)))
 
 #ifdef __cplusplus
 }

@@ -366,6 +366,7 @@ eval_code2(co, globals, locals,
 	register PyObject **fastlocals = NULL;
 	PyObject *retval = NULL;	/* Return value */
 	PyThreadState *tstate = PyThreadState_Get();
+	unsigned char *first_instr;
 #ifdef LLTRACE
 	int lltrace;
 #endif
@@ -379,11 +380,10 @@ eval_code2(co, globals, locals,
 #define GETCONST(i)	Getconst(f, i)
 #define GETNAME(i)	Getname(f, i)
 #define GETNAMEV(i)	Getnamev(f, i)
-#define FIRST_INSTR()	(GETUSTRINGVALUE(co->co_code))
-#define INSTR_OFFSET()	(next_instr - FIRST_INSTR())
+#define INSTR_OFFSET()	(next_instr - first_instr)
 #define NEXTOP()	(*next_instr++)
 #define NEXTARG()	(next_instr += 2, (next_instr[-1]<<8) + next_instr[-2])
-#define JUMPTO(x)	(next_instr = FIRST_INSTR() + (x))
+#define JUMPTO(x)	(next_instr = first_instr + (x))
 #define JUMPBY(x)	(next_instr += (x))
 
 /* Stack manipulation macros */
@@ -580,7 +580,8 @@ eval_code2(co, globals, locals,
 		return NULL;
 	}
 
-	next_instr = GETUSTRINGVALUE(co->co_code);
+	_PyCode_GETCODEPTR(co, &first_instr);
+	next_instr = first_instr;
 	stack_pointer = f->f_valuestack;
 	
 	why = WHY_NOT;
@@ -2801,7 +2802,9 @@ find_from_args(f, nexti)
 	PyObject *list, *name;
 	unsigned char *next_instr;
 	
-	next_instr = GETUSTRINGVALUE(f->f_code->co_code) + nexti;
+	_PyCode_GETCODEPTR(f->f_code, &next_instr);
+	next_instr += nexti;
+
 	opcode = (*next_instr++);
 	if (opcode != IMPORT_FROM) {
 		Py_INCREF(Py_None);

@@ -121,9 +121,11 @@ code_repr(co)
 {
 	char buf[500];
 	int lineno = -1;
-	char *p = PyString_AS_STRING(co->co_code);
+	unsigned char *p;
 	char *filename = "???";
 	char *name = "???";
+
+	_PyCode_GETCODEPTR(co, &p);
 	if (*p == SET_LINENO)
 		lineno = (p[1] & 0xff) | ((p[2] & 0xff) << 8);
 	if (co->co_filename && PyString_Check(co->co_filename))
@@ -146,8 +148,7 @@ code_compare(co, cp)
 	if (cmp) return cmp;
 	cmp = co->co_flags - cp->co_flags;
 	if (cmp) return cmp;
-	cmp = PyObject_Compare((PyObject *)co->co_code,
-			       (PyObject *)cp->co_code);
+	cmp = PyObject_Compare(co->co_code, cp->co_code);
 	if (cmp) return cmp;
 	cmp = PyObject_Compare(co->co_consts, cp->co_consts);
 	if (cmp) return cmp;
@@ -162,7 +163,7 @@ code_hash(co)
 	PyCodeObject *co;
 {
 	long h, h1, h2, h3, h4;
-	h1 = PyObject_Hash((PyObject *)co->co_code);
+	h1 = PyObject_Hash(co->co_code);
 	if (h1 == -1) return -1;
 	h2 = PyObject_Hash(co->co_consts);
 	if (h2 == -1) return -1;
@@ -216,15 +217,25 @@ PyCode_New(argcount, nlocals, stacksize, flags,
 {
 	PyCodeObject *co;
 	int i;
+	PyBufferProcs *pb;
 	/* Check argument types */
 	if (argcount < 0 || nlocals < 0 ||
-	    code == NULL || !PyString_Check(code) ||
+	    code == NULL ||
 	    consts == NULL || !PyTuple_Check(consts) ||
 	    names == NULL || !PyTuple_Check(names) ||
 	    varnames == NULL || !PyTuple_Check(varnames) ||
 	    name == NULL || !PyString_Check(name) ||
 	    filename == NULL || !PyString_Check(filename) ||
 		lnotab == NULL || !PyString_Check(lnotab)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	pb = code->ob_type->tp_as_buffer;
+	if (pb == NULL ||
+	    pb->bf_getreadbuffer == NULL ||
+	    pb->bf_getsegcount == NULL ||
+	    (*pb->bf_getsegcount)(code, NULL) != 1)
+	{
 		PyErr_BadInternalCall();
 		return NULL;
 	}
@@ -264,7 +275,7 @@ PyCode_New(argcount, nlocals, stacksize, flags,
 		co->co_stacksize = stacksize;
 		co->co_flags = flags;
 		Py_INCREF(code);
-		co->co_code = (PyStringObject *)code;
+		co->co_code = code;
 		Py_INCREF(consts);
 		co->co_consts = consts;
 		Py_INCREF(names);

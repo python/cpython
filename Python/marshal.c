@@ -142,6 +142,7 @@ w_object(v, p)
 	WFILE *p;
 {
 	int i, n;
+	PyBufferProcs *pb;
 	
 	if (v == NULL) {
 		w_byte(TYPE_NULL, p);
@@ -251,7 +252,7 @@ w_object(v, p)
 		w_short(co->co_nlocals, p);
 		w_short(co->co_stacksize, p);
 		w_short(co->co_flags, p);
-		w_object((PyObject *)co->co_code, p);
+		w_object(co->co_code, p);
 		w_object(co->co_consts, p);
 		w_object(co->co_names, p);
 		w_object(co->co_varnames, p);
@@ -259,6 +260,18 @@ w_object(v, p)
 		w_object(co->co_name, p);
 		w_short(co->co_firstlineno, p);
 		w_object(co->co_lnotab, p);
+	}
+	else if ((pb = v->ob_type->tp_as_buffer) != NULL &&
+		 pb->bf_getsegcount != NULL &&
+		 pb->bf_getreadbuffer != NULL &&
+		 (*pb->bf_getsegcount)(v, NULL) == 1)
+	{
+		/* Write unknown buffer-style objects as a string */
+		char *s;
+		w_byte(TYPE_STRING, p);
+		n = (*pb->bf_getreadbuffer)(v, 0, (void **)&s);
+		w_long((long)n, p);
+		w_string(s, n, p);
 	}
 	else {
 		w_byte(TYPE_UNKNOWN, p);
@@ -730,7 +743,7 @@ marshal_loads(self, args)
 	PyObject *v;
 	char *s;
 	int n;
-	if (!PyArg_Parse(args, "s#", &s, &n))
+	if (!PyArg_Parse(args, "r#", &s, &n))
 		return NULL;
 	rf.fp = NULL;
 	rf.str = args;
