@@ -29,7 +29,7 @@ try:
     assert re.sub('(.)', re.escape(s), 'x') == s
     assert re.sub('(.)', lambda m: s, 'x') == s
 
-    assert re.sub('(?P<a>x)', '\g<a>\g<a>', 'xx') == 'xxxx'
+    assert re.sub('(?P<unk>x)', '\g<unk>\g<unk>', 'xx') == 'xxxx'
 
     assert re.sub('a', r'\t\n\v\r\f\a\b\B\Z\a\A\w\W\s\S\d\D', 'a') == '\t\n\v\r\f\a\bBZ\aAwWsSdD'
     assert re.sub('a', '\t\n\v\r\f\a', 'a') == '\t\n\v\r\f\a'
