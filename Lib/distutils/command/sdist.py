@@ -11,7 +11,7 @@ import fnmatch
 from types import *
 from glob import glob
 from distutils.core import Command
-from distutils.util import newer, remove_tree
+from distutils.util import newer, remove_tree, make_tarball, make_zipfile
 from distutils.text_file import TextFile
 from distutils.errors import DistutilsExecError
 
@@ -503,60 +503,11 @@ class sdist (Command):
     # make_release_tree ()
 
 
-    def make_tarball (self, base_dir, compress="gzip"):
-
-        # XXX GNU tar 1.13 has a nifty option to add a prefix directory.
-        # It's pretty new, though, so we certainly can't require it --
-        # but it would be nice to take advantage of it to skip the
-        # "create a tree of hardlinks" step!  (Would also be nice to
-        # detect GNU tar to use its 'z' option and save a step.)
-
-        if compress is not None and compress not in ('gzip', 'compress'):
-            raise ValueError, \
-                  "if given, 'compress' must be 'gzip' or 'compress'"
-
-        archive_name = base_dir + ".tar"
-        self.spawn (["tar", "-cf", archive_name, base_dir])
-
-        if compress:
-            self.spawn ([compress, archive_name])
-
+    def make_tarball (self, base_dir, compress):
+        make_tarball (base_dir, compress, self.verbose, self.dry_run)
 
     def make_zipfile (self, base_dir):
-
-        # This initially assumed the Unix 'zip' utility -- but
-        # apparently InfoZIP's zip.exe works the same under Windows, so
-        # no changes needed!
-
-        try:
-            self.spawn (["zip", "-r", base_dir + ".zip", base_dir])
-        except DistutilsExecError:
-
-            # XXX really should distinguish between "couldn't find
-            # external 'zip' command" and "zip failed" -- shouldn't try
-            # again in the latter case.  (I think fixing this will
-            # require some cooperation from the spawn module -- perhaps
-            # a utility function to search the path, so we can fallback
-            # on zipfile.py without the failed spawn.)
-            try:
-                import zipfile
-            except ImportError:
-                raise DistutilsExecError, \
-                      ("unable to create zip file '%s.zip': " + 
-                       "could neither find a standalone zip utility nor " +
-                       "import the 'zipfile' module") % base_dir
-
-            z = zipfile.ZipFile (base_dir + ".zip", "wb",
-                                 compression=zipfile.ZIP_DEFLATED)
-            
-            def visit (z, dirname, names):
-                for name in names:
-                    path = os.path.join (dirname, name)
-                    if os.path.isfile (path):
-                        z.write (path, path)
-                        
-            os.path.walk (base_dir, visit, z)
-            z.close()
+        make_zipfile (base_dir, self.verbose, self.dry_run)
 
 
     def make_distribution (self):
