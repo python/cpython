@@ -361,7 +361,7 @@ get_history_item(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "i:index", &idx))
 		return NULL;
 	if ((hist_ent = history_get(idx)))
-	    return PyString_FromString(hist_ent->line);
+		return PyString_FromString(hist_ent->line);
 	else {
 		Py_INCREF(Py_None);
 		return Py_None;
@@ -477,6 +477,7 @@ static struct PyMethodDef readline_methods[] =
 	{0, 0}
 };
 
+
 /* C function to call the Python hooks. */
 
 static int
@@ -522,6 +523,7 @@ on_pre_input_hook(void)
 	return on_hook(pre_input_hook, pre_input_hook_tstate);
 }
 #endif
+
 
 /* C function to call the Python completer. */
 
@@ -576,6 +578,7 @@ flex_complete(char *text, int start, int end)
 	endidx = PyInt_FromLong((long) end);
 	return completion_matches(text, *on_completion);
 }
+
 
 /* Helper to initialize GNU readline properly. */
 
