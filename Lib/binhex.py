@@ -92,7 +92,7 @@ else:
         fp = open(name)
         data = open(name).read(256)
         for c in data:
-            if not c.isspace() and (c<' ' or ord(c) > 0177):
+            if not c.isspace() and (c<' ' or ord(c) > 0x7f):
                 break
         else:
             finfo.Type = 'TEXT'
