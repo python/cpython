@@ -43,10 +43,10 @@ def encode(in_file, out_file, name=None, mode=None):
 	in_file = sys.stdin
     elif type(in_file) == type(''):
 	if name == None:
-	    name = basename(in_file)
+	    name = os.path.basename(in_file)
 	if mode == None:
 	    try:
-		mode = os.path.stat(in_file)[0]
+		mode = os.stat(in_file)[0]
 	    except AttributeError:
 		pass
 	in_file = open(in_file, 'rb')
