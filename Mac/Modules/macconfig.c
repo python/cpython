@@ -49,7 +49,7 @@ extern void initpwd();
 extern void initgrp();
 extern void initcrypt();
 extern void initselect();
-extern void initsocket();
+extern void init_socket();
 extern void initaudioop();
 extern void initimageop();
 extern void initrgbimg();
@@ -141,7 +141,7 @@ extern void initimgop();
 extern void init_tkinter();
 #endif
 #ifdef USE_GUSI
-extern void initsocket();
+extern void init_socket();
 extern void initselect();
 #endif
 #ifdef USE_WASTE
@@ -155,6 +155,9 @@ extern void initzlib();
 #endif
 #ifdef WITH_THREAD
 extern void initthread();
+#endif
+#ifdef USE_PYEXPAT
+extern void initpyexpat();
 #endif
 
 extern void initcPickle();
@@ -261,7 +264,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"_tkinter",	init_tkinter},
 #endif
 #ifdef USE_GUSI
-	{"socket",	initsocket},
+	{"_socket",	init_socket},
 	{"select",	initselect},
 #endif
 #ifdef USE_WASTE
@@ -275,6 +278,9 @@ struct _inittab _PyImport_Inittab[] = {
 #endif
 #ifdef WITH_THREAD
 	{"thread",	initthread},
+#endif
+#ifdef USE_PYEXPAT
+	{"pyexpat", initpyexpat},
 #endif
 	{"cPickle",	initcPickle},
 	{"cStringIO",	initcStringIO},
