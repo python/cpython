@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.195 
+# From configure.in Revision: 1.196 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -5417,7 +5417,7 @@ else
 int main() {
 
 /* Ultrix mips cc rejects this.  */
-typedef int charset[2]; const charset x = {0,0};
+typedef int charset[2]; const charset x;
 /* SunOS 4.1.1 cc rejects this.  */
 char const *const *ccp;
 char **p;
@@ -6545,8 +6545,8 @@ fi
 
 
 SRCDIRS="Parser Grammar Objects Python Modules"
-echo $ac_n "checking for build directoris""... $ac_c" 1>&6
-echo "configure:6550: checking for build directoris" >&5
+echo $ac_n "checking for build directories""... $ac_c" 1>&6
+echo "configure:6550: checking for build directories" >&5
 for dir in $SRCDIRS; do
     if test ! -d $dir; then
         mkdir $dir
@@ -6656,7 +6656,7 @@ done
 ac_given_srcdir=$srcdir
 ac_given_INSTALL="$INSTALL"
 
-trap 'rm -fr `echo "Makefile.pre Modules/Setup.config setup.cfg config.h" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
+trap 'rm -fr `echo "Makefile.pre Modules/Setup.config config.h" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
 cat >> $CONFIG_STATUS <<EOF
 
@@ -6781,7 +6781,7 @@ EOF
 
 cat >> $CONFIG_STATUS <<EOF
 
-CONFIG_FILES=\${CONFIG_FILES-"Makefile.pre Modules/Setup.config setup.cfg"}
+CONFIG_FILES=\${CONFIG_FILES-"Makefile.pre Modules/Setup.config"}
 EOF
 cat >> $CONFIG_STATUS <<\EOF
 for ac_file in .. $CONFIG_FILES; do if test "x$ac_file" != x..; then
