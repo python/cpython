@@ -1899,9 +1899,6 @@ static PyThreadState *event_tstate = NULL;
 static int
 EventHook()
 {
-#if defined(WITH_THREAD) || defined(MS_WINDOWS)
-	PyThreadState *tstate = PyThreadState_Get();
-#endif
 #ifndef MS_WINDOWS
 	FHANDLE tfile;
 #endif
@@ -1923,7 +1920,7 @@ EventHook()
 #if defined(WITH_THREAD) || defined(MS_WINDOWS)
 		Py_BEGIN_ALLOW_THREADS
 		acquire_lock(tcl_lock, 1);
-		tcl_tstate = tstate;
+		tcl_tstate = event_tstate;
 
 		result = Tcl_DoOneEvent(TCL_DONT_WAIT);
 
