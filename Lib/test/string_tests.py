@@ -314,3 +314,9 @@ def run_contains_tests(test):
     test('__contains__', 'asdf', True, 'asdf') # vereq('asdf' in 'asdf', True)
     test('__contains__', 'asd', False, 'asdf') # vereq('asdf' in 'asd', False)
     test('__contains__', '', False, 'asdf')    # vereq('asdf' in '', False)
+
+def run_inplace_tests(constructor):
+    # Verify clearing of SF bug #592573
+    s = t = constructor('abc')
+    s += constructor('def')
+    verify(s != t, 'in-place concatenate should create a new object')
