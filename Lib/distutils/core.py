@@ -13,6 +13,7 @@ __revision__ = "$Id$"
 import sys, os
 from types import *
 from distutils.errors import *
+from distutils.util import grok_environment_error
 
 # Mainly import these so setup scripts can "from distutils.core import" them.
 from distutils.dist import Distribution
