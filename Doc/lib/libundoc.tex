@@ -33,6 +33,14 @@ Some of these are very old and/or not very robust; marked with ``hmm.''
 \item[\module{ihooks}]
 --- Import hook support (for \refmodule{rexec}; may become obsolete).
 
+\item[\module{platform}]
+--- This module tries to retrieve as much platform identifying data as
+possible.  It makes this information available via function APIs.
+If called from the command line, it prints the platform information
+concatenated as single string to \code{sys.stdout}.  The output format
+is useable as part of a filename.
+\versionadded{2.3}
+
 \item[\module{smtpd}]
 --- An SMTP daemon implementation which meets the minimum requirements
 for \rfc{821} conformance.
