@@ -1,4 +1,4 @@
-#! /bin/env python
+#! /usr/bin/env python
 
 """Print the long name of an Internet domain.
 
