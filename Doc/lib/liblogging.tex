@@ -35,6 +35,21 @@ constrained to use these levels: you can specify your own and use a
 more general \class{Logger} method, \method{log()}, which takes an
 explicit level argument.
 
+The numeric values of logging levels are given in the following table. These
+are primarily of interest if you want to define your own levels, and need
+them to have specific values relative to the predefined levels. If you
+define a level with the same numeric value, it overwrites the predefined
+value; the predefined name is lost.
+
+\begin{tableii}{l|l}{code}{Level}{Numeric value}
+  \lineii{CRITICAL}{50}
+  \lineii{ERROR}{40}
+  \lineii{WARNING}{30}
+  \lineii{INFO}{20}
+  \lineii{DEBUG}{10}
+  \lineii{NOTSET}{0}
+\end{tableii}
+
 Levels can also be associated with loggers, being set either by the
 developer or through loading a saved logging configuration. When a
 logging method is called on a logger, the logger compares its own
@@ -297,8 +312,9 @@ constructor sets this attribute to 1.
 Sets the threshold for this logger to \var{lvl}. Logging messages
 which are less severe than \var{lvl} will be ignored. When a logger is
 created, the level is set to \constant{NOTSET} (which causes all messages
-to be processed in the root logger, or delegation to the parent in non-root
-loggers).
+to be processed when the logger is the root logger, or delegation to the
+parent when the logger is a non-root logger). Note that the root logger
+is created with level \constant{WARNING}.
 \end{methoddesc}
 
 \begin{methoddesc}{isEnabledFor}{lvl}
@@ -1324,10 +1340,6 @@ also includes information such as when the record was created, the
 source line where the logging call was made, and any exception
 information to be logged.
 
-\class{LogRecord} has no methods; it's just a repository for
-information about the logging event. The only reason it's a class
-rather than a dictionary is to facilitate extension.
-
 \begin{classdesc}{LogRecord}{name, lvl, pathname, lineno, msg, args,
                              exc_info}
 Returns an instance of \class{LogRecord} initialized with interesting
@@ -1341,6 +1353,11 @@ which, together with \var{msg}, makes up the user message; and
 \function{sys.exc_info() }(or \constant{None}, if no exception information
 is available).
 \end{classdesc}
+
+\begin{methoddesc}{getMessage}{}
+Returns the message for this \class{LogRecord} instance after merging any
+user-supplied arguments with the message.
+\end{methoddesc}
 
 \subsection{Thread Safety}
 
