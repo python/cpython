@@ -352,12 +352,12 @@ class BuiltinTest(unittest.TestCase):
             pass
         self.assertRaises(TypeError, filter, badfunc, range(5))
 
-        # test biltinmodule.c::filtertuple()
+        # test bltinmodule.c::filtertuple()
         self.assertEqual(filter(None, (1, 2)), (1, 2))
         self.assertEqual(filter(lambda x: x>=3, (1, 2, 3, 4)), (3, 4))
         self.assertRaises(TypeError, filter, 42, (1, 2))
 
-        # test biltinmodule.c::filterstring()
+        # test bltinmodule.c::filterstring()
         self.assertEqual(filter(None, "12"), "12")
         self.assertEqual(filter(lambda x: x>="3", "1234"), "34")
         self.assertRaises(TypeError, filter, 42, "12")
@@ -365,8 +365,9 @@ class BuiltinTest(unittest.TestCase):
             def __getitem__(self, index):
                 raise ValueError
         self.assertRaises(ValueError, filter, lambda x: x >="3", badstr("1234"))
+
         if have_unicode:
-            # test biltinmodule.c::filterstring()
+            # test bltinmodule.c::filterunicode()
             self.assertEqual(filter(None, unicode("12")), unicode("12"))
             self.assertEqual(filter(lambda x: x>="3", unicode("1234")), unicode("34"))
             self.assertRaises(TypeError, filter, 42, unicode("12"))
