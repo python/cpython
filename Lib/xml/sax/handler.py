@@ -26,15 +26,15 @@ class ErrorHandler:
     only parameter."""
 
     def error(self, exception):
-	"Handle a recoverable error."
+        "Handle a recoverable error."
         raise exception
 
     def fatalError(self, exception):
-	"Handle a non-recoverable error."
+        "Handle a non-recoverable error."
         raise exception
 
     def warning(self, exception):
-	"Handle a warning."   
+        "Handle a warning."   
         print exception
 
 # ===== CONTENTHANDLER =====
