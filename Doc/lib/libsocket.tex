@@ -109,6 +109,14 @@ representing an error returned by a library call.
 by the \cfunction{gai_strerror()} C function.
 \end{excdesc}
 
+\begin{excdesc}{timeout}
+This exception is raised when a timeout occurs on a socket which has
+had timeouts enabled via a prior call to \method{settimeout()}.  The
+accompanying value is a string whose value is currently always ``timed
+out''.
+\versionadded{2.3}
+\end{excdesc}
+
 \begin{datadesc}{AF_UNIX}
 \dataline{AF_INET}
 \dataline{AF_INET6}
@@ -579,7 +587,7 @@ block until they can proceed.
 Set a timeout on blocking socket operations.  The \var{value} argument
 can be a nonnegative float expressing seconds, or \code{None}.
 If a float is
-given, subsequent socket operations will raise an \exception{error}
+given, subsequent socket operations will raise an \exception{timeout}
 exception if the timeout period \var{value} has elapsed before the
 operation has completed.  Setting a timeout of \code{None} disables
 timeouts on socket operations.
