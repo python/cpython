@@ -125,4 +125,4 @@ class MimeWriter:
 
 
 if __name__ == '__main__':
-    print "To test the MimeWriter module, run TestMimeWriter.py."
+    import test.test_MimeWriter
