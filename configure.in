@@ -127,8 +127,6 @@ AC_ARG_WITH(gcc, [  --without-gcc                   never use gcc], [
 
 			AR="$PWD/BeOS/ar-fake"
 			RANLIB=:
-			
-			AC_DEFINE(DL_EXPORT_HEADER,"dl_export.h")
 			;;
 		x86)
 			CC=gcc
