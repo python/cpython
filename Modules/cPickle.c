@@ -249,8 +249,8 @@ Pdata_popTuple(Pdata *self, int start) {
 
     l=self->length-start;
     UNLESS (r=PyTuple_New(l)) return NULL;
-    for (i=start, j=0 ; j < l; )
-        PyTuple_SET_ITEM(r,j++,self->data[i++]);
+    for (i=start, j=0 ; j < l; i++, j++)
+        PyTuple_SET_ITEM(r, j, self->data[i]);
 
     self->length=start;
     return r;
@@ -263,8 +263,8 @@ Pdata_popList(Pdata *self, int start) {
 
     l=self->length-start;
     UNLESS (r=PyList_New(l)) return NULL;
-    for (i=start, j=0 ; j < l; )
-        PyList_SET_ITEM(r,j++,self->data[i++]);
+    for (i=start, j=0 ; j < l; i++, j++)
+        PyList_SET_ITEM(r, j, self->data[i]);
 
     self->length=start;
     return r;
@@ -3104,11 +3104,20 @@ load_pop(Unpicklerobject *self) {
 
     UNLESS ((len=self->stack->length) > 0) return stackUnderflow();
 
+    /* Note that we split the (pickle.py) stack into two stacks, 
+       an object stack and a mark stack. We have to be clever and
+       pop the right one. We do this by looking at the top of the
+       mark stack.
+    */
+
     if ((self->num_marks > 0) && 
         (self->marks[self->num_marks - 1] == len))
         self->num_marks--;
-    else 
-        Py_DECREF(self->stack->data[--(self->stack->length)]);
+    else { 
+        len--;
+        Py_DECREF(self->stack->data[len]);
+	self->stack->length=len;
+    }
 
     return 0;
 }
@@ -3433,6 +3442,11 @@ load_build(Unpicklerobject *self) {
 static int
 load_mark(Unpicklerobject *self) {
     int s;
+
+    /* Note that we split the (pickle.py) stack into two stacks, an
+       object stack and a mark stack. Here we push a mark onto the
+       mark stack.  
+    */
 
     if ((self->num_marks + 1) >= self->marks_size) {
         s=self->marks_size+20;
