@@ -1,8 +1,5 @@
-"""Prototype sysconfig module that loads information when run as a script,
-but only defines constants when imported.
-
-This should be run as a script as one of the last steps of the Python
-installation process.
+"""Provide access to Python's configuration information.  The specific names
+defined in the module depend heavily on the platform and configuration.
 
 Written by:   Fred L. Drake, Jr.
 Email:        <fdrake@acm.org>
@@ -18,14 +15,20 @@ import sys
 
 
 def get_config_h_filename():
+    """Return full pathname of installed config.h file."""
     return os.path.join(sys.exec_prefix, "lib", "python" + sys.version[:3],
                         "config", "config.h")
 
 def get_makefile_filename():
+    """Return full pathname of installed Makefile from the Python build."""
     return os.path.join(sys.exec_prefix, "lib", "python" + sys.version[:3],
                         "config", "Makefile")
 
 def parse_config_h(fp, g=None):
+    """Parse a config.h-style file.  A dictionary containing name/value
+    pairs is returned.  If an optional dictionary is passed in as the second
+    argument, it is used instead of a new dictionary.
+    """
     if g is None:
         g = {}
     define_rx = re.compile("#define ([A-Z][A-Z0-9_]+) (.*)\n")
@@ -48,6 +51,10 @@ def parse_config_h(fp, g=None):
     return g
 
 def parse_makefile(fp, g=None):
+    """Parse a Makefile-style file.  A dictionary containing name/value
+    pairs is returned.  If an optional dictionary is passed in as the second
+    argument, it is used instead of a new dictionary.
+    """
     if g is None:
         g = {}
     variable_rx = re.compile("([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)\n")
@@ -114,6 +121,7 @@ def parse_makefile(fp, g=None):
 
 
 def _init_posix():
+    """Initialize the module as appropriate for POSIX systems."""
     g = globals()
     # load the installed config.h:
     parse_config_h(open(get_config_h_filename()), g)
