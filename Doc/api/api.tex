@@ -456,7 +456,7 @@ def incr_item(dict, key):
         item = dict[key]
     except KeyError:
         item = 0
-    return item + 1
+    dict[key] = item + 1
 \end{verbatim}
 \ttindex{incr_item()}
 
@@ -472,21 +472,25 @@ int incr_item(PyObject *dict, PyObject *key)
     item = PyObject_GetItem(dict, key);
     if (item == NULL) {
         /* Handle KeyError only: */
-        if (!PyErr_ExceptionMatches(PyExc_KeyError)) goto error;
+        if (!PyErr_ExceptionMatches(PyExc_KeyError))
+            goto error;
 
         /* Clear the error and use zero: */
         PyErr_Clear();
         item = PyInt_FromLong(0L);
-        if (item == NULL) goto error;
+        if (item == NULL)
+            goto error;
     }
-
     const_one = PyInt_FromLong(1L);
-    if (const_one == NULL) goto error;
+    if (const_one == NULL)
+        goto error;
 
     incremented_item = PyNumber_Add(item, const_one);
-    if (incremented_item == NULL) goto error;
+    if (incremented_item == NULL)
+        goto error;
 
-    if (PyObject_SetItem(dict, key, incremented_item) < 0) goto error;
+    if (PyObject_SetItem(dict, key, incremented_item) < 0)
+        goto error;
     rv = 0; /* Success */
     /* Continue with cleanup code */
 
