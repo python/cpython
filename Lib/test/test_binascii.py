@@ -91,3 +91,22 @@ if crc != 1571220330:
     print "binascii.crc32() failed."
 
 # The hqx test is in test_binhex.py
+
+# test hexlification
+s = '{s\005\000\000\000worldi\002\000\000\000s\005\000\000\000helloi\001\000\000\0000'
+t = binascii.b2a_hex(s)
+u = binascii.a2b_hex(t)
+if s <> u:
+    print 'binascii hexlification failed'
+try:
+    binascii.a2b_hex(t[:-1])
+except TypeError:
+    pass
+else:
+    print 'expected TypeError not raised'
+try:
+    binascii.a2b_hex(t[:-1] + 'q')
+except TypeError:
+    pass
+else:
+    print 'expected TypeError not raised'
