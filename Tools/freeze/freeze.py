@@ -397,7 +397,7 @@ def main():
                                                     frozen_extensions)
         # Create a module definition for the bootstrap C code.
         xtras = [frozenmain_c, os.path.basename(frozen_c),
-                 frozendllmain_c, extensions_c] + files
+                 frozendllmain_c, os.path.basename(extensions_c)] + files
         maindefn = checkextensions_win32.CExtension( '__main__', xtras )
         frozen_extensions.append( maindefn )
         outfp = open(makefile, 'w')
