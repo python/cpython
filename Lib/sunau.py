@@ -148,14 +148,11 @@ def _write_u32(file, x):
 		file.write(chr(int(data[i])))
 
 class Au_read:
-## 	access _file, _soundpos, _hdr_size, _data_size, _encoding, \
-## 		  _sampwidth, _framesize, _framerate, _nchannels, \
-## 		  _info: private
 
 	def __init__(self, f):
 		if type(f) == type(''):
 			import __builtin__
-			f = __builtin__.open(f, 'r')
+			f = __builtin__.open(f, 'rb')
 		self.initfp(f)
 
 	def __del__(self):
@@ -280,14 +277,11 @@ class Au_read:
 		self._file = None
 
 class Au_write:
-## 	access _file, _framerate, _nchannels, _sampwidth, _framesize, \
-## 		  _nframes, _nframeswritten, _datawritten, _info, \
-## 		  _comptype: private
 
 	def __init__(self, f):
 		if type(f) == type(''):
 			import __builtin__
-			f = __builtin__.open(f, 'w')
+			f = __builtin__.open(f, 'wb')
 		self.initfp(f)
 
 	def __del__(self):
@@ -410,7 +404,6 @@ class Au_write:
 	#
 	# private methods
 	#
-## 	if 0: access *: private
 
 	def _ensure_header_written(self):
 		if not self._nframeswritten:
