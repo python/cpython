@@ -805,6 +805,18 @@ sub do_cmd_production{
             . $_);
 }
 
+sub do_cmd_productioncont{
+    local($_) = @_;
+    my $defn = next_argument();
+    return ("<tr valign=\"baseline\">\n"
+            . "    <td>&nbsp;</td>\n"
+            . "    <td>&nbsp;</td>\n"
+            . "    <td><code>"
+            . translate_commands($defn)
+            . "</code></td></tr>"
+            . $_);
+}
+
 sub process_grammar_files{
     my $lang;
     my $filename;
@@ -845,6 +857,7 @@ sub process_grammar_files{
 
 sub strip_grammar_markup{
     local($_) = @_;
+    s/\\productioncont/              /g;
     s/\\production(<<\d+>>)(.+)\1/\n\2 ::= /g;
     s/\\token(<<\d+>>)(.+)\1/\2/g;
     s/\\e([^a-zA-Z])/\\\1/g;

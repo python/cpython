@@ -54,8 +54,8 @@ categorized syntactically as atoms.  The syntax for atoms is:
   \production{atom}
              {\token{identifier} | \token{literal} | \token{enclosure}}
   \production{enclosure}
-             {\token{parenth_form} | \token{list_display}
-              | \token{dict_display} | \token{string_conversion}}
+             {\token{parenth_form} | \token{list_display}}
+  \productioncont{| \token{dict_display} | \token{string_conversion}}
 \end{productionlist}
 
 
@@ -112,9 +112,8 @@ Python supports string literals and various numeric literals:
 
 \begin{productionlist}
   \production{literal}
-             {\token{stringliteral} | \token{integer}
-              | \token{longinteger} | \token{floatnumber}
-              | \token{imagnumber}}
+             {\token{stringliteral} | \token{integer} | \token{longinteger}}
+  \productioncont{| \token{floatnumber} | \token{imagnumber}}
 \end{productionlist}
 
 Evaluation of a literal yields an object of the given type (string,
@@ -439,13 +438,12 @@ series of arguments:
   \production{call}
              {\token{primary} "(" [\token{argument_list} [","]] ")"}
   \production{argument_list}
-             {\token{positional_arguments} ["," \token{keyword_arguments} 
-		 ["," "*" \token{expression} ["," "**" \token{expression}]]]
-              | \token{keyword_arguments} ["," "*" \token{expression} 
-		["," "**" \token{expression}]]
-	      | "*" \token{expression} ["," "**" \token{expression}]
-	      | "**" \token{expression}
-	     }
+             {\token{positional_arguments} ["," \token{keyword_arguments}}
+  \productioncont{   ["," "*" \token{expression} ["," "**" \token{expression}]]]}
+  \productioncont{| \token{keyword_arguments} ["," "*" \token{expression}}
+  \productioncont{                             ["," "**" \token{expression}]]}
+  \productioncont{| "*" \token{expression} ["," "**" \token{expression}]}
+  \productioncont{| "**" \token{expression}}
   \production{positional_arguments}
              {\token{expression} ("," \token{expression})*}
   \production{keyword_arguments}
@@ -666,8 +664,8 @@ operators:
 \begin{productionlist}
   \production{m_expr}
              {\token{u_expr} | \token{m_expr} "*" \token{u_expr}
-              | \token{m_expr} "/" \token{u_expr}
-              | \token{m_expr} "\%" \token{u_expr}}
+              | \token{m_expr} "/" \token{u_expr}}
+  \productioncont{| \token{m_expr} "\%" \token{u_expr}}
   \production{a_expr}
              {\token{m_expr} | \token{aexpr} "+" \token{m_expr}
               \token{aexpr} "-" \token{m_expr}}
@@ -801,8 +799,8 @@ interpretation that is conventional in mathematics:
   \production{comparison}
              {\token{or_expr} ( \token{comp_operator} \token{or_expr} )*}
   \production{comp_operator}
-             {"<" | ">" | "==" | ">=" | "<=" | "<>" | "!="
-              | "is" ["not"] | ["not"] "in"}
+             {"<" | ">" | "==" | ">=" | "<=" | "<>" | "!="}
+  \productioncont{| "is" ["not"] | ["not"] "in"}
 \end{productionlist}
 
 Comparisons yield integer values: \code{1} for true, \code{0} for false.

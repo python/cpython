@@ -42,8 +42,12 @@ Summarizing:
 
 \begin{productionlist}
   \production{compound_stmt}
-             {\token{if_stmt} | \token{while_stmt} | \token{for_stmt}
-              | \token{try_stmt} | \token{funcdef} | \token{classdef}}
+             {\token{if_stmt}}
+  \productioncont{| \token{while_stmt}}
+  \productioncont{| \token{for_stmt}}
+  \productioncont{| \token{try_stmt}}
+  \productioncont{| \token{funcdef}}
+  \productioncont{| \token{classdef}}
   \production{suite}
              {\token{stmt_list} NEWLINE
               | NEWLINE INDENT \token{statement}+ DEDENT}
@@ -73,9 +77,9 @@ The \keyword{if} statement is used for conditional execution:
 
 \begin{productionlist}
   \production{if_stmt}
-             {"if" \token{expression} ":" \token{suite}
-              ( "elif" \token{expression} ":" \token{suite} )*
-              ["else" ":" \token{suite}]}
+             {"if" \token{expression} ":" \token{suite}}
+  \productioncont{( "elif" \token{expression} ":" \token{suite} )*}
+  \productioncont{["else" ":" \token{suite}]}
 \end{productionlist}
 
 It selects exactly one of the suites by evaluating the expressions one
@@ -97,8 +101,8 @@ as an expression is true:
 
 \begin{productionlist}
   \production{while_stmt}
-             {"while" \token{expression} ":" \token{suite}
-               ["else" ":" \token{suite}]}
+             {"while" \token{expression} ":" \token{suite}}
+  \productioncont{["else" ":" \token{suite}]}
 \end{productionlist}
 
 This repeatedly tests the expression and, if it is true, executes the
@@ -126,8 +130,8 @@ sequence (such as a string, tuple or list) or other iterable object:
 \begin{productionlist}
   \production{for_stmt}
              {"for" \token{target_list} "in" \token{expression_list}
-              ":" \token{suite}
-              ["else" ":" \token{suite}]}
+              ":" \token{suite}}
+  \productioncont{["else" ":" \token{suite}]}
 \end{productionlist}
 
 The expression list is evaluated once; it should yield a sequence.  The
@@ -192,10 +196,10 @@ code for a group of statements:
   \production{try_stmt}
              {\token{try_exc_stmt} | \token{try_fin_stmt}}
   \production{try_exc_stmt}
-             {"try" ":" \token{suite}
-              ("except" [\token{expression} ["," \token{target}]] ":"
-              \token{suite})+
-              ["else" ":" \token{suite}]}
+             {"try" ":" \token{suite}}
+  \productioncont{("except" [\token{expression}
+                             ["," \token{target}]] ":" \token{suite})+}
+  \productioncont{["else" ":" \token{suite}]}
   \production{try_fin_stmt}
              {"try" ":" \token{suite}
               "finally" ":" \token{suite}}
@@ -310,10 +314,10 @@ section \ref{types}):
              {"def" \token{funcname} "(" [\token{parameter_list}] ")"
               ":" \token{suite}}
   \production{parameter_list}
-             {(\token{defparameter} ",")*
-              ("*" \token{identifier} [, "**" \token{identifier}]
-               | "**" \token{identifier}
-               | \token{defparameter} [","])}
+             {(\token{defparameter} ",")*}
+  \productioncont{("*" \token{identifier} [, "**" \token{identifier}]}
+  \productioncont{| "**" \token{identifier}
+                  | \token{defparameter} [","])}
   \production{defparameter}
              {\token{parameter} ["=" \token{expression}]}
   \production{sublist}
