@@ -123,10 +123,11 @@ Syntax colors:
 
 Other preferences:
 
-	To change the font on Windows, open EditorWindow.py and change
-	    text['font'] = ("lucida console", 8)
-	to, e.g.,
-	    text['font'] = ("courier new", 10)
+	Most preferences can be changed by editing one of the
+	configuration text files: config.txt (generic) or one of
+	config-unix.txt, config-win.txt, config.mac.txt (platform
+	specific).  User-specific preferences can be stored in
+	$HOME/.idle, which overrides the config*.txt files.
 
 	To change keyboard bindings, edit Bindings.py
 
