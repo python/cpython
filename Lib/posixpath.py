@@ -120,11 +120,8 @@ def commonprefix(m):
     if not m: return ''
     n = m[:]
     for i in range(len(n)):
-        n[i] = n[i].split(os.sep)
-        # if os.sep didn't have any effect, try os.altsep
-        if os.altsep and len(n[i]) == 1:
-            n[i] = n[i].split(os.altsep)
-            
+        n[i] = n[i].split("/")
+
     prefix = n[0]
     for item in n:
         for i in range(len(prefix)):
@@ -132,7 +129,7 @@ def commonprefix(m):
                 prefix = prefix[:i]
                 if i == 0: return ''
                 break
-    return os.sep.join(prefix)
+    return "/".join(prefix)
 
 
 # Get size, mtime, atime of files.
