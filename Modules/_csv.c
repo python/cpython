@@ -48,7 +48,8 @@ static long field_limit = 128 * 1024;	/* max parsed field size */
 
 typedef enum {
 	START_RECORD, START_FIELD, ESCAPED_CHAR, IN_FIELD, 
-	IN_QUOTED_FIELD, ESCAPE_IN_QUOTED_FIELD, QUOTE_IN_QUOTED_FIELD
+	IN_QUOTED_FIELD, ESCAPE_IN_QUOTED_FIELD, QUOTE_IN_QUOTED_FIELD,
+	EAT_CRNL
 } ParserState;
 
 typedef enum {
@@ -96,7 +97,6 @@ typedef struct {
 	char *field;		/* build current field in here */
 	int field_size;		/* size of allocated buffer */
 	int field_len;		/* length of current field */
-	int had_parse_error;	/* did we have a parse error? */
 	int numeric_field;	/* treat field as numeric */
 	unsigned long line_num;	/* Source-file line number */
 } ReaderObj;
@@ -497,6 +497,9 @@ _call_dialect(PyObject *dialect_inst, PyObject *kwargs)
 	return dialect;
 }
 
+/*
+ * READER
+ */
 static int
 parse_save_field(ReaderObj *self)
 {
@@ -544,22 +547,6 @@ parse_grow_buff(ReaderObj *self)
 }
 
 static int
-parse_reset(ReaderObj *self)
-{
-	if (self->fields) {
-		Py_DECREF(self->fields);
-	}
-	self->fields = PyList_New(0);
-	if (self->fields == NULL)
-		return -1;
-	self->field_len = 0;
-	self->state = START_RECORD;
-	self->had_parse_error = 0;
-	self->numeric_field = 0;
-	return 0;
-}
-
-static int
 parse_add_char(ReaderObj *self, char c)
 {
 	if (self->field_len >= field_limit) {
@@ -581,19 +568,23 @@ parse_process_char(ReaderObj *self, char c)
 	switch (self->state) {
 	case START_RECORD:
 		/* start of record */
-		if (c == '\n')
+		if (c == '\0')
 			/* empty line - return [] */
 			break;
+		else if (c == '\n' || c == '\r') {
+			self->state = EAT_CRNL;
+			break;
+		}
 		/* normal character - handle as START_FIELD */
 		self->state = START_FIELD;
 		/* fallthru */
 	case START_FIELD:
 		/* expecting field */
-		if (c == '\n') {
+		if (c == '\n' || c == '\r' || c == '\0') {
 			/* save empty field - return [fields] */
 			if (parse_save_field(self) < 0)
 				return -1;
-			self->state = START_RECORD;
+			self->state = (c == '\0' ? START_RECORD : EAT_CRNL);
 		}
 		else if (c == dialect->quotechar && 
 			 dialect->quoting != QUOTE_NONE) {
@@ -623,6 +614,8 @@ parse_process_char(ReaderObj *self, char c)
 		break;
 
 	case ESCAPED_CHAR:
+		if (c == '\0')
+			c = '\n';
 		if (parse_add_char(self, c) < 0)
 			return -1;
 		self->state = IN_FIELD;
@@ -630,11 +623,11 @@ parse_process_char(ReaderObj *self, char c)
 
 	case IN_FIELD:
 		/* in unquoted field */
-		if (c == '\n') {
+		if (c == '\n' || c == '\r' || c == '\0') {
 			/* end of line - return [fields] */
 			if (parse_save_field(self) < 0)
 				return -1;
-			self->state = START_RECORD;
+			self->state = (c == '\0' ? START_RECORD : EAT_CRNL);
 		}
 		else if (c == dialect->escapechar) {
 			/* possible escaped character */
@@ -655,11 +648,8 @@ parse_process_char(ReaderObj *self, char c)
 
 	case IN_QUOTED_FIELD:
 		/* in quoted field */
-		if (c == '\n') {
-			/* end of line - save '\n' in field */
-			if (parse_add_char(self, '\n') < 0)
-				return -1;
-		}
+		if (c == '\0')
+			;
 		else if (c == dialect->escapechar) {
 			/* Possible escape character */
 			self->state = ESCAPE_IN_QUOTED_FIELD;
@@ -683,6 +673,8 @@ parse_process_char(ReaderObj *self, char c)
 		break;
 
 	case ESCAPE_IN_QUOTED_FIELD:
+		if (c == '\0')
+			c = '\n';
 		if (parse_add_char(self, c) < 0)
 			return -1;
 		self->state = IN_QUOTED_FIELD;
@@ -703,11 +695,11 @@ parse_process_char(ReaderObj *self, char c)
 				return -1;
 			self->state = START_FIELD;
 		}
-		else if (c == '\n') {
+		else if (c == '\n' || c == '\r' || c == '\0') {
 			/* end of line - return [fields] */
 			if (parse_save_field(self) < 0)
 				return -1;
-			self->state = START_RECORD;
+			self->state = (c == '\0' ? START_RECORD : EAT_CRNL);
 		}
 		else if (!dialect->strict) {
 			if (parse_add_char(self, c) < 0)
@@ -716,10 +708,20 @@ parse_process_char(ReaderObj *self, char c)
 		}
 		else {
 			/* illegal */
-			self->had_parse_error = 1;
 			PyErr_Format(error_obj, "'%c' expected after '%c'", 
 					dialect->delimiter, 
                                         dialect->quotechar);
+			return -1;
+		}
+		break;
+
+	case EAT_CRNL:
+		if (c == '\n' || c == '\r')
+			;
+		else if (c == '\0')
+			self->state = START_RECORD;
+		else {
+			PyErr_Format(error_obj, "new-line character seen in unquoted field - do you need to open the file in universal-newline mode?");
 			return -1;
 		}
 		break;
@@ -728,100 +730,68 @@ parse_process_char(ReaderObj *self, char c)
 	return 0;
 }
 
-/*
- * READER
- */
-#define R_OFF(x) offsetof(ReaderObj, x)
-
-static struct PyMemberDef Reader_memberlist[] = {
-	{ "dialect", T_OBJECT, R_OFF(dialect), RO },
-	{ "line_num", T_ULONG, R_OFF(line_num), RO },
-	{ NULL }
-};
+static int
+parse_reset(ReaderObj *self)
+{
+	Py_XDECREF(self->fields);
+	self->fields = PyList_New(0);
+	if (self->fields == NULL)
+		return -1;
+	self->field_len = 0;
+	self->state = START_RECORD;
+	self->numeric_field = 0;
+	return 0;
+}
 
 static PyObject *
 Reader_iternext(ReaderObj *self)
 {
         PyObject *lineobj;
-        PyObject *fields;
-        char *line;
+        PyObject *fields = NULL;
+        char *line, c;
+	int linelen;
 
+	if (parse_reset(self) < 0)
+		return NULL;
         do {
                 lineobj = PyIter_Next(self->input_iter);
                 if (lineobj == NULL) {
                         /* End of input OR exception */
                         if (!PyErr_Occurred() && self->field_len != 0)
-                                return PyErr_Format(error_obj,
-                                                    "newline inside string");
+                                PyErr_Format(error_obj,
+					     "newline inside string");
                         return NULL;
                 }
 		++self->line_num;
 
-                if (self->had_parse_error)
-			if (parse_reset(self) < 0) {
-				Py_DECREF(lineobj);
-				return NULL;
-			}
                 line = PyString_AsString(lineobj);
+		linelen = PyString_Size(lineobj);
 
-                if (line == NULL) {
+                if (line == NULL || linelen < 0) {
                         Py_DECREF(lineobj);
                         return NULL;
                 }
-		if (strlen(line) < (size_t)PyString_GET_SIZE(lineobj)) {
-			self->had_parse_error = 1;
-			Py_DECREF(lineobj);
-			return PyErr_Format(error_obj,
-					    "string with NUL bytes");
-		}
-
-                /* Process line of text - send '\n' to processing code to
-                represent end of line.  End of line which is not at end of
-                string is an error. */
-                while (*line) {
-                        char c;
-
-                        c = *line++;
-                        if (c == '\r') {
-                                c = *line++;
-                                if (c == '\0')
-                                        /* macintosh end of line */
-                                        break;
-                                if (c == '\n') {
-                                        c = *line++;
-                                        if (c == '\0')
-                                                /* DOS end of line */
-                                                break;
-                                }
-                                self->had_parse_error = 1;
-                                Py_DECREF(lineobj);
-                                return PyErr_Format(error_obj,
-                                                    "newline inside string");
-                        }
-                        if (c == '\n') {
-                                c = *line++;
-                                if (c == '\0')
-                                        /* unix end of line */
-                                        break;
-                                self->had_parse_error = 1;
-                                Py_DECREF(lineobj);
-                                return PyErr_Format(error_obj, 
-                                                    "newline inside string");
-                        }
+                while (linelen--) {
+			c = *line++;
+			if (c == '\0') {
+				Py_DECREF(lineobj);
+				PyErr_Format(error_obj,
+					     "line contains NULL byte");
+				goto err;
+			}
 			if (parse_process_char(self, c) < 0) {
 				Py_DECREF(lineobj);
-				return NULL;
+				goto err;
 			}
 		}
-		if (parse_process_char(self, '\n') < 0) {
-			Py_DECREF(lineobj);
-			return NULL;
-		}
                 Py_DECREF(lineobj);
+		if (parse_process_char(self, 0) < 0)
+			goto err;
         } while (self->state != START_RECORD);
 
         fields = self->fields;
-        self->fields = PyList_New(0);
+        self->fields = NULL;
+err:
         return fields;
 }
 
@@ -875,6 +845,14 @@ PyDoc_STRVAR(Reader_Type_doc,
 static struct PyMethodDef Reader_methods[] = {
 	{ NULL, NULL }
 };
+#define R_OFF(x) offsetof(ReaderObj, x)
+
+static struct PyMemberDef Reader_memberlist[] = {
+	{ "dialect", T_OBJECT, R_OFF(dialect), RO },
+	{ "line_num", T_ULONG, R_OFF(line_num), RO },
+	{ NULL }
+};
+
 
 static PyTypeObject Reader_Type = {
 	PyObject_HEAD_INIT(NULL)
