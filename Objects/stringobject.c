@@ -2575,16 +2575,8 @@ _PyString_FormatLong(PyObject *val, int flags, int prec, int type,
 	numdigits = len - numnondigits;
 	assert(numdigits > 0);
 
-	/* Get rid of base marker unless F_ALT.  Even if F_ALT, leading 0x
-	 * must be stripped if the *value* is 0.
-	 */
-	if ((flags & F_ALT) == 0 ||
-	    ((flags & F_ALT) &&
-	     (type == 'x' || type == 'X') &&
-	     numdigits == 1 &&
-	     !sign &&
-	     buf[2] == '0'
-	    )) {
+	/* Get rid of base marker unless F_ALT */
+	if ((flags & F_ALT) == 0) {
 		/* Need to skip 0x, 0X or 0. */
 		int skipped = 0;
 		switch (type) {
@@ -2678,6 +2670,16 @@ formatint(char *buf, size_t buflen, int flags,
 		return -1;
 	}
 	sprintf(buf, fmt, x);
+	/* When converting 0 under %#x or %#X, C leaves off the base marker,
+	 * but we want it (for consistency with other %#x conversions, and
+	 * for consistency with Python's hex() function).
+	 */
+	if (x == 0 && (flags & F_ALT) && (type == 'x' || type == 'X')) {
+		assert(buf[1] != type);  /* else this C *is* adding 0x/0X */
+		memmove(buf+2, buf, strlen(buf) + 1);
+		buf[0] = '0';
+		buf[1] = (char)type;
+	}
 	return strlen(buf);
 }
 
@@ -3023,21 +3025,17 @@ PyString_Format(PyObject *format, PyObject *args)
 					width--;
 			}
 			if ((flags & F_ALT) && (c == 'x' || c == 'X')) {
-				/* There's a base marker ("0x" or "0X") if and
-				 * only if the value is non-zero.
-				 */
 				assert(pbuf[0] == '0');
-				if (pbuf[1] == c) {
-					if (fill != ' ') {
-						*res++ = *pbuf++;
-						*res++ = *pbuf++;
-					}
-					rescnt -= 2;
-					width -= 2;
-					if (width < 0)
-						width = 0;
-					len -= 2;
+				assert(pbuf[1] == c);
+				if (fill != ' ') {
+					*res++ = *pbuf++;
+					*res++ = *pbuf++;
 				}
+				rescnt -= 2;
+				width -= 2;
+				if (width < 0)
+					width = 0;
+				len -= 2;
 			}
 			if (width > len && !(flags & F_LJUST)) {
 				do {
@@ -3049,8 +3047,9 @@ PyString_Format(PyObject *format, PyObject *args)
 				if (sign)
 					*res++ = sign;
 				if ((flags & F_ALT) &&
-				    (c == 'x' || c == 'X') &&
-				    pbuf[1] == c) {
+				    (c == 'x' || c == 'X')) {
+					assert(pbuf[0] == '0');
+					assert(pbuf[1] == c);
 					*res++ = *pbuf++;
 					*res++ = *pbuf++;
 				}

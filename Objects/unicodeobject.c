@@ -4683,7 +4683,14 @@ formatint(Py_UNICODE *buf,
             "formatted integer is too long (precision too long?)");
         return -1;
     }
-    sprintf(fmt, "%%%s.%dl%c", (flags & F_ALT) ? "#" : "", prec, type);
+    /* When converting 0 under %#x or %#X, C leaves off the base marker,
+     * but we want it (for consistency with other %#x conversions, and
+     * for consistency with Python's hex() function).
+     */
+    if (x == 0 && (flags & F_ALT) && (type == 'x' || type == 'X'))
+        sprintf(fmt, "0%c%%%s.%dl%c", type, "#", prec, type);
+    else
+        sprintf(fmt, "%%%s.%dl%c", (flags & F_ALT) ? "#" : "", prec, type);
     return usprintf(buf, fmt, x);
 }
 
@@ -5081,17 +5088,16 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    }
 	    if ((flags & F_ALT) && (c == 'x' || c == 'X')) {
 		assert(pbuf[0] == '0');
-		if (pbuf[1] == c) {
-			if (fill != ' ') {
-			    *res++ = *pbuf++;
-			    *res++ = *pbuf++;
-			}
-			rescnt -= 2;
-			width -= 2;
-			if (width < 0)
-			    width = 0;
-			len -= 2;
+		assert(pbuf[1] == c);
+		if (fill != ' ') {
+		    *res++ = *pbuf++;
+		    *res++ = *pbuf++;
 		}
+		rescnt -= 2;
+		width -= 2;
+		if (width < 0)
+		    width = 0;
+		len -= 2;
 	    }
 	    if (width > len && !(flags & F_LJUST)) {
 		do {
@@ -5102,9 +5108,9 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    if (fill == ' ') {
 		if (sign)
 		    *res++ = sign;
-		if ((flags & F_ALT) && (c == 'x' || c == 'X') &&
-		    pbuf[1] == c) {
+		if ((flags & F_ALT) && (c == 'x' || c == 'X')) {
 		    assert(pbuf[0] == '0');
+		    assert(pbuf[1] == c);
 		    *res++ = *pbuf++;
 		    *res++ = *pbuf++;
 		}
