@@ -1286,13 +1286,14 @@ window_dealloc(wp)
 	free((char *)wp);
 }
 
-static void
+static int
 window_print(wp, fp, flags)
 	windowobject *wp;
 	FILE *fp;
 	int flags;
 {
 	fprintf(fp, "<window titled '%s'>", getstringvalue(wp->w_title));
+	return 0;
 }
 
 static object *

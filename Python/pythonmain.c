@@ -289,10 +289,12 @@ print_error()
 	object *exception, *v;
 	err_get(&exception, &v);
 	fprintf(stderr, "Unhandled exception: ");
-	printobject(exception, stderr, PRINT_RAW);
+	if (printobject(exception, stderr, PRINT_RAW) != 0)
+		err_clear();
 	if (v != NULL && v != None) {
 		fprintf(stderr, ": ");
-		printobject(v, stderr, PRINT_RAW);
+		if (printobject(v, stderr, PRINT_RAW) != 0)
+			err_clear();
 	}
 	fprintf(stderr, "\n");
 	XDECREF(exception);

@@ -186,12 +186,14 @@ tb_printinternal(tb, fp)
 	FILE *fp;
 {
 	while (tb != NULL) {
-		if (intrcheck()) {
-			fprintf(fp, "[interrupted]\n");
+		if (intrcheck())
+			break;
+		fprintf(fp, "  File \"");
+		if (printobject(tb->tb_frame->f_code->co_filename,
+				fp, PRINT_RAW) != 0) {
+			err_clear();
 			break;
 		}
-		fprintf(fp, "  File \"");
-		printobject(tb->tb_frame->f_code->co_filename, fp, PRINT_RAW);
 		fprintf(fp, "\", line %d\n", tb->tb_lineno);
 		tb_displayline(fp,
 		     getstringvalue(tb->tb_frame->f_code->co_filename),
