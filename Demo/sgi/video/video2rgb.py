@@ -18,7 +18,7 @@ def help():
 # Imported modules
 
 import sys
-sys.path.append('/ufs/guido/src/video') # Increase chance of finding VFile
+sys.path.append('/ufs/jack/src/av/video') # Increase chance of finding VFile
 import VFile
 import time
 import getopt
@@ -112,6 +112,12 @@ def process(filename):
 def convert(vin, cf, width, height, depth, pf):
 	global seqno
 
+	if type(pf) == type(()):
+		xpf, ypf = pf
+	elif pf == 0:
+		xpf = ypf = 1
+	else:
+		xpf = ypf = pf
 	while 1:
 		try:
 			time, data, cdata = vin.getnextframe()
@@ -120,6 +126,7 @@ def convert(vin, cf, width, height, depth, pf):
 		if cdata:
 			print 'Film contains chromdata!'
 			return
+		data = cf(data, width/xpf, height/abs(ypf))
 		if pf:
 			data = applypackfactor(data, width, height, pf)
 		s = `seqno`
