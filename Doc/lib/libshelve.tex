@@ -30,9 +30,26 @@ list = d.keys() # a list of all existing keys (slow!)
 d.close()       # close it
 \end{verbatim}
 
+Restrictions:
+
+\begin{itemize}
+
+\item
+The choice of which database package will be used (e.g. dbm or gdbm)
+depends on which interface is available.  Therefore it isn't safe to
+open the database directly using dbm.  The database is also
+(unfortunately) subject to the limitations of dbm, if it is used ---
+this means that (the pickled representation of) the objects stored in
+the database should be fairly small, and in rare cases key collisions
+may cause the database to refuse updates.
+
+\item
 Dependent on the implementation, closing a persistent dictionary may
 or may not be necessary to flush changes to disk.
 
-Note: \code{shelve} does not support {\em concurrent} access to
+\item
+The \code{shelve} module does not support {\em concurrent} access to
 shelved objects.  Two programs should not try to simultaneously access
 the same shelf.
+
+\end{itemize}
