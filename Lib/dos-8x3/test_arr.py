@@ -52,7 +52,7 @@ def testtype(type, example):
 	    print 'array of %s converted to a list: ' % a.typecode, a.tolist()
 	if verbose:
 	    print 'array of %s converted to a string: ' \
-	           % a.typecode, a.tostring()
+	           % a.typecode, `a.tostring()`
 
 
 main()
