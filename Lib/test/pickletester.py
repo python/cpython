@@ -555,19 +555,21 @@ class AbstractPickleTests(unittest.TestCase):
         x = MyTuple([1, 2, 3])
         x.foo = 42
         x.bar = "hello"
-        s = self.dumps(x, 2)
-        y = self.loads(s)
-        self.assertEqual(tuple(x), tuple(y))
-        self.assertEqual(x.__dict__, y.__dict__)
+        for proto in protocols:
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            self.assertEqual(tuple(x), tuple(y))
+            self.assertEqual(x.__dict__, y.__dict__)
 
     def test_newobj_list(self):
         x = MyList([1, 2, 3])
         x.foo = 42
         x.bar = "hello"
-        s = self.dumps(x, 2)
-        y = self.loads(s)
-        self.assertEqual(list(x), list(y))
-        self.assertEqual(x.__dict__, y.__dict__)
+        for proto in protocols:
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            self.assertEqual(list(x), list(y))
+            self.assertEqual(x.__dict__, y.__dict__)
 
     def test_newobj_generic(self):
         for proto in protocols:
