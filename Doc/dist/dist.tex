@@ -297,8 +297,8 @@ mind that the \emph{absence} of a leading slash indicates a relative
 path, the opposite of the MacOS convention with colons.)
 
 This, of course, only applies to pathnames given to Distutils
-functions.  If you, for example, use standard python functions such as
-\function{glob.glob} or \function{os.listdir} to specify files, you
+functions.  If you, for example, use standard Python functions such as
+\function{glob.glob()} or \function{os.listdir()} to specify files, you
 should be careful to write portable code instead of hardcoding path
 separators:
 
@@ -714,42 +714,42 @@ version. This information includes:
   Python versions prior to 2.2.3 or 2.3.  
 \item[(4)] The list of classifiers is available from the
   PyPI website (\url{http://www.python.org/pypi}).
-\end{description}
-
-\option{classifiers} are specified in a python list:
+  \option{classifiers} are specified as a list of strings:
 
 \begin{verbatim}
 setup(...
-        classifiers = [
-            'Development Status :: 4 - Beta',
-            'Environment :: Console',
-            'Environment :: Web Environment',
-            'Intended Audience :: End Users/Desktop',
-            'Intended Audience :: Developers',
-            'Intended Audience :: System Administrators',
-            'License :: OSI Approved :: Python Software Foundation License',
-            'Operating System :: MacOS :: MacOS X',
-            'Operating System :: Microsoft :: Windows',
-            'Operating System :: POSIX',
-            'Programming Language :: Python',
-            'Topic :: Communications :: Email',
-            'Topic :: Office/Business',
-            'Topic :: Software Development :: Bug Tracking',
-        ],
+      classifiers=[
+          'Development Status :: 4 - Beta',
+          'Environment :: Console',
+          'Environment :: Web Environment',
+          'Intended Audience :: End Users/Desktop',
+          'Intended Audience :: Developers',
+          'Intended Audience :: System Administrators',
+          'License :: OSI Approved :: Python Software Foundation License',
+          'Operating System :: MacOS :: MacOS X',
+          'Operating System :: Microsoft :: Windows',
+          'Operating System :: POSIX',
+          'Programming Language :: Python',
+          'Topic :: Communications :: Email',
+          'Topic :: Office/Business',
+          'Topic :: Software Development :: Bug Tracking',
+          ],
       ...
-)
+      )
 \end{verbatim}
+\end{description}
 
-If you wish to include classifiers in your \file{setup.py} file and also
-wish to remain backwards-compatible with Python releases prior to 2.2.3,
-then you can include the following code fragment in your \file{setup.py}
-before the \code{setup()} call.
+If you wish to include classifiers or a download URL in your
+\file{setup.py} file and also wish to remain backwards-compatible with
+Python releases prior to 2.2.3, then you can include the following
+code fragment in your \file{setup.py} before the \code{setup()} call:
 
 \begin{verbatim}
 # patch distutils if it can't cope with the "classifiers" keyword
 if sys.version < '2.2.3':
     from distutils.dist import DistributionMetadata
     DistributionMetadata.classifiers = None
+    DistributionMetadata.download_url = None
 \end{verbatim}
 
 
