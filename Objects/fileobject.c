@@ -1298,18 +1298,9 @@ file_setattr(PyFileObject *f, char *name, PyObject *v)
 }
 
 static PyObject *
-file_getiter(PyFileObject *f)
+file_getiter(PyObject *f)
 {
-	static PyObject *es;
-	PyObject *iter;
-	PyObject *rl = Py_FindMethod(file_methods, (PyObject *)f, "readline");
-	if (rl == NULL)
-		return NULL;
-	if (es == NULL)
-		es = PyString_FromString("");
-	iter = PyCallIter_New(rl, es);
-	Py_DECREF(rl);
-	return iter;
+	return PyObject_CallMethod(f, "xreadlines", "");
 }
 
 PyTypeObject PyFile_Type = {
@@ -1339,7 +1330,7 @@ PyTypeObject PyFile_Type = {
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
-	(getiterfunc)file_getiter,		/* tp_iter */
+	file_getiter,				/* tp_iter */
 	0,					/* tp_iternext */
 };
 
