@@ -9,7 +9,7 @@
 import os
 import tempfile
 import pipes
-import whatsound
+import sndhdr
 
 table = {}
 
@@ -78,7 +78,7 @@ def _toaiff(filename, temps):
 	else:
 		fname = filename
 	try:
-		ftype = whatsound.whathdr(fname)
+		ftype = sndhdr.whathdr(fname)
 		if ftype:
 			ftype = ftype[0] # All we're interested in
 	except IOError:
