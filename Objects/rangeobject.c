@@ -130,7 +130,14 @@ range_item(rangeobject *r, int i)
 static int
 range_length(rangeobject *r)
 {
-	return r->len;
+#if LONG_MAX != INT_MAX
+	if (r->len > INT_MAX) {
+		PyErr_SetString(PyExc_ValueError,
+				"xrange object size cannot be reported");
+		return -1;
+	}
+#endif
+	return (int)(r->len);
 }
 
 static PyObject *
