@@ -120,7 +120,15 @@ resource_getrlimit(self, args)
 		PyErr_SetFromErrno(ResourceError);
 		return NULL;
 	}
-	return Py_BuildValue("ii", rl.rlim_cur, rl.rlim_max);
+
+#if defined(HAVE_LONG_LONG)
+	if (sizeof(rl.rlim_cur) > sizeof(long)) {
+		return Py_BuildValue("LL",
+				     (LONG_LONG) rl.rlim_cur,
+				     (LONG_LONG) rl.rlim_max);
+	}
+#endif
+	return Py_BuildValue("ii", (long) rl.rlim_cur, (long) rl.rlim_max);
 }
 
 static PyObject *
@@ -130,9 +138,9 @@ resource_setrlimit(self, args)
 {
 	struct rlimit rl;
 	int resource;
+	PyObject *curobj, *maxobj;
 
-	if (!PyArg_ParseTuple(args, "i(ii)", &resource, &rl.rlim_cur, 
-			      &rl.rlim_max)) 
+	if (!PyArg_ParseTuple(args, "i(OO)", &resource, &curobj, &maxobj))
 		return NULL;
 
 	if (resource < 0 || resource >= RLIM_NLIMITS) {
@@ -140,6 +148,17 @@ resource_setrlimit(self, args)
 				"invalid resource specified");
 		return NULL;
 	}
+
+#if !defined(HAVE_LARGEFILE_SUPPORT)
+	rl.rlim_cur = PyInt_AsLong(curobj);
+	rl.rlim_max = PyInt_AsLong(maxobj);
+#else
+	/* The limits are probably bigger than a long */
+	rl.rlim_cur = PyLong_Check(curobj) ?
+		PyLong_AsLongLong(curobj) : PyInt_AsLong(curobj);
+	rl.rlim_max = PyLong_Check(maxobj) ?
+		PyLong_AsLongLong(maxobj) : PyInt_AsLong(maxobj);
+#endif
 
 	rl.rlim_cur = rl.rlim_cur & RLIM_INFINITY;
 	rl.rlim_max = rl.rlim_max & RLIM_INFINITY;
