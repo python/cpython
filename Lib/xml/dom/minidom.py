@@ -727,7 +727,7 @@ class DocumentType(Node):
     name = None
     publicId = None
     systemId = None
-    internalSubset = ""
+    internalSubset = None
     entities = None
     notations = None
 
