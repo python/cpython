@@ -4521,6 +4521,8 @@ initcPickle(void) {
     PyObject *format_version;
     PyObject *compatible_formats;
 
+    if (init_stuff(m, d) < 0) return;
+
     Picklertype.ob_type = &PyType_Type;
     Unpicklertype.ob_type = &PyType_Type;
     PdataType.ob_type = &PyType_Type;
@@ -4542,6 +4544,4 @@ initcPickle(void) {
     PyDict_SetItemString(d, "compatible_formats", compatible_formats);
     Py_XDECREF(format_version);
     Py_XDECREF(compatible_formats);
-
-    init_stuff(m, d);
 }
