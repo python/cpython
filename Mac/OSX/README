@@ -1,8 +1,8 @@
 Building and using a framework-based Python on Mac OS X.
 --------------------------------------------------------
 
-This document provides a quick introduction to framework-based Python.
-It is rather terse and probably incomplete, please send me feedback.
+This document provides a quick introduction to framework-based Python, its
+advantages, and how to build it.
 
 1. Why would I want a framework Python in stead of a normal static Python?
 --------------------------------------------------------------------------
@@ -15,11 +15,15 @@ While it is technically possible to create a .app without using frameworks you
 will have to do the work yourself if you really want this.
 
 A second reason for using frameworks is that they put Python-related items in
-only two places: /Library/Framework/Python.framework and /Applications/Python.
+only two places: /Library/Framework/Python.framework and /Applications/MacPython-2.3.
 This simplifies matters for users installing Python from a binary distribution
 if they want to get rid of it again. Moreover, due to the way frameworks work
 a user without admin privileges can install a binary distribution in his or
 her home directory without recompilation.
+
+Incidentally, the procedure described here is also the procedure that is
+used to create the MacPython binary installer, so the information here
+should theoretically allow you to rebuild that.
 
 2. How does a framework Python differ from a normal static Python?
 ------------------------------------------------------------------
@@ -51,7 +55,7 @@ information.
 
 This directory contains a Makefile that will create a couple of python-related
 applications (fullblown OSX .app applications, that is) in
-/Applications/Python, and a hidden helper application Python.app inside the
+/Applications/MacPython-2.3, and a hidden helper application Python.app inside the
 Python.framework, and unix tools "python" and "pythonw" into /usr/local/bin.
 In addition it has a target "installmacsubtree" that installs the relevant
 portions of the Mac subtree into the Python.framework.
@@ -65,10 +69,10 @@ in the sequence
 This sequence will put the framework in /Library/Framework/Python.framework,
 the applications in /Applications/Python and the unix tools in /usr/local/bin.
 
-Building in another place, for instance $HOME/Library/Frameworks if you have
+Installing in another place, for instance $HOME/Library/Frameworks if you have
 no admin privileges on your machine, has only been tested very lightly. This
 can be done by configuring with --enable-framework=$HOME/Library/Frameworks.
-The other two directories, /Applications/Python and /usr/local/bin, will then
+The other two directories, /Applications/MacPython-2.3 and /usr/local/bin, will then
 also be deposited in $HOME. This is sub-optimal for the unix tools, which you
 would want in $HOME/bin, but there is no easy way to fix this right now.
 
@@ -80,6 +84,10 @@ you could use --enable-framework=/tmp/newversion/Library/Frameworks and use
 If you want to install some part, but not all, read the main Makefile. The
 frameworkinstall is composed of a couple of sub-targets that install the
 framework itself, the Mac subtree, the applications and the unix tools.
+
+There is an extra target frameworkinstallextras that is not part of the
+normal frameworkinstall which installs the Demo and Tools directories
+into /Applications/MacPython-2.3, this is useful for binary distributions.
 
 If you want to run the Makefile here directly, in stead of through the main
 Makefile, you will have to pass various variable-assignments. Read the
@@ -111,44 +119,28 @@ non-GUI and GUI python scripts from the command line, respectively.
 6. How do I create a binary distribution?
 -----------------------------------------
 
-Note: this section is work-in-progress.
+Go to the Mac/OSX/Dist directory. There you find a script "build" that
+does all the work: it configures and builds a framework Python, installs
+it, creates the installer package file and packs this in a DMG image.
 
-First, to make sure there's no contamination, it is best to remove your
-existing Python installation (clear out /Library/Frameworks/Python.framework
-and /Applications/Python). Also, after build/install is finished check that
-nothing has shown up in those two locations.
+All of this is normally done completely isolated in /tmp/_py, so it does not
+use your normal build directory nor does it install into /.
 
-Create a subdirectory of the main python directory, say build-pythondist. In
-there, run
-	../configure --enable-framework=/tmp/pythondist/Library/Frameworks \
-		LDFLAGS=-Wl,-x
-	make
-	make frameworkinstall
-This installs a complete distribution set in /tmp/pythondist: in a framework
-build all other pathnames are computed from the framework pathname.
+Because the build script locates the Python source tree relative to its own
+pathname you may have to run it with a full pathname. If you are debugging your
+install you can pass one argument: the pathname where the build directory
+is located (i.e. where configure and make will be run), then this directory
+will be saved between runs of the build script. Do *not* specify your normal
+build directory here.
 
-Optionally you may want to include the full documentation in the binary installer.
-To this end, execute the following commands:
-	python.exe ../Mac/OSX/setupDocs.py build
-	python.exe ../Mac/OSX/setupDocs.py install \
-		--prefix=/tmp/python/Library/Frameworks/Python.framework/Versions/Current
-		
-Note that the unix tools in /tmp/pythondist are wrong, these have to be
-removed, and the installer post-install script should recreate them on the
-target system. Also, the .pyc and .pyo files need to be removed:
-	rm -rf /tmp/pythondist/usr
-	python.exe ../Mac/script/zappycfiles.py /tmp/pythondist
+build will ask you whether you have updated the readme file, and it will offer
+to include the full documentation in the installer. That option has not
+been used for a while, and it may not work.
 
-Finally, create the .pkg file with a commandline like
-	python ../Mac/scripts/buildpkg.py \
-		--Title=MacPython-X \
-		--Version=2.3a0 \
-		--Description="Python for Mac OS X, framework based" \
-		/tmp/pythondist
-This creates a MacPython-X.pkg in the current directory.
-
-TBD: provide postinstall scripts to precompile .pyc/.pyo files, and to recreate
-the unix programs.
+If you need to execute code on the client machine after installing Python
+you can add this to resources/postflight. If you need to do even stranger things
+you have to read Apple's documentation on PackageMaker and read the source
+of Mac/scripts/buildpkg.py.
 
 7. Odds and ends.
 -----------------
@@ -164,4 +156,4 @@ macresource module and the Mac/OSX/Makefile cater for this, and create
 ".rsrc.df.rsrc" files on the fly that are normal datafork-based resource
 files.
 
-	Jack Jansen, jack@oratrix.com, 06-Sep-02
+	Jack Jansen, Jack.Jansen@cwi.nl, 20-Jun-2003.
