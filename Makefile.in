@@ -168,13 +168,16 @@ $(LIBRARY):	$(SUBDIRS)
 		for i in $(SUBDIRS); do \
 			(cd $$i; $(MAKE) VERSION="$(VERSION)" add2lib); done
 
-# This rule is only here for DG/UX!!!
+# This rule is only here for DG/UX and BeOS!!!
 libpython$(VERSION).so:	$(LIBRARY)
 		case `uname -s | tr -d '/ ' | tr '[A-Z]' '[a-z]'` in \
 		*dgux*) \
 		    test -d dgux || mkdir dgux; \
 		    (cd dgux;ar x ../$^;ld -G -o ../$@ * ); \
 		    /bin/rm -rf ./dgux \
+		    ;; \
+		beos) \
+		    $(srcdir)/BeOS/ar-fake so $(LIBRARY) $@ \
 		    ;; \
 		esac
 
@@ -367,7 +370,7 @@ libainstall:	all
 			else	true; \
 			fi; \
 		done
-		@if [ "$(MACHDEP)" != "beos" ] ; then \
+		@if test -d $(LIBRARY); then :; else \
 			$(INSTALL_DATA) $(LIBRARY) $(LIBPL)/$(LIBRARY) ; \
 			$(RANLIB) $(LIBPL)/$(LIBRARY) ; \
 		fi
@@ -396,23 +399,19 @@ libainstall:	all
 			echo; echo "See Misc/AIX-NOTES for details.";	\
 		else true; \
 		fi
-		@if [ "$(MACHDEP)" = "beos" ] ; then \
+		@case "$(MACHDEP)" in beos*) \
 			echo; echo "Installing support files for building shared extension modules on BeOS:"; \
 			$(INSTALL_DATA) BeOS/README $(LIBPL)/README;	\
 			echo; echo "$(LIBPL)/README";			\
 			$(INSTALL_DATA) BeOS/README.readline-2.2 $(LIBPL)/README.readline-2.2; \
 			echo "$(LIBPL)/README.readline-2.2";		\
-			$(INSTALL_DATA) BeOS/dl_export.h $(LIBPL)/dl_export.h; \
-			echo "$(LIBPL)/dl_export.h";			\
 			$(INSTALL_PROGRAM) BeOS/ar-fake $(LIBPL)/ar-fake; \
 			echo "$(LIBPL)/ar-fake";			\
-			$(INSTALL_PROGRAM) BeOS/linkcc $(LIBPL)/linkcc; \
-			echo "$(LIBPL)/linkcc";				\
 			$(INSTALL_PROGRAM) BeOS/linkmodule $(LIBPL)/linkmodule; \
 			echo "$(LIBPL)/linkmodule";			\
 			echo; echo "See BeOS/README for details.";	\
-		else true; \
-		fi
+			;; \
+		esac
 
 # Install the dynamically loadable modules
 # This goes into $(exec_prefix)
