@@ -126,7 +126,7 @@ def analyze_node(text):
 			topic, ref = text[a1:b1], text[a2:b2]
 			if ref == ':':
 				ref = topic
-			menu.append(topic, ref)
+			menu.append((topic, ref))
 	#
 	# Get the footnotes
 	#
@@ -140,7 +140,7 @@ def analyze_node(text):
 		topic, ref = text[a1:b1], text[a2:b2]
 		if ref == ':':
 			ref = topic
-		footnotes.append(topic, ref)
+		footnotes.append((topic, ref))
 	#
 	return node, (prev, next, up), menu, footnotes
 #

@@ -40,7 +40,7 @@ def treat_file(file, outfp):
 			name = line[a2:b2]
 			pat = line[a:b]
 			tag = pat + '\177' + `lineno` + ',' + `charno` + '\n'
-			tags.append(name, tag)
+			tags.append((name, tag))
 			size = size + len(tag)
 		charno = charno + len(line)
 	outfp.write('\f\n' + file + ',' + `size` + '\n')

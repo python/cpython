@@ -168,7 +168,7 @@ class NFSClient(UDPClient):
 			entries, eof = rest
 			last_cookie = None
 			for fileid, name, cookie in entries:
-				list.append(fileid, name)
+				list.append((fileid, name))
 				last_cookie = cookie
 			if eof or last_cookie == None:
 				break

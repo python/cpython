@@ -644,7 +644,7 @@ class TexinfoParser:
 
     def close_footnote(self):
         id = len(self.footnotes) + 1
-        self.footnotes.append(id, self.collectsavings())
+        self.footnotes.append((id, self.collectsavings()))
 
     def writefootnotes(self):
         self.write(self.FN_HEADER)
@@ -993,7 +993,7 @@ class TexinfoParser:
             for i in self.numbering:
                 x = x + `i` + '.'
             args = x + ' ' + args
-            self.contents.append(level, args, self.nodename)
+            self.contents.append((level, args, self.nodename))
         self.write('<', type, '>')
         self.expand(args)
         self.write('</', type, '>\n')
@@ -1362,7 +1362,7 @@ class TexinfoParser:
     def do_vindex(self, args): self.index('vr', args)
 
     def index(self, name, args):
-        self.whichindex[name].append(args, self.nodename)
+        self.whichindex[name].append((args, self.nodename))
 
     def do_synindex(self, args):
         words = string.split(args)
@@ -1409,7 +1409,7 @@ class TexinfoParser:
                     break
                 i = mo.end()
                 sortkey = sortkey[i:]
-            index1.append(sortkey, key, node)
+            index1.append((sortkey, key, node))
         del index[:]
         index1.sort()
         self.write('<DL COMPACT>\n')

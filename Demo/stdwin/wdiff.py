@@ -95,7 +95,7 @@ def diffdata(a, b, flags): # Compute directory differences.
 		if x in ['./', '../']:
 			pass
 		elif x not in b_list:
-			a_only.append(x, a_only_action)
+			a_only.append((x, a_only_action))
 		else:
 			ax = os.path.join(a, x)
 			bx = os.path.join(b, x)
@@ -110,15 +110,15 @@ def diffdata(a, b, flags): # Compute directory differences.
 				except (RuntimeError, os.error):
 					same = 0
 			if same:
-				ab_same.append(x, ab_same_action)
+				ab_same.append((x, ab_same_action))
 			else:
-				ab_diff.append(x, ab_diff_action)
+				ab_diff.append((x, ab_diff_action))
 	#
 	for x in b_list:
 		if x in ['./', '../']:
 			pass
 		elif x not in a_list:
-			b_only.append(x, b_only_action)
+			b_only.append((x, b_only_action))
 	#
 	return data
 

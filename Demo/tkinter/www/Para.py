@@ -67,7 +67,7 @@ class Para:
 			self.words[i] = fo, te, wi, sp, 0, as, de
 			total = total + wi + sp
 		if total < tab:
-			self.words.append(None, '', 0, tab-total, 0, as, de)
+			self.words.append((None, '', 0, tab-total, 0, as, de))
 	#
 	# Make a hanging tag: tab to hang, increment indent_left by hang,
 	# and reset indent_hang to -hang

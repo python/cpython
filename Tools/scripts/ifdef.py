@@ -79,16 +79,16 @@ def process(fpi, fpo):
 				ko = 0
 			word = words[1]
 			if word in defs:
-				stack.append(ok, ko, word)
+				stack.append((ok, ko, word))
 				if not ko: ok = 0
 			elif word in undefs:
-				stack.append(ok, not ko, word)
+				stack.append((ok, not ko, word))
 				if ko: ok = 0
 			else:
-				stack.append(ok, -1, word)
+				stack.append((ok, -1, word))
 				if ok: fpo.write(line)
 		elif keyword == 'if':
-			stack.append(ok, -1, '')
+			stack.append((ok, -1, ''))
 			if ok: fpo.write(line)
 		elif keyword == 'else' and stack:
 			s_ok, s_ko, s_word = stack[-1]
