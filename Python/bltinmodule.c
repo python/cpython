@@ -37,6 +37,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "compile.h"
 #include "eval.h"
 
+/* Forward */
+static object *filterstring PROTO((object *, object *));
+static object *filtertuple  PROTO((object *, object *));
+static object *exec_eval PROTO((object *v, int start));
+
 static object *
 builtin_abs(self, v)
 	object *self;
@@ -59,6 +64,132 @@ builtin_apply(self, args)
 	if (!getargs(args, "(OO)", &func, &arglist))
 		return NULL;
 	return call_object(func, arglist);
+}
+
+static object *
+builtin_bagof(self, args)
+	object *self;
+	object *args;
+{
+	object *func, *seq, *arg, *result;
+	sequence_methods *sqf;
+	int len, newfunc = 0;
+	register int i,j;
+	static char bagof_err[] = "bagof() requires 1 or 2 args";
+
+	if (args == NULL) {
+		err_setstr(TypeError, bagof_err);
+		return NULL;
+	}
+
+	if (is_tupleobject(args)) {
+		if (gettuplesize(args) != 2) {
+			err_setstr(TypeError, bagof_err);
+			return NULL;
+		}
+
+		func = gettupleitem(args, 0);
+		seq  = gettupleitem(args, 1);
+
+		if (is_stringobject(func)) {
+			if ((func = exec_eval(func, lambda_input)) == NULL)
+				return NULL;
+			newfunc = 1;
+		}
+	}
+	else {
+		func = None;
+		seq  = args;
+	}
+
+	/* check for special cases; strings and tuples are returned as same */
+	if (is_stringobject(seq)) {
+		object *r = filterstring(func, seq);
+		if (newfunc)
+			DECREF(func);
+		return r;
+	}
+
+	else if (is_tupleobject(seq)) {
+		object *r = filtertuple(func, seq);
+		if (newfunc)
+			DECREF(func);
+		return r;
+	}
+
+	if (! (sqf = seq->ob_type->tp_as_sequence)) {
+		err_setstr(TypeError,
+			   "argument to bagof() must be a sequence type");
+		goto Fail_2;
+	}
+
+	if ((len = (*sqf->sq_length)(seq)) < 0)
+		goto Fail_2;
+
+	if (is_listobject(seq) && seq->ob_refcnt == 1) {
+		INCREF(seq);
+		result = seq;
+	}
+	else
+		if ((result = newlistobject(len)) == NULL)
+			goto Fail_2;
+
+	if ((arg = newtupleobject(1)) == NULL)
+		goto Fail_1;
+
+	for (i = j = 0; i < len; ++i) {
+		object *ele, *value;
+
+		if (arg->ob_refcnt > 1) {
+			DECREF(arg);
+			if ((arg = newtupleobject(1)) == NULL)
+				goto Fail_1;
+		}
+
+		if ((ele = (*sqf->sq_item)(seq, i)) == NULL)
+			goto Fail_0;
+
+		if (func == None)
+			value = ele;
+		else {
+			if (settupleitem(arg, 0, ele) < 0)
+				goto Fail_0;
+
+			if ((value = call_object(func, arg)) == NULL)
+				goto Fail_0;
+		}
+
+		if (testbool(value)) {
+			INCREF(ele);
+			if (setlistitem(result, j++, ele) < 0)
+				goto Fail_0;
+		}
+
+		DECREF(value);
+	}
+
+	/* list_ass_slice() expects the rest of the list to be non-null */
+	for (i = j; i < len; ++i) {
+		INCREF(None);
+		if (setlistitem(result, i, None) < 0)
+			goto Fail_0;
+	}
+
+	DECREF(arg);
+	if (newfunc)
+		DECREF(func);
+
+	(*result->ob_type->tp_as_sequence->sq_ass_slice)(result, j, len, NULL);
+	return result;
+
+Fail_0:
+	DECREF(arg);
+Fail_1:
+	DECREF(result);
+Fail_2:
+	if (newfunc)
+		DECREF(func);
+	return NULL;
 }
 
 static object *
@@ -191,6 +322,7 @@ exec_eval(v, start)
 	object *str = NULL, *globals = NULL, *locals = NULL;
 	char *s;
 	int n;
+	/* XXX This is a bit of a mess.  Should make it varargs */
 	if (v != NULL) {
 		if (is_tupleobject(v) &&
 				((n = gettuplesize(v)) == 2 || n == 3)) {
@@ -206,9 +338,10 @@ exec_eval(v, start)
 			globals != NULL && !is_dictobject(globals) ||
 			locals != NULL && !is_dictobject(locals)) {
 		err_setstr(TypeError,
-		    "exec/eval arguments must be (string|code)[,dict[,dict]]");
+		  "eval/lambda arguments must be (string|code)[,dict[,dict]]");
 		return NULL;
 	}
+	/* XXX The following is only correct for eval(), not for lambda() */
 	if (is_codeobject(str))
 		return eval_code((codeobject *) str, globals, locals,
 				 (object *)NULL, (object *)NULL);
@@ -217,7 +350,7 @@ exec_eval(v, start)
 		err_setstr(ValueError, "embedded '\\0' in string arg");
 		return NULL;
 	}
-	if (start == eval_input) {
+	if (start == eval_input || start == lambda_input) {
 		while (*s == ' ' || *s == '\t')
 			s++;
 	}
@@ -336,6 +469,136 @@ builtin_id(self, args)
 }
 
 static object *
+builtin_map(self, args)
+	object *self;
+	object *args;
+{
+	typedef struct {
+		object *seq;
+		sequence_methods *sqf;
+		int len;
+	} sequence;
+
+	object *func, *result;
+	sequence *seqs = NULL, *sqp;
+	int n, len, newfunc = 0;
+	register int i, j;
+
+	if (args == NULL || !is_tupleobject(args)) {
+		err_setstr(TypeError, "map() requires at least two args");
+		return NULL;
+	}
+
+	func = gettupleitem(args, 0);
+	n    = gettuplesize(args) - 1;
+
+	if (is_stringobject(func)) {
+		if ((func = exec_eval(func, lambda_input)) == NULL)
+			return NULL;
+		newfunc = 1;
+	}
+
+	if ((seqs = (sequence *) malloc(n * sizeof(sequence))) == NULL)
+		return err_nomem();
+
+	for (len = -1, i = 0, sqp = seqs; i < n; ++i, ++sqp) {
+		int curlen;
+	
+		if ((sqp->seq = gettupleitem(args, i + 1)) == NULL)
+			goto Fail_2;
+
+		if (! (sqp->sqf = sqp->seq->ob_type->tp_as_sequence)) {
+			static char errmsg[] =
+			    "argument %d to map() must be a sequence object";
+			char errbuf[sizeof(errmsg) + 3];
+
+			sprintf(errbuf, errmsg, i+2);
+			err_setstr(TypeError, errbuf);
+			goto Fail_2;
+		}
+
+		if ((curlen = sqp->len = (*sqp->sqf->sq_length)(sqp->seq)) < 0)
+			goto Fail_2;
+
+		if (curlen > len)
+			len = curlen;
+	}
+
+	if ((result = (object *) newlistobject(len)) == NULL)
+		goto Fail_2;
+
+	if ((args = newtupleobject(n)) == NULL)
+		goto Fail_1;
+
+	for (i = 0; i < len; ++i) {
+		object *arg, *value;
+
+		if (args->ob_refcnt > 1) {
+			DECREF(args);
+			if ((args = newtupleobject(n)) == NULL)
+				goto Fail_1;
+		}
+
+		for (j = 0, sqp = seqs; j < n; ++j, ++sqp) {
+			if (i >= sqp->len) {
+				INCREF(None);
+				if (settupleitem(args, j, None) < 0)
+					goto Fail_0;
+				arg = None;
+			}
+
+			else {
+				if ((arg = (*sqp->sqf->sq_item)(sqp->seq, i)) == NULL)
+					goto Fail_0;
+
+				if (settupleitem(args, j, arg) < 0)
+					goto Fail_0;
+			}
+		}
+
+		if (func == None) {
+			if (n == 1)	{ /* avoid creating singleton */
+				INCREF(arg);
+				if (setlistitem(result, i, arg) < 0)
+					goto Fail_0;
+			}
+			else {
+				INCREF(args);
+				if (setlistitem(result, i, args) < 0)
+					goto Fail_0;
+			}
+		}
+		else {
+			if ((value = call_object(func, args)) == NULL)
+				goto Fail_0;
+
+			if (setlistitem((object *) result, i, value) < 0)
+				goto Fail_0;
+		}
+	}
+
+	if (seqs) free(seqs);
+
+	DECREF(args);
+	if (newfunc)
+		DECREF(func);
+
+	return result;
+
+Fail_0:
+	DECREF(args);
+Fail_1:
+	DECREF(result);
+Fail_2:
+	if (newfunc)
+		DECREF(func);
+
+	if (seqs) free(seqs);
+
+	return NULL;
+}
+
+static object *
 builtin_setattr(self, args)
 	object *self;
 	object *args;
@@ -411,6 +674,14 @@ builtin_int(self, v)
 		return NULL;
 	}
 	return (*nb->nb_int)(v);
+}
+
+static object *
+builtin_lambda(self, v)
+	object *self;
+	object *v;
+{
+	return exec_eval(v, lambda_input);
 }
 
 static object *
@@ -641,6 +912,58 @@ builtin_range(self, v)
 }
 
 static object *
+builtin_xrange(self, v)
+	object *self;
+	object *v;
+{
+	static char *errmsg = "xrange() requires 1-3 int arguments";
+	int i, n;
+	long start, stop, step, len;
+	if (v != NULL && is_intobject(v))
+		start = 0, stop = getintvalue(v), step = 1;
+
+	else if (v == NULL || !is_tupleobject(v)) {
+		err_setstr(TypeError, errmsg);
+		return NULL;
+	}
+	else {
+		n = gettuplesize(v);
+		if (n < 1 || n > 3) {
+			err_setstr(TypeError, errmsg);
+			return NULL;
+		}
+		for (i = 0; i < n; i++) {
+			if (!is_intobject(gettupleitem(v, i))) {
+				err_setstr(TypeError, errmsg);
+				return NULL;
+			}
+		}
+		if (n == 3) {
+			step = getintvalue(gettupleitem(v, 2));
+			--n;
+		}
+		else
+			step = 1;
+		stop = getintvalue(gettupleitem(v, --n));
+		if (n > 0)
+			start = getintvalue(gettupleitem(v, 0));
+		else
+			start = 0;
+	}
+
+	if (step == 0) {
+		err_setstr(ValueError, "zero step for xrange()");
+		return NULL;
+	}
+
+	len = (stop - start + step + ((step > 0) ? -1 : 1)) / step;
+	if (len < 0)
+		len = 0;
+
+	return newrangeobject(start, len, step, 1);
+}
+
+static object *
 builtin_raw_input(self, v)
 	object *self;
 	object *v;
@@ -656,6 +979,103 @@ builtin_raw_input(self, v)
 			return NULL;
 	}
 	return filegetline(sysget("stdin"), -1);
+}
+
+static object *
+builtin_reduce(self, args)
+	object *self;
+	object *args;
+{
+	object *seq, *func, *result;
+	sequence_methods *sqf;
+	static char reduce_err[] = "reduce() requires 2 or 3 args";
+	register int i;
+	int start = 0, newfunc = 0;
+	int len;
+
+	if (args == NULL || !is_tupleobject(args)) {
+		err_setstr(TypeError, reduce_err);
+		return NULL;
+	}
+
+	switch (gettuplesize(args)) {
+	case 2:
+		start = 1;		/* fall through */
+	case 3:
+		func = gettupleitem(args, 0);
+		seq  = gettupleitem(args, 1);
+		break;
+	default:
+		err_setstr(TypeError, reduce_err);
+	}
+
+	if ((sqf = seq->ob_type->tp_as_sequence) == NULL) {
+		err_setstr(TypeError,
+		    "2nd argument to reduce() must be a sequence object");
+		return NULL;
+	}
+
+	if (is_stringobject(func)) {
+		if ((func = exec_eval(func, lambda_input)) == NULL)
+			return NULL;
+		newfunc = 1;
+	}
+
+	if ((len = (*sqf->sq_length)(seq)) < 0)
+		goto Fail_2;
+
+	if (start == 1) {
+		if (len == 0) {
+			err_setstr(TypeError,
+			    "reduce of empty sequence with no initial value");
+			goto Fail_2;
+		}
+
+		if ((result = (*sqf->sq_item)(seq, 0)) == NULL)
+			goto Fail_2;
+	}
+	else {
+		result = gettupleitem(args, 2);
+		INCREF(result);
+	}
+
+	if ((args = newtupleobject(2)) == NULL)
+		goto Fail_1;
+
+	for (i = start; i < len; ++i) {
+		object *op2;
+
+		if (args->ob_refcnt > 1) {
+			DECREF(args);
+			if ((args = newtupleobject(2)) == NULL)
+				goto Fail_1;
+		}
+
+		if ((op2 = (*sqf->sq_item)(seq, i)) == NULL)
+			goto Fail_2;
+
+		settupleitem(args, 0, result);
+		settupleitem(args, 1, op2);
+		if ((result = call_object(func, args)) == NULL)
+			goto Fail_0;
+	}
+
+	DECREF(args);
+	if (newfunc)
+		DECREF(func);
+
+	return result;
+
+	/* XXX I hate goto's. I hate goto's. I hate goto's. I hate goto's. */
+Fail_0:
+	DECREF(args);
+	goto Fail_2;
+Fail_1:
+	DECREF(result);
+Fail_2:
+	if (newfunc)
+		DECREF(func);
+	return NULL;
 }
 
 static object *
@@ -740,6 +1160,7 @@ builtin_type(self, v)
 static struct methodlist builtin_methods[] = {
 	{"abs",		builtin_abs},
 	{"apply",	builtin_apply},
+	{"bagof",	builtin_bagof},
 	{"chr",		builtin_chr},
 	{"cmp",		builtin_cmp},
 	{"coerce",	builtin_coerce},
@@ -756,8 +1177,10 @@ static struct methodlist builtin_methods[] = {
 	{"id",		builtin_id},
 	{"input",	builtin_input},
 	{"int",		builtin_int},
+	{"lambda",	builtin_lambda},
 	{"len",		builtin_len},
 	{"long",	builtin_long},
+	{"map",		builtin_map},
 	{"max",		builtin_max},
 	{"min",		builtin_min},
 	{"oct",		builtin_oct},
@@ -766,12 +1189,14 @@ static struct methodlist builtin_methods[] = {
 	{"pow",		builtin_pow},
 	{"range",	builtin_range},
 	{"raw_input",	builtin_raw_input},
+	{"reduce",	builtin_reduce},
 	{"reload",	builtin_reload},
 	{"repr",	builtin_repr},
 	{"round",	builtin_round},
 	{"setattr",	builtin_setattr},
 	{"str",		builtin_str},
 	{"type",	builtin_type},
+	{"xrange",	builtin_xrange},
 	{NULL,		NULL},
 };
 
@@ -882,4 +1307,156 @@ coerce(pv, pw)
 	}
 	err_setstr(TypeError, "number coercion failed");
 	return -1;
+}
+
+
+/* Filter a tuple through a function */
+
+static object *
+filtertuple(func, tuple)
+	object *func;
+	object *tuple;
+{
+	object *arg, *result;
+	register int i, j;
+	int len = gettuplesize(tuple), shared = 0;
+
+	if (tuple->ob_refcnt == 1) {
+		result = tuple;
+		shared = 1;
+		/* defer INCREF (resizetuple wants it to be one) */
+	}
+	else
+		if ((result = newtupleobject(len)) == NULL)
+			return NULL;
+
+	if ((arg = newtupleobject(1)) == NULL)
+		goto Fail_1;
+
+	for (i = j = 0; i < len; ++i) {
+		object *ele, *value;
+
+		if (arg->ob_refcnt > 1) {
+			DECREF(arg);
+			if ((arg = newtupleobject(1)) == NULL)
+				goto Fail_1;
+		}
+
+		if ((ele = gettupleitem(tuple, i)) == NULL)
+			goto Fail_0;
+		INCREF(ele);
+
+		if (func == None)
+			value = ele;
+		else {
+			if (settupleitem(arg, 0, ele) < 0)
+				goto Fail_0;
+
+			if ((value = call_object(func, arg)) == NULL)
+				goto Fail_0;
+		}
+
+		if (testbool(value)) {
+			INCREF(ele);
+			if (settupleitem(result, j++, ele) < 0)
+				goto Fail_0;
+		}
+
+		DECREF(value);
+	}
+
+	DECREF(arg);
+	if (resizetuple(&result, j) < 0)
+		return NULL;
+
+	if (shared)
+		INCREF(result);
+
+	return result;
+
+Fail_0:
+	DECREF(arg);
+Fail_1:
+	if (!shared)
+		DECREF(result);
+	return NULL;
+}
+
+
+/* Filter a string through a function */
+
+static object *
+filterstring(func, strobj)
+	object *func;
+	object *strobj;
+{
+	object *arg, *result;
+	register int i, j;
+	int len = getstringsize(strobj), shared = 0;
+
+	if (strobj->ob_refcnt == 1) {
+		result = strobj;
+		shared = 1;
+		/* defer INCREF (resizestring wants it to be one) */
+
+		if (func == None) {
+			INCREF(result);
+			return result;
+		}
+	}
+	else {
+		if ((result = newsizedstringobject(NULL, len)) == NULL)
+			return NULL;
+
+		if (func == None) {
+			strcpy(GETSTRINGVALUE((stringobject *)result),
+			       GETSTRINGVALUE((stringobject *)strobj));
+			return result;
+		}
+	}
+
+	if ((arg = newtupleobject(1)) == NULL)
+		goto Fail_1;
+
+	for (i = j = 0; i < len; ++i) {
+		object *ele, *value;
+
+		if (arg->ob_refcnt > 1) {
+			DECREF(arg);
+			if ((arg = newtupleobject(1)) == NULL)
+				goto Fail_1;
+		}
+
+		if ((ele = (*strobj->ob_type->tp_as_sequence->sq_item)
+		           (strobj, i)) == NULL)
+			goto Fail_0;
+
+		if (settupleitem(arg, 0, ele) < 0)
+			goto Fail_0;
+
+		if ((value = call_object(func, arg)) == NULL)
+			goto Fail_0;
+
+		if (testbool(value))
+			GETSTRINGVALUE((stringobject *)result)[j++] =
+				GETSTRINGVALUE((stringobject *)ele)[0];
+
+		DECREF(value);
+	}
+
+	DECREF(arg);
+	if (resizestring(&result, j) < 0)
+		return NULL;
+
+	if (shared)
+		INCREF(result);
+
+	return result;
+
+Fail_0:
+	DECREF(arg);
+Fail_1:
+	if (!shared)
+		DECREF(result);
+	return NULL;
 }

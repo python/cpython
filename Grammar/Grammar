@@ -2,6 +2,9 @@
 
 # Change log:
 
+# 25-Oct-93:
+#	Added lambda_input
+
 # 18-Oct-93:
 #	Use testlist instead of exprlist in expr_stmt
 #	Add exec statement
@@ -75,13 +78,14 @@
 #	single_input is a single interactive statement;
 #	file_input is a module or sequence of commands read from an input file;
 #	expr_input is the input for the input() function;
-#	eval_input is the input for the eval() function.
+#	eval_input is the input for the eval() function;
+#	lambda_input is the input for the proposed lambda() function.
 
 # NB: compound_stmt in single_input is followed by extra NEWLINE!
 single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
 file_input: (NEWLINE | stmt)* ENDMARKER
-expr_input: testlist NEWLINE
 eval_input: testlist NEWLINE* ENDMARKER
+lambda_input: varargslist ':' testlist NEWLINE* ENDMARKER
 
 funcdef: 'def' NAME parameters ':' suite
 parameters: '(' [varargslist] ')'
@@ -108,7 +112,7 @@ access_stmt: 'access' ('*' | NAME (',' NAME)*) ':' accesstype (',' accesstype)*
 accesstype: NAME+
 # accesstype should be ('public' | 'protected' | 'private') ['read'] ['write']
 # but can't be because that would create undesirable reserved words!
-exec_stmt: 'exec' expr ['in' expr [',' expr]]
+exec_stmt: 'exec' expr ['in' test [',' test]]
 
 compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
 if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]

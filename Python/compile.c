@@ -164,6 +164,7 @@ struct compiling {
 	int c_nexti;		/* index into c_code */
 	int c_errors;		/* counts errors occurred */
 	int c_infunction;	/* set when compiling a function */
+	int c_inlambda;		/* set when compiling an expression */
 	int c_loops;		/* counts nested loops */
 	int c_begin;		/* begin of current loop, for 'continue' */
 	int c_block[MAXBLOCKS];	/* stack of block types */
@@ -205,7 +206,7 @@ block_pop(c, type)
 
 /* Prototypes */
 
-static int com_init PROTO((struct compiling *, char *));
+static int com_init PROTO((struct compiling *, char *, int));
 static void com_free PROTO((struct compiling *));
 static void com_done PROTO((struct compiling *));
 static void com_node PROTO((struct compiling *, struct _node *));
@@ -221,9 +222,10 @@ static void com_addopname PROTO((struct compiling *, int, node *));
 static void com_list PROTO((struct compiling *, node *, int));
 
 static int
-com_init(c, filename)
+com_init(c, filename, inlambda)
 	struct compiling *c;
 	char *filename;
+	int inlambda;
 {
 	if ((c->c_code = newsizedstringobject((char *)NULL, 1000)) == NULL)
 		goto fail_3;
@@ -236,6 +238,7 @@ com_init(c, filename)
 	c->c_nexti = 0;
 	c->c_errors = 0;
 	c->c_infunction = 0;
+	c->c_inlambda = inlambda;
 	c->c_loops = 0;
 	c->c_begin = 0;
 	c->c_nblocks = 0;
@@ -1792,7 +1795,7 @@ com_funcdef(c, n)
 {
 	object *v;
 	REQ(n, funcdef); /* funcdef: 'def' NAME parameters ':' suite */
-	v = (object *)compile(n, c->c_filename);
+	v = (object *)_compile(n, c->c_filename, 0);
 	if (v == NULL)
 		c->c_errors++;
 	else {
@@ -1801,6 +1804,25 @@ com_funcdef(c, n)
 		com_addbyte(c, BUILD_FUNCTION);
 		com_addopname(c, STORE_NAME, CHILD(n, 1));
 		DECREF(v);
+	}
+}
+
+static void
+com_lambda(c, n)
+	struct compiling *c;
+	node *n;
+{
+	object *v;
+	REQ(n, lambda_input);
+	v = (object *)_compile(n, c->c_filename, 1);
+	if (v == NULL)
+		c->c_errors++;
+	else {
+		int i = com_addconst(c, v);
+		DECREF(v);
+		com_addoparg(c, LOAD_CONST, i);
+		com_addbyte(c, BUILD_FUNCTION);
+		com_addbyte(c, RETURN_VALUE);
 	}
 }
 
@@ -1839,7 +1861,7 @@ com_classdef(c, n)
 		com_addoparg(c, BUILD_TUPLE, 0);
 	else
 		com_bases(c, CHILD(n, 3));
-	v = (object *)compile(n, c->c_filename);
+	v = (object *)_compile(n, c->c_filename, 0);
 	if (v == NULL)
 		c->c_errors++;
 	else {
@@ -2097,6 +2119,17 @@ compile_funcdef(c, n)
 }
 
 static void
+compile_lambda(c, n)
+	struct compiling *c;
+	node *n;
+{
+	REQ(n, lambda_input)
+	com_arglist(c, CHILD(n, 0));
+	com_node(c, CHILD(n, 2));
+	com_addbyte(c, RETURN_VALUE);
+}
+
+static void
 compile_node(c, n)
 	struct compiling *c;
 	node *n;
@@ -2120,12 +2153,11 @@ compile_node(c, n)
 		com_addbyte(c, RETURN_VALUE);
 		break;
 	
-	case expr_input: /* Built-in function eval() */
-		com_node(c, CHILD(n, 0));
-		com_addbyte(c, RETURN_VALUE);
+	case lambda_input: /* Built-in function lambda() */
+		(c->c_inlambda ? compile_lambda : com_lambda)(c, n);
 		break;
 	
-	case eval_input: /* Built-in function input() */
+	case eval_input: /* Built-in functions eval() and input() */
 		com_node(c, CHILD(n, 0));
 		com_addbyte(c, RETURN_VALUE);
 		break;
@@ -2285,13 +2317,14 @@ optimize(c)
 }
 
 codeobject *
-compile(n, filename)
+_compile(n, filename, inlambda)
 	node *n;
 	char *filename;
+	int inlambda;
 {
 	struct compiling sc;
 	codeobject *co;
-	if (!com_init(&sc, filename))
+	if (!com_init(&sc, filename, inlambda))
 		return NULL;
 	compile_node(&sc, n);
 	com_done(&sc);
