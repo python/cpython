@@ -286,7 +286,7 @@ builtin_complex(self, args)
 {
 	object *r, *i;
 	number_methods *nbr, *nbi;
-	complex cr, ci;
+	Py_complex cr, ci;
 
 	i = NULL;
 	if (!newgetargs(args, "O|O:complex", &r, &i))
