@@ -195,7 +195,7 @@ class PyShell(PyShellEditorWindow):
         text.bind("<<open-stack-viewer>>", self.open_stack_viewer)
 
         sys.stdout = PseudoFile(self, "stdout")
-        ##sys.stderr = PseudoFile(self, "stderr")
+        sys.stderr = PseudoFile(self, "stderr")
         sys.stdin = self
         self.console = PseudoFile(self, "console")
 
