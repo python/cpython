@@ -40,8 +40,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* State shared between threads */
 
-#define NEXITFUNCS 32
-
 struct _ts; /* Forward */
 struct _is; /* Forward */
 
