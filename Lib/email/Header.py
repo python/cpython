@@ -416,6 +416,9 @@ def _split_ascii(s, firstlen, restlen, continuation_ws, splitchars):
     lines = []
     maxlen = firstlen
     for line in s.splitlines():
+        # Ignore any leading whitespace (i.e. continuation whitespace) already
+        # on the line, since we'll be adding our own.
+        line = line.lstrip()
         if len(line) < maxlen:
             lines.append(line)
             maxlen = restlen
