@@ -6,13 +6,13 @@ should be based on this code. """
 
 class XMLReader:
     def __init__(self):
-	self._cont_handler = handler.ContentHandler()
-	#self._dtd_handler  = handler.DTDHandler()
-	#self._ent_handler  = handler.EntityResolver()
-	self._err_handler  = handler.ErrorHandler()
+        self._cont_handler = handler.ContentHandler()
+        #self._dtd_handler  = handler.DTDHandler()
+        #self._ent_handler  = handler.EntityResolver()
+        self._err_handler  = handler.ErrorHandler()
 
     def parse(self, source):
-	"Parse an XML document from a system identifier or an InputSource."
+        "Parse an XML document from a system identifier or an InputSource."
         raise NotImplementedError("This method must be implemented!")
 
     def getContentHandler(self):
@@ -28,24 +28,24 @@ class XMLReader:
         return self._dtd_handler
         
     def setDTDHandler(self, handler):
-	"Register an object to receive basic DTD-related events."
-	self._dtd_handler = handler
+        "Register an object to receive basic DTD-related events."
+        self._dtd_handler = handler
 
     def getEntityResolver(self):
         "Returns the current EntityResolver."
         return self._ent_handler
         
     def setEntityResolver(self, resolver):
-	"Register an object to resolve external entities."
-	self._ent_handler = resolver
+        "Register an object to resolve external entities."
+        self._ent_handler = resolver
 
     def getErrorHandler(self):
         "Returns the current ErrorHandler."
         return self._err_handler
         
     def setErrorHandler(self, handler):
-	"Register an object to receive error-message events."
-	self._err_handler = handler
+        "Register an object to receive error-message events."
+        self._err_handler = handler
 
     def setLocale(self, locale):
         """Allow an application to set the locale for errors and warnings. 
@@ -149,20 +149,20 @@ class Locator:
     results are unpredictable."""
 
     def getColumnNumber(self):
-	"Return the column number where the current event ends."
-	return -1
+        "Return the column number where the current event ends."
+        return -1
 
     def getLineNumber(self):
-	"Return the line number where the current event ends."
-	return -1
+        "Return the line number where the current event ends."
+        return -1
 
     def getPublicId(self):
-	"Return the public identifier for the current event."
-	return None
+        "Return the public identifier for the current event."
+        return None
 
     def getSystemId(self):
-	"Return the system identifier for the current event."
-	return None
+        "Return the system identifier for the current event."
+        return None
 
 # --- AttributesImpl
 class AttributesImpl:
