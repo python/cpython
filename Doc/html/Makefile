@@ -77,7 +77,6 @@ doc/doc.html:  $(DOCFILES) $(BUILDINDEX)
 	$(MKHTML) $(TOPDIR)/doc/doc.tex
 
 ext/ext.html:  $(EXTFILES)
-	echo $(EXTFILES)
 	$(MKHTML) $(TOPDIR)/ext/ext.tex
 
 lib/lib.html:  $(LIBFILES) $(BUILDINDEX)
