@@ -441,7 +441,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
         pattern = re.compile(r'\b((http|ftp)://\S+[\w/]|'
                                 r'RFC[- ]?(\d+)|'
                                 r'PEP[- ]?(\d+)|'
-                                r'(self\.)?(\w+))\b')
+                                r'(self\.)?(\w+))')
         while 1:
             match = pattern.search(text, here)
             if not match: break
