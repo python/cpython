@@ -4,15 +4,34 @@
 
 \NeedsTeXFormat{LaTeX2e}[1995/12/01]
 \ProvidesPackage{myformat}
-             [1998/01/11 $Revision$
+             [1998/01/11 
                  LaTeX package (Python manual markup)]
+
+% Optional packages:
+%
+% If processing of these documents fails at your TeX installation,
+% these may be commented out (independently) to make things work.
+% These are both supplied with the current version of the teTeX
+% distribution.
+%
+% The "fancyhdr" package makes nicer page footers reasonable to
+% implement, and is used to put the chapter and section information in 
+% the footers.
+%
+% The "times" package makes the default font the PostScript Times
+% font, which makes for smaller PostScript and a font that more people 
+% like.
+%
+\RequirePackage{fancyhdr}\typeout{Using fancier footers than usual....}
+\RequirePackage{times}\typeout{Using times fonts instead of Computer Modern.}
+
 
 % Increase printable page size (copied from fullpage.sty)
 \topmargin 0pt
 \advance \topmargin by -\headheight
 \advance \topmargin by -\headsep
 
-\textheight 8.9in
+\textheight 8.7in
 
 \oddsidemargin 0pt
 \evensidemargin \oddsidemargin
@@ -26,9 +45,38 @@
 \parindent =       0mm
 \parskip =         2mm
 
+% uncomment the following line if you have the fancyhdr package available:
 \pagestyle{empty}			% start this way; change for
 \pagenumbering{roman}			% ToC & chapters
 \setcounter{secnumdepth}{1}
+
+% Redefine the 'normal' header/footer style when using "fancyhdr" package:
+\@ifundefined{fancyhf}{}{
+  \fancypagestyle{normal}{%
+    \fancyhf{}%
+    \fancyfoot[LE,RO]{{\HeaderFamily\thepage}}%
+    \fancyfoot[LO]{{\HeaderFamily\nouppercase{\rightmark}}}%
+    \fancyfoot[RE]{{\HeaderFamily\nouppercase{\leftmark}}}%
+    \renewcommand{\headrulewidth}{0pt}%
+    \renewcommand{\footrulewidth}{0.4pt}%
+  }
+  % Update the plain style so we get the page number & footer line,
+  % but not a chapter or section title.  This is to keep the first
+  % page of a chapter and the blank page between chapters `clean.'
+  \fancypagestyle{plain}{%
+    \fancyhf{}%
+    \fancyfoot[LE,RO]{{\HeaderFamily\thepage}}%
+    \renewcommand{\headrulewidth}{0pt}%
+    \renewcommand{\footrulewidth}{0.4pt}%
+  }
+  % Redefine \cleardoublepage so that the blank page between chapters
+  % gets the plain style and not the fancy style.
+  \renewcommand{\cleardoublepage}{\clearpage\if@twoside \ifodd\c@page\else
+    \hbox{}
+    \thispagestyle{plain}
+    \newpage
+    \if@twocolumn\hbox{}\newpage\fi\fi\fi}
+}
 
 % old code font selections:
 \let\codefont=\tt
@@ -368,6 +416,7 @@
   }%
   \cleardoublepage%
   \pagenumbering{arabic}%
+  \@ifundefined{fancyhf}{}{\pagestyle{normal}}%
 }
 
 % Allow the release number to be specified independently of the
@@ -489,6 +538,3 @@
   }
   \typeout{Using fancy chapter headings.}
 }
-
-% Uncomment the following line to use a PostScript font instead of bitmaps:
-%\RequirePackage{times}\typeout{Using times fonts instead of Computer Modern.}
