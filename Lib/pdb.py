@@ -329,29 +329,35 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		# code parse time.  We don't want that, so all breakpoints
 		# set at 'def' statements are moved one line onward
 		if line[:3] == 'def':
-			incomment = ''
+			instr = ''
+			brackets = 0
 			while 1:
+				skipone = 0
+				for c in line:
+					if instr:
+						if skipone:
+							skipone = 0
+						elif c == '\\':
+							skipone = 1
+						elif c == instr:
+							instr = ''
+					elif c == '#':
+						break
+					elif c in ('"',"'"):
+						instr = c
+					elif c in ('(','{','['):
+						brackets = brackets + 1
+					elif c in (')','}',']'):
+						brackets = brackets - 1
 				lineno = lineno+1
 				line = linecache.getline(filename, lineno)
 				if not line:
 					print 'end of file'
 					return 0
 				line = string.strip(line)
-				if incomment:
-					if len(line) < 3: continue
-					if (line[-3:] == incomment):
-						incomment = ''
-					continue
 				if not line: continue	# Blank line
-				if len(line) >= 3:
-					if (line[:3] == '"""'
-					    or line[:3] == "'''"):
-						if line[-3:] == line[:3]:
-							# one-line string
-							continue
-						incomment = line[:3]
-						continue
-				if line[0] != '#': break
+				if brackets <= 0 and line[0] not in ('#','"',"'"):
+					break
 		return lineno
 
 	def do_enable(self, arg):
