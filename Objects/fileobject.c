@@ -222,7 +222,7 @@ typedef off_t Py_off_t;
 
 /* a portable fseek() function
    return 0 on success, non-zero on failure (with errno set) */
-int
+static int
 _portable_fseek(FILE *fp, Py_off_t offset, int whence)
 {
 #if defined(HAVE_FSEEKO)
@@ -257,7 +257,7 @@ _portable_fseek(FILE *fp, Py_off_t offset, int whence)
 /* a portable ftell() function
    Return -1 on failure with errno set appropriately, current file
    position on success */
-Py_off_t
+static Py_off_t
 _portable_ftell(FILE* fp)
 {
 #if SIZEOF_FPOS_T >= 8 && defined(HAVE_LARGEFILE_SUPPORT)

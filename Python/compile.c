@@ -374,7 +374,8 @@ struct compiling {
         PyFutureFeatures *c_future; /* pointer to module's __future__ */
 };
 
-int is_free(int v)
+static int
+is_free(int v)
 {
 	if ((v & (USE | DEF_FREE))
 	    && !(v & (DEF_LOCAL | DEF_PARAM | DEF_GLOBAL)))

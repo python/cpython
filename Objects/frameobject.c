@@ -251,7 +251,7 @@ PyFrame_BlockPop(PyFrameObject *f)
 
 /* Convert between "fast" version of locals and dictionary version */
 
-void
+static void
 map_to_dict(PyObject *map, int nmap, PyObject *dict, PyObject **values,
 	    int deref)
 {

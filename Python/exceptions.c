@@ -420,7 +420,7 @@ SystemExit__init__(PyObject *self, PyObject *args)
 }
 
 
-PyMethodDef SystemExit_methods[] = {
+static PyMethodDef SystemExit_methods[] = {
     { "__init__", SystemExit__init__, METH_VARARGS},
     {NULL, NULL}
 };
@@ -836,7 +836,7 @@ SyntaxError__str__(PyObject *self, PyObject *args)
 }
 
 
-PyMethodDef SyntaxError_methods[] = {
+static PyMethodDef SyntaxError_methods[] = {
     {"__init__", SyntaxError__init__, METH_VARARGS},
     {"__str__",  SyntaxError__str__, METH_VARARGS},
     {NULL, NULL}
