@@ -1,0 +1,151 @@
+\chapter{Building C and \Cpp{} Extensions on Windows
+     \label{building-on-windows}}
+
+
+This chapter briefly explains how to create a Windows extension module
+for Python using Microsoft Visual \Cpp{}, and follows with more
+detailed background information on how it works.  The explanatory
+material is useful for both the Windows programmer learning to build
+Python extensions and the \UNIX{} programmer interested in producing
+software which can be successfully built on both \UNIX{} and Windows.
+
+
+\section{A Cookbook Approach \label{win-cookbook}}
+
+\sectionauthor{Neil Schemenauer}{neil_schemenauer@transcanada.com}
+
+This section provides a recipe for building a Python extension on
+Windows.
+
+Grab the binary installer from \url{http://www.python.org/} and
+install Python.  The binary installer has all of the required header
+files except for \file{pyconfig.h}.
+
+Get the source distribution and extract it into a convenient location.
+Copy the \file{pyconfig.h} from the \file{PC/} directory into the
+\file{include/} directory created by the installer.
+
+Create a \file{Setup} file for your extension module, as described in
+chapter \ref{building-on-unix}.
+
+Get David Ascher's \file{compile.py} script from
+\url{http://starship.python.net/crew/da/compile/}.  Run the script to
+create Microsoft Visual \Cpp{} project files.
+
+Open the DSW file in Visual \Cpp{} and select \strong{Build}.
+
+If your module creates a new type, you may have trouble with this line:
+
+\begin{verbatim}
+    PyObject_HEAD_INIT(&PyType_Type)
+\end{verbatim}
+
+Change it to:
+
+\begin{verbatim}
+    PyObject_HEAD_INIT(NULL)
+\end{verbatim}
+
+and add the following to the module initialization function:
+
+\begin{verbatim}
+    MyObject_Type.ob_type = &PyType_Type;
+\end{verbatim}
+
+Refer to section 3 of the
+\citetitle[http://www.python.org/doc/FAQ.html]{Python FAQ} for details
+on why you must do this.
+
+
+\section{Differences Between \UNIX{} and Windows
+     \label{dynamic-linking}}
+\sectionauthor{Chris Phoenix}{cphoenix@best.com}
+
+
+\UNIX{} and Windows use completely different paradigms for run-time
+loading of code.  Before you try to build a module that can be
+dynamically loaded, be aware of how your system works.
+
+In \UNIX{}, a shared object (\file{.so}) file contains code to be used by the
+program, and also the names of functions and data that it expects to
+find in the program.  When the file is joined to the program, all
+references to those functions and data in the file's code are changed
+to point to the actual locations in the program where the functions
+and data are placed in memory.  This is basically a link operation.
+
+In Windows, a dynamic-link library (\file{.dll}) file has no dangling
+references.  Instead, an access to functions or data goes through a
+lookup table.  So the DLL code does not have to be fixed up at runtime
+to refer to the program's memory; instead, the code already uses the
+DLL's lookup table, and the lookup table is modified at runtime to
+point to the functions and data.
+
+In \UNIX{}, there is only one type of library file (\file{.a}) which
+contains code from several object files (\file{.o}).  During the link
+step to create a shared object file (\file{.so}), the linker may find
+that it doesn't know where an identifier is defined.  The linker will
+look for it in the object files in the libraries; if it finds it, it
+will include all the code from that object file.
+
+In Windows, there are two types of library, a static library and an
+import library (both called \file{.lib}).  A static library is like a
+\UNIX{} \file{.a} file; it contains code to be included as necessary.
+An import library is basically used only to reassure the linker that a
+certain identifier is legal, and will be present in the program when
+the DLL is loaded.  So the linker uses the information from the
+import library to build the lookup table for using identifiers that
+are not included in the DLL.  When an application or a DLL is linked,
+an import library may be generated, which will need to be used for all
+future DLLs that depend on the symbols in the application or DLL.
+
+Suppose you are building two dynamic-load modules, B and C, which should
+share another block of code A.  On \UNIX{}, you would \emph{not} pass
+\file{A.a} to the linker for \file{B.so} and \file{C.so}; that would
+cause it to be included twice, so that B and C would each have their
+own copy.  In Windows, building \file{A.dll} will also build
+\file{A.lib}.  You \emph{do} pass \file{A.lib} to the linker for B and
+C.  \file{A.lib} does not contain code; it just contains information
+which will be used at runtime to access A's code.  
+
+In Windows, using an import library is sort of like using \samp{import
+spam}; it gives you access to spam's names, but does not create a
+separate copy.  On \UNIX{}, linking with a library is more like
+\samp{from spam import *}; it does create a separate copy.
+
+
+\section{Using DLLs in Practice \label{win-dlls}}
+\sectionauthor{Chris Phoenix}{cphoenix@best.com}
+
+Windows Python is built in Microsoft Visual \Cpp{}; using other
+compilers may or may not work (though Borland seems to).  The rest of
+this section is MSV\Cpp{} specific.
+
+When creating DLLs in Windows, you must pass \file{python15.lib} to
+the linker.  To build two DLLs, spam and ni (which uses C functions
+found in spam), you could use these commands:
+
+\begin{verbatim}
+cl /LD /I/python/include spam.c ../libs/python15.lib
+cl /LD /I/python/include ni.c spam.lib ../libs/python15.lib
+\end{verbatim}
+
+The first command created three files: \file{spam.obj},
+\file{spam.dll} and \file{spam.lib}.  \file{Spam.dll} does not contain
+any Python functions (such as \cfunction{PyArg_ParseTuple()}), but it
+does know how to find the Python code thanks to \file{python15.lib}.
+
+The second command created \file{ni.dll} (and \file{.obj} and
+\file{.lib}), which knows how to find the necessary functions from
+spam, and also from the Python executable.
+
+Not every identifier is exported to the lookup table.  If you want any
+other modules (including Python) to be able to see your identifiers,
+you have to say \samp{_declspec(dllexport)}, as in \samp{void
+_declspec(dllexport) initspam(void)} or \samp{PyObject
+_declspec(dllexport) *NiGetSpamData(void)}.
+
+Developer Studio will throw in a lot of import libraries that you do
+not really need, adding about 100K to your executable.  To get rid of
+them, use the Project Settings dialog, Link tab, to specify
+\emph{ignore default libraries}.  Add the correct
+\file{msvcrt\var{xx}.lib} to the list of libraries.

@@ -1,0 +1,798 @@
+\chapter{Defining New Types
+        \label{defining-new-types}}
+\sectionauthor{Michael Hudson}{mwh21@cam.ac.uk}
+\sectionauthor{Dave Kuhlman}{dkuhlman@rexx.com}
+
+As mentioned in the last chapter, Python allows the writer of an
+extension module to define new types that can be manipulated from
+Python code, much like strings and lists in core Python.
+
+This is not hard; the code for all extension types follows a pattern,
+but there are some details that you need to understand before you can
+get started.
+
+\section{The Basics
+    \label{dnt-basics}}
+
+The Python runtime sees all Python objects as variables of type
+\ctype{PyObject*}.  A \ctype{PyObject} is not a very magnificent
+object - it just contains the refcount and a pointer to the object's
+``type object''.  This is where the action is; the type object
+determines which (C) functions get called when, for instance, an
+attribute gets looked up on an object or it is multiplied by another
+object.  I call these C functions ``type methods'' to distinguish them
+from things like \code{[].append} (which I will call ``object
+methods'' when I get around to them).
+
+So, if you want to define a new object type, you need to create a new
+type object.
+
+This sort of thing can only be explained by example, so here's a
+minimal, but complete, module that defines a new type:
+
+\begin{verbatim}
+#include <Python.h>
+
+staticforward PyTypeObject noddy_NoddyType;
+
+typedef struct {
+    PyObject_HEAD
+} noddy_NoddyObject;
+
+static PyObject*
+noddy_new_noddy(PyObject* self, PyObject* args)
+{
+    noddy_NoddyObject* noddy;
+
+    if (!PyArg_ParseTuple(args,":new_noddy")) 
+        return NULL;
+
+    noddy = PyObject_New(noddy_NoddyObject, &noddy_NoddyType);
+
+    return (PyObject*)noddy;
+}
+
+static void
+noddy_noddy_dealloc(PyObject* self)
+{
+    PyObject_Del(self);
+}
+
+static PyTypeObject noddy_NoddyType = {
+    PyObject_HEAD_INIT(NULL)
+    0,
+    "Noddy",
+    sizeof(noddy_NoddyObject),
+    0,
+    noddy_noddy_dealloc, /*tp_dealloc*/
+    0,          /*tp_print*/
+    0,          /*tp_getattr*/
+    0,          /*tp_setattr*/
+    0,          /*tp_compare*/
+    0,          /*tp_repr*/
+    0,          /*tp_as_number*/
+    0,          /*tp_as_sequence*/
+    0,          /*tp_as_mapping*/
+    0,          /*tp_hash */
+};
+
+static PyMethodDef noddy_methods[] = {
+    { "new_noddy", noddy_new_noddy, METH_VARARGS },
+    {NULL, NULL}
+};
+
+DL_EXPORT(void)
+initnoddy(void) 
+{
+    noddy_NoddyType.ob_type = &PyType_Type;
+
+    Py_InitModule("noddy", noddy_methods);
+}
+\end{verbatim}
+
+Now that's quite a bit to take in at once, but hopefully bits will
+seem familiar from the last chapter.
+
+The first bit that will be new is:
+
+\begin{verbatim}
+staticforward PyTypeObject noddy_NoddyType;
+\end{verbatim}
+
+This names the type object that will be defining further down in the
+file.  It can't be defined here because its definition has to refer to
+functions that have no yet been defined, but we need to be able to
+refer to it, hence the declaration.
+
+The \code{staticforward} is required to placate various brain dead
+compilers.
+
+\begin{verbatim}
+typedef struct {
+    PyObject_HEAD
+} noddy_NoddyObject;
+\end{verbatim}
+
+This is what a Noddy object will contain.  In this case nothing more
+than every Python object contains - a refcount and a pointer to a type
+object.  These are the fields the \code{PyObject_HEAD} macro brings
+in.  The reason for the macro is to standardize the layout and to
+enable special debugging fields to be brought in debug builds.
+
+For contrast
+
+\begin{verbatim}
+typedef struct {
+    PyObject_HEAD
+    long ob_ival;
+} PyIntObject;
+\end{verbatim}
+
+is the corresponding definition for standard Python integers.
+
+Next up is:
+
+\begin{verbatim}
+static PyObject*
+noddy_new_noddy(PyObject* self, PyObject* args)
+{
+    noddy_NoddyObject* noddy;
+
+    if (!PyArg_ParseTuple(args,":new_noddy")) 
+        return NULL;
+
+    noddy = PyObject_New(noddy_NoddyObject, &noddy_NoddyType);
+
+    return (PyObject*)noddy;
+}
+\end{verbatim}
+
+This is in fact just a regular module function, as described in the
+last chapter.  The reason it gets special mention is that this is
+where we create our Noddy object.  Defining PyTypeObject structures is
+all very well, but if there's no way to actually \emph{create} one
+of the wretched things it is not going to do anyone much good.
+
+Almost always, you create objects with a call of the form:
+
+\begin{verbatim}
+PyObject_New(<type>, &<type object>);
+\end{verbatim}
+
+This allocates the memory and then initializes the object (sets
+the reference count to one, makes the \cdata{ob_type} pointer point at
+the right place and maybe some other stuff, depending on build options).
+You \emph{can} do these steps separately if you have some reason to
+--- but at this level we don't bother.
+
+We cast the return value to a \ctype{PyObject*} because that's what
+the Python runtime expects.  This is safe because of guarantees about
+the layout of structures in the C standard, and is a fairly common C
+programming trick.  One could declare \cfunction{noddy_new_noddy} to
+return a \ctype{noddy_NoddyObject*} and then put a cast in the
+definition of \cdata{noddy_methods} further down the file --- it
+doesn't make much difference.
+
+Now a Noddy object doesn't do very much and so doesn't need to
+implement many type methods.  One you can't avoid is handling
+deallocation, so we find
+
+\begin{verbatim}
+static void
+noddy_noddy_dealloc(PyObject* self)
+{
+    PyObject_Del(self);
+}
+\end{verbatim}
+
+This is so short as to be self explanatory.  This function will be
+called when the reference count on a Noddy object reaches \code{0} (or
+it is found as part of an unreachable cycle by the cyclic garbage
+collector).  \cfunction{PyObject_Del()} is what you call when you want
+an object to go away.  If a Noddy object held references to other
+Python objects, one would decref them here.
+
+Moving on, we come to the crunch --- the type object.
+
+\begin{verbatim}
+static PyTypeObject noddy_NoddyType = {
+    PyObject_HEAD_INIT(NULL)
+    0,
+    "Noddy",
+    sizeof(noddy_NoddyObject),
+    0,
+    noddy_noddy_dealloc, /*tp_dealloc*/
+    0,                   /*tp_print*/
+    0,                   /*tp_getattr*/
+    0,                   /*tp_setattr*/
+    0,                   /*tp_compare*/
+    0,                   /*tp_repr*/
+    0,                   /*tp_as_number*/
+    0,                   /*tp_as_sequence*/
+    0,                   /*tp_as_mapping*/
+    0,                   /*tp_hash */
+};
+\end{verbatim}
+
+Now if you go and look up the definition of \ctype{PyTypeObject} in
+\file{object.h} you'll see that it has many, many more fields that the
+definition above.  The remaining fields will be filled with zeros by
+the C compiler, and it's common practice to not specify them
+explicitly unless you need them.  
+
+This is so important that I'm going to pick the top of it apart still
+further:
+
+\begin{verbatim}
+    PyObject_HEAD_INIT(NULL)
+\end{verbatim}
+
+This line is a bit of a wart; what we'd like to write is:
+
+\begin{verbatim}
+    PyObject_HEAD_INIT(&PyType_Type)
+\end{verbatim}
+
+as the type of a type object is ``type'', but this isn't strictly
+conforming C and some compilers complain.  So instead we fill in the
+\cdata{ob_type} field of \cdata{noddy_NoddyType} at the earliest
+oppourtunity --- in \cfunction{initnoddy()}.
+
+\begin{verbatim}
+    0,
+\end{verbatim}
+
+XXX why does the type info struct start PyObject_*VAR*_HEAD??
+
+\begin{verbatim}
+    "Noddy",
+\end{verbatim}
+
+The name of our type.  This will appear in the default textual
+representation of our objects and in some error messages, for example:
+
+\begin{verbatim}
+>>> "" + noddy.new_noddy()
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+TypeError: cannot add type "Noddy" to string
+\end{verbatim}
+
+\begin{verbatim}
+    sizeof(noddy_NoddyObject),
+\end{verbatim}
+
+This is so that Python knows how much memory to allocate when you call
+\cfunction{PyObject_New}.
+
+\begin{verbatim}
+    0,
+\end{verbatim}
+
+This has to do with variable length objects like lists and strings.
+Ignore for now...
+
+Now we get into the type methods, the things that make your objects
+different from the others.  Of course, the Noddy object doesn't
+implement many of these, but as mentioned above you have to implement
+the deallocation function.
+
+\begin{verbatim}
+    noddy_noddy_dealloc, /*tp_dealloc*/
+\end{verbatim}
+
+From here, all the type methods are nil so I won't go over them yet -
+that's for the next section!
+
+Everything else in the file should be familiar, except for this line
+in \cfunction{initnoddy}:
+
+\begin{verbatim}
+    noddy_NoddyType.ob_type = &PyType_Type;
+\end{verbatim}
+
+This was alluded to above --- the \cdata{noddy_NoddyType} object should
+have type ``type'', but \code{\&PyType_Type} is not constant and so
+can't be used in its initializer.  To work around this, we patch it up
+in the module initialization.
+
+That's it!  All that remains is to build it; put the above code in a
+file called \file{noddymodule.c} and
+
+\begin{verbatim}
+from distutils.core import setup, Extension
+setup(name = "noddy", version = "1.0",
+    ext_modules = [Extension("noddy", ["noddymodule.c"])])
+\end{verbatim}
+
+in a file called \file{setup.py}; then typing
+
+\begin{verbatim}
+$ python setup.py build%$
+\end{verbatim}
+
+at a shell should produce a file \file{noddy.so} in a subdirectory;
+move to that directory and fire up Python --- you should be able to
+\code{import noddy} and play around with Noddy objects.
+
+That wasn't so hard, was it?
+
+
+\section{Type Methods
+         \label{dnt-type-methods}}
+
+This section aims to give a quick fly-by on the various type methods
+you can implement and what they do.
+
+Here is the definition of \ctype{PyTypeObject}, with some fields only
+used in debug builds omitted:
+
+\begin{verbatim}
+typedef struct _typeobject {
+    PyObject_VAR_HEAD
+    char *tp_name; /* For printing */
+    int tp_basicsize, tp_itemsize; /* For allocation */
+
+    /* Methods to implement standard operations */
+
+    destructor tp_dealloc;
+    printfunc tp_print;
+    getattrfunc tp_getattr;
+    setattrfunc tp_setattr;
+    cmpfunc tp_compare;
+    reprfunc tp_repr;
+
+    /* Method suites for standard classes */
+
+    PyNumberMethods *tp_as_number;
+    PySequenceMethods *tp_as_sequence;
+    PyMappingMethods *tp_as_mapping;
+
+    /* More standard operations (here for binary compatibility) */
+
+    hashfunc tp_hash;
+    ternaryfunc tp_call;
+    reprfunc tp_str;
+    getattrofunc tp_getattro;
+    setattrofunc tp_setattro;
+
+    /* Functions to access object as input/output buffer */
+    PyBufferProcs *tp_as_buffer;
+
+    /* Flags to define presence of optional/expanded features */
+    long tp_flags;
+
+    char *tp_doc; /* Documentation string */
+
+    /* Assigned meaning in release 2.0 */
+    /* call function for all accessible objects */
+    traverseproc tp_traverse;
+
+    /* delete references to contained objects */
+    inquiry tp_clear;
+
+    /* Assigned meaning in release 2.1 */
+    /* rich comparisons */
+    richcmpfunc tp_richcompare;
+
+    /* weak reference enabler */
+    long tp_weaklistoffset;
+
+    /* Added in release 2.2 */
+    /* Iterators */
+    getiterfunc tp_iter;
+    iternextfunc tp_iternext;
+
+    /* Attribute descriptor and subclassing stuff */
+    struct PyMethodDef *tp_methods;
+    struct memberlist *tp_members;
+    struct getsetlist *tp_getset;
+    struct _typeobject *tp_base;
+    PyObject *tp_dict;
+    descrgetfunc tp_descr_get;
+    descrsetfunc tp_descr_set;
+    long tp_dictoffset;
+    initproc tp_init;
+    allocfunc tp_alloc;
+    newfunc tp_new;
+    destructor tp_free; /* Low-level free-memory routine */
+    PyObject *tp_bases;
+    PyObject *tp_mro; /* method resolution order */
+    PyObject *tp_defined;
+
+} PyTypeObject;
+\end{verbatim}
+
+Now that's a \emph{lot} of methods.  Don't worry too much though - if
+you have a type you want to define, the chances are very good that you
+will only implement a handful of these.
+
+As you probably expect by now, we're going to go over this and give
+more information about the various handlers.  We won't go in the order
+they are defined in the structure, because there is a lot of
+historical baggage that impacts the ordering of the fields; be sure
+your type initializaion keeps the fields in the right order!  It's
+often easiest to find an example that includes all the fields you need
+(even if they're initialized to \code{0}) and then change the values
+to suit your new type.
+
+\begin{verbatim}
+    char *tp_name; /* For printing */
+\end{verbatim}
+
+The name of the type - as mentioned in the last section, this will
+appear in various places, almost entirely for diagnostic purposes.
+Try to choose something that will be helpful in such a situation!
+
+\begin{verbatim}
+    int tp_basicsize, tp_itemsize; /* For allocation */
+\end{verbatim}
+
+These fields tell the runtime how much memory to allocate when new
+objects of this typed are created.  Python has some builtin support
+for variable length structures (think: strings, lists) which is where
+the \cdata{tp_itemsize} field comes in.  This will be dealt with
+later.
+
+\begin{verbatim}
+    char *tp_doc;
+\end{verbatim}
+
+Here you can put a string (or its address) that you want returned when
+the Python script references \code{obj.__doc__} to retrieve the
+docstring.
+   
+Now we come to the basic type methods---the ones most extension types
+will implement.
+
+
+\subsection{Finalization and De-allocation}
+
+\begin{verbatim}
+    destructor tp_dealloc;
+\end{verbatim}
+
+This function is called when the reference count of the instance of
+your type is reduced to zero and the Python interpreter wants to
+reclaim it.  If your type has memory to free or other clean-up to
+perform, put it here.  The object itself needs to be freed here as
+well.  Here is an example of this function:
+
+\begin{verbatim}
+static void
+newdatatype_dealloc(newdatatypeobject * obj)
+{
+    free(obj->obj_UnderlyingDatatypePtr);
+    PyObject_DEL(obj);
+}
+\end{verbatim}
+
+
+\subsection{Object Representation}
+
+In Python, there are three ways to generate a textual representation
+of an object: the \function{repr()}\bifuncindex{repr} function (or
+equivalent backtick syntax), the \function{str()}\bifuncindex{str}
+function, and the \keyword{print} statement.  For most objects, the
+\keyword{print} statement is equivalent to the \function{str()}
+function, but it is possible to special-case printing to a
+\ctype{FILE*} if necessary; this should only be done if efficiency is
+identified as a problem and profiling suggests that creating a
+temporary string object to be written to a file is too expensive.
+
+These handlers are all optional, and most types at most need to
+implement the \member{tp_str} and \member{tp_repr} handlers.
+
+\begin{verbatim}
+    reprfunc tp_repr;
+    reprfunc tp_str;
+    printfunc tp_print;
+\end{verbatim}
+
+The \member{tp_repr} handler should return a string object containing
+a representation of the instance for which it is called.  Here is a
+simple example:
+
+\begin{verbatim}
+static PyObject *
+newdatatype_repr(newdatatypeobject * obj)
+{
+    char buf[4096];
+    sprintf(buf, "Repr-ified_newdatatype{{size:%d}}",
+            obj->obj_UnderlyingDatatypePtr->size);
+    return PyString_FromString(buf);
+}
+\end{verbatim}
+
+If no \member{tp_repr} handler is specified, the interpreter will
+supply a representation that uses the type's \member{tp_name} and a
+uniquely-identifying value for the object.
+
+The \member{tp_str} handler is to \function{str()} what the
+\member{tp_repr} handler described above is to \function{repr()}; that
+is, it is called when Python code calls \function{str()} on an
+instance of your object.  It's implementation is very similar to the
+\member{tp_repr} function, but the resulting string is intended to be
+human consumption.  It \member{tp_str} is not specified, the
+\member{tp_repr} handler is used instead.
+
+Here is a simple example:
+
+\begin{verbatim}
+static PyObject *
+newdatatype_str(newdatatypeobject * obj)
+{
+    PyObject *pyString;
+    char buf[4096];
+    sprintf(buf, "Stringified_newdatatype{{size:%d}}",
+        obj->obj_UnderlyingDatatypePtr->size
+        );
+    pyString = PyString_FromString(buf);
+    return pyString;
+}
+\end{verbatim}
+
+The print function will be called whenever Python needs to "print" an
+instance of the type.  For example, if 'node' is an instance of type
+TreeNode, then the print function is called when Python code calls:
+
+\begin{verbatim}
+print node
+\end{verbatim}
+
+There is a flags argument and one flag, \constant{Py_PRINT_RAW}, and
+it suggests that you print without string quotes and possibly without
+interpreting escape sequences.
+
+The print function receives a file object as an argument. You will
+likely want to write to that file object.
+
+Here is a sampe print function:
+
+\begin{verbatim}
+static int
+newdatatype_print(newdatatypeobject *obj, FILE *fp, int flags)
+{
+    if (flags & Py_PRINT_RAW) {
+        fprintf(fp, "<{newdatatype object--size: %d}>",
+                obj->obj_UnderlyingDatatypePtr->size);
+    }
+    else {
+        fprintf(fp, "\"<{newdatatype object--size: %d}>\"",
+                obj->obj_UnderlyingDatatypePtr->size);
+    }
+    return 0;
+}
+\end{verbatim}
+
+
+\subsection{Attribute Management Functions}
+
+\begin{verbatim}
+    getattrfunc tp_getattr;
+    setattrfunc tp_setattr;
+\end{verbatim}
+
+The \member{tp_getattr} handle is called when the object requires an
+attribute look-up.  It is called in the same situations where the
+\method{__getattr__()} method of a class would be called.
+
+A likely way to handle this is (1) to implement a set of functions
+(such as \cfunction{newdatatype_getSize()} and
+\cfunction{newdatatype_setSize()} in the example below), (2) provide a
+method table listing these functions, and (3) provide a getattr
+function that returns the result of a lookup in that table.
+
+Here is an example:
+
+\begin{verbatim}
+static PyMethodDef newdatatype_methods[] = {
+    {"getSize", (PyCFunction)newdatatype_getSize, METH_VARARGS},
+    {"setSize", (PyCFunction)newdatatype_setSize, METH_VARARGS},
+    {NULL,      NULL}           /* sentinel */
+};
+
+static PyObject *
+newdatatype_getattr(newdatatypeobject *obj, char *name)
+{
+    return Py_FindMethod(newdatatype_methods, (PyObject *)obj, name);
+}
+\end{verbatim}
+
+The \member{tp_setattr} handler is called when the
+\method{__setattr__()} or \method{__delattr__()} method of a class
+instance would be called.  When an attribute should be deleted, the
+third parameter will be \NULL.  Here is an example that simply raises
+an exception; if this were really all you wanted, the
+\member{tp_setattr} handler should be set to \NULL.
+   
+\begin{verbatim}
+static int
+newdatatype_setattr(newdatatypeobject *obj, char *name, PyObject *v)
+{
+    char buf[1024];
+    sprintf(buf, "Set attribute not supported for attribute %s", name);
+    PyErr_SetString(PyExc_RuntimeError, buf);
+    return -1;
+}
+\end{verbatim}
+
+
+\subsection{Object Comparison}
+
+\begin{verbatim}
+    cmpfunc tp_compare;
+\end{verbatim}
+
+The \member{tp_compare} handler is called when comparisons are needed
+are the object does not implement the specific rich comparison method
+which matches the requested comparison.  (It is always used if defined
+and the \cfunction{PyObject_Compare()} or \cfunction{PyObject_Cmp()}
+functions are used, or if \function{cmp()} is used from Python.)
+It is analogous to the \method{__cmp__()} method.  This function
+should return a negative integer if \var{obj1} is less than
+\var{obj2}, \code{0} if they are equal, and a positive integer if
+\var{obj1} is greater than
+\var{obj2}.
+
+Here is a sample implementation:
+
+\begin{verbatim}
+static int
+newdatatype_compare(newdatatypeobject * obj1, newdatatypeobject * obj2)
+{
+    long result;
+ 
+    if (obj1->obj_UnderlyingDatatypePtr->size <
+        obj2->obj_UnderlyingDatatypePtr->size) {
+        result = -1;
+    }
+    else if (obj1->obj_UnderlyingDatatypePtr->size >
+             obj2->obj_UnderlyingDatatypePtr->size) {
+        result = 1;
+    }
+    else {
+        result = 0;
+    }
+    return result;
+}
+\end{verbatim}
+
+
+\subsection{Abstract Protocol Support}
+
+\begin{verbatim}
+  tp_as_number;
+  tp_as_sequence;
+  tp_as_mapping;
+\end{verbatim}
+
+If you wish your object to be able to act like a number, a sequence,
+or a mapping object, then you place the address of a structure that
+implements the C type \ctype{PyNumberMethods},
+\ctype{PySequenceMethods}, or \ctype{PyMappingMethods}, respectively.
+It is up to you to fill in this structure with appropriate values. You
+can find examples of the use of each of these in the \file{Objects}
+directory of the Python source distribution.
+
+
+\begin{verbatim}
+    hashfunc tp_hash;
+\end{verbatim}
+
+This function, if you choose to provide it, should return a hash
+number for an instance of your datatype. Here is a moderately
+pointless example:
+
+\begin{verbatim}
+static long
+newdatatype_hash(newdatatypeobject *obj)
+{
+    long result;
+    result = obj->obj_UnderlyingDatatypePtr->size;
+    result = result * 3;
+    return result;
+}
+\end{verbatim}
+
+\begin{verbatim}
+    ternaryfunc tp_call;
+\end{verbatim}
+
+This function is called when an instance of your datatype is "called",
+for example, if \code{obj1} is an instance of your datatype and the Python
+script contains \code{obj1('hello')}, the \member{tp_call} handler is
+invoked.
+
+This function takes three arguments:
+
+\begin{enumerate}
+  \item
+    \var{arg1} is the instance of the datatype which is the subject of
+    the call. If the call is \code{obj1('hello')}, then \var{arg1} is
+    \code{obj1}.
+
+  \item
+    \var{arg2} is a tuple containing the arguments to the call.  You
+    can use \cfunction{PyArg_ParseTuple()} to extract the arguments.
+
+  \item
+    \var{arg3} is a dictionary of keyword arguments that were passed.
+    If this is non-\NULL{} and you support keyword arguments, use
+    \cfunction{PyArg_ParseTupleAndKeywords()} to extract the
+    arguments.  If you do not want to support keyword arguments and
+    this is non-\NULL, raise a \exception{TypeError} with a message
+    saying that keyword arguments are not supported.
+\end{enumerate}
+       
+Here is a desultory example of the implementation of call function.
+
+\begin{verbatim}
+/* Implement the call function.
+ *    obj1 is the instance receiving the call.
+ *    obj2 is a tuple containing the arguments to the call, in this
+ *         case 3 strings.
+ */
+static PyObject *
+newdatatype_call(newdatatypeobject *obj, PyObject *args, PyObject *other)
+{
+    PyObject *result;
+    char *arg1;
+    char *arg2;
+    char *arg3;
+    char buf[4096];
+    if (!PyArg_ParseTuple(args, "sss:call", &arg1, &arg2, &arg3)) {
+        return NULL;
+    }
+    sprintf(buf,
+            "Returning -- value: [%d] arg1: [%s] arg2: [%s] arg3: [%s]\n",
+            obj->obj_UnderlyingDatatypePtr->size,
+            arg1, arg2, arg3);
+    printf(buf);
+    return PyString_FromString(buf);
+}
+\end{verbatim}
+
+
+\subsection{More Suggestions}
+
+Remember that you can omit most of these functions, in which case you
+provide \code{0} as a value.
+
+In the \file{Objects} directory of the Python source distribution,
+there is a file \file{xxobject.c}, which is intended to be used as a
+template for the implementation of new types.  One useful strategy
+for implementing a new type is to copy and rename this file, then
+read the instructions at the top of it.
+
+There are type definitions for each of the functions you must
+provide.  They are in \file{object.h} in the Python include
+directory that comes with the source distribution of Python.
+
+In order to learn how to implement any specific method for your new
+datatype, do the following: Download and unpack the Python source
+distribution.  Go the the \file{Objects} directory, then search the
+C source files for \code{tp_} plus the function you want (for
+example, \code{tp_print} or \code{tp_compare}).  You will find
+examples of the function you want to implement.
+
+When you need to verify that the type of an object is indeed the
+object you are implementing and if you use xxobject.c as an starting
+template for your implementation, then there is a macro defined for
+this purpose. The macro definition will look something like this:
+
+\begin{verbatim}
+#define is_newdatatypeobject(v)  ((v)->ob_type == &Newdatatypetype)
+\end{verbatim}
+
+And, a sample of its use might be something like the following:
+
+\begin{verbatim}
+    if (!is_newdatatypeobject(objp1) {
+        PyErr_SetString(PyExc_TypeError, "arg #1 not a newdatatype");
+        return NULL;
+    }
+\end{verbatim}
+
+%For a reasonably extensive example, from which most of the snippits
+%above were taken, see \file{newdatatype.c} and \file{newdatatype.h}.

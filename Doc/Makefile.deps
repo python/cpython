@@ -26,6 +26,11 @@ DOCFILES= $(HOWTOSTYLES) \
 	doc/doc.tex
 
 EXTFILES= ext/ext.tex $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
+	ext/extending.tex \
+	ext/newtypes.tex \
+	ext/unix.tex \
+	ext/windows.tex \
+	ext/embedding.tex \
 	texinputs/reportingbugs.tex
 
 TUTFILES= tut/tut.tex $(MANSTYLES) $(COMMONTEX)
