@@ -105,6 +105,7 @@
 
 ;;; Code:
 
+(require 'comint)
 (require 'custom)
 (eval-when-compile
   (require 'cl)
@@ -630,6 +631,16 @@ Optional LIM is ignored."
 	       (define-key py-mode-output-map key
 		 #'(lambda () (interactive) (beep))))
 	     (where-is-internal 'self-insert-command))
+  )
+
+(defvar py-shell-map nil
+  "Keymap used in *Python* shell buffers.")
+(if py-shell-map
+    nil
+  (setq py-shell-map (copy-keymap comint-mode-map))
+  (define-key py-shell-map [tab]   'tab-to-tab-stop)
+  (define-key py-shell-map "\C-c-" 'py-up-exception)
+  (define-key py-shell-map "\C-c=" 'py-down-exception)
   )
 
 (defvar py-mode-syntax-table nil
@@ -1193,17 +1204,13 @@ filter."
   ;; BAW - should undo be disabled in the python process buffer, if
   ;; this bug still exists?
   (interactive)
-  (require 'comint)
   (switch-to-buffer-other-window
    (apply 'make-comint py-which-bufname py-which-shell nil py-which-args))
   (make-local-variable 'comint-prompt-regexp)
   (setq comint-prompt-regexp "^>>> \\|^[.][.][.] \\|^(pdb) ")
   (add-hook 'comint-output-filter-functions 'py-comint-output-filter-function)
   (set-syntax-table py-mode-syntax-table)
-  ;; set up keybindings for this subshell
-  (local-set-key [tab]   'self-insert-command)
-  (local-set-key "\C-c-" 'py-up-exception)
-  (local-set-key "\C-c=" 'py-down-exception)
+  (use-local-map py-shell-map)
   )
 
 (defun py-clear-queue ()
