@@ -603,8 +603,12 @@ Padding is done using spaces.  The original string is returned if
 Return a copy of the string converted to lowercase.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{lstrip}{}
-Return a copy of the string with leading whitespace removed.
+\begin{methoddesc}[string]{lstrip}{\optional{chars}}
+Return a copy of the string with leading characters removed.  If
+\var{chars} is omitted or \code{None}, whitespace characters are
+removed.  If given and not \code{None}, \var{chars} must be a string;
+the characters in the string will be stripped from the beginning of
+the string this method is called on.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{replace}{old, new\optional{, maxsplit}}
@@ -632,8 +636,12 @@ Padding is done using spaces.  The original string is returned if
 \var{width} is less than \code{len(\var{s})}.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{rstrip}{}
-Return a copy of the string with trailing whitespace removed.
+\begin{methoddesc}[string]{rstrip}{\optional{chars}}
+Return a copy of the string with trailing characters removed.  If
+\var{chars} is omitted or \code{None}, whitespace characters are
+removed.  If given and not \code{None}, \var{chars} must be a string;
+the characters in the string will be stripped from the end of the
+string this method is called on.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{split}{\optional{sep \optional{,maxsplit}}}
@@ -649,16 +657,20 @@ boundaries.  Line breaks are not included in the resulting list unless
 \var{keepends} is given and true.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{startswith}{prefix\optional{, start\optional{, end}}}
+\begin{methoddesc}[string]{startswith}{prefix\optional{,
+                                       start\optional{, end}}}
 Return true if string starts with the \var{prefix}, otherwise
 return false.  With optional \var{start}, test string beginning at
 that position.  With optional \var{end}, stop comparing string at that
 position.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{strip}{}
-Return a copy of the string with leading and trailing whitespace
-removed.
+\begin{methoddesc}[string]{strip}{\optional{chars}}
+Return a copy of the string with leading and trailing characters
+removed.  If \var{chars} is omitted or \code{None}, whitespace
+characters are removed.  If given and not \code{None}, \var{chars}
+must be a string; the characters in the string will be stripped from
+the both ends of the string this method is called on.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{swapcase}{}
