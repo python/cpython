@@ -86,5 +86,5 @@ PyTypeObject PyType_Type = {
 	0,			/*tp_xxx2*/
 	0,			/*tp_xxx3*/
 	0,			/*tp_xxx4*/
-	"Define the behaviour of a particular type of object.",
+	"Define the behavior of a particular type of object.",
 };
