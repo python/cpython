@@ -188,7 +188,8 @@ class build_ext (Command):
 
         # Setup the CCompiler object that we'll use to do all the
         # compiling and linking
-        self.compiler = new_compiler (compiler=self.compiler,
+        self.compiler = new_compiler (#compiler=self.compiler,
+                                      compiler="msvc",
                                       verbose=self.verbose,
                                       dry_run=self.dry_run,
                                       force=self.force)
@@ -402,11 +403,6 @@ class build_ext (Command):
             if os.environ.has_key('CFLAGS'):
                 extra_args.extend(string.split(os.environ['CFLAGS']))
                 
-            # Run any platform/compiler-specific hooks needed before
-            # compiling (currently none, but any hypothetical subclasses
-            # might find it useful to override this).
-            self.precompile_hook()
-
             objects = self.compiler.compile (sources,
                                              output_dir=self.build_temp,
                                              #macros=macros,
@@ -421,9 +417,9 @@ class build_ext (Command):
                 objects.extend (ext.extra_objects)
             extra_args = ext.extra_link_args
 
-            # Run any platform/compiler-specific hooks needed between
-            # compiling and linking (currently needed only on Windows).
-            self.prelink_hook()
+            # Bunch of fixing-up we have to do for Microsoft's linker.
+            if self.compiler.compiler_type == 'msvc':
+                self.msvc_prelink_hack(sources, ext, extra_args)
 
             self.compiler.link_shared_object (
                 objects, ext_filename, 
@@ -504,12 +500,9 @@ class build_ext (Command):
     # find_swig ()
     
 
-    # -- Hooks ---------------------------------------------------------
+    # -- Hooks 'n hacks ------------------------------------------------
 
-    def precompile_hook (self):
-        pass
-
-    def prelink_hook (self):
+    def msvc_prelink_hack (self, sources, ext, extra_args):
 
         # XXX this is a kludge!  Knowledge of specific compilers or
         # platforms really doesn't belong here; in an ideal world, the
@@ -521,33 +514,32 @@ class build_ext (Command):
         # Thus, kludges like this slip in occasionally.  (This is no
         # excuse for committing more platform- and compiler-specific
         # kludges; they are to be avoided if possible!)
-        if self.compiler.compiler_type == 'msvc':
-            def_file = ext.export_symbol_file
-            if def_file is None:
-                source_dir = os.path.dirname (sources[0])
-                ext_base = (string.split (ext.name, '.'))[-1]
-                def_file = os.path.join (source_dir, "%s.def" % ext_base)
-                if not os.path.exists (def_file):
-                    def_file = None
 
-            if def_file is not None:
-                extra_args.append ('/DEF:' + def_file)
-            else:
-                modname = string.split (ext.name, '.')[-1]
-                extra_args.append('/export:init%s'%modname)
+        def_file = ext.export_symbol_file
+        if def_file is None:
+            source_dir = os.path.dirname (sources[0])
+            ext_base = (string.split (ext.name, '.'))[-1]
+            def_file = os.path.join (source_dir, "%s.def" % ext_base)
+            if not os.path.exists (def_file):
+                def_file = None
 
-            # The MSVC linker generates unneeded .lib and .exp files,
-            # which cannot be suppressed by any linker switches.  So
-            # make sure they are generated in the temporary build
-            # directory.
-            implib_file = os.path.join (
-                self.build_temp,
-                self.get_ext_libname (ext.name))
-            extra_args.append ('/IMPLIB:' + implib_file)
-            self.mkpath (os.path.dirname (implib_file))
-        # if MSVC
+        if def_file is not None:
+            extra_args.append ('/DEF:' + def_file)
+        else:
+            modname = string.split (ext.name, '.')[-1]
+            extra_args.append('/export:init%s' % modname)
 
-    # prelink_hook ()
+        # The MSVC linker generates unneeded .lib and .exp files,
+        # which cannot be suppressed by any linker switches.  So
+        # make sure they are generated in the temporary build
+        # directory.
+        implib_file = os.path.join (
+            self.build_temp,
+            self.get_ext_libname (ext.name))
+        extra_args.append ('/IMPLIB:' + implib_file)
+        self.mkpath (os.path.dirname (implib_file))
+
+    # msvc_prelink_hack ()
 
 
     # -- Name generators -----------------------------------------------
