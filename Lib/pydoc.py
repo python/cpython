@@ -99,7 +99,7 @@ def replace(text, *pairs):
 def cram(text, maxlen):
     """Omit part of a string if needed to make it fit in a maximum length."""
     if len(text) > maxlen:
-        pre = max(0, (maxlen-3)/2)
+        pre = max(0, (maxlen-3)//2)
         post = max(0, maxlen-3-pre)
         return text[:pre] + '...' + text[len(text)-post:]
     return text
