@@ -1,6 +1,7 @@
 from winreg import hives, createKey, openKey, flags, deleteKey, regtypes
 import sys, traceback
 import time
+import array
 
 def testHives():
     hivenames = ["HKEY_CLASSES_ROOT","HKEY_CURRENT_USER","HKEY_LOCAL_MACHINE",
@@ -127,6 +128,13 @@ def testSetStringValue():
     del hives["HKCU"].getValues()[ "Blah" ]
     assert not hives["HKCU"].getValues().has_key( "Blah" )
 
+    # Ensure Unicode works as we expect
+    hives["HKCU"].setValue( u"Blah", u"abc" )
+    assert hives["HKCU"].getValueData( "Blah" )=="abc"
+    assert hives["HKCU"].getValues().has_key( u"Blah" )
+    del hives["HKCU"].getValues()[ u"Blah" ]
+    assert not hives["HKCU"].getValues().has_key( u"Blah" )
+
 def testDeleteValue():
     hives["HKCU"].setValue( "Blah", "abc" )
     assert hives["HKCU"].getValues().has_key( "Blah" )
@@ -175,17 +183,18 @@ def testSetIntValue():
     key.getValues()["abcd"]=(5,regtypes["REG_DWORD"])
     assert key.getValues()[ "abcd" ][1]==5
     key.deleteValue( "abcd" )
-    key.deleteKey( "HKLM\\Software\\a\\b")
-    key.deleteKey( "HKLM\\Software\\a")
+    deleteKey( "HKLM\\Software\\a\\b")
+    deleteKey( "HKLM\\Software\\a")
 
 def testSetBinaryValue(): 
     key=createKey( "HKLM\\Software\\a\\b")
     key.setValue( "abcd", array.array( 'c', "PPPPPPPPPPPPPPP") )
     key.setValue( "abcde", array.array( 'c', "PPPPPPPPPPPPPPP"), 
                        regtypes["REG_BINARY"] )
-    assert key.getValues()["abcd"]==key.getValues()["abcde"]
-    key.deleteKey( "HKLM\\Software\\a\\b")
-    key.deleteKey( "HKLM\\Software\\a")
+    assert key.getValues()["abcd"][1]==key.getValues()["abcde"][1]
+    key = None # Remove our reference.
+    deleteKey( "HKLM\\Software\\a\\b")
+    deleteKey( "HKLM\\Software\\a")
 
 def testSetNone(): pass
 
