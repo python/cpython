@@ -129,6 +129,10 @@ class TestTranforms(unittest.TestCase):
         self.assert_('(2)' in asm)
         self.assert_("('b')" in asm)
 
+        # Verify that large sequences do not result from folding
+        asm = dis_single('a="x"*1000')
+        self.assert_('(1000)' in asm)
+
     def test_elim_extra_return(self):
         # RETURN LOAD_CONST None RETURN  -->  RETURN
         def f(x):
