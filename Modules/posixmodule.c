@@ -5130,7 +5130,7 @@ posix_statvfs(PyObject *self, PyObject *args)
 PyDoc_STRVAR(posix_tempnam__doc__,
 "tempnam([dir[, prefix]]) -> string\n\n\
 Return a unique name for a temporary file.\n\
-The directory and a short may be specified as strings; they may be omitted\n\
+The directory and a prefix may be specified as strings; they may be omitted\n\
 or None if not needed.");
 
 static PyObject *
