@@ -39,6 +39,8 @@ Command line options:
 -m bytes  -- skip HTML pages larger than this size (default %(MAXPAGE)d)
 -q        -- quiet operation (also suppresses external links report)
 -v        -- verbose operation; repeating -v will increase verbosity
+-t root   -- specify root dir which should be treated as internal (can repeat)
+-a        -- don't check name anchors
 
 Command line arguments:
 
@@ -61,8 +63,10 @@ import getopt
 import string
 from Tkinter import *
 import tktools
-import webchecker
+import wcnew
 import random
+
+webchecker = wcnew
 
 # Override some for a weaker platform
 if sys.platform == 'mac':
@@ -72,12 +76,16 @@ if sys.platform == 'mac':
 
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'm:qv')
+        opts, args = getopt.getopt(sys.argv[1:], 't:m:qva')
     except getopt.error, msg:
         sys.stdout = sys.stderr
         print msg
         print __doc__%vars(webchecker)
         sys.exit(2)
+    webchecker.verbose = webchecker.VERBOSE
+    webchecker.nonames = webchecker.NONAMES
+    webchecker.maxpage = webchecker.MAXPAGE
+    extra_roots = []
     for o, a in opts:
         if o == '-m':
             webchecker.maxpage = string.atoi(a)
@@ -85,13 +93,29 @@ def main():
             webchecker.verbose = 0
         if o == '-v':
             webchecker.verbose = webchecker.verbose + 1
+        if o == '-t':
+            extra_roots.append(a)
+        if o == '-a':
+            webchecker.nonames = not webchecker.nonames
     root = Tk(className='Webchecker')
     root.protocol("WM_DELETE_WINDOW", root.quit)
     c = CheckerWindow(root)
+    c.setflags(verbose=webchecker.verbose, maxpage=webchecker.maxpage,
+               nonames=webchecker.nonames)
     if args:
         for arg in args[:-1]:
             c.addroot(arg)
         c.suggestroot(args[-1])
+    # Usually conditioned on whether external links
+    # will be checked, but since that's not a command
+    # line option, just toss them in.
+    for url_root in extra_roots:
+        # Make sure it's terminated by a slash,
+        # so that addroot doesn't discard the last
+        # directory component.
+        if url_root[-1] != "/":
+            url_root = url_root + "/"
+        c.addroot(url_root, add_to_do = 0)
     root.mainloop()
 
 
@@ -139,11 +163,12 @@ class CheckerWindow(webchecker.Checker):
         self.__checking.pack(side=TOP, fill=X)
         self.__mp = mp = MultiPanel(parent)
         sys.stdout = self.__log = LogPanel(mp, "Log")
-        self.__todo = ListPanel(mp, "To check", self.showinfo)
-        self.__done = ListPanel(mp, "Checked", self.showinfo)
-        self.__bad = ListPanel(mp, "Bad links", self.showinfo)
-        self.__errors = ListPanel(mp, "Pages w/ bad links", self.showinfo)
+        self.__todo = ListPanel(mp, "To check", self, self.showinfo)
+        self.__done = ListPanel(mp, "Checked", self, self.showinfo)
+        self.__bad = ListPanel(mp, "Bad links", self, self.showinfo)
+        self.__errors = ListPanel(mp, "Pages w/ bad links", self, self.showinfo)
         self.__details = LogPanel(mp, "Details")
+        self.root_seed = None
         webchecker.Checker.__init__(self)
         if root:
             root = string.strip(str(root))
@@ -155,11 +180,14 @@ class CheckerWindow(webchecker.Checker):
         webchecker.Checker.reset(self)
         for p in self.__todo, self.__done, self.__bad, self.__errors:
             p.clear()
+        if self.root_seed:
+            self.suggestroot(self.root_seed)
 
     def suggestroot(self, root):
         self.__rootentry.delete(0, END)
         self.__rootentry.insert(END, root)
         self.__rootentry.select_range(0, END)
+        self.root_seed = root
 
     def enterroot(self, event=None):
         root = self.__rootentry.get()
@@ -221,7 +249,7 @@ class CheckerWindow(webchecker.Checker):
                 self.__todo.list.select_set(i)
             self.__todo.list.yview(i)
             url = self.__todo.items[i]
-            self.__checking.config(text="Checking "+url)
+            self.__checking.config(text="Checking "+self.format_url(url))
             self.__parent.update()
             self.dopage(url)
         else:
@@ -232,7 +260,7 @@ class CheckerWindow(webchecker.Checker):
     def showinfo(self, url):
         d = self.__details
         d.clear()
-        d.put("URL:    %s\n" % url)
+        d.put("URL:    %s\n" % self.format_url(url))
         if self.bad.has_key(url):
             d.put("Error:  %s\n" % str(self.bad[url]))
         if url in self.roots:
@@ -246,18 +274,18 @@ class CheckerWindow(webchecker.Checker):
         else:
             d.put("Status: unknown (!)\n")
             o = []
-        if self.errors.has_key(url):
+        if (not url[1]) and self.errors.has_key(url[0]):
             d.put("Bad links from this page:\n")
-            for triple in self.errors[url]:
+            for triple in self.errors[url[0]]:
                 link, rawlink, msg = triple
-                d.put("  HREF  %s" % link)
-                if link != rawlink: d.put(" (%s)" %rawlink)
+                d.put("  HREF  %s" % self.format_url(link))
+                if self.format_url(link) != rawlink: d.put(" (%s)" %rawlink)
                 d.put("\n")
                 d.put("  error %s\n" % str(msg))
         self.__mp.showpanel("Details")
         for source, rawlink in o:
             d.put("Origin: %s" % source)
-            if rawlink != url:
+            if rawlink != self.format_url(url):
                 d.put(" (%s)" % rawlink)
             d.put("\n")
         d.text.yview("1.0")
@@ -288,7 +316,7 @@ class CheckerWindow(webchecker.Checker):
 
     def seterror(self, url, triple):
         webchecker.Checker.seterror(self, url, triple)
-        self.__errors.insert(url)
+        self.__errors.insert((url, ''))
         self.newstatus()
 
     def newstatus(self):
@@ -301,10 +329,11 @@ class CheckerWindow(webchecker.Checker):
 
 class ListPanel:
 
-    def __init__(self, mp, name, showinfo=None):
+    def __init__(self, mp, name, checker, showinfo=None):
         self.mp = mp
         self.name = name
         self.showinfo = showinfo
+        self.checker = checker
         self.panel = mp.addpanel(name)
         self.list, self.frame = tktools.make_list_box(
             self.panel, width=60, height=5)
@@ -321,7 +350,7 @@ class ListPanel:
     def doubleclick(self, event):
         l = self.selectedindices()
         if l:
-            self.showinfo(self.list.get(l[0]))
+            self.showinfo(self.items[l[0]])
 
     def selectedindices(self):
         l = self.list.curselection()
@@ -334,7 +363,7 @@ class ListPanel:
                 self.mp.showpanel(self.name)
             # (I tried sorting alphabetically, but the display is too jumpy)
             i = len(self.items)
-            self.list.insert(i, url)
+            self.list.insert(i, self.checker.format_url(url))
             self.list.yview(i)
             self.items.insert(i, url)
 
