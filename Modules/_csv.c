@@ -300,7 +300,7 @@ dialect_init(DialectObj * self, PyObject * args, PyObject * kwargs)
 	self->doublequote = 1;
 	self->strict = 0;
 
-        if (!PyArg_ParseTuple(args, "|O", &dialect))
+	if (!PyArg_UnpackTuple(args, "", 0, 1, &dialect))
                 return -1;
         Py_XINCREF(dialect);
         if (kwargs != NULL) {
@@ -842,7 +842,7 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
 	self->field_len = 0;
 	self->state = START_RECORD;
 
-        if (!PyArg_ParseTuple(args, "O|O", &iterator, &dialect)) {
+	if (!PyArg_UnpackTuple(args, "", 1, 2, &iterator, &dialect)) {
                 Py_DECREF(self);
                 return NULL;
         }
@@ -1287,7 +1287,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 	self->rec_len = 0;
 	self->num_fields = 0;
 
-        if (!PyArg_ParseTuple(args, "O|O", &output_file, &dialect)) {
+	if (!PyArg_UnpackTuple(args, "", 1, 2, &output_file, &dialect)) {
                 Py_DECREF(self);
                 return NULL;
         }
@@ -1327,7 +1327,7 @@ csv_register_dialect(PyObject *module, PyObject *args)
 {
         PyObject *name_obj, *dialect_obj;
 
-        if (!PyArg_ParseTuple(args, "OO", &name_obj, &dialect_obj))
+	if (!PyArg_UnpackTuple(args, "", 2, 2, &name_obj, &dialect_obj))
                 return NULL;
         if (!PyString_Check(name_obj)
 #ifdef Py_USING_UNICODE
