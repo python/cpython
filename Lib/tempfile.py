@@ -1,19 +1,44 @@
 # Temporary file name allocation
+#
+# XXX This tries to be not UNIX specific, but I don't know beans about
+# how to choose a temp directory or filename on MS-DOS or other
+# systems so it may have to be changed...
 
-import posix
-import path
+
+import os
 
 
-# Changeable parameters (by clients!)...
+# Parameters that the caller may set to override the defaults
 
-tempdir = '/usr/tmp'
-template = '@'
+tempdir = None
+template = None
 
-# Use environment variable $TMPDIR to override default tempdir.
 
-if posix.environ.has_key('TMPDIR'):
-	# XXX Could check that it's a writable directory...
-	tempdir = posix.environ['TMPDIR']
+# Function to calculate the directory to use
+
+def gettempdir():
+	global tempdir
+	if tempdir == None:
+		try:
+			tempdir = os.environ['TMPDIR']
+		except (KeyError, AttributeError):
+			if os.name == 'posix':
+				tempdir = '/usr/tmp' # XXX Why not /tmp?
+			else:
+				tempdir = os.getcwd() # XXX Is this OK?
+	return tempdir
+
+
+# Function to calculate a prefix of the filename to use
+
+def gettempprefix():
+	global template
+	if template == None:
+		if os.name == 'posix':
+			template = '@' + `os.getpid()` + '.'
+		else:
+			template = 'tmp' # XXX might choose a better one
+	return template
 
 
 # Counter for generating unique names
@@ -21,16 +46,14 @@ if posix.environ.has_key('TMPDIR'):
 counter = 0
 
 
-# User-callable function
-# XXX Should this have a parameter, like C's mktemp()?
-# XXX Should we instead use the model of Standard C's tempnam()?
-# XXX By all means, avoid a mess with four different functions like C...
+# User-callable function to return a unique temporary file name
 
 def mktemp():
 	global counter
+	dir = gettempdir()
+	pre = gettempprefix()
 	while 1:
-		counter = counter+1
-		file = tempdir+'/'+template+`posix.getpid()`+'.'+`counter`
-		if not path.exists(file):
-			break
-	return file
+		counter = counter + 1
+		file = os.path.join(dir, pre + `counter`)
+		if not os.path.exists(file):
+			return file
