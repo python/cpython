@@ -40,20 +40,18 @@ Set various options.  Subsequent \function{compress()} and
 \function{decompress()} calls will use these options.  The following
 options are available:
 
-\begin{tableii}{|l|l|}{code}{Option}{Effect}
+\begin{tableii}{|l|p{3in}|}{code}{Option}{Effect}
   \lineii{'forcegray'}{%
     Force output to be grayscale, even if input is RGB.}
   \lineii{'quality'}{%
     Set the quality of the compressed image to a value between
-    \code{0} and \code{100} (default is \code{75}).  \\
-    &This only affects compression.}
+    \code{0} and \code{100} (default is \code{75}).  This only affects
+    compression.}
   \lineii{'optimize'}{%
     Perform Huffman table optimization.  Takes longer, but results in
-    smaller compressed \\
-    &image.  This only affects compression.}
+    smaller compressed image.  This only affects compression.}
   \lineii{'smooth'}{%
     Perform inter-block smoothing on uncompressed image.  Only useful
-    for low-quality \\
-    &images.  This only affects decompression.}
+    for low-quality images.  This only affects decompression.}
 \end{tableii}
 \end{funcdesc}
