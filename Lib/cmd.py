@@ -131,15 +131,30 @@ class Cmd:
 				return
 			func()
 		else:
-			names = dir(self.__class__)
+			# Inheritance says we have to look in class and
+			# base classes; order is not important.
+			names = []
+			classes = [self.__class__]
+			while classes:
+				aclass = classes[0]
+				if aclass.__bases__:
+				    classes = classes + list(aclass.__bases__)
+				names = names + dir(aclass)
+				del classes[0]
 			cmds_doc = []
 			cmds_undoc = []
 			help = {}
 			for name in names:
 				if name[:5] == 'help_':
 					help[name[5:]]=1
+			names.sort()
+			# There can be duplicates if routines overridden
+			prevname = ''
 			for name in names:
 				if name[:3] == 'do_':
+					if name == prevname:
+						continue
+					prevname = name
 					cmd=name[3:]
 					if help.has_key(cmd):
 						cmds_doc.append(cmd)
