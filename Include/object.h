@@ -146,6 +146,9 @@ typedef PyObject *(*intintargfunc) Py_PROTO((PyObject *, int, int));
 typedef int(*intobjargproc) Py_PROTO((PyObject *, int, PyObject *));
 typedef int(*intintobjargproc) Py_PROTO((PyObject *, int, int, PyObject *));
 typedef int(*objobjargproc) Py_PROTO((PyObject *, PyObject *, PyObject *));
+typedef int (*getreadbufferproc) Py_PROTO((PyObject *, int, void **));
+typedef int (*getwritebufferproc) Py_PROTO((PyObject *, int, void **));
+typedef int (*getsegcountproc) Py_PROTO((PyObject *, int *));
 
 typedef struct {
 	binaryfunc nb_add;
@@ -189,6 +192,13 @@ typedef struct {
 	objobjargproc mp_ass_subscript;
 } PyMappingMethods;
 
+typedef struct {
+	getreadbufferproc bf_getreadbuffer;
+	getwritebufferproc bf_getwritebuffer;
+	getsegcountproc bf_getsegcount;
+} PyBufferProcs;
+	
+
 typedef void (*destructor) Py_PROTO((PyObject *));
 typedef int (*printfunc) Py_PROTO((PyObject *, FILE *, int));
 typedef PyObject *(*getattrfunc) Py_PROTO((PyObject *, char *));
@@ -227,8 +237,10 @@ typedef struct _typeobject {
 	getattrofunc tp_getattro;
 	setattrofunc tp_setattro;
 
+	/* Functions to access object as input/output buffer */
+	PyBufferProcs *tp_as_buffer;
+	
 	/* Space for future expansion */
-	long tp_xxx3;
 	long tp_xxx4;
 
 	char *tp_doc; /* Documentation string */

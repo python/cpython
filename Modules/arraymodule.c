@@ -1169,6 +1169,44 @@ array_repr(a)
 	return s;
 }
 
+static int
+array_buffer_getreadbuf(self, index, ptr)
+	arrayobject *self;
+	int index;
+	const void **ptr;
+{
+	if ( index != 0 ) {
+		PyErr_SetString(PyExc_SystemError, "Accessing non-existent array segment");
+		return -1;
+	}
+	*ptr = (void *)self->ob_item;
+	return self->ob_size*self->ob_descr->itemsize;
+}
+
+static int
+array_buffer_getwritebuf(self, index, ptr)
+	arrayobject *self;
+	int index;
+	const void **ptr;
+{
+	if ( index != 0 ) {
+		PyErr_SetString(PyExc_SystemError, "Accessing non-existent array segment");
+		return -1;
+	}
+	*ptr = (void *)self->ob_item;
+	return self->ob_size*self->ob_descr->itemsize;
+}
+
+static int
+array_buffer_getsegcount(self, lenp)
+	arrayobject *self;
+	int *lenp;
+{
+	if ( lenp )
+		*lenp = self->ob_size*self->ob_descr->itemsize;
+	return 1;
+}
+
 static PySequenceMethods array_as_sequence = {
 	(inquiry)array_length,		        /*sq_length*/
 	(binaryfunc)array_concat,               /*sq_concat*/
@@ -1178,6 +1216,13 @@ static PySequenceMethods array_as_sequence = {
 	(intobjargproc)array_ass_item,		/*sq_ass_item*/
 	(intintobjargproc)array_ass_slice,	/*sq_ass_slice*/
 };
+
+static PyBufferProcs array_as_buffer = {
+	(getreadbufferproc)array_buffer_getreadbuf,
+	(getwritebufferproc)array_buffer_getwritebuf,
+	(getsegcountproc)array_buffer_getsegcount,
+};
+
 
 statichere PyTypeObject Arraytype = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -1194,6 +1239,14 @@ statichere PyTypeObject Arraytype = {
 	0,				/*tp_as_number*/
 	&array_as_sequence,		/*tp_as_sequence*/
 	0,				/*tp_as_mapping*/
+	0, 				/*tp_hash*/
+	0,				/*tp_call*/
+	0,				/*tp_str*/
+	0,				/*tp_getattro*/
+	0,				/*tp_setattro*/
+	&array_as_buffer,		/*tp_as_buffer*/
+	0,				/*tp_xxx4*/
+	0,				/*tp_doc*/
 };
 
 

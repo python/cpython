@@ -456,6 +456,40 @@ string_hash(a)
 	return x;
 }
 
+static int
+string_buffer_getreadbuf(self, index, ptr)
+	PyStringObject *self;
+	int index;
+	const void **ptr;
+{
+	if ( index != 0 ) {
+		PyErr_SetString(PyExc_SystemError, "Accessing non-existent string segment");
+		return -1;
+	}
+	*ptr = (void *)self->ob_sval;
+	return self->ob_size;
+}
+
+static int
+string_buffer_getwritebuf(self, index, ptr)
+	PyStringObject *self;
+	int index;
+	const void **ptr;
+{
+	PyErr_SetString(PyExc_TypeError, "Cannot use string as modifyable buffer");
+	return -1;
+}
+
+static int
+string_buffer_getsegcount(self, lenp)
+	PyStringObject *self;
+	int *lenp;
+{
+	if ( lenp )
+		*lenp = self->ob_size;
+	return 1;
+}
+
 static PySequenceMethods string_as_sequence = {
 	(inquiry)string_length, /*sq_length*/
 	(binaryfunc)string_concat, /*sq_concat*/
@@ -464,6 +498,12 @@ static PySequenceMethods string_as_sequence = {
 	(intintargfunc)string_slice, /*sq_slice*/
 	0,		/*sq_ass_item*/
 	0,		/*sq_ass_slice*/
+};
+
+static PyBufferProcs string_as_buffer = {
+	(getreadbufferproc)string_buffer_getreadbuf,
+	(getwritebufferproc)string_buffer_getwritebuf,
+	(getsegcountproc)string_buffer_getsegcount,
 };
 
 PyTypeObject PyString_Type = {
@@ -486,7 +526,7 @@ PyTypeObject PyString_Type = {
 	0,		/*tp_str*/
 	0,		/*tp_getattro*/
 	0,		/*tp_setattro*/
-	0,		/*tp_xxx3*/
+	&string_as_buffer,	/*tp_as_buffer*/
 	0,		/*tp_xxx4*/
 	0,		/*tp_doc*/
 };
