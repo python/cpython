@@ -1226,9 +1226,7 @@ parsestr(struct compiling *com, char *s)
 	char *buf;
 	char *p;
 	char *end;
-	int c;
-	int first = *s;
-	int quote = first;
+	int quote = *s;
 	int rawmode = 0;
 	char* encoding = ((com == NULL) ? NULL : com->c_encoding);
 	int need_encoding;
@@ -1347,102 +1345,11 @@ parsestr(struct compiling *com, char *s)
 			return PyString_FromStringAndSize(s, len);
 		}
 	}
-	v = PyString_FromStringAndSize((char *)NULL, /* XXX 4 is enough? */
-				       need_encoding ? len * 4 : len);
+
+	v = PyString_DecodeEscape(s, len, NULL, unicode,
+				  need_encoding ? encoding : NULL);
 	if (v == NULL)
-		return NULL;
-	p = buf = PyString_AsString(v);
-	end = s + len;
-	while (s < end) {
-		if (*s != '\\') {
-		  ORDINAL: 
-			if (need_encoding && (*s & 0x80)) {
-				char *r;
-				int rn;
-				PyObject* w = decode_utf8(&s, end, encoding);
-				if (w == NULL)
-					return NULL;
-				r = PyString_AsString(w);
-				rn = PyString_Size(w);
-				memcpy(p, r, rn);
-				p += rn;
-				Py_DECREF(w);
-			} else {
-				*p++ = *s++;
-			}
-			continue;
-		}
-		s++;
-		switch (*s++) {
-		/* XXX This assumes ASCII! */
-		case '\n': break;
-		case '\\': *p++ = '\\'; break;
-		case '\'': *p++ = '\''; break;
-		case '\"': *p++ = '\"'; break;
-		case 'b': *p++ = '\b'; break;
-		case 'f': *p++ = '\014'; break; /* FF */
-		case 't': *p++ = '\t'; break;
-		case 'n': *p++ = '\n'; break;
-		case 'r': *p++ = '\r'; break;
-		case 'v': *p++ = '\013'; break; /* VT */
-		case 'a': *p++ = '\007'; break; /* BEL, not classic C */
-		case '0': case '1': case '2': case '3':
-		case '4': case '5': case '6': case '7':
-			c = s[-1] - '0';
-			if ('0' <= *s && *s <= '7') {
-				c = (c<<3) + *s++ - '0';
-				if ('0' <= *s && *s <= '7')
-					c = (c<<3) + *s++ - '0';
-			}
-			*p++ = c;
-			break;
-		case 'x':
-			if (isxdigit(Py_CHARMASK(s[0])) 
-			    && isxdigit(Py_CHARMASK(s[1]))) {
-				unsigned int x = 0;
-				c = Py_CHARMASK(*s);
-				s++;
-				if (isdigit(c))
-					x = c - '0';
-				else if (islower(c))
-					x = 10 + c - 'a';
-				else
-					x = 10 + c - 'A';
-				x = x << 4;
-				c = Py_CHARMASK(*s);
-				s++;
-				if (isdigit(c))
-					x += c - '0';
-				else if (islower(c))
-					x += 10 + c - 'a';
-				else
-					x += 10 + c - 'A';
-				*p++ = x;
-				break;
-			}
-			Py_DECREF(v);
-			com_error(com, PyExc_ValueError, 
-				  "invalid \\x escape");
-			return NULL;
-#ifndef Py_USING_UNICODE
-		case 'u':
-		case 'U':
-		case 'N':
-			if (unicode) {
-				Py_DECREF(v);
-				com_error(com, PyExc_ValueError,
-					  "Unicode escapes not legal "
-					  "when Unicode disabled");
-				return NULL;
-			}
-#endif
-		default:
-			*p++ = '\\';
-			s--;
-			goto ORDINAL;
-		}
-	}
-	_PyString_Resize(&v, (int)(p - buf));
+		PyErr_SyntaxLocation(com->c_filename, com->c_lineno);
 	return v;
 }
 
