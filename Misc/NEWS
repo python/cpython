@@ -2,8 +2,22 @@
 Python News
 +++++++++++
 
-What's New in Python 2.4 release candidate 1?
-=============================================
+(editors: check NEWS.help for information about editing NEWS using ReST.)
+
+What's New in Python 2.4 (release candidate 1|beta 3)
+=====================================================
+
+*Release date: XX-XXX-2004*
+
+Core and builtins
+-----------------
+
+...
+
+Extension Modules
+-----------------
+
+...
 
 Library
 -------
@@ -12,8 +26,46 @@ Library
   attempt is made to execute the remaining handlers.  The last exception
   raised is re-raised.
 
+Build
+-----
 
-(editors: check NEWS.help for information about editing NEWS using ReST.)
+...
+
+C API
+-----
+
+...
+
+Documentation
+-------------
+
+...
+
+Tests
+-----
+
+...
+
+Windows
+-------
+
+...
+
+Mac
+---
+
+...
+
+New platforms
+-------------
+
+...
+
+Tools/Demos
+-----------
+
+...
+
 
 What's New in Python 2.4 beta 2?
 ================================
@@ -92,42 +144,6 @@ Build
 -----
 
 - Patch #1044395: --enable-shared is allowed in FreeBSD also.
-
-C API
------
-
-...
-
-Documentation
--------------
-
-...
-
-Tests
------
-
-...
-
-Windows
--------
-
-...
-
-Mac
----
-
-...
-
-New platforms
--------------
-
-...
-
-Tools/Demos
------------
-
-...
-
 
 What's New in Python 2.4 beta 1?
 ================================
