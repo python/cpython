@@ -411,6 +411,7 @@ initmain()
 		if (bimod == NULL ||
 		    PyDict_SetItemString(d, "__builtins__", bimod) != 0)
 			Py_FatalError("can't add __builtins__ to __main__");
+		Py_DECREF(bimod);
 	}
 }
 
