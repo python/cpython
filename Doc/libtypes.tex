@@ -126,8 +126,9 @@ Notes:
 \item[(1)]
 \code{<>} and \code{!=} are alternate spellings for the same operator.
 (I couldn't choose between \ABC{} and \C{}! :-)
-\indexii{ABC@\ABC{}}{language}
-\indexii{\C{}}{language}
+\index{ABC language@\ABC{} language}
+\index{language!ABC@\ABC{}}
+\indexii{C@\C{}}{language}
 
 \end{description}
 
@@ -167,7 +168,7 @@ working with.
 \indexiii{long}{integer}{type}
 \indexii{floating point}{type}
 \indexii{complex number}{type}
-\indexii{\C{}}{language}
+\indexii{C@\C{}}{language}
 
 Complex numbers have a real and imaginary part, which are both
 implemented using \code{double} in \C{}.  To extract these parts from
@@ -252,7 +253,7 @@ module \code{math} for well-defined conversions.
 \bifuncindex{ceil}
 \indexii{numeric}{conversions}
 \refbimodindex{math}
-\indexii{\C{}}{language}
+\indexii{C@\C{}}{language}
 
 \item[(3)]
 See the section on built-in functions for an exact definition.
@@ -421,8 +422,10 @@ All other errors raise exceptions.
 
 If the right argument is a dictionary (or any kind of mapping), then
 the formats in the string must have a parenthesized key into that
-dictionary inserted immediately after the \code{\%} character, and
-each format formats the corresponding entry from the mapping.  E.g.
+dictionary inserted immediately after the \character{\%} character,
+and each format formats the corresponding entry from the mapping.
+For example:
+
 \begin{verbatim}
 >>> count = 2
 >>> language = 'Python'
@@ -430,11 +433,12 @@ each format formats the corresponding entry from the mapping.  E.g.
 Python has 002 quote types.
 >>> 
 \end{verbatim}
+
 In this case no * specifiers may occur in a format (since they
 require a sequential parameter list).
 
 Additional string operations are defined in standard module
-\code{string} and in built-in module \code{re}.
+\module{string} and in built-in module \module{re}.
 \refstmodindex{string}
 \refbimodindex{re}
 
