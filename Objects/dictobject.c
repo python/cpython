@@ -981,43 +981,83 @@ PyDict_Items(PyObject *mp)
 
 /* Subroutine which returns the smallest key in a for which b's value
    is different or absent.  The value is returned too, through the
-   pval argument.  No reference counts are incremented. */
+   pval argument.  Both are NULL if no key in a is found for which b's status
+   differs.  The refcounts on (and only on) non-NULL *pval and function return
+   values must be decremented by the caller (characterize() increments them
+   to ensure that mutating comparison and PyDict_GetItem calls can't delete
+   them before the caller is done looking at them). */
 
 static PyObject *
 characterize(dictobject *a, dictobject *b, PyObject **pval)
 {
-	PyObject *diff = NULL;
+	PyObject *akey = NULL; /* smallest key in a s.t. a[akey] != b[akey] */
+	PyObject *aval = NULL; /* a[akey] */
 	int i, cmp;
 
-	*pval = NULL;
 	for (i = 0; i < a->ma_size; i++) {
-		if (a->ma_table[i].me_value != NULL) {
-			PyObject *key = a->ma_table[i].me_key;
-			PyObject *aval, *bval;
-			if (diff != NULL) {
-			    cmp = PyObject_RichCompareBool(diff, key, Py_LT);
-			    if (cmp < 0)
-				return NULL;
-			    if (cmp > 0)
+		PyObject *thiskey, *thisaval, *thisbval;
+		if (a->ma_table[i].me_value == NULL)
+			continue;
+		thiskey = a->ma_table[i].me_key;
+		Py_INCREF(thiskey);  /* keep alive across compares */
+		if (akey != NULL) {
+			cmp = PyObject_RichCompareBool(akey, thiskey, Py_LT);
+			if (cmp < 0) {
+				Py_DECREF(thiskey);
+				goto Fail;
+			}
+			if (cmp > 0 ||
+			    i >= a->ma_size ||
+			    a->ma_table[i].me_value == NULL)
+			{
+				/* Not the *smallest* a key; or maybe it is
+				 * but the compare shrunk the dict so we can't
+				 * find its associated value anymore; or
+				 * maybe it is but the compare deleted the
+				 * a[thiskey] entry.
+				 */
+				Py_DECREF(thiskey);
 				continue;
 			}
-			aval = a->ma_table[i].me_value;
-			bval = PyDict_GetItem((PyObject *)b, key);
-			if (bval == NULL)
-				cmp = 0;
-			else {
-			    cmp = PyObject_RichCompareBool(aval, bval, Py_EQ);
-			    if (cmp < 0)
-				return NULL;
-			}
-			if (cmp == 0)
-			{
-				diff = key;
-				*pval = aval;
+		}
+
+		/* Compare a[thiskey] to b[thiskey]; cmp <- true iff equal. */
+		thisaval = a->ma_table[i].me_value;
+		assert(thisaval);
+		Py_INCREF(thisaval);   /* keep alive */
+		thisbval = PyDict_GetItem((PyObject *)b, thiskey);
+		if (thisbval == NULL)
+			cmp = 0;
+		else {
+			/* both dicts have thiskey:  same values? */
+			cmp = PyObject_RichCompareBool(
+						thisaval, thisbval, Py_EQ);
+			if (cmp < 0) {
+		    		Py_DECREF(thiskey);
+		    		Py_DECREF(thisaval);
+		    		goto Fail;
 			}
 		}
+		if (cmp == 0) {
+			/* New winner. */
+			Py_XDECREF(akey);
+			Py_XDECREF(aval);
+			akey = thiskey;
+			aval = thisaval;
+		}
+		else {
+			Py_DECREF(thiskey);
+			Py_DECREF(thisaval);
+		}
 	}
-	return diff;
+	*pval = aval;
+	return akey;
+
+Fail:
+	Py_XDECREF(akey);
+	Py_XDECREF(aval);
+	*pval = NULL;
+	return NULL;
 }
 
 static int
@@ -1031,19 +1071,40 @@ dict_compare(dictobject *a, dictobject *b)
 		return -1;	/* a is shorter */
 	else if (a->ma_used > b->ma_used)
 		return 1;	/* b is shorter */
+
 	/* Same length -- check all keys */
+	bdiff = bval = NULL;
 	adiff = characterize(a, b, &aval);
-	if (adiff == NULL && PyErr_Occurred())
-		return -1;
-	if (adiff == NULL)
-		return 0;	/* a is a subset with the same length */
+	if (adiff == NULL) {
+		assert(!aval);
+		/* Either an error, or a is a subst with the same length so
+		 * must be equal.
+		 */
+		res = PyErr_Occurred() ? -1 : 0;
+		goto Finished;
+	}
 	bdiff = characterize(b, a, &bval);
-	if (bdiff == NULL && PyErr_Occurred())
-		return -1;
-	/* bdiff == NULL would be impossible now */
-	res = PyObject_Compare(adiff, bdiff);
-	if (res == 0)
+	if (bdiff == NULL && PyErr_Occurred()) {
+		assert(!bval);
+		res = -1;
+		goto Finished;
+	}
+	res = 0;
+	if (bdiff) {
+		/* bdiff == NULL "should be" impossible now, but perhaps
+		 * the last comparison done by the characterize() on a had
+		 * the side effect of making the dicts equal!
+		 */
+		res = PyObject_Compare(adiff, bdiff);
+	}
+	if (res == 0 && bval != NULL)
 		res = PyObject_Compare(aval, bval);
+
+Finished:
+	Py_XDECREF(adiff);
+	Py_XDECREF(bdiff);
+	Py_XDECREF(aval);
+	Py_XDECREF(bval);
 	return res;
 }
 
