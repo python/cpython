@@ -108,6 +108,15 @@
                         <SETTING><NAME>Recursive</NAME><VALUE>true</VALUE></SETTING>
                         <SETTING><NAME>HostFlags</NAME><VALUE>All</VALUE></SETTING>
                     </SETTING>
+                    <SETTING>
+                        <SETTING><NAME>SearchPath</NAME>
+                            <SETTING><NAME>Path</NAME><VALUE>::::ICProgKit1.4:APIs</VALUE></SETTING>
+                            <SETTING><NAME>PathFormat</NAME><VALUE>MacOS</VALUE></SETTING>
+                            <SETTING><NAME>PathRoot</NAME><VALUE>Project</VALUE></SETTING>
+                        </SETTING>
+                        <SETTING><NAME>Recursive</NAME><VALUE>false</VALUE></SETTING>
+                        <SETTING><NAME>HostFlags</NAME><VALUE>All</VALUE></SETTING>
+                    </SETTING>
 
                     <SETTING>
                         <SETTING><NAME>SearchPath</NAME>
@@ -609,9 +618,9 @@
                 <SETTING><NAME>MWMerge_MacOS_copyResources</NAME><VALUE>1</VALUE></SETTING>
                 <SETTING><NAME>MWMerge_MacOS_skipResources</NAME>
                     <SETTING><VALUE></VALUE></SETTING>
-                    <SETTING><VALUE>Å¯É</VALUE></SETTING>
-                    <SETTING><VALUE>˛^h</VALUE></SETTING>
-                    <SETTING><VALUE>ãﬂ0</VALUE></SETTING>
+                    <SETTING><VALUE>™ø∞</VALUE></SETTING>
+                    <SETTING><VALUE>ﬂ^h</VALUE></SETTING>
+                    <SETTING><VALUE>—ß0</VALUE></SETTING>
                 </SETTING>
 
                 <!-- Settings for "PPC CodeGen" panel -->
