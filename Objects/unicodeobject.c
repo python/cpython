@@ -1016,13 +1016,13 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
         /* \OOO (octal) escapes */
         case '0': case '1': case '2': case '3':
         case '4': case '5': case '6': case '7':
-            c = s[-1] - '0';
+            x = s[-1] - '0';
             if ('0' <= *s && *s <= '7') {
-                c = (c<<3) + *s++ - '0';
+                x = (x<<3) + *s++ - '0';
                 if ('0' <= *s && *s <= '7')
-                    c = (c<<3) + *s++ - '0';
+                    x = (x<<3) + *s++ - '0';
             }
-            *p++ = c;
+            *p++ = x;
             break;
 
         /* \xXXXX escape with 0-4 hex digits */
