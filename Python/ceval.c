@@ -4086,10 +4086,22 @@ build_class(PyObject *methods, PyObject *bases, PyObject *name)
 		/* A type error here likely means that the user passed 
 		   in a base that was not a class (such the random module
 		   instead of the random.random type).  Help them out with
-		   a more informative error message */
-		PyErr_SetString(PyExc_TypeError,
-			"Error when calling the metaclass.\n" \
-			"Make sure the base arguments are valid.");
+		   by augmenting the error message with more information.*/
+
+		PyObject *ptype, *pvalue, *ptraceback;
+
+		PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+		if (PyString_Check(pvalue)) {
+			PyObject *newmsg;
+			newmsg = PyString_FromFormat(
+				"Error when calling the metaclass bases\n    %s",
+				PyString_AS_STRING(pvalue));
+			if (newmsg != NULL) {
+				Py_DECREF(pvalue);
+				pvalue = newmsg;
+			}
+		}
+		PyErr_Restore(ptype, pvalue, ptraceback);
 	}
 	return result;
 }
