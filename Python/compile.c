@@ -1309,7 +1309,7 @@ com_list_comprehension(struct compiling *c, node *n)
 {
 	/* listmaker: test list_for */
 	char tmpname[12];
-	sprintf(tmpname, "[%d]", ++c->c_tmpname);
+	sprintf(tmpname, "_[%d]", ++c->c_tmpname);
 	com_addoparg(c, BUILD_LIST, 0);
 	com_addbyte(c, DUP_TOP); /* leave the result on the stack */
 	com_push(c, 2);
@@ -4689,7 +4689,7 @@ symtable_list_comprehension(struct symtable *st, node *n)
 {
 	char tmpname[12];
 
-	sprintf(tmpname, "[%d]", ++st->st_tmpname);
+	sprintf(tmpname, "_[%d]", ++st->st_tmpname);
 	symtable_add_def(st, tmpname, DEF_LOCAL);
 	symtable_assign(st, CHILD(n, 1), 0);
 	symtable_node(st, CHILD(n, 3));
