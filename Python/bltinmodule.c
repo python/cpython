@@ -1116,11 +1116,12 @@ Update and return a dictionary containing the current scope's local variables.")
 static PyObject *
 min_max(PyObject *args, int op)
 {
+	const char *name = op == Py_LT ? "min" : "max";
 	PyObject *v, *w, *x, *it;
 
 	if (PyTuple_Size(args) > 1)
 		v = args;
-	else if (!PyArg_UnpackTuple(args, (op==Py_LT) ? "min" : "max", 1, 1, &v))
+	else if (!PyArg_UnpackTuple(args, (char *)name, 1, 1, &v))
 		return NULL;
 
 	it = PyObject_GetIter(v);
@@ -1158,8 +1159,8 @@ min_max(PyObject *args, int op)
 		}
 	}
 	if (w == NULL)
-		PyErr_SetString(PyExc_ValueError,
-				"min() or max() arg is an empty sequence");
+		PyErr_Format(PyExc_ValueError,
+			     "%s() arg is an empty sequence", name);
 	Py_DECREF(it);
 	return w;
 }
