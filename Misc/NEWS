@@ -3,6 +3,42 @@ What's New in Python 2.1 beta 1?
 
 Core language, builtins, and interpreter
 
+- Following an outcry from the community about the amount of code
+  broken by the nested scopes feature introduced in 2.1a2, we decided
+  to make this feature optional, and to wait until Python 2.2 (or at
+  least 6 months) to make it standard.  The option can be enabled on a
+  per-module basis by adding "from __future__ import nested_scopes" at
+  the beginning of a module (before any other statements, but after
+  comments and an optional docstring).  See PEP 236 (Back to the
+  __future__) for a description of the __future__ statement.  PEP 227
+  (Statically Nested Scopes) has been updated to reflect this change,
+  and to clarify the semantics in a number of endcases.
+
+- The nested scopes code, when enabled, has been hardened, and most
+  bugs and memory leaks in it have been fixed.
+
+- Compile-time warnings are now generated for a number of conditions
+  that will break or change in meaning when nested scopes are enabled:
+
+  - Using "from...import *" or "exec" without in-clause in a function
+    scope that also defines a lambda or nested function with one or
+    more free (non-local) variables.  The presence of the import* or
+    bare exec makes it impossible for the compiler to determine the
+    exact set of local variables in the outer scope, which makes it
+    impossible to determine the bindings for free variables in the
+    inner scope.  To avoid the warning about import *, change it into
+    an import of explicitly name object, or move the import* statement
+    to the global scope; to avoid the warning about bare exec, use
+    exec...in... (a good idea anyway -- there's a possibility that
+    bare exec will be deprecated in the future).
+
+  - Use of a global variable in a nested scope with the same name as a
+    local variable in a surrounding scope.  This will change in
+    meaning with nested scopes: the name in the inner scope will
+    reference the variable in the outer scope rather than the global
+    of the same name.  To avoid the warning, either rename the outer
+    variable, or use a global statement in the inner function.
+
 - An optional object allocator has been included.  This allocator is
   optimized for Python objects and should be faster and use less memory
   than the standard system allocator.  It is not enabled by default
