@@ -938,6 +938,9 @@ initossaudiodev(void)
 
     OSSAudioError = PyErr_NewException("ossaudiodev.OSSAudioError", NULL, NULL);
     if (OSSAudioError) {
+	/* Each call to PyModule_AddObject decrefs it; compensate: */
+	Py_INCREF(OSSAudioError);
+	Py_INCREF(OSSAudioError);
         PyModule_AddObject(m, "error", OSSAudioError);
         PyModule_AddObject(m, "OSSAudioError", OSSAudioError);
     }
