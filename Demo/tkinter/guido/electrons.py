@@ -5,14 +5,14 @@
 #
 # Usage: electrons [n [bitmapfile]]
 #
-# n is the number of electrons to animate; default is 4, maximum 15.
+# n is the number of electrons to animate; default is 30.
 #
 # The bitmap file can be any X11 bitmap file (look in
 # /usr/include/X11/bitmaps for samples); it is displayed as the
 # background of the animation.  Default is no bitmap.
 
-# This uses Steen Lumholt's Tk interface
 from Tkinter import *
+import random
 
 
 # The graphical interface
@@ -32,25 +32,23 @@ class Electrons:
 						      bitmap=bitmap,
 						      foreground='blue')
 
-		self.pieces = {}
+		self.pieces = []
 		x1, y1, x2, y2 = 10,70,14,74
-		for i in range(n,0,-1):
+		for i in range(n):
 			p = c.create_oval(x1, y1, x2, y2, fill='red')
-			self.pieces[i] = p
+			self.pieces.append(p)
 			y1, y2 = y1 +2, y2 + 2
 		self.tk.update()
 
-	def random_move(self,n):
-		import random
+	def random_move(self, n):
 		c = self.canvas
-		for i in range(1,n+1):
-			p = self.pieces[i]
+		for p in self.pieces:
 			x = random.choice(range(-2,4))
 			y = random.choice(range(-3,4))
 			c.move(p, x, y)
 		self.tk.update()
 
-	# Run -- never returns
+	# Run -- allow 500 movemens
 	def run(self):
 		try:
 			for i in range(500):
@@ -66,7 +64,7 @@ class Electrons:
 def main():
 	import sys, string
 
-	# First argument is number of pegs, default 4
+	# First argument is number of electrons, default 30
 	if sys.argv[1:]:
 		n = string.atoi(sys.argv[1])
 	else:
@@ -91,5 +89,3 @@ def main():
 # Call main when run as script
 if __name__ == '__main__':
 	main()
-
-
