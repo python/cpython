@@ -355,11 +355,11 @@ class CodeGenerator:
         self.set_lineno(node)
         self.emit('SETUP_LOOP', after)
         self.visit(node.list)
-        self.visit(ast.Const(0))
+        self.emit('GET_ITER')
+
         self.nextBlock(start)
         self.set_lineno(node, force=1)
-        self.emit('FOR_LOOP', anchor)
-        self.nextBlock()
+        self.emit('FOR_ITER', anchor)
         self.visit(node.assign)
         self.visit(node.body)
         self.emit('JUMP_ABSOLUTE', start)
@@ -567,7 +567,8 @@ class CodeGenerator:
                 self.nextBlock(next)
             else:
                 self.nextBlock()
-            self.emit('POP_TOP')
+            if expr: # XXX
+                self.emit('POP_TOP')
         self.emit('END_FINALLY')
         if node.else_:
             self.nextBlock(lElse)
@@ -1001,7 +1002,10 @@ class NestedScopeCodeGenerator(CodeGenerator):
             else:
                 self.emit(prefix + '_FAST', name)
         elif scope == SC_GLOBAL:
-            self.emit(prefix + '_GLOBAL', name)
+            if not self.optimized:
+                self.emit(prefix + '_NAME', name)
+            else:
+                self.emit(prefix + '_GLOBAL', name)
         elif scope == SC_FREE or scope == SC_CELL:
             self.emit(prefix + '_DEREF', name)
         else:
