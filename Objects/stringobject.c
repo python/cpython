@@ -233,8 +233,12 @@ static int
 stringcompare(a, b)
 	stringobject *a, *b;
 {
-	/* XXX should use memcmp on shortest size, then compare lengths */
-	return strcmp(a->ob_sval, b->ob_sval);
+	int len_a = a->ob_size, len_b = b->ob_size;
+	int min_len = (len_a < len_b) ? len_a : len_b;
+	int cmp = memcmp(a->ob_sval, b->ob_sval, min_len);
+	if (cmp != 0)
+		return cmp;
+	return (len_a < len_b) ? -1 : (len_a > len_b) ? 1 : 0;
 }
 
 static sequence_methods string_as_sequence = {
