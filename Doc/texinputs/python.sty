@@ -137,11 +137,11 @@
 % Set up abstract ways to get the normal and smaller font sizes that
 % work even in footnote context.
 \newif\ifpy@infootnote \py@infootnotefalse
-\let\py@oldfootnotetext\@footnotetext
-\def\@footnotetext#1{%
+\let\py@oldmakefntext\@makefntext
+\def\@makefntext#1{%
   \bgroup%
     \py@infootnotetrue
-    \py@oldfootnotetext{#1}%
+    \py@oldmakefntext{#1}%
   \egroup%
 }
 \def\py@defaultsize{%
