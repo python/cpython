@@ -511,7 +511,7 @@ class build_ext (Command):
         for source in sources:
             (base, ext) = os.path.splitext(source)
             if ext == ".i":             # SWIG interface file
-                new_sources.append(base + target_ext)
+                new_sources.append(base + '_wrap' + target_ext)
                 swig_sources.append(source)
                 swig_targets[source] = new_sources[-1]
             else:
@@ -521,7 +521,7 @@ class build_ext (Command):
             return new_sources
 
         swig = self.find_swig()
-        swig_cmd = [swig, "-python", "-dnone", "-ISWIG"]
+        swig_cmd = [swig, "-python"]
         if self.swig_cpp:
             swig_cmd.append("-c++")
 
