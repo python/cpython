@@ -12,8 +12,8 @@ directories, with various optional time/correctness trade-offs.
 The \module{filecmp} module defines the following functions:
 
 \begin{funcdesc}{cmp}{f1, f2\optional{, shallow\optional{, use_statcache}}}
-Compare the files named \var{f1} and \var{f2}, returning \code{1} if
-they seem equal, \code{0} otherwise.
+Compare the files named \var{f1} and \var{f2}, returning \code{True} if
+they seem equal, \code{False} otherwise.
 
 Unless \var{shallow} is given and is false, files with identical
 \function{os.stat()} signatures are taken to be equal.  If
@@ -51,9 +51,9 @@ Example:
 \begin{verbatim}
 >>> import filecmp
 >>> filecmp.cmp('libundoc.tex', 'libundoc.tex')
-1
+True
 >>> filecmp.cmp('libundoc.tex', 'lib.tex')
-0
+False
 \end{verbatim}
 
 
