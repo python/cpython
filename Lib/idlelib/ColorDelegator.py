@@ -4,7 +4,7 @@ import re
 import keyword
 from Tkinter import *
 from Delegator import Delegator
-from IdleConf import idleconf
+from configHandler import idleConf
 
 #$ event <<toggle-auto-coloring>>
 #$ win <Control-slash>
@@ -53,19 +53,21 @@ class ColorDelegator(Delegator):
                 apply(self.tag_configure, (tag,), cnf)
         self.tag_raise('sel')
 
-    cconf = idleconf.getsection('Colors')
+    theme = idleConf.GetOption('main','Theme','name')
 
     tagdefs = {
-        "COMMENT": cconf.getcolor("comment"),
-        "KEYWORD": cconf.getcolor("keyword"),
-        "STRING": cconf.getcolor("string"),
-        "DEFINITION": cconf.getcolor("definition"),
-        "SYNC": cconf.getcolor("sync"),
-        "TODO": cconf.getcolor("todo"),
-        "BREAK": cconf.getcolor("break"),
+        "COMMENT": idleConf.GetHighlight(theme, "comment"),
+        "KEYWORD": idleConf.GetHighlight(theme, "keyword"),
+        "STRING": idleConf.GetHighlight(theme, "string"),
+        "DEFINITION": idleConf.GetHighlight(theme, "definition"),
+        "SYNC": idleConf.GetHighlight(theme, "sync"),
+        "TODO": idleConf.GetHighlight(theme, "todo"),
+        "BREAK": idleConf.GetHighlight(theme, "break"),
         # The following is used by ReplaceDialog:
-        "hit": cconf.getcolor("hit"),
+        "hit": idleConf.GetHighlight(theme, "hit"),
         }
+    
+    print tagdefs
 
     def insert(self, index, chars, tags=None):
         index = self.index(index)

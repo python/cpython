@@ -112,16 +112,6 @@ class ConfigDialog(Toplevel):
             self.optMenuKeysCustom.config(state=NORMAL)
             self.buttonDeleteCustomKeys.config(state=NORMAL)
     
-    def SetFgBg(self):
-        if self.fgHilite.get()==0:
-            self.labelFontTypeTitle.config(state=DISABLED)
-            self.checkFontBold.config(state=DISABLED)
-            self.checkFontItalic.config(state=DISABLED)
-        elif self.fgHilite.get()==1:
-            self.labelFontTypeTitle.config(state=NORMAL)
-            self.checkFontBold.config(state=NORMAL)
-            self.checkFontItalic.config(state=NORMAL)
-    
     def GetColour(self):
         rgbTuplet, colourString = tkColorChooser.askcolor(parent=self,
                 title='Pick new colour for : '+self.highlightTarget.get(),
@@ -142,7 +132,7 @@ class ConfigDialog(Toplevel):
         self.editFont.config(size=self.fontSize.get(),weight=NORMAL,
             family=self.listFontName.get(self.listFontName.curselection()[0]))
 
-    def SetHighlightTargetBinding(self,event):
+    def SetHighlightTargetBinding(self,*args):
         self.SetHighlightTarget()
         
     def SetHighlightTarget(self):
@@ -151,19 +141,16 @@ class ConfigDialog(Toplevel):
             self.radioFg.config(state=DISABLED)
             self.radioBg.config(state=DISABLED)
             self.fgHilite.set(0)
-            self.SetFgBg()
         elif self.highlightTarget.get() in ('Shell Foreground',
                 'Shell Stdout Foreground','Shell Stderr Foreground'):
             #fg and font style selection possible
             self.radioFg.config(state=DISABLED)
             self.radioBg.config(state=DISABLED)
             self.fgHilite.set(1)
-            self.SetFgBg()
         else: #full fg/bg and font style selection possible
             self.radioFg.config(state=NORMAL)
             self.radioBg.config(state=NORMAL)
             self.fgHilite.set(1) #default to setting foreground properties
-            self.SetFgBg()
     
     def CreateWidgets(self):
         self.framePages = Frame(self)
@@ -216,6 +203,7 @@ class ConfigDialog(Toplevel):
     def CreatePageFontTab(self):
         #tkVars
         self.fontSize=StringVar()
+        self.fontBold=StringVar()
         self.spaceNum=IntVar()
         self.tabCols=IntVar()
         self.indentType=IntVar() 
@@ -229,7 +217,7 @@ class ConfigDialog(Toplevel):
         #frameFont
         labelFontTitle=Label(frameFont,text='Set Base Editor Font')
         frameFontName=Frame(frameFont)
-        frameFontSize=Frame(frameFontName)
+        frameFontParam=Frame(frameFont)
         labelFontNameTitle=Label(frameFontName,justify=LEFT,
                 text='Font :')
         self.listFontName=Listbox(frameFontName,height=5,takefocus=FALSE,
@@ -238,9 +226,11 @@ class ConfigDialog(Toplevel):
         scrollFont=Scrollbar(frameFontName)
         scrollFont.config(command=self.listFontName.yview)
         self.listFontName.config(yscrollcommand=scrollFont.set)
-        labelFontSizeTitle=Label(frameFontSize,text='Size :')
-        self.optMenuFontSize=DynOptionMenu(frameFontSize,self.fontSize,None,
+        labelFontSizeTitle=Label(frameFontParam,text='Size :')
+        self.optMenuFontSize=DynOptionMenu(frameFontParam,self.fontSize,None,
             command=self.SetFontSampleBinding)
+        checkFontBold=Checkbutton(frameFontParam,variable=self.fontBold,
+            onvalue='Bold',offvalue='',text='Bold')
         frameFontSample=Frame(frameFont,relief=SOLID,borderwidth=1)
         self.labelFontSample=Label(frameFontSample,
                 text='AaBbCcDdEe\nFfGgHhIiJjK\n1234567890\n#:+=(){}[]',
@@ -265,20 +255,20 @@ class ConfigDialog(Toplevel):
                 text='when tab key inserts tabs,\ncolumns per tab')
         self.scaleTabCols=Scale(frameIndentSize,variable=self.tabCols,
                 orient='horizontal',tickinterval=2,from_=2,to=8)
-        
         #widget packing
         #body
         frameFont.pack(side=LEFT,padx=5,pady=10,expand=TRUE,fill=BOTH)
         frameIndent.pack(side=LEFT,padx=5,pady=10,fill=Y)
         #frameFont
         labelFontTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
-        frameFontName.pack(side=TOP,padx=5,pady=5)
-        frameFontSize.pack(side=RIGHT,anchor=N,fill=X)
+        frameFontName.pack(side=TOP,padx=5,pady=5,fill=X)
+        frameFontParam.pack(side=TOP,padx=5,pady=5,fill=X)
         labelFontNameTitle.pack(side=TOP,anchor=W)
-        self.listFontName.pack(side=LEFT,fill=Y)
+        self.listFontName.pack(side=LEFT,expand=TRUE,fill=X)
         scrollFont.pack(side=LEFT,fill=Y)
-        labelFontSizeTitle.pack(side=TOP,anchor=W)
-        self.optMenuFontSize.pack(side=TOP,anchor=W,fill=X)
+        labelFontSizeTitle.pack(side=LEFT,anchor=W)
+        self.optMenuFontSize.pack(side=LEFT,anchor=W)
+        checkFontBold.pack(side=LEFT,anchor=W,padx=20)
         frameFontSample.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=BOTH)
         self.labelFontSample.pack(expand=TRUE,fill=BOTH)
         #frameIndent
@@ -296,16 +286,14 @@ class ConfigDialog(Toplevel):
         return frame
 
     def CreatePageHighlight(self):
-        #tkVars
-        self.highlightTarget=StringVar()
         self.builtinTheme=StringVar()
         self.customTheme=StringVar()
         self.fgHilite=IntVar()
         self.colour=StringVar()
         self.fontName=StringVar()
-        self.fontBold=StringVar()
-        self.fontItalic=StringVar()
         self.themeType=IntVar() 
+        self.highlightTarget=StringVar()
+        self.highlightTarget.trace_variable('w',self.SetHighlightTargetBinding)
         ##widget creation
         #body frame
         frame=Frame(self.framePages,borderwidth=2,relief=RAISED)
@@ -313,39 +301,96 @@ class ConfigDialog(Toplevel):
         frameCustom=Frame(frame,borderwidth=2,relief=GROOVE)
         frameTheme=Frame(frame,borderwidth=2,relief=GROOVE)
         #frameCustom
-        self.frameHighlightTarget=Frame(frameCustom)
-        self.frameHighlightSample=Frame(frameCustom,relief=SOLID,
-                borderwidth=1,cursor='hand2')
-        frameSet=Frame(frameCustom)
-        self.frameColourSet=Frame(frameSet,relief=SOLID,borderwidth=1)
+        self.textHighlightSample=Text(frameCustom,relief=SOLID,borderwidth=1,
+            font=('courier',12,''),cursor='hand2',width=10,height=10,
+            takefocus=FALSE,highlightthickness=0)
+        text=self.textHighlightSample
+        text.bind('<Double-Button-1>',lambda e: 'break')
+        text.bind('<B1-Motion>',lambda e: 'break')
+        text.insert(END,'#you can click in here','comment')
+        text.insert(END,'\n')
+        text.insert(END,'#to choose items','comment')
+        text.insert(END,'\n')
+        text.insert(END,'def','keyword')
+        text.insert(END,' ')
+        text.insert(END,'func','definition')
+        text.insert(END,'(param):')
+        text.insert(END,'\n  ')
+        text.insert(END,'"""string"""','string')
+        text.insert(END,'\n  var0 = ')
+        text.insert(END,"'string'",'string')
+        text.insert(END,'\n  var1 = ')
+        text.insert(END,"'selected'",'selected')
+        text.insert(END,'\n  var2 = ')
+        text.insert(END,"'found'",'found')
+        text.insert(END,'\n\n')
+        text.insert(END,' error ','error')
+        text.insert(END,'cursor |','cursor')
+        text.insert(END,'\n ')
+        text.insert(END,'shell','shell')
+        text.insert(END,' ')
+        text.insert(END,'stdout','shellstdout')
+        text.insert(END,' ')
+        text.insert(END,'stderr','shellstderr')
+        text.tag_add('normal',1.0,END)
+        text.tag_lower('normal')
+        text.tag_bind('normal','<ButtonPress-1>',
+            lambda e: e.widget.winfo_toplevel().highlightTarget.set(
+            'Normal Text'))
+        text.tag_bind('comment','<ButtonPress-1>',
+            lambda e: e.widget.winfo_toplevel().highlightTarget.set(
+            'Python Comments'))
+        text.tag_bind('keyword','<ButtonPress-1>',
+            lambda e: e.widget.winfo_toplevel().highlightTarget.set(
+            'Python Keywords'))
+        text.tag_bind('definition','<ButtonPress-1>',
+            lambda e: e.widget.winfo_toplevel().highlightTarget.set(
+            'Python Definitions'))
+        text.tag_bind('string','<ButtonPress-1>',
+            lambda e: e.widget.winfo_toplevel().highlightTarget.set(
+            'Python Strings'))
+        text.tag_bind('selected','<ButtonPress-1>',
+            lambda e: e.widget.winfo_toplevel().highlightTarget.set(
+            'Selected Text'))
+        text.tag_bind('found','<ButtonPress-1>',
+            lambda e: e.widget.winfo_toplevel().highlightTarget.set(
+            'Found Text'))
+        text.tag_bind('error','<ButtonPress-1>',
+            lambda e: e.widget.winfo_toplevel().highlightTarget.set(
+            'Error Background'))
+        text.tag_bind('cursor','<ButtonPress-1>',
+            lambda e: e.widget.winfo_toplevel().highlightTarget.set(
+            'Cursor'))
+        text.tag_bind('shell','<ButtonPress-1>',
+            lambda e: e.widget.winfo_toplevel().highlightTarget.set(
+            'Shell Foreground'))
+        text.tag_bind('shellstdout','<ButtonPress-1>',
+            lambda e: e.widget.winfo_toplevel().highlightTarget.set(
+            'Shell Stdout Foreground'))
+        text.tag_bind('shellstderr','<ButtonPress-1>',
+            lambda e: e.widget.winfo_toplevel().highlightTarget.set(
+            'Shell Stderr Foreground'))
+        text.config(state=DISABLED)
+        self.frameColourSet=Frame(frameCustom,relief=SOLID,borderwidth=1)
         frameFgBg=Frame(frameCustom)
-        frameFontSet=Frame(frameSet)
         labelCustomTitle=Label(frameCustom,text='Set Custom Highlighting')
-        labelTargetTitle=Label(self.frameHighlightTarget,text='for : ')
-        self.optMenuHighlightTarget=DynOptionMenu(self.frameHighlightTarget,
-            self.highlightTarget,None,command=self.SetHighlightTargetBinding)
+        buttonSetColour=Button(self.frameColourSet,text='Choose Colour for :',
+            command=self.GetColour)
+        self.optMenuHighlightTarget=DynOptionMenu(self.frameColourSet,
+            self.highlightTarget,None)#,command=self.SetHighlightTargetBinding
         self.radioFg=Radiobutton(frameFgBg,variable=self.fgHilite,
-            value=1,command=self.SetFgBg,text='Foreground')
+            value=1,text='Foreground')#,command=self.SetFgBg
         self.radioBg=Radiobutton(frameFgBg,variable=self.fgHilite,
-            value=0,command=self.SetFgBg,text='Background')
+            value=0,text='Background')#,command=self.SetFgBg
         self.fgHilite.set(1)
-        buttonSetColour=Button(self.frameColourSet,text='Choose Colour',
-                command=self.GetColour)
-        self.labelFontTypeTitle=Label(frameFontSet,text='Font Style :')
-        self.checkFontBold=Checkbutton(frameFontSet,variable=self.fontBold,
-            onvalue='Bold',offvalue='',text='Bold')
-        self.checkFontItalic=Checkbutton(frameFontSet,variable=self.fontItalic,
-            onvalue='Italic',offvalue='',text='Italic')
-        self.labelTestSample=Label(self.frameHighlightSample,justify=LEFT,font=('courier',12,''),
-            text='#when finished, this\n#sample area will\n#be interactive\n'+
-            'def Ahem(foo,bar):\n    '+
-            '"""'+'doc hazard'+'"""'+
-            '\n    test=foo\n    text=bar\n    return')        
+        #self.labelFontTypeTitle=Label(frameFontSet,text='Font Style :')
+        #self.checkFontBold=Checkbutton(frameFontSet,variable=self.fontBold,
+        #    onvalue='Bold',offvalue='',text='Bold')
+        #self.checkFontItalic=Checkbutton(frameFontSet,variable=self.fontItalic,
+        #    onvalue='Italic',offvalue='',text='Italic')
         buttonSaveCustomTheme=Button(frameCustom, 
             text='Save as a Custom Theme')
         #frameTheme
-        #frameDivider=Frame(frameTheme,relief=SUNKEN,borderwidth=1,
-        #    width=2,height=10)
         labelThemeTitle=Label(frameTheme,text='Select a Highlighting Theme')
         labelTypeTitle=Label(frameTheme,text='Select : ')
         self.radioThemeBuiltin=Radiobutton(frameTheme,variable=self.themeType,
@@ -356,33 +401,23 @@ class ConfigDialog(Toplevel):
             self.builtinTheme,None,command=None)
         self.optMenuThemeCustom=DynOptionMenu(frameTheme,
             self.customTheme,None,command=None)
- #       self.themeType.set(0)
         self.buttonDeleteCustomTheme=Button(frameTheme,text='Delete Custom Theme')
- #       self.SetThemeType()
         ##widget packing
         #body
         frameCustom.pack(side=LEFT,padx=5,pady=10,expand=TRUE,fill=BOTH)
         frameTheme.pack(side=LEFT,padx=5,pady=10,fill=Y)
         #frameCustom
         labelCustomTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
-        self.frameHighlightTarget.pack(side=TOP,padx=5,pady=5,fill=X)
+        self.frameColourSet.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=X)
         frameFgBg.pack(side=TOP,padx=5,pady=0)
-        self.frameHighlightSample.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=BOTH)
-        frameSet.pack(side=TOP,fill=X)
-        self.frameColourSet.pack(side=LEFT,padx=5,pady=5,fill=BOTH)
-        frameFontSet.pack(side=RIGHT,padx=5,pady=5,anchor=W)
-        labelTargetTitle.pack(side=LEFT,anchor=E)
-        self.optMenuHighlightTarget.pack(side=RIGHT,anchor=W,expand=TRUE,fill=X)
+        self.textHighlightSample.pack(side=TOP,padx=5,pady=5,expand=TRUE,
+            fill=BOTH)
+        buttonSetColour.pack(side=TOP,expand=TRUE,fill=X,padx=5,pady=3)
+        self.optMenuHighlightTarget.pack(side=TOP,expand=TRUE,fill=X,padx=5,pady=3)
         self.radioFg.pack(side=LEFT,anchor=E)
         self.radioBg.pack(side=RIGHT,anchor=W)
-        buttonSetColour.pack(expand=TRUE,fill=BOTH,padx=10,pady=10)
-        self.labelFontTypeTitle.pack(side=TOP,anchor=W)
-        self.checkFontBold.pack(side=LEFT,anchor=W,pady=2)
-        self.checkFontItalic.pack(side=RIGHT,anchor=W)
-        self.labelTestSample.pack(anchor=CENTER,expand=TRUE,fill=BOTH)
         buttonSaveCustomTheme.pack(side=BOTTOM,fill=X,padx=5,pady=5)        
         #frameTheme
-        #frameDivider.pack(side=LEFT,fill=Y,padx=5,pady=5)
         labelThemeTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
         labelTypeTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
         self.radioThemeBuiltin.pack(side=TOP,anchor=W,padx=5)
@@ -600,7 +635,7 @@ class ConfigDialog(Toplevel):
         ##load theme element option menu
         elements=('Normal Text','Python Keywords','Python Definitions',
                 'Python Comments','Python Strings','Selected Text',
-                'Search Hits','Cursor','Error Background','Shell Foreground',
+                'Found Text','Cursor','Error Background','Shell Foreground',
                 'Shell Stdout Foreground','Shell Stderr Foreground')
         self.optMenuHighlightTarget.SetMenu(elements,elements[0])   
     
