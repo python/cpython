@@ -24,8 +24,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Socket module */
 
-/* XXX Ought to fix getStr*arg calls to use getargs(args, "s#", ...) */
-
 /*
 This module provides an interface to Berkeley socket IPC.
 
@@ -72,6 +70,7 @@ Socket methods:
 
 #include "allobjects.h"
 #include "modsupport.h"
+#include "ceval.h"
 
 #include "myselect.h" /* Implies <sys/types.h>, <sys/time.h>, <sys/param.h> */
 
@@ -171,7 +170,9 @@ setipaddr(name, addr_ret)
 			((long) d3 << 8) | ((long) d4 << 0));
 		return 4;
 	}
+	BGN_SAVE
 	hp = gethostbyname(name);
+	END_SAVE
 	if (hp == NULL) {
 		err_setstr(SocketError, "host not found");
 		return -1;
@@ -256,16 +257,16 @@ getsockaddrarg(s, args, addr_ret, len_ret)
 	case AF_UNIX:
 	{
 		static struct sockaddr_un addr;
-		object *path;
+		char *path;
 		int len;
-		if (!getStrarg(args, &path))
+		if (!getargs(args, "s#", &path, &len))
 			return 0;
-		if ((len = getstringsize(path)) > sizeof addr.sun_path) {
+		if (len > sizeof addr.sun_path) {
 			err_setstr(SocketError, "AF_UNIX path too long");
 			return 0;
 		}
 		addr.sun_family = AF_UNIX;
-		memcpy(addr.sun_path, getstringvalue(path), len);
+		memcpy(addr.sun_path, path, len);
 		*addr_ret = (struct sockaddr *) &addr;
 		*len_ret = len + sizeof addr.sun_family;
 		return 1;
@@ -274,11 +275,11 @@ getsockaddrarg(s, args, addr_ret, len_ret)
 	case AF_INET:
 	{
 		static struct sockaddr_in addr;
-		object *host;
+		char *host;
 		int port;
-		if (!getStrintarg(args, &host, &port))
+		if (!getargs(args, "(si)", &host, &port))
 			return 0;
-		if (setipaddr(getstringvalue(host), &addr) < 0)
+		if (setipaddr(host, &addr) < 0)
 			return 0;
 		addr.sin_family = AF_INET;
 		addr.sin_port = htons(port);
@@ -344,7 +345,9 @@ sock_accept(s, args)
 		return NULL;
 	if (!getsockaddrlen(s, &addrlen))
 		return NULL;
+	BGN_SAVE
 	newfd = accept(s->sock_fd, (struct sockaddr *) addrbuf, &addrlen);
+	END_SAVE
 	if (newfd < 0)
 		return socket_error();
 	/* Create the new object with unspecified family,
@@ -370,7 +373,7 @@ sock_allowbroadcast(s, args)
 {
 	int flag;
 	int res;
-	if (!getintarg(args, &flag))
+	if (!getargs(args, "i", &flag))
 		return NULL;
 	res = setsockopt(s->sock_fd, SOL_SOCKET, SO_BROADCAST,
 			 &flag, sizeof flag);
@@ -461,9 +464,13 @@ sock_bind(s, args)
 {
 	struct sockaddr *addr;
 	int addrlen;
+	int res;
 	if (!getsockaddrarg(s, args, &addr, &addrlen))
 		return NULL;
-	if (bind(s->sock_fd, addr, addrlen) < 0)
+	BGN_SAVE
+	res = bind(s->sock_fd, addr, addrlen);
+	END_SAVE
+	if (res < 0)
 		return socket_error();
 	INCREF(None);
 	return None;
@@ -481,7 +488,9 @@ sock_close(s, args)
 {
 	if (!getnoarg(args))
 		return NULL;
+	BGN_SAVE
 	(void) close(s->sock_fd);
+	END_SAVE
 	s->sock_fd = -1;
 	INCREF(None);
 	return None;
@@ -497,9 +506,13 @@ sock_connect(s, args)
 {
 	struct sockaddr *addr;
 	int addrlen;
+	int res;
 	if (!getsockaddrarg(s, args, &addr, &addrlen))
 		return NULL;
-	if (connect(s->sock_fd, addr, addrlen) < 0)
+	BGN_SAVE
+	res = connect(s->sock_fd, addr, addrlen);
+	END_SAVE
+	if (res < 0)
 		return socket_error();
 	INCREF(None);
 	return None;
@@ -527,9 +540,13 @@ sock_listen(s, args)
 	object *args;
 {
 	int backlog;
+	int res;
 	if (!getintarg(args, &backlog))
 		return NULL;
-	if (listen(s->sock_fd, backlog) < 0)
+	BGN_SAVE
+	res = listen(s->sock_fd, backlog);
+	END_SAVE
+	if (res < 0)
 		return socket_error();
 	INCREF(None);
 	return None;
@@ -549,15 +566,15 @@ sock_makefile(s, args)
 	object *args;
 {
 	extern int fclose PROTO((FILE *));
-	object *mode;
+	char *mode;
 	int fd;
 	FILE *fp;
-	if (!getStrarg(args, &mode))
+	if (!getargs(args, "s", &mode))
 		return NULL;
 	if ((fd = dup(s->sock_fd)) < 0 ||
-	    (fp = fdopen(fd, getstringvalue(mode))) == NULL)
+	    (fp = fdopen(fd, mode)) == NULL)
 		return socket_error();
-	return newopenfileobject(fp, "<socket>", getstringvalue(mode), fclose);
+	return newopenfileobject(fp, "<socket>", mode, fclose);
 }
 
 
@@ -579,7 +596,9 @@ sock_recv(s, args)
 	buf = newsizedstringobject((char *) 0, len);
 	if (buf == NULL)
 		return NULL;
+	BGN_SAVE
 	n = recv(s->sock_fd, getstringvalue(buf), len, flags);
+	END_SAVE
 	if (n < 0)
 		return socket_error();
 	if (resizestring(&buf, n) < 0)
@@ -600,10 +619,13 @@ sock_recvfrom(s, args)
 	int addrlen, len, n;
 	if (!getintarg(args, &len))
 		return NULL;
+	if (!getsockaddrlen(s, &addrlen))
+		return NULL;
 	buf = newsizedstringobject((char *) 0, len);
-	addrlen = sizeof addrbuf;
+	BGN_SAVE
 	n = recvfrom(s->sock_fd, getstringvalue(buf), len, 0,
 		     addrbuf, &addrlen);
+	END_SAVE
 	if (n < 0)
 		return socket_error();
 	if (resizestring(&buf, n) < 0)
@@ -620,16 +642,17 @@ sock_send(s, args)
 	sockobject *s;
 	object *args;
 {
-	object *buf;
+	char *buf;
 	int len, n, flags;
-	if (!getStrintarg(args, &buf, &flags)) {
+	if (!getargs(args, "(s#i)", &buf, &len, &flags)) {
 		err_clear();
-		if (!getStrarg(args, &buf))
+		if (!getargs(args, "s#", &buf, &len))
 			return NULL;
 		flags = 0;
 	}
-	len = getstringsize(buf);
-	n = send(s->sock_fd, getstringvalue(buf), len, flags);
+	BGN_SAVE
+	n = send(s->sock_fd, buf, len, flags);
+	END_SAVE
 	if (n < 0)
 		return socket_error();
 	INCREF(None);
@@ -644,19 +667,20 @@ sock_sendto(s, args)
 	sockobject *s;
 	object *args;
 {
-	object *buf;
+	object *addro;
+	char *buf;
 	struct sockaddr *addr;
 	int addrlen, len, n;
 	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 2) {
 		err_badarg();
 		return NULL;
 	}
-	if (!getStrarg(gettupleitem(args, 0), &buf) ||
-	    !getsockaddrarg(s, gettupleitem(args, 1), &addr, &addrlen))
+	if (!getargs(args, "(s#O)", &buf, &len, &addro) ||
+	    !getsockaddrarg(s, addro, &addr, &addrlen))
 		return NULL;
-	len = getstringsize(buf);
-	n = sendto(s->sock_fd, getstringvalue(buf), len, 0,
-		   addr, addrlen);
+	BGN_SAVE
+	n = sendto(s->sock_fd, buf, len, 0, addr, addrlen);
+	END_SAVE
 	if (n < 0)
 		return socket_error();
 	INCREF(None);
@@ -672,9 +696,13 @@ sock_shutdown(s, args)
 	object *args;
 {
 	int how;
+	int res;
 	if (!getintarg(args, &how))
 		return NULL;
-	if (shutdown(s->sock_fd, how) < 0)
+	BGN_SAVE
+	res = shutdown(s->sock_fd, how);
+	END_SAVE
+	if (res < 0)
 		return socket_error();
 	INCREF(None);
 	return None;
@@ -758,13 +786,19 @@ socket_gethostname(self, args)
 	object *args;
 {
 	char buf[1024];
+	int res;
 	if (!getnoarg(args))
 		return NULL;
-	if (gethostname(buf, (int) sizeof buf - 1) < 0)
+	BGN_SAVE
+	res = gethostname(buf, (int) sizeof buf - 1);
+	END_SAVE
+	if (res < 0)
 		return socket_error();
 	buf[sizeof buf - 1] = '\0';
 	return newstringobject(buf);
 }
+
+
 /* Python interface to gethostbyname(name). */
 
 /*ARGSUSED*/
@@ -775,9 +809,9 @@ socket_gethostbyname(self, args)
 {
 	object *name;
 	struct sockaddr_in addrbuf;
-	if (!getStrarg(args, &name))
+	if (!getargs(args, "s", &name))
 		return NULL;
-	if (setipaddr(getstringvalue(name), &addrbuf) < 0)
+	if (setipaddr(name, &addrbuf) < 0)
 		return NULL;
 	return makeipaddr(&addrbuf);
 }
@@ -793,11 +827,13 @@ socket_getservbyname(self, args)
 	object *self;
 	object *args;
 {
-	object *name, *proto;
+	char *name, *proto;
 	struct servent *sp;
-	if (!getStrStrarg(args, &name, &proto))
+	if (!getargs(args, "(ss)", &name, &proto))
 		return NULL;
-	sp = getservbyname(getstringvalue(name), getstringvalue(proto));
+	BGN_SAVE
+	sp = getservbyname(name, proto);
+	END_SAVE
 	if (sp == NULL) {
 		err_setstr(SocketError, "service/proto not found");
 		return NULL;
@@ -827,7 +863,9 @@ socket_socket(self, args)
 			return NULL;
 		proto = 0;
 	}
+	BGN_SAVE
 	fd = socket(family, type, proto);
+	END_SAVE
 	if (fd < 0)
 		return socket_error();
 	s = newsockobject(fd, family, type, proto);

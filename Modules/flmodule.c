@@ -35,9 +35,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "import.h"
 #include "modsupport.h"
 #include "structmember.h"
-
-/* #include "ceval.h" */
-extern object *call_object(object *, object *);
+#include "ceval.h"
 
 /* Generic Forms Objects */
 

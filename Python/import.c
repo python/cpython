@@ -35,7 +35,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pythonrun.h"
 #include "marshal.h"
 #include "compile.h"
-#include "ceval.h"
+#include "eval.h"
 #include "osdefs.h"
 
 extern int verbose; /* Defined in pythonmain.c */

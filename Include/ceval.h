@@ -22,10 +22,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* Interface to execute compiled code */
-/* This header depends on "compile.h" */
-
-object *eval_code PROTO((codeobject *, object *, object *, object *));
+/* Interface to random parts in ceval.c */
 
 object *call_object PROTO((object *, object *));
 
@@ -34,3 +31,70 @@ object *getlocals PROTO((void));
 
 void printtraceback PROTO((FILE *));
 void flushline PROTO((void));
+
+
+/* Interface for threads.
+
+   A module that plans to do a blocking system call (or something else
+   that lasts a long time and doesn't touch Python data) can allow other
+   threads to run as follows:
+
+	...preparations here...
+	BGN_SAVE
+	...blocking system call here...
+	END_SAVE
+	...interpretr result here...
+
+   The BGN_SAVE/END_SAVE pair expands to a {}-surrounded block.
+   To leave the block in the middle (e.g., with return), you must insert
+   a line containing RET_SAVE before the return, e.g.
+
+	if (...premature_exit...) {
+		RET_SAVE
+		err_errno(IOError);
+		return NULL;
+	}
+
+   An alternative is:
+
+	RET_SAVE
+	if (...premature_exit...) {
+		err_errno(IOError);
+		return NULL;
+	}
+	RES_SAVE
+
+   For convenience, that the value of 'errno' is restored across
+   END_SAVE and RET_SAVE.
+
+   WARNING: NEVER NEST CALLS TO BGN_SAVE AND END_SAVE!!!
+
+   The function init_save_thread() should be called only from
+   initthread() in "threadmodule.c".
+
+   Note that not yet all candidates have been converted to use this
+   mechanism!
+*/
+
+extern void init_save_thread PROTO((void));
+extern void *save_thread PROTO((void));
+extern void restore_thread PROTO((void *));
+
+#ifdef USE_THREAD
+
+#define BGN_SAVE { \
+			void *_save; \
+			_save = save_thread();
+#define RET_SAVE	restore_thread(_save);
+#define RES_SAVE	_save = save_thread();
+#define END_SAVE	restore_thread(_save); \
+		 }
+
+#else /* !USE_THREAD */
+
+#define BGN_SAVE {
+#define RET_SAVE
+#define RES_SAVE
+#define END_SAVE }
+
+#endif /* !USE_THREAD */

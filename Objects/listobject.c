@@ -26,8 +26,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 #include "modsupport.h"
-#include "compile.h" /* Needed by ceval.h */
-#include "ceval.h" /* For call_object() */
+#include "ceval.h"
 
 object *
 newlistobject(size)

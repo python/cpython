@@ -17,7 +17,7 @@ static int exiting;
 #include <lwp/lwp.h>
 #include <lwp/stackdep.h>
 
-#define STACKSIZE	1000	/* stacksize for a thread */
+#define STACKSIZE	16000	/* stacksize for a thread */
 #define NSTACKS		2	/* # stacks to be put in cache initialy */
 
 struct lock {
@@ -90,7 +90,7 @@ void exit_thread _P0()
 		exit(0);
 #ifdef __sgi
 	exiting = 1;
-	exit(0);
+	_exit(0);
 #endif
 #ifdef SOLARIS
 	thread_exit();
@@ -113,7 +113,7 @@ static void exit_sig _P0()
 #ifdef DEBUG
 		printf("exiting in exit_sig\n");
 #endif
-		exit(exit_status);
+		_exit(exit_status);
 	}
 }
 #endif
@@ -255,7 +255,7 @@ void exit_prog _P1(status, int status)
 	exiting = 1;
 	do_exit = 1;
 	exit_status = status;
-	exit(status);
+	_exit(status);
 #endif
 #ifdef sun
 	pod_exit(status);

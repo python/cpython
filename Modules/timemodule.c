@@ -25,8 +25,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Time module */
 
 #include "allobjects.h"
-
 #include "modsupport.h"
+#include "ceval.h"
 
 #include "sigtype.h"
 
@@ -104,14 +104,13 @@ time_sleep(self, args)
 	object *self;
 	object *args;
 {
-	void *save, *save_thread(), restore_thread();
-	int secs;
+	long secs;
 	SIGTYPE (*sigsave)() = 0; /* Initialized to shut lint up */
-	if (!getintarg(args, &secs))
+	if (!getargs(args, "l", &secs))
 		return NULL;
-	save = save_thread();
+	BGN_SAVE
 	if (setjmp(sleep_intr)) {
-		restore_thread(save);
+		RET_SAVE
 		signal(SIGINT, sigsave);
 		err_set(KeyboardInterrupt);
 		return NULL;
@@ -119,8 +118,12 @@ time_sleep(self, args)
 	sigsave = signal(SIGINT, SIG_IGN);
 	if (sigsave != (SIGTYPE (*)()) SIG_IGN)
 		signal(SIGINT, sleep_catcher);
-	sleep(secs);
-	restore_thread(save);
+#ifdef BSD_TIME
+	longsleep(secs);
+#else
+	sleep((int)secs);
+#endif
+	END_SAVE
 	signal(SIGINT, sigsave);
 	INCREF(None);
 	return None;
@@ -151,14 +154,13 @@ time_millisleep(self, args)
 	object *self;
 	object *args;
 {
-	void *save, *save_thread(), restore_thread();
 	long msecs;
 	SIGTYPE (*sigsave)();
 	if (!getlongarg(args, &msecs))
 		return NULL;
-	save = save_thread();
+	BGN_SAVE
 	if (setjmp(sleep_intr)) {
-		restore_thread(save);
+		RET_SAVE
 		signal(SIGINT, sigsave);
 		err_set(KeyboardInterrupt);
 		return NULL;
@@ -167,7 +169,7 @@ time_millisleep(self, args)
 	if (sigsave != (SIGTYPE (*)()) SIG_IGN)
 		signal(SIGINT, sleep_catcher);
 	millisleep(msecs);
-	restore_thread(save);
+	END_SAVE
 	signal(SIGINT, sigsave);
 	INCREF(None);
 	return None;
@@ -249,12 +251,12 @@ inittime()
 #define MacTicks	(* (long *)0x16A)
 
 #ifdef THINK_C_3_0
-sleep(msecs)
-	int msecs;
+sleep(secs)
+	int secs;
 {
 	register long deadline;
 	
-	deadline = MacTicks + msecs * 60;
+	deadline = MacTicks + mecs * 60;
 	while (MacTicks < deadline) {
 		if (intrcheck())
 			sleep_catcher(SIGINT);
@@ -295,7 +297,6 @@ millitimer()
 	if (gettimeofday(&t, &tz) != 0)
 		return -1;
 	return t.tv_sec*1000 + t.tv_usec/1000;
-	
 }
 
 millisleep(msecs)
@@ -304,6 +305,15 @@ millisleep(msecs)
 	struct timeval t;
 	t.tv_sec = msecs/1000;
 	t.tv_usec = (msecs%1000)*1000;
+	(void) select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t);
+}
+
+longsleep(secs)
+	long secs;
+{
+	struct timeval t;
+	t.tv_sec = secs;
+	t.tv_usec = 0;
 	(void) select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t);
 }
 
