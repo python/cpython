@@ -79,4 +79,4 @@ def isdir(path):
         st = stat(path)
     except _os.error:
         return False
-    return S_ISDIR(st[ST_MODE])
+    return S_ISDIR(st.st_mode)

@@ -136,18 +136,15 @@ def commonprefix(m):
 
 def getsize(filename):
     """Return the size of a file, reported by os.stat()."""
-    st = os.stat(filename)
-    return st[stat.ST_SIZE]
+    return os.stat(filename).st_size
 
 def getmtime(filename):
     """Return the last modification time of a file, reported by os.stat()."""
-    st = os.stat(filename)
-    return st[stat.ST_MTIME]
+    return os.stat(filename).st_mtime
 
 def getatime(filename):
     """Return the last access time of a file, reported by os.stat()."""
-    st = os.stat(filename)
-    return st[stat.ST_ATIME]
+    return os.stat(filename).st_atime
 
 
 # Is a path a symbolic link?
@@ -159,7 +156,7 @@ def islink(path):
         st = os.lstat(path)
     except (os.error, AttributeError):
         return False
-    return stat.S_ISLNK(st[stat.ST_MODE])
+    return stat.S_ISLNK(st.st_mode)
 
 
 # Does a path exist?
@@ -184,7 +181,7 @@ def isdir(path):
         st = os.stat(path)
     except os.error:
         return False
-    return stat.S_ISDIR(st[stat.ST_MODE])
+    return stat.S_ISDIR(st.st_mode)
 
 
 # Is a path a regular file?
@@ -197,7 +194,7 @@ def isfile(path):
         st = os.stat(path)
     except os.error:
         return False
-    return stat.S_ISREG(st[stat.ST_MODE])
+    return stat.S_ISREG(st.st_mode)
 
 
 # Are two filenames really pointing to the same file?
@@ -224,8 +221,8 @@ def sameopenfile(fp1, fp2):
 
 def samestat(s1, s2):
     """Test whether two stat buffers reference the same file"""
-    return s1[stat.ST_INO] == s2[stat.ST_INO] and \
-           s1[stat.ST_DEV] == s2[stat.ST_DEV]
+    return s1.st_ino == s2.st_ino and \
+           s1.st_dev == s2.st_dev
 
 
 # Is a path a mount point?
@@ -238,12 +235,12 @@ def ismount(path):
         s2 = os.stat(join(path, '..'))
     except os.error:
         return False # It doesn't exist -- so not a mount point :-)
-    dev1 = s1[stat.ST_DEV]
-    dev2 = s2[stat.ST_DEV]
+    dev1 = s1.st_dev
+    dev2 = s2.st_dev
     if dev1 != dev2:
         return True     # path/.. on a different device as path
-    ino1 = s1[stat.ST_INO]
-    ino2 = s2[stat.ST_INO]
+    ino1 = s1.st_ino
+    ino2 = s2.st_ino
     if ino1 == ino2:
         return True     # path/.. is the same i-node as path
     return False

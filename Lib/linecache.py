@@ -7,7 +7,6 @@ that name.
 
 import sys
 import os
-from stat import *
 
 __all__ = ["getline","clearcache","checkcache"]
 
@@ -52,7 +51,7 @@ def checkcache():
         except os.error:
             del cache[filename]
             continue
-        if size != stat[ST_SIZE] or mtime != stat[ST_MTIME]:
+        if size != stat.st_size or mtime != stat.st_mtime:
             del cache[filename]
 
 
@@ -96,6 +95,6 @@ def updatecache(filename):
     except IOError, msg:
 ##      print '*** Cannot open', fullname, ':', msg
         return []
-    size, mtime = stat[ST_SIZE], stat[ST_MTIME]
+    size, mtime = stat.st_size, stat.st_mtime
     cache[filename] = size, mtime, lines, fullname
     return lines

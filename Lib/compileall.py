@@ -13,7 +13,6 @@ See module py_compile for details of the actual byte-compilation.
 """
 
 import os
-import stat
 import sys
 import py_compile
 
@@ -56,8 +55,8 @@ def compile_dir(dir, maxlevels=10, ddir=None,
             head, tail = name[:-3], name[-3:]
             if tail == '.py':
                 cfile = fullname + (__debug__ and 'c' or 'o')
-                ftime = os.stat(fullname)[stat.ST_MTIME]
-                try: ctime = os.stat(cfile)[stat.ST_MTIME]
+                ftime = os.stat(fullname).st_mtime
+                try: ctime = os.stat(cfile).st_mtime
                 except os.error: ctime = 0
                 if (ctime > ftime) and not force: continue
                 if not quiet:

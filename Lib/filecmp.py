@@ -64,9 +64,9 @@ def cmp(f1, f2, shallow=1, use_statcache=0):
     return outcome
 
 def _sig(st):
-    return (stat.S_IFMT(st[stat.ST_MODE]),
-            st[stat.ST_SIZE],
-            st[stat.ST_MTIME])
+    return (stat.S_IFMT(st.st_mode),
+            st.st_size,
+            st.st_mtime)
 
 def _do_cmp(f1, f2):
     bufsize = BUFSIZE
@@ -199,8 +199,8 @@ class dircmp:
                 ok = 0
 
             if ok:
-                a_type = stat.S_IFMT(a_stat[stat.ST_MODE])
-                b_type = stat.S_IFMT(b_stat[stat.ST_MODE])
+                a_type = stat.S_IFMT(a_stat.st_mode)
+                b_type = stat.S_IFMT(b_stat.st_mode)
                 if a_type != b_type:
                     self.common_funny.append(x)
                 elif stat.S_ISDIR(a_type):

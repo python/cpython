@@ -373,7 +373,7 @@ class ZipFile:
         """Put the bytes from filename into the archive under the name
         arcname."""
         st = os.stat(filename)
-        mtime = time.localtime(st[8])
+        mtime = time.localtime(st.st_mtime)
         date_time = mtime[0:6]
         # Create ZipInfo instance to store file information
         if arcname is None:
@@ -572,10 +572,10 @@ class PyZipFile(ZipFile):
         file_pyc = pathname + ".pyc"
         file_pyo = pathname + ".pyo"
         if os.path.isfile(file_pyo) and \
-                            os.stat(file_pyo)[8] >= os.stat(file_py)[8]:
+                            os.stat(file_pyo).st_mtime >= os.stat(file_py).st_mtime:
             fname = file_pyo    # Use .pyo file
         elif not os.path.isfile(file_pyc) or \
-             os.stat(file_pyc)[8] < os.stat(file_py)[8]:
+             os.stat(file_pyc).st_mtime < os.stat(file_py).st_mtime:
             import py_compile
             if self.debug:
                 print "Compiling", file_py

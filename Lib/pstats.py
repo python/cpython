@@ -108,7 +108,7 @@ class Stats:
             f.close()
             try:
                 file_stats = os.stat(arg)
-                arg = time.ctime(file_stats[8]) + "    " + arg
+                arg = time.ctime(file_stats.st_mtime) + "    " + arg
             except:  # in case this is not unix
                 pass
             self.files = [ arg ]
