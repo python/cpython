@@ -14,6 +14,18 @@ Release date: 30-May-2003
   for new-style class instances.
 
 - Backport SF 742860: new, improved __delitem__ for WeakKeyDictionary.
+  This old __delitem__ wasn't threadsafe, was very inefficient (expected
+  time O(len(dict)) instead of O(1)), and could raise a spurious
+  RuntimeError if another thread mutated the dict during __delitem__, or if
+  a comparison function mutated it.  It also neglected to raise KeyError
+  when the key wasn't present; didn't raise TypeError when the key wasn't
+  of a weakly referencable type; and broke various more-or-less obscure
+  dict invariants by using a sequence of equality comparisons over the
+  whole set of dict keys instead of computing the key's hash code to
+  narrow the search to those keys with the same hash code.  All of these
+  are considered to be bugs.  A new implementation of __delitem__ repairs
+  all  that, but note that fixing these bugs may change visible behavior
+  in code relying (whether intentionally or accidentally) on old behavior.
 
 - RPM spec file update from Sean Reifschneider.
 
@@ -200,9 +212,9 @@ Release date: 22-May-2003
 
 - Distutils: Translate spaces in the machine name to underscores
   (Power Macintosh -> Power_Macintosh)
-  
+
 - Distutils: on Mac OS X don't use -R for runtime_library_dirs, use
-  -L in stead (#723495). 
+  -L in stead (#723495).
 
 - Backported SF #658233, continuation lines in .mo file metadata
   crashed gettext.GNUTranslations parsing.  Also, export more symbols
