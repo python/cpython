@@ -215,7 +215,7 @@ module = MacModule('_CarbonEvt', 'CarbonEvents', includestuff, finalstuff, inits
 
 
 
-class EventHandlerRefObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+class EventHandlerRefObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
 	def outputStructMembers(self):
 		Output("%s ob_itself;", self.itselftype)
 		Output("PyObject *ob_callback;")
@@ -228,7 +228,7 @@ class EventHandlerRefObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
 		Output("Py_DECREF(self->ob_callback);")
 		OutRbrace()
 		
-class MyGlobalObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+class MyGlobalObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
 	pass
 
 for typ in RefObjectTypes:

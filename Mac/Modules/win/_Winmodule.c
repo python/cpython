@@ -77,6 +77,7 @@ PyObject *WinObj_New(WindowPtr itself)
 {
 	WindowObject *it;
 	if (itself == NULL) return PyMac_Error(resNotFound);
+	/* XXXX Or should we use WhichWindow code here? */
 	it = PyObject_NEW(WindowObject, &Window_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
@@ -2928,6 +2929,7 @@ static PyMethodDef WinObj_methods[] = {
 
 #define WinObj_getsetlist NULL
 
+
 static int WinObj_compare(WindowObject *self, WindowObject *other)
 {
 	if ( self->ob_itself > other->ob_itself ) return 1;
@@ -2946,6 +2948,24 @@ static int WinObj_hash(WindowObject *self)
 {
 	return (int)self->ob_itself;
 }
+#define WinObj_tp_init 0
+
+#define WinObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *WinObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	WindowPtr itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, WinObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((WindowObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define WinObj_tp_free PyObject_Del
+
 
 PyTypeObject Window_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -2968,19 +2988,27 @@ PyTypeObject Window_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	WinObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	WinObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	WinObj_tp_init, /* tp_init */
+	WinObj_tp_alloc, /* tp_alloc */
+	WinObj_tp_new, /* tp_new */
+	WinObj_tp_free, /* tp_free */
 };
 
 /* --------------------- End object type Window --------------------- */
@@ -3828,8 +3856,10 @@ void init_Win(void)
 		return;
 	Window_Type.ob_type = &PyType_Type;
 	Py_INCREF(&Window_Type);
-	if (PyDict_SetItemString(d, "WindowType", (PyObject *)&Window_Type) != 0)
-		Py_FatalError("can't initialize WindowType");
+	PyModule_AddObject(m, "Window", (PyObject *)&Window_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&Window_Type);
+	PyModule_AddObject(m, "WindowType", (PyObject *)&Window_Type);
 }
 
 /* ======================== End module _Win ========================= */

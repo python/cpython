@@ -979,6 +979,7 @@ static PyGetSetDef TEObj_getsetlist[] = {
 	{"txMode", (getter)TEObj_get_txMode, (setter)TEObj_set_txMode, "Current text-drawing mode"},
 	{"txSize", (getter)TEObj_get_txSize, (setter)TEObj_set_txSize, "Current font size"},
 	{"nLines", (getter)TEObj_get_nLines, (setter)TEObj_set_nLines, "TBD"},
+	{NULL, NULL, NULL, NULL},
 };
 
 
@@ -987,6 +988,24 @@ static PyGetSetDef TEObj_getsetlist[] = {
 #define TEObj_repr NULL
 
 #define TEObj_hash NULL
+#define TEObj_tp_init 0
+
+#define TEObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *TEObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	TEHandle itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, TEObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((TEObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define TEObj_tp_free PyObject_Del
+
 
 PyTypeObject TE_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -1009,19 +1028,27 @@ PyTypeObject TE_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	TEObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	TEObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	TEObj_tp_init, /* tp_init */
+	TEObj_tp_alloc, /* tp_alloc */
+	TEObj_tp_new, /* tp_new */
+	TEObj_tp_free, /* tp_free */
 };
 
 /* ----------------------- End object type TE ----------------------- */
@@ -1313,8 +1340,10 @@ void init_TE(void)
 		return;
 	TE_Type.ob_type = &PyType_Type;
 	Py_INCREF(&TE_Type);
-	if (PyDict_SetItemString(d, "TEType", (PyObject *)&TE_Type) != 0)
-		Py_FatalError("can't initialize TEType");
+	PyModule_AddObject(m, "TE", (PyObject *)&TE_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&TE_Type);
+	PyModule_AddObject(m, "TEType", (PyObject *)&TE_Type);
 }
 
 /* ========================= End module _TE ========================= */

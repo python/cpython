@@ -94,7 +94,7 @@ int ThemeButtonDrawInfo_Convert(PyObject *v, ThemeButtonDrawInfo *p_itself)
 
 """
 
-class MyObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+class MyObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
 	pass
 ## 	def outputCheckNewArg(self):
 ## 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")

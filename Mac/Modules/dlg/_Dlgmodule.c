@@ -966,6 +966,7 @@ static PyMethodDef DlgObj_methods[] = {
 
 #define DlgObj_getsetlist NULL
 
+
 static int DlgObj_compare(DialogObject *self, DialogObject *other)
 {
 	if ( self->ob_itself > other->ob_itself ) return 1;
@@ -979,6 +980,24 @@ static int DlgObj_hash(DialogObject *self)
 {
 	return (int)self->ob_itself;
 }
+#define DlgObj_tp_init 0
+
+#define DlgObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *DlgObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	DialogPtr itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, DlgObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((DialogObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define DlgObj_tp_free PyObject_Del
+
 
 PyTypeObject Dialog_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -1001,19 +1020,27 @@ PyTypeObject Dialog_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	DlgObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	DlgObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	DlgObj_tp_init, /* tp_init */
+	DlgObj_tp_alloc, /* tp_alloc */
+	DlgObj_tp_new, /* tp_new */
+	DlgObj_tp_free, /* tp_free */
 };
 
 /* --------------------- End object type Dialog --------------------- */
@@ -1589,8 +1616,10 @@ void init_Dlg(void)
 		return;
 	Dialog_Type.ob_type = &PyType_Type;
 	Py_INCREF(&Dialog_Type);
-	if (PyDict_SetItemString(d, "DialogType", (PyObject *)&Dialog_Type) != 0)
-		Py_FatalError("can't initialize DialogType");
+	PyModule_AddObject(m, "Dialog", (PyObject *)&Dialog_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&Dialog_Type);
+	PyModule_AddObject(m, "DialogType", (PyObject *)&Dialog_Type);
 }
 
 /* ======================== End module _Dlg ========================= */

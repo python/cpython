@@ -330,19 +330,27 @@ static PyTypeObject SndChannel_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	SndCh_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	SndCh_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	0, /*tp_init*/
+	0, /*tp_alloc*/
+	0, /*tp_new*/
+	0, /*tp_free*/
 };
 
 /* ------------------- End object type SndChannel ------------------- */
@@ -459,6 +467,7 @@ static PyGetSetDef SPBObj_getsetlist[] = {
 	{"milliseconds", (getter)SPBObj_get_milliseconds, (setter)SPBObj_set_milliseconds, NULL},
 	{"error", (getter)SPBObj_get_error, (setter)SPBObj_set_error, NULL},
 	{"completionRoutine", (getter)SPBObj_get_completionRoutine, (setter)SPBObj_set_completionRoutine, NULL},
+	{NULL, NULL, NULL, NULL},
 };
 
 
@@ -489,19 +498,27 @@ static PyTypeObject SPB_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	SPBObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	SPBObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	0, /*tp_init*/
+	0, /*tp_alloc*/
+	0, /*tp_new*/
+	0, /*tp_free*/
 };
 
 /* ---------------------- End object type SPB ----------------------- */
@@ -1537,12 +1554,16 @@ void init_Snd(void)
 		return;
 	SndChannel_Type.ob_type = &PyType_Type;
 	Py_INCREF(&SndChannel_Type);
-	if (PyDict_SetItemString(d, "SndChannelType", (PyObject *)&SndChannel_Type) != 0)
-		Py_FatalError("can't initialize SndChannelType");
+	PyModule_AddObject(m, "SndChannel", (PyObject *)&SndChannel_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&SndChannel_Type);
+	PyModule_AddObject(m, "SndChannelType", (PyObject *)&SndChannel_Type);
 	SPB_Type.ob_type = &PyType_Type;
 	Py_INCREF(&SPB_Type);
-	if (PyDict_SetItemString(d, "SPBType", (PyObject *)&SPB_Type) != 0)
-		Py_FatalError("can't initialize SPBType");
+	PyModule_AddObject(m, "SPB", (PyObject *)&SPB_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&SPB_Type);
+	PyModule_AddObject(m, "SPBType", (PyObject *)&SPB_Type);
 }
 
 /* ======================== End module _Snd ========================= */

@@ -57,7 +57,8 @@ initstuff = initstuff + """
 	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(GWorldPtr, GWorldObj_Convert);
 """
 
-class MyObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+class MyObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
+	# XXXX Should inherit from GrafPtr?
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
 ## 	def outputInitStructMembers(self):

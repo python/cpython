@@ -742,11 +742,30 @@ static PyMethodDef DragObj_methods[] = {
 
 #define DragObj_getsetlist NULL
 
+
 #define DragObj_compare NULL
 
 #define DragObj_repr NULL
 
 #define DragObj_hash NULL
+#define DragObj_tp_init 0
+
+#define DragObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *DragObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	DragRef itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, DragObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((DragObjObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define DragObj_tp_free PyObject_Del
+
 
 PyTypeObject DragObj_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -769,19 +788,27 @@ PyTypeObject DragObj_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	DragObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	DragObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	DragObj_tp_init, /* tp_init */
+	DragObj_tp_alloc, /* tp_alloc */
+	DragObj_tp_new, /* tp_new */
+	DragObj_tp_free, /* tp_free */
 };
 
 /* -------------------- End object type DragObj --------------------- */
@@ -1109,8 +1136,10 @@ void init_Drag(void)
 		return;
 	DragObj_Type.ob_type = &PyType_Type;
 	Py_INCREF(&DragObj_Type);
-	if (PyDict_SetItemString(d, "DragObjType", (PyObject *)&DragObj_Type) != 0)
-		Py_FatalError("can't initialize DragObjType");
+	PyModule_AddObject(m, "DragObj", (PyObject *)&DragObj_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&DragObj_Type);
+	PyModule_AddObject(m, "DragObjType", (PyObject *)&DragObj_Type);
 
 	dragglue_TrackingHandlerUPP = NewDragTrackingHandlerUPP(dragglue_TrackingHandler);
 	dragglue_ReceiveHandlerUPP = NewDragReceiveHandlerUPP(dragglue_ReceiveHandler);

@@ -236,7 +236,7 @@ initstuff = initstuff + """
 ##	def outputFreeIt(self, itselfname):
 ##		Output("KillPoly(%s);", itselfname)
 
-class MyGRObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+class MyGRObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
 	getsetlist = [
 		('visRgn',
 		"""RgnHandle h=NewRgn(); /* XXXX wrong dispose routine */
@@ -277,7 +277,7 @@ class MyGRObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
 		OutRbrace()
 		Output("#endif")
 
-class MyBMObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+class MyBMObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
 	getsetlist = [
 	(
 	'baseAddr',

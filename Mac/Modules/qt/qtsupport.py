@@ -181,7 +181,7 @@ QTFloatSingle = Type("QTFloatSingle", "f")
 dummyshortptr = FakeType('(short *)0')
 dummyStringPtr = FakeType('(StringPtr)0')
 
-class MovieObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+class MovieObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output("""if (itself == NULL) {
 					PyErr_SetString(Qt_Error,"Cannot create null Movie");
@@ -190,7 +190,7 @@ class MovieObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
 	def outputFreeIt(self, itselfname):
 		Output("DisposeMovie(%s);", itselfname)
 
-class TrackObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+class TrackObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output("""if (itself == NULL) {
 					PyErr_SetString(Qt_Error,"Cannot create null Track");
@@ -199,7 +199,7 @@ class TrackObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
 	def outputFreeIt(self, itselfname):
 		Output("DisposeMovieTrack(%s);", itselfname)
 
-class MediaObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+class MediaObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output("""if (itself == NULL) {
 					PyErr_SetString(Qt_Error,"Cannot create null Media");
@@ -208,7 +208,7 @@ class MediaObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
 	def outputFreeIt(self, itselfname):
 		Output("DisposeTrackMedia(%s);", itselfname)
 
-class UserDataObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+class UserDataObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output("""if (itself == NULL) {
 					PyErr_SetString(Qt_Error,"Cannot create null UserData");
@@ -217,7 +217,7 @@ class UserDataObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
 	def outputFreeIt(self, itselfname):
 		Output("DisposeUserData(%s);", itselfname)
 
-class TimeBaseObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+class TimeBaseObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output("""if (itself == NULL) {
 					PyErr_SetString(Qt_Error,"Cannot create null TimeBase");
@@ -226,7 +226,7 @@ class TimeBaseObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
 ##	def outputFreeIt(self, itselfname):
 ##		Output("DisposeTimeBase(%s);", itselfname)
 
-class MovieCtlObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+class MovieCtlObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output("""if (itself == NULL) {
 					PyErr_SetString(Qt_Error,"Cannot create null MovieController");

@@ -97,11 +97,30 @@ static PyMethodDef AliasObj_methods[] = {
 
 #define AliasObj_getsetlist NULL
 
+
 #define AliasObj_compare NULL
 
 #define AliasObj_repr NULL
 
 #define AliasObj_hash NULL
+#define AliasObj_tp_init 0
+
+#define AliasObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *AliasObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	AliasHandle itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, AliasObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((AliasObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define AliasObj_tp_free PyObject_Del
+
 
 PyTypeObject Alias_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -124,19 +143,27 @@ PyTypeObject Alias_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	AliasObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	AliasObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	AliasObj_tp_init, /* tp_init */
+	AliasObj_tp_alloc, /* tp_alloc */
+	AliasObj_tp_new, /* tp_new */
+	AliasObj_tp_free, /* tp_free */
 };
 
 /* --------------------- End object type Alias ---------------------- */
@@ -665,8 +692,10 @@ void init_Alias(void)
 		return;
 	Alias_Type.ob_type = &PyType_Type;
 	Py_INCREF(&Alias_Type);
-	if (PyDict_SetItemString(d, "AliasType", (PyObject *)&Alias_Type) != 0)
-		Py_FatalError("can't initialize AliasType");
+	PyModule_AddObject(m, "Alias", (PyObject *)&Alias_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&Alias_Type);
+	PyModule_AddObject(m, "AliasType", (PyObject *)&Alias_Type);
 }
 
 /* ======================= End module _Alias ======================== */

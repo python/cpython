@@ -55,7 +55,7 @@ ScrapFlavorFlags = Type('ScrapFlavorFlags', 'l')
 #ScrapFlavorInfo = OpaqueType('ScrapFlavorInfo', 'ScrapFlavorInfo')
 putscrapbuffer = FixedInputBufferType('void *')
 
-class MyObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+class MyObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
 	pass
 
 # Create the generator groups and link them
