@@ -1,7 +1,7 @@
 \section{\module{thread} ---
-         Multiple threads of control.}
-\declaremodule{builtin}{thread}
+         Multiple threads of control}
 
+\declaremodule{builtin}{thread}
 \modulesynopsis{Create multiple threads of control within one interpreter.}
 
 
@@ -31,7 +31,7 @@ Raised on thread-specific errors.
 This is the type of lock objects.
 \end{datadesc}
 
-\begin{funcdesc}{start_new_thread}{function, args\optional{kwargs}}
+\begin{funcdesc}{start_new_thread}{function, args\optional{, kwargs}}
 Start a new thread.  The thread executes the function \var{function}
 with the argument list \var{args} (which must be a tuple).  The
 optional \var{kwargs} argument specifies a dictionary of keyword
@@ -54,7 +54,7 @@ This is an obsolete synonym for \function{exit()}.
 %\begin{funcdesc}{exit_prog}{status}
 %Exit all threads and report the value of the integer argument
 %\var{status} as the exit status of the entire program.
-%\strong{Caveat:} code in pending \code{finally} clauses, in this thread
+%\strong{Caveat:} code in pending \keyword{finally} clauses, in this thread
 %or in other threads, is not executed.
 %\end{funcdesc}
 
@@ -103,7 +103,7 @@ some thread, \code{0} if not.
 \item
 Threads interact strangely with interrupts: the
 \exception{KeyboardInterrupt} exception will be received by an
-arbitrary thread.  (When the \module{signal}\refbimodindex{signal}
+arbitrary thread.  (When the \refmodule{signal}\refbimodindex{signal}
 module is available, interrupts always go to the main thread.)
 
 \item
