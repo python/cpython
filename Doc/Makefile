@@ -276,7 +276,7 @@ lib.texi: python-lib.texi
 COMMONPERL=perl/manual.perl perl/python.perl
 
 l2h:
-	(cd html; $(MAKE))
+	(cd html; $(MAKE) TEXINPUTS=../paper-$(PAPER):../texinputs)
 
 l2hapi: $(COMMONPERL)
 	$(MKHTML) api $(L2HARGS)
