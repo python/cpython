@@ -43,3 +43,6 @@
 #include <stdio.h>
 extern int fileno(FILE *);
 #endif
+#ifndef Py_DEBUG
+#define NDEBUG
+#endif

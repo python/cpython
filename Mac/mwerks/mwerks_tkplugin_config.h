@@ -11,3 +11,6 @@
 #define USE_TK			/* Include _tkinter module in core Python */
 #define MAC_TCL			/* This *must* be on if USE_TK is on */
 #define WITHOUT_FRAMEWORKS	/* Use old-style Universal Header includes, not Carbon/Carbon.h */
+#ifndef Py_DEBUG
+#define NDEBUG
+#endif
