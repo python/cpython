@@ -98,6 +98,9 @@ newsizedstringobject(str, size)
 #ifdef CACHE_HASH
 	op->ob_shash = -1;
 #endif
+#ifdef INTERN_STRINGS
+	op->ob_sinterned = NULL;
+#endif
 	NEWREF(op);
 	if (str != NULL)
 		memcpy(op->ob_sval, str, size);
@@ -144,6 +147,9 @@ newstringobject(str)
 	op->ob_size = size;
 #ifdef CACHE_HASH
 	op->ob_shash = -1;
+#endif
+#ifdef INTERN_STRINGS
+	op->ob_sinterned = NULL;
 #endif
 	NEWREF(op);
 	strcpy(op->ob_sval, str);
@@ -304,6 +310,9 @@ string_concat(a, bb)
 #ifdef CACHE_HASH
 	op->ob_shash = -1;
 #endif
+#ifdef INTERN_STRINGS
+	op->ob_sinterned = NULL;
+#endif
 	NEWREF(op);
 	memcpy(op->ob_sval, a->ob_sval, (int) a->ob_size);
 	memcpy(op->ob_sval + a->ob_size, b->ob_sval, (int) b->ob_size);
@@ -335,6 +344,9 @@ string_repeat(a, n)
 	op->ob_size = size;
 #ifdef CACHE_HASH
 	op->ob_shash = -1;
+#endif
+#ifdef INTERN_STRINGS
+	op->ob_sinterned = NULL;
 #endif
 	NEWREF(op);
 	for (i = 0; i < size; i += a->ob_size)
@@ -462,6 +474,13 @@ typeobject Stringtype = {
 	&string_as_sequence,	/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
 	(hashfunc)string_hash, /*tp_hash*/
+	0,		/*tp_call*/
+	0,		/*tp_str*/
+	0,		/*tp_getattro*/
+	0,		/*tp_setattro*/
+	0,		/*tp_xxx3*/
+	0,		/*tp_xxx4*/
+	0,		/*tp_doc*/
 };
 
 void
@@ -928,3 +947,59 @@ formatstring(format, args)
 		DECREF(args);
 	return NULL;
 }
+
+
+#ifdef INTERN_STRINGS
+
+static PyObject *interned;
+
+void
+PyString_InternInPlace(p)
+	PyObject **p;
+{
+	register PyStringObject *s = (PyStringObject *)(*p);
+	PyObject *t;
+	if (s == NULL || !PyString_Check(s))
+		Py_FatalError("PyString_InternInPlace: strings only please!");
+	if ((t = s->ob_sinterned) != NULL) {
+		if (t == (PyObject *)s)
+			return;
+		Py_INCREF(t);
+		*p = t;
+		Py_DECREF(s);
+		return;
+	}
+	if (interned == NULL) {
+		interned = PyDict_New();
+		if (interned == NULL)
+			return;
+		/* Force slow lookups: */
+		PyDict_SetItem(interned, Py_None, Py_None);
+	}
+	if ((t = PyDict_GetItem(interned, (PyObject *)s)) != NULL) {
+		Py_INCREF(t);
+		*p = s->ob_sinterned = t;
+		Py_DECREF(s);
+		return;
+	}
+	t = (PyObject *)s;
+	if (PyDict_SetItem(interned, t, t) == 0) {
+		s->ob_sinterned = t;
+		return;
+	}
+	PyErr_Clear();
+}
+
+
+PyObject *
+PyString_InternFromString(cp)
+	const char *cp;
+{
+	PyObject *s = PyString_FromString(cp);
+	if (s == NULL)
+		return NULL;
+	PyString_InternInPlace(&s);
+	return s;
+}
+
+#endif
