@@ -44,7 +44,9 @@ video.py	player for movies recorded by camcorder.py
 		soundfile	default is none (no sound)
 		skipbytes	byte offset in soundfile where sound starts
 
-vinfo.py	print a summary of a movie file
+vinfo.py	print summary of movie file(s)
+		usage: vinfo [-d] moviefile ...
+		-d		print delta times (default: print abs times)
 
 vpregs.py	definition of VP registers
 
