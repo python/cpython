@@ -26,6 +26,7 @@ from email import Iterators
 import test_email
 from test_support import findfile
 
+
 NL = '\n'
 EMPTYSTRING = ''
 SPACE = ' '
@@ -696,6 +697,28 @@ Your message cannot be delivered to the following recipients:
         eq(subsubpart['message-id'],
            '<002001c144a6$8752e060$56104586@oxy.edu>')
 
+    def test_epilogue(self):
+        fp = openfile('msg_21.txt')
+        try:
+            text = fp.read()
+        finally:
+            fp.close()
+        msg = Message()
+        msg['From'] = 'aperson@dom.ain'
+        msg['To'] = 'bperson@dom.ain'
+        msg['Subject'] = 'Test'
+        msg.preamble = 'MIME message\n'
+        msg.epilogue = 'End of MIME message\n'
+        msg1 = MIMEText('One')
+        msg2 = MIMEText('Two')
+        msg.add_header('Content-Type', 'multipart/mixed', boundary='BOUNDARY')
+        msg.add_payload(msg1)
+        msg.add_payload(msg2)
+        sfp = StringIO()
+        g = Generator(sfp)
+        g(msg)
+        self.assertEqual(sfp.getvalue(), text)
+
 
 
 # A general test of parser->model->generator idempotency.  IOW, read a message
@@ -758,6 +781,10 @@ class TestIdempotent(unittest.TestCase):
 
     def test_dsn(self):
         msg, text = self._msgobj('msg_16.txt')
+        self._idempotent(msg, text)
+
+    def test_preamble_epilogue(self):
+        msg, text = self._msgobj('msg_21.txt')
         self._idempotent(msg, text)
 
     def test_content_type(self):
