@@ -139,9 +139,11 @@ distclean realclean clobber: clean
 
 BOILERPLATE=$(TOPDIR)/texinputs/boilerplate.tex
 index.html: index.html.in $(BOILERPLATE)
-	REL=`grep '\\release{' $(BOILERPLATE) | sed 's/.*\\release{\(.*\)}.*$$/\1/'` ; \
+	REL=`grep '\\release{' $(BOILERPLATE) | sed 's/.*\\release{\(.*\)}.*$$/\1/'`; \
+		REL=`echo "$$REL" | sed 's/[$$]//g'`; \
 		sed "s/@RELEASE@/$$REL/g" $< >TEMP
 	DATE=`grep '\\date{' $(BOILERPLATE) | sed 's/.*\\date{\(.*\)}.*$$/\1/'` ; \
+		if [ "$$DATE" = '\today' ] ; then DATE=`date '+%B %e, %Y'`;fi;\
 		sed "s/@DATE@/$$DATE/g" TEMP >$@
 	rm -f TEMP
 
