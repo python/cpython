@@ -483,8 +483,12 @@ int_pow(PyIntObject *v, PyIntObject *w, PyIntObject *z)
 	iv = v->ob_ival;
 	iw = w->ob_ival;
 	if (iw < 0) {
-		PyErr_SetString(PyExc_ValueError,
-				"integer to the negative power");
+		if (iv)
+			PyErr_SetString(PyExc_ValueError,
+					"integer to a negative power");
+		else
+			PyErr_SetString(PyExc_ZeroDivisionError,
+					"0 to a negative power");
 		return NULL;
 	}
  	if ((PyObject *)z != Py_None) {

@@ -1244,8 +1244,12 @@ long_pow(PyLongObject *a, PyLongObject *b, PyLongObject *c)
 	
 	size_b = b->ob_size;
 	if (size_b < 0) {
-		PyErr_SetString(PyExc_ValueError,
-				"long integer to the negative power");
+		if (a->ob_size)
+			PyErr_SetString(PyExc_ValueError,
+					"long integer to a negative power");
+		else
+			PyErr_SetString(PyExc_ZeroDivisionError,
+					"zero to a negative power");
 		return NULL;
 	}
 	z = (PyLongObject *)PyLong_FromLong(1L);
