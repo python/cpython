@@ -47,15 +47,23 @@ import StdSuites
 #
 # Set property and element dictionaries now that all classes have been defined
 #
-getbaseclasses(character)
-getbaseclasses(text)
-getbaseclasses(window)
-getbaseclasses(file)
-getbaseclasses(line)
-getbaseclasses(selection_2d_object)
-getbaseclasses(application)
-getbaseclasses(insertion_point)
-getbaseclasses(document)
+getbaseclasses(single_class_browser)
+getbaseclasses(project_document)
+getbaseclasses(symbol_browser)
+getbaseclasses(editor_document)
+getbaseclasses(file_compare_document)
+getbaseclasses(class_browser)
+getbaseclasses(subtarget)
+getbaseclasses(message_document)
+getbaseclasses(project_inspector)
+getbaseclasses(text_document)
+getbaseclasses(catalog_document)
+getbaseclasses(class_hierarchy)
+getbaseclasses(target)
+getbaseclasses(build_progress_document)
+getbaseclasses(target_file)
+getbaseclasses(ToolServer_worksheet)
+getbaseclasses(single_class_hierarchy)
 getbaseclasses(File_Mapping)
 getbaseclasses(browser_catalog)
 getbaseclasses(Build_Settings)
@@ -92,37 +100,37 @@ getbaseclasses(Font)
 getbaseclasses(Target_Source_Trees)
 getbaseclasses(Debugger_Display)
 getbaseclasses(class_)
-getbaseclasses(single_class_browser)
-getbaseclasses(project_document)
-getbaseclasses(symbol_browser)
-getbaseclasses(editor_document)
-getbaseclasses(file_compare_document)
-getbaseclasses(class_browser)
-getbaseclasses(subtarget)
-getbaseclasses(message_document)
-getbaseclasses(project_inspector)
-getbaseclasses(text_document)
-getbaseclasses(catalog_document)
-getbaseclasses(class_hierarchy)
-getbaseclasses(target)
-getbaseclasses(build_progress_document)
-getbaseclasses(target_file)
-getbaseclasses(ToolServer_worksheet)
-getbaseclasses(single_class_hierarchy)
+getbaseclasses(character)
+getbaseclasses(text)
+getbaseclasses(window)
+getbaseclasses(file)
+getbaseclasses(line)
+getbaseclasses(selection_2d_object)
+getbaseclasses(application)
+getbaseclasses(insertion_point)
+getbaseclasses(document)
 
 #
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'cha ' : character,
-	'ctxt' : text,
-	'cwin' : window,
-	'file' : file,
-	'clin' : line,
-	'csel' : selection_2d_object,
-	'capp' : application,
-	'cins' : insertion_point,
-	'docu' : document,
+	'1BRW' : single_class_browser,
+	'PRJD' : project_document,
+	'SYMB' : symbol_browser,
+	'EDIT' : editor_document,
+	'COMP' : file_compare_document,
+	'BROW' : class_browser,
+	'SBTG' : subtarget,
+	'MSSG' : message_document,
+	'INSP' : project_inspector,
+	'TXTD' : text_document,
+	'CTLG' : catalog_document,
+	'HIER' : class_hierarchy,
+	'TRGT' : target,
+	'PRGS' : build_progress_document,
+	'SRCF' : target_file,
+	'TOOL' : ToolServer_worksheet,
+	'1HIR' : single_class_hierarchy,
 	'FMap' : File_Mapping,
 	'Cata' : browser_catalog,
 	'BSTG' : Build_Settings,
@@ -159,23 +167,15 @@ _classdeclarations = {
 	'TSTs' : Target_Source_Trees,
 	'DbDS' : Debugger_Display,
 	'Clas' : class_,
-	'1BRW' : single_class_browser,
-	'PRJD' : project_document,
-	'SYMB' : symbol_browser,
-	'EDIT' : editor_document,
-	'COMP' : file_compare_document,
-	'BROW' : class_browser,
-	'SBTG' : subtarget,
-	'MSSG' : message_document,
-	'INSP' : project_inspector,
-	'TXTD' : text_document,
-	'CTLG' : catalog_document,
-	'HIER' : class_hierarchy,
-	'TRGT' : target,
-	'PRGS' : build_progress_document,
-	'SRCF' : target_file,
-	'TOOL' : ToolServer_worksheet,
-	'1HIR' : single_class_hierarchy,
+	'cha ' : character,
+	'ctxt' : text,
+	'cwin' : window,
+	'file' : file,
+	'clin' : line,
+	'csel' : selection_2d_object,
+	'capp' : application,
+	'cins' : insertion_point,
+	'docu' : document,
 }
 
 

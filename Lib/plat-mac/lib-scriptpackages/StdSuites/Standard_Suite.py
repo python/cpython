@@ -448,11 +448,11 @@ class Standard_Suite_Events(builtin_Suite_Events):
 			return _arguments['----']
 
 
-class alias(aetools.ComponentItem):
-	"""alias - a file on a disk or server.  The file must exist when you check the syntax of your script. """
+class aliases(aetools.ComponentItem):
+	"""aliases -  """
 	want = 'alis'
 
-aliases = alias
+alias = aliases
 
 class application(aetools.ComponentItem):
 	"""application - An application program """
@@ -480,31 +480,11 @@ class version(aetools.NProperty):
 
 applications = application
 
-class document(aetools.ComponentItem):
-	"""document - A document of a scriptable application """
-	want = 'docu'
-class modified(aetools.NProperty):
-	"""modified - Has the document been modified since the last save? """
-	which = 'imod'
-	want = 'bool'
-
-documents = document
-
-class file(aetools.ComponentItem):
-	"""file - a file on a disk or server """
-	want = 'file'
-class stationery(aetools.NProperty):
-	"""stationery - Is the file a stationery file? """
-	which = 'pspd'
-	want = 'bool'
-
-files = file
-
-class insertion_point(aetools.ComponentItem):
-	"""insertion point - An insertion location between two objects """
+class insertion_points(aetools.ComponentItem):
+	"""insertion points -  """
 	want = 'cins'
 
-insertion_points = insertion_point
+insertion_point = insertion_points
 
 class selection_2d_object(aetools.ComponentItem):
 	"""selection-object - A way to refer to the state of the current of the selection.  Use the \xd4select\xd5 command to make a new selection. """
@@ -559,10 +539,30 @@ class zoomed(aetools.NProperty):
 	want = 'bool'
 
 windows = window
-alias._superclassnames = []
-alias._privpropdict = {
+
+class document(aetools.ComponentItem):
+	"""document - A document of a scriptable application """
+	want = 'docu'
+class modified(aetools.NProperty):
+	"""modified - Has the document been modified since the last save? """
+	which = 'imod'
+	want = 'bool'
+
+documents = document
+
+class file(aetools.ComponentItem):
+	"""file - a file on a disk or server """
+	want = 'file'
+class stationery(aetools.NProperty):
+	"""stationery - Is the file a stationery file? """
+	which = 'pspd'
+	want = 'bool'
+
+files = file
+aliases._superclassnames = []
+aliases._privpropdict = {
 }
-alias._privelemdict = {
+aliases._privelemdict = {
 }
 application._superclassnames = []
 application._privpropdict = {
@@ -574,22 +574,10 @@ application._privpropdict = {
 }
 application._privelemdict = {
 }
-document._superclassnames = []
-document._privpropdict = {
-	'modified' : modified,
+insertion_points._superclassnames = []
+insertion_points._privpropdict = {
 }
-document._privelemdict = {
-}
-file._superclassnames = []
-file._privpropdict = {
-	'stationery' : stationery,
-}
-file._privelemdict = {
-}
-insertion_point._superclassnames = []
-insertion_point._privpropdict = {
-}
-insertion_point._privelemdict = {
+insertion_points._privelemdict = {
 }
 selection_2d_object._superclassnames = []
 selection_2d_object._privpropdict = {
@@ -611,6 +599,18 @@ window._privpropdict = {
 	'zoomed' : zoomed,
 }
 window._privelemdict = {
+}
+document._superclassnames = []
+document._privpropdict = {
+	'modified' : modified,
+}
+document._privelemdict = {
+}
+file._superclassnames = []
+file._privpropdict = {
+	'stationery' : stationery,
+}
+file._privelemdict = {
 }
 class _3c_(aetools.NComparison):
 	"""< - Less than """
@@ -663,9 +663,9 @@ _Enum_styl = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'alis' : alias,
+	'alis' : aliases,
 	'capp' : application,
-	'cins' : insertion_point,
+	'cins' : insertion_points,
 	'csel' : selection_2d_object,
 	'cwin' : window,
 	'docu' : document,

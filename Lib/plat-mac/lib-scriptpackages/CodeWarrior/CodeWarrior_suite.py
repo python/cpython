@@ -244,27 +244,21 @@ class CodeWarrior_suite_Events:
 			return _arguments['----']
 
 
-class ToolServer_worksheet(aetools.ComponentItem):
-	"""ToolServer worksheet - a ToolServer worksheet """
-	want = 'TOOL'
+class single_class_browser(aetools.ComponentItem):
+	"""single class browser - a single class browser """
+	want = '1BRW'
 class inherits(aetools.NProperty):
 	"""inherits - all properties and elements of the given class are inherited by this class. """
 	which = 'c@#^'
 	want = 'TXTD'
 
-ToolServer_worksheets = ToolServer_worksheet
+single_class_browsers = single_class_browser
 
-class build_progress_document(aetools.ComponentItem):
-	"""build progress document - a build progress document """
-	want = 'PRGS'
+class single_class_hierarchy(aetools.ComponentItem):
+	"""single class hierarchy - a single class hierarchy document """
+	want = '1HIR'
 
-build_progress_documents = build_progress_document
-
-class catalog_document(aetools.ComponentItem):
-	"""catalog document - a browser catalog document """
-	want = 'CTLG'
-
-catalog_documents = catalog_document
+single_class_hierarchies = single_class_hierarchy
 
 class class_browser(aetools.ComponentItem):
 	"""class browser - a class browser """
@@ -272,11 +266,17 @@ class class_browser(aetools.ComponentItem):
 
 class_browsers = class_browser
 
-class class_hierarchies(aetools.ComponentItem):
-	"""class hierarchies - more than one class hierarchy document """
-	want = 'HIER'
+class file_compare_document(aetools.ComponentItem):
+	"""file compare document - a file compare document """
+	want = 'COMP'
 
-class_hierarchy = class_hierarchies
+file_compare_documents = file_compare_document
+
+class catalog_document(aetools.ComponentItem):
+	"""catalog document - a browser catalog document """
+	want = 'CTLG'
+
+catalog_documents = catalog_document
 
 class editor_document(aetools.ComponentItem):
 	"""editor document - an editor document """
@@ -284,17 +284,29 @@ class editor_document(aetools.ComponentItem):
 
 editor_documents = editor_document
 
-class file_compare_document(aetools.ComponentItem):
-	"""file compare document - a file compare document """
-	want = 'COMP'
+class class_hierarchy(aetools.ComponentItem):
+	"""class hierarchy - a class hierarchy document """
+	want = 'HIER'
 
-file_compare_documents = file_compare_document
+class_hierarchies = class_hierarchy
+
+class project_inspector(aetools.ComponentItem):
+	"""project inspector - the project inspector """
+	want = 'INSP'
+
+project_inspectors = project_inspector
 
 class message_document(aetools.ComponentItem):
 	"""message document - a message document """
 	want = 'MSSG'
 
 message_documents = message_document
+
+class build_progress_document(aetools.ComponentItem):
+	"""build progress document - a build progress document """
+	want = 'PRGS'
+
+build_progress_documents = build_progress_document
 
 class project_document(aetools.ComponentItem):
 	"""project document - a project document """
@@ -306,24 +318,6 @@ class current_target(aetools.NProperty):
 #        element 'TRGT' as ['indx', 'name', 'test', 'rang']
 
 project_documents = project_document
-
-class project_inspector(aetools.ComponentItem):
-	"""project inspector - the project inspector """
-	want = 'INSP'
-
-project_inspectors = project_inspector
-
-class single_class_browser(aetools.ComponentItem):
-	"""single class browser - a single class browser """
-	want = '1BRW'
-
-single_class_browsers = single_class_browser
-
-class single_class_hierarchies(aetools.ComponentItem):
-	"""single class hierarchies - more than one single class hierarchy document """
-	want = '1HIR'
-
-single_class_hierarchy = single_class_hierarchies
 
 class subtarget(aetools.ComponentItem):
 	"""subtarget - a target that is prerequisite for another target """
@@ -338,26 +332,6 @@ class target(aetools.NProperty):
 	want = 'TRGT'
 
 subtargets = subtarget
-
-class symbol_browser(aetools.ComponentItem):
-	"""symbol browser - a symbol browser """
-	want = 'SYMB'
-
-symbol_browsers = symbol_browser
-
-class target(aetools.ComponentItem):
-	"""target - a target in a project """
-	want = 'TRGT'
-class name(aetools.NProperty):
-	"""name -  """
-	which = 'pnam'
-	want = 'itxt'
-class project_document(aetools.NProperty):
-	"""project document - the project document that contains this target """
-	which = 'PrjD'
-	want = 'PRJD'
-#        element 'SBTG' as ['indx', 'test', 'rang']
-#        element 'SRCF' as ['indx', 'test', 'rang']
 
 class target_file(aetools.ComponentItem):
 	"""target file - a source or header file in a target """
@@ -429,6 +403,32 @@ class weak_link(aetools.NProperty):
 
 target_files = target_file
 
+class symbol_browser(aetools.ComponentItem):
+	"""symbol browser - a symbol browser """
+	want = 'SYMB'
+
+symbol_browsers = symbol_browser
+
+class ToolServer_worksheet(aetools.ComponentItem):
+	"""ToolServer worksheet - a ToolServer worksheet """
+	want = 'TOOL'
+
+ToolServer_worksheets = ToolServer_worksheet
+
+class target(aetools.ComponentItem):
+	"""target - a target in a project """
+	want = 'TRGT'
+class name(aetools.NProperty):
+	"""name -  """
+	which = 'pnam'
+	want = 'itxt'
+class project_document(aetools.NProperty):
+	"""project document - the project document that contains this target """
+	which = 'PrjD'
+	want = 'PRJD'
+#        element 'SBTG' as ['indx', 'test', 'rang']
+#        element 'SRCF' as ['indx', 'test', 'rang']
+
 targets = target
 
 class text_document(aetools.ComponentItem):
@@ -448,24 +448,18 @@ class selection(aetools.NProperty):
 #        element 'ctxt' as ['rang']
 
 text_documents = text_document
-ToolServer_worksheet._superclassnames = ['text_document']
-ToolServer_worksheet._privpropdict = {
+single_class_browser._superclassnames = ['text_document']
+single_class_browser._privpropdict = {
 	'inherits' : inherits,
 }
-ToolServer_worksheet._privelemdict = {
+single_class_browser._privelemdict = {
 }
 import Standard_Suite
-build_progress_document._superclassnames = ['document']
-build_progress_document._privpropdict = {
+single_class_hierarchy._superclassnames = ['document']
+single_class_hierarchy._privpropdict = {
 	'inherits' : inherits,
 }
-build_progress_document._privelemdict = {
-}
-catalog_document._superclassnames = ['text_document']
-catalog_document._privpropdict = {
-	'inherits' : inherits,
-}
-catalog_document._privelemdict = {
+single_class_hierarchy._privelemdict = {
 }
 class_browser._superclassnames = ['text_document']
 class_browser._privpropdict = {
@@ -473,10 +467,17 @@ class_browser._privpropdict = {
 }
 class_browser._privelemdict = {
 }
-class_hierarchies._superclassnames = []
-class_hierarchies._privpropdict = {
+file_compare_document._superclassnames = ['text_document']
+file_compare_document._privpropdict = {
+	'inherits' : inherits,
 }
-class_hierarchies._privelemdict = {
+file_compare_document._privelemdict = {
+}
+catalog_document._superclassnames = ['text_document']
+catalog_document._privpropdict = {
+	'inherits' : inherits,
+}
+catalog_document._privelemdict = {
 }
 editor_document._superclassnames = ['text_document']
 editor_document._privpropdict = {
@@ -484,17 +485,29 @@ editor_document._privpropdict = {
 }
 editor_document._privelemdict = {
 }
-file_compare_document._superclassnames = ['text_document']
-file_compare_document._privpropdict = {
+class_hierarchy._superclassnames = ['document']
+class_hierarchy._privpropdict = {
 	'inherits' : inherits,
 }
-file_compare_document._privelemdict = {
+class_hierarchy._privelemdict = {
+}
+project_inspector._superclassnames = ['document']
+project_inspector._privpropdict = {
+	'inherits' : inherits,
+}
+project_inspector._privelemdict = {
 }
 message_document._superclassnames = ['text_document']
 message_document._privpropdict = {
 	'inherits' : inherits,
 }
 message_document._privelemdict = {
+}
+build_progress_document._superclassnames = ['document']
+build_progress_document._privpropdict = {
+	'inherits' : inherits,
+}
+build_progress_document._privelemdict = {
 }
 project_document._superclassnames = ['document']
 project_document._privpropdict = {
@@ -504,23 +517,6 @@ project_document._privpropdict = {
 project_document._privelemdict = {
 	'target' : target,
 }
-project_inspector._superclassnames = ['document']
-project_inspector._privpropdict = {
-	'inherits' : inherits,
-}
-project_inspector._privelemdict = {
-}
-single_class_browser._superclassnames = ['text_document']
-single_class_browser._privpropdict = {
-	'inherits' : inherits,
-}
-single_class_browser._privelemdict = {
-}
-single_class_hierarchies._superclassnames = []
-single_class_hierarchies._privpropdict = {
-}
-single_class_hierarchies._privelemdict = {
-}
 subtarget._superclassnames = ['target']
 subtarget._privpropdict = {
 	'inherits' : inherits,
@@ -528,21 +524,6 @@ subtarget._privpropdict = {
 	'target' : target,
 }
 subtarget._privelemdict = {
-}
-symbol_browser._superclassnames = ['text_document']
-symbol_browser._privpropdict = {
-	'inherits' : inherits,
-}
-symbol_browser._privelemdict = {
-}
-target._superclassnames = []
-target._privpropdict = {
-	'name' : name,
-	'project_document' : project_document,
-}
-target._privelemdict = {
-	'subtarget' : subtarget,
-	'target_file' : target_file,
 }
 target_file._superclassnames = []
 target_file._privpropdict = {
@@ -564,6 +545,27 @@ target_file._privpropdict = {
 	'weak_link' : weak_link,
 }
 target_file._privelemdict = {
+}
+symbol_browser._superclassnames = ['text_document']
+symbol_browser._privpropdict = {
+	'inherits' : inherits,
+}
+symbol_browser._privelemdict = {
+}
+ToolServer_worksheet._superclassnames = ['text_document']
+ToolServer_worksheet._privpropdict = {
+	'inherits' : inherits,
+}
+ToolServer_worksheet._privelemdict = {
+}
+target._superclassnames = []
+target._privpropdict = {
+	'name' : name,
+	'project_document' : project_document,
+}
+target._privelemdict = {
+	'subtarget' : subtarget,
+	'target_file' : target_file,
 }
 text_document._superclassnames = ['document']
 text_document._privpropdict = {
@@ -624,12 +626,12 @@ _Enum_PERM = {
 #
 _classdeclarations = {
 	'1BRW' : single_class_browser,
-	'1HIR' : single_class_hierarchies,
+	'1HIR' : single_class_hierarchy,
 	'BROW' : class_browser,
 	'COMP' : file_compare_document,
 	'CTLG' : catalog_document,
 	'EDIT' : editor_document,
-	'HIER' : class_hierarchies,
+	'HIER' : class_hierarchy,
 	'INSP' : project_inspector,
 	'MSSG' : message_document,
 	'PRGS' : build_progress_document,

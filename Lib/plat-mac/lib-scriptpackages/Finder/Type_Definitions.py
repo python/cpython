@@ -19,31 +19,120 @@ class alias_list(aetools.ComponentItem):
 	"""alias list - A list of aliases.  Use \xd4as alias list\xd5 when a list of aliases is needed (instead of a list of file system item references). """
 	want = 'alst'
 
-class column(aetools.ComponentItem):
-	"""column - a column of a list view """
-	want = 'lvcl'
+class label(aetools.ComponentItem):
+	"""label - (NOT AVAILABLE YET) A Finder label (name and color) """
+	want = 'clbl'
+class color(aetools.NProperty):
+	"""color - the color associated with the label """
+	which = 'colr'
+	want = 'cRGB'
 class index(aetools.NProperty):
 	"""index - the index in the front-to-back ordering within its container """
 	which = 'pidx'
 	want = 'long'
 class name(aetools.NProperty):
-	"""name - the column name """
+	"""name - the name associated with the label """
 	which = 'pnam'
-	want = 'elsv'
-class sort_direction(aetools.NProperty):
-	"""sort direction - The direction in which the window is sorted """
-	which = 'sord'
-	want = 'sodr'
-class visible(aetools.NProperty):
-	"""visible - is this column visible """
-	which = 'pvis'
-	want = 'bool'
-class width(aetools.NProperty):
-	"""width - the width of this column """
-	which = 'clwd'
-	want = 'shor'
+	want = 'utxt'
 
-columns = column
+class preferences(aetools.ComponentItem):
+	"""preferences - (NOT AVAILABLE, SUBJECT TO CHANGE) The Finder Preferences """
+	want = 'cprf'
+class button_view_arrangement(aetools.NProperty):
+	"""button view arrangement - the method of arrangement of icons in default Finder button view windows """
+	which = 'barr'
+	want = 'earr'
+class button_view_icon_size(aetools.NProperty):
+	"""button view icon size - the size of icons displayed in Finder button view windows. """
+	which = 'bisz'
+	want = 'long'
+class calculates_folder_sizes(aetools.NProperty):
+	"""calculates folder sizes - Are folder sizes calculated and displayed in Finder list view windows? """
+	which = 'sfsz'
+	want = 'bool'
+class delay_before_springing(aetools.NProperty):
+	"""delay before springing - the delay before springing open a container in ticks (1/60th of a second) (12 is shortest delay, 60 is longest delay) """
+	which = 'dela'
+	want = 'shor'
+class list_view_icon_size(aetools.NProperty):
+	"""list view icon size - the size of icons displayed in Finder list view windows. """
+	which = 'lisz'
+	want = 'long'
+class shows_comments(aetools.NProperty):
+	"""shows comments - Are comments displayed in default Finder list view windows? """
+	which = 'scom'
+	want = 'bool'
+class shows_creation_date(aetools.NProperty):
+	"""shows creation date - Are creation dates displayed in default Finder list view windows? """
+	which = 'scda'
+	want = 'bool'
+class shows_kind(aetools.NProperty):
+	"""shows kind - Are document kinds displayed in default Finder list view windows? """
+	which = 'sknd'
+	want = 'bool'
+class shows_label(aetools.NProperty):
+	"""shows label - Are labels displayed in default Finder list view windows? """
+	which = 'slbl'
+	want = 'bool'
+class shows_modification_date(aetools.NProperty):
+	"""shows modification date - Are modification dates displayed in default Finder list view windows? """
+	which = 'sdat'
+	want = 'bool'
+class shows_size(aetools.NProperty):
+	"""shows size - Are file sizes displayed in default Finder list view windows? """
+	which = 'ssiz'
+	want = 'bool'
+class shows_version(aetools.NProperty):
+	"""shows version - Are file versions displayed in default Finder list view windows? """
+	which = 'svrs'
+	want = 'bool'
+class spatial_view_arrangement(aetools.NProperty):
+	"""spatial view arrangement - the method of arrangement of icons in default Finder spatial view windows """
+	which = 'iarr'
+	want = 'earr'
+class spatial_view_icon_size(aetools.NProperty):
+	"""spatial view icon size - the size of icons displayed in Finder spatial view windows. """
+	which = 'iisz'
+	want = 'long'
+class spring_open_folders(aetools.NProperty):
+	"""spring open folders - Spring open folders after the specified delay? """
+	which = 'sprg'
+	want = 'bool'
+class uses_relative_dates(aetools.NProperty):
+	"""uses relative dates - Are relative dates (e.g., today, yesterday) shown  in Finder list view windows? """
+	which = 'urdt'
+	want = 'bool'
+class uses_simple_menus(aetools.NProperty):
+	"""uses simple menus - Use simplified Finder menus? """
+	which = 'usme'
+	want = 'bool'
+class uses_wide_grid(aetools.NProperty):
+	"""uses wide grid - Space icons on a wide grid? """
+	which = 'uswg'
+	want = 'bool'
+class view_font(aetools.NProperty):
+	"""view font - the id of the font used in Finder views. """
+	which = 'vfnt'
+	want = 'long'
+class view_font_size(aetools.NProperty):
+	"""view font size - the size of the font used in Finder views """
+	which = 'vfsz'
+	want = 'long'
+class window(aetools.NProperty):
+	"""window - the window that would open if Finder preferences was opened """
+	which = 'cwin'
+	want = 'pwnd'
+#        element 'clbl' as ['indx', 'name']
+
+class icon_view_options(aetools.ComponentItem):
+	"""icon view options - the icon view options """
+	want = 'icop'
+
+arrangement = spatial_view_arrangement
+class icon_size(aetools.NProperty):
+	"""icon size - the size of icons displayed in the icon view """
+	which = 'lvis'
+	want = 'shor'
 
 class icon_family(aetools.ComponentItem):
 	"""icon family - (NOT AVAILABLE YET) A family of icons """
@@ -87,157 +176,36 @@ class small_monochrome_icon_and_mask(aetools.NProperty):
 	which = 'ics#'
 	want = 'ics#'
 
-class icon_view_options(aetools.ComponentItem):
-	"""icon view options - the icon view options """
-	want = 'icop'
-class arrangement(aetools.NProperty):
-	"""arrangement - the property by which to keep icons arranged """
-	which = 'iarr'
-	want = 'earr'
-class icon_size(aetools.NProperty):
-	"""icon size - the size of icons displayed in the icon view """
-	which = 'lvis'
+class column(aetools.ComponentItem):
+	"""column - a column of a list view """
+	want = 'lvcl'
+class sort_direction(aetools.NProperty):
+	"""sort direction - The direction in which the window is sorted """
+	which = 'sord'
+	want = 'sodr'
+class visible(aetools.NProperty):
+	"""visible - is this column visible """
+	which = 'pvis'
+	want = 'bool'
+class width(aetools.NProperty):
+	"""width - the width of this column """
+	which = 'clwd'
 	want = 'shor'
 
-class label(aetools.ComponentItem):
-	"""label - (NOT AVAILABLE YET) A Finder label (name and color) """
-	want = 'clbl'
-class color(aetools.NProperty):
-	"""color - the color associated with the label """
-	which = 'colr'
-	want = 'cRGB'
+columns = column
 
 class list_view_options(aetools.ComponentItem):
 	"""list view options - the list view options """
 	want = 'lvop'
-class calculates_folder_sizes(aetools.NProperty):
-	"""calculates folder sizes - Are folder sizes calculated and displayed in the window? """
-	which = 'sfsz'
-	want = 'bool'
 class sort_column(aetools.NProperty):
 	"""sort column - the column that the list view is sorted on """
 	which = 'srtc'
 	want = 'lvcl'
-class uses_relative_dates(aetools.NProperty):
-	"""uses relative dates - Are relative dates (e.g., today, yesterday) shown in the list view? """
-	which = 'urdt'
-	want = 'bool'
 #        element 'lvcl' as ['indx', 'rele', 'rang', 'test']
-
-class preferences(aetools.ComponentItem):
-	"""preferences - (NOT AVAILABLE, SUBJECT TO CHANGE) The Finder Preferences """
-	want = 'cprf'
-class button_view_arrangement(aetools.NProperty):
-	"""button view arrangement - the method of arrangement of icons in default Finder button view windows """
-	which = 'barr'
-	want = 'earr'
-class button_view_icon_size(aetools.NProperty):
-	"""button view icon size - the size of icons displayed in Finder button view windows. """
-	which = 'bisz'
-	want = 'long'
-class delay_before_springing(aetools.NProperty):
-	"""delay before springing - the delay before springing open a container in ticks (1/60th of a second) (12 is shortest delay, 60 is longest delay) """
-	which = 'dela'
-	want = 'shor'
-class list_view_icon_size(aetools.NProperty):
-	"""list view icon size - the size of icons displayed in Finder list view windows. """
-	which = 'lisz'
-	want = 'long'
-class shows_comments(aetools.NProperty):
-	"""shows comments - Are comments displayed in default Finder list view windows? """
-	which = 'scom'
-	want = 'bool'
-class shows_creation_date(aetools.NProperty):
-	"""shows creation date - Are creation dates displayed in default Finder list view windows? """
-	which = 'scda'
-	want = 'bool'
-class shows_kind(aetools.NProperty):
-	"""shows kind - Are document kinds displayed in default Finder list view windows? """
-	which = 'sknd'
-	want = 'bool'
-class shows_label(aetools.NProperty):
-	"""shows label - Are labels displayed in default Finder list view windows? """
-	which = 'slbl'
-	want = 'bool'
-class shows_modification_date(aetools.NProperty):
-	"""shows modification date - Are modification dates displayed in default Finder list view windows? """
-	which = 'sdat'
-	want = 'bool'
-class shows_size(aetools.NProperty):
-	"""shows size - Are file sizes displayed in default Finder list view windows? """
-	which = 'ssiz'
-	want = 'bool'
-class shows_version(aetools.NProperty):
-	"""shows version - Are file versions displayed in default Finder list view windows? """
-	which = 'svrs'
-	want = 'bool'
-
-spatial_view_arrangement = arrangement
-class spatial_view_icon_size(aetools.NProperty):
-	"""spatial view icon size - the size of icons displayed in Finder spatial view windows. """
-	which = 'iisz'
-	want = 'long'
-class spring_open_folders(aetools.NProperty):
-	"""spring open folders - Spring open folders after the specified delay? """
-	which = 'sprg'
-	want = 'bool'
-class uses_simple_menus(aetools.NProperty):
-	"""uses simple menus - Use simplified Finder menus? """
-	which = 'usme'
-	want = 'bool'
-class uses_wide_grid(aetools.NProperty):
-	"""uses wide grid - Space icons on a wide grid? """
-	which = 'uswg'
-	want = 'bool'
-class view_font(aetools.NProperty):
-	"""view font - the id of the font used in Finder views. """
-	which = 'vfnt'
-	want = 'long'
-class view_font_size(aetools.NProperty):
-	"""view font size - the size of the font used in Finder views """
-	which = 'vfsz'
-	want = 'long'
-class window(aetools.NProperty):
-	"""window - the window that would open if Finder preferences was opened """
-	which = 'cwin'
-	want = 'pwnd'
-#        element 'clbl' as ['indx', 'name']
 alias_list._superclassnames = []
 alias_list._privpropdict = {
 }
 alias_list._privelemdict = {
-}
-column._superclassnames = []
-column._privpropdict = {
-	'index' : index,
-	'name' : name,
-	'sort_direction' : sort_direction,
-	'visible' : visible,
-	'width' : width,
-}
-column._privelemdict = {
-}
-icon_family._superclassnames = []
-icon_family._privpropdict = {
-	'large_32_bit_icon' : large_32_bit_icon,
-	'large_4_bit_icon' : large_4_bit_icon,
-	'large_8_bit_icon' : large_8_bit_icon,
-	'large_8_bit_mask' : large_8_bit_mask,
-	'large_monochrome_icon_and_mask' : large_monochrome_icon_and_mask,
-	'small_32_bit_icon' : small_32_bit_icon,
-	'small_4_bit_icon' : small_4_bit_icon,
-	'small_8_bit_icon' : small_8_bit_icon,
-	'small_8_bit_mask' : small_8_bit_mask,
-	'small_monochrome_icon_and_mask' : small_monochrome_icon_and_mask,
-}
-icon_family._privelemdict = {
-}
-icon_view_options._superclassnames = []
-icon_view_options._privpropdict = {
-	'arrangement' : arrangement,
-	'icon_size' : icon_size,
-}
-icon_view_options._privelemdict = {
 }
 label._superclassnames = []
 label._privpropdict = {
@@ -246,16 +214,6 @@ label._privpropdict = {
 	'name' : name,
 }
 label._privelemdict = {
-}
-list_view_options._superclassnames = []
-list_view_options._privpropdict = {
-	'calculates_folder_sizes' : calculates_folder_sizes,
-	'icon_size' : icon_size,
-	'sort_column' : sort_column,
-	'uses_relative_dates' : uses_relative_dates,
-}
-list_view_options._privelemdict = {
-	'column' : column,
 }
 preferences._superclassnames = []
 preferences._privpropdict = {
@@ -284,6 +242,48 @@ preferences._privpropdict = {
 preferences._privelemdict = {
 	'label' : label,
 }
+icon_view_options._superclassnames = []
+icon_view_options._privpropdict = {
+	'arrangement' : arrangement,
+	'icon_size' : icon_size,
+}
+icon_view_options._privelemdict = {
+}
+icon_family._superclassnames = []
+icon_family._privpropdict = {
+	'large_32_bit_icon' : large_32_bit_icon,
+	'large_4_bit_icon' : large_4_bit_icon,
+	'large_8_bit_icon' : large_8_bit_icon,
+	'large_8_bit_mask' : large_8_bit_mask,
+	'large_monochrome_icon_and_mask' : large_monochrome_icon_and_mask,
+	'small_32_bit_icon' : small_32_bit_icon,
+	'small_4_bit_icon' : small_4_bit_icon,
+	'small_8_bit_icon' : small_8_bit_icon,
+	'small_8_bit_mask' : small_8_bit_mask,
+	'small_monochrome_icon_and_mask' : small_monochrome_icon_and_mask,
+}
+icon_family._privelemdict = {
+}
+column._superclassnames = []
+column._privpropdict = {
+	'index' : index,
+	'name' : name,
+	'sort_direction' : sort_direction,
+	'visible' : visible,
+	'width' : width,
+}
+column._privelemdict = {
+}
+list_view_options._superclassnames = []
+list_view_options._privpropdict = {
+	'calculates_folder_sizes' : calculates_folder_sizes,
+	'icon_size' : icon_size,
+	'sort_column' : sort_column,
+	'uses_relative_dates' : uses_relative_dates,
+}
+list_view_options._privelemdict = {
+	'column' : column,
+}
 
 #
 # Indices of types declared in this module
@@ -306,7 +306,7 @@ _propdeclarations = {
 	'colr' : color,
 	'cwin' : window,
 	'dela' : delay_before_springing,
-	'iarr' : arrangement,
+	'iarr' : spatial_view_arrangement,
 	'icl4' : large_4_bit_icon,
 	'icl8' : large_8_bit_icon,
 	'ics#' : small_monochrome_icon_and_mask,

@@ -15,13 +15,23 @@ class Text_Suite_Events:
 	pass
 
 
-class character(aetools.ComponentItem):
-	"""character - A character """
-	want = 'cha '
+class text_flow(aetools.ComponentItem):
+	"""text flow - A contiguous block of text.  Page layout applications call this a \xd4story.\xd5 """
+	want = 'cflo'
 class _3c_inheritance_3e_(aetools.NProperty):
 	"""<inheritance> - inherits some of its properties from this class """
 	which = 'c@#^'
 	want = 'ctxt'
+class name(aetools.NProperty):
+	"""name - the name """
+	which = 'pnam'
+	want = 'itxt'
+
+text_flows = text_flow
+
+class character(aetools.ComponentItem):
+	"""character - A character """
+	want = 'cha '
 
 class line(aetools.ComponentItem):
 	"""line - A line of text """
@@ -72,15 +82,11 @@ class writing_code(aetools.NProperty):
 #        element 'ctxt' as ['indx']
 #        element 'cwor' as ['indx']
 
-class text_flow(aetools.ComponentItem):
-	"""text flow - A contiguous block of text.  Page layout applications call this a \xd4story.\xd5 """
-	want = 'cflo'
-class name(aetools.NProperty):
-	"""name - the name """
-	which = 'pnam'
-	want = 'itxt'
+class word(aetools.ComponentItem):
+	"""word - A word """
+	want = 'cwor'
 
-text_flows = text_flow
+words = word
 
 class text_style_info(aetools.ComponentItem):
 	"""text style info - On and Off styles of text run """
@@ -95,12 +101,13 @@ class on_styles(aetools.NProperty):
 	want = 'styl'
 
 text_style_infos = text_style_info
-
-class word(aetools.ComponentItem):
-	"""word - A word """
-	want = 'cwor'
-
-words = word
+text_flow._superclassnames = ['text']
+text_flow._privpropdict = {
+	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
+	'name' : name,
+}
+text_flow._privelemdict = {
+}
 character._superclassnames = ['text']
 character._privpropdict = {
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
@@ -136,12 +143,11 @@ text._privelemdict = {
 	'text' : text,
 	'word' : word,
 }
-text_flow._superclassnames = ['text']
-text_flow._privpropdict = {
+word._superclassnames = ['text']
+word._privpropdict = {
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
-	'name' : name,
 }
-text_flow._privelemdict = {
+word._privelemdict = {
 }
 text_style_info._superclassnames = []
 text_style_info._privpropdict = {
@@ -149,12 +155,6 @@ text_style_info._privpropdict = {
 	'on_styles' : on_styles,
 }
 text_style_info._privelemdict = {
-}
-word._superclassnames = ['text']
-word._privpropdict = {
-	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
-}
-word._privelemdict = {
 }
 _Enum_just = {
 	'left' : 'left',	# Align with left margin

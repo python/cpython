@@ -1,54 +1,54 @@
 """
-Package generated from /System/Library/CoreServices/Finder.app
+Package generated from /System/Library/CoreServices/System Events.app
 """
 import aetools
 Error = aetools.Error
 import Standard_Suite
-import Legacy_suite
-import Containers_and_folders
-import Files
-import Finder_Basics
-import Finder_items
-import Window_classes
-import Type_Definitions
-import Enumerations
+import Text_Suite
+import Disk_2d_Folder_2d_File_Suite
+import Folder_Actions_Suite
+import Login_Items_Suite
+import Power_Suite
+import Processes_Suite
+import System_Events_Suite
+import Hidden_Suite
 
 
 _code_to_module = {
-	'CoRe' : Standard_Suite,
-	'fleg' : Legacy_suite,
-	'fndr' : Containers_and_folders,
-	'fndr' : Files,
-	'fndr' : Finder_Basics,
-	'fndr' : Finder_items,
-	'fndr' : Window_classes,
-	'tpdf' : Type_Definitions,
-	'tpnm' : Enumerations,
+	'????' : Standard_Suite,
+	'????' : Text_Suite,
+	'cdis' : Disk_2d_Folder_2d_File_Suite,
+	'faco' : Folder_Actions_Suite,
+	'logi' : Login_Items_Suite,
+	'powr' : Power_Suite,
+	'prcs' : Processes_Suite,
+	'sevs' : System_Events_Suite,
+	'tpnm' : Hidden_Suite,
 }
 
 
 
 _code_to_fullname = {
-	'CoRe' : ('Finder.Standard_Suite', 'Standard_Suite'),
-	'fleg' : ('Finder.Legacy_suite', 'Legacy_suite'),
-	'fndr' : ('Finder.Containers_and_folders', 'Containers_and_folders'),
-	'fndr' : ('Finder.Files', 'Files'),
-	'fndr' : ('Finder.Finder_Basics', 'Finder_Basics'),
-	'fndr' : ('Finder.Finder_items', 'Finder_items'),
-	'fndr' : ('Finder.Window_classes', 'Window_classes'),
-	'tpdf' : ('Finder.Type_Definitions', 'Type_Definitions'),
-	'tpnm' : ('Finder.Enumerations', 'Enumerations'),
+	'????' : ('SystemEvents.Standard_Suite', 'Standard_Suite'),
+	'????' : ('SystemEvents.Text_Suite', 'Text_Suite'),
+	'cdis' : ('SystemEvents.Disk_2d_Folder_2d_File_Suite', 'Disk_2d_Folder_2d_File_Suite'),
+	'faco' : ('SystemEvents.Folder_Actions_Suite', 'Folder_Actions_Suite'),
+	'logi' : ('SystemEvents.Login_Items_Suite', 'Login_Items_Suite'),
+	'powr' : ('SystemEvents.Power_Suite', 'Power_Suite'),
+	'prcs' : ('SystemEvents.Processes_Suite', 'Processes_Suite'),
+	'sevs' : ('SystemEvents.System_Events_Suite', 'System_Events_Suite'),
+	'tpnm' : ('SystemEvents.Hidden_Suite', 'Hidden_Suite'),
 }
 
 from Standard_Suite import *
-from Legacy_suite import *
-from Containers_and_folders import *
-from Files import *
-from Finder_Basics import *
-from Finder_items import *
-from Window_classes import *
-from Type_Definitions import *
-from Enumerations import *
+from Text_Suite import *
+from Disk_2d_Folder_2d_File_Suite import *
+from Folder_Actions_Suite import *
+from Login_Items_Suite import *
+from Power_Suite import *
+from Processes_Suite import *
+from System_Events_Suite import *
+from Hidden_Suite import *
 
 def getbaseclasses(v):
 	if not getattr(v, '_propdict', None):
@@ -67,36 +67,25 @@ import StdSuites
 #
 # Set property and element dictionaries now that all classes have been defined
 #
+getbaseclasses(character)
+getbaseclasses(attachment)
+getbaseclasses(paragraph)
+getbaseclasses(word)
+getbaseclasses(attribute_run)
+getbaseclasses(text)
+getbaseclasses(script)
+getbaseclasses(folder_action)
+getbaseclasses(file)
+getbaseclasses(alias)
 getbaseclasses(item)
-getbaseclasses(application)
-getbaseclasses(trash_2d_object)
-getbaseclasses(desktop_2d_object)
-getbaseclasses(container)
 getbaseclasses(folder)
 getbaseclasses(disk)
-getbaseclasses(package)
-getbaseclasses(file)
-getbaseclasses(application_file)
-getbaseclasses(alias_file)
-getbaseclasses(internet_location_file)
-getbaseclasses(document_file)
-getbaseclasses(clipping)
-getbaseclasses(preferences_window)
-getbaseclasses(Finder_window)
+getbaseclasses(color)
 getbaseclasses(window)
-getbaseclasses(clipping_window)
-getbaseclasses(information_window)
-getbaseclasses(icon_view_options)
-getbaseclasses(label)
-getbaseclasses(column)
-getbaseclasses(preferences)
-getbaseclasses(alias_list)
-getbaseclasses(icon_family)
-getbaseclasses(list_view_options)
-getbaseclasses(process)
-getbaseclasses(application_process)
-getbaseclasses(desk_accessory_process)
 getbaseclasses(application)
+getbaseclasses(item)
+getbaseclasses(document)
+getbaseclasses(login_item)
 getbaseclasses(StdSuites.Type_Names_Suite.double_integer)
 getbaseclasses(StdSuites.Type_Names_Suite.version)
 getbaseclasses(StdSuites.Type_Names_Suite.RGB16_color)
@@ -137,41 +126,75 @@ getbaseclasses(StdSuites.Type_Names_Suite.small_real)
 getbaseclasses(StdSuites.Type_Names_Suite.null)
 getbaseclasses(StdSuites.Type_Names_Suite.location_reference)
 getbaseclasses(StdSuites.Type_Names_Suite.bounding_rectangle)
+getbaseclasses(window)
+getbaseclasses(radio_button)
+getbaseclasses(list)
+getbaseclasses(desk_accessory_process)
+getbaseclasses(menu_item)
+getbaseclasses(progress_indicator)
+getbaseclasses(menu)
+getbaseclasses(menu_button)
+getbaseclasses(pop_up_button)
+getbaseclasses(incrementor)
+getbaseclasses(sheet)
+getbaseclasses(tool_bar)
+getbaseclasses(application_process)
+getbaseclasses(text_field)
+getbaseclasses(text_area)
+getbaseclasses(slider)
+getbaseclasses(scroll_area)
+getbaseclasses(relevance_indicator)
+getbaseclasses(busy_indicator)
+getbaseclasses(row)
+getbaseclasses(process)
+getbaseclasses(table)
+getbaseclasses(outline)
+getbaseclasses(UI_element)
+getbaseclasses(value_indicator)
+getbaseclasses(system_wide_UI_element)
+getbaseclasses(button)
+getbaseclasses(application)
+getbaseclasses(radio_group)
+getbaseclasses(image)
+getbaseclasses(tab_group)
+getbaseclasses(menu_bar)
+getbaseclasses(grow_area)
+getbaseclasses(check_box)
+getbaseclasses(column)
+getbaseclasses(static_text)
+getbaseclasses(splitter_group)
+getbaseclasses(group)
+getbaseclasses(splitter)
+getbaseclasses(drawer)
+getbaseclasses(color_well)
+getbaseclasses(scroll_bar)
+getbaseclasses(combo_box)
+getbaseclasses(browser)
+getbaseclasses(application)
 
 #
 # Indices of types declared in this module
 #
 _classdeclarations = {
+	'cha ' : character,
+	'atts' : attachment,
+	'cpar' : paragraph,
+	'cwor' : word,
+	'catr' : attribute_run,
+	'ctxt' : text,
+	'scpt' : script,
+	'foac' : folder_action,
+	'file' : file,
+	'alis' : alias,
 	'cobj' : item,
-	'capp' : application,
-	'ctrs' : trash_2d_object,
-	'cdsk' : desktop_2d_object,
-	'ctnr' : container,
 	'cfol' : folder,
 	'cdis' : disk,
-	'pack' : package,
-	'file' : file,
-	'appf' : application_file,
-	'alia' : alias_file,
-	'inlf' : internet_location_file,
-	'docf' : document_file,
-	'clpf' : clipping,
-	'pwnd' : preferences_window,
-	'brow' : Finder_window,
+	'colr' : color,
 	'cwin' : window,
-	'lwnd' : clipping_window,
-	'iwnd' : information_window,
-	'icop' : icon_view_options,
-	'clbl' : label,
-	'lvcl' : column,
-	'cprf' : preferences,
-	'alst' : alias_list,
-	'ifam' : icon_family,
-	'lvop' : list_view_options,
-	'prcs' : process,
-	'pcap' : application_process,
-	'pcda' : desk_accessory_process,
 	'capp' : application,
+	'cobj' : item,
+	'docu' : document,
+	'logi' : login_item,
 	'comp' : StdSuites.Type_Names_Suite.double_integer,
 	'vers' : StdSuites.Type_Names_Suite.version,
 	'tr16' : StdSuites.Type_Names_Suite.RGB16_color,
@@ -212,20 +235,65 @@ _classdeclarations = {
 	'null' : StdSuites.Type_Names_Suite.null,
 	'insl' : StdSuites.Type_Names_Suite.location_reference,
 	'qdrt' : StdSuites.Type_Names_Suite.bounding_rectangle,
+	'cwin' : window,
+	'radB' : radio_button,
+	'list' : list,
+	'pcda' : desk_accessory_process,
+	'menI' : menu_item,
+	'proI' : progress_indicator,
+	'menE' : menu,
+	'menB' : menu_button,
+	'popB' : pop_up_button,
+	'incr' : incrementor,
+	'sheE' : sheet,
+	'tbar' : tool_bar,
+	'pcap' : application_process,
+	'txtf' : text_field,
+	'txta' : text_area,
+	'sliI' : slider,
+	'scra' : scroll_area,
+	'reli' : relevance_indicator,
+	'busi' : busy_indicator,
+	'crow' : row,
+	'prcs' : process,
+	'tabB' : table,
+	'outl' : outline,
+	'uiel' : UI_element,
+	'vali' : value_indicator,
+	'sysw' : system_wide_UI_element,
+	'butT' : button,
+	'capp' : application,
+	'rgrp' : radio_group,
+	'imaA' : image,
+	'tab ' : tab_group,
+	'mbar' : menu_bar,
+	'grow' : grow_area,
+	'chbx' : check_box,
+	'ccol' : column,
+	'sttx' : static_text,
+	'splg' : splitter_group,
+	'sgrp' : group,
+	'splr' : splitter,
+	'draA' : drawer,
+	'colW' : color_well,
+	'scrb' : scroll_bar,
+	'comB' : combo_box,
+	'broW' : browser,
+	'capp' : application,
 }
 
 
-class Finder(Standard_Suite_Events,
-		Legacy_suite_Events,
-		Containers_and_folders_Events,
-		Files_Events,
-		Finder_Basics_Events,
-		Finder_items_Events,
-		Window_classes_Events,
-		Type_Definitions_Events,
-		Enumerations_Events,
+class SystemEvents(Standard_Suite_Events,
+		Text_Suite_Events,
+		Disk_2d_Folder_2d_File_Suite_Events,
+		Folder_Actions_Suite_Events,
+		Login_Items_Suite_Events,
+		Power_Suite_Events,
+		Processes_Suite_Events,
+		System_Events_Suite_Events,
+		Hidden_Suite_Events,
 		aetools.TalkTo):
-	_signature = 'MACS'
+	_signature = 'sevs'
 
-	_moduleName = 'Finder'
+	_moduleName = 'SystemEvents'
 

@@ -1,7 +1,7 @@
 """Suite Standard Suite: Common classes and commands for most applications.
 Level 1, version 1
 
-Generated from /Applications/Utilities/Terminal.app
+Generated from /System/Library/CoreServices/System Events.app
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -349,7 +349,7 @@ class version(aetools.NProperty):
 	"""version - The version of the application. """
 	which = 'vers'
 	want = 'utxt'
-#        element 'cwin' as ['name', 'indx', 'rele', 'rang', 'test', 'ID  ']
+#        element 'cwin' as ['name', 'indx', 'rele', 'rang', 'test']
 #        element 'docu' as ['name', 'indx', 'rele', 'rang', 'test']
 
 applications = application

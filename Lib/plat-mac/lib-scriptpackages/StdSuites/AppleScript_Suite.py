@@ -740,9 +740,33 @@ class AppleScript_Suite_Events:
 			return _arguments['----']
 
 
-class empty_ae_name_(aetools.ComponentItem):
-	""" - the undefined value """
-	want = 'undf'
+class anything(aetools.ComponentItem):
+	"""anything - any class or reference """
+	want = '****'
+
+class pictures(aetools.ComponentItem):
+	"""pictures -  """
+	want = 'PICT'
+
+picture = pictures
+
+class styled_text(aetools.ComponentItem):
+	"""styled text - text with font, size, and style information """
+	want = 'STXT'
+
+styled_text = styled_text
+
+class strings(aetools.ComponentItem):
+	"""strings -  """
+	want = 'TEXT'
+
+string = strings
+
+class aliases(aetools.ComponentItem):
+	"""aliases -  """
+	want = 'alis'
+
+alias = aliases
 
 class April(aetools.ComponentItem):
 	"""April - the month of April """
@@ -752,117 +776,21 @@ class August(aetools.ComponentItem):
 	"""August - the month of August """
 	want = 'aug '
 
-class C_string(aetools.ComponentItem):
-	"""C string - text followed by a null """
-	want = 'cstr'
+class booleans(aetools.ComponentItem):
+	"""booleans -  """
+	want = 'bool'
 
-C_strings = C_string
+boolean = booleans
 
-class December(aetools.ComponentItem):
-	"""December - the month of December """
-	want = 'dec '
-
-class February(aetools.ComponentItem):
-	"""February - the month of February """
-	want = 'feb '
-
-class Friday(aetools.ComponentItem):
-	"""Friday - Friday """
-	want = 'fri '
-
-class January(aetools.ComponentItem):
-	"""January - the month of January """
-	want = 'jan '
-
-class July(aetools.ComponentItem):
-	"""July - the month of July """
-	want = 'jul '
-
-class June(aetools.ComponentItem):
-	"""June - the month of June """
-	want = 'jun '
-
-class March(aetools.ComponentItem):
-	"""March - the month of March """
-	want = 'mar '
-
-class May(aetools.ComponentItem):
-	"""May - the month of May """
-	want = 'may '
-
-class Monday(aetools.ComponentItem):
-	"""Monday - Monday """
-	want = 'mon '
-
-class November(aetools.ComponentItem):
-	"""November - the month of November """
-	want = 'nov '
-
-class October(aetools.ComponentItem):
-	"""October - the month of October """
-	want = 'oct '
-
-class Pascal_string(aetools.ComponentItem):
-	"""Pascal string - text up to 255 characters preceded by a length byte """
-	want = 'pstr'
-
-Pascal_strings = Pascal_string
-
-class RGB_color(aetools.ComponentItem):
-	"""RGB color - Three integers specifying red, green, blue color values """
+class RGB_colors(aetools.ComponentItem):
+	"""RGB colors -  """
 	want = 'cRGB'
 
-RGB_colors = RGB_color
+RGB_color = RGB_colors
 
-class Saturday(aetools.ComponentItem):
-	"""Saturday - Saturday """
-	want = 'sat '
-
-class September(aetools.ComponentItem):
-	"""September - the month of September """
-	want = 'sep '
-
-class Sunday(aetools.ComponentItem):
-	"""Sunday - Sunday """
-	want = 'sun '
-
-class Thursday(aetools.ComponentItem):
-	"""Thursday - Thursday """
-	want = 'thu '
-
-class Tuesday(aetools.ComponentItem):
-	"""Tuesday - Tuesday """
-	want = 'tue '
-
-class Unicode_text(aetools.ComponentItem):
-	"""Unicode text -  """
-	want = 'utxt'
-
-Unicode_text = Unicode_text
-
-class Wednesday(aetools.ComponentItem):
-	"""Wednesday - Wednesday """
-	want = 'wed '
-
-class alias(aetools.ComponentItem):
-	"""alias - a file on a disk or server.  The file must exist when you check the syntax of your script. """
-	want = 'alis'
-
-class alias_or_string(aetools.ComponentItem):
-	"""alias or string - an alias or string """
-	want = 'sf  '
-
-aliases = alias
-
-class anything(aetools.ComponentItem):
-	"""anything - any class or reference """
-	want = '****'
-
-class app(aetools.ComponentItem):
-	"""app - Short name for application """
+class application(aetools.ComponentItem):
+	"""application - specifies global properties of AppleScript """
 	want = 'capp'
-
-application = app
 class AppleScript(aetools.NProperty):
 	"""AppleScript - the top-level script object """
 	which = 'ascr'
@@ -916,41 +844,13 @@ class weeks(aetools.NProperty):
 	which = 'week'
 	want = 'long'
 
-applications = app
+applications = application
 
-class boolean(aetools.ComponentItem):
-	"""boolean - A true or false value """
-	want = 'bool'
+app = application
 
-booleans = boolean
-
-class centimeters(aetools.ComponentItem):
-	"""centimeters - a distance measurement in SI centimeters """
-	want = 'cmtr'
-
-centimetres = centimeters
-
-class character(aetools.ComponentItem):
-	"""character - an individual text character """
-	want = 'cha '
-
-characters = character
-
-class class_(aetools.ComponentItem):
-	"""class - the type of a value """
-	want = 'pcls'
-class _3c_Inheritance_3e_(aetools.NProperty):
-	"""<Inheritance> - inherits some of its properties from this class """
-	which = 'c@#^'
-	want = 'type'
-
-classes = class_
-
-class constant(aetools.ComponentItem):
-	"""constant - A constant value """
-	want = 'enum'
-
-constants = constant
+class upper_case(aetools.ComponentItem):
+	"""upper case - Text with lower case converted to upper case """
+	want = 'case'
 
 class cubic_centimeters(aetools.ComponentItem):
 	"""cubic centimeters - a volume measurement in SI cubic centimeters """
@@ -962,9 +862,31 @@ class cubic_feet(aetools.ComponentItem):
 	"""cubic feet - a volume measurement in Imperial cubic feet """
 	want = 'cfet'
 
-class cubic_inches(aetools.ComponentItem):
-	"""cubic inches - a volume measurement in Imperial cubic inches """
-	want = 'cuin'
+class characters(aetools.ComponentItem):
+	"""characters -  """
+	want = 'cha '
+
+character = characters
+
+class writing_code_info(aetools.ComponentItem):
+	"""writing code info - script code and language code of text run """
+	want = 'citl'
+class language_code(aetools.NProperty):
+	"""language code - the language code for the text """
+	which = 'plcd'
+	want = 'shor'
+class script_code(aetools.NProperty):
+	"""script code - the script code for the text """
+	which = 'pscd'
+	want = 'shor'
+
+writing_code_infos = writing_code_info
+
+class text_items(aetools.ComponentItem):
+	"""text items -  """
+	want = 'citm'
+
+text_item = text_items
 
 class cubic_meters(aetools.ComponentItem):
 	"""cubic meters - a volume measurement in SI cubic meters """
@@ -972,13 +894,171 @@ class cubic_meters(aetools.ComponentItem):
 
 cubic_metres = cubic_meters
 
+class centimeters(aetools.ComponentItem):
+	"""centimeters - a distance measurement in SI centimeters """
+	want = 'cmtr'
+
+centimetres = centimeters
+
+class item(aetools.ComponentItem):
+	"""item - An item of any type """
+	want = 'cobj'
+class id(aetools.NProperty):
+	"""id - the unique ID number of this object """
+	which = 'ID  '
+	want = 'long'
+
+items = item
+
+class C_strings(aetools.ComponentItem):
+	"""C strings -  """
+	want = 'cstr'
+
+C_string = C_strings
+
+class text(aetools.ComponentItem):
+	"""text - text with language and style information """
+	want = 'ctxt'
+
+class cubic_inches(aetools.ComponentItem):
+	"""cubic inches - a volume measurement in Imperial cubic inches """
+	want = 'cuin'
+
 class cubic_yards(aetools.ComponentItem):
 	"""cubic yards - a distance measurement in Imperial cubic yards """
 	want = 'cyrd'
 
-class data(aetools.ComponentItem):
-	"""data - an AppleScript raw data object """
-	want = 'rdat'
+class December(aetools.ComponentItem):
+	"""December - the month of December """
+	want = 'dec '
+
+class degrees_Celsius(aetools.ComponentItem):
+	"""degrees Celsius - a temperature measurement in SI degrees Celsius """
+	want = 'degc'
+
+class degrees_Fahrenheit(aetools.ComponentItem):
+	"""degrees Fahrenheit - a temperature measurement in degrees Fahrenheit """
+	want = 'degf'
+
+class degrees_Kelvin(aetools.ComponentItem):
+	"""degrees Kelvin - a temperature measurement in degrees Kelvin """
+	want = 'degk'
+
+class reals(aetools.ComponentItem):
+	"""reals -  """
+	want = 'doub'
+
+real = reals
+
+class encoded_strings(aetools.ComponentItem):
+	"""encoded strings -  """
+	want = 'encs'
+
+encoded_string = encoded_strings
+
+class constants(aetools.ComponentItem):
+	"""constants -  """
+	want = 'enum'
+
+constant = constants
+
+class events(aetools.ComponentItem):
+	"""events -  """
+	want = 'evnt'
+
+event = events
+
+class February(aetools.ComponentItem):
+	"""February - the month of February """
+	want = 'feb '
+
+class feet(aetools.ComponentItem):
+	"""feet - a distance measurement in Imperial feet """
+	want = 'feet'
+
+class Friday(aetools.ComponentItem):
+	"""Friday - Friday """
+	want = 'fri '
+
+class file_specifications(aetools.ComponentItem):
+	"""file specifications -  """
+	want = 'fss '
+
+file_specification = file_specifications
+
+class gallons(aetools.ComponentItem):
+	"""gallons - a volume measurement in Imperial gallons """
+	want = 'galn'
+
+class grams(aetools.ComponentItem):
+	"""grams - a mass measurement in SI meters """
+	want = 'gram'
+
+class handlers(aetools.ComponentItem):
+	"""handlers -  """
+	want = 'hand'
+
+handler = handlers
+
+class inches(aetools.ComponentItem):
+	"""inches - a distance measurement in Imperial inches """
+	want = 'inch'
+
+class international_text(aetools.ComponentItem):
+	"""international text - text that begins with a writing code """
+	want = 'itxt'
+
+international_text = international_text
+
+class January(aetools.ComponentItem):
+	"""January - the month of January """
+	want = 'jan '
+
+class July(aetools.ComponentItem):
+	"""July - the month of July """
+	want = 'jul '
+
+class June(aetools.ComponentItem):
+	"""June - the month of June """
+	want = 'jun '
+
+class reference_forms(aetools.ComponentItem):
+	"""reference forms -  """
+	want = 'kfrm'
+
+reference_form = reference_forms
+
+class kilograms(aetools.ComponentItem):
+	"""kilograms - a mass measurement in SI kilograms """
+	want = 'kgrm'
+
+class kilometers(aetools.ComponentItem):
+	"""kilometers - a distance measurement in SI kilometers """
+	want = 'kmtr'
+
+kilometres = kilometers
+
+class keystroke(aetools.ComponentItem):
+	"""keystroke - a press of a key combination on a Macintosh keyboard """
+	want = 'kprs'
+class key(aetools.NProperty):
+	"""key - the character for the key was pressed (ignoring modifiers) """
+	which = 'kMsg'
+	want = 'cha '
+class key_kind(aetools.NProperty):
+	"""key kind - the kind of key that was pressed """
+	which = 'kknd'
+	want = 'ekst'
+class modifiers(aetools.NProperty):
+	"""modifiers - the modifier keys pressed in combination """
+	which = 'kMod'
+	want = 'eMds'
+
+keystrokes = keystroke
+
+class pounds(aetools.ComponentItem):
+	"""pounds - a weight measurement in SI meters """
+	want = 'lbs '
 
 class date(aetools.ComponentItem):
 	"""date - Absolute date and time values """
@@ -1014,121 +1094,13 @@ class year(aetools.NProperty):
 
 dates = date
 
-class degrees_Celsius(aetools.ComponentItem):
-	"""degrees Celsius - a temperature measurement in SI degrees Celsius """
-	want = 'degc'
-
-class degrees_Fahrenheit(aetools.ComponentItem):
-	"""degrees Fahrenheit - a temperature measurement in degrees Fahrenheit """
-	want = 'degf'
-
-class degrees_Kelvin(aetools.ComponentItem):
-	"""degrees Kelvin - a temperature measurement in degrees Kelvin """
-	want = 'degk'
-
-class encoded_string(aetools.ComponentItem):
-	"""encoded string - text encoded using the Text Encoding Converter """
-	want = 'encs'
-
-encoded_strings = encoded_string
-
-class event(aetools.ComponentItem):
-	"""event - an AppleEvents event """
-	want = 'evnt'
-
-events = event
-
-class feet(aetools.ComponentItem):
-	"""feet - a distance measurement in Imperial feet """
-	want = 'feet'
-
-class file_specification(aetools.ComponentItem):
-	"""file specification - a file specification as used by the operating system """
-	want = 'fss '
-
-file_specifications = file_specification
-
-class gallons(aetools.ComponentItem):
-	"""gallons - a volume measurement in Imperial gallons """
-	want = 'galn'
-
-class grams(aetools.ComponentItem):
-	"""grams - a mass measurement in SI meters """
-	want = 'gram'
-
-class handler(aetools.ComponentItem):
-	"""handler - an AppleScript event or subroutine handler """
-	want = 'hand'
-
-handlers = handler
-
-class inches(aetools.ComponentItem):
-	"""inches - a distance measurement in Imperial inches """
-	want = 'inch'
-
-class integer(aetools.ComponentItem):
-	"""integer - An integral number """
-	want = 'long'
-
-integers = integer
-
-class international_text(aetools.ComponentItem):
-	"""international text -  """
-	want = 'itxt'
-
-international_text = international_text
-
-class item(aetools.ComponentItem):
-	"""item - An item of any type """
-	want = 'cobj'
-class id(aetools.NProperty):
-	"""id - the unique ID number of this object """
-	which = 'ID  '
-	want = 'long'
-
-items = item
-
-class keystroke(aetools.ComponentItem):
-	"""keystroke - a press of a key combination on a Macintosh keyboard """
-	want = 'kprs'
-class key(aetools.NProperty):
-	"""key - the character for the key was pressed (ignoring modifiers) """
-	which = 'kMsg'
-	want = 'cha '
-class key_kind(aetools.NProperty):
-	"""key kind - the kind of key that was pressed """
-	which = 'kknd'
-	want = 'ekst'
-class modifiers(aetools.NProperty):
-	"""modifiers - the modifier keys pressed in combination """
-	which = 'kMod'
-	want = 'eMds'
-
-keystrokes = keystroke
-
-class kilograms(aetools.ComponentItem):
-	"""kilograms - a mass measurement in SI kilograms """
-	want = 'kgrm'
-
-class kilometers(aetools.ComponentItem):
-	"""kilometers - a distance measurement in SI kilometers """
-	want = 'kmtr'
-
-kilometres = kilometers
-
-class linked_list(aetools.ComponentItem):
-	"""linked list - An ordered collection of items """
-	want = 'llst'
+class list(aetools.ComponentItem):
+	"""list - An ordered collection of items """
+	want = 'list'
 class length(aetools.NProperty):
 	"""length - the length of a list """
 	which = 'leng'
 	want = 'long'
-
-linked_lists = linked_list
-
-class list(aetools.ComponentItem):
-	"""list - An ordered collection of items """
-	want = 'list'
 class rest(aetools.NProperty):
 	"""rest - all items of the list excluding first """
 	which = 'rest'
@@ -1138,18 +1110,6 @@ class reverse(aetools.NProperty):
 	which = 'rvse'
 	want = 'list'
 
-class list_or_record(aetools.ComponentItem):
-	"""list or record - a list or record """
-	want = 'lr  '
-
-class list_or_string(aetools.ComponentItem):
-	"""list or string - a list or string """
-	want = 'ls  '
-
-class list_2c__record_or_text(aetools.ComponentItem):
-	"""list, record or text - a list, record or text """
-	want = 'lrs '
-
 lists = list
 
 class liters(aetools.ComponentItem):
@@ -1158,11 +1118,43 @@ class liters(aetools.ComponentItem):
 
 litres = liters
 
-class machine(aetools.ComponentItem):
-	"""machine - a computer """
+class linked_list(aetools.ComponentItem):
+	"""linked list - An ordered collection of items """
+	want = 'llst'
+
+linked_lists = linked_list
+
+class integers(aetools.ComponentItem):
+	"""integers -  """
+	want = 'long'
+
+integer = integers
+
+class list_or_record(aetools.ComponentItem):
+	"""list or record - a list or record """
+	want = 'lr  '
+
+class list_2c__record_or_text(aetools.ComponentItem):
+	"""list, record or text - a list, record or text """
+	want = 'lrs '
+
+class list_or_string(aetools.ComponentItem):
+	"""list or string - a list or string """
+	want = 'ls  '
+
+class machines(aetools.ComponentItem):
+	"""machines -  """
 	want = 'mach'
 
-machines = machine
+machine = machines
+
+class March(aetools.ComponentItem):
+	"""March - the month of March """
+	want = 'mar '
+
+class May(aetools.ComponentItem):
+	"""May - the month of May """
+	want = 'may '
 
 class meters(aetools.ComponentItem):
 	"""meters - a distance measurement in SI meters """
@@ -1174,55 +1166,73 @@ class miles(aetools.ComponentItem):
 	"""miles - a distance measurement in Imperial miles """
 	want = 'mile'
 
-class missing_value(aetools.ComponentItem):
-	"""missing value - unavailable value, such as properties missing from heterogeneous classes in a Whose clause """
-	want = 'msng'
-
-missing_values = missing_value
-
-class month(aetools.ComponentItem):
-	"""month - a month """
+class months(aetools.ComponentItem):
+	"""months -  """
 	want = 'mnth'
 
-months = month
+month = months
 
-class number(aetools.ComponentItem):
-	"""number - an integer or real number """
-	want = 'nmbr'
+class Monday(aetools.ComponentItem):
+	"""Monday - Monday """
+	want = 'mon '
+
+class missing_values(aetools.ComponentItem):
+	"""missing values -  """
+	want = 'msng'
+
+missing_value = missing_values
 
 class number_or_date(aetools.ComponentItem):
 	"""number or date - a number or date """
 	want = 'nd  '
 
-class number_or_string(aetools.ComponentItem):
-	"""number or string - a number or string """
-	want = 'ns  '
-
 class number_2c__date_or_text(aetools.ComponentItem):
 	"""number, date or text - a number, date or text """
 	want = 'nds '
 
-numbers = number
+class numbers(aetools.ComponentItem):
+	"""numbers -  """
+	want = 'nmbr'
+
+number = numbers
+
+class November(aetools.ComponentItem):
+	"""November - the month of November """
+	want = 'nov '
+
+class number_or_string(aetools.ComponentItem):
+	"""number or string - a number or string """
+	want = 'ns  '
+
+class references(aetools.ComponentItem):
+	"""references -  """
+	want = 'obj '
+
+reference = references
+
+class October(aetools.ComponentItem):
+	"""October - the month of October """
+	want = 'oct '
 
 class ounces(aetools.ComponentItem):
 	"""ounces - a weight measurement in SI meters """
 	want = 'ozs '
 
-class picture(aetools.ComponentItem):
-	"""picture - A QuickDraw picture object """
-	want = 'PICT'
+class class_(aetools.ComponentItem):
+	"""class - the type of a value """
+	want = 'pcls'
+class _3c_Inheritance_3e_(aetools.NProperty):
+	"""<Inheritance> - inherits some of its properties from this class """
+	which = 'c@#^'
+	want = 'type'
 
-pictures = picture
+classes = class_
 
-class pounds(aetools.ComponentItem):
-	"""pounds - a weight measurement in SI meters """
-	want = 'lbs '
-
-class preposition(aetools.ComponentItem):
-	"""preposition - an AppleEvents preposition """
+class prepositions(aetools.ComponentItem):
+	"""prepositions -  """
 	want = 'prep'
 
-prepositions = preposition
+preposition = prepositions
 
 class properties(aetools.ComponentItem):
 	"""properties -  """
@@ -1230,33 +1240,37 @@ class properties(aetools.ComponentItem):
 
 property = properties
 
+class writing_code(aetools.ComponentItem):
+	"""writing code - codes that identify the language and script system """
+	want = 'psct'
+
+class Pascal_strings(aetools.ComponentItem):
+	"""Pascal strings -  """
+	want = 'pstr'
+
+Pascal_string = Pascal_strings
+
 class quarts(aetools.ComponentItem):
 	"""quarts - a volume measurement in Imperial quarts """
 	want = 'qrts'
 
-class real(aetools.ComponentItem):
-	"""real - A real number """
-	want = 'doub'
+class data(aetools.ComponentItem):
+	"""data - an AppleScript raw data object """
+	want = 'rdat'
 
-reals = real
-
-class record(aetools.ComponentItem):
-	"""record - A set of labeled items """
+class records(aetools.ComponentItem):
+	"""records -  """
 	want = 'reco'
 
-records = record
+record = records
 
-class reference(aetools.ComponentItem):
-	"""reference - an AppleScript reference """
-	want = 'obj '
+class Saturday(aetools.ComponentItem):
+	"""Saturday - Saturday """
+	want = 'sat '
 
-class reference_form(aetools.ComponentItem):
-	"""reference form - an AppleEvents key form """
-	want = 'kfrm'
-
-reference_forms = reference_form
-
-references = reference
+class seconds(aetools.ComponentItem):
+	"""seconds - more than one second """
+	want = 'scnd'
 
 class script(aetools.ComponentItem):
 	"""script - An AppleScript script """
@@ -1272,15 +1286,19 @@ class parent(aetools.NProperty):
 
 scripts = script
 
-class seconds(aetools.ComponentItem):
-	"""seconds - more than one second """
-	want = 'scnd'
+class September(aetools.ComponentItem):
+	"""September - the month of September """
+	want = 'sep '
 
-class sound(aetools.ComponentItem):
-	"""sound - a sound object on the clipboard """
+class alias_or_string(aetools.ComponentItem):
+	"""alias or string - an alias or string """
+	want = 'sf  '
+
+class sounds(aetools.ComponentItem):
+	"""sounds -  """
 	want = 'snd '
 
-sounds = sound
+sound = sounds
 
 class square_feet(aetools.ComponentItem):
 	"""square feet - an area measurement in Imperial square feet """
@@ -1292,61 +1310,57 @@ class square_kilometers(aetools.ComponentItem):
 
 square_kilometres = square_kilometers
 
+class square_miles(aetools.ComponentItem):
+	"""square miles - an area measurement in Imperial square miles """
+	want = 'sqmi'
+
 class square_meters(aetools.ComponentItem):
 	"""square meters - an area measurement in SI square meters """
 	want = 'sqrm'
 
 square_metres = square_meters
 
-class square_miles(aetools.ComponentItem):
-	"""square miles - an area measurement in Imperial square miles """
-	want = 'sqmi'
-
 class square_yards(aetools.ComponentItem):
 	"""square yards - an area measurement in Imperial square yards """
 	want = 'sqyd'
 
-class string(aetools.ComponentItem):
-	"""string - text in 8-bit Macintosh Roman format """
-	want = 'TEXT'
-
-strings = string
-
 class styled_Clipboard_text(aetools.ComponentItem):
-	"""styled Clipboard text -  """
+	"""styled Clipboard text - clipboard text with font, size, and style information """
 	want = 'styl'
 
 styled_Clipboard_text = styled_Clipboard_text
 
+class Sunday(aetools.ComponentItem):
+	"""Sunday - Sunday """
+	want = 'sun '
+
 class styled_Unicode_text(aetools.ComponentItem):
-	"""styled Unicode text -  """
+	"""styled Unicode text - styled text in the Unicode format """
 	want = 'sutx'
 
 styled_Unicode_text = styled_Unicode_text
 
-class styled_text(aetools.ComponentItem):
-	"""styled text -  """
-	want = 'STXT'
+class Thursday(aetools.ComponentItem):
+	"""Thursday - Thursday """
+	want = 'thu '
 
-styled_text = styled_text
-
-class text(aetools.ComponentItem):
-	"""text - text with language and style information """
-	want = 'ctxt'
-
-class text_item(aetools.ComponentItem):
-	"""text item - text between delimiters """
-	want = 'citm'
-
-text_items = text_item
+class Tuesday(aetools.ComponentItem):
+	"""Tuesday - Tuesday """
+	want = 'tue '
 
 class type_class(aetools.ComponentItem):
 	"""type class - the name of a particular class (or any four-character code) """
 	want = 'type'
 
-class upper_case(aetools.ComponentItem):
-	"""upper case - Text with lower case converted to upper case """
-	want = 'case'
+class empty_ae_name_(aetools.ComponentItem):
+	""" - the undefined value """
+	want = 'undf'
+
+class Unicode_text(aetools.ComponentItem):
+	"""Unicode text - text in the Unicode format (cannot be viewed without conversion) """
+	want = 'utxt'
+
+Unicode_text = Unicode_text
 
 class vector(aetools.ComponentItem):
 	"""vector - An ordered collection of items """
@@ -1358,43 +1372,54 @@ class version(aetools.ComponentItem):
 	"""version - a version value """
 	want = 'vers'
 
-class weekday(aetools.ComponentItem):
-	"""weekday - a weekday """
+class Wednesday(aetools.ComponentItem):
+	"""Wednesday - Wednesday """
+	want = 'wed '
+
+class weekdays(aetools.ComponentItem):
+	"""weekdays -  """
 	want = 'wkdy'
 
-weekdays = weekday
-
-class writing_code(aetools.ComponentItem):
-	"""writing code - codes that identify the language and script system """
-	want = 'psct'
-
-class writing_code_info(aetools.ComponentItem):
-	"""writing code info - script code and language code of text run """
-	want = 'citl'
-class language_code(aetools.NProperty):
-	"""language code - the language code for the text """
-	which = 'plcd'
-	want = 'shor'
-class script_code(aetools.NProperty):
-	"""script code - the script code for the text """
-	which = 'pscd'
-	want = 'shor'
-
-writing_code_infos = writing_code_info
+weekday = weekdays
 
 class yards(aetools.ComponentItem):
 	"""yards - a distance measurement in Imperial yards """
 	want = 'yard'
 
-class zone(aetools.ComponentItem):
-	"""zone - an AppleTalk zone """
+class zones(aetools.ComponentItem):
+	"""zones -  """
 	want = 'zone'
 
-zones = zone
-empty_ae_name_._superclassnames = []
-empty_ae_name_._privpropdict = {
+zone = zones
+anything._superclassnames = []
+anything._privpropdict = {
 }
-empty_ae_name_._privelemdict = {
+anything._privelemdict = {
+}
+pictures._superclassnames = []
+pictures._privpropdict = {
+}
+pictures._privelemdict = {
+}
+styled_text._superclassnames = []
+styled_text._privpropdict = {
+}
+styled_text._privelemdict = {
+}
+styled_text._superclassnames = []
+styled_text._privpropdict = {
+}
+styled_text._privelemdict = {
+}
+strings._superclassnames = []
+strings._privpropdict = {
+}
+strings._privelemdict = {
+}
+aliases._superclassnames = []
+aliases._privpropdict = {
+}
+aliases._privelemdict = {
 }
 April._superclassnames = []
 April._privpropdict = {
@@ -1406,161 +1431,38 @@ August._privpropdict = {
 }
 August._privelemdict = {
 }
-C_string._superclassnames = []
-C_string._privpropdict = {
+booleans._superclassnames = []
+booleans._privpropdict = {
 }
-C_string._privelemdict = {
+booleans._privelemdict = {
 }
-December._superclassnames = []
-December._privpropdict = {
+RGB_colors._superclassnames = []
+RGB_colors._privpropdict = {
 }
-December._privelemdict = {
+RGB_colors._privelemdict = {
 }
-February._superclassnames = []
-February._privpropdict = {
+application._superclassnames = []
+application._privpropdict = {
+	'AppleScript' : AppleScript,
+	'days' : days,
+	'hours' : hours,
+	'minutes' : minutes,
+	'pi' : pi,
+	'print_depth' : print_depth,
+	'print_length' : print_length,
+	'result' : result,
+	'return_' : return_,
+	'space' : space,
+	'tab' : tab,
+	'text_item_delimiters' : text_item_delimiters,
+	'weeks' : weeks,
 }
-February._privelemdict = {
+application._privelemdict = {
 }
-Friday._superclassnames = []
-Friday._privpropdict = {
+upper_case._superclassnames = []
+upper_case._privpropdict = {
 }
-Friday._privelemdict = {
-}
-January._superclassnames = []
-January._privpropdict = {
-}
-January._privelemdict = {
-}
-July._superclassnames = []
-July._privpropdict = {
-}
-July._privelemdict = {
-}
-June._superclassnames = []
-June._privpropdict = {
-}
-June._privelemdict = {
-}
-March._superclassnames = []
-March._privpropdict = {
-}
-March._privelemdict = {
-}
-May._superclassnames = []
-May._privpropdict = {
-}
-May._privelemdict = {
-}
-Monday._superclassnames = []
-Monday._privpropdict = {
-}
-Monday._privelemdict = {
-}
-November._superclassnames = []
-November._privpropdict = {
-}
-November._privelemdict = {
-}
-October._superclassnames = []
-October._privpropdict = {
-}
-October._privelemdict = {
-}
-Pascal_string._superclassnames = []
-Pascal_string._privpropdict = {
-}
-Pascal_string._privelemdict = {
-}
-RGB_color._superclassnames = []
-RGB_color._privpropdict = {
-}
-RGB_color._privelemdict = {
-}
-Saturday._superclassnames = []
-Saturday._privpropdict = {
-}
-Saturday._privelemdict = {
-}
-September._superclassnames = []
-September._privpropdict = {
-}
-September._privelemdict = {
-}
-Sunday._superclassnames = []
-Sunday._privpropdict = {
-}
-Sunday._privelemdict = {
-}
-Thursday._superclassnames = []
-Thursday._privpropdict = {
-}
-Thursday._privelemdict = {
-}
-Tuesday._superclassnames = []
-Tuesday._privpropdict = {
-}
-Tuesday._privelemdict = {
-}
-Unicode_text._superclassnames = []
-Unicode_text._privpropdict = {
-}
-Unicode_text._privelemdict = {
-}
-Unicode_text._superclassnames = []
-Unicode_text._privpropdict = {
-}
-Unicode_text._privelemdict = {
-}
-Wednesday._superclassnames = []
-Wednesday._privpropdict = {
-}
-Wednesday._privelemdict = {
-}
-alias._superclassnames = []
-alias._privpropdict = {
-}
-alias._privelemdict = {
-}
-alias_or_string._superclassnames = []
-alias_or_string._privpropdict = {
-}
-alias_or_string._privelemdict = {
-}
-anything._superclassnames = []
-anything._privpropdict = {
-}
-anything._privelemdict = {
-}
-app._superclassnames = []
-app._privpropdict = {
-}
-app._privelemdict = {
-}
-boolean._superclassnames = []
-boolean._privpropdict = {
-}
-boolean._privelemdict = {
-}
-centimeters._superclassnames = []
-centimeters._privpropdict = {
-}
-centimeters._privelemdict = {
-}
-character._superclassnames = []
-character._privpropdict = {
-}
-character._privelemdict = {
-}
-class_._superclassnames = ['type_class']
-class_._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-}
-class_._privelemdict = {
-}
-constant._superclassnames = []
-constant._privpropdict = {
-}
-constant._privelemdict = {
+upper_case._privelemdict = {
 }
 cubic_centimeters._superclassnames = []
 cubic_centimeters._privpropdict = {
@@ -1572,37 +1474,63 @@ cubic_feet._privpropdict = {
 }
 cubic_feet._privelemdict = {
 }
-cubic_inches._superclassnames = []
-cubic_inches._privpropdict = {
+characters._superclassnames = []
+characters._privpropdict = {
 }
-cubic_inches._privelemdict = {
+characters._privelemdict = {
+}
+writing_code_info._superclassnames = []
+writing_code_info._privpropdict = {
+	'language_code' : language_code,
+	'script_code' : script_code,
+}
+writing_code_info._privelemdict = {
+}
+text_items._superclassnames = []
+text_items._privpropdict = {
+}
+text_items._privelemdict = {
 }
 cubic_meters._superclassnames = []
 cubic_meters._privpropdict = {
 }
 cubic_meters._privelemdict = {
 }
+centimeters._superclassnames = []
+centimeters._privpropdict = {
+}
+centimeters._privelemdict = {
+}
+item._superclassnames = []
+item._privpropdict = {
+	'id' : id,
+}
+item._privelemdict = {
+}
+C_strings._superclassnames = []
+C_strings._privpropdict = {
+}
+C_strings._privelemdict = {
+}
+text._superclassnames = []
+text._privpropdict = {
+}
+text._privelemdict = {
+}
+cubic_inches._superclassnames = []
+cubic_inches._privpropdict = {
+}
+cubic_inches._privelemdict = {
+}
 cubic_yards._superclassnames = []
 cubic_yards._privpropdict = {
 }
 cubic_yards._privelemdict = {
 }
-data._superclassnames = []
-data._privpropdict = {
+December._superclassnames = []
+December._privpropdict = {
 }
-data._privelemdict = {
-}
-date._superclassnames = []
-date._privpropdict = {
-	'date_string' : date_string,
-	'day' : day,
-	'month' : month,
-	'time' : time,
-	'time_string' : time_string,
-	'weekday' : weekday,
-	'year' : year,
-}
-date._privelemdict = {
+December._privelemdict = {
 }
 degrees_Celsius._superclassnames = []
 degrees_Celsius._privpropdict = {
@@ -1619,25 +1547,45 @@ degrees_Kelvin._privpropdict = {
 }
 degrees_Kelvin._privelemdict = {
 }
-encoded_string._superclassnames = []
-encoded_string._privpropdict = {
+reals._superclassnames = []
+reals._privpropdict = {
 }
-encoded_string._privelemdict = {
+reals._privelemdict = {
 }
-event._superclassnames = []
-event._privpropdict = {
+encoded_strings._superclassnames = []
+encoded_strings._privpropdict = {
 }
-event._privelemdict = {
+encoded_strings._privelemdict = {
+}
+constants._superclassnames = []
+constants._privpropdict = {
+}
+constants._privelemdict = {
+}
+events._superclassnames = []
+events._privpropdict = {
+}
+events._privelemdict = {
+}
+February._superclassnames = []
+February._privpropdict = {
+}
+February._privelemdict = {
 }
 feet._superclassnames = []
 feet._privpropdict = {
 }
 feet._privelemdict = {
 }
-file_specification._superclassnames = []
-file_specification._privpropdict = {
+Friday._superclassnames = []
+Friday._privpropdict = {
 }
-file_specification._privelemdict = {
+Friday._privelemdict = {
+}
+file_specifications._superclassnames = []
+file_specifications._privpropdict = {
+}
+file_specifications._privelemdict = {
 }
 gallons._superclassnames = []
 gallons._privpropdict = {
@@ -1649,21 +1597,16 @@ grams._privpropdict = {
 }
 grams._privelemdict = {
 }
-handler._superclassnames = []
-handler._privpropdict = {
+handlers._superclassnames = []
+handlers._privpropdict = {
 }
-handler._privelemdict = {
+handlers._privelemdict = {
 }
 inches._superclassnames = []
 inches._privpropdict = {
 }
 inches._privelemdict = {
 }
-integer._superclassnames = []
-integer._privpropdict = {
-}
-integer._privelemdict = {
-}
 international_text._superclassnames = []
 international_text._privpropdict = {
 }
@@ -1674,19 +1617,25 @@ international_text._privpropdict = {
 }
 international_text._privelemdict = {
 }
-item._superclassnames = []
-item._privpropdict = {
-	'id' : id,
+January._superclassnames = []
+January._privpropdict = {
 }
-item._privelemdict = {
+January._privelemdict = {
 }
-keystroke._superclassnames = []
-keystroke._privpropdict = {
-	'key' : key,
-	'key_kind' : key_kind,
-	'modifiers' : modifiers,
+July._superclassnames = []
+July._privpropdict = {
 }
-keystroke._privelemdict = {
+July._privelemdict = {
+}
+June._superclassnames = []
+June._privpropdict = {
+}
+June._privelemdict = {
+}
+reference_forms._superclassnames = []
+reference_forms._privpropdict = {
+}
+reference_forms._privelemdict = {
 }
 kilograms._superclassnames = []
 kilograms._privpropdict = {
@@ -1698,11 +1647,30 @@ kilometers._privpropdict = {
 }
 kilometers._privelemdict = {
 }
-linked_list._superclassnames = []
-linked_list._privpropdict = {
-	'length' : length,
+keystroke._superclassnames = []
+keystroke._privpropdict = {
+	'key' : key,
+	'key_kind' : key_kind,
+	'modifiers' : modifiers,
 }
-linked_list._privelemdict = {
+keystroke._privelemdict = {
+}
+pounds._superclassnames = []
+pounds._privpropdict = {
+}
+pounds._privelemdict = {
+}
+date._superclassnames = []
+date._privpropdict = {
+	'date_string' : date_string,
+	'day' : day,
+	'month' : month,
+	'time' : time,
+	'time_string' : time_string,
+	'weekday' : weekday,
+	'year' : year,
+}
+date._privelemdict = {
 }
 list._superclassnames = []
 list._privpropdict = {
@@ -1712,30 +1680,51 @@ list._privpropdict = {
 }
 list._privelemdict = {
 }
+liters._superclassnames = []
+liters._privpropdict = {
+}
+liters._privelemdict = {
+}
+linked_list._superclassnames = []
+linked_list._privpropdict = {
+	'length' : length,
+}
+linked_list._privelemdict = {
+}
+integers._superclassnames = []
+integers._privpropdict = {
+}
+integers._privelemdict = {
+}
 list_or_record._superclassnames = []
 list_or_record._privpropdict = {
 }
 list_or_record._privelemdict = {
-}
-list_or_string._superclassnames = []
-list_or_string._privpropdict = {
-}
-list_or_string._privelemdict = {
 }
 list_2c__record_or_text._superclassnames = []
 list_2c__record_or_text._privpropdict = {
 }
 list_2c__record_or_text._privelemdict = {
 }
-liters._superclassnames = []
-liters._privpropdict = {
+list_or_string._superclassnames = []
+list_or_string._privpropdict = {
 }
-liters._privelemdict = {
+list_or_string._privelemdict = {
 }
-machine._superclassnames = []
-machine._privpropdict = {
+machines._superclassnames = []
+machines._privpropdict = {
 }
-machine._privelemdict = {
+machines._privelemdict = {
+}
+March._superclassnames = []
+March._privpropdict = {
+}
+March._privelemdict = {
+}
+May._superclassnames = []
+May._privpropdict = {
+}
+May._privelemdict = {
 }
 meters._superclassnames = []
 meters._privpropdict = {
@@ -1747,85 +1736,111 @@ miles._privpropdict = {
 }
 miles._privelemdict = {
 }
-missing_value._superclassnames = []
-missing_value._privpropdict = {
+months._superclassnames = []
+months._privpropdict = {
 }
-missing_value._privelemdict = {
+months._privelemdict = {
 }
-month._superclassnames = []
-month._privpropdict = {
+Monday._superclassnames = []
+Monday._privpropdict = {
 }
-month._privelemdict = {
+Monday._privelemdict = {
 }
-number._superclassnames = []
-number._privpropdict = {
+missing_values._superclassnames = []
+missing_values._privpropdict = {
 }
-number._privelemdict = {
+missing_values._privelemdict = {
 }
 number_or_date._superclassnames = []
 number_or_date._privpropdict = {
 }
 number_or_date._privelemdict = {
 }
+number_2c__date_or_text._superclassnames = []
+number_2c__date_or_text._privpropdict = {
+}
+number_2c__date_or_text._privelemdict = {
+}
+numbers._superclassnames = []
+numbers._privpropdict = {
+}
+numbers._privelemdict = {
+}
+November._superclassnames = []
+November._privpropdict = {
+}
+November._privelemdict = {
+}
 number_or_string._superclassnames = []
 number_or_string._privpropdict = {
 }
 number_or_string._privelemdict = {
 }
-number_2c__date_or_text._superclassnames = []
-number_2c__date_or_text._privpropdict = {
+references._superclassnames = []
+references._privpropdict = {
 }
-number_2c__date_or_text._privelemdict = {
+references._privelemdict = {
+}
+October._superclassnames = []
+October._privpropdict = {
+}
+October._privelemdict = {
 }
 ounces._superclassnames = []
 ounces._privpropdict = {
 }
 ounces._privelemdict = {
 }
-picture._superclassnames = []
-picture._privpropdict = {
+class_._superclassnames = ['type_class']
+class_._privpropdict = {
+	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 }
-picture._privelemdict = {
+class_._privelemdict = {
 }
-pounds._superclassnames = []
-pounds._privpropdict = {
+prepositions._superclassnames = []
+prepositions._privpropdict = {
 }
-pounds._privelemdict = {
-}
-preposition._superclassnames = []
-preposition._privpropdict = {
-}
-preposition._privelemdict = {
+prepositions._privelemdict = {
 }
 properties._superclassnames = []
 properties._privpropdict = {
 }
 properties._privelemdict = {
 }
+writing_code._superclassnames = []
+writing_code._privpropdict = {
+}
+writing_code._privelemdict = {
+}
+Pascal_strings._superclassnames = []
+Pascal_strings._privpropdict = {
+}
+Pascal_strings._privelemdict = {
+}
 quarts._superclassnames = []
 quarts._privpropdict = {
 }
 quarts._privelemdict = {
 }
-real._superclassnames = []
-real._privpropdict = {
+data._superclassnames = []
+data._privpropdict = {
 }
-real._privelemdict = {
+data._privelemdict = {
 }
-record._superclassnames = []
-record._privpropdict = {
+records._superclassnames = []
+records._privpropdict = {
 }
-record._privelemdict = {
+records._privelemdict = {
 }
-reference._superclassnames = []
-reference._privpropdict = {
+Saturday._superclassnames = []
+Saturday._privpropdict = {
 }
-reference._privelemdict = {
+Saturday._privelemdict = {
 }
-reference_form._superclassnames = []
-reference_form._privpropdict = {
+seconds._superclassnames = []
+seconds._privpropdict = {
 }
-reference_form._privelemdict = {
+seconds._privelemdict = {
 }
 script._superclassnames = []
 script._privpropdict = {
@@ -1834,15 +1849,20 @@ script._privpropdict = {
 }
 script._privelemdict = {
 }
-seconds._superclassnames = []
-seconds._privpropdict = {
+September._superclassnames = []
+September._privpropdict = {
 }
-seconds._privelemdict = {
+September._privelemdict = {
 }
-sound._superclassnames = []
-sound._privpropdict = {
+alias_or_string._superclassnames = []
+alias_or_string._privpropdict = {
 }
-sound._privelemdict = {
+alias_or_string._privelemdict = {
+}
+sounds._superclassnames = []
+sounds._privpropdict = {
+}
+sounds._privelemdict = {
 }
 square_feet._superclassnames = []
 square_feet._privpropdict = {
@@ -1854,26 +1874,21 @@ square_kilometers._privpropdict = {
 }
 square_kilometers._privelemdict = {
 }
-square_meters._superclassnames = []
-square_meters._privpropdict = {
-}
-square_meters._privelemdict = {
-}
 square_miles._superclassnames = []
 square_miles._privpropdict = {
 }
 square_miles._privelemdict = {
+}
+square_meters._superclassnames = []
+square_meters._privpropdict = {
+}
+square_meters._privelemdict = {
 }
 square_yards._superclassnames = []
 square_yards._privpropdict = {
 }
 square_yards._privelemdict = {
 }
-string._superclassnames = []
-string._privpropdict = {
-}
-string._privelemdict = {
-}
 styled_Clipboard_text._superclassnames = []
 styled_Clipboard_text._privpropdict = {
 }
@@ -1883,6 +1898,11 @@ styled_Clipboard_text._superclassnames = []
 styled_Clipboard_text._privpropdict = {
 }
 styled_Clipboard_text._privelemdict = {
+}
+Sunday._superclassnames = []
+Sunday._privpropdict = {
+}
+Sunday._privelemdict = {
 }
 styled_Unicode_text._superclassnames = []
 styled_Unicode_text._privpropdict = {
@@ -1894,35 +1914,35 @@ styled_Unicode_text._privpropdict = {
 }
 styled_Unicode_text._privelemdict = {
 }
-styled_text._superclassnames = []
-styled_text._privpropdict = {
+Thursday._superclassnames = []
+Thursday._privpropdict = {
 }
-styled_text._privelemdict = {
+Thursday._privelemdict = {
 }
-styled_text._superclassnames = []
-styled_text._privpropdict = {
+Tuesday._superclassnames = []
+Tuesday._privpropdict = {
 }
-styled_text._privelemdict = {
-}
-text._superclassnames = []
-text._privpropdict = {
-}
-text._privelemdict = {
-}
-text_item._superclassnames = []
-text_item._privpropdict = {
-}
-text_item._privelemdict = {
+Tuesday._privelemdict = {
 }
 type_class._superclassnames = []
 type_class._privpropdict = {
 }
 type_class._privelemdict = {
 }
-upper_case._superclassnames = []
-upper_case._privpropdict = {
+empty_ae_name_._superclassnames = []
+empty_ae_name_._privpropdict = {
 }
-upper_case._privelemdict = {
+empty_ae_name_._privelemdict = {
+}
+Unicode_text._superclassnames = []
+Unicode_text._privpropdict = {
+}
+Unicode_text._privelemdict = {
+}
+Unicode_text._superclassnames = []
+Unicode_text._privpropdict = {
+}
+Unicode_text._privelemdict = {
 }
 vector._superclassnames = []
 vector._privpropdict = {
@@ -1935,32 +1955,25 @@ version._privpropdict = {
 }
 version._privelemdict = {
 }
-weekday._superclassnames = []
-weekday._privpropdict = {
+Wednesday._superclassnames = []
+Wednesday._privpropdict = {
 }
-weekday._privelemdict = {
+Wednesday._privelemdict = {
 }
-writing_code._superclassnames = []
-writing_code._privpropdict = {
+weekdays._superclassnames = []
+weekdays._privpropdict = {
 }
-writing_code._privelemdict = {
-}
-writing_code_info._superclassnames = []
-writing_code_info._privpropdict = {
-	'language_code' : language_code,
-	'script_code' : script_code,
-}
-writing_code_info._privelemdict = {
+weekdays._privelemdict = {
 }
 yards._superclassnames = []
 yards._privpropdict = {
 }
 yards._privelemdict = {
 }
-zone._superclassnames = []
-zone._privpropdict = {
+zones._superclassnames = []
+zones._privpropdict = {
 }
-zone._privelemdict = {
+zones._privelemdict = {
 }
 _Enum_boov = {
 	'true' : 'true',	# the true boolean value
@@ -2029,25 +2042,25 @@ _Enum_misc = {
 #
 _classdeclarations = {
 	'****' : anything,
-	'PICT' : picture,
+	'PICT' : pictures,
 	'STXT' : styled_text,
-	'TEXT' : string,
-	'alis' : alias,
+	'TEXT' : strings,
+	'alis' : aliases,
 	'apr ' : April,
 	'aug ' : August,
-	'bool' : boolean,
-	'cRGB' : RGB_color,
-	'capp' : app,
+	'bool' : booleans,
+	'cRGB' : RGB_colors,
+	'capp' : application,
 	'case' : upper_case,
 	'ccmt' : cubic_centimeters,
 	'cfet' : cubic_feet,
-	'cha ' : character,
+	'cha ' : characters,
 	'citl' : writing_code_info,
-	'citm' : text_item,
+	'citm' : text_items,
 	'cmet' : cubic_meters,
 	'cmtr' : centimeters,
 	'cobj' : item,
-	'cstr' : C_string,
+	'cstr' : C_strings,
 	'ctxt' : text,
 	'cuin' : cubic_inches,
 	'cyrd' : cubic_yards,
@@ -2055,23 +2068,23 @@ _classdeclarations = {
 	'degc' : degrees_Celsius,
 	'degf' : degrees_Fahrenheit,
 	'degk' : degrees_Kelvin,
-	'doub' : real,
-	'encs' : encoded_string,
-	'enum' : constant,
-	'evnt' : event,
+	'doub' : reals,
+	'encs' : encoded_strings,
+	'enum' : constants,
+	'evnt' : events,
 	'feb ' : February,
 	'feet' : feet,
 	'fri ' : Friday,
-	'fss ' : file_specification,
+	'fss ' : file_specifications,
 	'galn' : gallons,
 	'gram' : grams,
-	'hand' : handler,
+	'hand' : handlers,
 	'inch' : inches,
 	'itxt' : international_text,
 	'jan ' : January,
 	'jul ' : July,
 	'jun ' : June,
-	'kfrm' : reference_form,
+	'kfrm' : reference_forms,
 	'kgrm' : kilograms,
 	'kmtr' : kilometers,
 	'kprs' : keystroke,
@@ -2080,40 +2093,40 @@ _classdeclarations = {
 	'list' : list,
 	'litr' : liters,
 	'llst' : linked_list,
-	'long' : integer,
+	'long' : integers,
 	'lr  ' : list_or_record,
 	'lrs ' : list_2c__record_or_text,
 	'ls  ' : list_or_string,
-	'mach' : machine,
+	'mach' : machines,
 	'mar ' : March,
 	'may ' : May,
 	'metr' : meters,
 	'mile' : miles,
-	'mnth' : month,
+	'mnth' : months,
 	'mon ' : Monday,
-	'msng' : missing_value,
+	'msng' : missing_values,
 	'nd  ' : number_or_date,
 	'nds ' : number_2c__date_or_text,
-	'nmbr' : number,
+	'nmbr' : numbers,
 	'nov ' : November,
 	'ns  ' : number_or_string,
-	'obj ' : reference,
+	'obj ' : references,
 	'oct ' : October,
 	'ozs ' : ounces,
 	'pcls' : class_,
-	'prep' : preposition,
+	'prep' : prepositions,
 	'prop' : properties,
 	'psct' : writing_code,
-	'pstr' : Pascal_string,
+	'pstr' : Pascal_strings,
 	'qrts' : quarts,
 	'rdat' : data,
-	'reco' : record,
+	'reco' : records,
 	'sat ' : Saturday,
 	'scnd' : seconds,
 	'scpt' : script,
 	'sep ' : September,
 	'sf  ' : alias_or_string,
-	'snd ' : sound,
+	'snd ' : sounds,
 	'sqft' : square_feet,
 	'sqkm' : square_kilometers,
 	'sqmi' : square_miles,
@@ -2130,9 +2143,9 @@ _classdeclarations = {
 	'vect' : vector,
 	'vers' : version,
 	'wed ' : Wednesday,
-	'wkdy' : weekday,
+	'wkdy' : weekdays,
 	'yard' : yards,
-	'zone' : zone,
+	'zone' : zones,
 }
 
 _propdeclarations = {

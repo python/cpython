@@ -33,11 +33,11 @@ class translation(aetools.NProperty):
 
 drawing_areas = drawing_area
 
-class graphic_group(aetools.ComponentItem):
-	"""graphic group - Group of graphics """
+class graphic_groups(aetools.ComponentItem):
+	"""graphic groups -  """
 	want = 'cpic'
 
-graphic_groups = graphic_group
+graphic_group = graphic_groups
 drawing_area._superclassnames = []
 drawing_area._privpropdict = {
 	'rotation' : rotation,
@@ -46,10 +46,10 @@ drawing_area._privpropdict = {
 }
 drawing_area._privelemdict = {
 }
-graphic_group._superclassnames = []
-graphic_group._privpropdict = {
+graphic_groups._superclassnames = []
+graphic_groups._privpropdict = {
 }
-graphic_group._privelemdict = {
+graphic_groups._privelemdict = {
 }
 
 #
@@ -57,7 +57,7 @@ graphic_group._privelemdict = {
 #
 _classdeclarations = {
 	'cdrw' : drawing_area,
-	'cpic' : graphic_group,
+	'cpic' : graphic_groups,
 }
 
 _propdeclarations = {

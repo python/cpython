@@ -119,11 +119,91 @@ class writing_code(aetools.NProperty):
 
 drawing_areas = drawing_area
 
-class graphic_group(aetools.ComponentItem):
-	"""graphic group - Group of graphics """
+class graphic_objects(aetools.ComponentItem):
+	"""graphic objects -  """
+	want = 'cgob'
+
+graphic_object = graphic_objects
+
+class graphic_shapes(aetools.ComponentItem):
+	"""graphic shapes -  """
+	want = 'cgsh'
+
+graphic_shape = graphic_shapes
+
+class graphic_text(aetools.ComponentItem):
+	"""graphic text - A series of characters within a drawing area """
+	want = 'cgtx'
+class color(aetools.NProperty):
+	"""color - the color of the first character """
+	which = 'colr'
+	want = 'cRGB'
+class font(aetools.NProperty):
+	"""font - the name of the font of the first character """
+	which = 'font'
+	want = 'ctxt'
+class size(aetools.NProperty):
+	"""size - the size in points of the first character """
+	which = 'ptsz'
+	want = 'fixd'
+class uniform_styles(aetools.NProperty):
+	"""uniform styles - the text styles that are uniform throughout the text """
+	which = 'ustl'
+	want = 'tsty'
+
+class ovals(aetools.ComponentItem):
+	"""ovals -  """
+	want = 'covl'
+
+oval = ovals
+
+class polygon(aetools.ComponentItem):
+	"""polygon - A polygon """
+	want = 'cpgn'
+class point_list(aetools.NProperty):
+	"""point list - the list of points that define the polygon """
+	which = 'ptlt'
+	want = 'QDpt'
+
+polygons = polygon
+
+class graphic_groups(aetools.ComponentItem):
+	"""graphic groups -  """
 	want = 'cpic'
 
-graphic_groups = graphic_group
+graphic_group = graphic_groups
+
+class pixel_maps(aetools.ComponentItem):
+	"""pixel maps -  """
+	want = 'cpix'
+
+pixel_map = pixel_maps
+
+class pixel(aetools.ComponentItem):
+	"""pixel - A pixel """
+	want = 'cpxl'
+
+pixels = pixel
+
+class rectangles(aetools.ComponentItem):
+	"""rectangles -  """
+	want = 'crec'
+
+rectangle = rectangles
+
+class rounded_rectangle(aetools.ComponentItem):
+	"""rounded rectangle - A rounded rectangle """
+	want = 'crrc'
+class corner_curve_height(aetools.NProperty):
+	"""corner curve height - the height of the oval used to define the shape of the rounded corners """
+	which = 'pchd'
+	want = 'shor'
+class corner_curve_width(aetools.NProperty):
+	"""corner curve width - the width of the oval used to define the shape of the rounded corners """
+	which = 'pcwd'
+	want = 'shor'
+
+rounded_rectangles = rounded_rectangle
 
 class graphic_line(aetools.ComponentItem):
 	"""graphic line - A graphic line """
@@ -146,86 +226,6 @@ class start_point(aetools.NProperty):
 	want = 'QDpt'
 
 graphic_lines = graphic_line
-
-class graphic_object(aetools.ComponentItem):
-	"""graphic object - A graphic object """
-	want = 'cgob'
-
-graphic_objects = graphic_object
-
-class graphic_shape(aetools.ComponentItem):
-	"""graphic shape - A graphic shape """
-	want = 'cgsh'
-
-graphic_shapes = graphic_shape
-
-class graphic_text(aetools.ComponentItem):
-	"""graphic text - A series of characters within a drawing area """
-	want = 'cgtx'
-class color(aetools.NProperty):
-	"""color - the color of the first character """
-	which = 'colr'
-	want = 'cRGB'
-class font(aetools.NProperty):
-	"""font - the name of the font of the first character """
-	which = 'font'
-	want = 'ctxt'
-class size(aetools.NProperty):
-	"""size - the size in points of the first character """
-	which = 'ptsz'
-	want = 'fixd'
-class uniform_styles(aetools.NProperty):
-	"""uniform styles - the text styles that are uniform throughout the text """
-	which = 'ustl'
-	want = 'tsty'
-
-class oval(aetools.ComponentItem):
-	"""oval - An oval """
-	want = 'covl'
-
-ovals = oval
-
-class pixel(aetools.ComponentItem):
-	"""pixel - A pixel """
-	want = 'cpxl'
-
-class pixel_map(aetools.ComponentItem):
-	"""pixel map - A pixel map """
-	want = 'cpix'
-
-pixel_maps = pixel_map
-
-pixels = pixel
-
-class polygon(aetools.ComponentItem):
-	"""polygon - A polygon """
-	want = 'cpgn'
-class point_list(aetools.NProperty):
-	"""point list - the list of points that define the polygon """
-	which = 'ptlt'
-	want = 'QDpt'
-
-polygons = polygon
-
-class rectangle(aetools.ComponentItem):
-	"""rectangle - A rectangle """
-	want = 'crec'
-
-rectangles = rectangle
-
-class rounded_rectangle(aetools.ComponentItem):
-	"""rounded rectangle - A rounded rectangle """
-	want = 'crrc'
-class corner_curve_height(aetools.NProperty):
-	"""corner curve height - the height of the oval used to define the shape of the rounded corners """
-	which = 'pchd'
-	want = 'shor'
-class corner_curve_width(aetools.NProperty):
-	"""corner curve width - the width of the oval used to define the shape of the rounded corners """
-	which = 'pcwd'
-	want = 'shor'
-
-rounded_rectangles = rounded_rectangle
 arc._superclassnames = []
 arc._privpropdict = {
 	'arc_angle' : arc_angle,
@@ -259,29 +259,15 @@ drawing_area._privpropdict = {
 }
 drawing_area._privelemdict = {
 }
-graphic_group._superclassnames = []
-graphic_group._privpropdict = {
+graphic_objects._superclassnames = []
+graphic_objects._privpropdict = {
 }
-graphic_group._privelemdict = {
+graphic_objects._privelemdict = {
 }
-graphic_line._superclassnames = []
-graphic_line._privpropdict = {
-	'arrow_style' : arrow_style,
-	'dash_style' : dash_style,
-	'end_point' : end_point,
-	'start_point' : start_point,
+graphic_shapes._superclassnames = []
+graphic_shapes._privpropdict = {
 }
-graphic_line._privelemdict = {
-}
-graphic_object._superclassnames = []
-graphic_object._privpropdict = {
-}
-graphic_object._privelemdict = {
-}
-graphic_shape._superclassnames = []
-graphic_shape._privpropdict = {
-}
-graphic_shape._privelemdict = {
+graphic_shapes._privelemdict = {
 }
 graphic_text._superclassnames = []
 graphic_text._privpropdict = {
@@ -292,21 +278,10 @@ graphic_text._privpropdict = {
 }
 graphic_text._privelemdict = {
 }
-oval._superclassnames = []
-oval._privpropdict = {
+ovals._superclassnames = []
+ovals._privpropdict = {
 }
-oval._privelemdict = {
-}
-pixel._superclassnames = []
-pixel._privpropdict = {
-	'color' : color,
-}
-pixel._privelemdict = {
-}
-pixel_map._superclassnames = []
-pixel_map._privpropdict = {
-}
-pixel_map._privelemdict = {
+ovals._privelemdict = {
 }
 polygon._superclassnames = []
 polygon._privpropdict = {
@@ -314,10 +289,26 @@ polygon._privpropdict = {
 }
 polygon._privelemdict = {
 }
-rectangle._superclassnames = []
-rectangle._privpropdict = {
+graphic_groups._superclassnames = []
+graphic_groups._privpropdict = {
 }
-rectangle._privelemdict = {
+graphic_groups._privelemdict = {
+}
+pixel_maps._superclassnames = []
+pixel_maps._privpropdict = {
+}
+pixel_maps._privelemdict = {
+}
+pixel._superclassnames = []
+pixel._privpropdict = {
+	'color' : color,
+}
+pixel._privelemdict = {
+}
+rectangles._superclassnames = []
+rectangles._privpropdict = {
+}
+rectangles._privelemdict = {
 }
 rounded_rectangle._superclassnames = []
 rounded_rectangle._privpropdict = {
@@ -325,6 +316,15 @@ rounded_rectangle._privpropdict = {
 	'corner_curve_width' : corner_curve_width,
 }
 rounded_rectangle._privelemdict = {
+}
+graphic_line._superclassnames = []
+graphic_line._privpropdict = {
+	'arrow_style' : arrow_style,
+	'dash_style' : dash_style,
+	'end_point' : end_point,
+	'start_point' : start_point,
+}
+graphic_line._privelemdict = {
 }
 _Enum_arro = {
 	'no_arrow' : 'arno',	# No arrow on line
@@ -358,15 +358,15 @@ _Enum_tran = {
 _classdeclarations = {
 	'carc' : arc,
 	'cdrw' : drawing_area,
-	'cgob' : graphic_object,
-	'cgsh' : graphic_shape,
+	'cgob' : graphic_objects,
+	'cgsh' : graphic_shapes,
 	'cgtx' : graphic_text,
-	'covl' : oval,
+	'covl' : ovals,
 	'cpgn' : polygon,
-	'cpic' : graphic_group,
-	'cpix' : pixel_map,
+	'cpic' : graphic_groups,
+	'cpix' : pixel_maps,
 	'cpxl' : pixel,
-	'crec' : rectangle,
+	'crec' : rectangles,
 	'crrc' : rounded_rectangle,
 	'glin' : graphic_line,
 }

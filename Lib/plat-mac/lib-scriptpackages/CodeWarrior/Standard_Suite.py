@@ -194,42 +194,6 @@ class offset(aetools.NProperty):
 	which = 'pOff'
 	want = 'long'
 
-class document(aetools.ComponentItem):
-	"""document - a document """
-	want = 'docu'
-class file_permissions(aetools.NProperty):
-	"""file permissions - the file permissions for the document """
-	which = 'PERM'
-	want = 'PERM'
-class index(aetools.NProperty):
-	"""index - the number of the document """
-	which = 'pidx'
-	want = 'long'
-class kind(aetools.NProperty):
-	"""kind - the kind of document """
-	which = 'DKND'
-	want = 'DKND'
-class location(aetools.NProperty):
-	"""location - the file of the document """
-	which = 'FILE'
-	want = 'fss '
-class name(aetools.NProperty):
-	"""name - the title of the document """
-	which = 'pnam'
-	want = 'itxt'
-class window(aetools.NProperty):
-	"""window - the window of the document. """
-	which = 'cwin'
-	want = 'cwin'
-
-documents = document
-
-class file(aetools.ComponentItem):
-	"""file - A file """
-	want = 'file'
-
-files = file
-
 class insertion_point(aetools.ComponentItem):
 	"""insertion point - An insertion location between two objects """
 	want = 'cins'
@@ -237,6 +201,10 @@ class insertion_point(aetools.ComponentItem):
 class line(aetools.ComponentItem):
 	"""line - lines of text """
 	want = 'clin'
+class index(aetools.NProperty):
+	"""index - index of a line object from the beginning of the document (first line has index 1) """
+	which = 'pidx'
+	want = 'long'
 #        element 'cha ' as ['indx', 'rang', 'rele']
 
 lines = line
@@ -271,6 +239,10 @@ class document(aetools.NProperty):
 	"""document - the document that owns this window """
 	which = 'docu'
 	want = 'docu'
+class name(aetools.NProperty):
+	"""name - the title of the window """
+	which = 'pnam'
+	want = 'itxt'
 class position(aetools.NProperty):
 	"""position - upper left coordinates of window """
 	which = 'ppos'
@@ -285,6 +257,34 @@ class zoomed(aetools.NProperty):
 	want = 'bool'
 
 windows = window
+
+class document(aetools.ComponentItem):
+	"""document - a document """
+	want = 'docu'
+class file_permissions(aetools.NProperty):
+	"""file permissions - the file permissions for the document """
+	which = 'PERM'
+	want = 'PERM'
+class kind(aetools.NProperty):
+	"""kind - the kind of document """
+	which = 'DKND'
+	want = 'DKND'
+class location(aetools.NProperty):
+	"""location - the file of the document """
+	which = 'FILE'
+	want = 'fss '
+class window(aetools.NProperty):
+	"""window - the window of the document. """
+	which = 'cwin'
+	want = 'cwin'
+
+documents = document
+
+class files(aetools.ComponentItem):
+	"""files - Every file """
+	want = 'file'
+
+file = files
 application._superclassnames = []
 application._privpropdict = {
 	'user_interaction' : user_interaction,
@@ -299,22 +299,6 @@ character._privpropdict = {
 	'offset' : offset,
 }
 character._privelemdict = {
-}
-document._superclassnames = []
-document._privpropdict = {
-	'file_permissions' : file_permissions,
-	'index' : index,
-	'kind' : kind,
-	'location' : location,
-	'name' : name,
-	'window' : window,
-}
-document._privelemdict = {
-}
-file._superclassnames = []
-file._privpropdict = {
-}
-file._privelemdict = {
 }
 insertion_point._superclassnames = []
 insertion_point._privpropdict = {
@@ -366,6 +350,22 @@ window._privpropdict = {
 }
 window._privelemdict = {
 }
+document._superclassnames = []
+document._privpropdict = {
+	'file_permissions' : file_permissions,
+	'index' : index,
+	'kind' : kind,
+	'location' : location,
+	'name' : name,
+	'window' : window,
+}
+document._privelemdict = {
+}
+files._superclassnames = []
+files._privpropdict = {
+}
+files._privelemdict = {
+}
 
 #
 # Indices of types declared in this module
@@ -379,7 +379,7 @@ _classdeclarations = {
 	'ctxt' : text,
 	'cwin' : window,
 	'docu' : document,
-	'file' : file,
+	'file' : files,
 }
 
 _propdeclarations = {

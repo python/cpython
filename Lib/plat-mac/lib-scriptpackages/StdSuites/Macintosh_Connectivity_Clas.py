@@ -29,6 +29,24 @@ class ID(aetools.NProperty):
 
 ADB_addresses = ADB_address
 
+class address_specification(aetools.ComponentItem):
+	"""address specification - Unique designation of a device or service connected to this computer """
+	want = 'cadr'
+class conduit(aetools.NProperty):
+	"""conduit - How the addressee is physically connected """
+	which = 'pcon'
+	want = 'econ'
+class properties(aetools.NProperty):
+	"""properties - property that allows getting and setting of multiple properties """
+	which = 'pALL'
+	want = 'reco'
+class protocol(aetools.NProperty):
+	"""protocol - How to talk to this addressee """
+	which = 'pprt'
+	want = 'epro'
+
+address_specifications = address_specification
+
 class AppleTalk_address(aetools.ComponentItem):
 	"""AppleTalk address - Addresses a device or service connected via the AppleTalk protocol """
 	want = 'cat '
@@ -46,6 +64,26 @@ class AppleTalk_zone(aetools.NProperty):
 	want = 'TEXT'
 
 AppleTalk_addresses = AppleTalk_address
+
+class bus_slot(aetools.ComponentItem):
+	"""bus slot - Addresses a PC, PCI, or NuBus card """
+	want = 'cbus'
+
+bus_slots = bus_slot
+
+class device_specification(aetools.ComponentItem):
+	"""device specification - A device connected to a computer """
+	want = 'cdev'
+class device_address(aetools.NProperty):
+	"""device address - the address of the device """
+	which = 'pdva'
+	want = 'cadr'
+class device_type(aetools.NProperty):
+	"""device type - the kind of device """
+	which = 'pdvt'
+	want = 'edvt'
+
+device_specifications = device_specification
 
 class Ethernet_address(aetools.ComponentItem):
 	"""Ethernet address - Addresses a device by its Ethernet address """
@@ -111,59 +149,29 @@ class Token_Ring_address(aetools.ComponentItem):
 
 Token_Ring_addresses = Token_Ring_address
 
-class USB_Addresses(aetools.ComponentItem):
-	"""USB Addresses -  """
+class USB_address(aetools.ComponentItem):
+	"""USB address - Addresses a device on the Universal Serial Bus """
 	want = 'cusb'
-
-USB_address = USB_Addresses
 class name(aetools.NProperty):
 	"""name - the USB device name """
 	which = 'pnam'
 	want = 'TEXT'
 
-class address_specification(aetools.ComponentItem):
-	"""address specification - Unique designation of a device or service connected to this computer """
-	want = 'cadr'
-class conduit(aetools.NProperty):
-	"""conduit - How the addressee is physically connected """
-	which = 'pcon'
-	want = 'econ'
-class properties(aetools.NProperty):
-	"""properties - property that allows getting and setting of multiple properties """
-	which = 'pALL'
-	want = 'reco'
-class protocol(aetools.NProperty):
-	"""protocol - How to talk to this addressee """
-	which = 'pprt'
-	want = 'epro'
-
-address_specifications = address_specification
-
-class bus_slot(aetools.ComponentItem):
-	"""bus slot - Addresses a PC, PCI, or NuBus card """
-	want = 'cbus'
-
-bus_slots = bus_slot
-
-class device_specification(aetools.ComponentItem):
-	"""device specification - A device connected to a computer """
-	want = 'cdev'
-class device_address(aetools.NProperty):
-	"""device address - the address of the device """
-	which = 'pdva'
-	want = 'cadr'
-class device_type(aetools.NProperty):
-	"""device type - the kind of device """
-	which = 'pdvt'
-	want = 'edvt'
-
-device_specifications = device_specification
+USB_Addresses = USB_address
 ADB_address._superclassnames = ['address_specification']
 ADB_address._privpropdict = {
 	'ID' : ID,
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 }
 ADB_address._privelemdict = {
+}
+address_specification._superclassnames = []
+address_specification._privpropdict = {
+	'conduit' : conduit,
+	'properties' : properties,
+	'protocol' : protocol,
+}
+address_specification._privelemdict = {
 }
 AppleTalk_address._superclassnames = ['address_specification']
 AppleTalk_address._privpropdict = {
@@ -173,6 +181,21 @@ AppleTalk_address._privpropdict = {
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 }
 AppleTalk_address._privelemdict = {
+}
+bus_slot._superclassnames = ['address_specification']
+bus_slot._privpropdict = {
+	'ID' : ID,
+	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
+}
+bus_slot._privelemdict = {
+}
+device_specification._superclassnames = []
+device_specification._privpropdict = {
+	'device_address' : device_address,
+	'device_type' : device_type,
+	'properties' : properties,
+}
+device_specification._privelemdict = {
 }
 Ethernet_address._superclassnames = ['address_specification']
 Ethernet_address._privpropdict = {
@@ -222,33 +245,12 @@ Token_Ring_address._privpropdict = {
 }
 Token_Ring_address._privelemdict = {
 }
-USB_Addresses._superclassnames = []
-USB_Addresses._privpropdict = {
-}
-USB_Addresses._privelemdict = {
-}
-address_specification._superclassnames = []
-address_specification._privpropdict = {
-	'conduit' : conduit,
-	'properties' : properties,
-	'protocol' : protocol,
-}
-address_specification._privelemdict = {
-}
-bus_slot._superclassnames = ['address_specification']
-bus_slot._privpropdict = {
-	'ID' : ID,
+USB_address._superclassnames = ['address_specification']
+USB_address._privpropdict = {
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
+	'name' : name,
 }
-bus_slot._privelemdict = {
-}
-device_specification._superclassnames = []
-device_specification._privpropdict = {
-	'device_address' : device_address,
-	'device_type' : device_type,
-	'properties' : properties,
-}
-device_specification._privelemdict = {
+USB_address._privelemdict = {
 }
 _Enum_econ = {
 	'ADB' : 'eadb',	# 
@@ -337,7 +339,7 @@ _classdeclarations = {
 	'clt ' : LocalTalk_address,
 	'cscs' : SCSI_address,
 	'ctok' : Token_Ring_address,
-	'cusb' : USB_Addresses,
+	'cusb' : USB_address,
 }
 
 _propdeclarations = {
