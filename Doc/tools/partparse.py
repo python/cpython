@@ -1001,6 +1001,7 @@ def startchange():
     hist.cindex = []
     hist.inargs = 0
     hist.enumeratenesting, hist.itemizenesting = 0, 0
+    hist.this_module = None
 
     out.doublenodes = []
     out.doublecindeces = []
@@ -1025,11 +1026,18 @@ d = {}
 for name in ('url', 'module', 'function', 'cfunction',
 	     'keyword', 'method', 'exception', 'constant',
 	     'email', 'class', 'member', 'cdata', 'ctype',
-	     'member', 'sectcode', 'verb'):
+	     'member', 'sectcode', 'verb',
+             'cfunction', 'cdata', 'ctype',
+             ):
     d[name] = chunk_type[CSNAME], 'code', 0
 for name in ('emph', 'var', 'strong', 'code', 'kbd', 'key',
 	     'dfn', 'samp', 'file', 'r', 'i', 't'):
     d[name] = chunk_type[CSNAME], name, 0
+d['character'] = chunk_type[CSNAME], 'samp', 0
+d['url'] = chunk_type[CSNAME], 'code', 0
+d['email'] = chunk_type[CSNAME], 'code', 0
+d['mimetype'] = chunk_type[CSNAME], 'code', 0
+d['newsgroup'] = chunk_type[CSNAME], 'code', 0
 d['program'] = chunk_type[CSNAME], 'strong', 0
 d['\\'] = chunk_type[CSNAME], '*', 0
 # add stuff that converts to text:
@@ -1101,24 +1109,11 @@ def do_funcdesc(length, buf, pp, i, index=1):
     length = length - (newi-i)
 
     idxsi = hist.indexsubitem	# words
-    command = ''
-    cat_class = ''
-    if idxsi and idxsi[-1] in ('method', 'protocol', 'attribute'):
-	command = 'defmethod'
-	cat_class = string.join(idxsi[:-1])
-    elif len(idxsi) == 2 and idxsi[1] == 'function':
-	command = 'deffn'
-	cat_class = string.join(idxsi)
-    elif len(idxsi) == 3 and idxsi[:2] == ['in', 'module']:
-	command = 'deffn'
-	cat_class = 'function of ' + string.join(idxsi[1:])
-    elif len(idxsi) > 3 and idxsi[:2] == ['in', 'modules']:
-	command = 'deffn'
-	cat_class = 'function of ' + string.join(idxsi[1:])
-
-    if not command:
-	raise error, 'don\'t know what to do with indexsubitem ' + `idxsi`
-
+    command = 'deffn'
+    if hist.this_module:
+        cat_class = 'function of ' + hist.this_module
+    else:
+        cat_class = 'built-in function'
     ch.chtype = chunk_type[CSLINE]
     ch.data = command
 
@@ -1151,22 +1146,12 @@ def do_excdesc(length, buf, pp, i):
     command = ''
     cat_class = ''
     class_class = ''
-    if len(idxsi) == 2 and idxsi[1] == 'exception':
-	command = 'defvr'
-	cat_class = string.join(idxsi)
-    elif len(idxsi) == 3 and idxsi[:2] == ['in', 'module']:
-	command = 'defcv'
-	cat_class = 'exception'
-	class_class = string.join(idxsi[1:])
-    elif len(idxsi) == 4 and idxsi[:3] == ['exception', 'in', 'module']:
-	command = 'defcv'
-	cat_class = 'exception'
-	class_class = string.join(idxsi[2:])
-    elif idxsi == ['built-in', 'exception', 'base', 'class']:
+    if idxsi == ['built-in', 'exception', 'base', 'class']:
 	command = 'defvr'
 	cat_class = 'exception base class'
     else:
-	raise error, 'don\'t know what to do with indexsubitem ' + `idxsi`
+	command = 'defcv'
+	cat_class = 'exception'
 
     ch.chtype = chunk_type[CSLINE]
     ch.data = command
@@ -1246,6 +1231,46 @@ def do_opcodedesc(length, buf, pp, i):
     pp[i] = chunk(GROUP, wh, cslinearg)
     hist.command = ch.data
     return length, i
+
+
+def add_module_index(pp, length, i, buf, ch, extra, ref=1):
+    ch.chtype = chunk_type[CSLINE]
+    ch.data = 'pindex'
+    length, newi = getnextarg(length, buf, pp, i)
+    ingroupch = pp[i:newi]
+    del pp[i:newi]
+    length = length - (newi-i)
+    if not ref:
+        if len(ingroupch) == 1:
+            hist.this_module = s(buf, ch.data)
+        else:
+            hist.this_module = None
+            print 'add_module_index() error ==>', ingroupch
+
+    if extra:
+        ingroupch.append(chunk(PLAIN, ch.where, ' '))
+        ingroupch.append(chunk(CSNAME, ch.where, 'r'))
+        ingroupch.append(chunk(GROUP, ch.where, [
+            chunk(PLAIN, ch.where, extra)]))
+
+    pp.insert(i, chunk(GROUP, ch.where, ingroupch))
+    return length+1, i+1
+
+
+def yank_indexsubitem(pp, length, i, buf, ch, cmdname):
+    stuff = pp[i].data
+    if len(stuff) != 1:
+        raise error, "first parameter to \\%s too long" % cmdname
+    if pp[i].chtype != chunk_type[GROUP]:
+        raise error, "bad chunk type following \\%s" \
+              "\nexpected GROUP, got %s" + (cmdname, str(ch.chtype))
+    text = s(buf, stuff[0].data)
+    if text[:1] != '(' or text[-1:] != ')':
+        raise error, \
+              'expected indexsubitem enclosed in parenteses'
+    hist.indexsubitem = string.split(text[1:-1])
+    del pp[i-1:i+1]
+    return length - 2, i - 1
 
 
 # regular indices: those that are not set in tt font by default....
@@ -1462,6 +1487,28 @@ def changeit(buf, pp):
 		if length != len(pp):
 		    raise 'STILL, SOMETHING wrong', `i`
 
+            elif envname in ('methoddesc', 'methoddescni'):
+		length, newi = getoptarg(length, buf, pp, i)
+		ingroupch = pp[i:newi]
+		del pp[i:newi]
+		length = length - (newi-i)
+                #
+		pp.insert(i, chunk(PLAIN, ch.where, ''))
+		i, length = i+1, length+1
+		length, i = do_funcdesc(length, buf, pp, i,
+					envname[-2:] != "ni")
+
+	    elif envname in ('memberdesc', 'memberdescni'):
+		length, newi = getoptarg(length, buf, pp, i)
+		ingroupch = pp[i:newi]
+		del pp[i:newi]
+		length = length - (newi-i)
+                #
+		pp.insert(i, chunk(PLAIN, ch.where, ''))
+		i, length = i+1, length+1
+		length, i = do_datadesc(length, buf, pp, i,
+					envname[-2:] != "ni")
+
 	    elif envname in ('funcdesc', 'funcdescni', 'classdesc'):
 		pp.insert(i, chunk(PLAIN, ch.where, ''))
 		i, length = i+1, length+1
@@ -1540,7 +1587,10 @@ def changeit(buf, pp):
 		i, length = i+1, length+1
 
 	    elif envname in ('funcdesc', 'excdesc', 'datadesc', 'classdesc',
-			     'funcdescni', 'datadescni'):
+			     'funcdescni', 'datadescni',
+                             'methoddesc', 'memberdesc',
+                             'methoddescni', 'memberdescni',
+                             ):
 		pp[i:i] = [chunk(CSLINE, ch.where, 'end'),
 			   chunk(GROUP, ch.where, [
 			       chunk(PLAIN, ch.where, hist.command)])]
@@ -1623,21 +1673,28 @@ def changeit(buf, pp):
 		ch.chtype = chunk_type[PLAIN]
 
 	    elif s_buf_data == 'setindexsubitem':
-		stuff = pp[i].data
-		if len(stuff) != 1:
-		    raise error, "parameter to \\setindexsubitem{} too long"
-		if pp[i].chtype != chunk_type[GROUP]:
-		    raise error, "bad chunk type following \\setindexsubitem" \
-			  "\nexpected GROUP, got " + str(ch.chtype)
-		text = s(buf, stuff[0].data)
-		if text[:1] != '(' or text[-1:] != ')':
-		    raise error, \
-			  'expected indexsubitem enclosed in parenteses'
-		hist.indexsubitem = string.split(text[1:-1])
-		del stuff, text
-		del pp[i-1:i+1]
-		i = i - 1
-		length = length - 2
+                length, i = yank_indexsubitem(pp, length, i, buf, ch,
+                                              'setindexsubitem')
+
+            elif s_buf_data == 'withsubitem':
+                oldsubitem = hist.indexsubitem
+                try:
+                    length, i = yank_indexsubitem(pp, length, i, buf, ch,
+                                                  'withsubitem')
+                    stuff = pp[i].data
+                    del pp[i]
+                    length = length - 1
+                    changeit(buf, stuff)
+                    stuff = None
+                finally:
+                    hist.indexsubitem = oldsubitem
+
+            elif s_buf_data in ('textrm', 'pytype'):
+                stuff = pp[i].data
+                pp[i-1:i+1] = stuff
+                length = length - 2 + len(stuff)
+                stuff = None
+                i = i - 1
 
 	    elif s_buf_data == 'newcommand':
 		print "ignoring definition of \\" + s(buf, pp[i].data[0].data)
@@ -1657,6 +1714,7 @@ def changeit(buf, pp):
 		pp[i-1:i+1] = stuff
 		i = i - 1
 		length = length + len(stuff) - 2
+                stuff = None
 
 	    elif s_buf_data == 'version':
 		ch.chtype = chunk_type[PLAIN]
@@ -1684,13 +1742,15 @@ def changeit(buf, pp):
 		    command = 'vindex'
 		elif len(idxsi) == 3 and idxsi[:2] == ['in', 'module']:
 		    command = 'cindex'
+                elif len(idxsi) == 3 and idxsi[:2] == ['class', 'in']:
+                    command = 'findex'
 		else:
 		    print 'WARNING: can\'t categorize ' + `idxsi` \
 			  + ' for \'ttindex\' command'
 		    command = 'cindex'
 
 		if not cat_class:
-		    cat_class = '('+string.join(idxsi)+')'
+		    cat_class = '(%s)' % string.join(idxsi)
 
 		ch.chtype = chunk_type[CSLINE]
 		ch.data = command
@@ -1737,19 +1797,24 @@ def changeit(buf, pp):
 		    del pp[i]
 		    length = length-1
 
-## 	    elif s_buf_data == 'copyright':
-## 		if (pp[i].chtype == chunk_type[GROUP]
-## 		    and not pp[i].data):
-## 		    del pp[i]
-## 		    length = length - 1
-## 		del pp[i-1]
-## 		i, length = i-1, length-1
-
 	    elif s_buf_data == 'manpage':
 		ch.data = 'emph'
 		sect = s(buf, pp[i+1].data[0].data)
 		pp[i+1].data = "(%s)" % sect
 		pp[i+1].chtype = chunk_type[PLAIN]
+
+            elif s_buf_data == 'envvar':
+                # this should do stuff in the index, too...
+                ch.data = "$"
+                ch.chtype = chunk_type[PLAIN]
+                pp[i] = pp[i].data[0]
+
+            elif s_buf_data == 'regexp':
+                ch.data = 'code'
+                pp.insert(i+1, chunk(PLAIN, ch.where, '"'))
+                pp.insert(i-1, chunk(PLAIN, ch.where, '"'))
+                length = length + 2
+                i = i + 1
 
 	    elif s_buf_data in ('lineiii', 'lineii'):
 		# This is the most tricky one
@@ -1790,6 +1855,7 @@ def changeit(buf, pp):
 		# @node A, , ,
 		# @xxxsection A
 		## also: remove commas and quotes
+                hist.this_module = None
 		if s_buf_data == "chapter":
 		    ch.data = hist.chaptertype
 		ch.chtype = chunk_type[CSLINE]
@@ -1913,68 +1979,24 @@ def changeit(buf, pp):
 		length, i = length+1, i+1
 
 	    elif s_buf_data in ('bimodindex', 'refbimodindex'):
-		ch.chtype = chunk_type[CSLINE]
-		ch.data = 'pindex'
-		length, newi = getnextarg(length, buf, pp, i)
-		ingroupch = pp[i:newi]
-		del pp[i:newi]
-		length = length - (newi-i)
+                length, i = add_module_index(
+                    pp, length, i, buf, ch, '(built-in)',
+                    (s_buf_data[:3] == 'ref'))
 
-		ingroupch.append(chunk(PLAIN, ch.where, ' '))
-		ingroupch.append(chunk(CSNAME, ch.where, 'r'))
-		ingroupch.append(chunk(GROUP, ch.where, [
-			  chunk(PLAIN, ch.where,
-			  '(built-in)')]))
-
-		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
-		length, i = length+1, i+1
-
-	    elif s_buf_data == 'refmodindex':
-		ch.chtype = chunk_type[CSLINE]
-		ch.data = 'pindex'
-		length, newi = getnextarg(length, buf, pp, i)
-		ingroupch = pp[i:newi]
-		del pp[i:newi]
-		length = length - (newi-i)
-
-		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
-		length, i = length+1, i+1
+	    elif s_buf_data in ('modindex', 'refmodindex'):
+                length, i = add_module_index(
+                    pp, length, i, buf, ch, '',
+                    (s_buf_data[:3] == 'ref'))
 
 	    elif s_buf_data in ('stmodindex', 'refstmodindex'):
-		ch.chtype = chunk_type[CSLINE]
-		# use the program index as module index
-		ch.data = 'pindex'
-		length, newi = getnextarg(length, buf, pp, i)
-		ingroupch = pp[i:newi]
-		del pp[i:newi]
-		length = length - (newi-i)
+                length, i = add_module_index(
+                    pp, length, i, buf, ch, '(standard)',
+                    (s_buf_data[:3] == 'ref'))
 
-		ingroupch.append(chunk(PLAIN, ch.where, ' '))
-		ingroupch.append(chunk(CSNAME, ch.where, 'r'))
-		ingroupch.append(chunk(GROUP, ch.where, [
-			  chunk(PLAIN, ch.where,
-			  '(standard)')]))
-
-		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
-		length, i = length+1, i+1
-
-	    elif s_buf_data in ('stmodindex', 'refstmodindex'):
-		ch.chtype = chunk_type[CSLINE]
-		# use the program index as module index
-		ch.data = 'pindex'
-		length, newi = getnextarg(length, buf, pp, i)
-		ingroupch = pp[i:newi]
-		del pp[i:newi]
-		length = length - (newi-i)
-
-		ingroupch.append(chunk(PLAIN, ch.where, ' '))
-		ingroupch.append(chunk(CSNAME, ch.where, 'r'))
-		ingroupch.append(chunk(GROUP, ch.where, [
-			  chunk(PLAIN, ch.where,
-			  '(standard)')]))
-
-		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
-		length, i = length+1, i+1
+	    elif s_buf_data in ('exmodindex', 'refexmodindex'):
+                length, i = add_module_index(
+                    pp, length, i, buf, ch, '(extension)',
+                    (s_buf_data[:3] == 'ref'))
 
 	    elif s_buf_data == 'stindex':
 		# XXX must actually go to newindex st
@@ -2130,13 +2152,15 @@ def changeit(buf, pp):
 		i, length = i+2, length+2
 
 	    elif s_buf_data == 'seemodule':
+                # discard optional arg first:
+		length, newi = getoptarg(length, buf, pp, i)
+		ingroupch = pp[i:newi]
+		del pp[i:newi]
+		length = length - (newi-i)
+                #
 		ch.data = "code"
-		# this is needed for just one of the input files... -sigh-
-		while pp[i+1].chtype == chunk_type[COMMENT]:
-		    i = i + 1
 		data = pp[i+1].data
-		oparen = chunk(PLAIN, ch.where, " (")
-		data.insert(0, oparen)
+		data.insert(0, chunk(PLAIN, ch.where, " ("))
 		data.append(chunk(PLAIN, ch.where, ")"))
 		pp[i+1:i+2] = data
 		length = length + len(data) - 1
@@ -2162,6 +2186,7 @@ def changeit(buf, pp):
 			  chunk(GROUP, ch.where, stuff),
 			  chunk(PLAIN, ch.where, '  ')] + action \
 			  + [chunk(DENDLINE, ch.where, '\n')]
+                stuff = None
 		i = i - 1
 		pp[i:i] = chunks
 		length = length + len(chunks)
@@ -2295,7 +2320,9 @@ def dumpit(buf, wm, pp):
 		    pos = re_newline.search(text)
 		    if pos < 0:
 			break
-		    print 'WARNING: found newline in csline arg'
+                    # these seem to be completely harmless, so don't warn:
+## 		    print 'WARNING: found newline in csline arg (%s)' \
+##                           % s(buf, ch.data)
 		    wm(text[:pos] + ' ')
 		    text = text[pos+1:]
 		wm(text)
