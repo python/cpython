@@ -32,6 +32,19 @@ suggested by the units in which their value or argument is expressed.
 E.g.\ on most UNIX systems, the clock ``ticks'' only 50 or 100 times a
 second, and on the Mac, times are only accurate to whole seconds.
 
+\item
+The time tuple as returned by \code{gmtime()} and \code{localtime()},
+or as accpted by \code{mktime()} is a tuple of 9
+integers: year (e.g.\ 1993), month (1--12), day (1--31), hour
+(0--23), minute (0--59), second (0--59), weekday (0--6, monday is 0),
+Julian day (1--366) and daylight savings flag (-1, 0  or 1).
+Note that unlike the C structure, the month value is a range of 1-12, not
+0-11.  A year value of $<$ 100 will typically be silently converted to
+1900 $+$ year value.  A -1 argument as daylight savings flag, passed to
+\code{mktime()} will usually result in the correct daylight savings
+state to be filled in.
+
+
 \end{itemize}
 
 The module defines the following functions and data items:
@@ -45,7 +58,6 @@ east of the 0th meridian (as in Western Europe, including the UK).
 Only use this if \code{daylight} is nonzero.
 \end{datadesc}
 
-
 \begin{funcdesc}{asctime}{tuple}
 Convert a tuple representing a time as returned by \code{gmtime()} or
 \code{localtime()} to a 24-character string of the following form:
@@ -53,13 +65,11 @@ Convert a tuple representing a time as returned by \code{gmtime()} or
 the same name, there is no trailing newline.
 \end{funcdesc}
 
-
 \begin{funcdesc}{clock}{}
 Return the current CPU time as a floating point number expressed in
 seconds.  The precision, and in fact the very definiton of the meaning
 of ``CPU time'', depends on that of the C function of the same name.
 \end{funcdesc}
-
 
 \begin{funcdesc}{ctime}{secs}
 Convert a time expressed in seconds since the epoch to a string
@@ -72,11 +82,9 @@ Nonzero if a DST timezone is defined.
 \end{datadesc}
 
 \begin{funcdesc}{gmtime}{secs}
-Convert a time expressed in seconds since the epoch to a tuple of 9
-integers, in UTC: year (e.g.\ 1993), month (1--12), day (1--31), hour
-(0--23), minute (0--59), second (0--59), weekday (0--6, monday is 0),
-Julian day (1--366), dst flag (always zero).  Fractions of a second are
-ignored.  Note subtle differences with the C function of this name.
+Convert a time expressed in seconds since the epoch to a time tuple
+in UTC in which the dst flag is always zero.  Fractions of a second are
+ignored.
 \end{funcdesc}
 
 \begin{funcdesc}{localtime}{secs}
@@ -86,7 +94,9 @@ to 1 when DST applies to the given time.
 
 \begin{funcdesc}{mktime}{tuple}
 This is the inverse function of \code{localtime}.  Its argument is the
-full 9-tuple (since the dst flag is needed).  It returns a floating
+full 9-tuple (since the dst flag is needed --- pass -1 as the dst flag if
+it is unknown) which expresses the time
+in \em{local} time, not UTC.  It returns a floating
 point number, for compatibility with \code{time.time()}.  If the input
 value can't be represented as a valid time, OverflowError is raised.
 \end{funcdesc}
@@ -99,8 +109,75 @@ be a floating point number to indicate a more precise sleep time.
 \begin{funcdesc}{strftime}{format, tuple}
 Convert a tuple representing a time as returned by \code{gmtime()} or
 \code{localtime()} to a string as specified by the format argument.
-See the \code{strftime(3)} man page for details of the syntax of
-format strings.
+
+      The following directives, shown without the optional field width and
+      precision specification, are replaced by the indicated characters:
+
+\begin{tabular}{lp{25em}}
+           \%a  &      Locale's abbreviated weekday name. \\
+           \%A  &      Locale's full weekday name. \\
+           \%b  &      Locale's abbreviated month name. \\
+           \%B  &      Locale's full month name. \\
+           \%c  &      Locale's appropriate date and time representation. \\
+           \%d  &      Day of the month as a decimal number [01,31]. \\
+           \%E  &      Locale's combined Emperor/Era name and year. \\
+           \%H  &      Hour (24-hour clock) as a decimal number [00,23]. \\
+           \%I  &      Hour (12-hour clock) as a decimal number [01,12]. \\
+           \%j  &      Day of the year as a decimal number [001,366]. \\
+           \%m  &      Month as a decimal number [01,12]. \\
+           \%M  &      Minute as a decimal number [00,59]. \\
+           \%n  &      New-line character. \\
+           \%N  &      Locale's Emperor/Era name. \\
+           \%o  &      Locale's Emperor/Era year. \\
+           \%p  &      Locale's equivalent of either AM or PM. \\
+           \%S  &      Second as a decimal number [00,61]. \\
+           \%t  &      Tab character. \\
+           \%U  &      Week number of the year (Sunday as the first day of the
+                     week) as a decimal number [00,53].  All days in a new
+                     year preceding the first Sunday are considered to be in
+                     week 0. \\
+           \%w  &      Weekday as a decimal number [0(Sunday),6]. \\
+           \%W  &      Week number of the year (Monday as the first day of the
+                     week) as a decimal number [00,53].  All days in a new
+                     year preceding the first Sunday are considered to be in
+                     week 0. \\
+           \%x  &      Locale's appropriate date representation. \\
+           \%X  &      Locale's appropriate time representation. \\
+           \%y  &      Year without century as a decimal number [00,99]. \\
+           \%Y  &      Year with century as a decimal number. \\
+           \%Z  &      Time zone name (or by no characters if no time zone
+                     exists). \\
+           \%\%  &     \% \\
+\end{tabular}
+
+      An optional field width and precision specification can immediately
+      follow the initial \% of a directive in the following order: \\
+
+\begin{tabular}{lp{25em}}
+      [-|0]w  &       the decimal digit string w specifies a minimum field
+                     width in which the result of the conversion is right-
+                     or left-justified.  It is right-justified (with space
+                     padding) by default.  If the optional flag `-' is
+                     specified, it is left-justified with space padding on
+                     the right.  If the optional flag `0' is specified, it
+                     is right-justified and padded with zeros on the left. \\
+      .p      &       the decimal digit string p specifies the minimum number
+                     of digits to appear for the d, H, I, j, m, M, o, S, U,
+                     w, W, y and Y directives, and the maximum number of
+                     characters to be used from the a, A, b, B, c, D, E, F,
+                     h, n, N, p, r, t, T, x, X, z, Z, and % directives.  In
+                     the first case, if a directive supplies fewer digits
+                     than specified by the precision, it will be expanded
+                     with leading zeros.  In the second case, if a directive
+                     supplies more characters than specified by the
+                     precision, excess characters will truncated on the
+                     right.
+\end{tabular}
+
+      If no field width or precision is specified for a d, H, I, m, M, S, U,
+      W, y, or j directive, a default of .2 is used for all but j for which
+      .3 is used.
+
 \end{funcdesc}
 
 \begin{funcdesc}{time}{}
@@ -121,3 +198,4 @@ A tuple of two strings: the first is the name of the local non-DST
 timezone, the second is the name of the local DST timezone.  If no DST
 timezone is defined, the second string should not be used.
 \end{datadesc}
+
