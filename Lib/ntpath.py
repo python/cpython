@@ -21,7 +21,7 @@ def normcase(s):
     return string.lower(string.replace(s, "/", "\\"))
 
 
-# Return wheter a path is absolute.
+# Return whether a path is absolute.
 # Trivial in Posix, harder on the Mac or MS-DOS.
 # For DOS it is absolute if it starts with a slash or backslash (current
 # volume), or if a pathname after the volume letter and colon / UNC resource
