@@ -1,0 +1,10 @@
+This is the Python version of the MD5 test program from the MD5
+Internet Draft (Rivest and Dusse, The MD5 Message-Digest Algorithm, 10
+July 1991).  The file "foo" contains the string "abc" with no trailing
+newline.
+
+When called without arguments, it acts as a filter.  When called with
+"-x", it executes a self-test, and the output should literally match
+the output given in the RFC.
+
+Code by Jan-Hein B\"uhrman after the original in C.
