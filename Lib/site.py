@@ -95,14 +95,14 @@ if sys.exec_prefix != sys.prefix:
     prefixes.append(sys.exec_prefix)
 for prefix in prefixes:
     if prefix:
-	if sys.platform[:3] in ('win', 'mac'):
-	    sitedirs = [prefix]
-	else:
+	if os.sep == '/':
 	    sitedirs = [os.path.join(prefix,
 				     "lib",
 				     "python" + sys.version[:3],
 				     "packages"),
 			os.path.join(prefix, "lib", "site-python")]
+	else:
+	    sitedirs = [prefix]
 	for sitedir in sitedirs:
 	    if os.path.isdir(sitedir):
 		addsitedir(sitedir)
