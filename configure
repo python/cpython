@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.200 
+# From configure.in Revision: 1.201 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -6569,7 +6569,7 @@ fi
 #fi
 
 
-SRCDIRS="Parser Grammar Objects Python Modules"
+SRCDIRS="Include Parser Grammar Objects Python Modules"
 echo $ac_n "checking for build directories""... $ac_c" 1>&6
 echo "configure:6575: checking for build directories" >&5
 for dir in $SRCDIRS; do

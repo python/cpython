@@ -1413,7 +1413,7 @@ AC_CHECK_TYPE(socklen_t, int)
 #fi
 
 AC_SUBST(SRCDIRS)
-SRCDIRS="Parser Grammar Objects Python Modules"
+SRCDIRS="Include Parser Grammar Objects Python Modules"
 AC_MSG_CHECKING(for build directories)
 for dir in $SRCDIRS; do
     if test ! -d $dir; then
