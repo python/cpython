@@ -125,8 +125,8 @@ slashes separating \var{head} from \var{tail}).
 \begin{funcdesc}{splitext}{p}
 Split the pathname \var{p} in a pair \code{(\var{root}, \var{ext})}
 such that \code{\var{root} + \var{ext} == \var{p}},
-the last component of \var{root} contains no periods,
-and \var{ext} is empty or begins with a period.
+and \var{ext} is empty or begins with a period and contains
+at most one period.
 \end{funcdesc}
 
 \begin{funcdesc}{walk}{p\, visit\, arg}
