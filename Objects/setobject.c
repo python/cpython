@@ -240,7 +240,7 @@ static PyObject *
 set_intersection(PySetObject *so, PyObject *other)
 {
 	PySetObject *result;
-	PyObject *item, *selfdata, *tgtdata, *it;
+	PyObject *item, *selfdata, *tgtdata, *it, *tmp;
 
 	result = (PySetObject *)make_new_set(so->ob_type, NULL);
 	if (result == NULL)
@@ -248,14 +248,27 @@ set_intersection(PySetObject *so, PyObject *other)
 	tgtdata = result->data;
 	selfdata = so->data;
 
-	if (PyAnySet_Check(other) && 
-		PyDict_Size(((PySetObject *)other)->data) > PyDict_Size(selfdata)) {
-		selfdata = ((PySetObject *)other)->data;
-		other = (PyObject *)so;
-	} else if (PyDict_Check(other) &&
-		PyDict_Size(other) > PyDict_Size(selfdata)) {
+	if (PyAnySet_Check(other))
+		other = ((PySetObject *)other)->data;
+
+	if (PyDict_Check(other) && PyDict_Size(other) > PyDict_Size(selfdata)) {
+		tmp = selfdata;
 		selfdata = other;
-		other = so->data;
+		other = tmp;
+	}
+
+	if (PyDict_CheckExact(other)) {
+		PyObject *value;
+		int pos = 0;
+		while (PyDict_Next(other, &pos, &item, &value)) {
+			if (PyDict_Contains(selfdata, item)) {
+				if (PyDict_SetItem(tgtdata, item, Py_True) == -1) {
+					Py_DECREF(result);
+					return NULL;
+				}
+			}
+		}
+		return (PyObject *)result;
 	}
 
 	it = PyObject_GetIter(other);
@@ -719,18 +732,18 @@ static int
 set_tp_print(PySetObject *so, FILE *fp, int flags)
 {
 	PyObject *key, *value;
-	int pos=0, firstpass=1;
+	int pos=0;
+	char *emit = "";	/* No separator emitted on first pass */
+	char *separator = ", ";
 
 	fprintf(fp, "%s([", so->ob_type->tp_name);
 	while (PyDict_Next(so->data, &pos, &key, &value)) {
-		if (firstpass)
-			firstpass = 0;
-		else
-			fprintf(fp, ", ");
+		fputs(emit, fp);
+		emit = separator;
 		if (PyObject_Print(key, fp, 0) != 0)
 			return -1;
 	}
-	fprintf(fp, "])");
+	fputs("])", fp);
 	return 0;
 }
 
@@ -1077,7 +1090,8 @@ PyTypeObject PyFrozenSet_Type = {
 	0,				/* ob_size */
 	"frozenset",			/* tp_name */
 	sizeof(PySetObject),		/* tp_basicsize */
-	0,				/* tp_itemsize */	/* methods */
+	0,				/* tp_itemsize */
+	/* methods */
 	(destructor)set_dealloc,	/* tp_dealloc */
 	(printfunc)set_tp_print,	/* tp_print */
 	0,				/* tp_getattr */
