@@ -1,5 +1,6 @@
 #import "MyAppDelegate.h"
 #import "PreferencesWindowController.h"
+#import <Carbon/Carbon.h>
 
 @implementation MyAppDelegate
 
@@ -29,12 +30,13 @@
 
 - (BOOL)shouldShowUI
 {
-    // if this call comes before applicationDidFinishLaunching: we do not show a UI
-    // for the file. Also, we should terminate immedeately after starting the script.
-    if (initial_action_done)
-        return YES;
+    // if this call comes before applicationDidFinishLaunching: we 
+    // should terminate immedeately after starting the script.
+    if (!initial_action_done)
+        should_terminate = YES;
     initial_action_done = YES;
-    should_terminate = YES;
+    if( GetCurrentKeyModifiers() & optionKey )
+        return YES;
     return NO;
 }
 
@@ -46,19 +48,6 @@
 - (BOOL)applicationShouldOpenUntitledFile:(NSApplication *)sender
 {
     return NO;
-}
-
-
-- (BOOL)application:(NSApplication *)sender xx_openFile:(NSString *)filename
-{
-    initial_action_done = YES;
-    return YES;
-}
-
-- (BOOL)application:(id)sender xx_openFileWithoutUI:(NSString *)filename
-{
-    initial_action_done = YES;
-    return YES;
 }
 
 @end
