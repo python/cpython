@@ -129,14 +129,18 @@ class GNUTranslations(NullTranslations):
 
     def _parse(self, fp):
         """Override this method to support alternative .mo formats."""
+        # We need to & all 32 bit unsigned integers with 0xffffff for
+        # portability to 64 bit machines.
+        MASK = 0xffffffff
         unpack = struct.unpack
         filename = getattr(fp, 'name', '')
         # Parse the .mo file header, which consists of 5 little endian 32
         # bit words.
         self._catalog = catalog = {}
         buf = fp.read()
+        buflen = len(buf)
         # Are we big endian or little endian?
-        magic = unpack('<i', buf[:4])[0]
+        magic = unpack('<i', buf[:4])[0] & MASK
         if magic == self.LE_MAGIC:
             version, msgcount, masteridx, transidx = unpack('<4i', buf[4:20])
             ii = '<ii'
@@ -145,15 +149,20 @@ class GNUTranslations(NullTranslations):
             ii = '>ii'
         else:
             raise IOError(0, 'Bad magic number', filename)
-        #
+        # more unsigned ints
+        msgcount &= MASK
+        masteridx &= MASK
+        transidx &= MASK
         # Now put all messages from the .mo file buffer into the catalog
         # dictionary.
         for i in xrange(0, msgcount):
             mlen, moff = unpack(ii, buf[masteridx:masteridx+8])
-            mend = moff + mlen
+            moff &= MASK
+            mend = moff + (mlen & MASK)
             tlen, toff = unpack(ii, buf[transidx:transidx+8])
-            tend = toff + tlen
-            if mend < len(buf) and tend < len(buf):
+            toff &= MASK
+            tend = toff + (tlen & MASK)
+            if mend < buflen and tend < buflen:
                 tmsg = buf[toff:tend]
                 catalog[buf[moff:mend]] = tmsg
             else:
