@@ -14,6 +14,10 @@ class FormatParagraph:
     keydefs = {
         '<<format-paragraph>>': ['<Alt-q>'],
     }
+    
+    unix_keydefs = {
+        '<<format-paragraph>>': ['<Meta-q>'],
+    } 
 
     def __init__(self, editwin):
         self.editwin = editwin
@@ -53,7 +57,7 @@ def find_paragraph(text, mark):
     # Search back to beginning of paragraph
     lineno = first_lineno - 1
     line = text.get("%d.0" % lineno, "%d.0 lineend" % lineno)
-    while not is_all_white(line):
+    while lineno > 0 and not is_all_white(line):
         lineno = lineno - 1
         line = text.get("%d.0" % lineno, "%d.0 lineend" % lineno)
     first = "%d.0" % (lineno+1)
