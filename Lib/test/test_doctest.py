@@ -4,6 +4,7 @@ Test script for doctest.
 
 from test import test_support
 import doctest
+import warnings
 
 ######################################################################
 ## Sample Objects (used by test cases)
@@ -277,7 +278,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print tests  # doctest: +ELLIPSIS
-    [<DocTest sample_func from ...:12 (1 example)>]
+    [<DocTest sample_func from ...:13 (1 example)>]
 
     >>> tests[0].filename
     'test_doctest.py'
@@ -1493,12 +1494,135 @@ def test_DocFileSuite():
 
 def test_trailing_space_in_test():
     """
-    Trailing spaces in expcted output are significant:
+    Trailing spaces in expected output are significant:
 
       >>> x, y = 'foo', ''
       >>> print x, y
       foo \n
     """
+
+# old_test1, ... used to live in doctest.py, but cluttered it.  Note
+# that these use the deprecated doctest.Tester, so should go away (or
+# be rewritten) someday.
+
+# Ignore all warnings about the use of class Tester in this module.
+# Note that the name of this module may differ depending on how it's
+# imported, so the use of __name__ is important.
+warnings.filterwarnings("ignore", "class Tester", DeprecationWarning,
+                        __name__, 0)
+
+def old_test1(): r"""
+>>> from doctest import Tester
+>>> t = Tester(globs={'x': 42}, verbose=0)
+>>> t.runstring(r'''
+...      >>> x = x * 2
+...      >>> print x
+...      42
+... ''', 'XYZ')
+**********************************************************************
+Line 3, in XYZ
+Failed example:
+    print x
+Expected:
+    42
+Got:
+    84
+(1, 2)
+>>> t.runstring(">>> x = x * 2\n>>> print x\n84\n", 'example2')
+(0, 2)
+>>> t.summarize()
+**********************************************************************
+1 items had failures:
+   1 of   2 in XYZ
+***Test Failed*** 1 failures.
+(1, 4)
+>>> t.summarize(verbose=1)
+1 items passed all tests:
+   2 tests in example2
+**********************************************************************
+1 items had failures:
+   1 of   2 in XYZ
+4 tests in 2 items.
+3 passed and 1 failed.
+***Test Failed*** 1 failures.
+(1, 4)
+"""
+
+def old_test2(): r"""
+        >>> from doctest import Tester
+        >>> t = Tester(globs={}, verbose=1)
+        >>> test = r'''
+        ...    # just an example
+        ...    >>> x = 1 + 2
+        ...    >>> x
+        ...    3
+        ... '''
+        >>> t.runstring(test, "Example")
+        Running string Example
+        Trying: x = 1 + 2
+        Expecting: nothing
+        ok
+        Trying: x
+        Expecting: 3
+        ok
+        0 of 2 examples failed in string Example
+        (0, 2)
+"""
+
+def old_test3(): r"""
+        >>> from doctest import Tester
+        >>> t = Tester(globs={}, verbose=0)
+        >>> def _f():
+        ...     '''Trivial docstring example.
+        ...     >>> assert 2 == 2
+        ...     '''
+        ...     return 32
+        ...
+        >>> t.rundoc(_f)  # expect 0 failures in 1 example
+        (0, 1)
+"""
+
+def old_test4(): """
+        >>> import new
+        >>> m1 = new.module('_m1')
+        >>> m2 = new.module('_m2')
+        >>> test_data = \"""
+        ... def _f():
+        ...     '''>>> assert 1 == 1
+        ...     '''
+        ... def g():
+        ...    '''>>> assert 2 != 1
+        ...    '''
+        ... class H:
+        ...    '''>>> assert 2 > 1
+        ...    '''
+        ...    def bar(self):
+        ...        '''>>> assert 1 < 2
+        ...        '''
+        ... \"""
+        >>> exec test_data in m1.__dict__
+        >>> exec test_data in m2.__dict__
+        >>> m1.__dict__.update({"f2": m2._f, "g2": m2.g, "h2": m2.H})
+
+        Tests that objects outside m1 are excluded:
+
+        >>> from doctest import Tester
+        >>> t = Tester(globs={}, verbose=0)
+        >>> t.rundict(m1.__dict__, "rundict_test", m1)  # f2 and g2 and h2 skipped
+        (0, 4)
+
+        Once more, not excluding stuff outside m1:
+
+        >>> t = Tester(globs={}, verbose=0)
+        >>> t.rundict(m1.__dict__, "rundict_test_pvt")  # None are skipped.
+        (0, 8)
+
+        The exclusion of objects from outside the designated module is
+        meant to be invoked automagically by testmod.
+
+        >>> doctest.testmod(m1, verbose=False)
+        (0, 4)
+"""
 
 ######################################################################
 ## Main
