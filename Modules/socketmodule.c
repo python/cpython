@@ -904,14 +904,15 @@ pair (host, port); the host must refer to the local host.";
 static PyObject *
 PySocketSock_close(PySocketSockObject *s, PyObject *args)
 {
+	SOCKET_T fd;
 	if (!PyArg_ParseTuple(args, ":close"))
 		return NULL;
-	if (s->sock_fd != -1) {
+	if ((fd = s->sock_fd) != -1) {
+		s->sock_fd = -1;
 		Py_BEGIN_ALLOW_THREADS
-		(void) SOCKETCLOSE(s->sock_fd);
+		(void) SOCKETCLOSE(fd);
 		Py_END_ALLOW_THREADS
 	}
-	s->sock_fd = -1;
 	Py_INCREF(Py_None);
 	return Py_None;
 }
