@@ -468,6 +468,15 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
+     DL_IMPORT(int) PyObject_CheckReadBuffer(PyObject *obj);
+
+      /*  
+	  Checks whether an arbitrary object supports the (character,
+	  single segment) buffer interface.  Returns 1 on success, 0
+	  on failure.
+
+      */
+
      DL_IMPORT(int) PyObject_AsReadBuffer(PyObject *obj,
 					  const void **buffer,
 					  int *buffer_len);
