@@ -1014,6 +1014,12 @@ AC_SUBST(HAVE_GETHOSTBYNAME)
 # checks for system services
 # (none yet)
 
+# Cope with the DB mess.  If we detect libdba, assume it's a version 2
+# or later DB and should be linked first (before the DB 1.xx stuff in glibc).
+# Also define an appropriate symbol so we can conditionalize code in the
+# dbmmodule; the API has changed since 1.xx.
+AC_CHECK_LIB(dba, __db_mutex_lock)
+
 # Linux requires this for correct f.p. operations
 AC_CHECK_FUNC(__fpu_control,
   [],

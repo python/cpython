@@ -32,6 +32,15 @@ def wrapper(func, *rest):
 	# a special value like curses.KEY_LEFT will be returned
         stdscr.keypad(1)
 
+        # Start color, too.  Harmless if the terminal doesn't have
+        # color; user can test with has_color() later on.  The try/catch
+        # works around a minor bit of over-conscientiousness in the curses
+        # module -- the error return from C start_color() is ignorable.
+        try:
+            curses.start_color()
+        except:
+            pass
+
         res = apply(func, (stdscr,) + rest)
     except:
 	# In the event of an error, restore the terminal
