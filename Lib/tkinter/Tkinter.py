@@ -12,18 +12,9 @@ import string; _string = string; del string
 TkVersion = _string.atof(_tkinter.TK_VERSION)
 TclVersion = _string.atof(_tkinter.TCL_VERSION)
 
-######################################################################
-# Since the values of file event masks changed from Tk 4.0 to Tk 4.1,
-# they are defined here (and not in Tkconstants):
-######################################################################
-if TkVersion >= 4.1:
-    READABLE = 2
-    WRITABLE = 4
-    EXCEPTION = 8
-else:
-    READABLE = 1
-    WRITABLE = 2
-    EXCEPTION = 4
+READABLE = _tkinter.READABLE
+WRITABLE = _tkinter.WRITABLE
+EXCEPTION = _tkinter.EXCEPTION
     
     
 def _flatten(tuple):
@@ -706,6 +697,9 @@ class Tk(Misc, Wm):
 		for c in self.children.values(): c.destroy()
 		self.tk.call('destroy', self._w)
 		Misc.destroy(self)
+		global _default_root
+		if _default_root is self:
+			_default_root = None
 	def __str__(self):
 		return self._w
 	def readprofile(self, baseName, className):
