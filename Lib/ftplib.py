@@ -95,7 +95,8 @@ class FTP:
 	# Get the welcome message from the server
 	# (this is read and squirreled away by connect())
 	def getwelcome(self):
-		if self.debugging: print '*welcome*', `self.welcome`
+		if self.debugging:
+			print '*welcome*', self.sanitize(self.welcome)
 		return self.welcome
 
 	# Set the debugging level.  Argument level means:
@@ -106,15 +107,24 @@ class FTP:
 		self.debugging = level
 	debug = set_debuglevel
 
+	# Internal: "sanitize" a string for printing
+	def sanitize(self, s):
+		if s[:5] == 'pass ' or s[:5] == 'PASS ':
+			i = len(s)
+			while i > 5 and s[i-1] in '\r\n':
+				i = i-1
+			s = s[:5] + '*'*(i-5) + s[i:]
+		return `s`
+
 	# Internal: send one line to the server, appending CRLF
 	def putline(self, line):
 		line = line + CRLF
-		if self.debugging > 1: print '*put*', `line`
+		if self.debugging > 1: print '*put*', self.sanitize(line)
 		self.sock.send(line)
 
 	# Internal: send one command to the server (through putline())
 	def putcmd(self, line):
-		if self.debugging: print '*cmd*', `line`
+		if self.debugging: print '*cmd*', self.sanitize(line)
 		self.putline(line)
 
 	# Internal: return one line from the server, stripping CRLF.
@@ -122,7 +132,7 @@ class FTP:
 	def getline(self):
 		line = self.file.readline()
 		if self.debugging > 1:
-			print '*get*', `line`
+			print '*get*', self.sanitize(line)
 		if not line: raise EOFError
 		if line[-2:] == CRLF: line = line[:-2]
 		elif line[-1:] in CRLF: line = line[:-1]
@@ -148,7 +158,7 @@ class FTP:
 	# Raise various errors if the response indicates an error
 	def getresp(self):
 		resp = self.getmultiline()
-		if self.debugging: print '*resp*', `resp`
+		if self.debugging: print '*resp*', self.sanitize(resp)
 		self.lastresp = resp[:3]
 		c = resp[:1]
 		if c == '4':
@@ -171,7 +181,7 @@ class FTP:
 	# tried.  Instead, just send the ABOR command as OOB data.
 	def abort(self):
 		line = 'ABOR' + CRLF
-		if self.debugging > 1: print '*put urgent*', `line`
+		if self.debugging > 1: print '*put urgent*', self.sanitize(line)
 		self.sock.send(line, MSG_OOB)
 		resp = self.getmultiline()
 		if resp[:3] not in ('426', '226'):
