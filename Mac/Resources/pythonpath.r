@@ -89,7 +89,7 @@ resource 'STR#' (PYTHONPATH_ID, "sys.path initialization") {
 		"$(PYTHON):Lib",
 		"$(PYTHON):Extensions:img:Mac",
 		"$(PYTHON):Extensions:img:Lib",
-		"$(PYTHON):Extensions:Imaging:PIL",
+		"$(PYTHON):Extensions:Imaging",
 		"$(PYTHON):Lib:lib-tk",
 		"$(PYTHON):Lib:site-packages",
 	}
