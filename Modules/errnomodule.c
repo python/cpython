@@ -33,11 +33,7 @@ static PyMethodDef errno_methods[] = {
 /* Helper function doing the dictionary inserting */
 
 static void
-_inscode(d, de, name, code)
-	PyObject *d;
-	PyObject *de;
-	char *name;
-	int code;
+_inscode(PyObject *d, PyObject *de, char *name, int code)
 {
 	PyObject *u;
 	PyObject *v;
