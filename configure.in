@@ -952,15 +952,27 @@ else
     LIBS="-lpth $LIBS"
     LIBOBJS="$LIBOBJS thread.o"],[
     AC_MSG_RESULT(no)
-    AC_CHECK_LIB(pthread, pthread_create, [AC_DEFINE(WITH_THREAD)
+
+    # Just looking for pthread_create in libpthread is not enough:
+    # on HP/UX, pthread.h renames pthread_create to a different symbol name.
+    # So we really have to include pthread.h, and then link.
+    _libs=$LIBS
+    LIBS="$LIBS -lpthread"
+    AC_MSG_CHECKING([for pthread_create in -lpthread])
+    AC_TRY_LINK([#include <pthread.h>
+
+void * start_routine (void *arg) { exit (0); }], [
+pthread_create (NULL, NULL, start_routine, NULL)], [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(WITH_THREAD)
     case $ac_sys_system in
       Darwin*) ;;
       *) AC_DEFINE(_POSIX_THREADS)
          posix_threads=yes
          ;;
     esac
-    LIBS="-lpthread $LIBS"
     LIBOBJS="$LIBOBJS thread.o"],[
+    LIBS=$_libs
     AC_CHECK_FUNC(pthread_detach, [AC_DEFINE(WITH_THREAD)
     case $ac_sys_system in
       Darwin*) ;;
