@@ -605,6 +605,7 @@ getbuiltin(name)
 object *AttributeError;
 object *EOFError;
 object *IOError;
+object *ImportError;
 object *IndexError;
 object *KeyError;
 object *KeyboardInterrupt;
@@ -631,21 +632,22 @@ newstdexception(name)
 static void
 initerrors()
 {
-	RuntimeError = newstdexception("RuntimeError");
+	AttributeError = newstdexception("AttributeError");
 	EOFError = newstdexception("EOFError");
-	TypeError = newstdexception("TypeError");
+	IOError = newstdexception("IOError");
+	ImportError = newstdexception("ImportError");
+	IndexError = newstdexception("IndexError");
+	KeyError = newstdexception("KeyError");
+	KeyboardInterrupt = newstdexception("KeyboardInterrupt");
 	MemoryError = newstdexception("MemoryError");
 	NameError = newstdexception("NameError");
-	SystemError = newstdexception("SystemError");
-	KeyboardInterrupt = newstdexception("KeyboardInterrupt");
-	AttributeError = newstdexception("AttributeError");
-	IOError = newstdexception("IOError");
-	ZeroDivisionError = newstdexception("ZeroDivisionError");
-	IndexError = newstdexception("IndexError");
-	ValueError = newstdexception("ValueError");
-	KeyError = newstdexception("KeyError");
 	OverflowError = newstdexception("OverflowError");
+	RuntimeError = newstdexception("RuntimeError");
 	SyntaxError = newstdexception("SyntaxError");
+	SystemError = newstdexception("SystemError");
+	TypeError = newstdexception("TypeError");
+	ValueError = newstdexception("ValueError");
+	ZeroDivisionError = newstdexception("ZeroDivisionError");
 }
 
 void
