@@ -663,7 +663,7 @@ LIBS="$LIBS -ldl -ldld"], AC_MSG_RESULT(no))
 # checks for library functions
 AC_CHECK_FUNCS(alarm chown clock dlopen execv flock fork \
  fsync fdatasync ftime ftruncate \
- gethostname_r getpeername getpgrp getpid getpwent gettimeofday getwd \
+ gethostbyname_r getpeername getpgrp getpid getpwent gettimeofday getwd \
  kill link lstat mkfifo mktime nice pause plock pthread_init putenv readlink \
  select setgid setlocale setuid setsid setpgid setpgrp setvbuf \
  sigaction siginterrupt sigrelse strftime strptime symlink \
