@@ -21,7 +21,7 @@ INSTALLED_PYTHONW=$(APPINSTALLDIR)/Contents/MacOS/python
 # Items more-or-less copied from the main Makefile
 DIRMODE=755
 INSTALL=/usr/bin/install -c
-INSTALL_SYMLINK=/usr/bin/install -l as
+INSTALL_SYMLINK=ln -fs
 INSTALL_PROGRAM=${INSTALL}
 INSTALL_SCRIPT= ${INSTALL_PROGRAM}
 INSTALL_DATA=	${INSTALL} -m 644
@@ -122,7 +122,7 @@ install_Python: $(PYTHON)
 	
 	
 install_IDE: $(INSTALLED_PYTHONW)
-	@if $(INSTALLED_PYTHONW) -c "import waste"; then ; else \
+	@if $(INSTALLED_PYTHONW) -c "import waste"; then : ; else \
 		echo PythonIDE needs the \"waste\" extension module; \
 		echo See Mac/OSX/README for details; \
 		exit 1; \
