@@ -125,6 +125,17 @@ The third major set of additions came in Python 2.3, and is called "protocol
   efficiently by index (EXT{1,2,4}).  This is akin to the memo and GET, but
   the registry contents are predefined (there's nothing akin to the memo's
   PUT).
+
+Another, independent change with Python 2.3 is the abandonment of any
+pretense that it might be safe to pickles received from untrusted
+parties -- no sufficient security analysis has been done to guarantee
+this and there isn't a use case to warrants the expense of such an
+analysis.
+
+To this end, all tests for __safe_for_unpickling__ or for
+copy_reg.safe_constructors are removed from the unpickling code.
+References to these variables in the descriptions below are to be seen
+as describing unpickling in Python 2.2 and before.
 """
 
 # Meta-rule:  Descriptions are stored in instances of descriptor objects,
@@ -1591,8 +1602,9 @@ opcodes = [
       first insists that the class object have a __safe_for_unpickling__
       attribute.  Unlike as for the __safe_for_unpickling__ check in REDUCE,
       it doesn't matter whether this attribute has a true or false value, it
-      only matters whether it exists (XXX this smells like a bug).  If
-      __safe_for_unpickling__ dosn't exist, UnpicklingError is raised.
+      only matters whether it exists (XXX this is a bug; cPickle
+      requires the attribute to be true).  If __safe_for_unpickling__
+      doesn't exist, UnpicklingError is raised.
 
       Else (the class object does have a __safe_for_unpickling__ attr),
       the class object obtained from INST's arguments is applied to the
@@ -1624,8 +1636,9 @@ opcodes = [
 
       As for INST, the remainder of the stack above the markobject is
       gathered into an argument tuple, and then the logic seems identical,
-      except that no __safe_for_unpickling__ check is done (XXX this smells
-      like a bug).  See INST for the gory details.
+      except that no __safe_for_unpickling__ check is done (XXX this is
+      a bug; cPickle does test __safe_for_unpickling__).  See INST for
+      the gory details.
       """),
 
     I(name='NEWOBJ',
