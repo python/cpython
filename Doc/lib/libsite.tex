@@ -6,13 +6,11 @@
 
 
 \strong{This module is automatically imported during initialization.}
+The automatic import can be suppressed using the interpreter's
+\programopt{-S} option.
 
-In earlier versions of Python (up to and including 1.5a3), scripts or
-modules that needed to use site-specific modules would place
-\samp{import site} somewhere near the top of their code.  This is no
-longer necessary.
-
-This will append site-specific paths to the module search path.
+Importing this module will append site-specific paths to the module
+search path.
 \indexiii{module}{search}{path}
 
 It starts by constructing up to four directories from a head and a
