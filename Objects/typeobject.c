@@ -613,66 +613,6 @@ call_maybe(PyObject *o, char *name, PyObject **nameobj, char *format, ...)
 	return retval;
 }
 
-/* Method resolution order algorithm from "Putting Metaclasses to Work"
-   by Forman and Danforth (Addison-Wesley 1999). */
-
-static int
-conservative_merge(PyObject *left, PyObject *right)
-{
-	int left_size;
-	int right_size;
-	int i, j, r, ok;
-	PyObject *temp, *rr;
-
-	assert(PyList_Check(left));
-	assert(PyList_Check(right));
-
-  again:
-	left_size = PyList_GET_SIZE(left);
-	right_size = PyList_GET_SIZE(right);
-	for (i = 0; i < left_size; i++) {
-		for (j = 0; j < right_size; j++) {
-			if (PyList_GET_ITEM(left, i) ==
-			    PyList_GET_ITEM(right, j)) {
-				/* found a merge point */
-				temp = PyList_New(0);
-				if (temp == NULL)
-					return -1;
-				for (r = 0; r < j; r++) {
-					rr = PyList_GET_ITEM(right, r);
-					ok = PySequence_Contains(left, rr);
-					if (ok < 0) {
-						Py_DECREF(temp);
-						return -1;
-					}
-					if (!ok) {
-						ok = PyList_Append(temp, rr);
-						if (ok < 0) {
-							Py_DECREF(temp);
-							return -1;
-						}
-					}
-				}
-				ok = PyList_SetSlice(left, i, i, temp);
-				Py_DECREF(temp);
-				if (ok < 0)
-					return -1;
-				ok = PyList_SetSlice(right, 0, j+1, NULL);
-				if (ok < 0)
-					return -1;
-				goto again;
-			}
-		}
-	}
-	return PyList_SetSlice(left, left_size, left_size, right);
-}
-
-static int
-serious_order_disagreements(PyObject *left, PyObject *right)
-{
-	return 0; /* XXX later -- for now, we cheat: "don't do that" */
-}
-
 static int
 fill_classic_mro(PyObject *mro, PyObject *cls)
 {
@@ -714,11 +654,87 @@ classic_mro(PyObject *cls)
 	return NULL;
 }
 
+/*  
+    Method resolution order algorithm C3 described in
+    "A Monotonic Superclass Linearization for Dylan",
+    by Kim Barrett, Bob Cassel, Paul Haahr,
+    David A. Moon, Keith Playford, and P. Tucker Withington. 
+    (OOPSLA 1996)
+
+ */
+
+static int 
+tail_contains(PyObject *list, int whence, PyObject *o) {
+	int j, size;
+	size = PyList_GET_SIZE(list);
+
+	for (j = whence+1; j < size; j++) {
+		if (PyList_GET_ITEM(list, j) == o)
+			return 1;
+	}
+	return 0;
+}
+
+static int 
+pmerge(PyObject *acc, PyObject* to_merge) {
+	int i, j, to_merge_size;
+	int *remain;
+	int ok, empty_cnt;
+	
+	to_merge_size = PyList_GET_SIZE(to_merge);
+
+	remain = PyMem_MALLOC(SIZEOF_INT*to_merge_size);
+	if (remain == NULL)
+		return -1;
+	for (i = 0; i < to_merge_size; i++)
+		remain[i] = 0;
+
+  again:
+	empty_cnt = 0;
+	for (i = 0; i < to_merge_size; i++) {
+		PyObject *candidate;
+		
+		PyObject *cur_list = PyList_GET_ITEM(to_merge, i);
+
+		if (remain[i] >= PyList_GET_SIZE(cur_list)) {
+			empty_cnt++;
+			continue;
+                }
+
+		candidate = PyList_GET_ITEM(cur_list, remain[i]);
+		for (j = 0; j < to_merge_size; j++) {
+			PyObject *j_lst = PyList_GET_ITEM(to_merge, j);
+			if (tail_contains(j_lst, remain[j], candidate))
+				goto skip; /* continue outer loop */
+		}
+		ok = PyList_Append(acc, candidate);
+		if (ok < 0) {
+			PyMem_Free(remain);
+			return -1;
+		}
+		for (j = 0; j < to_merge_size; j++) {
+			PyObject *j_lst = PyList_GET_ITEM(to_merge, j);
+			if (PyList_GET_ITEM(j_lst, remain[j]) == candidate) {
+				remain[j]++;
+			}
+		}
+		goto again;
+	  skip:
+	}
+
+	PyMem_FREE(remain);
+	if (empty_cnt == to_merge_size)
+		return 0;
+	PyErr_SetString(PyExc_TypeError, "MRO order disagreement");
+	return -1;
+}
+
 static PyObject *
 mro_implementation(PyTypeObject *type)
 {
 	int i, n, ok;
 	PyObject *bases, *result;
+	PyObject *to_merge, *bases_aslist;
 
 	if(type->tp_dict == NULL) {
 		if(PyType_Ready(type) < 0)
@@ -727,9 +743,11 @@ mro_implementation(PyTypeObject *type)
 
 	bases = type->tp_bases;
 	n = PyTuple_GET_SIZE(bases);
-	result = Py_BuildValue("[O]", (PyObject *)type);
-	if (result == NULL)
+
+	to_merge = PyList_New(n+1);
+	if (to_merge == NULL)
 		return NULL;
+
 	for (i = 0; i < n; i++) {
 		PyObject *base = PyTuple_GET_ITEM(bases, i);
 		PyObject *parentMRO;
@@ -739,20 +757,33 @@ mro_implementation(PyTypeObject *type)
 		else
 			parentMRO = classic_mro(base);
 		if (parentMRO == NULL) {
-			Py_DECREF(result);
+			Py_DECREF(to_merge);
 			return NULL;
-		}
-		if (serious_order_disagreements(result, parentMRO)) {
-			Py_DECREF(result);
-			return NULL;
-		}
-		ok = conservative_merge(result, parentMRO);
-		Py_DECREF(parentMRO);
-		if (ok < 0) {
-			Py_DECREF(result);
-			return NULL;
-		}
+	        }
+
+		PyList_SET_ITEM(to_merge, i, parentMRO);
 	}
+
+	bases_aslist = PySequence_List(bases);
+	if (bases_aslist == NULL) {
+		Py_DECREF(to_merge);
+		return NULL;
+	}
+	PyList_SET_ITEM(to_merge, n, bases_aslist);
+
+	result = Py_BuildValue("[O]", (PyObject *)type);
+	if (result == NULL) {
+		Py_DECREF(to_merge);
+		return NULL;
+	}
+
+	ok = pmerge(result, to_merge);
+	Py_DECREF(to_merge);
+	if (ok < 0) {
+		Py_DECREF(result);
+		return NULL;
+	}
+
 	return result;
 }
 
