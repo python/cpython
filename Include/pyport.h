@@ -373,18 +373,6 @@ typedef	struct fd_set {
 #error "LONG_BIT definition appears wrong for platform (bad gcc/glibc config?)."
 #endif
 
-#ifdef __NeXT__
-#ifdef __sparc__
-/*
- * This works around a bug in the NS/Sparc 3.3 pre-release
- * limits.h header file.
- * 10-Feb-1995 bwarsaw@cnri.reston.va.us
- */
-#undef LONG_MIN
-#define LONG_MIN (-LONG_MAX-1)
-#endif
-#endif
-
 /*
  * Rename some functions for the Borland compiler
  */
