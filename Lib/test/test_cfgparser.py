@@ -115,6 +115,16 @@ class TestCaseBase(unittest.TestCase):
         self.failUnless(cf.has_option("section", "Key"))
 
 
+    def test_default_case_sensitivity(self):
+        cf = self.newconfig({"foo": "Bar"})
+        self.assertEqual(
+            cf.get("DEFAULT", "Foo"), "Bar",
+            "could not locate option, expecting case-insensitive option names")
+        cf = self.newconfig({"Foo": "Bar"})
+        self.assertEqual(
+            cf.get("DEFAULT", "Foo"), "Bar",
+            "could not locate option, expecting case-insensitive defaults")
+
     def test_parse_errors(self):
         self.newconfig()
         self.parse_error(ConfigParser.ParsingError,
