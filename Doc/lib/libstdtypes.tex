@@ -613,7 +613,8 @@ is at least one character, false otherwise.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{isdigit}{}
-Return true if there are only digit characters, false otherwise.
+Return true if all characters in the string are digits and there
+is at least one character, false otherwise.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{islower}{}
@@ -623,13 +624,14 @@ there is at least one cased character, false otherwise.
 
 \begin{methoddesc}[string]{isspace}{}
 Return true if there are only whitespace characters in the string and
-the string is not empty, false otherwise.
+there is at least one character, false otherwise.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{istitle}{}
-Return true if the string is a titlecased string: uppercase
-characters may only follow uncased characters and lowercase characters
-only cased ones.  Return false otherwise.
+Return true if the string is a titlecased string and there is at least one
+character, i.e. uppercase characters may only follow uncased
+characters and lowercase characters only cased ones.  Return false
+otherwise.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{isupper}{}
