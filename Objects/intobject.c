@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -27,7 +27,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "allobjects.h"
 #include "modsupport.h"
 
-#ifdef __STDC__
+#ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif
 
@@ -168,12 +168,31 @@ long
 getintvalue(op)
 	register object *op;
 {
-	if (!is_intobject(op)) {
-		err_badcall();
+	number_methods *nb;
+	intobject *io;
+	long val;
+	
+	if (op && is_intobject(op))
+		return GETINTVALUE((intobject*) op);
+	
+	if (op == NULL || (nb = op->ob_type->tp_as_number) == NULL ||
+	    nb->nb_int == NULL) {
+		err_badarg();
 		return -1;
 	}
-	else
-		return ((intobject *)op) -> ob_ival;
+	
+	io = (intobject*) (*nb->nb_int) (op);
+	if (io == NULL)
+		return -1;
+	if (!is_intobject(io)) {
+		err_setstr(TypeError, "nb_int should return int object");
+		return -1;
+	}
+	
+	val = GETINTVALUE(io);
+	DECREF(io);
+	
+	return val;
 }
 
 /* Methods */
@@ -245,19 +264,134 @@ int_sub(v, w)
 	return newintobject(x);
 }
 
+/*
+Integer overflow checking used to be done using a double, but on 64
+bit machines (where both long and double are 64 bit) this fails
+because the double doesn't have enouvg precision.  John Tromp suggests
+the following algorithm:
+
+Suppose again we normalize a and b to be nonnegative.
+Let ah and al (bh and bl) be the high and low 32 bits of a (b, resp.).
+Now we test ah and bh against zero and get essentially 3 possible outcomes.
+
+1) both ah and bh > 0 : then report overflow
+
+2) both ah and bh = 0 : then compute a*b and report overflow if it comes out
+                        negative
+
+3) ah > 0 and bh = 0  : compute ah*bl and report overflow if it's >= 2^31
+                        compute al*bl and report overflow if it's negative
+                        add (ah*bl)<<32 to al*bl and report overflow if
+                        it's negative
+
+In case of no overflow the result is then negated if necessary.
+
+The majority of cases will be 2), in which case this method is the same as
+what I suggested before. If multiplication is expensive enough, then the
+other method is faster on case 3), but also more work to program, so I
+guess the above is the preferred solution.
+
+*/
+
 static object *
 int_mul(v, w)
 	intobject *v;
 	intobject *w;
 {
-	register long a, b;
-	double x;
+	long a, b, ah, bh, x, y;
+	int s = 1;
+
 	a = v->ob_ival;
 	b = w->ob_ival;
-	x = (double)a * (double)b;
-	if (x > LONG_MAX || x < (double) (long) (LONG_MIN))
-		return err_ovf("integer multiplication");
-	return newintobject(a * b);
+	ah = a >> (LONG_BIT/2);
+	bh = b >> (LONG_BIT/2);
+
+	/* Quick test for common case: two small positive ints */
+
+	if (ah == 0 && bh == 0) {
+		x = a*b;
+		if (x < 0)
+			goto bad;
+		return newintobject(x);
+	}
+
+	/* Arrange that a >= b >= 0 */
+
+	if (a < 0) {
+		a = -a;
+		if (a < 0) {
+			/* Largest negative */
+			if (b == 0 || b == 1) {
+				x = a*b;
+				goto ok;
+			}
+			else
+				goto bad;
+		}
+		s = -s;
+		ah = a >> (LONG_BIT/2);
+	}
+	if (b < 0) {
+		b = -b;
+		if (b < 0) {
+			/* Largest negative */
+			if (a == 0 || a == 1 && s == 1) {
+				x = a*b;
+				goto ok;
+			}
+			else
+				goto bad;
+		}
+		s = -s;
+		bh = b >> (LONG_BIT/2);
+	}
+
+	/* 1) both ah and bh > 0 : then report overflow */
+
+	if (ah != 0 && bh != 0)
+		goto bad;
+
+	/* 2) both ah and bh = 0 : then compute a*b and report
+				   overflow if it comes out negative */
+
+	if (ah == 0 && bh == 0) {
+		x = a*b;
+		if (x < 0)
+			goto bad;
+		return newintobject(x*s);
+	}
+
+	if (a < b) {
+		/* Swap */
+		x = a;
+		a = b;
+		b = x;
+		ah = bh;
+		/* bh not used beyond this point */
+	}
+
+	/* 3) ah > 0 and bh = 0  : compute ah*bl and report overflow if
+				   it's >= 2^31
+                        compute al*bl and report overflow if it's negative
+                        add (ah*bl)<<32 to al*bl and report overflow if
+                        it's negative
+			(NB b == bl in this case, and we make a = al) */
+
+	y = ah*b;
+	if (y >= (1L << (LONG_BIT/2)))
+		goto bad;
+	a &= (1L << (LONG_BIT/2)) - 1;
+	x = a*b;
+	if (x < 0)
+		goto bad;
+	x += y << LONG_BIT/2;
+	if (x < 0)
+		goto bad;
+ ok:
+	return newintobject(x * s);
+
+ bad:
+	return err_ovf("integer multiplication");
 }
 
 static int
@@ -330,15 +464,79 @@ int_divmod(x, y)
 }
 
 static object *
-int_pow(v, w)
+int_pow(v, w, z)
 	intobject *v;
 	intobject *w;
+	intobject *z;
 {
+#if 1
+	register long iv, iw, iz, ix, temp, prev;
+ 	int zset = 0;
+	iv = v->ob_ival;
+	iw = w->ob_ival;
+	if (iw < 0) {
+		err_setstr(ValueError, "integer to the negative power");
+		return NULL;
+	}
+ 	if ((object *)z != None) {
+		iz = z->ob_ival;
+	 	zset = 1;
+	}
+	/*
+	 * XXX: The original exponentiation code stopped looping
+	 * when temp hit zero; this code will continue onwards
+	 * unnecessarily, but at least it won't cause any errors.
+	 * Hopefully the speed improvement from the fast exponentiation
+	 * will compensate for the slight inefficiency.
+	 * XXX: Better handling of overflows is desperately needed.
+	 */
+ 	temp = iv;
+	ix = 1;
+	while (iw > 0) {
+	 	prev = ix;	/* Save value for overflow check */
+	 	if (iw & 1) {	
+		 	ix = ix*temp;
+			if (temp == 0)
+				break; /* Avoid ix / 0 */
+			if (ix / temp != prev)
+				return err_ovf("integer pow()");
+		}
+	 	iw >>= 1;	/* Shift exponent down by 1 bit */
+	        if (iw==0) break;
+	 	prev = temp;
+	 	temp *= temp;	/* Square the value of temp */
+	 	if (prev!=0 && temp/prev!=prev)
+			return err_ovf("integer pow()");
+	 	if (zset) {
+			/* If we did a multiplication, perform a modulo */
+		 	ix = ix % iz;
+		 	temp = temp % iz;
+		}
+	}
+	if (zset) {
+	 	object *t1, *t2;
+	 	long int div, mod;
+	 	t1=newintobject(ix); 
+		t2=newintobject(iz);
+	 	if (t1==NULL || t2==NULL ||
+	 		i_divmod((intobject *)t1, (intobject *)t2, &div, &mod)<0) {
+		 	XDECREF(t1);
+		 	XDECREF(t2);
+			return(NULL);
+		}
+	 	ix=mod;
+	}
+	return newintobject(ix);
+#else
 	register long iv, iw, ix;
 	iv = v->ob_ival;
 	iw = w->ob_ival;
 	if (iw < 0) {
 		err_setstr(ValueError, "integer to the negative power");
+		return NULL;
+	}
+	if ((object *)z != None) {
+		err_setstr(TypeError, "pow(int, int, int) not yet supported");
 		return NULL;
 	}
 	ix = 1;
@@ -351,7 +549,8 @@ int_pow(v, w)
 			return err_ovf("integer pow()");
 	}
 	return newintobject(ix);
-}
+#endif
+}				
 
 static object *
 int_neg(v)
@@ -535,29 +734,29 @@ int_hex(v)
 }
 
 static number_methods int_as_number = {
-	int_add,	/*nb_add*/
-	int_sub,	/*nb_subtract*/
-	int_mul,	/*nb_multiply*/
-	int_div,	/*nb_divide*/
-	int_mod,	/*nb_remainder*/
-	int_divmod,	/*nb_divmod*/
-	int_pow,	/*nb_power*/
-	int_neg,	/*nb_negative*/
-	int_pos,	/*nb_positive*/
-	int_abs,	/*nb_absolute*/
-	int_nonzero,	/*nb_nonzero*/
-	int_invert,	/*nb_invert*/
-	int_lshift,	/*nb_lshift*/
-	int_rshift,	/*nb_rshift*/
-	int_and,	/*nb_and*/
-	int_xor,	/*nb_xor*/
-	int_or,		/*nb_or*/
+	(binaryfunc)int_add, /*nb_add*/
+	(binaryfunc)int_sub, /*nb_subtract*/
+	(binaryfunc)int_mul, /*nb_multiply*/
+	(binaryfunc)int_div, /*nb_divide*/
+	(binaryfunc)int_mod, /*nb_remainder*/
+	(binaryfunc)int_divmod, /*nb_divmod*/
+	(ternaryfunc)int_pow, /*nb_power*/
+	(unaryfunc)int_neg, /*nb_negative*/
+	(unaryfunc)int_pos, /*nb_positive*/
+	(unaryfunc)int_abs, /*nb_absolute*/
+	(inquiry)int_nonzero, /*nb_nonzero*/
+	(unaryfunc)int_invert, /*nb_invert*/
+	(binaryfunc)int_lshift, /*nb_lshift*/
+	(binaryfunc)int_rshift, /*nb_rshift*/
+	(binaryfunc)int_and, /*nb_and*/
+	(binaryfunc)int_xor, /*nb_xor*/
+	(binaryfunc)int_or, /*nb_or*/
 	0,		/*nb_coerce*/
-	int_int,	/*nb_int*/
-	int_long,	/*nb_long*/
-	int_float,	/*nb_float*/
-	int_oct,	/*nb_oct*/
-	int_hex,	/*nb_hex*/
+	(unaryfunc)int_int, /*nb_int*/
+	(unaryfunc)int_long, /*nb_long*/
+	(unaryfunc)int_float, /*nb_float*/
+	(unaryfunc)int_oct, /*nb_oct*/
+	(unaryfunc)int_hex, /*nb_hex*/
 };
 
 typeobject Inttype = {
@@ -566,14 +765,14 @@ typeobject Inttype = {
 	"int",
 	sizeof(intobject),
 	0,
-	int_dealloc,	/*tp_dealloc*/
-	int_print,	/*tp_print*/
+	(destructor)int_dealloc, /*tp_dealloc*/
+	(printfunc)int_print, /*tp_print*/
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/
-	int_compare,	/*tp_compare*/
-	int_repr,	/*tp_repr*/
+	(cmpfunc)int_compare, /*tp_compare*/
+	(reprfunc)int_repr, /*tp_repr*/
 	&int_as_number,	/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
-	int_hash,	/*tp_hash*/
+	(hashfunc)int_hash, /*tp_hash*/
 };
