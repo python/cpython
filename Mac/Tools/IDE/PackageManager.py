@@ -385,7 +385,7 @@ class PackageBrowser(PimpInterface):
 			self.w.install_button.enable(installed != "yes" or self.w.force_button.get())
 			self.w.homepage_button.enable(not not self.packages[sel].homepage())
 			description = self.packages[sel].description()
-			description = description.split('\r\n')
+			description = description.splitlines()
 			description = '\r'.join(description)
 			self.w.description.set(description)
 			self.w.verbose_button.enable(1)
