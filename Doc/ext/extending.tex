@@ -65,9 +65,7 @@ is evaluated (we'll see shortly how it ends up being called):
 
 \begin{verbatim}
 static PyObject *
-spam_system(self, args)
-    PyObject *self;
-    PyObject *args;
+spam_system(PyObject *self, PyObject *args)
 {
     char *command;
     int sts;
@@ -371,7 +369,8 @@ calling \cfunction{initspam()} after the call to
 \cfunction{Py_Initialize()} or \cfunction{PyMac_Initialize()}:
 
 \begin{verbatim}
-int main(int argc, char **argv)
+int
+main(int argc, char *argv[])
 {
     /* Pass argv[0] to the Python interpreter */
     Py_SetProgramName(argv[0]);
@@ -476,8 +475,7 @@ definition:
 static PyObject *my_callback = NULL;
 
 static PyObject *
-my_set_callback(dummy, args)
-    PyObject *dummy, *args;
+my_set_callback(PyObject *dummy, PyObject *args)
 {
     PyObject *result = NULL;
     PyObject *temp;
@@ -696,7 +694,7 @@ follows:
 
 \begin{verbatim}
 int PyArg_ParseTupleAndKeywords(PyObject *arg, PyObject *kwdict,
-                                char *format, char **kwlist, ...);
+                                char *format, char *kwlist[], ...);
 \end{verbatim}
 
 The \var{arg} and \var{format} parameters are identical to those of the
@@ -720,10 +718,7 @@ Geoff Philbrick (\email{philbrick@hks.com}):%
 #include "Python.h"
 
 static PyObject *
-keywdarg_parrot(self, args, keywds)
-    PyObject *self;
-    PyObject *args;
-    PyObject *keywds;
+keywdarg_parrot(PyObject *self, PyObject *args, PyObject *keywds)
 {  
     int voltage;
     char *state = "a stiff";
@@ -1018,7 +1013,9 @@ The first and most important case to know about is using
 reference to a list item.  For instance:
 
 \begin{verbatim}
-bug(PyObject *list) {
+void
+bug(PyObject *list)
+{
     PyObject *item = PyList_GetItem(list, 0);
 
     PyList_SetItem(list, 1, PyInt_FromLong(0L));
@@ -1052,7 +1049,9 @@ temporarily increment the reference count.  The correct version of the
 function reads:
 
 \begin{verbatim}
-no_bug(PyObject *list) {
+void
+no_bug(PyObject *list)
+{
     PyObject *item = PyList_GetItem(list, 0);
 
     Py_INCREF(item);
@@ -1078,7 +1077,9 @@ the I/O to complete.  Obviously, the following function has the same
 problem as the previous one:
 
 \begin{verbatim}
-bug(PyObject *list) {
+void
+bug(PyObject *list)
+{
     PyObject *item = PyList_GetItem(list, 0);
     Py_BEGIN_ALLOW_THREADS
     ...some blocking I/O call...
@@ -1221,8 +1222,7 @@ declared \keyword{static} like everything else:
 
 \begin{verbatim}
 static int
-PySpam_System(command)
-    char *command;
+PySpam_System(char *command)
 {
     return system(command);
 }
@@ -1232,9 +1232,7 @@ The function \cfunction{spam_system()} is modified in a trivial way:
 
 \begin{verbatim}
 static PyObject *
-spam_system(self, args)
-    PyObject *self;
-    PyObject *args;
+spam_system(PyObject *self, PyObject *args)
 {
     char *command;
     int sts;
