@@ -119,7 +119,8 @@ class Message:
         header.
 
         This is a convenience method and may not generate the message exactly
-        as you intend.  For more flexibility, use the flatten() method of a
+        as you intend because by default it mangles lines that begin with
+        "From ".  For more flexibility, use the flatten() method of a
         Generator instance.
         """
         from email.Generator import Generator
