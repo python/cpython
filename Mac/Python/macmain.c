@@ -68,6 +68,54 @@ static int  orig_argc;
 static int keep_normal;
 static int keep_error = 1;
 
+/* Initialize the Mac toolbox world */
+
+static void
+init_mac_world()
+{
+#ifdef THINK_C
+	printf("\n");
+#else
+	MaxApplZone();
+	InitGraf(&qd.thePort);
+	InitFonts();
+	InitWindows();
+	TEInit();
+	InitDialogs((long)0);
+	InitMenus();
+	InitCursor();
+#endif
+}
+
+/* Initialization code shared by interpreter and applets */
+
+static void
+init_common()
+{
+
+	/* Initialize toolboxes */
+	init_mac_world();
+	
+#ifdef USE_MAC_SHARED_LIBRARY
+	/* Add the shared library to the stack of resource files */
+	PyMac_AddLibResources();
+#endif
+
+#if defined(USE_GUSI)
+	/* Setup GUSI */
+	GUSIDefaultSetup();
+#endif
+
+#ifdef USE_SIOUX
+	/* Set various SIOUX flags. Some are changed later based on options */
+	SIOUXSettings.asktosaveonclose = 0;
+	SIOUXSettings.showstatusline = 0;
+	SIOUXSettings.tabspaces = 4;
+#endif
+
+}
+
+
 #ifdef USE_MAC_APPLET_SUPPORT
 /* Applet support */
 
@@ -112,14 +160,7 @@ PyMac_InitApplet()
 	char **argv;
 	int err;
 
-#ifdef USE_MAC_SHARED_LIBRARY
-	PyMac_AddLibResources();
-#endif
-#ifdef USE_SIOUX
-	SIOUXSettings.asktosaveonclose = 0;
-	SIOUXSettings.showstatusline = 0;
-	SIOUXSettings.tabspaces = 4;
-#endif
+	init_common();
 	argc = PyMac_GetArgv(&argv);
 	Py_Initialize();
 	PySys_SetArgv(argc, argv);
@@ -139,14 +180,7 @@ PyMac_InitApplication()
 	int argc;
 	char **argv;
 	
-#ifdef USE_MAC_SHARED_LIBRARY
-	PyMac_AddLibResources();
-#endif
-#ifdef USE_SIOUX
-	SIOUXSettings.asktosaveonclose = 0;
-	SIOUXSettings.showstatusline = 0;
-	SIOUXSettings.tabspaces = 4;
-#endif
+	init_common();
 	argc = PyMac_GetArgv(&argv);
 	if ( argc > 1 ) {
 		/* We're running a script. Attempt to change current directory */
@@ -181,8 +215,8 @@ PyMac_InteractiveOptions(int *inspect, int *verbose, int *suppress_print,
 	/* Default-defaults: */
 	*keep_error = 1;
 	/* Get default settings from our preference file */
-	PyMac_PreferenceOptions(&inspect, &Py_VerboseFlag, &Py_SuppressPrintingFlag,
-			&unbuffered, &Py_DebugFlag, &keep_normal, &keep_error);
+	PyMac_PreferenceOptions(inspect, verbose, suppress_print,
+			unbuffered, debugging, keep_normal, keep_error);
 	/* If option is pressed override these */
 	GetKeys(rmap);
 	map = (unsigned char *)rmap;
