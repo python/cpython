@@ -314,7 +314,7 @@ The ``Hello, world'' of csv reading is
 
 \begin{verbatim}
 import csv
-reader = csv.reader(file("some.csv", "rb"))
+reader = csv.reader(open("some.csv", "rb"))
 for row in reader:
     print row
 \end{verbatim}
@@ -323,7 +323,7 @@ To print just the first and last columns of each row try
 
 \begin{verbatim}
 import csv
-reader = csv.reader(file("some.csv", "rb"))
+reader = csv.reader(open("some.csv", "rb"))
 for row in reader:
     print row[0], row[-1]
 \end{verbatim}
@@ -332,7 +332,7 @@ The corresponding simplest possible writing example is
 
 \begin{verbatim}
 import csv
-writer = csv.writer(file("some.csv", "wb"))
+writer = csv.writer(open("some.csv", "wb"))
 for row in someiterable:
     writer.writerow(row)
 \end{verbatim}
