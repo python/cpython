@@ -21,7 +21,7 @@ extern "C" {
 
 typedef struct {
     PyObject_VAR_HEAD
-    /* Vector of pointers to list elements.  list[0] is ob_item{0], etc. */
+    /* Vector of pointers to list elements.  list[0] is ob_item[0], etc. */
     PyObject **ob_item;
 
     /* ob_item contains space for 'allocated' elements.  The number
