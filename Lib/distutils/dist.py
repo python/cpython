@@ -258,8 +258,11 @@ class Distribution:
         if filenames is None:
             filenames = self.find_config_files()
 
+        print "Distribution.parse_config_files():"
+
         parser = ConfigParser()
         for filename in filenames:
+            print "  reading", filename
             parser.read(filename)
             for section in parser.sections():
                 options = parser.options(section)
@@ -271,9 +274,11 @@ class Distribution:
                     if opt != '__name__':
                         opts[opt] = (filename, parser.get(section,opt))
 
-        from pprint import pprint
-        print "options (after parsing config files):"
-        pprint (self.command_options)
+            # Make the ConfigParser forget everything (so we retain
+            # the original filenames that options come from) -- gag,
+            # retch, puke -- another good reason for a distutils-
+            # specific config parser (sigh...)
+            parser.__init__()
 
 
     # -- Command-line parsing methods ----------------------------------
@@ -397,7 +402,7 @@ class Distribution:
                                  cmd_class.user_options)
         parser.set_negative_aliases (negative_opt)
         (args, opts) = parser.getopt (args[1:])
-        if opts.help:
+        if hasattr(opts, 'help') and opts.help:
             print "showing help for command", cmd_class
             self._show_help(parser, display_options=0, commands=[cmd_class])
             return
@@ -408,7 +413,7 @@ class Distribution:
             self.command_options[command] = {}
         cmd_opts = self.command_options[command]
         for (name, value) in vars(opts).items():
-            cmd_opts[command] = ("command line", value)
+            cmd_opts[name] = ("command line", value)
 
         return args
 
@@ -605,9 +610,24 @@ class Distribution:
         """
         cmd_obj = self.command_obj.get(command)
         if not cmd_obj and create:
+            print "Distribution.get_command_obj(): " \
+                  "creating '%s' command object" % command
+
             klass = self.get_command_class(command)
-            cmd_obj = self.command_obj[command] = klass()
-            self.command_run[command] = 0
+            cmd_obj = self.command_obj[command] = klass(self)
+            self.have_run[command] = 0
+
+            # Set any options that were supplied in config files
+            # or on the command line.  (NB. support for error
+            # reporting is lame here: any errors aren't reported
+            # until 'finalize_options()' is called, which means
+            # we won't report the source of the error.)
+            options = self.command_options.get(command)
+            if options:
+                print "  setting options:"
+                for (option, (source, value)) in options.items():
+                    print "    %s = %s (from %s)" % (option, value, source)
+                    setattr(cmd_obj, option, value)
 
         return cmd_obj
 
