@@ -134,7 +134,6 @@ __all__ = [
 
 import threading
 import copy
-import math
 import operator
 
 #Exponent Range
@@ -2120,8 +2119,7 @@ class Context(object):
     Emax -   Maximum exponent
     capitals -      If 1, 1*10^1 is printed as 1E+1.
                     If 0, printed as 1e1
-                    (Defaults to 1)
-    clamp - If 1, change exponents if too high (Default 0)
+    _clamp - If 1, change exponents if too high (Default 0)
     """
 
     DefaultLock = threading.Lock()
@@ -2130,7 +2128,7 @@ class Context(object):
                  trap_enablers=None, flags=None,
                  _rounding_decision=None,
                  Emin=None, Emax=None,
-                 capitals=1, _clamp=0,
+                 capitals=None, _clamp=0,
                  _ignored_flags=[]):
         if flags is None:
             flags = dict.fromkeys(Signals, 0)
@@ -2208,7 +2206,7 @@ class Context(object):
         return int(self.Emin - self.prec + 1)
 
     def Etop(self):
-        """Returns maximum exponent (= Emin - prec + 1)"""
+        """Returns maximum exponent (= Emax - prec + 1)"""
         return int(self.Emax - self.prec + 1)
 
     def _set_rounding_decision(self, type):
@@ -2430,7 +2428,7 @@ class Context(object):
         return a.__mul__(b, context=self)
 
     def normalize(self, a):
-        """normalize reduces its operand to its simplest form.
+        """normalize reduces an operand to its simplest form.
 
         Essentially a plus operation with all trailing zeros removed from the
         result.
@@ -2968,7 +2966,8 @@ DefaultContext = Context(
         flags=None,
         _rounding_decision=ALWAYS_ROUND,
         Emax=DEFAULT_MAX_EXPONENT,
-        Emin=DEFAULT_MIN_EXPONENT
+        Emin=DEFAULT_MIN_EXPONENT,
+        capitals=1
 )
 
 # Pre-made alternate contexts offered by the specification
