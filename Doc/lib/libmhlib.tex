@@ -2,7 +2,7 @@
 % <skip@mojam.com>.
 
 \section{\module{mhlib} ---
-         Object-oriented access to MH mailboxes}
+         Access to MH mailboxes}
 
 \declaremodule{standard}{mhlib}
 \modulesynopsis{Manipulate MH mailboxes from Python.}
@@ -159,6 +159,9 @@ Copy one message to a given destination in another folder.
 
 
 \subsection{Message Objects \label{mh-message-objects}}
+
+The \class{Message} class adds one method to those of
+\class{mimetools.Message}:
 
 \begin{methoddesc}[Message]{openmessage}{n}
 Return a new open message object (costs a file descriptor).
