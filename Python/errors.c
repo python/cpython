@@ -41,6 +41,8 @@
 #include "tupleobject.h"
 #include "errors.h"
 
+extern char *strerror PROTO((int));
+
 /* Last exception stored by err_setval() */
 
 static object *last_exception;
