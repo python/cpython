@@ -2,6 +2,7 @@
 
 from math import * # Also for export
 import Tkinter
+
 class Error(Exception):
     pass
 
@@ -52,7 +53,6 @@ class RawPen:
             canvas.delete(item)
         self._delete_turtle()
         self._draw_turtle()
-
 
     def tracer(self, flag):
         self._tracing = flag
@@ -117,7 +117,6 @@ class RawPen:
     def _set_color(self,color):
         self._color = color
         self._draw_turtle()
-
 
     def write(self, arg, move=0):
         x, y = start = self._position
@@ -200,6 +199,40 @@ class RawPen:
         if self._filling:
             self._path.append(self._position)
         self._draw_turtle()
+            
+    def heading(self):
+        return self._angle
+
+    def setheading(self, angle):
+        self._angle = angle
+        self._draw_turtle()
+
+    def window_width(self):
+        width = self._canvas.winfo_width()
+        if width <= 1:	# the window isn't managed by a geometry manager
+            width = self._canvas['width']
+        return width
+
+    def window_height(self):
+        height = self._canvas.winfo_height()
+        if height <= 1:	# the window isn't managed by a geometry manager
+            height = self._canvas['height']
+        return height
+
+    def position(self):
+        x0, y0 = self._origin
+        x1, y1 = self._position
+        return [x1-x0, -y1+y0]
+
+    def setx(self, xpos):
+        x0, y0 = self._origin
+        x1, y1 = self._position
+        self._goto(x0+xpos, y1)
+
+    def sety(self, ypos):
+        x0, y0 = self._origin
+        x1, y1 = self._position
+        self._goto(x1, y0-ypos)
 
     def goto(self, *args):
         if len(args) == 1:
@@ -326,6 +359,13 @@ def write(arg, move=0): _getpen().write(arg, move)
 def fill(flag): _getpen().fill(flag)
 def circle(radius, extent=None): _getpen().circle(radius, extent)
 def goto(*args): apply(_getpen().goto, args)
+def heading(): return _getpen().heading()
+def setheading(angle): _getpen().setheading(angle)
+def position(): return _getpen().position()
+def window_width(): return _getpen().window_width()
+def window_height(): return _getpen().window_height()
+def setx(xpos): _getpen().setx(xpos)
+def sety(ypos): _getpen().sety(ypos)
 
 def demo():
     reset()
