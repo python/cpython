@@ -367,7 +367,7 @@ postscript-$(PAPER)-$(RELEASE).zip: $(PSFILES) paper-$(PAPER)/README
 	rm -f $@
 	cd paper-$(PAPER) && zip -q -9 ../$@ *.ps README
 
-html-$(RELEASE).tar:	html
+html-$(RELEASE).tar:	$(ALLHTMLFILES)
 	cd $(HTMLDIR) && \
 		tar cf ../html-$(RELEASE).tar *.html */*.css */*.html \
 					      */*.gif */*.txt
