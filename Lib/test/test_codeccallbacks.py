@@ -222,7 +222,7 @@ class CodecCallbackTest(unittest.TestCase):
         # Test UnicodeError subclasses: construction, attribute assignment and __str__ conversion
         # check with one missing argument
         self.assertRaises(TypeError, exctype, *args[:-1])
-        # check with one missing argument
+        # check with one argument too much
         self.assertRaises(TypeError, exctype, *(args + ["too much"]))
         # check with one argument of the wrong type
         wrongargs = [ "spam", u"eggs", 42, 1.0, None ]
@@ -238,6 +238,8 @@ class CodecCallbackTest(unittest.TestCase):
                     else:
                         callargs.append(args[i])
                 self.assertRaises(TypeError, exctype, *callargs)
+
+        # check with the correct number and type of arguments
         exc = exctype(*args)
         self.assertEquals(str(exc), msg)
 
@@ -283,17 +285,20 @@ class CodecCallbackTest(unittest.TestCase):
         )
 
     def test_badandgoodstrictexceptions(self):
+        # "strict" complains about a non-exception passed in
         self.assertRaises(
             TypeError,
             codecs.strict_errors,
             42
         )
+        # "strict" complains about the wrong exception type
         self.assertRaises(
             Exception,
             codecs.strict_errors,
             Exception("ouch")
         )
 
+        # If the correct exception is passed in, "strict" raises it
         self.assertRaises(
             UnicodeEncodeError,
             codecs.strict_errors,
@@ -301,16 +306,19 @@ class CodecCallbackTest(unittest.TestCase):
         )
 
     def test_badandgoodignoreexceptions(self):
+        # "ignore" complains about a non-exception passed in
         self.assertRaises(
            TypeError,
            codecs.ignore_errors,
            42
         )
+        # "ignore" complains about the wrong exception type
         self.assertRaises(
            TypeError,
            codecs.ignore_errors,
            UnicodeError("ouch")
         )
+        # If the correct exception is passed in, "ignore" returns an empty replacement
         self.assertEquals(
             codecs.ignore_errors(UnicodeEncodeError("ascii", u"\u3042", 0, 1, "ouch")),
             (u"", 1)
@@ -325,16 +333,19 @@ class CodecCallbackTest(unittest.TestCase):
         )
 
     def test_badandgoodreplaceexceptions(self):
+        # "replace" complains about a non-exception passed in
         self.assertRaises(
            TypeError,
            codecs.replace_errors,
            42
         )
+        # "replace" complains about the wrong exception type
         self.assertRaises(
            TypeError,
            codecs.replace_errors,
            UnicodeError("ouch")
         )
+        # With the correct exception, "ignore" returns an empty replacement
         self.assertEquals(
             codecs.replace_errors(UnicodeEncodeError("ascii", u"\u3042", 0, 1, "ouch")),
             (u"?", 1)
@@ -349,25 +360,19 @@ class CodecCallbackTest(unittest.TestCase):
         )
 
     def test_badandgoodxmlcharrefreplaceexceptions(self):
+        # "xmlcharrefreplace" complains about a non-exception passed in
         self.assertRaises(
            TypeError,
            codecs.xmlcharrefreplace_errors,
            42
         )
+        # "xmlcharrefreplace" complains about the wrong exception types
         self.assertRaises(
            TypeError,
            codecs.xmlcharrefreplace_errors,
            UnicodeError("ouch")
         )
-        self.assertEquals(
-            codecs.xmlcharrefreplace_errors(UnicodeEncodeError("ascii", u"\u3042", 0, 1, "ouch")),
-            (u"&#%d;" % 0x3042, 1)
-        )
-        self.assertRaises(
-            TypeError,
-            codecs.xmlcharrefreplace_errors,
-            UnicodeError("ouch")
-        )
+        # "xmlcharrefreplace" can only be used for encoding
         self.assertRaises(
             TypeError,
             codecs.xmlcharrefreplace_errors,
@@ -378,18 +383,37 @@ class CodecCallbackTest(unittest.TestCase):
             codecs.xmlcharrefreplace_errors,
             UnicodeTranslateError(u"\u3042", 0, 1, "ouch")
         )
+        # Use the correct exception
+        self.assertEquals(
+            codecs.xmlcharrefreplace_errors(UnicodeEncodeError("ascii", u"\u3042", 0, 1, "ouch")),
+            (u"&#%d;" % 0x3042, 1)
+        )
 
     def test_badandgoodbackslashreplaceexceptions(self):
+        # "backslashreplace" complains about a non-exception passed in
         self.assertRaises(
            TypeError,
            codecs.backslashreplace_errors,
            42
         )
+        # "backslashreplace" complains about the wrong exception types
         self.assertRaises(
            TypeError,
            codecs.backslashreplace_errors,
            UnicodeError("ouch")
         )
+        # "backslashreplace" can only be used for encoding
+        self.assertRaises(
+            TypeError,
+            codecs.backslashreplace_errors,
+            UnicodeDecodeError("ascii", "\xff", 0, 1, "ouch")
+        )
+        self.assertRaises(
+            TypeError,
+            codecs.backslashreplace_errors,
+            UnicodeTranslateError(u"\u3042", 0, 1, "ouch")
+        )
+        # Use the correct exception
         self.assertEquals(
             codecs.backslashreplace_errors(UnicodeEncodeError("ascii", u"\u3042", 0, 1, "ouch")),
             (u"\\u3042", 1)
@@ -419,22 +443,6 @@ class CodecCallbackTest(unittest.TestCase):
                 codecs.backslashreplace_errors(UnicodeEncodeError("ascii", u"\U0010ffff", 0, 1, "ouch")),
                 (u"\\U0010ffff", 1)
             )
-
-        self.assertRaises(
-            TypeError,
-            codecs.backslashreplace_errors,
-            UnicodeError("ouch")
-        )
-        self.assertRaises(
-            TypeError,
-            codecs.backslashreplace_errors,
-            UnicodeDecodeError("ascii", "\xff", 0, 1, "ouch")
-        )
-        self.assertRaises(
-            TypeError,
-            codecs.backslashreplace_errors,
-            UnicodeTranslateError(u"\u3042", 0, 1, "ouch")
-        )
 
     def test_badhandlerresults(self):
         results = ( 42, u"foo", (1,2,3), (u"foo", 1, 3), (u"foo", None), (u"foo",), ("foo", 1, 3), ("foo", None), ("foo",) )
