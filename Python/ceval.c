@@ -1362,6 +1362,7 @@ eval_frame(PyFrameObject *f)
 				    s[len-1] != ' ')
 					PyFile_SoftSpace(w, 0);
 			    } 
+#ifdef Py_USING_UNICODE
 			    else if (PyUnicode_Check(v)) {
 				Py_UNICODE *s = PyUnicode_AS_UNICODE(v);
 				int len = PyUnicode_GET_SIZE(v);
@@ -1370,6 +1371,7 @@ eval_frame(PyFrameObject *f)
 				    s[len-1] != ' ')
 				    PyFile_SoftSpace(w, 0);
 			    }
+#endif
 			}
 			Py_DECREF(v);
 			Py_XDECREF(stream);
