@@ -105,6 +105,11 @@ def _compile(*key):
     _cache[key] = p
     return p
 
+def _expand(pattern, match, template):
+    # internal: match.expand implementation hook
+    template = sre_parse.parse_template(template, pattern)
+    return sre_parse.expand_template(template, match)
+
 def _sub(pattern, template, string, count=0):
     # internal: pattern.sub implementation hook
     return _subn(pattern, template, string, count)[0]

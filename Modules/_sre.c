@@ -4,20 +4,22 @@
  * regular expression matching engine
  *
  * partial history:
- * 99-10-24 fl  created (based on existing template matcher code)
- * 00-03-06 fl  first alpha, sort of (0.5)
- * 00-06-30 fl  added fast search optimization (0.9.3)
- * 00-06-30 fl  added assert (lookahead) primitives, etc (0.9.4)
- * 00-07-02 fl  added charset optimizations, etc (0.9.5)
- * 00-07-03 fl  store code in pattern object, lookbehind, etc
- * 00-07-08 fl  added regs attribute
- * 00-07-21 fl  reset lastindex in scanner methods (0.9.6)
- * 00-08-01 fl  fixes for 1.6b1 (0.9.8)
- * 00-08-03 fl  added recursion limit
- * 00-08-07 fl  use PyOS_CheckStack() if available
- * 00-08-08 fl  changed findall to return empty strings instead of None
- * 00-08-27 fl  properly propagate memory errors
- * 00-09-02 fl  return -1 instead of None for start/end/span
+ * 1999-10-24 fl  created (based on existing template matcher code)
+ * 2000-03-06 fl  first alpha, sort of (0.5)
+ * 2000-06-30 fl  added fast search optimization (0.9.3)
+ * 2000-06-30 fl  added assert (lookahead) primitives, etc (0.9.4)
+ * 2000-07-02 fl  added charset optimizations, etc (0.9.5)
+ * 2000-07-03 fl  store code in pattern object, lookbehind, etc
+ * 2000-07-08 fl  added regs attribute
+ * 2000-07-21 fl  reset lastindex in scanner methods (0.9.6)
+ * 2000-08-01 fl  fixes for 1.6b1 (0.9.8)
+ * 2000-08-03 fl  added recursion limit
+ * 2000-08-07 fl  use PyOS_CheckStack() if available
+ * 2000-08-08 fl  changed findall to return empty strings instead of None
+ * 2000-08-27 fl  properly propagate memory errors
+ * 2000-09-02 fl  return -1 instead of None for start/end/span
+ * 2000-09-20 fl  added expand method
+ * 2000-09-21 fl  don't use the buffer interface for unicode strings
  *
  * Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
  *
@@ -1045,7 +1047,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
     SRE_CHAR* end = state->end;
     int status = 0;
     int prefix_len = 0;
-    int prefix_skip;
+    int prefix_skip = 0;
     SRE_CODE* prefix = NULL;
     SRE_CODE* charset = NULL;
     SRE_CODE* overlap = NULL;
@@ -1291,6 +1293,17 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
 
     state->lastindex = -1;
 
+#if defined(HAVE_UNICODE)
+    if (PyUnicode_Check(string)) {
+        /* unicode strings doesn't always support the buffer interface */
+        ptr = (void*) PyUnicode_AS_DATA(string);
+        bytes = PyUnicode_GET_DATA_SIZE(string);
+        size = PyUnicode_GET_SIZE(string);
+        state->charsize = sizeof(Py_UNICODE);
+
+    } else {
+#endif
+
     /* get pointer to string buffer */
     buffer = string->ob_type->tp_as_buffer;
     if (!buffer || !buffer->bf_getreadbuffer || !buffer->bf_getsegcount ||
@@ -1307,7 +1320,6 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     }
 
     /* determine character size */
-
 #if PY_VERSION_HEX >= 0x01060000
     size = PyObject_Size(string);
 #else
@@ -1324,6 +1336,10 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
         PyErr_SetString(PyExc_TypeError, "buffer size mismatch");
         return NULL;
     }
+
+#if defined(HAVE_UNICODE)
+    }
+#endif
 
     /* adjust boundaries */
     if (start < 0)
@@ -1858,6 +1874,20 @@ match_getslice(MatchObject* self, PyObject* index, PyObject* def)
 }
 
 static PyObject*
+match_expand(MatchObject* self, PyObject* args)
+{
+    PyObject* template;
+    if (!PyArg_ParseTuple(args, "O:expand", &template))
+        return NULL;
+
+    /* delegate to Python code */
+    return call(
+        "_expand",
+        Py_BuildValue("OOO", self->pattern, self, template)
+        );
+}
+
+static PyObject*
 match_group(MatchObject* self, PyObject* args)
 {
     PyObject* result;
@@ -2094,6 +2124,7 @@ static PyMethodDef match_methods[] = {
     {"span", (PyCFunction) match_span, 1},
     {"groups", (PyCFunction) match_groups, 1},
     {"groupdict", (PyCFunction) match_groupdict, 1},
+    {"expand", (PyCFunction) match_expand, 1},
     {NULL, NULL}
 };
 
