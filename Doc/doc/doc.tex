@@ -1654,6 +1654,16 @@ This \UNIX\ is also followed by a space.
   The components of graphical interfaces will be assigned markup, but
   most of the specifics have not been determined.
 
+  \begin{macrodesc}{guilabel}{\p{label}}
+    Labels presented as part of an interactive user interface should
+    be marked using \macro{guilabel}.  This includes labels from
+    text-based interfaces such as those created using \code{curses} or
+    other text-based libraries.  Any label used in the interface
+    should be marked with this macro, including button labels, window
+    titles, field names, menu and menu selection names, and even
+    values in selection lists.
+  \end{macrodesc}
+
   \begin{macrodesc}{menuselection}{\p{menupath}}
     Menu selections should be marked using a combination of
     \macro{menuselection} and \macro{sub}.  This macro is used to mark
@@ -1673,6 +1683,10 @@ This \UNIX\ is also followed by a space.
     such as the ellipsis some operating systems use to indicate that
     the command opens a dialog, the indicator should be omitted from
     the selection name.
+
+    Individual selection names within the \macro{menuselection} should
+    not be marked using \macro{guilabel} since that's implied by using
+    \macro{menuselection}.
   \end{macrodesc}
 
   \begin{macrodesc}{sub}{}
