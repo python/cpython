@@ -2524,7 +2524,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	if (co->co_flags & CO_GENERATOR) {
 		/* Don't need to keep the reference to f_back, it will be set
 		 * when the generator is resumed. */
-		Py_DECREF(f->f_back);
+		Py_XDECREF(f->f_back);
 		f->f_back = NULL;
 
 		/* Create a new generator that owns the ready to run frame
@@ -2906,11 +2906,23 @@ PyEval_GetRestricted(void)
 }
 
 int
-PyEval_GetNestedScopes(void)
+PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 {
 	PyFrameObject *current_frame = PyThreadState_Get()->frame;
-	return current_frame == NULL ? 0 : 
-	    current_frame->f_code->co_flags & CO_NESTED;
+	int result = 0;
+
+	if (current_frame != NULL) {
+		const int codeflags = current_frame->f_code->co_flags;
+		if (codeflags & CO_NESTED) {
+			result = 1;
+			cf->cf_flags |= PyCF_NESTED_SCOPES;
+		}
+		if (codeflags & CO_GENERATOR_ALLOWED) {
+			result = 1;
+			cf->cf_flags |= PyCF_GENERATORS;
+		}
+	}
+	return result;
 }
 
 int
@@ -3730,26 +3742,25 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 	else if (PyFile_Check(prog)) {
 		FILE *fp = PyFile_AsFile(prog);
 		char *name = PyString_AsString(PyFile_Name(prog));
-		if (PyEval_GetNestedScopes()) {
-			PyCompilerFlags cf;
-			cf.cf_nested_scopes = 1;
+		PyCompilerFlags cf;
+		cf.cf_flags = 0;
+		if (PyEval_MergeCompilerFlags(&cf))
 			v = PyRun_FileFlags(fp, name, Py_file_input, globals,
 					    locals, &cf); 
-		} else {
+		else
 			v = PyRun_File(fp, name, Py_file_input, globals,
 				       locals); 
-		}
 	}
 	else {
 		char *str;
+		PyCompilerFlags cf;
 		if (PyString_AsStringAndSize(prog, &str, NULL))
 			return -1;
-		if (PyEval_GetNestedScopes()) {
-			PyCompilerFlags cf;
-			cf.cf_nested_scopes = 1;
+		cf.cf_flags = 0;
+		if (PyEval_MergeCompilerFlags(&cf))
 			v = PyRun_StringFlags(str, Py_file_input, globals, 
 					      locals, &cf);
-		} else
+		else
 			v = PyRun_String(str, Py_file_input, globals, locals);
 	}
 	if (plain)

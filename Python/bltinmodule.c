@@ -393,6 +393,7 @@ builtin_compile(PyObject *self, PyObject *args)
 	char *filename;
 	char *startstr;
 	int start;
+	PyCompilerFlags cf;
 
 	if (!PyArg_ParseTuple(args, "sss:compile", &str, &filename, &startstr))
 		return NULL;
@@ -407,11 +408,10 @@ builtin_compile(PyObject *self, PyObject *args)
 		   "compile() arg 3 must be 'exec' or 'eval' or 'single'");
 		return NULL;
 	}
-	if (PyEval_GetNestedScopes()) {
-		PyCompilerFlags cf;
-		cf.cf_nested_scopes = 1;
+	cf.cf_flags = 0;
+	if (PyEval_MergeCompilerFlags(&cf))
 		return Py_CompileStringFlags(str, filename, start, &cf);
-	} else
+	else
 		return Py_CompileString(str, filename, start);
 }
 
@@ -822,6 +822,7 @@ builtin_execfile(PyObject *self, PyObject *args)
 	PyObject *globals = Py_None, *locals = Py_None;
 	PyObject *res;
 	FILE* fp;
+	PyCompilerFlags cf;
 
 	if (!PyArg_ParseTuple(args, "s|O!O!:execfile",
 			&filename,
@@ -847,12 +848,11 @@ builtin_execfile(PyObject *self, PyObject *args)
 		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
 	}
-	if (PyEval_GetNestedScopes()) {
-		PyCompilerFlags cf;
-		cf.cf_nested_scopes = 1;
+	cf.cf_flags = 0;
+	if (PyEval_MergeCompilerFlags(&cf))
 		res = PyRun_FileExFlags(fp, filename, Py_file_input, globals,
 				   locals, 1, &cf);
-	} else
+	else
 		res = PyRun_FileEx(fp, filename, Py_file_input, globals,
 				   locals, 1);
 	return res;
