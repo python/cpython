@@ -254,7 +254,7 @@ I_CARBON_PLUGINS :  (buildmwproject, "CWIE", [
 ##	(":Mac:Build:icglue.carbon.mcp", "icglue.carbon"),
 ##	(":Mac:Build:waste.carbon.mcp", "waste.carbon"),
 	(":Mac:Build:zlib.carbon.mcp", "zlib.carbon"),
-##	(":Mac:Build:_tkinter.carbon.mcp", "_tkinter.carbon"),
+##	(":Mac:Build:_tkinter.mcp", "_tkinter.carbon"),
 ##	(":Extensions:Imaging:_tkinter.carbon.mcp", "_tkinter.carbon"),
 	(":Mac:Build:ColorPicker.carbon.mcp", "ColorPicker.carbon"),
 	(":Mac:Build:App.carbon.mcp", "App.carbon"),
@@ -277,7 +277,7 @@ I_PPC_SMALL : (buildmwproject, "CWIE", [
 I_PPC_EXTENSIONS : (buildmwproject, "CWIE", [
 		(":Extensions:Imaging:_imaging.mcp", "_imaging.ppc"),
 ##		(":Extensions:Imaging:_tkinter.mcp", "_tkinter.ppc"),
-		(":Extensions:img:Mac:imgmodules.mcp", "imgmodules"),
+		(":Extensions:img:Mac:imgmodules.mcp", "imgmodules.ppc"),
 ##		(":Extensions:Numerical:Mac:numpymodules.mcp", "multiarraymodule"),
 ##		(":Extensions:Numerical:Mac:numpymodules.mcp", "_numpy"),
 ##		(":Extensions:Numerical:Mac:numpymodules.mcp", "umathmodule"),
@@ -288,8 +288,20 @@ I_PPC_EXTENSIONS : (buildmwproject, "CWIE", [
 ##		(":Extensions:Numerical:Packages:RNG:Mac:RNG.mcp", "RNG.ppc"),
 	]),
 
-I_CARBON_EXTENSIONS : (buildcarbonnotyet, None, [()]),
-
+I_CARBON_EXTENSIONS : (buildmwproject, "CWIE", [
+##		(":Extensions:Imaging:_imaging.mcp", "_imaging.carbon"),
+##		(":Extensions:Imaging:_tkinter.mcp", "_tkinter.carbon"),
+		(":Extensions:img:Mac:imgmodules.mcp", "imgmodules.carbon"),
+##		(":Extensions:Numerical:Mac:numpymodules.mcp", "multiarraymodule"),
+##		(":Extensions:Numerical:Mac:numpymodules.mcp", "_numpy"),
+##		(":Extensions:Numerical:Mac:numpymodules.mcp", "umathmodule"),
+##		(":Extensions:Numerical:Mac:numpymodules.mcp", "arrayfns"),
+##		(":Extensions:Numerical:Packages:FFT:Mac:fftpack.mcp", "fftpack.ppc"),
+##		(":Extensions:Numerical:Packages:LALITE:Mac:lapack_lite.mcp", "lapack_lite.ppc"),
+##		(":Extensions:Numerical:Packages:RANLIB:Mac:ranlib.mcp", "ranlib.ppc"),
+##		(":Extensions:Numerical:Packages:RNG:Mac:RNG.mcp", "RNG.ppc"),
+	]),
+	
 I_APPLETS : (buildapplet, None, [
 		(":Mac:scripts:EditPythonPrefs.py", "EditPythonPrefs"),
 		(":Mac:scripts:BuildApplet.py", "BuildApplet"),
