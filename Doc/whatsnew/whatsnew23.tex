@@ -1604,6 +1604,13 @@ Some of the more notable changes are:
 
 \begin{itemize}
 
+\item The \file{regrtest.py} script now provides a way to allow ``all
+resources except \var{foo}.''  A resource name passed to the
+\programopt{-u} option can now be prefixed with a hyphen
+(\character{-}) to mean ``remove this resource.''  For example, the
+option `\code{\programopt{-u}all,-bsddb}' could be used to enable the
+use of all resources except \code{bsddb}.
+
 \item The tools used to build the documentation now work under Cygwin
 as well as \UNIX.
 
