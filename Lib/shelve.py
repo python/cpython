@@ -72,6 +72,10 @@ class Shelf:
 	def __del__(self):
 		self.close()
 
+	def sync(self):
+		if hasattr(self.dict, 'sync'):
+			self.dict.sync()
+	    
 
 class BsdDbShelf(Shelf):
 	"""Shelf implementation using the "BSD" db interface.
