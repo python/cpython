@@ -107,8 +107,7 @@ How it works
 ============
 
 Some changes were made to the interpreter:
-- if sys.trace is defined (by the user) and not None, it should be a function
-- sys.trace is called the global trace function
+- sys.settrace(func) sets the global trace function
 - there can also a local trace function (see later)
 
 Trace functions have three arguments: (frame, event, arg)
