@@ -142,5 +142,6 @@ You need to know a great deal about the interpreter to use this!";
 void
 initnew()
 {
-	initmodule3("new", new_methods, new_doc, (object *)NULL);
+	initmodule4("new", new_methods, new_doc, (object *)NULL,
+		    PYTHON_API_VERSION);
 }
