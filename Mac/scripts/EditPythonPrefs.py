@@ -110,9 +110,9 @@ def interact(options, title):
 	d = GetNewDialog(DIALOG_ID, -1)
 	htext = d.GetDialogItemAsControl(TITLE_ITEM)
 	SetDialogItemText(htext, title)
-	ctl = d.GetDialogItemAsControl(TEXT_ITEM)
+	path_ctl = d.GetDialogItemAsControl(TEXT_ITEM)
 	data = string.joinfields(options['path'], '\r')
-	ctl.SetControlData(Controls.kControlEditTextPart, Controls.kControlEditTextTextTag, data)
+	path_ctl.SetControlData(Controls.kControlEditTextPart, Controls.kControlEditTextTextTag, data)
 
 	d.SelectDialogItemText(TEXT_ITEM, 0, 32767)
 	d.SelectDialogItemText(TEXT_ITEM, 0, 0)
@@ -142,7 +142,8 @@ def interact(options, title):
 			noptions = optinteract(noptions)
 			if noptions:
 				options = noptions
-	tmp = string.splitfields(h.data, '\r')
+	data = path_ctl.GetControlData(Controls.kControlEditTextPart, Controls.kControlEditTextTextTag)
+	tmp = string.splitfields(data, '\r')
 	newpath = []
 	for i in tmp:
 		if i:
