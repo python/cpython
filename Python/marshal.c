@@ -46,6 +46,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #define TYPE_NONE	'N'
 #define TYPE_ELLIPSIS   '.'
 #define TYPE_INT	'i'
+#define TYPE_INT64	'I'
 #define TYPE_FLOAT	'f'
 #define TYPE_COMPLEX	'x'
 #define TYPE_LONG	'l'
@@ -127,6 +128,18 @@ w_long(x, p)
 }
 
 static void
+w_long64(x, p)
+	long x;
+	WFILE *p;
+{
+	w_long(x, p);
+	w_byte((int)((x>>32) & 0xff), p);
+	w_byte((int)((x>>40) & 0xff), p);
+	w_byte((int)((x>>48) & 0xff), p);
+	w_byte((int)((x>>56) & 0xff), p);
+}
+
+static void
 w_object(v, p)
 	object *v;
 	WFILE *p;
@@ -140,8 +153,16 @@ w_object(v, p)
 	else if (v == Py_Ellipsis)
 	        w_byte(TYPE_ELLIPSIS, p);  
 	else if (is_intobject(v)) {
-		w_byte(TYPE_INT, p);
-		w_long(getintvalue(v), p);
+		long x = GETINTVALUE((intobject *)v);
+		long y = x>>31;
+		if (y && y != -1) {
+			w_byte(TYPE_INT64, p);
+			w_long64(x, p);
+		}
+		else {
+			w_byte(TYPE_INT, p);
+			w_long(x, p);
+		}
 	}
 	else if (is_longobject(v)) {
 		longobject *ob = (longobject *)v;
@@ -307,7 +328,46 @@ r_long(p)
 		x |= (long)rs_byte(p) << 16;
 		x |= (long)rs_byte(p) << 24;
 	}
-	/* XXX If your long is > 32 bits, add sign-extension here!!! */
+	/* Sign extension for 64-bit machines */
+	x <<= (8*sizeof(long) - 32);
+	x >>= (8*sizeof(long) - 32);
+	return x;
+}
+
+static long
+r_long64(p)
+	RFILE *p;
+{
+	register long x;
+	register FILE *fp = p->fp;
+	if (sizeof(long) < 8) {
+		object *f = sysget("stderr");
+		err_clear();
+		if (f != NULL) {
+			writestring(
+			"Warning: un-marshal 64-bit int in 32-bit mode\n", f);
+		}
+	}
+	if (fp) {
+		x = getc(fp);
+		x |= (long)getc(fp) << 8;
+		x |= (long)getc(fp) << 16;
+		x |= (long)getc(fp) << 24;
+		x |= (long)getc(fp) << 32;
+		x |= (long)getc(fp) << 40;
+		x |= (long)getc(fp) << 48;
+		x |= (long)getc(fp) << 56;
+	}
+	else {
+		x = rs_byte(p);
+		x |= (long)rs_byte(p) << 8;
+		x |= (long)rs_byte(p) << 16;
+		x |= (long)rs_byte(p) << 24;
+		x |= (long)rs_byte(p) << 32;
+		x |= (long)rs_byte(p) << 40;
+		x |= (long)rs_byte(p) << 48;
+		x |= (long)rs_byte(p) << 56;
+	}
 	return x;
 }
 
@@ -338,6 +398,9 @@ r_object(p)
 	
 	case TYPE_INT:
 		return newintobject(r_long(p));
+	
+	case TYPE_INT64:
+		return newintobject(r_long64(p));
 	
 	case TYPE_LONG:
 		{
