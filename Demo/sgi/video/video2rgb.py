@@ -1,18 +1,18 @@
 #! /ufs/guido/bin/sgi/python
 
-# Play CMIF movie files
+# Convert CMIF movie file(s) to a sequence of rgb images
 
 
 # Help function
 
 def help():
-	print 'Usage: Vplay [options] [file] ...'
+	print 'Usage: video2rgb [options] [file] ...'
 	print
 	print 'Options:'
 	print '-q         : quiet, no informative messages'
 	print '-m         : create monochrome (greyscale) image files'
-	print '-f prefix  : create image files with names "prefix000.rgb"'
-	print 'file ...   : file(s) to play; default film.video'
+	print '-f prefix  : create image files with names "prefix0000.rgb"'
+	print 'file ...   : file(s) to convert; default film.video'
 
 
 # Imported modules

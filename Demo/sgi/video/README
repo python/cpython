@@ -80,7 +80,13 @@ Vaddcache.py	add a "cached index" to a video file, for faster playing
 
 Vrecb.py	like Vrec.py but uses "burst capture" -- somewhat specialized
 
-rgb2video.py	combine a sequence of rgb images into a CMIF video file
+Dsend.py	like Vsend.py but sends screen snapshots (to Vreceive.py)
+
+DisplayVideoIn.py	Like LiveVideoIn.py but reads screen snapshots
+
+rgb2video.py	combine a sequence of rgb image files into a CMIF video file
+
+video2rgb.py	split a CMIF video file into a sequence of rgb image files
 
 
 These modules and files are used by the above programs:
