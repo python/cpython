@@ -21,7 +21,7 @@ import os
 import sys
 
 
-__version__ = '1.5'
+__version__ = '1.6'
 
 # Helper for non-unix systems
 if os.name == 'mac':
@@ -43,11 +43,14 @@ else:
 
 # Shortcut for basic usage
 _urlopener = None
-def urlopen(url):
+def urlopen(url, data=None):
 	global _urlopener
 	if not _urlopener:
 		_urlopener = FancyURLopener()
-	return _urlopener.open(url)
+	if data is None:
+		return _urlopener.open(url)
+	else:
+		return _urlopener.open(url, data)
 def urlretrieve(url, filename=None):
 	global _urlopener
 	if not _urlopener:
@@ -114,7 +117,7 @@ class URLopener:
 
 	# External interface
 	# Use URLopener().open(file) instead of open(file, 'r')
-	def open(self, fullurl):
+	def open(self, fullurl, data=None):
 		fullurl = unwrap(fullurl)
 		type, url = splittype(fullurl)
  		if not type: type = 'file'
@@ -129,14 +132,20 @@ class URLopener:
 			import regsub
 			name = regsub.gsub('-', '_', name)
 		if not hasattr(self, name):
-			return self.open_unknown(fullurl)
+			if data is None:
+				return self.open_unknown(fullurl)
+			else:
+				return self.open_unknown(fullurl, data)
 		try:
-			return getattr(self, name)(url)
+			if data is None:
+				return getattr(self, name)(url)
+			else:
+				return getattr(self, name)(url, data)
 		except socket.error, msg:
 			raise IOError, ('socket error', msg), sys.exc_traceback
 
 	# Overridable interface to open unknown URL type
-	def open_unknown(self, fullurl):
+	def open_unknown(self, fullurl, data=None):
 		type, url = splittype(fullurl)
 		raise IOError, ('url error', 'unknown url type', type)
 
@@ -180,7 +189,7 @@ class URLopener:
 	# Each method named open_<type> knows how to open that type of URL
 
 	# Use HTTP protocol
-	def open_http(self, url):
+	def open_http(self, url, data=None):
 		import httplib
 		if type(url) is type(""):
 			host, selector = splithost(url)
@@ -202,10 +211,18 @@ class URLopener:
 		else:
 			auth = None
 		h = httplib.HTTP(host)
-		h.putrequest('GET', selector)
+		if data is not None:
+			h.putrequest('POST', selector)
+			h.putheader('Content-type',
+				    'application/x-www-form-urlencoded')
+			h.putheader('Content-length', '%d' % len(data))
+		else:
+			h.putrequest('GET', selector)
 		if auth: h.putheader('Authorization', 'Basic %s' % auth)
 		for args in self.addheaders: apply(h.putheader, args)
 		h.endheaders()
+		if data is not None:
+			h.send(data + '\r\n')
 		errcode, errmsg, headers = h.getreply()
 		fp = h.getfile()
 		if errcode == 200:
