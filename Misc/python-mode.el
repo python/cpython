@@ -1040,7 +1040,7 @@ comint believe the user typed this string so that
 	(procbuf (process-buffer proc))
 ;	(comint-scroll-to-bottom-on-output t)
 	(msg (format "## working on region in file %s...\n" filename))
-	(cmd (format "execfile('%s')\n" filename)))
+	(cmd (format "execfile(r'%s')\n" filename)))
     (unwind-protect
 	(save-excursion
 	  (set-buffer procbuf)
@@ -1318,7 +1318,7 @@ This may be preferable to `\\[py-execute-buffer]' because:
 			 (file-name-nondirectory file))))
                  (format "if globals().has_key('%s'):\n    reload(%s)\nelse:\n    import %s\n"
                          f f f))
-             (format "execfile('%s')\n" file))
+             (format "execfile(r'%s')\n" file))
            async))
       ;; else
       (py-execute-buffer async))))
