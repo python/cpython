@@ -162,7 +162,6 @@ class ListViewer:
         if self.__dontcenter:
             self.__dontcenter = 0
         else:
-            height = canvas['height']
             ig, ig, ig, y1 = canvas.coords(colortag)
             ig, ig, ig, y2 = canvas.coords(self.__bboxes[-1])
             h = int(canvas['height']) * 0.5
