@@ -60,11 +60,11 @@ class AboutDialog(Toplevel):
                 justify=LEFT,fg=self.fg,bg=self.bg)
         labelDesc.grid(row=2,column=0,sticky=W,columnspan=3,padx=10,pady=5)
         labelCopyright = Label(frameBg,
-                text="Copyright (c) 2001 Python Software Foundation;\nAll Rights Reserved",
+                text="Copyright (c) 2001 - 2003 Python Software Foundation\nAll Rights Reserved",
                 justify=LEFT,fg=self.fg,bg=self.bg)
         labelCopyright.grid(row=3,column=0,sticky=W,columnspan=3,padx=10,pady=5)
         labelLicense = Label(frameBg,
-                text='Released under the Python 2.1.1 PSF Licence',
+                text='Released under the Python 2.3 PSF License',
                 justify=LEFT,fg=self.fg,bg=self.bg)
         labelLicense.grid(row=4,column=0,sticky=W,columnspan=3,padx=10,pady=5)
         Frame(frameBg,height=5,bg=self.bg).grid(row=5,column=0)
