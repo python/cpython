@@ -176,7 +176,7 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
         TestImporter.modules['reloadmodule'] = (False, reload_co)
         reload(reloadmodule)
         self.failUnless(hasattr(reloadmodule,'reloaded'))
-       
+
     def testMetaPath(self):
         i = MetaImporter()
         sys.meta_path.append(i)
