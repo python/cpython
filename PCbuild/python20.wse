@@ -1700,13 +1700,13 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=.\_ssl.pyd
-  Destination=%MAINDIR%\DLLs\_ssl.pyd
+  Source=.\_sre.pyd
+  Destination=%MAINDIR%\DLLs\_sre.pyd
   Flags=0000000000000010
 end
 item: Install File
-  Source=.\_sre.pyd
-  Destination=%MAINDIR%\DLLs\_sre.pyd
+  Source=.\_ssl.pyd
+  Destination=%MAINDIR%\DLLs\_ssl.pyd
   Flags=0000000000000010
 end
 item: Install File
@@ -1788,6 +1788,11 @@ end
 item: Install File
   Source=.\_sre.lib
   Destination=%MAINDIR%\libs\_sre.lib
+  Flags=0000000000000010
+end
+item: Install File
+  Source=.\_ssl.lib
+  Destination=%MAINDIR%\libs\_ssl.lib
   Flags=0000000000000010
 end
 item: Install File
