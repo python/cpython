@@ -3,6 +3,8 @@
 
 \declaremodule{standard}{ConfigParser}
 \modulesynopsis{Configuration file parser.}
+\moduleauthor{Ken Manheimer}{klm@digicool.com}
+\moduleauthor{Barry Warsaw}{bwarsaw@python.org}
 \sectionauthor{Christopher G. Petrilli}{petrilli@amber.org}
 
 This module defines the class \class{ConfigParser}.
@@ -16,24 +18,27 @@ programs which can be customized by end users easily.
 The configuration file consists of sections, lead by a
 \samp{[section]} header and followed by \samp{name: value} entries,
 with continuations in the style of \rfc{822}; \samp{name=value} is
-also accepted.  The optional values can contain format strings which
-refer to other values in the same section, or values in a special
+also accepted.  Note that leading whitespace is removed from values.
+The optional values can contain format strings which refer to other
+values in the same section, or values in a special
 \code{DEFAULT} section.  Additional defaults can be provided upon
-initialization and retrieval.  Lines beginning with \character{\#} are 
-ignored and may be used to provide comments.
+initialization and retrieval.  Lines beginning with \character{\#} or
+\character{;} are ignored and may be used to provide comments.
 
 For example:
 
 \begin{verbatim}
 foodir: %(dir)s/whatever
+dir=frob
 \end{verbatim}
 
-would resolve the \samp{\%(dir)s} to the value of dir. All reference
-expansions are done late, on demand.
+would resolve the \samp{\%(dir)s} to the value of
+\samp{dir} (\samp{frob} in this case).  All reference expansions are
+done on demand.
 
-Intrinsic defaults can be specified by passing them into the
-\class{ConfigParser} constructor as a dictionary.  Additional defaults
-may be passed into the \method{get} method which will override all
+Default values can be specified by passing them into the
+\class{ConfigParser} constructor as a dictionary.  Additional defaults 
+may be passed into the \method{get()} method which will override all
 others.
 
 \begin{classdesc}{ConfigParser}{\optional{defaults}}
@@ -50,7 +55,9 @@ Exception raised when a specified section is not found.
 \end{excdesc}
 
 \begin{excdesc}{DuplicateSectionError}
-Exception raised when mutliple sections with the same name are found.
+Exception raised when mutliple sections with the same name are found,
+or if \method{add_section()} is called with the name of a section that 
+is already present.
 \end{excdesc}
 
 \begin{excdesc}{NoOptionError}
@@ -87,7 +94,14 @@ Return a dictionairy containing the instance-wide defaults.
 \end{methoddesc}
 
 \begin{methoddesc}{sections}{}
-Return a list of the sections available.
+Return a list of the sections available; \code{DEFAULT} is not
+included in the list.
+\end{methoddesc}
+
+\begin{methoddesc}{add_section}{section}
+Add a section named \var{section} to the instance.  If a section by
+the given name already exists, \exception{DuplicateSectionError} is
+raised.
 \end{methoddesc}
 
 \begin{methoddesc}{has_section}{section}
@@ -123,6 +137,6 @@ A convenience method which coerces the \var{option} in the specified
 \begin{methoddesc}{getboolean}{section, option}
 A convenience method which coerces the \var{option} in the specified
 \var{section} to a boolean value.  Note that the only accepted values
-for the option are \code{0} and \code{1}, any others will raise
+for the option are \samp{0} and \samp{1}, any others will raise
 \exception{ValueError}.
 \end{methoddesc}

@@ -1,29 +1,46 @@
 \section{\module{crypt} ---
-         Function used to check \UNIX{} passwords}
+         Function to check \UNIX{} passwords}
 
 \declaremodule{builtin}{crypt}
   \platform{Unix}
-\modulesynopsis{The \cfunction{crypt()} function used to check \UNIX{}
-  passwords.}
+\modulesynopsis{The \cfunction{crypt()} function used to check
+  \UNIX{} passwords.}
 \moduleauthor{Steven D. Majewski}{sdm7g@virginia.edu}
 \sectionauthor{Steven D. Majewski}{sdm7g@virginia.edu}
+\sectionauthor{Peter Funk}{pf@artcom-gmbh.de}
 
 
-This module implements an interface to the \manpage{crypt}{3} routine,
-which is a one-way hash function based upon a modified DES algorithm;
-see the \UNIX{} man page for further details.  Possible uses include
+This module implements an interface to the
+\manpage{crypt}{3}\index{crypt(3)} routine, which is a one-way hash
+function based upon a modified DES\indexii{cipher}{DES} algorithm; see
+the \UNIX{} man page for further details.  Possible uses include
 allowing Python scripts to accept typed passwords from the user, or
 attempting to crack \UNIX{} passwords with a dictionary.
-\index{crypt(3)}
 
 \begin{funcdesc}{crypt}{word, salt} 
-\var{word} will usually be a user's password.  \var{salt} is a
-2-character string which will be used to select one of 4096 variations
-of DES\indexii{cipher}{DES}.  The characters in \var{salt} must be
-either \character{.}, \character{/}, or an alphanumeric character.
-Returns the hashed password as a string, which will be composed of
-characters from the same alphabet as the salt.
+  \var{word} will usually be a user's password as typed at a prompt or 
+  in a graphical interface.  \var{salt} is usually a random
+  two-character string which will be used to perturb the DES algorithm
+  in one of 4096 ways.  The characters in \var{salt} must be in the
+  set \regexp{[./a-zA-Z0-9]}.  Returns the hashed password as a
+  string, which will be composed of characters from the same alphabet
+   as the salt (the first two characters represent the salt itself).
 \end{funcdesc}
 
-The module and documentation were written by Steve Majewski.
-\index{Majewski, Steve}
+
+A simple example illustrating typical use:
+
+\begin{verbatim}
+import crypt, getpass, pwd
+
+def login():
+    username = raw_input('Python login:')
+    cryptedpasswd = pwd.getpwnam(username)[1]
+    if cryptedpasswd:
+        if cryptedpasswd == 'x' or cryptedpasswd == '*': 
+            raise "Sorry, currently no support for shadow passwords"
+        cleartext = getpass.getpass()
+        return crypt.crypt(cleartext, cryptedpasswd[:2]) == cryptedpasswd
+    else:
+        return 1
+\end{verbatim}

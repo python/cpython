@@ -31,6 +31,11 @@ It is always available.
 A string containing the copyright pertaining to the Python interpreter.
 \end{datadesc}
 
+\begin{datadesc}{dllhandle}
+Integer specifying the handle of the Python DLL.
+Availability: Windows.
+\end{datadesc}
+
 \begin{funcdesc}{exc_info}{}
 This function returns a tuple of three values that give information
 about the exception that is currently being handled.  The information
@@ -285,5 +290,26 @@ exception type and value are printed.
 \end{datadesc}
 
 \begin{datadesc}{version}
-A string containing the version number of the Python interpreter.
+A string containing the version number of the Python interpreter plus
+additional information on the build number and compiler used.  It has
+a value of the form \code{'\var{version} (\#\var{build_number},
+\var{build_date}, \var{build_time}) [\var{compiler}]'}.  The first
+three characters are used to identify the version in the installation
+directories (where appropriate on each platform).  An example:
+
+\begin{verbatim}
+>>> import sys
+>>> sys.version
+'1.5.2 (#0 Apr 13 1999, 10:51:12) [MSC 32 bit (Intel)]'
+\end{verbatim}
+\end{datadesc}
+
+\begin{datadesc}{winver}
+The version number used to form registry keys on Windows platforms.
+This is stored as string resource 1000 in the Python DLL.  The value
+is normally the first three characters of \constant{version}.  It is
+provided in the \module{sys} module for informational purposes;
+modifying this value has no effect on the registry keys used by
+Python.
+Availability: Windows.
 \end{datadesc}

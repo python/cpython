@@ -127,8 +127,8 @@ slashes.
 Normalize a pathname.  This collapses redundant separators and
 up-level references, e.g. \code{A//B}, \code{A/./B} and
 \code{A/foo/../B} all become \code{A/B}.  It does not normalize the
-case (use \function{normcase()} for that).  On Windows, it does
-converts forward slashes to backward slashes.
+case (use \function{normcase()} for that).  On Windows, it converts
+forward slashes to backward slashes.
 \end{funcdesc}
 
 \begin{funcdesc}{samefile}{path1, path2}

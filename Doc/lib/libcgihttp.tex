@@ -3,6 +3,7 @@
 
 
 \declaremodule{standard}{CGIHTTPServer}
+  \platform{Unix}
 \sectionauthor{Moshe Zadka}{mzadka@geocities.com}
 \modulesynopsis{This module provides a request handler for HTTP servers
                 which can run CGI scripts.}
@@ -13,6 +14,9 @@ interface compatible with
 \class{BaseHTTPServer.BaseHTTPRequestHandler} and inherits behaviour
 from \class{SimpleHTTPServer.SimpleHTTPRequestHandler} but can also
 run CGI scripts.
+
+\strong{Note:}  This module is \UNIX{} dependent since it creates the
+CGI process using \function{os.fork()} and \function{os.exec()}.
 
 The \module{CGIHTTPServer} module defines the following class:
 

@@ -1,8 +1,8 @@
 \section{\module{urllib} ---
-         Open an arbitrary object given by URL.}
-\declaremodule{standard}{urllib}
+         Open an arbitrary resource by URL}
 
-\modulesynopsis{Open an arbitrary object given by URL (requires sockets).}
+\declaremodule{standard}{urllib}
+\modulesynopsis{Open an arbitrary network resource by URL (requires sockets).}
 
 \index{WWW}
 \index{World-Wide Web}
@@ -62,6 +62,37 @@ If the \var{url} uses the \file{http:} scheme identifier, the optional
 must in standard \file{application/x-www-form-urlencoded} format;
 see the \function{urlencode()} function below.
 
+The \function{urlopen()} function works transparently with proxies.
+In a \UNIX{} or Windows environment, set the \envvar{http_proxy},
+\envvar{ftp_proxy} or \envvar{gopher_proxy} environment variables to a
+URL that identifies the proxy server before starting the Python
+interpreter.  For example (the \character{\%} is the command prompt):
+
+\begin{verbatim}
+% http_proxy="http://www.someproxy.com:3128"
+% export http_proxy
+% python
+...
+\end{verbatim}
+
+In a Macintosh environment, \function{urlopen()} will retrieve proxy
+information from Internet\index{Internet Config} Config.
+
+The \function{urlopen()} function works transparently with proxies.
+In a \UNIX{} or Windows environment, set the \envvar{http_proxy},
+\envvar{ftp_proxy} or \envvar{gopher_proxy} environment variables to a
+URL that identifies the proxy server before starting the Python
+interpreter, e.g.:
+
+\begin{verbatim}
+% http_proxy="http://www.someproxy.com:3128"
+% export http_proxy
+% python
+...
+\end{verbatim}
+
+In a Macintosh environment, \function{urlopen()} will retrieve proxy
+information from Internet Config.
 \end{funcdesc}
 
 \begin{funcdesc}{urlretrieve}{url\optional{, filename\optional{, hook}}}
@@ -127,6 +158,55 @@ characters, where both \var{key} and \var{value} are quoted using
 \function{quote_plus()} above.
 \end{funcdesc}
 
+The public functions \function{urlopen()} and \function{urlretrieve()}
+create an instance of the \class{FancyURLopener} class and use it to perform
+their requested actions.  To override this functionality, programmers can
+create a subclass of \class{URLopener} or \class{FancyURLopener}, then
+assign that class to the \var{urllib._urlopener} variable before calling the
+desired function.  For example, applications may want to specify a different
+\code{user-agent} header than \class{URLopener} defines.  This can be
+accomplished with the following code:
+
+\begin{verbatim}
+class AppURLopener(urllib.FancyURLopener):
+    def __init__(self, *args):
+        apply(urllib.FancyURLopener.__init__, (self,) + args)
+        self.version = "App/1.7"
+
+urllib._urlopener = AppURLopener
+\end{verbatim}
+
+\begin{classdesc}{URLopener}{\optional{proxies\optional{, **x509}}}
+Base class for opening and reading URLs.  Unless you need to support
+opening objects using schemes other than \file{http:}, \file{ftp:},
+\file{gopher:} or \file{file:}, you probably want to use
+\class{FancyURLopener}.
+
+By default, the \class{URLopener} class sends a
+\code{user-agent} header of \samp{urllib/\var{VVV}}, where
+\var{VVV} is the \module{urllib} version number.  Applications can
+define their own \code{user-agent} header by subclassing
+\class{URLopener} or \class{FancyURLopener} and setting the instance
+attribute \var{version} to an appropriate string value before the
+\method{open()} method is called.
+
+Additional keyword parameters, collected in \var{x509}, are used for
+authentication with the \file{https:} scheme.  The keywords
+\var{key_file} and \var{cert_file} are supported; both are needed to
+actually retrieve a resource at an \file{https:} URL.
+\end{classdesc}
+
+\begin{classdesc}{FancyURLopener}{...}
+\class{FancyURLopener} subclasses \class{URLopener} providing default
+handling for the following HTTP response codes: 301, 302 or 401.  For
+301 and 302 response codes, the \code{location} header is used to
+fetch the actual URL.  For 401 response codes (authentication
+required), basic HTTP authentication is performed.
+
+The parameters to the constructor are the same as those for
+\class{URLopener}.
+\end{classdesc}
+
 Restrictions:
 
 \begin{itemize}
@@ -175,3 +255,60 @@ to parse and unparse URL strings, the recommended interface for URL
 manipulation is in module \refmodule{urlparse}\refstmodindex{urlparse}.
 
 \end{itemize}
+
+
+\subsection{URLopener Objects \label{urlopener-objs}}
+\sectionauthor{Skip Montanaro}{skip@mojam.com}
+
+\class{URLopener} and \class{FancyURLopener} objects have the
+following methodsL
+
+\begin{methoddesc}{open}{fullurl\optional{, data}}
+Open \var{fullurl} using the appropriate protocol.  This method sets 
+up cache and proxy information, then calls the appropriate open method with
+its input arguments.  If the scheme is not recognized,
+\method{open_unknown()} is called.  The \var{data} argument 
+has the same meaning as the \var{data} argument of \function{urlopen()}.
+\end{methoddesc}
+
+\begin{methoddesc}{open_unknown}{fullurl\optional{, data}}
+Overridable interface to open unknown URL types.
+\end{methoddesc}
+
+\begin{methoddesc}{retrieve}{url\optional{, filename\optional{, reporthook}}}
+Retrieves the contents of \var{url} and places it in \var{filename}.  The
+return value is a tuple consisting of a local filename and either a
+\class{mimetools.Message} object containing the response headers (for remote
+URLs) or None (for local URLs).  The caller must then open and read the
+contents of \var{filename}.  If \var{filename} is not given and the URL
+refers to a local file, the input filename is returned.  If the URL is
+non-local and \var{filename} is not given, the filename is the output of
+\function{tempfile.mktemp()} with a suffix that matches the suffix of the last
+path component of the input URL.  If \var{reporthook} is given, it must be
+a function accepting three numeric parameters.  It will be called after each
+chunk of data is read from the network.  \var{reporthook} is ignored for
+local URLs.
+\end{methoddesc}
+
+
+\subsection{Examples}
+\nodename{Urllib Examples}
+
+Here is an example session that uses the \samp{GET} method to retrieve
+a URL containing parameters:
+
+\begin{verbatim}
+>>> import urllib
+>>> params = urllib.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
+>>> f = urllib.urlopen("http://www.musi-cal.com/cgi-bin/query?%s" % params)
+>>> print f.read()
+\end{verbatim}
+
+The following example uses the \samp{POST} method instead:
+
+\begin{verbatim}
+>>> import urllib
+>>> params = urllib.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
+>>> f = urllib.urlopen("http://www.musi-cal.com/cgi-bin/query", params)
+>>> print f.read()
+\end{verbatim}

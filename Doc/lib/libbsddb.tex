@@ -7,59 +7,71 @@
 \sectionauthor{Skip Montanaro}{skip@mojam.com}
 
 
-The \module{bsddb} module provides an interface to the Berkeley DB library.
-Users can create hash, btree or record based library files using the
-appropriate open call. Bsddb objects behave generally like dictionaries.
-Keys and values must be strings, however, so to use other objects as keys or 
-to store other kinds of objects the user must serialize them somehow,
-typically using marshal.dumps or pickle.dumps.
+The \module{bsddb} module provides an interface to the Berkeley DB
+library.  Users can create hash, btree or record based library files
+using the appropriate open call. Bsddb objects behave generally like
+dictionaries.  Keys and values must be strings, however, so to use
+other objects as keys or to store other kinds of objects the user must
+serialize them somehow, typically using marshal.dumps or pickle.dumps.
 
-The \module{bsddb} module is only available on \UNIX{} systems, so it is not
-built by default in the standard Python distribution.  Also, there are two
-incompatible versions of the underlying library.  Version 1.85 is widely
-available, but has some known bugs.  Version 2 is not quite as widely used,
-but does offer some improvements.  The \module{bsddb} module uses the 1.85
-interface.  Users wishing to use version 2 of the Berkeley DB library will
-have to modify the source for the module to include db_185.h instead of
-db.h.
+The \module{bsddb} module is only available on \UNIX{} systems, so it
+is not built by default in the standard Python distribution.  Also,
+there are two incompatible versions of the underlying library.
+Version 1.85 is widely available, but has some known bugs.  Version 2
+is not quite as widely used, but does offer some improvements.  The
+\module{bsddb} module uses the 1.85 interface.  Users wishing to use
+version 2 of the Berkeley DB library will have to modify the source
+for the module to include \file{db_185.h} instead of
+\file{db.h} (\file{db_185.h} contains the version 1.85 compatibility
+interface).
 
 The \module{bsddb} module defines the following functions that create
-objects that access the appropriate type of Berkeley DB file.  The first two
-arguments of each function are the same.  For ease of portability, only the
-first two arguments should be used in most instances.
+objects that access the appropriate type of Berkeley DB file.  The
+first two arguments of each function are the same.  For ease of
+portability, only the first two arguments should be used in most
+instances.
 
 \begin{funcdesc}{hashopen}{filename\optional{, flag\optional{,
-mode\optional{, bsize\optional{, ffactor\optional{, nelem\optional{,
-cachesize\optional{, hash\optional{, lorder}}}}}}}}}
-Open the hash format file named \var{filename}.  The optional \var{flag}
-identifies the mode used to open the file.  It may be ``r'' (read only),
-``w'' (read-write), ``c'' (read-write - create if necessary) or ``n''
-(read-write - truncate to zero length).  The other arguments are rarely used
-and are just passed to the low-level dbopen function.  Consult the
-Berkeley DB documentation for their use and interpretation.
+                           mode\optional{, bsize\optional{,
+                           ffactor\optional{, nelem\optional{,
+                           cachesize\optional{, hash\optional{,
+                           lorder}}}}}}}}}
+Open the hash format file named \var{filename}.  The optional
+\var{flag} identifies the mode used to open the file.  It may be
+\character{r} (read only), \character{w} (read-write),
+\character{c} (read-write - create if necessary) or
+\character{n} (read-write - truncate to zero length).  The other
+arguments are rarely used and are just passed to the low-level
+\cfunction{dbopen()} function.  Consult the Berkeley DB documentation
+for their use and interpretation.
 \end{funcdesc}
-
 
 \begin{funcdesc}{btopen}{filename\optional{, flag\optional{,
 mode\optional{, btflags\optional{, cachesize\optional{, maxkeypage\optional{,
 minkeypage\optional{, psize\optional{, lorder}}}}}}}}}
-Open the btree format file named \var{filename}.  The optional \var{flag}
-identifies the mode used to open the file.  It may be ``r'' (read only),
-``w'' (read-write), ``c'' (read-write - create if necessary) or ``n''
-(read-write - truncate to zero length).  The other arguments are rarely used
-and are just passed to the low-level dbopen function.  Consult the
-Berkeley DB documentation for their use and interpretation.
+
+Open the btree format file named \var{filename}.  The optional
+\var{flag} identifies the mode used to open the file.  It may be
+\character{r} (read only), \character{w} (read-write),
+\character{c} (read-write - create if necessary) or
+\character{n} (read-write - truncate to zero length).  The other
+arguments are rarely used and are just passed to the low-level dbopen
+function.  Consult the Berkeley DB documentation for their use and
+interpretation.
 \end{funcdesc}
 
 \begin{funcdesc}{rnopen}{filename\optional{, flag\optional{, mode\optional{,
 rnflags\optional{, cachesize\optional{, psize\optional{, lorder\optional{,
 reclen\optional{, bval\optional{, bfname}}}}}}}}}}
-Open a DB record format file named \var{filename}.  The optional \var{flag}
-identifies the mode used to open the file.  It may be ``r'' (read only),
-``w'' (read-write), ``c'' (read-write - create if necessary) or ``n''
-(read-write - truncate to zero length).  The other arguments are rarely used
-and are just passed to the low-level dbopen function.  Consult the
-Berkeley DB documentation for their use and interpretation.
+
+Open a DB record format file named \var{filename}.  The optional
+\var{flag} identifies the mode used to open the file.  It may be
+\character{r} (read only), \character{w} (read-write),
+\character{c} (read-write - create if necessary) or
+\character{n} (read-write - truncate to zero length).  The other
+arguments are rarely used and are just passed to the low-level dbopen
+function.  Consult the Berkeley DB documentation for their use and
+interpretation.
 \end{funcdesc}
 
 
@@ -86,7 +98,7 @@ list returned is different for different file formats.
 \end{methoddesc}
 
 \begin{methoddesc}{has_key}{key}
-Return 1 if the DB file contains the argument as a key.
+Return \code{1} if the DB file contains the argument as a key.
 \end{methoddesc}
 
 \begin{methoddesc}{set_location}{key}

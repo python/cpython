@@ -30,15 +30,17 @@ The following values are considered false:
 \item	\code{None}
 	\withsubitem{(Built-in object)}{\ttindex{None}}
 
-\item	zero of any numeric type, e.g., \code{0}, \code{0L}, \code{0.0}.
+\item	zero of any numeric type, for example, \code{0}, \code{0L},
+        \code{0.0}, \code{0j}.
 
-\item	any empty sequence, e.g., \code{''}, \code{()}, \code{[]}.
+\item	any empty sequence, for example, \code{''}, \code{()}, \code{[]}.
 
-\item	any empty mapping, e.g., \code{\{\}}.
+\item	any empty mapping, for example, \code{\{\}}.
 
 \item	instances of user-defined classes, if the class defines a
 	\method{__nonzero__()} or \method{__len__()} method, when that
-	method returns zero.
+	method returns zero.\footnote{Additional information on these
+special methods may be found in the \emph{Python Reference Manual}.}
 
 \end{itemize}
 
@@ -77,9 +79,9 @@ Notes:
 These only evaluate their second argument if needed for their outcome.
 
 \item[(2)]
-\samp{not} has a lower priority than non-Boolean operators, so e.g.
-\code{not a == b} is interpreted as \code{not(a == b)}, and
-\code{a == not b} is a syntax error.
+\samp{not} has a lower priority than non-Boolean operators, so
+\code{not \var{a} == \var{b}} is interpreted as \code{not (\var{a} ==
+\var{b})}, and \code{\var{a} == not \var{b}} is a syntax error.
 
 \end{description}
 
@@ -88,10 +90,11 @@ These only evaluate their second argument if needed for their outcome.
 
 Comparison operations are supported by all objects.  They all have the
 same priority (which is higher than that of the Boolean operations).
-Comparisons can be chained arbitrarily, e.g. \code{x < y <= z} is
-equivalent to \code{x < y and y <= z}, except that \code{y} is
-evaluated only once (but in both cases \code{z} is not evaluated at
-all when \code{x < y} is found to be false).
+Comparisons can be chained arbitrarily; for example, \code{\var{x} <
+\var{y} <= \var{z}} is equivalent to \code{\var{x} < \var{y} and
+\var{y} <= \var{z}}, except that \var{y} is evaluated only once (but
+in both cases \var{z} is not evaluated at all when \code{\var{x} <
+\var{y}} is found to be false).
 \indexii{chaining}{comparisons}
 
 This table summarizes the comparison operations:
@@ -123,26 +126,33 @@ Notes:
 \index{ABC language@\ABC{} language}
 \index{language!ABC@\ABC{}}
 \indexii{C@\C{}}{language}
+\code{!=} is the preferred spelling; \code{<>} is obsolescent.
 
 \end{description}
 
 Objects of different types, except different numeric types, never
 compare equal; such objects are ordered consistently but arbitrarily
 (so that sorting a heterogeneous array yields a consistent result).
-Furthermore, some types (e.g., windows) support only a degenerate
-notion of comparison where any two objects of that type are unequal.
-Again, such objects are ordered arbitrarily but consistently.
-\indexii{types}{numeric}
+Furthermore, some types (for example, file objects) support only a
+degenerate notion of comparison where any two objects of that type are
+unequal.  Again, such objects are ordered arbitrarily but
+consistently.
+\indexii{object}{numeric}
 \indexii{objects}{comparing}
 
-(Implementation note: objects of different types except numbers are
-ordered by their type names; objects of the same types that don't
-support proper comparison are ordered by their address.)
+Instances of a class normally compare as non-equal unless the class
+\withsubitem{(instance method)}{\ttindex{__cmp__()}}
+defines the \method{__cmp__()} method.  Refer to the \emph{Python
+Reference Manual} for information on the use of this method to effect
+object comparisons.
 
-Two more operations with the same syntactic priority, \samp{in} and
-\samp{not in}, are supported only by sequence types (below).
-\opindex{in}
-\opindex{not in}
+\strong{Implementation note:} Objects of different types except
+numbers are ordered by their type names; objects of the same types
+that don't support proper comparison are ordered by their address.
+
+Two more operations with the same syntactic priority,
+\samp{in}\opindex{in} and \samp{not in}\opindex{not in}, are supported
+only by sequence types (below).
 
 
 \subsection{Numeric Types \label{typesnumeric}}
@@ -150,9 +160,9 @@ Two more operations with the same syntactic priority, \samp{in} and
 There are four numeric types: \dfn{plain integers}, \dfn{long integers}, 
 \dfn{floating point numbers}, and \dfn{complex numbers}.
 Plain integers (also just called \dfn{integers})
-are implemented using \ctype{long} in \C{}, which gives them at least 32
+are implemented using \ctype{long} in C, which gives them at least 32
 bits of precision.  Long integers have unlimited precision.  Floating
-point numbers are implemented using \ctype{double} in \C{}.  All bets on
+point numbers are implemented using \ctype{double} in C.  All bets on
 their precision are off unless you happen to know the machine you are
 working with.
 \indexii{numeric}{types}
@@ -161,20 +171,20 @@ working with.
 \indexiii{long}{integer}{type}
 \indexii{floating point}{type}
 \indexii{complex number}{type}
-\indexii{C@\C{}}{language}
+\indexii{C}{language}
 
 Complex numbers have a real and imaginary part, which are both
-implemented using \ctype{double} in \C{}.  To extract these parts from
+implemented using \ctype{double} in C.  To extract these parts from
 a complex number \var{z}, use \code{\var{z}.real} and \code{\var{z}.imag}.  
 
 Numbers are created by numeric literals or as the result of built-in
 functions and operators.  Unadorned integer literals (including hex
-and octal numbers) yield plain integers.  Integer literals with an \samp{L}
-or \samp{l} suffix yield long integers
-(\samp{L} is preferred because \samp{1l} looks too much like eleven!).
-Numeric literals containing a decimal point or an exponent sign yield
-floating point numbers.  Appending \samp{j} or \samp{J} to a numeric
-literal yields a complex number.
+and octal numbers) yield plain integers.  Integer literals with an
+\character{L} or \character{l} suffix yield long integers
+(\character{L} is preferred because \samp{1l} looks too much like
+eleven!).  Numeric literals containing a decimal point or an exponent
+sign yield floating point numbers.  Appending \character{j} or
+\character{J} to a numeric literal yields a complex number.
 \indexii{numeric}{literals}
 \indexii{integer}{literals}
 \indexiii{long}{integer}{literals}
@@ -236,21 +246,23 @@ Notes:
 \item[(1)]
 For (plain or long) integer division, the result is an integer.
 The result is always rounded towards minus infinity: 1/2 is 0, 
-(-1)/2 is -1, 1/(-2) is -1, and (-1)/(-2) is 0.
+(-1)/2 is -1, 1/(-2) is -1, and (-1)/(-2) is 0.  Note that the result
+is a long integer if either operand is a long integer, regardless of
+the numeric value.
 \indexii{integer}{division}
 \indexiii{long}{integer}{division}
 
 \item[(2)]
 Conversion from floating point to (long or plain) integer may round or
 truncate as in \C{}; see functions \function{floor()} and \function{ceil()} in
-module \module{math} for well-defined conversions.
+module \refmodule{math}\refbimodindex{math} for well-defined conversions.
 \withsubitem{(in module math)}{\ttindex{floor()}\ttindex{ceil()}}
 \indexii{numeric}{conversions}
-\refbimodindex{math}
 \indexii{C@\C{}}{language}
 
 \item[(3)]
-See the section on built-in functions for an exact definition.
+See section \ref{built-in-funcs}, ``Built-in Functions,'' for a full
+description.
 
 \end{description}
 % XXXJH exceptions: overflow (when? what operations?) zerodivision
@@ -302,7 +314,7 @@ division by \code{pow(2, \var{n})} without overflow check.
 There are three sequence types: strings, lists and tuples.
 
 Strings literals are written in single or double quotes:
-\code{'xyzzy'}, \code{"frobozz"}.  See Chapter 2 of the
+\code{'xyzzy'}, \code{"frobozz"}.  See chapter 2 of the
 \citetitle[../ref/ref.html]{Python Reference Manual} for more about
 string literals.  Lists are constructed with square brackets,
 separating items with commas: \code{[a, b, c]}.  Tuples are
@@ -332,10 +344,10 @@ and \var{j} are integers:
 equal to \var{x}, else \code{1}}{}
   \hline
   \lineiii{\var{s} + \var{t}}{the concatenation of \var{s} and \var{t}}{}
-  \lineiii{\var{s} * \var{n}\textrm{,} \var{n} * \var{s}}{\var{n} copies of \var{s} concatenated}{(3)}
+  \lineiii{\var{s} * \var{n}\textrm{,} \var{n} * \var{s}}{\var{n} copies of \var{s} concatenated}{(1)}
   \hline
-  \lineiii{\var{s}[\var{i}]}{\var{i}'th item of \var{s}, origin 0}{(1)}
-  \lineiii{\var{s}[\var{i}:\var{j}]}{slice of \var{s} from \var{i} to \var{j}}{(1), (2)}
+  \lineiii{\var{s}[\var{i}]}{\var{i}'th item of \var{s}, origin 0}{(2)}
+  \lineiii{\var{s}[\var{i}:\var{j}]}{slice of \var{s} from \var{i} to \var{j}}{(2), (3)}
   \hline
   \lineiii{len(\var{s})}{length of \var{s}}{}
   \lineiii{min(\var{s})}{smallest item of \var{s}}{}
@@ -356,23 +368,21 @@ equal to \var{x}, else \code{1}}{}
 Notes:
 
 \begin{description}
-  
-\item[(1)] If \var{i} or \var{j} is negative, the index is relative to
+\item[(1)] Values of \var{n} less than \code{0} are treated as
+  \code{0} (which yields an empty sequence of the same type as
+  \var{s}).
+
+\item[(2)] If \var{i} or \var{j} is negative, the index is relative to
   the end of the string, i.e., \code{len(\var{s}) + \var{i}} or
   \code{len(\var{s}) + \var{j}} is substituted.  But note that \code{-0} is
   still \code{0}.
   
-\item[(2)] The slice of \var{s} from \var{i} to \var{j} is defined as
+\item[(3)] The slice of \var{s} from \var{i} to \var{j} is defined as
   the sequence of items with index \var{k} such that \code{\var{i} <=
   \var{k} < \var{j}}.  If \var{i} or \var{j} is greater than
   \code{len(\var{s})}, use \code{len(\var{s})}.  If \var{i} is omitted,
   use \code{0}.  If \var{j} is omitted, use \code{len(\var{s})}.  If
   \var{i} is greater than or equal to \var{j}, the slice is empty.
-
-\item[(3)] Values of \var{n} less than \code{0} are treated as
-  \code{0} (which yields an empty sequence of the same type as
-  \var{s}).
-
 \end{description}
 
 
@@ -452,24 +462,24 @@ The following operations are defined on mutable sequence types (where
   \lineiii{del \var{s}[\var{i}:\var{j}]}
 	{same as \code{\var{s}[\var{i}:\var{j}] = []}}{}
   \lineiii{\var{s}.append(\var{x})}
-	{same as \code{\var{s}[len(\var{s}):len(\var{s})] = [\var{x}]}}{}
+	{same as \code{\var{s}[len(\var{s}):len(\var{s})] = [\var{x}]}}{(1)}
   \lineiii{\var{s}.extend(\var{x})}
-        {same as \code{\var{s}[len(\var{s}):len(\var{s})] = \var{x}}}{(5)}
+        {same as \code{\var{s}[len(\var{s}):len(\var{s})] = \var{x}}}{(2)}
   \lineiii{\var{s}.count(\var{x})}
     {return number of \var{i}'s for which \code{\var{s}[\var{i}] == \var{x}}}{}
   \lineiii{\var{s}.index(\var{x})}
-    {return smallest \var{i} such that \code{\var{s}[\var{i}] == \var{x}}}{(1)}
+    {return smallest \var{i} such that \code{\var{s}[\var{i}] == \var{x}}}{(3)}
   \lineiii{\var{s}.insert(\var{i}, \var{x})}
 	{same as \code{\var{s}[\var{i}:\var{i}] = [\var{x}]}
 	  if \code{\var{i} >= 0}}{}
   \lineiii{\var{s}.pop(\optional{\var{i}})}
     {same as \code{\var{x} = \var{s}[\var{i}]; del \var{s}[\var{i}]; return \var{x}}}{(4)}
   \lineiii{\var{s}.remove(\var{x})}
-	{same as \code{del \var{s}[\var{s}.index(\var{x})]}}{(1)}
+	{same as \code{del \var{s}[\var{s}.index(\var{x})]}}{(3)}
   \lineiii{\var{s}.reverse()}
-	{reverses the items of \var{s} in place}{(3)}
+	{reverses the items of \var{s} in place}{(5)}
   \lineiii{\var{s}.sort(\optional{\var{cmpfunc}})}
-	{sort the items of \var{s} in place}{(2), (3)}
+	{sort the items of \var{s} in place}{(5), (6)}
 \end{tableiii}
 \indexiv{operations on}{mutable}{sequence}{types}
 \indexiii{operations on}{sequence}{types}
@@ -484,10 +494,29 @@ The following operations are defined on mutable sequence types (where
 \noindent
 Notes:
 \begin{description}
-\item[(1)] Raises \exception{ValueError} when \var{x} is not found in
+\item[(1)] The C implementation of Python has historically accepted
+  multiple parameters and implicitly joined them into a tuple; this
+  will no longer work in Python 1.6.  Use of this misfeature has been
+  deprecated since Python 1.4.
+
+\item[(2)] Raises an exception when \var{x} is not a list object.  The 
+  \method{extend()} method is experimental and not supported by
+  mutable sequence types other than lists.
+
+\item[(3)] Raises \exception{ValueError} when \var{x} is not found in
   \var{s}.
 
-\item[(2)] The \method{sort()} method takes an optional argument
+\item[(4)] The \method{pop()} method is experimental and not supported 
+  by other mutable sequence types than lists.  The optional argument
+  \var{i} defaults to \code{-1}, so that by default the last item is
+  removed and returned.
+
+\item[(5)] The \method{sort()} and \method{reverse()} methods modify the
+  list in place for economy of space when sorting or reversing a large
+  list.  They don't return the sorted or reversed list to remind you
+  of this side effect.
+
+\item[(6)] The \method{sort()} method takes an optional argument
   specifying a comparison function of two arguments (list items) which
   should return \code{-1}, \code{0} or \code{1} depending on whether
   the first argument is considered smaller than, equal to, or larger
@@ -497,24 +526,12 @@ Notes:
   \method{reverse()} than to use the built-in function
   \function{sort()} with a comparison function that reverses the
   ordering of the elements.
-
-\item[(3)] The \method{sort()} and \method{reverse()} methods modify the
-  list in place for economy of space when sorting or reversing a large
-  list.  They don't return the sorted or reversed list to remind you
-  of this side effect.
-
-\item[(4)] The \method{pop()} method is experimental and not supported 
-  by other mutable sequence types than lists.  The optional argument
-  \var{i} defaults to \code{-1}, so that by default the last item is
-  removed and returned.
-
-\item[(5)] Raises an exception when \var{x} is not a list object.  The 
-  \method{extend()} method is experimental and not supported by
-  mutable types other than lists.
 \end{description}
 
 
 \subsection{Mapping Types \label{typesmapping}}
+\indexii{mapping}{types}
+\indexii{dictionary}{type}
 
 A \dfn{mapping} object maps values of one type (the key type) to
 arbitrary objects.  Mappings are mutable objects.  There is currently
@@ -526,9 +543,6 @@ Numeric types used for keys obey the normal rules for numeric
 comparison: if two numbers compare equal (e.g. \code{1} and
 \code{1.0}) then they can be used interchangeably to index the same
 dictionary entry.
-
-\indexii{mapping}{types}
-\indexii{dictionary}{type}
 
 Dictionaries are created by placing a comma-separated list of
 \code{\var{key}: \var{value}} pairs within braces, for example:
@@ -586,12 +600,17 @@ Notes:
 \item[(1)] Raises a \exception{KeyError} exception if \var{k} is not
 in the map.
 
-\item[(2)] Keys and values are listed in random order.
+\item[(2)] Keys and values are listed in random order.  If
+\method{keys()} and \method{values()} are called with no intervening
+modifications to the dictionary, the two lists will directly
+correspond.  This allows the creation of \code{(\var{value},
+\var{key})} pairs using \function{map()}: \samp{pairs = map(None,
+\var{a}.values(), \var{a}.keys())}.
 
 \item[(3)] \var{b} must be of the same type as \var{a}.
 
 \item[(4)] Never raises an exception if \var{k} is not in the map,
-instead it returns \var{f}.  \var{f} is optional; when \var{f} is not
+instead it returns \var{x}.  \var{x} is optional; when \var{x} is not
 provided and \var{k} is not in the map, \code{None} is returned.
 \end{description}
 
@@ -629,7 +648,7 @@ written as \code{<module 'os' from '/usr/local/lib/python1.5/os.pyc'>}.
 \subsubsection{Classes and Class Instances \label{typesobjects}}
 \nodename{Classes and Instances}
 
-See Chapters 3 and 7 of the \citetitle[../ref/ref.html]{Python
+See chapters 3 and 7 of the \citetitle[../ref/ref.html]{Python
 Reference Manual} for these.
 
 
@@ -730,7 +749,7 @@ It is written as \code{Ellipsis}.
 
 File objects are implemented using \C{}'s \code{stdio}
 package and can be created with the built-in function
-\function{open()}\bifuncindex{open} described section
+\function{open()}\bifuncindex{open} described in section
 \ref{built-in-funcs}, ``Built-in Functions.''  They are also returned
 by some other built-in functions and methods, e.g.,
 \function{posix.popen()} and \function{posix.fdopen()} and the
@@ -793,7 +812,7 @@ descriptors, e.g. module \module{fcntl} or \function{os.read()} and friends.
   non-negative, it is a maximum byte count (including the trailing
   newline) and an incomplete line may be returned.
   An empty string is returned when \EOF{} is hit
-  immediately.  Note: unlike \code{stdio}'s \cfunction{fgets()}, the returned
+  immediately.  Note: Unlike \code{stdio}'s \cfunction{fgets()}, the returned
   string contains null characters (\code{'\e 0'}) if they occurred in the
   input.
 \end{methoddesc}
@@ -823,12 +842,12 @@ descriptors, e.g. module \module{fcntl} or \function{os.read()} and friends.
 Truncate the file's size.  If the optional size argument present, the
 file is truncated to (at most) that size.  The size defaults to the
 current position.  Availability of this function depends on the
-operating system version (e.g., not all \UNIX{} versions support this
+operating system version (for example, not all \UNIX{} versions support this
 operation).
 \end{methoddesc}
 
 \begin{methoddesc}[file]{write}{str}
-Write a string to the file.  There is no return value.  Note: due to
+Write a string to the file.  There is no return value.  Note: Due to
 buffering, the string may not actually show up in the file until
 the \method{flush()} or \method{close()} method is called.
 \end{methoddesc}
