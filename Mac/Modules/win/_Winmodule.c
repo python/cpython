@@ -3112,7 +3112,7 @@ static PyObject *Win_CreateNewWindow(PyObject *_self, PyObject *_args)
 	                       &outWindow);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     WinObj_WhichWindow, outWindow);
+	                     WinObj_New, outWindow);
 	return _res;
 }
 
@@ -3132,7 +3132,7 @@ static PyObject *Win_CreateWindowFromResource(PyObject *_self, PyObject *_args)
 	                                &outWindow);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     WinObj_WhichWindow, outWindow);
+	                     WinObj_New, outWindow);
 	return _res;
 }
 

@@ -136,6 +136,13 @@ class MyScanner(Scanner):
 			([("void", "wStorage", "OutMode")],
 			 [("NullStorage", "*", "InMode")]),
 			
+			# match FindWindowOfClass
+			([("WindowRef", "outWindow", "OutMode"), ("WindowPartCode", "outWindowPart", "OutMode")],
+			 [("ExistingWindowPtr", "*", "OutMode"), ("WindowPartCode", "outWindowPart", "OutMode")]),
+		    # then match CreateNewWindow and CreateWindowFromResource
+			([("WindowRef", "outWindow", "OutMode")],
+			 [("WindowRef", "*", "*")]),
+			
 			([("WindowPtr", "*", "OutMode")],
 			 [("ExistingWindowPtr", "*", "*")]),
 			([("WindowRef", "*", "OutMode")],	# Same, but other style headerfiles
