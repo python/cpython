@@ -438,6 +438,27 @@ Returns the value of the environment variable TERM, truncated to 14
 characters.
 \end{funcdesc}
 
+\begin{funcdesc}{tigetflag}{capname}
+Returns the value of the Boolean capability corresponding to the
+terminfo capability name \var{capname}.  The value -1 is returned if
+\var{capname} is not a Boolean capability, or 0 if it is canceled or
+absent from the terminal description.
+\end{funcdesc}
+
+\begin{funcdesc}{tigetnum}{capname}
+Returns the value of the numeric capability corresponding to the
+terminfo capability name \var{capname}.  The value -2 is returned if
+\var{capname} is not a numeric capability, or -1 if it is canceled or absent
+from the terminal description.  
+\end{funcdesc}
+
+\begin{funcdesc}{tigetstr}{capname}
+Returns the value of the string capability corresponding to the
+terminfo capability name \var{capname}.  \code{None} is returned if
+\var{capname} is not a string capability, or is canceled or absent
+from the terminal description.
+\end{funcdesc}
+
 \begin{funcdesc}{typeahead}{fd}
 Specifies that the file descriptor \var{fd} be used for typeahead
 checking.  If \var{fd} is -1, then no typeahead checking is done.
