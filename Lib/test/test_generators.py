@@ -47,7 +47,7 @@ Let's try a simple generator:
 
     >>> def f():
     ...     yield 1
-    ...     return
+    ...     raise StopIteration
     ...     yield 2 # never reached
     ...
     >>> g = f()
