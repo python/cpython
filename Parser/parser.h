@@ -57,10 +57,11 @@ typedef struct {
 	node		*p_tree;	/* Top of parse tree */
 } parser_state;
 
-parser_state *newparser PROTO((grammar *g, int start));
-void delparser PROTO((parser_state *ps));
-int addtoken PROTO((parser_state *ps, int type, char *str, int lineno));
-void addaccelerators PROTO((grammar *g));
+parser_state *PyParser_New Py_PROTO((grammar *g, int start));
+void PyParser_Delete Py_PROTO((parser_state *ps));
+int PyParser_AddToken
+	Py_PROTO((parser_state *ps, int type, char *str, int lineno));
+void PyGrammar_AddAccelerators Py_PROTO((grammar *g));
 
 #ifdef __cplusplus
 }

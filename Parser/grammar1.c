@@ -39,7 +39,7 @@ PERFORMANCE OF THIS SOFTWARE.
 /* Return the DFA for the given type */
 
 dfa *
-finddfa(g, type)
+PyGrammar_FindDFA(g, type)
 	grammar *g;
 	register int type;
 {
@@ -63,7 +63,7 @@ finddfa(g, type)
 }
 
 char *
-labelrepr(lb)
+PyGrammar_LabelRepr(lb)
 	label *lb;
 {
 	static char buf[100];
@@ -80,10 +80,10 @@ labelrepr(lb)
 	}
 	else {
 		if (lb->lb_str == NULL)
-			return tok_name[lb->lb_type];
+			return _PyParser_TokenNames[lb->lb_type];
 		else {
 			sprintf(buf, "%.32s(%.32s)",
-				tok_name[lb->lb_type], lb->lb_str);
+				_PyParser_TokenNames[lb->lb_type], lb->lb_str);
 			return buf;
 		}
 	}

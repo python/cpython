@@ -169,7 +169,7 @@ static label labels[19] = {
 	{7, 0},
 	{8, 0},
 };
-static grammar gram = {
+static grammar _PyParser_Grammar = {
 	6,
 	dfas,
 	{19, labels},
@@ -179,5 +179,5 @@ static grammar gram = {
 grammar *
 meta_grammar()
 {
-	return &gram;
+	return &_PyParser_Grammar;
 }

@@ -39,7 +39,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "token.h"
 #include "grammar.h"
 
-extern int debugging;
+extern int Py_DebugFlag;
 
 grammar *
 newgrammar(start)
@@ -47,9 +47,9 @@ newgrammar(start)
 {
 	grammar *g;
 	
-	g = NEW(grammar, 1);
+	g = PyMem_NEW(grammar, 1);
 	if (g == NULL)
-		fatal("no mem for new grammar");
+		Py_FatalError("no mem for new grammar");
 	g->g_ndfas = 0;
 	g->g_dfa = NULL;
 	g->g_start = start;
@@ -67,9 +67,9 @@ adddfa(g, type, name)
 {
 	dfa *d;
 	
-	RESIZE(g->g_dfa, dfa, g->g_ndfas + 1);
+	PyMem_RESIZE(g->g_dfa, dfa, g->g_ndfas + 1);
 	if (g->g_dfa == NULL)
-		fatal("no mem to resize dfa in adddfa");
+		Py_FatalError("no mem to resize dfa in adddfa");
 	d = &g->g_dfa[g->g_ndfas++];
 	d->d_type = type;
 	d->d_name = name;
@@ -86,9 +86,9 @@ addstate(d)
 {
 	state *s;
 	
-	RESIZE(d->d_state, state, d->d_nstates + 1);
+	PyMem_RESIZE(d->d_state, state, d->d_nstates + 1);
 	if (d->d_state == NULL)
-		fatal("no mem to resize state in addstate");
+		Py_FatalError("no mem to resize state in addstate");
 	s = &d->d_state[d->d_nstates++];
 	s->s_narcs = 0;
 	s->s_arc = NULL;
@@ -111,9 +111,9 @@ addarc(d, from, to, lbl)
 	assert(0 <= to && to < d->d_nstates);
 	
 	s = &d->d_state[from];
-	RESIZE(s->s_arc, arc, s->s_narcs + 1);
+	PyMem_RESIZE(s->s_arc, arc, s->s_narcs + 1);
 	if (s->s_arc == NULL)
-		fatal("no mem to resize arc list in addarc");
+		Py_FatalError("no mem to resize arc list in addarc");
 	a = &s->s_arc[s->s_narcs++];
 	a->a_lbl = lbl;
 	a->a_arrow = to;
@@ -133,9 +133,9 @@ addlabel(ll, type, str)
 			strcmp(ll->ll_label[i].lb_str, str) == 0)
 			return i;
 	}
-	RESIZE(ll->ll_label, label, ll->ll_nlabels + 1);
+	PyMem_RESIZE(ll->ll_label, label, ll->ll_nlabels + 1);
 	if (ll->ll_label == NULL)
-		fatal("no mem to resize labellist in addlabel");
+		Py_FatalError("no mem to resize labellist in addlabel");
 	lb = &ll->ll_label[ll->ll_nlabels++];
 	lb->lb_type = type;
 	lb->lb_str = str; /* XXX strdup(str) ??? */
@@ -158,12 +158,12 @@ findlabel(ll, type, str)
 			return i;
 	}
 	fprintf(stderr, "Label %d/'%s' not found\n", type, str);
-	fatal("grammar.c:findlabel()");
+	Py_FatalError("grammar.c:findlabel()");
 	return 0; /* Make gcc -Wall happy */
 }
 
 /* Forward */
-static void translabel PROTO((grammar *, label *));
+static void translabel Py_PROTO((grammar *, label *));
 
 void
 translatelabels(g)
@@ -186,24 +186,25 @@ translabel(g, lb)
 {
 	int i;
 	
-	if (debugging)
-		printf("Translating label %s ...\n", labelrepr(lb));
+	if (Py_DebugFlag)
+		printf("Translating label %s ...\n", PyGrammar_LabelRepr(lb));
 	
 	if (lb->lb_type == NAME) {
 		for (i = 0; i < g->g_ndfas; i++) {
 			if (strcmp(lb->lb_str, g->g_dfa[i].d_name) == 0) {
-				if (debugging)
-					printf("Label %s is non-terminal %d.\n",
-						lb->lb_str,
-						g->g_dfa[i].d_type);
+				if (Py_DebugFlag)
+					printf(
+					    "Label %s is non-terminal %d.\n",
+					    lb->lb_str,
+					    g->g_dfa[i].d_type);
 				lb->lb_type = g->g_dfa[i].d_type;
 				lb->lb_str = NULL;
 				return;
 			}
 		}
 		for (i = 0; i < (int)N_TOKENS; i++) {
-			if (strcmp(lb->lb_str, tok_name[i]) == 0) {
-				if (debugging)
+			if (strcmp(lb->lb_str, _PyParser_TokenNames[i]) == 0) {
+				if (Py_DebugFlag)
 					printf("Label %s is terminal %d.\n",
 						lb->lb_str, i);
 				lb->lb_type = i;
@@ -218,7 +219,7 @@ translabel(g, lb)
 	if (lb->lb_type == STRING) {
 		if (isalpha(lb->lb_str[1]) || lb->lb_str[1] == '_') {
 			char *p;
-			if (debugging)
+			if (Py_DebugFlag)
 				printf("Label %s is a keyword\n", lb->lb_str);
 			lb->lb_type = NAME;
 			lb->lb_str++;
@@ -227,7 +228,7 @@ translabel(g, lb)
 				*p = '\0';
 		}
 		else if (lb->lb_str[2] == lb->lb_str[0]) {
-			int type = (int) tok_1char(lb->lb_str[1]);
+			int type = (int) PyToken_OneChar(lb->lb_str[1]);
 			if (type != OP) {
 				lb->lb_type = type;
 				lb->lb_str = NULL;
@@ -237,7 +238,7 @@ translabel(g, lb)
 					lb->lb_str);
 		}
 		else if (lb->lb_str[2] && lb->lb_str[3] == lb->lb_str[0]) {
-			int type = (int) tok_2char(lb->lb_str[1],
+			int type = (int) PyToken_TwoChars(lb->lb_str[1],
 						   lb->lb_str[2]);
 			if (type != OP) {
 				lb->lb_type = type;
@@ -252,5 +253,6 @@ translabel(g, lb)
 				lb->lb_str);
 	}
 	else
-		printf("Can't translate label '%s'\n", labelrepr(lb));
+		printf("Can't translate label '%s'\n",
+		       PyGrammar_LabelRepr(lb));
 }

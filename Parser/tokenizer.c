@@ -38,7 +38,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "tokenizer.h"
 #include "errcode.h"
 
-extern char *my_readline PROTO((char *));
+extern char *PyOS_Readline Py_PROTO((char *));
 /* Return malloc'ed string including trailing \n;
    empty malloc'ed string for EOF;
    NULL if interrupted */
@@ -47,13 +47,13 @@ extern char *my_readline PROTO((char *));
 #define TABSIZE 8
 
 /* Forward */
-static struct tok_state *tok_new PROTO((void));
-static int tok_nextc PROTO((struct tok_state *tok));
-static void tok_backup PROTO((struct tok_state *tok, int c));
+static struct tok_state *tok_new Py_PROTO((void));
+static int tok_nextc Py_PROTO((struct tok_state *tok));
+static void tok_backup Py_PROTO((struct tok_state *tok, int c));
 
 /* Token names */
 
-char *tok_name[] = {
+char *_PyParser_TokenNames[] = {
 	"ENDMARKER",
 	"NAME",
 	"NUMBER",
@@ -103,7 +103,7 @@ char *tok_name[] = {
 static struct tok_state *
 tok_new()
 {
-	struct tok_state *tok = NEW(struct tok_state, 1);
+	struct tok_state *tok = PyMem_NEW(struct tok_state, 1);
 	if (tok == NULL)
 		return NULL;
 	tok->buf = tok->cur = tok->end = tok->inp = tok->start = NULL;
@@ -124,7 +124,7 @@ tok_new()
 /* Set up tokenizer for string */
 
 struct tok_state *
-tok_setups(str)
+PyTokenizer_FromString(str)
 	char *str;
 {
 	struct tok_state *tok = tok_new();
@@ -138,15 +138,15 @@ tok_setups(str)
 /* Set up tokenizer for file */
 
 struct tok_state *
-tok_setupf(fp, ps1, ps2)
+PyTokenizer_FromFile(fp, ps1, ps2)
 	FILE *fp;
 	char *ps1, *ps2;
 {
 	struct tok_state *tok = tok_new();
 	if (tok == NULL)
 		return NULL;
-	if ((tok->buf = NEW(char, BUFSIZ)) == NULL) {
-		DEL(tok);
+	if ((tok->buf = PyMem_NEW(char, BUFSIZ)) == NULL) {
+		PyMem_DEL(tok);
 		return NULL;
 	}
 	tok->cur = tok->inp = tok->buf;
@@ -161,12 +161,12 @@ tok_setupf(fp, ps1, ps2)
 /* Free a tok_state structure */
 
 void
-tok_free(tok)
+PyTokenizer_Free(tok)
 	struct tok_state *tok;
 {
 	if (tok->fp != NULL && tok->buf != NULL)
-		DEL(tok->buf);
-	DEL(tok);
+		PyMem_DEL(tok->buf);
+	PyMem_DEL(tok);
 }
 
 
@@ -200,7 +200,7 @@ tok_nextc(tok)
 			return *tok->cur++;
 		}
 		if (tok->prompt != NULL) {
-			char *new = my_readline(tok->prompt);
+			char *new = PyOS_Readline(tok->prompt);
 			if (tok->nextprompt != NULL)
 				tok->prompt = tok->nextprompt;
 			if (new == NULL)
@@ -246,7 +246,7 @@ tok_nextc(tok)
 			char *pt;
 			if (tok->start == NULL) {
 				if (tok->buf == NULL) {
-					tok->buf = NEW(char, BUFSIZ);
+					tok->buf = PyMem_NEW(char, BUFSIZ);
 					if (tok->buf == NULL) {
 						tok->done = E_NOMEM;
 						return EOF;
@@ -281,7 +281,7 @@ tok_nextc(tok)
 				int curvalid = tok->inp - tok->buf;
 				int newsize = curvalid + BUFSIZ;
 				char *newbuf = tok->buf;
-				RESIZE(newbuf, char, newsize);
+				PyMem_RESIZE(newbuf, char, newsize);
 				if (newbuf == NULL) {
 					tok->done = E_NOMEM;
 					tok->cur = tok->inp;
@@ -334,7 +334,7 @@ tok_backup(tok, c)
 {
 	if (c != EOF) {
 		if (--tok->cur < tok->buf)
-			fatal("tok_backup: begin of buffer");
+			Py_FatalError("tok_backup: begin of buffer");
 		if (*tok->cur != c)
 			*tok->cur = c;
 	}
@@ -344,7 +344,7 @@ tok_backup(tok, c)
 /* Return the token corresponding to a single character */
 
 int
-tok_1char(c)
+PyToken_OneChar(c)
 	int c;
 {
 	switch (c) {
@@ -377,7 +377,7 @@ tok_1char(c)
 
 
 int
-tok_2char(c1, c2)
+PyToken_TwoChars(c1, c2)
 	int c1, c2;
 {
 	switch (c1) {
@@ -417,7 +417,7 @@ tok_2char(c1, c2)
 /* Get next token, after space stripping etc. */
 
 int
-tok_get(tok, p_start, p_end)
+PyTokenizer_Get(tok, p_start, p_end)
 	register struct tok_state *tok; /* In/out: tokenizer state */
 	char **p_start, **p_end; /* Out: point to start/end of token */
 {
@@ -481,7 +481,8 @@ tok_get(tok, p_start, p_end)
 					tok->pendin--;
 				}
 				if (col != tok->indstack[tok->indent]) {
-					fprintf(stderr, "inconsistent dedent\n");
+					fprintf(stderr,
+						"inconsistent dedent\n");
 					tok->done = E_TOKEN;
 					tok->cur = tok->inp;
 					return ERRORTOKEN;
@@ -569,7 +570,8 @@ tok_get(tok, p_start, p_end)
 	
 #ifdef macintosh
 	if (c == '\r') {
-		fprintf(stderr, "File contains \\r characters (incorrect line endings?)\n");
+		fprintf(stderr,
+		  "File contains \\r characters (incorrect line endings?)\n");
 		tok->done = E_TOKEN;
 		tok->cur = tok->inp;
 		return ERRORTOKEN;
@@ -726,7 +728,7 @@ tok_get(tok, p_start, p_end)
 	/* Check for two-character token */
 	{
 		int c2 = tok_nextc(tok);
-		int token = tok_2char(c, c2);
+		int token = PyToken_TwoChars(c, c2);
 		if (token != OP) {
 			*p_start = tok->start;
 			*p_end = tok->cur;
@@ -752,7 +754,7 @@ tok_get(tok, p_start, p_end)
 	/* Punctuation character */
 	*p_start = tok->start;
 	*p_end = tok->cur;
-	return tok_1char(c);
+	return PyToken_OneChar(c);
 }
 
 
@@ -763,7 +765,7 @@ tok_dump(type, start, end)
 	int type;
 	char *start, *end;
 {
-	printf("%s", tok_name[type]);
+	printf("%s", _PyParser_TokenNames[type]);
 	if (type == NAME || type == NUMBER || type == STRING || type == OP)
 		printf("(%.*s)", (int)(end - start), start);
 }

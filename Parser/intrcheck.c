@@ -45,12 +45,12 @@ int Py_AddPendingCall Py_PROTO((int (*func) Py_PROTO((ANY *)), ANY *arg));
 #include <io.h>
 
 void
-initintr()
+PyOS_InitInterrupts()
 {
 }
 
 int
-intrcheck()
+PyOS_InterruptOccurred()
 {
 	_wyield();
 }
@@ -76,13 +76,13 @@ intrcheck()
 #include <go32.h>
 
 void
-initintr()
+PyOS_InitInterrupts()
 {
 	_go32_want_ctrl_break(1 /* TRUE */);
 }
 
 int
-intrcheck()
+PyOS_InterruptOccurred()
 {
 	return _go32_was_ctrl_break_hit();
 }
@@ -92,12 +92,12 @@ intrcheck()
 /* This might work for MS-DOS (untested though): */
 
 void
-initintr()
+PyOS_InitInterrupts()
 {
 }
 
 int
-intrcheck()
+PyOS_InterruptOccurred()
 {
 	int interrupted = 0;
 	while (kbhit()) {
@@ -141,7 +141,7 @@ PyErr_SetInterrupt()
 	interrupted = 1;
 }
 
-extern int sigcheck();
+extern int PyErr_CheckSignals();
 
 /* ARGSUSED */
 static RETSIGTYPE
@@ -152,7 +152,7 @@ intcatcher(sig)
 	int sig; /* Not used by required by interface */
 #endif /* _M_IX86 */
 {
-	extern void goaway PROTO((int));
+	extern void Py_Exit Py_PROTO((int));
 	static char message[] =
 "python: to interrupt a truly hanging Python program, interrupt once more.\n";
 	switch (interrupted++) {
@@ -163,15 +163,15 @@ intcatcher(sig)
 		break;
 	case 2:
 		interrupted = 0;
-		goaway(1);
+		Py_Exit(1);
 		break;
 	}
 	signal(SIGINT, intcatcher);
-	Py_AddPendingCall(sigcheck, NULL);
+	Py_AddPendingCall(PyErr_CheckSignals, NULL);
 }
 
 void
-initintr()
+PyOS_InitInterrupts()
 {
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		signal(SIGINT, intcatcher);
@@ -187,7 +187,7 @@ initintr()
 }
 
 int
-intrcheck()
+PyOS_InterruptOccurred()
 {
 	if (!interrupted)
 		return 0;

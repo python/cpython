@@ -35,10 +35,10 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "grammar.h"
 #include "token.h"
 
-extern int debugging;
+extern int Py_DebugFlag;
 
 /* Forward */
-static void calcfirstset PROTO((grammar *, dfa *));
+static void calcfirstset Py_PROTO((grammar *, dfa *));
 
 void
 addfirstsets(g)
@@ -72,7 +72,7 @@ calcfirstset(g, d)
 	dfa *d1;
 	label *l0;
 	
-	if (debugging)
+	if (Py_DebugFlag)
 		printf("Calculate FIRST set for '%s'\n", d->d_name);
 	
 	if (dummy == NULL)
@@ -91,9 +91,9 @@ calcfirstset(g, d)
 	nbits = g->g_ll.ll_nlabels;
 	result = newbitset(nbits);
 	
-	sym = NEW(int, 1);
+	sym = PyMem_NEW(int, 1);
 	if (sym == NULL)
-		fatal("no mem for new sym in calcfirstset");
+		Py_FatalError("no mem for new sym in calcfirstset");
 	nsyms = 1;
 	sym[0] = findlabel(&g->g_ll, d->d_type, (char *)NULL);
 	
@@ -105,13 +105,14 @@ calcfirstset(g, d)
 				break;
 		}
 		if (j >= nsyms) { /* New label */
-			RESIZE(sym, int, nsyms + 1);
+			PyMem_RESIZE(sym, int, nsyms + 1);
 			if (sym == NULL)
-				fatal("no mem to resize sym in calcfirstset");
+				Py_FatalError(
+				    "no mem to resize sym in calcfirstset");
 			sym[nsyms++] = a->a_lbl;
 			type = l0[a->a_lbl].lb_type;
 			if (ISNONTERMINAL(type)) {
-				d1 = finddfa(g, type);
+				d1 = PyGrammar_FindDFA(g, type);
 				if (d1->d_first == dummy) {
 					fprintf(stderr,
 						"Left-recursion below '%s'\n",
@@ -120,7 +121,8 @@ calcfirstset(g, d)
 				else {
 					if (d1->d_first == NULL)
 						calcfirstset(g, d1);
-					mergebitset(result, d1->d_first, nbits);
+					mergebitset(result,
+						    d1->d_first, nbits);
 				}
 			}
 			else if (ISTERMINAL(type)) {
@@ -129,11 +131,11 @@ calcfirstset(g, d)
 		}
 	}
 	d->d_first = result;
-	if (debugging) {
+	if (Py_DebugFlag) {
 		printf("FIRST set for '%s': {", d->d_name);
 		for (i = 0; i < nbits; i++) {
 			if (testbit(result, i))
-				printf(" %s", labelrepr(&l0[i]));
+				printf(" %s", PyGrammar_LabelRepr(&l0[i]));
 		}
 		printf(" }\n");
 	}

@@ -41,13 +41,13 @@ PERFORMANCE OF THIS SOFTWARE.
 
 
 /* Forward */
-static node *parsetok PROTO((struct tok_state *, grammar *, int,
+static node *parsetok Py_PROTO((struct tok_state *, grammar *, int,
 			     perrdetail *));
 
 /* Parse input coming from a string.  Return error code, print some errors. */
 
 node *
-parsestring(s, g, start, err_ret)
+PyParser_ParseString(s, g, start, err_ret)
 	char *s;
 	grammar *g;
 	int start;
@@ -61,7 +61,7 @@ parsestring(s, g, start, err_ret)
 	err_ret->offset = 0;
 	err_ret->text = NULL;
 
-	if ((tok = tok_setups(s)) == NULL) {
+	if ((tok = PyTokenizer_FromString(s)) == NULL) {
 		err_ret->error = E_NOMEM;
 		return NULL;
 	}
@@ -73,7 +73,7 @@ parsestring(s, g, start, err_ret)
 /* Parse input coming from a file.  Return error code, print some errors. */
 
 node *
-parsefile(fp, filename, g, start, ps1, ps2, err_ret)
+PyParser_ParseFile(fp, filename, g, start, ps1, ps2, err_ret)
 	FILE *fp;
 	char *filename;
 	grammar *g;
@@ -89,7 +89,7 @@ parsefile(fp, filename, g, start, ps1, ps2, err_ret)
 	err_ret->offset = 0;
 	err_ret->text = NULL;
 
-	if ((tok = tok_setupf(fp, ps1, ps2)) == NULL) {
+	if ((tok = PyTokenizer_FromFile(fp, ps1, ps2)) == NULL) {
 		err_ret->error = E_NOMEM;
 		return NULL;
 	}
@@ -119,7 +119,7 @@ parsetok(tok, g, start, err_ret)
 	node *n;
 	int started = 0;
 
-	if ((ps = newparser(g, start)) == NULL) {
+	if ((ps = PyParser_New(g, start)) == NULL) {
 		fprintf(stderr, "no mem for new parser\n");
 		err_ret->error = E_NOMEM;
 		return NULL;
@@ -131,7 +131,7 @@ parsetok(tok, g, start, err_ret)
 		int len;
 		char *str;
 
-		type = tok_get(tok, &a, &b);
+		type = PyTokenizer_Get(tok, &a, &b);
 		if (type == ERRORTOKEN) {
 			err_ret->error = tok->done;
 			break;
@@ -143,7 +143,7 @@ parsetok(tok, g, start, err_ret)
 		else
 			started = 1;
 		len = b - a; /* XXX this may compute NULL - NULL */
-		str = NEW(char, len + 1);
+		str = PyMem_NEW(char, len + 1);
 		if (str == NULL) {
 			fprintf(stderr, "no mem for next token\n");
 			err_ret->error = E_NOMEM;
@@ -153,7 +153,8 @@ parsetok(tok, g, start, err_ret)
 			strncpy(str, a, len);
 		str[len] = '\0';
 		if ((err_ret->error =
-		     addtoken(ps, (int)type, str, tok->lineno)) != E_OK)
+		     PyParser_AddToken(ps, (int)type, str,
+				       tok->lineno)) != E_OK)
 			break;
 	}
 
@@ -164,7 +165,7 @@ parsetok(tok, g, start, err_ret)
 	else
 		n = NULL;
 
-	delparser(ps);
+	PyParser_Delete(ps);
 
 	if (n == NULL) {
 		if (tok->lineno <= 1 && tok->done == E_EOF)
@@ -182,7 +183,7 @@ parsetok(tok, g, start, err_ret)
 		}
 	}
 
-	tok_free(tok);
+	PyTokenizer_Free(tok);
 
 	return n;
 }
