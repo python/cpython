@@ -228,7 +228,7 @@ class SMTP:
         By default, smtplib.SMTP_PORT is used.  An SMTPConnectError is raised
         if the specified `host' doesn't respond correctly.  If specified,
 	`local_hostname` is used as the FQDN of the local host.  By default,
-	the local hostname is found using gethostbyname().
+	the local hostname is found using socket.getfqdn().
 
         """
         self.esmtp_features = {}
