@@ -59,6 +59,12 @@ LIBDESTDIR=	$DESTDIR/lib
 LIBDEST=	$LIBDESTDIR/python
 DOCDESTDIR=	$LIBDEST/doc
 
+# This is only used for .info generation:
+EMACS=		emacs
+PYTHON=		python
+MAKEINFO=	makeinfo
+PARTPARSE=	$(PYTHON) ./partparse.pyc
+
 # Ideally, you shouldn't need to edit beyond this point
 
 # Main target
@@ -151,6 +157,26 @@ api.ps:	api.dvi
 
 # The remaining part of the Makefile is concerned with various
 # conversions, as described above.  See also the README file.
+
+.SUFFIXES: .py .pyc
+
+.py.pyc:
+	$(PYTHON) -c "import $*"
+
+.PRECIOUS:	lib.texi
+
+lib1.texi: lib*.tex texipre.dat texipost.dat partparse.pyc
+	$(PARTPARSE) -o lib1.texi `./whichlibs`
+
+lib.texi: lib1.texi fix.el
+	$(EMACS) -batch -l fix.el -f save-buffer -kill
+	cp lib1.texi lib.texi
+
+python-lib.info: lib.texi
+	-$(MAKEINFO) --footnote-style end --fill-column 72 \
+		     --paragraph-indent 0 lib.texi
+
+lib.info: python-lib.info
 
 # Targets to convert the manuals to HTML using Nikos Drakos' LaTeX to
 # HTML converter.  For more info on this program, see
