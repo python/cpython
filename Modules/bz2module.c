@@ -211,7 +211,7 @@ Util_GetLine(BZ2FileObject *self, int n)
 				self->pos++;
 				if (bzerror != BZ_OK || buf == end)
 					break;
-				if (skipnextlf ) {
+				if (skipnextlf) {
 					skipnextlf = 0;
 					if (c == '\n') {
 						/* Seeing a \n here with 
@@ -498,7 +498,8 @@ BZ2File_read(BZ2FileObject *self, PyObject *args)
 		buffersize = bytesrequested;
 	if (buffersize > INT_MAX) {
 		PyErr_SetString(PyExc_OverflowError,
-			"requested number of bytes is more than a Python string can hold");
+				"requested number of bytes is "
+				"more than a Python string can hold");
 		goto cleanup;
 	}
 	ret = PyString_FromStringAndSize((char *)NULL, buffersize);
@@ -1223,13 +1224,15 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 
 			default:
 				error = 1;
+				break;
 		}
 		if (error) {
-			PyErr_SetString(PyExc_ValueError, "invalid mode");
+			PyErr_Format(PyExc_ValueError,
+				     "invalid mode char %c", *mode);
 			return -1;
 		}
 		mode++;
-		if (*mode == 0)
+		if (*mode == '\0')
 			break;
 	}
 
@@ -1240,7 +1243,10 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 	
 	file_args = Py_BuildValue("(ssi)", name, mode, buffering);
 	if (!file_args)
-		goto error;
+		return -1;
+
+	/* From now on, we have stuff to dealloc, so jump to error label
+	 * instead of returning */
 
 	if (PyFile_Type.tp_init((PyObject *)self, file_args, NULL) < 0)
 		goto error;
@@ -1299,6 +1305,7 @@ BZ2File_dealloc(BZ2FileObject *self)
 					 0, NULL, NULL);
 			break;
 	}
+	Util_DropReadAhead(self);
 	((PyObject*)self)->ob_type->tp_free((PyObject *)self);
 }
 
@@ -1362,7 +1369,7 @@ newlines are available only when reading.\n\
 #endif
 ;
 
-statichere PyTypeObject BZ2File_Type = {
+static PyTypeObject BZ2File_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0,			/*ob_size*/
 	"bz2.BZ2File",		/*tp_name*/
@@ -1435,8 +1442,8 @@ BZ2Comp_compress(BZ2CompObject *self, PyObject *args)
 
 	ACQUIRE_LOCK(self);
 	if (!self->running) {
-		PyErr_SetString(PyExc_ValueError, "this object was already "
-						  "flushed");
+		PyErr_SetString(PyExc_ValueError,
+				"this object was already flushed");
 		goto error;
 	}
 
@@ -1551,8 +1558,10 @@ error:
 }
 
 static PyMethodDef BZ2Comp_methods[] = {
-	{"compress", (PyCFunction)BZ2Comp_compress, METH_VARARGS, BZ2Comp_compress__doc__},
-	{"flush", (PyCFunction)BZ2Comp_flush, METH_NOARGS, BZ2Comp_flush__doc__},
+	{"compress", (PyCFunction)BZ2Comp_compress, METH_VARARGS,
+	 BZ2Comp_compress__doc__},
+	{"flush", (PyCFunction)BZ2Comp_flush, METH_NOARGS,
+	 BZ2Comp_flush__doc__},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -1625,7 +1634,7 @@ compress() function instead. The compresslevel parameter, if given,\n\
 must be a number between 1 and 9.\n\
 ");
 
-statichere PyTypeObject BZ2Comp_Type = {
+static PyTypeObject BZ2Comp_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0,			/*ob_size*/
 	"bz2.BZ2Compressor",	/*tp_name*/
@@ -1842,7 +1851,7 @@ data sequentially. If you want to decompress data in one shot, use the\n\
 decompress() function instead.\n\
 ");
 
-statichere PyTypeObject BZ2Decomp_Type = {
+static PyTypeObject BZ2Decomp_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0,			/*ob_size*/
 	"bz2.BZ2Decompressor",	/*tp_name*/
