@@ -175,9 +175,15 @@ class TestJointOps(unittest.TestCase):
         self.failIf(set('cbs').issuperset('a'))
 
     def test_pickling(self):
-        p = pickle.dumps(self.s)
-        dup = pickle.loads(p)
-        self.assertEqual(self.s, dup, "%s != %s" % (self.s, dup))
+        for i in (0, 1, 2):
+            p = pickle.dumps(self.s, i)
+            dup = pickle.loads(p)
+            self.assertEqual(self.s, dup, "%s != %s" % (self.s, dup))
+            if type(self.s) not in (set, frozenset):
+                self.s.x = 10
+                p = pickle.dumps(self.s)
+                dup = pickle.loads(p)
+                self.assertEqual(self.s.x, dup.x)
 
     def test_deepcopy(self):
         class Tracer:

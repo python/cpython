@@ -844,7 +844,7 @@ PyDoc_STRVAR(pop_doc, "Remove and return an arbitrary set element.");
 static PyObject *
 set_reduce(PySetObject *so)
 {
-	PyObject *keys=NULL, *args=NULL, *result=NULL;
+	PyObject *keys=NULL, *args=NULL, *result=NULL, *dict=NULL;
 
 	keys = PyDict_Keys(so->data);
 	if (keys == NULL)
@@ -852,10 +852,17 @@ set_reduce(PySetObject *so)
 	args = PyTuple_Pack(1, keys);
 	if (args == NULL)
 		goto done;
-	result = PyTuple_Pack(2, so->ob_type, args);
+	dict = PyObject_GetAttrString((PyObject *)so, "__dict__");
+	if (dict == NULL) {
+		PyErr_Clear();
+		dict = Py_None;
+		Py_INCREF(dict);
+	}
+	result = PyTuple_Pack(3, so->ob_type, args, dict);
 done:
 	Py_XDECREF(args);
 	Py_XDECREF(keys);
+	Py_XDECREF(dict);
 	return result;
 }
 
