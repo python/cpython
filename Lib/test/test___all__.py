@@ -15,7 +15,7 @@ def check_all(modname):
         # caught here.  It also leaves a partial pty module in sys.modules.
         # So when test_pty is called later, the import of pty succeeds,
         # but shouldn't.  As a result, test_pty crashes with an
-        # AtttributeError instead of an ImportError, and regrtest interprets
+        # AttributeError instead of an ImportError, and regrtest interprets
         # the latter as a test failure (ImportError is treated as "test
         # skipped" -- which is what test_pty should say on Windows).
         try:
