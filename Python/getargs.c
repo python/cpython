@@ -84,6 +84,8 @@ vgetargs1(PyObject *args, char *format, va_list *p_va, int compat)
 	int i, len;
 	char *msg;
 	
+	assert(compat || (args != (PyObject*)NULL));
+
 	for (;;) {
 		int c = *format++;
 		if (c == '(' /* ')' */) {
