@@ -52,7 +52,6 @@ install: pythonforbundle
 		b=$(APPINSTALLDIR)/Contents/$$d; \
 		for i in $$a/*; \
 		do \
-			echo jaja $$i; \
 			case $$i in \
 			*CVS) ;; \
 			*.py[co]) ;; \
