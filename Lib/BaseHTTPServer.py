@@ -236,7 +236,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
 	words = string.split(requestline)
 	if len(words) == 3:
 	    [command, path, version] = words
-	    if version != self.protocol_version:
+	    if version[:5] != 'HTTP/':
 		self.send_error(400, "Bad request version (%s)" % `version`)
 		return
 	elif len(words) == 2:
@@ -297,7 +297,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
 	self.log_request(code)
 	if message is None:
 	    if self.responses.has_key(code):
-		message = self.responses[code][1]
+		message = self.responses[code][0]
 	    else:
 		message = ''
 	if self.request_version != 'HTTP/0.9':
