@@ -695,10 +695,10 @@ posix_chmod(self, args)
 	char *path;
 	int i;
 	int res;
-	if (!PyArg_ParseTuple(args, format, &path, &i))
+	if (!PyArg_ParseTuple(args, "si", &path, &i))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-	res = chmod(path, i);
+	res = chmod(path, (mode_t)i);
 	Py_END_ALLOW_THREADS
 	if (res < 0)
 		return posix_error_with_filename(path);
