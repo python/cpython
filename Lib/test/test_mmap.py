@@ -297,6 +297,24 @@ def test_both():
         except OSError:
             pass
 
+    # make sure a double close doesn't crash on Solaris (Bug# 665913)
+    f = open(TESTFN, 'w+')
+
+    try:    # unlink TESTFN no matter what
+        f.write(2**24 * 'a') # Arbitrary character
+        f.close()
+
+        f = open(TESTFN)
+        mf = mmap.mmap(f.fileno(), 2**24, access=mmap.ACCESS_READ)
+        mf.close()
+        mf.close()
+        f.close()
+
+    finally:
+        try:
+            os.unlink(TESTFN)
+        except OSError:
+            pass
 
 
     print ' Test passed'
