@@ -228,7 +228,7 @@ def test():
         print "disabling automatic collection"
     enabled = gc.isenabled()
     gc.disable()
-    verify(not gc.isenabled() )
+    verify(not gc.isenabled())
     debug = gc.get_debug()
     gc.set_debug(debug & ~gc.DEBUG_LEAK) # this test is supposed to leak
 
