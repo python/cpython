@@ -86,7 +86,9 @@ Return the bitwise exclusive or of \var{a} and \var{b}.
 
 \begin{funcdesc}{not_}{o}
 \funcline{__not__}{o}
-Return the outcome of \keyword{not} \var{o}.
+Return the outcome of \keyword{not} \var{o}.  (Note that there is no
+\method{__not__()} discipline for object instances; only the
+interpreter core defines this operation.)
 \end{funcdesc}
 
 \begin{funcdesc}{truth}{o}
