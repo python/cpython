@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-"""An RFC 821 smtp proxy.
+"""An RFC 2821 smtp proxy.
 
 Usage: %(program)s [options] localhost:port remotehost:port
 
@@ -133,6 +133,7 @@ class SMTPChannel(asynchat.async_chat):
     # Implementation of base class abstract method
     def found_terminator(self):
         line = EMPTYSTRING.join(self.__line)
+        print >> DEBUGSTREAM, 'Data:', repr(line)
         self.__line = []
         if self.__state == self.COMMAND:
             if not line:
