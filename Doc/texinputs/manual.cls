@@ -44,6 +44,15 @@
 %
 \RequirePackage{python}
 
+% support for module synopsis sections:
+\newcommand{\py@ModSynopsisFilename}{\jobname\thechapter.syn}
+\let\py@OldChapter=\chapter
+\renewcommand{\chapter}{
+  \py@ProcessModSynopsis
+  \py@closeModSynopsisFile
+  \py@OldChapter
+}
+
 
 % Change the title page to look a bit better, and fit in with the
 % fncychap ``Bjarne'' style a bit better.
