@@ -279,47 +279,30 @@ file_read(f, args)
 	return v;
 }
 
-/* Read a line.
-   Without argument, or with a zero argument, read until end of line
-   or EOF, whichever comes first.
-   With a positive argument n, read at most n bytes until end of line
-   or EOF, whichever comes first.
-   Negative and non-integer arguments are illegal.
-   When EOF is hit immediately, return an empty string.
-   A newline character is returned as the last character of the buffer
-   if it is read.
+/* Internal routine to get a line.
+   Size argument interpretation:
+   > 0: max length;
+   = 0: read arbitrary line;
+   < 0: strip trailing '\n', raise EOFError if EOF reached immediately
 */
 
-/* XXX Should this be unified with raw_input()? */
-
-static object *
-file_readline(f, args)
+object *
+getline(f, n)
 	fileobject *f;
-	object *args;
+	int n;
 {
 	register FILE *fp;
 	register int c;
 	register char *buf, *end;
-	int n, n1, n2;
+	int n1, n2;
 	object *v;
-	
+
 	if ((fp = f->f_fp) == NULL) {
 		err_badarg();
 		return NULL;
 	}
-	
-	if (args == NULL)
-		n = 0; /* Unlimited */
-	else {
-		if (!getintarg(args, &n))
-			return NULL;
-		if (n < 0) {
-			err_badarg();
-			return NULL;
-		}
-	}
-	
-	n2 = n != 0 ? n : 100;
+
+	n2 = n > 0 ? n : 100;
 	v = newsizedstringobject((char *)NULL, n2);
 	if (v == NULL)
 		return NULL;
@@ -327,11 +310,26 @@ file_readline(f, args)
 	end = buf + n2;
 	
 	for (;;) {
-		if ((c = getc(fp)) == EOF || (*buf++ = c) == '\n')
+		if ((c = getc(fp)) == EOF) {
+			if (intrcheck()) {
+				DECREF(v);
+				err_set(KeyboardInterrupt);
+				return NULL;
+			}
+			if (n < 0 && buf == BUF(v)) {
+				DECREF(v);
+				err_set(EOFError);
+				return NULL;
+			}
 			break;
-		/* XXX Error check? */
+		}
+		if ((*buf++ = c) == '\n') {
+			if (n < 0)
+				buf--;
+			break;
+		}
 		if (buf == end) {
-			if (n != 0)
+			if (n > 0)
 				break;
 			n1 = n2;
 			n2 += 1000;
@@ -348,6 +346,43 @@ file_readline(f, args)
 	return v;
 }
 
+/* External C interface */
+
+object *
+filegetline(f, n)
+	object *f;
+	int n;
+{
+	if (f == NULL || !is_fileobject(f)) {
+		err_badcall();
+		return NULL;
+	}
+	return getline((fileobject *)f, n);
+}
+
+/* Python method */
+
+static object *
+file_readline(f, args)
+	fileobject *f;
+	object *args;
+{
+	int n;
+
+	if (args == NULL)
+		n = 0; /* Unlimited */
+	else {
+		if (!getintarg(args, &n))
+			return NULL;
+		if (n < 0) {
+			err_badarg();
+			return NULL;
+		}
+	}
+
+	return getline((object *)f, n);
+}
+
 static object *
 file_readlines(f, args)
 	fileobject *f;
@@ -355,11 +390,13 @@ file_readlines(f, args)
 {
 	object *list;
 	object *line;
-	
+
+	if (!getnoarg(args))
+		return NULL;
 	if ((list = newlistobject(0)) == NULL)
 		return NULL;
 	for (;;) {
-		line = file_readline(f, args);
+		line = getline(f, 0);
 		if (line != NULL && getstringsize(line) == 0) {
 			DECREF(line);
 			break;
