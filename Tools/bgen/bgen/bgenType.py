@@ -30,14 +30,15 @@ class Type:
         return self.getargsFormat(), self.getargsArgs()
 
     def getargsFormat(self):
-        """Return the format for this type for use with [new]getargs().
+        """Return the format for this type for use with PyArg_Parse().
 
         Example: int.getargsFormat() returns the string "i".
+        (getargs is a very old name for PyArg_Parse, hence the name of this method).
         """
         return self.fmt
 
     def getargsArgs(self, name):
-        """Return an argument for use with [new]getargs().
+        """Return an argument for use with PyArg_Parse().
 
         Example: int.getargsArgs("spam") returns the string "&spam".
         """
@@ -79,15 +80,17 @@ class Type:
         return self.mkvalueFormat(), self.mkvalueArgs()
 
     def mkvalueFormat(self):
-        """Return the format for this type for use with mkvalue().
+        """Return the format for this type for use with Py_BuildValue().
 
         This is normally the same as getargsFormat() but it is
         a separate function to allow future divergence.
+        (mkvalue is a very old name for Py_BuildValue, hence the name of this
+        method).
         """
         return self.getargsFormat()
 
     def mkvalueArgs(self, name):
-        """Return an argument for use with mkvalue().
+        """Return an argument for use with Py_BuildValue().
 
         Example: int.mkvalueArgs("spam") returns the string "spam".
         """
