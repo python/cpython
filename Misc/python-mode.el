@@ -2537,7 +2537,7 @@ local bindings to py-newline-and-indent."))
 ;; Also, if we're sitting inside a triple quoted string, this will
 ;; drop us at the line that begins the string.
 (defun py-goto-initial-line ()
-  (let (open-bracket-pos state strchr bod done)
+  (let (open-bracket-pos)
     (while (py-continuation-line-p)
       (beginning-of-line)
       (if (py-backslash-continuation-line-p)
