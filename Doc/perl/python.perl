@@ -742,6 +742,8 @@ sub do_env_tableii{
       "$next_pair_rx$any_next_pair_rx3$any_next_pair_rx5$any_next_pair_rx7";
     if (/$tableiii_rx/o) {
 	$font = $4;
+	$font = ''
+	    if ($font eq 'textrm');
 	$h1 = $6;
 	$h2 = $8;
     }
@@ -758,10 +760,13 @@ sub do_cmd_lineii{
     s/$next_pair_pr_rx//o;
     my $c1 = $2;
     s/$next_pair_pr_rx//o;
-    my $c2 = $2;
-    my $font = $globals{"lineifont"};
+    my($c2,$font,$efont) = ($2, $globals{"lineifont"}, '');
+    if ($font) {
+	$font = "<$font>";
+	$efont = "</$font>";
+    }
     my($c1align,$c2align) = @col_aligns[0,1];
-    "<tr>$c1align<$font>$c1</$font></td>\n"
+    "<tr>$c1align$font$c1$efont</td>\n"
       . "      $c2align$c2</td>$'";
 }
 
@@ -774,6 +779,8 @@ sub do_env_tableiii{
 	. "$any_next_pair_rx9";
     if (/$tableiii_rx/o) {
 	$font = $4;
+	$font = ''
+	    if ($font eq 'textrm');
 	$h1 = $6;
 	$h2 = $8;
 	$h3 = $10;
@@ -794,10 +801,13 @@ sub do_cmd_lineiii{
     s/$next_pair_pr_rx//o;
     my $c2 = $2;
     s/$next_pair_pr_rx//o;
-    my $c3 = $2;
-    my $font = $globals{"lineifont"};
+    my($c3,$font,$efont) = ($2, $globals{"lineifont"}, '');
+    if ($font) {
+	$font = "<$font>";
+	$efont = "</$font>";
+    }
     my($c1align, $c2align, $c3align) = @col_aligns;
-    "<tr>$c1align<$font>$c1</$font></td>\n"
+    "<tr>$c1align$font$c1$efont</td>\n"
       . "      $c2align$c2</td>\n"
       . "      $c3align$c3</td>$'";
 }
