@@ -38,13 +38,13 @@ The module defines the following functions:
 
 \begin{funcdesc}{flock}{fd\, op}
 Perform the lock operation \var{op} on file descriptor \var{fd}.
-See the Unix manual for details.  (On some systems, this function is
-emulated using \code{fcntl}.)
+See the \UNIX{} manual for details.  (On some systems, this function is
+emulated using \code{fcntl()}.)
 \end{funcdesc}
 
 \begin{funcdesc}{lockf}{fd\, code\, \optional{len\, \optional{start\, \optional{whence}}}}
 This is a wrapper around the \code{F_SETLK} and \code{F_SETLKW}
-\code{fcntl()} calls.  See the Unix manual for details.
+\code{fcntl()} calls.  See the \UNIX{} manual for details.
 \end{funcdesc}
 
 If the library modules \code{FCNTL} or \code{IOCTL} are missing, you
