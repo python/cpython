@@ -8,6 +8,7 @@ srcdir = ../..
 dstroot=/.
 prefix=$(dstroot)/Library/Frameworks/Python.framework/Versions/$(VERSION)
 LIBDEST=$(prefix)/lib/python$(VERSION)
+BUILDPYTHON=$(builddir)/python.exe
 
 # These are normally glimpsed from the previous set
 bindir=$(dstroot)/usr/local/bin
@@ -41,7 +42,6 @@ STRIPFLAG=-s
 ##LD=cc
 CPMAC=/Developer/Tools/CpMac
 
-PYTHON=$(builddir)/python.exe
 APPTEMPLATE=$(srcdir)/Mac/OSXResources/app
 APPSUBDIRS=MacOS Resources Resources/English.lproj
 CACHERSRC=$(srcdir)/Mac/scripts/cachersrc.py
@@ -56,7 +56,7 @@ install_PythonLauncher:
 	pbxbuild -target PythonLauncher -buildstyle Deployment \
 		DSTROOT=$(dstroot) INSTALL_PATH=$(PYTHONAPPSPATH) install
 	
-install_Python: $(PYTHON)
+install_Python:
 	@for i in $(PYTHONAPPSDIR) $(APPINSTALLDIR) $(APPINSTALLDIR)/Contents; do \
 		if test ! -d $$i; then \
 			echo "Creating directory $$i"; \
@@ -94,7 +94,7 @@ install_Python: $(PYTHON)
 			esac; \
 		done; \
 	done
-	$(INSTALL_PROGRAM) $(STRIPFLAG) $(PYTHON) $(APPINSTALLDIR)/Contents/MacOS/python
+	$(INSTALL_PROGRAM) $(STRIPFLAG) $(BUILDPYTHON) $(APPINSTALLDIR)/Contents/MacOS/python
 # Finally create the documentation symlink
 	$(LN) -fsn ../../../../English.lproj/Documentation $(APPINSTALLDIR)/Contents/Resources/English.lproj/Documentation
 	
@@ -207,9 +207,9 @@ installmacsubtree:
 	
 	$(INSTALL_DATA) $(PTHFILE) $(LIBDEST)/site-packages/
 
-	$(PYTHON) $(CACHERSRC) -v $(MACLIBDEST) $(MACTOOLSDEST)
-	$(PYTHON) -Wi -tt $(compileall) -x badsyntax $(MACTOOLSDEST)
-	$(PYTHON) -O -Wi -tt $(compileall) -x badsyntax $(MACTOOLSDEST)
+	$(BUILDPYTHON) $(CACHERSRC) -v $(MACLIBDEST) $(MACTOOLSDEST)
+	$(BUILDPYTHON) -Wi -tt $(compileall) -x badsyntax $(MACTOOLSDEST)
+	$(BUILDPYTHON) -O -Wi -tt $(compileall) -x badsyntax $(MACTOOLSDEST)
 
 #
 # We use the full name here in stead of $(INSTALLED_PYTHONW), because
