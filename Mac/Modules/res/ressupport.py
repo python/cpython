@@ -100,7 +100,7 @@ initstuff = initstuff + """
 
 module = MacModule('_Res', 'Res', includestuff, finalstuff, initstuff)
 
-class ResDefinition(PEP252Mixin, GlobalObjectDefinition):
+class ResDefinition(PEP253Mixin, GlobalObjectDefinition):
 	getsetlist = [
 		('data',
 		"""
@@ -176,6 +176,42 @@ class ResDefinition(PEP252Mixin, GlobalObjectDefinition):
 		OutRbrace()
 		Output("self->ob_itself = NULL;")
 
+	def output_tp_newBody(self):
+		Output("PyObject *self;")
+		Output
+		Output("if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;")
+		Output("((%s *)self)->ob_itself = NULL;", self.objecttype)
+		Output("((%s *)self)->ob_freeit = NULL;", self.objecttype)
+		Output("return self;")
+		
+	def output_tp_initBody(self):
+		Output("char *srcdata = NULL;")
+		Output("int srclen = 0;")
+		Output("%s itself;", self.itselftype);
+		Output("char *kw[] = {\"itself\", 0};")
+		Output()
+		Output("if (PyArg_ParseTupleAndKeywords(args, kwds, \"O&\", kw, %s_Convert, &itself))",
+			self.prefix);
+		OutLbrace()
+		Output("((%s *)self)->ob_itself = itself;", self.objecttype)
+		Output("return 0;")
+		OutRbrace()
+		Output("PyErr_Clear();")
+		Output("if (!PyArg_ParseTupleAndKeywords(args, kwds, \"|s#\", kw, &srcdata, &srclen)) return -1;")
+		Output("if ((itself = NewHandle(srclen)) == NULL)")
+		OutLbrace()
+		Output("PyErr_NoMemory();")
+		Output("return 0;")
+		OutRbrace()
+		Output("((%s *)self)->ob_itself = itself;", self.objecttype)
+# XXXX		Output("((%s *)self)->ob_freeit = PyMac_AutoDisposeHandle;")
+		Output("if (srclen && srcdata)")
+		OutLbrace()
+		Output("HLock(itself);")
+		Output("memcpy(*itself, srcdata, srclen);")
+		Output("HUnlock(itself);")
+		OutRbrace()
+		Output("return 0;")
 
 resobject = ResDefinition('Resource', 'ResObj', 'Handle')
 module.addobject(resobject)
