@@ -397,4 +397,3 @@ else: raise TestFailed, 'type(), w/2 args expected TypeError'
 try: type(1, 2, 3, 4)
 except TypeError: pass
 else: raise TestFailed, 'type(), w/4 args expected TypeError'
-
