@@ -333,6 +333,15 @@ class StrptimeTests(unittest.TestCase):
                         "Default values for strptime() are incorrect;"
                         " %s != %s" % (strp_output, defaults))
 
+    def test_escaping(self):
+        # Make sure all characters that have regex significance are escaped.
+        # Parentheses are in a purposeful order; will cause an error of
+        # unbalanced parentheses when the regex is compiled if they are not
+        # escaped.
+        # Test instigated by bug #796149 .
+        need_escaping = ".^$*+?{}\[]|)("
+        self.failUnless(_strptime.strptime(need_escaping, need_escaping))
+
 class Strptime12AMPMTests(unittest.TestCase):
     """Test a _strptime regression in '%I %p' at 12 noon (12 PM)"""
 

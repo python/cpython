@@ -249,7 +249,7 @@ class TimeRE(dict):
         processed_format = ''
         # The sub() call escapes all characters that might be misconstrued
         # as regex syntax.
-        regex_chars = re_compile(r"([\\.^$*+?{}\[\]|])")
+        regex_chars = re_compile(r"([\\.^$*+?\(\){}\[\]|])")
         format = regex_chars.sub(r"\\\1", format)
         whitespace_replacement = re_compile('\s+')
         format = whitespace_replacement.sub('\s*', format)
