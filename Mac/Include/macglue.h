@@ -81,8 +81,9 @@ void PyMac_HandleEvent Py_PROTO((EventRecord *, int)); /* Handle one event, if p
 void PyMac_InitMenuBar(void);			/* Setup menu bar as we want it */
 void PyMac_RestoreMenuBar(void);		/* Restore menu bar for ease of exiting */
 
-int PyMac_FindResourceModule(char *, char *); /* Test for 'PYC ' resource in a file */
+int PyMac_FindResourceModule(PyStringObject *, char *, char *); /* Test for 'PYC ' resource in a file */
 PyObject * PyMac_LoadResourceModule(char *, char *); /* Load 'PYC ' resource from file */
+struct filedescr *PyMac_FindModuleExtension(char *, int *, char *); /* Look for module in single folder */
 
 int PyMac_GetDirectory(FSSpec *dirfss, char *prompt);		/* Ask user for a directory */
 void PyMac_PromptGetFile(short numTypes, ConstSFTypeListPtr typeList, 
