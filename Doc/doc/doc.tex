@@ -365,6 +365,11 @@ distribution, to create or maintain whole documents or sections.
       entries are generated.)
     \end{macrodesc}
 
+    \begin{macrodesc}{e}{}
+      Produces a backslash.  This is convenient in \macro{code} and
+      similar macros.
+    \end{macrodesc}
+
     \begin{macrodesc}{email}{\p{address}}
       An email address.  Note that this is \emph{not} hyperlinked in
       any of the possible output formats.
@@ -475,6 +480,17 @@ distribution, to create or maintain whole documents or sections.
     \begin{macrodesc}{strong}{\p{text}}
       Strongly emphasized text; this will be presented using a bold
       font.
+    \end{macrodesc}
+
+    \begin{macrodesc}{url}{\p{url}}
+      A URL (or URN).  The URL will be presented as text.  In the HTML 
+      and PDF formatted versions, the URL will also be a hyperlink.
+      This can be used when referring to external resources.  Note
+      that many characters are special to \LaTeX{} and this macro
+      does not always do the right thing.  In particular, the tilde
+      character (\character{\~}) is mis-handled; encoding it as a
+      hex-sequence does work, use \samp{\%7e} in place of the tilde
+      character.
     \end{macrodesc}
 
     \begin{macrodesc}{var}{\p{name}}
@@ -688,7 +704,7 @@ distribution, to create or maintain whole documents or sections.
       This should be used in the document preamble if a ``Module
       Index'' is desired for a document containing reference material
       on many modules.  This causes a data file
-      \code{lib\macro{jobname}.idx} to be created from the
+      \code{lib\var{jobname}.idx} to be created from the
       \macro{declaremodule} macros.  This file can be processed by the
       \program{makeindex} program to generate a file which can be
       \macro{input} into the document at the desired location of the
@@ -911,6 +927,12 @@ distribution, to create or maintain whole documents or sections.
 	tree.  Use \program{mkhowto --help} for a list of command line 
 	options.
 
+        \program{mkhowto} can be used for both \code{howto} and
+        \code{manual} class documents.  (For the later, be sure to get 
+	the latest version from the Python CVS repository rather than
+        the version distributed in the \file{latex-1.5.2.tgz} source
+	archive.)
+
 	XXX  Need more here.
     \end{description}
 
@@ -987,6 +1009,7 @@ distribution, to create or maintain whole documents or sections.
     Comments and bug reports on the standard documents should be sent
     to \email{python-docs@python.org}.  This may include comments
     about formatting, content, grammatical and spelling errors, or
-    this document.
+    this document.  You can also send comments on this document
+    directly to the author at \email{fdrake@acm.org}.
 
 \end{document}
