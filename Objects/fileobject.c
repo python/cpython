@@ -1228,7 +1228,7 @@ file_readlines(PyFileObject *f, PyObject *args)
 		else {
 			Py_BEGIN_ALLOW_THREADS
 			errno = 0;
-			nread = Py_UniversalNewlineFread(buffer+nfilled, 
+			nread = Py_UniversalNewlineFread(buffer+nfilled,
 				buffersize-nfilled, f->f_fp, (PyObject *)f);
 			Py_END_ALLOW_THREADS
 			shortread = (nread < buffersize-nfilled);
@@ -1943,7 +1943,7 @@ Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
 	int newlinetypes = 0;
 	int skipnextlf = 0;
 	int univ_newline = 1;
-	
+
 	if (fobj) {
 		if (!PyFile_Check(fobj)) {
 			errno = ENXIO;	/* What can you do... */
@@ -2024,61 +2024,71 @@ Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
 ** the different types of newlines seen.
 */
 size_t
-Py_UniversalNewlineFread(void *buf, size_t n,
+Py_UniversalNewlineFread(char *buf, size_t n,
 			 FILE *stream, PyObject *fobj)
 {
-	char *src = buf, *dst = buf, c;
-	int nread, ntodo=n;
-	int newlinetypes, skipnextlf, univ_newline;
-	
+	char *dst = buf;
+	PyFileObject *f = (PyFileObject *)fobj;
+	int newlinetypes, skipnextlf;
+
+	assert(buf != NULL);
+	assert(stream != NULL);
+
 	if (!fobj || !PyFile_Check(fobj)) {
 		errno = ENXIO;	/* What can you do... */
 		return -1;
 	}
-	univ_newline = ((PyFileObject *)fobj)->f_univ_newline;
-	if ( !univ_newline )
+	if (!f->f_univ_newline)
 		return fread(buf, 1, n, stream);
-	newlinetypes = ((PyFileObject *)fobj)->f_newlinetypes;
-	skipnextlf = ((PyFileObject *)fobj)->f_skipnextlf;
-	while (ntodo > 0) {
-		if (ferror(stream))
-			break;
-		nread = fread(dst, 1, ntodo, stream);
-		src = dst;
-		if (nread <= 0) {
-			if (skipnextlf)
-				newlinetypes |= NEWLINE_CR;
-			break;
-		}
-		ntodo -= nread;
-		while ( nread-- ) {
-			c = *src++;
+	newlinetypes = f->f_newlinetypes;
+	skipnextlf = f->f_skipnextlf;
+	/* Invariant:  n is the number of bytes remaining to be filled
+	 * in the buffer.
+	 */
+	while (n) {
+		size_t nread;
+		int shortread;
+		char *src = dst;
+
+		nread = fread(dst, 1, n, stream);
+		assert(nread <= n);
+		shortread = nread != n;	/* true iff EOF or error */
+		while (nread--) {
+			char c = *src++;
 			if (c == '\r') {
-				/* Save CR as LF and set flag to skip next newline
-				*/
+				/* Save as LF and set flag to skip next LF. */
 				*dst++ = '\n';
+				--n;
 				skipnextlf = 1;
-			} else if (skipnextlf && c == '\n') {
-				/* Skip an LF, and remember that we saw CR LF
-				*/
+			}
+			else if (skipnextlf && c == '\n') {
+				/* Skip LF, and remember we saw CR LF. */
 				skipnextlf = 0;
 				newlinetypes |= NEWLINE_CRLF;
-			} else {
-				/* Normal char to be stored in buffer. Also update
-				** the newlinetypes flag if either this is an LF
-				** or the previous char was a CR.
-				*/
+			}
+			else {
+				/* Normal char to be stored in buffer.  Also
+				 * update the newlinetypes flag if either this
+				 * is an LF or the previous char was a CR.
+				 */
 				if (c == '\n')
 					newlinetypes |= NEWLINE_LF;
 				else if (skipnextlf)
 					newlinetypes |= NEWLINE_CR;
 				*dst++ = c;
+				--n;
 				skipnextlf = 0;
 			}
 		}
+		if (shortread) {
+			/* If this is EOF, update type flags. */
+			if (skipnextlf && feof(stream))
+				newlinetypes |= NEWLINE_CR;
+			break;
+		}
 	}
-	((PyFileObject *)fobj)->f_newlinetypes = newlinetypes;
-	((PyFileObject *)fobj)->f_skipnextlf = skipnextlf;
-	return dst - (char *)buf;
+	f->f_newlinetypes = newlinetypes;
+	f->f_skipnextlf = skipnextlf;
+	return dst - buf;
 }
 #endif
