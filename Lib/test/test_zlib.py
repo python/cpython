@@ -76,6 +76,19 @@ if decomp2 != buf:
 else:
     print "decompressobj with init options succeeded"
 
+# Test flush() with the various options, using all the different levels
+# in order to provide more variations.
+for sync in [zlib.Z_NO_FLUSH, zlib.Z_SYNC_FLUSH, zlib.Z_FULL_FLUSH]:
+    for level in range(10):
+	obj = zlib.compressobj( level )
+    	d = obj.compress( buf[:3000] )
+	d = d + obj.flush( sync )
+	d = d + obj.compress( buf[3000:] )
+	d = d + obj.flush()
+	if zlib.decompress(d) != buf:
+	    print "Decompress failed: flush mode=%i, level=%i" % (sync,level)
+	del obj
+
 def ignore():
     """An empty function with a big string.
 
