@@ -18,7 +18,8 @@ if verbose:
     
 if sys.platform in ('netbsd1',
                     'freebsd2', 'freebsd3',
-                    'bsdos2', 'bsdos3', 'bsdos4'):
+                    'bsdos2', 'bsdos3', 'bsdos4',
+                    'openbsd', 'openbsd2'):
     lockdata = struct.pack('lxxxxlxxxxlhh', 0, 0, 0, FCNTL.F_WRLCK, 0)
 elif sys.platform in ['aix3', 'aix4']:
     lockdata = struct.pack('hhlllii', FCNTL.F_WRLCK, 0, 0, 0, 0, 0, 0)
