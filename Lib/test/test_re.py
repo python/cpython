@@ -8,6 +8,10 @@ import sys, os, traceback
 
 # Misc tests from Tim Peters' re.doc
 
+# WARNING: Don't change deteails in these tests if you don't know
+# what you're doing. Some of these tests were carefuly modeled to
+# cover most of the code.
+
 import unittest
 
 class ReTests(unittest.TestCase):
@@ -164,6 +168,172 @@ class ReTests(unittest.TestCase):
                          (None, 'b', None))
         self.assertEqual(pat.match('ac').group(1, 'b2', 3), ('a', None, 'c'))
 
+    def test_re_groupref_exists(self):
+        return # not yet
+        self.assertEqual(re.match('^(\()?([^()]+)(?(1)\))$', '(a)').groups(),
+                         ('(', 'a'))
+        self.assertEqual(re.match('^(\()?([^()]+)(?(1)\))$', 'a').groups(),
+                         (None, 'a'))
+        self.assertEqual(re.match('^(\()?([^()]+)(?(1)\))$', 'a)'), None)
+        self.assertEqual(re.match('^(\()?([^()]+)(?(1)\))$', '(a'), None)
+        self.assertEqual(re.match('^(?:(a)|c)((?(1)b|d))$', 'ab').groups(),
+                         ('a', 'b'))
+        self.assertEqual(re.match('^(?:(a)|c)((?(1)b|d))$', 'cd').groups(),
+                         (None, 'd'))
+        self.assertEqual(re.match('^(?:(a)|c)((?(1)|d))$', 'cd').groups(),
+                         (None, 'd'))
+        self.assertEqual(re.match('^(?:(a)|c)((?(1)|d))$', 'a').groups(),
+                         ('a', ''))
+
+    def test_re_groupref(self):
+        self.assertEqual(re.match(r'^(\|)?([^()]+)\1$', '|a|').groups(),
+                         ('|', 'a'))
+        self.assertEqual(re.match(r'^(\|)?([^()]+)\1?$', 'a').groups(),
+                         (None, 'a'))
+        self.assertEqual(re.match(r'^(\|)?([^()]+)\1$', 'a|'), None)
+        self.assertEqual(re.match(r'^(\|)?([^()]+)\1$', '|a'), None)
+        self.assertEqual(re.match(r'^(?:(a)|c)(\1)$', 'aa').groups(),
+                         ('a', 'a'))
+        self.assertEqual(re.match(r'^(?:(a)|c)(\1)?$', 'c').groups(),
+                         (None, None))
+
+    def test_groupdict(self):
+        self.assertEqual(re.match('(?P<first>first) (?P<second>second)',
+                                  'first second').groupdict(),
+                         {'first':'first', 'second':'second'})
+
+    def test_expand(self):
+        self.assertEqual(re.match("(?P<first>first) (?P<second>second)",
+                                  "first second")
+                                  .expand(r"\2 \1 \g<second> \g<first>"),
+                         "second first second first")
+
+    def test_repeat_minmax(self):
+        self.assertEqual(re.match("^(\w){1}$", "abc"), None)
+        self.assertEqual(re.match("^(\w){1}?$", "abc"), None)
+        self.assertEqual(re.match("^(\w){1,2}$", "abc"), None)
+        self.assertEqual(re.match("^(\w){1,2}?$", "abc"), None)
+
+        self.assertEqual(re.match("^(\w){3}$", "abc").group(1), "c")
+        self.assertEqual(re.match("^(\w){1,3}$", "abc").group(1), "c")
+        self.assertEqual(re.match("^(\w){1,4}$", "abc").group(1), "c")
+        self.assertEqual(re.match("^(\w){3,4}?$", "abc").group(1), "c")
+        self.assertEqual(re.match("^(\w){3}?$", "abc").group(1), "c")
+        self.assertEqual(re.match("^(\w){1,3}?$", "abc").group(1), "c")
+        self.assertEqual(re.match("^(\w){1,4}?$", "abc").group(1), "c")
+        self.assertEqual(re.match("^(\w){3,4}?$", "abc").group(1), "c")
+
+        self.assertEqual(re.match("^x{1}$", "xxx"), None)
+        self.assertEqual(re.match("^x{1}?$", "xxx"), None)
+        self.assertEqual(re.match("^x{1,2}$", "xxx"), None)
+        self.assertEqual(re.match("^x{1,2}?$", "xxx"), None)
+
+        self.assertNotEqual(re.match("^x{3}$", "xxx"), None)
+        self.assertNotEqual(re.match("^x{1,3}$", "xxx"), None)
+        self.assertNotEqual(re.match("^x{1,4}$", "xxx"), None)
+        self.assertNotEqual(re.match("^x{3,4}?$", "xxx"), None)
+        self.assertNotEqual(re.match("^x{3}?$", "xxx"), None)
+        self.assertNotEqual(re.match("^x{1,3}?$", "xxx"), None)
+        self.assertNotEqual(re.match("^x{1,4}?$", "xxx"), None)
+        self.assertNotEqual(re.match("^x{3,4}?$", "xxx"), None)
+
+    def test_getattr(self):
+        self.assertEqual(re.match("(a)", "a").pos, 0)
+        self.assertEqual(re.match("(a)", "a").endpos, 1)
+        self.assertEqual(re.match("(a)", "a").string, "a")
+        self.assertEqual(re.match("(a)", "a").regs, ((0, 1), (0, 1)))
+        self.assertNotEqual(re.match("(a)", "a").re, None)
+
+    def test_special_escapes(self):
+        self.assertEqual(re.search(r"\b(b.)\b",
+                                   "abcd abc bcd bx").group(1), "bx")
+        self.assertEqual(re.search(r"\B(b.)\B",
+                                   "abc bcd bc abxd").group(1), "bx")
+        self.assertEqual(re.search(r"\b(b.)\b",
+                                   "abcd abc bcd bx", re.LOCALE).group(1), "bx")
+        self.assertEqual(re.search(r"\B(b.)\B",
+                                   "abc bcd bc abxd", re.LOCALE).group(1), "bx")
+        self.assertEqual(re.search(r"\b(b.)\b",
+                                   "abcd abc bcd bx", re.UNICODE).group(1), "bx")
+        self.assertEqual(re.search(r"\B(b.)\B",
+                                   "abc bcd bc abxd", re.UNICODE).group(1), "bx")
+        self.assertEqual(re.search(r"^abc$", "\nabc\n", re.M).group(0), "abc")
+        self.assertEqual(re.search(r"^\Aabc\Z$", "abc", re.M).group(0), "abc")
+        self.assertEqual(re.search(r"^\Aabc\Z$", "\nabc\n", re.M), None)
+        self.assertEqual(re.search(r"\b(b.)\b",
+                                   u"abcd abc bcd bx").group(1), "bx")
+        self.assertEqual(re.search(r"\B(b.)\B",
+                                   u"abc bcd bc abxd").group(1), "bx")
+        self.assertEqual(re.search(r"^abc$", u"\nabc\n", re.M).group(0), "abc")
+        self.assertEqual(re.search(r"^\Aabc\Z$", u"abc", re.M).group(0), "abc")
+        self.assertEqual(re.search(r"^\Aabc\Z$", u"\nabc\n", re.M), None)
+        self.assertEqual(re.search(r"\d\D\w\W\s\S",
+                                   "1aa! a").group(0), "1aa! a")
+        self.assertEqual(re.search(r"\d\D\w\W\s\S",
+                                   "1aa! a", re.LOCALE).group(0), "1aa! a")
+        self.assertEqual(re.search(r"\d\D\w\W\s\S",
+                                   "1aa! a", re.UNICODE).group(0), "1aa! a")
+
+    def test_ignore_case(self):
+        self.assertEqual(re.match("abc", "ABC", re.I).group(0), "ABC")
+        self.assertEqual(re.match("abc", u"ABC", re.I).group(0), "ABC")
+
+    def test_bigcharset(self):
+        self.assertEqual(re.match(u"([\u2222\u2223])",
+                                  u"\u2222").group(1), u"\u2222")
+        self.assertEqual(re.match(u"([\u2222\u2223])",
+                                  u"\u2222", re.UNICODE).group(1), u"\u2222")
+
+    def test_anyall(self):
+        self.assertEqual(re.match("a.b", "a\nb", re.DOTALL).group(0),
+                         "a\nb")
+        self.assertEqual(re.match("a.*b", "a\n\nb", re.DOTALL).group(0),
+                         "a\n\nb")
+
+    def test_non_consuming(self):
+        self.assertEqual(re.match("(a(?=\s[^a]))", "a b").group(1), "a")
+        self.assertEqual(re.match("(a(?=\s[^a]*))", "a b").group(1), "a")
+        self.assertEqual(re.match("(a(?=\s[abc]))", "a b").group(1), "a")
+        self.assertEqual(re.match("(a(?=\s[abc]*))", "a bc").group(1), "a")
+        self.assertEqual(re.match(r"(a)(?=\s\1)", "a a").group(1), "a")
+        self.assertEqual(re.match(r"(a)(?=\s\1*)", "a aa").group(1), "a")
+        self.assertEqual(re.match(r"(a)(?=\s(abc|a))", "a a").group(1), "a")
+
+        self.assertEqual(re.match(r"(a(?!\s[^a]))", "a a").group(1), "a")
+        self.assertEqual(re.match(r"(a(?!\s[abc]))", "a d").group(1), "a")
+        self.assertEqual(re.match(r"(a)(?!\s\1)", "a b").group(1), "a")
+        self.assertEqual(re.match(r"(a)(?!\s(abc|a))", "a b").group(1), "a")
+
+    def test_ignore_case(self):
+        self.assertEqual(re.match(r"(a\s[^a])", "a b", re.I).group(1), "a b")
+        self.assertEqual(re.match(r"(a\s[^a]*)", "a bb", re.I).group(1), "a bb")
+        self.assertEqual(re.match(r"(a\s[abc])", "a b", re.I).group(1), "a b")
+        self.assertEqual(re.match(r"(a\s[abc]*)", "a bb", re.I).group(1), "a bb")
+        self.assertEqual(re.match(r"((a)\s\2)", "a a", re.I).group(1), "a a")
+        self.assertEqual(re.match(r"((a)\s\2*)", "a aa", re.I).group(1), "a aa")
+        self.assertEqual(re.match(r"((a)\s(abc|a))", "a a", re.I).group(1), "a a")
+        self.assertEqual(re.match(r"((a)\s(abc|a)*)", "a aa", re.I).group(1), "a aa")
+
+    def test_category(self):
+        self.assertEqual(re.match(r"(\s)", " ").group(1), " ")
+
+    def test_getlower(self):
+        import _sre
+        self.assertEqual(_sre.getlower(ord('A'), 0), ord('a'))
+        self.assertEqual(_sre.getlower(ord('A'), re.LOCALE), ord('a'))
+        self.assertEqual(_sre.getlower(ord('A'), re.UNICODE), ord('a'))
+
+        self.assertEqual(re.match("abc", "ABC", re.I).group(0), "ABC")
+        self.assertEqual(re.match("abc", u"ABC", re.I).group(0), "ABC")
+
+    def test_not_literal(self):
+        self.assertEqual(re.search("\s([^a])", " b").group(1), "b")
+        self.assertEqual(re.search("\s([^a]*)", " bb").group(1), "bb")
+
+    def test_search_coverage(self):
+        self.assertEqual(re.search("\s(b)", " b").group(1), "b")
+        self.assertEqual(re.search("a\s", "a ").group(0), "a ")
+
     def test_re_escape(self):
         p=""
         for i in range(0, 256):
@@ -262,6 +432,8 @@ class ReTests(unittest.TestCase):
             (r"=|\+|-|\*|/", s_operator),
             (r"\s+", None),
             ])
+
+        self.assertNotEqual(scanner.scanner.scanner("").pattern, None)
 
         self.assertEqual(scanner.scan("sum = 3*foo + 312.50 + bar"),
                          (['sum', 'op=', 3, 'op*', 'foo', 'op+', 312.5,
