@@ -34,7 +34,9 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 #include "structmember.h"
 
+#ifndef DONT_HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif /* DONT_HAVE_SYS_TYPES_H */
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -62,7 +64,9 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #define BUF(v) PyString_AS_STRING((PyStringObject *)v)
 
+#ifndef DONT_HAVE_ERRNO_H
 #include <errno.h>
+#endif
 
 typedef struct {
 	PyObject_HEAD
@@ -441,10 +445,15 @@ file_isatty(f, args)
 #ifndef DONT_HAVE_FSTAT
 #define HAVE_FSTAT
 
+#ifndef DONT_HAVE_SYS_TYPES_H
 #include <sys/types.h>
-#include <sys/stat.h>
-
 #endif
+
+#ifndef DONT_HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+
+#endif /* DONT_HAVE_FSTAT */
 
 #if BUFSIZ < 8192
 #define SMALLCHUNK 8192

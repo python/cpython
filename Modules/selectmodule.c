@@ -48,7 +48,9 @@ PERFORMANCE OF THIS SOFTWARE.
 extern void bzero();
 #endif
 
+#ifndef DONT_HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
 
 #if defined(PYOS_OS2)
 #include <sys/time.h>
