@@ -3,6 +3,18 @@ What's New in Python 2.2a0?
 
 Core
 
+- Dictionary objects now support the "in" operator: "x in dict" means
+  the same as dict.has_key(x).
+
+- Iterators were added; this is a generalized way of providing values
+  to a for loop.  See PEP 234.  There's a new built-in function iter()
+  to return an iterator.  There's a new protocol to get the next value
+  from an iterator using the next() method (in Python) or the
+  tp_iternext slot (in C).  There's a new protocol to get iterators
+  using the __iter__() method (in Python) or the tp_iter slot (in C).
+  Iterating (i.e. a for loop) over a dictionary generates its keys.
+  Iterating over a file generates its lines.
+
 - The following functions were generalized to work nicely with iterator
   arguments:
   list()
