@@ -67,15 +67,15 @@ Return \code{1} if there is a frozen module (see \code{init_frozen})
 called \var{name}, \code{0} if there is no such module.
 \end{funcdesc}
 
-\begin{funcdesc}{load_compiled}{name\, pathname\, \optional{file}}
+\begin{funcdesc}{load_compiled}{name\, pathname\, file}
 Load and initialize a module implemented as a byte-compiled code file
 and return its module object.  If the module was already initialized,
 it will be initialized {\em again}.  The \var{name} argument is used
 to create or access a module object.  The \var{pathname} argument
-points to the byte-compiled code file.  The optional \var{file}
+points to the byte-compiled code file.  The \var{file}
 argument is the byte-compiled code file, open for reading in binary
-mode, from the beginning --- if not given, the function opens
-\var{pathname}.  It must currently be a real file object, not a
+mode, from the beginning.
+It must currently be a real file object, not a
 user-defined class emulating a file.
 \end{funcdesc}
 
@@ -92,14 +92,14 @@ shared libraries is highly system dependent, and not all systems
 support it.)
 \end{funcdesc}
 
-\begin{funcdesc}{load_source}{name\, pathname\, \optional{file}}
+\begin{funcdesc}{load_source}{name\, pathname\, file}
 Load and initialize a module implemented as a Python source file and
 return its module object.  If the module was already initialized, it
 will be initialized {\em again}.  The \var{name} argument is used to
 create or access a module object.  The \var{pathname} argument points
-to the source file.  The optional \var{file} argument is the source
-file, open for reading as text, from the beginning --- if not given,
-the function opens \var{pathname}.  It must currently be a real file
+to the source file.  The \var{file} argument is the source
+file, open for reading as text, from the beginning.
+It must currently be a real file
 object, not a user-defined class emulating a file.  Note that if a
 properly matching byte-compiled file (with suffix \code{.pyc}) exists,
 it will be used instead of parsing the given source file.
