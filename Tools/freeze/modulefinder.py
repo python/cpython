@@ -32,9 +32,9 @@ packagePathMap = {}
 
 # A Public interface
 def AddPackagePath(packagename, path):
-	paths = packagePathMap.get(packagename, [])
-	paths.append(path)
-	packagePathMap[packagename] = paths
+    paths = packagePathMap.get(packagename, [])
+    paths.append(path)
+    packagePathMap[packagename] = paths
 
 class Module:
 
@@ -302,8 +302,8 @@ class ModuleFinder:
         m.__file__ = pathname
         m.__path__ = [pathname]
 
-	# As per comment at top of file, simulate runtime __path__ additions.
-	m.__path__ = m.__path__ + packagePathMap.get(fqname, [])
+        # As per comment at top of file, simulate runtime __path__ additions.
+        m.__path__ = m.__path__ + packagePathMap.get(fqname, [])
 
         fp, buf, stuff = self.find_module("__init__", m.__path__)
         self.load_module(fqname, fp, buf, stuff)
