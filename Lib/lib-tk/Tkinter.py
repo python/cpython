@@ -714,9 +714,9 @@ class Misc:
 	size = grid_size
 	def grid_slaves(self, row=None, column=None):
 		args = ()
-		if row:
+		if row is not None:
 			args = args + ('-row', row)
-		if column:
+		if column is not None:
 			args = args + ('-column', column)
 		return map(self._nametowidget,
 			   self.tk.splitlist(self.tk.call(
@@ -1156,6 +1156,7 @@ def At(x, y=None):
 		return '@' + `x` + ',' + `y`
 
 class Canvas(Widget):
+	_tagcommands = None
 	def __init__(self, master=None, cnf={}, **kw):
 		Widget.__init__(self, master, 'canvas', cnf, kw)
 	def addtag(self, *args):
@@ -1182,8 +1183,16 @@ class Canvas(Widget):
 		if funcid:
 			self.deletecommand(funcid)
 	def tag_bind(self, tagOrId, sequence=None, func=None, add=None):
-		return self._bind((self._w, 'bind', tagOrId),
-				  sequence, func, add)
+		res = self._bind((self._w, 'bind', tagOrId),
+				 sequence, func, add)
+		if sequence and func and res:
+			# remember the funcid for later
+			if self._tagcommands is None:
+				self._tagcommands = {}
+			list = self._tagcommands.get(tagOrId) or []
+			self._tagcommands[tagOrId] = list
+			list.append(res)
+		return res
 	def canvasx(self, screenx, gridspacing=None):
 		return getdouble(self.tk.call(
 			self._w, 'canvasx', screenx, gridspacing))
@@ -1227,7 +1236,16 @@ class Canvas(Widget):
 	def dchars(self, *args):
 		self.tk.call((self._w, 'dchars') + args)
 	def delete(self, *args):
+		self._delete_bindings(args)
 		self.tk.call((self._w, 'delete') + args)
+	def _delete_bindings(self, args):
+		for tag in args:
+			for a in self.tag_bind(tag):
+				b = self.tag_bind(tag, a)
+				c = _string.split(b, '[')[1]
+				d = _string.split(c)[0]
+				print "deletecommand(%s)" % `d`
+				self.deletecommand(d)
 	def dtag(self, *args):
 		self.tk.call((self._w, 'dtag') + args)
 	def find(self, *args):
