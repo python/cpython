@@ -1,16 +1,17 @@
 import os
 import base64
+import shutil
 import gettext
-
 import unittest
-from unittest import TestCase
+
+from test.test_support import run_suite
+
 
 # TODO:
 #  - Add new tests, for example for "dgettext"
 #  - Remove dummy tests, for example testing for single and double quotes
 #    has no sense, it would have if we were testing a parser (i.e. pygettext)
 #  - Tests should have only one assert.
-
 
 GNU_MO_DATA = '''\
 3hIElQAAAAAGAAAAHAAAAEwAAAALAAAAfAAAAAAAAACoAAAAFQAAAKkAAAAjAAAAvwAAAKEAAADj
@@ -32,263 +33,293 @@ IHNiZSBsYmhlIENsZ3ViYSBjZWJ0ZW56ZiBvbCBjZWJpdnF2YXQgbmEgdmFncmVzbnByIGdiIGd1
 ciBUQUgKdHJnZ3JrZyB6cmZmbnRyIHBuZ255YnQgeXZvZW5lbC4AYmFjb24Ad2luayB3aW5rAA==
 '''
 
+UMO_DATA = '''\
+3hIElQAAAAACAAAAHAAAACwAAAAFAAAAPAAAAAAAAABQAAAABAAAAFEAAAAPAQAAVgAAAAQAAABm
+AQAAAQAAAAIAAAAAAAAAAAAAAAAAAAAAYWLDngBQcm9qZWN0LUlkLVZlcnNpb246IDIuMApQTy1S
+ZXZpc2lvbi1EYXRlOiAyMDAzLTA0LTExIDEyOjQyLTA0MDAKTGFzdC1UcmFuc2xhdG9yOiBCYXJy
+eSBBLiBXQXJzYXcgPGJhcnJ5QHB5dGhvbi5vcmc+Ckxhbmd1YWdlLVRlYW06IFhYIDxweXRob24t
+ZGV2QHB5dGhvbi5vcmc+Ck1JTUUtVmVyc2lvbjogMS4wCkNvbnRlbnQtVHlwZTogdGV4dC9wbGFp
+bjsgY2hhcnNldD11dGYtOApDb250ZW50LVRyYW5zZmVyLUVuY29kaW5nOiA3Yml0CkdlbmVyYXRl
+ZC1CeTogbWFudWFsbHkKAMKkeXoA
+'''
 
 LOCALEDIR = os.path.join('xx', 'LC_MESSAGES')
 MOFILE = os.path.join(LOCALEDIR, 'gettext.mo')
-
-def setup():
-    os.makedirs(LOCALEDIR)
-    fp = open(MOFILE, 'wb')
-    fp.write(base64.decodestring(GNU_MO_DATA))
-    fp.close()
-    os.environ['LANGUAGE'] = 'xx'
-
-def teardown():
-    os.environ['LANGUAGE'] = 'en'
-    os.unlink(MOFILE)
-    os.removedirs(LOCALEDIR)
+UMOFILE = os.path.join(LOCALEDIR, 'ugettext.mo')
 
 
-class GettextTestCase1(TestCase):
+class GettextBaseTest(unittest.TestCase):
     def setUp(self):
+        os.makedirs(LOCALEDIR)
+        fp = open(MOFILE, 'wb')
+        fp.write(base64.decodestring(GNU_MO_DATA))
+        fp.close()
+        fp = open(UMOFILE, 'wb')
+        fp.write(base64.decodestring(UMO_DATA))
+        fp.close()
+        os.environ['LANGUAGE'] = 'xx'
+
+    def tearDown(self):
+        os.environ['LANGUAGE'] = 'en'
+        shutil.rmtree(LOCALEDIR)
+
+
+class GettextTestCase1(GettextBaseTest):
+    def setUp(self):
+        GettextBaseTest.setUp(self)
         self.localedir = os.curdir
         self.mofile = MOFILE
-
         gettext.install('gettext', self.localedir)
 
-
     def test_some_translations(self):
+        eq = self.assertEqual
         # test some translations
-        assert _('albatross') == 'albatross'
-        assert _(u'mullusk') == 'bacon'
-        assert _(r'Raymond Luxury Yach-t') == 'Throatwobbler Mangrove'
-        assert _(ur'nudge nudge') == 'wink wink'
-
+        eq(_('albatross'), 'albatross')
+        eq(_(u'mullusk'), 'bacon')
+        eq(_(r'Raymond Luxury Yach-t'), 'Throatwobbler Mangrove')
+        eq(_(ur'nudge nudge'), 'wink wink')
 
     def test_double_quotes(self):
+        eq = self.assertEqual
         # double quotes
-        assert _("albatross") == 'albatross'
-        assert _(u"mullusk") == 'bacon'
-        assert _(r"Raymond Luxury Yach-t") == 'Throatwobbler Mangrove'
-        assert _(ur"nudge nudge") == 'wink wink'
-
+        eq(_("albatross"), 'albatross')
+        eq(_(u"mullusk"), 'bacon')
+        eq(_(r"Raymond Luxury Yach-t"), 'Throatwobbler Mangrove')
+        eq(_(ur"nudge nudge"), 'wink wink')
 
     def test_triple_single_quotes(self):
+        eq = self.assertEqual
         # triple single quotes
-        assert _('''albatross''') == 'albatross'
-        assert _(u'''mullusk''') == 'bacon'
-        assert _(r'''Raymond Luxury Yach-t''') == 'Throatwobbler Mangrove'
-        assert _(ur'''nudge nudge''') == 'wink wink'
-
+        eq(_('''albatross'''), 'albatross')
+        eq(_(u'''mullusk'''), 'bacon')
+        eq(_(r'''Raymond Luxury Yach-t'''), 'Throatwobbler Mangrove')
+        eq(_(ur'''nudge nudge'''), 'wink wink')
 
     def test_triple_double_quotes(self):
+        eq = self.assertEqual
         # triple double quotes
-        assert _("""albatross""") == 'albatross'
-        assert _(u"""mullusk""") == 'bacon'
-        assert _(r"""Raymond Luxury Yach-t""") == 'Throatwobbler Mangrove'
-        assert _(ur"""nudge nudge""") == 'wink wink'
-
+        eq(_("""albatross"""), 'albatross')
+        eq(_(u"""mullusk"""), 'bacon')
+        eq(_(r"""Raymond Luxury Yach-t"""), 'Throatwobbler Mangrove')
+        eq(_(ur"""nudge nudge"""), 'wink wink')
 
     def test_multiline_strings(self):
+        eq = self.assertEqual
         # multiline strings
-        assert _('''This module provides internationalization and localization
+        eq(_('''This module provides internationalization and localization
 support for your Python programs by providing an interface to the GNU
-gettext message catalog library.''') == '''Guvf zbqhyr cebivqrf vagreangvbanyvmngvba naq ybpnyvmngvba
+gettext message catalog library.'''),
+           '''Guvf zbqhyr cebivqrf vagreangvbanyvmngvba naq ybpnyvmngvba
 fhccbeg sbe lbhe Clguba cebtenzf ol cebivqvat na vagresnpr gb gur TAH
-trggrkg zrffntr pngnybt yvoenel.'''
-
+trggrkg zrffntr pngnybt yvoenel.''')
 
     def test_the_alternative_interface(self):
+        eq = self.assertEqual
         # test the alternative interface
-        fp = open(os.path.join(self.mofile), 'rb')
+        fp = open(self.mofile, 'rb')
         t = gettext.GNUTranslations(fp)
         fp.close()
-
+        # Install the translation object
         t.install()
-
-        assert _('nudge nudge') == 'wink wink'
-
-        # try unicode return type
-        t.install(unicode=1)
-
-        assert _('mullusk') == 'bacon'
+        eq(_('nudge nudge'), 'wink wink')
+        # Try unicode return type
+        t.install(unicode=True)
+        eq(_('mullusk'), 'bacon')
 
 
-class GettextTestCase2(TestCase):
+class GettextTestCase2(GettextBaseTest):
     def setUp(self):
+        GettextBaseTest.setUp(self)
         self.localedir = os.curdir
-
+        # Set up the bindings
         gettext.bindtextdomain('gettext', self.localedir)
         gettext.textdomain('gettext')
-
+        # For convenience
         self._ = gettext.gettext
 
-
     def test_bindtextdomain(self):
-        assert gettext.bindtextdomain('gettext') == self.localedir
-
+        self.assertEqual(gettext.bindtextdomain('gettext'), self.localedir)
 
     def test_textdomain(self):
-        assert gettext.textdomain() == 'gettext'
-
+        self.assertEqual(gettext.textdomain(), 'gettext')
 
     def test_some_translations(self):
+        eq = self.assertEqual
         # test some translations
-        assert self._('albatross') == 'albatross'
-        assert self._(u'mullusk') == 'bacon'
-        assert self._(r'Raymond Luxury Yach-t') == 'Throatwobbler Mangrove'
-        assert self._(ur'nudge nudge') == 'wink wink'
-
+        eq(self._('albatross'), 'albatross')
+        eq(self._(u'mullusk'), 'bacon')
+        eq(self._(r'Raymond Luxury Yach-t'), 'Throatwobbler Mangrove')
+        eq(self._(ur'nudge nudge'), 'wink wink')
 
     def test_double_quotes(self):
+        eq = self.assertEqual
         # double quotes
-        assert self._("albatross") == 'albatross'
-        assert self._(u"mullusk") == 'bacon'
-        assert self._(r"Raymond Luxury Yach-t") == 'Throatwobbler Mangrove'
-        assert self._(ur"nudge nudge") == 'wink wink'
-
+        eq(self._("albatross"), 'albatross')
+        eq(self._(u"mullusk"), 'bacon')
+        eq(self._(r"Raymond Luxury Yach-t"), 'Throatwobbler Mangrove')
+        eq(self._(ur"nudge nudge"), 'wink wink')
 
     def test_triple_single_quotes(self):
+        eq = self.assertEqual
         # triple single quotes
-        assert self._('''albatross''') == 'albatross'
-        assert self._(u'''mullusk''') == 'bacon'
-        assert self._(r'''Raymond Luxury Yach-t''') == 'Throatwobbler Mangrove'
-        assert self._(ur'''nudge nudge''') == 'wink wink'
-
+        eq(self._('''albatross'''), 'albatross')
+        eq(self._(u'''mullusk'''), 'bacon')
+        eq(self._(r'''Raymond Luxury Yach-t'''), 'Throatwobbler Mangrove')
+        eq(self._(ur'''nudge nudge'''), 'wink wink')
 
     def test_triple_double_quotes(self):
+        eq = self.assertEqual
         # triple double quotes
-        assert self._("""albatross""") == 'albatross'
-        assert self._(u"""mullusk""") == 'bacon'
-        assert self._(r"""Raymond Luxury Yach-t""") == 'Throatwobbler Mangrove'
-        assert self._(ur"""nudge nudge""") == 'wink wink'
-
+        eq(self._("""albatross"""), 'albatross')
+        eq(self._(u"""mullusk"""), 'bacon')
+        eq(self._(r"""Raymond Luxury Yach-t"""), 'Throatwobbler Mangrove')
+        eq(self._(ur"""nudge nudge"""), 'wink wink')
 
     def test_multiline_strings(self):
+        eq = self.assertEqual
         # multiline strings
-        assert self._('''This module provides internationalization and localization
+        eq(self._('''This module provides internationalization and localization
 support for your Python programs by providing an interface to the GNU
-gettext message catalog library.''') == '''Guvf zbqhyr cebivqrf vagreangvbanyvmngvba naq ybpnyvmngvba
+gettext message catalog library.'''),
+           '''Guvf zbqhyr cebivqrf vagreangvbanyvmngvba naq ybpnyvmngvba
 fhccbeg sbe lbhe Clguba cebtenzf ol cebivqvat na vagresnpr gb gur TAH
-trggrkg zrffntr pngnybt yvoenel.'''
+trggrkg zrffntr pngnybt yvoenel.''')
 
 
-
-
-class PluralFormsTestCase(TestCase):
+class PluralFormsTestCase(GettextBaseTest):
     def setUp(self):
+        GettextBaseTest.setUp(self)
         self.mofile = MOFILE
 
     def test_plural_forms1(self):
+        eq = self.assertEqual
         x = gettext.ngettext('There is %s file', 'There are %s files', 1)
-        assert x == 'Hay %s fichero'
-
+        eq(x, 'Hay %s fichero')
         x = gettext.ngettext('There is %s file', 'There are %s files', 2)
-        assert x == 'Hay %s ficheros'
-
+        eq(x, 'Hay %s ficheros')
 
     def test_plural_forms2(self):
-        fp = open(os.path.join(self.mofile), 'rb')
+        eq = self.assertEqual
+        fp = open(self.mofile, 'rb')
         t = gettext.GNUTranslations(fp)
         fp.close()
-
         x = t.ngettext('There is %s file', 'There are %s files', 1)
-        assert x == 'Hay %s fichero'
-
+        eq(x, 'Hay %s fichero')
         x = t.ngettext('There is %s file', 'There are %s files', 2)
-        assert x == 'Hay %s ficheros'
-
+        eq(x, 'Hay %s ficheros')
 
     def test_hu(self):
+        eq = self.assertEqual
         f = gettext.c2py('0')
         s = ''.join([ str(f(x)) for x in range(200) ])
-        assert s == "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-
+        eq(s, "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
 
     def test_de(self):
+        eq = self.assertEqual
         f = gettext.c2py('n != 1')
         s = ''.join([ str(f(x)) for x in range(200) ])
-        assert s == "10111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
-
+        eq(s, "10111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111")
 
     def test_fr(self):
+        eq = self.assertEqual
         f = gettext.c2py('n>1')
         s = ''.join([ str(f(x)) for x in range(200) ])
-        assert s == "00111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
-
+        eq(s, "00111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111")
 
     def test_gd(self):
+        eq = self.assertEqual
         f = gettext.c2py('n==1 ? 0 : n==2 ? 1 : 2')
         s = ''.join([ str(f(x)) for x in range(200) ])
-        assert s == "20122222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222"
-
+        eq(s, "20122222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222")
 
     def test_gd2(self):
+        eq = self.assertEqual
         # Tests the combination of parentheses and "?:"
         f = gettext.c2py('n==1 ? 0 : (n==2 ? 1 : 2)')
         s = ''.join([ str(f(x)) for x in range(200) ])
-        assert s == "20122222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222"
-
+        eq(s, "20122222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222")
 
     def test_lt(self):
+        eq = self.assertEqual
         f = gettext.c2py('n%10==1 && n%100!=11 ? 0 : n%10>=2 && (n%100<10 || n%100>=20) ? 1 : 2')
         s = ''.join([ str(f(x)) for x in range(200) ])
-        assert s == "20111111112222222222201111111120111111112011111111201111111120111111112011111111201111111120111111112011111111222222222220111111112011111111201111111120111111112011111111201111111120111111112011111111"
-
+        eq(s, "20111111112222222222201111111120111111112011111111201111111120111111112011111111201111111120111111112011111111222222222220111111112011111111201111111120111111112011111111201111111120111111112011111111")
 
     def test_ru(self):
+        eq = self.assertEqual
         f = gettext.c2py('n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2')
         s = ''.join([ str(f(x)) for x in range(200) ])
-        assert s == "20111222222222222222201112222220111222222011122222201112222220111222222011122222201112222220111222222011122222222222222220111222222011122222201112222220111222222011122222201112222220111222222011122222"
-
+        eq(s, "20111222222222222222201112222220111222222011122222201112222220111222222011122222201112222220111222222011122222222222222220111222222011122222201112222220111222222011122222201112222220111222222011122222")
 
     def test_pl(self):
+        eq = self.assertEqual
         f = gettext.c2py('n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2')
         s = ''.join([ str(f(x)) for x in range(200) ])
-        assert s == "20111222222222222222221112222222111222222211122222221112222222111222222211122222221112222222111222222211122222222222222222111222222211122222221112222222111222222211122222221112222222111222222211122222"
-
+        eq(s, "20111222222222222222221112222222111222222211122222221112222222111222222211122222221112222222111222222211122222222222222222111222222211122222221112222222111222222211122222221112222222111222222211122222")
 
     def test_sl(self):
+        eq = self.assertEqual
         f = gettext.c2py('n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3')
         s = ''.join([ str(f(x)) for x in range(200) ])
-        assert s == "30122333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333012233333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
-
+        eq(s, "30122333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333012233333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333")
 
     def test_security(self):
+        raises = self.assertRaises
         # Test for a dangerous expression
-        try:
-            gettext.c2py("os.chmod('/etc/passwd',0777)")
-        except ValueError:
-            pass
-        else:
-            raise AssertionError
+        raises(ValueError, gettext.c2py, "os.chmod('/etc/passwd',0777)")
 
+
+class UnicodeTranslationsTest(GettextBaseTest):
+    def setUp(self):
+        GettextBaseTest.setUp(self)
+        fp = open(UMOFILE, 'rb')
+        try:
+            self.t = gettext.GNUTranslations(fp, coerce=True)
+        finally:
+            fp.close()
+        self._ = self.t.ugettext
+
+    def test_unicode_msgid(self):
+        unless = self.failUnless
+        unless(isinstance(self._(''), unicode))
+        unless(isinstance(self._(u''), unicode))
+
+    def test_unicode_msgstr(self):
+        eq = self.assertEqual
+        eq(self._(u'ab\xde'), u'\xa4yz')
+
+
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(GettextTestCase1))
+    suite.addTest(unittest.makeSuite(GettextTestCase2))
+    suite.addTest(unittest.makeSuite(PluralFormsTestCase))
+    suite.addTest(unittest.makeSuite(UnicodeTranslationsTest))
+    return suite
+    
+
+def test_main():
+    run_suite(suite())
 
 
 if __name__ == '__main__':
-    try:
-        setup()
-        unittest.main()
-    finally:
-        teardown()
+    test_main()
 
 
-
-
-# For reference, here's the .po file used to created the .mo data above.
+# For reference, here's the .po file used to created the GNU_MO_DATA above.
 #
 # The original version was automatically generated from the sources with
 # pygettext. Later it was manually modified to add plural forms support.
 
 '''
-# Dummy translation for Python's test_gettext.py module.
+# Dummy translation for the Python test_gettext.py module.
 # Copyright (C) 2001 Python Software Foundation
 # Barry Warsaw <barry@python.org>, 2000.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: 2.0\n"
-"PO-Revision-Date: 2000-08-29 12:19-04:00\n"
+"PO-Revision-Date: 2003-04-11 14:32-0400\n"
 "Last-Translator: J. David Ibanez <j-david@noos.fr>\n"
 "Language-Team: XX <python-dev@python.org>\n"
 "MIME-Version: 1.0\n"
@@ -335,4 +366,28 @@ msgid "There is %s file"
 msgid_plural "There are %s files"
 msgstr[0] "Hay %s fichero"
 msgstr[1] "Hay %s ficheros"
+'''
+
+# Here's the second example po file example, used to generate the UMO_DATA
+# containing utf-8 encoded Unicode strings
+
+'''
+# Dummy translation for the Python test_gettext.py module.
+# Copyright (C) 2001 Python Software Foundation
+# Barry Warsaw <barry@python.org>, 2000.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 2.0\n"
+"PO-Revision-Date: 2003-04-11 12:42-0400\n"
+"Last-Translator: Barry A. WArsaw <barry@python.org>\n"
+"Language-Team: XX <python-dev@python.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 7bit\n"
+"Generated-By: manually\n"
+
+#: nofile:0
+msgid "ab\xc3\x9e"
+msgstr "\xc2\xa4yz"
 '''
