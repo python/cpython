@@ -612,6 +612,17 @@
     \fi]
 }{\end{fulllineitems}}
 
+% C type fields ----------------------------------------------------------
+% \begin{cmemberdesc}{container type}{ctype}{membername}
+\newcommand{\cmemberline}[3]{
+  \item[\code{#2 \bfcode{#3}}]
+  \index{#3@{\py@idxcode{#3}} (#1 member)}
+}
+\newenvironment{cmemberdesc}[3]{
+  \begin{fulllineitems}
+    \cmemberline{#1}{#2}{#3}
+}{\end{fulllineitems}}
+
 % Funky macros -----------------------------------------------------------
 % \begin{csimplemacrodesc}{name}
 % -- "simple" because it has no args; NOT for constant definitions!
