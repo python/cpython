@@ -6,7 +6,7 @@ implemented for use with the MetroWerks CodeWarrior compiler on the
 PowerPC Mac, but may also be useful (in a more limited way) for use
 with MW 68K or Think compilers.
 
-This is distribution 1.0, dated April 19, 1995.
+This is distribution 1.1, dated May 28, 1997.
 
 		How does it work?
 		-----------------
@@ -52,9 +52,13 @@ One reason for not using it:
   
 		How do I use it?
 		----------------
+You may want to look at the source: most debugging options are off by
+default, and so is returning cache-aligned blocks. Near the top of
+malloc.c you will see a couple of defines you can turn on.
+
 For MW PPC: simply add the sources to your project. Due to the way the
 linker works all mallocs will use the new malloc, even the malloc
-calls that come from the libraries (if I'm informaed correctly).
+calls that come from the libraries.
 
 For MW 68K: ditto, only supposedly the library malloc calls will still
 use the original malloc. The two packages don't bite each other,
