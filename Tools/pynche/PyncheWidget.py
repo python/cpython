@@ -89,10 +89,12 @@ class PyncheWidget:
         return self.__root
 
     def __popup_about(self, event=None):
-        tkMessageBox.showinfo('About Pynche 1.0',
+        from pynche import __version__
+        tkMessageBox.showinfo('About Pynche ' + __version__,
                               '''\
-Pynche -- the PYthonically
-Natural Color and Hue Editor
+Pynche %s
+The PYthonically Natural
+Color and Hue Editor
 
 Copyright (C) 1998
 Barry A. Warsaw
@@ -100,7 +102,7 @@ All rights reserved
 
 For information about Pynche
 contact: Barry A. Warsaw
-email:   bwarsaw@python.org''')
+email:   bwarsaw@python.org''' % __version__)
 
     def __popup_text(self, event=None):
         if not self.__textwin:
