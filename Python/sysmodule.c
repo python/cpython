@@ -131,6 +131,7 @@ initsys(argc, argv)
 	dictinsert(sysdict, "exit", exit);
 	if (err_occurred())
 		fatal("can't insert sys.* objects in sys dict");
+	DECREF(exit);
 	DECREF(v);
 	/* The other symbols are added elsewhere */
 	
@@ -141,16 +142,50 @@ initsys(argc, argv)
 		fatal("can't create sys module");
 	if (setmoduledict(v, sysdict) != 0)
 		fatal("can't assign sys dict to sys module");
+	DECREF(v);
+}
+
+static void
+cleardict(d)
+	object *d;
+{
+	int i;
+	for (i = getdictsize(d); --i >= 0; ) {
+		char *k;
+		k = getdictkey(d, i);
+		if (k != NULL) {
+			(void) dictremove(d, k);
+		}
+	}
 }
 
 void
 closesys()
 {
-	object *mtab;
-	mtab = sysget("modules");
-	if (mtab != NULL && is_dictobject(mtab))
-		dictremove(mtab, "sys"); /* Get rid of recursion */
-	else
-		fprintf(stderr, "[module sys not found]\n");
+	object *modules;
+	modules = sysget("modules");
+	if (modules != NULL && is_dictobject(modules)) {
+		int i;
+		/* Explicitly erase all modules; this is the safest way
+		   to get rid of at least *some* circular dependencies */
+		INCREF(modules);
+		for (i = getdictsize(modules); --i >= 0; ) {
+			char *k;
+			k = getdictkey(modules, i);
+			if (k != NULL) {
+				object *m;
+				m = dictlookup(modules, k);
+				if (m != NULL && is_moduleobject(m)) {
+					object *d;
+					d = getmoduledict(m);
+					if (d != NULL && is_dictobject(d)) {
+						cleardict(d);
+					}
+				}
+			}
+		}
+		cleardict(modules);
+		DECREF(modules);
+	}
 	DECREF(sysdict);
 }
