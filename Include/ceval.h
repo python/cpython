@@ -44,6 +44,16 @@ PyObject *PyEval_CallObjectWithKeywords
 #define PyEval_CallObject(func,arg) \
         PyEval_CallObjectWithKeywords(func, arg, (PyObject *)NULL)
 
+#ifdef HAVE_STDARG_PROTOTYPES
+PyObject *PyEval_CallFunction Py_PROTO((PyObject *obj, char *format, ...));
+PyObject *PyEval_CallMethod Py_PROTO((PyObject *obj,
+				      char *methodname, char *format, ...));
+#else
+/* Better to have no prototypes at all for varargs functions in this case */
+PyObject *PyEval_CallFunction();
+PyObject *PyEval_CallMethod();
+#endif
+
 PyObject *PyEval_GetBuiltins Py_PROTO((void));
 PyObject *PyEval_GetGlobals Py_PROTO((void));
 PyObject *PyEval_GetLocals Py_PROTO((void));
