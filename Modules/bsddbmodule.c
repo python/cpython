@@ -41,6 +41,9 @@ PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include "Python.h"
+#ifdef WITH_THREAD
+#include "thread.h"
+#endif
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -53,6 +56,9 @@ typedef struct {
 	PyObject_HEAD
 	DB *di_bsddb;
 	int di_size;	/* -1 means recompute */
+#ifdef WITH_THREAD
+	type_lock di_lock;
+#endif
 } bsddbobject;
 
 staticforward PyTypeObject Bsddbtype;
@@ -93,14 +99,27 @@ newdbhashobject(file, flags, mode,
 #ifdef O_BINARY
 	flags |= O_BINARY;
 #endif
-	if ((dp->di_bsddb = dbopen(file, flags,
-				   mode, DB_HASH, &info)) == NULL) {
+	Py_BEGIN_ALLOW_THREADS
+	dp->di_bsddb = dbopen(file, flags, mode, DB_HASH, &info);
+	Py_END_ALLOW_THREADS
+	if (dp->di_bsddb == NULL) {
 		PyErr_SetFromErrno(BsddbError);
+#ifdef WITH_THREAD
+		dp->di_lock = NULL;
+#endif
 		Py_DECREF(dp);
 		return NULL;
 	}
 
 	dp->di_size = -1;
+#ifdef WITH_THREAD
+	dp->di_lock = allocate_lock();
+	if (dp->di_lock == NULL) {
+		PyErr_SetString(BsddbError, "can't allocate lock");
+		Py_DECREF(dp);
+		return NULL;
+	}
+#endif
 
 	return (PyObject *)dp;
 }
@@ -136,14 +155,27 @@ newdbbtobject(file, flags, mode,
 #ifdef O_BINARY
 	flags |= O_BINARY;
 #endif
-	if ((dp->di_bsddb = dbopen(file, flags,
-				   mode, DB_BTREE, &info)) == NULL) {
+	Py_BEGIN_ALLOW_THREADS
+	dp->di_bsddb = dbopen(file, flags, mode, DB_BTREE, &info);
+	Py_END_ALLOW_THREADS
+	if (dp->di_bsddb == NULL) {
 		PyErr_SetFromErrno(BsddbError);
+#ifdef WITH_THREAD
+		dp->di_lock = NULL;
+#endif
 		Py_DECREF(dp);
 		return NULL;
 	}
 
 	dp->di_size = -1;
+#ifdef WITH_THREAD
+	dp->di_lock = allocate_lock();
+	if (dp->di_lock == NULL) {
+		PyErr_SetString(BsddbError, "can't allocate lock");
+		Py_DECREF(dp);
+		return NULL;
+	}
+#endif
 
 	return (PyObject *)dp;
 }
@@ -179,31 +211,63 @@ newdbrnobject(file, flags, mode,
 #ifdef O_BINARY
 	flags |= O_BINARY;
 #endif
-	if ((dp->di_bsddb = dbopen(file, flags, mode,
-				   DB_RECNO, &info)) == NULL) {
+	Py_BEGIN_ALLOW_THREADS
+	dp->di_bsddb = dbopen(file, flags, mode, DB_RECNO, &info);
+	Py_END_ALLOW_THREADS
+	if (dp->di_bsddb == NULL) {
 		PyErr_SetFromErrno(BsddbError);
+#ifdef WITH_THREAD
+		dp->di_lock = NULL;
+#endif
 		Py_DECREF(dp);
 		return NULL;
 	}
 
 	dp->di_size = -1;
+#ifdef WITH_THREAD
+	dp->di_lock = allocate_lock();
+	if (dp->di_lock == NULL) {
+		PyErr_SetString(BsddbError, "can't allocate lock");
+		Py_DECREF(dp);
+		return NULL;
+	}
+#endif
 
 	return (PyObject *)dp;
 }
-
 
 static void
 bsddb_dealloc(dp)
 	bsddbobject *dp;
 {
+#ifdef WITH_THREAD
+	if (dp->di_lock) {
+		acquire_lock(dp->di_lock, 0);
+		release_lock(dp->di_lock);
+		free_lock(dp->di_lock);
+		dp->di_lock = NULL;
+	}
+#endif
 	if (dp->di_bsddb != NULL) {
-		if ((dp->di_bsddb->close)(dp->di_bsddb) != 0)
+		int status;
+		Py_BEGIN_ALLOW_THREADS
+		status = (dp->di_bsddb->close)(dp->di_bsddb);
+		Py_END_ALLOW_THREADS
+		if (status != 0)
 			fprintf(stderr,
 				"Python bsddb: close errno %d in dealloc\n",
 				errno);
 	}
 	PyMem_DEL(dp);
 }
+
+#ifdef WITH_THREAD
+#define BSDDB_BGN_SAVE(_dp) Py_BEGIN_ALLOW_THREADS acquire_lock(_dp->di_lock,1);
+#define BSDDB_END_SAVE(_dp) release_lock(_dp->di_lock); Py_END_ALLOW_THREADS
+#else
+#define BSDDB_BGN_SAVE(_dp) Py_BEGIN_ALLOW_THREADS 
+#define BSDDB_END_SAVE(_dp) Py_END_ALLOW_THREADS
+#endif
 
 static int
 bsddb_length(dp)
@@ -217,12 +281,14 @@ bsddb_length(dp)
 		DBT krec, drec;
 		int status;
 		int size = 0;
+		BSDDB_BGN_SAVE(dp)
 		for (status = (dp->di_bsddb->seq)(dp->di_bsddb,
 						  &krec, &drec,R_FIRST);
 		     status == 0;
 		     status = (dp->di_bsddb->seq)(dp->di_bsddb,
 						  &krec, &drec, R_NEXT))
 			size++;
+		BSDDB_END_SAVE(dp)
 		if (status < 0) {
 			PyErr_SetFromErrno(BsddbError);
 			return -1;
@@ -239,8 +305,9 @@ bsddb_subscript(dp, key)
 {
 	int status;
 	DBT krec, drec;
-	char *data;
+	char *data,buf[4096];
 	int size;
+	PyObject *result;
 
 	if (!PyArg_Parse(key, "s#", &data, &size))
 		return NULL;
@@ -249,7 +316,14 @@ bsddb_subscript(dp, key)
 	krec.data = data;
 	krec.size = size;
 
+	BSDDB_BGN_SAVE(dp)
 	status = (dp->di_bsddb->get)(dp->di_bsddb, &krec, &drec, 0);
+	if (status == 0) {
+		if (drec.size > sizeof(buf)) data = malloc(drec.size);
+		else data = buf;
+		memcpy(data,drec.data,drec.size);
+	}
+	BSDDB_END_SAVE(dp)
 	if (status != 0) {
 		if (status < 0)
 			PyErr_SetFromErrno(BsddbError);
@@ -258,7 +332,9 @@ bsddb_subscript(dp, key)
 		return NULL;
 	}
 
-	return PyString_FromStringAndSize((char *)drec.data, (int)drec.size);
+	result = PyString_FromStringAndSize(data, (int)drec.size);
+	if (data != buf) free(data);
+	return result;
 }
 
 static int
@@ -284,7 +360,9 @@ bsddb_ass_sub(dp, key, value)
 	krec.size = size;
 	dp->di_size = -1;
 	if (value == NULL) {
+		BSDDB_BGN_SAVE(dp)
 		status = (dp->di_bsddb->del)(dp->di_bsddb, &krec, 0);
+		BSDDB_END_SAVE(dp)
 	}
 	else {
 		if (!PyArg_Parse(value, "s#", &data, &size)) {
@@ -305,7 +383,9 @@ bsddb_ass_sub(dp, key, value)
 		printf("before put key= '%s', size= %d\n",
 		       krec.data, krec.size);
 #endif
+		BSDDB_BGN_SAVE(dp)
 		status = (dp->di_bsddb->put)(dp->di_bsddb, &krec, &drec, 0);
+		BSDDB_END_SAVE(dp)
 	}
 	if (status != 0) {
 		if (status < 0)
@@ -331,7 +411,11 @@ bsddb_close(dp, args)
 	if (!PyArg_NoArgs(args))
 		return NULL;
 	if (dp->di_bsddb != NULL) {
-		if ((dp->di_bsddb->close)(dp->di_bsddb) != 0) {
+		int status;
+		BSDDB_BGN_SAVE(dp)
+		status = (dp->di_bsddb->close)(dp->di_bsddb);
+		BSDDB_END_SAVE(dp)
+		if (status != 0) {
 			dp->di_bsddb = NULL;
 			PyErr_SetFromErrno(BsddbError);
 			return NULL;
@@ -349,6 +433,7 @@ bsddb_keys(dp, args)
 {
 	PyObject *list, *item;
 	DBT krec, drec;
+	char *data,buf[4096];
 	int status;
 	int err;
 
@@ -358,12 +443,17 @@ bsddb_keys(dp, args)
 	list = PyList_New(0);
 	if (list == NULL)
 		return NULL;
-	for (status = (dp->di_bsddb->seq)(dp->di_bsddb, &krec, &drec, R_FIRST);
-	     status == 0;
-	     status = (dp->di_bsddb->seq)(dp->di_bsddb,
-					  &krec, &drec, R_NEXT)) {
-		item = PyString_FromStringAndSize((char *)krec.data,
-						  (int)krec.size);
+	BSDDB_BGN_SAVE(dp)
+	status = (dp->di_bsddb->seq)(dp->di_bsddb, &krec, &drec, R_FIRST);
+	if (status == 0) {
+		if (krec.size > sizeof(buf)) data = malloc(krec.size);
+		else data = buf;
+		memcpy(data,krec.data,krec.size);
+	}
+	BSDDB_END_SAVE(dp)
+	while (status == 0) {
+		item = PyString_FromStringAndSize(data, (int)krec.size);
+		if (data != buf) free(data);
 		if (item == NULL) {
 			Py_DECREF(list);
 			return NULL;
@@ -374,6 +464,14 @@ bsddb_keys(dp, args)
 			Py_DECREF(list);
 			return NULL;
 		}
+		BSDDB_BGN_SAVE(dp)
+		status = (dp->di_bsddb->seq)(dp->di_bsddb, &krec, &drec, R_NEXT);
+		if (status == 0) {
+			if (krec.size > sizeof(buf)) data = malloc(krec.size);
+			else data = buf;
+			memcpy(data,krec.data,krec.size);
+		}
+		BSDDB_END_SAVE(dp)
 	}
 	if (status < 0) {
 		PyErr_SetFromErrno(BsddbError);
@@ -401,7 +499,9 @@ bsddb_has_key(dp, args)
 	krec.data = data;
 	krec.size = size;
 
+	BSDDB_BGN_SAVE(dp)
 	status = (dp->di_bsddb->get)(dp->di_bsddb, &krec, &drec, 0);
+	BSDDB_END_SAVE(dp)
 	if (status < 0) {
 		PyErr_SetFromErrno(BsddbError);
 		return NULL;
@@ -417,8 +517,9 @@ bsddb_set_location(dp, key)
 {
 	int status;
 	DBT krec, drec;
-	char *data;
+	char *data,buf[4096];
 	int size;
+	PyObject *result;
 
 	if (!PyArg_Parse(key, "s#", &data, &size))
 		return NULL;
@@ -426,7 +527,14 @@ bsddb_set_location(dp, key)
 	krec.data = data;
 	krec.size = size;
 
+	BSDDB_BGN_SAVE(dp)
 	status = (dp->di_bsddb->seq)(dp->di_bsddb, &krec, &drec, R_CURSOR);
+	if (status == 0) {
+		if (drec.size > sizeof(buf)) data = malloc(drec.size);
+		else data = buf;
+		memcpy(data,drec.data,drec.size);
+	}
+	BSDDB_END_SAVE(dp)
 	if (status != 0) {
 		if (status < 0)
 			PyErr_SetFromErrno(BsddbError);
@@ -435,8 +543,9 @@ bsddb_set_location(dp, key)
 		return NULL;
 	}
 
-	return Py_BuildValue("s#s#", krec.data, krec.size,
-			     drec.data, drec.size);
+	result = Py_BuildValue("s#s#", krec.data, krec.size, data, drec.size);
+	if (data != buf) free(data);
+	return result;
 }
 
 static PyObject *
@@ -447,6 +556,9 @@ bsddb_seq(dp, args, sequence_request)
 {
 	int status;
 	DBT krec, drec;
+	char *kdata,kbuf[4096];
+	char *ddata,dbuf[4096];
+	PyObject *result;
 
 	if (!PyArg_NoArgs(args))
 		return NULL;
@@ -455,8 +567,18 @@ bsddb_seq(dp, args, sequence_request)
 	krec.data = 0;
 	krec.size = 0;
 
+	BSDDB_BGN_SAVE(dp)
 	status = (dp->di_bsddb->seq)(dp->di_bsddb, &krec,
 				     &drec, sequence_request);
+	if (status == 0) {
+		if (krec.size > sizeof(kbuf)) kdata = malloc(krec.size);
+		else kdata = kbuf;
+		memcpy(kdata,krec.data,krec.size);
+		if (drec.size > sizeof(dbuf)) ddata = malloc(drec.size);
+		else ddata = dbuf;
+		memcpy(ddata,drec.data,drec.size);
+	}
+	BSDDB_END_SAVE(dp)
 	if (status != 0) {
 		if (status < 0)
 			PyErr_SetFromErrno(BsddbError);
@@ -465,8 +587,10 @@ bsddb_seq(dp, args, sequence_request)
 		return NULL;
 	}
 
-	return Py_BuildValue("s#s#", krec.data, krec.size,
-			     drec.data, drec.size);
+	result = Py_BuildValue("s#s#", kdata, krec.size, ddata, drec.size);
+	if (kdata != kbuf) free(kdata);
+	if (ddata != dbuf) free(ddata);
+	return result;
 }
 
 static PyObject *
@@ -507,7 +631,9 @@ bsddb_sync(dp, args)
 	if (!PyArg_NoArgs(args))
 		return NULL;
 	check_bsddbobject_open(dp);
+	BSDDB_BGN_SAVE(dp)
 	status = (dp->di_bsddb->sync)(dp->di_bsddb, 0);
+	BSDDB_END_SAVE(dp)
 	if (status != 0) {
 		PyErr_SetFromErrno(BsddbError);
 		return NULL;

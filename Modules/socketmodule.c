@@ -86,6 +86,9 @@ Socket methods:
 */
 
 #include "Python.h"
+#if defined(WITH_THREAD) && !defined(HAVE_GETHOSTBYNAME_R) && !defined(MS_WINDOWS)
+#include "thread.h"
+#endif
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -301,6 +304,13 @@ BUILD_FUNC_DEF_4(PySocketSock_New,int,fd, int,family, int,type, int,proto)
 }
 
 
+/* Lock to allow python interpreter to continue, but only allow one 
+   thread to be in gethostbyname */
+#if defined(WITH_THREAD) && !defined(HAVE_GETHOSTBYNAME_R) && !defined(MS_WINDOWS)
+type_lock gethostbyname_lock;
+#endif
+
+
 /* Convert a string specifying a host name or one of a few symbolic
    names to a numeric IP address.  This usually calls gethostbyname()
    to do the work; the names "" and "<broadcast>" are special.
@@ -337,13 +347,19 @@ BUILD_FUNC_DEF_2(setipaddr, char*,name, struct sockaddr_in *,addr_ret)
 			((long) d3 << 8) | ((long) d4 << 0));
 		return 4;
 	}
-#ifdef HAVE_GETHOSTBYNAME_R
 	Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_GETHOSTBYNAME_R
 	hp = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
-	Py_END_ALLOW_THREADS
 #else /* not HAVE_GETHOSTBYNAME_R */
+#if defined(WITH_THREAD) && !defined(MS_WINDOWS)
+	acquire_lock(gethostbyname_lock,1);
+#endif
 	hp = gethostbyname(name);
+#if defined(WITH_THREAD) && !defined(MS_WINDOWS)
+	release_lock(gethostbyname_lock);
+#endif
 #endif /* HAVE_GETHOSTBYNAME_R */
+	Py_END_ALLOW_THREADS
 
 	if (hp == NULL) {
 #ifdef HAVE_HSTRERROR
@@ -1162,14 +1178,35 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyaddr,PyObject *,self, PyObject *, args)
 	PyObject *name_list = (PyObject *)NULL;
 	PyObject *addr_list = (PyObject *)NULL;
 	PyObject *tmp;
+#ifdef HAVE_GETHOSTBYNAME_R
+	struct hostent hp_allocated;
+	char buf[16384];
+	int buf_len = (sizeof buf) - 1;
+	int errnop;
+#endif /* HAVE_GETHOSTBYNAME_R */
 
 	if (!PyArg_Parse(args, "s", &ip_num))
 		return NULL;
 	if (setipaddr(ip_num, &addr) < 0)
 		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_GETHOSTBYNAME_R
+	h = gethostbyaddr_r((char *)&addr.sin_addr,
+			    sizeof(addr.sin_addr),
+			    AF_INET, 
+			    &hp_allocated, buf, buf_len, &errnop);
+#else /* not HAVE_GETHOSTBYNAME_R */
+#if defined(WITH_THREAD) && !defined(MS_WINDOWS)
+	acquire_lock(gethostbyname_lock,1);
+#endif
 	h = gethostbyaddr((char *)&addr.sin_addr,
 			  sizeof(addr.sin_addr),
 			  AF_INET);
+#if defined(WITH_THREAD) && !defined(MS_WINDOWS)
+	release_lock(gethostbyname_lock);
+#endif
+#endif /* HAVE_GETHOSTBYNAME_R */
+	Py_END_ALLOW_THREADS
 	if (h == NULL) {
 #ifdef HAVE_HSTRERROR
 	        /* Let's get real error message to return */
@@ -1775,5 +1812,10 @@ initsocket()
 #endif
 #ifdef	IP_DROP_MEMBERSHIP
 	insint(d, "IP_DROP_MEMBERSHIP", IP_DROP_MEMBERSHIP);
+#endif
+
+	/* Initialize gethostbyname lock */
+#if defined(WITH_THREAD) && !defined(HAVE_GETHOSTBYNAME_R) && !defined(MS_WINDOWS)
+	gethostbyname_lock = allocate_lock();
 #endif
 }
