@@ -122,11 +122,12 @@ should detect mount points for all \UNIX{} and \POSIX{} variants.
 Joins one or more path components intelligently.  If any component is
 an absolute path, all previous components are thrown away, and joining
 continues.  The return value is the concatenation of \var{path1}, and
-optionally \var{path2}, etc., with exactly one slash (\code{'/'})
-inserted between components, unless \var{path} is empty.  Note that on
-Windows, since there is a current directory for each drive,
-{}\function{os.path.join("c:", "foo")} represents a path relative to the
-current directory on drive C:, not \code{c:\\foo}.
+optionally \var{path2}, etc., with exactly one directory separator
+(\code{os.sep}) inserted between components, unless \var{path} is
+empty.  Note that on Windows, since there is a current directory for
+each drive, \function{os.path.join("c:", "foo")} represents a path
+relative to the current directory on drive \file{C:} (\file{c:foo}), not
+\file{c:\textbackslash\textbackslash foo}.
 \end{funcdesc}
 
 \begin{funcdesc}{normcase}{path}
