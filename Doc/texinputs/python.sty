@@ -623,6 +623,15 @@
       \index{#1@{\py@idxcode{#1}} (class in \py@thismodule)}]
 }{\end{fulllineitems}}
 
+% \begin{classdesc*}{name}
+\newenvironment{classdesc*}[1]{
+  % Using \renewcommand doesn't work for this, for unknown reasons:
+  \global\def\py@thisclass{#1}
+  \begin{fulllineitems}
+    \item[\strong{class }\code{\bfcode{#1}}%
+      \index{#1@{\py@idxcode{#1}} (class in \py@thismodule)}]
+}{\end{fulllineitems}}
+
 % \begin{excclassdesc}{name}{constructor args}
 % but indexes as an exception
 \newenvironment{excclassdesc}[2]{
@@ -632,6 +641,9 @@
     \item[\strong{exception }\code{\bfcode{#1}(\py@varvars{#2})}%
       \index{#1@{\py@idxcode{#1}} (exception in \py@thismodule)}]
 }{\end{fulllineitems}}
+
+% There is no corresponding {excclassdesc*} environment.  To describe
+% a class exception without parameters, use the {excdesc} environment.
 
 
 \let\py@classbadkey=\@undefined
