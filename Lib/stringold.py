@@ -116,8 +116,26 @@ def find(*args):
 	except index_error:
 		return -1
 
+# Convert string to float
+atof_error = 'non-float argument to string.atof'
+def atof(str):
+	import regex
+	sign = ''
+	s = str
+	if s and s[0] in '+-':
+		sign = s[0]
+		s = s[1:]
+	if not s: raise atof_error, str
+	while s[0] == '0' and len(s) > 1 and s[1] in digits: s = s[1:]
+	if regex.match('[0-9]*\(\.[0-9]*\)?\([eE][-+]?[0-9]+\)?', s) != len(s):
+		raise atof_error, str
+	try:
+		return eval(sign + s)
+	except SyntaxError:
+		raise atof_error, str
+
 # Convert string to integer
-atoi_error = 'non-numeric argument to string.atoi'
+atoi_error = 'non-integer argument to string.atoi'
 def atoi(str):
 	sign = ''
 	s = str
@@ -129,6 +147,20 @@ def atoi(str):
 	for c in s:
 		if c not in digits: raise atoi_error, str
 	return eval(sign + s)
+
+# Convert string to long integer
+atol_error = 'non-integer argument to string.atol'
+def atol(str):
+	sign = ''
+	s = str
+	if s and s[0] in '+-':
+		sign = s[0]
+		s = s[1:]
+	if not s: raise atoi_error, str
+	while s[0] == '0' and len(s) > 1: s = s[1:]
+	for c in s:
+		if c not in digits: raise atoi_error, str
+	return eval(sign + s + 'L')
 
 # Left-justify a string
 def ljust(s, width):

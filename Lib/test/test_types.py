@@ -152,6 +152,9 @@ a.reverse()
 if a <> [2,1,0,-1,-2]: raise TestFailed, 'list reverse'
 a.sort()
 if a <> [-2,-1,0,1,2]: raise TestFailed, 'list sort'
+def revcmp(a, b): return cmp(b, a)
+a.sort(revcmp)
+if a <> [2,1,0,-1,-2]: raise TestFailed, 'list sort with cmp func'
 
 print '6.6 Mappings == Dictionaries'
 d = {}

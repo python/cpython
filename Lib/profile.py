@@ -377,3 +377,15 @@ def debug():
 # test command
 def test():
 	run('import x; x.main()')
+
+# print help
+def help():
+	for dirname in sys.path:
+		fullname = os.path.join(dirname, 'profile.doc')
+		if os.path.exists(fullname):
+			sts = os.system('${PAGER-more} '+fullname)
+			if sts: print '*** Pager exit status:', sts
+			break
+	else:
+		print 'Sorry, can\'t find the help file "profile.doc"',
+		print 'along the Python search path'
