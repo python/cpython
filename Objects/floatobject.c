@@ -629,7 +629,10 @@ float_coerce(PyObject **pv, PyObject **pw)
 		return 0;
 	}
 	else if (PyLong_Check(*pw)) {
-		*pw = PyFloat_FromDouble(PyLong_AsDouble(*pw));
+		double x = PyLong_AsDouble(*pw);
+		if (x == -1.0 && PyErr_Occurred())
+			return -1;
+		*pw = PyFloat_FromDouble(x);
 		Py_INCREF(*pv);
 		return 0;
 	}

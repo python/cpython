@@ -371,9 +371,10 @@ def test_float_overflow():
     for x in -2.0, -1.0, 0.0, 1.0, 2.0:
         verify(float(long(x)) == x)
 
+    shuge = '12345' * 1000
     huge = 1L << 30000
     mhuge = -huge
-    namespace = {'huge': huge, 'mhuge': mhuge, 'math': math}
+    namespace = {'huge': huge, 'mhuge': mhuge, 'shuge': shuge, 'math': math}
     for test in ["float(huge)", "float(mhuge)",
                  "complex(huge)", "complex(mhuge)",
                  "complex(huge, 1)", "complex(mhuge, 1)",
@@ -386,7 +387,8 @@ def test_float_overflow():
                  "1. ** huge", "huge ** 1.", "1. ** mhuge", "mhuge ** 1.",
                  "math.sin(huge)", "math.sin(mhuge)",
                  "math.sqrt(huge)", "math.sqrt(mhuge)", # should do better
-                 "math.floor(huge)", "math.floor(mhuge)"]:
+                 "math.floor(huge)", "math.floor(mhuge)",
+                 "float(shuge) == int(shuge)"]:
 
         try:
             eval(test, namespace)
