@@ -564,6 +564,7 @@ PyMac_Error
 PyErr_Mac
 PyMac_GetOSErrException
 PyMac_StrError
+c2pstrcpy
 Pstring
 PLstrrchr
 PLstrcmp
@@ -580,6 +581,7 @@ Py_GetPrefix
 Py_GetArgcArgv
 Py_GetProgramFullPath
 PyMac_Exit
+PyMac_OutputSeen
 PyMac_InitApplication
 PyMac_Initialize
 PyMac_InitApplet
@@ -813,6 +815,7 @@ init_locale
 initEvt
 copyright
 init_sre
+initsha
 __vt__15GUSISIOUXDevice		# GUSISIOUXDevice::__vt
 __vt__15GUSISIOUXSocket		# GUSISIOUXSocket::__vt
 sInstance__15GUSISIOUXDevice		# GUSISIOUXDevice::sInstance
@@ -836,7 +839,7 @@ Instance__15GUSISIOUXSocketFv		# GUSISIOUXSocket::Instance()
 GUSISetupConsoleStdio
 GUSIStdioFlush
 GUSIStdioClose
-fdopen
+_fdopen
 __close_console
 __close_file
 __position_file
@@ -1070,6 +1073,7 @@ GUSIFSpResolve
 GUSIFSpIndex
 GUSIFSpDown
 GUSIFSpUp
+GUSIMakeTempFSp
 GUSISpecial2FSp
 GUSIPath2FSp
 GUSIWD2FSp
@@ -1087,6 +1091,8 @@ AliasPath__12GUSIFileSpecCFv		# GUSIFileSpec::AliasPath() const
 Resolve__12GUSIFileSpecFb		# GUSIFileSpec::Resolve(bool)
 EncodedPath__12GUSIFileSpecCFv		# GUSIFileSpec::EncodedPath() const
 RelativePath__12GUSIFileSpecCFv		# GUSIFileSpec::RelativePath() const
+__as__9HFileInfoFRC9HFileInfo		# HFileInfo::operator =(const HFileInfo&)
+__as__7DirInfoFRC7DirInfo		# DirInfo::operator =(const DirInfo&)
 RelativePath__12GUSIFileSpecCFRC6FSSpec		# GUSIFileSpec::RelativePath(const FSSpec&) const
 PrependPathComponent__12GUSIFileSpecCFRPcPCUcb		# GUSIFileSpec::PrependPathComponent(char*&,const unsigned char*,bool) const
 FullPath__12GUSIFileSpecCFv		# GUSIFileSpec::FullPath() const
@@ -1193,6 +1199,7 @@ Want__17GUSIMacFileDeviceFR13GUSIFileToken		# GUSIMacFileDevice::Want(GUSIFileTo
 __dt__17GUSIMacFileDeviceFv		# GUSIMacFileDevice::~GUSIMacFileDevice()
 __dt__Q23std66auto_ptr<17GUSIMacFileDevice,Q23std28_Single<17GUSIMacFileDevice>>Fv		# std::auto_ptr<GUSIMacFileDevice, std::_Single<GUSIMacFileDevice>>::~auto_ptr()
 Instance__17GUSIMacFileDeviceFv		# GUSIMacFileDevice::Instance()
+__dt__Q211GUSIProcess7A5SaverFv		# GUSIProcess::A5Saver::~A5Saver()
 sDrvrState__16GUSIMTInetSocket		# GUSIMTInetSocket::sDrvrState
 __vt__16GUSIMTInetSocket		# GUSIMTInetSocket::__vt
 sHostAddress__16GUSIMTInetSocket		# GUSIMTInetSocket::sHostAddress
@@ -1304,7 +1311,6 @@ GUSIKillBuiltinServiceDBEntry
 Next__17GUSIFileServiceDBFv		# GUSIFileServiceDB::Next()
 Reset__17GUSIFileServiceDBFv		# GUSIFileServiceDB::Reset()
 __dt__13GUSIServiceDBFv		# GUSIServiceDB::~GUSIServiceDB()
-__ct__17GUSIFileServiceDBFPQ23std5_FILE		# GUSIFileServiceDB::GUSIFileServiceDB(std::_FILE*)
 Instance__17GUSIFileServiceDBFv		# GUSIFileServiceDB::Instance()
 getprotobynumber__9GUSINetDBFi		# GUSINetDB::getprotobynumber(int)
 getprotobyname__9GUSINetDBFPCc		# GUSINetDB::getprotobyname(const char*)
@@ -1512,7 +1518,7 @@ bind
 socketpair
 socket
 getdtablesize
-mktime__FPQ23std2tm		# mktime(std::tm*)
+mktime
 gmtime
 localtime
 __dt__40GUSISpecificData<Q23std2tm,&.GUSIKillTM>Fv		# GUSISpecificData<std::tm, &.GUSIKillTM>::~GUSISpecificData()
@@ -1565,9 +1571,12 @@ GUSIPPCRecv__FP13GUSIPPCSocket		# GUSIPPCRecv(GUSIPPCSocket*)
 GUSIPPCSend__FP13GUSIPPCSocket		# GUSIPPCSend(GUSIPPCSocket*)
 __dt__13GUSIPPCSocketFv		# GUSIPPCSocket::~GUSIPPCSocket()
 shutdown__13GUSIPPCSocketFi		# GUSIPPCSocket::shutdown(int)
+ioctl__13GUSIPPCSocketFUiPc		# GUSIPPCSocket::ioctl(unsigned int,char*)
+fcntl__13GUSIPPCSocketFiPc		# GUSIPPCSocket::fcntl(int,char*)
 select__13GUSIPPCSocketFPbPbPb		# GUSIPPCSocket::select(bool*,bool*,bool*)
 sendto__13GUSIPPCSocketFRC12GUSIGathereriPCvUi		# GUSIPPCSocket::sendto(const GUSIGatherer&,int,const void*,unsigned int)
 recvfrom__13GUSIPPCSocketFRC13GUSIScattereriPvPUi		# GUSIPPCSocket::recvfrom(const GUSIScatterer&,int,void*,unsigned int*)
+Supports__13GUSIPPCSocketFQ210GUSISocket12ConfigOption		# GUSIPPCSocket::Supports(GUSISocket::ConfigOption)
 __ct__13GUSIPPCSocketFP13GUSIPPCSocketRQ213GUSIPPCSocket8Listener		# GUSIPPCSocket::GUSIPPCSocket(GUSIPPCSocket*,GUSIPPCSocket::Listener&)
 accept__13GUSIPPCSocketFPvPUi		# GUSIPPCSocket::accept(void*,unsigned int*)
 listen__13GUSIPPCSocketFi		# GUSIPPCSocket::listen(int)
@@ -1675,7 +1684,6 @@ __ct__9GUSITimerFbP11GUSIContext		# GUSITimer::GUSITimer(bool,GUSIContext*)
 GUSIKillTimers
 __dt__Q29GUSITimer10TimerQueueFv		# GUSITimer::TimerQueue::~TimerQueue()
 Wakeup__9GUSITimerFv		# GUSITimer::Wakeup()
-__dt__Q211GUSIProcess7A5SaverFv		# GUSIProcess::A5Saver::~A5Saver()
 GM2LocalTime__8GUSITimeFv		# GUSITime::GM2LocalTime()
 Local2GMTime__8GUSITimeFv		# GUSITime::Local2GMTime()
 Zone__8GUSITimeFv		# GUSITime::Zone()
@@ -1794,13 +1802,12 @@ __init_arr
 __copy
 __som_check_ev
 __som_check_new
-__vt__Q23std9exception		# std::exception::__vt
 __vt__Q23std13bad_exception		# std::bad_exception::__vt
-what__Q23std13bad_exceptionCFv		# std::bad_exception::what() const
+__vt__Q23std9exception		# std::exception::__vt
 what__Q23std9exceptionCFv		# std::exception::what() const
+what__Q23std13bad_exceptionCFv		# std::bad_exception::what() const
 __end__catch
 __throw
-__ct__Q23std9exceptionFv		# std::exception::exception()
 __dt__Q23std9exceptionFv		# std::exception::~exception()
 __unexpected
 __dt__Q23std13bad_exceptionFv		# std::bad_exception::~bad_exception()
@@ -1809,6 +1816,7 @@ __register_fragment
 __global_destructor_chain
 __destroy_global_chain
 __register_global_object
+__destroy_new_array3
 __destroy_new_array2
 __destroy_new_array
 __destroy_arr
@@ -1829,6 +1837,8 @@ __dt__Q23std8bad_castFv		# std::bad_cast::~bad_cast()
 __get_typeid
 __dt__Q23std10bad_typeidFv		# std::bad_typeid::~bad_typeid()
 nothrow__3std		# std::nothrow
+__dla__FPvRCQ23std9nothrow_t		# operator delete[](void*,const std::nothrow_t&)
+__dl__FPvRCQ23std9nothrow_t		# operator delete(void*,const std::nothrow_t&)
 __dla__FPv		# operator delete[](void*)
 __nwa__FUlRCQ23std9nothrow_t		# operator new[](unsigned long,const std::nothrow_t&)
 __nwa__FUl		# operator new[](unsigned long)
@@ -1901,6 +1911,7 @@ __load_buffer
 __prep_buffer
 __convert_to_newlines
 __convert_from_newlines
+ccommand
 puts
 fputs
 putchar
@@ -1918,22 +1929,34 @@ __get_char
 __ctype_map
 __lower_map
 __upper_map
-toupper
-tolower
-isxdigit
-isupper
-isspace
-ispunct
-isprint
-islower
-isgraph
-isdigit
-iscntrl
-isalpha
-isalnum
 fwrite
 fread
 errno
+_splitpath
+_makepath
+_strrev
+_itow
+_itoa
+_strspnp
+_strnset
+_strset
+_strdate
+_strupr
+_wstrrev
+_strnicmp
+_stricmp
+_heapmin
+_gcvt
+_ultoa
+_strlwr
+_wcsspnp
+_wcsnset
+_wcsset
+_wcsrev
+_wcsnicmp
+_wcsicmp
+_wcsupr
+_wcslwr
 __temp_file_mode
 __set_idle_proc
 __get_file_modes
@@ -1946,6 +1969,9 @@ fflush
 fclose
 tmpfile
 tmpnam
+__rename_file
+__delete_file
+__temp_file_name
 rewind
 fsetpos
 fseek
@@ -1953,20 +1979,6 @@ _fseek
 fgetpos
 ftell
 _ftell
-__float_nan
-__float_huge
-__double_min
-__double_max
-__double_epsilon
-__double_tiny
-__double_huge
-__double_nan
-__extended_min
-__extended_max
-__extended_epsilon
-__extended_tiny
-__extended_huge
-__extended_nan
 __lconv
 localeconv
 setlocale
@@ -1991,6 +2003,10 @@ perror
 ferror
 feof
 clearerr
+__path2fss
+__sys_pointer_size
+__sys_free
+__sys_alloc
 sprintf
 snprintf
 vsprintf
@@ -2005,7 +2021,8 @@ qsort
 srand
 rand
 sscanf
-__vsscanf
+vsscanf
+vfscanf
 scanf
 fscanf
 __StringRead
@@ -2025,15 +2042,10 @@ strncat
 strcat
 strncpy
 strcpy
-__close_string
-__write_string
-__read_string
-__open_string_file
 atof
 strtod
+strtold
 __strtold
-strtoumax
-strtoimax
 atol
 atoi
 strtoll
@@ -2048,38 +2060,58 @@ __month_to_days
 strftime
 ctime
 asctime
-mktime
 difftime
 clock
 __leap_year
-ccommand
-__kill_critical_regions
-__init_critical_regions
-umask
-__rename_file
-__delete_file
-__temp_file_name
-__path2fss
-__sys_free
-__sys_alloc
 __to_gm_time
 __get_time
 __get_clock
-ttyname
-getlogin
-exec
-cuserid
+_fcntl
+_creat
+_open
+_mkdir
+_fstat
+_stat
+_write
+_unlink
+_ttyname
+_sleep
+_rmdir
+_read
+_lseek
+_isatty
+_getlogin
+_getcwd
+_exec
+_cuserid
+_close
+_chdir
+__new_umask
+_fileno
+_umask
 _ftype
 _fcreator
-tell
-fileno
+_chmod
 __gettype
 __getcreator
 __ctopstring
 __system7present
-__myraise
 utimes
-uname
+_uname
+__float_nan
+__float_huge
+__double_min
+__double_max
+__double_epsilon
+__double_tiny
+__double_huge
+__double_nan
+__extended_min
+__extended_max
+__extended_epsilon
+__extended_tiny
+__extended_huge
+__extended_nan
 fwide
 fgetws
 fputws
@@ -2093,8 +2125,6 @@ putwc
 watof
 wcstod
 __wcstold
-wcstoumax
-wcstoimax
 watol
 watoi
 wcstoll
@@ -2111,19 +2141,6 @@ __wupper_map
 iswctype
 wctype
 wctob
-towupper
-towlower
-iswxdigit
-iswupper
-iswspace
-iswpunct
-iswprint
-iswlower
-iswgraph
-iswdigit
-iswcntrl
-iswalpha
-iswalnum
 wmemcmp
 wmemchr
 wmemset
@@ -2138,7 +2155,8 @@ wprintf
 __wStringWrite
 __wFileWrite
 swscanf
-__vswscanf
+vswscanf
+vfwscanf
 vwscanf
 wscanf
 fwscanf
@@ -2163,11 +2181,6 @@ wcslen
 wcsftime
 wctime
 wasctime
-ValidateMallocHeap
-GetNextMallocHeapRegistration
-GetFirstMallocHeapRegistration
-UnregisterMallocHeap
-RegisterMallocHeap
 __fminl
 __fmaxl
 __fdiml
@@ -2319,6 +2332,8 @@ SIOUXUpdateWindow
 SIOUXDrawGrowBox
 AdjustText
 SIOUXIsAppWindow
+OTAsyncOpenInternetServices
+OTOpenInternetServices
 InitOpenTransportUtilities
 CloseOpenTransport
 OTRegisterAsClient
@@ -2338,11 +2353,11 @@ OTCloseProvider
 t_alloc
 t_open
 t_close
-__OTExitPatch
-__gLibraryManager
-__gSLMGlobal
 __gOTClientRecord
 InitOpenTransportCommon
+SetupOpenTransport
+__gLibraryManager
+__gSLMGlobal
 OTCreateDeferredTask
 OTCreateSystemTask
 OTOpenProviderOnStream
@@ -2352,5 +2367,3 @@ OTAsyncStreamOpen
 stream_open
 stream_pipe
 OTStreamPipe
-OTAsyncOpenInternetServices
-OTOpenInternetServices
