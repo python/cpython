@@ -98,6 +98,10 @@ extern DL_IMPORT(int) PyErr_Warn(PyObject *, char *);
 /* In sigcheck.c or signalmodule.c */
 extern DL_IMPORT(int) PyErr_CheckSignals(void);
 extern DL_IMPORT(void) PyErr_SetInterrupt(void);
+
+/* Support for adding program text to SyntaxErrors */
+extern DL_IMPORT(void) PyErr_SyntaxLocation(char *, int);
+extern DL_IMPORT(PyObject *) PyErr_ProgramText(char *, int);
 	
 
 #ifdef __cplusplus
