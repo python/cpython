@@ -73,10 +73,8 @@ def buildapplication(debug = 0):
 		return
 	if tf[-3:] == '.py':
 		tf = tf[:-3]
-		logfile = tf[:-3] + '.log'
 	else:
 		tf = tf + '.app'
-		logfile = tf + '.log'
 	
 	dstfss, ok = macfs.StandardPutFile('Save application as:', tf)
 	if not ok:
