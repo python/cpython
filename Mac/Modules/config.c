@@ -294,6 +294,7 @@ extern void initdl();
 extern void initsyslog();
 extern void initgestalt();
 extern void initmacfs();
+extern void initbinascii();
 #ifdef THINK
 extern void initmacconsole();
 #endif
@@ -365,6 +366,7 @@ struct {
 #endif
 	{"gestalt", initgestalt},
 	{"macfs", initmacfs},
+	{"binascii", initbinascii},
 #ifdef THINK_C
 /* This is an interface to the Think runtime */
 	{"macconsole", initmacconsole},
