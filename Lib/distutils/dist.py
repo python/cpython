@@ -15,7 +15,7 @@ from copy import copy
 
 try:
     import warnings
-except:
+except ImportError:
     warnings = None
 
 from distutils.errors import *
