@@ -76,7 +76,7 @@ class MultiEditorWindow(EditorWindow):
         if pyclbr._modules.has_key(base):
             del pyclbr._modules[base]
         import ClassBrowser
-        ClassBrowser.ClassBrowser(self.flist, base)
+        ClassBrowser.ClassBrowser(self.flist, base, [head])
 
 
 class FileList:

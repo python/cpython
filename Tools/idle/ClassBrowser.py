@@ -20,10 +20,10 @@ from ScrolledList import ScrolledList
 
 class ClassBrowser:
     
-    def __init__(self, flist, name):
+    def __init__(self, flist, name, path=[]):
         root = flist.root
         try:
-            dict = pyclbr.readmodule(name)
+            dict = pyclbr.readmodule(name, path)
         except ImportError, msg:
             tkMessageBox.showerror("Import error", str(msg), parent=root)
             return
