@@ -478,19 +478,22 @@ deque_dealloc(dequeobject *deque)
 static int
 deque_traverse(dequeobject *deque, visitproc visit, void *arg)
 {
-	block * b = deque->leftblock;
-	int index = deque->leftindex;
+	block *b;
 	PyObject *item;
+	int index;
+	int indexlo = deque->leftindex;
 
-	while (b != deque->rightblock || index <= deque->rightindex) {
-		item = b->data[index];
-		index++;
-		if (index == BLOCKLEN ) {
-			assert(b->rightlink != NULL);
-			b = b->rightlink;
-			index = 0;
+	assert(deque->leftblock != NULL);
+	for (b = deque->leftblock; b != NULL; b = b->rightlink) {
+		const int indexhi = b == deque->rightblock ?
+					 deque->rightindex :
+				    	 BLOCKLEN - 1;
+
+		for (index = indexlo; index <= indexhi; ++index) {
+			item = b->data[index];
+			Py_VISIT(item);
 		}
-		Py_VISIT(item);
+		indexlo = 0;
 	}
 	return 0;
 }
