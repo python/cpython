@@ -491,7 +491,7 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 		if(v_as_SF == NULL)
 			return -1;
 		n = PySequence_Fast_GET_SIZE(v_as_SF);
-		vitem = _PySequence_Fast_ITEMS(v_as_SF);
+		vitem = PySequence_Fast_ITEMS(v_as_SF);
 	}
 	if (ilow < 0)
 		ilow = 0;
@@ -686,7 +686,7 @@ listextend_internal(PyListObject *self, PyObject *b)
 	}
 
 	/* populate the end of self with b's items */
-	src = _PySequence_Fast_ITEMS(b);
+	src = PySequence_Fast_ITEMS(b);
 	dest = self->ob_item + selflen;
 	for (i = 0; i < blen; i++) {
 		PyObject *o = src[i];
@@ -2561,7 +2561,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 				PyMem_MALLOC(slicelength*sizeof(PyObject*));
 
 			selfitems = self->ob_item;
-			seqitems = _PySequence_Fast_ITEMS(seq);
+			seqitems = PySequence_Fast_ITEMS(seq);
 			for (cur = start, i = 0; i < slicelength;
 			     cur += step, i++) {
 				garbage[i] = selfitems[cur];
