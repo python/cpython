@@ -156,7 +156,7 @@ def main():
 
 		rv = lvi.getnextpacket()
 		if not rv:
-			time.millisleep(10)
+			time.sleep(0.010)
 			continue
 
 		pos, data = rv

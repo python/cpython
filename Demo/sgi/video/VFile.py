@@ -385,7 +385,6 @@ class Displayer(VideoParams):
 		self.color0 = None	# magic, used by clearto()
 		self.fixcolor0 = 0	# don't need to fix color0
 		self.mustunpack = (not support_packed_pixels())
-		return self
 
 	# setinfo() must reset some internal flags
 
@@ -1184,11 +1183,11 @@ def test():
 	gl.prefsize(vin.getsize())
 	wid = gl.winopen(filename)
 	vin.initcolormap()
-	t0 = time.millitimer()
+	t0 = time.time()
 	while 1:
 		try: t, data, cdata = vin.getnextframe()
 		except EOFError: break
-		dt = t0 + t - time.millitimer()
-		if dt > 0: time.millisleep(dt)
+		dt = t0 + t - time.time()
+		if dt > 0: time.time(dt)
 		vin.showframe(data, cdata)
 	time.sleep(2)
