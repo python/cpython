@@ -1,12 +1,11 @@
-This is Python release 1.5.2a1
+This is Python release 1.5.2a2
 ==============================
 
 
 What's new in this release?
 ---------------------------
 
-See the Misc/NEWS file.  Nothing spectacular this time.  The BeOS port 
-is now integrated, courtesy Chris Herborth (see below).
+Quite a bit!  See the Misc/NEWS file.
 
 
 If you don't read instructions
@@ -38,7 +37,8 @@ If you use Python, please consider joining the Python Software
 Activity (PSA).  See http://www.python.org/psa/.
 
 Organizations that make heavy use of Python are especially encouraged
-to become corporate members!
+to become corporate members -- or better still, to join the Python
+Consortium (see http://www.python.org/consortium/).
 
 
 How do I learn Python?
