@@ -245,6 +245,7 @@ EXPORTS
 	PyArg_Parse
 	PyArgs_VaParse
 	PyArg_ParseTuple
+	PyArg_ParseTupleAndKeywords
 	PyArg_GetChar
 	PyArg_GetDoubleArray
 	PyArg_GetFloat
@@ -259,6 +260,7 @@ EXPORTS
 	PyArg_GetString
 	PyErr_BadArgument
 	PyErr_BadInternalCall
+	PyErr_Format
 	PyErr_NoMemory
 	PyErr_SetFromErrno
 	PyErr_SetNone
