@@ -150,7 +150,7 @@ PyFrame_New(tstate, code, globals, locals)
 	static PyObject *builtin_object;
 	PyFrameObject *f;
 	PyObject *builtins;
-	int extras = code->co_stacksize + code->co_nlocals;
+	int extras;
 
 	if (builtin_object == NULL) {
 		builtin_object = PyString_InternFromString("__builtins__");
@@ -164,6 +164,7 @@ PyFrame_New(tstate, code, globals, locals)
 		PyErr_BadInternalCall();
 		return NULL;
 	}
+	extras = code->co_stacksize + code->co_nlocals;
 	if (back == NULL || back->f_globals != globals) {
 		builtins = PyDict_GetItem(globals, builtin_object);
 		if (builtins != NULL && PyModule_Check(builtins))
