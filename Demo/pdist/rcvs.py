@@ -146,6 +146,7 @@ class MyFile(File):
 		code = self.action()
 		if code in ('A', 'M'):
 			self.put(message)
+			return 1
 		elif code == 'R':
 			print "%s: committing removes not yet implemented" % \
 			      self.file
@@ -203,6 +204,9 @@ class MyFile(File):
 		f.write(data)
 		f.close()
 		self.setentry(self.rrev, self.rsum)
+
+	def log(self, otherflags):
+		print self.proxy.log(self.file, otherflags)
 
 	def add(self):
 		self.eseen = 0		# While we're hacking...
@@ -264,8 +268,8 @@ class RCVS(CVS):
 			message = raw_input("One-liner: ")
 		committed = []
 		for e in list:
-			committed.append(e.file)
-			e.commit(message)
+			if e.commit(message):
+				committed.append(e.file)
 		self.mailinfo(committed, message)
 
 	def mailinfo(self, files, message = ""):
@@ -300,19 +304,19 @@ class RCVS(CVS):
 			raise RuntimeError, "'cvs add' needs at least one file"
 		list = []
 		for e in self.whichentries(files, 1):
-			code = e.action()
-			print code, e.file
-			e.report()
 			e.add()
-			code = e.action()
-			print code, e.file
-			e.report()
-			print '='*20
 
 	def rm(self, files):
 		if not files:
 			raise RuntimeError, "'cvs rm' needs at least one file"
 		raise RuntimeError, "'cvs rm' not yet imlemented"
+
+	def log(self, files, opts):
+		flags = ''
+		for o, a in opts:
+			flags = flags + ' ' + o + a
+		for e in self.whichentries(files):
+			e.log(flags)
 
 	def whichentries(self, files, localfilestoo = 0):
 		if files:
@@ -360,11 +364,14 @@ class rcvs(CommandFrameWork):
 		CommandFrameWork.__init__(self)
 		self.proxy = None
 		self.cvs = RCVS()
-
-	def recurse(self):
+		
+	def close(self):
 		if self.proxy:
 			self.proxy._close()
 		self.proxy = None
+
+	def recurse(self):
+		self.close()
 		names = os.listdir(os.curdir)
 		for name in names:
 			if name == os.curdir or name == os.pardir:
@@ -450,7 +457,10 @@ class rcvs(CommandFrameWork):
 		self.cvs.putentries()
 	do_rm = do_remove
 
-
+	def do_log(self, opts, files):
+		"""log [rlog-options] [file] ..."""
+		self.cvs.log(files, opts)
+	flags_log = 'bhLNRtd:s:V:'
 
 
 def remove(fn):
@@ -461,7 +471,11 @@ def remove(fn):
 
 
 def main():
-	rcvs().run()
+	r = rcvs()
+	try:
+		r.run()
+	finally:
+		r.close()
 
 
 if __name__ == "__main__":
