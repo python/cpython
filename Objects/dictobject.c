@@ -395,7 +395,6 @@ actually be smaller than the old one.
 static int
 dictresize(dictobject *mp, int minused)
 {
-	register int oldsize = mp->ma_size;
 	register int newsize, newpoly;
 	register dictentry *oldtable = mp->ma_table;
 	register dictentry *newtable;
