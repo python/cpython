@@ -255,10 +255,10 @@ BOOTSTRAP_SCRIPT = """\
 #!/bin/sh
 
 execdir=$(dirname "${0}")
-executable=${execdir}/%(executable)s
+executable="${execdir}/%(executable)s"
 resdir=$(dirname "${execdir}")/Resources
-main=${resdir}/%(mainprogram)s
-PYTHONPATH=$resdir
+main="${resdir}/%(mainprogram)s"
+PYTHONPATH="$resdir"
 export PYTHONPATH
 exec "${executable}" "${main}" "${1}"
 """
