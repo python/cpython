@@ -52,7 +52,7 @@ for keyword in kwlist:
 iskeyword = kwdict.has_key
 
 def main():
-    import sys, re, string
+    import sys, re
 
     args = sys.argv[1:]
     iptfile = args and args[0] or "Python/graminit.c"
@@ -66,7 +66,7 @@ def main():
     while 1:
         line = fp.readline()
         if not line: break
-        if string.find(line, '{1, "') > -1:
+        if line.find('{1, "') > -1:
             match = strprog.search(line)
             if match:
                 lines.append("        '" + match.group(1) + "',\n")
@@ -89,7 +89,7 @@ def main():
 
     # write the output file
     fp = open(optfile, 'w')
-    fp.write(string.join(format, ''))
+    fp.write(''.join(format))
     fp.close()
 
 if __name__ == "__main__":
