@@ -389,6 +389,12 @@ Extension modules
 Library
 -------
 
+- When cancelling a server that implemented threading with a keyboard
+  interrupt, the server would shut down but not terminate (waiting on
+  client threads). A new member variable, daemon_threads, was added to
+  the ThreadingMixIn class in SocketServer.py to make it explicit that
+  this behavior needs to be controlled.
+
 - A new module, optparse, provides a fancy alternative to getopt for
   command line parsing.  It is a slightly modified version of Greg
   Ward's Optik package.

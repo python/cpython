@@ -56,7 +56,8 @@ instance, a threading UDP server class is created as follows:
         class ThreadingUDPServer(ThreadingMixIn, UDPServer): pass
 
 The Mix-in class must come first, since it overrides a method defined
-in UDPServer!
+in UDPServer! Setting the various member variables also changes
+the behavior of the underlying server mechanism.
 
 To implement a service, you must derive a class from
 BaseRequestHandler and redefine its handle() method.  You can then run
@@ -448,6 +449,10 @@ class ForkingMixIn:
 class ThreadingMixIn:
     """Mix-in class to handle each request in a new thread."""
 
+    # Decides how threads will act upon termination of the
+    # main process
+    daemon_threads = 0
+
     def process_request_thread(self, request, client_address):
         """Same as in BaseServer but as a thread.
 
@@ -466,6 +471,8 @@ class ThreadingMixIn:
         import threading
         t = threading.Thread(target = self.process_request_thread,
                              args = (request, client_address))
+        if self.daemon_threads:
+            t.setDaemon (1)
         t.start()
 
 
