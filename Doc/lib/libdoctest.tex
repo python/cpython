@@ -344,17 +344,17 @@ can also be used in doctest directives (see below).
     is prone to in regular expressions.
 \end{datadesc}
 
-\begin{datadesc}{UNIFIED_DIFF}
+\begin{datadesc}{REPORT_UDIFF}
     When specified, failures that involve multi-line expected and
     actual outputs are displayed using a unified diff.
 \end{datadesc}
 
-\begin{datadesc}{CONTEXT_DIFF}
+\begin{datadesc}{REPORT_CDIFF}
     When specified, failures that involve multi-line expected and
     actual outputs will be displayed using a context diff.
 \end{datadesc}
 
-\begin{datadesc}{NDIFF_DIFF}
+\begin{datadesc}{REPORT_NDIFF}
     When specified, differences are computed by \code{difflib.Differ},
     using the same algorithm as the popular \file{ndiff.py} utility.
     This is the only method that marks differences within lines as
@@ -421,8 +421,8 @@ can be useful.
 
 \versionchanged[Constants \constant{DONT_ACCEPT_BLANKLINE},
     \constant{NORMALIZE_WHITESPACE}, \constant{ELLIPSIS},
-    \constant{UNIFIED_DIFF}, \constant{CONTEXT_DIFF}, and
-    \constant{NDIFF_DIFF}
+    \constant{REPORT_UDIFF}, \constant{REPORT_CDIFF}, and
+    \constant{REPORT_NDIFF}
     were added; by default \code{<BLANKLINE>} in expected output
     matches an empty line in actual output; and doctest directives
     were added]{2.4}
