@@ -667,6 +667,7 @@ void
 _PyMalloc_Free(void *p)
 {
 	poolp pool;
+	block *lastfree;
 	poolp next, prev;
 	uint size;
 
@@ -679,57 +680,66 @@ _PyMalloc_Free(void *p)
 		LOCK();
 		INCMINE;
 		/*
-		 * At this point, the pool is not empty
+		 * Link p to the start of the pool's freeblock list.  Since
+		 * the pool had at least the p block outstanding, the pool
+		 * wasn't empty (so it's already in a usedpools[] list, or
+		 * was full and is in no list -- it's not in the freeblocks
+		 * list in any case).
 		 */
-		if ((*(block **)p = pool->freeblock) == NULL) {
-			/*
-			 * Pool was full
-			 */
-			pool->freeblock = (block *)p;
-			--pool->ref.count;
-			/*
-			 * Frontlink to used pools
-			 * This mimics LRU pool usage for new allocations and
-			 * targets optimal filling when several pools contain
-			 * blocks of the same size class.
-			 */
-			size = pool->szidx;
-			next = usedpools[size + size];
-			prev = next->prevpool;
-			pool->nextpool = next;
-			pool->prevpool = prev;
-			next->prevpool = pool;
-			prev->nextpool = pool;
-			UNLOCK();
-			return;
-		}
-		/*
-		 * Pool was not full
-		 */
+		*(block **)p = lastfree = pool->freeblock;
 		pool->freeblock = (block *)p;
-		if (--pool->ref.count != 0) {
+		if (lastfree) {
+			/*
+			 * freeblock wasn't NULL, so the pool wasn't full,
+			 * and the pool is in a usedpools[] list.
+			 */
+			assert(pool->ref.count < pool.capacity);
+			if (--pool->ref.count != 0) {
+				/* pool isn't empty:  leave it in usedpools */
+				UNLOCK();
+				return;
+			}
+			/*
+			 * Pool is now empty:  unlink from usedpools, and
+			 * link to the front of usedpools.  This ensures that
+			 * previously freed pools will be allocated later
+			 * (being not referenced, they are perhaps paged out).
+			 */
+			next = pool->nextpool;
+			prev = pool->prevpool;
+			next->prevpool = prev;
+			prev->nextpool = next;
+			/* Link to freepools.  This is a singly-linked list,
+			 * and pool->prevpool isn't used there.
+			 */
+			pool->nextpool = freepools;
+			freepools = pool;
 			UNLOCK();
 			return;
 		}
 		/*
-		 * Pool is now empty, unlink from used pools
+		 * Pool was full, so doesn't currently live in any list:
+		 * link it to the front of the appropriate usedpools[] list.
+		 * This mimics LRU pool usage for new allocations and
+		 * targets optimal filling when several pools contain
+		 * blocks of the same size class.
 		 */
-		next = pool->nextpool;
-		prev = pool->prevpool;
-		next->prevpool = prev;
-		prev->nextpool = next;
-		/*
-		 * Frontlink to free pools
-		 * This ensures that previously freed pools will be allocated
-		 * later (being not referenced, they are perhaps paged out).
-		 */
-		pool->nextpool = freepools;
-		freepools = pool;
+		assert(pool->ref.count == pool->capacity); /* else not full */
+		--pool->ref.count;
+		assert(pool->ref.count > 0);	/* else the pool is empty */
+		size = pool->szidx;
+		next = usedpools[size + size];
+		prev = next->prevpool;
+		/* insert pool before next:   prev <-> pool <-> next */
+		pool->nextpool = next;
+		pool->prevpool = prev;
+		next->prevpool = pool;
+		prev->nextpool = pool;
 		UNLOCK();
 		return;
 	}
 
-	/* We did not allocate this address. */
+	/* We didn't allocate this address. */
 	INCTHEIRS;
 	PyMem_FREE(p);
 }
