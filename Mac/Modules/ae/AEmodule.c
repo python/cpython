@@ -34,15 +34,14 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <AppleEvents.h>
 
-#ifdef THINK_C
+#ifndef HAVE_UNIVERSAL_HEADERS
 #define AEIdleProcPtr IdleProcPtr
 #define AEFilterProcPtr EventFilterProcPtr
 #define AEEventHandlerProcPtr EventHandlerProcPtr
 #endif
 
-#ifndef __MWERKS__
-/* Actually, this is "if not universal headers".
-** I'm trying to setup the code here so that is easily automated,
+#ifndef HAVE_UNIVERSAL_HEADERS
+/* I'm trying to setup the code here so that is easily automated,
 ** as follows:
 ** - Use the UPP in the source
 ** - for pre-universal headers, #define each UPP as the corresponding ProcPtr
