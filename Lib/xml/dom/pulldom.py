@@ -1,7 +1,7 @@
 import minidom
 import xml.sax
 
-#todo: SAX2/namespace handling
+#todo: namespace handling
 
 START_ELEMENT = "START_ELEMENT"
 END_ELEMENT = "END_ELEMENT"
@@ -19,13 +19,13 @@ class PullDOM:
 
     def setDocumentLocator(self, locator): pass
 
-    def startElement(self, name, tagName, attrs):
+    def startElement(self, name, attrs):
         if not hasattr(self, "curNode"):
             # FIXME: hack!
             self.startDocument()
 
-        node = self.document.createElement(tagName) #FIXME namespaces!
-        for attr in attrs.keys():
+        node = self.document.createElement(name)
+        for (attr, value) in attrs.items():
             node.setAttribute(attr, attrs[attr])
 
         parent = self.curNode
@@ -34,12 +34,12 @@ class PullDOM:
             node.previousSibling = parent.childNodes[-1]
             node.previousSibling.nextSibling = node
         self.curNode = node
-        # FIXME: do I have to screen namespace attributes
+
         self.lastEvent[1] = [(START_ELEMENT, node), None]
         self.lastEvent = self.lastEvent[1]
         #self.events.append((START_ELEMENT, node))
 
-    def endElement(self, name, tagName):
+    def endElement(self, name):
         node = self.curNode
         self.lastEvent[1] = [(END_ELEMENT, node), None]
         self.lastEvent = self.lastEvent[1]
