@@ -12,9 +12,9 @@ stack frame.  It also supports post-mortem debugging and can be called
 under program control.
 
 The debugger is extensible --- it is actually defined as a class
-\code{Pdb}.  The extension interface uses the (also undocumented)
-modules \code{bdb} and \code{cmd}; it is currently undocumented but
-easily understood by reading the source.
+\code{Pdb}.  This is currently undocumented but easily understood by
+reading the source.  The extension interface uses the (also
+undocumented) modules \code{bdb} and \code{cmd}.
 \ttindex{Pdb}
 \ttindex{bdb}
 \ttindex{cmd}
@@ -25,13 +25,20 @@ specific modules).
 \index{stdwin}
 \ttindex{wdb}
 
+The debugger's prompt is ``\code{(Pdb) }''.
 Typical usage to run a program under control of the debugger is:
 
 \begin{verbatim}
 >>> import pdb
 >>> import mymodule
 >>> pdb.run('mymodule.test()')
-(Pdb)
+> <string>(0)?()
+(Pdb) continue
+> <string>(1)?()
+(Pdb) continue
+NameError: 'spam'
+> <string>(1)?()
+(Pdb) 
 \end{verbatim}
 
 Typical usage to inspect a crashed program is:
@@ -40,12 +47,18 @@ Typical usage to inspect a crashed program is:
 >>> import pdb
 >>> import mymodule
 >>> mymodule.test()
-(crashes with a stack trace)
+Traceback (innermost last):
+  File "<stdin>", line 1, in ?
+  File "./mymodule.py", line 4, in test
+    test2()
+  File "./mymodule.py", line 3, in test2
+    print spam
+NameError: spam
 >>> pdb.pm()
-(Pdb)
+> ./mymodule.py(3)test2()
+-> print spam
+(Pdb) 
 \end{verbatim}
-
-The debugger's prompt is ``\code{(Pdb) }''.
 
 The module defines the following functions; each enters the debugger
 in a slightly different way:
@@ -111,7 +124,8 @@ Commands that the debugger doesn't recognize are assumed to be Python
 statements and are executed in the context of the program being
 debugged.  Python statements can also be prefixed with an exclamation
 point (``\code{!}'').  This is a powerful way to inspect the program
-being debugged; it is even possible to change variables.  When an
+being debugged; it is even possible to change a variable or call a
+function.  When an
 exception occurs in such a statement, the exception name is printed
 but the debugger's state is not changed.
 
