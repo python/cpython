@@ -33,8 +33,8 @@ import errno as _errno
 from random import Random as _Random
 
 if _os.name == 'mac':
-    import macfs as _macfs
-    import MACFS as _MACFS
+    import Carbon.Folder as _Folder
+    import Carbon.Folders as _Folders
 
 try:
     import fcntl as _fcntl
@@ -124,11 +124,11 @@ def _candidate_tempdir_list():
     # Failing that, try OS-specific locations.
     if _os.name == 'mac':
         try:
-            refnum, dirid = _macfs.FindFolder(_MACFS.kOnSystemDisk,
-                                              _MACFS.kTemporaryFolderType, 1)
-            dirname = _macfs.FSSpec((refnum, dirid, '')).as_pathname()
+            fsr = _Folder.FSFindFolder(_Folders.kOnSystemDisk,
+                                              _Folders.kTemporaryFolderType, 1)
+            dirname = fsr.as_pathname()
             dirlist.append(dirname)
-        except _macfs.error:
+        except _Folder.error:
             pass
     elif _os.name == 'riscos':
         dirname = _os.getenv('Wimp$ScrapDir')
