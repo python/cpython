@@ -229,6 +229,7 @@ builtin_execfile(self, v)
 		    "execfile arguments must be filename[,dict[,dict]]");
 		return NULL;
 	}
+	s = getstringvalue(str);
 	if (strlen(s) != getstringsize(str)) {
 		err_setstr(ValueError, "embedded '\\0' in string arg");
 		return NULL;
