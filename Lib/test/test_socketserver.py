@@ -124,10 +124,10 @@ def testloop(proto, servers, hdlrcls, testfunc):
         if verbose: print "done"
 
 tcpservers = [TCPServer, ThreadingTCPServer]
-if hasattr(os, 'fork'):
+if hasattr(os, 'fork') and os.name not in ('os2',):
     tcpservers.append(ForkingTCPServer)
 udpservers = [UDPServer, ThreadingUDPServer]
-if hasattr(os, 'fork'):
+if hasattr(os, 'fork') and os.name not in ('os2',):
     udpservers.append(ForkingUDPServer)
 
 if not hasattr(socket, 'AF_UNIX'):
