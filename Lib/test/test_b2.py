@@ -238,6 +238,15 @@ b = dir(sys)
 a.sort()
 b.sort()
 if a <> b: raise TestFailed, 'vars(sys)'
+def f0():
+	if vars() != {}: raise TestFailed, 'vars() in f0()'
+f0()
+def f2():
+	f0()
+	a = 1
+	b = 2
+	if vars() != {'a': a, 'b': b}: raise TestFailed, 'vars() in f2()'
+f2()
 
 print 'xrange'
 if tuple(xrange(10)) <> tuple(range(10)): raise TestFailed, 'xrange(10)'
