@@ -392,6 +392,33 @@ optimize_code(PyObject *code, PyObject* consts)
 		opcode = codestr[i];
 		switch (opcode) {
 
+		/* Replace UNARY_NOT JUMP_IF_FALSE with NOP JUMP_IF_TRUE */
+		case UNARY_NOT:
+			if (codestr[i+1] != JUMP_IF_FALSE  ||
+			    codestr[i+4] != POP_TOP  ||
+			    !ISBASICBLOCK(blocks,i,5))
+				continue;
+			tgt = GETJUMPTGT(codestr, (i+1));
+			if (codestr[tgt] != POP_TOP)
+				continue;
+			codestr[i] = NOP;
+			codestr[i+1] = JUMP_IF_TRUE;
+			break;
+
+		/* not a is b -->  a is not b
+		   not a in b -->  a not in b
+		   not a is not b -->  a is b
+		   not a not in b -->  a in b */
+		case COMPARE_OP:
+			j = GETARG(codestr, i);
+			if (j < 6  ||  j > 9  ||
+			    codestr[i+3] != UNARY_NOT  || 
+			    !ISBASICBLOCK(blocks,i,4))
+  			 continue;
+			SETARG(codestr, i, (j^1));
+			codestr[i+3] = NOP;
+			break;
+
 		/* Skip over LOAD_CONST trueconst  JUMP_IF_FALSE xx  POP_TOP. 
 		   Note, only the first opcode is changed, the others still
 		   perform normally if they happen to be jump targets. */
@@ -418,8 +445,8 @@ optimize_code(PyObject *code, PyObject* consts)
 				codestr[i] = ROT_TWO;
 				codestr[i+1] = JUMP_FORWARD;
 				SETARG(codestr, i+1, 2);
-				codestr[i+4] = DUP_TOP;  /* Filler codes used as NOPs */
-				codestr[i+5] = POP_TOP;
+				codestr[i+4] = NOP;
+				codestr[i+5] = NOP;
 				continue;
 			} 
 			if (GETARG(codestr, i) == 3 && \
@@ -428,7 +455,7 @@ optimize_code(PyObject *code, PyObject* consts)
 				codestr[i+1] = ROT_TWO;
 				codestr[i+2] = JUMP_FORWARD;
 				SETARG(codestr, i+2, 1);
-				codestr[i+5] = DUP_TOP;
+				codestr[i+5] = NOP;
 			}
 			break;
 
