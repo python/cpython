@@ -16,7 +16,6 @@ fopenRF(name, mode)
 	char *mode;
 {
 	int fd;
-	FILE *fp;
 	int modebits = -1;
 	int extramodebits = 0;
 	char *modep;
