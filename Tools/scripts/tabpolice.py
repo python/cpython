@@ -16,6 +16,7 @@ def main():
 		opts, args = getopt.getopt(sys.argv[1:], "qv")
 	except getopt.error, msg:
 		print msg
+		return
 	for o, a in opts:
 		if o == '-v':
 			verbose = verbose + 1
@@ -23,6 +24,9 @@ def main():
 		if o == '-q':
 			quiet = 1
 			verbose = 0
+	if not args:
+		print "Usage:", sys.argv[0], "file_or_directory ..."
+		return
 	for arg in args:
 		check(arg)
 
