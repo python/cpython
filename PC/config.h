@@ -64,7 +64,7 @@ you must define MS_NO_COREDLL (do not test this macro) */
 #else
 #define COMPILER "[MSC (Unknown)]"
 #endif
-#define PYTHONPATH ".\\lib;.\\lib\\win;.\\lib\\test;.\\lib\\tkinter"
+#define PYTHONPATH ".\\lib;.\\lib\\plat-win;.\\lib\\lib-tk"
 typedef int pid_t;
 #define WORD_BIT 32
 #pragma warning(disable:4113)
