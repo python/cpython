@@ -1,3 +1,12 @@
+What's New in IDLE 1.1.1?
+=======================
+
+*Release date: XX-DEC-2004*
+
+- The GUI was hanging if the shell window was closed while a raw_input() 
+  was pending.  Restored the quit() of the readline() mainloop().
+  http://mail.python.org/pipermail/idle-dev/2004-December/002307.html
+
 What's New in IDLE 1.1?
 =======================
 
