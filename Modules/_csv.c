@@ -323,9 +323,9 @@ dialect_init(DialectObj * self, PyObject * args, PyObject * kwargs)
                 /* If dialect is a string, look it up in our registry */
                 if (PyString_Check(dialect)
 #ifdef Py_USING_UNICODE
-|| PyUnicode_Check(dialect)
+		    || PyUnicode_Check(dialect)
 #endif
-) {
+			) {
                         PyObject * new_dia;
                         new_dia = get_dialect_from_registry(dialect);
                         Py_DECREF(dialect);
@@ -333,7 +333,7 @@ dialect_init(DialectObj * self, PyObject * args, PyObject * kwargs)
                                 return -1;
                         dialect = new_dia;
                 }
-                /* A class rather than an instance? Instanciate */
+                /* A class rather than an instance? Instantiate */
                 if (PyObject_TypeCheck(dialect, &PyClass_Type)) {
                         PyObject * new_dia;
                         new_dia = PyObject_CallFunction(dialect, "");
@@ -363,7 +363,9 @@ dialect_init(DialectObj * self, PyObject * args, PyObject * kwargs)
                         if (value_obj) {
                                 if (PyObject_SetAttr((PyObject *)self, 
                                                      name_obj, value_obj)) {
+					Py_DECREF(value_obj);
                                         Py_DECREF(dir_list);
+					Py_DECREF(dialect);
                                         return -1;
                                 }
                                 Py_DECREF(value_obj);
@@ -442,7 +444,7 @@ static PyTypeObject Dialect_Type = {
 	(initproc)dialect_init,			/* tp_init */
 	PyType_GenericAlloc,	                /* tp_alloc */
 	dialect_new,			        /* tp_new */
-	0,                           /* tp_free */
+	0,                           		/* tp_free */
 };
 
 static void
@@ -737,7 +739,35 @@ Reader_dealloc(ReaderObj *self)
         Py_XDECREF(self->dialect);
         Py_XDECREF(self->input_iter);
         Py_XDECREF(self->fields);
-	PyMem_DEL(self);
+	PyObject_GC_Del(self);
+}
+
+static int
+Reader_traverse(ReaderObj *self, visitproc visit, void *arg)
+{
+	int err;
+#define VISIT(SLOT) \
+	if (SLOT) { \
+		err = visit((PyObject *)(SLOT), arg); \
+		if (err) \
+			return err; \
+	}
+	VISIT(self->dialect);
+	VISIT(self->input_iter);
+	VISIT(self->fields);
+	return 0;
+}
+
+static int
+Reader_clear(ReaderObj *self)
+{
+        Py_XDECREF(self->dialect);
+        Py_XDECREF(self->input_iter);
+        Py_XDECREF(self->fields);
+        self->dialect = NULL;
+        self->input_iter = NULL;
+        self->fields = NULL;
+	return 0;
 }
 
 PyDoc_STRVAR(Reader_Type_doc,
@@ -773,10 +803,11 @@ static PyTypeObject Reader_Type = {
 	0,                                      /*tp_getattro*/
         0,                                      /*tp_setattro*/
         0,                                      /*tp_as_buffer*/
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+		Py_TPFLAGS_HAVE_GC,		/*tp_flags*/
 	Reader_Type_doc,                        /*tp_doc*/
-        0,                                      /*tp_traverse*/
-        0,                                      /*tp_clear*/
+        (traverseproc)Reader_traverse,          /*tp_traverse*/
+        (inquiry)Reader_clear,                  /*tp_clear*/
         0,                                      /*tp_richcompare*/
         0,                                      /*tp_weaklistoffset*/
         (getiterfunc)Reader_getiter,            /*tp_iter*/
@@ -791,7 +822,7 @@ static PyObject *
 csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
 {
         PyObject * iterator, * dialect = NULL, *ctor_args;
-        ReaderObj * self = PyObject_NEW(ReaderObj, &Reader_Type);
+        ReaderObj * self = PyObject_GC_New(ReaderObj, &Reader_Type);
 
         if (!self)
                 return NULL;
@@ -1160,7 +1191,32 @@ Writer_dealloc(WriterObj *self)
 {
         Py_XDECREF(self->dialect);
         Py_XDECREF(self->writeline);
-	PyMem_DEL(self);
+	PyObject_GC_Del(self);
+}
+
+static int
+Writer_traverse(WriterObj *self, visitproc visit, void *arg)
+{
+	int err;
+#define VISIT(SLOT) \
+	if (SLOT) { \
+		err = visit((PyObject *)(SLOT), arg); \
+		if (err) \
+			return err; \
+	}
+	VISIT(self->dialect);
+	VISIT(self->writeline);
+	return 0;
+}
+
+static int
+Writer_clear(WriterObj *self)
+{
+        Py_XDECREF(self->dialect);
+        Py_XDECREF(self->writeline);
+	self->dialect = NULL;
+	self->writeline = NULL;
+	return 0;
 }
 
 PyDoc_STRVAR(Writer_Type_doc, 
@@ -1192,10 +1248,11 @@ static PyTypeObject Writer_Type = {
 	0,                                      /*tp_getattro*/
         0,                                      /*tp_setattro*/
         0,                                      /*tp_as_buffer*/
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+		Py_TPFLAGS_HAVE_GC,		/*tp_flags*/
 	Writer_Type_doc,
-        0,                                      /*tp_traverse*/
-        0,                                      /*tp_clear*/
+        (traverseproc)Writer_traverse,          /*tp_traverse*/
+        (inquiry)Writer_clear,                  /*tp_clear*/
         0,                                      /*tp_richcompare*/
         0,                                      /*tp_weaklistoffset*/
         (getiterfunc)0,                         /*tp_iter*/
@@ -1209,7 +1266,7 @@ static PyObject *
 csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 {
         PyObject * output_file, * dialect = NULL, *ctor_args;
-        WriterObj * self = PyObject_NEW(WriterObj, &Writer_Type);
+        WriterObj * self = PyObject_GC_New(WriterObj, &Writer_Type);
 
         if (!self)
                 return NULL;
