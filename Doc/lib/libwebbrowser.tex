@@ -42,7 +42,7 @@ The following functions are defined:
   Return a controller object for the browser type \var{name}.
 \end{funcdesc}
 
-\begin{funcdesc}{register}{name, constructor\optional{, controller}}
+\begin{funcdesc}{register}{name, constructor\optional{, instance}}
   Register the browser type \var{name}.  Once a browser type is
   registered, the \function{get()} function can return a controller
   for that browser type.  If \var{instance} is not provided, or is
