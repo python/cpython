@@ -2672,7 +2672,7 @@ current namespace because they are defined in the
 \module{Sound.Effects} package when the \code{from...import} statement
 is executed.  (This also works when \code{__all__} is defined.)
 
-Note that in general the practicing of importing * from a module or
+Note that in general the practice of importing \code{*} from a module or
 package is frowned upon, since it often causes poorly readable code.
 However, it is okay to use it to save typing in interactive sessions,
 and certain modules are designed to export only names that follow
@@ -2712,6 +2712,17 @@ Sound.Effects import echo}.
 %\code{__.__} for the parent package, and so on.  This feature was dropped
 %because of its awkwardness; since most packages will have a relative
 %shallow substructure, this is no big loss.)
+
+\subsection{Packages in Multiple Directories}
+
+Packages support one more special attribute, \member{__path__}.  This
+is initialized to be a list containing the name of the directory
+holding the package's \file{__init__.py} before the code in that file
+is executed.  This variable can be modified; doing so affects future
+searches for modules and subpackages contained in the package.
+
+While this feature is not often needed, it can be used to extend the
+set of modules found in a package.
 
 
 
