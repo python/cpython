@@ -265,7 +265,7 @@ The module defines the following functions and constants, and an exception:
 
 \setindexsubitem{(in module re)}
 
-\begin{funcdesc}{compile}{pattern\optional{\, flags}}
+\begin{funcdesc}{compile}{pattern\optional{, flags}}
   Compile a regular expression pattern into a regular expression
   object, which can be used for matching using its \function{match()} and
   \function{search()} methods, described below.  
@@ -274,23 +274,20 @@ The module defines the following functions and constants, and an exception:
   \var{flags} value.  Values can be any of the following variables,
   combined using bitwise OR (the \code{|} operator).
 
-\begin{description}
-
-%  The use of \quad in the item labels is ugly but adds enough space
-%  to the label that it doesn't get visually run-in with the text.
-
-\item[\constant{I} or \constant{IGNORECASE} or \code{(?i)}\quad]
-
+\begin{datadesc}{I}
+\dataline{IGNORECASE}
 Perform case-insensitive matching; expressions like \code{[A-Z]} will match
 lowercase letters, too.  This is not affected by the current locale.
+\end{datadesc}
 
-\item[\constant{L} or \constant{LOCALE} or \constant{(?L)}\quad]
-
+\begin{datadesc}{L}
+\dataline{LOCALE}
 Make \code{\e w}, \code{\e W}, \code{\e b},
 \code{\e B}, dependent on the current locale. 
+\end{datadesc}
 
-\item[\constant{M} or \constant{MULTILINE} or \constant{(?m)}\quad]
-
+\begin{datadesc}{M}
+\dataline{MULTILINE}
 When specified, the pattern character \code{\^} matches at the
 beginning of the string and at the beginning of each line
 (immediately following each newline); and the pattern character
@@ -299,30 +296,32 @@ beginning of the string and at the beginning of each line
 By default, \code{\^} matches only at the beginning of the string, and
 \code{\$} only at the end of the string and immediately before the
 newline (if any) at the end of the string. 
+\end{datadesc}
 
-\item[\constant{S} or \constant{DOTALL} or \constant{(?s)}\quad]
-
+\begin{datadesc}{S}
+\dataline{DOTALL}
 Make the \code{.} special character any character at all, including a
 newline; without this flag, \code{.} will match anything \emph{except}
 a newline.
+\end{datadesc}
 
-\item[\constant{X} or \constant{VERBOSE} or \constant{(?x)}\quad]
-
+\begin{datadesc}{X}
+\dataline{VERBOSE}
 Ignore whitespace within the pattern
 except when in a character class or preceded by an unescaped
 backslash, and, when a line contains a \code{\#} neither in a character
 class or preceded by an unescaped backslash, all characters from the
 leftmost such \code{\#} through the end of the line are ignored.
+\end{datadesc}
 
-\end{description}
 
 The sequence
-%
+
 \begin{verbatim}
 prog = re.compile(pat)
 result = prog.match(str)
 \end{verbatim}
-%
+
 is equivalent to
 
 \begin{verbatim}
@@ -343,7 +342,7 @@ expression will be used several times in a single program.
   regular expression metacharacters in it.
 \end{funcdesc}
 
-\begin{funcdesc}{match}{pattern\, string\optional{\, flags}}
+\begin{funcdesc}{match}{pattern, string\optional{, flags}}
   If zero or more characters at the beginning of \var{string} match
   the regular expression \var{pattern}, return a corresponding
   \class{MatchObject} instance.  Return \code{None} if the string does not
@@ -351,7 +350,7 @@ expression will be used several times in a single program.
   match.
 \end{funcdesc}
 
-\begin{funcdesc}{search}{pattern\, string\optional{\, flags}}
+\begin{funcdesc}{search}{pattern, string\optional{, flags}}
   Scan through \var{string} looking for a location where the regular
   expression \var{pattern} produces a match, and return a
   corresponding \class{MatchObject} instance.
@@ -360,7 +359,7 @@ expression will be used several times in a single program.
   different from finding a zero-length match at some point in the string.
 \end{funcdesc}
 
-\begin{funcdesc}{split}{pattern\, string\, \optional{, maxsplit=0}}
+\begin{funcdesc}{split}{pattern, string, \optional{, maxsplit\code{ = 0}}}
   Split \var{string} by the occurrences of \var{pattern}.  If
   capturing parentheses are used in pattern, then occurrences of
   patterns or subpatterns are also returned.
@@ -383,7 +382,7 @@ expression will be used several times in a single program.
   the old \function{regsub.split()} and \function{regsub.splitx()}.
 \end{funcdesc}
 
-\begin{funcdesc}{sub}{pattern\, repl\, string\optional{, count=0}}
+\begin{funcdesc}{sub}{pattern, repl, string\optional{, count\code{ = 0}}}
 Return the string obtained by replacing the leftmost non-overlapping
 occurrences of \var{pattern} in \var{string} by the replacement
 \var{repl}.  If the pattern isn't found, \var{string} is returned
@@ -404,20 +403,17 @@ The pattern may be a string or a
 regex object; if you need to specify
 regular expression flags, you must use a regex object, or use
 embedded modifiers in a pattern; e.g.
-
-\begin{verbatim}
-sub("(?i)b+", "x", "bbbb BBBB") returns 'x x'.
-\end{verbatim}
+\samp{sub("(?i)b+", "x", "bbbb BBBB")} returns \code{'x x'}.
 
 The optional argument \var{count} is the maximum number of pattern
 occurrences to be replaced; count must be a non-negative integer, and
 the default value of 0 means to replace all occurrences.
 
 Empty matches for the pattern are replaced only when not adjacent to a
-previous match, so \code{sub('x*', '-', 'abc')} returns '-a-b-c-'.
+previous match, so \samp{sub('x*', '-', 'abc')} returns \code{'-a-b-c-'}.
 \end{funcdesc}
 
-\begin{funcdesc}{subn}{pattern\, repl\, string\optional{, count=0}}
+\begin{funcdesc}{subn}{pattern, repl, string\optional{, count\code{ = 0}}}
 Perform the same operation as \function{sub()}, but return a tuple
 \code{(\var{new_string}, \var{number_of_subs_made})}.
 \end{funcdesc}
@@ -425,8 +421,8 @@ Perform the same operation as \function{sub()}, but return a tuple
 \begin{excdesc}{error}
   Exception raised when a string passed to one of the functions here
   is not a valid regular expression (e.g., unmatched parentheses) or
-  when some other error occurs during compilation or matching.  (It is
-  never an error if a string contains no match for a pattern.)
+  when some other error occurs during compilation or matching.  It is
+  never an error if a string contains no match for a pattern.
 \end{excdesc}
 
 \subsection{Regular Expression Objects}
@@ -434,7 +430,7 @@ Compiled regular expression objects support the following methods and
 attributes:
 
 \setindexsubitem{(re method)}
-\begin{funcdesc}{match}{string\optional{\, pos}\optional{\, endpos}}
+\begin{funcdesc}{match}{string\optional{, pos}\optional{, endpos}}
   If zero or more characters at the beginning of \var{string} match
   this regular expression, return a corresponding
   \class{MatchObject} instance.  Return \code{None} if the string does not
@@ -452,7 +448,7 @@ attributes:
   searched for a match.
 \end{funcdesc}
 
-\begin{funcdesc}{search}{string\optional{\, pos}\optional{\, endpos}}
+\begin{funcdesc}{search}{string\optional{, pos}\optional{, endpos}}
   Scan through \var{string} looking for a location where this regular
   expression produces a match.  Return \code{None} if no
   position in the string matches the pattern; note that this is
@@ -462,28 +458,28 @@ attributes:
   meaning as for the \method{match()} method.
 \end{funcdesc}
 
-\begin{funcdesc}{split}{string\, \optional{, maxsplit=0}}
+\begin{funcdesc}{split}{string, \optional{, maxsplit\code{ = 0}}}
 Identical to the \function{split()} function, using the compiled pattern.
 \end{funcdesc}
 
-\begin{funcdesc}{sub}{repl\, string\optional{, count=0}}
+\begin{funcdesc}{sub}{repl, string\optional{, count\code{ = 0}}}
 Identical to the \function{sub()} function, using the compiled pattern.
 \end{funcdesc}
 
-\begin{funcdesc}{subn}{repl\, string\optional{, count=0}}
+\begin{funcdesc}{subn}{repl, string\optional{, count\code{ = 0}}}
 Identical to the \function{subn()} function, using the compiled pattern.
 \end{funcdesc}
 
 \setindexsubitem{(regex attribute)}
 
 \begin{datadesc}{flags}
-The flags argument used when the regex object was compiled, or 0 if no
-flags were provided.
+The flags argument used when the regex object was compiled, or
+\code{0} if no flags were provided.
 \end{datadesc}
 
 \begin{datadesc}{groupindex}
-A dictionary mapping any symbolic group names (defined by 
-\code{?P<\var{id}>}) to group numbers.  The dictionary is empty if no
+A dictionary mapping any symbolic group names defined by 
+\code{(?P<\var{id}>)} to group numbers.  The dictionary is empty if no
 symbolic groups were used in the pattern.
 \end{datadesc}
 
@@ -531,9 +527,7 @@ singleton tuple is returned in such cases.)
 \end{funcdesc}
 
 \begin{funcdesc}{start}{\optional{group}}
-\end{funcdesc}
-
-\begin{funcdesc}{end}{\optional{group}}
+\funcline{end}{\optional{group}}
 Return the indices of the start and end of the substring
 matched by \var{group}; \var{group} defaults to zero (meaning the whole
 matched substring).
