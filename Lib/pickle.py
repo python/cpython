@@ -389,11 +389,11 @@ class Unpickler:
 	dispatch[NONE] = load_none
 
 	def load_int(self):
-		self.stack.append(string.atoi(self.readline()[:-1]))
+		self.stack.append(string.atoi(self.readline()[:-1], 0))
 	dispatch[INT] = load_int
 
 	def load_long(self):
-		self.stack.append(string.atol(self.readline()[:-1]))
+		self.stack.append(string.atol(self.readline()[:-1], 0))
 	dispatch[LONG] = load_long
 
 	def load_float(self):
@@ -544,7 +544,7 @@ def test():
 	fn = 'pickle_tmp'
 	c = C()
 	c.foo = 1
-	c.bar = 2
+	c.bar = 2L
 	x = [0,1,2,3]
 	y = ('abc', 'abc', c, c)
 	x.append(y)
