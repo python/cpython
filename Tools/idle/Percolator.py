@@ -12,6 +12,14 @@ class Percolator:
         self.bottom.delete = self.redir.register("delete", self.delete)
         self.filters = []
 
+    def close(self):
+        while self.top is not self.bottom:
+            self.removefilter(self.top)
+        self.top = None
+        self.bottom.setdelegate(None); self.bottom = None
+        self.redir.close(); self.redir = None
+        self.text = None
+
     def insert(self, index, chars, tags=None):
         # Could go away if inheriting from Delegator
         self.top.insert(index, chars, tags)
