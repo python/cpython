@@ -344,7 +344,12 @@ $(LIBRARY): $(LIBRARY_OBJS)
 	$(RANLIB) $@
 
 libpython$(VERSION).so: $(LIBRARY_OBJS)
-	$(LDSHARED) -o $@ $(LIBRARY_OBJS) $(SHLIBS) $(LIBC) $(LIBM)
+	if test $INSTSONAME != $LDLIBRARY; then \
+		$(LDSHARED) -Wl,-soname=$(INSTSONAME) -o $(INSTSONAME) $(LIBRARY_OBJS) $(SHLIBS) $(LIBC) $(LIBM); \
+		$(LN) -f $(INSTSONAME) $@; \
+	else\
+		$(LDSHARED) -o $@ $(LIBRARY_OBJS) $(SHLIBS) $(LIBC) $(LIBM); \
+	fi
 
 libpython$(VERSION).sl: $(LIBRARY_OBJS)
 	$(LDSHARED) -o $@ $(LIBRARY_OBJS) $(LIBC) $(LIBM)
