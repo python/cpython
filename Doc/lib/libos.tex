@@ -1080,7 +1080,7 @@ false, the triple for a directory is generated after the triples for all
 of its subdirectories (directories are generated bottom up).
 
 When \var{topdown} is true, the caller can modify the \var{dirnames} list
-in-place (perhaps unsing \keyword{del} or slice assignment), and
+in-place (perhaps using \keyword{del} or slice assignment), and
 \function{walk()} will only recurse into the subdirectories whose names
 remain in \var{dirnames}; this can be used to prune the search,
 impose a specific order of visiting, or even to inform \function{walk()}
