@@ -852,6 +852,28 @@ _expectations = {
         test_winreg
         test_winsound
         """,
+    'cygwin':
+        """
+        test_al
+        test_cd
+        test_cl
+        test_curses
+        test_dbm
+        test_email_codecs
+        test_gl
+        test_imgfile
+        test_largefile
+        test_linuxaudiodev
+        test_locale
+        test_mpz
+        test_nis
+        test_socket_ssl
+        test_socketserver
+        test_sunaudiodev
+        test_unicode_file
+        test_winreg
+        test_winsound
+        """,
 }
 
 class _ExpectedSkips:
