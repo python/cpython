@@ -1,7 +1,5 @@
 #! /usr/bin/env python
 
-from __future__ import generators
-
 """
 Module difflib -- helpers for computing deltas between objects.
 

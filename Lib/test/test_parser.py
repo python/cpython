@@ -27,14 +27,10 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.roundtrip(parser.suite, s)
 
     def test_yield_statement(self):
-        self.check_suite("from __future__ import generators\n"
-                         "def f(): yield 1")
-        self.check_suite("from __future__ import generators\n"
-                         "def f(): return; yield 1")
-        self.check_suite("from __future__ import generators\n"
-                         "def f(): yield 1; return")
-        self.check_suite("from __future__ import generators\n"
-                         "def f():\n"
+        self.check_suite("def f(): yield 1")
+        self.check_suite("def f(): return; yield 1")
+        self.check_suite("def f(): yield 1; return")
+        self.check_suite("def f():\n"
                          "    for x in range(30):\n"
                          "        yield x\n")
 
