@@ -11,7 +11,7 @@ the same application, the present example should work just fine.  DC
 """
 
 import os, sys, time, thread
-from test_support import verify, verbose, TestSkipped
+from test.test_support import verify, verbose, TestSkipped
 
 try:
     os.fork

@@ -6,7 +6,7 @@ import os
 import bsddb
 import dbhash # Just so we know it's imported
 import tempfile
-from test_support import verbose, verify
+from test.test_support import verbose, verify
 
 def test(openmethod, what, ondisk=1):
 
