@@ -1191,6 +1191,8 @@ builtin_raw_input(self, args)
 			if (po == NULL)
 				return NULL;
 			prompt = PyString_AsString(po);
+			if (prompt == NULL)
+				return NULL;
 		}
 		else {
 			po = NULL;
