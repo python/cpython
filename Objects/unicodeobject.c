@@ -1834,6 +1834,8 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
     }
     if (_PyUnicode_Resize(&v, (int)(p - PyUnicode_AS_UNICODE(v))))
         goto onError;
+    Py_XDECREF(errorHandler);
+    Py_XDECREF(exc);
     return (PyObject *)v;
 
 ucnhashError:
