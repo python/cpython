@@ -37,9 +37,12 @@ API are included in your code by the following line:
 This implies inclusion of the following standard headers:
 \code{<stdio.h>}, \code{<string.h>}, \code{<errno.h>},
 \code{<limits.h>}, and \code{<stdlib.h>} (if available).
-Since Python may define some pre-processor definitions which affect
-the standard headers on some systems, you must include \file{Python.h}
-before any standard headers are included.
+
+\begin{notice}[warning]
+  Since Python may define some pre-processor definitions which affect
+  the standard headers on some systems, you \emph{must} include
+  \file{Python.h} before any standard headers are included.
+\end{notice}
 
 All user visible names defined by Python.h (except those defined by
 the included standard headers) have one of the prefixes \samp{Py} or
