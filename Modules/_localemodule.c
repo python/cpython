@@ -327,9 +327,11 @@ init_locale()
   PyDict_SetItemString(d,"LC_MONETARY",x);
   Py_XDECREF(x);
 
+#ifdef LC_MESSAGES
   x=PyInt_FromLong(LC_MESSAGES);
   PyDict_SetItemString(d,"LC_MESSAGES",x);
   Py_XDECREF(x);
+#endif /* LC_MESSAGES */
 
   x=PyInt_FromLong(LC_NUMERIC);
   PyDict_SetItemString(d,"LC_NUMERIC",x);
