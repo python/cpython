@@ -1,6 +1,19 @@
-import sys, string, time, os, stat, regex, cgi, faqconf
+"""Generic FAQ Wizard.
 
-from cgi import escape
+This is a CGI program that maintains a user-editable FAQ.  It uses RCS
+to keep track of changes to individual FAQ entries.  It is fully
+configurable; everything you might want to change when using this
+program to maintain some other FAQ than the Python FAQ is contained in
+the configuration module, faqconf.py.
+
+Note that this is not an executable script; it's an importable module.
+The actual script in cgi-bin minimal; it's appended at the end of this
+file as a string literal.
+
+"""
+
+import sys, string, time, os, stat, regex, cgi, faqconf
+from faqconf import *			# This imports all uppercase names
 
 class FileError:
     def __init__(self, file):
@@ -9,34 +22,60 @@ class FileError:
 class InvalidFile(FileError):
     pass
 
+class NoSuchSection(FileError):
+    def __init__(self, section):
+	FileError.__init__(self, NEWFILENAME %(section, 1))
+	self.section = section
+
 class NoSuchFile(FileError):
     def __init__(self, file, why=None):
 	FileError.__init__(self, file)
 	self.why = why
 
+def replace(s, old, new):
+    try:
+	return string.replace(s, old, new)
+    except AttributeError:
+	return string.join(string.split(s, old), new)
+
+def escape(s):
+    s = replace(s, '&', '&amp;')
+    s = replace(s, '<', '&lt;')
+    s = replace(s, '>', '&gt')
+    return s
+
 def escapeq(s):
     s = escape(s)
-    import regsub
-    s = regsub.gsub('"', '&quot;', s)
+    s = replace(s, '"', '&quot;')
     return s
 
-def interpolate(format, entry={}, kwdict={}, **kw):
-    s = format % MDict(kw, entry, kwdict, faqconf.__dict__)
-    return s
+def _interpolate(format, args, kw):
+    try:
+	quote = kw['_quote']
+    except KeyError:
+	quote = 1
+    d = (kw,) + args + (faqconf.__dict__,)
+    m = MagicDict(d, quote)
+    return format % m
 
-def emit(format, entry={}, kwdict={}, file=sys.stdout, **kw):
-    s = format % MDict(kw, entry, kwdict, faqconf.__dict__)
-    file.write(s)
+def interpolate(format, *args, **kw):
+    return _interpolate(format, args, kw)
+
+def emit(format, *args, **kw):
+    try:
+	f = kw['_file']
+    except KeyError:
+	f = sys.stdout
+    f.write(_interpolate(format, args, kw))
 
 translate_prog = None
 
 def translate(text):
     global translate_prog
     if not translate_prog:
-	import regex
 	url = '\(http\|ftp\)://[^ \t\r\n]*'
 	email = '\<[-a-zA-Z0-9._]+@[-a-zA-Z0-9._]+'
-	translate_prog = prog = regex.compile(url + "\|" + email)
+	translate_prog = prog = regex.compile(url + '\|' + email)
     else:
 	prog = translate_prog
     i = 0
@@ -45,10 +84,10 @@ def translate(text):
 	j = prog.search(text, i)
 	if j < 0:
 	    break
-	list.append(cgi.escape(text[i:j]))
+	list.append(escape(text[i:j]))
 	i = j
 	url = prog.group(0)
-	while url[-1] in ");:,.?'\"":
+	while url[-1] in ');:,.?\'"':
 	    url = url[:-1]
 	url = escape(url)
 	if ':' in url:
@@ -58,7 +97,7 @@ def translate(text):
 	list.append(repl)
 	i = i + len(url)
     j = len(text)
-    list.append(cgi.escape(text[i:j]))
+    list.append(escape(text[i:j]))
     return string.join(list, '')
 
 emphasize_prog = None
@@ -67,12 +106,9 @@ def emphasize(line):
     global emphasize_prog
     import regsub
     if not emphasize_prog:
-	import regex
-	pat = "\*\([a-zA-Z]+\)\*"
-	emphasize_prog = prog = regex.compile(pat)
-    else:
-	prog = emphasize_prog
-    return regsub.gsub(prog, "<I>\\1</I>", line)
+	pat = '\*\([a-zA-Z]+\)\*'
+	emphasize_prog = regex.compile(pat)
+    return regsub.gsub(emphasize_prog, '<I>\\1</I>', line)
 
 def load_cookies():
     if not os.environ.has_key('HTTP_COOKIE'):
@@ -90,7 +126,7 @@ def load_cookies():
 def load_my_cookie():
     cookies = load_cookies()
     try:
-	value = cookies[faqconf.COOKIE_NAME]
+	value = cookies[COOKIE_NAME]
     except KeyError:
 	return {}
     import urllib
@@ -105,20 +141,35 @@ def load_my_cookie():
 	    'email': email,
 	    'password': password}
 
-class MDict:
+def send_my_cookie(ui):
+    name = COOKIE_NAME
+    value = "%s/%s/%s" % (ui.author, ui.email, ui.password)
+    import urllib
+    value = urllib.quote(value)
+    now = time.time()
+    then = now + COOKIE_LIFETIME
+    gmt = time.gmtime(then)
+    print "Set-Cookie: %s=%s; path=/cgi-bin/;" % (name, value),
+    print time.strftime("expires=%a, %d-%b-%x %X GMT", gmt)
 
-    def __init__(self, *d):
+class MagicDict:
+
+    def __init__(self, d, quote):
 	self.__d = d
+	self.__quote = quote
 
     def __getitem__(self, key):
 	for d in self.__d:
 	    try:
 		value = d[key]
 		if value:
+		    value = str(value)
+		    if self.__quote:
+			value = escapeq(value)
 		    return value
 	    except KeyError:
 		pass
-	return ""
+	return ''
 
 class UserInput:
 
@@ -140,17 +191,50 @@ class UserInput:
     def __getitem__(self, key):
 	return getattr(self, key)
 
-class FaqFormatter:
+class FaqEntry:
 
-    def __init__(self, entry):
-	self.entry = entry
+    def __init__(self, fp, file, sec_num):
+	self.file = file
+	self.sec, self.num = sec_num
+	if fp:
+	    import rfc822
+	    self.__headers = rfc822.Message(fp)
+	    self.body = string.strip(fp.read())
+	else:
+	    self.__headers = {'title': "%d.%d. " % sec_num}
+	    self.body = ''
+
+    def __getattr__(self, name):
+	if name[0] == '_':
+	    raise AttributeError
+	key = string.join(string.split(name, '_'), '-')
+	try:
+	    value = self.__headers[key]
+	except KeyError:
+	    value = ''
+	setattr(self, name, value)
+	return value
+
+    def __getitem__(self, key):
+	return getattr(self, key)
+
+    def load_version(self):
+	command = interpolate(SH_RLOG_H, self)
+	p = os.popen(command)
+	version = ''
+	while 1:
+	    line = p.readline()
+	    if not line:
+		break
+	    if line[:5] == 'head:':
+		version = string.strip(line[5:])
+	p.close()
+	self.version = version
 
     def show(self, edit=1):
-	entry = self.entry
-	print "<HR>"
-	print "<H2>%s</H2>" % escape(entry.title)
+	emit(ENTRY_HEADER, self)
 	pre = 0
-	for line in string.split(entry.body, '\n'):
+	for line in string.split(self.body, '\n'):
 	    if not string.strip(line):
 		if pre:
 		    print '</PRE>'
@@ -178,57 +262,16 @@ class FaqFormatter:
 	    pre = 0
 	if edit:
 	    print '<P>'
-	    emit(faqconf.ENTRY_FOOTER, self.entry)
-	    if self.entry.last_changed_date:
-		emit(faqconf.ENTRY_LOGINFO, self.entry)
+	    emit(ENTRY_FOOTER, self)
+	    if self.last_changed_date:
+		emit(ENTRY_LOGINFO, self)
 	print '<P>'
-
-class FaqEntry:
-
-    formatterclass = FaqFormatter
-
-    def __init__(self, fp, file, sec_num):
-	import rfc822
-	self.file = file
-	self.sec, self.num = sec_num
-	self.__headers = rfc822.Message(fp)
-	self.body = string.strip(fp.read())
-
-    def __getattr__(self, name):
-	if name[0] == '_':
-	    raise AttributeError
-	key = string.join(string.split(name, '_'), '-')
-	try:
-	    value = self.__headers[key]
-	except KeyError:
-	    value = ''
-	setattr(self, name, value)
-	return value
-
-    def __getitem__(self, key):
-	return getattr(self, key)
-
-    def show(self, edit=1):
-	self.formatterclass(self).show(edit=edit)
-
-    def load_version(self):
-	command = interpolate(faqconf.SH_RLOG_H, self)
-	p = os.popen(command)
-	version = ""
-	while 1:
-	    line = p.readline()
-	    if not line:
-		break
-	    if line[:5] == 'head:':
-		version = string.strip(line[5:])
-	p.close()
-	self.version = version
 
 class FaqDir:
 
     entryclass = FaqEntry
 
-    __okprog = regex.compile('^faq\([0-9][0-9]\)\.\([0-9][0-9][0-9]\)\.htp$')
+    __okprog = regex.compile(OKFILENAME)
 
     def __init__(self, dir=os.curdir):
 	self.__dir = dir
@@ -279,8 +322,17 @@ class FaqDir:
     def show(self, file, edit=1):
 	self.open(file).show(edit=edit)
 
-    def new(self, sec):
-	XXX
+    def new(self, section):
+	if not SECTION_TITLES.has_key(section):
+	    raise NoSuchSection(section)
+	maxnum = 0
+	for file in self.list():
+	    sec, num = self.parse(file)
+	    if sec == section:
+		maxnum = max(maxnum, num)
+	sec_num = (section, maxnum+1)
+	file = NEWFILENAME % sec_num
+	return self.entryclass(None, file, sec_num)
 
 class FaqWizard:
 
@@ -289,13 +341,13 @@ class FaqWizard:
 	self.dir = FaqDir()
 
     def go(self):
-	print "Content-type: text/html"
-	req = self.ui.req or "home"
+	print 'Content-type: text/html'
+	req = self.ui.req or 'home'
 	mname = 'do_%s' % req
 	try:
 	    meth = getattr(self, mname)
 	except AttributeError:
-	    self.error("Bad request %s" % `req`)
+	    self.error("Bad request type %s." % `req`)
 	else:
 	    try:
 		meth()
@@ -303,29 +355,43 @@ class FaqWizard:
 		self.error("Invalid entry file name %s" % exc.file)
 	    except NoSuchFile, exc:
 		self.error("No entry with file name %s" % exc.file)
+	    except NoSuchSection, exc:
+		self.error("No section number %s" % exc.section)
 	self.epilogue()
 
     def error(self, message, **kw):
-	self.prologue(faqconf.T_ERROR)
-	apply(emit, (message,), kw)
+	self.prologue(T_ERROR)
+	emit(message, kw)
 
     def prologue(self, title, entry=None, **kw):
-	emit(faqconf.PROLOGUE, entry, kwdict=kw, title=escape(title))
+	emit(PROLOGUE, entry, kwdict=kw, title=escape(title))
 
     def epilogue(self):
-	emit(faqconf.EPILOGUE)
+	emit(EPILOGUE)
 
     def do_home(self):
-	self.prologue(faqconf.T_HOME)
-	emit(faqconf.HOME)
+	self.prologue(T_HOME)
+	emit(HOME)
+
+    def do_debug(self):
+	self.prologue("FAQ Wizard Debugging")
+	form = cgi.FieldStorage()
+	cgi.print_form(form)
+        cgi.print_environ(os.environ)
+	cgi.print_directory()
+	cgi.print_arguments()
 
     def do_search(self):
 	query = self.ui.query
 	if not query:
-	    self.error("No query string")
+	    self.error("Empty query string!")
 	    return
-	self.prologue(faqconf.T_SEARCH)
-	if self.ui.casefold == "no":
+	self.prologue(T_SEARCH)
+	if self.ui.querytype != 'regex':
+	    for c in '\\.[]?+^$*':
+		if c in query:
+		    query = replace(query, c, '\\'+c)
+	if self.ui.casefold == 'no':
 	    p = regex.compile(query)
 	else:
 	    p = regex.compile(query, regex.casefold)
@@ -338,26 +404,26 @@ class FaqWizard:
 	    if p.search(entry.title) >= 0 or p.search(entry.body) >= 0:
 		hits.append(file)
 	if not hits:
-	    emit(faqconf.NO_HITS, count=0)
-	elif len(hits) <= faqconf.MAXHITS:
+	    emit(NO_HITS, self.ui, count=0)
+	elif len(hits) <= MAXHITS:
 	    if len(hits) == 1:
-		emit(faqconf.ONE_HIT, count=1)
+		emit(ONE_HIT, count=1)
 	    else:
-		emit(faqconf.FEW_HITS, count=len(hits))
+		emit(FEW_HITS, count=len(hits))
 	    self.format_all(hits)
 	else:
-	    emit(faqconf.MANY_HITS, count=len(hits))
+	    emit(MANY_HITS, count=len(hits))
 	    self.format_index(hits)
 
     def do_all(self):
-	self.prologue(faqconf.T_ALL)
+	self.prologue(T_ALL)
 	files = self.dir.list()
 	self.last_changed(files)
 	self.format_all(files)
 
     def do_compat(self):
 	files = self.dir.list()
-	emit(faqconf.COMPAT)
+	emit(COMPAT)
 	self.last_changed(files)
 	self.format_all(files, edit=0)
 	sys.exit(0)
@@ -372,7 +438,7 @@ class FaqWizard:
 	    mtime = st[stat.ST_MTIME]
 	    if mtime > latest:
 		latest = mtime
-	print time.strftime(faqconf.LAST_CHANGED,
+	print time.strftime(LAST_CHANGED,
 			    time.localtime(time.time()))
 
     def format_all(self, files, edit=1):
@@ -380,10 +446,10 @@ class FaqWizard:
 	    self.dir.show(file, edit=edit)
 
     def do_index(self):
-	self.prologue(faqconf.T_INDEX)
-	self.format_index(self.dir.list())
+	self.prologue(T_INDEX)
+	self.format_index(self.dir.list(), add=1)
 
-    def format_index(self, files):
+    def format_index(self, files, add=0):
 	sec = 0
 	for file in files:
 	    try:
@@ -392,14 +458,16 @@ class FaqWizard:
 		continue
 	    if entry.sec != sec:
 		if sec:
-		    emit(faqconf.INDEX_ENDSECTION, sec=sec)
+		    if add:
+			emit(INDEX_ADDSECTION, sec=sec)
+		    emit(INDEX_ENDSECTION, sec=sec)
 		sec = entry.sec
-		emit(faqconf.INDEX_SECTION,
-			    sec=sec,
-			    title=faqconf.SECTION_TITLES[sec])
-	    emit(faqconf.INDEX_ENTRY, entry)
+		emit(INDEX_SECTION, sec=sec, title=SECTION_TITLES[sec])
+	    emit(INDEX_ENTRY, entry)
 	if sec:
-	    emit(faqconf.INDEX_ENDSECTION, sec=sec)
+	    if add:
+		emit(INDEX_ADDSECTION, sec=sec)
+	    emit(INDEX_ENDSECTION, sec=sec)
 
     def do_recent(self):
 	if not self.ui.days:
@@ -422,53 +490,58 @@ class FaqWizard:
 		list.append((mtime, file))
 	list.sort()
 	list.reverse()
-	self.prologue(faqconf.T_RECENT)
+	self.prologue(T_RECENT)
 	if days <= 1:
 	    period = "%.2g hours" % (days*24)
 	else:
 	    period = "%.6g days" % days
 	if not list:
-	    emit(faqconf.NO_RECENT, period=period)
+	    emit(NO_RECENT, period=period)
 	elif len(list) == 1:
-	    emit(faqconf.ONE_RECENT, period=period)
+	    emit(ONE_RECENT, period=period)
 	else:
-	    emit(faqconf.SOME_RECENT, period=period, count=len(list))
+	    emit(SOME_RECENT, period=period, count=len(list))
 	self.format_all(map(lambda (mtime, file): file, list))
-	emit(faqconf.TAIL_RECENT)
+	emit(TAIL_RECENT)
 
     def do_roulette(self):
-	self.prologue(faqconf.T_ROULETTE)
+	self.prologue(T_ROULETTE)
 	file = self.dir.roulette()
 	self.dir.show(file)
 
     def do_help(self):
-	self.prologue(faqconf.T_HELP)
-	emit(faqconf.HELP)
+	self.prologue(T_HELP)
+	emit(HELP)
 
     def do_show(self):
 	entry = self.dir.open(self.ui.file)
-	self.prologue("Python FAQ Entry")
+	self.prologue(T_SHOW)
 	entry.show()
 
     def do_add(self):
 	self.prologue(T_ADD)
-	self.error("Not yet implemented")
+	emit(ADD_HEAD)
+	sections = SECTION_TITLES.items()
+	sections.sort()
+	for section, title in sections:
+	    emit(ADD_SECTION, section=section, title=title)
+	emit(ADD_TAIL)
 
     def do_delete(self):
 	self.prologue(T_DELETE)
-	self.error("Not yet implemented")
+	emit(DELETE)
 
     def do_log(self):
 	entry = self.dir.open(self.ui.file)
-	self.prologue(faqconf.T_LOG, entry)
-	emit(faqconf.LOG, entry)
-	self.rlog(interpolate(faqconf.SH_RLOG, entry), entry)
+	self.prologue(T_LOG, entry)
+	emit(LOG, entry)
+	self.rlog(interpolate(SH_RLOG, entry), entry)
 
     def rlog(self, command, entry=None):
 	output = os.popen(command).read()
-	sys.stdout.write("<PRE>")
+	sys.stdout.write('<PRE>')
 	athead = 0
-	lines = string.split(output, "\n")
+	lines = string.split(output, '\n')
 	while lines and not lines[-1]:
 	    del lines[-1]
 	if lines:
@@ -479,8 +552,8 @@ class FaqWizard:
 	for line in lines:
 	    if entry and athead and line[:9] == 'revision ':
 		rev = string.strip(line[9:])
-		if rev != "1.1":
-		    emit(faqconf.DIFFLINK, entry, rev=rev, line=line)
+		if rev != '1.1':
+		    emit(DIFFLINK, entry, rev=rev, line=line)
 		else:
 		    print line
 		athead = 0
@@ -489,61 +562,76 @@ class FaqWizard:
 		if line[:1] == '-' and len(line) >= 20 and \
 		   line == len(line) * line[0]:
 		    athead = 1
-		    sys.stdout.write("<HR>")
+		    sys.stdout.write('<HR>')
 		else:
 		    print line
-	print "</PRE>"
+	print '</PRE>'
 
     def do_diff(self):
 	entry = self.dir.open(self.ui.file)
 	rev = self.ui.rev
 	r = regex.compile(
-	    "^\([1-9][0-9]?[0-9]?\)\.\([1-9][0-9]?[0-9]?[0-9]?\)$")
+	    '^\([1-9][0-9]?[0-9]?\)\.\([1-9][0-9]?[0-9]?[0-9]?\)$')
 	if r.match(rev) < 0:
-	    self.error("Invalid revision number: %s" % `rev`)
+	    self.error("Invalid revision number: %s." % `rev`)
 	[major, minor] = map(string.atoi, r.group(1, 2))
 	if minor == 1:
-	    self.error("No previous revision")
+	    self.error("No previous revision.")
 	    return
-	prev = "%d.%d" % (major, minor-1)
-	self.prologue(faqconf.T_DIFF, entry)
-	self.shell(interpolate(faqconf.SH_RDIFF, entry, rev=rev, prev=prev))
+	prev = '%d.%d' % (major, minor-1)
+	self.prologue(T_DIFF, entry)
+	self.shell(interpolate(SH_RDIFF, entry, rev=rev, prev=prev))
 
     def shell(self, command):
 	output = os.popen(command).read()
-	sys.stdout.write("<PRE>")
+	sys.stdout.write('<PRE>')
 	print escape(output)
-	print "</PRE>"
+	print '</PRE>'
 
     def do_new(self):
-	editor = FaqEditor(self.ui, self.dir.new(self.file))
-	self.prologue(faqconf.T_NEW)
-	self.error("Not yet implemented")
+	entry = self.dir.new(section=string.atoi(self.ui.section))
+	entry.version = '*new*'
+	self.prologue(T_EDIT)
+	emit(EDITHEAD)
+	emit(EDITFORM1, entry, editversion=entry.version)
+	emit(EDITFORM2, entry, load_my_cookie())
+	emit(EDITFORM3)
+	entry.show(edit=0)
 
     def do_edit(self):
 	entry = self.dir.open(self.ui.file)
 	entry.load_version()
-	self.prologue(faqconf.T_EDIT)
-	emit(faqconf.EDITHEAD)
-	emit(faqconf.EDITFORM1, entry, editversion=entry.version)
-	emit(faqconf.EDITFORM2, entry, load_my_cookie(), log=self.ui.log)
-	emit(faqconf.EDITFORM3)
+	self.prologue(T_EDIT)
+	emit(EDITHEAD)
+	emit(EDITFORM1, entry, editversion=entry.version)
+	emit(EDITFORM2, entry, load_my_cookie())
+	emit(EDITFORM3)
 	entry.show(edit=0)
 
     def do_review(self):
-	entry = self.dir.open(self.ui.file)
-	entry.load_version()
+	send_my_cookie(self.ui)
+	if self.ui.editversion == '*new*':
+	    sec, num = self.dir.parse(self.ui.file)
+	    entry = self.dir.new(section=sec)
+	    entry.version = "*new*"
+	    if entry.file != self.ui.file:
+		self.error("Commit version conflict!")
+		emit(NEWCONFLICT, self.ui, sec=sec, num=num)
+		return
+	else:
+	    entry = self.dir.open(self.ui.file)
+	    entry.load_version()
 	# Check that the FAQ entry number didn't change
 	if string.split(self.ui.title)[:1] != string.split(entry.title)[:1]:
-	    self.error("Don't change the FAQ entry number please.")
+	    self.error("Don't change the entry number please!")
 	    return
 	# Check that the edited version is the current version
 	if entry.version != self.ui.editversion:
-	    self.error("Version conflict.")
-	    emit(faqconf.VERSIONCONFLICT, entry, self.ui)
+	    self.error("Commit version conflict!")
+	    emit(VERSIONCONFLICT, entry, self.ui)
 	    return
-	commit_ok = ((not faqconf.PASSWORD
-		      or self.ui.password == faqconf.PASSWORD) 
+	commit_ok = ((not PASSWORD
+		      or self.ui.password == PASSWORD) 
 		     and self.ui.author
 		     and '@' in self.ui.email
 		     and self.ui.log)
@@ -551,40 +639,45 @@ class FaqWizard:
 	    if not commit_ok:
 		self.cantcommit()
 	    else:
-		self.commit()
+		self.commit(entry)
 	    return
-	self.prologue(faqconf.T_REVIEW)
-	emit(faqconf.REVIEWHEAD)
+	self.prologue(T_REVIEW)
+	emit(REVIEWHEAD)
 	entry.body = self.ui.body
 	entry.title = self.ui.title
 	entry.show(edit=0)
-	emit(faqconf.EDITFORM1, entry, self.ui)
+	emit(EDITFORM1, self.ui, entry)
 	if commit_ok:
-	    emit(faqconf.COMMIT)
+	    emit(COMMIT)
 	else:
-	    emit(faqconf.NOCOMMIT)
-	emit(faqconf.EDITFORM2, entry, load_my_cookie(), log=self.ui.log)
-	emit(faqconf.EDITFORM3)
+	    emit(NOCOMMIT)
+	emit(EDITFORM2, self.ui, entry, load_my_cookie())
+	emit(EDITFORM3)
 
     def cantcommit(self):
-	self.prologue(faqconf.T_CANTCOMMIT)
-	print faqconf.CANTCOMMIT_HEAD
+	self.prologue(T_CANTCOMMIT)
+	print CANTCOMMIT_HEAD
 	if not self.ui.passwd:
-	    emit(faqconf.NEED_PASSWD)
+	    emit(NEED_PASSWD)
 	if not self.ui.log:
-	    emit(faqconf.NEED_LOG)
+	    emit(NEED_LOG)
 	if not self.ui.author:
-	    emit(faqconf.NEED_AUTHOR)
+	    emit(NEED_AUTHOR)
 	if not self.ui.email:
-	    emit(faqconf.NEED_EMAIL)
-	print faqconf.CANTCOMMIT_TAIL
+	    emit(NEED_EMAIL)
+	print CANTCOMMIT_TAIL
 
-    def commit(self):
-	file = self.ui.file
-	entry = self.dir.open(file)
-	# Chech that there were any changes
+    def commit(self, entry):
+	file = entry.file
+	# Normalize line endings in body
+	if '\r' in self.ui.body:
+	    import regsub
+	    self.ui.body = regsub.gsub('\r\n?', '\n', self.ui.body)
+	# Normalize whitespace in title
+	self.ui.title = string.join(string.split(self.ui.title))
+	# Check that there were any changes
 	if self.ui.body == entry.body and self.ui.title == entry.title:
-	    self.error("No changes.")
+	    self.error("You didn't make any changes!")
 	    return
 	# XXX Should lock here
 	try:
@@ -592,25 +685,25 @@ class FaqWizard:
 	except os.error:
 	    pass
 	try:
-	    f = open(file, "w")
+	    f = open(file, 'w')
 	except IOError, why:
-	    self.error(faqconf.CANTWRITE, file=file, why=why)
+	    self.error(CANTWRITE, file=file, why=why)
 	    return
 	date = time.ctime(time.time())
-	emit(faqconf.FILEHEADER, self.ui, os.environ, date=date, file=f)
-	f.write("\n")
+	emit(FILEHEADER, self.ui, os.environ, date=date, _file=f, _quote=0)
+	f.write('\n')
 	f.write(self.ui.body)
-	f.write("\n")
+	f.write('\n')
 	f.close()
 
 	import tempfile
 	tfn = tempfile.mktemp()
-	f = open(tfn, "w")
-	emit(faqconf.LOGHEADER, self.ui, os.environ, date=date, file=f)
+	f = open(tfn, 'w')
+	emit(LOGHEADER, self.ui, os.environ, date=date, _file=f)
 	f.close()
 
 	command = interpolate(
-	    faqconf.SH_LOCK + "\n" + faqconf.SH_CHECKIN,
+	    SH_LOCK + '\n' + SH_CHECKIN,
 	    file=file, tfn=tfn)
 
 	p = os.popen(command)
@@ -618,12 +711,12 @@ class FaqWizard:
 	sts = p.close()
 	# XXX Should unlock here
 	if not sts:
-	    self.prologue(faqconf.T_COMMITTED)
-	    emit(faqconf.COMMITTED)
+	    self.prologue(T_COMMITTED)
+	    emit(COMMITTED)
 	else:
-	    self.error(faqconf.T_COMMITFAILED)
-	    emit(faqconf.COMMITFAILED, sts=sts)
-	print "<PRE>%s</PRE>" % cgi.escape(output)
+	    self.error(T_COMMITFAILED)
+	    emit(COMMITFAILED, sts=sts)
+	print '<PRE>%s</PRE>' % escape(output)
 
 	try:
 	    os.unlink(tfn)
@@ -636,31 +729,17 @@ class FaqWizard:
 wiz = FaqWizard()
 wiz.go()
 
+# This bootstrap script should be placed in your cgi-bin directory.
+# You only need to edit the first two lines: change
+# /usr/local/bin/python to where your Python interpreter lives change
+# the value for FAQDIR to where your FAQ lives.  The faqwiz.py and
+# faqconf.py files should live there, too.
+
 BOOTSTRAP = """\
 #! /usr/local/bin/python
 FAQDIR = "/usr/people/guido/python/FAQ"
-
-# This bootstrap script should be placed in your cgi-bin directory.
-# You only need to edit the first two lines (above): Change
-# /usr/local/bin/python to where your Python interpreter lives (you
-# can't use /usr/bin/env here!); change FAQDIR to where your FAQ
-# lives.  The faqwiz.py and faqconf.py files should live there, too.
-
-import posix
-t1 = posix.times()
-import os, sys, time, operator
+import sys, os
 os.chdir(FAQDIR)
 sys.path.insert(0, FAQDIR)
-try:
-    import faqwiz
-except SystemExit, n:
-    sys.exit(n)
-except:
-    t, v, tb = sys.exc_type, sys.exc_value, sys.exc_traceback
-    print
-    import cgi
-    cgi.print_exception(t, v, tb)
-t2 = posix.times()
-fmt = "<BR>(times: user %.3g, sys %.3g, ch-user %.3g, ch-sys %.3g, real %.3g)"
-print fmt % tuple(map(operator.sub, t2, t1))
+import faqwiz
 """
