@@ -18,30 +18,32 @@ extern "C" {
    Python runtime switches to its own malloc (different from standard
    malloc), no recompilation is required for the extensions.
 
-   The macro versions trade compatibility for speed. They can be used
-   whenever there is a performance problem, but their use implies
-   recompilation of the code for each new Python release. The Python
-   core uses the macros because it *is* compiled on every upgrade.
-   This might not be the case with 3rd party extensions in a custom
-   setup (for example, a customer does not always have access to the
-   source of 3rd party deliverables). You have been warned! */
+   The macro versions are free to trade compatibility for speed, although
+   there's no guarantee they're ever faster.  Extensions shouldn't use the
+   macro versions, as they don't gurantee binary compatibility across
+   releases.
+
+   Do not mix calls to PyMem_xyz with calls to platform
+   malloc/realloc/calloc/free. */
 
 /*
  * Raw memory interface
  * ====================
  */
 
-/* To make sure the interpreter is user-malloc friendly, all memory
-   APIs are implemented on top of this one. */
-
 /* Functions */
 
-/* Function wrappers around PyMem_MALLOC and friends; useful if you
-   need to be sure that you are using the same memory allocator as
-   Python.  Note that the wrappers make sure that allocating 0 bytes
-   returns a non-NULL pointer, even if the underlying malloc
-   doesn't. Returned pointers must be checked for NULL explicitly.
-   No action is performed on failure. */
+/* Functions supplying platform-independent semantics for malloc/realloc/
+   free; useful if you need to be sure you're using the same memory
+   allocator as Python (this can be especially important on Windows, if
+   you need to make sure you're using the same MS malloc/free, and out of
+   the same heap, as the main Python DLL uses).
+   These functions make sure that allocating 0 bytes returns a distinct
+   non-NULL pointer (whenever possible -- if we're flat out of memory, NULL
+   may be returned), even if the platform malloc and realloc don't.
+   Returned pointers must be checked for NULL explicitly.  No action is
+   performed on failure (no exception is set, no warning is printed, etc).` */
+
 extern DL_IMPORT(void *) PyMem_Malloc(size_t);
 extern DL_IMPORT(void *) PyMem_Realloc(void *, size_t);
 extern DL_IMPORT(void) PyMem_Free(void *);
@@ -49,16 +51,29 @@ extern DL_IMPORT(void) PyMem_Free(void *);
 /* Starting from Python 1.6, the wrappers Py_{Malloc,Realloc,Free} are
    no longer supported. They used to call PyErr_NoMemory() on failure. */
 
-/* Macros (override these if you want to a different malloc */
+/* Macros. */
 #ifndef PyMem_MALLOC
-#define PyMem_MALLOC(n)         malloc(n)
-#define PyMem_REALLOC(p, n)     realloc((void *)(p), (n))
-#define PyMem_FREE(p)           free((void *)(p))
+#ifdef MALLOC_ZERO_RETURNS_NULL
+#define PyMem_MALLOC(n)         malloc((n) ? (n) : 1)
+#else
+#define PyMem_MALLOC		malloc
 #endif
+
+/* Caution:  whether MALLOC_ZERO_RETURNS_NULL is #defined has nothing to
+   do with whether platform realloc(non-NULL, 0) normally frees the memory
+   or returns NULL.  Rather than introduce yet another config variation,
+   just make a realloc to 0 bytes act as if to 1 instead. */
+#define PyMem_REALLOC(p, n)     realloc((p), (n) ? (n) : 1)
+
+#define PyMem_FREE           	free
+#endif	/* PyMem_MALLOC */
 
 /*
  * Type-oriented memory interface
  * ==============================
+ *
+ * These are carried along for historical reasons.  There's rarely a good
+ * reason to use them anymore.
  */
 
 /* Functions */
@@ -66,29 +81,29 @@ extern DL_IMPORT(void) PyMem_Free(void *);
 	( (type *) PyMem_Malloc((n) * sizeof(type)) )
 #define PyMem_Resize(p, type, n) \
 	( (p) = (type *) PyMem_Realloc((p), (n) * sizeof(type)) )
-#define PyMem_Del(p) PyMem_Free(p)
+
+/* In order to avoid breaking old code mixing PyObject_{New, NEW} with
+   PyMem_{Del, DEL} (there was no choice about this in 1.5.2), the latter
+   have to be redirected to the object allocator. */
+/* XXX The parser module needs rework before this can be enabled. */
+#if 0
+#define PyMem_Del  PyObject_Free
+#else
+#define PyMem_Del  PyMem_Free
+#endif
 
 /* Macros */
 #define PyMem_NEW(type, n) \
-	( (type *) PyMem_MALLOC(_PyMem_EXTRA + (n) * sizeof(type)) )
+	( (type *) PyMem_MALLOC((n) * sizeof(type)) )
+#define PyMem_RESIZE(p, type, n) \
+	( (p) = (type *) PyMem_REALLOC((p), (n) * sizeof(type)) )
 
-/* See comment near MALLOC_ZERO_RETURNS_NULL in pyport.h. */
-#define PyMem_RESIZE(p, type, n)			\
-	do {						\
-		size_t _sum = (n) * sizeof(type);	\
-		if (!_sum)				\
-			_sum = 1;			\
-		(p) = (type *)((p) ?			\
-			       PyMem_REALLOC(p, _sum) :	\
-			       PyMem_MALLOC(_sum));	\
-	} while (0)
-
-#define PyMem_DEL(p) PyMem_FREE(p)
-
-/* PyMem_XDEL is deprecated. To avoid the call when p is NULL,
-   it is recommended to write the test explicitly in the code.
-   Note that according to ANSI C, free(NULL) has no effect. */
-
+/* XXX The parser module needs rework before this can be enabled. */
+#if 0
+#define PyMem_DEL PyObject_FREE
+#else
+#define PyMem_DEL  PyMem_FREE
+#endif
 
 #ifdef __cplusplus
 }
