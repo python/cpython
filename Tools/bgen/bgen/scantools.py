@@ -392,7 +392,7 @@ if missing: raise "Missing Types"
 			self.report("(No symbol definitions will be written)")
 		else:
 			self.report("defsfile = %s", `self.defsfile.name`)
-			self.defsfile.write("# Generated from %s\n\n" % `inputname`)
+			self.defsfile.write("# Generated from %s\n\n" % `os.path.split(inputname)[1]`)
 			self.writeinitialdefs()
 		self.alreadydone = []
 		try:
