@@ -357,7 +357,8 @@ trace_frame_exc(PyThreadState *tstate, PyFrameObject *f)
 #endif
 
 static PyObject*
-call_with_frame(PyCodeObject *c, PyObject* func, PyObject* args)
+call_with_frame(PyCodeObject *c, PyObject* func, PyObject* args,
+                xmlparseobject *self)
 {
     PyThreadState *tstate = PyThreadState_GET();
     PyFrameObject *f;
@@ -379,6 +380,7 @@ call_with_frame(PyCodeObject *c, PyObject* func, PyObject* args)
     if (res == NULL) {
 	if (tstate->curexc_traceback == NULL)
 	    PyTraceBack_Here(f);
+        XML_StopParser(self->itself, XML_FALSE);
 #ifdef FIX_TRACE
 	if (trace_frame_exc(tstate, f) < 0) {
 	    return NULL;
@@ -453,7 +455,7 @@ call_character_handler(xmlparseobject *self, const XML_Char *buffer, int len)
     /* temp is now a borrowed reference; consider it unused. */
     self->in_callback = 1;
     temp = call_with_frame(getcode(CharacterData, "CharacterData", __LINE__),
-                           self->handlers[CharacterData], args);
+                           self->handlers[CharacterData], args, self);
     /* temp is an owned reference again, or NULL */
     self->in_callback = 0;
     Py_DECREF(args);
@@ -574,7 +576,7 @@ my_StartElementHandler(void *userData,
         /* Container is now a borrowed reference; ignore it. */
         self->in_callback = 1;
         rv = call_with_frame(getcode(StartElement, "StartElement", __LINE__),
-                             self->handlers[StartElement], args);
+                             self->handlers[StartElement], args, self);
         self->in_callback = 0;
         Py_DECREF(args);
         if (rv == NULL) {
@@ -601,7 +603,7 @@ my_##NAME##Handler PARAMS {\
         if (!args) { flag_error(self); return RETURN;} \
         self->in_callback = 1; \
         rv = call_with_frame(getcode(NAME,#NAME,__LINE__), \
-                             self->handlers[NAME], args); \
+                             self->handlers[NAME], args, self); \
         self->in_callback = 0; \
         Py_DECREF(args); \
         if (rv == NULL) { \
@@ -758,7 +760,7 @@ my_ElementDeclHandler(void *userData,
         }
         self->in_callback = 1;
         rv = call_with_frame(getcode(ElementDecl, "ElementDecl", __LINE__),
-                             self->handlers[ElementDecl], args);
+                             self->handlers[ElementDecl], args, self);
         self->in_callback = 0;
         if (rv == NULL) {
             flag_error(self);
