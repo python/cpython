@@ -14,10 +14,9 @@ from email import Message
 EMPTYSTRING = ''
 NL = '\n'
 
-
 
 class Parser:
-    def __init__(self, _class=Message.Message):
+    def __init__(self, _class=Message.Message, strict=1):
         """Parser of RFC 2822 and MIME email messages.
 
         Creates an in-memory object tree representing the email message, which
@@ -32,17 +31,25 @@ class Parser:
         _class is the class to instantiate for new message objects when they
         must be created.  This class must have a constructor that can take
         zero arguments.  Default is Message.Message.
+
+        Optional strict tells the parser to be strictly RFC compliant or to be
+        more forgiving in parsing of ill-formatted MIME documents.  When
+        non-strict mode is used, the parser will try to make up for missing or
+        erroneous boundaries and other peculiarities seen in the wild.
+        Defaults to strict parsing.
         """
         self._class = _class
+        self._strict = strict
 
-    def parse(self, fp):
+    def parse(self, fp, headersonly=0):
         root = self._class()
         self._parseheaders(root, fp)
-        self._parsebody(root, fp)
+        if not headersonly:
+            self._parsebody(root, fp)
         return root
 
-    def parsestr(self, text):
-        return self.parse(StringIO(text))
+    def parsestr(self, text, headersonly=0):
+        return self.parse(StringIO(text), headersonly=headersonly)
 
     def _parseheaders(self, container, fp):
         # Parse the headers, returning a list of header/value pairs.  None as
@@ -67,9 +74,13 @@ class Parser:
                 if lineno == 1:
                     container.set_unixfrom(line)
                     continue
-                else:
+                elif self._strict:
                     raise Errors.HeaderParseError(
                         'Unix-from in headers after first rfc822 header')
+                else:
+                    # ignore the wierdly placed From_ line
+                    # XXX: maybe set unixfrom anyway? or only if not already?
+                    continue
             # Header continuation line
             if line[0] in ' \t':
                 if not lastheader:
@@ -84,8 +95,15 @@ class Parser:
             # instead of raising the exception).
             i = line.find(':')
             if i < 0:
-                raise Errors.HeaderParseError(
-                    'Not a header, not a continuation')
+                if self._strict:
+                    raise Errors.HeaderParseError(
+                        "Not a header, not a continuation: ``%s''"%line)
+                elif lineno == 1 and line.startswith('--'):
+                    # allow through duplicate boundary tags.
+                    continue
+                else:
+                    raise Errors.HeaderParseError(
+                        "Not a header, not a continuation: ``%s''"%line)
             if lastheader:
                 container[lastheader] = NL.join(lastvalue)
             lastheader = line[:i]
@@ -122,31 +140,60 @@ class Parser:
             cre = re.compile('\r\n|\r|\n')
             mo = cre.search(payload, start)
             if mo:
-                start += len(mo.group(0)) * (1 + isdigest)
+                start += len(mo.group(0))
             # We create a compiled regexp first because we need to be able to
             # specify the start position, and the module function doesn't
             # support this signature. :(
             cre = re.compile('(?P<sep>\r\n|\r|\n)' +
                              re.escape(separator) + '--')
             mo = cre.search(payload, start)
-            if not mo:
+            if mo:
+                terminator = mo.start()
+                linesep = mo.group('sep')
+                if mo.end() < len(payload):
+                    # there's some post-MIME boundary epilogue
+                    epilogue = payload[mo.end():]
+            elif self._strict:
                 raise Errors.BoundaryError(
-                    "Couldn't find terminating boundary: %s" % boundary)
-            terminator = mo.start()
-            linesep = mo.group('sep')
-            if mo.end() < len(payload):
-                # there's some post-MIME boundary epilogue
-                epilogue = payload[mo.end():]
+                        "Couldn't find terminating boundary: %s" % boundary)
+            else:
+                # handle the case of no trailing boundary. I hate mail clients.
+                # check that it ends in a blank line
+                endre = re.compile('(?P<sep>\r\n|\r|\n){2}$')
+                mo = endre.search(payload)
+                if not mo:
+                    raise Errors.BoundaryError(
+                        "Couldn't find terminating boundary, and no "+
+                        "trailing empty line")
+                else:
+                    linesep = mo.group('sep')
+                    terminator = len(payload)
             # We split the textual payload on the boundary separator, which
-            # includes the trailing newline.  If the container is a
-            # multipart/digest then the subparts are by default message/rfc822
-            # instead of text/plain.  In that case, they'll have an extra
-            # newline before the headers to distinguish the message's headers
-            # from the subpart headers.
-            separator += linesep * (1 + isdigest)
+            # includes the trailing newline. If the container is a
+            # multipart/digest then the subparts are by default message/rfc822 
+            # instead of text/plain.  In that case, they'll have a optional 
+            # block of MIME headers, then an empty line followed by the 
+            # message headers.
+            separator += linesep
             parts = payload[start:terminator].split(linesep + separator)
             for part in parts:
-                msgobj = self.parsestr(part)
+                if isdigest: 
+                    if part[0] == linesep:
+                        # There's no header block so create an empty message
+                        # object as the container, and lop off the newline so
+                        # we can parse the sub-subobject
+                        msgobj = self._class()
+                        part = part[1:]
+                    else:
+                        parthdrs, part = part.split(linesep+linesep, 1)
+                        # msgobj in this case is the "message/rfc822" container
+                        msgobj = self.parsestr(parthdrs, headersonly=1)
+                    # while submsgobj is the message itself
+                    submsgobj = self.parsestr(part)
+                    msgobj.attach(submsgobj)
+                    msgobj.set_default_type('message/rfc822')
+                else:
+                    msgobj = self.parsestr(part)
                 container.preamble = preamble
                 container.epilogue = epilogue
                 container.attach(msgobj)
