@@ -24,6 +24,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Long (arbitrary precision) integer object interface */
 
+typedef struct _longobject longobject; /* Revealed in longintrepr.h */
+
 extern typeobject Longtype;
 
 #define is_longobject(op) ((op)->ob_type == &Longtype)
@@ -32,3 +34,6 @@ extern object *newlongobject PROTO((long));
 extern object *dnewlongobject PROTO((double));
 extern long getlongvalue PROTO((object *));
 extern double dgetlongvalue PROTO((object *));
+
+object *long_format PROTO((object *, int));
+object *long_scan PROTO((char *, int));
