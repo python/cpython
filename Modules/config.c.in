@@ -24,6 +24,16 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Configurable Python configuration file */
 
+/* These modules are normally always included, but *may* be taken out */
+#define USE_GRP		1	/* Use together with pwd */
+#define USE_MARSHAL	1	/* This is linked anyway */
+#define USE_PWD		1	/* Use together with grp */
+#define USE_POSIX	1
+#define USE_SELECT	1
+#define USE_SOCKET	1
+#define USE_TIME	1
+#define USE_MATH	1
+
 #include "PROTO.h"
 #include "mymalloc.h"
 
@@ -85,7 +95,7 @@ donecalls()
 }
 
 #ifndef PYTHONPATH
-#define PYTHONPATH ".:/usr/local/lib/python"
+#define PYTHONPATH ".:/usr/local/lib/python"
 #endif
 
 extern char *getenv();
@@ -115,26 +125,24 @@ getpythonpath()
    These are initialized when first imported. */
 
 /* Standard modules */
-extern void initgrp();
-extern void initmarshal();
-extern void initmath();
-extern void initposix();
-extern void initpwd();
-extern void initselect();
-extern void initsocket();
-extern void inittime();
 
-#ifdef USE_AUDIO
-extern void initaudio();
-#endif
 #ifdef USE_AL
 extern void inital();
 #endif
 #ifdef USE_AMOEBA
 extern void initamoeba();
 #endif
+#ifdef USE_AUDIO
+extern void initaudio();
+#endif
 #ifdef USE_CD
 extern void initcd();
+#endif
+#ifdef USE_DBM
+extern void initdbm();
+#endif
+#ifdef USE_FCNTL
+extern void initfcntl();
 #endif
 #ifdef USE_FL
 extern void initfl();
@@ -145,8 +153,20 @@ extern void initfm();
 #ifdef USE_GL
 extern void initgl();
 #endif
+#ifdef USE_GRP
+extern void initgrp();
+#endif
+#ifdef USE_IMGFILE
+extern void initimgfile();
+#endif
 #ifdef USE_JPEG
 extern void initjpeg();
+#endif
+#ifdef USE_MARSHAL
+extern void initmarshal();
+#endif
+#ifdef USE_MATH
+extern void initmath();
 #endif
 #ifdef USE_NIS
 extern void initnis();
@@ -154,11 +174,38 @@ extern void initnis();
 #ifdef USE_PANEL
 extern void initpanel();
 #endif
+#ifdef USE_POSIX
+extern void initposix();
+#endif
+#ifdef USE_PWD
+extern void initpwd();
+#endif
 #ifdef USE_REGEX
 extern void initregex();
 #endif
+#ifdef USE_ROTOR
+extern void initrotor();
+#endif
+#ifdef USE_SELECT
+extern void initselect();
+#endif
+#ifdef USE_SGI
+extern void initsgi();
+#endif
+#ifdef USE_SOCKET
+extern void initsocket();
+#endif
 #ifdef USE_STDWIN
 extern void initstdwin();
+#endif
+#ifdef USE_STROP
+extern void initstrop();
+#endif
+#ifdef USE_STRUCT
+extern void initstruct();
+#endif
+#ifdef USE_SUNAUDIODEV
+extern void initsunaudiodev();
 #endif
 #ifdef USE_THREAD
 extern void initthread();
@@ -166,28 +213,14 @@ extern void initthread();
 #ifdef USE_SV
 extern void initsv();
 #endif
+#ifdef USE_TIME
+extern void inittime();
+#endif
 
 struct {
 	char *name;
 	void (*initfunc)();
 } inittab[] = {
-
-	/* Standard modules, in alphabetical order */
-
-	{"grp",		initgrp},
-	{"marshal",	initmarshal},
-	{"math",	initmath},
-	{"posix",	initposix},
-	{"pwd",		initpwd},
-	{"select",	initselect},
-	{"socket",	initsocket},
-	{"time",	inittime},
-
-	/* Optional modules, in alphabetical order */
-
-#ifdef USE_AUDIO
-	{"audio",	initaudio},
-#endif
 
 #ifdef USE_AL
 	{"al",		inital},
@@ -197,8 +230,20 @@ struct {
 	{"amoeba",	initamoeba},
 #endif
 
+#ifdef USE_AUDIO
+	{"audio",	initaudio},
+#endif
+
 #ifdef USE_CD
 	{"cd",		initcd},
+#endif
+
+#ifdef USE_DBM
+	{"dbm",		initdbm},
+#endif
+
+#ifdef USE_FCNTL
+	{"fcntl",	initfcntl},
 #endif
 
 #ifdef USE_FL
@@ -213,8 +258,24 @@ struct {
 	{"gl",		initgl},
 #endif
 
+#ifdef USE_GRP
+	{"grp",		initgrp},
+#endif
+
+#ifdef USE_IMGFILE
+	{"imgfile",	initimgfile},
+#endif
+
 #ifdef USE_JPEG
 	{"jpeg",	initjpeg},
+#endif
+
+#ifdef USE_MARSHAL
+	{"marshal",	initmarshal},
+#endif
+
+#ifdef USE_MATH
+	{"math",	initmath},
 #endif
 
 #ifdef USE_NIS
@@ -225,20 +286,60 @@ struct {
 	{"pnl",		initpanel},
 #endif
 
+#ifdef USE_POSIX
+	{"posix",	initposix},
+#endif
+
+#ifdef USE_PWD
+	{"pwd",		initpwd},
+#endif
+
 #ifdef USE_REGEX
 	{"regex",	initregex},
+#endif
+
+#ifdef USE_ROTOR
+	{"rotor",	initrotor},
+#endif
+
+#ifdef USE_SELECT
+	{"select",	initselect},
+#endif
+
+#ifdef USE_SGI
+	{"sgi",		initsgi},
+#endif
+
+#ifdef USE_SOCKET
+	{"socket",	initsocket},
 #endif
 
 #ifdef USE_STDWIN
 	{"stdwin",	initstdwin},
 #endif
 
-#ifdef USE_THREAD
-	{"thread",	initthread},
+#ifdef USE_STRUCT
+	{"strop",	initstrop},
+#endif
+
+#ifdef USE_STRUCT
+	{"struct",	initstruct},
+#endif
+
+#ifdef USE_SUNAUDIODEV
+	{"sunaudiodev",	initsunaudiodev},
 #endif
 
 #ifdef USE_SV
 	{"sv",		initsv},
+#endif
+
+#ifdef USE_THREAD
+	{"thread",	initthread},
+#endif
+
+#ifdef USE_TIME
+	{"time",	inittime},
 #endif
 
 	{0,		0}		/* Sentinel */
