@@ -62,7 +62,7 @@ typedef struct {
     int stacksize;
     int stackbase;
     /* hooks */
-    SRE_TOLOWER_HOOK tolower;
+    SRE_TOLOWER_HOOK lower;
 } SRE_STATE;
 
 typedef struct {
