@@ -827,7 +827,7 @@ class Wobj:
 	self.data = self.data + data
 
 # ignore these commands
-ignoredcommands = ('bcode', 'ecode')
+ignoredcommands = ('bcode', 'ecode', 'hline', 'fulllineitems', 'small')
 # map commands like these to themselves as plaintext
 wordsselves = ('UNIX', 'ABC', 'C', 'ASCII', 'EOF', 'LaTeX')
 # \{ --> {,  \} --> }, etc
@@ -1978,6 +1978,12 @@ def dumpit(buf, wm, pp):
 
 	if ch.chtype == chunk_type[CSNAME]:
 	    s_buf_data = s(buf, ch.data)
+            if s_buf_data == 'e':
+                wm('\\')
+                continue
+            if s_buf_data == '$':
+                wm('$')
+                continue
 	    wm('@' + s_buf_data)
 	    if s_buf_data == 'node' and \
 		      pp[i].chtype == chunk_type[PLAIN] and \

@@ -136,7 +136,7 @@ The \var{maxblocksize} argument specifies the maximum block size
 
 \begin{funcdesc}{retrlines}{command\optional{\, callback}}
 Retrieve a file or directory listing in \ASCII{} transfer mode.
-var{command} should be an appropriate \samp{RETR} command (see
+\var{command} should be an appropriate \samp{RETR} command (see
 \code{retrbinary()} or a \samp{LIST} command (usually just the string
 \code{"LIST"}).  The \var{callback} function is called for each line,
 with the trailing CRLF stripped.  The default \var{callback} prints
@@ -160,14 +160,14 @@ read until EOF from the open file object \var{file} using its
 
 \begin{funcdesc}{nlst}{argument\optional{\, \ldots}}
 Return a list of files as returned by the \samp{NLST} command.  The
-optional var{argument} is a directory to list (default is the current
+optional \var{argument} is a directory to list (default is the current
 server directory).  Multiple arguments can be used to pass
 non-standard options to the \samp{NLST} command.
 \end{funcdesc}
 
 \begin{funcdesc}{dir}{argument\optional{\, \ldots}}
 Return a directory listing as returned by the \samp{LIST} command, as
-a list of lines.  The optional var{argument} is a directory to list
+a list of lines.  The optional \var{argument} is a directory to list
 (default is the current server directory).  Multiple arguments can be
 used to pass non-standard options to the \samp{LIST} command.  If the
 last argument is a function, it is used as a \var{callback} function
