@@ -197,7 +197,6 @@ class BinHex:
         self.state = _DID_HEADER
 
     def _writeinfo(self, name, finfo):
-        name = name
         nl = len(name)
         if nl > 63:
             raise Error, 'Filename too long'
