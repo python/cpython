@@ -424,7 +424,8 @@ def main():
         outfp.close()
     infp.close()
 
-    cflags = defines + includes + ['$(OPT)']
+    cflags = ['$(OPT)']
+    cppflags = defines + includes
     libs = [os.path.join(binlib, 'libpython$(VERSION).a')]
 
     somevars = {}
@@ -434,6 +435,7 @@ def main():
         somevars[key] = makevars[key]
 
     somevars['CFLAGS'] = string.join(cflags) # override
+    somevars['CPPFLAGS'] = string.join(cppflags) # override
     files = ['$(OPT)', '$(LDFLAGS)', base_config_c, base_frozen_c] + \
             files + supp_sources +  addfiles + libs + \
             ['$(MODLIBS)', '$(LIBS)', '$(SYSLIBS)']

@@ -31,7 +31,8 @@ RLLIBS=-lreadline -ltermcap
 OTHERLIBS=-lnsl -lpthread -ldl -lm -ldb -lutil
 
 # Compilation and link flags -- no need to change normally
-CFLAGS=$(PYINCL) $(OPT)
+CFLAGS=$(OPT)
+CPPFLAGS=$(PYINCL)
 LIBS=$(PYLIBS) $(RLLIBS) $(OTHERLIBS)
 
 # Default port for the pysvr application

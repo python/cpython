@@ -216,7 +216,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			*) src='$(srcdir)/'"$srcdir/$src";;
 			esac
 			case $doconfig in
-			no)	cc="$cc \$(CCSHARED) \$(CFLAGS)";;
+			no)	cc="$cc \$(CCSHARED) \$(CFLAGS) \$(CPPFLAGS)";;
 			*)
 				cc="$cc \$(PY_CFLAGS)";;
 			esac

@@ -15,7 +15,8 @@ VERSION=	2.1
 # Compiler flags
 OPT=		-g
 INCLUDES=	-I$(srcdir)/Include -I$(blddir)
-CFLAGS=		$(OPT) $(INCLUDES)
+CFLAGS=		$(OPT)
+CPPFLAGS=	$(INCLUDES)
 
 # The Python library
 LIBPYTHON=	$(blddir)/libpython$(VERSION).a
