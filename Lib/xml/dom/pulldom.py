@@ -44,6 +44,9 @@ class PullDOM(xml.sax.ContentHandler):
         self._locator = locator
 
     def startPrefixMapping(self, prefix, uri):
+        if not hasattr(self, '_xmlns_attrs'):
+            self._xmlns_attrs = []
+        self._xmlns_attrs.append((prefix or 'xmlns', uri))
         self._ns_contexts.append(self._current_context.copy())
         self._current_context[uri] = prefix or ''
 
@@ -51,6 +54,13 @@ class PullDOM(xml.sax.ContentHandler):
         self._current_context = self._ns_contexts.pop()
 
     def startElementNS(self, name, tagName , attrs):
+        # Retrieve xml namespace declaration attributes.
+        xmlns_uri = 'http://www.w3.org/2000/xmlns/'
+        xmlns_attrs = getattr(self, '_xmlns_attrs', None)
+        if xmlns_attrs is not None:
+            for aname, value in xmlns_attrs:
+                attrs._attrs[(xmlns_uri, aname)] = value
+            self._xmlns_attrs = []
         uri, localname = name
         if uri:
             # When using namespaces, the reader may or may not
@@ -76,7 +86,14 @@ class PullDOM(xml.sax.ContentHandler):
 
         for aname,value in attrs.items():
             a_uri, a_localname = aname
-            if a_uri:
+            if a_uri == xmlns_uri:
+                if a_localname == 'xmlns':
+                    qname = a_localname
+                else:
+                    qname = 'xmlns:' + a_localname
+                attr = self.document.createAttributeNS(a_uri, qname)
+                node.setAttributeNodeNS(attr)
+            elif a_uri:
                 prefix = self._current_context[a_uri]
                 if prefix:
                     qname = prefix + ":" + a_localname
