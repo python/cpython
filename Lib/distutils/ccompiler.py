@@ -67,10 +67,12 @@ class CCompiler:
 
     def __init__ (self,
                   verbose=0,
-                  dry_run=0):
+                  dry_run=0,
+                  force=0):
 
         self.verbose = verbose
         self.dry_run = dry_run
+        self.force = force
 
         # 'output_dir': a common output directory for object, library,
         # shared object, and shared library files
@@ -312,9 +314,19 @@ class CCompiler:
            'output_libname' should be a library name, not a filename;
            the filename will be inferred from the library name.
 
-           'library_dirs', if supplied, should be a list of additional
-           directories to search on top of the system default and those
-           supplied to 'add_library_dir()' and/or 'set_library_dirs()'.
+           'libraries' is a list of libraries to link against.  These are
+           library names, not filenames, since they're translated into
+           filenames in a platform-specific way (eg. "foo" becomes
+           "libfoo.a" on Unix and "foo.lib" on DOS/Windows).  However, they
+           can include a directory component, which means the linker will
+           look in that specific directory rather than searching all the
+           normal locations.
+
+           'library_dirs', if supplied, should be a list of directories to
+           search for libraries that were specified as bare library names
+           (ie. no directory component).  These are on top of the system
+           default and those supplied to 'add_library_dir()' and/or
+           'set_library_dirs()'.
 
            'extra_preargs' and 'extra_postargs' are as for 'compile()'
            (except of course that they supply command-line arguments
@@ -402,6 +414,9 @@ class CCompiler:
         if self.verbose >= level:
             print msg
 
+    def warn (self, msg):
+        sys.stderr.write ("warning: %s\n" % msg)
+
     def spawn (self, cmd):
         spawn (cmd, verbose=self.verbose, dry_run=self.dry_run)
 
@@ -429,7 +444,8 @@ compiler_class = { 'unix': ('unixccompiler', 'UnixCCompiler'),
 def new_compiler (plat=None,
                   compiler=None,
                   verbose=0,
-                  dry_run=0):
+                  dry_run=0,
+                  force=0):
 
     """Generate an instance of some CCompiler subclass for the supplied
        platform/compiler combination.  'plat' defaults to 'os.name'
@@ -470,7 +486,7 @@ def new_compiler (plat=None,
               ("can't compile C/C++ code: unable to find class '%s' " +
                "in module '%s'") % (class_name, module_name)
 
-    return klass (verbose, dry_run)
+    return klass (verbose, dry_run, force)
 
 
 def gen_preprocess_options (macros, includes):
@@ -524,20 +540,18 @@ def gen_preprocess_options (macros, includes):
 # gen_preprocess_options ()
 
 
-def gen_lib_options (library_dirs, libraries, dir_format, lib_format):
+def gen_lib_options (compiler, library_dirs, libraries):
     """Generate linker options for searching library directories and
        linking with specific libraries.  'libraries' and 'library_dirs'
        are, respectively, lists of library names (not filenames!) and
-       search directories.  'lib_format' is a format string with exactly
-       one "%s", into which will be plugged each library name in turn;
-       'dir_format' is similar, but directory names will be plugged into
-       it.  Returns a list of command-line options suitable for use with
-       some compiler (depending on the two format strings passed in)."""
+       search directories.  Returns a list of command-line options suitable
+       for use with some compiler (depending on the two format strings
+       passed in)."""
 
     lib_opts = []
 
     for dir in library_dirs:
-        lib_opts.append (dir_format % dir)
+        lib_opts.append (compiler.library_dir_option (dir))
 
     # XXX it's important that we *not* remove redundant library mentions!
     # sometimes you really do have to say "-lfoo -lbar -lfoo" in order to
@@ -546,7 +560,16 @@ def gen_lib_options (library_dirs, libraries, dir_format, lib_format):
     # pretty nasty way to arrange your C code.
 
     for lib in libraries:
-        lib_opts.append (lib_format % lib)
+        (lib_dir, lib_name) = os.path.split (lib)
+        if lib_dir:
+            lib_file = compiler.find_library_file ([lib_dir], lib_name)
+            if lib_file:
+                lib_opts.append (lib_file)
+            else:
+                compiler.warn ("no library file corresponding to "
+                               "'%s' found (skipping)" % lib)
+        else:
+            lib_opts.append (compiler.library_option (lib))
 
     return lib_opts
 
