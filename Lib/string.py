@@ -167,7 +167,8 @@ class Template:
                 return self.delimiter
             if mo.group('invalid') is not None:
                 self._invalid(mo)
-            raise ValueError('Unrecognized named group in pattern', pattern)
+            raise ValueError('Unrecognized named group in pattern',
+                             self.pattern)
         return self.pattern.sub(convert, self.template)
 
     def safe_substitute(self, *args, **kws):
@@ -199,7 +200,8 @@ class Template:
                 return self.delimiter
             if mo.group('invalid') is not None:
                 self._invalid(mo)
-            raise ValueError('Unrecognized named group in pattern', pattern)
+            raise ValueError('Unrecognized named group in pattern',
+                             self.pattern)
         return self.pattern.sub(convert, self.template)
 
 
