@@ -770,7 +770,7 @@ see its docs for details.
         >>> m1 = new.module('_m1')
         >>> m2 = new.module('_m2')
         >>> test_data = \"""
-        ... def f():
+        ... def _f():
         ...     '''>>> assert 1 == 1
         ...     '''
         ... def g():
@@ -785,26 +785,32 @@ see its docs for details.
         ... \"""
         >>> exec test_data in m1.__dict__
         >>> exec test_data in m2.__dict__
+        >>> m1.__dict__.update({"f2": m2._f, "g2": m2.g, "h2": m2.H})
 
         Tests that objects outside m1 are excluded:
 
-        >>> d = {"_f": m1.f,  "g": m1.g,  "h": m1.H,
-        ...      "f2": m2.f, "g2": m2.g, "h2": m2.H}
         >>> t = Tester(globs={}, verbose=0)
-        >>> t.rundict(d, "rundict_test", m1)  # _f, f2 and g2 and h2 skipped
+        >>> t.rundict(m1.__dict__, "rundict_test", m1)  # _f, f2 and g2 and h2 skipped
         (0, 3)
 
         Again, but with a custom isprivate function allowing _f:
 
         >>> t = Tester(globs={}, verbose=0, isprivate=lambda x,y: 0)
-        >>> t.rundict(d, "rundict_test_pvt", m1)  # Only f2, g2 and h2 skipped
+        >>> t.rundict(m1.__dict__, "rundict_test_pvt", m1)  # Only f2, g2 and h2 skipped
         (0, 4)
 
         And once more, not excluding stuff outside m1:
 
         >>> t = Tester(globs={}, verbose=0, isprivate=lambda x,y: 0)
-        >>> t.rundict(d, "rundict_test_pvt")  # None are skipped.
+        >>> t.rundict(m1.__dict__, "rundict_test_pvt")  # None are skipped.
         (0, 8)
+
+        The exclusion of objects from outside the designated module is
+        meant to be invoked automagically by testmod.
+
+        >>> testmod(m1)
+        (0, 3)
+
         """
 
         if not hasattr(d, "items"):
@@ -1037,7 +1043,7 @@ def testmod(m, name=None, globs=None, verbose=None, isprivate=None,
         name = m.__name__
     tester = Tester(m, globs=globs, verbose=verbose, isprivate=isprivate)
     failures, tries = tester.rundoc(m, name)
-    f, t = tester.rundict(m.__dict__, name)
+    f, t = tester.rundict(m.__dict__, name, m)
     failures = failures + f
     tries = tries + t
     if hasattr(m, "__test__"):
