@@ -329,7 +329,6 @@ Sleep(int milli)
 	select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t);
 }
 #endif /* MS_WINDOWS */
-#endif /* WITH_THREAD */
 
 /* Wait up to 1s for the mainloop to come up. */
 
@@ -349,6 +348,7 @@ WaitForMainloop(TkappObject* self)
 	PyErr_SetString(PyExc_RuntimeError, "main thread is not in main loop");
 	return 0;
 }
+#endif /* WITH_THREAD */
 
 
 static char *
@@ -624,11 +624,13 @@ Tkapp_New(char *screenName, char *baseName, char *className,
 	    return 0;
 	}
 #endif
+#ifdef WITH_THREAD
 	if (v->threaded && tcl_lock) {
 	    /* If Tcl is threaded, we don't need the lock. */
 	    PyThread_free_lock(tcl_lock);
 	    tcl_lock = NULL;
 	}
+#endif
 
 	v->BooleanType = Tcl_GetObjType("boolean");
 	v->ByteArrayType = Tcl_GetObjType("bytearray");
@@ -1246,6 +1248,7 @@ Tkapp_Call(PyObject *_self, PyObject *args)
 	/* Could add TCL_EVAL_GLOBAL if wrapped by GlobalCall... */
 	int flags = TCL_EVAL_DIRECT;
 
+#ifdef WITH_THREAD
 	if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
 		/* We cannot call the command directly. Instead, we must
 		   marshal the parameters to the interpreter thread. */
@@ -1272,7 +1275,9 @@ Tkapp_Call(PyObject *_self, PyObject *args)
 				PyErr_SetObject(Tkinter_TclError, exc_value);
 		}
 	}
-	else {
+	else 
+#endif
+	{
 
 		objv = Tkapp_CallArgs(args, objStore, &objc);
 		if (!objv)
@@ -1532,6 +1537,7 @@ var_invoke(PyObject *_self, char* arg1, char* arg2, char* arg3, int flags,
 	ev->coderesult = coderesult;
 	ev->res = &res;
 	ev->exc = &exc;
+#ifdef WITH_THREAD
 	if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
 		/* The current thread is not the interpreter thread.  Marshal
 		   the call to the interpreter thread, then wait for
@@ -1543,7 +1549,9 @@ var_invoke(PyObject *_self, char* arg1, char* arg2, char* arg3, int flags,
 		ev->ev.proc = (Tcl_EventProc*)var_proc;
 		Tkapp_ThreadSend(self, (Tcl_Event*)ev, &ev->cond, &var_mutex);
 	}
-	else {
+	else 
+#endif
+	{
 		/* Tcl is not threaded, or this is the interpreter thread.  To
 		   perform the call, we must hold the TCL lock. To receive the
 		   results, we must also hold the Python lock. */
@@ -2049,9 +2057,11 @@ Tkapp_CreateCommand(PyObject *_self, PyObject *args)
 		return NULL;
 	}
 
+#ifdef WITH_THREAD
 	if (self->threaded && self->thread_id != Tcl_GetCurrentThread() &&
 	    !WaitForMainloop(self))
 		return NULL;
+#endif
 
 	data = PyMem_NEW(PythonCmd_ClientData, 1);
 	if (!data)
@@ -2208,6 +2218,7 @@ Tkapp_CreateFileHandler(PyObject *self, PyObject *args)
 			      &file, &mask, &func))
 		return NULL;
 
+#ifdef WITH_THREAD
 	if (!self && !tcl_lock) {
 		/* We don't have the Tcl lock since Tcl is threaded. */
 		PyErr_SetString(PyExc_RuntimeError,
@@ -2215,6 +2226,7 @@ Tkapp_CreateFileHandler(PyObject *self, PyObject *args)
 				"for threaded Tcl");
 		return NULL;
 	}
+#endif
 
 	if (self) {
 		CHECK_TCL_APPARTMENT;
@@ -2249,6 +2261,7 @@ Tkapp_DeleteFileHandler(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "O:deletefilehandler", &file))
 		return NULL;
 
+#ifdef WITH_THREAD
 	if (!self && !tcl_lock) {
 		/* We don't have the Tcl lock since Tcl is threaded. */
 		PyErr_SetString(PyExc_RuntimeError,
@@ -2256,6 +2269,7 @@ Tkapp_DeleteFileHandler(PyObject *self, PyObject *args)
 				"for threaded Tcl");
 		return NULL;
 	}
+#endif
 
 	if (self) {
 		CHECK_TCL_APPARTMENT;
@@ -2426,6 +2440,7 @@ Tkapp_CreateTimerHandler(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
+#ifdef WITH_THREAD
 	if (!self && !tcl_lock) {
 		/* We don't have the Tcl lock since Tcl is threaded. */
 		PyErr_SetString(PyExc_RuntimeError,
@@ -2433,6 +2448,7 @@ Tkapp_CreateTimerHandler(PyObject *self, PyObject *args)
 				"for threaded Tcl");
 		return NULL;
 	}
+#endif
 
 	if (self) {
 		CHECK_TCL_APPARTMENT;
@@ -2460,6 +2476,7 @@ Tkapp_MainLoop(PyObject *_self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "|i:mainloop", &threshold))
 		return NULL;
 
+#ifdef WITH_THREAD
 	if (!self && !tcl_lock) {
 		/* We don't have the Tcl lock since Tcl is threaded. */
 		PyErr_SetString(PyExc_RuntimeError,
@@ -2467,6 +2484,7 @@ Tkapp_MainLoop(PyObject *_self, PyObject *args)
 				"for threaded Tcl");
 		return NULL;
 	}
+#endif
 
 	if (self) {
 		CHECK_TCL_APPARTMENT;
@@ -2834,7 +2852,9 @@ MyFileProc(void *clientData, int mask)
 }
 #endif
 
+#ifdef WITH_THREAD
 static PyThreadState *event_tstate = NULL;
+#endif
 
 static int
 EventHook(void)
