@@ -139,13 +139,13 @@ def isfile(s):
 
 
 def exists(s):
-    """Return true if the pathname refers to an existing file or directory."""
+    """Return True if the pathname refers to an existing file or directory."""
 
     try:
         st = os.stat(s)
     except os.error:
-        return 0
-    return 1
+        return False
+    return True
 
 # Return the longest prefix of all list elements.
 

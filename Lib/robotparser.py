@@ -134,9 +134,9 @@ class RobotFileParser:
         _debug("Checking robot.txt allowance for:\n  user agent: %s\n  url: %s" %
                (useragent, url))
         if self.disallow_all:
-            return 0
+            return False
         if self.allow_all:
-            return 1
+            return True
         # search for given user agent matches
         # the first match counts
         url = urllib.quote(urlparse.urlparse(urllib.unquote(url))[2]) or "/"
@@ -147,7 +147,7 @@ class RobotFileParser:
         if self.default_entry:
             return self.default_entry.allowance(url)
         # agent not found ==> access granted
-        return 1
+        return True
 
 
     def __str__(self):
@@ -195,11 +195,11 @@ class Entry:
         for agent in self.useragents:
             if agent=='*':
                 # we have the catch-all agent
-                return 1
+                return True
             agent = agent.lower()
             if useragent.find(agent) != -1:
-                return 1
-        return 0
+                return True
+        return False
 
     def allowance(self, filename):
         """Preconditions:

@@ -600,8 +600,8 @@ class FieldStorage:
         if self.list is None:
             raise TypeError, "not indexable"
         for item in self.list:
-            if item.name == key: return 1
-        return 0
+            if item.name == key: return True
+        return False
 
     def __len__(self):
         """Dictionary style len(x) support."""

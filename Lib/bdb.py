@@ -92,31 +92,31 @@ class Bdb:
 
     def stop_here(self, frame):
         if self.stopframe is None:
-            return 1
+            return True
         if frame is self.stopframe:
-            return 1
+            return True
         while frame is not None and frame is not self.stopframe:
             if frame is self.botframe:
-                return 1
+                return True
             frame = frame.f_back
-        return 0
+        return False
 
     def break_here(self, frame):
         filename = self.canonic(frame.f_code.co_filename)
         if not self.breaks.has_key(filename):
-            return 0
+            return False
         lineno = frame.f_lineno
         if not lineno in self.breaks[filename]:
-            return 0
+            return False
         # flag says ok to delete temp. bp
         (bp, flag) = effective(filename, lineno, frame)
         if bp:
             self.currentbp = bp.number
             if (flag and bp.temporary):
                 self.do_clear(str(bp.number))
-            return 1
+            return True
         else:
-            return 0
+            return False
 
     def do_clear(self, arg):
         raise NotImplementedError, "subclass of bdb must implement do_clear()"

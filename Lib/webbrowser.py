@@ -78,15 +78,15 @@ def _synthesize(browser):
 
 
 def _iscommand(cmd):
-    """Return true if cmd can be found on the executable search path."""
+    """Return True if cmd can be found on the executable search path."""
     path = os.environ.get("PATH")
     if not path:
-        return 0
+        return False
     for d in path.split(os.pathsep):
         exe = os.path.join(d, cmd)
         if os.path.isfile(exe):
-            return 1
-    return 0
+            return True
+    return False
 
 
 PROCESS_CREATION_DELAY = 4

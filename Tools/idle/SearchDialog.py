@@ -34,9 +34,9 @@ class SearchDialog(SearchDialogBase):
     def find_again(self, text):
         if not self.engine.getpat():
             self.open(text)
-            return 0
+            return False
         if not self.engine.getprog():
-            return 0
+            return False
         res = self.engine.search_text(text)
         if res:
             line, m = res
@@ -48,17 +48,17 @@ class SearchDialog(SearchDialogBase):
                 sellast = text.index("sel.last")
                 if selfirst == first and sellast == last:
                     text.bell()
-                    return 0
+                    return False
             except TclError:
                 pass
             text.tag_remove("sel", "1.0", "end")
             text.tag_add("sel", first, last)
             text.mark_set("insert", self.engine.isback() and first or last)
             text.see("insert")
-            return 1
+            return True
         else:
             text.bell()
-            return 0
+            return False
 
     def find_selection(self, text):
         pat = text.get("sel.first", "sel.last")
