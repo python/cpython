@@ -1,8 +1,6 @@
 import imp
 import os
 import marshal
-import stat
-import string
 import struct
 import sys
 import types
@@ -135,7 +133,7 @@ class Module(AbstractCompileMode):
         # calling the interface that would also generate a 1-byte code
         # to indicate the type of the value.  simplest way to get the
         # same effect is to call marshal and then skip the code.
-        mtime = os.stat(self.filename)[stat.ST_MTIME]
+        mtime = os.path.getmtime(self.filename)
         mtime = struct.pack('i', mtime)
         return self.MAGIC + mtime
 
@@ -764,7 +762,7 @@ class CodeGenerator:
             if VERSION > 1:
                 self.emit('LOAD_CONST', None)
             self.emit('IMPORT_NAME', name)
-            mod = string.split(name, ".")[0]
+            mod = name.split(".")[0]
             self.storeName(alias or mod)
 
     def visitFrom(self, node):
@@ -790,7 +788,7 @@ class CodeGenerator:
         self.emit('POP_TOP')
 
     def _resolveDots(self, name):
-        elts = string.split(name, ".")
+        elts = name.split(".")
         if len(elts) == 1:
             return
         for elt in elts[1:]:
