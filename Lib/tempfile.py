@@ -126,11 +126,12 @@ class TemporaryFileWrapper:
 
 def TemporaryFile(mode='w+b', bufsize=-1, suffix=""):
     name = mktemp(suffix)
-    file = open(name, mode, bufsize)
-    try:
+    if os.name == 'posix':
+        # Unix -- be very careful
+        fd = os.open(name, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700)
         os.unlink(name)
-    except os.error:
-        # Non-unix -- can't unlink file that's still open, use wrapper
-        return TemporaryFileWrapper(file, name)
+        return os.fdopen(fd, mode, bufsize)
     else:
-        return file
+        # Non-unix -- can't unlink file that's still open, use wrapper
+        file = open(name, mode, bufsize)
+        return TemporaryFileWrapper(file, name)
