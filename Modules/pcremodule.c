@@ -164,7 +164,7 @@ staticforward PyTypeObject Pcre_Type = {
 	/* methods */
 	(destructor)PyPcre_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	PyPcre_getattr,                      /*tp_getattr*/
+	(getattrfunc)PyPcre_getattr, /*tp_getattr*/
 	0,                      /*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
