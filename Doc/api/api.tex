@@ -1596,7 +1596,7 @@ Return element of \var{o} corresponding to the object \var{key} or
 \samp{\var{o}[\var{key}]}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyMapping_SetItemString}{PyObject *o, char *key, PyObject *v}
+\begin{cfuncdesc}{int}{PyMapping_SetItemString}{PyObject *o, char *key, PyObject *v}
 Map the object \var{key} to the value \var{v} in object \var{o}.
 Returns \code{-1} on failure.  This is the equivalent of the Python
 statement \samp{\var{o}[\var{key}] = \var{v}}.
