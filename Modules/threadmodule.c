@@ -221,7 +221,7 @@ t_bootstrap(void *boot_raw)
 static PyObject *
 thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 {
-	PyObject *func, *args = NULL, *keyw = NULL;
+	PyObject *func, *args, *keyw = NULL;
 	struct bootstate *boot;
 
 	if (!PyArg_ParseTuple(fargs, "OO|O:start_new_thread", &func, &args, &keyw))
@@ -233,7 +233,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 	}
 	if (!PyTuple_Check(args)) {
 		PyErr_SetString(PyExc_TypeError,
-				"optional 2nd arg must be a tuple");
+				"2nd arg must be a tuple");
 		return NULL;
 	}
 	if (keyw != NULL && !PyDict_Check(keyw)) {
