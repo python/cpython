@@ -770,7 +770,11 @@ class EditorWindow:
         return idleConf.GetExtensions()
 
     def load_extension(self, name):
-        mod = __import__(name, globals(), locals(), [])
+        try:
+            mod = __import__(name, globals(), locals(), [])
+        except ImportError:
+            print "\nFailed to import extension: ", name
+            return None
         cls = getattr(mod, name)
         ins = cls(self)
         self.extensions[name] = ins

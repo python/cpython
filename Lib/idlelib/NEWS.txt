@@ -3,6 +3,9 @@ What's New in IDLE 1.0.4?
 
 *Release date: XX-Jan-2005*
 
+- If an extension can't be loaded, print warning and skip it instead of
+  erroring out.
+
 - Improve error handling when .idlerc can't be created.  This is a partial
   backport of configHandler.py, Revision 1.36,  11Jan05.
 
