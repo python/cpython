@@ -219,7 +219,7 @@ class StringIO:
         slen = self.len
         if spos == slen:
             self.buflist.append(s)
-            self.len = self.pos = slen = spos = spos + len(s)
+            self.len = self.pos = spos + len(s)
             return
         if spos > slen:
             self.buflist.append('\0'*(spos - slen))
@@ -231,10 +231,11 @@ class StringIO:
             self.buflist = [self.buf[:spos], s, self.buf[newpos:]]
             self.buf = ''
             if newpos > slen:
-                self.len = newpos
+                slen = newpos
         else:
             self.buflist.append(s)
-            self.len = newpos
+            slen = newpos
+        self.len = slen
         self.pos = newpos
 
     def writelines(self, iterable):
