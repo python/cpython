@@ -1555,7 +1555,7 @@ class OutputChecker:
 
         # This flag causes doctest to ignore any differences in the
         # contents of whitespace strings.  Note that this can be used
-        # in conjunction with the ELLISPIS flag.
+        # in conjunction with the ELLIPSIS flag.
         if optionflags & NORMALIZE_WHITESPACE:
             got = ' '.join(got.split())
             want = ' '.join(want.split())
@@ -2435,6 +2435,7 @@ __test__ = {"_TestClass": _TestClass,
                       >>> x + y, x * y
                       (3, 2)
                       """,
+
             "bool-int equivalence": r"""
                                     In 2.2, boolean expressions displayed
                                     0 or 1.  By default, we still accept
@@ -2450,30 +2451,32 @@ __test__ = {"_TestClass": _TestClass,
                                     >>> 4 > 4
                                     False
                                     """,
+
             "blank lines": r"""
-            Blank lines can be marked with <BLANKLINE>:
-                >>> print 'foo\n\nbar\n'
-                foo
-                <BLANKLINE>
-                bar
-                <BLANKLINE>
+                Blank lines can be marked with <BLANKLINE>:
+                    >>> print 'foo\n\nbar\n'
+                    foo
+                    <BLANKLINE>
+                    bar
+                    <BLANKLINE>
             """,
-            }
-#             "ellipsis": r"""
-#             If the ellipsis flag is used, then '...' can be used to
-#             elide substrings in the desired output:
-#                 >>> print range(1000)
-#                 [0, 1, 2, ..., 999]
-#             """,
-#             "whitespace normalization": r"""
-#             If the whitespace normalization flag is used, then
-#             differences in whitespace are ignored.
-#                 >>> print range(30)
-#                 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
-#                  15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
-#                  27, 28, 29]
-#             """,
-#            }
+
+            "ellipsis": r"""
+                If the ellipsis flag is used, then '...' can be used to
+                elide substrings in the desired output:
+                    >>> print range(1000) #doctest: +ELLIPSIS
+                    [0, 1, 2, ..., 999]
+            """,
+
+            "whitespace normalization": r"""
+                If the whitespace normalization flag is used, then
+                differences in whitespace are ignored.
+                    >>> print range(30) #doctest: +NORMALIZE_WHITESPACE
+                    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
+                     15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+                     27, 28, 29]
+            """,
+           }
 
 def test1(): r"""
 >>> warnings.filterwarnings("ignore", "class Tester", DeprecationWarning,
@@ -2592,11 +2595,6 @@ def test4(): """
 """
 
 def _test():
-    #import doctest
-    #doctest.testmod(doctest, verbose=False,
-    #                optionflags=ELLIPSIS | NORMALIZE_WHITESPACE |
-    #                UNIFIED_DIFF)
-    #print '~'*70
     r = unittest.TextTestRunner()
     r.run(DocTestSuite())
 
