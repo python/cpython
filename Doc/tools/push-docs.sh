@@ -78,6 +78,7 @@ if $ANNOUNCE ; then
 To: $ADDRESSES
 From: "Fred L. Drake" <fdrake@acm.org>
 Subject: [$DOCLABEL doc updates]
+X-No-Archive: yes
 
 The $DOCLABEL version of the documentation has been updated:
 
