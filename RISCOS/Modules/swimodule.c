@@ -11,6 +11,9 @@
    * Added swi.ArgError which is generated for errors when the user passes invalid arguments to
        functions etc
    * Added "errnum" attribute to swi.error, so one can now check to see what the error number was
+
+ 1.02  03 March 2002 Dietmar Schwertberger
+   * Added string, integer, integers, tuple and tuples
 */
 
 #include "oslib/os.h"
@@ -412,12 +415,154 @@ static PyObject *swi_swi(PyObject *self,PyObject *args)
   fail:Py_DECREF(result);return 0;
 }
 
+static PyObject *swi_string(PyObject *self, PyObject *arg)
+{ char *s;
+  int l=-1;
+  if(!PyArg_ParseTuple(arg,"i|i",(unsigned int *)&s, &l)) return NULL;
+  if (l==-1)
+    l = strlen(s);
+  return PyString_FromStringAndSize((char*)s, l);
+}
+
+static char swi_string__doc__[] =
+"string(address[, length]) -> string\n\
+Read a null terminated string from the given address.";
+
+
+static PyObject *swi_integer(PyObject *self, PyObject *arg)
+{ int *i;
+
+  if(!PyArg_ParseTuple(arg,"i",(unsigned int *)&i))
+    return NULL;
+  return PyInt_FromLong(*i);
+}
+
+static char swi_integer__doc__[] =
+"integer(address) -> string\n\
+Read an integer from the given address.";
+
+
+static PyObject *swi_integers(PyObject *self, PyObject *arg)
+{ int *i;
+  int c=-1;
+  PyObject *result, *result1;
+  
+  if(!PyArg_ParseTuple(arg,"i|i",(unsigned int *)&i, &c)) return NULL;
+  result=PyList_New(0);
+  if (result) {
+    while ( c>0 || (c==-1 && *i) ) {
+      result1 = PyInt_FromLong((long)*i);
+      if (!result1) {
+        Py_DECREF(result);
+        return NULL;
+      }
+      if (PyList_Append(result, result1)!=0) {
+        Py_DECREF(result);
+        Py_DECREF(result1);
+        return NULL;
+      };
+      i++;
+      if (c!=-1)
+        c--;
+    }
+  }
+  return result;
+}
+
+static char swi_integers__doc__[] =
+"integers(address[, count]) -> string\n\
+Either read a null terminated list of integers or\n\
+a list of given length from the given address.";
+
+
+static PyObject *swi_tuples(PyObject *self, PyObject *arg)
+{
+  unsigned char *i;         /* points to current */
+  int c=-1, l=4, j, zero;         /* count, length, index */
+  PyObject *result, *result1, *result11;
+  
+  if(!PyArg_ParseTuple(arg,"i|ii",(unsigned int *)&i, &l, &c)) return NULL;
+  result=PyList_New(0);
+  if (result) {
+    while (c) {
+      result1 = PyTuple_New(l);
+      if (!result1) {
+        Py_DECREF(result);
+        return NULL;
+      }
+      zero = (c==-1); /* check for zeros? */
+      for(j=0;j<l;j++) {
+        if (zero && *i)
+          zero = 0;   /* non-zero found */
+        result11 = PyInt_FromLong((long)(*i));
+        if (!result11) {
+          Py_DECREF(result);
+          return NULL;
+        }
+        PyTuple_SetItem(result1, j, result11);
+        i++;
+      }
+      if (c==-1 && zero) {
+        Py_DECREF(result1);
+        c = 0;
+        break;
+      }
+      if (PyList_Append(result, result1)!=0) {
+        Py_DECREF(result1);
+        Py_DECREF(result);
+        return NULL;
+      }
+      if (c!=-1)
+        c--;
+    }
+  }
+  return result;
+}
+
+static char swi_tuples__doc__[] =
+"tuples(address[, length=4[, count]]) -> string\n\
+Either read a null terminated list of byte tuples or\n\
+a list of given length from the given address.";
+
+
+static PyObject *swi_tuple(PyObject *self, PyObject *arg)
+{
+  unsigned char *i;         /* points to current */
+  int c=1, j;
+  PyObject *result, *result1;
+  
+  if(!PyArg_ParseTuple(arg,"i|i",(unsigned int *)&i, &c)) return NULL;
+  result = PyTuple_New(c);
+  if (!result)
+    return NULL;
+  for(j=0;j<c;j++) {
+    result1 = PyInt_FromLong((long)(i[j]));
+    if (!result1) {
+      Py_DECREF(result);
+      return NULL;
+    }
+    PyTuple_SetItem(result, j, result1);
+  }
+  return result;
+}
+
+static char swi_tuple__doc__[] =
+"tuple(address[, count=1]]) -> tuple\n\
+Read count bytes from given address.";
+
+
 static PyMethodDef SwiMethods[]=
-{ { "swi",swi_swi,1},
-  { "block",PyBlock_New,1},
-  { "register",PyRegister,1},
-  { NULL,NULL}		 /* Sentinel */
+{ { "swi", swi_swi,1},
+  { "block", PyBlock_New,1},
+  { "register", PyRegister,1},
+  { "string", swi_string,METH_VARARGS, swi_string__doc__},
+  { "integer", swi_integer,METH_VARARGS, swi_integer__doc__},
+  { "integers", swi_integers,METH_VARARGS, swi_integers__doc__},
+  { "tuples", swi_tuples,METH_VARARGS, swi_tuples__doc__},
+  { "tuple", swi_tuple,METH_VARARGS, swi_tuple__doc__},
+  { NULL,NULL,0,NULL}		 /* Sentinel */
 };
+
 
 void initswi()
 { PyObject *m, *d;

@@ -221,9 +221,11 @@ typedef size_t socklen_t;
 # ifndef RISCOS
 #  include <fcntl.h>
 # else
-#  include <sys/fcntl.h>
+#  include <sys/ioctl.h>
+#  include <socklib.h>
 #  define NO_DUP
 int h_errno; /* not used */
+#  define INET_ADDRSTRLEN 16
 # endif
 
 #else
@@ -464,6 +466,18 @@ set_error(void)
 	}
 #endif
 
+#if defined(RISCOS)
+	if (_inet_error.errnum != NULL) {
+		PyObject *v;
+		v = Py_BuildValue("(is)", errno, _inet_err());
+		if (v != NULL) {
+			PyErr_SetObject(socket_error, v);
+			Py_DECREF(v);
+		}
+		return NULL;
+	}
+#endif
+
 	return PyErr_SetFromErrno(socket_error);
 }
 
@@ -548,8 +562,11 @@ internal_setblocking(PySocketSockObject *s, int block)
 	block = !block;
 	ioctlsocket(s->sock_fd, FIONBIO, (u_long*)&block);
 #endif /* MS_WINDOWS */
-#endif /* __BEOS__ */
+#else /* RISCOS */
+	block = !block;
+	socketioctl(s->sock_fd, FIONBIO, (u_long*)&block);
 #endif /* RISCOS */
+#endif /* __BEOS__ */
 	Py_END_ALLOW_THREADS
 
 	/* Since these don't return anything */
@@ -1211,11 +1228,11 @@ operations are disabled.");
 /* s.sleeptaskw(1 | 0) method */
 
 static PyObject *
-sock_sleeptaskw(PySocketSockObject *s,PyObject *args)
+sock_sleeptaskw(PySocketSockObject *s,PyObject *arg)
 {
 	int block;
-	int delay_flag;
-	if (!PyArg_Parse(args, "i", &block))
+	block = PyInt_AsLong(arg);
+	if (block == -1 && PyErr_Occurred())
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	socketioctl(s->sock_fd, 0x80046679, (u_long*)&block);
@@ -2056,7 +2073,7 @@ static PyMethodDef sock_methods[] = {
 	{"shutdown",	(PyCFunction)sock_shutdown, METH_O,
 			shutdown_doc},
 #ifdef RISCOS
-	{"sleeptaskw",	(PyCFunction)sock_sleeptaskw, METH_VARARGS,
+	{"sleeptaskw",	(PyCFunction)sock_sleeptaskw, METH_O,
 	 		sleeptaskw_doc},
 #endif
 	{NULL,			NULL}		/* sentinel */
@@ -2858,8 +2875,11 @@ socket_inet_pton(PyObject *self, PyObject *args)
 	int af;
 	char* ip;
 	int retval;
+#ifdef ENABLE_IPV6
 	char packed[MAX(sizeof(struct in_addr), sizeof(struct in6_addr))];
-
+#else
+	char packed[sizeof(struct in_addr)];
+#endif
 	if (!PyArg_ParseTuple(args, "is:inet_pton", &af, &ip)) {
 		return NULL;
 	}
@@ -2875,9 +2895,11 @@ socket_inet_pton(PyObject *self, PyObject *args)
 	} else if (af == AF_INET) {
 		return PyString_FromStringAndSize(packed,
 			sizeof(struct in_addr));
+#ifdef ENABLE_IPV6
 	} else if (af == AF_INET6) {
 		return PyString_FromStringAndSize(packed,
 			sizeof(struct in6_addr));
+#endif
 	} else {
 		PyErr_SetString(socket_error, "unknown address family");
 		return NULL;
@@ -2896,7 +2918,11 @@ socket_inet_ntop(PyObject *self, PyObject *args)
 	char* packed;
 	int len;
 	const char* retval;
+#ifdef ENABLE_IPV6
 	char ip[MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN) + 1];
+#else
+	char ip[INET_ADDRSTRLEN + 1];
+#endif
 	
 	/* Guarantee NUL-termination for PyString_FromString() below */
 	memset((void *) &ip[0], '\0', sizeof(ip) + 1);
@@ -2911,12 +2937,14 @@ socket_inet_ntop(PyObject *self, PyObject *args)
 				"invalid length of packed IP address string");
 			return NULL;
 		}
+#ifdef ENABLE_IPV6
 	} else if (af == AF_INET6) {
 		if (len != sizeof(struct in6_addr)) {
 			PyErr_SetString(PyExc_ValueError,
 				"invalid length of packed IP address string");
 			return NULL;
 		}
+#endif
 	} else {
 		PyErr_Format(PyExc_ValueError,
 			"unknown address family %d", af);
@@ -3235,7 +3263,7 @@ os_init(void)
 	_kernel_swi(0x43380, &r, &r);
 	taskwindow = r.r[0];
 
-	return 0;
+	return 1;
 }
 
 #endif /* RISCOS */

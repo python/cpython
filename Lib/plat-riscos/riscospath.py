@@ -15,7 +15,7 @@ as os.path.
 # strings representing various path-related bits and pieces
 curdir = '@'
 pardir = '^'
-extsep = '.'
+extsep = '/'
 sep = '.'
 pathsep = ','
 defpath = '<Run$Dir>'

@@ -78,7 +78,7 @@ os = imp.load_module("os", *x)
 
 def test_module_with_large_stack(module):
     # create module w/list of 65000 elements to test bug #561858
-    filename = module + '.py'
+    filename = module + os.extsep + 'py'
 
     # create a file with a list of 65000 elements
     f = open(filename, 'w+')
@@ -102,8 +102,8 @@ def test_module_with_large_stack(module):
 
     # cleanup
     del sys.path[-1]
-    for ext in '.pyc', '.pyo':
-        fname = module + ext
+    for ext in 'pyc', 'pyo':
+        fname = module + os.extsep + ext
         if os.path.exists(fname):
             os.unlink(fname)
 

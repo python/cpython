@@ -21,15 +21,15 @@ except ImportError:
 def path(path):
     return test_support.findfile(path)
 
-testtar = path("testtar.tar")
-tempdir = path("testtar.dir")
-tempname = path("testtar.tmp")
+testtar = path("testtar" + os.extsep + "tar")
+tempdir = path("testtar" + os.extsep + "dir")
+tempname = path("testtar" + os.extsep + "tmp")
 membercount = 10
 
 def tarname(comp=""):
     if not comp:
         return testtar
-    return "%s.%s" % (testtar, comp)
+    return "%s%s%s" % (testtar, os.extsep, comp)
 
 def dirname():
     if not os.path.exists(tempdir):

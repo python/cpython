@@ -6,7 +6,7 @@ from test import test_support
 
 class TestCase(unittest.TestCase):
 
-    fn = "shelftemp.db"
+    fn = "shelftemp" + os.extsep + "db"
 
     def test_ascii_file_shelf(self):
         try:

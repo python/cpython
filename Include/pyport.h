@@ -147,6 +147,7 @@ typedef PY_LONG_LONG		Py_intptr_t;
 
 #ifdef RISCOS
 #include <sys/types.h>
+#include "unixstuff.h"
 #endif
 
 #ifndef DONT_HAVE_SYS_STAT_H

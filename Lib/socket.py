@@ -96,7 +96,6 @@ if sys.platform.lower().startswith("win"):
     errorTab[10065] = "The host is unreachable."
     __all__.append("errorTab")
 
-del os, sys
 
 
 def getfqdn(name=''):
@@ -138,6 +137,9 @@ _socketmethods = (
     'getpeername', 'getsockname', 'getsockopt', 'setsockopt',
     'sendall', 'setblocking',
     'settimeout', 'gettimeout', 'shutdown')
+
+if sys.platform == "riscos":
+    _socketmethods = _socketmethods + ('sleeptaskw',)
 
 class _closedsocket(object):
     __slots__ = []

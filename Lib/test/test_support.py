@@ -56,14 +56,14 @@ def forget(modname):
     import os
     for dirname in sys.path:
         try:
-            os.unlink(os.path.join(dirname, modname + '.pyc'))
+            os.unlink(os.path.join(dirname, modname + os.extsep + 'pyc'))
         except os.error:
             pass
         # Deleting the .pyo file cannot be within the 'try' for the .pyc since
         # the chance exists that there is no .pyc (and thus the 'try' statement
         # is exited) but there is a .pyo file.
         try:
-            os.unlink(os.path.join(dirname, modname + '.pyo'))
+            os.unlink(os.path.join(dirname, modname + os.extsep + 'pyo'))
         except os.error:
             pass
 
@@ -118,7 +118,9 @@ import os
 if os.name == 'java':
     # Jython disallows @ in module names
     TESTFN = '$test'
-elif os.name != 'riscos':
+elif os.name == 'riscos':
+    TESTFN = 'testfile'
+else:
     TESTFN = '@test'
     # Unicode name only used if TEST_FN_ENCODING exists for the platform.
     if have_unicode:
@@ -129,8 +131,6 @@ elif os.name != 'riscos':
         else:
             TESTFN_UNICODE=unicode("@test-\xe0\xf2", "latin-1") # 2 latin characters.
         TESTFN_ENCODING=sys.getfilesystemencoding()
-else:
-    TESTFN = 'test'
 
 # Make sure we can write to TESTFN, try in /tmp if we can't
 fp = None
