@@ -96,14 +96,14 @@ class POP3:
 
 
     def _putline(self, line):
-        #if self._debugging > 1: print '*put*', `line`
+        if self._debugging > 1: print '*put*', `line`
         self.sock.send('%s%s' % (line, CRLF))
 
 
     # Internal: send one command to the server (through _putline())
 
     def _putcmd(self, line):
-        #if self._debugging: print '*cmd*', `line`
+        if self._debugging: print '*cmd*', `line`
         self._putline(line)
 
 
@@ -113,7 +113,7 @@ class POP3:
 
     def _getline(self):
         line = self.file.readline()
-        #if self._debugging > 1: print '*get*', `line`
+        if self._debugging > 1: print '*get*', `line`
         if not line: raise error_proto('-ERR EOF')
         octets = len(line)
         # server can send any combination of CR & LF
@@ -131,7 +131,7 @@ class POP3:
 
     def _getresp(self):
         resp, o = self._getline()
-        #if self._debugging > 1: print '*resp*', `resp`
+        if self._debugging > 1: print '*resp*', `resp`
         c = resp[:1]
         if c != '+':
             raise error_proto(resp)
@@ -205,7 +205,7 @@ class POP3:
         """
         retval = self._shortcmd('STAT')
         rets = retval.split()
-        #if self._debugging: print '*stat*', `rets`
+        if self._debugging: print '*stat*', `rets`
         numMessages = int(rets[1])
         sizeMessages = int(rets[2])
         return (numMessages, sizeMessages)
