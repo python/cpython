@@ -26,13 +26,13 @@ zero, the queue size is infinite.
 \begin{excdesc}{Empty}
 Exception raised when non-blocking \method{get()} (or
 \method{get_nowait()}) is called on a \class{Queue} object which is
-empty or locked.
+empty.
 \end{excdesc}
 
 \begin{excdesc}{Full}
 Exception raised when non-blocking \method{put()} (or
 \method{put_nowait()}) is called on a \class{Queue} object which is
-full or locked.
+full.
 \end{excdesc}
 
 \subsection{Queue Objects}
@@ -51,7 +51,7 @@ semantics, this number is not reliable.
 
 \begin{methoddesc}{empty}{}
 Return \code{True} if the queue is empty, \code{False} otherwise.
-Becauseof multithreading semantics, this is not reliable.
+Because of multithreading semantics, this is not reliable.
 \end{methoddesc}
 
 \begin{methoddesc}{full}{}
