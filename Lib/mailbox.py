@@ -259,7 +259,7 @@ class BabylMailbox(_Mailbox):
             line = self.fp.readline()
             if not line:
                 return
-            if line == '\037\014\n':
+            if line == '\037\014\n' or line == '\037':
                 self.fp.seek(pos)
                 return
 
