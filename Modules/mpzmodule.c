@@ -62,7 +62,7 @@
 
 #include "gmp.h"
 
-#if __GNU_MP__ + 0 == 2
+#if __GNU_MP__ + 0 >= 2
 #define GMP2
 #define BITS_PER_MP_LIMB mp_bits_per_limb
 #else
