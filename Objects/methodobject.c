@@ -30,27 +30,20 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 typedef struct {
 	OB_HEAD
-	char	*m_name;
-	method	m_meth;
+	struct methodlist *m_ml;
 	object	*m_self;
-	int	m_flags;
 } methodobject;
 
 object *
-newmethodobject(name, meth, self, flags)
-	char *name;
-	method meth;
+newmethodobject(ml, self)
+	struct methodlist *ml;
 	object *self;
-	int flags;
 {
 	methodobject *op = NEWOBJ(methodobject, &Methodtype);
 	if (op != NULL) {
-		op->m_name = name;
-		op->m_meth = meth;
-		if (self != NULL)
-			INCREF(self);
+		op->m_ml = ml;
+		XINCREF(self);
 		op->m_self = self;
-		op->m_flags = flags;
 	}
 	return (object *)op;
 }
@@ -63,7 +56,7 @@ getmethod(op)
 		err_badcall();
 		return NULL;
 	}
-	return ((methodobject *)op) -> m_meth;
+	return ((methodobject *)op) -> m_ml -> ml_meth;
 }
 
 object *
@@ -85,7 +78,7 @@ getvarargs(op)
 		err_badcall();
 		return -1;
 	}
-	return ((methodobject *)op) -> m_flags & METH_VARARGS;
+	return ((methodobject *)op) -> m_ml -> ml_flags & METH_VARARGS;
 }
 
 /* Methods (the standard built-in methods, that is) */
@@ -94,11 +87,37 @@ static void
 meth_dealloc(m)
 	methodobject *m;
 {
-	if (m->m_self != NULL)
-		DECREF(m->m_self);
-	if (m->m_flags & METH_FREENAME)
-		free(m->m_name);
+	XDECREF(m->m_self);
 	free((char *)m);
+}
+
+static object *
+meth_getattr(m, name)
+	methodobject *m;
+	char *name;
+{
+	if (strcmp(name, "__name__") == 0) {
+		return newstringobject(m->m_ml->ml_name);
+	}
+	if (strcmp(name, "__doc__") == 0) {
+		char *doc = m->m_ml->ml_doc;
+		if (doc != NULL)
+			return newstringobject(doc);
+		INCREF(None);
+		return None;
+	}
+	if (strcmp(name, "__self__") == 0) {
+		object *self = m->m_self;
+		if (self == NULL)
+			self = None;
+		INCREF(self);
+		return self;
+	}
+	if (strcmp(name, "__members__") == 0) {
+		return mkvalue("[sss]", "__doc__", "__name__", "__self__");
+	}
+	err_setstr(AttributeError, name);
+	return NULL;
 }
 
 static object *
@@ -107,11 +126,11 @@ meth_repr(m)
 {
 	char buf[200];
 	if (m->m_self == NULL)
-		sprintf(buf, "<built-in function %.80s>", m->m_name);
+		sprintf(buf, "<built-in function %.80s>", m->m_ml->ml_name);
 	else
 		sprintf(buf,
 			"<built-in method %.80s of %.80s object at %lx>",
-			m->m_name, m->m_self->ob_type->tp_name,
+			m->m_ml->ml_name, m->m_self->ob_type->tp_name,
 			(long)m->m_self);
 	return newstringobject(buf);
 }
@@ -122,9 +141,9 @@ meth_compare(a, b)
 {
 	if (a->m_self != b->m_self)
 		return cmpobject(a->m_self, b->m_self);
-	if (a->m_meth == b->m_meth)
+	if (a->m_ml->ml_meth == b->m_ml->ml_meth)
 		return 0;
-	if (strcmp(a->m_name, b->m_name) < 0)
+	if (strcmp(a->m_ml->ml_name, b->m_ml->ml_name) < 0)
 		return -1;
 	else
 		return 1;
@@ -142,7 +161,7 @@ meth_hash(a)
 		if (x == -1)
 			return -1;
 	}
-	return x ^ (long) a->m_meth;
+	return x ^ (long) a->m_ml->ml_meth;
 }
 
 typeobject Methodtype = {
@@ -153,7 +172,7 @@ typeobject Methodtype = {
 	0,
 	(destructor)meth_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
-	0,		/*tp_getattr*/
+	(getattrfunc)meth_getattr, /*tp_getattr*/
 	0,		/*tp_setattr*/
 	(cmpfunc)meth_compare, /*tp_compare*/
 	(reprfunc)meth_repr, /*tp_repr*/
@@ -201,9 +220,7 @@ findmethod(ml, op, name)
 		return listmethods(ml);
 	for (; ml->ml_name != NULL; ml++) {
 		if (strcmp(name, ml->ml_name) == 0)
-			return newmethodobject(ml->ml_name, ml->ml_meth, op,
-					       ml->ml_varargs ?
-					       METH_VARARGS : 0);
+			return newmethodobject(ml, op);
 	}
 	err_setstr(AttributeError, name);
 	return NULL;
