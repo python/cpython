@@ -22,36 +22,87 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* Macintosh Python main program */
+/* Python interpreter main program */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "Python.h"
+#include "pythonresources.h"
+#include "import.h"
+#include "marshal.h"
 
-#include "rename2.h"
-#include "mymalloc.h"
-
-#ifdef THINK_C
-#define CONSOLE_IO
-#endif
-
+#include <Memory.h>
+#include <Resources.h>
 #include <stdio.h>
-#include <string.h>
-
-#ifdef CONSOLE_IO
-#include <console.h>
-#endif
+#include <Events.h>
+#include <Windows.h>
+#include <Desk.h>
 
 #ifdef __MWERKS__
 #include <SIOUX.h>
 #endif
 
-extern char *fileargument;
+#define STARTUP "PythonStartup"
 
-main(argc, argv)
+extern int Py_DebugFlag; /* For parser.c, declared in pythonrun.c */
+extern int Py_VerboseFlag; /* For import.c, declared in pythonrun.c */
+extern int Py_SuppressPrintingFlag; /* For ceval.c, declared in pythonrun.c */
+
+
+/* Subroutines that live in their own file */
+extern char *getversion();
+extern char *getcopyright();
+
+
+/* For getprogramname(); set by main() */
+static char *argv0;
+
+/* For getargcargv(); set by main() */
+static char **orig_argv;
+static int  orig_argc;
+
+#ifdef USE_MAC_APPLET_SUPPORT
+/* Applet support */
+
+/* Run a compiled Python Python script from 'PYC ' resource __main__ */
+static int
+run_main_resource()
+{
+	Handle h;
+	long size;
+	PyObject *code;
+	PyObject *result;
+	
+	h = GetNamedResource('PYC ', "\p__main__");
+	if (h == NULL) {
+		Alert(NOPYC_ALERT, NULL);
+		return 1;
+	}
+	size = GetResourceSizeOnDisk(h);
+	HLock(h);
+	code = PyMarshal_ReadObjectFromString(*h + 8, (int)(size - 8));
+	HUnlock(h);
+	ReleaseResource(h);
+	if (code == NULL) {
+		PyErr_Print();
+		return 1;
+	}
+	result = PyImport_ExecCodeModule("__main__", code);
+	Py_DECREF(code);
+	if (result == NULL) {
+		PyErr_Print();
+		return 1;
+	}
+	Py_DECREF(result);
+	return 0;
+}
+
+/* Initialization sequence for applets */
+void
+PyMac_InitApplet()
+{
 	int argc;
 	char **argv;
-{
+	int err;
+
 #ifdef USE_MAC_SHARED_LIBRARY
 	PyMac_AddLibResources();
 #endif
@@ -60,84 +111,197 @@ main(argc, argv)
 	SIOUXSettings.showstatusline = 0;
 	SIOUXSettings.tabspaces = 4;
 #endif
-#ifdef USE_STDWIN
-#ifdef THINK_C
-	/* This is done to initialize the Think console I/O library before stdwin.
-	   If we don't do this, the console I/O library will only be usable for
-	   output, and the interactive version of the interpreter will quit
-	   immediately because it sees an EOF from stdin.
-	   The disadvantage is that when using STDWIN, your stdwin menus will
-	   appear next to the console I/O's File and Edit menus, and you will have
-	   an empty console window in your application (though it can be removed
-	   by clever use of console library I believe).
-	   Remove this line if you want to be able to double-click Python scripts
-	   that use STDWIN and never use stdin for input.
-	   (A more dynamic solution may be possible e.g. based on bits in the
-	   SIZE resource or whatever...  Have fun, and let me know if you find
-	   a better way!) */
-	printf("\n");
-#endif
-#ifdef BUILD_APPLET_TEMPLATE
-	/* Make argv[0] and [1] be application name. The "argument" will later
-	** be recognized as APPL type and interpreted as being a .pyc file.
-	** XXXX Should be changed. Argv[0] should be the shared lib location or
-	** something, so we can find our Lib directory, etc.
-	*/
-	{
-		char *progname;
-		extern char *getappname();
-		
-		progname = getappname();
-		if ( (argv = (char **)malloc(3*sizeof(char *))) == NULL ) {
-			fprintf(stderr, "No memory\n");
-			exit(1);
-		}
-		argv[0] = malloc(strlen(progname)+1);
-		argv[1] = malloc(strlen(progname)+1);
-		argv[2] = NULL;
-		if ( argv[0] == NULL || argv[1] == NULL ) {
-			fprintf(stderr, "No memory\n");
-			exit(1);
-		}
-		strcpy(argv[0], progname);
-		strcpy(argv[1], progname);
-		argc = 2;
-	}
-#else
-	/* Use STDWIN's wargs() to set argc/argv to list of files to open */
-	wargs(&argc, &argv);
-#endif
-	/* Put About Python... in Apple menu */
-	{
-		extern char *about_message;
-		extern char *about_item;
-		extern char *getversion(), *getcopyright();
-		static char buf[1024];
-		sprintf(buf, "Python %s\r\
-\r\
-%s\r\
-\r\
-Author: Guido van Rossum <guido@cwi.nl>\r\
-FTP: host ftp.cwi.nl, directory pub/python\r\
-Newsgroup: comp.lang.python\r\
-\r\
-Motto: \"Nobody expects the Spanish Inquisition!\"",
-			getversion(), getcopyright());
-		about_message = buf;
-		about_item = "About Python...";
-	}
-#endif /* USE_STDWIN */
-#ifdef CONSOLE_IO
-	if (argc >= 1 && argv[0][0] != '\0') {
-		static char buf[256];
-		buf[0] = strlen(argv[0]);
-		strncpy(buf+1, argv[0], buf[0]);
-		console_options.title = (unsigned char *)buf;
-	}
+	argc = PyMac_GetArgv(&argv);
+	Py_Initialize();
+	PySys_SetArgv(argc, argv);
+	err = run_main_resource();
+	fflush(stderr);
+	fflush(stdout);
+#ifdef __MWERKS__
+	if (!err)
+		SIOUXSettings.autocloseonquit = 1;
 	else
-		console_options.title = "\pPython";
-#endif /* CONSOLE_IO */
-	if ( argc > 1 )
-		fileargument = argv[1];  /* Mod by Jack to do chdir */
-	realmain(argc, argv);
+		printf("\n[Terminated]\n");
+#endif
+	/* XXX Should we bother to Py_Exit(sts)? */
+}
+
+#endif /* USE_MAC_APPLET_SUPPORT */
+
+/* For normal application */
+void
+PyMac_InitApplication()
+{
+	int argc;
+	char **argv;
+	
+#ifdef USE_MAC_SHARED_LIBRARY
+	PyMac_AddLibResources();
+#endif
+#ifdef __MWERKS__
+	SIOUXSettings.asktosaveonclose = 0;
+	SIOUXSettings.showstatusline = 0;
+	SIOUXSettings.tabspaces = 4;
+#endif
+	argc = PyMac_GetArgv(&argv);
+	if ( argc > 1 ) {
+		/* We're running a script. Attempt to change current directory */
+		char curwd[256], *endp;
+		
+		strcpy(curwd, argv[1]);
+		endp = strrchr(curwd, ':');
+		if ( endp && endp > curwd ) {
+			*endp = '\0';
+
+			chdir(curwd);
+		}
+	}
+	Py_Main(argc, argv);
+}
+
+/*
+** PyMac_InteractiveOptions - Allow user to set options if option key is pressed
+*/
+void
+PyMac_InteractiveOptions(int *inspect, int *verbose, int *suppress_print, 
+						 int *unbuffered, int *debugging)
+{
+	KeyMap rmap;
+	unsigned char *map;
+	short item, type;
+	ControlHandle handle;
+	DialogPtr dialog;
+	Rect rect;
+	
+	GetKeys(rmap);
+	map = (unsigned char *)rmap;
+	if ( ( map[0x3a>>3] & (1<<(0x3a&7)) ) == 0 )	/* option key is 3a */
+		return;
+
+	dialog = GetNewDialog(OPT_DIALOG, NULL, (WindowPtr)-1);
+	if ( dialog == NULL ) {
+		printf("Option dialog not found - cannot set options\n");
+		return;
+	}
+	while (1) {
+		handle = NULL;
+		ModalDialog(NULL, &item);
+		if ( item == OPT_OK )
+			break;
+		if ( item == OPT_CANCEL ) {
+			DisposDialog(dialog);
+			exit(0);
+		}
+#define OPT_ITEM(num, var) \
+		if ( item == (num) ) { \
+			*(var) = !*(var); \
+			GetDialogItem(dialog, (num), &type, (Handle *)&handle, &rect); \
+			SetCtlValue(handle, (short)*(var)); \
+		}
+		
+		OPT_ITEM(OPT_INSPECT, inspect);
+		OPT_ITEM(OPT_VERBOSE, verbose);
+		OPT_ITEM(OPT_SUPPRESS, suppress_print);
+		OPT_ITEM(OPT_UNBUFFERED, unbuffered);
+		OPT_ITEM(OPT_DEBUGGING, debugging);
+		
+#undef OPT_ITEM
+	}
+	DisposDialog(dialog);
+}
+/* Main program */
+
+int
+Py_Main(argc, argv)
+	int argc;
+	char **argv;
+{
+	int c;
+	int sts;
+	char *command = NULL;
+	char *filename = NULL;
+	FILE *fp = stdin;
+	char *p;
+	int inspect = 0;
+	int unbuffered = 0;
+
+	orig_argc = argc;	/* For getargcargv() */
+	orig_argv = argv;
+	argv0 = argv[0];	/* For getprogramname() */
+	
+	PyMac_InteractiveOptions(&inspect, &Py_VerboseFlag, &Py_SuppressPrintingFlag,
+			&unbuffered, &Py_DebugFlag);
+
+
+	if (unbuffered) {
+#ifndef MPW
+		setbuf(stdout, (char *)NULL);
+		setbuf(stderr, (char *)NULL);
+#else
+		/* On MPW (3.2) unbuffered seems to hang */
+		setvbuf(stdout, (char *)NULL, _IOLBF, BUFSIZ);
+		setvbuf(stderr, (char *)NULL, _IOLBF, BUFSIZ);
+#endif
+	}
+
+	filename = argv[1];
+
+	if (Py_VerboseFlag ||
+	    command == NULL && filename == NULL && isatty((int)fileno(fp)))
+		fprintf(stderr, "Python %s\n%s\n",
+			getversion(), getcopyright());
+	
+	if (filename != NULL) {
+		if ((fp = fopen(filename, "r")) == NULL) {
+			fprintf(stderr, "%s: can't open file '%s'\n",
+				argv[0], filename);
+			exit(2);
+		}
+	}
+	
+	Py_Initialize();
+	
+	PySys_SetArgv(argc-1, argv+1);
+
+	if (filename == NULL && isatty((int)fileno(fp))) {
+		FILE *fp = fopen(STARTUP, "r");
+		if (fp != NULL) {
+			(void) PyRun_SimpleFile(fp, STARTUP);
+			PyErr_Clear();
+			fclose(fp);
+		}
+	}
+	sts = PyRun_AnyFile(
+			fp, filename == NULL ? "<stdin>" : filename) != 0;
+	if (filename != NULL)
+		fclose(fp);
+
+	if (inspect && isatty((int)fileno(stdin)) &&
+	    (filename != NULL || command != NULL))
+		sts = PyRun_AnyFile(stdin, "<stdin>") != 0;
+
+	Py_Exit(sts);
+	/*NOTREACHED*/
+}
+
+
+/* Return the program name -- some code out there needs this. */
+
+char *
+getprogramname()
+{
+	return argv0;
+}
+
+
+/* Make the *original* argc/argv available to other modules.
+   This is rare, but it is needed by the secureware extension. */
+
+void
+getargcargv(argc,argv)
+	int *argc;
+	char ***argv;
+{
+	*argc = orig_argc;
+	*argv = orig_argv;
 }
