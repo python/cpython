@@ -96,6 +96,8 @@ static lumrow PROTO((unsigned char *, unsigned char *, int));
 
 static object *ImgfileError;
 
+static int reverse_order;
+
 #ifdef ADD_TAGS
 /*
  *	addlongimgtag - 
@@ -339,6 +341,8 @@ longimagedata(self, args)
   	if(badorder) {
 	    for(z=0; z<zsize; z++) {
 		lptr = base;
+		if (reverse_order)
+		    lptr += (ysize - 1) * xsize * sizeof(unsigned long);
 		for(y=0; y<ysize; y++) {
 		    if(cur != starttab[y+z*ysize]) {
 			fseek(inf,starttab[y+z*ysize],SEEK_SET);
@@ -356,11 +360,16 @@ longimagedata(self, args)
 		    fread(rledat,lengthtab[y+z*ysize],1,inf);
 		    cur += lengthtab[y+z*ysize];
 		    expandrow(lptr,rledat,3-z);
-		    lptr += xsize * sizeof(unsigned long);
+		    if (reverse_order)
+			lptr -= xsize * sizeof(unsigned long);
+		    else
+			lptr += xsize * sizeof(unsigned long);
 		}
 	    }
 	} else {
 	    lptr = base;
+	    if (reverse_order)
+		lptr += (ysize - 1) * xsize * sizeof(unsigned long);
 	    for(y=0; y<ysize; y++) {
 		for(z=0; z<zsize; z++) {
 		    if(cur != starttab[y+z*ysize]) {
@@ -371,7 +380,10 @@ longimagedata(self, args)
 		    cur += lengthtab[y+z*ysize];
 		    expandrow(lptr,rledat,3-z);
 		}
-		lptr += xsize * sizeof(unsigned long);
+		if (reverse_order)
+		    lptr -= xsize * sizeof(unsigned long);
+		else
+		    lptr += xsize * sizeof(unsigned long);
 	    }
     	}
 	if(zsize == 3) 
@@ -398,10 +410,15 @@ longimagedata(self, args)
 	fseek(inf,512,SEEK_SET);
 	for(z=0; z<zsize; z++) {
 	    lptr = base;
+	    if (reverse_order)
+		lptr += (ysize - 1) * xsize * sizeof(unsigned long);
 	    for(y=0; y<ysize; y++) {
 		fread(verdat,xsize,1,inf);
 		interleaverow(lptr,verdat,3-z,xsize);
-		lptr += xsize * sizeof(unsigned long);
+		if (reverse_order)
+		    lptr -= xsize * sizeof(unsigned long);
+		else
+		    lptr += xsize * sizeof(unsigned long);
 	    }
 	}
 	if(zsize == 3) 
@@ -579,6 +596,8 @@ longstoimage(self, args)
     goodwrite *= writeheader(outf,&image);
     fseek(outf,512+2*tablen,SEEK_SET);
     pos = 512+2*tablen;
+    if (reverse_order)
+	lptr += (ysize - 1) * xsize * sizeof(unsigned long);
     for(y=0; y<ysize; y++) {
 	for(z=0; z<zsize; z++) {
 	    if(zsize == 1) {
@@ -601,7 +620,10 @@ longstoimage(self, args)
 	    lengthtab[y+z*ysize] = len;
 	    pos += len;
 	}
-	lptr += xsize * sizeof(unsigned long);
+	if (reverse_order)
+	    lptr -= xsize * sizeof(unsigned long);
+	else
+	    lptr += xsize * sizeof(unsigned long);
     }
 
     fseek(outf,512,SEEK_SET);
@@ -694,10 +716,25 @@ int z, cnt;
     return optr - (unsigned char *)rlebuf;
 }
 
+static object *
+ttob(self, args)
+    object *self;
+    object *args;
+{
+    int order, oldorder;
+
+    if (!getargs(args, "d", &order))
+	return NULL;
+    oldorder = reverse_order;
+    reverse_order = order;
+    return newintobject(oldorder);
+}
+
 static struct methodlist rgbimg_methods[] = {
     {"sizeofimage",	sizeofimage},
     {"longimagedata",	longimagedata},
     {"longstoimage",	longstoimage},
+    {"ttob",		ttob},
     {NULL, NULL}		/* sentinel */
 };
 
