@@ -102,17 +102,24 @@ static PyObject *
 unicode_internal_decode(PyObject *self,
 			PyObject *args)
 {
+    PyObject *obj;
+    const char *errors = NULL;
     const char *data;
     int size;
-    const char *errors = NULL;
     
-    if (!PyArg_ParseTuple(args, "s#|z:unicode_internal_decode",
-			  &data, &size, &errors))
+    if (!PyArg_ParseTuple(args, "O|z:unicode_internal_decode",
+			  &obj, &errors))
 	return NULL;
 
-    return codec_tuple(PyUnicode_FromUnicode((Py_UNICODE *)data, 
-					       size / sizeof(Py_UNICODE)),
-		       size);
+    if (PyUnicode_Check(obj))
+	return codec_tuple(obj, PyUnicode_GET_SIZE(obj));
+    else {
+	if (PyObject_AsReadBuffer(obj, (const void **)&data, &size))
+	    return NULL;
+	return codec_tuple(PyUnicode_FromUnicode((Py_UNICODE *)data,
+						 size / sizeof(Py_UNICODE)),
+			   size);
+    }
 }
 
 static PyObject *
@@ -344,6 +351,33 @@ charbuffer_encode(PyObject *self,
 
     return codec_tuple(PyString_FromStringAndSize(data, size),
 		       size);
+}
+
+static PyObject *
+unicode_internal_encode(PyObject *self,
+			PyObject *args)
+{
+    PyObject *obj;
+    const char *errors = NULL;
+    const char *data;
+    int size;
+    
+    if (!PyArg_ParseTuple(args, "O|z:unicode_internal_encode",
+			  &obj, &errors))
+	return NULL;
+
+    if (PyUnicode_Check(obj)) {
+	data = PyUnicode_AS_DATA(obj);
+	size = PyUnicode_GET_DATA_SIZE(obj);
+	return codec_tuple(PyString_FromStringAndSize(data, size),
+			   size);
+    }
+    else {
+	if (PyObject_AsReadBuffer(obj, (const void **)&data, &size))
+	    return NULL;
+	return codec_tuple(PyString_FromStringAndSize(data, size),
+			   size);
+    }
 }
 
 static PyObject *
@@ -604,7 +638,7 @@ static PyMethodDef _codecs_functions[] = {
     {"utf_16_ex_decode",	utf_16_ex_decode,		1},
     {"unicode_escape_encode",	unicode_escape_encode,		1},
     {"unicode_escape_decode",	unicode_escape_decode,		1},
-    {"unicode_internal_encode",	readbuffer_encode,		1},
+    {"unicode_internal_encode",	unicode_internal_encode,	1},
     {"unicode_internal_decode",	unicode_internal_decode,	1},
     {"raw_unicode_escape_encode", raw_unicode_escape_encode,	1},
     {"raw_unicode_escape_decode", raw_unicode_escape_decode,	1},
