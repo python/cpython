@@ -557,7 +557,7 @@ listinsert(self, args)
 {
 	int i;
 	PyObject *v;
-	if (!PyArg_ParseTuple(args, "iO", &i, &v))
+	if (!PyArg_ParseTuple(args, "iO:insert", &i, &v))
 		return NULL;
 	return ins(self, i, v);
 }
@@ -568,7 +568,7 @@ listappend(self, args)
 	PyObject *args;
 {
 	PyObject *v;
-	if (!PyArg_ParseTuple(args, "O", &v))
+	if (!PyArg_ParseTuple(args, "O:append", &v))
 		return NULL;
 	return ins(self, (int) self->ob_size, v);
 }
@@ -584,7 +584,7 @@ listextend(self, args)
 	int blen;
 	register int i;
 
-	if (!PyArg_ParseTuple(args, "O", &b))
+	if (!PyArg_ParseTuple(args, "O:extend", &b))
 		return NULL;
 
 	if (!PyList_Check(b)) {
@@ -651,7 +651,7 @@ listpop(self, args)
 {
 	int i = -1;
 	PyObject *v;
-	if (!PyArg_ParseTuple(args, "|i", &i))
+	if (!PyArg_ParseTuple(args, "|i:pop", &i))
 		return NULL;
 	if (self->ob_size == 0) {
 		/* Special-case most common failure cause */
@@ -1224,7 +1224,7 @@ listsort(self, args)
 	PyObject *compare = NULL;
 
 	if (args != NULL) {
-		if (!PyArg_ParseTuple(args, "|O", &compare))
+		if (!PyArg_ParseTuple(args, "|O:sort", &compare))
 			return NULL;
 	}
 	self->ob_type = &immutable_list_type;
@@ -1261,7 +1261,7 @@ listreverse(self, args)
 	register PyObject **p, **q;
 	register PyObject *tmp;
 	
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":reverse"))
 		return NULL;
 
 	if (self->ob_size > 1) {
@@ -1326,7 +1326,7 @@ listindex(self, args)
 	int i;
 	PyObject *v;
 
-	if (!PyArg_ParseTuple(args, "O", &v))
+	if (!PyArg_ParseTuple(args, "O:index", &v))
 		return NULL;
 	for (i = 0; i < self->ob_size; i++) {
 		if (PyObject_Compare(self->ob_item[i], v) == 0)
@@ -1347,7 +1347,7 @@ listcount(self, args)
 	int i;
 	PyObject *v;
 
-	if (!PyArg_ParseTuple(args, "O", &v))
+	if (!PyArg_ParseTuple(args, "O:count", &v))
 		return NULL;
 	for (i = 0; i < self->ob_size; i++) {
 		if (PyObject_Compare(self->ob_item[i], v) == 0)
@@ -1366,7 +1366,7 @@ listremove(self, args)
 	int i;
 	PyObject *v;
 
-	if (!PyArg_ParseTuple(args, "O", &v))
+	if (!PyArg_ParseTuple(args, "O:remove", &v))
 		return NULL;
 	for (i = 0; i < self->ob_size; i++) {
 		if (PyObject_Compare(self->ob_item[i], v) == 0) {
