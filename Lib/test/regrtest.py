@@ -633,6 +633,7 @@ _expectations = {
         test_poll
         test_popen
         test_popen2
+        test_posix
         test_pty
         test_pwd
         test_resource
