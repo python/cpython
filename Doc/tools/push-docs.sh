@@ -19,12 +19,36 @@ fi
 
 EXPLANATION=''
 
-if [ "$1" = '-m' ] ; then
-    EXPLANATION="$2"
-    shift 2
-elif [ "$1" ] ; then
-    EXPLANATION="`cat $1`"
-    shift 1
+while [ "$#" -gt 0 ] ; do
+  case "$1" in
+      -m)
+          EXPLANATION="$2"
+          shift 2
+          ;;
+      -t)
+          DOCTYPE="$2"
+          shift 2
+          ;;
+      -F)
+          EXPLANATION="`cat $2`"
+          shift 2
+          ;;
+      -*)
+          echo "Unknown option: $1" >&2
+          exit 2
+          ;;
+      *)
+          break
+          ;;
+  esac
+done
+if [ "$1" ] ; then
+    if [ "$EXPLANATION" ] ; then
+        echo "Explanation may only be given once!" >&2
+        exit 2
+    fi
+    EXPLANATION="$1"
+    shift
 fi
 
 START="`pwd`"
@@ -45,7 +69,7 @@ ssh python.sourceforge.net tmp/update-docs.sh $DOCTYPE $PACKAGE '&&' rm tmp/upda
 Mail -s "[$DOCLABEL doc updates]" $ADDRESSES <<EOF
 The development version of the documentation has been updated:
 
-	http://python.sourceforge.net/$DOCTYPE-docs/
+    http://python.sourceforge.net/$DOCTYPE-docs/
 
 $EXPLANATION
 EOF
