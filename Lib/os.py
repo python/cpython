@@ -220,8 +220,7 @@ def _execvpe(file, args, env=None):
         envpath = env['PATH']
     else:
         envpath = defpath
-    import string
-    PATH = string.splitfields(envpath, pathsep)
+    PATH = envpath.split(pathsep)
     if not _notfound:
         import tempfile
         # Exec a file that is guaranteed not to exist
@@ -248,22 +247,26 @@ else:
 
     if name in ('os2', 'nt', 'dos'):  # Where Env Var Names Must Be UPPERCASE
         # But we store them as upper case
-        import string
         class _Environ(UserDict.UserDict):
             def __init__(self, environ):
                 UserDict.UserDict.__init__(self)
                 data = self.data
-                upper = string.upper
                 for k, v in environ.items():
-                    data[upper(k)] = v
+                    data[k.upper()] = v
             def __setitem__(self, key, item):
                 putenv(key, item)
-                key = string.upper(key)
-                self.data[key] = item
+                self.data[key.upper()] = item
             def __getitem__(self, key):
-                return self.data[string.upper(key)]
+                return self.data[key.upper()]
+            def __delitem__(self, key):
+                del self.data[key.upper()]
             def has_key(self, key):
-                return self.data.has_key(string.upper(key))
+                return self.data.has_key(key.upper())
+            def get(self, key, failobj=None):
+                return self.data.get(key.upper(), failobj)
+            def update(self, dict):
+                for k, v in dict.items():
+                    self[k] = v
 
     else:  # Where Env Var Names Can Be Mixed Case
         class _Environ(UserDict.UserDict):
@@ -273,6 +276,9 @@ else:
             def __setitem__(self, key, item):
                 putenv(key, item)
                 self.data[key] = item
+            def update(self, dict):
+                for k, v in dict.items():
+                    self[k] = v
 
     environ = _Environ(environ)
 
