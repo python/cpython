@@ -198,6 +198,20 @@ float_rem(v, w)
 }
 
 static object *
+float_divmod(v, w)
+	floatobject *v;
+	object *w;
+{
+	double wx;
+	if (!is_floatobject(w)) {
+		err_badarg();
+		return NULL;
+	}
+	err_setstr(RuntimeError, "divmod() on float not implemented");
+	return NULL;
+}
+
+static object *
 float_pow(v, w)
 	floatobject *v;
 	object *w;
@@ -210,7 +224,7 @@ float_pow(v, w)
 	iv = v->ob_fval;
 	iw = ((floatobject *)w)->ob_fval;
 	if (iw == 0.0)
-		return newfloatobject(1.0); /* x**0 is always 1, even 0**0 */
+		return newfloatobject(1.0); /* x**0 is 1, even 0**0 */
 	errno = 0;
 	ix = pow(iv, iw);
 	if (errno != 0) {
@@ -232,18 +246,31 @@ static object *
 float_pos(v)
 	floatobject *v;
 {
-	return newfloatobject(v->ob_fval);
+	INCREF(v);
+	return (object *)v;
+}
+
+static object *
+float_abs(v)
+	floatobject *v;
+{
+	if (v->ob_fval < 0)
+		return float_neg(v);
+	else
+		return float_pos(v);
 }
 
 static number_methods float_as_number = {
-	float_add,	/*tp_add*/
-	float_sub,	/*tp_subtract*/
-	float_mul,	/*tp_multiply*/
-	float_div,	/*tp_divide*/
-	float_rem,	/*tp_remainder*/
-	float_pow,	/*tp_power*/
-	float_neg,	/*tp_negate*/
-	float_pos,	/*tp_plus*/
+	float_add,	/*nb_add*/
+	float_sub,	/*nb_subtract*/
+	float_mul,	/*nb_multiply*/
+	float_div,	/*nb_divide*/
+	float_rem,	/*nb_remainder*/
+	float_divmod,	/*nb_divmod*/
+	float_pow,	/*nb_power*/
+	float_neg,	/*nb_negative*/
+	float_pos,	/*nb_positive*/
+	float_abs,	/*nb_absolute*/
 };
 
 typeobject Floattype = {
