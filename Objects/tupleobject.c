@@ -233,7 +233,7 @@ tuplehash(v)
 		y = hashobject(*p++);
 		if (y == -1)
 			return -1;
-		x = (x + x + x) ^ y;
+		x = (1000003*x) ^ y;
 	}
 	x ^= v->ob_size;
 	if (x == -1)
