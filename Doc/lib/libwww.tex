@@ -1,0 +1,45 @@
+\chapter{WORLD-WIDE WEB EXTENSIONS}
+\index{WWW}
+\indexii{World-Wide}{Web}
+
+The modules described in this chapter provide various services to
+World-Wide Web (WWW) clients and/or services, and a few modules
+related to news and email.  They are all implemented in Python.  Some
+of these modules require the presence of the system-dependent module
+\code{sockets}, which is currently only fully supported on Unix and
+Windows NT.  Here is an overview:
+
+\begin{description}
+
+\item[urllib]
+--- Open an arbitrary object given by URL (requires sockets).
+
+\item[httplib]
+--- HTTP protocol client (requires sockets).
+
+\item[ftplib]
+--- FTP protocol client (requires sockets).
+
+\item[gopherlib]
+--- Gopher protocol client (requires sockets).
+
+\item[nntplib]
+--- NNTP protocol client (requires sockets).
+
+\item[urlparse]
+--- Parse a URL string into a tuple (addressing scheme identifier, network
+location, path, parameters, query string, fragment identifier).
+
+\item[htmllib]
+--- A (slow) parser for HTML files.
+
+\item[sgmllib]
+--- Only as much of an SGML parser as needed to parse HTML.
+
+\item[rfc822]
+--- Parse RFC-822 style mail headers.
+
+\item[mimetools]
+--- Tools for parsing MIME style message bodies.
+
+\end{description}
