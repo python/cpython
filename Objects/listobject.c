@@ -1631,7 +1631,7 @@ list_nohash(PyObject *self)
 PyDoc_STRVAR(append_doc,
 "L.append(object) -- append object to end");
 PyDoc_STRVAR(extend_doc,
-"L.extend(list) -- extend list by appending list elements");
+"L.extend(sequence) -- extend list by appending sequence elements");
 PyDoc_STRVAR(insert_doc,
 "L.insert(index, object) -- insert object before index");
 PyDoc_STRVAR(pop_doc,
