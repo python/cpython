@@ -174,8 +174,8 @@ reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (!PyArg_UnpackTuple(args, "reversed", 1, 1, &seq))
 		return NULL;
 
-	/* Special case optimization for xrange */
-	if (PyRange_Check(seq))
+	/* Special case optimization for xrange and lists */
+	if (PyRange_Check(seq) || PyList_Check(seq))
 		return PyObject_CallMethod(seq, "__reversed__", NULL);
 
 	if (!PySequence_Check(seq)) {
