@@ -35,7 +35,8 @@ import os
 import string
 import sys
 
-Error = 'uu.Error'
+class Error(Exception):
+    pass
 
 def encode(in_file, out_file, name=None, mode=None):
     """Uuencode file"""

@@ -2,7 +2,8 @@
 
 MAGIC = '.snd'
 
-error = 'sunaudio sound header conversion error'
+class error(Exception):
+	pass
 
 
 def get_long_be(s):
