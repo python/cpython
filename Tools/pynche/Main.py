@@ -46,7 +46,7 @@ Where:
         initial color, as a color name or #RRGGBB format
 """
 
-__version__ = '1.4'
+__version__ = '1.4.1'
 
 import sys
 import os
@@ -127,10 +127,12 @@ def build(master=None, initialcolor=None, initfile=None, ignore=None,
     # defer to the command line chosen color database, falling back to the one
     # in the .pynche file.
     if dbfile is None:
-        dbfile = s.optiondb()['DBFILE']
+        dbfile = s.optiondb().get('DBFILE')
     # find a parseable color database
     colordb = None
     files = RGB_TXT[:]
+    if dbfile is None:
+        dbfile = files.pop()
     while colordb is None:
         try:
             colordb = ColorDB.get_colordb(dbfile)
