@@ -848,7 +848,7 @@ def splittype(url):
     match = _typeprog.match(url)
     if match:
         scheme = match.group(1)
-        return scheme, url[len(scheme) + 1:]
+        return scheme.lower(), url[len(scheme) + 1:]
     return None, url
 
 _hostprog = None
