@@ -353,8 +353,7 @@ class Profile:
         else:
             pframe = None
         frame = self.fake_frame(code, pframe)
-        a = self.dispatch['call'](self, frame, 0)
-        return
+        self.dispatch['call'](self, frame, 0)
 
     # collect stats from pending stack, including getting final
     # timings for self.cmd frame.
@@ -365,7 +364,7 @@ class Profile:
         while self.cur[-1]:
             # We *can* cause assertion errors here if
             # dispatch_trace_return checks for a frame match!
-            a = self.dispatch['return'](self, self.cur[-2], t)
+            self.dispatch['return'](self, self.cur[-2], t)
             t = 0
         self.t = get_time() - t
 
