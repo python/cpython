@@ -754,7 +754,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 
      int PySequence_Contains Py_PROTO((PyObject *o, PyObject *value));
-     #define PySequence_In PySequence_Contains
+#define PySequence_In PySequence_Contains
 
        /*
 	 Determine if o contains value.  If an item in o is equal to
