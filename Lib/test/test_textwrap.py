@@ -33,11 +33,11 @@ class BaseTestCase(unittest.TestCase):
             'expected:\n%s\nbut got:\n%s' % (
                 self.show(expect), self.show(result)))
 
-    def check_wrap (self, text, width, expect):
-        result = wrap(text, width)
+    def check_wrap(self, text, width, expect, **kwargs):
+        result = wrap(text, width, **kwargs)
         self.check(result, expect)
 
-    def check_split (self, wrapper, text, expect):
+    def check_split(self, wrapper, text, expect):
         result = wrapper._split(text)
         self.assertEquals(result, expect,
                           "\nexpected %r\n"
@@ -99,6 +99,16 @@ What a mess!
         self.check_wrap(text, 20, ["This is a short",
                                    "paragraph."])
         self.check_wrap(text, 40, ["This is a short paragraph."])
+
+
+    def test_wrap_short_1line(self):
+        # Test endcases
+
+        text = "This is a short line."
+
+        self.check_wrap(text, 30, ["This is a short line."])
+        self.check_wrap(text, 30, ["(1) This is a short line."],
+                        initial_indent="(1) ")
 
 
     def test_hyphenated(self):
