@@ -162,6 +162,7 @@ def main():
 	
 	loadtoolboxmodules()
 	
+	sys.path.append('::Mac:Lib')
 	import macostools
 		
 	# Remove old .slb aliases and collect a list of .slb files
