@@ -548,10 +548,11 @@ Sets the background property of the window to the character \var{ch},
 with attributes \var{attr}.  The change is then applied to every
 character position in that window:
 \begin{itemize}
-\item  The attribute of every character in the window  is
-              changed to the new background attribute.
-
-\item    Wherever  the  former background character appears,
+\item  
+The attribute of every character in the window  is
+changed to the new background attribute.
+\item
+Wherever  the  former background character appears,
 it is changed to the new background character.
 \end{itemize}
 
@@ -977,7 +978,7 @@ Also available as \constant{__version__}.
 \end{tableii}
 
 Keys are referred to by integer constants with names starting with 
-\code{KEY_}.   The exact names available are system dependent.
+\code{KEY_}.   The exact keycaps available are system dependent.
 
 % XXX this table is far too large!
 % XXX should this table be alphabetized?
@@ -1079,17 +1080,37 @@ Keys are referred to by integer constants with names starting with
   \lineii{KEY_MAX}{Maximum key value}
 \end{tableii}
 
+On VT100s and their software emulations such as X terminal emulators,
+there are normally at least four function keys (KEY_F1, KEY_F2,
+KEY_F3, KEY_F4) available and the arrow keys mapped to KEY_UP,
+KEY_DOWN, KEY_LEFT and KEY_RIGHT in the obvious way. If your machine has a PC
+keybboard, it is safe to expect arrow keys and twelve function keys; also,
+the following keypad mappings are standard:
+
+\begin{tableii}{c|l}{code}{Keycap}{code}
+   \lineii{Insert}{KEY_IC}
+   \lineii{Delete}{KEY_DC}
+   \lineii{Home}{KEY_HOME}
+   \lineii{End}{KEY_END}
+   \lineii{Page Up}{KEY_NPAGE}
+   \lineii{Page Down}{KEY_PPAGE}
+\end{tableii}
+
 The following table lists characters from the alternate character set.
+These are inherited from the VT100 terminal, and will generally be 
+available on software emulations such as X terminals.  When there
+is no graphic available, curses falls back on a crude printable ASCII
+approximation.
 \strong{Note:} These are available only after \function{initscr()} has 
 been called.
 
 \begin{tableii}{c|l}{code}{ACS code}{Meaning}
-  \lineii{ACS_BBSS}{}
+  \lineii{ACS_BBSS}{alternate name for upper right corner}
   \lineii{ACS_BLOCK}{solid square block}
   \lineii{ACS_BOARD}{board of squares}
-  \lineii{ACS_BSBS}{}
-  \lineii{ACS_BSSB}{}
-  \lineii{ACS_BSSS}{}
+  \lineii{ACS_BSBS}{alternate name for horizontal line}
+  \lineii{ACS_BSSB}{alternate name for upper left corner}
+  \lineii{ACS_BSSS}{alternate name for top tee}
   \lineii{ACS_BTEE}{bottom tee}
   \lineii{ACS_BULLET}{bullet}
   \lineii{ACS_CKBOARD}{checker board (stipple)}
@@ -1107,20 +1128,20 @@ been called.
   \lineii{ACS_NEQUAL}{not-equal sign}
   \lineii{ACS_PI}{letter pi}
   \lineii{ACS_PLMINUS}{plus-or-minus sign}
-  \lineii{ACS_PLUS}{plus sign}
+  \lineii{ACS_PLUS}{big plus sign}
   \lineii{ACS_RARROW}{right arrow}
   \lineii{ACS_RTEE}{right tee}
   \lineii{ACS_S1}{scan line 1}
   \lineii{ACS_S3}{scan line 3}
   \lineii{ACS_S7}{scan line 7}
   \lineii{ACS_S9}{scan line 9}
-  \lineii{ACS_SBBS}{}
-  \lineii{ACS_SBSB}{}
-  \lineii{ACS_SBSS}{}
-  \lineii{ACS_SSBB}{}
-  \lineii{ACS_SSBS}{}
-  \lineii{ACS_SSSB}{}
-  \lineii{ACS_SSSS}{}
+  \lineii{ACS_SBBS}{alternate name for lower right corner}
+  \lineii{ACS_SBSB}{alternate name for vertical line}
+  \lineii{ACS_SBSS}{alternate name for right tee}
+  \lineii{ACS_SSBB}{alternate name for lower left corner}
+  \lineii{ACS_SSBS}{alternate name for bottom tee}
+  \lineii{ACS_SSSB}{alternate name for left tee}
+  \lineii{ACS_SSSS}{alternate name for crossover or big plus}
   \lineii{ACS_STERLING}{pound sterling}
   \lineii{ACS_TTEE}{top tee}
   \lineii{ACS_UARROW}{up arrow}
