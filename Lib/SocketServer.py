@@ -351,7 +351,7 @@ class BaseRequestHandler:
     defines a handle() method.
 
     The handle() method can find the request as self.request, the
-    client address as self.client_request, and the server (in case it
+    client address as self.client_address, and the server (in case it
     needs access to per-server information) as self.server.  Since a
     separate instance is created for each request, the handle() method
     can define arbitrary other instance variariables.
