@@ -1763,7 +1763,7 @@ builtin_xrange(PyObject *self, PyObject *args)
 				"xrange() result has too many items");
 		return NULL;
 	}
-	return PyRange_New(ilow, n, istep);
+	return PyRange_New(ilow, n, istep, 1);
 }
 
 static char xrange_doc[] =
