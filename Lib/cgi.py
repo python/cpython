@@ -419,6 +419,11 @@ __version__ = "2.2"
 import string
 import sys
 import os
+import urllib
+import regsub
+import mimetools
+import rfc822
+from StringIO import StringIO
 
 
 # Logging support
@@ -551,7 +556,6 @@ def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
 	    If false (the default), errors are silently ignored.
 	    If true, errors raise a ValueError exception.
     """
-    import urllib, regsub
     name_value_pairs = string.splitfields(qs, '&')
     dict = {}
     for name_value in name_value_pairs:
@@ -591,7 +595,6 @@ def parse_multipart(fp, pdict):
     point in having two implementations of the same parsing algorithm.
 
     """
-    import mimetools
     if pdict.has_key('boundary'):
 	boundary = pdict['boundary']
     else:
@@ -702,7 +705,6 @@ class MiniFieldStorage:
 
     def __init__(self, name, value):
 	"""Constructor from field name and value."""
-	from StringIO import StringIO
 	self.name = name
 	self.value = value
         # self.file = StringIO(value)
@@ -795,7 +797,6 @@ class FieldStorage:
 		qs = sys.argv[1]
 	    else:
 		qs = ""
-	    from StringIO import StringIO
 	    fp = StringIO(qs)
 	    if headers is None:
 		headers = {'content-type':
@@ -917,7 +918,6 @@ class FieldStorage:
 
     def read_multi(self):
 	"""Internal: read a part that is itself multipart."""
-	import rfc822
 	self.list = []
 	part = self.__class__(self.fp, {}, self.innerboundary)
 	# Throw first part away
@@ -1018,7 +1018,7 @@ class FieldStorage:
 		    self.done = 1
 		    break
 
-    def make_file(self, binary):
+    def make_file(self, binary=None):
 	"""Overridable: return a readable & writable file.
 
 	The file will be used as follows:
@@ -1026,8 +1026,8 @@ class FieldStorage:
 	- seek(0)
 	- data is read from it
 
-	The 'binary' argument is 'b' if the file should be created in
-	binary mode (on non-Unix systems), '' otherwise.
+	The 'binary' argument is unused -- the file is always opened
+	in binary mode.
 
 	This version opens a temporary file for reading and writing,
 	and immediately deletes (unlinks) it.  The trick (on Unix!) is
@@ -1043,10 +1043,8 @@ class FieldStorage:
 
 	"""
 	import tempfile
-	tfn = tempfile.mktemp()
-	f = open(tfn, "w%s+" % binary)
-	os.unlink(tfn)
-	return f
+	return tempfile.TemporaryFile("w+b")
+	
 
 
 # Backwards Compatibility Classes
@@ -1318,7 +1316,6 @@ environment as well.  Here are some common variable names:
 
 def escape(s, quote=None):
     """Replace special characters '&', '<' and '>' by SGML entities."""
-    import regsub
     s = regsub.gsub("&", "&amp;", s)	# Must be done first!
     s = regsub.gsub("<", "&lt;", s)
     s = regsub.gsub(">", "&gt;", s)
