@@ -1416,7 +1416,7 @@ sub do_env_tableii{
     my $a1 = $col_aligns[0];
     my $a2 = $col_aligns[1];
     s/\\lineii</\\lineii[$a1|$a2]</g;
-    return '<table class="realtable">'
+    return '<div class="center"><table class="realtable">'
            . "\n  <thead>"
            . "\n    <tr>"
            . "\n      $th1$h1</th>"
@@ -1426,7 +1426,7 @@ sub do_env_tableii{
            . "\n  <tbody>"
            . $_
            . "\n    </tbody>"
-           . "\n</table>";
+           . "\n</table></div>";
 }
 
 sub do_env_longtableii{
@@ -1460,7 +1460,7 @@ sub do_env_tableiii{
     my $a2 = $col_aligns[1];
     my $a3 = $col_aligns[2];
     s/\\lineiii</\\lineiii[$a1|$a2|$a3]</g;
-    return '<table class="realtable">'
+    return '<div class="center"><table class="realtable">'
            . "\n  <thead>"
            . "\n    <tr>"
            . "\n      $th1$h1</th>"
@@ -1471,7 +1471,7 @@ sub do_env_tableiii{
            . "\n  <tbody>"
            . $_
            . "\n    </tbody>"
-           . "\n</table>";
+           . "\n</table></div>";
 }
 
 sub do_env_longtableiii{
@@ -1509,7 +1509,7 @@ sub do_env_tableiv{
     my $a3 = $col_aligns[2];
     my $a4 = $col_aligns[3];
     s/\\lineiv</\\lineiv[$a1|$a2|$a3|$a4]</g;
-    return '<table class="realtable">'
+    return '<div class="center"><table class="realtable">'
            . "\n  <thead>"
            . "\n    <tr>"
            . "\n      $th1$h1</th>"
@@ -1521,7 +1521,7 @@ sub do_env_tableiv{
            . "\n  <tbody>"
            . $_
            . "\n    </tbody>"
-           . "\n</table>";
+           . "\n</table></div>";
 }
 
 sub do_env_longtableiv{
@@ -1563,7 +1563,7 @@ sub do_env_tablev{
     my $a4 = $col_aligns[3];
     my $a5 = $col_aligns[4];
     s/\\linev</\\linev[$a1|$a2|$a3|$a4|$a5]</g;
-    return '<table class="realtable">'
+    return '<div class="center"><table class="realtable">'
            . "\n  <thead>"
            . "\n    <tr>"
            . "\n      $th1$h1</th>"
@@ -1576,7 +1576,7 @@ sub do_env_tablev{
            . "\n  <tbody>"
            . $_
            . "\n    </tbody>"
-           . "\n</table>";
+           . "\n</table></div>";
 }
 
 sub do_env_longtablev{
@@ -1720,9 +1720,9 @@ sub do_cmd_maketitle{
         }
     }
     else {
-        $the_title .= ("\n<center>"
+        $the_title .= ("\n<div class='center'>"
                        . make_my_titlepage()
-                       . "\n</center>");
+                       . "\n</div>");
     }
     $the_title .= "\n</div>";
     return $the_title . $_;
