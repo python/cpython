@@ -119,6 +119,11 @@ heappop(PyObject *self, PyObject *heap)
 	PyObject *lastelt, *returnitem;
 	int n;
 
+	if (!PyList_Check(heap)) {
+		PyErr_SetString(PyExc_ValueError, "heap argument must be a list");
+		return NULL;
+	}
+
 	/* # raises appropriate IndexError if heap is empty */
 	n = PyList_GET_SIZE(heap);
 	if (n == 0) {
