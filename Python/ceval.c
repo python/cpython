@@ -1422,7 +1422,7 @@ testbool(v)
 	else if (v->ob_type->tp_as_sequence != NULL)
 		res = (*v->ob_type->tp_as_sequence->sq_length)(v);
 	else
-		res = 0;
+		res = 1;
 	if (res > 0)
 		res = 1;
 	return res;
