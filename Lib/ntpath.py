@@ -13,7 +13,7 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime", "islink","exists","isdir","isfile","ismount",
            "walk","expanduser","expandvars","normpath","abspath","splitunc",
-           "supports_unicode_filenames"]
+           "realpath","supports_unicode_filenames"]
 
 # Normalize the case of a pathname and map slashes to backslashes.
 # Other normalizations (such as optimizing '../' away) are not done
