@@ -125,7 +125,7 @@ def _testLock():
     lock.release()
 
     lock.acquire()
-    
+
     thread.start_new_thread(f1, (lock,)) # Adds 2
     thread.start_new_thread(f1, (lock, f1)) # Adds 3
     thread.start_new_thread(f2, (lock,)) # Adds 1

@@ -66,7 +66,7 @@ def dline(pair, from_x, from_y, x2, y2, ch):
 def main(win):
     global stdscr
     stdscr = win
-    
+
     lastbeep = -1
     my_bg = curses.COLOR_BLACK
 
@@ -80,7 +80,7 @@ def main(win):
 
     cx = (curses.COLS - 1) / 2
     cy = curses.LINES / 2
-    ch = min( cy-1, int(cx / ASPECT) - 1) 
+    ch = min( cy-1, int(cx / ASPECT) - 1)
     mradius = (3 * ch) / 4
     hradius = ch / 2
     sradius = 5 * ch / 6
@@ -95,7 +95,7 @@ def main(win):
                   "ASCII Clock by Howard Jones <ha.jones@ic.ac.uk>, 1994")
 
     sradius = max(sradius-4, 8)
-    
+
     while 1:
         curses.napms(1000)
 
@@ -125,7 +125,7 @@ def main(win):
             stdscr.attrset(curses.color_pair(1))
 
         plot(cx + sdx, cy - sdy, ord('O'))
-        
+
         if curses.has_colors():
             stdscr.attrset(curses.color_pair(0))
 

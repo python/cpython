@@ -10,8 +10,6 @@ s.bind(('', 0))
 s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
 
 while 1:
-	data = repr(time.time()) + '\n'
-	s.sendto(data, ('<broadcast>', MYPORT))
-	time.sleep(2)
-
-	
+    data = repr(time.time()) + '\n'
+    s.sendto(data, ('<broadcast>', MYPORT))
+    time.sleep(2)

@@ -34,89 +34,89 @@ NFLAG = 0
 PFLAG = 0
 
 try:
-	optlist, ARGS = getopt.getopt(sys.argv[1:], 'acde:F:np')
+    optlist, ARGS = getopt.getopt(sys.argv[1:], 'acde:F:np')
 except getopt.error, msg:
-	sys.stderr.write(sys.argv[0] + ': ' + msg + '\n')
-	sys.exit(2)
+    sys.stderr.write(sys.argv[0] + ': ' + msg + '\n')
+    sys.exit(2)
 
 for option, optarg in optlist:
-	if option == '-a':
-		AFLAG = 1
-	elif option == '-c':
-		CFLAG = 1
-	elif option == '-d':
-		DFLAG = 1
-	elif option == '-e':
-		for line in string.splitfields(optarg, '\n'):
-			SCRIPT.append(line)
-	elif option == '-F':
-		FS = optarg
-	elif option == '-n':
-		NFLAG = 1
-		PFLAG = 0
-	elif option == '-p':
-		NFLAG = 1
-		PFLAG = 1
-	else:
-		print option, 'not recognized???'
+    if option == '-a':
+        AFLAG = 1
+    elif option == '-c':
+        CFLAG = 1
+    elif option == '-d':
+        DFLAG = 1
+    elif option == '-e':
+        for line in string.splitfields(optarg, '\n'):
+            SCRIPT.append(line)
+    elif option == '-F':
+        FS = optarg
+    elif option == '-n':
+        NFLAG = 1
+        PFLAG = 0
+    elif option == '-p':
+        NFLAG = 1
+        PFLAG = 1
+    else:
+        print option, 'not recognized???'
 
 if not ARGS: ARGS.append('-')
 
 if not SCRIPT:
-	if ARGS[0] == '-':
-		fp = sys.stdin
-	else:
-		fp = open(ARGS[0], 'r')
-	while 1:
-		line = fp.readline()
-		if not line: break
-		SCRIPT.append(line[:-1])
-	del fp
-	del ARGS[0]
-	if not ARGS: ARGS.append('-')
+    if ARGS[0] == '-':
+        fp = sys.stdin
+    else:
+        fp = open(ARGS[0], 'r')
+    while 1:
+        line = fp.readline()
+        if not line: break
+        SCRIPT.append(line[:-1])
+    del fp
+    del ARGS[0]
+    if not ARGS: ARGS.append('-')
 
 if CFLAG:
-	prologue = ['if 0:']
-	epilogue = []
+    prologue = ['if 0:']
+    epilogue = []
 elif NFLAG:
-	# Note that it is on purpose that AFLAG and PFLAG are
-	# tested dynamically each time through the loop
-	prologue = [ \
-		'LINECOUNT = 0', \
-		'for FILE in ARGS:', \
-		'   \tif FILE == \'-\':', \
-		'   \t   \tFP = sys.stdin', \
-		'   \telse:', \
-		'   \t   \tFP = open(FILE, \'r\')', \
-		'   \tLINENO = 0', \
-		'   \twhile 1:', \
-		'   \t   \tLINE = FP.readline()', \
-		'   \t   \tif not LINE: break', \
-		'   \t   \tLINENO = LINENO + 1', \
-		'   \t   \tLINECOUNT = LINECOUNT + 1', \
-		'   \t   \tL = LINE[:-1]', \
-		'   \t   \taflag = AFLAG', \
-		'   \t   \tif aflag:', \
-		'   \t   \t   \tif FS: F = string.splitfields(L, FS)', \
-		'   \t   \t   \telse: F = string.split(L)' \
-		]
-	epilogue = [ \
-		'   \t   \tif not PFLAG: continue', \
-		'   \t   \tif aflag:', \
-		'   \t   \t   \tif FS: print string.joinfields(F, FS)', \
-		'   \t   \t   \telse: print string.join(F)', \
-		'   \t   \telse: print L', \
-		]
+    # Note that it is on purpose that AFLAG and PFLAG are
+    # tested dynamically each time through the loop
+    prologue = [ \
+            'LINECOUNT = 0', \
+            'for FILE in ARGS:', \
+            '   \tif FILE == \'-\':', \
+            '   \t   \tFP = sys.stdin', \
+            '   \telse:', \
+            '   \t   \tFP = open(FILE, \'r\')', \
+            '   \tLINENO = 0', \
+            '   \twhile 1:', \
+            '   \t   \tLINE = FP.readline()', \
+            '   \t   \tif not LINE: break', \
+            '   \t   \tLINENO = LINENO + 1', \
+            '   \t   \tLINECOUNT = LINECOUNT + 1', \
+            '   \t   \tL = LINE[:-1]', \
+            '   \t   \taflag = AFLAG', \
+            '   \t   \tif aflag:', \
+            '   \t   \t   \tif FS: F = string.splitfields(L, FS)', \
+            '   \t   \t   \telse: F = string.split(L)' \
+            ]
+    epilogue = [ \
+            '   \t   \tif not PFLAG: continue', \
+            '   \t   \tif aflag:', \
+            '   \t   \t   \tif FS: print string.joinfields(F, FS)', \
+            '   \t   \t   \telse: print string.join(F)', \
+            '   \t   \telse: print L', \
+            ]
 else:
-	prologue = ['if 1:']
-	epilogue = []
+    prologue = ['if 1:']
+    epilogue = []
 
 # Note that we indent using tabs only, so that any indentation style
 # used in 'command' will come out right after re-indentation.
 
 program = string.joinfields(prologue, '\n') + '\n'
 for line in SCRIPT:
-	program = program + ('   \t   \t' + line + '\n')
+    program = program + ('   \t   \t' + line + '\n')
 program = program + (string.joinfields(epilogue, '\n') + '\n')
 
 import tempfile
@@ -124,7 +124,7 @@ fp = tempfile.NamedTemporaryFile()
 fp.write(program)
 fp.flush()
 if DFLAG:
-	import pdb
-	pdb.run('execfile(%r)' % (tfn,))
+    import pdb
+    pdb.run('execfile(%r)' % (tfn,))
 else:
-	execfile(tfn)
+    execfile(tfn)

@@ -48,7 +48,7 @@ class EiffelMetaClass1(EiffelBaseMetaClass):
             method.__doc__ = func.__doc__
 
         return method
-    
+
     make_eiffel_method = staticmethod(make_eiffel_method)
 
 class EiffelMethodWrapper:
@@ -66,7 +66,7 @@ class EiffelDescriptor(object):
         self._func = func
         self._pre = pre
         self._post = post
-        
+
         self.__name__ = func.__name__
         self.__doc__ = func.__doc__
 
@@ -141,4 +141,3 @@ def _test(metaclass):
 if __name__ == "__main__":
     _test(EiffelMetaClass1)
     _test(EiffelMetaClass2)
-
