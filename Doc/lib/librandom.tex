@@ -1,0 +1,71 @@
+\section{Standard Module \sectcode{random}}
+\stmodindex{random}
+
+This module implements pseudo-random number generators for various
+distributions: on the real line, there are functions to compute normal
+or Gaussian, lognormal, negative exponential, gamma, and beta
+distributions.  For generating distribution of angles, the circular
+uniform and von Mises distributions are available.
+
+The module exports the following functions, which are exactly
+equivalent to those in the \code{whrandom} module: \code{choice},
+\code{randint}, \code{random}, \code{uniform}.  See the documentation
+for the \code{whrandom} module for these functions.
+
+The following functions specific to the \code{random} module are also
+defined, and all return real values.  Function parameters are named
+after the corresponding variables in the distribution's equation, as
+used in common mathematical practice; most of these equations can be
+found in any statistics text.
+
+\renewcommand{\indexsubitem}{(in module random)}
+\begin{funcdesc}{betavariate}{alpha\, beta}
+Beta distribution.  Conditions on the parameters are \code{alpha>-1}
+and \code{beta>-1}.
+Returned values will range between 0 and 1.
+\end{funcdesc}
+
+\begin{funcdesc}{cunifvariate}{mean\, arc}
+Circular uniform distribution.  \var{mean} is the mean angle, and
+\var{arc} is the range of the distribution, centered around the mean
+angle.  Both values must be expressed in radians, and can range
+between 0 and \code{pi}.  Returned values will range between
+\code{mean - arc/2} and \code{mean + arc/2}.
+\end{funcdesc}
+
+\begin{funcdesc}{expovariate}{lambd}
+Exponential distribution.  \var{lambd} is 1.0 divided by the desired mean.
+(The parameter would be called ``lambda'', but that's also a reserved
+word in Python.)  Returned values will range from 0 to positive infinity.
+\end{funcdesc}
+
+\begin{funcdesc}{gamma}{alpha\, beta}
+Gamma distribution.  (\emph{Not} the gamma function!) 
+Conditions on the parameters are \code{alpha>-1} and \code{beta>0}.
+\end{funcdesc}
+
+\begin{funcdesc}{gauss}{mu\, sigma}
+Gaussian distribution.  \var{mu} is the mean, and \var{sigma} is the
+standard deviation.  This is slightly faster than the
+\code{normalvariate} function defined below.
+\end{funcdesc}
+
+\begin{funcdesc}{lognormvariate}{mu\, sigma}
+Log normal distribution.  If you take the natural logarithm of this
+distribution, you'll get a normal distribution with mean \var{mu} and
+standard deviation \var{sigma}  \var{mu} can have any value, and \var{sigma}
+must be greater than zero.  
+\end{funcdesc}
+
+\begin{funcdesc}{normalvariate}{mu\, sigma}
+Normal distribution.  \var{mu} is the mean, and \var{sigma} is the
+standard deviation.
+\end{funcdesc}
+
+\begin{funcdesc}{vonmisesvariate}{mu\, kappa}
+\var{mu} is the mean angle, expressed in radians between 0 and pi,
+and \var{kappa} is the concentration parameter, which must be greater
+then or equal to zero.  If \var{kappa} is equal to zero, this
+distribution reduces to a uniform random angle over the range 0 to
+\code{2*pi}.
+\end{funcdesc}
