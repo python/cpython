@@ -842,11 +842,11 @@ static PyMethodDef bsddbmodule_methods[] = {
 };
 
 PyMODINIT_FUNC
-initbsddb(void) {
+initbsddb185(void) {
 	PyObject *m, *d;
 
 	Bsddbtype.ob_type = &PyType_Type;
-	m = Py_InitModule("bsddb", bsddbmodule_methods);
+	m = Py_InitModule("bsddb185", bsddbmodule_methods);
 	d = PyModule_GetDict(m);
 	BsddbError = PyErr_NewException("bsddb.error", NULL, NULL);
 	if (BsddbError != NULL)
