@@ -1,3 +1,108 @@
 \section{Built-in Module \sectcode{termios}}
+\bimodindex{termios}
+\indexii{Posix}{I/O control}
+\indexii{tty}{I/O control}
 
-To be provided.
+\renewcommand{\indexsubitem}{(in module termios)}
+
+This module provides an interface to the Posix calls for tty I/O
+control.  For a complete description of these calls, see the Posix or
+\UNIX{} manual pages.  It is only available for those \UNIX{} versions
+that support Posix \code{termios} style tty I/O control (and then
+only if configured at installation time).
+
+All functions in this module take a file descriptor \var{fd} as their
+first argument.  This must be an integer file descriptor, such as
+returned by \code{sys.stdin.fileno()}.
+
+This module should be used in conjunction with the \code{TERMIOS}
+module, which defines the relevant symbolic constants (see the next
+section).
+
+The module defines the following functions:
+
+\begin{funcdesc}{tcgetattr}{fd}
+Return a list containing the tty attributes for file descriptor
+\var{fd}, as follows: \code{[\var{iflag}, \var{oflag}, \var{cflag},
+\var{lflag}, \var{ispeed}, \var{ospeed}, \var{cc}]} where \var{cc} is
+a list of the tty special characters (each a string of length 1,
+except the items with indices \code{VMIN} and \code{VTIME}, which are
+integers when these fields are defined).  The interpretation of the
+flags and the speeds as well as the indexing in the \var{cc} array
+must be done using the symbolic constants defined in the
+\code{TERMIOS} module.
+\end{funcdesc}
+
+\begin{funcdesc}{tcsetattr}{fd\, when\, attributes}
+Set the tty attributes for file descriptor \var{fd} from the
+\var{attributes}, which is a list like the one returned by
+\code{tcgetattr()}.  The \var{when} argument determines when the
+attributes are changed: \code{TERMIOS.TCSANOW} to change immediately,
+\code{TERMIOS.TCSADRAIN} to change after transmitting all queued
+output, or \code{TERMIOS.TCSAFLUSH} to change after transmitting all
+queued output and discarding all queued input.
+\end{funcdesc}
+
+\begin{funcdesc}{tcsendbreak}{fd\, duration}
+Send a break on file descriptor \var{fd}.  A zero \var{duration} sends
+a break for 0.25--0.5 seconds; a nonzero \var{duration} has a system
+dependent meaning.
+\end{funcdesc}
+
+\begin{funcdesc}{tcdrain}{fd}
+Wait until all output written to file descriptor \var{fd} has been
+transmitted.
+\end{funcdesc}
+
+\begin{funcdesc}{tcflush}{fd\, queue}
+Discard queued data on file descriptor \var{fd}.  The \var{queue}
+selector specifies which queue: \code{TERMIOS.TCIFLUSH} for the input
+queue, \code{TERMIOS.TCOFLUSH} for the output queue, or
+\code{TERMIOS.TCIOFLUSH} for both queues.
+\end{funcdesc}
+
+\begin{funcdesc}{tcflow}{fd\, action}
+Suspend or resume input or output on file descriptor \var{fd}.  The
+\var{action} argument can be \code{TERMIOS.TCOOFF} to suspend output,
+\code{TERMIOS.TCOON} to restart output, \code{TERMIOS.TCIOFF} to
+suspend input, or \code{TERMIOS.TCION} to restart input.
+\end{funcdesc}
+
+\subsection{Example}
+\nodename{termios Example}
+
+Here's a function that prompts for a password with echoing turned off.
+Note the technique using a separate \code{termios.tcgetattr()} call
+and a \code{try {\ldots} finally} statement to ensure that the old tty
+attributes are restored exactly no matter what happens:
+
+\begin{verbatim}
+def getpass(prompt = "Password: "):
+    import termios, TERMIOS, sys
+    fd = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
+    new = termios.tcgetattr(fd)
+    new[3] = new[3] & ~TERMIOS.ECHO          # lflags
+    try:
+        termios.tcsetattr(fd, TERMIOS.TCSADRAIN, new)
+        passwd = raw_input(prompt)
+    finally:
+        termios.tcsetattr(fd, TERMIOS.TCSADRAIN, old)
+    return passwd
+\end{verbatim}
+
+
+\section{Standard Module \sectcode{TERMIOS}}
+\stmodindex{TERMIOS}
+\indexii{Posix}{I/O control}
+\indexii{tty}{I/O control}
+
+\renewcommand{\indexsubitem}{(in module TERMIOS)}
+
+This module defines the symbolic constants required to use the
+\code{termios} module (see the previous section).  See the Posix or
+\UNIX{} manual pages (or the source) for a list of those constants.
+
+Note: this module resides in a system-dependent subdirectory of the
+Python library directory.  You may have to generate it for your
+particular system using the script \file{Tools/scripts/h2py.py}.
