@@ -2196,6 +2196,11 @@ instancemethod_call(PyObject *func, PyObject *arg, PyObject *kw)
 static PyObject *
 instancemethod_descr_get(PyObject *meth, PyObject *obj, PyObject *type)
 {
+	if (PyMethod_GET_SELF(meth) != NULL) {
+		/* Don't rebind an already bound method */
+		Py_INCREF(meth);
+		return meth;
+	}
 	if (obj == Py_None)
 		obj = NULL;
 	return PyMethod_New(PyMethod_GET_FUNCTION(meth), obj, type);
