@@ -60,6 +60,7 @@ def valid_identifier(id):
 
 _cache = {}
 _MAXCACHE = 20
+
 def _cachecompile(pattern, flags):
     key = (pattern, flags)
     try:
@@ -74,16 +75,16 @@ def _cachecompile(pattern, flags):
 
 def match(pattern, string, flags=0):
     return _cachecompile(pattern, flags).match(string)
-
+  
 def search(pattern, string, flags=0):
     return _cachecompile(pattern, flags).search(string)
-
+  
 def sub(pattern, repl, string, count=0):
     return _cachecompile(pattern).sub(repl, string, count)
 
 def subn(pattern, repl, string, count=0):
     return _cachecompile(pattern).subn(repl, string, count)
-
+  
 def split(pattern, string, maxsplit=0):
     return _cachecompile(pattern).subn(string, maxsplit)
 
@@ -100,12 +101,16 @@ class RegexObject:
 	self.groupindex = groupindex
 	self.callouts = callouts
 	self.fastmap = build_fastmap(code)
+	
 	if code[0].name == 'bol':
 	    self.anchor = 1
+	    
 	elif code[0].name == 'begbuf':
 	    self.anchor = 2
+	    
 	else:
 	    self.anchor = 0
+	    
 	self.buffer = assemble(code)
     def search(self, string, pos=0):
 	regs = reop.search(self.buffer,
@@ -118,10 +123,12 @@ class RegexObject:
 			   pos)
 	if regs is None:
 	    return None
+	
 	return MatchObject(self,
 			   string,
 			   pos,
 			   regs)
+    
     def match(self, string, pos=0):
 	regs = reop.match(self.buffer,
 			  self.num_regs,
@@ -133,14 +140,18 @@ class RegexObject:
 			  pos)
 	if regs is None:
 	    return None
+	
 	return MatchObject(self,
 			   string,
 			   pos,
 			   regs)
+    
     def sub(self, repl, string, count=0):
 	pass
+    
     def subn(self, repl, string, count=0):
 	pass
+    
     def split(self, string, maxsplit=0):
 	pass
     
@@ -150,6 +161,7 @@ class MatchObject:
 	self.string = string
 	self.pos = pos
 	self.regs = regs
+	
     def start(self, g):
 	if type(g) == type(''):
 	    try:
@@ -157,6 +169,7 @@ class MatchObject:
 	    except (KeyError, TypeError):
 		raise IndexError, ('group "' + g + '" is undefined')
 	return self.regs[g][0]
+    
     def end(self, g):
 	if type(g) == type(''):
 	    try:
@@ -164,6 +177,7 @@ class MatchObject:
 	    except (KeyError, TypeError):
 		raise IndexError, ('group "' + g + '" is undefined')
 	return self.regs[g][1]
+    
     def span(self, g):
 	if type(g) == type(''):
 	    try:
@@ -171,6 +185,7 @@ class MatchObject:
 	    except (KeyError, TypeError):
 		raise IndexError, ('group "' + g + '" is undefined')
 	return self.regs[g]
+    
     def group(self, *groups):
 	if len(groups) == 0:
 	    groups = range(1, self.re.num_regs)
@@ -339,7 +354,7 @@ class UpdateFailureJump(JumpInstruction):
 	JumpInstruction.__init__(self, chr(12), label)
 
 class DummyFailureJump(JumpInstruction):
-    name = 'update_failure_jump'
+    name = 'dummy_failure_jump'
     def __init__(self, label):
 	JumpInstruction.__init__(self, chr(13), label)
 	
@@ -764,11 +779,34 @@ def expand_escape(pattern, index, context=NORMAL):
 
 def compile(pattern, flags=0):
     stack = []
-    index = 0
     label = 0
     register = 1
     groupindex = {}
     callouts = []
+
+    # preprocess the pattern looking for embedded pattern modifiers
+
+    index = 0
+    while (index != -1):
+	index = string.find(pattern, '(?', index)
+	if index != -1:
+	    index = index + 2
+	    if (index < len(pattern)) and (pattern[index] in 'iImMsSxX'):
+		while (index < len(pattern)) and (pattern[index] != ')'):
+		    if pattern[index] in 'iI':
+			flags = flags | IGNORECASE
+		    elif pattern[index] in 'mM':
+			flags = flags | MULTILINE
+		    elif pattern[index] in 'sS':
+			flags = flags | DOTALL
+		    elif pattern[index] in 'xX':
+			flags = flags | VERBOSE
+		    else:
+			raise error, 'unknown flag'
+		    index = index + 1
+
+    index = 0
+    
     while (index < len(pattern)):
 	char = pattern[index]
 	index = index + 1
@@ -809,12 +847,6 @@ def compile(pattern, flags=0):
 		raise error, 'unknown escape type'
 
 	elif char == '|':
-	    if len(stack) == 0:
-		raise error, 'alternate with nothing on the left'
-	    if stack[-1][0].name == '(':
-		raise error, 'alternate with nothing on the left in the group'
-	    if stack[-1][0].name == '|':
-		raise error, 'alternates with nothing inbetween them'
 	    expr = []
 	    
 	    while (len(stack) != 0) and \
@@ -915,17 +947,10 @@ def compile(pattern, flags=0):
 				  'assertion is unsupported')
 
 		elif pattern[index] in 'iImMsSxX':
+		    # ignore embedded pattern modifiers here, they
+		    # have already been taken care of in the
+		    # preprocessing
 		    while (index < len(pattern)) and (pattern[index] != ')'):
-			if pattern[index] in 'iI':
-			    flags = flags | IGNORECASE
-			elif pattern[index] in 'mM':
-			    flags = flags | MULTILINE
-			elif pattern[index] in 'sS':
-			    flags = flags | DOTALL
-			elif pattern[index] in 'xX':
-			    flags = flags | VERBOSE
-			else:
-			    raise error, 'unknown flag'
 			index = index + 1
 		    index = index + 1
 		    
@@ -947,13 +972,6 @@ def compile(pattern, flags=0):
 	    if len(stack) == 0:
 		raise error, 'too many close parens'
 	    
-	    if len(expr) == 0:
-		raise error, 'nothing inside parens'
-
-	    # check to see if alternation used correctly
-	    if (expr[-1].name == '|'):
-		raise error, 'alternate with nothing on the right'
-
 	    # remove markers left by alternation
 	    expr = filter(lambda x: x.name != '|', expr)
 
@@ -1023,18 +1041,17 @@ def compile(pattern, flags=0):
 		    while min > 0:
 			expr = expr + stack[-1]
 			min = min - 1
-		    registers = registers_used(stack[-1])
 		    if minimal:
 			expr = expr + \
 			       ([Jump(label + 1),
 				 Label(label)] + \
 				stack[-1] + \
 				[Label(label + 1),
-				 FailureJump(label, registers)])
+				 FailureJump(label)])
 		    else:
 			expr = expr + \
 			       ([Label(label),
-				 FailureJump(label + 1, registers)] +
+				 FailureJump(label + 1)] +
 				stack[-1] +
 				[StarJump(label),
 				 Label(label + 1)])
@@ -1109,7 +1126,7 @@ def compile(pattern, flags=0):
 	    registers = registers_used(stack[-1])
 	    if (index < len(pattern)) and (pattern[index] == '?'):
 		# non-greedy matching
-		expr = [JumpInstructions(label + 1),
+		expr = [Jump(label + 1),
 			Label(label)] + \
 		       stack[-1] + \
 		       [Label(label + 1),
@@ -1130,9 +1147,10 @@ def compile(pattern, flags=0):
 	    # positive closure
 	    if len(stack) == 0:
 		raise error, '+ needs something to repeat'
+	    
 	    if (stack[-1][0].name == '(') or (stack[-1][0].name == '|'):
 		raise error, '+ needs something to repeat'
-	    registers = registers_used(stack[-1])
+	    
 	    if (index < len(pattern)) and (pattern[index] == '?'):
 		# non-greedy
 		expr = [Label(label)] + \
@@ -1156,7 +1174,6 @@ def compile(pattern, flags=0):
 	elif char == '?':
 	    if len(stack) == 0:
 		raise error, 'need something to be optional'
-	    registers = registers_used(stack[-1])
 	    if (index < len(pattern)) and (pattern[index] == '?'):
 		# non-greedy matching
 		expr = [FailureJump(label),
@@ -1177,7 +1194,7 @@ def compile(pattern, flags=0):
 
 	elif char == '.':
 	    if flags & DOTALL:
-		stack.append(Set(map(chr, range(256))))
+		stack.append([Set(map(chr, range(256)))])
 	    else:
 		stack.append([AnyChar()])
 
@@ -1337,8 +1354,6 @@ def compile(pattern, flags=0):
 	del stack[-1]
     if len(code) == 0:
 	raise error, 'no code generated'
-    if (code[-1].name == '|'):
-	raise error, 'alternate with nothing on the right'
     code = filter(lambda x: x.name != '|', code)
     need_label = 0
     for i in range(len(code)):
