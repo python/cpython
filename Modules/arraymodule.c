@@ -121,6 +121,17 @@ b_setitem(ap, i, v)
 }
 
 static PyObject *
+B_getitem(ap, i)
+	arrayobject *ap;
+	int i;
+{
+	long x = ((unsigned char *)ap->ob_item)[i];
+	return PyInt_FromLong(x);
+}
+
+#define B_setitem b_setitem
+
+static PyObject *
 h_getitem(ap, i)
 	arrayobject *ap;
 	int i;
@@ -141,6 +152,16 @@ h_setitem(ap, i, v)
 		     ((short *)ap->ob_item)[i] = x;
 	return 0;
 }
+
+static PyObject *
+H_getitem(ap, i)
+	arrayobject *ap;
+	int i;
+{
+	return PyInt_FromLong((long) ((unsigned short *)ap->ob_item)[i]);
+}
+
+#define H_setitem h_setitem
 
 static PyObject *
 i_getitem(ap, i)
@@ -165,6 +186,36 @@ i_setitem(ap, i, v)
 }
 
 static PyObject *
+I_getitem(ap, i)
+	arrayobject *ap;
+	int i;
+{
+	return PyLong_FromUnsignedLong(
+		(unsigned long) ((unsigned int *)ap->ob_item)[i]);
+}
+
+static int
+I_setitem(ap, i, v)
+	arrayobject *ap;
+	int i;
+	PyObject *v;
+{
+	unsigned long x;
+	if (PyLong_Check(v)) {
+		x = PyLong_AsUnsignedLong(v);
+		if (x == (unsigned long) -1 && PyErr_Occurred())
+			return -1;
+	}
+	else {
+		if (!PyArg_Parse(v, "l;array item must be integer", &x))
+			return -1;
+	}
+	if (i >= 0)
+		((unsigned int *)ap->ob_item)[i] = x;
+	return 0;
+}
+
+static PyObject *
 l_getitem(ap, i)
 	arrayobject *ap;
 	int i;
@@ -183,6 +234,35 @@ l_setitem(ap, i, v)
 		return -1;
 	if (i >= 0)
 		     ((long *)ap->ob_item)[i] = x;
+	return 0;
+}
+
+static PyObject *
+L_getitem(ap, i)
+	arrayobject *ap;
+	int i;
+{
+	return PyLong_FromUnsignedLong(((unsigned long *)ap->ob_item)[i]);
+}
+
+static int
+L_setitem(ap, i, v)
+	arrayobject *ap;
+	int i;
+	PyObject *v;
+{
+	unsigned long x;
+	if (PyLong_Check(v)) {
+		x = PyLong_AsUnsignedLong(v);
+		if (x == (unsigned long) -1 && PyErr_Occurred())
+			return -1;
+	}
+	else {
+		if (!PyArg_Parse(v, "l;array item must be integer", &x))
+			return -1;
+	}
+	if (i >= 0)
+		((unsigned long *)ap->ob_item)[i] = x;
 	return 0;
 }
 
@@ -234,9 +314,13 @@ d_setitem(ap, i, v)
 static struct arraydescr descriptors[] = {
 	{'c', sizeof(char), c_getitem, c_setitem},
 	{'b', sizeof(char), b_getitem, b_setitem},
+	{'B', sizeof(char), B_getitem, B_setitem},
 	{'h', sizeof(short), h_getitem, h_setitem},
+	{'H', sizeof(short), H_getitem, H_setitem},
 	{'i', sizeof(int), i_getitem, i_setitem},
+	{'I', sizeof(int), I_getitem, I_setitem},
 	{'l', sizeof(long), l_getitem, l_setitem},
+	{'L', sizeof(long), L_getitem, L_setitem},
 	{'f', sizeof(float), f_getitem, f_setitem},
 	{'d', sizeof(double), d_getitem, d_setitem},
 	{'\0', 0, 0, 0} /* Sentinel */
@@ -1166,7 +1250,7 @@ a_array(self, args)
 		}
 	}
 	PyErr_SetString(PyExc_ValueError,
-			"bad typecode (must be c, b, h, l, f or d)");
+		"bad typecode (must be c, b, B, h, H, i, I, l, L, f or d)");
 	return NULL;
 }
 
