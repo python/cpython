@@ -41,6 +41,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <AEObjects.h>
 #include <Desk.h>
 #include <Fonts.h>
+#include <TextEdit.h>
+#include <Menus.h>
+#include <Dialogs.h>
+#include <Windows.h>
 
 #ifdef GENERATINGCFM	/* Defined to 0 or 1 in Universal headers */
 #define HAVE_UNIVERSAL_HEADERS
@@ -147,7 +151,6 @@ get_application_name()
 {
 	static char appname[256];
 	FSSpec appspec;
-	long size;
 	
 	if (current_process_location(&appspec))
 		return NULL;
@@ -282,6 +285,9 @@ event_loop()
 static void
 init_mac_world()
 {
+#ifdef THINK_C
+	printf("\n");
+#else
 	MaxApplZone();
 	InitGraf(&qd.thePort);
 	InitFonts();
@@ -290,6 +296,7 @@ init_mac_world()
 	InitDialogs((long)0);
 	InitMenus();
 	InitCursor();
+#endif
 }
 /* Get the argv vector, return argc */
 
