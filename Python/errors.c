@@ -308,7 +308,7 @@ PyErr_SetFromErrnoWithFilename(exc, filename)
 		   table, we use it, otherwise we assume it really _is_ 
 		   a Win32 error code
 		*/
-		if (i < _sys_nerr) {
+		if (i > 0 && i < _sys_nerr) {
 			s = _sys_errlist[i];
 		}
 		else {
