@@ -41,13 +41,13 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef HAVE_SYS_SELECT_H
 
-#include <sys/select.h>
-
 #ifdef SYS_SELECT_WITH_SYS_TIME
 #include "mytime.h"
 #else /* !SYS_SELECT_WITH_SYS_TIME */
 #include <time.h>
 #endif /* !SYS_SELECT_WITH_SYS_TIME */
+
+#include <sys/select.h>
 
 #else /* !HAVE_SYS_SELECT_H */
 
