@@ -37,6 +37,11 @@ What's New in Python 2.4 final?
 Core and builtins
 -----------------
 
+- Bug #1086555:  Fix leak in syslog module.
+
+- Bug #1085744:  Add missing overflow check to PySequence_Tuple().
+  Make resize schedule linear (amortized).
+
 - Bug 875692: Improve signal handling, especially when using threads, by
   forcing an early re-execution of PyEval_EvalFrame() "periodic" code when
   things_to_do is not cleared by Py_MakePendingCalls().
