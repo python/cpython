@@ -573,6 +573,7 @@ setup_readline(void)
 	rl_completer_word_break_characters =
 		strdup(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?");
 		/* All nonalphanums except '.' */
+	rl_completion_append_character ='\0';
 
 	begidx = PyInt_FromLong(0L);
 	endidx = PyInt_FromLong(0L);
