@@ -13,6 +13,9 @@ this:
 
 cc config.o -Wl,-E libModules.a  ../Python/libPython.a  ../Objects/libObjects.a ../Parser/libParser.a   -lm  -ldld -o python
 
+[Guido's note: as of Python 1.5, replace the four libraries with
+../libpython$(VERSION).a]
+
 Second, the dynamic module must be compiled with the +z option to make
 it position independent and then linked into a shared library:
 
