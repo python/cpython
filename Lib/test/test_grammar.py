@@ -246,6 +246,20 @@ d22v(*(1, 2, 3, 4))
 d22v(1, 2, *(3, 4, 5))
 d22v(1, *(2, 3), **{'d': 4})
 
+### lambdef: 'lambda' [varargslist] ':' test
+print 'lambdef'
+l1 = lambda : 0
+verify(l1() == 0)
+l2 = lambda : a[d] # XXX just testing the expression
+l3 = lambda : [2 < x for x in [-1, 3, 0L]]
+verify(l3() == [0, 1, 0])
+l4 = lambda x = lambda y = lambda z=1 : z : y() : x()
+verify(l4() == 1)
+l5 = lambda x, y, z=2: x + y + z
+verify(l5(1, 2) == 5)
+verify(l5(1, 2, 3) == 6)
+check_syntax("lambda x: x = 2")
+
 ### stmt: simple_stmt | compound_stmt
 # Tested below
 
