@@ -96,11 +96,13 @@ class MyFile(File):
 		elif code == 'r':
 			self.eseen = 0
 		elif code in ('c', 'u'):
+			self.eseen = 1
 			self.erev = self.rrev
 			self.enew = 0
 			self.edeleted = 0
 			self.esum = self.rsum
 			self.emtime, self.ectime = os.stat(self.file)[-2:]
+			self.extra = ''
 
 	def commit(self, message = ""):
 		code = self.action()
