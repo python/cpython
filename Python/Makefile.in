@@ -16,6 +16,9 @@ LIBOBJS=	@LIBOBJS@
 LIBS=		@LIBS@
 DLINCLDIR=	@DLINCLDIR@
 
+# Machine-dependent subdirectories
+MACHDEP=	@MACHDEP@
+
 
 # === Other things that are customizable but not by configure ===
 
@@ -33,10 +36,12 @@ OBJS=		\
 		bltinmodule.o \
 		ceval.o cgensupport.o compile.o \
 		errors.o \
-		getargs.o getmtime.o graminit.o \
+		frozen.o \
+		getargs.o getcompiler.o getcopyright.o getmtime.o \
+		getplatform.o getversion.o graminit.o \
 		import.o importdl.o \
 		marshal.o modsupport.o mystrtoul.o \
-		pythonmain.o pythonrun.o \
+		pythonrun.o \
 		sigcheck.o structmember.o sysmodule.o \
 		traceback.o \
 		$(LIBOBJS)
@@ -65,8 +70,12 @@ Makefile:	$(srcdir)/Makefile.in ../config.status
 		(cd ..; CONFIG_FILES=Python/Makefile CONFIG_HEADERS= \
 		$(SHELL) config.status)
 
+getplatform.o:	getplatform.c Makefile
+		$(CC) -c $(CFLAGS) -DPLATFORM='"$(MACHDEP)"' \
+		      $(srcdir)/getplatform.c
+
 importdl.o:	importdl.c
-		$(CC) $(CFLAGS) -I$(DLINCLDIR) -c $(srcdir)/importdl.c
+		$(CC) -c $(CFLAGS) -I$(DLINCLDIR) $(srcdir)/importdl.c
 
 depend:
 		$(MKDEP) $(CFLAGS) `echo $(OBJS) | tr ' ' '\012' | \
@@ -81,11 +90,16 @@ compile.o: compile.c
 dup2.o: dup2.c
 errors.o: errors.c
 fmod.o: fmod.c
+frozen.o: frozen.c
 frozenmain.o: frozenmain.c
 getargs.o: getargs.c
+getcompiler.o: getcompiler.c
+getcopyright.o: getcopyright.c
 getcwd.o: getcwd.c
 getmtime.o: getmtime.c
 getopt.o: getopt.c
+getplatform.o: getplatform.c
+getversion.o: getversion.c
 graminit.o: graminit.c
 import.o: import.c
 importdl.o: importdl.c
@@ -93,7 +107,6 @@ marshal.o: marshal.c
 memmove.o: memmove.c
 modsupport.o: modsupport.c
 mystrtoul.o: mystrtoul.c
-pythonmain.o: pythonmain.c
 pythonrun.o: pythonrun.c
 sigcheck.o: sigcheck.c
 strerror.o: strerror.c
