@@ -529,6 +529,7 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 			delta = vr[1] - dr[1] - value
 		delta = min(maxdelta, delta)
 		delta = max(mindelta, delta)
+		delta = int(delta)
 		self.ted.WEScroll(0, delta)
 		self.updatescrollbars()
 	
@@ -556,6 +557,7 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 			#	delta = viewoffset
 		delta = min(maxdelta, delta)
 		delta = max(mindelta, delta)
+		delta = int(delta)
 		self.ted.WEScroll(delta, 0)
 		self.updatescrollbars()
 	

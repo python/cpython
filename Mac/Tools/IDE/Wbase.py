@@ -401,7 +401,7 @@ class Frame(Widget):
 			Qd.SetPenState(penstate)
 
 def _darkencolor((r, g, b)):
-	return 0.75 * r, 0.75 * g, 0.75 * b
+	return int(0.75 * r), int(0.75 * g), int(0.75 * b)
 
 class BevelBox(Widget):
 	
