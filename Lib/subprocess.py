@@ -125,7 +125,7 @@ appearance of the main window and priority for the new process.
 
 This module also defines two shortcut functions:
 
-call(*args, **kwargs):
+call(*popenargs, **kwargs):
     Run command with arguments.  Wait for command to complete, then
     return the returncode attribute.
 
@@ -417,7 +417,7 @@ PIPE = -1
 STDOUT = -2
 
 
-def call(*args, **kwargs):
+def call(*popenargs, **kwargs):
     """Run command with arguments.  Wait for command to complete, then
     return the returncode attribute.
 
@@ -425,7 +425,7 @@ def call(*args, **kwargs):
 
     retcode = call(["ls", "-l"])
     """
-    return Popen(*args, **kwargs).wait()
+    return Popen(*popenargs, **kwargs).wait()
 
 
 def list2cmdline(seq):
