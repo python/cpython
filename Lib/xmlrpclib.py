@@ -755,7 +755,7 @@ def dumps(params, methodname=None, methodresponse=None, encoding=None):
     elif methodresponse and isinstance(params, TupleType):
         assert len(params) == 1, "response tuple must be a singleton"
 
-    if not encoding:
+    if encoding is None:
         encoding = "utf-8"
 
     m = Marshaller(encoding)
@@ -767,7 +767,7 @@ def dumps(params, methodname=None, methodresponse=None, encoding=None):
         xmlheader = "<?xml version='1.0'?>\n" # utf-8 is default
 
     # standard XML-RPC wrappings
-    if methodname:
+    if methodname is not None:
         # a method call
         if not isinstance(methodname, StringType):
             methodname = methodname.encode(encoding)

@@ -203,7 +203,7 @@ class URLopener:
         if self.tempcache and url in self.tempcache:
             return self.tempcache[url]
         type, url1 = splittype(url)
-        if not filename and (not type or type == 'file'):
+        if filename is None and (not type or type == 'file'):
             try:
                 fp = self.open_local_file(url1)
                 hdrs = fp.info()
@@ -662,7 +662,7 @@ _localhost = None
 def localhost():
     """Return the IP address of the magic hostname 'localhost'."""
     global _localhost
-    if not _localhost:
+    if _localhost is None:
         _localhost = socket.gethostbyname('localhost')
     return _localhost
 
@@ -670,7 +670,7 @@ _thishost = None
 def thishost():
     """Return the IP address of the current host."""
     global _thishost
-    if not _thishost:
+    if _thishost is None:
         _thishost = socket.gethostbyname(socket.gethostname())
     return _thishost
 
@@ -678,7 +678,7 @@ _ftperrors = None
 def ftperrors():
     """Return the set of errors raised by the FTP class."""
     global _ftperrors
-    if not _ftperrors:
+    if _ftperrors is None:
         import ftplib
         _ftperrors = ftplib.all_errors
     return _ftperrors
@@ -687,7 +687,7 @@ _noheaders = None
 def noheaders():
     """Return an empty mimetools.Message object."""
     global _noheaders
-    if not _noheaders:
+    if _noheaders is None:
         import mimetools
         import StringIO
         _noheaders = mimetools.Message(StringIO.StringIO(), 0)

@@ -17,7 +17,7 @@ def register(name, klass, instance=None):
 
 def get(using=None):
     """Return a browser launcher instance appropriate for the environment."""
-    if using:
+    if using is not None:
         alternatives = [using]
     else:
         alternatives = _tryorder

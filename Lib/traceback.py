@@ -16,7 +16,7 @@ def _print(file, str='', terminator='\n'):
 def print_list(extracted_list, file=None):
     """Print the list of tuples as returned by extract_tb() or
     extract_stack() as a formatted stack trace to the given file."""
-    if not file:
+    if file is None:
         file = sys.stderr
     for filename, lineno, name, line in extracted_list:
         _print(file,
@@ -51,7 +51,7 @@ def print_tb(tb, limit=None, file=None):
     'file' should be an open file or file-like object with a write()
     method.
     """
-    if not file:
+    if file is None:
         file = sys.stderr
     if limit is None:
         if hasattr(sys, 'tracebacklimit'):
@@ -116,7 +116,7 @@ def print_exception(etype, value, tb, limit=None, file=None):
     occurred with a caret on the next line indicating the approximate
     position of the error.
     """
-    if not file:
+    if file is None:
         file = sys.stderr
     if tb:
         _print(file, 'Traceback (most recent call last):')
@@ -203,7 +203,7 @@ def print_exc(limit=None, file=None):
     """Shorthand for 'print_exception(sys.exc_type, sys.exc_value, sys.exc_traceback, limit, file)'.
     (In fact, it uses sys.exc_info() to retrieve the same information
     in a thread-safe way.)"""
-    if not file:
+    if file is None:
         file = sys.stderr
     try:
         etype, value, tb = sys.exc_info()
@@ -214,7 +214,7 @@ def print_exc(limit=None, file=None):
 def print_last(limit=None, file=None):
     """This is a shorthand for 'print_exception(sys.last_type,
     sys.last_value, sys.last_traceback, limit, file)'."""
-    if not file:
+    if file is None:
         file = sys.stderr
     print_exception(sys.last_type, sys.last_value, sys.last_traceback,
                     limit, file)
