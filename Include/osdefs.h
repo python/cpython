@@ -33,7 +33,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef macintosh
 #define SEP ':'
 #define MAXPATHLEN 256
-#define DELIM ' '
+/* Mod by Jack: newline is less likely to occur in filenames than space */
+#define DELIM '\n'
 #endif
 
 #if defined(MSDOS) || defined(NT)
