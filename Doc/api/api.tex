@@ -20,7 +20,7 @@
 \begin{abstract}
 
 \noindent
-This manual documents the API used by \C{} (or \Cpp{}) programmers who
+This manual documents the API used by C and \Cpp{} programmers who
 want to write extension modules or embed Python.  It is a companion to
 \citetitle[../ext/ext.html]{Extending and Embedding the Python
 Interpreter}, which describes the general principles of extension
@@ -40,26 +40,22 @@ source code releases.
 
 \chapter{Introduction \label{intro}}
 
-The Application Programmer's Interface to Python gives \C{} and \Cpp{}
-programmers access to the Python interpreter at a variety of levels.
-The API is equally usable from \Cpp{}, but for brevity it is generally
-referred to as the Python/\C{} API.  There are two fundamentally
-different reasons for using the Python/\C{} API.  The first reason is
-to write \emph{extension modules} for specific purposes; these are
-\C{} modules that extend the Python interpreter.  This is probably the
-most common use.  The second reason is to use Python as a component in
-a larger application; this technique is generally referred to as
-\dfn{embedding} Python in an application.
+The Application Programmer's Interface to Python gives C and
+\Cpp{} programmers access to the Python interpreter at a variety of
+levels.  The API is equally usable from \Cpp{}, but for brevity it is
+generally referred to as the Python/C API.  There are two
+fundamentally different reasons for using the Python/C API.  The first
+reason is to write \emph{extension modules} for specific purposes;
+these are C modules that extend the Python interpreter.  This is
+probably the most common use.  The second reason is to use Python as a
+component in a larger application; this technique is generally
+referred to as \dfn{embedding} Python in an application.
 
 Writing an extension module is a relatively well-understood process, 
 where a ``cookbook'' approach works well.  There are several tools 
 that automate the process to some extent.  While people have embedded 
 Python in other applications since its early existence, the process of 
 embedding Python is less straightforward that writing an extension.  
-Python 1.5 introduces a number of new API functions as well as some 
-changes to the build process that make embedding much simpler.  
-This manual describes the \version\ state of affairs.
-% XXX Eventually, take the historical notes out
 
 Many API functions are useful independent of whether you're embedding 
 or extending Python; moreover, most applications that embed Python 
@@ -83,8 +79,9 @@ This implies inclusion of the following standard headers:
 
 All user visible names defined by Python.h (except those defined by
 the included standard headers) have one of the prefixes \samp{Py} or
-\samp{_Py}.  Names beginning with \samp{_Py} are for internal use
-only.  Structure member names do not have a reserved prefix.
+\samp{_Py}.  Names beginning with \samp{_Py} are for internal use by
+the Python implementation and should not be used by extension writers.
+Structure member names do not have a reserved prefix.
 
 \strong{Important:} user code should never define names that begin
 with \samp{Py} or \samp{_Py}.  This confuses the reader, and
@@ -92,19 +89,39 @@ jeopardizes the portability of the user code to future Python
 versions, which may define additional names beginning with one of
 these prefixes.
 
+The header files are typically installed with Python.  On \UNIX, these 
+are located in the directories
+\file{\envvar{prefix}/include/python\var{version}/} and
+\file{\envvar{exec_prefix}/include/python\var{version}/}, where
+\envvar{prefix} and \envvar{exec_prefix} are defined by the
+corresponding parameters to Python's \program{configure} script and
+\var{version} is \code{sys.version[:3]}.  On Windows, the headers are
+installed in \file{\envvar{prefix}/include}, where \envvar{prefix} is
+the installation directory specified to the installer.
+
+To include the headers, place both directories (if different) on your
+compiler's search path for includes.  Do \emph{not} place the parent
+directories on the search path and then use
+\samp{\#include <python1.5/Python.h>}; this will break on
+multi-platform builds since the platform independent headers under
+\envvar{prefix} include the platform specific headers from
+\envvar{exec_prefix}.
+
 
 \section{Objects, Types and Reference Counts \label{objects}}
 
 Most Python/C API functions have one or more arguments as well as a
-return value of type \ctype{PyObject *}.  This type is a pointer
+return value of type \ctype{PyObject*}.  This type is a pointer
 to an opaque data type representing an arbitrary Python
 object.  Since all Python object types are treated the same way by the
 Python language in most situations (e.g., assignments, scope rules,
 and argument passing), it is only fitting that they should be
-represented by a single \C{} type.  All Python objects live on the heap:
-you never declare an automatic or static variable of type
-\ctype{PyObject}, only pointer variables of type \ctype{PyObject *} can 
-be declared.
+represented by a single C type.  Almost all Python objects live on the
+heap: you never declare an automatic or static variable of type
+\ctype{PyObject}, only pointer variables of type \ctype{PyObject*} can 
+be declared.  The sole exception are the type objects\obindex{type};
+since these must never be deallocated, they are typically static
+\ctype{PyTypeObject} objects.
 
 All Python objects (even Python integers) have a \dfn{type} and a
 \dfn{reference count}.  An object's type determines what kind of object 
@@ -112,8 +129,8 @@ it is (e.g., an integer, a list, or a user-defined function; there are
 many more as explained in the \citetitle[../ref/ref.html]{Python
 Reference Manual}).  For each of the well-known types there is a macro
 to check whether an object is of that type; for instance,
-\samp{PyList_Check(\var{a})} is true if and only if the object pointed
-to by \var{a} is a Python list.
+\samp{PyList_Check(\var{a})} is true if (and only if) the object
+pointed to by \var{a} is a Python list.
 
 
 \subsection{Reference Counts \label{refcounts}}
@@ -121,29 +138,31 @@ to by \var{a} is a Python list.
 The reference count is important because today's computers have a 
 finite (and often severely limited) memory size; it counts how many 
 different places there are that have a reference to an object.  Such a 
-place could be another object, or a global (or static) \C{} variable, or 
-a local variable in some \C{} function.  When an object's reference count 
+place could be another object, or a global (or static) C variable, or 
+a local variable in some C function.  When an object's reference count 
 becomes zero, the object is deallocated.  If it contains references to 
 other objects, their reference count is decremented.  Those other 
 objects may be deallocated in turn, if this decrement makes their 
 reference count become zero, and so on.  (There's an obvious problem 
 with objects that reference each other here; for now, the solution is 
-``don't do that''.)
+``don't do that.'')
 
 Reference counts are always manipulated explicitly.  The normal way is 
-to use the macro \cfunction{Py_INCREF()} to increment an object's 
-reference count by one, and \cfunction{Py_DECREF()} to decrement it by 
-one.  The decref macro is considerably more complex than the incref one, 
-since it must check whether the reference count becomes zero and then 
-cause the object's deallocator, which is a function pointer contained 
-in the object's type structure.  The type-specific deallocator takes 
-care of decrementing the reference counts for other objects contained 
-in the object, and so on, if this is a compound object type such as a 
-list.  There's no chance that the reference count can overflow; at 
-least as many bits are used to hold the reference count as there are 
-distinct memory locations in virtual memory (assuming 
-\code{sizeof(long) >= sizeof(char *)}).  Thus, the reference count 
-increment is a simple operation.
+to use the macro \cfunction{Py_INCREF()}\ttindex{Py_INCREF()} to
+increment an object's reference count by one, and
+\cfunction{Py_DECREF()}\ttindex{Py_DECREF()} to decrement it by  
+one.  The \cfunction{Py_DECREF()} macro is considerably more complex
+than the incref one, since it must check whether the reference count
+becomes zero and then cause the object's deallocator to be called.
+The deallocator is a function pointer contained in the object's type
+structure.  The type-specific deallocator takes care of decrementing
+the reference counts for other objects contained in the object if this
+is a compound object type, such as a list, as well as performing any
+additional finalization that's needed.  There's no chance that the
+reference count can overflow; at least as many bits are used to hold
+the reference count as there are distinct memory locations in virtual
+memory (assuming \code{sizeof(long) >= sizeof(char*)}).  Thus, the
+reference count increment is a simple operation.
 
 It is not necessary to increment an object's reference count for every 
 local variable that contains a pointer to an object.  In theory, the 
@@ -156,7 +175,7 @@ long as our variable is pointing to it.  If we know that there is at
 least one other reference to the object that lives at least as long as 
 our variable, there is no need to increment the reference count 
 temporarily.  An important situation where this arises is in objects 
-that are passed as arguments to \C{} functions in an extension module 
+that are passed as arguments to C functions in an extension module 
 that are called from Python; the call mechanism guarantees to hold a 
 reference to every argument for the duration of the call.
 
@@ -170,17 +189,18 @@ allows control to flow back to the user from a \cfunction{Py_DECREF()},
 so almost any operation is potentially dangerous.
 
 A safe approach is to always use the generic operations (functions 
-whose name begins with \samp{PyObject_}, \samp{PyNumber_}, 
-\samp{PySequence_} or \samp{PyMapping_}).  These operations always 
-increment the reference count of the object they return.  This leaves 
-the caller with the responsibility to call \cfunction{Py_DECREF()}
-when they are done with the result; this soon becomes second nature.
+whose name begins with \samp{PyObject_}, \samp{PyNumber_},
+\samp{PySequence_} or \samp{PyMapping_}).  These operations always
+increment the reference count of the object they return.  This leaves
+the caller with the responsibility to call
+\cfunction{Py_DECREF()} when they are done with the result; this soon
+becomes second nature.
 
 
 \subsubsection{Reference Count Details \label{refcountDetails}}
 
 The reference count behavior of functions in the Python/C API is best 
-expelained in terms of \emph{ownership of references}.  Note that we 
+explained in terms of \emph{ownership of references}.  Note that we 
 talk of owning references, never of owning objects; objects are always 
 shared!  When a function owns a reference, it has to dispose of it 
 properly --- either by passing ownership on (usually to its caller) or 
@@ -194,13 +214,14 @@ Conversely, when calling a function passes it a reference to an
 object, there are two possibilities: the function \emph{steals} a 
 reference to the object, or it does not.  Few functions steal 
 references; the two notable exceptions are
-\cfunction{PyList_SetItem()} and \cfunction{PyTuple_SetItem()}, which
+\cfunction{PyList_SetItem()}\ttindex{PyList_SetItem()} and
+\cfunction{PyTuple_SetItem()}\ttindex{PyTuple_SetItem()}, which 
 steal a reference to the item (but not to the tuple or list into which
 the item is put!).  These functions were designed to steal a reference
 because of a common idiom for populating a tuple or list with newly
 created objects; for example, the code to create the tuple \code{(1,
 2, "three")} could look like this (forgetting about error handling for
-the moment; a better way to code this is shown below anyway):
+the moment; a better way to code this is shown below):
 
 \begin{verbatim}
 PyObject *t;
@@ -239,7 +260,7 @@ You might find it strange that the ``recommended'' approach takes more
 code.  However, in practice, you will rarely use these ways of
 creating and populating a tuple or list.  There's a generic function,
 \cfunction{Py_BuildValue()}, that can create most common objects from
-\C{} values, directed by a \dfn{format string}.  For example, the
+C values, directed by a \dfn{format string}.  For example, the
 above two blocks of code could be replaced by the following (which
 also takes care of the error checking):
 
@@ -274,6 +295,7 @@ int set_all(PyObject *target, PyObject *item)
     return 0;
 }
 \end{verbatim}
+\ttindex{set_all()}
 
 The situation is slightly different for function return values.  
 While passing a reference to most functions does not change your 
@@ -298,8 +320,8 @@ returned object.
 
 Here is an example of how you could write a function that computes the
 sum of the items in a list of integers; once using 
-\cfunction{PyList_GetItem()}, once using
-\cfunction{PySequence_GetItem()}.
+\cfunction{PyList_GetItem()}\ttindex{PyList_GetItem()}, and once using
+\cfunction{PySequence_GetItem()}\ttindex{PySequence_GetItem()}.
 
 \begin{verbatim}
 long sum_list(PyObject *list)
@@ -319,6 +341,7 @@ long sum_list(PyObject *list)
     return total;
 }
 \end{verbatim}
+\ttindex{sum_list()}
 
 \begin{verbatim}
 long sum_sequence(PyObject *sequence)
@@ -326,11 +349,11 @@ long sum_sequence(PyObject *sequence)
     int i, n;
     long total = 0;
     PyObject *item;
-    n = PyObject_Size(list);
+    n = PySequence_Length(sequence);
     if (n < 0)
         return -1; /* Has no length */
     for (i = 0; i < n; i++) {
-        item = PySequence_GetItem(list, i);
+        item = PySequence_GetItem(sequence, i);
         if (item == NULL)
             return -1; /* Not a sequence, or other failure */
         if (PyInt_Check(item))
@@ -340,15 +363,17 @@ long sum_sequence(PyObject *sequence)
     return total;
 }
 \end{verbatim}
+\ttindex{sum_sequence()}
 
 
 \subsection{Types \label{types}}
 
 There are few other data types that play a significant role in 
-the Python/C API; most are simple \C{} types such as \ctype{int}, 
-\ctype{long}, \ctype{double} and \ctype{char *}.  A few structure types 
+the Python/C API; most are simple C types such as \ctype{int}, 
+\ctype{long}, \ctype{double} and \ctype{char*}.  A few structure types 
 are used to describe static tables used to list the functions exported 
-by a module or the data attributes of a new object type.  These will 
+by a module or the data attributes of a new object type, and another
+is used to describe the value of a complex number.  These will 
 be discussed together with the functions that use them.
 
 
@@ -356,11 +381,11 @@ be discussed together with the functions that use them.
 
 The Python programmer only needs to deal with exceptions if specific 
 error handling is required; unhandled exceptions are automatically 
-propagated to the caller, then to the caller's caller, and so on, till 
+propagated to the caller, then to the caller's caller, and so on, until
 they reach the top-level interpreter, where they are reported to the 
 user accompanied by a stack traceback.
 
-For \C{} programmers, however, error checking always has to be explicit.  
+For C programmers, however, error checking always has to be explicit.  
 All functions in the Python/C API can raise exceptions, unless an 
 explicit claim is made otherwise in a function's documentation.  In 
 general, when a function encounters an error, it sets an exception, 
@@ -369,7 +394,7 @@ error indicator --- usually \NULL{} or \code{-1}.  A few functions
 return a Boolean true/false result, with false indicating an error.
 Very few functions return no explicit error indicator or have an 
 ambiguous return value, and require explicit testing for errors with 
-\cfunction{PyErr_Occurred()}.
+\cfunction{PyErr_Occurred()}\ttindex{PyErr_Occurred()}.
 
 Exception state is maintained in per-thread storage (this is 
 equivalent to using global storage in an unthreaded application).  A 
@@ -378,23 +403,28 @@ The function \cfunction{PyErr_Occurred()} can be used to check for
 this: it returns a borrowed reference to the exception type object
 when an exception has occurred, and \NULL{} otherwise.  There are a
 number of functions to set the exception state:
-\cfunction{PyErr_SetString()} is the most common (though not the most
-general) function to set the exception state, and
-\cfunction{PyErr_Clear()} clears the exception state.
+\cfunction{PyErr_SetString()}\ttindex{PyErr_SetString()} is the most
+common (though not the most general) function to set the exception
+state, and \cfunction{PyErr_Clear()}\ttindex{PyErr_Clear()} clears the
+exception state.
 
 The full exception state consists of three objects (all of which can 
 be \NULL{}): the exception type, the corresponding exception 
-value, and the traceback.  These have the same meanings as the Python 
-object \code{sys.exc_type}, \code{sys.exc_value}, 
-\code{sys.exc_traceback}; however, they are not the same: the Python 
+value, and the traceback.  These have the same meanings as the Python
+\withsubitem{(in module sys)}{
+  \ttindex{exc_type}\ttindex{exc_value}\ttindex{exc_traceback}}
+objects \code{sys.exc_type}, \code{sys.exc_value}, and
+\code{sys.exc_traceback}; however, they are not the same: the Python
 objects represent the last exception being handled by a Python 
-\keyword{try} \ldots\ \keyword{except} statement, while the \C{} level
+\keyword{try} \ldots\ \keyword{except} statement, while the C level
 exception state only exists while an exception is being passed on
-between \C{} functions until it reaches the Python interpreter, which
-takes care of transferring it to \code{sys.exc_type} and friends.
+between C functions until it reaches the Python bytecode interpreter's 
+main loop, which takes care of transferring it to \code{sys.exc_type}
+and friends.
 
 Note that starting with Python 1.5, the preferred, thread-safe way to 
-access the exception state from Python code is to call the function 
+access the exception state from Python code is to call the function
+\withsubitem{(in module sys)}{\ttindex{exc_info()}}
 \function{sys.exc_info()}, which returns the per-thread exception state 
 for Python code.  Also, the semantics of both ways to access the 
 exception state have changed so that a function which catches an 
@@ -408,17 +438,17 @@ stack frames in the traceback.
 As a general principle, a function that calls another function to 
 perform some task should check whether the called function raised an 
 exception, and if so, pass the exception state on to its caller.  It 
-should discard any object references that it owns, and returns an 
+should discard any object references that it owns, and return an 
 error indicator, but it should \emph{not} set another exception ---
 that would overwrite the exception that was just raised, and lose
 important information about the exact cause of the error.
 
-A simple example of detecting exceptions and passing them on is shown 
-in the \cfunction{sum_sequence()} example above.  It so happens that
-that example doesn't need to clean up any owned references when it
-detects an error.  The following example function shows some error
-cleanup.  First, to remind you why you like Python, we show the
-equivalent Python code:
+A simple example of detecting exceptions and passing them on is shown
+in the \cfunction{sum_sequence()}\ttindex{sum_sequence()} example
+above.  It so happens that that example doesn't need to clean up any
+owned references when it detects an error.  The following example
+function shows some error cleanup.  First, to remind you why you like
+Python, we show the equivalent Python code:
 
 \begin{verbatim}
 def incr_item(dict, key):
@@ -428,8 +458,9 @@ def incr_item(dict, key):
         item = 0
     return item + 1
 \end{verbatim}
+\ttindex{incr_item()}
 
-Here is the corresponding \C{} code, in all its glory:
+Here is the corresponding C code, in all its glory:
 
 \begin{verbatim}
 int incr_item(PyObject *dict, PyObject *key)
@@ -470,18 +501,21 @@ int incr_item(PyObject *dict, PyObject *key)
     return rv; /* -1 for error, 0 for success */
 }
 \end{verbatim}
+\ttindex{incr_item()}
 
 This example represents an endorsed use of the \keyword{goto} statement 
-in \C{}!  It illustrates the use of
-\cfunction{PyErr_ExceptionMatches()} and \cfunction{PyErr_Clear()} to
-handle specific exceptions, and the use of \cfunction{Py_XDECREF()} to
-dispose of owned references that may be \NULL{} (note the \samp{X} in
-the name; \cfunction{Py_DECREF()} would crash when confronted with a
-\NULL{} reference).  It is important that the variables used to hold
-owned references are initialized to \NULL{} for this to work;
-likewise, the proposed return value is initialized to \code{-1}
-(failure) and only set to success after the final call made is
-successful.
+in C!  It illustrates the use of
+\cfunction{PyErr_ExceptionMatches()}\ttindex{PyErr_ExceptionMatches()} and
+\cfunction{PyErr_Clear()}\ttindex{PyErr_Clear()} to
+handle specific exceptions, and the use of
+\cfunction{Py_XDECREF()}\ttindex{Py_XDECREF()} to
+dispose of owned references that may be \NULL{} (note the
+\character{X} in the name; \cfunction{Py_DECREF()} would crash when
+confronted with a \NULL{} reference).  It is important that the
+variables used to hold owned references are initialized to \NULL{} for
+this to work; likewise, the proposed return value is initialized to
+\code{-1} (failure) and only set to success after the final call made
+is successful.
 
 
 \section{Embedding Python \label{embedding}}
@@ -492,26 +526,30 @@ initialization, and possibly the finalization, of the Python
 interpreter.  Most functionality of the interpreter can only be used
 after the interpreter has been initialized.
 
-The basic initialization function is \cfunction{Py_Initialize()}.
+The basic initialization function is
+\cfunction{Py_Initialize()}\ttindex{Py_Initialize()}.
 This initializes the table of loaded modules, and creates the
 fundamental modules \module{__builtin__}\refbimodindex{__builtin__},
 \module{__main__}\refbimodindex{__main__} and 
 \module{sys}\refbimodindex{sys}.  It also initializes the module
 search path (\code{sys.path}).%
 \indexiii{module}{search}{path}
+\withsubitem{(in module sys)}{\ttindex{path}}
 
 \cfunction{Py_Initialize()} does not set the ``script argument list'' 
 (\code{sys.argv}).  If this variable is needed by Python code that 
 will be executed later, it must be set explicitly with a call to 
-\code{PySys_SetArgv(\var{argc}, \var{argv})} subsequent to the call 
-to \cfunction{Py_Initialize()}.
+\code{PySys_SetArgv(\var{argc},
+\var{argv})}\ttindex{PySys_SetArgv()} subsequent to the call to
+\cfunction{Py_Initialize()}.
 
 On most systems (in particular, on \UNIX{} and Windows, although the
-details are slightly different), \cfunction{Py_Initialize()}
-calculates the module search path based upon its best guess for the
-location of the standard Python interpreter executable, assuming that
-the Python library is found in a fixed location relative to the Python
-interpreter executable.  In particular, it looks for a directory named
+details are slightly different),
+\cfunction{Py_Initialize()} calculates the module search path based
+upon its best guess for the location of the standard Python
+interpreter executable, assuming that the Python library is found in a
+fixed location relative to the Python interpreter executable.  In
+particular, it looks for a directory named
 \file{lib/python1.5} (replacing \file{1.5} with the current
 interpreter version) relative to the parent directory where the
 executable named \file{python} is found on the shell command search
@@ -527,23 +565,25 @@ or insert additional directories in front of the standard path by
 setting \envvar{PYTHONPATH}.
 
 The embedding application can steer the search by calling 
-\code{Py_SetProgramName(\var{file})} \emph{before} calling 
+\code{Py_SetProgramName(\var{file})}\ttindex{Py_SetProgramName()} \emph{before} calling 
 \cfunction{Py_Initialize()}.  Note that \envvar{PYTHONHOME} still
 overrides this and \envvar{PYTHONPATH} is still inserted in front of
 the standard path.  An application that requires total control has to
-provide its own implementation of \cfunction{Py_GetPath()},
-\cfunction{Py_GetPrefix()}, \cfunction{Py_GetExecPrefix()},
-\cfunction{Py_GetProgramFullPath()} (all defined in
-\file{Modules/getpath.c}).
+provide its own implementation of
+\cfunction{Py_GetPath()}\ttindex{Py_GetPath()},
+\cfunction{Py_GetPrefix()}\ttindex{Py_GetPrefix()},
+\cfunction{Py_GetExecPrefix()}\ttindex{Py_GetExecPrefix()}, and
+\cfunction{Py_GetProgramFullPath()}\ttindex{Py_GetProgramFullPath()} (all
+defined in \file{Modules/getpath.c}).
 
 Sometimes, it is desirable to ``uninitialize'' Python.  For instance, 
 the application may want to start over (make another call to 
 \cfunction{Py_Initialize()}) or the application is simply done with its 
 use of Python and wants to free all memory allocated by Python.  This
 can be accomplished by calling \cfunction{Py_Finalize()}.  The function
-\cfunction{Py_IsInitialized()} returns true iff Python is currently in the
-initialized state.  More information about these functions is given in
-a later chapter.
+\cfunction{Py_IsInitialized()}\ttindex{Py_IsInitialized()} returns
+true if Python is currently in the initialized state.  More
+information about these functions is given in a later chapter.
 
 
 \chapter{The Very High Level Layer \label{veryhigh}}
@@ -552,12 +592,17 @@ The functions in this chapter will let you execute Python source code
 given in a file or a buffer, but they will not let you interact in a
 more detailed way with the interpreter.
 
+Several of these functions accept a start symbol from the grammar as a 
+parameter.  The available start symbols are \constant{Py_eval_input},
+\constant{Py_file_input}, and \constant{Py_single_input}.  These are
+described following the functions which accept them as parameters.
+
 \begin{cfuncdesc}{int}{PyRun_AnyFile}{FILE *fp, char *filename}
   If \var{fp} refers to a file associated with an interactive device
   (console or terminal input or \UNIX{} pseudo-terminal), return the
   value of \cfunction{PyRun_InteractiveLoop()}, otherwise return the
   result of \cfunction{PyRun_SimpleFile()}.  If \var{filename} is
-  \NULL{}, use \code{"???"} as the filename.
+  \NULL{}, this function uses \code{"???"} as the filename.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyRun_SimpleString}{char *command}
@@ -611,8 +656,8 @@ more detailed way with the interpreter.
                                          int start, PyObject *globals,
                                          PyObject *locals}
   Similar to \cfunction{PyRun_String()}, but the Python source code is 
-  read from \var{fp} instead of an in-memory string.  \var{filename}
-  should be the name of the file.
+  read from \var{fp} instead of an in-memory string.
+  \var{filename} should be the name of the file.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{Py_CompileString}{char *str, char *filename,
@@ -629,20 +674,20 @@ more detailed way with the interpreter.
 
 \begin{cvardesc}{int}{Py_eval_input}
   The start symbol from the Python grammar for isolated expressions;
-  for use with \cfunction{Py_CompileString()}.
+  for use with \cfunction{Py_CompileString()}\ttindex{Py_CompileString()}.
 \end{cvardesc}
 
 \begin{cvardesc}{int}{Py_file_input}
   The start symbol from the Python grammar for sequences of statements
   as read from a file or other source; for use with
-  \cfunction{Py_CompileString()}.  This is the symbol to use when
-  compiling arbitrarily long Python source code.
+  \cfunction{Py_CompileString()}\ttindex{Py_CompileString()}.  This is
+  the symbol to use when compiling arbitrarily long Python source code.
 \end{cvardesc}
 
 \begin{cvardesc}{int}{Py_single_input}
   The start symbol from the Python grammar for a single statement; for 
-  use with \cfunction{Py_CompileString()}.  This is the symbol used
-  for the interactive interpreter loop.
+  use with \cfunction{Py_CompileString()}\ttindex{Py_CompileString()}.
+  This is the symbol used for the interactive interpreter loop.
 \end{cvardesc}
 
 
@@ -670,15 +715,15 @@ object's type's deallocation function (which must not be \NULL{}) is
 invoked.
 
 \strong{Warning:} The deallocation function can cause arbitrary Python
-code to be invoked (e.g. when a class instance with a \method{__del__()}
-method is deallocated).  While exceptions in such code are not
-propagated, the executed code has free access to all Python global
-variables.  This means that any object that is reachable from a global
-variable should be in a consistent state before \cfunction{Py_DECREF()} is
-invoked.  For example, code to delete an object from a list should
-copy a reference to the deleted object in a temporary variable, update
-the list data structure, and then call \cfunction{Py_DECREF()} for the
-temporary variable.
+code to be invoked (e.g. when a class instance with a
+\method{__del__()} method is deallocated).  While exceptions in such
+code are not propagated, the executed code has free access to all
+Python global variables.  This means that any object that is reachable
+from a global variable should be in a consistent state before
+\cfunction{Py_DECREF()} is invoked.  For example, code to delete an
+object from a list should copy a reference to the deleted object in a
+temporary variable, update the list data structure, and then call
+\cfunction{Py_DECREF()} for the temporary variable.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{Py_XDECREF}{PyObject *o}
@@ -688,32 +733,31 @@ is the same as for \cfunction{Py_DECREF()}, and the same warning
 applies.
 \end{cfuncdesc}
 
-The following functions or macros are only for internal use:
-\cfunction{_Py_Dealloc()}, \cfunction{_Py_ForgetReference()},
-\cfunction{_Py_NewReference()}, as well as the global variable
-\cdata{_Py_RefTotal}.
-
-XXX Should mention Py_Malloc(), Py_Realloc(), Py_Free(),
-PyMem_Malloc(), PyMem_Realloc(), PyMem_Free(), PyMem_NEW(),
-PyMem_RESIZE(), PyMem_DEL(), PyMem_XDEL().
+The following functions or macros are only for use within the
+interpreter core: \cfunction{_Py_Dealloc()},
+\cfunction{_Py_ForgetReference()}, \cfunction{_Py_NewReference()}, as
+well as the global variable \cdata{_Py_RefTotal}.
 
 
 \chapter{Exception Handling \label{exceptionHandling}}
 
-The functions in this chapter will let you handle and raise Python
+The functions described in this chapter will let you handle and raise Python
 exceptions.  It is important to understand some of the basics of
-Python exception handling.  It works somewhat like the \UNIX{}
-\cdata{errno} variable: there is a global indicator (per thread) of the
-last error that occurred.  Most functions don't clear this on success,
-but will set it to indicate the cause of the error on failure.  Most
-functions also return an error indicator, usually \NULL{} if they are
-supposed to return a pointer, or \code{-1} if they return an integer
-(exception: the \cfunction{PyArg_Parse*()} functions return \code{1} for
-success and \code{0} for failure).  When a function must fail because
-some function it called failed, it generally doesn't set the error
-indicator; the function it called already set it.
+Python exception handling.  It works somewhat like the
+\UNIX{} \cdata{errno} variable: there is a global indicator (per
+thread) of the last error that occurred.  Most functions don't clear
+this on success, but will set it to indicate the cause of the error on
+failure.  Most functions also return an error indicator, usually
+\NULL{} if they are supposed to return a pointer, or \code{-1} if they
+return an integer (exception: the \cfunction{PyArg_Parse*()} functions
+return \code{1} for success and \code{0} for failure).  When a
+function must fail because some function it called failed, it
+generally doesn't set the error indicator; the function it called
+already set it.
 
 The error indicator consists of three Python objects corresponding to
+\withsubitem{(in module sys)}{
+  \ttindex{exc_type}\ttindex{exc_value}\ttindex{exc_traceback}}
 the Python variables \code{sys.exc_type}, \code{sys.exc_value} and
 \code{sys.exc_traceback}.  API functions exist to interact with the
 error indicator in various ways.  There is a separate error indicator
@@ -734,24 +778,27 @@ Test whether the error indicator is set.  If set, return the exception
 \cfunction{PyErr_Set*()} functions or to \cfunction{PyErr_Restore()}).  If
 not set, return \NULL{}.  You do not own a reference to the return
 value, so you do not need to \cfunction{Py_DECREF()} it.
-\strong{Note:} do not compare the return value to a specific
+\strong{Note:}  Do not compare the return value to a specific
 exception; use \cfunction{PyErr_ExceptionMatches()} instead, shown
-below.
+below.  (The comparison could easily fail since the exception may be
+an instance instead of a class, in the case of a class exception, or
+it may the a subclass of the expected exception.)
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyErr_ExceptionMatches}{PyObject *exc}
 Equivalent to
 \samp{PyErr_GivenExceptionMatches(PyErr_Occurred(), \var{exc})}.
-This should only be called when an exception is actually set.
+This should only be called when an exception is actually set; a memory 
+access violation will occur if no exception has been raised.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyErr_GivenExceptionMatches}{PyObject *given, PyObject *exc}
 Return true if the \var{given} exception matches the exception in
 \var{exc}.  If \var{exc} is a class object, this also returns true
-when \var{given} is a subclass.  If \var{exc} is a tuple, all
+when \var{given} is an instance of a subclass.  If \var{exc} is a tuple, all
 exceptions in the tuple (and recursively in subtuples) are searched
-for a match.  This should only be called when an exception is actually
-set.
+for a match.  If \var{given} is \NULL, a memory access violation will
+occur.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyErr_NormalizeException}{PyObject**exc, PyObject**val, PyObject**tb}
@@ -760,7 +807,8 @@ Under certain circumstances, the values returned by
 \code{*\var{exc}} is a class object but \code{*\var{val}} is not an
 instance of the  same class.  This function can be used to instantiate
 the class in that case.  If the values are already normalized, nothing
-happens.
+happens.  The delayed normalization is implemented to improve
+performance.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyErr_Clear}{}
@@ -768,14 +816,16 @@ Clear the error indicator.  If the error indicator is not set, there
 is no effect.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{void}{PyErr_Fetch}{PyObject **ptype, PyObject **pvalue, PyObject **ptraceback}
+\begin{cfuncdesc}{void}{PyErr_Fetch}{PyObject **ptype, PyObject **pvalue,
+                                     PyObject **ptraceback}
 Retrieve the error indicator into three variables whose addresses are
 passed.  If the error indicator is not set, set all three variables to
 \NULL{}.  If it is set, it will be cleared and you own a reference to
-each object retrieved.  The value and traceback object may be \NULL{}
-even when the type object is not.  \strong{Note:} this function is
-normally only used by code that needs to handle exceptions or by code
-that needs to save and restore the error indicator temporarily.
+each object retrieved.  The value and traceback object may be
+\NULL{} even when the type object is not.  \strong{Note:}  This
+function is normally only used by code that needs to handle exceptions
+or by code that needs to save and restore the error indicator
+temporarily.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyErr_Restore}{PyObject *type, PyObject *value, PyObject *traceback}
@@ -789,7 +839,7 @@ that class.  Do not pass an invalid exception type or value.
 takes away a reference to each object, i.e. you must own a reference
 to each object before the call and after the call you no longer own
 these references.  (If you don't understand this, don't use this
-function.  I warned you.)  \strong{Note:} this function is normally
+function.  I warned you.)  \strong{Note:}  This function is normally
 only used by code that needs to save and restore the error indicator
 temporarily.
 \end{cfuncdesc}
@@ -825,11 +875,12 @@ returns \NULL{} so an object allocation function can write
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyErr_SetFromErrno}{PyObject *type}
-This is a convenience function to raise an exception when a \C{} library
-function has returned an error and set the \C{} variable \cdata{errno}.
+This is a convenience function to raise an exception when a C library
+function has returned an error and set the C variable \cdata{errno}.
 It constructs a tuple object whose first item is the integer
 \cdata{errno} value and whose second item is the corresponding error
-message (gotten from \cfunction{strerror()}), and then calls
+message (gotten from \cfunction{strerror()}\ttindex{strerror()}), and
+then calls
 \samp{PyErr_SetObject(\var{type}, \var{object})}.  On \UNIX{}, when
 the \cdata{errno} value is \constant{EINTR}, indicating an interrupted
 system call, this calls \cfunction{PyErr_CheckSignals()}, and if that set
@@ -852,36 +903,36 @@ whether a signal has been sent to the processes and if so, invokes the
 corresponding signal handler.  If the
 \module{signal}\refbimodindex{signal} module is supported, this can
 invoke a signal handler written in Python.  In all cases, the default
-effect for \constant{SIGINT} is to raise the
-\exception{KeyboadInterrupt} exception.  If an exception is raised the 
+effect for \constant{SIGINT}\ttindex{SIGINT} is to raise the
+\withsubitem{(built-in exception)}{\ttindex{KeyboardInterrupt}}
+\exception{KeyboardInterrupt} exception.  If an exception is raised the 
 error indicator is set and the function returns \code{1}; otherwise
 the function returns \code{0}.  The error indicator may or may not be
 cleared if it was previously set.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyErr_SetInterrupt}{}
-This function is obsolete (XXX or platform dependent?).  It simulates
-the effect of a \constant{SIGINT} signal arriving --- the next time
+This function is obsolete.  It simulates the effect of a
+\constant{SIGINT}\ttindex{SIGINT} signal arriving --- the next time
 \cfunction{PyErr_CheckSignals()} is called,
-\exception{KeyboadInterrupt} will be raised.
+\withsubitem{(built-in exception)}{\ttindex{KeyboardInterrupt}}
+\exception{KeyboardInterrupt} will be raised.
+It may be called without holding the interpreter lock.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyErr_NewException}{char *name,
                                                  PyObject *base,
                                                  PyObject *dict}
 This utility function creates and returns a new exception object.  The
-\var{name} argument must be the name of the new exception, a \C{} string
-of the form \code{module.class}.  The \var{base} and \var{dict}
-arguments are normally \NULL{}.  Normally, this creates a class
-object derived from the root for all exceptions, the built-in name
-\exception{Exception} (accessible in C as \cdata{PyExc_Exception}).
-In this case the \member{__module__} attribute of the new class is set to the
-first part (up to the last dot) of the \var{name} argument, and the
-class name is set to the last part (after the last dot).  When the
-user has specified the \programopt{-X} command line option to use string
-exceptions, for backward compatibility, or when the \var{base}
-argument is not a class object (and not \NULL{}), a string object
-created from the entire \var{name} argument is returned.  The
+\var{name} argument must be the name of the new exception, a C string
+of the form \code{module.class}.  The \var{base} and
+\var{dict} arguments are normally \NULL{}.  Normally, this creates a
+class object derived from the root for all exceptions, the built-in
+name \exception{Exception} (accessible in C as
+\cdata{PyExc_Exception}).  In this case the \member{__module__}
+attribute of the new class is set to the first part (up to the last
+dot) of the \var{name} argument, and the class name is set to the last
+part (after the last dot).  The
 \var{base} argument can be used to specify an alternate base class.
 The \var{dict} argument can be used to specify a dictionary of class
 variables and methods.
@@ -891,42 +942,66 @@ variables and methods.
 \section{Standard Exceptions \label{standardExceptions}}
 
 All standard Python exceptions are available as global variables whose
-names are \samp{PyExc_} followed by the Python exception name. These
-have the type \ctype{PyObject *}; they are all either class objects or
-string objects, depending on the use of the \programopt{-X} option to the
-interpreter.  For completeness, here are all the variables:
-\cdata{PyExc_Exception},
-\cdata{PyExc_StandardError},
-\cdata{PyExc_ArithmeticError},
-\cdata{PyExc_LookupError},
-\cdata{PyExc_AssertionError},
-\cdata{PyExc_AttributeError},
-\cdata{PyExc_EOFError},
-\cdata{PyExc_EnvironmentError},
-\cdata{PyExc_FloatingPointError},
-\cdata{PyExc_IOError},
-\cdata{PyExc_ImportError},
-\cdata{PyExc_IndexError},
-\cdata{PyExc_KeyError},
-\cdata{PyExc_KeyboardInterrupt},
-\cdata{PyExc_MemoryError},
-\cdata{PyExc_NameError},
-\cdata{PyExc_NotImplementedError},
-\cdata{PyExc_OSError},
-\cdata{PyExc_OverflowError},
-\cdata{PyExc_RuntimeError},
-\cdata{PyExc_SyntaxError},
-\cdata{PyExc_SystemError},
-\cdata{PyExc_SystemExit},
-\cdata{PyExc_TypeError},
-\cdata{PyExc_ValueError},
-\cdata{PyExc_ZeroDivisionError}.
+names are \samp{PyExc_} followed by the Python exception name.  These
+have the type \ctype{PyObject*}; they are all class objects.  For
+completeness, here are all the variables:
+
+\begin{tableiii}{l|l|c}{cdata}{C Name}{Python Name}{Notes}
+  \lineiii{PyExc_Exception}{\exception{Exception}}{(1)}
+  \lineiii{PyExc_StandardError}{\exception{StandardError}}{(1)}
+  \lineiii{PyExc_ArithmeticError}{\exception{ArithmeticError}}{(1)}
+  \lineiii{PyExc_LookupError}{\exception{LookupError}}{(1)}
+  \lineiii{PyExc_AssertionError}{\exception{AssertionError}}{}
+  \lineiii{PyExc_AttributeError}{\exception{AttributeError}}{}
+  \lineiii{PyExc_EOFError}{\exception{EOFError}}{}
+  \lineiii{PyExc_EnvironmentError}{\exception{EnvironmentError}}{(1)}
+  \lineiii{PyExc_FloatingPointError}{\exception{FloatingPointError}}{}
+  \lineiii{PyExc_IOError}{\exception{IOError}}{}
+  \lineiii{PyExc_ImportError}{\exception{ImportError}}{}
+  \lineiii{PyExc_IndexError}{\exception{IndexError}}{}
+  \lineiii{PyExc_KeyError}{\exception{KeyError}}{}
+  \lineiii{PyExc_KeyboardInterrupt}{\exception{KeyboardInterrupt}}{}
+  \lineiii{PyExc_MemoryError}{\exception{MemoryError}}{}
+  \lineiii{PyExc_NameError}{\exception{NameError}}{}
+  \lineiii{PyExc_NotImplementedError}{\exception{NotImplementedError}}{}
+  \lineiii{PyExc_OSError}{\exception{OSError}}{}
+  \lineiii{PyExc_OverflowError}{\exception{OverflowError}}{}
+  \lineiii{PyExc_RuntimeError}{\exception{RuntimeError}}{}
+  \lineiii{PyExc_SyntaxError}{\exception{SyntaxError}}{}
+  \lineiii{PyExc_SystemError}{\exception{SystemError}}{}
+  \lineiii{PyExc_SystemExit}{\exception{SystemExit}}{}
+  \lineiii{PyExc_TypeError}{\exception{TypeError}}{}
+  \lineiii{PyExc_ValueError}{\exception{ValueError}}{}
+  \lineiii{PyExc_ZeroDivisionError}{\exception{ZeroDivisionError}}{}
+\end{tableiii}
+
+\noindent
+Note:
+\begin{description}
+\item[(1)]
+  This is a base class for other standard exceptions.  If the
+  \code{-X} interpreter option is used, these will be tuples
+  containing the string exceptions which would have otherwise been
+  subclasses.
+\end{description}
+
+
+\section{Deprecation of String Exceptions}
+
+The \code{-X} command-line option will be removed in Python 1.6.  All
+exceptions built into Python or provided in the standard library will
+\withsubitem{(built-in exception)}{\ttindex{Exception}}
+be classes derived from \exception{Exception}.
+
+String exceptions will still be supported in the interpreter to allow
+existing code to run unmodified, but this will also change in a future 
+release.
 
 
 \chapter{Utilities \label{utilities}}
 
 The functions in this chapter perform various utility tasks, such as
-parsing function arguments and constructing Python values from \C{}
+parsing function arguments and constructing Python values from C
 values.
 
 \section{OS Utilities \label{os}}
@@ -943,7 +1018,7 @@ the strings \code{"<stdin>"} or \code{"???"}.
 \begin{cfuncdesc}{long}{PyOS_GetLastModificationTime}{char *filename}
 Return the time of last modification of the file \var{filename}.
 The result is encoded in the same way as the timestamp returned by
-the standard \C{} library function \cfunction{time()}.
+the standard C library function \cfunction{time()}.
 \end{cfuncdesc}
 
 
@@ -954,21 +1029,24 @@ Print a fatal error message and kill the process.  No cleanup is
 performed.  This function should only be invoked when a condition is
 detected that would make it dangerous to continue using the Python
 interpreter; e.g., when the object administration appears to be
-corrupted.  On \UNIX{}, the standard \C{} library function
-\cfunction{abort()} is called which will attempt to produce a
-\file{core} file.
+corrupted.  On \UNIX{}, the standard C library function
+\cfunction{abort()}\ttindex{abort()} is called which will attempt to
+produce a \file{core} file.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{Py_Exit}{int status}
-Exit the current process.  This calls \cfunction{Py_Finalize()} and
-then calls the standard \C{} library function
-\code{exit(\var{status})}.
+Exit the current process.  This calls
+\cfunction{Py_Finalize()}\ttindex{Py_Finalize()} and
+then calls the standard C library function
+\code{exit(\var{status})}\ttindex{exit()}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{Py_AtExit}{void (*func) ()}
-Register a cleanup function to be called by \cfunction{Py_Finalize()}.
+Register a cleanup function to be called by
+\cfunction{Py_Finalize()}\ttindex{Py_Finalize()}.
 The cleanup function will be called with no arguments and should
-return no value.  At most 32 cleanup functions can be registered.
+return no value.  At most 32 \index{cleanup functions}cleanup
+functions can be registered.
 When the registration is successful, \cfunction{Py_AtExit()} returns
 \code{0}; on failure, it returns \code{-1}.  The cleanup function
 registered last is called first.  Each cleanup function will be called
@@ -981,18 +1059,22 @@ by \var{func}.
 \section{Importing Modules \label{importing}}
 
 \begin{cfuncdesc}{PyObject*}{PyImport_ImportModule}{char *name}
-This is a simplified interface to \cfunction{PyImport_ImportModuleEx()}
-below, leaving the \var{globals} and \var{locals} arguments set to
-\NULL{}.  When the \var{name} argument contains a dot (i.e., when
-it specifies a submodule of a package), the \var{fromlist} argument is
-set to the list \code{['*']} so that the return value is the named
-module rather than the top-level package containing it as would
-otherwise be the case.  (Unfortunately, this has an additional side
-effect when \var{name} in fact specifies a subpackage instead of a
-submodule: the submodules specified in the package's \code{__all__}
-variable are loaded.)  Return a new reference to the imported module,
-or \NULL{} with an exception set on failure (the module may still
-be created in this case --- examine \code{sys.modules} to find out).
+This is a simplified interface to
+\cfunction{PyImport_ImportModuleEx()} below, leaving the
+\var{globals} and \var{locals} arguments set to \NULL{}.  When the
+\var{name} argument contains a dot (i.e., when it specifies a
+submodule of a package), the \var{fromlist} argument is set to the
+list \code{['*']} so that the return value is the named module rather
+than the top-level package containing it as would otherwise be the
+case.  (Unfortunately, this has an additional side effect when
+\var{name} in fact specifies a subpackage instead of a submodule: the
+submodules specified in the package's \code{__all__} variable are
+\index{package variable!\code{__all__}}
+\withsubitem{(package variable)}{\ttindex{__all__}}loaded.)  Return a
+new reference to the imported module, or
+\NULL{} with an exception set on failure (the module may still be
+created in this case --- examine \code{sys.modules} to find out).
+\withsubitem{(in module sys)}{\ttindex{modules}}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyImport_ImportModuleEx}{char *name, PyObject *globals, PyObject *locals, PyObject *fromlist}
@@ -1030,16 +1112,12 @@ on failure (the module still exists in this case).
 Return the module object corresponding to a module name.  The
 \var{name} argument may be of the form \code{package.module}).  First
 check the modules dictionary if there's one there, and if not, create
-a new one and insert in in the modules dictionary.  Because the former
-action is most common, this does not return a new reference, and you
-do not own the returned reference.
+a new one and insert in in the modules dictionary.
 Warning: this function does not load or import the module; if the
 module wasn't already loaded, you will get an empty module object.
 Use \cfunction{PyImport_ImportModule()} or one of its variants to
 import a module.
-Return \NULL{} with an
-exception set on failure.  \strong{Note:} this function returns
-a ``borrowed'' reference.  
+Return \NULL{} with an exception set on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyImport_ExecCodeModule}{char *name, PyObject *co}
@@ -1053,9 +1131,10 @@ already imported.)
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{long}{PyImport_GetMagicNumber}{}
-Return the magic number for Python bytecode files (a.k.a. \file{.pyc}
-and \file{.pyo} files).  The magic number should be present in the
-first four bytes of the bytecode file, in little-endian byte order.
+Return the magic number for Python bytecode files (a.k.a.
+\file{.pyc} and \file{.pyo} files).  The magic number should be
+present in the first four bytes of the bytecode file, in little-endian
+byte order.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyImport_GetModuleDict}{}
@@ -1093,7 +1172,7 @@ load, use \cfunction{PyImport_ImportModule()}.
 already imported.)
 \end{cfuncdesc}
 
-\begin{ctypedesc}{struct _frozen}
+\begin{ctypedesc}[_frozen]{struct _frozen}
 This is the structure type definition for frozen module descriptors,
 as generated by the \program{freeze}\index{freeze utility} utility
 (see \file{Tools/freeze/} in the Python source distribution).  Its
@@ -1110,9 +1189,9 @@ struct _frozen {
 
 \begin{cvardesc}{struct _frozen*}{PyImport_FrozenModules}
 This pointer is initialized to point to an array of \ctype{struct
-_frozen} records, terminated by one whose members are all \NULL{}
-or zero.  When a frozen module is imported, it is searched in this
-table.  Third-party code could play tricks with this to provide a
+_frozen} records, terminated by one whose members are all
+\NULL{} or zero.  When a frozen module is imported, it is searched in
+this table.  Third-party code could play tricks with this to provide a 
 dynamically created collection of frozen modules.
 \end{cvardesc}
 
@@ -1122,15 +1201,16 @@ dynamically created collection of frozen modules.
 The functions in this chapter interact with Python objects regardless
 of their type, or with wide classes of object types (e.g. all
 numerical types, or all sequence types).  When used on object types
-for which they do not apply, they will flag a Python exception.
+for which they do not apply, they will raise a Python exception.
 
 \section{Object Protocol \label{object}}
 
 \begin{cfuncdesc}{int}{PyObject_Print}{PyObject *o, FILE *fp, int flags}
-Print an object \var{o}, on file \var{fp}.  Returns \code{-1} on error
-The flags argument is used to enable certain printing
-options. The only option currently supported is
-\constant{Py_PRINT_RAW}.
+Print an object \var{o}, on file \var{fp}.  Returns \code{-1} on error.
+The flags argument is used to enable certain printing options.  The
+only option currently supported is \constant{Py_PRINT_RAW}; if given,
+the \function{str()} of the object is written instead of the
+\function{repr()}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyObject_HasAttrString}{PyObject *o, char *attr_name}
@@ -1140,7 +1220,8 @@ Returns \code{1} if \var{o} has the attribute \var{attr_name}, and
 This function always succeeds.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyObject_GetAttrString}{PyObject *o, char *attr_name}
+\begin{cfuncdesc}{PyObject*}{PyObject_GetAttrString}{PyObject *o,
+                                                     char *attr_name}
 Retrieve an attribute named \var{attr_name} from object \var{o}.
 Returns the attribute value on success, or \NULL{} on failure.
 This is the equivalent of the Python expression
@@ -1156,7 +1237,8 @@ This function always succeeds.
 \end{cfuncdesc}
 
 
-\begin{cfuncdesc}{PyObject*}{PyObject_GetAttr}{PyObject *o, PyObject *attr_name}
+\begin{cfuncdesc}{PyObject*}{PyObject_GetAttr}{PyObject *o,
+                                               PyObject *attr_name}
 Retrieve an attribute named \var{attr_name} from object \var{o}.
 Returns the attribute value on success, or \NULL{} on failure.
 This is the equivalent of the Python expression
@@ -1200,7 +1282,7 @@ Compare the values of \var{o1} and \var{o2} using a routine provided
 by \var{o1}, if one exists, otherwise with a routine provided by
 \var{o2}.  The result of the comparison is returned in \var{result}.
 Returns \code{-1} on failure.  This is the equivalent of the Python
-statement \samp{\var{result} = cmp(\var{o1}, \var{o2})}.
+statement\bifuncindex{cmp} \samp{\var{result} = cmp(\var{o1}, \var{o2})}.
 \end{cfuncdesc}
 
 
@@ -1209,13 +1291,13 @@ Compare the values of \var{o1} and \var{o2} using a routine provided
 by \var{o1}, if one exists, otherwise with a routine provided by
 \var{o2}.  Returns the result of the comparison on success.  On error,
 the value returned is undefined; use \cfunction{PyErr_Occurred()} to
-detect an error.  This is equivalent to the
-Python expression \samp{cmp(\var{o1}, \var{o2})}.
+detect an error.  This is equivalent to the Python
+expression\bifuncindex{cmp} \samp{cmp(\var{o1}, \var{o2})}.
 \end{cfuncdesc}
 
 
 \begin{cfuncdesc}{PyObject*}{PyObject_Repr}{PyObject *o}
-Compute the string representation of object, \var{o}.  Returns the
+Compute a string representation of object \var{o}.  Returns the
 string representation on success, \NULL{} on failure.  This is
 the equivalent of the Python expression \samp{repr(\var{o})}.
 Called by the \function{repr()}\bifuncindex{repr} built-in function
@@ -1224,7 +1306,7 @@ and by reverse quotes.
 
 
 \begin{cfuncdesc}{PyObject*}{PyObject_Str}{PyObject *o}
-Compute the string representation of object \var{o}.  Returns the
+Compute a string representation of object \var{o}.  Returns the
 string representation on success, \NULL{} on failure.  This is
 the equivalent of the Python expression \samp{str(\var{o})}.
 Called by the \function{str()}\bifuncindex{str} built-in function and
@@ -1233,40 +1315,42 @@ by the \keyword{print} statement.
 
 
 \begin{cfuncdesc}{int}{PyCallable_Check}{PyObject *o}
-Determine if the object \var{o}, is callable.  Return \code{1} if the
+Determine if the object \var{o} is callable.  Return \code{1} if the
 object is callable and \code{0} otherwise.
 This function always succeeds.
 \end{cfuncdesc}
 
 
-\begin{cfuncdesc}{PyObject*}{PyObject_CallObject}{PyObject *callable_object, PyObject *args}
+\begin{cfuncdesc}{PyObject*}{PyObject_CallObject}{PyObject *callable_object,
+                                                  PyObject *args}
 Call a callable Python object \var{callable_object}, with
 arguments given by the tuple \var{args}.  If no arguments are
-needed, then args may be \NULL{}.  Returns the result of the
+needed, then \var{args} may be \NULL{}.  Returns the result of the
 call on success, or \NULL{} on failure.  This is the equivalent
 of the Python expression \samp{apply(\var{o}, \var{args})}.
+\bifuncindex{apply}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyObject_CallFunction}{PyObject *callable_object, char *format, ...}
 Call a callable Python object \var{callable_object}, with a
-variable number of \C{} arguments. The \C{} arguments are described
+variable number of C arguments. The C arguments are described
 using a \cfunction{Py_BuildValue()} style format string. The format may
 be \NULL{}, indicating that no arguments are provided.  Returns the
 result of the call on success, or \NULL{} on failure.  This is
 the equivalent of the Python expression \samp{apply(\var{o},
-\var{args})}.
+\var{args})}.\bifuncindex{apply}
 \end{cfuncdesc}
 
 
 \begin{cfuncdesc}{PyObject*}{PyObject_CallMethod}{PyObject *o, char *m, char *format, ...}
 Call the method named \var{m} of object \var{o} with a variable number
-of C arguments.  The \C{} arguments are described by a
+of C arguments.  The C arguments are described by a
 \cfunction{Py_BuildValue()} format string.  The format may be \NULL{},
 indicating that no arguments are provided. Returns the result of the
 call on success, or \NULL{} on failure.  This is the equivalent of the
 Python expression \samp{\var{o}.\var{method}(\var{args})}.
-Note that Special method names, such as \method{__add__()},
-\method{__getitem__()}, and so on are not supported. The specific
+Note that special method names, such as \method{__add__()},
+\method{__getitem__()}, and so on are not supported.  The specific
 abstract-object routines for these must be used.
 \end{cfuncdesc}
 
@@ -1274,7 +1358,7 @@ abstract-object routines for these must be used.
 \begin{cfuncdesc}{int}{PyObject_Hash}{PyObject *o}
 Compute and return the hash value of an object \var{o}.  On
 failure, return \code{-1}.  This is the equivalent of the Python
-expression \samp{hash(\var{o})}.
+expression \samp{hash(\var{o})}.\bifuncindex{hash}
 \end{cfuncdesc}
 
 
@@ -1296,8 +1380,8 @@ equivalent to the Python expression \samp{type(\var{o})}.
 \begin{cfuncdesc}{int}{PyObject_Length}{PyObject *o}
 Return the length of object \var{o}.  If the object \var{o} provides
 both sequence and mapping protocols, the sequence length is
-returned. On error, \code{-1} is returned.  This is the equivalent
-to the Python expression \samp{len(\var{o})}.
+returned.  On error, \code{-1} is returned.  This is the equivalent
+to the Python expression \samp{len(\var{o})}.\bifuncindex{len}
 \end{cfuncdesc}
 
 
@@ -1339,8 +1423,8 @@ failure.  This is the equivalent of the Python expression
 
 
 \begin{cfuncdesc}{PyObject*}{PyNumber_Subtract}{PyObject *o1, PyObject *o2}
-Returns the result of subtracting \var{o2} from \var{o1}, or \NULL{}
-on failure.  This is the equivalent of the Python expression
+Returns the result of subtracting \var{o2} from \var{o1}, or
+\NULL{} on failure.  This is the equivalent of the Python expression
 \samp{\var{o1} - \var{o2}}.
 \end{cfuncdesc}
 
@@ -1363,7 +1447,7 @@ This is the equivalent of the Python expression \samp{\var{o1} /
 \begin{cfuncdesc}{PyObject*}{PyNumber_Remainder}{PyObject *o1, PyObject *o2}
 Returns the remainder of dividing \var{o1} by \var{o2}, or \NULL{} on
 failure.  This is the equivalent of the Python expression
-\samp{\var{o1} \% \var{o2}}.
+\samp{\var{o1} \%\ \var{o2}}.
 \end{cfuncdesc}
 
 
@@ -1378,7 +1462,8 @@ expression \samp{divmod(\var{o1}, \var{o2})}.
 See the built-in function \function{pow()}\bifuncindex{pow}.  Returns
 \NULL{} on failure. This is the equivalent of the Python expression
 \samp{pow(\var{o1}, \var{o2}, \var{o3})}, where \var{o3} is optional.
-If \var{o3} is to be ignored, pass \cdata{Py_None} in its place.
+If \var{o3} is to be ignored, pass \cdata{Py_None} in its place
+(passing \NULL{} for \var{o3} would cause an illegal memory access).
 \end{cfuncdesc}
 
 
@@ -1397,6 +1482,7 @@ This is the equivalent of the Python expression \samp{+\var{o}}.
 \begin{cfuncdesc}{PyObject*}{PyNumber_Absolute}{PyObject *o}
 Returns the absolute value of \var{o}, or \NULL{} on failure.  This is
 the equivalent of the Python expression \samp{abs(\var{o})}.
+\bifuncindex{abs}
 \end{cfuncdesc}
 
 
@@ -1440,53 +1526,52 @@ failure.  This is the equivalent of the Python expression
 \samp{\var{o1} or \var{o2}}.
 \end{cfuncdesc}
 
-
 \begin{cfuncdesc}{PyObject*}{PyNumber_Coerce}{PyObject **p1, PyObject **p2}
 This function takes the addresses of two variables of type
-\ctype{PyObject*}.
-
-If the objects pointed to by \code{*\var{p1}} and \code{*\var{p2}}
-have the same type, increment their reference count and return
-\code{0} (success). If the objects can be converted to a common
-numeric type, replace \code{*p1} and \code{*p2} by their converted
-value (with 'new' reference counts), and return \code{0}.
-If no conversion is possible, or if some other error occurs,
-return \code{-1} (failure) and don't increment the reference counts.
-The call \code{PyNumber_Coerce(\&o1, \&o2)} is equivalent to the
-Python statement \samp{\var{o1}, \var{o2} = coerce(\var{o1},
-\var{o2})}.
+\ctype{PyObject*}.  If the objects pointed to by \code{*\var{p1}} and
+\code{*\var{p2}} have the same type, increment their reference count
+and return \code{0} (success). If the objects can be converted to a
+common numeric type, replace \code{*p1} and \code{*p2} by their
+converted value (with 'new' reference counts), and return \code{0}.
+If no conversion is possible, or if some other error occurs, return
+\code{-1} (failure) and don't increment the reference counts.  The
+call \code{PyNumber_Coerce(\&o1, \&o2)} is equivalent to the Python
+statement \samp{\var{o1}, \var{o2} = coerce(\var{o1}, \var{o2})}.
+\bifuncindex{coerce}
 \end{cfuncdesc}
-
 
 \begin{cfuncdesc}{PyObject*}{PyNumber_Int}{PyObject *o}
 Returns the \var{o} converted to an integer object on success, or
 \NULL{} on failure.  This is the equivalent of the Python
-expression \samp{int(\var{o})}.
+expression \samp{int(\var{o})}.\bifuncindex{int}
 \end{cfuncdesc}
-
 
 \begin{cfuncdesc}{PyObject*}{PyNumber_Long}{PyObject *o}
 Returns the \var{o} converted to a long integer object on success,
 or \NULL{} on failure.  This is the equivalent of the Python
-expression \samp{long(\var{o})}.
+expression \samp{long(\var{o})}.\bifuncindex{long}
 \end{cfuncdesc}
 
-
 \begin{cfuncdesc}{PyObject*}{PyNumber_Float}{PyObject *o}
-Returns the \var{o} converted to a float object on success, or \NULL{}
-on failure.  This is the equivalent of the Python expression
-\samp{float(\var{o})}.
+Returns the \var{o} converted to a float object on success, or
+\NULL{} on failure.  This is the equivalent of the Python expression
+\samp{float(\var{o})}.\bifuncindex{float}
 \end{cfuncdesc}
 
 
 \section{Sequence Protocol \label{sequence}}
 
 \begin{cfuncdesc}{int}{PySequence_Check}{PyObject *o}
-Return \code{1} if the object provides sequence protocol, and \code{0}
-otherwise.  
-This function always succeeds.
+Return \code{1} if the object provides sequence protocol, and
+\code{0} otherwise.  This function always succeeds.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{int}{PySequence_Length}{PyObject *o}
+Returns the number of objects in sequence \var{o} on success, and
+\code{-1} on failure.  For objects that do not provide sequence
+protocol, this is equivalent to the Python expression
+\samp{len(\var{o})}.\bifuncindex{len}
+\end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PySequence_Concat}{PyObject *o1, PyObject *o2}
 Return the concatenation of \var{o1} and \var{o2} on success, and \NULL{} on
@@ -1496,9 +1581,9 @@ expression \samp{\var{o1} + \var{o2}}.
 
 
 \begin{cfuncdesc}{PyObject*}{PySequence_Repeat}{PyObject *o, int count}
-Return the result of repeating sequence object \var{o} \var{count}
-times, or \NULL{} on failure.  This is the equivalent of the Python
-expression \samp{\var{o} * \var{count}}.
+Return the result of repeating sequence object
+\var{o} \var{count} times, or \NULL{} on failure.  This is the
+equivalent of the Python expression \samp{\var{o} * \var{count}}.
 \end{cfuncdesc}
 
 
@@ -1527,7 +1612,8 @@ Delete the \var{i}th element of object \var{v}.  Returns
 statement \samp{del \var{o}[\var{i}]}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PySequence_SetSlice}{PyObject *o, int i1, int i2, PyObject *v}
+\begin{cfuncdesc}{int}{PySequence_SetSlice}{PyObject *o, int i1,
+                                            int i2, PyObject *v}
 Assign the sequence object \var{v} to the slice in sequence
 object \var{o} from \var{i1} to \var{i2}.  This is the equivalent of
 the Python statement \samp{\var{o}[\var{i1}:\var{i2}] = \var{v}}.
@@ -1541,7 +1627,8 @@ statement \samp{del \var{o}[\var{i1}:\var{i2}]}.
 
 \begin{cfuncdesc}{PyObject*}{PySequence_Tuple}{PyObject *o}
 Returns the \var{o} as a tuple on success, and \NULL{} on failure.
-This is equivalent to the Python expression \code{tuple(\var{o})}.
+This is equivalent to the Python expression \samp{tuple(\var{o})}.
+\bifuncindex{tuple}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PySequence_Count}{PyObject *o, PyObject *value}
@@ -1551,7 +1638,7 @@ return the number of keys for which \code{\var{o}[\var{key}] ==
 the Python expression \samp{\var{o}.count(\var{value})}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PySequence_In}{PyObject *o, PyObject *value}
+\begin{cfuncdesc}{int}{PySequence_Contains}{PyObject *o, PyObject *value}
 Determine if \var{o} contains \var{value}.  If an item in \var{o} is
 equal to \var{value}, return \code{1}, otherwise return \code{0}.  On
 error, return \code{-1}.  This is equivalent to the Python expression
@@ -1568,16 +1655,16 @@ the Python expression \samp{\var{o}.index(\var{value})}.
 \section{Mapping Protocol \label{mapping}}
 
 \begin{cfuncdesc}{int}{PyMapping_Check}{PyObject *o}
-Return \code{1} if the object provides mapping protocol, and \code{0}
-otherwise.  
-This function always succeeds.
+Return \code{1} if the object provides mapping protocol, and
+\code{0} otherwise.  This function always succeeds.
 \end{cfuncdesc}
 
 
 \begin{cfuncdesc}{int}{PyMapping_Length}{PyObject *o}
-Returns the number of keys in object \var{o} on success, and \code{-1}
-on failure.  For objects that do not provide sequence protocol,
-this is equivalent to the Python expression \samp{len(\var{o})}.
+Returns the number of keys in object \var{o} on success, and
+\code{-1} on failure.  For objects that do not provide mapping
+protocol, this is equivalent to the Python expression
+\samp{len(\var{o})}.\bifuncindex{len}
 \end{cfuncdesc}
 
 
@@ -1596,9 +1683,9 @@ the Python statement \samp{del \var{o}[\var{key}]}.
 
 
 \begin{cfuncdesc}{int}{PyMapping_HasKeyString}{PyObject *o, char *key}
-On success, return \code{1} if the mapping object has the key \var{key}
-and \code{0} otherwise.  This is equivalent to the Python expression
-\samp{\var{o}.has_key(\var{key})}. 
+On success, return \code{1} if the mapping object has the key
+\var{key} and \code{0} otherwise.  This is equivalent to the Python
+expression \samp{\var{o}.has_key(\var{key})}. 
 This function always succeeds.
 \end{cfuncdesc}
 
@@ -1646,77 +1733,13 @@ statement \samp{\var{o}[\var{key}] = \var{v}}.
 \end{cfuncdesc}
 
 
-\section{Constructors}
-
-\begin{cfuncdesc}{PyObject*}{PyFile_FromString}{char *file_name, char *mode}
-On success, returns a new file object that is opened on the
-file given by \var{file_name}, with a file mode given by \var{mode},
-where \var{mode} has the same semantics as the standard \C{} routine
-\cfunction{fopen()}.  On failure, return \code{-1}.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyFile_FromFile}{FILE *fp, char *file_name, char *mode, int close_on_del}
-Return a new file object for an already opened standard \C{} file
-pointer, \var{fp}.  A file name, \var{file_name}, and open mode,
-\var{mode}, must be provided as well as a flag, \var{close_on_del},
-that indicates whether the file is to be closed when the file object
-is destroyed.  On failure, return \code{-1}.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyFloat_FromDouble}{double v}
-Returns a new float object with the value \var{v} on success, and
-\NULL{} on failure.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyInt_FromLong}{long v}
-Returns a new int object with the value \var{v} on success, and
-\NULL{} on failure.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyList_New}{int len}
-Returns a new list of length \var{len} on success, and \NULL{} on
-failure.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyLong_FromLong}{long v}
-Returns a new long object with the value \var{v} on success, and
-\NULL{} on failure.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyLong_FromDouble}{double v}
-Returns a new long object with the value \var{v} on success, and
-\NULL{} on failure.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyDict_New}{}
-Returns a new empty dictionary on success, and \NULL{} on
-failure.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyString_FromString}{char *v}
-Returns a new string object with the value \var{v} on success, and
-\NULL{} on failure.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyString_FromStringAndSize}{char *v, int len}
-Returns a new string object with the value \var{v} and length
-\var{len} on success, and \NULL{} on failure.  If \var{v} is \NULL{},
-the contents of the string are uninitialized.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyTuple_New}{int len}
-Returns a new tuple of length \var{len} on success, and \NULL{} on
-failure.
-\end{cfuncdesc}
-
-
 \chapter{Concrete Objects Layer \label{concrete}}
 
 The functions in this chapter are specific to certain Python object
 types.  Passing them an object of the wrong type is not a good idea;
 if you receive an object from a Python program and you are not sure
 that it has the right type, you must perform a type check first;
-e.g. to check that an object is a dictionary, use
+for example. to check that an object is a dictionary, use
 \cfunction{PyDict_Check()}.  The chapter is structured like the
 ``family tree'' of Python object types.
 
@@ -1729,19 +1752,38 @@ This section describes Python type objects and the singleton object
 
 \subsection{Type Objects \label{typeObjects}}
 
+\obindex{type}
 \begin{ctypedesc}{PyTypeObject}
-
+The C structure of the objects used to describe built-in types.
 \end{ctypedesc}
 
-\begin{cvardesc}{PyObject *}{PyType_Type}
+\begin{cvardesc}{PyObject*}{PyType_Type}
 This is the type object for type objects; it is the same object as
 \code{types.TypeType} in the Python layer.
+\withsubitem{(in module types)}{\ttindex{TypeType}}
 \end{cvardesc}
+
+\begin{cfuncdesc}{int}{PyType_Check}{PyObject *o}
+Returns true is the object \var{o} is a type object.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyType_HasFeature}{PyObject *o, int feature}
+Returns true if the type object \var{o} sets the feature
+\var{feature}.  Type features are denoted by single bit flags.  The
+only defined feature flag is \constant{Py_TPFLAGS_HAVE_GETCHARBUFFER}, 
+described in section \ref{buffer-structs}.
+\end{cfuncdesc}
 
 
 \subsection{The None Object \label{noneObject}}
 
-\begin{cvardesc}{PyObject *}{Py_None}
+\obindex{None@\texttt{None}}
+Note that the \ctype{PyTypeObject} for \code{None} is not directly
+exposed in the Python/C API.  Since \code{None} is a singleton,
+testing for object identity (using \samp{==} in C) is sufficient.
+There is no \cfunction{PyNone_Check()} function for the same reason.
+
+\begin{cvardesc}{PyObject*}{Py_None}
 The Python \code{None} object, denoting lack of value.  This object has
 no methods.
 \end{cvardesc}
@@ -1749,6 +1791,7 @@ no methods.
 
 \section{Sequence Objects \label{sequenceObjects}}
 
+\obindex{sequence}
 Generic operations on sequence objects were discussed in the previous 
 chapter; this section deals with the specific kinds of sequence 
 objects that are intrinsic to the Python language.
@@ -1756,23 +1799,19 @@ objects that are intrinsic to the Python language.
 
 \subsection{String Objects \label{stringObjects}}
 
+\obindex{string}
 \begin{ctypedesc}{PyStringObject}
 This subtype of \ctype{PyObject} represents a Python string object.
 \end{ctypedesc}
 
 \begin{cvardesc}{PyTypeObject}{PyString_Type}
-This instance of \ctype{PyTypeObject} represents the Python string type.
+This instance of \ctype{PyTypeObject} represents the Python string
+type; it is the same object as \code{types.TypeType} in the Python
+layer.\withsubitem{(in module types)}{\ttindex{StringType}}.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyString_Check}{PyObject *o}
 Returns true if the object \var{o} is a string object.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyString_FromStringAndSize}{const char *v,
-                                                          int len}
-Returns a new string object with the value \var{v} and length
-\var{len} on success, and \NULL{} on failure.  If \var{v} is \NULL{},
-the contents of the string are uninitialized.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyString_FromString}{const char *v}
@@ -1780,12 +1819,32 @@ Returns a new string object with the value \var{v} on success, and
 \NULL{} on failure.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyString_FromStringAndSize}{const char *v,
+                                                         int len}
+Returns a new string object with the value \var{v} and length
+\var{len} on success, and \NULL{} on failure.  If \var{v} is \NULL{},
+the contents of the string are uninitialized.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{int}{PyString_Size}{PyObject *string}
 Returns the length of the string in string object \var{string}.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{int}{PyString_GET_SIZE}{PyObject *string}
+Macro form of \cfunction{PyString_GetSize()} but without error
+checking.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{char*}{PyString_AsString}{PyObject *string}
-Resturns a \NULL{} terminated representation of the contents of \var{string}.
+Returns a null-terminated representation of the contents of
+\var{string}.  The pointer refers to the internal buffer of
+\var{string}, not a copy.  The data must not be modified in any way.
+It must not be de-allocated.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{char*}{PyString_AS_STRING}{PyObject *string}
+Macro form of \cfunction{PyString_AsString()} but without error
+checking.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyString_Concat}{PyObject **string,
@@ -1815,7 +1874,7 @@ the string may already be known in other parts of the code.
 \begin{cfuncdesc}{PyObject*}{PyString_Format}{PyObject *format,
                                               PyObject *args}
 Returns a new string object from \var{format} and \var{args}.  Analogous
-to \code{\var{format} \% \var{args}}.  The \var{args} argument must be
+to \code{\var{format} \%\ \var{args}}.  The \var{args} argument must be
 a tuple.
 \end{cfuncdesc}
 
@@ -1839,26 +1898,70 @@ that has been interned, or a new (``owned'') reference to an earlier
 interned string object with the same value.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{char*}{PyString_AS_STRING}{PyObject *string}
-Macro form of \cfunction{PyString_AsString()} but without error checking.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{int}{PyString_GET_SIZE}{PyObject *string}
-Macro form of \cfunction{PyString_GetSize()} but without error checking.
-\end{cfuncdesc}
-
 
 \subsection{Buffer Objects \label{bufferObjects}}
+\sectionauthor{Greg Stein}{gstein@lyra.org}
 
-XXX need a real description of buffers and buffer ''segments.``
+\obindex{buffer}
+Python objects implemented in C can export a group of functions called
+the ``buffer\index{buffer interface} interface.''  These functions can
+be used by an object to expose its data in a raw, byte-oriented
+format. Clients of the object can use the buffer interface to access
+the object data directly, without needing to copy it first.
+
+Two examples of objects that support 
+the buffer interface are strings and arrays. The string object exposes 
+the character contents in the buffer interface's byte-oriented
+form. An array can also expose its contents, but it should be noted
+that array elements may be multi-byte values.
+
+An example user of the buffer interface is the file object's
+\method{write()} method. Any object that can export a series of bytes
+through the buffer interface can be written to a file. There are a
+number of format codes to \cfunction{PyArgs_ParseTuple()} that operate 
+against an object's buffer interface, returning data from the target
+object.
+
+More information on the buffer interface is provided in the section
+``Buffer Object Structures'' (section \ref{buffer-structs}), under
+the description for \ctype{PyBufferProcs}\ttindex{PyBufferProcs}.
+
+A ``buffer object'' is defined in the \file{bufferobject.h} header
+(included by \file{Python.h}). These objects look very similar to
+string objects at the Python programming level: they support slicing,
+indexing, concatenation, and some other standard string
+operations. However, their data can come from one of two sources: from
+a block of memory, or from another object which exports the buffer
+interface.
+
+Buffer objects are useful as a way to expose the data from another
+object's buffer interface to the Python programmer. They can also be
+used as a zero-copy slicing mechanism. Using their ability to
+reference a block of memory, it is possible to expose any data to the
+Python programmer quite easily. The memory could be a large, constant
+array in a C extension, it could be a raw block of memory for
+manipulation before passing to an operating system library, or it
+could be used to pass around structured data in its native, in-memory
+format.
+
+\begin{ctypedesc}{PyBufferObject}
+This subtype of \ctype{PyObject} represents a buffer object.
+\end{ctypedesc}
 
 \begin{cvardesc}{PyTypeObject}{PyBuffer_Type}
 The instance of \ctype{PyTypeObject} which represents the Python
-buffer type.
+buffer type; it is the same object as \code{types.BufferType} in the
+Python layer.\withsubitem{(in module types)}{\ttindex{BufferType}}.
 \end{cvardesc}
 
 \begin{cvardesc}{int}{Py_END_OF_BUFFER}
-Constant returned by \cfunction{Py}
+This constant may be passed as the \var{size} parameter to
+\cfunction{PyBuffer_FromObject()} or
+\cfunction{PyBuffer_FromReadWriteObject()}. It indicates that the new
+\ctype{PyBufferObject} should refer to \var{base} object from the
+specified \var{offset} to the end of its exported buffer. Using this
+enables the caller to avoid querying the \var{base} object for its
+length.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyBuffer_Check}{PyObject *p}
@@ -1867,11 +1970,16 @@ Return true if the argument has type \cdata{PyBuffer_Type}.
 
 \begin{cfuncdesc}{PyObject*}{PyBuffer_FromObject}{PyObject *base,
                                                   int offset, int size}
-Return a new read-only buffer object.
-Raises \exception{TypeError} if \var{base} doesn't support the
-read-only buffer protocol or doesn't provide exactly one buffer
-segment.  Raises \exception{ValueError} if \var{offset} is less than
-zero.
+Return a new read-only buffer object.  This raises
+\exception{TypeError} if \var{base} doesn't support the read-only
+buffer protocol or doesn't provide exactly one buffer segment, or it
+raises \exception{ValueError} if \var{offset} is less than zero. The
+buffer will hold a reference to the \var{base} object, and the
+buffer's contents will refer to the \var{base} object's buffer
+interface, starting as position \var{offset} and extending for
+\var{size} bytes. If \var{size} is \constant{Py_END_OF_BUFFER}, then
+the new buffer's contents extend to the length of the
+\var{base} object's exported buffer data.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyBuffer_FromReadWriteObject}{PyObject *base,
@@ -1879,46 +1987,52 @@ zero.
                                                            int size}
 Return a new writable buffer object.  Parameters and exceptions are
 similar to those for \cfunction{PyBuffer_FromObject()}.
+If the \var{base} object does not export the writeable buffer
+protocol, then \exception{TypeError} is raised.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyBuffer_FromMemory}{void *ptr, int size}
-Return a new read-only buffer object that reads from a memory buffer.
+Return a new read-only buffer object that reads from a specified
+location in memory, with a specified size.
 The caller is responsible for ensuring that the memory buffer, passed
 in as \var{ptr}, is not deallocated while the returned buffer object
 exists.  Raises \exception{ValueError} if \var{size} is less than
-zero.
+zero.  Note that \constant{Py_END_OF_BUFFER} may \emph{not} be passed
+for the \var{size} parameter; \exception{ValueError} will be raised in 
+that case.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyBuffer_FromReadWriteMemory}{void *ptr, int size}
-Return a new writable buffer object that reads from and writes to a
-memory buffer.  The caller is responsible for ensuring that the memory
-buffer, passed in as \var{ptr}, is not deallocated while the returned
-buffer object exists.  Raises \exception{ValueError} if \var{size} is
-less than zero.
+Similar to \cfunction{PyBuffer_FromMemory()}, but the returned buffer
+is writable.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyBuffer_New}{int size}
 Returns a new writable buffer object that maintains its own memory
-buffer of \var{size} bytes.  \var{size} must be zero or positive.
+buffer of \var{size} bytes.  \exception{ValueError} is returned if
+\var{size} is not zero or positive.
 \end{cfuncdesc}
 
 
 \subsection{Tuple Objects \label{tupleObjects}}
 
+\obindex{tuple}
 \begin{ctypedesc}{PyTupleObject}
 This subtype of \ctype{PyObject} represents a Python tuple object.
 \end{ctypedesc}
 
 \begin{cvardesc}{PyTypeObject}{PyTuple_Type}
-This instance of \ctype{PyTypeObject} represents the Python tuple type.
+This instance of \ctype{PyTypeObject} represents the Python tuple
+type; it is the same object as \code{types.TupleType} in the Python
+layer.\withsubitem{(in module types)}{\ttindex{TupleType}}.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyTuple_Check}{PyObject *p}
 Return true if the argument is a tuple object.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyTuple_New}{int s}
-Return a new tuple object of size \var{s}.
+\begin{cfuncdesc}{PyObject*}{PyTuple_New}{int len}
+Return a new tuple object of size \var{len}, or \NULL{} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyTuple_Size}{PyTupleObject *p}
@@ -1929,8 +2043,7 @@ of that tuple.
 \begin{cfuncdesc}{PyObject*}{PyTuple_GetItem}{PyTupleObject *p, int pos}
 Returns the object at position \var{pos} in the tuple pointed
 to by \var{p}.  If \var{pos} is out of bounds, returns \NULL{} and
-sets an \exception{IndexError} exception.  \strong{Note:} this
-function returns a ``borrowed'' reference.
+sets an \exception{IndexError} exception.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyTuple_GET_ITEM}{PyTupleObject *p, int pos}
@@ -1944,80 +2057,101 @@ Takes a slice of the tuple pointed to by \var{p} from
 \var{low} to \var{high} and returns it as a new tuple.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyTuple_SetItem}{PyTupleObject *p,
-            int pos,
-            PyObject *o}
+\begin{cfuncdesc}{int}{PyTuple_SetItem}{PyObject *p,
+                                        int pos, PyObject *o}
 Inserts a reference to object \var{o} at position \var{pos} of
 the tuple pointed to by \var{p}. It returns \code{0} on success.
+\strong{Note:}  This function ``steals'' a reference to \var{o}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{void}{PyTuple_SET_ITEM}{PyTupleObject *p,
-            int pos,
-            PyObject *o}
-
+\begin{cfuncdesc}{void}{PyTuple_SET_ITEM}{PyObject *p,
+                                          int pos, PyObject *o}
 Does the same, but does no error checking, and
 should \emph{only} be used to fill in brand new tuples.
+\strong{Note:}  This function ``steals'' a reference to \var{o}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{_PyTuple_Resize}{PyTupleObject *p,
-            int new,
-            int last_is_sticky}
-Can be used to resize a tuple. Because tuples are
-\emph{supposed} to be immutable, this should only be used if there is only
-one module referencing the object. Do \emph{not} use this if the tuple may
-already be known to some other part of the code. \var{last_is_sticky} is
-a flag --- if set, the tuple will grow or shrink at the front, otherwise
-it will grow or shrink at the end. Think of this as destroying the old
-tuple and creating a new one, only more efficiently.
+                                        int newsize, int last_is_sticky}
+Can be used to resize a tuple.  \var{newsize} will be the new length
+of the tuple.  Because tuples are \emph{supposed} to be immutable,
+this should only be used if there is only one reference to the object.
+Do \emph{not} use this if the tuple may already be known to some other
+part of the code.  \var{last_is_sticky} is a flag --- if true, the
+tuple will grow or shrink at the front, otherwise it will grow or
+shrink at the end.  Think of this as destroying the old tuple and
+creating a new one, only more efficiently.  Returns \code{0} on
+success and \code{-1} on failure (in which case a
+\exception{MemoryError} or \exception{SystemError} will be raised).
 \end{cfuncdesc}
 
 
 \subsection{List Objects \label{listObjects}}
 
+\obindex{list}
 \begin{ctypedesc}{PyListObject}
 This subtype of \ctype{PyObject} represents a Python list object.
 \end{ctypedesc}
 
 \begin{cvardesc}{PyTypeObject}{PyList_Type}
-This instance of \ctype{PyTypeObject} represents the Python list type.
+This instance of \ctype{PyTypeObject} represents the Python list
+type.  This is the same object as \code{types.ListType}.
+\withsubitem{(in module types)}{\ttindex{ListType}}
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyList_Check}{PyObject *p}
 Returns true if its argument is a \ctype{PyListObject}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyList_New}{int size}
-Returns a new list of length \var{len} on success, and \NULL{} on
+\begin{cfuncdesc}{PyObject*}{PyList_New}{int len}
+Returns a new list of length \var{len} on success, or \NULL{} on
 failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_Size}{PyObject *list}
-Returns the length of the list object in \var{list}.
+Returns the length of the list object in \var{list}; this is
+equivalent to \samp{len(\var{list})} on a list object.
+\bifuncindex{len}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyList_GET_SIZE}{PyObject *list}
+Macro form of \cfunction{PyList_GetSize()} without error checking.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_GetItem}{PyObject *list, int index}
 Returns the object at position \var{pos} in the list pointed
 to by \var{p}.  If \var{pos} is out of bounds, returns \NULL{} and
-sets an \exception{IndexError} exception.  \strong{Note:} this
-function returns a ``borrowed'' reference.
+sets an \exception{IndexError} exception.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyList_GET_ITEM}{PyObject *list, int i}
+Macro form of \cfunction{PyList_GetItem()} without error checking.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_SetItem}{PyObject *list, int index,
                                        PyObject *item}
 Sets the item at index \var{index} in list to \var{item}.
+\strong{Note:}  This function ``steals'' a reference to \var{item}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyList_SET_ITEM}{PyObject *list, int i,
+                                              PyObject *o}
+Macro form of \cfunction{PyList_SetItem()} without error checking.
+\strong{Note:}  This function ``steals'' a reference to \var{item}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_Insert}{PyObject *list, int index,
                                       PyObject *item}
 Inserts the item \var{item} into list \var{list} in front of index
-\var{index}.  Returns 0 if successful; returns -1 and sets an
-exception if unsuccessful.  Analogous to \code{list.insert(index, item)}.
+\var{index}.  Returns \code{0} if successful; returns \code{-1} and
+raises an exception if unsuccessful.  Analogous to
+\code{\var{list}.insert(\var{index}, \var{item})}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_Append}{PyObject *list, PyObject *item}
 Appends the object \var{item} at the end of list \var{list}.  Returns
-0 if successful; returns -1 and sets an exception if unsuccessful.
-Analogous to \code{list.append(item)}.
+\code{0} if successful; returns \code{-1} and sets an exception if
+unsuccessful.  Analogous to \code{\var{list}.append(\var{item})}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_GetSlice}{PyObject *list,
@@ -2025,53 +2159,53 @@ Analogous to \code{list.append(item)}.
 Returns a list of the objects in \var{list} containing the objects 
 \emph{between} \var{low} and \var{high}.  Returns NULL and sets an
 exception if unsuccessful.
-Analogous to \code{list[low:high]}.
+Analogous to \code{\var{list}[\var{low}:\var{high}]}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_SetSlice}{PyObject *list,
                                         int low, int high,
                                         PyObject *itemlist}
-Sets the slice of \var{list} between \var{low} and \var{high} to the contents
-of \var{itemlist}.  Analogous to \code{list[low:high]=itemlist}.  Returns 0
-on success, -1 on failure.
+Sets the slice of \var{list} between \var{low} and \var{high} to the
+contents of \var{itemlist}.  Analogous to
+\code{\var{list}[\var{low}:\var{high}] = \var{itemlist}}.  Returns
+\code{0} on success, \code{-1} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_Sort}{PyObject *list}
-Sorts the items of \var{list} in place.  Returns 0 on success, -1 on failure.
+Sorts the items of \var{list} in place.  Returns \code{0} on success,
+\code{-1} on failure.  This is equivalent to
+\samp{\var{list}.sort()}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_Reverse}{PyObject *list}
-Reverses the items of \var{list} in place.  Returns 0 on success, -1 on failure.
+Reverses the items of \var{list} in place.  Returns \code{0} on
+success, \code{-1} on failure.  This is the equivalent of
+\samp{\var{list}.reverse()}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_AsTuple}{PyObject *list}
-Returns a new tuple object containing the contents of \var{list}.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyList_GET_ITEM}{PyObject *list, int i}
-Macro form of \cfunction{PyList_GetItem()} without error checking.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyList_SET_ITEM}{PyObject *list, int i,
-                                              PyObject *o}
-Macro form of \cfunction{PyList_SetItem()} without error checking.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{int}{PyList_GET_SIZE}{PyObject *list}
-Macro form of \cfunction{PyList_GetSize()} without error checking.
+Returns a new tuple object containing the contents of \var{list};
+equivalent to \samp{tuple(\var{list})}.\bifuncindex{tuple}
 \end{cfuncdesc}
 
 
 \section{Mapping Objects \label{mapObjects}}
 
+\obindex{mapping}
+
+
 \subsection{Dictionary Objects \label{dictObjects}}
 
+\obindex{dictionary}
 \begin{ctypedesc}{PyDictObject}
 This subtype of \ctype{PyObject} represents a Python dictionary object.
 \end{ctypedesc}
 
 \begin{cvardesc}{PyTypeObject}{PyDict_Type}
-This instance of \ctype{PyTypeObject} represents the Python dictionary type.
+This instance of \ctype{PyTypeObject} represents the Python dictionary 
+type.  This is exposed to Python programs as \code{types.DictType} and 
+\code{types.DictionaryType}.
+\withsubitem{(in module types)}{\ttindex{DictType}\ttindex{DictionaryType}}
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyDict_Check}{PyObject *p}
@@ -2079,23 +2213,23 @@ Returns true if its argument is a \ctype{PyDictObject}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyDict_New}{}
-Returns a new empty dictionary.
+Returns a new empty dictionary, or \NULL{} on failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyDict_Clear}{PyObject *p}
+Empties an existing dictionary of all key-value pairs.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyDict_Copy}{PyObject *p}
-Returns a new dictionary that contains the same key/value pairs as p.
+Returns a new dictionary that contains the same key-value pairs as p.
+Empties an existing dictionary of all key-value pairs.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{void}{PyDict_Clear}{PyDictObject *p}
-Empties an existing dictionary of all key/value pairs.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{int}{PyDict_SetItem}{PyDictObject *p,
-            PyObject *key,
-            PyObject *val}
-Inserts \var{value} into the dictionary with a key of \var{key}.  Both
-\var{key} and \var{value} should be PyObjects, and \var{key} should be
-hashable.
+\begin{cfuncdesc}{int}{PyDict_SetItem}{PyObject *p, PyObject *key,
+                                       PyObject *val}
+Inserts \var{value} into the dictionary with a key of \var{key}.
+\var{key} must be hashable; if it isn't, \exception{TypeError} will be 
+raised.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyDict_SetItemString}{PyDictObject *p,
@@ -2104,51 +2238,53 @@ hashable.
 Inserts \var{value} into the dictionary using \var{key}
 as a key. \var{key} should be a \ctype{char *}.  The key object is
 created using \code{PyString_FromString(\var{key})}.
+\ttindex{PyString_FromString()}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyDict_DelItem}{PyDictObject *p, PyObject *key}
+\begin{cfuncdesc}{int}{PyDict_DelItem}{PyObject *p, PyObject *key}
 Removes the entry in dictionary \var{p} with key \var{key}.
-\var{key} is a PyObject.
+\var{key} must be hashable; if it isn't, \exception{TypeError} is
+raised.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyDict_DelItemString}{PyDictObject *p, char *key}
+\begin{cfuncdesc}{int}{PyDict_DelItemString}{PyObject *p, char *key}
 Removes the entry in dictionary \var{p} which has a key
-specified by the \ctype{char *}\var{key}.
+specified by the string \var{key}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyDict_GetItem}{PyDictObject *p, PyObject *key}
+\begin{cfuncdesc}{PyObject*}{PyDict_GetItem}{PyObject *p, PyObject *key}
 Returns the object from dictionary \var{p} which has a key
 \var{key}.  Returns \NULL{} if the key \var{key} is not present, but
-without (!) setting an exception.  \strong{Note:}  this function
-returns a ``borrowed'' reference.
+\emph{without} setting an exception.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyDict_GetItemString}{PyDictObject *p, char *key}
+\begin{cfuncdesc}{PyObject*}{PyDict_GetItemString}{PyObject *p, char *key}
 This is the same as \cfunction{PyDict_GetItem()}, but \var{key} is
-specified as a \ctype{char *}, rather than a \ctype{PyObject *}.
+specified as a \ctype{char*}, rather than a \ctype{PyObject*}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyDict_Items}{PyDictObject *p}
+\begin{cfuncdesc}{PyObject*}{PyDict_Items}{PyObject *p}
 Returns a \ctype{PyListObject} containing all the items 
 from the dictionary, as in the dictinoary method \method{items()} (see
 the \citetitle[../lib/lib.html]{Python Library Reference}).
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyDict_Keys}{PyDictObject *p}
+\begin{cfuncdesc}{PyObject*}{PyDict_Keys}{PyObject *p}
 Returns a \ctype{PyListObject} containing all the keys 
 from the dictionary, as in the dictionary method \method{keys()} (see the
 \citetitle[../lib/lib.html]{Python Library Reference}).
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyDict_Values}{PyDictObject *p}
+\begin{cfuncdesc}{PyObject*}{PyDict_Values}{PyObject *p}
 Returns a \ctype{PyListObject} containing all the values 
 from the dictionary \var{p}, as in the dictionary method
 \method{values()} (see the \citetitle[../lib/lib.html]{Python Library
 Reference}).
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyDict_Size}{PyDictObject *p}
-Returns the number of items in the dictionary.
+\begin{cfuncdesc}{int}{PyDict_Size}{PyObject *p}
+Returns the number of items in the dictionary.  This is equivalent to
+\samp{len(\var{p})} on a dictionary.\bifuncindex{len}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyDict_Next}{PyDictObject *p,
@@ -2161,19 +2297,24 @@ Returns the number of items in the dictionary.
 
 \section{Numeric Objects \label{numericObjects}}
 
+\obindex{numeric}
+
+
 \subsection{Plain Integer Objects \label{intObjects}}
 
+\obindex{integer}
 \begin{ctypedesc}{PyIntObject}
 This subtype of \ctype{PyObject} represents a Python integer object.
 \end{ctypedesc}
 
 \begin{cvardesc}{PyTypeObject}{PyInt_Type}
 This instance of \ctype{PyTypeObject} represents the Python plain 
-integer type.
+integer type.  This is the same object as \code{types.IntType}.
+\withsubitem{(in modules types)}{\ttindex{IntType}}
 \end{cvardesc}
 
-\begin{cfuncdesc}{int}{PyInt_Check}{PyObject *}
-
+\begin{cfuncdesc}{int}{PyInt_Check}{PyObject* o}
+Returns true if \var{o} is of type \cdata{PyInt_Type}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyInt_FromLong}{long ival}
@@ -2186,24 +2327,26 @@ object. So it should be possible to change the value of \code{1}. I
 suspect the behaviour of Python in this case is undefined. :-)
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{long}{PyInt_AS_LONG}{PyIntObject *io}
-Returns the value of the object \var{io}.  No error checking is
-performed.
-\end{cfuncdesc}
-
 \begin{cfuncdesc}{long}{PyInt_AsLong}{PyObject *io}
 Will first attempt to cast the object to a \ctype{PyIntObject}, if
 it is not already one, and then return its value.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{long}{PyInt_AS_LONG}{PyObject *io}
+Returns the value of the object \var{io}.  No error checking is
+performed.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{long}{PyInt_GetMax}{}
-Returns the systems idea of the largest integer it can handle
-(\constant{LONG_MAX}, as defined in the system header files).
+Returns the system's idea of the largest integer it can handle
+(\constant{LONG_MAX}\ttindex{LONG_MAX}, as defined in the system
+header files).
 \end{cfuncdesc}
 
 
 \subsection{Long Integer Objects \label{longObjects}}
 
+\obindex{long integer}
 \begin{ctypedesc}{PyLongObject}
 This subtype of \ctype{PyObject} represents a Python long integer
 object.
@@ -2211,7 +2354,8 @@ object.
 
 \begin{cvardesc}{PyTypeObject}{PyLong_Type}
 This instance of \ctype{PyTypeObject} represents the Python long
-integer type.
+integer type.  This is the same object as \code{types.LongType}.
+\withsubitem{(in modules types)}{\ttindex{LongType}}
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyLong_Check}{PyObject *p}
@@ -2219,39 +2363,57 @@ Returns true if its argument is a \ctype{PyLongObject}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyLong_FromLong}{long v}
-Returns a new \ctype{PyLongObject} object from \var{v}.
+Returns a new \ctype{PyLongObject} object from \var{v}, or \NULL{} on
+failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyLong_FromUnsignedLong}{unsigned long v}
-Returns a new \ctype{PyLongObject} object from an unsigned \C{} long.
+Returns a new \ctype{PyLongObject} object from a C \ctype{unsigned
+long}, or \NULL{} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyLong_FromDouble}{double v}
-Returns a new \ctype{PyLongObject} object from the integer part of \var{v}.
+Returns a new \ctype{PyLongObject} object from the integer part of
+\var{v}, or \NULL{} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{long}{PyLong_AsLong}{PyObject *pylong}
-Returns a \C{} \ctype{long} representation of the contents of \var{pylong}.  
-WHAT HAPPENS IF \var{pylong} is greater than \constant{LONG_MAX}?
+Returns a C \ctype{long} representation of the contents of
+\var{pylong}.  If \var{pylong} is greater than
+\constant{LONG_MAX}\ttindex{LONG_MAX}, an \exception{OverflowError} is
+raised.\withsubitem{(built-in exception)}{OverflowError}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{unsigned long}{PyLong_AsUnsignedLong}{PyObject *pylong}
-Returns a \C{} \ctype{unsigned long} representation of the contents of 
-\var{pylong}.  WHAT HAPPENS IF \var{pylong} is greater than
-\constant{ULONG_MAX}?
+Returns a C \ctype{unsigned long} representation of the contents of 
+\var{pylong}.  If \var{pylong} is greater than
+\constant{ULONG_MAX}\ttindex{ULONG_MAX}, an \exception{OverflowError}
+is raised.\withsubitem{(built-in exception)}{OverflowError}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{PyLong_AsDouble}{PyObject *pylong}
-Returns a \C{} \ctype{double} representation of the contents of \var{pylong}.
+Returns a C \ctype{double} representation of the contents of \var{pylong}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyLong_FromString}{char *str, char **pend,
                                                 int base}
+Return a new \ctype{PyLongObject} based on the string value in
+\var{str}, which is interpreted according to the radix in \var{base}.
+If \var{pend} is non-\NULL, \code{*\var{pend}} will point to the first 
+character in \var{str} which follows the representation of the
+number.  If \var{base} is \code{0}, the radix will be determined base
+on the leading characters of \var{str}: if \var{str} starts with
+\code{'0x'} or \code{'0X'}, radix 16 will be used; if \var{str} starts 
+with \code{'0'}, radix 8 will be used; otherwise radix 10 will be
+used.  If \var{base} is not \code{0}, it must be between \code{2} and
+\code{36}, inclusive.  Leading spaces are ignored.  If there are no
+digits, \exception{ValueError} will be raised.
 \end{cfuncdesc}
 
 
 \subsection{Floating Point Objects \label{floatObjects}}
 
+\obindex{floating point}
 \begin{ctypedesc}{PyFloatObject}
 This subtype of \ctype{PyObject} represents a Python floating point
 object.
@@ -2259,7 +2421,8 @@ object.
 
 \begin{cvardesc}{PyTypeObject}{PyFloat_Type}
 This instance of \ctype{PyTypeObject} represents the Python floating
-point type.
+point type.  This is the same object as \code{types.FloatType}.
+\withsubitem{(in modules types)}{\ttindex{FloatType}}
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyFloat_Check}{PyObject *p}
@@ -2267,23 +2430,38 @@ Returns true if its argument is a \ctype{PyFloatObject}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyFloat_FromDouble}{double v}
-Creates a \ctype{PyFloatObject} object from \var{v}.
+Creates a \ctype{PyFloatObject} object from \var{v}, or \NULL{} on
+failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{PyFloat_AsDouble}{PyObject *pyfloat}
-Returns a \C{} \ctype{double} representation of the contents of \var{pyfloat}.
+Returns a C \ctype{double} representation of the contents of \var{pyfloat}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{PyFloat_AS_DOUBLE}{PyObject *pyfloat}
-Returns a \C{} \ctype{double} representation of the contents of
+Returns a C \ctype{double} representation of the contents of
 \var{pyfloat}, but without error checking.
 \end{cfuncdesc}
 
 
 \subsection{Complex Number Objects \label{complexObjects}}
 
+\obindex{complex number}
+Python's complex number objects are implemented as two distinct types
+when viewed from the C API:  one is the Python object exposed to
+Python programs, and the other is a C structure which represents the
+actual complex number value.  The API provides functions for working
+with both.
+
+\subsubsection{Complex Numbers as C Structures}
+
+Note that the functions which accept these structures as parameters
+and return them as results do so \emph{by value} rather than
+dereferencing them through pointers.  This is consistent throughout
+the API.
+
 \begin{ctypedesc}{Py_complex}
-The \C{} structure which corresponds to the value portion of a Python
+The C structure which corresponds to the value portion of a Python
 complex number object.  Most of the functions for dealing with complex
 number objects use structures of this type as input or output values,
 as appropriate.  It is defined as:
@@ -2295,6 +2473,40 @@ typedef struct {
 } Py_complex;
 \end{verbatim}
 \end{ctypedesc}
+
+\begin{cfuncdesc}{Py_complex}{_Py_c_sum}{Py_complex left, Py_complex right}
+Return the sum of two complex numbers, using the C
+\ctype{Py_complex} representation.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{Py_complex}{_Py_c_diff}{Py_complex left, Py_complex right}
+Return the difference between two complex numbers, using the C
+\ctype{Py_complex} representation.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{Py_complex}{_Py_c_neg}{Py_complex complex}
+Return the negation of the complex number \var{complex}, using the C
+\ctype{Py_complex} representation.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{Py_complex}{_Py_c_prod}{Py_complex left, Py_complex right}
+Return the product of two complex numbers, using the C
+\ctype{Py_complex} representation.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{Py_complex}{_Py_c_quot}{Py_complex dividend,
+                                          Py_complex divisor}
+Return the quotient of two complex numbers, using the C
+\ctype{Py_complex} representation.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{Py_complex}{_Py_c_pow}{Py_complex num, Py_complex exp}
+Return the exponentiation of \var{num} by \var{exp}, using the C
+\ctype{Py_complex} representation.
+\end{cfuncdesc}
+
+
+\subsubsection{Complex Numbers as Python Objects}
 
 \begin{ctypedesc}{PyComplexObject}
 This subtype of \ctype{PyObject} represents a Python complex number object.
@@ -2309,26 +2521,9 @@ number type.
 Returns true if its argument is a \ctype{PyComplexObject}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{Py_complex}{_Py_c_sum}{Py_complex left, Py_complex right}
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{Py_complex}{_Py_c_diff}{Py_complex left, Py_complex right}
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{Py_complex}{_Py_c_neg}{Py_complex complex}
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{Py_complex}{_Py_c_prod}{Py_complex left, Py_complex right}
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{Py_complex}{_Py_c_quot}{Py_complex dividend,
-                                          Py_complex divisor}
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{Py_complex}{_Py_c_pow}{Py_complex num, Py_complex exp}
-\end{cfuncdesc}
-
 \begin{cfuncdesc}{PyObject*}{PyComplex_FromCComplex}{Py_complex v}
+Create a new Python complex number object from a C
+\ctype{Py_complex} value.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyComplex_FromDoubles}{double real, double imag}
@@ -2336,14 +2531,15 @@ Returns a new \ctype{PyComplexObject} object from \var{real} and \var{imag}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{PyComplex_RealAsDouble}{PyObject *op}
-Returns the real part of \var{op} as a \C{} \ctype{double}.
+Returns the real part of \var{op} as a C \ctype{double}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{PyComplex_ImagAsDouble}{PyObject *op}
-Returns the imaginary part of \var{op} as a \C{} \ctype{double}.
+Returns the imaginary part of \var{op} as a C \ctype{double}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{Py_complex}{PyComplex_AsCComplex}{PyObject *op}
+Returns the \ctype{Py_complex} value of the complex number \var{op}.
 \end{cfuncdesc}
 
 
@@ -2352,64 +2548,96 @@ Returns the imaginary part of \var{op} as a \C{} \ctype{double}.
 
 \subsection{File Objects \label{fileObjects}}
 
+\obindex{file}
+Python's built-in file objects are implemented entirely on the
+\ctype{FILE*} support from the C standard library.  This is an
+implementation detail and may change in future releases of Python.
+
 \begin{ctypedesc}{PyFileObject}
 This subtype of \ctype{PyObject} represents a Python file object.
 \end{ctypedesc}
 
 \begin{cvardesc}{PyTypeObject}{PyFile_Type}
-This instance of \ctype{PyTypeObject} represents the Python file type.
+This instance of \ctype{PyTypeObject} represents the Python file
+type.  This is exposed to Python programs as \code{types.FileType}.
+\withsubitem{(in module types)}{\ttindex{FileType}}
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyFile_Check}{PyObject *p}
 Returns true if its argument is a \ctype{PyFileObject}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyFile_FromString}{char *name, char *mode}
-Creates a new \ctype{PyFileObject} pointing to the file
-specified in \var{name} with the mode specified in \var{mode}.
+\begin{cfuncdesc}{PyObject*}{PyFile_FromString}{char *filename, char *mode}
+On success, returns a new file object that is opened on the
+file given by \var{filename}, with a file mode given by \var{mode},
+where \var{mode} has the same semantics as the standard C routine
+\cfunction{fopen()}\ttindex{fopen()}.  On failure, returns \NULL.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyFile_FromFile}{FILE *fp,
-              char *name, char *mode, int (*close)}
-Creates a new \ctype{PyFileObject} from the already-open \var{fp}.
-The function \var{close} will be called when the file should be
-closed.
+                                              char *name, char *mode,
+                                              int (*close)(FILE*)}
+Creates a new \ctype{PyFileObject} from the already-open standard C
+file pointer, \var{fp}.  The function \var{close} will be called when
+the file should be closed.  Returns \NULL{} on failure.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{FILE *}{PyFile_AsFile}{PyFileObject *p}
-Returns the file object associated with \var{p} as a \ctype{FILE *}.
+\begin{cfuncdesc}{FILE*}{PyFile_AsFile}{PyFileObject *p}
+Returns the file object associated with \var{p} as a \ctype{FILE*}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyFile_GetLine}{PyObject *p, int n}
-undocumented as yet
+Equivalent to \code{\var{p}.readline(\optional{\var{n}})}, this
+function reads one line from the object \var{p}.  \var{p} may be a
+file object or any object with a \method{readline()} method.  If
+\var{n} is \code{0}, exactly one line is read, regardless of the
+length of the line.  If \var{n} is greater than \code{0}, no more than 
+\var{n} bytes will be read from the file; a partial line can be
+returned.  In both cases, an empty string is returned if the end of
+the file is reached immediately.  If \var{n} is less than \code{0},
+however, one line is read regardless of length, but
+\exception{EOFError} is raised if the end of the file is reached
+immediately.
+\withsubitem{(built-in exception)}{\ttindex{EOFError}}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyFile_Name}{PyObject *p}
-Returns the name of the file specified by \var{p} as a 
-\ctype{PyStringObject}.
+Returns the name of the file specified by \var{p} as a string object.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyFile_SetBufSize}{PyFileObject *p, int n}
-Available on systems with \cfunction{setvbuf()} only.  This should
-only be called immediately after file object creation.
+Available on systems with \cfunction{setvbuf()}\ttindex{setvbuf()}
+only.  This should only be called immediately after file object
+creation.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyFile_SoftSpace}{PyFileObject *p, int newflag}
-Sets the \member{softspace} attribute of \var{p} to \var{newflag}.
-Returns the previous value.  This function clears any errors, and will
-return \code{0} as the previous value if the attribute either does not
-exist or if there were errors in retrieving it.  There is no way to
-detect errors from this function, but doing so should not be needed.
+\begin{cfuncdesc}{int}{PyFile_SoftSpace}{PyObject *p, int newflag}
+This function exists for internal use by the interpreter.
+Sets the \member{softspace} attribute of \var{p} to \var{newflag} and
+\withsubitem{(file attribute)}{\ttindex{softspace}}returns the
+previous value.  \var{p} does not have to be a file object
+for this function to work properly; any object is supported (thought
+its only interesting if the \member{softspace} attribute can be set).
+This function clears any errors, and will return \code{0} as the
+previous value if the attribute either does not exist or if there were
+errors in retrieving it.  There is no way to detect errors from this
+function, but doing so should not be needed.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyFile_WriteObject}{PyObject *obj, PyFileObject *p,
                                            int flags}
-Writes object \var{obj} to file object \var{p}.
+Writes object \var{obj} to file object \var{p}.  The only supported
+flag for \var{flags} is \constant{Py_PRINT_RAW}\ttindex{Py_PRINT_RAW};
+if given, the \function{str()} of the object is written instead of the 
+\function{repr()}.  Returns \code{0} on success or \code{-1} on
+failure; the appropriate exception will be set.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyFile_WriteString}{char *s, PyFileObject *p,
                                            int flags}
-Writes string \var{s} to file object \var{p}.
+Writes string \var{s} to file object \var{p}.  Returns \code{0} on
+success or \code{-1} on failure; the appropriate exception will be
+set.
 \end{cfuncdesc}
 
 
@@ -2418,50 +2646,79 @@ Writes string \var{s} to file object \var{p}.
 \obindex{module}
 There are only a few functions special to module objects.
 
-\begin{cfuncdesc}{PyObject *}{PyModule_New}{char *name}
-Return a new module object with the \member{__name__} attribute set to 
-\var{name}.  Only the module's \member{__doc__} and \member{__name__}
-attributes are filled in; the caller is responsible for providing a
-\member{__file__} attribute.
+\begin{cvardesc}{PyTypeObject}{PyModule_Type}
+This instance of \ctype{PyTypeObject} represents the Python module
+type.  This is exposed to Python programs as \code{types.ModuleType}.
+\withsubitem{(in module types)}{\ttindex{ModuleType}}
+\end{cvardesc}
+
+\begin{cfuncdesc}{int}{PyModule_Check}{PyObject *p}
+Returns true if its argument is a module object.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject *}{PyModule_GetDict}{PyObject *module}
+\begin{cfuncdesc}{PyObject*}{PyModule_New}{char *name}
+Return a new module object with the \member{__name__} attribute set to
+\var{name}.  Only the module's \member{__doc__} and
+\member{__name__} attributes are filled in; the caller is responsible
+for providing a \member{__file__} attribute.
+\withsubitem{(module attribute)}{
+  \ttindex{__name__}\ttindex{__doc__}\ttindex{__file__}}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyModule_GetDict}{PyObject *module}
 Return the dictionary object that implements \var{module}'s namespace; 
 this object is the same as the \member{__dict__} attribute of the
 module object.  This function never fails.
+\withsubitem{(module attribute)}{\ttindex{__dict__}}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{char *}{PyModule_GetName}{PyObject *module}
+\begin{cfuncdesc}{char*}{PyModule_GetName}{PyObject *module}
 Return \var{module}'s \member{__name__} value.  If the module does not 
-provide one, \exception{SystemError} is raised.
+provide one, or if it is not a string, \exception{SystemError} is
+raised and \NULL{} is returned.
+\withsubitem{(module attribute)}{\ttindex{__name__}}
+\withsubitem{(built-in exception)}{\ttindex{SystemError}}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{char *}{PyModule_GetFilename}{PyObject *module}
+\begin{cfuncdesc}{char*}{PyModule_GetFilename}{PyObject *module}
 Return the name of the file from which \var{module} was loaded using
 \var{module}'s \member{__file__} attribute.  If this is not defined,
-raise \exception{SystemError}.
+or if it is not a string, raise \exception{SystemError} and return
+\NULL.
+\withsubitem{(module attribute)}{\ttindex{__file__}}
+\withsubitem{(built-in exception)}{\ttindex{SystemError}}
 \end{cfuncdesc}
 
 
 \subsection{CObjects \label{cObjects}}
 
+\obindex{CObject}
+Refer to \emph{Extending and Embedding the Python Interpreter},
+section 1.12 (``Providing a C API for an Extension Module''), for more 
+information on using these objects.
+
+
 \begin{ctypedesc}{PyCObject}
 This subtype of \ctype{PyObject} represents an opaque value, useful for
-\C{} extension modules who need to pass an opaque value (as a
-\ctype{void *} pointer) through Python code to other \C{} code.  It is
+C extension modules who need to pass an opaque value (as a
+\ctype{void*} pointer) through Python code to other C code.  It is
 often used to make a C function pointer defined in one module
 available to other modules, so the regular import mechanism can be
 used to access C APIs defined in dynamically loaded modules.
 \end{ctypedesc}
 
-\begin{cfuncdesc}{PyObject *}{PyCObject_FromVoidPtr}{void* cobj, 
+\begin{cfuncdesc}{int}{PyCObject_Check}{PyObject *p}
+Returns true if its argument is a \ctype{PyCObject}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyCObject_FromVoidPtr}{void* cobj, 
 	void (*destr)(void *)}
 Creates a \ctype{PyCObject} from the \code{void *} \var{cobj}.  The
 \var{destr} function will be called when the object is reclaimed, unless
 it is \NULL.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject *}{PyCObject_FromVoidPtrAndDesc}{void* cobj,
+\begin{cfuncdesc}{PyObject*}{PyCObject_FromVoidPtrAndDesc}{void* cobj,
 	void* desc, void (*destr)(void *, void *) }
 Creates a \ctype{PyCObject} from the \ctype{void *}\var{cobj}.  The
 \var{destr} function will be called when the object is reclaimed.  The
@@ -2469,15 +2726,16 @@ Creates a \ctype{PyCObject} from the \ctype{void *}\var{cobj}.  The
 destructor function.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{void *}{PyCObject_AsVoidPtr}{PyObject* self}
-Returns the object \ctype{void *} that the \ctype{PyCObject} \var{self}
-was created with.
+\begin{cfuncdesc}{void*}{PyCObject_AsVoidPtr}{PyObject* self}
+Returns the object \ctype{void *} that the
+\ctype{PyCObject} \var{self} was created with.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{void *}{PyCObject_GetDesc}{PyObject* self}
-Returns the description \ctype{void *} that the \ctype{PyCObject}
-\var{self} was created with.
+\begin{cfuncdesc}{void*}{PyCObject_GetDesc}{PyObject* self}
+Returns the description \ctype{void *} that the
+\ctype{PyCObject} \var{self} was created with.
 \end{cfuncdesc}
+
 
 \chapter{Initialization, Finalization, and Threads
          \label{initialization}}
@@ -2485,19 +2743,22 @@ Returns the description \ctype{void *} that the \ctype{PyCObject}
 \begin{cfuncdesc}{void}{Py_Initialize}{}
 Initialize the Python interpreter.  In an application embedding 
 Python, this should be called before using any other Python/C API 
-functions; with the exception of \cfunction{Py_SetProgramName()},
-\cfunction{PyEval_InitThreads()}, \cfunction{PyEval_ReleaseLock()},
-and \cfunction{PyEval_AcquireLock()}.  This initializes the table of
-loaded modules (\code{sys.modules}), and creates the fundamental
-modules \module{__builtin__}\refbimodindex{__builtin__},
+functions; with the exception of
+\cfunction{Py_SetProgramName()}\ttindex{Py_SetProgramName()},
+\cfunction{PyEval_InitThreads()}\ttindex{PyEval_InitThreads()},
+\cfunction{PyEval_ReleaseLock()}\ttindex{PyEval_ReleaseLock()},
+and \cfunction{PyEval_AcquireLock()}\ttindex{PyEval_AcquireLock()}.
+This initializes the table of loaded modules (\code{sys.modules}), and
+\withsubitem{(in module sys)}{\ttindex{modules}\ttindex{path}}creates the
+fundamental modules \module{__builtin__}\refbimodindex{__builtin__},
 \module{__main__}\refbimodindex{__main__} and
 \module{sys}\refbimodindex{sys}.  It also initializes the module
-search path (\code{sys.path}).%
-\indexiii{module}{search}{path}
-It does not set \code{sys.argv}; use \cfunction{PySys_SetArgv()} for
-that.  This is a no-op when called for a second time (without calling
-\cfunction{Py_Finalize()} first).  There is no return value; it is a
-fatal error if the initialization fails.
+search\indexiii{module}{search}{path} path (\code{sys.path}).
+It does not set \code{sys.argv}; use
+\cfunction{PySys_SetArgv()}\ttindex{PySys_SetArgv()} for that.  This
+is a no-op when called for a second time (without calling
+\cfunction{Py_Finalize()}\ttindex{Py_Finalize()} first).  There is no
+return value; it is a fatal error if the initialization fails.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{Py_IsInitialized}{}
@@ -2551,7 +2812,9 @@ modules, including the fundamental modules
 also separate.  The new environment has no \code{sys.argv} variable.
 It has new standard I/O stream file objects \code{sys.stdin},
 \code{sys.stdout} and \code{sys.stderr} (however these refer to the
-same underlying \ctype{FILE} structures in the \C{} library).
+same underlying \ctype{FILE} structures in the C library).
+\withsubitem{(in module sys)}{
+  \ttindex{stdout}\ttindex{stderr}\ttindex{stdin}}
 
 The return value points to the first thread state created in the new 
 sub-interpreter.  This thread state is made the current thread state.  
@@ -2572,13 +2835,16 @@ squirreled away.  When the same extension is imported by another
 contents of this copy; the extension's \code{init} function is not
 called.  Note that this is different from what happens when an
 extension is imported after the interpreter has been completely
-re-initialized by calling \cfunction{Py_Finalize()} and
-\cfunction{Py_Initialize()}; in that case, the extension's \code{init}
-function \emph{is} called again.
+re-initialized by calling
+\cfunction{Py_Finalize()}\ttindex{Py_Finalize()} and
+\cfunction{Py_Initialize()}\ttindex{Py_Initialize()}; in that case,
+the extension's \code{init\var{module}} function \emph{is} called
+again.
 
 \strong{Bugs and caveats:} Because sub-interpreters (and the main 
 interpreter) are part of the same process, the insulation between them 
 isn't perfect --- for example, using low-level file operations like 
+\withsubitem{(in module os)}{\ttindex{close()}}
 \function{os.close()} they can (accidentally or maliciously) affect each 
 other's open files.  Because of the way extensions are shared between 
 (sub-)interpreters, some extensions may not work properly; this is 
@@ -2600,15 +2866,17 @@ discussion of thread states below.  When the call returns, the current
 thread state is \NULL{}.  All thread states associated with this 
 interpreted are destroyed.  (The global interpreter lock must be held 
 before calling this function and is still held when it returns.)  
-\cfunction{Py_Finalize()} will destroy all sub-interpreters that haven't 
-been explicitly destroyed at that point.
+\cfunction{Py_Finalize()}\ttindex{Py_Finalize()} will destroy all
+sub-interpreters that haven't been explicitly destroyed at that point.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{Py_SetProgramName}{char *name}
-This function should be called before \cfunction{Py_Initialize()} is called 
+This function should be called before
+\cfunction{Py_Initialize()}\ttindex{Py_Initialize()} is called
 for the first time, if it is called at all.  It tells the interpreter 
-the value of the \code{argv[0]} argument to the \cfunction{main()} function 
-of the program.  This is used by \cfunction{Py_GetPath()} and some other 
+the value of the \code{argv[0]} argument to the
+\cfunction{main()}\ttindex{main()} function of the program.  This is
+used by \cfunction{Py_GetPath()}\ttindex{Py_GetPath()} and some other  
 functions below to find the Python run-time libraries relative to the 
 interpreter executable.  The default value is \code{"python"}.  The 
 argument should point to a zero-terminated character string in static 
@@ -2618,7 +2886,8 @@ the contents of this storage.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{char*}{Py_GetProgramName}{}
-Return the program name set with \cfunction{Py_SetProgramName()}, or the 
+Return the program name set with
+\cfunction{Py_SetProgramName()}\ttindex{Py_SetProgramName()}, or the
 default.  The returned string points into static storage; the caller 
 should not modify its value.
 \end{cfuncdesc}
@@ -2678,10 +2947,12 @@ platform.
 \begin{cfuncdesc}{char*}{Py_GetProgramFullPath}{}
 Return the full program name of the Python executable; this is 
 computed as a side-effect of deriving the default module search path 
-from the program name (set by \cfunction{Py_SetProgramName()} above).  The 
-returned string points into static storage; the caller should not 
+from the program name (set by
+\cfunction{Py_SetProgramName()}\ttindex{Py_SetProgramName()} above).
+The returned string points into static storage; the caller should not 
 modify its value.  The value is available to Python code as 
 \code{sys.executable}.
+\withsubitem{(in module sys)}{\ttindex{executable}}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{char*}{Py_GetPath}{}
@@ -2691,11 +2962,12 @@ program name (set by \cfunction{Py_SetProgramName()} above) and some
 environment variables.  The returned string consists of a series of 
 directory names separated by a platform dependent delimiter character.  
 The delimiter character is \character{:} on \UNIX{}, \character{;} on
-DOS/Windows, and \character{\\n} (the \ASCII{} newline character) on
+DOS/Windows, and \character{\e n} (the \ASCII{} newline character) on
 Macintosh.  The returned string points into static storage; the caller
 should not modify its value.  The value is available to Python code 
-as the list \code{sys.path}, which may be modified to change the 
-future search path for loaded modules.
+as the list \code{sys.path}\withsubitem{(in module sys)}{\ttindex{path}},
+which may be modified to change the future search path for loaded
+modules.
 
 % XXX should give the exact rules
 \end{cfuncdesc}
@@ -2713,6 +2985,7 @@ version; the first three characters are the major and minor version
 separated by a period.  The returned string points into static storage; 
 the caller should not modify its value.  The value is available to 
 Python code as the list \code{sys.version}.
+\withsubitem{(in module sys)}{\ttindex{version}}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{const char*}{Py_GetPlatform}{}
@@ -2724,6 +2997,7 @@ for Solaris 2.x, which is also known as SunOS 5.x, the value is
 is \code{"win"}.  The returned string points into static storage; 
 the caller should not modify its value.  The value is available to 
 Python code as \code{sys.platform}.
+\withsubitem{(in module sys)}{\ttindex{platform}}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{const char*}{Py_GetCopyright}{}
@@ -2735,6 +3009,7 @@ for example
 The returned string points into static storage; the caller should not 
 modify its value.  The value is available to Python code as the list 
 \code{sys.copyright}.
+\withsubitem{(in module sys)}{\ttindex{copyright}}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{const char*}{Py_GetCompiler}{}
@@ -2748,6 +3023,7 @@ version, in square brackets, for example:
 The returned string points into static storage; the caller should not 
 modify its value.  The value is available to Python code as part of 
 the variable \code{sys.version}.
+\withsubitem{(in module sys)}{\ttindex{version}}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{const char*}{Py_GetBuildInfo}{}
@@ -2761,16 +3037,32 @@ of the current Python interpreter instance, for example
 The returned string points into static storage; the caller should not 
 modify its value.  The value is available to Python code as part of 
 the variable \code{sys.version}.
+\withsubitem{(in module sys)}{\ttindex{version}}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PySys_SetArgv}{int argc, char **argv}
-% XXX
+Set \code{sys.argv} based on \var{argc} and \var{argv}.  These
+parameters are similar to those passed to the program's
+\cfunction{main()}\ttindex{main()} function with the difference that
+the first entry should refer to the script file to be executed rather
+than the executable hosting the Python interpreter.  If there isn't a
+script that will be run, the first entry in \var{argv} can be an empty
+string.  If this function fails to initialize \code{sys.argv}, a fatal 
+condition is signalled using
+\cfunction{Py_FatalError()}\ttindex{Py_FatalError()}.
+\withsubitem{(in module sys)}{\ttindex{argv}}
+% XXX impl. doesn't seem consistent in allowing 0/NULL for the params; 
+% check w/ Guido.
 \end{cfuncdesc}
 
 % XXX Other PySys thingies (doesn't really belong in this chapter)
 
 \section{Thread State and the Global Interpreter Lock
          \label{threads}}
+
+\index{global interpreter lock}
+\index{interpreter lock}
+\index{lock, interpreter}
 
 The Python interpreter is not fully thread safe.  In order to support
 multi-threaded Python programs, there's a global lock that must be
@@ -2783,8 +3075,9 @@ could end up being incremented only once instead of twice.
 Therefore, the rule exists that only the thread that has acquired the
 global interpreter lock may operate on Python objects or call Python/C
 API functions.  In order to support multi-threaded Python programs,
-the interpreter regularly release and reacquires the lock --- by
+the interpreter regularly releases and reacquires the lock --- by
 default, every ten bytecode instructions (this can be changed with
+\withsubitem{(in module sys)}{\ttindex{setcheckinterval()}}
 \function{sys.setcheckinterval()}).  The lock is also released and
 reacquired around potentially blocking I/O operations like reading or
 writing a file, so that other threads can run while the thread that
@@ -2792,17 +3085,20 @@ requests the I/O is waiting for the I/O operation to complete.
 
 The Python interpreter needs to keep some bookkeeping information
 separate per thread --- for this it uses a data structure called
-\ctype{PyThreadState}.  This is new in Python 1.5; in earlier versions,
-such state was stored in global variables, and switching threads could
-cause problems.  In particular, exception handling is now thread safe,
-when the application uses \function{sys.exc_info()} to access the
-exception last raised in the current thread.
+\ctype{PyThreadState}\ttindex{PyThreadState}.  This is new in Python
+1.5; in earlier versions, such state was stored in global variables,
+and switching threads could cause problems.  In particular, exception
+handling is now thread safe, when the application uses
+\withsubitem{(in module sys)}{\ttindex{exc_info()}}
+\function{sys.exc_info()} to access the exception last raised in the
+current thread.
 
 There's one global variable left, however: the pointer to the current
-\ctype{PyThreadState} structure.  While most thread packages have a way
-to store ``per-thread global data,'' Python's internal platform
-independent thread abstraction doesn't support this yet.  Therefore,
-the current thread state must be manipulated explicitly.
+\ctype{PyThreadState}\ttindex{PyThreadState} structure.  While most
+thread packages have a way to store ``per-thread global data,''
+Python's internal platform independent thread abstraction doesn't
+support this yet.  Therefore, the current thread state must be
+manipulated explicitly.
 
 This is easy enough in most cases.  Most code manipulating the global
 interpreter lock has the following simple structure:
@@ -2823,8 +3119,9 @@ Py_BEGIN_ALLOW_THREADS
 Py_END_ALLOW_THREADS
 \end{verbatim}
 
-The \code{Py_BEGIN_ALLOW_THREADS} macro opens a new block and declares
-a hidden local variable; the \code{Py_END_ALLOW_THREADS} macro closes
+The \code{Py_BEGIN_ALLOW_THREADS}\ttindex{Py_BEGIN_ALLOW_THREADS} macro
+opens a new block and declares a hidden local variable; the
+\code{Py_END_ALLOW_THREADS}\ttindex{Py_END_ALLOW_THREADS} macro closes 
 the block.  Another advantage of using these two macros is that when
 Python is compiled without thread support, they are defined empty,
 thus saving the thread state and lock manipulations.
@@ -2833,39 +3130,39 @@ When thread support is enabled, the block above expands to the
 following code:
 
 \begin{verbatim}
-{
     PyThreadState *_save;
+
     _save = PyEval_SaveThread();
     ...Do some blocking I/O operation...
     PyEval_RestoreThread(_save);
-}
 \end{verbatim}
 
 Using even lower level primitives, we can get roughly the same effect
 as follows:
 
 \begin{verbatim}
-{
     PyThreadState *_save;
+
     _save = PyThreadState_Swap(NULL);
     PyEval_ReleaseLock();
     ...Do some blocking I/O operation...
     PyEval_AcquireLock();
     PyThreadState_Swap(_save);
-}
 \end{verbatim}
 
 There are some subtle differences; in particular,
-\cfunction{PyEval_RestoreThread()} saves and restores the value of the
-global variable \cdata{errno}, since the lock manipulation does not
+\cfunction{PyEval_RestoreThread()}\ttindex{PyEval_RestoreThread()} saves
+and restores the value of the  global variable
+\cdata{errno}\ttindex{errno}, since the lock manipulation does not
 guarantee that \cdata{errno} is left alone.  Also, when thread support
-is disabled, \cfunction{PyEval_SaveThread()} and
+is disabled,
+\cfunction{PyEval_SaveThread()}\ttindex{PyEval_SaveThread()} and
 \cfunction{PyEval_RestoreThread()} don't manipulate the lock; in this
-case, \cfunction{PyEval_ReleaseLock()} and
-\cfunction{PyEval_AcquireLock()} are not available.  This is done so
-that dynamically loaded extensions compiled with thread support
-enabled can be loaded by an interpreter that was compiled with
-disabled thread support.
+case, \cfunction{PyEval_ReleaseLock()}\ttindex{PyEval_ReleaseLock()} and
+\cfunction{PyEval_AcquireLock()}\ttindex{PyEval_AcquireLock()} are not
+available.  This is done so that dynamically loaded extensions
+compiled with thread support enabled can be loaded by an interpreter
+that was compiled with disabled thread support.
 
 The global interpreter lock is used to protect the pointer to the
 current thread state.  When releasing the lock and saving the thread
@@ -2876,7 +3173,7 @@ Reversely, when acquiring the lock and restoring the thread state, the
 lock must be acquired before storing the thread state pointer.
 
 Why am I going on with so much detail about this?  Because when
-threads are created from \C{}, they don't have the global interpreter
+threads are created from C, they don't have the global interpreter
 lock, nor is there a thread state data structure for them.  Such
 threads must bootstrap themselves into existence, by first creating a
 thread state data structure, then acquiring the lock, and finally
@@ -2896,7 +3193,6 @@ you must obtain the thread state and access its \member{interp} member;
 this must be done by a thread that is created by Python or by the main
 thread after Python is initialized).
 
-XXX More?
 
 \begin{ctypedesc}{PyInterpreterState}
 This data structure represents the state shared by a number of
@@ -2920,13 +3216,15 @@ which points to this thread's interpreter state.
 Initialize and acquire the global interpreter lock.  It should be
 called in the main thread before creating a second thread or engaging
 in any other thread operations such as
-\cfunction{PyEval_ReleaseLock()} or
-\code{PyEval_ReleaseThread(\var{tstate})}.  It is not needed before
-calling \cfunction{PyEval_SaveThread()} or
-\cfunction{PyEval_RestoreThread()}.
+\cfunction{PyEval_ReleaseLock()}\ttindex{PyEval_ReleaseLock()} or
+\code{PyEval_ReleaseThread(\var{tstate})}\ttindex{PyEval_ReleaseThread()}.
+It is not needed before calling
+\cfunction{PyEval_SaveThread()}\ttindex{PyEval_SaveThread()} or
+\cfunction{PyEval_RestoreThread()}\ttindex{PyEval_RestoreThread()}.
 
 This is a no-op when called for a second time.  It is safe to call
-this function before calling \cfunction{Py_Initialize()}.
+this function before calling
+\cfunction{Py_Initialize()}\ttindex{Py_Initialize()}.
 
 When only the main thread exists, no lock operations are needed.  This
 is a common situation (most Python programs do not use threads), and
@@ -2997,38 +3295,40 @@ function is available even when thread support is disabled at compile
 time.)
 \end{cfuncdesc}
 
-% XXX These aren't really C types, but the ctypedesc macro is the simplest!
-\begin{ctypedesc}{Py_BEGIN_ALLOW_THREADS}
+The following macros are normally used without a trailing semicolon;
+look for example usage in the Python source distribution.
+
+\begin{csimplemacrodesc}{Py_BEGIN_ALLOW_THREADS}
 This macro expands to
 \samp{\{ PyThreadState *_save; _save = PyEval_SaveThread();}.
 Note that it contains an opening brace; it must be matched with a
 following \code{Py_END_ALLOW_THREADS} macro.  See above for further
 discussion of this macro.  It is a no-op when thread support is
 disabled at compile time.
-\end{ctypedesc}
+\end{csimplemacrodesc}
 
-\begin{ctypedesc}{Py_END_ALLOW_THREADS}
+\begin{csimplemacrodesc}{Py_END_ALLOW_THREADS}
 This macro expands to
 \samp{PyEval_RestoreThread(_save); \}}.
 Note that it contains a closing brace; it must be matched with an
 earlier \code{Py_BEGIN_ALLOW_THREADS} macro.  See above for further
 discussion of this macro.  It is a no-op when thread support is
 disabled at compile time.
-\end{ctypedesc}
+\end{csimplemacrodesc}
 
-\begin{ctypedesc}{Py_BEGIN_BLOCK_THREADS}
+\begin{csimplemacrodesc}{Py_BEGIN_BLOCK_THREADS}
 This macro expands to \samp{PyEval_RestoreThread(_save);} i.e. it
 is equivalent to \code{Py_END_ALLOW_THREADS} without the closing
 brace.  It is a no-op when thread support is disabled at compile
 time.
-\end{ctypedesc}
+\end{csimplemacrodesc}
 
-\begin{ctypedesc}{Py_BEGIN_UNBLOCK_THREADS}
+\begin{csimplemacrodesc}{Py_BEGIN_UNBLOCK_THREADS}
 This macro expands to \samp{_save = PyEval_SaveThread();} i.e. it is
 equivalent to \code{Py_BEGIN_ALLOW_THREADS} without the opening brace
 and variable declaration.  It is a no-op when thread support is
 disabled at compile time.
-\end{ctypedesc}
+\end{csimplemacrodesc}
 
 All of the following functions are only available when thread support
 is enabled at compile time, and must be called only when the
@@ -3081,6 +3381,237 @@ must be held.
 \end{cfuncdesc}
 
 
+\chapter{Memory Management \label{memory}}
+\sectionauthor{Vladimir Marangozov}{Vladimir.Marangozov@inrialpes.fr}
+
+
+\section{Overview \label{memoryOverview}}
+
+Memory management in Python involves a private heap containing all
+Python objects and data structures. The management of this private
+heap is ensured internally by the \emph{Python memory manager}.  The
+Python memory manager has different components which deal with various
+dynamic storage management aspects, like sharing, segmentation,
+preallocation or caching.
+
+At the lowest level, a raw memory allocator ensures that there is
+enough room in the private heap for storing all Python-related data
+by interacting with the memory manager of the operating system. On top
+of the raw memory allocator, several object-specific allocators
+operate on the same heap and implement distinct memory management
+policies adapted to the peculiarities of every object type. For
+example, integer objects are managed differently within the heap than
+strings, tuples or dictionaries because integers imply different
+storage requirements and speed/space tradeoffs. The Python memory
+manager thus delegates some of the work to the object-specific
+allocators, but ensures that the latter operate within the bounds of
+the private heap.
+
+It is important to understand that the management of the Python heap
+is performed by the interpreter itself and that the user has no
+control on it, even if she regularly manipulates object pointers to
+memory blocks inside that heap.  The allocation of heap space for
+Python objects and other internal buffers is performed on demand by
+the Python memory manager through the Python/C API functions listed in
+this document.
+
+To avoid memory corruption, extension writers should never try to
+operate on Python objects with the functions exported by the C
+library: \cfunction{malloc()}\ttindex{malloc()},
+\cfunction{calloc()}\ttindex{calloc()},
+\cfunction{realloc()}\ttindex{realloc()} and
+\cfunction{free()}\ttindex{free()}.  This will result in 
+mixed calls between the C allocator and the Python memory manager
+with fatal consequences, because they implement different algorithms
+and operate on different heaps.  However, one may safely allocate and
+release memory blocks with the C library allocator for individual
+purposes, as shown in the following example:
+
+\begin{verbatim}
+    PyObject *res;
+    char *buf = (char *) malloc(BUFSIZ); /* for I/O */
+
+    if (buf == NULL)
+        return PyErr_NoMemory();
+    ...Do some I/O operation involving buf...
+    res = PyString_FromString(buf);
+    free(buf); /* malloc'ed */
+    return res;
+\end{verbatim}
+
+In this example, the memory request for the I/O buffer is handled by
+the C library allocator. The Python memory manager is involved only
+in the allocation of the string object returned as a result.
+
+In most situations, however, it is recommended to allocate memory from
+the Python heap specifically because the latter is under control of
+the Python memory manager. For example, this is required when the
+interpreter is extended with new object types written in C. Another
+reason for using the Python heap is the desire to \emph{inform} the
+Python memory manager about the memory needs of the extension module.
+Even when the requested memory is used exclusively for internal,
+highly-specific purposes, delegating all memory requests to the Python
+memory manager causes the interpreter to have a more accurate image of
+its memory footprint as a whole. Consequently, under certain
+circumstances, the Python memory manager may or may not trigger
+appropriate actions, like garbage collection, memory compaction or
+other preventive procedures. Note that by using the C library
+allocator as shown in the previous example, the allocated memory for
+the I/O buffer escapes completely the Python memory manager.
+
+
+\section{Memory Interface \label{memoryInterface}}
+
+The following function sets, modeled after the ANSI C standard, are
+available for allocating and releasing memory from the Python heap:
+
+
+\begin{ctypedesc}{ANY*}
+The type used to represent arbitrary blocks of memory.  Values of this 
+type should be cast to the specific type that is needed.
+\end{ctypedesc}
+
+\begin{cfuncdesc}{ANY*}{PyMem_Malloc}{size_t n}
+Allocates \var{n} bytes and returns a pointer of type \ctype{ANY*} to
+the allocated memory, or \NULL{} if the request fails. Requesting zero
+bytes returns a non-\NULL{} pointer.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{ANY*}{PyMem_Realloc}{ANY *p, size_t n}
+Resizes the memory block pointed to by \var{p} to \var{n} bytes. The
+contents will be unchanged to the minimum of the old and the new
+sizes. If \var{p} is \NULL{}, the call is equivalent to
+\cfunction{PyMem_Malloc(\var{n})}; if \var{n} is equal to zero, the memory block
+is resized but is not freed, and the returned pointer is non-\NULL{}.
+Unless \var{p} is \NULL{}, it must have been returned by a previous
+call to \cfunction{PyMem_Malloc()} or \cfunction{PyMem_Realloc()}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyMem_Free}{ANY *p}
+Frees the memory block pointed to by \var{p}, which must have been
+returned by a previous call to \cfunction{PyMem_Malloc()} or
+\cfunction{PyMem_Realloc()}.  Otherwise, or if
+\cfunction{PyMem_Free(p)} has been called before, undefined behaviour
+occurs. If \var{p} is \NULL{}, no operation is performed.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{ANY*}{Py_Malloc}{size_t n}
+Same as \cfunction{PyMem_Malloc()}, but calls
+\cfunction{PyErr_NoMemory()} on failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{ANY*}{Py_Realloc}{ANY *p, size_t n}
+Same as \cfunction{PyMem_Realloc()}, but calls
+\cfunction{PyErr_NoMemory()} on failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{Py_Free}{ANY *p}
+Same as \cfunction{PyMem_Free()}.
+\end{cfuncdesc}
+
+The following type-oriented macros are provided for convenience.  Note 
+that \var{TYPE} refers to any C type.
+
+\begin{cfuncdesc}{\var{TYPE}*}{PyMem_NEW}{TYPE, size_t n}
+Same as \cfunction{PyMem_Malloc()}, but allocates \code{(\var{n} *
+sizeof(\var{TYPE}))} bytes of memory.  Returns a pointer cast to
+\ctype{\var{TYPE}*}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{\var{TYPE}*}{PyMem_RESIZE}{ANY *p, TYPE, size_t n}
+Same as \cfunction{PyMem_Realloc()}, but the memory block is resized
+to \code{(\var{n} * sizeof(\var{TYPE}))} bytes.  Returns a pointer
+cast to \ctype{\var{TYPE}*}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyMem_DEL}{ANY *p}
+Same as \cfunction{PyMem_Free()}.
+\end{cfuncdesc}
+
+
+\section{Examples \label{memoryExamples}}
+
+Here is the example from section \ref{memoryOverview}, rewritten so
+that the I/O buffer is allocated from the Python heap by using the
+first function set:
+
+\begin{verbatim}
+    PyObject *res;
+    char *buf = (char *) PyMem_Malloc(BUFSIZ); /* for I/O */
+
+    if (buf == NULL)
+        return PyErr_NoMemory();
+    /* ...Do some I/O operation involving buf... */
+    res = PyString_FromString(buf);
+    PyMem_Free(buf); /* allocated with PyMem_Malloc */
+    return res;
+\end{verbatim}
+
+With the second function set, the need to call
+\cfunction{PyErr_NoMemory()} is obviated:
+
+\begin{verbatim}
+    PyObject *res;
+    char *buf = (char *) Py_Malloc(BUFSIZ); /* for I/O */
+
+    if (buf == NULL)
+        return NULL;
+    /* ...Do some I/O operation involving buf... */
+    res = PyString_FromString(buf);
+    Py_Free(buf); /* allocated with Py_Malloc */
+    return res;
+\end{verbatim}
+
+The same code using the macro set:
+
+\begin{verbatim}
+    PyObject *res;
+    char *buf = PyMem_NEW(char, BUFSIZ); /* for I/O */
+
+    if (buf == NULL)
+        return PyErr_NoMemory();
+    /* ...Do some I/O operation involving buf... */
+    res = PyString_FromString(buf);
+    PyMem_DEL(buf); /* allocated with PyMem_NEW */
+    return res;
+\end{verbatim}
+
+Note that in the three examples above, the buffer is always
+manipulated via functions/macros belonging to the same set. Indeed, it
+is required to use the same memory API family for a given
+memory block, so that the risk of mixing different allocators is
+reduced to a minimum. The following code sequence contains two errors,
+one of which is labeled as \emph{fatal} because it mixes two different
+allocators operating on different heaps.
+
+\begin{verbatim}
+char *buf1 = PyMem_NEW(char, BUFSIZ);
+char *buf2 = (char *) malloc(BUFSIZ);
+char *buf3 = (char *) PyMem_Malloc(BUFSIZ);
+...
+PyMem_DEL(buf3);  /* Wrong -- should be PyMem_Free() */
+free(buf2);       /* Right -- allocated via malloc() */
+free(buf1);       /* Fatal -- should be PyMem_DEL()  */
+\end{verbatim}
+
+In addition to the functions aimed at handling raw memory blocks from
+the Python heap, objects in Python are allocated and released with
+\cfunction{_PyObject_New()}\ttindex{_PyObject_New()} and
+\cfunction{_PyObject_NewVar()}\ttindex{_PyObject_NewVar()}, or with
+their corresponding macros
+\cfunction{PyObject_NEW()}\ttindex{PyObject_NEW()} and
+\cfunction{PyObject_NEW_VAR()}\ttindex{PyObject_NEW_VAR()}.
+
+% XXX use this for Python 1.6:
+% \cfunction{_PyObject_New()}, \cfunction{_PyObject_NewVar()},
+% \cfunction{_PyObject_Del()}, or with their corresponding macros
+% \cfunction{PyObject_NEW()}, \cfunction{PyObject_NEW_VAR()},
+% \cfunction{PyObject_DEL()}.
+
+% These will be explained in the next chapter on defining and
+% implementing new object types in C.
+
+
 \chapter{Defining New Object Types \label{newTypes}}
 
 \begin{cfuncdesc}{PyObject*}{_PyObject_New}{PyTypeObject *type}
@@ -3089,10 +3620,11 @@ must be held.
 \begin{cfuncdesc}{PyObject*}{_PyObject_NewVar}{PyTypeObject *type, int size}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{TYPE}{_PyObject_NEW}{TYPE, PyTypeObject *}
+\begin{cfuncdesc}{\var{TYPE}}{_PyObject_NEW}{TYPE, PyTypeObject *type}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{TYPE}{_PyObject_NEW_VAR}{TYPE, PyTypeObject *, int size}
+\begin{cfuncdesc}{\var{TYPE}}{_PyObject_NEW_VAR}{TYPE, PyTypeObject *type,
+                                                 int size}
 \end{cfuncdesc}
 
 Py_InitModule (!!!)
@@ -3101,6 +3633,15 @@ PyArg_ParseTupleAndKeywords, PyArg_ParseTuple, PyArg_Parse
 
 Py_BuildValue
 
+DL_IMPORT
+
+Py*_Check
+
+_Py_NoneStruct
+
+
+\section{Common Object Structures \label{common-structs}}
+
 PyObject, PyVarObject
 
 PyObject_HEAD, PyObject_HEAD_INIT, PyObject_VAR_HEAD
@@ -3108,12 +3649,117 @@ PyObject_HEAD, PyObject_HEAD_INIT, PyObject_VAR_HEAD
 Typedefs:
 unaryfunc, binaryfunc, ternaryfunc, inquiry, coercion, intargfunc,
 intintargfunc, intobjargproc, intintobjargproc, objobjargproc,
-getreadbufferproc, getsegcountproc, getcharbufferproc,
 destructor, printfunc, getattrfunc, getattrofunc, setattrfunc,
 setattrofunc, cmpfunc, reprfunc, hashfunc
 
-\begin{ctypedesc}{int (*getwritebufferproc) (PyObject *self, int segment,
-                                             void **ptrptr)}
+
+\section{Mapping Object Structures \label{mapping-structs}}
+
+\begin{ctypedesc}{PyMappingMethods}
+Structure used to hold pointers to the functions used to implement the 
+mapping protocol for an extension type.
+\end{ctypedesc}
+
+
+\section{Number Object Structures \label{number-structs}}
+
+\begin{ctypedesc}{PyNumberMethods}
+Structure used to hold pointers to the functions an extension type
+uses to implement the number protocol.
+\end{ctypedesc}
+
+
+\section{Sequence Object Structures \label{sequence-structs}}
+
+\begin{ctypedesc}{PySequenceMethods}
+Structure used to hold pointers to the functions which an object uses
+to implement the sequence protocol.
+\end{ctypedesc}
+
+
+\section{Buffer Object Structures \label{buffer-structs}}
+\sectionauthor{Greg J. Stein}{greg@lyra.org}
+
+The buffer interface exports a model where an object can expose its
+internal data as a set of chunks of data, where each chunk is
+specified as a pointer/length pair.  These chunks are called
+\dfn{segments} and are presumed to be non-contiguous in memory.
+
+If an object does not export the buffer interface, then its
+\member{tp_as_buffer} member in the \ctype{PyTypeObject} structure
+should be \NULL{}.  Otherwise, the \member{tp_as_buffer} will point to
+a \ctype{PyBufferProcs} structure.
+
+\strong{Note:} It is very important that your
+\ctype{PyTypeObject} structure uses \code{Py_TPFLAGS_DEFAULT} for the
+value of the \member{tp_flags} member rather than \code{0}.  This
+tells the Python runtime that your \ctype{PyBufferProcs} structure
+contains the \member{bf_getcharbuffer} slot. Older versions of Python
+did not have this member, so a new Python interpreter using an old
+extension needs to be able to test for its presence before using it.
+
+\begin{ctypedesc}{PyBufferProcs}
+Structure used to hold the function pointers which define an
+implementation of the buffer protocol.
+
+The first slot is \member{bf_getreadbuffer}, of type
+\ctype{getreadbufferproc}.  If this slot is \NULL{}, then the object
+does not support reading from the internal data.  This is
+non-sensical, so implementors should fill this in, but callers should
+test that the slot contains a non-\NULL{} value.
+
+The next slot is \member{bf_getwritebuffer} having type
+\ctype{getwritebufferproc}. This slot may be \NULL{} if the object
+does not allow writing into its returned buffers.
+
+The third slot is \member{bf_getsegcount}, with type
+\ctype{getsegcountproc}.  This slot must not be \NULL{} and is used to 
+inform the caller how many segments the object contains.  Simple
+objects such as \ctype{PyString_Type} and
+\ctype{PyBuffer_Type} objects contain a single segment.
+
+The last slot is \member{bf_getcharbuffer}, of type
+\ctype{getcharbufferproc}.  This slot will only be present if the
+\code{Py_TPFLAGS_HAVE_GETCHARBUFFER} flag is present in the
+\member{tp_flags} field of the object's \ctype{PyTypeObject}.  Before using
+this slot, the caller should test whether it is present by using the
+\cfunction{PyType_HasFeature()}\ttindex{PyType_HasFeature()} function.
+If present, it may be \NULL, indicating that the object's contents
+cannot be used as \emph{8-bit characters}.
+The slot function may also raise an error if the object's contents
+cannot be interpreted as 8-bit characters.  For example, if the object
+is an array which is configured to hold floating point values, an
+exception may be raised if a caller attempts to use
+\member{bf_getcharbuffer} to fetch a sequence of 8-bit characters.
+This notion of exporting the internal buffers as ``text'' is used to
+distinguish between objects that are binary in nature, and those which
+have character-based content.
+
+\strong{Note:} The current policy seems to state that these characters
+may be multi-byte characters. This implies that a buffer size of
+\var{N} does not mean there are \var{N} characters present.
+\end{ctypedesc}
+
+\begin{datadesc}{Py_TPFLAGS_HAVE_GETCHARBUFFER}
+Flag bit set in the type structure to indicate that the
+\member{bf_getcharbuffer} slot is known.  This being set does not
+indicate that the object supports the buffer interface or that the
+\member{bf_getcharbuffer} slot is non-\NULL.
+\end{datadesc}
+
+\begin{ctypedesc}[getreadbufferproc]{int (*getreadbufferproc)
+                            (PyObject *self, int segment, void **ptrptr)}
+Return a pointer to a readable segment of the buffer.  This function
+is allowed to raise an exception, in which case it must return
+\code{-1}.  The \var{segment} which is passed must be zero or
+positive, and strictly less than the number of segments returned by
+the \member{bf_getsegcount} slot function.  On success, returns
+\code{0} and sets \code{*\var{ptrptr}} to a pointer to the buffer
+memory.
+\end{ctypedesc}
+
+\begin{ctypedesc}[getwritebufferproc]{int (*getwritebufferproc)
+                            (PyObject *self, int segment, void **ptrptr)}
 Return a pointer to a writable memory buffer in \code{*\var{ptrptr}};
 the memory buffer must correspond to buffer segment \var{segment}.
 Must return \code{-1} and set an exception on error.
@@ -3121,30 +3767,27 @@ Must return \code{-1} and set an exception on error.
 read-only buffers, and \exception{SystemError} should be raised when
 \var{segment} specifies a segment that doesn't exist.
 % Why doesn't it raise ValueError for this one?
+% GJS: because you shouldn't be calling it with an invalid
+%      segment. That indicates a blatant programming error in the C
+%      code.
 \end{ctypedesc}
 
-PyNumberMethods
+\begin{ctypedesc}[getsegcountproc]{int (*getsegcountproc)
+                            (PyObject *self, int *lenp)}
+Return the number of memory segments which comprise the buffer.  If
+\var{lenp} is not \NULL, the implementation must report the sum of the 
+sizes (in bytes) of all segments in \code{*\var{lenp}}.
+The function cannot fail.
+\end{ctypedesc}
 
-PySequenceMethods
-
-PyMappingMethods
-
-PyBufferProcs
-
-PyTypeObject
-
-DL_IMPORT
-
-PyType_Type
-
-Py*_Check
-
-Py_None, _Py_NoneStruct
+\begin{ctypedesc}[getcharbufferproc]{int (*getcharbufferproc)
+                            (PyObject *self, int segment, const char **ptrptr)}
+\end{ctypedesc}
 
 
-\chapter{Debugging \label{debugging}}
-
-XXX Explain Py_DEBUG, Py_TRACE_REFS, Py_REF_DEBUG.
+% \chapter{Debugging \label{debugging}}
+%
+% XXX Explain Py_DEBUG, Py_TRACE_REFS, Py_REF_DEBUG.
 
 
 \input{api.ind}			% Index -- must be last
