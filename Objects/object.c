@@ -17,6 +17,11 @@ int Py_DivisionWarningFlag;
    These are used by the individual routines for object creation.
    Do not call them otherwise, they do not initialize the object! */
 
+#ifdef Py_TRACE_REFS
+/* Head of doubly-linked list of all objects. */
+static PyObject refchain = {&refchain, &refchain};
+#endif
+
 #ifdef COUNT_ALLOCS
 static PyTypeObject *type_list;
 extern int tuple_zero_allocs, fast_tuple_allocs;
@@ -84,6 +89,16 @@ inc_count(PyTypeObject *tp)
 		 */
 		Py_INCREF(tp);
 		type_list = tp;
+#ifdef Py_REF_DEBUG
+		/* Also insert in the doubly-linked list of all objects. */
+		if (tp->_ob_next == NULL) {
+			PyObject *op = (PyObject *)tp;
+			op->_ob_next = refchain._ob_next;
+			op->_ob_prev = &refchain;
+			refchain._ob_next->_ob_prev = op;
+			refchain._ob_next = op;
+		}
+#endif
 	}
 	tp->tp_allocs++;
 	if (tp->tp_allocs - tp->tp_frees > tp->tp_maxalloc)
@@ -1935,8 +1950,6 @@ _Py_ReadyTypes(void)
 
 
 #ifdef Py_TRACE_REFS
-
-static PyObject refchain = {&refchain, &refchain};
 
 void
 _Py_NewReference(PyObject *op)
