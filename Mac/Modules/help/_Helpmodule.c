@@ -131,6 +131,19 @@ static PyObject *Help_HMSetDialogHelpFromBalloonRsrc(PyObject *_self, PyObject *
 	return _res;
 }
 
+static PyObject *Help_HMHideTag(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = HMHideTag();
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef Help_methods[] = {
 	{"HMGetHelpMenu", (PyCFunction)Help_HMGetHelpMenu, 1,
 	 PyDoc_STR("() -> (MenuRef outHelpMenu, MenuItemIndex outFirstCustomItemIndex)")},
@@ -146,6 +159,8 @@ static PyMethodDef Help_methods[] = {
 	 PyDoc_STR("(MenuRef inMenu, SInt16 inHmnuRsrcID) -> None")},
 	{"HMSetDialogHelpFromBalloonRsrc", (PyCFunction)Help_HMSetDialogHelpFromBalloonRsrc, 1,
 	 PyDoc_STR("(DialogPtr inDialog, SInt16 inHdlgRsrcID, SInt16 inItemStart) -> None")},
+	{"HMHideTag", (PyCFunction)Help_HMHideTag, 1,
+	 PyDoc_STR("() -> None")},
 	{NULL, NULL, 0}
 };
 
