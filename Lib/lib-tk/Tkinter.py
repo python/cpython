@@ -1599,8 +1599,15 @@ class Tk(Misc, Wm):
             raise RuntimeError, \
             "Tk 4.0 or higher is required; found Tk %s" \
             % str(TkVersion)
+        # Create and register the tkerror and exit commands
+        # We need to inline parts of _register here, _ register
+        # would register differently-named commands.
+        if self._tclCommands is None:
+            self._tclCommands = []
         self.tk.createcommand('tkerror', _tkerror)
         self.tk.createcommand('exit', _exit)
+        self._tclCommands.append('tkerror')
+        self._tclCommands.append('exit')
         if _support_default_root and not _default_root:
             _default_root = self
         self.protocol("WM_DELETE_WINDOW", self.destroy)

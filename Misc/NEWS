@@ -59,6 +59,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1121234: Properly cleanup _exit and tkerror commands.
+
 - Patch #1049151: xdrlib now unpacks booleans as True or False.
 
 - Fixed bug in a NameError bug in cookielib.  Patch #1116583.
