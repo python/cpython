@@ -22,8 +22,10 @@
  * 2000-09-21 fl  don't use the buffer interface for unicode strings
  * 2000-10-03 fl  fixed assert_not primitive; support keyword arguments
  * 2000-10-24 fl  really fixed assert_not; reset groups in findall
+ * 2000-12-21 fl  fixed memory leak in groupdict
+ * 2001-01-02 fl  properly reset pointer after failed assertion in MIN_UNTIL
  *
- * Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
+ * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
  * This version of the SRE library can be redistributed under CNRI's
  * Python 1.6 license.  For any other use, please contact Secret Labs
@@ -355,6 +357,7 @@ SRE_AT(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
     switch (at) {
 
     case SRE_AT_BEGINNING:
+    case SRE_AT_BEGINNING_STRING:
         return ((void*) ptr == state->beginning);
 
     case SRE_AT_BEGINNING_LINE:
@@ -369,6 +372,9 @@ SRE_AT(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
     case SRE_AT_END_LINE:
         return ((void*) ptr == state->end ||
                 SRE_IS_LINEBREAK((int) ptr[0]));
+
+    case SRE_AT_END_STRING:
+        return ((void*) ptr == state->end);
 
     case SRE_AT_BOUNDARY:
         if (state->beginning == state->end)
@@ -826,7 +832,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
             /* this operator only works if the repeated item is
                exactly one character wide, and we're not already
                collecting backtracking points.  for other cases,
-               use the MAX_REPEAT operator instead */
+               use the MAX_REPEAT operator */
 
             /* <REPEAT_ONE> <skip> <1=min> <2=max> item <SUCCESS> tail */
 
@@ -900,7 +906,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
 
         case SRE_OP_REPEAT:
             /* create repeat context.  all the hard work is done
-               by the UNTIL operator */
+               by the UNTIL operator (MAX_UNTIL, MIN_UNTIL) */
             /* <REPEAT> <skip> <1=min> <2=max> item <UNTIL> tail */
             TRACE(("|%p|%p|REPEAT %d %d\n", pattern, ptr,
                    pattern[1], pattern[2]));
@@ -974,6 +980,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
             if (i)
                 return i;
             state->repeat = rp;
+            state->ptr = ptr;
             return 0;
 
         case SRE_OP_MIN_UNTIL:
@@ -986,7 +993,8 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
 
             count = rp->count + 1;
 
-            TRACE(("|%p|%p|MIN_UNTIL %d\n", pattern, ptr, count));
+            TRACE(("|%p|%p|MIN_UNTIL %d %p\n", pattern, ptr, count,
+                   rp->pattern));
 
             state->ptr = ptr;
 
@@ -1009,6 +1017,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 /* free(rp); */
                 return i;
             }
+            state->ptr = ptr;
             state->repeat = rp;
 
             if (count >= rp->pattern[2] && rp->pattern[2] != 65535)
@@ -1020,6 +1029,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
             if (i)
                 return i;
             rp->count = count - 1;
+            state->ptr = ptr;
             return 0;
 
         default:
@@ -1965,7 +1975,7 @@ match_groupdict(MatchObject* self, PyObject* args, PyObject* kw)
 
     PyObject* def = Py_None;
     static char* kwlist[] = { "default", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "|O:groups", kwlist, &def))
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|O:groupdict", kwlist, &def))
         return NULL;
 
     result = PyDict_New();
@@ -1973,35 +1983,35 @@ match_groupdict(MatchObject* self, PyObject* args, PyObject* kw)
         return result;
 
     keys = PyMapping_Keys(self->pattern->groupindex);
-    if (!keys) {
-        Py_DECREF(result);
-        return NULL;
-    }
+    if (!keys)
+        goto failed;
 
     for (index = 0; index < PyList_GET_SIZE(keys); index++) {
+        int status;
         PyObject* key;
-        PyObject* item;
+        PyObject* value;
         key = PyList_GET_ITEM(keys, index);
-        if (!key) {
-            Py_DECREF(keys);
-            Py_DECREF(result);
-            return NULL;
-        }
-        item = match_getslice(self, key, def);
-        if (!item) {
+        if (!key)
+            goto failed;
+        value = match_getslice(self, key, def);
+        if (!value) {
             Py_DECREF(key);
-            Py_DECREF(keys);
-            Py_DECREF(result);
-            return NULL;
+            goto failed;
         }
-        /* FIXME: <fl> this can fail, right? */
-        PyDict_SetItem(result, key, item);
-	Py_DECREF(item);
+        status = PyDict_SetItem(result, key, value);
+        Py_DECREF(value);
+        if (status < 0)
+            goto failed;
     }
 
     Py_DECREF(keys);
 
     return result;
+
+failed:
+    Py_DECREF(keys);
+    Py_DECREF(result);
+    return NULL;
 }
 
 static PyObject*

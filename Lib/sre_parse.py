@@ -3,7 +3,7 @@
 #
 # convert re-style regular expression to sre pattern
 #
-# Copyright (c) 1998-2000 by Secret Labs AB.  All rights reserved.
+# Copyright (c) 1998-2001 by Secret Labs AB.  All rights reserved.
 #
 # See the sre.py file for information on usage and redistribution.
 #
@@ -34,7 +34,7 @@ ESCAPES = {
 }
 
 CATEGORIES = {
-    r"\A": (AT, AT_BEGINNING), # start of string
+    r"\A": (AT, AT_BEGINNING_STRING), # start of string
     r"\b": (AT, AT_BOUNDARY),
     r"\B": (AT, AT_NON_BOUNDARY),
     r"\d": (IN, [(CATEGORY, CATEGORY_DIGIT)]),
@@ -43,7 +43,7 @@ CATEGORIES = {
     r"\S": (IN, [(CATEGORY, CATEGORY_NOT_SPACE)]),
     r"\w": (IN, [(CATEGORY, CATEGORY_WORD)]),
     r"\W": (IN, [(CATEGORY, CATEGORY_NOT_WORD)]),
-    r"\Z": (AT, AT_END), # end of string
+    r"\Z": (AT, AT_END_STRING), # end of string
 }
 
 FLAGS = {
@@ -421,13 +421,13 @@ def _parse(source, state):
                         code1 = code1[1][0]
                     set.append(code1)
 
-            # FIXME: <fl> move set optimization to compiler!
+            # XXX: <fl> should move set optimization to compiler!
             if len(set)==1 and set[0][0] is LITERAL:
                 subpattern.append(set[0]) # optimization
             elif len(set)==2 and set[0][0] is NEGATE and set[1][0] is LITERAL:
                 subpattern.append((NOT_LITERAL, set[1][1])) # optimization
             else:
-                # FIXME: <fl> add charmap optimization
+                # XXX: <fl> should add charmap optimization here
                 subpattern.append((IN, set))
 
         elif this and this[0] in REPEAT_CHARS:
@@ -457,7 +457,7 @@ def _parse(source, state):
                     min = int(lo)
                 if hi:
                     max = int(hi)
-                # FIXME: <fl> check that hi >= lo!
+                # XXX: <fl> check that hi >= lo ???
             else:
                 raise error, "not supported"
             # figure out which item to repeat
@@ -601,7 +601,8 @@ def parse(str, flags=0, pattern=None):
     elif tail:
         raise error, "bogus characters at end of regular expression"
 
-    # p.dump()
+    if flags & SRE_FLAG_DEBUG:
+        p.dump()
 
     if not (flags & SRE_FLAG_VERBOSE) and p.pattern.flags & SRE_FLAG_VERBOSE:
         # the VERBOSE flag was switched on inside the pattern.  to be
@@ -672,8 +673,7 @@ def parse_template(source, pattern):
     return p
 
 def expand_template(template, match):
-    # FIXME: <fl> this is sooooo slow.  drop in the slicelist
-    # code instead
+    # XXX: <fl> this is sooooo slow.  drop in the slicelist code instead
     p = []
     a = p.append
     sep = match.string[:0]
