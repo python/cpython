@@ -25,12 +25,29 @@ from macsupport import *
 MenuHandle = OpaqueByValueType(OBJECTTYPE, OBJECTPREFIX)
 MenuRef = MenuHandle
 Handle = OpaqueByValueType("Handle", "ResObj")
-
+MenuBarHandle = OpaqueByValueType("MenuBarHandle", "ResObj")
+MenuID = Type("MenuID", "h")
+MenuItemIndex = Type("MenuItemIndex", "h")
+MenuCommand = Type("MenuCommand", "l")
+MenuAttributes = Type("MenuAttributes", "l")
+MenuItemAttributes = Type("MenuItemAttributes", "l")
 unsigned_char = Type('unsigned char', 'b')
+FMFontFamily = Type("FMFontFamily", "h")
+FMFontStyle = Type("FMFontStyle", "h")
 
 includestuff = includestuff + """
 #include <Devices.h> /* Defines OpenDeskAcc in universal headers */
 #include <%s>""" % MACHEADERFILE + """
+
+#if !ACCESSOR_CALLS_ARE_FUNCTIONS
+#define GetMenuID(menu) ((*(menu))->menuID)
+#define GetMenuWidth(menu) ((*(menu))->menuWidth)
+#define GetMenuHeight(menu) ((*(menu))->menuHeight)
+
+#define SetMenuID(menu, id) ((*(menu))->menuID = (id))
+#define SetMenuWidth(menu, width) ((*(menu))->menuWidth = (width))
+#define SetMenuHeight(menu, height) ((*(menu))->menuHeight = (height))
+#endif
 
 #define as_Menu(h) ((MenuHandle)h)
 #define as_Resource(h) ((Handle)h)

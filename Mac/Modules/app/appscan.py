@@ -43,6 +43,12 @@ class MyScanner(Scanner):
 			"GetThemeFont",		# Funny stringbuffer in/out parameter, I think...
 			]
 
+	def makegreylist(self):
+		return [
+			('#if TARGET_API_MAC_CARBON', [
+				'GetThemeMetric',
+			])]
+			
 	def makeblacklisttypes(self):
 		return [
 			"MenuTitleDrawingUPP",

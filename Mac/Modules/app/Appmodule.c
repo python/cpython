@@ -1111,6 +1111,28 @@ static PyObject *App_GetThemeTextColor(_self, _args)
 	return _res;
 }
 
+#if TARGET_API_MAC_CARBON
+
+static PyObject *App_GetThemeMetric(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	ThemeMetric inMetric;
+	SInt32 outMetric;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &inMetric))
+		return NULL;
+	_err = GetThemeMetric(inMetric,
+	                      &outMetric);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     outMetric);
+	return _res;
+}
+#endif
+
 static PyMethodDef App_methods[] = {
 	{"RegisterAppearanceClient", (PyCFunction)App_RegisterAppearanceClient, 1,
 	 "() -> None"},
@@ -1218,6 +1240,11 @@ static PyMethodDef App_methods[] = {
 	 "(ThemeBrush inBrush, SInt16 inDepth, Boolean inColorDev) -> (RGBColor outColor)"},
 	{"GetThemeTextColor", (PyCFunction)App_GetThemeTextColor, 1,
 	 "(ThemeTextColor inColor, SInt16 inDepth, Boolean inColorDev) -> (RGBColor outColor)"},
+
+#if TARGET_API_MAC_CARBON
+	{"GetThemeMetric", (PyCFunction)App_GetThemeMetric, 1,
+	 "(ThemeMetric inMetric) -> (SInt32 outMetric)"},
+#endif
 	{NULL, NULL, 0}
 };
 
@@ -1237,7 +1264,7 @@ void initApp()
 	App_Error = PyMac_GetOSErrException();
 	if (App_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", App_Error) != 0)
-		Py_FatalError("can't initialize App.Error");
+		return;
 }
 
 /* ========================= End module App ========================= */

@@ -831,7 +831,7 @@ void initCm()
 	Cm_Error = PyMac_GetOSErrException();
 	if (Cm_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Cm_Error) != 0)
-		Py_FatalError("can't initialize Cm.Error");
+		return;
 	ComponentInstance_Type.ob_type = &PyType_Type;
 	Py_INCREF(&ComponentInstance_Type);
 	if (PyDict_SetItemString(d, "ComponentInstanceType", (PyObject *)&ComponentInstance_Type) != 0)

@@ -9,6 +9,9 @@
 #include "pymactoolbox.h"
 
 #include <Controls.h>
+#ifndef kControlCheckBoxUncheckedValue
+#include <ControlDefinitions.h>
+#endif
 
 staticforward PyObject *CtlObj_WhichControl(ControlHandle);
 
@@ -45,6 +48,26 @@ ControlFontStyle_Convert(v, itself)
 		&itself->just, QdRGB_Convert, &itself->foreColor,
 		QdRGB_Convert, &itself->backColor);
 }
+
+/*
+** Parse/generate ControlID records
+*/
+static PyObject *
+PyControlID_New(itself)
+	ControlID *itself;
+{
+
+	return Py_BuildValue("O&l", PyMac_BuildOSType, itself->signature, itself->id);
+}
+
+static int
+PyControlID_Convert(v, itself)
+	PyObject *v;
+	ControlID *itself;
+{
+	return PyArg_ParseTuple(v, "O&l", PyMac_GetOSType, &itself->signature, &itself->id);
+}
+
 
 /* TrackControl and HandleControlClick callback support */
 static PyObject *tracker;
@@ -378,6 +401,55 @@ static PyObject *CtlObj_TestControl(_self, _args)
 	return _res;
 }
 
+#if TARGET_API_MAC_CARBON
+
+static PyObject *CtlObj_HandleControlContextualMenuClick(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Point inWhere;
+	Boolean menuDisplayed;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetPoint, &inWhere))
+		return NULL;
+	_err = HandleControlContextualMenuClick(_self->ob_itself,
+	                                        inWhere,
+	                                        &menuDisplayed);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("b",
+	                     menuDisplayed);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *CtlObj_GetControlClickActivation(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Point inWhere;
+	EventModifiers inModifiers;
+	ClickActivationResult outResult;
+	if (!PyArg_ParseTuple(_args, "O&H",
+	                      PyMac_GetPoint, &inWhere,
+	                      &inModifiers))
+		return NULL;
+	_err = GetControlClickActivation(_self->ob_itself,
+	                                 inWhere,
+	                                 inModifiers,
+	                                 &outResult);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     outResult);
+	return _res;
+}
+#endif
+
 static PyObject *CtlObj_HandleControlKey(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
@@ -386,8 +458,8 @@ static PyObject *CtlObj_HandleControlKey(_self, _args)
 	SInt16 _rv;
 	SInt16 inKeyCode;
 	SInt16 inCharCode;
-	SInt16 inModifiers;
-	if (!PyArg_ParseTuple(_args, "hhh",
+	EventModifiers inModifiers;
+	if (!PyArg_ParseTuple(_args, "hhH",
 	                      &inKeyCode,
 	                      &inCharCode,
 	                      &inModifiers))
@@ -400,6 +472,32 @@ static PyObject *CtlObj_HandleControlKey(_self, _args)
 	                     _rv);
 	return _res;
 }
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *CtlObj_HandleControlSetCursor(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Point localPoint;
+	EventModifiers modifiers;
+	Boolean cursorWasSet;
+	if (!PyArg_ParseTuple(_args, "O&H",
+	                      PyMac_GetPoint, &localPoint,
+	                      &modifiers))
+		return NULL;
+	_err = HandleControlSetCursor(_self->ob_itself,
+	                              localPoint,
+	                              modifiers,
+	                              &cursorWasSet);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("b",
+	                     cursorWasSet);
+	return _res;
+}
+#endif
 
 static PyObject *CtlObj_MoveControl(_self, _args)
 	ControlObject *_self;
@@ -694,6 +792,47 @@ static PyObject *CtlObj_IsValidControlHandle(_self, _args)
 	return _res;
 }
 
+#if TARGET_API_MAC_CARBON
+
+static PyObject *CtlObj_SetControlID(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	ControlID inID;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyControlID_Convert, &inID))
+		return NULL;
+	_err = SetControlID(_self->ob_itself,
+	                    &inID);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *CtlObj_GetControlID(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	ControlID outID;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = GetControlID(_self->ob_itself,
+	                    &outID);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     PyControlID_New, &outID);
+	return _res;
+}
+#endif
+
 static PyObject *CtlObj_RemoveControlProperty(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
@@ -714,6 +853,62 @@ static PyObject *CtlObj_RemoveControlProperty(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *CtlObj_GetControlPropertyAttributes(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	OSType propertyCreator;
+	OSType propertyTag;
+	UInt32 attributes;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetOSType, &propertyCreator,
+	                      PyMac_GetOSType, &propertyTag))
+		return NULL;
+	_err = GetControlPropertyAttributes(_self->ob_itself,
+	                                    propertyCreator,
+	                                    propertyTag,
+	                                    &attributes);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     attributes);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *CtlObj_ChangeControlPropertyAttributes(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	OSType propertyCreator;
+	OSType propertyTag;
+	UInt32 attributesToSet;
+	UInt32 attributesToClear;
+	if (!PyArg_ParseTuple(_args, "O&O&ll",
+	                      PyMac_GetOSType, &propertyCreator,
+	                      PyMac_GetOSType, &propertyTag,
+	                      &attributesToSet,
+	                      &attributesToClear))
+		return NULL;
+	_err = ChangeControlPropertyAttributes(_self->ob_itself,
+	                                       propertyCreator,
+	                                       propertyTag,
+	                                       attributesToSet,
+	                                       attributesToClear);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
 
 static PyObject *CtlObj_GetControlRegion(_self, _args)
 	ControlObject *_self;
@@ -813,174 +1008,6 @@ static PyObject *CtlObj_SetControlColor(_self, _args)
 		return NULL;
 	SetControlColor(_self->ob_itself,
 	                newColorTable);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *CtlObj_GetBevelButtonMenuValue(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	SInt16 outValue;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_err = GetBevelButtonMenuValue(_self->ob_itself,
-	                               &outValue);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("h",
-	                     outValue);
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *CtlObj_SetBevelButtonMenuValue(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	SInt16 inValue;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &inValue))
-		return NULL;
-	_err = SetBevelButtonMenuValue(_self->ob_itself,
-	                               inValue);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *CtlObj_GetBevelButtonMenuHandle(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	MenuHandle outHandle;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_err = GetBevelButtonMenuHandle(_self->ob_itself,
-	                                &outHandle);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&",
-	                     MenuObj_New, outHandle);
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *CtlObj_SetBevelButtonTransform(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	IconTransformType transform;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &transform))
-		return NULL;
-	_err = SetBevelButtonTransform(_self->ob_itself,
-	                               transform);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *CtlObj_SetImageWellTransform(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	IconTransformType inTransform;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &inTransform))
-		return NULL;
-	_err = SetImageWellTransform(_self->ob_itself,
-	                             inTransform);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *CtlObj_GetTabContentRect(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	Rect outContentRect;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_err = GetTabContentRect(_self->ob_itself,
-	                         &outContentRect);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&",
-	                     PyMac_BuildRect, &outContentRect);
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *CtlObj_SetTabEnabled(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	SInt16 inTabToHilite;
-	Boolean inEnabled;
-	if (!PyArg_ParseTuple(_args, "hb",
-	                      &inTabToHilite,
-	                      &inEnabled))
-		return NULL;
-	_err = SetTabEnabled(_self->ob_itself,
-	                     inTabToHilite,
-	                     inEnabled);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *CtlObj_SetDisclosureTriangleLastValue(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	SInt16 inValue;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &inValue))
-		return NULL;
-	_err = SetDisclosureTriangleLastValue(_self->ob_itself,
-	                                      inValue);
-	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -1152,6 +1179,389 @@ static PyObject *CtlObj_GetControlDataSize(_self, _args)
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("l",
 	                     outMaxSize);
+	return _res;
+}
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *CtlObj_SetControlDragTrackingEnabled(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Boolean tracks;
+	if (!PyArg_ParseTuple(_args, "b",
+	                      &tracks))
+		return NULL;
+	_err = SetControlDragTrackingEnabled(_self->ob_itself,
+	                                     tracks);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *CtlObj_IsControlDragTrackingEnabled(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Boolean tracks;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = IsControlDragTrackingEnabled(_self->ob_itself,
+	                                    &tracks);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("b",
+	                     tracks);
+	return _res;
+}
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+
+static PyObject *CtlObj_GetControlBounds(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect _rv;
+	Rect bounds;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetControlBounds(_self->ob_itself,
+	                       &bounds);
+	_res = Py_BuildValue("O&O&",
+	                     PyMac_BuildRect, &_rv,
+	                     PyMac_BuildRect, &bounds);
+	return _res;
+}
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+
+static PyObject *CtlObj_IsControlHilited(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = IsControlHilited(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+
+static PyObject *CtlObj_GetControlHilite(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	UInt16 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetControlHilite(_self->ob_itself);
+	_res = Py_BuildValue("H",
+	                     _rv);
+	return _res;
+}
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+
+static PyObject *CtlObj_GetControlOwner(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	WindowPtr _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetControlOwner(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     WinObj_New, _rv);
+	return _res;
+}
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+
+static PyObject *CtlObj_GetControlDataHandle(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Handle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetControlDataHandle(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+
+static PyObject *CtlObj_GetControlPopupMenuHandle(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	MenuHandle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetControlPopupMenuHandle(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     MenuObj_New, _rv);
+	return _res;
+}
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+
+static PyObject *CtlObj_GetControlPopupMenuID(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetControlPopupMenuID(_self->ob_itself);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+
+static PyObject *CtlObj_SetControlDataHandle(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Handle dataHandle;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &dataHandle))
+		return NULL;
+	SetControlDataHandle(_self->ob_itself,
+	                     dataHandle);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+
+static PyObject *CtlObj_SetControlBounds(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect bounds;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetRect, &bounds))
+		return NULL;
+	SetControlBounds(_self->ob_itself,
+	                 &bounds);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+
+static PyObject *CtlObj_SetControlPopupMenuHandle(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	MenuHandle popupMenu;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      MenuObj_Convert, &popupMenu))
+		return NULL;
+	SetControlPopupMenuHandle(_self->ob_itself,
+	                          popupMenu);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+
+static PyObject *CtlObj_SetControlPopupMenuID(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short menuID;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &menuID))
+		return NULL;
+	SetControlPopupMenuID(_self->ob_itself,
+	                      menuID);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
+static PyObject *CtlObj_GetBevelButtonMenuValue(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	SInt16 outValue;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = GetBevelButtonMenuValue(_self->ob_itself,
+	                               &outValue);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("h",
+	                     outValue);
+	return _res;
+}
+
+static PyObject *CtlObj_SetBevelButtonMenuValue(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	SInt16 inValue;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &inValue))
+		return NULL;
+	_err = SetBevelButtonMenuValue(_self->ob_itself,
+	                               inValue);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_GetBevelButtonMenuHandle(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	MenuHandle outHandle;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = GetBevelButtonMenuHandle(_self->ob_itself,
+	                                &outHandle);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     MenuObj_New, outHandle);
+	return _res;
+}
+
+static PyObject *CtlObj_SetBevelButtonTransform(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	IconTransformType transform;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &transform))
+		return NULL;
+	_err = SetBevelButtonTransform(_self->ob_itself,
+	                               transform);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_SetDisclosureTriangleLastValue(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	SInt16 inValue;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &inValue))
+		return NULL;
+	_err = SetDisclosureTriangleLastValue(_self->ob_itself,
+	                                      inValue);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_GetTabContentRect(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	Rect outContentRect;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = GetTabContentRect(_self->ob_itself,
+	                         &outContentRect);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildRect, &outContentRect);
+	return _res;
+}
+
+static PyObject *CtlObj_SetTabEnabled(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	SInt16 inTabToHilite;
+	Boolean inEnabled;
+	if (!PyArg_ParseTuple(_args, "hb",
+	                      &inTabToHilite,
+	                      &inEnabled))
+		return NULL;
+	_err = SetTabEnabled(_self->ob_itself,
+	                     inTabToHilite,
+	                     inEnabled);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_SetImageWellTransform(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	IconTransformType inTransform;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &inTransform))
+		return NULL;
+	_err = SetImageWellTransform(_self->ob_itself,
+	                             inTransform);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -1540,8 +1950,23 @@ static PyMethodDef CtlObj_methods[] = {
 	 "(Point startPoint, Rect limitRect, Rect slopRect, DragConstraint axis) -> None"},
 	{"TestControl", (PyCFunction)CtlObj_TestControl, 1,
 	 "(Point testPoint) -> (ControlPartCode _rv)"},
+
+#if TARGET_API_MAC_CARBON
+	{"HandleControlContextualMenuClick", (PyCFunction)CtlObj_HandleControlContextualMenuClick, 1,
+	 "(Point inWhere) -> (Boolean menuDisplayed)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"GetControlClickActivation", (PyCFunction)CtlObj_GetControlClickActivation, 1,
+	 "(Point inWhere, EventModifiers inModifiers) -> (ClickActivationResult outResult)"},
+#endif
 	{"HandleControlKey", (PyCFunction)CtlObj_HandleControlKey, 1,
-	 "(SInt16 inKeyCode, SInt16 inCharCode, SInt16 inModifiers) -> (SInt16 _rv)"},
+	 "(SInt16 inKeyCode, SInt16 inCharCode, EventModifiers inModifiers) -> (SInt16 _rv)"},
+
+#if TARGET_API_MAC_CARBON
+	{"HandleControlSetCursor", (PyCFunction)CtlObj_HandleControlSetCursor, 1,
+	 "(Point localPoint, EventModifiers modifiers) -> (Boolean cursorWasSet)"},
+#endif
 	{"MoveControl", (PyCFunction)CtlObj_MoveControl, 1,
 	 "(SInt16 h, SInt16 v) -> None"},
 	{"SizeControl", (PyCFunction)CtlObj_SizeControl, 1,
@@ -1580,8 +2005,28 @@ static PyMethodDef CtlObj_methods[] = {
 	 "(SInt32 newMinimum) -> None"},
 	{"IsValidControlHandle", (PyCFunction)CtlObj_IsValidControlHandle, 1,
 	 "() -> (Boolean _rv)"},
+
+#if TARGET_API_MAC_CARBON
+	{"SetControlID", (PyCFunction)CtlObj_SetControlID, 1,
+	 "(ControlID inID) -> None"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"GetControlID", (PyCFunction)CtlObj_GetControlID, 1,
+	 "() -> (ControlID outID)"},
+#endif
 	{"RemoveControlProperty", (PyCFunction)CtlObj_RemoveControlProperty, 1,
 	 "(OSType propertyCreator, OSType propertyTag) -> None"},
+
+#if TARGET_API_MAC_CARBON
+	{"GetControlPropertyAttributes", (PyCFunction)CtlObj_GetControlPropertyAttributes, 1,
+	 "(OSType propertyCreator, OSType propertyTag) -> (UInt32 attributes)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"ChangeControlPropertyAttributes", (PyCFunction)CtlObj_ChangeControlPropertyAttributes, 1,
+	 "(OSType propertyCreator, OSType propertyTag, UInt32 attributesToSet, UInt32 attributesToClear) -> None"},
+#endif
 	{"GetControlRegion", (PyCFunction)CtlObj_GetControlRegion, 1,
 	 "(ControlPartCode inPart, RgnHandle outRegion) -> None"},
 	{"GetControlVariant", (PyCFunction)CtlObj_GetControlVariant, 1,
@@ -1599,46 +2044,6 @@ static PyMethodDef CtlObj_methods[] = {
 #if !TARGET_API_MAC_CARBON
 	{"SetControlColor", (PyCFunction)CtlObj_SetControlColor, 1,
 	 "(CCTabHandle newColorTable) -> None"},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"GetBevelButtonMenuValue", (PyCFunction)CtlObj_GetBevelButtonMenuValue, 1,
-	 "() -> (SInt16 outValue)"},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"SetBevelButtonMenuValue", (PyCFunction)CtlObj_SetBevelButtonMenuValue, 1,
-	 "(SInt16 inValue) -> None"},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"GetBevelButtonMenuHandle", (PyCFunction)CtlObj_GetBevelButtonMenuHandle, 1,
-	 "() -> (MenuHandle outHandle)"},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"SetBevelButtonTransform", (PyCFunction)CtlObj_SetBevelButtonTransform, 1,
-	 "(IconTransformType transform) -> None"},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"SetImageWellTransform", (PyCFunction)CtlObj_SetImageWellTransform, 1,
-	 "(IconTransformType inTransform) -> None"},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"GetTabContentRect", (PyCFunction)CtlObj_GetTabContentRect, 1,
-	 "() -> (Rect outContentRect)"},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"SetTabEnabled", (PyCFunction)CtlObj_SetTabEnabled, 1,
-	 "(SInt16 inTabToHilite, Boolean inEnabled) -> None"},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"SetDisclosureTriangleLastValue", (PyCFunction)CtlObj_SetDisclosureTriangleLastValue, 1,
-	 "(SInt16 inValue) -> None"},
 #endif
 	{"SendControlMessage", (PyCFunction)CtlObj_SendControlMessage, 1,
 	 "(SInt16 inMessage, SInt32 inParam) -> (SInt32 _rv)"},
@@ -1658,6 +2063,87 @@ static PyMethodDef CtlObj_methods[] = {
 	 "() -> (UInt32 outFeatures)"},
 	{"GetControlDataSize", (PyCFunction)CtlObj_GetControlDataSize, 1,
 	 "(ControlPartCode inPart, ResType inTagName) -> (Size outMaxSize)"},
+
+#if TARGET_API_MAC_CARBON
+	{"SetControlDragTrackingEnabled", (PyCFunction)CtlObj_SetControlDragTrackingEnabled, 1,
+	 "(Boolean tracks) -> None"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"IsControlDragTrackingEnabled", (PyCFunction)CtlObj_IsControlDragTrackingEnabled, 1,
+	 "() -> (Boolean tracks)"},
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+	{"GetControlBounds", (PyCFunction)CtlObj_GetControlBounds, 1,
+	 "() -> (Rect _rv, Rect bounds)"},
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+	{"IsControlHilited", (PyCFunction)CtlObj_IsControlHilited, 1,
+	 "() -> (Boolean _rv)"},
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+	{"GetControlHilite", (PyCFunction)CtlObj_GetControlHilite, 1,
+	 "() -> (UInt16 _rv)"},
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+	{"GetControlOwner", (PyCFunction)CtlObj_GetControlOwner, 1,
+	 "() -> (WindowPtr _rv)"},
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+	{"GetControlDataHandle", (PyCFunction)CtlObj_GetControlDataHandle, 1,
+	 "() -> (Handle _rv)"},
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+	{"GetControlPopupMenuHandle", (PyCFunction)CtlObj_GetControlPopupMenuHandle, 1,
+	 "() -> (MenuHandle _rv)"},
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+	{"GetControlPopupMenuID", (PyCFunction)CtlObj_GetControlPopupMenuID, 1,
+	 "() -> (short _rv)"},
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+	{"SetControlDataHandle", (PyCFunction)CtlObj_SetControlDataHandle, 1,
+	 "(Handle dataHandle) -> None"},
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+	{"SetControlBounds", (PyCFunction)CtlObj_SetControlBounds, 1,
+	 "(Rect bounds) -> None"},
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+	{"SetControlPopupMenuHandle", (PyCFunction)CtlObj_SetControlPopupMenuHandle, 1,
+	 "(MenuHandle popupMenu) -> None"},
+#endif
+
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+	{"SetControlPopupMenuID", (PyCFunction)CtlObj_SetControlPopupMenuID, 1,
+	 "(short menuID) -> None"},
+#endif
+	{"GetBevelButtonMenuValue", (PyCFunction)CtlObj_GetBevelButtonMenuValue, 1,
+	 "() -> (SInt16 outValue)"},
+	{"SetBevelButtonMenuValue", (PyCFunction)CtlObj_SetBevelButtonMenuValue, 1,
+	 "(SInt16 inValue) -> None"},
+	{"GetBevelButtonMenuHandle", (PyCFunction)CtlObj_GetBevelButtonMenuHandle, 1,
+	 "() -> (MenuHandle outHandle)"},
+	{"SetBevelButtonTransform", (PyCFunction)CtlObj_SetBevelButtonTransform, 1,
+	 "(IconTransformType transform) -> None"},
+	{"SetDisclosureTriangleLastValue", (PyCFunction)CtlObj_SetDisclosureTriangleLastValue, 1,
+	 "(SInt16 inValue) -> None"},
+	{"GetTabContentRect", (PyCFunction)CtlObj_GetTabContentRect, 1,
+	 "() -> (Rect outContentRect)"},
+	{"SetTabEnabled", (PyCFunction)CtlObj_SetTabEnabled, 1,
+	 "(SInt16 inTabToHilite, Boolean inEnabled) -> None"},
+	{"SetImageWellTransform", (PyCFunction)CtlObj_SetImageWellTransform, 1,
+	 "(IconTransformType inTransform) -> None"},
 	{"as_Resource", (PyCFunction)CtlObj_as_Resource, 1,
 	 "() -> (Handle _rv)"},
 	{"GetControlRect", (PyCFunction)CtlObj_GetControlRect, 1,
@@ -1906,6 +2392,31 @@ static PyObject *Ctl_IdleControls(_self, _args)
 	return _res;
 }
 
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Ctl_GetControlByID(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr inWindow;
+	ControlID inID;
+	ControlHandle outControl;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      WinObj_Convert, &inWindow,
+	                      PyControlID_Convert, &inID))
+		return NULL;
+	_err = GetControlByID(inWindow,
+	                      &inID,
+	                      &outControl);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_WhichControl, outControl);
+	return _res;
+}
+#endif
+
 static PyObject *Ctl_DumpControlHierarchy(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -2057,6 +2568,51 @@ static PyObject *Ctl_ClearKeyboardFocus(_self, _args)
 	return _res;
 }
 
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Ctl_SetAutomaticControlDragTrackingEnabledForWindow(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr theWindow;
+	Boolean tracks;
+	if (!PyArg_ParseTuple(_args, "O&b",
+	                      WinObj_Convert, &theWindow,
+	                      &tracks))
+		return NULL;
+	_err = SetAutomaticControlDragTrackingEnabledForWindow(theWindow,
+	                                                       tracks);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Ctl_IsAutomaticControlDragTrackingEnabledForWindow(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr theWindow;
+	Boolean tracks;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      WinObj_Convert, &theWindow))
+		return NULL;
+	_err = IsAutomaticControlDragTrackingEnabledForWindow(theWindow,
+	                                                      &tracks);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("b",
+	                     tracks);
+	return _res;
+}
+#endif
+
 static PyObject *Ctl_as_Control(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -2088,6 +2644,11 @@ static PyMethodDef Ctl_methods[] = {
 	 "(Point inWhere, WindowPtr inWindow) -> (ControlHandle _rv, SInt16 outPart)"},
 	{"IdleControls", (PyCFunction)Ctl_IdleControls, 1,
 	 "(WindowPtr inWindow) -> None"},
+
+#if TARGET_API_MAC_CARBON
+	{"GetControlByID", (PyCFunction)Ctl_GetControlByID, 1,
+	 "(WindowPtr inWindow, ControlID inID) -> (ControlHandle outControl)"},
+#endif
 	{"DumpControlHierarchy", (PyCFunction)Ctl_DumpControlHierarchy, 1,
 	 "(WindowPtr inWindow, FSSpec inDumpFile) -> None"},
 	{"CreateRootControl", (PyCFunction)Ctl_CreateRootControl, 1,
@@ -2104,6 +2665,16 @@ static PyMethodDef Ctl_methods[] = {
 	 "(WindowPtr inWindow) -> None"},
 	{"ClearKeyboardFocus", (PyCFunction)Ctl_ClearKeyboardFocus, 1,
 	 "(WindowPtr inWindow) -> None"},
+
+#if TARGET_API_MAC_CARBON
+	{"SetAutomaticControlDragTrackingEnabledForWindow", (PyCFunction)Ctl_SetAutomaticControlDragTrackingEnabledForWindow, 1,
+	 "(WindowPtr theWindow, Boolean tracks) -> None"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"IsAutomaticControlDragTrackingEnabledForWindow", (PyCFunction)Ctl_IsAutomaticControlDragTrackingEnabledForWindow, 1,
+	 "(WindowPtr theWindow) -> (Boolean tracks)"},
+#endif
 	{"as_Control", (PyCFunction)Ctl_as_Control, 1,
 	 "(Handle h) -> (ControlHandle _rv)"},
 	{NULL, NULL, 0}
@@ -2320,7 +2891,7 @@ void initCtl()
 	Ctl_Error = PyMac_GetOSErrException();
 	if (Ctl_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Ctl_Error) != 0)
-		Py_FatalError("can't initialize Ctl.Error");
+		return;
 	Control_Type.ob_type = &PyType_Type;
 	Py_INCREF(&Control_Type);
 	if (PyDict_SetItemString(d, "ControlType", (PyObject *)&Control_Type) != 0)

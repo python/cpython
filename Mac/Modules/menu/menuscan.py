@@ -38,6 +38,10 @@ class MyScanner(Scanner):
 			"GetMenuItemPropertySize",
 			"SetMenuItemProperty",
 			"RemoveMenuItemProperty",
+			"SetMenuCommandProperty",
+			"GetMenuCommandProperty",
+			"GetMenuTitle", # Funny arg/returnvalue
+			"SetMenuTitle",
 			]
 
 	def makegreylist(self):
@@ -55,6 +59,31 @@ class MyScanner(Scanner):
 				'SetMenuFlash',
 				'InitMenus',
 				'InitProcMenu',
+			]),
+			('#if TARGET_API_MAC_CARBON', [
+				'DisposeMenuBar',
+				'DuplicateMenuBar',
+				'CreateNewMenu',
+				'GetFontFamilyFromMenuSelection',
+				'UpdateStandardFontMenu',
+				'CreateStandardFontMenu',
+				'RemoveMenuCommandProperty',
+				'GetMenuCommandPropertySize',
+				'IsMenuCommandEnabled',
+				'DisableMenuCommand',
+				'EnableMenuCommand',
+				'GetIndMenuItemWithCommandID',
+				'CountMenuItemsWithCommandID',
+				'MenuHasEnabledItems',
+				'EnableAllMenuItems',
+				'DisableAllMenuItems',
+				'ChangeMenuItemAttributes',
+				'GetMenuItemAttributes',
+				'ChangeMenuAttributes',
+				'GetMenuAttributes',
+				'ChangeMenuItemPropertyAttributes',
+				'GetMenuItemPropertyAttributes',
+				
 			])]
 			
 	def makeblacklisttypes(self):
@@ -64,6 +93,9 @@ class MyScanner(Scanner):
 			'MCTablePtr',
 			'AEDesc_ptr', # For now: doable, but not easy
 			'ProcessSerialNumber', # ditto
+			"MenuDefSpecPtr", # Too difficult for now
+			"MenuDefSpec_ptr", # ditto
+			"MenuTrackingData",
 			]
 
 	def makerepairinstructions(self):

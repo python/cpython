@@ -319,14 +319,14 @@ static PyObject *Fm_SetAntiAliasedTextEnabled(_self, _args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
-	Boolean inEnable;
-	SInt16 inMinFontSize;
+	Boolean iEnable;
+	SInt16 iMinFontSize;
 	if (!PyArg_ParseTuple(_args, "bh",
-	                      &inEnable,
-	                      &inMinFontSize))
+	                      &iEnable,
+	                      &iMinFontSize))
 		return NULL;
-	_err = SetAntiAliasedTextEnabled(inEnable,
-	                                 inMinFontSize);
+	_err = SetAntiAliasedTextEnabled(iEnable,
+	                                 iMinFontSize);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
@@ -339,13 +339,13 @@ static PyObject *Fm_IsAntiAliasedTextEnabled(_self, _args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
-	SInt16 outMinFontSize;
+	SInt16 oMinFontSize;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	_rv = IsAntiAliasedTextEnabled(&outMinFontSize);
+	_rv = IsAntiAliasedTextEnabled(&oMinFontSize);
 	_res = Py_BuildValue("bh",
 	                     _rv,
-	                     outMinFontSize);
+	                     oMinFontSize);
 	return _res;
 }
 
@@ -394,9 +394,9 @@ static PyMethodDef Fm_methods[] = {
 	{"GetAppFont", (PyCFunction)Fm_GetAppFont, 1,
 	 "() -> (short _rv)"},
 	{"SetAntiAliasedTextEnabled", (PyCFunction)Fm_SetAntiAliasedTextEnabled, 1,
-	 "(Boolean inEnable, SInt16 inMinFontSize) -> None"},
+	 "(Boolean iEnable, SInt16 iMinFontSize) -> None"},
 	{"IsAntiAliasedTextEnabled", (PyCFunction)Fm_IsAntiAliasedTextEnabled, 1,
-	 "() -> (Boolean _rv, SInt16 outMinFontSize)"},
+	 "() -> (Boolean _rv, SInt16 oMinFontSize)"},
 	{NULL, NULL, 0}
 };
 
@@ -416,7 +416,7 @@ void initFm()
 	Fm_Error = PyMac_GetOSErrException();
 	if (Fm_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Fm_Error) != 0)
-		Py_FatalError("can't initialize Fm.Error");
+		return;
 }
 
 /* ========================= End module Fm ========================== */

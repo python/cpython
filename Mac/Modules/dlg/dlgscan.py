@@ -59,11 +59,18 @@ class MyScanner(Scanner):
 		return [
 			('#if !TARGET_API_MAC_CARBON', [
 				'SetGrafPortOfDialog',
+			]),
+			('#if TARGET_API_MAC_CARBON', [
+				'InsertDialogItem',
+				'RemoveDialogItems',
+				'GetParamText',
 			])]
 			
 	def makeblacklisttypes(self):
 		return [
 			"AlertStdAlertParamPtr",	# Too much work, for now
+			"AlertStdAlertParamRec",	# ditto
+			"AlertStdAlertParamRec_ptr",	# ditto
 			"QTModelessCallbackProcPtr",
 			]
 

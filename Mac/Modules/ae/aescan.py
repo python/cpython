@@ -70,11 +70,19 @@ class AppleEventsScanner(Scanner):
 		return [
 			"AEDisposeDesc",
 #			"AEGetEventHandler",
+			"AEGetDescData", # Use object.data
+			"AEGetSpecialHandler",
 			# Constants with funny definitions
 			"kAEDontDisposeOnResume",
 			"kAEUseStandardDispatch",
 			]
 
+	def makegreylist(self):
+		return [
+			('#if TARGET_API_MAC_CARBON', [
+				'AEGetDescDataSize',
+				'AEReplaceDescData',
+			])]
 	def makeblacklisttypes(self):
 		return [
 			"ProcPtr",

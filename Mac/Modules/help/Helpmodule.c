@@ -315,7 +315,7 @@ void initHelp()
 	Help_Error = PyMac_GetOSErrException();
 	if (Help_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Help_Error) != 0)
-		Py_FatalError("can't initialize Help.Error");
+		return;
 }
 
 /* ======================== End module Help ========================= */

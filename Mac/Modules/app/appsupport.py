@@ -65,6 +65,7 @@ ThemeGrowDirection = Type("ThemeGrowDirection", "H")
 ThemeSoundKind = OSTypeType("ThemeSoundKind")
 ThemeDragSoundKind = OSTypeType("ThemeDragSoundKind")
 ThemeBackgroundKind = Type("ThemeBackgroundKind", "l")
+ThemeMetric = Type("ThemeMetric", "l")
 RGBColor = OpaqueType("RGBColor", "QdRGB")
 
 includestuff = includestuff + """

@@ -10,6 +10,31 @@
 
 #include <Lists.h>
 
+#if !ACCESSOR_CALLS_ARE_FUNCTIONS
+#define GetListPort(list) ((CGrafPtr)(*(list))->port)
+#define GetListVerticalScrollBar(list) ((*(list))->vScroll)
+#define GetListHorizontalScrollBar(list) ((*(list))->hScroll)
+#define GetListActive(list) ((*(list))->lActive)
+#define GetListClickTime(list) ((*(list))->clikTime)
+#define GetListRefCon(list) ((*(list))->refCon)
+#define GetListDefinition(list) ((*(list))->listDefProc) /* XXX Is this indeed the same? */
+#define GetListUserHandle(list) ((*(list))->userHandle)
+#define GetListDataHandle(list) ((*(list))->cells)
+#define GetListFlags(list) ((*(list))->listFlags)
+#define GetListSelectionFlags(list) ((*(list))->selFlags)
+#define SetListViewBounds(list, bounds) (((*(list))->rView) = *(bounds))
+
+#define SetListPort(list, port) (((*(list))->port) = (GrafPtr)(port))
+#define SetListCellIndent(list, ind) (((*(list))->indent) = *(ind))
+#define SetListClickTime(list, time) (((*(list))->clikTime) = (time))
+#define SetListLastClick(list, click) (((*(list)->lastClick) = *(click))
+#define SetListRefCon(list, refcon) (((*(list))->refCon) = (refcon))
+#define SetListUserHandle(list, handle) (((*(list))->userHandle) = (handle))
+#define SetListFlags(list, flags) (((*(list))->listFlags) = (flags))
+#define SetListSelectionFlags(list, flags) (((*(list))->selFlags) = (flags))
+
+#endif
+
 #define as_List(x) ((ListHandle)x)
 #define as_Resource(lh) ((Handle)lh)
 
@@ -649,6 +674,325 @@ static PyObject *List_LNew(_self, _args)
 	return _res;
 }
 
+static PyObject *List_GetListPort(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	CGrafPtr _rv;
+	ListHandle list;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ListObj_Convert, &list))
+		return NULL;
+	_rv = GetListPort(list);
+	_res = Py_BuildValue("O&",
+	                     GrafObj_New, _rv);
+	return _res;
+}
+
+static PyObject *List_GetListVerticalScrollBar(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ControlHandle _rv;
+	ListHandle list;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ListObj_Convert, &list))
+		return NULL;
+	_rv = GetListVerticalScrollBar(list);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_New, _rv);
+	return _res;
+}
+
+static PyObject *List_GetListHorizontalScrollBar(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ControlHandle _rv;
+	ListHandle list;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ListObj_Convert, &list))
+		return NULL;
+	_rv = GetListHorizontalScrollBar(list);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_New, _rv);
+	return _res;
+}
+
+static PyObject *List_GetListActive(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	ListHandle list;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ListObj_Convert, &list))
+		return NULL;
+	_rv = GetListActive(list);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *List_GetListClickTime(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt32 _rv;
+	ListHandle list;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ListObj_Convert, &list))
+		return NULL;
+	_rv = GetListClickTime(list);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *List_GetListRefCon(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt32 _rv;
+	ListHandle list;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ListObj_Convert, &list))
+		return NULL;
+	_rv = GetListRefCon(list);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *List_GetListDefinition(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Handle _rv;
+	ListHandle list;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ListObj_Convert, &list))
+		return NULL;
+	_rv = GetListDefinition(list);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *List_GetListUserHandle(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Handle _rv;
+	ListHandle list;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ListObj_Convert, &list))
+		return NULL;
+	_rv = GetListUserHandle(list);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *List_GetListDataHandle(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	DataHandle _rv;
+	ListHandle list;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ListObj_Convert, &list))
+		return NULL;
+	_rv = GetListDataHandle(list);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *List_GetListFlags(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OptionBits _rv;
+	ListHandle list;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ListObj_Convert, &list))
+		return NULL;
+	_rv = GetListFlags(list);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *List_GetListSelectionFlags(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OptionBits _rv;
+	ListHandle list;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ListObj_Convert, &list))
+		return NULL;
+	_rv = GetListSelectionFlags(list);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *List_SetListViewBounds(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ListHandle list;
+	Rect view;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      ListObj_Convert, &list,
+	                      PyMac_GetRect, &view))
+		return NULL;
+	SetListViewBounds(list,
+	                  &view);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *List_SetListPort(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ListHandle list;
+	CGrafPtr port;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      ListObj_Convert, &list,
+	                      GrafObj_Convert, &port))
+		return NULL;
+	SetListPort(list,
+	            port);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *List_SetListCellIndent(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ListHandle list;
+	Point indent;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ListObj_Convert, &list))
+		return NULL;
+	SetListCellIndent(list,
+	                  &indent);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildPoint, indent);
+	return _res;
+}
+
+static PyObject *List_SetListClickTime(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ListHandle list;
+	SInt32 time;
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      ListObj_Convert, &list,
+	                      &time))
+		return NULL;
+	SetListClickTime(list,
+	                 time);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *List_SetListRefCon(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ListHandle list;
+	SInt32 refCon;
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      ListObj_Convert, &list,
+	                      &refCon))
+		return NULL;
+	SetListRefCon(list,
+	              refCon);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *List_SetListUserHandle(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ListHandle list;
+	Handle userHandle;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      ListObj_Convert, &list,
+	                      ResObj_Convert, &userHandle))
+		return NULL;
+	SetListUserHandle(list,
+	                  userHandle);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *List_SetListFlags(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ListHandle list;
+	OptionBits listFlags;
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      ListObj_Convert, &list,
+	                      &listFlags))
+		return NULL;
+	SetListFlags(list,
+	             listFlags);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *List_SetListSelectionFlags(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ListHandle list;
+	OptionBits selectionFlags;
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      ListObj_Convert, &list,
+	                      &selectionFlags))
+		return NULL;
+	SetListSelectionFlags(list,
+	                      selectionFlags);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *List_as_List(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -668,6 +1012,44 @@ static PyObject *List_as_List(_self, _args)
 static PyMethodDef List_methods[] = {
 	{"LNew", (PyCFunction)List_LNew, 1,
 	 "(Rect rView, Rect dataBounds, Point cSize, short theProc, WindowPtr theWindow, Boolean drawIt, Boolean hasGrow, Boolean scrollHoriz, Boolean scrollVert) -> (ListHandle _rv)"},
+	{"GetListPort", (PyCFunction)List_GetListPort, 1,
+	 "(ListHandle list) -> (CGrafPtr _rv)"},
+	{"GetListVerticalScrollBar", (PyCFunction)List_GetListVerticalScrollBar, 1,
+	 "(ListHandle list) -> (ControlHandle _rv)"},
+	{"GetListHorizontalScrollBar", (PyCFunction)List_GetListHorizontalScrollBar, 1,
+	 "(ListHandle list) -> (ControlHandle _rv)"},
+	{"GetListActive", (PyCFunction)List_GetListActive, 1,
+	 "(ListHandle list) -> (Boolean _rv)"},
+	{"GetListClickTime", (PyCFunction)List_GetListClickTime, 1,
+	 "(ListHandle list) -> (SInt32 _rv)"},
+	{"GetListRefCon", (PyCFunction)List_GetListRefCon, 1,
+	 "(ListHandle list) -> (SInt32 _rv)"},
+	{"GetListDefinition", (PyCFunction)List_GetListDefinition, 1,
+	 "(ListHandle list) -> (Handle _rv)"},
+	{"GetListUserHandle", (PyCFunction)List_GetListUserHandle, 1,
+	 "(ListHandle list) -> (Handle _rv)"},
+	{"GetListDataHandle", (PyCFunction)List_GetListDataHandle, 1,
+	 "(ListHandle list) -> (DataHandle _rv)"},
+	{"GetListFlags", (PyCFunction)List_GetListFlags, 1,
+	 "(ListHandle list) -> (OptionBits _rv)"},
+	{"GetListSelectionFlags", (PyCFunction)List_GetListSelectionFlags, 1,
+	 "(ListHandle list) -> (OptionBits _rv)"},
+	{"SetListViewBounds", (PyCFunction)List_SetListViewBounds, 1,
+	 "(ListHandle list, Rect view) -> None"},
+	{"SetListPort", (PyCFunction)List_SetListPort, 1,
+	 "(ListHandle list, CGrafPtr port) -> None"},
+	{"SetListCellIndent", (PyCFunction)List_SetListCellIndent, 1,
+	 "(ListHandle list) -> (Point indent)"},
+	{"SetListClickTime", (PyCFunction)List_SetListClickTime, 1,
+	 "(ListHandle list, SInt32 time) -> None"},
+	{"SetListRefCon", (PyCFunction)List_SetListRefCon, 1,
+	 "(ListHandle list, SInt32 refCon) -> None"},
+	{"SetListUserHandle", (PyCFunction)List_SetListUserHandle, 1,
+	 "(ListHandle list, Handle userHandle) -> None"},
+	{"SetListFlags", (PyCFunction)List_SetListFlags, 1,
+	 "(ListHandle list, OptionBits listFlags) -> None"},
+	{"SetListSelectionFlags", (PyCFunction)List_SetListSelectionFlags, 1,
+	 "(ListHandle list, OptionBits selectionFlags) -> None"},
 	{"as_List", (PyCFunction)List_as_List, 1,
 	 "(Resource)->List.\nReturns List object (which is not auto-freed!)"},
 	{NULL, NULL, 0}
@@ -689,7 +1071,7 @@ void initList()
 	List_Error = PyMac_GetOSErrException();
 	if (List_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", List_Error) != 0)
-		Py_FatalError("can't initialize List.Error");
+		return;
 	List_Type.ob_type = &PyType_Type;
 	Py_INCREF(&List_Type);
 	if (PyDict_SetItemString(d, "ListType", (PyObject *)&List_Type) != 0)
