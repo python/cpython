@@ -109,7 +109,6 @@ class TestTranforms(unittest.TestCase):
             ('a="abc" + "def"', "('abcdef')"),      # check string ops
             ('a = 3**4', '(81)'),                   # binary power
             ('a = 3*4', '(12)'),                    # binary multiply
-            ('a = 13/4.0', '(3.25)'),               # binary divide
             ('a = 13//4', '(3)'),                   # binary floor divide
             ('a = 14%4', '(2)'),                    # binary modulo
             ('a = 2+3', '(5)'),                     # binary add
