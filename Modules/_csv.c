@@ -301,11 +301,12 @@ static char *dialect_kws[] = {
 	NULL
 };
 
-static int
-dialect_init(DialectObj * self, PyObject * args, PyObject * kwargs)
+static PyObject *
+dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-	int ret = -1;
-        PyObject *dialect = NULL;
+	DialectObj *self;
+	PyObject *ret = NULL;
+	PyObject *dialect = NULL;
 	PyObject *delimiter = NULL;
 	PyObject *doublequote = NULL;
 	PyObject *escapechar = NULL;
@@ -326,7 +327,35 @@ dialect_init(DialectObj * self, PyObject * args, PyObject * kwargs)
 					 &quoting,
 					 &skipinitialspace,
 					 &strict))
-                return -1;
+		return NULL;
+
+	if (dialect != NULL) {
+		if (IS_BASESTRING(dialect)) {
+			dialect = get_dialect_from_registry(dialect);
+			if (dialect == NULL)
+				return NULL;
+		}
+		else
+			Py_INCREF(dialect);
+		/* Can we reuse this instance? */
+		if (PyObject_TypeCheck(dialect, &Dialect_Type) &&
+		    delimiter == 0 &&
+		    doublequote == 0 &&
+		    escapechar == 0 &&
+		    lineterminator == 0 &&
+		    quotechar == 0 &&
+		    quoting == 0 &&
+		    skipinitialspace == 0 &&
+		    strict == 0)
+			return dialect;
+	}
+
+	self = (DialectObj *)type->tp_alloc(type, 0);
+	if (self == NULL) {
+		Py_XDECREF(dialect);
+		return NULL;
+	}
+	self->lineterminator = NULL;
 
 	Py_XINCREF(delimiter);
 	Py_XINCREF(doublequote);
@@ -337,16 +366,9 @@ dialect_init(DialectObj * self, PyObject * args, PyObject * kwargs)
 	Py_XINCREF(skipinitialspace);
 	Py_XINCREF(strict);
 	if (dialect != NULL) {
-		if (IS_BASESTRING(dialect)) {
-			dialect = get_dialect_from_registry(dialect);
-			if (dialect == NULL)
-				goto err;
-		} else
-			Py_INCREF(dialect);
 #define DIALECT_GETATTR(v, n) \
 		if (v == NULL) \
 			v = PyObject_GetAttrString(dialect, n)
-
 		DIALECT_GETATTR(delimiter, "delimiter");
 		DIALECT_GETATTR(doublequote, "doublequote");
 		DIALECT_GETATTR(escapechar, "escapechar");
@@ -356,7 +378,6 @@ dialect_init(DialectObj * self, PyObject * args, PyObject * kwargs)
 		DIALECT_GETATTR(skipinitialspace, "skipinitialspace");
 		DIALECT_GETATTR(strict, "strict");
 		PyErr_Clear();
-		Py_DECREF(dialect);
 	}
 
 	/* check types and convert to C values */
@@ -387,12 +408,13 @@ dialect_init(DialectObj * self, PyObject * args, PyObject * kwargs)
 		goto err;
 	}
 	if (self->lineterminator == 0) {
-                PyErr_SetString(PyExc_TypeError, "lineterminator must be set");
+		PyErr_SetString(PyExc_TypeError, "lineterminator must be set");
 		goto err;
 	}
 
-	ret = 0;
+	ret = (PyObject *)self;
 err:
+	Py_XDECREF(dialect);
 	Py_XDECREF(delimiter);
 	Py_XDECREF(doublequote);
 	Py_XDECREF(escapechar);
@@ -401,18 +423,7 @@ err:
 	Py_XDECREF(quoting);
 	Py_XDECREF(skipinitialspace);
 	Py_XDECREF(strict);
-        return ret;
-}
-
-static PyObject *
-dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-        DialectObj *self;
-        self = (DialectObj *)type->tp_alloc(type, 0);
-        if (self != NULL) {
-                self->lineterminator = NULL;
-        }
-        return (PyObject *)self;
+	return ret;
 }
 
 
@@ -459,8 +470,8 @@ static PyTypeObject Dialect_Type = {
 	0,					/* tp_descr_get */
 	0,					/* tp_descr_set */
 	0,					/* tp_dictoffset */
-	(initproc)dialect_init,			/* tp_init */
-	PyType_GenericAlloc,	                /* tp_alloc */
+	0,					/* tp_init */
+	0,					/* tp_alloc */
 	dialect_new,			        /* tp_new */
 	0,                           		/* tp_free */
 };
