@@ -1,7 +1,15 @@
 What's New in IDLE 1.1a0?
-===================================
+=========================
 
 *Release date: XX-XXX-2004*
+
+- CodeContext hint pane visibility state is now persistent across sessions.
+  The pane no longer appears in the shell window.  Added capability to limit
+  extensions to shell window or editor windows.  Noam Raphael addition
+  to Patch 936169.
+
+- Paragraph reformat width is now a configurable parameter in the
+  Options GUI.
 
 - New Extension: CodeContext.  Provides block structuring hints for code
   which has scrolled above an edit window. Patch 936169 Noam Raphael.
@@ -52,7 +60,7 @@ What's New in IDLE 1.1a0?
 
 
 What's New in IDLE 1.0?
-===================================
+=======================
 
 *Release date: 29-Jul-2003*
 
@@ -61,7 +69,7 @@ What's New in IDLE 1.0?
 
 
 What's New in IDLE 1.0 release candidate 2?
-===================================
+===========================================
 
 *Release date: 24-Jul-2003*
 
@@ -69,7 +77,7 @@ What's New in IDLE 1.0 release candidate 2?
 
 
 What's New in IDLE 1.0 release candidate 1?
-===================================
+===========================================
 
 *Release date: 18-Jul-2003*
 
@@ -90,7 +98,7 @@ What's New in IDLE 1.0 release candidate 1?
 
 
 What's New in IDLE 1.0b2?
-===================================
+=========================
 
 *Release date: 29-Jun-2003*
 
@@ -131,7 +139,7 @@ What's New in IDLE 1.0b2?
 
 
 What's New in IDLEfork 0.9b1?
-===================================
+=============================
 
 *Release date: 02-Jun-2003*
 

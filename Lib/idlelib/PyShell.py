@@ -806,6 +806,9 @@ class PyShell(OutputWindow):
         #
         self.pollinterval = 50  # millisec
 
+    def get_standard_extension_names(self):
+        return idleConf.GetExtensions(shell_only=True)
+
     reading = False
     executing = False
     canceled = False
