@@ -27,10 +27,243 @@ longopt_re = re.compile (r'^%s$' % longopt_pat)
 # For recognizing "negative alias" options, eg. "quiet=!verbose"
 neg_alias_re = re.compile ("^(%s)=!(%s)$" % (longopt_pat, longopt_pat))
 
-
 # This is used to translate long options to legitimate Python identifiers
 # (for use as attributes of some object).
 longopt_xlate = string.maketrans ('-', '_')
+
+# This records (option, value) pairs in the order seen on the command line;
+# it's close to what getopt.getopt() returns, but with short options
+# expanded.  (Ugh, this module should be OO-ified.)
+_option_order = None
+
+
+class FancyGetopt:
+    """Wrapper around the standard 'getopt()' module that provides some
+    handy extra functionality:
+      * short and long options are tied together
+      * options have help strings, and help text can be assembled
+        from them
+      * options set attributes of a passed-in object
+      * boolean options can have "negative aliases" -- eg. if
+        --quiet is the "negative alias" of --verbose, then "--quiet"
+        on the command line sets 'verbose' to false
+    """
+
+    def __init__ (self, option_table=None):
+
+        # The option table is (currently) a list of 3-tuples:
+        #   (long_option, short_option, help_string)
+        # if an option takes an argument, its long_option should have '='
+        # appended; short_option should just be a single character, no ':'
+        # in any case.  If a long_option doesn't have a corresponding
+        # short_option, short_option should be None.  All option tuples
+        # must have long options.
+        self.option_table = option_table
+
+        # 'option_index' maps long option names to entries in the option
+        # table (ie. those 3-tuples).
+        self.option_index = {}
+        if self.option_table:
+            self.build_index()
+
+        # 'negative_alias' keeps track of options that are the boolean
+        # opposite of some other option
+        self.negative_alias = {}
+        
+        # These keep track of the information in the option table.  We
+        # don't actually populate these structures until we're ready to
+        # parse the command-line, since the 'option_table' passed in here
+        # isn't necessarily the final word.
+        self.short_opts = []
+        self.long_opts = []
+        self.short2long = {}
+        self.attr_name = {}
+        self.takes_arg = {}
+
+        # And 'option_order' is filled up in 'getopt()'; it records the
+        # original order of options (and their values) on the command-line,
+        # but expands short options, converts aliases, etc.
+        self.option_order = []
+
+    # __init__ ()
+    
+
+    def build_index (self):
+        for option in self.option_table:
+            self.option_index[option[0]] = option
+
+    def add_option (self, long_option, short_option=None, help_string=None):
+        if self.option_index.has_key(long_option):
+            raise DistutilsGetoptError, \
+                  "option conflict: already an option '%s'" % long_option
+        else:
+            option = (long_option, short_option, help_string)
+            self.option_table.append (option)
+            self.option_index[long_option] = option
+
+    def set_negative_aliases (self, negative_alias):
+        """Set the negative aliases for this option parser.
+        'negative_alias' should be a dictionary mapping option names to
+        option names, both the key and value must already be defined
+        in the option table."""
+
+        assert type(negative_alias) is DictionaryType
+        for (negopt, opt) in negative_alias.items():
+            if not self.option_index.has_key(negopt):
+                raise DistutilsGetoptError, \
+                      ("invalid negative alias '%s': "
+                       "option '%s' not defined") % (negopt, negopt)
+            if not self.option_index.has_key(opt):
+                raise DistutilsGetoptError, \
+                      ("invalid negative alias '%s': "
+                       "aliased option '%s' not defined") % (negopt, opt)
+
+        self.negative_alias = negative_alias
+
+
+    def _grok_option_table (self):
+        """Populate the various data structures that keep tabs on
+           the option table.  Called by 'getopt()' before it can do
+           anything worthwhile."""
+
+        for option in self.option_table:
+            try:
+                (long, short, help) = option
+            except ValueError:
+                raise DistutilsGetoptError, \
+                      "invalid option tuple " + str (option)
+
+            # Type- and value-check the option names
+            if type(long) is not StringType or len(long) < 2:
+                raise DistutilsGetoptError, \
+                      ("invalid long option '%s': "
+                       "must be a string of length >= 2") % long
+
+            if (not ((short is None) or
+                     (type (short) is StringType and len (short) == 1))):
+                raise DistutilsGetoptError, \
+                      ("invalid short option '%s': "
+                       "must a single character or None") % short
+
+            self.long_opts.append (long)
+
+            if long[-1] == '=':             # option takes an argument?
+                if short: short = short + ':'
+                long = long[0:-1]
+                self.takes_arg[long] = 1
+            else:
+
+                # Is option is a "negative alias" for some other option (eg.
+                # "quiet" == "!verbose")?
+                alias_to = self.negative_alias.get(long)
+                if alias_to is not None:
+                    if self.takes_arg[alias_to]:
+                        raise DistutilsGetoptError, \
+                              ("invalid negative alias '%s': "
+                               "aliased option '%s' takes a value") % \
+                               (long, alias_to)
+
+                    self.long_opts[-1] = long # XXX redundant?!
+                    self.takes_arg[long] = 0
+
+                else:
+                    self.takes_arg[long] = 0
+
+
+            # Now enforce some bondage on the long option name, so we can
+            # later translate it to an attribute name on some object.  Have
+            # to do this a bit late to make sure we've removed any trailing
+            # '='.
+            if not longopt_re.match (long):
+                raise DistutilsGetoptError, \
+                      ("invalid long option name '%s' " +
+                       "(must be letters, numbers, hyphens only") % long
+
+            self.attr_name[long] = string.translate (long, longopt_xlate)
+            if short:
+                self.short_opts.append (short)
+                self.short2long[short[0]] = long
+
+        # for option_table
+
+    # _grok_option_table()
+
+
+    def getopt (self, args=None, object=None):
+
+        """Parse the command-line options in 'args' and store the results
+        as attributes of 'object'.  If 'args' is None or not supplied, uses
+        'sys.argv[1:]'.  If 'object' is None or not supplied, creates a new
+        OptionDummy object, stores option values there, and returns a tuple
+        (args, object).  If 'object' is supplied, it is modified in place
+        and 'getopt()' just returns 'args'; in both cases, the returned
+        'args' is a modified copy of the passed-in 'args' list, which is
+        left untouched."""
+
+        if args is None:
+            args = sys.argv[1:]
+        if object is None:
+            object = OptionDummy()
+            created_object = 1
+        else:
+            created_object = 0
+
+        self._grok_option_table()
+
+        short_opts = string.join (self.short_opts)
+        try:
+            (opts, args) = getopt.getopt (args, short_opts, self.long_opts)
+        except getopt.error, msg:
+            raise DistutilsArgError, msg
+
+        for (opt, val) in opts:
+            if len (opt) == 2 and opt[0] == '-': # it's a short option
+                opt = self.short2long[opt[1]]
+
+            elif len (opt) > 2 and opt[0:2] == '--':
+                opt = opt[2:]
+
+            else:
+                raise DistutilsInternalError, \
+                      "this can't happen: bad option string '%s'" % opt
+
+            if not self.takes_arg[opt]:     # boolean option?
+                if val != '':               # shouldn't have a value!
+                    raise DistutilsInternalError, \
+                          "this can't happen: bad option value '%s'" % value
+
+                alias = self.negative_alias.get (opt)
+                if alias:
+                    opt = alias
+                    val = 0
+                else:
+                    val = 1
+
+            attr = self.attr_name[opt]
+            setattr (object, attr, val)
+            self.option_order.append ((opt, val))
+
+        # for opts
+
+        if created_object:
+            return (args, object)
+        else:
+            return args
+
+    # getopt()
+
+
+    def get_option_order ():
+        """Returns the list of (option, value) tuples processed by the
+        previous run of 'fancy_getopt()'.  Raises RuntimeError if
+        'fancy_getopt()' hasn't been called yet."""
+
+        if self.option_order is None:
+            raise RuntimeError, "'fancy_getopt()' hasn't been called yet"
+        else:
+            return self.option_order
+
+# class FancyGetopt
 
 
 def fancy_getopt (options, negative_opt, object, args):
@@ -117,6 +350,9 @@ def fancy_getopt (options, negative_opt, object, args):
     except getopt.error, msg:
         raise DistutilsArgError, msg
 
+    global _option_order                # blechh! should OO-ify this module
+    _option_order = []
+
     for (opt, val) in opts:
         if len (opt) == 2 and opt[0] == '-': # it's a short option
             opt = short2long[opt[1]]
@@ -125,27 +361,36 @@ def fancy_getopt (options, negative_opt, object, args):
             opt = opt[2:]
 
         else:
-            raise RuntimeError, "getopt lies! (bad option string '%s')" % \
-                  opt
+            raise DistutilsInternalError, \
+                  "this can't happen: bad option string '%s'" % opt
+
+        if not takes_arg[opt]:          # boolean option?
+            if val != '':               # shouldn't have a value!
+                raise DistutilsInternalError, \
+                      "this can't happen: bad option value '%s'" % value
+
+            alias = negative_opt.get (opt)
+            if alias:
+                opt = alias
+                val = 0
+            else:
+                val = 1
 
         attr = attr_name[opt]
-        if takes_arg[opt]:
-            setattr (object, attr, val)
-        else:
-            if val == '':
-                alias = negative_opt.get (opt)
-                if alias:
-                    setattr (object, attr_name[alias], 0)
-                else:
-                    setattr (object, attr, 1)
-            else:
-                raise RuntimeError, "getopt lies! (bad value '%s')" % value
+        setattr (object, attr, val)
+        _option_order.append ((opt, val))
 
-    # end loop over options found in 'args'
+    # for opts
 
     return args
 
 # fancy_getopt()
+
+
+def fancy_getopt (options, negative_opt, object, args):
+    parser = FancyGetopt (options)
+    parser.set_negative_aliases (negative_opt)
+    return parser.getopt (args, object)
 
 
 WS_TRANS = string.maketrans (string.whitespace, ' ' * len (string.whitespace))
@@ -296,6 +541,12 @@ def print_help (options, file=None, header=None):
     for line in generate_help (options, header):
         file.write (line + "\n")
 # print_help ()
+
+
+class OptionDummy:
+    """Dummy class just used as a place to hold command-line option
+    values as instance attributes."""
+    pass
     
 
 if __name__ == "__main__":
