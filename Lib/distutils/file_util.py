@@ -90,7 +90,7 @@ def copy_file (src, dst,
        (os.symlink) instead of copying: set it to "hard" or "sym"; if it
        is None (the default), files are copied.  Don't set 'link' on
        systems that don't support it: 'copy_file()' doesn't check if
-       hard or symbolic linking is availalble.
+       hard or symbolic linking is available.
 
        Under Mac OS, uses the native file copy function in macostools;
        on other systems, uses '_copy_file_contents()' to copy file
@@ -131,8 +131,11 @@ def copy_file (src, dst,
         raise ValueError, \
               "invalid value '%s' for 'link' argument" % link
     if verbose:
-        print "%s %s -> %s" % (action, src, dir)
-
+        if os.path.basename(dst) == os.path.basename(src):
+            print "%s %s -> %s" % (action, src, dir)
+        else:
+            print "%s %s -> %s" % (action, src, dst)
+            
     if dry_run:
         return 1
 
