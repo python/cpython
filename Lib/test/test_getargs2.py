@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module=__name__)
 > Code C type Range check
 >
 > b unsigned char 0..UCHAR_MAX
-> h unsigned short 0..USHRT_MAX
+> h signed short SHRT_MIN..SHRT_MAX
 > B unsigned char none **
 > H unsigned short none **
 > k * unsigned long none
@@ -79,21 +79,6 @@ class Unsigned_TestCase(unittest.TestCase):
         self.failUnlessEqual(42, ul_convert("b", 42))
         self.failUnlessEqual(42, ul_convert("b", 42L))
         self.assertRaises(OverflowError, ul_convert, "b", VERY_LARGE)
-
-    def test_h(self):
-        # h returns 'unsigned short', and does range checking (0 ... USHRT_MAX)
-        self.failUnlessEqual(3, ul_convert("h", 3.14))
-        self.failUnlessEqual(99, ul_convert("h", Long()))
-        self.failUnlessEqual(99, ul_convert("h", Int()))
-
-        self.assertRaises(OverflowError, ul_convert, "h", -1)
-        self.failUnlessEqual(0, ul_convert("h", 0))
-        self.failUnlessEqual(USHRT_MAX, ul_convert("h", USHRT_MAX))
-        self.assertRaises(OverflowError, ul_convert, "h", USHRT_MAX+1)
-
-        self.failUnlessEqual(42, ul_convert("h", 42))
-        self.failUnlessEqual(42, ul_convert("h", 42L))
-        self.assertRaises(OverflowError, ul_convert, "h", VERY_LARGE)
 
     def test_B(self):
         # B returns 'unsigned char', no range checking
