@@ -378,9 +378,9 @@ time_strftime(self, args)
 	PyObject *tup;
 	struct tm buf;
 	const char *fmt;
-	int fmtlen, buflen;
+	size_t fmtlen, buflen;
 	char *outbuf = 0;
-	int i;
+	size_t i;
 
 	memset((ANY *) &buf, '\0', sizeof(buf));
 
