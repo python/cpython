@@ -141,27 +141,39 @@ sub get_my_icon($) {
            . " height='32'  alt='$text' width='32'>";
 }
 
-sub use_my_icon($$) {
-    my($s,$rel) = @_;
-    if ($s =~ /\<tex2html_([a-z_]+)_visible_mark\>/) {
-        my $r = get_my_icon($1);
-        $s =~ s/\<tex2html_[a-z_]+_visible_mark\>/$r/;
+sub unlinkify($) {
+    my $text = "$_[0]";
+    $text =~ s|</[aA]>||;
+    $text =~ s|<a\s+[^>]*>||i;
+    return $text;
+}
+
+sub use_icon($$$) {
+    my($rel,$str,$title) = @_;
+    if ($title) {
+        my $s = "$str";
+        if ($s =~ /\<tex2html_([a-z_]+)_visible_mark\>/) {
+            my $r = get_my_icon($1);
+            $s =~ s/\<tex2html_[a-z_]+_visible_mark\>/$r/;
+        }
+        $s =~ s/<[aA] /<a rel="$rel" title="$title" \n  /;
+        return $s;
     }
-    $s =~ s/<[aA] /<a rel="$rel" /;
-    return $s;
+    else {
+        return get_my_icon('blank');
+    }
 }
 
 sub make_nav_panel() {
     my $s;
-    my $BLANK_ICON = get_my_icon('blank');
-    $NEXT = $NEXT_TITLE ? use_my_icon("$NEXT", 'next') : $BLANK_ICON;
-    $UP = $UP_TITLE ? use_my_icon("$UP", 'parent') : $BLANK_ICON;
-    $PREVIOUS = ($PREVIOUS_TITLE
-                 ? use_my_icon("$PREVIOUS", 'prev') : $BLANK_ICON);
-    $CONTENTS = use_my_icon("$CONTENTS", 'contents');
-    $INDEX = $INDEX ? use_my_icon("$INDEX", 'index') : $BLANK_ICON;
+    # new iconic         rel         iconic     page title
+    $NEXT     = use_icon('next',     $NEXT,     unlinkify($NEXT_TITLE));
+    $UP       = use_icon('parent',   $UP,       unlinkify($UP_TITLE));
+    $PREVIOUS = use_icon('prev',     $PREVIOUS, unlinkify($PREVIOUS_TITLE));
+    $CONTENTS = use_icon('contents', $CONTENTS, 'Table of Contents');
+    $INDEX    = use_icon('index',    $INDEX,    'Index');
     if (!$CUSTOM_BUTTONS) {
-        $CUSTOM_BUTTONS = $BLANK_ICON;
+        $CUSTOM_BUTTONS = get_my_icon('blank');
     }
     $s = ('<table align="center" width="100%" cellpadding="0" cellspacing="2">'
           . "\n<tr>"
