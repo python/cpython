@@ -4,6 +4,7 @@ import test.test_support
 from test.test_support import verbose
 import random
 import threading
+import thread
 import time
 import unittest
 
@@ -78,11 +79,31 @@ class ThreadTests(unittest.TestCase):
         if verbose:
             print 'waiting for all tasks to complete'
         for t in threads:
-            t.join()
+            t.join(NUMTASKS)
+            self.assert_(not t.isAlive())
         if verbose:
             print 'all tasks done'
         self.assertEqual(numrunning.get(), 0)
 
+    def test_foreign_thread(self):
+        # Check that a "foreign" thread can use the threading module.
+        def f(mutex):
+            # Acquiring an RLock forces an entry for the foreign
+            # thread to get made in the threading._active map.
+            r = threading.RLock()
+            r.acquire()
+            r.release()
+            mutex.release()
+
+        mutex = threading.Lock()
+        mutex.acquire()
+        tid = thread.start_new_thread(f, (mutex,))
+        # Wait for the thread to finish.
+        mutex.acquire()
+        self.assert_(tid in threading._active)
+        self.assert_(isinstance(threading._active[tid],
+                                threading._DummyThread))
+        del threading._active[tid]
 
 def test_main():
     test.test_support.run_unittest(ThreadTests)
