@@ -66,6 +66,7 @@ Socket methods:
 - s.bind(sockaddr) --> None
 - s.close() --> None
 - s.connect(sockaddr) --> None
+- s.connect_ex(sockaddr) --> 0 or errno (handy for e.g. async connect)
 - s.fileno() --> file descriptor
 - s.dup() --> same as socket.fromfd(os.dup(s.fileno(), ...)
 - s.getpeername() --> sockaddr
@@ -678,6 +679,25 @@ BUILD_FUNC_DEF_2(PySocketSock_connect,PySocketSockObject *,s, PyObject *,args)
 		return PySocket_Err();
 	Py_INCREF(Py_None);
 	return Py_None;
+}
+
+
+/* s.connect_ex(sockaddr) method */
+
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_connect_ex,PySocketSockObject *,s, PyObject *,args)
+{
+	struct sockaddr *addr;
+	int addrlen;
+	int res;
+	if (!getsockaddrarg(s, args, &addr, &addrlen))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	res = connect(s->sock_fd, addr, addrlen);
+	Py_END_ALLOW_THREADS
+	if (res != 0)
+		res = errno;
+	return PyInt_FromLong((long) res);
 }
 
 
