@@ -105,11 +105,7 @@ struct dirent * readdir(DIR *);
 int rmdir(const char *path);
 int sync(void);
 
-#if defined(__SC__)
-int unlink(char *);
-#else
 int unlink(const char *);
-#endif
 
 #endif /* USE_GUSI */
 
