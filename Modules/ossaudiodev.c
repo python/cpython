@@ -76,7 +76,9 @@ static struct {
     { 16,       AFMT_U16_LE, "linear unsigned 16-bit little-endian audio" },
     { 16,       AFMT_S16_BE, "linear signed 16-bit big-endian audio" },
     { 16,       AFMT_S16_LE, "linear signed 16-bit little-endian audio" },
+#ifdef AFMT_S16_NE
     { 16,       AFMT_S16_NE, "linear signed 16-bit native-endian audio" },
+#endif
 };
 
 static int n_audio_types = sizeof(audio_types) / sizeof(audio_types[0]);
@@ -963,7 +965,9 @@ initossaudiodev(void)
     _EXPORT_INT(m, AFMT_U16_BE);
     _EXPORT_INT(m, AFMT_MPEG);
     _EXPORT_INT(m, AFMT_AC3);
+#ifdef AFMT_S16_NE
     _EXPORT_INT(m, AFMT_S16_NE);
+#endif
         
     /* Expose the sound mixer device numbers. */
     _EXPORT_INT(m, SOUND_MIXER_NRDEVICES);
@@ -1005,11 +1009,15 @@ initossaudiodev(void)
     _EXPORT_INT(m, SNDCTL_COPR_SENDMSG);
     _EXPORT_INT(m, SNDCTL_COPR_WCODE);
     _EXPORT_INT(m, SNDCTL_COPR_WDATA);
+#ifdef SNDCTL_DSP_BIND_CHANNEL
     _EXPORT_INT(m, SNDCTL_DSP_BIND_CHANNEL);
+#endif
     _EXPORT_INT(m, SNDCTL_DSP_CHANNELS);
     _EXPORT_INT(m, SNDCTL_DSP_GETBLKSIZE);
     _EXPORT_INT(m, SNDCTL_DSP_GETCAPS);
+#ifdef SNDCTL_DSP_GETCHANNELMASK
     _EXPORT_INT(m, SNDCTL_DSP_GETCHANNELMASK);
+#endif
     _EXPORT_INT(m, SNDCTL_DSP_GETFMTS);
     _EXPORT_INT(m, SNDCTL_DSP_GETIPTR);
     _EXPORT_INT(m, SNDCTL_DSP_GETISPACE);
@@ -1024,7 +1032,9 @@ initossaudiodev(void)
     _EXPORT_INT(m, SNDCTL_DSP_MAPOUTBUF);
     _EXPORT_INT(m, SNDCTL_DSP_NONBLOCK);
     _EXPORT_INT(m, SNDCTL_DSP_POST);
+#ifdef SNDCTL_DSP_PROFILE
     _EXPORT_INT(m, SNDCTL_DSP_PROFILE);
+#endif
     _EXPORT_INT(m, SNDCTL_DSP_RESET);
     _EXPORT_INT(m, SNDCTL_DSP_SAMPLESIZE);
     _EXPORT_INT(m, SNDCTL_DSP_SETDUPLEX);
@@ -1048,7 +1058,9 @@ initossaudiodev(void)
     _EXPORT_INT(m, SNDCTL_SEQ_CTRLRATE);
     _EXPORT_INT(m, SNDCTL_SEQ_GETINCOUNT);
     _EXPORT_INT(m, SNDCTL_SEQ_GETOUTCOUNT);
+#ifdef SNDCTL_SEQ_GETTIME
     _EXPORT_INT(m, SNDCTL_SEQ_GETTIME);
+#endif
     _EXPORT_INT(m, SNDCTL_SEQ_NRMIDIS);
     _EXPORT_INT(m, SNDCTL_SEQ_NRSYNTHS);
     _EXPORT_INT(m, SNDCTL_SEQ_OUTOFBAND);
@@ -1059,11 +1071,17 @@ initossaudiodev(void)
     _EXPORT_INT(m, SNDCTL_SEQ_SYNC);
     _EXPORT_INT(m, SNDCTL_SEQ_TESTMIDI);
     _EXPORT_INT(m, SNDCTL_SEQ_THRESHOLD);
+#ifdef SNDCTL_SYNTH_CONTROL
     _EXPORT_INT(m, SNDCTL_SYNTH_CONTROL);
+#endif
+#ifdef SNDCTL_SYNTH_ID
     _EXPORT_INT(m, SNDCTL_SYNTH_ID);
+#endif
     _EXPORT_INT(m, SNDCTL_SYNTH_INFO);
     _EXPORT_INT(m, SNDCTL_SYNTH_MEMAVL);
+#ifdef SNDCTL_SYNTH_REMOVESAMPLE
     _EXPORT_INT(m, SNDCTL_SYNTH_REMOVESAMPLE);
+#endif
     _EXPORT_INT(m, SNDCTL_TMR_CONTINUE);
     _EXPORT_INT(m, SNDCTL_TMR_METRONOME);
     _EXPORT_INT(m, SNDCTL_TMR_SELECT);
