@@ -21,7 +21,7 @@
 % size, or if there is no paper tray of the proper size currently installed, 
 % then the job will not be printed.  The following flag, if set to true, will
 % cause the job to print on the default paper in such cases.
-/FMAllowPaperSizeMismatch            true def
+/FMAllowPaperSizeMismatch            false def
 %
 % Frame products normally print colors as their true color on a color printer
 % or as shades of gray, based on luminance, on a black-and white printer. The
@@ -2249,10 +2249,10 @@ J
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 1 F
-(November 26, 1997) 275.66 604.67 T
+(December 31, 1997) 276.28 604.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(Release 1.5b1) 288.64 591.67 T
+(Release 1.5) 294.14 591.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
@@ -6639,79 +6639,80 @@ FrameNoSep
 0.34 (the dictionary implementation requires that a key\325s hash value is immutable \050if the object\325s) 135 376.67 P
 (hash value changes, it will be in the wrong hash bucket\051.) 135 363.67 T
 2 F
-(__nonzero__\050self\051) 384.29 363.67 T
+(__nonzero__\050self\051) 99 344.67 T
 1 F
--3.12 (Called to) 503.09 363.67 P
-2.26 (implement truth value testing; should return 0 or 1. When this method is not defined,) 135 350.67 P
+0.6 (Called to implement truth value testing; should return 0 or 1. When this) 217.8 344.67 P
+-0.06 (method is not defined,) 135 331.67 P
 2 F
-3.24 (__len__) 135 337.67 P
+-0.15 (__len__) 235.88 331.67 P
 1 F
-1.35 ( is called, if it is defined \050see below\051. If a class defines neither) 181.2 337.67 P
+-0.06 ( is called, if it is defined \050see below\051. If a class defines nei-) 282.08 331.67 P
+(ther) 135 318.67 T
 2 F
-3.24 (__len__) 475.04 337.67 P
+(__len__) 154.85 318.67 T
 1 F
-1.35 ( nor) 521.24 337.67 P
+( nor) 201.05 318.67 T
 2 F
-(__nonzero__) 135 324.67 T
+(__nonzero__) 221.22 318.67 T
 1 F
-(, all its instances are considered true.) 207.6 324.67 T
+(, all its instances are considered true.) 293.82 318.67 T
 0 12 Q
-(3.3.2) 99 299 T
-(Customizing attribute access) 144 299 T
+(3.3.2) 99 293 T
+(Customizing attribute access) 144 293 T
 1 11 Q
-0.28 (The following methods can be defined to customize the meaning of attribute access \050use of, assign-) 99 273.67 P
-0.41 0.12 (ment to, or deletion of) 99 260.67 B
+0.28 (The following methods can be defined to customize the meaning of attribute access \050use of, assign-) 99 267.67 P
+0.41 0.12 (ment to, or deletion of) 99 254.67 B
 2 F
-0.99 0.12 (x.) 204.89 260.67 B
+0.99 0.12 (x.) 204.89 254.67 B
 3 F
-0.41 0.12 (name) 218.34 260.67 B
+0.41 0.12 (name) 218.34 254.67 B
 1 F
-0.41 0.12 (\051 for class instances. For performance reasons, these methods are) 242.67 260.67 B
-0.41 0.02 (cached in the class object at class definition time; therefore, they cannot be changed after the class) 99 247.67 B
-(definition is executed.) 99 234.67 T
+0.41 0.12 (\051 for class instances. For performance reasons, these methods are) 242.67 254.67 B
+0.41 0.02 (cached in the class object at class definition time; therefore, they cannot be changed after the class) 99 241.67 B
+(definition is executed.) 99 228.67 T
 2 F
-(__getattr__\050self, name\051) 99 215.67 T
+(__getattr__\050self, name\051) 99 209.67 T
 1 F
--0.39 (Called when an attribute lookup has not found the attribute in the) 257.4 215.67 P
--0.6 (usual places \050i.e. it is not an instance attribute nor is it found in the class tree for) 135 202.67 P
+-0.39 (Called when an attribute lookup has not found the attribute in the) 257.4 209.67 P
+-0.6 (usual places \050i.e. it is not an instance attribute nor is it found in the class tree for) 135 196.67 P
 2 F
--1.43 (self) 478.63 202.67 P
+-1.43 (self) 478.63 196.67 P
 1 F
--0.6 (\051.) 505.03 202.67 P
+-0.6 (\051.) 505.03 196.67 P
 2 F
--1.43 (name) 513.6 202.67 P
+-1.43 (name) 513.6 196.67 P
 1 F
-0.67 (is the attribute name. This method should return the \050computed\051 attribute value or raise an) 135 189.67 P
+0.67 (is the attribute name. This method should return the \050computed\051 attribute value or raise an) 135 183.67 P
 2 F
-(AttributeError) 135 176.67 T
+(AttributeError) 135 170.67 T
 1 F
-( exception.) 227.4 176.67 T
-1.22 (Note that if the attribute is found through the normal mechanism,) 135 159.67 P
+( exception.) 227.4 170.67 T
+1.22 (Note that if the attribute is found through the normal mechanism,) 135 153.67 P
 2 F
-2.93 (__getattr__) 438.06 159.67 P
+2.93 (__getattr__) 438.06 153.67 P
 1 F
-1.22 ( is not) 510.66 159.67 P
-1.13 (called. \050This is an intentional asymmetry between) 135 146.67 P
+1.22 ( is not) 510.66 153.67 P
+1.13 (called. \050This is an intentional asymmetry between) 135 140.67 P
 2 F
-2.72 (__getattr__) 364.74 146.67 P
+2.72 (__getattr__) 364.74 140.67 P
 1 F
-1.13 ( and) 437.34 146.67 P
+1.13 ( and) 437.34 140.67 P
 2 F
-2.72 (__setattr__) 460.99 146.67 P
+2.72 (__setattr__) 460.99 140.67 P
 1 F
-1.13 (.\051) 533.59 146.67 P
-0 (This is done both for efficiency reasons and because otherwise) 135 133.67 P
+1.13 (.\051) 533.59 140.67 P
+0 (This is done both for efficiency reasons and because otherwise) 135 127.67 P
 2 F
-0.01 (__setattr__) 413.63 133.67 P
+0.01 (__setattr__) 413.63 127.67 P
 1 F
-0 ( would have) 486.23 133.67 P
--0.23 (no way to access other attributes of the instance. Note that at least for instance variables, you) 135 120.67 P
-0.14 (can fake total control by not inserting any values in the instance attribute dictionary \050but in-) 135 107.67 P
-(stead inserting them in another object\051.) 135 94.67 T
+0 ( would have) 486.23 127.67 P
+-0.23 (no way to access other attributes of the instance. Note that at least for instance variables, you) 135 114.67 P
+0.14 (can fake total control by not inserting any values in the instance attribute dictionary \050but in-) 135 101.67 P
+(stead inserting them in another object\051.) 135 88.67 T
 2 F
-(__setattr__\050self, name, value\051) 99 75.67 T
+(__setattr__\050self, name, value\051) 99 69.67 T
 1 F
--0.27 (Called whenever an attribute assignment is attempted.) 303.6 75.67 P
+-0.27 (Called whenever an attribute assignment is attempted.) 303.6 69.67 P
 0 0 0 1 0 0 0 K
 FMENDPAGE
 %%EndPage: "19" 25
@@ -10212,11 +10213,11 @@ FrameNoSep
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 1 11 Q
-0.25 (ator omits no code for an) 72 712.67 P
+0.29 (ator emits no code for an) 72 712.67 P
 2 F
-0.61 (assert) 186.56 712.67 P
+0.7 (assert) 186.16 712.67 P
 1 F
-0.25 ( statement when optimization is requested at compile time. Note that it) 226.16 712.67 P
+0.29 ( statement when optimization is requested at compile time. Note that it) 225.76 712.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 0.11 (is unnecessary to include the source code for the expression that failed in the error message; it will be dis-) 72 699.67 P
@@ -12467,6 +12468,8 @@ FrameNoSep
 (readline\050\051) 88.19 573.67 T
 1 F
 ( method of file objects.) 154.19 573.67 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
