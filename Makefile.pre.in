@@ -838,7 +838,7 @@ frameworkinstallunixtools:
 
 # This installs IDLE
 idleinstall:
-	SRCDIR=$(srcdir) \
+	SRCDIR=$(srcdir) $(RUNSHARED) \
 	./$(BUILDPYTHON) $(srcdir)/Tools/idle/setup.py install \
 	--check-tkinter \
 	--prefix=$(prefix) \
@@ -847,7 +847,7 @@ idleinstall:
 
 # This installs a few of the useful scripts in Tools/scripts
 scriptsinstall:
-	SRCDIR=$(srcdir) \
+	SRCDIR=$(srcdir) $(RUNSHARED) \
 	./$(BUILDPYTHON) $(srcdir)/Tools/scripts/setup.py install \
 	--prefix=$(prefix) \
 	--install-scripts=$(BINDIR)
