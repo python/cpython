@@ -8,9 +8,12 @@ To write out a plist file, use the writePlist(rootObject, pathOrFile)
 function. 'rootObject' is the top level object, 'pathOrFile' is a
 filename or a (writable) file object.
 
-To parse a plist from a file, use the readPlist(pathOrFile)
-function, with a file name or a (readable) file object as the only
-argument. It returns the top level object (usually a dictionary).
+To parse a plist from a file, use the readPlist(pathOrFile) function,
+with a file name or a (readable) file object as the only argument. It
+returns the top level object (again, usually a dictionary).
+
+To work with plist data in strings, you can use readPlistFromString()
+and writePlistToString().
 
 Values can be strings, integers, floats, booleans, tuples, lists,
 dictionaries, Data or Date objects. String values (including dictionary
@@ -19,13 +22,13 @@ keys) may be unicode strings -- they will be written out as UTF-8.
 This module exports a class named Dict(), which allows you to easily
 construct (nested) dicts using keyword arguments as well as accessing
 values with attribute notation, where d.foo is equivalent to d["foo"].
-Regular dictionaries work, too.
+Regular dictionaries work, too. Dictionaries are always represented with
+Dict instances when loading plist data.
 
 The <data> plist type is supported through the Data class. This is a
 thin wrapper around a Python string.
 
-The <date> plist data has (limited) support through the Date class.
-(Warning: Dates are only supported if the PyXML package is installed.)
+The <date> plist data has support through the Date class.
 
 Generate Plist example:
 
@@ -58,13 +61,15 @@ Parse Plist example:
 
 
 __all__ = [
-    "readPlist", "writePlist",
+    "readPlist", "writePlist", "readPlistFromString", "writePlistToString",
     "readPlistFromResource", "writePlistToResource",
     "Plist", "Data", "Date", "Dict"
 ]
 # Note: the Plist class has been deprecated.
 
-import base64, datetime
+import base64
+import datetime
+from cStringIO import StringIO
 
 
 def readPlist(pathOrFile):
@@ -99,19 +104,32 @@ def writePlist(rootObject, pathOrFile):
         pathOrFile.close()
 
 
+def readPlistFromString(data):
+    """Read a plist data from a string. Return the root object.
+    """
+    return readPlist(StringIO(data))
+
+
+def writePlistToString(rootObject):
+    """Return 'rootObject' as a plist-formatted string.
+    """
+    f = StringIO()
+    writePlist(rootObject, f)
+    return f.getvalue()
+
+
 def readPlistFromResource(path, restype='plst', resid=0):
     """Read plst resource from the resource fork of path.
     """
     from Carbon.File import FSRef, FSGetResourceForkName
     from Carbon.Files import fsRdPerm
     from Carbon import Res
-    from cStringIO import StringIO
     fsRef = FSRef(path)
     resNum = Res.FSOpenResourceFile(fsRef, FSGetResourceForkName(), fsRdPerm)
     Res.UseResFile(resNum)
-    plistData = StringIO(Res.Get1Resource(restype, resid).data)
+    plistData = Res.Get1Resource(restype, resid).data
     Res.CloseResFile(resNum)
-    return readPlist(plistData)
+    return readPlistFromString(plistData)
 
 
 def writePlistToResource(rootObject, path, restype='plst', resid=0):
@@ -120,10 +138,7 @@ def writePlistToResource(rootObject, path, restype='plst', resid=0):
     from Carbon.File import FSRef, FSGetResourceForkName
     from Carbon.Files import fsRdWrPerm
     from Carbon import Res
-    from cStringIO import StringIO
-    plistData = StringIO()
-    writePlist(rootObject, plistData)
-    plistData = plistData.getvalue()
+    plistData = writePlistToString(rootObject)
     fsRef = FSRef(path)
     resNum = Res.FSOpenResourceFile(fsRef, FSGetResourceForkName(), fsRdWrPerm)
     Res.UseResFile(resNum)
