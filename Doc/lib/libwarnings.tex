@@ -116,14 +116,15 @@ form (\var{action}, \var{message}, \var{category}, \var{module},
 
     \end{tableii}
 
-\item \var{message} is a compiled regular expression that the warning
-message must match (the match is case-insensitive)
+\item \var{message} is a string containing a regular expression that
+the warning message must match (the match is compiled to always be 
+case-insensitive) 
 
 \item \var{category} is a class (a subclass of \exception{Warning}) of
       which the warning category must be a subclass in order to match
 
-\item \var{module} is a compiled regular expression that the module
-      name must match
+\item \var{module} is a string containing a regular expression that the module
+      name must match (the match is compiled to be case-sensitive)
 
 \item \var{lineno} is an integer that the line number where the
       warning occurred must match, or \code{0} to match all line
