@@ -43,12 +43,12 @@ PERFORMANCE OF THIS SOFTWARE.
 ** by __initialize_with_resources.
 */
 
+#include <Types.h>
 #include <Quickdraw.h>
 #include <SegLoad.h>
 #include <CodeFragments.h>
 #include <Files.h>
 #include <Resources.h>
-
 
 /*
 ** Variables passed from shared lib initialization to PyMac_AddLibResources.
@@ -61,7 +61,7 @@ static FSSpec library_fss;
 ** loaded. We always return noErr (we just continue without the resources).
 */
 OSErr pascal
-__initialize_with_resources(InitBlockPtr data)
+__initialize_with_resources(CFragInitBlockPtr data)
 {
 	/* Call the MW runtime's initialization routine */
 /* #ifdef __CFM68K__ */
@@ -72,10 +72,10 @@ __initialize_with_resources(InitBlockPtr data)
 #endif
 	
 	if ( data == nil ) return noErr;
-	if ( data->fragLocator.where == kOnDiskFlat ) {
+	if ( data->fragLocator.where == kDataForkCFragLocator ) {
 		library_fss = *data->fragLocator.u.onDisk.fileSpec;
 		library_fss_valid = 1;
-	} else if ( data->fragLocator.where == kOnDiskSegmented ) {
+	} else if ( data->fragLocator.where == kResourceCFragLocator ) {
 		library_fss = *data->fragLocator.u.inSegs.fileSpec;
 		library_fss_valid = 1;
 	}
@@ -95,3 +95,16 @@ PyMac_AddLibResources()
 	(void)FSpOpenResFile(&library_fss, fsRdPerm);
 }
 
+/*
+** Dummy main() program to keep linker happy: we want to
+** use the MW AppRuntime in our shared library (better than building
+** custom runtime libraries as we did before) but AppRuntime
+** expects a main program. Note that it 
+*/
+
+#pragma export off
+int
+main(int argc, char **argv) {
+	DebugStr("\pCannot happen: PythonCore dummy main called!");
+}
+#pragma export reset
