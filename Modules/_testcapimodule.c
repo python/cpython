@@ -9,6 +9,22 @@
 
 static PyObject *TestError;	/* set to exception object in init */
 
+/* Raise TestError with test_name + ": " + msg, and return NULL. */
+
+static PyObject *
+raiseTestError(const char* test_name, const char* msg)
+{
+	char buf[2048];
+
+	if (strlen(test_name) + strlen(msg) > sizeof(buf) - 50)
+		PyErr_SetString(TestError, "internal error msg too large");
+	else {
+		sprintf(buf, "%s: %s", test_name, msg);
+		PyErr_SetString(TestError, buf);
+	}
+	return NULL;
+}
+
 /* Test #defines from config.h (particularly the SIZEOF_* defines).
 
    The ones derived from autoconf on the UNIX-like OSes can be relied
@@ -145,7 +161,7 @@ test_dict_iteration(PyObject* self, PyObject* args)
 
         if (!PyArg_ParseTuple(args, ":test_dict_iteration"))
                 return NULL;
-	
+
 	for (i = 0; i < 200; i++) {
 		if (test_dict_inner(i) < 0) {
 			return NULL;
@@ -156,10 +172,47 @@ test_dict_iteration(PyObject* self, PyObject* args)
 	return Py_None;
 }
 
+#ifdef HAVE_LONG_LONG
+
+/* Basic sanity checks for PyLong_{As, From}{Unsigned,}LongLong(). */
+
+static PyObject *
+test_longlong_api(PyObject* self, PyObject* args)
+{
+	/* unsigned LONG_LONG uinput, uoutput; */
+	LONG_LONG input, output;
+	PyObject *pyresult;
+
+        if (!PyArg_ParseTuple(args, ":test_longlong_api"))
+                return NULL;
+
+	input = 0;
+	pyresult = PyLong_FromLongLong(input);
+	if (pyresult == NULL)
+		return raiseTestError("test_longlong_api",
+				      "unexpected null result");
+	output = PyLong_AsLongLong(pyresult);
+	if (output == (LONG_LONG)-1 && PyErr_Occurred())
+		return raiseTestError("test_longlong_api",
+				      "unexpected -1 result");
+	if (output != input)
+		return raiseTestError("test_longlong_api",
+				       "output != input");
+	Py_DECREF(pyresult);
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+#endif
+
 static PyMethodDef TestMethods[] = {
-	{"test_config", test_config, METH_VARARGS},
-	{"test_list_api", test_list_api, METH_VARARGS},
-	{"test_dict_iteration", test_dict_iteration, METH_VARARGS},
+	{"test_config",		test_config,		METH_VARARGS},
+	{"test_list_api",	test_list_api,		METH_VARARGS},
+	{"test_dict_iteration",	test_dict_iteration,	METH_VARARGS},
+#ifdef HAVE_LONG_LONG
+	{"test_longlong_api",	test_longlong_api,	METH_VARARGS},
+#endif
 	{NULL, NULL} /* sentinel */
 };
 
