@@ -82,6 +82,18 @@ times, measured in seconds as a float.  The argument is the number of
 times through the loop, defaulting to one million.  The main
 statement, the setup statement and the timer function to be used are
 passed to the constructor.
+
+\begin{notice}
+By default, \method{timeit()} temporarily turns off garbage collection
+during the timing.  The advantage of this approach is that it makes
+independent timings more comparable.  This disadvantage is that GC
+may be an important component of the performance of the function being
+measured.  If so, GC can be re-enabled as the first statement in the
+\var{setup} string.  For example:
+\begin{verbatim}
+    timeit.Timer('for i in xrange(10): oct(i)', 'gc.enable()').timeit()
+\end{verbatim}
+\end{notice}
 \end{methoddesc}
 
 
