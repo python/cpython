@@ -534,6 +534,11 @@ try:
     # this assumes that the max data size (sys.maxint) == max address size
     # this also assumes that the address size is at least 4 bytes
     # with 8 byte addresses, the bug is not well tested
+    #
+    # Note: This test is expected to SEGV under Cygwin 1.3.12 or earlier
+    # due to a newlib bug.  See the following mailing list thread for the
+    # details:
+    #     http://sources.redhat.com/ml/newlib/2002/msg00369.html
     list(xrange(sys.maxint / 4))
 except MemoryError:
     pass
