@@ -274,6 +274,16 @@ extern int lstat Py_PROTO((const char *, struct stat *));
 
 #endif /* UNION_WAIT */
 
+/* Don't use the "_r" form if we don't need it (also, won't have a
+   prototype for it, at least on Solaris -- maybe others as well?). */
+#if defined(HAVE_CTERMID_R) && defined(WITH_THREAD)
+#define USE_CTERMID_R
+#endif
+
+#if defined(HAVE_TMPNAM_R) && defined(WITH_THREAD)
+#define USE_TMPNAM_R
+#endif
+
 /* Return a dictionary corresponding to the POSIX environment table */
 
 #if !defined(_MSC_VER) && ( !defined(__WATCOMC__) || defined(__QNX__) )
@@ -649,7 +659,7 @@ posix_ctermid(self, args)
 	if (!PyArg_ParseTuple(args, ":ctermid"))
 		return NULL;
 
-#if defined(HAVE_CTERMID_R) && defined(WITH_THREAD)
+#ifdef USE_CTERMID_R
 	ret = ctermid_r(buffer);
 #else
         ret = ctermid(buffer);
@@ -3342,7 +3352,7 @@ posix_tmpnam(self, args)
 
     if (!PyArg_ParseTuple(args, ":tmpnam"))
         return NULL;
-#if defined(HAVE_TMPNAM_R) && defined(WITH_THREAD)
+#ifdef USE_TMPNAM_R
     name = tmpnam_r(buffer);
 #else
     name = tmpnam(buffer);
@@ -3350,7 +3360,7 @@ posix_tmpnam(self, args)
     if (name == NULL) {
         PyErr_SetObject(PyExc_OSError,
                         Py_BuildValue("is", 0,
-#ifdef HAVE_TMPNAM_R
+#ifdef USE_TMPNAM_R
                                       "unexpected NULL from tmpnam_r"
 #else
                                       "unexpected NULL from tmpnam"
