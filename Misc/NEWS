@@ -178,6 +178,10 @@ Extension modules
 Library
 -------
 
+- urllib2 now supports processors.  A processor is a handler that
+  implements an xxx_request or xxx_response method.  These methods are
+  called for all requests.
+
 - distutils compilers now compile source files in the same order as
   they are passed to the compiler.
 
