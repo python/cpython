@@ -297,7 +297,8 @@ def readmodule_ex(module, path=[], inpackage=0):
 					# recursively read the imported module
 					d = readmodule(n, path, inpackage)
 				except:
-					print 'module', n, 'not found'
+					##print 'module', n, 'not found'
+					pass
 
 		elif m.start("ImportFrom") >= 0:
 			# from module import stuff
@@ -307,7 +308,7 @@ def readmodule_ex(module, path=[], inpackage=0):
 				# recursively read the imported module
 				d = readmodule(mod, path, inpackage)
 			except:
-				print 'module', mod, 'not found'
+				##print 'module', mod, 'not found'
 				continue
 			# add any classes that were defined in the
 			# imported module to our name space if they
