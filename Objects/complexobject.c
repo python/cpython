@@ -4,10 +4,7 @@
 
 #ifndef WITHOUT_COMPLEX
 
-#include "allobjects.h"
-#include "modsupport.h"
-
-#include <errno.h>
+#include "Python.h"
 #include "mymath.h"
 
 #ifdef i860
@@ -48,8 +45,8 @@
 #endif
 
 #if !defined(__STDC__) && !defined(macintosh)
-extern double fmod PROTO((double, double));
-extern double pow PROTO((double, double));
+extern double fmod Py_PROTO((double, double));
+extern double pow Py_PROTO((double, double));
 #endif
 
 
@@ -175,14 +172,14 @@ PyObject *
 PyComplex_FromCComplex(cval)
 	Py_complex cval;
 {
-	register complexobject *op =
-		(complexobject *) malloc(sizeof(complexobject));
+	register PyComplexObject *op =
+		(PyComplexObject *) malloc(sizeof(PyComplexObject));
 	if (op == NULL)
-		return err_nomem();
-	op->ob_type = &Complextype;
+		return PyErr_NoMemory();
+	op->ob_type = &PyComplex_Type;
 	op->cval = cval;
-	NEWREF(op);
-	return (object *) op;
+	_Py_NewReference(op);
+	return (PyObject *) op;
 }
 
 PyObject *
@@ -233,16 +230,16 @@ PyComplex_AsCComplex(op)
 
 static void
 complex_dealloc(op)
-	object *op;
+	PyObject *op;
 {
-	DEL(op);
+	PyMem_DEL(op);
 }
 
 
 static void
 complex_buf_repr(buf, v)
 	char *buf;
-	complexobject *v;
+	PyComplexObject *v;
 {
 	if (v->cval.real == 0.)
 		sprintf(buf, "%.12gj", v->cval.imag);
@@ -252,7 +249,7 @@ complex_buf_repr(buf, v)
 
 static int
 complex_print(v, fp, flags)
-	complexobject *v;
+	PyComplexObject *v;
 	FILE *fp;
 	int flags; /* Not used but required by interface */
 {
@@ -262,18 +259,18 @@ complex_print(v, fp, flags)
 	return 0;
 }
 
-static object *
+static PyObject *
 complex_repr(v)
-	complexobject *v;
+	PyComplexObject *v;
 {
 	char buf[100];
 	complex_buf_repr(buf, v);
-	return newstringobject(buf);
+	return PyString_FromString(buf);
 }
 
 static int
 complex_compare(v, w)
-	complexobject *v, *w;
+	PyComplexObject *v, *w;
 {
 /* Note: "greater" and "smaller" have no meaning for complex numbers,
    but Python requires that they be defined nevertheless. */
@@ -290,7 +287,7 @@ complex_compare(v, w)
 
 static long
 complex_hash(v)
-	complexobject *v;
+	PyComplexObject *v;
 {
 	double intpart, fractpart;
 	int expo;
@@ -312,11 +309,11 @@ complex_hash(v)
 	if (fractpart == 0.0 && v->cval.imag == 0.0) {
 		if (intpart > 0x7fffffffL || -intpart > 0x7fffffffL) {
 			/* Convert to long int and use its hash... */
-			object *w = dnewlongobject(v->cval.real);
+			PyObject *w = PyLong_FromDouble(v->cval.real);
 			if (w == NULL)
 				return -1;
-			x = hashobject(w);
-			DECREF(w);
+			x = PyObject_Hash(w);
+			Py_DECREF(w);
 			return x;
 		}
 		x = (long)intpart;
@@ -359,46 +356,46 @@ complex_hash(v)
 	return x;
 }
 
-static object *
+static PyObject *
 complex_add(v, w)
-	complexobject *v;
-	complexobject *w;
+	PyComplexObject *v;
+	PyComplexObject *w;
 {
 	Py_complex result;
 	PyFPE_START_PROTECT("complex_add", return 0)
 	result = c_sum(v->cval,w->cval);
 	PyFPE_END_PROTECT(result)
-	return newcomplexobject(result);
+	return PyComplex_FromCComplex(result);
 }
 
-static object *
+static PyObject *
 complex_sub(v, w)
-	complexobject *v;
-	complexobject *w;
+	PyComplexObject *v;
+	PyComplexObject *w;
 {
 	Py_complex result;
 	PyFPE_START_PROTECT("complex_sub", return 0)
 	result = c_diff(v->cval,w->cval);
 	PyFPE_END_PROTECT(result)
-	return newcomplexobject(result);
+	return PyComplex_FromCComplex(result);
 }
 
-static object *
+static PyObject *
 complex_mul(v, w)
-	complexobject *v;
-	complexobject *w;
+	PyComplexObject *v;
+	PyComplexObject *w;
 {
 	Py_complex result;
 	PyFPE_START_PROTECT("complex_mul", return 0)
 	result = c_prod(v->cval,w->cval);
 	PyFPE_END_PROTECT(result)
-	return newcomplexobject(result);
+	return PyComplex_FromCComplex(result);
 }
 
-static object *
+static PyObject *
 complex_div(v, w)
-	complexobject *v;
-	complexobject *w;
+	PyComplexObject *v;
+	PyComplexObject *w;
 {
 	Py_complex quot;
 	PyFPE_START_PROTECT("complex_div", return 0)
@@ -406,74 +403,74 @@ complex_div(v, w)
 	quot = c_quot(v->cval,w->cval);
 	PyFPE_END_PROTECT(quot)
 	if (c_error == 1) {
-		err_setstr(ZeroDivisionError, "complex division");
+		PyErr_SetString(PyExc_ZeroDivisionError, "complex division");
 		return NULL;
 	}
-	return newcomplexobject(quot);
+	return PyComplex_FromCComplex(quot);
 }
 
-static object *
+static PyObject *
 complex_remainder(v, w)
-	complexobject *v;
-	complexobject *w;
+	PyComplexObject *v;
+	PyComplexObject *w;
 {
         Py_complex div, mod;
 	c_error = 0;
 	div = c_quot(v->cval,w->cval); /* The raw divisor value. */
 	if (c_error == 1) {
-		err_setstr(ZeroDivisionError, "complex remainder");
+		PyErr_SetString(PyExc_ZeroDivisionError, "complex remainder");
 		return NULL;
 	}
 	div.real = floor(div.real); /* Use the floor of the real part. */
 	div.imag = 0.0;
 	mod = c_diff(v->cval, c_prod(w->cval, div));
 
-	return newcomplexobject(mod);
+	return PyComplex_FromCComplex(mod);
 }
 
 
-static object *
+static PyObject *
 complex_divmod(v, w)
-	complexobject *v;
-	complexobject *w;
+	PyComplexObject *v;
+	PyComplexObject *w;
 {
         Py_complex div, mod;
 	PyObject *d, *m, *z;
 	c_error = 0;
 	div = c_quot(v->cval,w->cval); /* The raw divisor value. */
 	if (c_error == 1) {
-		err_setstr(ZeroDivisionError, "complex divmod()");
+		PyErr_SetString(PyExc_ZeroDivisionError, "complex divmod()");
 		return NULL;
 	}
 	div.real = floor(div.real); /* Use the floor of the real part. */
 	div.imag = 0.0;
 	mod = c_diff(v->cval, c_prod(w->cval, div));
-	d = newcomplexobject(div);
-	m = newcomplexobject(mod);
-	z = mkvalue("(OO)", d, m);
+	d = PyComplex_FromCComplex(div);
+	m = PyComplex_FromCComplex(mod);
+	z = Py_BuildValue("(OO)", d, m);
 	Py_XDECREF(d);
 	Py_XDECREF(m);
 	return z;
 }
 
-static object *
+static PyObject *
 complex_pow(v, w, z)
-	complexobject *v;
-	object *w;
-	complexobject *z;
+	PyComplexObject *v;
+	PyObject *w;
+	PyComplexObject *z;
 {
 	Py_complex p;
 	Py_complex exponent;
 	long int_exponent;
 
- 	if ((object *)z!=None) {
-		err_setstr(ValueError, "complex modulo");
+ 	if ((PyObject *)z!=Py_None) {
+		PyErr_SetString(PyExc_ValueError, "complex modulo");
 		return NULL;
 	}
 
 	PyFPE_START_PROTECT("complex_pow", return 0)
 	c_error = 0;
-	exponent = ((complexobject*)w)->cval;
+	exponent = ((PyComplexObject*)w)->cval;
 	int_exponent = (long)exponent.real;
 	if (exponent.imag == 0. && exponent.real == int_exponent)
 		p = c_powi(v->cval,int_exponent);
@@ -482,112 +479,113 @@ complex_pow(v, w, z)
 
 	PyFPE_END_PROTECT(p)
 	if (c_error == 2) {
-		err_setstr(ValueError, "0.0 to a negative or complex power");
+		PyErr_SetString(PyExc_ValueError,
+				"0.0 to a negative or complex power");
 		return NULL;
 	}
 
-	return newcomplexobject(p);
+	return PyComplex_FromCComplex(p);
 }
 
-static object *
+static PyObject *
 complex_neg(v)
-	complexobject *v;
+	PyComplexObject *v;
 {
 	Py_complex neg;
 	neg.real = -v->cval.real;
 	neg.imag = -v->cval.imag;
-	return newcomplexobject(neg);
+	return PyComplex_FromCComplex(neg);
 }
 
-static object *
+static PyObject *
 complex_pos(v)
-	complexobject *v;
+	PyComplexObject *v;
 {
-	INCREF(v);
-	return (object *)v;
+	Py_INCREF(v);
+	return (PyObject *)v;
 }
 
-static object *
+static PyObject *
 complex_abs(v)
-	complexobject *v;
+	PyComplexObject *v;
 {
 	double result;
 	PyFPE_START_PROTECT("complex_abs", return 0)
 	result = hypot(v->cval.real,v->cval.imag);
 	PyFPE_END_PROTECT(result)
-	return newfloatobject(result);
+	return PyFloat_FromDouble(result);
 }
 
 static int
 complex_nonzero(v)
-	complexobject *v;
+	PyComplexObject *v;
 {
 	return v->cval.real != 0.0 && v->cval.imag != 0.0;
 }
 
 static int
 complex_coerce(pv, pw)
-	object **pv;
-	object **pw;
+	PyObject **pv;
+	PyObject **pw;
 {
 	Py_complex cval;
 	cval.imag = 0.;
-	if (is_intobject(*pw)) {
-		cval.real = (double)getintvalue(*pw);
-		*pw = newcomplexobject(cval);
-		INCREF(*pv);
+	if (PyInt_Check(*pw)) {
+		cval.real = (double)PyInt_AsLong(*pw);
+		*pw = PyComplex_FromCComplex(cval);
+		Py_INCREF(*pv);
 		return 0;
 	}
-	else if (is_longobject(*pw)) {
-		cval.real = dgetlongvalue(*pw);
-		*pw = newcomplexobject(cval);
-		INCREF(*pv);
+	else if (PyLong_Check(*pw)) {
+		cval.real = PyLong_AsDouble(*pw);
+		*pw = PyComplex_FromCComplex(cval);
+		Py_INCREF(*pv);
 		return 0;
 	}
-	else if (is_floatobject(*pw)) {
-		cval.real = getfloatvalue(*pw);
-		*pw = newcomplexobject(cval);
-		INCREF(*pv);
+	else if (PyFloat_Check(*pw)) {
+		cval.real = PyFloat_AsDouble(*pw);
+		*pw = PyComplex_FromCComplex(cval);
+		Py_INCREF(*pv);
 		return 0;
 	}
 	return 1; /* Can't do it */
 }
 
-static object *
+static PyObject *
 complex_int(v)
-	object *v;
+	PyObject *v;
 {
-	err_setstr(TypeError,
+	PyErr_SetString(PyExc_TypeError,
 		   "can't convert complex to int; use e.g. int(abs(z))");
 	return NULL;
 }
 
-static object *
+static PyObject *
 complex_long(v)
-	object *v;
+	PyObject *v;
 {
-	err_setstr(TypeError,
+	PyErr_SetString(PyExc_TypeError,
 		   "can't convert complex to long; use e.g. long(abs(z))");
 	return NULL;
 }
 
-static object *
+static PyObject *
 complex_float(v)
-	object *v;
+	PyObject *v;
 {
-	err_setstr(TypeError,
+	PyErr_SetString(PyExc_TypeError,
 		   "can't convert complex to float; use e.g. abs(z)");
 	return NULL;
 }
 
-static object *
+static PyObject *
 complex_conjugate(self)
-	object *self;
+	PyObject *self;
 {
 	Py_complex c;
-	c = ((complexobject *)self)->cval;
+	c = ((PyComplexObject *)self)->cval;
 	c.imag = -c.imag;
-	return newcomplexobject(c);
+	return PyComplex_FromCComplex(c);
 }
 
 static PyMethodDef complex_methods[] = {
@@ -596,21 +594,21 @@ static PyMethodDef complex_methods[] = {
 };
 
 
-static object *
+static PyObject *
 complex_getattr(self, name)
-	complexobject *self;
+	PyComplexObject *self;
 	char *name;
 {
 	if (strcmp(name, "real") == 0)
-		return (object *)newfloatobject(self->cval.real);
+		return (PyObject *)PyFloat_FromDouble(self->cval.real);
 	else if (strcmp(name, "imag") == 0)
-		return (object *)newfloatobject(self->cval.imag);
+		return (PyObject *)PyFloat_FromDouble(self->cval.imag);
 	else if (strcmp(name, "__members__") == 0)
-		return mkvalue("[ss]", "imag", "real");
-	return findmethod(complex_methods, (object *)self, name);
+		return Py_BuildValue("[ss]", "imag", "real");
+	return Py_FindMethod(complex_methods, (PyObject *)self, name);
 }
 
-static number_methods complex_as_number = {
+static PyNumberMethods complex_as_number = {
 	(binaryfunc)complex_add, /*nb_add*/
 	(binaryfunc)complex_sub, /*nb_subtract*/
 	(binaryfunc)complex_mul, /*nb_multiply*/
@@ -636,11 +634,11 @@ static number_methods complex_as_number = {
 	0,		/*nb_hex*/
 };
 
-typeobject Complextype = {
-	OB_HEAD_INIT(&Typetype)
+PyTypeObject PyComplex_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"complex",
-	sizeof(complexobject),
+	sizeof(PyComplexObject),
 	0,
 	(destructor)complex_dealloc,	/*tp_dealloc*/
 	(printfunc)complex_print,	/*tp_print*/

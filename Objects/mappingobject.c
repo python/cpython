@@ -37,8 +37,7 @@ PERFORMANCE OF THIS SOFTWARE.
   originally derived from) a file by that name I had to change its
   name.  For the user these objects are still called "dictionaries". */
 
-#include "allobjects.h"
-#include "modsupport.h"
+#include "Python.h"
 
 
 /*
@@ -85,7 +84,7 @@ static long polys[] = {
 };
 
 /* Object used as dummy key to fill deleted entries */
-static object *dummy; /* Initialized by first call to newmappingobject() */
+static PyObject *dummy; /* Initialized by first call to newmappingobject() */
 
 /*
 Invariant for entries: when in use, de_value is not NULL and de_key is
@@ -95,8 +94,8 @@ NULL, since otherwise other keys may be lost.
 */
 typedef struct {
 	long me_hash;
-	object *me_key;
-	object *me_value;
+	PyObject *me_key;
+	PyObject *me_value;
 #ifdef USE_CACHE_ALIGNED
 	long	aligner;
 #endif
@@ -111,7 +110,7 @@ To avoid slowing down lookups on a near-full table, we resize the table
 when it is more than half filled.
 */
 typedef struct {
-	OB_HEAD
+	PyObject_HEAD
 	int ma_fill;
 	int ma_used;
 	int ma_size;
@@ -119,16 +118,16 @@ typedef struct {
 	mappingentry *ma_table;
 } mappingobject;
 
-object *
-newmappingobject()
+PyObject *
+PyDict_New()
 {
 	register mappingobject *mp;
 	if (dummy == NULL) { /* Auto-initialize dummy */
-		dummy = newstringobject("<dummy key>");
+		dummy = PyString_FromString("<dummy key>");
 		if (dummy == NULL)
 			return NULL;
 	}
-	mp = NEWOBJ(mappingobject, &Mappingtype);
+	mp = PyObject_NEW(mappingobject, &PyDict_Type);
 	if (mp == NULL)
 		return NULL;
 	mp->ma_size = 0;
@@ -136,7 +135,7 @@ newmappingobject()
 	mp->ma_table = NULL;
 	mp->ma_fill = 0;
 	mp->ma_used = 0;
-	return (object *)mp;
+	return (PyObject *)mp;
 }
 
 /*
@@ -160,11 +159,11 @@ where x is a root. The initial value is derived from sum, too.
 (This version is due to Reimer Behrends, some ideas are also due to
 Jyrki Alakuijala.)
 */
-static mappingentry *lookmapping PROTO((mappingobject *, object *, long));
+static mappingentry *lookmapping Py_PROTO((mappingobject *, PyObject *, long));
 static mappingentry *
 lookmapping(mp, key, hash)
 	mappingobject *mp;
-	object *key;
+	PyObject *key;
 	long hash;
 {
 	register int i;
@@ -186,7 +185,9 @@ lookmapping(mp, key, hash)
 	if (ep->me_key == dummy)
 		freeslot = ep;
 	else if (ep->me_key == key ||
-		 (ep->me_hash == hash && cmpobject(ep->me_key, key) == 0)) {
+		 (ep->me_hash == hash &&
+		  PyObject_Compare(ep->me_key, key) == 0))
+	{
 		return ep;
 	}
 	/* Derive incr from sum, just to make it more arbitrary. Note that
@@ -211,7 +212,7 @@ lookmapping(mp, key, hash)
 		}
 		else if (ep->me_key == key ||
 			 (ep->me_hash == hash &&
-			  cmpobject(ep->me_key, key) == 0)) {
+			  PyObject_Compare(ep->me_key, key) == 0)) {
 			return ep;
 		}
 		/* Cycle through GF(2^n)-{0} */
@@ -226,28 +227,29 @@ Internal routine to insert a new item into the table.
 Used both by the internal resize routine and by the public insert routine.
 Eats a reference to key and one to value.
 */
-static void insertmapping PROTO((mappingobject *, object *, long, object *));
+static void insertmapping
+	Py_PROTO((mappingobject *, PyObject *, long, PyObject *));
 static void
 insertmapping(mp, key, hash, value)
 	register mappingobject *mp;
-	object *key;
+	PyObject *key;
 	long hash;
-	object *value;
+	PyObject *value;
 {
-	object *old_value;
+	PyObject *old_value;
 	register mappingentry *ep;
 	ep = lookmapping(mp, key, hash);
 	if (ep->me_value != NULL) {
 		old_value = ep->me_value;
 		ep->me_value = value;
-		DECREF(old_value); /* which **CAN** re-enter */
-		DECREF(key);
+		Py_DECREF(old_value); /* which **CAN** re-enter */
+		Py_DECREF(key);
 	}
 	else {
 		if (ep->me_key == NULL)
 			mp->ma_fill++;
 		else
-			DECREF(ep->me_key);
+			Py_DECREF(ep->me_key);
 		ep->me_key = key;
 		ep->me_hash = hash;
 		ep->me_value = value;
@@ -260,7 +262,7 @@ Restructure the table by allocating a new table and reinserting all
 items again.  When entries have been deleted, the new table may
 actually be smaller than the old one.
 */
-static int mappingresize PROTO((mappingobject *));
+static int mappingresize Py_PROTO((mappingobject *));
 static int
 mappingresize(mp)
 	mappingobject *mp;
@@ -275,7 +277,7 @@ mappingresize(mp)
 	for (i = 0, newsize = MINSIZE; ; i++, newsize <<= 1) {
 		if (i > sizeof(polys)/sizeof(polys[0])) {
 			/* Ran out of polynomials */
-			err_nomem();
+			PyErr_NoMemory();
 			return -1;
 		}
 		if (newsize > mp->ma_used*2) {
@@ -285,7 +287,7 @@ mappingresize(mp)
 	}
 	newtable = (mappingentry *) calloc(sizeof(mappingentry), newsize);
 	if (newtable == NULL) {
-		err_nomem();
+		PyErr_NoMemory();
 		return -1;
 	}
 	mp->ma_size = newsize;
@@ -302,31 +304,31 @@ mappingresize(mp)
 	}
 	for (i = 0, ep = oldtable; i < oldsize; i++, ep++) {
 		if (ep->me_value == NULL)
-			XDECREF(ep->me_key);
+			Py_XDECREF(ep->me_key);
 	}
 
-	XDEL(oldtable);
+	PyMem_XDEL(oldtable);
 	return 0;
 }
 
-object *
-mappinglookup(op, key)
-	object *op;
-	object *key;
+PyObject *
+PyDict_GetItem(op, key)
+	PyObject *op;
+	PyObject *key;
 {
 	long hash;
-	if (!is_mappingobject(op)) {
-		err_badcall();
+	if (!PyDict_Check(op)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
 	if (((mappingobject *)op)->ma_table == NULL)
 		return NULL;
 #ifdef CACHE_HASH
-	if (!is_stringobject(key) ||
-	    (hash = ((stringobject *) key)->ob_shash) == -1)
+	if (!PyString_Check(key) ||
+	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
 #endif
 	{
-		hash = hashobject(key);
+		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return NULL;
 	}
@@ -334,37 +336,37 @@ mappinglookup(op, key)
 }
 
 int
-mappinginsert(op, key, value)
-	register object *op;
-	object *key;
-	object *value;
+PyDict_SetItem(op, key, value)
+	register PyObject *op;
+	PyObject *key;
+	PyObject *value;
 {
 	register mappingobject *mp;
 	register long hash;
-	if (!is_mappingobject(op)) {
-		err_badcall();
+	if (!PyDict_Check(op)) {
+		PyErr_BadInternalCall();
 		return -1;
 	}
 	mp = (mappingobject *)op;
 #ifdef CACHE_HASH
-	if (is_stringobject(key)) {
+	if (PyString_Check(key)) {
 #ifdef INTERN_STRINGS
-		if (((stringobject *)key)->ob_sinterned != NULL) {
-			key = ((stringobject *)key)->ob_sinterned;
-			hash = ((stringobject *)key)->ob_shash;
+		if (((PyStringObject *)key)->ob_sinterned != NULL) {
+			key = ((PyStringObject *)key)->ob_sinterned;
+			hash = ((PyStringObject *)key)->ob_shash;
 		}
 		else
 #endif
 		{
-			hash = ((stringobject *)key)->ob_shash;
+			hash = ((PyStringObject *)key)->ob_shash;
 			if (hash == -1)
-				hash = hashobject(key);
+				hash = PyObject_Hash(key);
 		}
 	}
 	else
 #endif
 	{
-		hash = hashobject(key);
+		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return -1;
 	}
@@ -375,32 +377,32 @@ mappinginsert(op, key, value)
 				return -1;
 		}
 	}
-	INCREF(value);
-	INCREF(key);
+	Py_INCREF(value);
+	Py_INCREF(key);
 	insertmapping(mp, key, hash, value);
 	return 0;
 }
 
 int
-mappingremove(op, key)
-	object *op;
-	object *key;
+PyDict_DelItem(op, key)
+	PyObject *op;
+	PyObject *key;
 {
 	register mappingobject *mp;
 	register long hash;
 	register mappingentry *ep;
-	object *old_value, *old_key;
+	PyObject *old_value, *old_key;
 
-	if (!is_mappingobject(op)) {
-		err_badcall();
+	if (!PyDict_Check(op)) {
+		PyErr_BadInternalCall();
 		return -1;
 	}
 #ifdef CACHE_HASH
-	if (!is_stringobject(key) ||
-	    (hash = ((stringobject *) key)->ob_shash) == -1)
+	if (!PyString_Check(key) ||
+	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
 #endif
 	{
-		hash = hashobject(key);
+		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return -1;
 	}
@@ -410,28 +412,28 @@ mappingremove(op, key)
 	ep = lookmapping(mp, key, hash);
 	if (ep->me_value == NULL) {
 	empty:
-		err_setval(KeyError, key);
+		PyErr_SetObject(PyExc_KeyError, key);
 		return -1;
 	}
 	old_key = ep->me_key;
-	INCREF(dummy);
+	Py_INCREF(dummy);
 	ep->me_key = dummy;
 	old_value = ep->me_value;
 	ep->me_value = NULL;
 	mp->ma_used--;
-	DECREF(old_value); 
-	DECREF(old_key); 
+	Py_DECREF(old_value); 
+	Py_DECREF(old_key); 
 	return 0;
 }
 
 void
-mappingclear(op)
-	object *op;
+PyDict_Clear(op)
+	PyObject *op;
 {
 	int i, n;
 	register mappingentry *table;
 	mappingobject *mp;
-	if (!is_mappingobject(op))
+	if (!PyDict_Check(op))
 		return;
 	mp = (mappingobject *)op;
 	table = mp->ma_table;
@@ -441,22 +443,22 @@ mappingclear(op)
 	mp->ma_size = mp->ma_used = mp->ma_fill = 0;
 	mp->ma_table = NULL;
 	for (i = 0; i < n; i++) {
-		XDECREF(table[i].me_key);
-		XDECREF(table[i].me_value);
+		Py_XDECREF(table[i].me_key);
+		Py_XDECREF(table[i].me_value);
 	}
-	DEL(table);
+	PyMem_DEL(table);
 }
 
 int
-mappinggetnext(op, ppos, pkey, pvalue)
-	object *op;
+PyDict_Next(op, ppos, pkey, pvalue)
+	PyObject *op;
 	int *ppos;
-	object **pkey;
-	object **pvalue;
+	PyObject **pkey;
+	PyObject **pvalue;
 {
 	int i;
 	register mappingobject *mp;
-	if (!is_dictobject(op))
+	if (!PyDict_Check(op))
 		return 0;
 	mp = (mappingobject *)op;
 	i = *ppos;
@@ -484,12 +486,12 @@ mapping_dealloc(mp)
 	register mappingentry *ep;
 	for (i = 0, ep = mp->ma_table; i < mp->ma_size; i++, ep++) {
 		if (ep->me_key != NULL)
-			DECREF(ep->me_key);
+			Py_DECREF(ep->me_key);
 		if (ep->me_value != NULL)
-			DECREF(ep->me_value);
+			Py_DECREF(ep->me_value);
 	}
-	XDEL(mp->ma_table);
-	DEL(mp);
+	PyMem_XDEL(mp->ma_table);
+	PyMem_DEL(mp);
 }
 
 static int
@@ -507,10 +509,10 @@ mapping_print(mp, fp, flags)
 		if (ep->me_value != NULL) {
 			if (any++ > 0)
 				fprintf(fp, ", ");
-			if (printobject((object *)ep->me_key, fp, 0) != 0)
+			if (PyObject_Print((PyObject *)ep->me_key, fp, 0) != 0)
 				return -1;
 			fprintf(fp, ": ");
-			if (printobject(ep->me_value, fp, 0) != 0)
+			if (PyObject_Print(ep->me_value, fp, 0) != 0)
 				return -1;
 		}
 	}
@@ -518,31 +520,31 @@ mapping_print(mp, fp, flags)
 	return 0;
 }
 
-static object *
+static PyObject *
 mapping_repr(mp)
 	mappingobject *mp;
 {
-	auto object *v;
-	object *sepa, *colon;
+	auto PyObject *v;
+	PyObject *sepa, *colon;
 	register int i;
 	register int any;
 	register mappingentry *ep;
-	v = newstringobject("{");
-	sepa = newstringobject(", ");
-	colon = newstringobject(": ");
+	v = PyString_FromString("{");
+	sepa = PyString_FromString(", ");
+	colon = PyString_FromString(": ");
 	any = 0;
 	for (i = 0, ep = mp->ma_table; i < mp->ma_size && v; i++, ep++) {
 		if (ep->me_value != NULL) {
 			if (any++)
-				joinstring(&v, sepa);
-			joinstring_decref(&v, reprobject(ep->me_key));
-			joinstring(&v, colon);
-			joinstring_decref(&v, reprobject(ep->me_value));
+				PyString_Concat(&v, sepa);
+			PyString_ConcatAndDel(&v, PyObject_Repr(ep->me_key));
+			PyString_Concat(&v, colon);
+			PyString_ConcatAndDel(&v, PyObject_Repr(ep->me_value));
 		}
 	}
-	joinstring_decref(&v, newstringobject("}"));
-	XDECREF(sepa);
-	XDECREF(colon);
+	PyString_ConcatAndDel(&v, PyString_FromString("}"));
+	Py_XDECREF(sepa);
+	Py_XDECREF(colon);
 	return v;
 }
 
@@ -553,123 +555,123 @@ mapping_length(mp)
 	return mp->ma_used;
 }
 
-static object *
+static PyObject *
 mapping_subscript(mp, key)
 	mappingobject *mp;
-	register object *key;
+	register PyObject *key;
 {
-	object *v;
+	PyObject *v;
 	long hash;
 	if (mp->ma_table == NULL) {
-		err_setval(KeyError, key);
+		PyErr_SetObject(PyExc_KeyError, key);
 		return NULL;
 	}
 #ifdef CACHE_HASH
-	if (!is_stringobject(key) ||
-	    (hash = ((stringobject *) key)->ob_shash) == -1)
+	if (!PyString_Check(key) ||
+	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
 #endif
 	{
-		hash = hashobject(key);
+		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return NULL;
 	}
 	v = lookmapping(mp, key, hash) -> me_value;
 	if (v == NULL)
-		err_setval(KeyError, key);
+		PyErr_SetObject(PyExc_KeyError, key);
 	else
-		INCREF(v);
+		Py_INCREF(v);
 	return v;
 }
 
 static int
 mapping_ass_sub(mp, v, w)
 	mappingobject *mp;
-	object *v, *w;
+	PyObject *v, *w;
 {
 	if (w == NULL)
-		return mappingremove((object *)mp, v);
+		return PyDict_DelItem((PyObject *)mp, v);
 	else
-		return mappinginsert((object *)mp, v, w);
+		return PyDict_SetItem((PyObject *)mp, v, w);
 }
 
-static mapping_methods mapping_as_mapping = {
+static PyMappingMethods mapping_as_mapping = {
 	(inquiry)mapping_length, /*mp_length*/
 	(binaryfunc)mapping_subscript, /*mp_subscript*/
 	(objobjargproc)mapping_ass_sub, /*mp_ass_subscript*/
 };
 
-static object *
+static PyObject *
 mapping_keys(mp, args)
 	register mappingobject *mp;
-	object *args;
+	PyObject *args;
 {
-	register object *v;
+	register PyObject *v;
 	register int i, j;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	v = newlistobject(mp->ma_used);
+	v = PyList_New(mp->ma_used);
 	if (v == NULL)
 		return NULL;
 	for (i = 0, j = 0; i < mp->ma_size; i++) {
 		if (mp->ma_table[i].me_value != NULL) {
-			object *key = mp->ma_table[i].me_key;
-			INCREF(key);
-			setlistitem(v, j, key);
+			PyObject *key = mp->ma_table[i].me_key;
+			Py_INCREF(key);
+			PyList_SetItem(v, j, key);
 			j++;
 		}
 	}
 	return v;
 }
 
-static object *
+static PyObject *
 mapping_values(mp, args)
 	register mappingobject *mp;
-	object *args;
+	PyObject *args;
 {
-	register object *v;
+	register PyObject *v;
 	register int i, j;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	v = newlistobject(mp->ma_used);
+	v = PyList_New(mp->ma_used);
 	if (v == NULL)
 		return NULL;
 	for (i = 0, j = 0; i < mp->ma_size; i++) {
 		if (mp->ma_table[i].me_value != NULL) {
-			object *value = mp->ma_table[i].me_value;
-			INCREF(value);
-			setlistitem(v, j, value);
+			PyObject *value = mp->ma_table[i].me_value;
+			Py_INCREF(value);
+			PyList_SetItem(v, j, value);
 			j++;
 		}
 	}
 	return v;
 }
 
-static object *
+static PyObject *
 mapping_items(mp, args)
 	register mappingobject *mp;
-	object *args;
+	PyObject *args;
 {
-	register object *v;
+	register PyObject *v;
 	register int i, j;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	v = newlistobject(mp->ma_used);
+	v = PyList_New(mp->ma_used);
 	if (v == NULL)
 		return NULL;
 	for (i = 0, j = 0; i < mp->ma_size; i++) {
 		if (mp->ma_table[i].me_value != NULL) {
-			object *key = mp->ma_table[i].me_key;
-			object *value = mp->ma_table[i].me_value;
-			object *item = newtupleobject(2);
+			PyObject *key = mp->ma_table[i].me_key;
+			PyObject *value = mp->ma_table[i].me_value;
+			PyObject *item = PyTuple_New(2);
 			if (item == NULL) {
-				DECREF(v);
+				Py_DECREF(v);
 				return NULL;
 			}
-			INCREF(key);
-			settupleitem(item, 0, key);
-			INCREF(value);
-			settupleitem(item, 1, value);
-			setlistitem(v, j, item);
+			Py_INCREF(key);
+			PyTuple_SetItem(item, 0, key);
+			Py_INCREF(value);
+			PyTuple_SetItem(item, 1, value);
+			PyList_SetItem(v, j, item);
 			j++;
 		}
 	}
@@ -677,47 +679,47 @@ mapping_items(mp, args)
 }
 
 int
-getmappingsize(mp)
-	object *mp;
+PyDict_Size(mp)
+	PyObject *mp;
 {
-	if (mp == NULL || !is_mappingobject(mp)) {
-		err_badcall();
+	if (mp == NULL || !PyDict_Check(mp)) {
+		PyErr_BadInternalCall();
 		return 0;
 	}
 	return ((mappingobject *)mp)->ma_used;
 }
 
-object *
-getmappingkeys(mp)
-	object *mp;
+PyObject *
+PyDict_Keys(mp)
+	PyObject *mp;
 {
-	if (mp == NULL || !is_mappingobject(mp)) {
-		err_badcall();
+	if (mp == NULL || !PyDict_Check(mp)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return mapping_keys((mappingobject *)mp, (object *)NULL);
+	return mapping_keys((mappingobject *)mp, (PyObject *)NULL);
 }
 
-object *
-getmappingvalues(mp)
-	object *mp;
+PyObject *
+PyDict_Values(mp)
+	PyObject *mp;
 {
-	if (mp == NULL || !is_mappingobject(mp)) {
-		err_badcall();
+	if (mp == NULL || !PyDict_Check(mp)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return mapping_values((mappingobject *)mp, (object *)NULL);
+	return mapping_values((mappingobject *)mp, (PyObject *)NULL);
 }
 
-object *
-getmappingitems(mp)
-	object *mp;
+PyObject *
+PyDict_Items(mp)
+	PyObject *mp;
 {
-	if (mp == NULL || !is_mappingobject(mp)) {
-		err_badcall();
+	if (mp == NULL || !PyDict_Check(mp)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return mapping_items((mappingobject *)mp, (object *)NULL);
+	return mapping_items((mappingobject *)mp, (PyObject *)NULL);
 }
 
 #define NEWCMP
@@ -728,25 +730,26 @@ getmappingitems(mp)
    is different or absent.  The value is returned too, through the
    pval argument.  No reference counts are incremented. */
 
-static object *
+static PyObject *
 characterize(a, b, pval)
 	mappingobject *a;
 	mappingobject *b;
-	object **pval;
+	PyObject **pval;
 {
-	object *diff = NULL;
+	PyObject *diff = NULL;
 	int i;
 
 	*pval = NULL;
 	for (i = 0; i < a->ma_size; i++) {
 		if (a->ma_table[i].me_value != NULL) {
-			object *key = a->ma_table[i].me_key;
-			object *aval, *bval;
-			if (diff != NULL && cmpobject(key, diff) > 0)
+			PyObject *key = a->ma_table[i].me_key;
+			PyObject *aval, *bval;
+			if (diff != NULL && PyObject_Compare(key, diff) > 0)
 				continue;
 			aval = a->ma_table[i].me_value;
-			bval = mappinglookup((object *)b, key);
-			if (bval == NULL || cmpobject(aval, bval) != 0) {
+			bval = PyDict_GetItem((PyObject *)b, key);
+			if (bval == NULL || PyObject_Compare(aval, bval) != 0)
+			{
 				diff = key;
 				*pval = aval;
 			}
@@ -759,7 +762,7 @@ static int
 mapping_compare(a, b)
 	mappingobject *a, *b;
 {
-	object *adiff, *bdiff, *aval, *bval;
+	PyObject *adiff, *bdiff, *aval, *bval;
 	int res;
 
 	/* Compare lengths first */
@@ -773,9 +776,9 @@ mapping_compare(a, b)
 		return 0;	/* a is a subset with the same length */
 	bdiff = characterize(b, a, &bval);
 	/* bdiff == NULL would be impossible now */
-	res = cmpobject(adiff, bdiff);
+	res = PyObject_Compare(adiff, bdiff);
 	if (res == 0)
-		res = cmpobject(aval, bval);
+		res = PyObject_Compare(aval, bval);
 	return res;
 }
 
@@ -785,7 +788,7 @@ static int
 mapping_compare(a, b)
 	mappingobject *a, *b;
 {
-	object *akeys, *bkeys;
+	PyObject *akeys, *bkeys;
 	int i, n, res;
 	if (a == b)
 		return 0;
@@ -799,51 +802,51 @@ mapping_compare(a, b)
 		if (b->ma_used == 0)
 			return 1;
 	}
-	akeys = mapping_keys(a, (object *)NULL);
-	bkeys = mapping_keys(b, (object *)NULL);
+	akeys = mapping_keys(a, (PyObject *)NULL);
+	bkeys = mapping_keys(b, (PyObject *)NULL);
 	if (akeys == NULL || bkeys == NULL) {
 		/* Oops, out of memory -- what to do? */
 		/* For now, sort on address! */
-		XDECREF(akeys);
-		XDECREF(bkeys);
+		Py_XDECREF(akeys);
+		Py_XDECREF(bkeys);
 		if (a < b)
 			return -1;
 		else
 			return 1;
 	}
-	sortlist(akeys);
-	sortlist(bkeys);
+	PyList_Sort(akeys);
+	PyList_Sort(bkeys);
 	n = a->ma_used < b->ma_used ? a->ma_used : b->ma_used; /* smallest */
 	res = 0;
 	for (i = 0; i < n; i++) {
-		object *akey, *bkey, *aval, *bval;
+		PyObject *akey, *bkey, *aval, *bval;
 		long ahash, bhash;
-		akey = getlistitem(akeys, i);
-		bkey = getlistitem(bkeys, i);
-		res = cmpobject(akey, bkey);
+		akey = PyList_GetItem(akeys, i);
+		bkey = PyList_GetItem(bkeys, i);
+		res = PyObject_Compare(akey, bkey);
 		if (res != 0)
 			break;
 #ifdef CACHE_HASH
-		if (!is_stringobject(akey) ||
-		    (ahash = ((stringobject *) akey)->ob_shash) == -1)
+		if (!PyString_Check(akey) ||
+		    (ahash = ((PyStringObject *) akey)->ob_shash) == -1)
 #endif
 		{
-			ahash = hashobject(akey);
+			ahash = PyObject_Hash(akey);
 			if (ahash == -1)
-				err_clear(); /* Don't want errors here */
+				PyErr_Clear(); /* Don't want errors here */
 		}
 #ifdef CACHE_HASH
-		if (!is_stringobject(bkey) ||
-		    (bhash = ((stringobject *) bkey)->ob_shash) == -1)
+		if (!PyString_Check(bkey) ||
+		    (bhash = ((PyStringObject *) bkey)->ob_shash) == -1)
 #endif
 		{
-			bhash = hashobject(bkey);
+			bhash = PyObject_Hash(bkey);
 			if (bhash == -1)
-				err_clear(); /* Don't want errors here */
+				PyErr_Clear(); /* Don't want errors here */
 		}
 		aval = lookmapping(a, akey, ahash) -> me_value;
 		bval = lookmapping(b, bkey, bhash) -> me_value;
-		res = cmpobject(aval, bval);
+		res = PyObject_Compare(aval, bval);
 		if (res != 0)
 			break;
 	}
@@ -853,67 +856,67 @@ mapping_compare(a, b)
 		else if (a->ma_used > b->ma_used)
 			res = 1;
 	}
-	DECREF(akeys);
-	DECREF(bkeys);
+	Py_DECREF(akeys);
+	Py_DECREF(bkeys);
 	return res;
 }
 
 #endif /* !NEWCMP */
 
-static object *
+static PyObject *
 mapping_has_key(mp, args)
 	register mappingobject *mp;
-	object *args;
+	PyObject *args;
 {
-	object *key;
+	PyObject *key;
 	long hash;
 	register long ok;
-	if (!getargs(args, "O", &key))
+	if (!PyArg_Parse(args, "O", &key))
 		return NULL;
 #ifdef CACHE_HASH
-	if (!is_stringobject(key) ||
-	    (hash = ((stringobject *) key)->ob_shash) == -1)
+	if (!PyString_Check(key) ||
+	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
 #endif
 	{
-		hash = hashobject(key);
+		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return NULL;
 	}
 	ok = mp->ma_size != 0 && lookmapping(mp, key, hash)->me_value != NULL;
-	return newintobject(ok);
+	return PyInt_FromLong(ok);
 }
 
-static object *
+static PyObject *
 mapping_clear(mp, args)
 	register mappingobject *mp;
-	object *args;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	mappingclear((object *)mp);
-	INCREF(None);
-	return None;
+	PyDict_Clear((PyObject *)mp);
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static struct methodlist mapp_methods[] = {
-	{"clear",	(method)mapping_clear},
-	{"has_key",	(method)mapping_has_key},
-	{"items",	(method)mapping_items},
-	{"keys",	(method)mapping_keys},
-	{"values",	(method)mapping_values},
+static PyMethodDef mapp_methods[] = {
+	{"clear",	(PyCFunction)mapping_clear},
+	{"has_key",	(PyCFunction)mapping_has_key},
+	{"items",	(PyCFunction)mapping_items},
+	{"keys",	(PyCFunction)mapping_keys},
+	{"values",	(PyCFunction)mapping_values},
 	{NULL,		NULL}		/* sentinel */
 };
 
-static object *
+static PyObject *
 mapping_getattr(mp, name)
 	mappingobject *mp;
 	char *name;
 {
-	return findmethod(mapp_methods, (object *)mp, name);
+	return Py_FindMethod(mapp_methods, (PyObject *)mp, name);
 }
 
-typeobject Mappingtype = {
-	OB_HEAD_INIT(&Typetype)
+PyTypeObject PyDict_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"dictionary",
 	sizeof(mappingobject),
@@ -931,100 +934,100 @@ typeobject Mappingtype = {
 
 /* For backward compatibility with old dictionary interface */
 
-static object *last_name_object;
+static PyObject *last_name_object;
 static char *last_name_char; /* NULL or == getstringvalue(last_name_object) */
 
-object *
-getattro(v, name)
-	object *v;
-	object *name;
+PyObject *
+PyObject_GetAttr(v, name)
+	PyObject *v;
+	PyObject *name;
 {
 	if (v->ob_type->tp_getattro != NULL)
 		return (*v->ob_type->tp_getattro)(v, name);
 
 	if (name != last_name_object) {
-		XDECREF(last_name_object);
-		INCREF(name);
+		Py_XDECREF(last_name_object);
+		Py_INCREF(name);
 		last_name_object = name;
-		last_name_char = getstringvalue(name);
+		last_name_char = PyString_AsString(name);
 	}
-	return getattr(v, last_name_char);
+	return PyObject_GetAttrString(v, last_name_char);
 }
 
 int
-setattro(v, name, value)
-	object *v;
-	object *name;
-	object *value;
+PyObject_SetAttr(v, name, value)
+	PyObject *v;
+	PyObject *name;
+	PyObject *value;
 {
 	int err;
-	INCREF(name);
+	Py_INCREF(name);
 	PyString_InternInPlace(&name);
 	if (v->ob_type->tp_setattro != NULL)
 		err = (*v->ob_type->tp_setattro)(v, name, value);
 	else {
 		if (name != last_name_object) {
-			XDECREF(last_name_object);
-			INCREF(name);
+			Py_XDECREF(last_name_object);
+			Py_INCREF(name);
 			last_name_object = name;
-			last_name_char = getstringvalue(name);
+			last_name_char = PyString_AsString(name);
 		}
-		err = setattr(v, last_name_char, value);
+		err = PyObject_SetAttrString(v, last_name_char, value);
 	}
-	DECREF(name);
+	Py_DECREF(name);
 	return err;
 }
 
-object *
-dictlookup(v, key)
-	object *v;
+PyObject *
+PyDict_GetItemString(v, key)
+	PyObject *v;
 	char *key;
 {
 	if (key != last_name_char) {
-		XDECREF(last_name_object);
-		last_name_object = newstringobject(key);
+		Py_XDECREF(last_name_object);
+		last_name_object = PyString_FromString(key);
 		if (last_name_object == NULL) {
 			last_name_char = NULL;
 			return NULL;
 		}
 		PyString_InternInPlace(&last_name_object);
-		last_name_char = getstringvalue(last_name_object);
+		last_name_char = PyString_AsString(last_name_object);
 	}
-	return mappinglookup(v, last_name_object);
+	return PyDict_GetItem(v, last_name_object);
 }
 
 int
-dictinsert(v, key, item)
-	object *v;
+PyDict_SetItemString(v, key, item)
+	PyObject *v;
 	char *key;
-	object *item;
+	PyObject *item;
 {
 	if (key != last_name_char) {
-		XDECREF(last_name_object);
-		last_name_object = newstringobject(key);
+		Py_XDECREF(last_name_object);
+		last_name_object = PyString_FromString(key);
 		if (last_name_object == NULL) {
 			last_name_char = NULL;
 			return -1;
 		}
 		PyString_InternInPlace(&last_name_object);
-		last_name_char = getstringvalue(last_name_object);
+		last_name_char = PyString_AsString(last_name_object);
 	}
-	return mappinginsert(v, last_name_object, item);
+	return PyDict_SetItem(v, last_name_object, item);
 }
 
 int
-dictremove(v, key)
-	object *v;
+PyDict_DelItemString(v, key)
+	PyObject *v;
 	char *key;
 {
 	if (key != last_name_char) {
-		XDECREF(last_name_object);
-		last_name_object = newstringobject(key);
+		Py_XDECREF(last_name_object);
+		last_name_object = PyString_FromString(key);
 		if (last_name_object == NULL) {
 			last_name_char = NULL;
 			return -1;
 		}
-		last_name_char = getstringvalue(last_name_object);
+		last_name_char = PyString_AsString(last_name_object);
 	}
-	return mappingremove(v, last_name_object);
+	return PyDict_DelItem(v, last_name_object);
 }

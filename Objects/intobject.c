@@ -31,8 +31,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Integer object implementation */
 
-#include "allobjects.h"
-#include "modsupport.h"
+#include "Python.h"
 
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
@@ -55,28 +54,28 @@ PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 long
-getmaxint()
+PyInt_GetMax()
 {
 	return LONG_MAX;	/* To initialize sys.maxint */
 }
 
 /* Standard Booleans */
 
-intobject FalseObject = {
-	OB_HEAD_INIT(&Inttype)
+PyIntObject _Py_ZeroStruct = {
+	PyObject_HEAD_INIT(&PyInt_Type)
 	0
 };
 
-intobject TrueObject = {
-	OB_HEAD_INIT(&Inttype)
+PyIntObject _Py_TrueStruct = {
+	PyObject_HEAD_INIT(&PyInt_Type)
 	1
 };
 
-static object *
+static PyObject *
 err_ovf(msg)
 	char *msg;
 {
-	err_setstr(OverflowError, msg);
+	PyErr_SetString(PyExc_OverflowError, msg);
 	return NULL;
 }
 
@@ -91,23 +90,23 @@ err_ovf(msg)
 */
 
 #define BLOCK_SIZE	1000	/* 1K less typical malloc overhead */
-#define N_INTOBJECTS	(BLOCK_SIZE / sizeof(intobject))
+#define N_INTOBJECTS	(BLOCK_SIZE / sizeof(PyIntObject))
 
-static intobject *
+static PyIntObject *
 fill_free_list()
 {
-	intobject *p, *q;
-	p = NEW(intobject, N_INTOBJECTS);
+	PyIntObject *p, *q;
+	p = PyMem_NEW(PyIntObject, N_INTOBJECTS);
 	if (p == NULL)
-		return (intobject *)err_nomem();
+		return (PyIntObject *)PyErr_NoMemory();
 	q = p + N_INTOBJECTS;
 	while (--q > p)
-		*(intobject **)q = q-1;
-	*(intobject **)q = NULL;
+		*(PyIntObject **)q = q-1;
+	*(PyIntObject **)q = NULL;
 	return p + N_INTOBJECTS - 1;
 }
 
-static intobject *free_list = NULL;
+static PyIntObject *free_list = NULL;
 #ifndef NSMALLPOSINTS
 #define NSMALLPOSINTS		100
 #endif
@@ -120,28 +119,28 @@ static intobject *free_list = NULL;
    The integers that are saved are those in the range
    -NSMALLNEGINTS (inclusive) to NSMALLPOSINTS (not inclusive).
 */
-static intobject *small_ints[NSMALLNEGINTS + NSMALLPOSINTS];
+static PyIntObject *small_ints[NSMALLNEGINTS + NSMALLPOSINTS];
 #endif
 #ifdef COUNT_ALLOCS
 int quick_int_allocs, quick_neg_int_allocs;
 #endif
 
-object *
-newintobject(ival)
+PyObject *
+PyInt_FromLong(ival)
 	long ival;
 {
-	register intobject *v;
+	register PyIntObject *v;
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
 	if (-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS &&
 	    (v = small_ints[ival + NSMALLNEGINTS]) != NULL) {
-		INCREF(v);
+		Py_INCREF(v);
 #ifdef COUNT_ALLOCS
 		if (ival >= 0)
 			quick_int_allocs++;
 		else
 			quick_neg_int_allocs++;
 #endif
-		return (object *) v;
+		return (PyObject *) v;
 	}
 #endif
 	if (free_list == NULL) {
@@ -149,55 +148,56 @@ newintobject(ival)
 			return NULL;
 	}
 	v = free_list;
-	free_list = *(intobject **)free_list;
-	v->ob_type = &Inttype;
+	free_list = *(PyIntObject **)free_list;
+	v->ob_type = &PyInt_Type;
 	v->ob_ival = ival;
-	NEWREF(v);
+	_Py_NewReference(v);
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
 	if (-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS) {
 		/* save this one for a following allocation */
-		INCREF(v);
+		Py_INCREF(v);
 		small_ints[ival + NSMALLNEGINTS] = v;
 	}
 #endif
-	return (object *) v;
+	return (PyObject *) v;
 }
 
 static void
 int_dealloc(v)
-	intobject *v;
+	PyIntObject *v;
 {
-	*(intobject **)v = free_list;
+	*(PyIntObject **)v = free_list;
 	free_list = v;
 }
 
 long
-getintvalue(op)
-	register object *op;
+PyInt_AsLong(op)
+	register PyObject *op;
 {
-	number_methods *nb;
-	intobject *io;
+	PyNumberMethods *nb;
+	PyIntObject *io;
 	long val;
 	
-	if (op && is_intobject(op))
-		return GETINTVALUE((intobject*) op);
+	if (op && PyInt_Check(op))
+		return PyInt_AS_LONG((PyIntObject*) op);
 	
 	if (op == NULL || (nb = op->ob_type->tp_as_number) == NULL ||
 	    nb->nb_int == NULL) {
-		err_badarg();
+		PyErr_BadArgument();
 		return -1;
 	}
 	
-	io = (intobject*) (*nb->nb_int) (op);
+	io = (PyIntObject*) (*nb->nb_int) (op);
 	if (io == NULL)
 		return -1;
-	if (!is_intobject(io)) {
-		err_setstr(TypeError, "nb_int should return int object");
+	if (!PyInt_Check(io)) {
+		PyErr_SetString(PyExc_TypeError,
+				"nb_int should return int object");
 		return -1;
 	}
 	
-	val = GETINTVALUE(io);
-	DECREF(io);
+	val = PyInt_AS_LONG(io);
+	Py_DECREF(io);
 	
 	return val;
 }
@@ -207,7 +207,7 @@ getintvalue(op)
 /* ARGSUSED */
 static int
 int_print(v, fp, flags)
-	intobject *v;
+	PyIntObject *v;
 	FILE *fp;
 	int flags; /* Not used but required by interface */
 {
@@ -215,18 +215,18 @@ int_print(v, fp, flags)
 	return 0;
 }
 
-static object *
+static PyObject *
 int_repr(v)
-	intobject *v;
+	PyIntObject *v;
 {
 	char buf[20];
 	sprintf(buf, "%ld", v->ob_ival);
-	return newstringobject(buf);
+	return PyString_FromString(buf);
 }
 
 static int
 int_compare(v, w)
-	intobject *v, *w;
+	PyIntObject *v, *w;
 {
 	register long i = v->ob_ival;
 	register long j = w->ob_ival;
@@ -235,7 +235,7 @@ int_compare(v, w)
 
 static long
 int_hash(v)
-	intobject *v;
+	PyIntObject *v;
 {
 	/* XXX If this is changed, you also need to change the way
 	   Python's long, float and complex types are hashed. */
@@ -245,10 +245,10 @@ int_hash(v)
 	return x;
 }
 
-static object *
+static PyObject *
 int_add(v, w)
-	intobject *v;
-	intobject *w;
+	PyIntObject *v;
+	PyIntObject *w;
 {
 	register long a, b, x;
 	a = v->ob_ival;
@@ -256,13 +256,13 @@ int_add(v, w)
 	x = a + b;
 	if ((x^a) < 0 && (x^b) < 0)
 		return err_ovf("integer addition");
-	return newintobject(x);
+	return PyInt_FromLong(x);
 }
 
-static object *
+static PyObject *
 int_sub(v, w)
-	intobject *v;
-	intobject *w;
+	PyIntObject *v;
+	PyIntObject *w;
 {
 	register long a, b, x;
 	a = v->ob_ival;
@@ -270,7 +270,7 @@ int_sub(v, w)
 	x = a - b;
 	if ((x^a) < 0 && (x^~b) < 0)
 		return err_ovf("integer subtraction");
-	return newintobject(x);
+	return PyInt_FromLong(x);
 }
 
 /*
@@ -302,10 +302,10 @@ guess the above is the preferred solution.
 
 */
 
-static object *
+static PyObject *
 int_mul(v, w)
-	intobject *v;
-	intobject *w;
+	PyIntObject *v;
+	PyIntObject *w;
 {
 	long a, b, ah, bh, x, y;
 	int s = 1;
@@ -321,7 +321,7 @@ int_mul(v, w)
 		x = a*b;
 		if (x < 0)
 			goto bad;
-		return newintobject(x);
+		return PyInt_FromLong(x);
 	}
 
 	/* Arrange that a >= b >= 0 */
@@ -367,7 +367,7 @@ int_mul(v, w)
 		x = a*b;
 		if (x < 0)
 			goto bad;
-		return newintobject(x*s);
+		return PyInt_FromLong(x*s);
 	}
 
 	if (a < b) {
@@ -397,7 +397,7 @@ int_mul(v, w)
 	if (x < 0)
 		goto bad;
  ok:
-	return newintobject(x * s);
+	return PyInt_FromLong(x * s);
 
  bad:
 	return err_ovf("integer multiplication");
@@ -405,7 +405,7 @@ int_mul(v, w)
 
 static int
 i_divmod(x, y, p_xdivy, p_xmody)
-	register intobject *x, *y;
+	register PyIntObject *x, *y;
 	long *p_xdivy, *p_xmody;
 {
 	long xi = x->ob_ival;
@@ -413,7 +413,8 @@ i_divmod(x, y, p_xdivy, p_xmody)
 	long xdivy, xmody;
 	
 	if (yi == 0) {
-		err_setstr(ZeroDivisionError, "integer division or modulo");
+		PyErr_SetString(PyExc_ZeroDivisionError,
+				"integer division or modulo");
 		return -1;
 	}
 	if (yi < 0) {
@@ -438,57 +439,59 @@ i_divmod(x, y, p_xdivy, p_xmody)
 	return 0;
 }
 
-static object *
+static PyObject *
 int_div(x, y)
-	intobject *x;
-	intobject *y;
+	PyIntObject *x;
+	PyIntObject *y;
 {
 	long d, m;
 	if (i_divmod(x, y, &d, &m) < 0)
 		return NULL;
-	return newintobject(d);
+	return PyInt_FromLong(d);
 }
 
-static object *
+static PyObject *
 int_mod(x, y)
-	intobject *x;
-	intobject *y;
+	PyIntObject *x;
+	PyIntObject *y;
 {
 	long d, m;
 	if (i_divmod(x, y, &d, &m) < 0)
 		return NULL;
-	return newintobject(m);
+	return PyInt_FromLong(m);
 }
 
-static object *
+static PyObject *
 int_divmod(x, y)
-	intobject *x;
-	intobject *y;
+	PyIntObject *x;
+	PyIntObject *y;
 {
 	long d, m;
 	if (i_divmod(x, y, &d, &m) < 0)
 		return NULL;
-	return mkvalue("(ll)", d, m);
+	return Py_BuildValue("(ll)", d, m);
 }
 
-static object *
+static PyObject *
 int_pow(v, w, z)
-	intobject *v;
-	intobject *w;
-	intobject *z;
+	PyIntObject *v;
+	PyIntObject *w;
+	PyIntObject *z;
 {
 #if 1
 	register long iv, iw, iz=0, ix, temp, prev;
 	iv = v->ob_ival;
 	iw = w->ob_ival;
 	if (iw < 0) {
-		err_setstr(ValueError, "integer to the negative power");
+		PyErr_SetString(PyExc_ValueError,
+				"integer to the negative power");
 		return NULL;
 	}
- 	if ((object *)z != None) {
+ 	if ((PyObject *)z != Py_None) {
 		iz = z->ob_ival;
 		if (iz == 0) {
-			err_setstr(ValueError, "pow(x, y, z) with z==0");
+			PyErr_SetString(PyExc_ValueError,
+					"pow(x, y, z) with z==0");
 			return NULL;
 		}
 	}
@@ -524,31 +527,35 @@ int_pow(v, w, z)
 		}
 	}
 	if (iz) {
-	 	object *t1, *t2;
+	 	PyObject *t1, *t2;
 	 	long int div, mod;
-	 	t1=newintobject(ix); 
-		t2=newintobject(iz);
+	 	t1=PyInt_FromLong(ix); 
+		t2=PyInt_FromLong(iz);
 	 	if (t1==NULL || t2==NULL ||
-	 		i_divmod((intobject *)t1, (intobject *)t2, &div, &mod)<0) {
-		 	XDECREF(t1);
-		 	XDECREF(t2);
+	 		i_divmod((PyIntObject *)t1,
+				 (PyIntObject *)t2, &div, &mod)<0)
+		{
+		 	Py_XDECREF(t1);
+		 	Py_XDECREF(t2);
 			return(NULL);
 		}
-		DECREF(t1);
-		DECREF(t2);
+		Py_DECREF(t1);
+		Py_DECREF(t2);
 	 	ix=mod;
 	}
-	return newintobject(ix);
+	return PyInt_FromLong(ix);
 #else
 	register long iv, iw, ix;
 	iv = v->ob_ival;
 	iw = w->ob_ival;
 	if (iw < 0) {
-		err_setstr(ValueError, "integer to the negative power");
+		PyErr_SetString(PyExc_ValueError,
+				"integer to the negative power");
 		return NULL;
 	}
-	if ((object *)z != None) {
-		err_setstr(TypeError, "pow(int, int, int) not yet supported");
+	if ((PyObject *)z != Py_None) {
+		PyErr_SetString(PyExc_TypeError,
+				"pow(int, int, int) not yet supported");
 		return NULL;
 	}
 	ix = 1;
@@ -560,33 +567,33 @@ int_pow(v, w, z)
 		if (ix / iv != prev)
 			return err_ovf("integer pow()");
 	}
-	return newintobject(ix);
+	return PyInt_FromLong(ix);
 #endif
 }				
 
-static object *
+static PyObject *
 int_neg(v)
-	intobject *v;
+	PyIntObject *v;
 {
 	register long a, x;
 	a = v->ob_ival;
 	x = -a;
 	if (a < 0 && x < 0)
 		return err_ovf("integer negation");
-	return newintobject(x);
+	return PyInt_FromLong(x);
 }
 
-static object *
+static PyObject *
 int_pos(v)
-	intobject *v;
+	PyIntObject *v;
 {
-	INCREF(v);
-	return (object *)v;
+	Py_INCREF(v);
+	return (PyObject *)v;
 }
 
-static object *
+static PyObject *
 int_abs(v)
-	intobject *v;
+	PyIntObject *v;
 {
 	if (v->ob_ival >= 0)
 		return int_pos(v);
@@ -596,56 +603,56 @@ int_abs(v)
 
 static int
 int_nonzero(v)
-	intobject *v;
+	PyIntObject *v;
 {
 	return v->ob_ival != 0;
 }
 
-static object *
+static PyObject *
 int_invert(v)
-	intobject *v;
+	PyIntObject *v;
 {
-	return newintobject(~v->ob_ival);
+	return PyInt_FromLong(~v->ob_ival);
 }
 
-static object *
+static PyObject *
 int_lshift(v, w)
-	intobject *v;
-	intobject *w;
+	PyIntObject *v;
+	PyIntObject *w;
 {
 	register long a, b;
 	a = v->ob_ival;
 	b = w->ob_ival;
 	if (b < 0) {
-		err_setstr(ValueError, "negative shift count");
+		PyErr_SetString(PyExc_ValueError, "negative shift count");
 		return NULL;
 	}
 	if (a == 0 || b == 0) {
-		INCREF(v);
-		return (object *) v;
+		Py_INCREF(v);
+		return (PyObject *) v;
 	}
 	if (b >= LONG_BIT) {
-		return newintobject(0L);
+		return PyInt_FromLong(0L);
 	}
 	a = (unsigned long)a << b;
-	return newintobject(a);
+	return PyInt_FromLong(a);
 }
 
-static object *
+static PyObject *
 int_rshift(v, w)
-	intobject *v;
-	intobject *w;
+	PyIntObject *v;
+	PyIntObject *w;
 {
 	register long a, b;
 	a = v->ob_ival;
 	b = w->ob_ival;
 	if (b < 0) {
-		err_setstr(ValueError, "negative shift count");
+		PyErr_SetString(PyExc_ValueError, "negative shift count");
 		return NULL;
 	}
 	if (a == 0 || b == 0) {
-		INCREF(v);
-		return (object *) v;
+		Py_INCREF(v);
+		return (PyObject *) v;
 	}
 	if (b >= LONG_BIT) {
 		if (a < 0)
@@ -659,67 +666,67 @@ int_rshift(v, w)
 		else
 			a = (unsigned long)a >> b;
 	}
-	return newintobject(a);
+	return PyInt_FromLong(a);
 }
 
-static object *
+static PyObject *
 int_and(v, w)
-	intobject *v;
-	intobject *w;
+	PyIntObject *v;
+	PyIntObject *w;
 {
 	register long a, b;
 	a = v->ob_ival;
 	b = w->ob_ival;
-	return newintobject(a & b);
+	return PyInt_FromLong(a & b);
 }
 
-static object *
+static PyObject *
 int_xor(v, w)
-	intobject *v;
-	intobject *w;
+	PyIntObject *v;
+	PyIntObject *w;
 {
 	register long a, b;
 	a = v->ob_ival;
 	b = w->ob_ival;
-	return newintobject(a ^ b);
+	return PyInt_FromLong(a ^ b);
 }
 
-static object *
+static PyObject *
 int_or(v, w)
-	intobject *v;
-	intobject *w;
+	PyIntObject *v;
+	PyIntObject *w;
 {
 	register long a, b;
 	a = v->ob_ival;
 	b = w->ob_ival;
-	return newintobject(a | b);
+	return PyInt_FromLong(a | b);
 }
 
-static object *
+static PyObject *
 int_int(v)
-	intobject *v;
+	PyIntObject *v;
 {
-	INCREF(v);
-	return (object *)v;
+	Py_INCREF(v);
+	return (PyObject *)v;
 }
 
-static object *
+static PyObject *
 int_long(v)
-	intobject *v;
+	PyIntObject *v;
 {
-	return newlongobject((v -> ob_ival));
+	return PyLong_FromLong((v -> ob_ival));
 }
 
-static object *
+static PyObject *
 int_float(v)
-	intobject *v;
+	PyIntObject *v;
 {
-	return newfloatobject((double)(v -> ob_ival));
+	return PyFloat_FromDouble((double)(v -> ob_ival));
 }
 
-static object *
+static PyObject *
 int_oct(v)
-	intobject *v;
+	PyIntObject *v;
 {
 	char buf[100];
 	long x = v -> ob_ival;
@@ -727,20 +734,20 @@ int_oct(v)
 		strcpy(buf, "0");
 	else
 		sprintf(buf, "0%lo", x);
-	return newstringobject(buf);
+	return PyString_FromString(buf);
 }
 
-static object *
+static PyObject *
 int_hex(v)
-	intobject *v;
+	PyIntObject *v;
 {
 	char buf[100];
 	long x = v -> ob_ival;
 	sprintf(buf, "0x%lx", x);
-	return newstringobject(buf);
+	return PyString_FromString(buf);
 }
 
-static number_methods int_as_number = {
+static PyNumberMethods int_as_number = {
 	(binaryfunc)int_add, /*nb_add*/
 	(binaryfunc)int_sub, /*nb_subtract*/
 	(binaryfunc)int_mul, /*nb_multiply*/
@@ -766,11 +773,11 @@ static number_methods int_as_number = {
 	(unaryfunc)int_hex, /*nb_hex*/
 };
 
-typeobject Inttype = {
-	OB_HEAD_INIT(&Typetype)
+PyTypeObject PyInt_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"int",
-	sizeof(intobject),
+	sizeof(PyIntObject),
 	0,
 	(destructor)int_dealloc, /*tp_dealloc*/
 	(printfunc)int_print, /*tp_print*/

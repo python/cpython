@@ -31,51 +31,52 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Class object implementation */
 
-#include "allobjects.h"
+#include "Python.h"
 #include "structmember.h"
 
 /* Forward */
-static object *class_lookup PROTO((classobject *, object *, classobject **));
-static object *instance_getattr1 PROTO((instanceobject *, object *));
+static PyObject *class_lookup
+	Py_PROTO((PyClassObject *, PyObject *, PyClassObject **));
+static PyObject *instance_getattr1 Py_PROTO((PyInstanceObject *, PyObject *));
 
-object *
-newclassobject(bases, dict, name)
-	object *bases; /* NULL or tuple of classobjects! */
-	object *dict;
-	object *name; /* String; NULL if unknown */
+PyObject *
+PyClass_New(bases, dict, name)
+	PyObject *bases; /* NULL or tuple of classobjects! */
+	PyObject *dict;
+	PyObject *name; /* String; NULL if unknown */
 {
 #ifdef SUPPORT_OBSOLETE_ACCESS
 	int pos;
-	object *key, *value;
+	PyObject *key, *value;
 #endif
-	classobject *op, *dummy;
-	static object *getattrstr, *setattrstr, *delattrstr;
-	static object *docstr;
+	PyClassObject *op, *dummy;
+	static PyObject *getattrstr, *setattrstr, *delattrstr;
+	static PyObject *docstr;
 	if (docstr == NULL) {
 		docstr= PyString_InternFromString("__doc__");
 		if (docstr == NULL)
 			return NULL;
 	}
-	if (mappinglookup(dict, docstr) == NULL) {
-		if (mappinginsert(dict, docstr, None) < 0)
+	if (PyDict_GetItem(dict, docstr) == NULL) {
+		if (PyDict_SetItem(dict, docstr, Py_None) < 0)
 			return NULL;
 	}
 	if (bases == NULL) {
-		bases = newtupleobject(0);
+		bases = PyTuple_New(0);
 		if (bases == NULL)
 			return NULL;
 	}
 	else
-		INCREF(bases);
-	op = NEWOBJ(classobject, &Classtype);
+		Py_INCREF(bases);
+	op = PyObject_NEW(PyClassObject, &PyClass_Type);
 	if (op == NULL) {
-		DECREF(bases);
+		Py_DECREF(bases);
 		return NULL;
 	}
 	op->cl_bases = bases;
-	INCREF(dict);
+	Py_INCREF(dict);
 	op->cl_dict = dict;
-	XINCREF(name);
+	Py_XINCREF(name);
 	op->cl_name = name;
 	if (getattrstr == NULL) {
 		getattrstr = PyString_InternFromString("__getattr__");
@@ -85,102 +86,103 @@ newclassobject(bases, dict, name)
 	op->cl_getattr = class_lookup(op, getattrstr, &dummy);
 	op->cl_setattr = class_lookup(op, setattrstr, &dummy);
 	op->cl_delattr = class_lookup(op, delattrstr, &dummy);
-	XINCREF(op->cl_getattr);
-	XINCREF(op->cl_setattr);
-	XINCREF(op->cl_delattr);
+	Py_XINCREF(op->cl_getattr);
+	Py_XINCREF(op->cl_setattr);
+	Py_XINCREF(op->cl_delattr);
 #ifdef SUPPORT_OBSOLETE_ACCESS
 	pos = 0;
-	while (mappinggetnext(dict, &pos, &key, &value)) {
-		if (is_accessobject(value))
-			setaccessowner(value, (object *)op);
+	while (PyDict_Next(dict, &pos, &key, &value)) {
+		if (PyAccess_Check(value))
+			PyAccess_SetOwner(value, (PyObject *)op);
 	}
 #endif
-	return (object *) op;
+	return (PyObject *) op;
 }
 
 /* Class methods */
 
 static void
 class_dealloc(op)
-	classobject *op;
+	PyClassObject *op;
 {
-	DECREF(op->cl_bases);
-	DECREF(op->cl_dict);
-	XDECREF(op->cl_name);
+	Py_DECREF(op->cl_bases);
+	Py_DECREF(op->cl_dict);
+	Py_XDECREF(op->cl_name);
 	free((ANY *)op);
 }
 
-static object *
+static PyObject *
 class_lookup(cp, name, pclass)
-	classobject *cp;
-	object *name;
-	classobject **pclass;
+	PyClassObject *cp;
+	PyObject *name;
+	PyClassObject **pclass;
 {
 	int i, n;
-	object *value = mappinglookup(cp->cl_dict, name);
+	PyObject *value = PyDict_GetItem(cp->cl_dict, name);
 	if (value != NULL) {
 		*pclass = cp;
 		return value;
 	}
-	n = gettuplesize(cp->cl_bases);
+	n = PyTuple_Size(cp->cl_bases);
 	for (i = 0; i < n; i++) {
-		object *v = class_lookup((classobject *)
-				 gettupleitem(cp->cl_bases, i), name, pclass);
+		PyObject *v = class_lookup(
+			(PyClassObject *)
+			PyTuple_GetItem(cp->cl_bases, i), name, pclass);
 		if (v != NULL)
 			return v;
 	}
 	return NULL;
 }
 
-static object *
+static PyObject *
 class_getattr(op, name)
-	register classobject *op;
-	object *name;
+	register PyClassObject *op;
+	PyObject *name;
 {
-	register object *v;
-	register char *sname = getstringvalue(name);
-	classobject *class;
+	register PyObject *v;
+	register char *sname = PyString_AsString(name);
+	PyClassObject *class;
 	if (sname[0] == '_' && sname[1] == '_') {
 		if (strcmp(sname, "__dict__") == 0) {
-			if (getrestricted()) {
-				err_setstr(RuntimeError,
-					   "class.__dict__ not accessible in restricted mode");
+			if (PyEval_GetRestricted()) {
+				PyErr_SetString(PyExc_RuntimeError,
+			   "class.__dict__ not accessible in restricted mode");
 				return NULL;
 			}
-			INCREF(op->cl_dict);
+			Py_INCREF(op->cl_dict);
 			return op->cl_dict;
 		}
 		if (strcmp(sname, "__bases__") == 0) {
-			INCREF(op->cl_bases);
+			Py_INCREF(op->cl_bases);
 			return op->cl_bases;
 		}
 		if (strcmp(sname, "__name__") == 0) {
 			if (op->cl_name == NULL)
-				v = None;
+				v = Py_None;
 			else
 				v = op->cl_name;
-			INCREF(v);
+			Py_INCREF(v);
 			return v;
 		}
 	}
 	v = class_lookup(op, name, &class);
 	if (v == NULL) {
-		err_setval(AttributeError, name);
+		PyErr_SetObject(PyExc_AttributeError, name);
 		return NULL;
 	}
 #ifdef SUPPORT_OBSOLETE_ACCESS
-	if (is_accessobject(v)) {
-		v = getaccessvalue(v, getowner());
+	if (PyAccess_Check(v)) {
+		v = PyAccess_AsValue(v, PyEval_GetOwner());
 		if (v == NULL)
 			return NULL;
 	}
 	else
 #endif
-		INCREF(v);
-	if (is_funcobject(v)) {
-		object *w = newinstancemethodobject(v, (object *)NULL,
-						    (object *)class);
-		DECREF(v);
+		Py_INCREF(v);
+	if (PyFunction_Check(v)) {
+		PyObject *w = PyMethod_New(v, (PyObject *)NULL,
+						    (PyObject *)class);
+		Py_DECREF(v);
 		v = w;
 	}
 	return v;
@@ -188,61 +190,62 @@ class_getattr(op, name)
 
 static int
 class_setattr(op, name, v)
-	classobject *op;
-	object *name;
-	object *v;
+	PyClassObject *op;
+	PyObject *name;
+	PyObject *v;
 {
 #ifdef SUPPORT_OBSOLETE_ACCESS
-	object *ac;
+	PyObject *ac;
 #endif
-	char *sname = getstringvalue(name);
+	char *sname = PyString_AsString(name);
 	if (sname[0] == '_' && sname[1] == '_') {
-		int n = getstringsize(name);
+		int n = PyString_Size(name);
 		if (sname[n-1] == '_' && sname[n-2] == '_') {
-			err_setstr(TypeError, "read-only special attribute");
+			PyErr_SetString(PyExc_TypeError,
+					"read-only special attribute");
 			return -1;
 		}
 	}
-	if (getrestricted()) {
-		err_setstr(RuntimeError,
+	if (PyEval_GetRestricted()) {
+		PyErr_SetString(PyExc_RuntimeError,
 			   "classes are read-only in restricted mode");
 		return -1;
 	}
 #ifdef SUPPORT_OBSOLETE_ACCESS
-	ac = mappinglookup(op->cl_dict, name);
-	if (ac != NULL && is_accessobject(ac))
-		return setaccessvalue(ac, getowner(), v);
+	ac = PyDict_GetItem(op->cl_dict, name);
+	if (ac != NULL && PyAccess_Check(ac))
+		return PyAccess_SetValue(ac, PyEval_GetOwner(), v);
 #endif
 	if (v == NULL) {
-		int rv = mappingremove(op->cl_dict, name);
+		int rv = PyDict_DelItem(op->cl_dict, name);
 		if (rv < 0)
-			err_setstr(AttributeError,
+			PyErr_SetString(PyExc_AttributeError,
 				   "delete non-existing class attribute");
 		return rv;
 	}
 	else
-		return mappinginsert(op->cl_dict, name, v);
+		return PyDict_SetItem(op->cl_dict, name, v);
 }
 
-static object *
+static PyObject *
 class_repr(op)
-	classobject *op;
+	PyClassObject *op;
 {
 	char buf[140];
 	char *name;
-	if (op->cl_name == NULL || !is_stringobject(op->cl_name))
+	if (op->cl_name == NULL || !PyString_Check(op->cl_name))
 		name = "?";
 	else
-		name = getstringvalue(op->cl_name);
+		name = PyString_AsString(op->cl_name);
 	sprintf(buf, "<class %.100s at %lx>", name, (long)op);
-	return newstringobject(buf);
+	return PyString_FromString(buf);
 }
 
-typeobject Classtype = {
-	OB_HEAD_INIT(&Typetype)
+PyTypeObject PyClass_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"class",
-	sizeof(classobject),
+	sizeof(PyClassObject),
 	0,
 	(destructor)class_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
@@ -261,20 +264,20 @@ typeobject Classtype = {
 };
 
 int
-issubclass(class, base)
-	object *class;
-	object *base;
+PyClass_IsSubclass(class, base)
+	PyObject *class;
+	PyObject *base;
 {
 	int i, n;
-	classobject *cp;
+	PyClassObject *cp;
 	if (class == base)
 		return 1;
-	if (class == NULL || !is_classobject(class))
+	if (class == NULL || !PyClass_Check(class))
 		return 0;
-	cp = (classobject *)class;
-	n = gettuplesize(cp->cl_bases);
+	cp = (PyClassObject *)class;
+	n = PyTuple_Size(cp->cl_bases);
 	for (i = 0; i < n; i++) {
-		if (issubclass(gettupleitem(cp->cl_bases, i), base))
+		if (PyClass_IsSubclass(PyTuple_GetItem(cp->cl_bases, i), base))
 			return 1;
 	}
 	return 0;
@@ -286,34 +289,35 @@ issubclass(class, base)
 #ifdef SUPPORT_OBSOLETE_ACCESS
 static int
 addaccess(class, inst)
-	classobject *class;
-	instanceobject *inst;
+	PyClassObject *class;
+	PyInstanceObject *inst;
 {
 	int i, n, pos, ret;
-	object *key, *value, *ac;
+	PyObject *key, *value, *ac;
 	
-	n = gettuplesize(class->cl_bases);
+	n = PyTuple_Size(class->cl_bases);
 	for (i = 0; i < n; i++) {
-		if (addaccess((classobject *)gettupleitem(class->cl_bases, i), inst) < 0)
+		if (addaccess((PyClassObject *)PyTuple_GetItem(
+			      class->cl_bases, i), inst) < 0)
 			return -1;
 	}
 	
 	pos = 0;
-	while (mappinggetnext(class->cl_dict, &pos, &key, &value)) {
-		if (!is_accessobject(value))
+	while (PyDict_Next(class->cl_dict, &pos, &key, &value)) {
+		if (!PyAccess_Check(value))
 			continue;
-		if (hasaccessvalue(value))
+		if (PyAccess_HasValue(value))
 			continue;
-		ac = dict2lookup(inst->in_dict, key);
-		if (ac != NULL && is_accessobject(ac)) {
-			err_setval(ConflictError, key);
+		ac = PyDict_GetItem(inst->in_dict, key);
+		if (ac != NULL && PyAccess_Check(ac)) {
+			PyErr_SetObject(PyExc_ConflictError, key);
 			return -1;
 		}
-		ac = cloneaccessobject(value);
+		ac = PyAccess_Clone(value);
 		if (ac == NULL)
 			return -1;
-		ret = dict2insert(inst->in_dict, key, ac);
-		DECREF(ac);
+		ret = PyDict_SetItem(inst->in_dict, key, ac);
+		Py_DECREF(ac);
 		if (ret != 0)
 			return -1;
     	}
@@ -321,125 +325,125 @@ addaccess(class, inst)
 }
 #endif
 
-object *
-newinstanceobject(class, arg, kw)
-	object *class;
-	object *arg;
-	object *kw;
+PyObject *
+PyInstance_New(class, arg, kw)
+	PyObject *class;
+	PyObject *arg;
+	PyObject *kw;
 {
-	register instanceobject *inst;
-	object *init;
-	static object *initstr;
-	if (!is_classobject(class)) {
-		err_badcall();
+	register PyInstanceObject *inst;
+	PyObject *init;
+	static PyObject *initstr;
+	if (!PyClass_Check(class)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	inst = NEWOBJ(instanceobject, &Instancetype);
+	inst = PyObject_NEW(PyInstanceObject, &PyInstance_Type);
 	if (inst == NULL)
 		return NULL;
-	INCREF(class);
-	inst->in_class = (classobject *)class;
-	inst->in_dict = newdictobject();
+	Py_INCREF(class);
+	inst->in_class = (PyClassObject *)class;
+	inst->in_dict = PyDict_New();
 	if (inst->in_dict == NULL
 #ifdef SUPPORT_OBSOLETE_ACCESS
-	    || addaccess((classobject *)class, inst) != 0
+	    || addaccess((PyClassObject *)class, inst) != 0
 #endif
 		) {
-		DECREF(inst);
+		Py_DECREF(inst);
 		return NULL;
 	}
 	if (initstr == NULL)
 		initstr = PyString_InternFromString("__init__");
 	init = instance_getattr1(inst, initstr);
 	if (init == NULL) {
-		err_clear();
-		if ((arg != NULL && (!is_tupleobject(arg) ||
-				     gettuplesize(arg) != 0))
-		    || (kw != NULL && (!is_dictobject(kw) ||
-				      getdictsize(kw) != 0))) {
-			err_setstr(TypeError,
+		PyErr_Clear();
+		if ((arg != NULL && (!PyTuple_Check(arg) ||
+				     PyTuple_Size(arg) != 0))
+		    || (kw != NULL && (!PyDict_Check(kw) ||
+				      PyDict_Size(kw) != 0))) {
+			PyErr_SetString(PyExc_TypeError,
 				   "this constructor takes no arguments");
-			DECREF(inst);
+			Py_DECREF(inst);
 			inst = NULL;
 		}
 	}
 	else {
-		object *res = PyEval_CallObjectWithKeywords(init, arg, kw);
-		DECREF(init);
+		PyObject *res = PyEval_CallObjectWithKeywords(init, arg, kw);
+		Py_DECREF(init);
 		if (res == NULL) {
-			DECREF(inst);
+			Py_DECREF(inst);
 			inst = NULL;
 		}
 		else {
-			if (res != None) {
-				err_setstr(TypeError,
+			if (res != Py_None) {
+				PyErr_SetString(PyExc_TypeError,
 					   "__init__() should return None");
-				DECREF(inst);
+				Py_DECREF(inst);
 				inst = NULL;
 			}
-			DECREF(res);
+			Py_DECREF(res);
 		}
 	}
-	return (object *)inst;
+	return (PyObject *)inst;
 }
 
 /* Instance methods */
 
 static void
 instance_dealloc(inst)
-	register instanceobject *inst;
+	register PyInstanceObject *inst;
 {
-	object *error_type, *error_value, *error_traceback;
-	object *del;
-	static object *delstr;
+	PyObject *error_type, *error_value, *error_traceback;
+	PyObject *del;
+	static PyObject *delstr;
 	/* Call the __del__ method if it exists.  First temporarily
 	   revive the object and save the current exception, if any. */
 #ifdef Py_TRACE_REFS
 	/* much too complicated if Py_TRACE_REFS defined */
-	extern long ref_total;
-	inst->ob_type = &Instancetype;
-	NEWREF(inst);
-	ref_total--;		/* compensate for increment in NEWREF */
+	extern long _Py_RefTotal;
+	inst->ob_type = &PyInstance_Type;
+	_Py_NewReference(inst);
+	_Py_RefTotal--;		/* compensate for increment in NEWREF */
 #ifdef COUNT_ALLOCS
 	inst->ob_type->tp_alloc--; /* ditto */
 #endif
 #else /* !Py_TRACE_REFS */
-	INCREF(inst);
+	Py_INCREF(inst);
 #endif /* !Py_TRACE_REFS */
-	err_fetch(&error_type, &error_value, &error_traceback);
+	PyErr_Fetch(&error_type, &error_value, &error_traceback);
 	if (delstr == NULL)
 		delstr = PyString_InternFromString("__del__");
 	if ((del = instance_getattr1(inst, delstr)) != NULL) {
-		object *res = call_object(del, (object *)NULL);
+		PyObject *res = PyEval_CallObject(del, (PyObject *)NULL);
 		if (res == NULL) {
-			object *f, *t, *v, *tb;
- 			err_fetch(&t, &v, &tb);
-			f = sysget("stderr");
-			err_clear();
+			PyObject *f, *t, *v, *tb;
+ 			PyErr_Fetch(&t, &v, &tb);
+			f = PySys_GetObject("stderr");
+			PyErr_Clear();
 			if (f != NULL) {
-				writestring("Exception ", f);
+				PyFile_WriteString("Exception ", f);
 				if (t) {
-					writeobject(t, f, Py_PRINT_RAW);
-					if (v && v != None) {
-						writestring(": ", f);
-						writeobject(v, f, 0);
+					PyFile_WriteObject(t, f, Py_PRINT_RAW);
+					if (v && v != Py_None) {
+						PyFile_WriteString(": ", f);
+						PyFile_WriteObject(v, f, 0);
 					}
 				}
-				writestring(" in ", f);
-				writeobject(del, f, 0);
-				writestring(" ignored\n", f);
-				err_clear(); /* Just in case */
+				PyFile_WriteString(" in ", f);
+				PyFile_WriteObject(del, f, 0);
+				PyFile_WriteString(" ignored\n", f);
+				PyErr_Clear(); /* Just in case */
 			}
 			Py_XDECREF(t);
 			Py_XDECREF(v);
 			Py_XDECREF(tb);
 		}
 		else
-			DECREF(res);
-		DECREF(del);
+			Py_DECREF(res);
+		Py_DECREF(del);
 	}
 	/* Restore the saved exception and undo the temporary revival */
-	err_restore(error_type, error_value, error_traceback);
+	PyErr_Restore(error_type, error_value, error_traceback);
 	/* Can't use DECREF here, it would cause a recursive call */
 	if (--inst->ob_refcnt > 0) {
 #ifdef COUNT_ALLOCS
@@ -451,70 +455,70 @@ instance_dealloc(inst)
 #ifdef COUNT_ALLOCS
 	inst->ob_type->tp_free--;	/* compensate for increment in UNREF */
 #endif
-	UNREF(inst);
+	_Py_ForgetReference(inst);
 	inst->ob_type = NULL;
 #endif /* Py_TRACE_REFS */
-	DECREF(inst->in_class);
-	XDECREF(inst->in_dict);
+	Py_DECREF(inst->in_class);
+	Py_XDECREF(inst->in_dict);
 	free((ANY *)inst);
 }
 
-static object *
+static PyObject *
 instance_getattr1(inst, name)
-	register instanceobject *inst;
-	object *name;
+	register PyInstanceObject *inst;
+	PyObject *name;
 {
-	register object *v;
-	register char *sname = getstringvalue(name);
-	classobject *class;
+	register PyObject *v;
+	register char *sname = PyString_AsString(name);
+	PyClassObject *class;
 	if (sname[0] == '_' && sname[1] == '_') {
 		if (strcmp(sname, "__dict__") == 0) {
-			if (getrestricted()) {
-				err_setstr(RuntimeError,
-					   "instance.__dict__ not accessible in restricted mode");
+			if (PyEval_GetRestricted()) {
+				PyErr_SetString(PyExc_RuntimeError,
+			"instance.__dict__ not accessible in restricted mode");
 				return NULL;
 			}
-			INCREF(inst->in_dict);
+			Py_INCREF(inst->in_dict);
 			return inst->in_dict;
 		}
 		if (strcmp(sname, "__class__") == 0) {
-			INCREF(inst->in_class);
-			return (object *)inst->in_class;
+			Py_INCREF(inst->in_class);
+			return (PyObject *)inst->in_class;
 		}
 	}
 	class = NULL;
-	v = mappinglookup(inst->in_dict, name);
+	v = PyDict_GetItem(inst->in_dict, name);
 	if (v == NULL) {
 		v = class_lookup(inst->in_class, name, &class);
 		if (v == NULL) {
-			err_setval(AttributeError, name);
+			PyErr_SetObject(PyExc_AttributeError, name);
 			return NULL;
 		}
 	}
 #ifdef SUPPORT_OBSOLETE_ACCESS
-	if (is_accessobject(v)) {
-		v = getaccessvalue(v, getowner());
+	if (PyAccess_Check(v)) {
+		v = PyAccess_AsValue(v, PyEval_GetOwner());
 		if (v == NULL)
 			return NULL;
 	}
 	else
 #endif
-		INCREF(v);
+		Py_INCREF(v);
 	if (class != NULL) {
-		if (is_funcobject(v)) {
-			object *w = newinstancemethodobject(v, (object *)inst,
-							    (object *)class);
-			DECREF(v);
+		if (PyFunction_Check(v)) {
+			PyObject *w = PyMethod_New(v, (PyObject *)inst,
+							    (PyObject *)class);
+			Py_DECREF(v);
 			v = w;
 		}
-		else if (is_instancemethodobject(v)) {
-			object *im_class = instancemethodgetclass(v);
+		else if (PyMethod_Check(v)) {
+			PyObject *im_class = PyMethod_Class(v);
 			/* Only if classes are compatible */
-			if (issubclass((object *)class, im_class)) {
-				object *im_func = instancemethodgetfunc(v);
-				object *w = newinstancemethodobject(im_func,
-						(object *)inst, im_class);
-				DECREF(v);
+			if (PyClass_IsSubclass((PyObject *)class, im_class)) {
+				PyObject *im_func = PyMethod_Function(v);
+				PyObject *w = PyMethod_New(im_func,
+						(PyObject *)inst, im_class);
+				Py_DECREF(v);
 				v = w;
 			}
 		}
@@ -522,62 +526,63 @@ instance_getattr1(inst, name)
 	return v;
 }
 
-static object *
+static PyObject *
 instance_getattr(inst, name)
-	register instanceobject *inst;
-	object *name;
+	register PyInstanceObject *inst;
+	PyObject *name;
 {
-	register object *func, *res;
+	register PyObject *func, *res;
 	res = instance_getattr1(inst, name);
 	if (res == NULL && (func = inst->in_class->cl_getattr) != NULL) {
-		object *args;
-		err_clear();
-		args = mkvalue("(OO)", inst, name);
+		PyObject *args;
+		PyErr_Clear();
+		args = Py_BuildValue("(OO)", inst, name);
 		if (args == NULL)
 			return NULL;
-		res = call_object(func, args);
-		DECREF(args);
+		res = PyEval_CallObject(func, args);
+		Py_DECREF(args);
 	}
 	return res;
 }
 
 static int
 instance_setattr1(inst, name, v)
-	instanceobject *inst;
-	object *name;
-	object *v;
+	PyInstanceObject *inst;
+	PyObject *name;
+	PyObject *v;
 {
 #ifdef SUPPORT_OBSOLETE_ACCESS
-	object *ac;
-	ac = mappinglookup(inst->in_dict, name);
-	if (ac != NULL && is_accessobject(ac))
-		return setaccessvalue(ac, getowner(), v);
+	PyObject *ac;
+	ac = PyDict_GetItem(inst->in_dict, name);
+	if (ac != NULL && PyAccess_Check(ac))
+		return PyAccess_SetValue(ac, PyEval_GetOwner(), v);
 #endif
 	if (v == NULL) {
-		int rv = mappingremove(inst->in_dict, name);
+		int rv = PyDict_DelItem(inst->in_dict, name);
 		if (rv < 0)
-			err_setstr(AttributeError,
+			PyErr_SetString(PyExc_AttributeError,
 				   "delete non-existing instance attribute");
 		return rv;
 	}
 	else
-		return mappinginsert(inst->in_dict, name, v);
+		return PyDict_SetItem(inst->in_dict, name, v);
 }
 
 static int
 instance_setattr(inst, name, v)
-	instanceobject *inst;
-	object *name;
-	object *v;
+	PyInstanceObject *inst;
+	PyObject *name;
+	PyObject *v;
 {
-	object *func, *args, *res;
-	char *sname = getstringvalue(name);
+	PyObject *func, *args, *res;
+	char *sname = PyString_AsString(name);
 	if (sname[0] == '_' && sname[1] == '_'
 	    && (strcmp(sname, "__dict__") == 0 ||
 		strcmp(sname, "__class__") == 0)) {
-	        int n = getstringsize(name);
+	        int n = PyString_Size(name);
 		if (sname[n-1] == '_' && sname[n-2] == '_') {
-			err_setstr(TypeError, "read-only special attribute");
+			PyErr_SetString(PyExc_TypeError,
+					"read-only special attribute");
 			return -1;
 		}
 	}
@@ -588,68 +593,68 @@ instance_setattr(inst, name, v)
 	if (func == NULL)
 		return instance_setattr1(inst, name, v);
 	if (v == NULL)
-		args = mkvalue("(OO)", inst, name);
+		args = Py_BuildValue("(OO)", inst, name);
 	else
-		args = mkvalue("(OOO)", inst, name, v);
+		args = Py_BuildValue("(OOO)", inst, name, v);
 	if (args == NULL)
 		return -1;
-	res = call_object(func, args);
-	DECREF(args);
+	res = PyEval_CallObject(func, args);
+	Py_DECREF(args);
 	if (res == NULL)
 		return -1;
-	DECREF(res);
+	Py_DECREF(res);
 	return 0;
 }
 
-static object *
+static PyObject *
 instance_repr(inst)
-	instanceobject *inst;
+	PyInstanceObject *inst;
 {
-	object *func;
-	object *res;
-	static object *reprstr;
+	PyObject *func;
+	PyObject *res;
+	static PyObject *reprstr;
 
 	if (reprstr == NULL)
 		reprstr = PyString_InternFromString("__repr__");
 	func = instance_getattr(inst, reprstr);
 	if (func == NULL) {
 		char buf[140];
-		object *classname = inst->in_class->cl_name;
+		PyObject *classname = inst->in_class->cl_name;
 		char *cname;
-		if (classname != NULL && is_stringobject(classname))
-			cname = getstringvalue(classname);
+		if (classname != NULL && PyString_Check(classname))
+			cname = PyString_AsString(classname);
 		else
 			cname = "?";
-		err_clear();
+		PyErr_Clear();
 		sprintf(buf, "<%.100s instance at %lx>", cname, (long)inst);
-		return newstringobject(buf);
+		return PyString_FromString(buf);
 	}
-	res = call_object(func, (object *)NULL);
-	DECREF(func);
+	res = PyEval_CallObject(func, (PyObject *)NULL);
+	Py_DECREF(func);
 	return res;
 }
 
-static object *
+static PyObject *
 instance_compare1(inst, other)
-	object *inst, *other;
+	PyObject *inst, *other;
 {
-	return instancebinop(inst, other, "__cmp__", "__rcmp__",
+	return PyInstance_DoBinOp(inst, other, "__cmp__", "__rcmp__",
 			     instance_compare1);
 }
 
 static int
 instance_compare(inst, other)
-	object *inst, *other;
+	PyObject *inst, *other;
 {
-	object *result;
+	PyObject *result;
 	long outcome;
 	result = instance_compare1(inst, other);
-	if (result == NULL || !is_intobject(result)) {
-		err_clear();
+	if (result == NULL || !PyInt_Check(result)) {
+		PyErr_Clear();
 		return (inst < other) ? -1 : 1;
 	}
-	outcome = getintvalue(result);
-	DECREF(result);
+	outcome = PyInt_AsLong(result);
+	Py_DECREF(result);
 	if (outcome < 0)
 		return -1;
 	else if (outcome > 0)
@@ -659,12 +664,12 @@ instance_compare(inst, other)
 
 static long
 instance_hash(inst)
-	instanceobject *inst;
+	PyInstanceObject *inst;
 {
-	object *func;
-	object *res;
+	PyObject *func;
+	PyObject *res;
 	long outcome;
-	static object *hashstr, *cmpstr;
+	static PyObject *hashstr, *cmpstr;
 
 	if (hashstr == NULL)
 		hashstr = PyString_InternFromString("__hash__");
@@ -672,45 +677,46 @@ instance_hash(inst)
 	if (func == NULL) {
 		/* If there is no __cmp__ method, we hash on the address.
 		   If a __cmp__ method exists, there must be a __hash__. */
-		err_clear();
+		PyErr_Clear();
 		if (cmpstr == NULL)
 			cmpstr = PyString_InternFromString("__cmp__");
 		func = instance_getattr(inst, cmpstr);
 		if (func == NULL) {
-			err_clear();
+			PyErr_Clear();
 			outcome = (long)inst;
 			if (outcome == -1)
 				outcome = -2;
 			return outcome;
 		}
-		err_setstr(TypeError, "unhashable instance");
+		PyErr_SetString(PyExc_TypeError, "unhashable instance");
 		return -1;
 	}
-	res = call_object(func, (object *)NULL);
-	DECREF(func);
+	res = PyEval_CallObject(func, (PyObject *)NULL);
+	Py_DECREF(func);
 	if (res == NULL)
 		return -1;
-	if (is_intobject(res)) {
-		outcome = getintvalue(res);
+	if (PyInt_Check(res)) {
+		outcome = PyInt_AsLong(res);
 		if (outcome == -1)
 			outcome = -2;
 	}
 	else {
-		err_setstr(TypeError, "__hash__() should return an int");
+		PyErr_SetString(PyExc_TypeError,
+				"__hash__() should return an int");
 		outcome = -1;
 	}
-	DECREF(res);
+	Py_DECREF(res);
 	return outcome;
 }
 
-static object *getitemstr, *setitemstr, *delitemstr, *lenstr;
+static PyObject *getitemstr, *setitemstr, *delitemstr, *lenstr;
 
 static int
 instance_length(inst)
-	instanceobject *inst;
+	PyInstanceObject *inst;
 {
-	object *func;
-	object *res;
+	PyObject *func;
+	PyObject *res;
 	int outcome;
 
 	if (lenstr == NULL)
@@ -718,57 +724,59 @@ instance_length(inst)
 	func = instance_getattr(inst, lenstr);
 	if (func == NULL)
 		return -1;
-	res = call_object(func, (object *)NULL);
-	DECREF(func);
+	res = PyEval_CallObject(func, (PyObject *)NULL);
+	Py_DECREF(func);
 	if (res == NULL)
 		return -1;
-	if (is_intobject(res)) {
-		outcome = getintvalue(res);
+	if (PyInt_Check(res)) {
+		outcome = PyInt_AsLong(res);
 		if (outcome < 0)
-			err_setstr(ValueError, "__len__() should return >= 0");
+			PyErr_SetString(PyExc_ValueError,
+					"__len__() should return >= 0");
 	}
 	else {
-		err_setstr(TypeError, "__len__() should return an int");
+		PyErr_SetString(PyExc_TypeError,
+				"__len__() should return an int");
 		outcome = -1;
 	}
-	DECREF(res);
+	Py_DECREF(res);
 	return outcome;
 }
 
-static object *
+static PyObject *
 instance_subscript(inst, key)
-	instanceobject *inst;
-	object *key;
+	PyInstanceObject *inst;
+	PyObject *key;
 {
-	object *func;
-	object *arg;
-	object *res;
+	PyObject *func;
+	PyObject *arg;
+	PyObject *res;
 
 	if (getitemstr == NULL)
 		getitemstr = PyString_InternFromString("__getitem__");
 	func = instance_getattr(inst, getitemstr);
 	if (func == NULL)
 		return NULL;
-	arg = mkvalue("(O)", key);
+	arg = Py_BuildValue("(O)", key);
 	if (arg == NULL) {
-		DECREF(func);
+		Py_DECREF(func);
 		return NULL;
 	}
-	res = call_object(func, arg);
-	DECREF(func);
-	DECREF(arg);
+	res = PyEval_CallObject(func, arg);
+	Py_DECREF(func);
+	Py_DECREF(arg);
 	return res;
 }
 
 static int
 instance_ass_subscript(inst, key, value)
-	instanceobject*inst;
-	object *key;
-	object *value;
+	PyInstanceObject*inst;
+	PyObject *key;
+	PyObject *value;
 {
-	object *func;
-	object *arg;
-	object *res;
+	PyObject *func;
+	PyObject *arg;
+	PyObject *res;
 
 	if (value == NULL) {
 		if (delitemstr == NULL)
@@ -783,82 +791,82 @@ instance_ass_subscript(inst, key, value)
 	if (func == NULL)
 		return -1;
 	if (value == NULL)
-		arg = mkvalue("(O)", key);
+		arg = Py_BuildValue("(O)", key);
 	else
-		arg = mkvalue("(OO)", key, value);
+		arg = Py_BuildValue("(OO)", key, value);
 	if (arg == NULL) {
-		DECREF(func);
+		Py_DECREF(func);
 		return -1;
 	}
-	res = call_object(func, arg);
-	DECREF(func);
-	DECREF(arg);
+	res = PyEval_CallObject(func, arg);
+	Py_DECREF(func);
+	Py_DECREF(arg);
 	if (res == NULL)
 		return -1;
-	DECREF(res);
+	Py_DECREF(res);
 	return 0;
 }
 
-static mapping_methods instance_as_mapping = {
+static PyMappingMethods instance_as_mapping = {
 	(inquiry)instance_length, /*mp_length*/
 	(binaryfunc)instance_subscript, /*mp_subscript*/
 	(objobjargproc)instance_ass_subscript, /*mp_ass_subscript*/
 };
 
-static object *
+static PyObject *
 instance_item(inst, i)
-	instanceobject *inst;
+	PyInstanceObject *inst;
 	int i;
 {
-	object *func, *arg, *res;
+	PyObject *func, *arg, *res;
 
 	if (getitemstr == NULL)
 		getitemstr = PyString_InternFromString("__getitem__");
 	func = instance_getattr(inst, getitemstr);
 	if (func == NULL)
 		return NULL;
-	arg = mkvalue("(i)", i);
+	arg = Py_BuildValue("(i)", i);
 	if (arg == NULL) {
-		DECREF(func);
+		Py_DECREF(func);
 		return NULL;
 	}
-	res = call_object(func, arg);
-	DECREF(func);
-	DECREF(arg);
+	res = PyEval_CallObject(func, arg);
+	Py_DECREF(func);
+	Py_DECREF(arg);
 	return res;
 }
 
-static object *
+static PyObject *
 instance_slice(inst, i, j)
-	instanceobject *inst;
+	PyInstanceObject *inst;
 	int i, j;
 {
-	object *func, *arg, *res;
-	static object *getslicestr;
+	PyObject *func, *arg, *res;
+	static PyObject *getslicestr;
 
 	if (getslicestr == NULL)
 		getslicestr = PyString_InternFromString("__getslice__");
 	func = instance_getattr(inst, getslicestr);
 	if (func == NULL)
 		return NULL;
-	arg = mkvalue("(ii)", i, j);
+	arg = Py_BuildValue("(ii)", i, j);
 	if (arg == NULL) {
-		DECREF(func);
+		Py_DECREF(func);
 		return NULL;
 	}
-	res = call_object(func, arg);
-	DECREF(func);
-	DECREF(arg);
+	res = PyEval_CallObject(func, arg);
+	Py_DECREF(func);
+	Py_DECREF(arg);
 	return res;
 }
 
 static int
 instance_ass_item(inst, i, item)
-	instanceobject *inst;
+	PyInstanceObject *inst;
 	int i;
-	object *item;
+	PyObject *item;
 {
-	object *func, *arg, *res;
+	PyObject *func, *arg, *res;
 
 	if (item == NULL) {
 		if (delitemstr == NULL)
@@ -873,61 +881,63 @@ instance_ass_item(inst, i, item)
 	if (func == NULL)
 		return -1;
 	if (item == NULL)
-		arg = mkvalue("i", i);
+		arg = Py_BuildValue("i", i);
 	else
-		arg = mkvalue("(iO)", i, item);
+		arg = Py_BuildValue("(iO)", i, item);
 	if (arg == NULL) {
-		DECREF(func);
+		Py_DECREF(func);
 		return -1;
 	}
-	res = call_object(func, arg);
-	DECREF(func);
-	DECREF(arg);
+	res = PyEval_CallObject(func, arg);
+	Py_DECREF(func);
+	Py_DECREF(arg);
 	if (res == NULL)
 		return -1;
-	DECREF(res);
+	Py_DECREF(res);
 	return 0;
 }
 
 static int
 instance_ass_slice(inst, i, j, value)
-	instanceobject *inst;
+	PyInstanceObject *inst;
 	int i, j;
-	object *value;
+	PyObject *value;
 {
-	object *func, *arg, *res;
-	static object *setslicestr, *delslicestr;
+	PyObject *func, *arg, *res;
+	static PyObject *setslicestr, *delslicestr;
 
 	if (value == NULL) {
 		if (delslicestr == NULL)
-			delslicestr = PyString_InternFromString("__delslice__");
+			delslicestr =
+				PyString_InternFromString("__delslice__");
 		func = instance_getattr(inst, delslicestr);
 	}
 	else {
 		if (setslicestr == NULL)
-			setslicestr = PyString_InternFromString("__setslice__");
+			setslicestr =
+				PyString_InternFromString("__setslice__");
 		func = instance_getattr(inst, setslicestr);
 	}
 	if (func == NULL)
 		return -1;
 	if (value == NULL)
-		arg = mkvalue("(ii)", i, j);
+		arg = Py_BuildValue("(ii)", i, j);
 	else
-		arg = mkvalue("(iiO)", i, j, value);
+		arg = Py_BuildValue("(iiO)", i, j, value);
 	if (arg == NULL) {
-		DECREF(func);
+		Py_DECREF(func);
 		return -1;
 	}
-	res = call_object(func, arg);
-	DECREF(func);
-	DECREF(arg);
+	res = PyEval_CallObject(func, arg);
+	Py_DECREF(func);
+	Py_DECREF(arg);
 	if (res == NULL)
 		return -1;
-	DECREF(res);
+	Py_DECREF(res);
 	return 0;
 }
 
-static sequence_methods instance_as_sequence = {
+static PySequenceMethods instance_as_sequence = {
 	(inquiry)instance_length, /*sq_length*/
 	0, /*sq_concat*/
 	0, /*sq_repeat*/
@@ -937,44 +947,44 @@ static sequence_methods instance_as_sequence = {
 	(intintobjargproc)instance_ass_slice, /*sq_ass_slice*/
 };
 
-static object *
+static PyObject *
 generic_unary_op(self, methodname)
-	instanceobject *self;
-	object *methodname;
+	PyInstanceObject *self;
+	PyObject *methodname;
 {
-	object *func, *res;
+	PyObject *func, *res;
 
 	if ((func = instance_getattr(self, methodname)) == NULL)
 		return NULL;
-	res = call_object(func, (object *)NULL);
-	DECREF(func);
+	res = PyEval_CallObject(func, (PyObject *)NULL);
+	Py_DECREF(func);
 	return res;
 }
 
 
 /* Forward */
-static int halfbinop Py_PROTO((object *, object *, char *, object **,
-			  object * (*) Py_PROTO((object *, object *)), int ));
+static int halfbinop Py_PROTO((PyObject *, PyObject *, char *, PyObject **,
+		PyObject * (*) Py_PROTO((PyObject *, PyObject *)), int ));
 
 
 /* Implement a binary operator involving at least one class instance. */
 
-object *
-instancebinop(v, w, opname, ropname, thisfunc)
-	object *v;
-	object *w;
+PyObject *
+PyInstance_DoBinOp(v, w, opname, ropname, thisfunc)
+	PyObject *v;
+	PyObject *w;
 	char *opname;
 	char *ropname;
-	object * (*thisfunc) PROTO((object *, object *));
+	PyObject * (*thisfunc) Py_PROTO((PyObject *, PyObject *));
 {
 	char buf[256];
-	object *result = NULL;
+	PyObject *result = NULL;
 	if (halfbinop(v, w, opname, &result, thisfunc, 0) <= 0)
 		return result;
 	if (halfbinop(w, v, ropname, &result, thisfunc, 1) <= 0)
 		return result;
 	sprintf(buf, "%s nor %s defined for these operands", opname, ropname);
-	err_setstr(TypeError, buf);
+	PyErr_SetString(PyExc_TypeError, buf);
 	return NULL;
 }
 
@@ -986,152 +996,152 @@ instancebinop(v, w, opname, ropname, thisfunc)
    1  if we could try another operation
 */
 
-static object *coerce_obj;
+static PyObject *coerce_obj;
 
 static int
 halfbinop(v, w, opname, r_result, thisfunc, swapped)
-	object *v;
-	object *w;
+	PyObject *v;
+	PyObject *w;
 	char *opname;
-	object **r_result;
-	object * (*thisfunc) PROTO((object *, object *));
+	PyObject **r_result;
+	PyObject * (*thisfunc) Py_PROTO((PyObject *, PyObject *));
 	int swapped;
 {
-	object *func;
-	object *args;
-	object *coerce;
-	object *coerced = NULL;
-	object *v1;
+	PyObject *func;
+	PyObject *args;
+	PyObject *PyNumber_Coerce;
+	PyObject *coerced = NULL;
+	PyObject *v1;
 	
-	if (!is_instanceobject(v))
+	if (!PyInstance_Check(v))
 		return 1;
 	if (coerce_obj == NULL) {
 		coerce_obj = PyString_InternFromString("__coerce__");
 		if (coerce_obj == NULL)
 			return -1;
 	}
-	coerce = getattro(v, coerce_obj);
-	if (coerce == NULL) {
-		err_clear();
+	PyNumber_Coerce = PyObject_GetAttr(v, coerce_obj);
+	if (PyNumber_Coerce == NULL) {
+		PyErr_Clear();
 	}
 	else {
-		args = mkvalue("(O)", w);
+		args = Py_BuildValue("(O)", w);
 		if (args == NULL) {
 			return -1;
 		}
-		coerced = call_object(coerce, args);
-		DECREF(args);
-		DECREF(coerce);
+		coerced = PyEval_CallObject(PyNumber_Coerce, args);
+		Py_DECREF(args);
+		Py_DECREF(PyNumber_Coerce);
 		if (coerced == NULL) {
 			return -1;
 		}
-		if (coerced == None) {
-			DECREF(coerced);
+		if (coerced == Py_None) {
+			Py_DECREF(coerced);
 			return 1;
 		}
-		if (!is_tupleobject(coerced) || gettuplesize(coerced) != 2) {
-			DECREF(coerced);
-			err_setstr(TypeError,
+		if (!PyTuple_Check(coerced) || PyTuple_Size(coerced) != 2) {
+			Py_DECREF(coerced);
+			PyErr_SetString(PyExc_TypeError,
 				   "coercion should return None or 2-tuple");
 			return -1;
 		}
-		v1 = gettupleitem(coerced, 0);
-		w = gettupleitem(coerced, 1);
+		v1 = PyTuple_GetItem(coerced, 0);
+		w = PyTuple_GetItem(coerced, 1);
 		if (v1 != v) {
 			v = v1;
-			if (!is_instanceobject(v) && !is_instanceobject(w)) {
+			if (!PyInstance_Check(v) && !PyInstance_Check(w)) {
 				if (swapped)
 					*r_result = (*thisfunc)(w, v);
 				else
 					*r_result = (*thisfunc)(v, w);
-				DECREF(coerced);
+				Py_DECREF(coerced);
 				return *r_result == NULL ? -1 : 0;
 			}
 		}
-		w = gettupleitem(coerced, 1);
+		w = PyTuple_GetItem(coerced, 1);
 	}
-	func = getattr(v, opname);
+	func = PyObject_GetAttrString(v, opname);
 	if (func == NULL) {
-		XDECREF(coerced);
-		if (err_occurred() != AttributeError)
+		Py_XDECREF(coerced);
+		if (PyErr_Occurred() != PyExc_AttributeError)
 			return -1;
-		err_clear();
+		PyErr_Clear();
 		return 1;
 	}
-	args = mkvalue("(O)", w);
+	args = Py_BuildValue("(O)", w);
 	if (args == NULL) {
-		DECREF(func);
-		XDECREF(coerced);
+		Py_DECREF(func);
+		Py_XDECREF(coerced);
 		return -1;
 	}
-	*r_result = call_object(func, args);
-	DECREF(args);
-	DECREF(func);
-	XDECREF(coerced);
+	*r_result = PyEval_CallObject(func, args);
+	Py_DECREF(args);
+	Py_DECREF(func);
+	Py_XDECREF(coerced);
 	return *r_result == NULL ? -1 : 0;
 }
 
 static int
 instance_coerce(pv, pw)
-	object **pv;
-	object **pw;
+	PyObject **pv;
+	PyObject **pw;
 {
-	object *v = *pv;
-	object *w = *pw;
-	object *coerce;
-	object *args;
-	object *coerced;
+	PyObject *v = *pv;
+	PyObject *w = *pw;
+	PyObject *PyNumber_Coerce;
+	PyObject *args;
+	PyObject *coerced;
 
 	if (coerce_obj == NULL) {
 		coerce_obj = PyString_InternFromString("__coerce__");
 		if (coerce_obj == NULL)
 			return -1;
 	}
-	coerce = getattro(v, coerce_obj);
-	if (coerce == NULL) {
+	PyNumber_Coerce = PyObject_GetAttr(v, coerce_obj);
+	if (PyNumber_Coerce == NULL) {
 		/* No __coerce__ method: always OK */
-		err_clear();
-		INCREF(v);
-		INCREF(w);
+		PyErr_Clear();
+		Py_INCREF(v);
+		Py_INCREF(w);
 		return 0;
 	}
 	/* Has __coerce__ method: call it */
-	args = mkvalue("(O)", w);
+	args = Py_BuildValue("(O)", w);
 	if (args == NULL) {
 		return -1;
 	}
-	coerced = call_object(coerce, args);
-	DECREF(args);
-	DECREF(coerce);
+	coerced = PyEval_CallObject(PyNumber_Coerce, args);
+	Py_DECREF(args);
+	Py_DECREF(PyNumber_Coerce);
 	if (coerced == NULL) {
 		/* __coerce__ call raised an exception */
 		return -1;
 	}
-	if (coerced == None) {
+	if (coerced == Py_None) {
 		/* __coerce__ says "I can't do it" */
-		DECREF(coerced);
+		Py_DECREF(coerced);
 		return 1;
 	}
-	if (!is_tupleobject(coerced) || gettuplesize(coerced) != 2) {
+	if (!PyTuple_Check(coerced) || PyTuple_Size(coerced) != 2) {
 		/* __coerce__ return value is malformed */
-		DECREF(coerced);
-		err_setstr(TypeError,
+		Py_DECREF(coerced);
+		PyErr_SetString(PyExc_TypeError,
 			   "coercion should return None or 2-tuple");
 		return -1;
 	}
 	/* __coerce__ returned two new values */
-	*pv = gettupleitem(coerced, 0);
-	*pw = gettupleitem(coerced, 1);
-	INCREF(*pv);
-	INCREF(*pw);
-	DECREF(coerced);
+	*pv = PyTuple_GetItem(coerced, 0);
+	*pw = PyTuple_GetItem(coerced, 1);
+	Py_INCREF(*pv);
+	Py_INCREF(*pw);
+	Py_DECREF(coerced);
 	return 0;
 }
 
 
 #define UNARY(funcname, methodname) \
-static object *funcname(self) instanceobject *self; { \
-	static object *o; \
+static PyObject *funcname(self) PyInstanceObject *self; { \
+	static PyObject *o; \
 	if (o == NULL) o = PyString_InternFromString(methodname); \
 	return generic_unary_op(self, o); \
 }
@@ -1142,38 +1152,40 @@ UNARY(instance_abs, "__abs__")
 
 static int
 instance_nonzero(self)
-	instanceobject *self;
+	PyInstanceObject *self;
 {
-	object *func, *res;
+	PyObject *func, *res;
 	long outcome;
-	static object *nonzerostr;
+	static PyObject *nonzerostr;
 
 	if (nonzerostr == NULL)
 		nonzerostr = PyString_InternFromString("__nonzero__");
 	if ((func = instance_getattr(self, nonzerostr)) == NULL) {
-		err_clear();
+		PyErr_Clear();
 		if (lenstr == NULL)
 			lenstr = PyString_InternFromString("__len__");
 		if ((func = instance_getattr(self, lenstr)) == NULL) {
-			err_clear();
+			PyErr_Clear();
 			/* Fall back to the default behavior:
 			   all instances are nonzero */
 			return 1;
 		}
 	}
-	res = call_object(func, (object *)NULL);
-	DECREF(func);
+	res = PyEval_CallObject(func, (PyObject *)NULL);
+	Py_DECREF(func);
 	if (res == NULL)
 		return -1;
-	if (!is_intobject(res)) {
-		DECREF(res);
-		err_setstr(TypeError, "__nonzero__ should return an int");
+	if (!PyInt_Check(res)) {
+		Py_DECREF(res);
+		PyErr_SetString(PyExc_TypeError,
+				"__nonzero__ should return an int");
 		return -1;
 	}
-	outcome = getintvalue(res);
-	DECREF(res);
+	outcome = PyInt_AsLong(res);
+	Py_DECREF(res);
 	if (outcome < 0) {
-		err_setstr(ValueError, "__nonzero__ should return >= 0");
+		PyErr_SetString(PyExc_ValueError,
+				"__nonzero__ should return >= 0");
 		return -1;
 	}
 	return outcome > 0;
@@ -1187,35 +1199,35 @@ UNARY(instance_oct, "__oct__")
 UNARY(instance_hex, "__hex__")
 
 /* This version is for ternary calls only (z != None) */
-static object *
+static PyObject *
 instance_pow(v, w, z)
-	object *v;
-	object *w;
-	object *z;
+	PyObject *v;
+	PyObject *w;
+	PyObject *z;
 {
 	/* XXX Doesn't do coercions... */
-	object *func;
-	object *args;
-	object *result;
-	static object *powstr;
+	PyObject *func;
+	PyObject *args;
+	PyObject *result;
+	static PyObject *powstr;
 
 	if (powstr == NULL)
 		powstr = PyString_InternFromString("__pow__");
-	func = getattro(v, powstr);
+	func = PyObject_GetAttr(v, powstr);
 	if (func == NULL)
 		return NULL;
-	args = mkvalue("(OO)", w, z);
+	args = Py_BuildValue("(OO)", w, z);
 	if (args == NULL) {
-		DECREF(func);
+		Py_DECREF(func);
 		return NULL;
 	}
-	result = call_object(func, args);
-	DECREF(func);
-	DECREF(args);
+	result = PyEval_CallObject(func, args);
+	Py_DECREF(func);
+	Py_DECREF(args);
 	return result;
 }
 
-static number_methods instance_as_number = {
+static PyNumberMethods instance_as_number = {
 	0, /*nb_add*/
 	0, /*nb_subtract*/
 	0, /*nb_multiply*/
@@ -1241,11 +1253,11 @@ static number_methods instance_as_number = {
 	(unaryfunc)instance_hex, /*nb_hex*/
 };
 
-typeobject Instancetype = {
-	OB_HEAD_INIT(&Typetype)
+PyTypeObject PyInstance_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"instance",
-	sizeof(instanceobject),
+	sizeof(PyInstanceObject),
 	0,
 	(destructor)instance_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
@@ -1271,71 +1283,71 @@ typeobject Instancetype = {
 */
 
 typedef struct {
-	OB_HEAD
-	object	*im_func;	/* The function implementing the method */
-	object	*im_self;	/* The instance it is bound to, or NULL */
-	object	*im_class;	/* The class that defined the method */
-} instancemethodobject;
+	PyObject_HEAD
+	PyObject *im_func;	/* The function implementing the method */
+	PyObject *im_self;	/* The instance it is bound to, or NULL */
+	PyObject *im_class;	/* The class that defined the method */
+} PyMethodObject;
 
-object *
-newinstancemethodobject(func, self, class)
-	object *func;
-	object *self;
-	object *class;
+PyObject *
+PyMethod_New(func, self, class)
+	PyObject *func;
+	PyObject *self;
+	PyObject *class;
 {
-	register instancemethodobject *im;
-	if (!is_funcobject(func)) {
-		err_badcall();
+	register PyMethodObject *im;
+	if (!PyFunction_Check(func)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	im = NEWOBJ(instancemethodobject, &Instancemethodtype);
+	im = PyObject_NEW(PyMethodObject, &PyMethod_Type);
 	if (im == NULL)
 		return NULL;
-	INCREF(func);
+	Py_INCREF(func);
 	im->im_func = func;
-	XINCREF(self);
+	Py_XINCREF(self);
 	im->im_self = self;
-	INCREF(class);
+	Py_INCREF(class);
 	im->im_class = class;
-	return (object *)im;
+	return (PyObject *)im;
 }
 
-object *
-instancemethodgetfunc(im)
-	register object *im;
+PyObject *
+PyMethod_Function(im)
+	register PyObject *im;
 {
-	if (!is_instancemethodobject(im)) {
-		err_badcall();
+	if (!PyMethod_Check(im)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return ((instancemethodobject *)im)->im_func;
+	return ((PyMethodObject *)im)->im_func;
 }
 
-object *
-instancemethodgetself(im)
-	register object *im;
+PyObject *
+PyMethod_Self(im)
+	register PyObject *im;
 {
-	if (!is_instancemethodobject(im)) {
-		err_badcall();
+	if (!PyMethod_Check(im)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return ((instancemethodobject *)im)->im_self;
+	return ((PyMethodObject *)im)->im_self;
 }
 
-object *
-instancemethodgetclass(im)
-	register object *im;
+PyObject *
+PyMethod_Class(im)
+	register PyObject *im;
 {
-	if (!is_instancemethodobject(im)) {
-		err_badcall();
+	if (!PyMethod_Check(im)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return ((instancemethodobject *)im)->im_class;
+	return ((PyMethodObject *)im)->im_class;
 }
 
 /* Class method methods */
 
-#define OFF(x) offsetof(instancemethodobject, x)
+#define OFF(x) offsetof(PyMethodObject, x)
 
 static struct memberlist instancemethod_memberlist[] = {
 	{"im_func",	T_OBJECT,	OFF(im_func)},
@@ -1347,106 +1359,106 @@ static struct memberlist instancemethod_memberlist[] = {
 	{NULL}	/* Sentinel */
 };
 
-static object *
+static PyObject *
 instancemethod_getattr(im, name)
-	register instancemethodobject *im;
-	object *name;
+	register PyMethodObject *im;
+	PyObject *name;
 {
-	char *sname = getstringvalue(name);
+	char *sname = PyString_AsString(name);
 	if (sname[0] == '_') {
-		funcobject *func = (funcobject *)(im->im_func);
+		PyFunctionObject *func = (PyFunctionObject *)(im->im_func);
 		if (strcmp(sname, "__name__") == 0) {
-			INCREF(func->func_name);
+			Py_INCREF(func->func_name);
 			return func->func_name;
 		}
 		if (strcmp(sname, "__doc__") == 0) {
-			INCREF(func->func_doc);
+			Py_INCREF(func->func_doc);
 			return func->func_doc;
 		}
 	}
-	if (getrestricted()) {
-		err_setstr(RuntimeError,
-			   "instance-method attributes not accessible in restricted mode");
+	if (PyEval_GetRestricted()) {
+		PyErr_SetString(PyExc_RuntimeError,
+	    "instance-method attributes not accessible in restricted mode");
 		return NULL;
 	}
-	return getmember((char *)im, instancemethod_memberlist, sname);
+	return PyMember_Get((char *)im, instancemethod_memberlist, sname);
 }
 
 static void
 instancemethod_dealloc(im)
-	register instancemethodobject *im;
+	register PyMethodObject *im;
 {
-	DECREF(im->im_func);
-	XDECREF(im->im_self);
-	DECREF(im->im_class);
+	Py_DECREF(im->im_func);
+	Py_XDECREF(im->im_self);
+	Py_DECREF(im->im_class);
 	free((ANY *)im);
 }
 
 static int
 instancemethod_compare(a, b)
-	instancemethodobject *a, *b;
+	PyMethodObject *a, *b;
 {
 	if (a->im_self != b->im_self)
 		return (a->im_self < b->im_self) ? -1 : 1;
-	return cmpobject(a->im_func, b->im_func);
+	return PyObject_Compare(a->im_func, b->im_func);
 }
 
-static object *
+static PyObject *
 instancemethod_repr(a)
-	instancemethodobject *a;
+	PyMethodObject *a;
 {
 	char buf[240];
-	instanceobject *self = (instanceobject *)(a->im_self);
-	funcobject *func = (funcobject *)(a->im_func);
-	classobject *class = (classobject *)(a->im_class);
-	object *fclassname, *iclassname, *funcname;
+	PyInstanceObject *self = (PyInstanceObject *)(a->im_self);
+	PyFunctionObject *func = (PyFunctionObject *)(a->im_func);
+	PyClassObject *class = (PyClassObject *)(a->im_class);
+	PyObject *fclassname, *iclassname, *funcname;
 	char *fcname, *icname, *fname;
 	fclassname = class->cl_name;
 	funcname = func->func_name;
-	if (fclassname != NULL && is_stringobject(fclassname))
-		fcname = getstringvalue(fclassname);
+	if (fclassname != NULL && PyString_Check(fclassname))
+		fcname = PyString_AsString(fclassname);
 	else
 		fcname = "?";
-	if (funcname != NULL && is_stringobject(funcname))
-		fname = getstringvalue(funcname);
+	if (funcname != NULL && PyString_Check(funcname))
+		fname = PyString_AsString(funcname);
 	else
 		fname = "?";
 	if (self == NULL)
 		sprintf(buf, "<unbound method %.100s.%.100s>", fcname, fname);
 	else {
 		iclassname = self->in_class->cl_name;
-		if (iclassname != NULL && is_stringobject(iclassname))
-			icname = getstringvalue(iclassname);
+		if (iclassname != NULL && PyString_Check(iclassname))
+			icname = PyString_AsString(iclassname);
 		else
 			icname = "?";
 		sprintf(buf, "<method %.60s.%.60s of %.60s instance at %lx>",
 			fcname, fname, icname, (long)self);
 	}
-	return newstringobject(buf);
+	return PyString_FromString(buf);
 }
 
 static long
 instancemethod_hash(a)
-	instancemethodobject *a;
+	PyMethodObject *a;
 {
 	long x, y;
 	if (a->im_self == NULL)
-		x = hashobject(None);
+		x = PyObject_Hash(Py_None);
 	else
-		x = hashobject(a->im_self);
+		x = PyObject_Hash(a->im_self);
 	if (x == -1)
 		return -1;
-	y = hashobject(a->im_func);
+	y = PyObject_Hash(a->im_func);
 	if (y == -1)
 		return -1;
 	return x ^ y;
 }
 
-typeobject Instancemethodtype = {
-	OB_HEAD_INIT(&Typetype)
+PyTypeObject PyMethod_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"instance method",
-	sizeof(instancemethodobject),
+	sizeof(PyMethodObject),
 	0,
 	(destructor)instancemethod_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/

@@ -31,7 +31,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Tuple object implementation */
 
-#include "allobjects.h"
+#include "Python.h"
 
 #ifndef MAXSAVESIZE
 #define MAXSAVESIZE	20
@@ -41,109 +41,112 @@ PERFORMANCE OF THIS SOFTWARE.
 /* Entries 1 upto MAXSAVESIZE are free lists, entry 0 is the empty
    tuple () of which at most one instance will be allocated.
 */
-static tupleobject *free_tuples[MAXSAVESIZE];
+static PyTupleObject *free_tuples[MAXSAVESIZE];
 #endif
 #ifdef COUNT_ALLOCS
 int fast_tuple_allocs;
 int tuple_zero_allocs;
 #endif
 
-object *
-newtupleobject(size)
+PyObject *
+PyTuple_New(size)
 	register int size;
 {
 	register int i;
-	register tupleobject *op;
+	register PyTupleObject *op;
 	if (size < 0) {
-		err_badcall();
+		PyErr_BadInternalCall();
 		return NULL;
 	}
 #if MAXSAVESIZE > 0
 	if (size == 0 && free_tuples[0]) {
 		op = free_tuples[0];
-		INCREF(op);
+		Py_INCREF(op);
 #ifdef COUNT_ALLOCS
 		tuple_zero_allocs++;
 #endif
-		return (object *) op;
+		return (PyObject *) op;
 	}
-	if (0 < size && size < MAXSAVESIZE && (op = free_tuples[size]) != NULL) {
-		free_tuples[size] = (tupleobject *) op->ob_item[0];
+	if (0 < size && size < MAXSAVESIZE &&
+	    (op = free_tuples[size]) != NULL)
+	{
+		free_tuples[size] = (PyTupleObject *) op->ob_item[0];
 #ifdef COUNT_ALLOCS
 		fast_tuple_allocs++;
 #endif
 	} else
 #endif
 	{
-		op = (tupleobject *)
-			malloc(sizeof(tupleobject) + size * sizeof(object *));
+		op = (PyTupleObject *) malloc(
+			sizeof(PyTupleObject) + size * sizeof(PyObject *));
 		if (op == NULL)
-			return err_nomem();
+			return PyErr_NoMemory();
 	}
-	op->ob_type = &Tupletype;
+	op->ob_type = &PyTuple_Type;
 	op->ob_size = size;
 	for (i = 0; i < size; i++)
 		op->ob_item[i] = NULL;
-	NEWREF(op);
+	_Py_NewReference(op);
 #if MAXSAVESIZE > 0
 	if (size == 0) {
 		free_tuples[0] = op;
-		INCREF(op);	/* extra INCREF so that this is never freed */
+		Py_INCREF(op);	/* extra INCREF so that this is never freed */
 	}
 #endif
-	return (object *) op;
+	return (PyObject *) op;
 }
 
 int
-gettuplesize(op)
-	register object *op;
+PyTuple_Size(op)
+	register PyObject *op;
 {
-	if (!is_tupleobject(op)) {
-		err_badcall();
+	if (!PyTuple_Check(op)) {
+		PyErr_BadInternalCall();
 		return -1;
 	}
 	else
-		return ((tupleobject *)op)->ob_size;
+		return ((PyTupleObject *)op)->ob_size;
 }
 
-object *
-gettupleitem(op, i)
-	register object *op;
+PyObject *
+PyTuple_GetItem(op, i)
+	register PyObject *op;
 	register int i;
 {
-	if (!is_tupleobject(op)) {
-		err_badcall();
+	if (!PyTuple_Check(op)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	if (i < 0 || i >= ((tupleobject *)op) -> ob_size) {
-		err_setstr(IndexError, "tuple index out of range");
+	if (i < 0 || i >= ((PyTupleObject *)op) -> ob_size) {
+		PyErr_SetString(PyExc_IndexError, "tuple index out of range");
 		return NULL;
 	}
-	return ((tupleobject *)op) -> ob_item[i];
+	return ((PyTupleObject *)op) -> ob_item[i];
 }
 
 int
-settupleitem(op, i, newitem)
-	register object *op;
+PyTuple_SetItem(op, i, newitem)
+	register PyObject *op;
 	register int i;
-	object *newitem;
+	PyObject *newitem;
 {
-	register object *olditem;
-	register object **p;
-	if (!is_tupleobject(op)) {
-		XDECREF(newitem);
-		err_badcall();
+	register PyObject *olditem;
+	register PyObject **p;
+	if (!PyTuple_Check(op)) {
+		Py_XDECREF(newitem);
+		PyErr_BadInternalCall();
 		return -1;
 	}
-	if (i < 0 || i >= ((tupleobject *)op) -> ob_size) {
-		XDECREF(newitem);
-		err_setstr(IndexError, "tuple assignment index out of range");
+	if (i < 0 || i >= ((PyTupleObject *)op) -> ob_size) {
+		Py_XDECREF(newitem);
+		PyErr_SetString(PyExc_IndexError,
+				"tuple assignment index out of range");
 		return -1;
 	}
-	p = ((tupleobject *)op) -> ob_item + i;
+	p = ((PyTupleObject *)op) -> ob_item + i;
 	olditem = *p;
 	*p = newitem;
-	XDECREF(olditem);
+	Py_XDECREF(olditem);
 	return 0;
 }
 
@@ -151,14 +154,14 @@ settupleitem(op, i, newitem)
 
 static void
 tupledealloc(op)
-	register tupleobject *op;
+	register PyTupleObject *op;
 {
 	register int i;
 	for (i = 0; i < op->ob_size; i++)
-		XDECREF(op->ob_item[i]);
+		Py_XDECREF(op->ob_item[i]);
 #if MAXSAVESIZE > 0
 	if (0 < op->ob_size && op->ob_size < MAXSAVESIZE) {
-		op->ob_item[0] = (object *) free_tuples[op->ob_size];
+		op->ob_item[0] = (PyObject *) free_tuples[op->ob_size];
 		free_tuples[op->ob_size] = op;
 	} else
 #endif
@@ -167,7 +170,7 @@ tupledealloc(op)
 
 static int
 tupleprint(op, fp, flags)
-	tupleobject *op;
+	PyTupleObject *op;
 	FILE *fp;
 	int flags;
 {
@@ -176,7 +179,7 @@ tupleprint(op, fp, flags)
 	for (i = 0; i < op->ob_size; i++) {
 		if (i > 0)
 			fprintf(fp, ", ");
-		if (printobject(op->ob_item[i], fp, 0) != 0)
+		if (PyObject_Print(op->ob_item[i], fp, 0) != 0)
 			return -1;
 	}
 	if (op->ob_size == 1)
@@ -185,35 +188,35 @@ tupleprint(op, fp, flags)
 	return 0;
 }
 
-static object *
+static PyObject *
 tuplerepr(v)
-	tupleobject *v;
+	PyTupleObject *v;
 {
-	object *s, *comma;
+	PyObject *s, *comma;
 	int i;
-	s = newstringobject("(");
-	comma = newstringobject(", ");
+	s = PyString_FromString("(");
+	comma = PyString_FromString(", ");
 	for (i = 0; i < v->ob_size && s != NULL; i++) {
 		if (i > 0)
-			joinstring(&s, comma);
-		joinstring_decref(&s, reprobject(v->ob_item[i]));
+			PyString_Concat(&s, comma);
+		PyString_ConcatAndDel(&s, PyObject_Repr(v->ob_item[i]));
 	}
-	DECREF(comma);
+	Py_DECREF(comma);
 	if (v->ob_size == 1)
-		joinstring_decref(&s, newstringobject(","));
-	joinstring_decref(&s, newstringobject(")"));
+		PyString_ConcatAndDel(&s, PyString_FromString(","));
+	PyString_ConcatAndDel(&s, PyString_FromString(")"));
 	return s;
 }
 
 static int
 tuplecompare(v, w)
-	register tupleobject *v, *w;
+	register PyTupleObject *v, *w;
 {
 	register int len =
 		(v->ob_size < w->ob_size) ? v->ob_size : w->ob_size;
 	register int i;
 	for (i = 0; i < len; i++) {
-		int cmp = cmpobject(v->ob_item[i], w->ob_item[i]);
+		int cmp = PyObject_Compare(v->ob_item[i], w->ob_item[i]);
 		if (cmp != 0)
 			return cmp;
 	}
@@ -222,15 +225,15 @@ tuplecompare(v, w)
 
 static long
 tuplehash(v)
-	tupleobject *v;
+	PyTupleObject *v;
 {
 	register long x, y;
 	register int len = v->ob_size;
-	register object **p;
+	register PyObject **p;
 	x = 0x345678L;
 	p = v->ob_item;
 	while (--len >= 0) {
-		y = hashobject(*p++);
+		y = PyObject_Hash(*p++);
 		if (y == -1)
 			return -1;
 		x = (1000003*x) ^ y;
@@ -243,30 +246,30 @@ tuplehash(v)
 
 static int
 tuplelength(a)
-	tupleobject *a;
+	PyTupleObject *a;
 {
 	return a->ob_size;
 }
 
-static object *
+static PyObject *
 tupleitem(a, i)
-	register tupleobject *a;
+	register PyTupleObject *a;
 	register int i;
 {
 	if (i < 0 || i >= a->ob_size) {
-		err_setstr(IndexError, "tuple index out of range");
+		PyErr_SetString(PyExc_IndexError, "tuple index out of range");
 		return NULL;
 	}
-	INCREF(a->ob_item[i]);
+	Py_INCREF(a->ob_item[i]);
 	return a->ob_item[i];
 }
 
-static object *
+static PyObject *
 tupleslice(a, ilow, ihigh)
-	register tupleobject *a;
+	register PyTupleObject *a;
 	register int ilow, ihigh;
 {
-	register tupleobject *np;
+	register PyTupleObject *np;
 	register int i;
 	if (ilow < 0)
 		ilow = 0;
@@ -276,97 +279,97 @@ tupleslice(a, ilow, ihigh)
 		ihigh = ilow;
 	if (ilow == 0 && ihigh == a->ob_size) {
 		/* XXX can only do this if tuples are immutable! */
-		INCREF(a);
-		return (object *)a;
+		Py_INCREF(a);
+		return (PyObject *)a;
 	}
-	np = (tupleobject *)newtupleobject(ihigh - ilow);
+	np = (PyTupleObject *)PyTuple_New(ihigh - ilow);
 	if (np == NULL)
 		return NULL;
 	for (i = ilow; i < ihigh; i++) {
-		object *v = a->ob_item[i];
-		INCREF(v);
+		PyObject *v = a->ob_item[i];
+		Py_INCREF(v);
 		np->ob_item[i - ilow] = v;
 	}
-	return (object *)np;
+	return (PyObject *)np;
 }
 
-object *
-gettupleslice(op, i, j)
-	object *op;
+PyObject *
+PyTuple_GetSlice(op, i, j)
+	PyObject *op;
 	int i, j;
 {
-	if (op == NULL || !is_tupleobject(op)) {
-		err_badcall();
+	if (op == NULL || !PyTuple_Check(op)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return tupleslice((tupleobject *)op, i, j);
+	return tupleslice((PyTupleObject *)op, i, j);
 }
 
-static object *
+static PyObject *
 tupleconcat(a, bb)
-	register tupleobject *a;
-	register object *bb;
+	register PyTupleObject *a;
+	register PyObject *bb;
 {
 	register int size;
 	register int i;
-	tupleobject *np;
-	if (!is_tupleobject(bb)) {
-		err_badarg();
+	PyTupleObject *np;
+	if (!PyTuple_Check(bb)) {
+		PyErr_BadArgument();
 		return NULL;
 	}
-#define b ((tupleobject *)bb)
+#define b ((PyTupleObject *)bb)
 	size = a->ob_size + b->ob_size;
-	np = (tupleobject *) newtupleobject(size);
+	np = (PyTupleObject *) PyTuple_New(size);
 	if (np == NULL) {
 		return NULL;
 	}
 	for (i = 0; i < a->ob_size; i++) {
-		object *v = a->ob_item[i];
-		INCREF(v);
+		PyObject *v = a->ob_item[i];
+		Py_INCREF(v);
 		np->ob_item[i] = v;
 	}
 	for (i = 0; i < b->ob_size; i++) {
-		object *v = b->ob_item[i];
-		INCREF(v);
+		PyObject *v = b->ob_item[i];
+		Py_INCREF(v);
 		np->ob_item[i + a->ob_size] = v;
 	}
-	return (object *)np;
+	return (PyObject *)np;
 #undef b
 }
 
-static object *
+static PyObject *
 tuplerepeat(a, n)
-	tupleobject *a;
+	PyTupleObject *a;
 	int n;
 {
 	int i, j;
 	int size;
-	tupleobject *np;
-	object **p;
+	PyTupleObject *np;
+	PyObject **p;
 	if (n < 0)
 		n = 0;
 	if (a->ob_size*n == a->ob_size) {
 		/* Since tuples are immutable, we can return a shared
 		   copy in this case */
-		INCREF(a);
-		return (object *)a;
+		Py_INCREF(a);
+		return (PyObject *)a;
 	}
 	size = a->ob_size * n;
-	np = (tupleobject *) newtupleobject(size);
+	np = (PyTupleObject *) PyTuple_New(size);
 	if (np == NULL)
 		return NULL;
 	p = np->ob_item;
 	for (i = 0; i < n; i++) {
 		for (j = 0; j < a->ob_size; j++) {
 			*p = a->ob_item[j];
-			INCREF(*p);
+			Py_INCREF(*p);
 			p++;
 		}
 	}
-	return (object *) np;
+	return (PyObject *) np;
 }
 
-static sequence_methods tuple_as_sequence = {
+static PySequenceMethods tuple_as_sequence = {
 	(inquiry)tuplelength, /*sq_length*/
 	(binaryfunc)tupleconcat, /*sq_concat*/
 	(intargfunc)tuplerepeat, /*sq_repeat*/
@@ -376,12 +379,12 @@ static sequence_methods tuple_as_sequence = {
 	0,		/*sq_ass_slice*/
 };
 
-typeobject Tupletype = {
-	OB_HEAD_INIT(&Typetype)
+PyTypeObject PyTuple_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"tuple",
-	sizeof(tupleobject) - sizeof(object *),
-	sizeof(object *),
+	sizeof(PyTupleObject) - sizeof(PyObject *),
+	sizeof(PyObject *),
 	(destructor)tupledealloc, /*tp_dealloc*/
 	(printfunc)tupleprint, /*tp_print*/
 	0,		/*tp_getattr*/
@@ -404,21 +407,21 @@ typeobject Tupletype = {
    front, otherwise it will grow or shrink at the end. */
 
 int
-resizetuple(pv, newsize, last_is_sticky)
-	object **pv;
+_PyTuple_Resize(pv, newsize, last_is_sticky)
+	PyObject **pv;
 	int newsize;
 	int last_is_sticky;
 {
-	register tupleobject *v;
-	register tupleobject *sv;
+	register PyTupleObject *v;
+	register PyTupleObject *sv;
 	int i;
 	int sizediff;
 
-	v = (tupleobject *) *pv;
-	if (v == NULL || !is_tupleobject(v) || v->ob_refcnt != 1) {
+	v = (PyTupleObject *) *pv;
+	if (v == NULL || !PyTuple_Check(v) || v->ob_refcnt != 1) {
 		*pv = 0;
-		DECREF(v);
-		err_badcall();
+		Py_DECREF(v);
+		PyErr_BadInternalCall();
 		return -1;
 	}
 	sizediff = newsize - v->ob_size;
@@ -428,29 +431,30 @@ resizetuple(pv, newsize, last_is_sticky)
 #ifdef Py_REF_DEBUG
 	--_Py_RefTotal;
 #endif
-	UNREF(v);
+	_Py_ForgetReference(v);
 	if (last_is_sticky && sizediff < 0) {
-		/* shrinking: move entries to the front and zero moved entries */
+		/* shrinking:
+		   move entries to the front and zero moved entries */
 		for (i = 0; i < newsize; i++) {
-			XDECREF(v->ob_item[i]);
+			Py_XDECREF(v->ob_item[i]);
 			v->ob_item[i] = v->ob_item[i - sizediff];
 			v->ob_item[i - sizediff] = NULL;
 		}
 	}
 	for (i = newsize; i < v->ob_size; i++) {
-		XDECREF(v->ob_item[i]);
+		Py_XDECREF(v->ob_item[i]);
 		v->ob_item[i] = NULL;
 	}
-	sv = (tupleobject *)
+	sv = (PyTupleObject *)
 		realloc((char *)v,
-			sizeof(tupleobject) + newsize * sizeof(object *));
-	*pv = (object *) sv;
+			sizeof(PyTupleObject) + newsize * sizeof(PyObject *));
+	*pv = (PyObject *) sv;
 	if (sv == NULL) {
-		DEL(v);
-		err_nomem();
+		PyMem_DEL(v);
+		PyErr_NoMemory();
 		return -1;
 	}
-	NEWREF(sv);
+	_Py_NewReference(sv);
 	for (i = sv->ob_size; i < newsize; i++)
 		sv->ob_item[i] = NULL;
 	if (last_is_sticky && sizediff > 0) {

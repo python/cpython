@@ -31,111 +31,113 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Method object implementation */
 
-#include "allobjects.h"
+#include "Python.h"
 
 #include "token.h"
 
 typedef struct {
-	OB_HEAD
-	struct methodlist *m_ml;
-	object	*m_self;
-} methodobject;
+	PyObject_HEAD
+	PyMethodDef *m_ml;
+	PyObject	*m_self;
+} PyCFunctionObject;
 
-object *
-newmethodobject(ml, self)
-	struct methodlist *ml;
-	object *self;
+PyObject *
+PyCFunction_New(ml, self)
+	PyMethodDef *ml;
+	PyObject *self;
 {
-	methodobject *op = NEWOBJ(methodobject, &Methodtype);
+	PyCFunctionObject *op = PyObject_NEW(PyCFunctionObject,
+					     &PyCFunction_Type);
 	if (op != NULL) {
 		op->m_ml = ml;
-		XINCREF(self);
+		Py_XINCREF(self);
 		op->m_self = self;
 	}
-	return (object *)op;
+	return (PyObject *)op;
 }
 
-method
-getmethod(op)
-	object *op;
+PyCFunction
+PyCFunction_GetFunction(op)
+	PyObject *op;
 {
-	if (!is_methodobject(op)) {
-		err_badcall();
+	if (!PyCFunction_Check(op)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return ((methodobject *)op) -> m_ml -> ml_meth;
+	return ((PyCFunctionObject *)op) -> m_ml -> ml_meth;
 }
 
-object *
-getself(op)
-	object *op;
+PyObject *
+PyCFunction_GetSelf(op)
+	PyObject *op;
 {
-	if (!is_methodobject(op)) {
-		err_badcall();
+	if (!PyCFunction_Check(op)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return ((methodobject *)op) -> m_self;
+	return ((PyCFunctionObject *)op) -> m_self;
 }
 
 int
-getflags(op)
-	object *op;
+PyCFunction_GetFlags(op)
+	PyObject *op;
 {
-	if (!is_methodobject(op)) {
-		err_badcall();
+	if (!PyCFunction_Check(op)) {
+		PyErr_BadInternalCall();
 		return -1;
 	}
-	return ((methodobject *)op) -> m_ml -> ml_flags;
+	return ((PyCFunctionObject *)op) -> m_ml -> ml_flags;
 }
 
 /* Methods (the standard built-in methods, that is) */
 
 static void
 meth_dealloc(m)
-	methodobject *m;
+	PyCFunctionObject *m;
 {
-	XDECREF(m->m_self);
+	Py_XDECREF(m->m_self);
 	free((char *)m);
 }
 
-static object *
+static PyObject *
 meth_getattr(m, name)
-	methodobject *m;
+	PyCFunctionObject *m;
 	char *name;
 {
 	if (strcmp(name, "__name__") == 0) {
-		return newstringobject(m->m_ml->ml_name);
+		return PyString_FromString(m->m_ml->ml_name);
 	}
 	if (strcmp(name, "__doc__") == 0) {
 		char *doc = m->m_ml->ml_doc;
 		if (doc != NULL)
-			return newstringobject(doc);
-		INCREF(None);
-		return None;
+			return PyString_FromString(doc);
+		Py_INCREF(Py_None);
+		return Py_None;
 	}
 	if (strcmp(name, "__self__") == 0) {
-		object *self;
-		if (getrestricted()) {
-			err_setstr(RuntimeError,
+		PyObject *self;
+		if (PyEval_GetRestricted()) {
+			PyErr_SetString(PyExc_RuntimeError,
 			 "method.__self__ not accessible in restricted mode");
 			return NULL;
 		}
 		self = m->m_self;
 		if (self == NULL)
-			self = None;
-		INCREF(self);
+			self = Py_None;
+		Py_INCREF(self);
 		return self;
 	}
 	if (strcmp(name, "__members__") == 0) {
-		return mkvalue("[sss]", "__doc__", "__name__", "__self__");
+		return Py_BuildValue("[sss]",
+				     "__doc__", "__name__", "__self__");
 	}
-	err_setstr(AttributeError, name);
+	PyErr_SetString(PyExc_AttributeError, name);
 	return NULL;
 }
 
-static object *
+static PyObject *
 meth_repr(m)
-	methodobject *m;
+	PyCFunctionObject *m;
 {
 	char buf[200];
 	if (m->m_self == NULL)
@@ -145,15 +147,15 @@ meth_repr(m)
 			"<built-in method %.80s of %.80s object at %lx>",
 			m->m_ml->ml_name, m->m_self->ob_type->tp_name,
 			(long)m->m_self);
-	return newstringobject(buf);
+	return PyString_FromString(buf);
 }
 
 static int
 meth_compare(a, b)
-	methodobject *a, *b;
+	PyCFunctionObject *a, *b;
 {
 	if (a->m_self != b->m_self)
-		return cmpobject(a->m_self, b->m_self);
+		return PyObject_Compare(a->m_self, b->m_self);
 	if (a->m_ml->ml_meth == b->m_ml->ml_meth)
 		return 0;
 	if (strcmp(a->m_ml->ml_name, b->m_ml->ml_name) < 0)
@@ -164,24 +166,24 @@ meth_compare(a, b)
 
 static long
 meth_hash(a)
-	methodobject *a;
+	PyCFunctionObject *a;
 {
 	long x;
 	if (a->m_self == NULL)
 		x = 0;
 	else {
-		x = hashobject(a->m_self);
+		x = PyObject_Hash(a->m_self);
 		if (x == -1)
 			return -1;
 	}
 	return x ^ (long) a->m_ml->ml_meth;
 }
 
-typeobject Methodtype = {
-	OB_HEAD_INIT(&Typetype)
+PyTypeObject PyCFunction_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"builtin_function_or_method",
-	sizeof(methodobject),
+	sizeof(PyCFunctionObject),
 	0,
 	(destructor)meth_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
@@ -197,71 +199,71 @@ typeobject Methodtype = {
 
 /* List all methods in a chain -- helper for findmethodinchain */
 
-static object *
+static PyObject *
 listmethodchain(chain)
-	struct methodchain *chain;
+	PyMethodChain *chain;
 {
-	struct methodchain *c;
-	struct methodlist *ml;
+	PyMethodChain *c;
+	PyMethodDef *ml;
 	int i, n;
-	object *v;
+	PyObject *v;
 	
 	n = 0;
 	for (c = chain; c != NULL; c = c->link) {
 		for (ml = c->methods; ml->ml_name != NULL; ml++)
 			n++;
 	}
-	v = newlistobject(n);
+	v = PyList_New(n);
 	if (v == NULL)
 		return NULL;
 	i = 0;
 	for (c = chain; c != NULL; c = c->link) {
 		for (ml = c->methods; ml->ml_name != NULL; ml++) {
-			setlistitem(v, i, newstringobject(ml->ml_name));
+			PyList_SetItem(v, i, PyString_FromString(ml->ml_name));
 			i++;
 		}
 	}
-	if (err_occurred()) {
-		DECREF(v);
+	if (PyErr_Occurred()) {
+		Py_DECREF(v);
 		return NULL;
 	}
-	sortlist(v);
+	PyList_Sort(v);
 	return v;
 }
 
 /* Find a method in a method chain */
 
-object *
-findmethodinchain(chain, self, name)
-	struct methodchain *chain;
-	object *self;
+PyObject *
+Py_FindMethodInChain(chain, self, name)
+	PyMethodChain *chain;
+	PyObject *self;
 	char *name;
 {
 	if (strcmp(name, "__methods__") == 0)
 		return listmethodchain(chain);
 	while (chain != NULL) {
-		struct methodlist *ml = chain->methods;
+		PyMethodDef *ml = chain->methods;
 		for (; ml->ml_name != NULL; ml++) {
 			if (name[0] == ml->ml_name[0] &&
 			    strcmp(name+1, ml->ml_name+1) == 0)
-				return newmethodobject(ml, self);
+				return PyCFunction_New(ml, self);
 		}
 		chain = chain->link;
 	}
-	err_setstr(AttributeError, name);
+	PyErr_SetString(PyExc_AttributeError, name);
 	return NULL;
 }
 
 /* Find a method in a single method list */
 
-object *
-findmethod(methods, self, name)
-	struct methodlist *methods;
-	object *self;
+PyObject *
+Py_FindMethod(methods, self, name)
+	PyMethodDef *methods;
+	PyObject *self;
 	char *name;
 {
-	struct methodchain chain;
+	PyMethodChain chain;
 	chain.methods = methods;
 	chain.link = NULL;
-	return findmethodinchain(&chain, self, name);
+	return Py_FindMethodInChain(&chain, self, name);
 }
