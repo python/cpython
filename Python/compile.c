@@ -2474,6 +2474,7 @@ com_assign(struct compiling *c, node *n, int assigning, node *augn)
 		
 		case exprlist:
 		case testlist:
+		case testlist1:
 			if (NCH(n) > 1) {
 				if (assigning > OP_APPLY) {
 					com_error(c, PyExc_SyntaxError,
@@ -2955,6 +2956,7 @@ is_constant_false(struct compiling *c, node *n)
 
 	case expr_stmt:
 	case testlist:
+	case testlist1:
 	case test:
 	case and_test:
 	case not_test:
@@ -3356,6 +3358,7 @@ get_rawdocstring(node *n)
 
 	case expr_stmt:
 	case testlist:
+	case testlist1:
 	case test:
 	case and_test:
 	case not_test:
@@ -3704,6 +3707,7 @@ com_node(struct compiling *c, node *n)
 	/* Expression nodes */
 	
 	case testlist:
+	case testlist1:
 	case testlist_safe:
 		com_list(c, n, 0);
 		break;
@@ -5447,6 +5451,7 @@ symtable_assign(struct symtable *st, node *n, int def_flag)
 		return;
 	case exprlist:
 	case testlist:
+	case testlist1:
 		if (NCH(n) == 1) {
 			n = CHILD(n, 0);
 			goto loop;

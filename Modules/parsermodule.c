@@ -844,6 +844,7 @@ VALIDATER(subscriptlist);       VALIDATER(sliceop);
 VALIDATER(exprlist);            VALIDATER(dictmaker);
 VALIDATER(arglist);             VALIDATER(argument);
 VALIDATER(listmaker);           VALIDATER(yield_stmt);
+VALIDATER(testlist1);
 
 #undef VALIDATER
 
@@ -1053,6 +1054,14 @@ validate_testlist(node *tree)
 {
     return (validate_repeating_list(tree, testlist,
                                     validate_test, "testlist"));
+}
+
+
+static int
+validate_testlist1(node *tree)
+{
+    return (validate_repeating_list(tree, testlist1,
+                                    validate_test, "testlist1"));
 }
 
 
@@ -2185,7 +2194,7 @@ validate_atom(node *tree)
             break;
           case BACKQUOTE:
             res = ((nch == 3)
-                   && validate_testlist(CHILD(tree, 1))
+                   && validate_testlist1(CHILD(tree, 1))
                    && validate_ntype(CHILD(tree, 2), BACKQUOTE));
             break;
           case NAME:
@@ -2670,6 +2679,9 @@ validate_node(node *tree)
              */
           case testlist:
             res = validate_testlist(tree);
+            break;
+          case testlist1:
+            res = validate_testlist1(tree);
             break;
           case test:
             res = validate_test(tree);
