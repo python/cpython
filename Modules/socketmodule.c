@@ -281,6 +281,10 @@ int h_errno; /* not used */
 #include "addrinfo.h"
 #endif
 
+#if defined(_MSC_VER) && _MSC_VER == 1200
+#include "addrinfo.h"
+#endif
+
 #ifndef HAVE_INET_PTON
 int inet_pton(int af, const char *src, void *dst);
 const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
