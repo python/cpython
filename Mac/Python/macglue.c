@@ -895,7 +895,7 @@ PyMac_FindModuleExtension(char *buf, int *lenp, char *module)
 #if 0
 			strcpy(buf+*lenp+modnamelen, fdp->suffix);
 #else
-			strcpy(buf+*lenp+modnamelen, fdp->suffix);
+			strcpy(buf+*lenp, fdp->suffix);
 #endif
 			*lenp = strlen(buf);
 			return fdp;
