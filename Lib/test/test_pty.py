@@ -25,9 +25,8 @@ except OSError:
     # " An optional feature could not be imported " ... ?
     raise TestSkipped, "Pseudo-terminals (seemingly) not functional."
 
-# this hangs on HPUX 11, comment out for now until we can determine cause
-##if not os.isatty(slave_fd):
-##    raise TestFailed, "slave_fd is not a tty"
+if not os.isatty(slave_fd):
+    raise TestFailed, "slave_fd is not a tty"
 
 # IRIX apparently turns \n into \r\n. Allow that, but avoid allowing other
 # differences (like extra whitespace, trailing garbage, etc.)
