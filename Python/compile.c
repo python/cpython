@@ -3808,6 +3808,7 @@ dict_keys_inorder(PyObject *dict, int offset)
 	while (PyDict_Next(dict, &pos, &k, &v)) {
 		i = PyInt_AS_LONG(v);
 		Py_INCREF(k);
+		assert((i - offset) < size);
 		PyTuple_SET_ITEM(tuple, i - offset, k);
 	}
 	return tuple;
@@ -4316,9 +4317,17 @@ symtable_load_symbols(struct compiling *c)
 			/* undo the original DEF_FREE */
 			flags &= ~(DEF_FREE | DEF_FREE_CLASS);
 
-		if ((flags & (DEF_FREE | DEF_FREE_CLASS))
-		    && (flags & (DEF_LOCAL | DEF_PARAM)))
+		/* Deal with names that need two actions:
+		   1. Cell variables, which are also locals.
+		   2. Free variables in methods that are also class
+		   variables or declared global.
+		*/
+		if (flags & (DEF_FREE | DEF_FREE_CLASS)) {
+		    if ((ste->ste_type == TYPE_CLASS 
+			 && flags != DEF_FREE_CLASS)
+			|| (flags & (DEF_LOCAL | DEF_PARAM)))
 			symtable_resolve_free(c, name, &si);
+		}
 
 		if (flags & DEF_STAR) {
 			c->c_argcount--;
@@ -4478,7 +4487,7 @@ symtable_update_free_vars(struct symtable *st)
 			   with bindings for N between B and A, then N
 			   is global in B.
 			*/
-			if (v) {
+			if (v && (ste->ste_type != TYPE_CLASS)) {
 				int flags = PyInt_AS_LONG(v); 
 				if (flags & DEF_GLOBAL) {
 					symtable_undo_free(st, child->ste_id,
