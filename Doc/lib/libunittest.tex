@@ -82,6 +82,8 @@ class.
 
 
 \begin{seealso}
+  \seemodule{doctest}{Another test-support module with a very
+                      different flavor.}
   \seetitle[http://pyunit.sourceforge.net/]{PyUnit Web Site}{The
             source for further information on PyUnit.}
   \seetitle[http://www.XProgramming.com/testfram.htm]{Simple Smalltalk
@@ -128,9 +130,9 @@ if __name__ == '__main__':
     unittest.main()
 \end{verbatim}
 
-A testcase is created by subclassing \code{unittest.TestCase}.
+A testcase is created by subclassing \class{unittest.TestCase}.
 The three individual tests are defined with methods whose names start with
-the letters \code{test}.  This naming convention informs the test runner
+the letters \samp{test}.  This naming convention informs the test runner
 about which methods represent tests.
 
 The crux of each test is a call to \method{assertEqual()} to
@@ -144,9 +146,10 @@ method prior to each test.  Likewise, if a \method{tearDown()} method is
 defined, the test runner will invoke that method after each test.  In the
 example, \method{setUp()} was used to create a fresh sequence for each test.
 
-The final block shows a simple way to run the tests.  \code{unittest.main()}
-provides a command line interface to the test script.  When run from the
-command line, the above script produces an output that looks like this:
+The final block shows a simple way to run the tests.
+\function{unittest.main()} provides a command line interface to the
+test script.  When run from the command line, the above script
+produces an output that looks like this:
 
 \begin{verbatim}
 ...
@@ -156,14 +159,13 @@ Ran 3 tests in 0.000s
 OK
 \end{verbatim}
 
-Instead of \code{unittest.main()}, there are other ways to run the tests
+Instead of \function{unittest.main()}, there are other ways to run the tests
 with a finer level of control, less terse output, and no requirement to be
 run from the command line.  For example, the last two lines may be replaced
 with:
 
 \begin{verbatim}
-suite = unittest.TestSuite()
-suite.addTest(unittest.makeSuite(TestSequenceFunctions))
+suite = unittest.makeSuite(TestSequenceFunctions)
 unittest.TextTestRunner(verbosity=2).run(suite)
 \end{verbatim}
 
@@ -362,12 +364,11 @@ class WidgetTestSuite(unittest.TestSuite):
 
 Since it is a common pattern to create a \class{TestCase} subclass
 with many similarly named test functions, there is a convenience
-function called \function{makeSuite()} provided in the
-\refmodule{unittest} module that constructs a test suite that
-comprises all of the test cases in a test case class:
+function called \function{makeSuite()} that constructs a test suite
+that comprises all of the test cases in a test case class:
 
 \begin{verbatim}
-suite = unittest.makeSuite(WidgetTestCase,'test')
+suite = unittest.makeSuite(WidgetTestCase)
 \end{verbatim}
 
 Note that when using the \function{makeSuite()} function, the order in
@@ -517,7 +518,7 @@ if __name__ == '__main__':
 \end{funcdesc}
 
 In some cases, the existing tests may have be written using the
-\module{doctest} module.  If so, that module provides a 
+\refmodule{doctest} module.  If so, that module provides a 
 \class{DocTestSuite} class that can automatically build
 \class{unittest.TestSuite} instances from the existing test code.
 \versionadded{2.3}
@@ -558,7 +559,7 @@ Methods in the first group are:
 
 \begin{methoddesc}[TestCase]{run}{\optional{result}}
   Run the test, collecting the result into the test result object
-  passed as \var{result}.  If \var{result} is omitted or \code{None},
+  passed as \var{result}.  If \var{result} is omitted or \constant{None},
   a temporary result object is created and used, but is not made
   available to the caller.  This is equivalent to simply calling the
   \class{TestCase} instance.
@@ -578,14 +579,14 @@ report failures.
 \methodline{failUnless}{expr\optional{, msg}}
   Signal a test failure if \var{expr} is false; the explanation for
   the error will be \var{msg} if given, otherwise it will be
-  \code{None}.
+  \constant{None}.
 \end{methoddesc}
 
 \begin{methoddesc}[TestCase]{assertEqual}{first, second\optional{, msg}}
 \methodline{failUnlessEqual}{first, second\optional{, msg}}
   Test that \var{first} and \var{second} are equal.  If the values do
   not compare equal, the test will fail with the explanation given by
-  \var{msg}, or \code{None}.  Note that using \method{failUnlessEqual()}
+  \var{msg}, or \constant{None}.  Note that using \method{failUnlessEqual()}
   improves upon doing the comparison as the first parameter to
   \method{failUnless()}:  the default value for \var{msg} can be
   computed to include representations of both \var{first} and
@@ -596,7 +597,7 @@ report failures.
 \methodline{failIfEqual}{first, second\optional{, msg}}
   Test that \var{first} and \var{second} are not equal.  If the values
   do compare equal, the test will fail with the explanation given by
-  \var{msg}, or \code{None}.  Note that using \method{failIfEqual()}
+  \var{msg}, or \constant{None}.  Note that using \method{failIfEqual()}
   improves upon doing the comparison as the first parameter to
   \method{failUnless()} is that the default value for \var{msg} can be
   computed to include representations of both \var{first} and
@@ -612,7 +613,7 @@ report failures.
   and comparing to zero.  Note that comparing a given number of decimal places
   is not the same as comparing a given number of significant digits.
   If the values do not compare equal, the test will fail with the explanation
-  given by \var{msg}, or \code{None}.  
+  given by \var{msg}, or \constant{None}.  
 \end{methoddesc}
 
 \begin{methoddesc}[TestCase]{assertNotAlmostEqual}{first, second\optional{,
@@ -624,7 +625,7 @@ report failures.
   and comparing to zero.  Note that comparing a given number of decimal places
   is not the same as comparing a given number of significant digits.
   If the values do not compare equal, the test will fail with the explanation
-  given by \var{msg}, or \code{None}.  
+  given by \var{msg}, or \constant{None}.  
 \end{methoddesc}
 
 \begin{methoddesc}[TestCase]{assertRaises}{exception, callable, \moreargs}
@@ -640,12 +641,12 @@ report failures.
 \begin{methoddesc}[TestCase]{failIf}{expr\optional{, msg}}
   The inverse of the \method{failUnless()} method is the
   \method{failIf()} method.  This signals a test failure if \var{expr}
-  is true, with \var{msg} or \code{None} for the error message.
+  is true, with \var{msg} or \constant{None} for the error message.
 \end{methoddesc}
 
 \begin{methoddesc}[TestCase]{fail}{\optional{msg}}
   Signals a test failure unconditionally, with \var{msg} or
-  \code{None} for the error message.
+  \constant{None} for the error message.
 \end{methoddesc}
 
 \begin{memberdesc}[TestCase]{failureException}
@@ -680,10 +681,10 @@ information on the test:
 \end{methoddesc}
 
 \begin{methoddesc}[TestCase]{shortDescription}{}
-  Returns a one-line description of the test, or \code{None} if no
+  Returns a one-line description of the test, or \constant{None} if no
   description has been provided.  The default implementation of this
   method returns the first line of the test method's docstring, if
-  available, or \code{None}.
+  available, or \constant{None}.
 \end{methoddesc}
 
 
@@ -891,7 +892,7 @@ either by subclassing or assignment on an instance:
 \begin{memberdesc}[TestLoader]{sortTestMethodsUsing}
   Function to be used to compare method names when sorting them in
   \method{getTestCaseNames()}.  The default value is the built-in
-  \function{cmp()} function; it can be set to \code{None} to disable
+  \function{cmp()} function; it can be set to \constant{None} to disable
   the sort.
 \end{memberdesc}
 
