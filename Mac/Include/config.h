@@ -51,7 +51,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define HAVE_FOPENRF
 #endif
 
-#define HAVE_MKTIME
 #ifdef __MWERKS__
 #define HAVE_STRFTIME
 #ifndef __MC68K__
@@ -62,7 +61,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 #endif
 
+#define HAVE_LIMITS_H
+#define HAVE_MEMMOVE
 #define CHECK_IMPORT_CASE
+#define HAVE_STRERROR
+#define HAVE_LOCALE_H
+#define HAVE_MKTIME
 
 #ifdef USE_GUSI
 /* GUSI provides a lot of unixisms */
