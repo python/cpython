@@ -862,7 +862,9 @@ listpop(PyListObject *self, PyObject *args)
 	/* Use status, so that in a release build compilers don't
 	 * complain about the unused name.
 	 */
-	return status++, v;
+	(void) status;
+
+	return v;
 }
 
 /* Reverse a slice of a list in place, from lo up to (exclusive) hi. */
