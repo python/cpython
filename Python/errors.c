@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -60,8 +60,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <errno.h>
 
-#include "errcode.h"
-
 extern char *strerror PROTO((int));
 
 /* Last exception stored by err_setval() */
@@ -100,10 +98,11 @@ err_setstr(exception, string)
 	XDECREF(value);
 }
 
-int
+
+object *
 err_occurred()
 {
-	return last_exception != NULL;
+	return last_exception;
 }
 
 void
@@ -147,11 +146,10 @@ err_errno(exc)
 	object *exc;
 {
 	object *v;
-	if (errno == EINTR && intrcheck()) {
-		err_set(KeyboardInterrupt);
+	int i = errno;
+	if (i == EINTR && sigcheck())
 		return NULL;
-	}
-	v = mkvalue("(is)", errno, strerror(errno));
+	v = mkvalue("(is)", i, strerror(i));
 	if (v != NULL) {
 		err_setval(exc, v);
 		DECREF(v);
@@ -163,35 +161,4 @@ void
 err_badcall()
 {
 	err_setstr(SystemError, "bad argument to internal function");
-}
-
-/* Set the error appropriate to the given input error code (see errcode.h) */
-
-void
-err_input(err)
-	int err;
-{
-	switch (err) {
-	case E_DONE:
-	case E_OK:
-		break;
-	case E_SYNTAX:
-		err_setstr(SyntaxError, "invalid syntax");
-		break;
-	case E_TOKEN:
-		err_setstr(SyntaxError, "invalid token");
-		break;
-	case E_INTR:
-		err_set(KeyboardInterrupt);
-		break;
-	case E_NOMEM:
-		err_nomem();
-		break;
-	case E_EOF:
-		err_setstr(SyntaxError, "unexpected EOF while parsing");
-		break;
-	default:
-		err_setstr(SystemError, "unknown parsing error");
-		break;
-	}
 }
