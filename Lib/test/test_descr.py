@@ -1443,7 +1443,7 @@ def inherits():
     verify(str(s).__class__ is str)
 
     s = madstring("\x00" * 5)
-    #XXX verify(str(s) == "\x00" ( 5)
+    #XXX verify(str(s) == "\x00" * 5)
     verify(str(s).__class__ is str)
 
     class madunicode(unicode):
@@ -1460,7 +1460,7 @@ def inherits():
     verify(u.rev().rev() == madunicode(u"ABCDEF"))
     u = madunicode(u"12345")
     verify(unicode(u) == u"12345")
-    #XXX verify(unicode(u).__class__ is unicode)
+    verify(unicode(u).__class__ is unicode)
 
 def all():
     lists()

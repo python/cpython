@@ -61,6 +61,7 @@ Copyright (c) Corporation for National Research Initiatives.
 #ifndef Py_USING_UNICODE
 
 #define PyUnicode_Check(op)                 0
+#define PyUnicode_CheckExact(op)            0
 
 #else
 
@@ -373,6 +374,7 @@ typedef struct {
 extern DL_IMPORT(PyTypeObject) PyUnicode_Type;
 
 #define PyUnicode_Check(op) PyObject_TypeCheck(op, &PyUnicode_Type)
+#define PyUnicode_CheckExact(op) ((op)->ob_type == &PyUnicode_Type)
 
 /* Fast access macros */
 #define PyUnicode_GET_SIZE(op) \
