@@ -104,6 +104,8 @@ class build_py (Command):
     def get_data_files (self):
         """Generate list of '(package,src_dir,build_dir,filenames)' tuples"""
         data = []
+        if not self.packages:
+            return data
         for package in self.packages:
             # Locate package source directory
             src_dir = self.get_package_dir(package)
