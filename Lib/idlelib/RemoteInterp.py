@@ -121,7 +121,7 @@ class CommandProtocol:
     def _decode_msg(self, msg):
         seqno = self.decode_seqno(msg[:self.SEQNO_ENC_LEN])
         msg = msg[self.SEQNO_ENC_LEN:]
-        parts = msg.split(" ", 2)
+        parts = msg.split(" ", 1)
         if len(parts) == 1:
             cmd = msg
             arg = ''
