@@ -593,7 +593,7 @@ The only special operation on a module is attribute access:
 \code{\var{m}.\var{name}}, where \var{m} is a module and \var{name}
 accesses a name defined in \var{m}'s symbol table.  Module attributes
 can be assigned to.  (Note that the \code{import} statement is not,
-strictly spoking, an operation on a module object; \code{import
+strictly speaking, an operation on a module object; \code{import
 \var{foo}} does not require a module object named \var{foo} to exist,
 rather it requires an (external) \emph{definition} for a module named
 \var{foo} somewhere.)
@@ -641,12 +641,12 @@ lists) and class instance methods.  Built-in methods are described
 with the types that support them.
 
 The implementation adds two special read-only attributes to class
-instance methods: \code{\var{m}.im_self} is the object whose method this
-is, and \code{\var{m}.im_func} is the function implementing the method.
-Calling \code{\var{m}(\var{arg-1}, \var{arg-2}, {\rm \ldots},
-\var{arg-n})} is completely equivalent to calling
-\code{\var{m}.im_func(\var{m}.im_self, \var{arg-1}, \var{arg-2}, {\rm
-\ldots}, \var{arg-n})}.
+instance methods: \code{\var{m}.im_self} is the object on which the
+method operates, and \code{\var{m}.im_func} is the function
+implementing the method.  Calling \code{\var{m}(\var{arg-1},
+\var{arg-2}, {\rm \ldots}, \var{arg-n})} is completely equivalent to
+calling \code{\var{m}.im_func(\var{m}.im_self, \var{arg-1},
+\var{arg-2}, {\rm \ldots}, \var{arg-n})}.
 
 See the \emph{Python Reference Manual} for more information.
 
