@@ -296,7 +296,7 @@ class VideoParams:
 		self.setsize(values[1], values[2])
 		(self.c0bits, self.c1bits, self.c2bits, \
 			  self.offset, self.chrompack) = values[4:9]
-		if self.format == 'compress':
+		if self.format == 'compress' and len(values) > 9:
 			self.compressheader = values[9]
 		self.setderived()
 
