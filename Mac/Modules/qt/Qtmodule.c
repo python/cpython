@@ -60,7 +60,34 @@ staticforward int TrackObj_Convert(PyObject *, Track *);
 staticforward PyObject *MovieObj_New(Movie);
 staticforward int MovieObj_Convert(PyObject *, Movie *);
 staticforward PyObject *MovieCtlObj_New(MovieController);
-staticforward int MovieCtlObj_Convert(PyObject *, MovieController *);
+staticforward int MovieCtlObj_Convert(PyObject *, TimeBase *);
+staticforward PyObject *TimeBaseObj_New(TimeBase);
+staticforward int TimeBaseObj_Convert(PyObject *, TimeBase *);
+
+/*
+** Parse/generate time records
+*/
+static PyObject *
+QtTimeRecord_New(itself)
+	TimeRecord *itself;
+{
+
+	return Py_BuildValue("O&lO&", PyMac_Buildwide, &itself->value, itself->scale, 
+			TimeBaseObj_New, itself->base);
+}
+
+static int
+QtTimeRecord_Convert(v, p_itself)
+	PyObject *v;
+	TimeRecord *p_itself;
+{
+	
+	if( !PyArg_ParseTuple(v, "O&lO&", PyMac_Getwide, &p_itself->value, &p_itself->scale,
+			TimeBaseObj_Convert, &p_itself->base) )
+		return 0;
+	return 1;
+}
+
 
 
 
@@ -1050,8 +1077,57 @@ TimeBaseObj_Convert(v, p_itself)
 static void TimeBaseObj_dealloc(self)
 	TimeBaseObject *self;
 {
-	DisposeTimeBase(self->ob_itself);
+	/* Cleanup of self->ob_itself goes here */
 	PyMem_DEL(self);
+}
+
+static PyObject *TimeBaseObj_DisposeTimeBase(_self, _args)
+	TimeBaseObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	DisposeTimeBase(_self->ob_itself);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *TimeBaseObj_GetTimeBaseTime(_self, _args)
+	TimeBaseObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	TimeValue _rv;
+	TimeScale s;
+	TimeRecord tr;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &s))
+		return NULL;
+	_rv = GetTimeBaseTime(_self->ob_itself,
+	                      s,
+	                      &tr);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     QtTimeRecord_New, &tr);
+	return _res;
+}
+
+static PyObject *TimeBaseObj_SetTimeBaseTime(_self, _args)
+	TimeBaseObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	TimeRecord tr;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      QtTimeRecord_Convert, &tr))
+		return NULL;
+	SetTimeBaseTime(_self->ob_itself,
+	                &tr);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
 }
 
 static PyObject *TimeBaseObj_SetTimeBaseValue(_self, _args)
@@ -1103,6 +1179,78 @@ static PyObject *TimeBaseObj_SetTimeBaseRate(_self, _args)
 	return _res;
 }
 
+static PyObject *TimeBaseObj_GetTimeBaseStartTime(_self, _args)
+	TimeBaseObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	TimeValue _rv;
+	TimeScale s;
+	TimeRecord tr;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &s))
+		return NULL;
+	_rv = GetTimeBaseStartTime(_self->ob_itself,
+	                           s,
+	                           &tr);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     QtTimeRecord_New, &tr);
+	return _res;
+}
+
+static PyObject *TimeBaseObj_SetTimeBaseStartTime(_self, _args)
+	TimeBaseObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	TimeRecord tr;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      QtTimeRecord_Convert, &tr))
+		return NULL;
+	SetTimeBaseStartTime(_self->ob_itself,
+	                     &tr);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *TimeBaseObj_GetTimeBaseStopTime(_self, _args)
+	TimeBaseObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	TimeValue _rv;
+	TimeScale s;
+	TimeRecord tr;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &s))
+		return NULL;
+	_rv = GetTimeBaseStopTime(_self->ob_itself,
+	                          s,
+	                          &tr);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     QtTimeRecord_New, &tr);
+	return _res;
+}
+
+static PyObject *TimeBaseObj_SetTimeBaseStopTime(_self, _args)
+	TimeBaseObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	TimeRecord tr;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      QtTimeRecord_Convert, &tr))
+		return NULL;
+	SetTimeBaseStopTime(_self->ob_itself,
+	                    &tr);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *TimeBaseObj_GetTimeBaseFlags(_self, _args)
 	TimeBaseObject *_self;
 	PyObject *_args;
@@ -1133,6 +1281,25 @@ static PyObject *TimeBaseObj_SetTimeBaseFlags(_self, _args)
 	return _res;
 }
 
+static PyObject *TimeBaseObj_SetTimeBaseMasterTimeBase(_self, _args)
+	TimeBaseObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	TimeBase master;
+	TimeRecord slaveZero;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      TimeBaseObj_Convert, &master,
+	                      QtTimeRecord_Convert, &slaveZero))
+		return NULL;
+	SetTimeBaseMasterTimeBase(_self->ob_itself,
+	                          master,
+	                          &slaveZero);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *TimeBaseObj_GetTimeBaseMasterTimeBase(_self, _args)
 	TimeBaseObject *_self;
 	PyObject *_args;
@@ -1147,6 +1314,25 @@ static PyObject *TimeBaseObj_GetTimeBaseMasterTimeBase(_self, _args)
 	return _res;
 }
 
+static PyObject *TimeBaseObj_SetTimeBaseMasterClock(_self, _args)
+	TimeBaseObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Component clockMeister;
+	TimeRecord slaveZero;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpObj_Convert, &clockMeister,
+	                      QtTimeRecord_Convert, &slaveZero))
+		return NULL;
+	SetTimeBaseMasterClock(_self->ob_itself,
+	                       clockMeister,
+	                       &slaveZero);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *TimeBaseObj_GetTimeBaseMasterClock(_self, _args)
 	TimeBaseObject *_self;
 	PyObject *_args;
@@ -1158,6 +1344,38 @@ static PyObject *TimeBaseObj_GetTimeBaseMasterClock(_self, _args)
 	_rv = GetTimeBaseMasterClock(_self->ob_itself);
 	_res = Py_BuildValue("O&",
 	                     CmpInstObj_New, _rv);
+	return _res;
+}
+
+static PyObject *TimeBaseObj_GetTimeBaseStatus(_self, _args)
+	TimeBaseObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	long _rv;
+	TimeRecord unpinnedTime;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetTimeBaseStatus(_self->ob_itself,
+	                        &unpinnedTime);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     QtTimeRecord_New, &unpinnedTime);
+	return _res;
+}
+
+static PyObject *TimeBaseObj_SetTimeBaseZero(_self, _args)
+	TimeBaseObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	TimeRecord zero;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	SetTimeBaseZero(_self->ob_itself,
+	                &zero);
+	_res = Py_BuildValue("O&",
+	                     QtTimeRecord_New, &zero);
 	return _res;
 }
 
@@ -1176,20 +1394,42 @@ static PyObject *TimeBaseObj_GetTimeBaseEffectiveRate(_self, _args)
 }
 
 static PyMethodDef TimeBaseObj_methods[] = {
+	{"DisposeTimeBase", (PyCFunction)TimeBaseObj_DisposeTimeBase, 1,
+	 "() -> None"},
+	{"GetTimeBaseTime", (PyCFunction)TimeBaseObj_GetTimeBaseTime, 1,
+	 "(TimeScale s) -> (TimeValue _rv, TimeRecord tr)"},
+	{"SetTimeBaseTime", (PyCFunction)TimeBaseObj_SetTimeBaseTime, 1,
+	 "(TimeRecord tr) -> None"},
 	{"SetTimeBaseValue", (PyCFunction)TimeBaseObj_SetTimeBaseValue, 1,
 	 "(TimeValue t, TimeScale s) -> None"},
 	{"GetTimeBaseRate", (PyCFunction)TimeBaseObj_GetTimeBaseRate, 1,
 	 "() -> (Fixed _rv)"},
 	{"SetTimeBaseRate", (PyCFunction)TimeBaseObj_SetTimeBaseRate, 1,
 	 "(Fixed r) -> None"},
+	{"GetTimeBaseStartTime", (PyCFunction)TimeBaseObj_GetTimeBaseStartTime, 1,
+	 "(TimeScale s) -> (TimeValue _rv, TimeRecord tr)"},
+	{"SetTimeBaseStartTime", (PyCFunction)TimeBaseObj_SetTimeBaseStartTime, 1,
+	 "(TimeRecord tr) -> None"},
+	{"GetTimeBaseStopTime", (PyCFunction)TimeBaseObj_GetTimeBaseStopTime, 1,
+	 "(TimeScale s) -> (TimeValue _rv, TimeRecord tr)"},
+	{"SetTimeBaseStopTime", (PyCFunction)TimeBaseObj_SetTimeBaseStopTime, 1,
+	 "(TimeRecord tr) -> None"},
 	{"GetTimeBaseFlags", (PyCFunction)TimeBaseObj_GetTimeBaseFlags, 1,
 	 "() -> (long _rv)"},
 	{"SetTimeBaseFlags", (PyCFunction)TimeBaseObj_SetTimeBaseFlags, 1,
 	 "(long timeBaseFlags) -> None"},
+	{"SetTimeBaseMasterTimeBase", (PyCFunction)TimeBaseObj_SetTimeBaseMasterTimeBase, 1,
+	 "(TimeBase master, TimeRecord slaveZero) -> None"},
 	{"GetTimeBaseMasterTimeBase", (PyCFunction)TimeBaseObj_GetTimeBaseMasterTimeBase, 1,
 	 "() -> (TimeBase _rv)"},
+	{"SetTimeBaseMasterClock", (PyCFunction)TimeBaseObj_SetTimeBaseMasterClock, 1,
+	 "(Component clockMeister, TimeRecord slaveZero) -> None"},
 	{"GetTimeBaseMasterClock", (PyCFunction)TimeBaseObj_GetTimeBaseMasterClock, 1,
 	 "() -> (ComponentInstance _rv)"},
+	{"GetTimeBaseStatus", (PyCFunction)TimeBaseObj_GetTimeBaseStatus, 1,
+	 "() -> (long _rv, TimeRecord unpinnedTime)"},
+	{"SetTimeBaseZero", (PyCFunction)TimeBaseObj_SetTimeBaseZero, 1,
+	 "() -> (TimeRecord zero)"},
 	{"GetTimeBaseEffectiveRate", (PyCFunction)TimeBaseObj_GetTimeBaseEffectiveRate, 1,
 	 "() -> (Fixed _rv)"},
 	{NULL, NULL, 0}
@@ -4008,6 +4248,44 @@ static PyObject *MovieObj_GetMovieTimeBase(_self, _args)
 	return _res;
 }
 
+static PyObject *MovieObj_SetMovieMasterTimeBase(_self, _args)
+	MovieObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	TimeBase tb;
+	TimeRecord slaveZero;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      TimeBaseObj_Convert, &tb,
+	                      QtTimeRecord_Convert, &slaveZero))
+		return NULL;
+	SetMovieMasterTimeBase(_self->ob_itself,
+	                       tb,
+	                       &slaveZero);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *MovieObj_SetMovieMasterClock(_self, _args)
+	MovieObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Component clockMeister;
+	TimeRecord slaveZero;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpObj_Convert, &clockMeister,
+	                      QtTimeRecord_Convert, &slaveZero))
+		return NULL;
+	SetMovieMasterClock(_self->ob_itself,
+	                    clockMeister,
+	                    &slaveZero);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *MovieObj_GetMovieGWorld(_self, _args)
 	MovieObject *_self;
 	PyObject *_args;
@@ -4649,6 +4927,39 @@ static PyObject *MovieObj_GetMovieActiveSegment(_self, _args)
 	_res = Py_BuildValue("ll",
 	                     startTime,
 	                     duration);
+	return _res;
+}
+
+static PyObject *MovieObj_GetMovieTime(_self, _args)
+	MovieObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	TimeValue _rv;
+	TimeRecord currentTime;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetMovieTime(_self->ob_itself,
+	                   &currentTime);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     QtTimeRecord_New, &currentTime);
+	return _res;
+}
+
+static PyObject *MovieObj_SetMovieTime(_self, _args)
+	MovieObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	TimeRecord newtime;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      QtTimeRecord_Convert, &newtime))
+		return NULL;
+	SetMovieTime(_self->ob_itself,
+	             &newtime);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -5604,6 +5915,10 @@ static PyMethodDef MovieObj_methods[] = {
 	 "() -> None"},
 	{"GetMovieTimeBase", (PyCFunction)MovieObj_GetMovieTimeBase, 1,
 	 "() -> (TimeBase _rv)"},
+	{"SetMovieMasterTimeBase", (PyCFunction)MovieObj_SetMovieMasterTimeBase, 1,
+	 "(TimeBase tb, TimeRecord slaveZero) -> None"},
+	{"SetMovieMasterClock", (PyCFunction)MovieObj_SetMovieMasterClock, 1,
+	 "(Component clockMeister, TimeRecord slaveZero) -> None"},
 	{"GetMovieGWorld", (PyCFunction)MovieObj_GetMovieGWorld, 1,
 	 "() -> (CGrafPtr port, GDHandle gdh)"},
 	{"SetMovieGWorld", (PyCFunction)MovieObj_SetMovieGWorld, 1,
@@ -5684,6 +5999,10 @@ static PyMethodDef MovieObj_methods[] = {
 	 "(TimeValue startTime, TimeValue duration) -> None"},
 	{"GetMovieActiveSegment", (PyCFunction)MovieObj_GetMovieActiveSegment, 1,
 	 "() -> (TimeValue startTime, TimeValue duration)"},
+	{"GetMovieTime", (PyCFunction)MovieObj_GetMovieTime, 1,
+	 "() -> (TimeValue _rv, TimeRecord currentTime)"},
+	{"SetMovieTime", (PyCFunction)MovieObj_SetMovieTime, 1,
+	 "(TimeRecord newtime) -> None"},
 	{"SetMovieTimeValue", (PyCFunction)MovieObj_SetMovieTimeValue, 1,
 	 "(TimeValue newtime) -> None"},
 	{"GetMovieUserData", (PyCFunction)MovieObj_GetMovieUserData, 1,
@@ -7198,6 +7517,74 @@ static PyObject *Qt_NewTimeBase(_self, _args)
 	return _res;
 }
 
+static PyObject *Qt_ConvertTime(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	TimeRecord inout;
+	TimeBase newBase;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      TimeBaseObj_Convert, &newBase))
+		return NULL;
+	ConvertTime(&inout,
+	            newBase);
+	_res = Py_BuildValue("O&",
+	                     QtTimeRecord_New, &inout);
+	return _res;
+}
+
+static PyObject *Qt_ConvertTimeScale(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	TimeRecord inout;
+	TimeScale newScale;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &newScale))
+		return NULL;
+	ConvertTimeScale(&inout,
+	                 newScale);
+	_res = Py_BuildValue("O&",
+	                     QtTimeRecord_New, &inout);
+	return _res;
+}
+
+static PyObject *Qt_AddTime(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	TimeRecord dst;
+	TimeRecord src;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      QtTimeRecord_Convert, &src))
+		return NULL;
+	AddTime(&dst,
+	        &src);
+	_res = Py_BuildValue("O&",
+	                     QtTimeRecord_New, &dst);
+	return _res;
+}
+
+static PyObject *Qt_SubtractTime(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	TimeRecord dst;
+	TimeRecord src;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      QtTimeRecord_Convert, &src))
+		return NULL;
+	SubtractTime(&dst,
+	             &src);
+	_res = Py_BuildValue("O&",
+	                     QtTimeRecord_New, &dst);
+	return _res;
+}
+
 static PyObject *Qt_MusicMediaGetIndexedTunePlayer(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -7386,6 +7773,14 @@ static PyMethodDef Qt_methods[] = {
 	 "(MediaHandler mh, short imageIndex, long imagePropertyType, void * imagePropertyValue) -> (ComponentResult _rv)"},
 	{"NewTimeBase", (PyCFunction)Qt_NewTimeBase, 1,
 	 "() -> (TimeBase _rv)"},
+	{"ConvertTime", (PyCFunction)Qt_ConvertTime, 1,
+	 "(TimeBase newBase) -> (TimeRecord inout)"},
+	{"ConvertTimeScale", (PyCFunction)Qt_ConvertTimeScale, 1,
+	 "(TimeScale newScale) -> (TimeRecord inout)"},
+	{"AddTime", (PyCFunction)Qt_AddTime, 1,
+	 "(TimeRecord src) -> (TimeRecord dst)"},
+	{"SubtractTime", (PyCFunction)Qt_SubtractTime, 1,
+	 "(TimeRecord src) -> (TimeRecord dst)"},
 	{"MusicMediaGetIndexedTunePlayer", (PyCFunction)Qt_MusicMediaGetIndexedTunePlayer, 1,
 	 "(ComponentInstance ti, long sampleDescIndex) -> (ComponentResult _rv, ComponentInstance tp)"},
 	{"AlignWindow", (PyCFunction)Qt_AlignWindow, 1,
