@@ -701,7 +701,7 @@ corner.
 \begin{methoddesc}[window]{getch}{\optional{x, y}}
 Get a character. Note that the integer returned does \emph{not} have to
 be in \ASCII{} range: function keys, keypad keys and so on return numbers
-higher than 256. In no-delay mode, an exception is raised if there is 
+higher than 256. In no-delay mode, -1 is returned if there is 
 no input.
 \end{methoddesc}
 
