@@ -109,6 +109,11 @@ class AbstractFormatter:
 	self.nospace = self.softspace = 0
 	self.writer.send_literal_data(data)
 
+    def flush_softspace(self):
+	if self.softspace:
+	    self.nospace = self.softspace = 0
+	    self.writer.send_flowing_data(' ')
+
     def push_font(self, (size, i, b, tt)):
 	if self.font_stack:
 	    csize, ci, cb, ctt = self.font_stack[-1]
