@@ -51,6 +51,10 @@ class TextWrapper:
     whitespace_trans = string.maketrans(string.whitespace,
                                         ' ' * len(string.whitespace))
 
+    unicode_whitespace_trans = {}
+    for c in string.whitespace:
+        unicode_whitespace_trans[ord(unicode(c))] = ord(u' ')
+
     # This funky little regex is just the trick for splitting
     # text up into word-wrappable chunks.  E.g.
     #   "Hello there -- you goof-ball, use the -b option!"
@@ -99,7 +103,10 @@ class TextWrapper:
         if self.expand_tabs:
             text = text.expandtabs()
         if self.replace_whitespace:
-            text = text.translate(self.whitespace_trans)
+            if isinstance(text, str):
+                text = text.translate(self.whitespace_trans)
+            elif isinstance(text, unicode):
+                text = text.translate(self.unicode_whitespace_trans)
         return text
 
 
