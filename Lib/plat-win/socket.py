@@ -27,7 +27,7 @@ class _socketobject:
 	self._sock = sock
 
     def close(self):
-	self._sock = None
+	self._sock = 0
 
     def __del__(self):
 	self.close()
@@ -68,7 +68,7 @@ class _fileobject:
 	    if self._sock:
 		self.flush()
 	finally:
-	    self._sock = None
+	    self._sock = 0
 
     def __del__(self):
 	self.close()
