@@ -24,7 +24,6 @@ import locale
 import calendar
 from re import compile as re_compile
 from re import IGNORECASE
-from string import whitespace as whitespace_string
 
 __author__ = "Brett Cannon"
 __email__ = "drifty@bigfoot.com"
@@ -33,6 +32,17 @@ __all__ = ['strptime']
 
 RegexpType = type(re_compile(''))
 
+def _getlang():
+    # Figure out what the current language is set to.
+    current_lang = locale.getlocale(locale.LC_TIME)[0]
+    if current_lang:
+        return current_lang
+    else:
+        current_lang = locale.getdefaultlocale()[0]
+        if current_lang:
+            return current_lang
+        else:
+            return ''
 
 class LocaleTime(object):
     """Stores and handles locale-specific information related to time.
@@ -285,19 +295,9 @@ class LocaleTime(object):
         self.__timezone = self.__pad(time.tzname, 0)
 
     def __calc_lang(self):
-        # Set self.__lang by using locale.getlocale() or
-        # locale.getdefaultlocale().  If both turn up empty, set the attribute
-        # to ''.  This is to stop calls to this method and to make sure
-        # strptime() can produce an re object correctly.
-        current_lang = locale.getlocale(locale.LC_TIME)[0]
-        if current_lang:
-            self.__lang = current_lang
-        else:
-            current_lang = locale.getdefaultlocale()[0]
-            if current_lang:
-                self.__lang = current_lang
-            else:
-                self.__lang = ''
+        # Set self.__lang by using __getlang().
+        self.__lang = _getlang()
+
 
 
 class TimeRE(dict):
@@ -382,8 +382,8 @@ class TimeRE(dict):
     def pattern(self, format):
         """Return re pattern for the format string."""
         processed_format = ''
-        for whitespace in whitespace_string:
-            format = format.replace(whitespace, r'\s*')
+        whitespace_replacement = re_compile('\s+')
+        format = whitespace_replacement.sub('\s*', format)
         while format.find('%') != -1:
             directive_index = format.index('%')+1
             processed_format = "%s%s%s" % (processed_format,
@@ -394,15 +394,31 @@ class TimeRE(dict):
 
     def compile(self, format):
         """Return a compiled re object for the format string."""
-        format = "(?#%s)%s" % (self.locale_time.lang,format)
         return re_compile(self.pattern(format), IGNORECASE)
 
+# Cached TimeRE; probably only need one instance ever so cache it for performance
+_locale_cache = TimeRE()
+# Cached regex objects; same reason as for TimeRE cache
+_regex_cache = dict()
 
 def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a time struct based on the input data and the format string."""
-    locale_time = LocaleTime()
-    compiled_re = TimeRE(locale_time).compile(format)
-    found = compiled_re.match(data_string)
+    global _locale_cache
+    global _regex_cache
+    locale_time = _locale_cache.locale_time
+    # If the language changes, caches are invalidated, so clear them
+    if locale_time.lang != _getlang():
+        _locale_cache = TimeRE()
+        _regex_cache.clear()
+    format_regex = _regex_cache.get(format)
+    if not format_regex:
+        # Limit regex cache size to prevent major bloating of the module;
+        # The value 5 is arbitrary
+        if len(_regex_cache) > 5:
+            _regex_cache.clear()
+        format_regex = _locale_cache.compile(format)
+        _regex_cache[format] = format_regex
+    found = format_regex.match(data_string)
     if not found:
         raise ValueError("time data did not match format")
     year = 1900
