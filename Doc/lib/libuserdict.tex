@@ -4,21 +4,19 @@
 \declaremodule{standard}{UserDict}
 \modulesynopsis{Class wrapper for dictionary objects.}
 
-\note{This module is available for backward compatibility only.  If
-you are writing code that does not need to work with versions of
-Python earlier than Python 2.2, please consider subclassing directly
-from the built-in \class{dict} type.}
 
-This module defines a class that acts as a wrapper around
-dictionary objects.  It is a useful base class for
-your own dictionary-like classes, which can inherit from
-them and override existing methods or add new ones.  In this way one
-can add new behaviors to dictionaries.
-
-The module also defines a mixin defining all dictionary methods for
-classes that already have a minimum mapping interface.  This greatly
-simplifies writing classes that need to be substitutable for
+The module defines a mixin,  \class{DictMixin}, defining all dictionary
+methods for classes that already have a minimum mapping interface.  This
+greatly simplifies writing classes that need to be substitutable for
 dictionaries (such as the shelve module).
+
+This also module defines a class, \class{UserDict}, that acts as a wrapper
+around dictionary objects.  The need for this class has been largely
+supplanted by the ability to subclass directly from \class{dict} (a feature
+that became available starting with Python version 2.2).  Prior to the
+introduction of \class{dict}, the \class{UserDict} class was used to
+create dictionary-like sub-classes that obtained new behaviors by overriding
+existing methods or adding new ones.
 
 The \module{UserDict} module defines the \class{UserDict} class
 and \class{DictMixin}:
