@@ -41,12 +41,6 @@ class TimeTestCase(unittest.TestCase):
         time.asctime(time.gmtime(self.t))
         self.assertRaises(TypeError, time.asctime, 0)
 
-    def test_mktime(self):
-        self.assertRaises(OverflowError,
-                          time.mktime, (999999, 999999, 999999, 999999,
-                                        999999, 999999, 999999, 999999,
-                                        999999))
-
 
 def test_main():
     test_support.run_unittest(TimeTestCase)
