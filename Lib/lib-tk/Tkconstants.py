@@ -70,6 +70,8 @@ ALL='all' # e.g. Canvas.delete(ALL)
 NORMAL='normal'
 DISABLED='disabled'
 ACTIVE='active'
+# Canvas state
+HIDDEN='hidden'
 
 # Menu item types
 CASCADE='cascade'
