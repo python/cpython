@@ -100,12 +100,16 @@ def load(dir):
         genplatfile = os.path.join(dir, "config-unix.txt")
         
     platfile = os.path.join(dir, "config-%s.txt" % sys.platform)
+
+    try:
+        homedir = os.environ['HOME']
+    except KeyError:
+        homedir = os.getcwd()
     
     for file in (os.path.join(dir, "config.txt"),
                  genplatfile,
                  platfile,
-                 # XXX watch out for KeyError
-                 os.path.join(os.environ['HOME'], ".idle"),
+                 os.path.join(homedir, ".idle"),
                  ):
         try:
             f = open(file)
