@@ -257,6 +257,8 @@ getcode(enum HandlerTypes slot, char* func_name, int lineno)
 			nulltuple,	/* consts */
 			nulltuple,	/* names */
 			nulltuple,	/* varnames */
+			nulltuple,	/* freevars */
+			nulltuple,	/* cellvars */
 			filename,	/* filename */
 			name,		/* name */
 			lineno,		/* firstlineno */
@@ -288,7 +290,9 @@ call_with_frame(PyCodeObject *c, PyObject* func, PyObject* args)
 			tstate,			/*back*/
 			c,			/*code*/
 			tstate->frame->f_globals,	/*globals*/
-			NULL);			/*locals*/
+			NULL,			/*locals*/
+			0,
+			NULL);                  /* closure */
 	if (f == NULL)
 		return NULL;
 	tstate->frame = f;
