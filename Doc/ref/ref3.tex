@@ -1091,9 +1091,16 @@ returns zero is considered to be false in a Boolean context.
 
 \begin{methoddesc}[mapping object]{__getitem__}{self, key}
 Called to implement evaluation of \code{\var{self}[\var{key}]}.
-For a sequence types, the accepted keys should be integers.  Note that the
-special interpretation of negative indices (if the class wishes to
+For a sequence types, the accepted keys should be integers.  Note that
+the special interpretation of negative indices (if the class wishes to
 emulate a sequence type) is up to the \method{__getitem__()} method.
+If \var{key} is of an inappropriate type, \exception{TypeError} may be
+raised; if of a value outside the set of indexes for the sequence
+(after any special interpretation of negative values),
+\exception{IndexError} should be raised.
+\strong{Note:}  \keyword{for} loops expect that an
+\exception{IndexError} will be raised for illegal indexes to allow
+proper detection of the end of the sequence.
 \end{methoddesc}
 
 \begin{methoddesc}[mapping object]{__setitem__}{self, key, value}
@@ -1101,14 +1108,17 @@ Called to implement assignment to \code{\var{self}[\var{key}]}.  Same
 note as for \method{__getitem__()}.  This should only be implemented
 for mappings if the objects support changes to the values for keys, or
 if new keys can be added, or for sequences if elements can be
-replaced.
+replaced.  The same exceptions should be raised for improper
+\var{key} values as for the \method{__getitem__()} method.
 \end{methoddesc}
 
 \begin{methoddesc}[mapping object]{__delitem__}{self, key}
 Called to implement deletion of \code{\var{self}[\var{key}]}.  Same
 note as for \method{__getitem__()}.  This should only be implemented
 for mappings if the objects support removal of keys, or for sequences
-if elements can be removed from the sequence.
+if elements can be removed from the sequence.  The same exceptions
+should be raised for improper \var{key} values as for the
+\method{__getitem__()} method.
 \end{methoddesc}
 
 
