@@ -37,7 +37,8 @@ class HookWatcher:
 
 
 class ProfileSimulator(HookWatcher):
-    def __init__(self):
+    def __init__(self, testcase):
+        self.testcase = testcase
         self.stack = []
         HookWatcher.__init__(self)
 
@@ -54,13 +55,8 @@ class ProfileSimulator(HookWatcher):
         self.stack.pop()
 
     def trace_exception(self, frame):
-        if len(self.stack) >= 2 and frame is self.stack[-2]:
-            self.add_event('propogate-from', self.stack[-1])
-            self.stack.pop()
-        else:
-            # Either an exception was raised in Python or a C function
-            # raised an exception; this does not represent propogation.
-            self.add_event('ignore', frame)
+        self.testcase.fail(
+            "the profiler should never receive exception events")
 
     dispatch = {
         'call': trace_call,
@@ -94,8 +90,7 @@ class ProfileHookTestCase(TestCaseBase):
             1/0
         f_ident = ident(f)
         self.check_events(f, [(1, 'call', f_ident),
-                              (1, 'exception', f_ident),
-                              (0, 'exception', protect_ident),
+                              (1, 'return', f_ident),
                               ])
 
     def test_caught_exception(self):
@@ -104,7 +99,6 @@ class ProfileHookTestCase(TestCaseBase):
             except: pass
         f_ident = ident(f)
         self.check_events(f, [(1, 'call', f_ident),
-                              (1, 'exception', f_ident),
                               (1, 'return', f_ident),
                               ])
 
@@ -114,7 +108,6 @@ class ProfileHookTestCase(TestCaseBase):
             except: pass
         f_ident = ident(f)
         self.check_events(f, [(1, 'call', f_ident),
-                              (1, 'exception', f_ident),
                               (1, 'return', f_ident),
                               ])
 
@@ -123,11 +116,10 @@ class ProfileHookTestCase(TestCaseBase):
             1/0
         f_ident = ident(f)
         self.check_events(f, [(1, 'call', f_ident),
-                              (1, 'exception', f_ident),
                               # This isn't what I expected:
-                              (0, 'exception', protect_ident),
+                              # (0, 'exception', protect_ident),
                               # I expected this again:
-                              # (1, 'exception', f_ident),
+                              (1, 'return', f_ident),
                               ])
 
     def test_exception_in_except_clause(self):
@@ -143,11 +135,9 @@ class ProfileHookTestCase(TestCaseBase):
         g_ident = ident(g)
         self.check_events(g, [(1, 'call', g_ident),
                               (2, 'call', f_ident),
-                              (2, 'exception', f_ident),
-                              (1, 'exception', g_ident),
+                              (2, 'return', f_ident),
                               (3, 'call', f_ident),
-                              (3, 'exception', f_ident),
-                              (1, 'exception', g_ident),
+                              (3, 'return', f_ident),
                               (1, 'return', g_ident),
                               ])
 
@@ -161,10 +151,9 @@ class ProfileHookTestCase(TestCaseBase):
         g_ident = ident(g)
         self.check_events(g, [(1, 'call', g_ident),
                               (2, 'call', f_ident),
-                              (2, 'exception', f_ident),
-                              (1, 'exception', g_ident),
+                              (2, 'return', f_ident),
                               (1, 'falling through', g_ident),
-                              (0, 'exception', protect_ident),
+                              (1, 'return', g_ident),
                               ])
 
     def test_raise_twice(self):
@@ -173,9 +162,7 @@ class ProfileHookTestCase(TestCaseBase):
             except: 1/0
         f_ident = ident(f)
         self.check_events(f, [(1, 'call', f_ident),
-                              (1, 'exception', f_ident),
-                              (1, 'exception', f_ident),
-                              (0, 'exception', protect_ident)
+                              (1, 'return', f_ident),
                               ])
 
     def test_raise_reraise(self):
@@ -184,8 +171,7 @@ class ProfileHookTestCase(TestCaseBase):
             except: raise
         f_ident = ident(f)
         self.check_events(f, [(1, 'call', f_ident),
-                              (1, 'exception', f_ident),
-                              (0, 'exception', protect_ident)
+                              (1, 'return', f_ident),
                               ])
 
     def test_raise(self):
@@ -193,8 +179,7 @@ class ProfileHookTestCase(TestCaseBase):
             raise Exception()
         f_ident = ident(f)
         self.check_events(f, [(1, 'call', f_ident),
-                              (1, 'exception', f_ident),
-                              (0, 'exception', protect_ident)
+                              (1, 'return', f_ident),
                               ])
 
     def test_distant_exception(self):
@@ -218,12 +203,11 @@ class ProfileHookTestCase(TestCaseBase):
                               (3, 'call', h_ident),
                               (4, 'call', g_ident),
                               (5, 'call', f_ident),
-                              (5, 'exception', f_ident),
-                              (4, 'exception', g_ident),
-                              (3, 'exception', h_ident),
-                              (2, 'exception', i_ident),
-                              (1, 'exception', j_ident),
-                              (0, 'exception', protect_ident),
+                              (5, 'return', f_ident),
+                              (4, 'return', g_ident),
+                              (3, 'return', h_ident),
+                              (2, 'return', i_ident),
+                              (1, 'return', j_ident),
                               ])
 
     def test_generator(self):
@@ -266,14 +250,14 @@ class ProfileHookTestCase(TestCaseBase):
                               (2, 'return', f_ident),
                               # once more to hit the raise:
                               (2, 'call', f_ident),
-                              (2, 'exception', f_ident),
+                              (2, 'return', f_ident),
                               (1, 'return', g_ident),
                               ])
 
 
 class ProfileSimulatorTestCase(TestCaseBase):
     def new_watcher(self):
-        return ProfileSimulator()
+        return ProfileSimulator(self)
 
     def test_simple(self):
         def f(p):
@@ -288,8 +272,7 @@ class ProfileSimulatorTestCase(TestCaseBase):
             1/0
         f_ident = ident(f)
         self.check_events(f, [(1, 'call', f_ident),
-                              (1, 'ignore', f_ident),
-                              (1, 'propogate-from', f_ident),
+                              (1, 'return', f_ident),
                               ])
 
     def test_caught_exception(self):
@@ -298,7 +281,6 @@ class ProfileSimulatorTestCase(TestCaseBase):
             except: pass
         f_ident = ident(f)
         self.check_events(f, [(1, 'call', f_ident),
-                              (1, 'ignore', f_ident),
                               (1, 'return', f_ident),
                               ])
 
@@ -323,12 +305,11 @@ class ProfileSimulatorTestCase(TestCaseBase):
                               (3, 'call', h_ident),
                               (4, 'call', g_ident),
                               (5, 'call', f_ident),
-                              (5, 'ignore', f_ident),
-                              (5, 'propogate-from', f_ident),
-                              (4, 'propogate-from', g_ident),
-                              (3, 'propogate-from', h_ident),
-                              (2, 'propogate-from', i_ident),
-                              (1, 'propogate-from', j_ident),
+                              (5, 'return', f_ident),
+                              (4, 'return', g_ident),
+                              (3, 'return', h_ident),
+                              (2, 'return', i_ident),
+                              (1, 'return', j_ident),
                               ])
 
 
