@@ -1085,21 +1085,23 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
 {
 	PyTypeObject *tp = v->ob_type;
 
-#ifdef Py_USING_UNICODE
-	/* The Unicode to string conversion is done here because the
-	   existing tp_getattro slots expect a string object as name
-	   and we wouldn't want to break those. */
-	if (PyUnicode_Check(name)) {
-		name = _PyUnicode_AsDefaultEncodedString(name, NULL);
-		if (name == NULL)
-			return NULL;
-	}
-	else
-#endif
 	if (!PyString_Check(name)) {
-		PyErr_SetString(PyExc_TypeError,
-				"attribute name must be string");
-		return NULL;
+#ifdef Py_USING_UNICODE
+		/* The Unicode to string conversion is done here because the
+		   existing tp_getattro slots expect a string object as name
+		   and we wouldn't want to break those. */
+		if (PyUnicode_Check(name)) {
+			name = _PyUnicode_AsDefaultEncodedString(name, NULL);
+			if (name == NULL)
+				return NULL;
+		}
+		else
+#endif
+		{
+			PyErr_SetString(PyExc_TypeError,
+					"attribute name must be string");
+			return NULL;
+		}
 	}
 	if (tp->tp_getattro != NULL)
 		return (*tp->tp_getattro)(v, name);
@@ -1129,21 +1131,23 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 	PyTypeObject *tp = v->ob_type;
 	int err;
 
-#ifdef Py_USING_UNICODE
-	/* The Unicode to string conversion is done here because the
-	   existing tp_setattro slots expect a string object as name
-	   and we wouldn't want to break those. */
-	if (PyUnicode_Check(name)) {
-		name = PyUnicode_AsEncodedString(name, NULL, NULL);
-		if (name == NULL)
-			return -1;
-	}
-	else 
-#endif
 	if (!PyString_Check(name)){
-		PyErr_SetString(PyExc_TypeError,
-				"attribute name must be string");
-		return -1;
+#ifdef Py_USING_UNICODE
+		/* The Unicode to string conversion is done here because the
+		   existing tp_setattro slots expect a string object as name
+		   and we wouldn't want to break those. */
+		if (PyUnicode_Check(name)) {
+			name = PyUnicode_AsEncodedString(name, NULL, NULL);
+			if (name == NULL)
+				return -1;
+		}
+		else 
+#endif
+		{
+			PyErr_SetString(PyExc_TypeError,
+					"attribute name must be string");
+			return -1;
+		}
 	}
 	else
 		Py_INCREF(name);
@@ -1217,21 +1221,23 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 	descrgetfunc f;
 	PyObject **dictptr;
 
-#ifdef Py_USING_UNICODE
-	/* The Unicode to string conversion is done here because the
-	   existing tp_setattro slots expect a string object as name
-	   and we wouldn't want to break those. */
-	if (PyUnicode_Check(name)) {
-		name = PyUnicode_AsEncodedString(name, NULL, NULL);
-		if (name == NULL)
-			return NULL;
-	}
-	else 
-#endif
 	if (!PyString_Check(name)){
-		PyErr_SetString(PyExc_TypeError,
-				"attribute name must be string");
-		return NULL;
+#ifdef Py_USING_UNICODE
+		/* The Unicode to string conversion is done here because the
+		   existing tp_setattro slots expect a string object as name
+		   and we wouldn't want to break those. */
+		if (PyUnicode_Check(name)) {
+			name = PyUnicode_AsEncodedString(name, NULL, NULL);
+			if (name == NULL)
+				return NULL;
+		}
+		else 
+#endif
+		{
+			PyErr_SetString(PyExc_TypeError,
+					"attribute name must be string");
+			return NULL;
+		}
 	}
 	else
 		Py_INCREF(name);
@@ -1291,21 +1297,23 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 	PyObject **dictptr;
 	int res = -1;
 
-#ifdef Py_USING_UNICODE
-	/* The Unicode to string conversion is done here because the
-	   existing tp_setattro slots expect a string object as name
-	   and we wouldn't want to break those. */
-	if (PyUnicode_Check(name)) {
-		name = PyUnicode_AsEncodedString(name, NULL, NULL);
-		if (name == NULL)
-			return -1;
-	}
-	else 
-#endif
 	if (!PyString_Check(name)){
-		PyErr_SetString(PyExc_TypeError,
-				"attribute name must be string");
-		return -1;
+#ifdef Py_USING_UNICODE
+		/* The Unicode to string conversion is done here because the
+		   existing tp_setattro slots expect a string object as name
+		   and we wouldn't want to break those. */
+		if (PyUnicode_Check(name)) {
+			name = PyUnicode_AsEncodedString(name, NULL, NULL);
+			if (name == NULL)
+				return -1;
+		}
+		else 
+#endif
+		{
+			PyErr_SetString(PyExc_TypeError,
+					"attribute name must be string");
+			return -1;
+		}
 	}
 	else
 		Py_INCREF(name);
