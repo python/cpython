@@ -261,14 +261,48 @@ static PyObject *
 class_repr(op)
 	PyClassObject *op;
 {
+	PyObject *mod = PyDict_GetItemString(op->cl_dict, "__module__");
 	char buf[140];
 	char *name;
 	if (op->cl_name == NULL || !PyString_Check(op->cl_name))
 		name = "?";
 	else
 		name = PyString_AsString(op->cl_name);
-	sprintf(buf, "<class %.100s at %lx>", name, (long)op);
+	if (mod == NULL || !PyString_Check(mod))
+		sprintf(buf, "<class ?.%.100s at %lx>", name, (long)op);
+	else
+		sprintf(buf, "<class %.50s.%.50s at %lx>",
+			PyString_AsString(mod),
+			name, (long)op);
 	return PyString_FromString(buf);
+}
+
+static PyObject *
+class_str(op)
+	PyClassObject *op;
+{
+	PyObject *mod = PyDict_GetItemString(op->cl_dict, "__module__");
+	PyObject *name = op->cl_name;
+	PyObject *res;
+	int m, n;
+
+	if (name == NULL || !PyString_Check(name))
+		return class_repr(op);
+	if (mod == NULL || !PyString_Check(mod)) {
+		Py_INCREF(name);
+		return name;
+	}
+	m = PyString_Size(mod);
+	n = PyString_Size(name);
+	res = PyString_FromStringAndSize((char *)NULL, m+1+n);
+	if (res != NULL) {
+		char *s = PyString_AsString(res);
+		memcpy(s, PyString_AsString(mod), m);
+		s += m;
+		*s++ = '.';
+		memcpy(s, PyString_AsString(name), n);
+	}
+	return res;
 }
 
 PyTypeObject PyClass_Type = {
@@ -288,7 +322,7 @@ PyTypeObject PyClass_Type = {
 	0,		/*tp_as_mapping*/
 	0,		/*tp_hash*/
 	0,		/*tp_call*/
-	0,		/*tp_str*/
+	(reprfunc)class_str, /*tp_str*/
 	(getattrofunc)class_getattr, /*tp_getattro*/
 	(setattrofunc)class_setattr, /*tp_setattro*/
 };
