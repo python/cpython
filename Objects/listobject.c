@@ -751,7 +751,7 @@ static struct methodlist list_methods[] = {
 	{"count",	(method)listcount},
 	{"index",	(method)listindex},
 	{"insert",	(method)listinsert},
-	{"sort",	(method)listsort},
+	{"sort",	(method)listsort, 0},
 	{"remove",	(method)listremove},
 	{"reverse",	(method)listreverse},
 	{NULL,		NULL}		/* sentinel */

@@ -29,6 +29,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "structmember.h"
 #include "ceval.h"
 
+#ifdef THINK_C
+#define HAVE_FOPENRF
+#endif
+
 #define BUF(v) GETSTRINGVALUE((stringobject *)v)
 
 #include <errno.h>
@@ -652,20 +656,20 @@ file_writelines(f, args)
 }
 
 static struct methodlist file_methods[] = {
-	{"close",	(method)file_close},
-	{"flush",	(method)file_flush},
-	{"fileno",	(method)file_fileno},
-	{"isatty",	(method)file_isatty},
-	{"read",	(method)file_read},
-	{"readline",	(method)file_readline},
-	{"readlines",	(method)file_readlines},
-	{"seek",	(method)file_seek},
+	{"close",	(method)file_close, 0},
+	{"flush",	(method)file_flush, 0},
+	{"fileno",	(method)file_fileno, 0},
+	{"isatty",	(method)file_isatty, 0},
+	{"read",	(method)file_read, 0},
+	{"readline",	(method)file_readline, 0},
+	{"readlines",	(method)file_readlines, 0},
+	{"seek",	(method)file_seek, 0},
 #ifdef HAVE_FTRUNCATE
-	{"truncate",	(method)file_truncate},
+	{"truncate",	(method)file_truncate, 0},
 #endif
-	{"tell",	(method)file_tell},
-	{"write",	(method)file_write},
-	{"writelines",	(method)file_writelines},
+	{"tell",	(method)file_tell, 0},
+	{"write",	(method)file_write, 0},
+	{"writelines",	(method)file_writelines, 0},
 	{NULL,		NULL}		/* sentinel */
 };
 
