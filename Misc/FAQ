@@ -1295,25 +1295,16 @@ to sys.stderr when this happens.
 4.18. Q. How do I change the shell environment for programs called
 using os.popen() or os.system()?  Changing os.environ doesn't work.
 
-A. Modifying the environment passed to subshells was left out of the
-interpreter because there seemed to be no well-established portable
-way to do it (in particular, some systems, have putenv(), others have
-setenv(), and some have none at all).
+A. You must be using either a version of python before 1.4, or on a
+(rare) system that doesn't have the putenv() library function.
 
-However if all you want is to pass environment variables to the
-commands run by os.system() or os.popen(), there's a simple solution:
-prefix the command string with a couple of variable assignments and
-export statements.  The following would be universal for popen:
-
-        import os
-        from commands import mkarg # nifty routine to add shell quoting
-        def epopen(cmd, mode, env = {}):
-                # env is a dictionary of environment variables
-                prefix = ''
-                for key, value in env.items():
-                        prefix = prefix + '%s=%s\n' % (key, mkarg(value)[1:])
-                        prefix = prefix + 'export %s\n' % key
-                return os.popen(prefix + cmd, mode)
+Before Python 1.4, modifying the environment passed to subshells was
+left out of the interpreter because there seemed to be no
+well-established portable way to do it (in particular, some systems,
+have putenv(), others have setenv(), and some have none at all).  As
+of Python 1.4, almost all Unix systems *do* have putenv(), and so does
+the Win32 API, and thus the os module was modified so that changes to
+os.environ are trapped and the corresponding putenv() call is made.
 
 4.19. Q. What is a class?
 
