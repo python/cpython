@@ -272,10 +272,19 @@ class TestDialectRegistry(unittest.TestCase):
         expected_dialects.sort()
         csv.register_dialect(name, myexceltsv)
         try:
-            self.failUnless(isinstance(csv.get_dialect(name), myexceltsv))
+            self.failUnless(csv.get_dialect(name).delimiter, '\t')
             got_dialects = csv.list_dialects()
             got_dialects.sort()
             self.assertEqual(expected_dialects, got_dialects)
+        finally:
+            csv.unregister_dialect(name)
+
+    def test_register_kwargs(self):
+        name = 'fedcba'
+        csv.register_dialect(name, delimiter=';')
+        try:
+            self.failUnless(csv.get_dialect(name).delimiter, '\t')
+            self.failUnless(list(csv.reader('X;Y;Z', name)), ['X', 'Y', 'Z'])
         finally:
             csv.unregister_dialect(name)
 
