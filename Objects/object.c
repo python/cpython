@@ -570,6 +570,13 @@ PyObject _Py_NoneStruct = {
 static PyObject refchain = {&refchain, &refchain};
 
 void
+_Py_ResetReferences()
+{
+	refchain._ob_prev = refchain._ob_next = &refchain;
+	_Py_RefTotal = 0;
+}
+
+void
 _Py_NewReference(op)
 	PyObject *op;
 {
@@ -625,10 +632,8 @@ _Py_PrintReferences(fp)
 	FILE *fp;
 {
 	PyObject *op;
-	fprintf(fp, "Remaining objects (except strings referenced once):\n");
+	fprintf(fp, "Remaining objects:\n");
 	for (op = refchain._ob_next; op != &refchain; op = op->_ob_next) {
-		if (op->ob_refcnt == 1 && PyString_Check(op))
-			continue; /* Will be printed elsewhere */
 		fprintf(fp, "[%d] ", op->ob_refcnt);
 		if (PyObject_Print(op, fp, 0) != 0)
 			PyErr_Clear();
@@ -676,3 +681,79 @@ PyTypeObject *_Py_cobject_hack = &PyCObject_Type;
 
 /* Hack to force loading of abstract.o */
 int (*_Py_abstract_hack) Py_FPROTO((PyObject *)) = &PyObject_Length;
+
+
+/* Malloc wrappers (see mymalloc.h) */
+
+/* The Py_{Malloc,Realloc} wrappers call PyErr_NoMemory() on failure */
+
+ANY *
+Py_Malloc(nbytes)
+	size_t nbytes;
+{
+	ANY *p;
+#if _PyMem_EXTRA > 0
+	if (nbytes == 0)
+		nbytes = _PyMem_EXTRA;
+#endif
+	p = malloc(nbytes);
+	if (p != NULL)
+		return p;
+	else
+		return PyErr_NoMemory();
+}
+
+ANY *
+Py_Realloc(p, nbytes)
+	ANY *p;
+	size_t nbytes;
+{
+#if _PyMem_EXTRA > 0
+	if (nbytes == 0)
+		nbytes = _PyMem_EXTRA;
+#endif
+	p = realloc(p, nbytes);
+	if (p != NULL)
+		return p;
+	else
+		return PyErr_NoMemory();
+}
+
+void
+Py_Free(p)
+	ANY *p;
+{
+	free(p);
+}
+
+/* The PyMem_{Malloc,Realloc} wrappers don't call anything on failure */
+
+ANY *
+PyMem_Malloc(nbytes)
+	size_t nbytes;
+{
+#if _PyMem_EXTRA > 0
+	if (nbytes == 0)
+		nbytes = _PyMem_EXTRA;
+#endif
+	return malloc(nbytes);
+}
+
+ANY *
+PyMem_Realloc(p, nbytes)
+	ANY *p;
+	size_t nbytes;
+{
+#if _PyMem_EXTRA > 0
+	if (nbytes == 0)
+		nbytes = _PyMem_EXTRA;
+#endif
+	return realloc(p, nbytes);
+}
+
+void
+PyMem_Free(p)
+	ANY *p;
+{
+	free(p);
+}
