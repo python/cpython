@@ -502,7 +502,8 @@ class Pickler:
 
         # No recursion (including the empty-tuple case for protocol 0).
         self.write(TUPLE)
-        self.memoize(object) # XXX shouldn't memoize empty tuple?!
+        if object:                      # No need to memoize empty tuple
+            self.memoize(object)
 
     dispatch[TupleType] = save_tuple
 
