@@ -23,7 +23,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include <ColorPicker.h>
 #include "Python.h"
-
+#include "macglue.h"
 
 /* ----------------------------------------------------- */
 
@@ -42,16 +42,12 @@ cp_GetColor(self, args)
 	RGBColor inColor, outColor;
 	Boolean ok;
 	Point where = {0, 0};
-	char * prompt;
-	Str255 pprompt;
+	Str255 prompt;
 	
-	if (!PyArg_ParseTuple(args, "sO&", &prompt, QdRGB_Convert, &inColor))
+	if (!PyArg_ParseTuple(args, "O&O&", PyMac_GetStr255, prompt, QdRGB_Convert, &inColor))
 		return NULL;
 	
-	BlockMove(prompt, pprompt + 1, strlen(prompt));
-	pprompt[0] = strlen(prompt);
-	
-	ok = GetColor(where, pprompt, &inColor, &outColor);
+	ok = GetColor(where, prompt, &inColor, &outColor);
 	
 	return Py_BuildValue("O&h", QdRGB_New, &outColor, ok);
 }
