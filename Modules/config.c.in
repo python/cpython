@@ -27,12 +27,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* These modules are normally always included, but *may* be taken out */
 #define USE_GRP		1	/* Use together with pwd */
 #define USE_MARSHAL	1	/* This is linked anyway */
+#define USE_MATH	1
 #define USE_PWD		1	/* Use together with grp */
 #define USE_POSIX	1
 #define USE_SELECT	1
 #define USE_SOCKET	1
+#define USE_STRUCT	1
 #define USE_TIME	1
-#define USE_MATH	1
 
 #include "PROTO.h"
 #include "mymalloc.h"
@@ -318,7 +319,7 @@ struct {
 	{"stdwin",	initstdwin},
 #endif
 
-#ifdef USE_STRUCT
+#ifdef USE_STROP
 	{"strop",	initstrop},
 #endif
 
