@@ -87,12 +87,18 @@ def process(filename):
 		print string.ljust(vin.format, 8),
 		print string.rjust(`vin.width`, 4),
 		print string.rjust(`vin.height`, 4),
-		s = string.rjust(`vin.packfactor`, 2)
-		if vin.packfactor and vin.format not in ('rgb', 'jpeg') and \
-			  (vin.width/vin.packfactor) % 4 <> 0:
-			s = s + '!'
+		if type(vin.packfactor) == type(()):
+			xpf, ypf = vin.packfactor
+			s = string.rjust(`xpf`, 2) + ',' + \
+				  string.rjust(`ypf`, 2)
 		else:
-			s = s + ' '
+			s = string.rjust(`vin.packfactor`, 2)
+			if type(vin.packfactor) == type(0) and \
+				  vin.format not in ('rgb', 'jpeg') and \
+				  (vin.width/vin.packfactor) % 4 <> 0:
+				s = s + '!  '
+			else:
+				s = s + '   '
 		print s,
 		sys.stdout.flush()
 	else:
@@ -144,7 +150,8 @@ def process(filename):
 
 	if terse:
 		print string.rjust(`n`, 6),
-		print string.rjust(`int(n*10000.0/t)*0.1`, 5)
+		if t: print string.rjust(`int(n*10000.0/t)*0.1`, 5),
+		print
 	else:
 		print 'Total', n, 'frames in', t*0.001, 'sec.',
 		if t: print '-- average', int(n*10000.0/t)*0.1, 'frames/sec',
