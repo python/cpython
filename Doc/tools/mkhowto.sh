@@ -64,12 +64,13 @@ MAX_SPLIT_DEPTH=8
 
 build_html() {
     TEXFILE=`kpsewhich $1.tex`
+    BUILDDIR=${2:-$1}
     latex2html \
      -init_file $L2H_INIT_FILE \
      -init_file $L2H_AUX_INIT_FILE \
-     -dir $1 $TEXFILE || exit $?
+     -dir $BUILDDIR $TEXFILE || exit $?
     if [ "$MAX_SPLIT_DEPTH" -ne 1 ] ; then
-	(cd $1; $MYDIR/node2label.pl *.html) || exit $?
+	(cd $BUILDDIR; $MYDIR/node2label.pl *.html) || exit $?
     fi
 }
 
@@ -127,6 +128,10 @@ build_ps() {
     dvips -N0 -o $1.ps $1 || exit $?
 }
 
+build_text() {
+    lynx -nolist -dump $2/index.html >$1.txt
+}
+
 l2hoption() {
     if [ "$2" ] ; then
 	echo "\$$1 = \"$2\";" >>$L2H_AUX_INIT_FILE
@@ -139,6 +144,7 @@ cleanup() {
     if [ ! "$BUILD_DVI" ] ; then
 	rm -f $1.dvi
     fi
+    rm -rf $1.temp-html
     rm -f $1/IMG* $1/*.pl $1/WARNINGS $1/index.dat $1/modindex.dat
 }
 
@@ -162,6 +168,11 @@ while [ "$1" ] ; do
 	    ;;
 	--html|--htm|--ht)
 	    BUILD_HTML=true
+	    USE_DEFAULT_FORMAT=false
+	    shift 1
+	    ;;
+	--text|--tex|--te|--t)
+	    BUILD_TEXT=true
 	    USE_DEFAULT_FORMAT=false
 	    shift 1
 	    ;;
@@ -220,19 +231,25 @@ while [ "$1" ] ; do
 done
 
 if [ $# = 0 ] ; then
-    usage 2
+    # check for a single .tex file in .
+    COUNT=`ls -1 *.tex | wc -l | sed 's/[ 	]//g'`
+    if [ "$COUNT" -eq 1 ] ; then
+	set -- `ls -1 *.tex`
+    else
+	usage 2
+    fi
 fi
 
 if [ $USE_DEFAULT_FORMAT = true ] ; then
     eval "BUILD_$DEFAULT_FORMAT=true"
 fi
 
-if [ "$DEBUGGING" ] ; then
-    set -x
-fi
-
 if [ "$QUIET" ] ; then
     exec >/dev/null
+fi
+
+if [ "$DEBUGGING" ] ; then
+    set -x
 fi
 
 echo '# auxillary init file for latex2html' >$L2H_AUX_INIT_FILE
@@ -255,20 +272,42 @@ for FILE in $@ ; do
     #
     if [ "$BUILD_DVI" -o "$BUILD_PS" ] ; then
 	build_dvi $FILE 2>&1 | tee -a $LOGFILE
+	HAVE_TEMPS=true
     fi
     if [ "$BUILD_PDF" ] ; then
 	build_pdf $FILE 2>&1 | tee -a $LOGFILE
+	HAVE_TEMPS=true
     fi
     if [ "$BUILD_PS" ] ; then
 	build_ps $FILE 2>&1 | tee -a $LOGFILE
     fi
     if [ "$BUILD_HTML" ] ; then
-	if [ ! "$BUILD_DVI" -o ! "$BUILD_PDF" ] ; then
+	if [ ! "$HAVE_TEMPS" ] ; then
 	    # need to get aux file
 	    build_dvi $FILE 2>&1 | tee -a $LOGFILE
+	    HAVE_TEMPS=true
 	fi
-	build_html $FILE 2>&1 | tee -a $LOGFILE
+	build_html $FILE $FILE 2>&1 | tee -a $LOGFILE
     fi
+    if [ "$BUILD_TEXT" ] ; then
+	if [ ! "$HAVE_TEMPS" ] ; then
+	    # need to get aux file
+	    build_dvi $FILE 2>&1 | tee -a $LOGFILE
+	    HAVE_TEMPS=true
+	fi
+	# this is why building text really has to be last:
+	if [ "$MAX_SPLIT_DEPTH" -ne 1 ] ; then
+	    echo '# re-hack this file for --text:' >>$L2H_AUX_INIT_FILE
+	    l2hoption MAX_SPLIT_DEPTH 1
+	    echo '1;' >>$L2H_AUX_INIT_FILE
+	    TEMPDIR=$FILE.temp-html
+	    build_html $FILE $TEMPDIR 2>&1 | tee -a $LOGFILE
+	else
+	    TEMPDIR=$FILE
+	fi
+	build_text $FILE $TEMPDIR 2>&1 | tee -a $LOGFILE
+    fi
+
     if [ "$DISCARD_TEMPS" ] ; then
 	cleanup $FILE 2>&1 | tee -a $LOGFILE
     fi
