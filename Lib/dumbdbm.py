@@ -33,11 +33,26 @@ error = IOError                         # For anydbm
 
 class _Database(UserDict.DictMixin):
 
-    def __init__(self, file, mode):
+    def __init__(self, filebasename, mode):
         self._mode = mode
-        self._dirfile = file + _os.extsep + 'dir'
-        self._datfile = file + _os.extsep + 'dat'
-        self._bakfile = file + _os.extsep + 'bak'
+
+        # The directory file is a text file.  Each line looks like
+        #    "%r, (%d, %d)\n" % (key, pos, siz)
+        # where key is the string key, pos is the offset into the dat
+        # file of the associated value's first byte, and siz is the number
+        # of bytes in the associated value.
+        self._dirfile = filebasename + _os.extsep + 'dir'
+
+        # The data file is a binary file pointed into by the directory
+        # file, and holds the values associated with keys.  Each value
+        # begins at a _BLOCKSIZE-aligned byte offset, and is a raw
+        # binary 8-bit string value.
+        self._datfile = filebasename + _os.extsep + 'dat'
+        self._bakfile = filebasename + _os.extsep + 'bak'
+
+        # The index is an in-memory dict, mirroring the directory file.
+        self._index = None  # maps keys to (pos, siz) pairs
+
         # Mod by Jack: create data file if needed
         try:
             f = _open(self._datfile, 'r')
@@ -46,6 +61,7 @@ class _Database(UserDict.DictMixin):
         f.close()
         self._update()
 
+    # Read directory file into the in-memory index dict.
     def _update(self):
         self._index = {}
         try:
@@ -53,21 +69,28 @@ class _Database(UserDict.DictMixin):
         except IOError:
             pass
         else:
-            while 1:
-                line = f.readline().rstrip()
-                if not line: break
-                key, (pos, siz) = eval(line)
-                self._index[key] = (pos, siz)
+            for line in f:
+                key, pos_and_siz_pair = eval(line)
+                self._index[key] = pos_and_siz_pair
             f.close()
 
+    # Write the index dict to the directory file.  The original directory
+    # file (if any) is renamed with a .bak extension first.  If a .bak
+    # file currently exists, it's deleted.
     def _commit(self):
-        try: _os.unlink(self._bakfile)
-        except _os.error: pass
-        try: _os.rename(self._dirfile, self._bakfile)
-        except _os.error: pass
+        try:
+            _os.unlink(self._bakfile)
+        except _os.error:
+            pass
+
+        try:
+            _os.rename(self._dirfile, self._bakfile)
+        except _os.error:
+            pass
+
         f = _open(self._dirfile, 'w', self._mode)
         for key, (pos, siz) in self._index.items():
-            f.write("%s, (%s, %s)\n" % (`key`, `pos`, `siz`))
+            f.write("%r, (%d, %d)\n" % (key, pos, siz))
         f.close()
 
     def __getitem__(self, key):
@@ -78,21 +101,25 @@ class _Database(UserDict.DictMixin):
         f.close()
         return dat
 
+    # Append val to the data file, starting at a _BLOCKSIZE-aligned
+    # offset.  The data file is first padded with NUL bytes (if needed)
+    # to get to an aligned offset.  Return pair
+    #     (starting offset of val, len(val))
     def _addval(self, val):
         f = _open(self._datfile, 'rb+')
         f.seek(0, 2)
         pos = int(f.tell())
-## Does not work under MW compiler
-##              pos = ((pos + _BLOCKSIZE - 1) / _BLOCKSIZE) * _BLOCKSIZE
-##              f.seek(pos)
         npos = ((pos + _BLOCKSIZE - 1) // _BLOCKSIZE) * _BLOCKSIZE
         f.write('\0'*(npos-pos))
         pos = npos
-
         f.write(val)
         f.close()
         return (pos, len(val))
 
+    # Write val to the data file, starting at offset pos.  The caller
+    # is responsible for ensuring that there's enough room starting at
+    # pos to hold val, without overwriting some other value.  Return
+    # pair (pos, len(val)).
     def _setval(self, pos, val):
         f = _open(self._datfile, 'rb+')
         f.seek(pos)
@@ -100,31 +127,45 @@ class _Database(UserDict.DictMixin):
         f.close()
         return (pos, len(val))
 
-    def _addkey(self, key, (pos, siz)):
-        self._index[key] = (pos, siz)
+    # key is a new key whose associated value starts in the data file
+    # at offset pos and with length size.  Add an index record to
+    # the in-memory index dict, and append one to the index file.
+    def _addkey(self, key, pos_and_siz_pair):
+        self._index[key] = pos_and_siz_pair
         f = _open(self._dirfile, 'a', self._mode)
-        f.write("%s, (%s, %s)\n" % (`key`, `pos`, `siz`))
+        f.write("%r, %r\n" % (key, pos_and_siz_pair))
         f.close()
 
     def __setitem__(self, key, val):
         if not type(key) == type('') == type(val):
             raise TypeError, "keys and values must be strings"
-        if not key in self._index:
-            (pos, siz) = self._addval(val)
-            self._addkey(key, (pos, siz))
+        if key not in self._index:
+            self._addkey(key, self._addval(val))
         else:
+            # See whether the new value is small enough to fit in the
+            # (padded) space currently occupied by the old value.
             pos, siz = self._index[key]
             oldblocks = (siz + _BLOCKSIZE - 1) // _BLOCKSIZE
             newblocks = (len(val) + _BLOCKSIZE - 1) // _BLOCKSIZE
             if newblocks <= oldblocks:
-                pos, siz = self._setval(pos, val)
-                self._index[key] = pos, siz
+                self._index[key] = self._setval(pos, val)
             else:
-                pos, siz = self._addval(val)
-                self._index[key] = pos, siz
+                # The new value doesn't fit in the (padded) space used
+                # by the old value.  The blocks used by the old value are
+                # forever lost.
+                self._index[key] = self._addval(val)
+
+            # Note that _index may be out of synch with the directory
+            # file now:  _setval() and _addval() don't update the directory
+            # file.
 
     def __delitem__(self, key):
+        # The blocks used by the associated value are lost.
         del self._index[key]
+        # XXX It's unclear why we do a _commit() here (the code always
+        # XXX has, so I'm not changing it).  _setitem__ doesn't try to
+        # XXX keep the directory file in synch.  Why should we?  Or
+        # XXX why shouldn't __setitem__?
         self._commit()
 
     def keys(self):
