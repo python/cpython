@@ -77,13 +77,20 @@ def open_pathname(pathname):
 		refno = Res.FSpOpenResFile(pathname, 1)
 	except Res.Error, arg:
 		if arg[0] in (-37, -39):
-			# No resource fork. We may be on OSX, try to decode
-			# the applesingle file.
-			pathname = _decode(pathname)
-			if pathname:
+			# No resource fork. We may be on OSX, and this may be either
+			# a data-fork based resource file or a AppleSingle file
+			# from the CVS repository.
+			try:
 				refno = Res.FSOpenResourceFile(pathname, u'', 1)
+			except Res.Error, arg:
+				if arg[0] != -199:
+					# -199 is "bad resource map"
+					raise
 			else:
-				raise
+				return refno
+			# Finally try decoding an AppleSingle file
+			pathname = _decode(pathname)
+			refno = Res.FSOpenResourceFile(pathname, u'', 1)
 	return refno
 	
 def _decode(pathname):
