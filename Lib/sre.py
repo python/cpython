@@ -165,7 +165,7 @@ class Scanner:
         p = []
         for phrase, action in lexicon:
             p.append("(?:%s)(?P#%d)" % (phrase, len(p)))
-        self.scanner = sre.compile("|".join(p))
+        self.scanner = _compile("|".join(p))
     def scan(self, string):
         result = []
         append = result.append
@@ -178,7 +178,7 @@ class Scanner:
             j = m.end()
             if i == j:
                 break
-            action = self.lexicon[m.index][1]
+            action = self.lexicon[m.lastindex][1]
             if callable(action):
                 self.match = match
                 action = action(self, m.group())
