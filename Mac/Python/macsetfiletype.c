@@ -42,14 +42,17 @@ char *name;
 long creator, type;
 {
 	FInfo info;
+	FSSpec fss;
 	unsigned char *pname;
 	
 	pname = (StringPtr) Pstring(name);
-	if ( GetFInfo(pname, 0, &info) < 0 )
+	if (FSMakeFSSpec(0, 0, pname, &fss) < 0 )
+		return -1;
+	if ( FSpGetFInfo(&fss, &info) < 0 )
 		return -1;
 	info.fdType = type;
 	info.fdCreator = creator;
-	return SetFInfo(pname, 0, &info);
+	return FSpSetFInfo(&fss, &info);
 }
 
 long
@@ -58,9 +61,12 @@ char *name;
 {
 	FInfo info;
 	unsigned char *pname;
+	FSSpec fss;
 	
 	pname = (StringPtr) Pstring(name);
-	if ( GetFInfo(pname, 0, &info) < 0 )
+	if (FSMakeFSSpec(0, 0, pname, &fss) < 0 )
+		return -1;
+	if ( FSpGetFInfo(&fss, &info) < 0 )
 		return -1;
 	return info.fdType;
 }
