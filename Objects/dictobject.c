@@ -2148,15 +2148,16 @@ static PyObject *dictiter_iternextvalue(dictiterobject *di)
 	}
 
 	i = di->di_pos;
-	if (i < 0)
+	mask = d->ma_mask;
+	if (i < 0 || i > mask)
 		goto fail;
 	ep = d->ma_table;
-	mask = d->ma_mask;
-	while (i <= mask && (value=ep[i].me_value) == NULL)
+	while ((value=ep[i].me_value) == NULL) {
 		i++;
+		if (i > mask)
+			goto fail;
+	}
 	di->di_pos = i+1;
-	if (i > mask)
-		goto fail;
 	di->len--;
 	Py_INCREF(value);
 	return value;
