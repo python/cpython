@@ -76,11 +76,12 @@ def client(hostname):
 	#
 	otheraddr = gethostbyname(hostname), PORT1
 	try:
-		ioloop(s, otheraddr)
-	except KeyboardInterrupt:
-		log('client got intr')
-	except error:
-		log('client got error')
+		try:
+			ioloop(s, otheraddr)
+		except KeyboardInterrupt:
+			log('client got intr')
+		except error:
+			log('client got error')
 	finally:
 		s.sendto('', otheraddr)
 		log('client finished sending empty packet to server')
