@@ -29,6 +29,9 @@ l2htut:
 tarhtml:
 	$(MAKE) srcdir=.. VPATH=.. -f ../Makefile tarhtml
 
+webcheck:
+	$(MAKE) srcdir=.. VPATH=.. -f ../Makefile webcheck
+
 icons:
 	mkdir icons
 	cp ../icons/*.gif icons/
