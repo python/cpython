@@ -357,7 +357,7 @@ class _Stream:
             self.buf = ""
             if self.type == "gz":
                 self.fileobj.write(struct.pack("<l", self.crc))
-                self.fileobj.write(struct.pack("<L", self.pos))
+                self.fileobj.write(struct.pack("<L", self.pos & 0xffffFFFFL))
 
         if not self._extfileobj:
             self.fileobj.close()
