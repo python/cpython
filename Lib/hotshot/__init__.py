@@ -35,4 +35,4 @@ class Profile:
         return self
 
     def runcall(self, func, *args, **kw):
-        self._prof.runcall(func, args, kw)
+        return self._prof.runcall(func, args, kw)
