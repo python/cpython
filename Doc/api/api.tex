@@ -1742,7 +1742,7 @@ it.  This is the equivalent of the Python expression \samp{\var{o1} |=
 \var{o2}}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyNumber_Coerce}{PyObject **p1, PyObject **p2}
+\begin{cfuncdesc}{int}{PyNumber_Coerce}{PyObject **p1, PyObject **p2}
 This function takes the addresses of two variables of type
 \ctype{PyObject*}.  If the objects pointed to by \code{*\var{p1}} and
 \code{*\var{p2}} have the same type, increment their reference count
