@@ -548,7 +548,7 @@ def main():
         ifp = sys.stdin
         ofp = sys.stdout
     elif len(args) == 1:
-        ifp = open(args)
+        ifp = open(args[0])
         ofp = sys.stdout
     elif len(args) == 2:
         ifp = open(args[0])
