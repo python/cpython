@@ -158,7 +158,7 @@ else:
         return inst.fromchild, inst.tochild
 
     __all__.extend(["Popen3", "Popen4"])
-    
+
 def _test():
     cmd  = "cat"
     teststr = "ab cd\n"

@@ -6,8 +6,8 @@ import sys
 class Error(Exception):
     pass
 
-_browsers = {}		# Dictionary of available browser controllers
-_tryorder = []		# Preference order of available browsers
+_browsers = {}          # Dictionary of available browser controllers
+_tryorder = []          # Preference order of available browsers
 
 def register(name, klass, instance=None):
     """Register a browser connector and, optionally, connection."""
@@ -24,7 +24,7 @@ def get(using=None):
             # User gave us a command line, don't mess with it.
             return browser
         else:
-            # User gave us a browser name. 
+            # User gave us a browser name.
             command = _browsers[browser.lower()]
             if command[1] is None:
                 return command[0]()
@@ -37,7 +37,7 @@ def get(using=None):
 def open(url, new=0, autoraise=1):
     get().open(url, new, autoraise)
 
-def open_new(url):	# Marked deprecated.  May be removed in 2.1.
+def open_new(url):      # Marked deprecated.  May be removed in 2.1.
     get().open(url, 1)
 
 #
@@ -47,7 +47,7 @@ def open_new(url):	# Marked deprecated.  May be removed in 2.1.
 # support the user's platform.
 #
 
-# 
+#
 # Platform support for Unix
 #
 
@@ -78,7 +78,7 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
         def open(self, url, new=0, autoraise=1):
             os.system(self.command % url)
 
-        def open_new(self, url):	# Deprecated.  May be removed in 2.1.
+        def open_new(self, url):        # Deprecated.  May be removed in 2.1.
             self.open(url)
 
     # Easy cases first -- register console browsers if we have them.

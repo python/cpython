@@ -323,7 +323,7 @@ class Pickler:
                     else:
                         self.write(BINSTRING + s + object)
             else:
-                if unicode: 
+                if unicode:
                     object = object.replace(u"\\", u"\\u005c")
                     object = object.replace(u"\n", u"\\u000a")
                     object = object.encode('raw-unicode-escape')
@@ -335,7 +335,7 @@ class Pickler:
             self.write(self.put(memo_len))
             memo[d] = (memo_len, object)
         dispatch[StringType] = save_string
-            
+
     def save_tuple(self, object):
 
         write = self.write

@@ -334,4 +334,3 @@ def readmodule_ex(module, path=[], inpackage=0):
 
 def _indent(ws, _expandtabs=string.expandtabs):
     return len(_expandtabs(ws, TABWIDTH))
-

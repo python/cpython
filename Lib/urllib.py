@@ -1103,7 +1103,7 @@ def urlencode(query,doseq=0):
     parameters in the output will match the order of parameters in the
     input.
     """
-    
+
     if hasattr(query,"items"):
         # mapping objects
         query = query.items()
