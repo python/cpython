@@ -7,6 +7,7 @@
 */
 
 #define USE_GUSI		/* Stdio implemented with GUSI */
+#define USE_MSL			/* Use Mw Standard Library (as opposed to Plaugher C libraries) */
 /* #define USE_TOOLBOX		/* Include toolbox modules in core Python */
 /* #define USE_QT		/* Include quicktime modules in core Python */
 /* #define USE_WASTE		/* Include waste module in core Python */
@@ -21,6 +22,11 @@
 #define USE_MAC_APPLET_SUPPORT		/* Enable code to run a PYC resource */
 #define USE_MAC_DYNAMIC_LOADING		/* Enable dynamically loaded modules */
 /* #define USE_MALLOC_DEBUG			/* Enable range checking and other malloc debugging */
+/* #define USE_GDBM		/* Include the gdbm module */
 #ifdef __powerc
 #define USE_CACHE_ALIGNED 8		/* Align on 32-byte boundaries for 604 */
+#endif
+#ifdef USE_MSL
+#define MSL_USE_PRECOMPILED_HEADERS 0	/* Don't use precomp headers: we include our own */
+#include <ansi_prefix.mac.h>
 #endif
