@@ -40,7 +40,7 @@ DEFAULT_LOGGING_CONFIG_PORT = 9030
 #   _listener holds the server object doing the listening
 _listener = None
 
-def fileConfig(fname):
+def fileConfig(fname, defaults=None):
     """
     Read the logging configuration from a ConfigParser-format file.
 
@@ -55,7 +55,7 @@ def fileConfig(fname):
     """
     import ConfigParser
 
-    cp = ConfigParser.ConfigParser()
+    cp = ConfigParser.ConfigParser(defaults)
     if hasattr(cp, 'readfp') and hasattr(fname, 'readline'):
         cp.readfp(fname)
     else:
