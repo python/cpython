@@ -1709,7 +1709,7 @@ BZ2Decomp_decompress(BZ2DecompObject *self, PyObject *args)
 	char *data;
 	int datasize;
 	int bufsize = SMALLCHUNK;
-	long totalout;
+	LONG_LONG totalout;
 	PyObject *ret = NULL;
 	bz_stream *bzs = &self->bzs;
 	int bzerror;
@@ -1769,7 +1769,7 @@ BZ2Decomp_decompress(BZ2DecompObject *self, PyObject *args)
 	}
 
 	if (bzs->avail_out != 0)
-		_PyString_Resize(&ret, BZS_TOTAL_OUT(bzs) - totalout);
+		_PyString_Resize(&ret, (int)(BZS_TOTAL_OUT(bzs) - totalout));
 
 	RELEASE_LOCK(self);
 	return ret;
