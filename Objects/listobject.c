@@ -1779,12 +1779,16 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 			
 			/* drawing pictures might help 
 			   understand these for loops */
-			for (cur = start, i = 0; cur < stop; cur += step, i++) {
+			for (cur = start, i = 0;
+			     cur < stop;
+			     cur += step, i++)
+			{
 				garbage[i] = PyList_GET_ITEM(self, cur);
 
 				for (j = 0; j < step; j++) {
 					PyList_SET_ITEM(self, cur + j - i, 
-						PyList_GET_ITEM(self, cur + j + 1));
+						PyList_GET_ITEM(self,
+								cur + j + 1));
 				}
 			}
 			for (cur = start + slicelength*step + 1; 
