@@ -21,7 +21,8 @@ Extension modules
 
 Library
 -------
-- rfc822 Messages now support iteration.
+
+- rfc822 Messages now support iterating over the headers.
 
 - The (undocumented) tarfile.Tarfile.membernames has been removed;
   applications should use the getmember function.
