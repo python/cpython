@@ -202,50 +202,56 @@ REFFILES = ref/ref1.tex ref/ref2.tex ref/ref3.tex ref/ref4.tex \
 
 # LaTeX source files for the Python Library Reference
 LIBFILES = lib/lib.tex \
-    lib/libintro.tex lib/libobjs.tex lib/libstdtypes.tex lib/libexcs.tex \
-    lib/libfuncs.tex lib/libpython.tex lib/libsys.tex lib/libtypes.tex \
-    lib/libtraceback.tex lib/libpickle.tex lib/libshelve.tex \
-    lib/libcopy.tex lib/libmarshal.tex lib/libimp.tex lib/libparser.tex \
-    lib/libbltin.tex lib/libmain.tex lib/libstrings.tex lib/libstring.tex \
-    lib/libregex.tex lib/libregsub.tex lib/libstruct.tex lib/libmisc.tex \
-    lib/libmath.tex lib/librand.tex lib/libwhrandom.tex lib/libarray.tex \
-    lib/liballos.tex lib/libos.tex lib/libtime.tex lib/libgetopt.tex \
-    lib/libtempfile.tex lib/liberrno.tex lib/libsomeos.tex lib/libsignal.tex \
-    lib/libsocket.tex lib/libselect.tex lib/libthread.tex lib/libunix.tex \
-    lib/libposix.tex lib/libposixpath.tex lib/libpwd.tex lib/libgrp.tex \
-    lib/libcrypt.tex lib/libdbm.tex lib/libgdbm.tex lib/libtermios.tex \
-    lib/libfcntl.tex lib/libposixfile.tex lib/libsyslog.tex lib/libpdb.tex \
-    lib/libprofile.tex lib/libwww.tex lib/libcgi.tex lib/liburllib.tex \
-    lib/libhttplib.tex lib/libftplib.tex lib/libgopherlib.tex \
-    lib/libnntplib.tex lib/liburlparse.tex lib/libhtmllib.tex \
-    lib/libsgmllib.tex lib/librfc822.tex lib/libmimetools.tex \
-    lib/libbinascii.tex lib/libmm.tex lib/libaudioop.tex lib/libimageop.tex \
-    lib/libaifc.tex lib/libjpeg.tex lib/librgbimg.tex lib/libcrypto.tex \
-    lib/libmd5.tex lib/libmpz.tex lib/librotor.tex lib/libstdwin.tex \
-    lib/libsgi.tex lib/libal.tex lib/libcd.tex lib/libfl.tex lib/libfm.tex \
-    lib/libgl.tex lib/libimgfile.tex lib/libsun.tex lib/libxdrlib.tex \
-    lib/libimghdr.tex lib/librestricted.tex lib/librexec.tex \
-    lib/libbastion.tex lib/libformatter.tex lib/liboperator.tex \
-    lib/libsoundex.tex lib/libresource.tex lib/libstat.tex \
-    lib/libstringio.tex lib/libtoken.tex \
-    lib/libundoc.tex lib/libmailcap.tex lib/libglob.tex lib/libuser.tex \
-    lib/libanydbm.tex lib/librandom.tex lib/libsite.tex lib/libwhichdb.tex \
-    lib/libbase64.tex lib/libfnmatch.tex lib/libquopri.tex lib/libzlib.tex \
-    lib/libsocksvr.tex lib/libmailbox.tex lib/libcommands.tex \
-    lib/libcmath.tex lib/libgzip.tex lib/libpprint.tex \
-    lib/libcode.tex lib/libmimify.tex lib/libre.tex lib/libuserdict.tex \
-    lib/libdis.tex lib/libxmllib.tex lib/libqueue.tex lib/liblocale.tex \
-    lib/libbasehttp.tex lib/libcopyreg.tex lib/libsymbol.tex \
-    lib/libbinhex.tex lib/libuu.tex \
-    lib/libsunaudio.tex lib/libfileinput.tex lib/libimaplib.tex \
-    lib/libpoplib.tex lib/libcalendar.tex lib/libpopen2.tex \
-    lib/libbisect.tex lib/libmimetypes.tex lib/libsmtplib.tex lib/libcmd.tex \
-    lib/libmultifile.tex lib/libthreading.tex
+    lib/libintro.tex lib/libobjs.tex lib/libstdtypes.tex \
+    lib/libexcs.tex lib/libfuncs.tex lib/libpython.tex lib/libsys.tex \
+    lib/libtypes.tex lib/libtraceback.tex lib/libpickle.tex \
+    lib/libshelve.tex lib/libcopy.tex lib/libmarshal.tex \
+    lib/libimp.tex lib/libparser.tex lib/libbltin.tex lib/libmain.tex \
+    lib/libstrings.tex lib/libstring.tex lib/libregex.tex \
+    lib/libregsub.tex lib/libstruct.tex lib/libmisc.tex \
+    lib/libmath.tex lib/librand.tex lib/libwhrandom.tex \
+    lib/libarray.tex lib/liballos.tex lib/libos.tex lib/libtime.tex \
+    lib/libgetopt.tex lib/libtempfile.tex lib/liberrno.tex \
+    lib/libsomeos.tex lib/libsignal.tex lib/libsocket.tex \
+    lib/libselect.tex lib/libthread.tex lib/libunix.tex \
+    lib/libposix.tex lib/libposixpath.tex lib/libpwd.tex \
+    lib/libgrp.tex lib/libcrypt.tex lib/libdbm.tex lib/libgdbm.tex \
+    lib/libtermios.tex lib/libfcntl.tex lib/libposixfile.tex \
+    lib/libsyslog.tex lib/libpdb.tex lib/libprofile.tex lib/libwww.tex \
+    lib/libcgi.tex lib/liburllib.tex lib/libhttplib.tex \
+    lib/libftplib.tex lib/libgopherlib.tex lib/libnntplib.tex \
+    lib/liburlparse.tex lib/libhtmllib.tex lib/libsgmllib.tex \
+    lib/librfc822.tex lib/libmimetools.tex lib/libbinascii.tex \
+    lib/libmm.tex lib/libaudioop.tex lib/libimageop.tex \
+    lib/libaifc.tex lib/libjpeg.tex lib/librgbimg.tex \
+    lib/libcrypto.tex lib/libmd5.tex lib/libmpz.tex lib/librotor.tex \
+    lib/libstdwin.tex lib/libsgi.tex lib/libal.tex lib/libcd.tex \
+    lib/libfl.tex lib/libfm.tex lib/libgl.tex lib/libimgfile.tex \
+    lib/libsun.tex lib/libxdrlib.tex lib/libimghdr.tex \
+    lib/librestricted.tex lib/librexec.tex lib/libbastion.tex \
+    lib/libformatter.tex lib/liboperator.tex lib/libsoundex.tex \
+    lib/libresource.tex lib/libstat.tex lib/libstringio.tex \
+    lib/libtoken.tex lib/libundoc.tex lib/libmailcap.tex \
+    lib/libglob.tex lib/libuser.tex lib/libanydbm.tex \
+    lib/librandom.tex lib/libsite.tex lib/libwhichdb.tex \
+    lib/libbase64.tex lib/libfnmatch.tex lib/libquopri.tex \
+    lib/libzlib.tex lib/libsocksvr.tex lib/libmailbox.tex \
+    lib/libcommands.tex lib/libcmath.tex lib/libgzip.tex \
+    lib/libpprint.tex lib/libcode.tex lib/libmimify.tex lib/libre.tex \
+    lib/libuserdict.tex lib/libdis.tex lib/libxmllib.tex \
+    lib/libqueue.tex lib/liblocale.tex lib/libbasehttp.tex \
+    lib/libcopyreg.tex lib/libsymbol.tex lib/libbinhex.tex \
+    lib/libuu.tex lib/libsunaudio.tex lib/libfileinput.tex \
+    lib/libimaplib.tex lib/libpoplib.tex lib/libcalendar.tex \
+    lib/libpopen2.tex lib/libbisect.tex lib/libmimetypes.tex \
+    lib/libsmtplib.tex lib/libcmd.tex lib/libmultifile.tex \
+    lib/libthreading.tex
 
 # LaTeX source files for Macintosh Library Modules.
-MACLIBFILES = mac/mac.tex mac/libmac.tex mac/libctb.tex mac/libmacconsole.tex \
-    mac/libmacdnr.tex mac/libmacfs.tex mac/libmacos.tex mac/libmacostools.tex \
-    mac/libmactcp.tex mac/libmacspeech.tex mac/libmacui.tex mac/libmacic.tex \
+MACLIBFILES = mac/mac.tex mac/libmac.tex mac/libctb.tex \
+    mac/libmacconsole.tex mac/libmacdnr.tex mac/libmacfs.tex \
+    mac/libmacos.tex mac/libmacostools.tex mac/libmactcp.tex \
+    mac/libmacspeech.tex mac/libmacui.tex mac/libmacic.tex \
     mac/libframework.tex mac/libminiae.tex
 
 # Python Library Reference
@@ -397,7 +403,8 @@ tarballs:  tarpdf tarps tarhtml tarlatex
 # - sources: .tex, .bib, .sty, *.cls
 # - useful results: .dvi, .pdf, .ps, .texi, .info
 clean:
-	(cd paper-$(PAPER); rm -f *~ *.aux *.idx *.ilg *.ind *.log *.toc *.bkm *.syn)
+	(cd paper-$(PAPER); \
+	 rm -f *~ *.aux *.idx *.ilg *.ind *.log *.toc *.bkm *.syn)
 	(cd $(INFODIR); $(MAKE) clean)
 	(cd $(HTMLDIR); rm -f @webchecker.pickle)
 	rm -f html-$(RELEASE).tgz info-$(RELEASE).tgz
