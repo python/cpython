@@ -12,9 +12,11 @@ protocol.
 
 \begin{classdesc}{Telnet}{\optional{host\optional{, port}}}
 \class{Telnet} represents a connection to a telnet server. The
-instance is initially not connected; the \method{open()} method must
-be used to establish a connection.  Alternatively, the host name and
-optional port number can be passed to the constructor, too.
+instance is initially not connected by default; the \method{open()}
+method must be used to establish a connection.  Alternatively, the
+host name and optional port number can be passed to the constructor,
+to, in which case the connection to the server will be established
+before the constructor returns.
 
 Do not reopen an already connected instance.
 
