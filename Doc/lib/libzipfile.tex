@@ -1,0 +1,169 @@
+\section{\module{zipfile} ---
+         Work with ZIP archives}
+
+\modulesynopsis{Read and write ZIP-format archive files.}
+\moduleauthor{James C. Ahlstrom}{jim@interet.com}
+\sectionauthor{James C. Ahlstrom}{jim@interet.com}
+% LaTeX markup by Fred L. Drake, Jr. <fdrake@acm.org>
+
+The ZIP file format is a common archive and compression standard.
+This module provides tools to create, read, write, append, and list a
+ZIP file.
+
+The available attributes of this module are:
+
+\begin{excdesc}{error}
+  The error raised for bad ZIP files.
+\end{excdesc}
+
+\begin{datadesc}{_debug}
+  Level of printing, defaults to \code{1}.
+\end{datadesc}
+
+\begin{classdesc}{ZipFile}{...}
+  The class for reading and writing ZIP files.  See
+  ``\citetitle{ZipFile Objects}'' (section \ref{zipfile-objects}) for
+  constructor details.
+\end{classdesc}
+
+\begin{funcdesc}{is_zipfile}{path} 
+  Returns true if \var{path} is a valid ZIP file based on its magic
+  number, otherwise returns false.  This module does not currently
+  handle ZIP files which have appended comments.
+\end{funcdesc}
+
+\begin{funcdesc}{zip2date}{zdate}
+  Return \code{(\var{year}, \var{month}, \var{day})} for a ZIP date
+  code.
+\end{funcdesc}
+
+\begin{funcdesc}{zip2time}{ztime}
+  Return \code{(\var{hour}, \var{minute}, \var{second})} for a ZIP
+  time code.
+\end{funcdesc}
+
+\begin{funcdesc}{date2zip}{year, month, day}
+  Return a ZIP date code. 
+\end{funcdesc}
+
+\begin{funcdesc}{time2zip}{hour, minute, second}
+  Return a ZIP time code.
+\end{funcdesc}
+
+\begin{datadesc}{ZIP_STORED}
+  The numeric constant (\code{0}) for an uncompressed archive member.
+\end{datadesc}
+
+\begin{datadesc}{ZIP_DEFLATED}
+  The numeric constant for the usual ZIP compression method.  This
+  requires the zlib module.  No other compression methods are
+  currently supported.
+\end{datadesc}
+
+
+\begin{seealso}
+  \seetext{XXX point to ZIP format definition}
+  \seetext{XXX point to Info-ZIP home page; mention WiZ}
+\end{seealso}
+
+
+\subsection{ZipFile Objects \label{zipfile-objects}}
+
+\begin{classdesc}{ZipFile}{filename\optional{, mode\optional{, compression}}} 
+  Open a ZIP file named \var{filename}.  The \var{mode} parameter
+  should be \code{'r'} to read an existing file, \code{'w'} to
+  truncate and write a new file, or \code{'a'} to append to an
+  existing file.  For \var{mode} is \code{'a'} and \var{filename}
+  refers to an existing ZIP file, then additional files are added to
+  it.  If \var{filename} does not refer to a ZIP file, then a new ZIP
+  archive is appended to the file.  This is meant for adding a ZIP
+  archive to another file, such as \file{python.exe}.  Using
+\begin{verbatim}
+cat myzip.zip >> python.exe
+\end{verbatim}
+  also works, and at least \program{WinZip} can read such files.
+  \var{compression} is the ZIP compression method to use when writing
+  the archive, and should be \constant{ZIP_STORED} or
+  \constant{ZIP_DEFLATED}; unrecognized values will cause
+  \exception{ValueError} to be raised.  The default is
+  \constant{ZIP_STORED}. 
+\end{classdesc}
+
+XXX explain the "extra" string for the ZIP format
+
+\begin{memberdesc}{TOC}
+  A read-only dictionary whose keys are the names in the archive, and
+  whose values are tuples as follows:
+
+\begin{tableii}{c|l}{code}{Index}{Meaning}
+  \lineii{0}{File data seek offset}
+  \lineii{1}{ZIP file "extra" data as a string}
+  \lineii{2}{ZIP file bit flags}
+  \lineii{3}{ZIP file compression type}
+  \lineii{4}{File modification time in DOS format}
+  \lineii{5}{File modification date in DOS format}
+  \lineii{6}{The CRC-32 of the uncompressed data}
+  \lineii{7}{The compressed size of the file}
+  \lineii{8}{The uncompressed size of the file}
+\end{tableii}
+\end{memberdesc}
+
+The class ZipFile has these methods: 
+
+\begin{methoddesc}{listdir}{}
+  Return a list of names in the archive.  Equivalent to
+  \code{\var{zipfile}.TOC.keys()}.
+\end{methoddesc}
+
+\begin{methoddesc}{printdir}{}
+  Print a table of contents for the archive to stdout. 
+\end{methoddesc}
+
+\begin{methoddesc}{read}{name}
+  Return the bytes of the file in the archive.  The archive must be
+  open for read or append.
+\end{methoddesc}
+
+\begin{methoddesc}{writestr}{bytes, arcname, year, month, day, hour,
+                             minute, second\optional{, extra}}
+  Write the string \var{bytes} and the other data to the archive, and
+  give the archive member the name \var{arcname}.  \var{extra} is the
+  ZIP extra data string.  The archive must be opened with mode
+  \code{'w'} or \code{'a'}.
+\end{methoddesc}
+
+\begin{methoddesc}{write}{filename, arcname\optional{, extra}}
+  Write the file named \var{filename} to the archive, giving it the
+  archive name \var{arcname}.  \var{extra} is the ZIP extra data
+  string.  The archive must be open with mode \code{'w'} or
+  \code{'a'}.
+\end{methoddesc}
+
+\begin{methoddesc}{writepy}{pathname\optional{, basename}}
+  Search for files \file{*.py} and add the corresponding file to the
+  archive.  The corresponding file is a \file{*.pyo} file if
+  available, else a \file{*.pyc} file, compiling if necessary.  If the
+  pathname is a file, the filename must end with \file{.py}, and just
+  the (corresponding \file{*.py[oc]}) file is added at the top level
+  (no path information).  If it is a directory, and the directory is
+  not a package directory, then all the files \file{*.py[oc]} are
+  added at the top level.  If the directory is a package directory,
+  then all \file{*.py[oc]} are added under the package name as a file
+  path, and if any subdirectories are package directories, all of
+  these are added recursively.  \var{basename} is intended for
+  internal use only.  The \method{writepy()} method makes archives
+  with file names like this:
+
+\begin{verbatim}
+    string.pyc                                # Top level name 
+    test/__init__.pyc                         # Package directory 
+    test/testall.pyc                          # Module test.testall
+    test/bogus/__init__.pyc                   # Subpackage directory 
+    test/bogus/myfile.pyc                     # Submodule test.bogus.myfile
+\end{verbatim}
+\end{methoddesc}
+
+\begin{methoddesc}{close}{}
+  Close the archive file.  You must call \method{close()} before
+  exiting your program or essential records will not be written. 
+\end{methoddesc}
