@@ -65,6 +65,12 @@ class ObjectDefinition(GeneratorGroup):
 
 		self.outputSetattr()
 		
+		self.outputCompare()
+		
+		self.outputRepr()
+		
+		self.outputHash()
+		
 		self.outputTypeObject()
 
 		OutHeader2("End object type " + self.name)
@@ -153,6 +159,18 @@ class ObjectDefinition(GeneratorGroup):
 		Output()
 		Output("#define %s_setattr NULL", self.prefix)
 
+	def outputCompare(self):
+		Output()
+		Output("#define %s_compare NULL", self.prefix)
+
+	def outputRepr(self):
+		Output()
+		Output("#define %s_repr NULL", self.prefix)
+
+	def outputHash(self):
+		Output()
+		Output("#define %s_hash NULL", self.prefix)
+
 	def outputTypeObject(self):
 		sf = self.static and "staticforward "
 		Output()
@@ -168,6 +186,12 @@ class ObjectDefinition(GeneratorGroup):
 		Output("0, /*tp_print*/")
 		Output("(getattrfunc) %s_getattr, /*tp_getattr*/", self.prefix)
 		Output("(setattrfunc) %s_setattr, /*tp_setattr*/", self.prefix)
+		Output("(cmpfunc) %s_compare, /*tp_compare*/", self.prefix)
+		Output("(reprfunc) %s_repr, /*tp_repr*/", self.prefix)
+		Output("(PyNumberMethods *)0, /* tp_as_number */")
+		Output("(PySequenceMethods *)0, /* tp_as_sequence */")
+		Output("(PyMappingMethods *)0, /* tp_as_mapping */")
+		Output("(hashfunc) %s_hash, /*tp_hash*/", self.prefix)
 		DedentLevel()
 		Output("};")
 		
@@ -192,3 +216,46 @@ class GlobalObjectDefinition(ObjectDefinition):
 	def __init__(self, name, prefix = None, itselftype = None):
 		ObjectDefinition.__init__(self, name, prefix or name, itselftype or name)
 		self.static = ""
+
+class ObjectIdentityMixin:
+	"""A mixin class for objects that makes the identity of ob_itself
+	govern comparisons and dictionary lookups. Useful if the C object can
+	be returned by library calls and it is difficult (or impossible) to find
+	the corresponding Python objects. With this you can create Python object
+	wrappers on the fly"""
+	
+	def outputCompare(self):
+		Output()
+		Output("static int %s_compare(self, other)", self.prefix)
+		IndentLevel()
+		Output("%s *self, *other;", self.objecttype)
+		DedentLevel()
+		OutLbrace()
+		Output("unsigned long v, w;")
+		Output()
+		Output("if (!%s_Check((PyObject *)other))", self.prefix)
+		OutLbrace()
+		Output("v=(unsigned long)self;")
+		Output("w=(unsigned long)other;")
+		OutRbrace()
+		Output("else")
+		OutLbrace()
+		Output("v=(unsigned long)self->ob_itself;")
+		Output("w=(unsigned long)other->ob_itself;")
+		OutRbrace()
+		Output("if( v < w ) return -1;")
+		Output("if( v > w ) return 1;")
+		Output("return 0;")
+		OutRbrace()
+		
+	def outputHash(self):
+		Output()
+		Output("static long %s_hash(self)", self.prefix)
+		IndentLevel()
+		Output("%s *self;", self.objecttype)
+		DedentLevel()
+		OutLbrace()
+		Output("return (long)self->ob_itself;")
+		OutRbrace()
+		
+
