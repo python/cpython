@@ -91,6 +91,8 @@ bsddb
     This builds bsddb\Port\win32\db.lib, which the MSVC project links in.
     Note that if you're running Win9X, you'll need to run vcvars32.bat
     before running nmake (this batch file is in your MSVC installation).
+    TODO:  make this work like zlib (in particular, MSVC runs the prelink
+    step in an enviroment that already has the correct envars set up).
 
 pyexpat
     Python wrapper for accelerated XML parsing.  Requires
