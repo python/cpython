@@ -6,83 +6,7 @@ message catalog library.
 
 I18N refers to the operation by which a program is made aware of multiple
 languages.  L10N refers to the adaptation of your program, once
-internationalized, to the local language and cultural habits.  In order to
-provide multilingual messages for your Python programs, you need to take the
-following steps:
-
-    - prepare your program by specially marking translatable strings
-    - run a suite of tools over your marked program files to generate raw
-      messages catalogs
-    - create language specific translations of the message catalogs
-    - use this module so that message strings are properly translated
-
-In order to prepare your program for I18N, you need to look at all the strings
-in your program.  Any string that needs to be translated should be marked by
-wrapping it in _('...') -- i.e. a call to the function `_'.  For example:
-
-    filename = 'mylog.txt'
-    message = _('writing a log message')
-    fp = open(filename, 'w')
-    fp.write(message)
-    fp.close()
-
-In this example, the string `writing a log message' is marked as a candidate
-for translation, while the strings `mylog.txt' and `w' are not.
-
-The GNU gettext package provides a tool, called xgettext, that scans C and C++
-source code looking for these specially marked strings.  xgettext generates
-what are called `.pot' files, essentially structured human readable files
-which contain every marked string in the source code.  These .pot files are
-copied and handed over to translators who write language-specific versions for
-every supported language.
-
-For I18N Python programs however, xgettext won't work; it doesn't understand
-the myriad of string types support by Python.  The standard Python
-distribution provides a tool called pygettext that does though (found in the
-Tools/i18n directory).  This is a command line script that supports a similar
-interface as xgettext; see its documentation for details.  Once you've used
-pygettext to create your .pot files, you can use the standard GNU gettext
-tools to generate your machine-readable .mo files, which are what's used by
-this module.
-
-In the simple case, to use this module then, you need only add the following
-bit of code to the main driver file of your application:
-
-    import gettext
-    gettext.install()
-
-This sets everything up so that your _('...') function calls Just Work.  In
-other words, it installs `_' in the builtins namespace for convenience.  You
-can skip this step and do it manually by the equivalent code:
-
-    import gettext
-    import __builtin__
-    __builtin__['_'] = gettext.gettext
-
-Once you've done this, you probably want to call bindtextdomain() and
-textdomain() to get the domain set up properly.  Again, for convenience, you
-can pass the domain and localedir to install to set everything up in one fell
-swoop:
-
-    import gettext
-    gettext.install('mydomain', '/my/locale/dir')
-
-If your program needs to support many languages at the same time, you will
-want to create Translation objects explicitly, like so:
-
-    import gettext
-    gettext.install()
-
-    lang1 = gettext.Translations(open('/path/to/my/lang1/messages.mo'))
-    lang2 = gettext.Translations(open('/path/to/my/lang2/messages.mo'))
-    lang3 = gettext.Translations(open('/path/to/my/lang3/messages.mo'))
-
-    gettext.set(lang1)
-    # all _() will now translate to language 1
-    gettext.set(lang2)
-    # all _() will now translate to language 2
-
-Currently, only GNU gettext format binary .mo files are supported.
+internationalized, to the local language and cultural habits.
 
 """
 
@@ -104,21 +28,27 @@ Currently, only GNU gettext format binary .mo files are supported.
 #
 # Barry Warsaw integrated these modules, wrote the .install() API and code,
 # and conformed all C and Python code to Python's coding standards.
+#
+# Francois Pinard and Marc-Andre Lemburg also contributed valuably to this
+# module.
+#
+# TODO:
+# - Lazy loading of .mo files.  Currently the entire catalog is loaded into
+#   memory, but that's probably bad for large translated programs.  Instead,
+#   the lexical sort of original strings in GNU .mo files should be exploited
+#   to do binary searches and lazy initializations.  Or you might want to use
+#   the undocumented double-hash algorithm for .mo files with hash tables, but
+#   you'll need to study the GNU gettext code to do this.
+#
+# - Support Solaris .mo file formats.  Unfortunately, we've been unable to
+#   find this format documented anywhere.
 
 import os
 import sys
 import struct
-from UserDict import UserDict
+from errno import ENOENT
 
-
-
-# globals
-_translations = {}
-_current_translation = None
-_current_domain = 'messages'
-
-# Domain to directory mapping, for use by bindtextdomain()
-_localedirs = {}
+_default_localedir = os.path.join(sys.prefix, 'share', 'locale')
 
 
 
@@ -165,16 +95,37 @@ def _expand_lang(locale):
 
 
 
-class GNUTranslations(UserDict):
-    # Magic number of .mo files
-    MAGIC = 0x950412de
+class NullTranslations:
+    def __init__(self, fp=None):
+        self._info = {}
+        self._charset = None
+        if fp:
+            self._parse(fp)
 
-    def __init__(self, fp):
-        if fp is None:
-            d = {}
-        else:
-            d = self._parse(fp)
-        UserDict.__init__(self, d)
+    def _parse(self, fp):
+        pass
+
+    def gettext(self, message):
+        return message
+
+    def ugettext(self, message):
+        return unicode(message)
+
+    def info(self):
+        return self._info
+
+    def charset(self):
+        return self._charset
+
+    def install(self, unicode=0):
+        import __builtin__
+        __builtin__.__dict__['_'] = unicode and self.ugettext or self.gettext
+
+
+class GNUTranslations(NullTranslations):
+    # Magic number of .mo files
+    LE_MAGIC = 0x950412de
+    BE_MAGIC = struct.unpack('>i', struct.pack('<i', LE_MAGIC))[0]
 
     def _parse(self, fp):
         """Override this method to support alternative .mo formats."""
@@ -182,51 +133,62 @@ class GNUTranslations(UserDict):
         filename = getattr(fp, 'name', '')
         # Parse the .mo file header, which consists of 5 little endian 32
         # bit words.
-        catalog = {}
+        self._catalog = catalog = {}
         buf = fp.read()
-        magic, version, msgcount, masteridx, transidx = unpack(
-            '<5i', buf[:20])
-        if magic <> self.MAGIC:
+        # Are we big endian or little endian?
+        magic = unpack('<i', buf[:4])[0]
+        if magic == self.LE_MAGIC:
+            version, msgcount, masteridx, transidx = unpack('<4i', buf[4:20])
+            ii = '<ii'
+        elif magic == self.BE_MAGIC:
+            version, msgcount, masteridx, transidx = unpack('>4i', buf[4:20])
+            ii = '>ii'
+        else:
             raise IOError(0, 'Bad magic number', filename)
         #
         # Now put all messages from the .mo file buffer into the catalog
         # dictionary.
         for i in xrange(0, msgcount):
-            mstart = unpack('<i', buf[masteridx+4:masteridx+8])[0]
-            mend = mstart + unpack('<i', buf[masteridx:masteridx+4])[0]
-            tstart = unpack('<i', buf[transidx+4:transidx+8])[0]
-            tend = tstart + unpack('<i', buf[transidx:transidx+4])[0]
+            mlen, moff = unpack(ii, buf[masteridx:masteridx+8])
+            mend = moff + mlen
+            tlen, toff = unpack(ii, buf[transidx:transidx+8])
+            tend = toff + tlen
             if mend < len(buf) and tend < len(buf):
-                catalog[buf[mstart:mend]] = buf[tstart:tend]
+                tmsg = buf[toff:tend]
+                catalog[buf[moff:mend]] = tmsg
             else:
                 raise IOError(0, 'File is corrupt', filename)
-            #
+            # See if we're looking at GNU .mo conventions for metadata
+            if mlen == 0 and tmsg.lower().startswith('project-id-version:'):
+                # Catalog description
+                for item in tmsg.split('\n'):
+                    item = item.strip()
+                    if not item:
+                        continue
+                    k, v = item.split(':', 1)
+                    k = k.strip().lower()
+                    v = v.strip()
+                    self._info[k] = v
+                    if k == 'content-type':
+                        self._charset = v.split('charset=')[1]
             # advance to next entry in the seek tables
             masteridx += 8
             transidx += 8
-        return catalog
+
+    def gettext(self, message):
+        return self._catalog.get(message, message)
+
+    def ugettext(self, message):
+        tmsg = self._catalog.get(message, message)
+        return unicode(tmsg, self._charset)
 
 
 
-# By default, use GNU gettext format .mo files
-Translations = GNUTranslations
-
 # Locate a .mo file using the gettext strategy
-def _find(localedir=None, languages=None, domain=None):
-    global _current_domain
-    global _localedirs
+def find(domain, localedir=None, languages=None):
     # Get some reasonable defaults for arguments that were not supplied
-    if domain is None:
-        domain = _current_domain
     if localedir is None:
-        localedir = _localedirs.get(
-            domain,
-            # TBD: The default localedir is actually system dependent.  I
-            # don't know of a good platform-consistent and portable way to
-            # default it, so instead, we'll just use sys.prefix.  Most
-            # programs should be calling bindtextdomain() or such explicitly
-            # anyway.
-            os.path.join(sys.prefix, 'share', 'locale'))
+        localedir = _default_localedir
     if languages is None:
         languages = []
         for envar in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
@@ -247,72 +209,77 @@ def _find(localedir=None, languages=None, domain=None):
         if lang == 'C':
             break
         mofile = os.path.join(localedir, lang, 'LC_MESSAGES', '%s.mo' % domain)
-        # see if it's in the cache
-        mo = _translations.get(mofile)
-        if mo:
-            return mo
-        fp = None
-        try:
-            try:
-                fp = open(mofile, 'rb')
-                t = Translations(fp)
-                _translations[mofile] = t
-                return t
-            except IOError:
-                pass
-        finally:
-            if fp:
-                fp.close()
-    return {}
+        if os.path.exists(mofile):
+            return mofile
+    return None
 
 
 
-def bindtextdomain(domain=None, localedir=None):
-    """Bind domain to a file in the specified directory."""
-    global _localedirs
-    if domain is None:
-        return None
-    if localedir is None:
-        return _localedirs.get(domain, _localedirs.get('C'))
-    _localedirs[domain] = localedir
-    return localedir
+# a mapping between absolute .mo file path and Translation object
+_translations = {}
+
+def translation(domain, localedir=None, languages=None, class_=None):
+    if class_ is None:
+        class_ = GNUTranslations
+    mofile = find(domain, localedir, languages)
+    if mofile is None:
+        raise IOError(ENOENT, 'No translation file found for domain', domain)
+    key = os.path.abspath(mofile)
+    # TBD: do we need to worry about the file pointer getting collected?
+    t = _translations.setdefault(key, class_(open(mofile, 'rb')))
+    return t
+
+
+
+def install(domain, localedir=None, unicode=0):
+    translation(domain, localedir).install(unicode)
+
+
+
+# a mapping b/w domains and locale directories
+_localedirs = {}
+# current global domain, `messages' used for compatibility w/ GNU gettext
+_current_domain = 'messages'
 
 
 def textdomain(domain=None):
-    """Change or query the current global domain."""
     global _current_domain
-    if domain is None:
-        return _current_domain
-    else:
+    if domain is not None:
         _current_domain = domain
-        return domain
+    return _current_domain
 
 
-def gettext(message):
-    """Return localized version of a message."""
-    return _find().get(message, message)
+def bindtextdomain(domain, localedir=None):
+    global _localedirs
+    if localedir is not None:
+        _localedirs[domain] = localedir
+    return _localedirs.get(domain, _default_localedir)
 
 
 def dgettext(domain, message):
-    """Like gettext(), but look up message in specified domain."""
-    return _find(domain=domain).get(message, message)
+    try:
+        t = translation(domain, _localedirs.get(domain, None))
+    except IOError:
+        return message
+    return t.gettext(message)
+    
+
+def gettext(message):
+    return dgettext(_current_domain, message)
 
 
-
-# A higher level API
-def set(translation):
-    global _current_translation
-    _current_translation = translation
+# dcgettext() has been deemed unnecessary and is not implemented.
 
+# James Henstridge's Catalog constructor from GNOME gettext.  Documented usage
+# was:
+#
+#    import gettext
+#    cat = gettext.Catalog(PACKAGE, localedir=LOCALEDIR)
+#    _ = cat.gettext
+#    print _('Hello World')
 
-def get():
-    global _current_translation
-    return _current_translation
+# The resulting catalog object currently don't support access through a
+# dictionary API, which was supported (but apparently unused) in GNOME
+# gettext.
 
-
-def install(domain=None, localedir=None):
-    import __builtin__
-    __builtin__.__dict__['_'] = gettext
-    if domain is not None:
-        bindtextdomain(domain, localedir)
-        textdomain(domain)
+Catalog = translation
