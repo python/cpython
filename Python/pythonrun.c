@@ -801,8 +801,7 @@ print_error_text(PyObject *f, int offset, char *text)
 void
 PyErr_PrintEx(int set_sys_last_vars)
 {
-	int err = 0;
-	PyObject *exception, *v, *tb, *f;
+	PyObject *exception, *v, *tb, *hook;
 	PyErr_Fetch(&exception, &v, &tb);
 	PyErr_NormalizeException(&exception, &v, &tb);
 
@@ -845,14 +844,47 @@ PyErr_PrintEx(int set_sys_last_vars)
 		PySys_SetObject("last_value", v);
 		PySys_SetObject("last_traceback", tb);
 	}
-	f = PySys_GetObject("stderr");
+	hook = PySys_GetObject("excepthook");
+	if (hook) {
+		PyObject *args = Py_BuildValue("(OOO)",
+                    exception, v ? v : Py_None, tb ? tb : Py_None);
+		PyObject *result = PyEval_CallObject(hook, args);
+		if (result == NULL) {
+			PyObject *exception2, *v2, *tb2;
+			PyErr_Fetch(&exception2, &v2, &tb2);
+			PyErr_NormalizeException(&exception2, &v2, &tb2);
+			if (Py_FlushLine())
+				PyErr_Clear();
+			fflush(stdout);
+			PySys_WriteStderr("Error in sys.excepthook:\n");
+			PyErr_Display(exception2, v2, tb2);
+			PySys_WriteStderr("\nOriginal exception was:\n");
+			PyErr_Display(exception, v, tb);
+		}
+		Py_XDECREF(result);
+		Py_XDECREF(args);
+	} else {
+		PySys_WriteStderr("sys.excepthook is missing\n");
+		PyErr_Display(exception, v, tb);
+	}
+	Py_XDECREF(exception);
+	Py_XDECREF(v);
+	Py_XDECREF(tb);
+}
+
+void PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
+{
+	int err = 0;
+	PyObject *v = value;
+	PyObject *f = PySys_GetObject("stderr");
 	if (f == NULL)
 		fprintf(stderr, "lost sys.stderr\n");
 	else {
 		if (Py_FlushLine())
 			PyErr_Clear();
 		fflush(stdout);
-		err = PyTraceBack_Print(tb, f);
+		if (tb && tb != Py_None)
+			err = PyTraceBack_Print(tb, f);
 		if (err == 0 &&
 		    PyErr_GivenExceptionMatches(exception, PyExc_SyntaxError))
 		{
@@ -875,8 +907,6 @@ PyErr_PrintEx(int set_sys_last_vars)
 				PyFile_WriteString("\n", f);
 				if (text != NULL)
 					print_error_text(f, offset, text);
-				Py_INCREF(message);
-				Py_DECREF(v);
 				v = message;
 				/* Can't be bothered to check all those
 				   PyFile_WriteString() calls */
@@ -932,9 +962,6 @@ PyErr_PrintEx(int set_sys_last_vars)
 		if (err == 0)
 			err = PyFile_WriteString("\n", f);
 	}
-	Py_XDECREF(exception);
-	Py_XDECREF(v);
-	Py_XDECREF(tb);
 	/* If an error happened here, don't show it.
 	   XXX This is wrong, but too many callers rely on this behavior. */
 	if (err != 0)

@@ -59,6 +59,7 @@ DL_IMPORT(struct symtable *) Py_SymtableString(char *, char *, int);
 
 DL_IMPORT(void) PyErr_Print(void);
 DL_IMPORT(void) PyErr_PrintEx(int);
+DL_IMPORT(void) PyErr_Display(PyObject *, PyObject *, PyObject *);
 
 DL_IMPORT(int) Py_AtExit(void (*func)(void));
 

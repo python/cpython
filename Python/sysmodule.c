@@ -107,9 +107,25 @@ sys_displayhook(PyObject *self, PyObject *args)
 }
 
 static char displayhook_doc[] =
-"displayhook(o) -> None\n"
+"displayhook(object) -> None\n"
 "\n"
-"Print o to the stdout, and save it in __builtin__._\n";
+"Print an object to sys.stdout and also save it in __builtin__._\n";
+
+static PyObject *
+sys_excepthook(PyObject* self, PyObject* args)
+{
+	PyObject *exc, *value, *tb;
+	if (!PyArg_ParseTuple(args, "OOO:excepthook", &exc, &value, &tb))
+		return NULL;
+	PyErr_Display(exc, value, tb);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static char excepthook_doc[] =
+"excepthook(exctype, value, traceback) -> None\n"
+"\n"
+"Handle an exception by displaying it with a traceback on sys.stderr.\n";
 
 static PyObject *
 sys_exc_info(PyObject *self, PyObject *args)
@@ -378,6 +394,7 @@ static PyMethodDef sys_methods[] = {
 	/* Might as well keep this in alphabetic order */
 	{"displayhook",	sys_displayhook, 1, displayhook_doc},
 	{"exc_info",	sys_exc_info, 1, exc_info_doc},
+	{"excepthook",	sys_excepthook, 1, excepthook_doc},
 	{"exit",	sys_exit, 0, exit_doc},
 	{"getdefaultencoding", sys_getdefaultencoding, 1,
 	 getdefaultencoding_doc}, 
@@ -477,13 +494,20 @@ Dynamic objects:\n\
 argv -- command line arguments; argv[0] is the script pathname if known\n\
 path -- module search path; path[0] is the script directory, else ''\n\
 modules -- dictionary of loaded modules\n\
-exitfunc -- you may set this to a function to be called when Python exits\n\
+\n\
+displayhook -- called to show results in an interactive session\n\
+excepthook -- called to handle any uncaught exception other than SystemExit\n\
+  To customize printing in an interactive session or to install a custom\n\
+  top-level exception handler, assign other functions to replace these.\n\
+\n\
+exitfunc -- if sys.exitfunc exists, this routine is called when Python exits\n\
+  Assigning to sys.exitfunc is deprecated; use the atexit module instead.\n\
 \n\
 stdin -- standard input file object; used by raw_input() and input()\n\
 stdout -- standard output file object; used by the print statement\n\
 stderr -- standard error object; used for error messages\n\
-  By assigning another file object (or an object that behaves like a file)\n\
-  to one of these, it is possible to redirect all of the interpreter's I/O.\n\
+  By assigning other file objects (or objects that behave like files)\n\
+  to these, it is possible to redirect all of the interpreter's I/O.\n\
 \n\
 last_type -- type of last uncaught exception\n\
 last_value -- value of last uncaught exception\n\
@@ -498,7 +522,7 @@ exc_traceback -- traceback of exception currently being handled\n\
   because it is thread-safe.\n\
 "
 #ifndef MS_WIN16
-/* Concatenating string here */
+/* concatenating string here */
 "\n\
 Static objects:\n\
 \n\
@@ -512,15 +536,23 @@ platform -- platform identifier\n\
 executable -- pathname of this Python interpreter\n\
 prefix -- prefix used to find the Python library\n\
 exec_prefix -- prefix used to find the machine-specific Python library\n\
-dllhandle -- [Windows only] integer handle of the Python DLL\n\
+"
+#ifdef MS_WINDOWS
+/* concatenating string here */
+"dllhandle -- [Windows only] integer handle of the Python DLL\n\
 winver -- [Windows only] version number of the Python DLL\n\
-__stdin__ -- the original stdin; don't use!\n\
-__stdout__ -- the original stdout; don't use!\n\
-__stderr__ -- the original stderr; don't use!\n\
+"
+#endif /* MS_WINDOWS */
+"__stdin__ -- the original stdin; don't touch!\n\
+__stdout__ -- the original stdout; don't touch!\n\
+__stderr__ -- the original stderr; don't touch!\n\
+__displayhook__ -- the original displayhook; don't touch!\n\
+__excepthook__ -- the original excepthook; don't touch!\n\
 \n\
 Functions:\n\
 \n\
 displayhook() -- print an object to the screen, and save it in __builtin__._\n\
+excepthook() -- print an exception and its traceback to sys.stderr\n\
 exc_info() -- return thread-safe information about the current exception\n\
 exit() -- exit the interpreter by raising SystemExit\n\
 getrefcount() -- return the reference count for an object (plus one :-)\n\
@@ -530,7 +562,7 @@ setprofile() -- set the global profiling function\n\
 setrecursionlimit() -- set the max recursion depth for the interpreter\n\
 settrace() -- set the global debug tracing function\n\
 "
-#endif
+#endif /* MS_WIN16 */
 /* end of sys_doc */ ;
 
 PyObject *
@@ -555,6 +587,10 @@ _PySys_Init(void)
 	PyDict_SetItemString(sysdict, "__stdin__", sysin);
 	PyDict_SetItemString(sysdict, "__stdout__", sysout);
 	PyDict_SetItemString(sysdict, "__stderr__", syserr);
+	PyDict_SetItemString(sysdict, "__displayhook__",
+                             PyDict_GetItemString(sysdict, "displayhook"));
+	PyDict_SetItemString(sysdict, "__excepthook__",
+                             PyDict_GetItemString(sysdict, "excepthook"));
 	Py_XDECREF(sysin);
 	Py_XDECREF(sysout);
 	Py_XDECREF(syserr);
