@@ -1,8 +1,6 @@
 """
 SAX driver for the Pyexpat C module.  This driver works with
 pyexpat.__version__ == '1.5'.
-
-$Id$
 """
 
 # Todo on driver:
@@ -18,10 +16,8 @@ $Id$
 
 version = "0.20"
 
-from string import split
-
+from xml.parsers import expat
 from xml.sax import xmlreader
-import pyexpat
 import xml.sax
 
 # --- ExpatParser
@@ -49,9 +45,9 @@ class ExpatParser( xmlreader.IncrementalParser, xmlreader.Locator ):
         self._cont_handler.setDocumentLocator(self)
         try:
             xmlreader.IncrementalParser.parse(self, stream)
-        except pyexpat.error:
+        except expat.error:
             error_code = self._parser.ErrorCode
-            raise xml.sax.SAXParseException(pyexpat.ErrorString(error_code),
+            raise xml.sax.SAXParseException(expat.ErrorString(error_code),
                                            None, self)
             
             self._cont_handler.endDocument()
@@ -96,11 +92,11 @@ class ExpatParser( xmlreader.IncrementalParser, xmlreader.Locator ):
         
     def reset(self):
         if self._namespaces:
-            self._parser = pyexpat.ParserCreate(None, " ")
+            self._parser = expat.ParserCreate(None, " ")
             self._parser.StartElementHandler = self.start_element_ns
             self._parser.EndElementHandler = self.end_element_ns
         else:
-            self._parser = pyexpat.ParserCreate()
+            self._parser = expat.ParserCreate()
             self._parser.StartElementHandler = self.start_element
             self._parser.EndElementHandler = self.end_element
 
@@ -142,7 +138,7 @@ class ExpatParser( xmlreader.IncrementalParser, xmlreader.Locator ):
         self._cont_handler.endElement( name, name )
 
     def start_element_ns(self, name, attrs):
-        pair = split(name)
+        pair = name.split()
         if len(pair) == 1:
             tup = (None, name )
         else:
@@ -152,7 +148,7 @@ class ExpatParser( xmlreader.IncrementalParser, xmlreader.Locator ):
                                         xmlreader.AttributesImpl(attrs, None))        
 
     def end_element_ns(self, name):
-        pair = split(name)
+        pair = name.split()
         if len(pair) == 1:
             name = (None, name, None)
         else:
