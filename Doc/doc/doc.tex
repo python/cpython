@@ -12,8 +12,8 @@
 
 \author{Fred L. Drake, Jr.}
 \authoraddress{
-	PythonLabs \\
-	Email: \email{fdrake@acm.org}
+        PythonLabs \\
+        Email: \email{fdrake@acm.org}
 }
 
 
@@ -94,65 +94,65 @@ distribution, to create or maintain whole documents or sections.
 
   \begin{definitions}
     \term{Document Sources}
-	The \LaTeX{} sources for each document are placed in a
-	separate directory.  These directories are given short
-	names which vaguely indicate the document in each:
+        The \LaTeX{} sources for each document are placed in a
+        separate directory.  These directories are given short
+        names which vaguely indicate the document in each:
 
-	\begin{tableii}{p{.75in}|p{3in}}{filenq}{Directory}{Document Title}
-	  \lineii{api/}
+        \begin{tableii}{p{.75in}|p{3in}}{filenq}{Directory}{Document Title}
+          \lineii{api/}
             {\citetitle[../api/api.html]{The Python/C API}}
-	  \lineii{dist/}
+          \lineii{dist/}
             {\citetitle[../dist/dist.html]{Distributing Python Modules}}
-	  \lineii{doc/}
+          \lineii{doc/}
             {\citetitle[../doc/doc.html]{Documenting Python}}
-	  \lineii{ext/}
+          \lineii{ext/}
             {\citetitle[../ext/ext.html]{Extending and Embedding the Python Interpreter}}
-	  \lineii{inst/}
+          \lineii{inst/}
             {\citetitle[../inst/inst.html]{Installing Python Modules}}
-	  \lineii{lib/}
+          \lineii{lib/}
             {\citetitle[../lib/lib.html]{Python Library Reference}}
-	  \lineii{mac/}
+          \lineii{mac/}
             {\citetitle[../mac/mac.html]{Macintosh Module Reference}}
-	  \lineii{ref/}
+          \lineii{ref/}
             {\citetitle[../ref/ref.html]{Python Reference Manual}}
-	  \lineii{tut/}
+          \lineii{tut/}
             {\citetitle[../tut/tut.html]{Python Tutorial}}
-	\end{tableii}
+        \end{tableii}
 
     \term{Format-Specific Output}
-	Most output formats have a directory which contains a
-	\file{Makefile} which controls the generation of that format
-	and provides storage for the formatted documents.  The only
-	variations within this category are the Portable Document
+        Most output formats have a directory which contains a
+        \file{Makefile} which controls the generation of that format
+        and provides storage for the formatted documents.  The only
+        variations within this category are the Portable Document
         Format (PDF) and PostScript versions are placed in the
-	directories \file{paper-a4/} and \file{paper-letter/} (this
-	causes all the temporary files created by \LaTeX{} to be kept
-	in the same place for each paper size, where they can be more
-	easily ignored).
+        directories \file{paper-a4/} and \file{paper-letter/} (this
+        causes all the temporary files created by \LaTeX{} to be kept
+        in the same place for each paper size, where they can be more
+        easily ignored).
 
-	\begin{tableii}{p{.75in}|p{3in}}{filenq}{Directory}{Output Formats}
-	  \lineii{html/}{HTML output}
-	  \lineii{info/}{GNU info output}
-	  \lineii{isilo/}{\ulink{iSilo}{http://www.isilo.com/}
-                	  documents (for Palm OS devices)}
-	  \lineii{paper-a4/}{PDF and PostScript, A4 paper}
-	  \lineii{paper-letter/}{PDF and PostScript, US-Letter paper}
-	\end{tableii}
+        \begin{tableii}{p{.75in}|p{3in}}{filenq}{Directory}{Output Formats}
+          \lineii{html/}{HTML output}
+          \lineii{info/}{GNU info output}
+          \lineii{isilo/}{\ulink{iSilo}{http://www.isilo.com/}
+                          documents (for Palm OS devices)}
+          \lineii{paper-a4/}{PDF and PostScript, A4 paper}
+          \lineii{paper-letter/}{PDF and PostScript, US-Letter paper}
+        \end{tableii}
 
     \term{Supplemental Files}
-	Some additional directories are used to store supplemental
-	files used for the various processes.  Directories are
-	included for the shared \LaTeX{} document classes, the
-	\LaTeX2HTML support, template files for various document
-	components, and the scripts used to perform various steps in
-	the formatting processes.
+        Some additional directories are used to store supplemental
+        files used for the various processes.  Directories are
+        included for the shared \LaTeX{} document classes, the
+        \LaTeX2HTML support, template files for various document
+        components, and the scripts used to perform various steps in
+        the formatting processes.
 
-	\begin{tableii}{p{.75in}|p{3in}}{filenq}{Directory}{Contents}
-	  \lineii{perl/}{Support for \LaTeX2HTML processing}
-	  \lineii{templates/}{Example files for source documents}
-	  \lineii{texinputs/}{Style implementation for \LaTeX}
-	  \lineii{tools/}{Custom processing scripts}
-	\end{tableii}
+        \begin{tableii}{p{.75in}|p{3in}}{filenq}{Directory}{Contents}
+          \lineii{perl/}{Support for \LaTeX2HTML processing}
+          \lineii{templates/}{Example files for source documents}
+          \lineii{texinputs/}{Style implementation for \LaTeX}
+          \lineii{tools/}{Custom processing scripts}
+        \end{tableii}
 
   \end{definitions}
 
@@ -190,21 +190,22 @@ distribution, to create or maintain whole documents or sections.
     word ``processor'' instead.
 
     \item[\POSIX]
-	The name assigned to a particular group of standards.  This is
-	always uppercase.  Use the macro \macro{POSIX} to represent this
-    name.
+        The name assigned to a particular group of standards.  This is
+        always uppercase.  Use the macro \macro{POSIX} to represent this
+        name.
 
     \item[Python]
-	The name of our favorite programming language is always
-	capitalized.
+        The name of our favorite programming language is always
+        capitalized.
 
     \item[Unicode]
-	The name of a character set and matching encoding.  This is
-    always written capitalized.
+        The name of a character set and matching encoding.  This is
+        always written capitalized.
 
     \item[\UNIX]
-    The name of the operating system developed at AT\&T Bell Labs
-    in the early 1970s.  Use the macro \macro{UNIX} to use this name.
+        The name of the operating system developed at AT\&T Bell Labs
+        in the early 1970s.  Use the macro \macro{UNIX} to use this
+        name.
   \end{description}
 
 
@@ -216,7 +217,7 @@ distribution, to create or maintain whole documents or sections.
 
   Perhaps the most important concept to keep in mind while marking up
   Python documentation is that while \TeX{} is unstructured, \LaTeX{} was
-  designed as a layer on top of \TeX{} which specifically supports 
+  designed as a layer on top of \TeX{} which specifically supports
   structured markup.  The Python-specific markup is intended to extend
   the structure provided by standard \LaTeX{} document classes to
   support additional information specific to Python.
@@ -501,7 +502,7 @@ This \UNIX\ is also followed by a space.
       author's email address.  The domain name portion of
       the address should be lower case.
 
-      No presentation is generated from this markup, but it is used to 
+      No presentation is generated from this markup, but it is used to
       help keep track of contributions.
     \end{macrodesc}
 
@@ -678,7 +679,7 @@ This \UNIX\ is also followed by a space.
 \begin{verbatim}
 >>> 1 + 1
 2
->>> 
+>>>
 \end{verbatim}
 
     Within the \env{verbatim} environment, characters special to
@@ -773,7 +774,7 @@ This \UNIX\ is also followed by a space.
     \end{macrodesc}
 
     \begin{macrodesc}{deprecated}{\p{version}\p{what to do}}
-      Declare whatever is being described as being deprecated starting 
+      Declare whatever is being described as being deprecated starting
       with release \var{version}.  The text given as \var{what to do}
       should recommend something to use instead.  It should be
       complete sentences.  The entire deprecation notice will be
@@ -782,7 +783,7 @@ This \UNIX\ is also followed by a space.
     \end{macrodesc}
 
     \begin{macrodesc}{dfn}{\p{term}}
-      Mark the defining instance of \var{term} in the text.  (No index 
+      Mark the defining instance of \var{term} in the text.  (No index
       entries are generated.)
     \end{macrodesc}
 
@@ -821,7 +822,7 @@ This \UNIX\ is also followed by a space.
 
     \begin{macrodesc}{filenq}{\p{file or dir}}
       Like \macro{file}, but single quotes are never used.  This can
-      be used in conjunction with tables if a column will only contain 
+      be used in conjunction with tables if a column will only contain
       file or directory names.
       \warning{The \macro{filenq} macro cannot be used in the
       content of a section title due to processing limitations.}
@@ -923,8 +924,8 @@ This \UNIX\ is also followed by a space.
 
     \begin{macrodesc}{program}{\p{name}}
       The name of an executable program.  This may differ from the
-      file name for the executable for some platforms.  In particular, 
-      the \file{.exe} (or other) extension should be omitted for 
+      file name for the executable for some platforms.  In particular,
+      the \file{.exe} (or other) extension should be omitted for
       Windows programs.
     \end{macrodesc}
 
@@ -941,7 +942,7 @@ This \UNIX\ is also followed by a space.
     \end{macrodesc}
 
     \begin{macrodesc}{refmodule}{\op{key}\p{name}}
-      Like \macro{module}, but create a hyperlink to the documentation 
+      Like \macro{module}, but create a hyperlink to the documentation
       for the named module.  Note that the corresponding
       \macro{declaremodule} must be in the same document.  If the
       \macro{declaremodule} defines a module key different from the
@@ -954,7 +955,7 @@ This \UNIX\ is also followed by a space.
     \end{macrodesc}
 
     \begin{macrodesc}{rfc}{\p{number}}
-      A reference to an Internet Request for Comments.  This generates 
+      A reference to an Internet Request for Comments.  This generates
       appropriate index entries.  The text \samp{RFC \var{number}} is
       generated; in the HTML output, this text is a hyperlink to an
       online copy of the specified RFC.
@@ -962,7 +963,7 @@ This \UNIX\ is also followed by a space.
 
     \begin{macrodesc}{samp}{\p{text}}
       A short code sample, but possibly longer than would be given
-      using \macro{code}.  Since quotation marks are added, spaces are 
+      using \macro{code}.  Since quotation marks are added, spaces are
       acceptable.
     \end{macrodesc}
 
@@ -995,7 +996,7 @@ This \UNIX\ is also followed by a space.
     \end{macrodesc}
 
     \begin{macrodesc}{url}{\p{url}}
-      A URL (or URN).  The URL will be presented as text.  In the HTML 
+      A URL (or URN).  The URL will be presented as text.  In the HTML
       and PDF formatted versions, the URL will also be a hyperlink.
       This can be used when referring to external resources without
       specific titles; references to resources which have titles
@@ -1304,8 +1305,8 @@ This \UNIX\ is also followed by a space.
   \lineii{RuntimeWarning}
          {Base category for warnings about dubious runtime features.}
   \lineii{FutureWarning}
-	 {Base category for warnings about constructs that will change
-	 semantically in the future.}
+         {Base category for warnings about constructs that will change
+         semantically in the future.}
 \end{tableii}
 \end{verbatim}
 
@@ -1555,7 +1556,7 @@ This \UNIX\ is also followed by a space.
 
     \begin{macrodesc}{indexii}{\p{word1}\p{word2}}
       Build two index entries.  This is exactly equivalent to using
-      \code{\e index\{\var{word1}!\var{word2}\}} and 
+      \code{\e index\{\var{word1}!\var{word2}\}} and
       \code{\e index\{\var{word2}!\var{word1}\}}.
     \end{macrodesc}
 
@@ -1766,12 +1767,12 @@ This \UNIX\ is also followed by a space.
     \begin{description}
       \item[\program{mkhowto}]
         This is the primary script used to format third-party
-	documents.  It contains all the logic needed to ``get it
-	right.''  The proper way to use this script is to make a
-	symbolic link to it or run it in place; the actual script file 
-	must be stored as part of the documentation source tree,
-	though it may be used to format documents outside the
-	tree.  Use \program{mkhowto} \longprogramopt{help}
+        documents.  It contains all the logic needed to ``get it
+        right.''  The proper way to use this script is to make a
+        symbolic link to it or run it in place; the actual script file
+        must be stored as part of the documentation source tree,
+        though it may be used to format documents outside the
+        tree.  Use \program{mkhowto} \longprogramopt{help}
         for a list of
         command line options.
 
@@ -1780,7 +1781,7 @@ This \UNIX\ is also followed by a space.
         always use the latest version of this tool rather than a
         version from an older source release of Python.
 
-	XXX  Need more here.
+        XXX  Need more here.
     \end{description}
 
 
@@ -1893,7 +1894,7 @@ This \UNIX\ is also followed by a space.
     extent that the desired information is already present in the
     documentation.  Some XSLT stylesheets have been started for
     presenting a preliminary XML version as HTML, but the results are
-    fairly rough..
+    fairly rough.
 
     The timeframe for the conversion is not clear since there doesn't
     seem to be much time available to work on this, but the appearant
