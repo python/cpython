@@ -4083,6 +4083,37 @@ posix_putenv(PyObject *self, PyObject *args)
 }
 #endif /* putenv */
 
+#ifdef HAVE_UNSETENV
+static char posix_unsetenv__doc__[] =
+"unsetenv(key) -> None\n\
+Delete an environment variable.";
+
+static PyObject *
+posix_unsetenv(PyObject *self, PyObject *args)
+{
+        char *s1;
+
+	if (!PyArg_ParseTuple(args, "s:unsetenv", &s1))
+		return NULL;
+
+	unsetenv(s1);
+
+	/* Remove the key from posix_putenv_garbage;
+	 * this will cause it to be collected.  This has to
+	 * happen after the real unsetenv() call because the 
+	 * old value was still accessible until then.
+	 */
+	if (PyDict_DelItem(posix_putenv_garbage,
+		PyTuple_GET_ITEM(args, 0))) {
+		/* really not much we can do; just leak */
+		PyErr_Clear();
+	}
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+#endif /* unsetenv */
+
 #ifdef HAVE_STRERROR
 static char posix_strerror__doc__[] =
 "strerror(code) -> string\n\
@@ -5666,6 +5697,9 @@ static PyMethodDef posix_methods[] = {
 #endif
 #ifdef HAVE_PUTENV
 	{"putenv",	posix_putenv, METH_VARARGS, posix_putenv__doc__},
+#endif
+#ifdef HAVE_UNSETENV
+	{"unsetenv",	posix_unsetenv, METH_VARARGS, posix_unsetenv__doc__},
 #endif
 #ifdef HAVE_STRERROR
 	{"strerror",	posix_strerror, METH_VARARGS, posix_strerror__doc__},

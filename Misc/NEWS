@@ -46,14 +46,15 @@ Extension modules
 
 - binascii has now two quopri support functions, a2b_qp and b2a_qp.
 
-- readline now supports setting the startup_hook and the pre_event_hook.
+- readline now supports setting the startup_hook and the
+  pre_event_hook, and adds the add_history() function.
 
-- os and posix supports chroot() and setgroups() where available.  The
-  stat(), fstat(), statvfs() and fstatvfs() functions now return
-  "pseudo-sequences" -- the various fields can now be accessed as
-  attributes (e.g. os.stat("/").st_mtime) but for backwards
-  compatibility they also behave as a fixed-length sequence.  Some
-  platform-specific fields (e.g. st_rdev) are only accessible as
+- os and posix supports chroot(), setgroups() and unsetenv() where
+  available.  The stat(), fstat(), statvfs() and fstatvfs() functions
+  now return "pseudo-sequences" -- the various fields can now be
+  accessed as attributes (e.g. os.stat("/").st_mtime) but for
+  backwards compatibility they also behave as a fixed-length sequence.
+  Some platform-specific fields (e.g. st_rdev) are only accessible as
   attributes.
 
 - time: localtime(), gmtime() and strptime() now return a
