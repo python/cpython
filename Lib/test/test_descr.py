@@ -7,6 +7,10 @@ def vereq(a, b):
     if not (a == b):
         raise TestFailed, "%r == %r" % (a, b)
 
+def veris(a, b):
+    if a is not b:
+        raise TestFailed, "%r is %r" % (a, b)
+
 def testunop(a, res, expr="len(a)", meth="__len__"):
     if verbose: print "checking", expr
     dict = {'a': a}
@@ -623,10 +627,8 @@ def metaclass():
     class autosuper(type):
         # Automatically add __super to the class
         # This trick only works for dynamic classes
-        # so we force __dynamic__ = 1
         def __new__(metaclass, name, bases, dict):
-            # XXX Should check that name isn't already a base class name
-            dict["__dynamic__"] = 1
+            assert dict.get("__dynamic__", 1)
             cls = super(autosuper, metaclass).__new__(metaclass,
                                                       name, bases, dict)
             # Name mangling for __super removes leading underscores
@@ -949,7 +951,7 @@ def dynamics():
 
     # Test handling of int*seq and seq*int
     class I(int):
-        __dynamic__ = 1
+        __dynamic__ = 1 # XXX why?
     vereq("a"*I(2), "aa")
     vereq(I(2)*"a", "aa")
     vereq(2*I(3), 6)
@@ -958,7 +960,7 @@ def dynamics():
 
     # Test handling of long*seq and seq*long
     class L(long):
-        __dynamic__ = 1
+        __dynamic__ = 1 # XXX why?
     vereq("a"*L(2L), "aa")
     vereq(L(2L)*"a", "aa")
     vereq(2*L(3), 6)
@@ -967,7 +969,7 @@ def dynamics():
 
     # Test comparison of classes with dynamic metaclasses
     class dynamicmetaclass(type):
-        __dynamic__ = 1
+        __dynamic__ = 1 # XXX ???
     class someclass:
         __metaclass__ = dynamicmetaclass
     verify(someclass != object)
@@ -1253,7 +1255,7 @@ def specials():
     verify(10 not in c1)
     # Test the default behavior for dynamic classes
     class D(object):
-        __dynamic__ = 1
+        __dynamic__ = 1 # XXX why?
         def __getitem__(self, i):
             if 0 <= i < 10: return i
             raise IndexError
@@ -1563,30 +1565,30 @@ def inherits():
     verify((+a).__class__ is float)
 
     class madcomplex(complex):
-        __dynamic__ = 0
+        __dynamic__ = 0 # XXX Shouldn't be necessary
         def __repr__(self):
             return "%.17gj%+.17g" % (self.imag, self.real)
     a = madcomplex(-3, 4)
     vereq(repr(a), "4j-3")
     base = complex(-3, 4)
-    verify(base.__class__ is complex)
+    veris(base.__class__, complex)
     vereq(a, base)
     vereq(complex(a), base)
-    verify(complex(a).__class__ is complex)
+    veris(complex(a).__class__, complex)
     a = madcomplex(a)  # just trying another form of the constructor
     vereq(repr(a), "4j-3")
     vereq(a, base)
     vereq(complex(a), base)
-    verify(complex(a).__class__ is complex)
+    veris(complex(a).__class__, complex)
     vereq(hash(a), hash(base))
-    verify((+a).__class__ is complex)
-    verify((a + 0).__class__ is complex)
+    veris((+a).__class__, complex)
+    veris((a + 0).__class__, complex)
     vereq(a + 0, base)
-    verify((a - 0).__class__ is complex)
+    veris((a - 0).__class__, complex)
     vereq(a - 0, base)
-    verify((a * 1).__class__ is complex)
+    veris((a * 1).__class__, complex)
     vereq(a * 1, base)
-    verify((a / 1).__class__ is complex)
+    veris((a / 1).__class__, complex)
     vereq(a / 1, base)
 
     class madtuple(tuple):
@@ -2237,6 +2239,66 @@ def binopoverride():
         def __eq__(self, other):
             return self.lower() == other.lower()
 
+def subclasspropagation():
+    if verbose: print "Testing propagation of slot functions to subclasses..."
+    class A(object):
+        pass
+    class B(A):
+        pass
+    class C(A):
+        pass
+    class D(B, C):
+        pass
+    d = D()
+    vereq(hash(d), id(d))
+    A.__hash__ = lambda self: 42
+    vereq(hash(d), 42)
+    C.__hash__ = lambda self: 314
+    vereq(hash(d), 314)
+    B.__hash__ = lambda self: 144
+    vereq(hash(d), 144)
+    D.__hash__ = lambda self: 100
+    vereq(hash(d), 100)
+    del D.__hash__
+    vereq(hash(d), 144)
+    del B.__hash__
+    vereq(hash(d), 314)
+    del C.__hash__
+    vereq(hash(d), 42)
+    del A.__hash__
+    vereq(hash(d), id(d))
+    d.foo = 42
+    d.bar = 42
+    vereq(d.foo, 42)
+    vereq(d.bar, 42)
+    def __getattribute__(self, name):
+        if name == "foo":
+            return 24
+        return object.__getattribute__(self, name)
+    A.__getattribute__ = __getattribute__
+    vereq(d.foo, 24)
+    vereq(d.bar, 42)
+    def __getattr__(self, name):
+        if name in ("spam", "foo", "bar"):
+            return "hello"
+        raise AttributeError, name
+    B.__getattr__ = __getattr__
+    vereq(d.spam, "hello")
+    vereq(d.foo, 24)
+    vereq(d.bar, 42)
+    del A.__getattribute__
+    vereq(d.foo, 42)
+    del d.foo
+    vereq(d.foo, "hello")
+    vereq(d.bar, 42)
+    del B.__getattr__
+    try:
+        d.foo
+    except AttributeError:
+        pass
+    else:
+        raise TestFailed, "d.foo should be undefined now"
+    
 
 def test_main():
     class_docstrings()
@@ -2284,6 +2346,7 @@ def test_main():
     pickles()
     copies()
     binopoverride()
+    subclasspropagation()
     if verbose: print "All OK"
 
 if __name__ == "__main__":

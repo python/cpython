@@ -676,7 +676,7 @@ solid_base(PyTypeObject *type)
 
 staticforward void object_dealloc(PyObject *);
 staticforward int object_init(PyObject *, PyObject *, PyObject *);
-staticforward int update_slot(PyTypeObject *, PyObject *, PyObject *);
+staticforward int update_slot(PyTypeObject *, PyObject *);
 staticforward void fixup_slot_dispatchers(PyTypeObject *);
 
 static PyObject *
@@ -1107,7 +1107,7 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
 	if (type->tp_flags & Py_TPFLAGS_DYNAMICTYPE) {
 		if (PyObject_GenericSetAttr((PyObject *)type, name, value) < 0)
 			return -1;
-		return update_slot(type, name, value);
+		return update_slot(type, name);
 	}
 	PyErr_SetString(PyExc_TypeError, "can't set static type attributes");
 	return -1;
@@ -3679,6 +3679,7 @@ typedef struct {
 	int offset;
 	void *function;
 	wrapperfunc wrapper;
+	PyObject *name_strobj;
 } slotdef;
 
 #undef TPSLOT
@@ -3797,9 +3798,7 @@ static slotdef slotdefs[] = {
 	       slot_nb_inplace_true_divide, wrap_binaryfunc),
 
 	TPSLOT("__str__", tp_str, slot_tp_str, wrap_unaryfunc),
-	TPSLOT("__str__", tp_print, NULL, NULL),
 	TPSLOT("__repr__", tp_repr, slot_tp_repr, wrap_unaryfunc),
-	TPSLOT("__repr__", tp_print, NULL, NULL),
 	TPSLOT("__cmp__", tp_compare, _PyObject_SlotCompare, wrap_cmpfunc),
 	TPSLOT("__hash__", tp_hash, slot_tp_hash, wrap_hashfunc),
 	TPSLOT("__call__", tp_call, slot_tp_call, wrap_call),
@@ -3827,35 +3826,6 @@ static slotdef slotdefs[] = {
 	{NULL}
 };
 
-static int
-update_slot(PyTypeObject *type, PyObject *name, PyObject *value)
-{
-	char *s;
-	int n;
-	slotdef *p;
-	void **ptr;
-
-	assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
-	if (value == NULL)
-		return 0; /* Can't unset a slot */
-	s = PyString_AsString(name);
-	n = PyString_Size(name);
-	if (s == NULL || n < 0) {
-		/* Shouldn't happen, but can't be bothered */
-		PyErr_Clear();
-		return 0;
-	}
-	if (!(s[0] == '_' && s[1] == '_' && s[n-1] == '_' && s[n-2] == '_'))
-		return 0;
-	for (p = slotdefs; p->name; p++) {
-		if (!strcmp(p->name, s)) {
-			ptr = (void **) ((char *)type + p->offset);
-			*ptr = p->function;
-		}
-	}
-	return 0;
-}
-
 static void **
 slotptr(PyTypeObject *type, int offset)
 {
@@ -3881,6 +3851,119 @@ slotptr(PyTypeObject *type, int offset)
 	if (ptr != NULL)
 		ptr += offset;
 	return (void **)ptr;
+}
+
+staticforward int recurse_down_subclasses(PyTypeObject *type, int offset);
+
+static int
+update_one_slot(PyTypeObject *type, int offset)
+{
+	slotdef *p;
+	PyObject *descr;
+	PyWrapperDescrObject *d;
+	void *generic = NULL, *specific = NULL;
+	int use_generic = 0;
+	void **ptr;
+
+	for (p = slotdefs; p->name; p++) {
+		if (p->offset != offset)
+			continue;
+		descr = _PyType_Lookup(type, p->name_strobj);
+		if (descr == NULL)
+			continue;
+		ptr = slotptr(type, p->offset);
+		if (ptr == NULL)
+			continue;
+		generic = p->function;
+		if (descr->ob_type == &PyWrapperDescr_Type) {
+			d = (PyWrapperDescrObject *)descr;
+			if (d->d_base->wrapper == p->wrapper &&
+			    PyType_IsSubtype(type, d->d_type)) {
+				if (specific == NULL ||
+				    specific == d->d_wrapped)
+					specific = d->d_wrapped;
+				else
+					use_generic = 1;
+			}
+		}
+		else
+			use_generic = 1;
+		if (specific && !use_generic)
+			*ptr = specific;
+		else
+			*ptr = generic;
+	}
+	if (recurse_down_subclasses(type, offset) < 0)
+		return -1;
+	return 0;
+}
+
+static int
+recurse_down_subclasses(PyTypeObject *type, int offset)
+{
+	PyTypeObject *subclass;
+	PyObject *ref, *subclasses;
+	int i, n;
+
+	subclasses = type->tp_subclasses;
+	if (subclasses == NULL)
+		return 0;
+	assert(PyList_Check(subclasses));
+	n = PyList_GET_SIZE(subclasses);
+	for (i = 0; i < n; i++) {
+		ref = PyList_GET_ITEM(subclasses, i);
+		assert(PyWeakref_CheckRef(ref));
+		subclass = (PyTypeObject *)PyWeakref_GET_OBJECT(ref);
+		if (subclass == NULL)
+			continue;
+		assert(PyType_Check(subclass));
+		if (update_one_slot(subclass, offset) < 0)
+			return -1;
+	}
+	return 0;
+}
+
+static void
+init_name_strobj(void)
+{
+	slotdef *p;
+	static int initialized = 0;
+
+	if (initialized)
+		return;
+	for (p = slotdefs; p->name; p++) {
+		p->name_strobj = PyString_InternFromString(p->name);
+		if (!p->name_strobj)
+			Py_FatalError("XXX ouch");
+	}
+	initialized = 1;
+}
+
+static void
+collect_offsets(PyObject *name, int offsets[])
+{
+	slotdef *p;
+
+	init_name_strobj();
+	for (p = slotdefs; p->name; p++) {
+		if (name == p->name_strobj)
+			*offsets++ = p->offset;
+	}
+	*offsets = 0;
+}
+
+static int
+update_slot(PyTypeObject *type, PyObject *name)
+{
+	int offsets[10];
+	int *ip;
+
+	collect_offsets(name, offsets);
+	for (ip = offsets; *ip; ip++) {
+		if (update_one_slot(type, *ip) < 0)
+			return -1;
+	}
+	return 0;
 }
 
 static void
