@@ -36,7 +36,9 @@ def print_exc(limit=None, file=None):
 class PyInteractive:
 	
 	def __init__(self):
+		import codeop
 		self._pybuf = ""
+		self._compile = codeop.Compile()
 	
 	def executeline(self, stuff, out = None, env = None):
 		if env is None:
@@ -72,7 +74,7 @@ class PyInteractive:
 				return
 			
 			try:
-				code = compile(self._pybuf, "<input>", "single")
+				code = self._compile(self._pybuf, "<input>", "single")
 			except SyntaxError, err:
 				pass
 			except:
@@ -84,12 +86,12 @@ class PyInteractive:
 				return
 			
 			try:
-				code1 = compile(self._pybuf + "\n", "<input>", "single")
+				code1 = self._compile(self._pybuf + "\n", "<input>", "single")
 			except SyntaxError, err1:
 				pass
 			
 			try:
-				code2 = compile(self._pybuf + "\n\n", "<input>", "single")
+				code2 = self._compile(self._pybuf + "\n\n", "<input>", "single")
 			except SyntaxError, err2:
 				pass
 			
