@@ -38,7 +38,7 @@ class NullFormatter:
     """
 
     def __init__(self, writer=None):
-        if not writer:
+        if writer is None:
             writer = NullWriter()
         self.writer = writer
     def end_paragraph(self, blankline): pass
@@ -433,7 +433,7 @@ class DumbWriter(NullWriter):
 def test(file = None):
     w = DumbWriter()
     f = AbstractFormatter(w)
-    if file:
+    if file is not None:
         fp = open(file)
     elif sys.argv[1:]:
         fp = open(sys.argv[1])

@@ -104,7 +104,7 @@ class NullTranslations:
         self._info = {}
         self._charset = None
         self._fallback = None
-        if fp:
+        if fp is not None:
             self._parse(fp)
 
     def _parse(self, fp):

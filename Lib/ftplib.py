@@ -659,7 +659,7 @@ class Netrc:
     __defacct = None
 
     def __init__(self, filename=None):
-        if not filename:
+        if filename is None:
             if os.environ.has_key("HOME"):
                 filename = os.path.join(os.environ["HOME"],
                                         ".netrc")
