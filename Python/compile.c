@@ -4496,6 +4496,17 @@ symtable_node(struct symtable *st, node *n)
 		break;
 
 	}
+	case assert_stmt: 
+		if (Py_OptimizeFlag)
+			return;
+		if (NCH(n) == 2) {
+			n = CHILD(n, 1);
+			goto loop;
+		} else {
+			symtable_node(st, CHILD(n, 1));
+			n = CHILD(n, 3);
+			goto loop;
+		}
 	case except_clause:
 		if (NCH(n) == 4)
 			symtable_assign(st, CHILD(n, 3), 0);
