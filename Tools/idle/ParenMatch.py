@@ -14,7 +14,7 @@ import string
 
 import PyParse
 from AutoIndent import AutoIndent, index2line
-from IdleConf import IdleConf
+from IdleConf import idleconf
 
 class ParenMatch:
     """Highlight matching parentheses
@@ -56,8 +56,8 @@ class ParenMatch:
     windows_keydefs = {}
     unix_keydefs = {}
 
-    iconf = IdleConf.getsection('ParenMatch')
-    STYLE = iconf.get('style')
+    iconf = idleconf.getsection('ParenMatch')
+    STYLE = iconf.getdef('style', 'default')
     FLASH_DELAY = iconf.getint('flash-delay')
     HILITE_CONFIG = iconf.getcolor('hilite')
     BELL = iconf.getboolean('bell')

@@ -18,28 +18,28 @@
 # enable option with the value 0.  
 
 [EditorWindow]
-width: 80
-height: 24
+width= 80
+height= 24
 # fonts defined in config-[win/unix].txt
 
 [Colors]
-normal-foreground: black
-normal-background: white
-# These color types are not explicitly defined: sync, todo, stdin
-keyword-foreground: #ff7700
-comment-foreground: #dd0000
-string-foreground: #00aa00
-definition-foreground: #0000ff
-hilite-foreground: #000068
-hilite-background: #006868
-break-foreground: #ff7777
-hit-foreground: #ffffff
-hit-background: #000000
-stdout-foreground: blue
-stderr-foreground: red
-console-foreground: #770000
-error-background: #ff7777
-cursor-background: black
+normal-foreground= black
+normal-background= white
+# These color types are not explicitly defined= sync, todo, stdin
+keyword-foreground= #ff7700
+comment-foreground= #dd0000
+string-foreground= #00aa00
+definition-foreground= #0000ff
+hilite-foreground= #000068
+hilite-background= #006868
+break-foreground= #ff7777
+hit-foreground= #ffffff
+hit-background= #000000
+stdout-foreground= blue
+stderr-foreground= red
+console-foreground= #770000
+error-background= #ff7777
+cursor-background= black
 
 [SearchBinding]
 
@@ -56,9 +56,9 @@ cursor-background: black
 [CallTips]
 
 [ParenMatch]
-enable: 0 ; ParenMatch conflicts with CallTips
-style: expression
-flash-delay: 500
-bell: 1
-hilite-foreground: black
-hilite-background: #43cd80 ; SeaGreen3
+enable= 0
+style= expression
+flash-delay= 500
+bell= 1
+hilite-foreground= black
+hilite-background= #43cd80

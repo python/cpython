@@ -4,7 +4,7 @@ import re
 import keyword
 from Tkinter import *
 from Delegator import Delegator
-from IdleConf import IdleConf
+from IdleConf import idleconf
 
 #$ event <<toggle-auto-coloring>>
 #$ win <Control-slash>
@@ -51,7 +51,7 @@ class ColorDelegator(Delegator):
                 apply(self.tag_configure, (tag,), cnf)
         self.tag_raise('sel')
 
-    cconf = IdleConf.getsection('Colors')
+    cconf = idleconf.getsection('Colors')
 
     tagdefs = {
         "COMMENT": cconf.getcolor("comment"),
