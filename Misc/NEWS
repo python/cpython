@@ -22,6 +22,14 @@ Library
   #1110478: revert os.environ.update to do putenv again).
 
 
+Tests
+-----
+
+- Fix the test for socket.getfqdn() in test_socket to also consider the host
+  name returned by socket.gethostname() a valid return value for getfqdn().
+  Also clarified the wording of docs and docstring that this is the case.
+
+
 What's New in Python 2.4.1c1?
 =============================
 
