@@ -144,12 +144,11 @@ class Application:
 	# event type.
 	# Normally, however, you'd just define handlers for individual
 	# events.
-	# (XXX I'm not sure if using default parameter values is the right
-	# way to define the mask and wait time passed to WaitNextEvent.)
 	
 	schedparams = (0, 0)	# By default disable Python's event handling
+	default_wait = None		# By default we wait GetCaretTime in WaitNextEvent
 	
-	def mainloop(self, mask = everyEvent, wait = 0):
+	def mainloop(self, mask = everyEvent, wait = None):
 		self.quitting = 0
 		saveparams = apply(MacOS.SchedParams, self.schedparams)
 		try:
@@ -169,7 +168,7 @@ class Application:
 		while self.do1event(mask, wait=0):
 			pass
 	
-	def do1event(self, mask = everyEvent, wait = 0):
+	def do1event(self, mask = everyEvent, wait = None):
 		ok, event = self.getevent(mask, wait)
 		if IsDialogEvent(event):
 			if self.do_dialogevent(event):
@@ -182,10 +181,14 @@ class Application:
 	def idle(self, event):
 		pass
 	
-	def getevent(self, mask = everyEvent, wait = 0):
+	def getevent(self, mask = everyEvent, wait = None):
 		if self.needmenubarredraw:
 			DrawMenuBar()
 			self.needmenubarredraw = 0
+		if wait is None:
+			wait = self.default_wait
+			if wait is None:
+				wait = GetCaretTime()
 		ok, event = WaitNextEvent(mask, wait)
 		return ok, event
 			

@@ -24,7 +24,7 @@ class Application(FrameWork.Application):
 		# map certain F key codes to equivalent command-letter combos (JJS)
 		self.fkeymaps = {122:"z", 120:"x", 99:"c", 118:"v"}
 	
-	def mainloop(self, mask=FrameWork.everyEvent, wait=0):
+	def mainloop(self, mask=FrameWork.everyEvent, wait=None):
 		import W
 		self.quitting = 0
 		saveyield = MacOS.EnableAppswitch(-1)
@@ -44,7 +44,7 @@ class Application(FrameWork.Application):
 		finally:
 			MacOS.EnableAppswitch(1)
 	
-	def debugger_mainloop(self, mask=FrameWork.everyEvent, wait=0):
+	def debugger_mainloop(self, mask=FrameWork.everyEvent, wait=None):
 		import W
 		self.debugger_quitting = 0
 		saveyield = MacOS.EnableAppswitch(-1)
