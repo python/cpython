@@ -535,6 +535,70 @@ xmlparse_GetBase(xmlparseobject *self, PyObject *args)
     return Py_BuildValue("z", XML_GetBase(self->itself));
 }
 
+static char xmlparse_ExternalEntityParserCreate__doc__[] = 
+"ExternalEntityParserCreate(context, encoding)\n\
+Create a parser for parsing an external entity based on the
+information passed to the ExternalEntityRefHandler.";
+
+static PyObject *
+xmlparse_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
+{
+    char *context;
+    char *encoding = NULL;
+    xmlparseobject *new_parser;
+    int i;
+
+    if (!PyArg_ParseTuple(args, "s|s:ExternalEntityParserCreate", &context,
+			  &encoding)) {
+        return NULL;
+    }
+
+#if PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION < 6
+    new_parser = PyObject_NEW(xmlparseobject, &Xmlparsetype);
+    if (new_parser == NULL)
+        return NULL;
+
+    new_parser->returns_unicode = 0;
+#else
+    /* Code for versions 1.6 and later */
+    new_parser = PyObject_New(xmlparseobject, &Xmlparsetype);
+    if (new_parser == NULL)
+        return NULL;
+
+    new_parser->returns_unicode = 1;
+#endif
+    
+    new_parser->itself = XML_ExternalEntityParserCreate(self->itself, context,
+							encoding);    
+    if (!new_parser) {
+        Py_DECREF(new_parser);
+        return PyErr_NoMemory();
+    }
+
+    XML_SetUserData(new_parser->itself, (void *)new_parser);
+
+    /* allocate and clear handlers first */
+    for(i = 0; handler_info[i].name != NULL; i++)
+      /* do nothing */;
+
+    new_parser->handlers = malloc(sizeof(PyObject *)*i);
+    clear_handlers(new_parser);
+
+    /* then copy handlers from self */
+    for (i = 0; handler_info[i].name != NULL; i++) {
+      if (self->handlers[i]) {
+	Py_INCREF(self->handlers[i]);
+	new_parser->handlers[i] = self->handlers[i];
+        handler_info[i].setter(new_parser->itself, 
+			       handler_info[i].handler);
+      }
+    }
+      
+    return new_parser;    
+}
+
+
+
 static struct PyMethodDef xmlparse_methods[] = {
     {"Parse",	  (PyCFunction)xmlparse_Parse,
 	 	  METH_VARARGS,	xmlparse_Parse__doc__},
@@ -544,6 +608,8 @@ static struct PyMethodDef xmlparse_methods[] = {
 	 	  METH_VARARGS,      xmlparse_SetBase__doc__},
     {"GetBase",   (PyCFunction)xmlparse_GetBase,
 	 	  METH_VARARGS,      xmlparse_GetBase__doc__},
+    {"ExternalEntityParserCreate", (PyCFunction)xmlparse_ExternalEntityParserCreate,
+	 	  METH_VARARGS,      xmlparse_ExternalEntityParserCreate__doc__},
 	{NULL,		NULL}		/* sentinel */
 };
 
