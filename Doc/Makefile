@@ -45,8 +45,8 @@ libmac.tex libmacconsole.tex libmacfs.tex libmactcp.tex libmacspeech.tex \
 	libmd5.tex libmimetools.tex libmm.tex libmods.tex libmpz.tex \
 libnntplib.tex \
 libobjs.tex libos.tex \
-libpanel.tex libposix.tex libposixfile.tex libppath.tex libpickle.tex \
-	libpwd.tex \
+libpanel.tex libpickle.tex libposix.tex libposixfile.tex \
+	libppath.tex libprofile.tex libpwd.tex \
 librand.tex libregex.tex libregsub.tex \
 	librfc822.tex librgbimg.tex librotor.tex \
 libselect.tex libsgi.tex libsgmllib.tex \
