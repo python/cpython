@@ -87,7 +87,16 @@ class Cddb():
 					if self.toc != value:
 						print 'toc\'s don\'t match'
 			elif name1[:5] == 'track':
-				trackno = string.atoi(name1[5:])
+				try:
+					trackno = string.atoi(name1[5:])
+				except strings.atoi_error:
+					print 'syntax error in ' + file
+					continue
+				if trackno > ntracks:
+					print 'track number ' + trackno + \
+						  ' in file ' + file + \
+						  ' out of range'
+					continue
 				self.track[trackno] = value
 		f.close()
 		return self
