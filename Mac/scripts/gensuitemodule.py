@@ -224,7 +224,7 @@ def compilesuite(suite, major, minor, language, script, fname):
 	if not ok:
 		return
 	fp = open(fss.as_pathname(), 'w')
-	fss.SetCreatorType('PYTH', 'TEXT')
+	fss.SetCreatorType('Pyth', 'TEXT')
 	
 	fp.write('"""Suite %s: %s\n' % (name, desc))
 	fp.write("Level %d, version %d\n\n" % (level, version))
