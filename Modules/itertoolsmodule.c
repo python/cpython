@@ -477,7 +477,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	isliceobject *lz;
 
 	numargs = PyTuple_Size(args);
-	if (!PyArg_ParseTuple(args, "O|OOl:islice", &seq, &a1, &a2, &step))
+	if (!PyArg_ParseTuple(args, "OO|Ol:islice", &seq, &a1, &a2, &step))
 		return NULL;
 
 	if (numargs == 2) {
@@ -491,7 +491,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 				return NULL;
 			}
 		}
-	} else if (numargs == 3 || numargs == 4) {
+	} else {
 		start = PyInt_AsLong(a1);
 		if (start == -1 && PyErr_Occurred()) {
 			PyErr_Clear();

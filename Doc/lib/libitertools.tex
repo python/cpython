@@ -197,9 +197,9 @@ by functions or loops that truncate the stream.
   If \var{start} is non-zero, then elements from the iterable are skipped
   until start is reached.  Afterward, elements are returned consecutively
   unless \var{step} is set higher than one which results in items being
-  skipped.  If \var{stop} is not specified or is \code{None}, then iteration
-  continues indefinitely; otherwise, it stops at the specified position.
-  Unlike regular slicing,
+  skipped.  If \var{stop} is \code{None}, then iteration continues until
+  the iterator is exhausted, if at all; otherwise, it stops at the specified
+  position.  Unlike regular slicing,
   \function{islice()} does not support negative values for \var{start},
   \var{stop}, or \var{step}.  Can be used to extract related fields
   from data where the internal structure has been flattened (for
@@ -208,13 +208,10 @@ by functions or loops that truncate the stream.
 
   \begin{verbatim}
      def islice(iterable, *args):
-         if args:
-             s = slice(*args)
-             next = s.start or 0
-             stop = s.stop
-             step = s.step or 1
-         else:
-             next, stop, step = 0, None, 1
+         s = slice(*args)
+         next = s.start or 0
+         stop = s.stop
+         step = s.step or 1
          for cnt, element in enumerate(iterable):
              if cnt < next:
                  continue
