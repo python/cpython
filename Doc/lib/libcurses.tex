@@ -466,6 +466,13 @@ terminfo capability name \var{capname}.  \code{None} is returned if
 from the terminal description.
 \end{funcdesc}
 
+\begin{funcdesc}{tparm}{str\optional{,...}}
+Instantiates the string \var{str} with the supplied parameters, where 
+\var{str} should be a parameterized string obtained from the terminfo 
+database.  E.g. \code{tparm(tigetstr("cup"),5,3)} could result in 
+\code{"\e{}033[6;4H"}, the exact result depending on terminal type.
+\end{funcdesc}
+
 \begin{funcdesc}{typeahead}{fd}
 Specifies that the file descriptor \var{fd} be used for typeahead
 checking.  If \var{fd} is -1, then no typeahead checking is done.

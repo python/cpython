@@ -47,10 +47,9 @@ unsupported functions:
 	overlay overwrite resetty resizeterm restartterm ripoffline
 	savetty scr_dump scr_init scr_restore scr_set scrl set_curterm
 	set_term setterm setupterm tgetent tgetflag tgetnum tgetstr
-	tgoto timeout tparm tputs tputs typeahead use_default_colors
-	vidattr vidputs waddchnstr waddchstr wchgat wcolor_set
-	winchnstr winchstr winnstr wmouse_trafo wredrawln wscrl
-	wtimeout
+	tgoto timeout tputs typeahead use_default_colors vidattr
+	vidputs waddchnstr waddchstr wchgat wcolor_set winchnstr
+	winchstr winnstr wmouse_trafo wredrawln wscrl wtimeout
 
 Low-priority: 
 	slk_attr slk_attr_off slk_attr_on slk_attr_set slk_attroff
@@ -2098,6 +2097,57 @@ PyCurses_tigetstr(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+PyCurses_tparm(PyObject *self, PyObject *args)
+{
+	char* fmt;
+	char* result = NULL;
+	int i1,i2,i3,i4,i5,i6,i7,i8,i9;
+
+	PyCursesInitialised;
+
+	if (!PyArg_ParseTuple(args, "s|iiiiiiiii:tparm", 
+			      &fmt, &i1, &i2, &i3, &i4, 
+			      &i5, &i6, &i7, &i8, &i9)) {
+		return NULL;
+	}
+	
+	switch (PyTuple_GET_SIZE(args)) {
+	case 1:
+		result = tparm(fmt);
+		break;
+	case 2:
+		result = tparm(fmt,i1);
+		break;
+	case 3:
+		result = tparm(fmt,i1,i2);
+		break;
+	case 4:
+		result = tparm(fmt,i1,i2,i3);
+		break;
+	case 5:
+		result = tparm(fmt,i1,i2,i3,i4);
+		break;
+	case 6:
+		result = tparm(fmt,i1,i2,i3,i4,i5);
+		break;
+	case 7:
+		result = tparm(fmt,i1,i2,i3,i4,i5,i6);
+		break;
+	case 8:
+		result = tparm(fmt,i1,i2,i3,i4,i5,i6,i7);
+		break;
+	case 9:
+		result = tparm(fmt,i1,i2,i3,i4,i5,i6,i7,i8);
+		break;
+	case 10:
+		result = tparm(fmt,i1,i2,i3,i4,i5,i6,i7,i8,i9);
+		break;
+	}
+
+	return PyString_FromString(result);
+}
+
+static PyObject *
 PyCurses_TypeAhead(PyObject *self, PyObject *args)
 {
   int fd;
@@ -2246,6 +2296,7 @@ static PyMethodDef PyCurses_methods[] = {
   {"tigetflag",		  (PyCFunction)PyCurses_tigetflag, METH_VARARGS},
   {"tigetnum",		  (PyCFunction)PyCurses_tigetnum, METH_VARARGS},
   {"tigetstr",		  (PyCFunction)PyCurses_tigetstr, METH_VARARGS},
+  {"tparm",               (PyCFunction)PyCurses_tparm, METH_VARARGS},
   {"typeahead",           (PyCFunction)PyCurses_TypeAhead},
   {"unctrl",              (PyCFunction)PyCurses_UnCtrl},
   {"ungetch",             (PyCFunction)PyCurses_UngetCh},
