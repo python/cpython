@@ -376,9 +376,15 @@ object, so I can't just put extern in all cases. :-( )
 
 #ifdef BAD_STATIC_FORWARD
 #define staticforward extern
+#ifdef __SC__
+#define statichere
 #else
+#define statichere static
+#endif /* __SC__ */
+#else /* !BAD_STATIC_FORWARD */
 #define staticforward static
-#endif /* BAD_STATIC_FORWARD */
+#define statichere static
+#endif /* !BAD_STATIC_FORWARD */
 
 
 /*
