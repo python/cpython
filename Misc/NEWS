@@ -110,7 +110,7 @@ Standard library and extensions
   user buffer interface on Unicode strings.  Does not hang if group id
   is followed by whitespace.
 
-- StringIO: size hint in readlines() is now supported as documented. 
+- StringIO: Size hint in readlines() is now supported as documented. 
 
 - struct: Check ranges for bytes and shorts.
 
@@ -130,11 +130,18 @@ Standard library and extensions
 - xml: New version detection code allows PyXML to override standard
   XML package if PyXML version is greater than 0.6.1.
 
-- xml.dom: XXX
+- xml.dom: DOM level 1 support for basic XML.  Includes xml.dom.minidom
+  (conventional DOM), and xml.dom.pulldom, which allows building the DOM
+  tree only for nodes which are sufficiently interesting to a specific
+  application.  Does not provide the HTML-specific extensions.  Still
+  undocumented.
 
-- xml.sax: XXX
+- xml.sax: SAX 2 support for Python, including all the handler
+  interfaces needed to process XML 1.0 compliant XML.  Some
+  documentation is already available.
 
-- XXX pyexpat: XXX
+- pyexpat: Renamed to xml.parsers.expat since this is part of the new,
+  packagized XML support.
 
 
 C API
@@ -160,7 +167,8 @@ C API
   encoded version of a Unicode object.
 
 - The standard header <limits.h> is now included by Python.h (if it
-  exists).
+  exists).  INT_MAX and LONG_MAX will always be defined, even if
+  <limits.h> is not available.
 
 
 Internals
@@ -188,6 +196,9 @@ Build and platform-specific issues
 
 - Improved support for HP-UX build -- threads should now be correctly
   configured (on HP-UX 10.20 and 11.00).
+
+- Python/C API now properly exposed to dynamically-loaded extension
+  modules on Reliant UNIX.
 
 
 What's new in 2.0 beta 1?
