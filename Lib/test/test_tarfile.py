@@ -327,6 +327,14 @@ class WriteTestGzip(WriteTest):
 class WriteStreamTestGzip(WriteStreamTest):
     comp = "gz"
 
+# Filemode test cases
+
+class FileModeTest(unittest.TestCase):
+    def test_modes(self):
+        self.assertEqual(tarfile.filemode(0755), '-rwxr-xr-x')
+        self.assertEqual(tarfile.filemode(07111), '---s--s--t')
+
+    
 if bz2:
     # Bzip2 TestCases
     class ReadTestBzip2(ReadTestGzip):
@@ -354,6 +362,7 @@ def test_main():
         bz2.BZ2File(tarname("bz2"), "wb").write(file(tarname(), "rb").read())
 
     tests = [
+        FileModeTest,
         ReadTest,
         ReadStreamTest,
         WriteTest,
