@@ -15,7 +15,13 @@ import zipimport
 
 def make_pyc(co, mtime):
     data = marshal.dumps(co)
-    pyc = imp.get_magic() + struct.pack("<i", mtime) + data
+    if type(mtime) is type(0.0):
+    	# Mac mtimes need a bit of special casing
+    	if mtime < 0x7fffffff:
+    		mtime = int(mtime)
+    	else:
+    		mtime = int(-0x100000000L + long(mtime))
+    pyc = imp.get_magic() + struct.pack("<i", int(mtime)) + data
     return pyc
 
 NOW = time.time()
@@ -32,7 +38,10 @@ TESTMOD = "ziptestmodule"
 TESTPACK = "ziptestpackage"
 TESTPACK2 = "ziptestpackage2"
 TEMP_ZIP = os.path.abspath("junk95142.zip")
-
+if sys.platform == 'mac':
+    CURDIRPREFIX=':'
+else:
+    CURDIRPREFIX=''
 
 class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
@@ -59,7 +68,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             if expected_ext:
                 file = mod.get_file()
                 self.assertEquals(file, os.path.join(TEMP_ZIP,
-                                  os.sep.join(modules) + expected_ext))
+                                  CURDIRPREFIX + os.sep.join(modules) + expected_ext))
         finally:
             z.close()
             os.remove(TEMP_ZIP)
