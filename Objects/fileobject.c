@@ -254,6 +254,8 @@ _portable_fseek(FILE *fp, off_t offset, int whence)
 	return fseeko(fp, offset, whence);
 #elif defined(HAVE_FSEEK64)
 	return fseek64(fp, offset, whence);
+#elif defined(__BEOS__)
+	return _fseek(fp, offset, whence);
 #elif defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_FPOS_T >= 8 
 	/* lacking a 64-bit capable fseek() (as Win64 does) use a 64-bit capable
 		fsetpos() and tell() to implement fseek()*/
