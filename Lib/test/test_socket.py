@@ -109,6 +109,7 @@ except socket.error:
 canfork = hasattr(os, 'fork')
 try:
     PORT = 50007
+    msg = 'socket test\n'
     if not canfork or os.fork():
         # parent is server
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -133,13 +134,52 @@ try:
             f = conn.makefile()
             if verbose:
                 print 'file obj:', f
+            data = conn.recv(1024)
+            if verbose:
+                print 'received:', data
+            conn.sendall(data)
+
+            # Perform a few tests on the windows file object
+            if verbose:
+                print "Staring _fileobject tests..."
+            f = socket._fileobject (conn, 'rb', 8192)
+            first_seg = f.read(7)
+            second_seg = f.read(5)
+            if not first_seg == 'socket ' or not second_seg == 'test\n':
+                print "Error performing read with the python _fileobject class"
+                os._exit (1)
+            elif verbose:
+                print "_fileobject buffered read works"
+            f.write (data)
+            f.flush ()
+
+            buf = ''
             while 1:
-                data = conn.recv(1024)
-                if not data:
+                char = f.read(1)
+                if not char:
+                    print "Error performing unbuffered read with the python ", \
+                          "_fileobject class"
+                    os._exit (1)
+                buf += char
+                if buf == msg:
+                    if verbose:
+                        print "__fileobject unbuffered read works"
                     break
-                if verbose:
-                    print 'received:', data
-                conn.sendall(data)
+            if verbose:
+                # If we got this far, write() must work as well
+                print "__fileobject write works"
+            f.write(buf)
+            f.flush()
+
+            line = f.readline()
+            if not line == msg:
+                print "Error perferming readline with the python _fileobject class"
+                os._exit (1)
+            f.write(line)
+            f.flush()
+            if verbose:
+                print "__fileobject readline works"
+
             conn.close()
     else:
         try:
@@ -149,11 +189,18 @@ try:
             if verbose:
                 print 'child connecting'
             s.connect(("127.0.0.1", PORT))
-            msg = 'socket test'
-            s.send(msg)
-            data = s.recv(1024)
-            if msg != data:
-                print 'parent/client mismatch'
+
+            iteration = 0
+            while 1:
+                s.send(msg)
+                data = s.recv(12)
+                if not data:
+                    break
+                if msg != data:
+                    print "parent/client mismatch. Failed in %s iteration. Received: [%s]" \
+                          %(iteration, data)
+                time.sleep (1)
+                iteration += 1
             s.close()
         finally:
             os._exit(1)

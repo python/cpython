@@ -134,7 +134,8 @@ def getfqdn(name=''):
 _socketmethods = (
     'bind', 'connect', 'connect_ex', 'fileno', 'listen',
     'getpeername', 'getsockname', 'getsockopt', 'setsockopt',
-    'recv', 'recvfrom', 'send', 'sendall', 'sendto', 'setblocking', 'shutdown')
+    'recv', 'recvfrom', 'send', 'sendall', 'sendto', 'setblocking',
+    'settimeout', 'gettimeout', 'shutdown')
 
 class _socketobject:
 
@@ -168,94 +169,108 @@ class _socketobject:
 
 
 class _fileobject:
+    """Implements a file object on top of a regular socket object."""
 
-    def __init__(self, sock, mode, bufsize):
+    def __init__(self, sock, mode='rb', bufsize=8192):
         self._sock = sock
         self._mode = mode
-        if bufsize < 0:
+        if bufsize <= 0:
             bufsize = 512
-        self._rbufsize = max(1, bufsize)
+        self._rbufsize = bufsize
         self._wbufsize = bufsize
-        self._wbuf = self._rbuf = ""
+        self._rbuf = [ ]
+        self._wbuf = [ ]
 
     def close(self):
         try:
             if self._sock:
                 self.flush()
         finally:
-            self._sock = 0
+            self._sock = None
 
     def __del__(self):
         self.close()
 
     def flush(self):
         if self._wbuf:
-            self._sock.sendall(self._wbuf)
-            self._wbuf = ""
+            buffer = ''.join(self._wbuf)
+            self._sock.sendall(buffer)
+            self._wbuf = [ ]
 
-    def fileno(self):
+    def fileno (self):
         return self._sock.fileno()
 
     def write(self, data):
-        self._wbuf = self._wbuf + data
+        self._wbuf.append (data)
+        # A _wbufsize of 1 means we're doing unbuffered IO.
+        # Flush accordingly.
         if self._wbufsize == 1:
             if '\n' in data:
-                self.flush()
-        else:
-            if len(self._wbuf) >= self._wbufsize:
-                self.flush()
+                self.flush ()
+        elif self.__get_wbuf_len() >= self._wbufsize:
+            self.flush()
 
     def writelines(self, list):
         filter(self._sock.sendall, list)
         self.flush()
 
-    def read(self, n=-1):
-        if n >= 0:
-            k = len(self._rbuf)
-            if n <= k:
-                data = self._rbuf[:n]
-                self._rbuf = self._rbuf[n:]
-                return data
-            n = n - k
-            L = [self._rbuf]
-            self._rbuf = ""
-            while n > 0:
-                new = self._sock.recv(max(n, self._rbufsize))
-                if not new: break
-                k = len(new)
-                if k > n:
-                    L.append(new[:n])
-                    self._rbuf = new[n:]
-                    break
-                L.append(new)
-                n = n - k
-            return "".join(L)
-        k = max(512, self._rbufsize)
-        L = [self._rbuf]
-        self._rbuf = ""
-        while 1:
-            new = self._sock.recv(k)
-            if not new: break
-            L.append(new)
-            k = min(k*2, 1024**2)
-        return "".join(L)
+    def __get_wbuf_len (self):
+        buf_len = 0
+        for i in [len(x) for x in self._wbuf]:
+            buf_len += i
+        return buf_len
 
-    def readline(self, limit=-1):
-        data = ""
-        i = self._rbuf.find('\n')
-        while i < 0 and not (0 < limit <= len(self._rbuf)):
-            new = self._sock.recv(self._rbufsize)
-            if not new: break
-            i = new.find('\n')
-            if i >= 0: i = i + len(self._rbuf)
-            self._rbuf = self._rbuf + new
-        if i < 0: i = len(self._rbuf)
-        else: i = i+1
-        if 0 <= limit < len(self._rbuf): i = limit
-        data, self._rbuf = self._rbuf[:i], self._rbuf[i:]
+    def __get_rbuf_len(self):
+        buf_len = 0
+        for i in [len(x) for x in self._rbuf]:
+            buf_len += i
+        return buf_len
+
+    def read(self, size=-1):
+        buf_len = self.__get_rbuf_len()
+        while size < 0 or buf_len < size:
+            recv_size = max(self._rbufsize, size - buf_len)
+            data = self._sock.recv(recv_size)
+            if not data:
+                break
+            buf_len += len(data)
+            self._rbuf.append(data)
+        data = ''.join(self._rbuf)
+        # Clear the rbuf at the end so we're not affected by
+        # an exception during a recv
+        self._rbuf = [ ]
+        if buf_len > size and size >= 0:
+           self._rbuf.append(data[size:])
+           data = data[:size]
         return data
 
-    def readlines(self, sizehint = 0):
+    def readline(self, size=-1):
+        index = -1
+        buf_len = self.__get_rbuf_len()
+        if len (self._rbuf):
+            index = min([x.find('\n') for x in self._rbuf])
+        while index < 0 and (size < 0 or buf_len < size):
+            recv_size = max(self._rbufsize, size - buf_len)
+            data = self._sock.recv(recv_size)
+            if not data:
+                break
+            buf_len += len(data)
+            self._rbuf.append(data)
+            index = data.find('\n')
+        data = ''.join(self._rbuf)
+        self._rbuf = [ ]
+        index = data.find('\n')
+        if index >= 0:
+            index += 1
+        elif buf_len > size:
+            index = size
+        else:
+            index = buf_len
+        self._rbuf.append(data[index:])
+        data = data[:index]
+        return data
+
+    def readlines(self, sizehint=0):
         total = 0
         list = []
         while 1:
