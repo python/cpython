@@ -30,7 +30,7 @@ Character data:
 End of CDATA section
 End element:
 	'sub2'
-External entity ref: ('http://www.python.org/namespace=http://www.w3.org/XML/1998/namespace\014external_entity', None, 'entity.file', None)
+External entity ref: (None, 'entity.file', None)
 End element:
 	'root'
 PI:
@@ -60,7 +60,7 @@ Character data:
 End of CDATA section
 End element:
 	u'sub2'
-External entity ref: (u'http://www.python.org/namespace=http://www.w3.org/XML/1998/namespace\014external_entity', None, u'entity.file', None)
+External entity ref: (None, u'entity.file', None)
 End element:
 	u'root'
 PI:
@@ -90,6 +90,15 @@ Character data:
 End of CDATA section
 End element:
 	u'sub2'
-External entity ref: (u'http://www.python.org/namespace=http://www.w3.org/XML/1998/namespace\014external_entity', None, u'entity.file', None)
+External entity ref: (None, u'entity.file', None)
 End element:
 	u'root'
+
+Testing constructor for proper handling of namespace_separator values:
+Legal values tested o.k.
+Caught expected TypeError:
+ParserCreate, argument 2: expected string or None, int found
+Caught expected ValueError:
+namespace_separator must be one character, omitted, or None
+Caught expected ValueError:
+namespace_separator must be one character, omitted, or None
