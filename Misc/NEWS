@@ -1,14 +1,281 @@
 What's new in this release?
 ===========================
 
-Below is a list of all relevant changes since release 1.4.  The
-sections are now in a more useful order: the most recent changes are
-listed first.
+Below is a list of all relevant changes since release 1.4.  The most
+recent changes are listed first.
 
 A note on attributions: while I have sprinkled some names throughout
 here, I'm grateful to many more people who remain unnamed.  You may
 find your name in the ACKS file.  If you believe you deserve more
 credit, let me know and I'll add you to the list!
+
+
+======================================================================
+
+
+From 1.5.2a1 to 1.5.2a2
+=======================
+
+General
+-------
+
+- It is now a syntax error to have a function argument without a
+default following one with a default.
+
+- __file__ is now set to the .py file if it was parsed (it used to
+always be the .pyc/.pyo file).
+
+- Don't exit with a fatal error during initialization when there's a
+problem with the exceptions.py module.
+
+- New environment variable PYTHONOPTIMIZE can be used to set -O.
+
+- New version of python-mode.el for Emacs.
+
+Miscellaneous fixed bugs
+------------------------
+
+- No longer print the (confusing) error message about stack underflow
+while compiling.
+
+- Some threading and locking bugs fixed.
+
+- When errno is zero, report "Error", not "Success".
+
+Documentation
+-------------
+
+- Documentation will be released separately.
+
+- Doc strings added to array and md5 modules by Chris Petrilli.
+
+Ports and build procedure
+-------------------------
+
+- Stop installing when a move or copy fails.
+
+- New version of the OS/2 port code by Jeff Rush.
+
+- The makesetup script handles absolute filenames better.
+
+- The 'new' module is now enabled by default in the Setup file.
+
+- I *think* I've solved the problem with the Linux build blowing up
+sometimes due to a conflict between sigcheck/intrcheck and
+signalmodule.
+
+Built-in functions
+------------------
+
+- The second argument to apply() can now be any sequence, not just a
+tuple.
+
+Built-in types
+--------------
+
+- Lists have a new method: L1.extend(L2) is equivalent to the common
+idiom L1[len(L1):] = L2.
+
+- Better error messages when a sequence is indexed with a non-integer.
+
+- Bettter error message when calling a non-callable object (include
+the type in the message).
+
+Python services
+---------------
+
+- New version of cPickle.c fixes some bugs.
+
+- pickle.py: improved instantiation error handling.
+
+- code.py: reworked quite a bit.  New base class
+InteractiveInterpreter and derived class InteractiveConsole.  Fixed
+several problems in compile_command().
+
+- py_compile.py: print error message and continue on syntax errors.
+Also fixed an old bug with the fstat code (it was never used).
+
+- pyclbr.py: support submodules of packages.
+
+String Services
+---------------
+
+- StringIO.py: raise the right exception (ValueError) for attempted
+I/O on closed StringIO objects.
+
+- re.py: fixed a bug in subn(), which caused .groups() to fail inside
+the replacement function called by sub().
+
+- The struct module has a new format 'P': void * in native mode.
+
+Generic OS Services
+-------------------
+
+- Module time: Y2K robustness.  2-digit year acceptance depends on
+value of time.accept2dyear, initialized from env var PYTHONY2K,
+default 0.  Years 00-68 mean 2000-2068, while 69-99 mean 1969-1999
+(POSIX or X/Open recommendation).
+
+- os.path: normpath(".//x") should return "x", not "/x".
+
+- getpass.py: fall back on default_getpass() when sys.stdin.fileno()
+doesn't work.
+
+- tempfile.py: regenerate the template after a fork() call.
+
+Optional OS Services
+--------------------
+
+- In the signal module, disable restarting interrupted system calls
+when we have siginterrupt().
+
+Debugger
+--------
+
+- No longer set __args__; this feature is no longer supported and can
+affect the debugged code.
+
+- cmd.py, pdb.py and bdb.py have been overhauled by Richard Wolff, who
+added aliases and some other useful new features, e.g. much better
+breakpoint support: temporary breakpoint, disabled breakpoints,
+breakpoints with ignore counts, and conditions; breakpoints can be set
+on a file before it is loaded.
+
+Profiler
+--------
+
+- Changes so that JPython can use it.  Also fix the calibration code
+so it actually works again
+.
+Internet Protocols and Support
+------------------------------
+
+- imaplib.py: new version from Piers Lauder.
+
+- smtplib.py: change sendmail() method to accept a single string or a
+list or strings as the destination (commom newbie mistake).
+
+- poplib.py: LIST with a msg argument fixed.
+
+- urlparse.py: some optimizations for common case (http).
+
+- urllib.py: support content-length in info() for ftp protocol;
+support for a progress meter through a third argument to
+urlretrieve(); commented out gopher test (the test site is dead).
+
+Internet Data handling
+----------------------
+
+- sgmllib.py: support tags with - or . in their name.
+
+- mimetypes.py: guess_type() understands 'data' URLs.
+
+Restricted Execution
+--------------------
+
+- The classes rexec.RModuleLoader and rexec.RModuleImporter no
+longer exist.
+
+Tkinter
+-------
+
+- When reporting an exception, store its info in sys.last_*.  Also,
+write all of it to stderr.
+
+- Added NS, EW, and NSEW constants, for grid's sticky option.
+
+- Fixed last-minute bug in 1.5.2a1 release: need to include "mytime.h".
+
+- Make bind variants without a sequence return a tuple of sequences
+(formerly it returned a string, which wasn't very convenient).
+
+- Add image commands to the Text widget (these are new in Tk 8.0).
+
+- Added new listbox and canvas methods: {xview,yview}_{scroll,moveto}.)
+
+- Improved the thread code (but you still can't call update() from
+another thread on Windows).
+
+- Fixed unnecessary references to _default_root in the new dialog
+modules.
+
+- Miscellaneous problems fixed.
+
+
+Windows General
+---------------
+
+- Call LoadLibraryEx(..., ..., LOAD_WITH_ALTERED_SEARCH_PATH) to
+search for dependent dlls in the directory containing the .pyd.
+
+- In debugging mode, call DebugBreak() in Py_FatalError().
+
+Windows Installer
+-----------------
+
+- Install zlib.dll in the DLLs directory instead of in the win32
+system directory, to avoid conflicts with other applications that have 
+their own zlib.dll.
+
+Test Suite
+----------
+
+- test_long.py: new test for long integers, by Tim Peters.
+
+- regrtest.py: improved so it can be used for other test suites as
+well.
+
+- test_strftime.py: use re to compare test results, to support legal
+variants (e.g. on Linux).
+
+Tools and Demos
+---------------
+
+- Four new scripts in Tools/scripts: crlf.py and lfcr.py (to
+remove/add Windows style '\r\n' line endings), untabify.py (to remove
+tabs), and rgrep.yp (reverse grep).
+
+- Improvements to Tools/freeze/.  Each Python module is now written to
+its own C file.  This prevents some compilers or assemblers from
+blowing up on large frozen programs, and saves recompilation time if
+only a few modules are changed.  Other changes too, e.g. new command
+line options -x and -i.
+
+- Much improved (and smaller!) version of Tools/scripts/mailerdaemon.py.
+
+Python/C API
+------------
+
+- New mechanism to support extensions of the type object while
+remaining backward compatible with extensions compiled for previous
+versions of Python 1.5.  A flags field indicates presence of certain
+fields.
+
+- Addition to the buffer API to differentiate access to bytes and
+8-bit characters (in anticipation of Unicode characters).
+
+- New argument parsing format t# ("text") to indicate 8-bit
+characters; s# simply means 8-bit bytes, for backwards compatibility.
+
+- New object type, bufferobject.c is an example and can be used to
+create buffers from memory.
+
+- Some support for 64-bit longs, including some MS platforms.
+
+- Many calls to fprintf(stderr, ...) have been replaced with calls to
+PySys_WriteStderr(...).
+
+- The calling context for PyOS_Readline() has changed: it must now be
+called with the interpreter lock held!  It releases the lock around
+the call to the function pointed to by PyOS_ReadlineFunctionPointer
+(default PyOS_StdioReadline()).
+
+- New APIs PyLong_FromVoidPtr() and PyLong_AsVoidPtr().
+
+- Renamed header file "thread.h" to "pythread.h".
+
+- The code string of code objects may now be anything that supports the
+buffer API.
 
 
 ======================================================================
