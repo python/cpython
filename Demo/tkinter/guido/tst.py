@@ -6,13 +6,12 @@ def do_hello():
 	print 'Hello world!'
 
 class Quit(Button):
-	def action(self):
-		self.quit()
 	def __init__(self, master=None, cnf={}):
 		Button.__init__(self, master, 
-				{'text': 'Quit', 
-				 'command': self.action})
-		Button.config(self, cnf)
+				({'name': 'quit',
+				  'text': 'Quit', 
+				  'command': self.quit},
+				 cnf))
 
 class Stuff(Canvas):
 	def enter(self, e):
@@ -77,5 +76,5 @@ test.master.maxsize(500, 500)
 test.testing.invoke()
 
 # Use the -i option and type ^C to get a prompt
-test.mainloop()
+mainloop()
 
