@@ -48,7 +48,7 @@ else:
         # resulting codeset may be unknown to Python. We ignore all
         # these problems, falling back to ASCII
         encoding = locale.nl_langinfo(locale.CODESET)
-        if encoding is None:
+        if encoding is None or encoding is '':
             # situation occurs on Mac OS X
             encoding = 'ascii'
         codecs.lookup(encoding)
@@ -58,7 +58,7 @@ else:
         # bugs that can cause ValueError.
         try:
             encoding = locale.getdefaultlocale()[1]
-            if encoding is None:
+            if encoding is None or encoding is '':
                 # situation occurs on Mac OS X
                 encoding = 'ascii'
             codecs.lookup(encoding)
