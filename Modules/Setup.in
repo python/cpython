@@ -32,19 +32,16 @@
 #
 # which defines a Make variable definition inserted into Makefile.in
 #
-# Finally, if a line has the literal form
-#
-# *shared*
-#
-# (that is including the '*' and '*' !) then the following modules will
-# not be included in the config.c file, nor in the list of objects to be
-# added to the library archive, and their linker options won't be added 
-# to the linker options, but rules to create their .o files and their
-# shared libraries will still be added to the Makefile, and their
-# names will be collected in the Make variable SHAREDMODS.  This is
-# used to build modules as shared libraries.  (They must be installed
-# using "make sharedinstall".)  (For compatibility, *noconfig* has the
-# same effect as *shared*.)
+# Finally, if a line contains just the word "*shared*" (without the
+# quotes but with the stars), then the following modules will not be
+# included in the config.c file, nor in the list of objects to be
+# added to the library archive, and their linker options won't be
+# added to the linker options, but rules to create their .o files and
+# their shared libraries will still be added to the Makefile, and
+# their names will be collected in the Make variable SHAREDMODS.  This
+# is used to build modules as shared libraries.  (They must be
+# installed using "make sharedinstall".)  (For compatibility,
+# *noconfig* has the same effect as *shared*.)
 
 # NOTE: As a standard policy, as many modules as can be supported by a
 # platform should be present.  The distribution comes with all modules
