@@ -8,6 +8,9 @@ a generic tool and CodeGenerator as a specific tool.
 from p2c import transformer, ast
 import dis
 import misc
+import marshal
+import new
+import string
 
 def parse(path):
     f = open(path)
@@ -97,7 +100,6 @@ class ASTVisitor:
         if meth:
             return meth(node)
 
-
 class CodeGenerator:
     def __init__(self):
 	self.code = PythonVMCode()
@@ -109,15 +111,19 @@ class CodeGenerator:
     def visitModule(self, node):
 	lnf = walk(node.node, LocalNameFinder())
 	self.locals.push(lnf.getLocals())
-
-    def visitFunction(self, node):
-	lnf = walk(node.code, LocalNameFinder(node.argnames))
-	self.locals.push(lnf.getLocals())
-	self.code.setLineNo(node.lineno)
-        print node.code
-        self.visit(node.code)
+        self.visit(node.node)
         self.code.emit('LOAD_CONST', 'None')
         self.code.emit('RETURN_VALUE')
+        return 1
+
+    def visitFunction(self, node):
+        codeBody = NestedCodeGenerator(node.code, node.argnames)
+        walk(node.code, codeBody)
+        self.code.setLineNo(node.lineno)
+        self.code.emit('LOAD_CONST', codeBody.code)
+        self.code.emit('MAKE_FUNCTION')
+        self.code.emit('STORE_NAME', node.name)
+        return 1
 
     def visitCallFunc(self, node):
 	self.visit(node.node)
@@ -262,6 +268,33 @@ class CodeGenerator:
 	self.visitPrint(node)
 	self.code.emit('PRINT_NEWLINE')
 	return 1
+
+class NestedCodeGenerator(CodeGenerator):
+    """Generate code for a function object within another scope
+
+    XXX not clear that this subclass is needed
+    """
+    super_init = CodeGenerator.__init__
+    
+    def __init__(self, code, args):
+        """code and args of function or class being walked
+
+        XXX need to separately pass to ASTVisitor.  the constructor
+        only uses the code object to find the local names
+        """
+        self.super_init()
+        lnf = walk(code, LocalNameFinder(args))
+        self.locals.push(lnf.getLocals())
+
+    def visitFunction(self, node):
+	lnf = walk(node.code, LocalNameFinder(node.argnames))
+	self.locals.push(lnf.getLocals())
+        # XXX need to handle def foo((a, b)):
+	self.code.setLineNo(node.lineno)
+        self.visit(node.code)
+        self.code.emit('LOAD_CONST', 'None')
+        self.code.emit('RETURN_VALUE')
+        return 1
 	
 
 class LocalNameFinder:
@@ -319,10 +352,61 @@ class ForwardRef:
 
     def resolve(self):
 	return self.val
+
+class CompiledModule:
+    """Store the code object for a compiled module
+
+    XXX Not clear how the code objects will be stored.  Seems possible
+    that a single code attribute is sufficient, because it will
+    contains references to all the need code objects.  That might be
+    messy, though.
+    """
+    MAGIC = (20121 | (ord('\r')<<16) | (ord('\n')<<24))
+
+    def __init__(self):
+        self.code = None
+
+    def addCode(self, code):
+        """addCode(self: SelfType, code: PythonVMCode)"""
+	
+    def dump(self, path):
+        """create a .pyc file"""
+        f = open(path, 'wb')
+        f.write(self._pyc_header())
+        marshal.dump(self.code, f)
+        f.close()
+        
+    def _pyc_header(self, path):
+        # compile.c uses marshal to write a long directly, with
+        # calling the interface that would also generate a 1-byte code
+        # to indicate the type of the value.  simplest way to get the
+        # same effect is to call marshal and then skip the code.
+        buf = marshal.dumps(self.MAGIC)[1:]
+        # skip the mtime for now, since I don't have the write
+        # structure to pass the filename being compiled into this
+        # instance 
+        return buf + chr(0) * 4
 	
 class PythonVMCode:
+
     def __init__(self):
-	self.insts = []  
+	self.insts = []
+        # used by makeCodeObject
+        self.argcount = 0
+        self.code = ''
+        self.consts = []
+        self.filename = ''
+        self.firstlineno = 0
+        self.flags = 0
+        self.lnotab = None
+        self.name = ''
+        self.names = []
+        self.nlocals = 0
+        self.stacksize = 2
+        self.varnames = []
+
+    def __repr__(self):
+        return "<bytecode: %d instrs>" % len(self.insts)
 
     def emit(self, *args):
 	print "emit", args
@@ -337,7 +421,88 @@ class PythonVMCode:
     def convert(self):
 	"""Convert human-readable names to real bytecode"""
 	pass
-	
+
+    def makeCodeObject(self):
+        """Make a Python code object"""
+        code = []
+        self._findOffsets()
+        for t in self.insts:
+            opname = t[0]
+            if len(t) == 1:
+                code.append(chr(self.opnum[opname]))
+            elif len(t) == 2:
+                oparg = self._convertArg(opname, t[1])
+                hi, lo = divmod(oparg, 256)
+                code.append(chr(self.opnum[opname]) + chr(lo) + chr(hi))
+        return string.join(code, '')
+
+    def _findOffsets(self):
+        """Find offsets for use in resolving ForwardRefs"""
+        self.offsets = []
+        cur = 0
+        for t in self.insts:
+            self.offsets.append(cur)
+            l = len(t)
+            if l == 1:
+                cur = cur + 1
+            elif l == 2:
+                arg = t[1]
+                if isinstance(arg, ForwardRef):
+                    arg.__offset = cur
+                cur = cur + 3
+
+    def _convertArg(self, op, arg):
+        """Convert the string representation of an arg to a number
+
+        The specific handling depends on the opcode.
+
+        XXX This first implementation isn't going to be very
+        efficient. 
+        """
+        if op == 'SET_LINENO':
+            return arg
+        if op == 'LOAD_CONST':
+            return self._lookupName(arg, self.consts)
+        if op == 'LOAD_FAST':
+            return self._lookupName(arg, self.varnames, self.names)
+        if op == 'LOAD_GLOBAL':
+            return self._lookupName(arg, self.names)
+        if op == 'STORE_NAME':
+            return self._lookupName(arg, self.names)
+        if op == 'COMPARE_OP':
+            return self.cmp_op.index(arg)
+        if self.hasjrel.has_elt(op):
+            return self.offsets[arg.resolve()]
+        if self.hasjabs.has_elt(op):
+            return self.offsets[arg.resolve()] - arg.__offset
+        print op, arg
+        return arg
+
+    def _lookupName(self, name, list, list2=None):
+        """Return index of name in list, appending if necessary
+
+        Yicky hack: Second list can be used for lookup of local names
+        where the name needs to be added to varnames and names.
+        """
+        if name in list:
+            return list.index(name)
+        else:
+            end = len(list)
+            list.append(name)
+            if list2 is not None:
+                list2.append(name)
+            return end
+
+    # Convert some stuff from the dis module for local use
+    
+    cmp_op = list(dis.cmp_op)
+    hasjrel = misc.Set()
+    for i in dis.hasjrel:
+        hasjrel.add(dis.opname[i])
+    hasjabs = misc.Set()
+    for i in dis.hasjabs:
+        hasjabs.add(dis.opname[i])
+    
     opnum = {}
     for num in range(len(dis.opname)):
 	opnum[dis.opname[num]] = num
@@ -403,4 +568,4 @@ if __name__ == "__main__":
 	if inst[0] == 'SET_LINENO':
 	    print
 	print "%4d" % i, inst
-
+    code = cg.code.makeCodeObject()
