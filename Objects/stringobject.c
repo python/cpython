@@ -925,10 +925,8 @@ do_strip(self, args, striptype)
 {
 	char *s = PyString_AS_STRING(self);
 	int len = PyString_GET_SIZE(self), i, j;
-	PyObject *scobj = NULL;
-	int count = -1;
 
-	if (!PyArg_ParseTuple(args, "|Oi", scobj, count))
+	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 
 	i = 0;
