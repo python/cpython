@@ -112,12 +112,25 @@ class NNTP:
         self.file = self.sock.makefile('rb')
         self.debugging = 0
         self.welcome = self.getresp()
+        
+        # 'mode reader' is sometimes necessary to enable 'reader' mode.
+        # However, the order in which 'mode reader' and 'authinfo' need to 
+        # arrive differs between some NNTP servers. Try to send
+        # 'mode reader', and if it fails with an authorization failed
+        # error, try again after sending authinfo.
+        readermode_afterauth = 0
         if readermode:
             try:
                 self.welcome = self.shortcmd('mode reader')
             except NNTPPermanentError:
                 # error 500, probably 'not implemented'
                 pass
+            except NNTPTemporaryError, e:
+                if user and e.response[:3] == '480':
+                    # Need authorization before 'mode reader'
+                    readermode_afterauth = 1
+                else:
+                    raise
         if user:
             resp = self.shortcmd('authinfo user '+user)
             if resp[:3] == '381':
@@ -128,6 +141,13 @@ class NNTP:
                             'authinfo pass '+password)
                     if resp[:3] != '281':
                         raise NNTPPermanentError(resp)
+            if readermode_afterauth:
+                try:
+                    self.welcome = self.shortcmd('mode reader')
+                except NNTPPermanentError:
+                    # error 500, probably 'not implemented'
+                    pass
+            
 
     # Get the welcome message from the server
     # (this is read and squirreled away by __init__()).
