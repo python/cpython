@@ -1,13 +1,8 @@
+%
+% myformat.sty for the Python doc  [updated to work with Latex2e]
+%
+
 % Style parameters and macros used by most documents here
-
-\input{a4wide.sty} % Take this out if it doesn't exist or doesn't work
-\input{times.sty} % And this (at CWI, this uses PostScript fonts)
-
-% This has to be tuned each time the repair person takes the printer apart:
-%\addtolength{\oddsidemargin}{-2.5mm}
-%\addtolength{\evensidemargin}{-2.5mm}
-
-% Style parameters
 \raggedbottom
 \sloppy
 \parindent =       0mm
@@ -36,11 +31,28 @@
 	\noindent
 }
 
-% Underscores are not magic throughout the Python documentation.
-% This still only gives the right effect in the tt font!!!
-\def\_{\ifnum\fam=\ttfam \char'137\else{\tt\char'137}\fi}
-\catcode`\_=12
-\catcode`\_=\active\def_{\ifnum\fam=\ttfam \char'137 \else{\tt\char'137}\fi}
+% Underscore hack (only act like subscript operator if in math mode)
+%
+% The following is due to Mark Wooding (the old version didn't work with
+% Latex 2e.
+
+\DeclareRobustCommand\hackscore{%
+  \ifmmode_\else\textunderscore\fi%
+}
+\begingroup
+\catcode`\_\active
+\def\next{%
+  \AtBeginDocument{\catcode`\_\active\def_{\hackscore{}}}%
+}
+\expandafter\endgroup\next
+
+%
+% This is the old hack, which didn't work with 2e.  
+% If you're still using Latex 2.09, you can give it a try if the above fails.
+%
+%\def\_{\ifnum\fam=\ttfamily \char'137\else{\tt\char'137}\fi}
+%\catcode`\_=12
+%\catcode`\_=\active\def_{\ifnum\fam=\ttfamily \char'137 \else{\tt\char'137}\fi}
 
 % Define \itembreak: force the text after an item to start on a new line
 \newcommand{\itembreak}{
@@ -89,7 +101,6 @@
 % Define \funcitem{func}{args}: define a function item
 \newcommand{\funcitem}[2]{%
 \ttindex{#1}%
-%\item[{\tt #1(#2)}]
 \item[\code{#1(\varvars{#2})}]
 \ 
 }
@@ -140,37 +151,27 @@
 \newcommand{\ABC}{{\sc abc}}
 \newcommand{\UNIX}{{\sc Unix}}
 \newcommand{\ASCII}{{\sc ascii}}
-%\newcommand{\C}{{\bf C}}
 \newcommand{\Cpp}{C\protect\raisebox{.18ex}{++}}
 \newcommand{\C}{C}
 \newcommand{\EOF}{{\sc eof}}
 
 % code is the most difficult one...
-%\frenchspacing removed, because \section, etc., can't handle it
 \newcommand{\code}[1]{{\@vobeyspaces\@noligs\def\{{\char`\{}\def\}{\char`\}}\def\~{\char`\~}\def\^{\char`\^}\def\e{\char`\\}\def\${\char`\$}\def\#{\char`\#}\def\&{\char`\&}\def\%{\char`\%}%
 \mbox{\tt #1}}}
-%This one does not work
-%%%% myspecials, same as dospecials, but without {, } and \
-%%%\def\myspecials{\do\ \do\$\do\&%
-%%%  \do\#\do\^\do\^^K\do\_\do\^^A\do\%\do\~}
-%%%\newcommand{\code}[1]{\begingroup \catcode``=13 \@noligs
-%%%\tt \let\do\@makeother \myspecials
-%%%#1\endgroup}
+
 \newcommand{\kbd}[1]{\mbox{\tt #1}}
 \newcommand{\key}[1]{\mbox{\tt #1}}
 \newcommand{\samp}[1]{\mbox{`\code{#1}'}}
 \newcommand{\var}[1]{\mbox{\it#1\/}}
 \let\file=\samp
 \newcommand{\dfn}[1]{{\em #1\/}}
-\newcommand{\emph}[1]{{\em #1\/}}
+\renewcommand{\emph}[1]{{\em #1\/}}
 \newcommand{\strong}[1]{{\bf #1}}
 
-%\newcommand{\varvars}[1]{{\catcode`\,=\active\def,{\tt\char`\,\/tt}\var{#1}}}
-%\newcommand{\varvars}[1]{{\def\,{\/{\tt\char`\,}}\var{#1}}}
 \newcommand{\varvars}[1]{{\def\,{\/{\tt\char`\,}}\def\({\/{\tt\char`\(}}\def\){\/{\tt\char`\)}}\var{#1}}}
 
 \newif\iftexi\texifalse
-%not supported yet%\newif\iflatex\latextrue
+\newif\iflatex\latextrue
 
 \newenvironment{tableii}[4]{\begin{center}\def\lineii##1##2{\csname#2\endcsname{##1}&##2\\}\begin{tabular}{#1}\hline#3&#4\\
 \hline}{\hline\end{tabular}\end{center}}
@@ -182,15 +183,3 @@
 \advance\@tempdima \leftmargin\makebox[\@tempdima][l]{#1}}
 
 \newcommand{\sectcode}[1]{{\tt #1}}
-%%%
-%%%\let\orgchapter\chapter
-%%%\def\chapter#1{{\let\code\sectcode\orgchapter{#1}}}
-%%%\let\orgsection\section
-%%%\def\section#1{{\let\code\sectcode\orgsection{#1}}}
-%%%\let\orgsubsection\subsection
-%%%\def\subsection#1{{\let\code\sectcode\orgsubsection{#1}}}
-%%%\let\orgsubsubsection\subsubsection
-%%%\def\subsubsection#1{{\let\code\sectcode\orgsubsubsection{#1}}}
-%%%\let\orgsubsubsubsection\subsubsubsection
-%%%\def\subsubsubsection#1{{\let\code\sectcode\orgsubsubsubsection{#1}}}
-
