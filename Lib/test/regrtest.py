@@ -227,7 +227,7 @@ def runtest(test, generate, verbose, testdir = None):
                 cfp.close()
         finally:
             sys.stdout = save_stdout
-    except ImportError, msg:
+    except (ImportError, test_support.TestSkipped), msg:
         return -1
     except KeyboardInterrupt, v:
         raise KeyboardInterrupt, v, sys.exc_info()[2]
