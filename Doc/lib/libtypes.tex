@@ -492,7 +492,7 @@ can be used interchangeably to index the same dictionary entry.
 \indexii{dictionary}{type}
 
 Dictionaries are created by placing a comma-separated list of
-\code{\var{key}:\,var{value}} pairs within braces, for example:
+\code{\var{key}:\,\var{value}} pairs within braces, for example:
 \code{\{'jack':\,4098, 'sjoerd':\,4127\}} or
 \code{\{4098:\,'jack', 4127:\,'sjoerd'\}}.
 
@@ -683,7 +683,7 @@ Files have the following methods:
 	you can tell whether the last line of a file ended in a newline
 	or not (yes this happens!).}
   (but may be absent when a file ends with an
-  incomplete line).  If thevar{size} argument is present and
+  incomplete line).  If the \var{size} argument is present and
   non-negative, it is a maximum byte count (including the trailing
   newline) and an incomplete line may be returned.
   An empty string is returned when \EOF{} is hit
@@ -713,7 +713,7 @@ Files have the following methods:
 Truncate the file's size.  If the optional size argument present, the
 file is truncated to (at most) that size.  The size defaults to the
 current position.  Availability of this function depends on the
-operating system version (e.g., not all {\UNIX} versions support this
+operating system version (e.g., not all \UNIX{} versions support this
 operation).
 \end{funcdesc}
 
