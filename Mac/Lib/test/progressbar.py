@@ -1,12 +1,12 @@
 # Progress dialog
 
 from addpack import addpack
-addpack('Demo')
+addpack('Tools')
 addpack('bgen')
 addpack('dlg')
 addpack('evt')
 
-from Dlg import GetNewDialog, ModalDialog, SetIText
+from Dlg import GetNewDialog, ModalDialog, SetDialogItemText
 
 count = 0
 
@@ -17,12 +17,12 @@ def filter(d, e):
 
 def main():
 	d = GetNewDialog(256, -1)
-	tp, h, rect = d.GetDItem(2)
-	SetIText(h, "Progress...")
+	tp, h, rect = d.GetDialogItem(2)
+	SetDialogItemText(h, "Progress...")
 	for i in range(100):
 		if i%10 == 0:
 			str = "Progress...%d" % i
-			SetIText(h, str)
+			SetDialogItemText(h, str)
 			ModalDialog(filter)
 		for j in range(100): pass
 

@@ -56,7 +56,7 @@ typedef struct ControlObject {
 } ControlObject;
 
 PyObject *CtlObj_New(itself)
-	const ControlHandle itself;
+	ControlHandle itself;
 {
 	ControlObject *it;
 	if (itself == NULL) return PyMac_Error(resNotFound);
@@ -86,7 +86,7 @@ static void CtlObj_dealloc(self)
 	PyMem_DEL(self);
 }
 
-static PyObject *CtlObj_SetCTitle(_self, _args)
+static PyObject *CtlObj_SetControlTitle(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
@@ -95,14 +95,14 @@ static PyObject *CtlObj_SetCTitle(_self, _args)
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetStr255, title))
 		return NULL;
-	SetCTitle(_self->ob_itself,
-	          title);
+	SetControlTitle(_self->ob_itself,
+	                title);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
 }
 
-static PyObject *CtlObj_GetCTitle(_self, _args)
+static PyObject *CtlObj_GetControlTitle(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
@@ -111,8 +111,8 @@ static PyObject *CtlObj_GetCTitle(_self, _args)
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetStr255, title))
 		return NULL;
-	GetCTitle(_self->ob_itself,
-	          title);
+	GetControlTitle(_self->ob_itself,
+	                title);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -224,7 +224,7 @@ static PyObject *CtlObj_SizeControl(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetCtlValue(_self, _args)
+static PyObject *CtlObj_SetControlValue(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
@@ -233,14 +233,14 @@ static PyObject *CtlObj_SetCtlValue(_self, _args)
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &theValue))
 		return NULL;
-	SetCtlValue(_self->ob_itself,
-	            theValue);
+	SetControlValue(_self->ob_itself,
+	                theValue);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
 }
 
-static PyObject *CtlObj_GetCtlValue(_self, _args)
+static PyObject *CtlObj_GetControlValue(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
@@ -248,13 +248,13 @@ static PyObject *CtlObj_GetCtlValue(_self, _args)
 	short _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	_rv = GetCtlValue(_self->ob_itself);
+	_rv = GetControlValue(_self->ob_itself);
 	_res = Py_BuildValue("h",
 	                     _rv);
 	return _res;
 }
 
-static PyObject *CtlObj_SetCtlMin(_self, _args)
+static PyObject *CtlObj_SetControlMinimum(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
@@ -263,14 +263,14 @@ static PyObject *CtlObj_SetCtlMin(_self, _args)
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &minValue))
 		return NULL;
-	SetCtlMin(_self->ob_itself,
-	          minValue);
+	SetControlMinimum(_self->ob_itself,
+	                  minValue);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
 }
 
-static PyObject *CtlObj_GetCtlMin(_self, _args)
+static PyObject *CtlObj_GetControlMinimum(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
@@ -278,13 +278,13 @@ static PyObject *CtlObj_GetCtlMin(_self, _args)
 	short _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	_rv = GetCtlMin(_self->ob_itself);
+	_rv = GetControlMinimum(_self->ob_itself);
 	_res = Py_BuildValue("h",
 	                     _rv);
 	return _res;
 }
 
-static PyObject *CtlObj_SetCtlMax(_self, _args)
+static PyObject *CtlObj_SetControlMaximum(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
@@ -293,14 +293,14 @@ static PyObject *CtlObj_SetCtlMax(_self, _args)
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &maxValue))
 		return NULL;
-	SetCtlMax(_self->ob_itself,
-	          maxValue);
+	SetControlMaximum(_self->ob_itself,
+	                  maxValue);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
 }
 
-static PyObject *CtlObj_GetCtlMax(_self, _args)
+static PyObject *CtlObj_GetControlMaximum(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
@@ -308,13 +308,13 @@ static PyObject *CtlObj_GetCtlMax(_self, _args)
 	short _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	_rv = GetCtlMax(_self->ob_itself);
+	_rv = GetControlMaximum(_self->ob_itself);
 	_res = Py_BuildValue("h",
 	                     _rv);
 	return _res;
 }
 
-static PyObject *CtlObj_SetCRefCon(_self, _args)
+static PyObject *CtlObj_SetControlReference(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
@@ -323,14 +323,14 @@ static PyObject *CtlObj_SetCRefCon(_self, _args)
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &data))
 		return NULL;
-	SetCRefCon(_self->ob_itself,
-	           data);
+	SetControlReference(_self->ob_itself,
+	                    data);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
 }
 
-static PyObject *CtlObj_GetCRefCon(_self, _args)
+static PyObject *CtlObj_GetControlReference(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
@@ -338,9 +338,23 @@ static PyObject *CtlObj_GetCRefCon(_self, _args)
 	long _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	_rv = GetCRefCon(_self->ob_itself);
+	_rv = GetControlReference(_self->ob_itself);
 	_res = Py_BuildValue("l",
 	                     _rv);
+	return _res;
+}
+
+static PyObject *CtlObj_SetControlAction(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	SetControlAction(_self->ob_itself,
+	                 (ControlActionUPP)0);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -386,6 +400,20 @@ static PyObject *CtlObj_TestControl(_self, _args)
 	return _res;
 }
 
+static PyObject *CtlObj_GetControlVariant(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetControlVariant(_self->ob_itself);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
 static PyObject *CtlObj_TrackControl(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
@@ -404,24 +432,10 @@ static PyObject *CtlObj_TrackControl(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_GetCVariant(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short _rv;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = GetCVariant(_self->ob_itself);
-	_res = Py_BuildValue("h",
-	                     _rv);
-	return _res;
-}
-
 static PyMethodDef CtlObj_methods[] = {
-	{"SetCTitle", (PyCFunction)CtlObj_SetCTitle, 1,
+	{"SetControlTitle", (PyCFunction)CtlObj_SetControlTitle, 1,
 	 "(Str255 title) -> None"},
-	{"GetCTitle", (PyCFunction)CtlObj_GetCTitle, 1,
+	{"GetControlTitle", (PyCFunction)CtlObj_GetControlTitle, 1,
 	 "(Str255 title) -> None"},
 	{"DisposeControl", (PyCFunction)CtlObj_DisposeControl, 1,
 	 "() -> None"},
@@ -437,30 +451,32 @@ static PyMethodDef CtlObj_methods[] = {
 	 "(short h, short v) -> None"},
 	{"SizeControl", (PyCFunction)CtlObj_SizeControl, 1,
 	 "(short w, short h) -> None"},
-	{"SetCtlValue", (PyCFunction)CtlObj_SetCtlValue, 1,
+	{"SetControlValue", (PyCFunction)CtlObj_SetControlValue, 1,
 	 "(short theValue) -> None"},
-	{"GetCtlValue", (PyCFunction)CtlObj_GetCtlValue, 1,
+	{"GetControlValue", (PyCFunction)CtlObj_GetControlValue, 1,
 	 "() -> (short _rv)"},
-	{"SetCtlMin", (PyCFunction)CtlObj_SetCtlMin, 1,
+	{"SetControlMinimum", (PyCFunction)CtlObj_SetControlMinimum, 1,
 	 "(short minValue) -> None"},
-	{"GetCtlMin", (PyCFunction)CtlObj_GetCtlMin, 1,
+	{"GetControlMinimum", (PyCFunction)CtlObj_GetControlMinimum, 1,
 	 "() -> (short _rv)"},
-	{"SetCtlMax", (PyCFunction)CtlObj_SetCtlMax, 1,
+	{"SetControlMaximum", (PyCFunction)CtlObj_SetControlMaximum, 1,
 	 "(short maxValue) -> None"},
-	{"GetCtlMax", (PyCFunction)CtlObj_GetCtlMax, 1,
+	{"GetControlMaximum", (PyCFunction)CtlObj_GetControlMaximum, 1,
 	 "() -> (short _rv)"},
-	{"SetCRefCon", (PyCFunction)CtlObj_SetCRefCon, 1,
+	{"SetControlReference", (PyCFunction)CtlObj_SetControlReference, 1,
 	 "(long data) -> None"},
-	{"GetCRefCon", (PyCFunction)CtlObj_GetCRefCon, 1,
+	{"GetControlReference", (PyCFunction)CtlObj_GetControlReference, 1,
 	 "() -> (long _rv)"},
+	{"SetControlAction", (PyCFunction)CtlObj_SetControlAction, 1,
+	 "() -> None"},
 	{"DragControl", (PyCFunction)CtlObj_DragControl, 1,
 	 "(Point startPt, Rect limitRect, Rect slopRect, short axis) -> None"},
 	{"TestControl", (PyCFunction)CtlObj_TestControl, 1,
 	 "(Point thePt) -> (short _rv)"},
+	{"GetControlVariant", (PyCFunction)CtlObj_GetControlVariant, 1,
+	 "() -> (short _rv)"},
 	{"TrackControl", (PyCFunction)CtlObj_TrackControl, 1,
 	 "(Point thePoint) -> (short _rv)"},
-	{"GetCVariant", (PyCFunction)CtlObj_GetCVariant, 1,
-	 "() -> (short _rv)"},
 	{NULL, NULL, 0}
 };
 
@@ -580,22 +596,6 @@ static PyObject *Ctl_DrawControls(_self, _args)
 	return _res;
 }
 
-static PyObject *Ctl_UpdtControl(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	WindowPtr theWindow;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      WinObj_Convert, &theWindow))
-		return NULL;
-	UpdtControl(theWindow,
-	            theWindow->visRgn);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
 static PyObject *Ctl_UpdateControls(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -642,8 +642,6 @@ static PyMethodDef Ctl_methods[] = {
 	{"KillControls", (PyCFunction)Ctl_KillControls, 1,
 	 "(WindowPtr theWindow) -> None"},
 	{"DrawControls", (PyCFunction)Ctl_DrawControls, 1,
-	 "(WindowPtr theWindow) -> None"},
-	{"UpdtControl", (PyCFunction)Ctl_UpdtControl, 1,
 	 "(WindowPtr theWindow) -> None"},
 	{"UpdateControls", (PyCFunction)Ctl_UpdateControls, 1,
 	 "(WindowPtr theWindow) -> None"},

@@ -1,4 +1,6 @@
 # Scan <Controls.h>, generating ctlgen.py.
+import addpack
+addpack.addpack(':Tools:bgen:bgen')
 
 from scantools import Scanner
 
@@ -20,7 +22,7 @@ class MyScanner(Scanner):
 		listname = "functions"
 		if arglist:
 			t, n, m = arglist[0]
-			if t == "ControlHandle" and m == "InMode":
+			if t in ("ControlHandle", "ControlRef") and m == "InMode":
 				classname = "Method"
 				listname = "methods"
 		return classname, listname
@@ -35,6 +37,7 @@ class MyScanner(Scanner):
 	def makeblacklisttypes(self):
 		return [
 			'ProcPtr',
+			'ControlActionUPP',
 			'CCTabHandle',
 			'AuxCtlHandle',
 			]
@@ -51,8 +54,12 @@ class MyScanner(Scanner):
 			# For TrackControl
 			([("ProcPtr", "actionProc", "InMode")],
 			 [("FakeType('(ControlActionUPP)0')", "*", "*")]),
+			([("ControlActionUPP", "actionProc", "InMode")],
+			 [("FakeType('(ControlActionUPP)0')", "*", "*")]),
 			
 			([("ControlHandle", "*", "OutMode")],
+			 [("ExistingControlHandle", "*", "*")]),
+			([("ControlRef", "*", "OutMode")],	# Ditto, for Universal Headers
 			 [("ExistingControlHandle", "*", "*")]),
 			]
 

@@ -1,5 +1,8 @@
 # Scan an Apple header file, generating a Python file of generator calls.
 
+import addpack
+addpack.addpack(':Tools:bgen:bgen')
+
 from scantools import Scanner
 
 LONG = "Dialogs"
@@ -24,7 +27,7 @@ class MyScanner(Scanner):
 		listname = "functions"
 		if arglist:
 			t, n, m = arglist[0]
-			if t == "DialogPtr" and m == "InMode":
+			if t in ("DialogPtr", "DialogRef") and m == "InMode":
 				classname = "Method"
 				listname = "methods"
 		return classname, listname
@@ -42,6 +45,7 @@ class MyScanner(Scanner):
 			'FreeAlert',
 			'CouldDialog',
 			'FreeDialog',
+			'GetStdFilterProc',
 			]
 
 	def makeblacklisttypes(self):
@@ -65,6 +69,8 @@ class MyScanner(Scanner):
 			 [("NullStorage", "*", "InMode")]),
 			
 			([("DialogPtr", "*", "OutMode")],
+			 [("ExistingDialogPtr", "*", "*")]),
+			([("DialogRef", "*", "OutMode")],
 			 [("ExistingDialogPtr", "*", "*")]),
 			]
 

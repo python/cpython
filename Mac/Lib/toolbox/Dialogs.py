@@ -1,4 +1,4 @@
-# Generated from 'D:Development:THINK C:Mac #includes:Apple #includes:Dialogs.h'
+# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:Dialogs.h'
 
 ctrlItem = 4
 btnCtrl = 0
@@ -16,6 +16,7 @@ cancel = 2
 stopIcon = 0
 noteIcon = 1
 cautionIcon = 2
+kIDODialogItem = 24
 overlayDITL = 0
 appendDITLRight = 1
 appendDITLBottom = 2

@@ -3,6 +3,9 @@
 # Python library.
 # The ID can be overridden by passing a second parameter.
 
+import addpack
+addpack.addpack(':Tools:bgen:evt')
+
 from Dlg import *
 from Events import *
 import string
@@ -17,8 +20,8 @@ def f(d, event):
 
 def message(str = "Hello, world!", id = ID):
 	d = GetNewDialog(id, -1)
-	tp, h, rect = d.GetDItem(2)
-	SetIText(h, str)
+	tp, h, rect = d.GetDialogItem(2)
+	SetDialogItemText(h, str)
 	while 1:
 		n = ModalDialog(f)
 		if n == 1: break

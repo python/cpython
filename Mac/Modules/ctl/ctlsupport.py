@@ -5,6 +5,9 @@
 
 import string
 
+import addpack
+addpack.addpack(':Tools:bgen:bgen')
+
 # Declarations that change for each manager
 MACHEADERFILE = 'Controls.h'		# The Apple header file
 MODNAME = 'Ctl'				# The name of the module
@@ -22,6 +25,7 @@ from macsupport import *
 # Create the type objects
 
 ControlHandle = OpaqueByValueType(OBJECTTYPE, OBJECTPREFIX)
+ControlRef = ControlHandle
 ExistingControlHandle = OpaqueByValueType(OBJECTTYPE, "CtlObj_WhichControl", "BUG")
 
 RgnHandle = FakeType("theWindow->visRgn") # XXX
