@@ -18,8 +18,8 @@ lib:
 
 qua:
 	latex qua
-	latex qua
 	bibtex qua
+	latex qua
 	latex qua
 
 clean:
