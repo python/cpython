@@ -2352,8 +2352,4 @@ init_curses(void)
 	  SetDictInt("KEY_MIN", KEY_MIN);
 	  SetDictInt("KEY_MAX", KEY_MAX);
 	}
-
-	/* Check for errors */
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module _curses");
 }
