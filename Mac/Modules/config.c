@@ -104,6 +104,8 @@ extern void initQd();
 extern void initQt();
 extern void initRes();
 extern void initSnd();
+extern void initScrap();
+extern void initTE();
 extern void initWin();
 #endif
 
@@ -190,6 +192,8 @@ struct {
 	{"Qd", initQd},
 	{"Qt", initQt},
 	{"Snd", initSnd},
+	{"Scrap", initScrap},
+	{"TE", initTE},
 	{"Win", initWin},
 	{"Res", initRes},
 #endif
