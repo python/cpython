@@ -10,7 +10,7 @@ What's New in Python 2.3 alpha 2?
 *Release date: XX-XXX-2003*
 
 Core and builtins
-----------------
+-----------------
 
 - Through a bytecode optimizer bug (and I bet you didn't even know
   Python *had* a bytecode optimizer :-), "unsigned" hex/oct constants
@@ -74,6 +74,12 @@ Core and builtins
 
 Extension modules
 -----------------
+
+- The imp module now has ways to acquire and release the "import
+  lock": imp.acquire_lock() and imp.release_lock().  Note: this is a
+  reentrant lock, so releasing the lock only truly releases it when
+  this is the last release_lock() call.  You can check with
+  imp.lock_held().  (SF bug #580952 and patch #683257.)
 
 - Fix some bugs in the parser module.  SF bug #678518.
 
