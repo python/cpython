@@ -388,7 +388,7 @@ PyMac_Exit(status)
 	if (keep) {
 		SIOUXSettings.standalone = 1;
 		SIOUXSettings.autocloseonquit = 0;
-		SIOUXSetTitle("\p«terminated»");
+		SIOUXSetTitle("\p\307terminated\310");
 	}
 	else
 		SIOUXSettings.autocloseonquit = 1;
