@@ -700,11 +700,10 @@ approximately where \code{x/y} is replaced by \code{floor(x/y)}) or
     * y + x \%{} y} be very close to \code{x}.
 }.
 
-Complex floor division operator, modulo operator, and
-\function{divmod()}.
-
-\deprecated{2.3}{Instead convert to float using \function{abs()}
-if appropriate.}
+\deprecated{2.3}{The floor division operator, the modulo operator,
+and the \function{divmod()} function are no longer defined for complex
+numbers.  Instead, convert to a floating point number using the
+\function{abs()} function if appropriate.}
 
 The \code{+} (addition) operator yields the sum of its arguments.
 The arguments must either both be numbers or both sequences of the
