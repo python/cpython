@@ -159,7 +159,8 @@ PYTHON=		python$(EXE)
 MODULE_OBJS=	\
 		Modules/config.o \
 		Modules/getpath.o \
-		Modules/main.o
+		Modules/main.o \
+		Modules/gcmodule.o
 
 # Used of signalmodule.o is not available
 SIGNAL_OBJS=	@SIGNAL_OBJS@
