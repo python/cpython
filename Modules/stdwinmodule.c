@@ -454,6 +454,66 @@ drawing_textbreak(dp, args)
 		(long)wtextbreak(getstringvalue(s), (int)getstringsize(s), a));
 }
 
+static object *
+drawing_setfont(self, args)
+	drawingobject *self;
+	object *args;
+{
+	TEXTATTR saveattr, winattr;
+	object *str;
+	if (!getstrarg(args, &str))
+		return NULL;
+	wsetfont(getstringvalue(str));
+	INCREF(None);
+	return None;
+}
+
+static object *
+drawing_getbgcolor(self, args)
+	object *self;
+	object *args;
+{
+	if (!getnoarg(args))
+		return NULL;
+	return newintobject((long)wgetbgcolor());
+}
+
+static object *
+drawing_getfgcolor(self, args)
+	object *self;
+	object *args;
+{
+	if (!getnoarg(args))
+		return NULL;
+	return newintobject((long)wgetfgcolor());
+}
+
+static object *
+drawing_setbgcolor(self, args)
+	object *self;
+	object *args;
+{
+	long color;
+	if (!getlongarg(args, &color))
+		return NULL;
+	wsetbgcolor((COLOR)color);
+	INCREF(None);
+	return None;
+}
+
+static object *
+drawing_setfgcolor(self, args)
+	object *self;
+	object *args;
+{
+	long color;
+	if (!getlongarg(args, &color))
+		return NULL;
+	wsetfgcolor((COLOR)color);
+	INCREF(None);
+	return None;
+}
+
 static struct methodlist drawing_methods[] = {
 	{"box",		drawing_box},
 	{"circle",	drawing_circle},
@@ -473,6 +533,16 @@ static struct methodlist drawing_methods[] = {
 	{"lineheight",	drawing_lineheight},
 	{"textbreak",	drawing_textbreak},
 	{"textwidth",	drawing_textwidth},
+
+	/* Font setting methods: */
+	{"setfont",	drawing_setfont},
+	
+	/* Color methods: */
+	{"getbgcolor",	drawing_getbgcolor},
+	{"getfgcolor",	drawing_getfgcolor},
+	{"setbgcolor",	drawing_setbgcolor},
+	{"setfgcolor",	drawing_setfgcolor},
+
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -569,7 +639,7 @@ text_draw(self, args)
 	if (!getrectarg(args, a))
 		return NULL;
 	if (Drawing != NULL) {
-		err_setstr(RuntimeError, "not drawing");
+		err_setstr(RuntimeError, "already drawing");
 		return NULL;
 	}
 	/* Clip to text area and ignore if area is empty */
@@ -1211,6 +1281,26 @@ window_setwincursor(self, args)
 	return None;
 }
 
+static object *
+window_setfont(self, args)
+	windowobject *self;
+	object *args;
+{
+	TEXTATTR saveattr, winattr;
+	object *str;
+	if (!getstrarg(args, &str))
+		return NULL;
+	wgettextattr(&saveattr);
+	wgetwintextattr(self->w_win, &winattr);
+	wsettextattr(&winattr);
+	wsetfont(getstringvalue(str));
+	wgettextattr(&winattr);
+	wsetwintextattr(self->w_win, &winattr);
+	wsettextattr(&saveattr);
+	INCREF(None);
+	return None;
+}
+
 static struct methodlist window_methods[] = {
 	{"begindrawing",window_begindrawing},
 	{"change",	window_change},
@@ -1222,6 +1312,7 @@ static struct methodlist window_methods[] = {
 	{"scroll",	window_scroll},
 	{"setwincursor",window_setwincursor},
 	{"setdocsize",	window_setdocsize},
+	{"setfont",	window_setfont},
 	{"setorigin",	window_setorigin},
 	{"setselection",window_setselection},
 	{"settimer",	window_settimer},
@@ -1464,6 +1555,19 @@ stdwin_setdefwinsize(sw, args)
 }
 
 static object *
+stdwin_setdefscrollbars(sw, args)
+	object *sw;
+	object *args;
+{
+	int a[2];
+	if (!getpointarg(args, a))
+		return NULL;
+	wsetdefscrollbars(a[0], a[1]);
+	INCREF(None);
+	return None;
+}
+
+static object *
 stdwin_getdefwinpos(wp, args)
 	windowobject *wp;
 	object *args;
@@ -1485,6 +1589,18 @@ stdwin_getdefwinsize(wp, args)
 		return NULL;
 	wgetdefwinsize(&width, &height);
 	return makepoint(width, height);
+}
+
+static object *
+stdwin_getdefscrollbars(wp, args)
+	windowobject *wp;
+	object *args;
+{
+	int h, v;
+	if (!getnoarg(args))
+		return NULL;
+	wgetdefscrollbars(&h, &v);
+	return makepoint(h, v);
 }
 
 static object *
@@ -1657,6 +1773,17 @@ stdwin_resetselection(self, args)
 	return None;
 }
 
+static object *
+stdwin_fetchcolor(self, args)
+	object *self;
+	object *args;
+{
+	object *colorname;
+	if (!getstrarg(args, &colorname))
+		return NULL;
+	return newintobject((long)wfetchcolor(getstringvalue(colorname)));
+}
+
 static struct methodlist stdwin_methods[] = {
 	{"askfile",		stdwin_askfile},
 	{"askstr",		stdwin_askstr},
@@ -1664,9 +1791,11 @@ static struct methodlist stdwin_methods[] = {
 	{"fleep",		stdwin_fleep},
 	{"getselection",	stdwin_getselection},
 	{"getcutbuffer",	stdwin_getcutbuffer},
+	{"getdefscrollbars",	stdwin_getdefscrollbars},
 	{"getdefwinpos",	stdwin_getdefwinpos},
 	{"getdefwinsize",	stdwin_getdefwinsize},
 	{"getevent",		stdwin_getevent},
+	{"fetchcolor",		stdwin_fetchcolor},
 	{"menucreate",		stdwin_menucreate},
 	{"message",		stdwin_message},
 	{"open",		stdwin_open},
@@ -1674,6 +1803,7 @@ static struct methodlist stdwin_methods[] = {
 	{"resetselection",	stdwin_resetselection},
 	{"rotatecutbuffers",	stdwin_rotatecutbuffers},
 	{"setcutbuffer",	stdwin_setcutbuffer},
+	{"setdefscrollbars",	stdwin_setdefscrollbars},
 	{"setdefwinpos",	stdwin_setdefwinpos},
 	{"setdefwinsize",	stdwin_setdefwinsize},
 	
@@ -1682,6 +1812,16 @@ static struct methodlist stdwin_methods[] = {
 	{"lineheight",		drawing_lineheight},
 	{"textbreak",		drawing_textbreak},
 	{"textwidth",		drawing_textwidth},
+
+	/* Same for font setting methods: */
+	{"setfont",		drawing_setfont},
+
+	/* Same for color setting/getting methods: */
+	{"getbgcolor",		drawing_getbgcolor},
+	{"getfgcolor",		drawing_getfgcolor},
+	{"setbgcolor",		drawing_setbgcolor},
+	{"setfgcolor",		drawing_setfgcolor},
+
 	{NULL,			NULL}		/* sentinel */
 };
 
