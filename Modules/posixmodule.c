@@ -75,24 +75,24 @@ corresponding Unix manual entries for more information on calls.";
 /* Various compilers have only certain posix functions */
 /* XXX Gosh I wish these were all moved into config.h */
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
-  #define HAVE_EXECV      1
-  #define HAVE_GETCWD     1
-  #define HAVE_SYSTEM     1
-  #define HAVE_WAIT       1
-  #define HAVE_KILL       1
-  #define HAVE_PIPE       1
-  #define HAVE_POPEN      1
+#define HAVE_EXECV      1
+#define HAVE_GETCWD     1
+#define HAVE_SYSTEM     1
+#define HAVE_WAIT       1
+#define HAVE_KILL       1
+#define HAVE_PIPE       1
+#define HAVE_POPEN      1
 
-// #define HAVE_FORK       1
-// #define HAVE_GETEGID    1
-// #define HAVE_GETEUID    1
-// #define HAVE_GETGID     1
-// #define HAVE_GETPPID    1
-// #define HAVE_GETUID     1
-// #define HAVE_OPENDIR    1
+/* #define HAVE_FORK       1 */
+/* #define HAVE_GETEGID    1 */
+/* #define HAVE_GETEUID    1 */
+/* #define HAVE_GETGID     1 */
+/* #define HAVE_GETPPID    1 */
+/* #define HAVE_GETUID     1 */
+/* #define HAVE_OPENDIR    1 */
 #include <process.h>
 #else
-#ifdef __WATCOMC__		/* Watcom compiler */
+#if defined(__WATCOMC__) && !defined(__QNX__)		/* Watcom compiler */
 #define HAVE_GETCWD     1
 #define HAVE_OPENDIR    1
 #define HAVE_SYSTEM	1
@@ -144,7 +144,7 @@ corresponding Unix manual entries for more information on calls.";
 #define HAVE_WAIT       1
 #endif  /* _MSC_VER */
 #endif  /* __BORLANDC__ */
-#endif  /* ! __WATCOMC__ */
+#endif  /* ! __WATCOMC__ || __QNX__ */
 #endif /* ! __IBMC__ */
 
 #ifndef _MSC_VER
@@ -171,7 +171,7 @@ extern int symlink();
 #if defined(PYCC_VACPP)
 extern int mkdir Py_PROTO((char *));
 #else
-#if defined(__WATCOMC__) || defined(_MSC_VER)
+#if ( defined(__WATCOMC__) || defined(_MSC_VER) ) && !defined(__QNX__)
 extern int mkdir Py_PROTO((const char *));
 #else
 extern int mkdir Py_PROTO((const char *, mode_t));
@@ -232,7 +232,7 @@ extern int lstat Py_PROTO((const char *, struct stat *));
 #include <dirent.h>
 #define NAMLEN(dirent) strlen((dirent)->d_name)
 #else
-#ifdef __WATCOMC__
+#if defined(__WATCOMC__) && !defined(__QNX__)
 #include <direct.h>
 #define NAMLEN(dirent) strlen((dirent)->d_name)
 #else
@@ -270,7 +270,7 @@ extern int lstat Py_PROTO((const char *, struct stat *));
 
 /* Return a dictionary corresponding to the POSIX environment table */
 
-#if !defined(_MSC_VER) && !defined(__WATCOMC__)
+#if !defined(_MSC_VER) && ( !defined(__WATCOMC__) || defined(__QNX__) )
 extern char **environ;
 #endif /* !_MSC_VER */
 
@@ -666,28 +666,28 @@ posix_listdir(self, args)
 	if ((d = PyList_New(0)) == NULL)
         return NULL;
 
-    rc = DosFindFirst(namebuf,         // Wildcard Pattern to Match
-                      &hdir,           // Handle to Use While Search Directory
+    rc = DosFindFirst(namebuf,         /* Wildcard Pattern to Match */
+                      &hdir,           /* Handle to Use While Search Directory */
                       FILE_READONLY | FILE_HIDDEN | FILE_SYSTEM | FILE_DIRECTORY,
-                      &ep, sizeof(ep), // Structure to Receive Directory Entry
-                      &srchcnt,        // Max and Actual Count of Entries Per Iteration
-                      FIL_STANDARD);   // Format of Entry (EAs or Not)
+                      &ep, sizeof(ep), /* Structure to Receive Directory Entry */
+                      &srchcnt,        /* Max and Actual Count of Entries Per Iteration */
+                      FIL_STANDARD);   /* Format of Entry (EAs or Not) */
 
     if (rc != NO_ERROR) {
         errno = ENOENT;
         return posix_error();
     }
 
-    if (srchcnt > 0) { // If Directory is NOT Totally Empty,
+    if (srchcnt > 0) { /* If Directory is NOT Totally Empty, */
         do {
             if (ep.achName[0] == '.'
             && (ep.achName[1] == '\0' || ep.achName[1] == '.' && ep.achName[2] == '\0'))
-                continue; // Skip Over "." and ".." Names
+                continue; /* Skip Over "." and ".." Names */
 
             strcpy(namebuf, ep.achName);
 
-            // Leave Case of Name Alone -- In Native Form
-            // (Removed Forced Lowercasing Code)
+            /* Leave Case of Name Alone -- In Native Form */
+            /* (Removed Forced Lowercasing Code) */
 
             v = PyString_FromString(namebuf);
             if (v == NULL) {
@@ -768,7 +768,7 @@ posix_mkdir(self, args)
 	if (!PyArg_ParseTuple(args, "s|i", &path, &mode))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-#if defined(__WATCOMC__) || defined(_MSC_VER) || defined(PYCC_VACPP)
+#if ( defined(__WATCOMC__) || defined(_MSC_VER) || defined(PYCC_VACPP) ) && !defined(__QNX__)
 	res = mkdir(path);
 #else
 	res = mkdir(path, mode);
@@ -1365,7 +1365,7 @@ posix_kill(self, args)
             return posix_error();
 
     } else
-        return NULL; // Unrecognized Signal Requested
+        return NULL; /* Unrecognized Signal Requested */
 #else
 	if (kill(pid, sig) == -1)
 		return posix_error();
@@ -1425,9 +1425,9 @@ async_system(const char *command)
     *p = '\0';
 
     rc = DosExecPgm(errormsg, sizeof(errormsg),
-                    EXEC_ASYNC, // Execute Async w/o Wait for Results
+                    EXEC_ASYNC, /* Execute Async w/o Wait for Results */
                     args,
-                    NULL,       // Inherit Parent's Environment
+                    NULL,       /* Inherit Parent's Environment */
                     &rcodes, shell);
     return rc;
 }
@@ -1440,48 +1440,48 @@ popen(const char *command, const char *mode, int pipesize)
     APIRET   rc = DosCreatePipe(&rhan, &whan, pipesize);
 
     if (rc != NO_ERROR)
-        return NULL; // ERROR - Unable to Create Anon Pipe
+        return NULL; /* ERROR - Unable to Create Anon Pipe */
 
-    if (strchr(mode, 'r') != NULL) { // Treat Command as a Data Source
-        int oldfd = dup(1);      // Save STDOUT Handle in Another Handle
+    if (strchr(mode, 'r') != NULL) { /* Treat Command as a Data Source */
+        int oldfd = dup(1);      /* Save STDOUT Handle in Another Handle */
 
-        DosEnterCritSec();       // Stop Other Threads While Changing Handles
-        close(1);                // Make STDOUT Available for Reallocation
+        DosEnterCritSec();      /* Stop Other Threads While Changing Handles */
+        close(1);                /* Make STDOUT Available for Reallocation */
 
-        if (dup2(whan, 1) == 0) {      // Connect STDOUT to Pipe Write Side
-            DosClose(whan);            // Close Now-Unused Pipe Write Handle
-
-            if (async_system(command) == NO_ERROR)
-                retfd = fdopen(rhan, "rb"); // And Return Pipe Read Handle
-        }
-
-        dup2(oldfd, 1);          // Reconnect STDOUT to Original Handle
-        DosExitCritSec();        // Now Allow Other Threads to Run
-
-        close(oldfd);            // And Close Saved STDOUT Handle
-        return retfd;            // Return fd of Pipe or NULL if Error
-
-    } else if (strchr(mode, 'w')) { // Treat Command as a Data Sink
-        int oldfd = dup(0);      // Save STDIN Handle in Another Handle
-
-        DosEnterCritSec();       // Stop Other Threads While Changing Handles
-        close(0);                // Make STDIN Available for Reallocation
-
-        if (dup2(rhan, 0) == 0)     { // Connect STDIN to Pipe Read Side
-            DosClose(rhan);           // Close Now-Unused Pipe Read Handle
+        if (dup2(whan, 1) == 0) {      /* Connect STDOUT to Pipe Write Side */
+            DosClose(whan);            /* Close Now-Unused Pipe Write Handle */
 
             if (async_system(command) == NO_ERROR)
-                retfd = fdopen(whan, "wb"); // And Return Pipe Write Handle
+                retfd = fdopen(rhan, "rb"); /* And Return Pipe Read Handle */
         }
 
-        dup2(oldfd, 0);          // Reconnect STDIN to Original Handle
-        DosExitCritSec();        // Now Allow Other Threads to Run
+        dup2(oldfd, 1);          /* Reconnect STDOUT to Original Handle */
+        DosExitCritSec();        /* Now Allow Other Threads to Run */
 
-        close(oldfd);            // And Close Saved STDIN Handle
-        return retfd;            // Return fd of Pipe or NULL if Error
+        close(oldfd);            /* And Close Saved STDOUT Handle */
+        return retfd;            /* Return fd of Pipe or NULL if Error */
+
+    } else if (strchr(mode, 'w')) { /* Treat Command as a Data Sink */
+        int oldfd = dup(0);      /* Save STDIN Handle in Another Handle */
+
+        DosEnterCritSec();      /* Stop Other Threads While Changing Handles */
+        close(0);                /* Make STDIN Available for Reallocation */
+
+        if (dup2(rhan, 0) == 0)     { /* Connect STDIN to Pipe Read Side */
+            DosClose(rhan);           /* Close Now-Unused Pipe Read Handle */
+
+            if (async_system(command) == NO_ERROR)
+                retfd = fdopen(whan, "wb"); /* And Return Pipe Write Handle */
+        }
+
+        dup2(oldfd, 0);          /* Reconnect STDIN to Original Handle */
+        DosExitCritSec();        /* Now Allow Other Threads to Run */
+
+        close(oldfd);            /* And Close Saved STDIN Handle */
+        return retfd;            /* Return fd of Pipe or NULL if Error */
 
     } else
-        return NULL; // ERROR - Invalid Mode (Neither Read nor Write)
+        return NULL; /* ERROR - Invalid Mode (Neither Read nor Write) */
 }
 
 static PyObject *
@@ -2497,7 +2497,7 @@ all_ins(d)
 }
 
 
-#if defined(_MSC_VER) || defined(__WATCOMC__)
+#if ( defined(_MSC_VER) || defined(__WATCOMC__) ) && !defined(__QNX__)
 #define INITFUNC initnt
 #define MODNAME "nt"
 #else
