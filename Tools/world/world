@@ -1,6 +1,10 @@
 #! /usr/bin/env python
 
-"""Print mappings between country names and DNS country codes.
+"""world -- Print mappings between country names and DNS country codes.
+
+Author:  Barry Warsaw
+Email:   bwarsaw@python.org
+Version: %(__version__)s
 
 This script will take a list of Internet addresses and print out where in the
 world those addresses originate from, based on the top-level domain country
@@ -12,8 +16,8 @@ code found in the address.  Addresses can be in any of the following forms:
 
 If no match is found, the address is interpreted as a regular expression [*]
 and a reverse lookup is attempted.  This script will search the country names
-and printing a list of matching entries.  You can force reverse mappings with
-the `-r' flag (see below).
+and print a list of matching entries.  You can force reverse mappings with the
+`-r' flag (see below).
 
 For example:
 
@@ -47,7 +51,7 @@ The latest known change to this information was:
 This script also knows about non-geographic top-level domains.
 
 
-Usage: %s [-d] [-p|-P file] [-h] addr [addr ...]
+Usage: %(PROGRAM)s [-d] [-p file] [-o] [-h] addr [addr ...]
 
     --dump
     -d
@@ -57,12 +61,12 @@ Usage: %s [-d] [-p|-P file] [-h] addr [addr ...]
     -p file
         Parse an iso3166-countrycodes file extracting the two letter country
         code followed by the country name.  Note that the three letter country
-        code and number, which are also provided in the standard format file,
-        are ignored.
+        codes and numbers, which are also provided in the standard format
+        file, are ignored.
 
     --outputdict
     -o
-        With used in conjunction with the `-p' option, output is in the form
+        When used in conjunction with the `-p' option, output is in the form
         of a Python dictionary, and country names are normalized
         w.r.t. capitalization.  This makes it appropriate for cutting and
         pasting back into this file.
@@ -81,8 +85,6 @@ Usage: %s [-d] [-p|-P file] [-h] addr [addr ...]
 
 """
 __version__ = '$Revision$'
-__author__ = 'Barry Warsaw <bwarsaw@python.org>'
-__source__ = '<url:http://www.python.org/~bwarsaw/pyware/>'
 
 
 import sys
@@ -94,12 +96,15 @@ except ImportError:
     print sys.argv[0], 'requires Python 1.5'
     sys.exit(1)
 
+PROGRAM = sys.argv[0]
 
 
 
-def usage(status=0):
-    print __doc__ % sys.argv[0]
-    sys.exit(status)
+def usage(code, msg=''):
+    print __doc__ % globals()
+    if msg:
+        print msg
+    sys.exit(code)
 
 
 
@@ -218,20 +223,24 @@ def main():
     normalize = 0
     forcerev = 0
 
-    opts, args = getopt.getopt(
-	sys.argv[1:],
-	'p:rohd',
-	['parse', 'reverse', 'outputdict', 'help', 'dump'])
-    for arg, val in opts:
-	if arg in ('-h', '--help'):
+    try:
+        opts, args = getopt.getopt(
+            sys.argv[1:],
+            'p:rohd',
+            ['parse=', 'reverse', 'outputdict', 'help', 'dump'])
+    except getopt.error, msg:
+        usage(1, msg)
+
+    for opt, arg in opts:
+	if opt in ('-h', '--help'):
 	    help = 1
-	elif arg in ('-d', '--dump'):
+	elif opt in ('-d', '--dump'):
 	    dump = 1
-	elif arg in ('-p', '--parse'):
-	    parsefile = val
-	elif arg in ('-o', '--output'):
+	elif opt in ('-p', '--parse'):
+	    parsefile = arg
+	elif opt in ('-o', '--output'):
 	    normalize = 1
-	elif arg in ('-r', '--reverse'):
+	elif opt in ('-r', '--reverse'):
 	    forcerev = 1
 
     if help:
