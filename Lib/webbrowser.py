@@ -261,8 +261,7 @@ class WindowsDefault:
 # the TERM and DISPLAY cases, because we might be running Python from inside
 # an xterm.
 if os.environ.get("TERM") or os.environ.get("DISPLAY"):
-    _tryorder = ["galeon", "mozilla", "netscape", "kfm",
-                 "grail", "links", "lynx", "w3m",]
+    _tryorder = ["links", "lynx", "w3m"]
 
     # Easy cases first -- register console browsers if we have them.
     if os.environ.get("TERM"):
@@ -278,6 +277,9 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
 
     # X browsers have more in the way of options
     if os.environ.get("DISPLAY"):
+        _tryorder = ["galeon", "skipstone", "mozilla", "netscape",
+                     "kfm", "grail"] + _tryorder
+
         # First, the Netscape series
         if _iscommand("mozilla"):
             register("mozilla", None, Netscape("mozilla"))
@@ -292,6 +294,11 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
         # Gnome's Galeon
         if _iscommand("galeon"):
             register("galeon", None, Galeon("galeon"))
+
+        # Skipstone, another Gtk/Mozilla based browser
+        if _iscommand("skipstone"):
+            register("skipstone", None, GenericBrowser(
+                "skipstone '%s' >/dev/null &"))
 
         # Konqueror/kfm, the KDE browser.
         if _iscommand("kfm") or _iscommand("konqueror"):
