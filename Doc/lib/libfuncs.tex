@@ -354,3 +354,15 @@ its goal is to return a printable string.
 >>> if type(x) == type(''): print 'It is a string'
 \end{verbatim}\ecode
 \end{funcdesc}
+
+\begin{funcdesc}{xrange}{start\, end\, step}
+This function is very similar to \code{range()}, but returns an
+``xrange object'' instead of a list.  This is an opaque sequence type
+which yields the same values as the corresponding list, without
+actually storing them all simultaneously.  The advantage of
+\code{xrange()} over \code{range()} is minimal (since \code{xrange()}
+still has to create the values when asked for them) except when a very
+large range is used on a memory-starved machine (e.g. DOS) or when all
+of the range's elements are never used (e.g. when the loop is usually
+terminated with \code{break}).
+\end{funcdesc}
