@@ -46,12 +46,19 @@ prefix=		/usr/local
 # Install prefix for architecture-dependent files
 exec_prefix=	$(prefix)
 
+# Expanded directories
+MANDIR=$(prefix)/man
+BINDIR=$(exec_prefix)/bin
+LIBDIR=$(exec_prefix)/lib
+INCLUDEDIR=$(prefix)/include
+SCRIPTDIR=$(prefix)/lib
+
 # Symbols used for using shared libraries
 SO=		@SO@
 LDSHARED=	@LDSHARED@
 CCSHARED=	@CCSHARED@
 LINKFORSHARED=	@LINKFORSHARED@
-DESTSHARED=	$(prefix)/lib/python/$(MACHDEP)
+DESTSHARED=	$(SCRIPTDIR)/python/$(MACHDEP)
 
 # Programs
 SHELL=		/bin/sh
@@ -94,13 +101,13 @@ test:		python
 
 # Install the interpreter
 install:	python
-		$(INSTALL) python $(exec_prefix)/bin/python
+		$(INSTALL) python $(BINDIR)/python
 		@echo If this is your first time, consider make libinstall...
 
 # Install the library.
 # If your system does not support "cp -r", try "copy -r" or perhaps
 # something like find Lib -print | cpio -pacvdmu $(LIBDEST)
-LIBDEST=	$(prefix)/lib/python
+LIBDEST=	$(SCRIPTDIR)/python
 libinstall:
 		-if test ! -d $(LIBDEST); \
 		then mkdir $(LIBDEST); \
@@ -108,14 +115,15 @@ libinstall:
 		cp -r $(srcdir)/Lib/* $(LIBDEST)
 		PYTHONPATH=$(LIBDEST) \
 			./python $(LIBDEST)/compileall.py $(LIBDEST)
+		cd Modules; make sharedinstall
 
 # install the manual page
 maninstall:
 		$(INSTALL) $(srcdir)/Misc/python.man \
-			$(prefix)/man/man1/python.1
+			$(MANDIR)/man1/python.1
 
 # install the include files
-INCLUDEPY=	$(prefix)/include/Py
+INCLUDEPY=	$(INCLUDEDIR)/Py
 inclinstall:
 		-if test ! -d $(INCLUDEPY); \
 		then mkdir $(INCLUDEPY); \
@@ -123,7 +131,7 @@ inclinstall:
 		cp $(srcdir)/Include/*.h $(INCLUDEPY)
 
 # install the lib*.a files and miscellaneous stuff needed by extensions
-LIBP=		$(exec_prefix)/lib/python
+LIBP=		$(LIBDIR)/python
 LIBPL=		$(LIBP)/lib
 libainstall:	all
 		-if test ! -d $(LIBP); \
