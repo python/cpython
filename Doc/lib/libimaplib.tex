@@ -8,14 +8,15 @@
 
 % Based on HTML documentation by Piers Lauder <piers@staff.cs.usyd.edu.au>;
 % converted by Fred L. Drake, Jr. <fdrake@acm.org>.
+% Revised by ESR, January 2000.
 
 \indexii{IMAP4}{protocol}
 
 This module defines a class, \class{IMAP4}, which encapsulates a
-connection to an IMAP4 server and implements the IMAP4rev1 client
-protocol as defined in \rfc{2060}. It is backward compatible with
-IMAP4 (\rfc{1730}) servers, but note that the \samp{STATUS} command is
-not supported in IMAP4.
+connection to an IMAP4 server and implements a large subset of the
+IMAP4rev1 client protocol as defined in \rfc{2060}. It is backward
+compatible with IMAP4 (\rfc{1730}) servers, but note that the
+\samp{STATUS} command is not supported in IMAP4.
 
 A single class is provided by the \module{imaplib} module:
 
@@ -71,8 +72,10 @@ The following utility functions are defined:
 \end{funcdesc}
 
 
-Note that IMAP4 message numbers change as the mailbox changes, so it
-is highly advisable to use UIDs instead, with the UID command.
+Note that IMAP4 message numbers change as the mailbox changes; in
+particular, after an \samp{EXPUNGE} command performs deletions the
+remaining messages are renumbered. So it is highly advisable to use
+UIDs instead, with the UID command.
 
 At the end of the module, there is a test section that contains a more
 extensive example of usage.
