@@ -2072,11 +2072,11 @@ string_istitle(PyStringObject *self, PyObject *args)
 
 
 static char splitlines__doc__[] =
-"S.splitlines([maxsplit]]) -> list of strings\n\
+"S.splitlines([keepends]]) -> list of strings\n\
 \n\
 Return a list of the lines in S, breaking at line boundaries.\n\
-If maxsplit is given, at most maxsplit are done. Line breaks are not\n\
-included in the resulting list.";
+Line breaks are not included in the resulting list unless keepends\n\
+is given and true.";
 
 #define SPLIT_APPEND(data, left, right)					\
 	str = PyString_FromStringAndSize(data + left, right - left);	\
@@ -2092,43 +2092,43 @@ included in the resulting list.";
 static PyObject*
 string_splitlines(PyStringObject *self, PyObject *args)
 {
-    int maxcount = -1;
     register int i;
     register int j;
     int len;
+    int keepends = 0;
     PyObject *list;
     PyObject *str;
     char *data;
 
-    if (!PyArg_ParseTuple(args, "|i:splitlines", &maxcount))
+    if (!PyArg_ParseTuple(args, "|i:splitlines", &keepends))
         return NULL;
 
     data = PyString_AS_STRING(self);
     len = PyString_GET_SIZE(self);
-
-    if (maxcount < 0)
-        maxcount = INT_MAX;
 
     list = PyList_New(0);
     if (!list)
         goto onError;
 
     for (i = j = 0; i < len; ) {
+	int eol;
+
 	/* Find a line and append it */
 	while (i < len && data[i] != '\n' && data[i] != '\r')
 	    i++;
-	if (maxcount-- <= 0)
-	    break;
-	SPLIT_APPEND(data, j, i);
 
 	/* Skip the line break reading CRLF as one line break */
+	eol = i;
 	if (i < len) {
 	    if (data[i] == '\r' && i + 1 < len &&
 		data[i+1] == '\n')
 		i += 2;
 	    else
 		i++;
+	    if (keepends)
+		eol = i;
 	}
+	SPLIT_APPEND(data, j, eol);
 	j = i;
     }
     if (j < len) {
@@ -2591,7 +2591,10 @@ PyString_Format(format, args)
 					fmt = fmt_start;
 					goto unicode;
 				}
+				if (c == 's')
 				temp = PyObject_Str(v);
+				else
+					temp = PyObject_Repr(v);
 				if (temp == NULL)
 					goto error;
 				if (!PyString_Check(temp)) {
