@@ -12,7 +12,7 @@ extern "C" {
    contains at least 16 bits, but it's made changeable anyway.
    Note: 'digit' should be able to hold 2*MASK+1, and 'twodigits'
    should be able to hold the intermediate results in 'mul'
-   (at most MASK << SHIFT).
+   (at most (BASE-1)*(2*BASE+1) == MASK*(2*MASK+3)).
    Also, x_sub assumes that 'digit' is an unsigned type, and overflow
    is handled by taking the result mod 2**N for some N > SHIFT.
    And, at some places it is assumed that MASK fits in an int, as well. */
