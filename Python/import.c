@@ -42,6 +42,7 @@ initimport()
 		fatal("no mem for module table");
 	if (sysset("modules", v) != 0)
 		fatal("can't assign sys.modules");
+	DECREF(v);
 }
 
 object *
