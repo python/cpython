@@ -440,6 +440,11 @@ AC_MSG_CHECKING(for clock_t in time.h)
 AC_EGREP_HEADER(clock_t, time.h, was_it_defined=yes, AC_DEFINE(clock_t, long))
 AC_MSG_RESULT($was_it_defined)
 
+# Two defines needed to enable largefile support on various platforms
+# These may affect some typedefs
+AC_DEFINE(_LARGEFILE_SOURCE)
+AC_DEFINE(_FILE_OFFSET_BITS, 64)
+
 # Add some code to confdefs.h so that the test for off_t works on SCO
 cat >> confdefs.h <<\EOF
 #if defined(SCO_DS)
@@ -1275,47 +1280,6 @@ AC_CHECK_FUNCS(alarm chown clock confstr ctermid ctermid_r execv \
 
 AC_CHECK_FUNCS(openpty,, AC_CHECK_LIB(util,openpty, [AC_DEFINE(HAVE_OPENPTY)] [LIBS="$LIBS -lutil"]))
 AC_CHECK_FUNCS(forkpty,, AC_CHECK_LIB(util,forkpty, [AC_DEFINE(HAVE_FORKPTY)] [LIBS="$LIBS -lutil"]))
-
-# Try defining symbols to enable large file support.
-# The particular combination of symbols used here is known to work
-# on Linux and Solaris [2.]7.
-AC_MSG_CHECKING(for CFLAGS to enable large files)
-OLD_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
-AC_TRY_RUN([
-#include <sys/types.h>
-#include <stdio.h>
-main() {
-	FILE *fp;
-	off_t seek = 0x80000000ul;
-	off_t tell = 0;
-	fp = fopen("conftestval", "wb");
-	if (fp == NULL) {
-		perror("conftestval");
-		exit(1);
-	}
- 	if (fseeko(fp, seek, 0) < 0)
-		perror("fseeko");
-	else
-		tell = ftello(fp);
-	fclose(fp);
-	unlink("conftestval");
-	if (tell == seek) {
-		fprintf(stderr, "seek to 2**31 worked\n");
-		exit(0);
-	}
-	else {
-		exit(1);
-		fprintf(stderr, "seek to 2**31 didn't work\n");
-	}
-}
-],
-AC_MSG_RESULT(yes)
-AC_DEFINE(_LARGEFILE_SOURCE)
-AC_DEFINE(_FILE_OFFSET_BITS,64),
-AC_MSG_RESULT(no),
-AC_MSG_RESULT(no (cross-compiling)))
-CFLAGS="$OLD_CFLAGS"
 
 # check for long file support functions
 AC_CHECK_FUNCS(fseek64 fseeko fstatvfs ftell64 ftello statvfs)

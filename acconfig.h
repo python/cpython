@@ -74,9 +74,7 @@
 /* Defined to enable large file support when an off_t is bigger than a long
    and long long is available and at least as big as an off_t. You may need
    to add some flags for configuration and compilation to enable this mode.
-   E.g, for Solaris 2.7:
-   CFLAGS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64" OPT="-O2 $CFLAGS" \
-	configure
+   (For Solaris and Linux, the necessary defines are already defined.)
 */
 #undef HAVE_LARGEFILE_SUPPORT
 
