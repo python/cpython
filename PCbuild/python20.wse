@@ -1907,6 +1907,24 @@ item: Install File
   Description=Library email package
   Flags=0000000000000010
 end
+item: Install File
+  Source=..\lib\email\test\*.py
+  Destination=%MAINDIR%\Lib\email\test
+  Description=email tests
+  Flags=0000000000000010
+end
+item: Install File
+  Source=..\lib\email\test\data\*.txt
+  Destination=%MAINDIR%\Lib\email\test\data
+  Description=email test data
+  Flags=0000000000000010
+end
+item: Install File
+  Source=..\lib\email\test\data\*.gif
+  Destination=%MAINDIR%\Lib\email\test\data
+  Description=email test data
+  Flags=0000000000000010
+end
 item: Remark
 end
 item: Install File
@@ -2230,14 +2248,6 @@ end
 item: Install File
   Source=..\lib\test\*.out
   Destination=%MAINDIR%\Lib\test
-  Description=Python Test files
-  Flags=0000000000000010
-end
-item: Remark
-end
-item: Install File
-  Source=..\lib\test\data\*.*
-  Destination=%MAINDIR%\Lib\test\data
   Description=Python Test files
   Flags=0000000000000010
 end
