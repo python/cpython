@@ -28,20 +28,8 @@ If \var{file} is omitted or \code{None}, the output goes to
 object to receive the output.
 \end{funcdesc}
 
-\begin{funcdesc}{extract_tb}{traceback\optional{, limit}}
-Return a list of up to \var{limit} ``pre-processed'' stack trace
-entries extracted from \var{traceback}.  It is useful for alternate
-formatting of stack traces.  If \var{limit} is omitted or \code{None},
-all entries are extracted.  A ``pre-processed'' stack trace entry is a
-quadruple (\var{filename}, \var{line number}, \var{function name},
-\var{line text}) representing the information that is usually printed
-for a stack trace.  The \var{line text} is a string with leading and
-trailing whitespace stripped; if the source is not available it is
-\code{None}.
-\end{funcdesc}
-
-\begin{funcdesc}{print_exception}{type, value,
-traceback\optional{, limit\optional{, file}}}
+\begin{funcdesc}{print_exception}{type, value, traceback\optional{,
+                                  limit\optional{, file}}}
 Print exception information and up to \var{limit} stack trace entries
 from \var{traceback} to \var{file}.
 This differs from \function{print_tb()} in the
@@ -73,15 +61,16 @@ frame to start.  The optional \var{limit} and \var{file} arguments have the
 same meaning as for \function{print_exception()}.
 \end{funcdesc}
 
-\begin{funcdesc}{extract_tb}{tb\optional{, limit}}
-Return a list containing the raw (unformatted) traceback information
-extracted from the traceback object \var{tb}.  The optional
-\var{limit} argument has the same meaning as for
-\function{print_exception()}.  The items in the returned list are
-4-tuples containing the following values: filename, line number,
-function name, and source text line.  The source text line is stripped 
-of leading and trailing whitespace; it is \code{None} when the source
-text file is unavailable.
+\begin{funcdesc}{extract_tb}{traceback\optional{, limit}}
+Return a list of up to \var{limit} ``pre-processed'' stack trace
+entries extracted from the traceback object \var{traceback}.  It is
+useful for alternate formatting of stack traces.  If \var{limit} is
+omitted or \code{None}, all entries are extracted.  A
+``pre-processed'' stack trace entry is a quadruple (\var{filename},
+\var{line number}, \var{function name}, \var{text}) representing
+the information that is usually printed for a stack trace.  The
+\var{text} is a string with leading and trailing whitespace
+stripped; if the source is not available it is \code{None}.
 \end{funcdesc}
 
 \begin{funcdesc}{extract_stack}{\optional{f\optional{, limit}}}
