@@ -237,6 +237,13 @@ Returns true if the node has any attributes.
 Returns true if the node has any child nodes.
 \end{methoddesc}
 
+\begin{methoddesc}[Node]{isSameNode}{other}
+Returns true if \var{other} refers to the same node as this node.
+This is especially useful for DOM implementations which use any sort
+of proxy architecture (because more than one object can refer to the
+same node).
+\end{methoddesc}
+
 \begin{methoddesc}[Node]{appendChild}{newChild}
 Add a new child node to this node at the end of the list of children,
 returning \var{newChild}.
