@@ -74,8 +74,9 @@ def makeEditMenu():
 
     # just to be cute, let's disable the undo option:
     Edit_button.menu.add('command', label="Undo")
-    # undo is the 0th entry...
-    Edit_button.menu.entryconfig(0, state=DISABLED)
+    # Since the tear-off bar is the 0th entry,
+    # undo is the 1st entry...
+    Edit_button.menu.entryconfig(1, state=DISABLED)
 
     # and these are just for show. No "command" callbacks attached.
     Edit_button.menu.add_command(label="Cut")
