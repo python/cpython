@@ -1,8 +1,3 @@
-#
-# HTTP/1.1 client library
-#
-
-# ### this may as well go into a doc string...
 """HTTP/1.1 client library
 
 <intro stuff goes here>
@@ -70,7 +65,6 @@ Unread-response                _CS_IDLE           <response_class>
 Req-started-unread-response    _CS_REQ_STARTED    <response_class>
 Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 """
-
 
 import socket
 import string
@@ -599,13 +593,15 @@ class HTTPSConnection(HTTPConnection):
         self.sock = FakeSocket(sock, ssl)
 
 
-class HTTP(HTTPConnection):
+class HTTP:
     "Compatibility class with httplib.py from 1.5."
 
     _http_vsn = 10
     _http_vsn_str = 'HTTP/1.0'
 
     debuglevel = 0
+
+    _connection_class = HTTPConnection
 
     def __init__(self, host='', port=None, **x509):
         "Provide a default host, since the superclass requires one."
@@ -617,7 +613,11 @@ class HTTP(HTTPConnection):
         # Note that we may pass an empty string as the host; this will throw
         # an error when we attempt to connect. Presumably, the client code
         # will call connect before then, with a proper host.
-        HTTPConnection.__init__(self, host, port)
+        self._conn = self._connection_class(host, port)
+        # set up delegation to flesh out interface
+        self.send = self._conn.send
+        self.putrequest = self._conn.putrequest
+        self.endheaders = self._conn.endheaders
 
         # we never actually use these for anything, but we keep them here for
         # compatibility with post-1.5.2 CVS.
@@ -630,8 +630,8 @@ class HTTP(HTTPConnection):
         "Accept arguments to set the host/port, since the superclass doesn't."
 
         if host is not None:
-            self._set_hostport(host, port)
-        HTTPConnection.connect(self)
+            self._conn._set_hostport(host, port)
+        self._conn.connect()
 
     def set_debuglevel(self, debuglevel):
         "The class no longer supports the debuglevel."
@@ -643,8 +643,8 @@ class HTTP(HTTPConnection):
 
     def putheader(self, header, *values):
         "The superclass allows only one value argument."
-        HTTPConnection.putheader(self, header,
-                                 string.joinfields(values, '\r\n\t'))
+        self._conn.putheader(header,
+                             string.joinfields(values, '\r\n\t'))
 
     def getreply(self):
         """Compat definition since superclass does not define it.
@@ -655,14 +655,14 @@ class HTTP(HTTPConnection):
         - any RFC822 headers in the response from the server
         """
         try:
-            response = self.getresponse()
+            response = self._conn.getresponse()
         except BadStatusLine, e:
             ### hmm. if getresponse() ever closes the socket on a bad request,
             ### then we are going to have problems with self.sock
 
             ### should we keep this behavior? do people use it?
             # keep the socket open (as a file), and return it
-            self.file = self.sock.makefile('rb', 0)
+            self.file = self._conn.sock.makefile('rb', 0)
 
             # close our socket -- we want to restart after any protocol error
             self.close()
@@ -675,7 +675,7 @@ class HTTP(HTTPConnection):
         return response.status, response.reason, response.msg
 
     def close(self):
-        HTTPConnection.close(self)
+        self._conn.close()
 
         # note that self.file == response.fp, which gets closed by the
         # superclass. just clear the object ref here.
@@ -684,6 +684,17 @@ class HTTP(HTTPConnection):
         ### do it
         self.file = None
 
+if hasattr(socket, 'ssl'):
+    class HTTPS(HTTP):
+        """Compatibility with 1.5 httplib interface
+
+        Python 1.5.2 did not have an HTTPS class, but it defined an
+        interface for sending http requests that is also useful for
+        https. 
+        """
+
+    _connection_class = HTTPSConnection
+        
 
 class HTTPException(Exception):
     pass
@@ -764,7 +775,7 @@ def test():
     print h.getfile().read()
 
     if hasattr(socket, 'ssl'):
-        host = 'www.c2.net'
+        host = 'sourceforge.net'
         hs = HTTPS()
         hs.connect(host)
         hs.putrequest('GET', selector)
