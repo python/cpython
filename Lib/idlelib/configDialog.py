@@ -83,6 +83,10 @@ class ConfigDialog(Toplevel):
         self.Help()
     
     def ChangePage(self):
+        #pop up the active 'tab' only
+        for button in self.pageButtons: button.master.config(relief=RIDGE)
+        self.pageButtons[self.pageNum.get()].master.config(relief=RAISED)
+        #switch page
         self.pages[self.pageNum.get()].lift()
         self.title('Settings - '+
                 self.pageButtons[self.pageNum.get()].cget('text'))
@@ -147,7 +151,7 @@ class ConfigDialog(Toplevel):
     def CreateWidgets(self):
         self.framePages = Frame(self)
         frameActionButtons = Frame(self)
-        framePageButtons = Frame(self.framePages,borderwidth=1,relief=SUNKEN)
+        framePageButtons = Frame(self.framePages)
         #action buttons
         self.buttonHelp = Button(frameActionButtons,text='Help',
                 command=self.Help,takefocus=FALSE)
@@ -160,21 +164,20 @@ class ConfigDialog(Toplevel):
         #page buttons
         self.pageNum=IntVar()
         self.pageNum.set(0)
-        buttonPageFontTab = Radiobutton(framePageButtons,value=0,
-                text='Font/Tabs',padx=5,pady=5)
-        buttonPageHighlight = Radiobutton(framePageButtons,value=1,
-                text='Highlighting',padx=5,pady=5)
-        buttonPageKeys = Radiobutton(framePageButtons,value=2,
-                text='Keys',padx=5,pady=5)
-        buttonPageGeneral = Radiobutton(framePageButtons,value=3,
-                text='General',padx=5,pady=5)
-        self.pageButtons=(buttonPageFontTab,buttonPageHighlight,
-                buttonPageKeys,buttonPageGeneral)
-        for button in self.pageButtons:
-            button.config(command=self.ChangePage,underline=0,takefocus=FALSE,
-            indicatoron=FALSE,highlightthickness=0,variable=self.pageNum,
-            selectcolor=self.bg,borderwidth=1)
-            button.pack(side=LEFT)
+        pageButtonNames=('Fonts/Tabs','Highlighting','Keys','General')
+        self.pageButtons=[]
+        buttonValue=0
+        for name in pageButtonNames:
+            buttonFrame=Frame(framePageButtons,borderwidth=2,relief=RIDGE)
+            buttonFrame.pack(side=LEFT)
+            button = Radiobutton(buttonFrame,command=self.ChangePage,
+                value=buttonValue,padx=5,pady=5,takefocus=FALSE,underline=0,
+                indicatoron=FALSE,highlightthickness=0,variable=self.pageNum,
+                selectcolor=self.bg,borderwidth=0,text=name)
+            button.pack()
+            button.lift()
+            self.pageButtons.append(button)
+            buttonValue=buttonValue+1
         #pages
         self.pages=(self.CreatePageFontTab(),
                     self.CreatePageHighlight(),
@@ -182,7 +185,7 @@ class ConfigDialog(Toplevel):
                     self.CreatePageGeneral())
 
         #grid in framePages so we can overlap pages
-        framePageButtons.grid(row=0,column=0,sticky=W)
+        framePageButtons.grid(row=0,column=0,sticky=NSEW)
         for page in self.pages: page.grid(row=1,column=0,sticky=(N,S,E,W))
         
         self.buttonHelp.pack(side=RIGHT,padx=5,pady=5)
@@ -201,7 +204,7 @@ class ConfigDialog(Toplevel):
         self.newFont=tkFont.Font(self,('courier',12,'normal'))
         ##widget creation
         #body frame
-        frame=Frame(self.framePages,borderwidth=2,relief=SUNKEN)
+        frame=Frame(self.framePages,borderwidth=2,relief=RAISED)
         #body section frames
         frameFont=Frame(frame,borderwidth=2,relief=GROOVE)
         frameIndent=Frame(frame,borderwidth=2,relief=GROOVE)
@@ -291,7 +294,7 @@ class ConfigDialog(Toplevel):
         self.themeType=IntVar() 
         ##widget creation
         #body frame
-        frame=Frame(self.framePages,borderwidth=2,relief=SUNKEN)
+        frame=Frame(self.framePages,borderwidth=2,relief=RAISED)
         #body section frames
         frameCustom=Frame(frame,borderwidth=2,relief=GROOVE)
         frameTheme=Frame(frame,borderwidth=2,relief=GROOVE)
@@ -383,7 +386,7 @@ class ConfigDialog(Toplevel):
         self.keysType=IntVar() 
         ##widget creation
         #body frame
-        frame=Frame(self.framePages,borderwidth=2,relief=SUNKEN)
+        frame=Frame(self.framePages,borderwidth=2,relief=RAISED)
         #body section frames
         frameCustom=Frame(frame,borderwidth=2,relief=GROOVE)
         frameKeySets=Frame(frame,borderwidth=2,relief=GROOVE)
@@ -457,7 +460,7 @@ class ConfigDialog(Toplevel):
         self.extState=IntVar()       
         #widget creation
         #body
-        frame=Frame(self.framePages,borderwidth=2,relief=SUNKEN)
+        frame=Frame(self.framePages,borderwidth=2,relief=RAISED)
         #body section frames        
         frameRun=Frame(frame,borderwidth=2,relief=GROOVE)
         frameWinSize=Frame(frame,borderwidth=2,relief=GROOVE)
