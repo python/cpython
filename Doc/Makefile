@@ -323,7 +323,8 @@ html/acks.html: ACKS $(TOOLSDIR)/support.py $(TOOLSDIR)/mkackshtml
 BOILERPLATE=texinputs/boilerplate.tex
 html/index.html: $(INDEXFILES)
 html/index.html: html/index.html.in $(BOILERPLATE) tools/rewrite.py
-	$(PYTHON) tools/rewrite.py $(BOILERPLATE) RELEASE=$(RELEASE) \
+	$(PYTHON) tools/rewrite.py $(BOILERPLATE) \
+		RELEASE=$(RELEASE) WHATSNEW=$(WHATSNEW) \
 		<$< >$@
 
 html/modindex.html: $(TOOLSDIR)/support.py $(TOOLSDIR)/mkmodindex
