@@ -270,7 +270,7 @@ class BaseSet(object):
         if len(self) < len(other):  # Fast check for obvious cases
             return False
         for elt in ifilter(self._data.has_key, other, True):
-                return False
+            return False
         return True
 
     # Inequality comparisons using the is-subset relation.
