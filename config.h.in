@@ -269,6 +269,9 @@
 /* Define if you have the getpeername function.  */
 #undef HAVE_GETPEERNAME
 
+/* Define if you have the getgroups function.  */
+#undef HAVE_GETGROUPS
+
 /* Define if you have the getpgrp function.  */
 #undef HAVE_GETPGRP
 
@@ -283,6 +286,18 @@
 
 /* Define if you have the getwd function.  */
 #undef HAVE_GETWD
+
+/* Define if you have the fpathconf function.  */
+#undef HAVE_FPATHCONF
+
+/* Define if you have the pathconf function.  */
+#undef HAVE_PATHCONF
+
+/* Define if you have the confstr function.  */
+#undef HAVE_CONFSTR
+
+/* Define if you have the sysconf function.  */
+#undef HAVE_SYSCONF
 
 /* Define if you have the hypot function.  */
 #undef HAVE_HYPOT
