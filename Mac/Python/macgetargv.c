@@ -318,15 +318,3 @@ PyMac_GetArgv(pargv)
 	*pargv = arg_vector;
 	return arg_count;
 }
-
-/* Initialization sequence for normal application */
-
-void
-main()
-{
-	int argc;
-	char **argv;
-	
-	argc = PyMac_GetArgv(&argv);
-	Py_Main(argc, argv);
-}
