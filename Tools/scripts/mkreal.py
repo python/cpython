@@ -1,4 +1,4 @@
-#! /usr/local/python
+#! /usr/local/bin/python
 
 # mkreal
 #
@@ -45,6 +45,7 @@ def mkrealdir(name):
 def main():
 	sys.stdout = sys.stderr
 	progname = os.path.basename(sys.argv[0])
+	if progname == '-c': progname = 'mkreal'
 	args = sys.argv[1:]
 	if not args:
 		print 'usage:', progname, 'path ...'

@@ -40,7 +40,7 @@ rep = sys.stdout.write
 def main():
 	bad = 0
 	if not sys.argv[1:]: # No arguments
-		err('usage: ' + argv[0] + ' file-or-directory ...\n')
+		err('usage: ' + sys.argv[0] + ' file-or-directory ...\n')
 		sys.exit(2)
 	for arg in sys.argv[1:]:
 		if os.path.isdir(arg):
