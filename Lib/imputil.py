@@ -333,6 +333,8 @@ _suffix_char = __debug__ and 'c' or 'o'
 # byte-compiled file suffix
 _suffix = '.py' + _suffix_char
 
+# the C_EXTENSION suffixes
+_c_suffixes = filter(lambda x: x[2] == imp.C_EXTENSION, imp.get_suffixes())
 
 def _compile(pathname, timestamp):
   """Compile (and cache) a Python source file.
@@ -429,7 +431,7 @@ def _timestamp(pathname):
     return None
   return long(s[8])
 
-def _fs_import(dir, modname):
+def _fs_import(dir, modname, fqname):
   "Fetch a module from the filesystem."
 
   pathname = _os_path_join(dir, modname)
@@ -440,6 +442,18 @@ def _fs_import(dir, modname):
   else:
     values = { }
     ispkg = 0
+
+    # look for dynload modules
+    for desc in _c_suffixes:
+      file = pathname + desc[0]
+      try:
+        fp = open(file, desc[1])
+      except IOError:
+        pass
+      else:
+        module = imp.load_module(fqname, fp, file, desc)
+        values['__file__'] = file
+        return 0, module, values
 
   t_py = _timestamp(pathname + '.py')
   t_pyc = _timestamp(pathname + _suffix)
@@ -578,7 +592,7 @@ class DirectoryImporter(Importer):
 
     # Return the module (and other info) if found in the specified
     # directory. Otherwise, return None.
-    return _fs_import(dir, modname)
+    return _fs_import(dir, modname, fqname)
 
   def __repr__(self):
     return '<%s.%s for "%s" at 0x%x>' % (self.__class__.__module__,
@@ -602,11 +616,11 @@ class PathImporter(Importer):
   def get_code(self, parent, modname, fqname):
     if parent:
       # we are looking for a module inside of a specific package
-      return _fs_import(parent.__pkgdir__, modname)
+      return _fs_import(parent.__pkgdir__, modname, fqname)
 
     # scan sys.path, looking for the requested module
     for dir in self.path:
-      result = _fs_import(dir, modname)
+      result = _fs_import(dir, modname, fqname)
       if result:
         return result
 
