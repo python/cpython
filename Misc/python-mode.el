@@ -1592,7 +1592,7 @@ the new line indented."
 			   (/= startpos
 			       (save-excursion
 				 (goto-char (1+ open-bracket-pos))
-				 (skip-chars-forward " \t\n")
+				 (forward-comment (point-max))
 				 (point))))
 		      ;; again mimic the first list item
 		      (current-indentation)
