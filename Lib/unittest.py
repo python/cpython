@@ -443,7 +443,7 @@ class TestLoader:
             if not isinstance(test, TestCase) and \
                not isinstance(test, TestSuite):
                 raise ValueError, \
-                      "calling %s returned %s, not a test" % obj,test
+                      "calling %s returned %s, not a test" % (obj,test)
             return test
         else:
             raise ValueError, "don't know how to make test from: %s" % obj
