@@ -40,6 +40,10 @@ PERFORMANCE OF THIS SOFTWARE.
 DL_IMPORT(PyObject *) PyEval_CallObjectWithKeywords
 	Py_PROTO((PyObject *, PyObject *, PyObject *));
 
+/* DLL-level Backwards compatibility: */
+#undef PyEval_CallObject
+DL_IMPORT(PyObject *) PyEval_CallObject Py_PROTO((PyObject *, PyObject *));
+
 /* Inline this */
 #define PyEval_CallObject(func,arg) \
         PyEval_CallObjectWithKeywords(func, arg, (PyObject *)NULL)

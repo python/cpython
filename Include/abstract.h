@@ -754,6 +754,12 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 
      DL_IMPORT(int) PySequence_Contains Py_PROTO((PyObject *o, PyObject *value));
+
+/* For DLL-level backwards compatibility */
+#undef PySequence_In
+     DL_IMPORT(int) PySequence_In Py_PROTO((PyObject *o, PyObject *value));
+
+/* For source-level backwards compatibility */
 #define PySequence_In PySequence_Contains
 
        /*
