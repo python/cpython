@@ -101,6 +101,7 @@ use a modified environment.
 \end{datadesc}
 
 \begin{funcdescni}{chdir}{path}
+\funclineni{fchdir}{}
 \funclineni{getcwd}{}
 These functions are described in ``Files and Directories'' (section
 \ref{os-file-dir}).
@@ -588,6 +589,14 @@ Availability: \UNIX, Windows.
 \index{directory!changing}
 Change the current working directory to \var{path}.
 Availability: Macintosh, \UNIX, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{fchdir}{fd}
+Change the current working directory to the directory represented by
+the file descriptor \var{fd}.  The descriptor must refer to an opened
+directory, not an open file.
+Availability: \UNIX.
+\versionadded{2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{getcwd}{}
