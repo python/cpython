@@ -132,6 +132,30 @@ class TestBasicOpsTriple(TestBasicOps):
 
 #==============================================================================
 
+def baditer():
+    raise TypeError
+    yield True
+
+def gooditer():
+    yield True
+
+class TestExceptionPropagation(unittest.TestCase):
+    """SF 628246:  Set constructor should not trap iterator TypeErrors"""
+
+    def test_instanceWithException(self):
+        self.assertRaises(TypeError, Set, baditer())
+
+    def test_instancesWithoutException(self):
+        """All of these iterables should load without exception."""
+        Set([1,2,3])
+        Set((1,2,3))
+        Set({'one':1, 'two':2, 'three':3})
+        Set(xrange(3))
+        Set('abc')
+        Set(gooditer())
+
+#==============================================================================
+
 class TestSetOfSets(unittest.TestCase):
     def test_constructor(self):
         inner = Set([1])
@@ -604,6 +628,7 @@ class TestCopyingNested(TestCopying):
 def makeAllTests():
     suite = unittest.TestSuite()
     for klass in (TestSetOfSets,
+                  TestExceptionPropagation,
                   TestBasicOpsEmpty,
                   TestBasicOpsSingleton,
                   TestBasicOpsTuple,
