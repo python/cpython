@@ -1,9 +1,9 @@
 """\
 minidom.py -- a lightweight DOM implementation.
 
-parse( "foo.xml" )
+parse("foo.xml")
 
-parseString( "<foo><bar/></foo>" )
+parseString("<foo><bar/></foo>")
 
 Todo:
 =====
@@ -47,7 +47,7 @@ class Node(_Node):
             Node.allnodes[index] = repr(self.__dict__)
             if Node.debug is None:
                 Node.debug = _get_StringIO()
-                #open( "debug4.out", "w" )
+                #open("debug4.out", "w")
             Node.debug.write("create %s\n" % index)
 
     def __getattr__(self, key):
@@ -102,7 +102,7 @@ class Node(_Node):
     def insertBefore(self, newChild, refChild):
         if newChild.nodeType not in self.childNodeTypes:
             raise HierarchyRequestErr, \
-                  "%s cannot be child of %s" % (repr(newChild), repr(self) )
+                  "%s cannot be child of %s" % (repr(newChild), repr(self))
         if newChild.parentNode is not None:
             newChild.parentNode.removeChild(newChild)
         if refChild is None:
@@ -125,7 +125,7 @@ class Node(_Node):
     def appendChild(self, node):
         if node.nodeType not in self.childNodeTypes:
             raise HierarchyRequestErr, \
-                  "%s cannot be child of %s" % (repr(node), repr(self) )
+                  "%s cannot be child of %s" % (repr(node), repr(self))
         if node.parentNode is not None:
             node.parentNode.removeChild(node)
         if self.childNodes:
@@ -143,7 +143,7 @@ class Node(_Node):
     def replaceChild(self, newChild, oldChild):
         if newChild.nodeType not in self.childNodeTypes:
             raise HierarchyRequestErr, \
-                  "%s cannot be child of %s" % (repr(newChild), repr(self) )
+                  "%s cannot be child of %s" % (repr(newChild), repr(self))
         if newChild.parentNode is not None:
             newChild.parentNode.removeChild(newChild)
         if newChild is oldChild:
@@ -435,10 +435,16 @@ class Element(Node):
         Node.unlink(self)
 
     def getAttribute(self, attname):
-        return self._attrs[attname].value
+        try:
+            return self._attrs[attname].value
+        except KeyError:
+            return ""
 
     def getAttributeNS(self, namespaceURI, localName):
-        return self._attrsNS[(namespaceURI, localName)].value
+        try:
+            return self._attrsNS[(namespaceURI, localName)].value
+        except KeyError:
+            return ""
 
     def setAttribute(self, attname, value):
         attr = Attr(attname)
@@ -457,7 +463,7 @@ class Element(Node):
         return self._attrs.get(attrname)
 
     def getAttributeNodeNS(self, namespaceURI, localName):
-        return self._attrsNS[(namespaceURI, localName)]
+        return self._attrsNS.get((namespaceURI, localName))
 
     def setAttributeNode(self, attr):
         if attr.ownerElement not in (None, self):
@@ -527,6 +533,12 @@ class Element(Node):
 
     def _get_attributes(self):
         return AttributeList(self._attrs, self._attrsNS)
+
+    def hasAttributes(self):
+        if self._attrs or self._attrsNS:
+            return 1
+        else:
+            return 0
 
 class Comment(Node):
     nodeType = Node.COMMENT_NODE
@@ -624,7 +636,8 @@ class DOMImplementation:
 
     def createDocument(self, namespaceURI, qualifiedName, doctype):
         if doctype and doctype.parentNode is not None:
-            raise xml.dom.WrongDocumentErr("doctype object owned by another DOM tree")
+            raise xml.dom.WrongDocumentErr(
+                "doctype object owned by another DOM tree")
         doc = Document()
         if doctype is None:
             doctype = self.createDocumentType(qualifiedName, None, None)
@@ -634,7 +647,11 @@ class DOMImplementation:
                and namespaceURI != "http://www.w3.org/XML/1998/namespace":
                 raise xml.dom.NamespaceErr("illegal use of 'xml' prefix")
             if prefix and not namespaceURI:
-                raise xml.dom.NamespaceErr("illegal use of prefix without namespaces")
+                raise xml.dom.NamespaceErr(
+                    "illegal use of prefix without namespaces")
+            element = doc.createElementNS(namespaceURI, qualifiedName)
+            doc.appendChild(element)
+        # XXX else, raise an error?  Empty qname is illegal in the DOM spec!
         doctype.parentNode = doc
         doc.doctype = doctype
         doc.implementation = self
@@ -662,13 +679,14 @@ class Document(Node):
     def appendChild(self, node):
         if node.nodeType not in self.childNodeTypes:
             raise HierarchyRequestErr, \
-                  "%s cannot be child of %s" % (repr(node), repr(self) )
+                  "%s cannot be child of %s" % (repr(node), repr(self))
         if node.parentNode is not None:
             node.parentNode.removeChild(node)
 
         if node.nodeType == Node.ELEMENT_NODE \
            and self._get_documentElement():
-            raise xml.dom.HierarchyRequestErr("two document elements disallowed")
+            raise xml.dom.HierarchyRequestErr(
+                "two document elements disallowed")
         return Node.appendChild(self, node)
 
     def removeChild(self, oldChild):
@@ -720,6 +738,7 @@ class Document(Node):
         return rc
 
     def writexml(self, writer):
+        writer.write('<?xml version="1.0" ?>\n')
         for node in self.childNodes:
             node.writexml(writer)
 
