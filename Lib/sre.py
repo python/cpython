@@ -89,6 +89,10 @@ def _compile(pattern, flags=0):
     _cache[key] = p
     return p
 
+def purge():
+    # clear pattern cache
+    _cache.clear()
+
 def _sub(pattern, template, string, count=0):
     # internal: pattern.sub implementation hook
     return _subn(pattern, template, string, count)[0]
@@ -142,3 +146,12 @@ def _split(pattern, string, maxsplit=0):
         n = n + 1
     append(string[i:])
     return s
+
+# register myself for pickling
+
+import copy_reg
+
+def _pickle(p):
+    return _compile, (p.pattern, p.flags)
+
+copy_reg.pickle(type(_compile("")), _pickle, _compile)

@@ -31,15 +31,15 @@ def _compile(code, pattern, flags):
                 emit(OPCODES[OP_IGNORE[op]])
             else:
                 emit(OPCODES[op])
-            emit(ord(av))
+            emit(av)
         elif op is IN:
             if flags & SRE_FLAG_IGNORECASE:
                 emit(OPCODES[OP_IGNORE[op]])
                 def fixup(literal, flags=flags):
-                    return _sre.getlower(ord(literal), flags)
+                    return _sre.getlower(literal, flags)
             else:
                 emit(OPCODES[op])
-                fixup = ord
+		fixup = lambda x: x
             skip = len(code); emit(0)
             for op, av in av:
                 emit(OPCODES[op])
@@ -165,7 +165,7 @@ def _compile_info(code, pattern, flags):
     if not (flags & SRE_FLAG_IGNORECASE):
         for op, av in pattern.data:
             if op is LITERAL:
-                prefix.append(ord(av))
+                prefix.append(av)
             else:
                 break
     # add an info block

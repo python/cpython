@@ -20,7 +20,7 @@
  * 00-06-28 fl	fixed findall (0.9.1)
  * 00-06-29 fl	fixed split, added more scanner features (0.9.2)
  * 00-06-30 fl	tuning, fast search (0.9.3)
- * 00-06-30 fl	added assert (lookahead) primitives (0.9.4)
+ * 00-06-30 fl	added assert (lookahead) primitives, etc (0.9.4)
  *
  * Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
  *
@@ -339,7 +339,7 @@ SRE_AT(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
 }
 
 LOCAL(int)
-SRE_MEMBER(SRE_CODE* set, SRE_CHAR ch)
+SRE_MEMBER(SRE_CODE* set, SRE_CODE ch)
 {
 	/* check if character is a member of the given set */
 
@@ -356,13 +356,13 @@ SRE_MEMBER(SRE_CODE* set, SRE_CHAR ch)
 			return !ok;
 
 		case SRE_OP_LITERAL:
-			if (ch == (SRE_CHAR) set[0])
+			if (ch == set[0])
 				return ok;
 			set++;
 			break;
 
 		case SRE_OP_RANGE:
-			if ((SRE_CHAR) set[0] <= ch && ch <= (SRE_CHAR) set[1])
+			if (set[0] <= ch && ch <= set[1])
 				return ok;
 			set += 2;
 			break;
@@ -455,8 +455,8 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 		case SRE_OP_LITERAL:
 			/* match literal string */
 			/* args: <code> */
-			TRACE(("%8d: literal %c\n", PTR(ptr), (SRE_CHAR) pattern[0]));
-			if (ptr >= end || *ptr != (SRE_CHAR) pattern[0])
+			TRACE(("%8d: literal %c\n", PTR(ptr), pattern[0]));
+			if (ptr >= end || (SRE_CODE) ptr[0] != pattern[0])
 				goto failure;
 			pattern++;
 			ptr++;
@@ -465,8 +465,8 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 		case SRE_OP_NOT_LITERAL:
 			/* match anything that is not literal character */
 			/* args: <code> */
-			TRACE(("%8d: literal not %c\n", PTR(ptr), (SRE_CHAR) pattern[0]));
-			if (ptr >= end || *ptr == (SRE_CHAR) pattern[0])
+			TRACE(("%8d: literal not %c\n", PTR(ptr), pattern[0]));
+			if (ptr >= end || (SRE_CODE) ptr[0] == pattern[0])
 				goto failure;
 			pattern++;
 			ptr++;
@@ -528,7 +528,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 			break;
 
 		case SRE_OP_LITERAL_IGNORE:
-			TRACE(("%8d: literal lower(%c)\n", PTR(ptr), (SRE_CHAR) *pattern));
+			TRACE(("%8d: literal lower(%c)\n", PTR(ptr), pattern[0]));
 			if (ptr >= end ||
                 state->lower(*ptr) != state->lower(*pattern))
 				goto failure;
@@ -537,8 +537,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 			break;
 
 		case SRE_OP_NOT_LITERAL_IGNORE:
-			TRACE(("%8d: literal not lower(%c)\n", PTR(ptr),
-                   (SRE_CHAR) *pattern));
+			TRACE(("%8d: literal not lower(%c)\n", PTR(ptr), pattern[0]));
 			if (ptr >= end ||
                 state->lower(*ptr) == state->lower(*pattern))
 				goto failure;
@@ -549,7 +548,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 		case SRE_OP_IN_IGNORE:
 			TRACE(("%8d: set lower(%c)\n", PTR(ptr), *ptr));
 			if (ptr >= end
-				|| !SRE_MEMBER(pattern+1, (SRE_CHAR) state->lower(*ptr)))
+				|| !SRE_MEMBER(pattern+1, (SRE_CODE) state->lower(*ptr)))
 				goto failure;
 			pattern += pattern[0];
 			ptr++;
@@ -631,9 +630,9 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 
 			} else if (pattern[3] == SRE_OP_LITERAL) {
 				/* repeated literal */
-				SRE_CHAR chr = (SRE_CHAR) pattern[4];
+				SRE_CODE chr = pattern[4];
 				while (count < (int) pattern[2]) {
-					if (ptr >= end || *ptr != chr)
+					if (ptr >= end || (SRE_CODE) ptr[0] != chr)
 						break;
 					ptr++;
 					count++;
@@ -641,9 +640,9 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 
 			} else if (pattern[3] == SRE_OP_LITERAL_IGNORE) {
 				/* repeated literal */
-				SRE_CHAR chr = (SRE_CHAR) pattern[4];
+				SRE_CODE chr = pattern[4];
 				while (count < (int) pattern[2]) {
-					if (ptr >= end || (SRE_CHAR) state->lower(*ptr) != chr)
+					if (ptr >= end || (SRE_CODE) state->lower(*ptr) != chr)
 						break;
 					ptr++;
 					count++;
@@ -651,9 +650,9 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 
 			} else if (pattern[3] == SRE_OP_NOT_LITERAL) {
 				/* repeated non-literal */
-				SRE_CHAR chr = (SRE_CHAR) pattern[4];
+				SRE_CODE chr = pattern[4];
 				while (count < (int) pattern[2]) {
-					if (ptr >= end || *ptr == chr)
+					if (ptr >= end || (SRE_CODE) ptr[0] == chr)
 						break;
 					ptr++;
 					count++;
@@ -661,9 +660,9 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 
 			} else if (pattern[3] == SRE_OP_NOT_LITERAL_IGNORE) {
 				/* repeated non-literal */
-				SRE_CHAR chr = (SRE_CHAR) pattern[4];
+				SRE_CODE chr = pattern[4];
 				while (count < (int) pattern[2]) {
-					if (ptr >= end || (SRE_CHAR) state->lower(*ptr) == chr)
+					if (ptr >= end || (SRE_CODE) state->lower(ptr[0]) == chr)
 						break;
 					ptr++;
 					count++;
@@ -712,7 +711,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 			} else if (pattern[pattern[0]] == SRE_OP_LITERAL) {
 				/* tail starts with a literal. skip positions where
 				   the rest of the pattern cannot possibly match */
-				SRE_CHAR chr = (SRE_CHAR) pattern[pattern[0]+1];
+				SRE_CODE chr = pattern[pattern[0]+1];
 				TRACE(("%8d: tail is literal %d\n", PTR(ptr), chr));
 				for (;;) {
 					TRACE(("%8d: scan for tail match\n", PTR(ptr)));
@@ -868,7 +867,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 			TRACE(("%8d: branch\n", PTR(ptr)));
 			while (*pattern) {
 				if (pattern[1] != SRE_OP_LITERAL ||
-					(ptr < end && *ptr == (SRE_CHAR) pattern[2])) {
+					(ptr < end && (SRE_CODE) ptr[0] == pattern[2])) {
 					TRACE(("%8d: branch check\n", PTR(ptr)));
 					state->ptr = ptr;
 					i = SRE_MATCH(state, pattern + 1);
@@ -976,7 +975,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
         end = state->end;
         while (ptr < end) {
             for (;;) {
-                if (*ptr != (SRE_CHAR) prefix[i]) {
+                if ((SRE_CODE) ptr[0] != prefix[i]) {
                     if (!i)
                         break;
                     else
@@ -1008,9 +1007,9 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 	if (pattern[0] == SRE_OP_LITERAL) {
 		/* pattern starts with a literal character.  this is used for
            short prefixes, and if fast search is disabled*/
-		SRE_CHAR chr = (SRE_CHAR) pattern[1];
+		SRE_CODE chr = pattern[1];
 		for (;;) {
-			while (ptr < end && *ptr != chr)
+			while (ptr < end && (SRE_CODE) ptr[0] != chr)
 				ptr++;
 			if (ptr == end)
 				return 0;
