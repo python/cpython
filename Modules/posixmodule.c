@@ -1122,7 +1122,7 @@ posix_waitpid(self, args)
 	object *self;
 	object *args;
 {
-	int pid, options, sts;
+	int pid, options, sts = 0;
 	if (!getargs(args, "(ii)", &pid, &options))
 		return NULL;
 	BGN_SAVE
