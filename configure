@@ -3863,15 +3863,13 @@ fi
 
 
 
-
-
 for ac_header in dlfcn.h fcntl.h grp.h limits.h langinfo.h \
 libintl.h locale.h ncurses.h poll.h pthread.h \
 signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h termios.h \
 sys/audioio.h sys/file.h sys/lock.h sys/mkdev.h sys/modem.h \
 sys/param.h sys/poll.h sys/select.h sys/socket.h sys/time.h sys/times.h \
 sys/un.h sys/utsname.h sys/wait.h pty.h term.h libutil.h \
-ndbm.h gdbm/ndbm.h sys/resource.h netpacket/packet.h
+sys/resource.h netpacket/packet.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
@@ -11369,6 +11367,7 @@ echo "$as_me:$LINENO: result: MACHDEP_OBJS" >&5
 echo "${ECHO_T}MACHDEP_OBJS" >&6
 
 # checks for library functions
+
 
 
 

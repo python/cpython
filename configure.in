@@ -599,7 +599,7 @@ signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h termios.h \
 sys/audioio.h sys/file.h sys/lock.h sys/mkdev.h sys/modem.h \
 sys/param.h sys/poll.h sys/select.h sys/socket.h sys/time.h sys/times.h \
 sys/un.h sys/utsname.h sys/wait.h pty.h term.h libutil.h \
-ndbm.h gdbm/ndbm.h sys/resource.h netpacket/packet.h)
+sys/resource.h netpacket/packet.h)
 AC_HEADER_DIRENT
 
 # checks for typedefs
