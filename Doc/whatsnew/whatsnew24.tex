@@ -302,7 +302,7 @@ It's equivalent to:
 
 \begin{verbatim}
 def f(): ...
-f = C(B(A(f)))
+f = A(B(C(f)))
 \end{verbatim}
 
 Decorators must come on the line before a function definition, and
@@ -364,7 +364,7 @@ words, \code{@A @B @C(args)} becomes:
 \begin{verbatim}
 def f(): ...
 _deco = C(args)
-f = _deco(B(A(f)))
+f = A(B(_deco(f)))
 \end{verbatim}
 
 Getting this right can be slightly brain-bending, but it's not too
@@ -1455,6 +1455,6 @@ by default.
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Hye-Shik Chang, Michael Dyck, Raymond Hettinger.
+article: Hye-Shik Chang, Michael Dyck, Raymond Hettinger, Hamish Lawson.
 
 \end{document}
