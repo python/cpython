@@ -13,8 +13,8 @@ most email document structures, including MIME documents.  You can
 pass the parser a string or a file object, and the parser will return
 to you the root \class{Message} instance of the object tree.  For
 simple, non-MIME messages the payload of this root object will likely
-be a string (e.g. containing the text of the message).  For MIME
-messages, the root object will return 1 from its
+be a string containing the text of the message.  For MIME
+messages, the root object will return true from its
 \method{is_multipart()} method, and the subparts can be accessed via
 the \method{get_payload()} and \method{walk()} methods.
 
@@ -39,10 +39,10 @@ same API as the \class{Parser} class.
 
 \begin{classdesc}{Parser}{\optional{_class}}
 The constructor for the \class{Parser} class takes a single optional
-argument \var{_class}.  This must be callable factory (i.e. a function
-or a class), and it is used whenever a sub-message object needs to be
-created.  It defaults to \class{Message} (see
-\refmodule{email.Message}).  \var{_class} will be called with zero
+argument \var{_class}.  This must be a callable factory (such as a
+function or a class), and it is used whenever a sub-message object
+needs to be created.  It defaults to \class{Message} (see
+\refmodule{email.Message}).  The factory will be called without
 arguments.
 \end{classdesc}
 
@@ -105,9 +105,9 @@ Here are some notes on the parsing semantics:
       blocks of headers, \class{Parser} will create a non-multipart
       object containing non-multipart subobjects for each header
       block.
-\item Another exception is for \mimetype{message/*} types (i.e. more
+\item Another exception is for \mimetype{message/*} types (more
       general than \mimetype{message/delivery-status}).  These are
-      typically \mimetype{message/rfc822} type messages, represented as a
-      non-multipart object containing a singleton payload, another
-      non-multipart \class{Message} instance.
+      typically \mimetype{message/rfc822} messages, represented as a
+      non-multipart object containing a singleton payload which is
+      another non-multipart \class{Message} instance.
 \end{itemize}
