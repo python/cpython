@@ -214,6 +214,10 @@ struct filedescr import_filetab[] = {
 	{0, 0}
 };
 
+#ifdef NO_DYNAMIC_LINK
+#undef DYNAMIC_LINK
+#endif
+
 object *
 load_dynamic_module(name, pathname, fp)
 	char *name;
