@@ -416,6 +416,7 @@ class Displayer(VideoParams):
 			pmsize = bytes*8
 		elif self.format == 'compress':
 			data = self.decompress(data)
+			pmsize = 32
 		elif self.format in ('mono', 'grey4'):
 			if self.mustunpack:
 				if self.format == 'mono':
