@@ -135,35 +135,57 @@ PyEval_InitThreads()
    dynamically loaded modules needn't be compiled separately for use
    with and without threads: */
 
-PyObject *
+PyThreadState *
 PyEval_SaveThread()
 {
 #ifdef WITH_THREAD
 	if (interpreter_lock) {
 		PyThreadState *tstate = PyThreadState_Swap(NULL);
-		PyObject *res = tstate ? (PyObject *) (tstate->frame) : NULL;
+		if (tstate == NULL)
+			Py_FatalError("PyEval_SaveThread: NULL tstate");
 		release_lock(interpreter_lock);
-		return res;
+		return tstate;
 	}
 #endif
 	return NULL;
 }
 
 void
-PyEval_RestoreThread(x)
-	PyObject *x;
+PyEval_RestoreThread(tstate)
+	PyThreadState *tstate;
 {
 #ifdef WITH_THREAD
 	if (interpreter_lock) {
 		int err;
 		err = errno;
+		if (tstate == NULL)
+			Py_FatalError("PyEval_RestoreThread: NULL tstate");
 		acquire_lock(interpreter_lock, 1);
+		PyThreadState_Swap(tstate);
 		errno = err;
-		PyThreadState_Swap(x ? ((PyFrameObject *)x)->f_tstate : NULL);
 	}
 #endif
 }
 
+#ifdef WITH_THREAD
+void
+PyEval_AcquireThread(tstate)
+	PyThreadState *tstate;
+{
+	acquire_lock(interpreter_lock, 1);
+	if (PyThreadState_Swap(tstate) != NULL)
+		Py_FatalError("PyEval_AcquireThread: non-NULL old state");
+}
+
+void
+PyEval_ReleaseThread(tstate)
+	PyThreadState *tstate;
+{
+	if (PyThreadState_Swap(NULL) != tstate)
+		Py_FatalError("PyEval_ReleaseThread: wrong thread state");
+	release_lock(interpreter_lock);
+}
+#endif
 
 /* Mechanism whereby asynchronously executing callbacks (e.g. UNIX
    signal handlers or Mac I/O completion routines) can schedule calls
