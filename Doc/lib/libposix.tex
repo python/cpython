@@ -62,10 +62,9 @@ CFLAGS="`getconf LFS_CFLAGS`" OPT="-g -O2 $CFLAGS" \
 On large-file-capable Linux systems, this might work:
 
 \begin{verbatim}
-CC="-D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
-export CC
-./configure
-\end{verbatim}
+CFLAGS='-D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64' OPT="-g -O2 $CFLAGS" \
+        ./configure
+\end{verbatim} % $ <-- bow to font-lock
 
 
 \subsection{Module Contents \label{posix-contents}}
