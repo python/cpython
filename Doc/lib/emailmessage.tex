@@ -390,4 +390,14 @@ Note that if the message object has no preamble, the
 The \var{epilogue} attribute acts the same way as the \var{preamble}
 attribute, except that it contains text that appears between the last
 boundary and the end of the message.
+
+One note: when generating the flat text for a \mimetype{multipart}
+message that has no \var{epilogue} (using the standard
+\class{Generator} class), no newline is added after the closing
+boundary line.  If the message object has an \var{epilogue} and its
+value does not start with a newline, a newline is printed after the
+closing boundary.  This seems a little clumsy, but it makes the most
+practical sense.  The upshot is that if you want to ensure that a
+newline get printed after your closing \mimetype{multipart} boundary,
+set the \var{epilogue} to the empty string.
 \end{datadesc}
