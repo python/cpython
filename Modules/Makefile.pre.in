@@ -1,0 +1,92 @@
+# NOTE: Makefile.in.in is converted into Makefile.in by running the
+# makesetup script in the current directory.  Makefile.in is converted
+# into Makefile by the configure script in the toplevel directory.
+# Once Makefile exists, it can be brought up to date by running
+# "make Makefile".
+
+# === Variables set by ./makesetup ===
+
+MODOBJS=	@MODOBJS@
+MODLIBS=	@MODLIBS@
+MODCPPS=	@MODCPPS@
+
+# === Definitions added by ./makesetup ===
+
+# === Variables set by $(TOP)/configure ===
+
+srcdir=		@srcdir@
+VPATH=		@srcdir@
+
+CC=		@CC@
+RANLIB=		@RANLIB@
+DEFS=		@DEFS@
+LIBS=		@LIBS@
+
+
+# === Variables that are customizable by hand ===
+
+TOP=		..
+INCLDIR=	$(TOP)/Include
+OPT=		-g
+CFLAGS=		$(OPT) -I$(INCLDIR) $(DEFS)
+
+AR=		ar
+MKDEP=		mkdep
+SHELL=		/bin/sh
+
+
+# === Fixed definitions ===
+
+OBJS=		$(MODOBJS)
+
+LIB=		libModules.a
+
+MYLIBS=		$(LIB) \
+		../Python/libPython.a \
+		../Objects/libObjects.a \
+		../Parser/libParser.a
+
+SYSLIBS=	$(MODLIBS) -lm
+
+
+# === Rules ===
+
+all:		$(LIB) $(TOP)/python
+
+$(LIB):		$(OBJS)
+		$(AR) cr $(LIB) $(OBJS)
+		$(RANLIB) $(LIB)
+
+$(TOP)/python:	config.o $(MYLIBS)
+		$(CC) config.o $(MYLIBS) $(LIBS) $(SYSLIBS) -o python
+		mv python $(TOP)/python
+
+config.o:	Makefile
+
+clean:
+		-rm -f *.o python core *~ [@,#]* *.old *.orig *.rej
+
+clobber:	clean
+		-rm -f *.a tags TAGS
+
+Makefile:	Makefile.in $(TOP)/config.status
+		CONFIG_FILES=Makefile CONFIG_HEADERS= \
+		$(SHELL) $(TOP)/config.status
+
+config.c Makefile.in:	Makefile.in.in config.c.in Setup makesetup
+		$(SHELL) ./makesetup Setup
+
+depend:
+		$(MKDEP) $(CFLAGS) \
+			`echo $(OBJS) | tr ' ' '\012' | sed 's/\.o/.c/'`
+
+.PRECIOUS:	Makefile.in Makefile config.c
+
+glmodule.c:	cgen.py cstubs
+		python cgen.py <cstubs >glmodule.c
+
+# === Rules added by ./makesetup ===
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
