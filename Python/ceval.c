@@ -48,6 +48,8 @@ static int prtrace(PyObject *, char *);
 #endif
 static int call_trace(Py_tracefunc, PyObject *, PyFrameObject *,
 		      int, PyObject *);
+static void call_trace_protected(Py_tracefunc, PyObject *,
+				 PyFrameObject *, int);
 static void call_exc_trace(Py_tracefunc, PyObject *, PyFrameObject *);
 static PyObject *loop_subscript(PyObject *, PyObject *);
 static PyObject *apply_slice(PyObject *, PyObject *, PyObject *);
@@ -2297,9 +2299,13 @@ eval_frame(PyFrameObject *f)
 			}
 		}
 		if (tstate->c_profilefunc) {
-			if (call_trace(tstate->c_profilefunc,
-				       tstate->c_profileobj, f,
-				       PyTrace_RETURN, retval)) {
+			if (why == WHY_EXCEPTION)
+				call_trace_protected(tstate->c_profilefunc,
+						     tstate->c_profileobj, f,
+						     PyTrace_RETURN);
+			else if (call_trace(tstate->c_profilefunc,
+					    tstate->c_profileobj, f,
+					    PyTrace_RETURN, retval)) {
 				Py_XDECREF(retval);
 				retval = NULL;
 				why = WHY_EXCEPTION;
@@ -2812,6 +2818,23 @@ call_exc_trace(Py_tracefunc func, PyObject *self, PyFrameObject *f)
 	}
 	err = call_trace(func, self, f, PyTrace_EXCEPTION, arg);
 	Py_DECREF(arg);
+	if (err == 0)
+		PyErr_Restore(type, value, traceback);
+	else {
+		Py_XDECREF(type);
+		Py_XDECREF(value);
+		Py_XDECREF(traceback);
+	}
+}
+
+static void
+call_trace_protected(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
+		     int what)
+{
+	PyObject *type, *value, *traceback;
+	int err;
+	PyErr_Fetch(&type, &value, &traceback);
+	err = call_trace(func, obj, frame, what, NULL);
 	if (err == 0)
 		PyErr_Restore(type, value, traceback);
 	else {
