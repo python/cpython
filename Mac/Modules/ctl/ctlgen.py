@@ -1,4 +1,4 @@
-# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Controls.h'
+# Generated from 'Sap:CodeWarrior7:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Controls.h'
 
 f = Function(ControlRef, 'NewControl',
     (WindowRef, 'theWindow', InMode),
@@ -51,7 +51,7 @@ methods.append(f)
 
 f = Function(void, 'UpdateControls',
     (WindowRef, 'theWindow', InMode),
-    (RgnHandle, 'updateRgn', InMode),
+    (RgnHandle, 'updateRegion', InMode),
 )
 functions.append(f)
 
@@ -70,7 +70,7 @@ methods.append(f)
 
 f = Method(void, 'DragControl',
     (ControlRef, 'theControl', InMode),
-    (Point, 'startPt', InMode),
+    (Point, 'startPoint', InMode),
     (Rect_ptr, 'limitRect', InMode),
     (Rect_ptr, 'slopRect', InMode),
     (DragConstraint, 'axis', InMode),
@@ -79,7 +79,7 @@ methods.append(f)
 
 f = Method(ControlPartCode, 'TestControl',
     (ControlRef, 'theControl', InMode),
-    (Point, 'thePt', InMode),
+    (Point, 'thePoint', InMode),
 )
 methods.append(f)
 
