@@ -1245,6 +1245,14 @@ def debug(msg, *args, **kwargs):
         basicConfig()
     apply(root.debug, (msg,)+args, kwargs)
 
+def log(level, msg, *args, **kwargs):
+    """
+    Log 'msg % args' with the integer severity 'level' on the root logger.
+    """
+    if len(root.handlers) == 0:
+        basicConfig()
+    apply(root.log, (level, msg)+args, kwargs)
+
 def disable(level):
     """
     Disable all logging calls less severe than 'level'.
