@@ -2579,11 +2579,11 @@ PySocket_ssl(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "O!zz:ssl",
 			      &PySocketSock_Type, (PyObject*)&Sock,
-			      &key_file, &cert_file) )
+			      &key_file, &cert_file))
 		return NULL;
 
 	rv = newSSLObject(Sock, key_file, cert_file);
-	if ( rv == NULL )
+	if (rv == NULL)
 		return NULL;
 	return (PyObject *)rv;
 }
@@ -2607,11 +2607,11 @@ SSL_issuer(SSLObject *self, PyObject *args)
 /* SSL object methods */
 
 static PyMethodDef SSLMethods[] = {
-	{ "write", (PyCFunction)SSL_SSLwrite, 1 },
-	{ "read", (PyCFunction)SSL_SSLread, 1 },
-	{ "server", (PyCFunction)SSL_server, 1 },
-	{ "issuer", (PyCFunction)SSL_issuer, 1 },
-	{ NULL, NULL}
+	{"write", (PyCFunction)SSL_SSLwrite, 1},
+	{"read", (PyCFunction)SSL_SSLread, 1},
+	{"server", (PyCFunction)SSL_server, 1},
+	{"issuer", (PyCFunction)SSL_issuer, 1},
+	{NULL, NULL}
 };
 
 static void SSL_dealloc(SSLObject *self)
