@@ -398,7 +398,8 @@ class Aifc_read():
 				pass
 			else:
 				raise Error, 'unrecognized chunk type '+chunk.chunkname
-			chunk.skip()
+			if formlength > 0:
+				chunk.skip()
 		if not self._comm_chunk_read or not self._ssnd_chunk:
 			raise Error, 'COMM chunk and/or SSND chunk missing'
 		if self._aifc and self._decomp:
@@ -500,7 +501,8 @@ class Aifc_read():
 				size = size / 2
 		data = self._ssnd_chunk.read(size)
 		if self._decomp and data:
-			params = [CL.FRAME_BUFFER_SIZE, len(data) * 2]
+			params = [CL.FRAME_BUFFER_SIZE, len(data) * 2, \
+				  CL.COMPRESSED_BUFFER_SIZE, len(data)]
 			self._decomp.SetParams(params)
 			data = self._decomp.Decompress(len(data) / self._nchannels, data)
 		self._soundpos = self._soundpos + len(data) / (self._nchannels * self._sampwidth)
