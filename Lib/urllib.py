@@ -572,7 +572,7 @@ class FancyURLopener(URLopener):
         http://www.ics.uci.edu/pub/ietf/http/draft-ietf-http-v10-spec-00.txt"""
         if not headers.has_key('www-authenticate'):
             URLopener.http_error_default(self, url, fp,
-                                         errmsg, headers)
+                                         errcode, errmsg, headers)
         stuff = headers['www-authenticate']
         import re
         match = re.match('[ \t]*([^ \t]+)[ \t]+realm="([^"]*)"', stuff)
