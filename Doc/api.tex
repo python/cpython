@@ -36,6 +36,7 @@ source code releases.
 % XXX a *really* short intro only.
 
 \chapter{Introduction}
+\label{intro}
 
 The Application Programmer's Interface to Python gives \C{} and \Cpp{}
 programmers access to the Python interpreter at a variety of levels.
@@ -65,6 +66,7 @@ good idea to become familiar with writing an extension before
 attempting to embed Python in a real application.
 
 \section{Include Files}
+\label{includes}
 
 All function, type and macro definitions needed to use the Python/C
 API are included in your code by the following line:
@@ -89,6 +91,7 @@ versions, which may define additional names beginning with one of
 these prefixes.
 
 \section{Objects, Types and Reference Counts}
+\label{objects}
 
 Most Python/C API functions have one or more arguments as well as a
 return value of type \code{PyObject *}.  This type is a pointer
@@ -110,6 +113,7 @@ object is of that type; for instance, \samp{PyList_Check(\var{a})} is
 true iff the object pointed to by \var{a} is a Python list.
 
 \subsection{Reference Counts}
+\label{refcounts}
 
 The reference count is important because today's computers have a 
 finite (and often severly limited) memory size; it counts how many 
@@ -170,6 +174,7 @@ the caller with the responsibility to call \cfunction{Py_DECREF()}
 when they are done with the result; this soon becomes second nature.
 
 \subsubsection{Reference Count Details}
+\label{refcountDetails}
 
 The reference count behavior of functions in the Python/C API is best 
 expelained in terms of \emph{ownership of references}.  Note that we 
@@ -329,6 +334,7 @@ long sum_sequence(PyObject *sequence)
 \end{verbatim}
 
 \subsection{Types}
+\label{types}
 
 There are few other data types that play a significant role in 
 the Python/C API; most are simple \C{} types such as \code{int}, 
@@ -338,6 +344,7 @@ by a module or the data attributes of a new object type.  These will
 be discussed together with the functions that use them.
 
 \section{Exceptions}
+\label{exceptions}
 
 The Python programmer only needs to deal with exceptions if specific 
 error handling is required; unhandled exceptions are automatically 
@@ -470,6 +477,7 @@ successful.
 
 
 \section{Embedding Python}
+\label{embedding}
 
 The one important task that only embedders (as opposed to extension
 writers) of the Python interpreter have to worry about is the
@@ -531,6 +539,7 @@ a later chapter.
 
 
 \chapter{The Very High Level Layer}
+\label{veryhigh}
 
 The functions in this chapter will let you execute Python source code
 given in a file or a buffer, but they will not let you interact in a
@@ -568,6 +577,7 @@ more detailed way with the interpreter.
 
 
 \chapter{Reference Counting}
+\label{countingRefs}
 
 The macros in this section are used for managing reference counts
 of Python objects.
@@ -620,6 +630,7 @@ PyMem_RESIZE(), PyMem_DEL(), PyMem_XDEL().
 
 
 \chapter{Exception Handling}
+\label{exceptionHandling}
 
 The functions in this chapter will let you handle and raise Python
 exceptions.  It is important to understand some of the basics of
@@ -809,6 +820,7 @@ variables and methods.
 
 
 \section{Standard Exceptions}
+\label{standardExceptions}
 
 All standard Python exceptions are available as global variables whose
 names are \samp{PyExc_} followed by the Python exception name.
@@ -842,12 +854,14 @@ variables:
 
 
 \chapter{Utilities}
+\label{utilities}
 
 The functions in this chapter perform various utility tasks, such as
 parsing function arguments and constructing Python values from \C{}
 values.
 
 \section{OS Utilities}
+\label{os}
 
 \begin{cfuncdesc}{int}{Py_FdIsInteractive}{FILE *fp, char *filename}
 Return true (nonzero) if the standard I/O file \var{fp} with name
@@ -866,6 +880,7 @@ the standard \C{} library function \cfunction{time()}.
 
 
 \section{Process Control}
+\label{processControl}
 
 \begin{cfuncdesc}{void}{Py_FatalError}{char *message}
 Print a fatal error message and kill the process.  No cleanup is
@@ -897,6 +912,7 @@ by \var{func}.
 
 
 \section{Importing Modules}
+\label{importing}
 
 \begin{cfuncdesc}{PyObject *}{PyImport_ImportModule}{char *name}
 This is a simplified interface to \cfunction{PyImport_ImportModuleEx()}
@@ -1028,6 +1044,7 @@ dynamically created collection of frozen modules.
 
 
 \chapter{Abstract Objects Layer}
+\label{abstract}
 
 The functions in this chapter interact with Python objects regardless
 of their type, or with wide classes of object types (e.g. all
@@ -1035,6 +1052,7 @@ numerical types, or all sequence types).  When used on object types
 for which they do not apply, they will flag a Python exception.
 
 \section{Object Protocol}
+\label{object}
 
 \begin{cfuncdesc}{int}{PyObject_Print}{PyObject *o, FILE *fp, int flags}
 Print an object \var{o}, on file \var{fp}.  Returns \code{-1} on error
@@ -1233,6 +1251,7 @@ failure. This is the equivalent of the Python statement \samp{del
 
 
 \section{Number Protocol}
+\label{number}
 
 \begin{cfuncdesc}{int}{PyNumber_Check}{PyObject *o}
 Returns \code{1} if the object \var{o} provides numeric protocols, and
@@ -1390,6 +1409,7 @@ on failure.  This is the equivalent of the Python expression
 
 
 \section{Sequence Protocol}
+\label{sequence}
 
 \begin{cfuncdesc}{int}{PySequence_Check}{PyObject *o}
 Return \code{1} if the object provides sequence protocol, and \code{0}
@@ -1474,7 +1494,9 @@ Return the first index \var{i} for which \code{\var{o}[\var{i}] ==
 the Python expression \samp{\var{o}.index(\var{value})}.
 \end{cfuncdesc}
 
+
 \section{Mapping Protocol}
+\label{mapping}
 
 \begin{cfuncdesc}{int}{PyMapping_Check}{PyObject *o}
 Return \code{1} if the object provides mapping protocol, and \code{0}
@@ -1626,6 +1648,7 @@ failure.
 
 
 \chapter{Concrete Objects Layer}
+\label{concrete}
 
 The functions in this chapter are specific to certain Python object
 types.  Passing them an object of the wrong type is not a good idea;
@@ -1637,12 +1660,14 @@ e.g. to check that an object is a dictionary, use
 
 
 \section{Fundamental Objects}
+\label{fundamental}
 
 This section describes Python type objects and the singleton object 
 \code{None}.
 
 
 \subsection{Type Objects}
+\label{typeObjects}
 
 \begin{ctypedesc}{PyTypeObject}
 
@@ -1654,6 +1679,7 @@ This section describes Python type objects and the singleton object
 
 
 \subsection{The None Object}
+\label{noneObject}
 
 \begin{cvardesc}{PyObject *}{Py_None}
 XXX macro
@@ -1661,6 +1687,7 @@ XXX macro
 
 
 \section{Sequence Objects}
+\label{sequenceObjects}
 
 Generic operations on sequence objects were discussed in the previous 
 chapter; this section deals with the specific kinds of sequence 
@@ -1668,6 +1695,7 @@ objects that are intrinsic to the Python language.
 
 
 \subsection{String Objects}
+\label{stringObjects}
 
 \begin{ctypedesc}{PyStringObject}
 This subtype of \code{PyObject} represents a Python string object.
@@ -1731,6 +1759,7 @@ This instance of \code{PyTypeObject} represents the Python string type.
 
 
 \subsection{Tuple Objects}
+\label{tupleObjects}
 
 \begin{ctypedesc}{PyTupleObject}
 This subtype of \code{PyObject} represents a Python tuple object.
@@ -1799,6 +1828,7 @@ tuple and creating a new one, only more efficiently.
 
 
 \subsection{List Objects}
+\label{listObjects}
 
 \begin{ctypedesc}{PyListObject}
 This subtype of \code{PyObject} represents a Python list object.
@@ -1866,8 +1896,10 @@ Returns true if its argument is a \code{PyListObject}.
 
 
 \section{Mapping Objects}
+\label{mapObjects}
 
 \subsection{Dictionary Objects}
+\label{dictObjects}
 
 \begin{ctypedesc}{PyDictObject}
 This subtype of \code{PyObject} represents a Python dictionary object.
@@ -1956,8 +1988,10 @@ Returns the number of items in the dictionary.
 
 
 \section{Numeric Objects}
+\label{numericObjects}
 
 \subsection{Plain Integer Objects}
+\label{intObjects}
 
 \begin{ctypedesc}{PyIntObject}
 This subtype of \code{PyObject} represents a Python integer object.
@@ -1999,6 +2033,7 @@ Returns the systems idea of the largest integer it can handle
 
 
 \subsection{Long Integer Objects}
+\label{longObjects}
 
 \begin{ctypedesc}{PyLongObject}
 This subtype of \code{PyObject} represents a Python long integer
@@ -2044,6 +2079,7 @@ Returns true if its argument is a \code{PyLongObject}.
 
 
 \subsection{Floating Point Objects}
+\label{floatObjects}
 
 \begin{ctypedesc}{PyFloatObject}
 This subtype of \code{PyObject} represents a Python floating point
@@ -2073,6 +2109,7 @@ Returns true if its argument is a \code{PyFloatObject}.
 
 
 \subsection{Complex Number Objects}
+\label{complexObjects}
 
 \begin{ctypedesc}{Py_complex}
 The \C{} structure which corresponds to the value portion of a Python
@@ -2148,8 +2185,10 @@ Returns true if its argument is a \code{PyComplexObject}.
 
 
 \section{Other Objects}
+\label{otherObjects}
 
 \subsection{File Objects}
+\label{fileObjects}
 
 \begin{ctypedesc}{PyFileObject}
 This subtype of \code{PyObject} represents a Python file object.
@@ -2211,11 +2250,13 @@ Writes string \var{s} to file object \var{p}.
 
 
 \subsection{CObjects}
+\label{cObjects}
 
 XXX
 
 
 \chapter{Initialization, Finalization, and Threads}
+\label{initialization}
 
 \begin{cfuncdesc}{void}{Py_Initialize}{}
 Initialize the Python interpreter.  In an application embedding 
@@ -2505,6 +2546,7 @@ the variable \code{sys.version}.
 % XXX Other PySys thingies (doesn't really belong in this chapter)
 
 \section{Thread State and the Global Interpreter Lock}
+\label{threads}
 
 The Python interpreter is not fully thread safe.  In order to support
 multi-threaded Python programs, there's a global lock that must be
@@ -2814,6 +2856,7 @@ must be held.
 
 
 \chapter{Defining New Object Types}
+\label{newTypes}
 
 \begin{cfuncdesc}{PyObject *}{_PyObject_New}{PyTypeObject *type}
 \end{cfuncdesc}
@@ -2859,6 +2902,7 @@ Py_None, _Py_NoneStruct
 
 
 \chapter{Debugging}
+\label{debugging}
 
 XXX Explain Py_DEBUG, Py_TRACE_REFS, Py_REF_DEBUG.
 
