@@ -97,6 +97,96 @@ static PyObject *Launch_LSCopyItemInfoForURL(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *Launch_LSGetExtensionInfo(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	UniChar *inNameLen__in__;
+	UniCharCount inNameLen__len__;
+	int inNameLen__in_len__;
+	UniCharCount outExtStartIndex;
+	if (!PyArg_ParseTuple(_args, "u#",
+	                      &inNameLen__in__, &inNameLen__in_len__))
+		return NULL;
+	inNameLen__len__ = inNameLen__in_len__;
+	_err = LSGetExtensionInfo(inNameLen__len__, inNameLen__in__,
+	                          &outExtStartIndex);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     outExtStartIndex);
+	return _res;
+}
+
+static PyObject *Launch_LSCopyDisplayNameForRef(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	FSRef inRef;
+	CFStringRef outDisplayName;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetFSRef, &inRef))
+		return NULL;
+	_err = LSCopyDisplayNameForRef(&inRef,
+	                               &outDisplayName);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, outDisplayName);
+	return _res;
+}
+
+static PyObject *Launch_LSCopyDisplayNameForURL(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	CFURLRef inURL;
+	CFStringRef outDisplayName;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CFURLRefObj_Convert, &inURL))
+		return NULL;
+	_err = LSCopyDisplayNameForURL(inURL,
+	                               &outDisplayName);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, outDisplayName);
+	return _res;
+}
+
+static PyObject *Launch_LSSetExtensionHiddenForRef(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	FSRef inRef;
+	Boolean inHide;
+	if (!PyArg_ParseTuple(_args, "O&b",
+	                      PyMac_GetFSRef, &inRef,
+	                      &inHide))
+		return NULL;
+	_err = LSSetExtensionHiddenForRef(&inRef,
+	                                  inHide);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Launch_LSSetExtensionHiddenForURL(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	CFURLRef inURL;
+	Boolean inHide;
+	if (!PyArg_ParseTuple(_args, "O&b",
+	                      CFURLRefObj_Convert, &inURL,
+	                      &inHide))
+		return NULL;
+	_err = LSSetExtensionHiddenForURL(inURL,
+	                                  inHide);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *Launch_LSCopyKindStringForRef(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -323,6 +413,16 @@ static PyMethodDef Launch_methods[] = {
 	 PyDoc_STR("(FSRef inItemRef, LSRequestedInfo inWhichInfo) -> (LSItemInfoRecord outItemInfo)")},
 	{"LSCopyItemInfoForURL", (PyCFunction)Launch_LSCopyItemInfoForURL, 1,
 	 PyDoc_STR("(CFURLRef inURL, LSRequestedInfo inWhichInfo) -> (LSItemInfoRecord outItemInfo)")},
+	{"LSGetExtensionInfo", (PyCFunction)Launch_LSGetExtensionInfo, 1,
+	 PyDoc_STR("(Buffer inNameLen) -> (UniCharCount outExtStartIndex)")},
+	{"LSCopyDisplayNameForRef", (PyCFunction)Launch_LSCopyDisplayNameForRef, 1,
+	 PyDoc_STR("(FSRef inRef) -> (CFStringRef outDisplayName)")},
+	{"LSCopyDisplayNameForURL", (PyCFunction)Launch_LSCopyDisplayNameForURL, 1,
+	 PyDoc_STR("(CFURLRef inURL) -> (CFStringRef outDisplayName)")},
+	{"LSSetExtensionHiddenForRef", (PyCFunction)Launch_LSSetExtensionHiddenForRef, 1,
+	 PyDoc_STR("(FSRef inRef, Boolean inHide) -> None")},
+	{"LSSetExtensionHiddenForURL", (PyCFunction)Launch_LSSetExtensionHiddenForURL, 1,
+	 PyDoc_STR("(CFURLRef inURL, Boolean inHide) -> None")},
 	{"LSCopyKindStringForRef", (PyCFunction)Launch_LSCopyKindStringForRef, 1,
 	 PyDoc_STR("(FSRef inFSRef) -> (CFStringRef outKindString)")},
 	{"LSCopyKindStringForURL", (PyCFunction)Launch_LSCopyKindStringForURL, 1,

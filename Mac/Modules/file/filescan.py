@@ -136,7 +136,9 @@ class MyScanner(Scanner_OSX):
 			"IOCompletionUPP", # Proc pointer
 			"AliasFilterProcPtr",
 			"AliasFilterUPP",
+			"FNSubscriptionUPP",
 			
+			"FNSubscriptionRef", # Lazy, for now.
 			]
 
 	def makerepairinstructions(self):

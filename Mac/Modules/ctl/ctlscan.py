@@ -125,6 +125,7 @@ class MyScanner(Scanner):
 ##			'DataBrowserTableViewColumnDesc',
 ##			'DataBrowserListViewColumnDesc',
 			'CFDataRef',
+			'DataBrowserListViewHeaderDesc', # difficult struct
 			]
 
 	def makerepairinstructions(self):

@@ -52,6 +52,7 @@ kTXNEndOffset = 0x7FFFFFFF
 MovieFileType = FOUR_CHAR_CODE('moov')
 kTXNUseEncodingWordRulesMask = 0x80000000
 kTXNFontSizeAttributeSize = 4
+normal = 0
 """)
 
 	def makeblacklistnames(self):
@@ -94,10 +95,18 @@ kTXNFontSizeAttributeSize = 4
 			"TXNBackground", #TBD
 			"TXNFindUPP", 
 			"ATSUStyle", #TBD
+			"TXNBackground_ptr", #TBD
+			"TXNControlData_ptr", #TBD
+			"TXNControlTag_ptr", #TBD
+			"TXNLongRect", #TBD
+			"TXNLongRect_ptr", #TBD
+			"TXNTypeAttributes_ptr", #TBD
+
 			"TXNActionKeyMapperProcPtr",
 			"TXNActionKeyMapperUPP",
 			"TXNTextBoxOptionsData",
 			"TXNCountOptions",
+			"void_ptr",
 			]
 
 	def makerepairinstructions(self):

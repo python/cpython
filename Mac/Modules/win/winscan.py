@@ -35,6 +35,7 @@ class MyScanner(Scanner):
 		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
 		self.defsfile.write("false = 0\n")
 		self.defsfile.write("true = 1\n")
+		self.defsfile.write("kWindowNoConstrainAttribute = 0x80000000\n")
 
 	def makeblacklistnames(self):
 		return [
@@ -49,6 +50,7 @@ class MyScanner(Scanner):
 			# Constants with funny definitions
 			'kMouseUpOutOfSlop',
 			'kAllWindowClasses',
+			'kWindowNoConstrainAttribute',
 			# OS8 only:
 			'GetAuxWin',
 			'GetWindowDataHandle',

@@ -39,8 +39,10 @@ class MyScanner(Scanner):
 
 	def writeinitialdefs(self):
 		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
+		self.defsfile.write("from Carbon.Files import *\n")
 		self.defsfile.write("kLSRequestAllInfo = -1\n")
 		self.defsfile.write("kLSRolesAll = -1\n")
+		self.defsfile.write("kLSInvalidExtensionIndex = -1\n")
 
 	def makeblacklistnames(self):
 		return [
@@ -48,6 +50,7 @@ class MyScanner(Scanner):
 			"LSTerm",
 			"kLSRequestAllInfo",
 			"kLSRolesAll",
+			"kLSInvalidExtensionIndex",
 			]
 
 	def makeblacklisttypes(self):
@@ -67,6 +70,12 @@ class MyScanner(Scanner):
     		 [('OptCFStringRef', 'inBundleID', 'InMode')]),
 			([('CFStringRef', 'inName', 'InMode')],
     		 [('OptCFStringRef', 'inName', 'InMode')]),
+
+			# Unicode filenames passed as length, buffer. LSGetExtensionInfo
+			([('UniCharCount', '*', 'InMode'),
+			  ('UniChar_ptr', '*', 'InMode')],
+			 [('UnicodeReverseInBuffer', '*', 'InMode')]
+			),
 			]
 			
 if __name__ == "__main__":

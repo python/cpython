@@ -40,6 +40,7 @@ initstuff = initstuff + """
 
 ComponentInstance = OpaqueByValueType('ComponentInstance', OBJECTPREFIX)
 OSAError = OSErrType("OSAError", "l")
+# OSALocalOrGlobal = Type("OSALocalOrGlobal", "l")
 OSAID = Type("OSAID", "l")
 OSADebugCallFrameRef = Type("OSADebugCallFrameRef", "l")
 OSADebugSessionRef = Type("OSADebugSessionRef", "l")
