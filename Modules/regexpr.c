@@ -917,7 +917,6 @@ static int re_optimize_star_jump(bufp, code)
 		default:
 		{
 			return 0;
-			break;
 		}
 		}
 	}
