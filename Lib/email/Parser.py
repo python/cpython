@@ -4,14 +4,12 @@
 """A parser of RFC 2822 and MIME email messages.
 """
 
-import re
 from cStringIO import StringIO
 
 # Intrapackage imports
 import Errors
 import Message
 
-bcre = re.compile('boundary="?([^"]+)"?', re.IGNORECASE)
 EMPTYSTRING = ''
 NL = '\n'
 
@@ -92,13 +90,8 @@ class Parser:
     def _parsebody(self, container, fp):
         # Parse the body, but first split the payload on the content-type
         # boundary if present.
-        boundary = isdigest = None
-        ctype = container['content-type']
-        if ctype:
-            mo = bcre.search(ctype)
-            if mo:
-                boundary = mo.group(1)
-            isdigest = container.get_type() == 'multipart/digest'
+        boundary = container.get_boundary()
+        isdigest = (container.get_type() == 'multipart/digest')
         # If there's a boundary, split the payload text into its constituent
         # parts and parse each separately.  Otherwise, just parse the rest of
         # the body as a single message.  Note: any exceptions raised in the
@@ -141,7 +134,20 @@ class Parser:
                 container.preamble = preamble
                 container.epilogue = epilogue
                 container.add_payload(msgobj)
-        elif ctype == 'message/rfc822':
+        elif container.get_type() == 'message/delivery-status':
+            # This special kind of type contains blocks of headers separated
+            # by a blank line.  We'll represent each header block as a
+            # separate Message object
+            blocks = []
+            while 1:
+                blockmsg = self._class()
+                self._parseheaders(blockmsg, fp)
+                if not len(blockmsg):
+                    # No more header blocks left
+                    break
+                blocks.append(blockmsg)
+            container.set_payload(blocks)
+        elif container.get_main_type() == 'message':
             # Create a container for the payload, but watch out for there not
             # being any headers left
             try:
