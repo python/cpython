@@ -1962,7 +1962,7 @@ repr             Redo repr() but with limits on most sizes.
 rexec            Restricted execution facilities ("safe" exec, eval, etc).
 rfc822           RFC-822 message manipulation class.
 rlcompleter      Word completion for GNU readline 2.0.
-robotparser      Parse robot.txt files, useful for web spiders.
+robotparser      Parse robots.txt files, useful for web spiders.
 sched            A generally useful event scheduler class.
 sets             Module for a set datatype.
 sgmllib          A parser for SGML.
