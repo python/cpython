@@ -20,6 +20,7 @@ uses_params = ['ftp', 'hdl', 'prospero', 'http',
 	       '']
 uses_query = ['http', 'wais',
 	      'https', 'shttp',
+	      'gopher',
 	      '']
 uses_fragment = ['ftp', 'hdl', 'http', 'gopher', 'news', 'nntp', 'wais',
 		 'https', 'shttp', 'snews',
