@@ -1353,9 +1353,9 @@ elif os.name == 'nt':
         # print proxyOverride
         # now check if we match one of the registry values.
         for test in proxyOverride:
-            test = test.replace(".", r"\.")	# mask dots
-            test = test.replace("*", r".*")	# change glob sequence
-            test = test.replace("?", r".")	# change glob char
+            test = test.replace(".", r"\.")     # mask dots
+            test = test.replace("*", r".*")     # change glob sequence
+            test = test.replace("?", r".")      # change glob char
             for val in host:
                 # print "%s <--> %s" %( test, val )
                 if re.match(test, val, re.I):

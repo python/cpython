@@ -71,7 +71,7 @@ f.close()
 # Try seek, write test
 f = gzip.GzipFile(filename, 'w')
 for pos in range(0, 256, 16):
-    f.seek(pos) 
+    f.seek(pos)
     f.write('GZ\n')
 f.close()
 

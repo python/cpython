@@ -20,14 +20,14 @@ Interpreters constructed with this class obey the following conventions:
    arguments text, line, begidx, endidx.  text is string we are matching
    against, all returned matches must begin with it.  line is the current
    input line (lstripped), begidx and endidx are the beginning and end
-   indexes of the text being matched, which could be used to provide 
+   indexes of the text being matched, which could be used to provide
    different completion depending upon which position the argument is in.
 
 The `default' method may be overridden to intercept commands for which there
 is no do_ method.
 
 The `completedefault' method may be overridden to intercept completions for
-commands that have no complete_ method. 
+commands that have no complete_ method.
 
 The data member `self.ruler' sets the character used to draw separator lines
 in the help messages.  If empty, no ruler line is drawn.  It defaults to "=".
@@ -66,7 +66,7 @@ class Cmd:
     nohelp = "*** No help on %s"
     use_rawinput = 1
 
-    def __init__(self, completekey='tab'): 
+    def __init__(self, completekey='tab'):
         if completekey:
             try:
                 import readline
@@ -131,7 +131,7 @@ class Cmd:
         while i < n and line[i] in self.identchars: i = i+1
         cmd, arg = line[:i], line[i:].strip()
         return cmd, arg, line
-    
+
     def onecmd(self, line):
         cmd, arg, line = self.parseline(line)
         if not line:
@@ -191,7 +191,7 @@ class Cmd:
             return self.completion_matches[state]
         except IndexError:
             return None
-    
+
     def get_names(self):
         # Inheritance says we have to look in class and
         # base classes; order is not important.

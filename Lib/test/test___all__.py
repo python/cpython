@@ -41,7 +41,7 @@ def check_all(modname):
 # In case _socket fails to build, make this test fail more gracefully
 # than an AttributeError somewhere deep in CGIHTTPServer.
 import _socket
-    
+
 check_all("BaseHTTPServer")
 check_all("CGIHTTPServer")
 check_all("ConfigParser")

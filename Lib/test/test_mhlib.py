@@ -43,7 +43,7 @@ def writeProfile(dict):
 
 def writeContext(folder):
     folder = normF(folder)
-    writeFile(os.path.join(_mhpath, "context"), 
+    writeFile(os.path.join(_mhpath, "context"),
               "Current-Folder: %s\n" % folder)
 
 def writeCurMessage(folder, cur):
@@ -96,31 +96,31 @@ class MhlibTests(unittest.TestCase):
     def setUp(self):
         deltree(_mhroot)
         mkdirs(_mhpath)
-        writeProfile({'Path' : os.path.abspath(_mhpath), 
+        writeProfile({'Path' : os.path.abspath(_mhpath),
                       'Editor': 'emacs',
                       'ignored-attribute': 'camping holiday'})
         # Note: These headers aren't really conformant to RFC822, but
         #  mhlib shouldn't care about that.
 
         # An inbox with a couple of messages.
-        writeMessage('inbox', 1, 
+        writeMessage('inbox', 1,
                      {'From': 'Mrs. Premise',
                       'To': 'Mrs. Conclusion',
                       'Date': '18 July 2001'}, "Hullo, Mrs. Conclusion!\n")
-        writeMessage('inbox', 2, 
+        writeMessage('inbox', 2,
                      {'From': 'Mrs. Conclusion',
                       'To': 'Mrs. Premise',
                       'Date': '29 July 2001'}, "Hullo, Mrs. Premise!\n")
-        
+
         # A folder with many messages
         for i in range(5, 101)+range(101, 201, 2):
-            writeMessage('wide', i, 
+            writeMessage('wide', i,
                          {'From': 'nowhere', 'Subject': 'message #%s' % i},
                          "This is message number %s\n" % i)
-        
+
         # A deeply nested folder
         def deep(folder, n):
-            writeMessage(folder, n, 
+            writeMessage(folder, n,
                          {'Subject': 'Message %s/%s' % (folder, n) },
                          "This is message number %s in %s\n" % (n, folder) )
         deep('deep/f1', 1)
@@ -131,10 +131,10 @@ class MhlibTests(unittest.TestCase):
         deep('deep', 3)
         deep('deep/f2/f3', 1)
         deep('deep/f2/f3', 2)
-        
+
     def tearDown(self):
         deltree(_mhroot)
-    
+
     def test_basic(self):
         writeContext('inbox')
         writeCurMessage('inbox', 2)
@@ -154,13 +154,13 @@ class MhlibTests(unittest.TestCase):
         mh.setcontext('inbox')
 
         inbox = mh.openfolder('inbox')
-        eq(inbox.getfullname(), 
+        eq(inbox.getfullname(),
            os.path.join(os.path.abspath(_mhpath), 'inbox'))
-        eq(inbox.getsequencesfilename(), 
+        eq(inbox.getsequencesfilename(),
            os.path.join(os.path.abspath(_mhpath), 'inbox', '.mh_sequences'))
-        eq(inbox.getmessagefilename(1), 
+        eq(inbox.getmessagefilename(1),
            os.path.join(os.path.abspath(_mhpath), 'inbox', '1'))
-        
+
     def test_listfolders(self):
         mh = getMH()
         eq = self.assertEquals
@@ -168,7 +168,7 @@ class MhlibTests(unittest.TestCase):
         folders = mh.listfolders()
         folders.sort()
         eq(folders, ['deep', 'inbox', 'wide'])
-        
+
         folders = mh.listallfolders()
         folders.sort()
         eq(folders, map(normF, ['deep', 'deep/f1', 'deep/f2', 'deep/f2/f3',
@@ -177,7 +177,7 @@ class MhlibTests(unittest.TestCase):
         folders = mh.listsubfolders('deep')
         folders.sort()
         eq(folders, map(normF, ['deep/f1', 'deep/f2']))
-        
+
         folders = mh.listallsubfolders('deep')
         folders.sort()
         eq(folders, map(normF, ['deep/f1', 'deep/f2', 'deep/f2/f3']))
@@ -190,22 +190,22 @@ class MhlibTests(unittest.TestCase):
         mh = getMH()
         eq = self.assertEquals
         writeCurMessage('wide', 55)
-        
+
         f = mh.openfolder('wide')
         all = f.listmessages()
         eq(all, range(5, 101)+range(101, 201, 2))
         eq(f.getcurrent(), 55)
         f.setcurrent(99)
-        eq(readFile(os.path.join(_mhpath, 'wide', '.mh_sequences')), 
+        eq(readFile(os.path.join(_mhpath, 'wide', '.mh_sequences')),
            'cur: 99\n')
 
         def seqeq(seq, val):
             eq(f.parsesequence(seq), val)
-        
+
         seqeq('5-55', range(5, 56))
         seqeq('90-108', range(90, 101)+range(101, 109, 2))
         seqeq('90-108', range(90, 101)+range(101, 109, 2))
-        
+
         seqeq('10:10', range(10, 20))
         seqeq('10:+10', range(10, 20))
         seqeq('101:10', range(101, 121, 2))
@@ -249,7 +249,7 @@ class MhlibTests(unittest.TestCase):
         self.assert_("dummy1" in mh.listfolders())
         path = os.path.join(_mhpath, "dummy1")
         self.assert_(os.path.exists(path))
-        
+
         f = mh.openfolder('dummy1')
         def create(n):
             msg = "From: foo\nSubject: %s\n\nDummy Message %s\n" % (n,n)
@@ -258,14 +258,14 @@ class MhlibTests(unittest.TestCase):
         create(7)
         create(8)
         create(9)
-        
+
         eq(readFile(f.getmessagefilename(9)),
            "From: foo\nSubject: 9\n\nDummy Message 9\n")
 
         eq(f.listmessages(), [7, 8, 9])
         files = os.listdir(path)
         files.sort()
-        eq(files, ['7', '8', '9']) 
+        eq(files, ['7', '8', '9'])
 
         f.removemessages(['7', '8'])
         files = os.listdir(path)
@@ -275,7 +275,7 @@ class MhlibTests(unittest.TestCase):
         create(10)
         create(11)
         create(12)
-        
+
         mh.makefolder("dummy2")
         f2 = mh.openfolder("dummy2")
         eq(f2.listmessages(), [])
@@ -285,12 +285,12 @@ class MhlibTests(unittest.TestCase):
         eq(f2.listmessages(), [3, 5])
         eq(readFile(f2.getmessagefilename(3)),
            "From: foo\nSubject: 10\n\nDummy Message 10\n")
-        
+
         f.copymessage(9, f2, 4)
         eq(f.listmessages(), [9, 12])
         eq(readFile(f2.getmessagefilename(4)),
            "From: foo\nSubject: 9\n\nDummy Message 9\n")
-        
+
         f.refilemessages([9, 12], f2)
         eq(f.listmessages(), [])
         eq(f2.listmessages(), [3, 4, 5, 6, 7])
@@ -306,7 +306,7 @@ class MhlibTests(unittest.TestCase):
     def test_read(self):
         mh = getMH()
         eq = self.assertEquals
-        
+
         f = mh.openfolder('inbox')
         msg = f.openmessage(1)
         # Check some basic stuff from rfc822
@@ -316,15 +316,15 @@ class MhlibTests(unittest.TestCase):
         # Okay, we have the right message.  Let's check the stuff from
         # mhlib.
         lines = sortLines(msg.getheadertext())
-        eq(lines, ["Date: 18 July 2001", 
+        eq(lines, ["Date: 18 July 2001",
                    "From: Mrs. Premise",
                    "To: Mrs. Conclusion"])
         lines = sortLines(msg.getheadertext(lambda h: len(h)==4))
-        eq(lines, ["Date: 18 July 2001", 
+        eq(lines, ["Date: 18 July 2001",
                    "From: Mrs. Premise"])
         eq(msg.getbodytext(), "Hullo, Mrs. Conclusion!\n\n")
         eq(msg.getbodytext(0), "Hullo, Mrs. Conclusion!\n\n")
-        
+
         # XXXX there should be a better way to reclaim the file handle
         msg.fp.close()
         del msg
