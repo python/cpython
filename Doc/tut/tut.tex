@@ -1,7 +1,7 @@
 % Format this file with latex.
 
-\documentstyle[palatino,11pt,myformat]{article}
-%\documentstyle[11pt,myformat]{article}
+%\documentstyle[palatino,11pt,myformat]{article}
+\documentstyle[11pt,myformat]{article}
 
 \title{\bf
 	Python Tutorial \\
@@ -144,9 +144,9 @@ on those machines where it is available; putting
 {\tt /usr/local}
 in your \UNIX\ shell's search path makes it possible to start it by
 typing the command
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 python
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 to the shell.
 Since the choice of the directory where the interpreter lives is an
 installation option, other places instead of
@@ -237,34 +237,17 @@ is not set, an installation-dependent default path is used, usually
 	{\tt PYTHONPATH} or from the installation-dependent default.
 	See the section on Standard Modules later.
 }
-The built-in module
-{\tt stdwin},
-if supported at all, is only available if the interpreter is started
-with the
-{\bf --s}
-flag.
-If this flag is given, stdwin is initialized as soon as the interpreter
-is started, and in the case of X11 stdwin certain command line arguments
-(like
-{\bf --display} )
-are consumed by stdwin.
 
 On BSD'ish \UNIX\ systems, \Python\ scripts can be made directly executable,
 like shell scripts, by putting the line
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 #! /usr/local/python
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 (assuming that's the name of the interpreter) at the beginning of the
 script and giving the file an executable mode.
 (The
 {\tt \#!}
 must be the first two characters of the file.)
-For scripts that use the built-in module
-{\tt stdwin},
-use
-\begin{code}\begin{verbatim}
-#! /usr/local/python -s
-\end{verbatim}\end{code}
 
 \subsection{Interactive Input Editing and History Substitution}
 
@@ -312,15 +295,15 @@ The key bindings and some other parameters of the Readline library can
 be customized by placing commands in an initialization file called
 {\tt \$HOME/.initrc}.
 Key bindings have the form
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 key-name: function-name
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 and options can be set with
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 set option-name value
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 Example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 # I prefer vi-style editing:
 set editing-mode vi
 # Edit using a single line:
@@ -328,13 +311,13 @@ set horizontal-scroll-mode On
 # Rebind some keys:
 Meta-h: backward-kill-word
 Control-u: universal-argument
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 Note that the default binding for TAB in \Python\ is to insert a TAB
 instead of Readline's default filename completion function.
 If you insist, you can override this by putting
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 TAB: complete
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 in your
 {\tt \$HOME/.inputrc}.
 (Of course, this makes it hard to type indented continuation lines.)
@@ -374,7 +357,7 @@ and
 work just as in most other languages (e.g., Pascal or C); parentheses
 can be used for grouping.
 For example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> # This is a comment
 >>> 2+2
 4
@@ -385,48 +368,46 @@ For example:
 >>> 7/3
 2
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 As in C, the equal sign ({\tt =}) is used to assign a value to a variable.
 The value of an assignment is not written:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> width = 20
 >>> height = 5*9
 >>> width * height
 900
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 There is some support for floating point, but you can't mix floating
 point and integral numbers in expression (yet):
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> 10.0 / 3.3
 3.0303030303
 >>> 
-\end{verbatim}\end{code}
-
+\end{verbatim}\ecode
 Besides numbers, \Python\ can also manipulate strings, enclosed in single
 quotes:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> 'foo bar'
 'foo bar'
 >>> 'doesn\'t'
 'doesn\'t'
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 Strings are written inside quotes and with quotes and other funny
 characters escaped by backslashes, to show the precise value.
 (There is also a way to write strings without quotes and escapes.)
 Strings can be concatenated (glued together) with the
 {\tt +}
-operator, and repeated with
-{\tt *}:
-\begin{code}\begin{verbatim}
+operator, and repeated with~{\tt *}:
+\bcode\begin{verbatim}
 >>> word = 'Help' + 'A'
 >>> word
 'HelpA'
 >>> '<' + word*5 + '>'
 '<HelpAHelpAHelpAHelpAHelpA>'
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 Strings can be subscripted; as in C, the first character of a string has
 subscript 0.
 There is no separate character type; a character is simply a string of
@@ -434,7 +415,7 @@ size one.
 As in Icon, substrings can be specified with the
 {\em slice}
 notation: two subscripts (indices) separated by a colon.
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> word[4]
 'A'
 >>> word[0:2]
@@ -450,11 +431,11 @@ notation: two subscripts (indices) separated by a colon.
 >>> word[:3] + word[3:]
 'HelpA'
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 Degenerate cases are handled gracefully: an index that is too large is
 replaced by the string size, an upper bound smaller than the lower bound
 returns an empty string.
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> word[1:100]
 'elpA'
 >>> word[10:]
@@ -462,11 +443,11 @@ returns an empty string.
 >>> word[2:1]
 ''
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 Slice indices (but not simple subscripts) may be negative numbers, to
 start counting from the right.
 For example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> word[-2:]    # Take last two characters
 'pA'
 >>> word[:-2]    # Drop last two characters
@@ -475,7 +456,7 @@ For example:
 >>> word[-0:]    # (since -0 equals 0)
 'HelpA'
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 The best way to remember how slices work is to think of the indices as
 pointing
 {\em between}
@@ -485,13 +466,13 @@ Then the right edge of the last character of a string of
 characters has index
 {\tt n},
 for example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
  +---+---+---+---+---+ 
  | H | e | l | p | A |
  +---+---+---+---+---+ 
  0   1   2   3   4   5 
 -5  -4  -3  -2  -1
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 The first row of numbers gives the position of the indices 0...5 in the
 string; the second row gives the corresponding negative indices.
 For nonnegative indices, the length of a slice is the difference of the
@@ -503,13 +484,12 @@ is 3--1 = 2.
 
 Finally, the built-in function {\tt len()} computes the length of a
 string:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> s = 'supercalifragilisticexpialidocious'
 >>> len(s)
 34
 >>> 
-\end{verbatim}\end{code}
-
+\end{verbatim}\ecode
 \Python\ knows a number of
 {\em compound}
 data types, used to group together other values.
@@ -517,42 +497,42 @@ The most versatile is the
 {\em list},
 which can be written as a list of comma-separated values between square
 brackets:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> a = ['foo', 'bar', 100, 1234]
 >>> a
 ['foo', 'bar', 100, 1234]
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 As for strings, list subscripts start at 0:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> a[0]
 'foo'
 >>> a[3]
 1234
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 Lists can be sliced and concatenated like strings:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> a[1:3]
 ['bar', 100]
 >>> a[:2] + ['bletch', 2*2]
 ['foo', 'bar', 'bletch', 4]
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 Unlike strings, which are
 {\em immutable},
 it is possible to change individual elements of a list:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> a
 ['foo', 'bar', 100, 1234]
 >>> a[2] = a[2] + 23
 >>> a
 ['foo', 'bar', 123, 1234]
 >>>
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 Assignment to slices is also possible, and this may even change the size
 of the list:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> # Replace some items:
 >>> a[0:2] = [1, 12]
 >>> a
@@ -566,13 +546,13 @@ of the list:
 >>> a
 [123, 'bletch', 'xyzzy', 1234]
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 The built-in function {\tt len()} also applies to lists:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> len(a)
 4
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 
 \subsection{Tuples and Sequences}
 
@@ -585,7 +565,7 @@ and two together.
 For instance, we can write an initial subsequence of the
 {\em Fibonacci}
 series as follows:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> # Fibonacci series:
 >>> # the sum of two elements defines the next
 >>> a, b = 0, 1
@@ -605,7 +585,7 @@ series as follows:
 55
 89
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 This example introduces several new features.
 \begin{itemize}
 \item
@@ -661,14 +641,14 @@ earlier in the calculator examples) in the way it handles multiple
 expressions and strings.
 Strings are written without quotes and a space is inserted between
 items, so you can format things nicely, like this:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> i = 256*256
 >>> print 'The value of i is', i
 The value of i is 65536
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 A trailing comma avoids the newline after the output:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> a, b = 0, 1
 >>> while b < 1000:
 ...     print b,
@@ -676,7 +656,7 @@ A trailing comma avoids the newline after the output:
 ... 
 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 Note that the interpreter inserts a newline before it prints the next
 prompt if the last line was not completed.
 \end{itemize}
@@ -691,7 +671,7 @@ twists.
 
 Perhaps the most well-known statement type is the {\tt if} statement.
 For example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> if x < 0:
 ...      x = 0
 ...      print 'Negative changed to zero'
@@ -702,7 +682,7 @@ For example:
 ... else:
 ...      print 'More'
 ... 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 There can be zero or more {\tt elif} parts, and the {\tt else} part is
 optional.
 The keyword `{\tt elif}' is short for `{\tt else if}', and is useful to
@@ -719,7 +699,7 @@ Rather than always iterating over an arithmetic progression of numbers
 and step (as C), \Python's {\tt for} statement iterates over the items
 of any sequence (e.g., a list or a string).
 For example (no pun intended):
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> # Measure some strings:
 >>> a = ['cat', 'window', 'defenestrate']
 >>> for x in a:
@@ -729,7 +709,7 @@ cat 3
 window 6
 defenestrate 12
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 
 \subsubsection{The {\tt range()} Function}
 
@@ -737,17 +717,17 @@ If you do need to iterate over a sequence of numbers, the built-in
 function {\tt range()} comes in handy.
 It generates lists containing arithmetic progressions,
 e.g.:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> range(10)
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 The given end point is never part of the generated list;
 {\tt range(10)} generates a list of 10 values,
 exactly the legal indices for items of a sequence of length 10.
 It is possible to let the range start at another number, or to specify a
 different increment (even negative):
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> range(5, 10)
 [5, 6, 7, 8, 9]
 >>> range(0, 10, 3)
@@ -755,10 +735,10 @@ different increment (even negative):
 >>> range(-10, -100, -30)
 [-10, -40, -70]
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 To iterate over the indices of a sequence, combine {\tt range()}
 and {\tt len()} as follows:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> a = ['Mary', 'had', 'a', 'little', 'boy']
 >>> for i in range(len(a)):
 ...     print i, a[i]
@@ -769,7 +749,7 @@ and {\tt len()} as follows:
 3 little
 4 boy
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 
 \subsubsection{Break Statements and Else Clauses on Loops}
 
@@ -781,7 +761,7 @@ the condition becomes false (with {\tt while}) but not when the loop is
 terminated by a {\tt break} statement.
 This is exemplified by the following loop, which searches for a list
 item of value 0:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> for n in range(2, 10):
 ...     for x in range(2, n):
 ...         if n % x = 0:
@@ -799,7 +779,7 @@ item of value 0:
 8 equals 2 * 4
 9 equals 3 * 3
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 
 \subsubsection{Pass Statements}
 
@@ -807,11 +787,11 @@ The {\tt pass} statement does nothing.
 It can be used when a statement is required syntactically but the
 program requires no action.
 For example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> while 1:
 ...       pass # Busy-wait for keyboard interrupt
 ... 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 
 \subsubsection{Conditions Revisited}
 
@@ -821,7 +801,7 @@ XXX To Be Done.
 
 We can create a function that writes the Fibonacci series to an
 arbitrary boundary:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> def fib(n):    # write Fibonacci series up to n
 ...     a, b = 0, 1
 ...     while b <= n:
@@ -832,7 +812,7 @@ arbitrary boundary:
 >>> fib(2000)
 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 The keyword
 {\tt def}
 introduces a function
@@ -872,14 +852,14 @@ user-defined function.
 This value can be assigned to another name which can then also be used
 as a function.
 This serves as a general renaming mechanism:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> fib
 <function object at 10042ed0>
 >>> f = fib
 >>> f(100)
 1 1 2 3 5 8 13 21 34 55 89
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 You might object that
 {\tt fib}
 is not a function but a procedure.
@@ -891,14 +871,14 @@ This value is called {\tt None} (it's a built-in name).
 Writing the value {\tt None} is normally suppressed by the interpreter
 if it would be the only value written.
 You can see it if you really want to:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> print fib(0)
 None
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 It is simple to write a function that returns a list of the numbers of
 the Fibonacci series, instead of printing it:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> def fib2(n): # return Fibonacci series up to n
 ...     result = []
 ...     a, b = 0, 1
@@ -911,7 +891,7 @@ the Fibonacci series, instead of printing it:
 >>> f100                # write the result
 [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 This example, as usual, demonstrates some new \Python\ features:
 \begin{itemize}
 \item
@@ -963,7 +943,7 @@ so {\tt a.insert(0, x)} inserts at the front of the list, and
 Sorts the elements of the list.
 \end{description}
 For example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> a = [10, 100, 1, 1000]
 >>> a.insert(2, -1)
 >>> a
@@ -977,7 +957,7 @@ For example:
 >>> b
 ['Mary', 'a', 'boy', 'had', 'little']
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 
 \subsection{Modules}
 
@@ -1010,7 +990,7 @@ appended.
 For instance, use your favorite text editor to create a file called
 {\tt fibo.py}
 in the current directory with the following contents:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 # Fibonacci numbers module
 
 def fib(n):    # write Fibonacci series up to n
@@ -1026,33 +1006,33 @@ def fib2(n): # return Fibonacci series up to n
           ret.append(b)
           a, b = b, a+b
     return ret
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 Now enter the \Python\ interpreter and import this module with the
 following command:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> import fibo
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 This does not enter the names of the functions defined in
 {\tt fibo}
 directly in the symbol table; it only enters the module name
 {\tt fibo}
 there.
 Using the module name you can access the functions:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> fibo.fib(1000)
 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987
 >>> fibo.fib2(100)
 [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 If you intend to use a function often you can assign it to a local name:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> fib = fibo.fib
 >>> fib(500)
 1 1 2 3 5 8 13 21 34 55 89 144 233 377
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 
 \subsubsection{More on Modules}
 
@@ -1090,23 +1070,23 @@ There is a variant of the
 statement that imports names from a module directly into the importing
 module's symbol table.
 For example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> from fibo import fib, fib2
 >>> fib(500)
 1 1 2 3 5 8 13 21 34 55 89 144 233 377
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 This does not introduce the module name from which the imports are taken
 in the local symbol table (so in the example, {\tt fibo} is not
 defined).
 
 There is even a variant to import all names that a module defines:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> from fibo import *
 >>> fib(500)
 1 1 2 3 5 8 13 21 34 55 89 144 233 377
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 This imports all names except those beginning with an underscore
 ({\tt \_}).
 
@@ -1130,7 +1110,7 @@ The variables
 and
 {\tt sys.ps2}
 define the strings used as primary and secondary prompts:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> import sys
 >>> sys.ps1
 '>>> '
@@ -1140,7 +1120,7 @@ define the strings used as primary and secondary prompts:
 C> print 'Yuck!'
 Yuck!
 C> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 These two variables are only defined if the interpreter is in
 interactive mode.
 
@@ -1154,11 +1134,11 @@ or from a built-in default if
 {\tt PYTHONPATH}
 is not set.
 You can modify it using standard list operations, e.g.:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> import sys
 >>> sys.path.append('/ufs/guido/lib/python')
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 
 \subsection{Errors and Exceptions}
 
@@ -1173,14 +1153,14 @@ and
 
 Syntax errors, also known as parsing errors, are perhaps the most common
 kind of complaint you get while you are still learning \Python:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> while 1 print 'Hello world'
 Parsing error: file <stdin>, line 1:
 while 1 print 'Hello world'
              ^
 Unhandled exception: run-time error: syntax error
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 The parser repeats the offending line and displays a little `arrow'
 pointing at the earliest point in the line where the error was detected.
 The error is caused by (or at least detected at) the token
@@ -1194,7 +1174,7 @@ the input came from a script.
 
 Even if a statement or expression is syntactically correct, it may cause
 an error when an attempt is made to execute it:
-\begin{code}\begin{verbatim}
+\bcode\small\begin{verbatim}
 >>> 10 * (1/0)
 Unhandled exception: run-time error: integer division by zero
 Stack backtrace (innermost last):
@@ -1208,7 +1188,7 @@ Unhandled exception: type error: illegal argument type for built-in operation
 Stack backtrace (innermost last):
   File "<stdin>", line 1
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 Errors detected during execution are called
 {\em exceptions}
 and are not unconditionally fatal: you will soon learn how to handle
@@ -1261,7 +1241,7 @@ The detail shows in what context the error was detected.
 It is possible to write programs that handle selected exceptions.
 Look at the following example, which prints a table of inverses of
 some floating point numbers:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> numbers = [0.3333, 2.5, 0.0, 10.0]
 >>> for x in numbers:
 ...     print x,
@@ -1275,7 +1255,7 @@ some floating point numbers:
 0 *** has no inverse ***
 10 0.1
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 The {\tt try} statement works as follows.
 \begin{itemize}
 \item
@@ -1306,10 +1286,10 @@ Handlers only handle exceptions that occur in the corresponding try
 clause, not in other handlers of the same {\tt try} statement.
 An except clause may name multiple exceptions as a parenthesized list,
 e.g.:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 ... except (RuntimeError, TypeError, NameError):
 ...     pass
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 The last except clause may omit the exception name(s), to serve as a
 wildcard.
 Use this with extreme caution!
@@ -1321,7 +1301,7 @@ The presence and type of the argument depend on the exception type.
 For exception types which have an argument, the except clause may
 specify a variable after the exception name (or list) to receive the
 argument's value, as follows:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> try:
 ...     foo()
 ... except NameError, x:
@@ -1329,7 +1309,7 @@ argument's value, as follows:
 ... 
 name foo undefined
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 If an exception has an argument, it is printed as the third part
 (`detail') of the message for unhandled exceptions.
 
@@ -1346,7 +1326,7 @@ These are in fact string objects whose
 The string is printed as the second part of the message for unhandled
 exceptions.
 Their names and values are:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 EOFError              'end-of-file read'
 KeyboardInterrupt     'keyboard interrupt'
 MemoryError           'out of memory'           *
@@ -1354,7 +1334,7 @@ NameError             'undefined name'          *
 RuntimeError          'run-time error'          *
 SystemError           'system error'            *
 TypeError             'type error'              *
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 The meanings should be clear enough.
 Those exceptions with a {\tt *} in the third column have an argument.
 
@@ -1362,7 +1342,7 @@ Exception handlers don't just handle exceptions if they occur
 immediately in the try clause, but also if they occur inside functions
 that are called (even indirectly) in the try clause.
 For example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> def this_fails():
 ...     x = 1/0
 ... 
@@ -1373,20 +1353,20 @@ For example:
 ... 
 Handling run-time error: domain error or zero division
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 
 \subsubsection{Raising Exceptions}
 
 The {\tt raise} statement allows the programmer to force a specified
 exception to occur.
 For example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> raise NameError, 'Hi There!'
 Unhandled exception: undefined name: Hi There!
 Stack backtrace (innermost last):
   File "<stdin>", line 1
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 The first argument to {\tt raise} names the exception to be raised.
 The optional second argument specifies the exception's argument.
 
@@ -1395,7 +1375,7 @@ The optional second argument specifies the exception's argument.
 Programs may name their own exceptions by assigning a string to a
 variable.
 For example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> my_exc = 'nobody likes me!'
 >>> try:
 ...     raise my_exc, 2*2
@@ -1408,7 +1388,7 @@ Unhandled exception: nobody likes me!: 1
 Stack backtrace (innermost last):
   File "<stdin>", line 7
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 Many standard modules use this to report errors that may occur in
 functions they define.
 
@@ -1417,7 +1397,7 @@ functions they define.
 The {\tt try} statement has another optional clause which is intended to
 define clean-up actions that must be executed under all circumstances.
 For example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> try:
 ...     raise KeyboardInterrupt
 ... finally:
@@ -1428,7 +1408,7 @@ Unhandled exception: keyboard interrupt
 Stack backtrace (innermost last):
   File "<stdin>", line 2
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 The
 {\em finally\ clause}
 must follow the except clauses(s), if any.
@@ -1489,7 +1469,7 @@ Consider the following example, which defines a class {\tt Set}
 representing a (finite) mathematical set with operations to add and
 remove elements, a membership test, and a request for the size of the
 set.
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 class Set():
     def new(self):
         self.elements = []
@@ -1507,7 +1487,7 @@ class Set():
         return e in self.elements
     def size(self):
         return len(self.elements)
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 Note that the class definition looks like a big compound statement,
 with all the function definitons indented repective to the
 {\tt class}
@@ -1518,7 +1498,7 @@ Let's assume that this
 is the only contents of the module file
 {\tt SetClass.py}.
 We can then use it in a \Python\ program as follows:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> from SetClass import Set
 >>> a = Set().new() # create a Set object
 >>> a.add(2)
@@ -1538,7 +1518,7 @@ a has 3 elements
 >>> 
 now a has 2 elements
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 From the example we learn in the first place that the functions defined
 in the class (e.g.,
 {\tt add})
