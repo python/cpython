@@ -31,7 +31,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Events.h>
 #include <StandardFile.h>
 
-#ifdef GENERATINGCFM	/* Defined to 0 or 1 in Universal headers */
+#ifdef GENERATINGCFM				/* Defined to 0 or 1 in Universal headers */
 #define HAVE_UNIVERSAL_HEADERS
 #endif
 
@@ -40,7 +40,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #ifdef USE_GUSI
-void PyMac_FixGUSIcd Py_PROTO((void));	/* Workaround for GUSI chdir() call */
+void PyMac_FixGUSIcd Py_PROTO((void));		/* Workaround for GUSI chdir() call */
 #endif
 
 char *PyMac_StrError(int);			/* strerror with mac errors */
@@ -48,12 +48,13 @@ char *PyMac_StrError(int);			/* strerror with mac errors */
 extern int PyMac_DoYieldEnabled;		/* Don't do eventloop when false */
 #ifdef USE_GUSI
 extern int PyMac_ConsoleIsDead;			/* True when exiting */
-extern void PyMac_SetGUSISpin(void);	/* Install our private GUSI spin routine */
+extern void PyMac_SetGUSISpin(void);		/* Install our private GUSI spin routine */
+extern void PyMac_StopGUSISpin(void);		/* Stop eventprocessing during exit() */
 #endif
 
 extern short PyMac_AppRefNum;			/* RefNum of application rsrcfork (from macmain.c) */
-extern FSSpec PyMac_ApplicationFSSpec;	/* Application location (from macargv.c) */
-extern char PyMac_ApplicationPath[];	/* Application location (from macargv.c) */
+extern FSSpec PyMac_ApplicationFSSpec;		/* Application location (from macargv.c) */
+extern char PyMac_ApplicationPath[];		/* Application location (from macargv.c) */
 extern OSErr PyMac_init_application_location Py_PROTO((void));	/* Init the above */
 extern OSErr PyMac_GetFullPath Py_PROTO((FSSpec *, char *)); /* convert fsspec->path (macargv.c) */
 extern int PyMac_GetArgv Py_PROTO((char ***, int));	/* Get argc, argv (from macargv.c) */
