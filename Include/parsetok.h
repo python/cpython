@@ -38,6 +38,10 @@ PyAPI_FUNC(node *) PyParser_ParseStringFlagsFilename(const char *,
 					      const char *,
 					      grammar *, int,
                                               perrdetail *, int);
+
+/* Note that he following function is defined in pythonrun.c not parsetok.c. */
+PyAPI_FUNC(void) PyParser_SetError(perrdetail *);
+
 #ifdef __cplusplus
 }
 #endif

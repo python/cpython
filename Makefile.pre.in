@@ -194,7 +194,10 @@ POBJS=		\
 		Parser/parser.o \
 		Parser/parsetok.o \
 		Parser/bitset.o \
-		Parser/metagrammar.o
+		Parser/metagrammar.o \
+		Parser/firstsets.o \
+		Parser/grammar.o \
+		Parser/pgen.o
 
 PARSER_OBJS=	$(POBJS) Parser/myreadline.o Parser/tokenizer.o
 
@@ -202,9 +205,6 @@ PGOBJS=		\
 		Objects/obmalloc.o \
 		Python/mysnprintf.o \
 		Parser/tokenizer_pgen.o \
-		Parser/firstsets.o \
-		Parser/grammar.o \
-		Parser/pgen.o \
 		Parser/printgrammar.o \
 		Parser/pgenmain.o
 

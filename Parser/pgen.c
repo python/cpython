@@ -669,6 +669,11 @@ pgen(node *n)
 	return g;
 }
 
+grammar *
+Py_pgen(node *n)
+{
+  return pgen(n);
+}
 
 /*
 
