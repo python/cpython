@@ -642,6 +642,67 @@ getmappingitems(mp)
 	return mapping_items((mappingobject *)mp, (object *)NULL);
 }
 
+#define NEWCMP
+
+#ifdef NEWCMP
+
+/* Subroutine which returns the smallest key in a for which b's value
+   is different or absent.  The value is returned too, through the
+   pval argument.  No reference counts are incremented. */
+
+static object *
+characterize(a, b, pval)
+	mappingobject *a;
+	mappingobject *b;
+	object **pval;
+{
+	object *diff = NULL;
+	int i;
+
+	*pval = NULL;
+	for (i = 0; i < a->ma_size; i++) {
+		if (a->ma_table[i].me_value != NULL) {
+			object *key = a->ma_table[i].me_key;
+			object *aval, *bval;
+			if (diff != NULL && cmpobject(key, diff) > 0)
+				continue;
+			aval = a->ma_table[i].me_value;
+			bval = mappinglookup((object *)b, key);
+			if (bval == NULL || cmpobject(aval, bval) != 0) {
+				diff = key;
+				*pval = aval;
+			}
+		}
+	}
+	return diff;
+}
+
+static int
+mapping_compare(a, b)
+	mappingobject *a, *b;
+{
+	object *adiff, *bdiff, *aval, *bval;
+	int res;
+
+	/* Compare lengths first */
+	if (a->ma_used < b->ma_used)
+		return -1;	/* a is shorter */
+	else if (a->ma_used > b->ma_used)
+		return 1;	/* b is shorter */
+	/* Same length -- check all keys */
+	adiff = characterize(a, b, &aval);
+	if (adiff == NULL)
+		return 0;	/* a is a subset with the same length */
+	bdiff = characterize(b, a, &bval);
+	/* bdiff == NULL would be impossible now */
+	res = cmpobject(adiff, bdiff);
+	if (res == 0)
+		res = cmpobject(aval, bval);
+	return res;
+}
+
+#else /* !NEWCMP */
+
 static int
 mapping_compare(a, b)
 	mappingobject *a, *b;
@@ -712,6 +773,8 @@ mapping_compare(a, b)
 	DECREF(bkeys);
 	return res;
 }
+
+#endif /* !NEWCMP */
 
 static object *
 mapping_has_key(mp, args)
