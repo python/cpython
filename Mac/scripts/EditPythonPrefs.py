@@ -46,7 +46,7 @@ GUSI_ID = 10240
 OVERRIDE_PATH_STRINGS_ID = 129
 OVERRIDE_DIRECTORY_ID = 129
 OVERRIDE_OPTIONS_ID = 129
-OVERRIDE_GUSI_ID = 10240
+OVERRIDE_GUSI_ID = 10241
 
 # Things we know about the GUSI resource. Note the code knows these too.
 GUSIPOS_TYPE=0
@@ -86,7 +86,6 @@ def message(str = "Hello, world!", id = MESSAGE_ID):
 	"""Show a simple alert with a text message"""
 	d = GetNewDialog(id, -1)
 	d.SetDialogDefaultItem(1)
-	print 'd=', d
 	tp, h, rect = d.GetDialogItem(2)
 	SetDialogItemText(h, str)
 	while 1:
@@ -187,8 +186,11 @@ def getoptions(id):
 	try:
 		opr = GetResource('Popt', id)
 	except (MacOS.Error, Res.Error):
-		return [0]*7, None
-	return map(lambda x: ord(x), opr.data), opr
+		return [0]*9, None
+	options = map(lambda x: ord(x), opr.data)
+	while len(options) < 9:
+		options = options + [0]
+	return options, opr
 	
 def getgusioptions(id):
 	try:
@@ -301,8 +303,7 @@ def edit_preferences():
 			gusi_opr.data = newdata
 			gusi_opr.ChangedResource()
 		else:
-			print 'Created new GUSI option'
-			ngusi_opr = Resource(gusi_opr.data)
+			ngusi_opr = Resource(newdata)
 			ngusi_opr.AddResource('GU\267I', GUSI_ID, '')
 				
 	CloseResFile(preff_handle)
@@ -342,12 +343,12 @@ def edit_applet(name):
 	saved_options = options[:]
 	
 	creator, type, delaycons, gusi_opr = getgusioptions(OVERRIDE_GUSI_ID)
-	if not opr:
+	if not gusi_opr:
 		if notfound:
 			notfound = notfound + ', GUSI options'
 		else:
 			notfound = 'GUSI options'
-			creator, type, delaycons, dummy = getgusioptions(GUSI_ID)
+		creator, type, delaycons, gusi_opr = getgusioptions(GUSI_ID)
 	saved_gusi_options = creator, type, delaycons
 	
 	dummy = dummy2 = None # Discard them.
@@ -361,7 +362,7 @@ def edit_applet(name):
 	if result == None:
 		sys.exit(0)
 		
-	pathlist, nfss, options = result
+	pathlist, nfss, (options, creator, type, delaycons) = result
 	if nfss != fss:
 		fss_changed = 1
 		
@@ -396,12 +397,13 @@ def edit_applet(name):
 			
 	if (creator, type, delaycons) != saved_gusi_options:
 		newdata = setgusioptions(gusi_opr, creator, type, delaycons)
-		if gusi_opr.HomeResFile == app_handle:
+		id, type, name = gusi_opr.GetResInfo()
+		if gusi_opr.HomeResFile() == app_handle and id == OVERRIDE_GUSI_ID:
 			gusi_opr.data = newdata
 			gusi_opr.ChangedResource()
 		else:
-			gusi_opr = Resource(gusi_opr.data)
-			gusi_opr.AddResource('GU\267I', OVERRIDE_GUSI_ID, '')
+			ngusi_opr = Resource(newdata)
+			ngusi_opr.AddResource('GU\267I', OVERRIDE_GUSI_ID, '')
 			
 	CloseResFile(app_handle)
 
