@@ -292,9 +292,15 @@ class Main:
 						try:
 							macostools.copy(fullname, os.path.join(destprefix, dest), 1)
 						except: #DBG
-							print 'cwd', os.getcwd() #DBG
-							print 'fsspec', macfs.FSSpec(fullname) #DBG
-							raise
+							print '*** Copy failed mysteriously, try again'
+							print '*** cwd', os.getcwd() #DBG
+							print '*** fsspec', macfs.FSSpec(fullname) #DBG
+							# Get rid of open files
+							try:
+								i = 1 / 0
+							except:
+								pass
+							macostools.copy(fullname, os.path.join(destprefix, dest), 1)
 		for d in todo:
 			if not self.rundir(d, destprefix, doit):
 				rv = 0
