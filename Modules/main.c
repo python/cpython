@@ -59,22 +59,22 @@ static char *argv0;
 static char **orig_argv;
 static int  orig_argc;
 
-
 /* Short usage message (with %s for argv0) */
 static char *usage_line =
-"usage: %s [-d] [-i] [-s] [-u ] [-v] [-c cmd | file | -] [arg] ...\n";
+"usage: %s [-d] [-i] [-s] [-u] [-v] [-c cmd | file | -] [arg] ...\n";
 
 /* Long usage message, split into parts < 512 bytes */
 static char *usage_top = "\n\
 Options and arguments (and corresponding environment variables):\n\
 -d     : debug output from parser (also PYTHONDEBUG=x)\n\
--i     : inspect interactively after running script (also PYTHONINSPECT=x)\n\
+-i     : inspect interactively after running script, (also PYTHONINSPECT=x)\n\
+         and force prompts, even if stdin does not appear to be a terminal.\n\
 -s     : suppress printing of top level expressions (also PYTHONSUPPRESS=x)\n\
 -u     : unbuffered stdout and stderr (also PYTHONUNBUFFERED=x)\n\
 -v     : verbose (trace import statements) (also PYTHONVERBOSE=x)\n\
--c cmd : program passed in as string (terminates option list)\n\
 ";
 static char *usage_bot = "\
+-c cmd : program passed in as string (terminates option list)\n\
 file   : program read from script file\n\
 -      : program read from stdin (default; interactive mode if a tty)\n\
 arg ...: arguments passed to program in sys.argv[1:]\n\
@@ -101,6 +101,7 @@ main(argc, argv)
 	char *p;
 	int inspect = 0;
 	int unbuffered = 0;
+	int stdin_is_interactive = 0;
 
 	orig_argc = argc;	/* For Py_GetArgcArgv() */
 	orig_argv = argv;
@@ -139,6 +140,7 @@ main(argc, argv)
 
 		case 'i':
 			inspect++;
+			Py_InteractiveFlag++;
 			break;
 
 		case 's':
@@ -165,37 +167,47 @@ main(argc, argv)
 		}
 	}
 
+	if (command == NULL && optind < argc &&
+	    strcmp(argv[optind], "-") != 0)
+	{
+		filename = argv[optind];
+		if (filename != NULL) {
+			if ((fp = fopen(filename, "r")) == NULL) {
+				fprintf(stderr, "%s: can't open file '%s'\n",
+					argv[0], filename);
+				exit(2);
+			}
+		}
+	}
+
+	stdin_is_interactive = Py_FdIsInteractive(stdin, (char *)0);
+
 	if (unbuffered) {
 #ifdef MS_WINDOWS
 		_setmode(fileno(stdin), O_BINARY);
 		_setmode(fileno(stdout), O_BINARY);
 #endif
 #ifndef MPW
-		setbuf(stdout, (char *)NULL);
-		setbuf(stderr, (char *)NULL);
+		setvbuf(stdin,  (char *)NULL, _IONBF, BUFSIZ);
+		setvbuf(stdout, (char *)NULL, _IONBF, BUFSIZ);
+		setvbuf(stderr, (char *)NULL, _IONBF, BUFSIZ);
 #else
 		/* On MPW (3.2) unbuffered seems to hang */
+		setvbuf(stdin,  (char *)NULL, _IOLBF, BUFSIZ);
 		setvbuf(stdout, (char *)NULL, _IOLBF, BUFSIZ);
 		setvbuf(stderr, (char *)NULL, _IOLBF, BUFSIZ);
 #endif
 	}
-
-	if (command == NULL && optind < argc &&
-	    strcmp(argv[optind], "-") != 0)
-		filename = argv[optind];
+	else if (stdin_is_interactive) {
+		setvbuf(stdin,  (char *)NULL, _IOLBF, BUFSIZ);
+		setvbuf(stdout, (char *)NULL, _IOLBF, BUFSIZ);
+		/* Leave stderr alone - it should be unbuffered anyway. */
+  	}
 
 	if (Py_VerboseFlag ||
-	    (command == NULL && filename == NULL && isatty((int)fileno(fp))))
+	    command == NULL && filename == NULL && stdin_is_interactive)
 		fprintf(stderr, "Python %s\n%s\n",
 			Py_GetVersion(), Py_GetCopyright());
-	
-	if (filename != NULL) {
-		if ((fp = fopen(filename, "r")) == NULL) {
-			fprintf(stderr, "%s: can't open file '%s'\n",
-				argv[0], filename);
-			exit(2);
-		}
-	}
 	
 	Py_Initialize();
 	
@@ -211,7 +223,7 @@ main(argc, argv)
 		sts = PyRun_SimpleString(command) != 0;
 	}
 	else {
-		if (filename == NULL && isatty((int)fileno(fp))) {
+		if (filename == NULL && stdin_is_interactive) {
 			char *startup = getenv("PYTHONSTARTUP");
 			if (startup != NULL && startup[0] != '\0') {
 				FILE *fp = fopen(startup, "r");
@@ -223,12 +235,13 @@ main(argc, argv)
 			}
 		}
 		sts = PyRun_AnyFile(
-			fp, filename == NULL ? "<stdin>" : filename) != 0;
+			fp,
+			filename == NULL ? "<stdin>" : filename) != 0;
 		if (filename != NULL)
 			fclose(fp);
 	}
 
-	if (inspect && isatty((int)fileno(stdin)) &&
+	if (inspect && stdin_is_interactive &&
 	    (filename != NULL || command != NULL))
 		sts = PyRun_AnyFile(stdin, "<stdin>") != 0;
 
