@@ -42,8 +42,37 @@ staticforward int TXNFontMenuObj_Convert(PyObject *, TXNFontMenuObject *);
 #endif
 
 /*
-** Parse/generate ADD records
+** Parse an optional fsspec
 */
+static int
+OptFSSpecPtr_Convert(PyObject *v, FSSpec **p_itself)
+{
+	static FSSpec fss;
+	if (v == Py_None)
+	{
+		*p_itself = NULL;
+		return 1;
+	}
+	*p_itself = &fss;
+	return PyMac_GetFSSpec(v, *p_itself);
+}
+
+/*
+** Parse an optional rect
+*/
+static int
+OptRectPtr_Convert(PyObject *v, Rect **p_itself)
+{
+	static Rect r;
+	
+	if (v == Py_None)
+	{
+		*p_itself = NULL;
+		return 1;
+	}
+	*p_itself = &r;
+	return PyMac_GetRect(v, *p_itself);
+}
 
 """
 
@@ -81,6 +110,8 @@ RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
 GWorldPtr = OpaqueByValueType("GWorldPtr", "GWorldObj")
 MlteInBuffer = VarInputBufferType('void *', 'ByteCount', 'l')
 
+OptFSSpecPtr = OpaqueByValueType("FSSpec *", "OptFSSpecPtr")
+OptRectPtr = OpaqueByValueType("Rect *", "OptRectPtr")
 # ADD object type here
 
 execfile("mltetypetest.py")
@@ -131,6 +162,26 @@ for f in TXNObject_methods: TXNObject_object.add(f)
 for f in TXNFontMenuObject_methods: TXNFontMenuObject_object.add(f)
 
 # ADD Manual generators here
+inittextension_body = """
+OSStatus _err;
+TXNMacOSPreferredFontDescription * iDefaultFonts = NULL;
+ItemCount iCountDefaultFonts = 0;
+TXNInitOptions iUsageFlags;
+PyMac_PRECHECK(TXNInitTextension);
+if (!PyArg_ParseTuple(_args, "l", &iUsageFlags))
+	return NULL;
+_err = TXNInitTextension(iDefaultFonts,
+                         iCountDefaultFonts,
+                         iUsageFlags);
+if (_err != noErr) return PyMac_Error(_err);
+Py_INCREF(Py_None);
+_res = Py_None;
+return _res;
+"""
+
+f = ManualGenerator("TXNInitTextension", inittextension_body);
+f.docstring = lambda: "(TXNInitOptions) -> None"
+module.add(f)
 
 # generate output (open the output file as late as possible)
 SetOutputFileName(OUTPUTFILE)

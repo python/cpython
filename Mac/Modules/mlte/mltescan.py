@@ -41,6 +41,9 @@ class MyScanner(Scanner_OSX):
 
 	def makeblacklistnames(self):
 		return [
+			"TXNGetFontDefaults", # Arg is too difficult
+			"TXNSetFontDefaults", # Arg is too difficult
+			"TXNInitTextension", # done manually
 			]
 
 	def makegreylist(self):
@@ -63,6 +66,22 @@ class MyScanner(Scanner_OSX):
 
 	def makerepairinstructions(self):
 		return [
+			# TXNNewObject has a lot of optional parameters
+			([("FSSpec_ptr", "iFileSpec", "InMode")],
+			 [("OptFSSpecPtr", "*", "*")]),
+			([("Rect", "iFrame", "OutMode")],
+			 [("OptRectPtr", "*", "InMode")]),
+			 
+			# In UH 332 some of the "const" are missing for input parameters passed
+			# by reference. We fix that up here.
+			([("EventRecord", "iEvent", "OutMode")],
+			 [("EventRecord_ptr", "*", "InMode")]),
+			([("FSSpec", "iFileSpecification", "OutMode")],
+			 [("FSSpec_ptr", "*", "InMode")]),
+			([("TXNMacOSPreferredFontDescription", "iFontDefaults", "OutMode")],
+			 [("TXNMacOSPreferredFontDescription_ptr", "*", "InMode")]),
+			 
+			# In buffers are passed as void *
 			([("void", "*", "OutMode"), ("ByteCount", "*", "InMode")],
 			 [("MlteInBuffer", "*", "InMode")]),
 			]

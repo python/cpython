@@ -38,8 +38,37 @@ staticforward int TXNFontMenuObj_Convert(PyObject *, TXNFontMenuObject *);
 #endif
 
 /*
-** Parse/generate ADD records
+** Parse an optional fsspec
 */
+static int
+OptFSSpecPtr_Convert(PyObject *v, FSSpec **p_itself)
+{
+	static FSSpec fss;
+	if (v == Py_None)
+	{
+		*p_itself = NULL;
+		return 1;
+	}
+	*p_itself = &fss;
+	return PyMac_GetFSSpec(v, *p_itself);
+}
+
+/*
+** Parse an optional rect
+*/
+static int
+OptRectPtr_Convert(PyObject *v, Rect **p_itself)
+{
+	static Rect r;
+	
+	if (v == Py_None)
+	{
+		*p_itself = NULL;
+		return 1;
+	}
+	*p_itself = &r;
+	return PyMac_GetRect(v, *p_itself);
+}
 
 
 static PyObject *Mlte_Error;
@@ -192,13 +221,13 @@ static PyObject *TXNObj_TXNTSMCheck(TXNObjectObject *_self, PyObject *_args)
 	Boolean _rv;
 	EventRecord iEvent;
 	PyMac_PRECHECK(TXNTSMCheck);
-	if (!PyArg_ParseTuple(_args, ""))
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetEventRecord, &iEvent))
 		return NULL;
 	_rv = TXNTSMCheck(_self->ob_itself,
 	                  &iEvent);
-	_res = Py_BuildValue("bO&",
-	                     _rv,
-	                     PyMac_BuildEventRecord, &iEvent);
+	_res = Py_BuildValue("b",
+	                     _rv);
 	return _res;
 }
 
@@ -665,10 +694,11 @@ static PyObject *TXNObj_TXNSave(TXNObjectObject *_self, PyObject *_args)
 	SInt16 iDataReference;
 	SInt16 iResourceReference;
 	PyMac_PRECHECK(TXNSave);
-	if (!PyArg_ParseTuple(_args, "O&O&lhh",
+	if (!PyArg_ParseTuple(_args, "O&O&lO&hh",
 	                      PyMac_GetOSType, &iType,
 	                      PyMac_GetOSType, &iResType,
 	                      &iPermanentEncoding,
+	                      PyMac_GetFSSpec, &iFileSpecification,
 	                      &iDataReference,
 	                      &iResourceReference))
 		return NULL;
@@ -680,8 +710,8 @@ static PyObject *TXNObj_TXNSave(TXNObjectObject *_self, PyObject *_args)
 	               iDataReference,
 	               iResourceReference);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&",
-	                     PyMac_BuildFSSpec, iFileSpecification);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -903,7 +933,7 @@ static PyMethodDef TXNObj_methods[] = {
 	{"TXNClick", (PyCFunction)TXNObj_TXNClick, 1,
 	 "(EventRecord iEvent) -> None"},
 	{"TXNTSMCheck", (PyCFunction)TXNObj_TXNTSMCheck, 1,
-	 "() -> (Boolean _rv, EventRecord iEvent)"},
+	 "(EventRecord iEvent) -> (Boolean _rv)"},
 	{"TXNSelectAll", (PyCFunction)TXNObj_TXNSelectAll, 1,
 	 "() -> None"},
 	{"TXNFocus", (PyCFunction)TXNObj_TXNFocus, 1,
@@ -961,7 +991,7 @@ static PyMethodDef TXNObj_methods[] = {
 	{"TXNGetChangeCount", (PyCFunction)TXNObj_TXNGetChangeCount, 1,
 	 "() -> (ItemCount _rv)"},
 	{"TXNSave", (PyCFunction)TXNObj_TXNSave, 1,
-	 "(OSType iType, OSType iResType, TXNPermanentTextEncodingType iPermanentEncoding, SInt16 iDataReference, SInt16 iResourceReference) -> (FSSpec iFileSpecification)"},
+	 "(OSType iType, OSType iResType, TXNPermanentTextEncodingType iPermanentEncoding, FSSpec iFileSpecification, SInt16 iDataReference, SInt16 iResourceReference) -> None"},
 	{"TXNRevert", (PyCFunction)TXNObj_TXNRevert, 1,
 	 "() -> None"},
 	{"TXNPageSetup", (PyCFunction)TXNObj_TXNPageSetup, 1,
@@ -1140,9 +1170,9 @@ static PyObject *Mlte_TXNNewObject(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
-	FSSpec iFileSpec;
+	FSSpec * iFileSpec;
 	WindowPtr iWindow;
-	Rect iFrame;
+	Rect * iFrame;
 	TXNFrameOptions iFrameOptions;
 	TXNFrameType iFrameType;
 	TXNFileType iFileType;
@@ -1150,17 +1180,18 @@ static PyObject *Mlte_TXNNewObject(PyObject *_self, PyObject *_args)
 	TXNObject oTXNObject;
 	TXNFrameID oTXNFrameID;
 	PyMac_PRECHECK(TXNNewObject);
-	if (!PyArg_ParseTuple(_args, "O&O&llO&l",
-	                      PyMac_GetFSSpec, &iFileSpec,
+	if (!PyArg_ParseTuple(_args, "O&O&O&llO&l",
+	                      OptFSSpecPtr_Convert, &iFileSpec,
 	                      WinObj_Convert, &iWindow,
+	                      OptRectPtr_Convert, &iFrame,
 	                      &iFrameOptions,
 	                      &iFrameType,
 	                      PyMac_GetOSType, &iFileType,
 	                      &iPermanentEncoding))
 		return NULL;
-	_err = TXNNewObject(&iFileSpec,
+	_err = TXNNewObject(iFileSpec,
 	                    iWindow,
-	                    &iFrame,
+	                    iFrame,
 	                    iFrameOptions,
 	                    iFrameType,
 	                    iFileType,
@@ -1169,8 +1200,7 @@ static PyObject *Mlte_TXNNewObject(PyObject *_self, PyObject *_args)
 	                    &oTXNFrameID,
 	                    (TXNObjectRefcon)0);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&O&l",
-	                     PyMac_BuildRect, &iFrame,
+	_res = Py_BuildValue("O&l",
 	                     TXNObj_New, oTXNObject,
 	                     oTXNFrameID);
 	return _res;
@@ -1268,9 +1298,30 @@ static PyObject *Mlte_TXNVersionInformation(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *Mlte_TXNInitTextension(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+
+	OSStatus _err;
+	TXNMacOSPreferredFontDescription * iDefaultFonts = NULL;
+	ItemCount iCountDefaultFonts = 0;
+	TXNInitOptions iUsageFlags;
+	PyMac_PRECHECK(TXNInitTextension);
+	if (!PyArg_ParseTuple(_args, "l", &iUsageFlags))
+		return NULL;
+	_err = TXNInitTextension(iDefaultFonts,
+	                         iCountDefaultFonts,
+	                         iUsageFlags);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+
+}
+
 static PyMethodDef Mlte_methods[] = {
 	{"TXNNewObject", (PyCFunction)Mlte_TXNNewObject, 1,
-	 "(FSSpec iFileSpec, WindowPtr iWindow, TXNFrameOptions iFrameOptions, TXNFrameType iFrameType, TXNFileType iFileType, TXNPermanentTextEncodingType iPermanentEncoding) -> (Rect iFrame, TXNObject oTXNObject, TXNFrameID oTXNFrameID)"},
+	 "(FSSpec * iFileSpec, WindowPtr iWindow, Rect * iFrame, TXNFrameOptions iFrameOptions, TXNFrameType iFrameType, TXNFileType iFileType, TXNPermanentTextEncodingType iPermanentEncoding) -> (TXNObject oTXNObject, TXNFrameID oTXNFrameID)"},
 	{"TXNTerminateTextension", (PyCFunction)Mlte_TXNTerminateTextension, 1,
 	 "() -> None"},
 	{"TXNIsScrapPastable", (PyCFunction)Mlte_TXNIsScrapPastable, 1,
@@ -1283,6 +1334,8 @@ static PyMethodDef Mlte_methods[] = {
 	 "(MenuHandle iFontMenuHandle, SInt16 iMenuID, SInt16 iStartHierMenuID) -> (TXNFontMenuObject oTXNFontMenuObject)"},
 	{"TXNVersionInformation", (PyCFunction)Mlte_TXNVersionInformation, 1,
 	 "() -> (TXNVersionValue _rv, TXNFeatureBits oFeatureFlags)"},
+	{"TXNInitTextension", (PyCFunction)Mlte_TXNInitTextension, 1,
+	 "(TXNInitOptions) -> None"},
 	{NULL, NULL, 0}
 };
 
