@@ -892,15 +892,19 @@ class _MultiCallMethod:
     def __call__(self, *args):
         self.__call_list.append((self.__name, args))
 
-def MultiCallIterator(results):
+class MultiCallIterator:
     """Iterates over the results of a multicall. Exceptions are
     thrown in response to xmlrpc faults."""
 
-    for i in results:
-        if type(i) == type({}):
-            raise Fault(i['faultCode'], i['faultString'])
-        elif type(i) == type([]):
-            yield i[0]
+    def __init__(self, results):
+        self.results = results
+
+    def __getitem__(self, i):
+        item = self.results[i]
+        if type(item) == type({}):
+            raise Fault(item['faultCode'], item['faultString'])
+        elif type(item) == type([]):
+            return item[0]
         else:
             raise ValueError,\
                   "unexpected type in multicall result"
@@ -1412,11 +1416,20 @@ if __name__ == "__main__":
     # simple test program (from the XML-RPC specification)
 
     # server = ServerProxy("http://localhost:8000") # local server
-    server = ServerProxy("http://betty.userland.com")
+    server = ServerProxy("http://time.xmlrpc.com/RPC2")
 
     print server
 
     try:
-        print server.examples.getStateName(41)
+        print server.currentTime.getCurrentTime()
+    except Error, v:
+        print "ERROR", v
+
+    multi = MultiCall(server)
+    multi.currentTime.getCurrentTime()
+    multi.currentTime.getCurrentTime()
+    try:
+        for response in multi():
+            print response
     except Error, v:
         print "ERROR", v
