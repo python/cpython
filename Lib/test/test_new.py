@@ -66,7 +66,10 @@ verify(g['c'] == 3,
 
 # bogus test of new.code()
 print 'new.code()'
-d = new.code(3, 3, 3, 3, codestr, (), (), (), (), (),
+d = new.code(3, 3, 3, 3, codestr, (), (), (), 
+             "<string>", "<name>", 1, "", (), ())
+# test backwards-compatibility version with no freevars or cellvars
+d = new.code(3, 3, 3, 3, codestr, (), (), (), 
              "<string>", "<name>", 1, "")
 if verbose:
     print d

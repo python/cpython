@@ -103,7 +103,9 @@ new_function(PyObject* unused, PyObject* args)
 }
 
 static char new_code_doc[] =
-"Create a code object from (ARGCOUNT, NLOCALS, STACKSIZE, FLAGS, CODESTRING, CONSTANTS, NAMES, VARNAMES, FREEVARS, CELLVARS, FILENAME, NAME, FIRSTLINENO, LNOTAB).";
+"Create a code object from (ARGCOUNT, NLOCALS, STACKSIZE, FLAGS, CODESTRING,\n"
+"CONSTANTS, NAMES, VARNAMES, FILENAME, NAME, FIRSTLINENO, LNOTAB, FREEVARS,\n"
+"CELLVARS).";
 
 static PyObject *
 new_code(PyObject* unused, PyObject* args)
@@ -116,25 +118,40 @@ new_code(PyObject* unused, PyObject* args)
 	PyObject* consts;
 	PyObject* names;
 	PyObject* varnames;
-	PyObject* freevars;
-	PyObject* cellvars;
+	PyObject* freevars = NULL;
+	PyObject* cellvars = NULL;
 	PyObject* filename;
 	PyObject* name;
 	int firstlineno;
 	PyObject* lnotab;
 	PyBufferProcs *pb;
 
-	if (!PyArg_ParseTuple(args, "iiiiOO!O!O!O!O!SSiS:code",
+	if (!PyArg_ParseTuple(args, "iiiiSO!O!O!SSiS|O!O!:code",
 			      &argcount, &nlocals, &stacksize, &flags,
 			      &code,
 			      &PyTuple_Type, &consts,
 			      &PyTuple_Type, &names,
 			      &PyTuple_Type, &varnames,
-			      &PyTuple_Type, &freevars,
-			      &PyTuple_Type, &cellvars,
 			      &filename, &name,
-			      &firstlineno, &lnotab))
+			      &firstlineno, &lnotab,
+			      &PyTuple_Type, &freevars,
+			      &PyTuple_Type, &cellvars))
 		return NULL;
+
+	if (freevars == NULL || cellvars == NULL) {
+		PyObject *empty = PyTuple_New(0);
+		if (empty == NULL)
+		    return NULL;
+		if (freevars == NULL) {
+		    freevars = empty;
+		    Py_INCREF(freevars);
+		}
+		if (cellvars == NULL) {
+		    cellvars = empty;
+		    Py_INCREF(cellvars);
+		}
+		Py_DECREF(empty);
+	}
 
 	pb = code->ob_type->tp_as_buffer;
 	if (pb == NULL ||
