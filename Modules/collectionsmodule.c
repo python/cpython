@@ -13,7 +13,7 @@
  * length of a cache line.  
  */
 
-#define BLOCKLEN 46
+#define BLOCKLEN 62
 #define CENTER ((BLOCKLEN - 1) / 2)
 
 /* A `dequeobject` is composed of a doubly-linked list of `block` nodes.
