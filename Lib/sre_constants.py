@@ -11,7 +11,7 @@
 
 # update when constants are added or removed
 
-MAGIC = 20010320
+MAGIC = 20010701
 
 # max code word in this release
 
@@ -33,6 +33,7 @@ ANY_ALL = "any_all"
 ASSERT = "assert"
 ASSERT_NOT = "assert_not"
 AT = "at"
+BIGCHARSET = "bigcharset"
 BRANCH = "branch"
 CALL = "call"
 CATEGORY = "category"
@@ -103,7 +104,7 @@ OPCODES = [
     BRANCH,
     CALL,
     CATEGORY,
-    CHARSET,
+    CHARSET, BIGCHARSET,
     GROUPREF, GROUPREF_IGNORE,
     IN, IN_IGNORE,
     INFO,

@@ -156,6 +156,8 @@ def _compile_charset(charset, flags, code, fixup=None):
             emit(fixup(av[1]))
         elif op is CHARSET:
             code.extend(av)
+        elif op is BIGCHARSET:
+            code.extend(av)
         elif op is CATEGORY:
             if flags & SRE_FLAG_LOCALE:
                 emit(CHCODES[CH_LOCALE[av]])
@@ -185,7 +187,7 @@ def _optimize_charset(charset, fixup):
                 return charset # cannot compress
     except IndexError:
         # character set contains unicode characters
-        return charset
+        return _optimize_unicode(charset, fixup)
     # compress character map
     i = p = n = 0
     runs = []
@@ -211,18 +213,77 @@ def _optimize_charset(charset, fixup):
             return out
     else:
         # use bitmap
-        data = []
-        m = 1; v = 0
-        for c in charmap:
-            if c:
-                v = v + m
-            m = m << 1
-            if m > MAXCODE:
-                data.append(v)
-                m = 1; v = 0
+        data = _mk_bitmap(charmap)
         out.append((CHARSET, data))
         return out
     return charset
+
+def _mk_bitmap(bits):
+    data = []
+    m = 1; v = 0
+    for c in bits:
+        if c:
+            v = v + m
+        m = m << 1
+        if m > MAXCODE:
+            data.append(v)
+            m = 1; v = 0
+    return data
+
+# To represent a big charset, first a bitmap of all characters in the
+# set is constructed. Then, this bitmap is sliced into chunks of 256
+# characters, duplicate chunks are eliminitated, and each chunk is
+# given a number. In the compiled expression, the charset is
+# represented by a 16-bit word sequence, consisting of one word for
+# the number of different chunks, a sequence of 256 bytes (128 words)
+# of chunk numbers indexed by their original chunk position, and a
+# sequence of chunks (16 words each).
+
+# Compression is normally good: in a typical charset, large ranges of
+# Unicode will be either completely excluded (e.g. if only cyrillic
+# letters are to be matched), or completely included (e.g. if large
+# subranges of Kanji match). These ranges will be represented by
+# chunks of all one-bits or all zero-bits.
+
+# Matching can be also done efficiently: the more significant byte of
+# the Unicode character is an index into the chunk number, and the
+# less significant byte is a bit index in the chunk (just like the
+# CHARSET matching).
+
+def _optimize_unicode(charset, fixup):
+    charmap = [0]*65536
+    negate = 0
+    for op, av in charset:
+        if op is NEGATE:
+            negate = 1
+        elif op is LITERAL:
+            charmap[fixup(av)] = 1
+        elif op is RANGE:
+            for i in range(fixup(av[0]), fixup(av[1])+1):
+                charmap[i] = 1
+        elif op is CATEGORY:
+            # XXX: could expand category
+            return charset # cannot compress
+    if negate:
+        for i in range(65536):
+            charmap[i] = not charmap[i]
+    comps = {}
+    mapping = [0]*256
+    block = 0
+    data = []
+    for i in range(256):
+        chunk = tuple(charmap[i*256:(i+1)*256])
+        new = comps.setdefault(chunk, block)
+        mapping[i] = new
+        if new == block:
+            block += 1
+            data += _mk_bitmap(chunk)
+    header = [block]
+    assert MAXCODE == 65535
+    for i in range(128):
+        header.append(mapping[2*i]+256*mapping[2*i+1])
+    data[0:0] = header
+    return [(BIGCHARSET, data)]    
 
 def _simple(av):
     # check if av is a "simple" operator
