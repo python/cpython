@@ -115,6 +115,11 @@ class Application:
 	def _quit(self, *args):
 		self.quitting = 1
 		
+	def cleanup(self):
+		for w in self._windows.values():
+			w.do_close()
+		return self._windows == {}
+		
 	def appendwindow(self, wid, window):
 		self._windows[wid] = window
 		
