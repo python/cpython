@@ -3641,10 +3641,17 @@ slot_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *func = PyObject_GetAttrString((PyObject *)type, "__new__");
+	static PyObject *new_str;
+	PyObject *func;
 	PyObject *newargs, *x;
 	int i, n;
 
+	if (new_str == NULL) {
+		new_str = PyString_InternFromString("__new__");
+		if (new_str == NULL)
+			return NULL;
+	}
+	func = PyObject_GetAttr((PyObject *)type, new_str);
 	if (func == NULL)
 		return NULL;
 	assert(PyTuple_Check(args));
