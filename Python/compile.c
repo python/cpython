@@ -5296,7 +5296,7 @@ symtable_import(struct symtable *st, node *n)
 		if (TYPE(CHILD(n, 3)) == STAR) {
 			if (st->st_cur->ste_type != TYPE_MODULE) {
 				symtable_warn(st,
-				      "import * not allowed inside function");
+				      "import * only allowed at module level");
 				return;
 			}
 			st->st_cur->ste_optimized |= OPT_IMPORT_STAR;
