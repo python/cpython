@@ -1,0 +1,6 @@
+test_thread
+waiting for all tasks to complete
+all tasks done
+
+*** Barrier Test ***
+all tasks done
