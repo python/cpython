@@ -181,7 +181,51 @@ fcntl_flock(self, args)
 	return None;
 }
 
+/* lockf(fd, operation) */
+static object *
+fcntl_lockf(self, args)
+	object *self; /* Not used */
+	object *args;
+{
+	int fd, code, len = 0, start = 0, whence = 0, ret;
+	FILE *f;
 
+	if (!PyArg_ParseTuple(args, "ii|iii", &fd, &code, &len, 
+			       &start, &whence))
+	    return NULL;
+
+	BGN_SAVE
+#ifndef LOCK_SH
+#define LOCK_SH		1	/* shared lock */
+#define LOCK_EX		2	/* exclusive lock */
+#define LOCK_NB		4	/* don't block when locking */
+#define LOCK_UN		8	/* unlock */
+#endif
+	{
+		struct flock l;
+		if (code == LOCK_UN)
+			l.l_type = F_UNLCK;
+		else if (code & LOCK_SH)
+			l.l_type = F_RDLCK;
+		else if (code & LOCK_EX)
+			l.l_type = F_WRLCK;
+		else {
+			err_setstr(ValueError, "unrecognized flock argument");
+			return NULL;
+		}
+		l.l_len = len;
+		l.l_start = start;
+		l.l_whence = whence;
+		ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
+	}
+	END_SAVE
+	if (ret < 0) {
+		err_errno(IOError);
+		return NULL;
+	}
+	INCREF(None);
+	return None;
+}
 
 /* List of functions */
 
@@ -189,6 +233,7 @@ static struct methodlist fcntl_methods[] = {
 	{"fcntl",	fcntl_fcntl},
 	{"ioctl",	fcntl_ioctl},
 	{"flock",	fcntl_flock},
+	{"lockf",       fcntl_lockf, 1},
 	{NULL,		NULL}		/* sentinel */
 };
 
