@@ -484,6 +484,7 @@ _expectations = {
         test_curses
         test_dbm
         test_dl
+        test_email_codecs
         test_fcntl
         test_fork1
         test_gdbm
@@ -511,6 +512,7 @@ _expectations = {
         test_cl
         test_curses
         test_dl
+        test_email_codecs
         test_gl
         test_imgfile
         test_largefile
@@ -534,6 +536,7 @@ _expectations = {
         test_curses
         test_dbm
         test_dl
+        test_email_codecs
         test_fcntl
         test_fork1
         test_gl
@@ -567,6 +570,7 @@ _expectations = {
         test_cd
         test_cl
         test_dl
+        test_email_codecs
         test_gl
         test_imgfile
         test_largefile
@@ -591,6 +595,7 @@ _expectations = {
         test_cd
         test_cl
         test_dl
+        test_email_codecs
         test_gl
         test_imgfile
         test_largefile
@@ -616,6 +621,7 @@ _expectations = {
         test_cd
         test_cl
         test_dl
+        test_email_codecs
         test_fork1
         test_gettext
         test_gl
@@ -652,6 +658,7 @@ _expectations = {
         test_crypt
         test_dbm
         test_dl
+        test_email_codecs
         test_fcntl
         test_fork1
         test_gdbm
@@ -690,6 +697,7 @@ _expectations = {
         test_cl
         test_curses
         test_dl
+        test_email_codecs
         test_gdbm
         test_gl
         test_imgfile

@@ -1,4 +1,4 @@
-# Copyright (C) 2001 Python Software Foundation
+# Copyright (C) 2001,2002 Python Software Foundation
 # Author: barry@zope.com (Barry Warsaw)
 
 """Classes to generate plain text from a message object tree.
@@ -8,12 +8,21 @@ import time
 import re
 import random
 
-from types import ListType, StringType
+from types import ListType
 from cStringIO import StringIO
 
-# Intrapackage imports
-import Message
-import Errors
+from email.Header import Header
+
+try:
+    from email._compat22 import _isstring
+except SyntaxError:
+    from email._compat21 import _isstring
+
+try:
+    True, False
+except NameError:
+    True = 1
+    False = 0
 
 EMPTYSTRING = ''
 SEMISPACE = '; '
@@ -38,14 +47,15 @@ class Generator:
     # Public interface
     #
 
-    def __init__(self, outfp, mangle_from_=1, maxheaderlen=78):
+    def __init__(self, outfp, mangle_from_=True, maxheaderlen=78):
         """Create the generator for message flattening.
 
         outfp is the output file-like object for writing the message to.  It
         must have a write() method.
 
-        Optional mangle_from_ is a flag that, when true, escapes From_ lines
-        in the body of the message by putting a `>' in front of them.
+        Optional mangle_from_ is a flag that, when True (the default), escapes
+        From_ lines in the body of the message by putting a `>' in front of
+        them.
 
         Optional maxheaderlen specifies the longest length for a non-continued
         header.  When a header line is longer (in characters, with tabs
@@ -57,21 +67,20 @@ class Generator:
         """
         self._fp = outfp
         self._mangle_from_ = mangle_from_
-        self.__first = 1
         self.__maxheaderlen = maxheaderlen
 
     def write(self, s):
         # Just delegate to the file object
         self._fp.write(s)
 
-    def __call__(self, msg, unixfrom=0):
+    def flatten(self, msg, unixfrom=False):
         """Print the message object tree rooted at msg to the output file
         specified when the Generator instance was created.
 
         unixfrom is a flag that forces the printing of a Unix From_ delimiter
         before the first object in the message tree.  If the original message
         has no From_ delimiter, a `standard' one is crafted.  By default, this
-        is 0 to inhibit the printing of any From_ delimiter.
+        is False to inhibit the printing of any From_ delimiter.
 
         Note that for subobjects, no From_ line is printed.
         """
@@ -81,6 +90,13 @@ class Generator:
                 ufrom = 'From nobody ' + time.ctime(time.time())
             print >> self._fp, ufrom
         self._write(msg)
+
+    # For backwards compatibility, but this is slower
+    __call__ = flatten
+
+    def clone(self, fp):
+        """Clone this generator with the exact same options."""
+        return self.__class__(fp, self._mangle_from_, self.__maxheaderlen)
 
     #
     # Protected interface - undocumented ;/
@@ -115,23 +131,19 @@ class Generator:
 
     def _dispatch(self, msg):
         # Get the Content-Type: for the message, then try to dispatch to
-        # self._handle_maintype_subtype().  If there's no handler for the full
-        # MIME type, then dispatch to self._handle_maintype().  If that's
-        # missing too, then dispatch to self._writeBody().
-        ctype = msg.get_type()
-        if ctype is None:
-            # No Content-Type: header so try the default handler
-            self._writeBody(msg)
-        else:
-            # We do have a Content-Type: header.
-            specific = UNDERSCORE.join(ctype.split('/')).replace('-', '_')
-            meth = getattr(self, '_handle_' + specific, None)
+        # self._handle_<maintype>_<subtype>().  If there's no handler for the
+        # full MIME type, then dispatch to self._handle_<maintype>().  If
+        # that's missing too, then dispatch to self._writeBody().
+        main = msg.get_content_maintype()
+        sub = msg.get_content_subtype()
+        specific = UNDERSCORE.join((main, sub)).replace('-', '_')
+        meth = getattr(self, '_handle_' + specific, None)
+        if meth is None:
+            generic = main.replace('-', '_')
+            meth = getattr(self, '_handle_' + generic, None)
             if meth is None:
-                generic = msg.get_main_type().replace('-', '_')
-                meth = getattr(self, '_handle_' + generic, None)
-                if meth is None:
-                    meth = self._writeBody
-            meth(msg)
+                meth = self._writeBody
+        meth(msg)
 
     #
     # Default handlers
@@ -139,12 +151,6 @@ class Generator:
 
     def _write_headers(self, msg):
         for h, v in msg.items():
-            # We only write the MIME-Version: header for the outermost
-            # container message.  Unfortunately, we can't use same technique
-            # as for the Unix-From above because we don't know when
-            # MIME-Version: will occur.
-            if h.lower() == 'mime-version' and not self.__first:
-                continue
             # RFC 2822 says that lines SHOULD be no more than maxheaderlen
             # characters wide, so we're well within our rights to split long
             # headers.
@@ -160,7 +166,7 @@ class Generator:
         # Find out whether any lines in the header are really longer than
         # maxheaderlen characters wide.  There could be continuation lines
         # that actually shorten it.  Also, replace hard tabs with 8 spaces.
-        lines = [s.replace('\t', SPACE8) for s in text.split('\n')]
+        lines = [s.replace('\t', SPACE8) for s in text.splitlines()]
         for line in lines:
             if len(line) > maxheaderlen:
                 break
@@ -168,52 +174,12 @@ class Generator:
             # No line was actually longer than maxheaderlen characters, so
             # just return the original unchanged.
             return text
-        rtn = []
-        for line in text.split('\n'):
-            # Short lines can remain unchanged
-            if len(line.replace('\t', SPACE8)) <= maxheaderlen:
-                rtn.append(line)
-                SEMINLTAB.join(rtn)
-            else:
-                oldlen = len(text)
-                # Try to break the line on semicolons, but if that doesn't
-                # work, try to split on folding whitespace.
-                while len(text) > maxheaderlen:
-                    i = text.rfind(';', 0, maxheaderlen)
-                    if i < 0:
-                        break
-                    rtn.append(text[:i])
-                    text = text[i+1:].lstrip()
-                if len(text) <> oldlen:
-                    # Splitting on semis worked
-                    rtn.append(text)
-                    return SEMINLTAB.join(rtn)
-                # Splitting on semis didn't help, so try to split on
-                # whitespace.
-                parts = re.split(r'(\s+)', text)
-                # Watch out though for "Header: longnonsplittableline"
-                if parts[0].endswith(':') and len(parts) == 3:
-                    return text
-                first = parts.pop(0)
-                sublines = [first]
-                acc = len(first)
-                while parts:
-                    len0 = len(parts[0])
-                    len1 = len(parts[1])
-                    if acc + len0 + len1 < maxheaderlen:
-                        sublines.append(parts.pop(0))
-                        sublines.append(parts.pop(0))
-                        acc += len0 + len1
-                    else:
-                        # Split it here, but don't forget to ignore the
-                        # next whitespace-only part
-                        rtn.append(EMPTYSTRING.join(sublines))
-                        del parts[0]
-                        first = parts.pop(0)
-                        sublines = [first]
-                        acc = len(first)
-                rtn.append(EMPTYSTRING.join(sublines))
-                return NLTAB.join(rtn)
+        # The `text' argument already has the field name prepended, so don't
+        # provide it here or the first line will get folded too short.
+        h = Header(text, maxlinelen=maxheaderlen,
+                   # For backwards compatibility, we use a hard tab here
+                   continuation_ws='\t')
+        return h.encode()
 
     #
     # Handlers for writing types and subtypes
@@ -223,7 +189,10 @@ class Generator:
         payload = msg.get_payload()
         if payload is None:
             return
-        if not isinstance(payload, StringType):
+        cset = msg.get_charset()
+        if cset is not None:
+            payload = cset.body_encode(payload)
+        if not _isstring(payload):
             raise TypeError, 'string payload expected: %s' % type(payload)
         if self._mangle_from_:
             payload = fcre.sub('>From ', payload)
@@ -232,28 +201,30 @@ class Generator:
     # Default body handler
     _writeBody = _handle_text
 
-    def _handle_multipart(self, msg, isdigest=0):
+    def _handle_multipart(self, msg):
         # The trick here is to write out each part separately, merge them all
         # together, and then make sure that the boundary we've chosen isn't
         # present in the payload.
         msgtexts = []
-        # BAW: kludge for broken add_payload() semantics; watch out for
-        # multipart/* MIME types with None or scalar payloads.
         subparts = msg.get_payload()
         if subparts is None:
-            # Nothing has every been attached
+            # Nothing has ever been attached
             boundary = msg.get_boundary(failobj=_make_boundary())
             print >> self._fp, '--' + boundary
             print >> self._fp, '\n'
             print >> self._fp, '--' + boundary + '--'
+            return
+        elif _isstring(subparts):
+            # e.g. a non-strict parse of a message with no starting boundary.
+            self._fp.write(subparts)
             return
         elif not isinstance(subparts, ListType):
             # Scalar payload
             subparts = [subparts]
         for part in subparts:
             s = StringIO()
-            g = self.__class__(s, self._mangle_from_, self.__maxheaderlen)
-            g(part, unixfrom=0)
+            g = self.clone(s)
+            g.flatten(part, unixfrom=False)
             msgtexts.append(s.getvalue())
         # Now make sure the boundary we've selected doesn't appear in any of
         # the message texts.
@@ -274,14 +245,8 @@ class Generator:
         # First boundary is a bit different; it doesn't have a leading extra
         # newline.
         print >> self._fp, '--' + boundary
-        if isdigest:
-            print >> self._fp
         # Join and write the individual parts
         joiner = '\n--' + boundary + '\n'
-        if isdigest:
-            # multipart/digest types effectively add an extra newline between
-            # the boundary and the body part.
-            joiner += '\n'
         self._fp.write(joiner.join(msgtexts))
         print >> self._fp, '\n--' + boundary + '--',
         # Write out any epilogue
@@ -290,9 +255,6 @@ class Generator:
                 print >> self._fp
             self._fp.write(msg.epilogue)
 
-    def _handle_multipart_digest(self, msg):
-        self._handle_multipart(msg, isdigest=1)
-
     def _handle_message_delivery_status(self, msg):
         # We can't just write the headers directly to self's file object
         # because this will leave an extra newline between the last header
@@ -300,8 +262,8 @@ class Generator:
         blocks = []
         for part in msg.get_payload():
             s = StringIO()
-            g = self.__class__(s, self._mangle_from_, self.__maxheaderlen)
-            g(part, unixfrom=0)
+            g = self.clone(s)
+            g.flatten(part, unixfrom=False)
             text = s.getvalue()
             lines = text.split('\n')
             # Strip off the unnecessary trailing empty line
@@ -316,11 +278,12 @@ class Generator:
 
     def _handle_message(self, msg):
         s = StringIO()
-        g = self.__class__(s, self._mangle_from_, self.__maxheaderlen)
-        # A message/rfc822 should contain a scalar payload which is another
-        # Message object.  Extract that object, stringify it, and write that
-        # out.
-        g(msg.get_payload(), unixfrom=0)
+        g = self.clone(s)
+        # The payload of a message/rfc822 part should be a multipart sequence
+        # of length 1.  The zeroth element of the list should be the Message
+        # object for the subpart.  Extract that object, stringify it, and
+        # write it out.
+        g.flatten(msg.get_payload(0), unixfrom=False)
         self._fp.write(s.getvalue())
 
 
@@ -331,7 +294,7 @@ class DecodedGenerator(Generator):
     Like the Generator base class, except that non-text parts are substituted
     with a format string representing the part.
     """
-    def __init__(self, outfp, mangle_from_=1, maxheaderlen=78, fmt=None):
+    def __init__(self, outfp, mangle_from_=True, maxheaderlen=78, fmt=None):
         """Like Generator.__init__() except that an additional optional
         argument is allowed.
 
@@ -363,7 +326,7 @@ class DecodedGenerator(Generator):
         for part in msg.walk():
             maintype = part.get_main_type('text')
             if maintype == 'text':
-                print >> self, part.get_payload(decode=1)
+                print >> self, part.get_payload(decode=True)
             elif maintype == 'multipart':
                 # Just skip this
                 pass
@@ -390,7 +353,7 @@ def _make_boundary(text=None):
         return boundary
     b = boundary
     counter = 0
-    while 1:
+    while True:
         cre = re.compile('^--' + re.escape(b) + '(--)?$', re.MULTILINE)
         if not cre.search(text):
             break

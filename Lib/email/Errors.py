@@ -1,4 +1,4 @@
-# Copyright (C) 2001 Python Software Foundation
+# Copyright (C) 2001,2002 Python Software Foundation
 # Author: barry@zope.com (Barry Warsaw)
 
 """email package exception classes.
@@ -7,7 +7,7 @@
 
 
 class MessageError(Exception):
-    """Base class for errors in this module."""
+    """Base class for errors in the email package."""
 
 
 class MessageParseError(MessageError):
