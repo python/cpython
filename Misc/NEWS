@@ -14,6 +14,238 @@ credit, let me know and I'll add you to the list!
 ======================================================================
 
 
+From 1.5.2b1 to 1.5.2b2
+=======================
+
+General
+-------
+
+- Many memory leaks fixed.
+
+- Many small bugs fixed.
+
+- Command line option -OO (or -O -O) suppresses inclusion of doc
+strings in resulting bytecode.
+
+Windows-specific changes
+------------------------
+
+- New built-in module winsound provides an interface to the Win32
+PlaySound() call.
+
+- Re-enable the audioop module in the config.c file.
+
+- On Windows, support spawnv() and associated P_* symbols.
+
+- Fixed the conversion of times() return values on Windows.
+
+- Removed freeze from the installer -- it doesn't work without the
+source tree.  (See FAQ 8.11.)
+
+- On Windows 95/98, the Tkinter module now is smart enough to find
+Tcl/Tk even when the PATH environment variable hasn't been set -- when
+the import of _tkinter fails, it searches in a standard locations,
+patches os.environ["PATH"], and tries again.  When it still fails, a
+clearer error message is produced.  This should avoid most
+installation problems with Tkinter use (e.g. in IDLE).
+
+- The -i option doesn't make any calls to set[v]buf() for stdin --
+this apparentlt screwed up _kbhit() and the _tkinter main loop.
+
+- The ntpath module (and hence, os.path on Windows) now parses out UNC
+paths (e.g. \\host\mountpoint\dir\file) as "drive letters", so that
+splitdrive() will \\host\mountpoint as the drive and \dir\file as the
+path.  ** EXPERIMENTAL **
+
+- Added a hack to the exit code so that if (1) the exit status is
+nonzero and (2) we think we have our own DOS box (i.e. we're not
+started from a command line shell), we print a message and wait for
+the user to hit a key before the DOS box is closed.
+
+- Updated the installer to WISE 5.0g.  Added a dialog warning about
+the imminent Tcl installation.  Added a dialog to specify the program
+group name in the start menu.  Upgraded the Tcl installer to Tcl
+8.0.4.
+
+Changes to intrinsics
+---------------------
+
+- The repr() or str() of a module object now shows the __file__
+attribute (i.e., the file which it was loaded), or the string
+"(built-in)" if there is no __file__ attribute.
+
+- The range() function now avoids overflow during its calculations (if
+at all possible).
+
+- New info string sys.hexversion, which is an integer encoding the
+version in hexadecimal.  In other words, hex(sys.hexversion) ==
+0x010502b2 for Python 1.5.2b2.
+
+New or improved ports
+---------------------
+
+- Support for Nextstep descendants (future Mac systems).
+
+- Improved BeOS support.
+
+- Support dynamic loading of shared libraries on NetBSD platforms that 
+use ELF (i.e., MIPS and Alpha systems).
+
+Configuration/build changes
+---------------------------
+
+- The Lib/test directory is no longer included in the default module
+search path (sys.path) -- "test" has been a package ever since 1.5.
+
+- Now using autoconf 2.13.
+
+New library modules
+-------------------
+
+- New library modules asyncore and asynchat: these form Sam Rushing's
+famous asynchronous socket library.  Sam has gracefully allowed me to
+incorporate these in the standard Python library.
+
+- New module statvfs contains indexing constants for [f]statvfs()
+return tuple.
+
+Changes to the library
+----------------------
+
+- The wave module (platform-independent support for Windows sound
+files) has been fixed to actually make it work.
+
+- The sunau module (platform-independent support for Sun/NeXT sound
+files) has been fixed to work across platforms.  Also, a weird
+encoding bug in the header of the audio test data file has been
+corrected.
+
+- Fix a bug in the urllib module that occasionally tripped up
+webchecker and other ftp retrieves.
+
+- ConfigParser's get() method now accepts an optional keyword argument
+(vars) that is substituted on top of the defaults that were setup in
+__init__.  You can now also have recusive references in your
+configuration file.
+
+- Some improvements to the Queue module, including a put_nowait()
+module and an optional "block" second argument, to get() and put(),
+defaulting to 1.
+
+- The updated xmllib module is once again compatible with the version
+present in Python 1.5.1 (this was accidentally broken in 1.5.2b1).
+
+- The bdb module (base class for the debugger) now supports
+canonicalizing pathnames used in breakpoints.  The derived class must
+override the new canonical() method for this to work.  Also changed
+clear_break() to the backwards compatible old signature, and added
+clear_bpbynumber() for the new functionality.
+
+- In sgmllib (and hence htmllib), recognize attributes even if they
+don't have space in front of them.  I.e.  '<a
+name="foo"href="bar.html">' will now have two attributes recognized.
+
+- In the debugger (pdb), change clear syntax to support three
+alternatives: clear; clear file:line; clear bpno bpno ...
+
+- The os.path module now pretends to be a submodule within the os
+"package", so you can do things like "from os.path import exists".
+
+- The standard exceptions now have doc strings.
+
+- In the smtplib module, exceptions are now classes.  Also avoid
+inserting a non-standard space after "TO" in rcpt() command.
+
+- The rfc822 module's getaddrlist() method now uses all occurrences of
+the specified header instead of just the first.  Some other bugfixes
+too (to handle more weird addresses found in a very large test set,
+and to avoid crashes on certain invalid dates), and a small test
+module has been added.
+
+- Fixed bug in urlparse in the common-case code for HTTP URLs; it
+would lose the query, fragment, and/or parameter information.
+
+- The sndhdr module no longer supports whatraw() -- it depended on a
+rare extenral program.
+
+- The UserList module/class now supports the extend() method, like
+real list objects.
+
+- The uu module now deals better with trailing garbage generated by
+some broke uuencoders.
+
+- The telnet module now has an my_interact() method which uses threads
+instead of select.  The interact() method uses this by default on
+Windows (where the single-threaded version doesn't work).
+
+- Add a class to mailbox.py for dealing with qmail directory
+mailboxes.  The test code was extended to notice these being used as
+well.
+
+Changes to extension modules
+----------------------------
+
+- Support for the [f]statvfs() system call, where it exists.
+
+- Fixed some bugs in cPickle where bad input could cause it to dump
+core.
+
+- Fixed cStringIO to make the writelines() function actually work.
+
+- Added strop.expandtabs() so string.expandtabs() is now much faster.
+
+- Added fsync() and fdatasync(), if they appear to exist.
+
+- Support for "long files" (64-bit seek pointers).
+
+- Fixed a bug in the zlib module's flush() function.
+
+- Added access() system call.  It returns 1 if access granted, 0 if
+not.
+
+- The curses module implements an optional nlines argument to
+w.scroll().  (It then calls wscrl(win, nlines) instead of scoll(win).)
+
+Changes to tools
+----------------
+
+- Some changes to IDLE; see Tools/idle/NEWS.txt.
+
+- Latest version of Misc/python-mode.el included.
+
+Changes to Tkinter
+------------------
+
+- Avoid tracebacks when an image is deleted after its root has been
+destroyed.
+
+Changes to the Python/C API
+---------------------------
+
+- When parentheses are used in a PyArg_Parse[Tuple]() call, any
+sequence is now accepted, instead of requiring a tuple.  This is in
+line with the general trend towards accepting arbitrary sequences.
+
+- Added PyModule_GetFilename().
+
+- In PyNumber_Power(), remove unneeded and even harmful test for float
+to the negative power (which is already and better done in
+floatobject.c).
+
+- New version identification symbols; read patchlevel.h for info.  The
+version numbers are now exported by Python.h.
+
+- Rolled back the API version change -- it's back to 1007!
+
+- The frozenmain.c function calls PyInitFrozenExtensions().
+
+- Added 'N' format character to Py_BuildValue -- like 'O' but doesn't
+INCREF.
+
+
+======================================================================
+
+
 From 1.5.2a2 to 1.5.2b1
 =======================
 
