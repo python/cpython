@@ -90,7 +90,6 @@ def	genallprojects(force=0):
 	global FORCEREBUILD
 	FORCEREBUILD = force
 	# Standard Python modules
-	genpluginproject("all", "ucnhash", sources=["ucnhash.c"])
 	genpluginproject("all", "pyexpat", 
 		sources=["pyexpat.c"], 
 		libraries=["libexpat.ppc.lib"], 

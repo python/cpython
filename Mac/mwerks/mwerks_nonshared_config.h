@@ -27,7 +27,6 @@
 #define USE_IC			/* Include Internet Config module */
 #define USE_PYEXPAT		/* Include Pyexpat module */
 #define USE_APPEARANCE	/* Enable Appearance support */
-#define USE_UCNHASH		/* Builtin ucnhash module (large!) */
 #define USE_MSL_MALLOC	/* Disable private malloc. Also disables next two defines */
 #ifndef USE_MSL_MALLOC
 /* #define USE_MALLOC_DEBUG			/* Enable range checking and other malloc debugging */

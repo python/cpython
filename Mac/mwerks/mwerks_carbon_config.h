@@ -29,7 +29,6 @@
 /* #define HAVE_DYNAMIC_LOADING		/* Enable dynamically loaded modules */
 /* #define USE_GDBM		/* Include the gdbm module */
 /* #define USE_ZLIB		/* Include the zlib module */
-#define USE_UCNHASH		/* Include ucnhash module */
 #define USE_APPEARANCE	/* Enable Appearance support */
 
 #define USE_MSL_MALLOC	/* Disable private malloc. Also disables next two defines */
