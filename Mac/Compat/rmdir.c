@@ -9,10 +9,8 @@ rmdir(path)
 	char *path;
 {
 	IOParam pb;
-	char name[MAXPATH];
 	
-	strncpy(name, path, sizeof name);
-	pb.ioNamePtr= (StringPtr) c2pstr(name);
+	pb.ioNamePtr= (StringPtr) Pstring(path);
 	pb.ioVRefNum= 0;
 	if (PBDelete((ParmBlkPtr)&pb, FALSE) != noErr) {
 		errno= EACCES;

@@ -12,14 +12,12 @@ mkdir(path, mode)
 	int mode; /* Ignored */
 {
 	HFileParam pb;
-	char name[MAXPATH];
 		
 	if (!hfsrunning()) {
 		errno= ENODEV;
 		return -1;
 	}
-	strncpy(name, path, sizeof name);
-	pb.ioNamePtr= (StringPtr) c2pstr(name);
+	pb.ioNamePtr= (StringPtr) Pstring(path);
 	pb.ioVRefNum= 0;
 	pb.ioDirID= 0;
 	if (PBDirCreate((HParmBlkPtr)&pb, FALSE) != noErr) {

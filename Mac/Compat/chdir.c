@@ -11,11 +11,8 @@ chdir(path)
 	char *path;
 {
 	WDPBRec pb;
-	char name[MAXPATH];
 	
-	strncpy(name, path, sizeof name);
-	name[MAXPATH-1]= EOS;
-	pb.ioNamePtr= (StringPtr) c2pstr(name);
+	pb.ioNamePtr= (StringPtr) Pstring(path);
 	pb.ioVRefNum= 0;
 	pb.ioWDDirID= 0;
 	if (PBHSetVol(&pb, FALSE) != noErr) {
