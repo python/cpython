@@ -649,14 +649,14 @@ eval_code2(co, globals, locals,
 		case POP_TOP:
 			v = POP();
 			DECREF(v);
-			break;
+			continue;
 		
 		case ROT_TWO:
 			v = POP();
 			w = POP();
 			PUSH(v);
 			PUSH(w);
-			break;
+			continue;
 		
 		case ROT_THREE:
 			v = POP();
@@ -665,19 +665,20 @@ eval_code2(co, globals, locals,
 			PUSH(v);
 			PUSH(x);
 			PUSH(w);
-			break;
+			continue;
 		
 		case DUP_TOP:
 			v = TOP();
 			INCREF(v);
 			PUSH(v);
-			break;
+			continue;
 		
 		case UNARY_POSITIVE:
 			v = POP();
 			x = pos(v);
 			DECREF(v);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case UNARY_NEGATIVE:
@@ -685,6 +686,7 @@ eval_code2(co, globals, locals,
 			x = neg(v);
 			DECREF(v);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case UNARY_NOT:
@@ -692,6 +694,7 @@ eval_code2(co, globals, locals,
 			x = not(v);
 			DECREF(v);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case UNARY_CONVERT:
@@ -699,6 +702,7 @@ eval_code2(co, globals, locals,
 			x = reprobject(v);
 			DECREF(v);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 			
 		case UNARY_INVERT:
@@ -706,6 +710,7 @@ eval_code2(co, globals, locals,
 			x = invert(v);
 			DECREF(v);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case BINARY_POWER:
@@ -715,6 +720,7 @@ eval_code2(co, globals, locals,
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case BINARY_MULTIPLY:
@@ -724,6 +730,7 @@ eval_code2(co, globals, locals,
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case BINARY_DIVIDE:
@@ -733,6 +740,7 @@ eval_code2(co, globals, locals,
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case BINARY_MODULO:
@@ -742,6 +750,7 @@ eval_code2(co, globals, locals,
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case BINARY_ADD:
@@ -751,6 +760,7 @@ eval_code2(co, globals, locals,
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case BINARY_SUBTRACT:
@@ -760,6 +770,7 @@ eval_code2(co, globals, locals,
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case BINARY_SUBSCR:
@@ -769,6 +780,7 @@ eval_code2(co, globals, locals,
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case BINARY_LSHIFT:
@@ -778,6 +790,7 @@ eval_code2(co, globals, locals,
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case BINARY_RSHIFT:
@@ -787,6 +800,7 @@ eval_code2(co, globals, locals,
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case BINARY_AND:
@@ -796,6 +810,7 @@ eval_code2(co, globals, locals,
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case BINARY_XOR:
@@ -805,6 +820,7 @@ eval_code2(co, globals, locals,
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case BINARY_OR:
@@ -814,6 +830,7 @@ eval_code2(co, globals, locals,
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case SLICE+0:
@@ -834,6 +851,7 @@ eval_code2(co, globals, locals,
 			XDECREF(v);
 			XDECREF(w);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case STORE_SLICE+0:
@@ -855,6 +873,7 @@ eval_code2(co, globals, locals,
 			DECREF(u);
 			XDECREF(v);
 			XDECREF(w);
+			if (err == 0) continue;
 			break;
 		
 		case DELETE_SLICE+0:
@@ -875,6 +894,7 @@ eval_code2(co, globals, locals,
 			DECREF(u);
 			XDECREF(v);
 			XDECREF(w);
+			if (err == 0) continue;
 			break;
 		
 		case STORE_SUBSCR:
@@ -886,6 +906,7 @@ eval_code2(co, globals, locals,
 			DECREF(u);
 			DECREF(v);
 			DECREF(w);
+			if (err == 0) continue;
 			break;
 		
 		case DELETE_SUBSCR:
@@ -895,6 +916,7 @@ eval_code2(co, globals, locals,
 			err = assign_subscript(v, w, (object *)NULL);
 			DECREF(v);
 			DECREF(w);
+			if (err == 0) continue;
 			break;
 		
 		case PRINT_EXPR:
@@ -929,6 +951,7 @@ eval_code2(co, globals, locals,
 					softspace(w, 0);
 			}
 			DECREF(v);
+			if (err == 0) continue;
 			break;
 		
 		case PRINT_NEWLINE:
@@ -1294,6 +1317,7 @@ eval_code2(co, globals, locals,
 #endif
 				INCREF(x);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 
 		case STORE_FAST:
@@ -1307,7 +1331,7 @@ eval_code2(co, globals, locals,
 			}
 #endif
 			SETLOCAL(oparg, v);
-			break;
+			continue;
 
 		case DELETE_FAST:
 #ifdef SUPPORT_OBSOLETE_ACCESS
@@ -1325,7 +1349,7 @@ eval_code2(co, globals, locals,
 			}
 #endif
 			SETLOCAL(oparg, NULL);
-			break;
+			continue;
 		
 		case BUILD_TUPLE:
 			x = newtupleobject(oparg);
@@ -1335,6 +1359,7 @@ eval_code2(co, globals, locals,
 					SETTUPLEITEM(x, oparg, w);
 				}
 				PUSH(x);
+				continue;
 			}
 			break;
 		
@@ -1348,12 +1373,14 @@ eval_code2(co, globals, locals,
 						break;
 				}
 				PUSH(x);
+				continue;
 			}
 			break;
 		
 		case BUILD_MAP:
 			x = newdictobject();
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case LOAD_ATTR:
@@ -1362,6 +1389,7 @@ eval_code2(co, globals, locals,
 			x = getattro(v, w);
 			DECREF(v);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case COMPARE_OP:
@@ -1371,6 +1399,7 @@ eval_code2(co, globals, locals,
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case IMPORT_NAME:
@@ -1405,6 +1434,7 @@ eval_code2(co, globals, locals,
 			x = call_object(x, w);
 			DECREF(w);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		
 		case IMPORT_FROM:
@@ -1417,6 +1447,7 @@ eval_code2(co, globals, locals,
 			}
 			err = import_from(x, v, w);
 			locals_2_fast(f, 0);
+			if (err == 0) continue;
 			break;
 
 #ifdef SUPPORT_OBSOLETE_ACCESS
@@ -1433,7 +1464,7 @@ eval_code2(co, globals, locals,
 		
 		case JUMP_FORWARD:
 			JUMPBY(oparg);
-			break;
+			continue;
 		
 		case JUMP_IF_FALSE:
 			err = testbool(TOP());
@@ -1441,7 +1472,9 @@ eval_code2(co, globals, locals,
 				err = 0;
 			else if (err == 0)
 				JUMPBY(oparg);
-			break;
+			else
+				break;
+			continue;
 		
 		case JUMP_IF_TRUE:
 			err = testbool(TOP());
@@ -1449,11 +1482,15 @@ eval_code2(co, globals, locals,
 				err = 0;
 				JUMPBY(oparg);
 			}
-			break;
+			else if (err == 0)
+				;
+			else
+				break;
+			continue;
 		
 		case JUMP_ABSOLUTE:
 			JUMPTO(oparg);
-			break;
+			continue;
 		
 		case FOR_LOOP:
 			/* for v in s: ...
@@ -1470,6 +1507,7 @@ eval_code2(co, globals, locals,
 				PUSH(x);
 				DECREF(w);
 				PUSH(u);
+				if (x != NULL) continue;
 			}
 			else {
 				DECREF(v);
@@ -1478,8 +1516,10 @@ eval_code2(co, globals, locals,
 				   but also an error: */
 				if (err_occurred())
 					why = WHY_EXCEPTION;
-				else
+				else {
 					JUMPBY(oparg);
+					continue;
+				}
 			}
 			break;
 		
@@ -1488,7 +1528,7 @@ eval_code2(co, globals, locals,
 		case SETUP_FINALLY:
 			setup_block(f, opcode, INSTR_OFFSET() + oparg,
 						STACK_LEVEL());
-			break;
+			continue;
 		
 		case SET_LINENO:
 #ifdef LLTRACE
@@ -1496,12 +1536,12 @@ eval_code2(co, globals, locals,
 				printf("--- %s:%d \n", filename, oparg);
 #endif
 			f->f_lineno = oparg;
-			if (f->f_trace != NULL) {
-				/* Trace each line of code reached */
-				f->f_lasti = INSTR_OFFSET();
-				err = call_trace(&f->f_trace, &f->f_trace,
-						 f, "line", None);
-			}
+			if (f->f_trace == NULL)
+				continue;
+			/* Trace each line of code reached */
+			f->f_lasti = INSTR_OFFSET();
+			err = call_trace(&f->f_trace, &f->f_trace,
+					 f, "line", None);
 			break;
 
 		case CALL_FUNCTION:
@@ -1619,6 +1659,7 @@ eval_code2(co, globals, locals,
 				DECREF(w);
 			}
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 		}
 		
@@ -1656,6 +1697,7 @@ eval_code2(co, globals, locals,
 			DECREF(v);
 			XDECREF(w);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 
 
