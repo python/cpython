@@ -2,7 +2,8 @@ Building Python using VC++ 5.0 or 6.0
 -------------------------------------
 
 This directory is used to build Python for Win32 platforms,
-e.g. Windows 95, 98 and NT.  It requires Microsoft Visual C++ 5.x.
+e.g. Windows 95, 98 and NT.  It requires Microsoft Visual C++ 6.x
+or 5.x.
 (For other Windows platforms and compilers, see ../PC/readme.txt.)
 
 Unlike previous versions, there's no longer a need to copy the project
