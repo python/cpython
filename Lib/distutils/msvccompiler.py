@@ -5,12 +5,13 @@ for the Microsoft Visual Studio."""
 
 
 # created 1999/08/19, Perry Stoll
-# 
+# hacked by Robin Becker and Thomas Heller to do a better job of
+#   finding DevStudio (through the registry)
+
 __revision__ = "$Id$"
 
-import os
-import sys
-import string
+import sys, os, string
+from types import *
 from distutils.errors import *
 from distutils.ccompiler import \
      CCompiler, gen_preprocess_options, gen_lib_options
@@ -137,6 +138,20 @@ class MSVCCompiler (CCompiler) :
 
     compiler_type = 'msvc'
 
+    # Private class data (need to distinguish C from C++ source for compiler)
+    _c_extensions = ['.c']
+    _cpp_extensions = ['.cc','.cpp']
+
+    # Needed for the filename generation methods provided by the
+    # base class, CCompiler.
+    src_extensions = _c_extensions + _cpp_extensions
+    obj_extension = '.obj'
+    static_lib_extension = '.lib'
+    shared_lib_extension = '.dll'
+    static_lib_format = shared_lib_format = '%s%s'
+    exe_extension = '.exe'
+
+
     def __init__ (self,
                   verbose=0,
                   dry_run=0,
@@ -169,9 +184,7 @@ class MSVCCompiler (CCompiler) :
 
         self.preprocess_options = None
         self.compile_options = [ '/nologo', '/Ox', '/MD', '/W3' ]
-        self.compile_options_debug = [
-            '/nologo', '/Od', '/MDd', '/W3', '/Z7', '/D_DEBUG'
-            ]
+        self.compile_options_debug = ['/nologo', '/Od', '/MDd', '/W3', '/Z7', '/D_DEBUG']
 
         self.ldflags_shared = ['/DLL', '/nologo', '/INCREMENTAL:NO']
         self.ldflags_shared_debug = [
@@ -181,21 +194,7 @@ class MSVCCompiler (CCompiler) :
 
 
     # -- Worker methods ------------------------------------------------
-    # (must be implemented by subclasses)
 
-    _c_extensions = [ '.c' ]
-    _cpp_extensions = [ '.cc', '.cpp' ]
-
-    _obj_ext = '.obj'
-    _exe_ext = '.exe'
-    _shared_lib_ext = '.dll'
-    _static_lib_ext = '.lib'
-
-    # XXX the 'output_dir' parameter is ignored by the methods in this
-    # class!  I just put it in to be consistent with CCompiler and
-    # UnixCCompiler, but someone who actually knows Visual C++ will
-    # have to make it work...
-    
     def compile (self,
                  sources,
                  output_dir=None,
@@ -205,48 +204,43 @@ class MSVCCompiler (CCompiler) :
                  extra_preargs=None,
                  extra_postargs=None):
 
-        if macros is None:
-            macros = []
-        if include_dirs is None:
-            include_dirs = []
+        (output_dir, macros, include_dirs) = \
+            self._fix_compile_args (output_dir, macros, include_dirs)
+        (objects, skip_sources) = self._prep_compile (sources, output_dir)
 
-        objectFiles = []
+        if extra_postargs is None:
+            extra_postargs = []
 
-        base_pp_opts = \
-            gen_preprocess_options (self.macros + macros,
-                                    self.include_dirs + include_dirs)
-
-        base_pp_opts.append('/c')
-
+        pp_opts = gen_preprocess_options (macros, include_dirs)
+        compile_opts = extra_preargs or []
+        compile_opts.append ('/c')
         if debug:
-            compile_options = self.compile_options_debug
+            compile_opts.extend (self.compile_options_debug)
         else:
-            compile_options = self.compile_options
+            compile_opts.extend (self.compile_options)
         
-        for srcFile in sources:
-            base,ext = os.path.splitext(srcFile)
-            objFile = base + ".obj"
+        for i in range (len (sources)):
+            src = sources[i] ; obj = objects[i]
+            ext = (os.path.splitext (src))[1]
 
-            if ext in self._c_extensions:
-                fileOpt = "/Tc"
-            elif ext in self._cpp_extensions:
-                fileOpt = "/Tp"
+            if skip_sources[src]:
+                self.announce ("skipping %s (%s up-to-date)" % (src, obj))
+            else:
+                if ext in self._c_extensions:
+                    input_opt = "/Tc" + src
+                elif ext in self._cpp_extensions:
+                    input_opt = "/Tp" + src
 
-            inputOpt  = fileOpt + srcFile
-            outputOpt = "/Fo"   + objFile
+                output_opt = "/Fo" + obj
 
-            cc_args = compile_options + \
-                      base_pp_opts + \
-                      [outputOpt, inputOpt]
+                self.mkpath (os.path.dirname (obj))
+                self.spawn ([self.cc] + compile_opts + pp_opts +
+                            [input_opt, output_opt] +
+                            extra_postargs)
 
-            if extra_preargs:
-                cc_args[:0] = extra_preargs
-            if extra_postargs:
-                cc_args.extend (extra_postargs)
+        return objects
 
-            self.spawn ([self.cc] + cc_args)
-            objectFiles.append( objFile )
-        return objectFiles
+    # compile ()
 
 
     # XXX the signature of this method is different from CCompiler and
@@ -263,25 +257,30 @@ class MSVCCompiler (CCompiler) :
                          extra_preargs=None,
                          extra_postargs=None):
 
-        if libraries is None:
-            libraries = []
-        if library_dirs is None:
-            library_dirs = []
+        (objects, output_dir, libraries, library_dirs) = \
+            self._fix_link_args (objects, output_dir, takes_libs=1,
+                                 libraries=libraries,
+                                 library_dirs=library_dirs)
         
-        lib_opts = gen_lib_options (self.libraries + libraries,
-                                    self.library_dirs + library_dirs,
-                                    "%s.lib", "/LIBPATH:%s")
+        output_filename = \
+            self.library_filename (output_libname, output_dir=output_dir)
 
-        ld_args = self.ldflags_static + lib_opts + \
-                  objects + ['/OUT:' + output_filename]
-        if debug:
-            pass                        # XXX what goes here?
-        if extra_preargs:
-            ld_args[:0] = extra_preargs
-        if extra_postargs:
-            ld_args.extend (extra_postargs)
+        if self._need_link (objects, output_filename):
+            lib_opts = gen_lib_options (libraries, library_dirs,
+                                        "%s.lib", "/LIBPATH:%s")
+            ld_args = self.ldflags_static + lib_opts + \
+                      objects + ['/OUT:' + output_filename]
+            if debug:
+                pass                    # XXX what goes here?
+            if extra_preargs:
+                ld_args[:0] = extra_preargs
+            if extra_postargs:
+                ld_args.extend (extra_postargs)
+            self.spawn ([self.link] + ld_args)
+        else:
+            self.announce ("skipping %s (up-to-date)" % output_filename)
 
-        self.spawn ( [ self.link ] + ld_args )
+    # link_static_lib ()
     
 
     def link_shared_lib (self,
@@ -294,8 +293,6 @@ class MSVCCompiler (CCompiler) :
                          extra_preargs=None,
                          extra_postargs=None):
 
-        # XXX should we sanity check the library name? (eg. no
-        # slashes)
         self.link_shared_object (objects,
                                  self.shared_library_name(output_libname),
                                  output_dir=output_dir,
@@ -315,70 +312,48 @@ class MSVCCompiler (CCompiler) :
                             debug=0,
                             extra_preargs=None,
                             extra_postargs=None):
-        """Link a bunch of stuff together to create a shared object
-           file.  Much like 'link_shared_lib()', except the output
-           filename is explicitly supplied as 'output_filename'."""
-        if libraries is None:
-            libraries = []
-        if library_dirs is None:
-            library_dirs = []
+
+        (objects, output_dir, libraries, library_dirs) = \
+            self._fix_link_args (objects, output_dir, takes_libs=1,
+                                 libraries=libraries, library_dirs=library_dirs)
         
-        lib_opts = gen_lib_options (self,
-                                    self.library_dirs + library_dirs,
-                                    self.libraries + libraries)
+        lib_opts = gen_lib_options (self, library_dirs, libraries)
+        if type (output_dir) not in (StringType, NoneType):
+            raise TypeError, "'output_dir' must be a string or None"
+        if output_dir is not None:
+            output_filename = os.path.join (output_dir, output_filename)
 
-        if debug:
-            ldflags = self.ldflags_shared_debug
-            basename, ext = os.path.splitext (output_filename)
-            #XXX not sure this belongs here
-            # extensions in debug_mode are named 'module_d.pyd'
-            output_filename = basename + '_d' + ext
+        if self._need_link (objects, output_filename):
+
+            if debug:
+                ldflags = self.ldflags_shared_debug
+                # XXX not sure this belongs here
+                # extensions in debug_mode are named 'module_d.pyd'
+                basename, ext = os.path.splitext (output_filename)
+                output_filename = basename + '_d' + ext
+            else:
+                ldflags = self.ldflags_shared
+
+            ld_args = ldflags + lib_opts + \
+                      objects + ['/OUT:' + output_filename]
+
+            if extra_preargs:
+                ld_args[:0] = extra_preargs
+            if extra_postargs:
+                ld_args.extend (extra_postargs)
+
+            self.mkpath (os.path.dirname (output_filename))
+            self.spawn ([self.link] + ld_args)
+
         else:
-            ldflags = self.ldflags_shared
+            self.announce ("skipping %s (up-to-date)" % output_filename)
 
-        ld_args = ldflags + lib_opts + \
-                  objects + ['/OUT:' + output_filename]
+    # link_shared_object ()
+    
 
-        if extra_preargs:
-            ld_args[:0] = extra_preargs
-        if extra_postargs:
-            ld_args.extend (extra_postargs)
-
-        self.spawn ( [ self.link ] + ld_args )
-
-
-    # -- Filename mangling methods -------------------------------------
-
-    def _change_extensions( self, filenames, newExtension ):
-        object_filenames = []
-
-        for srcFile in filenames:
-            base,ext = os.path.splitext( srcFile )
-            # XXX should we strip off any existing path?
-            object_filenames.append( base + newExtension )
-
-        return object_filenames
-
-    def object_filenames (self, source_filenames):
-        """Return the list of object filenames corresponding to each
-           specified source filename."""
-        return self._change_extensions( source_filenames, self._obj_ext )
-
-    def shared_object_filename (self, source_filename):
-        """Return the shared object filename corresponding to a
-           specified source filename."""
-        return self._change_extensions( source_filenames, self._shared_lib_ext )
-
-    def library_filename (self, libname):
-        """Return the static library filename corresponding to the
-           specified library name."""
-        return "%s%s" %( libname, self._static_lib_ext )
-
-    def shared_library_filename (self, libname):
-        """Return the shared library filename corresponding to the
-           specified library name."""
-        return "%s%s" %( libname, self._shared_lib_ext )
-
+    # -- Miscellaneous methods -----------------------------------------
+    # These are all used by the 'gen_lib_options() function, in
+    # ccompiler.py.
 
     def library_dir_option (self, dir):
         return "/LIBPATH:" + dir
