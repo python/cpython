@@ -163,57 +163,65 @@ equal <number>, `tab-width' is set to <number>, a message saying so is
 displayed in the echo area, and if `py-beep-if-tab-change' is non-nil
 the Emacs bell is also rung as a warning.")
 
-(defvar python-font-lock-keywords
-  (list
-   (cons
-    (concat
-     "\\<\\("
-     (mapconcat
-      'identity
-      '("access"  "and"      "break"  "continue"
-	"del"     "elif"     "else"   "except"
-	"exec"    "finally"  "for"    "from"
-	"global"  "if"       "import" "in"
-	"is"      "lambda"   "not"    "or"
-	"pass"    "print"    "raise"  "return"
-	"try"     "while"    "def"    "class"
-	)
-      "\\|")
-     "\\)\\>")
-    1)
-   ;; functions
-   '("\\bdef\\s +\\(\\sw+\\)(" 1 font-lock-function-name-face)
-   ;; classes
-   '("\\bclass\\s +\\(\\sw+\\)[(:]" 1 font-lock-function-name-face)
-   )
-  "*Additional keywords to highlight `python-mode' buffers.")
+;; These were the previous font-lock keywords, but I think I now
+;; prefer the ones from XEmacs 19.12's font-lock.el.  I've merged the
+;; two into the new definition below.
+;;
+;;(defvar python-font-lock-keywords
+;;  (list
+;;   (cons
+;;    (concat
+;;     "\\<\\("
+;;     (mapconcat
+;;      'identity
+;;      '("access"  "and"      "break"  "continue"
+;;	"del"     "elif"     "else"   "except"
+;;	"exec"    "finally"  "for"    "from"
+;;	"global"  "if"       "import" "in"
+;;	"is"      "lambda"   "not"    "or"
+;;	"pass"    "print"    "raise"  "return"
+;;	"try"     "while"    "def"    "class"
+;;	)
+;;      "\\|")
+;;     "\\)\\>")
+;;    1)
+;;   ;; functions
+;;   '("\\bdef\\s +\\(\\sw+\\)(" 1 font-lock-function-name-face)
+;;   ;; classes
+;;   '("\\bclass\\s +\\(\\sw+\\)[(:]" 1 font-lock-function-name-face)
+;;   )
+;;  "*Additional keywords to highlight `python-mode' buffers.")
 
-;; These are taken from XEmacs 19.12's font-lock.el file.  I prefer
-;; these myself, but which do you think are better?
+;; These are taken from XEmacs 19.12's font-lock.el file, but have the
+;; more complete list of keywords from the previous definition in
+;; python-mode.el.  There are a few other minor stylistic changes as
+;; well.
 ;; 
-;;(defconst python-font-lock-keywords
-;;  (purecopy
-;;   (list
-;;    (cons (concat "\\b\\("
-;;                  (mapconcat 'identity
-;;                             '("access"     "del"        "from"
-;;                               "lambda"     "return"     "and"
-;;                               "elif"       "global"     "not"
-;;                               "try:"       "break "     "else:"
-;;                               "if"         "or"         "while"
-;;                               "except"     "except:"    "import"
-;;                               "pass"       "continue"   "finally:"
-;;                               "in"         "print"      "for"
-;;                               "is"         "raise")
-;;                             "\\|")
-;;                  "\\)[ \n\t(]")
-;;          1)
-;;    '("\\bclass[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
-;;      1 font-lock-type-face)
-;;    '("\\bdef[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
-;;      1 font-lock-function-name-face)
-;;    ))
-;;  "Additional expressions to highlight in Python mode.")
+(defvar python-font-lock-keywords
+   (list
+    (cons (concat
+	   "\\b\\("
+	   (mapconcat
+	    'identity
+	    '("access"     "and"      "break"    "continue"
+	      "del"        "elif"     "else:"    "except"
+	      "except:"    "exec"     "finally:" "for"
+	      "from"       "global"   "if"       "import"
+	      "in"         "is"       "lambda"   "not"
+	      "or"         "pass"     "print"    "raise"
+	      "return"     "try:"     "while"
+	      )
+	    "\\|")
+	   "\\)[ \n\t(]")
+          1)
+    ;; classes
+    '("\\bclass[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
+      1 font-lock-type-face)
+    ;; functions
+    '("\\bdef[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
+      1 font-lock-function-name-face)
+    )
+  "*Additional expressions to highlight in Python mode.")
 
 ;; R Lindsay Todd <toddr@rpi.edu> suggests these changes to the
 ;; original keywords, which wouldn't be necessary if we go with the
