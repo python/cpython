@@ -21,6 +21,8 @@ import Qd
 from FrameWork import *
 import EasyDialogs
 import macfs
+import os
+import sys
 
 # Resource IDs
 ID_MAIN = 514
@@ -30,82 +32,65 @@ MAIN_CHECK=3
 MAIN_INCLUDE=4
 MAIN_EXCLUDE=5
 
-ID_INCEXC=515
+ID_INCWINDOW=515
+ID_EXCWINDOW=517
 INCEXC_DELETE=2
 INCEXC_CHANGE=3
 INCEXC_ADD=4
 
 ID_INCLUDE=512
 ID_EXCLUDE=513
-DLG_OK=1
+DLG_OK=1 # Include for include, exclude for exclude
 DLG_CANCEL=2
-DLG_FULL=3
-DLG_PPCDEV=4
-DLG_68K=5
-DLG_PPC=6
-DLG_BUTTONS=[DLG_FULL, DLG_PPCDEV, DLG_68K, DLG_PPC]
-DLG_LETTERS=['S', 'P', 'm', 'p']
-DLG_SRCPATH=7
-DLG_DSTPATH=8
+DLG_SRCPATH=3
+DLG_DSTPATH=4 # include dialog only
+DLG_EXCLUDE=5 # Exclude, include dialog only
 
 ID_DTYPE=516
+DTYPE_EXIST=1
+DTYPE_NEW=2
+DTYPE_CANCEL=3
 
 class EditDialogWindow(DialogWindow):
 	"""Include/exclude editor (modeless dialog window)"""
 	
-	def open(self, id, (type, src, dst), callback, cancelrv):
+	def open(self, id, (src, dst), callback, cancelrv):
 		self.id = id
-		if id == ID_INCLUDE:
-			title = "Include file dialog"
-		else:
-			title = "Exclude pattern dialog"
-		#self.wid.as_Window().SetWTitle(title)
 		self.callback = callback
 		self.cancelrv = cancelrv
 		DialogWindow.open(self, id)
 		tp, h, rect = self.wid.GetDialogItem(DLG_SRCPATH)
 		Dlg.SetDialogItemText(h, src)
+		self.wid.SetDialogDefaultItem(DLG_OK)
+		self.wid.SetDialogCancelItem(DLG_CANCEL)
 		if id == ID_INCLUDE:
 			tp, h, rect = self.wid.GetDialogItem(DLG_DSTPATH)
+			if dst == None:
+				dst = ''
 			Dlg.SetDialogItemText(h, dst)
-		for b in range(len(DLG_BUTTONS)):
-			if type == None or DLG_LETTERS[b] in type:
-				self.setbutton(DLG_BUTTONS[b], 1)
-
-	def setbutton(self, num, value):
-		tp, h, rect = self.wid.GetDialogItem(num)
-		h.as_Control().SetControlValue(value)
-		
-	def getbutton(self, num):
-		tp, h, rect = self.wid.GetDialogItem(num)
-		return h.as_Control().GetControlValue()
+		self.wid.DrawDialog()
 	
 	def do_itemhit(self, item, event):
-		if item in (DLG_OK, DLG_CANCEL):
+		if item in (DLG_OK, DLG_CANCEL, DLG_EXCLUDE):
 			self.done(item)
-		elif item in DLG_BUTTONS:
-			v = self.getbutton(item)
-			self.setbutton(item, (not v))
 		# else it is not interesting
 		
 	def done(self, item):
+		tp, h, rect = self.wid.GetDialogItem(DLG_SRCPATH)
+		src = Dlg.GetDialogItemText(h)
 		if item == DLG_OK:
-			distlist = ''
-			for i in range(len(DLG_BUTTONS)):
-				if self.getbutton(DLG_BUTTONS[i]):
-					distlist = distlist + DLG_LETTERS[i]
-			tp, h, rect = self.wid.GetDialogItem(DLG_SRCPATH)
-			src = Dlg.GetDialogItemText(h)
 			if self.id == ID_INCLUDE:
 				tp, h, rect = self.wid.GetDialogItem(DLG_DSTPATH)
 				dst = Dlg.GetDialogItemText(h)
-				rv = (distlist, src, dst)
+				rv = (src, dst)
 			else:
-				rv = (distlist, src)
+				rv = (src, None)
+		elif item == DLG_EXCLUDE:
+			rv = (src, None)
 		else:
 			rv = self.cancelrv
 		self.close()
-		self.callback((item==DLG_OK), rv)
+		self.callback((item in (DLG_OK, DLG_EXCLUDE)), rv)
 		
 class ListWindow(DialogWindow):
 	"""A dialog window containing a list as its main item"""
@@ -113,8 +98,10 @@ class ListWindow(DialogWindow):
 	def open(self, id, contents):
 		self.id = id
 		DialogWindow.open(self, id)
+		Qd.SetPort(self.wid)
 		tp, h, rect = self.wid.GetDialogItem(MAIN_LIST)
-		rect2 = rect[0], rect[1], rect[2]-16, rect[3]-16	# Scroll bar space
+		self.listrect = rect
+		rect2 = rect[0]+1, rect[1]+1, rect[2]-16, rect[3]-16	# Scroll bar space
 		self.list = List.LNew(rect2, (0, 0, 1, len(contents)), (0,0), 0, self.wid,
 				0, 1, 1, 1)
 		self.setlist(contents)
@@ -127,7 +114,8 @@ class ListWindow(DialogWindow):
 			for i in range(len(contents)):
 				self.list.LSetCell(contents[i], (0, i))
 		self.list.LSetDrawingMode(1)
-		self.list.LUpdate(self.wid.GetWindowPort().visRgn)
+		##self.list.LUpdate(self.wid.GetWindowPort().visRgn)
+		Win.InvalRect(self.listrect)
 		
 	def additem(self, item):
 		where = self.list.LAddRow(1, 0)
@@ -162,6 +150,7 @@ class ListWindow(DialogWindow):
 		
 	def do_rawupdate(self, window, event):
 		Qd.SetPort(window)
+		Qd.FrameRect(self.listrect)
 		self.list.LUpdate(self.wid.GetWindowPort().visRgn)
 		
 	def do_close(self):
@@ -173,7 +162,7 @@ class ListWindow(DialogWindow):
 		
 	def mycb_add(self, ok, item):
 		if item:
-			self.additem(item[1])
+			self.additem(item[0])
 			self.cb_add(item)
 		
 class MainListWindow(ListWindow):
@@ -181,35 +170,45 @@ class MainListWindow(ListWindow):
 
 	def open(self, id, cb_check, cb_run, cb_add):
 		ListWindow.open(self, id, [])
-		title = "MkDistr: Unresolved files"
-		#self.wid.as_Window().SetWTitle(title)
+		self.wid.SetDialogDefaultItem(ID_INCLUDE)
 		self.cb_run = cb_run
 		self.cb_check = cb_check
 		self.cb_add = cb_add
+		setwatchcursor()
+		list = self.cb_check()
+		self.setlist(list)
+		setarrowcursor()
 
 	def do_itemhit(self, item, event):
 		if item == MAIN_LIST:
 			self.do_listhit(event)
 		if item == MAIN_MKDISTR:
-			fss, ok = macfs.StandardPutFile('Destination folder:')
-			if not ok:
-				return
-			self.cb_run(fss.as_pathname())
+## XXXX This somehow stopped working...
+##			fss, ok = macfs.StandardPutFile('Destination folder:')
+##			if not ok:
+##				return
+##			dest = fss.as_pathname()
+			dest = os.path.join(os.getcwd(), 'Distribution')
+			setwatchcursor()
+			self.cb_run(dest)
+			setarrowcursor()
 		if item == MAIN_CHECK:
+			setwatchcursor()
 			list = self.cb_check()
 			self.setlist(list)
+			setarrowcursor()
 		if item == MAIN_INCLUDE:
 			self.do_dclick(self.delgetselection())
 		if item == MAIN_EXCLUDE:
 			for i in self.delgetselection():
-				self.cb_add(('', i, ''))
+				self.cb_add((i, None))
 			
 	def do_dclick(self, list):
 		if not list:
 			list = ['']
 		for l in list:
 			w = EditDialogWindow(self.parent)
-			w.open(ID_INCLUDE, (None, l, ''), self.mycb_add, None)
+			w.open(ID_INCLUDE, (l, None), self.mycb_add, None)
 
 	def mycb_add(self, ok, item):
 		if item:
@@ -219,11 +218,7 @@ class IncListWindow(ListWindow):
 	"""An include/exclude window"""
 	def open(self, id, editid, contents, cb_add, cb_del, cb_get):
 		ListWindow.open(self, id, contents)
-		if editid == ID_INCLUDE:
-			title = "MkDistr: files to include"
-		else:
-			title = "MkDistr: patterns to exclude"
-		#self.wid.as_Window().SetWTitle(title)
+		self.wid.SetDialogDefaultItem(INCEXC_CHANGE)
 		self.editid = editid
 		self.cb_add = cb_add
 		self.cb_del = cb_del
@@ -240,7 +235,7 @@ class IncListWindow(ListWindow):
 			self.do_dclick(self.delgetselection())
 		if item == INCEXC_ADD:
 			w = EditDialogWindow(self.parent)
-			w.open(self.editid, (None, '', ''), self.mycb_add, None)
+			w.open(self.editid, ('', None), self.mycb_add, None)
 			
 	def do_dclick(self, list):
 		if not list:
@@ -285,7 +280,7 @@ class MkDistrUI(Application):
 				self.iwin.close()
 			del self.iwin
 		self.iwin = IncListWindow(self)
-		self.iwin.open(ID_INCEXC, ID_INCLUDE, self.main.inc.getall(), self.main.inc.add,
+		self.iwin.open(ID_INCWINDOW, ID_INCLUDE, self.main.inc.getall(), self.main.inc.add,
 			self.main.inc.delete, self.main.inc.get)
 		
 	def showexc(self, *args):
@@ -294,7 +289,7 @@ class MkDistrUI(Application):
 				self.ewin.close()
 			del self.ewin
 		self.ewin = IncListWindow(self)
-		self.ewin.open(ID_INCEXC, ID_EXCLUDE, self.main.exc.getall(), self.main.exc.add,
+		self.ewin.open(ID_EXCWINDOW, ID_EXCLUDE, self.main.exc.getall(), self.main.exc.add,
 			self.main.exc.delete, self.main.exc.get)
 
 	def do_about(self, id, item, window, event):
@@ -302,11 +297,33 @@ class MkDistrUI(Application):
 		
 def GetType():
 	"""Ask user for distribution type"""
-	d = Dlg.GetNewDialog(ID_DTYPE, -1)
 	while 1:
-		rv = ModalDialog(None)
-		if rv >= 1 and rv <= 4:
-			return DLG_LETTERS[rv-1]
+		d = Dlg.GetNewDialog(ID_DTYPE, -1)
+		d.SetDialogDefaultItem(DTYPE_EXIST)
+		d.SetDialogCancelItem(DTYPE_CANCEL)
+		while 1:
+			rv = ModalDialog(None)
+			if rv in (DTYPE_EXIST, DTYPE_NEW, DTYPE_CANCEL):
+				break
+		del d
+		if rv == DTYPE_CANCEL:
+			sys.exit(0)
+		if rv == DTYPE_EXIST:
+##			macfs.SetFolder(':(MkDistr)')
+			fss, ok = macfs.StandardGetFile('TEXT')
+			if not ok:
+				sys.exit(0)
+			path = fss.as_pathname()
+			basename = os.path.split(path)[-1]
+			if basename[-8:] <> '.include':
+				EasyDialogs.Message('That is not a distribution include file')
+			else:
+				return basename[:-8]
+		else:
+			name = EasyDialogs.AskString('Distribution name:')
+			if name:
+				return name
+			sys.exit(0)
 			
 def InitUI():
 	"""Initialize stuff needed by UI (a resource file)"""
