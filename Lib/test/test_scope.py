@@ -1,5 +1,3 @@
-from __future__ import nested_scopes
-
 from test.test_support import verify, TestFailed, check_syntax
 
 print "1. simple nesting"
@@ -179,7 +177,7 @@ verify(f(6) == 720)
 
 print "11. unoptimized namespaces"
 
-check_syntax("""from __future__ import nested_scopes
+check_syntax("""\
 def unoptimized_clash1(strip):
     def f(s):
         from string import *
@@ -187,7 +185,7 @@ def unoptimized_clash1(strip):
     return f
 """)
 
-check_syntax("""from __future__ import nested_scopes
+check_syntax("""\
 def unoptimized_clash2():
     from string import *
     def f(s):
@@ -195,7 +193,7 @@ def unoptimized_clash2():
     return f
 """)
 
-check_syntax("""from __future__ import nested_scopes
+check_syntax("""\
 def unoptimized_clash2():
     from string import *
     def g():
@@ -205,7 +203,7 @@ def unoptimized_clash2():
 """)
 
 # XXX could allow this for exec with const argument, but what's the point
-check_syntax("""from __future__ import nested_scopes
+check_syntax("""\
 def error(y):
     exec "a = 1"
     def f(x):
@@ -213,14 +211,14 @@ def error(y):
     return f
 """)
 
-check_syntax("""from __future__ import nested_scopes
+check_syntax("""\
 def f(x):
     def g():
         return x
     del x # can't del name
 """)
 
-check_syntax("""from __future__ import nested_scopes
+check_syntax("""\
 def f():
     def g():
          from string import *

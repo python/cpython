@@ -66,4 +66,4 @@ class _Feature:
         return "Feature(" + `self.getOptionalRelease()` + ", " + \
                             `self.getMandatoryRelease()` + ")"
 
-nested_scopes = _Feature((2, 1, 0, "beta", 1), (2, 2, 0, "final", 0))
+nested_scopes = _Feature((2, 1, 0, "beta", 1), (2, 2, 0, "alpha", 0))
