@@ -36,10 +36,6 @@ extern char *getenv(const char *);
 
 #include "pythread.h"
 
-#ifdef __ksr__
-#define _POSIX_THREADS
-#endif
-
 #ifndef _POSIX_THREADS
 
 #ifdef __sgi
