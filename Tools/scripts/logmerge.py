@@ -114,8 +114,8 @@ def format_output(database):
 	if text != prevtext:
 	    if prev:
 		print sep2,
-		for (date, working_file, rev) in prev:
-		    print date, working_file
+		for (p_date, p_working_file, p_rev) in prev:
+		    print p_date, p_working_file
 		sys.stdout.writelines(prevtext)
 	    prev = []
 	prev.append((date, working_file, rev))
