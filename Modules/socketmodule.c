@@ -31,6 +31,7 @@ Limitations:
 
 - only AF_INET and AF_UNIX address families are supported
 - no read/write operations (use send/recv or makefile instead)
+- additional restrictions apply on Windows
 
 Module interface:
 
@@ -58,6 +59,7 @@ Socket methods:
 - s.close() --> None
 - s.connect(sockaddr) --> None
 - s.fileno() --> file descriptor
+- s.dup() --> same as socket.fromfd(os.dup(s.fileno(), ...)
 - s.getpeername() --> sockaddr
 - s.getsockname() --> sockaddr
 - s.getsockopt(level, optname[, buflen]) --> int or string
@@ -113,7 +115,7 @@ Socket methods:
 #ifdef NT
 /* seem to be a few differences in the API */
 #define close closesocket
-#define NO_DUP	/* Define for NT 3.1, Win3.1 and Win95, Undefine for NT3.5 */
+#define NO_DUP /* Actually it exists on NT 3.5, but what the heck... */
 #define FORCE_ANSI_FUNC_DEFS
 #endif
 
@@ -547,9 +549,12 @@ BUILD_FUNC_DEF_2(PySocketSock_getsockopt,PySocketSockObject *,s, PyObject *,args
 	int optname;
 	int res;
 	PyObject *buf;
-	int buflen;
+	int buflen = 0;
 
-	if (PyArg_Parse(args, "(ii)", &level, &optname)) {
+	if (!PyArg_ParseTuple(args, "ii|i", &level, &optname, &buflen))
+		return NULL;
+	
+	if (buflen == 0) {
 		int flag = 0;
 		int flagsize = sizeof flag;
 		res = getsockopt(s->sock_fd, level, optname,
@@ -558,9 +563,6 @@ BUILD_FUNC_DEF_2(PySocketSock_getsockopt,PySocketSockObject *,s, PyObject *,args
 			return PySocket_Err();
 		return PyInt_FromLong(flag);
 	}
-	PyErr_Clear();
-	if (!PyArg_Parse(args, "(iii)", &level, &optname, &buflen))
-		return NULL;
 	if (buflen <= 0 || buflen > 1024) {
 		PyErr_SetString(PySocket_Error, "getsockopt buflen out of range");
 		return NULL;
@@ -646,6 +648,30 @@ BUILD_FUNC_DEF_2(PySocketSock_fileno,PySocketSockObject *,s, PyObject *,args)
 		return NULL;
 	return PyInt_FromLong((long) s->sock_fd);
 }
+
+
+#ifndef NO_DUP
+/* s.dup() method */
+
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_dup,PySocketSockObject *,s, PyObject *,args)
+{
+	int newfd;
+	PyObject *sock;
+	if (!PyArg_NoArgs(args))
+		return NULL;
+	newfd = dup(s->sock_fd);
+	if (newfd < 0)
+		return PySocket_Err();
+	sock = (PyObject *) PySocketSock_New(newfd,
+					s->sock_family,
+					s->sock_type,
+					s->sock_proto);
+	if (sock == NULL)
+		close(newfd);
+	return sock;
+}
+#endif
 
 
 /* s.getsockname() method */
@@ -754,14 +780,10 @@ BUILD_FUNC_DEF_2(PySocketSock_makefile,PySocketSockObject *,s, PyObject *,args)
 static PyObject *
 BUILD_FUNC_DEF_2(PySocketSock_recv,PySocketSockObject *,s, PyObject *,args)
 {
-	int len, n, flags;
+	int len, n, flags = 0;
 	PyObject *buf;
-	flags = 0;
-	if (!PyArg_Parse(args, "i", &len)) {
-		PyErr_Clear();
-		if (!PyArg_Parse(args, "(ii)", &len, &flags))
-			return NULL;
-	}
+	if (!PyArg_ParseTuple(args, "i|i", &len, &flags))
+		return NULL;
 	buf = PyString_FromStringAndSize((char *) 0, len);
 	if (buf == NULL)
 		return NULL;
@@ -785,13 +807,9 @@ BUILD_FUNC_DEF_2(PySocketSock_recvfrom,PySocketSockObject *,s, PyObject *,args)
 {
 	char addrbuf[256];
 	PyObject *buf, *addr, *ret;
-	int addrlen, len, n, flags;
-	flags = 0;
-	if (!PyArg_Parse(args, "i", &len)) {
-		PyErr_Clear();
-		if (!PyArg_Parse(args, "(ii)", &len, &flags))
-		    return NULL;
-	}
+	int addrlen, len, n, flags = 0;
+	if (!PyArg_ParseTuple(args, "i|i", &len, &flags))
+		return NULL;
 	if (!getsockaddrlen(s, &addrlen))
 		return NULL;
 	buf = PyString_FromStringAndSize((char *) 0, len);
@@ -825,13 +843,9 @@ static PyObject *
 BUILD_FUNC_DEF_2(PySocketSock_send,PySocketSockObject *,s, PyObject *,args)
 {
 	char *buf;
-	int len, n, flags;
-	flags = 0;
-	if (!PyArg_Parse(args, "s#", &buf, &len)) {
-		PyErr_Clear();
-		if (!PyArg_Parse(args, "(s#i)", &buf, &len, &flags))
-			return NULL;
-	}
+	int len, n, flags = 0;
+	if (!PyArg_ParseTuple(args, "s#|i", &buf, &len, &flags))
+		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	n = send(s->sock_fd, buf, len, flags);
 	Py_END_ALLOW_THREADS
@@ -890,16 +904,16 @@ BUILD_FUNC_DEF_2(PySocketSock_shutdown,PySocketSockObject *,s, PyObject *,args)
 
 static PyMethodDef PySocketSock_methods[] = {
 	{"accept",		(PyCFunction)PySocketSock_accept},
-#if 0
-	{"allowbroadcast",	(PyCFunction)PySocketSock_allowbroadcast},
-#endif
 	{"setblocking",		(PyCFunction)PySocketSock_setblocking},
 	{"setsockopt",		(PyCFunction)PySocketSock_setsockopt},
-	{"getsockopt",		(PyCFunction)PySocketSock_getsockopt},
+	{"getsockopt",		(PyCFunction)PySocketSock_getsockopt, 1},
 	{"bind",		(PyCFunction)PySocketSock_bind},
 	{"close",		(PyCFunction)PySocketSock_close},
 	{"connect",		(PyCFunction)PySocketSock_connect},
 	{"fileno",		(PyCFunction)PySocketSock_fileno},
+#ifndef NO_DUP
+	{"dup",			(PyCFunction)PySocketSock_dup},
+#endif
 	{"getsockname",		(PyCFunction)PySocketSock_getsockname},
 #ifdef HAVE_GETPEERNAME
 	{"getpeername",		(PyCFunction)PySocketSock_getpeername},
@@ -908,9 +922,9 @@ static PyMethodDef PySocketSock_methods[] = {
 #ifndef NO_DUP
 	{"makefile",		(PyCFunction)PySocketSock_makefile, 1},
 #endif
-	{"recv",		(PyCFunction)PySocketSock_recv},
-	{"recvfrom",		(PyCFunction)PySocketSock_recvfrom},
-	{"send",		(PyCFunction)PySocketSock_send},
+	{"recv",		(PyCFunction)PySocketSock_recv, 1},
+	{"recvfrom",		(PyCFunction)PySocketSock_recvfrom, 1},
+	{"send",		(PyCFunction)PySocketSock_send, 1},
 	{"sendto",		(PyCFunction)PySocketSock_sendto},
 	{"shutdown",		(PyCFunction)PySocketSock_shutdown},
 	{NULL,			NULL}		/* sentinel */
@@ -1099,13 +1113,9 @@ BUILD_FUNC_DEF_2(PySocket_socket,PyObject *,self, PyObject *,args)
 #else
 	int fd;
 #endif
-	int family, type, proto;
-	proto = 0;
-	if (!PyArg_Parse(args, "(ii)", &family, &type)) {
-		PyErr_Clear();
-		if (!PyArg_Parse(args, "(iii)", &family, &type, &proto))
-			return NULL;
-	}
+	int family, type, proto = 0;
+	if (!PyArg_ParseTuple(args, "ii|i", &family, &type, &proto))
+		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	fd = socket(family, type, proto);
 	Py_END_ALLOW_THREADS
@@ -1138,13 +1148,9 @@ static PyObject *
 BUILD_FUNC_DEF_2(PySocket_fromfd,PyObject *,self, PyObject *,args)
 {
 	PySocketSockObject *s;
-	int fd, family, type, proto;
-	proto = 0;
-	if (!PyArg_Parse(args, "(iii)", &fd, &family, &type)) {
-		PyErr_Clear();
-		if (!PyArg_Parse(args, "(iiii)", &fd, &family, &type, &proto))
-			return NULL;
-	}
+	int fd, family, type, proto = 0;
+	if (!PyArg_ParseTuple(args, "iii|i", &fd, &family, &type, &proto))
+		return NULL;
 	/* Dup the fd so it and the socket can be closed independently */
 	fd = dup(fd);
 	if (fd < 0)
@@ -1158,50 +1164,6 @@ BUILD_FUNC_DEF_2(PySocket_fromfd,PyObject *,self, PyObject *,args)
 	return (PyObject *) s;
 }
 #endif /* NO_DUP */
-
-static PyObject * PySocket_WSAStartup(self, args)
-	PyObject *self, *args;
-{
-#ifdef _MSC_VER
-	WSADATA WSAData;
-	int ret;
-
-	if (!PyArg_NoArgs(args))
-		return NULL;
-	ret = WSAStartup(0x0101, &WSAData);	/* request version 1.1 */
-	switch(ret){
-	case WSASYSNOTREADY:
-		PyErr_SetString(PySocket_Error,
-			"WSAStartup failed: Network not ready\n");
-		break;
-	case WSAVERNOTSUPPORTED:
-	case WSAEINVAL:
-		PyErr_SetString(PySocket_Error,
-			"WSAStartup failed: Requested version not supported");
-		break;
-	case 0:	/* no error */
-		break;
-	default:
-		PyErr_SetString(PySocket_Error,
-			"WSAStartup failed");
-		break;
-	}
-#endif
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-static PyObject * PySocket_WSACleanup(self, args)
-	PyObject *self, *args;
-{
-	if (!PyArg_NoArgs(args))
-		return NULL;
-#ifdef _MSC_VER
-	WSACleanup();
-#endif
-	Py_INCREF(Py_None);
-	return Py_None;
-}
 
 static PyObject *
 BUILD_FUNC_DEF_2(PySocket_ntohs, PyObject *, self, PyObject *, args)
@@ -1258,11 +1220,9 @@ static PyMethodDef PySocket_methods[] = {
 	{"gethostbyaddr",	PySocket_gethostbyaddr},
 	{"gethostname",		PySocket_gethostname},
 	{"getservbyname",	PySocket_getservbyname},
-	{"socket",		PySocket_socket},
-	{"WSAStartup",		PySocket_WSAStartup},
-	{"WSACleanup",		PySocket_WSACleanup},
+	{"socket",		PySocket_socket, 1},
 #ifndef NO_DUP
-	{"fromfd",		PySocket_fromfd},
+	{"fromfd",		PySocket_fromfd, 1},
 #endif
 	{"ntohs",		PySocket_ntohs},
 	{"ntohl",		PySocket_ntohl},
@@ -1290,16 +1250,76 @@ BUILD_FUNC_DEF_3(insint,PyObject *,d, char *,name, int,value)
 }
 
 
+#ifdef NT
+
+/* Additional initialization and cleanup for NT/Windows */
+
+static void
+NTcleanup()
+{
+	WSACleanup();
+	fprintf(stderr, "WSACleanup called\n");
+}
+
+static int
+NTinit()
+{
+	WSADATA WSAData;
+	int ret;
+	char buf[100];
+	ret = WSAStartup(0x0101, &WSAData);
+	switch (ret) {
+	case 0:	/* no error */
+		atexit(NTcleanup);
+		return 1;
+	case WSASYSNOTREADY:
+		PyErr_SetString(PyExc_ImportError,
+				"WSAStartup failed: network not ready");
+		break;
+	case WSAVERNOTSUPPORTED:
+	case WSAEINVAL:
+		PyErr_SetString(PyExc_ImportError,
+		    "WSAStartup failed: requested version not supported");
+		break;
+	default:
+		sprintf(buf, "WSAStartup failed: error code %d", ret);
+		PyErr_SetString(PyExc_ImportError, buf);
+		break;
+	}
+	return 0;
+}
+
+#endif /* NT */
+
+
 /* Initialize this module.
    This is called when the first 'import socket' is done,
    via a table in config.c, if config.c is compiled with USE_SOCKET
-   defined. */
+   defined.
+
+   For NT (which actually means any Windows variant (?)), this module
+   is actually called "_socket", and there's a wrapper "socket.py"
+   which implements some missing functionality (such as makefile(),
+   dup() and fromfd()).  The import of "_socket" may fail with an
+   ImportError exception if initialization of WINSOCK fails.  When
+   WINSOCK is initialized succesfully, a call to WSACleanup() is
+   scheduled to be made at exit time.  */
 
 void
+#ifdef NT
+init_socket()
+#else
 initsocket()
+#endif
 {
 	PyObject *m, *d;
+#ifdef NT
+	if (!NTinit())
+		return;
+	m = Py_InitModule("_socket", PySocket_methods);
+#else
 	m = Py_InitModule("socket", PySocket_methods);
+#endif
 	d = PyModule_GetDict(m);
 	PySocket_Error = PyString_FromString("socket.error");
 	if (PySocket_Error == NULL || 
@@ -1553,48 +1573,4 @@ initsocket()
 #ifdef	IP_DROP_MEMBERSHIP
 	insint(d, "IP_DROP_MEMBERSHIP", IP_DROP_MEMBERSHIP);
 #endif
-
-#ifdef MS_WIN16
-/* All windows sockets require a successful WSAStartup() before use */
-	Py_XDECREF(PySocket_WSAStartup(NULL, NULL));
-#endif
 }
-
-#ifdef NT
-BOOL	WINAPI	DllMain (HANDLE hInst, 
-			ULONG ul_reason_for_call,
-			LPVOID lpReserved)
-{
-	const int opt = SO_SYNCHRONOUS_NONALERT;
-	switch (ul_reason_for_call)
-	{
-		case DLL_PROCESS_ATTACH: {
-			WSADATA WSAData;
-			BOOL ok = TRUE;
-			char buf[100] = "Python can't initialize Windows Sockets Module!\n\r";
-			if (WSAStartup(MAKEWORD(1,1), &WSAData)) {
-				wsprintf(buf+strlen(buf), "WSAStartup failed (%d)",WSAGetLastError());
-				ok = FALSE;
-			}
-			/*
-			** Setup sockets in non-overlapped mode by default
-			*/
-//			if (ok && setsockopt(INVALID_SOCKET,SOL_SOCKET,SO_OPENTYPE,(const char *)&opt,sizeof(opt)) != 0) {
-//				wsprintf(buf+strlen(buf),"setsockopt failed (%d)",WSAGetLastError());
-//				ok = FALSE;
-//			}
-			if (!ok) {
-				MessageBox(NULL,buf,"WinSock Error",MB_OK|MB_SETFOREGROUND);
-				return FALSE;
-			}
-			break;
-		}
-
-		case DLL_PROCESS_DETACH:
-			WSACleanup();
-			break;
-
-	}
-	return TRUE;
-}
-#endif /* NT */
