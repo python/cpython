@@ -113,13 +113,13 @@
 
 #ifndef PYTHONPATH
 #define PYTHONPATH PREFIX "/lib/python" VERSION ":" \
-	      EXEC_PREFIX "/lib/python" VERSION "/lib-dynload"
+              EXEC_PREFIX "/lib/python" VERSION "/lib-dynload"
 #endif
 
 #ifndef LANDMARK
 #define LANDMARK "os.py"
 #endif
- 
+
 static char prefix[MAXPATHLEN+1];
 static char exec_prefix[MAXPATHLEN+1];
 static char progpath[MAXPATHLEN+1];
@@ -137,7 +137,7 @@ reduce(char *dir)
 
 
 static int
-isfile(char *filename)		/* Is file, not directory */
+isfile(char *filename)          /* Is file, not directory */
 {
     struct stat buf;
     if (stat(filename, &buf) != 0)
@@ -149,7 +149,7 @@ isfile(char *filename)		/* Is file, not directory */
 
 
 static int
-ismodule(char *filename)	/* Is module -- check for .pyc/.pyo too */
+ismodule(char *filename)        /* Is module -- check for .pyc/.pyo too */
 {
     if (isfile(filename))
         return 1;
@@ -165,7 +165,7 @@ ismodule(char *filename)	/* Is module -- check for .pyc/.pyo too */
 
 
 static int
-isxfile(char *filename)		/* Is executable file */
+isxfile(char *filename)         /* Is executable file */
 {
     struct stat buf;
     if (stat(filename, &buf) != 0)
@@ -179,7 +179,7 @@ isxfile(char *filename)		/* Is executable file */
 
 
 static int
-isdir(char *filename)			/* Is directory */
+isdir(char *filename)                   /* Is directory */
 {
     struct stat buf;
     if (stat(filename, &buf) != 0)
@@ -213,29 +213,34 @@ joinpath(char *buffer, char *stuff)
     buffer[n+k] = '\0';
 }
 
-/* init_path_from_argv0 requires that path be allocated at least
-   MAXPATHLEN + 1 bytes and that argv0_path be no more than MAXPATHLEN
-   bytes. 
-*/
+/* copy_absolute requires that path be allocated at least
+   MAXPATHLEN + 1 bytes and that p be no more than MAXPATHLEN bytes. */
 static void
-init_path_from_argv0(char *path, char *argv0_path)
+copy_absolute(char *path, char *p)
 {
-    if (argv0_path[0] == '/')
-	strcpy(path, argv0_path);
-    else if (argv0_path[0] == '.') {
-	getcwd(path, MAXPATHLEN);
-	if (argv0_path[1] == '/') 
-	    joinpath(path, argv0_path + 2);
-	else
-	    joinpath(path, argv0_path);
-    }
+    if (p[0] == SEP)
+        strcpy(path, p);
     else {
-	getcwd(path, MAXPATHLEN);
-	joinpath(path, argv0_path);
+        getcwd(path, MAXPATHLEN);
+        if (p[0] == '.' && p[1] == SEP)
+            p += 2;
+        joinpath(path, p);
     }
 }
 
-/* search_for_prefix requires that argv0_path be no more than MAXPATHLEN 
+/* absolutize() requires that path be allocated at least MAXPATHLEN+1 bytes. */
+static void
+absolutize(char *path)
+{
+    char buffer[MAXPATHLEN + 1];
+
+    if (path[0] == SEP)
+        return;
+    copy_absolute(buffer, path);
+    strcpy(path, buffer);
+}
+
+/* search_for_prefix requires that argv0_path be no more than MAXPATHLEN
    bytes long.
 */
 static int
@@ -271,7 +276,7 @@ search_for_prefix(char *argv0_path, char *home)
     }
 
     /* Search from argv0_path, until root is found */
-    init_path_from_argv0(prefix, argv0_path);
+    copy_absolute(prefix, argv0_path);
     do {
         n = strlen(prefix);
         joinpath(prefix, lib_python);
@@ -295,7 +300,7 @@ search_for_prefix(char *argv0_path, char *home)
 
 
 /* search_for_exec_prefix requires that argv0_path be no more than
-   MAXPATHLEN bytes long.  
+   MAXPATHLEN bytes long.
 */
 static int
 search_for_exec_prefix(char *argv0_path, char *home)
@@ -324,7 +329,7 @@ search_for_exec_prefix(char *argv0_path, char *home)
     }
 
     /* Search from argv0_path, until root is found */
-    init_path_from_argv0(exec_prefix, argv0_path);
+    copy_absolute(exec_prefix, argv0_path);
     do {
         n = strlen(exec_prefix);
         joinpath(exec_prefix, lib_python);
@@ -368,7 +373,7 @@ calculate_path(void)
 #ifdef WITH_NEXT_FRAMEWORK
     NSModule pythonModule;
 #endif
-	
+
 #ifdef WITH_NEXT_FRAMEWORK
     pythonModule = NSModuleForSymbol(NSLookupAndBindSymbol("_Py_Initialize"));
     /* Use dylib functions to find out where the framework was loaded from */
@@ -387,42 +392,40 @@ calculate_path(void)
         joinpath(argv0_path, lib_python);
         joinpath(argv0_path, LANDMARK);
         if (!ismodule(argv0_path)) {
-        	/* We are in the build directory so use the name of the 
-        	   executable - we know that the absolute path is passed */
-        	strncpy(progpath, prog, MAXPATHLEN);
+                /* We are in the build directory so use the name of the
+                   executable - we know that the absolute path is passed */
+                strncpy(progpath, prog, MAXPATHLEN);
         }
         else {
-        	/* Use the location of the library as the progpath */
-	        strncpy(progpath, buf, MAXPATHLEN);
+                /* Use the location of the library as the progpath */
+                strncpy(progpath, buf, MAXPATHLEN);
         }
     }
     else {
         /* If we're not in a framework, fall back to the old way
            (even though NSNameOfModule() probably does the same thing.) */
 #endif
-	
-	/* If there is no slash in the argv0 path, then we have to
-	 * assume python is on the user's $PATH, since there's no
-	 * other way to find a directory to start the search from.  If
-	 * $PATH isn't exported, you lose.
-	 */
-	if (strchr(prog, SEP))
+
+        /* If there is no slash in the argv0 path, then we have to
+         * assume python is on the user's $PATH, since there's no
+         * other way to find a directory to start the search from.  If
+         * $PATH isn't exported, you lose.
+         */
+        if (strchr(prog, SEP))
             strncpy(progpath, prog, MAXPATHLEN);
-	else if (path) {
-	    int bufspace = MAXPATHLEN;
+        else if (path) {
             while (1) {
                 char *delim = strchr(path, DELIM);
 
                 if (delim) {
                     size_t len = delim - path;
-		    if (len > bufspace)
-			len = bufspace;
+                    if (len > MAXPATHLEN)
+                        len = MAXPATHLEN;
                     strncpy(progpath, path, len);
                     *(progpath + len) = '\0';
-		    bufspace -= len;
                 }
                 else
-                    strncpy(progpath, path, bufspace);
+                    strncpy(progpath, path, MAXPATHLEN);
 
                 joinpath(progpath, prog);
                 if (isxfile(progpath))
@@ -434,15 +437,17 @@ calculate_path(void)
                 }
                 path = delim + 1;
             }
-	}
-	else
+        }
+        else
             progpath[0] = '\0';
+        if (progpath[0] != SEP)
+            absolutize(progpath);
 #ifdef WITH_NEXT_FRAMEWORK
     }
 #endif
 
     strncpy(argv0_path, progpath, MAXPATHLEN);
-	
+
 #if HAVE_READLINK
     {
         char tmpbuffer[MAXPATHLEN+1];
@@ -451,8 +456,8 @@ calculate_path(void)
             /* It's not null terminated! */
             tmpbuffer[linklen] = '\0';
             if (tmpbuffer[0] == SEP)
-		/* tmpbuffer should never be longer than MAXPATHLEN,
-		   but extra check does not hurt */
+                /* tmpbuffer should never be longer than MAXPATHLEN,
+                   but extra check does not hurt */
                 strncpy(argv0_path, tmpbuffer, MAXPATHLEN);
             else {
                 /* Interpret relative to progpath */
@@ -472,17 +477,17 @@ calculate_path(void)
     if (!(pfound = search_for_prefix(argv0_path, home))) {
         if (!Py_FrozenFlag)
             fprintf(stderr,
-                    "Could not find platform independent libraries <prefix>\n");
+                "Could not find platform independent libraries <prefix>\n");
         strncpy(prefix, PREFIX, MAXPATHLEN);
         joinpath(prefix, lib_python);
     }
     else
         reduce(prefix);
-	
+
     if (!(efound = search_for_exec_prefix(argv0_path, home))) {
         if (!Py_FrozenFlag)
             fprintf(stderr,
-                    "Could not find platform dependent libraries <exec_prefix>\n");
+                "Could not find platform dependent libraries <exec_prefix>\n");
         strncpy(exec_prefix, EXEC_PREFIX, MAXPATHLEN);
         joinpath(exec_prefix, "lib/lib-dynload");
     }
