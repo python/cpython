@@ -6,7 +6,7 @@
 #include <sys/types.h>
 #include <string.h>
 
-#ifdef WITH_NEXT_FRAMEWORK
+#ifdef __APPLE__
 #include <mach-o/dyld.h>
 #endif
 
