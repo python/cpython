@@ -13,16 +13,16 @@ Frameworks tend to be harder to document, but are well worth the
 effort spent.
 
 \begin{description}
-\item[Tkinter.py]
+\item[\module{Tkinter}]
 --- Interface to Tcl/Tk for graphical user interfaces;
 Fredrik Lundh is working on this one!  See \emph{An Introduction to
 Tkinter} at \url{http://www.pythonware.com/library/} for on-line
 reference material.
 
-\item[Tkdnd.py]
+\item[\module{Tkdnd}]
 --- Drag-and-drop support for \module{Tkinter}.
 
-\item[test]
+\item[\module{test}]
 --- Regression testing framework.  This is used for the Python
 regression test, but is useful for other Python libraries as well.
 This is a package rather than a module.
@@ -34,17 +34,18 @@ This is a package rather than a module.
 Some of these are very old and/or not very robust; marked with ``hmm.''
 
 \begin{description}
-\item[dircmp.py]
+\item[\module{dircmp}]
 --- class to build directory diff tools on (may become a demo or tool)
 
-\item[pty.py]
---- Pseudo terminal utilities
-
-\item[bdb.py]
+\item[\module{bdb}]
 --- A generic Python debugger base class (used by pdb)
 
-\item[ihooks.py]
+\item[\module{ihooks}]
 --- Import hook support (for \refmodule{rexec}; may become obsolete)
+
+\item[\module{tzparse}]
+--- Parse a timezone specification (unfinished; may disappear in the
+future)
 \end{description}
 
 
@@ -55,13 +56,13 @@ and are not documented beyond this mention.  There's little need to
 document these.
 
 \begin{description}
-\item[dospath.py]
+\item[\module{dospath}]
 --- implementation of \module{os.path} on MS-DOS
 
-\item[ntpath.py]
+\item[\module{ntpath}]
 --- implementation on \module{os.path} on 32-bit Windows
 
-\item[posixpath.py]
+\item[\module{posixpath}]
 --- implementation on \module{os.path} on \POSIX{}
 \end{description}
 
@@ -69,42 +70,15 @@ document these.
 \section{Multimedia}
 
 \begin{description}
-\item[audiodev.py]
+\item[\module{audiodev}]
 --- Platform-independent API for playing audio data
 
-\item[sunaudio.py]
+\item[\module{sunaudio}]
 --- interpret sun audio headers (may become obsolete or a tool/demo)
 
-\item[toaiff.py]
+\item[\module{toaiff}]
 --- Convert "arbitrary" sound files to AIFF files; should probably
 become a tool or demo.  Requires the external program \program{sox}.
-\end{description}
-
-
-\section{Oddities}
-
-These modules are probably also obsolete, or just not very useful.
-Some of these may be made into tools or demos in future releases.
-
-\begin{description}
-\item[find.py]
---- find files matching pattern in directory tree (may become a demo
-or tool, or possibly obsolete)
-
-\item[grep.py]
---- grep (may become a demo or tool)
-
-\item[mutex.py]
---- Mutual exclusion --- for use with module sched
-
-\item[packmail.py]
---- create a self-unpacking \UNIX{} shell archive
-
-\item[sched.py]
---- event scheduler class
-
-\item[tzparse.py]
---- Parse a timezone specification (unfinished)
 \end{description}
 
 
@@ -118,55 +92,71 @@ To use any of these modules, add that directory to \code{sys.path},
 possibly using \envvar{PYTHONPATH}.
 
 \begin{description}
-\item[newdir.py]
+\item[\module{newdir}]
 --- New \function{dir()} function (the standard \function{dir()} is
 now just as good)
 
-\item[addpack.py]
---- standard support for "packages"
+\item[\module{addpack}]
+--- alternate approach to packages
 
-\item[codehack.py]
+\item[\module{codehack}]
 --- Extract function name or line number from a function
 code object (these are now accessible as attributes:
 \member{co.co_name}, \member{func.func_name},
 \member{co.co_firstlineno}).
 
-\item[dump.py]
+\item[\module{dump}]
 --- Print python code that reconstructs a variable
 
-\item[fmt.py]
+\item[\module{fmt}]
 --- text formatting abstractions (too slow)
 
-\item[Para.py]
+\item[\module{Para}]
 --- helper for fmt.py
 
-\item[lockfile.py]
+\item[\module{lockfile}]
 --- wrapper around FCNTL file locking (use
 \function{fcntl.lockf()}/\function{flock()} intead; see \refmodule{fcntl})
 
-\item[poly.py]
+\item[\module{poly}]
 --- Polynomials
 
-\item[tb.py]
+\item[\module{tb}]
 --- Print tracebacks, with a dump of local variables (use
 \function{pdb.pm()} or \refmodule{traceback} instead)
 
-\item[timingmodule]
+\item[\module{timing}]
 --- Measure time intervals to high resolution (use
 \function{time.clock()} instead).  (This is an extension module.)
 
-\item[util.py]
+\item[\module{util}]
 --- Useful functions that don't fit elsewhere.
 
-\item[wdb.py]
+\item[\module{wdb}]
 --- A primitive windowing debugger based on STDWIN.
 
-\item[whatsound.py]
+\item[\module{whatsound}]
 --- Recognize sound files; use \refmodule{sndhdr} instead.
 
-\item[zmod.py]
+\item[\module{zmod}]
 --- Compute properties of mathematical "fields"
 \end{description}
+
+
+The following modules are obsolete, but are likely re-surface as tools
+or scripts.
+
+\begin{description}
+\item[\module{find}]
+--- find files matching pattern in directory tree
+
+\item[\module{grep}]
+--- grep
+
+\item[\module{packmail}]
+--- create a self-unpacking \UNIX{} shell archive
+\end{description}
+
 
 The following modules were documented in previous versions of this
 manual, but are now considered obsolete.  The source for the
@@ -174,14 +164,14 @@ documentation is still available as part of the documentation source
 archive.
 
 \begin{description}
-\item[ni]
+\item[\module{ni}]
 --- Import modules in ``packages.''  Basic package support is now
 built in.
 
-\item[rand]
+\item[\module{rand}]
 --- Old interface to the random number generator.
 
-\item[soundex]
+\item[\module{soundex}]
 --- Algorithm for collapsing names which sound similar to a shared
 key.  (This is an extension module.)
 \end{description}
@@ -190,27 +180,20 @@ key.  (This is an extension module.)
 \section{Extension modules}
 
 \begin{description}
-\item[dlmodule.c]
----  A highly experimental and dangerous device for calling
-arbitrary \C{} functions in arbitrary shared libraries.
-
-\item[nismodule.c]
---- NIS (a.k.a. Sun's Yellow Pages) interface.
-
-\item[stdwinmodule.c]
+\item[\module{stdwin}]
 --- Interface to STDWIN (an old, unsupported
-platform-independent GUI package).  Obsolete; use Tkinter for a
-platform-independent GUI instead.
+platform-independent GUI package).  Obsolete; use \module{Tkinter} for
+a platform-independent GUI instead.
 \end{description}
 
 The following are SGI specific, and may be out of touch with the
 current version of reality.
 
 \begin{description}
-\item[clmodule.c]
+\item[\module{cl}]
 --- Interface to the SGI compression library.
 
-\item[svmodule.c]
+\item[\module{sv}]
 --- Interface to the ``simple video'' board on SGI Indigo
 (obsolete hardware).
 \end{description}
