@@ -775,12 +775,8 @@ xrange object will always take the same amount of memory, no matter the
 size of the range it represents.  There are no consistent performance
 advantages.
 
-XRange objects behave like tuples, and offer a single method:
-
-\begin{methoddesc}[xrange]{tolist}{}
-  Return a list object which represents the same values as the xrange
-  object.
-\end{methoddesc}
+XRange objects have very little behavior: they only support indexing
+and the \function{len()} function.
 
 
 \subsubsection{Mutable Sequence Types \label{typesseq-mutable}}
