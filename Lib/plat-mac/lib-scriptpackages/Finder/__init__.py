@@ -76,19 +76,6 @@ import StdSuites
 #
 # Set property and element dictionaries now that all classes have been defined
 #
-getbaseclasses(accessory_suitcase)
-getbaseclasses(preferences)
-getbaseclasses(sharable_container)
-getbaseclasses(application)
-getbaseclasses(trash_2d_object)
-getbaseclasses(accessory_process)
-getbaseclasses(window)
-getbaseclasses(information_window)
-getbaseclasses(process)
-getbaseclasses(application_file)
-getbaseclasses(internet_location)
-getbaseclasses(container_window)
-getbaseclasses(item)
 getbaseclasses(StdSuites.Type_Names_Suite.small_integer)
 getbaseclasses(StdSuites.Type_Names_Suite.RGB16_color)
 getbaseclasses(StdSuites.Type_Names_Suite.system_dictionary)
@@ -129,6 +116,20 @@ getbaseclasses(StdSuites.Type_Names_Suite.null)
 getbaseclasses(StdSuites.Type_Names_Suite.target_id)
 getbaseclasses(StdSuites.Type_Names_Suite.point)
 getbaseclasses(StdSuites.Type_Names_Suite.bounding_rectangle)
+getbaseclasses(accessory_suitcase)
+getbaseclasses(preferences)
+getbaseclasses(sharable_container)
+getbaseclasses(application)
+getbaseclasses(trash_2d_object)
+getbaseclasses(accessory_process)
+getbaseclasses(window)
+getbaseclasses(information_window)
+getbaseclasses(process)
+getbaseclasses(application_file)
+getbaseclasses(internet_location)
+getbaseclasses(container_window)
+getbaseclasses(item)
+getbaseclasses(item)
 getbaseclasses(trash_2d_object)
 getbaseclasses(desktop_2d_object)
 getbaseclasses(sharable_container)
@@ -136,9 +137,6 @@ getbaseclasses(sharing_privileges)
 getbaseclasses(disk)
 getbaseclasses(folder)
 getbaseclasses(container)
-getbaseclasses(application)
-getbaseclasses(special_folders)
-getbaseclasses(item)
 getbaseclasses(sound_file)
 getbaseclasses(font_file)
 getbaseclasses(internet_location_file)
@@ -152,6 +150,8 @@ getbaseclasses(application_file)
 getbaseclasses(suitcase)
 getbaseclasses(document_file)
 getbaseclasses(package)
+getbaseclasses(application)
+getbaseclasses(special_folders)
 getbaseclasses(preferences_window)
 getbaseclasses(view_options_window)
 getbaseclasses(window)
@@ -159,6 +159,17 @@ getbaseclasses(container_window)
 getbaseclasses(content_space)
 getbaseclasses(information_window)
 getbaseclasses(clipping_window)
+getbaseclasses(status_window)
+getbaseclasses(application)
+getbaseclasses(sharing_window)
+getbaseclasses(control_panel)
+getbaseclasses(process)
+getbaseclasses(item)
+getbaseclasses(file)
+getbaseclasses(sharable_container)
+getbaseclasses(container_window)
+getbaseclasses(container)
+getbaseclasses(information_window)
 getbaseclasses(process)
 getbaseclasses(desk_accessory_process)
 getbaseclasses(application_process)
@@ -246,35 +257,11 @@ getbaseclasses(StdSuites.Type_Names_Suite.null)
 getbaseclasses(StdSuites.Type_Names_Suite.target_id)
 getbaseclasses(StdSuites.Type_Names_Suite.point)
 getbaseclasses(StdSuites.Type_Names_Suite.bounding_rectangle)
-getbaseclasses(status_window)
-getbaseclasses(application)
-getbaseclasses(sharing_window)
-getbaseclasses(control_panel)
-getbaseclasses(process)
-getbaseclasses(item)
-getbaseclasses(file)
-getbaseclasses(sharable_container)
-getbaseclasses(container_window)
-getbaseclasses(container)
-getbaseclasses(information_window)
 
 #
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'dsut' : accessory_suitcase,
-	'cprf' : preferences,
-	'sctr' : sharable_container,
-	'capp' : application,
-	'ctrs' : trash_2d_object,
-	'pcda' : accessory_process,
-	'cwin' : window,
-	'iwnd' : information_window,
-	'prcs' : process,
-	'appf' : application_file,
-	'inlf' : internet_location,
-	'cwnd' : container_window,
-	'cobj' : item,
 	'shor' : StdSuites.Type_Names_Suite.small_integer,
 	'tr16' : StdSuites.Type_Names_Suite.RGB16_color,
 	'aeut' : StdSuites.Type_Names_Suite.system_dictionary,
@@ -315,6 +302,20 @@ _classdeclarations = {
 	'targ' : StdSuites.Type_Names_Suite.target_id,
 	'QDpt' : StdSuites.Type_Names_Suite.point,
 	'qdrt' : StdSuites.Type_Names_Suite.bounding_rectangle,
+	'dsut' : accessory_suitcase,
+	'cprf' : preferences,
+	'sctr' : sharable_container,
+	'capp' : application,
+	'ctrs' : trash_2d_object,
+	'pcda' : accessory_process,
+	'cwin' : window,
+	'iwnd' : information_window,
+	'prcs' : process,
+	'appf' : application_file,
+	'inlf' : internet_location,
+	'cwnd' : container_window,
+	'cobj' : item,
+	'cobj' : item,
 	'ctrs' : trash_2d_object,
 	'cdsk' : desktop_2d_object,
 	'sctr' : sharable_container,
@@ -322,9 +323,6 @@ _classdeclarations = {
 	'cdis' : disk,
 	'cfol' : folder,
 	'ctnr' : container,
-	'capp' : application,
-	'spfl' : special_folders,
-	'cobj' : item,
 	'sndf' : sound_file,
 	'fntf' : font_file,
 	'inlf' : internet_location_file,
@@ -338,6 +336,8 @@ _classdeclarations = {
 	'stcs' : suitcase,
 	'docf' : document_file,
 	'pack' : package,
+	'capp' : application,
+	'spfl' : special_folders,
 	'pwnd' : preferences_window,
 	'vwnd' : view_options_window,
 	'cwin' : window,
@@ -345,6 +345,17 @@ _classdeclarations = {
 	'dwnd' : content_space,
 	'iwnd' : information_window,
 	'lwnd' : clipping_window,
+	'qwnd' : status_window,
+	'capp' : application,
+	'swnd' : sharing_window,
+	'ccdv' : control_panel,
+	'prcs' : process,
+	'cobj' : item,
+	'file' : file,
+	'sctr' : sharable_container,
+	'cwnd' : container_window,
+	'ctnr' : container,
+	'iwnd' : information_window,
 	'prcs' : process,
 	'pcda' : desk_accessory_process,
 	'pcap' : application_process,
@@ -432,17 +443,6 @@ _classdeclarations = {
 	'targ' : StdSuites.Type_Names_Suite.target_id,
 	'QDpt' : StdSuites.Type_Names_Suite.point,
 	'qdrt' : StdSuites.Type_Names_Suite.bounding_rectangle,
-	'qwnd' : status_window,
-	'capp' : application,
-	'swnd' : sharing_window,
-	'ccdv' : control_panel,
-	'prcs' : process,
-	'cobj' : item,
-	'file' : file,
-	'sctr' : sharable_container,
-	'cwnd' : container_window,
-	'ctnr' : container,
-	'iwnd' : information_window,
 }
 
 

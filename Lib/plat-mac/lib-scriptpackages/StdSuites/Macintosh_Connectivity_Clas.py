@@ -36,13 +36,13 @@ class AppleTalk_machine(aetools.NProperty):
 	"""AppleTalk machine - the machine name part of the address """
 	which = 'patm'
 	want = 'TEXT'
-class AppleTalk_zone(aetools.NProperty):
-	"""AppleTalk zone - the zone part of the address """
-	which = 'patz'
-	want = 'TEXT'
 class AppleTalk_type(aetools.NProperty):
 	"""AppleTalk type - the type part of the AppleTalk address """
 	which = 'patt'
+	want = 'TEXT'
+class AppleTalk_zone(aetools.NProperty):
+	"""AppleTalk zone - the zone part of the address """
+	which = 'patz'
 	want = 'TEXT'
 
 AppleTalk_addresses = AppleTalk_address
@@ -94,13 +94,13 @@ LocalTalk_addresses = LocalTalk_address
 class SCSI_address(aetools.ComponentItem):
 	"""SCSI address - Addresses a SCSI device """
 	want = 'cscs'
-class SCSI_bus(aetools.NProperty):
-	"""SCSI bus - the SCSI bus number """
-	which = 'pscb'
-	want = 'shor'
 class LUN(aetools.NProperty):
 	"""LUN - the SCSI logical unit number """
 	which = 'pslu'
+	want = 'shor'
+class SCSI_bus(aetools.NProperty):
+	"""SCSI bus - the SCSI bus number """
+	which = 'pscb'
 	want = 'shor'
 
 SCSI_addresses = SCSI_address
@@ -124,14 +124,14 @@ class name(aetools.NProperty):
 class address_specification(aetools.ComponentItem):
 	"""address specification - Unique designation of a device or service connected to this computer """
 	want = 'cadr'
-class properties(aetools.NProperty):
-	"""properties - property that allows getting and setting of multiple properties """
-	which = 'pALL'
-	want = 'reco'
 class conduit(aetools.NProperty):
 	"""conduit - How the addressee is physically connected """
 	which = 'pcon'
 	want = 'econ'
+class properties(aetools.NProperty):
+	"""properties - property that allows getting and setting of multiple properties """
+	which = 'pALL'
+	want = 'reco'
 class protocol(aetools.NProperty):
 	"""protocol - How to talk to this addressee """
 	which = 'pprt'
@@ -148,51 +148,51 @@ bus_slots = bus_slot
 class device_specification(aetools.ComponentItem):
 	"""device specification - A device connected to a computer """
 	want = 'cdev'
-class device_type(aetools.NProperty):
-	"""device type - the kind of device """
-	which = 'pdvt'
-	want = 'edvt'
 class device_address(aetools.NProperty):
 	"""device address - the address of the device """
 	which = 'pdva'
 	want = 'cadr'
+class device_type(aetools.NProperty):
+	"""device type - the kind of device """
+	which = 'pdvt'
+	want = 'edvt'
 
 device_specifications = device_specification
 ADB_address._superclassnames = ['address_specification']
 ADB_address._privpropdict = {
-	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 	'ID' : ID,
+	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 }
 ADB_address._privelemdict = {
 }
 AppleTalk_address._superclassnames = ['address_specification']
 AppleTalk_address._privpropdict = {
-	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 	'AppleTalk_machine' : AppleTalk_machine,
-	'AppleTalk_zone' : AppleTalk_zone,
 	'AppleTalk_type' : AppleTalk_type,
+	'AppleTalk_zone' : AppleTalk_zone,
+	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 }
 AppleTalk_address._privelemdict = {
 }
 Ethernet_address._superclassnames = ['address_specification']
 Ethernet_address._privpropdict = {
-	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 	'ID' : ID,
+	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 }
 Ethernet_address._privelemdict = {
 }
 FireWire_address._superclassnames = ['address_specification']
 FireWire_address._privpropdict = {
-	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 	'ID' : ID,
+	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 }
 FireWire_address._privelemdict = {
 }
 IP_address._superclassnames = ['address_specification']
 IP_address._privpropdict = {
-	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
-	'ID' : ID,
 	'DNS_form' : DNS_form,
+	'ID' : ID,
+	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 	'port' : port,
 }
 IP_address._privelemdict = {
@@ -208,17 +208,17 @@ LocalTalk_address._privelemdict = {
 }
 SCSI_address._superclassnames = ['address_specification']
 SCSI_address._privpropdict = {
-	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
-	'SCSI_bus' : SCSI_bus,
 	'ID' : ID,
 	'LUN' : LUN,
+	'SCSI_bus' : SCSI_bus,
+	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 }
 SCSI_address._privelemdict = {
 }
 Token_Ring_address._superclassnames = ['address_specification']
 Token_Ring_address._privpropdict = {
-	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 	'ID' : ID,
+	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 }
 Token_Ring_address._privelemdict = {
 }
@@ -229,24 +229,24 @@ USB_Addresses._privelemdict = {
 }
 address_specification._superclassnames = []
 address_specification._privpropdict = {
-	'properties' : properties,
 	'conduit' : conduit,
+	'properties' : properties,
 	'protocol' : protocol,
 }
 address_specification._privelemdict = {
 }
 bus_slot._superclassnames = ['address_specification']
 bus_slot._privpropdict = {
-	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 	'ID' : ID,
+	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 }
 bus_slot._privelemdict = {
 }
 device_specification._superclassnames = []
 device_specification._privpropdict = {
-	'properties' : properties,
-	'device_type' : device_type,
 	'device_address' : device_address,
+	'device_type' : device_type,
+	'properties' : properties,
 }
 device_specification._privelemdict = {
 }
@@ -326,39 +326,39 @@ _Enum_epro = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'cat ' : AppleTalk_address,
-	'cadr' : address_specification,
-	'ctok' : Token_Ring_address,
-	'cfw ' : FireWire_address,
-	'cbus' : bus_slot,
-	'cscs' : SCSI_address,
 	'cadb' : ADB_address,
-	'cusb' : USB_Addresses,
-	'cip ' : IP_address,
-	'clt ' : LocalTalk_address,
+	'cadr' : address_specification,
+	'cat ' : AppleTalk_address,
+	'cbus' : bus_slot,
 	'cdev' : device_specification,
 	'cen ' : Ethernet_address,
+	'cfw ' : FireWire_address,
+	'cip ' : IP_address,
+	'clt ' : LocalTalk_address,
+	'cscs' : SCSI_address,
+	'ctok' : Token_Ring_address,
+	'cusb' : USB_Addresses,
 }
 
 _propdeclarations = {
+	'ID  ' : ID,
+	'c@#^' : _3c_inheritance_3e_,
+	'pALL' : properties,
+	'patm' : AppleTalk_machine,
+	'patt' : AppleTalk_type,
+	'patz' : AppleTalk_zone,
+	'pcon' : conduit,
 	'pdns' : DNS_form,
 	'pdva' : device_address,
-	'patt' : AppleTalk_type,
-	'pprt' : protocol,
-	'pcon' : conduit,
-	'patz' : AppleTalk_zone,
-	'pnet' : network,
 	'pdvt' : device_type,
 	'pnam' : name,
-	'c@#^' : _3c_inheritance_3e_,
-	'ID  ' : ID,
-	'pALL' : properties,
-	'psoc' : socket,
-	'pscb' : SCSI_bus,
-	'ppor' : port,
-	'patm' : AppleTalk_machine,
-	'pslu' : LUN,
+	'pnet' : network,
 	'pnod' : node,
+	'ppor' : port,
+	'pprt' : protocol,
+	'pscb' : SCSI_bus,
+	'pslu' : LUN,
+	'psoc' : socket,
 }
 
 _compdeclarations = {

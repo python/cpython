@@ -188,22 +188,30 @@ class Finder_items_Events:
 class item(aetools.ComponentItem):
 	"""item - An item """
 	want = 'cobj'
-class name(aetools.NProperty):
-	"""name - the name of the item """
-	which = 'pnam'
+class bounds(aetools.NProperty):
+	"""bounds - the bounding rectangle of the item (can only be set for an item in a window viewed as icons or buttons) """
+	which = 'pbnd'
+	want = 'qdrt'
+class comment(aetools.NProperty):
+	"""comment - the comment of the item, displayed in the \xd2Get Info\xd3 window """
+	which = 'comt'
 	want = 'itxt'
-class index(aetools.NProperty):
-	"""index - the index in the front-to-back ordering within its container """
-	which = 'pidx'
-	want = 'long'
-class id(aetools.NProperty):
-	"""id - an id that identifies the item """
-	which = 'ID  '
-	want = 'long'
 class container(aetools.NProperty):
 	"""container - the container of the item """
 	which = 'ctnr'
 	want = 'obj '
+class content_space(aetools.NProperty):
+	"""content space - the window that would open if the item was opened """
+	which = 'dwnd'
+	want = 'obj '
+class creation_date(aetools.NProperty):
+	"""creation date - the date on which the item was created """
+	which = 'ascd'
+	want = 'ldt '
+class description(aetools.NProperty):
+	"""description - a description of the item """
+	which = 'dscr'
+	want = 'itxt'
 class disk(aetools.NProperty):
 	"""disk - the disk on which the item is stored """
 	which = 'cdis'
@@ -212,91 +220,83 @@ class folder(aetools.NProperty):
 	"""folder - the folder in which the item is stored """
 	which = 'asdr'
 	want = 'obj '
-class position(aetools.NProperty):
-	"""position - the position of the item within its parent window (can only be set for an item in a window viewed as icons or buttons) """
-	which = 'posn'
-	want = 'QDpt'
-class bounds(aetools.NProperty):
-	"""bounds - the bounding rectangle of the item (can only be set for an item in a window viewed as icons or buttons) """
-	which = 'pbnd'
-	want = 'qdrt'
-class label_index(aetools.NProperty):
-	"""label index - the label of the item """
-	which = 'labi'
-	want = 'long'
-class kind(aetools.NProperty):
-	"""kind - the kind of the item """
-	which = 'kind'
-	want = 'itxt'
-class description(aetools.NProperty):
-	"""description - a description of the item """
-	which = 'dscr'
-	want = 'itxt'
-class comment(aetools.NProperty):
-	"""comment - the comment of the item, displayed in the \xd2Get Info\xd3 window """
-	which = 'comt'
-	want = 'itxt'
-class size(aetools.NProperty):
-	"""size - the logical size of the item """
-	which = 'ptsz'
-	want = 'long'
-class physical_size(aetools.NProperty):
-	"""physical size - the actual space used by the item on disk """
-	which = 'phys'
-	want = 'long'
-class creation_date(aetools.NProperty):
-	"""creation date - the date on which the item was created """
-	which = 'ascd'
-	want = 'ldt '
-class modification_date(aetools.NProperty):
-	"""modification date - the date on which the item was last modified """
-	which = 'asmo'
-	want = 'ldt '
 class icon(aetools.NProperty):
 	"""icon - the icon bitmap of the item """
 	which = 'iimg'
 	want = 'ifam'
+class id(aetools.NProperty):
+	"""id - an id that identifies the item """
+	which = 'ID  '
+	want = 'long'
+class index(aetools.NProperty):
+	"""index - the index in the front-to-back ordering within its container """
+	which = 'pidx'
+	want = 'long'
+class information_window(aetools.NProperty):
+	"""information window - the information window for the item """
+	which = 'iwnd'
+	want = 'obj '
+class kind(aetools.NProperty):
+	"""kind - the kind of the item """
+	which = 'kind'
+	want = 'itxt'
+class label_index(aetools.NProperty):
+	"""label index - the label of the item """
+	which = 'labi'
+	want = 'long'
+class modification_date(aetools.NProperty):
+	"""modification date - the date on which the item was last modified """
+	which = 'asmo'
+	want = 'ldt '
+class name(aetools.NProperty):
+	"""name - the name of the item """
+	which = 'pnam'
+	want = 'itxt'
+class physical_size(aetools.NProperty):
+	"""physical size - the actual space used by the item on disk """
+	which = 'phys'
+	want = 'long'
+class position(aetools.NProperty):
+	"""position - the position of the item within its parent window (can only be set for an item in a window viewed as icons or buttons) """
+	which = 'posn'
+	want = 'QDpt'
 class selected(aetools.NProperty):
 	"""selected - Is the item selected? """
 	which = 'issl'
 	want = 'bool'
-class content_space(aetools.NProperty):
-	"""content space - the window that would open if the item was opened """
-	which = 'dwnd'
-	want = 'obj '
+class size(aetools.NProperty):
+	"""size - the logical size of the item """
+	which = 'ptsz'
+	want = 'long'
 class window(aetools.NProperty):
 	"""window - the window that would open if the item was opened """
 	which = 'cwin'
-	want = 'obj '
-class information_window(aetools.NProperty):
-	"""information window - the information window for the item """
-	which = 'iwnd'
 	want = 'obj '
 
 items = item
 item._superclassnames = []
 item._privpropdict = {
-	'name' : name,
-	'index' : index,
-	'id' : id,
+	'bounds' : bounds,
+	'comment' : comment,
 	'container' : container,
+	'content_space' : content_space,
+	'creation_date' : creation_date,
+	'description' : description,
 	'disk' : disk,
 	'folder' : folder,
-	'position' : position,
-	'bounds' : bounds,
-	'label_index' : label_index,
-	'kind' : kind,
-	'description' : description,
-	'comment' : comment,
-	'size' : size,
-	'physical_size' : physical_size,
-	'creation_date' : creation_date,
-	'modification_date' : modification_date,
 	'icon' : icon,
-	'selected' : selected,
-	'content_space' : content_space,
-	'window' : window,
+	'id' : id,
+	'index' : index,
 	'information_window' : information_window,
+	'kind' : kind,
+	'label_index' : label_index,
+	'modification_date' : modification_date,
+	'name' : name,
+	'physical_size' : physical_size,
+	'position' : position,
+	'selected' : selected,
+	'size' : size,
+	'window' : window,
 }
 item._privelemdict = {
 }
@@ -310,27 +310,27 @@ _classdeclarations = {
 }
 
 _propdeclarations = {
-	'posn' : position,
-	'kind' : kind,
-	'ptsz' : size,
-	'phys' : physical_size,
-	'dwnd' : content_space,
-	'pbnd' : bounds,
-	'issl' : selected,
-	'labi' : label_index,
-	'dscr' : description,
+	'ID  ' : id,
+	'ascd' : creation_date,
+	'asdr' : folder,
+	'asmo' : modification_date,
+	'cdis' : disk,
 	'comt' : comment,
 	'ctnr' : container,
-	'pidx' : index,
-	'iimg' : icon,
-	'ID  ' : id,
 	'cwin' : window,
-	'pnam' : name,
-	'ascd' : creation_date,
-	'cdis' : disk,
-	'asmo' : modification_date,
-	'asdr' : folder,
+	'dscr' : description,
+	'dwnd' : content_space,
+	'iimg' : icon,
+	'issl' : selected,
 	'iwnd' : information_window,
+	'kind' : kind,
+	'labi' : label_index,
+	'pbnd' : bounds,
+	'phys' : physical_size,
+	'pidx' : index,
+	'pnam' : name,
+	'posn' : position,
+	'ptsz' : size,
 }
 
 _compdeclarations = {

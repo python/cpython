@@ -863,58 +863,58 @@ class app(aetools.ComponentItem):
 	want = 'capp'
 
 application = app
-class result(aetools.NProperty):
-	"""result - the last result of evaluation """
-	which = 'rslt'
-	want = '****'
-class space(aetools.NProperty):
-	"""space - a space character """
-	which = 'spac'
-	want = 'cha '
-class return_(aetools.NProperty):
-	"""return - a return character """
-	which = 'ret '
-	want = 'cha '
-class tab(aetools.NProperty):
-	"""tab - a tab character """
-	which = 'tab '
-	want = 'cha '
-class minutes(aetools.NProperty):
-	"""minutes - the number of seconds in a minute """
-	which = 'min '
+class AppleScript(aetools.NProperty):
+	"""AppleScript - the top-level script object """
+	which = 'ascr'
+	want = 'scpt'
+class days(aetools.NProperty):
+	"""days - the number of seconds in a day """
+	which = 'days'
 	want = 'long'
 class hours(aetools.NProperty):
 	"""hours - the number of seconds in an hour """
 	which = 'hour'
 	want = 'long'
-class days(aetools.NProperty):
-	"""days - the number of seconds in a day """
-	which = 'days'
-	want = 'long'
-class weeks(aetools.NProperty):
-	"""weeks - the number of seconds in a week """
-	which = 'week'
+class minutes(aetools.NProperty):
+	"""minutes - the number of seconds in a minute """
+	which = 'min '
 	want = 'long'
 class pi(aetools.NProperty):
 	"""pi - the constant pi """
 	which = 'pi  '
 	want = 'doub'
-class print_length(aetools.NProperty):
-	"""print length - the maximum length to print """
-	which = 'prln'
-	want = 'long'
 class print_depth(aetools.NProperty):
 	"""print depth - the maximum depth to print """
 	which = 'prdp'
 	want = 'long'
+class print_length(aetools.NProperty):
+	"""print length - the maximum length to print """
+	which = 'prln'
+	want = 'long'
+class result(aetools.NProperty):
+	"""result - the last result of evaluation """
+	which = 'rslt'
+	want = '****'
+class return_(aetools.NProperty):
+	"""return - a return character """
+	which = 'ret '
+	want = 'cha '
+class space(aetools.NProperty):
+	"""space - a space character """
+	which = 'spac'
+	want = 'cha '
+class tab(aetools.NProperty):
+	"""tab - a tab character """
+	which = 'tab '
+	want = 'cha '
 class text_item_delimiters(aetools.NProperty):
 	"""text item delimiters - the text item delimiters of a string """
 	which = 'txdl'
 	want = 'list'
-class AppleScript(aetools.NProperty):
-	"""AppleScript - the top-level script object """
-	which = 'ascr'
-	want = 'scpt'
+class weeks(aetools.NProperty):
+	"""weeks - the number of seconds in a week """
+	which = 'week'
+	want = 'long'
 
 applications = app
 
@@ -983,34 +983,34 @@ class data(aetools.ComponentItem):
 class date(aetools.ComponentItem):
 	"""date - Absolute date and time values """
 	want = 'ldt '
-class weekday(aetools.NProperty):
-	"""weekday - the day of a week of a date """
-	which = 'wkdy'
-	want = 'wkdy'
-class month(aetools.NProperty):
-	"""month - the month of a date """
-	which = 'mnth'
-	want = 'mnth'
-class day(aetools.NProperty):
-	"""day - the day of the month of a date """
-	which = 'day '
-	want = 'long'
-class year(aetools.NProperty):
-	"""year - the year of a date """
-	which = 'year'
-	want = 'long'
-class time(aetools.NProperty):
-	"""time - the time since midnight of a date """
-	which = 'time'
-	want = 'long'
 class date_string(aetools.NProperty):
 	"""date string - the date portion of a date-time value as text """
 	which = 'dstr'
 	want = 'TEXT'
+class day(aetools.NProperty):
+	"""day - the day of the month of a date """
+	which = 'day '
+	want = 'long'
+class month(aetools.NProperty):
+	"""month - the month of a date """
+	which = 'mnth'
+	want = 'mnth'
+class time(aetools.NProperty):
+	"""time - the time since midnight of a date """
+	which = 'time'
+	want = 'long'
 class time_string(aetools.NProperty):
 	"""time string - the time portion of a date-time value as text """
 	which = 'tstr'
 	want = 'TEXT'
+class weekday(aetools.NProperty):
+	"""weekday - the day of a week of a date """
+	which = 'wkdy'
+	want = 'wkdy'
+class year(aetools.NProperty):
+	"""year - the year of a date """
+	which = 'year'
+	want = 'long'
 
 dates = date
 
@@ -1095,14 +1095,14 @@ class key(aetools.NProperty):
 	"""key - the character for the key was pressed (ignoring modifiers) """
 	which = 'kMsg'
 	want = 'cha '
-class modifiers(aetools.NProperty):
-	"""modifiers - the modifier keys pressed in combination """
-	which = 'kMod'
-	want = 'eMds'
 class key_kind(aetools.NProperty):
 	"""key kind - the kind of key that was pressed """
 	which = 'kknd'
 	want = 'ekst'
+class modifiers(aetools.NProperty):
+	"""modifiers - the modifier keys pressed in combination """
+	which = 'kMod'
+	want = 'eMds'
 
 keystrokes = keystroke
 
@@ -1129,13 +1129,13 @@ linked_lists = linked_list
 class list(aetools.ComponentItem):
 	"""list - An ordered collection of items """
 	want = 'list'
-class reverse(aetools.NProperty):
-	"""reverse - the items of the list in reverse order """
-	which = 'rvse'
-	want = 'list'
 class rest(aetools.NProperty):
 	"""rest - all items of the list excluding first """
 	which = 'rest'
+	want = 'list'
+class reverse(aetools.NProperty):
+	"""reverse - the items of the list in reverse order """
+	which = 'rvse'
 	want = 'list'
 
 class list_or_record(aetools.ComponentItem):
@@ -1371,13 +1371,13 @@ class writing_code(aetools.ComponentItem):
 class writing_code_info(aetools.ComponentItem):
 	"""writing code info - script code and language code of text run """
 	want = 'citl'
-class script_code(aetools.NProperty):
-	"""script code - the script code for the text """
-	which = 'pscd'
-	want = 'shor'
 class language_code(aetools.NProperty):
 	"""language code - the language code for the text """
 	which = 'plcd'
+	want = 'shor'
+class script_code(aetools.NProperty):
+	"""script code - the script code for the text """
+	which = 'pscd'
 	want = 'shor'
 
 writing_code_infos = writing_code_info
@@ -1594,13 +1594,13 @@ data._privelemdict = {
 }
 date._superclassnames = []
 date._privpropdict = {
-	'weekday' : weekday,
-	'month' : month,
-	'day' : day,
-	'year' : year,
-	'time' : time,
 	'date_string' : date_string,
+	'day' : day,
+	'month' : month,
+	'time' : time,
 	'time_string' : time_string,
+	'weekday' : weekday,
+	'year' : year,
 }
 date._privelemdict = {
 }
@@ -1683,8 +1683,8 @@ item._privelemdict = {
 keystroke._superclassnames = []
 keystroke._privpropdict = {
 	'key' : key,
-	'modifiers' : modifiers,
 	'key_kind' : key_kind,
+	'modifiers' : modifiers,
 }
 keystroke._privelemdict = {
 }
@@ -1707,8 +1707,8 @@ linked_list._privelemdict = {
 list._superclassnames = []
 list._privpropdict = {
 	'length' : length,
-	'reverse' : reverse,
 	'rest' : rest,
+	'reverse' : reverse,
 }
 list._privelemdict = {
 }
@@ -1947,8 +1947,8 @@ writing_code._privelemdict = {
 }
 writing_code_info._superclassnames = []
 writing_code_info._privpropdict = {
-	'script_code' : script_code,
 	'language_code' : language_code,
+	'script_code' : script_code,
 }
 writing_code_info._privelemdict = {
 }
@@ -2028,155 +2028,155 @@ _Enum_misc = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'jul ' : July,
-	'may ' : May,
-	'TEXT' : string,
-	'cmet' : cubic_meters,
-	'STXT' : styled_text,
-	'nds ' : number_2c__date_or_text,
-	'feet' : feet,
-	'feb ' : February,
-	'degc' : degrees_Celsius,
-	'kprs' : keystroke,
-	'psct' : writing_code,
-	'degf' : degrees_Fahrenheit,
-	'lrs ' : list_2c__record_or_text,
-	'ldt ' : date,
-	'degk' : degrees_Kelvin,
-	'sun ' : Sunday,
-	'oct ' : October,
-	'evnt' : event,
-	'pstr' : Pascal_string,
-	'cyrd' : cubic_yards,
+	'****' : anything,
 	'PICT' : picture,
-	'ls  ' : list_or_string,
-	'long' : integer,
-	'prop' : properties,
-	'nmbr' : number,
+	'STXT' : styled_text,
+	'TEXT' : string,
+	'alis' : alias,
+	'apr ' : April,
+	'aug ' : August,
+	'bool' : boolean,
+	'cRGB' : RGB_color,
+	'capp' : app,
+	'case' : upper_case,
+	'ccmt' : cubic_centimeters,
+	'cfet' : cubic_feet,
+	'cha ' : character,
 	'citl' : writing_code_info,
 	'citm' : text_item,
-	'apr ' : April,
-	'thu ' : Thursday,
-	'type' : type_class,
-	'prep' : preposition,
-	'tue ' : Tuesday,
-	'case' : upper_case,
-	'vers' : version,
-	'wed ' : Wednesday,
-	'capp' : app,
-	'sqkm' : square_kilometers,
-	'obj ' : reference,
-	'vect' : vector,
-	'wkdy' : weekday,
-	'cRGB' : RGB_color,
-	'nd  ' : number_or_date,
-	'itxt' : international_text,
-	'scnd' : seconds,
-	'mar ' : March,
-	'kmtr' : kilometers,
-	'sqft' : square_feet,
-	'list' : list,
-	'styl' : styled_Clipboard_text,
-	'nov ' : November,
-	'qrts' : quarts,
-	'mile' : miles,
-	'msng' : missing_value,
-	'alis' : alias,
-	'jan ' : January,
-	'metr' : meters,
-	'mnth' : month,
-	'ns  ' : number_or_string,
-	'jun ' : June,
-	'aug ' : August,
-	'llst' : linked_list,
+	'cmet' : cubic_meters,
+	'cmtr' : centimeters,
+	'cobj' : item,
+	'cstr' : C_string,
+	'ctxt' : text,
+	'cuin' : cubic_inches,
+	'cyrd' : cubic_yards,
+	'dec ' : December,
+	'degc' : degrees_Celsius,
+	'degf' : degrees_Fahrenheit,
+	'degk' : degrees_Kelvin,
 	'doub' : real,
 	'encs' : encoded_string,
-	'galn' : gallons,
-	'cuin' : cubic_inches,
-	'fri ' : Friday,
-	'sf  ' : alias_or_string,
-	'lr  ' : list_or_record,
-	'mon ' : Monday,
-	'snd ' : sound,
-	'sep ' : September,
-	'kgrm' : kilograms,
-	'scpt' : script,
-	'****' : anything,
-	'litr' : liters,
-	'bool' : boolean,
-	'cmtr' : centimeters,
-	'sqrm' : square_meters,
-	'inch' : inches,
-	'zone' : zone,
-	'kfrm' : reference_form,
-	'cobj' : item,
-	'gram' : grams,
-	'cha ' : character,
-	'reco' : record,
-	'undf' : empty_ae_name_,
-	'dec ' : December,
 	'enum' : constant,
-	'hand' : handler,
-	'sqmi' : square_miles,
-	'rdat' : data,
-	'cstr' : C_string,
-	'utxt' : Unicode_text,
-	'sutx' : styled_Unicode_text,
-	'mach' : machine,
-	'sqyd' : square_yards,
-	'yard' : yards,
-	'ozs ' : ounces,
-	'lbs ' : pounds,
-	'cfet' : cubic_feet,
-	'ccmt' : cubic_centimeters,
-	'sat ' : Saturday,
-	'pcls' : class_,
+	'evnt' : event,
+	'feb ' : February,
+	'feet' : feet,
+	'fri ' : Friday,
 	'fss ' : file_specification,
-	'ctxt' : text,
+	'galn' : gallons,
+	'gram' : grams,
+	'hand' : handler,
+	'inch' : inches,
+	'itxt' : international_text,
+	'jan ' : January,
+	'jul ' : July,
+	'jun ' : June,
+	'kfrm' : reference_form,
+	'kgrm' : kilograms,
+	'kmtr' : kilometers,
+	'kprs' : keystroke,
+	'lbs ' : pounds,
+	'ldt ' : date,
+	'list' : list,
+	'litr' : liters,
+	'llst' : linked_list,
+	'long' : integer,
+	'lr  ' : list_or_record,
+	'lrs ' : list_2c__record_or_text,
+	'ls  ' : list_or_string,
+	'mach' : machine,
+	'mar ' : March,
+	'may ' : May,
+	'metr' : meters,
+	'mile' : miles,
+	'mnth' : month,
+	'mon ' : Monday,
+	'msng' : missing_value,
+	'nd  ' : number_or_date,
+	'nds ' : number_2c__date_or_text,
+	'nmbr' : number,
+	'nov ' : November,
+	'ns  ' : number_or_string,
+	'obj ' : reference,
+	'oct ' : October,
+	'ozs ' : ounces,
+	'pcls' : class_,
+	'prep' : preposition,
+	'prop' : properties,
+	'psct' : writing_code,
+	'pstr' : Pascal_string,
+	'qrts' : quarts,
+	'rdat' : data,
+	'reco' : record,
+	'sat ' : Saturday,
+	'scnd' : seconds,
+	'scpt' : script,
+	'sep ' : September,
+	'sf  ' : alias_or_string,
+	'snd ' : sound,
+	'sqft' : square_feet,
+	'sqkm' : square_kilometers,
+	'sqmi' : square_miles,
+	'sqrm' : square_meters,
+	'sqyd' : square_yards,
+	'styl' : styled_Clipboard_text,
+	'sun ' : Sunday,
+	'sutx' : styled_Unicode_text,
+	'thu ' : Thursday,
+	'tue ' : Tuesday,
+	'type' : type_class,
+	'undf' : empty_ae_name_,
+	'utxt' : Unicode_text,
+	'vect' : vector,
+	'vers' : version,
+	'wed ' : Wednesday,
+	'wkdy' : weekday,
+	'yard' : yards,
+	'zone' : zone,
 }
 
 _propdeclarations = {
-	'week' : weeks,
+	'ID  ' : id,
+	'ascr' : AppleScript,
+	'c@#^' : _3c_Inheritance_3e_,
+	'day ' : day,
+	'days' : days,
+	'dstr' : date_string,
+	'hour' : hours,
+	'kMod' : modifiers,
+	'kMsg' : key,
+	'kknd' : key_kind,
+	'leng' : length,
+	'min ' : minutes,
 	'mnth' : month,
 	'pare' : parent,
-	'leng' : length,
 	'pi  ' : pi,
-	'kMod' : modifiers,
-	'min ' : minutes,
-	'wkdy' : weekday,
-	'dstr' : date_string,
-	'rest' : rest,
-	'ascr' : AppleScript,
-	'kknd' : key_kind,
-	'c@#^' : _3c_Inheritance_3e_,
-	'ID  ' : id,
-	'year' : year,
-	'rvse' : reverse,
-	'tab ' : tab,
-	'tstr' : time_string,
 	'plcd' : language_code,
-	'ret ' : return_,
-	'kMsg' : key,
-	'hour' : hours,
-	'spac' : space,
-	'days' : days,
-	'txdl' : text_item_delimiters,
+	'pnam' : name,
 	'prdp' : print_depth,
 	'prln' : print_length,
 	'pscd' : script_code,
-	'time' : time,
-	'pnam' : name,
+	'rest' : rest,
+	'ret ' : return_,
 	'rslt' : result,
-	'day ' : day,
+	'rvse' : reverse,
+	'spac' : space,
+	'tab ' : tab,
+	'time' : time,
+	'tstr' : time_string,
+	'txdl' : text_item_delimiters,
+	'week' : weeks,
+	'wkdy' : weekday,
+	'year' : year,
 }
 
 _compdeclarations = {
 }
 
 _enumdeclarations = {
-	'eMds' : _Enum_eMds,
-	'cons' : _Enum_cons,
-	'misc' : _Enum_misc,
-	'ekst' : _Enum_ekst,
 	'boov' : _Enum_boov,
+	'cons' : _Enum_cons,
+	'eMds' : _Enum_eMds,
+	'ekst' : _Enum_ekst,
+	'misc' : _Enum_misc,
 }

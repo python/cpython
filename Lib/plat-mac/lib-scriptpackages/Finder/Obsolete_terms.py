@@ -89,17 +89,17 @@ class sharing_window(aetools.NProperty):
 class sharing_window(aetools.ComponentItem):
 	"""sharing window - A sharing window (opened by \xd2Sharing\xc9\xd3) """
 	want = 'swnd'
-class sharable_container(aetools.NProperty):
-	"""sharable container - the sharable container from which the window was opened """
-	which = 'sctr'
+class container(aetools.NProperty):
+	"""container - the container from which this window was opened """
+	which = 'ctnr'
 	want = 'obj '
 class item(aetools.NProperty):
 	"""item - the item from which this window was opened """
 	which = 'cobj'
 	want = 'obj '
-class container(aetools.NProperty):
-	"""container - the container from which this window was opened """
-	which = 'ctnr'
+class sharable_container(aetools.NProperty):
+	"""sharable container - the sharable container from which the window was opened """
+	which = 'sctr'
 	want = 'obj '
 
 sharing_windows = sharing_window
@@ -169,10 +169,10 @@ sharable_container._privelemdict = {
 }
 sharing_window._superclassnames = []
 sharing_window._privpropdict = {
-	'sharable_container' : sharable_container,
-	'item' : item,
 	'container' : container,
 	'folder_obsolete' : folder_obsolete,
+	'item' : item,
+	'sharable_container' : sharable_container,
 }
 sharing_window._privelemdict = {
 }
@@ -186,31 +186,31 @@ status_window._privelemdict = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'qwnd' : status_window,
 	'capp' : application,
-	'swnd' : sharing_window,
 	'ccdv' : control_panel,
-	'prcs' : process,
 	'cobj' : item,
-	'file' : file,
-	'sctr' : sharable_container,
-	'cwnd' : container_window,
 	'ctnr' : container,
+	'cwnd' : container_window,
+	'file' : file,
 	'iwnd' : information_window,
+	'prcs' : process,
+	'qwnd' : status_window,
+	'sctr' : sharable_container,
+	'swnd' : sharing_window,
 }
 
 _propdeclarations = {
-	'fitp' : file_type_obsolete,
-	'swnd' : sharing_window,
 	'cfol' : folder_obsolete,
+	'cobj' : item,
 	'crtd' : creation_date_obsolete,
+	'ctnr' : container,
+	'cwnd' : container_window,
+	'fitp' : file_type_obsolete,
 	'islk' : locked_obsolete,
 	'modd' : modification_date_obsolete,
-	'sctr' : sharable_container,
 	'pvwp' : view_preferences,
-	'cwnd' : container_window,
-	'ctnr' : container,
-	'cobj' : item,
+	'sctr' : sharable_container,
+	'swnd' : sharing_window,
 }
 
 _compdeclarations = {

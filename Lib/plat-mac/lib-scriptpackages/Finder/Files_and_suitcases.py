@@ -32,18 +32,6 @@ alias_files = alias_file
 class application_file(aetools.ComponentItem):
 	"""application file - An application's file on disk """
 	want = 'appf'
-class suggested_size(aetools.NProperty):
-	"""suggested size - the memory size with which the developer recommends the application be launched """
-	which = 'sprt'
-	want = 'long'
-class minimum_size(aetools.NProperty):
-	"""minimum size - the smallest memory size with which the application can be launched """
-	which = 'mprt'
-	want = 'long'
-class preferred_size(aetools.NProperty):
-	"""preferred size - the memory size with which the application will be launched """
-	which = 'appt'
-	want = 'long'
 class accepts_high_level_events(aetools.NProperty):
 	"""accepts high level events - Is the application high-level event aware? """
 	which = 'isab'
@@ -52,6 +40,18 @@ class has_scripting_terminology(aetools.NProperty):
 	"""has scripting terminology - Does the process have a scripting terminology, i.e., can it be scripted? """
 	which = 'hscr'
 	want = 'bool'
+class minimum_size(aetools.NProperty):
+	"""minimum size - the smallest memory size with which the application can be launched """
+	which = 'mprt'
+	want = 'long'
+class preferred_size(aetools.NProperty):
+	"""preferred size - the memory size with which the application will be launched """
+	which = 'appt'
+	want = 'long'
+class suggested_size(aetools.NProperty):
+	"""suggested size - the memory size with which the developer recommends the application be launched """
+	which = 'sprt'
+	want = 'long'
 
 application_files = application_file
 
@@ -83,26 +83,26 @@ document_files = document_file
 class file(aetools.ComponentItem):
 	"""file - A file """
 	want = 'file'
-class file_type(aetools.NProperty):
-	"""file type - the OSType identifying the type of data contained in the item """
-	which = 'asty'
-	want = 'type'
 class creator_type(aetools.NProperty):
 	"""creator type - the OSType identifying the application that created the item """
 	which = 'fcrt'
+	want = 'type'
+class file_type(aetools.NProperty):
+	"""file type - the OSType identifying the type of data contained in the item """
+	which = 'asty'
 	want = 'type'
 class locked(aetools.NProperty):
 	"""locked - Is the file locked? """
 	which = 'aslk'
 	want = 'bool'
-class stationery(aetools.NProperty):
-	"""stationery - Is the file a stationery pad? """
-	which = 'pspd'
-	want = 'bool'
 class product_version(aetools.NProperty):
 	"""product version - the version of the product (visible at the top of the \xd2Get Info\xd3 window) """
 	which = 'ver2'
 	want = 'itxt'
+class stationery(aetools.NProperty):
+	"""stationery - Is the file a stationery pad? """
+	which = 'pspd'
+	want = 'bool'
 class version(aetools.NProperty):
 	"""version - the version of the file (visible at the bottom of the \xd2Get Info\xd3 window) """
 	which = 'vers'
@@ -165,11 +165,11 @@ alias_file._privelemdict = {
 application_file._superclassnames = ['file']
 application_file._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'suggested_size' : suggested_size,
-	'minimum_size' : minimum_size,
-	'preferred_size' : preferred_size,
 	'accepts_high_level_events' : accepts_high_level_events,
 	'has_scripting_terminology' : has_scripting_terminology,
+	'minimum_size' : minimum_size,
+	'preferred_size' : preferred_size,
+	'suggested_size' : suggested_size,
 }
 application_file._privelemdict = {
 }
@@ -202,11 +202,11 @@ document_file._privelemdict = {
 file._superclassnames = ['item']
 file._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'file_type' : file_type,
 	'creator_type' : creator_type,
+	'file_type' : file_type,
 	'locked' : locked,
-	'stationery' : stationery,
 	'product_version' : product_version,
+	'stationery' : stationery,
 	'version' : version,
 }
 file._privelemdict = {
@@ -256,37 +256,37 @@ suitcase._privelemdict = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'sndf' : sound_file,
-	'fntf' : font_file,
-	'stcs' : suitcase,
-	'clpf' : clipping,
-	'dsut' : desk_accessory_suitcase,
 	'alia' : alias_file,
-	'dafi' : desk_accessory_file,
-	'fsut' : font_suitcase,
-	'file' : file,
 	'appf' : application_file,
-	'inlf' : internet_location_file,
+	'clpf' : clipping,
+	'dafi' : desk_accessory_file,
 	'docf' : document_file,
+	'dsut' : desk_accessory_suitcase,
+	'file' : file,
+	'fntf' : font_file,
+	'fsut' : font_suitcase,
+	'inlf' : internet_location_file,
 	'pack' : package,
+	'sndf' : sound_file,
+	'stcs' : suitcase,
 }
 
 _propdeclarations = {
-	'ver2' : product_version,
-	'vers' : version,
 	'appt' : preferred_size,
-	'snd ' : sound,
-	'pspd' : stationery,
-	'sprt' : suggested_size,
-	'isab' : accepts_high_level_events,
-	'hscr' : has_scripting_terminology,
+	'aslk' : locked,
 	'asty' : file_type,
 	'c@#^' : _3c_Inheritance_3e_,
 	'fcrt' : creator_type,
-	'mprt' : minimum_size,
+	'hscr' : has_scripting_terminology,
 	'iloc' : location,
-	'aslk' : locked,
+	'isab' : accepts_high_level_events,
+	'mprt' : minimum_size,
 	'orig' : original_item,
+	'pspd' : stationery,
+	'snd ' : sound,
+	'sprt' : suggested_size,
+	'ver2' : product_version,
+	'vers' : version,
 }
 
 _compdeclarations = {

@@ -264,6 +264,6 @@ _compdeclarations = {
 
 _enumdeclarations = {
 	'comp' : _Enum_comp,
-	'ncmd' : _Enum_ncmd,
 	'dire' : _Enum_dire,
+	'ncmd' : _Enum_ncmd,
 }

@@ -56,14 +56,14 @@ graphic_group._privelemdict = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'cpic' : graphic_group,
 	'cdrw' : drawing_area,
+	'cpic' : graphic_group,
 }
 
 _propdeclarations = {
 	'prot' : rotation,
-	'ptrs' : translation,
 	'pscl' : scale,
+	'ptrs' : translation,
 }
 
 _compdeclarations = {

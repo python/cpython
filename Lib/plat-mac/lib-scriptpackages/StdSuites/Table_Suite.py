@@ -86,13 +86,13 @@ _Enum_prtn = {
 _classdeclarations = {
 	'ccel' : cell,
 	'ccol' : column,
-	'ctbl' : table,
 	'crow' : row,
+	'ctbl' : table,
 }
 
 _propdeclarations = {
-	'pnam' : name,
 	'pfor' : formula,
+	'pnam' : name,
 	'ppro' : protection,
 }
 

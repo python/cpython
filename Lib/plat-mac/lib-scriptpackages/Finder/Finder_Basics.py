@@ -144,53 +144,17 @@ class Finder_Basics_Events:
 class application(aetools.ComponentItem):
 	"""application - The Finder """
 	want = 'capp'
-class clipboard(aetools.NProperty):
-	"""clipboard - the Finder\xd5s clipboard window """
-	which = 'pcli'
-	want = 'obj '
-class largest_free_block(aetools.NProperty):
-	"""largest free block - the largest free block of process memory available to launch an application """
-	which = 'mfre'
-	want = 'long'
-class name(aetools.NProperty):
-	"""name - the Finder\xd5s name """
-	which = 'pnam'
-	want = 'itxt'
-class visible(aetools.NProperty):
-	"""visible - Is the Finder\xd5s layer visible? """
-	which = 'pvis'
-	want = 'bool'
-class frontmost(aetools.NProperty):
-	"""frontmost - Is the Finder the frontmost process? """
-	which = 'pisf'
-	want = 'bool'
-class selection(aetools.NProperty):
-	"""selection - the selection visible to the user """
-	which = 'sele'
-	want = 'obj '
-class insertion_location(aetools.NProperty):
-	"""insertion location - the container in which a new folder would appear if \xd2New Folder\xd3 was selected """
-	which = 'pins'
-	want = 'obj '
-class file_sharing(aetools.NProperty):
-	"""file sharing - Is file sharing on? """
-	which = 'fshr'
-	want = 'bool'
-class sharing_starting_up(aetools.NProperty):
-	"""sharing starting up - Is file sharing in the process of starting up? """
-	which = 'fsup'
-	want = 'bool'
-class product_version(aetools.NProperty):
-	"""product version - the version of the System software running on this computer """
-	which = 'ver2'
-	want = 'itxt'
-class version(aetools.NProperty):
-	"""version - the version of the Finder """
-	which = 'vers'
-	want = 'itxt'
+class Finder_preferences(aetools.NProperty):
+	"""Finder preferences - Various preferences that apply to the Finder as a whole """
+	which = 'pfrp'
+	want = 'cprf'
 class about_this_computer(aetools.NProperty):
 	"""about this computer - the \xd2About this Computer\xd3 dialog and the list of running processes displayed in it """
 	which = 'abbx'
+	want = 'obj '
+class clipboard(aetools.NProperty):
+	"""clipboard - the Finder\xd5s clipboard window """
+	which = 'pcli'
 	want = 'obj '
 class desktop(aetools.NProperty):
 	"""desktop - the desktop """
@@ -200,45 +164,77 @@ class execution_state(aetools.NProperty):
 	"""execution state - the current execution state of the Finder """
 	which = 'exec'
 	want = 'ese0'
-class Finder_preferences(aetools.NProperty):
-	"""Finder preferences - Various preferences that apply to the Finder as a whole """
-	which = 'pfrp'
-	want = 'cprf'
-#        element 'cobj' as ['indx', 'name']
-#        element 'ctnr' as ['indx', 'name']
-#        element 'sctr' as ['indx', 'name']
-#        element 'cdis' as ['indx', 'name', 'ID  ']
-#        element 'cfol' as ['indx', 'name', 'ID  ']
-#        element 'file' as ['indx', 'name']
+class file_sharing(aetools.NProperty):
+	"""file sharing - Is file sharing on? """
+	which = 'fshr'
+	want = 'bool'
+class frontmost(aetools.NProperty):
+	"""frontmost - Is the Finder the frontmost process? """
+	which = 'pisf'
+	want = 'bool'
+class insertion_location(aetools.NProperty):
+	"""insertion location - the container in which a new folder would appear if \xd2New Folder\xd3 was selected """
+	which = 'pins'
+	want = 'obj '
+class largest_free_block(aetools.NProperty):
+	"""largest free block - the largest free block of process memory available to launch an application """
+	which = 'mfre'
+	want = 'long'
+class name(aetools.NProperty):
+	"""name - the Finder\xd5s name """
+	which = 'pnam'
+	want = 'itxt'
+class product_version(aetools.NProperty):
+	"""product version - the version of the System software running on this computer """
+	which = 'ver2'
+	want = 'itxt'
+class selection(aetools.NProperty):
+	"""selection - the selection visible to the user """
+	which = 'sele'
+	want = 'obj '
+class sharing_starting_up(aetools.NProperty):
+	"""sharing starting up - Is file sharing in the process of starting up? """
+	which = 'fsup'
+	want = 'bool'
+class version(aetools.NProperty):
+	"""version - the version of the Finder """
+	which = 'vers'
+	want = 'itxt'
+class visible(aetools.NProperty):
+	"""visible - Is the Finder\xd5s layer visible? """
+	which = 'pvis'
+	want = 'bool'
 #        element 'alia' as ['indx', 'name']
 #        element 'appf' as ['indx', 'name', 'ID  ']
-#        element 'docf' as ['indx', 'name']
-#        element 'fntf' as ['indx', 'name']
-#        element 'dafi' as ['indx', 'name']
-#        element 'inlf' as ['indx', 'name']
-#        element 'sndf' as ['indx', 'name']
+#        element 'cdis' as ['indx', 'name', 'ID  ']
+#        element 'cfol' as ['indx', 'name', 'ID  ']
 #        element 'clpf' as ['indx', 'name']
-#        element 'pack' as ['indx', 'name']
-#        element 'stcs' as ['indx', 'name']
-#        element 'fsut' as ['indx', 'name']
-#        element 'dsut' as ['indx', 'name']
-#        element 'prcs' as ['indx', 'name']
-#        element 'pcap' as ['indx', 'name']
-#        element 'pcda' as ['indx', 'name']
+#        element 'cobj' as ['indx', 'name']
+#        element 'ctnr' as ['indx', 'name']
 #        element 'cwin' as ['indx', 'name']
 #        element 'cwnd' as ['indx', 'name']
-#        element 'iwnd' as ['indx', 'name']
-#        element 'vwnd' as ['indx', 'name']
-#        element 'lwnd' as ['indx', 'name']
+#        element 'dafi' as ['indx', 'name']
+#        element 'docf' as ['indx', 'name']
+#        element 'dsut' as ['indx', 'name']
 #        element 'dwnd' as ['indx', 'name']
+#        element 'file' as ['indx', 'name']
+#        element 'fntf' as ['indx', 'name']
+#        element 'fsut' as ['indx', 'name']
+#        element 'inlf' as ['indx', 'name']
+#        element 'iwnd' as ['indx', 'name']
+#        element 'lwnd' as ['indx', 'name']
+#        element 'pack' as ['indx', 'name']
+#        element 'pcap' as ['indx', 'name']
+#        element 'pcda' as ['indx', 'name']
+#        element 'prcs' as ['indx', 'name']
+#        element 'sctr' as ['indx', 'name']
+#        element 'sndf' as ['indx', 'name']
+#        element 'stcs' as ['indx', 'name']
+#        element 'vwnd' as ['indx', 'name']
 
 class special_folders(aetools.ComponentItem):
 	"""special folders - The special folders used by the Mac OS """
 	want = 'spfl'
-class system_folder(aetools.NProperty):
-	"""system folder - the System folder """
-	which = 'macs'
-	want = 'obj '
 class apple_menu_items_folder(aetools.NProperty):
 	"""apple menu items folder - the special folder named \xd2Apple Menu Items,\xd3 the contents of which appear in the Apple menu """
 	which = 'amnu'
@@ -267,65 +263,68 @@ class startup_items_folder(aetools.NProperty):
 	"""startup items folder - the special folder named \xd2Startup Items\xd3 """
 	which = 'strt'
 	want = 'obj '
+class system_folder(aetools.NProperty):
+	"""system folder - the System folder """
+	which = 'macs'
+	want = 'obj '
 class temporary_items_folder(aetools.NProperty):
 	"""temporary items folder - the special folder named \xd2Temporary Items\xd3 (invisible) """
 	which = 'temp'
 	want = 'obj '
 application._superclassnames = []
-import Earlier_terms
-import Containers_and_folders
 import Files_and_suitcases
-import Process_classes
+import Containers_and_folders
+import Earlier_terms
 import Window_classes
+import Process_classes
 application._privpropdict = {
-	'clipboard' : clipboard,
-	'largest_free_block' : largest_free_block,
-	'name' : name,
-	'visible' : visible,
-	'frontmost' : frontmost,
-	'selection' : selection,
-	'insertion_location' : insertion_location,
-	'file_sharing' : file_sharing,
-	'sharing_starting_up' : sharing_starting_up,
-	'product_version' : product_version,
-	'version' : version,
+	'Finder_preferences' : Finder_preferences,
 	'about_this_computer' : about_this_computer,
+	'clipboard' : clipboard,
 	'desktop' : desktop,
 	'execution_state' : execution_state,
-	'Finder_preferences' : Finder_preferences,
+	'file_sharing' : file_sharing,
+	'frontmost' : frontmost,
+	'insertion_location' : insertion_location,
+	'largest_free_block' : largest_free_block,
+	'name' : name,
+	'product_version' : product_version,
+	'selection' : selection,
+	'sharing_starting_up' : sharing_starting_up,
+	'version' : version,
+	'visible' : visible,
 }
 application._privelemdict = {
-	'item' : Earlier_terms.item,
-	'container' : Containers_and_folders.container,
-	'sharable_container' : Earlier_terms.sharable_container,
-	'disk' : Containers_and_folders.disk,
-	'folder' : Containers_and_folders.folder,
-	'file' : Files_and_suitcases.file,
-	'alias_file' : Files_and_suitcases.alias_file,
-	'application_file' : Earlier_terms.application_file,
-	'document_file' : Files_and_suitcases.document_file,
-	'font_file' : Files_and_suitcases.font_file,
-	'desk_accessory_file' : Files_and_suitcases.desk_accessory_file,
-	'internet_location' : Earlier_terms.internet_location,
-	'sound_file' : Files_and_suitcases.sound_file,
-	'clipping' : Files_and_suitcases.clipping,
-	'package' : Files_and_suitcases.package,
-	'suitcase' : Files_and_suitcases.suitcase,
-	'font_suitcase' : Files_and_suitcases.font_suitcase,
-	'accessory_suitcase' : Earlier_terms.accessory_suitcase,
-	'process' : Earlier_terms.process,
-	'application_process' : Process_classes.application_process,
 	'accessory_process' : Earlier_terms.accessory_process,
-	'window' : Earlier_terms.window,
-	'container_window' : Earlier_terms.container_window,
-	'information_window' : Earlier_terms.information_window,
-	'view_options_window' : Window_classes.view_options_window,
+	'alias_file' : Files_and_suitcases.alias_file,
+	'application_file' : Files_and_suitcases.application_file,
+	'application_process' : Process_classes.application_process,
+	'clipping' : Files_and_suitcases.clipping,
 	'clipping_window' : Window_classes.clipping_window,
+	'container' : Containers_and_folders.container,
+	'container_window' : Earlier_terms.container_window,
 	'content_space' : Window_classes.content_space,
+	'desk_accessory_file' : Files_and_suitcases.desk_accessory_file,
+	'desk_accessory_suitcase' : Files_and_suitcases.desk_accessory_suitcase,
+	'disk' : Containers_and_folders.disk,
+	'document_file' : Files_and_suitcases.document_file,
+	'file' : Files_and_suitcases.file,
+	'folder' : Containers_and_folders.folder,
+	'font_file' : Files_and_suitcases.font_file,
+	'font_suitcase' : Files_and_suitcases.font_suitcase,
+	'information_window' : Earlier_terms.information_window,
+	'internet_location_file' : Files_and_suitcases.internet_location_file,
+	'item' : Earlier_terms.item,
+	'package' : Files_and_suitcases.package,
+	'process' : Earlier_terms.process,
+	'sharable_container' : Containers_and_folders.sharable_container,
+	'sound_file' : Files_and_suitcases.sound_file,
+	'suitcase' : Files_and_suitcases.suitcase,
+	'view_options_window' : Window_classes.view_options_window,
+	'window' : Earlier_terms.window,
 }
 special_folders._superclassnames = []
 special_folders._privpropdict = {
-	'system_folder' : system_folder,
 	'apple_menu_items_folder' : apple_menu_items_folder,
 	'control_panels_folder' : control_panels_folder,
 	'extensions_folder' : extensions_folder,
@@ -333,6 +332,7 @@ special_folders._privpropdict = {
 	'preferences_folder' : preferences_folder,
 	'shutdown_items_folder' : shutdown_items_folder,
 	'startup_items_folder' : startup_items_folder,
+	'system_folder' : system_folder,
 	'temporary_items_folder' : temporary_items_folder,
 }
 special_folders._privelemdict = {
@@ -347,30 +347,30 @@ _classdeclarations = {
 }
 
 _propdeclarations = {
-	'vers' : version,
-	'ver2' : product_version,
-	'pfrp' : Finder_preferences,
-	'exec' : execution_state,
-	'pins' : insertion_location,
-	'mfre' : largest_free_block,
-	'fsup' : sharing_starting_up,
-	'desk' : desktop,
-	'ctrl' : control_panels_folder,
-	'macs' : system_folder,
-	'font' : fonts_folder,
 	'abbx' : about_this_computer,
-	'shdf' : shutdown_items_folder,
-	'temp' : temporary_items_folder,
+	'amnu' : apple_menu_items_folder,
+	'ctrl' : control_panels_folder,
+	'desk' : desktop,
+	'exec' : execution_state,
+	'extn' : extensions_folder,
+	'font' : fonts_folder,
+	'fshr' : file_sharing,
+	'fsup' : sharing_starting_up,
+	'macs' : system_folder,
+	'mfre' : largest_free_block,
+	'pcli' : clipboard,
+	'pfrp' : Finder_preferences,
+	'pins' : insertion_location,
+	'pisf' : frontmost,
+	'pnam' : name,
+	'pref' : preferences_folder,
 	'pvis' : visible,
 	'sele' : selection,
-	'pisf' : frontmost,
-	'pref' : preferences_folder,
+	'shdf' : shutdown_items_folder,
 	'strt' : startup_items_folder,
-	'pcli' : clipboard,
-	'fshr' : file_sharing,
-	'pnam' : name,
-	'extn' : extensions_folder,
-	'amnu' : apple_menu_items_folder,
+	'temp' : temporary_items_folder,
+	'ver2' : product_version,
+	'vers' : version,
 }
 
 _compdeclarations = {
