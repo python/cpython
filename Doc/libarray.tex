@@ -84,8 +84,6 @@ are available, \exception{EOFError} is raised, but the items that were
 available are still inserted into the array.  \var{f} must be a real
 built-in file object; something else with a \code{read()} method won't
 do.
-
-Also available as the \method{read()} method.
 \end{funcdesc}
 
 \begin{funcdesc}{fromlist}{list}
@@ -106,14 +104,14 @@ Insert a new item with value \var{x} in the array before position
 \end{funcdesc}
 
 \begin{funcdesc}{read}{f\, n}
+\deprecated {1.5.1}
+  {Use the \method{fromfile()} method.}
 Read \var{n} items (as machine values) from the file object \var{f}
 and append them to the end of the array.  If less than \var{n} items
 are available, \exception{EOFError} is raised, but the items that were
 available are still inserted into the array.  \var{f} must be a real
 built-in file object; something else with a \method{read()} method won't
 do.
-
-Also available as the \method{fromfile()} method.
 \end{funcdesc}
 
 \begin{funcdesc}{reverse}{}
@@ -122,8 +120,6 @@ Reverse the order of the items in the array.
 
 \begin{funcdesc}{tofile}{f}
 Write all items (as machine values) to the file object \var{f}.
-
-Also available as the \function{write()} function.
 \end{funcdesc}
 
 \begin{funcdesc}{tolist}{}
@@ -137,9 +133,9 @@ be written to a file by the \method{tofile()} method.)
 \end{funcdesc}
 
 \begin{funcdesc}{write}{f}
+\deprecated {1.5.1}
+  {Use the \method{tofile()} method.}
 Write all items (as machine values) to the file object \var{f}.
-
-Also available as the \function{write()} function.
 \end{funcdesc}
 
 When an array object is printed or converted to a string, it is
