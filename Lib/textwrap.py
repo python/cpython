@@ -78,9 +78,10 @@ class TextWrapper:
     # splits into
     #   Hello/ /there/ /--/ /you/ /goof-/ball,/ /use/ /the/ /-b/ /option!
     # (after stripping out empty strings).
-    wordsep_re = re.compile(r'(\s+|'                  # any whitespace
-                            r'[^\s\w]*\w{2,}-(?=\w{2,})|' # hyphenated words
-                            r'(?<=[\w\!\"\'\&\.\,\?])-{2,}(?=\w))')   # em-dash
+    wordsep_re = re.compile(
+        r'(\s+|'                                  # any whitespace
+        r'[^\s\w]*\w+[a-zA-Z]-(?=\w+[a-zA-Z])|'   # hyphenated words
+        r'(?<=[\w\!\"\'\&\.\,\?])-{2,}(?=\w))')   # em-dash
 
     # XXX this is not locale- or charset-aware -- string.lowercase
     # is US-ASCII only (and therefore English-only)

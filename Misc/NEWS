@@ -206,6 +206,10 @@ Library
 - ``UserString.MutableString`` now supports negative indices in
   ``__setitem__`` and ``__delitem__``
 
+- Bug #1149508: ``textwrap`` now handles hyphenated numbers (eg. "2004-03-05")
+  correctly.
+
+
 Build
 -----
 
