@@ -70,8 +70,7 @@ class LogRecordStreamHandler(StreamRequestHandler):
                 while len(chunk) < slen:
                     chunk = chunk + self.connection.recv(slen - len(chunk))
                 obj = self.unPickle(chunk)
-                record = logging.LogRecord(None, None, "", 0, "", (), None)
-                record.__dict__.update(obj)
+                record = logging.makeLogRecord(obj)
                 self.handleLogRecord(record)
             except:
                 raise

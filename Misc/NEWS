@@ -83,6 +83,9 @@ Extension modules
 Library
 -------
 
+- The logging module now has a new function, makeLogRecord() making
+  LogHandler easier to interact with DatagramHandler and SocketHandler.
+
 - For compatibility with doctests created before 2.3, if an expected
   output block consists solely of "1" and the actual output block
   consists solely of "True", it's accepted as a match; similarly

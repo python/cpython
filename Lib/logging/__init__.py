@@ -36,8 +36,8 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "beta"
-__version__ = "0.4.8"
-__date__    = "22 April 2003"
+__version__ = "0.4.8.1"
+__date__    = "26 June 2003"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -232,6 +232,17 @@ class LogRecord:
         if self.args:
             msg = msg % self.args
         return msg
+
+def makeLogRecord(dict):
+    """
+    Make a LogRecord whose attributes are defined by the specified dictionary,
+    This function is useful for converting a logging event received over
+    a socket connection (which is sent as a dictionary) into a LogRecord
+    instance.
+    """
+    rv = LogRecord(None, None, "", 0, "", (), None)
+    rv.__dict__.update(dict)
+    return rv
 
 #---------------------------------------------------------------------------
 #   Formatter classes and functions

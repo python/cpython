@@ -111,8 +111,12 @@ class SocketHandler(logging.Handler):
     A handler class which writes logging records, in pickle format, to
     a streaming socket. The socket is kept open across logging calls.
     If the peer resets it, an attempt is made to reconnect on the next call.
-    Note that the very simple wire protocol used means that packet sizes
-    are expected to be encodable within 16 bits (i.e. < 32767 bytes).
+    The pickle which is sent is that of the LogRecord's attribute dictionary
+    (__dict__), so that the receiver does not need to have the logging module
+    installed in order to process the logging event.
+
+    To unpickle the record at the receiving end into a LogRecord, use the
+    makeLogRecord function.
     """
 
     def __init__(self, host, port):
@@ -208,9 +212,12 @@ class SocketHandler(logging.Handler):
 class DatagramHandler(SocketHandler):
     """
     A handler class which writes logging records, in pickle format, to
-    a datagram socket. Note that the very simple wire protocol used means
-    that packet sizes are expected to be encodable within 16 bits
-    (i.e. < 32767 bytes).
+    a datagram socket.  The pickle which is sent is that of the LogRecord's
+    attribute dictionary (__dict__), so that the receiver does not need to
+    have the logging module installed in order to process the logging event.
+
+    To unpickle the record at the receiving end into a LogRecord, use the
+    makeLogRecord function.
 
     """
     def __init__(self, host, port):
@@ -236,14 +243,6 @@ class DatagramHandler(SocketHandler):
         when the network is busy - UDP does not guarantee delivery and
         can deliver packets out of sequence.
         """
-        #old code
-        #sentsofar = 0
-        #left = len(s)
-        #addr = (self.host, self.port)
-        #while left > 0:
-        #    sent = self.sock.sendto(s[sentsofar:], addr)
-        #    sentsofar = sentsofar + sent
-        #    left = left - sent
         self.sock.sendto(s, (self.host, self.port))
 
 class SysLogHandler(logging.Handler):

@@ -52,7 +52,7 @@ use of \dfn{handlers}, which are instances of subclasses of the
 \class{Handler} class. Handlers are responsible for ensuring that a logged
 message (in the form of a \class{LogRecord}) ends up in a particular
 location (or set of locations) which is useful for the target audience for
-that message (e.g. end users, support desk staff, system administrators,
+that message (such as end users, support desk staff, system administrators,
 developers). Handlers are passed \class{LogRecord} instances intended for
 particular destinations. Each logger can have zero, one or more handlers
 associated with it (via the \method{addHandler} method of \class{Logger}).
@@ -204,6 +204,13 @@ with \var{lvl} is returned. Otherwise, the string "Level \%s" \% lvl is
 returned.
 \end{funcdesc}
 
+\begin{funcdesc}{makeLogRecord}{attrdict}
+Creates and returns a new \class{LogRecord} instance whose attributes are
+defined by \var{attrdict}. This function is useful for taking a pickled
+\class{LogRecord} attribute dictionary, sent over a socket, and reconstituting
+it as a \class{LogRecord} instance at the receiving end.
+\end{funcdesc}
+
 \begin{funcdesc}{basicConfig}{}
 Does basic configuration for the logging system by creating a
 \class{StreamHandler} with a default \class{Formatter} and adding it to
@@ -266,7 +273,7 @@ determined by \method{getEffectiveLevel()}.
 Indicates the effective level for this logger. If a value other than
 \constant{NOTSET} has been set using \method{setLevel()}, it is returned.
 Otherwise, the hierarchy is traversed towards the root until a value
-other than \constant{NOTSET} is found,and that value is returned.
+other than \constant{NOTSET} is found, and that value is returned.
 \end{methoddesc}
 
 \begin{methoddesc}{debug}{msg\optional{, *args\optional{, **kwargs}}}
@@ -535,9 +542,11 @@ Closes the socket.
 \end{methoddesc}
 
 \begin{methoddesc}{emit}{}
-Pickles the record and writes it to the socket in binary format.
-If there is an error with the socket, silently drops the packet.
-If the connection was previously lost, re-establishes the connection.
+Pickles the record's attribute dictionary and writes it to the socket in
+binary format. If there is an error with the socket, silently drops the
+packet. If the connection was previously lost, re-establishes the connection.
+To unpickle the record at the receiving end into a LogRecord, use the
+\function{makeLogRecord} function.
 \end{methoddesc}
 
 \begin{methoddesc}{handleError}{}
@@ -553,8 +562,8 @@ socket (\constant{socket.SOCK_STREAM}).
 \end{methoddesc}
 
 \begin{methoddesc}{makePickle}{record}
-Pickles the record in binary format with a length prefix, and returns
-it ready for transmission across the socket.
+Pickles the record's attribute dictionary in binary format with a length
+prefix, and returns it ready for transmission across the socket.
 \end{methoddesc}
 
 \begin{methoddesc}{send}{packet}
@@ -574,8 +583,11 @@ and \var{port}.
 \end{classdesc}
 
 \begin{methoddesc}{emit}{}
-Pickles the record and writes it to the socket in binary format.
-If there is an error with the socket, silently drops the packet.
+Pickles the record's attribute dictionary and writes it to the socket in
+binary format. If there is an error with the socket, silently drops the
+packet.
+To unpickle the record at the receiving end into a LogRecord, use the
+\function{makeLogRecord} function.
 \end{methoddesc}
 
 \begin{methoddesc}{makeSocket}{}
@@ -584,8 +596,7 @@ a UDP socket (\constant{socket.SOCK_DGRAM}).
 \end{methoddesc}
 
 \begin{methoddesc}{send}{s}
-Send a pickled string to a socket. This function allows for
-partial sends which can happen when the network is busy.
+Send a pickled string to a socket.
 \end{methoddesc}
 
 \subsubsection{SysLogHandler}
@@ -789,8 +800,8 @@ base
 supplied, the default value of "\%s(message)\\n" is used.
 
 A Formatter can be initialized with a format string which makes use of
-knowledge of the \class{LogRecord} attributes - e.g. the default value
-mentioned above makes use of the fact that the user's message and
+knowledge of the \class{LogRecord} attributes - such as the default value
+mentioned above making use of the fact that the user's message and
 arguments are pre- formatted into a LogRecord's \var{message}
 attribute. Currently, the useful attributes in a LogRecord are
 described by:
@@ -916,7 +927,11 @@ I/O.
 
 \subsubsection{Configuration functions}
 
-The following functions allow the logging module to be configured.
+The following functions allow the logging module to be configured. Before
+they can be used, you must import \module{logging.config}. Their use is optional -
+you can configure the logging module entirely by making calls to the main
+API (defined in \module{logging} itself) and defining handlers which are declared
+either in \module{logging} or \module{logging.handlers}.
 
 \begin{funcdesc}{fileConfig}{fname\optional{, defaults}}
 Reads the logging configuration from a ConfigParser-format file named
@@ -1013,7 +1028,7 @@ entry is set to 1 to indicate that messages must propagate to handlers
 higher up the logger hierarchy from this logger, or 0 to indicate that
 messages are \strong{not} propagated to handlers up the hierarchy. The
 \code{qualname} entry is the hierarchical channel name of the logger,
-i.e. the name used by the application to get the logger.
+for example, the name used by the application to get the logger.
 
 Sections which specify handler configuration are exemplified by the
 following.
