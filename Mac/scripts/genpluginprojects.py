@@ -175,23 +175,40 @@ def	genallprojects(force=0):
 	genpluginproject("all", "calldll", sources=["calldll.c"])
 	genpluginproject("all", "ColorPicker")
 	genpluginproject("ppc", "Printing")
+##	genpluginproject("ppc", "waste",
+##		sources=[
+##			"wastemodule.c",
+##			'WEAccessors.c', 'WEBirthDeath.c', 'WEDebug.c',
+##			'WEDrawing.c', 'WEFontTables.c', 'WEHighLevelEditing.c',
+##			'WEICGlue.c', 'WEInlineInput.c', 'WELineLayout.c', 'WELongCoords.c',
+##			'WELowLevelEditing.c', 'WEMouse.c', 'WEObjects.c', 'WEScraps.c',
+##			'WESelecting.c', 'WESelectors.c', 'WEUserSelectors.c', 'WEUtilities.c',
+##			'WEObjectHandlers.c',
+##			'WETabs.c',
+##			'WETabHooks.c'],
+##		libraries=['DragLib'],
+##		extradirs=[
+##			'::::Waste 1.3 Distribution:*',
+##			'::::ICProgKit1.4:APIs']
+##		)
+	# This is a hack, combining parts of Waste 2.0 with parts of 1.3
 	genpluginproject("ppc", "waste",
 		sources=[
 			"wastemodule.c",
-			'WEAccessors.c', 'WEBirthDeath.c', 'WEDebug.c',
-			'WEDrawing.c', 'WEFontTables.c', 'WEHighLevelEditing.c',
-			'WEICGlue.c', 'WEInlineInput.c', 'WELineLayout.c', 'WELongCoords.c',
-			'WELowLevelEditing.c', 'WEMouse.c', 'WEObjects.c', 'WEScraps.c',
-			'WESelecting.c', 'WESelectors.c', 'WEUserSelectors.c', 'WEUtilities.c',
-			'WEObjectHandlers.c',
-			'WETabs.c',
-			'WETabHooks.c'],
-		libraries=['DragLib'],
+			"WEObjectHandlers.c",
+			"WETabs.c", "WETabHooks.c"],
+		libraries=[
+			"WASTE.PPC.lib",
+			"TextCommon",
+			"UnicodeConverter",
+			"DragLib",
+			],
 		extradirs=[
-			'::::Waste 1.3 Distribution:*',
-			'::::ICProgKit1.4:APIs']
+			'{Compiler}:MacOS Support:(Third Party Support):Waste 2.0 Distribution:C_C++ Headers',
+			'{Compiler}:MacOS Support:(Third Party Support):Waste 2.0 Distribution:Static Libraries',
+			'::wastemods',
+			]
 		)
-	# This is a hack, combining parts of Waste 2.0 with parts of 1.3
 	genpluginproject("carbon", "waste",
 		sources=[
 			"wastemodule.c",
@@ -201,15 +218,15 @@ def	genallprojects(force=0):
 		extradirs=[
 			'{Compiler}:MacOS Support:(Third Party Support):Waste 2.0 Distribution:C_C++ Headers',
 			'{Compiler}:MacOS Support:(Third Party Support):Waste 2.0 Distribution:Static Libraries',
-			'::::Waste 1.3 Distribution:Extras:Sample Object Handlers',
-			'::::Waste 1.3 Distribution:Extras:Waste Tabs 1.3.2']
+			'::wastemods',
+			]
 		)
+##			'::::Waste 1.3 Distribution:Extras:Sample Object Handlers',
+##			'::::Waste 1.3 Distribution:Extras:Waste Tabs 1.3.2']
 	genpluginproject("ppc", "ctb")
 	genpluginproject("ppc", "icglue", sources=["icgluemodule.c"], 
-		libraries=["ICGlueCFM-PPC.lib"], 
-		extradirs=["::::ICProgKit1.4:APIs"])
-	genpluginproject("carbon", "icglue", sources=["icgluemodule.c"], 
-		extradirs=["::::ICProgKit1.4:APIs"])
+		libraries=["InternetConfigLib"])
+	genpluginproject("carbon", "icglue", sources=["icgluemodule.c"])
 	genpluginproject("ppc", "macspeech", libraries=["SpeechLib"])
 
 if __name__ == '__main__':
