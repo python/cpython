@@ -63,7 +63,7 @@ def main():
 	for filename in sys.argv[1:]:
 		process(template, filename)
 
-undefs = ('????', '    ', '\0\0\0\0')
+undefs = ('????', '    ', '\0\0\0\0', 'BINA')
 
 def process(template, filename):
 	
