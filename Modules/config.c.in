@@ -220,6 +220,7 @@ extern void initcl();
 #ifdef USE_TIME
 extern void inittime();
 #endif
+/* -- ADDMODULE MARKER 1 -- */
 
 struct {
 	char *name;
@@ -349,6 +350,8 @@ struct {
 #ifdef USE_TIME
 	{"time",	inittime},
 #endif
+
+/* -- ADDMODULE MARKER 2 -- */
 
 	{0,		0}		/* Sentinel */
 };
