@@ -304,10 +304,9 @@ is a tuple of six items: the frame object, the filename,
 the line number of the current line, the function name, a list of
 lines of context from the source code, and the index of the current
 line within that list.
-The optional \var{context} argument specifies the number of lines of
-context to return, which are centered around the current line.
 
-\warning{Keeping references to frame objects, as found in
+\begin{notice}[warning]
+Keeping references to frame objects, as found in
 the first element of the frame records these functions return, can
 cause your program to create reference cycles.  Once a reference cycle
 has been created, the lifespan of all objects which can be accessed
@@ -315,45 +314,13 @@ from the objects which form the cycle can become much longer even if
 Python's optional cycle detector is enabled.  If such cycles must be
 created, it is important to ensure they are explicitly broken to avoid
 the delayed destruction of objects and increased memory consumption
-which occurs.}
+which occurs.
 
-\begin{funcdesc}{getframeinfo}{frame\optional{, context}}
-  Get information about a frame or traceback object.  A 5-tuple
-  is returned, the last five elements of the frame's frame record.
-  The optional second argument specifies the number of lines of context
-  to return, which are centered around the current line.
-\end{funcdesc}
-
-\begin{funcdesc}{getouterframes}{frame\optional{, context}}
-  Get a list of frame records for a frame and all higher (calling)
-  frames.
-\end{funcdesc}
-
-\begin{funcdesc}{getinnerframes}{traceback\optional{, context}}
-  Get a list of frame records for a traceback's frame and all lower
-  frames.
-\end{funcdesc}
-
-\begin{funcdesc}{currentframe}{}
-  Return the frame object for the caller's stack frame.
-\end{funcdesc}
-
-\begin{funcdesc}{stack}{\optional{context}}
-  Return a list of frame records for the stack above the caller's
-  frame.
-\end{funcdesc}
-
-\begin{funcdesc}{trace}{\optional{context}}
-  Return a list of frame records for the stack below the current
-  exception.
-\end{funcdesc}
-
-Stackframes stored directly or indirectly in local variables can
-easily cause reference cycles.  Though the cycle detector will catch
-these, destruction of the frames (and local variables) can be made
-deterministic by removing the cycle in a \keyword{finally} clause.
-This is also important if the cycle detector was disabled when Python
-was compiled or using \function{gc.disable()}.  For example:
+Though the cycle detector will catch these, destruction of the frames
+(and local variables) can be made deterministic by removing the cycle
+in a \keyword{finally} clause.  This is also important if the cycle
+detector was disabled when Python was compiled or using
+\function{\refmodule{gc}.disable()}.  For example:
 
 \begin{verbatim}
 def handle_stackframe_without_leak():
@@ -363,3 +330,45 @@ def handle_stackframe_without_leak():
     finally:
         del frame
 \end{verbatim}
+\end{notice}
+
+The optional \var{context} argument supported by most of these
+functions specifies the number of lines of context to return, which
+are centered around the current line.
+
+\begin{funcdesc}{getframeinfo}{frame\optional{, context}}
+  Get information about a frame or traceback object.  A 5-tuple
+  is returned, the last five elements of the frame's frame record.
+\end{funcdesc}
+
+\begin{funcdesc}{getouterframes}{frame\optional{, context}}
+  Get a list of frame records for a frame and all outer frames.  These
+  frames represent the calls that lead to the creation of \var{frame}.
+  The first entry in the returned list represents \var{frame}; the
+  last entry represents the outermost call on \var{frame}'s stack.
+\end{funcdesc}
+
+\begin{funcdesc}{getinnerframes}{traceback\optional{, context}}
+  Get a list of frame records for a traceback's frame and all inner
+  frames.  These frames represent calls made as a consequence of
+  \var{frame}.  The first entry in the list represents
+  \var{traceback}; the last entry represents where the exception was
+  raised.
+\end{funcdesc}
+
+\begin{funcdesc}{currentframe}{}
+  Return the frame object for the caller's stack frame.
+\end{funcdesc}
+
+\begin{funcdesc}{stack}{\optional{context}}
+  Return a list of frame records for the caller's stack.  The first
+  entry in the returned list represents the caller; the last entry
+  represents the outermost call on the stack.
+\end{funcdesc}
+
+\begin{funcdesc}{trace}{\optional{context}}
+  Return a list of frame records for the stack between the current
+  frame and the frame in which an exception currently being handled
+  was raised in.  The first entry in the list represents the caller;
+  the last entry represents where the exception was raised.
+\end{funcdesc}
