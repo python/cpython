@@ -149,7 +149,7 @@ class ScriptBinding:
 
         If the user has configured IDLE for Autosave, the file will be
         silently saved if it already exists and is dirty.
-        
+
         """
         filename = self.editwin.io.filename
         if not self.editwin.get_saved():

@@ -303,7 +303,7 @@ class MyRPCClient(rpc.RPCClient):
         "Override the base class - just re-raise EOFError"
         raise EOFError
 
-    
+
 class ModifiedInterpreter(InteractiveInterpreter):
 
     def __init__(self, tkconsole):
