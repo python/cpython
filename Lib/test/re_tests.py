@@ -612,9 +612,11 @@ xyzabc
     (r'(([a-z]+):)?([a-z]+)$', 'smil', SUCCEED, 'g1+"-"+g2+"-"+g3', 'None-None-smil'),
     # bug 111869 (PRE/PCRE fails on this one, SRE doesn't)
     (r'.*d', 'abc\nabd', SUCCEED, 'found', 'abd'),
-    # bug 112468
+    # bug 112468: various expected syntax errors
     ('(', '', SYNTAX_ERROR),
     ('[\\41]', '!', SUCCEED, 'found', '!'),
-    # bug 115618
+    # bug 115040: rescan if flags are modified inside pattern
+    (r' (?x)foo ', 'foo', SUCCEED, 'found', 'foo'),
+    # bug 115618: negative lookahead
     (r'(?<!abc)(d.f)', 'abcdefdof', SUCCEED, 'found', 'dof'),
 ]

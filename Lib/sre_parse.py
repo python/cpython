@@ -593,6 +593,11 @@ def parse(str, flags=0, pattern=None):
 
     # p.dump()
 
+    if not (flags & SRE_FLAG_VERBOSE) and p.pattern.flags & SRE_FLAG_VERBOSE:
+        # the VERBOSE flag was switched on inside the pattern.  to be
+        # on the safe side, we'll parse the whole thing again...
+        return parse(str, p.pattern.flags)
+
     return p
 
 def parse_template(source, pattern):
