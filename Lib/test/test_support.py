@@ -41,3 +41,15 @@ def fcmp(x, y): # fuzzy comparison function
 
 TESTFN = '@test' # Filename used for testing
 from os import unlink
+
+def findfile(file, here=__file__):
+	import os
+        if os.path.isabs(file):
+		return file
+        import sys
+        path = sys.path
+	path = [os.path.dirname(here)] + path
+        for dn in path:
+                fn = os.path.join(dn, file)
+                if os.path.exists(fn): return fn
+        return file
