@@ -129,6 +129,7 @@ class bdist_rpm (Command):
         self.build_script = None
         self.install_script = None
         self.clean_script = None
+        self.verify_script = None
         self.pre_install = None
         self.post_install = None
         self.pre_uninstall = None
@@ -208,6 +209,7 @@ class bdist_rpm (Command):
         self.ensure_filename('build_script')
         self.ensure_filename('install_script')
         self.ensure_filename('clean_script')
+        self.ensure_filename('verify_script')
         self.ensure_filename('pre_install')
         self.ensure_filename('post_install')
         self.ensure_filename('pre_uninstall')
@@ -424,6 +426,7 @@ class bdist_rpm (Command):
               "--root=$RPM_BUILD_ROOT "
               "--record=INSTALLED_FILES") % self.python),
             ('clean', 'clean_script', "rm -rf $RPM_BUILD_ROOT"),
+            ('verifyscript', 'verify_script', None),
             ('pre', 'pre_install', None),
             ('post', 'post_install', None),
             ('preun', 'pre_uninstall', None),
