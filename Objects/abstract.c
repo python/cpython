@@ -813,8 +813,8 @@ PyNumber_InPlaceAdd(PyObject *v, PyObject *w)
 					PyNumber_Add, 0) <= 0)
 			return x;
 	}
-	else if ((HASINPLACE(v)
-		  && (v->ob_type->tp_as_sequence != NULL &&
+	else if (HASINPLACE(v)
+		  && ((v->ob_type->tp_as_sequence != NULL &&
 		      (f = v->ob_type->tp_as_sequence->sq_inplace_concat) != NULL))
 		 || (v->ob_type->tp_as_number != NULL &&
 		     (f = v->ob_type->tp_as_number->nb_inplace_add) != NULL))
