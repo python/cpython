@@ -906,11 +906,18 @@ def basejoin(base, url):
 # unquote('abc%20def') -> 'abc def'
 # quote('abc def') -> 'abc%20def')
 
+if hasattr(types, "UnicodeType"):
+    def _is_unicode(x):
+        return isinstance(x, unicode)
+else:
+    def _is_unicode(x):
+        return 0
+
 def toBytes(url):
     """toBytes(u"URL") --> 'URL'."""
     # Most URL schemes require ASCII. If that changes, the conversion
     # can be relaxed
-    if type(url) is types.UnicodeType:
+    if _is_unicode(url):
         try:
             url = url.encode("ASCII")
         except UnicodeError:
@@ -1189,7 +1196,7 @@ def urlencode(query,doseq=0):
             if type(v) == types.StringType:
                 v = quote_plus(v)
                 l.append(k + '=' + v)
-            elif type(v) == types.UnicodeType:
+            elif _is_unicode(v):
                 # is there a reasonable way to convert to ASCII?
                 # encode generates a string, but "replace" or "ignore"
                 # lose information and "strict" can raise UnicodeError
