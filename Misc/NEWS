@@ -16,6 +16,8 @@ Library
 
 - Tix.ResizeHandle exposes detach_widget, hide, and show.
 
+- The charset alias windows_1252 has been added.
+
 Tools/Demos
 
 Build
