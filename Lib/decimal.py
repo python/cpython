@@ -938,15 +938,13 @@ class Decimal(object):
                 sign = 1
             return Decimal( (sign, (0,), exp))
         if not self:
-            if exp < other._exp - context.prec-1:
-                exp = other._exp - context.prec-1
+            exp = max(exp, other._exp - context.prec-1)
             ans = other._rescale(exp, watchexp=0, context=context)
             if shouldround:
                 ans = ans._fix(context)
             return ans
         if not other:
-            if exp < self._exp - context.prec-1:
-                exp = self._exp - context.prec-1
+            exp = max(exp, self._exp - context.prec-1)
             ans = self._rescale(exp, watchexp=0, context=context)
             if shouldround:
                 ans = ans._fix(context)
@@ -1228,7 +1226,6 @@ class Decimal(object):
         if divmod and res.exp > context.prec + 1:
             return context._raise_error(DivisionImpossible)
 
-        ans = None
         prec_limit = 10 ** context.prec
         while 1:
             while op2.int <= op1.int:
@@ -1454,24 +1451,25 @@ class Decimal(object):
         if context is None:
             context = getcontext()
         prec = context.prec
-        ans = self._fixexponents(prec, context)
+        ans = self._fixexponents(context)
         if len(ans._int) > prec:
             ans = ans._round(prec, context=context)
-            ans = ans._fixexponents(prec, context)
+            ans = ans._fixexponents(context)
         return ans
 
-    def _fixexponents(self, prec, context):
+    def _fixexponents(self, context):
         """Fix the exponents and return a copy with the exponent in bounds.
         Only call if known to not be a special value.
         """
         folddown = context._clamp
         Emin = context.Emin
-        ans = Decimal(self)
+        ans = self
         ans_adjusted = ans.adjusted()
         if ans_adjusted < Emin:
             Etiny = context.Etiny()
             if ans._exp < Etiny:
                 if not ans:
+                    ans = Decimal(self)
                     ans._exp = Etiny
                     context._raise_error(Clamped)
                     return ans
@@ -1493,6 +1491,7 @@ class Decimal(object):
                 Emax = context.Emax
                 if ans_adjusted > Emax:
                     if not ans:
+                        ans = Decimal(self)
                         ans._exp = Emax
                         context._raise_error(Clamped)
                         return ans
@@ -1507,7 +1506,6 @@ class Decimal(object):
         You can specify the precision or rounding method.  Otherwise, the
         context determines it.
         """
-
 
         if self._is_special:
             ans = self._check_nans(context=context)
