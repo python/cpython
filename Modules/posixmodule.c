@@ -2289,7 +2289,7 @@ win32_popen4(PyObject *self, PyObject  *args)
 	return f;
 }
 
-static int
+static BOOL
 _PyPopenCreateProcess(char *cmdstring,
 		      HANDLE hStdin,
 		      HANDLE hStdout,
@@ -2299,7 +2299,7 @@ _PyPopenCreateProcess(char *cmdstring,
 	PROCESS_INFORMATION piProcInfo;
 	STARTUPINFO siStartInfo;
 	char *s1,*s2, *s3 = " /c ";
-	const char *szConsoleSpawn = "w9xpopen.exe \"";
+	const char *szConsoleSpawn = "w9xpopen.exe";
 	int i;
 	int x;
 
@@ -2321,22 +2321,55 @@ _PyPopenCreateProcess(char *cmdstring,
 			 * Oh gag, we're on Win9x. Use the workaround listed in
 			 * KB: Q150956
 			 */
-			char modulepath[256];
+			char modulepath[_MAX_PATH];
+			struct stat statinfo;
 			GetModuleFileName(NULL, modulepath, sizeof(modulepath));
 			for (i = x = 0; modulepath[i]; i++)
 				if (modulepath[i] == '\\')
 					x = i+1;
 			modulepath[x] = '\0';
+			/* Create the full-name to w9xpopen, so we can test it exists */
+			strncat(modulepath, 
+			        szConsoleSpawn, 
+			        (sizeof(modulepath)/sizeof(modulepath[0]))
+			               -strlen(modulepath));
+			if (stat(modulepath, &statinfo) != 0) {
+				/* Eeek - file-not-found - possibly an embedding 
+				   situation - see if we can locate it in sys.prefix 
+				*/
+				strncpy(modulepath, 
+				        Py_GetExecPrefix(), 
+				        sizeof(modulepath)/sizeof(modulepath[0]));
+				if (modulepath[strlen(modulepath)-1] != '\\')
+					strcat(modulepath, "\\");
+				strncat(modulepath, 
+				        szConsoleSpawn, 
+				        (sizeof(modulepath)/sizeof(modulepath[0]))
+				               -strlen(modulepath));
+				/* No where else to look - raise an easily identifiable
+				   error, rather than leaving Windows to report
+				   "file not found" - as the user is probably blissfully
+				   unaware this shim EXE is used, and it will confuse them.
+				   (well, it confused me for a while ;-)
+				*/
+				if (stat(modulepath, &statinfo) != 0) {
+					PyErr_Format(PyExc_RuntimeError, 
+					    "Can not locate '%s' which is needed "
+					    "for popen to work on this platform.",
+					    szConsoleSpawn);
+					return FALSE;
+				}
+			}
 			x = i + strlen(s3) + strlen(cmdstring) + 1 +
 				strlen(modulepath) + 
 				strlen(szConsoleSpawn) + 1;
+
 			s2 = (char *)_alloca(x);
 			ZeroMemory(s2, x);
 			sprintf(
 				s2,
-				"%s%s%s%s%s\"",
+				"%s \"%s%s%s\"",
 				modulepath,
-				szConsoleSpawn,
 				s1,
 				s3,
 				cmdstring);
@@ -2345,8 +2378,10 @@ _PyPopenCreateProcess(char *cmdstring,
 
 	/* Could be an else here to try cmd.exe / command.com in the path
 	   Now we'll just error out.. */
-	else
-		return -1;
+	else {
+		PyErr_SetString(PyExc_RuntimeError, "Can not locate a COMSPEC environment variable to use as the shell");
+		return FALSE;
+	}
   
 	ZeroMemory(&siStartInfo, sizeof(STARTUPINFO));
 	siStartInfo.cb = sizeof(STARTUPINFO);
@@ -2373,6 +2408,7 @@ _PyPopenCreateProcess(char *cmdstring,
 		*hProcess = piProcInfo.hProcess;
 		return TRUE;
 	}
+	win32_error("CreateProcess", NULL);
 	return FALSE;
 }
 
@@ -2564,7 +2600,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 					    hChildStdoutWr,
 					    hChildStdoutWr,
 					    &hProcess))
-			 return win32_error("CreateProcess", NULL);
+			 return NULL;
 	 }
 	 else {
 		 if (!_PyPopenCreateProcess(cmdstring,
@@ -2572,7 +2608,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 					    hChildStdoutWr,
 					    hChildStderrWr,
 					    &hProcess))
-			 return win32_error("CreateProcess", NULL);
+			 return NULL;
 	 }
 
 	 /*
