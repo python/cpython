@@ -1,6 +1,6 @@
 import os, sys, string, random, tempfile, unittest
 
-from test_support import run_unittest
+from test.test_support import run_unittest
 
 class TestImport(unittest.TestCase):
 

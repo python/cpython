@@ -1,6 +1,6 @@
 # Tests for rich comparisons
 
-from test_support import TestFailed, verify, verbose
+from test.test_support import TestFailed, verify, verbose
 
 class Number:
 

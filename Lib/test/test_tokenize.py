@@ -1,4 +1,4 @@
-from test_support import verbose, findfile
+from test.test_support import verbose, findfile
 import tokenize, os, sys
 
 if verbose:

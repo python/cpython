@@ -1,5 +1,5 @@
 import sys
-import test_support
+from test import test_support
 
 
 def powtest(type):

@@ -1,4 +1,4 @@
-from test_support import verbose, have_unicode
+from test.test_support import verbose, have_unicode
 import sys
 
 # test string formatting operator (I am not sure if this is being tested

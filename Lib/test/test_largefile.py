@@ -5,7 +5,7 @@
 #
 #----------------------------------------------------------------------
 
-import test_support
+from test import test_support
 import os, struct, stat, sys
 
 try:

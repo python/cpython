@@ -1,5 +1,5 @@
-from test_support import verbose, TestSkipped
-import string_tests
+from test.test_support import verbose, TestSkipped
+from test import string_tests
 import string, sys
 
 # XXX: kludge... short circuit if strings don't have methods

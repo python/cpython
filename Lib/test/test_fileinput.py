@@ -3,7 +3,7 @@ Tests for fileinput module.
 Nick Mathewson
 '''
 
-from test_support import verify, verbose, TESTFN
+from test.test_support import verify, verbose, TESTFN
 import sys, os, re
 from StringIO import StringIO
 from fileinput import FileInput

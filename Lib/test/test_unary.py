@@ -1,7 +1,7 @@
 """Test compiler changes for unary ops (+, -, ~) introduced in Python 2.2"""
 
 import unittest
-from test_support import run_unittest, have_unicode
+from test.test_support import run_unittest, have_unicode
 
 class UnaryOpTestCase(unittest.TestCase):
 

@@ -1,5 +1,5 @@
 import unittest
-import test_support
+from test import test_support
 import base64
 from binascii import Error as binascii_error
 

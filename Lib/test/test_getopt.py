@@ -3,7 +3,7 @@
 
 import getopt
 from getopt import GetoptError
-from test_support import verify, verbose
+from test.test_support import verify, verbose
 import os
 
 def expectException(teststr, expected, failure=AssertionError):

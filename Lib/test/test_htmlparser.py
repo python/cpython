@@ -3,8 +3,8 @@
 import HTMLParser
 import pprint
 import sys
-import test_support
 import unittest
+from test import test_support
 
 
 class EventCollector(HTMLParser.HTMLParser):

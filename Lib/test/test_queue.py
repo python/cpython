@@ -5,7 +5,7 @@ import sys
 import threading
 import time
 
-from test_support import verify, TestFailed, verbose
+from test.test_support import verify, TestFailed, verbose
 
 queue_size = 5
 

@@ -1,7 +1,7 @@
 import zlib
-from test_support import TestFailed
 import sys
 import imp
+from test.test_support import TestFailed
 
 try:
     t = imp.find_module('test_zlib')

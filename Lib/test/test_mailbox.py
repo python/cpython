@@ -1,8 +1,8 @@
 import mailbox
 import os
-import test_support
 import time
 import unittest
+from test import test_support
 
 # cleanup earlier tests
 try:

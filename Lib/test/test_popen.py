@@ -6,7 +6,7 @@
 
 import os
 import sys
-from test_support import TestSkipped
+from test.test_support import TestSkipped
 from os import popen
 
 # Test that command-lines get down as we expect.

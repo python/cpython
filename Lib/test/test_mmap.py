@@ -1,4 +1,4 @@
-from test_support import verify, vereq, TESTFN
+from test.test_support import verify, vereq, TESTFN
 import mmap
 import os, re
 

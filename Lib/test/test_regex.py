@@ -1,4 +1,4 @@
-from test_support import verbose, sortdict
+from test.test_support import verbose, sortdict
 import warnings
 warnings.filterwarnings("ignore", "the regex module is deprecated",
                         DeprecationWarning, r'test_regex$')

@@ -1,7 +1,7 @@
 """Tests for binary operators on subtypes of built-in types."""
 
-import test_support
 import unittest
+from test import test_support
 
 def gcd(a, b):
     """Greatest common divisor using Euclid's algorithm."""

@@ -1,6 +1,6 @@
 # Check every path through every method of UserDict
 
-from test_support import verify, verbose
+from test.test_support import verify, verbose
 from UserDict import UserDict, IterableUserDict
 
 d0 = {}

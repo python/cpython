@@ -3,7 +3,7 @@
    Nick Mathewson
 """
 import unittest
-from test_support import run_unittest
+from test.test_support import run_unittest
 
 from codeop import compile_command
 

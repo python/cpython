@@ -1,4 +1,4 @@
-from test_support import verbose, TestFailed, TestSkipped
+from test.test_support import verbose, TestFailed, TestSkipped
 import nis
 
 print 'nis.maps()'

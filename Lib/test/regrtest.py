@@ -64,8 +64,7 @@ import traceback
 import random
 import StringIO
 
-import test_support
-
+from test import test_support
 
 RESOURCE_NAMES = ('curses', 'largefile', 'network')
 

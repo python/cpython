@@ -2,7 +2,7 @@
    Test cases for pyclbr.py
    Nick Mathewson
 '''
-from test_support import run_unittest
+from test.test_support import run_unittest
 import unittest, sys
 from types import ClassType, FunctionType, MethodType
 import pyclbr

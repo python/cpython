@@ -3,7 +3,7 @@
    Roger E. Masse
 """
 import array
-from test_support import verbose, TESTFN, unlink, TestFailed,\
+from test.test_support import verbose, TESTFN, unlink, TestFailed,\
      have_unicode, vereq
 
 def main():

@@ -1,4 +1,4 @@
-from test_support import verbose, TestFailed
+from test.test_support import verbose, TestFailed
 
 if verbose:
     print "Testing whether compiler catches assignment to __debug__"

@@ -1,7 +1,7 @@
 import operator
 import unittest
 
-import test_support
+from test import test_support
 
 
 class OperatorTestCase(unittest.TestCase):

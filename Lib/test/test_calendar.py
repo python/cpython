@@ -1,7 +1,7 @@
 import calendar
 import unittest
 
-from test_support import run_unittest
+from test.test_support import run_unittest
 
 
 class CalendarTestCase(unittest.TestCase):

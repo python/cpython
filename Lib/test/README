@@ -52,7 +52,7 @@ All PyUnit-based tests in the Python test suite use boilerplate that
 looks like this:
 
     import unittest
-    import test_support
+    from test import test_support
 
     class MyTestCase1(unittest.TestCase):
         # define test methods here...
@@ -248,7 +248,7 @@ these mostly apply only to the "classic" tests; unittest- and doctest-
 based tests should follow the conventions natural to those frameworks):
 
     * If your test case detects a failure, raise TestFailed (found in
-      test_support).
+      test.test_support).
 
     * Import everything you'll need as early as possible.
 
@@ -275,8 +275,16 @@ based tests should follow the conventions natural to those frameworks):
 
 Miscellaneous
 
-There is a test_support module you can import from your test case.  It
-provides the following useful objects:
+There is a test_support module in the test package you can import from
+your test case.  Import this module using either
+
+    import test.test_support
+
+or
+
+    from test import test_support
+
+test_support provides the following useful objects:
 
     * TestFailed - raise this exception when your regression test detects a
       failure.
@@ -317,28 +325,6 @@ provides the following useful objects:
     * fcmp(x,y) - you can call this function to compare two floating point
       numbers when you expect them to only be approximately equal withing a
       fuzz factor (test_support.FUZZ, which defaults to 1e-6).
-
-NOTE:  Always import something from test_support like so:
-
-    from test_support import verbose
-
-or like so:
-
-    import test_support
-    ... use test_support.verbose in the code ...
-
-Never import anything from test_support like this:
-
-    from test.test_support import verbose
-
-"test" is a package already, so can refer to modules it contains without
-"test." qualification.  If you do an explicit "test.xxx" qualification, that
-can fool Python into believing test.xxx is a module distinct from the xxx
-in the current package, and you can end up importing two distinct copies of
-xxx.  This is especially bad if xxx=test_support, as regrtest.py can (and
-routinely does) overwrite its "verbose" and "use_large_resources"
-attributes:  if you get a second copy of test_support loaded, it may not
-have the same values for those as regrtest intended.
 
 
 Python and C statement coverage results are currently available at

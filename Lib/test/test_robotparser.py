@@ -1,4 +1,5 @@
-import unittest, StringIO, robotparser, test_support
+import unittest, StringIO, robotparser
+from test import test_support
 
 class RobotTestCase(unittest.TestCase):
     def __init__(self, index, parser, url, good, agent):

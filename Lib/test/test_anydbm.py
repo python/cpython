@@ -4,11 +4,11 @@
 """
 
 import os
-import test_support
 import unittest
 import anydbm
 import tempfile
 import glob
+from test import test_support
 
 _fname = tempfile.mktemp()
 

@@ -4,7 +4,7 @@ import os
 import pprint
 import unittest
 
-import test_support
+from test import test_support
 
 from hotshot.log import ENTER, EXIT, LINE
 

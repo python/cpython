@@ -1,4 +1,4 @@
-from test_support import verify
+from test.test_support import verify
 import urllib2
 import os
 

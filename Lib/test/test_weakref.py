@@ -3,7 +3,7 @@ import unittest
 import UserList
 import weakref
 
-import test_support
+from test import test_support
 
 
 class C:

@@ -6,7 +6,7 @@
 import sys
 sys.path=['.']+sys.path
 
-from test_support import verbose, TestFailed, have_unicode
+from test.test_support import verbose, TestFailed, have_unicode
 import sre
 import sys, os, string, traceback
 

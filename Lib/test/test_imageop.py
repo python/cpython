@@ -5,7 +5,7 @@
    Roger E. Masse
 """
 
-from test_support import verbose, unlink
+from test.test_support import verbose, unlink
 
 import imageop, uu, os
 

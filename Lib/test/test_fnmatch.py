@@ -1,6 +1,6 @@
 """Test cases for the fnmatch module."""
 
-import test_support
+from test import test_support
 import unittest
 
 from fnmatch import fnmatch, fnmatchcase

@@ -4,7 +4,7 @@
 """
 
 import errno
-from test_support import verbose
+from test.test_support import verbose
 
 errors = ['E2BIG', 'EACCES', 'EADDRINUSE', 'EADDRNOTAVAIL', 'EADV',
           'EAFNOSUPPORT', 'EAGAIN', 'EALREADY', 'EBADE', 'EBADF',

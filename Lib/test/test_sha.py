@@ -5,8 +5,8 @@
 # http://www.itl.nist.gov/div897/pubs/fip180-1.htm
 
 import sha
-import test_support
 import unittest
+from test import test_support
 
 
 class SHATestCase(unittest.TestCase):

@@ -1,6 +1,6 @@
 # Python test set -- part 6, built-in types
 
-from test_support import *
+from test.test_support import *
 
 print '6. Built-in types'
 

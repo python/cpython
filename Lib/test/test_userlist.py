@@ -1,7 +1,7 @@
 # Check every path through every method of UserList
 
 from UserList import UserList
-from test_support import TestFailed
+from test.test_support import TestFailed
 
 # Use check instead of assert so -O doesn't render the
 # test useless.

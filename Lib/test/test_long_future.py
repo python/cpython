@@ -3,7 +3,7 @@ from __future__ import division
 # test_long.py instead.  In the meantime, it's too obscure to try to
 # trick just part of test_long into using future division.
 
-from test_support import TestFailed, verify, verbose
+from test.test_support import TestFailed, verify, verbose
 
 def test_true_division():
     if verbose:

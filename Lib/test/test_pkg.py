@@ -3,7 +3,7 @@
 import sys, os, tempfile, traceback
 from os import mkdir, rmdir, extsep          # Can't test if these fail
 del mkdir, rmdir
-from test_support import verify, verbose, TestFailed
+from test.test_support import verify, verbose, TestFailed
 
 # Helpers to create and destroy hierarchies.
 

@@ -3,7 +3,7 @@ Tests for uu module.
 Nick Mathewson
 """
 
-from test_support import verify, TestFailed, verbose, TESTFN
+from test.test_support import verify, TestFailed, verbose, TESTFN
 import sys, os
 import uu
 from StringIO import StringIO

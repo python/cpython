@@ -6,7 +6,7 @@
 # randrange, and then Python hangs.
 
 import thread
-from test_support import verbose, TestSkipped
+from test.test_support import verbose, TestSkipped
 
 critical_section = thread.allocate_lock()
 done = thread.allocate_lock()

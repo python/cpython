@@ -2,7 +2,7 @@
    Tests for fpformat module
    Nick Mathewson
 '''
-from test_support import run_unittest
+from test.test_support import run_unittest
 import unittest
 from fpformat import fix, sci, NotANumber
 

@@ -1,7 +1,7 @@
 # Test to see if openpty works. (But don't worry if it isn't available.)
 
 import os
-from test_support import verbose, TestFailed, TestSkipped
+from test.test_support import verbose, TestFailed, TestSkipped
 
 try:
     if verbose:

@@ -7,7 +7,7 @@ import sys
 import os
 import unittest
 
-from test_support import run_unittest
+from test.test_support import run_unittest
 from repr import repr as r # Don't shadow builtin repr
 
 
