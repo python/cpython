@@ -535,7 +535,6 @@ locateResourcePy(char * resourceName, char * resourceURLCStr, int length) {
 int
 main(int argc, char **argv)
 {
-    int i;
     static char scriptpath[1024];
     char *script = NULL;
 
@@ -556,13 +555,8 @@ main(int argc, char **argv)
 		if (locateResourcePy("__main__.py", scriptpath, 1024))
 			script = scriptpath;
 			
-		printf("original argc=%d\n", argc);
-		for(i=0; i<argc; i++) printf("original argv[%d] = \"%s\"\n", i, argv[i]);
-
 		init_common(&argc, &argv, 0);
 
-		printf("modified argc=%d\n", argc);
-		for(i=0; i<argc; i++) printf("modified argv[%d] = \"%s\"\n", i, argv[i]);
 	}
 
 	Py_Main(argc, argv, script);
@@ -634,7 +628,12 @@ Py_Main(int argc, char **argv, char *filename)
 
 	if (Py_VerboseFlag ||
 	    (command == NULL && filename == NULL && isatty((int)fileno(fp))))
-		fprintf(stderr, "Python %s on %s\n%s\n",
+		fprintf(stderr, "%s %s on %s\n%s\n",
+#if !TARGET_API_MAC_OSX
+			"Python",
+#else
+			"Pythonw",
+#endif
 			Py_GetVersion(), Py_GetPlatform(), COPYRIGHT);
 	
 	if (filename != NULL) {
