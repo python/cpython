@@ -43,7 +43,7 @@ class bdist_rpm (Command):
         # info in setup.cfg, although they are of course free to
         # supply it on the command line.
         ('distribution-name', None,
-         "name of the (Linux) distribution name to which this "
+         "name of the (Linux) distribution to which this "
          "RPM applies (*not* the name of the module distribution!)"),
         ('group', None,
          "package classification [default: \"Development/Libraries\"]"),
