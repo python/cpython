@@ -1,0 +1,80 @@
+\section{Built-in Module \sectcode{signal}}
+
+\bimodindex{signal}
+This module provides mechanisms to write signal handlers in Python.
+
+{\bf Warning:} Some care must be taken if both signals and threads
+will be used in the same program.  The fundamental thing to remember
+in using signals and threads simultaneously is: always perform
+\code{signal()} operations in the main thread of execution.  Any
+thread can perform a \code{alarm()}, \code{getsignal()}, or
+\code{pause()}; only the main thread can set a new signal handler, and
+the main thread will be the only one to receive signals.  This means
+that signals can't be used as a means of interthread communication.
+Use locks instead.
+
+The variables defined in the signal module are:
+
+\renewcommand{\indexsubitem}{(in module signal)}
+\begin{datadesc}{SIG_DFL}
+  This is one of two standard signal handling options; it will simply
+  perform the default function for the signal.  For example, on most
+  systems the default action for SIGQUIT is to dump core and exit,
+  while the default action for SIGCLD is to simply ignore it.
+\end{datadesc}
+
+\begin{datadesc}{SIG_IGN}
+  This is another standard signal handler, which will simply ignore
+  the given signal.
+\end{datadesc}
+
+\begin{datadesc}{SIG*}
+  All the signal numbers are defined symbolically.  For example, the
+  hangup signal is defined as \code{signal.SIGHUP}; the variable names
+  are identical to the names used in C programs, as found in
+  \file{signal.h}.
+  The UNIX man page for \file{signal} lists the existing signals (on
+  some systems this is \file{signal(2)}, on others the list is in
+  \file{signal(7)}).
+  Note that not all systems define the same set of signal names; only
+  those names defined by the system are defined by this module.
+\end{datadesc}
+
+The signal module defines the following functions:
+
+\begin{funcdesc}{alarm}{time}
+  If \var{time} is non-zero, this function requests that a
+  \code{SIGALRM} signal be sent to the process in \var{time} seconds.
+  Any previously scheduled alarm is canceled (i.e. only one alarm can
+  be scheduled at any time).  The returned value is then the number of
+  seconds before any previously set alarm was to have been delivered.
+  If \var{time} is zero, no alarm id scheduled, and any scheduled
+  alarm is canceled.  The return value is the number of seconds
+  remaining before a previously scheduled alarm.  If the return value
+  is zero, no alarm is currently scheduled.  (See the UNIX man page
+  \code{alarm(2)}.)
+\end{funcdesc}
+
+\begin{funcdesc}{getsignal}{signalnum}
+  Returns the current signal handler for the signal \var{signalnum}.
+  The returned value may be a callable Python object, or one of the
+  special values \code{signal.SIG_IGN} or \code{signal.SIG_DFL}.
+\end{funcdesc}
+
+\begin{funcdesc}{pause}{}
+  Causes the process to sleep until a signal is received; the
+  appropriate handler will then be called.  Returns nothing.  (See the
+  UNIX man page \code{signal(2)}.)
+\end{funcdesc}
+
+\begin{funcdesc}{signal}{signalnum\, handler}
+  Sets the handler for signal \var{signalnum} to the function
+  \var{handler}.  \var{handler} can be any callable Python object, or
+  one of the special values \code{signal.SIG_IGN} or
+  \code{signal.SIG_DFL}.  The previous signal handler will be
+  returned.  (See the UNIX man page \code{signal(2)}.)
+
+  If threads are enabled, this function can only be called from the
+  main thread; attempting to call it from other threads will cause a
+  \code{ValueError} exception will be raised.
+\end{funcdesc}
