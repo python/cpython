@@ -766,10 +766,12 @@ digits.  Previously it would consume all the hex digits following the
 'x' and take the lowest 8 bits of the result, so \code{\e x123456} was
 equivalent to \code{\e x56}.
 
-The \exception{AttributeError} exception has a more friendly error message,
-whose text will be something like \code{'Spam' instance has no attribute 'eggs'}.
-Previously the error message was just the missing attribute name \code{eggs}, and 
-code written to take advantage of this fact will break in 2.0.
+The \exception{AttributeError} and \exception{NameError} exceptions
+have a more friendly error message, whose text will be something like
+\code{'Spam' instance has no attribute 'eggs'} or \code{name 'eggs' is
+not defined}.  Previously the error message was just the missing
+attribute name \code{eggs}, and code written to take advantage of this
+fact will break in 2.0.
 
 Some work has been done to make integers and long integers a bit more
 interchangeable.  In 1.5.2, large-file support was added for Solaris,
@@ -1325,9 +1327,9 @@ these modules.
 \section{Acknowledgements}
 
 The authors would like to thank the following people for offering
-suggestions on various drafts of this article: David Bolen, Mark Hammond, Gregg Hauser,
-Jeremy Hylton, Fredrik Lundh, Detlef Lannert, Aahz Maruch, Skip
-Montanaro, Vladimir Marangozov, Guido van Rossum, Neil Schemenauer,
-and Russ Schmidt.
+suggestions on various drafts of this article: David Bolen, Mark
+Hammond, Gregg Hauser, Jeremy Hylton, Fredrik Lundh, Detlef Lannert,
+Aahz Maruch, Skip Montanaro, Vladimir Marangozov, Tobias Polzin, Guido
+van Rossum, Neil Schemenauer, and Russ Schmidt.
 
 \end{document}
