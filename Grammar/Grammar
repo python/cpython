@@ -1,6 +1,9 @@
 # Grammar for Python, version 5
 
 # Changes compared to version 4:
+#	Blank lines and lines only containing a comment are now eaten
+#		by the lexer, so the NEWLINE* things in suite are gone
+#		(but the 2nd NEWLINE terminating single_input stays!)
 #	Semicolons can separate small statements
 #	'continue' statement
 #	Dictionary constructors: {key:value, key:value, ...}
@@ -59,7 +62,7 @@ while_stmt: 'while' test ':' suite ['else' ':' suite]
 for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
 try_stmt: 'try' ':' suite (except_clause ':' suite)* ['finally' ':' suite]
 except_clause: 'except' [test [',' test]]
-suite: simple_stmt | NEWLINE INDENT NEWLINE* (stmt NEWLINE*)+ DEDENT
+suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
 
 test: and_test ('or' and_test)*
 and_test: not_test ('and' not_test)*
