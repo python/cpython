@@ -733,6 +733,16 @@ The value of \var{endpos} which was passed to the
 the string beyond which the regex engine will not go.
 \end{memberdesc}
 
+\begin{memberdesc}[MatchObject]{lastgroup}
+The name of the last matched capturing group, or \code{None} if the
+group didn't have a name, or if no group was matched at all.
+\end{memberdesc}
+
+\begin{memberdesc}[MatchObject]{lastindex}
+The integer index of the last matched capturing group, or \code{None}
+if no group was matched at all.
+\end{memberdesc}
+
 \begin{memberdesc}[MatchObject]{re}
 The regular expression object whose \method{match()} or
 \method{search()} method produced this \class{MatchObject} instance.
