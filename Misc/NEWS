@@ -51,6 +51,8 @@ Extension modules
 Library
 -------
 
+- Patch #1014992: In tarfile.readline, never return more than a line.
+
 - Bug #1013882: Flush bz2 data even if nothing had been written so far.
 
 - Patch #997284: Allow pydoc to work with XP Themes (.manifest file)
