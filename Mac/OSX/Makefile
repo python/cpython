@@ -25,8 +25,12 @@ OBJECTS=$(PYTHONBUILDDIR)/Mac/Python/macmain.o \
 pythonforbundle: $(OBJECTS)
 	$(LD) $(LDFLAGS) $(OBJECTS) -o pythonforbundle
 
+PYTHON=$(PYTHONBUILDDIR)/python.exe
 APPTEMPLATE=$(PYTHONBUILDDIR)/Mac/OSXResources/app
 APPSUBDIRS=MacOS Resources Resources/English.lproj
+RESOURCEFILE_ASINGLE=$(PYTHONBUILDDIR)/Mac/Resources/dialogs.rsrc
+RESOURCEFILE=python.rsrc
+RFCONVERTER=$(PYTHONBUILDDIR)/Mac/Lib/applesingle.py
 install: pythonforbundle
 	@for i in $(APPINSTALLDIR) $(APPINSTALLDIR)/Contents; do \
 		if test ! -d $$i; then \
@@ -67,7 +71,9 @@ install: pythonforbundle
 		done; \
 	done
 	$(INSTALL_PROGRAM) pythonforbundle $(APPINSTALLDIR)/Contents/MacOS/python
-	echo Need to install resources
+	# Create a temporary version of the resources here
+	$(PYTHON) $(RFCONVERTER) -r $(RESOURCEFILE_ASINGLE) $(RESOURCEFILE)
+	$(INSTALL_DATA) $(RESOURCEFILE) $(APPINSTALLDIR)/Contents/Resources/$(RESOURCEFILE)
 		
 LIBDEST=$(INSTALLDIR)/Mac/Lib
 LIBSRC=$(PYTHONBUILDDIR)/Mac/Lib
