@@ -261,7 +261,7 @@ if str(buffer(buffer('asdf', 0, 2), 0)) != 'as':
 if str(buffer(buffer('asdf', 0, 2), 0, 5000)) != 'as':
     raise TestFailed, 'composing length-specified buffer failed'
 if str(buffer(buffer('asdf', 0, 2), 0, -1)) != 'as':
-    raise TestFailed, 'composing length-specified buffer failed' 
+    raise TestFailed, 'composing length-specified buffer failed'
 if str(buffer(buffer('asdf', 0, 2), 1, 2)) != 's':
     raise TestFailed, 'composing length-specified buffer failed'
 
