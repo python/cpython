@@ -93,7 +93,7 @@ except ImportError:
 def _group(s):
     conv=localeconv()
     grouping=conv['grouping']
-    if not grouping:return s
+    if not grouping:return (s, 0)
     result=""
     seps = 0
     spaces = ""
