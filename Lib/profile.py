@@ -252,13 +252,13 @@ class Profile:
         if self.cur and frame.f_back is not self.cur[-2]:
             rt, rtt, rct, rfn, rframe, rcur = self.cur
             if not isinstance(rframe, Profile.fake_frame):
-                if rframe.f_back is not frame.f_back:
-                    print rframe, rframe.f_back
-                    print frame, frame.f_back
-                    raise "Bad call", self.cur[-3]
+                assert rframe.f_back is frame.f_back, ("Bad call", rfn,
+                                                       rframe, rframe.f_back,
+                                                       frame, frame.f_back)
                 self.trace_dispatch_return(rframe, 0)
-                if self.cur and frame.f_back is not self.cur[-2]:
-                    raise "Bad call[2]", self.cur[-3]
+                assert (self.cur is None or \
+                        frame.f_back is self.cur[-2]), ("Bad call",
+                                                        self.cur[-3])
         fcode = frame.f_code
         fn = (fcode.co_filename, fcode.co_firstlineno, fcode.co_name)
         self.cur = (t, 0, 0, fn, frame, self.cur)
@@ -272,10 +272,8 @@ class Profile:
 
     def trace_dispatch_return(self, frame, t):
         if frame is not self.cur[-2]:
-            if frame is self.cur[-2].f_back:
-                self.trace_dispatch_return(self.cur[-2], 0)
-            else:
-                raise "Bad return", self.cur[-3]
+            assert frame is self.cur[-2].f_back, ("Bad return", self.cur[-3])
+            self.trace_dispatch_return(self.cur[-2], 0)
 
         # Prefix "r" means part of the Returning or exiting frame
         # Prefix "p" means part of the Previous or older frame
@@ -311,7 +309,7 @@ class Profile:
         }
 
 
-    # The next few function play with self.cmd. By carefully preloading
+    # The next few functions play with self.cmd. By carefully preloading
     # our parallel stack, we can force the profiled result to include
     # an arbitrary string as the name of the calling function.
     # We use self.cmd as that string, and the resulting stats look
