@@ -536,5 +536,5 @@ print
 print 'void'
 print 'initgl()'
 print '{'
-print '\tPy_InitModule("gl", gl_methods);'
+print '\t(void) Py_InitModule("gl", gl_methods);'
 print '}'
