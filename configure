@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.63 
+# From configure.in Revision: 1.64 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.12 
@@ -825,7 +825,7 @@ if test -z "$LINKCC"
 then
 	case $ac_sys_system in
 	AIX*)
-	   LINKCC="makexp_aix python.exp \"\" \$(LIBRARY); \$(PURIFY) \$(CC)";;
+	   LINKCC="\$(srcdir)/makexp_aix python.exp \"\" \$(LIBRARY); \$(PURIFY) \$(CC)";;
 	*) LINKCC="\$(PURIFY) \$(CC)";;
 	esac
 fi
@@ -1746,7 +1746,7 @@ echo "configure:1746: checking LDSHARED" >&5
 if test -z "$LDSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
-	AIX*) LDSHARED="ld_so_aix \$(CC)";;
+	AIX*) LDSHARED="\$(srcdir)/ld_so_aix \$(CC)";;
 	IRIX/5*) LDSHARED="ld -shared";;
 	IRIX*/6*) LDSHARED="ld $SGI_ABI -shared -all"; OPT="$OPT $SGI_ABI";;
 	SunOS/4*) LDSHARED="ld";;
