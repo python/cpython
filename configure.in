@@ -170,7 +170,7 @@ AC_ARG_WITH(cxx, [  --with-cxx=<compiler>           enable C++ support],[
 	with_cxx=no
 ])
 AC_MSG_RESULT($with_cxx)
-SET_CXX="CXX = $CXX"
+SET_CXX="CXX=$CXX"
 
 #AC_MSG_CHECKING(CCC)
 #if test -z "$CCC"
@@ -477,7 +477,7 @@ AC_DEFINE_UNQUOTED(SIZEOF_TIME_T, $ac_cv_sizeof_time_t)
 # if have pthread_t then define SIZEOF_PTHREAD_T
 AC_MSG_CHECKING(for pthread_t)
 have_pthread_t=no
-AC_TRY_COMPILE([#include <pthread.h>], [pthread_t x; x = (pthread_t)0;], have_pthread_t=yes)
+AC_TRY_COMPILE([#include <pthread.h>], [pthread_t x; x = *(pthread_t)*0;], have_pthread_t=yes)
 AC_MSG_RESULT($have_pthread_t)
 if test "$have_pthread_t" = yes ; then
   # AC_CHECK_SIZEOF() doesn't include <pthread.h>.
