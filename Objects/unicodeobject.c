@@ -4668,6 +4668,25 @@ formatfloat(Py_UNICODE *buf,
     return usprintf(buf, fmt, x);
 }
 
+static PyObject*
+formatlong(PyObject *val, int flags, int prec, int type)
+{
+	char *buf;
+	int i, len;
+	PyObject *str; /* temporary string object. */
+	PyUnicodeObject *result;
+
+	str = _PyString_FormatLong(val, flags, prec, type, &buf, &len);
+	if (!str)
+		return NULL;
+	result = _PyUnicode_New(len);
+	for (i = 0; i < len; i++)
+		result->str[i] = buf[i];
+	result->str[len] = 0;
+	Py_DECREF(str);
+	return (PyObject*)result;
+}
+
 static int
 formatint(Py_UNICODE *buf,
 	  size_t buflen,
@@ -4677,8 +4696,9 @@ formatint(Py_UNICODE *buf,
 	  PyObject *v)
 {
     /* fmt = '%#.' + `prec` + 'l' + `type`
-       worst case length = 3 + 10 (len of INT_MAX) + 1 + 1 = 15 (use 20)*/
-    char fmt[20];
+       worst case length = 3 + 19 (worst len of INT_MAX on 64-bit machine)
+       + 1 + 1 = 24*/
+    char fmt[64]; /* plenty big enough! */
     long x;
 
     x = PyInt_AsLong(v);
@@ -5006,26 +5026,29 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    case 'X':
 		if (c == 'i')
 		    c = 'd';
-		pbuf = formatbuf;
-		len = formatint(pbuf, sizeof(formatbuf)/sizeof(Py_UNICODE),
-			flags, prec, c, v);
-		if (len < 0)
-		    goto onError;
-		sign = (c == 'd');
-		if (flags & F_ZERO) {
-		    fill = '0';
-		    if ((flags&F_ALT) &&
-			(c == 'x' || c == 'X') &&
-			pbuf[0] == '0' && pbuf[1] == c) {
-			*res++ = *pbuf++;
-			*res++ = *pbuf++;
-			rescnt -= 2;
-			len -= 2;
-			width -= 2;
-			if (width < 0)
-			    width = 0;
-		    }
+		if (PyLong_Check(v) && PyLong_AsLong(v) == -1
+		    && PyErr_Occurred()) {
+		    PyErr_Clear();
+		    temp = formatlong(v, flags, prec, c);
+		    if (!temp)
+			goto onError;
+		    pbuf = PyUnicode_AS_UNICODE(temp);
+		    len = PyUnicode_GET_SIZE(temp);
+		    /* unbounded ints can always produce
+		       a sign character! */
+		    sign = 1;
 		}
+		else {
+		    pbuf = formatbuf;
+		    len = formatint(pbuf, sizeof(formatbuf)/sizeof(Py_UNICODE),
+				    flags, prec, c, v);
+		    if (len < 0)
+			goto onError;
+		    /* only d conversion is signed */
+		    sign = c == 'd';
+		}
+		if (flags & F_ZERO)
+		    fill = '0';
 		break;
 
 	    case 'e':
@@ -5039,7 +5062,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 		if (len < 0)
 		    goto onError;
 		sign = 1;
-		if (flags&F_ZERO)
+		if (flags & F_ZERO)
 		    fill = '0';
 		break;
 
@@ -5086,14 +5109,35 @@ PyObject *PyUnicode_Format(PyObject *format,
 		if (width > len)
 		    width--;
 	    }
+	    if ((flags & F_ALT) && (c == 'x' || c == 'X')) {
+		assert(pbuf[0] == '0');
+		assert(pbuf[1] == c);
+		if (fill != ' ') {
+		    *res++ = *pbuf++;
+		    *res++ = *pbuf++;
+		}
+		rescnt -= 2;
+		width -= 2;
+		if (width < 0)
+		    width = 0;
+		len -= 2;
+	    }
 	    if (width > len && !(flags & F_LJUST)) {
 		do {
 		    --rescnt;
 		    *res++ = fill;
 		} while (--width > len);
 	    }
-	    if (sign && fill == ' ')
-		*res++ = sign;
+	    if (fill == ' ') {
+		if (sign)
+		    *res++ = sign;
+		if ((flags & F_ALT) && (c == 'x' || c == 'X')) {
+		    assert(pbuf[0] == '0');
+		    assert(pbuf[1] == c);
+		    *res++ = *pbuf++;
+		    *res++ = *pbuf++;
+		}
+	    }
 	    memcpy(res, pbuf, len * sizeof(Py_UNICODE));
 	    res += len;
 	    rescnt -= len;

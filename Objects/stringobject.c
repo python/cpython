@@ -2427,6 +2427,13 @@ getnextarg(PyObject *args, int arglen, int *p_argidx)
 	return NULL;
 }
 
+/* Format codes
+ * F_LJUST	'-'
+ * F_SIGN	'+'
+ * F_BLANK	' '
+ * F_ALT	'#'
+ * F_ZERO	'0'
+ */
 #define F_LJUST (1<<0)
 #define F_SIGN	(1<<1)
 #define F_BLANK (1<<2)
@@ -2464,22 +2471,164 @@ formatfloat(char *buf, size_t buflen, int flags,
 	return strlen(buf);
 }
 
+/* _PyString_FormatLong emulates the format codes d, u, o, x and X, and
+ * the F_ALT flag, for Python's long (unbounded) ints.  It's not used for
+ * Python's regular ints.
+ * Return value:  a new PyString*, or NULL if error.
+ *  .  *pbuf is set to point into it,
+ *     *plen set to the # of chars following that.
+ *     Caller must decref it when done using pbuf.
+ *     The string starting at *pbuf is of the form
+ *         "-"? ("0x" | "0X")? digit+
+ *     "0x"/"0X" are present only for x and X conversions, with F_ALT
+ *         set in flags.  The case of hex digits will be correct, 
+ *     There will be at least prec digits, zero-filled on the left if
+ *         necessary to get that many.
+ * val		object to be converted
+ * flags	bitmask of format flags; only F_ALT is looked at
+ * prec		minimum number of digits; 0-fill on left if needed
+ * type		a character in [duoxX]; u acts the same as d
+ *
+ * CAUTION:  o, x and X conversions on regular ints can never
+ * produce a '-' sign, but can for Python's unbounded ints.
+ */
+PyObject*
+_PyString_FormatLong(PyObject *val, int flags, int prec, int type,
+		     char **pbuf, int *plen)
+{
+	PyObject *result = NULL;
+	char *buf;
+	int i;
+	int sign;	/* 1 if '-', else 0 */
+	int len;	/* number of characters */
+	int numdigits;	/* len == numnondigits + numdigits */
+	int numnondigits = 0;
+
+	switch (type) {
+	case 'd':
+	case 'u':
+		result = val->ob_type->tp_str(val);
+		break;
+	case 'o':
+		result = val->ob_type->tp_as_number->nb_oct(val);
+		break;
+	case 'x':
+	case 'X':
+		numnondigits = 2;
+		result = val->ob_type->tp_as_number->nb_hex(val);
+		break;
+	default:
+		assert(!"'type' not in [duoxX]");
+	}
+	if (!result)
+		return NULL;
+
+	/* To modify the string in-place, there can only be one reference. */
+	if (result->ob_refcnt != 1) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	buf = PyString_AsString(result);
+	len = PyString_Size(result);
+	if (buf[len-1] == 'L') {
+		--len;
+		buf[len] = '\0';
+	}
+	sign = buf[0] == '-';
+	numnondigits += sign;
+	numdigits = len - numnondigits;
+	assert(numdigits > 0);
+
+	/* Get rid of base marker unless F_ALT */
+	if ((flags & F_ALT) == 0) {
+		/* Need to skip 0x, 0X or 0. */
+		int skipped = 0;
+		switch (type) {
+		case 'o':
+			assert(buf[sign] == '0');
+			/* If 0 is only digit, leave it alone. */
+			if (numdigits > 1) {
+				skipped = 1;
+				--numdigits;
+			}
+			break;
+		case 'x':
+		case 'X':
+			assert(buf[sign] == '0');
+			assert(buf[sign + 1] == 'x');
+			skipped = 2;
+			numnondigits -= 2;
+			break;
+		}
+		if (skipped) {
+			buf += skipped;
+			len -= skipped;
+			if (sign)
+				buf[0] = '-';
+		}
+		assert(len == numnondigits + numdigits);
+		assert(numdigits > 0);
+	}
+
+	/* Fill with leading zeroes to meet minimum width. */
+	if (prec > numdigits) {
+		PyObject *r1 = PyString_FromStringAndSize(NULL,
+					numnondigits + prec);
+		char *b1;
+		if (!r1) {
+			Py_DECREF(result);
+			return NULL;
+		}
+		b1 = PyString_AS_STRING(r1);
+		for (i = 0; i < numnondigits; ++i)
+			*b1++ = *buf++;
+		for (i = 0; i < prec - numdigits; i++)
+			*b1++ = '0';
+		for (i = 0; i < numdigits; i++)
+			*b1++ = *buf++;
+		*b1 = '\0';
+		Py_DECREF(result);
+		result = r1;
+		buf = PyString_AS_STRING(result);
+		len = numnondigits + prec;
+	}
+
+	/* Fix up case for hex conversions. */
+	switch (type) {
+	case 'x':
+		/* Need to convert all upper case letters to lower case. */
+		for (i = 0; i < len; i++)
+			if (buf[i] >= 'A' && buf[i] <= 'F')
+				buf[i] += 'a'-'A';
+		break;
+	case 'X':
+		/* Need to convert 0x to 0X (and -0x to -0X). */
+		if (buf[sign + 1] == 'x')
+			buf[sign + 1] = 'X';
+		break;
+	}
+	*pbuf = buf;
+	*plen = len;
+	return result;
+}
+
 static int
 formatint(char *buf, size_t buflen, int flags,
           int prec, int type, PyObject *v)
 {
 	/* fmt = '%#.' + `prec` + 'l' + `type`
-	   worst case length = 3 + 10 (len of INT_MAX) + 1 + 1 = 15 (use 20)*/
-	char fmt[20];
+	   worst case length = 3 + 19 (worst len of INT_MAX on 64-bit machine)
+	   + 1 + 1 = 24 */
+	char fmt[64];	/* plenty big enough! */
 	long x;
 	if (!PyArg_Parse(v, "l;int argument required", &x))
 		return -1;
 	if (prec < 0)
 		prec = 1;
 	sprintf(fmt, "%%%s.%dl%c", (flags&F_ALT) ? "#" : "", prec, type);
-	/* buf = '+'/'-'/'0'/'0x' + '[0-9]'*max(prec,len(x in octal))
+	/* buf = '+'/'-'/'0'/'0x' + '[0-9]'*max(prec, len(x in octal))
 	   worst case buf = '0x' + [0-9]*prec, where prec >= 11 */
-	if (buflen <= 13 || buflen <= (size_t)2+(size_t)prec) {
+	if (buflen <= 13 || buflen <= (size_t)2 + (size_t)prec) {
 		PyErr_SetString(PyExc_OverflowError,
 			"formatted integer is too long (precision too long?)");
 		return -1;
@@ -2752,25 +2901,29 @@ PyString_Format(PyObject *format, PyObject *args)
 			case 'X':
 				if (c == 'i')
 					c = 'd';
-				pbuf = formatbuf;
-				len = formatint(pbuf, sizeof(formatbuf), flags, prec, c, v);
-				if (len < 0)
-					goto error;
-				sign = (c == 'd');
-				if (flags&F_ZERO) {
-					fill = '0';
-					if ((flags&F_ALT) &&
-					    (c == 'x' || c == 'X') &&
-					    pbuf[0] == '0' && pbuf[1] == c) {
-						*res++ = *pbuf++;
-						*res++ = *pbuf++;
-						rescnt -= 2;
-						len -= 2;
-						width -= 2;
-						if (width < 0)
-							width = 0;
-					}
+				if (PyLong_Check(v) && PyLong_AsLong(v) == -1
+				    && PyErr_Occurred()) {
+					/* Too big for a C long. */
+					PyErr_Clear();
+					temp = _PyString_FormatLong(v, flags,
+						prec, c, &pbuf, &len);
+					if (!temp)
+						goto error;
+					/* unbounded ints can always produce
+					   a sign character! */
+					sign = 1;
 				}
+				else {
+					pbuf = formatbuf;
+					len = formatint(pbuf, sizeof(formatbuf),
+							flags, prec, c, v);
+					if (len < 0)
+						goto error;
+					/* only d conversion is signed */
+					sign = c == 'd';
+				}
+				if (flags & F_ZERO)
+					fill = '0';
 				break;
 			case 'e':
 			case 'E':
@@ -2782,7 +2935,7 @@ PyString_Format(PyObject *format, PyObject *args)
 				if (len < 0)
 					goto error;
 				sign = 1;
-				if (flags&F_ZERO)
+				if (flags & F_ZERO)
 					fill = '0';
 				break;
 			case 'c':
@@ -2807,11 +2960,11 @@ PyString_Format(PyObject *format, PyObject *args)
 				else if (flags & F_BLANK)
 					sign = ' ';
 				else
-					sign = '\0';
+					sign = 0;
 			}
 			if (width < len)
 				width = len;
-			if (rescnt < width + (sign != '\0')) {
+			if (rescnt < width + (sign != 0)) {
 				reslen -= rescnt;
 				rescnt = width + fmtcnt + 100;
 				reslen += rescnt;
@@ -2827,14 +2980,36 @@ PyString_Format(PyObject *format, PyObject *args)
 				if (width > len)
 					width--;
 			}
-			if (width > len && !(flags&F_LJUST)) {
+			if ((flags & F_ALT) && (c == 'x' || c == 'X')) {
+				assert(pbuf[0] == '0');
+				assert(pbuf[1] == c);
+				if (fill != ' ') {
+					*res++ = *pbuf++;
+					*res++ = *pbuf++;
+				}
+				rescnt -= 2;
+				width -= 2;
+				if (width < 0)
+					width = 0;
+				len -= 2;
+			}
+			if (width > len && !(flags & F_LJUST)) {
 				do {
 					--rescnt;
 					*res++ = fill;
 				} while (--width > len);
 			}
-			if (sign && fill == ' ')
-				*res++ = sign;
+			if (fill == ' ') {
+				if (sign)
+					*res++ = sign;
+				if ((flags & F_ALT) &&
+				    (c == 'x' || c == 'X')) {
+					assert(pbuf[0] == '0');
+					assert(pbuf[1] == c);
+					*res++ = *pbuf++;
+					*res++ = *pbuf++;
+				}
+			}
 			memcpy(res, pbuf, len);
 			res += len;
 			rescnt -= len;
