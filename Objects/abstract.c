@@ -463,7 +463,8 @@ do_pow(v, w)
 				"pow() requires numeric arguments");
 		return NULL;
 	}
-	if (PyFloat_Check(w) && PyFloat_AsDouble(v) < 0.0) {
+	if (PyFloat_Check(v) && PyFloat_Check(w) &&
+	    PyFloat_AsDouble(v) < 0.0) {
 		if (!PyErr_Occurred())
 		    PyErr_SetString(PyExc_ValueError,
 				    "negative number to float power");
