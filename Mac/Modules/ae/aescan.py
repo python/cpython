@@ -2,6 +2,8 @@
 # Then run aesupport to generate AEmodule.c.
 0# (Should learn how to tell the compiler to compile it as well.)
 
+import addpack
+addpack.addpack(':Tools:bgen:bgen')
 import sys
 import os
 import string
@@ -46,6 +48,8 @@ class AppleEventsScanner(Scanner):
 		return [
 			"ProcPtr",
 			"AEArrayType",
+			"AECoercionHandlerUPP",
+			"UniversalProcPtr",
 			]
 
 	def makerepairinstructions(self):
@@ -65,6 +69,9 @@ class AppleEventsScanner(Scanner):
 			([("void", "*", "OutMode"), ("Size", "*", "InMode"),
 			                            ("Size", "*", "OutMode")],
 			 [("VarVarOutBuffer", "*", "InOutMode")]),
+			 
+			([("AppleEvent", "theAppleEvent", "OutMode")],
+			 [("AppleEvent_ptr", "*", "InMode")]),
 			]
 
 if __name__ == "__main__":

@@ -68,7 +68,7 @@ def pack(x, forcetype = None):
 	if t == DictionaryType:
 		record = AE.AECreateList('', 1)
 		for key, value in x.items():
-			record.AEPutKeyDesc(key, pack(value))
+			record.AEPutParamDesc(key, pack(value))
 		return record
 	if t == InstanceType and hasattr(x, '__aepack__'):
 		return x.__aepack__()
