@@ -14,8 +14,8 @@
 # IDLE extensions can be enabled and disabled by adding them to one of
 # the config files.  To enable an extension, create a section with the
 # same name as the extension, e.g. the [ParenMatch] section below.  To
-# disable an extension, either remove the section or add the the
-# enable option with the value 0.  
+# disable an extension, either remove the section or add the 'enable'
+# option with the value 0.  
 
 [EditorWindow]
 width= 80
