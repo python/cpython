@@ -1750,7 +1750,7 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                     chr += 10 + c - 'A';
             }
             s += i;
-            if (chr == 0xffffffff)
+            if (chr == 0xffffffff && PyErr_Occurred())
                 /* _decoding_error will have already written into the
                    target buffer. */
                 break;
