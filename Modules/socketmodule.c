@@ -975,6 +975,10 @@ socket_fromfd(self, args)
 		if (!getargs(args, "(iiii)", &fd, &family, &type, &proto))
 			return NULL;
 	}
+	/* Dup the fd so it and the socket can be closed independently */
+	fd = dup(fd);
+	if (fd < 0)
+		return socket_error();
 	s = newsockobject(fd, family, type, proto);
 	/* From now on, ignore SIGPIPE and let the error checking
 	   do the work. */
