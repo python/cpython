@@ -46,7 +46,7 @@ Misc/NEWS.  Some highlights:
   it exists and None (or the optional second argument) if not.
 
   - There is a new regression test harness, which tests many more
-  modules.  (To run the tests, do "import tes.autotest".)
+  modules.  (To run the tests, do "import test.autotest".)
 
   - The interpreter is much smarter about the initial value for
   sys.path; you can control it easier using $PYTHONHOME (see the usage
