@@ -575,6 +575,11 @@ int_pow(PyIntObject *v, PyIntObject *w, PyIntObject *z)
 	CONVERT_TO_LONG(v, iv);
 	CONVERT_TO_LONG(w, iw);
 	if (iw < 0) {
+		if ((PyObject *)z != Py_None) {
+			PyErr_SetString(PyExc_TypeError, "integer pow() arg "
+			     "3 must not be specified when arg 2 is < 0");
+			return NULL;
+		}
 		/* Return a float.  This works because we know that
 		   this calls float_pow() which converts its
 		   arguments to double. */

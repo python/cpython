@@ -82,17 +82,28 @@ if fcmp(pow(2.,10), 1024.): raise TestFailed, 'pow(2.,10)'
 if fcmp(pow(2.,20), 1024.*1024.): raise TestFailed, 'pow(2.,20)'
 if fcmp(pow(2.,30), 1024.*1024.*1024.): raise TestFailed, 'pow(2.,30)'
 #
-# XXX These don't work -- negative float to the float power...
-#if fcmp(pow(-2.,0), 1.): raise TestFailed, 'pow(-2.,0)'
-#if fcmp(pow(-2.,1), -2.): raise TestFailed, 'pow(-2.,1)'
-#if fcmp(pow(-2.,2), 4.): raise TestFailed, 'pow(-2.,2)'
-#if fcmp(pow(-2.,3), -8.): raise TestFailed, 'pow(-2.,3)'
-#
+if fcmp(pow(-2.,0), 1.): raise TestFailed, 'pow(-2.,0)'
+if fcmp(pow(-2.,1), -2.): raise TestFailed, 'pow(-2.,1)'
+if fcmp(pow(-2.,2), 4.): raise TestFailed, 'pow(-2.,2)'
+if fcmp(pow(-2.,3), -8.): raise TestFailed, 'pow(-2.,3)'
+
+from types import FloatType
 for x in 2, 2L, 2.0:
     for y in 10, 10L, 10.0:
         for z in 1000, 1000L, 1000.0:
-            if fcmp(pow(x, y, z), 24.0):
-                raise TestFailed, 'pow(%s, %s, %s)' % (x, y, z)
+            if isinstance(x, FloatType) or \
+               isinstance(y, FloatType) or \
+               isinstance(z, FloatType):
+                try:
+                    pow(x, y, z)
+                except TypeError:
+                    pass
+                else:
+                    raise TestFailed("3-arg float pow() should have "
+                                     "raised TypeError %r" % (x, y, z))
+            else:
+                if fcmp(pow(x, y, z), 24.0):
+                    raise TestFailed, 'pow(%s, %s, %s)' % (x, y, z)
 
 print 'range'
 if range(3) != [0, 1, 2]: raise TestFailed, 'range(3)'

@@ -118,7 +118,7 @@ class instances are callable if they have a \method{__call__()} method.
   operations.
 \end{funcdesc}
 
-\begin{funcdesc}{compile}{string, filename, kind\optional{, 
+\begin{funcdesc}{compile}{string, filename, kind\optional{,
                           flags\optional{, dont_inherit}}}
   Compile the \var{string} into a code object.  Code objects can be
   executed by an \keyword{exec} statement or evaluated by a call to
@@ -408,7 +408,7 @@ raised.
 \begin{funcdesc}{locals}{}
 Return a dictionary representing the current local symbol table.
 \strong{Warning:} The contents of this dictionary should not be
-modified; changes may not affect the values of local variables used by 
+modified; changes may not affect the values of local variables used by
 the interpreter.
 \end{funcdesc}
 
@@ -478,7 +478,7 @@ the interpreter.
   ignored).  If the file cannot be opened, \exception{IOError} is
   raised.
 
-  If \var{mode} is omitted, it defaults to \code{'r'}.  When opening a 
+  If \var{mode} is omitted, it defaults to \code{'r'}.  When opening a
   binary file, you should append \code{'b'} to the \var{mode} value
   for improved portability.  (It's useful even on systems which don't
   treat binary and text files differently, where it serves as
@@ -519,8 +519,14 @@ the interpreter.
   case, all arguments are converted to float and a float result is
   delivered.  For example, \code{10**2} returns \code{100}, but
   \code{10**-2} returns \code{0.01}.  (This last feature was added in
-  Python 2.2.  In Python 2.1 and before, a negative second argument
-  would raise an exception.)
+  Python 2.2.  In Python 2.1 and before, if both arguments were of integer
+  types and the second argument was negative, an exception was raised.)
+  If the second argument is negative, the third argument must be omitted. 
+  If \var{z} is present, \var{x} and \var{y} must be of integer types,
+  and \var{y} must be non-negative.  (This restriction was added in
+  Python 2.2.  In Python 2.1 and before, floating 3-argument \code{pow()}
+  returned platform-dependent results depending on floating-point
+  rounding accidents.)
 \end{funcdesc}
 
 \begin{funcdesc}{range}{\optional{start,} stop\optional{, step}}
@@ -731,7 +737,7 @@ returns a dictionary corresponding to the object's symbol table.
 The returned dictionary should not be modified: the effects on the
 corresponding symbol table are undefined.\footnote{
   In the current implementation, local variable bindings cannot
-  normally be affected this way, but variables retrieved from 
+  normally be affected this way, but variables retrieved from
   other scopes (such as modules) can be.  This may change.}
 \end{funcdesc}
 

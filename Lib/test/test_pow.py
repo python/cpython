@@ -64,6 +64,15 @@ def powtest(type):
         for j in range(jl, jh+1):
             for k in range(kl, kh+1):
                 if k != 0:
+                    if type == float or j < 0:
+                        try:
+                            pow(type(i),j,k)
+                        except TypeError:
+                            pass
+                        else:
+                            raise TestFailed("expected TypeError from "
+                                "pow%r" % ((type(i), j, k)))
+                        continue
                     if compare(pow(type(i),j,k), pow(type(i),j)% type(k)):
                         raise ValueError, "pow(" +str(i)+ "," +str(j)+ \
                              "," +str(k)+ ") != pow(" +str(i)+ "," + \
@@ -96,10 +105,6 @@ print `pow(-3L,3L) % -8`, `pow(-3L,3L,-8)`
 print `pow(5L,2) % -8`, `pow(5L,2,-8)`
 print
 
-print pow(3.0,3.0) % 8, pow(3.0,3.0,8)
-print pow(3.0,3.0) % -8, pow(3.0,3.0,-8)
-print pow(3.0,2) % -2, pow(3.0,2,-2)
-print pow(5.0,2) % -8, pow(5.0,2,-8)
 print
 
 for i in range(-10, 11):
@@ -112,8 +117,3 @@ for i in range(-10, 11):
             if j >= 0 and k != 0:
                 o = pow(long(i),j) % k
                 n = pow(long(i),j,k)
-                if o != n: print 'Long mismatch:', i,j,k
-            if i >= 0 and k != 0:
-                o = pow(float(i),j) % k
-                n = pow(float(i),j,k)
-                if o != n: print 'Float mismatch:', i,j,k

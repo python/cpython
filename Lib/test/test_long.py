@@ -314,10 +314,19 @@ def test_auto_overflow():
                 checkit(x, '**', y)
 
                 for z in special:
-                    if z != 0:
-                        expected = pow(longx, longy, long(z))
-                        got = pow(x, y, z)
-                        checkit('pow', x, y, '%', z)
+                    if z != 0 :
+                        if y >= 0:
+                            expected = pow(longx, longy, long(z))
+                            got = pow(x, y, z)
+                            checkit('pow', x, y, '%', z)
+                        else:
+                            try:
+                                pow(longx, longy, long(z))
+                            except TypeError:
+                                pass
+                            else:
+                                raise TestFailed("pow%r should have raised "
+                                "TypeError" % ((longx, longy, long(z))))
 
 # ---------------------------------------------------------------- do it
 

@@ -3,6 +3,12 @@ What's New in Python 2.2a3?
 
 Core
 
+- The 3-argument builtin pow() no longer allows a third non-None argument
+  if either of the first two arguments is a float, or if both are of
+  integer types and the second argument is negative (in which latter case
+  the arguments are converted to float, so this is really the same
+  restriction).
+
 - The builtin dir() now returns more information, and sometimes much
   more, generally naming all attributes of an object, and all attributes
   reachable from the object via its class, and from its class's base
