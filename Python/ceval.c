@@ -2607,35 +2607,36 @@ call_cfunction(PyObject *func, PyObject *arg, PyObject *kw)
 	PyObject *self = PyCFunction_GET_SELF(func);
 	int flags = PyCFunction_GET_FLAGS(func);
 
-	if (flags & METH_KEYWORDS && kw == NULL) {
-		static PyObject *dict = NULL;
-		if (dict == NULL) {
-			dict = PyDict_New();
-			if (dict == NULL)
-				return NULL;
-		}
-		kw = dict;
-		Py_INCREF(dict);
-	}
-	if (flags & METH_VARARGS && kw == NULL) {
-		return (*meth)(self, arg);
-	}
 	if (flags & METH_KEYWORDS) {
+		if (kw == NULL) {
+			static PyObject *dict = NULL;
+			if (dict == NULL) {
+				dict = PyDict_New();
+				if (dict == NULL)
+					return NULL;
+			}
+			kw = dict;
+			Py_INCREF(dict);
+		}
 		return (*(PyCFunctionWithKeywords)meth)(self, arg, kw);
-	}
-	if (!(flags & METH_VARARGS)) {
-		int size = PyTuple_GET_SIZE(arg);
-		if (size == 1)
-			arg = PyTuple_GET_ITEM(arg, 0);
-		else if (size == 0)
-			arg = NULL;
-		return (*meth)(self, arg);
 	}
 	if (kw != NULL && PyDict_Size(kw) != 0) {
 		PyErr_Format(PyExc_TypeError,
 			     "%.200s() takes no keyword arguments",
 			     f->m_ml->ml_name);
 		return NULL;
+	}
+	if (flags & METH_VARARGS) {
+		return (*meth)(self, arg);
+	}
+	if (!(flags & METH_VARARGS)) {
+		/* the really old style */
+		int size = PyTuple_GET_SIZE(arg);
+		if (size == 1)
+			arg = PyTuple_GET_ITEM(arg, 0);
+		else if (size == 0)
+			arg = NULL;
+		return (*meth)(self, arg);
 	}
 	/* should never get here ??? */
 	PyErr_BadInternalCall();

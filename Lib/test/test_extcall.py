@@ -1,4 +1,5 @@
 from UserList import UserList
+from test_support import TestFailed
 
 def f(*a, **k):
     print a, k
@@ -161,4 +162,13 @@ try:
 except TypeError, err:
     print err
 
-
+# A PyCFunction that takes only positional parameters should allow an
+# empty keyword dictionary to pass without a complaint, but raise a
+# TypeError if the dictionary is non-empty.
+id(1, **{})
+try:
+    id(1, **{"foo": 1})
+except TypeError:
+    pass
+else:
+    raise TestFailed, 'expected TypeError; no exception raised'

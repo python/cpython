@@ -39,6 +39,17 @@ apply(f1, (1,))
 apply(f2, (1, 2))
 apply(f3, (1, 2, 3))
 
+# A PyCFunction that takes only positional parameters should allow an
+# empty keyword dictionary to pass without a complaint, but raise a
+# TypeError if the dictionary is non-empty.
+apply(id, (1,), {})
+try:
+    apply(id, (1,), {"foo": 1})
+except TypeError:
+    pass
+else:
+    raise TestFailed, 'expected TypeError; no exception raised'
+
 print 'callable'
 if not callable(len):raise TestFailed, 'callable(len)'
 def f(): pass
