@@ -13,6 +13,12 @@ from macsupport import *
 DialogPtr = OpaqueByValueType("DialogPtr", "DlgObj")
 DialogRef = DialogPtr
 
+# XXXX There must be a more elegant way to do this. An OptHandle is
+# either a handle or None (in case NULL is passed in). This is needed
+# for GetDialogItem().
+OptHandle = OpaqueByValueType("Handle", "ResObj")
+OptHandle.new = "ResObj_OptNew"
+
 ModalFilterProcPtr = InputOnlyType("PyObject*", "O")
 ModalFilterProcPtr.passInput = lambda name: "NewModalFilterProc(Dlg_PassFilterProc(%s))" % name
 ModalFilterUPP = ModalFilterProcPtr

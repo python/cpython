@@ -63,6 +63,10 @@ class MyScanner(Scanner):
 			([("void", "*", "OutMode"), ("long", "*", "InMode"),
 			                            ("long", "*", "OutMode")],
 			 [("VarVarOutBuffer", "*", "InOutMode")]),
+			 
+			# GetDialogItem return handle is optional
+			([("Handle", "item", "OutMode")],
+			 [("OptHandle", "item", "OutMode")]),
 			
 			# NewDialog ETC.
 			([("void", "*", "OutMode")],
