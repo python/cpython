@@ -1,0 +1,119 @@
+\chapter{Undocumented Modules \label{undocumented-modules}}
+
+
+The modules in this chapter are poorly documented (if at all).  If you
+wish to contribute documentation of any of these modules, please get in
+touch with \email{python-docs@python.org}.
+
+\localmoduletable
+
+
+\section{\module{buildtools} --- Helper module for BuildApplet and Friends}
+\declaremodule{standard}{buildtools}
+  \platform{Mac}
+\modulesynopsis{Helper module for BuildApple, BuildApplication and macfreeze}
+
+
+\section{\module{py_resource} --- }
+\declaremodule[pyresource]{standard}{py_resource}
+  \platform{Mac}
+\modulesynopsis{}
+
+
+\section{\module{cfmfile} --- Code Fragment Resource module}
+\declaremodule{standard}{cfmfile}
+  \platform{Mac}
+\modulesynopsis{Code Fragment Resource module}
+
+\module{cfmfile} is a module that understands Code Fragments and the
+accompanying ``cfrg'' resources. It can parse them and merge them, and is
+used by BuildApplication to combine all plugin modules to a single
+executable.
+
+
+\section{\module{macerrors} --- MacOS Errors}
+\declaremodule{standard}{macerrors}
+  \platform{Mac}
+\modulesynopsis{Constant definitions for many MacOS error codes}
+
+\module{macerrors} cotains constant definitions for many MacOS error codes.
+
+
+\section{\module{macfsn} --- NavServices calls}
+\declaremodule{standard}{macfsn}
+  \platform{Mac}
+\modulesynopsis{NavServices versions of StandardFile calls}
+
+
+\module{macfsn} contains wrapper functions that have the same API as the macfs 
+StandardFile calls, but are implemented with Navigation Services. Importing it 
+will replace the methods in macfs with these, if Navigation Services is 
+available on your machine.
+
+
+\section{\module{icopen} --- Internet Config replacement for \method{open()}}
+\declaremodule{standard}{icopen}
+  \platform{Mac}
+\modulesynopsis{Internet Config replacement for \method{open()}}
+
+Importing \module{icopen} will replace the builtin \method{open()}
+with a version that uses Internet Config to set file type and creator
+for new files.
+
+
+\section{\module{mactty} --- }
+\declaremodule{standard}{mactty}
+  \platform{Mac}
+\modulesynopsis{}
+
+
+\section{\module{nsremote} --- Wrapper around Netscape OSA modules}
+\declaremodule{standard}{nsremote}
+  \platform{Mac}
+\modulesynopsis{Wrapper around Netscape OSA modules}
+
+\module{nsremote} is a wrapper around the Netscape OSA modules that
+allows you to easily send your browser to a given URL.
+
+
+\section{\module{PixMapWrapper} --- Wrapper for PixMap objects}
+\declaremodule{standard}{PixMapWrapper}
+  \platform{Mac}
+\modulesynopsis{Wrapper for PixMap objects}
+
+\module{PixMapWrapper} wraps a PixMap object with a Python object that
+allows access to the fields by name. It also has methods to convert
+to and from \module{PIL} images.
+
+
+\section{\module{preferences} --- }
+\declaremodule{standard}{preferences}
+  \platform{Mac}
+\modulesynopsis{}
+
+
+\section{\module{pythonprefs} --- }
+\declaremodule{standard}{pythonprefs}
+  \platform{Mac}
+\modulesynopsis{}
+
+
+\section{\module{quietconsole} --- non-visible stdout output}
+\declaremodule{standard}{quietconsole}
+  \platform{Mac}
+\modulesynopsis{buffered, non-visible stdout output}
+
+\module{quietconsole} allows you to keep stdio output in a buffer
+without displaying it (or without displaying the stdout window
+altogether, if set with \program{EditPythonPrefs}) until you try to read from
+stdin or disable the buffering, at which point all the saved output is
+sent to the window. Good for GUI programs that do want to display their
+output at a crash.
+
+
+\section{\module{W} --- Widgets built on \module{FrameWork}}
+\declaremodule{standard}{W}
+  \platform{Mac}
+\modulesynopsis{Widgets for the Mac, built on top of \module{FrameWork}}
+
+The \module{W} widgets are used extensively in the \program{IDE}.
