@@ -1741,8 +1741,10 @@ format.
                                         PyObject *itemlist}
   Sets the slice of \var{list} between \var{low} and \var{high} to the
   contents of \var{itemlist}.  Analogous to
-  \code{\var{list}[\var{low}:\var{high}] = \var{itemlist}}.  Returns
-  \code{0} on success, \code{-1} on failure.
+  \code{\var{list}[\var{low}:\var{high}] = \var{itemlist}}.
+  The \var{itemlist} may be \NULL{}, indicating the assignment
+  of an empty list (slice deletion).
+  Returns \code{0} on success, \code{-1} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_Sort}{PyObject *list}
