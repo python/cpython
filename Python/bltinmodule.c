@@ -1367,21 +1367,21 @@ handle_range_longs(PyObject *self, PyObject *args)
 	}
 
 	if (!PyInt_Check(ilow) && !PyLong_Check(ilow)) {
-		PyErr_Format(PyExc_ValueError,
+		PyErr_Format(PyExc_TypeError,
 			     "integer start argument expected, got %s.",
 			     ilow->ob_type->tp_name);
 		goto Fail;
 	}
 
 	if (!PyInt_Check(ihigh) && !PyLong_Check(ihigh)) {
-		PyErr_Format(PyExc_ValueError,
+		PyErr_Format(PyExc_TypeError,
 			     "integer end argument expected, got %s.",
 			     ihigh->ob_type->tp_name);
 		goto Fail;
 	}
 
 	if (!PyInt_Check(istep) && !PyLong_Check(istep)) {
-		PyErr_Format(PyExc_ValueError,
+		PyErr_Format(PyExc_TypeError,
 			     "integer step argument expected, got %s.",
 			     istep->ob_type->tp_name);
 		goto Fail;
