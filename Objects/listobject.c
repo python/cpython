@@ -1920,7 +1920,7 @@ PyTypeObject PyList_Type = {
 	(initproc)list_init,			/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	PyType_GenericNew,			/* tp_new */
-	PyObject_GC_Del,        		/* tp_free */
+	PyObject_GC_Del,			/* tp_free */
 };
 
 
@@ -2013,8 +2013,8 @@ static PyTypeObject immutable_list_type = {
 /*********************** List Iterator **************************/
 
 typedef struct {
-        PyObject_HEAD
-        long it_index;
+	PyObject_HEAD
+	long it_index;
 	PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
 } listiterobject;
 
@@ -2023,28 +2023,28 @@ PyTypeObject PyListIter_Type;
 static PyObject *
 list_iter(PyObject *seq)
 {
-        listiterobject *it;
+	listiterobject *it;
 
-        if (!PyList_Check(seq)) {
-                PyErr_BadInternalCall();
-                return NULL;
-        }
-        it = PyObject_GC_New(listiterobject, &PyListIter_Type);
-        if (it == NULL)
-                return NULL;
-        it->it_index = 0;
-        Py_INCREF(seq);
-        it->it_seq = (PyListObject *)seq;
-        _PyObject_GC_TRACK(it);
-        return (PyObject *)it;
+	if (!PyList_Check(seq)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	it = PyObject_GC_New(listiterobject, &PyListIter_Type);
+	if (it == NULL)
+		return NULL;
+	it->it_index = 0;
+	Py_INCREF(seq);
+	it->it_seq = (PyListObject *)seq;
+	_PyObject_GC_TRACK(it);
+	return (PyObject *)it;
 }
 
 static void
 listiter_dealloc(listiterobject *it)
 {
-        _PyObject_GC_UNTRACK(it);
+	_PyObject_GC_UNTRACK(it);
 	Py_XDECREF(it->it_seq);
-        PyObject_GC_Del(it);
+	PyObject_GC_Del(it);
 }
 
 static int
@@ -2052,76 +2052,76 @@ listiter_traverse(listiterobject *it, visitproc visit, void *arg)
 {
 	if (it->it_seq == NULL)
 		return 0;
-        return visit((PyObject *)it->it_seq, arg);
+	return visit((PyObject *)it->it_seq, arg);
 }
 
 
 static PyObject *
 listiter_getiter(PyObject *it)
 {
-        Py_INCREF(it);
-        return it;
+	Py_INCREF(it);
+	return it;
 }
 
 static PyObject *
 listiter_next(listiterobject *it)
 {
-        PyListObject *seq;
-        PyObject *item;
+	PyListObject *seq;
+	PyObject *item;
 
 	assert(it != NULL);
-        seq = it->it_seq;
+	seq = it->it_seq;
 	if (seq == NULL)
 		return NULL;
-        assert(PyList_Check(seq));
+	assert(PyList_Check(seq));
 
-        if (it->it_index < PyList_GET_SIZE(seq)) {
+	if (it->it_index < PyList_GET_SIZE(seq)) {
 		item = PyList_GET_ITEM(seq, it->it_index);
 		++it->it_index;
-                Py_INCREF(item);
-                return item;
-        }
+		Py_INCREF(item);
+		return item;
+	}
 
 	Py_DECREF(seq);
 	it->it_seq = NULL;
-        return NULL;
+	return NULL;
 }
 
 PyTypeObject PyListIter_Type = {
-        PyObject_HEAD_INIT(&PyType_Type)
-        0,                                      /* ob_size */
-        "listiterator",                         /* tp_name */
-        sizeof(listiterobject),                 /* tp_basicsize */
-        0,                                      /* tp_itemsize */
-        /* methods */
-        (destructor)listiter_dealloc,           /* tp_dealloc */
-        0,                                      /* tp_print */
-        0,                                      /* tp_getattr */
-        0,                                      /* tp_setattr */
-        0,                                      /* tp_compare */
-        0,                                      /* tp_repr */
-        0,                                      /* tp_as_number */
-        0,                                      /* tp_as_sequence */
-        0,                                      /* tp_as_mapping */
-        0,                                      /* tp_hash */
-        0,                                      /* tp_call */
-        0,                                      /* tp_str */
-        PyObject_GenericGetAttr,                /* tp_getattro */
-        0,                                      /* tp_setattro */
-        0,                                      /* tp_as_buffer */
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
-        0,                                      /* tp_doc */
-        (traverseproc)listiter_traverse,        /* tp_traverse */
-        0,                                      /* tp_clear */
-        0,                                      /* tp_richcompare */
-        0,                                      /* tp_weaklistoffset */
-        (getiterfunc)listiter_getiter,          /* tp_iter */
-        (iternextfunc)listiter_next,            /* tp_iternext */
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,					/* ob_size */
+	"listiterator",				/* tp_name */
+	sizeof(listiterobject),			/* tp_basicsize */
+	0,					/* tp_itemsize */
+	/* methods */
+	(destructor)listiter_dealloc,		/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+	0,					/* tp_doc */
+	(traverseproc)listiter_traverse,	/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	(getiterfunc)listiter_getiter,		/* tp_iter */
+	(iternextfunc)listiter_next,		/* tp_iternext */
 	0,					/* tp_methods */
-        0,                                      /* tp_members */
-        0,                                      /* tp_getset */
-        0,                                      /* tp_base */
-        0,                                      /* tp_dict */
-        0,                                      /* tp_descr_get */
-        0,                                      /* tp_descr_set */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
 };
