@@ -17,13 +17,14 @@ that wishes to use the mechanism must execute the statement
 import user
 \end{verbatim}
 
-The \code{user} module looks for a file \file{.pythonrc.py} in the user's
+The \module{user} module looks for a file \file{.pythonrc.py} in the user's
 home directory and if it can be opened, exececutes it (using
-\code{execfile()}) in its own (i.e. the module \code{user}'s) global
-namespace.  Errors during this phase are not caught; that's up to the
-program that imports the \code{user} module, if it wishes.  The home
-directory is assumed to be named by the \code{HOME} environment
-variable; if this is not set, the current directory is used.
+\function{execfile()}\bifuncindex{execfile}) in its own (i.e. the
+module \module{user}'s) global namespace.  Errors during this phase
+are not caught; that's up to the program that imports the
+\module{user} module, if it wishes.  The home directory is assumed to
+be named by the \code{HOME} environment variable; if this is not set,
+the current directory is used.
 
 The user's \file{.pythonrc.py} could conceivably test for
 \code{sys.version} if it wishes to do different things depending on
@@ -37,7 +38,7 @@ generally not a good idea.
 A suggestion for programmers who wish to use this mechanism: a simple
 way to let users specify options for your package is to have them
 define variables in their \file{.pythonrc.py} file that you test in
-your module.  For example, a module \code{spam} that has a verbosity
+your module.  For example, a module \module{spam} that has a verbosity
 level can look for a variable \code{user.spam_verbose}, as follows:
 
 \begin{verbatim}
