@@ -25,14 +25,16 @@ def redirect(filename, func, *args):
 		if f: f.close()
 
 def realmain():
+	#list('C:System Folder:Extensions:AppleScript\252')
 	#list('C:Tao AppleScript:Finder Liaison:Finder Liaison 1.0')
+	#list('C:Tao AppleScript:Scriptable Text Editor')
 	#list('C:Internet:Eudora 1.4.2:Eudora1.4.2')
-	list('E:Excel 4.0:Microsoft Excel')
+	#list('E:Excel 4.0:Microsoft Excel')
 	#list('C:Internet:Netscape 1.0N:Netscape 1.0N')
 	#find('C:')
-	#find('D:')
-	#find('E:')
-	#find('F:')
+	find('D:')
+	find('E:')
+	find('F:')
 
 def find(dir, maxlevel = 5):
 	hits = []
@@ -52,7 +54,7 @@ def find(dir, maxlevel = 5):
 				hits = hits + find(fullname, maxlevel-1)
 		else:
 			ctor, type = MacOS.GetCreatorAndType(fullname)
-			if type == 'APPL':
+			if type in ('APPL', 'FNDR', 'zsys', 'INIT', 'scri', 'cdev'):
 				sys.stderr.write("    %s\n" % `fullname`)
 				try:
 					rf = OpenRFPerm(fullname, 0, '\1')
@@ -82,13 +84,14 @@ def list(fullname):
 		for i in range(Count1Resources('aeut')):
 			res = Get1IndResource('aeut', 1+i)
 			resources.append(res)
-		print "\nLISTING aete+aeut RESOURCE IN", `fullname`
+		print "\nLISTING aete+aeut RESOURCES IN", `fullname`
 		for res in resources:
-			print res.GetResInfo()
+			print "decoding", res.GetResInfo(), "..."
 			data = res.data
 			try:
 				aete = decode(data)
 				showaete(aete)
+				print "Checking putaete..."
 				f = StringIO.StringIO()
 				putaete(f, aete)
 				newdata = f.getvalue()
@@ -139,6 +142,12 @@ def simplify(item):
 # It is presented bottom-up instead of top-down because there are  direct
 # references to the lower-level part-decoders from the high-level part-decoders.
 
+def getbyte(f, *args):
+	c = f.read(1)
+	if not c:
+		raise EOFError, 'in getbyte' + str(args)
+	return ord(c)
+
 def getword(f, *args):
 	getalign(f)
 	s = f.read(2)
@@ -181,8 +190,8 @@ def getlist(f, description, getitem):
 	count = getword(f)
 	list = []
 	for i in range(count):
-		getalign(f)
 		list.append(generic(getitem, f))
+		getalign(f)
 	return list
 
 def alt_generic(what, f, *args):
@@ -202,49 +211,100 @@ def generic(what, f, *args):
 		return record
 	return "BAD GENERIC ARGS: %s" % `what`
 
-getdata = [(getostype, "type"), (getpstr, "description"), (getword, "flags")]
-getoptarg = [(getpstr, "name"), (getostype, "keyword"), (getdata, "what")]
-getcommand = [(getpstr, "name"), (getpstr, "description"),
-	(getostype, "suite code"), (getostype, "command code"),
+getdata = [
+	(getostype, "type"),
+	(getpstr, "description"),
+	(getword, "flags")
+	]
+getargument = [
+	(getpstr, "name"),
+	(getostype, "keyword"),
+	(getdata, "what")
+	]
+getevent = [
+	(getpstr, "name"),
+	(getpstr, "description"),
+	(getostype, "suite code"),
+	(getostype, "event code"),
 	(getdata, "returns"),
 	(getdata, "accepts"),
-	(getlist, "optional arguments", getoptarg)]
-getprop = [(getpstr, "name"), (getostype, "code"), (getdata, "what")]
-getelem = [(getostype, "type"), (getlist, "accessibility", getostype)]
-getclass = [(getpstr, "name"), (getostype, "class code"), (getpstr, "description"),
-	(getlist, "properties", getprop), (getlist, "elements", getelem)]
-getenumitem = [(getpstr, "name"), (getostype, "value"), (getpstr, "description")]
-getenum = [(getostype, "enumtype"), (getlist, "enumitem", getenumitem)]
-getsuite = [(getpstr, "name"), (getpstr, "description"), (getostype, "code"),
-	(getword, "flags1"), (getword, "flags2"),
-	(getlist, "commands", getcommand),
+	(getlist, "optional arguments", getargument)
+	]
+getproperty = [
+	(getpstr, "name"),
+	(getostype, "code"),
+	(getdata, "what")
+	]
+getelement = [
+	(getostype, "type"),
+	(getlist, "keyform", getostype)
+	]
+getclass = [
+	(getpstr, "name"),
+	(getostype, "class code"),
+	(getpstr, "description"),
+	(getlist, "properties", getproperty),
+	(getlist, "elements", getelement)
+	]
+getcomparison = [
+	(getpstr, "operator name"),
+	(getostype, "operator ID"),
+	(getpstr, "operator comment"),
+	]
+getenumerator = [
+	(getpstr, "enumerator name"),
+	(getostype, "enumerator ID"),
+	(getpstr, "enumerator comment")
+	]
+getenumeration = [
+	(getostype, "enumeration ID"),
+	(getlist, "enumerator", getenumerator)
+	]
+getsuite = [
+	(getpstr, "suite name"),
+	(getpstr, "suite description"),
+	(getostype, "suite ID"),
+	(getword, "suite level"),
+	(getword, "suite version"),
+	(getlist, "events", getevent),
 	(getlist, "classes", getclass),
-	(getword, "count???"), (getlist, "enums", getenum)]
-getaete = [(getword, "skip1"), (getword, "skip2"), (getword, "skip3"),
-	(getlist, "suites", getsuite)]
+	(getlist, "comparisons", getcomparison),
+	(getlist, "enumerations", getenumeration)
+	]
+getaete = [
+	(getword, "major/minor version in BCD"),
+	(getword, "language code"),
+	(getword, "script code"),
+	(getlist, "suites", getsuite)
+	]
 
 
 # Display 'aete' resources in a friendly manner.
 # This one's done top-down again...
 
 def showaete(aete):
-	[flags1, flags2, flags3, suites] = aete
-	print "\nGlobal flags: x%x, x%x, x%x\n" % (flags1, flags2, flags3)
+	[version, language, script, suites] = aete
+	major, minor = divmod(version, 256)
+	print "\nVersion %d/%d, language %d, script %d" % \
+		(major, minor, language, script)
 	for suite in suites:
 		showsuite(suite)
 
 def showsuite(suite):
-	[name, desc, code, flags1, flags2, commands, classes, skip1, enums] = suite
+	[name, desc, code, level, version, events, classes, comps, enums] = suite
 	print "\nSuite %s -- %s (%s)" % (`name`, `desc`, `code`)
-	for command in commands:
-		showcommand(command)
-	for classe in classes:
-		showclass(classe)
+	print "Level %d, version %d" % (level, version)
+	for event in events:
+		showevent(event)
+	for cls in classes:
+		showclass(cls)
+	for comp in comps:
+		showcomparison(comp)
 	for enum in enums:
-		showenum(enum)
+		showenumeration(enum)
 
-def showcommand(command):
-	[name, desc, code, subcode, returns, accepts, arguments] = command
+def showevent(event):
+	[name, desc, code, subcode, returns, accepts, arguments] = event
 	print "\n    Command %s -- %s (%s, %s)" % (`name`, `desc`, `code`, `subcode`)
 	print "        returns", showdata(returns)
 	print "        accepts", showdata(accepts)
@@ -255,8 +315,8 @@ def showargument(arg):
 	[name, keyword, what] = arg
 	print "        %s (%s)" % (name, `keyword`), showdata(what)
 
-def showclass(classe):
-	[name, code, desc, properties, elements] = classe
+def showclass(cls):
+	[name, code, desc, properties, elements] = cls
 	print "\n    Class %s (%s) -- %s" % (`name`, `code`, `desc`)
 	for prop in properties:
 		showproperty(prop)
@@ -265,19 +325,23 @@ def showclass(classe):
 
 def showproperty(prop):
 	[name, code, what] = prop
-	print "        property %s (%s)" % (name, code), showdata(what)
+	print "        property %s (%s)" % (`name`, `code`), showdata(what)
 
 def showelement(elem):
-	[code, accessibility] = elem
-	print "        element %s" % `code`, "as", accessibility
+	[code, keyform] = elem
+	print "        element %s" % `code`, "as", keyform
 
-def showenum(enum):
+def showcomparison(comp):
+	[name, code, comment] = comp
+	print "    comparison  %s (%s) -- %s" % (`name`, `code`, comment)
+
+def showenumeration(enum):
 	[code, items] = enum
 	print "\n    Enum %s" % `code`
 	for item in items:
-		showitem(item)
+		showenumerator(item)
 
-def showitem(item):
+def showenumerator(item):
 	[name, code, desc] = item
 	print "        %s (%s) -- %s" % (`name`, `code`, `desc`)
 
@@ -285,7 +349,7 @@ def showdata(data):
 	[type, description, flags] = data
 	return "%s -- %s %s" % (`type`, `description`, showdataflags(flags))
 
-dataflagdict = {15: "optional", 14: "list", 13: "enum", 12: "writable"}
+dataflagdict = {15: "optional", 14: "list", 13: "enum", 12: "mutable"}
 def showdataflags(flags):
 	bits = []
 	for i in range(16):
@@ -301,30 +365,30 @@ def showdataflags(flags):
 # Closedly modelled after showaete()...
 
 def putaete(f, aete):
-	[flags1, flags2, flags3, suites] = aete
-	putword(f, flags1)
-	putword(f, flags2)
-	putword(f, flags3)
+	[version, language, script, suites] = aete
+	putword(f, version)
+	putword(f, language)
+	putword(f, script)
 	putlist(f, suites, putsuite)
 
 def putsuite(f, suite):
-	[name, desc, code, flags1, flags2, commands, classes, skip1, enums] = suite
+	[name, desc, code, level, version, events, classes, comps, enums] = suite
 	putpstr(f, name)
 	putpstr(f, desc)
 	putostype(f, code)
-	putword(f, flags1)
-	putword(f, flags2)
-	putlist(f, commands, putcommand)
+	putword(f, level)
+	putword(f, version)
+	putlist(f, events, putevent)
 	putlist(f, classes, putclass)
-	putword(f, skip1)
-	putlist(f, enums, putenum)
+	putlist(f, comps, putcomparison)
+	putlist(f, enums, putenumeration)
 
-def putcommand(f, command):
-	[name, desc, code, subcode, returns, accepts, arguments] = command
+def putevent(f, event):
+	[name, desc, eventclass, eventid, returns, accepts, arguments] = event
 	putpstr(f, name)
 	putpstr(f, desc)
-	putostype(f, code)
-	putostype(f, subcode)
+	putostype(f, eventclass)
+	putostype(f, eventid)
 	putdata(f, returns)
 	putdata(f, accepts)
 	putlist(f, arguments, putargument)
@@ -335,8 +399,8 @@ def putargument(f, arg):
 	putostype(f, keyword)
 	putdata(f, what)
 
-def putclass(f, classe):
-	[name, code, desc, properties, elements] = classe
+def putclass(f, cls):
+	[name, code, desc, properties, elements] = cls
 	putpstr(f, name)
 	putostype(f, code)
 	putpstr(f, desc)
@@ -350,12 +414,18 @@ def putelement(f, elem):
 	putostype(f, code)
 	putlist(f, parts, putostype)
 
-def putenum(f, enum):
+def putcomparison(f, comp):
+	[name, id, comment] = comp
+	putpstr(f, name)
+	putostype(f, id)
+	putpstr(f, comment)
+
+def putenumeration(f, enum):
 	[code, items] = enum
 	putostype(f, code)
-	putlist(f, items, putitem)
+	putlist(f, items, putenumerator)
 
-def putitem(f, item):
+def putenumerator(f, item):
 	[name, code, desc] = item
 	putpstr(f, name)
 	putostype(f, code)
@@ -370,12 +440,15 @@ def putdata(f, data):
 def putlist(f, list, putitem):
 	putword(f, len(list))
 	for item in list:
-		putalign(f)
 		putitem(f, item)
+		putalign(f)
 
 def putalign(f):
 	if f.tell() & 1:
 		f.write('\0')
+
+def putbyte(f, value):
+	f.write(chr(value))
 
 def putword(f, value):
 	putalign(f)
