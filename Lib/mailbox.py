@@ -182,19 +182,16 @@ class Maildir:
     def __init__(self, dirname):
         import string
         self.dirname = dirname
-        self.boxes = []
 
         # check for new mail
         newdir = os.path.join(self.dirname, 'new')
-        for file in os.listdir(newdir):
-            if len(string.split(file, '.')) > 2:
-                self.boxes.append(os.path.join(newdir, file))
+        boxes = [os.path.join(newdir, f)
+                 for f in os.listdir(newdir) if f[0] != '.']
 
         # Now check for current mail in this maildir
         curdir = os.path.join(self.dirname, 'cur')
-        for file in os.listdir(curdir):
-            if len(string.split(file, '.')) > 2:
-                self.boxes.append(os.path.join(curdir, file))
+        boxes += [os.path.join(curdir, f)
+                  for f in os.listdir(curdir) if f[0] != '.']
 
     def next(self):
         if not self.boxes:
