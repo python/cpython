@@ -1,11 +1,20 @@
 @rem Run Tests.  Run the regression test suite.
-@rem Plain "rt" runs Release build, arguments passed on to regrtest.
-@rem "rt -d" runs Debug build similarly, after shifting off -d.
-@rem Normally the tests are run twice, the first time after deleting
-@rem all the .py[co] files from Lib/ and Lib/test/.  But
-@rem "rt -q" (for Quick) runs the tests just once, and without
-@rem bothering to delete .py[co] files.
-@rem "rt -O" runs python or python_d with -O (depending on -d).
+@rem Usage:  rt [-d] [-O] [-q] regrtest_args
+@rem -d   Run Debug build (python_d.exe).  Else release build.
+@rem -O   Run python.exe or python_d.exe (see -d) with -O.
+@rem -q   "quick" -- normally the tests are run twice, the first time
+@rem      after deleting all the .py[co] files reachable from Lib/.
+@rem      -q runs the tests just once, and without deleting .py[co] files.
+@rem All leading instances of these switches are shifted off, and
+@rem whatever remains is passed to regrtest.py.  For example,
+@rem     rt -O -d -x test_thread
+@rem runs
+@rem     python_d -O ../lib/test/regrtest.py -x test_thread
+@rem twice, and
+@rem     rt -q -g test_binascii
+@rem runs
+@rem     python_d ../lib/test/regrtest.py -g test_binascii
+@rem to generate the expected-output file for binascii quickly.
 @set _exe=python
 @set _qmode=no
 @set _dashO=
