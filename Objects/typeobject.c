@@ -640,7 +640,7 @@ subtype_dealloc(PyObject *self)
 	/* We get here only if the type has GC */
 
 	/* UnTrack and re-Track around the trashcan macro, alas */
-	/* See explanation at end of funtion for full disclosure */
+	/* See explanation at end of function for full disclosure */
 	PyObject_GC_UnTrack(self);
 	++_PyTrash_delete_nesting;
 	Py_TRASHCAN_SAFE_BEGIN(self);
