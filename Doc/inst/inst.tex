@@ -142,7 +142,7 @@ python setup.py install
 
 On \UNIX, you'd run this command from a shell prompt; on Windows, you
 have to open a command prompt window (``DOS box'') and do it there; on
-Mac OS, things are a tad more complicated (see below).
+Mac OS X, you open a \command{Terminal} window to get a shell prompt.
 
 
 \subsection{Platform variations}
@@ -262,7 +262,8 @@ If you don't choose an installation directory---i.e., if you just run
 \code{setup.py install}---then the \command{install} command installs to
 the standard location for third-party Python modules.  This location
 varies by platform and by how you built/installed Python itself.  On
-\UNIX{} and Mac OS, it also depends on whether the module distribution
+\UNIX{} (and Mac OS X, which is also Unix-based),
+it also depends on whether the module distribution
 being installed is pure Python or contains extensions (``non-pure''):
 \begin{tableiv}{l|l|l|c}{textrm}%
   {Platform}{Standard installation location}{Default value}{Notes}
@@ -278,14 +279,6 @@ being installed is pure Python or contains extensions (``non-pure''):
           {\filenq{\filevar{prefix}}}
           {\filenq{C:\textbackslash{}Python}}
           {(2)}
-  \lineiv{Mac OS (pure)}
-          {\filenq{\filevar{prefix}:Lib:site-packages}}
-          {\filenq{Python:Lib:site-packages}}
-          {}
-  \lineiv{Mac OS (non-pure)}
-          {\filenq{\filevar{prefix}:Lib:site-packages}}
-          {\filenq{Python:Lib:site-packages}}
-          {}
 \end{tableiv}
 
 \noindent Notes:
@@ -302,8 +295,8 @@ being installed is pure Python or contains extensions (``non-pure''):
 
 \filevar{prefix} and \filevar{exec-prefix} stand for the directories
 that Python is installed to, and where it finds its libraries at
-run-time.  They are always the same under Windows and Mac OS, and very
-often the same under \UNIX.  You can find out what your Python
+run-time.  They are always the same under Windows, and very
+often the same under \UNIX and Mac OS X.  You can find out what your Python
 installation uses for \filevar{prefix} and \filevar{exec-prefix} by
 running Python in interactive mode and typing a few simple commands.
 Under \UNIX, just type \code{python} at the shell prompt.  Under
@@ -658,7 +651,7 @@ environment variables, such as Mac OS 9, the configuration
 variables supplied by the Distutils are the only ones you can use.)
 See section~\ref{config-files} for details.
 
-% XXX need some Windows and Mac OS examples---when would custom
+% XXX need some Windows examples---when would custom
 % installation schemes be needed on those platforms?
 
 
@@ -764,7 +757,7 @@ apply, values from ``earlier'' files are overridden by ``later'' files.
 \label{config-filenames}
 
 The names and locations of the configuration files vary slightly across
-platforms.  On \UNIX, the three configuration files (in the order they
+platforms.  On \UNIX and Mac OS X, the three configuration files (in the order they
 are processed) are:
 \begin{tableiii}{l|l|c}{textrm}
   {Type of file}{Location and filename}{Notes}
@@ -773,19 +766,11 @@ are processed) are:
   \lineiii{local}{\filenq{setup.cfg}}{(3)}
 \end{tableiii}
 
-On Windows, the configuration files are:
+And on Windows, the configuration files are:
 \begin{tableiii}{l|l|c}{textrm}
   {Type of file}{Location and filename}{Notes}
   \lineiii{system}{\filenq{\filevar{prefix}\textbackslash{}Lib\textbackslash{}distutils\textbackslash{}distutils.cfg}}{(4)}
   \lineiii{personal}{\filenq{\%HOME\%\textbackslash{}pydistutils.cfg}}{(5)}
-  \lineiii{local}{\filenq{setup.cfg}}{(3)}
-\end{tableiii}
-
-And on Mac OS, they are:
-\begin{tableiii}{l|l|c}{textrm}
-  {Type of file}{Location and filename}{Notes}
-  \lineiii{system}{\filenq{\filevar{prefix}:Lib:distutils:distutils.cfg}}{(6)}
-  \lineiii{personal}{N/A}{}
   \lineiii{local}{\filenq{setup.cfg}}{(3)}
 \end{tableiii}
 
@@ -818,9 +803,6 @@ And on Mac OS, they are:
   defined, no personal configuration file will be found or used.  (In
   other words, the Distutils make no attempt to guess your home
   directory on Windows.)
-\item[(6)] (See also notes (1) and (4).)  The default installation
-  prefix is just \file{Python:}, so under Python 1.6 and later this is
-  normally\file{Python:Lib:distutils:distutils.cfg}.  
 \end{description}
 
 

@@ -97,7 +97,16 @@ Macintosh
 - PackageManager and the underlying pimp.py module have been updated to
   version 0.5, which greatly simplifies maintainance of the package
   databases.
-  
+
+
+Documentation
+-------------
+
+- Remove all latent references for "Macintosh" that referred to semantics for
+  Mac OS 9 and change to reflect the state for OS X.
+  Closes patch #1095802.  Thanks Jack Jansen.
+
+ 
 What's New in Python 2.4 final?
 ===============================
 

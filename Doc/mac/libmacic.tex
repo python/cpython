@@ -6,13 +6,8 @@
 \modulesynopsis{Access to Internet Config.}
 
 
-This module provides access to Macintosh Internet
-Config\index{Internet Config} package,
-which stores preferences for Internet programs such as mail address,
-default homepage, etc. Also, Internet Config contains an elaborate set
-of mappings from Macintosh creator/type codes to foreign filename
-extensions plus information on how to transfer files (binary, ascii,
-etc.). Since MacOS 9, this module is a control panel named Internet.
+This module provides access to various internet-related preferences
+set through \program{System Preferences} or the \program{Finder}.
 
 There is a low-level companion module
 \module{icglue}\refbimodindex{icglue} which provides the basic
@@ -92,7 +87,7 @@ complete incomplete URLs.
 
 \begin{methoddesc}{mapfile}{file}
 Return the mapping entry for the given \var{file}, which can be passed
-as either a filename or an \function{macfs.FSSpec()} result, and which
+as either a filename or an \function{FSSpec()} result, and which
 need not exist.
 
 The mapping entry is returned as a tuple \code{(\var{version},
@@ -122,7 +117,7 @@ The mapping entry is returned in the same format as for \var{mapfile}.
 
 \begin{methoddesc}{settypecreator}{file}
 Given an existing \var{file}, specified either as a filename or as an
-\function{macfs.FSSpec()} result, set its creator and type correctly based
+\function{FSSpec()} result, set its creator and type correctly based
 on its extension.  The finder is told about the change, so the finder
 icon will be updated quickly.
 \end{methoddesc}
