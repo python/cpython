@@ -49,8 +49,9 @@
 LATEX=		TEXINPUTS=$(TEXINPUTS) latex
 PDFLATEX=	TEXINPUTS=$(TEXINPUTS) pdflatex
 TEXINPUTS=	.:$(srcdir):$(srcdir)/texinputs:
-DVIPS=		dvips -f -N0
+DVIPS=		dvips -N0
 DISTILL=	distill
+KPSEWHICH=	TEXINPUTS=$(TEXINPUTS) kpsewhich
 MAKEINDEX=	makeindex -s $(srcdir)/texinputs/myindex.ist
 L2H=		TEXINPUTS=$(TEXINPUTS) latex2html -init_file $(L2HINIT)
 L2HARGS=
@@ -117,7 +118,7 @@ tut-all:  tut.dvi tut.pdf tut.ps l2htut
 .SUFFIXES: .dvi .ps .pdf .tex
 
 .dvi.ps:
-	$(DVIPS) $< >$@
+	$(DVIPS) -o $@ $<
 
 #.ps.pdf:
 #	$(DISTILL) $<
@@ -172,7 +173,8 @@ LIBFILES = lib.tex \
     libuserdict.tex libdis.tex libxmllib.tex libqueue.tex \
     liblocale.tex libbasehttp.tex libcopyreg.tex libsymbol.tex libtoken.tex \
     libframework.tex libminiae.tex libbinhex.tex libuu.tex libsunaudio.tex \
-    libfileinput.tex libimaplib.tex libpoplib.tex
+    libfileinput.tex libimaplib.tex libpoplib.tex libcalendar.tex \
+    libpopen2.tex libbisect.tex
 
 MACLIBFILES = mac.tex libmac.tex libctb.tex libmacconsole.tex \
     libmacdnr.tex libmacfs.tex libmacos.tex libmacostools.tex \
@@ -226,7 +228,7 @@ python-lib.texi: lib1.texi tools/fix.el
 
 python-lib.info: python-lib.texi
 	$(MAKEINFO) --footnote-style end --fill-column 72 \
-		     --paragraph-indent 0 $<
+		    --paragraph-indent 0 $<
 
 # this is needed to prevent a second set of info files from being generated,
 # at least when using GNU make
@@ -245,28 +247,28 @@ lib.texi: python-lib.texi
 # in the distribution to simplify the process of creating a
 # self-contained HTML distribution; for this purpose I have also added
 # a (trivial) index.html.  Change the definition of $ICONSERVER in
-# .latex2html-init to use a different location for the icons directory.
+# perl/l2hinit.perl to use a different location for the icons directory.
 
 l2h: l2hapi l2hext l2hlib l2htut
 
-l2htut: tut.dvi $(COMMONPERL)
-	$(L2H) $(L2HARGS) tut.tex
-	(cd tut; ../tools/node2label.pl *.html)
+l2hapi: $(COMMONPERL)
+	$(L2H) $(L2HARGS) api.tex
+	(cd api; ../tools/node2label.pl *.html)
 
-l2hext: ext.dvi $(COMMONPERL)
+l2hext: $(COMMONPERL)
 	$(L2H) $(L2HARGS) ext.tex
 	(cd ext; ../tools/node2label.pl *.html)
 
-l2hlib: lib.dvi $(COMMONPERL)
-	tools/fix_libaux.sed <lib.aux >lib1.aux
-	mv lib1.aux lib.aux
+l2hlib: $(COMMONPERL)
+	$(srcdir)/tools/fix_libaux.sed <`$(KPSEWHICH) lib.aux` >lib1.aux
+	mv lib1.aux `$(KPSEWHICH) lib.aux`
 	if test -d lib ; then rm -f lib/*.html ; fi
 	$(L2H) $(L2HARGS) lib.tex
 	(cd lib; ../tools/node2label.pl *.html)
 
-l2hapi: api.dvi $(COMMONPERL)
-	$(L2H) $(L2HARGS) api.tex
-	(cd api; ../tools/node2label.pl *.html)
+l2htut: $(COMMONPERL)
+	$(L2H) $(L2HARGS) tut.tex
+	(cd tut; ../tools/node2label.pl *.html)
 
 # webchecker needs an extra flag to process the huge index from the libref
 webcheck:
@@ -279,16 +281,17 @@ lib-info-$(RELEASE).tar.gz: $(INFOFILES)
 	tar cf - python-???.info* | gzip -9 >$@
 
 latex-$(RELEASE).tar.gz:
-	tools/mktarball.sh
+	$(srcdir)/tools/mktarball.sh
 
 # This snags a PDF version if available, but doesn't fail if not.
 pdf-$(RELEASE).tar.gz: $(PDFFILES)
-	if test -f ref/ref.pdf ; then cp ref/ref.pdf . ; else true ; fi
+	if test -f $(srcdir)/ref/ref.pdf ; then \
+		cp $(srcdir)/ref/ref.pdf . ; else true ; fi
 	tar cf - ???.pdf | gzip -9 >$@
 	if test -f ref.pdf ; then rm ref.pdf ; else true ; fi
 
 postscript-$(RELEASE).tar.gz: $(PSFILES) ref/ref.ps
-	cp ref/ref.ps .
+	cp $(srcdir)/ref/ref.ps .
 	tar cf - ???.ps | gzip -9 >$@
 	rm ref.ps
 
@@ -327,7 +330,8 @@ l2hclean:
 
 # Remove temporaries as well as final products
 clobber: clean l2hclean
-	 rm -f *.dvi *.pdf *.ps *.texi python-*.info python-*.info-[0-9]*
+	rm -f $(DVIFILES) $(PSFILES) $(PDFFILES)
+	rm -f *.texi python-???.info python-???.info-[0-9]*
 
 realclean:  clobber
 distclean:  clobber
