@@ -2,7 +2,7 @@
 # extension module.
 
 # written by Andrew MacIntyre, April 2001.
-# released into the public domain "as is", with NO WARRANTY
+# updated July 2003, adding field accessor support
 
 # note that this implementation checks whether ":" or ";" as used as 
 # the field separator character.
@@ -96,6 +96,40 @@ def __get_field_sep(record):
     else:
         raise KeyError, '>> group database fields not delimited <<'
 
+# class to match the new record field name accessors.
+# the resulting object is intended to behave like a read-only tuple,
+# with each member also accessible by a field name.
+class Group:
+    def __init__(self, name, passwd, gid, mem):
+        self.__dict__['gr_name'] = name
+        self.__dict__['gr_passwd'] = passwd
+        self.__dict__['gr_gid'] = gid
+        self.__dict__['gr_mem'] = mem
+        self.__dict__['_record'] = (self.gr_name, self.gr_passwd,
+                                    self.gr_gid, self.gr_mem)
+
+    def __len__(self):
+        return 4
+
+    def __getitem__(self, key):
+        return self._record[key]
+
+    def __setattr__(self, name, value):
+        raise AttributeError('attribute read-only: %s' % name)
+
+    def __repr__(self):
+        return str(self._record)
+
+    def __cmp__(self, other):
+        this = str(self._record)
+        if this == other:
+            return 0
+        elif this < other:
+            return -1
+        else:
+            return 1
+
+
 # read the whole file, parsing each entry into tuple form
 # with dictionaries to speed recall by GID or group name
 def __read_group_file():
@@ -113,7 +147,8 @@ def __read_group_file():
                 sep = __get_field_sep(entry)
             fields = entry.split(sep)
             fields[2] = int(fields[2])
-            record = tuple(fields)
+            fields[3] = [f.strip() for f in fields[3].split(',')]
+            record = Group(*fields)
             if not gidx.has_key(fields[2]):
                 gidx[fields[2]] = record
             if not namx.has_key(fields[0]):

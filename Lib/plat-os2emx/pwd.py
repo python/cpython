@@ -2,7 +2,7 @@
 # extension module.
 
 # written by Andrew MacIntyre, April 2001.
-# released into the public domain "as is", with NO WARRANTY
+# updated July 2003, adding field accessor support
 
 # note that this implementation checks whether ":" or ";" as used as 
 # the field separator character.  Path conversions are are applied when
@@ -115,6 +115,45 @@ def __get_field_sep(record):
     else:
         raise KeyError, '>> passwd database fields not delimited <<'
 
+# class to match the new record field name accessors.
+# the resulting object is intended to behave like a read-only tuple,
+# with each member also accessible by a field name.
+class Passwd:
+    def __init__(self, name, passwd, uid, gid, gecos, dir, shell):
+        self.__dict__['pw_name'] = name
+        self.__dict__['pw_passwd'] = passwd
+        self.__dict__['pw_uid'] = uid
+        self.__dict__['pw_gid'] = gid
+        self.__dict__['pw_gecos'] = gecos
+        self.__dict__['pw_dir'] = dir
+        self.__dict__['pw_shell'] = shell
+        self.__dict__['_record'] = (self.pw_name, self.pw_passwd,
+                                    self.pw_uid, self.pw_gid,
+                                    self.pw_gecos, self.pw_dir,
+                                    self.pw_shell)
+
+    def __len__(self):
+        return 7
+
+    def __getitem__(self, key):
+        return self._record[key]
+
+    def __setattr__(self, name, value):
+        raise AttributeError('attribute read-only: %s' % name)
+
+    def __repr__(self):
+        return str(self._record)
+
+    def __cmp__(self, other):
+        this = str(self._record)
+        if this == other:
+            return 0
+        elif this < other:
+            return -1
+        else:
+            return 1
+
+
 # read the whole file, parsing each entry into tuple form
 # with dictionaries to speed recall by UID or passwd name
 def __read_passwd_file():
@@ -135,7 +174,7 @@ def __read_passwd_file():
                 fields[i] = int(fields[i])
             for i in (5, 6):
                 fields[i] = __field_sep[sep](fields[i])
-            record = tuple(fields)
+            record = Passwd(*fields)
             if not uidx.has_key(fields[2]):
                 uidx[fields[2]] = record
             if not namx.has_key(fields[0]):
