@@ -50,7 +50,7 @@ home folder.
 	import imp
 	cwd = os.getcwd()
 	tblibname = os.path.join(cwd, "toolboxmodules.slb")
-	if not os.exists(tblibname):
+	if not os.path.exists(tblibname):
 		print """
 I cannot find the 'toolboxmodules.slb' file in the PlugIns directory.
 Start afresh from a clean distribution. 
@@ -58,7 +58,7 @@ Start afresh from a clean distribution.
 		sys.exit(1)
 	try:
 		for wtd in ["Ctl", "Dlg", "Evt", "Qd", "Res", "Win"]:
-			imp.load_dynamic_module(wtd, tblibname, None)
+			imp.load_dynamic(wtd, tblibname)
 	except ImportError:
 		print """
 I cannot load the toolbox modules by hand. Are you sure you are
