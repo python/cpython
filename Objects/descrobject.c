@@ -690,7 +690,7 @@ static PyMappingMethods proxy_as_mapping = {
 static int
 proxy_contains(proxyobject *pp, PyObject *key)
 {
-	return PySequence_Contains(pp->dict, key);
+	return PyDict_Contains(pp->dict, key);
 }
 
 static PySequenceMethods proxy_as_sequence = {
@@ -709,7 +709,7 @@ static PySequenceMethods proxy_as_sequence = {
 static PyObject *
 proxy_has_key(proxyobject *pp, PyObject *key)
 {
-	int res = PySequence_Contains(pp->dict, key);
+	int res = PyDict_Contains(pp->dict, key);
 	if (res < 0)
 		return NULL;
 	return PyBool_FromLong(res);
