@@ -66,6 +66,8 @@ class MyScanner(Scanner):
 				'InvalRgn',
 				'InvalRect',
 				'IsValidWindowPtr', # I think this is useless for Python, but not sure...
+				'GetWindowZoomFlag',	# Not available in Carbon
+				'GetWindowTitleWidth',	# Ditto
 			]),
 			('#if TARGET_API_MAC_CARBON', [
 				'IsWindowUpdatePending',
