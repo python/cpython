@@ -18,8 +18,12 @@
 # Imported modules
 
 import sys
-import gl
-import GL
+try:
+	import gl
+	import GL
+	no_gl = 0
+except ImportError:
+	no_gl = 1
 import GET
 import colorsys
 import imageop
@@ -340,6 +344,9 @@ class Displayer(VideoParams):
 	# This does not need a current window
 
 	def init(self):
+		if no_gl:
+			raise RuntimeError, \
+				  'no gl module available, so cannot display'
 		self = VideoParams.init(self)
 		# User-settable parameters
 		self.magnify = 1.0	# frame magnification factor
@@ -377,7 +384,7 @@ class Displayer(VideoParams):
 		if self.upside_down:
 			gl.pixmode(GL.PM_TTOB, 1)
 		if self.mirror_image:
-			gp.pixmode(GL.PM_RTOL, 1)
+			gl.pixmode(GL.PM_RTOL, 1)
 		if self.format in ('jpeg', 'jpeggrey'):
 			import jpeg
 			data, width, height, bytes = jpeg.decompress(data)
