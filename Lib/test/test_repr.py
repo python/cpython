@@ -105,14 +105,18 @@ class ReprTests(unittest.TestCase):
             '<built-in method split of str object at 0x'))
 
     def test_xrange(self):
+        import warnings
         eq = self.assertEquals
         eq(repr(xrange(1)), 'xrange(1)')
         eq(repr(xrange(1, 2)), 'xrange(1, 2)')
         eq(repr(xrange(1, 2, 3)), 'xrange(1, 4, 3)')
         # Turn off warnings for deprecated multiplication
-        import warnings
-        warnings.filterwarnings('ignore', category=DeprecationWarning,
-                                module=ReprTests.__module__)
+        warnings.filterwarnings('ignore',
+                 r'xrange object multiplication is deprecated',
+                 DeprecationWarning, module=ReprTests.__module__)
+        warnings.filterwarnings('ignore',
+                 r"PyRange_New's 'repetitions' argument is deprecated",
+                 DeprecationWarning, module=ReprTests.__module__)
         eq(repr(xrange(1) * 3), '(xrange(1) * 3)')
 
     def test_nesting(self):

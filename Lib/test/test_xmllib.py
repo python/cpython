@@ -15,7 +15,7 @@ testdoc = """\
 
 import warnings
 warnings.filterwarnings("ignore", ".* xmllib .* obsolete.*",
-                        DeprecationWarning)
+                        DeprecationWarning, r'xmllib$')
 
 import test_support
 import unittest

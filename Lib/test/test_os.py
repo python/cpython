@@ -33,7 +33,7 @@ class TemporaryFileTests(unittest.TestCase):
         if not hasattr(os, "tempnam"):
             return
         warnings.filterwarnings("ignore", "tempnam", RuntimeWarning,
-                                "test_os")
+                                r"test_os$")
         self.check_tempfile(os.tempnam())
 
         name = os.tempnam(TESTFN)
@@ -57,7 +57,7 @@ class TemporaryFileTests(unittest.TestCase):
         if not hasattr(os, "tmpnam"):
             return
         warnings.filterwarnings("ignore", "tmpnam", RuntimeWarning,
-                                "test_os")
+                                r"test_os$")
         self.check_tempfile(os.tmpnam())
 
 # Test attributes on return values from os.*stat* family.

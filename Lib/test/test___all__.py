@@ -2,9 +2,12 @@ from test_support import verify, verbose
 import sys
 import warnings
 
-warnings.filterwarnings("ignore", ".* 'pre' .*", DeprecationWarning)
-warnings.filterwarnings("ignore", ".* regsub .*", DeprecationWarning)
-warnings.filterwarnings("ignore", ".* statcache .*", DeprecationWarning)
+warnings.filterwarnings("ignore", ".* 'pre' .*", DeprecationWarning,
+                        r'pre$')
+warnings.filterwarnings("ignore", ".* regsub .*", DeprecationWarning,
+                        r'^regsub$')
+warnings.filterwarnings("ignore", ".* statcache .*", DeprecationWarning,
+                        r'statcache$')
 
 def check_all(modname):
     names = {}
