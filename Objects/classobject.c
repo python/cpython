@@ -1970,7 +1970,6 @@ instance_iternext(PyInstanceObject *self)
 static PyObject *
 instance_call(PyObject *func, PyObject *arg, PyObject *kw)
 {
-	PyThreadState *tstate = PyThreadState_GET();
 	PyObject *res, *call = PyObject_GetAttrString(func, "__call__");
 	if (call == NULL) {
 		PyInstanceObject *inst = (PyInstanceObject*) func;
@@ -1990,14 +1989,13 @@ instance_call(PyObject *func, PyObject *arg, PyObject *kw)
 	       a() # infinite recursion
 	   This bounces between instance_call() and PyObject_Call() without
 	   ever hitting eval_frame() (which has the main recursion check). */
-	if (tstate->recursion_depth++ > Py_GetRecursionLimit()) {
-		PyErr_SetString(PyExc_RuntimeError,
-				"maximum __call__ recursion depth exceeded");
+	if (Py_EnterRecursiveCall(" in __call__")) {
 		res = NULL;
 	}
-	else
+	else {
 		res = PyObject_Call(call, arg, kw);
-	tstate->recursion_depth--;
+		Py_LeaveRecursiveCall();
+	}
 	Py_DECREF(call);
 	return res;
 }

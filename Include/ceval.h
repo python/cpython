@@ -43,8 +43,22 @@ PyAPI_FUNC(int) Py_FlushLine(void);
 PyAPI_FUNC(int) Py_AddPendingCall(int (*func)(void *), void *arg);
 PyAPI_FUNC(int) Py_MakePendingCalls(void);
 
+/* Protection against deeply nested recursive calls */
 PyAPI_FUNC(void) Py_SetRecursionLimit(int);
 PyAPI_FUNC(int) Py_GetRecursionLimit(void);
+
+#define Py_EnterRecursiveCall(where)                                    \
+	    (_Py_MakeRecCheck(PyThreadState_GET()->recursion_depth) &&  \
+	     _Py_CheckRecursiveCall(where))
+#define Py_LeaveRecursiveCall()				\
+	    (--PyThreadState_GET()->recursion_depth)
+PyAPI_FUNC(int) _Py_CheckRecursiveCall(char *where);
+PyAPI_DATA(int) _Py_CheckRecursionLimit;
+#ifdef USE_STACKCHECK
+#  define _Py_MakeRecCheck(x)  (++(x) > --_Py_CheckRecursionLimit)
+#else
+#  define _Py_MakeRecCheck(x)  (++(x) > _Py_CheckRecursionLimit)
+#endif
 
 PyAPI_FUNC(char *) PyEval_GetFuncName(PyObject *);
 PyAPI_FUNC(char *) PyEval_GetFuncDesc(PyObject *);
