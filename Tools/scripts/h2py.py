@@ -23,12 +23,13 @@
 
 import sys, regex, regsub, string, getopt, os
 
-p_define = regex.compile('^#[\t ]*define[\t ]+\([a-zA-Z0-9_]+\)[\t ]+')
+p_define = regex.compile('^[\t ]*#[\t ]*define[\t ]+\([a-zA-Z0-9_]+\)[\t ]+')
 
 p_macro = regex.compile(
-  '^#[\t ]*define[\t ]+\([a-zA-Z0-9_]+\)(\([_a-zA-Z][_a-zA-Z0-9]*\))[\t ]+')
+  '^[\t ]*#[\t ]*define[\t ]+'
+  '\([a-zA-Z0-9_]+\)(\([_a-zA-Z][_a-zA-Z0-9]*\))[\t ]+')
 
-p_include = regex.compile('^#[\t ]*include[\t ]+<\([a-zA-Z0-9_/\.]+\)')
+p_include = regex.compile('^[\t ]*#[\t ]*include[\t ]+<\([a-zA-Z0-9_/\.]+\)')
 
 p_comment = regex.compile('/\*\([^*]+\|\*+[^/]\)*\(\*+/\)?')
 
