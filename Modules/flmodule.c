@@ -394,7 +394,7 @@ call_forms_INf (func, obj, args)
 {
 	float parameter;
 
-	if (!getfloatarg (args, &parameter)) return NULL;
+	if (!getargs(args, "f", &parameter)) return NULL;
 
 	(*func) (obj, parameter);
 
@@ -411,7 +411,7 @@ call_forms_INfINf (func, obj, args)
 {
 	float par1, par2;
 
-	if (!getfloatfloatarg (args, &par1, &par2)) return NULL;
+	if (!getargs(args, "(ff)", &par1, &par2)) return NULL;
 
 	(*func) (obj, par1, par2);
 
@@ -428,7 +428,7 @@ call_forms_INi (func, obj, args)
 {
 	int parameter;
 
-	if (!getintarg (args, &parameter)) return NULL;
+	if (!getintarg(args, &parameter)) return NULL;
 
 	(*func) (obj, parameter);
 
@@ -443,11 +443,11 @@ call_forms_INc (func, obj, args)
 	FL_OBJECT *obj;
 	object *args;
 {
-	object *a;
+	char *a;
 
-	if (!getstrarg (args, &a)) return NULL;
+	if (!getstrarg(args, &a)) return NULL;
 
-	(*func) (obj, getstringvalue(a)[0]);
+	(*func) (obj, a[0]);
 
 	INCREF(None);
 	return None;
@@ -460,11 +460,11 @@ call_forms_INstr (func, obj, args)
 	FL_OBJECT *obj;
 	object *args;
 {  
-	object *a;
+	char *a;
      
-	if (!getstrarg (args, &a)) return NULL;
+	if (!getstrarg(args, &a)) return NULL;
 
-	(*func) (obj, getstringvalue (a));
+	(*func) (obj, a);
 
 	INCREF(None);
 	return None;
@@ -478,12 +478,12 @@ call_forms_INiINstr (func, obj, args)
 	FL_OBJECT *obj;
 	object *args;
 {
-	object *a;
-	int b;
+	char *b;
+	int a;
 	
-	if (!getintstrarg (args, &b, &a)) return NULL;
+	if (!getintstrarg(args, &a, &b)) return NULL;
 	
-	(*func) (obj, b, getstringvalue (a));
+	(*func) (obj, a, b);
 	
 	INCREF(None);
 	return None;
@@ -499,7 +499,7 @@ call_forms_INiINi (func, obj, args)
 {
 	int par1, par2;
 	
-	if (!getintintarg (args, &par1, &par2)) return NULL;
+	if (!getintintarg(args, &par1, &par2)) return NULL;
 	
 	(*func) (obj, par1, par2);
 	
@@ -533,7 +533,7 @@ call_forms_Rstr (func, obj, args)
 {  
 	char *str;
 	
-	if (!getnoarg (args)) return NULL;
+	if (!getnoarg(args)) return NULL;
 	
 	str = (*func) (obj);
 	
@@ -1034,7 +1034,7 @@ set_dial (g, args)
 {
 	float f1, f2, f3;
 
-	if (!getfloatfloatfloatarg(args, &f1, &f2, &f3))
+	if (!getargs(args, "(fff)", &f1, &f2, &f3))
 		return NULL;
 	fl_set_dial (g->ob_generic, f1, f2, f3);
 	INCREF(None);
@@ -1192,7 +1192,7 @@ set_slider (g, args)
 {
 	float f1, f2, f3;
 
-	if (!getfloatfloatfloatarg(args, &f1, &f2, &f3))
+	if (!args(args, "(fff)", &f1, &f2, &f3))
 		return NULL;
 	fl_set_slider (g->ob_generic, f1, f2, f3);
 	INCREF(None);
@@ -1402,10 +1402,10 @@ form_show_form(f, args)
 	object *args;
 {
 	int place, border;
-	object *name;
-	if (!getintintstrarg(args, &place, &border, &name))
+	char *name;
+	if (!getargs(args, "(iis)", &place, &border, &name))
 		return NULL;
-	fl_show_form(f->ob_form, place, border, getstringvalue(name));
+	fl_show_form(f->ob_form, place, border, name);
 	INCREF(None);
 	return None;
 }
@@ -1489,15 +1489,15 @@ generic_add_object(f, args, func, internal_methods)
 {
 	int type;
 	float x, y, w, h;
-	object *name;
+	char *name;
 	FL_OBJECT *obj;
 
-	if (!getintfloatfloatfloatfloatstrarg(args,&type,&x,&y,&w,&h,&name))
+	if (!getargs(args,"(iffffs)", &type,&x,&y,&w,&h,&name))
 		return NULL;
   
 	fl_addto_form (f-> ob_form);
   
-	obj = (*func) (type, x, y, w, h, getstringvalue(name));
+	obj = (*func) (type, x, y, w, h, name);
 
 	fl_end_form();
 
@@ -1671,10 +1671,10 @@ form_display_form(f, args)
 	object *args;
 {
 	int place, border;
-	object *name;
-	if (!getintintstrarg(args, &place, &border, &name))
+	char *name;
+	if (!getargs(args, "(iis)", &place, &border, &name))
 		return NULL;
-	fl_show_form(f->ob_form, place, border, getstringvalue(name));
+	fl_show_form(f->ob_form, place, border, name);
 	INCREF(None);
 	return None;
 }
@@ -1747,7 +1747,7 @@ forms_find_first_or_last(func, f, args)
 	FL_OBJECT *generic;
 	genericobject *g;
 	
-	if (!getintfloatfloatarg(args, &type, &mx, &my)) return NULL;
+	if (!getargs(args, "(iff)", &type, &mx, &my)) return NULL;
 
 	generic = (*func) (f-> ob_form, type, mx, my);
 
@@ -1921,7 +1921,7 @@ forms_make_form(dummy, args)
 	int type;
 	float w, h;
 	FL_FORM *form;
-	if (!getintfloatfloatarg(args, &type, &w, &h))
+	if (!getargs(args, "(iff)", &type, &w, &h))
 		return NULL;
 	form = fl_bgn_form(type, w, h);
 	if (form == NULL) {
@@ -2184,7 +2184,7 @@ forms_mapcolor(self, args)
 {
 	int arg0, arg1, arg2, arg3;
 
-	if (!getintintintintarg(args, &arg0, &arg1, &arg2, &arg3))
+	if (!getargs(args, "(iiii)", &arg0, &arg1, &arg2, &arg3))
 	      return NULL;
 
 	fl_mapcolor(arg0, (short) arg1, (short) arg2, (short) arg3);
@@ -2263,12 +2263,11 @@ forms_show_message(f, args)
      object *f;
      object *args;
 {
-	object *a, *b, *c;
+	char *a, *b, *c;
 
-        if (!getstrstrstrarg(args, &a, &b, &c)) return NULL;
+        if (!getargs(args, "(sss)", &a, &b, &c)) return NULL;
 
-	fl_show_message(
-		   getstringvalue(a), getstringvalue(b), getstringvalue(c));
+	fl_show_message(a, b, c);
 
 	INCREF(None);
 	return None;
@@ -2279,13 +2278,12 @@ forms_show_question(f, args)
      object *f;
      object *args;
 {
-        int ret;
-	object *a, *b, *c;
+	int ret;
+	char *a, *b, *c;
 
-        if (!getstrstrstrarg(args, &a, &b, &c)) return NULL;
+        if (!getargs(args, "(sss)", &a, &b, &c)) return NULL;
 
-	ret = fl_show_question(
-		   getstringvalue(a), getstringvalue(b), getstringvalue(c));
+	ret = fl_show_question(a, b, c);
    
         return newintobject((long) ret);
 }
@@ -2296,11 +2294,11 @@ forms_show_input(f, args)
      object *args;
 {
         char *str;
-	object *a, *b;
+	char *a, *b;
 
         if (!getstrstrarg(args, &a, &b)) return NULL;
 
-	str = fl_show_input(getstringvalue(a), getstringvalue(b));
+	str = fl_show_input(a, b);
 
 	if (str == NULL) {
 		INCREF(None);
@@ -2315,12 +2313,11 @@ forms_file_selector(f, args)
      object *args;
 {
         char *str;
-	object *a, *b, *c, *d;
+	char *a, *b, *c, *d;
 
-        if (!getstrstrstrstrarg(args, &a, &b, &c, &d)) return NULL;
+        if (!getargs(args, "(ssss)", &a, &b, &c, &d)) return NULL;
 
-	str = fl_show_file_selector(getstringvalue(a), getstringvalue(b),
-				     getstringvalue(c), getstringvalue(d));
+	str = fl_show_file_selector(a, b, c, d);
    
 	if (str == NULL) {
 		INCREF(None);
@@ -2419,144 +2416,4 @@ initfl()
 #ifndef FL_V15
 	fl_init();
 #endif /* !FL_V15 */
-}
-
-
-/* Support routines */
-
-int
-getintintstrarg(args, a, b, c)
-	object *args;
-	int *a, *b;
-	object **c;
-{
-	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 3) {
-		err_badarg();
-		return NULL;
-	}
-	return getintarg(gettupleitem(args, 0), a) &&
-		getintarg(gettupleitem(args, 1), b) &&
-		getstrarg(gettupleitem(args, 2), c);
-}
-
-int
-getintfloatfloatarg(args, a, b, c)
-	object *args;
-	int *a;
-	float *b, *c;
-{
-	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 3) {
-		err_badarg();
-		return NULL;
-	}
-	return getintarg(gettupleitem(args, 0), a) &&
-		getfloatarg(gettupleitem(args, 1), b) &&
-		getfloatarg(gettupleitem(args, 2), c);
-}
-
-int
-getintintintintarg(args, a, b, c, d)
-	object *args;
-	int *a, *b, *c, *d;
-{
-	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 4) {
-		err_badarg();
-		return NULL;
-	}
-	return getintarg(gettupleitem(args, 0), a) &&
-		getintarg(gettupleitem(args, 1), b) &&
-		getintarg(gettupleitem(args, 2), c) &&
-		getintarg(gettupleitem(args, 3), d);
-}
-
-int
-getfloatarg(args, a)
-	object *args;
-	float *a;
-{
-	double x;
-	if (!getdoublearg(args, &x))
-		return 0;
-	*a = x;
-	return 1;
-}
-
-int
-getintfloatfloatfloatfloatstrarg(args, type, x, y, w, h, name)
-     object *args;
-     int *type;
-     float *x, *y, *w, *h;
-     object **name;
-{
-	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 6) {
-		err_badarg();
-		return NULL;
-	}
-	return  getintarg(gettupleitem(args, 0), type) &&
-		getfloatarg(gettupleitem(args, 1), x) &&
-		getfloatarg(gettupleitem(args, 2), y) &&
-		getfloatarg(gettupleitem(args, 3), w) &&
-		getfloatarg(gettupleitem(args, 4), h) &&
-		getstrarg(gettupleitem(args, 5), name);
-}
-
-int
-getfloatfloatfloatarg(args, f1, f2, f3)
-     object *args;
-     float *f1, *f2, *f3;
-{
-        if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 3) {
-		err_badarg();
-		return NULL;
-	}
-	return  getfloatarg(gettupleitem(args, 0), f1) &&
-		getfloatarg(gettupleitem(args, 1), f2) &&
-		getfloatarg(gettupleitem(args, 2), f3);
-}
-
-int
-getfloatfloatarg(args, f1, f2)
-     object *args;
-     float *f1, *f2;
-{
-        if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 2) {
-		err_badarg();
-		return NULL;
-	}
-	return  getfloatarg(gettupleitem(args, 0), f1) &&
-		getfloatarg(gettupleitem(args, 1), f2);
-}
-
-int
-getstrstrstrarg(v, a, b, c)
-	object *v;
-	object **a;
-	object **b;
-        object **c;
-{
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 3) {
-		return err_badarg();
-	}
-	return getstrarg(gettupleitem(v, 0), a) &&
-		getstrarg(gettupleitem(v, 1), b)&&
-		getstrarg(gettupleitem(v, 2), c);
-}
-
-
-int
-getstrstrstrstrarg(v, a, b, c, d)
-	object *v;
-	object **a;
-	object **b;
-        object **c;
-        object **d;
-{
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 4) {
-		return err_badarg();
-	}
-	return getstrarg(gettupleitem(v, 0), a) &&
-		getstrarg(gettupleitem(v, 1), b)&&
-		getstrarg(gettupleitem(v, 2), c) &&
-		getstrarg(gettupleitem(v, 3),d);
-		  
 }

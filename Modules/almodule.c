@@ -22,7 +22,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* AL module -- interface to Mark Calows' Auido Library (AL). */
+/* AL module -- interface to Mark Callows' Audio Library (AL). */
 
 #include "audio.h"
 
@@ -43,6 +43,10 @@ extern typeobject Configtype; /* Forward */
 
 #define is_configobject(v) ((v)->ob_type == &Configtype)
 
+/* Forward */
+static int getconfigarg PROTO((object *, ALconfig *));
+static int getstrstrconfigarg PROTO((object *, char **, char **, ALconfig *));
+
 static object *
 setConfig (self, args, func)
 	configobject *self;
@@ -51,7 +55,7 @@ setConfig (self, args, func)
 {
 	long par;
 
-	if (!getlongarg(args, &par)) return NULL;
+	if (!getlongarg (args, &par)) return NULL;
 
 	(*func) (self-> ob_config, par);
 
@@ -67,7 +71,7 @@ getConfig (self, args, func)
 {	
 	long par;
 
-	if (!getnoarg(args)) return NULL;
+	if (!getnoarg (args)) return NULL;
 	
 	par = (*func) (self-> ob_config);
 
@@ -192,7 +196,7 @@ al_closeport (self, args)
 	portobject *self;
 	object *args;
 {
-	if (!getnoarg(args)) return NULL;
+	if (!getnoarg (args)) return NULL;
 
 	if (self->ob_port != NULL) {
 		ALcloseport (self-> ob_port);
@@ -211,7 +215,7 @@ al_getfd (self, args)
 {
 	int fd;
 
-	if (!getnoarg(args)) return NULL;
+	if (!getnoarg (args)) return NULL;
 
 	fd = ALgetfd (self-> ob_port);
 
@@ -225,7 +229,7 @@ al_getfilled (self, args)
 {
 	long count;
 
-	if (!getnoarg(args)) return NULL;
+	if (!getnoarg (args)) return NULL;
 	
 	count = ALgetfilled (self-> ob_port);
 
@@ -239,7 +243,7 @@ al_getfillable (self, args)
 {
 	long count;
 
-	if (!getnoarg(args)) return NULL;
+	if (!getnoarg (args)) return NULL;
 	
 	count = ALgetfillable (self-> ob_port);
 
@@ -281,17 +285,16 @@ al_writesamps (self, args)
 	object *args;
 {
 	long count;
-	object *v;
+	char *buf;
+	int size, width;
 	ALconfig c;
-	int width;
 
-	if (!getstrarg (args, &v)) return NULL;
+	if (!getargs (args, "s#", &buf, &size)) return NULL;
 
 	c = ALgetconfig(self->ob_port);
 	width = ALgetwidth(c);
 	ALfreeconfig(c);
-	ALwritesamps (self-> ob_port, (void *) getstringvalue(v),
-		      getstringsize(v) / width);
+	ALwritesamps (self-> ob_port, (void *) buf, (long) size / width);
 
 	INCREF (None);
 	return None;
@@ -304,7 +307,7 @@ al_getfillpoint (self, args)
 {
 	long count;
 
-	if (!getnoarg(args)) return NULL;
+	if (!getnoarg (args)) return NULL;
 	
 	count = ALgetfillpoint (self-> ob_port);
 
@@ -318,7 +321,7 @@ al_setfillpoint (self, args)
 {
 	long count;
 
-	if (!getlongarg(args, &count)) return NULL;
+	if (!getlongarg (args, &count)) return NULL;
 	
 	ALsetfillpoint (self-> ob_port, count);
 
@@ -333,7 +336,7 @@ al_setconfig (self, args)
 {
 	ALconfig config;
 
-	if (!getconfigarg(args, &config)) return NULL;
+	if (!getconfigarg (args, &config)) return NULL;
 	
 	ALsetconfig (self-> ob_port, config);
 
@@ -348,7 +351,7 @@ al_getconfig (self, args)
 {
 	ALconfig config;
 
-	if (!getnoarg(args)) return NULL;
+	if (!getnoarg (args)) return NULL;
 	
 	config = ALgetconfig (self-> ob_port);
 
@@ -420,13 +423,13 @@ static object *
 al_openport (self, args)
 	object *self, *args;
 {
-	object *name, *dir;
+	char *name, *dir;
 	ALport port;
 	ALconfig config = NULL;
 	int size;
 
 	if (args == NULL || !is_tupleobject(args)) {
-		err_badarg();
+		err_badarg ();
 		return NULL;
 	}
 	size = gettuplesize(args);
@@ -439,11 +442,11 @@ al_openport (self, args)
 			return NULL;
 	}
 	else {
-		err_badarg();
+		err_badarg ();
 		return NULL;
 	}
 
-	port = ALopenport(getstringvalue(name), getstringvalue(dir), config);
+	port = ALopenport(name, dir, config);
 
 	if (port == NULL) {
 		err_errno(RuntimeError);
@@ -481,7 +484,7 @@ al_queryparams(self, args)
 	object *v;
 	object *w;
 
-	if (!getlongarg(args, &device))
+	if (!getlongarg (args, &device))
 		return NULL;
 	length = ALqueryparams(device, PVdummy, 2L);
 	PVbuffer = NEW(long, length);
@@ -510,7 +513,7 @@ doParams(args, func, modified)
 	long length;
 	int i;
 	
-	if (!getlongobjectarg(args, &device, &list))
+	if (!getargs(args, "(lO)", &device, &list))
 		return NULL;
 	if (!is_listobject(list)) {
 		err_badarg();
@@ -572,31 +575,26 @@ inital()
 	initmodule("al", al_methods);
 }
 
-int
-getconfigarg (o, conf)
-	configobject *o;
+static int
+getconfigarg(o, conf)
+	object *o;
 	ALconfig *conf;
 {
 	if (o == NULL || !is_configobject(o))
 		return err_badarg ();
 	
-	*conf = o-> ob_config;
+	*conf = ((configobject *) o) -> ob_config;
 	
 	return 1;
 }
 
-int
+static int
 getstrstrconfigarg(v, a, b, c)
 	object *v;
-	object **a;
-	object **b;
+	char **a;
+	char **b;
 	ALconfig *c;
 {
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 3) {
-		return err_badarg();
-	}
-	
-	return getstrarg(gettupleitem(v, 0), a) &&
-		getstrarg(gettupleitem(v, 1), b) &&
-		getconfigarg (gettupleitem (v, 2), c);
+	object *o;
+	return getargs(v, "(ssO)", a, b, &o) && getconfigarg(o, c);
 }
