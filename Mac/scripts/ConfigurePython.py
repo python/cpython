@@ -10,23 +10,64 @@
 #
 # Jack Jansen, CWI, August 1995
 
-import os
-import macfs
 import sys
 
+def help():
+	print"""
+Try the following:
+1. Remove any old "Python Preferences" files from the system folder.
+2. Remove any old "PythonCore" files from the system folder.
+3. Make sure this script, PythonPPC and PythonCore are all located in the
+   python home folder (where the Lib and PlugIns folders are)
+4. Run this script again, by dropping it on PythonPPC.
+
+If this fails try removing starting afresh from the distribution archive.
+"""
+	sys.exit(1)
+	
+try:
+	import os
+except ImportError:
+	print """
+I cannot import the 'os' module, so something is wrong with sys.path
+"""
+	help()
+	
 try:
 	import Res
 except ImportError:
-	print """
-Res module not found, which probably means that you are trying
-to execute this script with a dynamically-linked python. This will
-not work, since the whole point of the script is to create aliases
-for dynamically-linked python to use. Do one of the following:
-- Run this script using a non-dynamic python
-- Use MkPluginAliases.as (an AppleScript)
-- Create the aliases by hand (see the source for a list)."""
-	sys.exit(1)
+	#
+	# Check that we are actually in the main python directory
+	#
+	try:
+		os.chdir(':PlugIns')
+	except IOError:
+		print """
+I cannot find the 'PlugIns' folder, so I am obviously not run from the Python
+home folder.
+"""
+		help()
+	import imp
+	cwd = os.getcwd()
+	tblibname = os.path.join(cwd, "toolboxmodules.slb")
+	if not os.exists(tblibname):
+		print """
+I cannot find the 'toolboxmodules.slb' file in the PlugIns directory.
+Start afresh from a clean distribution. 
+"""
+		sys.exit(1)
+	try:
+		for wtd in ["Ctl", "Dlg", "Evt", "Qd", "Res", "Win"]:
+			imp.load_dynamic_module(wtd, tblibname, None)
+	except ImportError:
+		print """
+I cannot load the toolbox modules by hand. Are you sure you are
+using a PowerPC mac?
+"""
+		sys.exit(1)
+		
 
+import macfs
 import EasyDialogs
 import macostools
 
