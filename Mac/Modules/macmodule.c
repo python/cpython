@@ -49,6 +49,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <fcntl.h>
 #endif
 
+#ifdef __MWERKS__
+#define MALLOC_DEBUG
+#endif
+
 #include "macdefs.h"
 #include "dirent.h"
 
