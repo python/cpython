@@ -751,6 +751,8 @@ static PyObject *
 int_lshift(PyIntObject *v, PyIntObject *w)
 {
 	long a, b, c;
+	PyObject *vv, *ww, *result;
+
 	CONVERT_TO_LONG(v, a);
 	CONVERT_TO_LONG(w, b);
 	if (b < 0) {
@@ -760,13 +762,33 @@ int_lshift(PyIntObject *v, PyIntObject *w)
 	if (a == 0 || b == 0)
 		return int_pos(v);
 	if (b >= LONG_BIT) {
-		return PyNumber_Lshift(PyLong_FromLong(PyInt_AS_LONG(v)),
-				       PyLong_FromLong(PyInt_AS_LONG(w)));
+		vv = PyLong_FromLong(PyInt_AS_LONG(v));
+		if (vv == NULL)
+			return NULL;
+		ww = PyLong_FromLong(PyInt_AS_LONG(w));
+		if (ww == NULL) {
+			Py_DECREF(vv);
+			return NULL;
+		}
+		result = PyNumber_Lshift(vv, ww);
+		Py_DECREF(vv);
+		Py_DECREF(ww);
+		return result;
 	}
 	c = a << b;
 	if (a != Py_ARITHMETIC_RIGHT_SHIFT(long, c, b)) {
-		return PyNumber_Lshift(PyLong_FromLong(PyInt_AS_LONG(v)),
-				       PyLong_FromLong(PyInt_AS_LONG(w)));
+		vv = PyLong_FromLong(PyInt_AS_LONG(v));
+		if (vv == NULL)
+			return NULL;
+		ww = PyLong_FromLong(PyInt_AS_LONG(w));
+		if (ww == NULL) {
+			Py_DECREF(vv);
+			return NULL;
+		}
+		result = PyNumber_Lshift(vv, ww);
+		Py_DECREF(vv);
+		Py_DECREF(ww);
+		return result;
 	}
 	return PyInt_FromLong(c);
 }
