@@ -21,7 +21,9 @@ class StreamWriter(Codec,codecs.StreamWriter):
     pass
         
 class StreamReader(Codec,codecs.StreamReader):
-    pass
+
+    def readline(self, size=None):
+        raise NotImplementedError, '.readline() is not implemented for UTF-16-BE'
 
 ### encodings module API
 
