@@ -274,7 +274,7 @@ class _Stream:
        _Stream is intended to be used only internally.
     """
 
-    def __init__(self, name, mode, type, fileobj, bufsize):
+    def __init__(self, name, mode, comptype, fileobj, bufsize):
         """Construct a _Stream object.
         """
         self._extfileobj = True
@@ -282,16 +282,22 @@ class _Stream:
             fileobj = _LowLevelFile(name, mode)
             self._extfileobj = False
 
-        self.name    = name or ""
-        self.mode    = mode
-        self.type    = type
-        self.fileobj = fileobj
-        self.bufsize = bufsize
-        self.buf     = ""
-        self.pos     = 0L
-        self.closed  = False
+        if comptype == '*':
+            # Enable transparent compression detection for the
+            # stream interface
+            fileobj = _StreamProxy(fileobj)
+            comptype = fileobj.getcomptype()
 
-        if type == "gz":
+        self.name     = name or ""
+        self.mode     = mode
+        self.comptype = comptype
+        self.fileobj  = fileobj
+        self.bufsize  = bufsize
+        self.buf      = ""
+        self.pos      = 0L
+        self.closed   = False
+
+        if comptype == "gz":
             try:
                 import zlib
             except ImportError:
@@ -303,7 +309,7 @@ class _Stream:
             else:
                 self._init_write_gz()
 
-        if type == "bz2":
+        if comptype == "bz2":
             try:
                 import bz2
             except ImportError:
@@ -315,7 +321,7 @@ class _Stream:
                 self.cmp = bz2.BZ2Compressor()
 
     def __del__(self):
-        if not self.closed:
+        if hasattr(self, "closed") and not self.closed:
             self.close()
 
     def _init_write_gz(self):
@@ -334,10 +340,10 @@ class _Stream:
     def write(self, s):
         """Write string s to the stream.
         """
-        if self.type == "gz":
+        if self.comptype == "gz":
             self.crc = self.zlib.crc32(s, self.crc)
         self.pos += len(s)
-        if self.type != "tar":
+        if self.comptype != "tar":
             s = self.cmp.compress(s)
         self.__write(s)
 
@@ -357,12 +363,16 @@ class _Stream:
         if self.closed:
             return
 
-        if self.mode == "w" and self.type != "tar":
+        if self.mode == "w" and self.comptype != "tar":
             self.buf += self.cmp.flush()
+
         if self.mode == "w" and self.buf:
+            blocks, remainder = divmod(len(self.buf), self.bufsize)
+            if remainder > 0:
+                self.buf += NUL * (self.bufsize - remainder)
             self.fileobj.write(self.buf)
             self.buf = ""
-            if self.type == "gz":
+            if self.comptype == "gz":
                 self.fileobj.write(struct.pack("<l", self.crc))
                 self.fileobj.write(struct.pack("<L", self.pos & 0xffffFFFFL))
 
@@ -441,7 +451,7 @@ class _Stream:
     def _read(self, size):
         """Return size bytes from the stream.
         """
-        if self.type == "tar":
+        if self.comptype == "tar":
             return self.__read(size)
 
         c = len(self.dbuf)
@@ -473,6 +483,30 @@ class _Stream:
         self.buf = t[size:]
         return t[:size]
 # class _Stream
+
+class _StreamProxy(object):
+    """Small proxy class that enables transparent compression
+       detection for the Stream interface (mode 'r|*').
+    """
+
+    def __init__(self, fileobj):
+        self.fileobj = fileobj
+        self.buf = self.fileobj.read(BLOCKSIZE)
+
+    def read(self, size):
+        self.read = self.fileobj.read
+        return self.buf
+
+    def getcomptype(self):
+        if self.buf.startswith("\037\213\010"):
+            return "gz"
+        if self.buf.startswith("BZh91"):
+            return "bz2"
+        return "tar"
+
+    def close(self):
+        self.fileobj.close()
+# class StreamProxy
 
 #------------------------
 # Extraction file object
@@ -879,7 +913,7 @@ class TarFile(object):
            an appropriate TarFile class.
 
            mode:
-           'r'          open for reading with transparent compression
+           'r' or 'r:*' open for reading with transparent compression
            'r:'         open for reading exclusively uncompressed
            'r:gz'       open for reading with gzip compression
            'r:bz2'      open for reading with bzip2 compression
@@ -887,6 +921,8 @@ class TarFile(object):
            'w' or 'w:'  open for writing without compression
            'w:gz'       open for writing with gzip compression
            'w:bz2'      open for writing with bzip2 compression
+
+           'r|*'        open a stream of tar blocks with transparent compression
            'r|'         open an uncompressed stream of tar blocks for reading
            'r|gz'       open a gzip compressed stream of tar blocks
            'r|bz2'      open a bzip2 compressed stream of tar blocks
@@ -898,7 +934,17 @@ class TarFile(object):
         if not name and not fileobj:
             raise ValueError, "nothing to open"
 
-        if ":" in mode:
+        if mode in ("r", "r:*"):
+            # Find out which *open() is appropriate for opening the file.
+            for comptype in cls.OPEN_METH:
+                func = getattr(cls, cls.OPEN_METH[comptype])
+                try:
+                    return func(name, "r", fileobj)
+                except (ReadError, CompressionError):
+                    continue
+            raise ReadError, "file could not be opened successfully"
+
+        elif ":" in mode:
             filemode, comptype = mode.split(":", 1)
             filemode = filemode or "r"
             comptype = comptype or "tar"
@@ -923,16 +969,6 @@ class TarFile(object):
                     _Stream(name, filemode, comptype, fileobj, bufsize))
             t._extfileobj = False
             return t
-
-        elif mode == "r":
-            # Find out which *open() is appropriate for opening the file.
-            for comptype in cls.OPEN_METH:
-                func = getattr(cls, cls.OPEN_METH[comptype])
-                try:
-                    return func(name, "r", fileobj)
-                except (ReadError, CompressionError):
-                    continue
-            raise ReadError, "file could not be opened successfully"
 
         elif mode in "aw":
             return cls.taropen(name, mode, fileobj)

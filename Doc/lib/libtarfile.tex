@@ -32,7 +32,7 @@ Some facts and figures:
     it defaults to \code{'r'}. Here is a full list of mode combinations:
 
     \begin{tableii}{c|l}{code}{mode}{action}
-    \lineii{'r'}{Open for reading with transparent compression (recommended).}
+    \lineii{'r' or 'r:*'}{Open for reading with transparent compression (recommended).}
     \lineii{'r:'}{Open for reading exclusively without compression.}
     \lineii{'r:gz'}{Open for reading with gzip compression.}
     \lineii{'r:bz2'}{Open for reading with bzip2 compression.}
@@ -65,6 +65,7 @@ Some facts and figures:
     (section~\ref{tar-examples}).  The currently possible modes:
 
     \begin{tableii}{c|l}{code}{Mode}{Action}
+    \lineii{'r|*'}{Open a \emph{stream} of tar blocks for reading with transparent compression.}
     \lineii{'r|'}{Open a \emph{stream} of uncompressed tar blocks for reading.}
     \lineii{'r|gz'}{Open a gzip compressed \emph{stream} for reading.}
     \lineii{'r|bz2'}{Open a bzip2 compressed \emph{stream} for reading.}
