@@ -2404,6 +2404,10 @@ def setclass():
     cant(C(), object)
     cant(object(), list)
     cant(list(), object)
+    o = object()
+    cant(o, type(1))
+    cant(o, type(None))
+    del o
 
 def setdict():
     if verbose: print "Testing __dict__ assignment..."
