@@ -1,0 +1,871 @@
+\section{Built-in Types}
+\label{types}
+
+The following sections describe the standard types that are built into
+the interpreter.  These are the numeric types, sequence types, and
+several others, including types themselves.  There is no explicit
+Boolean type; use integers instead.
+\indexii{built-in}{types}
+\indexii{Boolean}{type}
+
+Some operations are supported by several object types; in particular,
+all objects can be compared, tested for truth value, and converted to
+a string (with the \code{`{\rm \ldots}`} notation).  The latter conversion is
+implicitly used when an object is written by the \code{print} statement.
+\stindex{print}
+
+
+\subsection{Truth Value Testing}
+\label{truth}
+
+Any object can be tested for truth value, for use in an \code{if} or
+\code{while} condition or as operand of the Boolean operations below.
+The following values are considered false:
+\stindex{if}
+\stindex{while}
+\indexii{truth}{value}
+\indexii{Boolean}{operations}
+\index{false}
+
+\setindexsubitem{(Built-in object)}
+\begin{itemize}
+
+\item	\code{None}
+	\ttindex{None}
+
+\item	zero of any numeric type, e.g., \code{0}, \code{0L}, \code{0.0}.
+
+\item	any empty sequence, e.g., \code{''}, \code{()}, \code{[]}.
+
+\item	any empty mapping, e.g., \code{\{\}}.
+
+\item	instances of user-defined classes, if the class defines a
+	\code{__nonzero__()} or \code{__len__()} method, when that
+	method returns zero.
+
+\end{itemize}
+
+All other values are considered true --- so objects of many types are
+always true.
+\index{true}
+
+Operations and built-in functions that have a Boolean result always
+return \code{0} for false and \code{1} for true, unless otherwise
+stated.  (Important exception: the Boolean operations
+\samp{or}\opindex{or} and \samp{and}\opindex{and} always return one of
+their operands.)
+
+
+\subsection{Boolean Operations}
+\label{boolean}
+
+These are the Boolean operations, ordered by ascending priority:
+\indexii{Boolean}{operations}
+
+\begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
+  \lineiii{\var{x} or \var{y}}{if \var{x} is false, then \var{y}, else \var{x}}{(1)}
+  \lineiii{\var{x} and \var{y}}{if \var{x} is false, then \var{x}, else \var{y}}{(1)}
+  \hline
+  \lineiii{not \var{x}}{if \var{x} is false, then \code{1}, else \code{0}}{(2)}
+\end{tableiii}
+\opindex{and}
+\opindex{or}
+\opindex{not}
+
+\noindent
+Notes:
+
+\begin{description}
+
+\item[(1)]
+These only evaluate their second argument if needed for their outcome.
+
+\item[(2)]
+\samp{not} has a lower priority than non-Boolean operators, so e.g.
+\code{not a == b} is interpreted as \code{not(a == b)}, and
+\code{a == not b} is a syntax error.
+
+\end{description}
+
+
+\subsection{Comparisons}
+\label{comparisons}
+
+Comparison operations are supported by all objects.  They all have the
+same priority (which is higher than that of the Boolean operations).
+Comparisons can be chained arbitrarily, e.g. \code{x < y <= z} is
+equivalent to \code{x < y and y <= z}, except that \code{y} is
+evaluated only once (but in both cases \code{z} is not evaluated at
+all when \code{x < y} is found to be false).
+\indexii{chaining}{comparisons}
+
+This table summarizes the comparison operations:
+
+\begin{tableiii}{c|l|c}{code}{Operation}{Meaning}{Notes}
+  \lineiii{<}{strictly less than}{}
+  \lineiii{<=}{less than or equal}{}
+  \lineiii{>}{strictly greater than}{}
+  \lineiii{>=}{greater than or equal}{}
+  \lineiii{==}{equal}{}
+  \lineiii{<>}{not equal}{(1)}
+  \lineiii{!=}{not equal}{(1)}
+  \lineiii{is}{object identity}{}
+  \lineiii{is not}{negated object identity}{}
+\end{tableiii}
+\indexii{operator}{comparison}
+\opindex{==} % XXX *All* others have funny characters < ! >
+\opindex{is}
+\opindex{is not}
+
+\noindent
+Notes:
+
+\begin{description}
+
+\item[(1)]
+\code{<>} and \code{!=} are alternate spellings for the same operator.
+(I couldn't choose between \ABC{} and \C{}! :-)
+\index{ABC language@\ABC{} language}
+\index{language!ABC@\ABC{}}
+\indexii{C@\C{}}{language}
+
+\end{description}
+
+Objects of different types, except different numeric types, never
+compare equal; such objects are ordered consistently but arbitrarily
+(so that sorting a heterogeneous array yields a consistent result).
+Furthermore, some types (e.g., windows) support only a degenerate
+notion of comparison where any two objects of that type are unequal.
+Again, such objects are ordered arbitrarily but consistently.
+\indexii{types}{numeric}
+\indexii{objects}{comparing}
+
+(Implementation note: objects of different types except numbers are
+ordered by their type names; objects of the same types that don't
+support proper comparison are ordered by their address.)
+
+Two more operations with the same syntactic priority, \samp{in} and
+\samp{not in}, are supported only by sequence types (below).
+\opindex{in}
+\opindex{not in}
+
+
+\subsection{Numeric Types}
+\label{typesnumeric}
+
+There are four numeric types: \dfn{plain integers}, \dfn{long integers}, 
+\dfn{floating point numbers}, and \dfn{complex numbers}.
+Plain integers (also just called \dfn{integers})
+are implemented using \code{long} in \C{}, which gives them at least 32
+bits of precision.  Long integers have unlimited precision.  Floating
+point numbers are implemented using \code{double} in \C{}.  All bets on
+their precision are off unless you happen to know the machine you are
+working with.
+\indexii{numeric}{types}
+\indexii{integer}{types}
+\indexii{integer}{type}
+\indexiii{long}{integer}{type}
+\indexii{floating point}{type}
+\indexii{complex number}{type}
+\indexii{C@\C{}}{language}
+
+Complex numbers have a real and imaginary part, which are both
+implemented using \code{double} in \C{}.  To extract these parts from
+a complex number \var{z}, use \code{\var{z}.real} and \code{\var{z}.imag}.  
+
+Numbers are created by numeric literals or as the result of built-in
+functions and operators.  Unadorned integer literals (including hex
+and octal numbers) yield plain integers.  Integer literals with an \samp{L}
+or \samp{l} suffix yield long integers
+(\samp{L} is preferred because \samp{1l} looks too much like eleven!).
+Numeric literals containing a decimal point or an exponent sign yield
+floating point numbers.  Appending \samp{j} or \samp{J} to a numeric
+literal yields a complex number.
+\indexii{numeric}{literals}
+\indexii{integer}{literals}
+\indexiii{long}{integer}{literals}
+\indexii{floating point}{literals}
+\indexii{complex number}{literals}
+\indexii{hexadecimal}{literals}
+\indexii{octal}{literals}
+
+Python fully supports mixed arithmetic: when a binary arithmetic
+operator has operands of different numeric types, the operand with the
+``smaller'' type is converted to that of the other, where plain
+integer is smaller than long integer is smaller than floating point is
+smaller than complex.
+Comparisons between numbers of mixed type use the same rule.%
+\footnote{As a consequence, the list \code{[1, 2]} is considered equal
+	to \code{[1.0, 2.0]}, and similar for tuples.}
+The functions \code{int()}, \code{long()}, \code{float()},
+and \code{complex()} can be used
+to coerce numbers to a specific type.
+\index{arithmetic}
+\bifuncindex{int}
+\bifuncindex{long}
+\bifuncindex{float}
+\bifuncindex{complex}
+
+All numeric types support the following operations, sorted by
+ascending priority (operations in the same box have the same
+priority; all numeric operations have a higher priority than
+comparison operations):
+
+\begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
+  \lineiii{\var{x} + \var{y}}{sum of \var{x} and \var{y}}{}
+  \lineiii{\var{x} - \var{y}}{difference of \var{x} and \var{y}}{}
+  \hline
+  \lineiii{\var{x} * \var{y}}{product of \var{x} and \var{y}}{}
+  \lineiii{\var{x} / \var{y}}{quotient of \var{x} and \var{y}}{(1)}
+  \lineiii{\var{x} \%{} \var{y}}{remainder of \code{\var{x} / \var{y}}}{}
+  \hline
+  \lineiii{-\var{x}}{\var{x} negated}{}
+  \lineiii{+\var{x}}{\var{x} unchanged}{}
+  \hline
+  \lineiii{abs(\var{x})}{absolute value or magnitude of \var{x}}{}
+  \lineiii{int(\var{x})}{\var{x} converted to integer}{(2)}
+  \lineiii{long(\var{x})}{\var{x} converted to long integer}{(2)}
+  \lineiii{float(\var{x})}{\var{x} converted to floating point}{}
+  \lineiii{complex(\var{re},\var{im})}{a complex number with real part \var{re}, imaginary part \var{im}.  \var{im} defaults to zero.}{}
+  \lineiii{divmod(\var{x}, \var{y})}{the pair \code{(\var{x} / \var{y}, \var{x} \%{} \var{y})}}{(3)}
+  \lineiii{pow(\var{x}, \var{y})}{\var{x} to the power \var{y}}{}
+  \lineiii{\var{x} ** \var{y}}{\var{x} to the power \var{y}}{}
+\end{tableiii}
+\indexiii{operations on}{numeric}{types}
+
+\noindent
+Notes:
+\begin{description}
+
+\item[(1)]
+For (plain or long) integer division, the result is an integer.
+The result is always rounded towards minus infinity: 1/2 is 0, 
+(-1)/2 is -1, 1/(-2) is -1, and (-1)/(-2) is 0.
+\indexii{integer}{division}
+\indexiii{long}{integer}{division}
+
+\item[(2)]
+Conversion from floating point to (long or plain) integer may round or
+truncate as in \C{}; see functions \code{floor()} and \code{ceil()} in
+module \code{math} for well-defined conversions.
+\bifuncindex{floor}
+\bifuncindex{ceil}
+\indexii{numeric}{conversions}
+\refbimodindex{math}
+\indexii{C@\C{}}{language}
+
+\item[(3)]
+See the section on built-in functions for an exact definition.
+
+\end{description}
+% XXXJH exceptions: overflow (when? what operations?) zerodivision
+
+\subsubsection{Bit-string Operations on Integer Types}
+\nodename{Bit-string Operations}
+
+Plain and long integer types support additional operations that make
+sense only for bit-strings.  Negative numbers are treated as their 2's
+complement value (for long integers, this assumes a sufficiently large
+number of bits that no overflow occurs during the operation).
+
+The priorities of the binary bit-wise operations are all lower than
+the numeric operations and higher than the comparisons; the unary
+operation \samp{\~} has the same priority as the other unary numeric
+operations (\samp{+} and \samp{-}).
+
+This table lists the bit-string operations sorted in ascending
+priority (operations in the same box have the same priority):
+
+\begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
+  \lineiii{\var{x} | \var{y}}{bitwise \dfn{or} of \var{x} and \var{y}}{}
+  \lineiii{\var{x} \^{} \var{y}}{bitwise \dfn{exclusive or} of \var{x} and \var{y}}{}
+  \lineiii{\var{x} \&{} \var{y}}{bitwise \dfn{and} of \var{x} and \var{y}}{}
+  \lineiii{\var{x} << \var{n}}{\var{x} shifted left by \var{n} bits}{(1), (2)}
+  \lineiii{\var{x} >> \var{n}}{\var{x} shifted right by \var{n} bits}{(1), (3)}
+  \hline
+  \lineiii{\~\var{x}}{the bits of \var{x} inverted}{}
+\end{tableiii}
+\indexiii{operations on}{integer}{types}
+\indexii{bit-string}{operations}
+\indexii{shifting}{operations}
+\indexii{masking}{operations}
+
+\noindent
+Notes:
+\begin{description}
+\item[(1)] Negative shift counts are illegal and cause a
+\exception{ValueError} to be raised.
+\item[(2)] A left shift by \var{n} bits is equivalent to
+multiplication by \code{pow(2, \var{n})} without overflow check.
+\item[(3)] A right shift by \var{n} bits is equivalent to
+division by \code{pow(2, \var{n})} without overflow check.
+\end{description}
+
+
+\subsection{Sequence Types}
+\label{typesseq}
+
+There are three sequence types: strings, lists and tuples.
+
+Strings literals are written in single or double quotes:
+\code{'xyzzy'}, \code{"frobozz"}.  See Chapter 2 of the \emph{Python
+Reference Manual} for more about string literals.  Lists are
+constructed with square brackets, separating items with commas:
+\code{[a, b, c]}.  Tuples are constructed by the comma operator (not
+within square brackets), with or without enclosing parentheses, but an
+empty tuple must have the enclosing parentheses, e.g.,
+\code{a, b, c} or \code{()}.  A single item tuple must have a trailing
+comma, e.g., \code{(d,)}.
+\indexii{sequence}{types}
+\indexii{string}{type}
+\indexii{tuple}{type}
+\indexii{list}{type}
+
+Sequence types support the following operations.  The \samp{in} and
+\samp{not in} operations have the same priorities as the comparison
+operations.  The \samp{+} and \samp{*} operations have the same
+priority as the corresponding numeric operations.\footnote{They must
+have since the parser can't tell the type of the operands.}
+
+This table lists the sequence operations sorted in ascending priority
+(operations in the same box have the same priority).  In the table,
+\var{s} and \var{t} are sequences of the same type; \var{n}, \var{i}
+and \var{j} are integers:
+
+\begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
+  \lineiii{\var{x} in \var{s}}{\code{1} if an item of \var{s} is equal to \var{x}, else \code{0}}{}
+  \lineiii{\var{x} not in \var{s}}{\code{0} if an item of \var{s} is
+equal to \var{x}, else \code{1}}{}
+  \hline
+  \lineiii{\var{s} + \var{t}}{the concatenation of \var{s} and \var{t}}{}
+  \lineiii{\var{s} * \var{n}{\rm ,} \var{n} * \var{s}}{\var{n} copies of \var{s} concatenated}{(3)}
+  \hline
+  \lineiii{\var{s}[\var{i}]}{\var{i}'th item of \var{s}, origin 0}{(1)}
+  \lineiii{\var{s}[\var{i}:\var{j}]}{slice of \var{s} from \var{i} to \var{j}}{(1), (2)}
+  \hline
+  \lineiii{len(\var{s})}{length of \var{s}}{}
+  \lineiii{min(\var{s})}{smallest item of \var{s}}{}
+  \lineiii{max(\var{s})}{largest item of \var{s}}{}
+\end{tableiii}
+\indexiii{operations on}{sequence}{types}
+\bifuncindex{len}
+\bifuncindex{min}
+\bifuncindex{max}
+\indexii{concatenation}{operation}
+\indexii{repetition}{operation}
+\indexii{subscript}{operation}
+\indexii{slice}{operation}
+\opindex{in}
+\opindex{not in}
+
+\noindent
+Notes:
+
+\begin{description}
+  
+\item[(1)] If \var{i} or \var{j} is negative, the index is relative to
+  the end of the string, i.e., \code{len(\var{s}) + \var{i}} or
+  \code{len(\var{s}) + \var{j}} is substituted.  But note that \code{-0} is
+  still \code{0}.
+  
+\item[(2)] The slice of \var{s} from \var{i} to \var{j} is defined as
+  the sequence of items with index \var{k} such that \code{\var{i} <=
+  \var{k} < \var{j}}.  If \var{i} or \var{j} is greater than
+  \code{len(\var{s})}, use \code{len(\var{s})}.  If \var{i} is omitted,
+  use \code{0}.  If \var{j} is omitted, use \code{len(\var{s})}.  If
+  \var{i} is greater than or equal to \var{j}, the slice is empty.
+
+\item[(3)] Values of \var{n} less than \code{0} are treated as
+  \code{0} (which yields an empty sequence of the same type as
+  \var{s}).
+
+\end{description}
+
+\subsubsection{More String Operations}
+
+String objects have one unique built-in operation: the \code{\%}
+operator (modulo) with a string left argument interprets this string
+as a \C{} \cfunction{sprintf()} format string to be applied to the
+right argument, and returns the string resulting from this formatting
+operation.
+
+The right argument should be a tuple with one item for each argument
+required by the format string; if the string requires a single
+argument, the right argument may also be a single non-tuple object.%
+\footnote{A tuple object in this case should be a singleton.}
+The following format characters are understood:
+\code{\%}, \code{c}, \code{s}, \code{i}, \code{d}, \code{u}, \code{o},
+\code{x}, \code{X}, \code{e}, \code{E}, \code{f}, \code{g}, \code{G}. 
+Width and precision may be a \code{*} to specify that an integer argument
+specifies the actual width or precision.  The flag characters
+\code{-}, \code{+}, blank, \code{\#} and \code{0} are understood.  The
+size specifiers \code{h}, \code{l} or \code{L} may be 
+present but are ignored.  The \code{\%s} conversion takes any Python
+object and converts it to a string using \code{str()} before
+formatting it.  The ANSI features \code{\%p} and \code{\%n}
+are not supported.  Since Python strings have an explicit length,
+\code{\%s} conversions don't assume that \code{'\e0'} is the end of
+the string.
+
+For safety reasons, floating point precisions are clipped to 50;
+\code{\%f} conversions for numbers whose absolute value is over 1e25
+are replaced by \code{\%g} conversions.%
+\footnote{These numbers are fairly arbitrary.  They are intended to
+avoid printing endless strings of meaningless digits without hampering
+correct use and without having to know the exact precision of floating
+point values on a particular machine.}
+All other errors raise exceptions.
+
+If the right argument is a dictionary (or any kind of mapping), then
+the formats in the string must have a parenthesized key into that
+dictionary inserted immediately after the \character{\%} character,
+and each format formats the corresponding entry from the mapping.
+For example:
+
+\begin{verbatim}
+>>> count = 2
+>>> language = 'Python'
+>>> print '%(language)s has %(count)03d quote types.' % vars()
+Python has 002 quote types.
+\end{verbatim}
+
+In this case no \code{*} specifiers may occur in a format (since they
+require a sequential parameter list).
+
+Additional string operations are defined in standard module
+\module{string} and in built-in module \module{re}.
+\refstmodindex{string}
+\refbimodindex{re}
+
+\subsubsection{Mutable Sequence Types}
+
+List objects support additional operations that allow in-place
+modification of the object.
+These operations would be supported by other mutable sequence types
+(when added to the language) as well.
+Strings and tuples are immutable sequence types and such objects cannot
+be modified once created.
+The following operations are defined on mutable sequence types (where
+\var{x} is an arbitrary object):
+\indexiii{mutable}{sequence}{types}
+\indexii{list}{type}
+
+\begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
+  \lineiii{\var{s}[\var{i}] = \var{x}}
+	{item \var{i} of \var{s} is replaced by \var{x}}{}
+  \lineiii{\var{s}[\var{i}:\var{j}] = \var{t}}
+  	{slice of \var{s} from \var{i} to \var{j} is replaced by \var{t}}{}
+  \lineiii{del \var{s}[\var{i}:\var{j}]}
+	{same as \code{\var{s}[\var{i}:\var{j}] = []}}{}
+  \lineiii{\var{s}.append(\var{x})}
+	{same as \code{\var{s}[len(\var{s}):len(\var{s})] = [\var{x}]}}{}
+  \lineiii{\var{s}.count(\var{x})}
+    {return number of \var{i}'s for which \code{\var{s}[\var{i}] == \var{x}}}{}
+  \lineiii{\var{s}.index(\var{x})}
+    {return smallest \var{i} such that \code{\var{s}[\var{i}] == \var{x}}}{(1)}
+  \lineiii{\var{s}.insert(\var{i}, \var{x})}
+	{same as \code{\var{s}[\var{i}:\var{i}] = [\var{x}]}
+	  if \code{\var{i} >= 0}}{}
+  \lineiii{\var{s}.pop(\optional{\var{i}})}
+    {same as \code{\var{x} = \var{s}[\var{i}]; del \var{s}[\var{i}]; return \var{x}}}{(4)}
+  \lineiii{\var{s}.remove(\var{x})}
+	{same as \code{del \var{s}[\var{s}.index(\var{x})]}}{(1)}
+  \lineiii{\var{s}.reverse()}
+	{reverses the items of \var{s} in place}{(3)}
+  \lineiii{\var{s}.sort(\optional{\var{cmpfunc}})}
+	{sort the items of \var{s} in place}{(2), (3)}
+\end{tableiii}
+\indexiv{operations on}{mutable}{sequence}{types}
+\indexiii{operations on}{sequence}{types}
+\indexiii{operations on}{list}{type}
+\indexii{subscript}{assignment}
+\indexii{slice}{assignment}
+\stindex{del}
+\setindexsubitem{(list method)}
+\ttindex{append}
+\ttindex{count}
+\ttindex{index}
+\ttindex{insert}
+\ttindex{pop}
+\ttindex{remove}
+\ttindex{reverse}
+\ttindex{sort}
+
+\noindent
+Notes:
+\begin{description}
+\item[(1)] Raises an exception when \var{x} is not found in \var{s}.
+  
+\item[(2)] The \code{sort()} method takes an optional argument
+  specifying a comparison function of two arguments (list items) which
+  should return \code{-1}, \code{0} or \code{1} depending on whether the
+  first argument is considered smaller than, equal to, or larger than the
+  second argument.  Note that this slows the sorting process down
+  considerably; e.g. to sort a list in reverse order it is much faster
+  to use calls to \code{sort()} and \code{reverse()} than to use
+  \code{sort()} with a comparison function that reverses the ordering of
+  the elements.
+
+\item[(3)] The \code{sort()} and \code{reverse()} methods modify the
+list in place for economy of space when sorting or reversing a large
+list.  They don't return the sorted or reversed list to remind you of
+this side effect.
+
+\item[(4)] The \method{pop()} method is experimental and not supported 
+by other mutable sequence types than lists.
+The optional argument \var{i} defaults to \code{-1}, so that
+by default the last item is removed and returned.
+
+\end{description}
+
+
+\subsection{Mapping Types}
+\label{typesmapping}
+
+A \dfn{mapping} object maps values of one type (the key type) to
+arbitrary objects.  Mappings are mutable objects.  There is currently
+only one standard mapping type, the \dfn{dictionary}.  A dictionary's keys are
+almost arbitrary values.  The only types of values not acceptable as
+keys are values containing lists or dictionaries or other mutable
+types that are compared by value rather than by object identity.
+Numeric types used for keys obey the normal rules for numeric
+comparison: if two numbers compare equal (e.g. \code{1} and
+\code{1.0}) then they can be used interchangeably to index the same
+dictionary entry.
+
+\indexii{mapping}{types}
+\indexii{dictionary}{type}
+
+Dictionaries are created by placing a comma-separated list of
+\code{\var{key}: \var{value}} pairs within braces, for example:
+\code{\{'jack': 4098, 'sjoerd': 4127\}} or
+\code{\{4098: 'jack', 4127: 'sjoerd'\}}.
+
+The following operations are defined on mappings (where \var{a} is a
+mapping, \var{k} is a key and \var{x} is an arbitrary object):
+
+\begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
+  \lineiii{len(\var{a})}{the number of items in \var{a}}{}
+  \lineiii{\var{a}[\var{k}]}{the item of \var{a} with key \var{k}}{(1)}
+  \lineiii{\var{a}[\var{k}] = \var{x}}{set \code{\var{a}[\var{k}]} to \var{x}}{}
+  \lineiii{del \var{a}[\var{k}]}{remove \code{\var{a}[\var{k}]} from \var{a}}{(1)}
+  \lineiii{\var{a}.clear()}{remove all items from \code{a}}{}
+  \lineiii{\var{a}.copy()}{a (shallow) copy of \code{a}}{}
+  \lineiii{\var{a}.has_key(\var{k})}{\code{1} if \var{a} has a key \var{k}, else \code{0}}{}
+  \lineiii{\var{a}.items()}{a copy of \var{a}'s list of (key, item) pairs}{(2)}
+  \lineiii{\var{a}.keys()}{a copy of \var{a}'s list of keys}{(2)}
+  \lineiii{\var{a}.update(\var{b})}{\code{for k, v in \var{b}.items(): \var{a}[k] = v}}{(3)}
+  \lineiii{\var{a}.values()}{a copy of \var{a}'s list of values}{(2)}
+  \lineiii{\var{a}.get(\var{k}\optional{, \var{f}})}{the item of \var{a} with key \var{k}}{(4)}
+\end{tableiii}
+\indexiii{operations on}{mapping}{types}
+\indexiii{operations on}{dictionary}{type}
+\stindex{del}
+\bifuncindex{len}
+\setindexsubitem{(dictionary method)}
+\ttindex{keys}
+\ttindex{has_key}
+
+\noindent
+Notes:
+\begin{description}
+\item[(1)] Raises an exception if \var{k} is not in the map.
+
+\item[(2)] Keys and values are listed in random order.
+
+\item[(3)] \var{b} must be of the same type as \var{a}.
+
+\item[(4)] Never raises an exception if \var{k} is not in the map,
+instead it returns \var{f}.  \var{f} is optional, when not provided
+and \var{k} is not in the map, \code{None} is returned.
+\end{description}
+
+
+\subsection{Other Built-in Types}
+\label{typesother}
+
+The interpreter supports several other kinds of objects.
+Most of these support only one or two operations.
+
+\subsubsection{Modules}
+
+The only special operation on a module is attribute access:
+\code{\var{m}.\var{name}}, where \var{m} is a module and \var{name}
+accesses a name defined in \var{m}'s symbol table.  Module attributes
+can be assigned to.  (Note that the \code{import} statement is not,
+strictly spoking, an operation on a module object; \code{import
+\var{foo}} does not require a module object named \var{foo} to exist,
+rather it requires an (external) \emph{definition} for a module named
+\var{foo} somewhere.)
+
+A special member of every module is \code{__dict__}.
+This is the dictionary containing the module's symbol table.
+Modifying this dictionary will actually change the module's symbol
+table, but direct assignment to the \code{__dict__} attribute is not
+possible (i.e., you can write \code{\var{m}.__dict__['a'] = 1}, which
+defines \code{\var{m}.a} to be \code{1}, but you can't write
+\code{\var{m}.__dict__ = \{\}}.
+
+Modules are written like this: \code{<module 'sys'>}.
+
+\subsubsection{Classes and Class Instances}
+\nodename{Classes and Instances}
+
+See Chapters 3 and 7 of the \emph{Python Reference Manual} for these.
+
+\subsubsection{Functions}
+
+Function objects are created by function definitions.  The only
+operation on a function object is to call it:
+\code{\var{func}(\var{argument-list})}.
+
+There are really two flavors of function objects: built-in functions
+and user-defined functions.  Both support the same operation (to call
+the function), but the implementation is different, hence the
+different object types.
+
+The implementation adds two special read-only attributes:
+\code{\var{f}.func_code} is a function's \dfn{code
+object}\obindex{code} (see below) and \code{\var{f}.func_globals} is
+the dictionary used as the function's global name space (this is the
+same as \code{\var{m}.__dict__} where \var{m} is the module in which
+the function \var{f} was defined).
+
+
+\subsubsection{Methods}
+\obindex{method}
+
+Methods are functions that are called using the attribute notation.
+There are two flavors: built-in methods (such as \code{append()} on
+lists) and class instance methods.  Built-in methods are described
+with the types that support them.
+
+The implementation adds two special read-only attributes to class
+instance methods: \code{\var{m}.im_self} is the object whose method this
+is, and \code{\var{m}.im_func} is the function implementing the method.
+Calling \code{\var{m}(\var{arg-1}, \var{arg-2}, {\rm \ldots},
+\var{arg-n})} is completely equivalent to calling
+\code{\var{m}.im_func(\var{m}.im_self, \var{arg-1}, \var{arg-2}, {\rm
+\ldots}, \var{arg-n})}.
+
+See the \emph{Python Reference Manual} for more information.
+
+\subsubsection{Code Objects}
+\obindex{code}
+
+Code objects are used by the implementation to represent
+``pseudo-compiled'' executable Python code such as a function body.
+They differ from function objects because they don't contain a
+reference to their global execution environment.  Code objects are
+returned by the built-in \code{compile()} function and can be
+extracted from function objects through their \code{func_code}
+attribute.
+\bifuncindex{compile}
+\ttindex{func_code}
+
+A code object can be executed or evaluated by passing it (instead of a
+source string) to the \code{exec} statement or the built-in
+\code{eval()} function.
+\stindex{exec}
+\bifuncindex{eval}
+
+See the \emph{Python Reference Manual} for more information.
+
+\subsubsection{Type Objects}
+\label{bltin-type-objects}
+
+Type objects represent the various object types.  An object's type is
+accessed by the built-in function \code{type()}.  There are no special
+operations on types.  The standard module \code{types} defines names
+for all standard built-in types.
+\bifuncindex{type}
+\refstmodindex{types}
+
+Types are written like this: \code{<type 'int'>}.
+
+\subsubsection{The Null Object}
+\label{bltin-null-object}
+
+This object is returned by functions that don't explicitly return a
+value.  It supports no special operations.  There is exactly one null
+object, named \code{None} (a built-in name).
+
+It is written as \code{None}.
+
+\subsubsection{File Objects}
+\label{bltin-file-objects}
+
+File objects are implemented using \C{}'s \code{stdio} package and can be
+created with the built-in function \code{open()} described under
+Built-in Functions below.  They are also returned by some other
+built-in functions and methods, e.g.\ \code{posix.popen()} and
+\code{posix.fdopen()} and the \code{makefile()} method of socket
+objects.
+\bifuncindex{open}
+\refbimodindex{posix}
+\refbimodindex{socket}
+
+When a file operation fails for an I/O-related reason, the exception
+\code{IOError} is raised.  This includes situations where the
+operation is not defined for some reason, like \code{seek()} on a tty
+device or writing a file opened for reading.
+
+Files have the following methods:
+
+
+\begin{methoddesc}[file]{close}{}
+  Close the file.  A closed file cannot be read or written anymore.
+\end{methoddesc}
+
+\begin{methoddesc}[file]{flush}{}
+  Flush the internal buffer, like \code{stdio}'s \code{fflush()}.
+\end{methoddesc}
+
+\begin{methoddesc}[file]{isatty}{}
+  Return \code{1} if the file is connected to a tty(-like) device, else
+  \code{0}.
+\end{methoddesc}
+
+\begin{methoddesc}[file]{fileno}{}
+Return the integer ``file descriptor'' that is used by the underlying
+implementation to request I/O operations from the operating system.
+This can be useful for other, lower level interfaces that use file
+descriptors, e.g. module \code{fcntl} or \code{os.read()} and friends.
+\refbimodindex{fcntl}
+\end{methoddesc}
+
+\begin{methoddesc}[file]{read}{\optional{size}}
+  Read at most \var{size} bytes from the file (less if the read hits
+  \EOF{} or no more data is immediately available on a pipe, tty or
+  similar device).  If the \var{size} argument is negative or omitted,
+  read all data until \EOF{} is reached.  The bytes are returned as a string
+  object.  An empty string is returned when \EOF{} is encountered
+  immediately.  (For certain files, like ttys, it makes sense to
+  continue reading after an \EOF{} is hit.)
+\end{methoddesc}
+
+\begin{methoddesc}[file]{readline}{\optional{size}}
+  Read one entire line from the file.  A trailing newline character is
+  kept in the string%
+\footnote{The advantage of leaving the newline on is that an empty string 
+	can be returned to mean \EOF{} without being ambiguous.  Another 
+	advantage is that (in cases where it might matter, e.g. if you 
+	want to make an exact copy of a file while scanning its lines) 
+	you can tell whether the last line of a file ended in a newline
+	or not (yes this happens!).}
+  (but may be absent when a file ends with an
+  incomplete line).  If the \var{size} argument is present and
+  non-negative, it is a maximum byte count (including the trailing
+  newline) and an incomplete line may be returned.
+  An empty string is returned when \EOF{} is hit
+  immediately.  Note: unlike \code{stdio}'s \cfunction{fgets()}, the returned
+  string contains null characters (\code{'\e 0'}) if they occurred in the
+  input.
+\end{methoddesc}
+
+\begin{methoddesc}[file]{readlines}{\optional{sizehint}}
+  Read until \EOF{} using \method{readline()} and return a list containing
+  the lines thus read.  If the optional \var{sizehint} argument is
+  present, instead of reading up to \EOF{}, whole lines totalling
+  approximately \var{sizehint} bytes (possibly after rounding up to an
+  internal buffer size) are read.
+\end{methoddesc}
+
+\begin{methoddesc}[file]{seek}{offset\optional{, whence}}
+  Set the file's current position, like \code{stdio}'s \cfunction{fseek()}.
+  The \var{whence} argument is optional and defaults to \code{0}
+  (absolute file positioning); other values are \code{1} (seek
+  relative to the current position) and \code{2} (seek relative to the
+  file's end).  There is no return value.
+\end{methoddesc}
+
+\begin{methoddesc}[file]{tell}{}
+  Return the file's current position, like \code{stdio}'s
+  \cfunction{ftell()}.
+\end{methoddesc}
+
+\begin{methoddesc}[file]{truncate}{\optional{size}}
+Truncate the file's size.  If the optional size argument present, the
+file is truncated to (at most) that size.  The size defaults to the
+current position.  Availability of this function depends on the
+operating system version (e.g., not all \UNIX{} versions support this
+operation).
+\end{methoddesc}
+
+\begin{methoddesc}[file]{write}{str}
+Write a string to the file.  There is no return value.  Note: due to
+buffering, the string may not actually show up in the file until
+the \method{flush()} or \method{close()} method is called.
+\end{methoddesc}
+
+\begin{methoddesc}[file]{writelines}{list}
+Write a list of strings to the file.  There is no return value.
+(The name is intended to match \method{readlines()};
+\method{writelines()} does not add line separators.)
+\end{methoddesc}
+
+
+File objects also offer the following attributes:
+
+\begin{memberdesc}[file]{closed}
+Boolean indicating the current state of the file object.  This is a
+read-only attribute; the \method{close()} method changes the value.
+\end{memberdesc}
+
+\begin{memberdesc}[file]{mode}
+The I/O mode for the file.  If the file was created using the
+\function{open()} built-in function, this will be the value of the
+\var{mode} parameter.  This is a read-only attribute.
+\end{memberdesc}
+
+\begin{memberdesc}[file]{name}
+If the file object was created using \function{open()}, the name of
+the file.  Otherwise, some string that indicates the source of the
+file object, of the form \samp{<\mbox{\ldots}>}.  This is a read-only
+attribute.
+\end{memberdesc}
+
+\begin{memberdesc}[file]{softspace}
+Boolean that indicates whether a space character needs to be printed
+before another value when using the \keyword{print} statement.
+Classes that are trying to simulate a file object should also have a
+writable \member{softspace} attribute, which should be initialized to
+zero.  This will be automatic for classes implemented in Python; types
+implemented in \C{} will have to provide a writable \member{softspace}
+attribute.
+\end{memberdesc}
+
+\subsubsection{Internal Objects}
+
+See the \emph{Python Reference Manual} for this information.  It
+describes code objects, stack frame objects, traceback objects, and
+slice objects.
+
+
+\subsection{Special Attributes}
+\label{specialattrs}
+
+The implementation adds a few special read-only attributes to several
+object types, where they are relevant:
+
+\begin{itemize}
+
+\item
+\code{\var{x}.__dict__} is a dictionary of some sort used to store an
+object's (writable) attributes;
+
+\item
+\code{\var{x}.__methods__} lists the methods of many built-in object types,
+e.g., \code{[].__methods__} yields
+\code{['append', 'count', 'index', 'insert', 'pop', 'remove', 'reverse', 'sort']};
+
+\item
+\code{\var{x}.__members__} lists data attributes;
+
+\item
+\code{\var{x}.__class__} is the class to which a class instance belongs;
+
+\item
+\code{\var{x}.__bases__} is the tuple of base classes of a class object.
+
+\end{itemize}
