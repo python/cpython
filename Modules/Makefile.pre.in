@@ -17,7 +17,7 @@ VERSION=	@VERSION@
 srcdir=		@srcdir@
 VPATH=		@srcdir@
 
-@SET_CCC@
+@SET_CXX@
 CC=		@CC@
 RANLIB=		@RANLIB@
 AR=		@AR@
@@ -95,7 +95,8 @@ MAKESETUP=	$(srcdir)/makesetup
 FIXOBJS=	config.o getpath.o main.o getbuildinfo.o
 OBJS=		$(MODOBJS) $(FIXOBJS)
 
-MAINOBJ=	python.o
+#MAINOBJ=	python.o
+MAINOBJ=	@MAINOBJ@
 
 SYSLIBS=	$(LIBM) $(LIBC)
 
@@ -242,5 +243,8 @@ $(DESTSHARED):
 			else	true; \
 			fi; \
 		done
+
+ccpython.o: ccpython.cc
+	$(CXX) $(CFLAGS) -c $*.cc
 
 # Stuff is appended here by makesetup and make depend
