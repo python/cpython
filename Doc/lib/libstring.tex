@@ -21,8 +21,8 @@ The constants defined in this module are are:
 \end{datadesc}
 
 \begin{datadesc}{letters}
-  The concatenation of the strings \function{lowercase()} and
-  \function{uppercase()} described below.
+  The concatenation of the strings \constant{lowercase} and
+  \constant{uppercase} described below.
 \end{datadesc}
 
 \begin{datadesc}{lowercase}
@@ -156,8 +156,8 @@ The functions defined in this module are:
   each character in \var{from} into the character at the same position
   in \var{to}; \var{from} and \var{to} must have the same length.
 
-  \strong{Warning:} don't use strings derived from \code{lowercase}
-  and \code{uppercase} as arguments; in some locales, these don't have
+  \strong{Warning:} don't use strings derived from \constant{lowercase}
+  and \constant{uppercase} as arguments; in some locales, these don't have
   the same length.  For case conversions, always use
   \function{lower()} and \function{upper()}.
 \end{funcdesc}
