@@ -1,7 +1,9 @@
 """distutils.spawn
 
 Provides the 'spawn()' function, a front-end to various platform-
-specific functions for launching another program in a sub-process."""
+specific functions for launching another program in a sub-process.
+Also provides the 'find_executable()' to search the path for a given
+executable name. """
 
 # created 1999/07/24, Greg Ward
 
@@ -65,17 +67,8 @@ def _spawn_nt (cmd,
     executable = cmd[0]
     cmd = _nt_quote_args (cmd)
     if search_path:
-        paths = string.split( os.environ['PATH'], os.pathsep)
-        base,ext = os.path.splitext(executable)
-        if (ext != '.exe'):
-            executable = executable + '.exe'
-        if not os.path.isfile(executable):
-            paths.reverse()         # go over the paths and keep the last one
-            for p in paths:
-                f = os.path.join( p, executable )
-                if os.path.isfile ( f ):
-                    # the file exists, we have a shot at spawn working
-                    executable = f
+        # either we find one or it stays the same
+        executable = find_executable(executable) or executable 
     if verbose:
         print string.join ([executable] + cmd[1:], ' ')
     if not dry_run:
@@ -91,7 +84,6 @@ def _spawn_nt (cmd,
             raise DistutilsExecError, \
                   "command '%s' failed with exit status %d" % (cmd[0], rc)
 
-    
                 
 def _spawn_posix (cmd,
                   search_path=1,
@@ -147,3 +139,28 @@ def _spawn_posix (cmd,
                       "unknown error executing '%s': termination status %d" % \
                       (cmd[0], status)
 # _spawn_posix ()
+
+
+def find_executable(executable, path=None):
+    """Try to find 'executable' in the directories listed in 'path' (a
+    string listing directories separated by 'os.pathsep'; defaults to
+    os.environ['PATH']).  Returns the complete filename or None if not
+    found.
+    """
+    if path is None:
+        path = os.environ['PATH']
+    paths = string.split(path, os.pathsep)
+    (base, ext) = os.path.splitext(executable)
+    if (sys.platform == 'win32') and (ext != '.exe'):
+        executable = executable + '.exe'
+    if not os.path.isfile(executable):
+        for p in paths:
+            f = os.path.join(p, executable)
+            if os.path.isfile(f):
+                # the file exists, we have a shot at spawn working
+                return f
+        return None
+    else:
+        return executable
+
+# find_executable()    
