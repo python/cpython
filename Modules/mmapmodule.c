@@ -45,7 +45,7 @@ typedef struct {
 
 #ifdef MS_WIN32
 	HANDLE	map_handle;
-	HFILE	file_handle;
+	INT_PTR	file_handle;
 	char *	tagname;
 #endif
 
@@ -123,7 +123,7 @@ mmap_read_byte_method (mmap_object * self,
 	CHECK_VALID(NULL);
         if (!PyArg_ParseTuple(args, ":read_byte"))
 		return NULL;
-	if (self->pos >= 0 && self->pos < self->size) {
+	if (self->pos < self->size) {
 	        where = self->data + self->pos;
 		value = (char) *(where);
 		self->pos += 1;
@@ -153,7 +153,7 @@ mmap_read_line_method (mmap_object * self,
 	else
 		++eol;		/* we're interested in the position after the
 				   newline. */
-	result = PyString_FromStringAndSize(start, (long) (eol - start));
+	result = PyString_FromStringAndSize(start, (eol - start));
 	self->pos += (eol - start);
 	return (result);
 }
@@ -182,12 +182,12 @@ static PyObject *
 mmap_find_method (mmap_object *self,
 		      PyObject *args)
 {
-	long start = self->pos;
+	int start = self->pos;
 	char * needle;
 	int len;
 
 	CHECK_VALID(NULL);
-	if (!PyArg_ParseTuple (args, "s#|l", &needle, &len, &start)) {
+	if (!PyArg_ParseTuple (args, "s#|i", &needle, &len, &start)) {
 		return NULL;
 	} else {
 		char * p = self->data+self->pos;
@@ -200,8 +200,8 @@ mmap_find_method (mmap_object *self,
 			}
 			if (!*n) {
 				return Py_BuildValue (
-					"l",
-					(long) (p - (self->data + start)));
+					"i",
+					(int) (p - (self->data + start)));
 			}
 			p++;
 		}
@@ -255,7 +255,7 @@ mmap_size_method (mmap_object * self,
 		return NULL;
 
 #ifdef MS_WIN32
-	if (self->file_handle != (HFILE) 0xFFFFFFFF) {
+	if (self->file_handle != (INT_PTR) -1) {
 		return (Py_BuildValue (
 			"l",
 			GetFileSize ((HANDLE)self->file_handle, NULL)));
@@ -401,39 +401,44 @@ mmap_flush_method (mmap_object * self, PyObject * args)
 static PyObject *
 mmap_seek_method (mmap_object * self, PyObject * args)
 {
-	/* ptrdiff_t dist; */
-	long dist;
+	int dist;
 	int how=0;
 	CHECK_VALID(NULL);
-	if (!PyArg_ParseTuple (args, "l|i", &dist, &how)) {
+	if (!PyArg_ParseTuple (args, "i|i", &dist, &how)) {
 		return(NULL);
 	} else {
-		unsigned long where;
+		size_t where;
 		switch (how) {
-		case 0:
+		case 0: /* relative to start */
+			if (dist < 0)
+				goto onoutofrange;
 			where = dist;
 			break;
-		case 1:
+		case 1: /* relative to current position */
+			if ((int)self->pos + dist < 0)
+				goto onoutofrange;
 			where = self->pos + dist;
 			break;
-		case 2:
-			where = self->size - dist;
+		case 2: /* relative to end */
+			if ((int)self->size + dist < 0)
+				goto onoutofrange;
+			where = self->size + dist;
 			break;
 		default:
 			PyErr_SetString (PyExc_ValueError,
 					 "unknown seek type");
 			return NULL;
 		}
-		if ((where >= 0) && (where < (self->size))) {
-			self->pos = where;
-			Py_INCREF (Py_None);
-			return (Py_None);
-		} else {
-			PyErr_SetString (PyExc_ValueError,
-					 "seek out of range");
-			return NULL;
-		}
+		if (where > self->size)
+			goto onoutofrange;
+		self->pos = where;
+		Py_INCREF (Py_None);
+		return (Py_None);
 	}
+
+onoutofrange:
+	PyErr_SetString (PyExc_ValueError, "seek out of range");
+	return NULL;
 }
 
 static PyObject *
@@ -704,23 +709,84 @@ static PyTypeObject mmap_object_type = {
 	0,					/*tp_doc*/
 };
 
+
+/* extract the map size from the given PyObject
+
+   The map size is restricted to [0, INT_MAX] because this is the current
+   Python limitation on object sizes. Although the mmap object *could* handle
+   a larger map size, there is no point because all the useful operations
+   (len(), slicing(), sequence indexing) are limited by a C int.
+
+   Returns -1 on error, with an apprpriate Python exception raised. On
+   success, the map size is returned. */
+static int
+_GetMapSize(o)
+	PyObject *o;
+{
+	if (PyInt_Check(o)) {
+		long i = PyInt_AsLong(o);
+		if (PyErr_Occurred())
+			return -1;
+		if (i < 0)
+			goto onnegoverflow;
+		if (i > INT_MAX)
+			goto onposoverflow;
+		return (int)i;
+	}
+	else if (PyLong_Check(o)) {
+		long i = PyLong_AsLong(o);
+		if (PyErr_Occurred()) {
+			/* yes negative overflow is mistaken for positive overflow
+			   but not worth the trouble to check sign of 'i' */
+			if (PyErr_ExceptionMatches(PyExc_OverflowError))
+				goto onposoverflow;
+			else
+				return -1;
+		}
+		if (i < 0)
+			goto onnegoverflow;
+		if (i > INT_MAX)
+			goto onposoverflow;
+		return (int)i;
+	}
+	else {
+		PyErr_SetString(PyExc_TypeError,
+			"map size must be an integral value");
+		return -1;
+	}
+
+onnegoverflow:
+	PyErr_SetString(PyExc_OverflowError,
+		"memory mapped size must be positive");
+	return -1;
+
+onposoverflow:
+	PyErr_SetString(PyExc_OverflowError,
+		"memory mapped size is too large (limited by C int)");
+	return -1;
+}
+
 #ifdef UNIX 
 static PyObject *
 new_mmap_object (PyObject * self, PyObject * args, PyObject *kwdict)
 {
 	mmap_object * m_obj;
-	unsigned long map_size;
+	PyObject *map_size_obj = NULL;
+	int map_size;
 	int fd, flags = MAP_SHARED, prot = PROT_WRITE | PROT_READ;
 	char * filename;
 	int namelen;
 	char *keywords[] = {"file", "size", "flags", "prot", NULL};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwdict, 
-					 "il|ii", keywords, 
-					 &fd, &map_size, &flags, &prot)
+					 "iO|ii", keywords, 
+					 &fd, &map_size_obj, &flags, &prot)
 		)
 		return NULL;
-  
+	map_size = _GetMapSize(map_size_obj);
+	if (map_size < 0)
+		return NULL;
+	
 	m_obj = PyObject_New (mmap_object, &mmap_object_type);
 	if (m_obj == NULL) {return NULL;}
 	m_obj->size = (size_t) map_size;
@@ -744,24 +810,29 @@ static PyObject *
 new_mmap_object (PyObject * self, PyObject * args)
 {
 	mmap_object * m_obj;
-	unsigned long map_size;
+	PyObject *map_size_obj = NULL;
+	int map_size;
 	char * tagname = "";
 
 	DWORD dwErr = 0;
 	int fileno;
-	HFILE fh = 0;
+	INT_PTR fh = 0;
 
 	/* Patch the object type */
 	mmap_object_type.ob_type = &PyType_Type;
 
 	if (!PyArg_ParseTuple(args,
-			  "il|z",
+			  "iO|z",
 			  &fileno,
-			  &map_size,
+			  &map_size_obj,
 			  &tagname)
 		)
 		return NULL;
   
+	map_size = _GetMapSize(map_size_obj);
+	if (map_size < 0)
+		return NULL;
+	
 	/* if an actual filename has been specified */
 	if (fileno != 0) {
 		fh = _get_osfhandle(fileno);
@@ -784,7 +855,7 @@ new_mmap_object (PyObject * self, PyObject * args)
 		}
 	}
 	else {
-		m_obj->file_handle = (HFILE) 0xFFFFFFFF;
+		m_obj->file_handle = (INT_PTR) -1;
 		m_obj->size = map_size;
 	}
 
