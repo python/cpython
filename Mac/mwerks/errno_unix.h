@@ -29,6 +29,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
+#ifndef USE_GUSI2
 #define ENOTDIR		(-120)
 #ifndef __MSL__
 #define EACCES		(-54)
@@ -40,6 +41,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #define ENFILE		(-42)
 #define	EIO			(-36)
 #define ENOSPC		(-34)
+#endif
 
 #define ESRCH		3
 #define EINTR		4

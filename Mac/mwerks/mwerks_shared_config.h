@@ -6,7 +6,8 @@
 ** specific features, you may also need different sets of sources.
 */
 
-#define USE_GUSI		/* Stdio implemented with GUSI */
+/* #define USE_GUSI1		/* Stdio implemented with GUSI */
+#define USE_GUSI2		/* Stdio implemented with GUSI */
 #define USE_MSL			/* Use Mw Standard Library (as opposed to Plaugher C libraries) */
 #define USE_CORE_TOOLBOX	/* Include core toolbox modules (Dlg,Ctl,Menu,Win,Res,Qd) */
 /* #define USE_TOOLBOX		/* Include all toolbox modules in core Python */

@@ -5,7 +5,8 @@
 ** specific features, you may also need different sets of sources.
 */
 
-#define USE_GUSI		/* Stdio implemented with GUSI */
+#define USE_GUSI1		/* Stdio implemented with GUSI */
+/* #define USE_GUSI2		/* Stdio implemented with GUSI 2 */
 #define USE_MSL			/* Use Mw Standard Library (as opposed to Plaugher C libraries) */
 #define USE_TOOLBOX		/* Include toolbox modules in core Python */
 #define USE_QT			/* Include quicktime modules in core Python */

@@ -54,7 +54,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <TextUtils.h>
 #include <Dialogs.h>
 
-#ifdef USE_GUSI
+#ifdef USE_GUSI1
 #include <GUSI.h>
 #endif
 
@@ -444,7 +444,7 @@ PyMac_PreferenceOptions(PyMac_PrefRecord *pr)
 	UseResFile(oldrh);
 }
 
-#ifdef USE_GUSI
+#ifdef USE_GUSI1
 void
 PyMac_SetGUSIOptions()
 {
