@@ -445,7 +445,7 @@ Notes:
   \var{s}).
 
 \item[(2)] If \var{i} or \var{j} is negative, the index is relative to
-  the end of the string, i.e., \code{len(\var{s}) + \var{i}} or
+  the end of the string: \code{len(\var{s}) + \var{i}} or
   \code{len(\var{s}) + \var{j}} is substituted.  But note that \code{-0} is
   still \code{0}.
   
@@ -538,7 +538,7 @@ the string is not empty, false otherwise.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{istitle}{}
-Return true if the string is a titlecased string, i.e.\ uppercase
+Return true if the string is a titlecased string: uppercase
 characters may only follow uncased characters and lowercase characters
 only cased ones.  Return false otherwise.
 \end{methoddesc}
@@ -628,7 +628,7 @@ lowercase and vice versa.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{title}{}
-Return a titlecased version of, i.e.\ words start with uppercase
+Return a titlecased version of the string: words start with uppercase
 characters, all remaining cased characters are lowercase.
 \end{methoddesc}
 
@@ -1008,7 +1008,7 @@ A special member of every module is \member{__dict__}.
 This is the dictionary containing the module's symbol table.
 Modifying this dictionary will actually change the module's symbol
 table, but direct assignment to the \member{__dict__} attribute is not
-possible (i.e., you can write \code{\var{m}.__dict__['a'] = 1}, which
+possible (you can write \code{\var{m}.__dict__['a'] = 1}, which
 defines \code{\var{m}.a} to be \code{1}, but you can't write
 \code{\var{m}.__dict__ = \{\}}.
 
@@ -1087,7 +1087,7 @@ subclass of that class), otherwise a \code{TypeError} is raised.
 
 Like function objects, methods objects support getting
 arbitrary attributes.  However, since method attributes are actually
-stored on the underlying function object (i.e. \code{meth.im_func}),
+stored on the underlying function object (\code{meth.im_func}),
 setting method attributes on either bound or unbound methods is
 disallowed.  Attempting to set a method attribute results in a
 \code{TypeError} being raised.  In order to set a method attribute,
@@ -1167,7 +1167,7 @@ File objects are implemented using C's \code{stdio} package and can be
 created with the built-in function
 \function{open()}\bifuncindex{open} described in section 
 \ref{built-in-funcs}, ``Built-in Functions.''  They are also returned
-by some other built-in functions and methods, e.g.,
+by some other built-in functions and methods, such as
 \function{os.popen()} and \function{os.fdopen()} and the
 \method{makefile()} method of socket objects.
 \refstmodindex{os}
@@ -1206,10 +1206,11 @@ Files have the following methods:
   Return the integer ``file descriptor'' that is used by the
   underlying implementation to request I/O operations from the
   operating system.  This can be useful for other, lower level
-  interfaces that use file descriptors, e.g.\ module
-  \refmodule{fcntl}\refbimodindex{fcntl} or \function{os.read()} and
-  friends.  \strong{Note:} File-like objects which do not have a real
-  file descriptor should \emph{not} provide this method!
+  interfaces that use file descriptors, such as the
+  \refmodule{fcntl}\refbimodindex{fcntl} module or
+  \function{os.read()} and friends.  \strong{Note:} File-like objects
+  which do not have a real file descriptor should \emph{not} provide
+  this method!
 \end{methoddesc}
 
 \begin{methoddesc}[file]{read}{\optional{size}}
@@ -1229,7 +1230,7 @@ Files have the following methods:
   kept in the string\footnote{
 	The advantage of leaving the newline on is that an empty string 
 	can be returned to mean \EOF{} without being ambiguous.  Another 
-	advantage is that (in cases where it might matter, e.g. if you 
+	advantage is that (in cases where it might matter, for example. if you 
 	want to make an exact copy of a file while scanning its lines) 
 	you can tell whether the last line of a file ended in a newline
 	or not (yes this happens!).
@@ -1356,16 +1357,16 @@ object's (writable) attributes.
 \end{memberdesc}
 
 \begin{memberdesc}[object]{__methods__}
-List of the methods of many built-in object types,
-e.g., \code{[].__methods__} yields
-\code{['append', 'count', 'index', 'insert', 'pop', 'remove',
-'reverse', 'sort']}.  This usually does not need to be explicitly
-provided by the object.
+List of the methods of many built-in object types.  For example,
+\code{[].__methods__} yields \code{['append', 'count', 'index',
+'insert', 'pop', 'remove', 'reverse', 'sort']}.  This usually does not
+need to be explicitly provided by the object.
 \end{memberdesc}
 
 \begin{memberdesc}[object]{__members__}
 Similar to \member{__methods__}, but lists data attributes.  This
-usually does not need to be explicitly provided by the object.
+usually does not need to be explicitly provided by the object, and
+need not include the names of the attributes defined in this section.
 \end{memberdesc}
 
 \begin{memberdesc}[instance]{__class__}
@@ -1373,5 +1374,6 @@ The class to which a class instance belongs.
 \end{memberdesc}
 
 \begin{memberdesc}[class]{__bases__}
-The tuple of base classes of a class object.
+The tuple of base classes of a class object.  If there are no base
+classes, this will be an empty tuple.
 \end{memberdesc}

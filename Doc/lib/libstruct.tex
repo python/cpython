@@ -33,8 +33,8 @@ The module defines the following exception and functions:
   Unpack the string (presumably packed by \code{pack(\var{fmt},
   \textrm{\ldots})}) according to the given format.  The result is a
   tuple even if it contains exactly one item.  The string must contain
-  exactly the amount of data required by the format (i.e.
-  \code{len(\var{string})} must equal \code{calcsize(\var{fmt})}).
+  exactly the amount of data required by the format
+  (\code{len(\var{string})} must equal \code{calcsize(\var{fmt})}).
 \end{funcdesc}
 
 \begin{funcdesc}{calcsize}{fmt}
@@ -78,8 +78,8 @@ Notes:
 \end{description}
 
 
-A format character may be preceded by an integral repeat count;
-e.g.\ the format string \code{'4h'} means exactly the same as
+A format character may be preceded by an integral repeat count.  For
+example, the format string \code{'4h'} means exactly the same as
 \code{'hhhh'}.
 
 Whitespace characters between formats are ignored; a count and its
@@ -87,7 +87,7 @@ format must not contain whitespace though.
 
 For the \character{s} format character, the count is interpreted as the
 size of the string, not a repeat count like for the other format
-characters; e.g. \code{'10s'} means a single 10-byte string, while
+characters; for example, \code{'10s'} means a single 10-byte string, while
 \code{'10c'} means 10 characters.  For packing, the string is
 truncated or padded with null bytes as appropriate to make it fit.
 For unpacking, the resulting string always has exactly the specified
@@ -133,8 +133,8 @@ according to the following table:
 If the first character is not one of these, \character{@} is assumed.
 
 Native byte order is big-endian or little-endian, depending on the
-host system (e.g. Motorola and Sun are big-endian; Intel and DEC are
-little-endian).
+host system.  For example, Motorola and Sun processors are big-endian;
+Intel and DEC processors are little-endian.
 
 Native size and alignment are determined using the C compiler's
 \keyword{sizeof} expression.  This is always combined with native byte
@@ -156,7 +156,7 @@ The form \character{!} is available for those poor souls who claim they
 can't remember whether network byte order is big-endian or
 little-endian.
 
-There is no way to indicate non-native byte order (i.e. force
+There is no way to indicate non-native byte order (force
 byte-swapping); use the appropriate choice of \character{<} or
 \character{>}.
 
@@ -182,10 +182,10 @@ big-endian machine):
 
 Hint: to align the end of a structure to the alignment requirement of
 a particular type, end the format with the code for that type with a
-repeat count of zero, e.g.\ the format \code{'llh0l'} specifies two
-pad bytes at the end, assuming longs are aligned on 4-byte boundaries.
-This only works when native size and alignment are in effect;
-standard size and alignment does not enforce any alignment.
+repeat count of zero.  For example, the format \code{'llh0l'}
+specifies two pad bytes at the end, assuming longs are aligned on
+4-byte boundaries.  This only works when native size and alignment are
+in effect; standard size and alignment does not enforce any alignment.
 
 \begin{seealso}
   \seemodule{array}{Packed binary storage of homogeneous data.}

@@ -229,9 +229,10 @@ referenced as the numbered group 1.
 
 For example, if the pattern is
 \regexp{(?P<id>[a-zA-Z_]\e w*)}, the group can be referenced by its
-name in arguments to methods of match objects, such as \code{m.group('id')}
-or \code{m.end('id')}, and also by name in pattern text
-(e.g. \regexp{(?P=id)}) and replacement text (e.g. \code{\e g<id>}).
+name in arguments to methods of match objects, such as
+\code{m.group('id')} or \code{m.end('id')}, and also by name in
+pattern text (for example, \regexp{(?P=id)}) and replacement text
+(such as \code{\e g<id>}).
 
 \item[\code{(?P=\var{name})}] Matches whatever text was matched by the
 earlier group named \var{name}.
@@ -516,7 +517,7 @@ replacement string.  For example:
 
 The pattern may be a string or an RE object; if you need to specify
 regular expression flags, you must use a RE object, or use
-embedded modifiers in a pattern; e.g.
+embedded modifiers in a pattern; for example,
 \samp{sub("(?i)b+", "x", "bbbb BBBB")} returns \code{'x x'}.
 
 The optional argument \var{count} is the maximum number of pattern
@@ -555,9 +556,10 @@ Perform the same operation as \function{sub()}, but return a tuple
 
 \begin{excdesc}{error}
   Exception raised when a string passed to one of the functions here
-  is not a valid regular expression (e.g., unmatched parentheses) or
-  when some other error occurs during compilation or matching.  It is
-  never an error if a string contains no match for a pattern.
+  is not a valid regular expression (for example, it might contain
+  unmatched parentheses) or when some other error occurs during
+  compilation or matching.  It is never an error if a string contains
+  no match for a pattern.
 \end{excdesc}
 
 
@@ -654,7 +656,7 @@ corresponding group.
 Returns one or more subgroups of the match.  If there is a single
 argument, the result is a single string; if there are
 multiple arguments, the result is a tuple with one item per argument.
-Without arguments, \var{group1} defaults to zero (i.e. the whole match
+Without arguments, \var{group1} defaults to zero (the whole match
 is returned).
 If a \var{groupN} argument is zero, the corresponding return value is the
 entire matching string; if it is in the inclusive range [1..99], it is
