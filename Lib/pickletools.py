@@ -1902,7 +1902,7 @@ def dis(pickle, out=None, indentlevel=4):
 _dis_test = """
 >>> import pickle
 >>> x = [1, 2, (3, 4), {'abc': u"def"}]
->>> pik = pickle.dumps(x)
+>>> pik = pickle.dumps(x, 0)
 >>> dis(pik)
     0: ( MARK
     1: l     LIST       (MARK at 0)
@@ -1955,13 +1955,13 @@ Try again with a "binary" pickle.
 Exercise the INST/OBJ/BUILD family.
 
 >>> import random
->>> dis(pickle.dumps(random.random))
+>>> dis(pickle.dumps(random.random, 0))
     0: c GLOBAL     'random random'
    15: p PUT        0
    18: . STOP
 
 >>> x = [pickle.PicklingError()] * 2
->>> dis(pickle.dumps(x))
+>>> dis(pickle.dumps(x, 0))
     0: ( MARK
     1: l     LIST       (MARK at 0)
     2: p PUT        0
@@ -2016,7 +2016,7 @@ True
 True
 >>> T[0][0] is T
 True
->>> dis(pickle.dumps(L))
+>>> dis(pickle.dumps(L, 0))
     0: ( MARK
     1: l     LIST       (MARK at 0)
     2: p PUT        0
@@ -2043,7 +2043,7 @@ doesn't trigger this glitch, because the disassembler realizes that
 POP_MARK gets rid of the MARK.  Doing a better job on the protocol 0
 pickle would require the disassembler to emulate the stack.
 
->>> dis(pickle.dumps(T))
+>>> dis(pickle.dumps(T, 0))
     0: ( MARK
     1: (     MARK
     2: l         LIST       (MARK at 1)
