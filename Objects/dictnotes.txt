@@ -197,3 +197,24 @@ sizes and access patterns, the user may be able to provide useful hints.
    cache locality, and a simplified search routine.  It also eliminates
    the need to test for dummy entries on each probe.  The preconditions
    for this strategy arise in symbol tables and in the builtin dictionary.
+
+
+Readonly Dictionaries
+---------------------
+Some dictionary use cases pass through a build stage and then move to a
+more heavily exercised lookup stage with no further changes to the
+dictionary.
+
+An idea that emerged on python-dev is to be able to convert a dictionary
+to a read-only state.  This can help prevent programming errors and also
+provide knowledge that can be exploited for lookup optimization.
+
+The dictionary can be immediately rebuilt (eliminating dummy entries),
+resized (to an appropriate level of sparseness), and the keys can be
+jostled (to minimize collisions).  The lookdict() routine can then
+eliminate the test for dummy entries (saving about 1/4 of the time
+spend in the collision resolution loop).
+
+An additional possibility is to insert links into the empty spaces
+so that dictionary iteration can proceed in len(d) steps instead of
+(mp->mask + 1) steps.
