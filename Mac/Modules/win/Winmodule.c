@@ -11,9 +11,16 @@
 #include <Windows.h>
 
 #if !ACCESSOR_CALLS_ARE_FUNCTIONS
+/* Carbon calls that we emulate in classic mode */
 #define GetWindowSpareFlag(win) (((CWindowPeek)(win))->spareFlag)
 #define GetWindowFromPort(port) ((WindowRef)(port))
 #define GetWindowPortBounds(win, rectp) (*(rectp) = ((CWindowPeek)(win))->port.portRect)
+#endif
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+/* Classic calls that we emulate in carbon mode */
+#define GetWindowUpdateRgn(win, rgn) GetWindowRegion((win), kWindowUpdateRgn, (rgn))
+#define GetWindowStructureRgn(win, rgn) GetWindowRegion((win), kWindowStructureRgn, (rgn))
+#define GetWindowContentRgn(win, rgn) GetWindowRegion((win), kWindowContentRgn, (rgn))
 #endif
 
 /* Function to dispose a window, with a "normal" calling sequence */
@@ -1851,6 +1858,110 @@ static PyObject *WinObj_GetWindowPortBounds(_self, _args)
 	return _res;
 }
 
+static PyObject *WinObj_IsWindowVisible(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = IsWindowVisible(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *WinObj_GetWindowZoomFlag(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetWindowZoomFlag(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *WinObj_GetWindowStructureRgn(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle r;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &r))
+		return NULL;
+	GetWindowStructureRgn(_self->ob_itself,
+	                      r);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *WinObj_GetWindowContentRgn(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle r;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &r))
+		return NULL;
+	GetWindowContentRgn(_self->ob_itself,
+	                    r);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *WinObj_GetWindowUpdateRgn(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle r;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &r))
+		return NULL;
+	GetWindowUpdateRgn(_self->ob_itself,
+	                   r);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *WinObj_GetWindowTitleWidth(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetWindowTitleWidth(_self->ob_itself);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *WinObj_GetNextWindow(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	WindowPtr _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetNextWindow(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     WinObj_WhichWindow, _rv);
+	return _res;
+}
+
 #if !TARGET_API_MAC_CARBON
 
 static PyObject *WinObj_CloseWindow(_self, _args)
@@ -2142,6 +2253,20 @@ static PyMethodDef WinObj_methods[] = {
 	 "() -> None"},
 	{"GetWindowPortBounds", (PyCFunction)WinObj_GetWindowPortBounds, 1,
 	 "() -> (Rect bounds)"},
+	{"IsWindowVisible", (PyCFunction)WinObj_IsWindowVisible, 1,
+	 "() -> (Boolean _rv)"},
+	{"GetWindowZoomFlag", (PyCFunction)WinObj_GetWindowZoomFlag, 1,
+	 "() -> (Boolean _rv)"},
+	{"GetWindowStructureRgn", (PyCFunction)WinObj_GetWindowStructureRgn, 1,
+	 "(RgnHandle r) -> None"},
+	{"GetWindowContentRgn", (PyCFunction)WinObj_GetWindowContentRgn, 1,
+	 "(RgnHandle r) -> None"},
+	{"GetWindowUpdateRgn", (PyCFunction)WinObj_GetWindowUpdateRgn, 1,
+	 "(RgnHandle r) -> None"},
+	{"GetWindowTitleWidth", (PyCFunction)WinObj_GetWindowTitleWidth, 1,
+	 "() -> (short _rv)"},
+	{"GetNextWindow", (PyCFunction)WinObj_GetNextWindow, 1,
+	 "() -> (WindowPtr _rv)"},
 
 #if !TARGET_API_MAC_CARBON
 	{"CloseWindow", (PyCFunction)WinObj_CloseWindow, 1,
