@@ -392,7 +392,7 @@ class StreamRequestHandler(BaseRequestHandler):
 
     def setup(self):
 	self.connection = self.request
-	self.rfile = self.connection.makefile('rb')
+	self.rfile = self.connection.makefile('rb', 0)
 	self.wfile = self.connection.makefile('wb', 0)
 
     def finish(self):
