@@ -115,8 +115,8 @@ typedef struct {
 
 	PyFrameObject *gi_frame;
 
-        /* True if generator is being executed. */ 
-        int gi_running;
+	/* True if generator is being executed. */ 
+	int gi_running;
 } genobject;
 
 static PyObject *
@@ -207,14 +207,27 @@ gen_getiter(PyObject *gen)
 
 static struct PyMethodDef gen_methods[] = {
 	{"next",     (PyCFunction)gen_next, METH_VARARGS,
-	 "next() -- get the next value, or raise StopIteration"},
+	 	"next() -- get the next value, or raise StopIteration"},
 	{NULL,          NULL}   /* Sentinel */
 };
 
 static PyObject *
 gen_getattr(genobject *gen, char *name)
 {
-	return Py_FindMethod(gen_methods, (PyObject *)gen, name);
+	PyObject *result;
+
+	if (strcmp(name, "gi_frame") == 0) {
+		result = (PyObject *)gen->gi_frame;
+		assert(result != NULL);
+		Py_INCREF(result);
+	}
+	else if (strcmp(name, "gi_running") == 0)
+		result = (PyObject *)PyInt_FromLong((long)gen->gi_running);
+	else if (strcmp(name, "__members__") == 0)
+		result = Py_BuildValue("[ss]", "gi_frame", "gi_running");
+	else
+ 		result = Py_FindMethod(gen_methods, (PyObject *)gen, name);
+ 	return result;
 }
 
 statichere PyTypeObject gentype = {
