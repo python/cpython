@@ -6,7 +6,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 """#"
 from test_support import verify, verbose, TestFailed
-import sys
+import sys, string
 
 if not sys.platform.startswith('java'):
     # Test basic sanity of repr()
@@ -205,6 +205,9 @@ if 0:
     test('capwords', u'abc def ghi', u'Abc Def Ghi')
     test('capwords', u'abc\tdef\nghi', u'Abc Def Ghi')
     test('capwords', u'abc\t   def  \nghi', u'Abc Def Ghi')
+
+verify(string.zfill(u'34', 1) == u'34')
+verify(string.zfill(u'34', 5) == u'00034')
 
 # Comparisons:
 print 'Testing Unicode comparisons...',
