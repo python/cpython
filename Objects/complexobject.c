@@ -606,11 +606,8 @@ complex_getattr(self, name)
 		return (object *)newfloatobject(self->cval.real);
 	else if (strcmp(name, "imag") == 0)
 		return (object *)newfloatobject(self->cval.imag);
-	else if (strcmp(name, "conj") == 0) {
-		cval.real = self->cval.real;
-		cval.imag = -self->cval.imag;
-		return (object *)newcomplexobject(cval);
-	}
+	else if (strcmp(name, "__members__") == 0)
+		return mkvalue("[ss]", "imag", "real");
 	return findmethod(complex_methods, (object *)self, name);
 }
 
