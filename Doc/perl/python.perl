@@ -172,8 +172,6 @@ sub do_cmd_optional{
 # output files for users that read them over the network rather than
 # from local repositories.
 
-# \file and \samp are at the end of this file since they screw up fontlock.
-
 sub do_cmd_pytype{ return @_[0]; }
 sub do_cmd_makevar{
     return use_wrappers(@_[0], '<span class="makevar">', '</span>'); }
@@ -905,7 +903,7 @@ sub get_refcount($$){
 
 
 $TLSTART = '<span class="typelabel">';
-$TLEND   = '</span>';
+$TLEND   = '</span>&nbsp;';
 
 sub cfuncline_helper($$$){
     my($type, $name, $args) = @_;
@@ -1017,6 +1015,12 @@ sub convert_args($){
     return translate_commands($_);
 }
 
+sub funcline_helper($$$){
+    my($first, $idxitem, $arglist) = @_;
+    return (($first ? '<dl>' : '')
+            . "<dt><b>$idxitem</b>(<var>$arglist</var>)\n<dd>");
+}
+
 sub do_env_funcdesc{
     local($_) = @_;
     my $function_name = next_argument();
@@ -1026,18 +1030,15 @@ sub do_env_funcdesc{
 				   . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)<\/tt>/<\/tt>/;
-    return "<dl><dt><b>$idx</b>(<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
+    return funcline_helper(1, $idx, $arg_list) . $_ . '</dl>';
 }
 
 sub do_env_funcdescni{
     local($_) = @_;
     my $function_name = next_argument();
     my $arg_list = convert_args(next_argument());
-    return "<dl><dt><b><tt class=\"function\">$function_name</tt></b>"
-      . "(<var>$arg_list</var>)\n"
-      . '<dd>'
-      . $_
-      . '</dl>';
+    my $prefix = "<tt class=\"function\">$function_name</tt>";
+    return funcline_helper(1, $prefix, $arg_list) . $_ . '</dl>';
 }
 
 sub do_cmd_funcline{
@@ -1048,7 +1049,7 @@ sub do_cmd_funcline{
     my $idx = make_str_index_entry($prefix . get_indexsubitem());
     $prefix =~ s/\(\)//;
 
-    return "<dt><b>$prefix</b>(<var>$arg_list</var>)\n<dd>" . $_;
+    return funcline_helper(0, $prefix, $arg_list) . $_;
 }
 
 sub do_cmd_funclineni{
@@ -1057,7 +1058,7 @@ sub do_cmd_funclineni{
     my $arg_list = convert_args(next_argument());
     my $prefix = "<tt class=\"function\">$function_name</tt>";
 
-    return "<dt><b>$prefix</b>(<var>$arg_list</var>)\n<dd>" . $_;
+    return funcline_helper(0, $prefix, $arg_list) . $_;
 }
 
 # Change this flag to index the opcode entries.  I don't think it's very
@@ -1123,7 +1124,7 @@ sub do_env_excdesc{
     local($_) = @_;
     my $excname = next_argument();
     my $idx = make_str_index_entry("<tt class=\"exception\">$excname</tt>");
-    return ("<dl><dt><b>${TLSTART}exception$TLEND $idx</b>"
+    return ("<dl><dt><b>${TLSTART}exception$TLEND$idx</b>"
             . "\n<dd>"
             . $_
             . '</dl>');
@@ -1139,10 +1140,8 @@ sub handle_classlike_descriptor($$){
     $idx = make_str_index_entry(
 	"<tt class=\"$what\">$THIS_CLASS</tt> ($what in $THIS_MODULE)" );
     $idx =~ s/ \(.*\)//;
-    return ("<dl><dt><b>$TLSTART$what$TLEND $idx</b>"
-            . "(<var>$arg_list</var>)\n<dd>"
-            . $_
-            . '</dl>');
+    my $prefix = "$TLSTART$what$TLEND$idx";
+    return funcline_helper(1, $prefix, $arg_list) . $_ . '</dl>';
 }
 
 sub do_env_classdesc{
@@ -1155,9 +1154,9 @@ sub do_env_classdescstar{
     $idx = make_str_index_entry(
 	"<tt class=\"class\">$THIS_CLASS</tt> (class in $THIS_MODULE)");
     $idx =~ s/ \(.*\)//;
-    return ("<dl><dt><b>${TLSTART}class$TLEND $idx</b>\n<dd>"
-            . $_
-            . '</dl>');
+    my $prefix = "${TLSTART}class$TLEND$idx";
+    # Can't use funcline_helper() since there is no args list.
+    return "<dl><dt><b>$prefix</b>\n<dd>" . $_ . '</dl>';
 }
 
 sub do_env_excclassdesc{
@@ -1180,7 +1179,7 @@ sub do_env_methoddesc{
         "<tt class=\"method\">$method()</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
-    return "<dl><dt><b>$idx</b>(<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
+    return funcline_helper(1, $idx, $arg_list) . $_ . '</dl>';
 }
 
 
@@ -1199,8 +1198,7 @@ sub do_cmd_methodline{
         "<tt class=\"method\">$method()</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
-    return "<dt><b>$idx</b>(<var>$arg_list</var>)\n<dd>"
-           . $_;
+    return funcline_helper(0, $idx, $arg_list) . $_;
 }
 
 
@@ -1209,8 +1207,7 @@ sub do_cmd_methodlineni{
     next_optional_argument();
     my $method = next_argument();
     my $arg_list = convert_args(next_argument());
-    return "<dt><b>$method</b>(<var>$arg_list</var>)\n<dd>"
-           . $_;
+    return funcline_helper(0, $method, $arg_list) . $_;
 }
 
 sub do_env_methoddescni{
@@ -1218,9 +1215,7 @@ sub do_env_methoddescni{
     next_optional_argument();
     my $method = next_argument();
     my $arg_list = convert_args(next_argument());
-    return "<dl><dt><b>$method</b>(<var>$arg_list</var>)\n<dd>"
-           . $_
-	   . '</dl>';
+    return funcline_helper(1, $method, $arg_list) . $_ . '</dl>';
 }
 
 
