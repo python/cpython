@@ -2,7 +2,6 @@
 \label{module-traceback}
 \stmodindex{traceback}
 
-\setindexsubitem{(in module traceback)}
 
 This module provides a standard interface to format and print stack
 traces of Python programs.  It exactly mimics the behavior of the
@@ -13,15 +12,16 @@ you want to print stack traces under program control, e.g. in a
 The module uses traceback objects --- this is the object type
 that is stored in the variables \code{sys.exc_traceback} and
 \code{sys.last_traceback}.
+\obindex{traceback}
 
 The module defines the following functions:
 
-\begin{funcdesc}{print_tb}{traceback\optional{\, limit}}
+\begin{funcdesc}{print_tb}{traceback\optional{, limit}}
 Print up to \var{limit} stack trace entries from \var{traceback}.  If
 \var{limit} is omitted or \code{None}, all entries are printed.
 \end{funcdesc}
 
-\begin{funcdesc}{extract_tb}{traceback\optional{\, limit}}
+\begin{funcdesc}{extract_tb}{traceback\optional{, limit}}
 Return a list of up to \var{limit} ``pre-processed'' stack trace
 entries extracted from \var{traceback}.  It is useful for alternate
 formatting of stack traces.  If \var{limit} is omitted or \code{None},
@@ -33,23 +33,23 @@ trailing whitespace stripped; if the source is not available it is
 \code{None}.
 \end{funcdesc}
 
-\begin{funcdesc}{print_exception}{type\, value\, traceback\optional{\, limit}}
+\begin{funcdesc}{print_exception}{type, value, traceback\optional{, limit}}
 Print exception information and up to \var{limit} stack trace entries
-from \var{traceback}.  This differs from \code{print_tb} in the
+from \var{traceback}.  This differs from \function{print_tb()} in the
 following ways: (1) if \var{traceback} is not \code{None}, it prints a
-header ``\code{Traceback (innermost last):}''; (2) it prints the
+header \samp{Traceback (innermost last):}; (2) it prints the
 exception \var{type} and \var{value} after the stack trace; (3) if
-\var{type} is \code{SyntaxError} and \var{value} has the appropriate
+\var{type} is \exception{SyntaxError} and \var{value} has the appropriate
 format, it prints the line where the syntax error occurred with a
-caret indication the approximate position of the error.
+caret indicating the approximate position of the error.
 \end{funcdesc}
 
 \begin{funcdesc}{print_exc}{\optional{limit}}
-This is a shorthand for \code{print_exception(sys.exc_type,}
-\code{sys.exc_value,} \code{sys.exc_traceback,} \code{limit)}.
+This is a shorthand for `\code{print_exception(sys.exc_type,}
+\code{sys.exc_value,} \code{sys.exc_traceback,} \var{limit}\code{)}'.
 \end{funcdesc}
 
 \begin{funcdesc}{print_last}{\optional{limit}}
-This is a shorthand for \code{print_exception(sys.last_type,}
-\code{sys.last_value,} \code{sys.last_traceback,} \code{limit)}.
+This is a shorthand for `\code{print_exception(sys.last_type,}
+\code{sys.last_value,} \code{sys.last_traceback,} \var{limit}\code{)}'.
 \end{funcdesc}
