@@ -70,7 +70,7 @@ INSTALL_SHARED=	${INSTALL} -m 555
 
 # === Variables that are customizable by hand or by inclusion in Setup ===
 
-LINKCC=		$(PURIFY) $(CC)
+LINKCC=		$(PURIFY) @LINKCC@
 INCLDIR=	$(srcdir)/../Include
 CONFIGINCLDIR=	..
 CFLAGS=		$(OPT) -I$(INCLDIR) -I$(CONFIGINCLDIR) $(DEFS)

@@ -81,6 +81,21 @@ then
 fi
 
 AC_PROG_CC
+
+# LINKCC is the command that links the python executable -- default is $(CC).
+# This is altered for AIX in order to build the export list before linking.
+AC_SUBST(LINKCC)
+AC_MSG_CHECKING(LINKCC)
+if test -z "$LINKCC"
+then
+	case $ac_sys_system in
+	AIX*)
+	   LINKCC="makexp_aix python.exp \"\" \$(MYLIBS) \$(ADDOBJS); \$(CC)";;
+	*) LINKCC="\$(CC)";;
+	esac
+fi
+AC_MSG_RESULT($LINKCC)
+
 AC_PROG_RANLIB
 AC_SUBST(AR)
 AC_CHECK_PROGS(AR, ar aal, ar)

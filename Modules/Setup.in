@@ -51,11 +51,6 @@
 # to ftp sources from elsewhere.
 
 
-# -------> Uncomment this line if you are running AIX    <----------
-# -------> and if you are building with shared libraries <----------
-#LINKCC= makexp_aix python.exp "" $(MYLIBS) $(ADDOBJS) ; $(CC)
-
-
 # Some special rules to define PYTHONPATH.
 # Edit the definitions below to indicate which options you are using.
 # Don't add any whitespace or comments!

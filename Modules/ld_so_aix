@@ -20,6 +20,7 @@
 #                   (*) -bE:[ExportFile]             -bE:[OutputBaseName].exp
 #                   (*) -bI:[ImportFile]             -bI:./python.exp
 #                       -bM:[ModuleType]             -bM:SRE
+#                       -bhalt:[Number]              -bhalt:4
 #                       -T[Number]                   -T512
 #                       -H[Number]                   -H512
 #                       -lm
@@ -155,7 +156,7 @@ if test -z "$entry"; then
   entry=init`echo $filename | sed "s/module.*//"`
 fi
 
-#echo "ld_so_aix: Debug info section
+#echo "ld_so_aix: Debug info section"
 #echo "  -> output file : $objfile"
 #echo "  -> import file : $impfile"
 #echo "  -> export file : $expfile"
@@ -163,7 +164,7 @@ fi
 #echo "  -> object files: $objs"
 #echo "  -> CC arguments: $args"
 
-CCOPT="-Wl,-e$entry -Wl,-bE:$expfile -Wl,-bI:$impfile"
+CCOPT="-Wl,-e$entry -Wl,-bE:$expfile -Wl,-bI:$impfile -Wl,-bhalt:4"
 CCOPT="$CCOPT -Wl,-bM:SRE -Wl,-T512 -Wl,-H512 -lm -o $objfile"
 CCARGS="$args"
 
