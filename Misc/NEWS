@@ -12,6 +12,11 @@ What's New in Python 2.3 alpha 1?
 Type/class unification and new-style classes
 --------------------------------------------
 
+- Exposed the PyImport_FrozenModules variable in import.c through
+  imp.get_frozenmodules() and imp.set_frozenmodules().  This is
+  useful for freezing tools written in Python that use Python for
+  bootstrapping the frozen application.
+
 - One can now assign to __bases__ and __name__ of new-style classes.
 
 - dict() now accepts keyword arguments so that dict(one=1, two=2)
