@@ -142,13 +142,13 @@ class IncMatcher(Matcher):
 				if DEBUG:
 					print 'include', patharg, dstpath
 				return dstpath
-			path, lastcomp = os.path.split(path)
-			if not path:
-				break
-			removed[0:0] = [lastcomp]
-		# Next check the exclude directory
-		path = patharg
-		while 1:
+##			path, lastcomp = os.path.split(path)
+##			if not path:
+##				break
+##			removed[0:0] = [lastcomp]
+##		# Next check the exclude directory
+##		path = patharg
+##		while 1:
 			if self.edict.has_key(path):
 				if DEBUG:
 					print 'exclude', patharg, path
