@@ -518,7 +518,7 @@ class FaqWizard:
 	    emit(ONE_RECENT, period=period)
 	else:
 	    emit(SOME_RECENT, period=period, count=len(list))
-	self.format_all(map(lambda (mtime, file): file, list))
+	self.format_all(map(lambda (mtime, file): file, list), headers=0)
 	emit(TAIL_RECENT)
 
     def do_roulette(self):
