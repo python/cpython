@@ -1,7 +1,6 @@
 import zlib
 import sys
 import imp
-import string
 
 try:
     t = imp.find_module('test_zlib')
@@ -57,7 +56,7 @@ bufs = []
 for i in range(0, len(buf), 256):
     bufs.append(co.compress(buf[i:i+256]))
 bufs.append(co.flush())
-combuf = string.join(bufs, '')
+combuf = ''.join(bufs)
 
 decomp1 = zlib.decompress(combuf, -12, -5)
 if decomp1 != buf:
@@ -70,7 +69,7 @@ bufs = []
 for i in range(0, len(combuf), 128):
     bufs.append(deco.decompress(combuf[i:i+128]))
 bufs.append(deco.flush())
-decomp2 = string.join(buf, '')
+decomp2 = ''.join(buf)
 if decomp2 != buf:
     print "decompressobj with init options failed"
 else:

@@ -12,7 +12,6 @@ from test_support import verbose, TestFailed
 import socket
 import os
 import time
-import string
 
 def missing_ok(str):
     try:
@@ -79,7 +78,7 @@ if verbose:
     print all_host_names
 
 for name in all_host_names:
-    if string.find(name, '.'):
+    if name.find('.'):
         break
 else:
     print 'FQDN not found'

@@ -2,7 +2,7 @@
 
 # Sanity checker for time.strftime
 
-import time, calendar, sys, string, os, re
+import time, calendar, sys, os, re
 from test_support import verbose
 
 def main():
@@ -90,7 +90,7 @@ def strftest(now):
 
     if verbose:
         print "Strftime test, platform: %s, Python version: %s" % \
-              (sys.platform, string.split(sys.version)[0])
+              (sys.platform, sys.version.split()[0])
 
     for e in expectations:
         try:
