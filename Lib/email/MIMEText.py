@@ -17,8 +17,7 @@ class MIMEText(MIMENonMultipart):
                  _encoder=None):
         """Create a text/* type MIME document.
 
-        _text is the string for this message object.  If the text does not end
-        in a newline, one is added.
+        _text is the string for this message object.
 
         _subtype is the MIME sub content type, defaulting to "plain".
 
@@ -35,8 +34,6 @@ class MIMEText(MIMENonMultipart):
         """
         MIMENonMultipart.__init__(self, 'text', _subtype,
                                   **{'charset': _charset})
-        if _text and not _text.endswith('\n'):
-            _text += '\n'
         self.set_payload(_text, _charset)
         if _encoder is not None:
             warnings.warn('_encoder argument is obsolete.',
