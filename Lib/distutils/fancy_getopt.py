@@ -470,6 +470,13 @@ def wrap_text (text, width):
     return lines
 
 # wrap_text ()
+
+
+def translate_longopt (opt):
+    """Convert a long option name to a valid Python identifier by
+    changing "-" to "_".
+    """
+    return string.translate(opt, longopt_xlate)
         
 
 class OptionDummy:
