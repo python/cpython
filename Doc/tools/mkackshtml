@@ -30,6 +30,7 @@ def main():
     colnums = []
     for i in range(options.columns):
         colnums.append(percol*i)
+    options.aesop_type = "information"
     fp = options.get_output_file()
     fp.write(string.rstrip(options.get_header()) + "\n")
     fp.write(THANKS + "\n")
