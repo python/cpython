@@ -2597,17 +2597,6 @@ local bindings to py-newline-and-indent."))
 	(intern (buffer-substring (match-beginning 1) (match-end 1)))
       nil)))
 
-(defun py-delete-file-silently (fname)
-  (condition-case nil
-      (delete-file fname)
-    (error nil)))
-
-(defun py-kill-emacs-hook ()
-  ;; delete our temp files
-  (py-safe (while py-file-queue
-	     (py-delete-file-silently (car py-file-queue))
-	     (setq py-file-queue (cdr py-file-queue)))))
-
 (defun py-current-defun ()
   ;; tell add-log.el how to find the current function/method/variable
   (save-excursion
@@ -2668,6 +2657,11 @@ to do so may mean a greater delay in fixing your bug.\n\n")
       (py-keep-region-active))))
 
 
+(defun py-kill-emacs-hook ()
+  (mapcar #'(lambda (filename)
+	      (py-safe (delete-file filename)))
+	  py-file-queue))
+
 ;; arrange to kill temp files when Emacs exists
 (add-hook 'kill-emacs-hook 'py-kill-emacs-hook)
 
