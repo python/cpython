@@ -5,8 +5,12 @@
 
 
 
+#ifdef _WIN32
+#include "pywintoolbox.h"
+#else
 #include "macglue.h"
 #include "pymactoolbox.h"
+#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -455,6 +459,18 @@ static PyObject *Evt_LMSetKbdType(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *Evt_TickCount(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	UInt32 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = TickCount();
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
 static PyObject *Evt_WaitNextEvent(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -566,6 +582,8 @@ static PyMethodDef Evt_methods[] = {
 	 "() -> (UInt8 _rv)"},
 	{"LMSetKbdType", (PyCFunction)Evt_LMSetKbdType, 1,
 	 "(UInt8 value) -> None"},
+	{"TickCount", (PyCFunction)Evt_TickCount, 1,
+	 "() -> (UInt32 _rv)"},
 	{"WaitNextEvent", (PyCFunction)Evt_WaitNextEvent, 1,
 	 "(EventMask eventMask, UInt32 sleep [,RegionHandle]) -> (Boolean _rv, EventRecord theEvent)"},
 	{NULL, NULL, 0}
