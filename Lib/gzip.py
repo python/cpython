@@ -5,7 +5,7 @@ but random access is not allowed."""
 
 # based on Andrew Kuchling's minigzip.py distributed with the zlib module
 
-import os, struct, sys, time
+import struct, sys, time
 import zlib
 import __builtin__
 
