@@ -476,7 +476,6 @@ def padnone(seq):
     """Returns the sequence elements and then returns None indefinitely.
 
     Useful for emulating the behavior of the built-in map() function.
-
     """
     return chain(seq, repeat(None))
 
@@ -494,7 +493,6 @@ def repeatfunc(func, times=None, *args):
     """Repeat calls to func with specified arguments.
     
     Example:  repeatfunc(random.random)
-    
     """
     if times is None:
         return starmap(func, repeat(args))

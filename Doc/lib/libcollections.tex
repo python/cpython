@@ -135,12 +135,10 @@ deque(['c', 'b', 'a'])
 This section shows various approaches to working with deques.
 
 The \method{rotate()} method provides a way to implement \class{deque}
-slicing and deletion:
-
-This pure python implementation of \code{del d[n]} shows how to use the
-\method{rotate()} method as a building block for implementing a variety
-of class{deque} operations:
-
+slicing and deletion.  For example, a pure python implementation of
+\code{del d[n]} relies on the \method{rotate()} method to position
+elements to be popped:
+    
 \begin{verbatim}
 def delete_nth(d, n):
     d.rotate(-n)
@@ -188,9 +186,9 @@ h
 
 
 Multi-pass data reduction algorithms can be succinctly expressed and
-efficiently coded by extracting elements using multiple calls to
-\method{popleft()}, applying the reduction function, and using
-\method{append()} for adding the result back to the queue.
+efficiently coded by extracting elements with multiple calls to
+\method{popleft()}, applying the reduction function, and calling
+\method{append()} to add the result back to the queue.
 
 For example, building a balanced binary tree of nested lists entails
 reducing two adjacent nodes into one by grouping them in a list:
