@@ -46,7 +46,7 @@ SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 __author__ = "Steve Purcell"
 __email__ = "stephen_purcell at yahoo dot com"
-__version__ = "#Revision: 1.62 $"[11:-2]
+__version__ = "#Revision: 1.63 $"[11:-2]
 
 import time
 import sys
@@ -90,6 +90,8 @@ __metaclass__ = type
 def _strclass(cls):
     return "%s.%s" % (cls.__module__, cls.__name__)
 
+__unittest = 1
+
 class TestResult:
     """Holder for test result information.
 
@@ -119,12 +121,12 @@ class TestResult:
         """Called when an error has occurred. 'err' is a tuple of values as
         returned by sys.exc_info().
         """
-        self.errors.append((test, self._exc_info_to_string(err)))
+        self.errors.append((test, self._exc_info_to_string(err, test)))
 
     def addFailure(self, test, err):
         """Called when an error has occurred. 'err' is a tuple of values as
         returned by sys.exc_info()."""
-        self.failures.append((test, self._exc_info_to_string(err)))
+        self.failures.append((test, self._exc_info_to_string(err, test)))
 
     def addSuccess(self, test):
         "Called when a test has completed successfully"
@@ -138,15 +140,32 @@ class TestResult:
         "Indicates that the tests should be aborted"
         self.shouldStop = True
 
-    def _exc_info_to_string(self, err):
+    def _exc_info_to_string(self, err, test):
         """Converts a sys.exc_info()-style tuple of values into a string."""
-        return ''.join(traceback.format_exception(*err))
+        exctype, value, tb = err
+        # Skip test runner traceback levels
+        while tb and self._is_relevant_tb_level(tb):
+            tb = tb.tb_next
+        if exctype is test.failureException:
+            # Skip assert*() traceback levels
+            length = self._count_relevant_tb_levels(tb)
+            return ''.join(traceback.format_exception(exctype, value, tb, length))
+        return ''.join(traceback.format_exception(exctype, value, tb))
+
+    def _is_relevant_tb_level(self, tb):
+        return tb.tb_frame.f_globals.has_key('__unittest')
+
+    def _count_relevant_tb_levels(self, tb):
+        length = 0
+        while tb and not self._is_relevant_tb_level(tb):
+            length += 1
+            tb = tb.tb_next
+        return length
 
     def __repr__(self):
         return "<%s run=%i errors=%i failures=%i>" % \
                (_strclass(self.__class__), self.testsRun, len(self.errors),
                 len(self.failures))
-
 
 class TestCase:
     """A class whose instances are single test cases.
@@ -274,10 +293,7 @@ class TestCase:
         exctype, excvalue, tb = sys.exc_info()
         if sys.platform[:4] == 'java': ## tracebacks look different in Jython
             return (exctype, excvalue, tb)
-        newtb = tb.tb_next
-        if newtb is None:
-            return (exctype, excvalue, tb)
-        return (exctype, excvalue, newtb)
+        return (exctype, excvalue, tb)
 
     def fail(self, msg=None):
         """Fail immediately, with the given message."""
