@@ -1026,7 +1026,11 @@ _PyMalloc_DebugRealloc(void *p, size_t nbytes)
 	return fresh;
 }
 
-void
+/* Check the forbidden bytes on both ends of the memory allocated for p.
+ * If anything is wrong, print info to stderr via _PyMalloc_DebugDumpAddress,
+ * and call Py_FatalError to kill the program.
+ */
+ void
 _PyMalloc_DebugCheckAddress(const void *p)
 {
 	const uchar *q = (const uchar *)p;
@@ -1063,6 +1067,7 @@ error:
 	Py_FatalError(msg);
 }
 
+/* Display info to stderr about the memory block at p. */
 void
 _PyMalloc_DebugDumpAddress(const void *p)
 {
@@ -1147,6 +1152,97 @@ _PyMalloc_DebugDumpAddress(const void *p)
 		}
 		fputc('\n', stderr);
 	}
+}
+
+/* Print summary info to stderr about the state of pymalloc's structures. */
+void
+_PyMalloc_DebugDumpStats(void)
+{
+	uint i;
+	const uint numclasses = SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT;
+	uint numfreepools = 0;
+	/* # of pools per class index */
+	ulong numpools[SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT];
+	/* # of allocated blocks per class index */
+	ulong numblocks[SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT];
+	/* # of free blocks per class index */
+	ulong numfreeblocks[SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT];
+	ulong grandtotal;	/* total # of allocated bytes */
+	ulong freegrandtotal;	/* total # of available bytes in used blocks */
+
+	fprintf(stderr, "%u arenas * %d bytes/arena = %lu total bytes.\n",
+		narenas, ARENA_SIZE, narenas * (ulong)ARENA_SIZE);
+	fprintf(stderr, "Small block threshold = %d, in %u size classes.\n",
+		SMALL_REQUEST_THRESHOLD, numclasses);
+	fprintf(stderr, "pymalloc malloc+realloc called %lu times.\n",
+		serialno);
+
+	for (i = 0; i < numclasses; ++i)
+		numpools[i] = numblocks[i] = numfreeblocks[i] = 0;
+
+	/* Because empty pools aren't linked to from anything, it's easiest
+	 * to march over all the arenas.
+	 */
+	for (i = 0; i < narenas; ++i) {
+		uint poolsinarena;
+		uint j;
+		uptr base = arenas[i];
+
+		/* round up to pool alignment */
+		poolsinarena = ARENA_SIZE / POOL_SIZE;
+		if (base & (uptr)POOL_SIZE_MASK) {
+			--poolsinarena;
+			base &= ~(uptr)POOL_SIZE_MASK;
+			base += POOL_SIZE;
+		}
+
+		if (i == narenas - 1) {
+			/* current arena may have raw memory at the end */
+			numfreepools += nfreepools;
+			poolsinarena -= nfreepools;
+		}
+
+		/* visit every pool in the arena */
+		for (j = 0; j < poolsinarena; ++j, base += POOL_SIZE) {
+			poolp p = (poolp)base;
+			if (p->ref.count == 0) {
+				/* currently unused */
+				++numfreepools;
+				continue;
+			}
+			++numpools[p->szidx];
+			numblocks[p->szidx] += p->ref.count;
+			numfreeblocks[p->szidx] += p->capacity - p->ref.count;
+		}
+	}
+
+	fputc('\n', stderr);
+	fprintf(stderr, "Number of unused pools: %u\n", numfreepools);
+	fputc('\n', stderr);
+	fputs("class   num bytes   num pools   blocks in use  avail blocks\n"
+	      "-----   ---------   ---------   -------------  ------------\n",
+		stderr);
+
+	grandtotal = freegrandtotal = 0;
+	for (i = 0; i < numclasses; ++i) {
+		ulong p = numpools[i];
+		ulong b = numblocks[i];
+		ulong f = numfreeblocks[i];
+		uint size = (i+1) << ALIGNMENT_SHIFT;
+		if (p == 0) {
+			assert(b == 0 && f == 0);
+			continue;
+		}
+		fprintf(stderr, "%5u %11u %11lu %15lu %13lu\n",
+			i, size, p, b, f);
+		grandtotal += b * size;
+		freegrandtotal += f * size;
+	}
+	fputc('\n', stderr);
+	fprintf(stderr, "Total bytes in allocated blocks: %lu\n",
+		grandtotal);
+	fprintf(stderr, "Total free bytes in used pools:  %lu\n",
+		freegrandtotal);
 }
 
 #endif	/* PYMALLOC_DEBUG */

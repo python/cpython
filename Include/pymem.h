@@ -102,6 +102,7 @@ DL_IMPORT(void *) _PyMalloc_DebugRealloc(void *p, size_t nbytes);
 DL_IMPORT(void) _PyMalloc_DebugFree(void *p);
 DL_IMPORT(void) _PyMalloc_DebugDumpAddress(const void *p);
 DL_IMPORT(void) _PyMalloc_DebugCheckAddress(const void *p);
+DL_IMPORT(void) _PyMalloc_DebugDumpStats(void);
 #define _PyMalloc_MALLOC _PyMalloc_DebugMalloc
 #define _PyMalloc_REALLOC _PyMalloc_DebugRealloc
 #define _PyMalloc_FREE _PyMalloc_DebugFree
