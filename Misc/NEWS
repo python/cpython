@@ -691,6 +691,10 @@ Build
 C API
 -----
 
+- PyNumber_Check() now returns true for string and unicode objects.
+  This is a result of these types having a partially defined
+  tp_as_number slot.
+
 - The string object's layout has changed: the pointer member
   ob_sinterned has been replaced by an int member ob_sstate.  On some
   platforms (e.g. most 64-bit systems) this may change the offset of
