@@ -364,23 +364,37 @@ class TestSubsets(unittest.TestCase):
     case2method = {"<=": "issubset",
                    ">=": "issuperset",
                   }
-    cases_with_ops = Set(["==", "!="])
+
+    reverse = {"==": "==",
+               "!=": "!=",
+               "<":  ">",
+               ">":  "<",
+               "<=": ">=",
+               ">=": "<=",
+              }
 
     def test_issubset(self):
         x = self.left
         y = self.right
         for case in "!=", "==", "<", "<=", ">", ">=":
             expected = case in self.cases
+            # Test the binary infix spelling.
+            result = eval("x" + case + "y", locals())
+            self.assertEqual(result, expected)
+            # Test the "friendly" method-name spelling, if one exists.
             if case in TestSubsets.case2method:
-                # Test the method-name spelling.
                 method = getattr(x, TestSubsets.case2method[case])
                 result = method(y)
                 self.assertEqual(result, expected)
-            if case in TestSubsets.cases_with_ops:
-                # Test the binary infix spelling.
-                result = eval("x" + case + "y", locals())
-                self.assertEqual(result, expected)
 
+            # Now do the same for the operands reversed.
+            rcase = TestSubsets.reverse[case]
+            result = eval("y" + rcase + "x", locals())
+            self.assertEqual(result, expected)
+            if rcase in TestSubsets.case2method:
+                method = getattr(y, TestSubsets.case2method[rcase])
+                result = method(x)
+                self.assertEqual(result, expected)
 #------------------------------------------------------------------------------
 
 class TestSubsetEqualEmpty(TestSubsets):
@@ -410,7 +424,7 @@ class TestSubsetEmptyNonEmpty(TestSubsets):
 class TestSubsetPartial(TestSubsets):
    left  = Set([1])
    right = Set([1, 2])
-   name  = "one a non-empty subset of other"
+   name  = "one a non-empty proper subset of other"
    cases = "!=", "<", "<="
 
 #------------------------------------------------------------------------------
