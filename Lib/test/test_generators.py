@@ -445,14 +445,12 @@ Build up to a recursive Sieve of Eratosthenes generator.
 >>> firstn(primes, 20)
 [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71]
 
+
 Another famous problem:  generate all integers of the form
     2**i * 3**j  * 5**k
 in increasing order, where i,j,k >= 0.  Trickier than it may look at first!
 Try writing it without generators, and correctly, and without generating
 3 internal results for each result output.
-
-XXX Suspect there's memory leaks in this one; definitely in the next
-XXX version.
 
 >>> def times(n, g):
 ...     for i in g:
@@ -475,11 +473,11 @@ XXX version.
 ...             ng = g.next()
 ...             nh = h.next()
 
-This works, but is doing a whale of a lot or redundant work -- it's not
-clear how to get the internal uses of m235 to share a single generator.
-Note that me_times2 (etc) each need to see every element in the result
-sequence.  So this is an example where lazy lists are more natural (you
-can look at the head of a lazy list any number of times).
+The following works, but is doing a whale of a lot of redundant work --
+it's not clear how to get the internal uses of m235 to share a single
+generator.  Note that me_times2 (etc) each need to see every element in the
+result sequence.  So this is an example where lazy lists are more natural
+(you can look at the head of a lazy list any number of times).
 
 >>> def m235():
 ...     yield 1
@@ -491,21 +489,25 @@ can look at the head of a lazy list any number of times).
 ...                    me_times5):
 ...         yield i
 
+Don't print "too many" of these -- the implementation above is extremely
+inefficient:  each call of m235() leads to 3 recursive calls, and in
+turn each of those 3 more, and so on, and so on, until we've descended
+enough levels to satisfy the print stmts.  Very odd:  when I printed 5
+lines of results below, this managed to screw up Win98's malloc in "the
+usual" way, i.e. the heap grew over 4Mb so Win98 started fragmenting
+address space, and it *looked* like a very slow leak.
+
 >>> result = m235()
->>> for i in range(5):
+>>> for i in range(3):
 ...     print firstn(result, 15)
 [1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 16, 18, 20, 24]
 [25, 27, 30, 32, 36, 40, 45, 48, 50, 54, 60, 64, 72, 75, 80]
 [81, 90, 96, 100, 108, 120, 125, 128, 135, 144, 150, 160, 162, 180, 192]
-[200, 216, 225, 240, 243, 250, 256, 270, 288, 300, 320, 324, 360, 375, 384]
-[400, 405, 432, 450, 480, 486, 500, 512, 540, 576, 600, 625, 640, 648, 675]
 
 Heh.  Here's one way to get a shared list, complete with an excruciating
 namespace renaming trick.  The *pretty* part is that the times() and merge()
 functions can be reused as-is, because they only assume their stream
 arguments are iterable -- a LazyList is the same as a generator to times().
-
-XXX Massive memory leaks in this; see Python-Iterators.
 
 >>> class LazyList:
 ...     def __init__(self, g):
@@ -517,6 +519,9 @@ XXX Massive memory leaks in this; see Python-Iterators.
 ...         while i >= len(sofar):
 ...             sofar.append(fetch())
 ...         return sofar[i]
+...
+...     def clear(self):
+...         self.__dict__.clear()
 
 >>> def m235():
 ...     yield 1
@@ -529,6 +534,9 @@ XXX Massive memory leaks in this; see Python-Iterators.
 ...                    me_times5):
 ...         yield i
 
+Print as many of these as you like -- *this* implementation is memory-
+efficient.  XXX Except that it leaks unless you clear the dict!
+
 >>> m235 = LazyList(m235())
 >>> for i in range(5):
 ...     print [m235[j] for j in range(15*i, 15*(i+1))]
@@ -537,6 +545,34 @@ XXX Massive memory leaks in this; see Python-Iterators.
 [81, 90, 96, 100, 108, 120, 125, 128, 135, 144, 150, 160, 162, 180, 192]
 [200, 216, 225, 240, 243, 250, 256, 270, 288, 300, 320, 324, 360, 375, 384]
 [400, 405, 432, 450, 480, 486, 500, 512, 540, 576, 600, 625, 640, 648, 675]
+
+>>> m235.clear()  # XXX memory leak without this
+
+
+Ye olde Fibonacci generator, LazyList style.
+
+>>> def fibgen(a, b):
+...
+...     def sum(g, h):
+...         while 1:
+...             yield g.next() + h.next()
+...
+...     def tail(g):
+...         g.next()    # throw first away
+...         for x in g:
+...             yield x
+...
+...     yield a
+...     yield b
+...     for s in sum(iter(fib),
+...                  tail(iter(fib))):
+...         yield s
+
+>>> fib = LazyList(fibgen(1, 2))
+>>> firstn(iter(fib), 17)
+[1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584]
+
+>>> fib.clear()  # XXX memory leak without this
 """
 
 # syntax_tests mostly provokes SyntaxErrors.  Also fiddling with #if 0
@@ -670,72 +706,11 @@ But this is fine:
 <type 'None'>
 """
 
-
-x_tests = """
-
->>> def firstn(g, n):
-...     return [g.next() for i in range(n)]
-
->>> def times(n, g):
-...     for i in g:
-...         yield n * i
-
->>> def merge(g, h):
-...     ng = g.next()
-...     nh = h.next()
-...     while 1:
-...         if ng < nh:
-...             yield ng
-...             ng = g.next()
-...         elif ng > nh:
-...             yield nh
-...             nh = h.next()
-...         else:
-...             yield ng
-...             ng = g.next()
-...             nh = h.next()
-
->>> class LazyList:
-...     def __init__(self, g):
-...         self.sofar = []
-...         self.fetch = g.next
-...
-...     def __getitem__(self, i):
-...         sofar, fetch = self.sofar, self.fetch
-...         while i >= len(sofar):
-...             sofar.append(fetch())
-...         return sofar[i]
-
->>> def m235():
-...     yield 1
-...     # Gack:  m235 below actually refers to a LazyList.
-...     me_times2 = times(2, m235)
-...     me_times3 = times(3, m235)
-...     me_times5 = times(5, m235)
-...     for i in merge(merge(me_times2,
-...                          me_times3),
-...                    me_times5):
-...         yield i
-
->>> m235 = LazyList(m235())
->>> for i in range(5):
-...     x = [m235[j] for j in range(15*i, 15*(i+1))]
-
-
-[1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 16, 18, 20, 24]
-[25, 27, 30, 32, 36, 40, 45, 48, 50, 54, 60, 64, 72, 75, 80]
-[81, 90, 96, 100, 108, 120, 125, 128, 135, 144, 150, 160, 162, 180, 192]
-[200, 216, 225, 240, 243, 250, 256, 270, 288, 300, 320, 324, 360, 375, 384]
-[400, 405, 432, 450, 480, 486, 500, 512, 540, 576, 600, 625, 640, 648, 675]
-"""
-
-__test__ = {"tut":      tutorial_tests,  # clean
-            "pep":      pep_tests,     # clean
-            "email":    email_tests,     # clean
-            "fun":      fun_tests,       # leaks
-            "syntax":   syntax_tests   # clean
-           #"x": x_tests
-}
+__test__ = {"tut":      tutorial_tests,
+            "pep":      pep_tests,
+            "email":    email_tests,
+            "fun":      fun_tests,
+            "syntax":   syntax_tests}
 
 # Magic test name that regrtest.py invokes *after* importing this module.
 # This worms around a bootstrap problem.
@@ -745,8 +720,10 @@ def test_main():
     import doctest, test_generators
     if 0:
         # Temporary block to help track down leaks.  So far, the blame
-        # has fallen mostly on doctest.
-        for i in range(5000):
+        # fell mostly on doctest.  Later:  the only leaks remaining are
+        # in fun_tests, and only if you comment out the two LazyList.clear()
+        # calls.
+        for i in range(10000):
             doctest.master = None
             doctest.testmod(test_generators)
     else:
