@@ -175,6 +175,7 @@
 \let\py@OldVerbatim=\verbatim
 \let\py@OldEndVerbatim=\endverbatim
 \RequirePackage{verbatim}
+\let\py@OldVerbatimInput=\verbatiminput
 
 % Variable used by begin code command
 \newlength{\py@codewidth}
@@ -193,6 +194,19 @@
 \renewcommand{\endverbatim}{%
     \py@OldEndVerbatim%
   \end{minipage}%
+}
+\renewcommand{\verbatiminput}[1]{%
+  {\setlength{\parindent}{1cm}%
+   % Calculate the text width for the minipage:
+   \setlength{\py@codewidth}{\linewidth}%
+   \addtolength{\py@codewidth}{-\parindent}%
+   %
+   \small%
+   \begin{list}{}{\setlength{\leftmargin}{1cm}}
+     \item%
+     \py@OldVerbatimInput{#1}%
+   \end{list}
+  }%
 }
 
 % This does a similar thing for the {alltt} environment:
