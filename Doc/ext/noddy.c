@@ -51,6 +51,9 @@ static PyMethodDef noddy_methods[] = {
     {NULL}  /* Sentinel */
 };
 
+#ifndef PyMODINIT_FUNC	/* declarations for DLL import/export */
+#define PyMODINIT_FUNC void
+#endif
 PyMODINIT_FUNC
 initnoddy(void) 
 {

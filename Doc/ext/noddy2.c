@@ -13,7 +13,7 @@ Noddy_dealloc(Noddy* self)
 {
     Py_XDECREF(self->first);
     Py_XDECREF(self->last);
-    self->ob_type->tp_free(self);
+    self->ob_type->tp_free((PyObject*)self);
 }
 
 static PyObject *
@@ -167,6 +167,9 @@ static PyMethodDef module_methods[] = {
     {NULL}  /* Sentinel */
 };
 
+#ifndef PyMODINIT_FUNC	/* declarations for DLL import/export */
+#define PyMODINIT_FUNC void
+#endif
 PyMODINIT_FUNC
 initnoddy2(void) 
 {
