@@ -14,10 +14,6 @@ from sre_constants import *
 
 MAXREPEAT = 65535
 
-# FIXME: the following might change in 2.0 final.  but for now, this
-# seems to be the best way to be compatible with 1.5.2
-CHARMASK = 0xff
-
 SPECIAL_CHARS = ".\\[{()*+?^$|"
 REPEAT_CHARS  = "*+?{"
 
@@ -181,9 +177,10 @@ class Tokenizer:
             char = char + c
         self.index = self.index + len(char)
         self.next = char
-    def match(self, char):
+    def match(self, char, skip=1):
         if char == self.next:
-            self.__next()
+            if skip:
+                self.__next()
             return 1
         return 0
     def get(self):
@@ -230,16 +227,19 @@ def _class_escape(source, escape):
         return code
     try:
         if escape[1:2] == "x":
-            # FIXME: in 2.0, \xNN must have exactly two digits
-            while source.next in HEXDIGITS:
+            # hexadecimal escape (exactly two digits)
+            while source.next in HEXDIGITS and len(escape) < 4:
                 escape = escape + source.get()
             escape = escape[2:]
-            return LITERAL, int(escape[-4:], 16) & CHARMASK
+            if len(escape) != 2:
+                raise error, "bogus escape: %s" % repr("\\" + escape)
+            return LITERAL, int(escape, 16) & 0xff
         elif str(escape[1:2]) in OCTDIGITS:
-            while source.next in OCTDIGITS:
+            # octal escape (up to three digits)
+            while source.next in OCTDIGITS and len(escape) < 5:
                 escape = escape + source.get()
             escape = escape[1:]
-            return LITERAL, int(escape[-6:], 8) & CHARMASK
+            return LITERAL, int(escape, 8) & 0xff
         if len(escape) == 2:
             return LITERAL, ord(escape[1])
     except ValueError:
@@ -256,24 +256,32 @@ def _escape(source, escape, state):
         return code
     try:
         if escape[1:2] == "x":
-            while source.next in HEXDIGITS:
+            # hexadecimal escape
+            while source.next in HEXDIGITS and len(escape) < 4:
                 escape = escape + source.get()
             escape = escape[2:]
-            return LITERAL, int(escape[-4:], 16) & CHARMASK
+            if len(escape) != 2:
+                raise error, "bogus escape: %s" % repr("\\" + escape)
+            return LITERAL, int(escape, 16) & 0xff
+        elif escape[1:2] == "0":
+            # octal escape
+            while source.next in OCTDIGITS and len(escape) < 5:
+                escape = escape + source.get()
+            return LITERAL, int(escape[1:], 8) & 0xff
         elif escape[1:2] in DIGITS:
-            while 1:
-                group = _group(escape, state.groups)
-                if group:
-                    if (not source.next or
-                        not _group(escape + source.next, state.groups)):
-                        return GROUPREF, group
+            # octal escape *or* decimal group reference (sigh)
+            here = source.tell()
+            if source.next in DIGITS:
+                escape = escape + source.get()
+                if escape[2] in OCTDIGITS and source.next in OCTDIGITS:
+                    # got three octal digits; this is an octal escape
                     escape = escape + source.get()
-                elif source.next in OCTDIGITS:
-                    escape = escape + source.get()
-                else:
-                    break
-            escape = escape[1:]
-            return LITERAL, int(escape[-6:], 8) & CHARMASK
+                    return LITERAL, int(escape[1:], 8) & 0xff
+            # got at least one decimal digit; this is a group reference
+            group = _group(escape, state.groups)
+            if group:
+                return GROUPREF, group
+            raise error, "bogus escape: %s" % repr(escape)
         if len(escape) == 2:
             return LITERAL, ord(escape[1])
     except ValueError:
@@ -290,7 +298,7 @@ def _parse_sub(source, state, nested=1):
             continue
         if not nested:
             break
-        if not source.next or source.match(")"):
+        if not source.next or source.match(")", 0):
             break
         else:
             raise error, "pattern not properly closed"
@@ -395,7 +403,11 @@ def _parse(source, state):
                             code2 = LITERAL, ord(this)
                         if code1[0] != LITERAL or code2[0] != LITERAL:
                             raise error, "illegal range"
-                        set.append((RANGE, (code1[1], code2[1])))
+                        lo = code1[1]
+                        hi = code2[1]
+                        if hi < lo:
+                            raise error, "illegal range"
+                        set.append((RANGE, (lo, hi)))
                 else:
                     if code1[0] is IN:
                         code1 = code1[1][0]
@@ -505,6 +517,9 @@ def _parse(source, state):
                         if source.next is None or source.next == ")":
                             break
                         source.get()
+                    if not source.match(")"):
+                        raise error, "unbalanced parenthesis"
+                    continue
                 elif source.next in ("=", "!", "<"):
                     # lookahead assertions
                     char = source.get()
@@ -515,6 +530,8 @@ def _parse(source, state):
                         dir = -1 # lookbehind
                         char = source.get()
                     p = _parse_sub(source, state)
+                    if not source.match(")"):
+                        raise error, "unbalanced parenthesis"
                     if char == "=":
                         subpattern.append((ASSERT, (dir, p)))
                     else:
@@ -532,6 +549,8 @@ def _parse(source, state):
                 else:
                     group = state.getgroup(name)
                 p = _parse_sub(source, state)
+                if not source.match(")"):
+                    raise error, "unbalanced parenthesis"
                 subpattern.append((SUBPATTERN, (group, p)))
             else:
                 while 1:
@@ -625,7 +644,7 @@ def parse_template(source, pattern):
                         break
                 if not code:
                     this = this[1:]
-                    code = LITERAL, int(this[-6:], 8) & CHARMASK
+                    code = LITERAL, int(this[-6:], 8) & 0xff
                 a(code)
             else:
                 try:
