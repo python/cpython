@@ -39,7 +39,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib wsock32.lib"
+				AdditionalDependencies="wsock32.lib"
 				OutputFile="./select.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -105,7 +105,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib wsock32.lib"
+				AdditionalDependencies="wsock32.lib"
 				OutputFile="./select_d.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -179,7 +179,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
-				AdditionalDependencies="odbc32.lib odbccp32.lib wsock32.lib"
+				AdditionalDependencies="wsock32.lib"
 				OutputFile="./select.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
