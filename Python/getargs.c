@@ -685,12 +685,11 @@ vgetargskeywords(args, keywords, format, kwlist, p_va)
 	char *message = NULL;
 	int min = -1;
 	int max = 0;
-	int level = 0;
 	char *formatsave = format;
 	int i, len, tplen, kwlen;
 	char *msg, *ks, **p;
 	int nkwds, pos, match, converted;
-	object *key, *value, *item;
+	object *key, *value;
 	
 	/* nested tuples cannot be parsed when using keyword arguments */
 	
@@ -831,9 +830,11 @@ vgetargskeywords(args, keywords, format, kwlist, p_va)
 	
 	converted = 0;
 	for (i = tplen; i < nkwds; i++) {
+		object *item;
 		if (*format == '|')
 			format++;
-		if (item = PyMapping_GetItemString(keywords, kwlist[i])) {
+		item = PyMapping_GetItemString(keywords, kwlist[i]);
+		if (item != NULL) {
 			msg = convertitem(item, &format, p_va, levels, msgbuf);
 			if (msg) {
 				seterror(i+1, msg, levels, fname, message);
@@ -890,59 +891,59 @@ skipitem(p_format, p_va)
 	
 	case 'b': /* byte -- very short int */
 		{
-			va_arg(*p_va, char *);
+			(void) va_arg(*p_va, char *);
 			break;
 		}
 	
 	case 'h': /* short int */
 		{
-			va_arg(*p_va, short *);
+			(void) va_arg(*p_va, short *);
 			break;
 		}
 	
 	case 'i': /* int */
 		{
-			va_arg(*p_va, int *);
+			(void) va_arg(*p_va, int *);
 			break;
 		}
 	
 	case 'l': /* long int */
 		{
-			va_arg(*p_va, long *);
+			(void) va_arg(*p_va, long *);
 			break;
 		}
 	
 	case 'f': /* float */
 		{
-			va_arg(*p_va, float *);
+			(void) va_arg(*p_va, float *);
 			break;
 		}
 	
 	case 'd': /* double */
 		{
-			va_arg(*p_va, double *);
+			(void) va_arg(*p_va, double *);
 			break;
 		}
 	
 #ifndef WITHOUT_COMPLEX
 	case 'D': /* complex double */
 		{
-			va_arg(*p_va, Py_complex *);
+			(void) va_arg(*p_va, Py_complex *);
 			break;
 		}
 #endif /* WITHOUT_COMPLEX */
 	
 	case 'c': /* char */
 		{
-			va_arg(*p_va, char *);
+			(void) va_arg(*p_va, char *);
 			break;
 		}
 	
 	case 's': /* string */
 		{
-			va_arg(*p_va, char **);
+			(void) va_arg(*p_va, char **);
 			if (*format == '#') {
-				va_arg(*p_va, int *);
+				(void) va_arg(*p_va, int *);
 				format++;
 			}
 			break;
@@ -950,9 +951,9 @@ skipitem(p_format, p_va)
 	
 	case 'z': /* string */
 		{
-			va_arg(*p_va, char **);
+			(void) va_arg(*p_va, char **);
 			if (*format == '#') {
-				va_arg(*p_va, int *);
+				(void) va_arg(*p_va, int *);
 				format++;
 			}
 			break;
@@ -960,18 +961,16 @@ skipitem(p_format, p_va)
 	
 	case 'S': /* string object */
 		{
-			va_arg(*p_va, object **);
+			(void) va_arg(*p_va, object **);
 			break;
 		}
 	
 	case 'O': /* object */
 		{
-			typeobject *type;
-			object **p;
 			if (*format == '!') {
 				format++;
-				va_arg(*p_va, typeobject*);
-				va_arg(*p_va, object **);
+				(void) va_arg(*p_va, typeobject*);
+				(void) va_arg(*p_va, object **);
 			}
 #if 0
 /* I don't know what this is for */
@@ -979,19 +978,19 @@ skipitem(p_format, p_va)
 				inquiry pred = va_arg(*p_va, inquiry);
 				format++;
 				if ((*pred)(arg)) {
-					va_arg(*p_va, object **);
+					(void) va_arg(*p_va, object **);
 				}
 			}
 #endif
 			else if (*format == '&') {
 				typedef int (*converter)
 					PROTO((object *, void *));
-				va_arg(*p_va, converter);
-				va_arg(*p_va, void *);
+				(void) va_arg(*p_va, converter);
+				(void) va_arg(*p_va, void *);
 				format++;
 			}
 			else {
-				va_arg(*p_va, object **);
+				(void) va_arg(*p_va, object **);
 			}
 			break;
 		}
