@@ -467,18 +467,15 @@ This object may be accessed either as a tuple of\n\
   (mode,ino,dev,nlink,uid,gid,size,atime,mtime,ctime)\n\
 or via the attributes st_mode, st_ino, st_dev, st_nlink, st_uid, and so on.\n\
 \n\
-Macintosh: The fields st_rsize, st_creator, and st_type are available from\n\
-os.xstat.\n\
-\n\
 See os.stat for more information.\n";
 
 #define COMMON_STAT_RESULT_FIELDS \
         { "st_mode",  "protection bits" }, \
         { "st_ino",   "inode" }, \
-        { "st_dev",   "device" }, \ 
+        { "st_dev",   "device" }, \
         { "st_nlink", "number of hard links" }, \
-        { "st_uid",   "user ID of owner" }, \ 
-        { "st_gid",   "group ID of owner" }, \ 
+        { "st_uid",   "user ID of owner" }, \
+        { "st_gid",   "group ID of owner" }, \
         { "st_size",  "total size, in bytes" }, \
         { "st_atime", "time of last access" }, \
         { "st_mtime", "time of last modification" }, \
@@ -502,7 +499,7 @@ static PyTypeObject StatResultType;
 
 #ifdef TARGET_API_MAC_OS8
 static PyStructSequence_Field xstat_result_fields[] = {
-	COMMON_XSTAT_RESULT_FIELDS
+	COMMON_STAT_RESULT_FIELDS
 	{ "st_rsize" },
 	{ "st_creator" },
 	{ "st_type "},
