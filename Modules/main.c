@@ -366,6 +366,7 @@ Py_Main(int argc, char **argv)
 		Py_SetProgramName(argv[0]);
 #else
 	Py_SetProgramName(argv[0]);
+#endif
 	Py_Initialize();
 
 	if (Py_VerboseFlag ||
