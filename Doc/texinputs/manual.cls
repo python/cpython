@@ -32,7 +32,16 @@
 \RequirePackage{times}\typeout{Using times fonts instead of Computer Modern.}
 
 
-% Required package:
+% Required packages:
+%
+% The "fncychap" package is used to get the nice chapter headers.  The
+% .sty file is distributed with Python, so you should not need to disable
+% it.  You'd also end up with a mixed page style; uglier than stock LaTeX!
+%
+\RequirePackage[Bjarne]{fncychap}\typeout{Using fancy chapter headings.}
+% Do horizontal rules it this way to match:
+\newcommand{\@doHorizontalRule}{\mghrulefill{\RW}}
+%
 %
 % This gives us all the Python-specific markup that we really want.
 % This should come last.  Do not change this.
@@ -47,8 +56,7 @@
   \begin{titlepage}%
     \let\footnotesize\small
     \let\footnoterule\relax
-    \@ifundefined{ChTitleVar}{}{%
-      \mghrulefill{\RW}}%
+    \@doHorizontalRule%
     \@ifundefined{pdfinfo}{}{
       \pdfinfo{
         /Author (\@author)

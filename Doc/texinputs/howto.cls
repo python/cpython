@@ -40,12 +40,15 @@
 \RequirePackage{python}
 
 
+% need to do one of these....
+\newcommand{\@doHorizontalRule}{\rule{\textwidth}{1pt}}
+
+
 % Change the title page to look a bit better, and fit in with the
 % fncychap ``Bjarne'' style a bit better.
 %
 \renewcommand{\maketitle}{
-  \@ifundefined{ChTitleVar}{}{
-    \mghrulefill{\RW}}
+  \@doHorizontalRule
   \@ifundefined{pdfinfo}{}{
     \pdfinfo{
       /Author (\@author)
@@ -74,8 +77,7 @@
     \parskip = 0mm
     \OldTableofcontents
   \endgroup
-  \@ifundefined{ChTitleVar}{}{
-    \mghrulefill{\RW}}
+  \@doHorizontalRule
   \vspace{12pt}
 }  
 
