@@ -31,6 +31,16 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Events.h>
 #include <StandardFile.h>
 
+/* Scheduler parameters */
+typedef struct {
+	int		check_interrupt;	/* if true check for command-dot */
+	int		process_events;		/* if nonzero enable evt processing, this mask */
+	int		besocial;		/* Be social, give up CPU now and again */
+	double		check_interval;		/* how often to check */
+	double		bg_yield;		/* yield at most so long when in background */
+} PyMacSchedParams;
+
+
 #ifdef GENERATINGCFM				/* Defined to 0 or 1 in Universal headers */
 #define HAVE_UNIVERSAL_HEADERS
 #endif
@@ -45,7 +55,6 @@ void PyMac_FixGUSIcd Py_PROTO((void));		/* Workaround for GUSI chdir() call */
 
 char *PyMac_StrError(int);			/* strerror with mac errors */
 
-extern int PyMac_DoYieldEnabled;		/* Don't do eventloop when false */
 #ifdef USE_GUSI
 extern int PyMac_ConsoleIsDead;			/* True when exiting */
 extern void PyMac_SetGUSISpin(void);		/* Install our private GUSI spin routine */
@@ -62,14 +71,12 @@ extern int PyMac_GetArgv Py_PROTO((char ***, int));	/* Get argc, argv (from maca
 extern PyObject *PyMac_OSErrException;		/* Exception for OSErr */
 PyObject *PyMac_GetOSErrException(void);	/* Initialize & return it */
 
-#ifdef USE_MACTCP
-int PyMac_Idle Py_PROTO((void));		/* Idle routine */
-#endif
 void PyMac_Yield Py_PROTO((void));		/* optional idle routine for mainloop */
-void PyMac_SetYield Py_PROTO((long, long, long, long)); /* Set timeouts */
+void PyMac_GetSchedParams Py_PROTO((PyMacSchedParams *));	/* Get schedulers params */
+void PyMac_SetSchedParams Py_PROTO((PyMacSchedParams *));	/* Set schedulers params */
 PyObject *PyErr_Mac(PyObject *, int);		/* Exception with a mac error */
 PyObject *PyMac_Error(OSErr);			/* Uses PyMac_GetOSErrException */
-void PyMac_HandleEvent Py_PROTO((EventRecord *)); /* Handle one event, if possible */
+void PyMac_HandleEvent Py_PROTO((EventRecord *, int)); /* Handle one event, if possible */
 
 void PyMac_InitMenuBar(void);			/* Setup menu bar as we want it */
 
