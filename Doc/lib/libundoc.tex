@@ -208,9 +208,9 @@ library
 These modules are not on the standard module search path;
 \indexiii{module}{search}{path}
 but are available in the directory \file{lib-old/} installed  under
-\file{\textrm{\$prefix}/lib/python1.5/}.  To use any of these
-modules, add that directory to \code{sys.path}, possibly using
-\envvar{PYTHONPATH}.
+\file{\textrm{\$prefix}/lib/python1.5/}. % $ <-- bow to font lock
+To use any of these modules, add that directory to \code{sys.path},
+possibly using \envvar{PYTHONPATH}.
 
 \begin{description}
 \item[newdir.py]
@@ -227,16 +227,20 @@ modules, add that directory to \code{sys.path}, possibly using
 
 \item[lockfile.py]
 --- wrapper around FCNTL file locking (use
-fcntl.lockf/flock intead)
+\function{fcntl.lockf()}/\function{flock()} intead)
 
 \item[tb.py]
 --- Print tracebacks, with a dump of local variables (use
-pdb.pm() or traceback.py instead)
+\function{pdb.pm()} or \module{traceback} instead)
 
 \item[codehack.py]
---- extract function name or line number from a function
+--- Extract function name or line number from a function
 code object (these are now accessible as attributes: co.co_name,
-func.func_name, co.co_firstlineno)
+func.func_name, co.co_firstlineno).
+
+\item[timingmodule]
+--- Measure time intervals to high resolution (use
+\function{time.clock()} instead).  (This is an extension module.)
 \end{description}
 
 The following modules were documented in previous versions of this
@@ -244,7 +248,8 @@ manual, but are now considered obsolete:
 
 \begin{description}
 \item[ni]
---- Import modules in ``packages.''
+--- Import modules in ``packages.''  Basic package support is now
+built in.
 
 \item[rand]
 --- Old interface to the random number generator.
@@ -267,37 +272,37 @@ dbm clone).
 
 \item[dlmodule.c]
 ---  A highly experimental and dangerous device for calling
-arbitrary C functions in arbitrary shared libraries.
+arbitrary \C{} functions in arbitrary shared libraries.
 
 \item[newmodule.c]
---- Tommy Burnette's `new' module (creates new empty objects of
+--- Tommy Burnette's \module{new} module (creates new empty objects of
 certain kinds) --- dangerous.
 
 \item[nismodule.c]
 --- NIS (a.k.a. Sun's Yellow Pages) interface.
 
-\item[timingmodule.c]
---- Measure time intervals to high resolution (obsolete --- use
-time.clock() instead).
-
 \item[stdwinmodule.c]
 --- Interface to STDWIN (an old, unsupported
 platform-independent GUI package).  Obsolete; use Tkinter for a
 platform-independent GUI instead.
+\end{description}
 
 The following are SGI specific:
 
+\begin{description}
 \item[clmodule.c]
 --- Interface to the SGI compression library.
 
 \item[svmodule.c]
 --- Interface to the ``simple video'' board on SGI Indigo
 (obsolete hardware).
+\end{description}
 
 The following is Windows specific:
 
+\begin{description}
 \item[msvcrtmodule.c]
 (in directory \file{PC/}) --- define a number of Windows
-specific goodies like \code{khbit()}, \code{getch()} and
-\code{setmode()}.  (Windows 95 and NT only.)
+specific goodies like \function{khbit()}, \function{getch()} and
+\function{setmode()}.  (Windows 95 and NT only.)
 \end{description}
