@@ -344,7 +344,7 @@ def compileevent(fp, event):
 	# Error handling
 	#
 	fp.write("\t\tif _arguments.has_key('errn'):\n")
-	fp.write("\t\t\traise MacOS.Error, aetools.decodeerror(_arguments)\n")
+	fp.write("\t\t\traise aetools.Error, aetools.decodeerror(_arguments)\n")
 	fp.write("\t\t# XXXX Optionally decode result\n")
 	#
 	# Decode result
