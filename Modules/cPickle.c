@@ -892,7 +892,8 @@ fast_save_enter(Picklerobject *self, PyObject *obj)
 		if (PyDict_GetItem(self->fast_memo, key)) {
 			Py_DECREF(key);
 			PyErr_Format(PyExc_ValueError,
-				     "fast mode: can't pickle cyclic objects including object type %s at %p",
+				     "fast mode: can't pickle cyclic objects "
+				     "including object type %s at %p",
 				     obj->ob_type->tp_name, obj);
 			self->fast_container = -1;
 			return 0;
@@ -2786,10 +2787,12 @@ get_Pickler(PyObject *self, PyObject *args)
 	PyObject *file = NULL;
 	int proto = 0;
 
-	/* XXX What is this doing?  The documented signature is
-	 * XXX Pickler(file, proto=0), but this accepts Pickler() and
-	 * XXX Pickler(integer) too.  The meaning then is clear as mud.
-	 * XXX Bug?  Feature?
+	/* XXX
+	 * The documented signature is Pickler(file, proto=0), but this
+	 * accepts Pickler() and Pickler(integer) too.  The meaning then
+	 * is clear as mud, undocumented, and not supported by pickle.py.
+	 * I'm told Zope uses this, but I haven't traced into this code
+	 * far enough to figure out what it means.
 	 */
 	if (!PyArg_ParseTuple(args, "|i:Pickler", &proto)) {
 		PyErr_Clear();
@@ -2949,8 +2952,8 @@ find_class(PyObject *py_module_name, PyObject *py_global_name, PyObject *fc)
 
 	if (fc) {
 		if (fc==Py_None) {
-			PyErr_SetString(UnpicklingError,
-					"Global and instance pickles are not supported.");
+			PyErr_SetString(UnpicklingError, "Global and instance "
+					"pickles are not supported.");
 			return NULL;
 		}
 		return PyObject_CallFunction(fc, "OO", py_module_name,
@@ -3864,7 +3867,8 @@ load_get(Unpicklerobject *self)
 	if (! value) {
 		PyErr_SetObject(BadPickleGet, py_str);
 		rc = -1;
-	} else {
+	}
+	else {
 		PDATA_APPEND(self->stack, value, -1);
 		rc = 0;
 	}
@@ -3891,7 +3895,8 @@ load_binget(Unpicklerobject *self)
 	if (! value) {
 		PyErr_SetObject(BadPickleGet, py_key);
 		rc = -1;
-	} else {
+	}
+	else {
 		PDATA_APPEND(self->stack, value, -1);
 		rc = 0;
 	}
@@ -3927,7 +3932,8 @@ load_long_binget(Unpicklerobject *self)
 	if (! value) {
 		PyErr_SetObject(BadPickleGet, py_key);
 		rc = -1;
-	} else {
+	}
+	else {
 		PDATA_APPEND(self->stack, value, -1);
 		rc = 0;
 	}
