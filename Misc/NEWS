@@ -155,6 +155,13 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 
 - pyexpat.c - removed memory leaks
 
+- #233253 - distutils/command/build_ext.py - the --define and --undef options 
+            didn't work, whether specified on the command-line or in setup.cfg.
+
+- distutils/command/build_ext.py - make docstrings raw
+
+- #128930 - distutils/command/build_ext.py - split rpath argument
+
 What's New in Python 2.0?
 =========================
 

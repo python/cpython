@@ -151,6 +151,8 @@ class build_ext (Command):
             self.library_dirs = []
         if self.rpath is None:
             self.rpath = []
+        elif type(self.rpath) is StringType:
+            self.rpath = string.split(self.rpath, os.pathsep)
 
         # for extensions under windows use different directories
         # for Release and Debug builds.
@@ -161,6 +163,22 @@ class build_ext (Command):
                 self.build_temp = os.path.join(self.build_temp, "Debug")
             else:
                 self.build_temp = os.path.join(self.build_temp, "Release")
+
+        # The argument parsing will result in self.define being a string, but
+        # it has to be a list of 2-tuples.  All the preprocessor symbols
+        # specified by the 'define' option will be set to '1'.  Multiple
+        # symbols can be separated with commas.
+
+        if self.define:
+            defines = string.split(self.define, ',')
+            self.define = map(lambda symbol: (symbol, '1'), defines)
+
+        # The option for macros to undefine is also a string from the
+        # option parsing, but has to be a list.  Multiple symbols can also
+        # be separated with commas here.
+        if self.undef:
+            self.undef = string.split(self.undef, ',')
+
     # finalize_options ()
     
 
@@ -528,7 +546,7 @@ class build_ext (Command):
             return self.package + '.' + ext_name
 
     def get_ext_filename (self, ext_name):
-        """Convert the name of an extension (eg. "foo.bar") into the name
+        r"""Convert the name of an extension (eg. "foo.bar") into the name
         of the file from which it will be loaded (eg. "foo/bar.so", or
         "foo\bar.pyd").
         """
