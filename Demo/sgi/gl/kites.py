@@ -1,4 +1,4 @@
-#! /usr/local/python
+#! /usr/local/bin/python
 
 # *** This only works correctly on a 24 bit-plane machine. ***
 #
