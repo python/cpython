@@ -897,11 +897,12 @@ class C:
   \versionadded{2.2}
 \end{funcdesc}
 
-\begin{funcdesc}{sum}{sequence\optional{start=0}}
-  Sums up the items of a \var{sequence}, from left to right, and returns
-  the total.  The \var{sequence}'s items are normally numbers, and are
-  not allowed to be strings.  The fast, correct way to join up a
-  sequence of strings is by calling \code{''.join(\var{sequence})}.
+\begin{funcdesc}{sum}{sequence\optional{, start}}
+  Sums \var{start} and the items of a \var{sequence}, from left to
+  right, and returns the total.  \var{start} defaults to \code{0}.
+  The \var{sequence}'s items are normally numbers, and are not allowed
+  to be strings.  The fast, correct way to concatenate sequence of
+  strings is by calling \code{''.join(\var{sequence})}.
   \versionadded{2.3}
 \end{funcdesc}
 
