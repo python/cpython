@@ -137,7 +137,7 @@ class SGMLParser:
                     k = self.parse_pi(i)
                     if k < 0: break
                     i = i+k
-                    continue                    
+                    continue
                 match = special.match(rawdata, i)
                 if match:
                     if self.literal:
@@ -211,7 +211,7 @@ class SGMLParser:
     __starttag_text = None
     def get_starttag_text(self):
         return self.__starttag_text
-    
+
     # Internal -- handle starttag, return length or -1 if not terminated
     def parse_starttag(self, i):
         self.__starttag_text = None
