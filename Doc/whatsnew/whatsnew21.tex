@@ -751,8 +751,24 @@ memory overhead.  The allocator uses C's \function{malloc()} function
 to get large pools of memory, and then fulfills smaller memory
 requests from these pools.  It can be enabled by providing the
 \longprogramopt{with-pymalloc} option to the \program{configure} script; see
-\file{Objects/obmalloc.c} for the implementation details.
-Contributed by Vladimir Marangozov.
+\file{Objects/obmalloc.c} for the implementation details.  
+
+Authors of C extension modules should test their code with the object
+allocator enabled, because some incorrect code may break, causing core
+dumps at runtime.  There are a bunch of memory allocation functions in
+Python's C API that have previously been just aliases for the C
+library's \function{malloc()} and \function{free()}, meaning that if
+you accidentally called mismatched functions, the error wouldn't be
+noticeable.  When the object allocator is enabled, these functions
+aren't aliases of \function{malloc()} and \function{free()} any more,
+and calling the wrong function to free memory will get you a core
+dump.  For example, if memory was allocated using
+\function{PyMem_New()}, it has to be freed using
+\function{PyMem_Del()}, not \function{free()}.  A few modules included
+with Python fell afoul of this and had to be fixed; doubtless there
+are more third-party modules that will have the same problem.
+
+The object allocator was contributed by Vladimir Marangozov.
 
 \item The speed of line-oriented file I/O has been improved because
 people often complain about its lack of speed, and because it's often
@@ -826,6 +842,9 @@ code.
 
 \item The size of the Unicode character database was shrunk by another
 340K thanks to Fredrik Lundh.
+
+\item Some new ports were contributed: MacOS X (by Steven Majewski),
+Cygwin (by Jason Tishler); RISCOS (by Dietmar Schwertberger).
 
 \end{itemize}
 
