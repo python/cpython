@@ -139,7 +139,7 @@ class URLopener:
 			fp = open(filename, 'rb')
 			return addinfourl(fp, headers, fullurl)
 		type, url = splittype(fullurl)
- 		if not type: type = 'file'
+		if not type: type = 'file'
 		if self.proxies.has_key(type):
 			proxy = self.proxies[type]
 			type, proxy = splittype(proxy)
@@ -751,7 +751,7 @@ def splithost(url):
 		import re
 		_hostprog = re.compile('^//([^/]+)(.*)$')
 
-        match = _hostprog.match(url) 
+	match = _hostprog.match(url) 
 	if match: return match.group(1, 2)
 	return None, url
 
@@ -762,7 +762,7 @@ def splituser(host):
 		import re
 		_userprog = re.compile('^([^@]*)@(.*)$')
 
-        match = _userprog.match(host)
+	match = _userprog.match(host)
 	if match: return match.group(1, 2)
 	return None, host
 
@@ -773,7 +773,7 @@ def splitpasswd(user):
 		import re
 		_passwdprog = re.compile('^([^:]*):(.*)$')
 
-        match = _passwdprog.match(user)
+	match = _passwdprog.match(user)
 	if match: return match.group(1, 2)
 	return user, None
 
@@ -784,7 +784,7 @@ def splitport(host):
 		import re
 		_portprog = re.compile('^(.*):([0-9]+)$')
 
-        match = _portprog.match(host)
+	match = _portprog.match(host)
 	if match: return match.group(1, 2)
 	return host, None
 
@@ -799,7 +799,7 @@ def splitnport(host, defport=-1):
 		import re
 		_nportprog = re.compile('^(.*):(.*)$')
 
-        match = _nportprog.match(host)
+	match = _nportprog.match(host)
 	if match:
 		host, port = match.group(1, 2)
 		try:
@@ -817,7 +817,7 @@ def splitquery(url):
 		import re
 		_queryprog = re.compile('^(.*)\?([^?]*)$')
 
-        match = _queryprog.match(url)
+	match = _queryprog.match(url)
 	if match: return match.group(1, 2)
 	return url, None
 
@@ -828,7 +828,7 @@ def splittag(url):
 		import re
 		_tagprog = re.compile('^(.*)#([^#]*)$')
 
-        match = _tagprog.match(url)
+	match = _tagprog.match(url)
 	if match: return match.group(1, 2)
 	return url, None
 
