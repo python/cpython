@@ -1,0 +1,18 @@
+test_extcall
+() {}
+(1,) {}
+(1, 2) {}
+(1, 2, 3) {}
+(1, 2, 3, 4, 5) {}
+(1, 2, 3) {'b': 5, 'a': 4}
+(1, 2, 3, 4, 5) {'b': 7, 'a': 6}
+(1, 2, 3, 6, 7) {'y': 5, 'b': 9, 'x': 4, 'a': 8}
+TypeError: not enough arguments; expected 1, got 0
+TypeError: not enough arguments; expected 1, got 0
+TypeError: not enough arguments; expected 1, got 0
+1 () {}
+1 (2,) {}
+1 (2, 3) {}
+1 (2, 3, 4, 5) {}
+keyword parameter redefined: x
+keyword parameter redefined: b
