@@ -203,9 +203,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libcrypto.tex \
 	lib/libmd5.tex \
 	lib/libsha.tex \
-	lib/libmpz.tex \
 	lib/libhmac.tex \
-	lib/librotor.tex \
 	lib/libstdwin.tex \
 	lib/libsgi.tex \
 	lib/libal.tex \
@@ -278,7 +276,6 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libuu.tex \
 	lib/libsunaudio.tex \
 	lib/libfileinput.tex \
-	lib/libxreadlines.tex \
 	lib/libimaplib.tex \
 	lib/libpoplib.tex \
 	lib/libcalendar.tex \
