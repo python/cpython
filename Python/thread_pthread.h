@@ -119,7 +119,6 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
 	pthread_t th;
 	int status;
- 	sigset_t oldmask, newmask;
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
 	pthread_attr_t attrs;
 #endif
@@ -137,13 +136,6 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
         pthread_attr_setscope(&attrs, PTHREAD_SCOPE_SYSTEM);
 #endif
 
-	/* Mask all signals in the current thread before creating the new
-	 * thread.  This causes the new thread to start with all signals
-	 * blocked.
-	 */
-	sigfillset(&newmask);
-	SET_THREAD_SIGMASK(SIG_BLOCK, &newmask, &oldmask);
-
 	status = pthread_create(&th, 
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
 				 &attrs,
@@ -153,9 +145,6 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 				 (void* (*)(void *))func,
 				 (void *)arg
 				 );
-
-	/* Restore signal mask for original thread */
-	SET_THREAD_SIGMASK(SIG_SETMASK, &oldmask, NULL);
 
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
 	pthread_attr_destroy(&attrs);

@@ -2783,6 +2783,11 @@ then
   [Define this if you have flockfile(), getc_unlocked(), and funlockfile()])
 fi
 
+# check for readline 2.1
+AC_CHECK_LIB(readline, rl_callback_handler_install,
+	AC_DEFINE(HAVE_RL_CALLBACK, 1,
+        [Define if you have readline 2.1]), , -ltermcap)
+
 # check for readline 2.2
 AC_TRY_CPP([#include <readline/readline.h>],
 have_readline=yes, have_readline=no)
@@ -2803,6 +2808,17 @@ AC_CHECK_LIB(readline, rl_pre_input_hook,
 AC_CHECK_LIB(readline, rl_completion_matches,
 	AC_DEFINE(HAVE_RL_COMPLETION_MATCHES, 1,
         [Define if you have readline 4.2]), , -ltermcap)
+
+# also in readline 4.2
+AC_TRY_CPP([#include <readline/readline.h>],
+have_readline=yes, have_readline=no)
+if test $have_readline = yes
+then
+  AC_EGREP_HEADER([extern int rl_catch_signals;],
+  [readline/readline.h],
+  AC_DEFINE(HAVE_RL_CATCH_SIGNAL, 1,
+  [Define if you can turn off readline's signal handling.]), )
+fi
 
 AC_MSG_CHECKING(for broken nice())
 AC_CACHE_VAL(ac_cv_broken_nice, [

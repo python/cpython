@@ -318,7 +318,7 @@ static volatile int things_to_do = 0;
 int
 Py_AddPendingCall(int (*func)(void *), void *arg)
 {
-	static int busy = 0;
+	static volatile int busy = 0;
 	int i, j;
 	/* XXX Begin critical section */
 	/* XXX If you want this to be safe against nested

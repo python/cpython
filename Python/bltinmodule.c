@@ -1589,7 +1589,8 @@ builtin_raw_input(PyObject *self, PyObject *args)
                                   prompt);
 		Py_XDECREF(po);
 		if (s == NULL) {
-			PyErr_SetNone(PyExc_KeyboardInterrupt);
+			if (!PyErr_Occurred())
+				PyErr_SetNone(PyExc_KeyboardInterrupt);
 			return NULL;
 		}
 		if (*s == '\0') {
