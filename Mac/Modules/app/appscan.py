@@ -41,6 +41,13 @@ class MyScanner(Scanner):
 	def makeblacklistnames(self):
 		return [
 			"GetThemeFont",		# Funny stringbuffer in/out parameter, I think...
+			# Constants with funny definitions
+			"appearanceBadBrushIndexErr",
+			"appearanceProcessRegisteredErr",
+			"appearanceProcessNotRegisteredErr",
+			"appearanceBadTextColorIndexErr",
+			"appearanceThemeHasNoAccents",
+			"appearanceBadCursorIndexErr",
 			]
 
 	def makegreylist(self):
