@@ -18,7 +18,7 @@ import Standard_Suite
 import WWW_Suite
 import MacOS
 
-class Netscape(aetools.TalkTo, Standard_Suite.Standard_Suite, WWW_Suite.WWW_Suite):
+class Netscape(aetools.TalkTo, Standard_Suite.Standard_Suite, WWW_Suite.WorldWideWeb_suite_2c__as_defined_in_Spyglass_spec_2e_):
 	pass	
 	
 SIGNATURE='MOSS'
