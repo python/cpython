@@ -1,3 +1,18 @@
+THIS IS A *TEST* RELEASE.  It includes a significantly revised
+directory organization for the documentation, and much of the
+formatting process has been adjusted.  The documentation itself is not 
+necessarily consistent with any released version of Python.
+
+The only purpose for this release is to test the usability of the new
+directory structure.  Please attempt to *format* the documentation to
+determine if the new processes are suitable for your purposes; the
+basic targets have been extensively tested, but variations may require 
+some work.  Please let us know if there are any problems with the new
+organization or processes; send email to:
+
+			   python-docs@python.org
+
+
 Python main documentation -- in LaTeX
 -------------------------------------
 
