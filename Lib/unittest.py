@@ -6,7 +6,7 @@ Smalltalk testing framework.
 This module contains the core framework classes that form the basis of
 specific test cases and suites (TestCase, TestSuite etc.), and also a
 text-based utility class for running the tests and reporting the results
-(TextTestRunner).
+ (TextTestRunner).
 
 Simple usage:
 
@@ -203,7 +203,7 @@ class TestCase:
             try:
                 self.setUp()
             except:
-                result.addError(self,self.__exc_info())
+                result.addError(self, self.__exc_info())
                 return
 
             ok = 0
@@ -211,14 +211,14 @@ class TestCase:
                 testMethod()
                 ok = 1
             except self.failureException, e:
-                result.addFailure(self,self.__exc_info())
+                result.addFailure(self, self.__exc_info())
             except:
-                result.addError(self,self.__exc_info())
+                result.addError(self, self.__exc_info())
 
             try:
                 self.tearDown()
             except:
-                result.addError(self,self.__exc_info())
+                result.addError(self, self.__exc_info())
                 ok = 0
             if ok: result.addSuccess(self)
         finally:
