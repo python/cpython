@@ -128,6 +128,9 @@ extern void init_tkinter();
 extern void initsocket();
 extern void initselect();
 #endif
+#ifdef USE_WASTE
+extern void initwaste();
+#endif
 /* -- ADDMODULE MARKER 1 -- */
 
 extern void PyMarshal_Init();
@@ -215,6 +218,9 @@ struct {
 #ifdef USE_GUSI
 	{"socket",	initsocket},
 	{"select",	initselect},
+#endif
+#ifdef USE_WASTE
+	{"waste",	initwaste},
 #endif
 
 /* -- ADDMODULE MARKER 2 -- */
