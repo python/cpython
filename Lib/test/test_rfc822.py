@@ -11,7 +11,7 @@ def test(msg, results):
     fp.seek(0)
     m = rfc822.Message(fp)
     i = 0
-    
+
     for n, a in m.getaddrlist('to') + m.getaddrlist('cc'):
         if verbose:
             print 'name:', repr(n), 'addr:', repr(a)
@@ -47,11 +47,11 @@ def test(msg, results):
 test('''Date:    Wed, 13 Jan 1999 23:57:35 -0500
 From:    Guido van Rossum <guido@CNRI.Reston.VA.US>
 To:      "Guido van
-	 : Rossum" <guido@python.org>
+\t : Rossum" <guido@python.org>
 Subject: test2
 
 test2
-''', [('Guido van\n	 : Rossum', 'guido@python.org')])
+''', [('Guido van\n\t : Rossum', 'guido@python.org')])
 
 test('''From: Barry <bwarsaw@python.org
 To: guido@python.org (Guido: the Barbarian)
