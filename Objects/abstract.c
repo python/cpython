@@ -1238,8 +1238,8 @@ PySequence_Tuple(PyObject *v)
 	if (PyTuple_CheckExact(v)) {
 		/* Note that we can't know whether it's safe to return
 		   a tuple *subclass* instance as-is, hence the restriction
-		   to exact tuples here.  In contrasts, lists always make
-		   a copy, so there's need for exactness below. */
+		   to exact tuples here.  In contrast, lists always make
+		   a copy, so there's no need for exactness below. */
 		Py_INCREF(v);
 		return v;
 	}
