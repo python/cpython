@@ -1,3 +1,15 @@
+=================================
+==> Release 1.1 (11 Oct 1994) <==
+=================================
+
+Mon Oct 10 19:00:34 1994  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Makefile.in: apply ranlib to installed libraries
+
+	* Modules/socketmodule.c: new style
+
+	* Doc/ref3.tex: some stuff about __getattr__ etc.
+
 Thu Oct  6 16:40:05 1994  Guido van Rossum  <guido@voorn.cwi.nl>
 
 	* Got rid of Modules/imgformat.c (will be distributed with Jack's

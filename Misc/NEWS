@@ -1,9 +1,9 @@
-================================
-==> Release 1.1 (6 Oct 1994) <==
-================================
+=================================
+==> Release 1.1 (11 Oct 1994) <==
+=================================
 
 This release adds several new features, improved configuration and
-portability, and more fixed bugs than I can list here (including some
+portability, and fixes more bugs than I can list here (including some
 memory leaks).
 
 The source compiles and runs out of the box on more platforms than
