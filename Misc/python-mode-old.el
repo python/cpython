@@ -6,8 +6,8 @@
 ;;         1992-1994 Tim Peters <tim@ksr.com>
 ;; Maintainer:    bwarsaw@cnri.reston.va.us
 ;; Created:       Feb 1992
-;; Version:       2.11
-;; Last Modified: 1995/03/14 18:32:54
+;; Version:       2.12
+;; Last Modified: 1995/03/14 20:53:08
 ;; Keywords: python editing language major-mode
 
 ;; This software is provided as-is, without express or implied
@@ -68,7 +68,7 @@
 ;; LCD Archive Entry:
 ;; python-mode|Barry A. Warsaw|bwarsaw@cnri.reston.va.us
 ;; |Major mode for editing Python programs
-;; |1995/03/14 18:32:54|2.11|
+;; |1995/03/14 20:53:08|2.12|
 
 ;;; Code:
 
@@ -310,12 +310,24 @@ Currently-active file is at the head of the list.")
 (defconst py-outdent-re
   (concat "\\(" (mapconcat 'identity
 			   '("else:"
-			     "except\\s +.*:"
+			     "except\\(\\s +.*\\)?:"
 			     "finally:"
 			     "elif\\s +.*:")
 			   "\\|")
 	  "\\)")
   "Regexp matching clauses to be outdented one level.")
+
+(defconst py-no-outdent-re
+  (concat "\\(" (mapconcat 'identity
+			   '("try\\s +.*:"
+			     "except\\(\\s +.*\\)?:"
+			     "while\\s +.*:"
+			     "for\\s +.*:"
+			     "if\\s +.*:"
+			     "elif\\s +.*:")
+			   "\\|")
+	  "\\)")
+  "Regexp matching lines to not outdent after.")
 
 
 ;;;###autoload
@@ -397,20 +409,27 @@ In certain cases the line is outdented appropriately.  If a numeric
 argument is provided, that many colons are inserted non-electrically."
   (interactive "P")
   (self-insert-command (prefix-numeric-value arg))
-  (let (this-indent)
-    (if (and (not arg)
-	     (save-excursion
-	       (back-to-indentation)
-	       (looking-at py-outdent-re))
-	     (= (setq this-indent (py-compute-indentation))
-		(save-excursion
-		  (forward-line -1)
-		  (py-compute-indentation)))
-	     )
-	(save-excursion
-	  (beginning-of-line)
-	  (delete-horizontal-space)
-	  (indent-to (- this-indent py-indent-offset)))
+  (save-excursion
+    (let ((here (point))
+	  (outdent 0)
+	  (indent (py-compute-indentation)))
+      (if (and (not arg)
+	       (progn
+		 (back-to-indentation)
+		 (looking-at py-outdent-re))
+	       (prog2
+		   (backward-to-indentation 1)
+		   (not (looking-at py-no-outdent-re))
+		 (goto-char here))
+	       (= indent (progn
+			   (forward-line -1)
+			   (py-compute-indentation)))
+	       )
+	  (setq outdent py-indent-offset))
+      (goto-char here)
+      (beginning-of-line)
+      (delete-horizontal-space)
+      (indent-to (- indent outdent))
       )))
 
 
@@ -630,10 +649,12 @@ needed so that only a single column position is deleted."
   (let* ((ci (current-indentation))
 	 (move-to-indentation-p (<= (current-column) ci))
 	 (need (py-compute-indentation)))
-    ;; watch for outdents
+    ;; see if we need to outdent
     (if (save-excursion
-	  (back-to-indentation)
-	  (looking-at py-outdent-re))
+	  (and (progn (back-to-indentation)
+		      (looking-at py-outdent-re))
+	       (progn (backward-to-indentation 1)
+		      (not (looking-at py-no-outdent-re)))))
 	(setq need (- need py-indent-offset)))
     (if (/= ci need)
 	(save-excursion
@@ -1839,7 +1860,7 @@ local bindings to py-newline-and-indent."))
        (setq zmacs-region-stays t)))
 
 
-(defconst py-version "2.11"
+(defconst py-version "2.12"
   "`python-mode' version number.")
 (defconst py-help-address "bwarsaw@cnri.reston.va.us"
   "Address accepting submission of bug reports.")
