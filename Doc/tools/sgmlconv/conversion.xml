@@ -78,6 +78,8 @@
   <macro name="optional">
     <content/>
     </macro>
+  <macro name="unspecified"/>
+  <macro name="moreargs"/>
   <environment name="classdesc">
     <attribute name="name"/>
     <child name="args"/>
@@ -409,6 +411,15 @@
          </text>
     <child name="entry"/>
     </environment>
+  <environment name="longtableii" outputname="table">
+    <attribute name="cols">2</attribute>
+    <attribute name="colspec"/>
+    <attribute name="style"/>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    </environment>
   <macro name="lineii" outputname="row">
     <child name="entry"/>
     <text>
@@ -417,6 +428,18 @@
     </macro>
 
   <environment name="tableiii" outputname="table">
+    <attribute name="cols">3</attribute>
+    <attribute name="colspec"/>
+    <attribute name="style"/>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    </environment>
+  <environment name="longtableiii" outputname="table">
     <attribute name="cols">3</attribute>
     <attribute name="colspec"/>
     <attribute name="style"/>
@@ -439,6 +462,21 @@
     </macro>
 
   <environment name="tableiv" outputname="table">
+    <attribute name="cols">4</attribute>
+    <attribute name="colspec"/>
+    <attribute name="style"/>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    </environment>
+  <environment name="longtableiv" outputname="table">
     <attribute name="cols">4</attribute>
     <attribute name="colspec"/>
     <attribute name="style"/>

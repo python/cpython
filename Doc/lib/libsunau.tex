@@ -127,7 +127,9 @@ equivalent to output of the \method{get*()} methods.
 \end{methoddesc}
 
 \begin{methoddesc}[AU_read]{readframes}{n}
-Reads and returns at most \var{n} frames of audio, as a string of bytes.
+Reads and returns at most \var{n} frames of audio, as a string of
+bytes.  The data will be returned in linear format.  If the original
+data is in u-LAW format, it will be converted.
 \end{methoddesc}
 
 \begin{methoddesc}[AU_read]{rewind}{}
