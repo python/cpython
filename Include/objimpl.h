@@ -167,11 +167,7 @@ extern DL_IMPORT(void) _PyObject_Del(PyObject *);
 /* Macros trading binary compatibility for speed. See also pymem.h.
    Note that these macros expect non-NULL object pointers.*/
 #define PyObject_INIT(op, typeobj) \
-	((op)->ob_type = (typeobj), _Py_NewReference((PyObject *)(op)), \
-	 (PyType_SUPPORTS_WEAKREFS((typeobj)) \
-	      ? *(PyObject_GET_WEAKREFS_LISTPTR(op)) = NULL \
-              : NULL), \
-         (op))
+	( (op)->ob_type = (typeobj), _Py_NewReference((PyObject *)(op)), (op) )
 #define PyObject_INIT_VAR(op, typeobj, size) \
 	( (op)->ob_size = (size), PyObject_INIT((op), (typeobj)) )
 
