@@ -84,7 +84,7 @@ class ChipViewer:
 
     def update_yourself(self, red, green, blue):
         # Selected always shows the #rrggbb name of the color, nearest always
-        # shows the name of the nearest color in the database.  TBD: should
+        # shows the name of the nearest color in the database.  BAW: should
         # an exact match be indicated in some way?
         #
         # Always use the #rrggbb style to actually set the color, since we may 
