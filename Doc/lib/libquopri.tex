@@ -3,14 +3,14 @@
 
 \declaremodule{standard}{quopri}
 \modulesynopsis{Encode and decode files using the MIME
-quoted-printable encoding.}
+                quoted-printable encoding.}
 
 
 This module performs quoted-printable transport encoding and decoding,
 as defined in \rfc{1521}: ``MIME (Multipurpose Internet Mail Extensions)
 Part One''.  The quoted-printable encoding is designed for data where
 there are relatively few nonprintable characters; the base64 encoding
-scheme available via the \module{base64} module is more compact if there
+scheme available via the \refmodule{base64} module is more compact if there
 are many such characters, as when sending a graphics file.
 \indexii{quoted-printable}{encoding}
 \index{MIME!quoted-printable encoding}

@@ -14,11 +14,12 @@ of dialogs.  For most platforms, alternative, native solutions exist
 under X11, Win32 for Windows and Windows NT, and a collection of
 native toolkit interfaces for the Macintosh.
 
+
 \section{\module{stdwin} ---
          Platform-independent GUI System}
-\declaremodule{builtin}{stdwin}
 
-\modulesynopsis{Older GUI system for X11 and Macintosh}
+\declaremodule{builtin}{stdwin}
+\modulesynopsis{Older GUI system for X11 and Macintosh.}
 
 
 This module defines several new object types and functions that
@@ -57,7 +58,7 @@ the event applies, or
 if it applies to no window in particular;
 the third element is type-dependent.
 Names for event types and command codes are defined in the standard
-module \module{stdwinevent}.
+module \refmodule{stdwinevents}.
 \end{funcdesc}
 
 \begin{funcdesc}{pollevent}{}
@@ -232,7 +233,7 @@ Macintosh.
 
 \begin{funcdesc}{getselection}{i}
 Return X11 selection number \var{i.}  Selections are not cut buffers.
-Selection numbers are defined in module \module{stdwinevents}.
+Selection numbers are defined in module \refmodule{stdwinevents}.
 Selection \constant{WS_PRIMARY} is the \dfn{primary} selection (used
 by \program{xterm}, for instance); selection \constant{WS_SECONDARY}
 is the \dfn{secondary} selection; selection \constant{WS_CLIPBOARD} is
@@ -624,7 +625,7 @@ The following methods exist:
 Pass an arrow event to the text-edit block.
 The \var{code} must be one of \constant{WC_LEFT}, \constant{WC_RIGHT}, 
 \constant{WC_UP} or \constant{WC_DOWN} (see module
-\module{stdwinevents}).
+\refmodule{stdwinevents}).
 \end{methoddesc}
 
 \begin{methoddesc}[text-edit]{draw}{rect}
@@ -717,10 +718,11 @@ def main():
 main()
 \end{verbatim}
 
+
 \section{\module{stdwinevents} ---
          Constants for use with \module{stdwin}}
-\declaremodule{standard}{stdwinevents}
 
+\declaremodule{standard}{stdwinevents}
 \modulesynopsis{Constant definitions for use with \module{stdwin}}
 
 
@@ -735,15 +737,17 @@ Suggested usage is
 >>> 
 \end{verbatim}
 
+
 \section{\module{rect} ---
          Functions for use with \module{stdwin}}
-\declaremodule{standard}{rect}
 
-\modulesynopsis{Geometry-related utility function for use with \module{stdwin}}
+\declaremodule{standard}{rect}
+\modulesynopsis{Geometry-related utility function for use with
+                \module{stdwin}.}
 
 
 This module contains useful operations on rectangles.
-A rectangle is defined as in module \module{stdwin}:
+A rectangle is defined as in module \refmodule{stdwin}:
 a pair of points, where a point is a pair of integers.
 For example, the rectangle
 
@@ -753,7 +757,7 @@ For example, the rectangle
 
 is a rectangle whose left, top, right and bottom edges are 10, 20, 90
 and 80, respectively.  Note that the positive vertical axis points
-down (as in \module{stdwin}).
+down (as in \refmodule{stdwin}).
 
 The module defines the following objects:
 

@@ -6,7 +6,7 @@
 
 
 This module constructs higher-level threading interfaces on top of the 
-lower level \module{thread} module.
+lower level \refmodule{thread} module.
 
 This module is safe for use with \samp{from threading import *}.  It
 defines the following functions and objects:
@@ -91,7 +91,7 @@ All of the methods described below are executed atomically.
 A primitive lock is a synchronization primitive that is not owned
 by a particular thread when locked.  In Python, it is currently
 the lowest level synchronization primitive available, implemented
-directly by the \module{thread} extension module.
+directly by the \refmodule{thread} extension module.
 
 A primitive lock is in one of two states, ``locked'' or ``unlocked''.
 It is created in the unlocked state.  It has two basic methods,

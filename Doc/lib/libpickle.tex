@@ -1,7 +1,7 @@
 \section{\module{pickle} ---
-         Python object serialization.}
-\declaremodule{standard}{pickle}
+         Python object serialization}
 
+\declaremodule{standard}{pickle}
 \modulesynopsis{Convert Python objects to streams of bytes and back.}
 
 \index{persistency}
@@ -25,20 +25,20 @@ a byte stream and it can transform the byte stream into an object with
 the same internal structure.  The most obvious thing to do with these
 byte streams is to write them onto a file, but it is also conceivable
 to send them across a network or store them in a database.  The module
-\module{shelve} provides a simple interface to pickle and unpickle
-objects on ``dbm''-style database files.
-\refstmodindex{shelve}
+\refmodule{shelve}\refstmodindex{shelve} provides a simple interface
+to pickle and unpickle objects on DBM-style database files.
+
 
 \strong{Note:} The \module{pickle} module is rather slow.  A
-reimplementation of the same algorithm in \C{}, which is up to 1000 times
-faster, is available as the \module{cPickle}\refbimodindex{cPickle}
+reimplementation of the same algorithm in C, which is up to 1000 times
+faster, is available as the \refmodule{cPickle}\refbimodindex{cPickle}
 module.  This has the same interface except that \code{Pickler} and
 \code{Unpickler} are factory functions, not classes (so they cannot be
 used as base classes for inheritance).
 
-Unlike the built-in module \module{marshal}, \module{pickle} handles
-the following correctly:
-\refbimodindex{marshal}
+Unlike the built-in module \refmodule{marshal}\refbimodindex{marshal},
+\module{pickle} handles the following correctly:
+
 
 \begin{itemize}
 
@@ -52,12 +52,10 @@ the following correctly:
 
 The data format used by \module{pickle} is Python-specific.  This has
 the advantage that there are no restrictions imposed by external
-standards such as XDR%
-\index{XDR}
-\index{External Data Representation}
-(which can't represent pointer sharing); however
-it means that non-Python programs may not be able to reconstruct
-pickled Python objects.
+standards such as
+XDR\index{XDR}\index{External Data Representation} (which can't
+represent pointer sharing); however it means that non-Python programs
+may not be able to reconstruct pickled Python objects.
 
 By default, the \module{pickle} data format uses a printable \ASCII{}
 representation.  This is slightly more voluminous than a binary
@@ -74,9 +72,9 @@ compatibility with the Python 1.4 pickle module.  In a future version,
 the default may change to binary.
 
 The \module{pickle} module doesn't handle code objects, which the
-\module{marshal} module does.  I suppose \module{pickle} could, and maybe
+\refmodule{marshal} module does.  I suppose \module{pickle} could, and maybe
 it should, but there's probably no great need for it right now (as
-long as \module{marshal} continues to be used for reading and writing
+long as \refmodule{marshal} continues to be used for reading and writing
 code objects), and at least this avoids the possibility of smuggling
 Trojan horses into a program.
 \refbimodindex{marshal}
@@ -126,8 +124,8 @@ object must be a dictionary and its items are assigned to the new
 instance's dictionary.  (If a class defines both \method{__getstate__()}
 and \method{__setstate__()}, the state object needn't be a dictionary
 --- these methods can do what they want.)  This protocol is also used
-by the shallow and deep copying operations defined in the \module{copy}
-module.\refstmodindex{copy}
+by the shallow and deep copying operations defined in the
+\refmodule{copy}\refstmodindex{copy} module.
 \ttindex{__getstate__()}
 \ttindex{__setstate__()}
 \ttindex{__dict__}
@@ -264,35 +262,35 @@ This exception is raised when an unpicklable object is passed to
 
 
 \begin{seealso}
-\seemodule[copyreg]{copy_reg}{pickle interface constructor
-registration}
+  \seemodule[copyreg]{copy_reg}{pickle interface constructor
+                                registration}
 
-\seemodule{shelve}{indexed databases of objects; uses \module{pickle}}
+  \seemodule{shelve}{indexed databases of objects; uses \module{pickle}}
 
-\seemodule{copy}{shallow and deep object copying}
+  \seemodule{copy}{shallow and deep object copying}
 
-\seemodule{marshal}{high-performance serialization of built-in types}
+  \seemodule{marshal}{high-performance serialization of built-in types}
 \end{seealso}
 
 
 \section{\module{cPickle} ---
-         Alternate implementation of \module{pickle}.}
+         Alternate implementation of \module{pickle}}
+
 \declaremodule{builtin}{cPickle}
-
 \modulesynopsis{Faster version of \module{pickle}, but not subclassable.}
+\moduleauthor{Jim Fulton}{jfulton@digicool.com}
+\sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
 
-
-% This section was written by Fred L. Drake, Jr. <fdrake@acm.org>
 
 The \module{cPickle} module provides a similar interface and identical
-functionality as the \module{pickle} module, but can be up to 1000
-times faster since it is implemented in \C{}.  The only other
+functionality as the \refmodule{pickle} module, but can be up to 1000
+times faster since it is implemented in C.  The only other
 important difference to note is that \function{Pickler()} and
 \function{Unpickler()} are functions and not classes, and so cannot be
 subclassed.  This should not be an issue in most cases.
 
 The format of the pickle data is identical to that produced using the
-\module{pickle} module, so it is possible to use \module{pickle} and
+\refmodule{pickle} module, so it is possible to use \refmodule{pickle} and
 \module{cPickle} interchangably with existing pickles.
 
 (Since the pickle data format is actually a tiny stack-oriented

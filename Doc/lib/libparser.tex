@@ -59,7 +59,7 @@ non-terminal elements in the grammar always have a length greater than
 one.  The first element is an integer which identifies a production in
 the grammar.  These integers are given symbolic names in the C header
 file \file{Include/graminit.h} and the Python module
-\module{symbol}.  Each additional element of the sequence represents
+\refmodule{symbol}.  Each additional element of the sequence represents
 a component of the production as recognized in the input string: these
 are always sequences which have the same form as the parent.  An
 important aspect of this structure which should be noted is that
@@ -78,7 +78,7 @@ any child elements and the addition of the source text which was
 identified.  The example of the \keyword{if} keyword above is
 representative.  The various types of terminal symbols are defined in
 the C header file \file{Include/token.h} and the Python module
-\module{token}.
+\refmodule{token}.
 
 The AST objects are not required to support the functionality of this
 module, but are provided for three purposes: to allow an application
@@ -275,7 +275,7 @@ AST objects returned by \function{expr()}, \function{suite()} and
 \function{sequence2ast()} have no methods of their own.
 
 Ordered and equality comparisons are supported between AST objects.
-Pickling of AST objects (using the \module{pickle} module) is also
+Pickling of AST objects (using the \refmodule{pickle} module) is also
 supported.
 
 \begin{datadesc}{ASTType}
@@ -447,7 +447,7 @@ The numbers at the first element of each node in the tree are the node
 types; they map directly to terminal and non-terminal symbols in the
 grammar.  Unfortunately, they are represented as integers in the
 internal representation, and the Python structures generated do not
-change that.  However, the \module{symbol} and \module{token} modules
+change that.  However, the \refmodule{symbol} and \refmodule{token} modules
 provide symbolic names for the node types and dictionaries which map
 from the integers to the symbolic names for the node types.
 
