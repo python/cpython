@@ -57,6 +57,8 @@ Socket methods:
 - s.getsockopt(level, optname) --> flag
 - s.bind(sockaddr) --> None
 - s.connect(sockaddr) --> None
+- s.getsockname() --> sockaddr
+- s.getpeername() --> sockaddr
 - s.listen(n) --> None
 - s.makefile(mode) --> file object
 - s.recv(nbytes) --> string
@@ -564,6 +566,50 @@ sock_fileno(s, args)
 }
 
 
+/* s.getsockname() method */
+
+static object *
+sock_getsockname(s, args)
+	sockobject *s;
+	object *args;
+{
+	char addrbuf[256];
+	int addrlen, res;
+	if (!getnoarg(args))
+		return NULL;
+	if (!getsockaddrlen(s, &addrlen))
+		return NULL;
+	BGN_SAVE
+	res = getsockname(s->sock_fd, (struct sockaddr *) addrbuf, &addrlen);
+	END_SAVE
+	if (res < 0)
+		return socket_error();
+	return makesockaddr((struct sockaddr *) addrbuf, addrlen);
+}
+
+
+/* s.getpeername() method */
+
+static object *
+sock_getpeername(s, args)
+	sockobject *s;
+	object *args;
+{
+	char addrbuf[256];
+	int addrlen, res;
+	if (!getnoarg(args))
+		return NULL;
+	if (!getsockaddrlen(s, &addrlen))
+		return NULL;
+	BGN_SAVE
+	res = getpeername(s->sock_fd, (struct sockaddr *) addrbuf, &addrlen);
+	END_SAVE
+	if (res < 0)
+		return socket_error();
+	return makesockaddr((struct sockaddr *) addrbuf, addrlen);
+}
+
+
 /* s.listen(n) method */
 
 static object *
@@ -753,6 +799,8 @@ static struct methodlist sock_methods[] = {
 	{"close",	sock_close},
 	{"connect",	sock_connect},
 	{"fileno",	sock_fileno},
+	{"getsockname",	sock_getsockname},
+	{"getpeername",	sock_getpeername},
 	{"listen",	sock_listen},
 	{"makefile",	sock_makefile},
 	{"recv",	sock_recv},

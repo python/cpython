@@ -113,6 +113,70 @@ strop_splitfields(self, args)
 
 
 static object *
+strop_joinfields(self, args)
+	object *self; /* Not used */
+	object *args;
+{
+	object *seq, *item, *res;
+	object * (*getitem) FPROTO((object *, int));
+	char *sep, *p;
+	int seplen, seqlen, reslen, itemlen, i;
+
+	if (!getargs(args, "(Os#)", &seq, &sep, &seplen))
+		return NULL;
+	if (is_listobject(seq)) {
+		getitem = getlistitem;
+		seqlen = getlistsize(seq);
+	}
+	else if (is_tupleobject(seq)) {
+		getitem = gettupleitem;
+		seqlen = gettuplesize(seq);
+	}
+	else {
+		err_setstr(TypeError, "first argument must be list/tuple");
+		return NULL;
+	}
+	reslen = 0;
+	for (i = 0; i < seqlen; i++) {
+		item = getitem(seq, i);
+		if (!is_stringobject(item)) {
+			err_setstr(TypeError,
+			   "first argument must be list/tuple of strings");
+			return NULL;
+		}
+		if (i > 0)
+			reslen = reslen + seplen;
+		reslen = reslen + getstringsize(item);
+	}
+	if (seqlen == 1) {
+		/* Optimization if there's only one item */
+		item = getitem(seq, 0);
+		INCREF(item);
+		return item;
+	}
+	res = newsizedstringobject((char *)NULL, reslen);
+	if (res == NULL)
+		return NULL;
+	p = getstringvalue(res);
+	for (i = 0; i < seqlen; i++) {
+		item = getitem(seq, i);
+		if (i > 0) {
+			memcpy(p, sep, seplen);
+			p += seplen;
+		}
+		itemlen = getstringsize(item);
+		memcpy(p, getstringvalue(item), itemlen);
+		p += itemlen;
+	}
+	if (p != getstringvalue(res) + reslen) {
+		err_setstr(SystemError, "strop.joinfields: assertion failed");
+		return NULL;
+	}
+	return res;
+}
+
+
+static object *
 strop_index(self, args)
 	object *self; /* Not used */
 	object *args;
@@ -290,6 +354,7 @@ strop_swapcase(self, args)
 
 static struct methodlist strop_methods[] = {
 	{"index",	strop_index},
+	{"joinfields",	strop_joinfields},
 	{"lower",	strop_lower},
 	{"split",	strop_split},
 	{"splitfields",	strop_splitfields},
