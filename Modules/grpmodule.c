@@ -156,7 +156,7 @@ according to the password database.  Check both databases to get\n\
 complete membership information.)");
 
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initgrp(void)
 {
     PyObject *m, *d;

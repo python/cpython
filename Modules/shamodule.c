@@ -525,7 +525,7 @@ static struct PyMethodDef SHA_functions[] = {
 
 #define insint(n,v) { PyModule_AddIntConstant(m,n,v); }
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initsha(void)
 {
     PyObject *m;

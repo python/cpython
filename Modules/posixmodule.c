@@ -3211,6 +3211,7 @@ _PyPopenCreateProcess(char *cmdstring,
 {
 	PROCESS_INFORMATION piProcInfo;
 	STARTUPINFO siStartInfo;
+	DWORD dwProcessFlags = 0;  /* no NEW_CONSOLE by default for Ctrl+C handling */
 	char *s1,*s2, *s3 = " /c ";
 	const char *szConsoleSpawn = "w9xpopen.exe";
 	int i;
@@ -3303,6 +3304,16 @@ _PyPopenCreateProcess(char *cmdstring,
 				s1,
 				s3,
 				cmdstring);
+			/* Not passing CREATE_NEW_CONSOLE has been known to
+			   cause random failures on win9x.  Specifically a 
+			   dialog:
+			   "Your program accessed mem currently in use at xxx"
+			   and a hopeful warning about the stability of your
+			   system.
+			   Cost is Ctrl+C wont kill children, but anyone
+			   who cares can have a go!
+			*/
+			dwProcessFlags |= CREATE_NEW_CONSOLE;
 		}
 	}
 
@@ -3328,7 +3339,7 @@ _PyPopenCreateProcess(char *cmdstring,
 			  NULL,
 			  NULL,
 			  TRUE,
-			  0, /* no new console so Ctrl+C kills child too */
+			  dwProcessFlags,
 			  NULL,
 			  NULL,
 			  &siStartInfo,
@@ -6746,7 +6757,7 @@ all_ins(PyObject *d)
 #define MODNAME "posix"
 #endif
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 INITFUNC(void)
 {
 	PyObject *m, *v;

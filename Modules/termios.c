@@ -892,7 +892,7 @@ static struct constant {
 };
 
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 PyInit_termios(void)
 {
 	PyObject *m;

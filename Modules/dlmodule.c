@@ -209,7 +209,7 @@ insint(PyObject *d, char *name, int value)
 	Py_XDECREF(v);
 }
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initdl(void)
 {
 	PyObject *m, *d, *x;

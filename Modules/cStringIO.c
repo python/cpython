@@ -701,10 +701,10 @@ static struct PycStringIO_CAPI CAPI = {
   &Otype,
 };
 
-#ifndef DL_EXPORT	/* declarations for DLL import/export */
-#define DL_EXPORT(RTYPE) RTYPE
+#ifndef PyMODINIT_FUNC	/* declarations for DLL import/export */
+#define PyMODINIT_FUNC void
 #endif
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initcStringIO(void) {
   PyObject *m, *d, *v;
 

@@ -157,7 +157,7 @@ static PyMethodDef pwd_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initpwd(void)
 {
 	PyObject *m;

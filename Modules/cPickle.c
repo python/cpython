@@ -4789,10 +4789,10 @@ init_stuff(PyObject *module_dict)
 	return 0;
 }
 
-#ifndef DL_EXPORT	/* declarations for DLL import/export */
-#define DL_EXPORT(RTYPE) RTYPE
+#ifndef PyMODINIT_FUNC	/* declarations for DLL import/export */
+#define PyMODINIT_FUNC void
 #endif
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initcPickle(void) 
 {
 	PyObject *m, *d, *di, *v, *k;

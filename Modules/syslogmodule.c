@@ -155,7 +155,7 @@ static PyMethodDef syslog_methods[] = {
 
 /* Initialization function for the module */
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initsyslog(void)
 {
 	PyObject *m;

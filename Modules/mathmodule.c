@@ -334,7 +334,7 @@ PyDoc_STRVAR(module_doc,
 "This module is always available.  It provides access to the\n"
 "mathematical functions defined by the C standard.");
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initmath(void)
 {
 	PyObject *m, *d, *v;

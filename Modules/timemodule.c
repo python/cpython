@@ -620,7 +620,7 @@ strftime() -- convert time tuple to string according to format specification\n\
 strptime() -- parse string to time tuple according to format specification");
 
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 inittime(void)
 {
 	PyObject *m;

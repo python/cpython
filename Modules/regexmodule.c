@@ -642,7 +642,7 @@ static struct PyMethodDef regex_global_methods[] = {
 	{NULL,		NULL}		     /* sentinel */
 };
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initregex(void)
 {
 	PyObject *m, *d, *v;

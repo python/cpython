@@ -210,7 +210,7 @@ resource_methods[] = {
 
 /* Module initialization */
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initresource(void)
 {
 	PyObject *m, *v;

@@ -52,7 +52,7 @@ static PyMethodDef timing_methods[] = {
 };
 
 
-DL_EXPORT(void) inittiming(void)
+PyMODINIT_FUNC inittiming(void)
 {
 	(void)Py_InitModule("timing", timing_methods);
 }

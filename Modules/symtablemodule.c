@@ -43,7 +43,7 @@ static PyMethodDef symtable_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 init_symtable(void)
 {
 	PyObject *m;

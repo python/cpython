@@ -703,7 +703,7 @@ static PyMethodDef _codecs_functions[] = {
     {NULL, NULL}		/* sentinel */
 };
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 init_codecs(void)
 {
     Py_InitModule("_codecs", _codecs_functions);

@@ -1313,7 +1313,7 @@ static struct PyMethodDef binascii_module_methods[] = {
 /* Initialization function for the module (*must* be called initbinascii) */
 PyDoc_STRVAR(doc_binascii, "Conversion between binary data and ASCII");
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initbinascii(void)
 {
 	PyObject *m, *d, *x;
