@@ -778,8 +778,7 @@ floatsleep(double secs)
 		}
 	}
 	Py_END_ALLOW_THREADS
-#else /* !HAVE_SELECT || __BEOS__ */
-#ifdef macintosh
+#elif defined(macintosh)
 #define MacTicks	(* (long *)0x16A)
 	long deadline;
 	deadline = MacTicks + (long)(secs * 60.0);
@@ -788,14 +787,12 @@ floatsleep(double secs)
 		if (PyErr_CheckSignals())
 			return -1;
 	}
-#else /* !macintosh */
-#if defined(__WATCOMC__) && !defined(__QNX__)
+#elif defined(__WATCOMC__) && !defined(__QNX__)
 	/* XXX Can't interrupt this sleep */
 	Py_BEGIN_ALLOW_THREADS
 	delay((int)(secs * 1000 + 0.5));  /* delay() uses milliseconds */
 	Py_END_ALLOW_THREADS
-#else /* !__WATCOMC__ || __QNX__ */
-#ifdef MSDOS
+#elif defined(MSDOS)
 	struct timeb t1, t2;
 	double frac;
 	extern double fmod(double, double);
@@ -824,8 +821,7 @@ floatsleep(double secs)
 		    t1.time == t2.time && t1.millitm >= t2.millitm)
 			break;
 	}
-#else /* !MSDOS */
-#ifdef MS_WIN32
+#elif defined(MS_WIN32)
 	{
 		double millisecs = secs * 1000.0;
 		if (millisecs > (double)ULONG_MAX) {
@@ -837,8 +833,7 @@ floatsleep(double secs)
 		Sleep((unsigned long)millisecs);
 		Py_END_ALLOW_THREADS
 	}
-#else /* !MS_WIN32 */
-#ifdef PYOS_OS2
+#elif defined(PYOS_OS2)
 	/* This Sleep *IS* Interruptable by Exceptions */
 	Py_BEGIN_ALLOW_THREADS
 	if (DosSleep(secs * 1000) != NO_ERROR) {
@@ -847,8 +842,7 @@ floatsleep(double secs)
 		return -1;
 	}
 	Py_END_ALLOW_THREADS
-#else /* !PYOS_OS2 */
-#ifdef __BEOS__
+#elif defined(__BEOS__)
 	/* This sleep *CAN BE* interrupted. */
 	{
 		if( secs <= 0.0 ) {
@@ -864,8 +858,7 @@ floatsleep(double secs)
 		}
 		Py_END_ALLOW_THREADS
 	}
-#else /* !__BEOS__ */
-#ifdef RISCOS
+#elif defined(RISCOS)
 	if (secs <= 0.0)
 		return 0;
 	Py_BEGIN_ALLOW_THREADS
@@ -873,19 +866,28 @@ floatsleep(double secs)
 	if ( sleep(secs) )
 		return -1;
 	Py_END_ALLOW_THREADS
-#else /* !RISCOS */
+#elif defined(PLAN9)
+	{
+		double millisecs = secs * 1000.0;
+		if (millisecs > (double)LONG_MAX) {
+			PyErr_SetString(PyExc_OverflowError, "sleep length is too large");
+			return -1;
+		}
+		/* This sleep *CAN BE* interrupted. */
+		Py_BEGIN_ALLOW_THREADS
+		if(sleep((long)millisecs) < 0){
+			Py_BLOCK_THREADS
+			PyErr_SetFromErrno(PyExc_IOError);
+			return -1;
+		}
+		Py_END_ALLOW_THREADS
+	}
+#else
 	/* XXX Can't interrupt this sleep */
 	Py_BEGIN_ALLOW_THREADS
 	sleep((int)secs);
 	Py_END_ALLOW_THREADS
-#endif /* !RISCOS */
-#endif /* !__BEOS__ */
-#endif /* !PYOS_OS2 */
-#endif /* !MS_WIN32 */
-#endif /* !MSDOS */
-#endif /* !__WATCOMC__ || __QNX__ */
-#endif /* !macintosh */
-#endif /* !HAVE_SELECT */
+#endif
 
 	return 0;
 }
