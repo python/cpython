@@ -513,13 +513,19 @@ static void
 finisignal()
 {
 	int i;
+	PyObject *func;
 
 	signal(SIGINT, old_siginthandler);
+	old_siginthandler = SIG_DFL;
 
 	for (i = 1; i < NSIG; i++) {
+		func = Handlers[i].func;
 		Handlers[i].tripped = 0;
-		Py_XDECREF(Handlers[i].func);
 		Handlers[i].func = NULL;
+		if (i != SIGINT && func != NULL && func != Py_None &&
+		    func != DefaultHandler && func != IgnoreHandler)
+			signal(i, SIG_DFL);
+		Py_XDECREF(func);
 	}
 
 	Py_XDECREF(IntHandler);
