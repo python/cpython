@@ -59,8 +59,17 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #define TKMAJORMINOR (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION)
 
+#if TKMAJORMINOR >= 8000 && defined(macintosh)
+/* Sigh, we have to include this to get at the tcl qd pointer */
+#include <tkMac.h>
+#endif
+
 #if TKMAJORMINOR < 4001
 #error "Tk 4.0 or 3.x are not supported -- use 4.1 or higher"
+#endif
+
+#if TKMAJORMINOR < 8000 || !defined(MS_WINDOWS) && !defined(macintosh)
+#define HAVE_CREATEFILEHANDLER
 #endif
 
 extern int Tk_GetNumMainWindows();
@@ -78,7 +87,11 @@ extern int Tk_GetNumMainWindows();
 #include <Events.h> /* For EventRecord */
 
 typedef int (*TclMacConvertEventPtr) Py_PROTO((EventRecord *eventPtr));
-void TclMacSetEventProc Py_PROTO((TclMacConvertEventPtr procPtr));
+/* They changed the name... */
+#if TKMAJORMINOR < 8000
+#define Tcl_MacSetEventProc TclMacSetEventProc
+#endif
+void Tcl_MacSetEventProc Py_PROTO((TclMacConvertEventPtr procPtr));
 int TkMacConvertEvent Py_PROTO((EventRecord *eventPtr));
 
 staticforward int PyMacConvertEvent Py_PROTO((EventRecord *eventPtr));
@@ -985,7 +998,7 @@ GetFileNo(file)
 
 static PyObject* Tkapp_ClientDataDict = NULL;
 
-#ifndef WIN32
+#ifdef HAVE_CREATEFILEHANDLER
 static PyObject *
 Tkapp_CreateFileHandler(self, args)
 	PyObject *self;
@@ -1089,7 +1102,7 @@ Tkapp_DeleteFileHandler(self, args)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
-#endif /* WIN32 */
+#endif /* HAVE_CREATEFILEHANDLER */
 
 
 /**** Tktt Object (timer token) ****/
@@ -1104,6 +1117,8 @@ typedef struct
 }
 TkttObject;
 
+/* XXXX For now... */
+#if TKMAJORMINOR < 8000 || !defined(macintosh)
 static PyObject *
 Tktt_DeleteTimerHandler(self, args)
 	PyObject *self;
@@ -1210,6 +1225,7 @@ TimerHandler(clientData)
 	else
 		Py_DECREF(res);
 }
+#endif /* macintosh */
 
 static PyObject *
 Tkapp_CreateTimerHandler(self, args)
@@ -1340,7 +1356,7 @@ static PyMethodDef Tkapp_methods[] =
 	{"merge", 	       Tkapp_Merge, 0},
 	{"createcommand",      Tkapp_CreateCommand, 1},
 	{"deletecommand",      Tkapp_DeleteCommand, 1},
-#ifndef WIN32
+#ifdef HAVE_CREATEFILEHANDLER
 	{"createfilehandler",  Tkapp_CreateFileHandler, 1},
 	{"deletefilehandler",  Tkapp_DeleteFileHandler, 1},
 #endif
@@ -1423,7 +1439,7 @@ Tkinter_Create(self, args)
 static PyMethodDef moduleMethods[] =
 {
 	{"create",             Tkinter_Create, 1},
-#ifndef WIN32
+#ifdef HAVE_CREATEFILEHANDLER
 	{"createfilehandler",  Tkapp_CreateFileHandler, 1},
 	{"deletefilehandler",  Tkapp_DeleteFileHandler, 1},
 #endif
@@ -1505,15 +1521,22 @@ init_tkinter()
 	ins_string(d, "TK_VERSION", TK_VERSION);
 	ins_string(d, "TCL_VERSION", TCL_VERSION);
 
-#ifndef WIN32
 	if (PyOS_InputHook == NULL)
 		PyOS_InputHook = EventHook;
-#endif
 
 	if (PyErr_Occurred())
 		Py_FatalError("can't initialize module _tkinter");
 #ifdef macintosh
-	TclMacSetEventProc(PyMacConvertEvent);
+	/*
+	** Part of this code is stolen from MacintoshInit in tkMacAppInit.
+	** Most of the initializations in that routine (toolbox init calls and
+	** such) have already been done for us, so we only need these.
+	*/
+#if TKMAJORMINOR >= 8000
+	tcl_macQdPtr = &qd;
+#endif
+
+	Tcl_MacSetEventProc(PyMacConvertEvent);
 #if GENERATINGCFM
 	mac_addlibresources();
 #endif /* GENERATINGCFM */
@@ -1556,7 +1579,7 @@ PyMacConvertEvent(eventPtr)
 	return TkMacConvertEvent(eventPtr);
 }
 
-#ifdef USE_GUSI
+#if defined(USE_GUSI) && TKMAJORMINOR < 8000
 /*
  * For Python we have to override this routine (from TclMacNotify),
  * since we use GUSI for our sockets, not Tcl streams. Hence, we have
