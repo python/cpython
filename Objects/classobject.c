@@ -60,7 +60,6 @@ static void
 class_dealloc(op)
 	classobject *op;
 {
-	int i;
 	XDECREF(op->cl_bases);
 	DECREF(op->cl_methods);
 	XDECREF(op->cl_name);
