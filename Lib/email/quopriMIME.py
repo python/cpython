@@ -38,17 +38,23 @@ MISC_LEN = 7
 hqre = re.compile(r'[^-a-zA-Z0-9!*+/ ]')
 bqre = re.compile(r'[^ !-<>-~\t]')
 
+try:
+    True, False
+except NameError:
+    True = 1
+    False = 0
+
 
 
 # Helpers
 def header_quopri_check(c):
-    """Return true if the character should be escaped with header quopri."""
-    return hqre.match(c) and 1
+    """Return True if the character should be escaped with header quopri."""
+    return hqre.match(c) and True
 
 
 def body_quopri_check(c):
-    """Return true if the character should be escaped with body quopri."""
-    return bqre.match(c) and 1
+    """Return True if the character should be escaped with body quopri."""
+    return bqre.match(c) and True
 
 
 def header_quopri_len(s):
@@ -92,8 +98,8 @@ def quote(c):
 
 
 
-def header_encode(header, charset="iso-8859-1", keep_eols=0, maxlinelen=76,
-                  eol=NL):
+def header_encode(header, charset="iso-8859-1", keep_eols=False,
+                  maxlinelen=76, eol=NL):
     """Encode a single header line with quoted-printable (like) encoding.
 
     Defined in RFC 2045, this `Q' encoding is similar to quoted-printable, but
@@ -114,7 +120,7 @@ def header_encode(header, charset="iso-8859-1", keep_eols=0, maxlinelen=76,
 
     End-of-line characters (\\r, \\n, \\r\\n) will be automatically converted
     to the canonical email line separator \\r\\n unless the keep_eols
-    parameter is set to true (the default is false).
+    parameter is True (the default is False).
 
     Each line of the header will be terminated in the value of eol, which
     defaults to "\\n".  Set this to "\\r\\n" if you are using the result of
@@ -151,10 +157,10 @@ def header_encode(header, charset="iso-8859-1", keep_eols=0, maxlinelen=76,
 
 
 
-def encode(body, binary=0, maxlinelen=76, eol=NL):
+def encode(body, binary=False, maxlinelen=76, eol=NL):
     """Encode with quoted-printable, wrapping at maxlinelen characters.
 
-    If binary is false (the default), end-of-line characters will be converted
+    If binary is False (the default), end-of-line characters will be converted
     to the canonical email end-of-line sequence \\r\\n.  Otherwise they will
     be left verbatim.
 
@@ -213,7 +219,7 @@ def encode(body, binary=0, maxlinelen=76, eol=NL):
         # Now at end of line..
         if prev and prev in ' \t':
             # Special case for whitespace at end of file
-            if lineno+1 == len(lines):
+            if lineno + 1 == len(lines):
                 prev = quote(prev)
                 if len(encoded_line) + len(prev) > maxlinelen:
                     encoded_body += encoded_line + '=' + eol + prev
@@ -283,7 +289,7 @@ def decode(encoded, eol=NL):
             if i == n:
                 decoded += eol
     # Special case if original string did not end with eol
-    if encoded[-1] <> eol and decoded[-1] == eol:
+    if not encoded.endswith(eol) and decoded.endswith(eol):
         decoded = decoded[:-1]
     return decoded
 

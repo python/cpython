@@ -41,6 +41,12 @@ EMPTYSTRING = ''
 # See also Charset.py
 MISC_LEN = 7
 
+try:
+    True, False
+except NameError:
+    True = 1
+    False = 0
+
 
 
 # Helpers
@@ -56,8 +62,8 @@ def base64_len(s):
 
 
 
-def header_encode(header, charset='iso-8859-1', keep_eols=0, maxlinelen=76,
-                  eol=NL):
+def header_encode(header, charset='iso-8859-1', keep_eols=False,
+                  maxlinelen=76, eol=NL):
     """Encode a single header line with Base64 encoding in a given charset.
 
     Defined in RFC 2045, this Base64 encoding is identical to normal Base64
@@ -69,7 +75,7 @@ def header_encode(header, charset='iso-8859-1', keep_eols=0, maxlinelen=76,
 
     End-of-line characters (\\r, \\n, \\r\\n) will be automatically converted
     to the canonical email line separator \\r\\n unless the keep_eols
-    parameter is set to true (the default is false).
+    parameter is True (the default is False).
 
     Each line of the header will be terminated in the value of eol, which
     defaults to "\\n".  Set this to "\\r\\n" if you are using the result of
@@ -106,7 +112,7 @@ def header_encode(header, charset='iso-8859-1', keep_eols=0, maxlinelen=76,
     lines = []
     for line in base64ed:
         # Ignore the last character of each line if it is a newline
-        if line[-1] == NL:
+        if line.endswith(NL):
             line = line[:-1]
         # Add the chrome
         lines.append('=?%s?b?%s?=' % (charset, line))
@@ -117,13 +123,13 @@ def header_encode(header, charset='iso-8859-1', keep_eols=0, maxlinelen=76,
 
 
 
-def encode(s, binary=1, maxlinelen=76, eol=NL):
+def encode(s, binary=True, maxlinelen=76, eol=NL):
     """Encode a string with base64.
 
     Each line will be wrapped at, at most, maxlinelen characters (defaults to
     76 characters).
 
-    If binary is false, end-of-line characters will be converted to the
+    If binary is False, end-of-line characters will be converted to the
     canonical email end-of-line sequence \\r\\n.  Otherwise they will be left
     verbatim (this is the default).
 
@@ -143,7 +149,7 @@ def encode(s, binary=1, maxlinelen=76, eol=NL):
         # BAW: should encode() inherit b2a_base64()'s dubious behavior in
         # adding a newline to the encoded string?
         enc = b2a_base64(s[i:i + max_unencoded])
-        if enc[-1] == NL and eol <> NL:
+        if enc.endswith(NL) and eol <> NL:
             enc = enc[:-1] + eol
         encvec.append(enc)
     return EMPTYSTRING.join(encvec)
