@@ -107,6 +107,11 @@ multi-platform builds since the platform independent headers under
 \envvar{prefix} include the platform specific headers from
 \envvar{exec_prefix}.
 
+\Cpp{} users should note that though the API is defined entirely using
+C, the header files do properly declare the entry points to be
+\code{extern "C"}, so there is no need to do anything special to use
+the API from \Cpp.
+
 
 \section{Objects, Types and Reference Counts \label{objects}}
 
@@ -305,12 +310,12 @@ The reason is simple: in many cases, the returned object is created
 on the fly, and the reference you get is the only reference to the 
 object.  Therefore, the generic functions that return object 
 references, like \cfunction{PyObject_GetItem()} and 
-\cfunction{PySequence_GetItem()}, always return a new reference (i.e.,
-the  caller becomes the owner of the reference).
+\cfunction{PySequence_GetItem()}, always return a new reference (the
+caller becomes the owner of the reference).
 
 It is important to realize that whether you own a reference returned 
 by a function depends on which function you call only --- \emph{the
-plumage} (i.e., the type of the type of the object passed as an
+plumage} (the type of the type of the object passed as an
 argument to the function) \emph{doesn't enter into it!}  Thus, if you 
 extract an item from a list using \cfunction{PyList_GetItem()}, you
 don't own the reference --- but if you obtain the same item from the
@@ -875,7 +880,7 @@ and non-\NULL{} value or traceback.  The exception type should be a
 string or class; if it is a class, the value should be an instance of
 that class.  Do not pass an invalid exception type or value.
 (Violating these rules will cause subtle problems later.)  This call
-takes away a reference to each object, i.e.\ you must own a reference
+takes away a reference to each object: you must own a reference
 to each object before the call and after the call you no longer own
 these references.  (If you don't understand this, don't use this
 function.  I warned you.)  \strong{Note:}  This function is normally
@@ -1219,7 +1224,7 @@ by \var{func}.
 This is a simplified interface to
 \cfunction{PyImport_ImportModuleEx()} below, leaving the
 \var{globals} and \var{locals} arguments set to \NULL{}.  When the
-\var{name} argument contains a dot (i.e., when it specifies a
+\var{name} argument contains a dot (when it specifies a
 submodule of a package), the \var{fromlist} argument is set to the
 list \code{['*']} so that the return value is the named module rather
 than the top-level package containing it as would otherwise be the
@@ -3255,18 +3260,20 @@ Macro form of \cfunction{PyList_GetItem()} without error checking.
 \begin{cfuncdesc}{int}{PyList_SetItem}{PyObject *list, int index,
                                        PyObject *item}
 Sets the item at index \var{index} in list to \var{item}.
+Returns \code{0} on success or \code{-1} on failure.
 \strong{Note:}  This function ``steals'' a reference to \var{item} and
 discards a reference to an item already in the list at the affected
 position.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyList_SET_ITEM}{PyObject *list, int i,
+\begin{cfuncdesc}{void}{PyList_SET_ITEM}{PyObject *list, int i,
                                               PyObject *o}
 Macro form of \cfunction{PyList_SetItem()} without error checking.
 \strong{Note:}  This function ``steals'' a reference to \var{item},
 and, unlike \cfunction{PyList_SetItem()}, does \emph{not} discard a
-reference to any item that it being replaced.  This is normally only
-used to fill in new lists where there is no previous content..
+reference to any item that it being replaced; any reference in
+\var{list} at position \var{i} will be leaked.  This is normally only
+used to fill in new lists where there is no previous content.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_Insert}{PyObject *list, int index,
@@ -3356,17 +3363,19 @@ Empties an existing dictionary of all key-value pairs.
 
 \begin{cfuncdesc}{int}{PyDict_SetItem}{PyObject *p, PyObject *key,
                                        PyObject *val}
-Inserts \var{value} into the dictionary with a key of \var{key}.
+Inserts \var{value} into the dictionary \var{p} with a key of \var{key}.
 \var{key} must be hashable; if it isn't, \exception{TypeError} will be 
 raised.
+Returns \code{0} on success or \code{-1} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyDict_SetItemString}{PyObject *p,
             char *key,
             PyObject *val}
-Inserts \var{value} into the dictionary using \var{key}
+Inserts \var{value} into the dictionary \var{p} using \var{key}
 as a key. \var{key} should be a \ctype{char*}.  The key object is
 created using \code{PyString_FromString(\var{key})}.
+Returns \code{0} on success or \code{-1} on failure.
 \ttindex{PyString_FromString()}
 \end{cfuncdesc}
 
@@ -3379,6 +3388,7 @@ raised.
 \begin{cfuncdesc}{int}{PyDict_DelItemString}{PyObject *p, char *key}
 Removes the entry in dictionary \var{p} which has a key
 specified by the string \var{key}.
+Returns \code{0} on success or \code{-1} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyDict_GetItem}{PyObject *p, PyObject *key}
@@ -3548,14 +3558,14 @@ Returns a new \ctype{PyLongObject} object from the integer part of
 Returns a C \ctype{long} representation of the contents of
 \var{pylong}.  If \var{pylong} is greater than
 \constant{LONG_MAX}\ttindex{LONG_MAX}, an \exception{OverflowError} is
-raised.\withsubitem{(built-in exception)}{OverflowError}
+raised.\withsubitem{(built-in exception)}{\ttindex{OverflowError}}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{unsigned long}{PyLong_AsUnsignedLong}{PyObject *pylong}
 Returns a C \ctype{unsigned long} representation of the contents of 
 \var{pylong}.  If \var{pylong} is greater than
 \constant{ULONG_MAX}\ttindex{ULONG_MAX}, an \exception{OverflowError}
-is raised.\withsubitem{(built-in exception)}{OverflowError}
+is raised.\withsubitem{(built-in exception)}{\ttindex{OverflowError}}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{PyLong_AsDouble}{PyObject *pylong}
@@ -4540,14 +4550,14 @@ disabled at compile time.
 \end{csimplemacrodesc}
 
 \begin{csimplemacrodesc}{Py_BLOCK_THREADS}
-This macro expands to \samp{PyEval_RestoreThread(_save);} i.e. it
+This macro expands to \samp{PyEval_RestoreThread(_save);}: it
 is equivalent to \code{Py_END_ALLOW_THREADS} without the closing
 brace.  It is a no-op when thread support is disabled at compile
 time.
 \end{csimplemacrodesc}
 
 \begin{csimplemacrodesc}{Py_UNBLOCK_THREADS}
-This macro expands to \samp{_save = PyEval_SaveThread();} i.e. it is
+This macro expands to \samp{_save = PyEval_SaveThread();}: it is
 equivalent to \code{Py_BEGIN_ALLOW_THREADS} without the opening brace
 and variable declaration.  It is a no-op when thread support is
 disabled at compile time.
@@ -4699,18 +4709,20 @@ available for allocating and releasing memory from the Python heap:
 
 \begin{cfuncdesc}{void*}{PyMem_Malloc}{size_t n}
 Allocates \var{n} bytes and returns a pointer of type \ctype{void*} to
-the allocated memory, or \NULL{} if the request fails. Requesting zero
+the allocated memory, or \NULL{} if the request fails.  Requesting zero
 bytes returns a non-\NULL{} pointer.
+The memory will not have been initialized in any way.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void*}{PyMem_Realloc}{void *p, size_t n}
 Resizes the memory block pointed to by \var{p} to \var{n} bytes. The
 contents will be unchanged to the minimum of the old and the new
 sizes. If \var{p} is \NULL{}, the call is equivalent to
-\cfunction{PyMem_Malloc(\var{n})}; if \var{n} is equal to zero, the memory block
-is resized but is not freed, and the returned pointer is non-\NULL{}.
-Unless \var{p} is \NULL{}, it must have been returned by a previous
-call to \cfunction{PyMem_Malloc()} or \cfunction{PyMem_Realloc()}.
+\cfunction{PyMem_Malloc(\var{n})}; if \var{n} is equal to zero, the
+memory block is resized but is not freed, and the returned pointer is
+non-\NULL{}.  Unless \var{p} is \NULL{}, it must have been returned by
+a previous call to \cfunction{PyMem_Malloc()} or
+\cfunction{PyMem_Realloc()}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyMem_Free}{void *p}
@@ -4728,6 +4740,7 @@ that \var{TYPE} refers to any C type.
 Same as \cfunction{PyMem_Malloc()}, but allocates \code{(\var{n} *
 sizeof(\var{TYPE}))} bytes of memory.  Returns a pointer cast to
 \ctype{\var{TYPE}*}.
+The memory will not have been initialized in any way.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{\var{TYPE}*}{PyMem_Resize}{void *p, TYPE, size_t n}
@@ -4824,31 +4837,65 @@ implementing new object types in C.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyObject_Init}{PyObject *op,
-						PyTypeObject *type}
+					    PyTypeObject *type}
+  Initialize a newly-allocated object \var{op} with its type and
+  initial reference.  Returns the initialized object.  If \var{type}
+  indicates that the object participates in the cyclic garbage
+  detector, it it added to the detector's set of observed objects.
+  Other fields of the object are not affected.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyVarObject*}{PyObject_InitVar}{PyVarObject *op,
-						PyTypeObject *type, int size}
+						  PyTypeObject *type, int size}
+  This does everything \cfunction{PyObject_Init()} does, and also
+  initializes the length information for a variable-size object.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{\var{TYPE}*}{PyObject_New}{TYPE, PyTypeObject *type}
+  Allocate a new Python object using the C structure type \var{TYPE}
+  and the Python type object \var{type}.  Fields not defined by the
+  Python object header are not initialized; the object's reference
+  count will be one.  The size of the memory
+  allocation is determined from the \member{tp_basicsize} field of the
+  type object.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{\var{TYPE}*}{PyObject_NewVar}{TYPE, PyTypeObject *type,
                                                 int size}
+  Allocate a new Python object using the C structure type \var{TYPE}
+  and the Python type object \var{type}.  Fields not defined by the
+  Python object header are not initialized.  The allocated memory
+  allows for the \var{TYPE} structure plus \var{size} fields of the
+  size given by the \member{tp_itemsize} field of \var{type}.  This is
+  useful for implementing objects like tuples, which are able to
+  determine their size at construction time.  Embedding the array of
+  fields into the same allocation decreases the number of allocations,
+  improving the memory management efficiency.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyObject_Del}{PyObject *op}
+  Releases memory allocated to an object using
+  \cfunction{PyObject_New()} or \cfunction{PyObject_NewVar()}.  This
+  is normally called from the \member{tp_dealloc} handler specified in
+  the object's type.  The fields of the object should not be accessed
+  after this call as the memory is no longer a valid Python object.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{\var{TYPE}*}{PyObject_NEW}{TYPE, PyTypeObject *type}
+  Macro version of \cfunction{PyObject_New()}, to gain performance at
+  the expense of safety.  This does not check \var{type} for a \NULL{}
+  value.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{\var{TYPE}*}{PyObject_NEW_VAR}{TYPE, PyTypeObject *type,
                                                 int size}
+  Macro version of \cfunction{PyObject_NewVar()}, to gain performance
+  at the expense of safety.  This does not check \var{type} for a
+  \NULL{} value.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyObject_DEL}{PyObject *op}
+  Macro version of \cfunction{PyObject_Del()}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{Py_InitModule}{char *name,
@@ -4883,13 +4930,39 @@ implementing new object types in C.
   sure you need it.
 \end{cfuncdesc}
 
-PyArg_ParseTupleAndKeywords, PyArg_ParseTuple, PyArg_Parse
+\begin{cfuncdesc}{int}{PyArg_ParseTuple}{PyObject *args, char *format,
+                                         \moreargs}
+  Parse the parameters of a function that takes only positional
+  parameters into local variables.  See
+  \citetitle[../ext/parseTuple.html]{Extending and Embedding the
+  Python Interpreter} for more information.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyArg_ParseTupleAndKeywords}{PyObject *args,
+                    PyObject *kw, char *format, char *keywords[], \moreargs}
+  Parse the parameters of a function that takes both positional and
+  keyword parameters into local variables.  See
+  \citetitle[../ext/parseTupleAndKeywords.html]{Extending and
+  Embedding the Python Interpreter} for more information.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyArg_Parse}{PyObject *args, char *format, \moreargs}
+  Function used to deconstruct the argument lists of ``old-style''
+  functions --- these are functions which use the
+  \constant{METH_OLDARGS} parameter parsing method.  This is not
+  recommended for new code, and most code in the standard interpreter
+  has been modified to no longer use this.
+\end{cfuncdesc}
 
 Py_BuildValue
 
 DL_IMPORT
 
-_Py_NoneStruct
+\begin{cvardesc}{PyObject}{_Py_NoneStruct}
+  Object which is visible in Python as \code{None}.  This should only
+  be accessed using the \code{Py_None} macro, which evaluates to a
+  pointer to this object.
+\end{cvardesc}
 
 
 \section{Common Object Structures \label{common-structs}}
@@ -5164,7 +5237,7 @@ The \member{tp_clear} handler must be of the \ctype{inquiry} type, or
   Drop references that may have created reference cycles.  Immutable
   objects do not have to define this method since they can never
   directly create reference cycles.  Note that the object must still
-  be valid after calling this method (i.e., don't just call
+  be valid after calling this method (don't just call
   \cfunction{Py_DECREF()} on a reference).  The collector will call
   this method if it detects that this object is involved in a
   reference cycle.
