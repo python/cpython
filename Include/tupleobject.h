@@ -26,7 +26,7 @@ typedef struct {
 
 extern DL_IMPORT(PyTypeObject) PyTuple_Type;
 
-#define PyTuple_Check(op) ((op)->ob_type == &PyTuple_Type)
+#define PyTuple_Check(op) PyObject_TypeCheck(op, &PyTuple_Type)
 
 extern DL_IMPORT(PyObject *) PyTuple_New(int size);
 extern DL_IMPORT(int) PyTuple_Size(PyObject *);
