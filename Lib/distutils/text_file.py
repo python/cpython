@@ -15,7 +15,6 @@ import sys, os, string, re
 class TextFile:
 
     default_options = { 'strip_comments': 1,
-                        'comment_re':     re.compile (r'\s*#.*'),
                         'skip_blanks':    1,
                         'join_lines':     0,
                         'lstrip_ws':      0,
@@ -33,10 +32,7 @@ class TextFile:
         # or fallback to default_options
         for opt in self.default_options.keys():
             if options.has_key (opt):
-                if opt == 'comment_re' and type (options[opt]) is StringType:
-                    self.comment_re = re.compile (options[opt])
-                else:
-                    setattr (self, opt, options[opt])
+                setattr (self, opt, options[opt])
 
             else:
                 setattr (self, opt, self.default_options[opt])
@@ -76,11 +72,11 @@ class TextFile:
         if line is None:
             line = self.current_line
         sys.stderr.write (self.filename + ", ")
-        if type (line) is ListType:
+        if type (line) in (ListType, TupleType):
             sys.stderr.write ("lines %d-%d: " % tuple (line))
         else:
             sys.stderr.write ("line %d: " % line)
-        sys.stderr.write (msg + "\n")
+        sys.stderr.write (str (msg) + "\n")
 
 
     def readline (self):
@@ -97,15 +93,42 @@ class TextFile:
         buildup_line = ''
 
         while 1:
-            # read the line, optionally strip comments
+            # read the line, make it None if EOF
             line = self.file.readline()
+            if line == '': line = None
+
             if self.strip_comments and line:
-                line = self.comment_re.sub ('', line)
+
+                # Look for the first "#" in the line.  If none, never
+                # mind.  If we find one and it's the first character, or
+                # is not preceded by "\", then it starts a comment --
+                # strip the comment, strip whitespace before it, and
+                # carry on.  Otherwise, it's just an escaped "#", so
+                # unescape it (and any other escaped "#"'s that might be
+                # lurking in there) and otherwise leave the line alone.
+
+                pos = string.find (line, "#")
+                if pos == -1:           # no "#" -- no comments
+                    pass
+                elif pos == 0 or line[pos-1] != "\\": # it's a comment
+                    # Have to preserve the trailing newline; if
+                    # stripping comments resulted in an empty line, we'd
+                    # have no way to distinguish end-of-file! (NB. this
+                    # means that if the final line is all comment and
+                    # has to trailing newline, we will think that it's
+                    # EOF; I think that's OK.)
+                    has_newline = (line[-1] == '\n')
+                    line = line[0:pos]
+                    if has_newline: line = line + '\n'
+                    
+                else:                   # it's an escaped "#"
+                    line = string.replace (line, "\\#", "#")
+                
 
             # did previous line end with a backslash? then accumulate
             if self.join_lines and buildup_line:
                 # oops: end of file
-                if not line:
+                if line is None:
                     self.warn ("continuation line immediately precedes "
                                "end-of-file")
                     return buildup_line
@@ -119,7 +142,7 @@ class TextFile:
                     self.current_line = [self.current_line, self.current_line+1]
             # just an ordinary line, read it as usual
             else:
-                if not line:
+                if line is None:        # eof
                     return None
 
                 # still have to be careful about incrementing the line number!
@@ -217,15 +240,15 @@ continues on next line
     out_file.close ()
 
     in_file = TextFile (filename, strip_comments=0, skip_blanks=0,
-                   lstrip_ws=0, rstrip_ws=0)
+                        lstrip_ws=0, rstrip_ws=0)
     test_input (1, "no processing", in_file, result1)
 
     in_file = TextFile (filename, strip_comments=1, skip_blanks=0,
-                   lstrip_ws=0, rstrip_ws=0)
+                        lstrip_ws=0, rstrip_ws=0)
     test_input (2, "strip comments", in_file, result2)
 
     in_file = TextFile (filename, strip_comments=0, skip_blanks=1,
-                   lstrip_ws=0, rstrip_ws=0)
+                        lstrip_ws=0, rstrip_ws=0)
     test_input (3, "strip blanks", in_file, result3)
 
     in_file = TextFile (filename)
