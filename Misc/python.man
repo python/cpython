@@ -1,11 +1,8 @@
-.TH PYTHON "4 January 1995"
+.TH PYTHON "30 July 1996"
 .SH NAME
 python \- an interpreted, interactive, object-oriented programming language
 .SH SYNOPSIS
 .B python
-[
-.I X11-options
-]
 [
 .B \-d
 ]
@@ -44,7 +41,7 @@ semantics of the core language in (perhaps too) much detail.
 .PP
 Python's basic power can be extended with your own modules written in
 C or C++.
-On some (most?) systems such modules may be dynamically loaded.
+On most systems such modules may be dynamically loaded.
 Python is also adaptable as an extension language for existing
 applications.
 See the internal documentation for hints.
@@ -77,18 +74,6 @@ Print a message each time a module is initialized, showing the place
 Specify the command to execute (see next section).
 This terminates the option list (following options are passed as
 arguments to the command).
-.PP
-When the interpreter is configured to contain the
-.I stdwin
-built-in module for use with the X window system, additional command
-line options common to most X applications are recognized (by STDWIN),
-e.g.
-.B \-display
-.I displayname
-and
-.B \-geometry
-.I widthxheight+x+y.
-The complete set of options is described in the STDWIN documentation.
 .SH INTERPRETER INTERFACE
 The interpreter interface resembles that of the UNIX shell: when
 called with standard input connected to a tty device, it prompts for
@@ -123,7 +108,7 @@ is used,
 .I sys.argv[0]
 contains the string
 .I '-c'.
-Note that options interpreter by the Python interpreter or by STDWIN
+Note that options interpreted by the Python interpreter itself
 are not placed in
 .I sys.argv.
 .PP
@@ -148,7 +133,7 @@ These are subject to difference depending on local installation
 conventions:
 .IP /usr/local/bin/python
 Recommended location of the interpreter.
-.IP /usr/local/lib/python
+.IP /usr/local/lib/python1.4
 Recommended location of the directory containing the standard modules.
 .SH ENVIRONMENT VARIABLES
 .IP PYTHONPATH
@@ -160,6 +145,8 @@ The default search path is installation dependent, but always begins
 with `.', (for example,
 .I .:/usr/local/lib/python ).
 The default search path is appended to $PYTHONPATH.
+If a script argument is given, the directory containing the script is
+inserted in the path in front of $PYTHONPATH.
 The search path can be manipulated from within a Python program as the
 variable
 .I sys.path .
@@ -196,30 +183,22 @@ Python Tutorial
 Python Library Reference
 .br
 Python Reference Manual
-.br
-STDWIN under X11
-.SH BUGS AND CAVEATS
-The first time
-.I stdwin
-is imported, it initializes the STDWIN library.
-If this initialization fails, e.g. because the display connection
-fails, the interpreter aborts immediately.
 .SH AUTHOR
 .nf
 Guido van Rossum
-CWI (Centrum voor Wiskunde en Informatica)
-P.O. Box 4079
-1009 AB  Amsterdam
-The Netherlands
+CNRI
+1895 Preston White Drive
+Reston, VA 20191
+USA
 .PP
-E-mail: Guido.van.Rossum@cwi.nl
+E-mail: guido@cnri.reston.va.us, guido@python.org
 .fi
-.SH MAILING LIST
-There is a mailing list devoted to Python programming, bugs and
-design.
-To subscribe, send mail containing your real name and e-mail address
-in Internet form to
-.I python-list-request@cwi.nl.
+.SH INTERNET RESOURCES
+Web site: http://www.python.org
+.br
+FTP site: ftp://ftp.python.org
+.br
+Newsgroup: comp.lang.python
 .SH COPYRIGHT
 Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
 The Netherlands.
