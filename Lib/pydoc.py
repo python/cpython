@@ -801,8 +801,8 @@ def getpager():
         return plainpager
     if os.environ.has_key('PAGER'):
         return lambda a: pipepager(a, os.environ['PAGER'])
-    if sys.platform in ['win', 'win32', 'nt']:
-        return lambda a: tempfilepager(a, 'more')
+    if sys.platform == 'win32':
+        return lambda a: tempfilepager(a, 'more <')
     if hasattr(os, 'system') and os.system('less 2>/dev/null') == 0:
         return lambda a: pipepager(a, 'less')
 
@@ -835,7 +835,7 @@ def tempfilepager(text, cmd):
     file.write(text)
     file.close()
     try:
-        os.system(cmd + ' <' + filename)
+        os.system(cmd + ' ' + filename)
     finally:
         os.unlink(filename)
 
@@ -1193,7 +1193,7 @@ def gui():
             self.stop_btn = Tkinter.Button(self.search_frm,
                 text='stop', pady=0, command=self.stop, state='disabled')
             if sys.platform == 'win32':
-                # Attempting to hide and show this button crashes under Windows.
+                # Trying to hide and show this button crashes under Windows.
                 self.stop_btn.pack(side='right')
 
             self.window.title('pydoc')
@@ -1208,7 +1208,7 @@ def gui():
             self.search_frm.pack(side='top', fill='x')
             self.search_ent.focus_set()
 
-            font = ('helvetica', sys.platform in ['win32', 'win', 'nt'] and 8 or 10)
+            font = ('helvetica', sys.platform == 'win32' and 8 or 10)
             self.result_lst = Tkinter.Listbox(window, font=font, height=6)
             self.result_lst.bind('<Button-1>', self.select)
             self.result_lst.bind('<Double-Button-1>', self.goto)
@@ -1252,7 +1252,7 @@ def gui():
                 import webbrowser
                 webbrowser.open(url)
             except ImportError: # pre-webbrowser.py compatibility
-                if sys.platform in ['win', 'win32', 'nt']:
+                if sys.platform == 'win32':
                     os.system('start "%s"' % url)
                 elif sys.platform == 'mac':
                     try:
@@ -1353,8 +1353,8 @@ def cli():
     class BadUsage: pass
 
     try:
-        if sys.platform in ['mac', 'win', 'win32', 'nt'] and not sys.argv[1:]:
-            # CLI-less platforms
+        if sys.platform in ['mac', 'win32'] and not sys.argv[1:]:
+            # graphical platforms with threading (and no CLI)
             gui()
             return
 
