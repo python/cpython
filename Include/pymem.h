@@ -114,7 +114,7 @@ extern DL_IMPORT(void) PyMem_Free(void *);
 #define PyMem_New(type, n) \
 	( (type *) PyMem_Malloc((n) * sizeof(type)) )
 #define PyMem_Resize(p, type, n) \
-	( (p) = (type *) PyMem_Realloc((n) * sizeof(type)) )
+	( (p) = (type *) PyMem_Realloc((p), (n) * sizeof(type)) )
 #define PyMem_Del(p) PyMem_Free(p)
 
 /* Macros */
