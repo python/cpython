@@ -56,6 +56,10 @@ extern int BMObj_Convert(PyObject *, BitMapPtr *);
 extern PyObject *QdRGB_New(RGBColor *);
 extern int QdRGB_Convert(PyObject *, RGBColor *);
 
+/* Qdoffs exports */
+extern PyObject *GWorldObj_New(GWorldPtr);
+extern int GWorldObj_Convert(PyObject *, GWorldPtr *);
+
 /* Qt exports */
 extern PyObject *TrackObj_New(Track);
 extern int TrackObj_Convert(PyObject *, Track *);
