@@ -79,6 +79,9 @@ Standard library
 
 - The binascii module is now enabled on Win64.
 
+- tokenize.py no longer suffers "recursion depth" errors when parsing
+  programs with very long string literals.
+
 Internals
 
 - Fix several buffer overflow vulnerabilities in calculate_path(),
@@ -140,8 +143,8 @@ Tools and other miscellany
 
 - Removed debugging prints from main used with freeze.
 
-- IDLE auto-indent internals no longer crashes when it encounters
-  Unicode characters in the range 128 to 255.
+- IDLE auto-indent no longer crashes when it encounters Unicode
+  characters.
 
 What's new in 2.0 beta 2 (since beta 1)?
 ========================================
