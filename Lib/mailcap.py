@@ -1,13 +1,18 @@
-# Mailcap file handling.  See RFC 1524.
+"""Mailcap file handling.  See RFC 1524."""
 
 import os
 import string
-import tempfile
 
 
 # Part 1: top-level interface.
 
 def getcaps():
+    """Return a dictionary containing the mailcap database.
+    
+    The dictionary maps a MIME type (in all lowercase,
+    e.g. 'text/plain') to a list of corresponding mailcap entries.
+
+    """
     caps = {}
     for mailcap in listmailcapfiles():
 	try:
@@ -24,6 +29,7 @@ def getcaps():
     return caps
 
 def listmailcapfiles():
+    """Return a list of all mailcap files found on the system."""
     # XXX Actually, this is Unix-specific
     if os.environ.has_key('MAILCAPS'):
 	str = os.environ['MAILCAPS']
@@ -112,30 +118,39 @@ def parsefield(line, i, n):
 
 # Part 3: using the database.
 
-def findmatch(caps, type, key='view', filename="/dev/null", plist=[]):
-    entries = lookup(caps, type, key)
+def findmatch(caps, MIMEtype, key='view', filename="/dev/null", plist=[]):
+    """Find a match for a mailcap entry.
+    
+    Return a tuple containing the command line, and the mailcap entry
+    used; (None, None) if no match is found.  This may invoke the
+    'test' command of several matching entries before deciding which
+    entry to use.
+
+    """
+    entries = lookup(caps, MIMEtype, key)
+    # XXX This code should somehow check for the needsterminal flag. 
     for e in entries:
 	if e.has_key('test'):
 	    test = subst(e['test'], filename, plist)
 	    if test and os.system(test) != 0:
 		continue
-	command = subst(e[key], type, filename, plist)
+	command = subst(e[key], MIMEtype, filename, plist)
 	return command, e
     return None, None
 
-def lookup(caps, type, key=None):
+def lookup(caps, MIMEtype, key=None):
     entries = []
-    if caps.has_key(type):
-	entries = entries + caps[type]
-    types = string.splitfields(type, '/')
-    type = types[0] + '/*'
-    if caps.has_key(type):
-	entries = entries + caps[type]
+    if caps.has_key(MIMEtype):
+	entries = entries + caps[MIMEtype]
+    MIMEtypes = string.splitfields(MIMEtype, '/')
+    MIMEtype = MIMEtypes[0] + '/*'
+    if caps.has_key(MIMEtype):
+	entries = entries + caps[MIMEtype]
     if key is not None:
 	entries = filter(lambda e, key=key: e.has_key(key), entries)
     return entries
 
-def subst(field, type, filename, plist=[]):
+def subst(field, MIMEtype, filename, plist=[]):
     # XXX Actually, this is Unix-specific
     res = ''
     i, n = 0, len(field)
@@ -152,7 +167,7 @@ def subst(field, type, filename, plist=[]):
 	    elif c == 's':
 		res = res + filename
 	    elif c == 't':
-		res = res + type
+		res = res + MIMEtype
 	    elif c == '{':
 		start = i
 		while i < n and field[i] <> '}':
@@ -187,11 +202,11 @@ def test():
     for i in range(1, len(sys.argv), 2):
 	args = sys.argv[i:i+2]
 	if len(args) < 2:
-	    print "usage: mailcap [type file] ..."
+	    print "usage: mailcap [MIMEtype file] ..."
 	    return
-	type = args[0]
+	MIMEtype = args[0]
 	file = args[1]
-	command, e = findmatch(caps, type, 'view', file)
+	command, e = findmatch(caps, MIMEtype, 'view', file)
 	if not command:
 	    print "No viewer found for", type
 	else:
