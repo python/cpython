@@ -42,11 +42,28 @@ def spawn (cmd,
 # spawn ()
 
 
-def _spawn_nt ( cmd,
-                search_path=1,
-                verbose=0,
-                dry_run=0):
+def _nt_quote_args (args):
+    """Obscure quoting command line arguments on NT.
+       Simply quote every argument which contains blanks."""
+
+    # XXX this doesn't seem very robust to me -- but if the Windows guys
+    # say it'll work, I guess I'll have to accept it.  (What if an arg
+    # contains quotes?  What other magic characters, other than spaces,
+    # have to be escaped?  Is there an escaping mechanism other than
+    # quoting?)
+
+    for i in range (len (args)):
+        if string.find (args[i], ' ') == -1:
+            args[i] = '"%s"' % args[i]
+
+
+def _spawn_nt (cmd,
+               search_path=1,
+               verbose=0,
+               dry_run=0):
+
     executable = cmd[0]
+    cmd = _nt_quote_args (cmd)
     if search_path:
         paths = string.split( os.environ['PATH'], os.pathsep)
         base,ext = os.path.splitext(executable)
@@ -60,7 +77,7 @@ def _spawn_nt ( cmd,
                     # the file exists, we have a shot at spawn working
                     executable = f
     if verbose:
-        print string.join ( [executable] + cmd[1:], ' ')
+        print string.join ([executable] + cmd[1:], ' ')
     if not dry_run:
         # spawn for NT requires a full path to the .exe
         try:
