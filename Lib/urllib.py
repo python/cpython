@@ -201,11 +201,14 @@ class URLopener:
 		if type(url) is type(""):
 			host, selector = splithost(url)
 			user_passwd, host = splituser(host)
+			realhost = host
 		else:
 			host, selector = url
 			urltype, rest = splittype(selector)
 			user_passwd = None
-			if string.lower(urltype) == 'http':
+			if string.lower(urltype) != 'http':
+			    realhost = None
+			else:
 			    realhost, rest = splithost(rest)
 			    user_passwd, realhost = splituser(realhost)
 			    if user_passwd:
@@ -227,6 +230,7 @@ class URLopener:
 		else:
 			h.putrequest('GET', selector)
 		if auth: h.putheader('Authorization', 'Basic %s' % auth)
+		if realhost: h.putheader('Host', realhost)
 		for args in self.addheaders: apply(h.putheader, args)
 		h.endheaders()
 		if data is not None:
