@@ -525,7 +525,8 @@ class HTTPConnection:
     def _set_hostport(self, host, port):
         if port is None:
             i = host.rfind(':')
-            if i >= 0:
+            j = host.rfind(']')         # ipv6 addresses have [...]
+            if i > j:
                 try:
                     port = int(host[i+1:])
                 except ValueError:
