@@ -145,7 +145,7 @@ SOURCE=..\..\Modules\cjkcodecs\_gbk.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Modules\_heapmodule.c
+SOURCE=..\..\Modules\_heapqmodule.c
 # End Source File
 # Begin Source File
 
