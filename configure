@@ -3102,10 +3102,10 @@ if test "$with_threads" = "no"
 then
     USE_THREAD_MODULE="#"
 else
-    if test -d "$with_threads"
+    if test ! -z $with_threads -a -d $with_threads
     then LDFLAGS="$LDFLAGS -L$with_threads"
     fi
-    if test -d "$withval"
+    if test ! -z $withval -a -d $withval
     then LDFLAGS="$LDFLAGS -L$withval"
     fi
     cat >> confdefs.h <<\EOF
@@ -3782,7 +3782,7 @@ EOF
 
 DYNLOADFILE="dynload_dl.o"
 dldir=$withval
-if test -d "$dldir"
+if test ! -z $dldir -a -d $dldir
 then LDFLAGS="$LDFLAGS -L$dldir"
 else { echo "configure: error: proper usage is --with-sgi-dl=DIRECTORY" 1>&2; exit 1; }
 fi
@@ -3807,7 +3807,7 @@ EOF
 DYNLOADFILE="dynload_dl.o"
 dldir=`echo "$withval" | sed 's/,.*//'`
 dlddir=`echo "$withval" | sed 's/.*,//'`
-if test -d "$dldir" -a -d "$dlddir"
+if test ! -z "$dldir" -a -d "$dldir" -a ! -z "$dlddir" -a -d "$dlddir"
 then LDFLAGS="$LDFLAGS -L$dldir -L$dlddir"
 else { echo "configure: error: proper usage is --with-dl-dld=DL_DIRECTORY" 1>&2; exit 1; }
 fi
