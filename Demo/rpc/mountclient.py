@@ -175,5 +175,3 @@ def test():
 			continue
 		mcl.Umnt(item[0])
 	return
-
-#test()
