@@ -51,6 +51,8 @@ typedef struct {
 	/* The rest doesn't count for hash/cmp */
 	PyObject *co_filename;	/* string (where it was loaded from) */
 	PyObject *co_name;	/* string (name, for reference) */
+	int co_firstlineno;	/* first source line number */
+	PyObject *co_lnotab;	/* string (encoding addr<->lineno mapping) */
 } PyCodeObject;
 
 /* Masks for co_flags above */
@@ -70,7 +72,8 @@ struct _node; /* Declare the existence of this type */
 PyCodeObject *PyNode_Compile Py_PROTO((struct _node *, char *));
 PyCodeObject *PyCode_New Py_PROTO((
 	int, int, int, int, PyObject *, PyObject *, PyObject *, PyObject *,
-	PyObject *, PyObject *)); /* same as struct above */
+	PyObject *, PyObject *, int, PyObject *)); /* same as struct above */
+int PyCode_Addr2Line Py_PROTO((PyCodeObject *, int));
 
 #ifdef __cplusplus
 }
