@@ -17,18 +17,17 @@ for loc in candidate_locales:
     try:
 	setlocale(LC_NUMERIC, loc)
     except Error:
-        continue
+	continue
     if verbose:
-        print "locale %r" % loc
+	print "locale %r" % loc
     saw_locale = 1
     nl_radixchar = nl_langinfo(RADIXCHAR)
     li_radixchar = localeconv()['decimal_point']
     if nl_radixchar != li_radixchar:
-        print "%r != %r" % (nl_radixchar, li_radixchar)
+	print "%r != %r" % (nl_radixchar, li_radixchar)
     nl_radixchar = nl_langinfo(THOUSEP)
     li_radixchar = localeconv()['thousands_sep']
     if nl_radixchar != li_radixchar:
-        print "%r != %r" % (nl_radixchar, li_radixchar)
+	print "%r != %r" % (nl_radixchar, li_radixchar)
 if not saw_locale:
     raise ImportError, "None of the listed locales found"
-
