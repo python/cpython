@@ -632,6 +632,10 @@ whichmodule(PyObject *global, PyObject *global_name) {
     PyObject *module = 0, *modules_dict = 0,
         *global_name_attr = 0, *name = 0;
 
+    module = PyObject_GetAttrString(global, "__module__");
+    if (module) return module;
+    PyErr_Clear();
+
     if ((module = PyDict_GetItem(class_map, global))) {
         Py_INCREF(module);
         return module;
