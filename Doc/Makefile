@@ -672,9 +672,21 @@ distps:		tarps bzipps zipps
 distpdf:	tarpdf bzippdf zippdf
 distlatex:	tarlatex bziplatex ziplatex
 
-paperdist:	distpdf distps
-edist:		disthtml distinfo zipisilo
+# We use the "pkglist" target at the end of these to ensure the
+# package list is updated after building either of these; this seems a
+# reasonable compromise between only building it for distfiles or
+# having to build it manually.  Doing it here allows the packages for
+# distribution to be built using either of
+#     make distfiles && make PAPER=a4 paperdist
+#     make paperdist && make PAPER=a4 distfiles
+# The small amount of additional work is a small price to pay for not
+# having to remember which order to do it in. ;)
+paperdist:	distpdf distps pkglist
+edist:		disthtml distinfo zipisilo pkglist
 
+# The pkglist.html file is used as part of the download.html page on
+# python.org; it is not used as intermediate input here or as part of
+# the packages created.
 pkglist:
 	$(TOOLSDIR)/mkpkglist >pkglist.html
 
