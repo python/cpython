@@ -172,7 +172,7 @@ def _expand_lang(locale):
 class NullTranslations:
     def __init__(self, fp=None):
         self._info = {}
-        self._charset = 'iso-8859-1'
+        self._charset = None
         self._fallback = None
         if fp is not None:
             self._parse(fp)
@@ -264,24 +264,10 @@ class GNUTranslations(NullTranslations):
             if mend < buflen and tend < buflen:
                 msg = buf[moff:mend]
                 tmsg = buf[toff:tend]
-                if msg.find('\x00') >= 0:
-                    # Plural forms
-                    msgid1, msgid2 = msg.split('\x00')
-                    tmsg = tmsg.split('\x00')
-                    if self._coerce:
-                        msgid1 = unicode(msgid1, self._charset)
-                        tmsg = [unicode(x, self._charset) for x in tmsg]
-                    for i in range(len(tmsg)):
-                        catalog[(msgid1, i)] = tmsg[i]
-                else:
-                    if self._coerce:
-                        msg = unicode(msg, self._charset)
-                        tmsg = unicode(tmsg, self._charset)
-                    catalog[msg] = tmsg
             else:
                 raise IOError(0, 'File is corrupt', filename)
             # See if we're looking at GNU .mo conventions for metadata
-            if mlen == 0 and tmsg.lower().startswith('project-id-version:'):
+            if mlen == 0:
                 # Catalog description
                 for item in tmsg.splitlines():
                     item = item.strip()
@@ -299,6 +285,20 @@ class GNUTranslations(NullTranslations):
 ##                        nplurals = int(nplurals.strip())
                         plural = v[1].split('plural=')[1]
                         self.plural = c2py(plural)
+            if msg.find('\x00') >= 0:
+                # Plural forms
+                msgid1, msgid2 = msg.split('\x00')
+                tmsg = tmsg.split('\x00')
+                if self._coerce:
+                    msgid1 = unicode(msgid1, self._charset)
+                    tmsg = [unicode(x, self._charset) for x in tmsg]
+                for i in range(len(tmsg)):
+                    catalog[(msgid1, i)] = tmsg[i]
+            else:
+                if self._coerce:
+                    msg = unicode(msg, self._charset)
+                    tmsg = unicode(tmsg, self._charset)
+                catalog[msg] = tmsg
             # advance to next entry in the seek tables
             masteridx += 8
             transidx += 8
