@@ -44,13 +44,14 @@ def select(e, mods, vars, mod, skipofiles):
 		if not w:
 			continue
 		w = expandvars(w, vars)
-		if skipofiles and w[-2:] == '.o':
-			continue
-		if w[0] != '-' and w[-2:] in ('.o', '.a'):
-			w = os.path.join(e, w)
-		if w[:2] in ('-L', '-R'):
-			w = w[:2] + os.path.join(e, w[2:])
-		files.append(w)
+		for w in string.split(w):
+			if skipofiles and w[-2:] == '.o':
+				continue
+			if w[0] != '-' and w[-2:] in ('.o', '.a'):
+				w = os.path.join(e, w)
+			if w[:2] in ('-L', '-R'):
+				w = w[:2] + os.path.join(e, w[2:])
+			files.append(w)
 	return files
 
 cc_flags = ['-I', '-D', '-U']
