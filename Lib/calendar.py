@@ -11,7 +11,7 @@
 # - Monday is the first day of the week (numbered 0)
 
 # These are really parameters of the 'time' module:
-epoch = 1970		# Time began on January 1 of this year (00:00:00 UCT)
+epoch = 1970		# Time began on January 1 of this year (00:00:00 UTC)
 day_0 = 3		# The epoch begins on a Thursday (Monday = 0)
 
 # Return 1 for leap years, 0 for non-leap years
@@ -58,7 +58,7 @@ def leapdays(y1, y2):
 	return (y2+3)/4 - (y1+3)/4
 
 # Inverse of gmtime():
-# Turn UCT calendar time (less yday, wday) into seconds since epoch
+# Turn UTC calendar time (less yday, wday) into seconds since epoch
 def mktime(year, month, day, hours, mins, secs):
 	days = day - 1
 	for m in range(January, month): days = days + mdays[m]
@@ -96,8 +96,8 @@ def asctime(year, month, day, hours, mins, secs, yday, wday):
 	return s + ' ' + `year`
 
 # Localization: Minutes West from Greenwich
-# timezone = -2*60	# Middle-European time with DST on
-timezone = 5*60		# EST (sigh -- THINK time() doesn't return UCT)
+timezone = -2*60	# Middle-European time with DST on
+# timezone = 5*60  	# EST (sigh -- THINK time() doesn't return UTC)
 
 # Local time ignores DST issues for now -- adjust 'timezone' to fake it
 def localtime(secs):

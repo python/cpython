@@ -35,13 +35,29 @@ def test_gif(h, f):
 
 tests.append(test_gif)
 
-def test_pnm(h, f):
-	# PBM, PGM, PPM (portable {bit,gray,pix}map; together portable anymap)
+def test_pbm(h, f):
+	# PBM (portable bitmap)
 	if len(h) >= 3 and \
-		h[0] == 'P' and h[1] in '123456' and h[2] in ' \t\n\r':
-		return 'pnm'
+		h[0] == 'P' and h[1] in '14' and h[2] in ' \t\n\r':
+		return 'pbm'
 
-tests.append(test_pnm)
+tests.append(test_pbm)
+
+def test_pgm(h, f):
+	# PGM (portable graymap)
+	if len(h) >= 3 and \
+		h[0] == 'P' and h[1] in '25' and h[2] in ' \t\n\r':
+		return 'pgm'
+
+tests.append(test_pgm)
+
+def test_ppm(h, f):
+	# PPM (portable pixmap)
+	if len(h) >= 3 and \
+		h[0] == 'P' and h[1] in '36' and h[2] in ' \t\n\r':
+		return 'ppm'
+
+tests.append(test_ppm)
 
 def test_tiff(h, f):
 	# TIFF (can be in Motorola or Intel byte order)

@@ -18,57 +18,88 @@
 #	whrandom.random()	yields double precision random numbers 
 #				uniformly distributed between 0 and 1.
 #
-#	whrandom.seed()		must be called before whrandom.random()
+#	whrandom.seed(x, y, z)	must be called before whrandom.random()
 #				to seed the generator
+#
+#	There is also an interface to create multiple independent
+#	random generators, and to choose from other ranges.
 
 
 #	Translated by Guido van Rossum from C source provided by
 #	Adrian Baddeley.
 
 
-# The seed
-#
-_seed = [0, 0, 0]
-
-
-# Set the seed
-#
-def seed(x, y, z):
-	_seed[:] = [x, y, z]
-
-
-# Return the next random number in the range [0.0 .. 1.0)
-#
-def random():
-	from math import floor		# floor() function
+class whrandom:
 	#
-	[x, y, z] = _seed
-	x = 171 * (x % 177) - 2 * (x/177)
-	y = 172 * (y % 176) - 35 * (y/176)
-	z = 170 * (z % 178) - 63 * (z/178)
+	# Initialize an instance.
+	# Without arguments, initialize from current time.
+	# With arguments (x, y, z), initialize from them.
 	#
-	if x < 0: x = x + 30269
-	if y < 0: y = y + 30307
-	if z < 0: z = z + 30323
+	def init(self, *xyz):
+		if not xyz:
+			# Initialize from current time
+			import time
+			t = time.time()
+			t, x = divmod(t, 256)
+			t, y = divmod(t, 256)
+			t, z = divmod(t, 256)
+		else:
+			# Initialize from arguments (x, y, z)
+			x, y, z = xyz
+		self.seed(x, y, z)
+		return self
 	#
-	_seed[:] = [x, y, z]
+	# Set the seed from (x, y, z).
+	# These must be integers in the range [0, 256).
 	#
-	term = float(x)/30269.0 + float(y)/30307.0 + float(z)/30323.0
-	rand = term - floor(term)
+	def seed(self, *xyz):
+		if type(xyz) <> type(()) or len(xyz) <> 3:
+			raise TypeError, '3 seeds required'
+		x, y, z = xyz
+		if not type(x) == type(y) == type(z) == type(0):
+			raise TypeError, 'seeds must be integers'
+		if not 0 <= x < 256 and 0 <= y < 256 and 0 <= z < 256:
+			raise ValueError, 'seeds must be in range(0, 256)'
+		self._seed = xyz
 	#
-	if rand >= 1.0: rand = 0.0	# floor() inaccuracy?
+	# Get the next random number in the range [0.0, 1.0).
 	#
-	return rand
+	def random(self):
+		x, y, z = self._seed
+		#
+		x1, x2 = divmod(x, 177)
+		y1, y2 = divmod(y, 176)
+		z1, z2 = divmod(z, 178)
+		#
+		x = (171 * x2 -  2 * x1) % 30269
+		y = (172 * y2 - 35 * y1) % 30307
+		z = (170 * z2 - 63 * z1) % 30323
+		#
+		self._seed = x, y, z
+		#
+		return (x/30269.0 + y/30307.0 + z/30323.0) % 1.0
+	#
+	# Get a random number in the range [a, b).
+	#
+	def uniform(self, a, b):
+		return a + (b-a) * self.random()
+	#
+	# Get a random integer in the range [a, b] including both end points.
+	#
+	def randint(self, a, b):
+		return a + int(self.random() * (b+1-a))
+	#
+	# Choose a random element from a non-empty sequence.
+	#
+	def choice(self, seq):
+		return seq[int(self.random() * len(seq))]
 
 
 # Initialize from the current time
 #
-def init():
-	import time
-	t = time.time()
-	seed(t%256, t/256%256, t/65536%256)
-
-
-# Make sure the generator is preset to a nonzero value
-#
-init()
+_inst = whrandom().init()
+seed = _inst.seed
+random = _inst.random
+uniform = _inst.uniform
+randint = _inst.randint
+choice = _inst.choice
