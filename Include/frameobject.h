@@ -72,6 +72,7 @@ frameobject * newframeobject PROTO(
 
 #define Getconst(f, i)	(GETITEM((f)->f_code->co_consts, (i)))
 #define Getname(f, i)	(GETITEMNAME((f)->f_code->co_names, (i)))
+#define Getnamev(f, i)	(GETITEM((f)->f_code->co_names, (i)))
 
 
 /* Block management functions */
