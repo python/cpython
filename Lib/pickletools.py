@@ -70,10 +70,12 @@ At heart, that's all the PM has.  Subtleties arise for these reasons:
 + Backward compatibility and micro-optimization.  As explained below,
   pickle opcodes never go away, not even when better ways to do a thing
   get invented.  The repertoire of the PM just keeps growing over time.
-  So, e.g., there are now five distinct opcodes for building a Python integer,
-  four of them devoted to "short" integers.  Even so, the only way to pickle
-  a Python long int takes time quadratic in the number of digits, for both
-  pickling and unpickling.  This isn't so much a subtlety as a source of
+  For example, protocol 0 had two opcodes for building Python integers (INT
+  and LONG), protocol 1 added three more for more-efficient pickling of short
+  integers, and protocol 2 added two more for more-efficient pickling of
+  long integers (before protocol 2, the only ways to pickle a Python long
+  took time quadratic in the number of digits, for both pickling and
+  unpickling).  "Opcode bloat" isn't so much a subtlety as a source of
   wearying complication.
 
 
@@ -93,7 +95,8 @@ the older unpickler) opcode.
 The original pickle used what's now called "protocol 0", and what was called
 "text mode" before Python 2.3.  The entire pickle bytestream is made up of
 printable 7-bit ASCII characters, plus the newline character, in protocol 0.
-That's why it was called text mode.
+That's why it was called text mode.  Protocol 0 is small and elegant, but
+sometimes painfully inefficient.
 
 The second major set of additions is now called "protocol 1", and was called
 "binary mode" before Python 2.3.  This added many opcodes with arguments
@@ -101,10 +104,27 @@ consisting of arbitrary bytes, including NUL bytes and unprintable "high bit"
 bytes.  Binary mode pickles can be substantially smaller than equivalent
 text mode pickles, and sometimes faster too; e.g., BININT represents a 4-byte
 int as 4 bytes following the opcode, which is cheaper to unpickle than the
-(perhaps) 11-character decimal string attached to INT.
+(perhaps) 11-character decimal string attached to INT.  Protocol 1 also added
+a number of opcodes that operate on many stack elements at once (like APPENDS
+and SETITEMS).
 
 The third major set of additions came in Python 2.3, and is called "protocol
-2".  XXX Write a short blurb when Guido figures out what they are <wink>. XXX
+2".  This added:
+
+- A better way to pickle instances of new-style classes (NEWOBJ).
+
+- A way for a pickle to identify its protocol (PROTO).
+
+- Time- and space- efficient pickling of long ints (LONG{1,4}).
+
+- Shortcuts for small tuples (TUPLE{1,2,3}}.
+
+- Dedicated opcodes for bools (NEWTRUE, NEWFALSE).
+
+- The "extension registry", a vector of popular objects that can be pushed
+  efficiently by index (EXT{1,2,4}).  This is akin to the memo and GET, but
+  the registry contents are predefined (there's nothing akin to the memo's
+  PUT).
 """
 
 # Meta-rule:  Descriptions are stored in instances of descriptor objects,
@@ -889,19 +909,6 @@ opcodes = [
       earlier unpicklers ignore the leading "0" and return the int.
       """),
 
-    I(name='LONG',
-      code='L',
-      arg=decimalnl_long,
-      stack_before=[],
-      stack_after=[pylong],
-      proto=0,
-      doc="""Push a long integer.
-
-      The same as INT, except that the literal ends with 'L', and always
-      unpickles to a Python long.  There doesn't seem a real purpose to the
-      trailing 'L'.
-      """),
-
     I(name='BININT',
       code='J',
       arg=int4,
@@ -940,6 +947,46 @@ opcodes = [
       range(256, 2**16).  Integers in range(256) can also be pickled via
       BININT2, but BININT1 instead saves a byte.
       """),
+
+    I(name='LONG',
+      code='L',
+      arg=decimalnl_long,
+      stack_before=[],
+      stack_after=[pylong],
+      proto=0,
+      doc="""Push a long integer.
+
+      The same as INT, except that the literal ends with 'L', and always
+      unpickles to a Python long.  There doesn't seem a real purpose to the
+      trailing 'L'.
+
+      Note that LONG takes time quadratic in the number of digits when
+      unpickling (this is simply due to the nature of decimal->binary
+      conversion).  Proto 2 added linear-time (in C; still quadratic-time
+      in Python) LONG1 and LONG4 opcodes.
+      """),
+
+    I(name="LONG1",
+      code='\x8a',
+      arg=long1,
+      stack_before=[],
+      stack_after=[pylong],
+      proto=2,
+      doc="""Long integer using one-byte length.
+
+      A more efficient encoding of a Python long; the long1 encoding
+      says it all."""),
+
+    I(name="LONG4",
+      code='\x8b',
+      arg=long4,
+      stack_before=[],
+      stack_after=[pylong],
+      proto=2,
+      doc="""Long integer using found-byte length.
+
+      A more efficient encoding of a Python long; the long4 encoding
+      says it all."""),
 
     # Ways to spell strings (8-bit, not Unicode).
 
@@ -991,6 +1038,29 @@ opcodes = [
       stack_after=[pynone],
       proto=0,
       doc="Push None on the stack."),
+
+    # Ways to spell bools, starting with proto 2.  See INT for how this was
+    # done before proto 2.
+
+    I(name='NEWTRUE',
+      code='\x88',
+      arg=None,
+      stack_before=[],
+      stack_after=[pybool],
+      proto=2,
+      doc="""True.
+
+      Push True onto the stack."""),
+
+    I(name='NEWFALSE',
+      code='\x89',
+      arg=None,
+      stack_before=[],
+      stack_after=[pybool],
+      proto=2,
+      doc="""True.
+
+      Push False onto the stack."""),
 
     # Ways to spell Unicode strings.
 
@@ -1132,6 +1202,48 @@ opcodes = [
 
       Stack before: ... markobject 1 2 3 'abc'
       Stack after:  ... (1, 2, 3, 'abc')
+      """),
+
+    I(name='TUPLE1',
+      code='\x85',
+      arg=None,
+      stack_before=[anyobject],
+      stack_after=[pytuple],
+      proto=2,
+      doc="""One-tuple.
+
+      This code pops one value off the stack and pushes a tuple of
+      length 1 whose one item is that value back onto it.  IOW:
+
+          stack[-1] = tuple(stack[-1:])
+      """),
+
+    I(name='TUPLE2',
+      code='\x86',
+      arg=None,
+      stack_before=[anyobject, anyobject],
+      stack_after=[pytuple],
+      proto=2,
+      doc="""One-tuple.
+
+      This code pops two values off the stack and pushes a tuple
+      of length 2 whose items are those values back onto it.  IOW:
+
+          stack[-2:] = [tuple(stack[-2:])]
+      """),
+
+    I(name='TUPLE3',
+      code='\x87',
+      arg=None,
+      stack_before=[anyobject, anyobject, anyobject],
+      stack_after=[pytuple],
+      proto=2,
+      doc="""One-tuple.
+
+      This code pops three values off the stack and pushes a tuple
+      of length 3 whose items are those values back onto it.  IOW:
+
+          stack[-3:] = [tuple(stack[-3:])]
       """),
 
     # Ways to build dicts.
@@ -1317,6 +1429,53 @@ opcodes = [
       signed little-endian integer following.
       """),
 
+    # Access the extension registry (predefined objects).  Akin to the GET
+    # family.
+
+    I(name='EXT1',
+      code='\x82',
+      arg=uint1,
+      stack_before=[],
+      stack_after=[anyobject],
+      proto=2,
+      doc="""Extension code.
+
+      This code and the similar EXT2 and EXT4 allow using a registry
+      of popular objects that are pickled by name, typically classes.
+      It is envisioned that through a global negotiation and
+      registration process, third parties can set up a mapping between
+      ints and object names.
+
+      In order to guarantee pickle interchangeability, the extension
+      code registry ought to be global, although a range of codes may
+      be reserved for private use.
+
+      EXT1 has a 1-byte integer argument.  This is used to index into the
+      extension registry, and the object at that index is pushed on the stack.
+      """),
+
+    I(name='EXT2',
+      code='\x83',
+      arg=uint2,
+      stack_before=[],
+      stack_after=[anyobject],
+      proto=2,
+      doc="""Extension code.
+
+      See EXT1.  EXT2 has a two-byte integer argument.
+      """),
+
+    I(name='EXT4',
+      code='\x84',
+      arg=int4,
+      stack_before=[],
+      stack_after=[anyobject],
+      proto=2,
+      doc="""Extension code.
+
+      See EXT1.  EXT4 has a four-byte integer argument.
+      """),
+
     # Push a class object, or module function, on the stack, via its module
     # and name.
 
@@ -1487,7 +1646,34 @@ opcodes = [
       like a bug).  See INST for the gory details.
       """),
 
+    I(name='NEWOBJ',
+      code='\x81',
+      arg=None,
+      stack_before=[anyobject, anyobject],
+      stack_after=[anyobject],
+      proto=2,
+      doc="""Build an object instance.
+
+      The stack before should be thought of as containing a class
+      object followed by an argument tuple (the tuple being the stack
+      top).  Call these cls and args.  They are popped off the stack,
+      and the value returned by cls.__new__(cls, *args) is pushed back
+      onto the stack.
+      """),
+
     # Machine control.
+
+    I(name='PROTO',
+      code='\x80',
+      arg=uint1,
+      stack_before=[],
+      stack_after=[],
+      proto=2,
+      doc="""Protocol version indicator.
+
+      For protocol 2 and above, a pickle must start with this opcode.
+      The argument is the protocol version, an int in range(2, 256).
+      """),
 
     I(name='STOP',
       code='.',
@@ -1534,161 +1720,6 @@ opcodes = [
       ID is passed to self.persistent_load(), and whatever object that
       returns is pushed on the stack.  See PERSID for more detail.
       """),
-
-    # Protocol 2 opcodes
-
-    I(name='PROTO',
-      code='\x80',
-      arg=uint1,
-      stack_before=[],
-      stack_after=[],
-      proto=2,
-      doc="""Protocol version indicator.
-
-      For protocol 2 and above, a pickle must start with this opcode.
-      The argument is the protocol version, an int in range(2, 256).
-      """),
-
-    I(name='NEWOBJ',
-      code='\x81',
-      arg=None,
-      stack_before=[anyobject, anyobject],
-      stack_after=[anyobject],
-      proto=2,
-      doc="""Build an object instance.
-
-      The stack before should be thought of as containing a class
-      object followed by an argument tuple (the tuple being the stack
-      top).  Call these cls and args.  They are popped off the stack,
-      and the value returned by cls.__new__(cls, *args) is pushed back
-      onto the stack.
-      """),
-
-    I(name='EXT1',
-      code='\x82',
-      arg=uint1,
-      stack_before=[],
-      stack_after=[anyobject],
-      proto=2,
-      doc="""Extension code.
-
-      This code and the similar EXT2 and EXT4 allow using a registry
-      of popular objects that are pickled by name, typically classes.
-      It is envisioned that through a global negotiation and
-      registration process, third parties can set up a mapping between
-      ints and object names.
-
-      In order to guarantee pickle interchangeability, the extension
-      code registry ought to be global, although a range of codes may
-      be reserved for private use.
-      """),
-
-    I(name='EXT2',
-      code='\x83',
-      arg=uint2,
-      stack_before=[],
-      stack_after=[anyobject],
-      proto=2,
-      doc="""Extension code.
-
-      See EXT1.
-      """),
-
-    I(name='EXT4',
-      code='\x84',
-      arg=int4,
-      stack_before=[],
-      stack_after=[anyobject],
-      proto=2,
-      doc="""Extension code.
-
-      See EXT1.
-      """),
-
-    I(name='TUPLE1',
-      code='\x85',
-      arg=None,
-      stack_before=[anyobject],
-      stack_after=[pytuple],
-      proto=2,
-      doc="""One-tuple.
-
-      This code pops one value off the stack and pushes a tuple of
-      length 1 whose one item is that value back onto it.  IOW:
-
-          stack[-1] = tuple(stack[-1:])
-      """),
-
-    I(name='TUPLE2',
-      code='\x86',
-      arg=None,
-      stack_before=[anyobject, anyobject],
-      stack_after=[pytuple],
-      proto=2,
-      doc="""One-tuple.
-
-      This code pops two values off the stack and pushes a tuple
-      of length 2 whose items are those values back onto it.  IOW:
-
-          stack[-2:] = [tuple(stack[-2:])]
-      """),
-
-    I(name='TUPLE3',
-      code='\x87',
-      arg=None,
-      stack_before=[anyobject, anyobject, anyobject],
-      stack_after=[pytuple],
-      proto=2,
-      doc="""One-tuple.
-
-      This code pops three values off the stack and pushes a tuple
-      of length 3 whose items are those values back onto it.  IOW:
-
-          stack[-3:] = [tuple(stack[-3:])]
-      """),
-
-    I(name='NEWTRUE',
-      code='\x88',
-      arg=None,
-      stack_before=[],
-      stack_after=[pybool],
-      proto=2,
-      doc="""True.
-
-      Push True onto the stack."""),
-
-    I(name='NEWFALSE',
-      code='\x89',
-      arg=None,
-      stack_before=[],
-      stack_after=[pybool],
-      proto=2,
-      doc="""True.
-
-      Push False onto the stack."""),
-
-    I(name="LONG1",
-      code='\x8a',
-      arg=long1,
-      stack_before=[],
-      stack_after=[pylong],
-      proto=2,
-      doc="""Long integer using one-byte length.
-
-      A more efficient encoding of a Python long; the long1 encoding
-      says it all."""),
-
-    I(name="LONG4",
-      code='\x8b',
-      arg=long4,
-      stack_before=[],
-      stack_after=[pylong],
-      proto=2,
-      doc="""Long integer using found-byte length.
-
-      A more efficient encoding of a Python long; the long4 encoding
-      says it all."""),
-
 ]
 del I
 
