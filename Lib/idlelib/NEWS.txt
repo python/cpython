@@ -1,5 +1,5 @@
 What's New in IDLE 1.0.3?
-===================================
+=========================
 
 *Release date: 13-May-2004*
 
@@ -8,7 +8,7 @@ What's New in IDLE 1.0.3?
   Python Bug 775353, IDLEfork Bugs 755647, 761557
 
 What's New in IDLE 1.0.2?
-===================================
+=========================
 
 *Release date: 05-Dec-2003*
 
@@ -22,7 +22,7 @@ What's New in IDLE 1.0.2?
 - IDLE will use the Python html docs on the system, if found
 
 What's New in IDLE 1.0.1?
-===================================
+=========================
 
 *Release date: 23-Sep-2003*
 
@@ -33,7 +33,7 @@ What's New in IDLE 1.0.1?
   config-  filenames.  SF 782759  Also added note about .idlerc location.
 
 What's New in IDLE 1.0?
-===================================
+=======================
 
 *Release date: 29-Jul-2003*
 
@@ -42,7 +42,7 @@ What's New in IDLE 1.0?
 
 
 What's New in IDLE 1.0 release candidate 2?
-===================================
+===========================================
 
 *Release date: 24-Jul-2003*
 
@@ -50,7 +50,7 @@ What's New in IDLE 1.0 release candidate 2?
 
 
 What's New in IDLE 1.0 release candidate 1?
-===================================
+===========================================
 
 *Release date: 18-Jul-2003*
 
@@ -71,7 +71,7 @@ What's New in IDLE 1.0 release candidate 1?
 
 
 What's New in IDLE 1.0b2?
-===================================
+=========================
 
 *Release date: 29-Jun-2003*
 
@@ -112,7 +112,7 @@ What's New in IDLE 1.0b2?
 
 
 What's New in IDLEfork 0.9b1?
-===================================
+=============================
 
 *Release date: 02-Jun-2003*
 
