@@ -2386,7 +2386,7 @@ call_builtin(func, arg, kw)
 		Py_DECREF(call);
 		return res;
 	}
-	PyErr_Format(PyExc_TypeError, "call of non-function (type %s)",
+	PyErr_Format(PyExc_TypeError, "call of non-function (type %.400s)",
 		     func->ob_type->tp_name);
 	return NULL;
 }
