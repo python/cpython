@@ -1694,17 +1694,38 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 		if (res < 0 && WSAGetLastError() == WSAEWOULDBLOCK) {
 			/* This is a mess.  Best solution: trust select */
 			fd_set fds;
+			fd_set fds_exc;
 			struct timeval tv;
 			tv.tv_sec = (int)s->sock_timeout;
 			tv.tv_usec = (int)((s->sock_timeout - tv.tv_sec) * 1e6);
 			FD_ZERO(&fds);
 			FD_SET(s->sock_fd, &fds);
-			res = select(s->sock_fd+1, NULL, &fds, NULL, &tv);
+			FD_ZERO(&fds_exc);
+			FD_SET(s->sock_fd, &fds_exc);
+			res = select(s->sock_fd+1, NULL, &fds, &fds_exc, &tv);
 			if (res == 0) {
 				res = WSAEWOULDBLOCK;
 				timeout = 1;
-			} else if (res > 0)
-				res = 0;
+			} else if (res > 0) {
+				if (FD_ISSET(s->sock_fd, &fds))
+					/* The socket is in the writeable set - this
+					   means connected */
+					res = 0;
+				else {
+					/* As per MS docs, we need to call getsockopt()
+					   to get the underlying error */
+					int res_size = sizeof res;
+					/* It must be in the exception set */
+					assert(FD_ISSET(s->sock_fd, &fds_exc));
+					if (0 == getsockopt(s->sock_fd, SOL_SOCKET, SO_ERROR, 
+					                    (char *)&res, &res_size))
+						/* getsockopt also clears WSAGetLastError,
+						   so reset it back. */
+						WSASetLastError(res);
+					else
+						res = WSAGetLastError();
+				}
+			}
 			/* else if (res < 0) an error occurred */
 		}
 	}
