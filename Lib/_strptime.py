@@ -461,7 +461,7 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             month = _insensitiveindex(locale_time.a_month, found_dict['b'])
         elif group_key == 'd':
             day = int(found_dict['d'])
-        elif group_key is 'H':
+        elif group_key == 'H':
             hour = int(found_dict['H'])
         elif group_key == 'I':
             hour = int(found_dict['I'])
