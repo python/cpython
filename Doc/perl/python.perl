@@ -945,7 +945,7 @@ sub do_cmd_cmemberline{
     my $type = next_argument();
     my $name = next_argument();
     my $idx = make_str_index_entry("<tt class=\"cmember\">$name</tt>"
-                                   . " ($type member)");
+                                   . " ($container member)");
     $idx =~ s/ \(.*\)//;
     return "<dt>$type <b>$idx</b>\n<dd>"
            . $_;
@@ -956,7 +956,7 @@ sub do_env_cmemberdesc{
     my $type = next_argument();
     my $name = next_argument();
     my $idx = make_str_index_entry("<tt class=\"cmember\">$name</tt>"
-                                   . " ($type member)");
+                                   . " ($container member)");
     $idx =~ s/ \(.*\)//;
     return "<dl><dt>$type <b>$idx</b>\n<dd>"
            . $_
