@@ -311,29 +311,15 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcpid = os.spawnv(os.P_NOWAIT, args[0], args)
 
     def build_subprocess_arglist(self):
-        if sys.platform == 'darwin' and sys.argv[0].count('.app'):
-            # We need to avoid using sys.executable because it fails on some
-            # of the applet architectures On Mac OS X.
-            #
-            # here are the applet architectures tried:
-            #
-            # framework applet: sys.executable + -p is correct
-            # python 2.2 + pure python main applet:
-            #                   sys.executable + -p is correct
-            # pythonw idle.py:  sys.executable + -c is correct
-            #
-            # XXX what about warnoptions?
-            return [sys.executable, '-p', str(self.port)]
+        w = ['-W' + s for s in sys.warnoptions]
+        # Maybe IDLE is installed and is being accessed via sys.path,
+        # or maybe it's not installed and the idle.py script is being
+        # run from the IDLE source directory.
+        if __name__ == 'idlelib.PyShell':
+            command = "__import__('idlelib.run').run.main()"
         else:
-            w = ['-W' + s for s in sys.warnoptions]
-            # Maybe IDLE is installed and is being accessed via sys.path,
-            # or maybe it's not installed and the idle.py script is being
-            # run from the IDLE source directory.
-            if __name__ == 'idlelib.PyShell':
-                command = "__import__('idlelib.run').run.main()"
-            else:
-                command = "__import__('run').main()"
-            return [sys.executable] + w + ["-c", command, str(self.port)]
+            command = "__import__('run').main()"
+        return [sys.executable] + w + ["-c", command, str(self.port)]
 
     def start_subprocess(self):
         addr = ("localhost", self.port)

@@ -41,6 +41,17 @@ IDLEfork-0.9xx.tar.gz
 	at python1.5.  If so, change the first line in the /usr/bin/idle 
 	script to read:
 	       !# /usr/bin/python2.2
+
+	On Mac OS X, /usr/bin/python may be pointing at the OS-installed
+	python, which does not have GUI support. Change the first line of
+	/usr/bin/idle to read:
+		#! /usr/bin/env pythonw
+
+	Also, to build an IDLE application that can be used from the Finder
+	on Mac OS X, run:
+		pythonw buildapp.py build
+		open build
+	You will see an IDLE application.
 	       
 See README.txt for more details on this version of IDLEfork. 
 
