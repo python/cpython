@@ -456,12 +456,17 @@ class Au_write:
 		self._datalength = self._datawritten
 		self._file.seek(0, 2)
 
-def open(f, mode):
-	if mode == 'r':
+def open(f, mode=None):
+	if mode is None:
+		if hasattr(f, 'mode'):
+			mode = f.mode
+		else:
+			mode = 'rb'
+	if mode in ('r', 'rb'):
 		return Au_read(f)
-	elif mode == 'w':
+	elif mode in ('w', 'wb'):
 		return Au_write(f)
 	else:
-		raise Error, "mode must be 'r' or 'w'"
+		raise Error, "mode must be 'r', 'rb', 'w', or 'wb'"
 
 openfp = open
