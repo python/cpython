@@ -744,7 +744,11 @@ class EditorWindow(object):
         return idleConf.GetExtensions(editor_only=True)
 
     def load_extension(self, name):
-        mod = __import__(name, globals(), locals(), [])
+        try:
+            mod = __import__(name, globals(), locals(), [])
+        except ImportError:
+            print "\nFailed to import extension: ", name
+            return
         cls = getattr(mod, name)
         keydefs = idleConf.GetExtensionBindings(name)
         if hasattr(cls, "menudefs"):
@@ -762,7 +766,6 @@ class EditorWindow(object):
                 methodname = methodname + "_event"
                 if hasattr(ins, methodname):
                     self.text.bind(vevent, getattr(ins, methodname))
-        return ins
 
     def apply_bindings(self, keydefs=None):
         if keydefs is None:
