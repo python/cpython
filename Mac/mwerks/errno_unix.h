@@ -50,9 +50,11 @@ PERFORMANCE OF THIS SOFTWARE.
 #define EROFS		(-44)
 #endif
 
+#ifndef USE_GUSI2
 #define ESRCH		3
 #define EINTR		4
 #define ENODEV		19
+#endif
 #ifndef _POSIX
 #define EBADF		9
 #define EINVAL		22
