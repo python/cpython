@@ -1162,6 +1162,7 @@ parsenumber(struct compiling *co, char *s)
 				       "will return positive values "
 				       "in Python 2.4 and up") < 0)
 				return NULL;
+			errno = 0; /* Might be changed by PyErr_Warn() */
 		}
 	}
 	else
