@@ -167,13 +167,10 @@ MD5_new(self, args)
 {
 	md5object *md5p;
 	unsigned char *cp = NULL;
-	int len;
+	int len = 0;
 
-	if (!getargs(args, "")) {
-		err_clear();
-		if (!getargs(args, "s#", &cp, &len))
-			return NULL;
-	}
+	if (!newgetargs(args, "|s#", &cp, &len))
+		return NULL;
 
 	if ((md5p = newmd5object()) == NULL)
 		return NULL;
@@ -188,9 +185,9 @@ MD5_new(self, args)
 /* List of functions exported by this module */
 
 static struct methodlist md5_functions[] = {
-	{"new",			(method)MD5_new},
-	{"md5",			(method)MD5_new}, /* Backward compatibility */
-	{NULL,			NULL}		 /* Sentinel */
+	{"new",		(method)MD5_new, 1},
+	{"md5",		(method)MD5_new, 1}, /* Backward compatibility */
+	{NULL,		NULL}	/* Sentinel */
 };
 
 
