@@ -37,7 +37,14 @@ ConfigParser -- responsible for for parsing a list of
         return list of configuration options for the named section
 
     read(filenames)
-        read and parse the list of named configuration files
+        read and parse the list of named configuration files, given by
+        name.  A single filename is also allowed.  Non-existing files
+        are ignored.
+
+    readfp(fp, filename=None)
+        read and parse one configuration file, given as a file object.
+        The filename defaults to fp.name; it is only used in error
+        messages.
 
     get(section, option, raw=0, vars=None)
         return a string value for the named option.  All % interpolations are
@@ -166,13 +173,41 @@ class ConfigParser:
         return opts.keys()
 
     def read(self, filenames):
-        """Read and parse a list of filenames."""
+
+        """Read and parse a filename or a list of filenames.
+        
+        Files that cannot be opened are silently ignored; this is
+        designed so that you can specifiy a list of potential
+        configuration file locations (e.g. current directory, user's
+        home directory, systemwide directory), and all existing
+        configuration files in the list will be read.  A single
+        filename may also be given.
+        """
         if type(filenames) is type(''):
             filenames = [filenames]
-        for file in filenames:
-            fp = open(file)
-            self.__read(fp)
+        for filename in filenames:
+            try:
+                fp = open(filename)
+            except IOError:
+                continue
+            self.__read(fp, filename)
             fp.close()
+
+    def readfp(self, fp, filename=None):
+        """Like read() but the argument must be a file-like object.
+
+        The `fp' argument must have a `readline' method.  Optional
+        second argument is the `filename', which if not given, is
+        taken from fp.name.  If fp has no `name' attribute, `<???>' is
+        used.
+
+        """
+        if filename is None:
+            try:
+                filename = fp.name
+            except AttributeError:
+                filename = '<???>'
+        self.__read(fp, filename)
 
     def get(self, section, option, raw=0, vars=None):
         """Get an option value for a given section.
@@ -255,7 +290,7 @@ class ConfigParser:
         r'(?P<value>.*)$'                     # everything up to eol
         )
 
-    def __read(self, fp):
+    def __read(self, fp, fpname):
         """Parse a sectioned setup file.
 
         The sections in setup file contains a title line at the top,
@@ -302,7 +337,7 @@ class ConfigParser:
                     optname = None
                 # no section header in the file?
                 elif cursect is None:
-                    raise MissingSectionHeaderError(fp.name, lineno, `line`)
+                    raise MissingSectionHeaderError(fpname, lineno, `line`)
                 # an option line?
                 else:
                     mo = self.OPTCRE.match(line)
@@ -320,7 +355,7 @@ class ConfigParser:
                         # raised at the end of the file and will contain a
                         # list of all bogus lines
                         if not e:
-                            e = ParsingError(fp.name)
+                            e = ParsingError(fpname)
                         e.append(lineno, `line`)
         # if any parsing errors occurred, raise an exception
         if e:
