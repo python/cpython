@@ -1,32 +1,58 @@
-	Release notes for MacPython 1.5b3
+	Release notes for MacPython 1.5.1
 	---------------------------------
 	
 Open Issues and bugs:
 
-- Packages ("dotted import") appears to have problems for the cfm68k version
-  of MacPython. Please report anything of interest you find as soon as possible,
-  preferrably to pythonmac-sig@python.org.
-- import test.autotest fails the test_strftime test on %%. This is a bug in the
-  MetroWerks C strftime() routine. Test_re takes a loooooooooong time, by the way.
-- Tk menus may or may not work. Please let me know.
-- Occasionally Python becomes non-reactive to mouseclicks after switching it to
-  background and foreground again. If you experience this please let me know,
-  explaining the circumstances.
-- Printing a NumPy "array([1.2])" may cause a crash in cfm68k-Python. If you have
-  a 68k machine, a MetroWerks debugger, time and interest in NumPy: please let me
-  know and I'll ask you to help hunting this bug.
+- Packages ("dotted import") appears to have problems for the cfm68k
+  version of MacPython. Please report anything of interest you find as
+  soon as possible, preferrably to pythonmac-sig@python.org. I no longer
+  have access to a reasonable 68K machine, so it may well be that this
+  means the demise of cfm68k Python is near.
+- Printing a NumPy "array([1.2])" may cause a crash in
+  cfm68k-Python. Same comments as above.
 
 Changes since the previous version:
 
-Here are the mac-specific changes since MacPython 1.4, with end-user-visible
-changes near the top and API changes and other things that are developer-only
-more to the bottom. Changes marked with a [*] are new changes since
-1.5a3 (there has not been a MacPython 1.5b1). And, of course, all Guido's
-1.5-final changes are incorporated.
+Here are the mac-specific changes since MacPython 1.4, with
+end-user-visible changes near the top and API changes and other things
+that are developer-only more to the bottom. Changes marked with a [*]
+are new changes since 1.5b3 (there has never been a MacPython 1.5
+final). And, of course, all Guido's 1.5.1 changes are
+incorporated.
 
-- Moved Mac:Lib:toolbox and scripting to lib-toolbox and lib-scripting, analogous
-  to Guido's changes. Initial sys.path settings reflect this change [*]
-- Added cPickle and cStringIO modules [*]
+- Imported modules are now case-checked: the case of the filename
+  should match the name under which you import it [*]
+- There is now some minimal documentation on building true standalone
+  applications in Python, see building.html [*]
+- Python's private resources now use numbers from 228 up, because of
+  conflicts with Tk. This may affect you if you include private
+  resources in applets. [*]
+- Audio_mac spike bug fixed. [*]
+- FrameWork menu cleanup fixed. [*]
+- More MacOS errors now have a (somewhat) symbolic description. [*]
+- mactty module added to allow basic access to a serial line. [*]
+- toolbox modules have been regenerated, occasionally giving access to 
+  new functionality. They are now based upon Universal Headers version 
+  3.1 [*]
+- Waste module now uses Waste 1.3 [*]
+- Waste module now exports WE{Get,Set}TabSize [*]
+- Ordinal support in aetypes added (by Bill Bedford) [*]
+- ColorPicker module added (by Just van Rossum). It isn't documented,
+  but the docstring should be good enough. [*]
+- Printing module added (by Just van Rossum). It isn't documented and
+  it isn't easy to understand, but with Inside Mac beside you it might 
+  be useable. There's a test script in Mac:Lib:test. [*]
+- Sndihooks module added to give access to sound-input. Only lightly
+  tested and not documented yet. [*]
+- fstat() added to mac module. [*]
+- double dispose in MacOS.splash() fixed. [*]
+- Qt module now supports getting/setting movie times [*]
+- BuildApplet now also accepts old applets as input, which are updated 
+  to the current Python version [*]
+- Moved Mac:Lib:toolbox and scripting to lib-toolbox and
+  lib-scripting, analogous to Guido's changes. Initial sys.path settings
+  reflect this change
+- Added cPickle and cStringIO modules
 - Balloon help in set-preferences dialog and EditPythonPrefs
 - An interface to the Help Maganer has been added
 - New modules "preferences" and "pythonprefs" which allow access to
