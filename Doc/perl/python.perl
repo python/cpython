@@ -110,13 +110,6 @@ sub use_wrappers{
     return $before . $stuff . $after . $_;
 }
 
-sub use_sans_serif{
-    return use_wrappers(@_[0], '<font face="sans-serif">', '</font>');
-}
-sub use_italics{
-    return use_wrappers(@_[0], '<i>', '</i>');
-}
-
 $IN_DESC_HANDLER = 0;
 sub do_cmd_optional{
     if ($IN_DESC_HANDLER) {
@@ -182,7 +175,7 @@ sub do_cmd_var{
 sub do_cmd_dfn{
     return use_wrappers(@_[0], '<i class="dfn">', '</i>'); }
 sub do_cmd_emph{
-    return use_italics(@_); }
+    return use_wrappers(@_[0], '<i>', '</i>'); }
 sub do_cmd_file{
     return use_wrappers(@_[0], '<span class="file">', '</span>'); }
 sub do_cmd_filenq{
@@ -618,7 +611,7 @@ sub idx_cmd_refstmodindex{ return ref_module_index_helper('standard', @_); }
 sub do_cmd_nodename{ return do_cmd_label(@_); }
 
 sub init_myformat{
-#    $anchor_invisible_mark = '';
+    $anchor_invisible_mark = '';
     $anchor_mark = '';
     $icons{'anchor_mark'} = '';
 }
@@ -1531,8 +1524,12 @@ sub do_cmd_term{
 }
 
 
+# I don't recall exactly why this was needed, but it was very much needed.
+# We'll see if anything breaks when I move the "code" line out -- some
+# things broke with it in.
+
+#code # {}
 process_commands_wrap_deferred(<<_RAW_ARG_DEFERRED_CMDS_);
-code # {}
 declaremodule # [] # {} # {}
 memberline # [] # {}
 methodline # [] # {} # {}
