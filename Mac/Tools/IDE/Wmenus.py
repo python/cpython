@@ -111,7 +111,7 @@ class PopupWidget(Wbase.ClickableWidget):
 		self.menu.menu.EnableMenuItem(0)
 		reply = self.menu.menu.PopUpMenuSelect(t, l, 1)
 		if reply:
-			id = (reply & 0xffff0000) >> 16
+			id = reply >> 16
 			item = reply & 0xffff
 			self._menu_callback(id, item)
 		self._emptymenu()
@@ -200,7 +200,7 @@ class PopupMenu(PopupWidget):
 		self.menu.menu.EnableMenuItem(0)
 		reply = self.menu.menu.PopUpMenuSelect(t, l, 1)
 		if reply:
-			id = (reply & 0xffff0000) >> 16
+			id = reply >> 16
 			item = reply & 0xffff
 			self._menu_callback(id, item)
 
