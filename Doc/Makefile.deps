@@ -289,4 +289,6 @@ MACFILES= $(HOWTOSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 
 INSTFILES = $(HOWTOSTYLES) inst/inst.tex
 
-DISTFILES = $(HOWTOSTYLES) dist/dist.tex
+DISTFILES = $(HOWTOSTYLES) \
+	dist/dist.tex \
+	dist/sysconfig.tex
