@@ -238,8 +238,6 @@ extern DL_IMPORT(void) _PyObject_Del(PyObject *);
 #define PyObject_FROM_GC(op) (op)
 #define PyType_IS_GC(t) 0
 #define PyObject_IS_GC(o) 0
-#define PyObject_AS_GC(o) (o)
-#define PyObject_FROM_GC(o) (o)
 #define PyType_BASICSIZE(t) ((t)->tp_basicsize)
 #define PyType_SET_BASICSIZE(t, s) ((t)->tp_basicsize = (s))
 
