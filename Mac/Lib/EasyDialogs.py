@@ -277,7 +277,7 @@ class ProgressBar:
 					raise KeyboardInterrupt, ev
 			else:
 				if part == 4:	# inDrag 
-					self.d.DragWindow(where, screenbounds)
+					self.w.DragWindow(where, screenbounds)
 				else:
 					MacOS.HandleEvent(ev) 
 			
