@@ -621,6 +621,13 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
+     int PySequence_Lenth Py_PROTO((PyObject *o));
+
+       /*
+         Return the length of sequence object o, or -1 on failure.
+
+       */
+
      PyObject *PySequence_Concat Py_PROTO((PyObject *o1, PyObject *o2));
 
        /*
