@@ -91,7 +91,7 @@ class Debugger(bdb.Bdb):
 		self.set_quit()
 		self.clear_tracefuncs()
 		self.continuewithoutdebugger = 1
-		if self.w.parent:
+		if hasattr(self, "w") and self.w.parent:
 			self.exit_mainloop()
 			self.resetwidgets()
 	
