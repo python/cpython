@@ -109,7 +109,6 @@ __version__ = "$Revision$"
 import sys
 import os
 from types import *
-import string
 import StringIO
 import getopt
 import pickle
@@ -124,7 +123,7 @@ import robotparser
 
 # Extract real version number if necessary
 if __version__[0] == '$':
-    _v = string.split(__version__)
+    _v = __version__.split()
     if len(_v) == 3:
         __version__ = _v[1]
 
@@ -170,13 +169,13 @@ def main():
         if o == '-d':
             dumpfile = a
         if o == '-m':
-            maxpage = string.atoi(a)
+            maxpage = int(a)
         if o == '-n':
             norun = 1
         if o == '-q':
             verbose = 0
         if o == '-r':
-            roundsize = string.atoi(a)
+            roundsize = int(a)
         if o == '-t':
             extra_roots.append(a)
         if o == '-a':
@@ -248,7 +247,7 @@ def load_pickle(dumpfile=DUMPFILE, verbose=VERBOSE):
     f.close()
     if verbose > 0:
         print "Done."
-        print "Root:", string.join(c.roots, "\n      ")
+        print "Root:", "\n      ".join(c.roots)
     return c
 
 
@@ -316,7 +315,7 @@ class Checker:
             troot = root
             scheme, netloc, path, params, query, fragment = \
                     urlparse.urlparse(root)
-            i = string.rfind(path, "/") + 1
+            i = path.rfind("/") + 1
             if 0 < i < len(path):
                 path = path[:i]
                 troot = urlparse.urlunparse((scheme, netloc, path,
@@ -544,7 +543,7 @@ class Checker:
 
     def checkforhtml(self, info, url):
         if info.has_key('content-type'):
-            ctype = string.lower(cgi.parse_header(info['content-type'])[0])
+            ctype = cgi.parse_header(info['content-type'])[0].lower()
         else:
             if url[-1:] == "/":
                 return 1
@@ -809,7 +808,7 @@ class MyHTMLParser(sgmllib.SGMLParser):
     def do_link(self, attributes):
         for name, value in attributes:
             if name == "rel":
-                parts = string.split(string.lower(value))
+                parts = value.lower().split()
                 if (  parts == ["stylesheet"]
                       or parts == ["alternate", "stylesheet"]):
                     self.link_attr(attributes, "href")
@@ -836,13 +835,13 @@ class MyHTMLParser(sgmllib.SGMLParser):
     def link_attr(self, attributes, *args):
         for name, value in attributes:
             if name in args:
-                if value: value = string.strip(value)
+                if value: value = value.strip()
                 if value: self.links[value] = None
 
     def do_base(self, attributes):
         for name, value in attributes:
             if name == 'href':
-                if value: value = string.strip(value)
+                if value: value = value.strip()
                 if value:
                     if self.checker:
                         self.checker.note(1, "  Base %s", value)

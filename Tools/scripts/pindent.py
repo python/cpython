@@ -83,7 +83,6 @@ EXPANDTABS = 0
 
 import os
 import re
-import string
 import sys
 
 next = {}
@@ -119,7 +118,7 @@ class PythonIndenter:
 
     def write(self, line):
         if self.expandtabs:
-            self._write(string.expandtabs(line, self.tabsize))
+            self._write(line.expandtabs(self.tabsize))
         else:
             self._write(line)
         # end if
@@ -270,7 +269,7 @@ class PythonIndenter:
                     thiskw = ''
                 # end if
             # end if
-            indent = len(string.expandtabs(line[:i], self.tabsize))
+            indent = len(line[:i].expandtabs(self.tabsize))
             while indent < current:
                 if firstkw:
                     if topid:
@@ -370,7 +369,7 @@ class StringReader:
         return r
     # end def read
     def readline(self):
-        i = string.find(self.buf, '\n', self.pos)
+        i = self.buf.find('\n', self.pos)
         return self.read(i + 1 - self.pos)
     # end def readline
     def readlines(self):
@@ -514,9 +513,9 @@ def test():
             # end if
             action = 'reformat'
         elif o == '-s':
-            stepsize = string.atoi(a)
+            stepsize = int(a)
         elif o == '-t':
-            tabsize = string.atoi(a)
+            tabsize = int(a)
         elif o == '-e':
             expandtabs = 1
         # end if

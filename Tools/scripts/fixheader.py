@@ -3,7 +3,6 @@
 # Add some standard cpp magic to a header file
 
 import sys
-import string
 
 def main():
     args = sys.argv[1:]
@@ -29,8 +28,8 @@ def process(file):
     sys.stderr.write('Processing %s ...\n' % file)
     magic = 'Py_'
     for c in file:
-        if c in string.ascii_letters + string.digits:
-            magic = magic + string.upper(c)
+        if ord(c)<=0x80 and c.isalnum():
+            magic = magic + c.upper()
         else: magic = magic + '_'
     sys.stdout = f
     print '#ifndef', magic

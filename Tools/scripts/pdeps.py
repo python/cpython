@@ -23,7 +23,6 @@
 import sys
 import regex
 import os
-import string
 
 
 # Main program
@@ -82,10 +81,10 @@ def process(filename, table):
         elif m_from.match(line) >= 0:
             (a, b), (a1, b1) = m_from.regs[:2]
         else: continue
-        words = string.splitfields(line[a1:b1], ',')
+        words = line[a1:b1].split(',')
         # print '#', line, words
         for word in words:
-            word = string.strip(word)
+            word = word.strip()
             if word not in list:
                 list.append(word)
 
@@ -152,7 +151,7 @@ def printresults(table):
     for mod in modules:
         list = table[mod]
         list.sort()
-        print string.ljust(mod, maxlen), ':',
+        print mod.ljust(maxlen), ':',
         if mod in list:
             print '(*)',
         for ref in list:

@@ -11,7 +11,7 @@ The actual script to place in cgi-bin is faqw.py.
 
 """
 
-import sys, string, time, os, stat, re, cgi, faqconf
+import sys, time, os, stat, re, cgi, faqconf
 from faqconf import *                   # This imports all uppercase names
 now = time.time()
 
@@ -33,14 +33,14 @@ class NoSuchFile(FileError):
         self.why = why
 
 def escape(s):
-    s = string.replace(s, '&', '&amp;')
-    s = string.replace(s, '<', '&lt;')
-    s = string.replace(s, '>', '&gt;')
+    s = s.replace('&', '&amp;')
+    s = s.replace('<', '&lt;')
+    s = s.replace('>', '&gt;')
     return s
 
 def escapeq(s):
     s = escape(s)
-    s = string.replace(s, '"', '&quot;')
+    s = s.replace('"', '&quot;')
     return s
 
 def _interpolate(format, args, kw):
@@ -95,7 +95,7 @@ def translate(text, pre=0):
         list.append(repl)
     j = len(text)
     list.append(escape(text[i:j]))
-    return string.join(list, '')
+    return ''.join(list)
 
 def emphasize(line):
     return re.sub(r'\*([a-zA-Z]+)\*', r'<I>\1</I>', line)
@@ -109,7 +109,7 @@ def revparse(rev):
     m = revparse_prog.match(rev)
     if not m:
         return None
-    [major, minor] = map(string.atoi, m.group(1, 2))
+    [major, minor] = map(int, m.group(1, 2))
     return major, minor
 
 logon = 0
@@ -123,10 +123,10 @@ def load_cookies():
     if not os.environ.has_key('HTTP_COOKIE'):
         return {}
     raw = os.environ['HTTP_COOKIE']
-    words = map(string.strip, string.split(raw, ';'))
+    words = [s.strip() for s in raw.split(';')]
     cookies = {}
     for word in words:
-        i = string.find(word, '=')
+        i = word.find('=')
         if i >= 0:
             key, value = word[:i], word[i+1:]
             cookies[key] = value
@@ -140,10 +140,10 @@ def load_my_cookie():
         return {}
     import urllib
     value = urllib.unquote(value)
-    words = string.split(value, '/')
+    words = value.split('/')
     while len(words) < 3:
         words.append('')
-    author = string.join(words[:-2], '/')
+    author = '/'.join(words[:-2])
     email = words[-2]
     password = words[-1]
     return {'author': author,
@@ -194,7 +194,7 @@ class UserInput:
         except (TypeError, KeyError):
             value = ''
         else:
-            value = string.strip(value)
+            value = value.strip()
         setattr(self, name, value)
         return value
 
@@ -209,7 +209,7 @@ class FaqEntry:
         if fp:
             import rfc822
             self.__headers = rfc822.Message(fp)
-            self.body = string.strip(fp.read())
+            self.body = fp.read().strip()
         else:
             self.__headers = {'title': "%d.%d. " % sec_num}
             self.body = ''
@@ -217,7 +217,7 @@ class FaqEntry:
     def __getattr__(self, name):
         if name[0] == '_':
             raise AttributeError
-        key = string.join(string.split(name, '_'), '-')
+        key = '-'.join(name.split('_'))
         try:
             value = self.__headers[key]
         except KeyError:
@@ -237,7 +237,7 @@ class FaqEntry:
             if not line:
                 break
             if line[:5] == 'head:':
-                version = string.strip(line[5:])
+                version = line[5:].strip()
         p.close()
         self.version = version
 
@@ -262,10 +262,10 @@ class FaqEntry:
         emit(ENTRY_HEADER2, self)
         pre = 0
         raw = 0
-        for line in string.split(self.body, '\n'):
+        for line in self.body.split('\n'):
             # Allow the user to insert raw html into a FAQ answer
             # (Skip Montanaro, with changes by Guido)
-            tag = string.lower(string.rstrip(line))
+            tag = line.rstrip().lower()
             if tag == '<html>':
                 raw = 1
                 continue
@@ -275,14 +275,14 @@ class FaqEntry:
             if raw:
                 print line
                 continue
-            if not string.strip(line):
+            if not line.strip():
                 if pre:
                     print '</PRE>'
                     pre = 0
                 else:
                     print '<P>'
             else:
-                if line[0] not in string.whitespace:
+                if not line[0].isspace():
                     if pre:
                         print '</PRE>'
                         pre = 0
@@ -335,7 +335,7 @@ class FaqDir:
         if not m:
             return None
         sec, num = m.group(1, 2)
-        return string.atoi(sec), string.atoi(num)
+        return int(sec), int(num)
 
     def list(self):
         # XXX Caller shouldn't modify result
@@ -432,7 +432,7 @@ class FaqWizard:
                 return
             words = map(lambda w: r'\b%s\b' % w, words)
             if self.ui.querytype[:3] == 'any':
-                queries = [string.join(words, '|')]
+                queries = ['|'.join(words)]
             else:
                 # Each of the individual queries must match
                 queries = words
@@ -551,7 +551,7 @@ class FaqWizard:
         if not self.ui.days:
             days = 1
         else:
-            days = string.atof(self.ui.days)
+            days = float(self.ui.days)
         try:
             cutoff = now - days * 24 * 3600
         except OverflowError:
@@ -623,7 +623,7 @@ class FaqWizard:
         output = os.popen(command).read()
         sys.stdout.write('<PRE>')
         athead = 0
-        lines = string.split(output, '\n')
+        lines = output.split('\n')
         while lines and not lines[-1]:
             del lines[-1]
         if lines:
@@ -634,7 +634,7 @@ class FaqWizard:
         headrev = None
         for line in lines:
             if entry and athead and line[:9] == 'revision ':
-                rev = string.strip(line[9:])
+                rev = line[9:].split()
                 mami = revparse(rev)
                 if not mami:
                     print line
@@ -690,7 +690,7 @@ class FaqWizard:
         print '</PRE>'
 
     def do_new(self):
-        entry = self.dir.new(section=string.atoi(self.ui.section))
+        entry = self.dir.new(section=int(self.ui.section))
         entry.version = '*new*'
         self.prologue(T_EDIT)
         emit(EDITHEAD)
@@ -723,7 +723,7 @@ class FaqWizard:
             entry = self.dir.open(self.ui.file)
             entry.load_version()
         # Check that the FAQ entry number didn't change
-        if string.split(self.ui.title)[:1] != string.split(entry.title)[:1]:
+        if self.ui.title.split()[:1] != entry.title.split()[:1]:
             self.error("Don't change the entry number please!")
             return
         # Check that the edited version is the current version
@@ -779,7 +779,7 @@ class FaqWizard:
         if '\r' in self.ui.body:
             self.ui.body = re.sub('\r\n?', '\n', self.ui.body)
         # Normalize whitespace in title
-        self.ui.title = string.join(string.split(self.ui.title))
+        self.ui.title = ' '.join(self.ui.title.split())
         # Check that there were any changes
         if self.ui.body == entry.body and self.ui.title == entry.title:
             self.error("You didn't make any changes!")

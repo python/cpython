@@ -156,8 +156,6 @@ classprog = regex.compile(classexpr)
 baseexpr = '^ *\(.*\) *( *) *$'
 baseprog = regex.compile(baseexpr)
 
-import string
-
 def fixline(line):
     if classprog.match(line) < 0: # No 'class' keyword -- no change
         return line
@@ -176,7 +174,7 @@ def fixline(line):
     basepart = line[a2+1:b2]
 
     # Extract list of base expressions
-    bases = string.splitfields(basepart, ',')
+    bases = basepart.split(',')
 
     # Strip trailing '()' from each base expression
     for i in range(len(bases)):
@@ -185,7 +183,7 @@ def fixline(line):
             bases[i] = bases[i][x1:y1]
 
     # Join the bases back again and build the new line
-    basepart = string.joinfields(bases, ', ')
+    basepart = ', '.join(bases)
 
     return head + '(' + basepart + '):' + tail
 

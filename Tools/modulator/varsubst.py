@@ -1,7 +1,6 @@
 #
 # Variable substitution. Variables are $delimited$
 #
-import string
 import re
 
 error = 'varsubst.error'
@@ -37,7 +36,7 @@ class Varsubst:
             rv = rv + value
 
     def _modindent(self, value, old):
-        lastnl = string.rfind(old, '\n', 0) + 1
+        lastnl = old.rfind('\n', 0) + 1
         lastnl = len(old) - lastnl
         sub = '\n' + (' '*lastnl)
         return re.sub('\n', sub, value)

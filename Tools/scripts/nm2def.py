@@ -34,7 +34,7 @@ Even if this isn't the default output of your nm, there is generally an
 option to produce this format (since it is the original v7 Unix format).
 
 """
-import os,re,string,sys
+import os,re,sys
 
 PYTHONLIB = 'libpython'+sys.version[:3]+'.a'
 PC_PYTHONLIB = 'Python'+sys.version[0]+sys.version[2]+'.dll'
@@ -43,12 +43,12 @@ NM = 'nm -p -g %s'                      # For Linux, use "nm -g %s"
 def symbols(lib=PYTHONLIB,types=('T','C','D')):
 
     lines = os.popen(NM % lib).readlines()
-    lines = map(string.strip,lines)
+    lines = [s.strip() for s in lines]
     symbols = {}
     for line in lines:
         if len(line) == 0 or ':' in line:
             continue
-        items = string.split(line)
+        items = line.split()
         if len(items) != 3:
             continue
         address, type, name = items
@@ -69,7 +69,7 @@ def export_list(symbols):
     data.sort()
     data.append('')
     code.sort()
-    return string.join(data,' DATA\n')+'\n'+string.join(code,'\n')
+    return ' DATA\n'.join(data)+'\n'+'\n'.join(code)
 
 # Definition file template
 DEF_TEMPLATE = """\

@@ -6,7 +6,6 @@ __version__ = "$Revision$"
 
 import os
 import sys
-import string
 import urllib
 import getopt
 
@@ -14,7 +13,7 @@ import webchecker
 
 # Extract real version number if necessary
 if __version__[0] == '$':
-    _v = string.split(__version__)
+    _v = __version__.split()
     if len(_v) == 3:
         __version__ = _v[1]
 
@@ -90,14 +89,14 @@ class Sucker(webchecker.Checker):
     def savefilename(self, url):
         type, rest = urllib.splittype(url)
         host, path = urllib.splithost(rest)
-        while path[:1] == "/": path = path[1:]
+        path = path.lstrip("/")
         user, host = urllib.splituser(host)
         host, port = urllib.splitnport(host)
-        host = string.lower(host)
+        host = host.lower()
         if not path or path[-1] == "/":
             path = path + "index.html"
         if os.sep != "/":
-            path = string.join(string.split(path, "/"), os.sep)
+            path = os.sep.join(path.split("/"))
             if os.name == "mac":
                 path = os.sep + path
         path = os.path.join(host, path)

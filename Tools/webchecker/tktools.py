@@ -1,7 +1,6 @@
 """Assorted Tk-related subroutines used in Grail."""
 
 
-import string
 from types import *
 from Tkinter import *
 
@@ -335,7 +334,7 @@ def flatten(msg):
     """Turn a list or tuple into a single string -- recursively."""
     t = type(msg)
     if t in (ListType, TupleType):
-        msg = string.join(map(flatten, msg))
+        msg = ' '.join(map(flatten, msg))
     elif t is ClassType:
         msg = msg.__name__
     else:
@@ -345,7 +344,7 @@ def flatten(msg):
 
 def boolean(s):
     """Test whether a string is a Tk boolean, without error checking."""
-    if string.lower(s) in ('', '0', 'no', 'off', 'false'): return 0
+    if s.lower() in ('', '0', 'no', 'off', 'false'): return 0
     else: return 1
 
 

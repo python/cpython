@@ -141,7 +141,7 @@ def get_arg_text(ob):
                     items.append("...")
                 if fob.func_code.co_flags & 0x8:
                     items.append("***")
-                argText = string.join(items , ", ")
+                argText = ", ".join(items)
                 argText = "(%s)" % argText
             except:
                 pass

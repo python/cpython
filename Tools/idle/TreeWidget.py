@@ -16,7 +16,6 @@
 
 import os
 import sys
-import string
 from Tkinter import *
 import imp
 

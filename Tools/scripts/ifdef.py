@@ -29,7 +29,6 @@
 import sys
 import regex
 import getopt
-import string
 
 defs = []
 undefs = []
@@ -62,12 +61,12 @@ def process(fpi, fpo):
             nextline = fpi.readline()
             if not nextline: break
             line = line + nextline
-        tmp = string.strip(line)
+        tmp = line.strip()
         if tmp[:1] != '#':
             if ok: fpo.write(line)
             continue
-        tmp = string.strip(tmp[1:])
-        words = string.split(tmp)
+        tmp = tmp[1:].strip()
+        words = tmp.split()
         keyword = words[0]
         if keyword not in keywords:
             if ok: fpo.write(line)

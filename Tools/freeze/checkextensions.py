@@ -3,7 +3,6 @@
 # and one or more .o files or a lib.a file.
 
 import os
-import string
 import parsesetup
 
 def checkextensions(unknown, extensions):
@@ -44,7 +43,7 @@ def select(e, mods, vars, mod, skipofiles):
 		if not w:
 			continue
 		w = expandvars(w, vars)
-		for w in string.split(w):
+		for w in w.split():
 			if skipofiles and w[-2:] == '.o':
 				continue
 			# Assume $var expands to absolute pathname
@@ -73,14 +72,14 @@ def treatword(w):
 def expandvars(str, vars):
 	i = 0
 	while i < len(str):
-		i = k = string.find(str, '$', i)
+		i = k = str.find('$', i)
 		if i < 0:
 			break
 		i = i+1
 		var = str[i:i+1]
 		i = i+1
 		if var == '(':
-			j = string.find(str, ')', i)
+			j = str.find(')', i)
 			if j < 0:
 				break
 			var = str[i:j]

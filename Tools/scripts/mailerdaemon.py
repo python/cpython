@@ -1,6 +1,5 @@
 """mailerdaemon - classes to parse mailer-daemon messages"""
 
-import string
 import rfc822
 import calendar
 import re
@@ -18,9 +17,9 @@ class ErrorMessage(rfc822.Message):
         sub = self.getheader('Subject')
         if not sub:
             return 0
-        sub = string.lower(sub)
-        if sub[:12] == 'waiting mail': return 1
-        if string.find(sub, 'warning') >= 0: return 1
+        sub = sub.lower()
+        if sub.startswith('waiting mail'): return 1
+        if 'warning' in sub: return 1
         self.sub = sub
         return 0
 
@@ -132,10 +131,10 @@ def emparse_list(fp, sub):
             if type(regexp) is type(''):
                 for i in range(len(emails)-1,-1,-1):
                     email = emails[i]
-                    exp = re.compile(string.join(string.split(regexp, '<>'), re.escape(email)), re.MULTILINE)
+                    exp = re.compile(re.escape(email).join(regexp.split('<>')), re.MULTILINE)
                     res = exp.search(data)
                     if res is not None:
-                        errors.append(string.join(string.split(string.strip(email)+': '+res.group('reason'))))
+                        errors.append(' '.join((email.strip()+': '+res.group('reason')).split()))
                         del emails[i]
                 continue
             res = regexp.search(data)
@@ -143,14 +142,14 @@ def emparse_list(fp, sub):
                 reason = res.group('reason')
                 break
     for email in emails:
-        errors.append(string.join(string.split(string.strip(email)+': '+reason)))
+        errors.append(' '.join((email.strip()+': '+reason).split()))
     return errors
 
 EMPARSERS = [emparse_list, ]
 
 def sort_numeric(a, b):
-    a = string.atoi(a)
-    b = string.atoi(b)
+    a = int(a)
+    b = int(b)
     if a < b: return -1
     elif a > b: return 1
     else: return 0

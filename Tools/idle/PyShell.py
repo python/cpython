@@ -208,7 +208,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         # Stuff source in the filename cache
         filename = "<pyshell#%d>" % self.gid
         self.gid = self.gid + 1
-        lines = string.split(source, "\n")
+        lines = source.split("\n")
         linecache.cache[filename] = len(source)+1, 0, lines, filename
         return filename
 
@@ -582,7 +582,7 @@ class PyShell(OutputWindow):
         # If we're in the current input and there's only whitespace
         # beyond the cursor, erase that whitespace first
         s = self.text.get("insert", "end-1c")
-        if s and not string.strip(s):
+        if s and not s.strip():
             self.text.delete("insert", "end-1c")
         # If we're in the current input before its last line,
         # insert a newline right at the insert point

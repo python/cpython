@@ -15,7 +15,6 @@ although most Mac specific details are contained in header-specific subclasses.
 """
 
 import re
-import string
 import sys
 import os
 import fnmatch
@@ -67,8 +66,8 @@ class Scanner:
 		for type in types:
 			modes = self.usedtypes[type].keys()
 			modes.sort()
-			self.report("%s %s", type, string.join(modes))
-			
+			self.report("%s %s", type, " ".join(modes))
+
 	def gentypetest(self, file):
 		fp = open(file, "w")
 		fp.write("types=[\n")
@@ -163,9 +162,9 @@ if missing: raise "Missing Types"
 			while line[-2:] == '\\\n':
 				line = line[:-2] + ' ' + f.readline()
 				lineno = lineno + 1
-			i = string.find(line, '#')
+			i = line.find('#')
 			if i >= 0: line = line[:i]
-			words = map(string.strip, string.splitfields(line, ':'))
+			words = [s.strip() for s in line.split(':')]
 			if words == ['']: continue
 			if len(words) <> 3:
 				print "Line", startlineno,
@@ -179,8 +178,8 @@ if missing: raise "Missing Types"
 				print "Empty pattern"
 				print `line`
 				continue
-			patparts = map(string.strip, string.splitfields(pat, ','))
-			repparts = map(string.strip, string.splitfields(rep, ','))
+			patparts = [s.strip() for s in pat.split(',')]
+			repparts = [s.strip() for s in rep.split(',')]
 			patterns = []
 			for p in patparts:
 				if not p:
@@ -188,7 +187,7 @@ if missing: raise "Missing Types"
 					print "Empty pattern part"
 					print `line`
 					continue
-				pattern = string.split(p)
+				pattern = p.split()
 				if len(pattern) > 3:
 					print "Line", startlineno,
 					print "Pattern part has > 3 words"
@@ -205,7 +204,7 @@ if missing: raise "Missing Types"
 					print "Empty replacement part"
 					print `line`
 					continue
-				replacement = string.split(p)
+				replacement = p.split()
 				if len(replacement) > 3:
 					print "Line", startlineno,
 					print "Pattern part has > 3 words"
@@ -502,10 +501,10 @@ if missing: raise "Missing Types"
 		self.generate(type, name, arglist)
 
 	def extractarglist(self, args):
-		args = string.strip(args)
+		args = args.strip()
 		if not args or args == "void":
 			return []
-		parts = map(string.strip, string.splitfields(args, ","))
+		parts = [s.strip() for s in args.split(",")]
 		arglist = []
 		for part in parts:
 			arg = self.extractarg(part)
@@ -524,7 +523,7 @@ if missing: raise "Missing Types"
 			# array matches an optional [] after the argument name
 			type = type + " ptr "
 		type = re.sub("\*", " ptr ", type)
-		type = string.strip(type)
+		type = type.strip()
 		type = re.sub("[ \t]+", "_", type)
 		return self.modifyarg(type, name, mode)
 	
@@ -581,7 +580,7 @@ if missing: raise "Missing Types"
 				if item[i] == '*':
 					newitem[i] = old[k][i]
 				elif item[i][:1] == '$':
-					index = string.atoi(item[i][1:]) - 1
+					index = int(item[i][1:]) - 1
 					newitem[i] = old[index][i]
 			new.append(tuple(newitem))
 		##self.report("old: %s", `old`)

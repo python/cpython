@@ -16,7 +16,6 @@ file ...  : files to sum; '-' or no files means stdin
 """ % bufsize
 
 import sys
-import string
 import os
 import md5
 import regsub
@@ -89,7 +88,7 @@ def main(args = sys.argv[1:], out = sys.stdout):
         if o == '-t':
             rmode = 'r'
         if o == '-s':
-            bufsize = string.atoi(a)
+            bufsize = int(a)
     if not args: args = ['-']
     return sum(args, out)
 

@@ -83,7 +83,7 @@ Sample use, programmatically
    trace.print_results(show_missing=1)
 """
 
-import sys, os, string, tempfile, types, copy, operator, inspect, exceptions, marshal
+import sys, os, tempfile, types, copy, operator, inspect, exceptions, marshal
 try:
     import cPickle
     pickle = cPickle
@@ -177,7 +177,7 @@ class Ignore:
             # or
             #  d = "/usr/local.py"
             #  filename = "/usr/local.py"
-            if string.find(filename, d + os.sep) == 0:
+            if filename.startswith(d + os.sep):
                 self._ignore[modulename] = 1
                 return 1
 
@@ -341,13 +341,12 @@ class CoverageResults:
                     # '#pragma: NO COVER' (it is possible to embed this into
                     # the text as a non-comment; no easy fix)
                     if executable_linenos.has_key(i+1) and \
-                       string.find(lines[i],
-                                   string.join(['#pragma', 'NO COVER'])) == -1:
+                       lines[i].find(' '.join(['#pragma', 'NO COVER'])) == -1:
                         outfile.write('>>>>>> ')
                     else:
                         outfile.write(' '*7)
                     n_lines = n_lines + 1
-                outfile.write(string.expandtabs(lines[i], 8))
+                outfile.write(lines[i].expandtabs(8))
 
             outfile.close()
 
@@ -675,16 +674,16 @@ def main(argv=None):
             continue
 
         if opt == "--ignore-dir":
-            for s in string.split(val, os.pathsep):
+            for s in val.split(os.pathsep):
                 s = os.path.expandvars(s)
                 # should I also call expanduser? (after all, could use $HOME)
 
-                s = string.replace(s, "$prefix",
-                                   os.path.join(sys.prefix, "lib",
-                                                "python" + sys.version[:3]))
-                s = string.replace(s, "$exec_prefix",
-                                   os.path.join(sys.exec_prefix, "lib",
-                                                "python" + sys.version[:3]))
+                s = s.replace("$prefix",
+                              os.path.join(sys.prefix, "lib",
+                                           "python" + sys.version[:3]))
+                s = s.replace("$exec_prefix",
+                              os.path.join(sys.exec_prefix, "lib",
+                                           "python" + sys.version[:3]))
                 s = os.path.normpath(s)
                 ignore_dirs.append(s)
             continue

@@ -30,7 +30,6 @@ import sys
 import regex
 import os
 from stat import *
-import string
 
 err = sys.stderr.write
 dbg = err
@@ -101,7 +100,7 @@ def fix(filename):
             return 1
         if lineno == 1 and g is None and line[:2] == '#!':
             # Check for non-Python scripts
-            words = string.split(line[2:])
+            words = line[2:].split()
             if words and regex.search('[pP]ython', words[0]) < 0:
                 msg = filename + ': ' + words[0]
                 msg = msg + ' script; not fixed\n'

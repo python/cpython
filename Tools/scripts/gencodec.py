@@ -22,7 +22,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 """#"
 
-import string,re,os,time,marshal
+import re,os,time,marshal
 
 # Create numeric tables or character based ones ?
 numeric = 1
@@ -34,9 +34,7 @@ mapRE = re.compile('((?:0x[0-9a-fA-F]+\+?)+)'
                    '(#.+)?')
 
 def parsecodes(codes,
-
-               split=string.split,atoi=string.atoi,len=len,
-               filter=filter,range=range):
+               len=len, filter=filter,range=range):
 
     """ Converts code combinations to either a single code integer
         or a tuple of integers.
@@ -49,12 +47,12 @@ def parsecodes(codes,
     """
     if not codes:
         return None
-    l = split(codes,'+')
+    l = codes.split('+')
     if len(l) == 1:
-        return atoi(l[0],16)
+        return int(l[0],16)
     for i in range(len(l)):
         try:
-            l[i] = atoi(l[i],16)
+            l[i] = int(l[i],16)
         except ValueError:
             l[i] = None
     l = filter(lambda x: x is not None, l)
@@ -63,9 +61,7 @@ def parsecodes(codes,
     else:
         return tuple(l)
 
-def readmap(filename,
-
-            strip=string.strip):
+def readmap(filename):
 
     f = open(filename,'r')
     lines = f.readlines()
@@ -76,7 +72,7 @@ def readmap(filename,
     for i in range(256):
         unmapped[i] = i
     for line in lines:
-        line = strip(line)
+        line = line.strip()
         if not line or line[0] == '#':
             continue
         m = mapRE.match(line)
@@ -108,9 +104,7 @@ def readmap(filename,
 
     return enc2uni
 
-def hexrepr(t,
-
-            join=string.join):
+def hexrepr(t):
 
     if t is None:
         return 'None'
@@ -118,11 +112,9 @@ def hexrepr(t,
         len(t)
     except:
         return '0x%04x' % t
-    return '(' + join(map(lambda t: '0x%04x' % t, t),', ') + ')'
+    return '(' + ', '.join(map(lambda t: '0x%04x' % t, t)) + ')'
 
-def unicoderepr(t,
-
-                join=string.join):
+def unicoderepr(t):
 
     if t is None:
         return 'None'
@@ -133,11 +125,9 @@ def unicoderepr(t,
             len(t)
         except:
             return repr(unichr(t))
-        return repr(join(map(unichr, t),''))
+        return repr(''.join(map(unichr, t)))
 
-def keyrepr(t,
-
-            join=string.join):
+def keyrepr(t):
 
     if t is None:
         return 'None'
@@ -151,7 +141,7 @@ def keyrepr(t,
                 return repr(chr(t))
             else:
                 return repr(unichr(t))
-        return repr(join(map(chr, t),''))
+        return repr(''.join(map(chr, t)))
 
 def codegen(name,map,comments=1):
 
@@ -246,7 +236,7 @@ def getregentry():
 
 encoding_map = codecs.make_encoding_map(decoding_map)
 ''')
-    return string.join(l,'\n')
+    return '\n'.join(l)
 
 def pymap(name,map,pyfile,comments=1):
 
@@ -269,9 +259,9 @@ def convertdir(dir,prefix='',comments=1):
     mapnames = os.listdir(dir)
     for mapname in mapnames:
         name = os.path.split(mapname)[1]
-        name = string.replace(name,'-','_')
-        name = string.split(name, '.')[0]
-        name = string.lower(name)
+        name = name.replace('-','_')
+        name = name.split('.')[0]
+        name = name.lower()
         codefile = name + '.py'
         marshalfile = name + '.mapping'
         print 'converting %s to %s and %s' % (mapname,

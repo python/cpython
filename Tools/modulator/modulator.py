@@ -223,7 +223,7 @@ class UI_module:
         rv = rv + (name+'.name = '+`self.name_entry.get()`+'\n')
         rv = rv + (name+'.abbrev = '+`self.abbrev_entry.get()`+'\n')
         rv = rv + (name+'.methodlist = '+`getlistlist(self.method_list)`+'\n')
-        rv = rv + (name+'.objects = ['+string.joinfields(onames, ',')+']\n')
+        rv = rv + (name+'.objects = ['+','.join(onames)+']\n')
         rv = rv + ('\n')
         return rv
         

@@ -47,7 +47,6 @@ Other options are:
 
 import sys
 import os
-import string
 import errno
 import sunaudiodev
 from SUNAUDIODEV import *
@@ -372,9 +371,9 @@ class Helpwin:
                 fp = open(readmefile)
                 contents = fp.read()
                 # wax the last page, it contains Emacs cruft
-                i = string.rfind(contents, '\f')
+                i = contents.rfind('\f')
                 if i > 0:
-                    contents = string.rstrip(contents[:i])
+                    contents = contents[:i].rstrip()
             finally:
                 if fp:
                     fp.close()

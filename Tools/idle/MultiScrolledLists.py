@@ -3,7 +3,6 @@
 # the right list displays the substructure of the selected item
 # in the left list.
 
-import string
 from Tkinter import *
 from WindowList import ListedToplevel
 from Separator import HSeparator
