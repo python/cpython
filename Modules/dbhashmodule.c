@@ -91,21 +91,6 @@ newdbhashobject(file, flags, mode,
     return (object *)dp;
 }
 
-static object *
-dbhash_close(dp)
-    dbhashobject *dp;
-{
-    if (dp->di_dbhash != NULL) {
-	if ((dp->di_dbhash->close)(dp->di_dbhash) != 0) {
-	    err_errno(DbhashError);
-	    return NULL;
-	}
-    }
-    dp->di_dbhash = NULL;
-    INCREF(None);
-    return None;
-}
-
 static void
 dbhash_dealloc(dp)
     dbhashobject *dp;
@@ -213,6 +198,25 @@ static mapping_methods dbhash_as_mapping = {
 };
 
 static object *
+dbhash_close(dp, args)
+    dbhashobject *dp;
+    object *args;
+{
+    if (!getnoarg(args))
+	return NULL;
+    if (dp->di_dbhash != NULL) {
+	if ((dp->di_dbhash->close)(dp->di_dbhash) != 0) {
+		dp->di_dbhash = NULL;
+	    err_errno(DbhashError);
+	    return NULL;
+	}
+    }
+    dp->di_dbhash = NULL;
+    INCREF(None);
+    return None;
+}
+
+static object *
 dbhash_keys(dp, args)
     dbhashobject *dp;
     object *args;
@@ -222,10 +226,6 @@ dbhash_keys(dp, args)
     int status;
     int err;
 
-    if (dp == NULL || !is_dbhashobject(dp)) {
-	err_badcall();
-	return NULL;
-    }
     if (!getnoarg(args))
 	return NULL;
     list = newlistobject(0);
