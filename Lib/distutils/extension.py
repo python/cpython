@@ -7,7 +7,7 @@ modules in setup scripts."""
 
 __revision__ = "$Id$"
 
-import os
+import os, string
 from types import *
 
 
@@ -168,7 +168,7 @@ def read_setup_file (filename):
             elif switch == "-I":
                 ext.include_dirs.append(value)
             elif switch == "-D":
-                equals = value.find("=")
+                equals = string.find(value, "=")
                 if equals == -1:        # bare "-DFOO" -- no value
                     ext.define_macros.append((value, None))
                 else:                   # "-DFOO=blah"
