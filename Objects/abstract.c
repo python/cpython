@@ -1439,6 +1439,7 @@ PySequence_Tuple(PyObject *v)
 			if (n < oldn) {
 				/* Check for overflow */
 				PyErr_NoMemory();
+				Py_DECREF(item);
 				goto Fail; 
 			}
 			if (_PyTuple_Resize(&result, n) != 0) {
