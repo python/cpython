@@ -99,6 +99,10 @@ while [ "$1" ] ; do
 	    DISCARD_TEMPS=''
 	    shift 1
 	    ;;
+	-q|--quiet|__quie|--qui|--qu|--q)
+	    QUIET=true
+	    shift 1
+	    ;;
 	-*)
 	    usage
 	    ;;
@@ -117,6 +121,10 @@ fi
 
 if [ "$DEBUGGING" ] ; then
     set -x
+fi
+
+if [ "$QUIET" ] ; then
+    exec >/dev/null
 fi
 
 for FILE in $@ ; do
