@@ -1,5 +1,23 @@
 Mon Jan  3 00:02:24 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
+	* Doc/Makefile: remove 'qua' from default targets
+
+	* Doc/README: add reference to ext.tex, change reference to
+	lib*.tex, explain that qua isn't built by default
+
+	* README: explain DESTDIR, clarify install procedure, add more
+	explanation to some options, add description of ChangeLog, add
+	wuarchive.wustl.edu to list of mirror sites
+
+	* Modules/socketmodule.c: make AF_UNIX code dependent on existence
+	of AF_UNIX (SCO ODT 3.0 doesn't support it -- let's hope it
+	doesn't define the symbol either)
+
+	* Makefile: attempt to fix install targets (added separate
+	libinstall and maninstall)
+
+	* Doc/libregex.tex: documented Tracy Tims' changes
+
 	* Modules/regexpr.c: redid Tracy Tims' changes to minimize diffs
 	(only two added lines now)
 
