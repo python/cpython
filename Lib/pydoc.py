@@ -128,14 +128,21 @@ def allmethods(cl):
         methods[key] = getattr(cl, key)
     return methods
 
-def _split_class_attrs(attrs, predicate):
+def _split_list(s, predicate):
+    """Split sequence s via predicate, and return pair ([true], [false]).
+
+    The return value is a 2-tuple of lists,
+        ([x for x in s if predicate(x)],
+         [x for x in s if not predicate(x)])
+    """
+
     yes = []
     no = []
-    for tuple in attrs:
-        if predicate(tuple):
-            yes.append(tuple)
+    for x in s:
+        if predicate(x):
+            yes.append(x)
         else:
-            no.append(tuple)
+            no.append(x)
     return yes, no
 
 # ----------------------------------------------------- module manipulation
@@ -608,9 +615,20 @@ TT { font-family: lucidatypewriter, lucida console, courier }
         contents = []
         push = contents.append
 
+        # Cute little class to pump out a horizontal rule between sections.
+        class HorizontalRule:
+            def __init__(self):
+                self.needone = 0
+            def maybe(self):
+                if self.needone:
+                    push('<hr>\n')
+                self.needone = 1
+        hr = HorizontalRule()
+
         def spill(msg, attrs, predicate):
-            ok, attrs = _split_class_attrs(attrs, predicate)
+            ok, attrs = _split_list(attrs, predicate)
             if ok:
+                hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
                     push(self.document(getattr(object, name), name, mod,
@@ -621,17 +639,19 @@ TT { font-family: lucidatypewriter, lucida console, courier }
         # pydoc can't make any reasonable sense of properties on its own,
         # and it doesn't appear that the getter, setter and del'er methods
         # are discoverable.  For now, just pump out their names.
-        def spillproperties(msg, attrs):
-            ok, attrs = _split_class_attrs(attrs, lambda t: t[1] == 'property')
+        def spillproperties(msg, attrs, predicate):
+            ok, attrs = _split_list(attrs, predicate)
             if ok:
+                hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
                     push('<dl><dt><strong>%s</strong></dl>\n' % name)
             return attrs
 
-        def spilldata(msg, attrs):
-            ok, attrs = _split_class_attrs(attrs, lambda t: t[1] == 'data')
+        def spilldata(msg, attrs, predicate):
+            ok, attrs = _split_list(attrs, predicate)
             if ok:
+                hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
                     base = self.docother(getattr(object, name), name, mod)
@@ -658,18 +678,17 @@ TT { font-family: lucidatypewriter, lucida console, courier }
             except TypeError:
                 pass
 
-        # All attrs defined in this class come first.
-        attrs, inherited = _split_class_attrs(attrs,
-                                              lambda t: t[2] is object)
-        # Sort inherited attrs by name of defining class.
-        inherited.sort(lambda t1, t2: cmp(t1[2].__name__, t2[2].__name__))
+        # Sort attrs by name of defining class.
+        attrs.sort(lambda t1, t2: cmp(t1[2].__name__, t2[2].__name__))
 
-        thisclass = object
-        while attrs or inherited:
+        thisclass = object  # list attrs defined here first
+        while attrs:
+            attrs, inherited = _split_list(attrs, lambda t: t[2] is thisclass)
+
             if thisclass is object:
                 tag = "defined here"
             else:
-                tag = "inherited from class %s" % self.classlink(thisclass,
+                tag = "inherited from %s" % self.classlink(thisclass,
                                                           object.__module__)
             tag += ':<br>\n'
 
@@ -683,8 +702,10 @@ TT { font-family: lucidatypewriter, lucida console, courier }
                           lambda t: t[1] == 'class method')
             attrs = spill("Static methods %s" % tag, attrs,
                           lambda t: t[1] == 'static method')
-            attrs = spillproperties("Properties %s" % tag, attrs)
-            attrs = spilldata("Data %s" % tag, attrs)
+            attrs = spillproperties("Properties %s" % tag, attrs,
+                                    lambda t: t[1] == 'property')
+            attrs = spilldata("Data %s" % tag, attrs,
+                              lambda t: t[1] == 'data')
             assert attrs == []
 
             # Split off the attributes inherited from the next class (note
@@ -692,8 +713,6 @@ TT { font-family: lucidatypewriter, lucida console, courier }
             if inherited:
                 attrs = inherited
                 thisclass = attrs[0][2]
-                attrs, inherited = _split_class_attrs(attrs,
-                                                lambda t: t[2] is thisclass)
 
         contents = ''.join(contents)
 
@@ -973,7 +992,7 @@ class TextDoc(Doc):
         push = contents.append
 
         def spill(msg, attrs, predicate):
-            ok, attrs = _split_class_attrs(attrs, predicate)
+            ok, attrs = _split_list(attrs, predicate)
             if ok:
                 push(msg)
                 for name, kind, homecls, value in ok:
@@ -984,16 +1003,16 @@ class TextDoc(Doc):
         # pydoc can't make any reasonable sense of properties on its own,
         # and it doesn't appear that the getter, setter and del'er methods
         # are discoverable.  For now, just pump out their names.
-        def spillproperties(msg, attrs):
-            ok, attrs = _split_class_attrs(attrs, lambda t: t[1] == 'property')
+        def spillproperties(msg, attrs, predicate):
+            ok, attrs = _split_list(attrs, predicate)
             if ok:
                 push(msg)
                 for name, kind, homecls, value in ok:
                     push(name + '\n')
             return attrs
 
-        def spilldata(msg, attrs):
-            ok, attrs = _split_class_attrs(attrs, lambda t: t[1] == 'data')
+        def spilldata(msg, attrs, predicate):
+            ok, attrs = _split_list(attrs, predicate)
             if ok:
                 push(msg)
                 for name, kind, homecls, value in ok:
@@ -1004,32 +1023,33 @@ class TextDoc(Doc):
 
         attrs = inspect.classify_class_attrs(object)
 
-        # All attrs defined in this class come first.
-        attrs, inherited = _split_class_attrs(attrs,
-                                              lambda t: t[2] is object)
-        # Sort inherited attrs by name of defining class.
-        inherited.sort(lambda t1, t2: cmp(t1[2].__name__, t2[2].__name__))
+        # Sort attrs by name of defining class.
+        attrs.sort(lambda t1, t2: cmp(t1[2].__name__, t2[2].__name__))
 
-        thisclass = object
-        while attrs or inherited:
+        thisclass = object  # list attrs defined here first
+        while attrs:
+            attrs, inherited = _split_list(attrs, lambda t: t[2] is thisclass)
+
             if thisclass is object:
                 tag = "defined here"
             else:
-                tag = "inherited from class %s" % classname(thisclass,
-                                                            object.__module__)
+                tag = "inherited from %s" % classname(thisclass,
+                                                      object.__module__)
 
             # Sort attrs by name.
             attrs.sort(lambda t1, t2: cmp(t1[0], t2[0]))
 
             # Pump out the attrs, segregated by kind.
-            attrs = spill("Methods %s:\n" % tag, attrs,
+            attrs = spill("* Methods %s:\n" % tag, attrs,
                           lambda t: t[1] == 'method')
-            attrs = spill("Class methods %s:\n" % tag, attrs,
+            attrs = spill("* Class methods %s:\n" % tag, attrs,
                           lambda t: t[1] == 'class method')
-            attrs = spill("Static methods %s:\n" % tag, attrs,
+            attrs = spill("* Static methods %s:\n" % tag, attrs,
                           lambda t: t[1] == 'static method')
-            attrs = spillproperties("Properties %s:\n" % tag, attrs)
-            attrs = spilldata("Data %s:\n" % tag, attrs)
+            attrs = spillproperties("* Properties %s:\n" % tag, attrs,
+                                    lambda t: t[1] == 'property')
+            attrs = spilldata("* Data %s:\n" % tag, attrs,
+                              lambda t: t[1] == 'data')
             assert attrs == []
 
             # Split off the attributes inherited from the next class (note
@@ -1037,8 +1057,6 @@ class TextDoc(Doc):
             if inherited:
                 attrs = inherited
                 thisclass = attrs[0][2]
-                attrs, inherited = _split_class_attrs(attrs,
-                                                lambda t: t[2] is thisclass)
 
         contents = '\n'.join(contents)
         if not contents:
