@@ -164,7 +164,7 @@ class install (Command):
         self.install_scripts = None
         self.install_data = None
 
-        self.compile = 0
+        self.compile = None
         self.optimize = None
 
         # These two are for putting non-packagized distributions into their
