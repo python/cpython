@@ -1,3 +1,4 @@
+
 # Symbolic constants for Tk
 
 # Booleans
@@ -33,6 +34,7 @@ SUNKEN='sunken'
 FLAT='flat'
 RIDGE='ridge'
 GROOVE='groove'
+SOLID = 'solid'
 
 # -orient
 HORIZONTAL='horizontal'
