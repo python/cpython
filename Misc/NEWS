@@ -23,6 +23,9 @@ Core and builtins
   starting with Py2.3 are guaranteed to be stable (the relative order of
   records with equal keys is unchanged).
 
+- Added a list.copysort() method that returns a copy of the sorted list
+  while leaving the original intact.
+
 - Added test whether wchar_t is signed or not. A signed wchar_t is not
   usable as internal unicode type base for Py_UNICODE since the
   unicode implementation assumes an unsigned type.
@@ -43,6 +46,9 @@ Core and builtins
 
 - obj.__contains__() now returns True/False instead of 1/0.  SF patch
   820195.
+
+- builtin_sum() now uses PyNumber_InPlaceAdd, fixing a previous
+  performance bug for sum(list_of_lists) and similar cases.
 
 Extension modules
 -----------------
