@@ -1,0 +1,5 @@
+/* Localized versions of Info.plist keys */
+
+CFBundleName = "Python";
+CFBundleShortVersionString = "2.2a1";
+CFBundleGetInfoString = "Python Runtime and Library";

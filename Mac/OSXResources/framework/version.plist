@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist SYSTEM "file://localhost/System/Library/DTDs/PropertyList.dtd">
+<plist version="0.9">
+<dict>
+	<key>BuildVersion</key>
+	<string>1</string>
+	<key>CFBundleShortVersionString</key>
+	<string>2.2a1</string>
+	<key>CFBundleVersion</key>
+	<string>Python 2.2a1</string>
+	<key>ProjectName</key>
+	<string>Python</string>
+	<key>ReleaseStatus</key>
+	<string>alfa</string>
+	<key>SourceVersion</key>
+	<string>2.2a1</string>
+</dict>
+</plist>
