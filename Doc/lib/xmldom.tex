@@ -39,21 +39,25 @@ code.  The DOM is a standard tree representation for XML data.
 
 The Document Object Model is being defined by the W3C in stages, or
 ``levels'' in their terminology.  The Python mapping of the API is
-substantially based on the DOM Level 2 recommendation.  Some aspects
-of the API will only become available in future Python releases, or
-may only be available in particular DOM implementations.
+substantially based on the DOM Level~2 recommendation.  The mapping of
+the Level~3 specification, currently only available in draft form, is
+being developed by the \ulink{Python XML Special Interest
+Group}{http://www.python.org/sigs/xml-sig/} as part of the
+\ulink{PyXML package}{http://pyxml.sourceforge.net/}.  Refer to the
+documentation bundled with that package for information on the current
+state of DOM Level~3 support.
 
 DOM applications typically start by parsing some XML into a DOM.  How
-this is accomplished is not covered at all by DOM Level 1, and Level 2
+this is accomplished is not covered at all by DOM Level~1, and Level~2
 provides only limited improvements: There is a
 \class{DOMImplementation} object class which provides access to
 \class{Document} creation methods, but no way to access an XML
 reader/parser/Document builder in an implementation-independent way.
 There is also no well-defined way to access these methods without an
 existing \class{Document} object.  In Python, each DOM implementation
-will provide a function \function{getDOMImplementation}. DOM Level 3
+will provide a function \function{getDOMImplementation()}. DOM Level~3
 adds a Load/Store specification, which defines an interface to the
-reader, but this is not implemented in Python.
+reader, but this is not yet available in the Python standard library.
 
 Once you have a DOM document object, you can access the parts of your
 XML document through its properties and methods.  These properties are
@@ -70,11 +74,11 @@ the strict mapping from IDL).  See section \ref{dom-conformance},
 
 \begin{seealso}
   \seetitle[http://www.w3.org/TR/DOM-Level-2-Core/]{Document Object
-            Model (DOM) Level 2 Specification}
+            Model (DOM) Level~2 Specification}
            {The W3C recommendation upon which the Python DOM API is
             based.}
   \seetitle[http://www.w3.org/TR/REC-DOM-Level-1/]{Document Object
-            Model (DOM) Level 1 Specification}
+            Model (DOM) Level~1 Specification}
            {The W3C recommendation for the
             DOM supported by \module{xml.dom.minidom}.}
   \seetitle[http://pyxml.sourceforge.net]{PyXML}{Users that require a
@@ -137,7 +141,7 @@ Some convenience constants are also provided:
 \begin{datadesc}{XMLNS_NAMESPACE}
   The namespace URI for namespace declarations, as defined by
   \citetitle[http://www.w3.org/TR/DOM-Level-2-Core/core.html]{Document
-  Object Model (DOM) Level 2 Core Specification} (section~1.1.8).
+  Object Model (DOM) Level~2 Core Specification} (section~1.1.8).
   \versionadded{2.2}
 \end{datadesc}
 
@@ -204,7 +208,7 @@ with the DOM in Python.
 
 The \class{DOMImplementation} interface provides a way for
 applications to determine the availability of particular features in
-the DOM they are using.  DOM Level 2 added the ability to create new
+the DOM they are using.  DOM Level~2 added the ability to create new
 \class{Document} and \class{DocumentType} objects using the
 \class{DOMImplementation} as well.
 
@@ -319,11 +323,13 @@ This is especially useful for DOM implementations which use any sort
 of proxy architecture (because more than one object can refer to the
 same node).
 
-\note{This is based on a proposed DOM Level 3 API which is
-still in the ``working draft'' stage, but this particular interface
-appears uncontroversial.  Changes from the W3C will not necessarily
-affect this method in the Python DOM interface (though any new W3C
-API for this would also be supported).}
+\begin{notice}
+  This is based on a proposed DOM Level~3 API which is still in the
+  ``working draft'' stage, but this particular interface appears
+  uncontroversial.  Changes from the W3C will not necessarily affect
+  this method in the Python DOM interface (though any new W3C API for
+  this would also be supported).
+\end{notice}
 \end{methoddesc}
 
 \begin{methoddesc}[Node]{appendChild}{newChild}
@@ -372,7 +378,7 @@ the \method{getElementsByTagName()} and
 \method{getElementsByTagNameNS()} methods of \class{Node} return
 objects with this interface to represent query results.
 
-The DOM Level 2 recommendation defines one method and one attribute
+The DOM Level~2 recommendation defines one method and one attribute
 for these objects:
 
 \begin{methoddesc}[NodeList]{item}{i}
@@ -667,12 +673,15 @@ child nodes.
 The content of the text node as a string.
 \end{memberdesc}
 
-\note{The use of a \class{CDATASection} node does not
-indicate that the node represents a complete CDATA marked section,
-only that the content of the node was part of a CDATA section.  A
-single CDATA section may be represented by more than one node in the
-document tree.  There is no way to determine whether two adjacent
-\class{CDATASection} nodes represent different CDATA marked sections.}
+\begin{notice}
+  The use of a \class{CDATASection} node does not indicate that the
+  node represents a complete CDATA marked section, only that the
+  content of the node was part of a CDATA section.  A single CDATA
+  section may be represented by more than one node in the document
+  tree.  There is no way to determine whether two adjacent
+  \class{CDATASection} nodes represent different CDATA marked
+  sections.
+\end{notice}
 
 
 \subsubsection{ProcessingInstruction Objects \label{dom-pi-objects}}
@@ -695,7 +704,7 @@ whitespace character.
 
 \versionadded{2.1}
 
-The DOM Level 2 recommendation defines a single exception,
+The DOM Level~2 recommendation defines a single exception,
 \exception{DOMException}, and a number of constants that allow
 applications to determine what sort of error occurred.
 \exception{DOMException} instances carry a \member{code} attribute
