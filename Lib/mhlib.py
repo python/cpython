@@ -140,7 +140,6 @@ class MH:
 		folders = []
 		path = self.getpath()
 		for name in os.listdir(path):
-			if name in (os.curdir, os.pardir): continue
 			fullname = os.path.join(path, name)
 			if os.path.isdir(fullname):
 				folders.append(name)
@@ -160,7 +159,6 @@ class MH:
 		subfolders = []
 		subnames = os.listdir(fullname)
 		for subname in subnames:
-			if subname in (os.curdir, os.pardir): continue
 			fullsubname = os.path.join(fullname, subname)
 			if os.path.isdir(fullsubname):
 				name_subname = os.path.join(name, subname)
@@ -189,7 +187,6 @@ class MH:
 		subfolders = []
 		subnames = os.listdir(fullname)
 		for subname in subnames:
-			if subname in (os.curdir, os.pardir): continue
 			if subname[0] == ',' or isnumeric(subname): continue
 			fullsubname = os.path.join(fullname, subname)
 			if os.path.isdir(fullsubname):
@@ -227,7 +224,6 @@ class MH:
 	def deletefolder(self, name):
 		fullname = os.path.join(self.getpath(), name)
 		for subname in os.listdir(fullname):
-			if subname in (os.curdir, os.pardir): continue
 			fullsubname = os.path.join(fullname, subname)
 			try:
 				os.unlink(fullsubname)
@@ -239,9 +235,9 @@ class MH:
 
 # Class representing a particular folder
 
-numericprog = regex.compile('[1-9][0-9]*')
+numericprog = regex.compile('^[1-9][0-9]*$')
 def isnumeric(str):
-	return numericprog.match(str) == len(str)
+	return numericprog.match(str) >= 0
 
 class Folder:
 
@@ -284,13 +280,15 @@ class Folder:
 	# As a side effect, set self.last to the last message (or 0)
 	def listmessages(self):
 		messages = []
+		match = numericprog.match
+		append = messages.append
 		for name in os.listdir(self.getfullname()):
-			if name[0] != "," and \
-			   numericprog.match(name) == len(name):
-				messages.append(string.atoi(name))
+			if match(name) >= 0:
+				append(name)
+		messages = map(string.atoi, messages)
 		messages.sort()
 		if messages:
-			self.last = max(messages)
+			self.last = messages[-1]
 		else:
 			self.last = 0
 		return messages
