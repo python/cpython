@@ -129,6 +129,8 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 
 - Update install-sh using version from automake 1.4.
 
+- #12195 - webbrowser.py - there was typo in Mac code
+
 What's New in Python 2.0?
 =========================
 
