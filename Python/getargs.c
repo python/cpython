@@ -687,25 +687,39 @@ convertsimple1(PyObject *arg, char **p_format, va_list *p_va)
 			char **buffer;
 			const char *encoding;
 			PyObject *u, *s;
-			int size;
+			int size, recode_strings;
 
 			/* Get 'e' parameter: the encoding name */
 			encoding = (const char *)va_arg(*p_va, const char *);
 			if (encoding == NULL)
 			    	encoding = PyUnicode_GetDefaultEncoding();
 			
-			/* Get 's' parameter: the output buffer to use */
+			/* Get output buffer parameter:
+			     's' (recode all objects via Unicode) or
+			     't' (only recode non-string objects) 
+			*/
 			if (*format != 's')
+			    	recode_strings = 1;
+			else if (*format == 't')
+			    	recode_strings = 0;
+			else
 				return "(unknown parser marker combination)";
 			buffer = (char **)va_arg(*p_va, char **);
 			format++;
 			if (buffer == NULL)
 				return "(buffer is NULL)";
 			
+			/* Encode object */
+			if (!recode_strings && PyString_Check(arg)) {
+			    	s = arg;
+				Py_INCREF(s);
+			}
+			else {
 			/* Convert object to Unicode */
 			u = PyUnicode_FromObject(arg);
 			if (u == NULL)
-				return "string or unicode or text buffer";
+					return \
+				     "string or unicode or text buffer";
 			
 			/* Encode object; use default error handling */
 			s = PyUnicode_AsEncodedString(u,
@@ -716,7 +730,9 @@ convertsimple1(PyObject *arg, char **p_format, va_list *p_va)
 				return "(encoding failed)";
 			if (!PyString_Check(s)) {
 				Py_DECREF(s);
-				return "(encoder failed to return a string)";
+					return \
+				     "(encoder failed to return a string)";
+				}
 			}
 			size = PyString_GET_SIZE(s);
 
