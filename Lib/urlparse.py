@@ -3,7 +3,7 @@
 
 # Standard/builtin Python modules
 import string
-from string import joinfields, splitfields, find, rfind
+from string import joinfields, splitfields, rfind
 
 # A classification of schemes ('' means apply by default)
 uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'wais', 'file',
