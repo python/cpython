@@ -14,7 +14,9 @@
 \maketitle
 
 \begin{abstract}
-  The \module{email} package can be used to handle email.
+  The \module{email} package provides classes and utilities to create,
+  parse, generate, and modify email messages, conforming to all the
+  relevant email and MIME related RFCs.
 \end{abstract}
 
 % The ugly "%begin{latexonly}" pseudo-environment supresses the table
@@ -23,6 +25,60 @@
 %begin{latexonly}
 \tableofcontents
 %end{latexonly}
+
+\section{Introduction}
+The \module{email} package provides classes and utilities to create,
+parse, generate, and modify email messages, conforming to all the
+relevant email and MIME related RFCs.
+
+This document describes the current version of the \module{email}
+package, which is available to Python programmers in a number of ways.
+Python 2.2.2 and 2.3 come with \module{email} version 2, while earlier
+versions of Python 2.2.x come with \module{email} version 1.  Python
+2.1.x and earlier do not come with any version of the \module{email}
+package.
+
+The \module{email} package is also available as a standalone distutils
+package, and is compatible with Python 2.1.3 and beyond.  Thus, if
+you're using Python 2.1.3 you can download the standalone package and
+install it in your \file{site-packages} directory.  The standalone
+\module{email} package is available on the
+\ulink{SourceForge \module{mimelib} project}{http://mimelib.sf.net}.
+
+The documentation that follows was written for the Python project, so
+if you're reading this as part of the standalone \module{email}
+package documentation, there are a few notes to be aware of:
+
+\begin{itemize}
+\item Deprecation and ``version added'' notes are relative to the
+      Python version a feature was added or deprecated.  To find out
+      what version of the \module{email} package a particular item was
+      added, changed, or removed, refer to the package's
+      \ulink{\file{NEWS} file}{http://cvs.sf.net/cgi-bin/viewcvs.cgi/mimelib/mimelib/NEWS?rev=1.36&content-type=text/vnd.viewcvs-markup}.
+
+\item The code samples are written with Python 2.2 in mind.  For
+      Python 2.1.3, some adjustments are necessary.  For example, this
+      code snippet;
+
+      \begin{verbatim}
+      if isinstance(s, str):
+          # ...
+      \end{verbatim}
+
+      would need to be written this way in Python 2.1.3:
+
+      \begin{verbatim}
+      from types import StringType
+      # ...
+      if isinstance(s, StringType):
+          # ...
+      \end{verbatim}
+
+\item If you're reading this documentation as part of the
+      standalone \module{email} package, some of the internal links to
+      other sections of the Python standard library may not resolve.
+
+\end{itemize}
 
 \input{email}
 
