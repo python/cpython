@@ -164,10 +164,12 @@ mro_subclasses(PyTypeObject *type, PyObject* temp)
 		else {
 			PyObject* tuple;
 			tuple = Py_BuildValue("OO", subclass, old_mro);
+			Py_DECREF(old_mro);
 			if (!tuple)
 				return -1;
 			if (PyList_Append(temp, tuple) < 0)
 				return -1;
+			Py_DECREF(tuple);
 		}
 		if (mro_subclasses(subclass, temp) < 0)
 			return -1;
@@ -256,7 +258,7 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
 		for (i = 0; i < PyList_Size(temp); i++) {
 			PyTypeObject* cls;
 			PyObject* mro;
-			PyArg_ParseTuple(PyList_GetItem(temp, i),
+			PyArg_ParseTuple(PyList_GET_ITEM(temp, i),
 					 "OO", &cls, &mro);
 			Py_DECREF(cls->tp_mro);
 			cls->tp_mro = mro;
