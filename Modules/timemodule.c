@@ -129,12 +129,12 @@ time_sleep(self, args)
 	if (!PyArg_Parse(args, "d", &secs))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-	if (floatsleep(secs) != 0) {
-		Py_BLOCK_THREADS
-		return NULL;
-	}
+		if (floatsleep(secs) != 0) {
+			Py_BLOCK_THREADS
+				return NULL;
+		}
 	Py_END_ALLOW_THREADS
-	Py_INCREF(Py_None);
+		Py_INCREF(Py_None);
 	return Py_None;
 }
 
@@ -154,15 +154,15 @@ time_convert(when, function)
 		return PyErr_SetFromErrno(PyExc_IOError);
 	}
 	return Py_BuildValue("(iiiiiiiii)",
-		       p->tm_year + 1900,
-		       p->tm_mon + 1,        /* Want January == 1 */
-		       p->tm_mday,
-		       p->tm_hour,
-		       p->tm_min,
-		       p->tm_sec,
-		       (p->tm_wday + 6) % 7, /* Want Monday == 0 */
-		       p->tm_yday + 1,       /* Want January, 1 == 1 */
-		       p->tm_isdst);
+			     p->tm_year + 1900,
+			     p->tm_mon + 1,        /* Want January == 1 */
+			     p->tm_mday,
+			     p->tm_hour,
+			     p->tm_min,
+			     p->tm_sec,
+			     (p->tm_wday + 6) % 7, /* Want Monday == 0 */
+			     p->tm_yday + 1,       /* Want January, 1 == 1 */
+			     p->tm_isdst);
 }
 
 static PyObject *
@@ -193,15 +193,15 @@ gettmarg(args, p)
 	struct tm *p;
 {
 	if (!PyArg_Parse(args, "(iiiiiiiii)",
-		     &p->tm_year,
-		     &p->tm_mon,
-		     &p->tm_mday,
-		     &p->tm_hour,
-		     &p->tm_min,
-		     &p->tm_sec,
-		     &p->tm_wday,
-		     &p->tm_yday,
-		     &p->tm_isdst))
+			 &p->tm_year,
+			 &p->tm_mon,
+			 &p->tm_mday,
+			 &p->tm_hour,
+			 &p->tm_min,
+			 &p->tm_sec,
+			 &p->tm_wday,
+			 &p->tm_yday,
+			 &p->tm_isdst))
 		return 0;
 	if (p->tm_year >= 1900)
 		p->tm_year -= 1900;
@@ -239,8 +239,9 @@ time_strftime(self, args)
 	buf.tm_mon--;
 	buf.tm_wday = (buf.tm_wday + 1) % 7;
 	buf.tm_yday--;
-	/* I hate these functions that presume you know how big the output */
-	/* will be ahead of time... */
+	/* I hate these functions that presume you know how big the output
+	 * will be ahead of time...
+	 */
 	for (i = 1024 ; i < 8192 ; i += 1024) {
 		outbuf = malloc(i);
 		if (outbuf == NULL) {
@@ -366,7 +367,7 @@ inittime()
 		long winterzone, summerzone;
 		char wintername[10], summername[10];
 		/* XXX This won't work on the southern hemisphere.
-		   XXX Anybody got a better idea? */
+		  XXX Anybody got a better idea? */
 		t = (time((time_t *)0) / YEAR) * YEAR;
 		p = localtime(&t);
 		winterzone = -p->tm_gmtoff;
@@ -386,6 +387,8 @@ inittime()
 	}
 #endif /* HAVE_TM_ZONE */
 #endif /* !HAVE_TZNAME */
+	if (PyErr_Occurred())
+		Py_FatalError("Can't initialize time module");
 }
 
 
@@ -395,36 +398,36 @@ static double
 floattime()
 {
 	/* There are three ways to get the time:
-	   (1) gettimeofday() -- resolution in microseconds
-	   (2) ftime() -- resolution in milliseconds
-	   (3) time() -- resolution in seconds
-	   In all cases the return value is a float in seconds.
-	   Since on some systems (e.g. SCO ODT 3.0) gettimeofday() may
-	   fail, so we fall back on ftime() or time().
-	   Note: clock resolution does not imply clock accuracy! */
+	  (1) gettimeofday() -- resolution in microseconds
+	  (2) ftime() -- resolution in milliseconds
+	  (3) time() -- resolution in seconds
+	  In all cases the return value is a float in seconds.
+	  Since on some systems (e.g. SCO ODT 3.0) gettimeofday() may
+	  fail, so we fall back on ftime() or time().
+	  Note: clock resolution does not imply clock accuracy! */
 #ifdef HAVE_GETTIMEOFDAY
-    {
-	struct timeval t;
+	{
+		struct timeval t;
 #ifdef GETTIMEOFDAY_NO_TZ
-	if (gettimeofday(&t) == 0)
-		return (double)t.tv_sec + t.tv_usec*0.000001;
+		if (gettimeofday(&t) == 0)
+			return (double)t.tv_sec + t.tv_usec*0.000001;
 #else /* !GETTIMEOFDAY_NO_TZ */
-	if (gettimeofday(&t, (struct timezone *)NULL) == 0)
-		return (double)t.tv_sec + t.tv_usec*0.000001;
+		if (gettimeofday(&t, (struct timezone *)NULL) == 0)
+			return (double)t.tv_sec + t.tv_usec*0.000001;
 #endif /* !GETTIMEOFDAY_NO_TZ */
-    }
+	}
 #endif /* !HAVE_GETTIMEOFDAY */
-    {
+	{
 #ifdef HAVE_FTIME
-	struct timeb t;
-	ftime(&t);
-	return (double)t.time + (double)t.millitm * (double)0.001;
+		struct timeb t;
+		ftime(&t);
+		return (double)t.time + (double)t.millitm * (double)0.001;
 #else /* !HAVE_FTIME */
-	time_t secs;
-	time(&secs);
-	return (double)secs;
+		time_t secs;
+		time(&secs);
+		return (double)secs;
 #endif /* !HAVE_FTIME */
-    }
+	}
 }
 
 
@@ -436,7 +439,7 @@ static int
 #ifdef MPW
 floatsleep(double secs)
 #else
-floatsleep(secs)
+	floatsleep(secs)
 	double secs;
 #endif /* MPW */
 {
