@@ -17,8 +17,8 @@ SECTION_TITLES = {
 
 SHORTNAME = "Generic"			# FAQ name with "FAQ" omitted
 PASSWORD = ""				# Password for editing
-OWNERNAME = "GvR"			# Name for feedback
-OWNEREMAIL = "guido@python.org"		# Email for feedback
+OWNERNAME = "FAQ owner"			# Name for feedback
+OWNEREMAIL = "nobody@anywhere.org"	# Email for feedback
 HOMEURL = "http://www.python.org"	# Related home page
 HOMENAME = "Python home"		# Name of related home page
 RCSBINDIR = "/usr/local/bin/"		# Directory containing RCS commands
@@ -49,13 +49,19 @@ entries marked with * were changed within the last 7 days.)
 
 # Version -- don't change unless you edit faqwiz.py
 
-WIZVERSION = "1.0.3"			# FAQ Wizard version
+WIZVERSION = "1.0.4"			# FAQ Wizard version
 
-# This parameter is normally overwritten with a dynamic value
-
-FAQCGI = 'faqw.py'			# Relative URL of the FAQ cgi script
 import os, sys
-FAQCGI = os.path.basename(sys.argv[0]) or FAQCGI
+if os.name in ['nt',]:
+    # On NT we'll probably be running python from a batch file,
+    # so sys.argv[0] is not helpful
+    FAQCGI = 'faq.bat'			# Relative URL of the FAQ cgi script
+    # LOGNAME is not typically set on NT
+    os.environ[ 'LOGNAME' ] = "FAQWizard"
+else:
+    # This parameter is normally overwritten with a dynamic value
+    FAQCGI = 'faqw.py'			# Relative URL of the FAQ cgi script
+    FAQCGI = os.path.basename(sys.argv[0]) or FAQCGI
 del os, sys
 
 # Perl (re module) style regular expression to recognize FAQ entry
@@ -91,12 +97,23 @@ FAQNAME = SHORTNAME + " FAQ"		# Name of the FAQ
 
 # RCS commands
 
-SH_RLOG = RCSBINDIR + "rlog %(file)s </dev/null 2>&1"
-SH_RLOG_H = RCSBINDIR + "rlog -h %(file)s </dev/null 2>&1"
-SH_RDIFF = RCSBINDIR + "rcsdiff -r%(prev)s -r%(rev)s %(file)s </dev/null 2>&1"
-SH_REVISION = RCSBINDIR + "co -p%(rev)s %(file)s </dev/null 2>&1"
-SH_LOCK = RCSBINDIR + "rcs -l %(file)s </dev/null 2>&1"
-SH_CHECKIN =  RCSBINDIR + "ci -u %(file)s <%(tfn)s 2>&1"
+import os
+if os.name in ['nt', ]:
+    SH_RLOG = RCSBINDIR + "rlog %(file)s < NUL"
+    SH_RLOG_H = RCSBINDIR + "rlog -h %(file)s  < NUL"
+    SH_RDIFF = RCSBINDIR + "rcsdiff -r%(prev)s -r%(rev)s %(file)s < NUL"
+    SH_REVISION = RCSBINDIR + "co -p%(rev)s %(file)s < NUL"
+    ### Have to use co -l, or the file is not marked rw on NT
+    SH_LOCK = RCSBINDIR + "co -l %(file)s < NUL"
+    SH_CHECKIN =  RCSBINDIR + "ci -u %(file)s < %(tfn)s"
+else:
+    SH_RLOG = RCSBINDIR + "rlog %(file)s </dev/null 2>&1"
+    SH_RLOG_H = RCSBINDIR + "rlog -h %(file)s </dev/null 2>&1"
+    SH_RDIFF = RCSBINDIR + "rcsdiff -r%(prev)s -r%(rev)s %(file)s </dev/null 2>&1"
+    SH_REVISION = RCSBINDIR + "co -p%(rev)s %(file)s </dev/null 2>&1"
+    SH_LOCK = RCSBINDIR + "rcs -l %(file)s </dev/null 2>&1"
+    SH_CHECKIN =  RCSBINDIR + "ci -u %(file)s <%(tfn)s 2>&1"
+del os
 
 # Titles for various output pages (not subject to substitution)
 
@@ -531,7 +548,9 @@ HREF="http://www.python.org/psa/">the PSA home page</A>.
 
 <H2>Can I use HTML in the FAQ entry?</H2>
 
-No, but if you include a URL or an email address in the text it will
+Yes, if you include it in &lt;HTML&rt; and &lt;/HTML&gt; tags.
+<P>
+Also, if you include a URL or an email address in the text it will
 automatigally become an anchor of the right type.  Also, *word*
 is made italic (but only for single alphabetic words).
 
