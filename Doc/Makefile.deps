@@ -195,6 +195,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/libshutil.tex \
 	../lib/librepr.tex \
 	../lib/libmsvcrt.tex \
+	../lib/libwinreg.tex \
 	../lib/libwinsound.tex \
 	../lib/windows.tex \
 	../lib/libpyclbr.tex \
