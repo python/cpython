@@ -55,7 +55,7 @@ def mkdirs(dst):
 	if dst == '' or os.path.exists(dst):
 		return
 	head, tail = os.path.split(dst)
-	if not ':' in head:
+	if os.sep == ':' and not ':' in head:
 		head = head + ':'
 	mkdirs(head)
 	os.mkdir(dst, 0777)
