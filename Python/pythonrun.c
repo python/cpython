@@ -1247,6 +1247,12 @@ err_input(perrdetail *err)
 	case E_TOKEN:
 		msg = "invalid token";
 		break;
+	case E_EOFS:
+		msg = "EOF while scanning triple-quoted string";
+		break;
+	case E_EOLS:
+		msg = "EOL while scanning single-quoted string";
+		break;
 	case E_INTR:
 		PyErr_SetNone(PyExc_KeyboardInterrupt);
 		Py_XDECREF(v);
