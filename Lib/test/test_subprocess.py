@@ -269,7 +269,9 @@ class ProcessTestCase(unittest.TestCase):
                              stderr=subprocess.PIPE)
         (stdout, stderr) = p.communicate()
         self.assertEqual(stdout, None)
-        self.assertEqual(stderr, "pineapple")
+        # When running with a pydebug build, the # of references is outputted
+        # to stderr, so just check if stderr at least started with "pinapple"
+        self.assert_(stderr.startswith("pineapple"))
 
     def test_communicate(self):
         p = subprocess.Popen([sys.executable, "-c",
