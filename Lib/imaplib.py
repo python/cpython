@@ -15,7 +15,7 @@ Public functions:	Internaldate2tuple
 # 
 # Authentication code contributed by Donn Cave <donn@u.washington.edu> June 1998.
 
-__version__ = "2.36"
+__version__ = "2.39"
 
 import binascii, re, socket, string, time, random, sys
 
@@ -87,10 +87,13 @@ class IMAP4:
 
 	All arguments to commands are converted to strings, except for
 	AUTHENTICATE, and the last argument to APPEND which is passed as
-	an IMAP4 literal.  If necessary (the string contains
-	white-space and isn't enclosed with either parentheses or
-	double quotes) each string is quoted. However, the 'password'
-	argument to the LOGIN command is always quoted.
+	an IMAP4 literal.  If necessary (the string contains any
+	non-printing characters or white-space and isn't enclosed with
+	either parentheses or double quotes) each string is quoted.
+	However, the 'password' argument to the LOGIN command is always
+	quoted.  If you want to avoid having an argument string quoted
+	(eg: the 'flags' argument to STORE) then enclose the string in
+	parentheses (eg: "(\Deleted)").
 
 	Each command returns a tuple: (type, [data, ...]) where 'type'
 	is usually 'OK' or 'NO', and 'data' is either the text from the
@@ -351,6 +354,9 @@ class IMAP4:
 
 		(typ, [data, ...]) = <instance>.fetch(message_set, message_parts)
 
+		'message_parts' should be a string of selected parts
+		enclosed in parentheses, eg: "(UID BODY[TEXT])".
+
 		'data' are tuples of message part envelope and data.
 		"""
 		name = 'FETCH'
@@ -502,12 +508,14 @@ class IMAP4:
 		return self._untagged_response(typ, dat, name)
 
 
-	def store(self, message_set, command, flag_list):
+	def store(self, message_set, command, flags):
 		"""Alters flag dispositions for messages in mailbox.
 
-		(typ, [data]) = <instance>.store(message_set, command, flag_list)
+		(typ, [data]) = <instance>.store(message_set, command, flags)
 		"""
-		typ, dat = self._simple_command('STORE', message_set, command, flag_list)
+		if (flags[0],flags[-1]) != ('(',')'):
+			flags = '(%s)' % flags	# Avoid quoting the flags
+		typ, dat = self._simple_command('STORE', message_set, command, flags)
 		return self._untagged_response(typ, dat, 'FETCH')
 
 
