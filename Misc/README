@@ -1,0 +1,20 @@
+Python Misc subdirectory
+========================
+
+This directory contains files that wouldn't fit in elsewhere, in
+particular the UNIX manual page, an Emacs mode for Python source code,
+and a list of Frequently Asked Questions (and their answers).
+
+Files found here
+----------------
+
+BLURB		A quick description of Python for newcomers
+BLURB.LUTZ	A very good blurb to show to TCL/Perl hackers
+COPYING		The GNU GENERAL PUBLIC LICENCE (needed because of autoconf)
+COPYRIGHT	The Python copyright notice
+FAQ		Frequently Asked Questions about Python (and answers)
+Fixcprt.py	Fix the copyright message (a yearly chore :-)
+README		The file you're reading now
+fixfuncptrs.sh	Shell script to fix function pointer initializers
+python-mode.el	Emacs mode for editing Python programs (thanks again, Tim!)
+python.man	UNIX man page for the python interpreter
