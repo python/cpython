@@ -339,21 +339,20 @@ There is currently a single intrinsic mapping type:
 \begin{description}
 
 \item[Dictionaries]
-These represent finite sets of objects indexed by nearly arbitrary
-values.  The only types of values not acceptable as keys are values
-containing lists or dictionaries or other mutable types that are
-compared by value rather than by object identity, the reason being
-that the efficient implementation of dictionaries requires a key's
-hash value to remain constant.
+These\obindex{dictionary} represent finite sets of objects indexed by
+nearly arbitrary values.  The only types of values not acceptable as
+keys are values containing lists or dictionaries or other mutable
+types that are compared by value rather than by object identity, the
+reason being that the efficient implementation of dictionaries
+requires a key's hash value to remain constant.
 Numeric types used for keys obey the normal rules for numeric
 comparison: if two numbers compare equal (e.g., \code{1} and
 \code{1.0}) then they can be used interchangeably to index the same
 dictionary entry.
 
-Dictionaries are mutable; they are created by the \code{...}
-notation (see section \ref{dict}, ``Dictionary Displays'').
-\obindex{dictionary}
-\obindex{mutable}
+Dictionaries are \obindex{mutable}mutable; they are created by the
+\code{\{...\}} notation (see section \ref{dict}, ``Dictionary
+Displays'').
 
 The extension modules \module{dbm}\refstmodindex{dbm},
 \module{gdbm}\refstmodindex{gdbm}, \module{bsddb}\refstmodindex{bsddb}
@@ -362,12 +361,11 @@ provide additional examples of mapping types.
 \end{description} % Mapping types
 
 \item[Callable types]
-These are the types to which the function call operation (see section
-\ref{calls}, ``Calls'') can be applied:
+These\obindex{callable} are the types to which the function call
+operation (see section \ref{calls}, ``Calls'') can be applied:
 \indexii{function}{call}
 \index{invocation}
 \indexii{function}{argument}
-\obindex{callable}
 
 \begin{description}
 
