@@ -41,6 +41,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef __MWERKS__
 #include <SIOUX.h>
 #define USE_SIOUX
+#if __profile__ == 1
+#include <profiler.h>
+#endif
 #endif
 
 #ifdef THINK_C
@@ -244,6 +247,10 @@ init_common(int *argcp, char ***argvp)
 		setvbuf(stderr, (char *)NULL, _IOLBF, BUFSIZ);
 #endif
 	}
+#if __profile__ == 1
+	/* collectSummary or collectDetailed, timebase, #routines, max stack depth */
+	ProfilerInit(collectSummary, bestTimeBase, 2000, 150);
+#endif
 }
 
 /*
@@ -412,7 +419,11 @@ PyMac_Exit(status)
 	int status;
 {
 	int keep;
-	
+
+#if __profile__ == 1
+	ProfilerDump("\pPython Profiler Results");
+	ProfilerTerm();
+#endif	
 	if ( status )
 		keep = options.keep_error;
 	else
