@@ -35,7 +35,7 @@ _scriptExc_BadInstalled = "pimp._scriptExc_BadInstalled"
 
 NO_EXECUTE=0
 
-PIMP_VERSION="0.3"
+PIMP_VERSION="0.4"
 
 # Flavors:
 # source: setup-based package
@@ -44,7 +44,7 @@ DEFAULT_FLAVORORDER=['source', 'binary']
 DEFAULT_DOWNLOADDIR='/tmp'
 DEFAULT_BUILDDIR='/tmp'
 DEFAULT_INSTALLDIR=distutils.sysconfig.get_python_lib()
-DEFAULT_PIMPDATABASE="http://www.python.org/packman/version-0.3/24a0-%s.plist" % distutils.util.get_platform()
+DEFAULT_PIMPDATABASE_FMT="http://www.python.org/packman/version-%s/%s-%s-%s-%s-%s.plist"
 
 def _cmd(output, dir, *cmditems):
     """Internal routine to run a shell command in a given directory."""
@@ -163,7 +163,7 @@ class PimpPreferences:
         if not buildDir:
             buildDir = DEFAULT_BUILDDIR
         if not pimpDatabase:
-            pimpDatabase = DEFAULT_PIMPDATABASE
+            pimpDatabase = self.getDefaultDatabase()
         self.setInstallDir(installDir)
         self.flavorOrder = flavorOrder
         self.downloadDir = downloadDir
@@ -185,6 +185,53 @@ class PimpPreferences:
         
     def isUserInstall(self):
         return self.installDir != DEFAULT_INSTALLDIR
+        
+    def getDefaultDatabase(self, experimental=False):
+        if experimental:
+            status = "exp"
+        else:
+            status = "prod"
+            
+        major, minor, micro, state, extra = sys.version_info
+        pyvers = '%d.%d' % (major, minor)
+        if state != 'final':
+            pyvers = pyvers + '%s%d' % (state, extra)
+            
+        longplatform = distutils.util.get_platform()
+        osname, release, machine = longplatform.split('-')
+        # For some platforms we may want to differentiate between
+        # installation types
+        if osname == 'darwin':
+            if sys.prefix.startswith('/System/Library/Frameworks/Python.framework'):
+                osname = 'darwin_apple'
+            elif sys.prefix.startswith('/Library/Frameworks/Python.framework'):
+                osname = 'darwin_macpython'
+            # Otherwise we don't know...
+        # Now we try various URLs by playing with the release string.
+        # We remove numbers off the end until we find a match.
+        rel = release
+        while True:
+            url = DEFAULT_PIMPDATABASE_FMT % (PIMP_VERSION, status, pyvers, osname, rel, machine)
+            try:
+                urllib2.urlopen(url)
+            except urllib2.HTTPError, arg:
+            	print 'getDefaultDatabase: cannot open', url
+            	print 'error', arg
+                pass
+            else:
+                break
+            if not rel:
+                # We're out of version numbers to try. Use the
+                # full release number, this will give a reasonable
+                # error message later
+                url = DEFAULT_PIMPDATABASE_FMT % (PIMP_VERSION, status, pyvers, osname, release, machine)
+                break
+            idx = rel.rfind('.')
+            if idx < 0:
+                rel = ''
+            else:
+                rel = rel[:idx]
+        return url
 
     def check(self):
         """Check that the preferences make sense: directories exist and are
@@ -932,7 +979,6 @@ def main():
         print "       -D dir Set destination directory"
         print "              (default: %s)" % DEFAULT_INSTALLDIR
         print "       -u url URL for database"
-        print "              (default: %s)" % DEFAULT_PIMPDATABASE
         sys.exit(1)
         
     try:
