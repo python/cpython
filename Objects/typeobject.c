@@ -3461,7 +3461,7 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
 	if (getattribute != NULL &&
 	    getattribute->ob_type == &PyWrapperDescr_Type &&
 	    ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
-	    PyObject_GenericGetAttr)
+	    (void *)PyObject_GenericGetAttr)
 		    getattribute = NULL;
 	if (getattr == NULL && getattribute == NULL) {
 		/* Use the default dispatcher */
@@ -3700,9 +3700,9 @@ typedef struct {
 #undef RBINSLOT
 
 #define TPSLOT(NAME, SLOT, FUNCTION, WRAPPER) \
-	{NAME, offsetof(PyTypeObject, SLOT), FUNCTION, WRAPPER}
+	{NAME, offsetof(PyTypeObject, SLOT), (void *)(FUNCTION), WRAPPER}
 #define ETSLOT(NAME, SLOT, FUNCTION, WRAPPER) \
-	{NAME, offsetof(etype, SLOT), FUNCTION, WRAPPER}
+	{NAME, offsetof(etype, SLOT), (void *)(FUNCTION), WRAPPER}
 #define SQSLOT(NAME, SLOT, FUNCTION, WRAPPER) \
 	ETSLOT(NAME, as_sequence.SLOT, FUNCTION, WRAPPER)
 #define MPSLOT(NAME, SLOT, FUNCTION, WRAPPER) \
