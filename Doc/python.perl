@@ -366,8 +366,7 @@ sub make_str_index_entry{
 # (Used with LaTeX2HTML 96.1*)
 sub replace_verbatim {
     # Modifies $_
-    local($prefix,$suffix) = ("\n<p><dl><dd><pre><font size=-1>\n",
-			      "</font></pre></dl>");
+    local($prefix,$suffix) = ("\n<p><dl><dd><pre>\n", "</pre></dl>");
     s/$verbatim_mark(verbatim)(\d+)/$prefix$verbatim{$2}$suffix/go;
     s/$verbatim_mark(rawhtml)(\d+)/$verbatim{$2}/ego;	# Raw HTML
 }
@@ -375,8 +374,7 @@ sub replace_verbatim {
 # (Used with LaTeX2HTML 98.1)
 sub replace_verbatim_hook{
     # Modifies $_
-    local($prefix,$suffix) = ("\n<p><dl><dd><font size=-1>",
-			      "</font></dl>");
+    local($prefix,$suffix) = ("\n<p><dl><dd>", "</dl>");
     s/$math_verbatim_rx/&put_comment("MATH: ".$verbatim{$1})/eg;
     s/$verbatim_mark(\w*[vV]erbatim\*?)(\d+)\#/$prefix$verbatim{$2}$suffix/go;
     # Raw HTML, but replacements may have protected characters
