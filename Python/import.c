@@ -836,6 +836,40 @@ static int check_case(char *, int, int, char *);
 
 static int find_init_module(char *); /* Forward */
 
+#ifdef HAVE_DIRENT_H
+
+static int MatchFilename(char *pathname, char *filename);
+
+#include <sys/types.h>
+#include <dirent.h>
+
+static int MatchFilename(char *pathname, char *filename)
+{
+	DIR *dirp;
+	struct dirent *dp;
+	int len = strlen(filename);
+
+	if ((pathname == NULL) || (strlen(pathname) == 0))
+		pathname = ".";
+	dirp = opendir(pathname);
+	if (dirp) {
+		while ((dp = readdir(dirp)) != NULL) {
+#ifdef _DIRENT_HAVE_D_NAMELINE
+			int namelen = dp->d_namlen;
+#else  /* !_DIRENT_HAVE_D_NAMELINE */
+			int namelen = strlen(dp->d_name);
+#endif /* _DIRENT_HAVE_D_NAMELINE */
+			if (namelen == len && !strcmp(dp->d_name, filename)) {
+				(void)closedir(dirp);
+				return 1; /* Found */
+			}
+		}
+	}
+	(void)closedir(dirp);
+	return 0 ; /* Not found */
+}
+#endif /* HAVE_DIRENT_H */
+
 static struct filedescr *
 find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 	    FILE **p_fp)
@@ -966,8 +1000,27 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 			if (Py_VerboseFlag > 1)
 				PySys_WriteStderr("# trying %s\n", buf);
 			fp = fopen(buf, fdp->mode);
+#ifdef HAVE_DIRENT_H
+
+		        if (fp != NULL) {  /* check case */
+				char *curpath = PyString_AsString(v);
+				char *nstart = buf + strlen(curpath);
+				if (*nstart == SEP)
+					nstart++; 
+				if (MatchFilename(curpath, nstart)) {
+					break;      /* Found */
+				}
+				fclose(fp); /* No. Close & continue search */
+				fp = NULL;
+				if (Py_VerboseFlag > 1)
+					PySys_WriteStderr(
+					      "# case mismatch for %s:  %s\n", 
+					      name, buf);
+			}
+#else  /* !HAVE_DIRENT_H */
 			if (fp != NULL)
 				break;
+#endif /* HAVE_DIRENT_H */
 		}
 #endif /* !macintosh */
 		if (fp != NULL)
