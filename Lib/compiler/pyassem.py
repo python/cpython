@@ -3,9 +3,17 @@
 import dis
 import new
 import string
+import sys
 import types
 
 from compiler import misc
+
+def xxx_sort(l):
+    l = l[:]
+    def sorter(a, b):
+        return cmp(a.bid, b.bid)
+    l.sort(sorter)
+    return l
 
 class FlowGraph:
     def __init__(self):
@@ -16,13 +24,18 @@ class FlowGraph:
         self.blocks.add(self.exit)
 
     def startBlock(self, block):
+        if self._debug:
+            if self.current:
+                print "end", repr(self.current)
+                print "   ", self.current.get_children()
+            print repr(block)
         self.current = block
 
-    def nextBlock(self, block=None):
-        if block is None:
-            block = self.newBlock()
+    def nextBlock(self, block=None, force=0):
         # XXX think we need to specify when there is implicit transfer
-        # from one block to the next
+        # from one block to the next.  might be better to represent this
+        # with explicit JUMP_ABSOLUTE instructions that are optimized
+        # out when they are unnecessary.
         #
         # I think this strategy works: each block has a child
         # designated as "next" which is returned as the last of the
@@ -30,6 +43,16 @@ class FlowGraph:
         # reverse post order, the "next" block will always be emitted
         # immediately after its parent.
         # Worry: maintaining this invariant could be tricky
+        if block is None:
+            block = self.newBlock()
+
+        # Note: If the current block ends with an unconditional
+        # control transfer, then it is incorrect to add an implicit
+        # transfer to the block graph.  The current code requires
+        # these edges to get the blocks emitted in the right order,
+        # however. :-(  If a client needs to remove these edges, call
+        # pruneEdges().
+        
         self.current.addNext(block)
         self.startBlock(block)
 
@@ -41,13 +64,24 @@ class FlowGraph:
     def startExitBlock(self):
         self.startBlock(self.exit)
 
+    _debug = 0
+
+    def _enable_debug(self):
+        self._debug = 1
+
+    def _disable_debug(self):
+        self._debug = 0
+
     def emit(self, *inst):
-        # XXX should jump instructions implicitly call nextBlock?
+        if self._debug:
+            print "\t", inst
         if inst[0] == 'RETURN_VALUE':
             self.current.addOutEdge(self.exit)
+        if len(inst) == 2 and isinstance(inst[1], Block):
+            self.current.addOutEdge(inst[1])
         self.current.emit(inst)
 
-    def getBlocks(self):
+    def getBlocksInOrder(self):
         """Return the blocks in reverse postorder
 
         i.e. each node appears before all of its successors
@@ -64,13 +98,57 @@ class FlowGraph:
         # hack alert
         if not self.exit in order:
             order.append(self.exit)
+
+##        for b in order:
+##            print repr(b)
+##            print "\t", b.get_children()
+##            print b
+##            print
+            
         return order
+
+    def getBlocks(self):
+        return self.blocks.elements()
+
+    def getRoot(self):
+        """Return nodes appropriate for use with dominator"""
+        return self.entry
+    
+    def getContainedGraphs(self):
+        l = []
+        for b in self.getBlocks():
+            l.extend(b.getContainedGraphs())
+        return l
+
+    _uncond_transfer = ('RETURN_VALUE', 'RAISE_VARARGS',
+                        'JUMP_ABSOLUTE', 'JUMP_FORWARD')
+
+    def pruneNext(self):
+        """Remove bogus edge for unconditional transfers
+
+        Each block has a next edge that accounts for implicit control
+        transfers, e.g. from a JUMP_IF_FALSE to the block that will be
+        executed if the test is true.
+
+        These edges must remain for the current assembler code to
+        work. If they are removed, the dfs_postorder gets things in
+        weird orders.  However, they shouldn't be there for other
+        purposes, e.g. conversion to SSA form.  This method will
+        remove the next edge when it follows an unconditional control
+        transfer.
+        """
+        try:
+            op, arg = self.insts[-1]
+        except (IndexError, TypeError):
+            return
+        if op in self._uncond_transfer:
+            self.next = []
 
 def dfs_postorder(b, seen):
     """Depth-first search of tree rooted at b, return in postorder"""
     order = []
     seen[b] = b
-    for c in b.children():
+    for c in b.get_children():
         if seen.has_key(c):
             continue
         order = order + dfs_postorder(c, seen)
@@ -91,10 +169,9 @@ class Block:
 
     def __repr__(self):
         if self.label:
-            return "<block %s id=%d len=%d>" % (self.label, self.bid,
-                                                len(self.insts)) 
+            return "<block %s id=%d>" % (self.label, self.bid)
         else:
-            return "<block id=%d len=%d>" % (self.bid, len(self.insts))
+            return "<block id=%d>" % (self.bid)
 
     def __str__(self):
         insts = map(str, self.insts)
@@ -120,8 +197,25 @@ class Block:
         self.next.append(block)
         assert len(self.next) == 1, map(str, self.next)
 
-    def children(self):
+    def get_children(self):
+        if self.next and self.next[0] in self.outEdges:
+            self.outEdges.remove(self.next[0])
         return self.outEdges.elements() + self.next
+
+    def getContainedGraphs(self):
+        """Return all graphs contained within this block.
+
+        For example, a MAKE_FUNCTION block will contain a reference to
+        the graph for the function body.
+        """
+        contained = []
+        for inst in self.insts:
+            if len(inst) == 1:
+                continue
+            op = inst[1]
+            if hasattr(op, 'graph'):
+                contained.append(op.graph)
+        return contained
 
 # flags for code objects
 CO_OPTIMIZED = 0x0001
@@ -204,7 +298,7 @@ class PyFlowGraph(FlowGraph):
         pc = 0
         begin = {}
         end = {}
-        for b in self.getBlocks():
+        for b in self.getBlocksInOrder():
             begin[b] = pc
             for inst in b.getInstructions():
                 insts.append(inst)
@@ -274,6 +368,8 @@ class PyFlowGraph(FlowGraph):
 
     _converters = {}
     def _convert_LOAD_CONST(self, arg):
+        if hasattr(arg, 'getCode'):
+            arg = arg.getCode()
         return self._lookupName(arg, self.consts)
 
     def _convert_LOAD_FAST(self, arg):

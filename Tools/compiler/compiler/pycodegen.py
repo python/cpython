@@ -160,7 +160,7 @@ class CodeGenerator:
         self.set_lineno(node)
         for default in node.defaults:
             self.visit(default)
-        self.emit('LOAD_CONST', gen.getCode())
+        self.emit('LOAD_CONST', gen)
         self.emit('MAKE_FUNCTION', len(node.defaults))
 
     def visitClass(self, node):
@@ -195,7 +195,7 @@ class CodeGenerator:
             self.emit('POP_TOP')
             self.visit(suite)
             self.emit('JUMP_FORWARD', end)
-            self.nextBlock(nextTest)
+            self.startBlock(nextTest)
             self.emit('POP_TOP')
         if node.else_:
             self.visit(node.else_)
@@ -243,10 +243,11 @@ class CodeGenerator:
         self.nextBlock(start)
         self.set_lineno(node)
         self.emit('FOR_LOOP', anchor)
+        self.nextBlock()
         self.visit(node.assign)
         self.visit(node.body)
         self.emit('JUMP_ABSOLUTE', start)
-        self.nextBlock(anchor)
+        self.startBlock(anchor)
         self.emit('POP_BLOCK')
         if node.else_:
             self.visit(node.else_)
@@ -304,7 +305,7 @@ class CodeGenerator:
         if len(node.ops) > 1:
             end = self.newBlock()
             self.emit('JUMP_FORWARD', end)
-            self.nextBlock(cleanup)
+            self.startBlock(cleanup)
             self.emit('ROT_TWO')
             self.emit('POP_TOP')
             self.nextBlock(end)
@@ -344,11 +345,11 @@ class CodeGenerator:
             if cont:
                 skip_one = self.newBlock()
                 self.emit('JUMP_FORWARD', skip_one)
-                self.nextBlock(cont)
+                self.startBlock(cont)
                 self.emit('POP_TOP')
                 self.nextBlock(skip_one)
             self.emit('JUMP_ABSOLUTE', start)
-            self.nextBlock(anchor)
+            self.startBlock(anchor)
         self.delName(append)
         
         self.__list_count = self.__list_count - 1
@@ -363,6 +364,7 @@ class CodeGenerator:
         self.emit('SET_LINENO', node.lineno)
         self.nextBlock(start)
         self.emit('FOR_LOOP', anchor)
+        self.nextBlock()
         self.visit(node.assign)
         return start, anchor
 
@@ -390,9 +392,13 @@ class CodeGenerator:
         self.visit(node.test)
         self.emit('JUMP_IF_TRUE', end)
         self.nextBlock()
+        self.emit('POP_TOP')
         self.emit('LOAD_GLOBAL', 'AssertionError')
-        self.visit(node.fail)
-        self.emit('RAISE_VARARGS', 2)
+        if node.fail:
+            self.visit(node.fail)
+            self.emit('RAISE_VARARGS', 2)
+        else:
+            self.emit('RAISE_VARARGS', 1)
         self.nextBlock(end)
         self.emit('POP_TOP')
 
@@ -419,10 +425,11 @@ class CodeGenerator:
             lElse = end
         self.set_lineno(node)
         self.emit('SETUP_EXCEPT', handlers)
+        self.nextBlock()
         self.visit(node.body)
         self.emit('POP_BLOCK')
         self.emit('JUMP_FORWARD', lElse)
-        self.nextBlock(handlers)
+        self.startBlock(handlers)
         
         last = len(node.handlers) - 1
         for i in range(len(node.handlers)):
@@ -446,6 +453,8 @@ class CodeGenerator:
             self.emit('JUMP_FORWARD', end)
             if expr:
                 self.nextBlock(next)
+            else:
+                self.nextBlock()
             self.emit('POP_TOP')
         self.emit('END_FINALLY')
         if node.else_:
@@ -457,6 +466,7 @@ class CodeGenerator:
         final = self.newBlock()
         self.set_lineno(node)
         self.emit('SETUP_FINALLY', final)
+        self.nextBlock()
         self.visit(node.body)
         self.emit('POP_BLOCK')
         self.emit('LOAD_CONST', None)
