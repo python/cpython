@@ -76,3 +76,10 @@ au BufNewFile *.py,*.pyw,*.c,*.h set fileformat=unix
 " Automatically indent: ``filetype indent on``
 
 " Fold based on indentation: ``set foldmethod=indent``
+
+" Make trailing whitespace explicit:
+"highlight WhitespaceEOL ctermbg=red guibg=red 
+"match WhitespaceEOL /\s\+$/
+" or
+"set list listchars=trail:-
+
