@@ -61,9 +61,14 @@ static void
 mmap_object_dealloc(mmap_object *m_obj)
 {
 #ifdef MS_WIN32
-	UnmapViewOfFile (m_obj->data);
-	CloseHandle (m_obj->map_handle);
-	CloseHandle ((HANDLE)m_obj->file_handle);
+	if (m_obj->data != NULL)
+		UnmapViewOfFile (m_obj->data);
+	if (m_obj->map_handle != INVALID_HANDLE_VALUE)
+		CloseHandle (m_obj->map_handle);
+	if ((HANDLE)m_obj->file_handle != INVALID_HANDLE_VALUE)
+		CloseHandle ((HANDLE)m_obj->file_handle);
+	if (m_obj->tagname)
+		PyMem_Free(m_obj->tagname);
 #endif /* MS_WIN32 */
 
 #ifdef UNIX
@@ -826,9 +831,31 @@ new_mmap_object(PyObject *self, PyObject *args)
 	}
 
 	m_obj = PyObject_New (mmap_object, &mmap_object_type);
-    
+	if (m_obj==NULL)
+		return NULL;
+	/* Set every field to an invalid marker, so we can safely
+	   destruct the object in the face of failure */
+	m_obj->data = NULL;
+	m_obj->file_handle = (INT_PTR)INVALID_HANDLE_VALUE;
+	m_obj->map_handle = INVALID_HANDLE_VALUE;
+	m_obj->tagname = NULL;
+
 	if (fh) {
-		m_obj->file_handle = fh;
+		/* It is necessary to duplicate the handle, so the
+		   Python code can close it on us */
+		if (!DuplicateHandle(
+			    GetCurrentProcess(), /* source process handle */
+			    (HANDLE)fh, /* handle to be duplicated */
+			    GetCurrentProcess(), /* target proc handle */
+			    (LPHANDLE)&m_obj->file_handle, /* result */
+			    0, /* access - ignored due to options value */
+			    FALSE, /* inherited by child processes? */
+			    DUPLICATE_SAME_ACCESS)) { /* options */
+			dwErr = GetLastError();
+			Py_DECREF(m_obj);
+			PyErr_SetFromWindowsErr(dwErr);
+			return NULL;
+		}
 		if (!map_size) {
 			m_obj->size = GetFileSize ((HANDLE)fh, NULL);
 		} else {
@@ -836,12 +863,24 @@ new_mmap_object(PyObject *self, PyObject *args)
 		}
 	}
 	else {
-		m_obj->file_handle = (INT_PTR) -1;
 		m_obj->size = map_size;
 	}
 
 	/* set the initial position */
 	m_obj->pos = (size_t) 0;
+
+	/* set the tag name */
+	if (tagname != NULL) {
+		m_obj->tagname = PyMem_Malloc(strlen(tagname)+1);
+		if (m_obj->tagname == NULL) {
+			PyErr_NoMemory();
+			Py_DECREF(m_obj);
+			return NULL;
+		}
+		strcpy(m_obj->tagname, tagname);
+	}
+	else
+		m_obj->tagname = NULL;
 
 	m_obj->map_handle = CreateFileMapping ((HANDLE) m_obj->file_handle,
 					       NULL,
@@ -863,6 +902,7 @@ new_mmap_object(PyObject *self, PyObject *args)
 	} else {
 		dwErr = GetLastError();
 	}
+	Py_DECREF(m_obj);
 	PyErr_SetFromWindowsErr(dwErr);
 	return (NULL);
 }
