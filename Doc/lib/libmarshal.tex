@@ -61,19 +61,27 @@ The module defines these functions:
   \code{sys.stdout} or returned by \code{open()} or
   \code{posix.popen()}.
   
-  If the value has an unsupported type, garbage is written which cannot
-  be read back by \code{load()}.
+  If the value has (or contains an object that has) an unsupported type,
+  a \code{ValueError} exception is raised -- but garbage data will also
+  be written to the file.  The object will not be properly read back by
+  \code{load()}.
 \end{funcdesc}
 
 \begin{funcdesc}{load}{file}
   Read one value from the open file and return it.  If no valid value
   is read, raise \code{EOFError}, \code{ValueError} or
   \code{TypeError}.  The file must be an open file object.
+
+  Warning: If an object containing an unsupported type was marshalled
+  with \code{dump()}, \code{load()} will substitute \code{None} for the
+  unmarshallable type.
 \end{funcdesc}
 
 \begin{funcdesc}{dumps}{value}
   Return the string that would be written to a file by
   \code{dump(value, file)}.  The value must be a supported type.
+  Raise a \code{ValueError} exception if value has (or contains an
+  object that has) an unsupported type.
 \end{funcdesc}
 
 \begin{funcdesc}{loads}{string}
