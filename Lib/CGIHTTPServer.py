@@ -21,7 +21,7 @@ import SimpleHTTPServer
 
 try:
     os.fork
-except NameError:
+except AttributeError:
     raise SystemError, __name__ + " requires os.fork()"
 
 
