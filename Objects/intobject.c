@@ -47,6 +47,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define LONG_BIT (CHAR_BIT * sizeof(long))
 #endif
 
+long
+getmaxint()
+{
+	return LONG_MAX;	/* To initialize sys.maxint */
+}
+
 /* Standard Booleans */
 
 intobject FalseObject = {
