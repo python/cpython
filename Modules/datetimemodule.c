@@ -568,7 +568,18 @@ normalize_datetime(int *year, int *month, int *day,
  * setting MemoryError.  All data members remain uninitialized trash.
  *
  * We abuse the tp_alloc "nitems" argument to communicate whether a tzinfo
- * member is needed.  This is ugly.
+ * member is needed.  This is ugly, imprecise, and possibly insecure.
+ * tp_basicsize for the time and datetime types is set to the size of the
+ * struct that has room for the tzinfo member, so subclasses in Python will
+ * allocate enough space for a tzinfo member whether or not one is actually
+ * needed.  That's the "ugly and imprecise" parts.  The "possibly insecure"
+ * part is that PyType_GenericAlloc() (which subclasses in Python end up
+ * using) just happens today to effectively ignore the nitems argument
+ * when tp_itemsize is 0, which it is for these type objects.  If that
+ * changes, perhaps the callers of tp_alloc slots in this file should
+ * be changed to force a 0 nitems argument unless the type being allocated
+ * is a base type implemented in this file (so that tp_alloc is time_alloc
+ * or datetime_alloc below, which know about the nitems abuse).
  */
 
 static PyObject *
