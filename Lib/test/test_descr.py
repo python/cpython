@@ -3157,8 +3157,6 @@ def weakref_segfault():
 
         def __del__(self):
             x = self.ref()
-            print x
-            return x
 
     class Oops(object):
         pass
@@ -3169,6 +3167,7 @@ def weakref_segfault():
 
 
 def test_main():
+    weakref_segfault() # Must be first, somehow
     class_docstrings()
     lists()
     dicts()
@@ -3232,7 +3231,6 @@ def test_main():
     funnynew()
     subclass_right_op()
     dict_type_with_metaclass()
-    weakref_segfault()
 
     if verbose: print "All OK"
 
