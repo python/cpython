@@ -22,6 +22,7 @@ import sys
 import gl
 import GL
 import colorsys
+import imageop
 
 
 # Exception raised for various occasions
@@ -50,6 +51,12 @@ MAXMAP = 4096 - 256
 def conv_grey(l, x, y):
 	return colorsys.yiq_to_rgb(l, 0, 0)
 
+def conv_grey4(l, x, y):
+	return colorsys.yiq_to_rgb(l*17, 0, 0)
+
+def conv_mono(l, x, y):
+	return colorsys.yiq_to_rgb(l*255, 0, 0)
+
 def conv_yiq(y, i, q):
 	return colorsys.yiq_to_rgb(y, (i-0.5)*1.2, q-0.5)
 
@@ -73,7 +80,7 @@ def conv_jpeg(r, g, b):
 	raise Error, 'Attempt to make RGB colormap (jpeg)'
 
 conv_jpeggrey = conv_grey
-conv_mono = conv_grey
+conv_grey2 = conv_grey
 
 
 # Choose one of the above based upon a color system name
@@ -144,6 +151,15 @@ def is_entry_indigo():
 	b = gl.getgdesc(GL.GD_BITS_NORM_SNG_BLUE)
 	return (r, g, b) == (3, 3, 2)
 
+#
+# Predicate function to see whether this machine supports pixmode(PM_SIZE)
+# with values 1 or 4.
+#
+# XXX Temporarily disabled, since it is unclear which machines support
+# XXX which pixelsizes.
+#
+def support_packed_pixels():
+	return 0   # To be architecture-dependent
 
 # Routines to grab data, per color system (only a few really supported).
 # (These functions are used via eval with a constructed argument!)
@@ -215,7 +231,7 @@ class VideoParams:
 		# Essential parameters
 		self.format = 'grey'	# color system used
 		# Choose from: grey, rgb, rgb8, hsv, yiq, hls, jpeg, jpeggrey,
-		#              mono
+		#              mono, grey2, grey4
 		self.width = 0		# width of frame
 		self.height = 0		# height of frame
 		self.packfactor = 1	# expansion using rectzoom
@@ -264,6 +280,26 @@ class VideoParams:
 		print 'Bits:    ', self.c0bits, self.c1bits, self.c2bits
 		print 'Offset:  ', self.offset
 
+	# Calculate data size, if possible
+	def calcframesize(self):
+		if self.format == 'rgb':
+			return self.width*self.height*4
+		if self.format in ('jpeg', 'jpeggrey'):
+			raise CallError
+		if type(self.packfactor) == type(()):
+			xpf, ypf = self.packfactor
+		else:
+			xpf = ypf = self.packfactor
+		if ypf < 0: ypf = -ypf
+		size = (self.width/xpf)*(self.height/ypf)
+		if self.format == 'grey4':
+			size = (size+1)/2
+		elif self.format == 'grey2':
+			size = (size+3)/4
+		elif self.format == 'mono':
+			size = (size+7)/8
+		return size
+
 
 # Class to display video frames in a window.
 # It is the caller's responsibility to ensure that the correct window
@@ -287,6 +323,7 @@ class Displayer(VideoParams):
 		self.skipchrom = 0	# don't skip chrominance data
 		self.color0 = None	# magic, used by clearto()
 		self.fixcolor0 = 0	# don't need to fix color0
+		self.mustunpack = (not support_packed_pixels())
 		return self
 
 	# setinfo() must reset some internal flags
@@ -306,34 +343,65 @@ class Displayer(VideoParams):
 
 	def showpartframe(self, data, chromdata, (x,y,w,h)):
 		pf = self.packfactor
+		pmsize = 8
+		if pf:
+			if type(pf) == type(()):
+				xpf, ypf = pf
+			else:
+				xpf = ypf = pf
+			if ypf < 0:
+				gl.pixmode(GL.PM_TTOB, 1)
+				ypf = -ypf
+			if xpf < 0:
+				gl.pixmode(GL.PM_RTOL, 1)
+				xpf = -xpf
+		else:
+			xpf = ypf = 1
 		if self.format in ('jpeg', 'jpeggrey'):
 			import jpeg
 			data, width, height, bytes = jpeg.decompress(data)
 			if self.format == 'jpeg':
 				b = 4
-				p = 1
+				xp = yp = 1
 			else:
 				b = 1
-				p = pf
-			if (width, height, bytes) <> (w/p, h/p, b):
+				xp = xpf
+				yp = ypf
+			if (width, height, bytes) <> (w/xp, h/yp, b):
 				raise Error, 'jpeg data has wrong size'
-		elif self.format == 'mono':
-			import imageop
-			data = imageop.mono2grey(data, w, h, 0x20, 0xdf)
+		elif self.format in ('mono', 'grey4'):
+			if self.mustunpack:
+				if self.format == 'mono':
+					data = imageop.mono2grey(data, \
+						  w/xpf, h/ypf, 0x20, 0xdf)
+				elif self.format == 'grey4':
+					data = imageop.grey42grey(data, \
+						  w/xpf, h/ypf)
+			else:
+				# We don't need to unpack, the hardware
+				# can do it.
+				if self.format == 'mono':
+					pmsize = 1
+				else:
+					pmsize = 4
+		elif self.format == 'grey2':
+			data = imageop.grey22grey(data, w/xpf, h/ypf)
 		if not self.colormapinited:
 			self.initcolormap()
 		if self.fixcolor0:
 			gl.mapcolor(self.color0)
 			self.fixcolor0 = 0
-		factor = self.magnify
-		if pf: factor = factor * pf
+		xfactor = yfactor = self.magnify
+		if pf:
+			xfactor = xfactor * xpf
+			yfactor = yfactor * ypf
 		if chromdata and not self.skipchrom:
 			cp = self.chrompack
-			cx = int(x*factor*cp) + self.xorigin
-			cy = int(y*factor*cp) + self.yorigin
+			cx = int(x*xfactor*cp) + self.xorigin
+			cy = int(y*yfactor*cp) + self.yorigin
 			cw = (w+cp-1)/cp
 			ch = (h+cp-1)/cp
-			gl.rectzoom(factor*cp, factor*cp)
+			gl.rectzoom(xfactor*cp, yfactor*cp)
 			gl.pixmode(GL.PM_SIZE, 16)
 			gl.writemask(self.mask - ((1 << self.c0bits) - 1))
 			gl.lrectwrite(cx, cy, cx + cw - 1, cy + ch - 1, \
@@ -341,14 +409,14 @@ class Displayer(VideoParams):
 		#
 		if pf:
 			gl.writemask((1 << self.c0bits) - 1)
-			gl.pixmode(GL.PM_SIZE, 8)
-			w = w/pf
-			h = h/pf
-			x = x/pf
-			y = y/pf
-		gl.rectzoom(factor, factor)
-		x = int(x*factor)+self.xorigin
-		y = int(y*factor)+self.yorigin
+			gl.pixmode(GL.PM_SIZE, pmsize)
+			w = w/xpf
+			h = h/ypf
+			x = x/xpf
+			y = y/ypf
+		gl.rectzoom(xfactor, yfactor)
+		x = int(x*xfactor)+self.xorigin
+		y = int(y*yfactor)+self.yorigin
 		gl.lrectwrite(x, y, x + w - 1, y + h - 1, data)
 		gl.gflush()
 
@@ -422,7 +490,10 @@ class Displayer(VideoParams):
 	# by clear() and clearto()
 
 	def _initcmap(self):
-		convcolor = choose_conversion(self.format)
+		if self.format in ('mono', 'grey4') and self.mustunpack:
+			convcolor = conv_grey
+		else:
+			convcolor = choose_conversion(self.format)
 		maxbits = gl.getgdesc(GL.GD_BITS_NORM_SNG_CMODE)
 		if maxbits > 11:
 			maxbits = 11
@@ -496,7 +567,7 @@ class Grabber(VideoParams):
 
 
 # Read a CMIF video file header.
-# Return (version, values) where version is 0.0, 1.0, 2.0 or 3.0,
+# Return (version, values) where version is 0.0, 1.0, 2.0 or 3.[01],
 # and values is ready for setinfo().
 # Raise Error if there is an error in the info
 
@@ -513,6 +584,8 @@ def readfileheader(fp, filename):
 		version = 2.0
 	elif line == 'CMIF video 3.0\n':
 		version = 3.0
+	elif line == 'CMIF video 3.1\n':
+		version = 3.1
 	else:
 		# XXX Could be version 0.0 without identifying header
 		raise Error, \
@@ -537,19 +610,19 @@ def readfileheader(fp, filename):
 		else:
 			format = 'grey'
 		offset = 0
-	elif version == 3.0:
+	elif version in (3.0, 3.1):
 		line = fp.readline()
 		try:
 			format, rest = eval(line[:-1])
 		except:
-			raise Error, filename + ': Bad 3.0 color info'
+			raise Error, filename + ': Bad 3.[01] color info'
 		if format == 'xrgb8':
 			format = 'rgb8' # rgb8 upside-down, for X
 		if format in ('rgb', 'jpeg'):
 			c0bits = c1bits = c2bits = 0
 			chrompack = 0
 			offset = 0
-		elif format in ('grey', 'jpeggrey', 'mono'):
+		elif format in ('grey', 'jpeggrey', 'mono', 'grey2', 'grey4'):
 			c0bits = rest
 			c1bits = c2bits = 0
 			chrompack = 0
@@ -559,7 +632,7 @@ def readfileheader(fp, filename):
 			try:
 			    c0bits, c1bits, c2bits, chrompack, offset = rest
 			except:
-			    raise Error, filename + ': Bad 3.0 color info'
+			    raise Error, filename + ': Bad 3.[01] color info'
 	#
 	# Get frame geometry info
 	#
@@ -580,7 +653,13 @@ def readfileheader(fp, filename):
 		packfactor = 2
 	else:
 		raise Error, filename + ': Bad (w,h,pf) info'
-	if packfactor > 1:
+	if type(packfactor) == type(()):
+		xpf, ypf = packfactor
+		xpf = abs(xpf)
+		ypf = abs(ypf)
+		width = (width/xpf) * xpf
+		height = (height/ypf) * ypf
+	elif packfactor > 1:
 		width = (width / packfactor) * packfactor
 		height = (height / packfactor) * packfactor
 	#
@@ -629,11 +708,11 @@ def readv3frameheader(fp):
 	try:
 		t, datasize, chromdatasize = x = eval(line[:-1])
 	except:
-		raise Error, 'Bad 3.0 frame header'
+		raise Error, 'Bad 3.[01] frame header'
 	return x
 
 
-# Write a CMIF video file header (always version 3.0)
+# Write a CMIF video file header (always version 3.1)
 
 def writefileheader(fp, values):
 	(format, width, height, packfactor, \
@@ -641,13 +720,13 @@ def writefileheader(fp, values):
 	#
 	# Write identifying header
 	#
-	fp.write('CMIF video 3.0\n')
+	fp.write('CMIF video 3.1\n')
 	#
 	# Write color encoding info
 	#
 	if format in ('rgb', 'jpeg'):
 		data = (format, 0)
-	elif format in ('grey', 'jpeggrey', 'mono'):
+	elif format in ('grey', 'jpeggrey', 'mono', 'grey2', 'grey4'):
 		data = (format, c0bits)
 	else:
 		data = (format, (c0bits, c1bits, c2bits, chrompack, offset))
@@ -691,7 +770,7 @@ class BasicVinFile(VideoParams):
 			self._readframeheader = readv1frameheader
 		elif self.version == 2.0:
 			self._readframeheader = readv2frameheader
-		elif self.version == 3.0:
+		elif self.version in (3.0, 3.1):
 			self._readframeheader = readv3frameheader
 		else:
 			raise Error, \
@@ -949,6 +1028,14 @@ class BasicVoutFile(VideoParams):
 	def close(self):
 		self.fp.close()
 		del self.fp
+
+	def prealloc(self, nframes):
+		if not self.headerwritten: raise CallError
+		data = '\xff' * self.calcframesize()
+		pos = self.fp.tell()
+		for i in range(nframes):
+			self.fp.write(data)
+		self.fp.seek(pos)
 
 	def setinfo(self, values):
 		if self.headerwritten: raise CallError

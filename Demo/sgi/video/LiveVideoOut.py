@@ -18,8 +18,8 @@ class LiveVideoOut:
 		self.vw = vw
 		self.vh = vh
 		self.disp = Displayer().init()
-		if not type in ('rgb8', 'grey', 'mono'):
-			raise 'Incorrent live video output type'
+		if not type in ('rgb8', 'grey', 'mono', 'grey2', 'grey4'):
+			raise 'Incorrent live video output type', type
 		info = (type, vw, vh, 1, 8, 0, 0, 0, 0)
 		self.disp.setinfo(info)
 		self.wid = wid
@@ -62,6 +62,10 @@ class LiveVideoOut:
 			# Unfortunately size-check is difficult for
 			# packed video
 			nline = (len(data)*8)/self.vw
+		elif self.disp.format == 'grey2':
+			nline = (len(data)*4)/self.vw
+		elif self.disp.format == 'grey4':
+			nline = (len(data)*2)/self.vw
 		else:
 			nline = len(data)/self.vw
 			if nline*self.vw <> len(data):
@@ -76,3 +80,16 @@ class LiveVideoOut:
 
 	def close(self):
 		pass
+
+	# Call this to set optional mirroring of video
+	def setmirror(self, mirrored):
+		f, w, h, pf, c0, c1, c2, o, cp = self.disp.getinfo()
+		if type(pf) == type(()):
+			xpf, ypf = pf
+		else:
+			xpf = ypf = pf
+		xpf = abs(xpf)
+		if mirrored:
+			xpf = -xpf
+		info = (f, w, h, (xpf, ypf), c0, c1, c2, o, cp)
+		self.disp.setinfo(inf0)
