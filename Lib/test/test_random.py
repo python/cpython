@@ -74,7 +74,7 @@ class TestBasicOps(unittest.TestCase):
         pop = range(n)
         trials = 10000  # large num prevents false negatives without slowing normal case
         def factorial(n):
-            return n==0 and 1 or n * factorial(n-1)
+            return reduce(int.__mul__, xrange(1, n), 1)
         for k in xrange(n):
             expected = factorial(n) / factorial(n-k)
             perms = {}
@@ -271,7 +271,7 @@ class TestModule(unittest.TestCase):
         # tests validity but not completeness of the __all__ list
         self.failUnless(Set(random.__all__) <= Set(dir(random)))
 
-def test_main():
+def test_main(verbose=None):
     suite = unittest.TestSuite()
     for testclass in (WichmannHill_TestBasicOps,
                       MersenneTwister_TestBasicOps,
@@ -280,5 +280,14 @@ def test_main():
         suite.addTest(unittest.makeSuite(testclass))
     test_support.run_suite(suite)
 
+    # verify reference counting
+    import sys
+    if verbose and hasattr(sys, "gettotalrefcount"):
+        counts = []
+        for i in xrange(5):
+            test_support.run_suite(suite)
+            counts.append(sys.gettotalrefcount()-i)
+        print counts
+
 if __name__ == "__main__":
-    test_main()
+    test_main(verbose=True)
