@@ -52,6 +52,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 extern int Py_DebugFlag; /* For parser.c, declared in pythonrun.c */
 extern int Py_VerboseFlag; /* For import.c, declared in pythonrun.c */
 extern int Py_SuppressPrintingFlag; /* For ceval.c, declared in pythonrun.c */
+short PyMac_AppRefNum;	/* RefNum of application resource fork */
 
 
 /* Subroutines that live in their own file */
@@ -97,7 +98,9 @@ init_mac_world()
 static void
 init_common()
 {
-
+	/* Remember resource fork refnum, for later */
+	PyMac_AppRefNum = CurResFile();
+	
 	/* Initialize toolboxes */
 	init_mac_world();
 	
@@ -110,6 +113,7 @@ init_common()
 	/* Setup GUSI */
 	GUSIDefaultSetup();
 	PyMac_SetGUSISpin();
+	PyMac_SetGUSIOptions();
 #endif
 
 #ifdef USE_SIOUX
