@@ -116,6 +116,35 @@ for n in sizes:
     x = [e for e, i in augmented] # a stable sort of s
     check("stability", x, s)
 
+def bug453523():
+    global nerrors
+    from random import random
+
+    # If this fails, the most likely outcome is a core dump.
+    if verbose:
+        print "Testing bug 453523 -- list.sort() crasher."
+
+    class C:
+        def __lt__(self, other):
+            if L and random() < 0.75:
+                pop()
+            else:
+                push(3)
+            return random() < 0.5
+
+    L = [C() for i in range(50)]
+    pop = L.pop
+    push = L.append
+    try:
+        L.sort()
+    except ValueError:
+        pass
+    else:
+        print "    Mutation during list.sort() wasn't caught."
+        nerrors += 1
+
+bug453523()
+
 if nerrors:
     print "Test failed", nerrors
 elif verbose:

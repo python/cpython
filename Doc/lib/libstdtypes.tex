@@ -922,7 +922,7 @@ The following operations are defined on mutable sequence types (where
   \lineiii{\var{s}.reverse()}
 	{reverses the items of \var{s} in place}{(6)}
   \lineiii{\var{s}.sort(\optional{\var{cmpfunc}})}
-	{sort the items of \var{s} in place}{(6), (7), (8)}
+	{sort the items of \var{s} in place}{(6), (7), (8), (9)}
 \end{tableiii}
 \indexiv{operations on}{mutable}{sequence}{types}
 \indexiii{operations on}{sequence}{types}
@@ -980,6 +980,12 @@ Notes:
   Python 2.2.  The C implementation of Python 2.3 introduced a stable
   \method{sort()} method, but code that intends to be portable across
   implementations and versions must not rely on stability.
+
+\item[(9)] While a list is being sorted, the effect of attempting to
+  mutate, or even inspect, the list is undefined.  The C implementation
+  of Python 2.3 makes the list appear empty for the duration, and raises
+  \exception{ValueError} if it can detect that the list has been
+  mutated during a sort.
 \end{description}
 
 
