@@ -456,7 +456,14 @@ def _split_ascii(s, firstlen, restlen, continuation_ws, splitchars):
             elif curlen + partlen > maxlen:
                 if this:
                     lines.append(joiner.join(this) + eol)
-                this = [part]
+                # If this part is longer than maxlen and we aren't already
+                # splitting on whitespace, try to recursively split this line
+                # on whitespace.
+                if partlen > maxlen and ch <> ' ':
+                    this = [_split_ascii(part, maxlen, restlen,
+                                         continuation_ws, ' ')]
+                else:
+                    this = [part]
                 linelen = wslen + partlen
                 maxlen = restlen
             else:
