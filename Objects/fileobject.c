@@ -164,11 +164,8 @@ file_close(f, args)
 			sts = (*f->f_close)(f->f_fp);
 		f->f_fp = NULL;
 	}
-	if (sts == EOF) {
-		if (errno == 0)
-			errno = EIO;
+	if (sts == EOF)
 		return err_errno(IOError);
-	}
 	if (sts != 0)
 		return newintobject((long)sts);
 	INCREF(None);
@@ -197,9 +194,9 @@ file_seek(f, args)
 	}
 	errno = 0;
 	if (fseek(f->f_fp, offset, (int)whence) != 0) {
-		if (errno == 0)
-			errno = EIO;
-		return err_errno(IOError);
+		err_errno(IOError);
+		clearerr(f->f_fp);
+		return NULL;
 	}
 	INCREF(None);
 	return None;
@@ -218,9 +215,9 @@ file_tell(f, args)
 	errno = 0;
 	offset = ftell(f->f_fp);
 	if (offset == -1L) {
-		if (errno == 0)
-			errno = EIO;
-		return err_errno(IOError);
+		err_errno(IOError);
+		clearerr(f->f_fp);
+		return NULL;
 	}
 	return newintobject(offset);
 }
@@ -236,9 +233,9 @@ file_flush(f, args)
 	}
 	errno = 0;
 	if (fflush(f->f_fp) != 0) {
-		if (errno == 0)
-			errno = EIO;
-		return err_errno(IOError);
+		err_errno(IOError);
+		clearerr(f->f_fp);
+		return NULL;
 	}
 	INCREF(None);
 	return None;
@@ -455,9 +452,8 @@ file_write(f, args)
 	errno = 0;
 	n2 = fwrite(getstringvalue(args), 1, n = getstringsize(args), f->f_fp);
 	if (n2 != n) {
-		if (errno == 0)
-			errno = EIO;
 		err_errno(IOError);
+		clearerr(f->f_fp);
 		return NULL;
 	}
 	INCREF(None);
