@@ -681,7 +681,6 @@ class NetworkTests(unittest.TestCase):
         
 
 def test_main(verbose=None):
-    from test import test_sets
     tests = (TrivialTests,
              OpenerDirectorTests,
              HandlerTests,
