@@ -241,6 +241,12 @@ usable for reading and writing, respectively.
 (Not on MS-DOS.)
 \end{funcdesc}
 
+\begin{funcdesc}{plock}{op}
+Lock program segments into memory.  The value of \var{op}
+(defined in \code{<sys/lock.h>}) determines which segments are locked.
+(Not on MS-DOS.)
+\end{funcdesc}
+
 \begin{funcdesc}{popen}{command\optional{\, mode\optional{\, bufsize}}}
 Open a pipe to or from \var{command}.  The return value is an open
 file object connected to the pipe, which can be read or written
