@@ -119,6 +119,11 @@ typedef int (*visitproc)(PyObject *, void *);
 typedef int (*traverseproc)(PyObject *, visitproc, void *);
 
 typedef struct {
+	/* For old style numbers all arguments are guaranteed to be of the
+	   object's type (modulo coercion hacks that is); new style numbers
+	   should check both arguments for proper type and implement the
+	   necessary conversions in the slots themselves. */
+
 	binaryfunc nb_add;
 	binaryfunc nb_subtract;
 	binaryfunc nb_multiply;
@@ -153,6 +158,12 @@ typedef struct {
 	binaryfunc nb_inplace_and;
 	binaryfunc nb_inplace_xor;
 	binaryfunc nb_inplace_or;
+
+	/* New style number slots; these are only used the
+	   Py_TPFLAGS_NEWSTYLENUMBER flag is set */
+
+	binaryfunc nb_cmp; /* XXX this should be richcmpfunc */
+
 } PyNumberMethods;
 
 typedef struct {
@@ -322,6 +333,9 @@ given type object has a specified feature.
 /* PySequenceMethods and PyNumberMethods contain in-place operators */
 #define Py_TPFLAGS_HAVE_INPLACEOPS (1L<<3)
 
+/* PyNumberMethods do their own coercion */
+#define Py_TPFLAGS_NEWSTYLENUMBER (1L<<4)
+
 #define Py_TPFLAGS_DEFAULT  (Py_TPFLAGS_HAVE_GETCHARBUFFER | \
                              Py_TPFLAGS_HAVE_SEQUENCE_IN | \
                              Py_TPFLAGS_HAVE_INPLACEOPS)
@@ -434,6 +448,14 @@ extern DL_IMPORT(PyObject) _Py_NoneStruct; /* Don't use this directly */
 
 #define Py_None (&_Py_NoneStruct)
 
+/*
+Py_NotImplemented is a singleton used to signal that an operation is
+not implemented for a given type combination.
+*/
+
+extern DL_IMPORT(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
+
+#define Py_NotImplemented (&_Py_NotImplementedStruct)
 
 /*
 A common programming style in Python requires the forward declaration
