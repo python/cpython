@@ -69,7 +69,7 @@ def decode(input, output):
             partial = 1
         while i < n:
             c = line[i]
-            if c <> ESCAPE:
+            if c != ESCAPE:
                 new = new + c; i = i+1
             elif i+1 == n and not partial:
                 partial = 1; break

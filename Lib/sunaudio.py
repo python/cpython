@@ -13,7 +13,7 @@ def get_long_be(s):
 
 def gethdr(fp):
 	"""Read a sound header from an open file."""
-	if fp.read(4) <> MAGIC:
+	if fp.read(4) != MAGIC:
 		raise error, 'gethdr: bad magic word'
 	hdr_size = get_long_be(fp.read(4))
 	data_size = get_long_be(fp.read(4))

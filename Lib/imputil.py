@@ -434,7 +434,7 @@ def _os_bootstrap():
             path = s
             if ':' not in a:
                 a = ':' + a
-            if a[-1:] <> ':':
+            if a[-1:] != ':':
                 a = a + ':'
             return a + b
     else:
@@ -643,7 +643,7 @@ def _test_revamp():
 # from Guido:
 #   need to change sys.* references for rexec environs
 #   need hook for MAL's walk-me-up import strategy, or Tim's absolute strategy
-#   watch out for sys.modules[...] == None
+#   watch out for sys.modules[...] is None
 #   flag to force absolute imports? (speeds _determine_import_context and
 #       checking for a relative module)
 #   insert names of archives into sys.path  (see quote below)

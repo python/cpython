@@ -185,7 +185,7 @@ class FTP:
 				nextline = self.getline()
 				line = line + ('\n' + nextline)
 				if nextline[:3] == code and \
-					nextline[3:4] <> '-':
+					nextline[3:4] != '-':
 					break
 		return line
 
@@ -207,7 +207,7 @@ class FTP:
 	def voidresp(self):
 		"""Expect a response beginning with '2'."""
 		resp = self.getresp()
-		if resp[0] <> '2':
+		if resp[0] != '2':
 			raise error_reply, resp
 		return resp
 
@@ -277,14 +277,14 @@ class FTP:
 			if rest is not None:
 				self.sendcmd("REST %s" % rest)
 			resp = self.sendcmd(cmd)
-			if resp[0] <> '1':
+			if resp[0] != '1':
 				raise error_reply, resp
 		else:
 			sock = self.makeport()
 			if rest is not None:
 				self.sendcmd("REST %s" % rest)
 			resp = self.sendcmd(cmd)
-			if resp[0] <> '1':
+			if resp[0] != '1':
 				raise error_reply, resp
 			conn, sockaddr = sock.accept()
 		if resp[:3] == '150':
@@ -318,7 +318,7 @@ class FTP:
 		resp = self.sendcmd('USER ' + user)
 		if resp[0] == '3': resp = self.sendcmd('PASS ' + passwd)
 		if resp[0] == '3': resp = self.sendcmd('ACCT ' + acct)
-		if resp[0] <> '2':
+		if resp[0] != '2':
 			raise error_reply, resp
 		return resp
 
@@ -384,7 +384,7 @@ class FTP:
 		while 1:
 			buf = fp.readline()
 			if not buf: break
-			if buf[-2:] <> CRLF:
+			if buf[-2:] != CRLF:
 				if buf[-1] in CRLF: buf = buf[:-1]
 				buf = buf + CRLF
 			conn.send(buf)
@@ -423,7 +423,7 @@ class FTP:
 	def rename(self, fromname, toname):
 		'''Rename a file.'''
 		resp = self.sendcmd('RNFR ' + fromname)
-		if resp[0] <> '3':
+		if resp[0] != '3':
 			raise error_reply, resp
 		return self.voidcmd('RNTO ' + toname)
 
@@ -508,7 +508,7 @@ def parse227(resp):
 	Raises error_proto if it does not contain '(h1,h2,h3,h4,p1,p2)'
 	Return ('host.addr.as.numbers', port#) tuple.'''
 
-	if resp[:3] <> '227':
+	if resp[:3] != '227':
 		raise error_reply, resp
 	left = string.find(resp, '(')
 	if left < 0: raise error_proto, resp
@@ -516,7 +516,7 @@ def parse227(resp):
 	if right < 0:
 		raise error_proto, resp	# should contain '(h1,h2,h3,h4,p1,p2)'
 	numbers = string.split(resp[left+1:right], ',')
-	if len(numbers) <> 6:
+	if len(numbers) != 6:
 		raise error_proto, resp
 	host = string.join(numbers[:4], '.')
 	port = (string.atoi(numbers[4]) << 8) + string.atoi(numbers[5])
@@ -528,9 +528,9 @@ def parse257(resp):
 	This is a response to a MKD or PWD request: a directory name.
 	Returns the directoryname in the 257 reply.'''
 
-	if resp[:3] <> '257':
+	if resp[:3] != '257':
 		raise error_reply, resp
-	if resp[3:5] <> ' "':
+	if resp[3:5] != ' "':
 		return '' # Not compliant to RFC 959, but UNIX ftpd does this
 	dirname = ''
 	i = 5
@@ -539,7 +539,7 @@ def parse257(resp):
 		c = resp[i]
 		i = i+1
 		if c == '"':
-			if i >= n or resp[i] <> '"':
+			if i >= n or resp[i] != '"':
 				break
 			i = i+1
 		dirname = dirname + c

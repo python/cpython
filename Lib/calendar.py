@@ -50,7 +50,7 @@ def setfirstweekday(weekday):
 
 def isleap(year):
     """Return 1 for leap years, 0 for non-leap years."""
-    return year % 4 == 0 and (year % 100 <> 0 or year % 400 == 0)
+    return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
 
 def leapdays(y1, y2):
     """Return number of leap years in range [y1, y2).

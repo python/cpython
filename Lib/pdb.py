@@ -553,7 +553,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			first = max(1, self.curframe.f_lineno - 5)
 		else:
 			first = self.lineno + 1
-		if last == None:
+		if last is None:
 			last = first + 10
 		filename = self.curframe.f_code.co_filename
 		breaklist = self.get_file_breaks(filename)
@@ -895,7 +895,8 @@ def set_trace():
 def post_mortem(t):
 	p = Pdb()
 	p.reset()
-	while t.tb_next <> None: t = t.tb_next
+	while t.tb_next is not None:
+		t = t.tb_next
 	p.interaction(t.tb_frame, t)
 
 def pm():

@@ -17,7 +17,7 @@ def isabs(s):
     Anything else is absolute (the string up to the first colon is the
     volume name)."""
 
-    return ':' in s and s[0] <> ':'
+    return ':' in s and s[0] != ':'
 
 
 def join(s, *p):
@@ -30,7 +30,7 @@ def join(s, *p):
             t = t[1:]
         if ':' not in path:
             path = ':' + path
-        if path[-1:] <> ':':
+        if path[-1:] != ':':
             path = path + ':'
         path = path + t
     return path
@@ -151,7 +151,7 @@ def commonprefix(m):
     prefix = m[0]
     for item in m:
         for i in range(len(prefix)):
-            if prefix[:i+1] <> item[:i+1]:
+            if prefix[:i+1] != item[:i+1]:
                 prefix = prefix[:i]
                 if i == 0: return ''
                 break

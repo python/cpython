@@ -189,7 +189,7 @@ class BinHex:
         hqxer = _Hqxcoderengine(ofp)
         self.ofp = _Rlecoderengine(hqxer)
         self.crc = 0
-        if finfo == None:
+        if finfo is None:
             finfo = FInfo()
         self.dlen = dlen
         self.rlen = rlen
@@ -228,7 +228,7 @@ class BinHex:
         self._write(data)
 
     def close_data(self):
-        if self.dlen <> 0:
+        if self.dlen != 0:
             raise Error, 'Incorrect data size, diff='+`self.rlen`
         self._writecrc()
         self.state = _DID_DATA
@@ -246,7 +246,7 @@ class BinHex:
             self.close_data()
         if self.state != _DID_DATA:
             raise Error, 'Close at the wrong time'
-        if self.rlen <> 0:
+        if self.rlen != 0:
             raise Error, \
                   "Incorrect resource-datasize, diff="+`self.rlen`
         self._writecrc()

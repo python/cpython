@@ -489,7 +489,7 @@ class Morsel(UserDict):
         RA("%s=%s;" % (self.key, self.coded_value))
 
         # Now add any defined attributes
-        if attrs == None:
+        if attrs is None:
             attrs = self._reserved_keys
         for K,V in self.items():
             if V == "": continue

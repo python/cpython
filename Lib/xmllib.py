@@ -421,7 +421,7 @@ class XMLParser:
     # Internal -- parse comment, return length or -1 if not terminated
     def parse_comment(self, i):
         rawdata = self.rawdata
-        if rawdata[i:i+4] <> '<!--':
+        if rawdata[i:i+4] != '<!--':
             raise Error('unexpected call to handle_comment')
         res = commentclose.search(rawdata, i+4)
         if res is None:
@@ -487,7 +487,7 @@ class XMLParser:
     # Internal -- handle CDATA tag, return length or -1 if not terminated
     def parse_cdata(self, i):
         rawdata = self.rawdata
-        if rawdata[i:i+9] <> '<![CDATA[':
+        if rawdata[i:i+9] != '<![CDATA[':
             raise Error('unexpected call to parse_cdata')
         res = cdataclose.search(rawdata, i+9)
         if res is None:

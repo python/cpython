@@ -155,7 +155,7 @@ class MultiFile:
 				self.lastpos = abslastpos - self.start
 
 	def is_data(self, line):
-		return line[:2] <> '--'
+		return line[:2] != '--'
 
 	def section_divider(self, str):
 		return "--" + str
