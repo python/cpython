@@ -5,8 +5,6 @@
 
 from macsupport import *
 
-FSRef_ptr = OpaqueType("FSRef", "PyMac_BuildFSRef", "PyMac_GetFSRef")
-
 class ResMixIn:
 
 	def checkit(self):
@@ -20,6 +18,8 @@ class ResFunction(ResMixIn, FunctionGenerator): pass
 class ResMethod(ResMixIn, MethodGenerator): pass
 
 RsrcChainLocation = Type("RsrcChainLocation", "h")
+FSCatalogInfoBitmap = FakeType("0") # Type("FSCatalogInfoBitmap", "l")
+FSCatalogInfo_ptr = FakeType("(FSCatalogInfo *)0")
 
 # includestuff etc. are imported from macsupport
 
