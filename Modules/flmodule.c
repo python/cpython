@@ -1672,7 +1672,7 @@ forms_set_event_call_back(PyObject *dummy, PyObject *args)
 }
 
 static PyObject *
-forms_do_or_check_forms(PyObject *dummy, PyObject *args, FL_OBJECT *(*func)())
+forms_do_or_check_forms(PyObject *dummy, PyObject *args, FL_OBJECT *(*func)(void))
 {
 	FL_OBJECT *generic;
 	genericobject *g;
@@ -1751,7 +1751,7 @@ forms_check_only_forms(PyObject *dummy, PyObject *args)
 
 #ifdef UNUSED
 static PyObject *
-fl_call(void (*func)(), PyObject *args)
+fl_call(void (*func)(void), PyObject *args)
 {
 	if (!PyArg_NoArgs(args))
 		return NULL;
@@ -2058,7 +2058,7 @@ forms_file_selector(PyObject *f, PyObject *args)
 
 
 static PyObject *
-forms_file_selector_func(PyObject *args, char *(*func)())
+forms_file_selector_func(PyObject *args, char *(*func)(void))
 {
 	char *str;
 

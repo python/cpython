@@ -2,7 +2,7 @@
 
 #include "Python.h"
 
-extern DL_EXPORT(int) Py_Main();
+extern DL_EXPORT(int) Py_Main(int, char **);
 
 int
 main(int argc, char **argv)

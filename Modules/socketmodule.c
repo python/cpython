@@ -111,7 +111,7 @@ Socket methods:
 #endif
 
 #if !defined(MS_WINDOWS) && !defined(PYOS_OS2) && !defined(__BEOS__)
-extern int gethostname(); /* For Solaris, at least */
+extern int gethostname(char *, size_t); /* For Solaris, at least */
 #endif
 
 #if defined(PYCC_VACPP)

@@ -20,7 +20,7 @@
 
 #ifdef __sgi
 /* This is missing from rpcsvc/ypclnt.h */
-extern int yp_get_default_domain();
+extern int yp_get_default_domain(char **);
 #endif
 
 static PyObject *NisError;

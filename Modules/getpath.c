@@ -349,7 +349,7 @@ search_for_exec_prefix(char *argv0_path, char *home)
 static void
 calculate_path(void)
 {
-    extern char *Py_GetProgramName();
+    extern char *Py_GetProgramName(void);
 
     static char delimiter[2] = {DELIM, '\0'};
     static char separator[2] = {SEP, '\0'};
