@@ -184,12 +184,12 @@ Class attributes are:
 
 \begin{tableii}{c|l}{code}{Attribute}{Value}
   \lineii{min}{The most negative \class{timedelta} object,
-	       \code{timedelta(-999999999)}}
+               \code{timedelta(-999999999)}}
   \lineii{max}{The most positive \class{timedelta} object,
         timedelta(days=999999999, hours=23, minutes=59, seconds=59,
                   microseconds=999999)}
   \lineii{resolution}{The smallest possible difference between non-equal
-	\class{timedelta} objects, \code{timedelta(microseconds=1)}}
+        \class{timedelta} objects, \code{timedelta(microseconds=1)}}
 \end{tableii}
 
 Note that, because of normalization, \code{timedelta.max} \textgreater
@@ -226,12 +226,12 @@ Supported operations:
           {The floor is computed and the remainder (if any) is thrown away.}
           {(2)}
   \lineiii{+\var{t1}}
-	  {Returns a \class{timedelta} object with the same value.}
-	  {}
+          {Returns a \class{timedelta} object with the same value.}
+          {}
   \lineiii{-\var{t1}}
-	  {equivalent to \class{timedelta}(-\var{t1.days}, -\var{t1.seconds},
-	   -\var{t1.microseconds}),and to \var{t1}* -1.}
-	  {(1)(3)}
+          {equivalent to \class{timedelta}(-\var{t1.days}, -\var{t1.seconds},
+           -\var{t1.microseconds}),and to \var{t1}* -1.}
+          {(1)(3)}
   \lineiii{abs(\var{t})}
           {equivalent to +\var{t} when \code{t.days >= 0}, and to -\var{t} when
            \code{t.days < 0}.}
@@ -250,7 +250,7 @@ This is exact, but may overflow.
 Division by 0 raises \exception{ZeroDivisionError}.
 
 \item[(3)]
--\var{timedelta.max} is not representable as a \class{timedelta} object).
+-\var{timedelta.max} is not representable as a \class{timedelta} object.
 
 \end{description}
 
@@ -741,23 +741,24 @@ Instance methods:
 
 \subsection{\class{time} Objects \label{datetime-time}}
 
-A time object represents an idealized time of day, independent of day
-and timezone.
+A \class{time} object represents an idealized time of day, independent
+of day and timezone.
 
-Constructor:
+\begin{funcdesc}{hour=0, minute=0, second=0, microsecond=0}
 
-    time(hour=0, minute=0, second=0, microsecond=0)
+All arguments are optional.  They may be ints or longs, in the
+following ranges:
 
-    All arguments are optional.  They may be ints or longs, in the
-    following ranges:
+\begin{itemize}
+  \item \code{0 <= \var{hour} < 24}
+  \item \code{0 <= \var{minute} < 60}
+  \item \code{0 <= \var{second} < 60}
+  \item \code{0 <= \var{microsecond} < 1000000}
+\end{itemize}
 
-        0 <= hour < 24
-        0 <= minute < 60
-        0 <= second < 60
-        0 <= microsecond < 1000000
-
-    If an argument outside those ranges is given,
-    \exception{ValueError} is raised.
+If an argument outside those ranges is given, \exception{ValueError} is
+raised.
+\end{funcdesc}
 
 Class attributes:
 
@@ -1423,7 +1424,7 @@ Type-check macros:
     PyDelta_CheckExact(op)
 
     PyTZInfo_Check(op)
-    PyTZInfo_CheckExact(op
+    PyTZInfo_CheckExact(op)
 
 Accessor macros:
 
