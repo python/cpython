@@ -9,7 +9,7 @@ Number of forms: 1
 Name: form
 Width: 350.000000
 Height: 240.000000
-Number of Objects: 21
+Number of Objects: 23
 
 --------------------
 class: 1
@@ -31,60 +31,30 @@ class: 10000
 type: 0
 box: 0.000000 0.000000 0.000000 0.000000
 boxtype: 0
-colors: 0 0
+colors: 5487 512
 alignment: 4
 style: 0
 size: 11.000000
 lcol: 0
 label: 
-name: g_main
+name: g_burst
 callback: 
 argument: 
 
 --------------------
 class: 1
-type: 2
-box: 140.000000 10.000000 120.000000 160.000000
-boxtype: 2
+type: 1
+box: 140.000000 10.000000 120.000000 120.000000
+boxtype: 1
 colors: 47 47
 alignment: 0
 style: 0
 size: 11.000000
 lcol: 0
-label: Burst mode:
+label: 
 name: 
 callback: 
 argument: 
-
---------------------
-class: 1
-type: 2
-box: 10.000000 10.000000 120.000000 160.000000
-boxtype: 2
-colors: 47 47
-alignment: 0
-style: 0
-size: 11.000000
-lcol: 0
-label: Options:
-name: 
-callback: 
-argument: 
-
---------------------
-class: 31
-type: 2
-box: 60.000000 50.000000 40.000000 30.000000
-boxtype: 2
-colors: 13 5
-alignment: 0
-style: 0
-size: 11.000000
-lcol: 0
-label: Capture rate:
-name: in_rate
-callback: cb_rate
-argument: 0
 
 --------------------
 class: 31
@@ -117,9 +87,69 @@ callback: cb_nframes
 argument: 0
 
 --------------------
+class: 20000
+type: 0
+box: 0.000000 0.000000 0.000000 0.000000
+boxtype: 0
+colors: -322390740 -895472437
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: 
+callback: 
+argument: 
+
+--------------------
+class: 10000
+type: 0
+box: 0.000000 0.000000 0.000000 0.000000
+boxtype: 0
+colors: 1147496041 1852404841
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: g_main
+callback: 
+argument: 
+
+--------------------
+class: 1
+type: 1
+box: 10.000000 10.000000 120.000000 120.000000
+boxtype: 1
+colors: 47 47
+alignment: 0
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: 
+callback: 
+argument: 
+
+--------------------
+class: 31
+type: 2
+box: 50.000000 70.000000 40.000000 30.000000
+boxtype: 2
+colors: 13 5
+alignment: 0
+style: 0
+size: 11.000000
+lcol: 0
+label: Capture rate:
+name: in_rate
+callback: cb_rate
+argument: 0
+
+--------------------
 class: 12
 type: 1
-box: 150.000000 130.000000 100.000000 30.000000
+box: 140.000000 140.000000 120.000000 30.000000
 boxtype: 1
 colors: 39 3
 alignment: 4
@@ -164,7 +194,7 @@ argument: 0
 --------------------
 class: 11
 type: 0
-box: 270.000000 110.000000 70.000015 60.000004
+box: 270.000000 140.000000 70.000015 30.000002
 boxtype: 1
 colors: 47 47
 alignment: 4
@@ -177,24 +207,9 @@ callback: cb_capture
 argument: 0
 
 --------------------
-class: 13
-type: 1
-box: 20.000000 20.000000 110.000000 30.000000
-boxtype: 0
-colors: 7 3
-alignment: 4
-style: 0
-size: 11.000000
-lcol: 0
-label: "Fielddrop"
-name: b_drop
-callback: cb_drop
-argument: 0
-
---------------------
 class: 2
 type: 0
-box: 30.000000 50.000000 30.000000 30.000000
+box: 20.000000 70.000000 30.000000 30.000000
 boxtype: 0
 colors: 47 47
 alignment: 2
@@ -209,7 +224,7 @@ argument:
 --------------------
 class: 2
 type: 0
-box: 100.000000 50.000000 30.000000 30.000000
+box: 90.000000 70.000000 30.000000 30.000000
 boxtype: 0
 colors: 47 47
 alignment: 2
@@ -254,7 +269,7 @@ argument: 0
 --------------------
 class: 42
 type: 0
-box: 20.000000 110.000000 100.000000 30.000000
+box: 10.000000 140.000000 120.000000 30.000000
 boxtype: 5
 colors: 7 0
 alignment: 0
@@ -267,11 +282,26 @@ callback: cb_format
 argument: 0
 
 --------------------
+class: 12
+type: 1
+box: 20.000000 20.000000 100.000000 30.000000
+boxtype: 1
+colors: 39 3
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: Fielddrop
+name: b_drop
+callback: cb_drop
+argument: 0
+
+--------------------
 class: 20000
 type: 0
 box: 0.000000 0.000000 0.000000 0.000000
 boxtype: 0
-colors: 0 0
+colors: 544171552 1331849829
 alignment: 4
 style: 0
 size: 11.000000
@@ -286,7 +316,7 @@ class: 10000
 type: 0
 box: 0.000000 0.000000 0.000000 0.000000
 boxtype: 0
-colors: 0 0
+colors: 1147496041 1852404841
 alignment: 4
 style: 0
 size: 11.000000
@@ -299,14 +329,14 @@ argument:
 --------------------
 class: 11
 type: 0
-box: 10.000000 10.000000 330.000000 220.000000
+box: 270.000000 140.000000 70.000000 30.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
 style: 0
 size: 11.000000
 lcol: 0
-label: Stop capture
+label: Stop
 name: b_stop
 callback: cb_stop
 argument: 0
@@ -316,7 +346,7 @@ class: 20000
 type: 0
 box: 0.000000 0.000000 0.000000 0.000000
 boxtype: 0
-colors: 0 0
+colors: 544171552 1331849829
 alignment: 4
 style: 0
 size: 11.000000
