@@ -123,3 +123,7 @@ expect_error("000000000000008")  # plain octal literal w/ decimal digit
 expect_same("000000000000007", 7)
 expect_same("000000000000008.", 8.)
 expect_same("000000000000009.", 9.)
+
+# Verify treatment of unary minus on negative numbers SF bug #660455
+expect_same("0xffffffff", -1)
+expect_same("-0xffffffff", 1)
