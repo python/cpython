@@ -72,11 +72,6 @@ typedef struct { char c; void *x; } s_void_p;
 #ifdef HAVE_LONG_LONG
 typedef struct { char c; LONG_LONG x; } s_long_long;
 #define LONG_LONG_ALIGN (sizeof(s_long_long) - sizeof(LONG_LONG))
-
-#else
-static char qQ_error_msg[] =
-"q and Q unavailable in native mode on this platform; use a standard mode.\0";
-
 #endif
 
 #define STRINGIFY(x)    #x
@@ -578,16 +573,6 @@ nu_ulonglong(const char *p, const formatdef *f)
 {
 	return PyLong_FromUnsignedLongLong(*(unsigned LONG_LONG *)p);
 }
-
-#else
- 
-static PyObject *
-nu_qQerror(const char *p, const formatdef *f)
-{
-	PyErr_SetString(StructError, qQ_error_msg);
-	return NULL;
-}
-
 #endif
 
 static PyObject *
@@ -746,16 +731,6 @@ np_ulonglong(char *p, PyObject *v, const formatdef *f)
 	* (unsigned LONG_LONG *)p = x;
 	return 0;
 }
-
-#else
-
-static int
-np_qQerror(char *p, PyObject *v, const formatdef *f)
-{
-	PyErr_SetString(StructError, qQ_error_msg);
- 	return -1;
-}
-
 #endif
 
 static int
@@ -818,14 +793,6 @@ static formatdef native_table[] = {
 #ifdef HAVE_LONG_LONG
 	{'q',	sizeof(LONG_LONG), LONG_LONG_ALIGN, nu_longlong, np_longlong},
 	{'Q',	sizeof(LONG_LONG), LONG_LONG_ALIGN, nu_ulonglong,np_ulonglong},
-#else
-	/* n[pu]_qQerror just raise errors, but give them "the expected" size
-	   and alignment anyway so that calcsize returns something reasonable,
-	   and so unpack code that works on a 'long long' platform ends up in
-	   the error routine instead of with a mysterious "unpack str size
-	   does not match format" msg when run on a non-'long long' box. */
-	{'q',	8,		8, 		nu_qQerror,	 np_qQerror},
-	{'Q',	8,		8, 		nu_qQerror,	 np_qQerror},
 #endif
 	{0}
 };
