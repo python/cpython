@@ -14,6 +14,7 @@ __revision__ = "$Id$"
 
 import os
 import re
+import string
 import sys
 
 from errors import DistutilsPlatformError
@@ -250,7 +251,7 @@ def parse_makefile(fn, g=None):
         m = _variable_rx.match(line)
         if m:
             n, v = m.group(1, 2)
-            v = v.strip()
+            v = string.strip(v)
             if "$" in v:
                 notdone[n] = v
             else:
@@ -273,7 +274,7 @@ def parse_makefile(fn, g=None):
                     else:
                         try: value = int(value)
                         except ValueError:
-                            done[name] = value.strip()
+                            done[name] = string.strip(value)
                         else:
                             done[name] = value
                         del notdone[name]
@@ -289,7 +290,7 @@ def parse_makefile(fn, g=None):
                     else:
                         try: value = int(value)
                         except ValueError:
-                            done[name] = value.strip()
+                            done[name] = string.strip(value)
                         else:
                             done[name] = value
                         del notdone[name]
@@ -368,7 +369,8 @@ def _init_posix():
             # relative to the srcdir, which after installation no longer makes
             # sense.
             python_lib = get_python_lib(standard_lib=1)
-            linkerscript_name = os.path.basename(g['LDSHARED'].split()[0])
+            linkerscript_path = string.split(g['LDSHARED'])[0]
+            linkerscript_name = os.path.basename(linkerscript_path)
             linkerscript = os.path.join(python_lib, 'config',
                                         linkerscript_name)
 
