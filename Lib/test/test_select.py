@@ -56,7 +56,7 @@ def test():
                                         print 'EOF'
                                 break
                         continue
-                print 'Heh?'
+                print 'Unexpected return values from select():', rfd, wfd, xfd
         p.close()
 
 test()
