@@ -71,7 +71,8 @@ extern object *instancemethodgetclass PROTO((object *));
 
 extern int issubclass PROTO((object *, object *));
 
-extern object *instancebinop PROTO((object *, object *, char *, char *));
+extern object *instancebinop PROTO((object *, object *, char *, char *,
+				object * (*) PROTO((object *, object *)) ));
 
 #ifdef __cplusplus
 }
