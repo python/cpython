@@ -497,6 +497,20 @@ class Pickler:
         except AttributeError:
             module = whichmodule(object, name)
 
+        try:
+            __import__(module)
+            mod = sys.modules[module]
+            klass = getattr(mod, name)
+        except (ImportError, KeyError, AttributeError):
+            raise PicklingError(
+                "Can't pickle %r: it's not found as %s.%s" %
+                (object, module, name))
+        else:
+            if klass is not object:
+                raise PicklingError(
+                    "Can't pickle %r: it's not the same object as %s.%s" %
+                    (object, module, name))
+
         memo_len = len(memo)
         write(GLOBAL + module + '\n' + name + '\n' +
             self.put(memo_len))
