@@ -32,16 +32,16 @@ foreach $label (keys %internal_labels) {
 while (<>) {
   # don't want to do one s/// per line per node
   # so look for lines with hrefs, then do s/// on nodes present
-  if (/(HREF|href)=\"([^\#\"]*)html[\#\"]/) {
-    @parts = split(/(HREF|href)\=\"/);
+  if (/(HREF|href)=[\"\']([^\#\"\']*)html[\#\"\']/) {
+    @parts = split(/(HREF|href)\=[\"\']/);
     shift @parts;
     for $node (@parts) {
-      $node =~ s/[\#\"].*$//g;
+      $node =~ s/[\#\"\'].*$//g;
       chop($node);
       if (defined($nodes{$node})) {
 	$label = $nodes{$node};
-	if (s/(HREF|href)=\"$node([\#\"])/$1=\"$label.html$2/g) {
-	  s/(HREF|href)=\"$label.html#(l2h-)?SECTION\d+/$1=\"$label.html/g;
+	if (s/(HREF|href)=([\"\'])$node([\#\"\'])/href=$2$label.html$3/g) {
+	  s/(HREF|href)=([\"\'])$label.html/href=$2$label.html/g;
 	  $newnames{$node} = "$label.html";
 	}
       }

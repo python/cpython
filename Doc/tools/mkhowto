@@ -330,6 +330,8 @@ class Job:
         if texfile[:2] == os.curdir + os.sep:
             texfile = texfile[2:]
         # build the command line and run LaTeX2HTML:
+        if not os.path.isdir(builddir):
+            os.mkdir(builddir)
         args = [LATEX2HTML_BINARY,
                 "-init_file", L2H_INIT_FILE,
                 "-init_file", self.l2h_aux_init_file,

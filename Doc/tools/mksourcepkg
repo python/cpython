@@ -105,7 +105,9 @@ def main():
                run("tar cf - Python-%s | gzip -9 >%s.tgz"
                    % (release, archive))
           elif format == "zip":
-               run("zip -r9 %s.zip Python-%s"
+               if os.path.exists(archive + ".zip"):
+                    os.unlink(archive + ".zip")
+               run("zip -q -r9 %s.zip Python-%s"
                    % (archive, release))
 
      # clean up the work area:

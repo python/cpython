@@ -27,12 +27,16 @@ export TEXINPUTS
 
 if [ -d $part ] ; then
     rm -f $part/*.html
+else
+    mkdir $part
 fi
 
 echo "latex2html -init_file $srcdir/perl/l2hinit.perl -dir $part" \
  "${1:+$@} $srcdir/$part/$part.tex"
 latex2html \
  -no_auto_link \
+ -up_url '../index.html' \
+ -up_title 'Documentation Index' \
  -init_file $srcdir/perl/l2hinit.perl \
  -address '<hr>See <i><a href="about.html">About this document...</a></i> for information on suggesting changes.' \
  -dir $part \

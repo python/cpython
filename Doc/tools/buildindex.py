@@ -11,6 +11,8 @@ import sys
 class Node:
     __rmjunk = re.compile("<#\d+#>")
 
+    continuation = 0
+
     def __init__(self, link, str, seqno):
         self.links = [link]
         self.seqno = seqno
@@ -77,7 +79,7 @@ def split_entry(str, which):
     return stuff
 
 
-_rmtt = re.compile(r"(.*)<tt(?: class=[a-z0-9]+)?>(.*)</tt>(.*)$",
+_rmtt = re.compile(r"""(.*)<tt(?: class=['"][a-z0-9]+["'])?>(.*)</tt>(.*)$""",
                    re.IGNORECASE)
 _rmparens = re.compile(r"\(\)")
 
@@ -175,6 +177,22 @@ def split_columns(nodes, columns=1):
             start = i * colheight
             end = start + colheight
             cols.append(nodes[start:end])
+    #
+    # If items continue across columns, make sure they are marked
+    # as continuations so the user knows to look at the previous column.
+    #
+    for i in range(len(cols) - 1):
+        try:
+            prev = cols[i][-1]
+            next = cols[i + 1][0]
+        except IndexError:
+            return cols
+        else:
+            n = min(len(prev.key), len(next.key))
+            for j in range(n):
+                if prev.key[j] != next.key[j]:
+                    break
+                next.continuation = j + 1
     return cols
 
 
@@ -204,8 +222,12 @@ def format_column(nodes):
         for i in range(count, len(current) - 1):
             term = node.text[i]
             level = level + 1
-            append("\n<dt>%s\n<dd>\n%s<dl compact>"
-                   % (term, level * DL_LEVEL_INDENT))
+            if node.continuation > i:
+                extra = " (continued)"
+            else:
+                extra = ""
+            append("\n<dt>%s%s\n<dd>\n%s<dl compact>"
+                   % (term, extra, level * DL_LEVEL_INDENT))
         append("\n%s<dt>%s%s</a>"
                % (level * DL_LEVEL_INDENT, node.links[0], node.text[-1]))
         for link in node.links[1:]:
