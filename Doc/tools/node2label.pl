@@ -39,7 +39,7 @@ foreach $label (keys %internal_labels) {
 while (<>) {
   # don't want to do one s/// per line per node
   # so look for lines with hrefs, then do s/// on nodes present
-  if (/(HREF|href)=[\"\']([^\#\"\']*)html[\#\"\']/) {
+  if (/(HREF|href)=[\"\']node\d+\.html[\#\"\']/) {
     @parts = split(/(HREF|href)\=[\"\']/);
     shift @parts;
     for $node (@parts) {
