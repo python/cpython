@@ -25,9 +25,9 @@ def spawn (cmd,
     There is no way to run a program with a name different from that of its
     executable.
 
-    If 'search_path' is true (the default), the system's executable search
-    path will be used to find the program; otherwise, cmd[0] must be the
-    exact path to the executable.If 'dry_run' is true,
+    If 'search_path' is true (the default), the system's executable
+    search path will be used to find the program; otherwise, cmd[0]
+    must be the exact path to the executable.  If 'dry_run' is true,
     the command will not actually be run.
 
     Raise DistutilsExecError if running the program fails in any way; just
