@@ -369,11 +369,11 @@ Works as \code{DELETE_NAME}, but deletes a global name.
 %\end{opcodedesc}
 
 \begin{opcodedesc}{LOAD_CONST}{consti}
-Pushes \code{co_consts[consti]} onto the stack.
+Pushes \code{co_consts[\var{consti}]} onto the stack.
 \end{opcodedesc}
 
 \begin{opcodedesc}{LOAD_NAME}{namei}
-Pushes the value associated with \code{co_names[namei]} onto the stack.
+Pushes the value associated with \code{co_names[\var{namei}]} onto the stack.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BUILD_TUPLE}{count}
@@ -391,23 +391,23 @@ and set to zero by the compiler.
 \end{opcodedesc}
 
 \begin{opcodedesc}{LOAD_ATTR}{namei}
-Replaces TOS with \code{getattr(TOS,co_names[namei]}.
+Replaces TOS with \code{getattr(TOS,co_names[\var{namei}]}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{COMPARE_OP}{opname}
 Performs a boolean operation.  The operation name can be found
-in \code{cmp_op[opname]}.
+in \code{cmp_op[\var{opname}]}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{IMPORT_NAME}{namei}
-Imports the module \code{co_names[namei]}.  The module object is
-pushed onto the stack.  The current name space is not affect: for a
+Imports the module \code{co_names[\var{namei}]}.  The module object is
+pushed onto the stack.  The current name space is not affected: for a
 proper import statement, a subsequent \code{STORE_FAST} instruction
 modifies the name space.
 \end{opcodedesc}
 
 \begin{opcodedesc}{IMPORT_FROM}{namei}
-Imports the attribute \code{co_names[namei]}.  The module to import
+Imports the attribute \code{co_names[\var{namei}]}.  The module to import
 from is found in TOS and left there.
 \end{opcodedesc}
 
@@ -441,7 +441,7 @@ sequence, the incremented counter, and the current item onto the stack.
 %\end{opcodedesc}
 
 \begin{opcodedesc}{LOAD_GLOBAL}{namei}
-Loads the global named \code{co_names[namei]} onto the stack.
+Loads the global named \code{co_names[\var{namei}]} onto the stack.
 \end{opcodedesc}
 
 %\begin{opcodedesc}{SET_FUNC_ARGS}{argc}
@@ -464,16 +464,16 @@ Pushes a try block from a try-except clause onto the block stack.
 \end{opcodedesc}
 
 \begin{opcodedesc}{LOAD_FAST}{var_num}
-Pushes a reference to the local \code{co_varnames[var_num]} onto
+Pushes a reference to the local \code{co_varnames[\var{var_num}]} onto
 the stack.
 \end{opcodedesc}
 
 \begin{opcodedesc}{STORE_FAST}{var_num}
-Stores TOS into the local \code{co_varnames[var_num]}.
+Stores TOS into the local \code{co_varnames[\var{var_num}]}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{DELETE_FAST}{var_num}
-Deletes local \code{co_varnames[var_num]}.
+Deletes local \code{co_varnames[\var{var_num}]}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{SET_LINE_NO}{lineno}
