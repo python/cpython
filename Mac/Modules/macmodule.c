@@ -36,9 +36,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <fcntl.h>
 
-#include "macdefs.h"
-#include "dir.h"
-#include "stat.h"
+#include "::unixemu:macdefs.h"
+#include "::unixemu:dir.h"
+#include "::unixemu:stat.h"
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 1024
@@ -46,17 +46,18 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Prototypes for Unix simulation on Mac */
 
-int access PROTO((char *path, int mode));
-int chdir PROTO((char *path));
+int access PROTO((const char *path, int mode));
+int chdir PROTO((const char *path));
 char *getbootvol PROTO((void));
 char *getwd PROTO((char *));
-int mkdir  PROTO((char *path, int mode));
-DIR * opendir  PROTO((char *));
+int mkdir PROTO((const char *path, int mode));
+DIR * opendir PROTO((char *));
 void closedir PROTO((DIR *));
 struct direct * readdir PROTO((DIR *));
-int rmdir  PROTO((char *path));
-int stat  PROTO((char *path, struct stat *buf));
+int rmdir PROTO((const char *path));
+int stat PROTO((const char *path, struct stat *buf));
 int sync PROTO((void));
+int unlink PROTO((const char *));
 
 
 
@@ -67,7 +68,7 @@ static object *MacError; /* Exception mac.error */
 static object * 
 mac_error() 
 {
- 	return err_errno(MacError);
+	return err_errno(MacError);
 }
 
 /* MAC generic methods */
@@ -160,6 +161,8 @@ mac_close(self, args)
 	return None;
 }
 
+#ifdef MPW
+
 static object *
 mac_dup(self, args)
 	object *self;
@@ -194,6 +197,8 @@ mac_fdopen(self, args)
 		return mac_error();
 	return newopenfileobject(fp, "(fdopen)", mode, fclose);
 }
+
+#endif /* MPW */
 
 static object *
 mac_getbootvol(self, args)
@@ -424,8 +429,10 @@ static struct methodlist mac_methods[] = {
 	{"access",	mac_access},
 	{"chdir",	mac_chdir},
 	{"close",	mac_close},
+#ifdef MPW
 	{"dup",		mac_dup},
 	{"fdopen",	mac_fdopen},
+#endif
 	{"getbootvol",	mac_getbootvol}, /* non-standard */
 	{"getcwd",	mac_getcwd},
 	{"listdir",	mac_listdir},
