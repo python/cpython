@@ -39,6 +39,12 @@ completes), all functions registered are called in last in, first out
 order.  The assumption is that lower level modules will normally be
 imported before higher level modules and thus must be cleaned up
 later.
+
+If an exception is raised during execution of the exit handlers, a traceback
+is printed (unless SystemExit is raised) and the exception information is
+saved.  After all exit handlers have had a chance to run the last exception
+to be raised is reraised.
+
 \end{funcdesc}
 
 

@@ -2,6 +2,17 @@
 Python News
 +++++++++++
 
+What's New in Python 2.4 release candidate 1?
+=============================================
+
+Library
+-------
+
+- Bug 1052242: If exceptions are raised by an atexit handler function an
+  attempt is made to execute the remaining handlers.  The last exception
+  raised is re-raised.
+
+
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
 What's New in Python 2.4 beta 2?
