@@ -73,7 +73,10 @@ After installing
 ----------------
 
 It is probably a good idea to run the automatic tests. Start
-Python and "import test.regrtest ; test.regrtest.main()". 
+Python and "import test.regrtest ; test.regrtest.main()".
+
+On MacOS 8.6 a number of tests will fail because FSRefs are not
+supported.
 
 test_socket and test_logging fail, this problem is being investigated.
 
