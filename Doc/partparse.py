@@ -1013,6 +1013,18 @@ itemizesymbols = ['bullet', 'minus', 'dots']
 # same for enumerate
 enumeratesymbols = ['1', 'A', 'a']
 
+d = {}
+for name in ('url', 'module', 'function', 'cfunction',
+	     'keyword', 'method', 'exception', 'constant',
+	     'email', 'class', 'member', 'cdata', 'ctype',
+	     'member'):
+    d[name] = 'code'
+d['program'] = 'strong'
+d['sectcode'] = 'code'
+convertible_csname = d.has_key
+conversion = d.get
+del d, name
+
 ##
 ## \begin{ {func,data,exc}desc }{name}...
 ##   the resulting texi-code is dependent on the contents of indexsubitem
@@ -1391,6 +1403,8 @@ def changeit(buf, pp):
 		if pp[i].chtype != chunk_type[PLAIN]:
 		    raise error, 'Sorry, expected plain text argument'
 		hist.itemargmacro = s(buf, pp[i].data)
+		if convertible_csname(hist.itemargmacro):
+		    hist.itemargmacro = conversion(hist.itemargmacro)
 		del pp[i:newi]
 		length = length - (newi-i)
 
@@ -1593,9 +1607,6 @@ def changeit(buf, pp):
 		ch.chtype = chunk_type[PLAIN]
 		ch.data = release_version
 
-	    elif s_buf_data == 'program':
-		ch.data = "strong"
-
 	    elif s_buf_data == 'item':
 		ch.chtype = chunk_type[CSLINE]
 		length, newi = getoptarg(length, buf, pp, i)
@@ -1641,10 +1652,10 @@ def changeit(buf, pp):
 		if command in regindices:
 
 		    arg = [chunk(CSNAME, ch.where, 't'),
-			      chunk(GROUP, ch.where, arg)]
+			   chunk(GROUP, ch.where, arg)]
 		else:
 		    cat_arg = [chunk(CSNAME, ch.where, 'r'),
-			      chunk(GROUP, ch.where, cat_arg)]
+			       chunk(GROUP, ch.where, cat_arg)]
 
 		ingroupch = arg + \
 			  [chunk(PLAIN, ch.where, ' ')] + \
@@ -1868,9 +1879,6 @@ def changeit(buf, pp):
 		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
 		length, i = length+1, i+1
 
-	    elif s_buf_data == 'sectcode':
-		ch.data = 'code'
-
 	    elif s_buf_data in ('stmodindex', 'refstmodindex'):
 		ch.chtype = chunk_type[CSLINE]
 		# use the program index as module index
@@ -2086,10 +2094,8 @@ def changeit(buf, pp):
 	    elif s_buf_data in ('noindent', 'indexsubitem', 'footnote'):
 		pass
 
-	    elif s_buf_data in ('url', 'module', 'function', 'cfunction',
-				'keyword', 'method', 'exception', 'constant',
-				'email', 'class', 'member', 'cdata', 'ctype'):
-		ch.data = "code"
+	    elif convertible_csname(s_buf_data):
+		ch.data = conversion(s_buf_data)
 
 	    elif s_buf_data == 'label':
 		name = s(buf, pp[i].data[0].data)
