@@ -254,13 +254,13 @@ STRIP_EXEC = "/usr/bin/strip"
 BOOTSTRAP_SCRIPT = """\
 #!/bin/sh
 
-execdir=$(dirname ${0})
+execdir=$(dirname "${0}")
 executable=${execdir}/%(executable)s
-resdir=$(dirname ${execdir})/Resources
+resdir=$(dirname "${execdir}")/Resources
 main=${resdir}/%(mainprogram)s
 PYTHONPATH=$resdir
 export PYTHONPATH
-exec ${executable} ${main} ${1}
+exec "${executable}" "${main}" "${1}"
 """
 
 
@@ -619,7 +619,7 @@ Options:
   -p, --plist=FILE       .plist file (default: generate one)
       --nib=NAME         main nib name
   -c, --creator=CCCC     4-char creator code (default: '????')
-      --iconfile=FILE	 filename of the icon (an .icns file) to be used
+      --iconfile=FILE    filename of the icon (an .icns file) to be used
                          as the Finder icon
   -l, --link             symlink files/folder instead of copying them
       --link-exec        symlink the executable instead of copying it
