@@ -106,7 +106,7 @@ main(argc, argv)
 		}
 	}
 	
-	initall(); /* Defined in config*.c */
+	initall();
 	
 	setpythonpath(getpythonpath());
 	if (command != NULL) {
