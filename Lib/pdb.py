@@ -215,6 +215,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             arg = arg[:comma].rstrip()
         # parse stuff before comma: [filename:]lineno | function
         colon = arg.rfind(':')
+        funcname = None
         if colon >= 0:
             filename = arg[:colon].rstrip()
             f = self.lookupmodule(filename)
@@ -245,6 +246,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     if hasattr(func, 'im_func'):
                         func = func.im_func
                     code = func.func_code
+                    #use co_name to identify the bkpt (function names
+                    #could be aliased, but co_name is invariant)
+                    funcname = code.co_name
                     lineno = code.co_firstlineno
                     filename = code.co_filename
                 except:
@@ -257,6 +261,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                         print ('or was not found '
                                'along sys.path.')
                         return
+                    funcname = ok # ok contains a function name
                     lineno = int(ln)
         if not filename:
             filename = self.defaultFile()
@@ -264,7 +269,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         line = self.checkline(filename, lineno)
         if line:
             # now set the break point
-            err = self.set_break(filename, line, temporary, cond)
+            err = self.set_break(filename, line, temporary, cond, funcname)
             if err: print '***', err
             else:
                 bp = self.get_breaks(filename, line)[-1]
@@ -319,13 +324,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return answer or failed
 
     def checkline(self, filename, lineno):
-        """Return line number of first line at or after input
-        argument such that if the input points to a 'def', the
-        returned line number is the first
-        non-blank/non-comment line to follow.  If the input
-        points to a blank or comment line, return 0.  At end
-        of file, also return 0."""
+        """Check whether specified line seems to be executable.
 
+        Return `lineno` if it is, 0 if not (e.g. a docstring, comment, blank
+        line or EOF). Warning: testing is not comprehensive.
+        """
         line = linecache.getline(filename, lineno)
         if not line:
             print 'End of file'
@@ -336,40 +339,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
              (line[:3] == '"""') or line[:3] == "'''"):
             print '*** Blank or comment'
             return 0
-        # When a file is read in and a breakpoint is at
-        # the 'def' statement, the system stops there at
-        # code parse time.  We don't want that, so all breakpoints
-        # set at 'def' statements are moved one line onward
-        if line[:3] == 'def':
-            instr = ''
-            brackets = 0
-            while 1:
-                skipone = 0
-                for c in line:
-                    if instr:
-                        if skipone:
-                            skipone = 0
-                        elif c == '\\':
-                            skipone = 1
-                        elif c == instr:
-                            instr = ''
-                    elif c == '#':
-                        break
-                    elif c in ('"',"'"):
-                        instr = c
-                    elif c in ('(','{','['):
-                        brackets = brackets + 1
-                    elif c in (')','}',']'):
-                        brackets = brackets - 1
-                lineno = lineno+1
-                line = linecache.getline(filename, lineno)
-                if not line:
-                    print 'end of file'
-                    return 0
-                line = line.strip()
-                if not line: continue   # Blank line
-                if brackets <= 0 and line[0] not in ('#','"',"'"):
-                    break
         return lineno
 
     def do_enable(self, arg):
