@@ -92,7 +92,7 @@ builtin_apply(PyObject *self, PyObject *args)
 }
 
 static char apply_doc[] =
-"apply(object, args[, kwargs]) -> value\n\
+"apply(object[, args[, kwargs]]) -> value\n\
 \n\
 Call a callable object with positional arguments taken from the tuple args,\n\
 and keyword arguments taken from the optional dictionary kwargs.\n\
