@@ -34,6 +34,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define NO_UNAME
 #endif
 
+#ifdef __sgi
+#define DO_PG
+#endif
+
 #include <signal.h>
 #include <string.h>
 #include <setjmp.h>
@@ -637,6 +641,23 @@ posix_getpgrp(self, args)
 }
 
 static object *
+posix_setpgrp(self, args)
+	object *self;
+	object *args;
+{
+	if (!getnoarg(args))
+		return NULL;
+#ifdef SYSV
+	if (setpgrp() < 0)
+#else
+	if (setpgrp(0, 0) < 0)
+#endif
+		return err_errno(PosixError);
+	INCREF(None);
+	return None;
+}
+
+static object *
 posix_getppid(self, args)
 	object *self;
 	object *args;
@@ -815,7 +836,38 @@ posix_times(self, args)
 	return tuple;
 }
 
-#endif
+#endif /* DO_TIMES */
+
+#ifdef DO_PG
+
+static object *
+posix_setsid(self, args)
+	object *self;
+	object *args;
+{
+	if (!getnoarg(args))
+		return NULL;
+	if (setsid() < 0)
+		err_errno(PosixError);
+	INCREF(None);
+	return None;
+}
+
+static object *
+posix_setpgid(self, args)
+	object *self;
+	object *args;
+{
+	int pid, pgrp;
+	if (!getargs(args, "(ii)", &pid, &pgrp))
+		return NULL;
+	if (setpgid(pid, pgrp) < 0)
+		err_errno(PosixError);
+	INCREF(None);
+	return None;
+}
+
+#endif /* DO_PG */
 
 
 static struct methodlist posix_methods[] = {
@@ -859,8 +911,14 @@ static struct methodlist posix_methods[] = {
 	{"getuid",	posix_getuid},
 	{"kill",	posix_kill},
 	{"popen",	posix_popen},
+	{"setpgrp",	posix_setpgrp},
 	{"wait",	posix_wait},
 	{"waitpid",	posix_waitpid},
+#endif
+
+#ifdef DO_PG
+	{"setsid",	posix_setsid},
+	{"setpgid",	posix_setpgid},
 #endif
 
 	{NULL,		NULL}		 /* Sentinel */
