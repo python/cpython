@@ -55,9 +55,9 @@ to the constructor. Events scheduled for
 the same \var{time} will be executed in the order of their
 \var{priority}.
 
-Executing the event means executing \code{apply(\var{action},
-\var{argument})}.  \var{argument} must be a tuple holding the
-parameters for \var{action}.
+Executing the event means executing
+\code{\var{action}(*\var{argument})}.  \var{argument} must be a
+sequence holding the parameters for \var{action}.
 
 Return value is an event which may be used for later cancellation of
 the event (see \method{cancel()}).
