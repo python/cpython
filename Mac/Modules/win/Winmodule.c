@@ -15,6 +15,7 @@
 #define GetWindowSpareFlag(win) (((CWindowPeek)(win))->spareFlag)
 #define GetWindowFromPort(port) ((WindowRef)(port))
 #define GetWindowPortBounds(win, rectp) (*(rectp) = ((CWindowPeek)(win))->port.portRect)
+#define IsPointerValid(p) (((long)p&3) == 0)
 #endif
 #if ACCESSOR_CALLS_ARE_FUNCTIONS
 /* Classic calls that we emulate in carbon mode */
@@ -3038,7 +3039,7 @@ WinObj_WhichWindow(w)
 		Py_INCREF(it);
 	} else {
 		it = (PyObject *) GetWRefCon(w);
-		if (it == NULL || ((WindowObject *)it)->ob_itself != w || !WinObj_Check(it)) {
+		if (it == NULL || !IsPointerValid((Ptr)it) || ((WindowObject *)it)->ob_itself != w || !WinObj_Check(it)) {
 			it = WinObj_New(w);
 			((WindowObject *)it)->ob_freeit = NULL;
 		} else {
