@@ -191,6 +191,7 @@ POBJS=		\
 PARSER_OBJS=	$(POBJS) Parser/myreadline.o
 
 PGOBJS=		\
+		Python/mysnprintf.o \
 		Parser/firstsets.o \
 		Parser/grammar.o \
 		Parser/pgen.o \
