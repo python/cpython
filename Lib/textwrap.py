@@ -202,8 +202,9 @@ class TextWrapper:
             # Maximum width for this line.
             width = self.width - len(indent)
 
-            # First chunk on line is whitespace -- drop it.
-            if chunks[0].strip() == '':
+            # First chunk on line is whitespace -- drop it, unless this
+            # is the very beginning of the text (ie. no lines started yet).
+            if chunks[0].strip() == '' and lines:
                 del chunks[0]
 
             while chunks:
