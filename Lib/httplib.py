@@ -1,15 +1,14 @@
 # HTTP client class
 #
-# See the following document for a tentative protocol description:
-#     Hypertext Transfer Protocol (HTTP)        Tim Berners-Lee, CERN
-#     Internet Draft                                       5 Nov 1993
-#     draft-ietf-iiir-http-00.txt                  Expires 5 May 1994
+# See the following URL for a description of the HTTP/1.0 protocol:
+# http://www.w3.org/hypertext/WWW/Protocols/
+# (I actually implemented it from a much earlier draft.)
 #
 # Example:
 #
 # >>> from httplib import HTTP
-# >>> h = HTTP('www.cwi.nl')
-# >>> h.putreqest('GET', '/index.html')
+# >>> h = HTTP('www.python.org')
+# >>> h.putrequest('GET', '/index.html')
 # >>> h.putheader('Accept', 'text/html')
 # >>> h.putheader('Accept', 'text/plain')
 # >>> h.endheaders()
@@ -18,7 +17,8 @@
 # ...     f = h.getfile()
 # ...     print f.read() # Print the raw HTML
 # ...
-# <TITLE>Home Page of CWI, Amsterdam</TITLE>
+# <HEAD>
+# <TITLE>Python Language Home Page</TITLE>
 # [...many more lines...]
 # >>>
 #
@@ -58,7 +58,8 @@ class HTTP:
 			if i >= 0:
 				host, port = host[:i], host[i+1:]
 				try: port = string.atoi(port)
-				except string.atoi_error: pass
+				except string.atoi_error:
+				    raise socket.error, "nonnumeric port"
 		if not port: port = HTTP_PORT
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		if self.debuglevel > 0: print 'connect:', (host, port)
