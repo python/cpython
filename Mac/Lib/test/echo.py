@@ -33,6 +33,11 @@ import EasyDialogs
 
 kHighLevelEvent = 23				# Not defined anywhere for Python yet?
 
+def mymessage(str):
+	err = AE.AEInteractWithUser(kAEDefaultTimeout)
+	if err:
+		print str
+	EasyDialogs.Message(str)
 
 def main():
 	echo = EchoServer()
@@ -46,18 +51,20 @@ def main():
 
 class EchoServer:
 	
-	suites = ['aevt', 'core']
+	#suites = ['aevt', 'core', 'reqd']
+	suites = ['****']
 	
 	def __init__(self):
 		self.active = 0
 		for suite in self.suites:
 			AE.AEInstallEventHandler(suite, typeWildCard, self.aehandler)
+			print (suite, typeWildCard, self.aehandler)
 		self.active = 1
 		self.appleid = 1
 		Menu.ClearMenuBar()
 		self.applemenu = applemenu = Menu.NewMenu(self.appleid, "\024")
 		applemenu.AppendMenu("All about echo...;(-")
-		applemenu.AddResMenu('DRVR')
+		applemenu.AppendResMenu('DRVR')
 		applemenu.InsertMenu(0)
 		Menu.DrawMenuBar()
 	
@@ -88,10 +95,10 @@ class EchoServer:
 			try:
 				AE.AEProcessAppleEvent(event)
 			except AE.Error, err:
-				EasyDialogs.Message(msg + "\015AEProcessAppleEvent error: %s" % str(err))
+				mymessage(msg + "\015AEProcessAppleEvent error: %s" % str(err))
 				traceback.print_exc()
 			else:
-				EasyDialogs.Message(msg + "\015OK!")
+				mymessage(msg + "\015OK!")
 		elif what == keyDown:
 			c = chr(message & charCodeMask)
 			if c == '.' and modifiers & cmdKey:
@@ -105,7 +112,7 @@ class EchoServer:
 				item = result & 0xffff		# Lo word
 				if id == self.appleid:
 					if item == 1:
-						EasyDialogs.Message("Echo -- echo AppleEvents")
+						mymessage("Echo -- echo AppleEvents")
 					elif item > 1:
 						name = self.applemenu.GetItem(item)
 						Qd.OpenDeskAcc(name)
@@ -114,7 +121,7 @@ class EchoServer:
 ##			MacOS.HandleEvent(event)
 	
 	def aehandler(self, request, reply):
-		print "Apple Event",
+		print "Apple Event!"
 		parameters, attributes = aetools.unpackevent(request)
 		print "class =", `attributes['evcl'].type`,
 		print "id =", `attributes['evid'].type`
