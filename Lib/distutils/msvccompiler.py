@@ -50,8 +50,8 @@ if _can_read_reg:
     HKEY_LOCAL_MACHINE = hkey_mod.HKEY_LOCAL_MACHINE
     HKEY_CURRENT_USER = hkey_mod.HKEY_CURRENT_USER
     HKEY_USERS = hkey_mod.HKEY_USERS
-    
-    
+
+
 
 def get_devstudio_versions ():
     """Get list of devstudio versions from the Windows registry.  Return a
@@ -93,7 +93,7 @@ def get_msvc_paths (path, version='6.0', platform='x86'):
     """Get a list of devstudio directories (include, lib or path).  Return
        a list of strings; will be empty list if unable to access the
        registry or appropriate registry keys not found."""
-       
+
     if not _can_read_reg:
         return []
 
@@ -149,7 +149,7 @@ def find_exe (exe, version_number):
         if os.path.isfile(fn):
             return fn
 
-    return exe                          # last desperate hope 
+    return exe                          # last desperate hope
 
 
 def set_path_env_var (name, version_number):
@@ -294,7 +294,7 @@ class MSVCCompiler (CCompiler) :
             compile_opts.extend (self.compile_options_debug)
         else:
             compile_opts.extend (self.compile_options)
-        
+
         for i in range (len (sources)):
             src = sources[i] ; obj = objects[i]
             ext = (os.path.splitext (src))[1]
@@ -390,12 +390,12 @@ class MSVCCompiler (CCompiler) :
                 self.spawn ([self.lib] + lib_args)
             except DistutilsExecError, msg:
                 raise LibError, msg
-                
+
         else:
             self.announce ("skipping %s (up-to-date)" % output_filename)
 
     # create_static_lib ()
-    
+
     def link (self,
               target_desc,
               objects,
@@ -417,7 +417,7 @@ class MSVCCompiler (CCompiler) :
         if runtime_library_dirs:
             self.warn ("I don't know what to do with 'runtime_library_dirs': "
                        + str (runtime_library_dirs))
-        
+
         lib_opts = gen_lib_options (self,
                                     library_dirs, runtime_library_dirs,
                                     libraries)
@@ -441,7 +441,7 @@ class MSVCCompiler (CCompiler) :
             for sym in (export_symbols or []):
                 export_opts.append("/EXPORT:" + sym)
 
-            ld_args = (ldflags + lib_opts + export_opts + 
+            ld_args = (ldflags + lib_opts + export_opts +
                        objects + ['/OUT:' + output_filename])
 
             # The MSVC linker generates .lib and .exp files, which cannot be

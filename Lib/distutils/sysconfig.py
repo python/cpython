@@ -48,7 +48,7 @@ def get_python_inc(plat_specific=0, prefix=None):
 
     If 'prefix' is supplied, use it instead of sys.prefix or
     sys.exec_prefix -- i.e., ignore 'plat_specific'.
-    """    
+    """
     if prefix is None:
         prefix = plat_specific and EXEC_PREFIX or PREFIX
     if os.name == "posix":
@@ -318,7 +318,7 @@ def _init_posix():
     # the scripts are in another directory.
     if python_build:
         g['LDSHARED'] = g['BLDSHARED']
-        
+
     elif sys.version < '2.1':
         # The following two branches are for 1.5.2 compatibility.
         if sys.platform == 'aix4':          # what about AIX 3.x ?
@@ -337,7 +337,7 @@ def _init_posix():
             python_lib = get_python_lib(standard_lib=1)
             linkerscript_name = os.path.basename(string.split(g['LDSHARED'])[0])
             linkerscript = os.path.join(python_lib, 'config', linkerscript_name)
-            
+
             # XXX this isn't the right place to do this: adding the Python
             # library to the link, if needed, should be in the "build_ext"
             # command.  (It's also needed for non-MS compilers on Windows, and
@@ -345,7 +345,7 @@ def _init_posix():
             # method.)
             g['LDSHARED'] = ("%s -L%s/lib -lpython%s" %
                              (linkerscript, PREFIX, sys.version[0:3]))
-            
+
     global _config_vars
     _config_vars = g
 

@@ -98,7 +98,7 @@ class StrictVersion (Version):
     The rationale for this version numbering system will be explained
     in the distutils documentation.
     """
-    
+
     version_re = re.compile(r'^(\d+) \. (\d+) (\. (\d+))? ([ab](\d+))?$',
                             re.VERBOSE)
 
@@ -123,7 +123,7 @@ class StrictVersion (Version):
 
 
     def __str__ (self):
-        
+
         if self.version[2] == 0:
             vstring = string.join(map(str, self.version[0:2]), '.')
         else:
@@ -133,7 +133,7 @@ class StrictVersion (Version):
             vstring = vstring + self.prerelease[0] + str(self.prerelease[1])
 
         return vstring
-    
+
 
     def __cmp__ (self, other):
         if isinstance(other, StringType):
@@ -170,7 +170,7 @@ class StrictVersion (Version):
 # 2) sequences of letters are part of the tuple for comparison and are
 #    compared lexicographically
 # 3) recognize the numeric components may have leading zeroes
-# 
+#
 # The LooseVersion class below implements these rules: a version number
 # string is split up into a tuple of integer and string components, and
 # comparison is a simple tuple comparison.  This means that version
@@ -185,7 +185,7 @@ class StrictVersion (Version):
 #   - indicating a post-release patch ('p', 'pl', 'patch')
 # but of course this can't cover all version number schemes, and there's
 # no way to know what a programmer means without asking him.
-# 
+#
 # The problem is what to do with letters (and other non-numeric
 # characters) in a version number.  The current implementation does the
 # obvious and predictable thing: keep them as strings and compare
@@ -208,7 +208,7 @@ class StrictVersion (Version):
 # version numbering scheme to its domination.  The free-thinking
 # anarchists in the lot will never give in, though, and something needs
 # to be done to accommodate them.
-# 
+#
 # Perhaps a "moderately strict" version class could be implemented that
 # lets almost anything slide (syntactically), and makes some heuristic
 # assumptions about non-digits in version number strings.  This could
@@ -217,7 +217,7 @@ class StrictVersion (Version):
 # somehow knows that "1.2.1" < "1.2.2a2" < "1.2.2" < "1.2.2pl3", and is
 # just as happy dealing with things like "2g6" and "1.13++".  I don't
 # think I'm smart enough to do it right though.
-# 
+#
 # In any case, I've coded the test suite for this module (see
 # ../test/test_version.py) specifically to fail on things like comparing
 # "1.2a2" and "1.2".  That's not because the *code* is doing anything
@@ -296,6 +296,6 @@ class LooseVersion (Version):
             other = LooseVersion(other)
 
         return cmp(self.version, other.version)
-        
+
 
 # end class LooseVersion

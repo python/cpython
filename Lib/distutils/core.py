@@ -108,7 +108,7 @@ def setup (**attrs):
     # Find and parse the config file(s): they will override options from
     # the setup script, but be overridden by the command line.
     dist.parse_config_files()
-    
+
     if DEBUG:
         print "options (after parsing config files):"
         dist.dump_option_dicts()
@@ -146,7 +146,7 @@ def setup (**attrs):
                 raise
             else:
                 raise SystemExit, error
-            
+
         except (DistutilsExecError,
                 DistutilsFileError,
                 DistutilsOptionError,

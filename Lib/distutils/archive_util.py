@@ -31,7 +31,7 @@ def make_tarball (base_name, base_dir, compress="gzip",
     compress_ext = { 'gzip': ".gz",
                      'bzip2': '.bz2',
                      'compress': ".Z" }
-    
+
     # flags for compression program, each element of list will be an argument
     compress_flags = {'gzip': ["-f9"],
                       'compress': ["-f"],
@@ -85,7 +85,7 @@ def make_zipfile (base_name, base_dir, verbose=0, dry_run=0):
             import zipfile
         except ImportError:
             raise DistutilsExecError, \
-                  ("unable to create zip file '%s': " + 
+                  ("unable to create zip file '%s': " +
                    "could neither find a standalone zip utility nor " +
                    "import the 'zipfile' module") % zip_filename
 
@@ -152,7 +152,7 @@ def make_archive (base_name, format,
 
     kwargs = { 'verbose': verbose,
                'dry_run': dry_run }
-    
+
     try:
         format_info = ARCHIVE_FORMATS[format]
     except KeyError:

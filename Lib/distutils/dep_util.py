@@ -70,7 +70,7 @@ def newer_group (sources, target, missing='error'):
     # If the target doesn't even exist, then it's definitely out-of-date.
     if not os.path.exists(target):
         return 1
-   
+
     # Otherwise we have to find out the hard way: if *any* source file
     # is more recent than 'target', then 'target' is out-of-date and
     # we can immediately return true.  If we fall through to the end
@@ -80,12 +80,12 @@ def newer_group (sources, target, missing='error'):
     for source in sources:
         if not os.path.exists(source):
             if missing == 'error':      # blow up when we stat() the file
-                pass                    
-            elif missing == 'ignore':   # missing source dropped from 
+                pass
+            elif missing == 'ignore':   # missing source dropped from
                 continue                #  target's dependency list
             elif missing == 'newer':    # missing source means target is
                 return 1                #  out-of-date
-            
+
         source_mtime = os.stat(source)[ST_MTIME]
         if source_mtime > target_mtime:
             return 1

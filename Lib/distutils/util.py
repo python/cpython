@@ -30,7 +30,7 @@ def get_platform ():
        solaris-2.6-sun4u
        irix-5.3
        irix64-6.2
-       
+
     For non-POSIX platforms, currently just returns 'sys.platform'.
     """
     if os.name != "posix" or not hasattr(os, 'uname'):
@@ -44,9 +44,9 @@ def get_platform ():
 
     # Convert the OS name to lowercase and remove '/' characters
     # (to accommodate BSD/OS)
-    osname = string.lower(osname) 
+    osname = string.lower(osname)
     osname = string.replace(osname, '/', '')
-    
+
     if osname[:5] == "linux":
         # At least on Linux/Intel, 'machine' is the processor --
         # i386, etc.
@@ -59,7 +59,7 @@ def get_platform ():
         # fall through to standard osname-release-machine representation
     elif osname[:4] == "irix":              # could be "irix64"!
         return "%s-%s" % (osname, release)
-    elif osname[:3] == "aix":              
+    elif osname[:3] == "aix":
         return "%s-%s.%s" % (osname, version, release)
     elif osname[:6] == "cygwin":
         osname = "cygwin"
@@ -67,7 +67,7 @@ def get_platform ():
         m = rel_re.match(release)
         if m:
             release = m.group()
-            
+
     return "%s-%s-%s" % (osname, release, machine)
 
 # get_platform ()
@@ -280,7 +280,7 @@ def execute (func, args, msg=None, verbose=0, dry_run=0):
     # Generate a message if we weren't passed one
     if msg is None:
         msg = "%s%s" % (func.__name__, `args`)
-        if msg[-2:] == ',)':        # correct for singleton tuple 
+        if msg[-2:] == ',)':        # correct for singleton tuple
             msg = msg[0:-2] + ')'
 
     # Print it if verbosity level is high enough
@@ -403,7 +403,7 @@ byte_compile(files, optimize=%s, force=%s,
         spawn(cmd, verbose=verbose, dry_run=dry_run)
         execute(os.remove, (script_name,), "removing %s" % script_name,
                 verbose=verbose, dry_run=dry_run)
-        
+
     # "Direct" byte-compilation: use the py_compile module to compile
     # right here, right now.  Note that the script generated in indirect
     # mode simply calls 'byte_compile()' in direct mode, a weird sort of
@@ -453,5 +453,3 @@ def rfc822_escape (header):
     lines = map(string.strip, lines)
     header = string.join(lines, '\n' + 8*' ')
     return header
-
-
