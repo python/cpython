@@ -11,27 +11,27 @@ def getattr(x, name):
 def listattrs(x):
 	try:
 		dictkeys = x.__dict__.keys()
-	except (NameError, TypeError):
+	except (AttributeError, TypeError):
 		dictkeys = []
 	#
 	try:
 		methods = x.__methods__
-	except (NameError, TypeError):
+	except (AttributeError, TypeError):
 		methods = []
 	#
 	try:
 		members = x.__members__
-	except (NameError, TypeError):
+	except (AttributeError, TypeError):
 		members = []
 	#
 	try:
 		the_class = x.__class__
-	except (NameError, TypeError):
+	except (AttributeError, TypeError):
 		the_class = None
 	#
 	try:
 		bases = x.__bases__
-	except (NameError, TypeError):
+	except (AttributeError, TypeError):
 		bases = ()
 	#
 	total = dictkeys + methods + members
@@ -69,7 +69,7 @@ def is_function(x):
 # Use a class method to make a function that can be called
 # with or without arguments.
 #
-class _dirclass():
+class _dirclass:
 	def dir(args):
 		if type(args) = type(()):
 			return listattrs(args[1])
