@@ -1,6 +1,6 @@
 \documentstyle[twoside,11pt,myformat]{report}
 
-\title{Python-C API Reference}
+\title{Python/C API Reference}
 
 \input{boilerplate}
 
@@ -37,6 +37,8 @@ API functions in detail.
 
 \pagenumbering{arabic}
 
+% XXX Consider moving all this back to ext.tex and giving api.tex
+% XXX a *really* short intro only.
 
 \chapter{Introduction}
 
@@ -88,6 +90,8 @@ each of the well-known types there is a macro to check whether an
 object is of that type; for instance, \code{PyList_Check(a)} is true 
 iff the object pointed to by \code{a} is a Python list.
 
+\subsection{Reference Counts}
+
 The reference count is important only because today's computers have a 
 finite (and often severly limited) memory size; it counts how many 
 different places there are that have a reference to an object.  Such a 
@@ -103,7 +107,7 @@ with objects that reference each other here; for now, the solution is
 Reference counts are always manipulated explicitly.  The normal way is 
 to use the macro \code{Py_INCREF(a)} to increment an object's 
 reference count by one, and \code{Py_DECREF(a)} to decrement it by 
-one.  The latter macro is considerably more complex than the former, 
+one.  The decref macro is considerably more complex than the incref one, 
 since it must check whether the reference count becomes zero and then 
 cause the object's deallocator, which is a function pointer contained 
 in the object's type structure.  The type-specific deallocator takes 
@@ -146,7 +150,162 @@ increment the reference count of the object they return.  This leaves
 the caller with the responsibility to call \code{Py_DECREF()} when 
 they are done with the result; this soon becomes second nature.
 
-There are very few other data types that play a significant role in 
+\subsubsection{Reference Count Details}
+
+The reference count behavior of functions in the Python/C API is best 
+expelained in terms of \emph{ownership of references}.  Note that we 
+talk of owning reference, never of owning objects; objects are always 
+shared!  When a function owns a reference, it has to dispose of it 
+properly -- either by passing ownership on (usually to its caller) or 
+by calling \code{Py_DECREF()} or \code{Py_XDECREF()}.  When a function 
+passes ownership of a reference on to its caller, the caller is said 
+to receive a \emph{new} reference.  When to ownership is transferred, 
+the caller is said to \emph{borrow} the reference.  Nothing needs to 
+be done for a borrowed reference.
+
+Conversely, when calling a function while passing it a reference to an 
+object, there are two possibilities: the function \emph{steals} a 
+reference to the object, or it does not.  Few functions steal 
+references; the two notable exceptions are \code{PyList_SetItem()} and 
+\code{PyTuple_SetItem()}, which steal a reference to the item (but not to 
+the tuple or list into which the item it put!).  These functions were 
+designed to steal a reference because of a common idiom for 
+populating a tuple or list with newly created objects; e.g., the code 
+to create the tuple \code{(1, 2, "three")} could look like this 
+(forgetting about error handling for the moment):
+
+\begin{verbatim}
+PyObject *t;
+t = PyTuple_New(3);
+PyTuple_SetItem(t, 0, PyInt_FromLong(1L));
+PyTuple_SetItem(t, 1, PyInt_FromLong(2L));
+PyTuple_SetItem(t, 2, PyString_FromString("three"));
+\end{verbatim}
+
+Incidentally, \code{PyTuple_SetItem()} is the \emph{only} way to set 
+tuple items; \code{PyObject_SetItem()} refuses to do this since tuples 
+are an immutable data type.  You should only use 
+\code{PyTuple_SetItem()} for tuples that you are creating yourself.
+
+Equivalent code for populating a list can be written using 
+\code{PyList_New()} and \code{PyList_SetItem()}.  Such code can also 
+use \code{PySequence_SetItem()}; this illustrates the difference 
+between the two:
+
+\begin{verbatim}
+PyObject *l, *x;
+l = PyList_New(3);
+x = PyInt_FromLong(1L);
+PyObject_SetItem(l, 0, x); Py_DECREF(x);
+x = PyInt_FromLong(2L);
+PyObject_SetItem(l, 1, x); Py_DECREF(x);
+x = PyString_FromString("three");
+PyObject_SetItem(l, 2, x); Py_DECREF(x);
+\end{verbatim}
+
+You might find it strange that the ``recommended'' approach takes 
+more code.  in practice, you will rarely use these ways of creating 
+and populating a tuple or list, however; there's a generic function,
+\code{Py_BuildValue()} that can create most common objects from C 
+values, directed by a ``format string''.  For example, the above two 
+blocks of code could be replaced by the following (which also takes 
+care of the error checking!):
+
+\begin{verbatim}
+PyObject *t, *l;
+t = Py_BuildValue("(iis)", 1, 2, "three");
+l = Py_BuildValue("[iis]", 1, 2, "three");
+\end{verbatim}
+
+It is much more common to use \code{PyObject_SetItem()} and friends 
+with items whose references you are only borrowing, like arguments 
+that were passed in to the function you are writing.  In that case, 
+their behaviour regarding reference counts is much saner, since you 
+don't have to increment a reference count so you can give a reference 
+away (``have it be stolen'').  For example, this function sets all 
+items of a list (actually, any mutable sequence) to a given item:
+
+\begin{verbatim}
+int set_all(PyObject *target, PyObject *item)
+{
+    int i, n;
+    n = PyObject_Length(target);
+    if (n < 0)
+        return -1;
+    for (i = 0; i < n; i++) {
+        if (PyObject_SetItem(target, i, item) < 0)
+            return -1;
+    }
+    return 0;
+}
+\end{verbatim}
+
+The situation is slightly different for function return values.  
+While passing a reference to most functions does not change your 
+ownership responsibilities for that reference, many functions that 
+return a referece to an object give you ownership of the reference.
+The reason is simple: in many cases, the returned object is created 
+on the fly, and the reference you get is the only reference to the 
+object!  Therefore, the generic functions that return object 
+references, like \code{PyObject_GetItem()} and 
+\code{PySequence_GetItem()}, always return a new reference (i.e., the 
+caller becomes the owner of the reference).
+
+It is important to realize that whether you own a reference returned 
+by a function depends on which function you call only -- \emph{the 
+plumage} (i.e., the type of the type of the object passed as an 
+argument to the function) \emph{don't enter into it!}  Thus, if you 
+extract an item from a list using \code{PyList_GetItem()}, yo don't 
+own the reference -- but if you obtain the same item from the same 
+list using \code{PySequence_GetItem()} (which happens to take exactly 
+the same arguments), you do own a reference to the returned object.
+
+Here is an example of how you could write a function that computes the 
+sum of the items in a list of integers; once using 
+\code{PyList_GetItem()}, once using \code{PySequence_GetItem()}.
+
+\begin{verbatim}
+long sum_list(PyObject *list)
+{
+    int i, n;
+    long total = 0;
+    PyObject *item;
+    n = PyList_Size(list);
+    if (n < 0)
+        return -1; /* Not a list */
+    for (i = 0; i < n; i++) {
+        item = PyList_GetItem(list, i); /* Can't fail */
+        if (!PyInt_Check(item)) continue; /* Skip non-integers */
+        total += PyInt_AsLong(item);
+    }
+    return total;
+}
+\end{verbatim}
+
+\begin{verbatim}
+long sum_sequence(PyObject *sequence)
+{
+    int i, n;
+    long total = 0;
+    PyObject *item;
+    n = PyObject_Size(list);
+    if (n < 0)
+        return -1; /* Has no length */
+    for (i = 0; i < n; i++) {
+        item = PySequence_GetItem(list, i);
+        if (item == NULL)
+            return -1; /* Not a sequence, or other failure */
+        if (PyInt_Check(item))
+            total += PyInt_AsLong(item);
+        Py_DECREF(item); /* Discared reference ownership */
+    }
+    return total;
+}
+\end{verbatim}
+
+\subsection{Types}
+
+There are few other data types that play a significant role in 
 the Python/C API; most are all simple C types such as \code{int}, 
 \code{long}, \code{double} and \code{char *}.  A few structure types 
 are used to describe static tables used to list the functions exported 
@@ -159,10 +318,131 @@ The Python programmer only needs to deal with exceptions if specific
 error handling is required; unhandled exceptions are automatically 
 propagated to the caller, then to the caller's caller, and so on, till 
 they reach the top-level interpreter, where they are reported to the 
-user accompanied by a stack trace.
+user accompanied by a stack traceback.
 
-For C programmers, however, error checking always has to be explicit.
-% XXX add more stuff here
+For C programmers, however, error checking always has to be explicit.  
+All functions in the Python/C API can raise exceptions, unless an 
+explicit claim is made otherwise in a function's documentation.  In 
+general, when a function encounters an error, it sets an exception, 
+discards any object references that it owns, and returns an 
+error indicator -- usually \code{NULL} or \code{-1}.  A few functions 
+return a Boolean true/false result, with false indicating an error.
+Very few functions return no explicit error indicator or have an 
+ambiguous return value, and require explicit testing for errors with 
+\code{PyErr_Occurred()}.
+
+Exception state is maintained in per-thread storage (this is 
+equivalent to using global storage in an unthreaded application).  A 
+thread can be on one of two states: an exception has occurred, or not.  
+The function \code{PyErr_Occurred()} can be used to check for this: it 
+returns a borrowed reference to the exception type object when an 
+exception has occurred, and \code{NULL} otherwise.  There are a number 
+of functions to set the exception state: \code{PyErr_SetString()} is 
+the most common (though not the most general) function to set the 
+exception state, and \code{PyErr_Clear()} clears the exception state.
+
+The full exception state consists of three objects (all of which can 
+be \code{NULL} ): the exception type, the corresponding exception 
+value, and the traceback.  These have the same meanings as the Python 
+object \code{sys.exc_type}, \code{sys.exc_value}, 
+\code{sys.exc_traceback}; however, they are not the same: the Python 
+objects represent the last exception being handled by a Python 
+\code{try...except} statement, while the C level exception state only 
+exists while an exception is being passed on between C functions until 
+it reaches the Python interpreter, which takes care of transferring it 
+to \code{sys.exc_type} and friends.
+
+(Note that starting with Python 1.5, the preferred, thread-safe way to 
+access the exception state from Python code is to call the function 
+\code{sys.exc_info()}, which returns the per-thread exception state 
+for Python code.  Also, the semantics of both ways to access the 
+exception state have changed so that a function which catches an 
+exception will save and restore its thread's exception state so as to 
+preserve the exception state of its caller.  This prevents common bugs 
+in exception handling code caused by an innocent-looking function 
+overwriting the exception being handled; it also reduces the often 
+unwanted lifetime extension for objects that are referenced by the 
+stack frames in the traceback.)
+
+As a general principle, a function that calls another function to 
+perform some task should check whether the called function raised an 
+exception, and if so, pass the exception state on to its caller.  It 
+should discards any object references that it owns, and returns an 
+error indicator, but it should \emph{not} set another exception -- 
+that would overwrite the exception that was just raised, and lose 
+important reason about the exact cause of the error.
+
+A simple example of detecting exceptions and passing them on is shown 
+in the \code{sum_sequence()} example above.  It so happens that that 
+example doesn't need to clean up any owned references when it detects 
+an error.  The following example function shows some error cleanup.  
+First we show the equivalent Python code (to remind you why you like 
+Python):
+
+\begin{verbatim}
+def incr_item(seq, i):
+    try:
+        item = seq[i]
+    except IndexError:
+        item = 0
+    seq[i] = item + 1
+\end{verbatim}
+
+Here is the corresponding C code, in all its glory:
+
+% XXX Is it better to have fewer comments in the code?
+
+\begin{verbatim}
+int incr_item(PyObject *seq, int i)
+{
+    /* Objects all initialized to NULL for Py_XDECREF */
+    PyObject *item = NULL, *const_one = NULL, *incremented_item = NULL;
+    int rv = -1; /* Return value initialized to -1 (faulure) */
+
+    item = PySequence_GetItem(seq, i);
+    if (item == NULL) {
+        /* Handle IndexError only: */
+        if (PyErr_Occurred() != PyExc_IndexError) goto error;
+
+        /* Clear the error and use zero: */
+        PyErr_Clear();
+        item = PyInt_FromLong(1L);
+        if (item == NULL) goto error;
+    }
+
+    const_one = PyInt_FromLong(1L);
+    if (const_one == NULL) goto error;
+
+    incremented_item = PyNumber_Add(item, const_one);
+    if (incremented_item == NULL) goto error;
+
+    if (PyObject_SetItem(seq, i, incremented_item) < 0) goto error;
+    rv = 0; /* Success */
+    /* Continue with cleanup code */
+
+ error:
+    /* Cleanup code, shared by success and failure path */
+
+    /* Use Py_XDECREF() to ignore NULL references */
+    Py_XDECREF(item);
+    Py_XDECREF(const_one);
+    Py_XDECREF(incremented_item);
+
+    return rv; /* -1 for error, 0 for success */
+}
+\end{verbatim}
+
+This example represents an endorsed use of the \code{goto} statement 
+in C!  It illustrates the use of \code{PyErr_Occurred()} and 
+\code{PyErr_Clear()} to handle specific exceptions, and the use of 
+\code{Py_XDECREF()} to dispose of owned references that may be 
+\code{NULL} (note the `X' in the name; \code{Py_DECREF()} would crash 
+when confronted with a \code{NULL} reference).  It is important that 
+the variables used to hold owned references are initialized to 
+\code{NULL} for this to work; likewise, the proposed return value is 
+initialized to \code{-1} (failure) and only set to success  after 
+the final call made is succesful.
+
 
 \section{Embedding Python}
 
@@ -283,7 +563,7 @@ objects generically.
 
 \section{Reference Counting}
 
-For most of the functions in the Python-C API, if a function retains a
+For most of the functions in the Python/C API, if a function retains a
 reference to a Python object passed as an argument, then the function
 will increase the reference count of the object.  It is unnecessary
 for the caller to increase the reference count of an argument in
@@ -301,7 +581,7 @@ Exceptions to these rules will be noted with the individual functions.
 
 \section{Include Files}
 
-All function, type and macro definitions needed to use the Python-C
+All function, type and macro definitions needed to use the Python/C
 API are included in your code by the following line:
 
 \code{\#include "Python.h"}
@@ -543,7 +823,7 @@ returns \NULL{}, so a wrapper function around a system call can write
 \begin{cfuncdesc}{void}{PyErr_BadInternalCall}{}
 This is a shorthand for \code{PyErr_SetString(PyExc_TypeError,
 \var{message})}, where \var{message} indicates that an internal
-operation (e.g. a Python-C API function) was invoked with an illegal
+operation (e.g. a Python/C API function) was invoked with an illegal
 argument.  It is mostly for internal use.
 \end{cfuncdesc}
 
