@@ -61,8 +61,6 @@ static char *rcsid = "$Id$";
 #define VCHECK
 #endif /* USE_MALLOC_DEBUG */
 
-#define USE_CACHE_ALIGN		/* Define for aligning everything on 16-byte boundaries */
-
 typedef unsigned char u_char;
 typedef unsigned long u_long;
 typedef unsigned int u_int;
@@ -104,9 +102,9 @@ union	overhead {
 #define	ov_index	ovu.ovu_index
 #define	ov_rmagic	ovu.ovu_rmagic
 #define	ov_size		ovu.ovu_size
-#ifdef USE_CACHE_ALIGN
+#ifdef USE_CACHE_ALIGNED
 	struct cachealigner {
-		u_long	ovalign_1, ovalign_2, ovalign_3, ovalign_4;
+		u_long	ovalign[USE_CACHE_ALIGNED];
 	};
 #endif /* USE_CACHE_ALIGN */
 };
@@ -263,10 +261,19 @@ morecore(bucket)
 #ifdef DEBUG2
 	ASSERT(nblks*sz == amt);
 #endif
+#ifdef USE_CACHE_ALIGNED
+	op = (union overhead *)NewPtr(amt+4*USE_CACHE_ALIGNED);
+#else
 	op = (union overhead *)NewPtr(amt);
+#endif
 	/* no more room! */
   	if (op == NULL)
   		return;
+#ifdef USE_CACHE_ALIGNED
+#define ALIGN_MASK (4*USE_CACHE_ALIGNED-1)
+	while ((long)op & ALIGN_MASK )
+		op = (union overhead *)((long)op+1);
+#endif /* USE_CACHE_ALIGNED */
 	/*
 	 * Add new memory allocated to that on
 	 * free list for this hash bucket.
