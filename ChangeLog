@@ -1,6 +1,14 @@
+Wed Jan 12 10:17:41 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/import.c (get_module): call dlerror() when dlopen() fails
+	(also some layout changes)
+
 Tue Jan 11 10:56:00 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
-	* Makefile.in: "make (local)clean" shouldn't bother about Include
+	* Python/import.c: use RTLD_NOW (define as 2 if undefined)
+
+	* Makefile.in: "make (local)clean" shouldn't bother about Include;
+	added .PRECIOUS: config.status
 
 	* Modules/md5.h: define PROTOTYES as 1 if HAVE_PROTOTYPES is
 	defined
