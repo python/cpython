@@ -3820,10 +3820,8 @@ int PyUnicode_Contains(PyObject *container,
 	goto onError;
     }
     u = (PyUnicodeObject *)PyUnicode_FromObject(container);
-    if (u == NULL) {
-	Py_DECREF(v);
+    if (u == NULL)
 	goto onError;
-    }
 
     /* Check v in u */
     if (PyUnicode_GET_SIZE(v) != 1) {
