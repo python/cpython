@@ -28,3 +28,6 @@ TextStyle_New
 TextStyle_Convert
 TEObj_New
 TEObj_Convert
+AEDesc_New
+AEDesc_Convert
+
