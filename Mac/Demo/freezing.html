@@ -4,31 +4,57 @@
 </HEAD>
 <BODY>
 <H1>Creating standalone applications with Python</H1>
-<HR>
-With the <EM>macfreeze</EM> script you can <i>freeze</i> a Python
-script: create a fullblown Macintosh application that is completely
-self-contained. A frozen application is similar to an applet (see <a
-href="example2.html">Example 2</a> for information on creating applets),
-but where an applet depends on an existing Python installation for its
-standard modules and interpreter core, a frozen program does not,
-because it incorporates everything in a single binary. This means you
-can copy a frozen program to a machine that does not have Python
-installed and it will work, which is not true for an applet. <p>
 
-There are two ways to create a frozen application: through the
-CodeWarrior development environment or without any development
-environment. The former method is more versatile and may result in
-smaller binaries, because you can better customize what is included in
-your eventual application. The latter method builds an application by
-glueing together the various <em>.slb</em> shared libraries that come
-with a binary Python installation into a single file. This method of
-freezing, which does not require you to spend money on a development
-environment, is unique to MacPython, incidentally, on other platforms
-you will always need a C compiler and linker. <p>
+With <a href="example2.html#applet">BuildApplet</a> you can build a standalone
+Python application that works like
+any other Mac application: you can double-click it, run it while the
+Python interpreter is running other scripts, drop files on it, etc. It is, however,
+still dependent on the whole Python installation on your machine: the PythonCore
+engine, the plugin modules and the various Lib folders.<p>
 
-<h2>Common steps</h2>
+In some cases you may want to create a true application, for instance because
+you want to send it off to people who may not have Python installed on their
+machine, or because you the application is important and you do not want changes
+in your Python installation like new versions to influence it.
 
-The two processes have a number of steps in common. When you start
+<H2>The easy way</H2>
+
+The easiest way to create an application from a Python script is simply by dropping
+it on the <code>BuildApplication</code> applet in the main Python folder.
+BuildApplication has a similar interface as BuildApplet: you drop a script on
+it and it will process it, along with an optional <code>.rsrc</code> file.
+It does ask one extra question: whether you want to build your application for
+PPC macs only, 68K macs or any Mac.<P>
+
+What BuildApplication does, however, is very different. It parses your script,
+recursively looking for all modules you use, bundles the compiled code for
+all these modules in PYC resources, adds the executable machine code for the
+PythonCore engine, any dynamically loaded modules you use and a main program, combines
+all this into a single file and adds a few preference resources (which you
+can inspect with <code>EditPythonPrefs</code>, incidentally) to isolate the
+new program from the existing Python installation.<P>
+
+Usually you do not need to worry about all this, but occasionally you may have
+to exercise some control over the process, for instance because your
+program imports modules that don't exist (which can happen if your script
+is multi-platform and those modules will never be used on the Mac). See
+the section on <a href="#directives">directives</a> below for details.
+If you get strange error messages about missing modules it may also be worthwhile
+to run macfreeze in report mode on your program, see below.
+<P>
+
+<H2>Doing it the hard way</H2>
+
+With the <EM>macfreeze</EM> script, for which BuildApplication is a simple
+wrapper, you can go a step further and create CodeWarrior projects and
+sourcefiles which can then be used to build your final application. While
+BuildApplication is good enough for 90% of the use cases there are situations
+where you need macfreeze itself, mainly if you want to embed your frozen Python
+script into an existing C application, or when you need the extra bit of speed:
+the resulting application will start up a bit quicker than one generated
+with BuildApplication. <p>
+
+When you start
 <code>Mac:Tools:macfreeze:macfreeze.py</code> you are asked for the
 script file, and you can select which type of freeze to do. The first
 time you should always choose <em>report only</em>, which will produce a
@@ -36,6 +62,8 @@ listing of modules and where they are included from in the console
 window. Macfreeze actually parses all modules, so it may crash in the
 process. If it does try again with a higher debug value, this should
 show you where it crashes. <p>
+
+<h2><a name="directives">Directives</a></h2>
 
 For more elaborate programs you will often see that freeze includes
 modules you don't need (because they are for a different platform, for
@@ -68,6 +96,9 @@ module name, in which case it is looked up through the normal method.
 freeze deems the module necessary it will not be included in the
 application.
 
+<DT> <code>optional</code>
+<DD> Include a module if it can be found, but don't complain if it can't.
+
 </DL>
 
 There is actually a fourth way that macfreeze can operate: it can be used
@@ -96,7 +127,7 @@ location: when you run freeze again it will regenerate the
 <code>frozenmodules.rsrc</code> file but not the project and bundle
 files. This is probably what you want: if you modify your python sources
 you have to re-freeze, but you may have changed the project and bundle
-files, so you don't want to regenrate them. <p>
+files, so you don't want to regenerate them. <p>
 
 An alternative is to leave the build folder where it is, but then you
 have to adapt the search path in the project. <p>
@@ -117,8 +148,5 @@ with the exception that it sets the <code>sys.path</code> initialization
 to <code>$(APPLICATION)</code> only. This means that all modules will only
 be looked for in PYC resources in your application. <p>
 
-<h2>Freezing without CodeWarrior</h2>
-
-This does not work yet.
 </BODY>
 </HTML>
