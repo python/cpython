@@ -57,6 +57,9 @@
 /* Define to 1 if you have the `ctermid_r' function. */
 #undef HAVE_CTERMID_R
 
+/* Define to 1 if you have the device macros. */
+#undef HAVE_DEVICE_MACROS
+
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
 #undef HAVE_DIRENT_H
@@ -603,6 +606,14 @@
 
 /* Define if you are using Mach cthreads under mach / */
 #undef MACH_C_THREADS
+
+/* Define to 1 if `major', `minor', and `makedev' are declared in <mkdev.h>.
+   */
+#undef MAJOR_IN_MKDEV
+
+/* Define to 1 if `major', `minor', and `makedev' are declared in
+   <sysmacros.h>. */
+#undef MAJOR_IN_SYSMACROS
 
 /* Define if malloc(0) returns a NULL pointer. */
 #undef MALLOC_ZERO_RETURNS_NULL

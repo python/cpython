@@ -621,6 +621,7 @@ sys/param.h sys/poll.h sys/select.h sys/socket.h sys/time.h sys/times.h \
 sys/un.h sys/utsname.h sys/wait.h pty.h term.h wctype.h libutil.h \
 sys/resource.h netpacket/packet.h)
 AC_HEADER_DIRENT
+AC_HEADER_MAJOR
 
 # checks for typedefs
 was_it_defined=no
@@ -1716,6 +1717,24 @@ AC_CHECK_FUNCS(gettimeofday,
   )
 )
 
+AC_MSG_CHECKING(for major, minor, and makedev)
+AC_TRY_COMPILE([
+  #if defined(MAJOR_IN_MKDEV)
+  #include <sys/mkdev.h>
+  #elif defined(MAJOR_IN_SYSMACROS)
+  #include <sys/sysmacros.h>
+  #else
+  #include <sys/types.h>
+  #endif
+],[
+  makedev(major(0),minor(0));
+],[
+  AC_DEFINE(HAVE_DEVICE_MACROS, 1,
+	    [Define to 1 if you have the device macros.])
+  AC_MSG_RESULT(yes)
+],[
+  AC_MSG_RESULT(no)
+])
 
 # On OSF/1 V5.1, getaddrinfo is available, but a define
 # for [no]getaddrinfo in netdb.h. 
