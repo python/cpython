@@ -921,6 +921,7 @@ load_package(char *name, char *pathname)
 	if (fdp == NULL) {
 		if (PyErr_ExceptionMatches(PyExc_ImportError)) {
 			PyErr_Clear();
+			Py_INCREF(m);
 		}
 		else
 			m = NULL;
