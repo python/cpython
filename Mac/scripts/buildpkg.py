@@ -60,7 +60,6 @@ Title
 Version
 Description
 DefaultLocation
-Diskname
 DeleteWarning
 NeedsAuthorization
 DisableStop
@@ -71,6 +70,10 @@ Required
 InstallOnly
 RequiresReboot
 RootVolumeOnly
+LongFilenames
+LibrarySubdirectory
+AllowBackRev
+OverwritePermissions
 InstallFat\
 """
 
@@ -138,7 +141,6 @@ class PackageMaker:
         'Version': None,
         'Description': '',
         'DefaultLocation': '/',
-        'Diskname': '(null)',
         'DeleteWarning': '',
         'NeedsAuthorization': 'NO',
         'DisableStop': 'NO',
@@ -149,7 +151,12 @@ class PackageMaker:
         'InstallOnly': 'NO',
         'RequiresReboot': 'NO',
         'RootVolumeOnly' : 'NO',
-        'InstallFat': 'NO'}
+        'InstallFat': 'NO',
+        'LongFilenames': 'YES',
+        'LibrarySubdirectory': 'Standard',
+        'AllowBackRev': 'YES',
+        'OverwritePermissions': 'NO',
+        }
 
 
     def __init__(self, title, version, desc):
@@ -201,6 +208,7 @@ class PackageMaker:
         self._addArchive()
         self._addResources()
         self._addSizes()
+        self._addLoc()
 
 
     def _makeFolders(self):
@@ -223,7 +231,8 @@ class PackageMaker:
 
         info = ""
         for f in string.split(PKG_INFO_FIELDS, "\n"):
-            info = info + "%s %%(%s)s\n" % (f, f)
+            if self.packageInfo.has_key(f):
+                info = info + "%s %%(%s)s\n" % (f, f)
         info = info % self.packageInfo
         base = self.packageInfo["Title"] + ".info"
         path = join(self.packageResourceFolder, base)
@@ -351,6 +360,11 @@ class PackageMaker:
         format = "NumFiles %d\nInstalledSize %d\nCompressedSize %d\n"
         f.write(format % (numFiles, installedSize, zippedSize))
 
+    def _addLoc(self):
+        "Write .loc file."
+        base = self.packageInfo["Title"] + ".loc"
+        f = open(join(self.packageResourceFolder, base), "w")
+        f.write('/')
 
 # Shortcut function interface
 
