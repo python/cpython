@@ -24,6 +24,7 @@ user's home directory will be read.  Parse errors will raise
 name, line number, and terminating token.
 \end{classdesc}
 
+
 \subsection{netrc Objects \label{netrc-objects}}
 
 A \class{netrc} instance has the following methods:
@@ -36,7 +37,7 @@ the `default' entry.  If neither matching host nor default entry is
 available, return \code{None}.
 \end{methoddesc}
 
-\begin{methoddesc}{__repr__}{host}
+\begin{methoddesc}{__repr__}{}
 Dump the class data as a string in the format of a netrc file.
 (This discards comments and may reorder the entries.)
 \end{methoddesc}
