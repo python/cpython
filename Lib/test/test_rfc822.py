@@ -18,7 +18,7 @@ class MessageTestCase(unittest.TestCase):
             'To: "last, first" <userid@foo.net>\n\ntest\n')
         self.assert_(msg.get("to") == '"last, first" <userid@foo.net>')
         self.assert_(msg.get("TO") == '"last, first" <userid@foo.net>')
-        self.assert_(msg.get("No-Such-Header") == "")
+        self.assert_(msg.get("No-Such-Header") is None)
         self.assert_(msg.get("No-Such-Header", "No-Such-Value")
                      == "No-Such-Value")
 

@@ -425,13 +425,6 @@ class Message:
         for i in list:
             del self.headers[i]
 
-    def get(self, name, default=""):
-        name = name.lower()
-        if name in self.dict:
-            return self.dict[name]
-        else:
-            return default
-
     def setdefault(self, name, default=""):
         lowername = name.lower()
         if lowername in self.dict:
