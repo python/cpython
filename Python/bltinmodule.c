@@ -1152,6 +1152,76 @@ builtin_str(self, v)
 }
 
 static object *
+builtin_tuple(self, v)
+	object *self;
+	object *v;
+{
+	sequence_methods *sqf;
+	if (v == NULL)
+		v = None; /* Force error later */
+	if (is_tupleobject(v)) {
+		INCREF(v);
+		return v;
+	}
+	if (is_listobject(v)) {
+		int n = getlistsize(v);
+		object *t = newtupleobject(n);
+		if (t != NULL) {
+			int i;
+			for (i = 0; i < n; i++) {
+				object *item = getlistitem(v, i);
+				INCREF(item);
+				settupleitem(t, i, item);
+			}
+		}
+		return t;
+	}
+	if (is_stringobject(v)) {
+		int n = getstringsize(v);
+		object *t = newtupleobject(n);
+		if (t != NULL) {
+			int i;
+			char *p = getstringvalue(v);
+			for (i = 0; i < n; i++) {
+				object *item = newsizedstringobject(p+i, 1);
+				if (item == NULL) {
+					DECREF(t);
+					t = NULL;
+					break;
+				}
+				settupleitem(t, i, item);
+			}
+		}
+		return t;
+	}
+	/* Generic sequence object */
+	if ((sqf = v->ob_type->tp_as_sequence) != NULL) {
+		int n = (*sqf->sq_length)(v);
+		int i;
+		object *t;
+		if (n < 0)
+			return NULL;
+		t = newtupleobject(n);
+		if (t == NULL)
+			return NULL;
+		for (i = 0; i < n; i++) {
+			object *item = (*sqf->sq_item)(v, i);
+			if (item == NULL) {
+				DECREF(t);
+				t = NULL;
+				break;
+			}
+			settupleitem(t, i, item);
+		}
+		/* XXX Should support indefinite-length sequences */
+		return t;
+	}
+	/* None of the above */
+	err_setstr(TypeError, "tuple() argument must be a sequence");
+	return NULL;
+}
+
+static object *
 builtin_type(self, v)
 	object *self;
 	object *v;
@@ -1224,6 +1294,7 @@ static struct methodlist builtin_methods[] = {
 	{"round",	builtin_round},
 	{"setattr",	builtin_setattr},
 	{"str",		builtin_str},
+	{"tuple",	builtin_tuple},
 	{"type",	builtin_type},
 	{"vars",	builtin_vars},
 	{"xrange",	builtin_xrange},
