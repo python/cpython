@@ -48,6 +48,10 @@ class Dialog(Toplevel):
 
         self.wait_window(self)
 
+    def destroy(self):
+        self.initial_focus = None
+        Toplevel.destroy(self)
+
     #
     # construction hooks
 
@@ -130,6 +134,10 @@ class _QueryDialog(Dialog):
         self.initialvalue = initialvalue
 
         Dialog.__init__(self, parent, title)
+
+    def destroy(self):
+        self.entry = None
+        Dialog.destroy(self)
 
     def body(self, master):
 
