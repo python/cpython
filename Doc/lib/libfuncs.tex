@@ -897,6 +897,14 @@ class C:
   \versionadded{2.2}
 \end{funcdesc}
 
+\begin{funcdesc}{sum}{sequence\optional{start=0}}
+  Sums up the items of a \var{sequence}, from left to right, and returns
+  the total.  The \var{sequence}'s items are normally numbers, and are
+  not allowed to be strings.  The fast, correct way to join up a
+  sequence of strings is by calling \code{''.join(\var{sequence})}.
+  \versionadded{2.3}
+\end{funcdesc}
+
 \begin{funcdesc}{super}{type\optional{object-or-type}}
   Return the superclass of \var{type}.  If the second argument is omitted
   the super object returned is unbound.  If the second argument is an

@@ -12,6 +12,10 @@ What's New in Python 2.3 beta 1?
 Core and builtins
 -----------------
 
+- New builtin function sum(seq, start=0) returns the sum of all the
+  items in iterable object seq, plus start (items are normally numbers,
+  and cannot be strings).
+
 - bool() called without arguments now returns False rather than
   raising an exception.  This is consistent with calling the
   constructors for the other builtin types -- called without argument

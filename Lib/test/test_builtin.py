@@ -1099,6 +1099,27 @@ class BuiltinTest(unittest.TestCase):
         a[0] = a
         self.assertEqual(str(a), '{0: {...}}')
 
+    def test_sum(self):
+        self.assertEqual(sum([]), 0)
+        self.assertEqual(sum(range(2,8)), 27)
+        self.assertEqual(sum(iter(range(2,8))), 27)
+        self.assertEqual(sum(Squares(10)), 285)
+        self.assertEqual(sum(iter(Squares(10))), 285)
+        self.assertEqual(sum([[1], [2], [3]], []), [1, 2, 3])
+
+        self.assertRaises(TypeError, sum)
+        self.assertRaises(TypeError, sum, 42)
+        self.assertRaises(TypeError, sum, ['a', 'b', 'c'])
+        self.assertRaises(TypeError, sum, ['a', 'b', 'c'], '')
+        self.assertRaises(TypeError, sum, [[1], [2], [3]])
+        self.assertRaises(TypeError, sum, [{2:3}])
+        self.assertRaises(TypeError, sum, [{2:3}]*2, {2:3})
+
+        class BadSeq:
+            def __getitem__(self, index):
+                raise ValueError
+        self.assertRaises(ValueError, sum, BadSeq())
+
     def test_tuple(self):
         self.assertEqual(tuple(()), ())
         t0_3 = (0, 1, 2, 3)

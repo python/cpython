@@ -1798,6 +1798,66 @@ PyDoc_STRVAR(vars_doc,
 Without arguments, equivalent to locals().\n\
 With an argument, equivalent to object.__dict__.");
 
+
+static PyObject*
+builtin_sum(PyObject *self, PyObject *args)
+{
+	PyObject *seq;
+	PyObject *result = NULL;
+	PyObject *temp, *item, *iter;
+
+	if (!PyArg_ParseTuple(args, "O|O:sum", &seq, &result))
+		return NULL;
+
+	iter = PyObject_GetIter(seq);
+	if (iter == NULL)
+		return NULL;
+
+	if (result == NULL) {
+		result = PyInt_FromLong(0);
+		if (result == NULL) {
+			Py_DECREF(iter);
+			return NULL;
+		}
+	} else {
+		/* reject string values for 'start' parameter */
+		if (PyObject_TypeCheck(result, &PyBaseString_Type)) {
+			PyErr_SetString(PyExc_TypeError,
+				"can't sum strings [use ''.join(seq) instead]");
+			Py_DECREF(result);
+			Py_DECREF(iter);
+			return NULL;
+		}
+	}
+
+	for(;;) {
+		item = PyIter_Next(iter);
+		if (item == NULL) {
+			/* error, or end-of-sequence */
+			if (PyErr_Occurred()) {
+				Py_DECREF(result);
+				result = NULL;
+			}
+			break;
+		}
+		temp = PyNumber_Add(result, item);
+		Py_DECREF(result);
+		Py_DECREF(item);
+		result = temp;
+		if (result == NULL)
+			break;
+	}
+	Py_DECREF(iter);
+	return result;
+}
+
+PyDoc_STRVAR(sum_doc,
+"sum(sequence, start=0) -> value\n\
+\n\
+Returns the sum of a sequence of numbers (NOT strings) plus the value\n\
+of parameter 'start'.  When the sequence is empty, returns start.");
+
+
 static PyObject *
 builtin_isinstance(PyObject *self, PyObject *args)
 {
@@ -2001,6 +2061,7 @@ static PyMethodDef builtin_methods[] = {
  	{"repr",	builtin_repr,       METH_O, repr_doc},
  	{"round",	builtin_round,      METH_VARARGS, round_doc},
  	{"setattr",	builtin_setattr,    METH_VARARGS, setattr_doc},
+ 	{"sum",		builtin_sum,        METH_VARARGS, sum_doc},
 #ifdef Py_USING_UNICODE
  	{"unichr",	builtin_unichr,     METH_VARARGS, unichr_doc},
 #endif
