@@ -59,7 +59,6 @@ static PyObject *
 param2python(int resource, int param, ALvalue value, ALparamInfo *pinfo)
 {
 	ALparamInfo info;
-	PyObject *v;
 
 	if (pinfo == NULL) {
 		pinfo = &info;
@@ -717,7 +716,6 @@ PyDoc_STRVAR(alp_ReadFrames__doc__,
 static PyObject *
 alp_ReadFrames(alpobject *self, PyObject *args)
 {
-	void *samples;
 	int framecount;
 	PyObject *v;
 	int size;
@@ -1561,7 +1559,7 @@ static PyObject *
 al_SetParams(PyObject *self, PyObject *args)
 {
 	int resource;
-	PyObject *pvslist, *item;
+	PyObject *pvslist;
 	ALpv *pvs;
 	ALparamInfo *pinfo;
 	int npvs, i;
@@ -2545,6 +2543,12 @@ inital(void)
 		goto error;
 	Py_DECREF(x);
 #endif
+#ifdef AL_LOCKED
+	x =  PyInt_FromLong((long) AL_LOCKED);
+	if (x == NULL || PyDict_SetItemString(d, "LOCKED", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
 #ifdef AL_MASTER_CLOCK
 	x =  PyInt_FromLong((long) AL_MASTER_CLOCK);
 	if (x == NULL || PyDict_SetItemString(d, "MASTER_CLOCK", x) < 0)
@@ -2695,9 +2699,21 @@ inital(void)
 		goto error;
 	Py_DECREF(x);
 #endif
+#ifdef AL_NULL_INTERFACE
+	x =  PyInt_FromLong((long) AL_NULL_INTERFACE);
+	if (x == NULL || PyDict_SetItemString(d, "NULL_INTERFACE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
 #ifdef AL_NULL_RESOURCE
 	x =  PyInt_FromLong((long) AL_NULL_RESOURCE);
 	if (x == NULL || PyDict_SetItemString(d, "NULL_RESOURCE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef AL_OPTICAL_IF_TYPE
+	x =  PyInt_FromLong((long) AL_OPTICAL_IF_TYPE);
+	if (x == NULL || PyDict_SetItemString(d, "OPTICAL_IF_TYPE", x) < 0)
 		goto error;
 	Py_DECREF(x);
 #endif
@@ -3046,6 +3062,12 @@ inital(void)
 #ifdef AL_SHORT_NAME
 	x =  PyInt_FromLong((long) AL_SHORT_NAME);
 	if (x == NULL || PyDict_SetItemString(d, "SHORT_NAME", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef AL_SMPTE272M_IF_TYPE
+	x =  PyInt_FromLong((long) AL_SMPTE272M_IF_TYPE);
+	if (x == NULL || PyDict_SetItemString(d, "SMPTE272M_IF_TYPE", x) < 0)
 		goto error;
 	Py_DECREF(x);
 #endif
