@@ -338,8 +338,8 @@ class Dist (Command):
             # pattern
             if os.path.isdir (words[0]):
                 if exclude:
-                    file.warn ("exclude (!) doesn't apply to " +
-                               "whole directory trees")
+                    manifest.warn ("exclude (!) doesn't apply to " +
+                                   "whole directory trees")
                     continue
 
                 dir_files = self.search_dir (words[0], words[1:])
@@ -348,8 +348,8 @@ class Dist (Command):
             # Multiple words in pattern: that's a no-no unless the first
             # word is a directory name
             elif len (words) > 1:
-                file.warn ("can't have multiple words unless first word " +
-                           "('%s') is a directory name" % words[0])
+                manifest.warn ("can't have multiple words unless first word " +
+                               "('%s') is a directory name" % words[0])
                 continue
 
             # Single word, no bang: it's a "simple include pattern"
@@ -364,7 +364,7 @@ class Dist (Command):
             # Single word prefixed with a bang: it's a "simple exclude pattern"
             else:
                 if self.exclude_files (pattern) == 0:
-                    file.warn ("no files excluded by '%s'" % pattern)
+                    manifest.warn ("no files excluded by '%s'" % pattern)
 
             # if/elif/.../else on 'pattern'
 
