@@ -3994,10 +3994,13 @@ super_getattro(PyObject *self, PyObject *name)
 
 	if (su->obj != NULL) {
 		PyObject *mro, *res, *tmp, *dict;
+		PyTypeObject *starttype;
 		descrgetfunc f;
 		int i, n;
 
-		mro = su->obj->ob_type->tp_mro;
+		starttype = su->obj->ob_type;
+		mro = starttype->tp_mro;
+
 		if (mro == NULL)
 			n = 0;
 		else {
@@ -4009,7 +4012,8 @@ super_getattro(PyObject *self, PyObject *name)
 				break;
 		}
 		if (i >= n && PyType_Check(su->obj)) {
-			mro = ((PyTypeObject *)(su->obj))->tp_mro;
+			starttype = (PyTypeObject *)(su->obj);
+			mro = starttype->tp_mro;
 			if (mro == NULL)
 				n = 0;
 			else {
@@ -4037,7 +4041,7 @@ super_getattro(PyObject *self, PyObject *name)
 				Py_INCREF(res);
 				f = res->ob_type->tp_descr_get;
 				if (f != NULL) {
-					tmp = f(res, su->obj, res);
+					tmp = f(res, su->obj, (PyObject *)starttype);
 					Py_DECREF(res);
 					res = tmp;
 				}
