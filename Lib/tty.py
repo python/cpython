@@ -4,6 +4,8 @@
 
 from termios import *
 
+__all__ = ["setraw", "setcbreak"]
+
 # Indexes for termios list.
 IFLAG = 0
 OFLAG = 1

@@ -4,6 +4,8 @@ See RFC 1808: "Relative Uniform Resource Locators", by R. Fielding,
 UC Irvine, June 1995.
 """
 
+__all__ = ["urlparse", "urlunparse", "urljoin"]
+
 # A classification of schemes ('' means apply by default)
 uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'wais', 'file',
                  'https', 'shttp',

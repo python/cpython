@@ -14,11 +14,15 @@ __version__ = "Ka-Ping Yee, 26 October 1997; patched, GvR 3/30/98"
 import string, re
 from token import *
 
+import token
+__all__ = [x for x in dir(token) if x[0] != '_'] + ["COMMENT", "tokenize", "NL"]
+del token
+
 COMMENT = N_TOKENS
 tok_name[COMMENT] = 'COMMENT'
 NL = N_TOKENS + 1
 tok_name[NL] = 'NL'
-
+N_TOKENS += 2
 
 # Changes from 1.3:
 #     Ignore now accepts \f as whitespace.  Operator now includes '**'.

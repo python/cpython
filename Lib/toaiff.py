@@ -13,6 +13,8 @@ import tempfile
 import pipes
 import sndhdr
 
+__all__ = ["error", "toaiff"]
+
 table = {}
 
 t = pipes.Template()
