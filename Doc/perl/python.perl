@@ -243,8 +243,8 @@ sub do_cmd_newsgroup{
     local($_) = @_;
     my $newsgroup = next_argument();
     my $icon = get_link_icon("news:$newsgroup");
-    my $stuff = "<span class='newsgroup'><a href='news:$newsgroup'>"
-      . "$newsgroup$icon</a></span>";
+    my $stuff = "<a class='newsgroup' href='news:$newsgroup'>"
+      . "$newsgroup$icon</a>";
     return $stuff . $_;
 }
 
@@ -254,11 +254,11 @@ sub do_cmd_envvar{
     my($name,$aname,$ahref) = new_link_info();
     # The <tt> here is really to keep buildindex.py from making
     # the variable name case-insensitive.
-    add_index_entry("environment variables!$envvar@<tt>\$$envvar</tt>",
+    add_index_entry("environment variables!$envvar@<tt>$envvar</tt>",
 		    $ahref);
-    add_index_entry("$envvar@\$$envvar", $ahref);
+    add_index_entry("$envvar (environment variable)", $ahref);
     $aname =~ s/<a/<a class="envvar"/;
-    return "$aname\$$envvar</a>" . $_;
+    return "$aname$envvar</a>" . $_;
 }
 
 sub do_cmd_url{
@@ -278,16 +278,22 @@ sub do_cmd_manpage{
     return "<span class='manpage'><i>$page</i>($section)</span>" . $_;
 }
 
-sub get_pep_url{
-    my $rfcnum = sprintf("%04d", @_[0]);
-    return "http://python.sourceforge.net/peps/pep-$rfcnum.html";
+$PEP_FORMAT = "http://python.sourceforge.net/peps/pep-XXXX.html";
+$RFC_FORMAT = "http://www.ietf.org/rfc/rfcXXXX.txt";
+
+sub get_rfc_url($$){
+    my($rfcnum, $format) = @_;
+    $rfcnum = sprintf("%04d", $rfcnum);
+    $format = "$format";
+    $format =~ s/XXXX/$rfcnum/;
+    return $format;
 }
 
 sub do_cmd_pep{
     local($_) = @_;
     my $rfcnumber = next_argument();
     my $id = "rfcref-" . ++$global{'max_id'};
-    my $href = get_pep_url($rfcnumber);
+    my $href = get_rfc_url($rfcnumber, $PEP_FORMAT);
     my $icon = get_link_icon($href);
     # Save the reference
     my $nstr = gen_index_id("Python Enhancement Proposals!PEP $rfcnumber", '');
@@ -296,16 +302,11 @@ sub do_cmd_pep{
             . "$icon</a>" . $_);
 }
 
-sub get_rfc_url{
-    my $rfcnum = sprintf("%04d", @_[0]);
-    return "http://www.ietf.org/rfc/rfc$rfcnum.txt";
-}
-
 sub do_cmd_rfc{
     local($_) = @_;
     my $rfcnumber = next_argument();
     my $id = "rfcref-" . ++$global{'max_id'};
-    my $href = get_rfc_url($rfcnumber);
+    my $href = get_rfc_url($rfcnumber, $RFC_FORMAT);
     my $icon = get_link_icon($href);
     # Save the reference
     my $nstr = gen_index_id("RFC!RFC $rfcnumber", '');
@@ -337,14 +338,18 @@ sub do_cmd_deprecated{
     local($_) = @_;
     my $release = next_argument();
     my $reason = next_argument();
-    return "<b>Deprecated since release $release.</b>\n$reason<p>" . $_;
+    return ('<div class="versionnote">'
+            . "<b>Deprecated since release $release.</b>"
+            . "\n$reason</div><p>"
+            . $_);
 }
 
 sub do_cmd_versionadded{
     # one parameter:  \versionadded{version}
     local($_) = @_;
     my $release = next_argument();
-    return "\nNew in version $release.\n" . $_;
+    return ("\n<span class='versionnote'>New in version $release.</span>\n"
+            . $_);
 }
 
 sub do_cmd_versionchanged{
@@ -352,11 +357,11 @@ sub do_cmd_versionchanged{
     local($_) = @_;
     my $explanation = next_optional_argument();
     my $release = next_argument();
-    my $text = "\nChanged in version $release.\n";
-    if ($release) {
-        $text = "\nChanged in version $release:\n$explanation.\n";
+    my $text = "Changed in version $release.";
+    if ($explanation) {
+        $text = "Changed in version $release:\n$explanation.";
     }
-    return $text . $_;
+    return "\n<span class='versionnote'>$text</span>\n" . $_;
 }
 
 #
@@ -499,6 +504,9 @@ sub process_index_macros{
 	    &$cmd($ahref);
 	}
     }
+    if (/^[ \t\r\n]/) {
+        $_ = substr($_, 1);
+    }
     return "$aname$anchor_invisible_mark</a>" . $_;
 }
 
@@ -589,7 +597,7 @@ sub make_mod_index_entry{
         my $nstr = $1;
 	$Modules{$nstr} .= $ahref;
     }
-    return "$aname$anchor_invisible_mark</a>";
+    return "$aname$anchor_invisible_mark2</a>";
 }
 
 
@@ -647,7 +655,8 @@ sub idx_cmd_refstmodindex{ return ref_module_index_helper('standard', @_); }
 sub do_cmd_nodename{ return do_cmd_label(@_); }
 
 sub init_myformat{
-    $anchor_invisible_mark = '';
+    $anchor_invisible_mark = '&nbsp;';
+    $anchor_invisible_mark2 = '';
     $anchor_mark = '';
     $icons{'anchor_mark'} = '';
 }
@@ -1029,6 +1038,9 @@ sub fix_font{
     }
     elsif ($font eq 'programopt') {
         $font = 'b';
+    }
+    elsif ($font eq 'exception') {
+        $font = 'tt class="exception"';
     }
     return $font;
 }
@@ -1484,11 +1496,11 @@ sub do_cmd_seemodule{
 }
 
 sub handle_rfclike_reference{
-    local($_, $what) = @_;
+    local($_, $what, $format) = @_;
     my $rfcnum = next_argument();
     my $title = next_argument();
     my $text = next_argument();
-    my $url = get_rfc_url($rfcnum);
+    my $url = get_rfc_url($rfcnum, $format);
     my $icon = get_link_icon($url);
     return '<dl compact class="seerfc">'
       . "\n    <dt><a href=\"$url\""
@@ -1499,11 +1511,11 @@ sub handle_rfclike_reference{
 }
 
 sub do_cmd_seepep{
-    return handle_rfclike_reference(@_[0], "PEP");
+    return handle_rfclike_reference(@_[0], "PEP", $PEP_FORMAT);
 }
 
 sub do_cmd_seerfc{
-    return handle_rfclike_reference(@_[0], "RFC");
+    return handle_rfclike_reference(@_[0], "RFC", $RFC_FORMAT);
 }
 
 sub do_cmd_seetitle{
