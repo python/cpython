@@ -414,7 +414,7 @@ class PyBuildExt(build_ext):
         # haven't tested it recently.   For a more complete module,
         # refer to pympz.sourceforge.net.
 
-        # A compatible MP library unencombered by the GPL also exists.  It was
+        # A compatible MP library unencumbered by the GPL also exists.  It was
         # posted to comp.sources.misc in volume 40 and is widely available from
         # FTP archive sites. One URL for it is:
         # ftp://gatekeeper.dec.com/.b/usenet/comp.sources.misc/volume40/fgmp/part01.Z
