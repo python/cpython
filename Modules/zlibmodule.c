@@ -881,5 +881,5 @@ PyInit_zlib(void)
 
 #ifdef WITH_THREAD
     zlib_lock = PyThread_allocate_lock();
-#endif // WITH_THREAD
+#endif /* WITH_THREAD */
 }
