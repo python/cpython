@@ -261,7 +261,13 @@ class Application(FrameWork.Application):
 		savedir = os.getcwd()
 		os.chdir(top)
 		for name in names:
-			fss, isdir, isalias = macfs.ResolveAliasFile(name)
+			if name == "CVS":
+				continue
+			try:
+				fss, isdir, isalias = macfs.ResolveAliasFile(name)
+			except:
+				# maybe a broken alias
+				continue
 			path = fss.as_pathname()
 			if done.has_key(path):
 				continue
