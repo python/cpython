@@ -25,3 +25,12 @@ end
 define pyg
 print _PyGC_Dump($arg0)
 end
+
+# If you are in an eval_frame() function, calling pyframe with no
+# arguments will print the filename, function name, and line number.
+# It assumes that f is the name of the current frame.
+define pyframe
+x/s ((PyStringObject*)f->f_code->co_filename)->ob_sval
+x/s ((PyStringObject*)f->f_code->co_name)->ob_sval
+p f->f_lineno
+end
