@@ -157,15 +157,14 @@ PyThreadState_Clear(PyThreadState *tstate)
 }
 
 
-void
-PyThreadState_Delete(PyThreadState *tstate)
+/* Common code for PyThreadState_Delete() and PyThreadState_DeleteCurrent() */
+static void
+tstate_delete_common(PyThreadState *tstate)
 {
 	PyInterpreterState *interp;
 	PyThreadState **p;
 	if (tstate == NULL)
 		Py_FatalError("PyThreadState_Delete: NULL tstate");
-	if (tstate == _PyThreadState_Current)
-		Py_FatalError("PyThreadState_Delete: tstate is still current");
 	interp = tstate->interp;
 	if (interp == NULL)
 		Py_FatalError("PyThreadState_Delete: NULL interp");
@@ -181,6 +180,30 @@ PyThreadState_Delete(PyThreadState *tstate)
 	HEAD_UNLOCK();
 	PyMem_DEL(tstate);
 }
+
+
+void
+PyThreadState_Delete(PyThreadState *tstate)
+{
+	if (tstate == _PyThreadState_Current)
+		Py_FatalError("PyThreadState_Delete: tstate is still current");
+	tstate_delete_common(tstate);
+}
+
+
+#ifdef WITH_THREAD
+void
+PyThreadState_DeleteCurrent()
+{
+	PyThreadState *tstate = _PyThreadState_Current;
+	if (tstate == NULL)
+		Py_FatalError(
+			"PyThreadState_DeleteCurrent: no current tstate");
+	_PyThreadState_Current = NULL;
+	tstate_delete_common(tstate);
+	PyEval_ReleaseLock();
+}
+#endif /* WITH_THREAD */
 
 
 PyThreadState *
