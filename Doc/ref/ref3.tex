@@ -892,6 +892,15 @@ Special read-only attributes: \member{start} is the lower bound;
   \ttindex{stop}
   \ttindex{step}}
 
+Special method: \method{indices} takes an single integer argument
+\var{length} and computes information about the extended slice that
+the slice object would describe if applied to a sequence of
+\var{length}.  It returns a tuple of three integers; respectively
+these are the \var{start} and \var{stop} indices and the \var{step} or
+stride length of the slice.  Missing or out-of-bounds indices are
+handled in a manner consistent with regular slices.
+\versionadded{2.3}
+
 \end{description} % Internal types
 
 \end{description} % Types
