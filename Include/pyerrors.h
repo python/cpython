@@ -134,7 +134,6 @@ PyAPI_FUNC(PyObject *) PyUnicodeTranslateError_Create(
 /* get the encoding attribute */
 PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_GetEncoding(PyObject *);
 PyAPI_FUNC(PyObject *) PyUnicodeDecodeError_GetEncoding(PyObject *);
-PyAPI_FUNC(PyObject *) PyUnicodeTranslateError_GetEncoding(PyObject *);
 
 /* get the object attribute */
 PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_GetObject(PyObject *);

@@ -931,11 +931,6 @@ PyObject * PyUnicodeDecodeError_GetEncoding(PyObject *exc)
     return get_string(exc, "encoding");
 }
 
-PyObject * PyUnicodeTranslateError_GetEncoding(PyObject *exc)
-{
-    return get_string(exc, "encoding");
-}
-
 PyObject *PyUnicodeEncodeError_GetObject(PyObject *exc)
 {
     return get_unicode(exc, "object");
