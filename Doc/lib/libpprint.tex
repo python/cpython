@@ -4,7 +4,7 @@
 \stmodindex{pprint}
 \label{module-pprint}
 
-The \code{pprint} module provides a capability to ``pretty-print''
+The \module{pprint} module provides a capability to ``pretty-print''
 arbitrary Python data structures in a form which can be used as input
 to the interpreter.  If the formatted structures include objects which
 are not fundamental Python types, the representation may not be
@@ -14,33 +14,33 @@ objects which are not representable as Python constants.
 
 The formatted representation keeps objects on a single line if it can,
 and breaks them onto multiple lines if they don't fit within the
-allowed width.  Construct PrettyPrinter objects explicitly if you need
-to adjust the width constraint.
+allowed width.  Construct \class{PrettyPrinter} objects explicitly if
+you need to adjust the width constraint.
 
-The \code{pprint} module defines one class:
+The \module{pprint} module defines one class:
 
 \setindexsubitem{(in module pprint)}
 
 % First the implementation class:
 
-\begin{funcdesc}{PrettyPrinter}{...}
-Construct a PrettyPrinter instance.  This constructor understands
-several keyword parameters.  An output stream may be set using the
-\var{stream} keyword; the only method used on the stream object is the
-file protocol's \code{write()} method.  If not specified, the
-PrettyPrinter adopts \code{sys.stdout}.  Three additional parameters
-may be used to control the formatted representation.  The keywords are
-\var{indent}, \var{depth}, and \var{width}.  The amount of indentation
-added for each recursive level is specified by \var{indent}; the
-default is one.  Other values can cause output to look a little odd,
-but can make nesting easier to spot.  The number of levels which may
-be printed is controlled by \var{depth}; if the data structure being
-printed is too deep, the next contained level is replaced by
-\samp{...}.  By default, there is no constraint on the depth of the
-objects being formatted.  The desired output width is constrained
-using the \var{width} parameter; the default is eighty characters.  If
-a structure cannot be formatted within the constrained width, a best
-effort will be made.
+\begin{classdesc}{PrettyPrinter}{...}
+Construct a \class{PrettyPrinter} instance.  This constructor
+understands several keyword parameters.  An output stream may be set
+using the \var{stream} keyword; the only method used on the stream
+object is the file protocol's \method{write()} method.  If not
+specified, the \class{PrettyPrinter} adopts \code{sys.stdout}.  Three
+additional parameters may be used to control the formatted
+representation.  The keywords are \var{indent}, \var{depth}, and
+\var{width}.  The amount of indentation added for each recursive level
+is specified by \var{indent}; the default is one.  Other values can
+cause output to look a little odd, but can make nesting easier to
+spot.  The number of levels which may be printed is controlled by
+\var{depth}; if the data structure being printed is too deep, the next
+contained level is replaced by \samp{...}.  By default, there is no
+constraint on the depth of the objects being formatted.  The desired
+output width is constrained using the \var{width} parameter; the
+default is eighty characters.  If a structure cannot be formatted
+within the constrained width, a best effort will be made.
 
 \begin{verbatim}
 >>> import pprint, sys
@@ -68,12 +68,12 @@ effort will be made.
 >>> pp.pprint(tup)
 (266, (267, (307, (287, (288, (...))))))
 \end{verbatim}
-\end{funcdesc}
+\end{classdesc}
 
 
 % Now the derivative functions:
 
-The PrettyPrinter class supports several derivative functions:
+The \class{PrettyPrinter} class supports several derivative functions:
 
 \begin{funcdesc}{pformat}{object}
 Return the formatted representation of \var{object} as a string.  The
@@ -84,8 +84,8 @@ default parameters for formatting are used.
 Prints the formatted representation of \var{object} on \var{stream},
 followed by a newline.  If \var{stream} is omitted, \code{sys.stdout}
 is used.  This may be used in the interactive interpreter instead of a
-\code{print} command for inspecting values.  The default parameters
-for formatting are used.
+\keyword{print} statement for inspecting values.  The default
+parameters for formatting are used.
 
 \begin{verbatim}
 >>> stuff = sys.path[:]
@@ -104,7 +104,8 @@ for formatting are used.
 \begin{funcdesc}{isreadable}{object}
 Determine if the formatted representation of \var{object} is
 ``readable,'' or can be used to reconstruct the value using
-\code{eval()}.  Note that this returns false for recursive objects.
+\function{eval()}\bifuncindex{eval}.  Note that this returns false for
+recursive objects.
 
 \begin{verbatim}
 >>> pprint.isreadable(stuff)
@@ -136,15 +137,15 @@ l/lib/python1.4/test', '/usr/local/lib/python1.4/sunos5', '/usr/local/lib/python
 
 
 \subsection{PrettyPrinter Objects}
+\label{PrettyPrinter Objects}
 
-PrettyPrinter instances (returned by \code{PrettyPrinter()} above)
-have the following methods.
+PrettyPrinter instances have the following methods:
 
 \setindexsubitem{(PrettyPrinter method)}
 
 \begin{funcdesc}{pformat}{object}
 Return the formatted representation of \var{object}.  This takes into
-account the options passed to the PrettyPrinter constructor.
+account the options passed to the \class{PrettyPrinter} constructor.
 \end{funcdesc}
 
 \begin{funcdesc}{pprint}{object}
@@ -154,15 +155,16 @@ stream, followed by a newline.
 
 The following methods provide the implementations for the
 corresponding functions of the same names.  Using these methods on an
-instance is slightly more efficient since new PrettyPrinter objects
-don't need to be created.
+instance is slightly more efficient since new \class{PrettyPrinter}
+objects don't need to be created.
 
 \begin{funcdesc}{isreadable}{object}
 Determine if the formatted representation of the object is
 ``readable,'' or can be used to reconstruct the value using
-\code{eval()}.  Note that this returns false for recursive objects.
-If the \var{depth} parameter of the PrettyPrinter is set and the
-object is deeper than allowed, this returns false.
+\function{eval()}\bifuncindex{eval}.  Note that this returns false for
+recursive objects.  If the \var{depth} parameter of the
+\class{PrettyPrinter} is set and the object is deeper than allowed,
+this returns false.
 \end{funcdesc}
 
 \begin{funcdesc}{isrecursive}{object}
