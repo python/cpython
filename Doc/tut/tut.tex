@@ -1836,19 +1836,14 @@ cubes:
 More than one sequence may be passed; the function must then have as
 many arguments as there are sequences and is called with the
 corresponding item from each sequence (or \code{None} if some sequence
-is shorter than another).  If \code{None} is passed for the function,
-a function returning its argument(s) is substituted.
-
-Combining these two special cases, we see that
-\samp{map(None, \var{list1}, \var{list2})} is a convenient way of
-turning a pair of lists into a list of pairs.  For example:
+is shorter than another).  For example:
 
 \begin{verbatim}
 >>> seq = range(8)
->>> def square(x): return x*x
+>>> def add(x, y): return x+y
 ...
->>> map(None, seq, map(square, seq))
-[(0, 0), (1, 1), (2, 4), (3, 9), (4, 16), (5, 25), (6, 36), (7, 49)]
+>>> map(add, seq, seq)
+[0, 2, 4, 6, 8, 10, 12, 14]
 \end{verbatim}
 
 \samp{reduce(\var{func}, \var{sequence})} returns a single value
