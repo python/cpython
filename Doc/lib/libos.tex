@@ -107,6 +107,12 @@ These functions are described in ``Files and Directories'' (section
 \ref{os-file-dir}).
 \end{funcdescni}
 
+\begin{funcdesc}{ctermid}{}
+Return the filename corresponding to the controlling terminal of the
+process.
+Availability: \UNIX{}.
+\end{funcdesc}
+
 \begin{funcdesc}{getegid}{}
 Return the current process' effective group id.
 Availability: \UNIX{}.
@@ -248,6 +254,12 @@ errors), \code{None} is returned.
 Availability: \UNIX{}, Windows.
 \end{funcdesc}
 
+\begin{funcdesc}{tmpfile}{}
+Return a new file object opened in update mode (\samp{w+}).  The file
+has no directory entries associated with it and will be automatically
+deleted once there are no file descriptors for the file.
+Availability: \UNIX{}.
+\end{funcdesc}
 
 
 \subsection{File Descriptor Operations \label{os-fd-ops}}
@@ -575,6 +587,31 @@ Create a symbolic link pointing to \var{src} named \var{dst}.
 Availability: \UNIX{}.
 \end{funcdesc}
 
+\begin{funcdesc}{tempnam}{\optional{dir\optional{, prefix}}}
+Return a unique path name that is reasonable for creating a temporary
+file.  This will be an absolute path that names a potential directory
+entry in the directory \var{dir} or a common location for temporary
+files if \var{dir} is omitted or \code{None}.  If given and not
+\code{None}, \var{prefix} is used to provide a short prefix to the
+filename.  Applications are responsible for properly creating and
+managing files created using paths returned by \function{tempnam()};
+no automatic cleanup is provided.
+\end{funcdesc}
+
+\begin{funcdesc}{tmpnam}{}
+Return a unique path name that is reasonable for creating a temporary
+file.  This will be an absolute path that names a potential directory
+entry in a common location for temporary files.  Applications are
+responsible for properly creating and managing files created using
+paths returned by \function{tmpnam()}; no automatic cleanup is
+provided.
+\end{funcdesc}
+
+\begin{datadesc}{TMP_MAX}
+The maximum number of unique names that \function{tmpnam()} will
+generate before reusing names.
+\end{datadesc}
+
 \begin{funcdesc}{unlink}{path}
 Remove the file \var{path}.  This is the same function as
 \function{remove()}; the \function{unlink()} name is its traditional
@@ -591,9 +628,17 @@ Availability: Macintosh, \UNIX{}, Windows.
 
 \subsection{Process Management \label{os-process}}
 
-These functions may be used to create and manage additional
-processes.
+These functions may be used to create and manage processes.
 
+
+\begin{funcdesc}{abort}{}
+Generate a \constant{SIGABRT} signal to the current process.  On
+\UNIX, the default behavior is to produce a core dump; on Windows, the 
+process immediately returns an exit code of \code{3}.  Be aware that
+programs which use \function{signal.signal()} to register a handler
+for \constant{SIGABRT} will behave differently.
+Availability: \UNIX, Windows.
+\end{funcdesc}
 
 \begin{funcdesc}{execl}{path, arg0, arg1, ...}
 This is equivalent to
