@@ -284,7 +284,7 @@ extern DL_IMPORT(int) PyCallable_Check(PyObject *);
 extern DL_IMPORT(int) PyNumber_Coerce(PyObject **, PyObject **);
 extern DL_IMPORT(int) PyNumber_CoerceEx(PyObject **, PyObject **);
 
-extern DL_IMPORT(int) (*PyObject_ClearWeakRefs)(PyObject *);
+extern DL_IMPORT(void) (*PyObject_ClearWeakRefs)(PyObject *);
 
 /* Helpers for printing recursive container types */
 extern DL_IMPORT(int) Py_ReprEnter(PyObject *);

@@ -516,8 +516,7 @@ instance_dealloc(register PyInstanceObject *inst)
 	extern long _Py_RefTotal;
 #endif
 
-	if (!PyObject_ClearWeakRefs((PyObject *) inst))
-		return;
+	PyObject_ClearWeakRefs((PyObject *) inst);
 
 	/* Temporarily resurrect the object. */
 #ifdef Py_TRACE_REFS

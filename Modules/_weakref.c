@@ -692,7 +692,7 @@ weakref_proxy(PyObject *self, PyObject *args)
  * until one resurrects the object, at which point it stops invalidating
  * weak references and returns false.
  */
-static int
+static
 cleanup_helper(PyObject *object)
 {
     PyWeakReference **list;
@@ -702,7 +702,7 @@ cleanup_helper(PyObject *object)
         || object->ob_refcnt != 0) {
         PyErr_BadInternalCall();
         /* not sure what we should return here */
-        return 1;
+        return;
     }
     list = GET_WEAKREFS_LISTPTR(object);
     while (*list != NULL) {
@@ -722,7 +722,7 @@ cleanup_helper(PyObject *object)
             Py_DECREF(callback);
         }
     }
-    return (object->ob_refcnt > 0 ? 0 : 1);
+    return;
 }
 
 
