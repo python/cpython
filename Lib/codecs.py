@@ -205,7 +205,7 @@ class StreamReader(Codec):
         """
         # Unsliced reading:
         if size < 0:
-            return self.decode(self.stream.read())[0]
+            return self.decode(self.stream.read(), self.errors)[0]
 
         # Sliced reading:
         read = self.stream.read
@@ -214,7 +214,7 @@ class StreamReader(Codec):
         i = 0
         while 1:
             try:
-                object, decodedbytes = decode(data)
+                object, decodedbytes = decode(data, self.errors)
             except ValueError,why:
                 # This method is slow but should work under pretty much
                 # all conditions; at most 10 tries are made
@@ -247,7 +247,7 @@ class StreamReader(Codec):
             line = self.stream.readline()
         else:
             line = self.stream.readline(size)
-        return self.decode(line)[0]
+        return self.decode(line,self.errors)[0]
 
 
     def readlines(self, sizehint=0):
@@ -266,7 +266,7 @@ class StreamReader(Codec):
             data = self.stream.read()
         else:
             data = self.stream.read(sizehint)
-        return self.decode(data)[0].splitlines(1)
+        return self.decode(data,self.errors)[0].splitlines(1)
 
     def reset(self):
 
