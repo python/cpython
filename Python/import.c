@@ -61,7 +61,7 @@ extern long PyOS_GetLastModificationTime(); /* In getmtime.c */
 /* New way to come up with the magic number: (YEAR-1995), MONTH, DAY */
 #define MAGIC (20121 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
-PyObject *import_modules; /* This becomes sys.modules */
+PyObject *_PyImport_Modules; /* This becomes sys.modules */
 
 
 /* Initialize things */
@@ -69,9 +69,9 @@ PyObject *import_modules; /* This becomes sys.modules */
 void
 PyImport_Init()
 {
-	if (import_modules != NULL)
+	if (_PyImport_Modules != NULL)
 		Py_FatalError("duplicate initimport() call");
-	if ((import_modules = PyDict_New()) == NULL)
+	if ((_PyImport_Modules = PyDict_New()) == NULL)
 		Py_FatalError("no mem for dictionary of modules");
 	if (Py_OptimizeFlag) {
 		/* Replace ".pyc" with ".pyo" in import_filetab */
@@ -89,9 +89,9 @@ PyImport_Init()
 void
 PyImport_Cleanup()
 {
-	if (import_modules != NULL) {
-		PyObject *tmp = import_modules;
-		import_modules = NULL;
+	if (_PyImport_Modules != NULL) {
+		PyObject *tmp = _PyImport_Modules;
+		_PyImport_Modules = NULL;
 		/* This deletes all modules from sys.modules.
 		   When a module is deallocated, it in turn clears its
 		   dictionary, thus hopefully breaking any circular
@@ -118,7 +118,7 @@ PyImport_GetMagicNumber()
 PyObject *
 PyImport_GetModuleDict()
 {
-	return import_modules;
+	return _PyImport_Modules;
 }
 
 
@@ -134,18 +134,18 @@ PyImport_AddModule(name)
 {
 	PyObject *m;
 
-	if (import_modules == NULL) {
+	if (_PyImport_Modules == NULL) {
 		PyErr_SetString(PyExc_SystemError,
 				"sys.modules has been deleted");
 		return NULL;
 	}
-	if ((m = PyDict_GetItemString(import_modules, name)) != NULL &&
+	if ((m = PyDict_GetItemString(_PyImport_Modules, name)) != NULL &&
 	    PyModule_Check(m))
 		return m;
 	m = PyModule_New(name);
 	if (m == NULL)
 		return NULL;
-	if (PyDict_SetItemString(import_modules, name, m) != 0) {
+	if (PyDict_SetItemString(_PyImport_Modules, name, m) != 0) {
 		Py_DECREF(m);
 		return NULL;
 	}
@@ -661,12 +661,12 @@ PyImport_ImportModule(name)
 {
 	PyObject *m;
 
-	if (import_modules == NULL) {
+	if (_PyImport_Modules == NULL) {
 		PyErr_SetString(PyExc_SystemError,
 				"sys.modules has been deleted");
 		return NULL;
 	}
-	if ((m = PyDict_GetItemString(import_modules, name)) != NULL) {
+	if ((m = PyDict_GetItemString(_PyImport_Modules, name)) != NULL) {
 		Py_INCREF(m);
 	}
 	else {
@@ -675,7 +675,7 @@ PyImport_ImportModule(name)
 		    (i = PyImport_ImportFrozenModule(name))) {
 			if (i < 0)
 				return NULL;
-			if ((m = PyDict_GetItemString(import_modules,
+			if ((m = PyDict_GetItemString(_PyImport_Modules,
 						      name)) == NULL) {
 			    if (PyErr_Occurred() == NULL)
 			        PyErr_SetString(PyExc_SystemError,
@@ -710,12 +710,12 @@ PyImport_ReloadModule(m)
 	name = PyModule_GetName(m);
 	if (name == NULL)
 		return NULL;
-	if (import_modules == NULL) {
+	if (_PyImport_Modules == NULL) {
 		PyErr_SetString(PyExc_SystemError,
 				"sys.modules has been deleted");
 		return NULL;
 	}
-	if (m != PyDict_GetItemString(import_modules, name)) {
+	if (m != PyDict_GetItemString(_PyImport_Modules, name)) {
 		PyErr_SetString(PyExc_ImportError,
 				"reload() module not in sys.modules");
 		return NULL;
