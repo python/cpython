@@ -3,16 +3,16 @@
 Tkinter provides classes which allow the display, positioning and
 control of widgets. Toplevel widgets are Tk and Toplevel. Other
 widgets are Frame, Label, Entry, Text, Canvas, Button, Radiobutton,
-Checkbutton, Scale, Listbox, Scrollbar, OptionMenu. Properties of the widgets are
-specified with keyword arguments.  Keyword arguments have the same
-name as the corresponding resource under Tk.
+Checkbutton, Scale, Listbox, Scrollbar, OptionMenu. Properties of the
+widgets are specified with keyword arguments.  Keyword arguments have
+the same name as the corresponding resource under Tk.
 
 Widgets are positioned with one of the geometry managers Place, Pack
 or Grid. These managers can be called with methods place, pack, grid
 available in every Widget.
 
-Actions are bound to events by resources (e.g. keyword argument command) or
-with the method bind.
+Actions are bound to events by resources (e.g. keyword argument
+command) or with the method bind.
 
 Example (Hello, World):
 import Tkinter
@@ -2363,6 +2363,27 @@ class Listbox(Widget):
     def yview_scroll(self, number, what):
         """Shift the y-view according to NUMBER which is measured in "units" or "pages" (WHAT)."""
         self.tk.call(self._w, 'yview', 'scroll', number, what)
+    def itemconfigure(self, index, cnf=None, **kw):
+        """Configure resources of an item.
+
+        The values for resources are specified as keyword arguments.
+        To get an overview about the allowed keyword arguments
+        call the method without arguments.
+        Valid resource names: background, bg, foreground, fg,
+        selectbackground, selectforeground."""
+        if cnf is None and not kw:
+            cnf = {}
+            for x in self.tk.split(
+                self.tk.call(self._w, 'itemconfigure', index)):
+                cnf[x[0][1:]] = (x[0][1:],) + x[1:]
+            return cnf
+        if type(cnf) == StringType and not kw:
+            x = self.tk.split(self.tk.call(
+                self._w, 'itemconfigure', index, '-'+cnf))
+            return (x[0][1:],) + x[1:]
+        self.tk.call((self._w, 'itemconfigure', index) +
+                     self._options(cnf, kw))
+    itemconfig = itemconfigure
 
 class Menu(Widget):
     """Menu widget which allows to display menu bars, pull-down menus and pop-up menus."""
