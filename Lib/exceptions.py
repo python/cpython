@@ -58,9 +58,11 @@ class Exception:
 	else:
 	    return str(self.args)
 
-class StandardError(Exception):
     def __getitem__(self, i):
 	return self.args[i]
+
+class StandardError(Exception):
+    pass
 
 class SyntaxError(StandardError):
     filename = lineno = offset = text = None
