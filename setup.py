@@ -558,35 +558,41 @@ class PyBuildExt(build_ext):
             # and still experimental. Some (such as gestalt or icglue) are
             # already generally useful, some (the GUI ones) really need to
             # be used from a framework.
+            #
+            # I would like to trigger on WITH_NEXT_FRAMEWORK but that isn't
+            # available here. This Makefile variable is also what the install
+            # procedure triggers on.
+            frameworkdir = sysconfig.get_config_var('PYTHONFRAMEWORKDIR')
             exts.append( Extension('gestalt', ['gestaltmodule.c']) )
             exts.append( Extension('MacOS', ['macosmodule.c']) )
             exts.append( Extension('icglue', ['icgluemodule.c']) )
             exts.append( Extension('macfs', ['macfsmodule.c', '../Python/getapplbycreator.c']) )
-##            exts.append( Extension('Nav', ['Nav.c']) )
-##            exts.append( Extension('AE', ['ae/AEmodule.c']) )
-##            exts.append( Extension('App', ['app/Appmodule.c']) )
-##            exts.append( Extension('CF', ['cf/CFmodule.c'],
-##            		extra_link_args=['-framework', 'CoreFoundation']) )
-##            exts.append( Extension('Cm', ['cm/Cmmodule.c']) )
-##            exts.append( Extension('Ctl', ['ctl/Ctlmodule.c']) )
-##            exts.append( Extension('Dlg', ['dlg/Dlgmodule.c']) )
-##            exts.append( Extension('Drag', ['drag/Dragmodule.c']) )
-##            exts.append( Extension('Evt', ['evt/Evtmodule.c']) )
-##            exts.append( Extension('Fm', ['fm/Fmmodule.c']) )
-##            exts.append( Extension('Icn', ['icn/Icnmodule.c']) )
-##            exts.append( Extension('List', ['list/Listmodule.c']) )
-##            exts.append( Extension('Menu', ['menu/Menumodule.c']) )
-##            exts.append( Extension('Mlte', ['mlte/Mltemodule.c']) )
-##            exts.append( Extension('Qd', ['qd/Qdmodule.c']) )
-##            exts.append( Extension('Qdoffs', ['qdoffs/Qdoffsmodule.c']) )
-##            exts.append( Extension('Qt', ['qt/Qtmodule.c'],
-##            		extra_link_args=['-framework', 'QuickTime']) )
-##            exts.append( Extension('Res', ['res/Resmodule.c'] ) )
-####            exts.append( Extension('Scrap', ['scrap/Scrapmodule.c']) )
-##            exts.append( Extension('Snd', ['snd/Sndmodule.c']) )
-##            exts.append( Extension('TE', ['te/TEmodule.c']) )
-####            exts.append( Extension('waste', ['waste/wastemodule.c']) )
-##            exts.append( Extension('Win', ['win/Winmodule.c']) )
+            exts.append( Extension('_CF', ['cf/_CFmodule.c'],
+                    extra_link_args=['-framework', 'CoreFoundation']) )
+            exts.append( Extension('_Res', ['res/_Resmodule.c'] ) )
+            exts.append( Extension('_Snd', ['snd/_Sndmodule.c']) )
+            if frameworkdir:
+                exts.append( Extension('Nav', ['Nav.c']) )
+                exts.append( Extension('_AE', ['ae/_AEmodule.c']) )
+                exts.append( Extension('_App', ['app/_Appmodule.c']) )
+                exts.append( Extension('_Cm', ['cm/_Cmmodule.c']) )
+                exts.append( Extension('_Ctl', ['ctl/_Ctlmodule.c']) )
+                exts.append( Extension('_Dlg', ['dlg/_Dlgmodule.c']) )
+                exts.append( Extension('_Drag', ['drag/_Dragmodule.c']) )
+                exts.append( Extension('_Evt', ['evt/_Evtmodule.c']) )
+                exts.append( Extension('_Fm', ['fm/_Fmmodule.c']) )
+                exts.append( Extension('_Icn', ['icn/_Icnmodule.c']) )
+                exts.append( Extension('_List', ['list/_Listmodule.c']) )
+                exts.append( Extension('_Menu', ['menu/_Menumodule.c']) )
+                exts.append( Extension('_Mlte', ['mlte/_Mltemodule.c']) )
+                exts.append( Extension('_Qd', ['qd/_Qdmodule.c']) )
+                exts.append( Extension('_Qdoffs', ['qdoffs/_Qdoffsmodule.c']) )
+                exts.append( Extension('_Qt', ['qt/_Qtmodule.c'],
+                        extra_link_args=['-framework', 'QuickTime']) )
+##              exts.append( Extension('_Scrap', ['scrap/_Scrapmodule.c']) )
+                exts.append( Extension('_TE', ['te/_TEmodule.c']) )
+##              exts.append( Extension('waste', ['waste/wastemodule.c']) )
+                exts.append( Extension('_Win', ['win/_Winmodule.c']) )
             
         self.extensions.extend(exts)
 
