@@ -221,6 +221,39 @@ static PyMemberDef slice_members[] = {
 	{0}
 };
 
+static PyObject*
+slice_indices(PySliceObject* self, PyObject* len)
+{
+	int ilen, start, stop, step, slicelength;
+
+	ilen = PyInt_AsLong(len);
+
+	if (ilen == -1 && PyErr_Occurred()) {
+		return NULL;
+	}
+
+	if (PySlice_GetIndicesEx(self, ilen, &start, &stop, 
+				 &step, &slicelength) < 0) {
+		return NULL;
+	}
+
+	return Py_BuildValue("(lll)", start, stop, step);
+}
+
+PyDoc_STRVAR(slice_indices_doc,
+"S.indices(len) -> (start, stop, stride)\n\
+\n\
+Assuming a sequence of length len, calculate the start and stop\n\
+indices, and the stride length of the extended slice described by\n\
+S. Out of bounds indices are clipped in a manner consistent with the\n\
+handling of normal slices.");
+
+static PyMethodDef slice_methods[] = {
+	{"indices",	(PyCFuntion)slice_indices,
+	 METH_O,	slice_indices_doc},
+	{NULL, NULL}
+};
+
 static int
 slice_compare(PySliceObject *v, PySliceObject *w)
 {
@@ -271,7 +304,7 @@ PyTypeObject PySlice_Type = {
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
-	0,					/* tp_methods */
+	slice_methods,				/* tp_methods */
 	slice_members,				/* tp_members */
 	0,					/* tp_getset */
 	0,					/* tp_base */
