@@ -60,7 +60,7 @@ PyObject *
 PyRange_New(long start, long len, long step, int reps)
 {
 	long totlen = -1;
-	rangeobject *obj = PyMalloc_New(rangeobject, &PyRange_Type);
+	rangeobject *obj = PyObject_New(rangeobject, &PyRange_Type);
 
 	if (obj == NULL)
 		return NULL;
@@ -104,7 +104,7 @@ PyRange_New(long start, long len, long step, int reps)
 static void
 range_dealloc(rangeobject *r)
 {
-	PyMalloc_Del(r);
+	PyObject_Del(r);
 }
 
 static PyObject *
