@@ -443,13 +443,14 @@ class Distribution:
             type (cmd_class.help_options) is ListType):
             help_options = fix_help_options(cmd_class.help_options)
         else:
-            help_optiosn = []
+            help_options = []
 
 
         # All commands support the global options too, just by adding
         # in 'global_options'.
         parser.set_option_table (self.global_options +
-                                 cmd_class.user_options + help_options)
+                                 cmd_class.user_options +
+                                 help_options)
         parser.set_negative_aliases (negative_opt)
         (args, opts) = parser.getopt (args[1:])
         if hasattr(opts, 'help') and opts.help:
@@ -459,19 +460,21 @@ class Distribution:
 	if (hasattr(cmd_class, 'help_options') and
             type (cmd_class.help_options) is ListType):
 	    help_option_found=0
-	    for help_option in cmd_class.help_options:
-		if hasattr(opts, parser.get_attr_name(help_option[0])):
+	    for (help_option, short, desc, func) in cmd_class.help_options:
+		if hasattr(opts, parser.get_attr_name(help_option)):
 		    help_option_found=1
 		    #print "showing help for option %s of command %s" % \
                     #      (help_option[0],cmd_class)
-		    if callable(help_option[3]):
-			help_option[3]()
-		    else:
-        		raise DistutilsClassError, \
-                          ("command class %s must provide " +
-                           "a callable object for help_option '%s'") % \
-                          (cmd_class,help_option[0])
-	    if help_option_found: 
+
+                    if callable(func):
+			func()
+                    else:
+                        raise DistutilsClassError, \
+                            ("invalid help function %s for help option '%s': "
+                             "must be a callable object (function, etc.)") % \
+                            (`func`, help_option)
+
+            if help_option_found: 
 		return
 
         # Put the options from the command-line into their official
