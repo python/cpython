@@ -46,6 +46,21 @@ class Editor(W.Window):
 			raise IOError, "file '%s' does not exist" % path
 		self.path = path
 		
+		if '\n' in text:
+			import EasyDialogs
+			if string.find(text, '\r\n') >= 0:
+				sourceOS = 'DOS'
+				searchString = '\r\n'
+			else:
+				sourceOS = 'UNIX'
+				searchString = '\n'
+			change = EasyDialogs.AskYesNoCancel('³%s² contains %s-style line feeds. Change them to MacOS carriage returns?' % (self.title, sourceOS), 1)
+			# bug: Cancel is treated as No
+			if change > 0:
+				text = string.replace(text, searchString, '\r')
+		else:
+			change = 0
+		
 		self.settings = {}
 		if self.path:
 			self.readwindowsettings()
@@ -64,9 +79,12 @@ class Editor(W.Window):
 				self.tabsettings = defaulttabsettings
 		else:
 			self.tabsettings = defaulttabsettings
-		W.Window.__init__(self, bounds, self.title, minsize = (330, 120), tabbable = 0)
 		
+		W.Window.__init__(self, bounds, self.title, minsize = (330, 120), tabbable = 0)
 		self.setupwidgets(text)
+		if change > 0:
+				self.editgroup.editor.changed = 1
+		
 		if self.settings.has_key("selection"):
 			selstart, selend = self.settings["selection"]
 			self.setselection(selstart, selend)
@@ -319,7 +337,7 @@ class Editor(W.Window):
 					return 1
 			elif save < 0:
 				return 1
-		self.globals = None	     # XXX doesn't help... all globals leak :-(
+		self.globals = None	    # XXX doesn't help... all globals leak :-(
 		W.Window.close(self)
 	
 	def domenu_close(self, *args):
