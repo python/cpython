@@ -1364,6 +1364,7 @@ def inherits():
     verify(repr(hexint(7) + 9) == "0x10")
     verify(repr(hexint(1000) + 7) == "0x3ef")
     a = hexint(12345)
+    #XXX verify(a == 12345)
     verify(int(a) == 12345)
     verify(int(a).__class__ is int)
     verify(hash(a) == hash(12345))
@@ -1388,6 +1389,7 @@ def inherits():
     # because the example uses a short int left argument.)
     verify(str(5 + octlong(3000)) == "05675")
     a = octlong(12345)
+    #XXX verify(a == 12345L)
     verify(long(a) == 12345L)
     verify(hash(a) == hash(12345L))
     verify(long(a).__class__ is long)
@@ -1425,6 +1427,7 @@ def inherits():
             return "%.*g" % (self.prec, self)
     verify(repr(precfloat(1.1)) == "1.1")
     a = precfloat(12345)
+    #XXX verify(a == 12345.0)
     verify(float(a) == 12345.0)
     verify(float(a).__class__ is float)
     verify(hash(a) == hash(12345.0))
@@ -1437,10 +1440,12 @@ def inherits():
     verify(repr(a) == "4j-3")
     base = complex(-3, 4)
     verify(base.__class__ is complex)
+    #XXX verify(a == base)
     verify(complex(a) == base)
     verify(complex(a).__class__ is complex)
     a = madcomplex(a)  # just trying another form of the constructor
     verify(repr(a) == "4j-3")
+    #XXX verify(a == base)
     verify(complex(a) == base)
     verify(complex(a).__class__ is complex)
     verify(hash(a) == hash(base))
@@ -1464,6 +1469,7 @@ def inherits():
             self._rev = self.__class__(L)
             return self._rev
     a = madtuple((1,2,3,4,5,6,7,8,9,0))
+    verify(a == (1,2,3,4,5,6,7,8,9,0))
     verify(a.rev() == madtuple((0,9,8,7,6,5,4,3,2,1)))
     verify(a.rev().rev() == madtuple((1,2,3,4,5,6,7,8,9,0)))
     for i in range(512):
@@ -1498,6 +1504,7 @@ def inherits():
             self._rev = self.__class__("".join(L))
             return self._rev
     s = madstring("abcdefghijklmnopqrstuvwxyz")
+    #XXX verify(s == "abcdefghijklmnopqrstuvwxyz")
     verify(s.rev() == madstring("zyxwvutsrqponmlkjihgfedcba"))
     verify(s.rev().rev() == madstring("abcdefghijklmnopqrstuvwxyz"))
     for i in range(256):
@@ -1511,6 +1518,7 @@ def inherits():
 
     base = "\x00" * 5
     s = madstring(base)
+    #XXX verify(s == base)
     verify(str(s) == base)
     verify(str(s).__class__ is str)
     verify(hash(s) == hash(base))
@@ -1554,12 +1562,14 @@ def inherits():
     verify(s.lower() == base)
 
     s = madstring("x y")
+    #XXX verify(s == "x y")
     verify(intern(s).__class__ is str)
     verify(intern(s) is intern("x y"))
     verify(intern(s) == "x y")
 
     i = intern("y x")
     s = madstring("y x")
+    #XXX verify(s == i)
     verify(intern(s).__class__ is str)
     verify(intern(s) is i)
 
@@ -1577,6 +1587,7 @@ def inherits():
             self._rev = self.__class__(u"".join(L))
             return self._rev
     u = madunicode("ABCDEF")
+    verify(u == u"ABCDEF")
     verify(u.rev() == madunicode(u"FEDCBA"))
     verify(u.rev().rev() == madunicode(u"ABCDEF"))
     base = u"12345"
