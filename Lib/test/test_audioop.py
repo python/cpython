@@ -23,6 +23,13 @@ def testmax(data):
 		return 0
 	return 1
 
+def testminmax(data):
+	if audioop.minmax(data[0], 1) <> (0, 2) or \
+		  audioop.minmax(data[1], 2) <> (0, 2) or \
+		  audioop.minmax(data[2], 4) <> (0, 2):
+		return 0
+	return 1
+
 def testmaxpp(data):
 	if audioop.maxpp(data[0], 1) <> 0 or \
 		  audioop.maxpp(data[1], 2) <> 0 or \
