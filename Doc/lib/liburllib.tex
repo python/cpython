@@ -37,10 +37,17 @@ used at those few places where a true built-in file object is
 required.)
 
 The \method{info()} method returns an instance of the class
-\class{mimetools.Message} containing the headers received from the
-server, if the protocol uses such headers (currently the only
-supported protocol that uses this is HTTP).  See the description of
-the \module{mimetools}\refstmodindex{mimetools} module.
+\class{mimetools.Message} containing meta-information associated
+with the URL.  When the method is HTTP, these headers are those
+returned by the server at the head of the retrieved HTML page
+(including Content-Length and Content-Type).  When the method is FTP,
+a Content-Length header will be present if (as is now usual) the
+server passed back a file length in response to the FTP retrieval
+request.  When the method is local-file, returned headers will include
+a Date representing the file's last-modified time, a Content-Length
+giving file size, and a Content-Type containing a guess at the file's
+type. See also the description of the
+\module{mimetools}\refstmodindex{mimetools} module.
 
 If the \var{url} uses the \file{http:} scheme identifier, the optional
 \var{data} argument may be given to specify a \code{POST} request
@@ -50,7 +57,7 @@ see the \function{urlencode()} function below.
 
 \end{funcdesc}
 
-\begin{funcdesc}{urlretrieve}{url}
+\begin{funcdesc}{urlretrieve}{url\optional{, filename}\optional{, hook}}}
 Copy a network object denoted by a URL to a local file, if necessary.
 If the URL points to a local file, or a valid cached copy of the
 object exists, the object is not copied.  Return a tuple
@@ -60,6 +67,16 @@ is either \code{None} (for a local object) or whatever the
 \method{info()} method of the object returned by \function{urlopen()}
 returned (for a remote object, possibly cached).  Exceptions are the
 same as for \function{urlopen()}.
+
+The second argument, if present, specifies the file location to copy
+to (if absent, the location will be a tempfile with a generated name).
+The third argument, if present, is a hook function that will be called
+once on establishment of the network connection and once after each
+block read thereafter.  The hook will be passed three arguments; a
+count of blocks transferred so far, a block size in bytes, and the
+total size of the file.  The third argument may be -1 on older FTP
+servers which do not return a file size in response to a retrieval
+request.
 \end{funcdesc}
 
 \begin{funcdesc}{urlcleanup}{}
