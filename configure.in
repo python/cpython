@@ -568,11 +568,13 @@ case "$enable_toolbox_glue" in
 yes)
 	extra_frameworks="-framework Carbon -framework Foundation"
 	extra_machdep_objs="Python/mactoolboxglue.o"
+	extra_undefs="-u __dummy -u _PyMac_Error"
 	AC_DEFINE(USE_TOOLBOX_OBJECT_GLUE)
 	;;
 *)
 	extra_frameworks=""
 	extra_machdep_objs=""
+	extra_undefs=""
 	;;
 esac
 AC_MSG_RESULT($enable_toolbox_glue)
@@ -751,7 +753,7 @@ then
 		# -u _PyMac_Error is needed to pull in the mac toolbox glue, which is
 		# not used by the core itself but which needs to be in the core so
 		# that dynamically loaded extension modules have access to it.
-		LINKFORSHARED="-u __dummy -u _PyMac_Error -framework System"
+		LINKFORSHARED="$extra_undefs -framework System"
 		if test "$enable_framework"
 		then
 			LINKFORSHARED="$LINKFORSHARED -framework Python"
