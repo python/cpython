@@ -751,6 +751,11 @@ Yet to be written.
 Windows
 -------
 
+- When Python is built under a Microsoft compiler, sys.version now
+  includes the compiler version number (_MSC_VER).  For example, under
+  MSVC 6, sys.version constains the substring "MSC v.1200 ".  1200 is
+  the value of _MSC_VER under MSVC 6.
+
 - Sometimes the uninstall executable (UNWISE.EXE) vanishes.  One cause
   of that has been fixed in the installer (disabled Wise's "delete in-
   use files" uninstall option).
