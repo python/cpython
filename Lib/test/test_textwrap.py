@@ -14,7 +14,7 @@ from test import test_support
 from textwrap import TextWrapper, wrap, fill
 
 
-class WrapperTestCase(unittest.TestCase):
+class BaseTestCase(unittest.TestCase):
     '''Parent class with utility methods for textwrap tests.'''
 
     def show(self, textin):
@@ -38,7 +38,7 @@ class WrapperTestCase(unittest.TestCase):
         self.check(result, expect)
 
 
-class WrapTestCase(WrapperTestCase):
+class WrapTestCase(BaseTestCase):
 
     def setUp(self):
         self.wrapper = TextWrapper(width=45, fix_sentence_endings=True)
@@ -163,7 +163,7 @@ How *do* you spell that odd word, anyways?
 
 
 
-class IndentTestCases(WrapperTestCase):
+class IndentTestCases(BaseTestCase):
 
     # called before each test method
     def setUp(self):
