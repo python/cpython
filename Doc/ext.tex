@@ -240,7 +240,7 @@ you have already created) when you return an error indicator!
 
 The choice of which exception to raise is entirely yours.  There are
 predeclared \C{} objects corresponding to all built-in Python exceptions,
-e.g. \cdata{PyExc_ZeroDevisionError} which you can use directly.  Of
+e.g. \cdata{PyExc_ZeroDivisionError} which you can use directly.  Of
 course, you should choose exceptions wisely --- don't use
 \cdata{PyExc_TypeError} to mean that a file couldn't be opened (that
 should probably be \cdata{PyExc_IOError}).  If something's wrong with
