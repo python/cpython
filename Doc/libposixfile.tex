@@ -7,7 +7,7 @@
 \emph{Note:} This module will become obsolete in a future release.
 The locking operation that it provides is done better and more
 portably by the \function{fcntl.lockf()} call.%
-\index{lockf()@\idxcode{lockf()} (in module fcntl)}
+\withsubitem{(in module fcntl)}{\ttindex{lockf()}}
 
 This module implements some additional functionality over the built-in
 file objects.  In particular, it implements file locking, control over
@@ -15,7 +15,8 @@ the file flags, and an easy interface to duplicate the file object.
 The module defines a new file object, the posixfile object.  It
 has all the standard file object methods and adds the methods
 described below.  This module only works for certain flavors of
-\UNIX{}, since it uses \function{fcntl()} for file locking.
+\UNIX{}, since it uses \function{fcntl.fcntl()} for file locking.%
+\withsubitem{(in module fcntl)}{\ttindex{fcntl()}}
 
 To instantiate a posixfile object, use the \function{open()} function
 in the \module{posixfile} module.  The resulting object looks and
