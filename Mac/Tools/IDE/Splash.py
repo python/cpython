@@ -134,7 +134,7 @@ def wait():
 	time = Evt.TickCount()
 	whattext = 0
 	while _keepsplashscreenopen:
-)		ok, event = Evt.EventAvail(highLevelEventMask)
+		ok, event = Evt.EventAvail(highLevelEventMask)
 		if ok:
 			# got apple event, back to mainloop
 			break
