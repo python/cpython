@@ -1415,7 +1415,6 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
 {
     PyObject *repr;
     char *p;
-    char *q;
 
     static const char *hexdigit = "0123456789abcdef";
 
@@ -1423,7 +1422,7 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
     if (repr == NULL)
         return NULL;
 
-    p = q = PyString_AS_STRING(repr);
+    p = PyString_AS_STRING(repr);
 
     if (quotes) {
         *p++ = 'u';
@@ -1432,14 +1431,26 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
     }
     while (size-- > 0) {
         Py_UNICODE ch = *s++;
+
         /* Escape quotes */
-        if (quotes && (ch == (Py_UNICODE) q[1] || ch == '\\')) {
+        if (quotes && 
+	    (ch == (Py_UNICODE) PyString_AS_STRING(repr)[1] || ch == '\\')) {
             *p++ = '\\';
             *p++ = (char) ch;
         } 
+
 #ifdef Py_UNICODE_WIDE
         /* Map 21-bit characters to '\U00xxxxxx' */
         else if (ch >= 0x10000) {
+	    int offset = p - PyString_AS_STRING(repr);
+	    
+	    /* Resize the string if necessary */
+	    if (offset + 12 > PyString_GET_SIZE(repr)) {
+		if (_PyString_Resize(&repr, PyString_GET_SIZE(repr) + 100))
+		    goto onError;
+		p = PyString_AS_STRING(repr) + offset;
+	    }
+
             *p++ = '\\';
             *p++ = 'U';
             *p++ = hexdigit[(ch >> 28) & 0x0000000F];
@@ -1449,7 +1460,8 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
             *p++ = hexdigit[(ch >> 12) & 0x0000000F];
             *p++ = hexdigit[(ch >> 8) & 0x0000000F];
             *p++ = hexdigit[(ch >> 4) & 0x0000000F];
-            *p++ = hexdigit[ch & 15];
+            *p++ = hexdigit[ch & 0x0000000F];
+	    continue;
         }
 #endif
 	/* Map UTF-16 surrogate pairs to Unicode \UXXXXXXXX escapes */
@@ -1487,6 +1499,7 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
             *p++ = hexdigit[(ch >> 4) & 0x000F];
             *p++ = hexdigit[ch & 0x000F];
         }
+
         /* Map special whitespace to '\t', \n', '\r' */
         else if (ch == '\t') {
             *p++ = '\\';
@@ -1500,6 +1513,7 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
             *p++ = '\\';
             *p++ = 'r';
         }
+
         /* Map non-printable US ASCII to '\xhh' */
         else if (ch < ' ' || ch >= 128) {
             *p++ = '\\';
@@ -1507,15 +1521,16 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
             *p++ = hexdigit[(ch >> 4) & 0x000F];
             *p++ = hexdigit[ch & 0x000F];
         } 
+
         /* Copy everything else as-is */
         else
             *p++ = (char) ch;
     }
     if (quotes)
-        *p++ = q[1];
+        *p++ = PyString_AS_STRING(repr)[1];
 
     *p = '\0';
-    if (_PyString_Resize(&repr, p - q))
+    if (_PyString_Resize(&repr, p - PyString_AS_STRING(repr)))
 	goto onError;
 
     return repr;

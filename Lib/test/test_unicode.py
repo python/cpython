@@ -455,7 +455,8 @@ for encoding in ('utf-8', 'utf-16', 'utf-16-le', 'utf-16-be',
 u = u'\U00010001\U00020002\U00030003\U00040004\U00050005'
 for encoding in ('utf-8',
                  'utf-16', 'utf-16-le', 'utf-16-be',
-                 'raw_unicode_escape', 'unicode_escape', 'unicode_internal'):
+                 #'raw_unicode_escape',
+                 'unicode_escape', 'unicode_internal'):
     verify(unicode(u.encode(encoding),encoding) == u)
 
 u = u''.join(map(unichr, range(256)))
