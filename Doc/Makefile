@@ -95,7 +95,7 @@ EMACS=     emacs
 
 # The end of this should reflect the major/minor version numbers of
 # the release:
-WHATSNEW=whatsnew23
+WHATSNEW=whatsnew24
 
 # what's what
 MANDVIFILES=	paper-$(PAPER)/api.dvi paper-$(PAPER)/ext.dvi \
