@@ -33,6 +33,7 @@ class MultiEditorWindow(EditorWindow):
         self.io.edit = self
         self.text.bind("<<open-new-window>>", self.flist.new_callback)
         self.text.bind("<<close-all-windows>>", self.flist.close_all_callback)
+        self.text.bind("<<open-class-browser>>", self.open_class_browser)
 
     def close_hook(self):
         self.flist.close_edit(self)
@@ -60,6 +61,22 @@ class MultiEditorWindow(EditorWindow):
             def openit(self=self, file=file):
                 self.flist.open(file)
             wmenu.add_command(label=file, command=openit)
+    
+    def open_class_browser(self, event=None):
+        filename = self.io.filename
+        if not filename:
+            tkMessageBox.showerror(
+                "No filename",
+                "This buffer has no associated filename",
+                master=self.text)
+            return None
+        head, tail = os.path.split(filename)
+        base, ext = os.path.splitext(tail)
+        import pyclbr
+        if pyclbr._modules.has_key(base):
+            del pyclbr._modules[base]
+        import ClassBrowser
+        ClassBrowser.ClassBrowser(self.flist, base)
 
 
 class FileList:
