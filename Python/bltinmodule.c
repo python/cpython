@@ -130,10 +130,11 @@ builtin_apply(self, args)
 }
 
 static char apply_doc[] =
-"apply(function, args[, kwargs]) -> value\n\
+"apply(object, args[, kwargs]) -> value\n\
 \n\
-Call a function with positional arguments taken from the tuple args,\n\
-and keyword arguments taken from the optional dictionary kwargs.";
+Call a callable object with positional arguments taken from the tuple args,\n\
+and keyword arguments taken from the optional dictionary kwargs.\n\
+Note that classes are callable, as are instances with a __call__() method.";
 
 
 static PyObject *
