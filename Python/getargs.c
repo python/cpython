@@ -456,7 +456,7 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 		break;
 	}
 	
-	case 'h': {/* unsigned short int */
+	case 'h': {/* signed short int */
 		short *p = va_arg(*p_va, short *);
 		long ival;
 		if (float_argument_error(arg))
@@ -464,14 +464,14 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 		ival = PyInt_AsLong(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<h>", arg, msgbuf, bufsize);
-		else if (ival < 0) {
+		else if (ival < SHRT_MIN) {
 			PyErr_SetString(PyExc_OverflowError,
-			"unsigned short integer is less than minimum");
+			"signed short integer is less than minimum");
 			return converterr("integer<h>", arg, msgbuf, bufsize);
 		}
-		else if (ival > USHRT_MAX) {
+		else if (ival > SHRT_MAX) {
 			PyErr_SetString(PyExc_OverflowError,
-			"unsigned short integer is greater than maximum");
+			"signed short integer is greater than maximum");
 			return converterr("integer<h>", arg, msgbuf, bufsize);
 		}
 		else
