@@ -186,7 +186,7 @@ def executable(path):
 	st = os.stat(path)
     except os.error:
 	return 0
-    return 1
+    return st[0] & 0111 != 0
 
 
 def test(HandlerClass = CGIHTTPRequestHandler,
