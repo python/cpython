@@ -721,15 +721,17 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      PyObject *PySequence_Tuple Py_PROTO((PyObject *o));
 
        /*
-	 Returns the o as a tuple on success, and NULL on failure.
+	 Returns the sequence, o, as a tuple on success, and NULL on failure.
 	 This is equivalent to the Python expression: tuple(o)
        */
 
      PyObject *PySequence_List Py_PROTO((PyObject *o));
+
        /*
-       Returns the o as a list on success, and NULL on failure.
-       This is equivalent to the Python expression: list(o)
+	 Returns the sequence, o, as a list on success, and NULL on failure.
+	 This is equivalent to the Python expression: list(o)
        */
+
      int PySequence_Count Py_PROTO((PyObject *o, PyObject *value));
 
        /*
