@@ -92,7 +92,7 @@ def packevent(ae, parameters = {}, attributes = {}):
 	for key, value in parameters.items():
 		packkey(ae, key, value)
 	for key, value in attributes.items():
-		packkey(ae, key, value)
+		ae.AEPutAttributeDesc(key, pack(value))
 
 #
 # Support routine for automatically generated Suite interfaces
@@ -116,7 +116,7 @@ def enumsubst(arguments, key, edict):
 	v = arguments[key]
 	ok = edict.values()
 	if edict.has_key(v):
-		arguments[key] = edict[v]
+		arguments[key] = Enum(edict[v])
 	elif not v in ok:
 		raise TypeError, 'Unknown enumerator: %s'%v
 		
