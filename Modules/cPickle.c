@@ -2217,7 +2217,8 @@ dump(Picklerobject *self, PyObject *args)
 		char bytes[2];
 
 		bytes[0] = PROTO;
-		bytes[1] = self->proto;
+		assert(self->proto >= 0 && self->proto < 256);
+		bytes[1] = (char)self->proto;
 		if (self->write_func(self, bytes, 2) < 0)
 			return -1;
 	}
