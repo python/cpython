@@ -55,6 +55,7 @@ See the class definition for lower level access methods.
 
 There are also some utility functions here.
 """
+# Cleanup and extensions by Eric S. Raymond <esr@thyrsus.com>
 
 import string
 import time
@@ -339,7 +340,12 @@ class Message:
         return self.dict[string.lower(name)]
 
     def __setitem__(self, name, value):
-        """Set the value of a header."""
+        """Set the value of a header.
+
+        Note: This is not a perfect inversion of __getitem__, because 
+        any changed headers get stuck at the end of the raw-headers list
+        rather than where the altered header was.
+        """
         del self[name] # Won't fail if it doesn't exist
         self.dict[string.lower(name)] = value
         text = name + ": " + value
@@ -438,6 +444,9 @@ class AddrlistClass:
     
     To understand what this class does, it helps to have a copy of
     RFC-822 in front of you.
+
+    Note: this class interface is deprecated and may be removed in the future.
+    Use rfc822.AddressList instead.
     """
     
     def __init__(self, field):
@@ -687,6 +696,44 @@ class AddrlistClass:
         
         return plist
 
+class AddressList(AddrlistClass):
+    """An AddressList encapsulates a list of parsed RFC822 addresses."""
+    def __init__(self, field):
+        AddrlistClass.__init__(self, field)
+        if field:
+            self.addresslist = self.getaddrlist()
+        else:
+            self.addresslist = []
+
+    def __len__(self):
+        return len(self.addresslist)
+
+    def __str__(self):
+        return string.joinfields(map(dump_address_pair, self.addresslist),", ")
+
+    def __add__(self, other):
+        # Set union
+        newaddr = AddressList(None)
+        newaddr.addresslist = self.addresslist[:]
+        for x in other.addresslist:
+            if not x in self.addresslist:
+                newaddr.addresslist.append(x)
+        return newaddr
+
+    def __sub__(self, other):
+        # Set difference
+        newaddr = AddressList(None)
+        for x in self.addresslist:
+            if not x in other.addresslist:
+                newaddr.addresslist.append(x)
+        return newaddr
+
+def dump_address_pair(pair):
+    """Dump a (name, address) pair in a canonicalized form."""
+    if pair[0]:
+        return '"' + pair[0] + '" <' + pair[1] + '>'
+    else:
+        return pair[1]
 
 # Parse a date field
 
