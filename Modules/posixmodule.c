@@ -31,6 +31,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef MSDOS
 #define NO_LSTAT
+#define NO_UNAME
 #endif
 
 #include <signal.h>
@@ -385,6 +386,37 @@ posix_unlink(self, args)
 	return posix_1str(args, unlink);
 }
 
+#ifndef NO_UNAME
+#include <sys/utsname.h>
+
+static object *
+posix_uname(self, args)
+	object *self;
+	object *args;
+{
+	extern int uname PROTO((struct utsname *));
+	struct utsname u;
+	object *v;
+	if (uname(&u) < 0)
+		return posix_error();
+	v = newtupleobject(5);
+	if (v == NULL)
+		return NULL;
+#define SET(i, member) settupleitem(v, i, newstringobject(u.member))
+	SET(0, sysname);
+	SET(1, nodename);
+	SET(2, release);
+	SET(3, version);
+	SET(4, machine);
+#undef SET
+	if (err_occurred()) {
+		DECREF(v);
+		return NULL;
+	}
+	return v;
+}
+#endif /* NO_UNAME */
+
 #ifdef UTIME_STRUCT
 #include <utime.h>
 #endif
@@ -574,7 +606,7 @@ posix_wait(self, args) /* Also waitpid() */
 		pid = wait(&sts);
 	else {
 #ifdef NO_WAITPID
-		err_setstr(RuntimeError,
+		err_setstr(PosixError,
 		"posix.wait(pid, options) not supported on this system");
 #else
 		int options;
@@ -599,13 +631,14 @@ posix_wait(self, args) /* Also waitpid() */
 
 #endif /* MSDOS */
 
-#ifndef NO_LSTAT
-
 static object *
 posix_lstat(self, args)
 	object *self;
 	object *args;
 {
+#ifdef NO_LSTAT
+#define lstat stat
+#endif
 	extern int lstat PROTO((const char *, struct stat *));
 	return posix_do_stat(self, args, lstat);
 }
@@ -615,6 +648,10 @@ posix_readlink(self, args)
 	object *self;
 	object *args;
 {
+#ifdef NO_LSTAT
+	err_setstr(PosixError, "readlink not implemented on this system");
+	return NULL;
+#else
 	char buf[1024]; /* XXX Should use MAXPATHLEN */
 	char *path;
 	int n;
@@ -624,6 +661,7 @@ posix_readlink(self, args)
 	if (n < 0)
 		return posix_error();
 	return newsizedstringobject(buf, n);
+#endif
 }
 
 static object *
@@ -631,11 +669,14 @@ posix_symlink(self, args)
 	object *self;
 	object *args;
 {
+#ifdef NO_LSTAT
+	err_setstr(PosixError, "symlink not implemented on this system");
+	return NULL;
+#else
 	extern int symlink PROTO((const char *, const char *));
 	return posix_2str(args, symlink);
+#endif
 }
-
-#endif /* NO_LSTAT */
 
 
 static struct methodlist posix_methods[] = {
@@ -646,16 +687,23 @@ static struct methodlist posix_methods[] = {
 	{"link",	posix_link},
 #endif
 	{"listdir",	posix_listdir},
+	{"lstat",	posix_lstat},
 	{"mkdir",	posix_mkdir},
+	{"readlink",	posix_readlink},
 	{"rename",	posix_rename},
 	{"rmdir",	posix_rmdir},
 	{"stat",	posix_stat},
+	{"symlink",	posix_symlink},
 	{"system",	posix_system},
 #ifndef MSDOS
 	{"umask",	posix_umask},
 #endif
+#ifndef NO_UNAME
+	{"uname",	posix_uname},
+#endif
 	{"unlink",	posix_unlink},
 	{"utime",	posix_utime},
+
 #ifndef MSDOS
 	{"_exit",	posix__exit},
 	{"exec",	posix_exec},
@@ -667,11 +715,7 @@ static struct methodlist posix_methods[] = {
 	{"popen",	posix_popen},
 	{"wait",	posix_wait},
 #endif
-#ifndef NO_LSTAT
-	{"lstat",	posix_lstat},
-	{"readlink",	posix_readlink},
-	{"symlink",	posix_symlink},
-#endif
+
 	{NULL,		NULL}		 /* Sentinel */
 };
 
