@@ -93,9 +93,10 @@ simple as this:
 
 \begin{verbatim}
 from distutils.core import setup
-setup(name="foo",
-      version="1.0",
-      py_modules=["foo"])
+setup(name='foo',
+      version='1.0',
+      py_modules=['foo'],
+      )
 \end{verbatim}
 
 Some observations:
@@ -270,12 +271,12 @@ shown here, is used to install the package into Python 1.5.2.)
 
 from distutils.core import setup
 
-setup(name="Distutils",
-      version="1.0",
-      description="Python Distribution Utilities",
-      author="Greg Ward",
-      author_email="gward@python.net",
-      url="http://www.python.org/sigs/distutils-sig/",
+setup(name='Distutils',
+      version='1.0',
+      description='Python Distribution Utilities',
+      author='Greg Ward',
+      author_email='gward@python.net',
+      url='http://www.python.org/sigs/distutils-sig/',
       packages=['distutils', 'distutils.command'],
      )
 \end{verbatim}
@@ -409,7 +410,7 @@ additional instructions to the compiler/linker are needed, describing
 this extension is quite simple:
 
 \begin{verbatim}
-uExtension("foo", ["foo.c"])
+Extension('foo', ['foo.c'])
 \end{verbatim}
 
 The \class{Extension} class can be imported from
@@ -419,8 +420,10 @@ and nothing else might be:
 
 \begin{verbatim}
 from distutils.core import setup, Extension
-setup(name="foo", version="1.0",
-      ext_modules=[Extension("foo", ["foo.c"])])
+setup(name='foo',
+      version='1.0',
+      ext_modules=[Extension('foo', ['foo.c'])],
+      )
 \end{verbatim}
 
 The \class{Extension} class (actually, the underlying extension-building
@@ -435,13 +438,13 @@ The first argument to the \class{Extension} constructor is always the
 name of the extension, including any package names.  For example,
 
 \begin{verbatim}
-Extension("foo", ["src/foo1.c", "src/foo2.c"])
+Extension('foo', ['src/foo1.c', 'src/foo2.c'])
 \end{verbatim}
 
 describes an extension that lives in the root package, while
 
 \begin{verbatim}
-Extension("pkg.foo", ["src/foo1.c", "src/foo2.c"])
+Extension('pkg.foo', ['src/foo1.c', 'src/foo2.c'])
 \end{verbatim}
 
 describes the same extension in the \module{pkg} package.  The source
@@ -455,9 +458,9 @@ to \function{setup()}.  For example,
 
 \begin{verbatim}
 setup(...
-      ext_package="pkg",
-      ext_modules=[Extension("foo", ["foo.c"]),
-                   Extension("subpkg.bar", ["bar.c"])]
+      ext_package='pkg',
+      ext_modules=[Extension('foo', ['foo.c']),
+                   Extension('subpkg.bar', ['bar.c'])],
      )
 \end{verbatim}
 
@@ -502,7 +505,7 @@ For example, if your extension requires header files in the
 \code{include\_dirs} option:
 
 \begin{verbatim}
-Extension("foo", ["foo.c"], include_dirs=["include"])
+Extension('foo', ['foo.c'], include_dirs=['include'])
 \end{verbatim}
 
 You can specify absolute directories there; if you know that your
@@ -510,7 +513,7 @@ extension will only be built on \UNIX{} systems with X11R6 installed to
 \file{/usr}, you can get away with
 
 \begin{verbatim}
-Extension("foo", ["foo.c"], include_dirs=["/usr/include/X11"])
+Extension('foo', ['foo.c'], include_dirs=['/usr/include/X11'])
 \end{verbatim}
 
 You should avoid this sort of non-portable usage if you plan to
@@ -534,13 +537,14 @@ approach is to write C code like
 \end{verbatim}
 If you must put the \file{Numerical} include directory right into your
 header search path, though, you can find that directory using the
-Distutils \module{sysconfig} module:
+Distutils \refmodule{distutils.sysconfig} module:
 
 \begin{verbatim}
 from distutils.sysconfig import get_python_inc
-incdir = os.path.join(get_python_inc(plat_specific=1), "Numerical")
+incdir = os.path.join(get_python_inc(plat_specific=1), 'Numerical')
 setup(...,
-      Extension(..., include_dirs=[incdir]))
+      Extension(..., include_dirs=[incdir]),
+      )
 \end{verbatim}
 
 Even though this is quite portable---it will work on any Python
@@ -590,7 +594,7 @@ standard library search path on target systems
 
 \begin{verbatim}
 Extension(...,
-          libraries=["gdbm", "readline"])
+          libraries=['gdbm', 'readline'])
 \end{verbatim}
 
 If you need to link with libraries in a non-standard location, you'll
@@ -598,8 +602,8 @@ have to include the location in \code{library\_dirs}:
 
 \begin{verbatim}
 Extension(...,
-          library_dirs=["/usr/X11R6/lib"],
-          libraries=["X11", "Xt"])
+          library_dirs=['/usr/X11R6/lib'],
+          libraries=['X11', 'Xt'])
 \end{verbatim}
 
 (Again, this sort of non-portable construct should be avoided if you
@@ -641,8 +645,8 @@ The \option{scripts} option simply is a list of files to be handled
 in this way.  From the PyXML setup script:
 
 \begin{verbatim}
-setup (... 
-       scripts = ['scripts/xmlproc_parse', 'scripts/xmlproc_val']
+setup(... 
+      scripts=['scripts/xmlproc_parse', 'scripts/xmlproc_val']
       )
 \end{verbatim}
 
@@ -727,10 +731,10 @@ version. This information includes:
   compatible with Python versions prior to 2.2.3 or 2.3.  The list is
   available from the \ulink{PyPI website}{http://www.python.org/pypi}.
 
-\item["short string"] A single line of text, not more than 200 characters.
-\item["long string"] Multiple lines of plain text in ReStructuredText
+\item['short string'] A single line of text, not more than 200 characters.
+\item['long string'] Multiple lines of plain text in reStructuredText
   format (see \url{http://docutils.sf.net/}).
-\item["list of strings"] See below.
+\item['list of strings'] See below.
 \end{description}
 
 None of the string values may be Unicode.
@@ -758,7 +762,7 @@ pre-release release testing). Some examples:
 
 \begin{verbatim}
 setup(...
-      classifiers = [
+      classifiers=[
           'Development Status :: 4 - Beta',
           'Environment :: Console',
           'Environment :: Web Environment',
@@ -780,7 +784,7 @@ setup(...
 If you wish to include classifiers in your \file{setup.py} file and also
 wish to remain backwards-compatible with Python releases prior to 2.2.3,
 then you can include the following code fragment in your \file{setup.py}
-before the \code{setup()} call.
+before the \function{setup()} call.
 
 \begin{verbatim}
 # patch distutils if it can't cope with the "classifiers" or
@@ -1044,9 +1048,9 @@ prune examples/sample?/build
 \end{verbatim}
 
 The meanings should be fairly clear: include all files in the
-distribution root matching \code{*.txt}, all files anywhere under the
-\file{examples} directory matching \code{*.txt} or \code{*.py}, and
-exclude all directories matching \code{examples/sample?/build}.  All of
+distribution root matching \file{*.txt}, all files anywhere under the
+\file{examples} directory matching \file{*.txt} or \file{*.py}, and
+exclude all directories matching \file{examples/sample?/build}.  All of
 this is done \emph{after} the standard include set, so you can exclude
 files from the standard set with explicit instructions in the manifest
 template.  (Or, you can use the \longprogramopt{no-defaults} option to
@@ -1307,7 +1311,7 @@ both, you can explicitly specify multiple \command{bdist\_*} commands
 and their options:
 
 \begin{verbatim}
-python setup.py bdist_rpm --packager="John Doe <jdoe@python.net>" \
+python setup.py bdist_rpm --packager="John Doe <jdoe@example.org>" \
                 bdist_wininst --target_version="2.0"
 \end{verbatim}
 
@@ -1608,8 +1612,10 @@ distribution root directory.)  A minimal setup script to describe this
 situation would be:
 \begin{verbatim}
 from distutils.core import setup
-setup(name = "foo", version = "1.0",
-      py_modules = ["foo"])
+setup(name='foo',
+      version='1.0',
+      py_modules=['foo'],
+      )
 \end{verbatim}
 Note that the name of the distribution is specified independently with
 the \option{name} option, and there's no rule that says it has to be the
@@ -1630,8 +1636,10 @@ modules, eg. if you're distributing modules \module{foo} and
 and the setup script might be
 \begin{verbatim}
 from distutils.core import setup
-setup(name = "foobar", version = "1.0",
-      py_modules = ["foo", "bar"])
+setup(name='foobar',
+      version='1.0',
+      py_modules=['foo', 'bar'],
+      )
 \end{verbatim}
 
 You can put module source files into another directory, but if you have
@@ -1653,8 +1661,10 @@ file).
 The setup script from the last example could also be written as
 \begin{verbatim}
 from distutils.core import setup
-setup(name = "foobar", version = "1.0",
-      packages = [""])
+setup(name='foobar',
+      version='1.0',
+      packages=[''],
+      )
 \end{verbatim}
 (The empty string stands for the root package.)
 
@@ -1670,9 +1680,11 @@ then you would still specify the root package, but you have to tell the
 Distutils where source files in the root package live:
 \begin{verbatim}
 from distutils.core import setup
-setup(name = "foobar", version = "1.0",
-      package_dir = {"": "src"},
-      packages = [""])
+setup(name='foobar',
+      version='1.0',
+      package_dir={'': 'src'},
+      packages=[''],
+      )
 \end{verbatim}
 
 More typically, though, you will want to distribute multiple modules in
@@ -1691,8 +1703,10 @@ This is in fact the default layout expected by the Distutils, and the
 one that requires the least work to describe in your setup script:
 \begin{verbatim}
 from distutils.core import setup
-setup(name = "foobar", version = "1.0",
-      packages = ["foobar"])
+setup(name='foobar',
+      version='1.0',
+      packages=['foobar'],
+      )
 \end{verbatim}
 
 If you want to put modules in directories not named for their package,
@@ -1710,9 +1724,11 @@ example, if the \file{src} directory holds modules in the
 an appropriate setup script would be
 \begin{verbatim}
 from distutils.core import setup
-setup(name = "foobar", version = "1.0",
-      package_dir = {"foobar" : "src"},
-      packages = ["foobar"])
+setup(name='foobar',
+      version='1.0',
+      package_dir={'foobar': 'src'},
+      packages=['foobar'],
+      )
 \end{verbatim}
 
 Or, you might put modules from your main package right in the
@@ -1727,9 +1743,11 @@ distribution root:
 in which case your setup script would be
 \begin{verbatim}
 from distutils.core import setup
-setup(name = "foobar", version = "1.0",
-      package_dir = {"foobar" : ""},
-      packages = ["foobar"])
+setup(name='foobar',
+      version='1.0',
+      package_dir={'foobar': ''},
+      packages=['foobar'],
+      )
 \end{verbatim}
 (The empty string also stands for the current directory.)
 
@@ -1754,8 +1772,10 @@ sub-package:
 then the corresponding setup script would be
 \begin{verbatim}
 from distutils.core import setup
-setup(name = "foobar", version = "1.0",
-      packages = ["foobar", "foobar.subfoo"])
+setup(name='foobar',
+      version='1.0',
+      packages=['foobar', 'foobar.subfoo'],
+      )
 \end{verbatim}
 (Again, the empty string in \option{package\_dir} stands for the current
 directory.)
@@ -1777,8 +1797,10 @@ If the \module{foo} extension belongs in the root package, the setup
 script for this could be
 \begin{verbatim}
 from distutils.core import setup
-setup(name = "foobar", version = "1.0",
-      ext_modules = [Extension("foo", ["foo.c"])])
+setup(name='foobar',
+      version='1.0',
+      ext_modules=[Extension('foo', ['foo.c'])],
+      )
 \end{verbatim}
 
 If the extension actually belongs in a package, say \module{foopkg},
@@ -1789,8 +1811,10 @@ the \module{foopkg} package simply by changing the name of the
 extension:
 \begin{verbatim}
 from distutils.core import setup
-setup(name = "foobar", version = "1.0",
-      ext_modules = [Extension("foopkg.foo", ["foo.c"])])
+setup(name='foobar',
+      version='1.0',
+      ext_modules=[Extension('foopkg.foo', ['foo.c'])],
+      )
 \end{verbatim}
 
 
