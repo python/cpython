@@ -16,6 +16,8 @@ typedef struct {
 	PyObject *fn;
 	PyObject *args;
 	PyObject *kw;
+	PyObject *dict;
+	PyObject *weakreflist; /* List of weak references */
 } partialobject;
 
 static PyTypeObject partial_type;
@@ -63,6 +65,9 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 		Py_INCREF(Py_None);
 	}
 
+	pto->weakreflist = NULL;
+	pto->dict = NULL;
+
 	return (PyObject *)pto;
 }
 
@@ -70,9 +75,12 @@ static void
 partial_dealloc(partialobject *pto)
 {
 	PyObject_GC_UnTrack(pto);
+	if (pto->weakreflist != NULL)
+		PyObject_ClearWeakRefs((PyObject *) pto);
 	Py_XDECREF(pto->fn);
 	Py_XDECREF(pto->args);
 	Py_XDECREF(pto->kw);
+	Py_XDECREF(pto->dict);
 	pto->ob_type->tp_free(pto);
 }
 
@@ -128,6 +136,7 @@ partial_traverse(partialobject *pto, visitproc visit, void *arg)
 	Py_VISIT(pto->fn);
 	Py_VISIT(pto->args);
 	Py_VISIT(pto->kw);
+	Py_VISIT(pto->dict);
 	return 0;
 }
 
@@ -144,6 +153,47 @@ static PyMemberDef partial_memberlist[] = {
 	{"keywords",	T_OBJECT,	OFF(kw),	READONLY,
 	 "dictionary of keyword arguments to future partial calls"},
 	{NULL}  /* Sentinel */
+};
+
+static PyObject *
+partial_get_dict(partialobject *pto)
+{
+	if (pto->dict == NULL) {
+		pto->dict = PyDict_New();
+		if (pto->dict == NULL)
+			return NULL;
+	}
+	Py_INCREF(pto->dict);
+	return pto->dict;
+}
+
+static int
+partial_set_dict(partialobject *pto, PyObject *value)
+{
+	PyObject *tmp;
+
+	/* It is illegal to del p.__dict__ */
+	if (value == NULL) {
+		PyErr_SetString(PyExc_TypeError,
+				"a partial object's dictionary may not be deleted");
+		return -1;
+	}
+	/* Can only set __dict__ to a dictionary */
+	if (!PyDict_Check(value)) {
+		PyErr_SetString(PyExc_TypeError,
+				"setting partial object's dictionary to a non-dict");
+		return -1;
+	}
+	tmp = pto->dict;
+	Py_INCREF(value);
+	pto->dict = value;
+	Py_XDECREF(tmp);
+	return 0;
+}
+
+static PyGetSetDef partail_getsetlist[] = {
+	{"__dict__", (getter)partial_get_dict, (setter)partial_set_dict},
+	{NULL} /* Sentinel */
 };
 
 static PyTypeObject partial_type = {
@@ -166,25 +216,25 @@ static PyTypeObject partial_type = {
 	(ternaryfunc)partial_call,	/* tp_call */
 	0,				/* tp_str */
 	PyObject_GenericGetAttr,	/* tp_getattro */
-	0,				/* tp_setattro */
+	PyObject_GenericSetAttr,	/* tp_setattro */
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-		Py_TPFLAGS_BASETYPE,	/* tp_flags */
+		Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_WEAKREFS,	/* tp_flags */
 	partial_doc,			/* tp_doc */
 	(traverseproc)partial_traverse,	/* tp_traverse */
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
-	0,				/* tp_weaklistoffset */
+	offsetof(partialobject, weakreflist),	/* tp_weaklistoffset */
 	0,				/* tp_iter */
 	0,				/* tp_iternext */
 	0,				/* tp_methods */
 	partial_memberlist,		/* tp_members */
-	0,				/* tp_getset */
+	partail_getsetlist,		/* tp_getset */
 	0,				/* tp_base */
 	0,				/* tp_dict */
 	0,				/* tp_descr_get */
 	0,				/* tp_descr_set */
-	0,				/* tp_dictoffset */
+	offsetof(partialobject, dict),	/* tp_dictoffset */
 	0,				/* tp_init */
 	0,				/* tp_alloc */
 	partial_new,			/* tp_new */
