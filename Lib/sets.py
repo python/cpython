@@ -197,11 +197,13 @@ class BaseSet(object):
         result = self.__class__()
         data = result._data
         value = True
-        for elt in self:
-            if elt not in other:
+        selfdata = self._data
+        otherdata = other._data
+        for elt in selfdata:
+            if elt not in otherdata:
                 data[elt] = value
-        for elt in other:
-            if elt not in self:
+        for elt in otherdata:
+            if elt not in selfdata:
                 data[elt] = value
         return result
 
