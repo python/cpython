@@ -290,7 +290,8 @@ are objects on the heap in Python!)
 
 If you have a C function that returns no useful argument (a function
 returning \ctype{void}), the corresponding Python function must return
-\code{None}.   You need this idiom to do so:
+\code{None}.   You need this idiom to do so (which is implemented by the
+\csimplemacro{Py_RETURN_NONE} macro):
 
 \begin{verbatim}
     Py_INCREF(Py_None);
