@@ -18,10 +18,12 @@ dutree.py		Format du(1) output as a tree sorted by size
 eptags.py		Create Emacs TAGS file for Python modules
 fact.py			Factorize numbers
 findlinksto.py		Recursively find symbolic links to a given path prefix
+freeze.py		Convert a Python script into a free-standing binary
 from.py			Summarize mailbox
 linktree.py		Make a copy of a tree with links to original files
 lll.py			Find and list symbolic links in current directory
 lpwatch.py		Watch BSD line printer queues
+methfix.py		Fix old method syntax def f(self, (a1, ..., aN)):
 mkreal.py		Turn a symbolic link into a real file or directory
 objgraph.py		Print object graph from nm output on a library
 pdeps.py		Print dependencies between Python modules
