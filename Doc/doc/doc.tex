@@ -48,27 +48,28 @@ distribution, to create or maintain whole documents or sections.
   providing assistance for creating and maintaining documentation.
 
   The involvement of the community takes many forms, from authoring to
-  bug reports to just plain complaining when aspects of the
-  documentation could be easier to use.  All of these forms of input
-  from the community have proved useful during the time I've been
-  involved in maintaining the documentation.
+  bug reports to just plain complaining when the documentation could
+  be more complete or easier to use.  All of these forms of input from
+  the community have proved useful during the time I've been involved
+  in maintaining the documentation.
 
   This document is aimed at authors and potential authors of
-  documentation for Python.  Among this group, it is aimed primarily
-  at people contributing to the standard documentation and developing
-  additional documents using the same tools as the standard
-  documents.  This guide will be less useful for authors using the
-  Python documentation tools for topics other than Python, and less
-  useful still for authors not using the tools at all.
+  documentation for Python.  More specifically, it is for people
+  contributing to the standard documentation and developing additional
+  documents using the same tools as the standard documents.  This
+  guide will be less useful for authors using the Python documentation
+  tools for topics other than Python, and less useful still for
+  authors not using the tools at all.
 
   The material in this guide is intended to assist authors using the
   Python documentation tools.  It includes information on the source
   distribution of the standard documentation, a discussion of the
-  Python document classes, reference material on the markup defined in
-  the document classes, a list of the tools need for processing
+  document types, reference material on the markup defined in the
+  document classes, a list of the external tools needed for processing
   documents, and reference material on the tools provided with the
   documentation resources.  At the end, there is also a section
-  discussing future directions for the Python documentation.
+  discussing future directions for the Python documentation and where
+  to turn for more information.
 
 \section{Directory Structure}
 
@@ -81,8 +82,8 @@ distribution, to create or maintain whole documents or sections.
   structure.
 
   The documentation sources are usually placed within the Python
-  source distribution as the top-level subdirectory \file{Doc/}, but
-  are independent of the Python source distribution.
+  source distribution as the top-level directory \file{Doc/}, but
+  are not dependent on the Python source distribution in any way.
 
   The \file{Doc/} directory contains a few files and several
   subdirectories.  The files are mostly self-explanatory, including a
@@ -101,7 +102,10 @@ distribution, to create or maintain whole documents or sections.
 	and provides storage for the formatted documents.  The only
 	variations within this category are the Portable Document
         Format (PDF) and PostScript versions are placed in the
-	directories \file{paper-a4/} and \file{paper-letter/}.
+	directories \file{paper-a4/} and \file{paper-letter/} (this
+	causes all the temporary files created by \LaTeX{} to be kept
+	in the same place for each paper size, where they can be more
+	easily ignored).
 
     \term{Supplemental Files}
 	Some additional directories are used to store supplemental
@@ -124,7 +128,7 @@ distribution, to create or maintain whole documents or sections.
   itself, such as the title, the list of authors, the date, and the
   \emph{class} the document belongs to.  Additional information used
   to control index generation and the use of bibliographic databases
-  can also be placed in the preamble.  For most users, the preamble
+  can also be placed in the preamble.  For most authors, the preamble
   can be most easily created by copying it from an existing document
   and modifying a few key pieces of information.
 
@@ -134,12 +138,14 @@ distribution, to create or maintain whole documents or sections.
   \code{manual} class and the \code{howto} class.  These classes also
   define the additional markup used to document Python concepts and
   structures.  Specific information about these classes is provided in
-  Section \ref{classes}, ``Document Classes,'' below.  The first thing
+  section \ref{classes}, ``Document Classes,'' below.  The first thing
   in the preamble is the declaration of the document's class.
 
   After the class declaration, a number of \emph{macros} are used to
   provide further information about the document and setup any
-  additional markup that is needed.
+  additional markup that is needed.  No output is generated from the
+  preamble; it is an error to include free text in the preamble
+  because it would cause output.
 
   The document body follows the preamble.  This contains all the
   printed components of the document marked up structurally.  
@@ -159,7 +165,8 @@ distribution, to create or maintain whole documents or sections.
   standard documents.  This document class is based on the standard
   \LaTeX{} \code{report} class and is formatted very much like a long
   technical report.  The \emph{Python Reference Manual} is a good
-  example of a \code{manual} document.
+  example of a \code{manual} document, and the \emph{Python Library
+  Reference} is a large example.
 
   The \code{howto} documents are shorter, and don't have the large
   structure of the \code{manual} documents.  This class is based on
@@ -177,7 +184,7 @@ distribution, to create or maintain whole documents or sections.
   single chapter from a larger work.
 
 
-\section{Python-specific Markup}
+\section{Special Markup Constructs}
 
   The Python document classes define a lot of new environments and
   macros.  This section contains the reference material for these
@@ -209,12 +216,12 @@ distribution, to create or maintain whole documents or sections.
     class was not the most recently described class in the module; the
     \var{name} value from the most recent \env{classdesc} is implied.
     For features of built-in or extension types, the \var{type name}
-    value should always be provided.  Another special case which
-    deserves mention are the methods and members of general
-    ``protocols,'' such as the formatter and writer protocols
-    described for the \module{formatter} module: these may be
-    documented without any specific implementation classes, and will
-    always require the \var{type name} parameter to be provided.
+    value should always be provided.  Another special case includes
+    methods and members of general ``protocols,'' such as the
+    formatter and writer protocols described for the
+    \module{formatter} module: these may be documented without any
+    specific implementation classes, and will always require the
+    \var{type name} parameter to be provided.
 
     \begin{envdesc}{datadesc}{\p{name}}
       This environment is used to document global data in a module,
@@ -222,7 +229,7 @@ distribution, to create or maintain whole documents or sections.
       constants.''  Class and object attributes are not documented
       using this environment.
     \end{envdesc}
-    \begin{envdesc}{datadesc}{\p{name}}
+    \begin{envdesc}{datadescni}{\p{name}}
       Like \env{datadesc}, but without creating any index entries.
     \end{envdesc}
 
@@ -313,7 +320,9 @@ distribution, to create or maintain whole documents or sections.
     module is available on.  The keys are short identifiers;
     examples that are in use include \samp{IRIX}, \samp{Mac},
     \samp{Windows}, and \samp{Unix}.  It is important to use a key
-    which has already been used when applicable.
+    which has already been used when applicable.  This is used to
+    provide annotations in the Module Index and the HTML and GNU info
+    output.
   \end{macrodesc}
 
   \begin{macrodesc}{modulesynopsis}{\p{text}}
@@ -358,7 +367,7 @@ distribution, to create or maintain whole documents or sections.
     be used for an advantage when the documents are processed using
     the tools for Python documentation processing.  In particular, the
     generated HTML looks good!  There is also an advantage for the
-    eventual conversion of the documentation to SGML (see Section
+    eventual conversion of the documentation to SGML (see section
     \ref{futures}, ``Future Directions'').
 
     Each environment is named \env{table\var{cols}}, where \var{cols}
@@ -465,7 +474,7 @@ distribution, to create or maintain whole documents or sections.
     the scope of the tools.  Markup is provided which the processing
     software is able to use to generate a variety of kinds of index
     entry with minimal effort.  Additionally, many of the environments
-    described in Section \ref{info-units}, ``Information Units,'' will
+    described in section \ref{info-units}, ``Information Units,'' will
     generate appropriate entries into the general and module indexes.
 
     The following macro can be used to control the generation of index
@@ -663,7 +672,7 @@ distribution, to create or maintain whole documents or sections.
         pdf\TeX{} is a relatively new variant of \TeX, and is used to
         generate the PDF version of the manuals.  It is typically
         installed as part of most of the large \TeX{} distributions.
-        \program{pdflatex} is PDF\TeX{} using the \LaTeX{} format.
+        \program{pdflatex} is pdf\TeX{} using the \LaTeX{} format.
 
       \item[\program{perl}]
         Perl is required for \LaTeX2HTML{} and one of the scripts used
@@ -717,10 +726,9 @@ distribution, to create or maintain whole documents or sections.
     One side effect of this is that while we've been able to use
     standard ``engines'' for manipulating the documents, such as
     \LaTeX{} and \LaTeX2HTML, most of the actual transformations have
-    been created specifically for this documentation.  The \LaTeX{}
-    document classes and \LaTeX2HTML support are both complete
-    implementations of the specific markup designed for these
-    documents.
+    been created specifically for Python.  The \LaTeX{} document
+    classes and \LaTeX2HTML support are both complete implementations
+    of the specific markup designed for these documents.
 
     Combining highly customized markup with the somewhat esoteric
     systems used to process the documents leads us to ask some
@@ -756,9 +764,9 @@ distribution, to create or maintain whole documents or sections.
   \subsection{Discussion Forums \label{discussion}}
 
     Discussion of the future of the Python documentation and related
-    topics takes place in the ``Doc-SIG'' special interest group.
-    Information on the group, including mailing list archives and
-    subscriptions, is available at
+    topics takes place in the Documentation Special Interest Group, or
+    ``Doc-SIG.''  Information on the group, including mailing list
+    archives and subscription information, is available at
     \url{http://www.python.org/sigs/doc-sig/}.  The SIG is open to all
     interested parties.
 
