@@ -4,7 +4,7 @@
 ** Jack Jansen, CWI, August 1995.
 */
 
-#ifdef __MWERKS__
+#if defined(__MWERKS__) && !defined(USE_GUSI)
 #include <stdio.h>
 #include <unix.h>
 #include <errno.h>
