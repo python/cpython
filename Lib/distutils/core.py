@@ -12,8 +12,12 @@ __revision__ = "$Id$"
 import sys, os
 from types import *
 from distutils.errors import *
+
+# Mainly import these so setup scripts can "from distutils.core import" them.
 from distutils.dist import Distribution
 from distutils.cmd import Command
+from distutils.extension import Extension
+
 
 # This is a barebones help message generated displayed when the user
 # runs the setup script with no arguments at all.  More useful help
