@@ -106,8 +106,14 @@ def choose_boundary():
 		import socket
 		import os
 		hostid = socket.gethostbyname(socket.gethostname())
-		uid = `os.getuid()`
-		pid = `os.getpid()`
+		try:
+		    uid = `os.getuid()`
+		except:
+		    uid = '1'
+		try:
+		    pid = `os.getpid()`
+		except:
+		    pid = '1'
 		seed = `rand.rand()`
 		_prefix = hostid + '.' + uid + '.' + pid
 	timestamp = `int(time.time())`
