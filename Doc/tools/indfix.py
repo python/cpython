@@ -43,25 +43,20 @@ def dump_entries(write, entries):
 breakable_re = re.compile(
     r"  \\item (.*) [(](.*)[)]((?:(?:, \d+)|(?:, \\[a-z]*\{\d+\}))+)")
 
-def main():
-    import getopt
-    outfile = None
-    opts, args = getopt.getopt(sys.argv[1:], "o:")
-    for opt, val in opts:
-	if opt in ("-o", "--output"):
-	    outfile = val
-    filename = args[0]
-    outfile = outfile or filename
-    if filename == "-":
-	fp = sys.stdin
+
+def process(ifn, ofn=None):
+    if ifn == "-":
+        ifp = sys.stdin
     else:
-	fp = open(filename)
+        ifp = open(ifn)
+    if ofn is None:
+        ofn = ifn
     ofp = StringIO.StringIO()
     entries = []
     match = breakable_re.match
     write = ofp.write
     while 1:
-	line = fp.readline()
+	line = ifp.readline()
 	if not line:
 	    break
 	m = match(line)
@@ -79,13 +74,27 @@ def main():
 	    write(line)
     del write
     del match
-    fp.close()
-    if outfile == "-":
-	fp = sys.stdout
+    ifp.close()
+    data = ofp.getvalue()
+    ofp.close()
+    if ofn == "-":
+	ofp = sys.stdout
     else:
-	fp = open(outfile, "w")
-    fp.write(ofp.getvalue())
-    fp.close()
+	ofp = open(ofn, "w")
+    ofp.write(data)
+    ofp.close()
+
+
+def main():
+    import getopt
+    outfile = None
+    opts, args = getopt.getopt(sys.argv[1:], "o:")
+    for opt, val in opts:
+	if opt in ("-o", "--output"):
+	    outfile = val
+    filename = args[0]
+    outfile = outfile or filename
+    process(filename, outfile)
 
 
 if __name__ == "__main__":
