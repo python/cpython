@@ -87,8 +87,9 @@ def translate(text, pre=0):
 	list.append(escape(text[i:j]))
 	i = j
 	url = prog.group(0)
-	while url[-1] in ');:,.?\'"':
+	while url[-1] in '();:,.?\'"<>':
 	    url = url[:-1]
+	i = i + len(url)
 	url = escape(url)
 	if not pre or (pre and PROCESS_PREFORMAT):
 	    if ':' in url:
@@ -98,7 +99,6 @@ def translate(text, pre=0):
 	else:
 	    repl = url
 	list.append(repl)
-	i = i + len(url)
     j = len(text)
     list.append(escape(text[i:j]))
     return string.join(list, '')
