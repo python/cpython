@@ -681,20 +681,24 @@ Return a copy of the string converted to uppercase.
 \subsubsection{String Formatting Operations \label{typesseq-strings}}
 
 \index{formatting, string (\%{})}
+\index{interpolation, string (\%{})}
 \index{string!formatting}
+\index{string!interpolation}
 \index{printf-style formatting}
 \index{sprintf-style formatting}
 \index{\protect\%{} formatting}
+\index{\protect\%{} interpolation}
 
 String and Unicode objects have one unique built-in operation: the
-\code{\%} operator (modulo).  Given \code{\var{format} \%
-\var{values}} (where \var{format} is a string or Unicode object),
-\code{\%} conversion specifications in \var{format} are replaced with
-zero or more elements of \var{values}.  The effect is similar to the
-using \cfunction{sprintf()} in the C language.  If \var{format} is a
-Unicode object, or if any of the objects being converted using the
-\code{\%s} conversion are Unicode objects, the result will be a
-Unicode object as well.
+\code{\%} operator (modulo).  This is also known as the string
+\emph{formatting} or \emph{interpolation} operator.  Given
+\code{\var{format} \% \var{values}} (where \var{format} is a string or
+Unicode object), \code{\%} conversion specifications in \var{format}
+are replaced with zero or more elements of \var{values}.  The effect
+is similar to the using \cfunction{sprintf()} in the C language.  If
+\var{format} is a Unicode object, or if any of the objects being
+converted using the \code{\%s} conversion are Unicode objects, the
+result will be a Unicode object as well.
 
 If \var{format} requires a single argument, \var{values} may be a
 single non-tuple object. \footnote{A tuple object in this case should
