@@ -115,9 +115,12 @@ def stripid(text):
             return re.sub(pattern, '>', text)
     return text
 
+def _is_some_method(object):
+    return inspect.ismethod(object) or inspect.ismethoddescriptor(object)
+
 def allmethods(cl):
     methods = {}
-    for key, value in inspect.getmembers(cl, inspect.ismethod):
+    for key, value in inspect.getmembers(cl, _is_some_method):
         methods[key] = 1
     for base in cl.__bases__:
         methods.update(allmethods(base)) # all your base are belong to us
@@ -656,7 +659,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
                 reallink = realname
             title = '<a name="%s"><strong>%s</strong></a> = %s' % (
                 anchor, name, reallink)
-        if inspect.isbuiltin(object):
+        if inspect.isbuiltin(object) or inspect.ismethoddescriptor(object):
             argspec = '(...)'
         else:
             args, varargs, varkw, defaults = inspect.getargspec(object)
@@ -913,7 +916,7 @@ class TextDoc(Doc):
                 cl.__dict__[realname] is object):
                 skipdocs = 1
             title = self.bold(name) + ' = ' + realname
-        if inspect.isbuiltin(object):
+        if inspect.isbuiltin(object) or inspect.ismethoddescriptor(object):
             argspec = '(...)'
         else:
             args, varargs, varkw, defaults = inspect.getargspec(object)

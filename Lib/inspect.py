@@ -57,6 +57,23 @@ def ismethod(object):
         im_self         instance to which this method is bound, or None"""
     return isinstance(object, types.MethodType)
 
+def ismethoddescriptor(object):
+    """Return true if the object is a method descriptor, and ismethod false.
+
+    This is new in Python 2.2, and, for example, is true of int.__add__.
+    An object passing this test has a __get__ attribute but not a __set__
+    attribute, but beyond that the set of attributes varies.  __name__ is
+    usually sensible, and __doc__ often is.
+
+    Methods implemented via descriptors that also pass the ismethod() test
+    return false from the ismethoddescriptor() test, simply because
+    ismethod() is more informative -- you can, e.g., count on having the
+    im_func attribute (etc) when an object passes the latter."""
+    return (hasattr(object, "__get__")
+            and not hasattr(object, "__set__") # else it's a data descriptor
+            and not ismethod(object)           # mutual exclusion
+            and not isclass(object))
+
 def isfunction(object):
     """Return true if the object is a user-defined function.
 
@@ -127,7 +144,10 @@ def isbuiltin(object):
 
 def isroutine(object):
     """Return true if the object is any kind of function or method."""
-    return isbuiltin(object) or isfunction(object) or ismethod(object)
+    return (isbuiltin(object)
+            or isfunction(object)
+            or ismethod(object)
+            or ismethoddescriptor(object))
 
 def getmembers(object, predicate=None):
     """Return all members of an object as (name, value) pairs sorted by name.
