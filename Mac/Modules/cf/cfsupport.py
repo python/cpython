@@ -53,23 +53,58 @@ includestuff = includestuff + """
 #include <CoreServices/CoreServices.h>
 #endif
 
-/* For now we declare them forward here. They'll go to mactoolbox later */
-staticforward PyObject *CFTypeRefObj_New(CFTypeRef);
-staticforward int CFTypeRefObj_Convert(PyObject *, CFTypeRef *);
-staticforward PyObject *CFStringRefObj_New(CFStringRef);
-staticforward int CFStringRefObj_Convert(PyObject *, CFStringRef *);
-staticforward PyObject *CFURLRefObj_New(CFURLRef);
-staticforward int CFURLRefObj_Convert(PyObject *, CFURLRef *);
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+extern PyObject *_CFTypeRefObj_New(CFTypeRef);
+extern int _CFTypeRefObj_Convert(PyObject *, CFTypeRef *);
+#define CFTypeRefObj_New _CFTypeRefObj_New
+#define CFTypeRefObj_Convert _CFTypeRefObj_Convert
 
-staticforward int CFURLRefObj_Convert(PyObject *, CFURLRef *);
+extern PyObject *_CFStringRefObj_New(CFStringRef);
+extern int _CFStringRefObj_Convert(PyObject *, CFStringRef *);
+#define CFStringRefObj_New _CFStringRefObj_New
+#define CFStringRefObj_Convert _CFStringRefObj_Convert
 
-// ADD declarations
-#ifdef NOTYET_USE_TOOLBOX_OBJECT_GLUE
-//extern PyObject *_CFTypeRefObj_New(CFTypeRef);
-//extern int _CFTypeRefObj_Convert(PyObject *, CFTypeRef *);
+extern PyObject *_CFMutableStringRefObj_New(CFMutableStringRef);
+extern int _CFMutableStringRefObj_Convert(PyObject *, CFMutableStringRef *);
+#define CFMutableStringRefObj_New _CFMutableStringRefObj_New
+#define CFMutableStringRefObj_Convert _CFMutableStringRefObj_Convert
 
-//#define CFTypeRefObj_New _CFTypeRefObj_New
-//#define CFTypeRefObj_Convert _CFTypeRefObj_Convert
+extern PyObject *_CFArrayRefObj_New(CFArrayRef);
+extern int _CFArrayRefObj_Convert(PyObject *, CFArrayRef *);
+#define CFArrayRefObj_New _CFArrayRefObj_New
+#define CFArrayRefObj_Convert _CFArrayRefObj_Convert
+
+extern PyObject *_CFMutableArrayRefObj_New(CFMutableArrayRef);
+extern int _CFMutableArrayRefObj_Convert(PyObject *, CFMutableArrayRef *);
+#define CFMutableArrayRefObj_New _CFMutableArrayRefObj_New
+#define CFMutableArrayRefObj_Convert _CFMutableArrayRefObj_Convert
+
+extern PyObject *_CFDataRefObj_New(CFDataRef);
+extern int _CFDataRefObj_Convert(PyObject *, CFDataRef *);
+#define CFDataRefObj_New _CFDataRefObj_New
+#define CFDataRefObj_Convert _CFDataRefObj_Convert
+
+extern PyObject *_CFMutableDataRefObj_New(CFMutableDataRef);
+extern int _CFMutableDataRefObj_Convert(PyObject *, CFMutableDataRef *);
+#define CFMutableDataRefObj_New _CFMutableDataRefObj_New
+#define CFMutableDataRefObj_Convert _CFMutableDataRefObj_Convert
+
+extern PyObject *_CFDictionaryRefObj_New(CFDictionaryRef);
+extern int _CFDictionaryRefObj_Convert(PyObject *, CFDictionaryRef *);
+#define CFDictionaryRefObj_New _CFDictionaryRefObj_New
+#define CFDictionaryRefObj_Convert _CFDictionaryRefObj_Convert
+
+extern PyObject *_CFMutableDictionaryRefObj_New(CFMutableDictionaryRef);
+extern int _CFMutableDictionaryRefObj_Convert(PyObject *, CFMutableDictionaryRef *);
+#define CFMutableDictionaryRefObj_New _CFMutableDictionaryRefObj_New
+#define CFMutableDictionaryRefObj_Convert _CFMutableDictionaryRefObj_Convert
+
+extern PyObject *_CFURLRefObj_New(CFURLRef);
+extern int _CFURLRefObj_Convert(PyObject *, CFURLRef *);
+extern int _OptionalCFURLRefObj_Convert(PyObject *, CFURLRef *);
+#define CFURLRefObj_New _CFURLRefObj_New
+#define CFURLRefObj_Convert _CFURLRefObj_Convert
+#define OptionalCFURLRefObj_Convert _OptionalCFURLRefObj_Convert
 #endif
 
 /*
@@ -107,8 +142,24 @@ OptionalCFURLRefObj_Convert(PyObject *v, CFURLRef *p_itself)
 """
 
 initstuff = initstuff + """
-//	PyMac_INIT_TOOLBOX_OBJECT_NEW(Track, TrackObj_New);
-//	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Track, TrackObj_Convert);
+PyMac_INIT_TOOLBOX_OBJECT_NEW(CFTypeRef, CFTypeRefObj_New);
+PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CFTypeRef, CFTypeRefObj_Convert);
+PyMac_INIT_TOOLBOX_OBJECT_NEW(CFStringRef, CFStringRefObj_New);
+PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CFStringRef, CFStringRefObj_Convert);
+PyMac_INIT_TOOLBOX_OBJECT_NEW(CFMutableStringRef, CFMutableStringRefObj_New);
+PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CFMutableStringRef, CFMutableStringRefObj_Convert);
+
+PyMac_INIT_TOOLBOX_OBJECT_NEW(CFArrayRef, CFArrayRefObj_New);
+PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CFArrayRef, CFArrayRefObj_Convert);
+PyMac_INIT_TOOLBOX_OBJECT_NEW(CFMutableArrayRef, CFMutableArrayRefObj_New);
+PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CFMutableArrayRef, CFMutableArrayRefObj_Convert);
+PyMac_INIT_TOOLBOX_OBJECT_NEW(CFDictionaryRef, CFDictionaryRefObj_New);
+PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CFDictionaryRef, CFDictionaryRefObj_Convert);
+PyMac_INIT_TOOLBOX_OBJECT_NEW(CFMutableDictionaryRef, CFMutableDictionaryRefObj_New);
+PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CFMutableDictionaryRef, CFMutableDictionaryRefObj_Convert);
+PyMac_INIT_TOOLBOX_OBJECT_NEW(CFURLRef, CFURLRefObj_New);
+PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CFURLRef, CFURLRefObj_Convert);
+PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CFURLRef, CFURLRefObj_Convert);
 """
 
 Boolean = Type("Boolean", "l")
