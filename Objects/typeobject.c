@@ -463,13 +463,13 @@ subtype_dealloc(PyObject *self)
 	/* We get here only if the type has GC */
 
 	/* UnTrack and re-Track around the trashcan macro, alas */
-	_PyObject_GC_UNTRACK(self);
+	PyObject_GC_UnTrack(self);
 	Py_TRASHCAN_SAFE_BEGIN(self);
 	_PyObject_GC_TRACK(self); /* We'll untrack for real later */
 
 	/* Maybe call finalizer; exit early if resurrected */
 	if (call_finalizer(self) < 0)
-		return;
+		goto endlabel;
 
 	/* Find the nearest base with a different tp_dealloc
 	   and clear slots while we're at it */
@@ -508,6 +508,7 @@ subtype_dealloc(PyObject *self)
 	/* Can't reference self beyond this point */
 	Py_DECREF(type);
 
+  endlabel:
 	Py_TRASHCAN_SAFE_END(self);
 }
 
