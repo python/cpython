@@ -3,17 +3,17 @@
 "Replace CRLF with LF in argument files.  Print names of changed files."
 
 import sys, os
-for file in sys.argv[1:]:
-    if os.path.isdir(file):
-        print file, "Directory!"
+for filename in sys.argv[1:]:
+    if os.path.isdir(filename):
+        print filename, "Directory!"
         continue
-    data = open(file, "rb").read()
+    data = open(filename, "rb").read()
     if '\0' in data:
-        print file, "Binary!"
+        print filename, "Binary!"
         continue
     newdata = data.replace("\r\n", "\n")
     if newdata != data:
-        print file
-        f = open(file, "wb")
+        print filename
+        f = open(filename, "wb")
         f.write(newdata)
         f.close()
