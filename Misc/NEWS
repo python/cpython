@@ -4,6 +4,12 @@ XXX Release date: ??-Dec-2001 XXX
 
 Type/class unification and new-style classes
 
+- The "delete attribute" method of descriptor objects is called
+  __delete__, not __del__.  In previous releases, it was mistakenly
+  called __del__, which created an unfortunate overloading condition
+  with finalizers.  (The "get attribute" and "set attribute" methods
+  are still called __get__ and __set__, respectively.)
+
 Core and builtins
 
 Extension modules
