@@ -26,7 +26,7 @@ static void PyThread__init_thread(void)
  */
 
 
-int PyThread_start_new_thread(void (*func)(void *), void *arg)
+long PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
 	thread_t tid;
 	int success;
@@ -34,7 +34,7 @@ int PyThread_start_new_thread(void (*func)(void *), void *arg)
 	if (!initialized)
 		PyThread_init_thread();
 	success = lwp_create(&tid, func, MINPRIO, 0, lwp_newstk(), 1, arg);
-	return success < 0 ? 0 : 1;
+	return success < 0 ? -1 : 0;
 }
 
 long PyThread_get_thread_ident(void)

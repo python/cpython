@@ -143,7 +143,7 @@ PyThread__init_thread(void)
  */
 
 
-int 
+long
 PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
 	pthread_t th;
@@ -210,7 +210,11 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 		pthread_detach(th);
 #endif
 	}
-	return success != 0 ? 0 : 1;
+#if SIZEOF_PTHREAD_T <= SIZEOF_LONG
+	return (long) th;
+#else
+	return (long) *(long *) &th;
+#endif
 }
 
 /* XXX This implementation is considered (to quote Tim Peters) "inherently

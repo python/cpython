@@ -39,6 +39,8 @@ Core
 
 Library
 
+- thread.start_new_thread() now returns the thread ID (previously None).
+
 - doctest now excludes functions and classes not defined by the module
   being tested, thanks to Tim Hochberg.
 
@@ -90,6 +92,13 @@ C API
 - PyLong_AsLongLong() now accepts int (as well as long) arguments.
   Consequently, PyArg_ParseTuple's 'L' code also accepts int (as well
   as long) arguments.
+
+- PyThread_start_new_thread() now returns a long int giving the thread
+  ID, if one can be calculated; it returns -1 for error, 0 if no
+  thread ID is calculated (this is an incompatible change, but only
+  the thread module used this API).  This code has only really been
+  tested on Linux and Windows; other platforms please beware (and
+  report any bugs or strange behavior).
 
 New platforms
 

@@ -112,7 +112,7 @@ static void PyThread__init_thread( void )
 
 static int32 thread_count = 0;
 
-int PyThread_start_new_thread( void (*func)(void *), void *arg )
+long PyThread_start_new_thread( void (*func)(void *), void *arg )
 {
 	status_t success = 0;
 	thread_id tid;
@@ -131,7 +131,7 @@ int PyThread_start_new_thread( void (*func)(void *), void *arg )
 		success = resume_thread( tid );
 	}
 
-	return ( success == B_NO_ERROR ? 1 : 0 );
+	return ( success == B_NO_ERROR ? tid : -1 );
 }
 
 long PyThread_get_thread_ident( void )

@@ -21,16 +21,16 @@ PyThread__init_thread(void)
 /*
  * Thread support.
  */
-int
+long
 PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
   int aThread;
-  int success = 1;
+  int success = 0;
 
   aThread = _beginthread(func,NULL,65536,arg);
 
   if( aThread == -1 ) {
-    success = 0;
+    success = -1;
     fprintf(stderr,"aThread failed == %d",aThread);
     dprintf(("_beginthread failed. return %ld\n", errno));
   }

@@ -32,11 +32,10 @@ This is the type of lock objects.
 \end{datadesc}
 
 \begin{funcdesc}{start_new_thread}{function, args\optional{, kwargs}}
-Start a new thread.  The thread executes the function \var{function}
-with the argument list \var{args} (which must be a tuple).  The
-optional \var{kwargs} argument specifies a dictionary of keyword
-arguments.  When the
-function returns, the thread silently exits.  When the function
+Start a new thread and return its identifier.  The thread executes the function
+\var{function} with the argument list \var{args} (which must be a tuple).  The
+optional \var{kwargs} argument specifies a dictionary of keyword arguments.
+When the function returns, the thread silently exits.  When the function
 terminates with an unhandled exception, a stack trace is printed and
 then the thread exits (but other threads continue to run).
 \end{funcdesc}
