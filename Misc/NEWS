@@ -31,6 +31,8 @@ Core and builtins
 
 Extension modules
 
+- The locale module now exposes the C library's gettext interface.
+
 - A security hole ("double free") was found in zlib-1.1.3, a popular
   third party compression library used by some Python modules.  The
   hole was quickly plugged in zlib-1.1.4, and the Windows build of

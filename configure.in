@@ -520,8 +520,8 @@ dnl AC_MSG_RESULT($cpp_type)
 
 # checks for header files
 AC_HEADER_STDC
-AC_CHECK_HEADERS(dlfcn.h fcntl.h grp.h limits.h langinfo.h locale.h \
-ncurses.h poll.h pthread.h \
+AC_CHECK_HEADERS(dlfcn.h fcntl.h grp.h limits.h langinfo.h \
+libintl.h locale.h ncurses.h poll.h pthread.h \
 signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h termios.h \
 sys/audioio.h sys/file.h sys/lock.h sys/modem.h db_185.h db.h \
 sys/param.h sys/poll.h sys/select.h sys/socket.h sys/time.h sys/times.h \
