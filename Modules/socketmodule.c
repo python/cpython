@@ -1402,6 +1402,11 @@ initsocket()
 	if (PySocket_Error == NULL || 
 	    PyDict_SetItemString(d, "error", PySocket_Error) != 0)
 		Py_FatalError("can't define socket.error");
+	PySocketSock_Type.ob_type = &PyType_Type;
+	Py_INCREF(&PySocketSock_Type);
+	if (PyDict_SetItemString(d, "socket_type",
+				 (PyObject *)&PySocketSock_Type) != 0)
+		Py_FatalError("can't define socket.socket_type");
 	insint(d, "AF_INET", AF_INET);
 #ifdef AF_UNIX
 	insint(d, "AF_UNIX", AF_UNIX);
