@@ -835,7 +835,7 @@ def tempfilepager(text, cmd):
     file.write(text)
     file.close()
     try:
-        os.system(cmd + ' ' + filename)
+        os.system(cmd + ' <' + filename)
     finally:
         os.unlink(filename)
 
