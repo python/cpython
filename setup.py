@@ -604,7 +604,8 @@ class PyBuildExt(build_ext):
             # available here. This Makefile variable is also what the install
             # procedure triggers on.
             frameworkdir = sysconfig.get_config_var('PYTHONFRAMEWORKDIR')
-            exts.append( Extension('gestalt', ['gestaltmodule.c']) )
+            exts.append( Extension('gestalt', ['gestaltmodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('MacOS', ['macosmodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('icglue', ['icgluemodule.c'],
@@ -613,8 +614,10 @@ class PyBuildExt(build_ext):
                                    ['macfsmodule.c',
                                     '../Python/getapplbycreator.c'],
                         extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_CF', ['cf/_CFmodule.c']) )
-            exts.append( Extension('_Res', ['res/_Resmodule.c']) )
+            exts.append( Extension('_CF', ['cf/_CFmodule.c'],
+                        extra_link_args=['-framework', 'CoreFoundation']) )
+            exts.append( Extension('_Res', ['res/_Resmodule.c'],
+                        extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('_Snd', ['snd/_Sndmodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
             if frameworkdir:
