@@ -27,37 +27,48 @@
 MODE=		optimize
 #MODE=		debug
 # === Assert() enabled ===
-#ASSERTIONS=no
-ASSERTIONS=yes
+ASSERTIONS=no
+#ASSERTIONS=yes
+# === Hard-wire installation location ===
+FIXED_PYHOME=no
+#FIXED_PYHOME=yes
 
 # === Optional modules ===
 # Do you have the InfoZip compression library installed?
-ZLIB=		no
+HAVE_ZLIB=	no
 # Do you have the Ultra Fast Crypt (UFC) library installed?
-UFC=		no
+HAVE_UFC=	no
 # Do you have the Tcl/Tk library installed?
-TCLTK=		no
+HAVE_TCLTK=	no
 # Do you have the GNU multiprecision library installed?
-GMPZ=		no
+HAVE_GMPZ=	no
 # Do you have the GNU readline library installed?
 # NOTE: I'm using a modified version of Kai Uwe Rommel's port that 
 #       - is compiled with multithreading enabled
 #       - is linked statically
-#       I have had no success trying to use a DLL version, even with
-#       the multithreading switch.
-GREADLINE=	no
+#       I have had no success trying to use a DLL version, even when
+#       compiled with multithreading enabled.
+HAVE_GREADLINE=	no
 # Do you have the BSD DB library (v1.85) as included in the EMXBSD package?
 # NOTE: this library needs to be recompiled with a structure member
 #       renamed to avoid problems with the multithreaded errno support
 #       (there is a structure member called errno, used for shadowing the
 #       real errno, which conflicts with the errno redefinition of -Zmt)
-BSDDB=		no
+HAVE_BSDDB=	no
 # Do you have the ncurses library installed? EMX's BSD curses aren't enough! 
-CURSES=		no
+HAVE_NCURSES=	no
 # Do you have the GDBM library installed?
-GDBM=		no
+HAVE_GDBM=	no
 # Do you have the BZ2 compression library installed?
-BZ2=		no
+HAVE_BZ2=	no
+
+# === install locations ===
+# default value of PYTHONHOME
+LIB_DIR=C:/Python23
+# default is to have everything in or under PYTHONHOME
+EXE_DIR=$(LIB_DIR)
+DLL_DIR=$(EXE_DIR)
+
 
 # === The Tools ===
 CC=		gcc
@@ -84,6 +95,9 @@ else
 endif
 ifeq ($(ASSERTIONS),no)
   CFLAGS+=	-DNDEBUG
+endif
+ifeq ($(FIXED_PYHOME),yes)
+  CFLAGS+=	-DPREFIX=$(DQUOTE)$(LIB_DIR)$(DQUOTE)
 endif
 
 # We're using the OMF format since EMX's ld has a obscure bug
@@ -250,7 +264,7 @@ SRC.MODULES=	$(addprefix $(TOP), \
 		Modules/gcmodule.c \
 		Modules/signalmodule.c \
 		Modules/posixmodule.c \
-		Modules/threadmodule.c)
+		Modules/threadmodule.c
 SRC.PARSE1=	$(addprefix $(TOP), \
 		Parser/acceler.c \
 		Parser/grammar1.c \
@@ -391,6 +405,7 @@ EASYEXTMODULES=	array \
 HARDEXTMODULES=	binascii \
 		cPickle \
 		cStringI \
+		_csv \
 		_hotshot \
 		imageop \
 		itertool \
@@ -410,33 +425,33 @@ HARDEXTMODULES=	binascii \
 		zipimpor
 
 # Python external ($(MODULE.EXT)) modules - can be EASY or HARD
-ifeq ($(ZLIB),yes)
+ifeq ($(HAVE_ZLIB),yes)
   HARDEXTMODULES+=	zlib
 endif
-ifeq ($(UFC),yes)
+ifeq ($(HAVE_UFC),yes)
   HARDEXTMODULES+=	crypt
 endif
-ifeq ($(TCLTK),yes)
+ifeq ($(HAVE_TCLTK),yes)
   HARDEXTMODULES+=	_tkinter
   CFLAGS+=		-DHAS_DIRENT -I/TclTk80/include
   TK_LIBS+=		-L/TclTk80/lib -ltcl80 -ltk80
 endif
-ifeq ($(GMPZ),yes)
+ifeq ($(HAVE_GMPZ),yes)
   HARDEXTMODULES+=	mpz
 endif
-ifeq ($(GREADLINE),yes)
+ifeq ($(HAVE_GREADLINE),yes)
   HARDEXTMODULES+=	readline
 endif
-ifeq ($(BSDDB),yes)
+ifeq ($(HAVE_BSDDB),yes)
   HARDEXTMODULES+=	bsddb185
 endif
-ifeq ($(CURSES),yes)
+ifeq ($(HAVE_NCURSES),yes)
   HARDEXTMODULES+=	_curses _curses_
 endif
-ifeq ($(GDBM),yes)
+ifeq ($(HAVE_GDBM),yes)
   HARDEXTMODULES+=	gdbm dbm
 endif
-ifeq ($(BZ2),yes)
+ifeq ($(HAVE_BZ2),yes)
   HARDEXTMODULES+=	bz2
 endif
 
@@ -525,6 +540,9 @@ cStringIO$(MODULE.EXT): $(OUT)cStringIO$O $(OUT)cStringIO_m.def $(PYTHON.IMPLIB)
 
 cStringI$(MODULE.EXT): cStringIO$(MODULE.EXT)
 	cp $^ $@
+
+_csv$(MODULE.EXT): $(OUT)_csv$O $(OUT)_csv_m.def $(PYTHON.IMPLIB)
+	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
 
 _hotshot$(MODULE.EXT): $(OUT)_hotshot$O $(OUT)_hotshot_m.def $(PYTHON.IMPLIB)
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
