@@ -1915,8 +1915,8 @@ withsubitem # {} # {}
 _RAW_ARG_DEFERRED_CMDS_
 
 
-$alltt_start = '<dl><dd><pre class="verbatim">';
-$alltt_end = '</pre></dl>';
+$alltt_start = '<div class="verbatim"><pre>';
+$alltt_end = '</pre></div>';
 
 sub do_env_alltt {
     local ($_) = @_;
@@ -2008,12 +2008,12 @@ sub do_cmd_verbatiminput{
     else {
         $text = '<b>Could not locate requested file <i>$fname</i>!</b>\n';
     }
-    return ('<dl><dd><pre class="verbatim">'
+    return ("<div class=\"verbatim\">\n<pre>"
             . $text
-            . "</pre>\n<div class=\"verbatiminput-footer\">\n"
+            . "</pre>\n<div class=\"footer\">\n"
             . "<a href=\"$srcname.txt\" type=\"text/plain\""
             . ">Download as text.</a>"
-            . "\n</div>\n</dd></dl>"
+            . "\n</div></div>"
             . $_);
 }
 
