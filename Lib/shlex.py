@@ -12,7 +12,7 @@ __all__ = ["shlex"]
 class shlex:
     "A lexical analyzer class for simple shell-like syntaxes."
     def __init__(self, instream=None, infile=None):
-        if instream:
+        if instream is not None:
             self.instream = instream
             self.infile = infile
         else:
@@ -47,7 +47,7 @@ class shlex:
         self.instream = newstream
         self.lineno = 1
         if self.debug:
-            if newfile:
+            if newfile is not None:
                 print 'shlex: pushing to file %s' % (self.infile,)
             else:
                 print 'shlex: pushing to stream %s' % (self.instream,)
@@ -188,9 +188,9 @@ class shlex:
 
     def error_leader(self, infile=None, lineno=None):
         "Emit a C-compiler-like, Emacs-friendly error-message leader."
-        if not infile:
+        if infile is None:
             infile = self.infile
-        if not lineno:
+        if lineno is None:
             lineno = self.lineno
         return "\"%s\", line %d: " % (infile, lineno)
 
