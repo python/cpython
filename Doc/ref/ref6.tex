@@ -338,11 +338,15 @@ hints.
 Deletion of a target list recursively deletes each target, from left
 to right.
 
-Deletion of a name removes the binding of that name (which must exist)
+Deletion of a name removes the binding of that name 
 from the local or global namespace, depending on whether the name
-occurs in a \keyword{global} statement in the same code block.
+occurs in a \keyword{global} statement in the same code block.  If the
+name is unbound, a \exception{NameError} exception will be raised.
 \stindex{global}
 \indexii{unbinding}{name}
+
+It is illegal to delete a name from the local namespace if it occurs
+as a free variable\indexii{free}{varaible} in a nested block.
 
 Deletion of attribute references, subscriptions and slicings
 is passed to the primary object involved; deletion of a slicing
