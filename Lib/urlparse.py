@@ -28,7 +28,7 @@ uses_fragment = ['ftp', 'hdl', 'http', 'gopher', 'news', 'nntp', 'wais',
 # Characters valid in scheme names
 scheme_chars = string.letters + string.digits + '+-.'
 
-MAX_CACHE_SIZE = 2000
+MAX_CACHE_SIZE = 20
 _parse_cache = {}
 
 def clear_cache():
