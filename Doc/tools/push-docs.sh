@@ -10,9 +10,13 @@ TARGET="$TARGETHOST:$TARGETDIR"
 
 ADDRESSES='python-dev@python.org doc-sig@python.org python-list@python.org'
 
-VERSION=`echo '$Revision$' | sed 's/[$]Revision: \(.*\) [$]/\1/'`
+TOOLDIR="`dirname $0`"
+VERSION=`$TOOLDIR/getversioninfo`
+
+# Set $EXTRA to something non-empty if this is a non-trunk version:
 EXTRA=`echo "$VERSION" | sed 's/^[0-9][0-9]*\.[0-9][0-9]*//'`
-if [ "$EXTRA" ] ; then
+
+if echo "$EXTRA" | grep -q '[.]' ; then
     DOCLABEL="maintenance"
     DOCTYPE="maint"
 else
@@ -73,8 +77,7 @@ cd ..
 
 # now in .../Doc/
 make --no-print-directory bziphtml || exit $?
-RELEASE=`grep '^RELEASE=' Makefile | sed 's|RELEASE=||'`
-PACKAGE="html-$RELEASE.tar.bz2"
+PACKAGE="html-$VERSION.tar.bz2"
 scp "$PACKAGE" tools/update-docs.sh $TARGET/ || exit $?
 ssh "$TARGETHOST" tmp/update-docs.sh $DOCTYPE $PACKAGE '&&' rm tmp/update-docs.sh || exit $?
 
