@@ -21,7 +21,9 @@ Extension modules
 -----------------
 
 - Bug #793826:  re-ordered the reference counting code in
-  itertools.izip() to prevent re-entrancy anomalies.
+  itertools.izip() to prevent re-entrancy anomalies.  Also,
+  if given zero arguments, it now returns an empty iterator
+  rather than raising a type error.
 
 - Bug #770485: cStringIO did not support the f.closed attribute.
 

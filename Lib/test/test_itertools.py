@@ -87,7 +87,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(izip('abcdef', range(3))), zip('abcdef', range(3)))
         self.assertEqual(take(3,izip('abcdef', count())), zip('abcdef', range(3)))
         self.assertEqual(list(izip('abcdef')), zip('abcdef'))
-        self.assertRaises(TypeError, izip)
+        self.assertEqual(list(izip()), zip())
         self.assertRaises(TypeError, izip, 3)
         self.assertRaises(TypeError, izip, range(3), 3)
         # Check tuple re-use (implementation detail)
@@ -199,6 +199,8 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(ValueError, dropwhile(errfunc, [(4,5)]).next)
 
     def test_StopIteration(self):
+        self.assertRaises(StopIteration, izip().next)
+
         for f in (chain, cycle, izip):
             self.assertRaises(StopIteration, f([]).next)
             self.assertRaises(StopIteration, f(StopNow()).next)
@@ -501,15 +503,19 @@ Samuele
 
 >>> def all(pred, seq):
 ...     "Returns True if pred(x) is True for every element in the iterable"
-...     return not nth(ifilterfalse(pred, seq), 0)
+...     return False not in imap(pred, seq)
 
 >>> def some(pred, seq):
 ...     "Returns True if pred(x) is True for at least one element in the iterable"
-...     return bool(nth(ifilter(pred, seq), 0))
+...     return True in imap(pred, seq)
 
 >>> def no(pred, seq):
 ...     "Returns True if pred(x) is False for every element in the iterable"
-...     return not nth(ifilter(pred, seq), 0)
+...     return True not in imap(pred, seq)
+
+>>> def quantify(pred, seq):
+...     "Count how many times the predicate is True in the sequence"
+...     return sum(imap(pred, seq))
 
 >>> def padnone(seq):
 ...     "Returns the sequence elements and then returns None indefinitely"
@@ -565,6 +571,9 @@ True
 
 >>> no(lambda x: x%2==0, [1, 2, 5, 9])
 False
+
+>>> quantify(lambda x: x%2==0, xrange(99))
+50
 
 >>> list(window('abc'))
 [('a', 'b'), ('b', 'c')]

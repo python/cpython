@@ -226,10 +226,13 @@ by functions or loops that truncate the stream.
   \begin{verbatim}
      def izip(*iterables):
          iterables = map(iter, iterables)
-         while True:
+         while iterables:
              result = [i.next() for i in iterables]
              yield tuple(result)
   \end{verbatim}
+
+  \versionchanged[When no iterables are specified, returns a zero length
+                  iterator instead of raising a TypeError exception]{2.3.1}
 \end{funcdesc}
 
 \begin{funcdesc}{repeat}{object\optional{, times}}
