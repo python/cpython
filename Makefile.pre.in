@@ -297,7 +297,10 @@ platform: $(PYTHON)
 
 # Build the shared modules
 sharedmods: $(PYTHON)
-	CC='$(CC)' LDSHARED='$(LDSHARED)' ./$(PYTHON) -E $(srcdir)/setup.py build
+	case $$MAKEFLAGS in \
+	*-s*) CC='$(CC)' LDSHARED='$(LDSHARED)' ./$(PYTHON) -E $(srcdir)/setup.py -q build;; \
+	*) CC='$(CC)' LDSHARED='$(LDSHARED)' ./$(PYTHON) -E $(srcdir)/setup.py build;; \
+	esac
 
 # buildno should really depend on something like LIBRARY_SRC
 buildno: $(PARSER_OBJS) \
