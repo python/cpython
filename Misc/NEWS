@@ -95,6 +95,15 @@ Core and builtins
       show signed values (e.g. hex(-1) currently returns "0xffffffff";
       in Python 2.4 it will return "-0x1").
 
+    - The bits manipulated under the cover by sys.setcheckinterval() have
+      been changed.  Both the check interval and the ticker used to be
+      per-thread values.  They are now just a pair of global variables.  In
+      addition, the default check interval was boosted from 10 to 100
+      bytecode instructions.  This may have some effect on systems relied on
+      the old default value.  In particular, in multi-threaded applications
+      which try to be highly responsive, response time will increase by some
+      (perhaps imperceptible) amount.
+
 - When multiplying very large integers, a version of the so-called
   Karatsuba algorithm is now used.  This is most effective if the
   inputs have roughly the same size.  If they both have about N digits,
