@@ -24,10 +24,10 @@
 /* First, the C functions that do the real work */
 
 /* constants */
-static Py_complex c_1 = {1., 0.};
+static Py_complex c_one = {1., 0.};
 static Py_complex c_half = {0.5, 0.};
 static Py_complex c_i = {0., 1.};
-static Py_complex c_i2 = {0., 0.5};
+static Py_complex c_halfi = {0., 0.5};
 
 /* forward declarations */
 staticforward Py_complex c_log(Py_complex);
@@ -39,7 +39,7 @@ static Py_complex
 c_acos(Py_complex x)
 {
 	return c_neg(c_prodi(c_log(c_sum(x,c_prod(c_i,
-		    c_sqrt(c_diff(c_1,c_prod(x,x))))))));
+		    c_sqrt(c_diff(c_one,c_prod(x,x))))))));
 }
 
 static char c_acos_doc[] =
@@ -53,8 +53,8 @@ c_acosh(Py_complex x)
 {
 	Py_complex z;
 	z = c_sqrt(c_half);
-	z = c_log(c_prod(z, c_sum(c_sqrt(c_sum(x,c_1)),
-				  c_sqrt(c_diff(x,c_1)))));
+	z = c_log(c_prod(z, c_sum(c_sqrt(c_sum(x,c_one)),
+				  c_sqrt(c_diff(x,c_one)))));
 	return c_sum(z, z);
 }
 
@@ -85,7 +85,7 @@ c_asinh(Py_complex x)
 {
 	/* Break up long expression for WATCOM */
 	Py_complex z;
-	z = c_sum(c_1,c_prod(x, x));
+	z = c_sum(c_one, c_prod(x, x));
 	return c_log(c_sum(c_sqrt(z), x));
 }
 
@@ -98,7 +98,7 @@ static char c_asinh_doc[] =
 static Py_complex
 c_atan(Py_complex x)
 {
-	return c_prod(c_i2,c_log(c_quot(c_sum(c_i,x),c_diff(c_i,x))));
+	return c_prod(c_halfi,c_log(c_quot(c_sum(c_i,x),c_diff(c_i,x))));
 }
 
 static char c_atan_doc[] =
@@ -110,7 +110,7 @@ static char c_atan_doc[] =
 static Py_complex
 c_atanh(Py_complex x)
 {
-	return c_prod(c_half,c_log(c_quot(c_sum(c_1,x),c_diff(c_1,x))));
+	return c_prod(c_half,c_log(c_quot(c_sum(c_one,x),c_diff(c_one,x))));
 }
 
 static char c_atanh_doc[] =
