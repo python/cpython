@@ -334,6 +334,9 @@ BUILD_FUNC_DEF_2(setipaddr, char*,name, struct sockaddr_in *,addr_ret)
 	char buf[1001];
 	int buf_len = (sizeof buf) - 1;
 	int errnop;
+#if defined(linux) && (__GLIBC__ >= 2)
+	int result;
+#endif
 #endif /* HAVE_GETHOSTBYNAME_R */
 
 	memset((void *) addr_ret, '\0', sizeof(*addr_ret));
@@ -355,7 +358,11 @@ BUILD_FUNC_DEF_2(setipaddr, char*,name, struct sockaddr_in *,addr_ret)
 	}
 	Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
+#if defined(linux) && (__GLIBC__ >= 2)
+	result = gethostbyname_r(name, &hp_allocated, buf, buf_len, &hp, &errnop);
+#else
 	hp = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
+#endif
 #else /* not HAVE_GETHOSTBYNAME_R */
 #if defined(WITH_THREAD) && !defined(MS_WINDOWS)
 	PyThread_acquire_lock(gethostbyname_lock,1);
@@ -1407,6 +1414,9 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyname_ex,PyObject *,self, PyObject *,args)
 	char buf[16384];
 	int buf_len = (sizeof buf) - 1;
 	int errnop;
+#if defined(linux) && (__GLIBC__ >= 2)
+	int result;
+#endif
 #endif /* HAVE_GETHOSTBYNAME_R */
 	if (!PyArg_Parse(args, "s", &name))
 		return NULL;
@@ -1414,7 +1424,11 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyname_ex,PyObject *,self, PyObject *,args)
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
+#if defined(linux) && (__GLIBC__ >= 2)
+	result = gethostbyname_r(name, &hp_allocated, buf, buf_len, &h, &errnop);
+#else
 	h = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
+#endif
 #else /* not HAVE_GETHOSTBYNAME_R */
 #if defined(WITH_THREAD) && !defined(MS_WINDOWS)
 	PyThread_acquire_lock(gethostbyname_lock,1);
@@ -1449,6 +1463,9 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyaddr,PyObject *,self, PyObject *, args)
 	char buf[16384];
 	int buf_len = (sizeof buf) - 1;
 	int errnop;
+#if defined(linux) && (__GLIBC__ >= 2)
+	int result;
+#endif
 #endif /* HAVE_GETHOSTBYNAME_R */
 
 	if (!PyArg_Parse(args, "s", &ip_num))
@@ -1457,10 +1474,17 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyaddr,PyObject *,self, PyObject *, args)
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
+#if defined(linux) && (__GLIBC__ >= 2)
+	result = gethostbyaddr_r((char *)&addr.sin_addr,
+		sizeof(addr.sin_addr),
+		AF_INET, &hp_allocated, buf, buf_len,
+		&h, &errnop);
+#else
 	h = gethostbyaddr_r((char *)&addr.sin_addr,
 			    sizeof(addr.sin_addr),
 			    AF_INET, 
 			    &hp_allocated, buf, buf_len, &errnop);
+#endif
 #else /* not HAVE_GETHOSTBYNAME_R */
 #if defined(WITH_THREAD) && !defined(MS_WINDOWS)
 	PyThread_acquire_lock(gethostbyname_lock,1);
