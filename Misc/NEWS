@@ -104,6 +104,13 @@ Extension modules
 
 Library
 
+- random.gauss() uses a piece of hidden state used by nothing else,
+  and the .seed() and .whseed() methods failed to reset it.  In other
+  words, setting the seed didn't completely determine the sequence of
+  results produced by random.gauss().  It does now.  Programs repeatedly
+  mixing calls to a seed method with calls to gauss() may see different
+  results now.
+
 - The pickle.Pickler class grew a clear_memo() method to mimic that
   provided by cPickle.Pickler.
 
