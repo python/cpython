@@ -142,6 +142,11 @@ try:
 except NameError:
     unicode = None # unicode support not available
 
+try:
+    _bool_is_builtin = False.__class__.__name__ == "bool"
+except NameError:
+    _bool_is_builtin = 0
+
 def _decode(data, encoding, is8bit=re.compile("[\x80-\xff]").search):
     # decode non-ascii string (if possible)
     if unicode and encoding and is8bit(data):
@@ -266,51 +271,56 @@ class Fault(Error):
 # @param value A boolean value.  Any true value is interpreted as True,
 #              all other values are interpreted as False.
 
-class Boolean:
-    """Boolean-value wrapper.
+if _bool_is_builtin:
+    boolean = Boolean = bool
+    # to avoid breaking code which references xmlrpclib.{True,False}
+    True, False = True, False
+else:
+    class Boolean:
+        """Boolean-value wrapper.
 
-    Use True or False to generate a "boolean" XML-RPC value.
-    """
+        Use True or False to generate a "boolean" XML-RPC value.
+        """
 
-    def __init__(self, value = 0):
-        self.value = operator.truth(value)
+        def __init__(self, value = 0):
+            self.value = operator.truth(value)
 
-    def encode(self, out):
-        out.write("<value><boolean>%d</boolean></value>\n" % self.value)
+        def encode(self, out):
+            out.write("<value><boolean>%d</boolean></value>\n" % self.value)
 
-    def __cmp__(self, other):
-        if isinstance(other, Boolean):
-            other = other.value
-        return cmp(self.value, other)
+        def __cmp__(self, other):
+            if isinstance(other, Boolean):
+                other = other.value
+            return cmp(self.value, other)
 
-    def __repr__(self):
-        if self.value:
-            return "<Boolean True at %x>" % id(self)
-        else:
-            return "<Boolean False at %x>" % id(self)
+        def __repr__(self):
+            if self.value:
+                return "<Boolean True at %x>" % id(self)
+            else:
+                return "<Boolean False at %x>" % id(self)
 
-    def __int__(self):
-        return self.value
+        def __int__(self):
+            return self.value
 
-    def __nonzero__(self):
-        return self.value
+        def __nonzero__(self):
+            return self.value
 
-True, False = Boolean(1), Boolean(0)
+    True, False = Boolean(1), Boolean(0)
 
-##
-# Map true or false value to XML-RPC boolean values.
-#
-# @def boolean(value)
-# @param value A boolean value.  Any true value is mapped to True,
-#              all other values are mapped to False.
-# @return xmlrpclib.True or xmlrpclib.False.
-# @see Boolean
-# @see True
-# @see False
+    ##
+    # Map true or false value to XML-RPC boolean values.
+    #
+    # @def boolean(value)
+    # @param value A boolean value.  Any true value is mapped to True,
+    #              all other values are mapped to False.
+    # @return xmlrpclib.True or xmlrpclib.False.
+    # @see Boolean
+    # @see True
+    # @see False
 
-def boolean(value, _truefalse=(False, True)):
-    """Convert any Python value to XML-RPC 'boolean'."""
-    return _truefalse[operator.truth(value)]
+    def boolean(value, _truefalse=(False, True)):
+        """Convert any Python value to XML-RPC 'boolean'."""
+        return _truefalse[operator.truth(value)]
 
 ##
 # Wrapper for XML-RPC DateTime values.  This converts a time value to
@@ -411,7 +421,9 @@ def _binary(data):
     value.decode(data)
     return value
 
-WRAPPERS = DateTime, Binary, Boolean
+WRAPPERS = (DateTime, Binary)
+if not _bool_is_builtin:
+    WRAPPERS = WRAPPERS + (Boolean,)
 
 # --------------------------------------------------------------------
 # XML parsers
@@ -598,6 +610,13 @@ class Marshaller:
         write(str(value))
         write("</int></value>\n")
     dispatch[IntType] = dump_int
+
+    if _bool_is_builtin:
+        def dump_bool(self, value, write):
+            write("<value><boolean>")
+            write(value and "1" or "0")
+            write("</boolean></value>\n")
+        dispatch[bool] = dump_bool
 
     def dump_long(self, value, write):
         if value > MAXINT or value < MININT:
