@@ -547,8 +547,8 @@ This function must be registered with the interpreter using the
 \constant{METH_VARARGS} flag; this is described in section
 \ref{methodTable}, ``The Module's Method Table and Initialization
 Function.''  The \cfunction{PyArg_ParseTuple()} function and its
-arguments are documented in section \ref{parseTuple}, ``Format Strings
-for \cfunction{PyArg_ParseTuple()}.''
+arguments are documented in section \ref{parseTuple}, ``Extracting
+Parameters in Extension Functions.''
 
 The macros \cfunction{Py_XINCREF()} and \cfunction{Py_XDECREF()}
 increment/decrement the reference count of an object and are safe in
@@ -651,7 +651,8 @@ must be a format string, whose syntax is explained below.  The
 remaining arguments must be addresses of variables whose type is
 determined by the format string.  For the conversion to succeed, the
 \var{arg} object must match the format and the format must be
-exhausted.
+exhausted.  On success, \cfunction{PyArg_ParseTuple()} returns true,
+otherwise it returns false and raises an appropriate exception.
 
 Note that while \cfunction{PyArg_ParseTuple()} checks that the Python
 arguments have the required types, it cannot check the validity of the
@@ -986,10 +987,12 @@ int PyArg_ParseTupleAndKeywords(PyObject *arg, PyObject *kwdict,
 
 The \var{arg} and \var{format} parameters are identical to those of the
 \cfunction{PyArg_ParseTuple()} function.  The \var{kwdict} parameter
-is the dictionary of keywords received as the third parameter from the 
+is the dictionary of keywords received as the third parameter from the
 Python runtime.  The \var{kwlist} parameter is a \NULL{}-terminated
 list of strings which identify the parameters; the names are matched
-with the type information from \var{format} from left to right.
+with the type information from \var{format} from left to right.  On
+success, \cfunction{PyArg_ParseTupleAndKeywords()} returns true,
+otherwise it returns false and raises an appropriate exception.
 
 \strong{Note:}  Nested tuples cannot be parsed when using keyword
 arguments!  Keyword parameters passed in which are not present in the
