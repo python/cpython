@@ -536,16 +536,7 @@ Python.\footnote{
 
 \section{Limitations \label{profile-limits}}
 
-There are two fundamental limitations on this profiler.  The first is
-that it relies on the Python interpreter to dispatch \dfn{call},
-\dfn{return}, and \dfn{exception} events.  Compiled \C{} code does not
-get interpreted, and hence is ``invisible'' to the profiler.  All time
-spent in \C{} code (including built-in functions) will be charged to the
-Python function that invoked the \C{} code.  If the \C{} code calls out
-to some native Python code, then those calls will be profiled
-properly.
-
-The second limitation has to do with accuracy of timing information.
+One limitation has to do with accuracy of timing information.
 There is a fundamental problem with deterministic profilers involving
 accuracy.  The most obvious restriction is that the underlying ``clock''
 is only ticking at a rate (typically) of about .001 seconds.  Hence no
