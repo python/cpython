@@ -515,6 +515,7 @@ if test $enable_shared = "yes"; then
 	  LDLIBRARY='libpython$(VERSION).so'
 	  BLDLIBRARY='-Wl,-R,$(LIBDIR) -L. -lpython$(VERSION)'
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}
+	  INSTSONAME="$LDLIBRARY".$SOVERSION
           ;;
     Linux*|GNU*|NetBSD*)
 	  LDLIBRARY='libpython$(VERSION).so'
