@@ -1,4 +1,4 @@
-#! /ufs/guido/bin/sgi/python
+#! /usr/local/bin/python
 
 # Mirror a remote ftp subtree into a local directory tree.
 # Basic usage: ftpmirror [options] host remotedir localdir
@@ -98,7 +98,11 @@ def mirrorsubdir(f, localdir):
 	pwd = f.pwd()
 	if localdir and not os.path.isdir(localdir):
 		if verbose: print 'Creating local directory', localdir
-		makedir(localdir)
+		try:
+		    makedir(localdir)
+		except os.error, msg:
+		    print "Failed to establish local directory", localdir
+		    return
 	infofilename = os.path.join(localdir, '.mirrorinfo')
 	try:
 		text = open(infofilename, 'r').read()
@@ -158,6 +162,7 @@ def mirrorsubdir(f, localdir):
 				print 'Already have this version of', filename
 			continue
 		fullname = os.path.join(localdir, filename)
+		tempname = os.path.join(localdir, '@'+filename)
 		if interactive:
 			doit = askabout('file', filename, pwd)
 			if not doit:
@@ -165,13 +170,13 @@ def mirrorsubdir(f, localdir):
 					info[filename] = 'Not retrieved'
 				continue
 		try:
-			os.unlink(fullname)
+			os.unlink(tempname)
 		except os.error:
 			pass
 		try:
-			fp = open(fullname, 'w')
+			fp = open(tempname, 'w')
 		except IOError, msg:
-			print "Can't create %s: %s" % (fullname, str(msg))
+			print "Can't create %s: %s" % (tempname, str(msg))
 			continue
 		if verbose:
 			print 'Retrieving %s from %s as %s...' % \
@@ -190,6 +195,13 @@ def mirrorsubdir(f, localdir):
 		fp.close()
 		if fp1 != fp:
 			fp1.close()
+		try:
+		    os.rename(tempname, fullname)
+		except os.error, msg:
+			print "Can't rename %s to %s: %s" % (tempname,
+							     fullname,
+							     str(msg))
+			continue
 		info[filename] = infostuff
 		writedict(info, infofilename)
 		if verbose:
@@ -205,8 +217,11 @@ def mirrorsubdir(f, localdir):
 			print
 	#
 	# Remove local files that are no longer in the remote directory
-	if not localdir: names = os.listdir(os.curdir)
-	else: names = os.listdir(localdir)
+	try:
+	    if not localdir: names = os.listdir(os.curdir)
+	    else: names = os.listdir(localdir)
+	except os.error:
+	    names = []
 	for name in names:
 		if name[0] == '.' or info.has_key(name) or name in subdirs:
 			continue
