@@ -131,7 +131,7 @@
   The given thread state must be the current thread state.  See the
   discussion of thread states below.  When the call returns, the
   current thread state is \NULL.  All thread states associated with
-  this interpreted are destroyed.  (The global interpreter lock must
+  this interpreter are destroyed.  (The global interpreter lock must
   be held before calling this function and is still held when it
   returns.)  \cfunction{Py_Finalize()}\ttindex{Py_Finalize()} will
   destroy all sub-interpreters that haven't been explicitly destroyed
