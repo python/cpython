@@ -20,7 +20,6 @@ IRIX, Solaris 2.x, as well as on systems that have a \POSIX{} thread
 
 It defines the following constant and functions:
 
-\setindexsubitem{(in module thread)}
 \begin{excdesc}{error}
 Raised on thread-specific errors.
 \end{excdesc}
@@ -34,12 +33,12 @@ then the thread exits (but other threads continue to run).
 \end{funcdesc}
 
 \begin{funcdesc}{exit}{}
-This is a shorthand for \code{thread.exit_thread()}.
+This is a shorthand for \function{exit_thread()}.
 \end{funcdesc}
 
 \begin{funcdesc}{exit_thread}{}
-Raise the \code{SystemExit} exception.  When not caught, this will
-cause the thread to exit silently.
+Raise the \exception{SystemExit} exception.  When not caught, this
+will cause the thread to exit silently.
 \end{funcdesc}
 
 %\begin{funcdesc}{exit_prog}{status}
@@ -62,10 +61,10 @@ data.  Thread identifiers may be recycled when a thread exits and
 another thread is created.
 \end{funcdesc}
 
+
 Lock objects have the following methods:
 
-\setindexsubitem{(lock method)}
-\begin{funcdesc}{acquire}{\optional{waitflag}}
+\begin{methoddesc}[lock]{acquire}{\optional{waitflag}}
 Without the optional argument, this method acquires the lock
 unconditionally, if necessary waiting until it is released by another
 thread (only one thread at a time can acquire a lock --- that's their
@@ -74,52 +73,55 @@ reason for existence), and returns \code{None}.  If the integer
 if it is zero, the lock is only acquired if it can be acquired
 immediately without waiting, while if it is nonzero, the lock is
 acquired unconditionally as before.  If an argument is present, the
-return value is 1 if the lock is acquired successfully, 0 if not.
-\end{funcdesc}
+return value is \code{1} if the lock is acquired successfully,
+\code{0} if not.
+\end{methoddesc}
 
-\begin{funcdesc}{release}{}
+\begin{methoddesc}[lock]{release}{}
 Releases the lock.  The lock must have been acquired earlier, but not
 necessarily by the same thread.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{locked}{}
-Return the status of the lock:\ 1 if it has been acquired by some
-thread, 0 if not.
-\end{funcdesc}
+\begin{methoddesc}[lock]{locked}{}
+Return the status of the lock:\ \code{1} if it has been acquired by
+some thread, \code{0} if not.
+\end{methoddesc}
 
 \strong{Caveats:}
 
 \begin{itemize}
 \item
 Threads interact strangely with interrupts: the
-\code{KeyboardInterrupt} exception will be received by an arbitrary
-thread.  (When the \code{signal}\refbimodindex{signal} module is
-available, interrupts always go to the main thread.)
+\exception{KeyboardInterrupt} exception will be received by an
+arbitrary thread.  (When the \module{signal}\refbimodindex{signal}
+module is available, interrupts always go to the main thread.)
 
 \item
-Calling \code{sys.exit()} or raising the \code{SystemExit} exception is
-equivalent to calling \code{thread.exit_thread()}.
+Calling \function{sys.exit()} or raising the \exception{SystemExit}
+exception is equivalent to calling \function{exit_thread()}.
 
 \item
 Not all built-in functions that may block waiting for I/O allow other
-threads to run.  (The most popular ones (\code{sleep()}, \code{read()},
-\code{select()}) work as expected.)
+threads to run.  (The most popular ones (\function{time.sleep()},
+\method{\var{file}.read()}, \function{select.select()}) work as
+expected.)
 
 \item
-It is not possible to interrupt the \code{acquire()} method on a lock
--- the \code{KeyboardInterrupt} exception will happen after the lock
-has been acquired.
+It is not possible to interrupt the \method{acquire()} method on a lock
+--- the \exception{KeyboardInterrupt} exception will happen after the
+lock has been acquired.
 
 \item
 When the main thread exits, it is system defined whether the other
 threads survive.  On SGI IRIX using the native thread implementation,
 they survive.  On most other systems, they are killed without
-executing ``try-finally'' clauses or executing object destructors.
+executing \keyword{try} ... \keyword{finally} clauses or executing
+object destructors.
 \indexii{threads}{IRIX}
 
 \item
-When the main thread exits, it doesn't do any of its usual cleanup
-(except that ``try-finally'' clauses are honored), and the standard
-I/O files are not flushed.
+When the main thread exits, it does not do any of its usual cleanup
+(except that \keyword{try} ... \keyword{finally} clauses are honored),
+and the standard I/O files are not flushed.
 
 \end{itemize}
