@@ -1,5 +1,5 @@
 #! /ufs/guido/bin/sgi/python
-#! /usr/local/python
+#! /usr/local/bin/python
 
 # A rather specialized script to make sure that a symbolic link named
 # RCS exists pointing to a real RCS directory in a parallel tree
