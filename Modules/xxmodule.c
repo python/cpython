@@ -9,7 +9,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 ******************************************************************/
 
 /* Use this file as a template to start implementing a module that
-   also declares objects types. All occurrences of 'Xxo' should be changed
+   also declares object types. All occurrences of 'Xxo' should be changed
    to something reasonable for your objects. After that, all other
    occurrences of 'xx' should be changed to something reasonable for your
    module. If your module is named foo your sourcefile should be named
@@ -66,7 +66,7 @@ Xxo_demo(XxoObject *self, PyObject *args)
 }
 
 static PyMethodDef Xxo_methods[] = {
-	{"demo",	(PyCFunction)Xxo_demo,	1},
+	{"demo",	(PyCFunction)Xxo_demo,	METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -191,10 +191,10 @@ xx_roj(PyObject *self, PyObject *args)
 /* List of functions defined in the module */
 
 static PyMethodDef xx_methods[] = {
-	{"roj",		xx_roj,		1},
-	{"foo",		xx_foo,		1},
-	{"new",		xx_new,		1},
-	{"bug",		xx_bug,		1},
+	{"roj",		xx_roj,		METH_VARARGS},
+	{"foo",		xx_foo,		METH_VARARGS},
+	{"new",		xx_new,		METH_VARARGS},
+	{"bug",		xx_bug,		METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 
