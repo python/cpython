@@ -129,12 +129,12 @@ Example:
 import os, sys
 from stat import *
 
-def walktree(dir, callback):
-    '''recursively descend the directory rooted at dir,
+def walktree(top, callback):
+    '''recursively descend the directory tree rooted at top,
        calling the callback function for each regular file'''
 
-    for f in os.listdir(dir):
-        pathname = '%s/%s' % (dir, f)
+    for f in os.listdir(top):
+        pathname = os.path.join(top, f)
         mode = os.stat(pathname)[ST_MODE]
         if S_ISDIR(mode):
             # It's a directory, recurse into it
