@@ -3,6 +3,7 @@ TROFF=		ditroff
 MS=		-ms
 FUNNYTAB=	$$HOME/lib/funnytab
 PREVIEW=	dpv -f $(FUNNYTAB)
+PSDIT=		psdit
 
 tut:		tut.dit
 		$(PREVIEW) tut.dit
@@ -23,9 +24,17 @@ all:		$(ALL)
 $(ALL):		macros.ms
 
 clean:
-		rm -f $(ALL)
+		rm -f *.dit *.ps core @* ,* 
 
-.SUFFIXES:	.ms .dit
+.SUFFIXES:	# Remove default suffixes
+
+.SUFFIXES:	.ms .dit .ps
 
 .ms.dit:
 		$(TBL) $*.ms | $(TROFF) $(MS) >$@
+
+.dit.ps:
+		$(PSDIT) <$*.dit >$@
+
+.ms.ps:
+		$(TBL) $*.ms | $(TROFF) $(MS) | $(PSDIT) >$@
