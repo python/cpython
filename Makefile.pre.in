@@ -530,7 +530,7 @@ memtest:	all platform
 		$(TESTPYTHON) $(TESTPROG) $(MEMTESTOPTS)
 
 # Install everything
-install:	altinstall bininstall maninstall
+install:	altinstall bininstall maninstall idleinstall
 
 # Install almost everything without disturbing previous versions
 altinstall:	altbininstall libinstall inclinstall libainstall \
@@ -825,6 +825,10 @@ frameworkinstallapps:
 frameworkinstallunixtools:
 	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installunixtools \
 		srcdir=$(srcdir) builddir=. dstroot=$(PYTHONFRAMEWORKPREFIX)/../..
+
+# This installs IDLE
+idleinstall:
+	SRCDIR=$(srcdir) ./$(BUILDPYTHON) $(srcdir)/Tools/idle/setup.py install --check-tkinter
 
 # Build the toplevel Makefile
 Makefile.pre: Makefile.pre.in config.status
