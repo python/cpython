@@ -22,6 +22,19 @@ if sys.platform=="win32":
 IMPORT_NAME = dis.opname.index('IMPORT_NAME')
 IMPORT_FROM = dis.opname.index('IMPORT_FROM')
 
+# Modulefinder does a good job at simulating Python's, but it can not
+# handle __path__ modifications packages make at runtime.  Therefore there
+# is a mechanism whereby you can register extra paths in this map for a
+# package, and it will be honoured.
+
+# Note this is a mapping is lists of paths.
+packagePathMap = {}
+
+# A Public interface
+def AddPackagePath(packagename, path):
+	paths = packagePathMap.get(packagename, [])
+	paths.append(path)
+	packagePathMap[packagename] = paths
 
 class Module:
 
@@ -288,6 +301,10 @@ class ModuleFinder:
         m = self.add_module(fqname)
         m.__file__ = pathname
         m.__path__ = [pathname]
+
+	# As per comment at top of file, simulate runtime __path__ additions.
+	m.__path__ = m.__path__ + packagePathMap.get(fqname, [])
+
         fp, buf, stuff = self.find_module("__init__", m.__path__)
         self.load_module(fqname, fp, buf, stuff)
         self.msgout(2, "load_package ->", m)
@@ -405,7 +422,3 @@ if __name__ == '__main__':
         test()
     except KeyboardInterrupt:
         print "\n[interrupt]"
-
-# Local Variables:
-# indent-tabs-mode: nil
-# End:
