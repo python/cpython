@@ -75,4 +75,10 @@
 #define POPT_DEBUGGING	4
 #define POPT_KEEPNORM	5
 #define POPT_KEEPERR	6
+
+/* From macgetpath.c: */
+void PyMac_PreferenceOptions Py_PROTO((int *inspect, int *verbose, int *suppress_print, 
+						 int *unbuffered, int *debugging, int *keep_normal,
+						 int *keep_error));
+
  

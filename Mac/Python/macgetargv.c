@@ -295,31 +295,12 @@ event_loop()
 	}
 }
 
-/* Initialize the Mac toolbox world */
-
-static void
-init_mac_world()
-{
-#ifdef THINK_C
-	printf("\n");
-#else
-	MaxApplZone();
-	InitGraf(&qd.thePort);
-	InitFonts();
-	InitWindows();
-	TEInit();
-	InitDialogs((long)0);
-	InitMenus();
-	InitCursor();
-#endif
-}
 /* Get the argv vector, return argc */
 
 int
 PyMac_GetArgv(pargv)
 	char ***pargv;
 {
-	init_mac_world();
 	
 	arg_count = 0;
 	arg_vector[arg_count++] = strdup(get_application_name());

@@ -43,9 +43,9 @@ getpythonpath()
 	char *curwd;
 	char *p, *endp;
 	int newlen;
-	extern char *PyMac_GetPythonDir();
+	staticforward char *PyMac_GetPythonDir();
 #ifndef USE_BUILTIN_PATH
-	extern char *PyMac_GetPythonPath();
+	staticforward char *PyMac_GetPythonPath();
 #endif
 	
 	if ( pythonpath ) return pythonpath;
@@ -89,7 +89,7 @@ getpythonpath()
 /*
 ** Open/create the Python Preferences file, return the handle
 */
-short
+static short
 PyMac_OpenPrefFile()
 {
     AliasHandle handle;
@@ -142,7 +142,7 @@ PyMac_OpenPrefFile()
 /*
 ** Return the name of the Python directory
 */
-char *
+static char *
 PyMac_GetPythonDir()
 {
     static char name[256];
@@ -187,7 +187,7 @@ PyMac_GetPythonDir()
 }
 
 #ifndef USE_BUILTIN_PATH
-char *
+static char *
 PyMac_GetPythonPath(dir)
 char *dir;
 {
