@@ -34,6 +34,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <LowMem.h>
 
 #include "nfullpath.h"
+#include "getapplbycreator.h"
 
 #ifdef THINK_C
 #define FileFilterUPP FileFilterProcPtr
@@ -895,6 +896,25 @@ mfs_FindFolder(self, args)
 }
 
 static object *
+mfs_FindApplication(self, args)
+	object *self;	/* Not used */
+	object *args;
+{
+	OSErr err;
+	OSType which;
+	FSSpec	fss;
+		
+	if (!newgetargs(args, "O&", PyMac_GetOSType, &which) )
+		return NULL;
+	err = FindApplicationFromCreator(which, &fss);
+	if ( err ) {
+		PyErr_Mac(ErrorObject, err);
+		return NULL;
+	}
+	return (object *)newmfssobject(&fss);
+}
+
+static object *
 mfs_FInfo(self, args)
 	object *self;
 	object *args;
@@ -915,6 +935,7 @@ static struct methodlist mfs_methods[] = {
 	{"RawFSSpec",			mfs_RawFSSpec,			1},
 	{"RawAlias",			mfs_RawAlias,			1},
 	{"FindFolder",			mfs_FindFolder,			1},
+	{"FindApplication",		mfs_FindApplication,	1},
 	{"FInfo",				mfs_FInfo,				1},
  
 	{NULL,		NULL}		/* sentinel */
