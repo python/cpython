@@ -38,7 +38,7 @@ list2set(list, set, fd2obj)
     fd_set *set;
     object *fd2obj[FD_SETSIZE];
 {
-    int i, len, v, max=-1;
+    int i, len, v, max = -1;
     object *o, *filenomethod, *fno;
     
     FD_ZERO(set);
