@@ -39,14 +39,17 @@ cygwin in no-cygwin mode).
 #     By specifying -static we force ld to link against the import libraries, 
 #     this is windows standard and there are normally not the necessary symbols 
 #     in the dlls.
+#   *** only the version of June 2000 shows these problems 
 
 # created 2000/05/05, Rene Liebscher
 
 __revision__ = "$Id$"
 
 import os,sys,copy
+from distutils.ccompiler import gen_preprocess_options, gen_lib_options
 from distutils.unixccompiler import UnixCCompiler
 from distutils.file_util import write_file
+from distutils.errors import DistutilsExecError, CompileError, UnknownFileError
 
 class CygwinCCompiler (UnixCCompiler):
 
@@ -87,9 +90,9 @@ class CygwinCCompiler (UnixCCompiler):
         # same as the rest of binutils ( also ld )
         # dllwrap 2.10.90 is buggy
         if self.ld_version >= "2.10.90": 
-            self.linker = "gcc"
+            self.linker_dll = "gcc"
         else:
-            self.linker = "dllwrap"
+            self.linker_dll = "dllwrap"
 
         # Hard-code GCC because that's what this is all about.
         # XXX optimization, warnings etc. should be customizable.
@@ -97,7 +100,7 @@ class CygwinCCompiler (UnixCCompiler):
                              compiler_so='gcc -mcygwin -mdll -O -Wall',
                              linker_exe='gcc -mcygwin',
                              linker_so=('%s -mcygwin -mdll -static' %
-                                        self.linker))
+                                        self.linker_dll))
 
         # cygwin and mingw32 need different sets of libraries 
         if self.gcc_version == "2.91.57":
@@ -111,58 +114,108 @@ class CygwinCCompiler (UnixCCompiler):
         
     # __init__ ()
 
-    def link_shared_object (self,
-                            objects,
-                            output_filename,
-                            output_dir=None,
-                            libraries=None,
-                            library_dirs=None,
-                            runtime_library_dirs=None,
-                            export_symbols=None,
-                            debug=0,
-                            extra_preargs=None,
-                            extra_postargs=None,
-                            build_temp=None):
+    # not much different of the compile method in UnixCCompiler,
+    # but we have to insert some lines in the middle of it, so
+    # we put here a adapted version of it.
+    # (If we would call compile() in the base class, it would do some 
+    # initializations a second time, this is why all is done here.)
+    def compile (self,
+                 sources,
+                 output_dir=None,
+                 macros=None,
+                 include_dirs=None,
+                 debug=0,
+                 extra_preargs=None,
+                 extra_postargs=None):
+
+        (output_dir, macros, include_dirs) = \
+            self._fix_compile_args (output_dir, macros, include_dirs)
+        (objects, skip_sources) = self._prep_compile (sources, output_dir)
+
+        # Figure out the options for the compiler command line.
+        pp_opts = gen_preprocess_options (macros, include_dirs)
+        cc_args = pp_opts + ['-c']
+        if debug:
+            cc_args[:0] = ['-g']
+        if extra_preargs:
+            cc_args[:0] = extra_preargs
+        if extra_postargs is None:
+            extra_postargs = []
+
+        # Compile all source files that weren't eliminated by
+        # '_prep_compile()'.        
+        for i in range (len (sources)):
+            src = sources[i] ; obj = objects[i]
+            ext = (os.path.splitext (src))[1]
+            if skip_sources[src]:
+                self.announce ("skipping %s (%s up-to-date)" % (src, obj))
+            else:
+                self.mkpath (os.path.dirname (obj))
+                if ext == '.rc' or ext == '.res':
+                    # gcc needs '.res' and '.rc' compiled to object files !!!
+                    try:
+                        self.spawn (["windres","-i",src,"-o",obj])
+                    except DistutilsExecError, msg:
+                        raise CompileError, msg
+                else: # for other files use the C-compiler 
+                    try:
+                        self.spawn (self.compiler_so + cc_args +
+                                [src, '-o', obj] +
+                                extra_postargs)
+                    except DistutilsExecError, msg:
+                        raise CompileError, msg
+
+        # Return *all* object filenames, not just the ones we just built.
+        return objects
+
+    # compile ()
+
+
+    def link (self,
+              target_desc,
+              objects,
+              output_filename,
+              output_dir=None,
+              libraries=None,
+              library_dirs=None,
+              runtime_library_dirs=None,
+              export_symbols=None,
+              debug=0,
+              extra_preargs=None,
+              extra_postargs=None,
+              build_temp=None):
         
         # use separate copies, so we can modify the lists
         extra_preargs = copy.copy(extra_preargs or [])
         libraries = copy.copy(libraries or [])
-        
+        objects = copy.copy(objects or [])
+                
         # Additional libraries
         libraries.extend(self.dll_libraries)
-        
-        # we want to put some files in the same directory as the 
-        # object files are, build_temp doesn't help much
 
-        # where are the object files
-        temp_dir = os.path.dirname(objects[0])
-
-        # name of dll to give the helper files (def, lib, exp) the same name
-        (dll_name, dll_extension) = os.path.splitext(
-            os.path.basename(output_filename))
-
-        # generate the filenames for these files
-        def_file = None # this will be done later, if necessary
-        exp_file = os.path.join(temp_dir, dll_name + ".exp")
-        lib_file = os.path.join(temp_dir, 'lib' + dll_name + ".a")
-
-        #extra_preargs.append("--verbose")
-        if self.linker == "dllwrap":
-            extra_preargs.extend([#"--output-exp",exp_file,
-                                  "--output-lib",lib_file,
-                                 ])
-        else:
-            # doesn't work: bfd_close build\...\libfoo.a: Invalid operation
-            extra_preargs.extend([#"-Wl,--out-implib,%s" % lib_file,
-                                 ])
-       
-        #  check what we got in export_symbols
-        if export_symbols is not None:
-            # Make .def file
-            # (It would probably better to check if we really need this, 
+        # handle export symbols by creating a def-file
+        # with executables this only works with gcc/ld as linker
+        if ((export_symbols is not None) and
+            (target_desc != self.EXECUTABLE or self.linker_dll == "gcc")):
+            # (The linker doesn't do anything if output is up-to-date.
+            # So it would probably better to check if we really need this,
             # but for this we had to insert some unchanged parts of 
             # UnixCCompiler, and this is not what we want.) 
+
+            # we want to put some files in the same directory as the 
+            # object files are, build_temp doesn't help much
+            # where are the object files
+            temp_dir = os.path.dirname(objects[0])
+            # name of dll to give the helper files the same base name
+            (dll_name, dll_extension) = os.path.splitext(
+                os.path.basename(output_filename))
+
+            # generate the filenames for these files
             def_file = os.path.join(temp_dir, dll_name + ".def")
+            exp_file = os.path.join(temp_dir, dll_name + ".exp")
+            lib_file = os.path.join(temp_dir, 'lib' + dll_name + ".a")
+       
+            # Generate .def file
             contents = [
                 "LIBRARY %s" % os.path.basename(output_filename),
                 "EXPORTS"]
@@ -171,35 +224,78 @@ class CygwinCCompiler (UnixCCompiler):
             self.execute(write_file, (def_file, contents),
                          "writing %s" % def_file)
 
-        if def_file:
-            if self.linker == "dllwrap":
+            # next add options for def-file and to creating import libraries
+
+            # dllwrap uses different options than gcc/ld
+            if self.linker_dll == "dllwrap":
+                extra_preargs.extend([#"--output-exp",exp_file,
+                                       "--output-lib",lib_file,
+                                     ])
                 # for dllwrap we have to use a special option
-                extra_preargs.append("--def")
-            # for gcc/ld it is specified as any other object file    
-            extra_preargs.append(def_file)
+                extra_preargs.extend(["--def", def_file])
+            # we use gcc/ld here and can be sure ld is >= 2.9.10
+            else:
+                # doesn't work: bfd_close build\...\libfoo.a: Invalid operation
+                #extra_preargs.extend(["-Wl,--out-implib,%s" % lib_file])
+                # for gcc/ld the def-file is specified as any other object files    
+                objects.append(def_file)
+
+        #end: if ((export_symbols is not None) and
+        #        (target_desc <> self.EXECUTABLE or self.linker_dll == "gcc")):
                                                  
         # who wants symbols and a many times larger output file
         # should explicitly switch the debug mode on 
         # otherwise we let dllwrap/ld strip the output file
-        # (On my machine unstripped_file = stripped_file + 254KB
-        #   10KB < stripped_file < ??100KB ) 
+        # (On my machine: 10KB < stripped_file < ??100KB 
+        #   unstripped_file = stripped_file + XXX KB
+        #  ( XXX=254 for a typical python extension)) 
         if not debug: 
             extra_preargs.append("-s") 
         
-        UnixCCompiler.link_shared_object(self,
-                            objects,
-                            output_filename,
-                            output_dir,
-                            libraries,
-                            library_dirs,
-                            runtime_library_dirs,
-                            None, # export_symbols, we do this in our def-file
-                            debug,
-                            extra_preargs,
-                            extra_postargs,
-                            build_temp)
+        UnixCCompiler.link(self,
+                           target_desc,
+                           objects,
+                           output_filename,
+                           output_dir,
+                           libraries,
+                           library_dirs,
+                           runtime_library_dirs,
+                           None, # export_symbols, we do this in our def-file
+                           debug,
+                           extra_preargs,
+                           extra_postargs,
+                           build_temp)
         
-    # link_shared_object ()
+    # link ()
+
+    # -- Miscellaneous methods -----------------------------------------
+
+    # overwrite the one from CCompiler to support rc and res-files
+    def object_filenames (self,
+                          source_filenames,
+                          strip_dir=0,
+                          output_dir=''):
+        if output_dir is None: output_dir = ''
+        obj_names = []
+        for src_name in source_filenames:
+            # use normcase to make sure '.rc' is really '.rc' and not '.RC'
+            (base, ext) = os.path.splitext (os.path.normcase(src_name))
+            if ext not in (self.src_extensions + ['.rc','.res']):
+                raise UnknownFileError, \
+                      "unknown file type '%s' (from '%s')" % \
+                      (ext, src_name)
+            if strip_dir:
+                base = os.path.basename (base)
+            if ext == '.res' or ext == '.rc':
+                # these need to be compiled to object files
+                obj_names.append (os.path.join (output_dir, 
+                                            base + ext + self.obj_extension))
+            else:
+                obj_names.append (os.path.join (output_dir,
+                                            base + self.obj_extension))
+        return obj_names
+
+    # object_filenames ()
 
 # class CygwinCCompiler
 
@@ -227,7 +323,7 @@ class Mingw32CCompiler (CygwinCCompiler):
                              compiler_so='gcc -mno-cygwin -mdll -O -Wall',
                              linker_exe='gcc -mno-cygwin',
                              linker_so='%s -mno-cygwin -mdll -static %s' 
-                                        % (self.linker, entry_point))
+                                        % (self.linker_dll, entry_point))
         # Maybe we should also append -mthreads, but then the finished
         # dlls need another dll (mingwm10.dll see Mingw32 docs)
         # (-mthreads: Support thread-safe exception handling on `Mingw32')       

@@ -561,24 +561,32 @@ class CCompiler:
         pass
     
 
-    def link_shared_lib (self,
-                         objects,
-                         output_libname,
-                         output_dir=None,
-                         libraries=None,
-                         library_dirs=None,
-                         runtime_library_dirs=None,
-                         export_symbols=None,
-                         debug=0,
-                         extra_preargs=None,
-                         extra_postargs=None,
-                         build_temp=None):
-        """Link a bunch of stuff together to create a shared library file.
-        Similar semantics to 'create_static_lib()', with the addition of
-        other libraries to link against and directories to search for them.
-        Also, of course, the type and name of the generated file will
-        almost certainly be different, as will the program used to create
-        it.
+    # values for target_desc parameter in link()
+    SHARED_OBJECT = "shared_object"
+    SHARED_LIBRARY = "shared_library"
+    EXECUTABLE = "executable"
+
+    def link (self,
+              target_desc,
+              objects,
+              output_filename,
+              output_dir=None,
+              libraries=None,
+              library_dirs=None,
+              runtime_library_dirs=None,
+              export_symbols=None,
+              debug=0,
+              extra_preargs=None,
+              extra_postargs=None,
+              build_temp=None):
+        """Link a bunch of stuff together to create an executable or
+        shared library file.
+
+        The "bunch of stuff" consists of the list of object files supplied
+        as 'objects'.  'output_filename' should be a filename.  If
+        'output_dir' is supplied, 'output_filename' is relative to it
+        (i.e. 'output_filename' can provide directory components if
+        needed).
 
         'libraries' is a list of libraries to link against.  These are
         library names, not filenames, since they're translated into
@@ -610,7 +618,31 @@ class CCompiler:
 
         Raises LinkError on failure.
         """
-        pass
+        raise NotImplementedError
+
+    
+    # old methods, rewritten to use the new link() method.
+
+    def link_shared_lib (self,
+                         objects,
+                         output_libname,
+                         output_dir=None,
+                         libraries=None,
+                         library_dirs=None,
+                         runtime_library_dirs=None,
+                         export_symbols=None,
+                         debug=0,
+                         extra_preargs=None,
+                         extra_postargs=None,
+                         build_temp=None):
+        self.warn("link_shared_lib(..) is deprecated, please "
+                  "use link(CCompiler.SHARED_LIBRARY, ...) instead")
+        self.link(CCompiler.SHARED_LIBRARY, objects, 
+                  self.library_filename(output_libname, lib_type='shared'),
+                  output_dir,
+                  libraries, library_dirs, runtime_library_dirs,
+                  export_symbols, debug,
+                  extra_preargs, extra_postargs, build_temp)
     
 
     def link_shared_object (self,
@@ -625,16 +657,13 @@ class CCompiler:
                             extra_preargs=None,
                             extra_postargs=None,
                             build_temp=None):
-        """Link a bunch of stuff together to create a shared object file.
-        Much like 'link_shared_lib()', except the output filename is
-        explicitly supplied as 'output_filename'.  If 'output_dir' is
-        supplied, 'output_filename' is relative to it
-        (i.e. 'output_filename' can provide directory components if
-        needed).
-
-        Raises LinkError on failure.
-        """
-        pass
+        self.warn("link_shared_object(...) is deprecated, please "
+                  "use link(CCompiler.SHARED_OBJECT,...) instead.")
+        self.link(CCompiler.SHARED_OBJECT, objects,
+                  output_filename, output_dir,
+                  libraries, library_dirs, runtime_library_dirs,
+                  export_symbols, debug,
+                  extra_preargs, extra_postargs, build_temp)
 
 
     def link_executable (self,
@@ -647,16 +676,12 @@ class CCompiler:
                          debug=0,
                          extra_preargs=None,
                          extra_postargs=None):
-        """Link a bunch of stuff together to create a binary executable
-        file.  The "bunch of stuff" is as for 'link_shared_lib()'.
-        'output_progname' should be the base name of the executable
-        program--e.g. on Unix the same as the output filename, but on
-        DOS/Windows ".exe" will be appended.
-
-        Raises LinkError on failure.
-        """
-        pass
-
+        self.warn("link_executable(...) is deprecated, please "
+                  "use link(CCompiler.EXECUTABLE,...) instead.")
+        self.link (CCompiler.EXECUTABLE, objects, 
+                   self.executable_filename(output_progname), output_dir,
+                   libraries, library_dirs, runtime_library_dirs, None, 
+                   debug, extra_preargs, extra_postargs, None)
 
 
     # -- Miscellaneous methods -----------------------------------------
@@ -756,6 +781,14 @@ class CCompiler:
             basename = os.path.basename (basename)
         return os.path.join (output_dir, basename + self.shared_lib_extension)
 
+    def executable_filename (self,
+                                basename,
+                                strip_dir=0,
+                                output_dir=''):
+        if output_dir is None: output_dir = ''
+        if strip_dir:
+            basename = os.path.basename (basename)
+        return os.path.join(output_dir, basename + (self.exe_extension or ''))
 
     def library_filename (self,
                           libname,
