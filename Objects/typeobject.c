@@ -3723,7 +3723,8 @@ static slotdef slotdefs[] = {
 	       wrap_intargfunc),
 
 	MPSLOT("__len__", mp_length, slot_mp_length, wrap_inquiry),
-	MPSLOT("__getitem__", mp_subscript, slot_mp_subscript, wrap_sq_item),
+	MPSLOT("__getitem__", mp_subscript, slot_mp_subscript,
+	       wrap_binaryfunc),
 	MPSLOT("__setitem__", mp_ass_subscript, slot_mp_ass_subscript,
 	       wrap_objobjargproc),
 	MPSLOT("__delitem__", mp_ass_subscript, slot_mp_ass_subscript,
