@@ -8,6 +8,7 @@ distributions)."""
 __revision__ = "$Id$"
 
 import os, string
+import glob
 from types import *
 from distutils.core import Command, DEBUG
 from distutils.util import get_platform
@@ -24,6 +25,9 @@ class bdist_rpm (Command):
         ('rpm-base=', None,
          "base directory for creating RPMs (defaults to \"rpm\" under "
          "--bdist-base; must be specified for RPM 2)"),
+        ('dist-dir=', 'd',
+         "directory to put final RPM files in "
+         "(and .spec files if --spec-only)"),
         ('spec-only', None,
          "only regenerate spec file"),
         ('source-only', None,
@@ -109,6 +113,7 @@ class bdist_rpm (Command):
     def initialize_options (self):
         self.bdist_base = None
         self.rpm_base = None
+        self.dist_dir = None
         self.spec_only = None
         self.binary_only = None
         self.source_only = None
@@ -166,6 +171,7 @@ class bdist_rpm (Command):
         if not self.distribution.has_ext_modules():
             self.use_rpm_opt_flags = 0
 
+        self.set_undefined_options('bdist', ('dist_dir', 'dist_dir'))
         self.finalize_package_data()
 
     # finalize_options()
@@ -226,8 +232,8 @@ class bdist_rpm (Command):
 
         # make directories
         if self.spec_only:
-            spec_dir = "dist"
-            self.mkpath(spec_dir)       # XXX should be configurable
+            spec_dir = self.dist_dir
+            self.mkpath(spec_dir)
         else:
             rpm_dir = {}
             for d in ('SOURCES', 'SPECS', 'BUILD', 'RPMS', 'SRPMS'):
@@ -235,8 +241,8 @@ class bdist_rpm (Command):
                 self.mkpath(rpm_dir[d])
             spec_dir = rpm_dir['SPECS']
 
-        # Spec file goes into 'dist' directory if '--spec-only specified',
-        # into build/rpm.<plat> otherwise.
+        # Spec file goes into 'dist_dir' if '--spec-only specified',
+        # build/rpm.<plat> otherwise.
         spec_path = os.path.join(spec_dir,
                                  "%s.spec" % self.distribution.get_name())
         self.execute(write_file,
@@ -284,6 +290,19 @@ class bdist_rpm (Command):
             rpm_args.append('--clean')
         rpm_args.append(spec_path)
         self.spawn(rpm_args)
+
+        # XXX this is a nasty hack -- we really should have a proper way to
+        # find out the names of the RPM files created; also, this assumes
+        # that RPM creates exactly one source and one binary RPM.
+        if not self.dry_run:
+            srpms = glob.glob(os.path.join(rpm_dir['SRPMS'], "*.rpm"))
+            rpms = glob.glob(os.path.join(rpm_dir['RPMS'], "*/*.rpm"))
+            assert len(srpms) == 1, \
+                   "unexpected number of SRPM files found: %s" % srpms
+            assert len(rpms) == 1, \
+                   "unexpected number of RPM files found: %s" % rpms
+            self.move_file(srpms[0], self.dist_dir)
+            self.move_file(rpms[0], self.dist_dir)
 
     # run()
 
