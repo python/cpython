@@ -24,12 +24,35 @@ sub next_argument{
 
 sub next_optional_argument{
     my($param,$rx) = ('', "^\\s*(\\[([^]]*)\\])?");
-    s/$rx/$param=$1;''/eo;
+    s/$rx/$param=$2;''/eo;
     $param;
 }
 
 sub swallow_newline{
     s/[\n]?//o;
+}
+
+sub ArabictoRoman {
+    # Written by Robert Donohue <donahue@cfassp48.harvard.edu>,
+    # fixed by Fred Drake <fdrake@acm.org>,
+    # kept around in case it becomes useful.
+    my $a = @_;
+    my($b,@c,$i);
+    my(@D0,@D1,@D2);
+
+    @D0 = ("", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX");
+    @D1 = ("", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC");
+    @D2 = ("", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM");
+
+    $b = $a;
+    $i = 0;
+    while($b > 0) {
+	$c[$i] = ($b % 10);
+	$b -= ($b % 10);
+	$b /= 10;
+	$i++;
+    }
+    $D2[$c[2]] . $D1[$c[1]] . $D0[$c[0]];
 }
 
 # words typeset in a special way (not in HTML though)
@@ -600,6 +623,21 @@ sub do_env_memberdesc{
 }
 
 
+sub do_cmd_memberline{
+    local($_) = @_;
+    my $class = next_optional_argument();
+    my($member,$br_id) = next_argument_id();
+    $class = $THIS_CLASS
+        unless $class;
+    my $extra = '';
+    $extra = " ($class_name attribute)"
+        if (!($class eq ''));
+    my $idx = make_str_index_entry($br_id, "<tt>$member</tt>$extra");
+    $idx =~ s/ \(.*\)//;
+    $idx =~ s/\(\)//;
+    "<dt><b>$idx</b><dd>" . $_;
+}
+
 sub do_env_memberdescni{
     local($_) = @_;
     next_optional_argument();
@@ -607,6 +645,13 @@ sub do_env_memberdescni{
     "<dl><dt><b>$member</b>\n<dd>" . $_ . '</dl>';
 }
 
+
+sub do_cmd_memberlineni{
+    local($_) = @_;
+    next_optional_argument();
+    my $member = next_argument();
+    "<dt><b>$member</b><dd>" . $_;
+}
 
 @col_aligns = ("<td>", "<td>", "<td>");
 
