@@ -377,7 +377,6 @@ def is_private(prefix, base):
     Return true iff base begins with an (at least one) underscore, but
     does not both begin and end with (at least) two underscores.
 
-    >>> import warnings
     >>> warnings.filterwarnings("ignore", "is_private", DeprecationWarning,
     ...                         "doctest", 0)
     >>> is_private("a.b", "my_func")
@@ -397,7 +396,7 @@ def is_private(prefix, base):
     """
     warnings.warn("is_private is deprecated; it wasn't useful; "
                   "examine DocTestFinder.find() lists instead",
-                  DeprecationWarning)
+                  DeprecationWarning, stacklevel=2)
     return base[:1] == "_" and not base[:2] == "__" == base[-2:]
 
 def _extract_future_flags(globs):
@@ -1866,6 +1865,10 @@ def run_docstring_examples(f, globs, verbose=False, name="NoName",
 class Tester:
     def __init__(self, mod=None, globs=None, verbose=None,
                  isprivate=None, optionflags=0):
+
+        warnings.warn("class Tester is deprecated; "
+                      "use class doctest.DocTestRunner instead",
+                      DeprecationWarning, stacklevel=2)
         if mod is None and globs is None:
             raise TypeError("Tester.__init__: must specify mod or globs")
         if mod is not None and not _ismodule(mod):
@@ -2403,6 +2406,8 @@ __test__ = {"_TestClass": _TestClass,
 #            }
 
 def test1(): r"""
+>>> warnings.filterwarnings("ignore", "class Tester", DeprecationWarning,
+...                         "doctest", 0)
 >>> from doctest import Tester
 >>> t = Tester(globs={'x': 42}, verbose=0)
 >>> t.runstring(r'''
@@ -2437,6 +2442,8 @@ Got: 84
 """
 
 def test2(): r"""
+        >>> warnings.filterwarnings("ignore", "class Tester",
+        ...                         DeprecationWarning, "doctest", 0)
         >>> t = Tester(globs={}, verbose=1)
         >>> test = r'''
         ...    # just an example
@@ -2456,6 +2463,8 @@ def test2(): r"""
         (0, 2)
 """
 def test3(): r"""
+        >>> warnings.filterwarnings("ignore", "class Tester",
+        ...                         DeprecationWarning, "doctest", 0)
         >>> t = Tester(globs={}, verbose=0)
         >>> def _f():
         ...     '''Trivial docstring example.
@@ -2490,6 +2499,8 @@ def test4(): """
 
         Tests that objects outside m1 are excluded:
 
+        >>> warnings.filterwarnings("ignore", "class Tester",
+        ...                         DeprecationWarning, "doctest", 0)
         >>> t = Tester(globs={}, verbose=0)
         >>> t.rundict(m1.__dict__, "rundict_test", m1)  # f2 and g2 and h2 skipped
         (0, 4)

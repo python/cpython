@@ -12,17 +12,32 @@ What's New in Python 2.4 alpha 3?
 Core and builtins
 -----------------
 
-Subclasses of string can no longer be interned.  The semantics of
-interning were not clear here -- a subclass could be mutable, for
-example -- and had bugs.  Explicitly interning a subclass of string
-via intern() will raise a TypeError.  Internal operations that attempt
-to intern a string subclass will have no effect.
+- Subclasses of string can no longer be interned.  The semantics of
+  interning were not clear here -- a subclass could be mutable, for
+  example -- and had bugs.  Explicitly interning a subclass of string
+  via intern() will raise a TypeError.  Internal operations that attempt
+  to intern a string subclass will have no effect.
 
 Extension modules
 -----------------
 
 Library
 -------
+
+- doctest refactoring continued.  See the docs for details.  As part of
+  this effort, some old and little- (never?) used features are now
+  deprecated:  the Tester class, the module is_private() function, and the
+  isprivate argument to testmod().  The Tester class supplied a feeble
+  "by hand" way to combine multiple doctests, if you knew exactly what
+  you were doing.  The newer doctest features for unittest integration
+  already did a better job of that, are stronger now than ever, and the
+  new DocTestRunner class is a saner foundation if you want to do it by
+  hand.  The "private name" filtering gimmick was a mistake from the
+  start, and testmod() changed long ago to ignore it by default.  If
+  you want to filter out tests, the new DocTestFinder class can be used
+  to return a list of all doctests, and you can filter that list by
+  any computable criteria before passing it to a DocTestRunner instance.
+
 
 Tools/Demos
 -----------
