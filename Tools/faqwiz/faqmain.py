@@ -27,6 +27,7 @@ XXX TO DO
 NAMEPAT = "faq??.???.htp"
 NAMEREG = "^faq\([0-9][0-9]\)\.\([0-9][0-9][0-9]\)\.htp$"
 
+# Like so many other things, this should come from a file.
 SECTIONS = {
     "1": "General information and availability",
     "2": "Python in the real world",
@@ -85,14 +86,18 @@ class FAQServer:
 	<LI><A HREF="faq.py?req=delete">Delete a FAQ entry</A>
 	</UL>
 
+	<HR>
+
 	<H2>Search the FAQ</H2>
 
 	<FORM ACTION="faq.py?req=query">
 	<INPUT TYPE=text NAME=query>
-	<INPUT TYPE=submit VALUE="Search">
+	<INPUT TYPE=submit VALUE="Search"><BR>
+	(Case insensitive regular expressions.)
 	<INPUT TYPE=hidden NAME=req VALUE=query>
 	</FORM>
-
+	<HR>
+	<P>
 	Disclaimer: these pages are intended to be edited by anyone.
 	Please exercise discretion when editing, don't be rude, etc.
 	"""
@@ -605,7 +610,11 @@ class FAQServer:
 		    if not pre:
 			print '<PRE>'
 			pre = 1
-		print self.translate(line)
+		if '/' in line or '@' in line:
+		    line = self.translate(line)
+ 		if not pre and '*' in line:
+ 		    line = self.emphasize(line)
+		print line
 	if pre:
 	    print '</PRE>'
 	    pre = 0
@@ -663,12 +672,18 @@ class FAQServer:
 	print
 
     def epilogue(self):
+	if self.edit == 'no':
+	    global wanttime
+	    wanttime = 0
+	else:
+	    print '''
+	    <P>
+	    <HR>
+	    <A HREF="http://www.python.org">Python home</A> /
+	    <A HREF="faq.py">FAQ home</A> /
+	    Feedback to <A HREF="mailto:guido@python.org">GvR</A>
+	    '''
 	print '''
-	<P>
-	<HR>
-	<A HREF="http://www.python.org">Python home</A> /
-	<A HREF="faq.py">FAQ home</A> /
-	Feedback to <A HREF="mailto:guido@python.org">GvR</A>
 	</BODY>
 	</HTML>
 	'''
@@ -705,8 +720,21 @@ class FAQServer:
 	list.append(cgi.escape(text[i:j]))
 	return string.join(list, '')
 
+    emphasize_prog = None
+
+    def emphasize(self, line):
+	import regsub
+	if not self.emphasize_prog:
+	    import regex
+	    pat = "\*\([a-zA-Z]+\)\*"
+	    self.emphasize_prog = prog = regex.compile(pat)
+	else:
+	    prog = self.emphasize_prog
+	return regsub.gsub(prog, "<I>\\1</I>", line)
+
 print "Content-type: text/html"
 dt = 0
+wanttime = 1
 try:
     import time
     t1 = time.time()
@@ -718,7 +746,8 @@ try:
 except:
     print "\n<HR>Sorry, an error occurred"
     cgi.print_exception()
-print "<P>(running time = %s seconds)" % str(round(dt, 3))
+if wanttime:
+    print "<BR>(running time = %s seconds)" % str(round(dt, 3))
 
 # The following bootstrap script must be placed in cgi-bin/faq.py:
 BOOTSTRAP = """
