@@ -205,7 +205,8 @@ When commands are read from a tty, the interpreter is said to be in
 with the {\em primary\ prompt}, usually three greater-than signs ({\tt
 >>>}); for continuation lines it prompts with the
 {\em secondary\ prompt},
-by default three dots ({\tt ...}).  Typing an EOF (Control-D) 
+by default three dots ({\tt ...}).  Typing an EOF character
+(Control-D on {\UNIX}, Control-Z on DOS or Windows)
 at the primary prompt causes the interpreter to exit with a zero exit
 status.
 
@@ -275,7 +276,9 @@ Whenever {\tt spam.py} is successfully compiled, an attempt is made to
 write the compiled version to {\tt spam.pyc}.  It is not an error if
 this attempt fails; if for any reason the file is not written
 completely, the resulting {\tt spam.pyc} file will be recognized as
-invalid and thus ignored later.
+invalid and thus ignored later.  The contents of the {\tt spam.pyc}
+file is platform independent, so a Python module directory can be
+shared by machines of different architectures.
 
 \subsection{Executable Python scripts}
 
@@ -3205,9 +3208,9 @@ exactly as if \code{cmp(x, y)} were a binary operator like \code{+}
 
 \section{Unix Signal Handling}
 
-On Unix, Python now supports signal handling.  The module
+On {\UNIX}, Python now supports signal handling.  The module
 \code{signal} exports functions \code{signal}, \code{pause} and
-\code{alarm}, which act similar to their Unix counterparts.  The
+\code{alarm}, which act similar to their {\UNIX} counterparts.  The
 module also exports the conventional names for the various signal
 classes (also usable with \code{os.kill()}) and \code{SIG_IGN} and
 \code{SIG_DFL}.  See the section on \code{signal} in the Library
