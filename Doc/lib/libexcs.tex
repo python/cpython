@@ -80,7 +80,8 @@ various arithmetic errors: \exception{OverflowError},
 \begin{excdesc}{LookupError}
 The base class for the exceptions that are raised when a key or
 index used on a mapping or sequence is invalid: \exception{IndexError},
-\exception{KeyError}.
+\exception{KeyError}.  This can be raised directly by
+\function{sys.setdefaultencoding()}.
 \end{excdesc}
 
 \begin{excdesc}{EnvironmentError}
