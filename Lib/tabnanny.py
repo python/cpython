@@ -16,6 +16,8 @@ import string
 import getopt
 import tokenize
 
+__all__ = ["check"]
+
 verbose = 0
 filename_only = 0
 

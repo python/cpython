@@ -2,6 +2,9 @@
 
 import sys, re, types
 
+__all__ = ["warn", "showwarning", "formatwarning", "filterwarnings",
+           "resetwarnings"]
+
 defaultaction = "default"
 filters = []
 onceregistry = {}

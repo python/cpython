@@ -6,6 +6,8 @@ See: RFC 1014
 
 import struct
 
+__all__ = ["Error", "Packer", "Unpacker", "ConversionError"]
+
 # exceptions
 class Error:
     """Exception class for this module. Use:

@@ -41,6 +41,8 @@ import sys
 import socket
 import select
 
+__all__ = ["Telnet"]
+
 # Tunable parameters
 DEBUGLEVEL = 0
 

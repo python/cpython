@@ -10,6 +10,9 @@ try:
 except:
     zlib = None
 
+__all__ = ["BadZipfile", "error", "ZIP_STORED", "ZIP_DEFLATED", "is_zipfile",
+           "ZipInfo", "ZipFile", "PyZipFile"]
+
 class BadZipfile(Exception):
     pass
 error = BadZipfile      # The exception raised by this module

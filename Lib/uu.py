@@ -34,6 +34,8 @@ import binascii
 import os
 import sys
 
+__all__ = ["Error", "encode", "decode"]
+
 class Error(Exception):
     pass
 

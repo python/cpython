@@ -3,6 +3,8 @@
 import os
 import sys
 
+__all__ = ["Error", "open", "get", "register"]
+
 class Error(Exception):
     pass
 

@@ -28,6 +28,10 @@ import os
 import sys
 import types
 
+__all__ = ["urlopen", "URLopener", "FancyURLopener", "urlretrieve",
+           "urlcleanup", "quote", "quote_plus", "unquote", "unquote_plus",
+           "urlencode"]
+
 __version__ = '1.15'    # XXX This version is not always updated :-(
 
 MAXFTPCACHE = 10        # Trim the ftp cache beyond this size

@@ -73,6 +73,8 @@ is destroyed.
 
 import __builtin__
 
+__all__ = ["open", "openfp", "Error"]
+
 class Error(Exception):
     pass
 

@@ -6,6 +6,8 @@
 
 import os
 
+__all__ = ["mktemp", "TemporaryFile", "tempdir", "gettempprefix"]
+
 # Parameters that the caller may set to override the defaults
 tempdir = None
 template = None
