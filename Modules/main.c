@@ -219,7 +219,8 @@ main(argc, argv)
 }
 
 
-/* Return the program name -- some code out there needs this. */
+/* Return the program name -- some code out there needs this
+   (currently _tkinter.c and importdl.c). */
 
 char *
 getprogramname()
