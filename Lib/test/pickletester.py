@@ -254,11 +254,12 @@ class AbstractPickleTests(unittest.TestCase):
     def setUp(self):
         pass
 
-    def ensure_opcode_in_pickle(self, code, pickle):
+    # Return True if opcode code appears in the pickle, else False.
+    def opcode_in_pickle(self, code, pickle):
         for op, dummy, dummy in pickletools.genops(pickle):
             if op.code == code:
-                return
-        self.fail("didn't find opcode %r in pickle %r" % (code, pickle))
+                return True
+        return False
 
     def test_misc(self):
         # test various datatypes not tested by testdata
@@ -480,17 +481,21 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_long1(self):
         x = 12345678910111213141516178920L
-        s = self.dumps(x, 2)
-        y = self.loads(s)
-        self.assertEqual(x, y)
-        self.ensure_opcode_in_pickle(pickle.LONG1, s)
+        for proto in protocols:
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            self.assertEqual(x, y)
+            self.assertEqual(self.opcode_in_pickle(pickle.LONG1, s),
+                             proto >= 2)
 
     def test_long4(self):
         x = 12345678910111213141516178920L << (256*8)
-        s = self.dumps(x, 2)
-        y = self.loads(s)
-        self.assertEqual(x, y)
-        self.ensure_opcode_in_pickle(pickle.LONG4, s)
+        for proto in protocols:
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            self.assertEqual(x, y)
+            self.assertEqual(self.opcode_in_pickle(pickle.LONG4, s),
+                             proto >= 2)
 
     def test_short_tuples(self):
         # Map (proto, len(tuple)) to expected opcode.
@@ -523,20 +528,29 @@ class AbstractPickleTests(unittest.TestCase):
                 y = self.loads(s)
                 self.assertEqual(x, y, (proto, x, s, y))
                 expected = expected_opcode[proto, len(x)]
-                self.ensure_opcode_in_pickle(expected, s)
+                self.assertEqual(self.opcode_in_pickle(expected, s), True)
 
     def test_singletons(self):
+        # Map (proto, singleton) to expected opcode.
+        expected_opcode = {(0, None): pickle.NONE,
+                           (1, None): pickle.NONE,
+                           (2, None): pickle.NONE,
+
+                           (0, True): pickle.INT,
+                           (1, True): pickle.INT,
+                           (2, True): pickle.NEWTRUE,
+
+                           (0, False): pickle.INT,
+                           (1, False): pickle.INT,
+                           (2, False): pickle.NEWFALSE,
+                          }
         for proto in protocols:
             for x in None, False, True:
                 s = self.dumps(x, proto)
                 y = self.loads(s)
                 self.assert_(x is y, (proto, x, s, y))
-
-                # Test that proto >= 2 really uses the bool opcodes.
-                if proto >= 2 and x in (False, True):
-                    expected = x and pickle.NEWTRUE or pickle.NEWFALSE
-                    # Skip the PROTO opcode at the start.
-                    self.assertEqual(s[2], expected)
+                expected = expected_opcode[proto, x]
+                self.assertEqual(self.opcode_in_pickle(expected, s), True)
 
     def test_newobj_tuple(self):
         x = MyTuple([1, 2, 3])
