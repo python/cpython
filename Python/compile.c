@@ -89,14 +89,12 @@ typeobject Codetype = {
 	0,		/*tp_as_mapping*/
 };
 
-static codeobject *newcodeobject PROTO((object *, object *, object *, char *));
-
-static codeobject *
+codeobject *
 newcodeobject(code, consts, names, filename)
 	object *code;
 	object *consts;
 	object *names;
-	char *filename;
+	object *filename;
 {
 	codeobject *co;
 	int i;
@@ -123,10 +121,8 @@ newcodeobject(code, consts, names, filename)
 		co->co_consts = consts;
 		INCREF(names);
 		co->co_names = names;
-		if ((co->co_filename = newstringobject(filename)) == NULL) {
-			DECREF(co);
-			co = NULL;
-		}
+		INCREF(filename);
+		co->co_filename = filename;
 	}
 	return co;
 }
@@ -1869,12 +1865,15 @@ compile(n, filename)
 {
 	struct compiling sc;
 	codeobject *co;
+	object *v;
 	if (!com_init(&sc, filename))
 		return NULL;
 	compile_node(&sc, n);
 	com_done(&sc);
-	if (sc.c_errors == 0)
-		co = newcodeobject(sc.c_code, sc.c_consts, sc.c_names, filename);
+	if (sc.c_errors == 0 && (v = newstringobject(filename)) != NULL) {
+		co = newcodeobject(sc.c_code, sc.c_consts, sc.c_names, v);
+		DECREF(v);
+	}
 	else
 		co = NULL;
 	com_free(&sc);
