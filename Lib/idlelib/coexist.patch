@@ -1,0 +1,186 @@
+? coexist.diff
+? fidle
+? build
+? install.kbk
+? coexist.patch
+Index: PyShell.py
+===================================================================
+RCS file: /cvsroot/idlefork/idle/PyShell.py,v
+retrieving revision 1.6
+diff -c -r1.6 PyShell.py
+*** PyShell.py	2001/07/16 05:25:12	1.6
+--- PyShell.py	2001/07/16 05:53:22
+***************
+*** 470,476 ****
+  
+      def begin(self):
+          self.resetoutput()
+!         self.write("Python %s on %s\n%s\nIDLE Fork %s -- press F1 for help\n" %
+                     (sys.version, sys.platform, self.COPYRIGHT,
+                      idlever.IDLE_VERSION))
+          try:
+--- 470,476 ----
+  
+      def begin(self):
+          self.resetoutput()
+!         self.write("Python %s on %s\n%s\nFIDLE Fork %s -- press F1 for help\n" %
+                     (sys.version, sys.platform, self.COPYRIGHT,
+                      idlever.IDLE_VERSION))
+          try:
+Index: setup.py
+===================================================================
+RCS file: /cvsroot/idlefork/idle/setup.py,v
+retrieving revision 1.4
+diff -c -r1.4 setup.py
+*** setup.py	2001/07/16 04:00:10	1.4
+--- setup.py	2001/07/16 05:53:22
+***************
+*** 5,11 ****
+  import idlever
+  
+  # name of idle package
+! idlelib = "idlelib"
+  
+  # the normal build_py would not incorporate the .txt files
+  txt_files = ['config-unix.txt','config-win.txt','config.txt', 'help.txt']
+--- 5,11 ----
+  import idlever
+  
+  # name of idle package
+! idlelib = "fidlelib"
+  
+  # the normal build_py would not incorporate the .txt files
+  txt_files = ['config-unix.txt','config-win.txt','config.txt', 'help.txt']
+***************
+*** 55,69 ****
+  
+  # Arghhh. install_lib thinks that all files returned from build_py's
+  # get_outputs are bytecode files
+  class idle_install_lib(install_lib):
+      def _bytecode_filenames(self, files):
+          files = [n for n in files if n.endswith('.py')]
+          return install_lib._bytecode_filenames(self,files)
+- 
+  
+! setup(name="IDLE",
+        version = idlever.IDLE_VERSION,
+!       description = "IDLE, the Python IDE",
+        author = "Guido van Rossum",
+        author_email = "guido@python.org",
+        #url =
+--- 55,69 ----
+  
+  # Arghhh. install_lib thinks that all files returned from build_py's
+  # get_outputs are bytecode files
++ 
+  class idle_install_lib(install_lib):
+      def _bytecode_filenames(self, files):
+          files = [n for n in files if n.endswith('.py')]
+          return install_lib._bytecode_filenames(self,files)
+  
+! setup(name="FIDLE",
+        version = idlever.IDLE_VERSION,
+!       description = "FIDLE, the Forked Python IDE",
+        author = "Guido van Rossum",
+        author_email = "guido@python.org",
+        #url =
+***************
+*** 71,81 ****
+  """IDLE is a Tkinter based IDE for Python. It is written in 100% pure
+  Python and works both on Windows and Unix. It features a multi-window
+  text editor with multiple undo, Python colorizing, and many other things,
+! as well as a Python shell window and a debugger.""",
+  
+        cmdclass = {'build_py':idle_build_py,
+                    'install_lib':idle_install_lib},
+        package_dir = {idlelib:'.'},
+        packages = [idlelib],
+!       scripts = ['idle', 'idles']
+        )
+--- 71,86 ----
+  """IDLE is a Tkinter based IDE for Python. It is written in 100% pure
+  Python and works both on Windows and Unix. It features a multi-window
+  text editor with multiple undo, Python colorizing, and many other things,
+! as well as a Python shell window and a debugger.
+! 
+! FIDLE is a separate line of development which was initiated by D. Scherer
+! at CMU as part of Visual Python.  It features execution in a separate
+! process, with a fresh environment for each run. For further details, 
+! refer to idlefork.sourceforge.net.""",
+  
+        cmdclass = {'build_py':idle_build_py,
+                    'install_lib':idle_install_lib},
+        package_dir = {idlelib:'.'},
+        packages = [idlelib],
+!       scripts = ['fidle', 'fidles']
+        )
+*** /dev/null	Tue May  5 16:32:27 1998
+--- fidle	Sat Jul 14 12:40:25 2001
+***************
+*** 0 ****
+--- 1,12 ----
++ #! /usr/bin/env python
++ 
++ import os
++ import sys
++ from fidlelib import IdleConf
++ 
++ idle_dir = os.path.dirname(IdleConf.__file__)
++ IdleConf.load(idle_dir)
++ 
++ # defer importing Pyshell until IdleConf is loaded
++ from fidlelib import PyShell
++ PyShell.main()
+*** idle	Sat Jul 14 12:40:36 2001
+--- /dev/null	Tue May  5 16:32:27 1998
+***************
+*** 1,12 ****
+- #! /usr/bin/env python
+- 
+- import os
+- import sys
+- from idlelib import IdleConf
+- 
+- idle_dir = os.path.dirname(IdleConf.__file__)
+- IdleConf.load(idle_dir)
+- 
+- # defer importing Pyshell until IdleConf is loaded
+- from idlelib import PyShell
+- PyShell.main()
+--- 0 ----
+*** /dev/null	Tue May  5 16:32:27 1998
+--- fidles	Mon Jul 16 02:25:48 2001
+***************
+*** 0 ****
+--- 1,13 ----
++ #! /usr/bin/env python
++ 
++ import os
++ import sys
++ from fidlelib import IdleConf
++ 
++ idle_dir = os.path.dirname(IdleConf.__file__)
++ IdleConf.load(idle_dir)
++ 
++ # defer importing Pyshell until IdleConf is loaded
++ from fidlelib import PyShell
++ # open a shell instead of an editor window
++ PyShell.main(0)
+*** idles	Mon Jul 16 02:27:23 2001
+--- /dev/null	Tue May  5 16:32:27 1998
+***************
+*** 1,13 ****
+- #! /usr/bin/env python
+- 
+- import os
+- import sys
+- from idlelib import IdleConf
+- 
+- idle_dir = os.path.dirname(IdleConf.__file__)
+- IdleConf.load(idle_dir)
+- 
+- # defer importing Pyshell until IdleConf is loaded
+- from idlelib import PyShell
+- # open a shell instead of an editor window
+- PyShell.main(0)
+--- 0 ----
