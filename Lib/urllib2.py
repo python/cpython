@@ -408,7 +408,7 @@ class HTTPDefaultErrorHandler(BaseHandler):
         raise HTTPError(req.get_full_url(), code, msg, hdrs, fp)
 
 class HTTPRedirectHandler(BaseHandler):
-    def redirect_request(self, req, fp, code, msg, headers):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
         """Return a Request or None in response to a redirect.
 
         This is called by the http_error_30x methods when a redirection
@@ -417,16 +417,6 @@ class HTTPRedirectHandler(BaseHandler):
         raise HTTPError if no-one else should try to handle this url.  Return
         None if you can't but another Handler might.
         """
-        # XXX 301 and 302 errors must have a location or uri header.
-        # Not sure about the other error codes.
-        if "location" in headers:
-            newurl = headers["location"]
-        elif "uri" in headers:
-            newurl = headers["uri"]
-        else:
-            return
-        newurl = urlparse.urljoin(req.get_full_url(), newurl)
-        
         m = req.get_method()
         if (code in (301, 302, 303, 307) and m in ("GET", "HEAD")
             or code in (302, 303) and m == "POST"):
@@ -455,7 +445,7 @@ class HTTPRedirectHandler(BaseHandler):
         # XXX Probably want to forget about the state of the current
         # request, although that might interact poorly with other
         # handlers that also use handler-specific request attributes
-        new = self.redirect_request(req, fp, code, msg, headers)
+        new = self.redirect_request(req, fp, code, msg, headers, newurl)
         if new is None:
             return
 
