@@ -22,6 +22,7 @@ PyExc_SyntaxError
 PyExc_SystemError
 PyExc_SystemExit
 PyExc_UnboundLocalError
+PyExc_UnicodeError
 PyExc_TypeError
 PyExc_ValueError
 PyExc_ZeroDivisionError
@@ -86,6 +87,7 @@ getopt
 Py_GetVersion
 _PyParser_Grammar
 PyImport_Inittab
+_PyImport_Filetab
 PyImport_AppendInittab
 PyImport_ExtendInittab
 initimp
@@ -104,7 +106,6 @@ PyImport_Cleanup
 PyImport_GetModuleDict
 _PyImport_Fini
 _PyImport_Init
-_PyImport_Filetab
 _PyImport_LoadDynamicModule
 PyMarshal_Init
 PyMarshal_WriteObjectToString
@@ -225,6 +226,9 @@ PyNumber_And
 PyNumber_Xor
 PyNumber_Or
 PyNumber_Check
+PyObject_AsWriteBuffer
+PyObject_AsReadBuffer
+PyObject_AsCharBuffer
 PyObject_DelItem
 PyObject_SetItem
 PyObject_GetItem
@@ -269,6 +273,7 @@ PyDict_Items
 PyDict_Values
 PyDict_Keys
 PyDict_Size
+PyDict_Copy
 PyDict_Next
 PyDict_Clear
 PyDict_DelItem
@@ -288,6 +293,7 @@ PyFile_AsFile
 PyFloat_Type
 PyFloat_Fini
 PyFloat_AsString
+PyFloat_AsStringEx
 PyFloat_AsDouble
 PyFloat_FromString
 PyFloat_FromDouble
@@ -326,10 +332,6 @@ PyList_Size
 PyList_New
 PyLong_Type
 PyLong_FromString
-PyLong_AsUnsignedLongLong
-PyLong_AsLongLong
-PyLong_FromUnsignedLongLong
-PyLong_FromLongLong
 PyLong_AsVoidPtr
 PyLong_FromVoidPtr
 PyLong_AsDouble
@@ -356,6 +358,10 @@ PyModule_New
 _Py_NoneStruct
 _Py_cobject_hack
 _Py_abstract_hack
+_PyTrash_delete_later
+_PyTrash_delete_nesting
+_PyTrash_destroy_list
+_PyTrash_deposit_object
 Py_ReprLeave
 Py_ReprEnter
 PyMem_Free
@@ -479,7 +485,6 @@ PyMac_GetFullPath
 PyMac_init_process_location
 strdup
 Py_GetCompiler
-PyMac_SetGUSIOptions
 PyMac_PreferenceOptions
 PyMac_GetPythonPath
 PyMac_GetPythonDir
@@ -512,6 +517,7 @@ PyMac_RestoreMenuBar
 PyMac_InitMenuBar
 PyMac_SetSchedParams
 PyMac_GetSchedParams
+PyMac_DoYield
 PyMac_HandleEvent
 PyMac_BuildEventRecord
 PyMac_HandleEventIntern
@@ -531,10 +537,8 @@ PLstrrchr
 PLstrcmp
 PLstrcpy
 PyMac_StopGUSISpin
-PyMac_SetGUSISpin
 RotateCursor
 SpinCursor
-PyMac_FixGUSIcd
 guesstabsize
 PyMac_AppRefNum
 options
@@ -637,6 +641,12 @@ PyBuffer_FromReadWriteMemory
 PyBuffer_FromMemory
 PyBuffer_FromReadWriteObject
 PyBuffer_FromObject
+_PyImport_DynLoadFiletab
+_PyImport_GetDynLoadFunc
+sSuffices
+GUSISetupConfig
+GUSISetupDevices
+GUSISetupFactories
 atan
 atan2
 memmove
@@ -680,598 +690,6 @@ cos_d_d
 cos_d_pd
 cos_r_r
 cos_r_pr
-uADSPCompletion
-__vt__21AppleTalkSocketDomain		# AppleTalkSocketDomain::__vt
-__vt__10ADSPSocket		# ADSPSocket::__vt
-__vt__15AppleTalkSocket		# AppleTalkSocket::__vt
-AppleTalkSockets
-__dt__21AppleTalkSocketDomainFv		# AppleTalkSocketDomain::~AppleTalkSocketDomain()
-AtlkLookup__FRC10EntityNameP9AddrBlock		# AtlkLookup(const EntityName&,AddrBlock*)
-__dt__11AtlkSymAddrFv		# AtlkSymAddr::~AtlkSymAddr()
-Register__11AtlkSymAddrFUc		# AtlkSymAddr::Register(unsigned char)
-__ct__11AtlkSymAddrFRC10EntityName		# AtlkSymAddr::AtlkSymAddr(const EntityName&)
-choose__21AppleTalkSocketDomainFiPcPviPvPi		# AppleTalkSocketDomain::choose(int,char*,void*,int,void*,int*)
-socket__21AppleTalkSocketDomainFis		# AppleTalkSocketDomain::socket(int,short)
-GetDSP__21AppleTalkSocketDomainFv		# AppleTalkSocketDomain::GetDSP()
-Validate__21AppleTalkSocketDomainFv		# AppleTalkSocketDomain::Validate()
-DoMPPOpen__21AppleTalkSocketDomainFv		# AppleTalkSocketDomain::DoMPPOpen()
-__ct__21AppleTalkSocketDomainFv		# AppleTalkSocketDomain::AppleTalkSocketDomain()
-GUSIwithAppleTalkSockets
-select__10ADSPSocketFPUcPUcPUc		# ADSPSocket::select(unsigned char*,unsigned char*,unsigned char*)
-ioctl__10ADSPSocketFUiPv		# ADSPSocket::ioctl(unsigned int,void*)
-shutdown__10ADSPSocketFi		# ADSPSocket::shutdown(int)
-sendto__10ADSPSocketFPviiPvi		# ADSPSocket::sendto(void*,int,int,void*,int)
-recvfrom__10ADSPSocketFPviiPvPi		# ADSPSocket::recvfrom(void*,int,int,void*,int*)
-accept__10ADSPSocketFPvPi		# ADSPSocket::accept(void*,int*)
-connect__10ADSPSocketFPvi		# ADSPSocket::connect(void*,int)
-UnInit__10ADSPSocketFUc		# ADSPSocket::UnInit(unsigned char)
-Init__10ADSPSocketFv		# ADSPSocket::Init()
-listen__10ADSPSocketFi		# ADSPSocket::listen(int)
-__dt__10ADSPSocketFv		# ADSPSocket::~ADSPSocket()
-__ct__10ADSPSocketFUc		# ADSPSocket::ADSPSocket(unsigned char)
-getpeername__15AppleTalkSocketFPvPi		# AppleTalkSocket::getpeername(void*,int*)
-getsockname__15AppleTalkSocketFPvPi		# AppleTalkSocket::getsockname(void*,int*)
-__dt__10ErrnoSaverFv		# ErrnoSaver::~ErrnoSaver()
-bind__15AppleTalkSocketFPvi		# AppleTalkSocket::bind(void*,int)
-ioctl__15AppleTalkSocketFUiPv		# AppleTalkSocket::ioctl(unsigned int,void*)
-fcntl__15AppleTalkSocketFUii		# AppleTalkSocket::fcntl(unsigned int,int)
-__dt__15AppleTalkSocketFv		# AppleTalkSocket::~AppleTalkSocket()
-__ct__15AppleTalkSocketFUc		# AppleTalkSocket::AppleTalkSocket(unsigned char)
-__vt__8Gatherer		# Gatherer::__vt
-__vt__9Scatterer		# Scatterer::__vt
-__vt__9ScattGath		# ScattGath::__vt
-CopyC2PStr__FPCcPUc		# CopyC2PStr(const char*,unsigned char*)
-__dt__8GathererFv		# Gatherer::~Gatherer()
-__ct__8GathererFPC5ioveci		# Gatherer::Gatherer(const iovec*,int)
-__dt__9ScattererFv		# Scatterer::~Scatterer()
-__ct__9ScattererFPC5ioveci		# Scatterer::Scatterer(const iovec*,int)
-__dt__9ScattGathFv		# ScattGath::~ScattGath()
-__ct__9ScattGathFPC5ioveci		# ScattGath::ScattGath(const iovec*,int)
-Produce__10RingBufferFPcRl		# RingBuffer::Produce(char*,long&)
-Consume__10RingBufferFPcRl		# RingBuffer::Consume(char*,long&)
-Invalidate__10RingBufferFl		# RingBuffer::Invalidate(long)
-Validate__10RingBufferFl		# RingBuffer::Validate(long)
-Consumer__10RingBufferFRl		# RingBuffer::Consumer(long&)
-Producer__10RingBufferFRl		# RingBuffer::Producer(long&)
-__dt__10RingBufferFv		# RingBuffer::~RingBuffer()
-__ct__10RingBufferFUs		# RingBuffer::RingBuffer(unsigned short)
-GUSISpin
-GUSIExec
-gGUSISpeed
-StandAlone
-__vt__12SocketDomain		# SocketDomain::__vt
-gGUSISpinControl
-process__12SocketDomain		# SocketDomain::process
-domains__12SocketDomain		# SocketDomain::domains
-we__17GUSIConfiguration		# GUSIConfiguration::we
-firstTime__17GUSIConfiguration		# GUSIConfiguration::firstTime
-hasRevisedTimeMgr
-hasAppleEvents
-hasStdNBP
-hasStdNBP_P
-hasCTB
-hasCRM
-hasCRM_P
-hasProcessMgr
-hasNewSF
-hasAlias
-hasMakeFSSpec
-CatchStdIO
-GUSIFType
-Sockets
-GUSIConfig
-GUSILoadConfiguration
-GUSISetup
-GUSIDefaultSetup
-AppleTalkIdentity__FRsRs		# AppleTalkIdentity(short&,short&)
-__ct__7FeatureFRC7FeatureRC7Feature		# Feature::Feature(const Feature&,const Feature&)
-__ct__7FeatureFPFv_v		# Feature::Feature(void (*)(void))
-__ct__7FeatureFRC7FeaturePFv_v		# Feature::Feature(const Feature&,void (*)(void))
-__ct__7FeatureFPFv_s		# Feature::Feature(short (*)(void))
-__ct__7FeatureFRC7FeaturePFv_s		# Feature::Feature(const Feature&,short (*)(void))
-__ct__7FeatureFUlll		# Feature::Feature(unsigned long,long,long)
-__ct__7FeatureFUll		# Feature::Feature(unsigned long,long)
-__ct__7FeatureFUsSc		# Feature::Feature(unsigned short,signed char)
-GUSIInterrupt__Fv		# GUSIInterrupt()
-usleep
-sleep
-alarm
-GUSICheckAlarm__Fv		# GUSICheckAlarm()
-__dt__11SocketTableFv		# SocketTable::~SocketTable()
-__vc__11SocketTableFi		# SocketTable::operator [](int)
-Remove__11SocketTableFi		# SocketTable::Remove(int)
-Install__11SocketTableFP6Socketi		# SocketTable::Install(Socket*,int)
-__ct__11SocketTableFv		# SocketTable::SocketTable()
-DontStrip__12SocketDomainFv		# SocketDomain::DontStrip()
-choose__12SocketDomainFiPcPviPvPi		# SocketDomain::choose(int,char*,void*,int,void*,int*)
-socketpair__12SocketDomainFisPP6Socket		# SocketDomain::socketpair(int,short,Socket**)
-socket__12SocketDomainFis		# SocketDomain::socket(int,short)
-__dt__12SocketDomainFv		# SocketDomain::~SocketDomain()
-__ct__12SocketDomainFi		# SocketDomain::SocketDomain(int)
-Ready__12SocketDomainFv		# SocketDomain::Ready()
-Domain__12SocketDomainFi		# SocketDomain::Domain(int)
-GUSIGetEvents
-GUSISetEvents
-GUSIGetHook
-GUSISetHook
-isatty
-ftruncate
-lseek
-fstat
-setsockopt
-getsockopt
-ioctl
-dup2
-dup
-fcntl
-shutdown
-getpeername
-getsockname
-select
-sendmsg
-sendto
-send
-writev
-write
-recvmsg
-recvfrom
-recv
-readv
-read
-close
-accept
-listen
-connect
-bind
-choose
-pipe
-socketpair
-socket
-getdtablesize
-InitConsole__11SocketTableFv		# SocketTable::InitConsole()
-DelayConsole__17GUSIConfigurationCFv		# GUSIConfiguration::DelayConsole() const
-DoAutoInitGraf__17GUSIConfigurationCFv		# GUSIConfiguration::DoAutoInitGraf() const
-SetDefaultFType__17GUSIConfigurationCFRC9TFileSpec		# GUSIConfiguration::SetDefaultFType(const TFileSpec&) const
-__ct__17GUSIConfigurationFv		# GUSIConfiguration::GUSIConfiguration()
-GUSILoadConfiguration__17GUSIConfigurationFPPc		# GUSIConfiguration::GUSILoadConfiguration(char**)
-GUSI_error_nil
-GUSI_error
-GUSIDefaultSpin
-uFolderFFilter
-uGetDirDlgHook
-__vt__10FileSocket		# FileSocket::__vt
-FileSockets
-getcwd
-rmdir
-mkdir
-chdir
-scandir
-closedir
-rewinddir
-seekdir
-telldir
-readdir
-opendir
-readlink
-symlink
-CopyIconFamily__Fssss		# CopyIconFamily(short,short,short,short)
-__dt__10FileSocketFv		# FileSocket::~FileSocket()
-__ct__10FileSocketFsUc		# FileSocket::FileSocket(short,unsigned char)
-MarkTemporary__10FileSocketFRC6FSSpec		# FileSocket::MarkTemporary(const FSSpec&)
-select__10FileSocketFPUcPUcPUc		# FileSocket::select(unsigned char*,unsigned char*,unsigned char*)
-fstat__10FileSocketFP4stat		# FileSocket::fstat(stat*)
-ioctl__10FileSocketFUiPv		# FileSocket::ioctl(unsigned int,void*)
-fcntl__10FileSocketFUii		# FileSocket::fcntl(unsigned int,int)
-QueueSocket__16FileSocketDomainFP10FileSocketUc		# FileSocketDomain::QueueSocket(FileSocket*,unsigned char)
-MarkTemporary__16FileSocketDomainFRC6FSSpec		# FileSocketDomain::MarkTemporary(const FSSpec&)
-GUSIDefaultExec
-access__16FileSocketDomainFRC11GUSIFileRefi		# FileSocketDomain::access(const GUSIFileRef&,int)
-utime__16FileSocketDomainFRC11GUSIFileRefPC7utimbuf		# FileSocketDomain::utime(const GUSIFileRef&,const utimbuf*)
-chmod__16FileSocketDomainFRC11GUSIFileRefUs		# FileSocketDomain::chmod(const GUSIFileRef&,unsigned short)
-stat__16FileSocketDomainFRC11GUSIFileRefP4stat		# FileSocketDomain::stat(const GUSIFileRef&,stat*)
-faccess__16FileSocketDomainFRC11GUSIFileRefUiPl		# FileSocketDomain::faccess(const GUSIFileRef&,unsigned int,long*)
-fgetfileinfo__16FileSocketDomainFRC11GUSIFileRefPUlPUl		# FileSocketDomain::fgetfileinfo(const GUSIFileRef&,unsigned long*,unsigned long*)
-fsetfileinfo__16FileSocketDomainFRC11GUSIFileRefUlUl		# FileSocketDomain::fsetfileinfo(const GUSIFileRef&,unsigned long,unsigned long)
-rename__16FileSocketDomainFRC11GUSIFileRefPCc		# FileSocketDomain::rename(const GUSIFileRef&,const char*)
-remove__16FileSocketDomainFRC11GUSIFileRef		# FileSocketDomain::remove(const GUSIFileRef&)
-choose__16FileSocketDomainFiPcPviPvPi		# FileSocketDomain::choose(int,char*,void*,int,void*,int*)
-open__16FileSocketDomainFRC11GUSIFileRefi		# FileSocketDomain::open(const GUSIFileRef&,int)
-File_error__Fs		# File_error(short)
-IsDevice__FPCc		# IsDevice(const char*)
-__vt__16FileSocketDomain		# FileSocketDomain::__vt
-lastFileDomain__16FileSocketDomain		# FileSocketDomain::lastFileDomain
-firstFileDomain__16FileSocketDomain		# FileSocketDomain::firstFileDomain
-lastDeviceDomain__16FileSocketDomain		# FileSocketDomain::lastDeviceDomain
-firstDeviceDomain__16FileSocketDomain		# FileSocketDomain::firstDeviceDomain
-Yours__16FileSocketDomainFRC11GUSIFileRefQ216FileSocketDomain7Request		# FileSocketDomain::Yours(const GUSIFileRef&,FileSocketDomain::Request)
-__ct__16FileSocketDomainFv		# FileSocketDomain::FileSocketDomain()
-FindDomain__16FileSocketDomainFRC11GUSIFileRefQ216FileSocketDomain7Request		# FileSocketDomain::FindDomain(const GUSIFileRef&,FileSocketDomain::Request)
-__dt__16FileSocketDomainFv		# FileSocketDomain::~FileSocketDomain()
-__ct__16FileSocketDomainFiUcUc		# FileSocketDomain::FileSocketDomain(int,unsigned char,unsigned char)
-Info__11GUSIFileRefCFv		# GUSIFileRef::Info() const
-__ct__11GUSIFileRefFsQ216FileSocketDomain7Request		# GUSIFileRef::GUSIFileRef(short,FileSocketDomain::Request)
-__ct__11GUSIFileRefFPCcQ216FileSocketDomain7RequestUc		# GUSIFileRef::GUSIFileRef(const char*,FileSocketDomain::Request,unsigned char)
-access
-utime
-chmod
-lstat
-stat
-truncate
-faccess
-fgetfileinfo
-fsetfileinfo
-rename
-unlink
-remove
-creat
-open
-curDir__9TFileSpec		# TFileSpec::curDir
-lastInfo__9TFileSpec		# TFileSpec::lastInfo
-curVol__9TFileSpec		# TFileSpec::curVol
-error__9TFileSpec		# TFileSpec::error
-FSpTouchFolder
-FSpResolve
-FSpSmartMove
-FSpIndex
-FSpCatInfo
-FSpDown
-FSpUp
-Special2FSSpec
-Path2FSSpec
-WD2FSSpec
-FRefNum2FSSpec
-FSp2Encoding
-FSp2DirRelPath
-FSp2RelPath
-FSp2FullPath
-__ct__9TFileSpecFPCcUc		# TFileSpec::TFileSpec(const char*,unsigned char)
-IsEncodedFSSpec__9TFileSpecFPCcUc		# TFileSpec::IsEncodedFSSpec(const char*,unsigned char)
-__vc__9TFileSpecCFs		# TFileSpec::operator [](short) const
-__pl__9TFileSpecCFPCc		# TFileSpec::operator +(const char*) const
-__apl__9TFileSpecFPCc		# TFileSpec::operator +=(const char*)
-__pl__9TFileSpecCFPCUc		# TFileSpec::operator +(const unsigned char*) const
-__apl__9TFileSpecFPCUc		# TFileSpec::operator +=(const unsigned char*)
-AddPathComponent__9TFileSpecFPCci		# TFileSpec::AddPathComponent(const char*,int)
-IsParentOf__9TFileSpecCFRC9TFileSpec		# TFileSpec::IsParentOf(const TFileSpec&) const
-__ne__9TFileSpecCFRC9TFileSpec		# TFileSpec::operator !=(const TFileSpec&) const
-__eq__9TFileSpecCFRC9TFileSpec		# TFileSpec::operator ==(const TFileSpec&) const
-Exists__9TFileSpecCFv		# TFileSpec::Exists() const
-Resolve__9TFileSpecFUc		# TFileSpec::Resolve(unsigned char)
-Resolve__9TFileSpecFRC10CInfoPBRec		# TFileSpec::Resolve(const CInfoPBRec&)
-__mi__9TFileSpecCFi		# TFileSpec::operator -(int) const
-__ami__9TFileSpecFi		# TFileSpec::operator -=(int)
-__pp__9TFileSpecFv		# TFileSpec::operator ++()
-__mm__9TFileSpecFv		# TFileSpec::operator --()
-CatInfo__9TFileSpecCFR10CInfoPBRecUc		# TFileSpec::CatInfo(CInfoPBRec&,unsigned char) const
-Encode__9TFileSpecCFv		# TFileSpec::Encode() const
-RelPath__9TFileSpecCFsl		# TFileSpec::RelPath(short,long) const
-RelPath__9TFileSpecCFRC6FSSpec		# TFileSpec::RelPath(const FSSpec&) const
-RelPath__9TFileSpecCFv		# TFileSpec::RelPath() const
-FullAliasPath__9TFileSpecCFv		# TFileSpec::FullAliasPath() const
-FullPath__9TFileSpecCFv		# TFileSpec::FullPath() const
-Bless__9TFileSpecFv		# TFileSpec::Bless()
-__ct__9TFileSpecFs		# TFileSpec::TFileSpec(short)
-__ct__9TFileSpecFUlsl		# TFileSpec::TFileSpec(unsigned long,short,long)
-__ct__9TFileSpecFsPCUcUc		# TFileSpec::TFileSpec(short,const unsigned char*,unsigned char)
-__ct__9TFileSpecFslPCUcUc		# TFileSpec::TFileSpec(short,long,const unsigned char*,unsigned char)
-__ct__9TFileSpecFRC6FSSpecUc		# TFileSpec::TFileSpec(const FSSpec&,unsigned char)
-__ct__9TFileSpecFRC9TFileSpec		# TFileSpec::TFileSpec(const TFileSpec&)
-Default__9TFileSpecFv		# TFileSpec::Default()
-IsRoot__9TFileSpecFv		# TFileSpec::IsRoot()
-Root__9TFileSpecFv		# TFileSpec::Root()
-FindVol__9TFileSpecFs		# TFileSpec::FindVol(short)
-DefaultDir__9TFileSpecFv		# TFileSpec::DefaultDir()
-ChDir__9TFileSpecFRC9TFileSpec		# TFileSpec::ChDir(const TFileSpec&)
-DisposeFileGlob
-FileGlob2FSSpec
-NextFileGlob
-NewFileGlob
-Next__9TFileGlobFPQ29TFileGlob9BackTrackiUc		# TFileGlob::Next(TFileGlob::BackTrack*,int,unsigned char)
-Next__9TFileGlobFv		# TFileGlob::Next()
-__ct__9TFileGlobFPCcPC9TFileSpec		# TFileGlob::TFileGlob(const char*,const TFileSpec*)
-__vt__16INETSocketDomain		# INETSocketDomain::__vt
-__vt__10INETSocket		# INETSocket::__vt
-INETSockets
-__dt__16INETSocketDomainFv		# INETSocketDomain::~INETSocketDomain()
-CloseSocket__16INETSocketDomainFv		# INETSocketDomain::CloseSocket()
-OpenSocket__16INETSocketDomainFv		# INETSocketDomain::OpenSocket()
-GetPB__16INETSocketDomainFv		# INETSocketDomain::GetPB()
-socket__16INETSocketDomainFis		# INETSocketDomain::socket(int,short)
-Resolver__16INETSocketDomainFv		# INETSocketDomain::Resolver()
-Driver__16INETSocketDomainFv		# INETSocketDomain::Driver()
-__ct__16INETSocketDomainFv		# INETSocketDomain::INETSocketDomain()
-GUSIwithInternetSockets
-ioctl__10INETSocketFUiPv		# INETSocket::ioctl(unsigned int,void*)
-fcntl__10INETSocketFUii		# INETSocket::fcntl(unsigned int,int)
-shutdown__10INETSocketFi		# INETSocket::shutdown(int)
-getpeername__10INETSocketFPvPi		# INETSocket::getpeername(void*,int*)
-getsockname__10INETSocketFPvPi		# INETSocket::getsockname(void*,int*)
-bind__10INETSocketFPvi		# INETSocket::bind(void*,int)
-Available__10INETSocketFv		# INETSocket::Available()
-__dt__10INETSocketFv		# INETSocket::~INETSocket()
-__ct__10INETSocketFUl		# INETSocket::INETSocket(unsigned long)
-__ct__10INETSocketFv		# INETSocket::INETSocket()
-TCP_error__Fi		# TCP_error(int)
-ntohs
-ntohl
-htons
-htonl
-__vt__13MacFileSocket		# MacFileSocket::__vt
-__dt__13MacFileSocketFv		# MacFileSocket::~MacFileSocket()
-ftruncate__13MacFileSocketFl		# MacFileSocket::ftruncate(long)
-lseek__13MacFileSocketFli		# MacFileSocket::lseek(long,int)
-ioctl__13MacFileSocketFUiPv		# MacFileSocket::ioctl(unsigned int,void*)
-write__13MacFileSocketFPvi		# MacFileSocket::write(void*,int)
-read__13MacFileSocketFPvi		# MacFileSocket::read(void*,int)
-GUSIOpenFRef
-open__13MacFileSocketFRC9TFileSpeci		# MacFileSocket::open(const TFileSpec&,int)
-stdopen__9MPWDomain		# MPWDomain::stdopen
-open__9MPWDomain		# MPWDomain::open
-uDNRDone
-h_errno
-getprotobynumber
-getprotobyname
-getservbyport
-getservbyname
-getservent
-endservent
-setservent
-gethostname
-gethostid
-inet_addr
-inet_ntoa
-gethostbyaddr
-gethostbyname
-MXInfo
-HInfo
-AddrToName
-EnumCache
-AddrToStr
-StrToAddr
-CloseResolver
-OpenResolver
-OpenOurRF__Fv		# OpenOurRF()
-SearchFolderForDNRP__Fllsl		# SearchFolderForDNRP(long,long,short,long)
-GetCPanelFolder__FPsPl		# GetCPanelFolder(short*,long*)
-GetSystemFolder__FPsPl		# GetSystemFolder(short*,long*)
-TrapExists__Fs		# TrapExists(short)
-GetTrapType__Fs		# GetTrapType(short)
-NumToolboxTraps__Fv		# NumToolboxTraps()
-__vt__16NullSocketDomain		# NullSocketDomain::__vt
-__vt__10NullSocket		# NullSocket::__vt
-__dt__10NullSocketFv		# NullSocket::~NullSocket()
-__dt__16NullSocketDomainFv		# NullSocketDomain::~NullSocketDomain()
-open__16NullSocketDomainFRC11GUSIFileRefi		# NullSocketDomain::open(const GUSIFileRef&,int)
-Yours__16NullSocketDomainFRC11GUSIFileRefQ216FileSocketDomain7Request		# NullSocketDomain::Yours(const GUSIFileRef&,FileSocketDomain::Request)
-fstat__10NullSocketFP4stat		# NullSocket::fstat(stat*)
-select__10NullSocketFPUcPUcPUc		# NullSocket::select(unsigned char*,unsigned char*,unsigned char*)
-write__10NullSocketFPvi		# NullSocket::write(void*,int)
-read__10NullSocketFPvi		# NullSocket::read(void*,int)
-__ct__10NullSocketFv		# NullSocket::NullSocket()
-uPAPReadTimer
-uPAPWriteTimer
-__vt__15PAPSocketDomain		# PAPSocketDomain::__vt
-__vt__9PAPSocket		# PAPSocket::__vt
-PAPSockets
-__dt__15PAPSocketDomainFv		# PAPSocketDomain::~PAPSocketDomain()
-open__15PAPSocketDomainFRC11GUSIFileRefi		# PAPSocketDomain::open(const GUSIFileRef&,int)
-Yours__15PAPSocketDomainFRC11GUSIFileRefQ216FileSocketDomain7Request		# PAPSocketDomain::Yours(const GUSIFileRef&,FileSocketDomain::Request)
-GUSIwithPAPSockets
-select__9PAPSocketFPUcPUcPUc		# PAPSocket::select(unsigned char*,unsigned char*,unsigned char*)
-shutdown__9PAPSocketFi		# PAPSocket::shutdown(int)
-sendto__9PAPSocketFPviiPvi		# PAPSocket::sendto(void*,int,int,void*,int)
-recvfrom__9PAPSocketFPviiPvPi		# PAPSocket::recvfrom(void*,int,int,void*,int*)
-ioctl__9PAPSocketFUiPv		# PAPSocket::ioctl(unsigned int,void*)
-fcntl__9PAPSocketFUii		# PAPSocket::fcntl(unsigned int,int)
-Powerup__9PAPSocketFv		# PAPSocket::Powerup()
-__dt__9PAPSocketFv		# PAPSocket::~PAPSocket()
-__ct__9PAPSocketFv		# PAPSocket::PAPSocket()
-__dt__5PAPIDFv		# PAPID::~PAPID()
-__ct__5PAPIDFv		# PAPID::PAPID()
-GetPAPCode__5PAPIDFslPUc		# PAPID::GetPAPCode(short,long,unsigned char*)
-PAPWriteHellHound
-PAPReadHellHound
-PAPUnload__FPc		# PAPUnload(char*)
-PAPClose__FsPc		# PAPClose(short,char*)
-PAPStatus__FPcP12PAPStatusRecP9AddrBlockPc		# PAPStatus(char*,PAPStatusRec*,AddrBlock*,char*)
-PAPWrite__FsPcssPsPc		# PAPWrite(short,char*,short,short,short*,char*)
-PAPRead__FsPcPsPsPsPc		# PAPRead(short,char*,short*,short*,short*,char*)
-PAPOpen__FPsPcsP12PAPStatusRecPsPc		# PAPOpen(short*,char*,short,PAPStatusRec*,short*,char*)
-uPPCReadHellHound
-uPPCWriteHellHound
-uGUSIBrowseFilter
-__vt__15PPCSocketDomain		# PPCSocketDomain::__vt
-__vt__9PPCSocket		# PPCSocket::__vt
-hasPPC
-PPCSockets
-__dt__15PPCSocketDomainFv		# PPCSocketDomain::~PPCSocketDomain()
-choose__15PPCSocketDomainFiPcPviPvPi		# PPCSocketDomain::choose(int,char*,void*,int,void*,int*)
-socket__15PPCSocketDomainFis		# PPCSocketDomain::socket(int,short)
-__ct__15PPCSocketDomainFv		# PPCSocketDomain::PPCSocketDomain()
-GUSIwithPPCSockets
-select__9PPCSocketFPUcPUcPUc		# PPCSocket::select(unsigned char*,unsigned char*,unsigned char*)
-shutdown__9PPCSocketFi		# PPCSocket::shutdown(int)
-sendto__9PPCSocketFPviiPvi		# PPCSocket::sendto(void*,int,int,void*,int)
-recvfrom__9PPCSocketFPviiPvPi		# PPCSocket::recvfrom(void*,int,int,void*,int*)
-accept__9PPCSocketFPvPi		# PPCSocket::accept(void*,int*)
-connect__9PPCSocketFPvi		# PPCSocket::connect(void*,int)
-listen__9PPCSocketFi		# PPCSocket::listen(int)
-getpeername__9PPCSocketFPvPi		# PPCSocket::getpeername(void*,int*)
-getsockname__9PPCSocketFPvPi		# PPCSocket::getsockname(void*,int*)
-bind__9PPCSocketFPvi		# PPCSocket::bind(void*,int)
-ioctl__9PPCSocketFUiPv		# PPCSocket::ioctl(unsigned int,void*)
-fcntl__9PPCSocketFUii		# PPCSocket::fcntl(unsigned int,int)
-HellHoundsOnMyTrail__9PPCSocketFv		# PPCSocket::HellHoundsOnMyTrail()
-Alloc__9PPCSocketFv		# PPCSocket::Alloc()
-__dt__9PPCSocketFv		# PPCSocket::~PPCSocket()
-__ct__9PPCSocketFRC9PPCSocket		# PPCSocket::PPCSocket(const PPCSocket&)
-__ct__9PPCSocketFv		# PPCSocket::PPCSocket()
-PPCWriteHellHound
-PPCReadHellHound
-PPCInit_P
-GUSISIOUXEvents
-__vt__17SIOUXSocketDomain		# SIOUXSocketDomain::__vt
-__vt__11SIOUXSocket		# SIOUXSocket::__vt
-open__17SIOUXSocketDomainFRC11GUSIFileRefi		# SIOUXSocketDomain::open(const GUSIFileRef&,int)
-GUSIwithSIOUXSockets
-__dt__17SIOUXSocketDomainFv		# SIOUXSocketDomain::~SIOUXSocketDomain()
-Yours__17SIOUXSocketDomainFRC11GUSIFileRefQ216FileSocketDomain7Request		# SIOUXSocketDomain::Yours(const GUSIFileRef&,FileSocketDomain::Request)
-isatty__11SIOUXSocketFv		# SIOUXSocket::isatty()
-select__11SIOUXSocketFPUcPUcPUc		# SIOUXSocket::select(unsigned char*,unsigned char*,unsigned char*)
-write__11SIOUXSocketFPvi		# SIOUXSocket::write(void*,int)
-read__11SIOUXSocketFPvi		# SIOUXSocket::read(void*,int)
-ioctl__11SIOUXSocketFUiPv		# SIOUXSocket::ioctl(unsigned int,void*)
-__dt__11SIOUXSocketFv		# SIOUXSocket::~SIOUXSocket()
-__ct__11SIOUXSocketFv		# SIOUXSocket::SIOUXSocket()
-DoInitialize__11SIOUXSocketFv		# SIOUXSocket::DoInitialize()
-__vt__6Socket		# Socket::__vt
-post_select__6SocketFUcUcUc		# Socket::post_select(unsigned char,unsigned char,unsigned char)
-select__6SocketFPUcPUcPUc		# Socket::select(unsigned char*,unsigned char*,unsigned char*)
-pre_select__6SocketFUcUcUc		# Socket::pre_select(unsigned char,unsigned char,unsigned char)
-shutdown__6SocketFi		# Socket::shutdown(int)
-isatty__6SocketFv		# Socket::isatty()
-ftruncate__6SocketFl		# Socket::ftruncate(long)
-lseek__6SocketFli		# Socket::lseek(long,int)
-fstat__6SocketFP4stat		# Socket::fstat(stat*)
-ioctl__6SocketFUiPv		# Socket::ioctl(unsigned int,void*)
-fcntl__6SocketFUii		# Socket::fcntl(unsigned int,int)
-setsockopt__6SocketFiiPvi		# Socket::setsockopt(int,int,void*,int)
-getsockopt__6SocketFiiPvPi		# Socket::getsockopt(int,int,void*,int*)
-getpeername__6SocketFPvPi		# Socket::getpeername(void*,int*)
-getsockname__6SocketFPvPi		# Socket::getsockname(void*,int*)
-sendto__6SocketFPviiPvi		# Socket::sendto(void*,int,int,void*,int)
-recvfrom__6SocketFPviiPvPi		# Socket::recvfrom(void*,int,int,void*,int*)
-write__6SocketFPvi		# Socket::write(void*,int)
-read__6SocketFPvi		# Socket::read(void*,int)
-accept__6SocketFPvPi		# Socket::accept(void*,int*)
-listen__6SocketFi		# Socket::listen(int)
-connect__6SocketFPvi		# Socket::connect(void*,int)
-bind__6SocketFPvi		# Socket::bind(void*,int)
-__dt__6SocketFv		# Socket::~Socket()
-__ct__6SocketFv		# Socket::Socket()
-u_tcp_notify
-u_tcp_connect_done
-u_tcp_listen_done
-u_tcp_recv_done
-u_tcp_send_done
-__vt__9TCPSocket		# TCPSocket::__vt
-select__9TCPSocketFPUcPUcPUc		# TCPSocket::select(unsigned char*,unsigned char*,unsigned char*)
-sendto__9TCPSocketFPviiPvi		# TCPSocket::sendto(void*,int,int,void*,int)
-recvfrom__9TCPSocketFPviiPvPi		# TCPSocket::recvfrom(void*,int,int,void*,int*)
-accept__9TCPSocketFPvPi		# TCPSocket::accept(void*,int*)
-listen__9TCPSocketFi		# TCPSocket::listen(int)
-connect__9TCPSocketFPvi		# TCPSocket::connect(void*,int)
-Available__9TCPSocketFv		# TCPSocket::Available()
-GetPB__9TCPSocketFv		# TCPSocket::GetPB()
-__dt__9TCPSocketFv		# TCPSocket::~TCPSocket()
-__ct__9TCPSocketFP9TCPSocket		# TCPSocket::TCPSocket(TCPSocket*)
-__ct__9TCPSocketFUl		# TCPSocket::TCPSocket(unsigned long)
-__ct__9TCPSocketFv		# TCPSocket::TCPSocket()
-tcp_send_done__FP11AnnotatedPB		# tcp_send_done(AnnotatedPB*)
-tcp_recv_done__FP11AnnotatedPB		# tcp_recv_done(AnnotatedPB*)
-tcp_listen_done__FP11AnnotatedPB		# tcp_listen_done(AnnotatedPB*)
-tcp_connect_done__FP11AnnotatedPB		# tcp_connect_done(AnnotatedPB*)
-tcp_notify
-u_udp_read_ahead_done
-u_udp_send_done
-__vt__9UDPSocket		# UDPSocket::__vt
-select__9UDPSocketFPUcPUcPUc		# UDPSocket::select(unsigned char*,unsigned char*,unsigned char*)
-sendto__9UDPSocketFPviiPvi		# UDPSocket::sendto(void*,int,int,void*,int)
-recvfrom__9UDPSocketFPviiPvPi		# UDPSocket::recvfrom(void*,int,int,void*,int*)
-connect__9UDPSocketFPvi		# UDPSocket::connect(void*,int)
-getsockname__9UDPSocketFPvPi		# UDPSocket::getsockname(void*,int*)
-bind__9UDPSocketFPvi		# UDPSocket::bind(void*,int)
-ReadAhead__9UDPSocketFv		# UDPSocket::ReadAhead()
-FlushReadAhead__9UDPSocketFv		# UDPSocket::FlushReadAhead()
-NewStream__9UDPSocketFv		# UDPSocket::NewStream()
-Available__9UDPSocketFv		# UDPSocket::Available()
-GetPB__9UDPSocketFv		# UDPSocket::GetPB()
-__dt__9UDPSocketFv		# UDPSocket::~UDPSocket()
-__ct__9UDPSocketFUl		# UDPSocket::UDPSocket(unsigned long)
-__ct__9UDPSocketFv		# UDPSocket::UDPSocket()
-udp_read_ahead_done__FP11AnnotatedPB		# udp_read_ahead_done(AnnotatedPB*)
-rdDelete
-rdVersion
-rdBind
-rdConnect
-rdAccept
-rdRead
-rdWrite
-rdSend
-rdReadAvail
-rdWriteAvail
-rdBufSize
-rdDiscardRead
-rdShutDown
-rdDisconnect
-rdGUSI_error
-rdAddress
-rdOrphan
-rdAbortConnect
-UnixChannel_EmulatedVTable
-__vt__16UnixSocketDomain		# UnixSocketDomain::__vt
-__vt__15UnixDgramSocket		# UnixDgramSocket::__vt
-__vt__16UnixStreamSocket		# UnixStreamSocket::__vt
-__vt__10UnixSocket		# UnixSocket::__vt
-__dt__16UnixSocketDomainFv		# UnixSocketDomain::~UnixSocketDomain()
-choose__16UnixSocketDomainFiPcPviPvPi		# UnixSocketDomain::choose(int,char*,void*,int,void*,int*)
-socketpair__16UnixSocketDomainFisPP6Socket		# UnixSocketDomain::socketpair(int,short,Socket**)
-socket__16UnixSocketDomainFis		# UnixSocketDomain::socket(int,short)
-GUSIwithUnixSockets
-Validate__12UnixSocketIDFv		# UnixSocketID::Validate()
-__ct__12UnixSocketIDFP11UnixChannel		# UnixSocketID::UnixSocketID(UnixChannel*)
-AbortConnect__12UnixChannel2FP11UnixChannel		# UnixChannel2::AbortConnect(UnixChannel*)
-Orphan__12UnixChannel2Fv		# UnixChannel2::Orphan()
-__ct__12UnixChannel2FP10UnixSocket		# UnixChannel2::UnixChannel2(UnixSocket*)
-Address__11UnixChannelFv		# UnixChannel::Address()
-GUSI_error__11UnixChannelFi		# UnixChannel::GUSI_error(int)
-Disconnect__11UnixChannelFv		# UnixChannel::Disconnect()
-DiscardRead__11UnixChannelFi		# UnixChannel::DiscardRead(int)
-ShutDown__11UnixChannelFi		# UnixChannel::ShutDown(int)
-BufSize__11UnixChannelFv		# UnixChannel::BufSize()
-WriteAvail__11UnixChannelFv		# UnixChannel::WriteAvail()
-ReadAvail__11UnixChannelFv		# UnixChannel::ReadAvail()
-Send__11UnixChannelFP11UnixChannelPvi		# UnixChannel::Send(UnixChannel*,void*,int)
-Write__11UnixChannelFPvi		# UnixChannel::Write(void*,int)
-Read__11UnixChannelFPvi		# UnixChannel::Read(void*,int)
-Accept__11UnixChannelFP11UnixChannel		# UnixChannel::Accept(UnixChannel*)
-Connect__11UnixChannelFP11UnixChannel		# UnixChannel::Connect(UnixChannel*)
-Bind__11UnixChannelFR14UnixSocketAddr		# UnixChannel::Bind(UnixSocketAddr&)
-Version__11UnixChannelFv		# UnixChannel::Version()
-UnBind__11UnixChannelFv		# UnixChannel::UnBind()
-__dt__11UnixChannelFv		# UnixChannel::~UnixChannel()
-__ct__11UnixChannelFP10UnixSocket		# UnixChannel::UnixChannel(UnixSocket*)
-sendto__15UnixDgramSocketFPviiPvi		# UnixDgramSocket::sendto(void*,int,int,void*,int)
-recvfrom__15UnixDgramSocketFPviiPvPi		# UnixDgramSocket::recvfrom(void*,int,int,void*,int*)
-connect__15UnixDgramSocketFPvi		# UnixDgramSocket::connect(void*,int)
-__dt__15UnixDgramSocketFv		# UnixDgramSocket::~UnixDgramSocket()
-__ct__15UnixDgramSocketFv		# UnixDgramSocket::UnixDgramSocket()
-sendto__16UnixStreamSocketFPviiPvi		# UnixStreamSocket::sendto(void*,int,int,void*,int)
-recvfrom__16UnixStreamSocketFPviiPvPi		# UnixStreamSocket::recvfrom(void*,int,int,void*,int*)
-accept__16UnixStreamSocketFPvPi		# UnixStreamSocket::accept(void*,int*)
-connect__16UnixStreamSocketFPvi		# UnixStreamSocket::connect(void*,int)
-listen__16UnixStreamSocketFi		# UnixStreamSocket::listen(int)
-__dt__16UnixStreamSocketFv		# UnixStreamSocket::~UnixStreamSocket()
-__ct__16UnixStreamSocketFv		# UnixStreamSocket::UnixStreamSocket()
-shutdown__10UnixSocketFi		# UnixSocket::shutdown(int)
-select__10UnixSocketFPUcPUcPUc		# UnixSocket::select(unsigned char*,unsigned char*,unsigned char*)
-getpeername__10UnixSocketFPvPi		# UnixSocket::getpeername(void*,int*)
-getsockname__10UnixSocketFPvPi		# UnixSocket::getsockname(void*,int*)
-bind__10UnixSocketFPvi		# UnixSocket::bind(void*,int)
-ioctl__10UnixSocketFUiPv		# UnixSocket::ioctl(unsigned int,void*)
-fcntl__10UnixSocketFUii		# UnixSocket::fcntl(unsigned int,int)
-defaultbind__10UnixSocketFv		# UnixSocket::defaultbind()
-__dt__10UnixSocketFv		# UnixSocket::~UnixSocket()
-__ct__10UnixSocketFs		# UnixSocket::UnixSocket(short)
-__ct__14UnixSocketAddrF9TFileSpec		# UnixSocketAddr::UnixSocketAddr(TFileSpec)
-GUSISetupMSLSIOUX__Fv		# GUSISetupMSLSIOUX()
-fdopen
-__close_file
-__position_file
-__write_file
-__read_file
-__open_file
-__open_temp_file
 __dc_arr
 __del_arr
 __new_arr
@@ -1427,6 +845,8 @@ fflush
 fclose
 tmpfile
 tmpnam
+rename
+remove
 rewind
 fsetpos
 fseek
@@ -1544,23 +964,47 @@ __write_console
 __read_console
 __kill_critical_regions
 __init_critical_regions
+fcntl
+chmod
 umask
+creat
+open
 __rename_file
 __delete_file
 __temp_file_name
+__close_file
+__position_file
+__write_file
+__read_file
+__open_temp_file
+__open_file
 __path2fss
 __sys_free
 __sys_alloc
+mkdir
+fstat
+stat
 __to_gm_time
 __get_time
 __get_clock
+write
+unlink
 ttyname
+sleep
+rmdir
+read
+lseek
+isatty
 getlogin
+getcwd
 exec
 cuserid
+close
+chdir
 _ftype
 _fcreator
 tell
+fdopen
 fileno
 __gettype
 __getcreator
@@ -1568,6 +1012,7 @@ __ctopstring
 __system7present
 __myraise
 utimes
+utime
 uname
 fwide
 fgetws
@@ -1808,3 +1253,889 @@ SIOUXUpdateWindow
 SIOUXDrawGrowBox
 AdjustText
 SIOUXIsAppWindow
+__vt__15GUSISIOUXDevice		# GUSISIOUXDevice::__vt
+__vt__15GUSISIOUXSocket		# GUSISIOUXSocket::__vt
+sInstance__15GUSISIOUXDevice		# GUSISIOUXDevice::sInstance
+sInstance__15GUSISIOUXSocket		# GUSISIOUXSocket::sInstance
+__dt__15GUSISIOUXDeviceFv		# GUSISIOUXDevice::~GUSISIOUXDevice()
+GUSISetupConsoleDescriptors
+open__15GUSISIOUXDeviceFR13GUSIFileTokeni		# GUSISIOUXDevice::open(GUSIFileToken&,int)
+Want__15GUSISIOUXDeviceFR13GUSIFileToken		# GUSISIOUXDevice::Want(GUSIFileToken&)
+__dt__10GUSIDeviceFv		# GUSIDevice::~GUSIDevice()
+Instance__15GUSISIOUXDeviceFv		# GUSISIOUXDevice::Instance()
+select__15GUSISIOUXSocketFPbPbPb		# GUSISIOUXSocket::select(bool*,bool*,bool*)
+isatty__15GUSISIOUXSocketFv		# GUSISIOUXSocket::isatty()
+fstat__15GUSISIOUXSocketFP4stat		# GUSISIOUXSocket::fstat(stat*)
+ioctl__15GUSISIOUXSocketFUiPc		# GUSISIOUXSocket::ioctl(unsigned int,char*)
+write__15GUSISIOUXSocketFRC12GUSIGatherer		# GUSISIOUXSocket::write(const GUSIGatherer&)
+read__15GUSISIOUXSocketFRC13GUSIScatterer		# GUSISIOUXSocket::read(const GUSIScatterer&)
+__dt__15GUSISIOUXSocketFv		# GUSISIOUXSocket::~GUSISIOUXSocket()
+__ct__15GUSISIOUXSocketFv		# GUSISIOUXSocket::GUSISIOUXSocket()
+Instance__15GUSISIOUXSocketFv		# GUSISIOUXSocket::Instance()
+GUSISetupConsoleStdio
+GUSIStdioFlush
+GUSIStdioClose
+GUSI_diag_log
+vdfprintf
+dfprintf
+GUSI_break
+GUSI_log
+GUSI_pos
+gGUSIEventMask
+h_errno
+gGUSIEventHook
+gGUSIExecHook
+gGUSISpinHook
+GUSIHandleNextEvent__Fl		# GUSIHandleNextEvent(long)
+GUSISetMacHostError__Fs		# GUSISetMacHostError(short)
+GUSISetHostError__Fi		# GUSISetHostError(int)
+GUSISetMacError__Fs		# GUSISetMacError(short)
+GUSIMapMacError__Fs		# GUSIMapMacError(short)
+GUSISetPosixError__Fi		# GUSISetPosixError(int)
+GUSIGetHook__FUl		# GUSIGetHook(unsigned long)
+GUSISetHook__FUlPFv_v		# GUSISetHook(unsigned long,void (*)(void))
+__vt__22GUSIThreadManagerProxy		# GUSIThreadManagerProxy::__vt
+__vt__18GUSIContextFactory		# GUSIContextFactory::__vt
+__vt__11GUSIContext		# GUSIContext::__vt
+sError__11GUSIContext		# GUSIContext::sError
+sHasThreading__11GUSIContext		# GUSIContext::sHasThreading
+sCurrentContext__11GUSIContext		# GUSIContext::sCurrentContext
+sContexts__11GUSIContext		# GUSIContext::sContexts
+sInstance__11GUSIProcess		# GUSIProcess::sInstance
+__dt__Q211GUSIContext5QueueFv		# GUSIContext::Queue::~Queue()
+MakeInstance__22GUSIThreadManagerProxyFv		# GUSIThreadManagerProxy::MakeInstance()
+__dt__22GUSIThreadManagerProxyFv		# GUSIThreadManagerProxy::~GUSIThreadManagerProxy()
+__dt__Q23std76auto_ptr<22GUSIThreadManagerProxy,Q23std33_Single<22GUSIThreadManagerProxy>>Fv		# std::auto_ptr<GUSIThreadManagerProxy, std::_Single<GUSIThreadManagerProxy>>::~auto_ptr()
+Instance__22GUSIThreadManagerProxyFv		# GUSIThreadManagerProxy::Instance()
+SetThreadTerminator__22GUSIThreadManagerProxyFUlPFUlPv_vPv		# GUSIThreadManagerProxy::SetThreadTerminator(unsigned long,void (*)(unsigned long, void*),void*)
+SetThreadSwitcher__22GUSIThreadManagerProxyFUlPFUlPv_vPvUc		# GUSIThreadManagerProxy::SetThreadSwitcher(unsigned long,void (*)(unsigned long, void*),void*,unsigned char)
+NewThread__22GUSIThreadManagerProxyFUlPFPv_PvPvlUlPPvPUl		# GUSIThreadManagerProxy::NewThread(unsigned long,void* (*)(void*),void*,long,unsigned long,void**,unsigned long*)
+GUSIControl__FP7IOParam		# GUSIControl(IOParam*)
+GUSIFinishIO__FP7IOParam		# GUSIFinishIO(IOParam*)
+GUSIStartIO__FP7IOParam		# GUSIStartIO(IOParam*)
+Blocked__11GUSIContextFv		# GUSIContext::Blocked()
+Pending__11GUSIContextFv		# GUSIContext::Pending()
+Raise__11GUSIContextFb		# GUSIContext::Raise(bool)
+Yield__11GUSIProcessF13GUSIYieldMode		# GUSIProcess::Yield(GUSIYieldMode)
+SigSuspend__11GUSIContextFv		# GUSIContext::SigSuspend()
+SigWait__11GUSIContextFUi		# GUSIContext::SigWait(unsigned int)
+Yield__11GUSIContextF13GUSIYieldMode		# GUSIContext::Yield(GUSIYieldMode)
+Done__11GUSIContextFb		# GUSIContext::Done(bool)
+Terminate__11GUSIContextFv		# GUSIContext::Terminate()
+SwitchOut__11GUSIContextFv		# GUSIContext::SwitchOut()
+SwitchIn__11GUSIContextFv		# GUSIContext::SwitchIn()
+SetTerminator__11GUSIContextFPFUlPv_vPv		# GUSIContext::SetTerminator(void (*)(unsigned long, void*),void*)
+GUSISetThreadTerminator
+SetSwitchOut__11GUSIContextFPFUlPv_vPv		# GUSIContext::SetSwitchOut(void (*)(unsigned long, void*),void*)
+SetSwitchIn__11GUSIContextFPFUlPv_vPv		# GUSIContext::SetSwitchIn(void (*)(unsigned long, void*),void*)
+GUSISetThreadSwitcher
+CreateContext__18GUSIContextFactoryFUl		# GUSIContextFactory::CreateContext(unsigned long)
+CreateContext__18GUSIContextFactoryFPFPv_PvPvlUlPPvPUl		# GUSIContextFactory::CreateContext(void* (*)(void*),void*,long,unsigned long,void**,unsigned long*)
+__dt__18GUSIContextFactoryFv		# GUSIContextFactory::~GUSIContextFactory()
+__ct__18GUSIContextFactoryFv		# GUSIContextFactory::GUSIContextFactory()
+__dt__Q23std68auto_ptr<18GUSIContextFactory,Q23std29_Single<18GUSIContextFactory>>Fv		# std::auto_ptr<GUSIContextFactory, std::_Single<GUSIContextFactory>>::~auto_ptr()
+SetInstance__18GUSIContextFactoryFP18GUSIContextFactory		# GUSIContextFactory::SetInstance(GUSIContextFactory*)
+Instance__18GUSIContextFactoryFv		# GUSIContextFactory::Instance()
+GUSINewThread
+Wakeup__11GUSIProcessFv		# GUSIProcess::Wakeup()
+Wakeup__11GUSIContextFv		# GUSIContext::Wakeup()
+Liquidate__11GUSIContextFv		# GUSIContext::Liquidate()
+LiquidateAll__Q211GUSIContext5QueueFv		# GUSIContext::Queue::LiquidateAll()
+__dt__11GUSIContextFv		# GUSIContext::~GUSIContext()
+Lookup__11GUSIContextFUl		# GUSIContext::Lookup(unsigned long)
+__ct__11GUSIContextFPFPv_PvPvlUlPPvPUl		# GUSIContext::GUSIContext(void* (*)(void*),void*,long,unsigned long,void**,unsigned long*)
+__ct__11GUSIContextFUl		# GUSIContext::GUSIContext(unsigned long)
+FinishSetup__11GUSIContextFv		# GUSIContext::FinishSetup()
+GUSIThreadTerminator
+StartSetup__11GUSIContextFv		# GUSIContext::StartSetup()
+Setup__11GUSIContextFb		# GUSIContext::Setup(bool)
+GUSIThreadSwitchOut
+GUSIThreadSwitchIn
+__ct__11GUSIProcessFb		# GUSIProcess::GUSIProcess(bool)
+sKeyAlloc__17GUSISpecificTable		# GUSISpecificTable::sKeyAlloc
+sKeys__17GUSISpecificTable		# GUSISpecificTable::sKeys
+sNextID__12GUSISpecific		# GUSISpecific::sNextID
+Destruct__17GUSISpecificTableFP12GUSISpecific		# GUSISpecificTable::Destruct(GUSISpecific*)
+Register__17GUSISpecificTableFP12GUSISpecific		# GUSISpecificTable::Register(GUSISpecific*)
+DeleteSpecific__17GUSISpecificTableFPC12GUSISpecific		# GUSISpecificTable::DeleteSpecific(const GUSISpecific*)
+SetSpecific__17GUSISpecificTableFPC12GUSISpecificPv		# GUSISpecificTable::SetSpecific(const GUSISpecific*,void*)
+__dt__17GUSISpecificTableFv		# GUSISpecificTable::~GUSISpecificTable()
+__vt__12GUSIGatherer		# GUSIGatherer::__vt
+__vt__13GUSIScatterer		# GUSIScatterer::__vt
+__vt__10GUSISocket		# GUSISocket::__vt
+fstat__10GUSISocketFP4stat		# GUSISocket::fstat(stat*)
+__dt__12GUSIGathererFv		# GUSIGatherer::~GUSIGatherer()
+sendmsg__10GUSISocketFPC6msghdri		# GUSISocket::sendmsg(const msghdr*,int)
+sendto__10GUSISocketFRC12GUSIGathereriPCvUi		# GUSISocket::sendto(const GUSIGatherer&,int,const void*,unsigned int)
+write__10GUSISocketFRC12GUSIGatherer		# GUSISocket::write(const GUSIGatherer&)
+__dt__13GUSIScattererFv		# GUSIScatterer::~GUSIScatterer()
+recvmsg__10GUSISocketFP6msghdri		# GUSISocket::recvmsg(msghdr*,int)
+recvfrom__10GUSISocketFRC13GUSIScattereriPvPUi		# GUSISocket::recvfrom(const GUSIScatterer&,int,void*,unsigned int*)
+read__10GUSISocketFRC13GUSIScatterer		# GUSISocket::read(const GUSIScatterer&)
+select__10GUSISocketFPbPbPb		# GUSISocket::select(bool*,bool*,bool*)
+post_select__10GUSISocketFbbb		# GUSISocket::post_select(bool,bool,bool)
+pre_select__10GUSISocketFbbb		# GUSISocket::pre_select(bool,bool,bool)
+isatty__10GUSISocketFv		# GUSISocket::isatty()
+fsync__10GUSISocketFv		# GUSISocket::fsync()
+lseek__10GUSISocketFli		# GUSISocket::lseek(long,int)
+accept__10GUSISocketFPvPUi		# GUSISocket::accept(void*,unsigned int*)
+shutdown__10GUSISocketFi		# GUSISocket::shutdown(int)
+ftruncate__10GUSISocketFl		# GUSISocket::ftruncate(long)
+ioctl__10GUSISocketFUiPc		# GUSISocket::ioctl(unsigned int,char*)
+fcntl__10GUSISocketFiPc		# GUSISocket::fcntl(int,char*)
+setsockopt__10GUSISocketFiiPvUi		# GUSISocket::setsockopt(int,int,void*,unsigned int)
+getsockopt__10GUSISocketFiiPvPUi		# GUSISocket::getsockopt(int,int,void*,unsigned int*)
+connect__10GUSISocketFPvUi		# GUSISocket::connect(void*,unsigned int)
+listen__10GUSISocketFi		# GUSISocket::listen(int)
+getpeername__10GUSISocketFPvPUi		# GUSISocket::getpeername(void*,unsigned int*)
+getsockname__10GUSISocketFPvPUi		# GUSISocket::getsockname(void*,unsigned int*)
+bind__10GUSISocketFPvUi		# GUSISocket::bind(void*,unsigned int)
+RemoveContext__10GUSISocketFP11GUSIContext		# GUSISocket::RemoveContext(GUSIContext*)
+AddContext__10GUSISocketFP11GUSIContext		# GUSISocket::AddContext(GUSIContext*)
+Supports__10GUSISocketFQ210GUSISocket12ConfigOption		# GUSISocket::Supports(GUSISocket::ConfigOption)
+__dt__10GUSISocketFv		# GUSISocket::~GUSISocket()
+close__10GUSISocketFv		# GUSISocket::close()
+__ct__10GUSISocketFv		# GUSISocket::GUSISocket()
+__ct__10GUSImsghdrFRC13GUSIScattGathPCvUi		# GUSImsghdr::GUSImsghdr(const GUSIScattGath&,const void*,unsigned int)
+__vt__13GUSIScattGath		# GUSIScattGath::__vt
+Peek__Q214GUSIRingBuffer6PeekerFRC13GUSIScattererRUl		# GUSIRingBuffer::Peeker::Peek(const GUSIScatterer&,unsigned long&)
+Peek__Q214GUSIRingBuffer6PeekerFPvRUl		# GUSIRingBuffer::Peeker::Peek(void*,unsigned long&)
+PeekBuffer__Q214GUSIRingBuffer6PeekerFRUl		# GUSIRingBuffer::Peeker::PeekBuffer(unsigned long&)
+__dt__Q214GUSIRingBuffer6PeekerFv		# GUSIRingBuffer::Peeker::~Peeker()
+__ct__Q214GUSIRingBuffer6PeekerFR14GUSIRingBuffer		# GUSIRingBuffer::Peeker::Peeker(GUSIRingBuffer&)
+Valid__14GUSIRingBufferFv		# GUSIRingBuffer::Valid()
+Free__14GUSIRingBufferFv		# GUSIRingBuffer::Free()
+IterateIOVec__14GUSIRingBufferFRC13GUSIScattGathRUlRUlb		# GUSIRingBuffer::IterateIOVec(const GUSIScattGath&,unsigned long&,unsigned long&,bool)
+Consume__14GUSIRingBufferFPvRUl		# GUSIRingBuffer::Consume(void*,unsigned long&)
+Produce__14GUSIRingBufferFPvRUl		# GUSIRingBuffer::Produce(void*,unsigned long&)
+FreeBuffer__14GUSIRingBufferFPvUl		# GUSIRingBuffer::FreeBuffer(void*,unsigned long)
+ValidBuffer__14GUSIRingBufferFPvUl		# GUSIRingBuffer::ValidBuffer(void*,unsigned long)
+ConsumeBuffer__14GUSIRingBufferFRUl		# GUSIRingBuffer::ConsumeBuffer(unsigned long&)
+ProduceBuffer__14GUSIRingBufferFRUl		# GUSIRingBuffer::ProduceBuffer(unsigned long&)
+__dt__14GUSIRingBufferFv		# GUSIRingBuffer::~GUSIRingBuffer()
+ObsoleteBuffer__14GUSIRingBufferFv		# GUSIRingBuffer::ObsoleteBuffer()
+PurgeBuffers__14GUSIRingBufferFv		# GUSIRingBuffer::PurgeBuffers()
+SwitchBuffer__14GUSIRingBufferFUl		# GUSIRingBuffer::SwitchBuffer(unsigned long)
+__ct__14GUSIRingBufferFUl		# GUSIRingBuffer::GUSIRingBuffer(unsigned long)
+Invariant__14GUSIRingBufferFv		# GUSIRingBuffer::Invariant()
+Distance__14GUSIRingBufferFPcPc		# GUSIRingBuffer::Distance(char*,char*)
+__ct__13GUSIScattGathFRC13GUSIScattGath		# GUSIScattGath::GUSIScattGath(const GUSIScattGath&)
+__as__13GUSIScattGathFRC13GUSIScattGath		# GUSIScattGath::operator =(const GUSIScattGath&)
+__dt__13GUSIScattGathFv		# GUSIScattGath::~GUSIScattGath()
+Buffer__13GUSIScattGathCFv		# GUSIScattGath::Buffer() const
+__ct__13GUSIScattGathFPvUlb		# GUSIScattGath::GUSIScattGath(void*,unsigned long,bool)
+__ct__13GUSIScattGathFPC5iovecib		# GUSIScattGath::GUSIScattGath(const iovec*,int,bool)
+__vt__14GUSIPipeSocket		# GUSIPipeSocket::__vt
+__vt__15GUSIPipeFactory		# GUSIPipeFactory::__vt
+sInstance__15GUSIPipeFactory		# GUSIPipeFactory::sInstance
+__dt__15GUSIPipeFactoryFv		# GUSIPipeFactory::~GUSIPipeFactory()
+shutdown__14GUSIPipeSocketFi		# GUSIPipeSocket::shutdown(int)
+__dt__14GUSIPipeSocketFv		# GUSIPipeSocket::~GUSIPipeSocket()
+select__14GUSIPipeSocketFPbPbPb		# GUSIPipeSocket::select(bool*,bool*,bool*)
+write__14GUSIPipeSocketFRC12GUSIGatherer		# GUSIPipeSocket::write(const GUSIGatherer&)
+read__14GUSIPipeSocketFRC13GUSIScatterer		# GUSIPipeSocket::read(const GUSIScatterer&)
+Supports__14GUSIPipeSocketFQ210GUSISocket12ConfigOption		# GUSIPipeSocket::Supports(GUSISocket::ConfigOption)
+WakeupPeer__14GUSIPipeSocketFv		# GUSIPipeSocket::WakeupPeer()
+__ct__14GUSIPipeSocketFv		# GUSIPipeSocket::GUSIPipeSocket()
+__dt__14GUSIErrorSaverFv		# GUSIErrorSaver::~GUSIErrorSaver()
+socketpair__15GUSIPipeFactoryFiiiPP10GUSISocket		# GUSIPipeFactory::socketpair(int,int,int,GUSISocket**)
+socket__15GUSIPipeFactoryFiii		# GUSIPipeFactory::socket(int,int,int)
+__dt__17GUSISocketFactoryFv		# GUSISocketFactory::~GUSISocketFactory()
+GUSIwithLocalSockets
+__vt__22GUSISocketTypeRegistry		# GUSISocketTypeRegistry::__vt
+__vt__24GUSISocketDomainRegistry		# GUSISocketDomainRegistry::__vt
+__vt__17GUSISocketFactory		# GUSISocketFactory::__vt
+sInstance__24GUSISocketDomainRegistry		# GUSISocketDomainRegistry::sInstance
+__dt__24GUSISocketDomainRegistryFv		# GUSISocketDomainRegistry::~GUSISocketDomainRegistry()
+__dt__22GUSISocketTypeRegistryFv		# GUSISocketTypeRegistry::~GUSISocketTypeRegistry()
+RemoveFactory__22GUSISocketTypeRegistryFii		# GUSISocketTypeRegistry::RemoveFactory(int,int)
+AddFactory__22GUSISocketTypeRegistryFiiP17GUSISocketFactory		# GUSISocketTypeRegistry::AddFactory(int,int,GUSISocketFactory*)
+socketpair__22GUSISocketTypeRegistryFiiiPP10GUSISocket		# GUSISocketTypeRegistry::socketpair(int,int,int,GUSISocket**)
+socket__22GUSISocketTypeRegistryFiii		# GUSISocketTypeRegistry::socket(int,int,int)
+Find__22GUSISocketTypeRegistryFiibRPQ222GUSISocketTypeRegistry5Entry		# GUSISocketTypeRegistry::Find(int,int,bool,GUSISocketTypeRegistry::Entry*&)
+Initialize__22GUSISocketTypeRegistryFv		# GUSISocketTypeRegistry::Initialize()
+__ct__Q222GUSISocketTypeRegistry5EntryFv		# GUSISocketTypeRegistry::Entry::Entry()
+AddFactory__24GUSISocketDomainRegistryFiP17GUSISocketFactory		# GUSISocketDomainRegistry::AddFactory(int,GUSISocketFactory*)
+socketpair__24GUSISocketDomainRegistryFiiiPP10GUSISocket		# GUSISocketDomainRegistry::socketpair(int,int,int,GUSISocket**)
+socket__24GUSISocketDomainRegistryFiii		# GUSISocketDomainRegistry::socket(int,int,int)
+__ct__24GUSISocketDomainRegistryFv		# GUSISocketDomainRegistry::GUSISocketDomainRegistry()
+socketpair__17GUSISocketFactoryFiiiPP10GUSISocket		# GUSISocketFactory::socketpair(int,int,int,GUSISocket**)
+sDrvrState__16GUSIMTInetSocket		# GUSIMTInetSocket::sDrvrState
+__vt__16GUSIMTInetSocket		# GUSIMTInetSocket::__vt
+sHostAddress__16GUSIMTInetSocket		# GUSIMTInetSocket::sHostAddress
+sDrvrRefNum__16GUSIMTInetSocket		# GUSIMTInetSocket::sDrvrRefNum
+__dt__16GUSIMTInetSocketFv		# GUSIMTInetSocket::~GUSIMTInetSocket()
+GUSIwithMTInetSockets
+Supports__16GUSIMTInetSocketFQ210GUSISocket12ConfigOption		# GUSIMTInetSocket::Supports(GUSISocket::ConfigOption)
+setsockopt__16GUSIMTInetSocketFiiPvUi		# GUSIMTInetSocket::setsockopt(int,int,void*,unsigned int)
+getsockopt__16GUSIMTInetSocketFiiPvPUi		# GUSIMTInetSocket::getsockopt(int,int,void*,unsigned int*)
+ioctl__16GUSIMTInetSocketFUiPc		# GUSIMTInetSocket::ioctl(unsigned int,char*)
+fcntl__16GUSIMTInetSocketFiPc		# GUSIMTInetSocket::fcntl(int,char*)
+shutdown__16GUSIMTInetSocketFi		# GUSIMTInetSocket::shutdown(int)
+getpeername__16GUSIMTInetSocketFPvPUi		# GUSIMTInetSocket::getpeername(void*,unsigned int*)
+getsockname__16GUSIMTInetSocketFPvPUi		# GUSIMTInetSocket::getsockname(void*,unsigned int*)
+bind__16GUSIMTInetSocketFPvUi		# GUSIMTInetSocket::bind(void*,unsigned int)
+__dt__17GUSISMInputBufferFv		# GUSISMInputBuffer::~GUSISMInputBuffer()
+__dt__18GUSISMOutputBufferFv		# GUSISMOutputBuffer::~GUSISMOutputBuffer()
+__ct__16GUSIMTInetSocketFv		# GUSIMTInetSocket::GUSIMTInetSocket()
+HostAddr__16GUSIMTInetSocketFv		# GUSIMTInetSocket::HostAddr()
+Driver__16GUSIMTInetSocketFv		# GUSIMTInetSocket::Driver()
+__vt__16GUSIMTTcpFactory		# GUSIMTTcpFactory::__vt
+__vt__15GUSIMTTcpSocket		# GUSIMTTcpSocket::__vt
+instance__16GUSIMTTcpFactory		# GUSIMTTcpFactory::instance
+sListenProc__15GUSIMTTcpSocket		# GUSIMTTcpSocket::sListenProc
+sConnectProc__15GUSIMTTcpSocket		# GUSIMTTcpSocket::sConnectProc
+sNotifyProc__15GUSIMTTcpSocket		# GUSIMTTcpSocket::sNotifyProc
+sRecvProc__15GUSIMTTcpSocket		# GUSIMTTcpSocket::sRecvProc
+sSendProc__15GUSIMTTcpSocket		# GUSIMTTcpSocket::sSendProc
+__dt__16GUSIMTTcpFactoryFv		# GUSIMTTcpFactory::~GUSIMTTcpFactory()
+GUSIwithMTTcpSockets
+socket__16GUSIMTTcpFactoryFiii		# GUSIMTTcpFactory::socket(int,int,int)
+__dt__15GUSIMTTcpSocketFv		# GUSIMTTcpSocket::~GUSIMTTcpSocket()
+shutdown__15GUSIMTTcpSocketFi		# GUSIMTTcpSocket::shutdown(int)
+select__15GUSIMTTcpSocketFPbPbPb		# GUSIMTTcpSocket::select(bool*,bool*,bool*)
+sendto__15GUSIMTTcpSocketFRC12GUSIGathereriPCvUi		# GUSIMTTcpSocket::sendto(const GUSIGatherer&,int,const void*,unsigned int)
+recvfrom__15GUSIMTTcpSocketFRC13GUSIScattereriPvPUi		# GUSIMTTcpSocket::recvfrom(const GUSIScatterer&,int,void*,unsigned int*)
+__ct__15GUSIMTTcpSocketFRQ215GUSIMTTcpSocket8Listener		# GUSIMTTcpSocket::GUSIMTTcpSocket(GUSIMTTcpSocket::Listener&)
+accept__15GUSIMTTcpSocketFPvPUi		# GUSIMTTcpSocket::accept(void*,unsigned int*)
+listen__15GUSIMTTcpSocketFi		# GUSIMTTcpSocket::listen(int)
+connect__15GUSIMTTcpSocketFPvUi		# GUSIMTTcpSocket::connect(void*,unsigned int)
+__ct__15GUSIMTTcpSocketFv		# GUSIMTTcpSocket::GUSIMTTcpSocket()
+SetupListener__15GUSIMTTcpSocketFRQ215GUSIMTTcpSocket8Listener		# GUSIMTTcpSocket::SetupListener(GUSIMTTcpSocket::Listener&)
+CreateStream__15GUSIMTTcpSocketFPP15GUSIMTTcpSocket		# GUSIMTTcpSocket::CreateStream(GUSIMTTcpSocket**)
+GUSIMTTListen__FP15GUSIMTTcpSocket		# GUSIMTTListen(GUSIMTTcpSocket*)
+GUSIMTTListenDone__FP7TCPiopb		# GUSIMTTListenDone(TCPiopb*)
+GUSIMTTConnectDone__FP7TCPiopb		# GUSIMTTConnectDone(TCPiopb*)
+GUSIMTTNotify
+GUSIMTTRecv__FP15GUSIMTTcpSocket		# GUSIMTTRecv(GUSIMTTcpSocket*)
+GUSIMTTRecvDone__FP7TCPiopb		# GUSIMTTRecvDone(TCPiopb*)
+GUSIMTTSend__FP15GUSIMTTcpSocket		# GUSIMTTSend(GUSIMTTcpSocket*)
+GUSIMTTSendDone__FP7TCPiopb		# GUSIMTTSendDone(TCPiopb*)
+sID__16GUSITempFileSpec		# GUSITempFileSpec::sID
+sScratchSize__12GUSIFileSpec		# GUSIFileSpec::sScratchSize
+sScratch__12GUSIFileSpec		# GUSIFileSpec::sScratch
+GUSIFSp2Encoding
+GUSIFSp2DirRelPath
+GUSIFSp2RelPath
+GUSIFSp2FullPath
+GUSIFSpResolve
+GUSIFSpIndex
+GUSIFSpDown
+GUSIFSpUp
+GUSISpecial2FSp
+GUSIPath2FSp
+GUSIWD2FSp
+GUSIFRefNum2FSp
+TempName__16GUSITempFileSpecFPCUc		# GUSITempFileSpec::TempName(const unsigned char*)
+TempName__16GUSITempFileSpecFv		# GUSITempFileSpec::TempName()
+__ct__16GUSITempFileSpecFslPCUc		# GUSITempFileSpec::GUSITempFileSpec(short,long,const unsigned char*)
+__ct__16GUSITempFileSpecFsPCUc		# GUSITempFileSpec::GUSITempFileSpec(short,const unsigned char*)
+__ct__16GUSITempFileSpecFPCUc		# GUSITempFileSpec::GUSITempFileSpec(const unsigned char*)
+__ct__16GUSITempFileSpecFsl		# GUSITempFileSpec::GUSITempFileSpec(short,long)
+__ct__16GUSITempFileSpecFs		# GUSITempFileSpec::GUSITempFileSpec(short)
+IsParentOf__12GUSIFileSpecCFRC12GUSIFileSpec		# GUSIFileSpec::IsParentOf(const GUSIFileSpec&) const
+__eq__FRC12GUSIFileSpecRC12GUSIFileSpec		# operator ==(const GUSIFileSpec&,const GUSIFileSpec&)
+AliasPath__12GUSIFileSpecCFv		# GUSIFileSpec::AliasPath() const
+Resolve__12GUSIFileSpecFb		# GUSIFileSpec::Resolve(bool)
+EncodedPath__12GUSIFileSpecCFv		# GUSIFileSpec::EncodedPath() const
+RelativePath__12GUSIFileSpecCFv		# GUSIFileSpec::RelativePath() const
+RelativePath__12GUSIFileSpecCFRC6FSSpec		# GUSIFileSpec::RelativePath(const FSSpec&) const
+PrependPathComponent__12GUSIFileSpecCFRPcPCUcb		# GUSIFileSpec::PrependPathComponent(char*&,const unsigned char*,bool) const
+FullPath__12GUSIFileSpecCFv		# GUSIFileSpec::FullPath() const
+CatInfo__12GUSIFileSpecFs		# GUSIFileSpec::CatInfo(short)
+TouchFolder__12GUSIFileSpecFv		# GUSIFileSpec::TouchFolder()
+SetName__12GUSIFileSpecFPCc		# GUSIFileSpec::SetName(const char*)
+SetName__12GUSIFileSpecFPCUc		# GUSIFileSpec::SetName(const unsigned char*)
+SetParID__12GUSIFileSpecFl		# GUSIFileSpec::SetParID(long)
+SetVRef__12GUSIFileSpecFs		# GUSIFileSpec::SetVRef(short)
+__vc__12GUSIFileSpecFs		# GUSIFileSpec::operator [](short)
+__pl__FRC6FSSpecPCc		# operator +(const FSSpec&,const char*)
+__pl__FRC6FSSpecPCUc		# operator +(const FSSpec&,const unsigned char*)
+AddPathComponent__12GUSIFileSpecFPCcib		# GUSIFileSpec::AddPathComponent(const char*,int,bool)
+__pp__12GUSIFileSpecFv		# GUSIFileSpec::operator ++()
+__mm__12GUSIFileSpecFv		# GUSIFileSpec::operator --()
+GetVolume__12GUSIFileSpecFs		# GUSIFileSpec::GetVolume(short)
+__ct__12GUSIFileSpecFPCcb		# GUSIFileSpec::GUSIFileSpec(const char*,bool)
+__ct__12GUSIFileSpecFs		# GUSIFileSpec::GUSIFileSpec(short)
+__ct__12GUSIFileSpecFUls		# GUSIFileSpec::GUSIFileSpec(unsigned long,short)
+__ct__12GUSIFileSpecFsPCUcb		# GUSIFileSpec::GUSIFileSpec(short,const unsigned char*,bool)
+__ct__12GUSIFileSpecFslPCUcb		# GUSIFileSpec::GUSIFileSpec(short,long,const unsigned char*,bool)
+__ct__12GUSIFileSpecFRC6FSSpecb		# GUSIFileSpec::GUSIFileSpec(const FSSpec&,bool)
+__ct__12GUSIFileSpecFRC12GUSIFileSpec		# GUSIFileSpec::GUSIFileSpec(const GUSIFileSpec&)
+CScratch__12GUSIFileSpecFb		# GUSIFileSpec::CScratch(bool)
+ReadHex__FPCciPc		# ReadHex(const char*,int,char*)
+__vt__10GUSIDevice		# GUSIDevice::__vt
+sInstance__18GUSIDeviceRegistry		# GUSIDeviceRegistry::sInstance
+faccess__18GUSIDeviceRegistryFPCcPUiPv		# GUSIDeviceRegistry::faccess(const char*,unsigned int*,void*)
+fsetfileinfo__18GUSIDeviceRegistryFPCcUlUl		# GUSIDeviceRegistry::fsetfileinfo(const char*,unsigned long,unsigned long)
+fgetfileinfo__18GUSIDeviceRegistryFPCcPUlPUl		# GUSIDeviceRegistry::fgetfileinfo(const char*,unsigned long*,unsigned long*)
+readlink__18GUSIDeviceRegistryFPCcPci		# GUSIDeviceRegistry::readlink(const char*,char*,int)
+symlink__18GUSIDeviceRegistryFPCcPCc		# GUSIDeviceRegistry::symlink(const char*,const char*)
+opendir__18GUSIDeviceRegistryFPCc		# GUSIDeviceRegistry::opendir(const char*)
+rmdir__18GUSIDeviceRegistryFPCc		# GUSIDeviceRegistry::rmdir(const char*)
+mkdir__18GUSIDeviceRegistryFPCc		# GUSIDeviceRegistry::mkdir(const char*)
+access__18GUSIDeviceRegistryFPCci		# GUSIDeviceRegistry::access(const char*,int)
+utime__18GUSIDeviceRegistryFPCcPC7utimbuf		# GUSIDeviceRegistry::utime(const char*,const utimbuf*)
+chmod__18GUSIDeviceRegistryFPCcUs		# GUSIDeviceRegistry::chmod(const char*,unsigned short)
+stat__18GUSIDeviceRegistryFPCcP4statb		# GUSIDeviceRegistry::stat(const char*,stat*,bool)
+rename__18GUSIDeviceRegistryFPCcPCc		# GUSIDeviceRegistry::rename(const char*,const char*)
+remove__18GUSIDeviceRegistryFPCc		# GUSIDeviceRegistry::remove(const char*)
+open__18GUSIDeviceRegistryFPCci		# GUSIDeviceRegistry::open(const char*,int)
+Lookup__18GUSIDeviceRegistryFR13GUSIFileToken		# GUSIDeviceRegistry::Lookup(GUSIFileToken&)
+RemoveDevice__18GUSIDeviceRegistryFP10GUSIDevice		# GUSIDeviceRegistry::RemoveDevice(GUSIDevice*)
+AddDevice__18GUSIDeviceRegistryFP10GUSIDevice		# GUSIDeviceRegistry::AddDevice(GUSIDevice*)
+__ct__18GUSIDeviceRegistryFv		# GUSIDeviceRegistry::GUSIDeviceRegistry()
+faccess__10GUSIDeviceFR13GUSIFileTokenPUiPv		# GUSIDevice::faccess(GUSIFileToken&,unsigned int*,void*)
+fsetfileinfo__10GUSIDeviceFR13GUSIFileTokenUlUl		# GUSIDevice::fsetfileinfo(GUSIFileToken&,unsigned long,unsigned long)
+fgetfileinfo__10GUSIDeviceFR13GUSIFileTokenPUlPUl		# GUSIDevice::fgetfileinfo(GUSIFileToken&,unsigned long*,unsigned long*)
+readlink__10GUSIDeviceFR13GUSIFileTokenPci		# GUSIDevice::readlink(GUSIFileToken&,char*,int)
+symlink__10GUSIDeviceFR13GUSIFileTokenPCc		# GUSIDevice::symlink(GUSIFileToken&,const char*)
+opendir__10GUSIDeviceFR13GUSIFileToken		# GUSIDevice::opendir(GUSIFileToken&)
+rmdir__10GUSIDeviceFR13GUSIFileToken		# GUSIDevice::rmdir(GUSIFileToken&)
+mkdir__10GUSIDeviceFR13GUSIFileToken		# GUSIDevice::mkdir(GUSIFileToken&)
+access__10GUSIDeviceFR13GUSIFileTokeni		# GUSIDevice::access(GUSIFileToken&,int)
+utime__10GUSIDeviceFR13GUSIFileTokenPC7utimbuf		# GUSIDevice::utime(GUSIFileToken&,const utimbuf*)
+chmod__10GUSIDeviceFR13GUSIFileTokenUs		# GUSIDevice::chmod(GUSIFileToken&,unsigned short)
+stat__10GUSIDeviceFR13GUSIFileTokenP4stat		# GUSIDevice::stat(GUSIFileToken&,stat*)
+rename__10GUSIDeviceFR13GUSIFileTokenPCc		# GUSIDevice::rename(GUSIFileToken&,const char*)
+remove__10GUSIDeviceFR13GUSIFileToken		# GUSIDevice::remove(GUSIFileToken&)
+open__10GUSIDeviceFR13GUSIFileTokeni		# GUSIDevice::open(GUSIFileToken&,int)
+Want__10GUSIDeviceFR13GUSIFileToken		# GUSIDevice::Want(GUSIFileToken&)
+__ct__13GUSIFileTokenFsQ213GUSIFileToken7Request		# GUSIFileToken::GUSIFileToken(short,GUSIFileToken::Request)
+__ct__13GUSIFileTokenFRC12GUSIFileSpecQ213GUSIFileToken7Request		# GUSIFileToken::GUSIFileToken(const GUSIFileSpec&,GUSIFileToken::Request)
+StrStdStream__13GUSIFileTokenFPCc		# GUSIFileToken::StrStdStream(const char*)
+__ct__13GUSIFileTokenFPCcQ213GUSIFileToken7Requestb		# GUSIFileToken::GUSIFileToken(const char*,GUSIFileToken::Request,bool)
+StrFragEqual__13GUSIFileTokenFPCcPCc		# GUSIFileToken::StrFragEqual(const char*,const char*)
+__vt__16GUSIMacDirectory		# GUSIMacDirectory::__vt
+__vt__13GUSIDirectory		# GUSIDirectory::__vt
+__vt__17GUSIMacFileSocket		# GUSIMacFileSocket::__vt
+__vt__17GUSIMacFileDevice		# GUSIMacFileDevice::__vt
+sWakeupProc__17GUSIMacFileSocket		# GUSIMacFileSocket::sWakeupProc
+sWriteProc__17GUSIMacFileSocket		# GUSIMacFileSocket::sWriteProc
+sReadProc__17GUSIMacFileSocket		# GUSIMacFileSocket::sReadProc
+__dt__16GUSIMacDirectoryFv		# GUSIMacDirectory::~GUSIMacDirectory()
+rewinddir__16GUSIMacDirectoryFv		# GUSIMacDirectory::rewinddir()
+seekdir__16GUSIMacDirectoryFl		# GUSIMacDirectory::seekdir(long)
+telldir__16GUSIMacDirectoryFv		# GUSIMacDirectory::telldir()
+readdir__16GUSIMacDirectoryFv		# GUSIMacDirectory::readdir()
+__dt__13GUSIDirectoryFv		# GUSIDirectory::~GUSIDirectory()
+__ct__16GUSIMacDirectoryFRC6FSSpec		# GUSIMacDirectory::GUSIMacDirectory(const FSSpec&)
+Supports__17GUSIMacFileSocketFQ210GUSISocket12ConfigOption		# GUSIMacFileSocket::Supports(GUSISocket::ConfigOption)
+fstat__17GUSIMacFileSocketFP4stat		# GUSIMacFileSocket::fstat(stat*)
+ftruncate__17GUSIMacFileSocketFl		# GUSIMacFileSocket::ftruncate(long)
+lseek__17GUSIMacFileSocketFli		# GUSIMacFileSocket::lseek(long,int)
+setsockopt__17GUSIMacFileSocketFiiPvUi		# GUSIMacFileSocket::setsockopt(int,int,void*,unsigned int)
+getsockopt__17GUSIMacFileSocketFiiPvPUi		# GUSIMacFileSocket::getsockopt(int,int,void*,unsigned int*)
+ioctl__17GUSIMacFileSocketFUiPc		# GUSIMacFileSocket::ioctl(unsigned int,char*)
+fcntl__17GUSIMacFileSocketFiPc		# GUSIMacFileSocket::fcntl(int,char*)
+fsync__17GUSIMacFileSocketFv		# GUSIMacFileSocket::fsync()
+select__17GUSIMacFileSocketFPbPbPb		# GUSIMacFileSocket::select(bool*,bool*,bool*)
+write__17GUSIMacFileSocketFRC12GUSIGatherer		# GUSIMacFileSocket::write(const GUSIGatherer&)
+read__17GUSIMacFileSocketFRC13GUSIScatterer		# GUSIMacFileSocket::read(const GUSIScatterer&)
+SyncWrite__17GUSIMacFileSocketFv		# GUSIMacFileSocket::SyncWrite()
+SyncRead__17GUSIMacFileSocketFv		# GUSIMacFileSocket::SyncRead()
+__dt__17GUSIMacFileSocketFv		# GUSIMacFileSocket::~GUSIMacFileSocket()
+__ct__17GUSIMacFileSocketFsbi		# GUSIMacFileSocket::GUSIMacFileSocket(short,bool,int)
+faccess__17GUSIMacFileDeviceFR13GUSIFileTokenPUiPv		# GUSIMacFileDevice::faccess(GUSIFileToken&,unsigned int*,void*)
+fsetfileinfo__17GUSIMacFileDeviceFR13GUSIFileTokenUlUl		# GUSIMacFileDevice::fsetfileinfo(GUSIFileToken&,unsigned long,unsigned long)
+fgetfileinfo__17GUSIMacFileDeviceFR13GUSIFileTokenPUlPUl		# GUSIMacFileDevice::fgetfileinfo(GUSIFileToken&,unsigned long*,unsigned long*)
+readlink__17GUSIMacFileDeviceFR13GUSIFileTokenPci		# GUSIMacFileDevice::readlink(GUSIFileToken&,char*,int)
+symlink__17GUSIMacFileDeviceFR13GUSIFileTokenPCc		# GUSIMacFileDevice::symlink(GUSIFileToken&,const char*)
+opendir__17GUSIMacFileDeviceFR13GUSIFileToken		# GUSIMacFileDevice::opendir(GUSIFileToken&)
+rmdir__17GUSIMacFileDeviceFR13GUSIFileToken		# GUSIMacFileDevice::rmdir(GUSIFileToken&)
+mkdir__17GUSIMacFileDeviceFR13GUSIFileToken		# GUSIMacFileDevice::mkdir(GUSIFileToken&)
+access__17GUSIMacFileDeviceFR13GUSIFileTokeni		# GUSIMacFileDevice::access(GUSIFileToken&,int)
+utime__17GUSIMacFileDeviceFR13GUSIFileTokenPC7utimbuf		# GUSIMacFileDevice::utime(GUSIFileToken&,const utimbuf*)
+chmod__17GUSIMacFileDeviceFR13GUSIFileTokenUs		# GUSIMacFileDevice::chmod(GUSIFileToken&,unsigned short)
+stat__17GUSIMacFileDeviceFR13GUSIFileTokenP4stat		# GUSIMacFileDevice::stat(GUSIFileToken&,stat*)
+rename__17GUSIMacFileDeviceFR13GUSIFileTokenPCc		# GUSIMacFileDevice::rename(GUSIFileToken&,const char*)
+CleanupTemporaries__17GUSIMacFileDeviceFb		# GUSIMacFileDevice::CleanupTemporaries(bool)
+MarkTemporary__17GUSIMacFileDeviceFRC6FSSpec		# GUSIMacFileDevice::MarkTemporary(const FSSpec&)
+remove__17GUSIMacFileDeviceFR13GUSIFileToken		# GUSIMacFileDevice::remove(GUSIFileToken&)
+open__17GUSIMacFileDeviceFsi		# GUSIMacFileDevice::open(short,int)
+open__17GUSIMacFileDeviceFR13GUSIFileTokeni		# GUSIMacFileDevice::open(GUSIFileToken&,int)
+Want__17GUSIMacFileDeviceFR13GUSIFileToken		# GUSIMacFileDevice::Want(GUSIFileToken&)
+__dt__17GUSIMacFileDeviceFv		# GUSIMacFileDevice::~GUSIMacFileDevice()
+__dt__Q23std66auto_ptr<17GUSIMacFileDevice,Q23std28_Single<17GUSIMacFileDevice>>Fv		# std::auto_ptr<GUSIMacFileDevice, std::_Single<GUSIMacFileDevice>>::~auto_ptr()
+Instance__17GUSIMacFileDeviceFv		# GUSIMacFileDevice::Instance()
+sInstance__17GUSIConfiguration		# GUSIConfiguration::sInstance
+ConfigureHandleAppleEvents__17GUSIConfigurationFb		# GUSIConfiguration::ConfigureHandleAppleEvents(bool)
+CmdPeriod__17GUSIConfigurationFPC11EventRecord		# GUSIConfiguration::CmdPeriod(const EventRecord*)
+CheckInterrupt__17GUSIConfigurationFv		# GUSIConfiguration::CheckInterrupt()
+BrokenPipe__17GUSIConfigurationFv		# GUSIConfiguration::BrokenPipe()
+DoAutoInitGraf__17GUSIConfigurationFv		# GUSIConfiguration::DoAutoInitGraf()
+DoAutoSpin__17GUSIConfigurationCFv		# GUSIConfiguration::DoAutoSpin() const
+SetDefaultFType__17GUSIConfigurationCFRC12GUSIFileSpec		# GUSIConfiguration::SetDefaultFType(const GUSIFileSpec&) const
+ConfigureSuffices__17GUSIConfigurationFsPQ217GUSIConfiguration10FileSuffix		# GUSIConfiguration::ConfigureSuffices(short,GUSIConfiguration::FileSuffix*)
+__ct__17GUSIConfigurationFs		# GUSIConfiguration::GUSIConfiguration(short)
+LookupSocket__19GUSIDescriptorTableFi		# GUSIDescriptorTable::LookupSocket(int)
+__vc__19GUSIDescriptorTableFi		# GUSIDescriptorTable::operator [](int)
+RemoveSocket__19GUSIDescriptorTableFi		# GUSIDescriptorTable::RemoveSocket(int)
+InstallSocket__19GUSIDescriptorTableFP10GUSISocketi		# GUSIDescriptorTable::InstallSocket(GUSISocket*,int)
+__dt__19GUSIDescriptorTableFv		# GUSIDescriptorTable::~GUSIDescriptorTable()
+CloseAllDescriptors__19GUSIDescriptorTableFv		# GUSIDescriptorTable::CloseAllDescriptors()
+__dt__Q23std70auto_ptr<19GUSIDescriptorTable,Q23std30_Single<19GUSIDescriptorTable>>Fv		# std::auto_ptr<GUSIDescriptorTable, std::_Single<GUSIDescriptorTable>>::~auto_ptr()
+Instance__19GUSIDescriptorTableFv		# GUSIDescriptorTable::Instance()
+GUSIDefaultSetupConsole
+GUSISetupConsole
+__ct__19GUSIDescriptorTableFv		# GUSIDescriptorTable::GUSIDescriptorTable()
+get__40GUSISpecificData<Q23std2tm,&.GUSIKillTM>FP17GUSISpecificTable		# GUSISpecificData<std::tm, &.GUSIKillTM>::get(GUSISpecificTable*)
+faccess__FPCcPUiPv		# faccess(const char*,unsigned int*,void*)
+fsetfileinfo
+fgetfileinfo
+getservent
+getservbyport
+getservbyname
+getprotoent
+getprotobynumber
+getprotobyname
+gethostbyname
+gethostbyaddr
+endservent
+endprotoent
+setservent
+setprotoent
+gethostname
+gethostid
+inet_ntoa
+inet_addr
+inet_aton
+readlink
+symlink
+usleep
+truncate
+ftruncate
+setsockopt
+getsockopt
+ioctl
+shutdown
+getpeername
+getsockname
+select
+sendmsg
+sendto
+send
+writev
+recvmsg
+recvfrom
+recv
+readv
+accept
+listen
+connect
+bind
+socketpair
+socket
+getdtablesize
+mktime__FPQ23std2tm		# mktime(std::tm*)
+gmtime__FPCUl		# gmtime(const unsigned long*)
+localtime__FPCUl		# localtime(const unsigned long*)
+__dt__12GUSISpecificFv		# GUSISpecific::~GUSISpecific()
+__dt__40GUSISpecificData<Q23std2tm,&.GUSIKillTM>Fv		# GUSISpecificData<std::tm, &.GUSIKillTM>::~GUSISpecificData()
+GUSIKillTM
+gettimeofday
+time__FPUl		# time(unsigned long*)
+closedir
+rewinddir
+seekdir
+telldir
+readdir
+opendir
+access
+lstat
+dup2
+dup
+fsync
+pipe
+sDefault__15GUSIPThreadAttr		# GUSIPThreadAttr::sDefault
+sDefaultAttr__15GUSIPThreadAttr		# GUSIPThreadAttr::sDefaultAttr
+sched_yield
+pthread_once
+pthread_equal
+pthread_self
+pthread_cond_broadcast
+pthread_cond_signal
+pthread_cond_timedwait
+pthread_cond_wait
+pthread_cond_destroy
+pthread_cond_init
+pthread_condattr_destroy
+pthread_condattr_init
+pthread_mutex_unlock
+pthread_mutex_trylock
+pthread_mutex_lock
+pthread_mutex_destroy
+pthread_mutex_init
+pthread_mutexattr_destroy
+pthread_mutexattr_init
+pthread_setspecific
+pthread_getspecific
+pthread_key_delete
+pthread_key_create
+pthread_exit
+pthread_join
+pthread_detach
+pthread_create
+pthread_attr_setstacksize
+pthread_attr_getstacksize
+pthread_attr_setdetachstate
+pthread_attr_getdetachstate
+pthread_attr_destroy
+pthread_attr_init
+sBlocks__Q216GUSIContextQueue7element		# GUSIContextQueue::element::sBlocks
+Wakeup__16GUSIContextQueueFv		# GUSIContextQueue::Wakeup()
+push_back__16GUSIContextQueueFP11GUSIContext		# GUSIContextQueue::push_back(GUSIContext*)
+remove__16GUSIContextQueueFP11GUSIContext		# GUSIContextQueue::remove(GUSIContext*)
+__dt__16GUSIContextQueueFv		# GUSIContextQueue::~GUSIContextQueue()
+__dl__Q216GUSIContextQueue7elementFPvUl		# GUSIContextQueue::element::operator delete(void*,unsigned long)
+__nw__Q216GUSIContextQueue7elementFUl		# GUSIContextQueue::element::operator new(unsigned long)
+__vt__14GUSINullSocket		# GUSINullSocket::__vt
+__vt__14GUSINullDevice		# GUSINullDevice::__vt
+sInstance__14GUSINullDevice		# GUSINullDevice::sInstance
+__dt__14GUSINullDeviceFv		# GUSINullDevice::~GUSINullDevice()
+__dt__14GUSINullSocketFv		# GUSINullSocket::~GUSINullSocket()
+Supports__14GUSINullSocketFQ210GUSISocket12ConfigOption		# GUSINullSocket::Supports(GUSISocket::ConfigOption)
+fstat__14GUSINullSocketFP4stat		# GUSINullSocket::fstat(stat*)
+write__14GUSINullSocketFRC12GUSIGatherer		# GUSINullSocket::write(const GUSIGatherer&)
+read__14GUSINullSocketFRC13GUSIScatterer		# GUSINullSocket::read(const GUSIScatterer&)
+__ct__14GUSINullSocketFv		# GUSINullSocket::GUSINullSocket()
+stat__14GUSINullDeviceFR13GUSIFileTokenP4stat		# GUSINullDevice::stat(GUSIFileToken&,stat*)
+open__14GUSINullDeviceFv		# GUSINullDevice::open()
+open__14GUSINullDeviceFR13GUSIFileTokeni		# GUSINullDevice::open(GUSIFileToken&,int)
+Want__14GUSINullDeviceFR13GUSIFileToken		# GUSINullDevice::Want(GUSIFileToken&)
+GUSIwithNullSockets
+gGUSIInetFactories
+GUSIwithInetSockets
+sProtocols__9GUSINetDB		# GUSINetDB::sProtocols
+sServices__20GUSIBuiltinServiceDB		# GUSIBuiltinServiceDB::sServices
+__vt__20GUSIBuiltinServiceDB		# GUSIBuiltinServiceDB::__vt
+__vt__17GUSIFileServiceDB		# GUSIFileServiceDB::__vt
+__vt__13GUSIServiceDB		# GUSIServiceDB::__vt
+__vt__9GUSINetDB		# GUSINetDB::__vt
+sInstance__13GUSIServiceDB		# GUSIServiceDB::sInstance
+sData__13GUSIServiceDB		# GUSIServiceDB::sData
+sEntry__20GUSIBuiltinServiceDB		# GUSIBuiltinServiceDB::sEntry
+sInstance__9GUSINetDB		# GUSINetDB::sInstance
+__dt__64GUSISpecificData<Q213GUSIServiceDB4Data,&.GUSIKillServiceDBData>Fv		# GUSISpecificData<GUSIServiceDB::Data, &.GUSIKillServiceDBData>::~GUSISpecificData()
+__dt__80GUSISpecificData<Q220GUSIBuiltinServiceDB5Entry,&.GUSIKillBuiltinServiceDBEntry>Fv		# GUSISpecificData<GUSIBuiltinServiceDB::Entry, &.GUSIKillBuiltinServiceDBEntry>::~GUSISpecificData()
+get__64GUSISpecificData<Q213GUSIServiceDB4Data,&.GUSIKillServiceDBData>FP17GUSISpecificTable		# GUSISpecificData<GUSIServiceDB::Data, &.GUSIKillServiceDBData>::get(GUSISpecificTable*)
+get__80GUSISpecificData<Q220GUSIBuiltinServiceDB5Entry,&.GUSIKillBuiltinServiceDBEntry>FP17GUSISpecificTable		# GUSISpecificData<GUSIBuiltinServiceDB::Entry, &.GUSIKillBuiltinServiceDBEntry>::get(GUSISpecificTable*)
+__dt__9GUSINetDBFv		# GUSINetDB::~GUSINetDB()
+__dt__17GUSIFileServiceDBFv		# GUSIFileServiceDB::~GUSIFileServiceDB()
+__dt__20GUSIBuiltinServiceDBFv		# GUSIBuiltinServiceDB::~GUSIBuiltinServiceDB()
+__ct__11GUSIserventFv		# GUSIservent::GUSIservent()
+GUSIKillHostEnt
+Alloc__11GUSIhostentFUl		# GUSIhostent::Alloc(unsigned long)
+__ct__11GUSIhostentFv		# GUSIhostent::GUSIhostent()
+Instance__13GUSIServiceDBFv		# GUSIServiceDB::Instance()
+GUSIKillServiceDBData
+Next__20GUSIBuiltinServiceDBFv		# GUSIBuiltinServiceDB::Next()
+Reset__20GUSIBuiltinServiceDBFv		# GUSIBuiltinServiceDB::Reset()
+GUSIKillBuiltinServiceDBEntry
+Next__17GUSIFileServiceDBFv		# GUSIFileServiceDB::Next()
+Reset__17GUSIFileServiceDBFv		# GUSIFileServiceDB::Reset()
+__dt__13GUSIServiceDBFv		# GUSIServiceDB::~GUSIServiceDB()
+__ct__17GUSIFileServiceDBFPQ23std5_FILE		# GUSIFileServiceDB::GUSIFileServiceDB(std::_FILE*)
+Instance__17GUSIFileServiceDBFv		# GUSIFileServiceDB::Instance()
+getprotobynumber__9GUSINetDBFi		# GUSINetDB::getprotobynumber(int)
+getprotobyname__9GUSINetDBFPCc		# GUSINetDB::getprotobyname(const char*)
+endprotoent__9GUSINetDBFv		# GUSINetDB::endprotoent()
+setprotoent__9GUSINetDBFi		# GUSINetDB::setprotoent(int)
+getprotoent__9GUSINetDBFv		# GUSINetDB::getprotoent()
+getservbyport__9GUSINetDBFiPCc		# GUSINetDB::getservbyport(int,const char*)
+getservbyname__9GUSINetDBFPCcPCc		# GUSINetDB::getservbyname(const char*,const char*)
+endservent__9GUSINetDBFv		# GUSINetDB::endservent()
+setservent__9GUSINetDBFi		# GUSINetDB::setservent(int)
+getservent__9GUSINetDBFv		# GUSINetDB::getservent()
+gethostname__9GUSINetDBFPci		# GUSINetDB::gethostname(char*,int)
+gethostid__9GUSINetDBFv		# GUSINetDB::gethostid()
+inet_addr__9GUSINetDBFPCc		# GUSINetDB::inet_addr(const char*)
+inet_ntoa__9GUSINetDBF7in_addr		# GUSINetDB::inet_ntoa(in_addr)
+gethostbyaddr__9GUSINetDBFPCvUli		# GUSINetDB::gethostbyaddr(const void*,unsigned long,int)
+gethostbyname__9GUSINetDBFPCc		# GUSINetDB::gethostbyname(const char*)
+__ct__9GUSINetDBFv		# GUSINetDB::GUSINetDB()
+Instance__9GUSINetDBFv		# GUSINetDB::Instance()
+uDNRDone
+sResolverState__11GUSIMTNetDB		# GUSIMTNetDB::sResolverState
+__vt__11GUSIMTNetDB		# GUSIMTNetDB::__vt
+get__49GUSISpecificData<11GUSIhostent,&.GUSIKillHostEnt>FP17GUSISpecificTable		# GUSISpecificData<GUSIhostent, &.GUSIKillHostEnt>::get(GUSISpecificTable*)
+__dt__11GUSIMTNetDBFv		# GUSIMTNetDB::~GUSIMTNetDB()
+gethostid__11GUSIMTNetDBFv		# GUSIMTNetDB::gethostid()
+inet_ntoa__11GUSIMTNetDBF7in_addr		# GUSIMTNetDB::inet_ntoa(in_addr)
+gethostbyaddr__11GUSIMTNetDBFPCvUli		# GUSIMTNetDB::gethostbyaddr(const void*,unsigned long,int)
+gethostbyname__11GUSIMTNetDBFPCc		# GUSIMTNetDB::gethostbyname(const char*)
+Resolver__11GUSIMTNetDBFv		# GUSIMTNetDB::Resolver()
+__dt__49GUSISpecificData<11GUSIhostent,&.GUSIKillHostEnt>Fv		# GUSISpecificData<GUSIhostent, &.GUSIKillHostEnt>::~GUSISpecificData()
+Instantiate__11GUSIMTNetDBFv		# GUSIMTNetDB::Instantiate()
+GUSIFSMoveRename
+GUSIFSCatMove
+GUSIFSCatMove__FPC6FSSpecl		# GUSIFSCatMove(const FSSpec*,long)
+GUSIFSRename
+GUSIFSRstFLock
+GUSIFSSetFLock
+GUSIFSDirCreate
+GUSIFSDelete
+GUSIFSCreate
+GUSIFSCreate__FPC6FSSpec		# GUSIFSCreate(const FSSpec*)
+GUSIFSGetVolParms
+GUSIFSHGetVolParms__FP33GUSIIOPBWrapper<14HParamBlockRec>		# GUSIFSHGetVolParms(GUSIIOPBWrapper<HParamBlockRec>*)
+GUSIFSOpenRF
+GUSIFSOpenDF
+GUSIFSSetFInfo
+GUSIFSGetFInfo
+GUSIFSHSetFInfo__FP33GUSIIOPBWrapper<14HParamBlockRec>		# GUSIFSHSetFInfo(GUSIIOPBWrapper<HParamBlockRec>*)
+GUSIFSHGetFInfo__FP33GUSIIOPBWrapper<14HParamBlockRec>		# GUSIFSHGetFInfo(GUSIIOPBWrapper<HParamBlockRec>*)
+GUSIFSOpenDriver
+GUSIFSOpen__FP32GUSIIOPBWrapper<13ParamBlockRec>		# GUSIFSOpen(GUSIIOPBWrapper<ParamBlockRec>*)
+GUSIFSHGetVInfo__FP33GUSIIOPBWrapper<14HParamBlockRec>		# GUSIFSHGetVInfo(GUSIIOPBWrapper<HParamBlockRec>*)
+GUSIFSGetVInfo__FP32GUSIIOPBWrapper<13ParamBlockRec>		# GUSIFSGetVInfo(GUSIIOPBWrapper<ParamBlockRec>*)
+GUSIFSGetFCBInfo__FP26GUSIIOPBWrapper<8FCBPBRec>		# GUSIFSGetFCBInfo(GUSIIOPBWrapper<FCBPBRec>*)
+GUSIFSSetCatInfo__FP30GUSIIOPBWrapper<11GUSICatInfo>		# GUSIFSSetCatInfo(GUSIIOPBWrapper<GUSICatInfo>*)
+GUSIFSGetCatInfo__FP30GUSIIOPBWrapper<11GUSICatInfo>		# GUSIFSGetCatInfo(GUSIIOPBWrapper<GUSICatInfo>*)
+__vt__16GUSIMTUdpFactory		# GUSIMTUdpFactory::__vt
+__vt__15GUSIMTUdpSocket		# GUSIMTUdpSocket::__vt
+instance__16GUSIMTUdpFactory		# GUSIMTUdpFactory::instance
+sRecvProc__15GUSIMTUdpSocket		# GUSIMTUdpSocket::sRecvProc
+sSendProc__15GUSIMTUdpSocket		# GUSIMTUdpSocket::sSendProc
+__dt__16GUSIMTUdpFactoryFv		# GUSIMTUdpFactory::~GUSIMTUdpFactory()
+GUSIwithMTUdpSockets
+socket__16GUSIMTUdpFactoryFiii		# GUSIMTUdpFactory::socket(int,int,int)
+__dt__15GUSIMTUdpSocketFv		# GUSIMTUdpSocket::~GUSIMTUdpSocket()
+shutdown__15GUSIMTUdpSocketFi		# GUSIMTUdpSocket::shutdown(int)
+select__15GUSIMTUdpSocketFPbPbPb		# GUSIMTUdpSocket::select(bool*,bool*,bool*)
+sendto__15GUSIMTUdpSocketFRC12GUSIGathereriPCvUi		# GUSIMTUdpSocket::sendto(const GUSIGatherer&,int,const void*,unsigned int)
+recvfrom__15GUSIMTUdpSocketFRC13GUSIScattereriPvPUi		# GUSIMTUdpSocket::recvfrom(const GUSIScatterer&,int,void*,unsigned int*)
+connect__15GUSIMTUdpSocketFPvUi		# GUSIMTUdpSocket::connect(void*,unsigned int)
+__ct__15GUSIMTUdpSocketFv		# GUSIMTUdpSocket::GUSIMTUdpSocket()
+CreateStream__15GUSIMTUdpSocketFv		# GUSIMTUdpSocket::CreateStream()
+GUSIMTURecv__FP15GUSIMTUdpSocket		# GUSIMTURecv(GUSIMTUdpSocket*)
+GUSIMTURecvDone__FP7UDPiopb		# GUSIMTURecvDone(UDPiopb*)
+GUSIMTUSend__FP15GUSIMTUdpSocket		# GUSIMTUSend(GUSIMTUdpSocket*)
+GUSIMTUSendDone__FP7UDPiopb		# GUSIMTUSendDone(UDPiopb*)
+__vt__15GUSIOTUdpSocket		# GUSIOTUdpSocket::__vt
+__vt__17GUSIOTUdpStrategy		# GUSIOTUdpStrategy::__vt
+__vt__15GUSIOTTcpSocket		# GUSIOTTcpSocket::__vt
+__vt__17GUSIOTTcpStrategy		# GUSIOTTcpStrategy::__vt
+__vt__18GUSIOTInetStrategy		# GUSIOTInetStrategy::__vt
+__vt__16GUSIOTUdpFactory		# GUSIOTUdpFactory::__vt
+__vt__16GUSIOTTcpFactory		# GUSIOTTcpFactory::__vt
+__vt__13GUSIOTFactory		# GUSIOTFactory::__vt
+sInstance__16GUSIOTUdpFactory		# GUSIOTUdpFactory::sInstance
+sInstance__16GUSIOTTcpFactory		# GUSIOTTcpFactory::sInstance
+__dt__16GUSIOTTcpFactoryFv		# GUSIOTTcpFactory::~GUSIOTTcpFactory()
+__dt__16GUSIOTUdpFactoryFv		# GUSIOTUdpFactory::~GUSIOTUdpFactory()
+__dt__17GUSIOTTcpStrategyFv		# GUSIOTTcpStrategy::~GUSIOTTcpStrategy()
+__dt__15GUSIOTTcpSocketFv		# GUSIOTTcpSocket::~GUSIOTTcpSocket()
+__dt__17GUSIOTUdpStrategyFv		# GUSIOTUdpStrategy::~GUSIOTUdpStrategy()
+__dt__15GUSIOTUdpSocketFv		# GUSIOTUdpSocket::~GUSIOTUdpSocket()
+GUSIwithOTInetSockets
+GUSIwithOTUdpSockets
+GUSIwithOTTcpSockets
+ioctl__15GUSIOTUdpSocketFUiPc		# GUSIOTUdpSocket::ioctl(unsigned int,char*)
+setsockopt__15GUSIOTUdpSocketFiiPvUi		# GUSIOTUdpSocket::setsockopt(int,int,void*,unsigned int)
+getsockopt__15GUSIOTUdpSocketFiiPvPUi		# GUSIOTUdpSocket::getsockopt(int,int,void*,unsigned int*)
+ConfigPath__17GUSIOTUdpStrategyFv		# GUSIOTUdpStrategy::ConfigPath()
+ioctl__15GUSIOTTcpSocketFUiPc		# GUSIOTTcpSocket::ioctl(unsigned int,char*)
+setsockopt__15GUSIOTTcpSocketFiiPvUi		# GUSIOTTcpSocket::setsockopt(int,int,void*,unsigned int)
+getsockopt__15GUSIOTTcpSocketFiiPvPUi		# GUSIOTTcpSocket::getsockopt(int,int,void*,unsigned int*)
+ConfigPath__17GUSIOTTcpStrategyFv		# GUSIOTTcpStrategy::ConfigPath()
+DoIoctl__18GUSIOTMInetOptionsFPiUiPc		# GUSIOTMInetOptions::DoIoctl(int*,unsigned int,char*)
+DoSetSockOpt__18GUSIOTMInetOptionsFPiP9TEndpointiiPvUi		# GUSIOTMInetOptions::DoSetSockOpt(int*,TEndpoint*,int,int,void*,unsigned int)
+DoGetSockOpt__18GUSIOTMInetOptionsFPiP9TEndpointiiPvPUi		# GUSIOTMInetOptions::DoGetSockOpt(int*,TEndpoint*,int,int,void*,unsigned int*)
+UnpackAddress__18GUSIOTInetStrategyFRC7TNetbufPvPUi		# GUSIOTInetStrategy::UnpackAddress(const TNetbuf&,void*,unsigned int*)
+PackAddress__18GUSIOTInetStrategyFPCvUiR7TNetbufb		# GUSIOTInetStrategy::PackAddress(const void*,unsigned int,TNetbuf&,bool)
+socket__16GUSIOTUdpFactoryFiii		# GUSIOTUdpFactory::socket(int,int,int)
+Strategy__16GUSIOTUdpFactoryFiii		# GUSIOTUdpFactory::Strategy(int,int,int)
+__dt__21GUSIOTDatagramFactoryFv		# GUSIOTDatagramFactory::~GUSIOTDatagramFactory()
+Instance__16GUSIOTUdpFactoryFv		# GUSIOTUdpFactory::Instance()
+socket__16GUSIOTTcpFactoryFiii		# GUSIOTTcpFactory::socket(int,int,int)
+__dt__18GUSIOTInetStrategyFv		# GUSIOTInetStrategy::~GUSIOTInetStrategy()
+Strategy__16GUSIOTTcpFactoryFiii		# GUSIOTTcpFactory::Strategy(int,int,int)
+__dt__13GUSIOTFactoryFv		# GUSIOTFactory::~GUSIOTFactory()
+__dt__19GUSIOTStreamFactoryFv		# GUSIOTStreamFactory::~GUSIOTStreamFactory()
+Instance__16GUSIOTTcpFactoryFv		# GUSIOTTcpFactory::Instance()
+__vt__11GUSIOTNetDB		# GUSIOTNetDB::__vt
+__dt__11GUSIOTNetDBFv		# GUSIOTNetDB::~GUSIOTNetDB()
+gethostid__11GUSIOTNetDBFv		# GUSIOTNetDB::gethostid()
+inet_ntoa__11GUSIOTNetDBF7in_addr		# GUSIOTNetDB::inet_ntoa(in_addr)
+gethostbyaddr__11GUSIOTNetDBFPCvUli		# GUSIOTNetDB::gethostbyaddr(const void*,unsigned long,int)
+gethostbyname__11GUSIOTNetDBFPCc		# GUSIOTNetDB::gethostbyname(const char*)
+Resolver__11GUSIOTNetDBFv		# GUSIOTNetDB::Resolver()
+Instantiate__11GUSIOTNetDBFv		# GUSIOTNetDB::Instantiate()
+__ct__11GUSIOTNetDBFv		# GUSIOTNetDB::GUSIOTNetDB()
+GUSIOTNetDBNotify
+__vt__20GUSIOTDatagramSocket		# GUSIOTDatagramSocket::__vt
+__vt__18GUSIOTStreamSocket		# GUSIOTStreamSocket::__vt
+__vt__12GUSIOTSocket		# GUSIOTSocket::__vt
+__vt__14GUSIOTStrategy		# GUSIOTStrategy::__vt
+__vt__21GUSIOTDatagramFactory		# GUSIOTDatagramFactory::__vt
+__vt__19GUSIOTStreamFactory		# GUSIOTStreamFactory::__vt
+sOK__13GUSIOTFactory		# GUSIOTFactory::sOK
+select__20GUSIOTDatagramSocketFPbPbPb		# GUSIOTDatagramSocket::select(bool*,bool*,bool*)
+sendto__20GUSIOTDatagramSocketFRC12GUSIGathereriPCvUi		# GUSIOTDatagramSocket::sendto(const GUSIGatherer&,int,const void*,unsigned int)
+recvfrom__20GUSIOTDatagramSocketFRC13GUSIScattereriPvPUi		# GUSIOTDatagramSocket::recvfrom(const GUSIScatterer&,int,void*,unsigned int*)
+connect__20GUSIOTDatagramSocketFPvUi		# GUSIOTDatagramSocket::connect(void*,unsigned int)
+getpeername__20GUSIOTDatagramSocketFPvPUi		# GUSIOTDatagramSocket::getpeername(void*,unsigned int*)
+BindIfUnbound__20GUSIOTDatagramSocketFv		# GUSIOTDatagramSocket::BindIfUnbound()
+__dt__20GUSIOTDatagramSocketFv		# GUSIOTDatagramSocket::~GUSIOTDatagramSocket()
+Clone__20GUSIOTDatagramSocketFv		# GUSIOTDatagramSocket::Clone()
+__ct__20GUSIOTDatagramSocketFP14GUSIOTStrategy		# GUSIOTDatagramSocket::GUSIOTDatagramSocket(GUSIOTStrategy*)
+shutdown__18GUSIOTStreamSocketFi		# GUSIOTStreamSocket::shutdown(int)
+select__18GUSIOTStreamSocketFPbPbPb		# GUSIOTStreamSocket::select(bool*,bool*,bool*)
+sendto__18GUSIOTStreamSocketFRC12GUSIGathereriPCvUi		# GUSIOTStreamSocket::sendto(const GUSIGatherer&,int,const void*,unsigned int)
+__dt__Q210GUSISocket17AddContextInScopeFv		# GUSISocket::AddContextInScope::~AddContextInScope()
+recvfrom__18GUSIOTStreamSocketFRC13GUSIScattereriPvPUi		# GUSIOTStreamSocket::recvfrom(const GUSIScatterer&,int,void*,unsigned int*)
+connect__18GUSIOTStreamSocketFPvUi		# GUSIOTStreamSocket::connect(void*,unsigned int)
+accept__18GUSIOTStreamSocketFPvPUi		# GUSIOTStreamSocket::accept(void*,unsigned int*)
+getpeername__18GUSIOTStreamSocketFPvPUi		# GUSIOTStreamSocket::getpeername(void*,unsigned int*)
+listen__18GUSIOTStreamSocketFi		# GUSIOTStreamSocket::listen(int)
+MopupEvents__18GUSIOTStreamSocketFv		# GUSIOTStreamSocket::MopupEvents()
+__dt__18GUSIOTStreamSocketFv		# GUSIOTStreamSocket::~GUSIOTStreamSocket()
+close__18GUSIOTStreamSocketFv		# GUSIOTStreamSocket::close()
+Clone__18GUSIOTStreamSocketFv		# GUSIOTStreamSocket::Clone()
+__ct__18GUSIOTStreamSocketFP14GUSIOTStrategy		# GUSIOTStreamSocket::GUSIOTStreamSocket(GUSIOTStrategy*)
+Supports__12GUSIOTSocketFQ210GUSISocket12ConfigOption		# GUSIOTSocket::Supports(GUSISocket::ConfigOption)
+setsockopt__12GUSIOTSocketFiiPvUi		# GUSIOTSocket::setsockopt(int,int,void*,unsigned int)
+getsockopt__12GUSIOTSocketFiiPvPUi		# GUSIOTSocket::getsockopt(int,int,void*,unsigned int*)
+ioctl__12GUSIOTSocketFUiPc		# GUSIOTSocket::ioctl(unsigned int,char*)
+fcntl__12GUSIOTSocketFiPc		# GUSIOTSocket::fcntl(int,char*)
+shutdown__12GUSIOTSocketFi		# GUSIOTSocket::shutdown(int)
+getsockname__12GUSIOTSocketFPvPUi		# GUSIOTSocket::getsockname(void*,unsigned int*)
+Unbind__12GUSIOTSocketFv		# GUSIOTSocket::Unbind()
+BindToAddress__12GUSIOTSocketFP20GUSIOTAddr<5TBind,1>		# GUSIOTSocket::BindToAddress(GUSIOTAddr<TBind, 1>*)
+bind__12GUSIOTSocketFPvUi		# GUSIOTSocket::bind(void*,unsigned int)
+__dt__12GUSIOTSocketFv		# GUSIOTSocket::~GUSIOTSocket()
+close__12GUSIOTSocketFv		# GUSIOTSocket::close()
+__ct__12GUSIOTSocketFP14GUSIOTStrategy		# GUSIOTSocket::GUSIOTSocket(GUSIOTStrategy*)
+__dt__Q212GUSIOTSocket4LockFv		# GUSIOTSocket::Lock::~Lock()
+MopupEvents__12GUSIOTSocketFv		# GUSIOTSocket::MopupEvents()
+CopyAddress__14GUSIOTStrategyFRC7TNetbufR7TNetbuf		# GUSIOTStrategy::CopyAddress(const TNetbuf&,TNetbuf&)
+__dt__14GUSIOTStrategyFv		# GUSIOTStrategy::~GUSIOTStrategy()
+CreateConfiguration__14GUSIOTStrategyFv		# GUSIOTStrategy::CreateConfiguration()
+socket__21GUSIOTDatagramFactoryFiii		# GUSIOTDatagramFactory::socket(int,int,int)
+socket__19GUSIOTStreamFactoryFiii		# GUSIOTStreamFactory::socket(int,int,int)
+Initialize__13GUSIOTFactoryFv		# GUSIOTFactory::Initialize()
+GUSIOTNotify
+__vt__14GUSIDConSocket		# GUSIDConSocket::__vt
+__vt__14GUSIDConDevice		# GUSIDConDevice::__vt
+sInstance__14GUSIDConDevice		# GUSIDConDevice::sInstance
+__dt__14GUSIDConDeviceFv		# GUSIDConDevice::~GUSIDConDevice()
+isatty__14GUSIDConSocketFv		# GUSIDConSocket::isatty()
+Supports__14GUSIDConSocketFQ210GUSISocket12ConfigOption		# GUSIDConSocket::Supports(GUSISocket::ConfigOption)
+write__14GUSIDConSocketFRC12GUSIGatherer		# GUSIDConSocket::write(const GUSIGatherer&)
+read__14GUSIDConSocketFRC13GUSIScatterer		# GUSIDConSocket::read(const GUSIScatterer&)
+__dt__14GUSIDConSocketFv		# GUSIDConSocket::~GUSIDConSocket()
+__ct__14GUSIDConSocketFPCc		# GUSIDConSocket::GUSIDConSocket(const char*)
+open__14GUSIDConDeviceFR13GUSIFileTokeni		# GUSIDConDevice::open(GUSIFileToken&,int)
+Want__14GUSIDConDeviceFR13GUSIFileToken		# GUSIDConDevice::Want(GUSIFileToken&)
+GUSIwithDConSockets
+__vt__13GUSIPPCSocket		# GUSIPPCSocket::__vt
+__vt__14GUSIPPCFactory		# GUSIPPCFactory::__vt
+sDoneProc__13GUSIPPCSocket		# GUSIPPCSocket::sDoneProc
+sListenProc__13GUSIPPCSocket		# GUSIPPCSocket::sListenProc
+sRecvProc__13GUSIPPCSocket		# GUSIPPCSocket::sRecvProc
+sSendProc__13GUSIPPCSocket		# GUSIPPCSocket::sSendProc
+sInstance__14GUSIPPCFactory		# GUSIPPCFactory::sInstance
+__dt__14GUSIPPCFactoryFv		# GUSIPPCFactory::~GUSIPPCFactory()
+GUSIPPCListen__FP13GUSIPPCSocket		# GUSIPPCListen(GUSIPPCSocket*)
+GUSIPPCRecv__FP13GUSIPPCSocket		# GUSIPPCRecv(GUSIPPCSocket*)
+GUSIPPCSend__FP13GUSIPPCSocket		# GUSIPPCSend(GUSIPPCSocket*)
+__dt__13GUSIPPCSocketFv		# GUSIPPCSocket::~GUSIPPCSocket()
+shutdown__13GUSIPPCSocketFi		# GUSIPPCSocket::shutdown(int)
+select__13GUSIPPCSocketFPbPbPb		# GUSIPPCSocket::select(bool*,bool*,bool*)
+sendto__13GUSIPPCSocketFRC12GUSIGathereriPCvUi		# GUSIPPCSocket::sendto(const GUSIGatherer&,int,const void*,unsigned int)
+recvfrom__13GUSIPPCSocketFRC13GUSIScattereriPvPUi		# GUSIPPCSocket::recvfrom(const GUSIScatterer&,int,void*,unsigned int*)
+__ct__13GUSIPPCSocketFP13GUSIPPCSocketRQ213GUSIPPCSocket8Listener		# GUSIPPCSocket::GUSIPPCSocket(GUSIPPCSocket*,GUSIPPCSocket::Listener&)
+accept__13GUSIPPCSocketFPvPUi		# GUSIPPCSocket::accept(void*,unsigned int*)
+listen__13GUSIPPCSocketFi		# GUSIPPCSocket::listen(int)
+connect__13GUSIPPCSocketFPvUi		# GUSIPPCSocket::connect(void*,unsigned int)
+bind__13GUSIPPCSocketFPvUi		# GUSIPPCSocket::bind(void*,unsigned int)
+__ct__13GUSIPPCSocketFv		# GUSIPPCSocket::GUSIPPCSocket()
+GUSIPPCDone__FP16PPCParamBlockRec		# GUSIPPCDone(PPCParamBlockRec*)
+GUSIPPCListenDone__FP16PPCParamBlockRec		# GUSIPPCListenDone(PPCParamBlockRec*)
+GUSIPPCRecvDone__FP16PPCParamBlockRec		# GUSIPPCRecvDone(PPCParamBlockRec*)
+GUSIPPCSendDone__FP16PPCParamBlockRec		# GUSIPPCSendDone(PPCParamBlockRec*)
+SetupListener__13GUSIPPCSocketFRQ213GUSIPPCSocket8Listener		# GUSIPPCSocket::SetupListener(GUSIPPCSocket::Listener&)
+socket__14GUSIPPCFactoryFiii		# GUSIPPCFactory::socket(int,int,int)
+GUSIwithPPCSockets
+__vt__9GUSITimer		# GUSITimer::__vt
+sTimerQueue__9GUSITimer		# GUSITimer::sTimerQueue
+sTimerProc__9GUSITimer		# GUSITimer::sTimerProc
+sTimeZone__8GUSITime		# GUSITime::sTimeZone
+sTimeOffset__8GUSITime		# GUSITime::sTimeOffset
+__dt__53GUSISpecificData<Q29GUSITimer5Queue,&.GUSIKillTimers>Fv		# GUSISpecificData<GUSITimer::Queue, &.GUSIKillTimers>::~GUSISpecificData()
+get__53GUSISpecificData<Q29GUSITimer5Queue,&.GUSIKillTimers>FP17GUSISpecificTable		# GUSISpecificData<GUSITimer::Queue, &.GUSIKillTimers>::get(GUSISpecificTable*)
+__dt__9GUSITimerFv		# GUSITimer::~GUSITimer()
+Kill__9GUSITimerFv		# GUSITimer::Kill()
+Sleep__9GUSITimerFlb		# GUSITimer::Sleep(long,bool)
+__ct__9GUSITimerFbP11GUSIContext		# GUSITimer::GUSITimer(bool,GUSIContext*)
+GUSIKillTimers
+__dt__Q29GUSITimer10TimerQueueFv		# GUSITimer::TimerQueue::~TimerQueue()
+Wakeup__9GUSITimerFv		# GUSITimer::Wakeup()
+__dt__Q211GUSIProcess7A5SaverFv		# GUSIProcess::A5Saver::~A5Saver()
+LocalTime__8GUSITimeFv		# GUSITime::LocalTime()
+GMTime__8GUSITimeFv		# GUSITime::GMTime()
+Zone__8GUSITimeFv		# GUSITime::Zone()
+Now__8GUSITimeFv		# GUSITime::Now()
+__ct__8GUSITimeFRCQ23std2tm		# GUSITime::GUSITime(const std::tm&)
+__opQ23std2tm__8GUSITimeFv		# GUSITime::operator std::tm()
+__op8timespec__8GUSITimeFv		# GUSITime::operator timespec()
+__op7timeval__8GUSITimeFv		# GUSITime::operator timeval()
+Deconstruct__8GUSITimeFRx		# GUSITime::Deconstruct(long long&)
+Get64__8GUSITimeFQ28GUSITime6Format		# GUSITime::Get64(GUSITime::Format)
+__ct__8GUSITimeFRC8timespec		# GUSITime::GUSITime(const timespec&)
+__ct__8GUSITimeFRC7timeval		# GUSITime::GUSITime(const timeval&)
+Construct__8GUSITimeFxQ28GUSITime6Format		# GUSITime::Construct(long long,GUSITime::Format)
+__vt__9GUSIAlarm		# GUSIAlarm::__vt
+__vt__14GUSISigFactory		# GUSISigFactory::__vt
+__vt__14GUSISigProcess		# GUSISigProcess::__vt
+__vt__14GUSISigContext		# GUSISigContext::__vt
+ualarm
+__dt__9GUSIAlarmFv		# GUSIAlarm::~GUSIAlarm()
+__dt__Q23std48auto_ptr<9GUSIAlarm,Q23std19_Single<9GUSIAlarm>>Fv		# std::auto_ptr<GUSIAlarm, std::_Single<GUSIAlarm>>::~auto_ptr()
+alarm
+Restart__9GUSIAlarmFl		# GUSIAlarm::Restart(long)
+Wakeup__9GUSIAlarmFv		# GUSIAlarm::Wakeup()
+_exit
+abort__Fv		# abort()
+sigwait
+pause
+sigsuspend
+sigprocmask
+pthread_sigmask
+sigpending
+sigaction
+pthread_kill
+sigismember
+sigfillset
+sigemptyset
+sigdelset
+sigaddset
+CreateSigContext__14GUSISigFactoryFPC14GUSISigContext		# GUSISigFactory::CreateSigContext(const GUSISigContext*)
+CreateSigProcess__14GUSISigFactoryFv		# GUSISigFactory::CreateSigProcess()
+__dt__14GUSISigFactoryFv		# GUSISigFactory::~GUSISigFactory()
+__dt__Q23std60auto_ptr<14GUSISigFactory,Q23std25_Single<14GUSISigFactory>>Fv		# std::auto_ptr<GUSISigFactory, std::_Single<GUSISigFactory>>::~auto_ptr()
+SetInstance__14GUSISigFactoryFP14GUSISigFactory		# GUSISigFactory::SetInstance(GUSISigFactory*)
+Instance__14GUSISigFactoryFv		# GUSISigFactory::Instance()
+DefaultAction__14GUSISigProcessFiRC9sigaction		# GUSISigProcess::DefaultAction(int,const sigaction&)
+Raise__14GUSISigProcessFiP14GUSISigContext		# GUSISigProcess::Raise(int,GUSISigContext*)
+Post__14GUSISigProcessFi		# GUSISigProcess::Post(int)
+ClearPending__14GUSISigProcessFUi		# GUSISigProcess::ClearPending(unsigned int)
+Pending__14GUSISigProcessCFv		# GUSISigProcess::Pending() const
+SetAction__14GUSISigProcessFiRC9sigaction		# GUSISigProcess::SetAction(int,const sigaction&)
+CantIgnore__14GUSISigProcessFi		# GUSISigProcess::CantIgnore(int)
+CantCatch__14GUSISigProcessFi		# GUSISigProcess::CantCatch(int)
+GetAction__14GUSISigProcessFi		# GUSISigProcess::GetAction(int)
+__dt__14GUSISigProcessFv		# GUSISigProcess::~GUSISigProcess()
+__ct__14GUSISigProcessFv		# GUSISigProcess::GUSISigProcess()
+Raise__14GUSISigContextFP14GUSISigProcessb		# GUSISigContext::Raise(GUSISigProcess*,bool)
+Ready__14GUSISigContextFP14GUSISigProcess		# GUSISigContext::Ready(GUSISigProcess*)
+Pending__14GUSISigContextCFP14GUSISigProcess		# GUSISigContext::Pending(GUSISigProcess*) const
+Post__14GUSISigContextFi		# GUSISigContext::Post(int)
+ClearPending__14GUSISigContextFUi		# GUSISigContext::ClearPending(unsigned int)
+Pending__14GUSISigContextCFv		# GUSISigContext::Pending() const
+SetBlocked__14GUSISigContextFUi		# GUSISigContext::SetBlocked(unsigned int)
+GetBlocked__14GUSISigContextCFv		# GUSISigContext::GetBlocked() const
+CantBlock__14GUSISigContextFv		# GUSISigContext::CantBlock()
+__dt__14GUSISigContextFv		# GUSISigContext::~GUSISigContext()
+__ct__14GUSISigContextFPC14GUSISigContext		# GUSISigContext::GUSISigContext(const GUSISigContext*)
