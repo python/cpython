@@ -122,6 +122,11 @@
   \@ifundefined{fancyhf}{}{\pagestyle{normal}}%
   \@doing@page@targetstrue%
 }
+% This is needed to get the width of the section # area wide enough in the
+% library reference.  Doing it here keeps it the same for all the manuals.
+%
+\renewcommand*\l@section{\@dottedtocline{1}{1.5em}{2.6em}}
+\renewcommand*\l@subsection{\@dottedtocline{2}{4.1em}{3.5em}}
 
 
 % Fix the theindex environment to add an entry to the Table of
