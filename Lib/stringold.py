@@ -199,10 +199,10 @@ def atof(s):
 
     """
     if type(s) == _StringType:
-	return _float(s)
+        return _float(s)
     else:
-	raise TypeError('argument 1: expected string, %s found' %
-			type(s).__name__)
+        raise TypeError('argument 1: expected string, %s found' %
+                        type(s).__name__)
 
 # Convert string to integer
 def atoi(*args):
@@ -217,18 +217,18 @@ def atoi(*args):
 
     """
     try:
-	s = args[0]
+        s = args[0]
     except IndexError:
-	raise TypeError('function requires at least 1 argument: %d given' %
-			len(args))
+        raise TypeError('function requires at least 1 argument: %d given' %
+                        len(args))
     # Don't catch type error resulting from too many arguments to int().  The
     # error message isn't compatible but the error type is, and this function
     # is complicated enough already.
     if type(s) == _StringType:
-	return _apply(_int, args)
+        return _apply(_int, args)
     else:
-	raise TypeError('argument 1: expected string, %s found' %
-			type(s).__name__)
+        raise TypeError('argument 1: expected string, %s found' %
+                        type(s).__name__)
 
 
 # Convert string to long integer
@@ -245,18 +245,18 @@ def atol(*args):
 
     """
     try:
-	s = args[0]
+        s = args[0]
     except IndexError:
-	raise TypeError('function requires at least 1 argument: %d given' %
-			len(args))
+        raise TypeError('function requires at least 1 argument: %d given' %
+                        len(args))
     # Don't catch type error resulting from too many arguments to long().  The
     # error message isn't compatible but the error type is, and this function
     # is complicated enough already.
     if type(s) == _StringType:
-	return _apply(_long, args)
+        return _apply(_long, args)
     else:
-	raise TypeError('argument 1: expected string, %s found' %
-			type(s).__name__)
+        raise TypeError('argument 1: expected string, %s found' %
+                        type(s).__name__)
 
 
 # Left-justify a string
@@ -298,8 +298,8 @@ def center(s, width):
     if n <= 0: return s
     half = n/2
     if n%2 and width%2:
-	# This ensures that center(center(s, i), j) = center(s, j)
-	half = half+1
+        # This ensures that center(center(s, i), j) = center(s, j)
+        half = half+1
     return ' '*half +  s + ' '*(n-half)
 
 # Zero-fill a number, e.g., (12, 3) --> '012' and (-3, 3) --> '-03'
@@ -318,7 +318,7 @@ def zfill(x, width):
     if n >= width: return s
     sign = ''
     if s[0] in ('-', '+'):
-	sign, s = s[0], s[1:]
+        sign, s = s[0], s[1:]
     return sign + '0'*(width-n) + s
 
 # Expand tabs in a string.
@@ -333,12 +333,12 @@ def expandtabs(s, tabsize=8):
     """
     res = line = ''
     for c in s:
-	if c == '\t':
-	    c = ' '*(tabsize - len(line) % tabsize)
-	line = line + c
-	if c == '\n':
-	    res = res + line
-	    line = ''
+        if c == '\t':
+            c = ' '*(tabsize - len(line) % tabsize)
+        line = line + c
+        if c == '\n':
+            res = res + line
+            line = ''
     return res + line
 
 # Character translation through look-up table.
@@ -387,14 +387,14 @@ def maketrans(fromstr, tostr):
 
     """
     if len(fromstr) != len(tostr):
-	raise ValueError, "maketrans arguments must have same length"
+        raise ValueError, "maketrans arguments must have same length"
     global _idmapL
     if not _idmapL:
-	_idmapL = map(None, _idmap)
+        _idmapL = map(None, _idmap)
     L = _idmapL[:]
     fromstr = map(ord, fromstr)
     for i in range(len(fromstr)):
-	L[fromstr[i]] = tostr[i]
+        L[fromstr[i]] = tostr[i]
     return joinfields(L, "")
 
 # Substring replacement (global)
@@ -428,4 +428,4 @@ try:
     from strop import maketrans, lowercase, uppercase, whitespace
     letters = lowercase + uppercase
 except ImportError:
-    pass					  # Use the original versions
+    pass                                          # Use the original versions
