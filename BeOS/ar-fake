@@ -46,10 +46,19 @@ d)
 so)
         case $BE_HOST_CPU in
         ppc)
-                mwld -xms -export pragma -nodup -o $1 $library/*
+                #  In case your libpython.a refers to any exotic libraries,
+                #  mwld needs to know that here.  The following hack makes
+                #  a couple of assumptions about Modules/Makefile.  If it
+                #  doesn't work, you may as well add the necessary libraries
+                #  here explicitly instead.
+                extralibs=$(
+                        (cd Modules; make -f Makefile -n link) |
+                        sed -n 's/.*\.so \(.*\) -o python.*/\1/p'
+                )
+                mwld -xms -export pragma -nodup -o $1 $library/* $extralibs
                 ;;
         x86)
-                gcc -nostart -Wl,-soname=$(basename $1) -o $1 $library/*
+                ld -shared -soname $(basename $1) -o $1 $library/*
                 ;;
         esac
         status=$?
