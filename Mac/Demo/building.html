@@ -115,11 +115,11 @@ access paths try to set things up as follows:
 Top-level-folder:
 	CWGUSI
 	imglibs
-		libjpeg
-		pbmplus
-		libtiff
+		jpeg
+		netpbm
+			libtiff
 		zlib
-		libpng
+		png
 	gdbm
 	Python
 	Tcl/Tk Folder
@@ -128,6 +128,13 @@ Top-level-folder:
 		MoreFiles 1.4.3
 	Waste 1.3 distribution (if you want waste)
 </PRE>
+
+If your setup of the libraries is exactly the same as mine (which is
+not very likely, unless you happen to work from the same CVS
+repository) you can use the project <code>buildlibs.prj</code> in the
+<code>build.mac</code> folder to build all needed libraries in one
+fell swoop, otherwise you will have to build the libraries one by
+one. <p>
 
 First build GUSI. If you didn't get the python-specific GUSI you have to 
 move the files from the "CWGUSI-mods" to the right
