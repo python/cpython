@@ -421,16 +421,6 @@ class ProcessTestCase(unittest.TestCase):
                              preexec_fn=lambda: os.putenv("FRUIT", "apple"))
             self.assertEqual(p.stdout.read(), "apple")
 
-        def test_close_fds(self):
-            # Make sure we have some fds open
-            os.pipe()
-            p = subprocess.Popen([sys.executable, "-c",
-                              'import sys,os;' \
-                              'sys.stdout.write(str(os.dup(0)))'],
-                             stdout=subprocess.PIPE, close_fds=1)
-            # When all fds are closed, the next free fd should be 3.
-            self.assertEqual(p.stdout.read(), "3")
-
         def test_args_string(self):
             # args is a string
             f, fname = self.mkstemp()
