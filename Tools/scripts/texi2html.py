@@ -422,7 +422,7 @@ class TexinfoParser:
                 # Cannot happen unless spprog is changed
                 raise RuntimeError, 'unexpected funny '+`c`
             start = i
-            while i < n and text[i] in string.letters: i = i+1
+            while i < n and text[i] in string.ascii_letters: i = i+1
             if i == start:
                 # @ plus non-letter: literal next character
                 i = i+1
@@ -1260,7 +1260,7 @@ class TexinfoParser:
         if self.itemindex: self.index(self.itemindex, args)
         if self.itemarg:
             if self.itemarg[0] == '@' and self.itemarg[1:2] and \
-                            self.itemarg[1] in string.letters:
+                            self.itemarg[1] in string.ascii_letters:
                 args = self.itemarg + '{' + args + '}'
             else:
                 # some other character, e.g. '-'
@@ -1524,7 +1524,7 @@ def makefile(nodename):
 
 
 # Characters that are perfectly safe in filenames and hyperlinks
-goodchars = string.letters + string.digits + '!@-=+.'
+goodchars = string.ascii_letters + string.digits + '!@-=+.'
 
 # Replace characters that aren't perfectly safe by dashes
 # Underscores are bad since Cern HTTPD treats them as delimiters for

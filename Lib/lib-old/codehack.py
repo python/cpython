@@ -31,7 +31,7 @@ import linecache
 # Because this is a pretty expensive hack, a cache is kept.
 
 SET_LINENO = 127 # The opcode (see "opcode.h" in the Python source)
-identchars = string.letters + string.digits + '_' # Identifier characters
+identchars = string.ascii_letters + string.digits + '_' # Identifier characters
 
 _namecache = {} # The cache
 

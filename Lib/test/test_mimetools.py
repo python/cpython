@@ -2,7 +2,7 @@ from test_support import TestFailed
 import mimetools
 
 import string,StringIO
-start = string.letters + "=" + string.digits + "\n"
+start = string.ascii_letters + "=" + string.digits + "\n"
 for enc in ['7bit','8bit','base64','quoted-printable']:
     print enc,
     i = StringIO.StringIO(start)

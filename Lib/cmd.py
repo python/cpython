@@ -40,7 +40,7 @@ import string, sys
 __all__ = ["Cmd"]
 
 PROMPT = '(Cmd) '
-IDENTCHARS = string.letters + string.digits + '_'
+IDENTCHARS = string.ascii_letters + string.digits + '_'
 
 class Cmd:
     prompt = PROMPT

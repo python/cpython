@@ -62,7 +62,7 @@ def _split(p):
         s= q # find end of main FS name, not including special field
     else:
         for c in p[dash:s]:
-            if c not in string.letters:
+            if c not in string.ascii_letters:
                 q= 0
                 break # disallow invalid non-special-field characters in FS name
     r= q

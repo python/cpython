@@ -334,7 +334,7 @@ def expandvars(path):
     if '$' not in path:
         return path
     import string
-    varchars = string.letters + string.digits + '_-'
+    varchars = string.ascii_letters + string.digits + '_-'
     res = ''
     index = 0
     pathlen = len(path)

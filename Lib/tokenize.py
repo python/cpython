@@ -133,7 +133,7 @@ def tokenize_loop(readline, tokeneater):
 
 def generate_tokens(readline):
     lnum = parenlev = continued = 0
-    namechars, numchars = string.letters + '_', string.digits
+    namechars, numchars = string.ascii_letters + '_', '0123456789'
     contstr, needcont = '', 0
     contline = None
     indents = [0]
