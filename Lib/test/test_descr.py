@@ -343,8 +343,10 @@ def complexes():
     numops(100.0j, 3.0j, skip=['lt', 'le', 'gt', 'ge'])
     class Number(complex):
         __slots__ = ['prec']
-        def __init__(self, *args, **kwds):
-            self.prec = kwds.get('prec', 12)
+        def __new__(cls, *args, **kwds):
+            result = complex.__new__(cls, *args)
+            result.prec = kwds.get('prec', 12)
+            return result
         def __repr__(self):
             prec = self.prec
             if self.imag == 0.0:
@@ -353,9 +355,18 @@ def complexes():
                 return "%.*gj" % (prec, self.imag)
             return "(%.*g+%.*gj)" % (prec, self.real, prec, self.imag)
         __str__ = __repr__
+
     a = Number(3.14, prec=6)
     verify(`a` == "3.14")
     verify(a.prec == 6)
+
+    a = Number(a, prec=2)
+    verify(`a` == "3.1")
+    verify(a.prec == 2)
+
+    a = Number(234.5)
+    verify(`a` == "234.5")
+    verify(a.prec == 12)
 
 def spamlists():
     if verbose: print "Testing spamlist operations..."
