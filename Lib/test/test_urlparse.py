@@ -25,6 +25,9 @@ class UrlParseTestCase(unittest.TestCase):
             ('file:///tmp/junk.txt',
              ('file', '', '/tmp/junk.txt', '', '', ''),
              ('file', '', '/tmp/junk.txt', '', '')),
+            ('imap://mail.python.org/mbox1',
+             ('imap', 'mail.python.org', '/mbox1', '', '', ''),
+             ('imap', 'mail.python.org', '/mbox1', '', '')),
             ]:
             result = urlparse.urlparse(url)
             self.assertEqual(result, parsed)
