@@ -77,7 +77,7 @@ def istoken(s):
     return _token_rx.match(s) is not None
 
 
-def do_convert(ifp, ofp, xml=0, autoclose=(), verbatims=()):
+def convert(ifp, ofp, xml=0, autoclose=(), verbatims=()):
     if xml:
         autoclose = ()
     attrs = {}
@@ -152,24 +152,25 @@ def do_convert(ifp, ofp, xml=0, autoclose=(), verbatims=()):
 
 
 def dump_empty_element_names(knownempties):
+    d = {}
+    for gi in knownempties:
+        d[gi] = gi
     knownempties.append("")
     if os.path.isfile(EMPTIES_FILENAME):
-        mode = "a"
-    else:
-        mode = "w"
-    fp = open(EMPTIES_FILENAME, mode)
-    fp.write(string.join(knownempties, "\n"))
+        fp = open(EMPTIES_FILENAME)
+        while 1:
+            line = fp.readline()
+            if not line:
+                break
+            gi = string.strip(line)
+            if gi:
+                d[gi] = gi
+    fp = open(EMPTIES_FILENAME, "w")
+    gilist = d.keys()
+    gilist.sort()
+    fp.write(string.join(gilist, "\n"))
+    fp.write("\n")
     fp.close()
-
-
-def sgml_convert(ifp, ofp, autoclose, verbatims):
-    return do_convert(ifp, ofp, xml=0,
-                      autoclose=autoclose, verbatims=verbatims)
-
-
-def xml_convert(ifp, ofp, autoclose, verbatims):
-    return do_convert(ifp, ofp, xml=1,
-                      autoclose=autoclose, verbatims=verbatims)
 
 
 def update_gi_map(map, names, fromsgml=1):
@@ -186,7 +187,6 @@ def main():
     import sys
     #
     autoclose = AUTOCLOSE
-    convert = xml_convert
     xml = 1
     xmldecl = 0
     elem_names = ''
@@ -205,10 +205,8 @@ def main():
             LIST_EMPTIES = 1
         elif opt in ("-s", "--sgml"):
             xml = 0
-            convert = sgml_convert
         elif opt in ("-x", "--xml"):
             xml = 1
-            convert = xml_convert
         elif opt in ("-a", "--autoclose"):
             autoclose = string.split(arg, ",")
         elif opt == "--elements-map":
@@ -252,7 +250,7 @@ def main():
     try:
         if xml and xmldecl:
             opf.write('<?xml version="1.0" encoding="iso8859-1"?>\n')
-        convert(ifp, ofp, autoclose, verbatims)
+        convert(ifp, ofp, xml=xml, autoclose=autoclose, verbatims=verbatims)
     except IOError, (err, msg):
         if err != errno.EPIPE:
             raise
