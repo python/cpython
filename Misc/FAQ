@@ -1866,33 +1866,16 @@ Calling setattr(), to assign to variables in the module, also works.
 
 5.10. Q. How do I interface to C++ objects from Python?
 
-A. Depending on your requirements, there are many approaches.  Begin
-by reading the "Extending and Embedding" document (Doc/ext.tex, see
-also <URL:http://www.python.org/doc/>).  Realize that for the Python
-run-time system, there isn't a whole lot of difference between C and
-C++ -- so the strategy to build a new Python type around a C structure
-(pointer) type will also work for C++ objects.
+A. Depending on your requirements, there are many approaches.  To do
+this manually, begin by reading the "Extending and Embedding" document
+(Doc/ext.tex, see also <URL:http://www.python.org/doc/>).  Realize
+that for the Python run-time system, there isn't a whole lot of
+difference between C and C++ -- so the strategy to build a new Python
+type around a C structure (pointer) type will also work for C++
+objects.
 
-Automatic generation of interfaces between Python and C++ is still at
-the horizon -- parsing C++ header files requires an almost complete
-C++ parser, and many features aren't easily translated from C++ to
-Python: certain forms of operator oveloading, function overloading
-(best approached by a varargs function which explicitly type-checks
-its arguments), and reference arguments are just a number of features
-that are hard to translate correctly if at all.
-
-The hardest problem is to transparently translate the C++ class
-hierarchy to Python, so that Python programs derive classes from C++
-classes.  Given suitable constraints, this may be possible, but it
-would require more space than I have in this FAQ to explain how.
-In any case, you can get quite a bit done without this, using just the
-existing classes from Python.
-
-If this all seems rather daunting, that may be because it is -- C++
-isn't exactly a baby to handle without gloves!  However, people have
-accomplished amazing feats of interfacing between Python and C++, and
-a detailed question posted to the Python list is likely to elicit some
-interesting and useful responses.
+A useful automated approach (which also works for C) is SWIG:
+http://www.cs.utah.edu/~beazley/SWIG/.
 
 
 6. Python's design
