@@ -301,7 +301,10 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
 	if rsrcname:
 		builder.resources.append(rsrcname)
 	for o in others:
-		builder.resources.append(o)
+		if type(o) == str:
+			builder.resources.append(o)
+		else:
+			builder.files.append(o)
 	if plistname:
 		import plistlib
 		builder.plist = plistlib.Plist.fromFile(plistname)
