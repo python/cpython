@@ -33,6 +33,7 @@ typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /* Forward declarations */
 static PyObject *eval_frame(PyFrameObject *);
+static PyObject *call_function(PyObject ***, int);
 static PyObject *fast_function(PyObject *, PyObject ***, int, int, int);
 static PyObject *fast_cfunction(PyObject *, PyObject ***, int);
 static PyObject *do_call(PyObject *, PyObject ***, int, int);
@@ -1964,60 +1965,11 @@ eval_frame(PyFrameObject *f)
 			continue;
 
 		case CALL_FUNCTION:
-		{
-		    int na = oparg & 0xff;
-		    int nk = (oparg>>8) & 0xff;
-		    int n = na + 2 * nk;
-		    PyObject **pfunc = stack_pointer - n - 1;
-		    PyObject *func = *pfunc;
-
-		    /* Always dispatch PyCFunction first, because
-		       these are presumed to be the most frequent
-		       callable object.
-		    */
-		    if (PyCFunction_Check(func) && nk == 0) {
-			    int flags = PyCFunction_GET_FLAGS(func);
-			    if (flags  & (METH_VARARGS | METH_KEYWORDS)) {
-				    PyObject *callargs;
-				    callargs = load_args(&stack_pointer, na);
-				    x = PyCFunction_Call(func, callargs, NULL);
-				    Py_XDECREF(callargs); 
-			    } else
-				    x = fast_cfunction(func,
-						       &stack_pointer, na);
-		    } else {
-			    if (PyMethod_Check(func)
-				&& PyMethod_GET_SELF(func) != NULL) {
-				    /* optimize access to bound methods */
-				    PyObject *self = PyMethod_GET_SELF(func);
-				    Py_INCREF(self);
-				    func = PyMethod_GET_FUNCTION(func);
-				    Py_INCREF(func);
-				    Py_DECREF(*pfunc);
-				    *pfunc = self;
-				    na++;
-				    n++;
-			    } else
-				    Py_INCREF(func);
-			    if (PyFunction_Check(func)) {
-				    x = fast_function(func, &stack_pointer,
-						      n, na, nk);
-			    } else {
-				    x = do_call(func, &stack_pointer,
-						na, nk);
-			    }
-			    Py_DECREF(func);
-		    }
-
-		    while (stack_pointer > pfunc) {
-			    w = POP();
-			    Py_DECREF(w);
-		    }
-		    PUSH(x);
-		    if (x != NULL)
-			    continue;
-		    break;
-		}
+			x = call_function(&stack_pointer, oparg);
+			PUSH(x);
+			if (x != NULL)
+				continue;
+			break;
 
 		case CALL_FUNCTION_VAR:
 		case CALL_FUNCTION_KW:
@@ -3193,6 +3145,56 @@ PyEval_GetFuncDesc(PyObject *func)
 }
 
 #define EXT_POP(STACK_POINTER) (*--(STACK_POINTER))
+
+static PyObject *
+call_function(PyObject ***pp_stack, int oparg)
+{
+	int na = oparg & 0xff;
+	int nk = (oparg>>8) & 0xff;
+	int n = na + 2 * nk;
+	PyObject **pfunc = (*pp_stack) - n - 1;
+	PyObject *func = *pfunc;
+	PyObject *x, *w;
+
+	/* Always dispatch PyCFunction first, because
+	   these are presumed to be the most frequent
+	   callable object.
+	*/
+	if (PyCFunction_Check(func) && nk == 0) {
+		int flags = PyCFunction_GET_FLAGS(func);
+		if (flags  & (METH_VARARGS | METH_KEYWORDS)) {
+			PyObject *callargs;
+			callargs = load_args(pp_stack, na);
+			x = PyCFunction_Call(func, callargs, NULL);
+			Py_XDECREF(callargs); 
+		} else
+			x = fast_cfunction(func, pp_stack, na);
+	} else {
+		if (PyMethod_Check(func) && PyMethod_GET_SELF(func) != NULL) {
+			/* optimize access to bound methods */
+			PyObject *self = PyMethod_GET_SELF(func);
+			Py_INCREF(self);
+			func = PyMethod_GET_FUNCTION(func);
+			Py_INCREF(func);
+			Py_DECREF(*pfunc);
+			*pfunc = self;
+			na++;
+			n++;
+		} else
+			Py_INCREF(func);
+		if (PyFunction_Check(func))
+			x = fast_function(func, pp_stack, n, na, nk);
+		else 
+			x = do_call(func, pp_stack, na, nk);
+		Py_DECREF(func);
+	}
+	
+	while ((*pp_stack) > pfunc) {
+		w = EXT_POP(*pp_stack);
+		Py_DECREF(w);
+	}
+	return x;
+}
 
 /* The two fast_xxx() functions optimize calls for which no argument
    tuple is necessary; the objects are passed directly from the stack.
