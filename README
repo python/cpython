@@ -307,6 +307,14 @@ OS/2:   If you are running Warp3 or Warp4 and have IBM's VisualAge C/C++
         and type NMAKE.  Threading and sockets are supported by default
         in the resulting binaries of PYTHON15.DLL and PYTHON.EXE.
 
+Monterey (64-bit AIX):
+    The current Monterey C compiler (Visual Age) uses the OBJECT_MODE={32|64}
+    environment variable to set the compilation mode to either 32-bit or
+    64-bit (32-bit mode is the default). Presumably you want 64-bit
+    compilation mode for this 64-bit OS. As a result you must first set
+    OBJECT_MODE=64 in you environment before configuring (./configure) or
+    building (make) Python on Monterey.
+
 
 Configuring threads
 -------------------
