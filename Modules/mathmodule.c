@@ -242,8 +242,19 @@ initmath()
 	
 	m = Py_InitModule("math", math_methods);
 	d = PyModule_GetDict(m);
-	PyDict_SetItemString(d, "pi", v = PyFloat_FromDouble(atan(1.0) * 4.0));
+
+        if (!(v = PyFloat_FromDouble(atan(1.0) * 4.0)))
+                goto finally;
+	if (PyDict_SetItemString(d, "pi", v) < 0)
+                goto finally;
 	Py_DECREF(v);
-	PyDict_SetItemString(d, "e", v = PyFloat_FromDouble(exp(1.0)));
+
+        if (!(v = PyFloat_FromDouble(exp(1.0))))
+                goto finally;
+	if (PyDict_SetItemString(d, "e", ) < 0)
+                goto finally;
 	Py_DECREF(v);
+
+  finally:
+        Py_FatalError("can't initialize math module");
 }
