@@ -48,6 +48,8 @@ def select(e, mods, vars, mod, skipofiles):
 			continue
 		if w[0] != '-' and w[-2:] in ('.o', '.a'):
 			w = os.path.join(e, w)
+		if w[:2] in ('-L', '-R'):
+			w = w[:2] + os.path.join(e, w[2:])
 		files.append(w)
 	return files
 
