@@ -3975,10 +3975,16 @@ get_ref_type(struct compiling *c, char *name)
 	{
 		char buf[350];
 		sprintf(buf, 
-			"unknown scope for %.100s in %.100s(%s) in %s",
+			"unknown scope for %.100s in %.100s(%s) "
+			"in %s\nsymbols: %s\nlocals: %s\nglobals: %s\n",
 			name, c->c_name, 
 			PyObject_REPR(c->c_symtable->st_cur->ste_id),
-			c->c_filename);
+			c->c_filename,
+			PyObject_REPR(c->c_symtable->st_cur->ste_symbols),
+			PyObject_REPR(c->c_locals),
+			PyObject_REPR(c->c_globals)
+		    );
+
 		Py_FatalError(buf);
 	}
 	return -1; /* can't get here */
@@ -4330,10 +4336,13 @@ symtable_load_symbols(struct compiling *c)
 				if (PyDict_SetItem(c->c_globals, name,
 						   implicit) < 0)
 					goto fail;
-				v = PyInt_FromLong(flags);
-				if (PyDict_SetItem(st->st_global, name, v))
-					goto fail;
-				Py_DECREF(v);
+				if (st->st_nscopes != 1) {
+					v = PyInt_FromLong(flags);
+					if (PyDict_SetItem(st->st_global, 
+							   name, v)) 
+						goto fail;
+					Py_DECREF(v);
+				}
 			}
 		}
 	}
