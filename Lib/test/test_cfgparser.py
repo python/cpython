@@ -230,6 +230,18 @@ class TestCaseBase(unittest.TestCase):
             "bar=%(foo)s\n",
             defaults={"getname": "%(__name__)s"})
 
+    def check_items_config(self, expected):
+        cf = self.fromstring(
+            "[section]\n"
+            "name = value\n"
+            "key: |%(name)s| \n"
+            "getdefault: |%(default)s|\n"
+            "getname: |%(__name__)s|",
+            defaults={"default": "<default>"})
+        L = list(cf.items("section"))
+        L.sort()
+        self.assertEqual(L, expected)
+
 
 class ConfigParserTestCase(TestCaseBase):
     config_class = ConfigParser.ConfigParser
@@ -244,6 +256,13 @@ class ConfigParserTestCase(TestCaseBase):
         eq(cf.get("Foo", "bar10"),
            "something with lots of interpolation (10 steps)")
         self.get_error(ConfigParser.InterpolationDepthError, "Foo", "bar11")
+
+    def test_items(self):
+        self.check_items_config([('default', '<default>'),
+                                 ('getdefault', '|<default>|'),
+                                 ('getname', '|section|'),
+                                 ('key', '|value|'),
+                                 ('name', 'value')])
 
 
 class RawConfigParserTestCase(TestCaseBase):
@@ -261,6 +280,13 @@ class RawConfigParserTestCase(TestCaseBase):
            "something %(with10)s lots of interpolation (10 steps)")
         eq(cf.get("Foo", "bar11"),
            "something %(with11)s lots of interpolation (11 steps)")
+
+    def test_items(self):
+        self.check_items_config([('default', '<default>'),
+                                 ('getdefault', '|%(default)s|'),
+                                 ('getname', '|%(__name__)s|'),
+                                 ('key', '|%(name)s|'),
+                                 ('name', 'value')])
 
 
 def test_main():
