@@ -7,6 +7,7 @@ class TypeinWidget(Pmw.MegaWidget):
 	options = (('color', (128, 128, 128), self.__set_color),
 		   ('delegate', None, None),
 		   )
+	self.__update = 1
 	self.defineoptions(kw, options)
 
 	Pmw.MegaWidget.__init__(self, parent)
@@ -23,7 +24,8 @@ class TypeinWidget(Pmw.MegaWidget):
 	    maxwidth=4,
 	    entry_width=4,
 	    validate=self.__validate,
-	    modifiedcommand=self.__modified)
+	    modifiedcommand=self.__modified,
+	    command=self.__force_modify)
 	self.__x.grid(row=0, column=0)
 
 	self.__y = self.createcomponent(
@@ -36,7 +38,8 @@ class TypeinWidget(Pmw.MegaWidget):
 	    maxwidth=4,
 	    entry_width=4,
 	    validate=self.__validate,
-	    modifiedcommand=self.__modified)
+	    modifiedcommand=self.__modified,
+	    command=self.__force_modify)
 	self.__y.grid(row=1, column=0)
 
 	self.__z = self.createcomponent(
@@ -49,7 +52,8 @@ class TypeinWidget(Pmw.MegaWidget):
 	    maxwidth=4,
 	    entry_width=4,
 	    validate=self.__validate,
-	    modifiedcommand=self.__modified)
+	    modifiedcommand=self.__modified,
+	    command=self.__force_modify)
 	self.__z.grid(row=2, column=0)
 
 	# Check keywords and initialize options
@@ -67,6 +71,9 @@ class TypeinWidget(Pmw.MegaWidget):
 	self.__z.setentry(`blue`)
 	if obj == self:
 	    return
+
+    def set_update_on_typing(self, flag):
+	self.__update = flag
 
     #
     # PRIVATE INTERFACE
@@ -90,14 +97,21 @@ class TypeinWidget(Pmw.MegaWidget):
 	    return -1
 
     # called whenever a text entry is modified
-    def __modified(self):
+    def __modified(self, force=None):
 	# these are guaranteed to be valid, right?
 	vals = map(lambda x: x.get(), (self.__x, self.__y, self.__z))
 	rgbs = tuple(map(self.__str_to_int, vals))
 	valids = map(self.__validate, vals)
 	delegate = self['delegate']
-	if (None not in rgbs) and (-1 not in valids) and delegate:
+	if ((force or self.__update) and
+	    (None not in rgbs) and
+	    (-1 not in valids) and
+	    delegate):
+	    #
 	    delegate.set_color(self, rgbs)
+
+    def __force_modify(self):
+	self.__modified(force=1)
 
     # called whenever the color option is changed
     def __set_color(self):
