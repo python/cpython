@@ -94,6 +94,8 @@ MAKESETUP=	$(srcdir)/makesetup
 
 OBJS=		$(MODOBJS)
 
+# XXX Should getpath.o (and may be others) be added to OBJS?
+
 ADDOBJS=	main.o config.o getpath.o getbuildinfo.o
 
 LIB=		libModules.a
@@ -174,6 +176,7 @@ almodule.o: almodule.c
 arraymodule.o: arraymodule.c
 audioop.o: audioop.c
 cdmodule.o: cdmodule.c
+cgensupport.o: cgensupport.c
 clmodule.o: clmodule.c
 dbmmodule.o: dbmmodule.c
 errnomodule.o: errnomodule.c
