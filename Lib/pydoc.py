@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Generate Python documentation in HTML or as text for interactive use.
+"""Generate Python documentation in HTML or text for interactive use.
 
 At the shell command line outside of Python, run "pydoc <name>" to show
 documentation on something.  <name> may be the name of a Python function,
@@ -74,10 +74,13 @@ def index(dir):
 def pathdirs():
     """Convert sys.path into a list of absolute, existing, unique paths."""
     dirs = []
+    normdirs = []
     for dir in sys.path:
         dir = os.path.abspath(dir or '.')
-        if dir not in dirs and os.path.isdir(dir):
+        normdir = os.path.normcase(dir)
+        if normdir not in normdirs and os.path.isdir(dir):
             dirs.append(dir)
+            normdirs.append(normdir)
     return dirs
 
 def getdoc(object):
@@ -116,9 +119,13 @@ def cram(text, maxlen):
         return text[:pre] + '...' + text[len(text)-post:]
     return text
 
-def cleanid(text):
+def stripid(text):
     """Remove the hexadecimal id from a Python object representation."""
-    return re.sub(' at 0x[0-9a-f]{5,}>$', '>', text)
+    # The behaviour of %p is implementation-dependent, so we need an example.
+    for pattern in [' at 0x[0-9a-f]{6,}>$', ' at [0-9A-F]{8,}>$']:
+        if re.search(pattern, repr(Exception)):
+            return re.sub(pattern, '>', text)
+    return text
 
 def modulename(path):
     """Return the Python module name for a given path, or None."""
@@ -204,7 +211,7 @@ class HTMLRepr(Repr):
         if hasattr(self, methodname):
             return getattr(self, methodname)(x, level)
         else:
-            return self.escape(cram(cleanid(repr(x)), self.maxother))
+            return self.escape(cram(stripid(repr(x)), self.maxother))
 
     def repr_string(self, x, level):
         text = self.escape(cram(x, self.maxstring))
@@ -213,7 +220,7 @@ class HTMLRepr(Repr):
 
     def repr_instance(self, x, level):
         try:
-            return cram(cleanid(repr(x)), self.maxstring)
+            return cram(stripid(repr(x)), self.maxstring)
         except:
             return self.escape('<%s instance>' % x.__class__.__name__)
 
@@ -386,8 +393,8 @@ class HTMLDoc(Doc):
         result = ''
         head = '<br><big><big><strong>&nbsp;%s</strong></big></big>' % name
         try:
-            file = inspect.getsourcefile(object)
-            filelink = '<a href="file:%s">%s</a>' % (file, file)
+            path = os.path.abspath(inspect.getfile(object))
+            filelink = '<a href="file:%s">%s</a>' % (path, path)
         except TypeError:
             filelink = '(built-in)'
         info = []
@@ -395,7 +402,7 @@ class HTMLDoc(Doc):
             version = str(object.__version__)
             if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
                 version = strip(version[11:-1])
-            info.append('version: %s' % self.escape(version))
+            info.append('version %s' % self.escape(version))
         if hasattr(object, '__date__'):
             info.append(self.escape(str(object.__date__)))
         if info:
@@ -598,11 +605,11 @@ class TextRepr(Repr):
         if hasattr(self, methodname):
             return getattr(self, methodname)(x, level)
         else:
-            return cram(cleanid(repr(x)), self.maxother)
+            return cram(stripid(repr(x)), self.maxother)
 
     def repr_instance(self, x, level):
         try:
-            return cram(cleanid(repr(x)), self.maxstring)
+            return cram(stripid(repr(x)), self.maxstring)
         except:
             return '<%s instance>' % x.__class__.__name__
 
@@ -719,8 +726,8 @@ class TextDoc(Doc):
 
         if hasattr(object, '__version__'):
             version = str(object.__version__)
-            if version[:11] == '$Revision$':
-                version = version[11:-1]
+            if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
+                version = strip(version[11:-1])
             result = result + self.section('VERSION', version)
         if hasattr(object, '__date__'):
             result = result + self.section('DATE', str(object.__date__))
@@ -1109,7 +1116,7 @@ def serve(address, callback=None):
 
 # -------------------------------------------------- command-line interface
 
-if __name__ == '__main__':
+def cli():
     import getopt
     class BadUsage: pass
 
@@ -1180,3 +1187,6 @@ if __name__ == '__main__':
     Write out the HTML documentation for all modules in the tree
     under a given directory to files in the current directory.
 """ % ((sys.argv[0],) * 5)
+
+if __name__ == '__main__':
+    cli()
