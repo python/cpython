@@ -14,12 +14,19 @@ class WindowParent() = ManageOneChild():
 	def create(self, (title, size)):
 		self.title = title
 		self.size = size		# (width, height)
-		self.child = 0			# i.e., no child yet
-		self.win = 0			# i.e., no window yet
+		self._reset()
+		return self
+	#
+	def _reset(self):
+		self.child = 0
+		self.win = 0
 		self.itimer = 0
 		self.do_mouse = 0
 		self.do_timer = 0
-		return self
+	#
+	def destroy(self):
+		if self.child: self.child.destroy()
+		self._reset()
 	#
 	def need_mouse(self, child): self.do_mouse = 1
 	def no_mouse(self, child): self.do_mouse = 0
