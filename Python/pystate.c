@@ -395,7 +395,9 @@ _PyGILState_Init(PyInterpreterState *i, PyThreadState *t)
 	autoTLSkey = PyThread_create_key();
 	autoInterpreterState = i;
 	/* Now stash the thread state for this thread in TLS */
-	PyThread_set_key_value(autoTLSkey, (void *)t);
+	assert(PyThread_get_key_value(autoTLSkey) == NULL);
+	if (PyThread_set_key_value(autoTLSkey, (void *)t) < 0)
+		Py_FatalError("Couldn't create autoTLSkey mapping");
 	assert(t->gilstate_counter == 0); /* must be a new thread state */
 	t->gilstate_counter = 1;
 }
@@ -434,7 +436,8 @@ PyGILState_Ensure(void)
 		tcur = PyThreadState_New(autoInterpreterState);
 		if (tcur == NULL)
 			Py_FatalError("Couldn't create thread-state for new thread");
-		PyThread_set_key_value(autoTLSkey, (void *)tcur);
+		if (PyThread_set_key_value(autoTLSkey, (void *)tcur) < 0)
+			Py_FatalError("Couldn't create autoTLSkey mapping");
 		current = 0; /* new thread state is never current */
 	}
 	else
