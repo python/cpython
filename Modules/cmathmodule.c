@@ -67,11 +67,11 @@ static char c_acosh_doc[] =
 static Py_complex
 c_asin(Py_complex x)
 {
-	Py_complex z;
-	z = c_sqrt(c_half);
-	z = c_log(c_prod(z, c_sum(c_sqrt(c_sum(x, c_i)),
-				  c_sqrt(c_diff(x, c_i)))));
-	return c_sum(z, z);
+	/* -i * log[(sqrt(1-x**2) + i*x] */
+	const Py_complex squared = c_prod(x, x);
+	const Py_complex sqrt_1_minus_x_sq = c_sqrt(c_diff(c_one, squared));
+	const Py_complex sum = c_sum(sqrt_1_minus_x_sq, c_prod(c_i, x));
+        return c_neg(c_prodi(c_log(sum)));
 }
 
 static char c_asin_doc[] =
@@ -83,10 +83,11 @@ static char c_asin_doc[] =
 static Py_complex
 c_asinh(Py_complex x)
 {
-	/* Break up long expression for WATCOM */
 	Py_complex z;
-	z = c_sum(c_one, c_prod(x, x));
-	return c_log(c_sum(c_sqrt(z), x));
+	z = c_sqrt(c_half);
+	z = c_log(c_prod(z, c_sum(c_sqrt(c_sum(x, c_i)),
+				  c_sqrt(c_diff(x, c_i)))));
+	return c_sum(z, z);
 }
 
 static char c_asinh_doc[] =
