@@ -25,7 +25,11 @@ try:
 except ImportError:
 	MacOS = None
 
-from bgenlocations import CREATOR, INCLUDEDIR
+try:
+	from bgenlocations import CREATOR, INCLUDEDIR
+except ImportError:
+	CREATOR = None
+	INCLUDEDIR = os.curdir
 
 Error = "scantools.Error"
 
@@ -236,7 +240,7 @@ if missing: raise "Missing Types"
 		self.line = ""
 
 	def initpaths(self):
-		self.includepath = [':', INCLUDEDIR]
+		self.includepath = [os.curdir, INCLUDEDIR]
 
 	def initpatterns(self):
 		self.head_pat = r"^EXTERN_API[^_]"
@@ -263,7 +267,7 @@ if missing: raise "Missing Types"
 				setattr(self, name[:-4], prog)
 
 	def initosspecifics(self):
-		if MacOS:
+		if MacOS and CREATOR:
 			self.filetype = 'TEXT'
 			self.filecreator = CREATOR
 		else:
