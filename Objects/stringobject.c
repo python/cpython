@@ -2381,6 +2381,45 @@ string_center(PyStringObject *self, PyObject *args)
     return pad(self, left, marg - left, ' ');
 }
 
+static char zfill__doc__[] =
+"S.zfill(width) -> string\n"
+"\n"
+"Pad a numeric string S with zeros on the left, to fill a field\n"
+"of the specified width.  The string S is never truncated.";
+
+static PyObject *
+string_zfill(PyStringObject *self, PyObject *args)
+{
+    int fill;
+    PyObject *s;
+    const char *p;
+
+    int width;
+    if (!PyArg_ParseTuple(args, "i:zfill", &width))
+        return NULL;
+
+    if (PyString_GET_SIZE(self) >= width) {
+        Py_INCREF(self);
+        return (PyObject*) self;
+    }
+
+    fill = width - PyString_GET_SIZE(self);
+
+    s = pad(self, fill, 0, '0');
+
+    if (s == NULL)
+        return NULL;
+
+    p = PyString_AS_STRING(s);
+    if (p[fill] == '+' || p[fill] == '-') {
+        /* move sign to beginning of string */
+        p[0] = p[fill];
+        p[fill] = '0';
+    }
+
+    return (PyObject*) s;
+}
+
 static char isspace__doc__[] =
 "S.isspace() -> bool\n"
 "\n"
@@ -2728,6 +2767,7 @@ string_methods[] = {
 	{"ljust",       (PyCFunction)string_ljust,      METH_VARARGS, ljust__doc__},
 	{"rjust",       (PyCFunction)string_rjust,      METH_VARARGS, rjust__doc__},
 	{"center",      (PyCFunction)string_center,     METH_VARARGS, center__doc__},
+	{"zfill",       (PyCFunction)string_zfill,      METH_VARARGS, zfill__doc__},
 	{"encode",      (PyCFunction)string_encode,     METH_VARARGS, encode__doc__},
 	{"decode",      (PyCFunction)string_decode,     METH_VARARGS, decode__doc__},
 	{"expandtabs",  (PyCFunction)string_expandtabs, METH_VARARGS, expandtabs__doc__},

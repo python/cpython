@@ -206,8 +206,18 @@ if 0:
     test('capwords', u'abc\tdef\nghi', u'Abc Def Ghi')
     test('capwords', u'abc\t   def  \nghi', u'Abc Def Ghi')
 
-verify(string.zfill(u'34', 1) == u'34')
-verify(string.zfill(u'34', 5) == u'00034')
+test('zfill', u'123', u'123', 2)
+test('zfill', u'123', u'123', 3)
+test('zfill', u'123', u'0123', 4)
+test('zfill', u'+123', u'+123', 3)
+test('zfill', u'+123', u'+123', 4)
+test('zfill', u'+123', u'+0123', 5)
+test('zfill', u'-123', u'-123', 3)
+test('zfill', u'-123', u'-123', 4)
+test('zfill', u'-123', u'-0123', 5)
+test('zfill', u'', u'000', 3)
+test('zfill', u'34', u'34', 1)
+test('zfill', u'34', u'00034', 5)
 
 # Comparisons:
 print 'Testing Unicode comparisons...',

@@ -6,6 +6,10 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- A method zfill() was added to str and unicode, that fills a numeric
+  string to the left with zeros.  For example,
+  "+123".zfill(6) -> "+00123".
+
 - Complex numbers supported divmod() and the // and % operators, but
   these make no sense.  Since this was documented, they're being
   deprecated now.
