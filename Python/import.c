@@ -1194,26 +1194,43 @@ case_ok(char *buf, int len, int namelen, char *name)
 static int
 find_init_module(char *buf)
 {
-	size_t save_len = strlen(buf);
+	const size_t save_len = strlen(buf);
 	size_t i = save_len;
+	char *pname;  /* pointer to start of __init__ */
 	struct stat statbuf;
 
+/*	For calling case_ok(buf, len, namelen, name):
+ *	/a/b/c/d/e/f/g/h/i/j/k/some_long_module_name.py\0
+ *	^                      ^                   ^    ^
+ *	|--------------------- buf ---------------------|
+ *	|------------------- len ------------------|
+ *	                       |------ name -------|
+ *	                       |----- namelen -----|
+ */
 	if (save_len + 13 >= MAXPATHLEN)
 		return 0;
 	buf[i++] = SEP;
-	strcpy(buf+i, "__init__.py");
+	pname = buf + i;
+	strcpy(pname, "__init__.py");
 	if (stat(buf, &statbuf) == 0) {
-		buf[save_len] = '\0';
-		return 1;
+		if (case_ok(buf,
+			    save_len + 9,	/* len("/__init__") */
+		            8,   		/* len("__init__") */
+		            pname)) {
+			buf[save_len] = '\0';
+			return 1;
+		}
 	}
-	i += strlen(buf+i);
-	if (Py_OptimizeFlag)
-		strcpy(buf+i, "o");
-	else
-		strcpy(buf+i, "c");
+	i += strlen(pname);
+	strcpy(buf+i, Py_OptimizeFlag ? "o" : "c");
 	if (stat(buf, &statbuf) == 0) {
-		buf[save_len] = '\0';
-		return 1;
+		if (case_ok(buf,
+			    save_len + 9,	/* len("/__init__") */
+		            8,   		/* len("__init__") */
+		            pname)) {
+			buf[save_len] = '\0';
+			return 1;
+		}
 	}
 	buf[save_len] = '\0';
 	return 0;
