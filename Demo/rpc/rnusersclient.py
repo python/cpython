@@ -1,7 +1,7 @@
 # Remote nusers client interface
 
 import rpc
-from rpc import Packer, Unpacker, TCPClient, UDPClient
+from rpc import Packer, Unpacker, UDPClient, BroadcastUDPClient
 
 
 class RnusersPacker(Packer):
@@ -34,48 +34,65 @@ class RnusersUnpacker(Unpacker):
 		return self.unpack_array(self.unpack_utmpidle)
 
 
-class RnusersClient(UDPClient):
+class PartialRnusersClient:
 
 	def addpackers(self):
 		self.packer = RnusersPacker().init()
 		self.unpacker = RnusersUnpacker().init('')
 
+	def Num(self):
+		return self.make_call(1, None, None, self.unpacker.unpack_int)
+
+	def Names(self):
+		return self.make_call(2, None, \
+			None, self.unpacker.unpack_utmpidlearr)
+
+	def Allnames(self):
+		return self.make_call(3, None, \
+			None, self.unpacker.unpack_utmpidlearr)
+
+
+class RnusersClient(PartialRnusersClient, UDPClient):
+
 	def init(self, host):
 		return UDPClient.init(self, host, 100002, 2)
 
-	def Num(self):
-		self.start_call(1)
-		self.do_call()
-		n = self.unpacker.unpack_int()
-		self.end_call()
-		return n
 
-	def Names(self):
-		self.start_call(2)
-		self.do_call()
-		list = self.unpacker.unpack_utmpidlearr()
-		self.end_call()
-		return list
+class BroadcastRnusersClient(PartialRnusersClient, BroadcastUDPClient):
 
-	def Allnames(self):
-		self.start_call(3)
-		self.do_call()
-		list = self.unpacker.unpack_utmpidlearr()
-		self.end_call()
-		return list
+	def init(self, bcastaddr):
+		return BroadcastUDPClient.init(self, bcastaddr, 100002, 2)
 
 
 def test():
 	import sys
-	host = ''
-	if sys.argv[1:]: host = sys.argv[1]
+	if not sys.argv[1:]:
+		testbcast()
+		return
+	else:
+		host = sys.argv[1]
 	c = RnusersClient().init(host)
 	list = c.Names()
-	def strip0(s):
-		while s and s[-1] == '\0': s = s[:-1]
-		return s
 	for (line, name, host, time), idle in list:
 		line = strip0(line)
 		name = strip0(name)
 		host = strip0(host)
-		print name, host, line, time, idle
+		print `name`, `host`, `line`, time, idle
+
+def testbcast():
+	c = BroadcastRnusersClient().init('<broadcast>')
+	def listit(list, fromaddr):
+		host, port = fromaddr
+		print host + '\t:',
+		for (line, name, host, time), idle in list:
+			print strip0(name),
+		print
+	c.set_reply_handler(listit)
+	all = c.Names()
+	print 'Total Count:', len(all)
+
+def strip0(s):
+	while s and s[-1] == '\0': s = s[:-1]
+	return s
+
+test()
