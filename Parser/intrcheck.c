@@ -141,8 +141,11 @@ initintr()
 		signal(SIGINT, intcatcher);
 }
 
-int
-intrcheck()
+#ifdef THINK_C
+/* MPW and MW runtime catch cmd-. and raise SIGINT, THINK does not, it seems */
+static void
+scan_event_queue(flush)
+	int flush;
 {
 	register EvQElPtr q;
 	
@@ -152,11 +155,22 @@ intrcheck()
 		if (q->evtQWhat == keyDown &&
 				(char)q->evtQMessage == '.' &&
 				(q->evtQModifiers & cmdKey) != 0) {
-			FlushEvents(keyDownMask, 0);
+			if ( flush )
+				FlushEvents(keyDownMask, 0);
 			interrupted = 1;
 			break;
 		}
 	}
+}
+#endif
+
+int
+intrcheck()
+{
+#ifdef THINK_C
+	scan_event_queue(1);
+#endif
+	PyMac_Yield();
 	if (interrupted) {
 		interrupted = 0;
 		return 1;
@@ -172,18 +186,10 @@ intrcheck()
 int
 intrpeek()
 {
-	register EvQElPtr q;
-	
-	q = (EvQElPtr) GetEvQHdr()->qHead;
-	
-	for (; q; q = (EvQElPtr)q->qLink) {
-		if (q->evtQWhat == keyDown &&
-				(char)q->evtQMessage == '.' &&
-				(q->evtQModifiers & cmdKey) != 0) {
-			return 1;
-		}
-	}
-	return 0;
+#ifdef THINK_C
+	scan_event_queue(0);
+#endif
+	return interrupted;
 }
 
 #define OK
