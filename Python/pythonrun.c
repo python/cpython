@@ -179,11 +179,11 @@ Py_Finalize()
 	PyInterpreterState *interp;
 	PyThreadState *tstate;
 
-	call_sys_exitfunc();
-
 	if (!initialized)
 		return;
 	initialized = 0;
+
+	call_sys_exitfunc();
 
 	/* Get current thread state and interpreter pointer */
 	tstate = PyThreadState_Get();
