@@ -75,7 +75,6 @@ extern void initsyslog();
 extern void initgestalt();
 extern void initmacfs();
 extern void initbinascii();
-extern void initsoundex();
 extern void initoperator();
 extern void initerrno();
 extern void initpcre();
@@ -199,7 +198,6 @@ struct _inittab _PyImport_Inittab[] = {
 	{"gestalt", initgestalt},
 	{"macfs", initmacfs},
 	{"binascii", initbinascii},
-	{"soundex", initsoundex},
 	{"operator", initoperator},
 	{"errno", initerrno},
 	{"pcre", initpcre},
