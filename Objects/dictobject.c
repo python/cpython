@@ -958,18 +958,12 @@ dict_get(mp, args)
 	PyObject *args;
 {
 	PyObject *key;
-	PyObject *failobj = NULL;
+	PyObject *failobj = Py_None;
 	PyObject *val = NULL;
 	long hash;
 
-	if (mp->ma_table == NULL)
-		goto finally;
-
 	if (!PyArg_ParseTuple(args, "O|O", &key, &failobj))
 		return NULL;
-
-	if (failobj == NULL)
-		failobj = Py_None;
 
 #ifdef CACHE_HASH
 	if (!PyString_Check(key) ||
@@ -981,7 +975,7 @@ dict_get(mp, args)
 			return NULL;
 	}
 	val = lookdict(mp, key, hash)->me_value;
-  finally:
+
 	if (val == NULL)
 		val = failobj;
 	Py_INCREF(val);
