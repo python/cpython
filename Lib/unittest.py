@@ -400,6 +400,9 @@ class TestSuite:
 
     __str__ = __repr__
 
+    def __iter__(self):
+        return iter(self._tests)
+
     def countTestCases(self):
         cases = 0
         for test in self._tests:
