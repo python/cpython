@@ -73,23 +73,64 @@ class Shelf:
 		self.close()
 
 
-class DbShelf(Shelf):
+class BsdDbShelf(Shelf):
+	"""Shelf implementation using the "BSD" db interface.
+
+	The actual database is opened using one of thethe "bsddb" modules
+	"open" routines (i.e. bsddb.hashopen, bsddb.btopen or bsddb.rnopen.)
+
+	This class is initialized with the the database object
+	returned from one of the bsddb open functions.
+
+	See the module's __doc__ string for an overview of the interface.
+	"""
+
+	def __init__(self, dict):
+	    Shelf.__init__(self, dict)
+
+	def set_location(self, key):
+	     (key, value) = self.dict.set_location(key)
+	     f = StringIO.StringIO(value)
+	     return (key, pickle.Unpickler(f).load())
+
+	def next(self):
+	     (key, value) = self.dict.next()
+	     f = StringIO.StringIO(value)
+	     return (key, pickle.Unpickler(f).load())
+
+	def previous(self):
+	     (key, value) = self.dict.previous()
+	     f = StringIO.StringIO(value)
+	     return (key, pickle.Unpickler(f).load())
+
+	def first(self):
+	     (key, value) = self.dict.first()
+	     f = StringIO.StringIO(value)
+	     return (key, pickle.Unpickler(f).load())
+
+	def last(self):
+	     (key, value) = self.dict.last()
+	     f = StringIO.StringIO(value)
+	     return (key, pickle.Unpickler(f).load())
+
+
+class DbfilenameShelf(Shelf):
 	"""Shelf implementation using the "anydbm" generic dbm interface.
 
 	This is initialized with the filename for the dbm database.
 	See the module's __doc__ string for an overview of the interface.
 	"""
 	
-	def __init__(self, filename):
+	def __init__(self, filename, flag='c'):
 		import anydbm
-		Shelf.__init__(self, anydbm.open(filename))
+		Shelf.__init__(self, anydbm.open(filename, flag))
 
 
-def open(filename):
+def open(filename, flag='c'):
 	"""Open a persistent dictionary for reading and writing.
 
 	Argument is the filename for the dbm database.
 	See the module's __doc__ string for an overview of the interface.
 	"""
 	
-	return DbShelf(filename)
+	return DbfilenameShelf(filename, flag)
