@@ -132,7 +132,7 @@ get_line_buffer(self, args)
 }
 
 static char doc_get_line_buffer[] = "\
-get_line_buffer([function]) -> string\n\
+get_line_buffer() -> string\n\
 return the current contents of the line buffer.\
 ";
 
