@@ -289,10 +289,25 @@ class RawConfigParserTestCase(TestCaseBase):
                                  ('name', 'value')])
 
 
+class SafeConfigParserTestCase(ConfigParserTestCase):
+    config_class = ConfigParser.SafeConfigParser
+
+    def test_safe_interpolation(self):
+        # See http://www.python.org/sf/511737
+        cf = self.fromstring("[section]\n"
+                             "option1=xxx\n"
+                             "option2=%(option1)s/xxx\n"
+                             "ok=%(option1)s/%%s\n"
+                             "not_ok=%(option2)s/%%s")
+        self.assertEqual(cf.get("section", "ok"), "xxx/%s")
+        self.assertEqual(cf.get("section", "not_ok"), "xxx/xxx/%s")
+
+
 def test_main():
     suite = unittest.TestSuite()
     suite.addTests([unittest.makeSuite(ConfigParserTestCase),
-                    unittest.makeSuite(RawConfigParserTestCase)])
+                    unittest.makeSuite(RawConfigParserTestCase),
+                    unittest.makeSuite(SafeConfigParserTestCase)])
     test_support.run_suite(suite)
 
 if __name__ == "__main__":

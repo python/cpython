@@ -59,6 +59,16 @@ appropriate for the \samp{\%()s} string interpolation.  Note that
 and will override any value provided in \var{defaults}.
 \end{classdesc}
 
+\begin{classdesc}{SafeConfigParser}{\optional{defaults}}
+Derived class of \class{ConfigParser} that implements a more-sane
+variant of the magical interpolation feature.  This implementation is
+more predictable as well.
+% XXX Need to explain what's safer/more predictable about it.
+New applications should prefer this version if they don't need to be
+compatible with older versions of Python.
+\versionadded{2.3}
+\end{classdesc}
+
 \begin{excdesc}{NoSectionError}
 Exception raised when a specified section is not found.
 \end{excdesc}
