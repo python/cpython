@@ -343,7 +343,7 @@ def test_main():
         RecodingTest,
         PunycodeTest,
         NameprepTest,
-	CodecTest
+        CodecTest
     )
 
 

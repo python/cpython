@@ -204,7 +204,7 @@ DOCTYPE html [
         self._run_check("<e a=rgb(1,2,3)>", [
             ("starttag", "e", [("a", "rgb(1,2,3)")]),
             ])
-	# Regression test for SF bug #921657.
+        # Regression test for SF bug #921657.
         self._run_check("<a href=mailto:xyz@example.com>", [
             ("starttag", "a", [("href", "mailto:xyz@example.com")]),
             ])

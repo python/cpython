@@ -678,7 +678,7 @@ class NetworkTests(unittest.TestCase):
         data = result.read()
         self.assertEqual(len(data), 20)
 
-        
+
 
 def test_main(verbose=None):
     tests = (TrivialTests,

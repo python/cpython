@@ -133,7 +133,7 @@ class Test_Csv(unittest.TestCase):
         finally:
             fileobj.close()
             os.unlink(name)
-            
+
     def _read_test(self, input, expect, **kwargs):
         reader = csv.reader(input, **kwargs)
         result = list(reader)
@@ -226,7 +226,7 @@ class TestDialectRegistry(unittest.TestCase):
         finally:
             fileobj.close()
             os.unlink(name)
-            
+
     def test_dialect_apply(self):
         class testA(csv.excel):
             delimiter = "\t"
@@ -247,7 +247,7 @@ class TestDialectRegistry(unittest.TestCase):
             finally:
                 fileobj.close()
                 os.unlink(name)
-                
+
             fd, name = tempfile.mkstemp()
             fileobj = os.fdopen(fd, "w+b")
             try:
