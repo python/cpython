@@ -1203,7 +1203,7 @@ alp_getstatus(alpobject *self, PyObject *args)
 	long length;
 	int i;
 	
-	if (!PyArg_Parse(args, "O!", &PyList_Type, &list))
+	if (!PyArg_ParseTuple(args, "O!", &PyList_Type, &list))
 		return NULL;
 	length = PyList_Size(list);
 	PVbuffer = PyMem_NEW(long, length);
