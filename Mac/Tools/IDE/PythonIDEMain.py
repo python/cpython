@@ -18,6 +18,8 @@ class PythonIDE(Wapplication.Application):
 		
 		AE.AEInstallEventHandler(AppleEvents.kCoreEventClass, AppleEvents.kAEOpenApplication, 
 				self.ignoreevent)
+		AE.AEInstallEventHandler(AppleEvents.kCoreEventClass, AppleEvents.kAEReopenApplication, 
+				self.ignoreevent)
 		AE.AEInstallEventHandler(AppleEvents.kCoreEventClass, AppleEvents.kAEPrintDocuments, 
 				self.ignoreevent)
 		AE.AEInstallEventHandler(AppleEvents.kCoreEventClass, AppleEvents.kAEOpenDocuments, 
