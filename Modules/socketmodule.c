@@ -3964,6 +3964,71 @@ init_socket(void)
 #ifdef	IPV6_UNICAST_HOPS
 	PyModule_AddIntConstant(m, "IPV6_UNICAST_HOPS", IPV6_UNICAST_HOPS);
 #endif
+        /* Additional IPV6 socket options, defined in RFC 3493 */
+#ifdef IPV6_V6ONLY
+	PyModule_AddIntConstant(m, "IPV6_V6ONLY", IPV6_V6ONLY);
+#endif
+	/* Advanced IPV6 socket options, from RFC 3542 */
+#ifdef IPV6_CHECKSUM
+	PyModule_AddIntConstant(m, "IPV6_CHECKSUM", IPV6_CHECKSUM);
+#endif
+#ifdef IPV6_DONTFRAG
+	PyModule_AddIntConstant(m, "IPV6_DONTFRAG", IPV6_DONTFRAG);
+#endif
+#ifdef IPV6_DSTOPTS
+	PyModule_AddIntConstant(m, "IPV6_DSTOPTS", IPV6_DSTOPTS);
+#endif
+#ifdef IPV6_HOPLIMIT
+	PyModule_AddIntConstant(m, "IPV6_HOPLIMIT", IPV6_HOPLIMIT);
+#endif
+#ifdef IPV6_HOPOPTS
+	PyModule_AddIntConstant(m, "IPV6_HOPOPTS", IPV6_HOPOPTS);
+#endif
+#ifdef IPV6_NEXTHOP
+	PyModule_AddIntConstant(m, "IPV6_NEXTHOP", IPV6_NEXTHOP);
+#endif
+#ifdef IPV6_PATHMTU
+	PyModule_AddIntConstant(m, "IPV6_PATHMTU", IPV6_PATHMTU);
+#endif
+#ifdef IPV6_PKTINFO
+	PyModule_AddIntConstant(m, "IPV6_PKTINFO", IPV6_PKTINFO);
+#endif
+#ifdef IPV6_RECVDSTOPTS
+	PyModule_AddIntConstant(m, "IPV6_RECVDSTOPTS", IPV6_RECVDSTOPTS);
+#endif
+#ifdef IPV6_RECVHOPLIMIT
+	PyModule_AddIntConstant(m, "IPV6_RECVHOPLIMIT", IPV6_RECVHOPLIMIT);
+#endif
+#ifdef IPV6_RECVHOPOPTS
+	PyModule_AddIntConstant(m, "IPV6_RECVHOPOPTS", IPV6_RECVHOPOPTS);
+#endif
+#ifdef IPV6_RECVPKTINFO
+	PyModule_AddIntConstant(m, "IPV6_RECVPKTINFO", IPV6_RECVPKTINFO);
+#endif
+#ifdef IPV6_RECVRTHDR
+	PyModule_AddIntConstant(m, "IPV6_RECVRTHDR", IPV6_RECVRTHDR);
+#endif
+#ifdef IPV6_RECVTCLASS
+	PyModule_AddIntConstant(m, "IPV6_RECVTCLASS", IPV6_RECVTCLASS);
+#endif
+#ifdef IPV6_RTHDR
+	PyModule_AddIntConstant(m, "IPV6_RTHDR", IPV6_RTHDR);
+#endif
+#ifdef IPV6_RTHDRDSTOPTS
+	PyModule_AddIntConstant(m, "IPV6_RTHDRDSTOPTS", IPV6_RTHDRDSTOPTS);
+#endif
+#ifdef IPV6_RTHDR_TYPE_0
+	PyModule_AddIntConstant(m, "IPV6_RTHDR_TYPE_0", IPV6_RTHDR_TYPE_0);
+#endif
+#ifdef IPV6_RECVPATHMTU
+	PyModule_AddIntConstant(m, "IPV6_RECVPATHMTU", IPV6_RECVPATHMTU);
+#endif
+#ifdef IPV6_TCLASS
+	PyModule_AddIntConstant(m, "IPV6_TCLASS", IPV6_TCLASS);
+#endif
+#ifdef IPV6_USE_MIN_MTU
+	PyModule_AddIntConstant(m, "IPV6_USE_MIN_MTU", IPV6_USE_MIN_MTU);
+#endif
 
 	/* TCP options */
 #ifdef	TCP_NODELAY
@@ -4034,6 +4099,9 @@ init_socket(void)
 #ifdef EAI_NONAME
 	PyModule_AddIntConstant(m, "EAI_NONAME", EAI_NONAME);
 #endif
+#ifdef EAI_OVERFLOW
+	PyModule_AddIntConstant(m, "EAI_OVERFLOW", EAI_OVERFLOW);
+#endif
 #ifdef EAI_SERVICE
 	PyModule_AddIntConstant(m, "EAI_SERVICE", EAI_SERVICE);
 #endif
@@ -4060,6 +4128,9 @@ init_socket(void)
 #endif
 #ifdef AI_NUMERICHOST
 	PyModule_AddIntConstant(m, "AI_NUMERICHOST", AI_NUMERICHOST);
+#endif
+#ifdef AI_NUMERICSERV
+	PyModule_AddIntConstant(m, "AI_NUMERICSERV", AI_NUMERICSERV);
 #endif
 #ifdef AI_MASK
 	PyModule_AddIntConstant(m, "AI_MASK", AI_MASK);
