@@ -216,6 +216,7 @@ class RExec(ihooks._Verbose):
         m.modules = self.modules
         m.argv = ['RESTRICTED']
         m.path = map(None, self.ok_path)
+        m.exc_info = self.r_exc_info
         m = self.modules['sys']
         l = self.modules.keys() + list(self.ok_builtin_modules)
         l.sort()
@@ -359,28 +360,69 @@ class RExec(ihooks._Verbose):
             raise IOError, "can't open files for writing in restricted mode"
         return open(file, mode, buf)
 
+    # Restricted version of sys.exc_info()
+
+    def r_exc_info(self):
+        ty, va, tr = sys.exc_info()
+        tr = None
+        return ty, va, tr
+
 
 def test():
-    import traceback
-    r = RExec(verbose=('-v' in sys.argv[1:]))
-    print "*** RESTRICTED *** Python", sys.version
-    print sys.copyright
-    while 1:
+    import sys, getopt, traceback
+    opts, args = getopt.getopt(sys.argv[1:], 'vt:')
+    verbose = 0
+    trusted = []
+    for o, a in opts:
+        if o == '-v':
+            verbose = verbose+1
+        if o == '-t':
+            trusted.append(a)
+    r = RExec(verbose=verbose)
+    if trusted:
+        r.ok_builtin_modules = r.ok_builtin_modules + tuple(trusted)
+    if args:
+        r.modules['sys'].argv = args
+        r.modules['sys'].path.insert(0, os.path.dirname(args[0]))
+    else:
+        r.modules['sys'].path.insert(0, "")
+    fp = sys.stdin
+    if args and args[0] != '-':
         try:
+            fp = open(args[0])
+        except IOError, msg:
+            print "%s: can't open file %s" % (sys.argv[0], `args[0]`)
+            return 1
+    if fp.isatty():
+        print "*** RESTRICTED *** Python", sys.version
+        print sys.copyright
+        while 1:
             try:
-                s = raw_input('>>> ')
-            except EOFError:
-                print
-                break
-            if s and s[0] != '#':
-                s = s + '\n'
-                c = compile(s, '<stdin>', 'single')
-                r.r_exec(c)
+                try:
+                    s = raw_input('>>> ')
+                except EOFError:
+                    print
+                    break
+                if s and s[0] != '#':
+                    s = s + '\n'
+                    c = compile(s, '<stdin>', 'single')
+                    r.s_exec(c)
+            except SystemExit, n:
+                return n
+            except:
+                traceback.print_exc()
+    else:
+        text = fp.read()
+        fp.close()
+        c = compile(text, fp.name, 'exec')
+        try:
+            r.s_exec(c)
         except SystemExit, n:
-            sys.exit(n)
+            return n
         except:
             traceback.print_exc()
+            return 1
 
 
 if __name__ == '__main__':
-    test()
+    sys.exit(test())
