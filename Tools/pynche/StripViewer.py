@@ -58,6 +58,21 @@ def constant(numchips):
     return seq
 
 # red variations, green+blue = cyan constant
+def constant_red_generator(numchips, red, green, blue):
+    seq = constant(numchips)
+    return map(None, [red] * numchips, seq, seq)
+
+# green variations, red+blue = magenta constant
+def constant_green_generator(numchips, red, green, blue):
+    seq = constant(numchips)
+    return map(None, seq, [green] * numchips, seq)
+
+# blue variations, red+green = yellow constant
+def constant_blue_generator(numchips, red, green, blue):
+    seq = constant(numchips)
+    return map(None, seq, seq, [blue] * numchips)
+
+# red variations, green+blue = cyan constant
 def constant_cyan_generator(numchips, red, green, blue):
     seq = constant(numchips)
     return map(None, seq, [green] * numchips, [blue] * numchips)
@@ -73,7 +88,6 @@ def constant_yellow_generator(numchips, red, green, blue):
     return map(None, [red] * numchips, [green] * numchips, seq)
 
 
-
 
 class LeftArrow:
     _ARROWWIDTH = 30
@@ -293,49 +307,90 @@ class StripWidget:
         # move the arrows around
         self.__trackarrow(chip, (red, green, blue))
 
+    def set(self, label, generator):
+        self.__canvas.itemconfigure(self.__label, text=label)
+        self.__generator = generator
+
 
 class StripViewer:
     def __init__(self, switchboard, master=None):
         self.__sb = switchboard
         optiondb = switchboard.optiondb()
-        # create a frame inside the master
-        self.__frame = Frame(master, relief=RAISED, borderwidth=1)
-        self.__frame.grid(row=1, column=0, columnspan=2, sticky='EW')
+        # create a frame inside the master.
+        frame = Frame(master, relief=RAISED, borderwidth=1)
+        frame.grid(row=1, column=0, columnspan=2, sticky='NSEW')
+        # create the options to be used later
         uwd = self.__uwdvar = BooleanVar()
         uwd.set(optiondb.get('UPWHILEDRAG', 0))
         hexp = self.__hexpvar = BooleanVar()
         hexp.set(optiondb.get('HEXSTRIP', 0))
-        self.__reds = StripWidget(switchboard, self.__frame,
+        # create the red, green, blue strips inside their own frame
+        frame1 = Frame(frame)
+        frame1.pack(expand=YES, fill=BOTH)
+        self.__reds = StripWidget(switchboard, frame1,
                                   generator=constant_cyan_generator,
                                   axis=0,
                                   label='Red Variations',
                                   uwdvar=uwd, hexvar=hexp)
 
-        self.__greens = StripWidget(switchboard, self.__frame,
+        self.__greens = StripWidget(switchboard, frame1,
                                     generator=constant_magenta_generator,
                                     axis=1,
                                     label='Green Variations',
                                     uwdvar=uwd, hexvar=hexp)
 
-        self.__blues = StripWidget(switchboard, self.__frame,
+        self.__blues = StripWidget(switchboard, frame1,
                                    generator=constant_yellow_generator,
                                    axis=2,
                                    label='Blue Variations',
                                    uwdvar=uwd, hexvar=hexp)
 
-        frame = self.__frame1 = Frame(self.__frame)
-        frame.pack()
+        # create a frame to contain the controls
+        frame2 = Frame(frame)
+        frame2.pack(expand=YES, fill=BOTH)
+        frame2.columnconfigure(0, weight=20)
+        frame2.columnconfigure(2, weight=20)
 
-        self.__uwd = Checkbutton(frame,
-                                 text='Update while dragging',
-                                 variable=uwd)
-        self.__uwd.grid(row=0, column=0, sticky=W)
+        padx = 8
 
-        self.__hex = Checkbutton(frame,
-                                 text='Hexadecimal',
-                                 variable=hexp,
-                                 command=self.__togglehex)
-        self.__hex.grid(row=1, column=0, sticky=W)
+        # create the black button
+        blackbtn = Button(frame2,
+                          text='<- Black',
+                          command=self.__toblack)
+        blackbtn.grid(row=0, column=0, rowspan=2, sticky=W, padx=padx)
+
+        # create the controls
+        uwdbtn = Checkbutton(frame2,
+                             text='Update while dragging',
+                             variable=uwd)
+        uwdbtn.grid(row=0, column=1, sticky=W)
+        hexbtn = Checkbutton(frame2,
+                             text='Hexadecimal',
+                             variable=hexp,
+                             command=self.__togglehex)
+        hexbtn.grid(row=1, column=1, sticky=W)
+
+        # XXX: ignore this feature for now; it doesn't work quite right yet
+        
+##        gentypevar = self.__gentypevar = IntVar()
+##        self.__variations = Radiobutton(frame,
+##                                        text='Variations',
+##                                        variable=gentypevar,
+##                                        value=0,
+##                                        command=self.__togglegentype)
+##        self.__variations.grid(row=0, column=1, sticky=W)
+##        self.__constants = Radiobutton(frame,
+##                                       text='Constants',
+##                                       variable=gentypevar,
+##                                       value=1,
+##                                       command=self.__togglegentype)
+##        self.__constants.grid(row=1, column=1, sticky=W)
+
+        # create the white button
+        whitebtn = Button(frame2,
+                          text='White ->',
+                          command=self.__towhite)
+        whitebtn.grid(row=0, column=2, rowspan=2, sticky=E, padx=padx)
 
     def update_yourself(self, red, green, blue):
         self.__reds.update_yourself(red, green, blue)
@@ -345,6 +400,32 @@ class StripViewer:
     def __togglehex(self, event=None):
         red, green, blue = self.__sb.current_rgb()
         self.update_yourself(red, green, blue)
+
+    def __togglegentype(self, event=None):
+        which = self.__gentypevar.get()
+        if which == 0:
+            self.__reds.set(label='Red Variations',
+                            generator=constant_cyan_generator)
+            self.__greens.set(label='Green Variations',
+                              generator=constant_magenta_generator)
+            self.__blues.set(label='Blue Variations',
+                             generator=constant_yellow_generator)
+        elif which == 1:
+            self.__reds.set(label='Red Constant',
+                            generator=constant_red_generator)
+            self.__greens.set(label='Green Constant',
+                              generator=constant_green_generator)
+            self.__blues.set(label='Blue Constant',
+                             generator=constant_blue_generator)
+        else:
+            assert 0
+        self.__sb.update_views_current()
+
+    def __toblack(self, event=None):
+        self.__sb.update_views(0, 0, 0)
+
+    def __towhite(self, event=None):
+        self.__sb.update_views(255, 255, 255)
 
     def save_options(self, optiondb):
         optiondb['UPWHILEDRAG'] = self.__uwdvar.get()
