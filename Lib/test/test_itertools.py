@@ -106,6 +106,28 @@ class TestBasicOps(unittest.TestCase):
         underten = lambda x: x<10
         self.assertEqual(list(dropwhile(underten, data)), [20, 2, 4, 6, 8])
 
+    def test_StopIteration(self):
+        class StopNow:
+            """Test support class .  Emulates an empty iterable."""
+            def __iter__(self):
+                return self
+            def next(self):
+                raise StopIteration
+
+        for f in (chain, cycle, izip):
+            self.assertRaises(StopIteration, f([]).next)
+            self.assertRaises(StopIteration, f(StopNow()).next)
+
+        self.assertRaises(StopIteration, islice([], None).next)
+        self.assertRaises(StopIteration, islice(StopNow(), None).next)
+
+        self.assertRaises(StopIteration, repeat(None, 0).next)
+
+        for f in (ifilter, ifilterfalse, imap, takewhile, dropwhile, starmap):
+            self.assertRaises(StopIteration, f(lambda x:x, []).next)
+            self.assertRaises(StopIteration, f(lambda x:x, StopNow()).next)
+
+
 libreftest = """ Doctest for examples in the library reference, libitertools.tex
 
 
@@ -226,17 +248,15 @@ False
 __test__ = {'libreftest' : libreftest}
 
 def test_main(verbose=None):
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestBasicOps))
-    test_support.run_suite(suite)
+    test_support.run_unittest(TestBasicOps)
 
     # verify reference counting
     import sys
     if verbose and hasattr(sys, "gettotalrefcount"):
-        counts = []
-        for i in xrange(5):
-            test_support.run_suite(suite)
-            counts.append(sys.gettotalrefcount()-i)
+        counts = [None] * 5
+        for i in xrange(len(counts)):
+            test_support.run_unittest(TestBasicOps)
+            counts[i] = sys.gettotalrefcount()
         print counts
 
     # doctest the examples in the library reference
