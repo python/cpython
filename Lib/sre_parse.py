@@ -17,7 +17,7 @@ MAXREPEAT = 65535
 SPECIAL_CHARS = ".\\[{()*+?^$|"
 REPEAT_CHARS  = "*+?{"
 
-DIGITS = tuple("012345689")
+DIGITS = tuple("0123456789")
 
 OCTDIGITS = tuple("01234567")
 HEXDIGITS = tuple("0123456789abcdefABCDEF")
