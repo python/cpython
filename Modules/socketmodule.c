@@ -214,15 +214,19 @@ int shutdown( int, int );
 #if defined(MS_WINDOWS) || defined(__BEOS__)
 /* BeOS suffers from the same socket dichotomy as Win32... - [cjh] */
 /* seem to be a few differences in the API */
-#define close closesocket
+#define SOCKETCLOSE closesocket
 #define NO_DUP /* Actually it exists on NT 3.5, but what the heck... */
 #define FORCE_ANSI_FUNC_DEFS
 #endif
 
 #if defined(PYOS_OS2)
-#define close soclose
+#define SOCKETCLOSE soclose
 #define NO_DUP /* Sockets are Not Actual File Handles under OS/2 */
 #define FORCE_ANSI_FUNC_DEFS
+#endif
+
+#ifndef SOCKETCLOSE
+#define SOCKETCLOSE close
 #endif
 
 #ifdef FORCE_ANSI_FUNC_DEFS
@@ -682,7 +686,7 @@ BUILD_FUNC_DEF_2(PySocketSock_accept,PySocketSockObject *,s, PyObject *,args)
 					s->sock_type,
 					s->sock_proto);
 	if (sock == NULL) {
-		close(newfd);
+		SOCKETCLOSE(newfd);
 		goto finally;
 	}
 	if (!(addr = makesockaddr((struct sockaddr *) addrbuf, addrlen)))
@@ -889,7 +893,7 @@ BUILD_FUNC_DEF_2(PySocketSock_close,PySocketSockObject *,s, PyObject *,args)
 		return NULL;
 	if (s->sock_fd != -1) {
 		Py_BEGIN_ALLOW_THREADS
-		(void) close(s->sock_fd);
+		(void) SOCKETCLOSE(s->sock_fd);
 		Py_END_ALLOW_THREADS
 	}
 	s->sock_fd = -1;
@@ -988,7 +992,7 @@ BUILD_FUNC_DEF_2(PySocketSock_dup,PySocketSockObject *,s, PyObject *,args)
 					     s->sock_type,
 					     s->sock_proto);
 	if (sock == NULL)
-		close(newfd);
+		SOCKETCLOSE(newfd);
 	return sock;
 }
 
@@ -1112,7 +1116,7 @@ BUILD_FUNC_DEF_2(PySocketSock_makefile,PySocketSockObject *,s, PyObject *,args)
 #endif
 	{
 		if (fd >= 0)
-			close(fd);
+			SOCKETCLOSE(fd);
 		return PySocket_Err();
 	}
 	f = PyFile_FromFile(fp, "<socket>", mode, fclose);
@@ -1357,7 +1361,7 @@ static void
 BUILD_FUNC_DEF_1(PySocketSock_dealloc,PySocketSockObject *,s)
 {
 	if (s->sock_fd != -1)
-		(void) close(s->sock_fd);
+		(void) SOCKETCLOSE(s->sock_fd);
 	PyMem_DEL(s);
 }
 
@@ -1725,7 +1729,7 @@ BUILD_FUNC_DEF_2(PySocket_socket,PyObject *,self, PyObject *,args)
 	/* If the object can't be created, don't forget to close the
 	   file descriptor again! */
 	if (s == NULL)
-		(void) close(fd);
+		(void) SOCKETCLOSE(fd);
 	/* From now on, ignore SIGPIPE and let the error checking
 	   do the work. */
 #ifdef SIGPIPE      
@@ -1944,8 +1948,8 @@ BUILD_FUNC_DEF_3(newSSLObject,
 				PyString_FromString("newSSLObject error"));
 		return NULL;
 	}
-	memset(self->server, NULL, sizeof(char) * 256);
-	memset(self->issuer, NULL, sizeof(char) * 256);  
+	memset(self->server, '\0', sizeof(char) * 256);
+	memset(self->issuer, '\0', sizeof(char) * 256);  
   
 	self->x_attr = PyDict_New();
 	self->ctx = SSL_CTX_new(SSLv23_method()); /* Set up context */
