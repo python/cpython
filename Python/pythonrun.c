@@ -117,6 +117,8 @@ Py_Initialize()
 		Py_DebugFlag = 1;
 	if ((p = getenv("PYTHONVERBOSE")) && *p != '\0')
 		Py_VerboseFlag = 1;
+	if ((p = getenv("PYTHONOPTIMIZE")) && *p != '\0')
+		Py_OptimizeFlag = 1;
 
 	interp = PyInterpreterState_New();
 	if (interp == NULL)
