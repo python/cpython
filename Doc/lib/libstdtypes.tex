@@ -1185,6 +1185,10 @@ subset of the second set (is a subset, but is not equal).
 A set is greater than another set if and only if the first set is a proper
 superset of the second set (is a superset, but is not equal).
 
+Instanceas of \class{set} are compared to instances of \class{frozenset} based
+on their members.  For example, \samp{set('abc') == frozenset('abc')} returns
+\code{True}.     
+
 The subset and equality comparisons do not generalize to a complete
 ordering function.  For example, any two disjoint sets are not equal and
 are not subsets of each other, so \emph{all} of the following return
@@ -1195,11 +1199,9 @@ Accordingly, sets do not implement the \method{__cmp__} method.
 Since sets only define partial ordering (subset relationships), the output
 of the \method{list.sort()} method is undefined for lists of sets.
 
-For convenience in implementing sets of sets, the \method{__contains__()},
-\method{remove()}, and \method{discard()} methods automatically match
-instances of the \class{set} class their \class{frozenset} counterparts
-inside a set.  For example, \code{set('abc') in set([frozenset('abc')])}
-returns \code{True}.
+Binary operations that mix \class{set} instances with \class{frozenset}
+return the type of the first operand.  For example:
+\samp{frozenset('ab') | set('bc')} returns an instance of \class{frozenset}.
 
 The following table lists operations available for \class{set}
 that do not apply to immutable instances of \class{frozenset}:
