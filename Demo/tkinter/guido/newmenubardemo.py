@@ -25,8 +25,13 @@ class App:
  	self.editmenu.add_command(label="Copy")
  	self.editmenu.add_command(label="Paste")
 
+        self.helpmenu = Menu(self.menubar, name='help')
+
+        self.helpmenu.add_command(label="About...")
+
 	self.menubar.add_cascade(label="File", menu=self.filemenu)
 	self.menubar.add_cascade(label="Edit", menu=self.editmenu)
+	self.menubar.add_cascade(label="Help", menu=self.helpmenu)
 
 	self.top = Toplevel(menu=self.menubar)
 
