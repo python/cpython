@@ -81,7 +81,7 @@ __all__ = ["Random","seed","random","uniform","randint","choice",
            "cunifvariate","expovariate","vonmisesvariate","gammavariate",
            "stdgamma","gauss","betavariate","paretovariate","weibullvariate",
            "getstate","setstate","jumpahead","whseed"]
-           
+
 def _verify(name, expected):
     computed = eval(name)
     if abs(computed - expected) > 1e-7:

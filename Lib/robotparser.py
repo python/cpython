@@ -201,7 +201,7 @@ class URLopener(urllib.FancyURLopener):
         self.errcode = 200
         self.tries = 0
         self.maxtries = 10
-        
+
     def http_error_default(self, url, fp, errcode, errmsg, headers):
         self.errcode = errcode
         return urllib.FancyURLopener.http_error_default(self, url, fp, errcode,

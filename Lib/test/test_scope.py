@@ -207,7 +207,7 @@ check_syntax("""def unoptimized_clash2():
         return f
 """)
 
-# XXX could allow this for exec with const argument, but what's the point 
+# XXX could allow this for exec with const argument, but what's the point
 check_syntax("""def error(y):
     exec "a = 1"
     def f(x):
@@ -225,7 +225,7 @@ check_syntax("""def f():
     def g():
          from string import *
          return strip # global or local?
-""")            
+""")
 
 # and verify a few cases that should work
 
@@ -302,9 +302,9 @@ def makeReturner(*lst):
     def returner():
         return lst
     return returner
- 
+
 verify(makeReturner(1,2,3)() == (1,2,3))
- 
+
 def makeReturner2(**kwargs):
     def returner():
         return kwargs
