@@ -336,4 +336,334 @@ http://www.math.keio.ac.jp/matumoto/emt.html
 email: matumoto@math.keio.ac.jp
 \end{verbatim}
 
-    
+
+
+\subsection{Sockets}
+
+The \module{socket} module uses the functions, \function{getaddrinfo},
+and \function{getnameinfo}, which are coded in separate source files
+from the WIDE Project, \url{http://www.wide.ad.jp/about/index.html}.
+
+\begin{verbatim}      
+Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
+All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. Neither the name of the project nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+GAI_ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
+FOR GAI_ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON GAI_ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN GAI_ANY WAY
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.
+\end{verbatim}
+
+
+
+\subsection{Floating point exception control}
+
+The source for the \module{fpectl} module includes the following notice:
+
+\begin{verbatim}
+     ---------------------------------------------------------------------  
+    /                       Copyright (c) 1996.                           \ 
+   |          The Regents of the University of California.                 |
+   |                        All rights reserved.                           |
+   |                                                                       |
+   |   Permission to use, copy, modify, and distribute this software for   |
+   |   any purpose without fee is hereby granted, provided that this en-   |
+   |   tire notice is included in all copies of any software which is or   |
+   |   includes  a  copy  or  modification  of  this software and in all   |
+   |   copies of the supporting documentation for such software.           |
+   |                                                                       |
+   |   This  work was produced at the University of California, Lawrence   |
+   |   Livermore National Laboratory under  contract  no.  W-7405-ENG-48   |
+   |   between  the  U.S.  Department  of  Energy and The Regents of the   |
+   |   University of California for the operation of UC LLNL.              |
+   |                                                                       |
+   |                              DISCLAIMER                               |
+   |                                                                       |
+   |   This  software was prepared as an account of work sponsored by an   |
+   |   agency of the United States Government. Neither the United States   |
+   |   Government  nor the University of California nor any of their em-   |
+   |   ployees, makes any warranty, express or implied, or  assumes  any   |
+   |   liability  or  responsibility  for the accuracy, completeness, or   |
+   |   usefulness of any information,  apparatus,  product,  or  process   |
+   |   disclosed,   or  represents  that  its  use  would  not  infringe   |
+   |   privately-owned rights. Reference herein to any specific  commer-   |
+   |   cial  products,  process,  or  service  by trade name, trademark,   |
+   |   manufacturer, or otherwise, does not  necessarily  constitute  or   |
+   |   imply  its endorsement, recommendation, or favoring by the United   |
+   |   States Government or the University of California. The views  and   |
+   |   opinions  of authors expressed herein do not necessarily state or   |
+   |   reflect those of the United States Government or  the  University   |
+   |   of  California,  and shall not be used for advertising or product   |
+    \  endorsement purposes.                                              / 
+     ---------------------------------------------------------------------
+\end{verbatim}
+
+
+
+\subsection{MD5 message digest algorithm}
+
+The source code for the \module{md5} module contains the following notice:
+
+\begin{verbatim}
+Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All
+rights reserved.
+
+License to copy and use this software is granted provided that it
+is identified as the "RSA Data Security, Inc. MD5 Message-Digest
+Algorithm" in all material mentioning or referencing this software
+or this function.
+
+License is also granted to make and use derivative works provided
+that such works are identified as "derived from the RSA Data
+Security, Inc. MD5 Message-Digest Algorithm" in all material
+mentioning or referencing the derived work.
+
+RSA Data Security, Inc. makes no representations concerning either
+the merchantability of this software or the suitability of this
+software for any particular purpose. It is provided "as is"
+without express or implied warranty of any kind.
+
+These notices must be retained in any copies of any part of this
+documentation and/or software.
+\end{verbatim}
+
+
+
+\subsection{rotor -- Enigma-like encryption and decryption}
+
+The source code for the \module{rotor} contains the following notice:
+
+\begin{verbatim}
+Copyright 1994 by Lance Ellinghouse,
+Cathedral City, California Republic, United States of America.
+
+                        All Rights Reserved
+
+Permission to use, copy, modify, and distribute this software and its 
+documentation for any purpose and without fee is hereby granted, 
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in 
+supporting documentation, and that the name of Lance Ellinghouse
+not be used in advertising or publicity pertaining to distribution 
+of the software without specific, written prior permission.
+
+LANCE ELLINGHOUSE DISCLAIMS ALL WARRANTIES WITH REGARD TO
+THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS, IN NO EVENT SHALL LANCE ELLINGHOUSE BE LIABLE FOR ANY SPECIAL, 
+INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING 
+FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, 
+NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION 
+WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+\end{verbatim}
+
+
+\subsection{Asynchronous socket services}
+
+The \module{asynchat} and \module{asyncore} modules contain the
+following notice:
+
+\begin{verbatim}      
+ Copyright 1996 by Sam Rushing
+
+                         All Rights Reserved
+
+ Permission to use, copy, modify, and distribute this software and
+ its documentation for any purpose and without fee is hereby
+ granted, provided that the above copyright notice appear in all
+ copies and that both that copyright notice and this permission
+ notice appear in supporting documentation, and that the name of Sam
+ Rushing not be used in advertising or publicity pertaining to
+ distribution of the software without specific, written prior
+ permission.
+
+ SAM RUSHING DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+ INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN
+ NO EVENT SHALL SAM RUSHING BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+ CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+ OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+ NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+\end{verbatim}
+
+
+\subsection{Cookie management}
+
+The \module{Cookie} module contains the following notice:
+
+\begin{verbatim}
+ Copyright 2000 by Timothy O'Malley <timo@alum.mit.edu>
+
+                All Rights Reserved
+
+ Permission to use, copy, modify, and distribute this software
+ and its documentation for any purpose and without fee is hereby
+ granted, provided that the above copyright notice appear in all
+ copies and that both that copyright notice and this permission
+ notice appear in supporting documentation, and that the name of
+ Timothy O'Malley  not be used in advertising or publicity
+ pertaining to distribution of the software without specific, written
+ prior permission.
+
+ Timothy O'Malley DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS
+ SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+ AND FITNESS, IN NO EVENT SHALL Timothy O'Malley BE LIABLE FOR
+ ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+ WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+ ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ PERFORMANCE OF THIS SOFTWARE.
+\end{verbatim}      
+
+
+
+\subsection{Profiling}
+
+The \module{profile} and \module{pstats} modules contain
+the following notice:
+
+\begin{verbatim}
+ Copyright 1994, by InfoSeek Corporation, all rights reserved.
+ Written by James Roskind
+
+ Permission to use, copy, modify, and distribute this Python software
+ and its associated documentation for any purpose (subject to the
+ restriction in the following sentence) without fee is hereby granted,
+ provided that the above copyright notice appears in all copies, and
+ that both that copyright notice and this permission notice appear in
+ supporting documentation, and that the name of InfoSeek not be used in
+ advertising or publicity pertaining to distribution of the software
+ without specific, written prior permission.  This permission is
+ explicitly restricted to the copying and modification of the software
+ to remain in Python, compiled Python, or other languages (such as C)
+ wherein the modified or derived code is exclusively imported into a
+ Python module.
+
+ INFOSEEK CORPORATION DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS
+ SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ FITNESS. IN NO EVENT SHALL INFOSEEK CORPORATION BE LIABLE FOR ANY
+ SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER
+ RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF
+ CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+\end{verbatim}
+
+
+
+\subsection{Execution tracing}
+
+The \module{trace} module contains the following notice:
+
+\begin{verbatim}
+ portions copyright 2001, Autonomous Zones Industries, Inc., all rights...
+ err...  reserved and offered to the public under the terms of the
+ Python 2.2 license.
+ Author: Zooko O'Whielacronx
+ http://zooko.com/
+ mailto:zooko@zooko.com
+
+ Copyright 2000, Mojam Media, Inc., all rights reserved.
+ Author: Skip Montanaro
+
+ Copyright 1999, Bioreason, Inc., all rights reserved.
+ Author: Andrew Dalke
+
+ Copyright 1995-1997, Automatrix, Inc., all rights reserved.
+ Author: Skip Montanaro
+
+ Copyright 1991-1995, Stichting Mathematisch Centrum, all rights reserved.
+
+
+ Permission to use, copy, modify, and distribute this Python software and
+ its associated documentation for any purpose without fee is hereby
+ granted, provided that the above copyright notice appears in all copies,
+ and that both that copyright notice and this permission notice appear in
+ supporting documentation, and that the name of neither Automatrix,
+ Bioreason or Mojam Media be used in advertising or publicity pertaining to
+ distribution of the software without specific, written prior permission.
+\end{verbatim} 
+
+
+
+\subsection{UUencode and UUdecode functions}
+
+The \module{uu} module contains the following notice:
+
+\begin{verbatim}
+ Copyright 1994 by Lance Ellinghouse
+ Cathedral City, California Republic, United States of America.
+                        All Rights Reserved
+ Permission to use, copy, modify, and distribute this software and its
+ documentation for any purpose and without fee is hereby granted,
+ provided that the above copyright notice appear in all copies and that
+ both that copyright notice and this permission notice appear in
+ supporting documentation, and that the name of Lance Ellinghouse
+ not be used in advertising or publicity pertaining to distribution
+ of the software without specific, written prior permission.
+ LANCE ELLINGHOUSE DISCLAIMS ALL WARRANTIES WITH REGARD TO
+ THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ FITNESS, IN NO EVENT SHALL LANCE ELLINGHOUSE CENTRUM BE LIABLE
+ FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+ Modified by Jack Jansen, CWI, July 1995:
+ - Use binascii module to do the actual line-by-line conversion
+   between ascii and binary. This results in a 1000-fold speedup. The C
+   version is still 5 times faster, though.
+ - Arguments more compliant with python standard
+\end{verbatim}
+
+
+
+\subsection{XML Remote Procedure Calls}
+
+The \module{xmlrpclib} module contains the following notice:
+
+\begin{verbatim}
+     The XML-RPC client interface is
+
+ Copyright (c) 1999-2002 by Secret Labs AB
+ Copyright (c) 1999-2002 by Fredrik Lundh
+
+ By obtaining, using, and/or copying this software and/or its
+ associated documentation, you agree that you have read, understood,
+ and will comply with the following terms and conditions:
+
+ Permission to use, copy, modify, and distribute this software and
+ its associated documentation for any purpose and without fee is
+ hereby granted, provided that the above copyright notice appears in
+ all copies, and that both that copyright notice and this permission
+ notice appear in supporting documentation, and that the name of
+ Secret Labs AB or the author not be used in advertising or publicity
+ pertaining to distribution of the software without specific, written
+ prior permission.
+
+ SECRET LABS AB AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
+ TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANT-
+ ABILITY AND FITNESS.  IN NO EVENT SHALL SECRET LABS AB OR THE AUTHOR
+ BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+ DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+ WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+ ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+ OF THIS SOFTWARE.
+\end{verbatim}
