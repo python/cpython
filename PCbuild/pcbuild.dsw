@@ -12,7 +12,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name python15
+    Project_Dep_Name python16
     End Project Dependency
 }}}
 
@@ -27,7 +27,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name python15
+    Project_Dep_Name python16
     End Project Dependency
 }}}
 
@@ -42,7 +42,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name python15
+    Project_Dep_Name python16
     End Project Dependency
 }}}
 
@@ -57,13 +57,13 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name python15
+    Project_Dep_Name python16
     End Project Dependency
 }}}
 
 ###############################################################################
 
-Project: "python15"=".\python15.dsp" - Package Owner=<4>
+Project: "python16"=".\python16.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -84,7 +84,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name python15
+    Project_Dep_Name python16
     End Project Dependency
 }}}
 
@@ -99,7 +99,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name python15
+    Project_Dep_Name python16
     End Project Dependency
 }}}
 
@@ -114,7 +114,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name python15
+    Project_Dep_Name python16
     End Project Dependency
 }}}
 
@@ -131,5 +131,4 @@ Package=<3>
 }}}
 
 ###############################################################################
-
 
