@@ -253,6 +253,7 @@ al_readsamps (self, args)
 {
 	long count;
 	object *v;
+	ALconfig c;
 	int width;
 
 	if (!getlongarg (args, &count)) return NULL;
@@ -263,7 +264,9 @@ al_readsamps (self, args)
 		return NULL;
 	}
 
-	width = ALgetwidth(ALgetconfig(self->ob_port));
+	c = ALgetconfig(self->ob_port);
+	width = ALgetwidth(c);
+	ALfreeconfig(c);
 	v = newsizedstringobject ((char *)NULL, width * count);
 	if (v == NULL) return NULL;
 
@@ -279,11 +282,14 @@ al_writesamps (self, args)
 {
 	long count;
 	object *v;
+	ALconfig c;
 	int width;
 
 	if (!getstrarg (args, &v)) return NULL;
 
-	width = ALgetwidth(ALgetconfig(self->ob_port));
+	c = ALgetconfig(self->ob_port);
+	width = ALgetwidth(c);
+	ALfreeconfig(c);
 	ALwritesamps (self-> ob_port, (void *) getstringvalue(v),
 		      getstringsize(v) / width);
 
@@ -449,10 +455,98 @@ al_newconfig (self, args)
 
 	return newconfigobject (config);
 }
+
+static object *
+al_queryparams(self, args)
+	object *self, *args;
+{
+	long device;
+	long length;
+	long *PVbuffer;
+	long PVdummy[2];
+	object *v;
+	object *w;
+
+	if (!getlongarg(args, &device))
+		return NULL;
+	length = ALqueryparams(device, PVdummy, 2L);
+	PVbuffer = NEW(long, length);
+	if (PVbuffer == NULL)
+		return err_nomem();
+	(void) ALqueryparams(device, PVbuffer, length);
+	v = newlistobject((int)length);
+	if (v != NULL) {
+		int i;
+		for (i = 0; i < length; i++)
+			setlistitem(v, i, newintobject(PVbuffer[i]));
+	}
+	DEL(PVbuffer);
+	return v;
+}
+
+static object *
+doParams(args, func, modified)
+	object *args;
+	void (*func)(long, long *, long);
+	int modified;
+{
+	long device;
+	object *list, *v;
+	long *PVbuffer;
+	long length;
+	int i;
 	
+	if (!getlongobjectarg(args, &device, &list))
+		return NULL;
+	if (!is_listobject(list)) {
+		err_badarg();
+		return NULL;
+	}
+	length = getlistsize(list);
+	PVbuffer = NEW(long, length);
+	if (PVbuffer == NULL)
+		return err_nomem();
+	for (i = 0; i < length; i++) {
+		v = getlistitem(list, i);
+		if (!is_intobject(v)) {
+			DEL(PVbuffer);
+			err_badarg();
+			return NULL;
+		}
+		PVbuffer[i] = getintvalue(v);
+	}
+
+	ALgetparams(device, PVbuffer, length);
+
+	if (modified) {
+		for (i = 0; i < length; i++)
+			setlistitem(list, i, newintobject(PVbuffer[i]));
+	}
+
+	INCREF(None);
+	return None;
+}
+
+static object *
+al_getparams(self, args)
+	object *self, *args;
+{
+	return doParams(args, ALgetparams, 1);
+}
+
+static object *
+al_setparams(self, args)
+	object *self, *args;
+{
+	return doParams(args, ALsetparams, 0);
+}
+
 static struct methodlist al_methods[] = {
 	{"openport",		al_openport},
 	{"newconfig",		al_newconfig},
+	{"queryparams",		al_queryparams},
+	{"getparams",		al_getparams},
+	{"setparams",		al_setparams},
 	{NULL,			NULL}		/* sentinel */
 };
 
