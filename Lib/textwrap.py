@@ -56,7 +56,7 @@ class TextWrapper:
     # (after stripping out empty strings).
     wordsep_re = re.compile(r'(\s+|'                  # any whitespace
                             r'-*\w{2,}-(?=\w{2,})|'   # hyphenated words
-                            r'(?<=\w)-{2,}(?=\w))')   # em-dash
+                            r'(?<=\S)-{2,}(?=\S))')   # em-dash
 
     # XXX will there be a locale-or-charset-aware version of
     # string.lowercase in 2.3?
