@@ -185,7 +185,9 @@ typedef struct {
 typedef void (*destructor) Py_PROTO((PyObject *));
 typedef int (*printfunc) Py_PROTO((PyObject *, FILE *, int));
 typedef PyObject *(*getattrfunc) Py_PROTO((PyObject *, char *));
+typedef PyObject *(*getattrofunc) Py_PROTO((PyObject *, PyObject *));
 typedef int (*setattrfunc) Py_PROTO((PyObject *, char *, PyObject *));
+typedef int (*setattrofunc) Py_PROTO((PyObject *, PyObject *, PyObject *));
 typedef int (*cmpfunc) Py_PROTO((PyObject *, PyObject *));
 typedef PyObject *(*reprfunc) Py_PROTO((PyObject *));
 typedef long (*hashfunc) Py_PROTO((PyObject *));
@@ -215,10 +217,10 @@ typedef struct _typeobject {
 	hashfunc tp_hash;
 	ternaryfunc tp_call;
 	reprfunc tp_str;
+	getattrofunc tp_getattro;
+	setattrofunc tp_setattro;
 
 	/* Space for future expansion */
-	long tp_xxx1;
-	long tp_xxx2;
 	long tp_xxx3;
 	long tp_xxx4;
 
