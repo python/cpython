@@ -15,8 +15,8 @@
 # lives, and change the value for SRCDIR to where your faqwiz.py
 # module lives.  The faqconf.py and faqcust.py files live there, too.
 
-import posix
-t1 = posix.times()
+import os
+t1 = os.times() # If this doesn't work, just get rid of the timing code!
 try:
     FAQDIR = "/usr/people/guido/python/FAQ"
     SRCDIR = "/usr/people/guido/python/src/Tools/faqwiz"
@@ -31,6 +31,6 @@ except:
     print
     import cgi
     cgi.print_exception(t, v, tb)
-t2 = posix.times()
+t2 = os.times() # If this doesn't work, get rid of this and what follows!
 fmt = "<BR>(times: user %.3g, sys %.3g, ch-user %.3g, ch-sys %.3g, real %.3g)"
 print fmt % tuple(map(operator.sub, t2, t1))
