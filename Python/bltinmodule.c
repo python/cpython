@@ -1682,6 +1682,10 @@ initbuiltin()
 	initerrors();
 	(void) dictinsert(builtin_dict, "None", None);
 	(void) dictinsert(builtin_dict, "Ellipsis", Py_Ellipsis);
+	(void) dictinsert(builtin_dict, "__debug__",
+			  newintobject(Py_OptimizeFlag == 0));
+	if (err_occurred())
+		fatal("error creating None/Ellipsis/__debug__ in __builtin__");
 }
 
 
