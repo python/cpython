@@ -130,14 +130,14 @@ There are two types of integers:
 \begin{description}
 
 \item[Plain integers]
-These represent numbers in the range $-2^{31}$ through $2^{31}-1$.
+These represent numbers in the range -2147483648 through 2147483647.
 (The range may be larger on machines with a larger natural word
 size, but not smaller.)
 When the result of an operation falls outside this range, the
 exception \verb@OverflowError@ is raised.
 For the purpose of shift and mask operations, integers are assumed to
 have a binary, 2's complement notation using 32 or more bits, and
-hiding no bits from the user (i.e., all $2^{32}$ different bit
+hiding no bits from the user (i.e., all 4294967296 different bit
 patterns correspond to different values).
 \obindex{plain integer}
 
@@ -173,9 +173,9 @@ C implementation for the accepted range and handling of overflow.
 \item[Sequences]
 These represent finite ordered sets indexed by natural numbers.
 The built-in function \verb@len()@ returns the number of elements
-of a sequence.  When this number is $n$, the index set contains
-the numbers $0, 1, \ldots, n-1$.  Element \verb@i@ of sequence
-\verb@a@ is selected by \verb@a[i]@.
+of a sequence.  When this number is \var{n}, the index set contains
+the numbers 0, 1, \ldots, \var{n}-1.  Element \var{i} of sequence
+\var{a} is selected by \code{\var{a}[\var{i}]}.
 \obindex{seqence}
 \bifuncindex{len}
 \index{index operation}
@@ -183,9 +183,10 @@ the numbers $0, 1, \ldots, n-1$.  Element \verb@i@ of sequence
 \index{subscription}
 
 Sequences also support slicing: \verb@a[i:j]@ selects all elements
-with index $k$ such that $i <= k < j$.  When used as an expression,
-a slice is a sequence of the same type --- this implies that the
-index set is renumbered so that it starts at 0 again.
+with index \var{k} such that \var{i} \code{<=} \var{k} \code{<}
+\var{j}.  When used as an expression, a slice is a sequence of the
+same type --- this implies that the index set is renumbered so that it
+starts at 0 again.
 \index{slicing}
 
 Sequences are distinguished according to their mutability:
@@ -599,14 +600,14 @@ For \verb@__str__@, the default is to use \verb@__repr__@.
 
 \begin{description}
 
-\item[\tt __init__(self, args...)]
+\item[{\tt __init__(self, args...)}]
 Called when the instance is created.  The arguments are those passed
 to the class constructor expression.  If a base class has an
 \code{__init__} method the derived class's \code{__init__} method must
 explicitly call it to ensure proper initialization of the base class
 part of the instance.
 
-\item[\tt __del__(self)]
+\item[{\tt __del__(self)}]
 Called when the instance is about to be destroyed.  If a base class
 has an \code{__del__} method the derived class's \code{__del__} method
 must explicitly call it to ensure proper deletion of the base class
@@ -621,7 +622,7 @@ Note that \code{del x} doesn't directly call \code{x.__del__} --- the
 former decrements the reference count for \code{x} by one, but
 \code{x,__del__} is only called when its reference count reaches zero.
 
-\item[\tt __repr__(self)]
+\item[{\tt __repr__(self)}]
 Called by the \verb@repr()@ built-in function and by string conversions
 (reverse or backward quotes) to compute the string representation of an object.
 \indexii{string}{conversion}
@@ -629,11 +630,11 @@ Called by the \verb@repr()@ built-in function and by string conversions
 \indexii{backward}{quotes}
 \index{back-quotes}
 
-\item[\tt __str__(self)]
+\item[{\tt __str__(self)}]
 Called by the \verb@str()@ built-in function and by the \verb@print@
 statement compute the string representation of an object.
 
-\item[\tt __cmp__(self, other)]
+\item[{\tt __cmp__(self, other)}]
 Called by all comparison operations.  Should return -1 if
 \verb@self < other@,  0 if \verb@self == other@, +1 if
 \verb@self > other@.  If no \code{__cmp__} operation is defined, class
@@ -642,7 +643,7 @@ instances are compared by object identity (``address'').
 exceptions raised by comparisons are ignored, and the objects will be
 considered equal in this case.)
 
-\item[\tt __hash__(self)]
+\item[{\tt __hash__(self)}]
 Called for the key object for dictionary operations,
 and by the built-in function
 \code{hash()}.  Should return a 32-bit integer usable as a hash value
@@ -659,7 +660,7 @@ implements a \code{__cmp__} method it should not implement
 key's hash value is a constant.
 \obindex{dictionary}
 
-\item[\tt __call__(self, *args)]
+\item[{\tt __call__(self, *args)}]
 Called when the instance is ``called'' as a function.
 
 \end{description}
@@ -672,7 +673,7 @@ access for class instances.
 
 \begin{description}
 
-\item[\tt __getattr__(self, name)]
+\item[{\tt __getattr__(self, name)}]
 Called when an attribute lookup has not found the attribute in the
 usual places (i.e. it is not an instance attribute nor is it found in
 the class tree for \code{self}).  \code{name} is the attribute name.
@@ -687,7 +688,7 @@ Note that at least for instance variables, \code{__getattr__} can fake
 total control by simply not inserting any values in the instance
 attribute dictionary.
 
-\item[\tt __setattr__(self, name, value)]
+\item[{\tt __setattr__(self, name, value)}]
 Called when an attribute assignment is attempted.  This is called
 instead of the normal mechanism (i.e. store the value as an instance
 attribute).  \code{name} is the attribute name, \code{value} is the
@@ -699,7 +700,7 @@ cause a recursive call.  Instead, it should insert the value in the
 dictionary of instance attributes, e.g. \code{self.__dict__[name] =
 value}.
 
-\item[\tt __delattr__(self, name)]
+\item[{\tt __delattr__(self, name)}]
 Like \code{__setattr__} but for attribute deletion instead of
 assignment.
 
@@ -710,22 +711,22 @@ assignment.
 
 \begin{description}
 
-\item[\tt __len__(self)]
+\item[{\tt __len__(self)}]
 Called to implement the built-in function \verb@len()@.  Should return
 the length of the object, an integer \verb@>=@ 0.  Also, an object
 whose \verb@__len__()@ method returns 0 is considered to be false in a
 Boolean context.
 
-\item[\tt __getitem__(self, key)]
+\item[{\tt __getitem__(self, key)}]
 Called to implement evaluation of \verb@self[key]@.  Note that the
 special interpretation of negative keys (if the class wishes to
 emulate a sequence type) is up to the \verb@__getitem__@ method.
 
-\item[\tt __setitem__(self, key, value)]
+\item[{\tt __setitem__(self, key, value)}]
 Called to implement assignment to \verb@self[key]@.  Same note as for
 \verb@__getitem__@.
 
-\item[\tt __delitem__(self, key)]
+\item[{\tt __delitem__(self, key)}]
 Called to implement deletion of \verb@self[key]@.  Same note as for
 \verb@__getitem__@.
 
@@ -736,18 +737,18 @@ Called to implement deletion of \verb@self[key]@.  Same note as for
 
 \begin{description}
 
-\item[\tt __getslice__(self, i, j)]
+\item[{\tt __getslice__(self, i, j)}]
 Called to implement evaluation of \verb@self[i:j]@.  Note that missing
 \verb@i@ or \verb@j@ are replaced by 0 or \verb@len(self)@,
 respectively, and \verb@len(self)@ has been added (once) to originally
 negative \verb@i@ or \verb@j@ by the time this function is called
 (unlike for \verb@__getitem__@).
 
-\item[\tt __setslice__(self, i, j, sequence)]
+\item[{\tt __setslice__(self, i, j, sequence)}]
 Called to implement assignment to \verb@self[i:j]@.  Same notes as for
 \verb@__getslice__@.
 
-\item[\tt __delslice__(self, i, j)]
+\item[{\tt __delslice__(self, i, j)}]
 Called to implement deletion of \verb@self[i:j]@.  Same notes as for
 \verb@__getslice__@.
 
@@ -758,34 +759,34 @@ Called to implement deletion of \verb@self[i:j]@.  Same notes as for
 
 \begin{description}
 
-\item[\tt __add__(self, other)]\itemjoin
-\item[\tt __sub__(self, other)]\itemjoin
-\item[\tt __mul__(self, other)]\itemjoin
-\item[\tt __div__(self, other)]\itemjoin
-\item[\tt __mod__(self, other)]\itemjoin
-\item[\tt __divmod__(self, other)]\itemjoin
-\item[\tt __pow__(self, other)]\itemjoin
-\item[\tt __lshift__(self, other)]\itemjoin
-\item[\tt __rshift__(self, other)]\itemjoin
-\item[\tt __and__(self, other)]\itemjoin
-\item[\tt __xor__(self, other)]\itemjoin
-\item[\tt __or__(self, other)]\itembreak
+\item[{\tt __add__(self, other)}]\itemjoin
+\item[{\tt __sub__(self, other)}]\itemjoin
+\item[{\tt __mul__(self, other)}]\itemjoin
+\item[{\tt __div__(self, other)}]\itemjoin
+\item[{\tt __mod__(self, other)}]\itemjoin
+\item[{\tt __divmod__(self, other)}]\itemjoin
+\item[{\tt __pow__(self, other)}]\itemjoin
+\item[{\tt __lshift__(self, other)}]\itemjoin
+\item[{\tt __rshift__(self, other)}]\itemjoin
+\item[{\tt __and__(self, other)}]\itemjoin
+\item[{\tt __xor__(self, other)}]\itemjoin
+\item[{\tt __or__(self, other)}]\itembreak
 Called to implement the binary arithmetic operations (\verb@+@,
 \verb@-@, \verb@*@, \verb@/@, \verb@%@, \verb@divmod()@, \verb@pow()@,
 \verb@<<@, \verb@>>@, \verb@&@, \verb@^@, \verb@|@).
 
-\item[\tt __neg__(self)]\itemjoin
-\item[\tt __pos__(self)]\itemjoin
-\item[\tt __abs__(self)]\itemjoin
-\item[\tt __invert__(self)]\itembreak
+\item[{\tt __neg__(self)}]\itemjoin
+\item[{\tt __pos__(self)}]\itemjoin
+\item[{\tt __abs__(self)}]\itemjoin
+\item[{\tt __invert__(self)}]\itembreak
 Called to implement the unary arithmetic operations (\verb@-@, \verb@+@,
 \verb@abs()@ and \verb@~@).
 
-\item[\tt __nonzero__(self)]
+\item[{\tt __nonzero__(self)}]
 Called to implement boolean testing; should return 0 or 1.  An
 alternative name for this method is \verb@__len__@.
 
-\item[\tt __coerce__(self, other)]
+\item[{\tt __coerce__(self, other)}]
 Called to implement ``mixed-mode'' numeric arithmetic.  Should either
 return a tuple containing self and other converted to a common numeric
 type, or None if no way of conversion is known.  When the common type
@@ -803,14 +804,14 @@ same reason, in \verb@n*x@, where \verb@n@ is a built-in number and
 user-defined classes implementing sequences, mappings or numbers, but
 currently it doesn't --- hence this strange exception.}
 
-\item[\tt __int__(self)]\itemjoin
-\item[\tt __long__(self)]\itemjoin
-\item[\tt __float__(self)]\itembreak
+\item[{\tt __int__(self)}]\itemjoin
+\item[{\tt __long__(self)}]\itemjoin
+\item[{\tt __float__(self)}]\itembreak
 Called to implement the built-in functions \verb@int()@, \verb@long()@
 and \verb@float()@.  Should return a value of the appropriate type.
 
-\item[\tt __oct__(self)]\itemjoin
-\item[\tt __hex__(self)]\itembreak
+\item[{\tt __oct__(self)}]\itemjoin
+\item[{\tt __hex__(self)}]\itembreak
 Called to implement the built-in functions \verb@oct()@ and
 \verb@hex()@.  Should return a string value.
 
