@@ -191,10 +191,127 @@ distribution, to create or maintain whole documents or sections.
   because it would cause output.
 
   The document body follows the preamble.  This contains all the
-  printed components of the document marked up structurally.  
+  printed components of the document marked up structurally.  Generic
+  \LaTeX{} structures include hierarchical sections
 
-  XXX This section will discuss what the markup looks like, and
-   explain the difference between an environment and a macro.
+  \subsection{Syntax}
+
+    There are only a things that an author of Python documentation
+    needs to know about \LaTeX{} syntax.
+
+    A \dfn{comment} is started by the ``percent'' character
+    (\character{\%}) and continues through the end of the line and all
+    leading whitespace on the following line.  This is a little
+    different from any programming language I know of, so an example
+    is in order:
+
+\begin{verbatim}
+This is text.% comment
+    This is more text.  % another comment
+Still more text.
+\end{verbatim}
+
+    The first non-comment character following the first comment is the
+    letter \character{T} on the second line; the leading whitespace on
+    that line is consumed as part of the first comment.  This means
+    that there is no space between the first and second sentences, so
+    the period and letter \character{T} will be directly adjacent in
+    the typeset document.
+
+    Note also that though the first non-comment character after the
+    second comment is the letter \character{S}, there is whitespace
+    preceding the comment, so the two sentences are separated as
+    expected.
+
+    A \dfn{group} is an enclosure for a collection of text and
+    commands which encloses the formatting context and constrains the
+    scope of any changes to that context made by commands within the
+    group.  Groups can be nested hierarchically.  The formatting
+    context includes the font and the definition of additional macros
+    (or overrides of macros defined in outer groups).  Syntactically,
+    groups are enclosed in braces:
+
+\begin{verbatim}
+{text in a group}
+\end{verbatim}
+
+    An alternate syntax for a group using brackets (\code{\{...\}}) is
+    used by macros and environment constructors which take optional
+    parameters; brackets do not normally hold syntactic significance.
+    A degenerate group, containing only one atomic bit of content,
+    does not need to have an explicit group, unless it is required to
+    avoid ambiguity.  Since Python tends toward the explicit, groups
+    are also made explicit in the documentation markup.
+
+    Groups are used only sparingly in the Python documentation, except
+    for their use in marking parameters to macros and environments.
+
+    A \dfn{macro} is usually simple construct which is identified by
+    name and can take some number of parameters.  In normal \LaTeX{}
+    usage, one of these can be optional.  The markup is introduced
+    using the backslash character (\character{\e}), and the name is
+    given by alphabetic characters (no digits, hyphens, or
+    underscores).  Required parameters should be marked as a group,
+    and optional parameters should be marked using the alternate
+    syntax for a group.
+
+    For example, a macro named ``foo'' which takes a single parameter
+    would appear like this:
+
+\begin{verbatim}
+\name{parameter}
+\end{verbatim}
+
+    A macro which takes an optional parameter would be typed like this
+    when the optional paramter is given:
+
+\begin{verbatim}
+\name[optional]
+\end{verbatim}
+
+    If both optional and required parameters are to be required, it
+    looks like this:
+
+\begin{verbatim}
+\name[optional]{required}
+\end{verbatim}
+
+    A macro name may be followed by a space or newline; a space
+    between the macro name and any parameters will be consumed, but
+    this usage is not practiced in the Python documentation.  Such a
+    space is still consumed if there are no parameters to the marco,
+    in which case inserting an empty group (\code{\{\}}) or explicit
+    word space (\samp{\e\ }) immediately after the macro name helps to
+    avoid running the expansion of the macro into the following text.
+    Macros which take no parameters but which should not be followed
+    by a word space do not need special treatment if the following
+    character in the document source if not a name character (such as
+    puctuation).
+
+    Each line of this example shows an appropriate way to write text
+    which includes a macro which takes no parameters:
+
+\begin{verbatim}
+This \UNIX{} is followed by a space.
+This \UNIX\ is also followed by a space.
+\UNIX, followed by a comma, needs no additional markup.
+\end{verbatim}
+
+    An \dfn{environment} is ...
+
+    There are a number of less-used marks in \LaTeX{} are used to
+    enter non-\ASCII{} characters, especially those used in European
+    names.  Some which are found in the Python documentation are:
+
+    XXX Table of Latin-1 characters that we've actually used in the
+    Python documentation, pointer to other, more complete
+    documentation elsewhere.
+
+
+  \subsection{Hierarchical Structure}
+
+    XXX Talk about the traditional sectional hierarchy and how it's
+    marked in \LaTeX.
 
 
 \section{Document Classes \label{classes}}
@@ -390,13 +507,22 @@ distribution, to create or maintain whole documents or sections.
 
     Representing an interactive session requires including the prompts
     and output along with the Python code.  No special markup is
-    required for interactive sessions.
+    required for interactive sessions.  After the last line of input
+    or output presented, there should not be an ``unused'' primary
+    prompt; this is an example of what \emph{not} to do:
+
+\begin{verbatim}
+>>> 1 + 1
+2
+>>> 
+\end{verbatim}
 
     Within the \env{verbatim} environment, characters special to
     \LaTeX{} do not need to be specially marked in any way.  The entire
     example will be presented in a monospaced font; no attempt at
     ``pretty-printing'' is made, as the environment must work for
-    non-Python code and non-code displays.
+    non-Python code and non-code displays.  There should be no blank
+    lines at the top or bottom of any \env{verbatim} display.
 
     The Python Documentation Special Interest Group has discussed a
     number of approaches to creating pretty-printed code displays and
@@ -656,7 +782,7 @@ distribution, to create or maintain whole documents or sections.
       The version of Python in which the named feature was changed in
       some way (new parameters, changed side effects, etc.).
       \var{explanation} should be a \emph{brief} explanation of the
-      change consisting of a non-capitalized sentence fragment; a
+      change consisting of a capitalized sentence fragment; a
       period will be appended by the formatting process.
       This is typically added to the end of the first paragraph of the
       description before any availability notes and after
