@@ -35,6 +35,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 **	ASCII encoding method is "excess-space": 000000 is encoded as ' ', etc.
 **	short binary data is zero-extended (so the bits are always in the
 **	right place), this does *not* reflect in the length.
+** base64:
+**      Line breaks are insignificant, but lines are at most 76 chars
+**      each char encodes 6 bits, in similar order as uucode/hqx. Encoding
+**      is done via a table.
+**      Short binary data is filled (in ASCII) with '='.
 ** hqx:
 **	File starts with introductory text, real data starts and ends
 **	with colons.
@@ -132,6 +137,25 @@ static unsigned char table_a2b_hqx[256] = {
 
 static unsigned char table_b2a_hqx[] =
     "!\"#$%&'()*+,-012345689@ABCDEFGHIJKLMNPQRSTUVXYZ[`abcdefhijklmpqr";
+
+static char table_a2b_base64[] = {
+	-1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+	-1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+	-1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,62, -1,-1,-1,63,
+	52,53,54,55, 56,57,58,59, 60,61,-1,-1, -1, 0,-1,-1, /* Note PAD->0 */
+	-1, 0, 1, 2,  3, 4, 5, 6,  7, 8, 9,10, 11,12,13,14,
+	15,16,17,18, 19,20,21,22, 23,24,25,-1, -1,-1,-1,-1,
+	-1,26,27,28, 29,30,31,32, 33,34,35,36, 37,38,39,40,
+	41,42,43,44, 45,46,47,48, 49,50,51,-1, -1,-1,-1,-1
+};
+
+#define BASE64_PAD '='
+#define BASE64_MAXBIN 57	/* Max binary chunk size (76 char line) */
+
+static unsigned char table_b2a_base64[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+
 
 static unsigned short crctab_hqx[256] = {
     0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
@@ -284,6 +308,119 @@ binascii_b2a_uu(self, args)
 			*ascii_data++ = this_ch + ' ';
 		}
 	}
+	*ascii_data++ = '\n';	/* Append a courtesy newline */
+	
+	_PyString_Resize(&rv, (ascii_data - (unsigned char *)PyString_AsString(rv)));
+	return rv;
+}
+
+static char doc_a2b_base64[] = "(ascii) -> bin. Decode a line of base64 data";
+
+static PyObject *
+binascii_a2b_base64(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	unsigned char *ascii_data, *bin_data;
+	int leftbits = 0;
+	unsigned char this_ch;
+	unsigned int leftchar = 0;
+	int npad = 0;
+	PyObject *rv;
+	int ascii_len, bin_len;
+	
+	if ( !PyArg_ParseTuple(args, "s#", &ascii_data, &ascii_len) )
+		return NULL;
+
+	bin_len = ((ascii_len+3)/4)*3; /* Upper bound, corrected later */
+
+	/* Allocate the buffer */
+	if ( (rv=PyString_FromStringAndSize(NULL, bin_len)) == NULL )
+		return NULL;
+	bin_data = (unsigned char *)PyString_AsString(rv);
+	bin_len = 0;
+	for( ; ascii_len > 0 ; ascii_len--, ascii_data++ ) {
+		/*
+		** XXXX I don't do any checks on the chars, ignoring
+		** any illegal chars. Hope this is correct...
+		*/
+		this_ch = (*ascii_data & 0x7f);
+		if ( this_ch == BASE64_PAD )
+			npad++;
+		this_ch = table_a2b_base64[(*ascii_data) & 0x7f];
+		if ( this_ch == -1 ) continue;
+		/*
+		** Shift it in on the low end, and see if there's
+		** a byte ready for output.
+		*/
+		leftchar = (leftchar << 6) | (this_ch);
+		leftbits += 6;
+		if ( leftbits >= 8 ) {
+			leftbits -= 8;
+			*bin_data++ = (leftchar >> leftbits) & 0xff;
+			leftchar &= ((1 << leftbits) - 1);
+			bin_len++;
+		}
+	}
+	/* Check that no bits are left */
+	if ( leftbits ) {
+		PyErr_SetString(Error, "Incorrect padding");
+		Py_DECREF(rv);
+		return NULL;
+	}
+	/* and remove any padding */
+	bin_len -= npad;
+	/* and set string size correctly */
+	_PyString_Resize(&rv, bin_len);
+	return rv;
+}
+
+static char doc_b2a_base64[] = "(bin) -> ascii. Base64-code line of data";
+	
+static PyObject *
+binascii_b2a_base64(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	unsigned char *ascii_data, *bin_data;
+	int leftbits = 0;
+	unsigned char this_ch;
+	unsigned int leftchar = 0;
+	PyObject *rv;
+	int bin_len;
+	
+	if ( !PyArg_ParseTuple(args, "s#", &bin_data, &bin_len) )
+		return NULL;
+	if ( bin_len > BASE64_MAXBIN ) {
+		PyErr_SetString(Error, "Too much data for base64 line");
+		return NULL;
+	}
+	
+	/* We're lazy and allocate to much (fixed up later) */
+	if ( (rv=PyString_FromStringAndSize(NULL, bin_len*2)) == NULL )
+		return NULL;
+	ascii_data = (unsigned char *)PyString_AsString(rv);
+
+	for( ; bin_len > 0 ; bin_len--, bin_data++ ) {
+		/* Shift the data into our buffer */
+		leftchar = (leftchar << 8) | *bin_data;
+		leftbits += 8;
+
+		/* See if there are 6-bit groups ready */
+		while ( leftbits >= 6 ) {
+			this_ch = (leftchar >> (leftbits-6)) & 0x3f;
+			leftbits -= 6;
+			*ascii_data++ = table_b2a_base64[this_ch];
+		}
+	}
+	if ( leftbits == 2 ) {
+		*ascii_data++ = table_b2a_base64[(leftchar&3) << 4];
+		*ascii_data++ = BASE64_PAD;
+		*ascii_data++ = BASE64_PAD;
+	} else if ( leftbits == 4 ) {
+		*ascii_data++ = table_b2a_base64[(leftchar&0xf) << 2];
+		*ascii_data++ = BASE64_PAD;
+	} 
 	*ascii_data++ = '\n';	/* Append a courtesy newline */
 	
 	_PyString_Resize(&rv, (ascii_data - (unsigned char *)PyString_AsString(rv)));
@@ -562,6 +699,10 @@ binascii_crc_hqx(self, args)
 static struct PyMethodDef binascii_module_methods[] = {
 	{"a2b_uu",		binascii_a2b_uu,	1,	doc_a2b_uu},
 	{"b2a_uu",		binascii_b2a_uu,	1,	doc_b2a_uu},
+	{"a2b_base64",		binascii_a2b_base64,	1,
+		 doc_a2b_base64},
+	{"b2a_base64",		binascii_b2a_base64,	1,
+		 doc_b2a_base64},
 	{"a2b_hqx",		binascii_a2b_hqx,	1,	doc_a2b_hqx},
 	{"b2a_hqx",		binascii_b2a_hqx,	1,	doc_b2a_hqx},
 	{"rlecode_hqx",		binascii_rlecode_hqx,	1,
