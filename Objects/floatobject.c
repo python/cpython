@@ -59,7 +59,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define LONG_MIN (-LONG_MAX-1)
 #endif
 
-#ifndef macintosh
+#ifndef __STDC__
 extern double fmod PROTO((double, double));
 extern double pow PROTO((double, double));
 #endif
