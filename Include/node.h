@@ -8,11 +8,11 @@ extern "C" {
 #endif
 
 typedef struct _node {
+    short		n_type;
     char		*n_str;
-    struct _node	*n_child;
     int			n_lineno;
     int			n_nchildren;
-    short		n_type;
+    struct _node	*n_child;
 } node;
 
 PyAPI_FUNC(node *) PyNode_New(int type);
