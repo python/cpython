@@ -863,17 +863,13 @@ initpyexpat(void)
 
     /* Add some symbolic constants to the module */
     d = PyModule_GetDict(m);
-    ErrorObject = PyString_FromString("pyexpat.error");
+    if (ErrorObject == NULL)
+        ErrorObject = PyErr_NewException("pyexpat.error", NULL, NULL);
     PyDict_SetItemString(d, "error", ErrorObject);
 
     PyDict_SetItemString(d, "__version__",
                          PyString_FromStringAndSize(rev+11,
                                                     strlen(rev+11)-2));
-
-    sys_modules = PySys_GetObject("modules");
-    errors_module = PyModule_New("pyexpat.errors");
-    PyDict_SetItemString(d, "errors", errors_module);
-    PyDict_SetItemString(sys_modules, "pyexpat.errors", errors_module);
 
     /* XXX When Expat supports some way of figuring out how it was
        compiled, this should check and set native_encoding 
@@ -881,6 +877,26 @@ initpyexpat(void)
     */
     PyDict_SetItemString(d, "native_encoding", 
                          PyString_FromString("UTF-8"));
+
+    sys_modules = PySys_GetObject("modules");
+    {
+        PyObject *errmod_name = PyString_FromString("pyexpat.errors");
+
+        if (errmod_name != NULL) {
+            errors_module = PyDict_GetItem(errmod_name);
+            if (errors_module == NULL) {
+                errors_module = PyModule_New("pyexpat.errors");
+                if (errors_module != NULL) {
+                    PyDict_SetItemString(d, "errors", errors_module);
+                    PyDict_SetItem(sys_modules, errmod_name, errors_module);
+                }
+            }
+            PyDECREF(errmod_name);
+            if (errors_module == NULL)
+                /* Don't code dump later! */
+                return;
+        }
+    }
     errors_dict = PyModule_GetDict(errors_module);
 
 #define MYCONST(name) \
@@ -906,10 +922,6 @@ initpyexpat(void)
     MYCONST(XML_ERROR_MISPLACED_XML_PI);
     MYCONST(XML_ERROR_UNKNOWN_ENCODING);
     MYCONST(XML_ERROR_INCORRECT_ENCODING);
-
-    /* Check for errors */
-    if (PyErr_Occurred())
-        Py_FatalError("can't initialize module pyexpat");
 }
 
 void clear_handlers(xmlparseobject *self)
