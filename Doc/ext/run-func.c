@@ -5,7 +5,7 @@ main(int argc, char *argv[])
 {
     PyObject *pName, *pModule, *pDict, *pFunc;
     PyObject *pArgs, *pValue;
-    int i, result;
+    int i;
 
     if (argc < 3) {
         fprintf(stderr,"Usage: call pythonfile funcname [args]\n");
