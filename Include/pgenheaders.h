@@ -25,11 +25,15 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Include files and extern declarations used by most of the parser.
    This is a precompiled header for THINK C. */
 
+#ifdef THINK_C
+#define macintosh
+/* #define THINK_C_3_0		/*** TURN THIS ON FOR THINK C 3.0 ***/
+#endif
+
 #include <stdio.h>
 #include <string.h>
 
 #ifdef THINK_C
-/* #define THINK_C_3_0			/*** TURN THIS ON FOR THINK C 3.0 ****/
 #define label label_
 #undef label
 #endif
@@ -38,7 +42,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <proto.h>
 #endif
 
-#ifdef THINK_C
+#ifdef macintosh
 #ifndef THINK_C_3_0
 #include <stdlib.h>
 #endif

@@ -37,7 +37,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "tokenizer.h"
 #include "errcode.h"
 
-#ifdef THINK_C
+#ifdef macintosh
 #define TABSIZE 4
 #endif
 
