@@ -24,8 +24,6 @@ Here are some of the useful functions provided by this module:
 
 # This module is in the public domain.  No warranties.
 
-from __future__ import generators
-
 __author__ = 'Ka-Ping Yee <ping@lfw.org>'
 __date__ = '1 Jan 2001'
 
@@ -38,7 +36,7 @@ def ismodule(object):
     Module objects provide these attributes:
         __doc__         documentation string
         __file__        filename (missing for built-in modules)"""
-    return type(object) is types.ModuleType
+    return isinstance(object, types.ModuleType)
 
 def isclass(object):
     """Return true if the object is a class.
@@ -46,7 +44,7 @@ def isclass(object):
     Class objects provide these attributes:
         __doc__         documentation string
         __module__      name of module in which this class was defined"""
-    return type(object) is types.ClassType or hasattr(object, '__bases__')
+    return isinstance(object, types.ClassType) or hasattr(object, '__bases__')
 
 def ismethod(object):
     """Return true if the object is an instance method.
@@ -57,7 +55,7 @@ def ismethod(object):
         im_class        class object in which this method belongs
         im_func         function object containing implementation of method
         im_self         instance to which this method is bound, or None"""
-    return type(object) is types.MethodType
+    return isinstance(object, types.MethodType)
 
 def isfunction(object):
     """Return true if the object is a user-defined function.
@@ -70,7 +68,7 @@ def isfunction(object):
         func_doc        (same as __doc__)
         func_globals    global namespace in which this function was defined
         func_name       (same as __name__)"""
-    return type(object) in [types.FunctionType, types.LambdaType]
+    return isinstance(object, types.FunctionType)
 
 def istraceback(object):
     """Return true if the object is a traceback.
@@ -80,7 +78,7 @@ def istraceback(object):
         tb_lasti        index of last attempted instruction in bytecode
         tb_lineno       current line number in Python source code
         tb_next         next inner traceback object (called by this level)"""
-    return type(object) is types.TracebackType
+    return isinstance(object, types.TracebackType)
 
 def isframe(object):
     """Return true if the object is a frame object.
@@ -98,7 +96,7 @@ def isframe(object):
         f_locals        local namespace seen by this frame
         f_restricted    0 or 1 if frame is in restricted execution mode
         f_trace         tracing function for this frame, or None"""
-    return type(object) is types.FrameType
+    return isinstance(object, types.FrameType)
 
 def iscode(object):
     """Return true if the object is a code object.
@@ -116,7 +114,7 @@ def iscode(object):
         co_nlocals      number of local variables
         co_stacksize    virtual machine stack space required
         co_varnames     tuple of names of arguments and local variables"""
-    return type(object) is types.CodeType
+    return isinstance(object, types.CodeType)
 
 def isbuiltin(object):
     """Return true if the object is a built-in function or method.
@@ -125,7 +123,7 @@ def isbuiltin(object):
         __doc__         documentation string
         __name__        original name of this function or method
         __self__        instance to which a method is bound, or None"""
-    return type(object) is types.BuiltinFunctionType
+    return isinstance(object, types.BuiltinFunctionType)
 
 def isroutine(object):
     """Return true if the object is any kind of function or method."""
