@@ -45,5 +45,4 @@ s|<geq>|\&ge;|g
 s|<ldots>|\&hellip|g
 s|<leq>|\&le;|g
 s|<version>|\&version;|g
-s|---|\&mdash;|g
 ' || exit $?
