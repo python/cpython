@@ -104,6 +104,7 @@ class ReferencesTestCase(TestBase):
 
         self.assertRaises(weakref.ReferenceError, check, ref1)
         self.assertRaises(weakref.ReferenceError, check, ref2)
+        self.assertRaises(weakref.ReferenceError, bool, weakref.proxy(C()))
         self.assert_(self.cbcalled == 2)
 
     def check_basic_ref(self, factory):
