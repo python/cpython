@@ -138,8 +138,14 @@ newframeobject(back, code, globals, locals, owner, nvalues, nblocks)
 	int nvalues;
 	int nblocks;
 {
+	static object *builtin_object;
 	frameobject *f;
 	object *builtins;
+	if (builtin_object == NULL) {
+		builtin_object = newstringobject("__builtins__");
+		if (builtin_object == NULL)
+			return NULL;
+	}
 	if ((back != NULL && !is_frameobject(back)) ||
 		code == NULL || !is_codeobject(code) ||
 		globals == NULL || !is_dictobject(globals) ||
@@ -148,7 +154,7 @@ newframeobject(back, code, globals, locals, owner, nvalues, nblocks)
 		err_badcall();
 		return NULL;
 	}
-	builtins = dictlookup(globals, "__builtins__");
+	builtins = mappinglookup(globals, builtin_object);
 	if (builtins != NULL && is_moduleobject(builtins))
 		builtins = getmoduledict(builtins);
 	if (builtins == NULL || !is_mappingobject(builtins)) {
