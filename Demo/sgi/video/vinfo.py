@@ -3,6 +3,7 @@ from GL import *
 from DEVICE import *
 import time
 import sys
+import getopt
 
 class Struct(): pass
 epoch = Struct()
@@ -43,19 +44,28 @@ def saveframe(name, w, h, tijd, data):
     f.close()
 
 def main():
-	if len(sys.argv) > 1:
-		names = sys.argv[1:]
-	else:
+	delta = 0
+	opts, names = getopt.getopt(sys.argv[1:], 'd')
+	for opt, arg in opts:
+		if opt = '-d': delta = 1
+	if names = []:
 		names = ['film.video']
 	for name in names:
-	    f, w, h, pf = openvideo(name)
+	    try:
+		f, w, h, pf = openvideo(name)
+	    except:
+	    	sys.stderr.write(name + ': cannot open\n')
+	    	continue
 	    print name, ':', w, 'x', h, '; pf =', pf
 	    num = 0
 	    try:
+	    	otijd = 0
 		while 1:
 		    try:
 			tijd = loadframe(f, w, h, pf)
-			print '\t', tijd,
+			if delta: print '\t', tijd-otijd,
+			else: print '\t', tijd,
+			otijd = tijd
 			num = num + 1
 			if num % 8 = 0:
 				print
