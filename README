@@ -1026,6 +1026,7 @@ Modules/getpath.o.
 	in files. Python code can open a file with open(file, 'U') to
 	read it in universal newline mode. THIS OPTION IS UNSUPPORTED.
 
+--with-tsc: Profile using the Pentium timestamping counter (TSC).
 
 Building for multiple architectures (using the VPATH feature)
 -------------------------------------------------------------

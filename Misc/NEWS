@@ -499,6 +499,9 @@ Tools/Demos
 Build
 -----
 
+- Profiling the VM using the Pentium TSC is now possible if Python
+  is configured --with-tsc.
+
 - In order to find libraries, setup.py now also looks in /lib64, for use
   on AMD64.
 

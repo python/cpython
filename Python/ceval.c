@@ -17,6 +17,26 @@
 
 #include <ctype.h>
 
+#ifdef WITH_TSC
+#include <asm/msr.h>
+
+typedef unsigned long long uint64;
+
+void dump_tsc(int opcode, int ticked, uint64 inst0, uint64 inst1, 
+	      uint64 loop0, uint64 loop1, uint64 intr0, uint64 intr1)
+{
+	uint64 intr, inst, loop;
+	PyThreadState *tstate = PyThreadState_Get();
+	if (!tstate->interp->tscdump)
+		return;
+	intr = intr1 - intr0;
+	inst = inst1 - inst0 - intr;
+	loop = loop1 - loop0 - intr;
+	fprintf(stderr, "opcode=%03d t=%d inst=%06lld loop=%06lld\n",
+		opcode, ticked, inst, loop);
+}
+#endif
+
 /* Turn this on if your compiler chokes on the big switch: */
 /* #define CASE_TOO_BIG 1 */
 
@@ -30,7 +50,11 @@ typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /* Forward declarations */
 static PyObject *eval_frame(PyFrameObject *);
+#ifdef WITH_TSC
+static PyObject *call_function(PyObject ***, int, uint64*, uint64*);
+#else
 static PyObject *call_function(PyObject ***, int);
+#endif
 static PyObject *fast_function(PyObject *, PyObject ***, int, int, int);
 static PyObject *do_call(PyObject *, PyObject ***, int, int);
 static PyObject *ext_do_call(PyObject *, PyObject ***, int, int, int);
@@ -485,6 +509,44 @@ eval_frame(PyFrameObject *f)
 #define GETITEM(v, i) PyTuple_GetItem((v), (i))
 #endif
 
+#ifdef WITH_TSC
+/* Use Pentium timestamp counter to mark certain events:
+   inst0 -- beginning of switch statement for opcode dispatch
+   inst1 -- end of switch statement (may be skipped)
+   loop0 -- the top of the mainloop
+   loop1 -- place where control returns again to top of mainloop 
+            (may be skipped)
+   intr1 -- beginning of long interruption
+   intr2 -- end of long interruption
+
+   Many opcodes call out to helper C functions.  In some cases, the
+   time in those functions should be counted towards the time for the
+   opcode, but not in all cases.  For example, a CALL_FUNCTION opcode
+   calls another Python function; there's no point in charge all the
+   bytecode executed by the called function to the caller.
+
+   It's hard to make a useful judgement statically.  In the presence
+   of operator overloading, it's impossible to tell if a call will
+   execute new Python code or not.
+
+   It's a case-by-case judgement.  I'll use intr1 for the following
+   cases:
+
+   EXEC_STMT
+   IMPORT_STAR
+   IMPORT_FROM
+   CALL_FUNCTION (and friends)
+
+ */
+	uint64 inst0, inst1, loop0, loop1, intr0 = 0, intr1 = 0;
+	int ticked = 0;
+
+	rdtscll(inst0);
+	rdtscll(inst1);
+	rdtscll(loop0);
+	rdtscll(loop1);
+#endif
+
 /* Code access macros */
 
 #define INSTR_OFFSET()	(next_instr - first_instr)
@@ -643,6 +705,23 @@ eval_frame(PyFrameObject *f)
 	w = NULL;
 
 	for (;;) {
+#ifdef WITH_TSC
+		if (inst1 == 0) {
+			/* Almost surely, the opcode executed a break
+			   or a continue, preventing inst1 from being set
+			   on the way out of the loop.
+			*/
+			rdtscll(inst1);
+			loop1 = inst1;
+		}
+		dump_tsc(opcode, ticked, inst0, inst1, loop0, loop1,
+			 intr0, intr1);
+		ticked = 0;
+		inst1 = 0;
+		intr0 = 0;
+		intr1 = 0;
+		rdtscll(loop0);
+#endif
 		assert(stack_pointer >= f->f_valuestack); /* else underflow */
 		assert(STACK_LEVEL() <= f->f_stacksize);  /* else overflow */
 
@@ -662,6 +741,9 @@ eval_frame(PyFrameObject *f)
                         }
 			_Py_Ticker = _Py_CheckInterval;
 			tstate->tick_counter++;
+#ifdef WITH_TSC
+			ticked = 1;
+#endif
 			if (things_to_do) {
 				if (Py_MakePendingCalls() < 0) {
 					why = WHY_EXCEPTION;
@@ -752,6 +834,9 @@ eval_frame(PyFrameObject *f)
 #endif
 
 		/* Main switch on opcode */
+#ifdef WITH_TSC
+		rdtscll(inst0);
+#endif
 
 		switch (opcode) {
 
@@ -1493,7 +1578,13 @@ eval_frame(PyFrameObject *f)
 			v = SECOND();
 			u = THIRD();
 			STACKADJ(-3);
+#ifdef WITH_TSC
+			rdtscll(intr0);
+#endif
 			err = exec_statement(f, u, v, w);
+#ifdef WITH_TSC
+			rdtscll(intr1);
+#endif
 			Py_DECREF(u);
 			Py_DECREF(v);
 			Py_DECREF(w);
@@ -1855,7 +1946,13 @@ eval_frame(PyFrameObject *f)
 				x = NULL;
 				break;
 			}
+#ifdef WITH_TSC
+			rdtscll(intr0);
+#endif
 			x = PyEval_CallObject(x, w);
+#ifdef WITH_TSC
+			rdtscll(intr1);
+#endif
 			Py_DECREF(w);
 			SET_TOP(x);
 			if (x != NULL) continue;
@@ -1869,7 +1966,13 @@ eval_frame(PyFrameObject *f)
 					"no locals found during 'import *'");
 				break;
 			}
+#ifdef WITH_TSC
+			rdtscll(intr0);
+#endif
 			err = import_all_from(x, v);
+#ifdef WITH_TSC
+			rdtscll(intr1);
+#endif
 			PyFrame_LocalsToFast(f, 0);
 			Py_DECREF(v);
 			if (err == 0) continue;
@@ -1878,7 +1981,13 @@ eval_frame(PyFrameObject *f)
 		case IMPORT_FROM:
 			w = GETITEM(names, oparg);
 			v = TOP();
+#ifdef WITH_TSC
+			rdtscll(intr0);
+#endif
 			x = import_from(v, w);
+#ifdef WITH_TSC
+			rdtscll(intr1);
+#endif
 			PUSH(x);
 			if (x != NULL) continue;
 			break;
@@ -1987,7 +2096,11 @@ eval_frame(PyFrameObject *f)
 
 		case CALL_FUNCTION:
 			PCALL(PCALL_ALL);
+#ifdef WITH_TSC
+			x = call_function(&stack_pointer, oparg, &intr0, &intr1);
+#else
 			x = call_function(&stack_pointer, oparg);
+#endif
 			PUSH(x);
 			if (x != NULL)
 				continue;
@@ -2022,7 +2135,13 @@ eval_frame(PyFrameObject *f)
 			    n++;
 		    } else
 			    Py_INCREF(func);
+#ifdef WITH_TSC
+		    rdtscll(intr0);
+#endif
 		    x = ext_do_call(func, &stack_pointer, flags, na, nk);
+#ifdef WITH_TSC
+		    rdtscll(intr1);
+#endif
 		    Py_DECREF(func);
 
 		    while (stack_pointer > pfunc) {
@@ -2134,6 +2253,10 @@ eval_frame(PyFrameObject *f)
 
 	    on_error:
 
+#ifdef WITH_TSC
+		rdtscll(inst1);
+#endif
+
 		/* Quickly continue if no error occurred */
 
 		if (why == WHY_NOT) {
@@ -2143,9 +2266,15 @@ eval_frame(PyFrameObject *f)
 				if (PyErr_Occurred())
 					fprintf(stderr,
 						"XXX undetected error\n");
-				else
+				else {
+#endif
+#ifdef WITH_TSC
+					rdtscll(loop1);
 #endif
 					continue; /* Normal, fast path */
+#ifdef CHECKEXC
+				}
+#endif
 			}
 			why = WHY_EXCEPTION;
 			x = Py_None;
@@ -2260,6 +2389,9 @@ fast_block_end:
 
 		if (why != WHY_NOT)
 			break;
+#ifdef WITH_TSC
+		rdtscll(loop1);
+#endif
 
 	} /* main loop */
 
@@ -3331,7 +3463,11 @@ if (tstate->use_tracing) { \
 
 
 static PyObject *
-call_function(PyObject ***pp_stack, int oparg)
+call_function(PyObject ***pp_stack, int oparg
+#ifdef WITH_TSC
+		, uint64* pintr0, uint64* pintr1
+#endif
+		)
 {
 	int na = oparg & 0xff;
 	int nk = (oparg>>8) & 0xff;
@@ -3374,7 +3510,13 @@ call_function(PyObject ***pp_stack, int oparg)
 			PyObject *callargs;
 			callargs = load_args(pp_stack, na);
 			BEGIN_C_TRACE
+#ifdef WITH_TSC
+			rdtscll(*pintr0);
+#endif
 			x = PyCFunction_Call(func, callargs, NULL);
+#ifdef WITH_TSC
+			rdtscll(*pintr1);
+#endif
 			END_C_TRACE
 			Py_XDECREF(callargs);
 		}
@@ -3393,10 +3535,16 @@ call_function(PyObject ***pp_stack, int oparg)
 			n++;
 		} else
 			Py_INCREF(func);
+#ifdef WITH_TSC
+		rdtscll(*pintr0);
+#endif
 		if (PyFunction_Check(func))
 			x = fast_function(func, pp_stack, n, na, nk);
 		else
 			x = do_call(func, pp_stack, na, nk);
+#ifdef WITH_TSC
+		rdtscll(*pintr1);
+#endif
 		Py_DECREF(func);
 	}
 

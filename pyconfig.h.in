@@ -780,6 +780,9 @@
 /* Define if you want to compile in rudimentary thread support */
 #undef WITH_THREAD
 
+/* Define to profile with the Pentium timestamp counter */
+#undef WITH_TSC
+
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
 #undef WORDS_BIGENDIAN
