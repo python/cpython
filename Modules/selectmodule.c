@@ -248,7 +248,7 @@ select_select(PyObject *self, PyObject *args)
 		if (rfd2obj) PyMem_DEL(rfd2obj);
 		if (wfd2obj) PyMem_DEL(wfd2obj);
 		if (efd2obj) PyMem_DEL(efd2obj);
-		return NULL;
+		return PyErr_NoMemory();
 	}
 #endif /* SELECT_USES_HEAP */
 	/* Convert lists to fd_sets, and get maximum fd number
