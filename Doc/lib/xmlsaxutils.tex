@@ -22,6 +22,17 @@ either in direct use, or as base classes.
   strings; each key will be replaced with its corresponding value.
 \end{funcdesc}
 
+\begin{funcdesc}{unescape}{data\optional{, entities}}
+  Unescape \character{\&amp;}, \character{\&lt;}, and \character{\&gt;}
+  in a string of data.
+
+  You can unescape other strings of data by passing a dictionary as the
+  optional \var{entities} parameter.  The keys and values must all be
+  strings; each key will be replaced with its corresponding value.
+
+  \versionadded{2.3}
+\end{funcdesc}
+
 \begin{funcdesc}{quoteattr}{data\optional{, entities}}
   Similar to \function{escape()}, but also prepares \var{data} to be
   used as an attribute value.  The return value is a quoted version of
