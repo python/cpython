@@ -454,6 +454,16 @@ class Editor(W.Window):
 			code = compile(pytext, filename, "exec")
 		except (SyntaxError, EOFError):
 			raise buildtools.BuildError, "Syntax error in script %s" % `filename`
+			
+		import tempfile
+		tmpdir = tempfile.mkdtemp()
+		
+		if filename[-3:] != ".py":
+			filename = filename + ".py"
+		filename = os.path.join(tmpdir, os.path.split(filename)[1])
+		fp = open(filename, "w")
+		fp.write(pytext)
+		fp.close()
 		
 		# Try removing the output file
 		try:
@@ -461,7 +471,7 @@ class Editor(W.Window):
 		except os.error:
 			pass
 		template = buildtools.findtemplate()
-		buildtools.process_common(template, None, code, rsrcname, destname, 0, 1)
+		buildtools.process(template, filename, destname, rsrcname=rsrcname, progress=None)
 	
 	def domenu_gotoline(self, *args):
 		self.linefield.selectall()
