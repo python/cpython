@@ -389,20 +389,16 @@ def cleanup_trailing_parens(doc, element_names):
     for gi in element_names:
         d[gi] = gi
     rewrite_element = d.has_key
-    queue = []
-    for node in doc.childNodes:
-        if node.nodeType == ELEMENT:
-            queue.append(node)
+    queue = [node for node in doc.childNodes if node.nodeType == ELEMENT]
     while queue:
         node = queue[0]
         del queue[0]
         if rewrite_element(node.tagName):
-            children = node.childNodes
-            if len(children) == 1 \
-               and children[0].nodeType == TEXT:
-                data = children[0].data
-                if data[-2:] == "()":
-                    children[0].data = data[:-2]
+            lastchild = node.lastChild
+            if lastchild and lastchild.nodeType == TEXT:
+                data = lastchild.data
+                if data.endswith("()"):
+                    lastchild.data = data[:-2]
         else:
             for child in node.childNodes:
                 if child.nodeType == ELEMENT:
@@ -773,13 +769,17 @@ def fixup_signatures(doc, fragment):
         if child.nodeType == ELEMENT:
             args = child.getElementsByTagName("args")
             for arg in args:
-                fixup_args(doc, arg)
-                arg.normalize()
+                rewrite_args(doc, arg)
             args = child.getElementsByTagName("constructor-args")
             for arg in args:
-                fixup_args(doc, arg)
-                arg.normalize()
+                rewrite_args(doc, arg)
 
+def rewrite_args(doc, arglist):
+    fixup_args(doc, arglist)
+    arglist.normalize()
+    if arglist.childNodes.length == 1 and arglist.firstChild.nodeType == TEXT:
+        node = arglist.firstChild
+        node.data = ' '.join(node.data.split())
 
 def fixup_args(doc, arglist):
     for child in arglist.childNodes:
@@ -788,9 +788,7 @@ def fixup_args(doc, arglist):
             arglist.insertBefore(doc.createTextNode("["), child)
             optkids = child.childNodes
             while optkids:
-                k = optkids[0]
-                child.removeChild(k)
-                arglist.insertBefore(k, child)
+                arglist.insertBefore(child.firstChild, child)
             arglist.insertBefore(doc.createTextNode("]"), child)
             arglist.removeChild(child)
             return fixup_args(doc, arglist)
