@@ -29,35 +29,8 @@ for a particular new feature.
 The final release of Python 2.2 is planned for October 2001.
 
 %======================================================================
-\section{PEP 234: Iterators}
-
-XXX
-
-\begin{seealso}
-
-\seepep{234}{Iterators}{Written by Ka-Ping Yee and GvR; implemented 
-by the Python Labs crew, mostly by GvR and Tim Peters.}
-
-\end{seealso}
-
-%======================================================================
-\section{PEP 255: Simple Generators}
-
-XXX
-
-\begin{seealso}
-
-\seepep{255}{Simple Generators}{Written by Neil Schemenauer, 
-Tim Peters, Magnus Lie Hetland.  Implemented mostly by Neil
-Schemenauer, with fixes from the Python Labs crew, mostly by GvR and
-Tim Peters.}
-
-\end{seealso}
-
-%======================================================================
-% It looks like this set of changes isn't going to be getting into 2.2,
-% unless someone plans to merge the descr-branch back into the mainstream
-% very quickly.
+% It looks like this set of changes will likely get into 2.2,
+% so I need to read and digest the relevant PEPs.
 %\section{PEP 252: Type and Class Changes}
 
 %XXX
@@ -70,6 +43,278 @@ Tim Peters.}
 %\end{seealso}
 
 %======================================================================
+\section{PEP 234: Iterators}
+
+A significant addition to 2.2 is an iteration interface at both the C
+and Python levels.  Objects can define how they can be looped over by
+callers.
+
+In Python versions up to 2.1, the usual way to make \code{for item in
+obj} work is to define a \method{__getitem__()} method that looks
+something like this:
+
+\begin{verbatim}
+    def __getitem__(self, index):
+        return <next item>
+\end{verbatim}
+
+\method{__getitem__()} is more properly used to define an indexing
+operation on an object so that you can write \code{obj[5]} to retrieve
+the fifth element.  It's a bit misleading when you're using this only
+to support \keyword{for} loops.  Consider some file-like object that
+wants to be looped over; the \var{index} parameter is essentially
+meaningless, as the class probably assumes that a series of
+\method{__getitem__()} calls will be made, with \var{index}
+incrementing by one each time.  In other words, the presence of the
+\method{__getitem__()} method doesn't mean that \code{file[5]} will
+work, though it really should.
+
+In Python 2.2, iteration can be implemented separately, and
+\method{__getitem__()} methods can be limited to classes that really
+do support random access.  The basic idea of iterators is quite
+simple.  A new built-in function, \function{iter(obj)}, returns an
+iterator for the object \var{obj}.  (It can also take two arguments:
+\code{iter(\var{C}, \var{sentinel})} will call the callable \var{C}, until it
+returns \var{sentinel}, which will signal that the iterator is done.  This form probably won't be used very often.)
+
+Python classes can define an \method{__iter__()} method, which should
+create and return a new iterator for the object; if the object is its
+own iterator, this method can just return \code{self}.  In particular,
+iterators will usually be their own iterators.  Extension types
+implemented in C can implement a \code{tp_iter} function in order to
+return an iterator, too.
+
+So what do iterators do?  They have one required method,
+\method{next()}, which takes no arguments and returns the next value.
+When there are no more values to be returned, calling \method{next()}
+should raise the \exception{StopIteration} exception.
+
+\begin{verbatim}
+>>> L = [1,2,3]
+>>> i = iter(L)
+>>> print i
+<iterator object at 0x8116870>
+>>> i.next()
+1
+>>> i.next()
+2
+>>> i.next()
+3
+>>> i.next()
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+StopIteration
+>>>      
+\end{verbatim}
+
+In 2.2, Python's \keyword{for} statement no longer expects a sequence;
+it expects something for which \function{iter()} will return something.
+For backward compatibility, and convenience, an iterator is
+automatically constructed for sequences that don't implement
+\method{__iter__()} or a \code{tp_iter} slot, so \code{for i in
+[1,2,3]} will still work.  Wherever the Python interpreter loops over
+a sequence, it's been changed to use the iterator protocol.  This
+means you can do things like this:
+
+\begin{verbatim}
+>>> i = iter(L)
+>>> a,b,c = i
+>>> a,b,c
+(1, 2, 3)
+>>>
+\end{verbatim}
+
+Iterator support has been added to some of Python's basic types.  The
+\keyword{in} operator now works on dictionaries, so \code{\var{key} in
+dict} is now equivalent to \code{dict.has_key(\var{key})}.
+Calling \function{iter()} on a dictionary will return an iterator which loops over their keys:
+
+\begin{verbatim}
+>>> m = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+...      'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
+>>> for key in m: print key, m[key]
+...
+Mar 3
+Feb 2
+Aug 8
+Sep 9
+May 5
+Jun 6
+Jul 7
+Jan 1
+Apr 4
+Nov 11
+Dec 12
+Oct 10
+>>>
+\end{verbatim}          
+
+That's just the default behaviour.  If you want to iterate over keys,
+values, or key/value pairs, you can explicitly call the
+\method{iterkeys()}, \method{itervalues()}, or \method{iteritems()}
+methods to get an appropriate iterator.  
+
+Files also provide an iterator, which calls its \method{readline()}
+method until there are no more lines in the file.  This means you can
+now read each line of a file using code like this:
+
+\begin{verbatim}
+for line in file:
+    # do something for each line
+\end{verbatim}
+
+Note that you can only go forward in an iterator; there's no way to
+get the previous element, reset the iterator, or make a copy of it.
+An iterator object could provide such additional capabilities, but the iterator protocol only requires a \method{next()} method.
+
+\begin{seealso}
+
+\seepep{234}{Iterators}{Written by Ka-Ping Yee and GvR; implemented 
+by the Python Labs crew, mostly by GvR and Tim Peters.}
+
+\end{seealso}
+
+%======================================================================
+\section{PEP 255: Simple Generators}
+
+Generators are another new feature, one that interacts with the
+introduction of iterators.
+
+You're doubtless familiar with how function calls work in Python or
+C.  When you call a function, it gets a private area where its local
+variables are created.  When the function reaches a \keyword{return}
+statement, the local variables are destroyed and the resulting value
+is returned to the caller.  A later call to the same function will get
+a fresh new set of local variables.  But, what if the local variables
+weren't destroyed on exiting a function?  What if you could later
+resume the function where it left off?  This is what generators
+provide; they can be thought of as resumable functions.
+
+Here's the simplest example of a generator function:
+
+\begin{verbatim}
+def generate_ints(N):
+    for i in range(N):
+        yield i
+\end{verbatim}
+
+A new keyword, \keyword{yield}, was introduced for generators.  Any
+function containing a \keyword{yield} statement is a generator
+function; this is detected by Python's bytecode compiler which
+compiles the function specially.  When you call a generator function,
+it doesn't return a single value; instead it returns a generator
+object that supports the iterator interface.  On executing the
+\keyword{yield} statement, the generator outputs the value of
+\code{i}, similar to a \keyword{return} statement.  The big difference
+between \keyword{yield} and a \keyword{return} statement is that, on
+reaching a \keyword{yield} the generator's state of execution is
+suspended and local variables are preserved.  On the next call to the
+generator's \code{.next()} method, the function will resume executing
+immediately after the \keyword{yield} statement.  (For complicated
+reasons, the \keyword{yield} statement isn't allowed inside the
+\keyword{try} block of a \code{try...finally} statement; read PEP 255
+for a full explanation of the interaction between \keyword{yield} and
+exceptions.)
+
+Here's a sample usage of the \function{generate_ints} generator:
+
+\begin{verbatim}
+>>> gen = generate_ints(3)
+>>> gen
+<generator object at 0x8117f90>
+>>> gen.next()
+0
+>>> gen.next()
+1
+>>> gen.next()
+2
+>>> gen.next()
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+  File "<stdin>", line 2, in generate_ints
+StopIteration
+>>>
+\end{verbatim}
+
+You could equally write \code{for i in generate_ints(5)}, or
+\code{a,b,c = generate_ints(3)}.
+
+Inside a generator function, the \keyword{return} statement can only
+be used without a value, and is equivalent to raising the
+\exception{StopIteration} exception; afterwards the generator cannot
+return any further values.  \keyword{return} with a value, such as
+\code{return 5}, is a syntax error inside a generator function.  You
+can also raise \exception{StopIteration} manually, or just let the
+thread of execution fall off the bottom of the function, to achieve
+the same effect.
+
+You could achieve the effect of generators manually by writing your
+own class, and storing all the local variables of the generator as
+instance variables.  For example, returning a list of integers could
+be done by setting \code{self.count} to 0, and having the
+\method{next()} method increment \code{self.count} and return it.
+because it would be easy to write a Python class.  However, for a
+moderately complicated generator, writing a corresponding class would
+be much messier.  \file{Lib/test/test_generators.py} contains a number
+of more interesting examples.  The simplest one implements an in-order
+traversal of a tree using generators recursively.
+
+\begin{verbatim}
+# A recursive generator that generates Tree leaves in in-order.
+def inorder(t):
+    if t:
+        for x in inorder(t.left):
+            yield x
+        yield t.label
+        for x in inorder(t.right):
+            yield x
+\end{verbatim}
+
+Two other examples in \file{Lib/test/test_generators.py} produce
+solutions for the N-Queens problem (placing $N$ queens on an $NxN$
+chess board so that no queen threatens another) and the Knight's Tour
+(a route that takes a knight to every square of an $NxN$ chessboard
+without visiting any square twice). 
+
+The idea of generators comes from other programming languages,
+especially Icon (\url{http://www.cs.arizona.edu/icon/}), where the
+idea of generators is central to the language.  In Icon, every
+expression and function call behaves like a generator.  One example
+from ``An Overview of the Icon Programming Language'' at
+\url{http://www.cs.arizona.edu/icon/docs/ipd266.htm} gives an idea of
+what this looks like:
+
+\begin{verbatim}
+sentence := "Store it in the neighboring harbor"
+if (i := find("or", sentence)) > 5 then write(i)
+\end{verbatim}
+
+The \function{find()} function returns the indexes at which the
+substring ``or'' is found: 3, 23, 33.  In the \keyword{if} statement,
+\code{i} is first assigned a value of 3, but 3 is less than 5, so the
+comparison fails, and Icon retries it with the second value of 23.  23
+is greater than 5, so the comparison now succeeds, and the code prints
+the value 23 to the screen.
+
+Python doesn't go nearly as far as Icon in adopting generators as a
+central concept.  Generators are considered a new part of the core
+Python language, but learning or using them isn't compulsory; if they
+don't solve any problems that you have, feel free to ignore them.
+This is different from Icon where the idea of generators is a basic
+concept.  One novel feature of Python's interface as compared to
+Icon's is that a generator's state is represented as a concrete object
+that can be passed around to other functions or stored in a data
+structure.
+
+\begin{seealso}
+
+\seepep{255}{Simple Generators}{Written by Neil Schemenauer, 
+Tim Peters, Magnus Lie Hetland.  Implemented mostly by Neil
+Schemenauer, with fixes from the Python Labs crew.}
+
+\end{seealso}
+
+%======================================================================
 \section{Unicode Changes}
 
 XXX I have to figure out what the changes mean to users.
@@ -78,13 +323,178 @@ XXX I have to figure out what the changes mean to users.
 References: http://mail.python.org/pipermail/i18n-sig/2001-June/001107.html  
 and following thread.
 
+%======================================================================
+\section{PEP 227: Nested Scopes}
+
+In Python 2.1, statically nested scopes were added as an optional
+feature, to be enabled by a \code{from __future__ import
+nested_scopes} directive.  In 2.2 nested scopes no longer need to be
+specially enabled, but are always enabled.  The rest of this section
+is a copy of the description of nested scopes from my ``What's New in
+Python 2.1'' document; if you read it when 2.1 came out, you can skip
+the rest of this section.
+
+The largest change introduced in Python 2.1, and made complete in 2.2,
+is to Python's scoping rules.  In Python 2.0, at any given time there
+are at most three namespaces used to look up variable names: local,
+module-level, and the built-in namespace.  This often surprised people
+because it didn't match their intuitive expectations.  For example, a
+nested recursive function definition doesn't work:
+
+\begin{verbatim}
+def f():
+    ...
+    def g(value):
+        ...
+        return g(value-1) + 1
+    ...
+\end{verbatim}
+
+The function \function{g()} will always raise a \exception{NameError}
+exception, because the binding of the name \samp{g} isn't in either
+its local namespace or in the module-level namespace.  This isn't much
+of a problem in practice (how often do you recursively define interior
+functions like this?), but this also made using the \keyword{lambda}
+statement clumsier, and this was a problem in practice.  In code which
+uses \keyword{lambda} you can often find local variables being copied
+by passing them as the default values of arguments.
+
+\begin{verbatim}
+def find(self, name):
+    "Return list of any entries equal to 'name'"
+    L = filter(lambda x, name=name: x == name,
+               self.list_attribute)
+    return L
+\end{verbatim}
+
+The readability of Python code written in a strongly functional style
+suffers greatly as a result.
+
+The most significant change to Python 2.2 is that static scoping has
+been added to the language to fix this problem.  As a first effect,
+the \code{name=name} default argument is now unnecessary in the above
+example.  Put simply, when a given variable name is not assigned a
+value within a function (by an assignment, or the \keyword{def},
+\keyword{class}, or \keyword{import} statements), references to the
+variable will be looked up in the local namespace of the enclosing
+scope.  A more detailed explanation of the rules, and a dissection of
+the implementation, can be found in the PEP.
+
+This change may cause some compatibility problems for code where the
+same variable name is used both at the module level and as a local
+variable within a function that contains further function definitions.
+This seems rather unlikely though, since such code would have been
+pretty confusing to read in the first place.  
+
+One side effect of the change is that the \code{from \var{module}
+import *} and \keyword{exec} statements have been made illegal inside
+a function scope under certain conditions.  The Python reference
+manual has said all along that \code{from \var{module} import *} is
+only legal at the top level of a module, but the CPython interpreter
+has never enforced this before.  As part of the implementation of
+nested scopes, the compiler which turns Python source into bytecodes
+has to generate different code to access variables in a containing
+scope.  \code{from \var{module} import *} and \keyword{exec} make it
+impossible for the compiler to figure this out, because they add names
+to the local namespace that are unknowable at compile time.
+Therefore, if a function contains function definitions or
+\keyword{lambda} expressions with free variables, the compiler will
+flag this by raising a \exception{SyntaxError} exception.
+
+To make the preceding explanation a bit clearer, here's an example:
+
+\begin{verbatim}
+x = 1
+def f():
+    # The next line is a syntax error
+    exec 'x=2'  
+    def g():
+        return x
+\end{verbatim}
+
+Line 4 containing the \keyword{exec} statement is a syntax error,
+since \keyword{exec} would define a new local variable named \samp{x}
+whose value should be accessed by \function{g()}.  
+
+This shouldn't be much of a limitation, since \keyword{exec} is rarely
+used in most Python code (and when it is used, it's often a sign of a
+poor design anyway).
+=======
+%\end{seealso}
+
+\begin{seealso}
+
+\seepep{227}{Statically Nested Scopes}{Written and implemented by
+Jeremy Hylton.}
+
+\end{seealso}
+
 
 %======================================================================
 \section{New and Improved Modules}
 
 \begin{itemize}
 
-  \item xmlrpclib added to standard library.
+  \item The \module{xmlrpclib} module was contributed to the standard
+library by Fredrik Lundh.  It provides support for writing XML-RPC
+clients; XML-RPC is a simple remote procedure call protocol built on
+top of HTTP and XML. For example, the following snippet retrieves a
+list of RSS channels from the O'Reilly Network, and then retrieves a
+list of the recent headlines for one channel:
+
+\begin{verbatim}
+import xmlrpclib
+s = xmlrpclib.Server(
+      'http://www.oreillynet.com/meerkat/xml-rpc/server.php')
+channels = s.meerkat.getChannels()
+# channels is a list of dictionaries, like this:
+# [{'id': 4, 'title': 'Freshmeat Daily News'}
+#  {'id': 190, 'title': '32Bits Online'},
+#  {'id': 4549, 'title': '3DGamers'}, ... ]
+
+# Get the items for one channel
+items = s.meerkat.getItems( {'channel': 4} )
+
+# 'items' is another list of dictionaries, like this:
+# [{'link': 'http://freshmeat.net/releases/52719/', 
+#   'description': 'A utility which converts HTML to XSL FO.', 
+#   'title': 'html2fo 0.3 (Default)'}, ... ]
+\end{verbatim}
+
+See \url{http://www.xmlrpc.com} for more information about XML-RPC.
+
+  \item The \module{socket} module can be compiled to support IPv6;
+  specify the \code{--enable-ipv6} option to Python's configure
+  script.  (Contributed by Jun-ichiro ``itojun'' Hagino.)
+
+  \item Two new format characters were added to the \module{struct}
+  module for 64-bit integers on platforms that support the C
+  \ctype{long long} type.  \samp{q} is for a signed 64-bit integer,
+  and \samp{Q} is for an unsigned one.  The value is returned in
+  Python's long integer type.  (Contributed by Tim Peters.)
+
+  \item In the interpreter's interactive mode, there's a new built-in
+  function \function{help()}, that uses the \module{pydoc} module
+  introduced in Python 2.1 to provide interactive.
+  \code{help(\var{object})} displays any available help text about
+  \var{object}.  \code{help()} with no argument puts you in an online
+  help utility, where you can enter the names of functions, classes,
+  or modules to read their help text.
+  (Contributed by Guido van Rossum, using Ka-Ping Yee's \module{pydoc} module.)
+
+  \item Various bugfixes and performance improvements have been made
+to the SRE engine underlying the \module{re} module.  For example,
+\function{re.sub()} will now use \function{string.replace()}
+automatically when the pattern and its replacement are both just
+literal strings without regex metacharacters.  Another contributed
+patch speeds up certain Unicode character ranges by a factor of
+two. (SRE is maintained by Fredrik Lundh.  The BIGCHARSET patch
+was contributed by Martin von L\"owis.)
+
+  \item The \module{imaplib} module now has support for the IMAP
+NAMESPACE extension defined in \rfc{2342}.  (Contributed by Michel
+Pelletier.)
+
 
 \end{itemize}
 
@@ -92,20 +502,63 @@ and following thread.
 %======================================================================
 \section{Other Changes and Fixes}
 
-XXX
+As usual there were a bunch of other improvements and bugfixes
+scattered throughout the source tree.  A search through the CVS change
+logs finds there were XXX patches applied, and XXX bugs fixed; both
+figures are likely to be underestimates.  Some of the more notable
+changes are:
 
 \begin{itemize}
-
-  \item XXX Nested scoping enabled by default
 
   \item XXX C API: Reorganization of object calling 
 
   \item XXX .encode(), .decode() string methods.  Interesting new codecs such
-as zlib.
+as zlib.   
 
-%Original log message:
- 
-%The call_object() function, originally in ceval.c, begins a new life
+  \item MacOS code now in main CVS tree.
+
+  \item SF patch \#418147 Fixes to allow compiling w/ Borland, from Stephen Hansen.
+
+   \item Add support for Windows using "mbcs" as the default Unicode encoding when dealing with the file system.  As discussed on python-dev and in patch 410465.
+
+\item Lots of patches to dictionaries; measure performance improvement, if any.
+
+  \item Patch \#430754: Makes ftpmirror.py .netrc aware
+
+\item Fix bug reported by Tim Peters on python-dev:
+
+Keyword arguments passed to builtin functions that don't take them are
+ignored.
+
+>>> {}.clear(x=2)
+>>>
+
+instead of
+
+>>> {}.clear(x=2)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+TypeError: clear() takes no keyword arguments
+
+\item Make the license GPL-compatible.
+
+\item This change adds two new C-level APIs:  PyEval_SetProfile() and
+PyEval_SetTrace().  These can be used to install profile and trace
+functions implemented in C, which can operate at much higher speeds
+than Python-based functions.  The overhead for calling a C-based
+profile function is a very small fraction of a percent of the overhead
+involved in calling a Python-based function.
+
+The machinery required to call a Python-based profile or trace
+function been moved to sysmodule.c, where sys.setprofile() and
+sys.setprofile() simply become users of the new interface.
+
+\item 'Advanced' xrange() features now deprecated: repeat, slice,
+contains, tolist(), and the start/stop/step attributes.  This includes
+removing the 4th ('repeat') argument to PyRange_New().
+
+
+\item The call_object() function, originally in ceval.c, begins a new life
 %as the official API PyObject_Call().  It is also much simplified: all
 %it does is call the tp_call slot, or raise an exception if that's
 %NULL.
