@@ -1021,9 +1021,7 @@ class Unpickler:
         stack = self.stack
         mark = self.marker()
         list = stack[mark - 1]
-        for i in range(mark + 1, len(stack)):
-            list.append(stack[i])
-
+        list.extend(stack[mark + 1:])
         del stack[mark:]
     dispatch[APPENDS] = load_appends
 
