@@ -261,7 +261,8 @@ class Application:
 					do_char = window.do_char
 				except AttributeError:
 					do_char = self.do_char
-			do_char(c, event)
+				do_char(c, event)
+			# else it wasn't for us, sigh...
 	
 	def do_char(self, c, event):
 		if DEBUG: print "Character", `c`
