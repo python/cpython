@@ -87,6 +87,9 @@ typedef struct {
 	int ma_fill;
 	int ma_used;
 	int ma_size;
+#ifdef INTERN_STRINGS
+	int ma_fast;
+#endif
 	mappingentry *ma_table;
 } mappingobject;
 
@@ -106,6 +109,9 @@ newmappingobject()
 	mp->ma_table = NULL;
 	mp->ma_fill = 0;
 	mp->ma_used = 0;
+#ifdef INTERN_STRINGS
+	mp->ma_fast = 1;
+#endif
 	return (object *)mp;
 }
 
@@ -163,17 +169,40 @@ lookmapping(mp, key, hash)
 	unsigned long sum;
 	int incr;
 	int size;
+#ifdef INTERN_STRINGS
+	int fast;
+#endif
 
 	ep = &mp->ma_table[(unsigned long)hash%mp->ma_size];
 	ekey = ep->me_key;
 	if (ekey == NULL)
 		return ep;
+#ifdef INTERN_STRINGS
+	if ((fast = mp->ma_fast)) {
+		object *ikey;
+		if (!is_stringobject(key) ||
+		    (ikey = ((stringobject *)key)->ob_sinterned) == NULL)
+			fast = 0;
+		else
+			key = ikey;
+	}
+#endif
 	if (ekey == dummy)
 		freeslot = ep;
-	else if (ep->me_hash == hash && cmpobject(ekey, key) == 0)
-		return ep;
-	else
+	else {
+#ifdef INTERN_STRINGS
+		if (fast) {
+			if (ekey == key)
+				return ep;
+		}
+		else
+#endif
+		{
+			if (ep->me_hash == hash && cmpobject(ekey, key) == 0)
+				return ep;
+		}
 		freeslot = NULL;
+	}
 
 	size = mp->ma_size;
 	sum = hash;
@@ -183,6 +212,36 @@ lookmapping(mp, key, hash)
 	} while (incr == 0);
 
 	end = mp->ma_table + size;
+
+#ifdef INTERN_STRINGS
+	if (fast) {
+		if (freeslot == NULL) {
+			for (;;) {
+				ep += incr;
+				if (ep >= end)
+					ep -= size;
+				ekey = ep->me_key;
+				if (ekey == NULL || ekey == key)
+					return ep;
+				if (ekey == dummy) {
+					freeslot = ep;
+					break;
+				}
+			}
+		}
+
+		for (;;) {
+			ep += incr;
+			if (ep >= end)
+				ep -= size;
+			ekey = ep->me_key;
+			if (ekey == NULL)
+				return freeslot;
+			if (ekey == key)
+				return ep;
+		}
+	}
+#endif
 
 	if (freeslot == NULL) {
 		for (;;) {
@@ -339,13 +398,35 @@ mappinginsert(op, key, value)
 		err_badcall();
 		return -1;
 	}
-#ifdef CACHE_HASH
-	if (!is_stringobject(key) || (hash = ((stringobject *) key)->ob_shash) == -1)
-#endif
-	hash = hashobject(key);
-	if (hash == -1)
-		return -1;
 	mp = (mappingobject *)op;
+#ifdef CACHE_HASH
+	if (is_stringobject(key)) {
+#ifdef INTERN_STRINGS
+		if (((stringobject *)key)->ob_sinterned != NULL) {
+			key = ((stringobject *)key)->ob_sinterned;
+			hash = ((stringobject *)key)->ob_shash;
+		}
+		else
+#endif
+		{
+			hash = ((stringobject *)key)->ob_shash;
+			if (hash == -1)
+				hash = hashobject(key);
+#ifdef INTERN_STRINGS
+			mp->ma_fast = 0;
+#endif
+		}
+	}
+	else
+#endif
+	{
+		hash = hashobject(key);
+		if (hash == -1)
+			return -1;
+#ifdef INTERN_STRINGS
+		mp->ma_fast = 0;
+#endif
+	}
 	/* if fill >= 2/3 size, resize */
 	if (mp->ma_fill*3 >= mp->ma_size*2) {
 		if (mappingresize(mp) != 0) {
@@ -907,16 +988,22 @@ setattro(v, name, value)
 	object *name;
 	object *value;
 {
+	int err;
+	INCREF(name);
+	PyString_InternInPlace(&name);
 	if (v->ob_type->tp_setattro != NULL)
-		return (*v->ob_type->tp_setattro)(v, name, value);
-
-	if (name != last_name_object) {
-		XDECREF(last_name_object);
-		INCREF(name);
-		last_name_object = name;
-		last_name_char = getstringvalue(name);
+		err = (*v->ob_type->tp_setattro)(v, name, value);
+	else {
+		if (name != last_name_object) {
+			XDECREF(last_name_object);
+			INCREF(name);
+			last_name_object = name;
+			last_name_char = getstringvalue(name);
+		}
+		err = setattr(v, last_name_char, value);
 	}
-	return setattr(v, last_name_char, value);
+	DECREF(name);
+	return err;
 }
 
 object *
@@ -931,6 +1018,7 @@ dictlookup(v, key)
 			last_name_char = NULL;
 			return NULL;
 		}
+		PyString_InternInPlace(&last_name_object);
 		last_name_char = getstringvalue(last_name_object);
 	}
 	return mappinglookup(v, last_name_object);
@@ -949,6 +1037,7 @@ dictinsert(v, key, item)
 			last_name_char = NULL;
 			return -1;
 		}
+		PyString_InternInPlace(&last_name_object);
 		last_name_char = getstringvalue(last_name_object);
 	}
 	return mappinginsert(v, last_name_object, item);
