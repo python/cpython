@@ -100,6 +100,17 @@ emacs_bindings = [
      "<<comment-region>>", "<Meta-Key-3>", "<Alt-Key-3>"),
     ("edit", "Uncomment region", "Alt-4",
      "<<uncomment-region>>", "<Meta-Key-4>", "<Alt-Key-4>"),
+    
+    # Debug menu
+    
+    ("debug", "Go to line from traceback", None, "<<goto-traceback-line>>"),
+    ("debug", "Open stack viewer", None, "<<open-stack-viewer>>"),
+    
+    # Help menu
+    
+    ("help", "Help...", None, "<<help>>"),
+    ("help", None, None),
+    ("help", "About IDLE...", None, "<<about-idle>>"),
 
     # Not in any menu
 
@@ -134,11 +145,12 @@ def apply_bindings(text, bindings=default_bindings):
 def fill_menus(text, dict, bindings=default_bindings):
     # Fill the menus for the given text widget.  The dict argument is
     # a dictionary containing the menus, keyed by their lowercased name.
+    # Menus that are absent or None are ignored.
     for args in bindings:
         menu, label, accelerator = args[:3]
         if not menu:
             continue
-        menu = dict[menu]
+        menu = dict.get(menu)
         if not menu:
             continue
         if accelerator is None:
