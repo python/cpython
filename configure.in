@@ -465,6 +465,7 @@ int main(){
   pthread_t p;
   if(pthread_create(&p,NULL,routine,NULL)!=0)
     return 1;
+  (void)pthread_detach(p);
   return 0;
 }
 ],
@@ -497,6 +498,7 @@ int main(){
   pthread_t p;
   if(pthread_create(&p,NULL,routine,NULL)!=0)
     return 1;
+  (void)pthread_detach(p);
   return 0;
 }
 ],
