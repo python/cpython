@@ -828,6 +828,16 @@ instancemethod_dealloc(im)
 	free((ANY *)im);
 }
 
+static int
+instancemethod_compare(a, b)
+	instancemethodobject *a, *b;
+{
+	int cmp = cmpobject(a->im_self, b->im_self);
+	if (cmp == 0)
+		cmp = cmpobject(a->im_func, b->im_func);
+	return cmp;
+}
+
 typeobject Instancemethodtype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
@@ -838,7 +848,7 @@ typeobject Instancemethodtype = {
 	0,			/*tp_print*/
 	instancemethod_getattr,	/*tp_getattr*/
 	0,			/*tp_setattr*/
-	0,			/*tp_compare*/
+	instancemethod_compare,	/*tp_compare*/
 	0,			/*tp_repr*/
 	0,			/*tp_as_number*/
 	0,			/*tp_as_sequence*/
