@@ -2273,7 +2273,7 @@ com_and_test(struct compiling *c, node *n)
 static int
 com_make_closure(struct compiling *c, PyCodeObject *co)
 {
-	int i, free = PyTuple_GET_SIZE(co->co_freevars);
+	int i, free = PyCode_GetNumFree(co);
 	if (free == 0)
 		return 0;
 	for (i = 0; i < free; ++i) {
@@ -2333,7 +2333,7 @@ com_test(struct compiling *c, node *n)
 		com_push(c, 1);
 		if (closure) {
 			com_addoparg(c, MAKE_CLOSURE, ndefs);
-			com_pop(c, PyTuple_GET_SIZE(co->co_freevars));
+			com_pop(c, PyCode_GetNumFree(co));
 		} else
 			com_addoparg(c, MAKE_FUNCTION, ndefs);
 		Py_DECREF(co);
@@ -3590,7 +3590,7 @@ com_classdef(struct compiling *c, node *n)
 		com_push(c, 1);
 		if (closure) {
 			com_addoparg(c, MAKE_CLOSURE, 0);
-			com_pop(c, PyTuple_GET_SIZE(co->co_freevars));
+			com_pop(c, PyCode_GetNumFree(co));
 		} else
 			com_addoparg(c, MAKE_FUNCTION, 0);
 		com_addoparg(c, CALL_FUNCTION, 0);
