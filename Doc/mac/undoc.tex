@@ -12,21 +12,21 @@ touch with
 \section{\module{applesingle} --- AppleSingle decoder}
 \declaremodule{standard}{applesingle}
   \platform{Mac}
-\modulesynopsis{Rudimentary decoder for AppleSingle format files}
+\modulesynopsis{Rudimentary decoder for AppleSingle format files.}
 
 
 \section{\module{buildtools} --- Helper module for BuildApplet and Friends}
 \declaremodule{standard}{buildtools}
   \platform{Mac}
 \modulesynopsis{Helper module for BuildApplet, BuildApplication and
-                macfreeze}
+                macfreeze.}
 
 
 \section{\module{py_resource} --- Resources from Python code}
 \declaremodule[pyresource]{standard}{py_resource}
   \platform{Mac}
-\modulesynopsis{Helper to create \texttt{'PYC '} resources for compiled
-                applications}
+\modulesynopsis{Helper to create \texttt{'PYC~'} resources for compiled
+                applications.}
 
 This module is primarily used as a help module for
 \program{BuildApplet} and \program{BuildApplication}.  It is able to
@@ -36,7 +36,7 @@ store compiled Python code as \texttt{'PYC~'} resources in a file.
 \section{\module{cfmfile} --- Code Fragment Resource module}
 \declaremodule{standard}{cfmfile}
   \platform{Mac}
-\modulesynopsis{Code Fragment Resource module}
+\modulesynopsis{Code Fragment Resource module.}
 
 \module{cfmfile} is a module that understands Code Fragments and the
 accompanying ``cfrg'' resources. It can parse them and merge them, and is
@@ -47,7 +47,7 @@ executable.
 \section{\module{icopen} --- Internet Config replacement for \method{open()}}
 \declaremodule{standard}{icopen}
   \platform{Mac}
-\modulesynopsis{Internet Config replacement for \method{open()}}
+\modulesynopsis{Internet Config replacement for \method{open()}.}
 
 Importing \module{icopen} will replace the builtin \method{open()}
 with a version that uses Internet Config to set file type and creator
@@ -57,29 +57,30 @@ for new files.
 \section{\module{macerrors} --- Mac OS Errors}
 \declaremodule{standard}{macerrors}
   \platform{Mac}
-\modulesynopsis{Constant definitions for many Mac OS error codes}
+\modulesynopsis{Constant definitions for many Mac OS error codes.}
 
-\module{macerrors} cotains constant definitions for many Mac OS error codes.
+\module{macerrors} cotains constant definitions for many Mac OS error
+codes.
 
 
 \section{\module{macfsn} --- NavServices calls}
 \declaremodule{standard}{macfsn}
   \platform{Mac}
-\modulesynopsis{NavServices versions of StandardFile calls}
+\modulesynopsis{NavServices versions of StandardFile calls.}
 
 
-\module{macfsn} contains wrapper functions that have the same API as the macfs 
-StandardFile calls, but are implemented with Navigation Services through the
-\refmodule{Nav}\refbimodindex{Nav} module. Importing it 
-will replace the methods in \refmodule{macfs}\refbimodindex{macfs} with these,
-if Navigation Services is 
-available on your machine.
+\module{macfsn} contains wrapper functions that have the same API as
+the \refmodule{macfs} StandardFile calls, but are implemented with
+Navigation Services through the
+\refmodule{Nav}\refbimodindex{Nav} module.  Importing it will replace
+the methods in \refmodule{macfs}\refbimodindex{macfs} with these, if
+Navigation Services is available on your machine.
 
 
 \section{\module{macresource} --- Locate script resources}
 \declaremodule{standard}{macresource}
   \platform{Mac}
-\modulesynopsis{Locate script resources}
+\modulesynopsis{Locate script resources.}
 
 \module{macresource} helps scripts finding their resources, such as
 dialogs and menus, without requiring special case code for when the
@@ -88,7 +89,7 @@ script is run under MacPython, as a MacPython applet or under OSX Python.
 \section{\module{Nav} --- NavServices calls}
 \declaremodule{standard}{Nac}
   \platform{Mac}
-\modulesynopsis{Interface to Navigation Services}
+\modulesynopsis{Interface to Navigation Services.}
 
 A low-level interface to Navigation Services. 
 
@@ -96,7 +97,7 @@ A low-level interface to Navigation Services.
 \section{\module{mactty} --- Serial line connections}
 \declaremodule{standard}{mactty}
   \platform{Mac}
-\modulesynopsis{Easy access serial to line connections}
+\modulesynopsis{Easy access serial to line connections.}
 
 This module is only available under Mac OS 9 or earlier in classic PPC
 MacPython.
@@ -104,7 +105,7 @@ MacPython.
 \section{\module{mkcwproject} --- Create CodeWarrior projects}
 \declaremodule{standard}{mkcwproject}
   \platform{Mac}
-\modulesynopsis{Create CodeWarrior projects}
+\modulesynopsis{Create CodeWarrior projects.}
 
 \module{mkcwproject} creates project files for the Metrowerks CodeWarrior
 development environment. It is a helper module for
@@ -115,7 +116,7 @@ control.
 \section{\module{nsremote} --- Wrapper around Netscape OSA modules}
 \declaremodule{standard}{nsremote}
   \platform{Mac}
-\modulesynopsis{Wrapper around Netscape OSA modules}
+\modulesynopsis{Wrapper around Netscape OSA modules.}
 
 \module{nsremote} is a wrapper around the Netscape OSA modules that
 allows you to easily send your browser to a given URL.  A related
@@ -127,7 +128,7 @@ Reference}.
 \section{\module{PixMapWrapper} --- Wrapper for PixMap objects}
 \declaremodule{standard}{PixMapWrapper}
   \platform{Mac}
-\modulesynopsis{Wrapper for PixMap objects}
+\modulesynopsis{Wrapper for PixMap objects.}
 
 \module{PixMapWrapper} wraps a PixMap object with a Python object that
 allows access to the fields by name. It also has methods to convert
@@ -138,7 +139,7 @@ to and from \module{PIL} images.
 \declaremodule{standard}{preferences}
   \platform{Mac}
 \modulesynopsis{Nice application preferences manager with support for
-                defaults}
+                defaults.}
 
 The \module{preferences} module allows storage of user preferences in
 the system-wide preferences folder, with defaults coming from the
@@ -150,17 +151,17 @@ specific situations.
 \declaremodule{standard}{pythonprefs}
   \platform{Mac}
 \modulesynopsis{Specialized preferences manager for the Python
-                interpreter}
+                interpreter.}
 
 This module is a specialization of the \refmodule{preferences} module
 that allows reading and writing of the preferences for the Python
 interpreter.
 
 
-\section{\module{quietconsole} --- non-visible stdout output}
+\section{\module{quietconsole} --- Non-visible standard output}
 \declaremodule{standard}{quietconsole}
   \platform{Mac}
-\modulesynopsis{buffered, non-visible stdout output}
+\modulesynopsis{Buffered, non-visible standard output.}
 
 \module{quietconsole} allows you to keep stdio output in a buffer
 without displaying it (or without displaying the stdout window
@@ -170,10 +171,10 @@ sent to the window.  Good for programs with graphical user interfaces
 that do want to display their output at a crash.
 
 
-\section{\module{videoreader} --- read QuickTime movies}
+\section{\module{videoreader} --- Read QuickTime movies}
 \declaremodule{standard}{videoreader}
   \platform{Mac}
-\modulesynopsis{read QuickTime movies frame by frame for further processing}
+\modulesynopsis{Read QuickTime movies frame by frame for further processing.}
 
 \module{videoreader} reads and decodes QuickTime movies and passes
 a stream of images to your program. It also provides some support for
@@ -182,7 +183,7 @@ audio tracks.
 \section{\module{W} --- Widgets built on \module{FrameWork}}
 \declaremodule{standard}{W}
   \platform{Mac}
-\modulesynopsis{Widgets for the Mac, built on top of \module{FrameWork}}
+\modulesynopsis{Widgets for the Mac, built on top of \refmodule{FrameWork}.}
 
 The \module{W} widgets are used extensively in the \program{IDE}.
 
