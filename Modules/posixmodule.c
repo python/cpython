@@ -325,10 +325,18 @@ static PyObject *PosixError; /* Exception posix.error */
 
 /* Set a POSIX-specific error from errno, and return NULL */
 
-static PyObject * posix_error()
+static PyObject *
+posix_error()
 {
 	return PyErr_SetFromErrno(PosixError);
 }
+static PyObject *
+posix_error_with_filename(name)
+	char* name;
+{
+	return PyErr_SetFromErrnoWithFilename(PosixError, name);
+}
+
 
 #if defined(PYOS_OS2)
 /**********************************************************************
@@ -420,7 +428,7 @@ posix_1str(args, func)
 	res = (*func)(path1);
 	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return posix_error();
+		return posix_error_with_filename(path1);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -438,6 +446,7 @@ posix_2str(args, func)
 	res = (*func)(path1, path2);
 	Py_END_ALLOW_THREADS
 	if (res != 0)
+		/* XXX how to report both path1 and path2??? */
 		return posix_error();
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -457,7 +466,7 @@ posix_strint(args, func)
 	res = (*func)(path, i);
 	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return posix_error();
+		return posix_error_with_filename(path);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -476,7 +485,7 @@ posix_strintint(args, func)
 	res = (*func)(path, i, i2);
 	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return posix_error();
+		return posix_error_with_filename(path);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -496,7 +505,7 @@ posix_do_stat(self, args, statfunc)
 	res = (*statfunc)(path, &st);
 	Py_END_ALLOW_THREADS
 	if (res != 0)
-		return posix_error();
+		return posix_error_with_filename(path);
 	return Py_BuildValue("(llllllllll)",
 		    (long)st.st_mode,
 		    (long)st.st_ino,
@@ -868,7 +877,7 @@ posix_mkdir(self, args)
 #endif
 	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return posix_error();
+		return posix_error_with_filename(path);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -1056,7 +1065,7 @@ posix_utime(self, args)
 	res = utime(path, UTIME_ARG);
 	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return posix_error();
+		return posix_error_with_filename(path);
 	Py_INCREF(Py_None);
 	return Py_None;
 #undef UTIME_ARG
@@ -1772,7 +1781,7 @@ posix_readlink(self, args)
 	n = readlink(path, buf, (int) sizeof buf);
 	Py_END_ALLOW_THREADS
 	if (n < 0)
-		return posix_error();
+		return posix_error_with_filename(path);
 	return PyString_FromStringAndSize(buf, n);
 }
 #endif /* HAVE_READLINK */
@@ -1985,7 +1994,7 @@ posix_open(self, args)
 	fd = open(file, flag, mode);
 	Py_END_ALLOW_THREADS
 	if (fd < 0)
-		return posix_error();
+		return posix_error_with_filename(file);
 	return PyInt_FromLong((long)fd);
 }
 
@@ -2768,8 +2777,7 @@ INITFUNC()
         if (all_ins(d))
                 return;
 
-	/* Initialize exception */
-	PosixError = PyErr_NewException("os.error", NULL, NULL);
-	if (PosixError != NULL)
-		PyDict_SetItemString(d, "error", PosixError);
+	Py_INCREF(PyExc_OSError);
+	PosixError = PyExc_OSError;
+	PyDict_SetItemString(d, "error", PosixError);
 }
