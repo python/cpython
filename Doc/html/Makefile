@@ -34,7 +34,9 @@ INDEXFILES=api/api.html \
 	lib/lib.html \
 	mac/mac.html \
 	ref/ref.html \
-	tut/tut.html
+	tut/tut.html \
+	inst/inst.html \
+	dist/dist.html
 
 COMMONPERL= $(TOPDIR)/perl/manual.perl \
 	$(TOPDIR)/perl/python.perl \
@@ -43,7 +45,7 @@ COMMONPERL= $(TOPDIR)/perl/manual.perl \
 
 all:	$(INDEXFILES) index.html modindex.html
 
-.PHONY: api ext lib mac ref tut
+.PHONY: api ext lib mac ref tut inst dist
 
 api: api/api.html
 doc: doc/doc.html
@@ -52,6 +54,8 @@ lib: lib/lib.html
 mac: mac/mac.html
 ref: ref/ref.html
 tut: tut/tut.html
+inst: inst/inst.html
+dist: dist/dist.html
 
 $(INDEXFILES): $(COMMONPERL) \
 	       $(TOPDIR)/html/about.dat \
@@ -89,6 +93,13 @@ ref/ref.html:  $(PAPERDIR)/ref.aux $(BUILDINDEX) $(TOOLSDIR)/mkhtml.sh
 tut/tut.html:  $(PAPERDIR)/tut.aux $(TOOLSDIR)/mkhtml.sh
 	$(MKHTML) --numeric tut $(L2HARGS) -split 3
 
+inst/inst.html:$(INSTFILES) $(TOPDIR)/perl/distutils.perl
+	$(TOOLSDIR)/mkhowto --about stdabout.dat --address $(PYTHONDOCS) \
+		--html $(TOPDIR)/inst/inst.tex
+
+dist/dist.html:$(DISTFILES) $(TOPDIR)/perl/distutils.perl
+	$(TOOLSDIR)/mkhowto --about stdabout.dat --address $(PYTHONDOCS) \
+		--html $(TOPDIR)/dist/dist.tex
 
 include ../Makefile.deps
 
@@ -116,6 +127,8 @@ webcheck: all
 	$(WEBCHECKER) $(HTMLBASE)/mac/
 	$(WEBCHECKER) $(HTMLBASE)/ref/
 	$(WEBCHECKER) $(HTMLBASE)/tut/
+	$(WEBCHECKER) $(HTMLBASE)/dist/
+	$(WEBCHECKER) $(HTMLBASE)/inst/
 
 wcnew: all
 	$(WCNEW) $(HTMLBASE)/api/
@@ -131,7 +144,8 @@ clean:
 	rm -rf @webchecker.pickle
 
 distclean realclean clobber: clean
-	rm -rf index.html modindex.html api/ doc/ ext/ lib/ mac/ ref/ tut/
+	rm -rf index.html modindex.html 
+	rm -rf api/ doc/ ext/ lib/ mac/ ref/ tut/ inst/ dist/
 
 
 # This is really ugly, but we're not dependent on $(RELEASE), which isn't
