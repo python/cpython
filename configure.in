@@ -765,15 +765,18 @@ else
     AC_CHECK_LIB(cma, pthread_create, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(_POSIX_THREADS)
     LIBS="$LIBS -lcma"
-    LIBOBJS="$LIBOBJS thread.o"])
+    LIBOBJS="$LIBOBJS thread.o"],[
+    USE_THREAD_MODULE="#"])
     ])])])])])])])])
 
     AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
     LIBS="$LIBS -lmpc"
-    LIBOBJS="$LIBOBJS thread.o"])
+    LIBOBJS="$LIBOBJS thread.o"
+    USE_THREAD_MODULE=""])
     AC_CHECK_LIB(thread, thr_create, [AC_DEFINE(WITH_THREAD)
     LIBS="$LIBS -lthread"
-    LIBOBJS="$LIBOBJS thread.o"])
+    LIBOBJS="$LIBOBJS thread.o"
+    USE_THREAD_MODULE=""])
 fi
 
 # Check for GC support
