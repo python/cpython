@@ -48,8 +48,8 @@ extern int Py_SuppressPrintingFlag; /* For ceval.c, declared in pythonrun.c */
 
 
 /* Subroutines that live in their own file */
-extern char *getversion();
-extern char *getcopyright();
+extern char *getversion Py_PROTO((void));
+extern char *getcopyright Py_PROTO((void));
 
 
 /* For getprogramname(); set by main() */
