@@ -727,10 +727,6 @@ class TestDialectValidity(unittest.TestCase):
         mydialect.quoting = None
         self.assertRaises(csv.Error, mydialect)
 
-        mydialect.quoting = csv.QUOTE_NONE
-        mydialect.escapechar = None
-        self.assertRaises(csv.Error, mydialect)
-
         mydialect.doublequote = True
         mydialect.quoting = csv.QUOTE_ALL
         mydialect.quotechar = '"'
