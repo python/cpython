@@ -4,6 +4,23 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.4.1?
+===========================
+
+*Release date: xx-xxx-2005*
+
+Core and builtins
+-----------------
+
+Library
+-------
+
+Build
+-----
+
+- term.h is now properly detected again.
+
+
 What's New in Python 2.4 final?
 ===============================
 
