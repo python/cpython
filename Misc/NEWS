@@ -16,6 +16,10 @@ Extension modules
 
 Library
 
+- Traceback objects are now scanned by cyclic garbage collection, so
+  cycles created by casual use of sys.exc_info() no longer cause
+  permanent memory leaks (provided garbage collection is enabled).
+
 Tools/Demos
 
 Build

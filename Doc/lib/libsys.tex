@@ -109,7 +109,10 @@ It is always available.
   exception type and value.  If you do need the traceback, make sure
   to delete it after use (best done with a \keyword{try}
   ... \keyword{finally} statement) or to call \function{exc_info()} in
-  a function that does not itself handle an exception.}
+  a function that does not itself handle an exception.} \note{Beginning
+  with Python 2.2, such cycles are automatically reclaimed when garbage
+  collection is enabled and they become unreachable, but it remains more
+  efficient to avoid creating cycles.}
 \end{funcdesc}
 
 \begin{datadesc}{exc_type}
