@@ -154,7 +154,7 @@ def visiblename(name, all=None):
     """Decide whether to show documentation on a variable."""
     # Certain special names are redundant.
     if name in ['__builtins__', '__doc__', '__file__', '__path__',
-                '__module__', '__name__']: return 0
+                '__module__', '__name__', '__slots__']: return 0
     # Private names are hidden, but special names are displayed.
     if name.startswith('__') and name.endswith('__'): return 1
     if all is not None:
@@ -162,6 +162,14 @@ def visiblename(name, all=None):
         return name in all
     else:
         return not name.startswith('_')
+
+def classify_class_attrs(object):
+    """Wrap inspect.classify_class_attrs, with fixup for data descriptors."""
+    def fixup((name, kind, cls, value)):
+        if inspect.isdatadescriptor(value):
+            kind = 'data descriptor'
+        return name, kind, cls, value
+    return map(fixup, inspect.classify_class_attrs(object))
 
 # ----------------------------------------------------- module manipulation
 
@@ -718,13 +726,13 @@ class HTMLDoc(Doc):
                     push('\n')
             return attrs
 
-        def spillproperties(msg, attrs, predicate):
+        def spilldescriptors(msg, attrs, predicate):
             ok, attrs = _split_list(attrs, predicate)
             if ok:
                 hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
-                    push(self._docproperty(name, value, mod))
+                    push(self._docdescriptor(name, value, mod))
             return attrs
 
         def spilldata(msg, attrs, predicate):
@@ -749,7 +757,7 @@ class HTMLDoc(Doc):
             return attrs
 
         attrs = filter(lambda (name, kind, cls, value): visiblename(name),
-                       inspect.classify_class_attrs(object))
+                       classify_class_attrs(object))
         mdict = {}
         for key, kind, homecls, value in attrs:
             mdict[key] = anchor = '#' + name + '-' + key
@@ -788,8 +796,8 @@ class HTMLDoc(Doc):
                           lambda t: t[1] == 'class method')
             attrs = spill('Static methods %s' % tag, attrs,
                           lambda t: t[1] == 'static method')
-            attrs = spillproperties('Properties %s' % tag, attrs,
-                                    lambda t: t[1] == 'property')
+            attrs = spilldescriptors('Data descriptors %s' % tag, attrs,
+                                     lambda t: t[1] == 'data descriptor')
             attrs = spilldata('Data and other attributes %s' % tag, attrs,
                               lambda t: t[1] == 'data')
             assert attrs == []
@@ -871,7 +879,7 @@ class HTMLDoc(Doc):
             doc = doc and '<dd><tt>%s</tt></dd>' % doc
             return '<dl><dt>%s</dt>%s</dl>\n' % (decl, doc)
 
-    def _docproperty(self, name, value, mod):
+    def _docdescriptor(self, name, value, mod):
         results = []
         push = results.append
 
@@ -880,20 +888,13 @@ class HTMLDoc(Doc):
         if value.__doc__ is not None:
             doc = self.markup(value.__doc__, self.preformat)
             push('<dd><tt>%s</tt></dd>\n' % doc)
-        for attr, tag in [('fget', '<em>get</em>'),
-                          ('fset', '<em>set</em>'),
-                          ('fdel', '<em>delete</em>')]:
-            func = getattr(value, attr)
-            if func is not None:
-                base = self.document(func, tag, mod)
-                push('<dd>%s</dd>\n' % base)
         push('</dl>\n')
 
         return ''.join(results)
 
     def docproperty(self, object, name=None, mod=None, cl=None):
         """Produce html documentation for a property."""
-        return self._docproperty(name, object, mod)
+        return self._docdescriptor(name, object, mod)
 
     def docother(self, object, name=None, mod=None, *ignored):
         """Produce HTML documentation for a data object."""
@@ -1143,13 +1144,13 @@ class TextDoc(Doc):
                                        name, mod, object))
             return attrs
 
-        def spillproperties(msg, attrs, predicate):
+        def spilldescriptors(msg, attrs, predicate):
             ok, attrs = _split_list(attrs, predicate)
             if ok:
                 hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
-                    push(self._docproperty(name, value, mod))
+                    push(self._docdescriptor(name, value, mod))
             return attrs
 
         def spilldata(msg, attrs, predicate):
@@ -1167,7 +1168,7 @@ class TextDoc(Doc):
             return attrs
 
         attrs = filter(lambda (name, kind, cls, value): visiblename(name),
-                       inspect.classify_class_attrs(object))
+                       classify_class_attrs(object))
         while attrs:
             if mro:
                 thisclass = mro.popleft()
@@ -1195,8 +1196,8 @@ class TextDoc(Doc):
                           lambda t: t[1] == 'class method')
             attrs = spill("Static methods %s:\n" % tag, attrs,
                           lambda t: t[1] == 'static method')
-            attrs = spillproperties("Properties %s:\n" % tag, attrs,
-                                    lambda t: t[1] == 'property')
+            attrs = spilldescriptors("Data descriptors %s:\n" % tag, attrs,
+                                     lambda t: t[1] == 'data descriptor')
             attrs = spilldata("Data and other attributes %s:\n" % tag, attrs,
                               lambda t: t[1] == 'data')
             assert attrs == []
@@ -1254,33 +1255,22 @@ class TextDoc(Doc):
             doc = getdoc(object) or ''
             return decl + '\n' + (doc and rstrip(self.indent(doc)) + '\n')
 
-    def _docproperty(self, name, value, mod):
+    def _docdescriptor(self, name, value, mod):
         results = []
         push = results.append
 
         if name:
-            push(name)
-        need_blank_after_doc = 0
+            push(self.bold(name))
+            push('\n')
         doc = getdoc(value) or ''
         if doc:
             push(self.indent(doc))
-            need_blank_after_doc = 1
-        for attr, tag in [('fget', '<get>'),
-                          ('fset', '<set>'),
-                          ('fdel', '<delete>')]:
-            func = getattr(value, attr)
-            if func is not None:
-                if need_blank_after_doc:
-                    push('')
-                    need_blank_after_doc = 0
-                base = self.document(func, tag, mod)
-                push(self.indent(base))
-
-        return '\n'.join(results)
+            push('\n')
+        return ''.join(results)
 
     def docproperty(self, object, name=None, mod=None, cl=None):
         """Produce text documentation for a property."""
-        return self._docproperty(name, object, mod)
+        return self._docdescriptor(name, object, mod)
 
     def docother(self, object, name=None, mod=None, maxlen=None, doc=None):
         """Produce text documentation for a data object."""
