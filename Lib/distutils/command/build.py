@@ -14,15 +14,16 @@ class build (Command):
 
     description = "build everything needed to install"
 
-    options = [('build-base=', 'b',
-                "base directory for build library"),
-               ('build-lib=', 'l',
-                "directory for platform-shared files"),
-               ('build-platlib=', 'p',
-                "directory for platform-specific files"),
-               ('debug', 'g',
-                "compile extensions and libraries with debugging information"),
-              ]
+    user_options = [
+        ('build-base=', 'b',
+         "base directory for build library"),
+        ('build-lib=', 'l',
+         "directory for platform-shared files"),
+        ('build-platlib=', 'p',
+         "directory for platform-specific files"),
+        ('debug', 'g',
+         "compile extensions and libraries with debugging information"),
+        ]
 
     def set_default_options (self):
         self.build_base = 'build'

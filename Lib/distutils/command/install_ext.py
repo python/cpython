@@ -13,9 +13,10 @@ class install_ext (Command):
 
     description = "install C/C++ extension modules"
     
-    options = [('install-dir=', 'd', "directory to install to"),
-               ('build-dir=','b', "build directory (where to install from)"),
-              ]
+    user_options = [
+        ('install-dir=', 'd', "directory to install to"),
+        ('build-dir=','b', "build directory (where to install from)"),
+        ]
 
     def set_default_options (self):
         # let the 'install' command dictate our installation directory

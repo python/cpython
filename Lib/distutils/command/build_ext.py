@@ -42,25 +42,26 @@ class build_ext (Command):
     #     takes care of both command-line and client options
     #     in between set_default_options() and set_final_options())
 
-    options = [('build-dir=', 'd',
-                "directory for compiled extension modules"),
-               ('include-dirs=', 'I',
-                "list of directories to search for header files"),
-               ('define=', 'D',
-                "C preprocessor macros to define"),
-               ('undef=', 'U',
-                "C preprocessor macros to undefine"),
-               ('libs=', 'l',
-                "external C libraries to link with"),
-               ('library-dirs=', 'L',
-                "directories to search for external C libraries"),
-               ('rpath=', 'R',
-                "directories to search for shared C libraries at runtime"),
-               ('link-objects=', 'O',
-                "extra explicit link objects to include in the link"),
-               ('debug', 'g',
-                "compile/link with debugging information"),
-              ]
+    user_options = [
+        ('build-dir=', 'd',
+         "directory for compiled extension modules"),
+        ('include-dirs=', 'I',
+         "list of directories to search for header files"),
+        ('define=', 'D',
+         "C preprocessor macros to define"),
+        ('undef=', 'U',
+         "C preprocessor macros to undefine"),
+        ('libs=', 'l',
+         "external C libraries to link with"),
+        ('library-dirs=', 'L',
+         "directories to search for external C libraries"),
+        ('rpath=', 'R',
+         "directories to search for shared C libraries at runtime"),
+        ('link-objects=', 'O',
+         "extra explicit link objects to include in the link"),
+        ('debug', 'g',
+         "compile/link with debugging information"),
+        ]
 
 
     def set_default_options (self):

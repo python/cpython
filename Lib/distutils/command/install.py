@@ -16,42 +16,43 @@ class install (Command):
 
     description = "install everything from build directory"
 
-    options = [('prefix=', None, "installation prefix"),
-               ('exec-prefix=', None,
-                "prefix for platform-specific files"),
+    user_options = [
+        ('prefix=', None, "installation prefix"),
+        ('exec-prefix=', None,
+         "prefix for platform-specific files"),
 
-               # Build directories: where to install from
-               ('build-base=', None,
-                "base build directory"),
-               ('build-lib=', None,
-                "build directory for pure Python modules"),
-               ('build-platlib=', None,
-                "build directory for extension modules"),
+        # Build directories: where to install from
+        ('build-base=', None,
+         "base build directory"),
+        ('build-lib=', None,
+         "build directory for pure Python modules"),
+        ('build-platlib=', None,
+         "build directory for extension modules"),
 
-               # Installation directories: where to put modules and packages
-               ('install-lib=', None,
-                "base Python library directory"),
-               ('install-platlib=', None,
-                "platform-specific Python library directory"),
-               ('install-site-lib=', None,
-                "directory for site-specific packages and modules"),
-               ('install-site-platlib=', None,
-                "platform-specific site directory"),
-               ('install-scheme=', None,
-                "install to 'system' or 'site' library directory?"),
-               ('install-path=', None,
-                "extra intervening directories to put below install-lib"),
+        # Installation directories: where to put modules and packages
+        ('install-lib=', None,
+         "base Python library directory"),
+        ('install-platlib=', None,
+         "platform-specific Python library directory"),
+        ('install-site-lib=', None,
+         "directory for site-specific packages and modules"),
+        ('install-site-platlib=', None,
+         "platform-specific site directory"),
+        ('install-scheme=', None,
+         "install to 'system' or 'site' library directory?"),
+        ('install-path=', None,
+         "extra intervening directories to put below install-lib"),
 
-               # Where to install documentation (eventually!)
-               ('doc-format=', None, "format of documentation to generate"),
-               ('install-man=', None, "directory for Unix man pages"),
-               ('install-html=', None, "directory for HTML documentation"),
-               ('install-info=', None, "directory for GNU info files"),
-               
-               # Flags for 'build_py'
-               ('compile-py', None, "compile .py to .pyc"),
-               ('optimize-py', None, "compile .py to .pyo (optimized)"),
-              ]
+        # Where to install documentation (eventually!)
+        ('doc-format=', None, "format of documentation to generate"),
+        ('install-man=', None, "directory for Unix man pages"),
+        ('install-html=', None, "directory for HTML documentation"),
+        ('install-info=', None, "directory for GNU info files"),
+
+        # Flags for 'build_py'
+        ('compile-py', None, "compile .py to .pyc"),
+        ('optimize-py', None, "compile .py to .pyo (optimized)"),
+        ]
 
 
     def set_default_options (self):

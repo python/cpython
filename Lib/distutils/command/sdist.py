@@ -21,26 +21,27 @@ class sdist (Command):
 
     description = "create a source distribution (tarball, zip file, etc.)"
 
-    options = [('template=', 't',
-                "name of manifest template file [default: MANIFEST.in]"),
-               ('manifest=', 'm',
-                "name of manifest file [default: MANIFEST]"),
-               ('use-defaults', None,
-                "include the default file set in the manifest "
-                "[default; disable with --no-defaults]"),
-               ('manifest-only', None,
-                "just regenerate the manifest and then stop"),
-               ('force-manifest', None,
-                "forcibly regenerate the manifest and carry on as usual"),
-               
-               ('formats=', None,
-                "formats for source distribution (tar, ztar, gztar, or zip)"),
-               ('list-only', 'l',
-                "just list files that would be distributed"),
-               ('keep-tree', 'k',
-                "keep the distribution tree around after creating " +
-                "archive file(s)"),
-              ]
+    user_options = [
+        ('template=', 't',
+         "name of manifest template file [default: MANIFEST.in]"),
+        ('manifest=', 'm',
+         "name of manifest file [default: MANIFEST]"),
+        ('use-defaults', None,
+         "include the default file set in the manifest "
+         "[default; disable with --no-defaults]"),
+        ('manifest-only', None,
+         "just regenerate the manifest and then stop"),
+        ('force-manifest', None,
+         "forcibly regenerate the manifest and carry on as usual"),
+
+        ('formats=', None,
+         "formats for source distribution (tar, ztar, gztar, or zip)"),
+        ('list-only', 'l',
+         "just list files that would be distributed"),
+        ('keep-tree', 'k',
+         "keep the distribution tree around after creating " +
+         "archive file(s)"),
+        ]
     negative_opts = {'use-defaults': 'no-defaults'}
 
     default_format = { 'posix': 'gztar',

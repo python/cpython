@@ -18,8 +18,9 @@ class build_py (Command):
 
     description = "\"build\" pure Python modules (copy to build directory)"
 
-    options = [('build-dir=', 'd', "directory for platform-shared files"),
-              ]
+    user_options = [
+        ('build-dir=', 'd', "directory for platform-shared files"),
+        ]
 
 
     def set_default_options (self):

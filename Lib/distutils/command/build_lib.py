@@ -28,9 +28,10 @@ from distutils.ccompiler import new_compiler
 
 class build_lib (Command):
 
-    options = [('debug', 'g',
-                "compile with debugging information"),
-              ]
+    user_options = [
+        ('debug', 'g',
+         "compile with debugging information"),
+        ]
 
     def set_default_options (self):
         # List of libraries to build
