@@ -67,6 +67,8 @@ class TypeinViewer:
         icursor = ew.index(INSERT)
         if contents == '':
             contents = '0'
+        if contents[0] in 'xX' and self.__hexp.get():
+            contents = '0' + contents
         # figure out what the contents value is in the current base
         try:
             if self.__hexp.get():
@@ -79,9 +81,10 @@ class TypeinViewer:
         # the bell
         if v is None or v < 0 or v > 255:
             i = ew.index(INSERT)
-            contents = contents[:i-1] + contents[i:]
+            if event.char:
+                contents = contents[:i-1] + contents[i:]
+                icursor = icursor-1
             ew.bell()
-            icursor = icursor-1
         elif self.__hexp.get():
             contents = hex(v)
         else:
@@ -111,12 +114,19 @@ class TypeinViewer:
             redstr, greenstr, bluestr = map(hex, (red, green, blue))
         else:
             redstr, greenstr, bluestr = red, green, blue
-        self.__x.delete(0, END)
-        self.__y.delete(0, END)
-        self.__z.delete(0, END)
-        self.__x.insert(0, redstr)
-        self.__y.insert(0, greenstr)
-        self.__z.insert(0, bluestr)
+        x, y, z = self.__x, self.__y, self.__z
+        xicursor = x.index(INSERT)
+        yicursor = y.index(INSERT)
+        zicursor = z.index(INSERT)
+        x.delete(0, END)
+        y.delete(0, END)
+        z.delete(0, END)
+        x.insert(0, redstr)
+        y.insert(0, greenstr)
+        z.insert(0, bluestr)
+        x.icursor(xicursor)
+        y.icursor(yicursor)
+        z.icursor(zicursor)
 
     def hexp_var(self):
         return self.__hexp
