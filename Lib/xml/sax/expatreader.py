@@ -39,13 +39,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         self._source = source
         self.reset()
         self._cont_handler.setDocumentLocator(self)
-        try:
-            xmlreader.IncrementalParser.parse(self, source)
-        except expat.error:
-            error_code = self._parser.ErrorCode
-            raise SAXParseException(expat.ErrorString(error_code), None, self)
-            
-        self._cont_handler.endDocument()
+        xmlreader.IncrementalParser.parse(self, source)            
 
     def prepareParser(self, source):
         if source.getSystemId() != None:
@@ -73,21 +67,29 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
 
     # IncrementalParser methods
 
-    def feed(self, data):
+    def feed(self, data, isFinal = 0):
         if not self._parsing:
             self._parsing = 1
             self.reset()
             self._cont_handler.startDocument()
 
-        if not self._parser.Parse(data, 0):
-            msg = pyexpat.ErrorString(self._parser.ErrorCode)
-            raise SAXParseException(msg, None, self)
+        try:
+            # The isFinal parameter is internal to the expat reader.
+            # If it is set to true, expat will check validity of the entire
+            # document. When feeding chunks, they are not normally final -
+            # except when invoked from close.
+            self._parser.Parse(data, isFinal)
+        except expat.error:
+            error_code = self._parser.ErrorCode
+            raise SAXParseException(expat.ErrorString(error_code), None, self)
 
     def close(self):
-        if self._parsing:
-            self._cont_handler.endDocument()
-            self._parsing = 0
-        self._parser.Parse("", 1)
+        if self._entity_stack:
+            # If we are completing an external entity, do nothing here
+            return
+        self.feed("", isFinal = 1)
+        self._cont_handler.endDocument()
+        self._parsing = 0
         
     def reset(self):
         if self._namespaces:
@@ -128,7 +130,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         return self._source.getPublicId()
 
     def getSystemId(self):
-        return self._parser.GetBase()
+        return self._source.getSystemId()
     
     # event handlers
     def start_element(self, name, attrs):
@@ -194,7 +196,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
 
         try:
             xmlreader.IncrementalParser.parse(self, source)
-            self.close()
+            self._parser.Parse("",1)
         except:
             return 0  # FIXME: save error info here?
 
