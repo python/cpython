@@ -380,6 +380,8 @@ r_long64(RFILE *p)
 static PyObject *
 r_object(RFILE *p)
 {
+	/* NULL is a valid return value, it does not necessarily means that
+	   an exception is set. */
 	PyObject *v, *v2;
 	long i, n;
 	int type = r_byte(p);
@@ -430,8 +432,16 @@ r_object(RFILE *p)
 			if (ob == NULL)
 				return NULL;
 			ob->ob_size = n;
-			for (i = 0; i < size; i++)
-				ob->ob_digit[i] = r_short(p);
+			for (i = 0; i < size; i++) {
+				int digit = r_short(p);
+				if (digit < 0) {
+					Py_DECREF(ob);
+					PyErr_SetString(PyExc_ValueError,
+							"bad marshal data");
+					return NULL;
+				}
+				ob->ob_digit[i] = digit;
+			}
 			return (PyObject *)ob;
 		}
 
@@ -440,7 +450,7 @@ r_object(RFILE *p)
 			char buf[256];
 			double dx;
 			n = r_byte(p);
-			if (r_string(buf, (int)n, p) != n) {
+			if (n == EOF || r_string(buf, (int)n, p) != n) {
 				PyErr_SetString(PyExc_EOFError,
 					"EOF read where object expected");
 				return NULL;
@@ -458,7 +468,7 @@ r_object(RFILE *p)
 			char buf[256];
 			Py_complex c;
 			n = r_byte(p);
-			if (r_string(buf, (int)n, p) != n) {
+			if (n == EOF || r_string(buf, (int)n, p) != n) {
 				PyErr_SetString(PyExc_EOFError,
 					"EOF read where object expected");
 				return NULL;
@@ -468,7 +478,7 @@ r_object(RFILE *p)
 			c.real = atof(buf);
 			PyFPE_END_PROTECT(c)
 			n = r_byte(p);
-			if (r_string(buf, (int)n, p) != n) {
+			if (n == EOF || r_string(buf, (int)n, p) != n) {
 				PyErr_SetString(PyExc_EOFError,
 					"EOF read where object expected");
 				return NULL;
@@ -535,6 +545,9 @@ r_object(RFILE *p)
 		for (i = 0; i < n; i++) {
 			v2 = r_object(p);
 			if ( v2 == NULL ) {
+				if (!PyErr_Occurred())
+					PyErr_SetString(PyExc_TypeError,
+						"NULL object in marshal data");
 				Py_DECREF(v);
 				v = NULL;
 				break;
@@ -555,6 +568,9 @@ r_object(RFILE *p)
 		for (i = 0; i < n; i++) {
 			v2 = r_object(p);
 			if ( v2 == NULL ) {
+				if (!PyErr_Occurred())
+					PyErr_SetString(PyExc_TypeError,
+						"NULL object in marshal data");
 				Py_DECREF(v);
 				v = NULL;
 				break;
@@ -571,12 +587,16 @@ r_object(RFILE *p)
 			PyObject *key, *val;
 			key = r_object(p);
 			if (key == NULL)
-				break; /* XXX Assume TYPE_NULL, not an error */
+				break;
 			val = r_object(p);
 			if (val != NULL)
 				PyDict_SetItem(v, key, val);
 			Py_DECREF(key);
 			Py_XDECREF(val);
+		}
+		if (PyErr_Occurred()) {
+			Py_DECREF(v);
+			v = NULL;
 		}
 		return v;
 
@@ -592,29 +612,16 @@ r_object(RFILE *p)
 			int nlocals = r_long(p);
 			int stacksize = r_long(p);
 			int flags = r_long(p);
-			PyObject *code = NULL;
-			PyObject *consts = NULL;
-			PyObject *names = NULL;
-			PyObject *varnames = NULL;
-			PyObject *freevars = NULL;
-			PyObject *cellvars = NULL;
-			PyObject *filename = NULL;
-			PyObject *name = NULL;
-			int firstlineno = 0;
-			PyObject *lnotab = NULL;
-
-			code = r_object(p);
-			if (code) consts = r_object(p);
-			if (consts) names = r_object(p);
-			if (names) varnames = r_object(p);
-			if (varnames) freevars = r_object(p);
-			if (freevars) cellvars = r_object(p);
-			if (cellvars) filename = r_object(p);
-			if (filename) name = r_object(p);
-			if (name) {
-				firstlineno = r_long(p);
-				lnotab = r_object(p);
-			}
+			PyObject *code = r_object(p);
+			PyObject *consts = r_object(p);
+			PyObject *names = r_object(p);
+			PyObject *varnames = r_object(p);
+			PyObject *freevars = r_object(p);
+			PyObject *cellvars = r_object(p);
+			PyObject *filename = r_object(p);
+			PyObject *name = r_object(p);
+			int firstlineno = r_long(p);
+			PyObject *lnotab = r_object(p);
 
 			if (!PyErr_Occurred()) {
 				v = (PyObject *) PyCode_New(
@@ -645,6 +652,20 @@ r_object(RFILE *p)
 		return NULL;
 
 	}
+}
+
+PyObject *
+read_object(RFILE *p)
+{
+	PyObject *v;
+	if (PyErr_Occurred()) {
+		fprintf(stderr, "XXX readobject called with exception set\n");
+		return NULL;
+	}
+	v = r_object(p);
+	if (v == NULL && !PyErr_Occurred())
+		PyErr_SetString(PyExc_TypeError, "NULL object in marshal data");
+	return v;
 }
 
 int
@@ -693,10 +714,6 @@ PyMarshal_ReadLastObjectFromFile(FILE *fp)
 #ifdef HAVE_FSTAT
 	off_t filesize;
 #endif
-	if (PyErr_Occurred()) {
-		fprintf(stderr, "XXX rd_object called with exception set\n");
-		return NULL;
-	}
 #ifdef HAVE_FSTAT
 	filesize = getfilesize(fp);
 	if (filesize > 0) {
@@ -730,27 +747,18 @@ PyObject *
 PyMarshal_ReadObjectFromFile(FILE *fp)
 {
 	RFILE rf;
-	if (PyErr_Occurred()) {
-		fprintf(stderr, "XXX rd_object called with exception set\n");
-		return NULL;
-	}
 	rf.fp = fp;
-	return r_object(&rf);
+	return read_object(&rf);
 }
 
 PyObject *
 PyMarshal_ReadObjectFromString(char *str, int len)
 {
 	RFILE rf;
-	if (PyErr_Occurred()) {
-		fprintf(stderr, "XXX rds_object called with exception set\n");
-		return NULL;
-	}
 	rf.fp = NULL;
-	rf.str = NULL;
 	rf.ptr = str;
 	rf.end = str + len;
-	return r_object(&rf);
+	return read_object(&rf);
 }
 
 PyObject *
@@ -816,7 +824,6 @@ marshal_load(PyObject *self, PyObject *args)
 {
 	RFILE rf;
 	PyObject *f;
-	PyObject *v;
 	if (!PyArg_ParseTuple(args, "O:load", &f))
 		return NULL;
 	if (!PyFile_Check(f)) {
@@ -825,15 +832,7 @@ marshal_load(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	rf.fp = PyFile_AsFile(f);
-	rf.str = NULL;
-	rf.ptr = rf.end = NULL;
-	PyErr_Clear();
-	v = r_object(&rf);
-	if (PyErr_Occurred()) {
-		Py_XDECREF(v);
-		v = NULL;
-	}
-	return v;
+	return read_object(&rf);
 }
 
 static PyObject *
@@ -849,22 +848,14 @@ static PyObject *
 marshal_loads(PyObject *self, PyObject *args)
 {
 	RFILE rf;
-	PyObject *v;
 	char *s;
 	int n;
 	if (!PyArg_ParseTuple(args, "s#:loads", &s, &n))
 		return NULL;
 	rf.fp = NULL;
-	rf.str = args;
 	rf.ptr = s;
 	rf.end = s + n;
-	PyErr_Clear();
-	v = r_object(&rf);
-	if (PyErr_Occurred()) {
-		Py_XDECREF(v);
-		v = NULL;
-	}
-	return v;
+	return read_object(&rf);
 }
 
 static PyMethodDef marshal_methods[] = {

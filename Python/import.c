@@ -706,12 +706,12 @@ read_compiled_module(char *cpathname, FILE *fp)
 	PyObject *co;
 
 	co = PyMarshal_ReadLastObjectFromFile(fp);
-	/* Ugly: rd_object() may return NULL with or without error */
-	if (co == NULL || !PyCode_Check(co)) {
-		if (!PyErr_Occurred())
-			PyErr_Format(PyExc_ImportError,
-			    "Non-code object in %.200s", cpathname);
-		Py_XDECREF(co);
+	if (co == NULL)
+		return NULL;
+	if (!PyCode_Check(co)) {
+		PyErr_Format(PyExc_ImportError,
+			     "Non-code object in %.200s", cpathname);
+		Py_DECREF(co);
 		return NULL;
 	}
 	return (PyCodeObject *)co;
@@ -819,7 +819,7 @@ write_compiled_module(PyCodeObject *co, char *cpathname, long mtime)
 	/* First write a 0 for mtime */
 	PyMarshal_WriteLongToFile(0L, fp);
 	PyMarshal_WriteObjectToFile((PyObject *)co, fp);
-	if (ferror(fp)) {
+	if (fflush(fp) != 0 || ferror(fp)) {
 		if (Py_VerboseFlag)
 			PySys_WriteStderr("# can't write %s\n", cpathname);
 		/* Don't keep partial file */
