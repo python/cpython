@@ -633,8 +633,8 @@ int _PyUnicode_IsNumeric(register const Py_UNICODE ch)
 
 #ifndef WANT_WCTYPE_FUNCTIONS
 
-/* Returns 1 for Unicode characters having the type 'WS', 'B' or 'S',
-   0 otherwise. */
+/* Returns 1 for Unicode characters having the bidirectional type
+   'WS', 'B' or 'S' or the category 'Zs', 0 otherwise. */
 
 int _PyUnicode_IsWhitespace(register const Py_UNICODE ch)
 {
@@ -649,6 +649,8 @@ int _PyUnicode_IsWhitespace(register const Py_UNICODE ch)
     case 0x001E: /* RECORD SEPARATOR */
     case 0x001F: /* UNIT SEPARATOR */
     case 0x0020: /* SPACE */
+    case 0x0085: /* NEXT LINE */
+    case 0x00A0: /* NO-BREAK SPACE */
     case 0x1680: /* OGHAM SPACE MARK */
     case 0x2000: /* EN QUAD */
     case 0x2001: /* EM QUAD */
@@ -661,7 +663,9 @@ int _PyUnicode_IsWhitespace(register const Py_UNICODE ch)
     case 0x2008: /* PUNCTUATION SPACE */
     case 0x2009: /* THIN SPACE */
     case 0x200A: /* HAIR SPACE */
+    case 0x200B: /* ZERO WIDTH SPACE */
     case 0x2028: /* LINE SEPARATOR */
+    case 0x2029: /* PARAGRAPH SEPARATOR */
     case 0x202F: /* NARROW NO-BREAK SPACE */
     case 0x3000: /* IDEOGRAPHIC SPACE */
 	return 1;
