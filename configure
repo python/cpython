@@ -18884,7 +18884,7 @@ _ACEOF
 
   # wchar_t is only usable if it maps to an unsigned type
   if test "$unicode_size" = "$ac_cv_sizeof_wchar_t" \
-          -a "$ac_cv_wchar_t_signed" == "no"
+          -a "$ac_cv_wchar_t_signed" = "no"
   then
     PY_UNICODE_TYPE="wchar_t"
 
