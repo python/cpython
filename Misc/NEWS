@@ -318,7 +318,7 @@ Extension modules
   is now named bsddb185.
 
 - unicodedata was updated to Unicode 3.2. In now also supports names
-  for Hangul syllables.
+  for Hangul syllables and CJK unified ideographs.
 
 - resource.getrlimit() now returns longs instead of ints.
 

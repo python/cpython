@@ -348,6 +348,16 @@ _getucname(Py_UCS4 code, char* buffer, int buflen)
 	return 1;
     }
 
+    if ((0x3400 <= code && code <= 0x4DB5) ||  /* CJK Ideograph Extension A */
+        (0x4E00 <= code && code <= 0x9FA5) ||  /* CJK Ideograph */
+        (0x20000 <= code && code <= 0x2A6D6)) {/* CJK Ideograph Extension B */
+        if (buflen < 28)
+            /* Worst case: CJK UNIFIED IDEOGRAPH-20000 */
+            return 0;
+        sprintf(buffer, "CJK UNIFIED IDEOGRAPH-%X", code);
+        return 1;
+    }
+
     if (code >= 0x110000)
         return 0;
 
@@ -449,6 +459,30 @@ _getcode(const char* name, int namelen, Py_UCS4* code)
 	    *code = SBase + (L*VCount+V)*TCount + T;
 	    return 1;
 	}
+        /* Otherwise, it's an illegal syllable name. */
+        return 0;
+    }
+
+    /* Check for unified ideographs. */
+    if (strncmp(name, "CJK UNIFIED IDEOGRAPH-", 22) == 0) {
+        /* Four or five hexdigits must follow. */
+        v = 0;
+        name += 22;
+        namelen -= 22;
+        if (namelen != 4 && namelen != 5)
+            return 0;
+        while (namelen--) {
+            v *= 16;
+            if (*name >= '0' && *name <= '9')
+                v += *name - '0';
+            else if (*name >= 'A' && *name <= 'F')
+                v += *name - 'A' + 10;
+            else
+                return 0;
+            name++;
+        }
+        *code = v;
+        return 1;
     }
 
     /* the following is the same as python's dictionary lookup, with
@@ -535,7 +569,11 @@ unicodedata_lookup(PyObject* self, PyObject* args)
         return NULL;
 
     if (!_getcode(name, namelen, &code)) {
-        PyErr_SetString(PyExc_KeyError, "undefined character name");
+        char fmt[] = "undefined character name '%s'";
+        char *buf = PyMem_MALLOC(sizeof(fmt) + namelen);
+        sprintf(buf, fmt, name);
+        PyErr_SetString(PyExc_KeyError, buf);
+        PyMem_FREE(buf);
         return NULL;
     }
 

@@ -80,16 +80,28 @@ else:
     raise AssertionError, "Found name for U+D7A4"
 print "done."
 
-print "Testing code to name mapping for all characters....",
+print "Testing names of CJK unified ideographs....",
+exec r"""
+verify(u"\N{CJK UNIFIED IDEOGRAPH-3400}" == u"\u3400")
+verify(u"\N{CJK UNIFIED IDEOGRAPH-4DB5}" == u"\u4db5")
+verify(u"\N{CJK UNIFIED IDEOGRAPH-4E00}" == u"\u4e00")
+verify(u"\N{CJK UNIFIED IDEOGRAPH-9FA5}" == u"\u9fa5")
+verify(u"\N{CJK UNIFIED IDEOGRAPH-20000}" == u"\U00020000")
+verify(u"\N{CJK UNIFIED IDEOGRAPH-2A6D6}" == u"\U0002a6d6")
+"""
+print "done."
+
+print "Testing code to name mapping for all BMP characters....",
 count = 0
-for code in range(65536):
+for code in range(0x10000):
     try:
         char = unichr(code)
         name = unicodedata.name(char)
-        verify(unicodedata.lookup(name) == char)
-        count += 1
     except (KeyError, ValueError):
         pass
+    else:
+        verify(unicodedata.lookup(name) == char)
+        count += 1
 print "done."
 
 print "Found", count, "characters in the unicode name database"
