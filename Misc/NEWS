@@ -27,6 +27,9 @@ Extension modules
 Library
 -------
 
+- Bug #778964:  random.seed() now uses fractional seconds so that
+  rapid successive, seeding calls will produce different sequences.
+
 - Bug #777664: Add Tkconstants.HIDDEN.
 
 - Bug #781065: test_normalization is updated to the current
