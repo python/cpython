@@ -107,14 +107,6 @@ typedef FARPROC dl_funcptr;
 #define USE_DL
 #endif
 
-#ifdef __powerc
-#define USE_MAC_DYNAMIC_LOADING
-#endif
-
-#ifdef __CFM68K__
-#define USE_MAC_DYNAMIC_LOADING
-#endif
-
 #ifdef USE_MAC_DYNAMIC_LOADING
 #define DYNAMIC_LINK
 #define SHORT_EXT ".slb"
