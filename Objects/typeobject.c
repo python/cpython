@@ -303,12 +303,15 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
 	return r;
 
   bail:
+	Py_DECREF(type->tp_bases);
+	Py_DECREF(type->tp_base);
+	if (type->tp_mro != old_mro) {
+		Py_DECREF(type->tp_mro);
+	}
+
 	type->tp_bases = old_bases;
 	type->tp_base = old_base;
 	type->tp_mro = old_mro;
-
-	Py_DECREF(value);
-	Py_DECREF(new_base);
 
 	return -1;
 }
