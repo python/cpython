@@ -21,6 +21,7 @@ PyExc_NotImplementedError
 PyExc_SyntaxError
 PyExc_SystemError
 PyExc_SystemExit
+PyExc_UnboundLocalError
 PyExc_TypeError
 PyExc_ValueError
 PyExc_ZeroDivisionError
@@ -346,6 +347,7 @@ PyCFunction_GetFunction
 PyCFunction_New
 PyModule_Type
 _PyModule_Clear
+PyModule_GetFilename
 PyModule_GetName
 PyModule_GetDict
 PyModule_New
@@ -541,6 +543,7 @@ PyMac_Initialize
 PyMac_InitApplet
 getfiletype
 setfiletype
+main
 PyMac_AddLibResources
 __initialize_with_resources
 getbootvol
@@ -584,6 +587,7 @@ _PyImport_Inittab
 CtlObj_chain
 Control_Type
 initCtl
+CtlObj_NewUnmanaged
 CtlObj_WhichControl
 CtlObj_Convert
 CtlObj_New
@@ -622,6 +626,12 @@ initWin
 WinObj_WhichWindow
 WinObj_Convert
 WinObj_New
+PyBuffer_Type
+PyBuffer_New
+PyBuffer_FromReadWriteMemory
+PyBuffer_FromMemory
+PyBuffer_FromReadWriteObject
+PyBuffer_FromObject
 uADSPCompletion
 __vt__21AppleTalkSocketDomain		# AppleTalkSocketDomain::__vt
 __vt__10ADSPSocket		# ADSPSocket::__vt
@@ -1207,7 +1217,6 @@ __dt__10UnixSocketFv		# UnixSocket::~UnixSocket()
 __ct__10UnixSocketFs		# UnixSocket::UnixSocket(short)
 __ct__14UnixSocketAddrF9TFileSpec		# UnixSocketAddr::UnixSocketAddr(TFileSpec)
 GUSISetupMSLSIOUX__Fv		# GUSISetupMSLSIOUX()
-fwalk
 fdopen
 __close_file
 __position_file
@@ -1263,9 +1272,6 @@ __nwa__FUl		# operator new[](unsigned long)
 __dl__FPv		# operator delete(void*)
 __nw__FUlRCQ23std9nothrow_t		# operator new(unsigned long,const std::nothrow_t&)
 __nw__FUl		# operator new(unsigned long)
-_prealloc_newpool__3stdFUl		# std::_prealloc_newpool(unsigned long)
-_set_newnonptrmax__3stdFUl		# std::_set_newnonptrmax(unsigned long)
-_set_newpoolsize__3stdFUl		# std::_set_newpoolsize(unsigned long)
 __throws_bad_alloc__3std		# std::__throws_bad_alloc
 __vt__Q23std9bad_alloc		# std::bad_alloc::__vt
 __new_handler__3std		# std::__new_handler
@@ -1276,6 +1282,8 @@ set_new_handler__3stdFPFv_v		# std::set_new_handler(void (*)(void))
 __throw_bad_alloc__3stdFv		# std::__throw_bad_alloc()
 __dt__Q23std9bad_allocFv		# std::bad_alloc::~bad_alloc()
 qd
+__vec_longjmp
+longjmp
 exit
 abort
 __console_exit
@@ -1286,10 +1294,16 @@ exit
 __atexit
 atexit
 abort
-__malloc_pool
+fix_start
+vec_free
+vec_realloc
+vec_calloc
+vec_malloc
+__pool_free_all
+__msize
+deallocate_from_fixed_pools
+allocate_from_fixed_pools
 __files
-__num_to_file
-__file_to_num
 __flush_line_buffered_output_files
 __flush_all
 __close_all
@@ -1413,22 +1427,16 @@ perror
 ferror
 feof
 clearerr
-__pool_free_all
-__pool_free
-__pool_realloc
-__pool_alloc_clear
-__pool_alloc
-__pool_preassign
-__pool_preallocate
-__init_pool_obj
 sprintf
 snprintf
 vsprintf
 vsnprintf
-printf
+vfprintf
 vprintf
 fprintf
-vfprintf
+printf
+__StringWrite
+__FileWrite
 qsort
 srand
 rand
@@ -1436,7 +1444,8 @@ sscanf
 __vsscanf
 scanf
 fscanf
-__vfscanf
+__StringRead
+__FileRead
 raise
 signal
 __strerror
@@ -1488,14 +1497,12 @@ difftime
 clock
 __leap_year
 ccommand
-clrscr
 __close_console
 __write_console
 __read_console
-__end_critical_region
-__begin_critical_region
 __kill_critical_regions
 __init_critical_regions
+umask
 __rename_file
 __delete_file
 __temp_file_name
@@ -1569,18 +1576,21 @@ wmemchr
 wmemset
 wmemmove
 wmemcpy
-swprintf
-vwprintf
 vswprintf
-wprintf
-fwprintf
+swprintf
 vfwprintf
+vwprintf
+fwprintf
+wprintf
+__wStringWrite
+__wFileWrite
 swscanf
 __vswscanf
 vwscanf
 wscanf
 fwscanf
-__vfwscanf
+__wStringRead
+__wFileRead
 wcsstr
 wcstok
 wcscspn
@@ -1714,7 +1724,7 @@ llrint
 lrint
 scalbln
 scalbn
-SIOUXclrscr
+clrscr
 getch
 kbhit
 SIOUXSetTitle
