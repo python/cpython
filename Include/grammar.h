@@ -91,24 +91,24 @@ typedef struct {
 
 /* FUNCTIONS */
 
-grammar *newgrammar PROTO((int start));
-dfa *adddfa PROTO((grammar *g, int type, char *name));
-int addstate PROTO((dfa *d));
-void addarc PROTO((dfa *d, int from, int to, int lbl));
-dfa *finddfa PROTO((grammar *g, int type));
-char *typename PROTO((grammar *g, int lbl));
+grammar *newgrammar Py_PROTO((int start));
+dfa *adddfa Py_PROTO((grammar *g, int type, char *name));
+int addstate Py_PROTO((dfa *d));
+void addarc Py_PROTO((dfa *d, int from, int to, int lbl));
+dfa *PyGrammar_FindDFA Py_PROTO((grammar *g, int type));
+char *typename Py_PROTO((grammar *g, int lbl));
 
-int addlabel PROTO((labellist *ll, int type, char *str));
-int findlabel PROTO((labellist *ll, int type, char *str));
-char *labelrepr PROTO((label *lb));
-void translatelabels PROTO((grammar *g));
+int addlabel Py_PROTO((labellist *ll, int type, char *str));
+int findlabel Py_PROTO((labellist *ll, int type, char *str));
+char *PyGrammar_LabelRepr Py_PROTO((label *lb));
+void translatelabels Py_PROTO((grammar *g));
 
-void addfirstsets PROTO((grammar *g));
+void addfirstsets Py_PROTO((grammar *g));
 
-void addaccelerators PROTO((grammar *g));
+void PyGrammar_AddAccelerators Py_PROTO((grammar *g));
 
-void printgrammar PROTO((grammar *g, FILE *fp));
-void printnonterminals PROTO((grammar *g, FILE *fp));
+void printgrammar Py_PROTO((grammar *g, FILE *fp));
+void printnonterminals Py_PROTO((grammar *g, FILE *fp));
 
 #ifdef __cplusplus
 }

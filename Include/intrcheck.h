@@ -28,8 +28,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-extern int intrcheck PROTO((void));
-extern void initintr PROTO((void));
+extern int PyOS_InterruptOccurred Py_PROTO((void));
+extern void PyOS_InitInterrupts Py_PROTO((void));
 
 #ifdef __cplusplus
 }

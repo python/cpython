@@ -49,7 +49,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "myproto.h"
 #include "mymalloc.h"
 
-extern void fatal PROTO((char *));
+extern void Py_FatalError Py_PROTO((char *));
 
 #ifdef __cplusplus
 }

@@ -30,47 +30,45 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Error handling definitions */
 
-void err_set PROTO((object *));
-void err_setval PROTO((object *, object *));
-void err_restore PROTO((object *, object *, object *));
-void err_setstr PROTO((object *, char *));
-object *err_occurred PROTO((void));
-void err_fetch PROTO((object **, object **, object **));
-void err_clear PROTO((void));
+void PyErr_SetNone Py_PROTO((PyObject *));
+void PyErr_SetObject Py_PROTO((PyObject *, PyObject *));
+void PyErr_SetString Py_PROTO((PyObject *, char *));
+PyObject *PyErr_Occurred Py_PROTO((void));
+void PyErr_Clear Py_PROTO((void));
+void PyErr_Fetch Py_PROTO((PyObject **, PyObject **, PyObject **));
+void PyErr_Restore Py_PROTO((PyObject *, PyObject *, PyObject *));
 
 /* Predefined exceptions */
 
-extern DL_IMPORT object *AccessError;
-extern DL_IMPORT object *AttributeError;
-extern DL_IMPORT object *ConflictError;
-extern DL_IMPORT object *EOFError;
-extern DL_IMPORT object *IOError;
-extern DL_IMPORT object *ImportError;
-extern DL_IMPORT object *IndexError;
-extern DL_IMPORT object *KeyError;
-extern DL_IMPORT object *KeyboardInterrupt;
-extern DL_IMPORT object *MemoryError;
-extern DL_IMPORT object *NameError;
-extern DL_IMPORT object *OverflowError;
-extern DL_IMPORT object *RuntimeError;
-extern DL_IMPORT object *SyntaxError;
-extern DL_IMPORT object *SystemError;
-extern DL_IMPORT object *SystemExit;
-extern DL_IMPORT object *TypeError;
-extern DL_IMPORT object *ValueError;
-extern DL_IMPORT object *ZeroDivisionError;
+extern DL_IMPORT PyObject *PyExc_AccessError;
+extern DL_IMPORT PyObject *PyExc_AttributeError;
+extern DL_IMPORT PyObject *PyExc_ConflictError;
+extern DL_IMPORT PyObject *PyExc_EOFError;
+extern DL_IMPORT PyObject *PyExc_IOError;
+extern DL_IMPORT PyObject *PyExc_ImportError;
+extern DL_IMPORT PyObject *PyExc_IndexError;
+extern DL_IMPORT PyObject *PyExc_KeyError;
+extern DL_IMPORT PyObject *PyExc_KeyboardInterrupt;
+extern DL_IMPORT PyObject *PyExc_MemoryError;
+extern DL_IMPORT PyObject *PyExc_NameError;
+extern DL_IMPORT PyObject *PyExc_OverflowError;
+extern DL_IMPORT PyObject *PyExc_RuntimeError;
+extern DL_IMPORT PyObject *PyExc_SyntaxError;
+extern DL_IMPORT PyObject *PyExc_SystemError;
+extern DL_IMPORT PyObject *PyExc_SystemExit;
+extern DL_IMPORT PyObject *PyExc_TypeError;
+extern DL_IMPORT PyObject *PyExc_ValueError;
+extern DL_IMPORT PyObject *PyExc_ZeroDivisionError;
 
 /* Convenience functions */
 
-extern int err_badarg PROTO((void));
-extern object *err_nomem PROTO((void));
-extern object *err_errno PROTO((object *));
+extern int PyErr_BadArgument Py_PROTO((void));
+extern PyObject *PyErr_NoMemory Py_PROTO((void));
+extern PyObject *PyErr_SetFromErrno Py_PROTO((PyObject *));
 
-extern void err_badcall PROTO((void));
+extern void PyErr_BadInternalCall Py_PROTO((void));
 
-extern object *err_getexc PROTO((void));
-
-extern int sigcheck PROTO((void)); /* In sigcheck.c or signalmodule.c */
+extern int sigcheck Py_PROTO((void)); /* In sigcheck.c or signalmodule.c */
 
 #ifdef __cplusplus
 }

@@ -30,19 +30,19 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Interface to random parts in ceval.c */
 
-object *call_object PROTO((object *, object *));
+PyObject *PyEval_CallObject Py_PROTO((PyObject *, PyObject *));
 
-object *getbuiltins PROTO((void));
-object *getglobals PROTO((void));
-object *getlocals PROTO((void));
-object *getowner PROTO((void));
-object *getframe PROTO((void));
-int getrestricted PROTO((void));
+PyObject *PyEval_GetBuiltins Py_PROTO((void));
+PyObject *PyEval_GetGlobals Py_PROTO((void));
+PyObject *PyEval_GetLocals Py_PROTO((void));
+PyObject *PyEval_GetOwner Py_PROTO((void));
+PyObject *PyEval_GetFrame Py_PROTO((void));
+int PyEval_GetRestricted Py_PROTO((void));
 
-void flushline PROTO((void));
+void Py_FlushLine Py_PROTO((void));
 
-int Py_AddPendingCall PROTO((int (*func) PROTO((ANY *)), ANY *arg));
-int Py_MakePendingCalls PROTO((void));
+int Py_AddPendingCall Py_PROTO((int (*func) Py_PROTO((ANY *)), ANY *arg));
+int Py_MakePendingCalls Py_PROTO((void));
 
 
 /* Interface for threads.
@@ -52,62 +52,64 @@ int Py_MakePendingCalls PROTO((void));
    threads to run as follows:
 
 	...preparations here...
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	...blocking system call here...
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	...interpret result here...
 
-   The BGN_SAVE/END_SAVE pair expands to a {}-surrounded block.
+   The Py_BEGIN_ALLOW_THREADS/Py_END_ALLOW_THREADS pair expands to a
+   {}-surrounded block.
    To leave the block in the middle (e.g., with return), you must insert
    a line containing RET_SAVE before the return, e.g.
 
 	if (...premature_exit...) {
-		RET_SAVE
-		err_errno(IOError);
+		Py_BLOCK_THREADS
+		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
 	}
 
    An alternative is:
 
-	RET_SAVE
+	Py_BLOCK_THREADS
 	if (...premature_exit...) {
-		err_errno(IOError);
+		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
 	}
-	RES_SAVE
+	Py_UNBLOCK_THREADS
 
    For convenience, that the value of 'errno' is restored across
-   END_SAVE and RET_SAVE.
+   Py_END_ALLOW_THREADS and RET_SAVE.
 
-   WARNING: NEVER NEST CALLS TO BGN_SAVE AND END_SAVE!!!
+   WARNING: NEVER NEST CALLS TO Py_BEGIN_ALLOW_THREADS AND
+   Py_END_ALLOW_THREADS!!!
 
-   The function init_save_thread() should be called only from
+   The function PyEval_InitThreads() should be called only from
    initthread() in "threadmodule.c".
 
    Note that not yet all candidates have been converted to use this
    mechanism!
 */
 
-extern void init_save_thread PROTO((void));
-extern object *save_thread PROTO((void));
-extern void restore_thread PROTO((object *));
+extern void PyEval_InitThreads Py_PROTO((void));
+extern PyObject *PyEval_SaveThread Py_PROTO((void));
+extern void PyEval_RestoreThread Py_PROTO((PyObject *));
 
 #ifdef WITH_THREAD
 
-#define BGN_SAVE { \
-			object *_save; \
-			_save = save_thread();
-#define RET_SAVE	restore_thread(_save);
-#define RES_SAVE	_save = save_thread();
-#define END_SAVE	restore_thread(_save); \
+#define Py_BEGIN_ALLOW_THREADS { \
+			PyObject *_save; \
+			_save = PyEval_SaveThread();
+#define Py_BLOCK_THREADS	PyEval_RestoreThread(_save);
+#define Py_UNBLOCK_THREADS	_save = PyEval_SaveThread();
+#define Py_END_ALLOW_THREADS	PyEval_RestoreThread(_save); \
 		 }
 
 #else /* !WITH_THREAD */
 
-#define BGN_SAVE {
-#define RET_SAVE
-#define RES_SAVE
-#define END_SAVE }
+#define Py_BEGIN_ALLOW_THREADS {
+#define Py_BLOCK_THREADS
+#define Py_UNBLOCK_THREADS
+#define Py_END_ALLOW_THREADS }
 
 #endif /* !WITH_THREAD */
 

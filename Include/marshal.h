@@ -30,14 +30,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Interface for marshal.c */
 
-void wr_long PROTO((long, FILE *));
-void wr_short PROTO((int, FILE *));
-void wr_object PROTO((object *, FILE *));
+void PyMarshal_WriteLongToFile Py_PROTO((long, FILE *));
+void wr_short Py_PROTO((int, FILE *));
+void PyMarshal_WriteObjectToFile Py_PROTO((PyObject *, FILE *));
 
-long rd_long PROTO((FILE *));
-int rd_short PROTO((FILE *));
-object *rd_object PROTO((FILE *));
-object *rds_object PROTO((char *, int));
+long PyMarshal_ReadLongFromFile Py_PROTO((FILE *));
+int rd_short Py_PROTO((FILE *));
+PyObject *PyMarshal_ReadObjectFromFile Py_PROTO((FILE *));
+PyObject *PyMarshal_ReadObjectFromString Py_PROTO((char *, int));
 
 #ifdef __cplusplus
 }

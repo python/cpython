@@ -61,12 +61,12 @@ typedef long stwodigits; /* signed variant of twodigits */
    so that ob_digit[0] ... ob_digit[abs(ob_size)-1] are actually available. */
 
 struct _longobject {
-	OB_HEAD
+	PyObject_HEAD
 	int ob_size; /* XXX Hack! newvarobj() stores it as unsigned! */
 	digit ob_digit[1];
 };
 
-longobject *alloclongobject PROTO((int));
+PyLongObject *_PyLong_New Py_PROTO((int));
 
 #ifdef __cplusplus
 }

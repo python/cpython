@@ -29,16 +29,21 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 #ifdef HAVE_PROTOTYPES
-#define PROTO(x) x
+#define Py_PROTO(x) x
 #else
-#define PROTO(x) ()
+#define Py_PROTO(x) ()
 #endif
 
-#ifndef FPROTO
-#define FPROTO(x) PROTO(x)
+#ifndef Py_FPROTO
+#define Py_FPROTO(x) Py_PROTO(x)
 #endif
 
 #ifdef __cplusplus
 }
 #endif
+
+#ifndef Py_USE_NEW_NAMES
+#include "rename2.h"
+#endif
+
 #endif /* !Py_PROTO_H */

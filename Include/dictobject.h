@@ -32,19 +32,19 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "mappingobject.h"
 
-#define is_dictobject(op) is_mappingobject(op)
+#define PyDict_Check(op) is_mappingobject(op)
 
-#define newdictobject newmappingobject
+#define newdictobject PyDict_New
 
-extern object *dictlookup PROTO((object *dp, char *key));
-extern int dictinsert PROTO((object *dp, char *key, object *item));
-extern int dictremove PROTO((object *dp, char *key));
+extern PyObject *PyDict_GetItemString Py_PROTO((PyObject *dp, char *key));
+extern int PyDict_SetItemString Py_PROTO((PyObject *dp, char *key, PyObject *item));
+extern int PyDict_DelItemString Py_PROTO((PyObject *dp, char *key));
 
-#define getdictkeys getmappingkeys
+#define getdictkeys PyDict_Keys
 
-#define dict2lookup mappinglookup
-#define dict2insert mappinginsert
-#define dict2remove mappingremove
+#define dict2lookup PyDict_GetItem
+#define dict2insert PyDict_SetItem
+#define dict2remove PyDict_DelItem
 
 #ifdef __cplusplus
 }

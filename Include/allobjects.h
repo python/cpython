@@ -49,6 +49,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #include "myproto.h"
 
@@ -76,9 +77,17 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 #include "ceval.h"
 
-extern void fatal PROTO((char *));
+extern void Py_FatalError Py_PROTO((char *));
+
+#define PyArg_GetInt(v, a)	PyArg_Parse((v), "i", (a))
+#define PyArg_NoArgs(v)		PyArg_Parse(v, "")
 
 #ifdef __cplusplus
 }
 #endif
+
+#ifndef Py_USE_NEW_NAMES
+#include "rename2.h"
+#endif
+
 #endif /* !Py_ALLOBJECTS_H */

@@ -31,24 +31,24 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Function object interface */
 
 typedef struct {
-	OB_HEAD
-	object *func_code;
-	object *func_globals;
-	object *func_name;
+	PyObject_HEAD
+	PyObject *func_code;
+	PyObject *func_globals;
+	PyObject *func_name;
 	int	func_argcount;
-	object *func_argdefs;
-	object *func_doc;
-} funcobject;
+	PyObject *func_argdefs;
+	PyObject *func_doc;
+} PyFunctionObject;
 
-extern DL_IMPORT typeobject Functype;
+extern DL_IMPORT PyTypeObject PyFunction_Type;
 
-#define is_funcobject(op) ((op)->ob_type == &Functype)
+#define PyFunction_Check(op) ((op)->ob_type == &PyFunction_Type)
 
-extern object *newfuncobject PROTO((object *, object *));
-extern object *getfunccode PROTO((object *));
-extern object *getfuncglobals PROTO((object *));
-extern object *getfuncargstuff PROTO((object *, int *));
-extern int     setfuncargstuff PROTO((object *, int, object *));
+extern PyObject *PyFunction_New Py_PROTO((PyObject *, PyObject *));
+extern PyObject *PyFunction_GetCode Py_PROTO((PyObject *));
+extern PyObject *PyFunction_GetGlobals Py_PROTO((PyObject *));
+extern PyObject *getfuncargstuff Py_PROTO((PyObject *, int *));
+extern int     setfuncargstuff Py_PROTO((PyObject *, int, PyObject *));
 
 #ifdef __cplusplus
 }

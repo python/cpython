@@ -34,8 +34,8 @@ Range objects behave like the corresponding tuple objects except that
 they are represented by a start, stop, and step datamembers.
 */
 
-extern DL_IMPORT typeobject Rangetype;
+extern DL_IMPORT PyTypeObject Rangetype;
 
 #define is_rangeobject(op) ((op)->ob_type == &Rangetype)
 
-extern object *newrangeobject PROTO((long, long, long, int));
+extern PyObject *newrangeobject Py_PROTO((long, long, long, int));

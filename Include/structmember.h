@@ -46,7 +46,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* An array of memberlist structures defines the name, type and offset
    of selected members of a C structure.  These can be read by
-   getmember() and set by setmember() (except if their READONLY flag
+   PyMember_Get() and set by PyMember_Set() (except if their READONLY flag
    is set).  The array must be terminated with an entry whose name
    pointer is NULL. */
 
@@ -85,8 +85,8 @@ struct memberlist {
 #define READONLY	1
 #define RO		READONLY		/* Shorthand */
 
-object *getmember PROTO((char *, struct memberlist *, char *));
-int setmember PROTO((char *, struct memberlist *, char *, object *));
+PyObject *PyMember_Get Py_PROTO((char *, struct memberlist *, char *));
+int PyMember_Set Py_PROTO((char *, struct memberlist *, char *, PyObject *));
 
 #ifdef __cplusplus
 }

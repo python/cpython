@@ -65,12 +65,12 @@ object can be simply a pointer -- moving an object would require
 updating all the pointers, and changing an object's size would require
 moving it if there was another object right next to it.)
 
-Objects are always accessed through pointers of the type 'object *'.
-The type 'object' is a structure that only contains the reference count
+Objects are always accessed through pointers of the type 'PyObject *'.
+The type 'PyObject' is a structure that only contains the reference count
 and the type pointer.  The actual memory allocated for an object
 contains other data that can only be accessed after casting the pointer
 to a pointer to a longer structure type.  This longer type must start
-with the reference count and type fields; the macro OB_HEAD should be
+with the reference count and type fields; the macro PyObject_HEAD should be
 used for this (to accomodate for future changes).  The implementation
 of a particular object type can cast the object pointer to the proper
 type and back.
@@ -84,36 +84,36 @@ whose size is determined when the object is allocated.
 #ifndef NDEBUG
 
 /* Turn on heavy reference debugging */
-#define TRACE_REFS
+#define Py_TRACE_REFS
 
 /* Turn on reference counting */
-#define REF_DEBUG
+#define Py_REF_DEBUG
 
 #endif /* NDEBUG */
 
-#ifdef TRACE_REFS
-#define OB_HEAD \
+#ifdef Py_TRACE_REFS
+#define PyObject_HEAD \
 	struct _object *_ob_next, *_ob_prev; \
 	int ob_refcnt; \
 	struct _typeobject *ob_type;
-#define OB_HEAD_INIT(type) 0, 0, 1, type,
+#define PyObject_HEAD_INIT(type) 0, 0, 1, type,
 #else
-#define OB_HEAD \
+#define PyObject_HEAD \
 	int ob_refcnt; \
 	struct _typeobject *ob_type;
-#define OB_HEAD_INIT(type) 1, type,
+#define PyObject_HEAD_INIT(type) 1, type,
 #endif
 
-#define OB_VARHEAD \
-	OB_HEAD \
+#define PyObject_VAR_HEAD \
+	PyObject_HEAD \
 	int ob_size; /* Number of items in variable part */
  
 typedef struct _object {
-	OB_HEAD
-} object;
+	PyObject_HEAD
+} PyObject;
 
 typedef struct {
-	OB_VARHEAD
+	PyObject_VAR_HEAD
 } varobject;
 
 
@@ -124,7 +124,7 @@ Type objects contain a string containing the type name (to help somewhat
 in debugging), the allocation parameters (see newobj() and newvarobj()),
 and methods for accessing objects of the type.  Methods are optional,a
 nil pointer meaning that particular kind of access is not available for
-this type.  The DECREF() macro uses the tp_dealloc method without
+this type.  The Py_DECREF() macro uses the tp_dealloc method without
 checking for a nil pointer; it should always be implemented except if
 the implementation can guarantee that the reference count will never
 reach zero (e.g., for type objects).
@@ -133,16 +133,16 @@ NB: the methods for certain type groups are now contained in separate
 method blocks.
 */
 
-typedef object * (*unaryfunc) PROTO((object *));
-typedef object * (*binaryfunc) PROTO((object *, object *));
-typedef object * (*ternaryfunc) PROTO((object *, object *, object *));
-typedef int (*inquiry) PROTO((object *));
-typedef int (*coercion) PROTO((object **, object **));
-typedef object *(*intargfunc) PROTO((object *, int));
-typedef object *(*intintargfunc) PROTO((object *, int, int));
-typedef int(*intobjargproc) PROTO((object *, int, object *));
-typedef int(*intintobjargproc) PROTO((object *, int, int, object *));
-typedef int(*objobjargproc) PROTO((object *, object *, object *));
+typedef PyObject * (*unaryfunc) Py_PROTO((PyObject *));
+typedef PyObject * (*binaryfunc) Py_PROTO((PyObject *, PyObject *));
+typedef PyObject * (*ternaryfunc) Py_PROTO((PyObject *, PyObject *, PyObject *));
+typedef int (*inquiry) Py_PROTO((PyObject *));
+typedef int (*coercion) Py_PROTO((PyObject **, PyObject **));
+typedef PyObject *(*intargfunc) Py_PROTO((PyObject *, int));
+typedef PyObject *(*intintargfunc) Py_PROTO((PyObject *, int, int));
+typedef int(*intobjargproc) Py_PROTO((PyObject *, int, PyObject *));
+typedef int(*intintobjargproc) Py_PROTO((PyObject *, int, int, PyObject *));
+typedef int(*objobjargproc) Py_PROTO((PyObject *, PyObject *, PyObject *));
 
 typedef struct {
 	binaryfunc nb_add;
@@ -168,7 +168,7 @@ typedef struct {
 	unaryfunc nb_float;
 	unaryfunc nb_oct;
 	unaryfunc nb_hex;
-} number_methods;
+} PyNumberMethods;
 
 typedef struct {
 	inquiry sq_length;
@@ -178,24 +178,24 @@ typedef struct {
 	intintargfunc sq_slice;
 	intobjargproc sq_ass_item;
 	intintobjargproc sq_ass_slice;
-} sequence_methods;
+} PySequenceMethods;
 
 typedef struct {
 	inquiry mp_length;
 	binaryfunc mp_subscript;
 	objobjargproc mp_ass_subscript;
-} mapping_methods;
+} PyMappingMethods;
 
-typedef void (*destructor) PROTO((object *));
-typedef int (*printfunc) PROTO((object *, FILE *, int));
-typedef object *(*getattrfunc) PROTO((object *, char *));
-typedef int (*setattrfunc) PROTO((object *, char *, object *));
-typedef int (*cmpfunc) PROTO((object *, object *));
-typedef object *(*reprfunc) PROTO((object *));
-typedef long (*hashfunc) PROTO((object *));
+typedef void (*destructor) Py_PROTO((PyObject *));
+typedef int (*printfunc) Py_PROTO((PyObject *, FILE *, int));
+typedef PyObject *(*getattrfunc) Py_PROTO((PyObject *, char *));
+typedef int (*setattrfunc) Py_PROTO((PyObject *, char *, PyObject *));
+typedef int (*cmpfunc) Py_PROTO((PyObject *, PyObject *));
+typedef PyObject *(*reprfunc) Py_PROTO((PyObject *));
+typedef long (*hashfunc) Py_PROTO((PyObject *));
 
 typedef struct _typeobject {
-	OB_VARHEAD
+	PyObject_VAR_HEAD
 	char *tp_name; /* For printing */
 	int tp_basicsize, tp_itemsize; /* For allocation */
 	
@@ -210,9 +210,9 @@ typedef struct _typeobject {
 	
 	/* Method suites for standard classes */
 	
-	number_methods *tp_as_number;
-	sequence_methods *tp_as_sequence;
-	mapping_methods *tp_as_mapping;
+	PyNumberMethods *tp_as_number;
+	PySequenceMethods *tp_as_sequence;
+	PyMappingMethods *tp_as_mapping;
 
 	/* More standard operations (at end for binary compatibility) */
 
@@ -235,36 +235,36 @@ typedef struct _typeobject {
 	int tp_maxalloc;
 	struct _typeobject *tp_next;
 #endif
-} typeobject;
+} PyTypeObject;
 
-extern DL_IMPORT typeobject Typetype; /* The type of type objects */
+extern DL_IMPORT PyTypeObject PyType_Type; /* The type of type objects */
 
-#define is_typeobject(op) ((op)->ob_type == &Typetype)
+#define PyType_Check(op) ((op)->ob_type == &PyType_Type)
 
 /* Generic operations on objects */
-extern int printobject PROTO((object *, FILE *, int));
-extern object * reprobject PROTO((object *));
-extern object * strobject PROTO((object *));
-extern int cmpobject PROTO((object *, object *));
-extern object *getattr PROTO((object *, char *));
-extern int hasattr PROTO((object *, char *));
-extern object *getattro PROTO((object *, object *));
-extern int setattro PROTO((object *, object *, object *));
-extern long hashobject PROTO((object *));
+extern int PyObject_Print Py_PROTO((PyObject *, FILE *, int));
+extern PyObject * PyObject_Repr Py_PROTO((PyObject *));
+extern PyObject * strobject Py_PROTO((PyObject *));
+extern int PyObject_Compare Py_PROTO((PyObject *, PyObject *));
+extern PyObject *PyObject_GetAttrString Py_PROTO((PyObject *, char *));
+extern int hasattr Py_PROTO((PyObject *, char *));
+extern PyObject *PyObject_GetAttr Py_PROTO((PyObject *, PyObject *));
+extern int PyObject_SetAttr Py_PROTO((PyObject *, PyObject *, PyObject *));
+extern long PyObject_Hash Py_PROTO((PyObject *));
 
 /* Flag bits for printing: */
-#define PRINT_RAW	1	/* No string quotes etc. */
+#define Py_PRINT_RAW	1	/* No string quotes etc. */
 
 /*
 123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
 
-The macros INCREF(op) and DECREF(op) are used to increment or decrement
-reference counts.  DECREF calls the object's deallocator function; for
+The macros Py_INCREF(op) and Py_DECREF(op) are used to increment or decrement
+reference counts.  Py_DECREF calls the object's deallocator function; for
 objects that don't contain references to other objects or heap memory
 this can be the standard function free().  Both macros can be used
 whereever a void expression is allowed.  The argument shouldn't be a
-NIL pointer.  The macro NEWREF(op) is used only to initialize reference
-counts to 1; it is defined here for convenience.
+NIL pointer.  The macro _Py_NewReference(op) is used only to initialize
+reference counts to 1; it is defined here for convenience.
 
 We assume that the reference count field can never overflow; this can
 be proven when the size of the field is the same as the pointer size
@@ -277,65 +277,65 @@ complications in the deallocation function.  (This is actually a
 decision that's up to the implementer of each new type so if you want,
 you can count such references to the type object.)
 
-*** WARNING*** The DECREF macro must have a side-effect-free argument
+*** WARNING*** The Py_DECREF macro must have a side-effect-free argument
 since it may evaluate its argument multiple times.  (The alternative
 would be to mace it a proper function or assign it to a global temporary
 variable first, both of which are slower; and in a multi-threaded
 environment the global variable trick is not safe.)
 */
 
-#ifdef TRACE_REFS
-#ifndef REF_DEBUG
-#define REF_DEBUG
+#ifdef Py_TRACE_REFS
+#ifndef Py_REF_DEBUG
+#define Py_REF_DEBUG
 #endif
 #endif
 
-#ifndef TRACE_REFS
+#ifndef Py_TRACE_REFS
 #ifdef COUNT_ALLOCS
-#define DELREF(op) ((op)->ob_type->tp_free++, (*(op)->ob_type->tp_dealloc)((object *)(op)))
+#define _Py_Dealloc(op) ((op)->ob_type->tp_free++, (*(op)->ob_type->tp_dealloc)((PyObject *)(op)))
 #else
-#define DELREF(op) (*(op)->ob_type->tp_dealloc)((object *)(op))
+#define _Py_Dealloc(op) (*(op)->ob_type->tp_dealloc)((PyObject *)(op))
 #endif
-#define UNREF(op) /*empty*/
+#define _Py_ForgetReference(op) /*empty*/
 #endif
 
 #ifdef COUNT_ALLOCS
-extern void inc_count PROTO((typeobject *));
+extern void inc_count Py_PROTO((PyTypeObject *));
 #endif
 
-#ifdef REF_DEBUG
+#ifdef Py_REF_DEBUG
 extern long ref_total;
-#ifndef TRACE_REFS
+#ifndef Py_TRACE_REFS
 #ifdef COUNT_ALLOCS
-#define NEWREF(op) (inc_count((op)->ob_type), ref_total++, (op)->ob_refcnt = 1)
+#define _Py_NewReference(op) (inc_count((op)->ob_type), ref_total++, (op)->ob_refcnt = 1)
 #else
-#define NEWREF(op) (ref_total++, (op)->ob_refcnt = 1)
+#define _Py_NewReference(op) (ref_total++, (op)->ob_refcnt = 1)
 #endif
 #endif
-#define INCREF(op) (ref_total++, (op)->ob_refcnt++)
-#define DECREF(op) \
+#define Py_INCREF(op) (ref_total++, (op)->ob_refcnt++)
+#define Py_DECREF(op) \
 	if (--ref_total, --(op)->ob_refcnt != 0) \
 		; \
 	else \
-		DELREF(op)
+		_Py_Dealloc(op)
 #else
 #ifdef COUNT_ALLOCS
-#define NEWREF(op) (inc_count((op)->ob_type), (op)->ob_refcnt = 1)
+#define _Py_NewReference(op) (inc_count((op)->ob_type), (op)->ob_refcnt = 1)
 #else
-#define NEWREF(op) ((op)->ob_refcnt = 1)
+#define _Py_NewReference(op) ((op)->ob_refcnt = 1)
 #endif
-#define INCREF(op) ((op)->ob_refcnt++)
-#define DECREF(op) \
+#define Py_INCREF(op) ((op)->ob_refcnt++)
+#define Py_DECREF(op) \
 	if (--(op)->ob_refcnt != 0) \
 		; \
 	else \
-		DELREF(op)
+		_Py_Dealloc(op)
 #endif
 
 /* Macros to use in case the object pointer may be NULL: */
 
-#define XINCREF(op) if ((op) == NULL) ; else INCREF(op)
-#define XDECREF(op) if ((op) == NULL) ; else DECREF(op)
+#define Py_XINCREF(op) if ((op) == NULL) ; else Py_INCREF(op)
+#define Py_XDECREF(op) if ((op) == NULL) ; else Py_DECREF(op)
 
 /* Definition of NULL, so you don't have to include <stdio.h> */
 
@@ -345,20 +345,20 @@ extern long ref_total;
 
 
 /*
-NoObject is an object of undefined type which can be used in contexts
+_Py_NoneStruct is an object of undefined type which can be used in contexts
 where NULL (nil) is not suitable (since NULL often means 'error').
 
-Don't forget to apply INCREF() when returning this value!!!
+Don't forget to apply Py_INCREF() when returning this value!!!
 */
 
-extern DL_IMPORT object NoObject; /* Don't use this directly */
+extern DL_IMPORT PyObject _Py_NoneStruct; /* Don't use this directly */
 
-#define None (&NoObject)
+#define Py_None (&_Py_NoneStruct)
 
 
 /*
 A common programming style in Python requires the forward declaration
-of static, initialized structures, e.g. for a typeobject that is used
+of static, initialized structures, e.g. for a type object that is used
 by the functions whose address must be used in the initializer.
 Some compilers (notably SCO ODT 3.0, I seem to remember early AIX as
 well) botch this if you use the static keyword for both declarations
@@ -409,23 +409,26 @@ Reference Counts
 It takes a while to get used to the proper usage of reference counts.
 
 Functions that create an object set the reference count to 1; such new
-objects must be stored somewhere or destroyed again with DECREF().
-Functions that 'store' objects such as settupleitem() and dictinsert()
+objects must be stored somewhere or destroyed again with Py_DECREF().
+Functions that 'store' objects such as PyTuple_SetItem() and
+PyDict_SetItemString()
 don't increment the reference count of the object, since the most
 frequent use is to store a fresh object.  Functions that 'retrieve'
-objects such as gettupleitem() and dictlookup() also don't increment
+objects such as PyTuple_GetItem() and PyDict_GetItemString() also
+don't increment
 the reference count, since most frequently the object is only looked at
 quickly.  Thus, to retrieve an object and store it again, the caller
-must call INCREF() explicitly.
+must call Py_INCREF() explicitly.
 
-NOTE: functions that 'consume' a reference count like dictinsert() even
+NOTE: functions that 'consume' a reference count like
+PyDict_SetItemString() even
 consume the reference if the object wasn't stored, to simplify error
 handling.
 
 It seems attractive to make other functions that take an object as
 argument consume a reference count; however this may quickly get
 confusing (even the current practice is already confusing).  Consider
-it carefully, it may safe lots of calls to INCREF() and DECREF() at
+it carefully, it may save lots of calls to Py_INCREF() and Py_DECREF() at
 times.
 
 123456789-123456789-123456789-123456789-123456789-123456789-123456789-12

@@ -30,26 +30,29 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Method object interface */
 
-extern DL_IMPORT typeobject Methodtype;
+extern DL_IMPORT PyTypeObject PyCFunction_Type;
 
-#define is_methodobject(op) ((op)->ob_type == &Methodtype)
+#define PyCFunction_Check(op) ((op)->ob_type == &PyCFunction_Type)
 
-typedef object *(*method) FPROTO((object *, object *));
+typedef PyObject *(*PyCFunction) Py_FPROTO((PyObject *, PyObject *));
 
-extern method getmethod PROTO((object *));
-extern object *getself PROTO((object *));
-extern int getvarargs PROTO((object *));
+extern PyCFunction PyCFunction_GetFunction Py_PROTO((PyObject *));
+extern PyObject *PyCFunction_GetSelf Py_PROTO((PyObject *));
+extern int PyCFunction_IsVarArgs Py_PROTO((PyObject *));
 
-struct methodlist {
-	char	*ml_name;
-	method	ml_meth;
-	int	ml_flags;
-	char	*ml_doc;
+struct PyMethodDef {
+	char		*ml_name;
+	PyCFunction	ml_meth;
+	int		ml_flags;
+	char		*ml_doc;
 };
+typedef struct PyMethodDef PyMethodDef;
 
-extern object *newmethodobject PROTO((struct methodlist *, object *));
+extern PyObject *Py_FindMethod
+	Py_PROTO((PyMethodDef[], PyObject *, char *));
 
-extern object *findmethod PROTO((struct methodlist[], object *, char *));
+extern PyObject *PyCFunction_New
+	Py_PROTO((PyMethodDef *, PyObject *));
 
 /* Flag passed to newmethodobject */
 #define METH_VARARGS  0x0001

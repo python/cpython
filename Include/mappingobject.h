@@ -30,21 +30,21 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Mapping object type -- mapping from hashable object to object */
 
-extern DL_IMPORT typeobject Mappingtype;
+extern DL_IMPORT PyTypeObject Mappingtype;
 
 #define is_mappingobject(op) ((op)->ob_type == &Mappingtype)
 
-extern object *newmappingobject PROTO((void));
-extern object *mappinglookup PROTO((object *mp, object *key));
-extern int mappinginsert PROTO((object *mp, object *key, object *item));
-extern int mappingremove PROTO((object *mp, object *key));
-extern void mappingclear PROTO((object *mp));
-extern int mappinggetnext
-	PROTO((object *mp, int *pos, object **key, object **value));
-extern object *getmappingkeys PROTO((object *mp));
-extern object *getmappingvalues PROTO((object *mp));
-extern object *getmappingitems PROTO((object *mp));
-extern int getmappingsize PROTO((object *mp));
+extern PyObject *PyDict_New Py_PROTO((void));
+extern PyObject *PyDict_GetItem Py_PROTO((PyObject *mp, PyObject *key));
+extern int PyDict_SetItem Py_PROTO((PyObject *mp, PyObject *key, PyObject *item));
+extern int PyDict_DelItem Py_PROTO((PyObject *mp, PyObject *key));
+extern void PyDict_Clear Py_PROTO((PyObject *mp));
+extern int PyDict_Next
+	Py_PROTO((PyObject *mp, int *pos, PyObject **key, PyObject **value));
+extern PyObject *PyDict_Keys Py_PROTO((PyObject *mp));
+extern PyObject *PyDict_Values Py_PROTO((PyObject *mp));
+extern PyObject *PyDict_Items Py_PROTO((PyObject *mp));
+extern int getmappingsize Py_PROTO((PyObject *mp));
 
 #ifdef __cplusplus
 }

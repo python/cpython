@@ -37,31 +37,31 @@ Another generally useful object type is an tuple of object pointers.
 This is a mutable type: the tuple items can be changed (but not their
 number).  Out-of-range indices or non-tuple objects are ignored.
 
-*** WARNING *** settupleitem does not increment the new item's reference
+*** WARNING *** PyTuple_SetItem does not increment the new item's reference
 count, but does decrement the reference count of the item it replaces,
 if not nil.  It does *decrement* the reference count if it is *not*
-inserted in the tuple.  Similarly, gettupleitem does not increment the
+inserted in the tuple.  Similarly, PyTuple_GetItem does not increment the
 returned item's reference count.
 */
 
 typedef struct {
-	OB_VARHEAD
-	object *ob_item[1];
-} tupleobject;
+	PyObject_VAR_HEAD
+	PyObject *ob_item[1];
+} PyTupleObject;
 
-extern DL_IMPORT typeobject Tupletype;
+extern DL_IMPORT PyTypeObject PyTuple_Type;
 
-#define is_tupleobject(op) ((op)->ob_type == &Tupletype)
+#define PyTuple_Check(op) ((op)->ob_type == &PyTuple_Type)
 
-extern object *newtupleobject PROTO((int size));
-extern int gettuplesize PROTO((object *));
-extern object *gettupleitem PROTO((object *, int));
-extern int settupleitem PROTO((object *, int, object *));
-extern object *gettupleslice PROTO((object *, int, int));
-extern int resizetuple PROTO((object **, int, int));
+extern PyObject *PyTuple_New Py_PROTO((int size));
+extern int PyTuple_Size Py_PROTO((PyObject *));
+extern PyObject *PyTuple_GetItem Py_PROTO((PyObject *, int));
+extern int PyTuple_SetItem Py_PROTO((PyObject *, int, PyObject *));
+extern PyObject *PyTuple_GetSlice Py_PROTO((PyObject *, int, int));
+extern int resizetuple Py_PROTO((PyObject **, int, int));
 
 /* Macro, trading safety for speed */
-#define GETTUPLEITEM(op, i) ((op)->ob_item[i])
+#define PyTuple_GET_ITEM(op, i) ((op)->ob_item[i])
 
 #ifdef __cplusplus
 }

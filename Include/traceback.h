@@ -32,10 +32,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 struct _frame;
 
-int tb_here PROTO((struct _frame *));
-object *tb_fetch PROTO((void));
-int tb_store PROTO((object *));
-int tb_print PROTO((object *, object *));
+int PyTraceBack_Here Py_PROTO((struct _frame *));
+PyObject *PyTraceBack_Fetch Py_PROTO((void));
+int PyTraceBack_Store Py_PROTO((PyObject *));
+int PyTraceBack_Print Py_PROTO((PyObject *, PyObject *));
 
 #ifdef __cplusplus
 }

@@ -31,23 +31,23 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Float object interface */
 
 /*
-floatobject represents a (double precision) floating point number.
+PyFloatObject represents a (double precision) floating point number.
 */
 
 typedef struct {
-	OB_HEAD
+	PyObject_HEAD
 	double ob_fval;
-} floatobject;
+} PyFloatObject;
 
-extern DL_IMPORT typeobject Floattype;
+extern DL_IMPORT PyTypeObject PyFloat_Type;
 
-#define is_floatobject(op) ((op)->ob_type == &Floattype)
+#define PyFloat_Check(op) ((op)->ob_type == &PyFloat_Type)
 
-extern object *newfloatobject PROTO((double));
-extern double getfloatvalue PROTO((object *));
+extern PyObject *PyFloat_FromDouble Py_PROTO((double));
+extern double PyFloat_AsDouble Py_PROTO((PyObject *));
 
 /* Macro, trading safety for speed */
-#define GETFLOATVALUE(op) ((op)->ob_fval)
+#define PyFloat_AS_DOUBLE(op) ((op)->ob_fval)
 
 #ifdef __cplusplus
 }
