@@ -659,7 +659,7 @@ static PyObject *DlgObj_SetModalDialogEventMask(_self, _args)
 	PyObject *_res = NULL;
 	OSStatus _err;
 	EventMask inMask;
-	if (!PyArg_ParseTuple(_args, "h",
+	if (!PyArg_ParseTuple(_args, "H",
 	                      &inMask))
 		return NULL;
 	_err = SetModalDialogEventMask(_self->ob_itself,
@@ -682,7 +682,7 @@ static PyObject *DlgObj_GetModalDialogEventMask(_self, _args)
 	_err = GetModalDialogEventMask(_self->ob_itself,
 	                               &outMask);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("h",
+	_res = Py_BuildValue("H",
 	                     outMask);
 	return _res;
 }

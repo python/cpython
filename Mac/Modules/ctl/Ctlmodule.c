@@ -377,7 +377,7 @@ static PyObject *CtlObj_DragControl(_self, _args)
 	Rect limitRect;
 	Rect slopRect;
 	DragConstraint axis;
-	if (!PyArg_ParseTuple(_args, "O&O&O&h",
+	if (!PyArg_ParseTuple(_args, "O&O&O&H",
 	                      PyMac_GetPoint, &startPoint,
 	                      PyMac_GetRect, &limitRect,
 	                      PyMac_GetRect, &slopRect,
@@ -1080,7 +1080,7 @@ static PyObject *CtlObj_CountSubControls(_self, _args)
 	_err = CountSubControls(_self->ob_itself,
 	                        &outNumChildren);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("h",
+	_res = Py_BuildValue("H",
 	                     outNumChildren);
 	return _res;
 }
@@ -1093,7 +1093,7 @@ static PyObject *CtlObj_GetIndexedSubControl(_self, _args)
 	OSErr _err;
 	UInt16 inIndex;
 	ControlHandle outSubControl;
-	if (!PyArg_ParseTuple(_args, "h",
+	if (!PyArg_ParseTuple(_args, "H",
 	                      &inIndex))
 		return NULL;
 	_err = GetIndexedSubControl(_self->ob_itself,

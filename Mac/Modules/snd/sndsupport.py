@@ -116,9 +116,9 @@ SndCmd_Convert(PyObject *v, SndCommand *pc)
 		if (PyArg_ParseTuple(v, "h|hl", &pc->cmd, &pc->param1, &pc->param2))
 			return 1;
 		PyErr_Clear();
-		return PyArg_ParseTuple(v, "hhs#", &pc->cmd, &pc->param1, &pc->param2, &len);
+		return PyArg_ParseTuple(v, "Hhs#", &pc->cmd, &pc->param1, &pc->param2, &len);
 	}
-	return PyArg_Parse(v, "h", &pc->cmd);
+	return PyArg_Parse(v, "H", &pc->cmd);
 }
 
 static pascal void SndCh_UserRoutine(SndChannelPtr chan, SndCommand *cmd); /* Forward */

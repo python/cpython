@@ -746,7 +746,7 @@ static PyObject *Icn_GetIconRefOwners(_self, _args)
 	_err = GetIconRefOwners(theIconRef,
 	                        &owners);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("h",
+	_res = Py_BuildValue("H",
 	                     owners);
 	return _res;
 }

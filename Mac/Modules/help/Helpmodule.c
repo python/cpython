@@ -148,7 +148,7 @@ static PyObject *Help_HMSetFontSize(_self, _args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	UInt16 fontSize;
-	if (!PyArg_ParseTuple(_args, "h",
+	if (!PyArg_ParseTuple(_args, "H",
 	                      &fontSize))
 		return NULL;
 	_err = HMSetFontSize(fontSize);
@@ -185,7 +185,7 @@ static PyObject *Help_HMGetFontSize(_self, _args)
 		return NULL;
 	_err = HMGetFontSize(&fontSize);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("h",
+	_res = Py_BuildValue("H",
 	                     fontSize);
 	return _res;
 }
