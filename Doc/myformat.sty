@@ -94,7 +94,13 @@
 \evensidemargin \oddsidemargin
 \marginparwidth 0.5in
 
-\textwidth 6.5in
+\@ifundefined{paperwidth}{
+  \textwidth 6.5in
+}{
+  \textwidth \paperwidth
+  \advance\textwidth by -2in
+}
+
 
 % Style parameters and macros used by most documents here
 \raggedbottom
@@ -448,6 +454,22 @@
 \newcommand{\manpage}[2]{{\emph{#1}(#2)}}
 \newcommand{\rfc}[1]{RFC #1\index{RFC!RFC #1}}
 \newcommand{\program}[1]{\strong{#1}}
+
+
+% Deprecation stuff.
+% Should be extended to allow an index / list of deprecated stuff.  But
+% there's a lot of stuff that needs to be done to make that automatable.
+%
+% First parameter is the release number that deprecates the feature, the
+% second is the action the should be taken by users of the feature.
+%
+% Example:
+%
+%  \deprecated {1.5.1}
+%    {Use \method{frobnicate()} instead.}
+%
+\newcommand{\deprecated}[2]{%
+  \strong{Deprecated since release #1.}  #2\par}
 
 
 \newenvironment{tableii}[4]{%
