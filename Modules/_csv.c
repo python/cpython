@@ -584,10 +584,6 @@ parse_process_char(ReaderObj *self, char c)
 		break;
 
 	case ESCAPED_CHAR:
-		if (c != dialect->escapechar && 
-                    c != dialect->delimiter &&
-		    c != dialect->quotechar)
-			parse_add_char(self, dialect->escapechar);
 		parse_add_char(self, c);
 		self->state = IN_FIELD;
 		break;
@@ -642,10 +638,6 @@ parse_process_char(ReaderObj *self, char c)
 		break;
 
 	case ESCAPE_IN_QUOTED_FIELD:
-		if (c != dialect->escapechar && 
-                    c != dialect->delimiter &&
-		    c != dialect->quotechar)
-			parse_add_char(self, dialect->escapechar);
 		parse_add_char(self, c);
 		self->state = IN_QUOTED_FIELD;
 		break;
