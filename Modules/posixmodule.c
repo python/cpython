@@ -1853,7 +1853,7 @@ initnt()
                 goto finally;
 
 	/* Initialize nt.error exception */
-	PosixError = PyString_FromString("nt.error");
+	PosixError = PyString_FromString("os.error");
 	PyDict_SetItemString(d, "error", PosixError);
 
         if (!PyErr_Occurred())
@@ -1881,7 +1881,7 @@ initposix()
                 goto finally;
 
 	/* Initialize posix.error exception */
-	PosixError = PyString_FromString("posix.error");
+	PosixError = PyString_FromString("os.error");
 	PyDict_SetItemString(d, "error", PosixError);
 
         if (!PyErr_Occurred())
