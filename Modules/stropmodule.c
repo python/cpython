@@ -526,6 +526,7 @@ strop_atoi(self, args)
 	char *s, *end;
 	int base = 10;
 	long x;
+	char buffer[256]; /* For errors */
 
 	if (args != NULL && is_tupleobject(args)) {
 		if (!getargs(args, "(si)", &s, &base))
@@ -537,6 +538,8 @@ strop_atoi(self, args)
 	}
 	else if (!getargs(args, "s", &s))
 		return NULL;
+	while (*s && isspace(Py_CHARMASK(*s)))
+		s++;
 	if (s[0] == '\0') {
 		err_setstr(ValueError, "empty string for atoi()");
 		return NULL;
@@ -546,12 +549,16 @@ strop_atoi(self, args)
 		x = (long) mystrtoul(s, &end, base);
 	else
 		x = mystrtol(s, &end, base);
+	while (*end && isspace(Py_CHARMASK(*end)))
+		end++;
 	if (*end != '\0') {
-		err_setstr(ValueError, "invalid literal for atoi()");
+		sprintf(buffer, "invalid literal for atoi(): %.200s", s);
+		err_setstr(ValueError, buffer);
 		return NULL;
 	}
 	else if (errno != 0) {
-		err_setstr(OverflowError, "atoi() literal too large");
+		sprintf(buffer, "atoi() literal too large: %.200s", s);
+		err_setstr(ValueError, buffer);
 		return NULL;
 	}
 	return newintobject(x);
@@ -566,6 +573,7 @@ strop_atol(self, args)
 	char *s, *end;
 	int base = 10;
 	object *x;
+	char buffer[256]; /* For errors */
 
 	if (args != NULL && is_tupleobject(args)) {
 		if (!getargs(args, "(si)", &s, &base))
@@ -577,6 +585,8 @@ strop_atol(self, args)
 	}
 	else if (!getargs(args, "s", &s))
 		return NULL;
+	while (*s && isspace(Py_CHARMASK(*s)))
+		s++;
 	if (s[0] == '\0') {
 		err_setstr(ValueError, "empty string for atol()");
 		return NULL;
@@ -586,8 +596,11 @@ strop_atol(self, args)
 		return NULL;
 	if (base == 0 && (*end == 'l' || *end == 'L'))
 		end++;
+	while (*end && isspace(Py_CHARMASK(*end)))
+		end++;
 	if (*end != '\0') {
-		err_setstr(ValueError, "invalid literal for atol()");
+		sprintf(buffer, "invalid literal for atol(): %.200s", s);
+		err_setstr(ValueError, buffer);
 		DECREF(x);
 		return NULL;
 	}
@@ -603,21 +616,28 @@ strop_atof(self, args)
 	extern double strtod PROTO((const char *, char **));
 	char *s, *end;
 	double x;
+	char buffer[256]; /* For errors */
 
 	if (!getargs(args, "s", &s))
 		return NULL;
+	while (*s && isspace(Py_CHARMASK(*s)))
+		s++;
 	if (s[0] == '\0') {
 		err_setstr(ValueError, "empty string for atof()");
 		return NULL;
 	}
 	errno = 0;
 	x = strtod(s, &end);
+	while (*end && isspace(Py_CHARMASK(*end)))
+		end++;
 	if (*end != '\0') {
-		err_setstr(ValueError, "invalid literal for atof()");
+		sprintf(buffer, "invalid literal for atof(): %.200s", s);
+		err_setstr(ValueError, buffer);
 		return NULL;
 	}
 	else if (errno != 0) {
-		err_setstr(OverflowError, "atof() literal too large");
+		sprintf(buffer, "atof() literal too large: %.200s", s);
+		err_setstr(ValueError, buffer);
 		return NULL;
 	}
 	return newfloatobject(x);
