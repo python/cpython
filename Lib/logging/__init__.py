@@ -36,8 +36,8 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "beta"
-__version__ = "0.4.9.2"
-__date__    = "28 February 2004"
+__version__ = "0.4.9.3"
+__date__    = "03 July 2004"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -113,8 +113,12 @@ def getLevelName(level):
     If the level is one of the predefined levels (CRITICAL, ERROR, WARNING,
     INFO, DEBUG) then you get the corresponding string. If you have
     associated levels with names using addLevelName then the name you have
-    associated with 'level' is returned. Otherwise, the string
-    "Level %s" % level is returned.
+    associated with 'level' is returned.
+
+    If a numeric value corresponding to one of the defined levels is passed
+    in, the corresponding string representation is returned.
+
+    Otherwise, the string "Level %s" % level is returned.
     """
     return _levelNames.get(level, ("Level %s" % level))
 
@@ -968,6 +972,11 @@ class Logger(Filterer):
 
         logger.log(level, "We have a %s", "mysterious problem", exc_info=1)
         """
+        if type(level) != types.IntType:
+            if raiseExceptions:
+                raise TypeError, "level must be an integer"
+            else:
+                return
         if self.manager.disable >= level:
             return
         if self.isEnabledFor(level):
@@ -1106,17 +1115,54 @@ Logger.manager = Manager(Logger.root)
 
 BASIC_FORMAT = "%(levelname)s:%(name)s:%(message)s"
 
-def basicConfig():
+def basicConfig(**kwargs):
     """
-    Do basic configuration for the logging system by creating a
-    StreamHandler with a default Formatter and adding it to the
-    root logger.
+    Do basic configuration for the logging system.
+
+    This function does nothing if the root logger already has handlers
+    configured. It is a convenience method intended for use by simple scripts
+    to do one-shot configuration of the logging package.
+
+    The default behaviour is to create a StreamHandler which writes to
+    sys.stderr, set a formatter using the BASIC_FORMAT format string, and
+    add the handler to the root logger.
+
+    A number of optional keyword arguments may be specified, which can alter
+    the default behaviour.
+
+    filename  Specifies that a FileHandler be created, using the specified
+              filename, rather than a StreamHandler.
+    filemode  Specifies the mode to open the file, if filename is specified
+              (if filemode is unspecified, it defaults to "a").
+    format    Use the specified format string for the handler.
+    datefmt   Use the specified date/time format.
+    level     Set the root logger level to the specified level.
+    stream    Use the specified stream to initialize the StreamHandler. Note
+              that this argument is incompatible with 'filename' - if both
+              are present, 'stream' is ignored.
+
+    Note that you could specify a stream created using open(filename, mode)
+    rather than passing the filename and mode in. However, it should be
+    remembered that StreamHandler does not close its stream (since it may be
+    using sys.stdout or sys.stderr), whereas FileHandler closes its stream
+    when the handler is closed.
     """
     if len(root.handlers) == 0:
-        hdlr = StreamHandler()
-        fmt = Formatter(BASIC_FORMAT)
+        filename = kwargs.get("filename")
+        if filename:
+            mode = kwargs.get("filemode", "a")
+            hdlr = FileHandler(filename, mode)
+        else:
+            stream = kwargs.get("stream")
+            hdlr = StreamHandler(stream)
+        fs = kwargs.get("format", BASIC_FORMAT)
+        dfs = kwargs.get("datefmt", None)
+        fmt = Formatter(fs, dfs)
         hdlr.setFormatter(fmt)
         root.addHandler(hdlr)
+        level = kwargs.get("level")
+        if level:
+          root.setLevel(level)
 
 #---------------------------------------------------------------------------
 # Utility functions at module level.
