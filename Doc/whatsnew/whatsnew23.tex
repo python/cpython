@@ -788,6 +788,12 @@ document.
 added along with the built-in \class{bool} type, as described in
 section~\ref{section-bool} of this document.
 
+\item The \function{int()} type constructor will now return a long
+integer instead of raising an \exception{OverflowError} when a string
+or floating-point number is too large to fit into an integer.  This
+can lead to the paradoxical result that
+\code{isinstance(int(\var{expression}), int)} is false, but that seems unlikely to cause problems in practice.
+
 \item Built-in types now support the extended slicing syntax,
 as described in section~\ref{section-slices} of this document.
 
@@ -1602,17 +1608,14 @@ This section lists changes that may actually require changes to your code:
 \item \keyword{yield} is now always a keyword; if it's used as a
 variable name in your code, a different name must be chosen.
 
-\item You can no longer disable assertions by assigning to \code{__debug__}.
-
-\item Using \code{None} as a variable name will now result in a
-\exception{SyntaxWarning} warning.
-
-\item Names of extension types defined by the modules included with
-Python now contain the module and a \character{.} in front of the type
-name.
-
 \item For strings \var{X} and \var{Y}, \code{\var{X} in \var{Y}} now works
 if \var{X} is more than one character long.
+
+\item The \function{int()} type constructor will now return a long
+integer instead of raising an \exception{OverflowError} when a string
+or floating-point number is too large to fit into an integer.
+
+\item You can no longer disable assertions by assigning to \code{__debug__}.
 
 \item The Distutils \function{setup()} function has gained various new
 keyword arguments such as \var{depends}.  Old versions of the
@@ -1629,6 +1632,13 @@ if hasattr(core, 'get_distutil_options'):
     kw['depends'] = ['foo.h']
 ext = Extension(**kw)
 \end{verbatim}
+
+\item Using \code{None} as a variable name will now result in a
+\exception{SyntaxWarning} warning.
+
+\item Names of extension types defined by the modules included with
+Python now contain the module and a \character{.} in front of the type
+name.
 
 \end{itemize}
 
