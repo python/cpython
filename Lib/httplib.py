@@ -169,7 +169,6 @@ class HTTPMessage(mimetools.Message):
                 # for http and/or for repeating headers
                 # It's a continuation line.
                 list.append(line)
-                x = self.dict[headerseen] + "\n " + line.strip()
                 self.addcontinue(headerseen, line.strip())
                 continue
             elif self.iscomment(line):
@@ -311,20 +310,7 @@ class HTTPResponse:
             self.chunked = 0
 
         # will the connection close at the end of the response?
-        conn = self.msg.getheader('connection')
-        if conn:
-            conn = conn.lower()
-            # a "Connection: close" will always close the connection. if we
-            # don't see that and this is not HTTP/1.1, then the connection will
-            # close unless we see a Keep-Alive header.
-            self.will_close = conn.find('close') != -1 or \
-                              ( self.version != 11 and \
-                                not self.msg.getheader('keep-alive') )
-        else:
-            # for HTTP/1.1, the connection will always remain open
-            # otherwise, it will remain open IFF we see a Keep-Alive header
-            self.will_close = self.version != 11 and \
-                              not self.msg.getheader('keep-alive')
+        self.will_close = self._check_close()
 
         # do we have a Content-Length?
         # NOTE: RFC 2616, S4.4, #3 says we ignore this if tr_enc is "chunked"
@@ -350,6 +336,30 @@ class HTTPResponse:
            not self.chunked and \
            self.length is None:
             self.will_close = 1
+
+    def _check_close(self):
+        if self.version == 11:
+            # An HTTP/1.1 proxy is assumed to stay open unless
+            # explicitly closed.
+            conn = self.msg.getheader('connection')
+            if conn and conn.lower().find("close") >= 0:
+                return True
+            return False
+
+        # An HTTP/1.0 response with a Connection header is probably
+        # the result of a confused proxy.  Ignore it.
+
+        # For older HTTP, Keep-Alive indiciates persistent connection.
+        if self.msg.getheader('keep-alive'):
+            return False
+        
+        # Proxy-Connection is a netscape hack.
+        pconn = self.msg.getheader('proxy-connection')
+        if pconn and pconn.lower().find("keep-alive") >= 0:
+            return False
+
+        # otherwise, assume it will close
+        return True
 
     def close(self):
         if self.fp:
