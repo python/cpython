@@ -21,6 +21,22 @@
 #define M_PI (3.141592653589793239)
 #endif
 
+#ifdef SCO_ATAN2_BUG
+/*
+ * UnixWare 7+ is known to have a bug in atan2 that will return PI instead
+ * of ZERO (0) if the first argument is ZERO(0).
+ */
+static double atan2_sco(double x, double y)
+{
+	if (x == 0.0)
+		return (double)0.0;
+	return atan2(x, y);
+}
+#define ATAN2	atan2_sco
+#else
+#define ATAN2	atan2
+#endif
+
 /* First, the C functions that do the real work */
 
 /* constants */
@@ -172,7 +188,7 @@ c_log(Py_complex x)
 {
 	Py_complex r;
 	double l = hypot(x.real,x.imag);
-	r.imag = atan2(x.imag, x.real);
+	r.imag = ATAN2(x.imag, x.real);
 	r.real = log(l);
 	return r;
 }
@@ -188,7 +204,7 @@ c_log10(Py_complex x)
 {
 	Py_complex r;
 	double l = hypot(x.real,x.imag);
-	r.imag = atan2(x.imag, x.real)/log(10.);
+	r.imag = ATAN2(x.imag, x.real)/log(10.);
 	r.real = log10(l);
 	return r;
 }

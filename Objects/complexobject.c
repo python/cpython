@@ -26,6 +26,22 @@
 #define PREC_REPR	17
 #define PREC_STR	12
 
+#ifdef SCO_ATAN2_BUG
+/*
+ * UnixWare 7+ is known to have a bug in atan2 that will return PI instead
+ * of ZERO (0) if the first argument is ZERO(0).
+ */
+static double atan2_sco(double x, double y)
+{
+	if (x == 0.0)
+		return (double)0.0;
+	return atan2(x, y);
+}
+#define ATAN2	atan2_sco
+#else
+#define ATAN2	atan2
+#endif
+
 /* elementary operations on complex numbers */
 
 static Py_complex c_1 = {1., 0.};
@@ -138,7 +154,7 @@ c_pow(Py_complex a, Py_complex b)
 	else {
 		vabs = hypot(a.real,a.imag);
 		len = pow(vabs,b.real);
-		at = atan2(a.imag, a.real);
+		at = ATAN2(a.imag, a.real);
 		phase = at*b.real;
 		if (b.imag != 0.0) {
 			len /= exp(at*b.imag);
