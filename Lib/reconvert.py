@@ -61,7 +61,7 @@ XXX To be done...
 
 
 import regex
-from regex_syntax import * # RE_* 
+from regex_syntax import * # RE_*
 
 # Default translation table
 mastertable = {

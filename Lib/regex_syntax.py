@@ -33,9 +33,9 @@ RE_NEWLINE_OR = 16
 #   their special meaning regardless of the surrounding context.
 # 1 means that special characters may act as normal characters in some
 #   contexts.  Specifically, this applies to:
-#	^ - only special at the beginning, or after ( or |
-#	$ - only special at the end, or before ) or |
-#	*, +, ? - only special when not after the beginning, (, or |
+#       ^ - only special at the beginning, or after ( or |
+#       $ - only special at the end, or before ) or |
+#       *, +, ? - only special when not after the beginning, (, or |
 RE_CONTEXT_INDEP_OPS = 32
 
 # ANSI sequences (\n etc) and \xhh

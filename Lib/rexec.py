@@ -278,7 +278,7 @@ class RExec(ihooks._Verbose):
 
     def r_unload(self, m):
         return self.importer.unload(m)
-    
+
     # The s_* methods are similar but also swap std{in,out,err}
 
     def make_delegate_files(self):
@@ -309,7 +309,7 @@ class RExec(ihooks._Verbose):
         self.restricted_stdin = s.stdin
         self.restricted_stdout = s.stdout
         self.restricted_stderr = s.stderr
-        
+
 
     def save_files(self):
         self.save_stdin = sys.stdin
@@ -320,7 +320,7 @@ class RExec(ihooks._Verbose):
         sys.stdin = self.save_stdin
         sys.stdout = self.save_stdout
         sys.stderr = self.save_stderr
-    
+
     def s_apply(self, func, args=(), kw=None):
         self.save_files()
         try:
@@ -331,27 +331,27 @@ class RExec(ihooks._Verbose):
                 r = apply(func, args)
         finally:
             self.restore_files()
-    
+
     def s_exec(self, *args):
         self.s_apply(self.r_exec, args)
-    
+
     def s_eval(self, *args):
         self.s_apply(self.r_eval, args)
-    
+
     def s_execfile(self, *args):
         self.s_apply(self.r_execfile, args)
-    
+
     def s_import(self, *args):
         self.s_apply(self.r_import, args)
-    
+
     def s_reload(self, *args):
         self.s_apply(self.r_reload, args)
-    
+
     def s_unload(self, *args):
         self.s_apply(self.r_unload, args)
-    
+
     # Restricted open(...)
-    
+
     def r_open(self, file, mode='r', buf=-1):
         if mode not in ('r', 'rb'):
             raise IOError, "can't open files for writing in restricted mode"
