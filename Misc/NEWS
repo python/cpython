@@ -10,6 +10,10 @@ Core
   access to the current frame during destruction of a local variable
   could access a pointer to freed memory.
 
+- SF #457466: popenx() argument mangling hangs python (win9x only).
+  Under certain circumstances, using any of the popen calls on win9x
+  would cause python to hang.
+
 Library
 
 - The xml.sax.expatreader.ExpatParser class will no longer create
