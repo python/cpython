@@ -4013,15 +4013,15 @@ PyObject *
 PyUnicode_Join(PyObject *separator, PyObject *seq)
 {
     PyObject *internal_separator = NULL;
-    const Py_UNICODE *sep;
-    size_t seplen;
+    const Py_UNICODE blank = ' ';
+    const Py_UNICODE *sep = &blank;
+    size_t seplen = 1;
     PyUnicodeObject *res = NULL; /* the result */
     size_t res_alloc = 100;  /* # allocated bytes for string in res */
     size_t res_used;         /* # used bytes */
     Py_UNICODE *res_p;       /* pointer to free byte in res's string area */
     PyObject *fseq;          /* PySequence_Fast(seq) */
     int seqlen;              /* len(fseq) -- number of items in sequence */
-    const Py_UNICODE blank = ' ';
     PyObject *item;
     int i;
 
