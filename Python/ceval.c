@@ -1623,8 +1623,7 @@ eval_code2(co, globals, locals,
 			    if (!PyDict_Check(kwdict)) {
 				PyErr_SetString(PyExc_TypeError,
 					"** argument must be a dictionary");
-				x = NULL;
-				break;
+				goto extcall_fail;
 			    }
 			}
 			if (flags & 1) {
@@ -1632,39 +1631,34 @@ eval_code2(co, globals, locals,
 			    if (!PySequence_Check(stararg)) {
 				PyErr_SetString(PyExc_TypeError,
 					"* argument must be a sequence");
-				x = NULL;
-				break;
+				goto extcall_fail;
 			    }
 			    /* Convert abstract sequence to concrete tuple */
 			    if (!PyTuple_Check(stararg)) {
 				PyObject *t = NULL;
 				t = PySequence_Tuple(stararg);
 				if (t == NULL) {
-				    x = NULL;
-				    break;
+				    goto extcall_fail;
 				}
 				Py_DECREF(stararg);
 				stararg = t;
 			    }
 			    nstar = PyTuple_GET_SIZE(stararg);
 			    if (nstar < 0) {
-				x = NULL;
-				break;
+				goto extcall_fail;
 			    }
 			}
 			if (nk > 0) {
 			    if (kwdict == NULL) {
 				kwdict = PyDict_New();
 				if (kwdict == NULL) {
-				    x = NULL;
-				    break;
+    				    goto extcall_fail;
 				}
 			    }
 			    else {
 				    PyObject *d = PyDict_Copy(kwdict);
 				    if (d == NULL) {
-					    x = NULL;
-					    break;
+					    goto extcall_fail;
 				    }
 				    Py_DECREF(kwdict);
 				    kwdict = d;
@@ -1680,7 +1674,7 @@ eval_code2(co, globals, locals,
 						 PyString_AsString(key));
 				    Py_DECREF(key);
 				    Py_DECREF(value);
-				    break;
+				    goto extcall_fail;
 				}
 				err = PyDict_SetItem(kwdict, key, value);
 				Py_DECREF(key);
@@ -1689,7 +1683,11 @@ eval_code2(co, globals, locals,
 				    break;
 			    }
 			    if (err) {
-				Py_DECREF(kwdict);
+			      extcall_fail:
+				Py_XDECREF(kwdict);
+				Py_XDECREF(stararg);
+				Py_DECREF(func);
+				x=NULL;
 				break;
 			    }
 			}
@@ -2382,6 +2380,7 @@ PyEval_CallObjectWithKeywords(func, arg, kw)
 	if (kw != NULL && !PyDict_Check(kw)) {
 		PyErr_SetString(PyExc_TypeError,
 				"keyword list must be a dictionary");
+		Py_DECREF(arg);
 		return NULL;
 	}
 
