@@ -29,6 +29,14 @@ class CallTip:
         self.tipwindow = tw = Toplevel(self.widget)
         tw.wm_overrideredirect(1)
         tw.wm_geometry("+%d+%d" % (x, y))
+        try:
+            # This command is only needed and available on Tk >= 8.4.0 for OSX
+            # Without it, call tips intrude on the typing process by grabbing
+            # the focus.
+            tw.tk.call("::tk::unsupported::MacWindowStyle", "style", tw._w, 
+                       "help", "noActivates")
+        except TclError:
+            pass
         label = Label(tw, text=self.text, justify=LEFT,
                       background="#ffffe0", relief=SOLID, borderwidth=1,
                       font = self.widget['font'])
