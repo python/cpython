@@ -44,6 +44,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #else /* !HAVE_SYS_SELECT_H */
 
+#ifdef USE_GUSI
+/* If we don't have sys/select the definition may be in unistd.h */
+#include <GUSI.h>
+#endif
+
 #include "mytime.h"
 
 #endif /* !HAVE_SYS_SELECT_H */
