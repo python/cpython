@@ -3,12 +3,12 @@
 # Copyright 1994 by Lance Ellinghouse
 # Cathedral City, California Republic, United States of America.
 #                        All Rights Reserved
-# Permission to use, copy, modify, and distribute this software and its 
-# documentation for any purpose and without fee is hereby granted, 
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted,
 # provided that the above copyright notice appear in all copies and that
-# both that copyright notice and this permission notice appear in 
+# both that copyright notice and this permission notice appear in
 # supporting documentation, and that the name of Lance Ellinghouse
-# not be used in advertising or publicity pertaining to distribution 
+# not be used in advertising or publicity pertaining to distribution
 # of the software without specific, written prior permission.
 # LANCE ELLINGHOUSE DISCLAIMS ALL WARRANTIES WITH REGARD TO
 # THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
@@ -154,7 +154,7 @@ def test():
         print ' -d: Decode (in stead of encode)'
         print ' -t: data is text, encoded format unix-compatible text'
         sys.exit(1)
-        
+
     for o, a in optlist:
         if o == '-d': dopt = 1
         if o == '-t': topt = 1

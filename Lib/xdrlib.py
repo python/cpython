@@ -29,7 +29,7 @@ class ConversionError(Error):
     pass
 
 
-
+
 class Packer:
     """Pack various data representations into a buffer."""
 
@@ -106,7 +106,7 @@ class Packer:
         self.pack_farray(n, list, pack_item)
 
 
-
+
 class Unpacker:
     """Unpacks various data representations from the given buffer."""
 
@@ -220,7 +220,7 @@ class Unpacker:
         n = self.unpack_uint()
         return self.unpack_farray(n, unpack_item)
 
-
+
 # test suite
 def _test():
     p = Packer()
@@ -274,6 +274,6 @@ def _test():
             print 'ConversionError:', var.msg
         count = count + 1
 
-
+
 if __name__ == '__main__':
     _test()

@@ -1,12 +1,12 @@
 """An extensible library for opening URLs using a variety of protocols
 
 The simplest way to use this module is to call the urlopen function,
-which accepts a string containing a URL or a Request object (described 
+which accepts a string containing a URL or a Request object (described
 below).  It opens the URL and returns the results as file-like
 object; the returned object has some extra methods described below.
 
 The OpenerDirectory manages a collection of Handler objects that do
-all the actual work.  Each Handler implements a particular protocol or 
+all the actual work.  Each Handler implements a particular protocol or
 option.  The OpenerDirector is a composite object that invokes the
 Handlers needed to open the requested URL.  For example, the
 HTTPHandler performs HTTP GET and POST requests and deals with
@@ -16,7 +16,7 @@ with digest authentication.
 
 urlopen(url, data=None) -- basic usage is that same as original
 urllib.  pass the url and optionally data to post to an HTTP URL, and
-get a file-like object back.  One difference is that you can also pass 
+get a file-like object back.  One difference is that you can also pass
 a Request instance instead of URL.  Raises a URLError (subclass of
 IOError); for HTTP errors, raises an HTTPError, which can also be
 treated as a valid response.
@@ -42,7 +42,7 @@ exceptions:
 URLError-- a subclass of IOError, individual protocols have their own
 specific subclass
 
-HTTPError-- also a valid HTTP response, so you can treat an HTTP error 
+HTTPError-- also a valid HTTP response, so you can treat an HTTP error
 as an exceptional event or valid response
 
 internals:
@@ -57,7 +57,7 @@ import urllib2
 authinfo = urllib2.HTTPBasicAuthHandler()
 authinfo.add_password('realm', 'host', 'username', 'password')
 
-# build a new opener that adds authentication and caching FTP handlers 
+# build a new opener that adds authentication and caching FTP handlers
 opener = urllib2.build_opener(authinfo, urllib2.CacheFTPHandler)
 
 # install it
@@ -73,7 +73,7 @@ f = urllib2.urlopen('http://www.python.org/')
  # authentication for some reason but fails, how should the error be
  # signalled?  The client needs to know the HTTP error code.  But if
  # the handler knows that the problem was, e.g., that it didn't know
- # that hash algo that requested in the challenge, it would be good to 
+ # that hash algo that requested in the challenge, it would be good to
  # pass that information along to the client, too.
 
 # XXX to do:
@@ -141,7 +141,7 @@ def install_opener(opener):
     _opener = opener
 
 # do these error classes make sense?
-# make sure all of the IOError stuff is overridden.  we just want to be 
+# make sure all of the IOError stuff is overridden.  we just want to be
  # subtypes.
 
 class URLError(IOError):
@@ -165,7 +165,7 @@ class HTTPError(URLError, addinfourl):
         self.fp = fp
         # XXX
         self.filename = url
-        
+
     def __str__(self):
         return 'HTTP Error %s: %s' % (self.code, self.msg)
 
@@ -192,7 +192,7 @@ class Request:
 
     def __getattr__(self, attr):
         # XXX this is a fallback mechanism to guard against these
-        # methods getting called in a non-standard order.  this may be 
+        # methods getting called in a non-standard order.  this may be
         # too complicated and/or unnecessary.
         # XXX should the __r_XXX attributes be public?
         if attr[:12] == '_Request__r_':
@@ -259,7 +259,7 @@ class OpenerDirector:
         for meth in get_methods(handler):
             if meth[-5:] == '_open':
                 protocol = meth[:-5]
-                if self.handle_open.has_key(protocol): 
+                if self.handle_open.has_key(protocol):
                     self.handle_open[protocol].append(handler)
                 else:
                     self.handle_open[protocol] = [handler]
@@ -285,7 +285,7 @@ class OpenerDirector:
         if added:
             self.handlers.append(handler)
             handler.add_parent(self)
-        
+
     def __del__(self):
         self.close()
 
@@ -314,9 +314,9 @@ class OpenerDirector:
             if data is not None:
                 req.add_data(data)
         assert isinstance(req, Request) # really only care about interface
-        
+
         result = self._call_chain(self.handle_open, 'default',
-                                  'default_open', req)  
+                                  'default_open', req)
         if result:
             return result
 
@@ -381,7 +381,7 @@ def get_methods(inst):
 # XXX probably also want an abstract factory that knows things like
  # the fact that a ProxyHandler needs to get inserted first.
 # would also know when it makes sense to skip a superclass in favor of
- # a subclass and when it might make sense to include both 
+ # a subclass and when it might make sense to include both
 
 def build_opener(*handlers):
     """Create an opener object from a list of handlers.
@@ -393,7 +393,7 @@ def build_opener(*handlers):
     If any of the handlers passed as arguments are subclasses of the
     default handlers, the default handlers will not be used.
     """
-    
+
     opener = OpenerDirector()
     default_classes = [ProxyHandler, UnknownHandler, HTTPHandler,
                        HTTPDefaultErrorHandler, HTTPRedirectHandler,
@@ -472,7 +472,7 @@ class ProxyHandler(BaseHandler):
         assert hasattr(proxies, 'has_key'), "proxies must be a mapping"
         self.proxies = proxies
         for type, url in proxies.items():
-            setattr(self, '%s_open' % type, 
+            setattr(self, '%s_open' % type,
                     lambda r, proxy=url, type=type, meth=self.proxy_open: \
                     meth(r, proxy, type))
 
@@ -574,7 +574,7 @@ class HTTPPasswordMgr:
         if len(common) == len(base[1]):
             return 1
         return 0
-        
+
 
 class HTTPBasicAuthHandler(BaseHandler):
     rx = re.compile('[ \t]*([^ \t]+)[ \t]+realm="([^"]*)"')
@@ -590,8 +590,8 @@ class HTTPBasicAuthHandler(BaseHandler):
         # if __current_realm is not None, then the server must have
         # refused our name/password and is asking for authorization
         # again.  must be careful to set it to None on successful
-        # return. 
-    
+        # return.
+
     def http_error_401(self, req, fp, code, msg, headers):
         # XXX could be mult. headers
         authreq = headers.get('www-authenticate', None)
@@ -674,7 +674,7 @@ class HTTPDigestAuthHandler(BaseHandler):
             return None
 
         user, pw = self.passwd.find_user_password(realm,
-                                                  req.get_full_url()) 
+                                                  req.get_full_url())
         if user is None:
             return None
 
@@ -724,8 +724,8 @@ def encode_digest(digest):
         n = ord(c) & 0xf
         hexrep.append(hex(n)[-1])
     return string.join(hexrep, '')
-        
-        
+
+
 class HTTPHandler(BaseHandler):
     def http_open(self, req):
         # XXX devise a new mechanism to specify user/password
@@ -745,7 +745,7 @@ class HTTPHandler(BaseHandler):
                 h.putrequest('GET', req.get_selector())
         except socket.error, err:
             raise URLError(err)
-            
+
         # XXX proxies would have different host here
         h.putheader('Host', host)
         for args in self.parent.addheaders:
@@ -813,7 +813,7 @@ def parse_http_list(s):
                 start = i
                 inquote = 0
             else:
-                i = i + q 
+                i = i + q
         else:
             if c < q:
                 list.append(s[start:i+c])
@@ -838,7 +838,7 @@ class FileHandler(BaseHandler):
     names = None
     def get_names(self):
         if FileHandler.names is None:
-            FileHandler.names = (socket.gethostbyname('localhost'), 
+            FileHandler.names = (socket.gethostbyname('localhost'),
                                  socket.gethostbyname(socket.gethostname()))
         return FileHandler.names
 
@@ -967,7 +967,7 @@ class GopherHandler(BaseHandler):
 class OpenerFactory:
 
     default_handlers = [UnknownHandler, HTTPHandler,
-                        HTTPDefaultErrorHandler, HTTPRedirectHandler, 
+                        HTTPDefaultErrorHandler, HTTPRedirectHandler,
                         FTPHandler, FileHandler]
     proxy_handlers = [ProxyHandler]
     handlers = []
@@ -990,7 +990,7 @@ class OpenerFactory:
             opener.add_handler(ph)
 
 if __name__ == "__main__":
-    # XXX some of the test code depends on machine configurations that 
+    # XXX some of the test code depends on machine configurations that
     # are internal to CNRI.   Need to set up a public server with the
     # right authentication configuration for test purposes.
     if socket.gethostname() == 'bitdiddle':
@@ -1030,11 +1030,11 @@ if __name__ == "__main__":
 
         bauth = HTTPBasicAuthHandler()
         bauth.add_password('basic_test_realm', localhost, 'jhylton',
-                           'password') 
-        dauth = HTTPDigestAuthHandler()
-        dauth.add_password('digest_test_realm', localhost, 'jhylton', 
                            'password')
-        
+        dauth = HTTPDigestAuthHandler()
+        dauth.add_password('digest_test_realm', localhost, 'jhylton',
+                           'password')
+
 
     cfh = CacheFTPHandler()
     cfh.setTimeout(1)

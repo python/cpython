@@ -551,11 +551,11 @@ class FancyURLopener(URLopener):
             if match:
                 scheme, realm = match.groups()
                 if scheme.lower() == 'basic':
-                   name = 'retry_' + self.type + '_basic_auth'
-                   if data is None:
-                       return getattr(self,name)(url, realm)
-                   else:
-                       return getattr(self,name)(url, realm, data)
+                    name = 'retry_' + self.type + '_basic_auth'
+                    if data is None:
+                        return getattr(self,name)(url, realm)
+                    else:
+                        return getattr(self,name)(url, realm, data)
 
     def retry_http_basic_auth(self, url, realm, data=None):
         host, selector = splithost(url)
@@ -571,14 +571,14 @@ class FancyURLopener(URLopener):
             return self.open(newurl, data)
 
     def retry_https_basic_auth(self, url, realm, data=None):
-            host, selector = splithost(url)
-            i = host.find('@') + 1
-            host = host[i:]
-            user, passwd = self.get_user_passwd(host, realm, i)
-            if not (user or passwd): return None
-            host = user + ':' + passwd + '@' + host
-            newurl = '//' + host + selector
-            return self.open_https(newurl)
+        host, selector = splithost(url)
+        i = host.find('@') + 1
+        host = host[i:]
+        user, passwd = self.get_user_passwd(host, realm, i)
+        if not (user or passwd): return None
+        host = user + ':' + passwd + '@' + host
+        newurl = '//' + host + selector
+        return self.open_https(newurl)
 
     def get_user_passwd(self, host, realm, clear_cache = 0):
         key = realm + '@' + host.lower()

@@ -395,7 +395,7 @@ class Wave_write:
 
     def getmarkers(self):
         return None
-                
+
     def tell(self):
         return self._nframeswritten
 

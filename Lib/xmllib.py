@@ -250,9 +250,9 @@ class XMLParser:
                 break
             res = interesting.search(rawdata, i)
             if res:
-                    j = res.start(0)
+                j = res.start(0)
             else:
-                    j = n
+                j = n
             if i < j:
                 data = rawdata[i:j]
                 if self.__at_start and space.match(data) is None:
