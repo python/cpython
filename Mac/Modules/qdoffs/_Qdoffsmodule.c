@@ -73,7 +73,7 @@ int GWorldObj_Convert(PyObject *v, GWorldPtr *p_itself)
 static void GWorldObj_dealloc(GWorldObject *self)
 {
 	DisposeGWorld(self->ob_itself);
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *GWorldObj_GetGWorldDevice(GWorldObject *_self, PyObject *_args)
@@ -710,6 +710,7 @@ void init_Qdoffs(void)
 	    PyDict_SetItemString(d, "Error", Qdoffs_Error) != 0)
 		return;
 	GWorld_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&GWorld_Type) < 0) return;
 	Py_INCREF(&GWorld_Type);
 	PyModule_AddObject(m, "GWorld", (PyObject *)&GWorld_Type);
 	/* Backward-compatible name */

@@ -94,7 +94,7 @@ int AEDesc_Convert(PyObject *v, AEDesc *p_itself)
 static void AEDesc_dealloc(AEDescObject *self)
 {
 	AEDisposeDesc(&self->ob_itself);
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *AEDesc_AECoerceDesc(AEDescObject *_self, PyObject *_args)
@@ -1434,6 +1434,7 @@ void init_AE(void)
 	    PyDict_SetItemString(d, "Error", AE_Error) != 0)
 		return;
 	AEDesc_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&AEDesc_Type) < 0) return;
 	Py_INCREF(&AEDesc_Type);
 	PyModule_AddObject(m, "AEDesc", (PyObject *)&AEDesc_Type);
 	/* Backward-compatible name */

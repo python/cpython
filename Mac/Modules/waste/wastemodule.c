@@ -42,15 +42,15 @@ static PyObject *ExistingwasteObj_New(WEReference);
 /*
 ** Parse/generate TextStyle records
 */
-static
-PyObject *TextStyle_New(TextStylePtr itself)
+static PyObject *
+TextStyle_New(TextStylePtr itself)
 {
 
 	return Py_BuildValue("lllO&", (long)itself->tsFont, (long)itself->tsFace, (long)itself->tsSize, QdRGB_New,
 				&itself->tsColor);
 }
 
-static
+static int
 TextStyle_Convert(PyObject *v, TextStylePtr p_itself)
 {
 	long font, face, size;
@@ -66,8 +66,8 @@ TextStyle_Convert(PyObject *v, TextStylePtr p_itself)
 /*
 ** Parse/generate RunInfo records
 */
-static
-PyObject *RunInfo_New(WERunInfo *itself)
+static PyObject *
+RunInfo_New(WERunInfo *itself)
 {
 
 	return Py_BuildValue("llhhO&O&", itself->runStart, itself->runEnd, itself->runHeight,
@@ -87,7 +87,7 @@ LongRect_New(LongRect *r)
 	return Py_BuildValue("(llll)", r->left, r->top, r->right, r->bottom);
 }
 
-
+int
 LongPt_Convert(PyObject *v, LongPt *p)
 {
 	return PyArg_Parse(v, "(ll)", &p->h, &p->v);
@@ -146,8 +146,12 @@ my_new_handler(Point *objectSize, WEObjectReference objref)
 		if (!PyMac_GetPoint(rv, objectSize) )
 			err = errAECoercionFail;
 	}
-	if ( args ) Py_DECREF(args);
-	if ( rv ) Py_DECREF(rv);
+	if ( args ) {
+		Py_DECREF(args);
+	}
+	if ( rv ) {
+		Py_DECREF(rv);
+	}
 	return err;
 }
 
@@ -159,8 +163,12 @@ my_dispose_handler(WEObjectReference objref)
 	
 	args=Py_BuildValue("(O&)", WEOObj_New, objref);
 	err = any_handler(weDisposeHandler, objref, args, &rv);
-	if ( args ) Py_DECREF(args);
-	if ( rv ) Py_DECREF(rv);
+	if ( args ) {
+		Py_DECREF(args);
+	}
+	if ( rv ) {
+		Py_DECREF(rv);
+	}
 	return err;
 }
 
@@ -172,8 +180,12 @@ my_draw_handler(const Rect *destRect, WEObjectReference objref)
 	
 	args=Py_BuildValue("O&O&", PyMac_BuildRect, destRect, WEOObj_New, objref);
 	err = any_handler(weDrawHandler, objref, args, &rv);
-	if ( args ) Py_DECREF(args);
-	if ( rv ) Py_DECREF(rv);
+	if ( args ) {
+		Py_DECREF(args);
+	}
+	if ( rv ) {
+		Py_DECREF(rv);
+	}
 	return err;
 }
 
@@ -192,8 +204,12 @@ my_click_handler(Point hitPt, EventModifiers modifiers,
 		retvalue = PyInt_AsLong(rv);
 	else
 		retvalue = 0;
-	if ( args ) Py_DECREF(args);
-	if ( rv ) Py_DECREF(rv);
+	if ( args ) {
+		Py_DECREF(args);
+	}
+	if ( rv ) {
+		Py_DECREF(rv);
+	}
 	return retvalue;
 }
 		
@@ -238,7 +254,7 @@ int WEOObj_Convert(PyObject *v, WEObjectReference *p_itself)
 static void WEOObj_dealloc(WEOObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *WEOObj_WEGetObjectType(WEOObject *_self, PyObject *_args)
@@ -492,7 +508,7 @@ int wasteObj_Convert(PyObject *v, WEReference *p_itself)
 static void wasteObj_dealloc(wasteObject *self)
 {
 	WEDispose(self->ob_itself);
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *wasteObj_WEGetText(wasteObject *_self, PyObject *_args)
@@ -2441,7 +2457,8 @@ static PyObject *waste_STDObjectHandlers(PyObject *_self, PyObject *_args)
 					(UniversalProcPtr) NewWEClickObjectProc(HandleClickSound), NULL)) != noErr)
 			goto cleanup;
 		Py_INCREF(Py_None);
-		return Py_None;
+		_res = Py_None;
+		return _res;
 		
 	cleanup:
 		return PyMac_Error(err);
@@ -2483,7 +2500,8 @@ static PyObject *waste_WEInstallObjectHandler(PyObject *_self, PyObject *_args)
 		err = WEInstallObjectHandler(objectType, selector, handler, we);
 		if ( err ) return PyMac_Error(err);
 		Py_INCREF(Py_None);
-		return Py_None;
+		_res = Py_None;
+		return _res;
 
 }
 
@@ -2555,12 +2573,14 @@ void initwaste(void)
 	    PyDict_SetItemString(d, "Error", waste_Error) != 0)
 		return;
 	WEO_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&WEO_Type) < 0) return;
 	Py_INCREF(&WEO_Type);
 	PyModule_AddObject(m, "WEO", (PyObject *)&WEO_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&WEO_Type);
 	PyModule_AddObject(m, "WEOType", (PyObject *)&WEO_Type);
 	waste_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&waste_Type) < 0) return;
 	Py_INCREF(&waste_Type);
 	PyModule_AddObject(m, "waste", (PyObject *)&waste_Type);
 	/* Backward-compatible name */

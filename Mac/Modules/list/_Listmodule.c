@@ -112,7 +112,7 @@ static void ListObj_dealloc(ListObject *self)
 	self->ob_ldef_func = NULL;
 	SetListRefCon(self->ob_itself, (long)0);
 	if (self->ob_must_be_disposed && self->ob_itself) LDispose(self->ob_itself);
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *ListObj_LAddColumn(ListObject *_self, PyObject *_args)
@@ -1151,6 +1151,7 @@ void init_List(void)
 	    PyDict_SetItemString(d, "Error", List_Error) != 0)
 		return;
 	List_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&List_Type) < 0) return;
 	Py_INCREF(&List_Type);
 	PyModule_AddObject(m, "List", (PyObject *)&List_Type);
 	/* Backward-compatible name */

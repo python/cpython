@@ -110,7 +110,7 @@ static void WinObj_dealloc(WindowObject *self)
 	}
 	self->ob_itself = NULL;
 	self->ob_freeit = NULL;
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *WinObj_GetWindowOwnerCount(WindowObject *_self, PyObject *_args)
@@ -3223,6 +3223,7 @@ void init_Win(void)
 	    PyDict_SetItemString(d, "Error", Win_Error) != 0)
 		return;
 	Window_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&Window_Type) < 0) return;
 	Py_INCREF(&Window_Type);
 	PyModule_AddObject(m, "Window", (PyObject *)&Window_Type);
 	/* Backward-compatible name */

@@ -84,7 +84,7 @@ int DragObj_Convert(PyObject *v, DragRef *p_itself)
 static void DragObj_dealloc(DragObjObject *self)
 {
 	Py_XDECREF(self->sendproc);
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *DragObj_DisposeDrag(DragObjObject *_self, PyObject *_args)
@@ -1135,6 +1135,7 @@ void init_Drag(void)
 	    PyDict_SetItemString(d, "Error", Drag_Error) != 0)
 		return;
 	DragObj_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&DragObj_Type) < 0) return;
 	Py_INCREF(&DragObj_Type);
 	PyModule_AddObject(m, "DragObj", (PyObject *)&DragObj_Type);
 	/* Backward-compatible name */

@@ -78,7 +78,7 @@ static void SndCh_dealloc(SndChannelObject *self)
 {
 	SndDisposeChannel(self->ob_itself, 1);
 	Py_XDECREF(self->ob_callback);
-	PyObject_Del(self);
+	PyObject_Free((PyObject *)self);
 }
 
 static PyObject *SndCh_SndDoCommand(SndChannelObject *_self, PyObject *_args)
@@ -310,7 +310,7 @@ static void SPBObj_dealloc(SPBObject *self)
 	self->ob_thiscallback = 0;
 	Py_XDECREF(self->ob_completion);
 	Py_XDECREF(self->ob_interrupt);
-	PyObject_Del(self);
+	PyObject_Free((PyObject *)self);
 }
 
 static PyMethodDef SPBObj_methods[] = {
@@ -1142,12 +1142,14 @@ void init_Snd(void)
 	    PyDict_SetItemString(d, "Error", Snd_Error) != 0)
 		return;
 	SndChannel_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&SndChannel_Type) < 0) return;
 	Py_INCREF(&SndChannel_Type);
 	PyModule_AddObject(m, "SndChannel", (PyObject *)&SndChannel_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&SndChannel_Type);
 	PyModule_AddObject(m, "SndChannelType", (PyObject *)&SndChannel_Type);
 	SPB_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&SPB_Type) < 0) return;
 	Py_INCREF(&SPB_Type);
 	PyModule_AddObject(m, "SPB", (PyObject *)&SPB_Type);
 	/* Backward-compatible name */

@@ -357,8 +357,8 @@ MPDeleteCriticalRegion(reentrantLock);
 #endif /* USE_MAC_MP_MULTITHREADING */
 
 Py_INCREF(Py_None);
-
-return Py_None;
+_res = Py_None;
+return _res;
 """			
 
 f = ManualGenerator("RunApplicationEventLoop", runappeventloop);
