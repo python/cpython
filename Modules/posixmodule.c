@@ -5357,7 +5357,7 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_STATVFS
 	{"statvfs",	posix_statvfs, METH_VARARGS, posix_statvfs__doc__},
 #endif
-#ifdef HAVE_TMPNAM
+#ifdef HAVE_TMPFILE
 	{"tmpfile",	posix_tmpfile, METH_VARARGS, posix_tmpfile__doc__},
 #endif
 #ifdef HAVE_TEMPNAM
