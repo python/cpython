@@ -147,7 +147,6 @@ class EditorWindow:
 
         menu = self.menudict.get('windows')
         if menu:
-            menu.configure(tearoff=0)
             end = menu.index("end")
             if end is None:
                 end = -1
