@@ -1,0 +1,21 @@
+* Data
+*.CFM68K.slb
+*.Lib
+*.MAP
+*.SYM
+*.c
+*.dbg
+*.h
+*.hqx
+*.jack
+*.prj
+*.prj.exp
+*.pyc
+*.xSYM
+*.µ
+*.µ.exp
+@*
+[(]*[)]
+*.dll
+*.exe
+*.mak

@@ -1,0 +1,18 @@
+[(]*[)]
+*.Lib
+*.MAP
+*.SYM
+*.c
+*.dbg
+*.exp
+*.h
+*.hqx
+*.ppc.slb
+*.pyc
+*.xMAP
+*.xSYM
+*.µ
+*.µ.exp
+* Data
+*.prj
+*.prj.exp
