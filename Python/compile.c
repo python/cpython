@@ -2659,9 +2659,19 @@ com_return_stmt(struct compiling *c, node *n)
 static void
 com_yield_stmt(struct compiling *c, node *n)
 {
+	int i;
 	REQ(n, yield_stmt); /* 'yield' testlist */
 	if (!c->c_infunction) {
 		com_error(c, PyExc_SyntaxError, "'yield' outside function");
+	}
+	
+	for (i = 0; i < c->c_nblocks; ++i) {
+		if (c->c_block[i] == SETUP_FINALLY) {
+			com_error(c, PyExc_SyntaxError,
+				  "'yield' not allowed in a 'try' block "
+				  "with a 'finally' clause");
+			return;
+		}
 	}
 	com_node(c, CHILD(n, 1));
 	com_addbyte(c, YIELD_VALUE);
