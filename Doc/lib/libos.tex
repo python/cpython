@@ -1,5 +1,5 @@
 \section{\module{os} ---
-         Miscellaneous OS interfaces.}
+         Miscellaneous OS interfaces}
 \declaremodule{standard}{os}
 
 \modulesynopsis{Miscellaneous OS interfaces.}
@@ -7,16 +7,16 @@
 
 This module provides a more portable way of using operating system
 (OS) dependent functionality than importing an OS dependent built-in
-module like \module{posix}.
+module like \module{posix} or \module{nt}.
 
-When the optional built-in module \module{posix} is available, this
-module exports the same functions and data as \module{posix}; otherwise,
-it searches for an OS dependent built-in module like \module{mac} and
-exports the same functions and data as found there.  The design of all
-Python's built-in OS dependent modules is such that as long as the same
-functionality is available, it uses the same interface; e.g., the
-function \code{os.stat(\var{file})} returns stat info about \var{file}
-in a format compatible with the \POSIX{} interface.
+This module searches for an OS dependent built-in module like
+\module{mac} or \module{posix} and exports the same functions and data
+as found there.  The design of all Python's built-in OS dependent
+modules is such that as long as the same functionality is available,
+it uses the same interface; e.g., the function
+\code{os.stat(\var{path})} returns stat information about \var{path}
+in the same format (which happens to have originated with the \POSIX{}
+interface).
 
 Extensions peculiar to a particular OS are also available through the
 \module{os} module, but using them is of course a threat to
@@ -27,21 +27,751 @@ Note that after the first time \module{os} is imported, there is
 instead of directly from the OS dependent built-in module, so there
 should be \emph{no} reason not to use \module{os}!
 
-In addition to whatever the correct OS dependent module exports, the
-following variables and functions are always exported by \module{os}:
+
+\begin{excdesc}{error}
+This exception is raised when a function returns a
+system-related error (e.g., not for illegal argument types).  This is
+also known as the built-in exception \exception{OSError}.  The
+accompanying value is a pair containing the numeric error code from
+\cdata{errno} and the corresponding string, as would be printed by the
+C function \cfunction{perror()}.  See the module
+\refmodule{errno}\refbimodindex{errno}, which contains names for the
+error codes defined by the underlying operating system.
+
+When exceptions are classes, this exception carries two attributes,
+\member{errno} and \member{strerror}.  The first holds the value of
+the C \cdata{errno} variable, and the latter holds the corresponding
+error message from \cfunction{strerror()}.  For exceptions that
+involve a file system path (e.g. \function{chdir()} or
+\function{unlink()}), the exception instance will contain a third
+attribute, \member{filename}, which is the file name passed to the
+function.
+
+When exceptions are strings, the string for the exception is
+\code{'OSError'}.
+\end{excdesc}
 
 \begin{datadesc}{name}
 The name of the OS dependent module imported.  The following names
 have currently been registered: \code{'posix'}, \code{'nt'},
-\code{'dos'}, \code{'mac'}.
+\code{'dos'}, \code{'mac'}, \code{'os2'}.
 \end{datadesc}
 
 \begin{datadesc}{path}
 The corresponding OS dependent standard module for pathname
-operations, e.g., \module{posixpath} or \module{macpath}.  Thus, (given
-the proper imports), \code{os.path.split(\var{file})} is equivalent to but
-more portable than \code{posixpath.split(\var{file})}.
+operations, e.g., \module{posixpath} or \module{macpath}.  Thus, given
+the proper imports, \code{os.path.split(\var{file})} is equivalent to but
+more portable than \code{posixpath.split(\var{file})}.  Note that this 
+is also a valid module: it may be imported directly as
+\refmodule{os.path}.
 \end{datadesc}
+
+
+
+\subsection{Process Parameters \label{os-procinfo}}
+
+These functions and data items provide information and operate on the
+current process and user.
+
+\begin{funcdesc}{chdir}{path}
+Change the current working directory to \var{path}.
+Availability: Macintosh, \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{datadesc}{environ}
+A mapping representing the string environment. For example,
+\code{environ['HOME']} is the pathname of your home directory,
+equivalent to \code{getenv("HOME")} in C.
+
+If the platform supports the \function{putenv()} function, this
+mapping may be used to modify the environment as well as query the
+environment.  \function{putenv()} will be called automatically when
+the mapping is modified.
+
+If \function{putenv()} is not provided, this mapping may be passed to
+the appropriate process-creation functions to cause child processes to 
+use a modified environment.
+\end{datadesc}
+
+\begin{funcdesc}{getcwd}{}
+Return a string representing the current working directory.
+Availability: Macintosh, \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{getegid}{}
+Return the current process' effective group id.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{geteuid}{}
+Return the current process' effective user id.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{getgid}{}
+Return the current process' group id.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{getpgrp}{}
+\index{process!group}
+Return the current process group id.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{getpid}{}
+\index{process!id}
+Return the current process id.
+Availability: \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{getppid}{}
+\index{process!id of parent}
+Return the parent's process id.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{getuid}{}
+\index{user id}
+Return the current process' user id.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{putenv}{varname, value}
+\index{environment variables!setting}
+Set the environment variable named \var{varname} to the string
+\var{value}.  Such changes to the environment affect subprocesses
+started with \function{os.system()}, \function{popen()} or
+\function{fork()} and \function{execv()}.
+Availability: most flavors of \UNIX{}, Windows.
+
+When \function{putenv()} is
+supported, assignments to items in \code{os.environ} are automatically
+translated into corresponding calls to \function{putenv()}; however,
+calls to \function{putenv()} don't update \code{os.environ}, so it is
+actually preferable to assign to items of \code{os.environ}.  
+\end{funcdesc}
+
+\begin{funcdesc}{setgid}{gid}
+Set the current process' group id.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{setpgrp}{}
+Calls the system call \cfunction{setpgrp()} or \cfunction{setpgrp(0,
+0)} depending on which version is implemented (if any).  See the
+\UNIX{} manual for the semantics.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{setpgid}{pid, pgrp}
+Calls the system call \cfunction{setpgid()}.  See the \UNIX{} manual
+for the semantics.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{setsid}{}
+Calls the system call \cfunction{setsid()}.  See the \UNIX{} manual
+for the semantics.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{setuid}{uid}
+Set the current process' user id.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+% placed in this section since it relates to errno.... a little weak ;-(
+\begin{funcdesc}{strerror}{code}
+Return the error message corresponding to the error code in
+\var{code}.
+Availability: \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{umask}{mask}
+Set the current numeric umask and returns the previous umask.
+Availability: \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{uname}{}
+Return a 5-tuple containing information identifying the current
+operating system.  The tuple contains 5 strings:
+\code{(\var{sysname}, \var{nodename}, \var{release}, \var{version},
+\var{machine})}.  Some systems truncate the nodename to 8
+characters or to the leading component; a better way to get the
+hostname is \function{socket.gethostname()}
+\withsubitem{(in module socket)}{\ttindex{gethostname()}}
+or even
+\withsubitem{(in module socket)}{\ttindex{gethostbyaddr()}}
+\code{socket.gethostbyaddr(socket.gethostname())}.
+Availability: recent flavors of \UNIX{}.
+\end{funcdesc}
+
+
+
+\subsection{File Object Creation \label{os-newstreams}}
+
+These functions create new file objects.
+
+
+\begin{funcdesc}{fdopen}{fd\optional{, mode\optional{, bufsize}}}
+Return an open file object connected to the file descriptor \var{fd}.
+The \var{mode} and \var{bufsize} arguments have the same meaning as
+the corresponding arguments to the built-in \function{open()}
+function.
+Availability: Macintosh, \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{popen}{command\optional{, mode\optional{, bufsize}}}
+Open a pipe to or from \var{command}.  The return value is an open
+file object connected to the pipe, which can be read or written
+depending on whether \var{mode} is \code{'r'} (default) or \code{'w'}.
+The \var{bufsize} argument has the same meaning as the corresponding
+argument to the built-in \function{open()} function.  The exit status of
+the command (encoded in the format specified for \function{wait()}) is
+available as the return value of the \method{close()} method of the file
+object, except that when the exit status is zero (termination without
+errors), \code{None} is returned.
+Availability: \UNIX{}, Windows.
+\end{funcdesc}
+
+
+
+\subsection{File Descriptor Operations \label{os-fd-ops}}
+
+These functions operate on I/O streams referred to
+using file descriptors.
+
+
+\begin{funcdesc}{close}{fd}
+Close file descriptor \var{fd}.
+Availability: Macintosh, \UNIX{}, Windows.
+
+Note: this function is intended for low-level I/O and must be applied
+to a file descriptor as returned by \function{open()} or
+\function{pipe()}.  To close a ``file object'' returned by the
+built-in function \function{open()} or by \function{popen()} or
+\function{fdopen()}, use its \method{close()} method.
+\end{funcdesc}
+
+\begin{funcdesc}{dup}{fd}
+Return a duplicate of file descriptor \var{fd}.
+Availability: Macintosh, \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{dup2}{fd, fd2}
+Duplicate file descriptor \var{fd} to \var{fd2}, closing the latter
+first if necessary.
+Availability: \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{fstat}{fd}
+Return status for file descriptor \var{fd}, like \function{stat()}.
+Availability: \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{fstatvfs}{fd}
+Return information about the filesystem containing the file associated
+with file descriptor \var{fd}, like \function{statvfs()}.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{ftruncate}{fd, length}
+Truncate the file corresponding to file descriptor \var{fd}, 
+so that it is at most \var{length} bytes in size.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{lseek}{fd, pos, how}
+Set the current position of file descriptor \var{fd} to position
+\var{pos}, modified by \var{how}: \code{0} to set the position
+relative to the beginning of the file; \code{1} to set it relative to
+the current position; \code{2} to set it relative to the end of the
+file.
+Availability: Macintosh, \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{open}{file, flags\optional{, mode}}
+Open the file \var{file} and set various flags according to
+\var{flags} and possibly its mode according to \var{mode}.
+The default \var{mode} is \code{0777} (octal), and the current umask
+value is first masked out.  Return the file descriptor for the newly
+opened file.
+Availability: Macintosh, \UNIX{}, Windows.
+
+For a description of the flag and mode values, see the C run-time
+documentation; flag constants (like \constant{O_RDONLY} and
+\constant{O_WRONLY}) are defined in this module too (see below).
+
+Note: this function is intended for low-level I/O.  For normal usage,
+use the built-in function \function{open()}, which returns a ``file
+object'' with \method{read()} and \method{write()} methods (and many
+more).
+\end{funcdesc}
+
+\begin{funcdesc}{pipe}{}
+Create a pipe.  Return a pair of file descriptors \code{(\var{r},
+\var{w})} usable for reading and writing, respectively.
+Availability: \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{read}{fd, n}
+Read at most \var{n} bytes from file descriptor \var{fd}.
+Return a string containing the bytes read.
+Availability: Macintosh, \UNIX{}, Windows.
+
+Note: this function is intended for low-level I/O and must be applied
+to a file descriptor as returned by \function{open()} or
+\function{pipe()}.  To read a ``file object'' returned by the
+built-in function \function{open()} or by \function{popen()} or
+\function{fdopen()}, or \code{sys.stdin}, use its
+\method{read()} or \method{readline()} methods.
+\end{funcdesc}
+
+\begin{funcdesc}{tcgetpgrp}{fd}
+Return the process group associated with the terminal given by
+\var{fd} (an open file descriptor as returned by \function{open()}).
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{tcsetpgrp}{fd, pg}
+Set the process group associated with the terminal given by
+\var{fd} (an open file descriptor as returned by \function{open()})
+to \var{pg}.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{ttyname}{fd}
+Return a string which specifies the terminal device associated with
+file-descriptor \var{fd}.  If \var{fd} is not associated with a terminal
+device, an exception is raised.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{write}{fd, str}
+Write the string \var{str} to file descriptor \var{fd}.
+Return the number of bytes actually written.
+Availability: Macintosh, \UNIX{}, Windows.
+
+Note: this function is intended for low-level I/O and must be applied
+to a file descriptor as returned by \function{open()} or
+\function{pipe()}.  To write a ``file object'' returned by the
+built-in function \function{open()} or by \function{popen()} or
+\function{fdopen()}, or \code{sys.stdout} or \code{sys.stderr}, use
+its \method{write()} method.
+\end{funcdesc}
+
+
+The following data items are available for use in constructing the
+\var{flags} parameter to the \function{open()} function.
+
+\begin{datadesc}{O_RDONLY}
+\dataline{O_WRONLY}
+\dataline{O_RDWR}
+\dataline{O_NDELAY}
+\dataline{O_NONBLOCK}
+\dataline{O_APPEND}
+\dataline{O_DSYNC}
+\dataline{O_RSYNC}
+\dataline{O_SYNC}
+\dataline{O_NOCTTY}
+\dataline{O_CREAT}
+\dataline{O_EXCL}
+\dataline{O_TRUNC}
+Options for the \var{flag} argument to the \function{open()} function.
+These can be bit-wise OR'd together.
+Availability: Macintosh, \UNIX{}, Windows.
+\end{datadesc}
+
+
+\subsection{Files and Directories \label{os-file-dir}}
+
+\begin{funcdesc}{access}{path, mode}
+Check read/write/execute permissions for this process or extance of file
+\var{path}.  Return \code{1} if access is granted, \code{0} if not.
+See the \UNIX{} manual for the semantics.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{chmod}{path, mode}
+Change the mode of \var{path} to the numeric \var{mode}.
+Availability: \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{chown}{path, uid, gid}
+Change the owner and group id of \var{path} to the numeric \var{uid}
+and \var{gid}.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{link}{src, dst}
+Create a hard link pointing to \var{src} named \var{dst}.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{listdir}{path}
+Return a list containing the names of the entries in the directory.
+The list is in arbitrary order.  It does not include the special
+entries \code{'.'} and \code{'..'} even if they are present in the
+directory.
+Availability: Macintosh, \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{lstat}{path}
+Like \function{stat()}, but do not follow symbolic links.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{mkfifo}{path\optional{, mode}}
+Create a FIFO (a named pipe) named \var{path} with numeric mode
+\var{mode}.  The default \var{mode} is \code{0666} (octal).  The current
+umask value is first masked out from the mode.
+Availability: \UNIX{}.
+
+FIFOs are pipes that can be accessed like regular files.  FIFOs exist
+until they are deleted (for example with \function{os.unlink()}).
+Generally, FIFOs are used as rendezvous between ``client'' and
+``server'' type processes: the server opens the FIFO for reading, and
+the client opens it for writing.  Note that \function{mkfifo()}
+doesn't open the FIFO --- it just creates the rendezvous point.
+\end{funcdesc}
+
+\begin{funcdesc}{mkdir}{path\optional{, mode}}
+Create a directory named \var{path} with numeric mode \var{mode}.
+The default \var{mode} is \code{0777} (octal).  On some systems,
+\var{mode} is ignored.  Where it is used, the current umask value is
+first masked out.
+Availability: Macintosh, \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{makedirs}{path\optional{, mode}}
+\index{directory!creating}
+Recursive directory creation function.  Like \function{mkdir()},
+but makes all intermediate-level directories needed to contain the
+leaf directory.  Throws an \exception{error} exception if the leaf
+directory already exists or cannot be created.  The default \var{mode}
+is \code{0777} (octal).
+\versionadded{1.5.2}
+\end{funcdesc}
+
+\begin{funcdesc}{readlink}{path}
+Return a string representing the path to which the symbolic link
+points.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{remove}{path}
+Remove the file \var{path}.  See \function{rmdir()} below to remove a
+directory.  This is identical to the \function{unlink()} function
+documented below.
+Availability: Macintosh, \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{removedirs}{path}
+\index{directory!deleting}
+Recursive directory removal function.  Works like
+\function{rmdir()} except that, if the leaf directory is
+successfully removed, directories corresponding to rightmost path
+segments will be pruned way until either the whole path is consumed or
+an error is raised (which is ignored, because it generally means that
+a parent directory is not empty).  Throws an \exception{error}
+exception if the leaf directory could not be successfully removed.
+\versionadded{1.5.2}
+\end{funcdesc}
+
+\begin{funcdesc}{rename}{src, dst}
+Rename the file or directory \var{src} to \var{dst}.
+Availability: Macintosh, \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{renames}{old, new}
+Recursive directory or file renaming function.
+Works like \function{rename()}, except creation of any intermediate
+directories needed to make the new pathname good is attempted first.
+After the rename, directories corresponding to rightmost path segments
+of the old name will be pruned away using \function{removedirs()}.
+
+Note: this function can fail with the new directory structure made if
+you lack permissions needed to remove the leaf directory or file.
+\versionadded{1.5.2}
+\end{funcdesc}
+
+\begin{funcdesc}{rmdir}{path}
+Remove the directory \var{path}.
+Availability: Macintosh, \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{stat}{path}
+Perform a \cfunction{stat()} system call on the given path.  The
+return value is a tuple of at least 10 integers giving the most
+important (and portable) members of the \emph{stat} structure, in the
+order
+\code{st_mode},
+\code{st_ino},
+\code{st_dev},
+\code{st_nlink},
+\code{st_uid},
+\code{st_gid},
+\code{st_size},
+\code{st_atime},
+\code{st_mtime},
+\code{st_ctime}.
+More items may be added at the end by some implementations.
+(On MS Windows, some items are filled with dummy values.)
+Availability: Macintosh, \UNIX{}, Windows.
+
+Note: The standard module \refmodule{stat}\refstmodindex{stat} defines
+functions and constants that are useful for extracting information
+from a \ctype{stat} structure.
+\end{funcdesc}
+
+\begin{funcdesc}{statvfs}{path}
+Perform a \cfunction{statvfs()} system call on the given path.  The
+return value is a tuple of 11 integers giving the most common
+members of the \ctype{statvfs} structure, in the order
+\code{f_bsize},
+\code{f_frsize},
+\code{f_blocks},
+\code{f_bfree},
+\code{f_bavail},
+\code{f_files},
+\code{f_ffree},
+\code{f_favail},
+\code{f_fsid},
+\code{f_flag},
+\code{f_namemax}.
+Availability: \UNIX{}.
+
+Note: The standard module \module{statvfs}\refstmodindex{statvfs}
+defines constants that are useful for extracting information
+from a \ctype{statvfs} structure.
+\end{funcdesc}
+
+\begin{funcdesc}{symlink}{src, dst}
+Create a symbolic link pointing to \var{src} named \var{dst}.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{unlink}{path}
+Remove the file \var{path}.  This is the same function as
+\function{remove()}; the \function{unlink()} name is its traditional
+\UNIX{} name.
+Availability: Macintosh, \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{utime}{path, (atime, mtime)}
+Set the access and modified time of the file to the given values.
+(The second argument is a tuple of two items.)
+Availability: Macintosh, \UNIX{}, Windows.
+\end{funcdesc}
+
+
+\subsection{Process Management \label{os-process}}
+
+These functions may be used to create and manage additional
+processes.
+
+
+\begin{funcdesc}{execl}{path, arg0, arg1, ...}
+This is equivalent to
+\samp{execv(\var{path}, (\var{arg0}, \var{arg1}, ...))}.
+Availability: \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{execle}{path, arg0, arg1, ..., env}
+This is equivalent to
+\samp{execve(\var{path}, (\var{arg0}, \var{arg1}, ...), \var{env})}.
+Availability: \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{execlp}{path, arg0, arg1, ...}
+This is equivalent to
+\samp{execvp(\var{path}, (\var{arg0}, \var{arg1}, ...))}.
+Availability: \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{execv}{path, args}
+Execute the executable \var{path} with argument list \var{args},
+replacing the current process (i.e., the Python interpreter).
+The argument list may be a tuple or list of strings.
+Availability: \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{execve}{path, args, env}
+Execute the executable \var{path} with argument list \var{args},
+and environment \var{env},
+replacing the current process (i.e., the Python interpreter).
+The argument list may be a tuple or list of strings.
+The environment must be a dictionary mapping strings to strings.
+Availability: \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{execvp}{path, args}
+This is like \samp{execv(\var{path}, \var{args})} but duplicates
+the shell's actions in searching for an executable file in a list of
+directories.  The directory list is obtained from
+\code{environ['PATH']}.
+Availability: \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{execvpe}{path, args, env}
+This is a cross between \function{execve()} and \function{execvp()}.
+The directory list is obtained from \code{\var{env}['PATH']}.
+Availability: \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{_exit}{n}
+Exit to the system with status \var{n}, without calling cleanup
+handlers, flushing stdio buffers, etc.
+Availability: \UNIX{}, Windows.
+
+Note: the standard way to exit is \code{sys.exit(\var{n})}.
+\function{_exit()} should normally only be used in the child process
+after a \function{fork()}.
+\end{funcdesc}
+
+\begin{funcdesc}{fork}{}
+Fork a child process.  Return \code{0} in the child, the child's
+process id in the parent.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{kill}{pid, sig}
+\index{process!killing}
+\index{process!signalling}
+Kill the process \var{pid} with signal \var{sig}.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{nice}{increment}
+Add \var{increment} to the process's ``niceness''.  Return the new
+niceness.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{plock}{op}
+Lock program segments into memory.  The value of \var{op}
+(defined in \code{<sys/lock.h>}) determines which segments are locked.
+Availabilty: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{spawnv}{mode, path, args}
+Execute the program \var{path} in a new process, passing the arguments 
+specified in \var{args} as command-line parameters.  \var{args} may be 
+a list or a tuple.  \var{mode} is a magic operational constant.  See
+the Visual \Cpp{} Runtime Library documentation for further
+information.
+Availability: Windows.
+\versionadded{1.5.2}
+\end{funcdesc}
+
+\begin{funcdesc}{spawnve}{mode, path, args, env}
+Execute the program \var{path} in a new process, passing the arguments 
+specified in \var{args} as command-line parameters and the contents of 
+the mapping \var{env} as the environment.  \var{args} may be a list or
+a tuple.  \var{mode} is a magic operational constant.  See the Visual
+\Cpp{} Runtime Library documentation for further information.
+Availability: Windows.
+\versionadded{1.5.2}
+\end{funcdesc}
+
+\begin{datadesc}{_P_WAIT}
+\dataline{_P_NOWAIT}
+\dataline{_P_NOWAITO}
+\dataline{_P_OVERLAY}
+\dataline{_P_DETACH}
+Possible values for the \var{mode} parameter to \function{spawnv()}
+and \function{spawnve()}.
+Availability: Windows.
+\versionadded{1.5.2}
+\end{datadesc}
+
+\begin{funcdesc}{system}{command}
+Execute the command (a string) in a subshell.  This is implemented by
+calling the Standard C function \cfunction{system()}, and has the
+same limitations.  Changes to \code{posix.environ}, \code{sys.stdin}
+etc.\ are not reflected in the environment of the executed command.
+The return value is the exit status of the process encoded in the
+format specified for \function{wait()}.
+Availability: \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{times}{}
+Return a 5-tuple of floating point numbers indicating accumulated (CPU
+or other)
+times, in seconds.  The items are: user time, system time, children's
+user time, children's system time, and elapsed real time since a fixed
+point in the past, in that order.  See the \UNIX{}
+manual page \manpage{times}{2} or the corresponding Windows Platform
+API documentation.
+Availability: \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{wait}{}
+Wait for completion of a child process, and return a tuple containing
+its pid and exit status indication: a 16-bit number, whose low byte is
+the signal number that killed the process, and whose high byte is the
+exit status (if the signal number is zero); the high bit of the low
+byte is set if a core file was produced.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{waitpid}{pid, options}
+Wait for completion of a child process given by proces id, and return
+a tuple containing its process id and exit status indication (encoded
+as for \function{wait()}).  The semantics of the call are affected by
+the value of the integer \var{options}, which should be \code{0} for
+normal operation.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{datadesc}{WNOHANG}
+The option for \function{waitpid()} to avoid hanging if no child
+process status is available immediately.
+Availability: \UNIX{}.
+\end{datadesc}
+
+The following functions take a process stats code as returned by
+\function{waitpid()} as a parameter.  They may be used to determine
+the disposition of a process.
+
+\begin{funcdesc}{WIFSTOPPED}{status}
+Return true if the process has been stopped.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{WIFSIGNALED}{status}
+Return true if the process exited due to a signal.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{WIFEXITED}{status}
+Return true if the process exited using the \manpage{exit}{2} system
+call.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{WEXITSTATUS}{status}
+If \code{WIFEXITED(\var{status})} is true, return the integer
+parameter to the \manpage{exit}{2} system call.  Otherwise, the return 
+value is meaningless.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{WSTOPSIG}{status}
+Return the signal which caused the process to exit.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+
+\subsection{Miscellanenous System Data \label{os-path}}
+
+The follow data values are used to support path manipulation
+operations.  These are defined for all platforms.
+
+Higher-level operations on pathnames are defined in the
+\refmodule{os.path} module.
+
 
 \begin{datadesc}{curdir}
 The constant string used by the OS to refer to the current directory,
@@ -64,20 +794,13 @@ concatenate pathnames --- use \function{os.path.split()} and
 \begin{datadesc}{altsep}
 An alternative character used by the OS to separate pathname components,
 or \code{None} if only one separator character exists.  This is set to
-\character{/} on DOS/Windows systems where \code{sep} is a backslash.
+\character{/} on DOS and Windows systems where \code{sep} is a backslash.
 \end{datadesc}
 
 \begin{datadesc}{pathsep}
 The character conventionally used by the OS to separate search patch
 components (as in \envvar{PATH}), e.g.\ \character{:} for \POSIX{} or
-\character{;} for MS-DOS.
-\end{datadesc}
-
-\begin{datadesc}{linesep}
-The string used to separate (or, rather, terminate) lines on the
-current platform.  This may be a single character, e.g. \code{'\e n'}
-for \POSIX{} or \code{'\e r'} for MacOS, or multiple characters,
-e.g. \code{'\e r\e n'} for MS-DOS.
+\character{;} for DOS and Windows.
 \end{datadesc}
 
 \begin{datadesc}{defpath}
@@ -85,70 +808,9 @@ The default search path used by \function{exec*p*()} if the environment
 doesn't have a \code{'PATH'} key.
 \end{datadesc}
 
-\begin{funcdesc}{makedirs}{path\optional{, mode}}
-\versionadded{1.5.2}
-\index{directory!creating}
-Recursive directory creation function.  Like \function{mkdir()},
-but makes all intermediate-level directories needed to contain the
-leaf directory.  Throws an \exception{os.error} exception if the leaf
-directory already exists or cannot be created.  The default \var{mode}
-is \code{0777} (octal).
-\end{funcdesc}
-
-\begin{funcdesc}{removedirs}{path}
-\versionadded{1.5.2}
-\index{directory!deleting}
-Recursive directory removal function.  Works like
-\function{rmdir()} except that, if the leaf directory is
-successfully removed, directories corresponding to rightmost path
-segments will be pruned way until either the whole path is consumed or
-an error is raised (which is ignored, because it generally means that
-a parent directory is not empty).  Throws an \exception{os.error}
-exception if the leaf directory could not be successfully removed.
-\end{funcdesc}
-
-\begin{funcdesc}{renames}{old, new}
-\versionadded{1.5.2}
-Recursive directory or file renaming function.
-Works like \function{rename()}, except creation of any intermediate
-directories needed to make the new pathname good is attempted first.
-After the rename, directories corresponding to rightmost path segments
-of the old name will be pruned away using \function{removedirs()}.
-
-Note: this function can fail with the new directory structure made if
-you lack permissions needed to remove the leaf directory or file.
-\end{funcdesc}
-
-\begin{funcdesc}{execl}{path, arg0, arg1, ...}
-This is equivalent to
-\samp{execv(\var{path}, (\var{arg0}, \var{arg1}, ...))}.
-\end{funcdesc}
-
-\begin{funcdesc}{execle}{path, arg0, arg1, ..., env}
-This is equivalent to
-\samp{execve(\var{path}, (\var{arg0}, \var{arg1}, ...), \var{env})}.
-\end{funcdesc}
-
-\begin{funcdesc}{execlp}{path, arg0, arg1, ...}
-This is equivalent to
-\samp{execvp(\var{path}, (\var{arg0}, \var{arg1}, ...))}.
-\end{funcdesc}
-
-\begin{funcdesc}{execvp}{path, args}
-This is like \samp{execv(\var{path}, \var{args})} but duplicates
-the shell's actions in searching for an executable file in a list of
-directories.  The directory list is obtained from
-\code{environ['PATH']}.
-\end{funcdesc}
-
-\begin{funcdesc}{execvpe}{path, args, env}
-This is a cross between \function{execve()} and \function{execvp()}.
-The directory list is obtained from \code{\var{env}['PATH']}.
-\end{funcdesc}
-
-(The functions \function{execv()} and \function{execve()} are not
-documented here, since they are implemented by the OS dependent
-module.  If the OS dependent module doesn't define either of these,
-the functions that rely on it will raise an exception.  They are
-documented in the section on module \module{posix}, together with all
-other functions that \module{os} imports from the OS dependent module.)
+\begin{datadesc}{linesep}
+The string used to separate (or, rather, terminate) lines on the
+current platform.  This may be a single character, e.g. \code{'\e n'}
+for \POSIX{} or \code{'\e r'} for MacOS, or multiple characters,
+e.g. \code{'\e r\e n'} for MS-DOS and MS Windows.
+\end{datadesc}

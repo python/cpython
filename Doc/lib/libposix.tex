@@ -11,7 +11,7 @@ standardized by the C Standard and the \POSIX{} standard (a thinly
 disguised \UNIX{} interface).
 
 \strong{Do not import this module directly.}  Instead, import the
-module \module{os}, which provides a \emph{portable} version of this
+module \refmodule{os}, which provides a \emph{portable} version of this
 interface.  On \UNIX{}, the \module{os} module provides a superset of
 the \module{posix} interface.  On non-\UNIX{} operating systems the
 \module{posix} module is not available, but a subset is always
@@ -30,11 +30,12 @@ type errors, while errors reported by the system calls raise
 \exception{error} (a synonym for the standard exception
 \exception{OSError}), described below.
 
+
 \subsection{Large File Support \label{posix-large-files}}
+\sectionauthor{Steve Clift}{clift@mail.anacapa.net}
 \index{large files}
 \index{file!large files}
 
-\sectionauthor{Steve Clift}{clift@mail.anacapa.net}
 
 Several operating systems (including AIX, HPUX, Irix and Solaris)
 provide support for files that are larger than 2 Gb from a C
@@ -58,7 +59,8 @@ CFLAGS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64" OPT="-g -O2 $CFLAGS" \
 \end{verbatim} % $ <-- bow to font-lock
 
 
-\subsection{\module{posix} Module Contents \label{posix-contents}}
+\subsection{Module Contents \label{posix-contents}}
+
 
 Module \module{posix} defines the following data item:
 
@@ -75,13 +77,13 @@ passed on by \function{execv()}, \function{popen()} or
 export statements to the command string for \function{system()} or
 \function{popen()}.
 
-\strong{Note:} The \module{os} module provides an alternate
+\strong{Note:} The \refmodule{os} module provides an alternate
 implementation of \code{environ} which updates the environment on
 modification.  Note also that updating \code{os.environ} will render
-this dictionary obsolete.  Use of the \module{os} for this is
+this dictionary obsolete.  Use of the \refmodule{os} for this is
 recommended over direct access to the \module{posix} module.
 \end{datadesc}
 
 Additional contents of this module should only be accessed via the
-\module{os} module; refer to the documentation for that module for
+\refmodule{os} module; refer to the documentation for that module for
 further information.
