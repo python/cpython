@@ -208,8 +208,7 @@ PyUnicodeObject *_PyUnicode_New(int length)
 	    if ((unicode->length < length) &&
 		_PyUnicode_Resize(unicode, length)) {
 		free(unicode->str);
-		PyMem_DEL(unicode);
-		return NULL;
+		goto onError;
 	    }
 	}
 	else
@@ -222,8 +221,10 @@ PyUnicodeObject *_PyUnicode_New(int length)
 	unicode->str = PyMem_NEW(Py_UNICODE, length + 1);
     }
 
-    if (!unicode->str) 
+    if (!unicode->str) {
+	PyErr_NoMemory();
 	goto onError;
+    }
     unicode->str[length] = 0;
     unicode->length = length;
     unicode->hash = -1;
@@ -233,7 +234,6 @@ PyUnicodeObject *_PyUnicode_New(int length)
  onError:
     _Py_ForgetReference((PyObject *)unicode);
     PyMem_DEL(unicode);
-    PyErr_NoMemory();
     return NULL;
 }
 
@@ -707,25 +707,27 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 
    The resulting string is cached in the Unicode object for subsequent
    usage by this function. The cached version is needed to implement
-   the character buffer interface.
+   the character buffer interface and will live (at least) as long as
+   the Unicode object itself.
 
    The refcount of the string is *not* incremented.
 
+   *** Exported for internal use by the interpreter only !!! ***
+
 */
 
-static
-PyObject *utf8_string(PyUnicodeObject *self,
+PyObject *_PyUnicode_AsUTF8String(PyObject *unicode,
 		      const char *errors)
 {
-    PyObject *v = self->utf8str;
+    PyObject *v = ((PyUnicodeObject *)unicode)->utf8str;
 
     if (v)
         return v;
-    v = PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(self),
-			     PyUnicode_GET_SIZE(self),
+    v = PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
+			     PyUnicode_GET_SIZE(unicode),
 			     errors);
     if (v && errors == NULL)
-        self->utf8str = v;
+        ((PyUnicodeObject *)unicode)->utf8str = v;
     return v;
 }
 
@@ -737,7 +739,7 @@ PyObject *PyUnicode_AsUTF8String(PyObject *unicode)
         PyErr_BadArgument();
         return NULL;
     }
-    str = utf8_string((PyUnicodeObject *)unicode, NULL);
+    str = _PyUnicode_AsUTF8String(unicode, NULL);
     if (str == NULL)
         return NULL;
     Py_INCREF(str);
@@ -3183,7 +3185,7 @@ unicode_hash(PyUnicodeObject *self)
        on. */
     if (self->hash != -1)
 	return self->hash;
-    utf8 = utf8_string(self, NULL);
+    utf8 = _PyUnicode_AsUTF8String((PyObject *)self, NULL);
     if (utf8 == NULL)
 	return -1;
     hash = PyObject_Hash(utf8);
@@ -4087,7 +4089,7 @@ unicode_buffer_getcharbuf(PyUnicodeObject *self,
 			"accessing non-existent unicode segment");
         return -1;
     }
-    str = utf8_string(self, NULL);
+    str = _PyUnicode_AsUTF8String((PyObject *)self, NULL);
     if (str == NULL)
 	return -1;
     *ptr = (void *) PyString_AS_STRING(str);
