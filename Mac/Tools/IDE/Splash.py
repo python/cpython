@@ -43,6 +43,7 @@ def importing(module):
 	else:
 		Qd.EraseRect(rect)
 		Qd.PaintRect((36, 282, pos, 288))
+	Qd.QDFlushPortBuffer(splash.GetDialogWindow().GetWindowPort(), None)
 
 def my__import__(name, globals=None, locals=None, fromlist=None):
 	try:
@@ -101,6 +102,7 @@ def UpdateSplash(drawdialog = 0, what = 0):
 		splash.DrawDialog()
 	drawtext(what)
 	splash.GetDialogWindow().ValidWindowRect(splash.GetDialogPort().portRect)
+	Qd.QDFlushPortBuffer(splash.GetDialogWindow().GetWindowPort(), None)
 
 def drawtext(what = 0):
 	Qd.SetPort(splash)
