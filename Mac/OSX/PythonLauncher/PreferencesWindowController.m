@@ -90,5 +90,21 @@
     [self update_display];
 };
 
+// NSComboBoxDataSource protocol
+- (unsigned int)comboBox:(NSComboBox *)aComboBox indexOfItemWithStringValue:(NSString *)aString
+{
+    return [[settings interpreters] indexOfObjectIdenticalTo: aString];
+}
+
+- (id)comboBox:(NSComboBox *)aComboBox objectValueForItemAtIndex:(int)index
+{
+    return [[settings interpreters] objectAtIndex: index];
+}
+
+- (int)numberOfItemsInComboBox:(NSComboBox *)aComboBox
+{
+    return [[settings interpreters] count];
+}
+
 
 @end
