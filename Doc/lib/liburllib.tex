@@ -160,8 +160,8 @@ can be accomplished with the following code:
 import urllib
 
 class AppURLopener(urllib.FancyURLopener):
+    version = "App/1.7"
     def __init__(self, *args):
-        self.version = "App/1.7"
         urllib.FancyURLopener.__init__(self, *args)
 
 urllib._urlopener = AppURLopener()
@@ -243,9 +243,9 @@ By default, the \class{URLopener} class sends a
 \mailheader{User-Agent} header of \samp{urllib/\var{VVV}}, where
 \var{VVV} is the \module{urllib} version number.  Applications can
 define their own \mailheader{User-Agent} header by subclassing
-\class{URLopener} or \class{FancyURLopener} and setting the instance
-attribute \member{version} to an appropriate string value before the
-\method{open()} method is called.
+\class{URLopener} or \class{FancyURLopener} and setting the class
+attribute \member{version} to an appropriate string value in the
+subclass definition.
 
 The optional \var{proxies} parameter should be a dictionary mapping
 scheme names to proxy URLs, where an empty dictionary turns proxies
