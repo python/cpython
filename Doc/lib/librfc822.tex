@@ -6,7 +6,8 @@
 This module defines a class, \class{Message}, which represents a
 collection of ``email headers'' as defined by the Internet standard
 \rfc{822}.  It is used in various contexts, usually to read such
-headers from a file.
+headers from a file.  This module also defines a helper class 
+\class{AddressList} for parsing RFC822 addresses.
 
 Note that there's a separate module to read \UNIX{}, MH, and MMDF
 style mailbox files: \module{mailbox}\refstmodindex{mailbox}.
@@ -40,6 +41,12 @@ linefeed before the line is stored.
 All header matching is done independent of upper or lower case;
 e.g. \code{\var{m}['From']}, \code{\var{m}['from']} and
 \code{\var{m}['FROM']} all yield the same result.
+\end{classdesc}
+
+\begin{classdesc}{AddressList}{field}
+You may instantiate the AddresssList helper class using a single
+string parameter, a comma-separated list of RFC822 addresses to be
+parsed.  (The parameter None yields an empty list.)
 \end{classdesc}
 
 \begin{funcdesc}{parsedate}{date}
@@ -198,10 +205,45 @@ Finally, \class{Message} instances have two public instance variables:
 
 \begin{memberdesc}{headers}
 A list containing the entire set of header lines, in the order in
-which they were read.  Each line contains a trailing newline.  The
+which they were read (except that setitem calls may disturb this
+order). Each line contains a trailing newline.  The
 blank line terminating the headers is not contained in the list.
 \end{memberdesc}
 
 \begin{memberdesc}{fp}
 The file object passed at instantiation time.
+\end{memberdesc}
+
+\subsection{AddressList Objects}
+\label{addresslist-objects}
+
+An \class{AddressList} instance has the following methods:
+
+\begin{methoddesc}{__len__}{name}
+Return the number of addresses in the address list.
+\end{methoddesc}
+
+\begin{methoddesc}{__str__}{name}
+Return a canonicalized string representation of the address list.
+Addresses are rendered in "name" <host@domain> form, comma-separated.
+\end{methoddesc}
+
+\begin{methoddesc}{__add__}{name}
+Return an AddressList instance that contains all addresses in both
+AddressList operands, with duplicates removed (set union).
+\end{methoddesc}
+
+\begin{methoddesc}{__sub__}{name}
+Return an AddressList instance that contains every address in the
+left-hand AddressList operand that is not present in the right-hand
+address operand (set difference).
+\end{methoddesc}
+
+
+Finally, \class{AddressList} instances have one public instance variable:
+
+\begin{memberdesc}{addresslist}
+A list of tuple string pairs, one per address.  In each member, the
+first is the canonicalized name part of the address, the second is the
+route-address (@-separated host-domain pair).
 \end{memberdesc}
