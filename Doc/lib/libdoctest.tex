@@ -159,7 +159,7 @@ python M.py
 This won't display anything unless an example fails, in which case the
 failing example(s) and the cause(s) of the failure(s) are printed to stdout,
 and the final line of output is
-\\code{'***Test Failed*** \var{N} failures.'}, where \var{N} is the
+\samp{'***Test Failed*** \var{N} failures.'}, where \var{N} is the
 number of examples that failed.
 
 Run it with the \programopt{-v} switch instead:
@@ -203,7 +203,7 @@ attempted.
   Only docstrings attached to objects belonging to module \var{m} are
   searched.
 
-  Return \code{(\var{failure_count}, \var{test_count})}.
+  Return \samp{(\var{failure_count}, \var{test_count})}.
 
   Optional argument \var{name} gives the name of the module; by default,
   or if \code{None}, \code{\var{m}.__name__} is used.
@@ -227,7 +227,7 @@ attempted.
 
   Optional argument \var{verbose} prints lots of stuff if true, and prints
   only failures if false; by default, or if \code{None}, it's true
-  if and only if \code{'-v'} is in \code{\module{sys}.argv}.
+  if and only if \code{'-v'} is in \code{sys.argv}.
 
   Optional argument \var{report} prints a summary at the end when true,
   else prints nothing at the end.  In verbose mode, the summary is
@@ -245,7 +245,7 @@ attempted.
   Optional argument \var{isprivate} specifies a function used to
   determine whether a name is private.  The default function treats
   all names as public.  \var{isprivate} can be set to
-  \code{\module{doctest}.is_private} to skip over names that are
+  \code{doctest.is_private} to skip over names that are
   private according to Python's underscore naming convention.
   \deprecated{2.4}{\var{isprivate} was a stupid idea -- don't use it.
   If you need to skip tests based on name, filter the list returned by
@@ -287,7 +287,7 @@ Any classes found are recursively searched similarly, to test docstrings in
 their contained methods and nested classes.
 
 \versionchanged[A "private name" concept is deprecated and no longer
-                documented.]{2.4}
+                documented]{2.4}
 
 
 \subsection{What's the Execution Context?}
@@ -366,7 +366,7 @@ also be used in doctest directives.
     can match any substring in the actual output.  This includes
     substrings that span line boundaries, so it's best to keep usage of
     this simple.  Complicated uses can lead to the same kinds of
-    surprises that \code{.*} is prone to in regular expressions.
+    surprises that \regexp{.*} is prone to in regular expressions.
 \end{datadesc}
 
 \begin{datadesc}{UNIFIED_DIFF}
@@ -384,7 +384,7 @@ also be used in doctest directives.
     \constant{NORMALIZE_WHITESPACE}, \constant{ELLIPSIS},
     \constant{UNIFIED_DIFF}, and \constant{CONTEXT_DIFF}
     were added, and \code{<BLANKLINE>} in expected output matches
-    an empty line in actual output by default.]{2.4}
+    an empty line in actual output by default]{2.4}
 
 \subsection{Advanced Usage}
 
