@@ -796,6 +796,7 @@ posix_listdir(PyObject *self, PyObject *args)
 	HANDLE hFindFile;
 	WIN32_FIND_DATA FileData;
 	char namebuf[MAX_PATH+5];
+	char ch;
 
 	if (!PyArg_ParseTuple(args, "t#:listdir", &name, &len))
 		return NULL;
@@ -804,7 +805,8 @@ posix_listdir(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	strcpy(namebuf, name);
-	if (namebuf[len-1] != '/' && namebuf[len-1] != '\\')
+	ch = namebuf[len-1];
+	if (ch != '/' && ch != '\\' && ch != ':')
 		namebuf[len++] = '/';
 	strcpy(namebuf + len, "*.*");
 
@@ -844,8 +846,7 @@ posix_listdir(PyObject *self, PyObject *args)
 
 	return d;
 
-#else /* !MS_WIN32 */
-#ifdef _MSC_VER /* 16-bit Windows */
+#elif defined(_MSC_VER) /* 16-bit Windows */
 
 #ifndef MAX_PATH
 #define MAX_PATH	250
@@ -906,8 +907,7 @@ posix_listdir(PyObject *self, PyObject *args)
 
 	return d;
 
-#else
-#if defined(PYOS_OS2)
+#elif defined(PYOS_OS2)
 
 #ifndef MAX_PATH
 #define MAX_PATH    CCHMAXPATH
@@ -1016,10 +1016,8 @@ posix_listdir(PyObject *self, PyObject *args)
 
 	return d;
 
-#endif /* !PYOS_OS2 */
-#endif /* !_MSC_VER */
-#endif /* !MS_WIN32 */
-}
+#endif /* which OS */
+}  /* end of posix_listdir */
 
 static char posix_mkdir__doc__[] =
 "mkdir(path [, mode=0777]) -> None\n\
