@@ -166,6 +166,23 @@ def testLegalChildren():
     elem.appendChild(text)
     dom.unlink()
 
+def testNamedNodeMapSetItem():
+    dom = Document()
+    elem = dom.createElement('element')
+    attrs = elem.attributes
+    attrs["foo"] = "bar"
+    a = attrs.item(0)
+    confirm(a.ownerDocument is dom,
+            "NamedNodeMap.__setitem__() sets ownerDocument")
+    confirm(a.ownerElement is elem,
+            "NamedNodeMap.__setitem__() sets ownerElement")
+    confirm(a.value == "bar",
+            "NamedNodeMap.__setitem__() sets value")
+    confirm(a.nodeValue == "bar",
+            "NamedNodeMap.__setitem__() sets nodeValue")
+    elem.unlink()
+    dom.unlink()
+
 def testNonZero():
     dom = parse(tstfile)
     confirm(dom)# should not be zero
@@ -188,6 +205,11 @@ def testAAA():
     el = dom.documentElement
     el.setAttribute("spam", "jam2")
     confirm(el.toxml() == '<abc spam="jam2"/>', "testAAA")
+    a = el.getAttributeNode("spam")
+    confirm(a.ownerDocument is dom,
+            "setAttribute() sets ownerDocument")
+    confirm(a.ownerElement is dom.documentElement,
+            "setAttribute() sets ownerElement")
     dom.unlink()
 
 def testAAB():

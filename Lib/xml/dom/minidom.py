@@ -364,9 +364,10 @@ class NamedNodeMap:
     attributes as found in an input document.
     """
 
-    def __init__(self, attrs, attrsNS):
+    def __init__(self, attrs, attrsNS, ownerElement):
         self._attrs = attrs
         self._attrsNS = attrsNS
+        self._ownerElement = ownerElement
 
     try:
         property
@@ -430,6 +431,7 @@ class NamedNodeMap:
         if type(value) in _StringTypes:
             node = Attr(attname)
             node.value = value
+            node.ownerDocument = self._ownerElement.ownerDocument
         else:
             if not isinstance(value, Attr):
                 raise TypeError, "value must be a string or Attr object"
@@ -445,6 +447,7 @@ class NamedNodeMap:
             old.unlink()
         self._attrs[node.name] = node
         self._attrsNS[(node.namespaceURI, node.localName)] = node
+        node.ownerElement = self._ownerElement
         return old
 
     def setNamedItemNS(self, node):
@@ -518,14 +521,18 @@ class Element(Node):
     def setAttribute(self, attname, value):
         attr = Attr(attname)
         # for performance
-        attr.__dict__["value"] = attr.__dict__["nodeValue"] = value
+        d = attr.__dict__
+        d["value"] = d["nodeValue"] = value
+        d["ownerDocument"] = self.ownerDocument
         self.setAttributeNode(attr)
 
     def setAttributeNS(self, namespaceURI, qualifiedName, value):
         prefix, localname = _nssplit(qualifiedName)
         # for performance
         attr = Attr(qualifiedName, namespaceURI, localname, prefix)
-        attr.__dict__["value"] = attr.__dict__["nodeValue"] = value
+        d = attr.__dict__
+        d["value"] = d["nodeValue"] = value
+        d["ownerDocument"] = self.ownerDocument
         self.setAttributeNode(attr)
 
     def getAttributeNode(self, attrname):
@@ -608,7 +615,7 @@ class Element(Node):
             writer.write("/>%s"%(newl))
 
     def _get_attributes(self):
-        return AttributeList(self._attrs, self._attrsNS)
+        return NamedNodeMap(self._attrs, self._attrsNS, self)
 
     try:
         property
