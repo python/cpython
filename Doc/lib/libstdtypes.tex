@@ -982,6 +982,16 @@ attributes. \emph{Note that the current implementation only supports
 function attributes on functions written in Python.  Function
 attributes on built-ins may be supported in the future.}
 
+Functions have another special attribute \code{\var{f}.__dict__}
+(a.k.a. \code{\var{f}.func_dict}) which contains the namespace used to
+support function attributes.  \code{__dict__} can be accessed
+directly, set to a dictionary object, or \code{None}.  It can also be
+deleted (but the following two lines are equivalent):
+
+\begin{verbatim}
+del func.__dict__
+func.__dict__ = None
+\end{verbatim}
 
 \subsubsection{Methods \label{typesmethods}}
 \obindex{method}
@@ -1007,14 +1017,13 @@ object must be passed as the first argument.  In this case,
 \code{self} must be an instance of the unbound method's class (or a
 subclass of that class), otherwise a \code{TypeError} is raised.
 
-Like function objects, methods objects support getting and setting
-arbitrary attributes.  However, the attributes are actually stored on
-the underlying function object (i.e. \code{meth.im_func}).  To avoid
-surprising behavior, a \code{TypeError} is raised when an attempt is
-made to set an attribute on a bound method.  It is legal to get a
-bound method's attribute (the underlying function's attribute is
-returned), and it is also legal to set or get an unbound method's
-attribute.  For example:
+Like function objects, methods objects support getting
+arbitrary attributes.  However, since method attributes are actually
+stored on the underlying function object (i.e. \code{meth.im_func}),
+setting method attributes on either bound or unbound methods is
+disallowed.  Attempting to set a method attribute results in a
+\code{TypeError} being raised.  In order to set a method attribute,
+you need to explicitly set it on the underlying function object:
 
 \begin{verbatim}
 class C:
@@ -1022,13 +1031,8 @@ class C:
         pass
 
 c = C()
-d = C()
-c.method.whoami = 'my name is c'
-d.method.whoami = 'my name is d'
+c.method.im_func.whoami = 'my name is c'
 \end{verbatim}
-
-If bound method attribute setting was allowed, \code{c.method.whoami}
-would return ``my name is d''.
 
 See the \citetitle[../ref/ref.html]{Python Reference Manual} for more
 information.
