@@ -129,6 +129,7 @@ PyDict_New()
 	mp->ma_table = NULL;
 	mp->ma_fill = 0;
 	mp->ma_used = 0;
+	PyObject_GC_Init(mp);
 	return (PyObject *)mp;
 }
 
@@ -481,6 +482,7 @@ dict_dealloc(mp)
 	register int i;
 	register dictentry *ep;
 	Py_TRASHCAN_SAFE_BEGIN(mp)
+	PyObject_GC_Fini(mp);
 	for (i = 0, ep = mp->ma_table; i < mp->ma_size; i++, ep++) {
 		if (ep->me_key != NULL) {
 			Py_DECREF(ep->me_key);
@@ -1087,7 +1089,7 @@ PyTypeObject PyDict_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"dictionary",
-	sizeof(dictobject) + PyGC_INFO_SIZE,
+	sizeof(dictobject) + PyGC_HEAD_SIZE,
 	0,
 	(destructor)dict_dealloc, /*tp_dealloc*/
 	(printfunc)dict_print, /*tp_print*/

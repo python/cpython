@@ -94,7 +94,7 @@ PyTuple_New(size)
 		/* Check for overflow */
 		if (nbytes / sizeof(PyObject *) != (size_t)size ||
 		    (nbytes += sizeof(PyTupleObject) - sizeof(PyObject *)
-		     		+ PyGC_INFO_SIZE)
+		     		+ PyGC_HEAD_SIZE)
 		    <= 0)
 		{
 			return PyErr_NoMemory();
@@ -103,7 +103,7 @@ PyTuple_New(size)
 		op = (PyTupleObject *) PyObject_MALLOC(nbytes);
 		if (op == NULL)
 			return PyErr_NoMemory();
-
+		op = (PyTupleObject *) PyObject_FROM_GC(op);
 		PyObject_INIT_VAR(op, &PyTuple_Type, size);
 	}
 	for (i = 0; i < size; i++)
@@ -115,6 +115,7 @@ PyTuple_New(size)
 		Py_INCREF(op);	/* extra INCREF so that this is never freed */
 	}
 #endif
+	PyObject_GC_Init(op);
 	return (PyObject *) op;
 }
 
@@ -181,6 +182,7 @@ tupledealloc(op)
 	register int i;
 	register int len =  op->ob_size;
 	Py_TRASHCAN_SAFE_BEGIN(op)
+	PyObject_GC_Fini(op);
 	if (len > 0) {
 		i = len;
 		while (--i >= 0)
@@ -453,7 +455,7 @@ PyTypeObject PyTuple_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"tuple",
-	sizeof(PyTupleObject) - sizeof(PyObject *) + PyGC_INFO_SIZE,
+	sizeof(PyTupleObject) - sizeof(PyObject *) + PyGC_HEAD_SIZE,
 	sizeof(PyObject *),
 	(destructor)tupledealloc, /*tp_dealloc*/
 	(printfunc)tupleprint, /*tp_print*/
@@ -557,12 +559,27 @@ _PyTuple_Resize(pv, newsize, last_is_sticky)
 	} else 
 #endif		
 	{
+#ifdef WITH_CYCLE_GC
+		PyGC_Head *g = PyObject_AS_GC((PyObject *)v);
+		PyObject_GC_Fini((PyObject *)v);
+		sv = (PyTupleObject *)
+			PyObject_REALLOC((char *)g, sizeof(PyTupleObject) 
+					+ PyGC_HEAD_SIZE
+					+ newsize * sizeof(PyObject *));
+		if (g == NULL) {
+			sv = NULL;
+		} else {
+			sv = (PyTupleObject *)PyObject_FROM_GC(g);
+		}
+#else
 		sv = (PyTupleObject *)
 			PyObject_REALLOC((char *)v, sizeof(PyTupleObject) 
-					+ PyGC_INFO_SIZE
+					+ PyGC_HEAD_SIZE
 					+ newsize * sizeof(PyObject *));
+#endif
 		*pv = (PyObject *) sv;
 		if (sv == NULL) {
+			PyObject_GC_Init((PyObject *)v);
 			PyObject_DEL(v);
 			PyErr_NoMemory();
 			return -1;
@@ -578,6 +595,7 @@ _PyTuple_Resize(pv, newsize, last_is_sticky)
 			sv->ob_item[i - sizediff] = NULL;
 		}
 	}
+	PyObject_GC_Init(sv);
 	sv->ob_size = newsize;
 	return 0;
 }

@@ -72,10 +72,11 @@ PyList_New(size)
 	}
 	/* PyObject_NewVar is inlined */
 	op = (PyListObject *) PyObject_MALLOC(sizeof(PyListObject)
-						+ PyGC_INFO_SIZE);
+						+ PyGC_HEAD_SIZE);
 	if (op == NULL) {
 		return PyErr_NoMemory();
 	}
+	op = (PyListObject *) PyObject_FROM_GC(op);
 	if (size <= 0) {
 		op->ob_item = NULL;
 	}
@@ -89,6 +90,7 @@ PyList_New(size)
 	PyObject_INIT_VAR(op, &PyList_Type, size);
 	for (i = 0; i < size; i++)
 		op->ob_item[i] = NULL;
+	PyObject_GC_Init(op);
 	return (PyObject *) op;
 }
 
@@ -216,6 +218,7 @@ list_dealloc(op)
 {
 	int i;
 	Py_TRASHCAN_SAFE_BEGIN(op)
+	PyObject_GC_Fini(op);
 	if (op->ob_item != NULL) {
 		/* Do it backwards, for Christian Tismer.
 		   There's a simple test case where somehow this reduces
@@ -1498,7 +1501,7 @@ PyTypeObject PyList_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"list",
-	sizeof(PyListObject) + PyGC_INFO_SIZE,
+	sizeof(PyListObject) + PyGC_HEAD_SIZE,
 	0,
 	(destructor)list_dealloc, /*tp_dealloc*/
 	(printfunc)list_print, /*tp_print*/
@@ -1577,7 +1580,7 @@ static PyTypeObject immutable_list_type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"list (immutable, during sort)",
-	sizeof(PyListObject) + PyGC_INFO_SIZE,
+	sizeof(PyListObject) + PyGC_HEAD_SIZE,
 	0,
 	0,		/*tp_dealloc*/ /* Cannot happen */
 	(printfunc)list_print, /*tp_print*/

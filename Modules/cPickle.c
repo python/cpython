@@ -2892,7 +2892,7 @@ Instance_New(PyObject *cls, PyObject *args) {
                 Py_DECREF(inst);
                 goto err;
               }
-
+              PyObject_GC_Init(inst);
               return (PyObject *)inst;
             }
           Py_DECREF(__getinitargs__);

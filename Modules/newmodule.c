@@ -56,6 +56,7 @@ new_instance(unused, args)
 	Py_INCREF(dict);
 	inst->in_class = (PyClassObject *)klass;
 	inst->in_dict = dict;
+	PyObject_GC_Init(inst);
 	return (PyObject *)inst;
 }
 

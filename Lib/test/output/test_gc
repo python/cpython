@@ -1,0 +1,11 @@
+test_gc
+list 0x831a754
+dict 0x831a754
+list 0x831a754
+tuple 0x831a734
+class 0x831a794
+<test_gc.A instance at 831a754>
+a <test_gc.A instance at 831a754>
+b <test_gc.B instance at 831a95c>
+dict 0x831a9bc
+func 0x831d9e4

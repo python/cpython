@@ -451,6 +451,9 @@ typedef long intptr_t;
 /* Define if you want to use the GNU readline library */
 /* #define WITH_READLINE 1 */
 
+/* Define if you want cycle garbage collection */
+/* #define WITH_CYCLE_GC 1 */
+
 /* Define if you have clock.  */
 /* #define HAVE_CLOCK */
 

@@ -124,6 +124,10 @@ PyObject_Init(op, tp)
 				"NULL object passed to PyObject_Init");
 		return op;
   	}
+#ifdef WITH_CYCLE_GC
+	if (PyType_IS_GC(tp))
+		op = (PyObject *) PyObject_FROM_GC(op);
+#endif
 	/* Any changes should be reflected in PyObject_INIT (objimpl.h) */
 	op->ob_type = tp;
 	_Py_NewReference(op);
@@ -141,6 +145,10 @@ PyObject_InitVar(op, tp, size)
 				"NULL object passed to PyObject_InitVar");
 		return op;
 	}
+#ifdef WITH_CYCLE_GC
+	if (PyType_IS_GC(tp))
+		op = (PyVarObject *) PyObject_FROM_GC(op);
+#endif
 	/* Any changes should be reflected in PyObject_INIT_VAR */
 	op->ob_size = size;
 	op->ob_type = tp;
@@ -156,6 +164,10 @@ _PyObject_New(tp)
 	op = (PyObject *) PyObject_MALLOC(_PyObject_SIZE(tp));
 	if (op == NULL)
 		return PyErr_NoMemory();
+#ifdef WITH_CYCLE_GC
+	if (PyType_IS_GC(tp))
+		op = (PyObject *) PyObject_FROM_GC(op);
+#endif
 	return PyObject_INIT(op, tp);
 }
 
@@ -168,6 +180,10 @@ _PyObject_NewVar(tp, size)
 	op = (PyVarObject *) PyObject_MALLOC(_PyObject_VAR_SIZE(tp, size));
 	if (op == NULL)
 		return (PyVarObject *)PyErr_NoMemory();
+#ifdef WITH_CYCLE_GC
+	if (PyType_IS_GC(tp))
+		op = (PyVarObject *) PyObject_FROM_GC(op);
+#endif
 	return PyObject_INIT_VAR(op, tp, size);
 }
 
@@ -175,8 +191,22 @@ void
 _PyObject_Del(op)
 	PyObject *op;
 {
-	PyObject_FREE(op);
+#ifdef WITH_CYCLE_GC
+	if (PyType_IS_GC(op->ob_type)) {
+		PyGC_Head *g = PyObject_AS_GC(op);
+		PyObject_FREE(g);
+	} else
+#endif
+	{
+		PyObject_FREE(op);
+	}
 }
+
+#ifndef WITH_CYCLE_GC
+/* extension modules might need these */
+void _PyGC_Insert(PyObject *op) { }
+void _PyGC_Remove(PyObject *op) { }
+#endif
 
 int
 PyObject_Print(op, fp, flags)
@@ -917,8 +947,10 @@ _Py_Dealloc(op)
 {
 	destructor dealloc = op->ob_type->tp_dealloc;
 	_Py_ForgetReference(op);
+#ifndef WITH_CYCLE_GC
 	if (_PyTrash_delete_nesting < PyTrash_UNWIND_LEVEL-1)
 		op->ob_type = NULL;
+#endif
 	(*dealloc)(op);
 }
 
