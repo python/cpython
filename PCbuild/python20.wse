@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=5.0
-  Title=Python 2.0 alpha 2
+  Title=Python 2.0 beta 1
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -18,19 +18,19 @@ item: Global
   Patch Memory=4000
   Variable Name1=_SYS_
   Variable Description1=System directory
-  Variable Default1=C:\WINNT\SYSTEM32
+  Variable Default1=C:\Windows\System
   Variable Flags1=00001001
   Variable Name2=_WISE_
   Variable Description2=WISE root directory
-  Variable Default2=C:\Program Files\Wise
+  Variable Default2=C:\Wise
   Variable Flags2=00001001
   Variable Name3=_SRC_
   Variable Description3=Python source directory
-  Variable Default3=D:\src\Python-2.0
+  Variable Default3=C:\src\Python-2.0
   Variable Flags3=00001001
   Variable Name4=_DOC_
   Variable Description4=HTML documentation tree directory
-  Variable Default4=D:\src\Python-2.0\html
+  Variable Default4=C:\src\Python-2.0\html
   Variable Flags4=00001001
 end
 remarked item: Open/Close INSTALL.LOG
@@ -55,7 +55,7 @@ item: Check Configuration
 end
 item: Set Variable
   Variable=APPTITLE
-  Value=Python 2.0 alpha 2
+  Value=Python 2.0 beta 1
 end
 item: Set Variable
   Variable=GROUP
