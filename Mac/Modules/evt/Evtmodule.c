@@ -234,6 +234,8 @@ static PyObject *Evt_PostEvent(_self, _args)
 	return _res;
 }
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *Evt_OSEventAvail(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -252,6 +254,9 @@ static PyObject *Evt_OSEventAvail(_self, _args)
 	                     PyMac_BuildEventRecord, &theEvent);
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *Evt_GetOSEvent(_self, _args)
 	PyObject *_self;
@@ -271,6 +276,7 @@ static PyObject *Evt_GetOSEvent(_self, _args)
 	                     PyMac_BuildEventRecord, &theEvent);
 	return _res;
 }
+#endif
 
 static PyObject *Evt_FlushEvents(_self, _args)
 	PyObject *_self;
@@ -290,6 +296,8 @@ static PyObject *Evt_FlushEvents(_self, _args)
 	return _res;
 }
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *Evt_SystemClick(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -307,6 +315,9 @@ static PyObject *Evt_SystemClick(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *Evt_SystemTask(_self, _args)
 	PyObject *_self;
@@ -320,6 +331,9 @@ static PyObject *Evt_SystemTask(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *Evt_SystemEvent(_self, _args)
 	PyObject *_self;
@@ -336,6 +350,7 @@ static PyObject *Evt_SystemEvent(_self, _args)
 	                     _rv);
 	return _res;
 }
+#endif
 
 static PyObject *Evt_WaitNextEvent(_self, _args)
 	PyObject *_self;
@@ -390,18 +405,33 @@ static PyMethodDef Evt_methods[] = {
 	 "(EventMask eventMask) -> (Boolean _rv, EventRecord theEvent)"},
 	{"PostEvent", (PyCFunction)Evt_PostEvent, 1,
 	 "(EventKind eventNum, UInt32 eventMsg) -> None"},
+
+#ifndef TARGET_API_MAC_CARBON
 	{"OSEventAvail", (PyCFunction)Evt_OSEventAvail, 1,
 	 "(EventMask mask) -> (Boolean _rv, EventRecord theEvent)"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"GetOSEvent", (PyCFunction)Evt_GetOSEvent, 1,
 	 "(EventMask mask) -> (Boolean _rv, EventRecord theEvent)"},
+#endif
 	{"FlushEvents", (PyCFunction)Evt_FlushEvents, 1,
 	 "(EventMask whichMask, EventMask stopMask) -> None"},
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SystemClick", (PyCFunction)Evt_SystemClick, 1,
 	 "(EventRecord theEvent, WindowPtr theWindow) -> None"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SystemTask", (PyCFunction)Evt_SystemTask, 1,
 	 "() -> None"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SystemEvent", (PyCFunction)Evt_SystemEvent, 1,
 	 "(EventRecord theEvent) -> (Boolean _rv)"},
+#endif
 	{"WaitNextEvent", (PyCFunction)Evt_WaitNextEvent, 1,
 	 "(EventMask eventMask, UInt32 sleep [,RegionHandle]) -> (Boolean _rv, EventRecord theEvent)"},
 	{NULL, NULL, 0}

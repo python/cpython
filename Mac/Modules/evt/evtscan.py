@@ -35,6 +35,16 @@ class MyScanner(Scanner):
 				listname = "methods"
 		return classname, listname
 
+	def makegreylist(self):
+		return [
+			('#ifndef TARGET_API_MAC_CARBON', [
+				'SystemEvent',
+				'SystemTask',
+				'SystemClick',
+				'GetOSEvent',
+				'OSEventAvail',
+			])]
+
 	def makeblacklistnames(self):
 		return [
 			"KeyTranslate",

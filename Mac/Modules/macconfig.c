@@ -96,7 +96,6 @@ extern void initmactcp();
 #define USE_CORE_TOOLBOX
 #endif
 extern void initApp();
-extern void initEvt();
 extern void initFm();
 extern void initHelp();
 extern void initIcn();
@@ -113,6 +112,7 @@ extern void initDrag();
 extern void initAE();
 extern void initCtl();
 extern void initDlg();
+extern void initEvt();
 extern void initMenu();
 extern void initQd();
 extern void initRes();
@@ -160,6 +160,7 @@ extern void initthread();
 extern void initcPickle();
 extern void initcStringIO();
 extern void init_codecs();
+extern void init_locale();
 /* -- ADDMODULE MARKER 1 -- */
 
 extern void PyMarshal_Init();
@@ -208,6 +209,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"AE", initAE},
 	{"Ctl", initCtl},
 	{"Dlg", initDlg},
+	{"Evt", initEvt},
 	{"Menu", initMenu},
 	{"Nav", initNav},
 	{"Qd", initQd},
@@ -216,7 +218,6 @@ struct _inittab _PyImport_Inittab[] = {
 #endif
 #ifdef USE_TOOLBOX
 	{"App", initApp},
-	{"Evt", initEvt},
 	{"Fm", initFm},
 	{"Icn", initIcn},
 	{"List", initList},
@@ -270,6 +271,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"cPickle",	initcPickle},
 	{"cStringIO",	initcStringIO},
 	{"_codecs", init_codecs},
+	{"_locale", init_locale},
 
 /* -- ADDMODULE MARKER 2 -- */
 
