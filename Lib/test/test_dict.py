@@ -395,9 +395,22 @@ class DictTest(unittest.TestCase):
         else:
             self.fail("< didn't raise Exc")
 
+import mapping_tests
+
+class GeneralMappingTests(mapping_tests.BasicTestMappingProtocol):
+    type2test = dict
+
+class Dict(dict):
+    pass
+
+class SubclassMappingTests(mapping_tests.BasicTestMappingProtocol):
+    type2test = Dict
+
 def test_main():
     test_support.run_unittest(
         DictTest,
+        GeneralMappingTests,
+        SubclassMappingTests,
     )
 
 if __name__ == "__main__":
