@@ -3,7 +3,7 @@
 % $Id$
 
 \title{What's New in Python 2.2}
-\release{0.08}
+\release{0.09}
 \author{A.M. Kuchling}
 \authoraddress{\email{akuchlin@mems-exchange.org}}
 \begin{document}
@@ -1148,6 +1148,15 @@ more information about XML-RPC.
   generating e-mail messages.  (Contributed by Barry Warsaw, and
   arising out of his work on Mailman.)
 
+  \item The \module{difflib} module now contains a new \class{Differ}
+  class for producing human-readable lists of changes (a ``delta'')
+  between two sequences of lines of text.  There are also two
+  generator functions, \function{ndiff()} and \function{restore()},
+  which respectively return a delta from two sequences, or one of the
+  original sequences from a delta. (Grunt work contributed by David
+  Goodger, from ndiff.py code by Tim Peters who then did the
+  generatorization.)
+
   \item New constants \constant{ascii_letters},
   \constant{ascii_lowercase}, and \constant{ascii_uppercase} were
   added to the \module{string} module.  There were several modules in
@@ -1395,7 +1404,7 @@ to experiment with these modules can uncomment them manually.
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Fred Bremmer, Keith Briggs, Andrew Dalke, Fred~L. Drake, Jr.,
-Carel Fellinger, Mark Hammond, Stephen Hansen, Michael Hudson, Jack
+Carel Fellinger, David Goodger, Mark Hammond, Stephen Hansen, Michael Hudson, Jack
 Jansen, Marc-Andr\'e Lemburg, Martin von L\"owis, Fredrik Lundh,
 Michael McLay, Nick Mathewson, Paul Moore, Tim Peters, Jens Quade, Tom
 Reinhardt, Neil Schemenauer, Guido van Rossum, Greg Ward.
