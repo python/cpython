@@ -210,7 +210,7 @@ caller is said to receive a \emph{new} reference.  When no ownership
 is transferred, the caller is said to \emph{borrow} the reference.
 Nothing needs to be done for a borrowed reference.
 
-Conversely, when calling a function passes it a reference to an 
+Conversely, when a calling function passes it a reference to an 
 object, there are two possibilities: the function \emph{steals} a 
 reference to the object, or it does not.  Few functions steal 
 references; the two notable exceptions are
@@ -602,7 +602,7 @@ described following the functions which accept them as parameters.
   (console or terminal input or \UNIX{} pseudo-terminal), return the
   value of \cfunction{PyRun_InteractiveLoop()}, otherwise return the
   result of \cfunction{PyRun_SimpleFile()}.  If \var{filename} is
-  \NULL{}, this function uses \code{"???"} as the filename.
+  \NULL{}, this function uses \code{'???'} as the filename.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyRun_SimpleString}{char *command}
@@ -1024,7 +1024,7 @@ Return true (nonzero) if the standard I/O file \var{fp} with name
 which \samp{isatty(fileno(\var{fp}))} is true.  If the global flag
 \cdata{Py_InteractiveFlag} is true, this function also returns true if
 the \var{name} pointer is \NULL{} or if the name is equal to one of
-the strings \code{"<stdin>"} or \code{"???"}.
+the strings \code{'<stdin>'} or \code{'???'}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{long}{PyOS_GetLastModificationTime}{char *filename}
@@ -1663,6 +1663,17 @@ Return the first index \var{i} for which \code{\var{o}[\var{i}] ==
 the Python expression \samp{\var{o}.index(\var{value})}.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PySequence_List}{PyObject *o}
+Return a list object with the same contents as the arbitrary sequence
+\var{o}.  The returned list is guaranteed to be new.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PySequence_Tuple}{PyObject *o}
+Return a tuple object with the same contents as the arbitrary sequence
+\var{o}.  If \var{o} is a tuple, a new reference will be returned,
+otherwise a tuple will be constructed with the appropriate contents.
+\end{cfuncdesc}
+
 
 \section{Mapping Protocol \label{mapping}}
 
@@ -2231,7 +2242,7 @@ Returns \NULL{} in case an exception was raised by the codec.
 Returns a Python string object holding the UTF-16 encoded value of the
 Unicode data in \var{s}.
 
-If \var{byteorder} is not 0, output is written according to the
+If \var{byteorder} is not \code{0}, output is written according to the
 following byte order:
 
 \begin{verbatim}
@@ -2240,7 +2251,7 @@ following byte order:
    byteorder == 1:  big endian
 \end{verbatim}
 
-If byteorder is 0, the output string will always start with the
+If byteorder is \code{0}, the output string will always start with the
 Unicode BOM mark (U+FEFF). In the other two modes, no BOM mark is
 prepended.
 
@@ -2252,7 +2263,6 @@ Returns \NULL{} in case an exception was raised by the codec.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_AsUTF16String}{PyObject *unicode}
-
 Returns a Python string using the UTF-16 encoding in native byte
 order. The string always starts with a BOM mark. Error handling is
 ``strict''. Returns \NULL{} in case an exception was raised by the
@@ -3602,7 +3612,7 @@ the value of the \code{argv[0]} argument to the
 \cfunction{main()}\ttindex{main()} function of the program.  This is
 used by \cfunction{Py_GetPath()}\ttindex{Py_GetPath()} and some other  
 functions below to find the Python run-time libraries relative to the 
-interpreter executable.  The default value is \code{"python"}.  The 
+interpreter executable.  The default value is \code{'python'}.  The 
 argument should point to a zero-terminated character string in static 
 storage whose contents will not change for the duration of the 
 program's execution.  No code in the Python interpreter will change 
@@ -3620,11 +3630,11 @@ should not modify its value.
 Return the \emph{prefix} for installed platform-independent files.  This 
 is derived through a number of complicated rules from the program name 
 set with \cfunction{Py_SetProgramName()} and some environment variables; 
-for example, if the program name is \code{"/usr/local/bin/python"}, 
-the prefix is \code{"/usr/local"}.  The returned string points into 
+for example, if the program name is \code{'/usr/local/bin/python'}, 
+the prefix is \code{'/usr/local'}.  The returned string points into 
 static storage; the caller should not modify its value.  This 
 corresponds to the \makevar{prefix} variable in the top-level 
-\file{Makefile} and the \programopt{-}\programopt{-prefix} argument to the 
+\file{Makefile} and the \longprogramopt{prefix} argument to the 
 \program{configure} script at build time.  The value is available to 
 Python code as \code{sys.prefix}.  It is only useful on \UNIX{}.  See 
 also the next function.
@@ -3635,11 +3645,11 @@ Return the \emph{exec-prefix} for installed platform-\emph{de}pendent
 files.  This is derived through a number of complicated rules from the 
 program name set with \cfunction{Py_SetProgramName()} and some environment 
 variables; for example, if the program name is 
-\code{"/usr/local/bin/python"}, the exec-prefix is 
-\code{"/usr/local"}.  The returned string points into static storage; 
+\code{'/usr/local/bin/python'}, the exec-prefix is 
+\code{'/usr/local'}.  The returned string points into static storage; 
 the caller should not modify its value.  This corresponds to the 
 \makevar{exec_prefix} variable in the top-level \file{Makefile} and the 
-\programopt{-}\programopt{-exec_prefix} argument to the
+\longprogramopt{exec-prefix} argument to the
 \program{configure} script at build  time.  The value is available to
 Python code as \code{sys.exec_prefix}.  It is only useful on \UNIX{}.
 
@@ -3647,8 +3657,8 @@ Background: The exec-prefix differs from the prefix when platform
 dependent files (such as executables and shared libraries) are 
 installed in a different directory tree.  In a typical installation, 
 platform dependent files may be installed in the 
-\code{"/usr/local/plat"} subtree while platform independent may be 
-installed in \code{"/usr/local"}.
+\file{/usr/local/plat} subtree while platform independent may be 
+installed in \file{/usr/local}.
 
 Generally speaking, a platform is a combination of hardware and 
 software families, e.g.  Sparc machines running the Solaris 2.x 
@@ -3663,8 +3673,8 @@ bytecode files are platform independent (but not independent from the
 Python version by which they were compiled!).
 
 System administrators will know how to configure the \program{mount} or 
-\program{automount} programs to share \code{"/usr/local"} between platforms 
-while having \code{"/usr/local/plat"} be a different filesystem for each 
+\program{automount} programs to share \file{/usr/local} between platforms 
+while having \file{/usr/local/plat} be a different filesystem for each 
 platform.
 \end{cfuncdesc}
 
@@ -3717,8 +3727,8 @@ Return the platform identifier for the current platform.  On \UNIX{},
 this is formed from the ``official'' name of the operating system, 
 converted to lower case, followed by the major revision number; e.g., 
 for Solaris 2.x, which is also known as SunOS 5.x, the value is 
-\code{"sunos5"}.  On Macintosh, it is \code{"mac"}.  On Windows, it 
-is \code{"win"}.  The returned string points into static storage; 
+\code{'sunos5'}.  On Macintosh, it is \code{'mac'}.  On Windows, it 
+is \code{'win'}.  The returned string points into static storage; 
 the caller should not modify its value.  The value is available to 
 Python code as \code{sys.platform}.
 \withsubitem{(in module sys)}{\ttindex{platform}}
@@ -3728,7 +3738,7 @@ Python code as \code{sys.platform}.
 Return the official copyright string for the current Python version, 
 for example
 
-\code{"Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam"}
+\code{'Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam'}
 
 The returned string points into static storage; the caller should not 
 modify its value.  The value is available to Python code as the list 
@@ -4375,6 +4385,30 @@ unaryfunc, binaryfunc, ternaryfunc, inquiry, coercion, intargfunc,
 intintargfunc, intobjargproc, intintobjargproc, objobjargproc,
 destructor, printfunc, getattrfunc, getattrofunc, setattrfunc,
 setattrofunc, cmpfunc, reprfunc, hashfunc
+
+\begin{ctypedesc}{PyCFunction}
+Type of the functions used to implement most Python callables in C.
+\end{ctypedesc}
+
+\begin{ctypedesc}{PyMethodDef}
+Structure used to describe a method of an extension type.  This
+structure has four fields:
+
+\begin{tableiii}{l|l|l}{member}{Field}{C Type}{Meaning}
+  \lineiii{ml_name}{char *}{name of the method}
+  \lineiii{ml_meth}{PyCFunction}{pointer to the C implementation}
+  \lineiii{ml_flags}{int}{flag bits indicating how the call should be
+                          constructed}
+  \lineiii{ml_doc}{char *}{points to the contents of the docstring}
+\end{tableiii}
+\end{ctypedesc}
+
+\begin{cfuncdesc}{PyObject*}{Py_FindMethod}{PyMethodDef[] table,
+                                            PyObject *ob, char *name}
+Return a bound method object for an extension type implemented in C.
+This function also handles the special attribute \member{__methods__},
+returning a list of all the method names defined in \var{table}.
+\end{cfuncdesc}
 
 
 \section{Mapping Object Structures \label{mapping-structs}}
