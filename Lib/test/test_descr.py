@@ -1304,6 +1304,21 @@ def specials():
     for i in range(10):
         verify(i in p10)
     verify(10 not in p10)
+    # Safety test for __cmp__
+    def unsafecmp(a, b):
+        try:
+            a.__class__.__cmp__(a, b)
+        except TypeError:
+            pass
+        else:
+            raise TestFailed, "shouldn't allow %s.__cmp__(%r, %r)" % (
+                a.__class__, a, b)
+    unsafecmp(u"123", "123")
+    unsafecmp("123", u"123")
+    unsafecmp(1, 1.0)
+    unsafecmp(1.0, 1)
+    unsafecmp(1, 1L)
+    unsafecmp(1L, 1)
 
 def weakrefs():
     if verbose: print "Testing weak references..."
