@@ -148,7 +148,7 @@ Raise an exception otherwise.
 \begin{methoddesc}{retrbinary}{command,
     callback\optional{, maxblocksize\optional{, rest}}}
 Retrieve a file in binary transfer mode.  \var{command} should be an
-appropriate \samp{RETR} command, i.e.\ \code{'RETR \var{filename}'}.
+appropriate \samp{RETR} command: \code{'RETR \var{filename}'}.
 The \var{callback} function is called for each block of data received,
 with a single string argument giving the data block.
 The optional \var{maxblocksize} argument specifies the maximum chunk size to
@@ -175,7 +175,7 @@ default; in Python 2.1 and later, it is on by default.)
 
 \begin{methoddesc}{storbinary}{command, file\optional{, blocksize}}
 Store a file in binary transfer mode.  \var{command} should be an
-appropriate \samp{STOR} command, i.e.\ \code{"STOR \var{filename}"}.
+appropriate \samp{STOR} command: \code{"STOR \var{filename}"}.
 \var{file} is an open file object which is read until \EOF{} using its
 \method{read()} method in blocks of size \var{blocksize} to provide the
 data to be stored.  The \var{blocksize} argument defaults to 8192.
@@ -281,9 +281,9 @@ calls (see below).
 
 \begin{methoddesc}{close}{}
 Close the connection unilaterally.  This should not be applied to an
-already closed connection (e.g.\ after a successful call to
+already closed connection (such as after a successful call to
 \method{quit()}.  After this call the \class{FTP} instance should not
-be used any more (i.e., after a call to \method{close()} or
+be used any more (after a call to \method{close()} or
 \method{quit()} you cannot reopen the connection by issuing another
 \method{login()} method).
 \end{methoddesc}

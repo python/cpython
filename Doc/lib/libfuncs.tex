@@ -99,10 +99,10 @@ class instances are callable if they have a \method{__call__()} method.
 
 \begin{funcdesc}{chr}{i}
   Return a string of one character whose \ASCII{} code is the integer
-  \var{i}, e.g., \code{chr(97)} returns the string \code{'a'}.  This is the
-  inverse of \function{ord()}.  The argument must be in the range [0..255],
-  inclusive; \exception{ValueError} will be raised if \var{i} is
-  outside that range.
+  \var{i}.  For example, \code{chr(97)} returns the string \code{'a'}.
+  This is the inverse of \function{ord()}.  The argument must be in
+  the range [0..255], inclusive; \exception{ValueError} will be raised
+  if \var{i} is outside that range.
 \end{funcdesc}
 
 \begin{funcdesc}{cmp}{x, y}
@@ -122,14 +122,14 @@ class instances are callable if they have a \method{__call__()} method.
   Compile the \var{string} into a code object.  Code objects can be
   executed by an \keyword{exec} statement or evaluated by a call to
   \function{eval()}.  The \var{filename} argument should
-  give the file from which the code was read; pass e.g. \code{'<string>'}
-  if it wasn't read from a file.  The \var{kind} argument specifies
-  what kind of code must be compiled; it can be \code{'exec'} if
-  \var{string} consists of a sequence of statements, \code{'eval'}
-  if it consists of a single expression, or \code{'single'} if
-  it consists of a single interactive statement (in the latter case,
-  expression statements that evaluate to something else than
-  \code{None} will printed).
+  give the file from which the code was read; pass same recognizable value
+  if it wasn't read from a file (\code{'<string>'} is commonly used).
+  The \var{kind} argument specifies what kind of code must be
+  compiled; it can be \code{'exec'} if \var{string} consists of a
+  sequence of statements, \code{'eval'} if it consists of a single
+  expression, or \code{'single'} if it consists of a single
+  interactive statement (in the latter case, expression statements
+  that evaluate to something else than \code{None} will printed).
 \end{funcdesc}
 
 \begin{funcdesc}{complex}{real\optional{, imag}}
@@ -156,9 +156,9 @@ class instances are callable if they have a \method{__call__()} method.
   symbol table.  With an argument, attempts to return a list of valid
   attribute for that object.  This information is gleaned from the
   object's \member{__dict__}, \member{__methods__} and \member{__members__}
-  attributes, if defined.  The list is not necessarily complete; e.g.,
-  for classes, attributes defined in base classes are not included,
-  and for class instances, methods are not included.
+  attributes, if defined.  The list is not necessarily complete.  For
+  example, for classes, attributes defined in base classes are not
+  included, and for class instances, methods are not included.
   The resulting list is sorted alphabetically.  For example:
 
 \begin{verbatim}
@@ -202,9 +202,9 @@ class instances are callable if they have a \method{__call__()} method.
 \end{verbatim}
 
   This function can also be used to execute arbitrary code objects
-  (e.g.\ created by \function{compile()}).  In this case pass a code
-  object instead of a string.  The code object must have been compiled
-  passing \code{'eval'} to the \var{kind} argument.
+  (such as those created by \function{compile()}).  In this case pass
+  a code object instead of a string.  The code object must have been
+  compiled passing \code{'eval'} as the \var{kind} argument.
 
   Hints: dynamic execution of statements is supported by the
   \keyword{exec} statement.  Execution of statements from a file is
@@ -239,7 +239,7 @@ class instances are callable if they have a \method{__call__()} method.
   container which supports iteration, or an iterator,  If \var{list}
   is a string or a tuple, the result also has that type; otherwise it
   is always a list.  If \var{function} is \code{None}, the identity
-  function is assumed, i.e.\ all elements of \var{list} that are false
+  function is assumed, that is, all elements of \var{list} that are false
   (zero or empty) are removed.
 \end{funcdesc}
 
@@ -286,18 +286,18 @@ module from which it is called).
   Return the hash value of the object (if it has one).  Hash values
   are integers.  They are used to quickly compare dictionary
   keys during a dictionary lookup.  Numeric values that compare equal
-  have the same hash value (even if they are of different types, e.g.
-  1 and 1.0).
+  have the same hash value (even if they are of different types, as is
+  the case for 1 and 1.0).
 \end{funcdesc}
 
 \begin{funcdesc}{hex}{x}
   Convert an integer number (of any size) to a hexadecimal string.
   The result is a valid Python expression.  Note: this always yields
-  an unsigned literal, e.g. on a 32-bit machine, \code{hex(-1)} yields
-  \code{'0xffffffff'}.  When evaluated on a machine with the same
-  word size, this literal is evaluated as -1; at a different word
-  size, it may turn up as a large positive number or raise an
-  \exception{OverflowError} exception.
+  an unsigned literal.  For example, on a 32-bit machine,
+  \code{hex(-1)} yields \code{'0xffffffff'}.  When evaluated on a
+  machine with the same word size, this literal is evaluated as -1; at
+  a different word size, it may turn up as a large positive number or
+  raise an \exception{OverflowError} exception.
 \end{funcdesc}
 
 \begin{funcdesc}{id}{object}
@@ -352,7 +352,7 @@ module from which it is called).
   be done by a pointer compare instead of a string compare.  Normally,
   the names used in Python programs are automatically interned, and
   the dictionaries used to hold module, class or instance attributes
-  have interned keys.  Interned strings are immortal (i.e. never get
+  have interned keys.  Interned strings are immortal (never get
   garbage collected).
 \end{funcdesc}
 
@@ -410,36 +410,36 @@ the interpreter.
 \end{funcdesc}
 
 \begin{funcdesc}{map}{function, list, ...}
-Apply \var{function} to every item of \var{list} and return a list
-of the results.  If additional \var{list} arguments are passed, 
-\var{function} must take that many arguments and is applied to
-the items of all lists in parallel; if a list is shorter than another
-it is assumed to be extended with \code{None} items.  If
-\var{function} is \code{None}, the identity function is assumed; if
-there are multiple list arguments, \function{map()} returns a list
-consisting of tuples containing the corresponding items from all lists
-(i.e. a kind of transpose operation).  The \var{list} arguments may be
-any kind of sequence; the result is always a list.
+  Apply \var{function} to every item of \var{list} and return a list
+  of the results.  If additional \var{list} arguments are passed,
+  \var{function} must take that many arguments and is applied to the
+  items of all lists in parallel; if a list is shorter than another it
+  is assumed to be extended with \code{None} items.  If \var{function}
+  is \code{None}, the identity function is assumed; if there are
+  multiple list arguments, \function{map()} returns a list consisting
+  of tuples containing the corresponding items from all lists (a kind
+  of transpose operation).  The \var{list} arguments may be any kind
+  of sequence; the result is always a list.
 \end{funcdesc}
 
 \begin{funcdesc}{max}{s\optional{, args...}}
-With a single argument \var{s}, return the largest item of a
-non-empty sequence (e.g., a string, tuple or list).  With more than
-one argument, return the largest of the arguments.
+  With a single argument \var{s}, return the largest item of a
+  non-empty sequence (such as a string, tuple or list).  With more
+  than one argument, return the largest of the arguments.
 \end{funcdesc}
 
 \begin{funcdesc}{min}{s\optional{, args...}}
-With a single argument \var{s}, return the smallest item of a
-non-empty sequence (e.g., a string, tuple or list).  With more than
-one argument, return the smallest of the arguments.
+  With a single argument \var{s}, return the smallest item of a
+  non-empty sequence (such as a string, tuple or list).  With more
+  than one argument, return the smallest of the arguments.
 \end{funcdesc}
 
 \begin{funcdesc}{oct}{x}
   Convert an integer number (of any size) to an octal string.  The
-  result is a valid Python expression.  Note: this always yields
-  an unsigned literal, e.g. on a 32-bit machine, \code{oct(-1)} yields
-  \code{'037777777777'}.  When evaluated on a machine with the same
-  word size, this literal is evaluated as -1; at a different word
+  result is a valid Python expression.  Note: this always yields an
+  unsigned literal.  For example, on a 32-bit machine, \code{oct(-1)}
+  yields \code{'037777777777'}.  When evaluated on a machine with the
+  same word size, this literal is evaluated as -1; at a different word
   size, it may turn up as a large positive number or raise an
   \exception{OverflowError} exception.
 \end{funcdesc}
@@ -499,8 +499,8 @@ one argument, return the smallest of the arguments.
   numeric types.  With mixed operand types, the rules for binary
   arithmetic operators apply.  The effective operand type is also the
   type of the result; if the result is not expressible in this type, the
-  function raises an exception; e.g., \code{pow(2, -1)} or \code{pow(2,
-  35000)} is not allowed.
+  function raises an exception; for example, \code{pow(2, -1)} or
+  \code{pow(2, 35000)} is not allowed.
 \end{funcdesc}
 
 \begin{funcdesc}{range}{\optional{start,} stop\optional{, step}}
@@ -570,7 +570,7 @@ argument must be a module object, so it must have been successfully
 imported before.  This is useful if you have edited the module source
 file using an external editor and want to try out the new version
 without leaving the Python interpreter.  The return value is the
-module object (i.e.\ the same as the \var{module} argument).
+module object (the same as the \var{module} argument).
 
 There are a number of caveats:
 
@@ -623,7 +623,7 @@ when passed to \function{eval()}.
   after the decimal point.  If \var{n} is omitted, it defaults to zero.
   The result is a floating point number.  Values are rounded to the
   closest multiple of 10 to the power minus \var{n}; if two multiples
-  are equally close, rounding is done away from 0 (so e.g.
+  are equally close, rounding is done away from 0 (so. for example,
   \code{round(0.5)} is \code{1.0} and \code{round(-0.5)} is \code{-1.0}).
 \end{funcdesc}
 
@@ -645,7 +645,7 @@ which merely return the argument values (or their default).  They have
 no other explicit functionality; however they are used by Numerical
 Python\index{Numerical Python} and other third party extensions.
 Slice objects are also generated when extended indexing syntax is
-used, e.g. for \samp{a[start:stop:step]} or \samp{a[start:stop, i]}.
+used.  For example: \samp{a[start:stop:step]} or \samp{a[start:stop, i]}.
 \end{funcdesc}
 
 \begin{funcdesc}{str}{object}
@@ -680,7 +680,7 @@ For instance:
 
 \begin{funcdesc}{unichr}{i}
 Return the Unicode string of one character whose Unicode code is the
-integer \var{i}, e.g., \code{unichr(97)} returns the string
+integer \var{i}.  For example, \code{unichr(97)} returns the string
 \code{u'a'}.  This is the inverse of \function{ord()} for Unicode
 strings.  The argument must be in the range [0..65535], inclusive.
 \exception{ValueError} is raised otherwise.
@@ -712,7 +712,7 @@ The returned dictionary should not be modified: the effects on the
 corresponding symbol table are undefined.\footnote{
   In the current implementation, local variable bindings cannot
   normally be affected this way, but variables retrieved from 
-  other scopes (e.g. modules) can be.  This may change.}
+  other scopes (such as modules) can be.  This may change.}
 \end{funcdesc}
 
 \begin{funcdesc}{xrange}{\optional{start,} stop\optional{, step}}
@@ -723,8 +723,8 @@ actually storing them all simultaneously.  The advantage of
 \function{xrange()} over \function{range()} is minimal (since
 \function{xrange()} still has to create the values when asked for
 them) except when a very large range is used on a memory-starved
-machine (e.g. MS-DOS) or when all of the range's elements are never
-used (e.g. when the loop is usually terminated with \keyword{break}).
+machine or when all of the range's elements are never used (such as
+when the loop is usually terminated with \keyword{break}).
 \end{funcdesc}
 
 \begin{funcdesc}{zip}{seq1, \moreargs}

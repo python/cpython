@@ -331,7 +331,7 @@ A pad is like a window, except that it is not restricted by the screen
 size, and is not necessarily associated with a particular part of the
 screen.  Pads can be used when a large window is needed, and only a
 part of the window will be on the screen at one time.  Automatic
-refreshes of pads (e.g., from scrolling or echoing of input) do not
+refreshes of pads (such as from scrolling or echoing of input) do not
 occur.  The \method{refresh()} and \method{noutrefresh()} methods of a
 pad require 6 arguments to specify the part of the pad to be
 displayed and the location on the screen to be used for the display.
@@ -542,7 +542,7 @@ Window objects, as returned by \function{initscr()} and
 following methods:
 
 \begin{methoddesc}{addch}{\optional{y, x,} ch\optional{, attr}}
-\strong{Note:} A \emph{character} means a C character (i.e., an
+\strong{Note:} A \emph{character} means a C character (an
 \ASCII{} code), rather then a Python character (a string of length 1).
 (This note is true whenever the documentation mentions a character.)
 The builtin \function{ord()} is handy for conveying strings to codes.
