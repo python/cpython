@@ -37,7 +37,6 @@ class PythonIDE(Wapplication.Application):
 				home = os.getenv("HOME")
 				if home:
 					os.chdir(home)
-		print "We are in", os.getcwd()
 		self.preffilepath = os.path.join("Python", "PythonIDE preferences")
 		Wapplication.Application.__init__(self, 'Pide')
 		from Carbon import AE
@@ -455,11 +454,31 @@ class PythonIDE(Wapplication.Application):
 		# is located in the framework, but there's a symlink in Python.app.
 		# And as AHRegisterHelpBook wants a bundle (with the right bits in
 		# the plist file) we refer it to Python.app
+		#
+		# To make matters worse we have to look in two places: first in the IDE
+		# itself, then in the Python application inside the framework.
+		has_help = False
+		has_doc = False
+		ide_path_components = sys.argv[0].split("/")
+		if ide_path_components[-3:] == ["Contents", "Resources", "PythonIDE.py"]:
+			ide_app = "/".join(ide_path_components[:-3])
+			help_source = os.path.join(ide_app, 'Contents/Resources/English.lproj/Documentation')
+			doc_source = os.path.join(ide_app, 'Contents/Resources/English.lproj/PythonDocumentation')
+			has_help = os.path.isdir(help_source)
+			has_doc = os.path.isdir(doc_source)
+			if has_help or has_doc:
+				try:
+					from Carbon import AH
+					AH.AHRegisterHelpBook(ide_app)
+				except (ImportError, MacOS.Error), arg:
+					pass # W.Message("Cannot register Python Documentation: %s" % str(arg))
 		python_app = os.path.join(sys.prefix, 'Resources/Python.app')
-		help_source = os.path.join(python_app, 'Contents/Resources/English.lproj/Documentation')
-		doc_source = os.path.join(python_app, 'Contents/Resources/English.lproj/PythonDocumentation')
-		has_help = os.path.isdir(help_source)
-		has_doc = os.path.isdir(doc_source)
+		if not has_help:
+			help_source = os.path.join(python_app, 'Contents/Resources/English.lproj/Documentation')
+			has_help = os.path.isdir(help_source)
+		if not has_doc:
+			doc_source = os.path.join(python_app, 'Contents/Resources/English.lproj/PythonDocumentation')
+			has_doc = os.path.isdir(doc_source)
 		if has_help or has_doc:
 			try:
 				from Carbon import AH

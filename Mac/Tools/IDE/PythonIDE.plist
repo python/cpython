@@ -35,6 +35,15 @@
 	<key>CFBundleShortVersionString</key>
 	<string>2.3.2</string>
 
+	<key>CFBundleHelpBookFolder</key>
+	<array>
+		<string>PythonDocumentation</string>
+	</array>
+	<key>CFBundleHelpBookName</key>
+	<string>Python Help</string>
+	<key>CFBundleHelpTOCFile</key>
+	<string>index.html</string>
+
 	<key>CFBundleIconFile</key>
 	<string>PythonIDE.icns</string>
 	<key>CFBundleIdentifier</key>
