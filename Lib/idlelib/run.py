@@ -53,7 +53,7 @@ def main():
     while 1:
         try:
             if exit_requested:
-                os._exit(0)
+                sys.exit(0)
             try:
                 seq, request = rpc.request_queue.get(0)
             except Queue.Empty:
@@ -64,9 +64,15 @@ def main():
             rpc.response_queue.put((seq, ret))
         except KeyboardInterrupt:
             continue
+        except SystemExit:
+            raise
         except:
-            print_exception()
-            rpc.response_queue.put((seq, None))
+            try:
+                print_exception()
+                rpc.response_queue.put((seq, None))
+            except:
+                traceback.print_exc(file=sys.__stderr__)
+                sys.exit(1.1)
             continue
 
 def manage_socket(address):
@@ -207,13 +213,15 @@ class Executive:
         try:
             exec code in self.locals
         except:
+            if exit_requested:
+                sys.exit(0)
             try:
-                if exit_requested:
-                    os._exit(0)
+                # even print a user code SystemExit exception, continue
                 print_exception()
             except:
-                sys.stderr = sys.__stderr__
-                raise
+                # link not working? 
+                traceback.print_exc(file=sys.__stderr__)
+                sys.exit(1.2)
         else:
             flush_stdout()
 
