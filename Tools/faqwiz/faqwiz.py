@@ -74,7 +74,7 @@ translate_prog = None
 def translate(text):
     global translate_prog
     if not translate_prog:
-	url = '\(http\|ftp\)://[^ \t\r\n]*'
+	url = '\(http\|ftp\|https\)://[^ \t\r\n]*'
 	email = '\<[-a-zA-Z0-9._]+@[-a-zA-Z0-9._]+'
 	translate_prog = prog = regex.compile(url + '\|' + email)
     else:
