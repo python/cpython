@@ -18,7 +18,7 @@ HTML options:
     --split, -s		Specify a section level for page splitting, default: %(max_split_depth)s.
     --iconserver, -i	Specify location of icons (default: ./).
     --image-type	Specify the image type to use in HTML output;
-                        values: gif (default), png.
+                        values: gif, png (default).
     --numeric           Don't rename the HTML files; just keep node#.html for
                         the filenames.
     --style             Specify the CSS file to use for the output (filename,
@@ -83,7 +83,7 @@ class Options:
     discard_temps = 1
     have_temps = 0
     icon_server = "."
-    image_type = "gif"
+    image_type = "png"
     logging = 0
     max_link_depth = 3
     max_split_depth = 6
