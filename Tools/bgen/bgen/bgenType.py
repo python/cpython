@@ -100,6 +100,13 @@ class Type:
 		"""
 		pass
 
+class ByAddressType(Type):
+	"Simple type that is also passed by address for input"
+
+	def passInput(self, name):
+		return "&%s" % name
+
+
 
 # Sometimes it's useful to define a type that's only usable as input or output parameter
 
