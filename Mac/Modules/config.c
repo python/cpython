@@ -300,6 +300,7 @@ extern void initWin();
 /* -- ADDMODULE MARKER 1 -- */
 
 extern void initmarshal();
+extern void initimp();
 
 struct {
 	char *name;
@@ -307,7 +308,10 @@ struct {
 } inittab[] = {
 
 	{"array", initarray},
+#ifndef __SC__
+/* Do this one later... */
 	{"math", initmath},
+#endif
 	{"parser", initparser},
 	{"mac", initmac},
 	{"MacOS", MacOS_Init},
@@ -328,7 +332,10 @@ struct {
 #ifdef THINK_C
 	{"macconsole", initmacconsole},
 #endif
+#ifndef __SC__
+/* Do this one later... */
 	{"ctb", initctb},
+#endif
 	{"macfs", initmacfs},
 #ifdef __MWERKS__
 /* This is really "Jack Jansen" specific for now :-) */
@@ -338,23 +345,22 @@ struct {
 #endif
 /* This is really "Guido van Rossum" specific... :-) */
 	{"AE", initAE},
-#ifdef THINK_C
 	{"Ctl", initCtl},
 	{"Dlg", initDlg},
-#endif
 	{"Evt", initEvt},
 	{"Menu", initMenu},
 	{"Qd", initQd},
-	{"Res", initRes},
-#ifdef THINK_C
 	{"Snd", initSnd},
 	{"Win", initWin},
-#endif
+	{"Res", initRes},
 
 /* -- ADDMODULE MARKER 2 -- */
 
 	/* This module "lives in" with marshal.c */
 	{"marshal", initmarshal},
+	
+	/* This module "lives in" with import.c */
+	{"imp", initimp},
 
 	/* These entries are here for sys.builtin_module_names */
 	{"__main__", NULL},
