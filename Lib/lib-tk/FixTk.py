@@ -19,14 +19,19 @@ if os.path.exists(prefix):
                 tcldir = os.path.join(prefix,name)
                 if os.path.isdir(tcldir):
                     os.environ["TCL_LIBRARY"] = tcldir
-    # Now set the other variables accordingly
+    # Compute TK_LIBRARY, knowing that it has the same version
+    # as Tcl
     import _tkinter
     ver = str(_tkinter.TCL_VERSION)
-    for t in "tk", "tix":
-        key = t.upper() + "_LIBRARY"
-        try:
-            v = os.environ[key]
-        except KeyError:
-            v = os.path.join(sys.prefix, "tcl", t+ver)
-            if os.path.exists(os.path.join(v, "tclIndex")):
-                os.environ[key] = v
+    if not os.environ.has_key("TK_LIBRARY"):
+        v = os.path.join(prefix, 'tk'+ver)
+        if os.path.exists(os.path.join(v, "tclIndex")):
+            os.environ['TK_LIBRARY'] = v
+    # We don't know the Tix version, so we must search the entire
+    # directory
+    if not os.environ.has_key("TIX_LIBRARY"):
+        for name in os.listdir(prefix):
+            if name.startswith("tix"):
+                tixdir = os.path.join(prefix,name)
+                if os.path.isdir(tixdir):
+                    os.environ["TIX_LIBRARY"] = tixdir
