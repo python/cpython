@@ -64,6 +64,9 @@ staticforward int MovieCtlObj_Convert(PyObject *, TimeBase *);
 staticforward PyObject *TimeBaseObj_New(TimeBase);
 staticforward int TimeBaseObj_Convert(PyObject *, TimeBase *);
 
+/* Macro to allow us to GetNextInterestingTime without duration */
+#define GetMediaNextInterestingTimeOnly(media, flags, time, rate, rv) 			GetMediaNextInterestingTime(media, flags, time, rate, rv, NULL)
+			
 /*
 ** Parse/generate time records
 */
@@ -2746,6 +2749,30 @@ static PyObject *MediaObj_GetMediaPlayHints(_self, _args)
 	return _res;
 }
 
+static PyObject *MediaObj_GetMediaNextInterestingTimeOnly(_self, _args)
+	MediaObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short interestingTimeFlags;
+	TimeValue time;
+	Fixed rate;
+	TimeValue interestingTime;
+	if (!PyArg_ParseTuple(_args, "hlO&",
+	                      &interestingTimeFlags,
+	                      &time,
+	                      PyMac_GetFixed, &rate))
+		return NULL;
+	GetMediaNextInterestingTimeOnly(_self->ob_itself,
+	                                interestingTimeFlags,
+	                                time,
+	                                rate,
+	                                &interestingTime);
+	_res = Py_BuildValue("l",
+	                     interestingTime);
+	return _res;
+}
+
 static PyMethodDef MediaObj_methods[] = {
 	{"LoadMediaIntoRam", (PyCFunction)MediaObj_LoadMediaIntoRam, 1,
 	 "(TimeValue time, TimeValue duration, long flags) -> None"},
@@ -2837,6 +2864,8 @@ static PyMethodDef MediaObj_methods[] = {
 	 "(long flags, long flagsMask) -> None"},
 	{"GetMediaPlayHints", (PyCFunction)MediaObj_GetMediaPlayHints, 1,
 	 "() -> (long flags)"},
+	{"GetMediaNextInterestingTimeOnly", (PyCFunction)MediaObj_GetMediaNextInterestingTimeOnly, 1,
+	 "(short interestingTimeFlags, TimeValue time, Fixed rate) -> (TimeValue interestingTime)"},
 	{NULL, NULL, 0}
 };
 
