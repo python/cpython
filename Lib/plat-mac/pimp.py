@@ -46,6 +46,7 @@ ARCHIVE_FORMATS = [
 	(".tar.gz", "zcat \"%s\" | tar -xf -"),
 	(".tgz", "zcat \"%s\" | tar -xf -"),
 	(".tar.bz", "bzcat \"%s\" | tar -xf -"),
+	(".zip", "unzip \"%s\""),
 ]
 
 class MyURLopener(urllib.FancyURLopener):
@@ -343,6 +344,16 @@ class PimpPackage:
 		except _scriptExc_BadInstalled, arg:
 			return "bad", str(arg)
 		except:
+			sys.stderr.write("-------------------------------------\n")
+			sys.stderr.write("---- %s: install test got exception\n" % self.fullname())
+			sys.stderr.write("---- source:\n")
+			sys.stderr.write(installTest)
+			sys.stderr.write("---- exception:\n")
+			import traceback
+			traceback.print_exc(file=sys.stderr)
+			if self._db._maintainer:
+				sys.stderr.write("---- Please copy this and mail to %s\n" % self._db._maintainer)
+			sys.stderr.write("-------------------------------------\n")
 			return "bad", "Package install test got exception"
 		return "yes", ""
 		
@@ -540,10 +551,9 @@ class PimpPackage_binary(PimpPackage):
 		else:
 			return "unknown extension for archive file: %s" % filename
 		
-		# Modify where the files are extracted
-		prefixmod = '-C /'
+		# Extract the files in the root folder.
 		cmd = cmd % self.archiveFilename
-		if self._cmd(output, self._db.preferences.buildDir, cmd, prefixmod):
+		if self._cmd(output, "/", cmd):
 			return "unpack command failed"
 		
 		self.afterInstall()
