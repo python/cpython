@@ -66,8 +66,9 @@ def escape(pattern):
     alphanum=string.letters+'_'+string.digits
     for char in pattern:
 	if char not in alphanum:
-	    result.append('\\')
-	result.append(char)
+	    if char == '\000': result.append(r'\000')
+	    else: result.append('\\' + char)
+	else: result.append(char)
     return string.join(result, '')
 
 def compile(pattern, flags=0):
