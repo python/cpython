@@ -4025,6 +4025,7 @@ com_decorator_name(struct compiling *c, node *n)
 	varname = CHILD(n, 0);
 	REQ(varname, NAME);
 	com_addop_varname(c, VAR_LOAD, STR(varname));
+	com_push(c, 1);
 		
 	for (i = 1; i < nch; i += 2) {
 		node *attrname;
