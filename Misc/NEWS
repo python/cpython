@@ -12,6 +12,10 @@ What's New in Python 2.3.4 (final)?
 Core and builtins
 -----------------
 
+- Bug #858016: isinstance() and issubclass() can have their second
+  argument be a tuple whose nested depth is capped at the interpreter's
+  recursion limit.  Raises RuntimeError if the limit reached.
+
 - Made omitted callback and None equivalent for weakref.ref() and
   weakref.proxy(); the None case wasn't handled correctly in all
   cases.
@@ -33,10 +37,6 @@ Core and builtins
 
 Library
 -------
-
-- Bug #858016: isinstance() and issubclass() can have their second
-  argument be a tuple whose nested depth is capped at the interpreter's
-  recursion limit.  Raises RuntimeError if the limit reached.
 
 - Bug #700055: .pth files can now have any type of line endings.
 
