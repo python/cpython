@@ -4,10 +4,12 @@ import string
 
 MAXFD = 100	# Max number of file descriptors (os.getdtablesize()???)
 
-def popen2(cmd):
+def _popen2(cmd, capturestderr=0):
 	cmd = ['/bin/sh', '-c', cmd]
 	p2cread, p2cwrite = os.pipe()
 	c2pread, c2pwrite = os.pipe()
+	if capturestderr:
+		errout, errin = os.pipe()
 	pid = os.fork()
 	if pid == 0:
 		# Child
@@ -17,11 +19,13 @@ def popen2(cmd):
 			sys.stderr.write('popen2: bad read dup\n')
 		if os.dup(c2pwrite) <> 1:
 			sys.stderr.write('popen2: bad write dup\n')
+		if capturestderr:
+			os.close(2)
+			if os.dup(errin) <> 2: pass
 		for i in range(3, MAXFD):
 			try:
 				os.close(i)
-			except:
-				pass
+			except: pass
 		try:
 			os.execv(cmd[0], cmd)
 		finally:
@@ -32,4 +36,15 @@ def popen2(cmd):
 	tochild = os.fdopen(p2cwrite, 'w')
 	os.close(c2pwrite)
 	fromchild = os.fdopen(c2pread, 'r')
-	return fromchild, tochild
+	if capturestderr:
+		os.close(errin)
+		childerr = os.fdopen(errout, 'r')
+		return fromchild, tochild, childerr
+	else:
+		return fromchild, tochild, None
+
+def popen2(cmd):
+	return _popen2(cmd, 0)[:2]
+
+def popen3(cmd):
+	return _popen2(cmd, 1)
