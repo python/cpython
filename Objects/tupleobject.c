@@ -40,9 +40,7 @@ PyTuple_New(register int size)
 #endif
 		return (PyObject *) op;
 	}
-	if (0 < size && size < MAXSAVESIZE &&
-	    (op = free_tuples[size]) != NULL)
-	{
+	if (size < MAXSAVESIZE && (op = free_tuples[size]) != NULL) {
 		free_tuples[size] = (PyTupleObject *) op->ob_item[0];
 		num_free_tuples[size]--;
 #ifdef COUNT_ALLOCS
