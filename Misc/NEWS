@@ -32,6 +32,8 @@ Extension modules
 
 - SSL no longer crashes the interpreter when the remote side disconnects.
 
+- On Unix the mmap module can again be used to map device files.
+
 - time.strptime now exclusively uses the Python implementation
   contained within the _strptime module.
 
@@ -141,7 +143,7 @@ Core and builtins
 - Reverted a 2.3 beta 1 change to iterators for subclasses of list and
   tuple.  By default, the iterators now access data elements directly
   instead of going through __getitem__.  If __getitem__ access is
-  preferred, then __iter__ can be overriden.
+  preferred, then __iter__ can be overridden.
 
 - Creating an attribute on a module (i.e. a global variable created by
   __setattr__) that causes a builtin name to be shadowed now raises a
@@ -290,7 +292,7 @@ Tools/Demos
 Build
 -----
 
-- Setting DESTDIR during 'make install' now allows to specify a
+- Setting DESTDIR during 'make install' now allows specifying a
   different root directory.
 
 C API
@@ -489,7 +491,7 @@ Extension modules
   away from the original float.  This has been fixed.  See SF bug
   #705836.
 
-- New function time.tzset() provides access to the C library tzet()
+- New function time.tzset() provides access to the C library tzset()
   function, if supported.  (SF patch #675422.)
 
 - Using createfilehandler, deletefilehandler, createtimerhandler functions
