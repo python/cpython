@@ -32,7 +32,7 @@
 %define name python
 %define version 2.3.3
 %define libvers 2.3
-%define release 1pydotorg
+%define release 3pydotorg
 %define __prefix /usr
 
 #  kludge to get around rpm <percent>define weirdness
@@ -127,6 +127,10 @@ formats.
 %endif
 
 %changelog
+* Sat Mar 27 2003 Sean Reifschneider <jafo-rpms@tummy.com> [2.3.2-3pydotorg]
+- Being more agressive about finding the paths to fix for
+  #!/usr/local/bin/python.
+
 * Sat Feb 07 2004 Sean Reifschneider <jafo-rpms@tummy.com> [2.3.3-2pydotorg]
 - Adding code to remove "#!/usr/local/bin/python" from particular files and
   causing the RPM build to terminate if there are any unexpected files
@@ -267,10 +271,8 @@ mkdir -p "$RPM_BUILD_ROOT"/var/www/html/python
 %endif
 
 #  fix the #! line in installed files
-for file in \
-      usr/lib/python2.3/Tools/scripts/parseentities.py \
-      usr/lib/python2.3/cgi.py \
-      usr/lib/python2.3/Tools/faqwiz/faqw.py
+find . -type f -print0 | xargs -0 grep -l /usr/local/bin/python |
+      while read file
 do
    sed 's|^#!.*python|#!/usr/bin/env python'"%{binsuffix}"'|' \
          "$RPM_BUILD_ROOT"/"$file" >/tmp/fix-python-path.$$
