@@ -148,8 +148,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 	    if ua:
 		env['HTTP_USER_AGENT'] = ua
 	    # XXX Other HTTP_* headers
-	    import regsub
-	    decoded_query = regsub.gsub('+', ' ', query)
+	    decoded_query = string.replace(query, '+', ' ')
 	    try:
 		os.setuid(nobody)
 	    except os.error:

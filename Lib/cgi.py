@@ -420,7 +420,6 @@ import string
 import sys
 import os
 import urllib
-import regsub
 import mimetools
 import rfc822
 from StringIO import StringIO
@@ -564,8 +563,8 @@ def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
 	    if strict_parsing:
 		raise ValueError, "bad query field: %s" % `name_value`
 	    continue
-	name = urllib.unquote(regsub.gsub('+', ' ', nv[0]))
-	value = urllib.unquote(regsub.gsub('+', ' ', nv[1]))
+	name = urllib.unquote(string.replace(nv[0], '+', ' '))
+	value = urllib.unquote(string.replace(nv[1], '+', ' '))
         if len(value) or keep_blank_values:
 	    if dict.has_key (name):
 		dict[name].append(value)
@@ -1317,11 +1316,11 @@ environment as well.  Here are some common variable names:
 
 def escape(s, quote=None):
     """Replace special characters '&', '<' and '>' by SGML entities."""
-    s = regsub.gsub("&", "&amp;", s)	# Must be done first!
-    s = regsub.gsub("<", "&lt;", s)
-    s = regsub.gsub(">", "&gt;", s)
+    s = string.replace(s, "&", "&amp;")	# Must be done first!
+    s = string.replace(s, "<", "&lt;")
+    s = string.replace(s, ">", "&gt;",)
     if quote:
-	s = regsub.gsub('"', "&quot;", s)
+	s = string.replace(s, '"', "&quot;")
     return s
 
 

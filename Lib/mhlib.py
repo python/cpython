@@ -773,7 +773,7 @@ class SubMessage(Message):
 # - the string used to initialize the set (default ''),
 # - the separator between ranges (default ',')
 # - the separator between begin and end of a range (default '-')
-# The separators may be regular expressions and should be different.
+# The separators must be strings (not regexprs) and should be different.
 #
 # The tostring() function yields a string that can be passed to another
 # IntSet constructor; __repr__() is a valid IntSet constructor itself.
@@ -882,11 +882,11 @@ class IntSet:
 	self.normalize()
 
     def fromstring(self, data):
-	import string, regsub
+	import string
 	new = []
-	for part in regsub.split(data, self.sep):
+	for part in string.splitfields(data, self.sep):
 	    list = []
-	    for subp in regsub.split(part, self.rng):
+	    for subp in string.splitfields(part, self.rng):
 		s = string.strip(subp)
 		list.append(string.atoi(s))
 	    if len(list) == 1:
