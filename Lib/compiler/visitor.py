@@ -1,4 +1,4 @@
-from tools import ast
+from compiler import ast
 
 class ASTVisitor:
     """Performs a depth-first walk of the AST
