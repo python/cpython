@@ -1034,7 +1034,7 @@ PyObject_CallMethod(va_alist) va_dcl
 #endif
 {
   va_list va;
-  PyObject *args, *PyCFunction=0, *retval;
+  PyObject *args, *func=0, *retval;
 #ifdef HAVE_STDARG_PROTOTYPES
   va_start(va, format);
 #else
@@ -1053,15 +1053,15 @@ PyObject_CallMethod(va_alist) va_dcl
       return Py_ReturnNullError();
     }
 
-  PyCFunction=PyObject_GetAttrString(o,name);
-  if(! PyCFunction)
+  func=PyObject_GetAttrString(o,name);
+  if(! func)
     {
       va_end(va);
       PyErr_SetString(PyExc_AttributeError,name);
       return 0;
     }
    
-  if(! (PyCallable_Check(PyCFunction)))
+  if(! (PyCallable_Check(func)))
     {
       va_end(va);
       PyErr_SetString(PyExc_TypeError,"call of non-callable attribute");
@@ -1086,9 +1086,9 @@ PyObject_CallMethod(va_alist) va_dcl
       args=a;
     }
 
-  retval = PyObject_CallObject(PyCFunction,args);
+  retval = PyObject_CallObject(func,args);
   Py_DECREF(args);
-  Py_DECREF(PyCFunction);
+  Py_DECREF(func);
   return retval;
 }
 
