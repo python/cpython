@@ -2464,6 +2464,9 @@ init_curses(void)
 	PyDict_SetItemString(d, "__version__", v);
 	Py_DECREF(v);
 
+        SetDictInt("ERR", ERR);
+        SetDictInt("OK", OK);
+
 	/* Here are some attributes you can add to chars to print */
 	
 	SetDictInt("A_ATTRIBUTES",      A_ATTRIBUTES);
