@@ -1,0 +1,884 @@
+\documentstyle[twoside,11pt,myformat]{report}
+
+% NOTE: this file controls which chapters/sections of the library
+% manual are actually printed.  It is easy to customize your manual
+% by commenting out sections that you're not interested in.
+
+\title{Python-C API Reference}
+
+\input{boilerplate}
+
+\makeindex			% tell \index to actually write the .idx file
+
+
+\begin{document}
+
+\pagenumbering{roman}
+
+\maketitle
+
+\input{copyright}
+
+\begin{abstract}
+
+\noindent
+This manual documents the API used by C (or C++) programmers who want
+to write extension modules or embed Python.  It is a companion to
+``Extending and Embedding the Python Interpreter'', which describes
+the general principles of extension writing but does not document the
+API functions in detail.
+
+\end{abstract}
+
+\pagebreak
+
+{
+\parskip = 0mm
+\tableofcontents
+}
+
+\pagebreak
+
+\pagenumbering{arabic}
+
+
+\chapter{Introduction}
+
+From the viewpoint of of C access to Python services, we have:
+
+\begin{enumerate}
+
+\item "Very high level layer": two or three functions that let you
+exec or eval arbitrary Python code given as a string in a module whose
+name is given, passing C values in and getting C values out using
+mkvalue/getargs style format strings.  This does not require the user
+to declare any variables of type \code{PyObject *}.  This should be
+enough to write a simple application that gets Python code from the
+user, execs it, and returns the output or errors.
+
+\item "Abstract objects layer": which is the subject of this chapter.
+It has many functions operating on objects, and lest you do many
+things from C that you can also write in Python, without going through
+the Python parser.
+
+\item "Concrete objects layer": This is the public type-dependent
+interface provided by the standard built-in types, such as floats,
+strings, and lists.  This interface exists and is currently documented
+by the collection of include files provides with the Python
+distributions.
+
+\begin{enumerate}
+
+From the point of view of Python accessing services provided by C
+modules:
+
+\end{enumerate}
+
+\item[4] "Python module interface": this interface consist of the basic
+routines used to define modules and their members.  Most of the
+current extensions-writing guide deals with this interface.
+
+\item[5] "Built-in object interface": this is the interface that a new
+built-in type must provide and the mechanisms and rules that a
+developer of a new built-in type must use and follow.
+
+\end{enumerate}
+
+The Python C API provides four groups of operations on objects,
+corresponding to the same operations in the Python language: object,
+numeric, sequence, and mapping.  Each protocol consists of a
+collection of related operations.  If an operation that is not
+provided by a particular type is invoked, then the standard exception
+\code{TypeError} is raised with a operation name as an argument.
+
+In addition, for convenience this interface defines a set of
+constructors for building objects of built-in types.  This is needed
+so new objects can be returned from C functions that otherwise treat
+objects generically.
+
+\section{Reference Counting}
+
+For most of the functions in the Python-C API, if a function retains a
+reference to a Python object passed as an argument, then the function
+will increase the reference count of the object.  It is unnecessary
+for the caller to increase the reference count of an argument in
+anticipation of the object's retention.
+
+Usually, Python objects returned from functions should be treated as
+new objects.  Functions that return objects assume that the caller
+will retain a reference and the reference count of the object has
+already been incremented to account for this fact.  A caller that does
+not retain a reference to an object that is returned from a function
+must decrement the reference count of the object (using
+\code{Py_DECREF()}) to prevent memory leaks.
+
+Exceptions to these rules will be noted with the individual functions.
+
+\section{Include Files}
+
+All function, type and macro definitions needed to use the Python-C
+API are included in your code by the following line:
+
+\code{\#include "Python.h"}
+
+This implies inclusion of the following standard header files:
+stdio.h, string.h, errno.h, and stdlib.h (if available).
+
+All user visible names defined by Python.h (except those defined by
+the included standard headers) have one of the prefixes \code{Py} or
+\code{_Py}.  Names beginning with \code{_Py} are for internal use
+only.
+
+
+\chapter{Initialization and Shutdown of an Embedded Python Interpreter}
+
+When embedding the Python interpreter in a C or C++ program, the
+interpreter must be initialized.
+
+\begin{cfuncdesc}{void}{PyInitialize}{}
+This function initializes the interpreter.  It must be called before
+any interaction with the interpreter takes place.  If it is called
+more than once, the second and further calls have no effect.
+
+The function performs the following tasks: create an environment in
+which modules can be imported and Python code can be executed;
+initialize the \code{__builtin__} module; initialize the \code{sys}
+module; initialize \code{sys.path}; initialize signal handling; and
+create the empty \code{__main__} module.
+
+In the current system, there is no way to undo all these
+initializations or to create additional interpreter environments.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{Py_AtExit}{void (*func) ()}
+Register a cleanup function to be called when Python exits.  The
+cleanup function will be called with no arguments and should return no
+value.  At most 32 cleanup functions can be registered.  When the
+registration is successful, \code{Py_AtExit} returns 0; on failure, it
+returns -1.  Each cleanup function will be called t most once.  The
+cleanup function registered last is called first.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{Py_Exit}{int status}
+Exit the current process.  This calls \code{Py_Cleanup()} (see next
+item) and performs additional cleanup (under some circumstances it
+will attempt to delete all modules), and then calls the standard C
+library function \code{exit(status)}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{Py_Cleanup}{}
+Perform some of the cleanup that \code{Py_Exit} performs, but don't
+exit the process.  In particular, this invokes the user's
+\code{sys.exitfunc} function (if defined at all), and it invokes the
+cleanup functions registered with \code{Py_AtExit()}, in reverse order
+of their registration.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{Py_FatalError}{char *message}
+Print a fatal error message and die.  No cleanup is performed.  This
+function should only be invoked when a condition is detected that
+would make it dangerous to continue using the Python interpreter;
+e.g., when the object administration appears to be corrupted.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyImport_Init}{}
+Initialize the module table.  For internal use only.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyImport_Cleanup}{}
+Empty the module table.  For internal use only.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyBuiltin_Init}{}
+Initialize the \code{__builtin__} module.  For internal use only.
+\end{cfuncdesc}
+
+
+\chapter{Reference Counting}
+
+The functions in this chapter are used for managing reference counts
+of Python objects.
+
+\begin{cfuncdesc}{void}{Py_INCREF}{PyObject *o}
+Increment the reference count for object \code{o}.  The object must
+not be \NULL{}; if you aren't sure that it isn't \NULL{}, use
+\code{Py_XINCREF()}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{Py_XINCREF}{PyObject *o}
+Increment the reference count for object \code{o}.  The object may be
+\NULL{}, in which case the function has no effect.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{Py_DECREF}{PyObject *o}
+Decrement the reference count for object \code{o}.  The object must
+not be \NULL{}; if you aren't sure that it isn't \NULL{}, use
+\code{Py_XDECREF()}.  If the reference count reaches zero, the object's
+type's deallocation function (which must not be \NULL{}) is invoked.
+
+\strong{Warning:} The deallocation function can cause arbitrary Python
+code to be invoked (e.g. when a class instance with a \code{__del__()}
+method is deallocated).  While exceptions in such code are not
+propagated, the executed code has free access to all Python global
+variables.  This means that any object that is reachable from a global
+variable should be in a consistent state before \code{Py_DECREF()} is
+invoked.  For example, code to delete an object from a list should
+copy a reference to the deleted object in a temporary variable, update
+the list data structure, and then call \code{Py_DECREF()} for the
+temporary variable.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{Py_XDECREF}{PyObject *o}
+Decrement the reference count for object \code{o}.The object may be
+\NULL{}, in which case the function has no effect; otherwise the
+effect is the same as for \code{Py_DECREF()}, and the same warning
+applies.
+\end{cfuncdesc}
+
+
+\chapter{Exception Handling}
+
+The functions in this chapter will let you handle and raise Python
+exceptions.
+
+\begin{cfuncdesc}{void}{PyErr_Print}{}
+\end{cfuncdesc}
+
+
+\chapter{Utilities}
+
+The functions in this chapter perform various utility tasks, such as
+parsing function arguments and constructing Python values from C
+values.
+
+\begin{cfuncdesc}{int}{Py_FdIsInteractive}{FILE *fp, char *filename}
+Return true (nonzero) if the standard I/O file \code{fp} with name
+\code{filename} is deemed interactive.  This is the case for files for
+which \code{isatty(fileno(fp))} is true.  If the global flag
+\code{Py_InteractiveFlag} is true, this function also returns true if
+the \code{name} pointer is \NULL{} or if the name is equal to one of
+the strings \code{"<stdin>"} or \code{"???"}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{long}{PyOS_GetLastModificationTime}{char *filename}
+Return the time of last modification of the file \code{filename}.
+The result is encoded in the same way as the timestamp returned by
+the standard C library function \code{time()}.
+\end{cfuncdesc}
+
+
+\chapter{Debugging}
+
+XXX Explain Py_DEBUG, Py_TRACE_REFS, Py_REF_DEBUG.
+
+
+\chapter{The Very High Level Layer}
+
+The functions in this chapter will let you execute Python source code
+given in a file or a buffer, but they will not let you interact in a
+more detailed way with the interpreter.
+
+
+\chapter{Abstract Objects Layer}
+
+The functions in this chapter interact with Python objects regardless
+of their type, or with wide classes of object types (e.g. all
+numerical types, or all sequence types).  When used on object types
+for which they do not apply, they will flag a Python exception.
+
+\section{Object Protocol}
+
+\begin{cfuncdesc}{int}{PyObject_Print}{PyObject *o, FILE *fp, int flags}
+Print an object \code{o}, on file \code{fp}.  Returns -1 on error
+The flags argument is used to enable certain printing
+options. The only option currently supported is \code{Py_Print_RAW}. 
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyObject_HasAttrString}{PyObject *o, char *attr_name}
+Returns 1 if o has the attribute attr_name, and 0 otherwise.
+This is equivalent to the Python expression:
+\code{hasattr(o,attr_name)}.
+This function always succeeds.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyObject_GetAttrString}{PyObject *o, char *attr_name}
+Retrieve an attributed named attr_name form object o.
+Returns the attribute value on success, or \NULL{} on failure.
+This is the equivalent of the Python expression: \code{o.attr_name}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{int}{PyObject_HasAttr}{PyObject *o, PyObject *attr_name}
+Returns 1 if o has the attribute attr_name, and 0 otherwise.
+This is equivalent to the Python expression:
+\code{hasattr(o,attr_name)}. 
+This function always succeeds.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyObject_GetAttr}{PyObject *o, PyObject *attr_name}
+Retrieve an attributed named attr_name form object o.
+Returns the attribute value on success, or \NULL{} on failure.
+This is the equivalent of the Python expression: o.attr_name.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{int}{PyObject_SetAttrString}{PyObject *o, char *attr_name, PyObject *v}
+Set the value of the attribute named \code{attr_name}, for object \code{o},
+to the value \code{v}. Returns -1 on failure.  This is
+the equivalent of the Python statement: \code{o.attr_name=v}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{int}{PyObject_SetAttr}{PyObject *o, PyObject *attr_name, PyObject *v}
+Set the value of the attribute named \code{attr_name}, for
+object \code{o},
+to the value \code{v}. Returns -1 on failure.  This is
+the equivalent of the Python statement: \code{o.attr_name=v}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{int}{PyObject_DelAttrString}{PyObject *o, char *attr_name}
+Delete attribute named \code{attr_name}, for object \code{o}. Returns -1 on
+failure.  This is the equivalent of the Python
+statement: \code{del o.attr_name}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{int}{PyObject_DelAttr}{PyObject *o, PyObject *attr_name}
+Delete attribute named \code{attr_name}, for object \code{o}. Returns -1 on
+failure.  This is the equivalent of the Python
+statement: \code{del o.attr_name}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{int}{PyObject_Cmp}{PyObject *o1, PyObject *o2, int *result}
+Compare the values of \code{o1} and \code{o2} using a routine provided by
+\code{o1}, if one exists, otherwise with a routine provided by \code{o2}.
+The result of the comparison is returned in \code{result}.  Returns
+-1 on failure.  This is the equivalent of the Python
+statement: \code{result=cmp(o1,o2)}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{int}{PyObject_Compare}{PyObject *o1, PyObject *o2}
+Compare the values of \code{o1} and \code{o2} using a routine provided by
+\code{o1}, if one exists, otherwise with a routine provided by \code{o2}.
+Returns the result of the comparison on success.  On error,
+the value returned is undefined. This is equivalent to the
+Python expression: \code{cmp(o1,o2)}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyObject_Repr}{PyObject *o}
+Compute the string representation of object, \code{o}.  Returns the
+string representation on success, \NULL{} on failure.  This is
+the equivalent of the Python expression: \code{repr(o)}.
+Called by the \code{repr()} built-in function and by reverse quotes.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyObject_Str}{PyObject *o}
+Compute the string representation of object, \code{o}.  Returns the
+string representation on success, \NULL{} on failure.  This is
+the equivalent of the Python expression: \code{str(o)}.
+Called by the \code{str()} built-in function and by the \code{print}
+statement.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{int}{PyCallable_Check}{PyObject *o}
+Determine if the object \code{o}, is callable.  Return 1 if the
+object is callable and 0 otherwise.
+This function always succeeds.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyObject_CallObject}{PyObject *callable_object, PyObject *args}
+Call a callable Python object \code{callable_object}, with
+arguments given by the tuple \code{args}.  If no arguments are
+needed, then args may be \NULL{}.  Returns the result of the
+call on success, or \NULL{} on failure.  This is the equivalent
+of the Python expression: \code{apply(o, args)}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyObject_CallFunction}{PyObject *callable_object, char *format, ...}
+Call a callable Python object \code{callable_object}, with a
+variable number of C arguments. The C arguments are described
+using a mkvalue-style format string. The format may be \NULL{},
+indicating that no arguments are provided.  Returns the
+result of the call on success, or \NULL{} on failure.  This is
+the equivalent of the Python expression: \code{apply(o,args)}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyObject_CallMethod}{PyObject *o, char *m, char *format, ...}
+Call the method named \code{m} of object \code{o} with a variable number of
+C arguments.  The C arguments are described by a mkvalue
+format string.  The format may be \NULL{}, indicating that no
+arguments are provided. Returns the result of the call on
+success, or \NULL{} on failure.  This is the equivalent of the
+Python expression: \code{o.method(args)}.
+Note that Special method names, such as "\code{__add__}",
+"\code{__getitem__}", and so on are not supported. The specific
+abstract-object routines for these must be used.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{int}{PyObject_Hash}{PyObject *o}
+Compute and return the hash value of an object \code{o}.  On
+failure, return -1.  This is the equivalent of the Python
+expression: \code{hash(o)}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{int}{PyObject_IsTrue}{PyObject *o}
+Returns 1 if the object \code{o} is considered to be true, and
+0 otherwise. This is equivalent to the Python expression:
+\code{not not o}.
+This function always succeeds.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyObject_Type}{PyObject *o}
+On success, returns a type object corresponding to the object
+type of object \code{o}. On failure, returns \NULL{}.  This is
+equivalent to the Python expression: \code{type(o)}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyObject_Length}{PyObject *o}
+Return the length of object \code{o}.  If the object \code{o} provides
+both sequence and mapping protocols, the sequence length is
+returned. On error, -1 is returned.  This is the equivalent
+to the Python expression: \code{len(o)}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyObject_GetItem}{PyObject *o, PyObject *key}
+Return element of \code{o} corresponding to the object \code{key} or \NULL{}
+on failure. This is the equivalent of the Python expression:
+\code{o[key]}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{int}{PyObject_SetItem}{PyObject *o, PyObject *key, PyObject *v}
+Map the object \code{key} to the value \code{v}.
+Returns -1 on failure.  This is the equivalent
+of the Python statement: \code{o[key]=v}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{int}{PyObject_DelItem}{PyObject *o, PyObject *key, PyObject *v}
+Delete the mapping for \code{key} from \code{*o}.  Returns -1
+on failure.
+This is the equivalent of the Python statement: del o[key].
+\end{cfuncdesc}
+
+
+\section{Number Protocol}
+
+\begin{cfuncdesc}{int}{PyNumber_Check}{PyObject *o}
+Returns 1 if the object \code{o} provides numeric protocols, and
+false otherwise. 
+This function always succeeds.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_Add}{PyObject *o1, PyObject *o2}
+Returns the result of adding \code{o1} and \code{o2}, or null on failure.
+This is the equivalent of the Python expression: \code{o1+o2}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_Subtract}{PyObject *o1, PyObject *o2}
+Returns the result of subtracting \code{o2} from \code{o1}, or null on
+failure.  This is the equivalent of the Python expression:
+\code{o1-o2}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_Multiply}{PyObject *o1, PyObject *o2}
+Returns the result of multiplying \code{o1} and \code{o2}, or null on
+failure.  This is the equivalent of the Python expression:
+\code{o1*o2}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_Divide}{PyObject *o1, PyObject *o2}
+Returns the result of dividing \code{o1} by \code{o2}, or null on failure.
+This is the equivalent of the Python expression: \code{o1/o2}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_Remainder}{PyObject *o1, PyObject *o2}
+Returns the remainder of dividing \code{o1} by \code{o2}, or null on
+failure.  This is the equivalent of the Python expression:
+\code{o1\%o2}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_Divmod}{PyObject *o1, PyObject *o2}
+See the built-in function divmod.  Returns \NULL{} on failure.
+This is the equivalent of the Python expression:
+\code{divmod(o1,o2)}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_Power}{PyObject *o1, PyObject *o2, PyObject *o3}
+See the built-in function pow.  Returns \NULL{} on failure.
+This is the equivalent of the Python expression:
+\code{pow(o1,o2,o3)}, where \code{o3} is optional.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_Negative}{PyObject *o}
+Returns the negation of \code{o} on success, or null on failure.
+This is the equivalent of the Python expression: \code{-o}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_Positive}{PyObject *o}
+Returns \code{o} on success, or \NULL{} on failure.
+This is the equivalent of the Python expression: \code{+o}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_Absolute}{PyObject *o}
+Returns the absolute value of \code{o}, or null on failure.  This is
+the equivalent of the Python expression: \code{abs(o)}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_Invert}{PyObject *o}
+Returns the bitwise negation of \code{o} on success, or \NULL{} on
+failure.  This is the equivalent of the Python expression:
+\code{~o}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_Lshift}{PyObject *o1, PyObject *o2}
+Returns the result of left shifting \code{o1} by \code{o2} on success, or
+\NULL{} on failure.  This is the equivalent of the Python
+expression: \code{o1 << o2}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_Rshift}{PyObject *o1, PyObject *o2}
+Returns the result of right shifting \code{o1} by \code{o2} on success, or
+\NULL{} on failure.  This is the equivalent of the Python
+expression: \code{o1 >> o2}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_And}{PyObject *o1, PyObject *o2}
+Returns the result of "anding" \code{o2} and \code{o2} on success and \NULL{}
+on failure. This is the equivalent of the Python
+expression: \code{o1 and o2}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_Xor}{PyObject *o1, PyObject *o2}
+Returns the bitwise exclusive or of \code{o1} by \code{o2} on success, or
+\NULL{} on failure.  This is the equivalent of the Python
+expression: \code{o1\^{ }o2}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_Or}{PyObject *o1, PyObject *o2}
+Returns the result or \code{o1} and \code{o2} on success, or \NULL{} on
+failure.  This is the equivalent of the Python expression: 
+\code{o1 or o2}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_Coerce}{PyObject *o1, PyObject *o2}
+This function takes the addresses of two variables of type
+\code{PyObject*}.
+
+If the objects pointed to by \code{*p1} and \code{*p2} have the same type,
+increment their reference count and return 0 (success).
+If the objects can be converted to a common numeric type,
+replace \code{*p1} and \code{*p2} by their converted value (with 'new'
+reference counts), and return 0.
+If no conversion is possible, or if some other error occurs,
+return -1 (failure) and don't increment the reference counts.
+The call \code{PyNumber_Coerce(\&o1, \&o2)} is equivalent to the Python
+statement \code{o1, o2 = coerce(o1, o2)}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_Int}{PyObject *o}
+Returns the \code{o} converted to an integer object on success, or
+\NULL{} on failure.  This is the equivalent of the Python
+expression: \code{int(o)}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_Long}{PyObject *o}
+Returns the \code{o} converted to a long integer object on success,
+or \NULL{} on failure.  This is the equivalent of the Python
+expression: \code{long(o)}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_Float}{PyObject *o}
+Returns the \code{o} converted to a float object on success, or \NULL{}
+on failure.  This is the equivalent of the Python expression:
+\code{float(o)}.
+\end{cfuncdesc}
+
+
+\section{Sequence protocol}
+
+\begin{cfuncdesc}{int}{PySequence_Check}{PyObject *o}
+Return 1 if the object provides sequence protocol, and 0
+otherwise.  
+This function always succeeds.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PySequence_Concat}{PyObject *o1, PyObject *o2}
+Return the concatination of \code{o1} and \code{o2} on success, and \NULL{} on
+failure.   This is the equivalent of the Python
+expression: \code{o1+o2}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PySequence_Repeat}{PyObject *o, int count}
+Return the result of repeating sequence object \code{o} count times,
+or \NULL{} on failure.  This is the equivalent of the Python
+expression: \code{o*count}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PySequence_GetItem}{PyObject *o, int i}
+Return the ith element of \code{o}, or \NULL{} on failure. This is the
+equivalent of the Python expression: \code{o[i]}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PySequence_GetSlice}{PyObject *o, int i1, int i2}
+Return the slice of sequence object \code{o} between \code{i1} and \code{i2}, or
+\NULL{} on failure. This is the equivalent of the Python
+expression, \code{o[i1:i2]}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{int}{PySequence_SetItem}{PyObject *o, int i, PyObject *v}
+Assign object \code{v} to the \code{i}th element of \code{o}.
+Returns -1 on failure.  This is the equivalent of the Python
+statement, \code{o[i]=v}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PySequence_DelItem}{PyObject *o, int i}
+Delete the \code{i}th element of object \code{v}.  Returns
+-1 on failure.  This is the equivalent of the Python
+statement: \code{del o[i]}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PySequence_SetSlice}{PyObject *o, int i1, int i2, PyObject *v}
+Assign the sequence object \code{v} to the slice in sequence
+object \code{o} from \code{i1} to \code{i2}.  This is the equivalent of the Python
+statement, \code{o[i1:i2]=v}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PySequence_DelSlice}{PyObject *o, int i1, int i2}
+Delete the slice in sequence object, \code{o}, from \code{i1} to \code{i2}.
+Returns -1 on failure. This is the equivalent of the Python
+statement: \code{del o[i1:i2]}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PySequence_Tuple}{PyObject *o}
+Returns the \code{o} as a tuple on success, and \NULL{} on failure.
+This is equivalent to the Python expression: \code{tuple(o)}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PySequence_Count}{PyObject *o, PyObject *value}
+Return the number of occurrences of \code{value} on \code{o}, that is,
+return the number of keys for which \code{o[key]==value}.  On
+failure, return -1.  This is equivalent to the Python
+expression: \code{o.count(value)}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PySequence_In}{PyObject *o, PyObject *value}
+Determine if \code{o} contains \code{value}.  If an item in \code{o} is equal to
+\code{value}, return 1, otherwise return 0.  On error, return -1.  This
+is equivalent to the Python expression: \code{value in o}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PySequence_Index}{PyObject *o, PyObject *value}
+Return the first index for which \code{o[i]=value}.  On error,
+return -1.    This is equivalent to the Python
+expression: \code{o.index(value)}.
+\end{cfuncdesc}
+
+\section{Mapping protocol}
+
+\begin{cfuncdesc}{int}{PyMapping_Check}{PyObject *o}
+Return 1 if the object provides mapping protocol, and 0
+otherwise.  
+This function always succeeds.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{int}{PyMapping_Length}{PyObject *o}
+Returns the number of keys in object \code{o} on success, and -1 on
+failure.  For objects that do not provide sequence protocol,
+this is equivalent to the Python expression: \code{len(o)}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{int}{PyMapping_DelItemString}{PyObject *o, char *key}
+Remove the mapping for object \code{key} from the object \code{o}.
+Return -1 on failure.  This is equivalent to
+the Python statement: \code{del o[key]}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{int}{PyMapping_DelItem}{PyObject *o, PyObject *key}
+Remove the mapping for object \code{key} from the object \code{o}.
+Return -1 on failure.  This is equivalent to
+the Python statement: \code{del o[key]}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{int}{PyMapping_HasKeyString}{PyObject *o, char *key}
+On success, return 1 if the mapping object has the key \code{key}
+and 0 otherwise.  This is equivalent to the Python expression:
+\code{o.has_key(key)}. 
+This function always succeeds.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{int}{PyMapping_HasKey}{PyObject *o, PyObject *key}
+Return 1 if the mapping object has the key \code{key}
+and 0 otherwise.  This is equivalent to the Python expression:
+\code{o.has_key(key)}. 
+This function always succeeds.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyMapping_Keys}{PyObject *o}
+On success, return a list of the keys in object \code{o}.  On
+failure, return \NULL{}. This is equivalent to the Python
+expression: \code{o.keys()}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyMapping_Values}{PyObject *o}
+On success, return a list of the values in object \code{o}.  On
+failure, return \NULL{}. This is equivalent to the Python
+expression: \code{o.values()}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyMapping_Items}{PyObject *o}
+On success, return a list of the items in object \code{o}, where
+each item is a tuple containing a key-value pair.  On
+failure, return \NULL{}. This is equivalent to the Python
+expression: \code{o.items()}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyMapping_Clear}{PyObject *o}
+Make object \code{o} empty.  Returns 1 on success and 0 on failure.
+This is equivalent to the Python statement:
+\code{for key in o.keys(): del o[key]}
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyMapping_GetItemString}{PyObject *o, char *key}
+Return element of \code{o} corresponding to the object \code{key} or \NULL{}
+on failure. This is the equivalent of the Python expression:
+\code{o[key]}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyMapping_SetItemString}{PyObject *o, char *key, PyObject *v}
+Map the object \code{key} to the value \code{v} in object \code{o}.  Returns 
+-1 on failure.  This is the equivalent of the Python
+statement: \code{o[key]=v}.
+\end{cfuncdesc}
+
+
+\section{Constructors}
+
+\begin{cfuncdesc}{PyObject*}{PyFile_FromString}{char *file_name, char *mode}
+On success, returns a new file object that is opened on the
+file given by \code{file_name}, with a file mode given by \code{mode},
+where \code{mode} has the same semantics as the standard C routine,
+fopen.  On failure, return -1.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyFile_FromFile}{FILE *fp, char *file_name, char *mode, int close_on_del}
+Return a new file object for an already opened standard C
+file pointer, \code{fp}.  A file name, \code{file_name}, and open mode,
+\code{mode}, must be provided as well as a flag, \code{close_on_del}, that
+indicates whether the file is to be closed when the file
+object is destroyed.  On failure, return -1.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyFloat_FromDouble}{double v}
+Returns a new float object with the value \code{v} on success, and
+\NULL{} on failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyInt_FromLong}{long v}
+Returns a new int object with the value \code{v} on success, and
+\NULL{} on failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyList_New}{int l}
+Returns a new list of length \code{l} on success, and \NULL{} on
+failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyLong_FromLong}{long v}
+Returns a new long object with the value \code{v} on success, and
+\NULL{} on failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyLong_FromDouble}{double v}
+Returns a new long object with the value \code{v} on success, and
+\NULL{} on failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyDict_New}{}
+Returns a new empty dictionary on success, and \NULL{} on
+failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyString_FromString}{char *v}
+Returns a new string object with the value \code{v} on success, and
+\NULL{} on failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyString_FromStringAndSize}{char *v, int l}
+Returns a new string object with the value \code{v} and length \code{l}
+on success, and \NULL{} on failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyTuple_New}{int l}
+Returns a new tuple of length \code{l} on success, and \NULL{} on
+failure.
+\end{cfuncdesc}
+
+
+\chapter{Concrete Objects Layer}
+
+The functions in this chapter are specific to certain Python object
+types.  Passing them an object of the wrong type is not a good idea;
+if you receive an object from a Python program and you are not sure
+that it has the right type, you must perform a type check first;
+e.g. to check that an object is a dictionary, use
+\code{PyDict_Check()}.
+
+
+\chapter{Defining New Object Types}
+
+\begin{cfuncdesc}{PyObject *}{_PyObject_New}{PyTypeObject *type}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject *}{_PyObject_New}{PyTypeObject *type}
+\end{cfuncdesc}
+
+\input{api.ind}			% Index -- must be last
+
+\end{document}
