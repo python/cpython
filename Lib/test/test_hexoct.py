@@ -2,7 +2,7 @@
 
 This is complex because of changes due to PEP 237.
 
-Some of these tests will hvae to change in Python 2.4!
+Some of these tests will have to change in Python 2.4!
 """
 
 import unittest
