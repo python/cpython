@@ -553,10 +553,11 @@ class AddrlistClass:
             # address is a group
             returnlist = []
             
+            fieldlen = len(self.field)
             self.pos = self.pos + 1
             while self.pos < len(self.field):
                 self.gotonext()
-                if self.field[self.pos] == ';':
+                if self.pos < fieldlen and self.field[self.pos] == ';':
                     self.pos = self.pos + 1
                     break
                 returnlist = returnlist + self.getaddress()
