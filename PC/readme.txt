@@ -139,9 +139,6 @@ make_nt.in     Include file for nmake-based builds (unsupported).
 example_nt     A subdirectory showing how to build an extension as a
                DLL.
 
-setup_nt       A subdirectory containing an experimental installer
-               using Python only.
-
 
 Microsoft Visual C++ Version 1.5 (16-bit Windows)
 =================================================
