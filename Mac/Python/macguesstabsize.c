@@ -5,7 +5,7 @@
 
 #include <string.h>
 
-/* Interface used by tokenizer.c */
+/* Interface used by parsetok.c */
 
 guesstabsize(path)
 	char *path;
