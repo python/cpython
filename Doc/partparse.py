@@ -1001,7 +1001,7 @@ def next_command_p(length, buf, pp, i, cmdname):
 # things that are special to LaTeX, but not to texi..
 onlylatexspecial = '_~^$#&%'
 
-class Struct(): pass
+class Struct: pass
 
 hist = Struct()
 out = Struct()

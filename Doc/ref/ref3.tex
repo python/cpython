@@ -592,6 +592,24 @@ interpretations are used in this case.
 
 \begin{description}
 
+\item[\tt __init__(self, args...)]
+Called when the instance is created.  The arguments are those passed
+to the class constructor expression.  If a base class has an
+\code{__init__} method the derived class's \code{__init__} method must
+explicitly call it to ensure proper initialization of the base class
+part of the instance.
+
+\item[\tt __del__(self)]
+Called when the instance is about to be destroyed.  If a base class
+has an \code{__del__} method the derived class's \code{__del__} method
+must explicitly call it to ensure proper deletion of the base class
+part of the instance.  Note that it is possible for the \code{__del__}
+method to postpone destruction of the instance by creating a new
+reference to it.  It may then be called at a later time when this new
+reference is deleted.  Also note that it is not guaranteed that
+\code{__del__} methods are called for objects that still exist when
+the interpreter exits.
+
 \item[\tt __repr__(self)]
 Called by the \verb\print\ statement and conversions (reverse quotes) to
 compute the string representation of an object.
