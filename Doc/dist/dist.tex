@@ -168,7 +168,8 @@ following glossary of common Python terms:
   Typically contained in a single dynamically loadable pre-compiled
   file, e.g. a shared object (\file{.so}) file for CPython extensions on
   Unix, a DLL (given the \file{.pyd} extension) for CPython extensions
-  on Windows, or a Java class file for JPython extensions.
+  on Windows, or a Java class file for JPython extensions.  (Note that
+  currently, the Distutils only handles C/C++ extensions for CPython.)
 \item[package] a module that contains other modules; typically contained
   in a directory in the filesystem and distinguished from other
   directories by the presence of a file \file{\_\_init\_\_.py}.
@@ -217,8 +218,8 @@ purpose of the setup script is to describe your module distribution to
 the Distutils, so that the various commands that operate on your modules
 do the right thing.  As we saw in section~\ref{simple-example} above,
 the setup script consists mainly of a call to \function{setup()}, and
-all information supplied to the Distutils is supplied as keyword
-arguments to \function{setup()}.
+most information supplied to the Distutils by the module developer is
+supplied as keyword arguments to \function{setup()}.
 
 Here's a slightly more involved example, which we'll follow for the next
 couple of sections: the Distutils' own setup script.  (Keep in mind that
@@ -718,10 +719,10 @@ The manifest template commands are:
   \lineii{recursive-exclude \var{dir} \var{pat1} \var{pat2} ...}
     {exclude all files under \var{dir} matching any of the listed patterns}
   \lineii{global-include \var{pat1} \var{pat2} ...}
-    {include all files anywhere in the source tree matching 
+    {include all files anywhere in the source tree matching\\&
      any of the listed patterns}
   \lineii{global-exclude \var{pat1} \var{pat2} ...}
-    {exclude all files anywhere in the source tree matching 
+    {exclude all files anywhere in the source tree matching\\&
      any of the listed patterns}
   \lineii{prune \var{dir}}{exclude all files under \var{dir}}
   \lineii{graft \var{dir}}{include all files under \var{dir}}
