@@ -1,4 +1,4 @@
-# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Windows.h'
+# Generated from 'Sap:CodeWarrior7:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Windows.h'
 
 f = Function(void, 'InitWindows',
 )
@@ -126,6 +126,17 @@ f = Method(void, 'SetWRefCon',
 methods.append(f)
 
 f = Method(long, 'GetWRefCon',
+    (WindowRef, 'theWindow', InMode),
+)
+methods.append(f)
+
+f = Method(void, 'SetWindowPic',
+    (WindowRef, 'theWindow', InMode),
+    (PicHandle, 'pic', InMode),
+)
+methods.append(f)
+
+f = Method(PicHandle, 'GetWindowPic',
     (WindowRef, 'theWindow', InMode),
 )
 methods.append(f)

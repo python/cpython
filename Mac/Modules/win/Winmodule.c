@@ -340,6 +340,36 @@ static PyObject *WinObj_GetWRefCon(_self, _args)
 	return _res;
 }
 
+static PyObject *WinObj_SetWindowPic(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	PicHandle pic;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &pic))
+		return NULL;
+	SetWindowPic(_self->ob_itself,
+	             pic);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *WinObj_GetWindowPic(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	PicHandle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetWindowPic(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
 static PyObject *WinObj_ClipAbove(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
@@ -501,6 +531,195 @@ static PyObject *WinObj_DragWindow(_self, _args)
 	return _res;
 }
 
+static PyObject *WinObj_SetPortWindowPort(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	SetPortWindowPort(_self->ob_itself);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *WinObj_GetWindowKind(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetWindowKind(_self->ob_itself);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *WinObj_SetWindowKind(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short wKind;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &wKind))
+		return NULL;
+	SetWindowKind(_self->ob_itself,
+	              wKind);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *WinObj_IsWindowVisible(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = IsWindowVisible(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *WinObj_IsWindowHilited(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = IsWindowHilited(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *WinObj_GetWindowGoAwayFlag(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetWindowGoAwayFlag(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *WinObj_GetWindowZoomFlag(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetWindowZoomFlag(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *WinObj_GetWindowTitleWidth(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetWindowTitleWidth(_self->ob_itself);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *WinObj_GetNextWindow(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	WindowPtr _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetNextWindow(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     WinObj_WhichWindow, _rv);
+	return _res;
+}
+
+static PyObject *WinObj_GetWindowStandardState(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect r;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetWindowStandardState(_self->ob_itself,
+	                       &r);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildRect, &r);
+	return _res;
+}
+
+static PyObject *WinObj_GetWindowUserState(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect r;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetWindowUserState(_self->ob_itself,
+	                   &r);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildRect, &r);
+	return _res;
+}
+
+static PyObject *WinObj_SetWindowStandardState(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect r;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetRect, &r))
+		return NULL;
+	SetWindowStandardState(_self->ob_itself,
+	                       &r);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *WinObj_SetWindowUserState(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect r;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetRect, &r))
+		return NULL;
+	SetWindowUserState(_self->ob_itself,
+	                   &r);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef WinObj_methods[] = {
 	{"GetWTitle", (PyCFunction)WinObj_GetWTitle, 1,
 	 "() -> (Str255 title)"},
@@ -534,6 +753,10 @@ static PyMethodDef WinObj_methods[] = {
 	 "(long data) -> None"},
 	{"GetWRefCon", (PyCFunction)WinObj_GetWRefCon, 1,
 	 "() -> (long _rv)"},
+	{"SetWindowPic", (PyCFunction)WinObj_SetWindowPic, 1,
+	 "(PicHandle pic) -> None"},
+	{"GetWindowPic", (PyCFunction)WinObj_GetWindowPic, 1,
+	 "() -> (PicHandle _rv)"},
 	{"ClipAbove", (PyCFunction)WinObj_ClipAbove, 1,
 	 "() -> None"},
 	{"SaveOld", (PyCFunction)WinObj_SaveOld, 1,
@@ -554,6 +777,32 @@ static PyMethodDef WinObj_methods[] = {
 	 "(Point thePt) -> (Boolean _rv)"},
 	{"DragWindow", (PyCFunction)WinObj_DragWindow, 1,
 	 "(Point startPt, Rect boundsRect) -> None"},
+	{"SetPortWindowPort", (PyCFunction)WinObj_SetPortWindowPort, 1,
+	 "() -> None"},
+	{"GetWindowKind", (PyCFunction)WinObj_GetWindowKind, 1,
+	 "() -> (short _rv)"},
+	{"SetWindowKind", (PyCFunction)WinObj_SetWindowKind, 1,
+	 "(short wKind) -> None"},
+	{"IsWindowVisible", (PyCFunction)WinObj_IsWindowVisible, 1,
+	 "() -> (Boolean _rv)"},
+	{"IsWindowHilited", (PyCFunction)WinObj_IsWindowHilited, 1,
+	 "() -> (Boolean _rv)"},
+	{"GetWindowGoAwayFlag", (PyCFunction)WinObj_GetWindowGoAwayFlag, 1,
+	 "() -> (Boolean _rv)"},
+	{"GetWindowZoomFlag", (PyCFunction)WinObj_GetWindowZoomFlag, 1,
+	 "() -> (Boolean _rv)"},
+	{"GetWindowTitleWidth", (PyCFunction)WinObj_GetWindowTitleWidth, 1,
+	 "() -> (short _rv)"},
+	{"GetNextWindow", (PyCFunction)WinObj_GetNextWindow, 1,
+	 "() -> (WindowPtr _rv)"},
+	{"GetWindowStandardState", (PyCFunction)WinObj_GetWindowStandardState, 1,
+	 "() -> (Rect r)"},
+	{"GetWindowUserState", (PyCFunction)WinObj_GetWindowUserState, 1,
+	 "() -> (Rect r)"},
+	{"SetWindowStandardState", (PyCFunction)WinObj_SetWindowStandardState, 1,
+	 "(Rect r) -> None"},
+	{"SetWindowUserState", (PyCFunction)WinObj_SetWindowUserState, 1,
+	 "(Rect r) -> None"},
 	{NULL, NULL, 0}
 };
 

@@ -39,7 +39,7 @@ class MyScanner(Scanner):
 			'GrafPtr',
 			'CGrafPtr',
 			'RgnHandle',
-			'PicHandle',
+##			'PicHandle',
 			'WCTabHandle',
 			'AuxWinHandle',
 			'PixPatHandle',
