@@ -4,13 +4,13 @@ __version__ = '$Revision$'
 
 import getopt
 import os
-import string
 import sys
 
 import refcounts
 
 
-PREFIX = r"\begin{cfuncdesc}{Py(Var|)Object*}{"
+PREFIX_1 = r"\begin{cfuncdesc}{PyObject*}{"
+PREFIX_2 = r"\begin{cfuncdesc}{PyVarObject*}{"
 
 
 def main():
@@ -30,8 +30,6 @@ def main():
         output = open(outfile, "w")
     if not args:
         args = ["-"]
-    prefix = PREFIX
-    prefix_len = len(prefix)
     for infile in args:
         if infile == "-":
             input = sys.stdin
@@ -41,8 +39,13 @@ def main():
             line = input.readline()
             if not line:
                 break
-            if line[:prefix_len] == prefix:
-                s = string.split(line[prefix_len:], '}', 1)[0]
+            prefix = None
+            if line.startswith(PREFIX_1):
+                prefix = PREFIX_1
+            elif line.startswith(PREFIX_2):
+                prefix = PREFIX_2
+            if prefix:
+                s = line[len(prefix):].split('}', 1)[0]
                 try:
                     info = rcdict[s]
                 except KeyError:
@@ -56,7 +59,7 @@ def main():
                             rc = rc + " reference"
                         line = (r"\begin{cfuncdesc}[%s]{%s}{"
                                 % (rc, info.result_type)) \
-                                + line[prefix_len:]
+                                + line[len(prefix):]
             output.write(line)
         if infile != "-":
             input.close()
