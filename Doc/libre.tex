@@ -308,10 +308,24 @@ regular expression metacharacters in it.
 \begin{funcdesc}{sub}{pattern\, repl\, string\optional{, count=0}}
 Return the string obtained by replacing the leftmost non-overlapping
 occurrences of \var{pattern} in \var{string} by the replacement
-\var{repl}, which can be a string or the function that returns a string.  If the pattern isn't found, \var{string} is returned unchanged. The
-pattern may be a string or a regexp object; if you need to specify
-regular expression flags, you must use a regexp object, or use
-embedded modifiers in a pattern string; e.g.
+\var{repl}.  If the pattern isn't found, \var{string} is returned
+unchanged.  \var{repl} can be a string or a function; if a function,
+it is called for every non-overlapping occurance of \var{pattern}.
+The function takes a single match object argument, and 
+returns the replacement string.  For example:
+%
+\bcode\begin{verbatim}
+>>> def dashrepl(matchobj):
+...    if matchobj.group(0) == '-': return ' '
+...    else: return '-'
+>>> re.sub('-{1,2}', dashrepl, 'pro----gram-files')
+'pro--gram files'
+\end{verbatim}\ecode
+%
+The pattern may be a string or a
+regexp object; if you need to specify regular expression flags, you
+must use a regexp object, or use embedded modifiers in a pattern
+string; e.g.
 %
 \bcode\begin{verbatim}
 sub("(?i)b+", "x", "bbbb BBBB") returns 'x x'.
