@@ -47,16 +47,16 @@ def search(pattern, string, flags=0):
     return _compile(pattern, flags).search(string)
 
 def sub(pattern, repl, string, count=0):
-    return _compile(pattern).sub(repl, string, count)
+    return _compile(pattern, 0).sub(repl, string, count)
 
 def subn(pattern, repl, string, count=0):
-    return _compile(pattern).subn(repl, string, count)
+    return _compile(pattern, 0).subn(repl, string, count)
 
 def split(pattern, string, maxsplit=0):
-    return _compile(pattern).split(string, maxsplit)
+    return _compile(pattern, 0).split(string, maxsplit)
 
 def findall(pattern, string, maxsplit=0):
-    return _compile(pattern).findall(string, maxsplit)
+    return _compile(pattern, 0).findall(string, maxsplit)
 
 def compile(pattern, flags=0):
     return _compile(pattern, flags)
@@ -88,16 +88,14 @@ def _join(seq, sep):
     # internal: join into string having the same type as sep
     return string.join(seq, sep[:0])
 
-def _compile(pattern, flags=0):
+def _compile(*key):
     # internal: compile pattern
-    tp = type(pattern)
-    if tp not in sre_compile.STRING_TYPES:
+    p = _cache.get(key)
+    if p is not None:
+        return p
+    pattern, flags = key
+    if type(pattern) not in sre_compile.STRING_TYPES:
         return pattern
-    key = (tp, pattern, flags)
-    try:
-        return _cache[key]
-    except KeyError:
-        pass
     try:
         p = sre_compile.compile(pattern, flags)
     except error, v:
@@ -168,7 +166,7 @@ import copy_reg
 def _pickle(p):
     return _compile, (p.pattern, p.flags)
 
-copy_reg.pickle(type(_compile("")), _pickle, _compile)
+copy_reg.pickle(type(_compile("", 0)), _pickle, _compile)
 
 # --------------------------------------------------------------------
 # experimental stuff (see python-dev discussions for details)

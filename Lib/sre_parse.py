@@ -10,8 +10,6 @@
 
 import string, sys
 
-import _sre
-
 from sre_constants import *
 
 MAXREPEAT = 65535
@@ -232,6 +230,7 @@ def _class_escape(source, escape):
         return code
     try:
         if escape[1:2] == "x":
+            # FIXME: in 2.0, \xNN must have exactly two digits
             while source.next in HEXDIGITS:
                 escape = escape + source.get()
             escape = escape[2:]
@@ -556,12 +555,13 @@ def _parse(source, state):
 
     return subpattern
 
-def parse(str, flags=0):
+def parse(str, flags=0, pattern=None):
     # parse 're' pattern into list of (opcode, argument) tuples
 
     source = Tokenizer(str)
 
-    pattern = Pattern()
+    if pattern is None:
+        pattern = Pattern()
     pattern.flags = flags
 
     p = _parse_sub(source, pattern, 0)
