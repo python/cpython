@@ -2394,8 +2394,8 @@ myPyMac_GetFSSpec(PyObject *v, FSSpec *spec)
 	/* Otherwise we try to go via an FSRef. On OSX we go all the way,
 	** on OS9 we accept only a real FSRef object
 	*/
-#if TARGET_API_MAX_OSX
-	if ( myPyMac_GetFSRef(v, &fsr) >= 0 ) {
+#if TARGET_API_MAC_OSX
+	if ( myPyMac_GetFSRef(v, &fsr) ) {
 #else
 	if ( PyArg_Parse(v, "O&", FSRef_Convert, &fsr) ) {
 #endif	
