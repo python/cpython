@@ -151,10 +151,8 @@ class EditorWindow:
             text.bind("<<open-path-browser>>", self.open_path_browser)
 
         self.set_status_bar()
-        
         vbar['command'] = text.yview
         vbar.pack(side=RIGHT, fill=Y)
-
         text['yscrollcommand'] = vbar.set
         fontWeight='normal'
         if idleConf.GetOption('main','EditorWindow','font-bold',type='bool'):
@@ -168,30 +166,34 @@ class EditorWindow:
 
         self.per = per = self.Percolator(text)
         if self.ispythonsource(filename):
-            self.color = color = self.ColorDelegator(); per.insertfilter(color)
+            self.color = color = self.ColorDelegator()
+            per.insertfilter(color)
             ##print "Initial colorizer"
         else:
             ##print "No initial colorizer"
             self.color = None
-        self.undo = undo = self.UndoDelegator(); per.insertfilter(undo)
+
+        self.undo = undo = self.UndoDelegator()
+        per.insertfilter(undo)
+        text.undo_block_start = undo.undo_block_start
+        text.undo_block_stop = undo.undo_block_stop
+        undo.set_saved_change_hook(self.saved_change_hook)
+
+        # IOBinding implements file I/O and printing functionality
         self.io = io = self.IOBinding(self)
+        io.set_filename_change_hook(self.filename_change_hook)
+
         #create the Recent Files submenu
         self.menuRecentFiles=Menu(self.menubar)
         self.menudict['file'].insert_cascade(3,label='Recent Files',
                 underline=0,menu=self.menuRecentFiles)
         self.UpdateRecentFilesList()
 
-        text.undo_block_start = undo.undo_block_start
-        text.undo_block_stop = undo.undo_block_stop
-        undo.set_saved_change_hook(self.saved_change_hook)
-        io.set_filename_change_hook(self.filename_change_hook)
-
         if filename:
             if os.path.exists(filename):
                 io.loadfile(filename)
             else:
                 io.set_filename(filename)
-
         self.saved_change_hook()
 
         self.load_extensions()
