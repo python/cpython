@@ -1,3 +1,15 @@
+What's New in IDLE 1.0+?
+===================================
+
+*Release date: XX-XXX-2003*
+
+- IDLE didn't start correctly when Python was installed in "Program Files" on
+  W2K and XP.  Python Bugs 780451, 784183
+
+- config-main.def documentation incorrectly referred to idle- instead of
+  config-  filenames.  SF 782759  Also added note about .idlerc location.
+
+
 What's New in IDLE 1.0?
 ===================================
 
