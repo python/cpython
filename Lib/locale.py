@@ -95,6 +95,12 @@ def _group(s):
     grouping=conv['grouping']
     if not grouping:return s
     result=""
+    seps = 0
+    spaces = ""
+    if s[-1] == ' ':
+        sp = s.find(' ')
+        spaces = s[sp:]
+        s = s[:sp]
     while s and grouping:
         # if grouping is -1, we are done
         if grouping[0]==CHAR_MAX:
@@ -106,34 +112,48 @@ def _group(s):
             grouping=grouping[1:]
         if result:
             result=s[-group:]+conv['thousands_sep']+result
+            seps += 1
         else:
             result=s[-group:]
         s=s[:-group]
+        if s and s[-1] not in "0123456789":
+            # the leading string is only spaces and signs
+            return s+result+spaces,seps
     if not result:
-        return s
+        return s+spaces,seps
     if s:
         result=s+conv['thousands_sep']+result
-    return result
+        seps += 1
+    return result+spaces,seps
 
 def format(f,val,grouping=0):
     """Formats a value in the same way that the % formatting would use,
     but takes the current locale into account.
     Grouping is applied if the third parameter is true."""
-    result = f % abs(val)
+    result = f % val
     fields = result.split(".")
+    seps = 0
     if grouping:
-        fields[0]=_group(fields[0])
+        fields[0],seps=_group(fields[0])
     if len(fields)==2:
-        res = fields[0]+localeconv()['decimal_point']+fields[1]
+        result = fields[0]+localeconv()['decimal_point']+fields[1]
     elif len(fields)==1:
-        res = fields[0]
+        result = fields[0]
     else:
         raise Error, "Too many decimal points in result string"
 
-    if val < 0:
-        return '-'+res
-    else:
-        return res
+    while seps:
+        # If the number was formatted for a specific width, then it
+        # might have been filled with spaces to the left or right. If
+        # so, kill as much spaces as there where separators.
+        # Leading zeroes as fillers are not yet dealt with, as it is
+        # not clear how they should interact with grouping.
+        sp = result.find(" ")
+        if sp==-1:break
+        result = result[:sp]+result[sp+1:]
+        seps -= 1
+
+    return result
 
 def str(val):
     """Convert float to integer, taking the locale into account."""
