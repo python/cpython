@@ -124,8 +124,29 @@ sys_setprofile(self, args)
 	return None;
 }
 
+#ifdef USE_MALLOPT
+/* Link with -lmalloc (or -lmpc) on an SGI */
+#include <malloc.h>
+
+static object *
+sys_mdebug(self, args)
+	object *self;
+	object *args;
+{
+	int flag;
+	if (!getargs(args, "i", &flag))
+		return NULL;
+	mallopt(M_DEBUG, flag);
+	INCREF(None);
+	return None;
+}
+#endif /* USE_MALLOPT */
+
 static struct methodlist sys_methods[] = {
 	{"exit",	sys_exit},
+#ifdef USE_MALLOPT
+	{"mdebug",	sys_mdebug},
+#endif
 	{"setprofile",	sys_setprofile},
 	{"settrace",	sys_settrace},
 	{NULL,		NULL}		/* sentinel */
