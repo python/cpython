@@ -381,7 +381,7 @@ class Random:
         list itself is in random order so that all sub-slices are also
         random samples.  The original sequence is left undisturbed.
 
-        If the population has repeated elements, then each occurence is
+        If the population has repeated elements, then each occurrence is
         a possible selection in the sample.
 
         If indices are needed for a large population, use xrange as an
