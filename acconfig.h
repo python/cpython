@@ -20,6 +20,9 @@
 
 /* Used for BeOS configuration */
 #undef DL_EXPORT_HEADER
+#ifdef DL_EXPORT_HEADER
+#include DL_EXPORT_HEADER
+#endif
 
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG

@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.101 
+# From configure.in Revision: 1.102 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -690,7 +690,7 @@ else
 
 		case $BE_HOST_CPU in
 		ppc)
-			CC="mwcc -I$PWD/BeOS"
+			CC="mwcc -I$PWD/BeOS -nodup"
 			without_gcc=yes
 			case `uname -r` in
 				4.0*) OPT="-DUSE_DL_EXPORT -O7 -opt schedule604 -export pragma" ;;

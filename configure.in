@@ -118,7 +118,7 @@ AC_ARG_WITH(gcc, [--without-gcc             never use gcc], [
 
 		case $BE_HOST_CPU in
 		ppc)
-			CC="mwcc -I$PWD/BeOS"
+			CC="mwcc -I$PWD/BeOS -nodup"
 			without_gcc=yes
 			case `uname -r` in
 				4.0*) OPT="-DUSE_DL_EXPORT -O7 -opt schedule604 -export pragma" ;;
