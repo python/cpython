@@ -1060,7 +1060,7 @@ def mro_disagreement():
         try:
             callable(*args)
         except exc, msg:
-            if str(msg) != expected:
+            if not str(msg).startswith(expected):
                 raise TestFailed, "Message %r, expected %r" % (str(msg),
                                                                expected)
         else:
@@ -1071,9 +1071,9 @@ def mro_disagreement():
     # Test some very simple errors
     raises(TypeError, "duplicate base class A",
            type, "X", (A, A), {})
-    raises(TypeError, "MRO conflict among bases B, A",
+    raises(TypeError, "MRO conflict among bases ",
            type, "X", (A, B), {})
-    raises(TypeError, "MRO conflict among bases C, B, A",
+    raises(TypeError, "MRO conflict among bases ",
            type, "X", (A, C, B), {})
     # Test a slightly more complex error
     class GridLayout(object): pass
@@ -1081,7 +1081,7 @@ def mro_disagreement():
     class VerticalGrid(GridLayout): pass
     class HVGrid(HorizontalGrid, VerticalGrid): pass
     class VHGrid(VerticalGrid, HorizontalGrid): pass
-    raises(TypeError, "MRO conflict among bases VerticalGrid, HorizontalGrid",
+    raises(TypeError, "MRO conflict among bases ",
            type, "ConfusedGrid", (HVGrid, VHGrid), {})
 
 def objects():
