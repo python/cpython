@@ -62,7 +62,7 @@ static PyObject *ReopError;	/* Exception */
 #define BEGINNING_OF_BUFFER	7
 #define END_OF_BUFFER		8
 
-static char *reop_casefold;
+static unsigned char *reop_casefold;
 
 static PyObject *
 makeresult(regs, num_regs)
@@ -105,7 +105,7 @@ reop_match(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	char *string;
+	unsigned char *string;
 	int fastmaplen, stringlen;
 	int can_be_null, anchor, i;
 	int flags, pos, result;
@@ -163,8 +163,8 @@ reop_match(self, args)
 
 	if (result < -1) {
 		/* Failure like stack overflow */
-		PyErr_SetString(ReopError, "match failure");
-		
+	        if (!PyErr_Occurred())
+	  	        PyErr_SetString(ReopError, "match failure");
 		return NULL;
 	}
 	if (result == -1) {
@@ -174,12 +174,38 @@ reop_match(self, args)
 	return makeresult(&re_regs, bufp.num_registers);
 }
 
+#if 0
+static PyObject *
+reop_optimize(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+  unsigned char *buffer;
+  int buflen;
+  struct re_pattern_buffer bufp;
+
+  PyObject *opt_code;
+  
+  if (!PyArg_Parse(args, "(s#)", &buffer, &buflen)) return NULL;
+  /* Create a new string for the optimized code */
+  opt_code=PyString_FromStringAndSize(buffer, buflen);
+  if (opt_code!=NULL)
+    {
+      bufp.buffer = PyString_AsString(opt_code);
+      bufp.used=bufp.allocated=buflen;
+      
+    }
+  return opt_code;
+  
+}
+#endif
+
 static PyObject *
 reop_search(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	char *string;
+	unsigned char *string;
 	int fastmaplen, stringlen;
 	int can_be_null, anchor, i;
 	int flags, pos, result;
@@ -237,7 +263,8 @@ reop_search(self, args)
 
 	if (result < -1) {
 		/* Failure like stack overflow */
-		PyErr_SetString(ReopError, "match failure");
+	        if (!PyErr_Occurred())
+	  	        PyErr_SetString(ReopError, "match failure");
 		return NULL;
 	}
 
@@ -626,7 +653,7 @@ reop__expand(self, args)
 {
   PyObject *results, *match_obj;
   PyObject *repl_obj, *newstring;
-  char *repl;
+  unsigned char *repl;
   int size, total_len, i, start, pos;
 
   if (!PyArg_ParseTuple(args, "OS", &match_obj, &repl_obj)) 
@@ -810,7 +837,7 @@ internal_split(args, retain)
   reopobject *pattern;
   int maxsplit=0, count=0, length, next=0, result;
   int match_end=0; /* match_start is defined below */
-  char *start;
+  unsigned char *start;
 
   if (!PyArg_ParseTuple(args, "s#Oi", &start, &length, &pattern,
 			&maxsplit))
@@ -911,6 +938,7 @@ static struct PyMethodDef reop_global_methods[] = {
 	{"expand_escape", reop_expand_escape, 1},
 	{"_expand", reop__expand, 1},
 #if 0
+	{"_optimize",	reop_optimize, 0},
 	{"split",  reop_split, 0},
 	{"splitx",  reop_splitx, 0},
 #endif
@@ -922,8 +950,8 @@ initreop()
 {
 	PyObject *m, *d, *k, *v, *o;
 	int i;
-	char *s;
-	char j[2];
+	unsigned char *s;
+	unsigned char j[2];
 
 	re_compile_initialize();
 
@@ -936,7 +964,7 @@ initreop()
 		goto finally;
 	
 	/* Initialize reop.casefold constant */
-	if (!(v = PyString_FromStringAndSize((char *)NULL, 256)))
+	if (!(v = PyString_FromStringAndSize((unsigned char *)NULL, 256)))
 		goto finally;
 	
 	if (!(s = PyString_AsString(v)))

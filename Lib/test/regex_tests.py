@@ -278,6 +278,12 @@ tests = [
 ('\\([xyz]*\\)x', 'abcx', SUCCEED,
  'found+"-"+g1', 'x-'),
 ('\\(a\\)+b\\|aac', 'aac', SUCCEED,
- 'found+"-"+g1', 'aac-None')
+ 'found+"-"+g1', 'aac-None'),
+('\<a', 'a', SUCCEED, 'found', 'a'),
+('\<a', '!', FAIL),
+('a\<b', 'ab', FAIL),
+('a\>', 'ab', FAIL),
+('a\>', 'a!', SUCCEED, 'found', 'a'),
+('a\>', 'a', SUCCEED, 'found', 'a'),
 ]
 

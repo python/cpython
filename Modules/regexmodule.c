@@ -132,8 +132,10 @@ regobj_match(re, args)
 	re->re_lastok = NULL;
 	result = re_match(&re->re_patbuf, buffer, size, offset, &re->re_regs);
 	if (result < -1) {
-		/* Failure like stack overflow */
-		PyErr_SetString(RegexError, "match failure");
+		/* Serious failure of some sort; if re_match didn't 
+		   set an exception, raise a generic error */
+	        if (!PyErr_Occurred())
+		        PyErr_SetString(RegexError, "match failure");
 		return NULL;
 	}
 	if (result >= 0) {
@@ -174,8 +176,10 @@ regobj_search(re, args)
 	result = re_search(&re->re_patbuf, buffer, size, offset, range,
 			   &re->re_regs);
 	if (result < -1) {
-		/* Failure like stack overflow */
-		PyErr_SetString(RegexError, "match failure");
+		/* Serious failure of some sort; if re_match didn't 
+		   set an exception, raise a generic error */
+	        if (!PyErr_Occurred())
+	  	        PyErr_SetString(RegexError, "match failure");
 		return NULL;
 	}
 	if (result >= 0) {

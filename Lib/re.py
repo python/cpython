@@ -317,10 +317,19 @@ class Eol(Instruction):
 
 class Set(Instruction):
     name = 'set'
-    def __init__(self, set):
+    def __init__(self, set, flags=0):
 	self.set = set
-	Instruction.__init__(self, chr(3), 33)
+	if flags & IGNORECASE: self.set=map(string.lower, self.set)
+	if len(set)==1: 
+	    # If only one element, use the "exact" opcode (it'll be faster)
+	    Instruction.__init__(self, chr(4), 2)
+	else:
+	    # Use the "set" opcode
+	    Instruction.__init__(self, chr(3), 33)
     def assemble(self, position, labels):
+	if len(self.set)==1:
+	    # If only one character in set, generate an "exact" opcode
+	    return self.opcode + self.set[0]
 	result = self.opcode
 	temp = 0
 	for i, c in map(lambda x: (x, chr(x)), range(256)):
@@ -333,14 +342,16 @@ class Set(Instruction):
     def __repr__(self):
 	result = '%-15s' % (self.name)
 	self.set.sort()
+	# XXX this should print more intelligently
 	for char in self.set:
 	    result = result + char
 	return result
     
 class Exact(Instruction):
     name = 'exact'
-    def __init__(self, char):
+    def __init__(self, char, flags):
 	self.char = char
+	if flags & IGNORECASE: self.char=string.lower(self.char)
 	Instruction.__init__(self, chr(4), 2)
     def assemble(self, position, labels):
 	return self.opcode + self.char
@@ -881,7 +892,7 @@ def compile(pattern, flags=0):
 	    escape_type, value, index = expand_escape(pattern, index)
 
 	    if escape_type == CHAR:
-		stack.append([Exact(value)])
+		stack.append([Exact(value, flags)])
 		lastop = '\\' + value
 		
 	    elif escape_type == MEMORY_REFERENCE:
@@ -1306,7 +1317,7 @@ def compile(pattern, flags=0):
 
 	elif char == '.':
 	    if flags & DOTALL:
-		stack.append([Set(map(chr, range(256)))])
+		stack.append([Set(map(chr, range(256)), flags)])
 	    else:
 		stack.append([AnyChar()])
 	    lastop = '.'
@@ -1336,12 +1347,12 @@ def compile(pattern, flags=0):
 		    index = end + 1
 		# do not change lastop
 	    else:
-		stack.append([Exact(char)])
+		stack.append([Exact(char, flags)])
 		lastop = '#'
 
 	elif char in string.whitespace:
 	    if not (flags & VERBOSE):
-		stack.append([Exact(char)])
+		stack.append([Exact(char, flags)])
 		lastop = char
 
 	elif char == '[':
@@ -1449,22 +1460,25 @@ def compile(pattern, flags=0):
 	    index = index + 1
 
 	    if negate:
+		# If case is being ignored, then both upper- and lowercase
+		# versions of the letters must be excluded.
+		if flags & IGNORECASE: set=set+map(string.upper, set)
 		notset = []
 		for char in map(chr, range(256)):
 		    if char not in set:
 			notset.append(char)
 		if len(notset) == 0:
 		    raise error, 'empty negated set'
-		stack.append([Set(notset)])
+		stack.append([Set(notset, flags)])
 	    else:
 		if len(set) == 0:
 		    raise error, 'empty set'
-		stack.append([Set(set)])
+		stack.append([Set(set, flags)])
 
 	    lastop = '[]'
 
 	else:
-	    stack.append([Exact(char)])
+	    stack.append([Exact(char, flags)])
 	    lastop = char
 
     code = []
@@ -1485,6 +1499,7 @@ def compile(pattern, flags=0):
 	code.append(Label(label))
 	label = label + 1
     code.append(End())
+#    print code
     return RegexObject(pattern, flags, code, register, groupindex)
 
 # Replace expand_escape and _expand functions with their C equivalents.
