@@ -105,9 +105,18 @@ changes in daylight savings time, though not worth worrying about for
 common use.
 \end{funcdesc}
 
-\begin{funcdesc}{formatdate}{\optional{timeval}}
-Returns the time formatted as per Internet standards \rfc{2822}
-and updated by \rfc{1123}.  If \var{timeval} is provided, then it
-should be a floating point time value as expected by
-\method{time.gmtime()}, otherwise the current time is used.
+\begin{funcdesc}{formatdate}{\optional{timeval\optional{, localtime}}}
+Returns a date string as per Internet standard \rfc{2822}, e.g.:
+
+\begin{verbatim}
+Fri, 09 Nov 2001 01:08:47 -0000
+\end{verbatim}
+
+Optional \var{timeval} if given is a floating point time value as
+accepted by \function{time.gmtime()} and \function{time.localtime()},
+otherwise the current time is used.
+
+Optional \var{localtime} is a flag that when true, interprets
+\var{timeval}, and returns a date relative to the local timezone
+instead of UTC, properly taking daylight savings time into account.
 \end{funcdesc}
