@@ -83,6 +83,7 @@ musicdata = {
 52: ("David Lanz", "Cristofori's Dream", "New Age"),
 53: ("David Lanz", "Heartsounds", "New Age"),
 54: ("David Lanz", "Leaves on the Seine", "New Age"),
+99: ("unknown artist", "Unnamed song", "Unknown"),
 }
 
 #----------------------------------------------------------------------
@@ -117,6 +118,7 @@ class AssociateTestCase(unittest.TestCase):
 
     def createDB(self):
         self.primary = db.DB(self.env)
+        self.primary.set_get_returns_none(2)
         self.primary.open(self.filename, "primary", self.dbtype,
                           db.DB_CREATE | db.DB_THREAD)
 
@@ -136,6 +138,7 @@ class AssociateTestCase(unittest.TestCase):
 
         secDB = db.DB(self.env)
         secDB.set_flags(db.DB_DUP)
+        secDB.set_get_returns_none(2)
         secDB.open(self.filename, "secondary", db.DB_BTREE,
                    db.DB_CREATE | db.DB_THREAD)
         self.getDB().associate(secDB, self.getGenre)
@@ -166,6 +169,16 @@ class AssociateTestCase(unittest.TestCase):
 
 
     def finish_test(self, secDB):
+        # 'Blues' should not be in the secondary database
+        vals = secDB.pget('Blues')
+        assert vals == None, vals
+
+        vals = secDB.pget('Unknown')
+        assert vals[0] == 99 or vals[0] == '99', vals
+        vals[1].index('Unknown')
+        vals[1].index('Unnamed')
+        vals[1].index('unknown')
+
         if verbose:
             print "Primary key traversal:"
         c = self.getDB().cursor()
@@ -187,6 +200,18 @@ class AssociateTestCase(unittest.TestCase):
             print "Secondary key traversal:"
         c = secDB.cursor()
         count = 0
+
+        # test cursor pget
+        vals = c.pget('Unknown', flags=db.DB_LAST)
+        assert vals[1] == 99 or vals[1] == '99', vals
+        assert vals[0] == 'Unknown'
+        vals[2].index('Unknown')
+        vals[2].index('Unnamed')
+        vals[2].index('unknown')
+
+        vals = c.pget('Unknown', data='wrong value', flags=db.DB_GET_BOTH)
+        assert vals == None, vals
+
         rec = c.first()
         assert rec[0] == "Jazz"
         while rec is not None:

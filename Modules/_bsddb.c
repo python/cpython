@@ -97,7 +97,7 @@
 #error "eek! DBVER can't handle minor versions > 9"
 #endif
 
-#define PY_BSDDB_VERSION "4.2.7"
+#define PY_BSDDB_VERSION "4.2.8"
 static char *rcs_id = "$Id$";
 
 
@@ -1455,6 +1455,94 @@ DB_get(DBObject* self, PyObject* args, PyObject* kwargs)
                                    data.size);
         else /* return just the data */
             retval = PyString_FromStringAndSize((char*)data.data, data.size);
+        FREE_DBT(data);
+    }
+    FREE_DBT(key);
+
+    RETURN_IF_ERR();
+    return retval;
+}
+
+static PyObject*
+DB_pget(DBObject* self, PyObject* args, PyObject* kwargs)
+{
+    int err, flags=0;
+    PyObject* txnobj = NULL;
+    PyObject* keyobj;
+    PyObject* dfltobj = NULL;
+    PyObject* retval = NULL;
+    int dlen = -1;
+    int doff = -1;
+    DBT key, pkey, data;
+    DB_TXN *txn = NULL;
+    char* kwnames[] = {"key", "default", "txn", "flags", "dlen", "doff", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OOiii:pget", kwnames,
+                                     &keyobj, &dfltobj, &txnobj, &flags, &dlen,
+                                     &doff))
+        return NULL;
+
+    CHECK_DB_NOT_CLOSED(self);
+    if (!make_key_dbt(self, keyobj, &key, &flags))
+        return NULL;
+    if (!checkTxnObj(txnobj, &txn)) {
+        FREE_DBT(key);
+        return NULL;
+    }
+
+    CLEAR_DBT(data);
+    if (CHECK_DBFLAG(self, DB_THREAD)) {
+        /* Tell BerkeleyDB to malloc the return value (thread safe) */
+        data.flags = DB_DBT_MALLOC;
+    }
+    if (!add_partial_dbt(&data, dlen, doff)) {
+        FREE_DBT(key);
+        return NULL;
+    }
+
+    CLEAR_DBT(pkey);
+    pkey.flags = DB_DBT_MALLOC;
+    
+    MYDB_BEGIN_ALLOW_THREADS;
+    err = self->db->pget(self->db, txn, &key, &pkey, &data, flags);
+    MYDB_END_ALLOW_THREADS;
+
+    if ((err == DB_NOTFOUND) && (dfltobj != NULL)) {
+        err = 0;
+        Py_INCREF(dfltobj);
+        retval = dfltobj;
+    }
+    else if ((err == DB_NOTFOUND) && self->moduleFlags.getReturnsNone) {
+        err = 0;
+        Py_INCREF(Py_None);
+        retval = Py_None;
+    }
+    else if (!err) {
+        PyObject *pkeyObj;
+        PyObject *dataObj;
+        dataObj = PyString_FromStringAndSize(data.data, data.size);
+
+        if (self->primaryDBType == DB_RECNO ||
+            self->primaryDBType == DB_QUEUE)
+            pkeyObj = PyInt_FromLong(*(long *)pkey.data);
+        else
+            pkeyObj = PyString_FromStringAndSize(pkey.data, pkey.size);
+
+        if (flags & DB_SET_RECNO) /* return key , pkey and data */
+        {
+            PyObject *keyObj;
+            int type = _DB_get_type(self);
+            if (type == DB_RECNO || type == DB_QUEUE)
+                keyObj = PyInt_FromLong(*(long *)key.data);
+            else
+                keyObj = PyString_FromStringAndSize(key.data, key.size);
+            retval = Py_BuildValue("OOO", keyObj, pkeyObj, dataObj);
+        }
+        else /* return just the pkey and data */
+        {
+            retval = Py_BuildValue("OO", pkeyObj, dataObj);
+        }
+	FREE_DBT(pkey);
         FREE_DBT(data);
     }
     FREE_DBT(key);
@@ -2827,6 +2915,106 @@ DBC_get(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     return retval;
 }
 
+static PyObject*
+DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
+{
+    int err, flags=0;
+    PyObject* keyobj = NULL;
+    PyObject* dataobj = NULL;
+    PyObject* retval = NULL;
+    int dlen = -1;
+    int doff = -1;
+    DBT key, pkey, data;
+    char* kwnames[] = { "key","data", "flags", "dlen", "doff", NULL };
+
+    CLEAR_DBT(key);
+    CLEAR_DBT(data);
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i|ii:pget", &kwnames[2],
+				     &flags, &dlen, &doff))
+    {
+        PyErr_Clear();
+        if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Oi|ii:pget",
+                                         &kwnames[1], 
+					 &keyobj, &flags, &dlen, &doff))
+        {
+            PyErr_Clear();
+            if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OOi|ii:pget",
+                                             kwnames, &keyobj, &dataobj,
+                                             &flags, &dlen, &doff))
+            {
+                return NULL;
+	    }
+	}
+    }
+
+    CHECK_CURSOR_NOT_CLOSED(self);
+
+    if (keyobj && !make_key_dbt(self->mydb, keyobj, &key, NULL))
+        return NULL;
+    if ( (dataobj && !make_dbt(dataobj, &data)) ||
+         (!add_partial_dbt(&data, dlen, doff)) ) {
+        FREE_DBT(key);
+        return NULL;
+    }
+
+    if (CHECK_DBFLAG(self->mydb, DB_THREAD)) {
+        data.flags = DB_DBT_MALLOC;
+        if (!(key.flags & DB_DBT_REALLOC)) {
+            key.flags |= DB_DBT_MALLOC;
+        }
+    }
+
+    CLEAR_DBT(pkey);
+    pkey.flags = DB_DBT_MALLOC;
+
+    MYDB_BEGIN_ALLOW_THREADS;
+    err = self->dbc->c_pget(self->dbc, &key, &pkey, &data, flags);
+    MYDB_END_ALLOW_THREADS;
+
+    if ((err == DB_NOTFOUND) && self->mydb->moduleFlags.getReturnsNone) {
+        Py_INCREF(Py_None);
+        retval = Py_None;
+    }
+    else if (makeDBError(err)) {
+        retval = NULL;
+    }
+    else {
+        PyObject *pkeyObj;
+        PyObject *dataObj;
+        dataObj = PyString_FromStringAndSize(data.data, data.size);
+
+        if (self->mydb->primaryDBType == DB_RECNO ||
+            self->mydb->primaryDBType == DB_QUEUE)
+            pkeyObj = PyInt_FromLong(*(long *)pkey.data);
+        else
+            pkeyObj = PyString_FromStringAndSize(pkey.data, pkey.size);
+
+        if (flags & DB_SET_RECNO) /* return key, pkey and data */
+        {
+            PyObject *keyObj;
+            int type = _DB_get_type(self->mydb);
+            if (type == DB_RECNO || type == DB_QUEUE)
+                keyObj = PyInt_FromLong(*(long *)key.data);
+            else
+                keyObj = PyString_FromStringAndSize(key.data, key.size);
+            retval = Py_BuildValue("OOO", keyObj, pkeyObj, dataObj);
+            FREE_DBT(key);
+        }
+        else /* return just the pkey and data */
+        {
+            retval = Py_BuildValue("OO", pkeyObj, dataObj);
+        }
+        FREE_DBT(pkey);
+        FREE_DBT(data);
+    }
+    /* the only time REALLOC should be set is if we used an integer
+     * key that make_key_dbt malloc'd for us.  always free these. */
+    if (key.flags & DB_DBT_REALLOC) {
+        FREE_DBT(key);
+    }
+    return retval;
+}
+
 
 static PyObject*
 DBC_get_recno(DBCursorObject* self, PyObject* args)
@@ -2974,8 +3162,13 @@ DBC_set(DBCursorObject* self, PyObject* args, PyObject *kwargs)
             break;
         }
         FREE_DBT(data);
+        FREE_DBT(key);
     }
-    FREE_DBT(key);
+    /* the only time REALLOC should be set is if we used an integer
+     * key that make_key_dbt malloc'd for us.  always free these. */
+    if (key.flags & DB_DBT_REALLOC) {
+        FREE_DBT(key);
+    }
 
     return retval;
 }
@@ -3044,7 +3237,7 @@ DBC_set_range(DBCursorObject* self, PyObject* args, PyObject* kwargs)
         FREE_DBT(data);
     }
     /* the only time REALLOC should be set is if we used an integer
-     * key that make_dbt_key malloc'd for us.  always free these. */
+     * key that make_key_dbt malloc'd for us.  always free these. */
     if (key.flags & DB_DBT_REALLOC) {
         FREE_DBT(key);
     }
@@ -4183,6 +4376,7 @@ static PyMethodDef DB_methods[] = {
     {"delete",          (PyCFunction)DB_delete,         METH_VARARGS|METH_KEYWORDS},
     {"fd",              (PyCFunction)DB_fd,             METH_VARARGS},
     {"get",             (PyCFunction)DB_get,            METH_VARARGS|METH_KEYWORDS},
+    {"pget",            (PyCFunction)DB_pget,           METH_VARARGS|METH_KEYWORDS},
     {"get_both",        (PyCFunction)DB_get_both,       METH_VARARGS|METH_KEYWORDS},
     {"get_byteswapped", (PyCFunction)DB_get_byteswapped,METH_VARARGS},
     {"get_size",        (PyCFunction)DB_get_size,       METH_VARARGS|METH_KEYWORDS},
@@ -4242,6 +4436,7 @@ static PyMethodDef DBCursor_methods[] = {
     {"dup",             (PyCFunction)DBC_dup,           METH_VARARGS},
     {"first",           (PyCFunction)DBC_first,         METH_VARARGS|METH_KEYWORDS},
     {"get",             (PyCFunction)DBC_get,           METH_VARARGS|METH_KEYWORDS},
+    {"pget",            (PyCFunction)DBC_pget,          METH_VARARGS|METH_KEYWORDS},
     {"get_recno",       (PyCFunction)DBC_get_recno,     METH_VARARGS},
     {"last",            (PyCFunction)DBC_last,          METH_VARARGS|METH_KEYWORDS},
     {"next",            (PyCFunction)DBC_next,          METH_VARARGS|METH_KEYWORDS},
