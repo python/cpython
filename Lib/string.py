@@ -163,3 +163,15 @@ def expandtabs(s, tabsize):
 			res = res + line
 			line = ''
 	return res + line
+
+
+# Try importing optional built-in module "strop" -- if it exists,
+# it redefines some string operations that are 100-1000 times faster.
+# The manipulation with index_error is needed for compatibility.
+
+try:
+	from strop import *
+	from strop import index
+	index_error = ValueError
+except ImportError:
+	pass # Use the original, slow versions
