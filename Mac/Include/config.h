@@ -31,14 +31,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #define USE_STACKCHECK
 
-/* Define if on Macintosh (THINK_C, MPW or __MWERKS__ should also be defined) */
+/* Define if on Macintosh (MPW or __MWERKS__ should also be defined) */
 #ifndef macintosh
 #define macintosh
-#endif
-
-/* Define if you have the fopenRF function. */
-#ifdef THINK_C
-#define HAVE_FOPENRF
 #endif
 
 /* Define to case-check imported modules (why is this here?) */

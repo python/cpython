@@ -61,9 +61,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Fonts.h>
 #include <Menus.h>
 #include <TextUtils.h>
-#ifdef THINK_C
-#include <OSEvents.h> /* For EvQElPtr */
-#endif
 #ifdef __MWERKS__
 #include <SIOUX.h>
 #endif

@@ -7,10 +7,6 @@
 #include <Files.h>
 #include <OSUtils.h>
 
-#ifdef THINK_C
-#include <pascal.h>
-#endif
-
 #include <errno.h>
 #include <string.h>
 #ifdef __MWERKS__

@@ -57,10 +57,6 @@ extern PyObject *CtlObj_WhichControl(ControlHandle); /* Forward */
 extern PyObject *QdRGB_New(RGBColorPtr);
 extern QdRGB_Convert(PyObject *, RGBColorPtr);
 
-#ifdef THINK_C
-#define  ControlActionUPP ProcPtr
-#endif
-
 /*
 ** Parse/generate ControlFontStyleRec records
 */
