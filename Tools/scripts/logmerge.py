@@ -4,10 +4,11 @@
 
 Input should be the output of a CVS or RCS logging command, e.g.
 
-    cvs log -rrelease14
+    cvs log -rrelease14:
 
 which dumps all log messages from release1.4 upwards (assuming that
-release 1.4 was tagged with tag 'release14').
+release 1.4 was tagged with tag 'release14').  Note the trailing
+colon!
 
 This collects all the revision records and outputs them sorted by date
 rather than by file, collapsing duplicate revision record, i.e.,
@@ -18,7 +19,8 @@ entry; this is useful when using something like the above cvs log
 command, which shows the revisions including the given tag, while you
 probably want everything *since* that tag.
 
-XXX This code was created by reverse engineering CVS 1.9 and RCS 5.7.
+XXX This code was created by reverse engineering CVS 1.9 and RCS 5.7
+from their output.
 
 """
 
@@ -88,12 +90,17 @@ def digest_chunk(chunk):
 	dateline = lines[1]
 	text = lines[2:]
 	words = string.split(dateline)
+	author = None
 	if len(words) >= 3 and words[0] == 'date:':
 	    dateword = words[1]
 	    timeword = words[2]
 	    if timeword[-1:] == ';':
 		timeword = timeword[:-1]
 	    date = dateword + ' ' + timeword
+	    if len(words) >= 5 and words[3] == 'author:':
+		author = words[4]
+		if author[-1:] == ';':
+		    author = author[:-1]
 	else:
 	    date = None
 	    text.insert(0, revline)
@@ -103,22 +110,22 @@ def digest_chunk(chunk):
 	else:
 	    rev = None
 	    text.insert(0, revline)
-	records.append((date, working_file, rev, text))
+	records.append((date, working_file, rev, author, text))
     return records
 	
 def format_output(database):
     prevtext = None
     prev = []
-    database.append((None, None, None, None)) # Sentinel
-    for (date, working_file, rev, text) in database:
+    database.append((None, None, None, None, None)) # Sentinel
+    for (date, working_file, rev, author, text) in database:
 	if text != prevtext:
 	    if prev:
 		print sep2,
-		for (p_date, p_working_file, p_rev) in prev:
-		    print p_date, p_working_file
+		for (p_date, p_working_file, p_rev, p_author) in prev:
+		    print p_date, p_author, p_working_file
 		sys.stdout.writelines(prevtext)
 	    prev = []
-	prev.append((date, working_file, rev))
+	prev.append((date, working_file, rev, author))
 	prevtext = text
 
 main()
