@@ -1,5 +1,6 @@
 import re
 import unittest
+import warnings
 
 from test import test_support
 
@@ -26,6 +27,20 @@ class SyntaxTestCase(unittest.TestCase):
 
     def test_assign_del(self):
         self._check_error("del f()", "delete")
+
+    def test_global_err_then_warn(self):
+        # Bug tickler:  The SyntaxError raised for one global statement
+        # shouldn't be clobbered by a SyntaxWarning issued for a later one.
+        source = re.sub('(?m)^ *:', '', """\
+            :def error(a):
+            :    global a  # SyntaxError
+            :def warning():
+            :    b = 1
+            :    global b  # SyntaxWarning
+            :""")
+        warnings.filterwarnings(action='ignore', category=SyntaxWarning)
+        self._check_error(source, "global")
+        warnings.filters.pop(0)
 
 def test_main():
     test_support.run_unittest(SyntaxTestCase)
