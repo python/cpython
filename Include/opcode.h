@@ -37,12 +37,14 @@
 
 #define BREAK_LOOP	80
 #define RAISE_EXCEPTION	81
+#define LOAD_LOCALS	82
 #define RETURN_VALUE	83
 #define REQUIRE_ARGS	84
 #define REFUSE_ARGS	85
 #define BUILD_FUNCTION	86
 #define POP_BLOCK	87
 #define END_FINALLY	88
+#define BUILD_CLASS	89
 
 #define HAVE_ARGUMENT	90	/* Opcodes from here have an argument: */
 
