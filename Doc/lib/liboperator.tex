@@ -56,7 +56,9 @@ Return the absolute value of \var{o}.
 
 \begin{funcdesc}{inv}{o}
 \funcline{__inv__}{o}
-Return the inverse of \var{o}.
+\funcline{__invert__}{o}
+Return the inverse of \var{o}.  The names \function{invert()} and
+\function{__invert__()} were added in Python 2.0.
 \end{funcdesc}
 
 \begin{funcdesc}{lshift}{a, b}
@@ -107,9 +109,15 @@ Return \var{a} \code{*} \var{b} where \var{a} is a sequence and
 \end{funcdesc}
 
 \begin{funcdesc}{contains}{a, b}
-\funcline{sequenceIncludes}{a, b}
+\funcline{__contains__}{a, b}
 Return the outcome of the test \var{b} \code{in} \var{a}.
-Note the reversed operands.
+Note the reversed operands.  The name \function{__contains__()} was
+added in Python 2.0.
+\end{funcdesc}
+
+\begin{funcdesc}{sequenceIncludes}{\unspecified}
+\deprecated{2.0}{Use \function{contains()} instead.}
+Alias for \function{contains()}.
 \end{funcdesc}
 
 \begin{funcdesc}{countOf}{a, b}
