@@ -546,10 +546,14 @@ class AddrlistClass:
 
         Returns a list containing all of the addresses.
         """
-        ad = self.getaddress()
-        if ad:
-            return ad + self.getaddrlist()
-        else: return []
+        result = []
+        while 1:
+            ad = self.getaddress()
+            if ad:
+                result += ad
+            else:
+                break
+        return result
 
     def getaddress(self):
         """Parse the next address."""
