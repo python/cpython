@@ -697,8 +697,8 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\PCbuild\_test.pyd
-  Destination=%MAINDIR%\DLLs\_test.pyd
+  Source=%_SRC_%\PCbuild\_testcapi.pyd
+  Destination=%MAINDIR%\DLLs\_testcapi.pyd
   Flags=0000000000000010
 end
 item: Install File
@@ -771,8 +771,8 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\PCbuild\_test.lib
-  Destination=%MAINDIR%\libs\_test.lib
+  Source=%_SRC_%\PCbuild\_testcapi.lib
+  Destination=%MAINDIR%\libs\_testcapi.lib
   Flags=0000000000000010
 end
 item: Install File
