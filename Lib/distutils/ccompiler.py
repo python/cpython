@@ -575,6 +575,33 @@ class CCompiler:
 
 
 
+    # -- Miscellaneous methods -----------------------------------------
+    # These are all used by the 'gen_lib_options() function; there is
+    # no appropriate default implementation so subclasses should
+    # implement all of these.
+
+    def library_dir_option (self, dir):
+        """Return the compiler option to add 'dir' to the list of directories
+           searched for libraries."""
+        raise NotImplementedError
+
+    def runtime_library_dir_option (self, dir):
+        """Return the compiler option to add 'dir' to the list of directories
+           searched for runtime libraries."""
+        raise NotImplementedError
+
+    def library_option (self, lib):
+        """Return the compiler option to add 'dir' to the list of libraries
+           linked into the shared library or executable."""
+        raise NotImplementedError
+
+    def find_library_file (self, dirs, lib):
+        """Search the specified list of directories for a static or shared
+           library file 'lib' and return the full path to that file. Return
+           None if it wasn't found in any of the specified directories."""
+        raise NotImplementedError
+
+
     # -- Filename generation methods -----------------------------------
 
     # The default implementation of the filename generating methods are
