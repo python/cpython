@@ -19,7 +19,8 @@ Congratulations on getting this far. :-)
 
 To start building right away (on UNIX): type "./configure" in the
 current directory and when it finishes, type "make".  The section
-Build Instructions below is still recommended reading. :-)
+Build Instructions below is still recommended reading, especially the
+part on customizing Modules/Setup.
 
 
 What is Python anyway?
@@ -67,8 +68,9 @@ sharing the same source tree, see the section on VPATH below.
 You start by running the script "./configure", which figures out your
 system configuration and creates several Makefiles.  (It takes a
 minute or two -- please be patient!)  When it's done, you are ready to
-run make.  You may want to pass options to the configure script -- see
-the section below on configuration options and variables.
+run make.  You may want to pass options to the configure script, or
+edit the Setup file -- see the section below on configuration options
+and variables.
 
 To build Python, you normally type "make" in the toplevel directory.
 This will recursively run make in each of the subdirectories Parser,
@@ -113,6 +115,17 @@ which has more basic blocks than the default limit of 1000).  If the
 warning bothers you, edit the Makefile to remove "-Olimit 1500" from
 the OPT variable.
 
+If you get failures in test_long, or sys.maxint gets set to -1, you
+are probably experiencing compiler bugs, usually related to
+optimization.  This is a common problem with some versions of gcc and
+egcs, and some vendor-supplied compilers, which can sometimes be
+worked around by turning off optimization.  Consider switching to
+stable versions (gcc 2.7.2.3, egcs 1.1.2, or contact your vendor.)
+
+From Python 2.0 onward, all Python C code is ANSI C.  Compiling using
+old K&R-C-only compilers is no longer possible.  ANSI C compilers are
+available for all modern systems, either in the form of updated
+compilers from the vendor, or one of the free compilers (gcc, egcs).
 
 Platform specific notes
 -----------------------
@@ -132,43 +145,15 @@ Solaris: When using Sun's C compiler with threads, at least on Solaris
 	the "CC" environment variable when running the configure
 	script).
 
-Linux:  On Linux version 1.x, once you've built Python, use it to run
-	the regen script in the Lib/linux1 directory.  Apparently
-	the files as distributed don't match the system headers on
-	some Linux versions.  (The "h2py" command refers to
-	Tools/scripts/h2py.py.)  The modules distributed for Linux 2.x
-	should be okay.  Shared library support now works by default
-	on ELF-based x86 Linux systems.  (Note: when you change the
-	status of a module from static to shared, you must remove its
-	.o file or do a "make clean".)
+Linux:  A problem with threads and fork() was tracked down to a bug in
+	the pthreads code in glibc version 2.0.5; glibc version 2.0.7
+	solves the problem.  This causes the popen2 test to fail;
+	problem and solution reported by Pablo Bleyer.
 
-	Under RedHat Linux 5.0, if upgraded from a previous version,
-	remove the LinuxThreads packages.  This is needed because
-	LinuxThreads conflicts with the new thread support provided by
-	glibc.  Before running Python's configure script, use the
-	following commands as root (version numbers may differ; these
-	are from a stock 4.2 install):
-
-	% rpm -qa | grep ^linuxthread
-	linuxthreads-0.5-1
-	linuxthreads-devel-0.5-1
-	% rpm -e linuxthreads linuxthreads-devel
-
-	While Python only needs this to be done to allow thread
-	support to be included, the conflicts these packages create
-	with the new glibc may cause other packages which use threads
-	to fail as well, so their removal is a good idea regardless of
-	how you configure python.
-
-	More recently, a problem with threads and fork() was tracked
-	down to a bug in the pthreads code in glibc version 2.0.5;
-	glibc version 2.0.7 solves the problem.  This causes the
-	popen2 test to fail; problem and solution reported by Pablo
-	Bleyer.
-
-	Also under RedHat Linux 5.0, the crypt module now needs the
-	-lcrypt option.  Uncomment this flag in Modules/Setup, or
-	comment out the crypt module in the same file.
+	Under Linux systems using GNU libc 2 (aka libc6), the crypt
+	module now needs the -lcrypt option.  Uncomment this flag in
+	Modules/Setup, or comment out the crypt module in the same
+	file. Most modern Linux systems use glibc2.
 
 FreeBSD 3.x and probably platforms with NCurses that use libmytinfo or
 	similar: When using cursesmodule, the linking is not done in
@@ -179,11 +164,18 @@ FreeBSD 3.x and probably platforms with NCurses that use libmytinfo or
 	required on your platform.  Normally, it would be linked
 	automatically, but not necessarily in the correct order.
 
-DEC Unix: When enabling threads, use --with-dec-threads, not
-	--with-thread.  When using GCC, it is possible to get an
-	internal compiler error if optimization is used.  This was
-	reported for GCC 2.7.2.3 on selectmodule.c.  Manually compile
-	the affected file without optimization to solve the problem.
+BSDI:	BSDI versions before 4.1 have known problems with threads,
+	which can cause strange errors in a number of modules (for
+	instance, the 'test_signal' test script will hang forever.)
+	Turning off threads (with --with-threads=no) or upgrading to
+	BSDI 4.1 solves this problem.
+
+DEC Unix: Run configure with --with-dec-threads, or with
+	--with-threads=no if no threads are desired (threads are on by
+	default).  When using GCC, it is possible to get an internal
+	compiler error if optimization is used.  This was reported for
+	GCC 2.7.2.3 on selectmodule.c.  Manually compile the affected
+	file without optimization to solve the problem.
 
 DEC Ultrix: compile with GCC to avoid bugs in the native compiler,
 	and pass SHELL=/bin/sh5 to Make when installing.
@@ -218,13 +210,7 @@ SCO:	The following only apply to SCO 3; Python builds out of the box
 
 		LIBS=' -lsocket -lcrypt_i'
 
-SunOS 4.x: When using the standard "cc" compiler, certain modules may
-	not be compilable because they use non-K&R syntax.  You should
-	be able to get a basic Python interpreter by commenting out
-	such modules in the Modules/Setup file, but I really recommend
-	using gcc.
-
-	When using the SunPro C compiler, you may want to use the
+SunOS 4.x: When using the SunPro C compiler, you may want to use the
 	'-Xa' option instead of '-Xc', to enable some needed non-ANSI
 	Sunisms.
 
@@ -278,7 +264,7 @@ Cray T3E: Konrad Hinsen writes:
 	1) Don't use gcc. It compiles Python/graminit.c into something
 	   that the Cray assembler doesn't like. Cray's cc seems to work
 	   fine.
-	2) Uncomment modules md5 (won't compile) and audioop (will
+	2) Comment out modules md5 (won't compile) and audioop (will
 	   crash the interpreter during the test suite).
 	If you run the test suite, two tests will fail (rotate and
 	binascii), but these are not the modules you'd expect to need
@@ -291,16 +277,6 @@ SGI:	SGI's standard "make" utility (/bin/make or /usr/bin/make)
 	smarter "smake " utility (/usr/sbin/smake), or GNU make.  If
 	you set the first line of the Makefile to #!/usr/sbin/smake
 	smake will be invoked by make (likewise for GNU make).
-
-	A bug in the MIPSpro 7.1 compiler's optimizer seems to break
-	Modules/pypcre.c.  The short term solution is to compile it
-	without optimization.  The bug is fixed in version 7.2.1 of
-	the compiler.
-
-	A bug in gcc-2.8.1 sets sys.maxint to -1 which *also* seems to
-	break Modules/pypcre.c.  The egcs versions of gcc fix this
-	problem.  Or use configure --without-gcc to compile with SGI's
-	compiler, if you have it.  (Raj Srinivasan, Kelvin Chu)
 
 OS/2:   If you are running Warp3 or Warp4 and have IBM's VisualAge C/C++
         compiler installed, just change into the pc\os2vacpp directory
@@ -319,17 +295,17 @@ Monterey (64-bit AIX):
 Configuring threads
 -------------------
 
-The main switch to configure threads is to run the configure script
-(see below) with the --with-thread switch (on DEC, use
---with-dec-threads).  Unfortunately, on some platforms, additional
-compiler and/or linker options are required.  Below is a table of
-those options, collected by Bill Janssen.  I would love to automate
-this process more, but the information below is not enough to write a
-patch for the configure.in file, so manual intervention is required.
-If you patch the configure.in file and are confident that the patch
-works, please send me the patch.  (Don't bother patching the configure
-script itself -- it is regenerated each the configure.in file
-changes.)
+As of Python 2.0, threads are enabled by default.  If you wish to
+compile without threads, or if your thread support is broken, pass the
+--with-threads=no switch to configure.  Unfortunately, on some
+platforms, additional compiler and/or linker options are required for
+threads to work properly.  Below is a table of those options,
+collected by Bill Janssen.  I would love to automate this process
+more, but the information below is not enough to write a patch for the
+configure.in file, so manual intervention is required.  If you patch
+the configure.in file and are confident that the patch works, please
+send me the patch.  (Don't bother patching the configure script itself
+-- it is regenerated each the configure.in file changes.)
 
 Compiler switches for threads
 .............................
@@ -397,7 +373,7 @@ On SGI IRIX, there are modules that interface to many SGI specific
 system libraries, e.g. the GL library and the audio hardware.
 
 For SunOS and Solaris, enable module "sunaudiodev" to support the
-audio device.
+audio device. Likewise, for Linux systems, enable "linuxaudiodev".
 
 In addition to the file Setup, you can also edit the file Setup.local.
 (the makesetup script processes both).  You may find it more
@@ -520,16 +496,13 @@ Modules/getpath.o.
 --with-readline: This option is no longer supported.  To use GNU
 	readline, enable module "readline" in the Modules/Setup file.
 
---with-thread: On most Unix systems, you can now use multiple threads.
-	To enable this, pass --with-thread.  (--with-threads is an
-	alias.)  If the library required for threads lives in a
-	peculiar place, you can use --with-thread=DIRECTORY.  NOTE:
-	you must also enable the thread module by uncommenting it in
-	the Modules/Setup file.  (Threads aren't enabled automatically
-	because there are run-time penalties when support for them is
-	compiled in even if you don't use them.)  IMPORTANT: run "make
-	clean" after changing (either enabling or disabling) this
-	option, or you will get link errors!  Note: for DEC Unix use
+--with-threads: On most Unix systems, you can now use multiple
+	threads, and support for this is enabled by default.  To
+	disable this, pass --with-threads=no.  If the library required
+	for threads lives in a peculiar place, you can use
+	--with-thread=DIRECTORY.  IMPORTANT: run "make clean" after
+	changing (either enabling or disabling) this option, or you
+	will get link errors!  Note: for DEC Unix use
 	--with-dec-threads instead.
 
 --with-sgi-dl: On SGI IRIX 4, dynamic loading of extension modules is
