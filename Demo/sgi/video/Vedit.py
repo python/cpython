@@ -141,6 +141,9 @@ class Editor:
 		if self.vout.getinfo() <> self.vin.getinfo():
 			print 'Copying info...'
 			self.vout.setinfo(self.vin.getinfo())
+			if self.vin.format == 'compress':
+				self.vout.setcompressheader(\
+					  self.vin.getcompressheader())
 		self.vout.put(data)
 		self.oshow()
 		self.ishow()
