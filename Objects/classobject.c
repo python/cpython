@@ -1207,13 +1207,16 @@ PyInstance_DoBinOp(PyObject *v, PyObject *w, char *opname, char *ropname,
 {
 	char buf[256];
 	PyObject *result = NULL;
+
 	if (halfbinop(v, w, opname, &result, thisfunc, 0) <= 0)
 		return result;
 	if (halfbinop(w, v, ropname, &result, thisfunc, 1) <= 0)
 		return result;
 	/* Sigh -- special case for comparisons */
 	if (strcmp(opname, "__cmp__") == 0) {
-		long c = (v < w) ? -1 : (v > w) ? 1 : 0;
+		Py_uintptr_t iv = (Py_uintptr_t)v;
+		Py_uintptr_t iw = (Py_uintptr_t)w;
+		long c = (iv < iw) ? -1 : (iv > iw) ? 1 : 0;
 		return PyInt_FromLong(c);
 	}
 	sprintf(buf, "%s nor %s defined for these operands", opname, ropname);
