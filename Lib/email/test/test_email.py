@@ -354,6 +354,12 @@ class TestMessageAPI(TestEmailBase):
             ('boundary', 'D1690A7AC1.996856090/mail.example.com'),
             ('report-type', old_val)])
 
+    def test_del_param_on_other_header(self):
+        msg = Message()
+        msg.add_header('Content-Disposition', 'attachment', filename='bud.gif')
+        msg.del_param('filename', 'content-disposition')
+        self.assertEqual(msg['content-disposition'], 'attachment')
+
     def test_set_type(self):
         eq = self.assertEqual
         msg = Message()
@@ -364,6 +370,12 @@ class TestMessageAPI(TestEmailBase):
         eq(msg['content-type'], 'text/plain; charset="us-ascii"')
         msg.set_type('text/html')
         eq(msg['content-type'], 'text/html; charset="us-ascii"')
+
+    def test_set_type_on_other_header(self):
+        msg = Message()
+        msg['X-Content-Type'] = 'text/plain'
+        msg.set_type('application/octet-stream', 'X-Content-Type')
+        self.assertEqual(msg['x-content-type'], 'application/octet-stream')
 
     def test_get_content_type_missing(self):
         msg = Message()
