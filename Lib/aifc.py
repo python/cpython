@@ -593,7 +593,11 @@ class Aifc_read:
 				id = _read_short(chunk)
 				pos = _read_long(chunk)
 				name = _read_string(chunk)
-				self._markers.append((id, pos, name))
+				if pos or name:
+					# some files appear to have
+					# dummy markers consisting of
+					# a position 0 and name ''
+					self._markers.append((id, pos, name))
 		except EOFError:
 			print 'Warning: MARK chunk contains only',
 			print len(self._markers),
