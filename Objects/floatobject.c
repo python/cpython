@@ -64,6 +64,13 @@ newfloatobject(fval)
 	return (object *) op;
 }
 
+void
+float_dealloc(op)
+	object *op;
+{
+	DEL(op);
+}
+
 double
 getfloatvalue(op)
 	object *op;
@@ -106,11 +113,12 @@ float_buf_repr(buf, v)
 	}
 }
 
+/* ARGSUSED */
 static int
 float_print(v, fp, flags)
 	floatobject *v;
 	FILE *fp;
-	int flags;
+	int flags; /* Not used but required by interface */
 {
 	char buf[100];
 	float_buf_repr(buf, v);
@@ -178,7 +186,7 @@ float_rem(v, w)
 	floatobject *w;
 {
 	double vx, wx;
-	double div, mod;
+	double /* div, */ mod;
 	wx = w->ob_fval;
 	if (wx == 0.0) {
 		err_setstr(ZeroDivisionError, "float modulo");
@@ -186,10 +194,10 @@ float_rem(v, w)
 	}
 	vx = v->ob_fval;
 	mod = fmod(vx, wx);
-	div = (vx - mod) / wx;
+	/* div = (vx - mod) / wx; */
 	if (wx*mod < 0) {
 		mod += wx;
-		div -= 1.0;
+		/* div -= 1.0; */
 	}
 	return newfloatobject(mod);
 }
@@ -317,7 +325,7 @@ typeobject Floattype = {
 	"float",
 	sizeof(floatobject),
 	0,
-	free,			/*tp_dealloc*/
+	float_dealloc,		/*tp_dealloc*/
 	float_print,		/*tp_print*/
 	0,			/*tp_getattr*/
 	0,			/*tp_setattr*/
