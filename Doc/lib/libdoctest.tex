@@ -65,7 +65,7 @@ def factorial(n):
         raise ValueError("n must be >= 0")
     if math.floor(n) != n:
         raise ValueError("n must be exact integer")
-    if n+1 == n:  # e.g., 1e300
+    if n+1 == n:  # catch a value like 1e300
         raise OverflowError("n too large")
     result = 1
     factor = 2
@@ -243,13 +243,75 @@ value of the example).
 
 \subsection{Advanced Usage}
 
-\function{testmod()} actually creates a local instance of class
-\class{Tester}, runs appropriate methods of that class, and merges
-the results into global \class{Tester} instance \code{master}.
+Several module level functions are available for controlling how doctests
+are run.
 
-You can create your own instances of \class{Tester}, and so build your
-own policies, or even run methods of \code{master} directly.  See
-\code{Tester.__doc__} for details.
+\begin{funcdesc}{debug}{module, name}
+  Debug a single docstring containing doctests.
+
+  Provide the \var{module} (or dotted name of the module) containing the
+  docstring to be debugged and the \var{name} (within the module) of the
+  object with the docstring to be debugged.
+
+  The doctest examples are extracted (see function \function{testsource()}),
+  and written to a temporary file.  The Python debugger, \refmodule{pdb},
+  is then invoked on that file.    
+  \versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{testmod}{}
+  This function provides the most basic interface to the doctests.
+  It creates a local instance of class \class{Tester}, runs appropriate
+  methods of that class, and merges the results into the global \class{Tester}
+  instance, \code{master}.
+
+  To get finer control than \function{testmod()} offers, create an instance
+  of \class{Tester} with custom policies and run the methods of \code{master}
+  directly.  See \code{Tester.__doc__} for details.
+\end{funcdesc}
+
+\begin{funcdesc}{testsource}{module, name}
+  Extract the doctest examples from a docstring.
+
+  Provide the \var{module} (or dotted name of the module) containing the
+  tests to be extracted and the \var{name} (within the module) of the object
+  with the docstring containing the tests to be extracted.
+
+  The doctest examples are returned as a string containing Python
+  code.  The expected output blocks in the examples are converted
+  to Python comments.
+  \versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{DocTestSuite}{\optional{module}}
+  Convert doctest tests for a module to a \refmodule{unittest}
+  \class{TestSuite}.
+
+  The returned \class{TestSuite} is to be run by the unittest framework
+  and runs each doctest in the module.  If any of the doctests fail,
+  then the synthesized unit test fails, and a \exception{DocTestTestFailure}
+  exception is raised showing the name of the file containing the test and a
+  (sometimes approximate) line number.
+
+  The optional \var{module} argument provides the module to be tested.  It
+  can be a module object or a (possibly dotted) module name.  If not
+  specified, the module calling \function{DocTestSuite()} is used.
+
+  Example using one of the many ways that the \refmodule{unittest} module
+  can use a \class{TestSuite}:
+
+  \begin{verbatim}
+    import unittest
+    import doctest
+    import my_module_with_doctests
+
+    suite = doctest.DocTestSuite(my_module_with_doctests)
+    runner = unittest.TextTestRunner()
+    runner.run(suite)
+  \end{verbatim}
+
+  \versionadded{2.3}
+\end{funcdesc}
 
 
 \subsection{How are Docstring Examples Recognized?}
