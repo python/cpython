@@ -1,0 +1,26 @@
+%
+% LaTeX commands and macros needed for the two Distutils manuals,
+% inst.tex and dist.tex.
+%
+% $Id$
+%
+
+% My gripe list about the Python style files:
+%  * I want italics in verbatim environments (verbatim.sty?)
+%  * I hate escaping underscores (url.sty fixes this)
+
+% Should these be added to the standard Python doc tools?  (They'll be
+% needed for my "Distributing Python Modules" guide, too.)
+\newcommand{\command}[1]{\code{#1}}
+\newcommand{\option}[1]{\textsf{\small{#1}}}
+\newcommand{\filevar}[1]{{\textsl{\filenq{#1}}}}
+\newcommand{\homefile}[1]{\file{\tilde/#1}}
+\newcommand{\comingsoon}{\emph{Coming soon...}}
+\def\package{\module}
+
+% And how about these?  Very handy for writing pathnames (tilde for
+% Unix, backslash for DOS/Windows).
+\renewcommand{\tilde}{\raisebox{-0.5ex}{\symbol{126}}}
+\newcommand{\bslash}{\symbol{92}}      % XXX only works in tt fonts!
+
+\newcommand{\XXX}[1]{\textbf{**#1**}}
