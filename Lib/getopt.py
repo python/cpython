@@ -65,8 +65,7 @@ def getopt(args, shortopts, longopts = []):
         longopts = [longopts]
     else:
         longopts = list(longopts)
-    longopts.sort()
-    while args and args[0][:1] == '-' and args[0] != '-':
+    while args and args[0].startswith('-') and args[0] != '-':
         if args[0] == '--':
             args = args[1:]
             break
@@ -80,9 +79,10 @@ def getopt(args, shortopts, longopts = []):
 def do_longs(opts, opt, longopts, args):
     try:
         i = opt.index('=')
-        opt, optarg = opt[:i], opt[i+1:]
     except ValueError:
         optarg = None
+    else:
+        opt, optarg = opt[:i], opt[i+1:]
 
     has_arg, opt = long_has_args(opt, longopts)
     if has_arg:
@@ -99,18 +99,25 @@ def do_longs(opts, opt, longopts, args):
 #   has_arg?
 #   full option name
 def long_has_args(opt, longopts):
-    optlen = len(opt)
-    for i in range(len(longopts)):
-        x, y = longopts[i][:optlen], longopts[i][optlen:]
-        if opt != x:
-            continue
-        if y != '' and y != '=' and i+1 < len(longopts):
-            if opt == longopts[i+1][:optlen]:
-                raise GetoptError('option --%s not a unique prefix' % opt, opt)
-        if longopts[i][-1:] in ('=', ):
-            return 1, longopts[i][:-1]
-        return 0, longopts[i]
-    raise GetoptError('option --%s not recognized' % opt, opt)
+    possibilities = [o for o in longopts if o.startswith(opt)]
+    if not possibilities:
+        raise GetoptError('option --%s not recognized' % opt, opt)
+    # Is there an exact match?
+    if opt in possibilities:
+        return 0, opt
+    elif opt + '=' in possibilities:
+        return 1, opt
+    # No exact match, so better be unique.
+    if len(possibilities) > 1:
+        # XXX since possibilities contains all valid continuations, might be
+        # nice to work them into the error msg
+        raise GetoptError('option --%s not a unique prefix' % opt, opt)
+    assert len(possibilities) == 1
+    unique_match = possibilities[0]
+    has_arg = unique_match.endswith('=')
+    if has_arg:
+        unique_match = unique_match[:-1]
+    return has_arg, unique_match
 
 def do_shorts(opts, optstring, shortopts, args):
     while optstring != '':

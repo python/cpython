@@ -85,6 +85,13 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 
 - #233200 - cPickle did not use Py_BEGIN_ALLOW_THREADS.
 
+- #125452 - shlex.shlex hungs when it encounters a string with an unmatched 
+            quote
+
+- #119833 - close socket in smtplib if there was an error connecting
+
+- #126863 - getopt long option handling fixed
+
 What's New in Python 2.0?
 =========================
 
