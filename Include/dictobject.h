@@ -7,6 +7,12 @@ extern "C" {
 
 /* Dictionary object type -- mapping from hashable object to object */
 
+/* The distribution includes a separate file, Objects/dictnotes.txt,
+   describing explorations into dictionary design and optimization.  
+   It covers typical dictionary use patterns, the parameters for
+   tuning dictionaries, and several ideas for possible optimizations.
+*/
+
 /*
 There are three kinds of slots in the table:
 

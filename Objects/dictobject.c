@@ -1,6 +1,12 @@
 
 /* Dictionary object implementation using a hash table */
 
+/* The distribution includes a separate file, Objects/dictnotes.txt,
+   describing explorations into dictionary design and optimization.  
+   It covers typical dictionary use patterns, the parameters for
+   tuning dictionaries, and several ideas for possible optimizations.
+*/
+
 #include "Python.h"
 
 typedef PyDictEntry dictentry;
