@@ -107,4 +107,5 @@ def test_module_with_large_stack(module):
         if os.path.exists(fname):
             os.unlink(fname)
 
-test_module_with_large_stack('longlist')
+if sys.platform != 'mac':
+    test_module_with_large_stack('longlist')
