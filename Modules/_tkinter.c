@@ -580,6 +580,7 @@ Tkapp_New(char *screenName, char *baseName, char *className,
 {
 	TkappObject *v;
 	char *argv0;
+
 	v = PyObject_New(TkappObject, &Tkapp_Type);
 	if (v == NULL)
 		return NULL;
@@ -646,13 +647,15 @@ Tkapp_New(char *screenName, char *baseName, char *className,
 
 	/* some initial arguments need to be in argv */
 	if (sync || use) {
+		char *args;
 		int len = 0;
+
 		if (sync)
 			len += sizeof "-sync";
 		if (use)
 			len += strlen(use) + sizeof "-use ";
 
-		char *args = (char*)ckalloc(len);
+		args = (char*)ckalloc(len);
 		if (!args) {
 			PyErr_NoMemory();
 			Py_DECREF(v);
