@@ -324,6 +324,15 @@ class TestBasic(unittest.TestCase):
         for s in ('abcd', xrange(2000)):
             self.assertEqual(list(reversed(deque(s))), list(reversed(s)))
 
+    def test_gc_doesnt_blowup(self):
+        import gc
+        # This used to assert-fail in deque_traverse() under a debug
+        # build, or run wild with a NULL pointer in a release build.
+        d = deque()
+        for i in xrange(100):
+            d.append(1)
+            gc.collect()
+
 def R(seqn):
     'Regular generator'
     for i in seqn:
