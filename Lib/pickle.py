@@ -958,7 +958,10 @@ class _EmptyClass:
 
 # Shorthands
 
-from StringIO import StringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 def dump(object, file, bin = 0):
     Pickler(file, bin).dump(object)
@@ -974,38 +977,3 @@ def load(file):
 def loads(str):
     file = StringIO(str)
     return Unpickler(file).load()
-
-
-# The rest is used for testing only
-
-class C:
-    def __cmp__(self, other):
-        return cmp(self.__dict__, other.__dict__)
-
-def test():
-    fn = 'out'
-    c = C()
-    c.foo = 1
-    c.bar = 2
-    x = [0, 1, 2, 3]
-    y = ('abc', 'abc', c, c)
-    x.append(y)
-    x.append(y)
-    x.append(5)
-    f = open(fn, 'w')
-    F = Pickler(f)
-    F.dump(x)
-    f.close()
-    f = open(fn, 'r')
-    U = Unpickler(f)
-    x2 = U.load()
-    print x
-    print x2
-    print x == x2
-    print map(id, x)
-    print map(id, x2)
-    print F.memo
-    print U.memo
-
-if __name__ == '__main__':
-    test()
