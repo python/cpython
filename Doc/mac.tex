@@ -1,0 +1,67 @@
+\documentclass{howto}
+
+\title{Macintosh Library Modules}
+
+\input{boilerplate}
+
+\makeindex			% tell \index to actually write the
+				% .idx file
+\makemodindex			% ... and the module index as well.
+
+
+\begin{document}
+
+\maketitle
+
+\input{copyright}
+
+\begin{abstract}
+
+\noindent
+This library reference manual documents Python's extensions for the
+Macintosh.  It should be used in conjunction with the \emph{Python
+Library Reference}, which documents the standard library and built-in
+types.
+
+This manual assumes basic knowledge about the Python language.  For an
+informal introduction to Python, see the \emph{Python Tutorial}; the
+\emph{Python Reference Manual} remains the highest authority on
+syntactic and semantic questions.  Finally, the manual entitled
+\emph{Extending and Embedding the Python Interpreter} describes how to
+add new extensions to Python and how to embed it in other applications.
+
+\end{abstract}
+
+\tableofcontents
+
+\input{libmac}			% MACINTOSH ONLY
+\input{libctb}
+\input{libmacconsole}
+\input{libmacdnr}
+\input{libmacfs}
+\input{libmacic}
+\input{libmacos}
+\input{libmacostools}
+\input{libmactcp}
+\input{libmacspeech}
+\input{libmacui}
+\input{libframework}
+\input{libminiae}
+
+%
+%  The ugly "%begin{latexonly}" pseudo-environments are really just to
+%  keep LaTeX2HTML quiet during the \renewcommand{} macros; they're
+%  not really valuable.
+%
+
+%begin{latexonly}
+\renewcommand{\indexname}{Module Index}
+%end{latexonly}
+\input{modmac.ind}		% Module Index
+
+%begin{latexonly}
+\renewcommand{\indexname}{Index}
+%end{latexonly}
+\input{mac.ind}			% Index
+
+\end{document}
