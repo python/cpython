@@ -26,7 +26,8 @@ includestuff = includestuff + """
 /*
 ** Parse/generate ComponentDescriptor records
 */
-PyObject *CmpDesc_New(itself)
+static PyObject *
+CmpDesc_New(itself)
 	ComponentDescription *itself;
 {
 
@@ -37,6 +38,7 @@ PyObject *CmpDesc_New(itself)
 		itself->componentFlags, itself->componentFlagsMask);
 }
 
+static int
 CmpDesc_Convert(v, p_itself)
 	PyObject *v;
 	ComponentDescription *p_itself;

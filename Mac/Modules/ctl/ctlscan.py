@@ -84,6 +84,15 @@ class MyScanner(Scanner):
 			('#ifndef TARGET_API_MAC_CARBON', [
 				'GetAuxiliaryControlRecord',
 				'SetControlColor',
+				# These have suddenly disappeared in UH 3.3.2...
+				'GetBevelButtonMenuValue',
+				'SetBevelButtonMenuValue',
+				'GetBevelButtonMenuHandle',
+				'SetBevelButtonTransform',
+				'SetImageWellTransform',
+				'GetTabContentRect',
+				'SetTabEnabled',
+				'SetDisclosureTriangleLastValue',
 			])]
 			
 	def makeblacklisttypes(self):

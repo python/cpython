@@ -854,6 +854,7 @@ mfs_RawAlias(self, args)
 	return (PyObject *)newmfsaobject((AliasHandle)h);
 }
 
+#ifndef TARGET_API_MAC_CARBON
 static PyObject *
 mfs_GetDirectory(self, args)
 	PyObject *self;	/* Not used */
@@ -869,6 +870,7 @@ mfs_GetDirectory(self, args)
 	ok = PyMac_GetDirectory(&fsdir, prompt);
 	return Py_BuildValue("(Oi)", newmfssobject(&fsdir), ok);
 }
+#endif
 
 static PyObject *
 mfs_FindFolder(self, args)

@@ -38,8 +38,6 @@ includestuff = includestuff + """
 
 #define as_GrafPtr(gworld) ((GrafPtr)(gworld))
 
-#define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
-
 """
 
 

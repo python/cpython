@@ -44,6 +44,8 @@ ControlFontStyleRec_ptr = ControlFontStyleRec
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
 
+staticforward PyObject *CtlObj_WhichControl(ControlHandle);
+
 #define as_Control(h) ((ControlHandle)h)
 #define as_Resource(ctl) ((Handle)ctl)
 #ifdef TARGET_API_MAC_CARBON
@@ -51,17 +53,13 @@ includestuff = includestuff + """
 #else
 #define GetControlRect(ctl, rectp) (*(rectp) = ((*(ctl))->contrlRect))
 #endif
-#define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
-
-extern PyObject *CtlObj_WhichControl(ControlHandle); /* Forward */
-extern PyObject *QdRGB_New(RGBColorPtr);
-extern QdRGB_Convert(PyObject *, RGBColorPtr);
 
 /*
 ** Parse/generate ControlFontStyleRec records
 */
 #if 0 /* Not needed */
-PyObject *ControlFontStyle_New(itself)
+static PyObject *
+ControlFontStyle_New(itself)
 	ControlFontStyleRec *itself;
 {
 
@@ -71,6 +69,7 @@ PyObject *ControlFontStyle_New(itself)
 }
 #endif
 
+static int
 ControlFontStyle_Convert(v, itself)
 	PyObject *v;
 	ControlFontStyleRec *itself;
@@ -99,7 +98,8 @@ staticforward int setcallback(PyObject *, OSType, PyObject *, UniversalProcPtr *
 """
 
 finalstuff = finalstuff + """
-PyObject *CtlObj_NewUnmanaged(itself)
+static PyObject *
+CtlObj_NewUnmanaged(itself)
 	ControlHandle itself;
 {
 	ControlObject *it;
@@ -111,7 +111,7 @@ PyObject *CtlObj_NewUnmanaged(itself)
 	return (PyObject *)it;
 }
 
-PyObject *
+static PyObject *
 CtlObj_WhichControl(ControlHandle c)
 {
 	PyObject *it;

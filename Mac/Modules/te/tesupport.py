@@ -37,14 +37,11 @@ includestuff = includestuff + """
 #define as_TE(h) ((TEHandle)h)
 #define as_Resource(teh) ((Handle)teh)
 
-/* Exported by Qdmodule.c: */
-extern PyObject *QdRGB_New(RGBColor *);
-extern int QdRGB_Convert(PyObject *, RGBColor *);
-
 /*
 ** Parse/generate TextStyle records
 */
-PyObject *TextStyle_New(itself)
+static PyObject *
+TextStyle_New(itself)
 	TextStylePtr itself;
 {
 
@@ -52,6 +49,7 @@ PyObject *TextStyle_New(itself)
 				&itself->tsColor);
 }
 
+static int
 TextStyle_Convert(v, p_itself)
 	PyObject *v;
 	TextStylePtr p_itself;

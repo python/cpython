@@ -24,7 +24,8 @@ includestuff = includestuff + """
 /*
 ** Parse/generate ComponentDescriptor records
 */
-PyObject *FMRec_New(itself)
+static PyObject *
+FMRec_New(itself)
 	FMetricRec *itself;
 {
 
@@ -38,6 +39,7 @@ PyObject *FMRec_New(itself)
 
 #if 0
 /* Not needed... */
+static int
 FMRec_Convert(v, p_itself)
 	PyObject *v;
 	FMetricRec *p_itself;

@@ -58,8 +58,6 @@ PenState_ptr = StructInputBufferType('PenState')
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
 
-#define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
-
 /*
 ** Parse/generate RGB records
 */

@@ -5,42 +5,8 @@
 
 
 
-#define SystemSevenOrLater 1
-
 #include "macglue.h"
-#include <Memory.h>
-#include <Dialogs.h>
-#include <Menus.h>
-#include <Controls.h>
-
-extern PyObject *ResObj_New(Handle);
-extern int ResObj_Convert(PyObject *, Handle *);
-extern PyObject *OptResObj_New(Handle);
-extern int OptResObj_Convert(PyObject *, Handle *);
-
-extern PyObject *WinObj_New(WindowPtr);
-extern int WinObj_Convert(PyObject *, WindowPtr *);
-extern PyTypeObject Window_Type;
-#define WinObj_Check(x) ((x)->ob_type == &Window_Type)
-
-extern PyObject *DlgObj_New(DialogPtr);
-extern int DlgObj_Convert(PyObject *, DialogPtr *);
-extern PyTypeObject Dialog_Type;
-#define DlgObj_Check(x) ((x)->ob_type == &Dialog_Type)
-
-extern PyObject *MenuObj_New(MenuHandle);
-extern int MenuObj_Convert(PyObject *, MenuHandle *);
-
-extern PyObject *CtlObj_New(ControlHandle);
-extern int CtlObj_Convert(PyObject *, ControlHandle *);
-
-extern PyObject *GrafObj_New(GrafPtr);
-extern int GrafObj_Convert(PyObject *, GrafPtr *);
-
-extern PyObject *BMObj_New(BitMapPtr);
-extern int BMObj_Convert(PyObject *, BitMapPtr *);
-
-extern PyObject *WinObj_WhichWindow(WindowPtr);
+#include "pymactoolbox.h"
 
 #include <WASTE.h>
 #include <WEObjectHandlers.h>
@@ -381,6 +347,12 @@ static PyObject *WEOObj_getattr(self, name)
 
 #define WEOObj_setattr NULL
 
+#define WEOObj_compare NULL
+
+#define WEOObj_repr NULL
+
+#define WEOObj_hash NULL
+
 PyTypeObject WEO_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -392,6 +364,12 @@ PyTypeObject WEO_Type = {
 	0, /*tp_print*/
 	(getattrfunc) WEOObj_getattr, /*tp_getattr*/
 	(setattrfunc) WEOObj_setattr, /*tp_setattr*/
+	(cmpfunc) WEOObj_compare, /*tp_compare*/
+	(reprfunc) WEOObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) WEOObj_hash, /*tp_hash*/
 };
 
 /* ---------------------- End object type WEO ----------------------- */
@@ -682,7 +660,7 @@ static PyObject *wasteObj_WEGetClickCount(_self, _args)
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = WEGetClickCount(_self->ob_itself);
-	_res = Py_BuildValue("h",
+	_res = Py_BuildValue("H",
 	                     _rv);
 	return _res;
 }
@@ -746,13 +724,13 @@ static PyObject *wasteObj_WEContinuousStyle(_self, _args)
 	Boolean _rv;
 	WEStyleMode mode;
 	TextStyle ts;
-	if (!PyArg_ParseTuple(_args, "h",
+	if (!PyArg_ParseTuple(_args, "H",
 	                      &mode))
 		return NULL;
 	_rv = WEContinuousStyle(&mode,
 	                        &ts,
 	                        _self->ob_itself);
-	_res = Py_BuildValue("bhO&",
+	_res = Py_BuildValue("bHO&",
 	                     _rv,
 	                     mode,
 	                     TextStyle_New, &ts);
@@ -1096,7 +1074,7 @@ static PyObject *wasteObj_WEKey(_self, _args)
 	PyObject *_res = NULL;
 	SInt16 key;
 	EventModifiers modifiers;
-	if (!PyArg_ParseTuple(_args, "hh",
+	if (!PyArg_ParseTuple(_args, "hH",
 	                      &key,
 	                      &modifiers))
 		return NULL;
@@ -1116,7 +1094,7 @@ static PyObject *wasteObj_WEClick(_self, _args)
 	Point hitPt;
 	EventModifiers modifiers;
 	UInt32 clickTime;
-	if (!PyArg_ParseTuple(_args, "O&hl",
+	if (!PyArg_ParseTuple(_args, "O&Hl",
 	                      PyMac_GetPoint, &hitPt,
 	                      &modifiers,
 	                      &clickTime))
@@ -1216,7 +1194,7 @@ static PyObject *wasteObj_WESetStyle(_self, _args)
 	OSErr _err;
 	WEStyleMode mode;
 	TextStyle ts;
-	if (!PyArg_ParseTuple(_args, "hO&",
+	if (!PyArg_ParseTuple(_args, "HO&",
 	                      &mode,
 	                      TextStyle_Convert, &ts))
 		return NULL;
@@ -1889,6 +1867,12 @@ static PyObject *wasteObj_getattr(self, name)
 
 #define wasteObj_setattr NULL
 
+#define wasteObj_compare NULL
+
+#define wasteObj_repr NULL
+
+#define wasteObj_hash NULL
+
 PyTypeObject waste_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -1900,6 +1884,12 @@ PyTypeObject waste_Type = {
 	0, /*tp_print*/
 	(getattrfunc) wasteObj_getattr, /*tp_getattr*/
 	(setattrfunc) wasteObj_setattr, /*tp_setattr*/
+	(cmpfunc) wasteObj_compare, /*tp_compare*/
+	(reprfunc) wasteObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) wasteObj_hash, /*tp_hash*/
 };
 
 /* --------------------- End object type waste ---------------------- */

@@ -5,44 +5,12 @@
 
 
 
-#define SystemSevenOrLater 1
-
 #include "macglue.h"
-#include <Memory.h>
-#include <Dialogs.h>
-#include <Menus.h>
-#include <Controls.h>
-
-extern PyObject *ResObj_New(Handle);
-extern int ResObj_Convert(PyObject *, Handle *);
-extern PyObject *OptResObj_New(Handle);
-extern int OptResObj_Convert(PyObject *, Handle *);
-
-extern PyObject *WinObj_New(WindowPtr);
-extern int WinObj_Convert(PyObject *, WindowPtr *);
-extern PyTypeObject Window_Type;
-#define WinObj_Check(x) ((x)->ob_type == &Window_Type)
-
-extern PyObject *DlgObj_New(DialogPtr);
-extern int DlgObj_Convert(PyObject *, DialogPtr *);
-extern PyTypeObject Dialog_Type;
-#define DlgObj_Check(x) ((x)->ob_type == &Dialog_Type)
-
-extern PyObject *MenuObj_New(MenuHandle);
-extern int MenuObj_Convert(PyObject *, MenuHandle *);
-
-extern PyObject *CtlObj_New(ControlHandle);
-extern int CtlObj_Convert(PyObject *, ControlHandle *);
-
-extern PyObject *GrafObj_New(GrafPtr);
-extern int GrafObj_Convert(PyObject *, GrafPtr *);
-
-extern PyObject *BMObj_New(BitMapPtr);
-extern int BMObj_Convert(PyObject *, BitMapPtr *);
-
-extern PyObject *WinObj_WhichWindow(WindowPtr);
+#include "pymactoolbox.h"
 
 #include <Controls.h>
+
+staticforward PyObject *CtlObj_WhichControl(ControlHandle);
 
 #define as_Control(h) ((ControlHandle)h)
 #define as_Resource(ctl) ((Handle)ctl)
@@ -51,17 +19,13 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 #else
 #define GetControlRect(ctl, rectp) (*(rectp) = ((*(ctl))->contrlRect))
 #endif
-#define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
-
-extern PyObject *CtlObj_WhichControl(ControlHandle); /* Forward */
-extern PyObject *QdRGB_New(RGBColorPtr);
-extern QdRGB_Convert(PyObject *, RGBColorPtr);
 
 /*
 ** Parse/generate ControlFontStyleRec records
 */
 #if 0 /* Not needed */
-PyObject *ControlFontStyle_New(itself)
+static PyObject *
+ControlFontStyle_New(itself)
 	ControlFontStyleRec *itself;
 {
 
@@ -71,6 +35,7 @@ PyObject *ControlFontStyle_New(itself)
 }
 #endif
 
+static int
 ControlFontStyle_Convert(v, itself)
 	PyObject *v;
 	ControlFontStyleRec *itself;
@@ -854,6 +819,8 @@ static PyObject *CtlObj_SetControlColor(_self, _args)
 }
 #endif
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *CtlObj_GetBevelButtonMenuValue(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
@@ -870,6 +837,9 @@ static PyObject *CtlObj_GetBevelButtonMenuValue(_self, _args)
 	                     outValue);
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_SetBevelButtonMenuValue(_self, _args)
 	ControlObject *_self;
@@ -888,6 +858,9 @@ static PyObject *CtlObj_SetBevelButtonMenuValue(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_GetBevelButtonMenuHandle(_self, _args)
 	ControlObject *_self;
@@ -905,6 +878,9 @@ static PyObject *CtlObj_GetBevelButtonMenuHandle(_self, _args)
 	                     MenuObj_New, outHandle);
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_SetBevelButtonTransform(_self, _args)
 	ControlObject *_self;
@@ -923,6 +899,9 @@ static PyObject *CtlObj_SetBevelButtonTransform(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_SetImageWellTransform(_self, _args)
 	ControlObject *_self;
@@ -941,6 +920,9 @@ static PyObject *CtlObj_SetImageWellTransform(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_GetTabContentRect(_self, _args)
 	ControlObject *_self;
@@ -958,6 +940,9 @@ static PyObject *CtlObj_GetTabContentRect(_self, _args)
 	                     PyMac_BuildRect, &outContentRect);
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_SetTabEnabled(_self, _args)
 	ControlObject *_self;
@@ -979,6 +964,9 @@ static PyObject *CtlObj_SetTabEnabled(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_SetDisclosureTriangleLastValue(_self, _args)
 	ControlObject *_self;
@@ -997,6 +985,7 @@ static PyObject *CtlObj_SetDisclosureTriangleLastValue(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
 
 static PyObject *CtlObj_SendControlMessage(_self, _args)
 	ControlObject *_self;
@@ -1611,22 +1600,46 @@ static PyMethodDef CtlObj_methods[] = {
 	{"SetControlColor", (PyCFunction)CtlObj_SetControlColor, 1,
 	 "(CCTabHandle newColorTable) -> None"},
 #endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"GetBevelButtonMenuValue", (PyCFunction)CtlObj_GetBevelButtonMenuValue, 1,
 	 "() -> (SInt16 outValue)"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SetBevelButtonMenuValue", (PyCFunction)CtlObj_SetBevelButtonMenuValue, 1,
 	 "(SInt16 inValue) -> None"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"GetBevelButtonMenuHandle", (PyCFunction)CtlObj_GetBevelButtonMenuHandle, 1,
 	 "() -> (MenuHandle outHandle)"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SetBevelButtonTransform", (PyCFunction)CtlObj_SetBevelButtonTransform, 1,
 	 "(IconTransformType transform) -> None"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SetImageWellTransform", (PyCFunction)CtlObj_SetImageWellTransform, 1,
 	 "(IconTransformType inTransform) -> None"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"GetTabContentRect", (PyCFunction)CtlObj_GetTabContentRect, 1,
 	 "() -> (Rect outContentRect)"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SetTabEnabled", (PyCFunction)CtlObj_SetTabEnabled, 1,
 	 "(SInt16 inTabToHilite, Boolean inEnabled) -> None"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SetDisclosureTriangleLastValue", (PyCFunction)CtlObj_SetDisclosureTriangleLastValue, 1,
 	 "(SInt16 inValue) -> None"},
+#endif
 	{"SendControlMessage", (PyCFunction)CtlObj_SendControlMessage, 1,
 	 "(SInt16 inMessage, SInt32 inParam) -> (SInt32 _rv)"},
 	{"EmbedControl", (PyCFunction)CtlObj_EmbedControl, 1,
@@ -2098,7 +2111,8 @@ static PyMethodDef Ctl_methods[] = {
 
 
 
-PyObject *CtlObj_NewUnmanaged(itself)
+static PyObject *
+CtlObj_NewUnmanaged(itself)
 	ControlHandle itself;
 {
 	ControlObject *it;
@@ -2110,7 +2124,7 @@ PyObject *CtlObj_NewUnmanaged(itself)
 	return (PyObject *)it;
 }
 
-PyObject *
+static PyObject *
 CtlObj_WhichControl(ControlHandle c)
 {
 	PyObject *it;

@@ -31,15 +31,8 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 #include "macglue.h"
+#include "pymactoolbox.h"
 #include <Navigation.h>
-
-/* Exported by AEModule.c: */
-extern PyObject *AEDesc_New(AppleEvent *);
-extern int AEDesc_Convert(PyObject *, AppleEvent *);
-/* Exported by Resmodule.c */
-extern PyObject *ResObj_New(Handle);
-extern PyObject *OptResObj_New(Handle);
-extern int ResObj_Convert(PyObject *, Handle *);
 
 static PyObject *ErrorObject;
 

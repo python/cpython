@@ -131,7 +131,7 @@ GenericEventHandler(const AppleEvent *request, AppleEvent *reply, unsigned long 
 	PyObject *handler = (PyObject *)refcon;
 	AEDescObject *requestObject, *replyObject;
 	PyObject *args, *res;
-	if ((requestObject = (AEDescObject *)AEDesc_New(request)) == NULL) {
+	if ((requestObject = (AEDescObject *)AEDesc_New((AppleEvent *)request)) == NULL) {
 		return -1;
 	}
 	if ((replyObject = (AEDescObject *)AEDesc_New(reply)) == NULL) {
