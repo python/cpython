@@ -44,6 +44,11 @@ Extension modules
 Library
 -------
 
+- A new function tkFont.nametofont was added to return an existing
+  font. The Font class constructor now has an additional exists argument
+  which, if True, requests to return/configure an existing font, rather
+  than creating a new one. 
+
 - Updated the decimal package's min() and max() methods to match the
   latest revision of the General Decimal Arithmetic Specification.
   Quiet NaNs are ignored and equal values are sorted based on sign
