@@ -1455,7 +1455,8 @@ then with_universal_newlines="yes"
 fi
 if test "$with_universal_newlines" != "no"
 then
-    AC_DEFINE(WITH_UNIVERSAL_NEWLINES)
+    AC_DEFINE(WITH_UNIVERSAL_NEWLINES, 1,
+      [Define if you want to read files with foreign newlines.])
 fi
 AC_MSG_RESULT($with_universal_newlines)
 
