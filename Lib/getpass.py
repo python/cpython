@@ -30,12 +30,12 @@ def unix_getpass(prompt='Password: '):
     old = termios.tcgetattr(fd)     # a copy to save
     new = old[:]
 
-    new[3] = new[3] & ~TERMIOS.ECHO # 3 == 'lflags'
+    new[3] = new[3] & ~termios.ECHO # 3 == 'lflags'
     try:
-        termios.tcsetattr(fd, TERMIOS.TCSADRAIN, new)
+        termios.tcsetattr(fd, termios.TCSADRAIN, new)
         passwd = _raw_input(prompt)
     finally:
-        termios.tcsetattr(fd, TERMIOS.TCSADRAIN, old)
+        termios.tcsetattr(fd, termios.TCSADRAIN, old)
 
     sys.stdout.write('\n')
     return passwd
@@ -103,7 +103,7 @@ def getuser():
 
 # Bind the name getpass to the appropriate function
 try:
-    import termios, TERMIOS
+    import termios
 except ImportError:
     try:
         import msvcrt
