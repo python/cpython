@@ -205,6 +205,15 @@ class Distribution:
                     for (opt, val) in cmd_options.items():
                         opt_dict[opt] = ("setup script", val)
 
+            if attrs.has_key('licence'):
+                attrs['license'] = attrs['licence']
+                del attrs['licence']
+                msg = "'licence' distribution option is deprecated; use 'license'"
+                if warnings is not None:
+                    warnings.warn(msg)
+                else:
+                    sys.stderr.write(msg + "\n")
+
             # Now work on the rest of the attributes.  Any attribute that's
             # not already defined is invalid!
             for (key,val) in attrs.items():
@@ -966,7 +975,7 @@ class DistributionMetadata:
                          "maintainer", "maintainer_email", "url",
                          "license", "description", "long_description",
                          "keywords", "platforms", "fullname", "contact",
-                         "contact_email", "licence", "classifiers",
+                         "contact_email", "license", "classifiers",
                          "download_url")
 
     def __init__ (self):
