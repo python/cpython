@@ -116,6 +116,9 @@
 #define ALIGNMENT_SHIFT		3
 #define ALIGNMENT_MASK		(ALIGNMENT - 1)
 
+/* Return the number of bytes in size class I, as a uint. */
+#define INDEX2SIZE(I) (((uint)(I) + 1) << ALIGNMENT_SHIFT)
+
 /*
  * Max size threshold below which malloc requests are considered to be
  * small enough in order to use preallocated memory pools. You can tune
@@ -225,7 +228,7 @@
 /* When you say memory, my mind reasons in terms of (pointers to) blocks */
 typedef uchar block;
 
-/* Pool for small blocks */
+/* Pool for small blocks. */
 struct pool_header {
 	union { block *_padding;
 		uint count; } ref;	/* number of allocated blocks    */
@@ -234,7 +237,8 @@ struct pool_header {
 	struct pool_header *prevpool;	/* previous pool       ""        */
 	uint arenaindex;		/* index into arenas of base adr */
 	uint szidx;			/* block size class index	 */
-	uint capacity;			/* pool capacity in # of blocks  */
+	uint nextoffset;		/* bytes to virgin block	 */
+	uint maxnextoffset;		/* largest valid nextoffset	 */
 };
 
 typedef struct pool_header *poolp;
@@ -246,8 +250,11 @@ typedef struct pool_header *poolp;
 #define DUMMY_SIZE_IDX		0xffff	/* size class of newly cached pools */
 
 /* Round pointer P down to the closest pool-aligned address <= P, as a poolp */
-#define POOL_ADDR(P)	\
-	((poolp)((uptr)(P) & ~(uptr)POOL_SIZE_MASK))
+#define POOL_ADDR(P) ((poolp)((uptr)(P) & ~(uptr)POOL_SIZE_MASK))
+
+/* Return total number of blocks in poolp P, as a uint. */
+#define NUMBLOCKS(P)	\
+	((uint)(POOL_SIZE - POOL_OVERHEAD) / INDEX2SIZE((P)->szidx))
 
 /*==========================================================================*/
 
@@ -299,14 +306,7 @@ empty == all the pool's blocks are currently available for allocation
     Empty pools have no inherent size class:  the next time a malloc finds
     an empty list in usedpools[], it takes the first pool off of freepools.
     If the size class needed happens to be the same as the size class the pool
-    last had, some expensive initialization can be skipped (including an
-    integer division -- XXX since the value
-
-	pool->capacity = (POOL_SIZE - POOL_OVERHEAD) / size;
-
-    is invariant across all pools of a given size class, it may make more
-    sense to compute those at compile-time into a const vector indexed by
-    size class, and lose the pool->capacity member and the runtime divisions).
+    last had, some pool initialization can be skipped.
 
 
 Block Management
@@ -315,18 +315,20 @@ Blocks within pools are again carved out as needed.  pool->freeblock points to
 the start of a singly-linked list of free blocks within the pool.  When a
 block is freed, it's inserted at the front of its pool's freeblock list.  Note
 that the available blocks in a pool are *not* linked all together when a pool
-is initialized.  Instead only "the first" (lowest address) block is set up,
-setting pool->freeblock to NULL.  This is consistent with that pymalloc
-strives at all levels (arena, pool, and block) never to touch a piece of
-memory until it's actually needed.  So long as a pool is in the used state,
-we're certain there *is* a block available for allocating.  If pool->freeblock
-is NULL then, that means we simply haven't yet gotten to one of the higher-
-address blocks.  The address of "the next" available block can be computed
-then from pool->ref.count (the number of currently allocated blocks).  This
-computation can be expensive, because it requires an integer multiply.
-However, so long as the pool's size class doesn't change, it's a one-time cost
-for that block; the computation could be made cheaper via adding a highwater
-pointer to the pool_header, but the tradeoff is murky.
+is initialized.  Instead only "the first two" (lowest addresses) blocks are
+set up, returning the first such block, and setting pool->freeblock to a
+one-block list holding the second such block.  This is consistent with that
+pymalloc strives at all levels (arena, pool, and block) never to touch a piece
+of memory until it's actually needed.
+
+So long as a pool is in the used state, we're certain there *is* a block
+available for allocating.  If pool->freeblock is NULL then, that means we
+simply haven't yet gotten to one of the higher-address blocks.  The offset
+from the pool_header to the start of "the next" virgin block is stored in
+the pool_header nextoffset member, and the largest value of nextoffset that
+makes sense is stored in the maxnextoffset member when a pool is initialized.
+All the blocks in a pool have been passed out at least when and only when
+nextoffset > maxnextoffset.
 
 
 Major obscurity:  While the usedpools vector is declared to have poolp
@@ -596,15 +598,13 @@ _PyMalloc_Malloc(size_t nbytes)
 			/*
 			 * Reached the end of the free list, try to extend it
 			 */
-			if (pool->ref.count < pool->capacity) {
+			if (pool->nextoffset <= pool->maxnextoffset) {
 				/*
 				 * There is room for another block
 				 */
-				size++;
-				size <<= ALIGNMENT_SHIFT; /* block size */
-				pool->freeblock = (block *)pool + \
-						  POOL_OVERHEAD + \
-						  pool->ref.count * size;
+				pool->freeblock = (block *)pool +
+						  pool->nextoffset;
+				pool->nextoffset += INDEX2SIZE(size);
 				*(block **)(pool->freeblock) = NULL;
 				UNLOCK();
 				return (void *)bp;
@@ -650,16 +650,17 @@ _PyMalloc_Malloc(size_t nbytes)
 				return (void *)bp;
 			}
 			/*
-			 * Initialize the pool header and free list
-			 * then return the first block.
+			 * Initialize the pool header, set up the free list to
+			 * contain just the second block, and return the first
+			 * block.
 			 */
 			pool->szidx = size;
-			size++;
-			size <<= ALIGNMENT_SHIFT; /* block size */
+			size = INDEX2SIZE(size);
 			bp = (block *)pool + POOL_OVERHEAD;
+			pool->nextoffset = POOL_OVERHEAD + (size << 1);
+			pool->maxnextoffset = POOL_SIZE - size;
 			pool->freeblock = bp + size;
 			*(block **)(pool->freeblock) = NULL;
-			pool->capacity = (POOL_SIZE - POOL_OVERHEAD) / size;
 			UNLOCK();
 			return (void *)bp;
 		}
@@ -736,7 +737,6 @@ _PyMalloc_Free(void *p)
 			 * freeblock wasn't NULL, so the pool wasn't full,
 			 * and the pool is in a usedpools[] list.
 			 */
-			assert(pool->ref.count < pool->capacity);
 			if (--pool->ref.count != 0) {
 				/* pool isn't empty:  leave it in usedpools */
 				UNLOCK();
@@ -767,7 +767,6 @@ _PyMalloc_Free(void *p)
 		 * targets optimal filling when several pools contain
 		 * blocks of the same size class.
 		 */
-		assert(pool->ref.count == pool->capacity); /* else not full */
 		--pool->ref.count;
 		assert(pool->ref.count > 0);	/* else the pool is empty */
 		size = pool->szidx;
@@ -806,7 +805,7 @@ _PyMalloc_Realloc(void *p, size_t nbytes)
 	if (ADDRESS_IN_RANGE(p, pool->arenaindex)) {
 		/* We're in charge of this block */
 		INCMINE;
-		size = (pool->szidx + 1) << ALIGNMENT_SHIFT; /* block size */
+		size = INDEX2SIZE(pool->szidx);
 		if (size >= nbytes)
 			/* Don't bother if a smaller size was requested. */
 			return p;
@@ -1255,7 +1254,7 @@ _PyMalloc_DebugDumpStats(void)
 			}
 			++numpools[p->szidx];
 			numblocks[p->szidx] += p->ref.count;
-			numfreeblocks[p->szidx] += p->capacity - p->ref.count;
+			numfreeblocks[p->szidx] += NUMBLOCKS(p) - p->ref.count;
 		}
 	}
 
@@ -1271,7 +1270,7 @@ _PyMalloc_DebugDumpStats(void)
 		ulong p = numpools[i];
 		ulong b = numblocks[i];
 		ulong f = numfreeblocks[i];
-		uint size = (i+1) << ALIGNMENT_SHIFT;
+		uint size = INDEX2SIZE(i);
 		if (p == 0) {
 			assert(b == 0 && f == 0);
 			continue;
