@@ -389,8 +389,8 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
 			if progress:
 				progress.label('Creating __rawmain__.pyc')
 				progress.inc(0)
-			rawsourcefile = os.path.join(sys.prefix, 'Mac', 'Lib', 'appletrawmain.py')
-			rawsource = open(rawsourcefile, 'rU').read()
+			rawsourcefp, rawsourcefile, d2 = imp.find_module('appletrawmain')
+			rawsource = rawsourcefp.read()
 			rawcode = compile(rawsource, rawsourcefile, 'exec')
 			writepycfile(rawcode, outputfilename)
 			
@@ -488,6 +488,9 @@ def copyapptree(srctree, dsttree, exceptlist=[], progress=None):
 		dstpath = os.path.join(dsttree, this)
 		if os.path.isdir(srcpath):
 			os.mkdir(dstpath)
+		elif os.path.islink(srcpath):
+			endpoint = os.readlink(srcpath)
+			os.symlink(endpoint, dstpath)
 		else:
 			if progress:
 				progress.label('Copy '+this)
