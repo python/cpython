@@ -89,7 +89,7 @@ Python 1.5.2 and later will compile "out of the box" on BeOS), try this:
 
 7) Test:
 
-   make OPT=-DUSE_DL_EXPORT CCSHARED=-UUSE_DL_EXPORT test
+   make OPT=-DUSE_DL_EXPORT CCSHARED=-UUSE_DL_EXPORT MACHDEP=beos test
 
    Expect the following errors:
 
@@ -105,7 +105,7 @@ Python 1.5.2 and later will compile "out of the box" on BeOS), try this:
 
 8) Install:
 
-   make OPT=-DUSE_DL_EXPORT CCSHARED=-UUSE_DL_EXPORT install
+   make OPT=-DUSE_DL_EXPORT CCSHARED=-UUSE_DL_EXPORT MACHDEP=beos nstall
 
    This will fail trying to copy libpython1.5.a; at that point in the
    install, everything you "normally" need is installed (all the Python
