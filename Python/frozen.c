@@ -47,7 +47,11 @@ static unsigned char M___hello__[] = {
 };
 
 static struct _frozen _PyImport_FrozenModules[] = {
+	/* Test module */
 	{"__hello__", M___hello__, 90},
+	/* Test package (negative size indicates package-ness) */
+	{"__phello__", M___hello__, -90},
+	{"__phello__.spam", M___hello__, 90},
 	{0, 0, 0} /* sentinel */
 };
 
