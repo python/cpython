@@ -38,10 +38,10 @@ extern char *Py_GetVersion();
 extern char *Py_GetCopyright();
 
 
-/* For getprogramname(); set by main() */
+/* For Py_GetProgramName(); set by main() */
 static char *argv0;
 
-/* For getargcargv(); set by main() */
+/* For Py_GetArgcArgv(); set by main() */
 static char **orig_argv;
 static int  orig_argc;
 
@@ -88,9 +88,9 @@ main(argc, argv)
 	int inspect = 0;
 	int unbuffered = 0;
 
-	orig_argc = argc;	/* For getargcargv() */
+	orig_argc = argc;	/* For Py_GetArgcArgv() */
 	orig_argv = argv;
-	argv0 = argv[0];	/* For getprogramname() */
+	argv0 = argv[0];	/* For Py_GetProgramName() */
 
 	if ((p = getenv("PYTHONDEBUG")) && *p != '\0')
 		Py_DebugFlag = 1;
@@ -223,7 +223,7 @@ main(argc, argv)
    (currently _tkinter.c and importdl.c). */
 
 char *
-getprogramname()
+Py_GetProgramName()
 {
 	return argv0;
 }
@@ -233,7 +233,7 @@ getprogramname()
    This is rare, but it is needed by the secureware extension. */
 
 void
-getargcargv(argc,argv)
+Py_GetArgcArgv(argc, argv)
 	int *argc;
 	char ***argv;
 {
