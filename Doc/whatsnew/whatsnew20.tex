@@ -1,7 +1,7 @@
 \documentclass{howto}
 
 \title{What's New in Python 1.6}
-\release{0.01}
+\release{0.02}
 \author{A.M. Kuchling and Moshe Zadka}
 \authoraddress{\email{amk1@bigfoot.com}, \email{moshez@math.huji.ac.il} }
 \begin{document}
@@ -149,9 +149,10 @@ Unicode-aware regular expressions are available through the
 \module{re} module, which has a new underlying implementation called
 SRE written by Fredrik Lundh of Secret Labs AB. 
 
-% Added -U command line option.  With the option enabled the Python
-% compiler interprets all "..."  strings as u"..." (same with r"..." and
-% ur"...").  (XXX Is this just for experimenting?)
+(XXX M.A. Lemburg added a -U command line option, which causes the
+Python compiler to interpret all "..."  strings as u"..." (same with
+r"..." and ur"...").  Is this just for experimenting/testing, or is it
+actually a new feature?)
 
 % ======================================================================
 \section{Distutils: Making Modules Easy to Install}
@@ -228,7 +229,7 @@ packages, and Solaris .pkg files have been discussed and are in
 various stages of development.
 
 All this is documented in a new manual, \textit{Distributing Python
-Modules}.
+Modules}, that will be added to the basic set of Python documentation.
 
 % ======================================================================
 \section{String Methods}
@@ -268,17 +269,13 @@ did exist in JPython for quite some time, are \method{startswith()}
 and \method{endswith}.  \code{s.startswith(t)} is equivalent to \code{s[:len(t)]
 == t}, while \code{s.endswith(t)} is equivalent to \code{s[-len(t):] == t}.
 
-(XXX what'll happen to join?)  One other method which deserves special
-mention is \method{join}.  The \method{join} method of a list receives
-one parameter, a sequence of strings, and is equivalent to the
-\function{string.join} function from the old \module{string} module,
-with the arguments reversed. In other words, \code{s.join(seq)} is
-equivalent to the old \code{string.join(seq, s)}.
-
-Some list methods, such as \method{find}, \method{index},
-\method{count}, \method{rindex}, and \method{rfind} are now available
-on strings, allowing some nice polymorphic code which can deal with
-either lists or strings without changes.
+(XXX what'll happen to join? is this even worth mentioning?)  One
+other method which deserves special mention is \method{join}.  The
+\method{join} method of a string receives one parameter, a sequence of
+strings, and is equivalent to the \function{string.join} function from
+the old \module{string} module, with the arguments reversed. In other
+words, \code{s.join(seq)} is equivalent to the old
+\code{string.join(seq, s)}.
 
 % ======================================================================
 \section{Porting to 1.6}
@@ -293,9 +290,7 @@ that may cause old Python code to break.
 The change which will probably break the most code is tightening up
 the arguments accepted by some methods.  Some methods would take
 multiple arguments and treat them as a tuple, particularly various
-list methods such as \method{.append()}, \method{.insert()},
-\method{remove()}, and \method{.count()}.
-(XXX did anyone ever call the last 2 methods with multiple args?)
+list methods such as \method{.append()} and \method{.insert()}.
 In earlier versions of Python, if \code{L} is a list, \code{L.append(
 1,2 )} appends the tuple \code{(1,2)} to the list.  In Python 1.6 this
 causes a \exception{TypeError} exception to be raised, with the
@@ -315,15 +310,15 @@ preserve the old behaviour; this isn't recommended.
 Some of the functions in the \module{socket} module are still
 forgiving in this way.  For example, \function{socket.connect(
 ('hostname', 25) )} is the correct form, passing a tuple representing
-an IP address, but
-\function{socket.connect( 'hostname', 25 )} also
+an IP address, but \function{socket.connect( 'hostname', 25 )} also
 works. \function{socket.connect_ex()} and \function{socket.bind()} are
 similarly easy-going.  1.6alpha1 tightened these functions up, but
 because the documentation actually used the erroneous multiple
-argument form, many people wrote code which will break.  So for
-the\module{socket} module, the documentation was fixed and the
-multiple argument form is simply marked as deprecated; it'll be
-removed in a future Python version.  
+argument form, many people wrote code which would break with the
+stricter checking.  GvR backed out the changes in the face of public
+reaction, so for the\module{socket} module, the documentation was
+fixed and the multiple argument form is simply marked as deprecated;
+it \emph{will} be tightened up again in a future Python version.
 
 Some work has been done to make integers and long integers a bit more
 interchangeable.  In 1.5.2, large-file support was added for Solaris,
@@ -331,12 +326,12 @@ to allow reading files larger than 2Gb; this made the \method{tell()}
 method of file objects return a long integer instead of a regular
 integer.  Some code would subtract two file offsets and attempt to use
 the result to multiply a sequence or slice a string, but this raised a
-\exception{TypeError}.   In 1.6, long integers can be used to multiply
-or slice a sequence, and it'll behave as you'd intuitively expect it to; 
-\code{3L * 'abc'} produces 'abcabcabc', and 
-\code{ (0,1,2,3)[2L:4L]} produces (2,3). Long integers can also be
-used in various new places where previously only integers were
-accepted, such as in the \method{seek()} method of file objects.
+\exception{TypeError}.  In 1.6, long integers can be used to multiply
+or slice a sequence, and it'll behave as you'd intuitively expect it
+to; \code{3L * 'abc'} produces 'abcabcabc', and \code{
+(0,1,2,3)[2L:4L]} produces (2,3). Long integers can also be used in
+various new places where previously only integers were accepted, such
+as in the \method{seek()} method of file objects.
 
 The subtlest long integer change of all is that the \function{str()}
 of a long integer no longer has a trailing 'L' character, though
@@ -482,10 +477,10 @@ the comments in \file{Include/mymalloc.h} and
 the interface was hammered out, see the Web archives of the 'patches'
 and 'python-dev' lists at python.org.
 
-Recent versions of the GUSI (XXX what is GUSI?)
-development environment for MacOS support POSIX threads.  Therefore,
-POSIX threads are now supported on the Macintosh too.  Threading
-support using the user-space GNU pth library was also contributed.
+Recent versions of the GUSI development environment for MacOS support
+POSIX threads.  Therefore, Python's POSIX threading support now works
+on the Macintosh.  Threading support using the user-space GNU \texttt{pth}
+library was also contributed.
 
 Threading support on Windows was enhanced, too.  Windows supports
 thread locks that use kernel objects only in case of contention; in
@@ -507,12 +502,15 @@ and \module{nntplib}.  Consult the CVS logs for the exact
 patch-by-patch details.  
 
 Brian Gallew contributed OpenSSL support for the \module{socket}
-module.  When compiling Python, you can edit \file{Modules/Setup} to
-include SSL support.  When enabled, an additional function
+module.  OpenSSL is an implementation of the Secure Socket Layer,
+which encrypts the data being sent over a socket.  When compiling
+Python, you can edit \file{Modules/Setup} to include SSL support,
+which adds an additional function to the \module{socket} module:
 \function{socket.ssl(\var{socket}, \var{keyfile}, \var{certfile})},
-which takes a socket object and returns an SSL socket.  When SSL
-support is available, the \module{httplib} and \module{urllib} modules
-will support ``https://'' URLs.
+which takes a socket object and returns an SSL socket.  The
+\module{httplib} and \module{urllib} modules were also changed to
+support ``https://'' URLs, though no one has implemented FTP or SMTP
+over SSL.  
 
 The \module{Tkinter} module now supports Tcl/Tk version 8.1, 8.2, or
 8.3, and support for the older 7.x versions has been dropped.  The
@@ -527,18 +525,67 @@ module is no longer compatible with operating systems that only have
 BSD curses, but there don't seem to be any currently maintained OSes
 that fall into this category.
 
-XXX re - changed to be a frontend to sre
+As mentioned in the earlier discussion of 1.6's Unicode support, the
+underlying implementation of the regular expressions provided by the
+\module{re} module has been changed.  SRE, a new regular expression
+engine written by Fredrik Lundh and partially funded by Hewlett
+Packard, supports matching against both 8-bit strings and Unicode
+strings.
 
 % ======================================================================
 \section{New modules}
 
-winreg - Windows registry interface. (Bill Tutt, Mark Hammond)
-PyExpat - interface to Expat XML parser (Paul Prescod)
-robotparser - parse a robots.txt file (for writing web spiders)
-linuxaudio - audio for Linux
-mmap - treat a file as a memory buffer (Sam Rushing, AMK)
-filecmp - supersedes the old cmp.py and dircmp.py modules
-tabnanny - check Python sources for tab-width dependance
+A number of new modules were added.  We'll simply list them with brief
+descriptions; consult the 1.6 documentation for the details of a
+particular module.
+
+\begin{itemize}
+
+\item{\module{codecs}, \module{encodings}, \module{unicodedata}:}  Added as part of the new Unicode support. 
+
+\item{\module{filecmp}:} Supersedes the old \module{cmp} and
+\module{dircmp} modules, which have now become deprecated.
+(Contributed by Moshe Zadka.)
+
+\item{\module{linuxaudio}:} Support for the \file{/dev/audio} device on Linux,
+a twin to the existing \module{sunaudiodev} module.
+(Contributed by Peter Bosch.)
+
+\item{\module{mmap}:} An interface to memory-mapped files on both
+Windows and Unix.  A file's contents can be mapped directly into
+memory, at which point it behaves like a mutable string, so its
+contents can be read and modified.  They can even be passed to
+functions that expect ordinary strings, such as the \module{re}
+module. (Contributed by Sam Rushing, with some extensions by
+A.M. Kuchling.)
+
+\item{\module{PyExpat}:} An interface to the Expat XML parser.
+(Contributed by Paul Prescod.)
+
+\item{\module{robotparser}:} Parse a \file{robots.txt} file, which is
+used for writing Web spiders that politely avoid certain areas of a
+Web site.  The parser accepts the contents of a \file{robots.txt} file
+builds a set of rules from it, and can then answer questions about
+the fetchability of a given URL.  (Contributed by Skip Montanaro.)
+
+\item{\module{tabnanny}:} A module/script to 
+checks Python source code for ambiguous indentation.
+(Contributed by Tim Peters.)
+
+\item{\module{winreg}:} An interface to the Windows registry.
+\module{winreg} has been part of PythonWin since 1995, but now has
+been added to the core distribution, and enhanced to support Unicode.
+(Contributed by Bill Tutt and Mark Hammond.)
+
+\item{\module{zipfile}:} A module for reading and writing ZIP-format
+archives.  These are archives produced by \program{PKZIP} on
+DOS/Windows or \program{zip} on Unix, not to be confused with
+\program{gzip}-format files (which are supported by the \module{gzip}
+module)
+
+(Contributed by James C. Ahlstrom.)
+
+\end{itemize}
 
 % ======================================================================
 \section{IDLE Improvements}
@@ -548,7 +595,22 @@ XXX IDLE -- complete overhaul; what are the changes?
 % ======================================================================
 \section{Deleted and Deprecated Modules}
 
-XXX stdwin, cmp.py, dircmp.py, others?
+A few modules have been dropped because they're obsolete, or because
+there are now better ways to do the same thing.  The \module{stdwin}
+module is gone; it was for a platform-independent windowing toolkit
+that's no longer developed.  
+The \module{cmp} and \module{dircmp} modules have been moved to the 
+\file{lib-old} subdirectory; 
+
+If you have code which relies on modules that have been moved to
+\file{lib-old}, you can simply add that directory to \code{sys.path}  
+to get them back.
+
+XXX any others deleted?
+
+XXX Other candidates for deletion in 1.6: sgimodule.c, glmodule.c (and hence
+cgenmodule.c), imgfile.c, svmodule.c, flmodule.c, fmmodule.c,  almodule.c, clmodule.c, 
+ knee.py.  
 
 \end{document}
 
