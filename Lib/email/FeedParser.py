@@ -1,146 +1,144 @@
-# A new Feed-style Parser
+# Copyright (C) 2004 Python Software Foundation
+# Authors: Baxter, Wouters and Warsaw
 
-from email import Errors, Message
+"""FeedParser - An email feed parser.
+
+The feed parser implements an interface for incrementally parsing an email
+message, line by line.  This has advantages for certain applications, such as
+those reading email messages off a socket.
+
+FeedParser.feed() is the primary interface for pushing new data into the
+parser.  It returns when there's nothing more it can do with the available
+data.  When you have no more data to push into the parser, call .close().
+This completes the parsing and returns the root message object.
+
+The other advantage of this parser is that it will never throw a parsing
+exception.  Instead, when it finds something unexpected, it adds a 'defect' to
+the current message.  Defects are just instances that live on the message
+object's .defect attribute.
+"""
+
 import re
+from email import Errors
+from email import Message
 
 NLCRE = re.compile('\r\n|\r|\n')
-
+NLCRE_bol = re.compile('(\r\n|\r|\n)')
+NLCRE_eol = re.compile('(\r\n|\r|\n)$')
+NLCRE_crack = re.compile('(\r\n|\r|\n)')
+headerRE = re.compile(r'^(From |[-\w]{2,}:|[\t ])')
 EMPTYSTRING = ''
 NL = '\n'
 
 NeedMoreData = object()
 
-class FeedableLumpOfText:
-    "A file-like object that can have new data loaded into it"
 
+
+class BufferedSubFile(object):
+    """A file-ish object that can have new data loaded into it.
+
+    You can also push and pop line-matching predicates onto a stack.  When the
+    current predicate matches the current line, a false EOF response
+    (i.e. empty string) is returned instead.  This lets the parser adhere to a
+    simple abstraction -- it parses until EOF closes the current message.
+    """
     def __init__(self):
+        # The last partial line pushed into this object.
         self._partial = ''
-        self._done = False
-        # _pending is a list of lines, in reverse order
-        self._pending = []
+        # The list of full, pushed lines, in reverse order
+        self._lines = []
+        # The stack of false-EOF checking predicates.
+        self._eofstack = []
+        # A flag indicating whether the file has been closed or not.
+        self._closed = False
+
+    def push_eof_matcher(self, pred):
+        self._eofstack.append(pred)
+
+    def pop_eof_matcher(self):
+        return self._eofstack.pop()
+
+    def close(self):
+        # Don't forget any trailing partial line.
+        self._lines.append(self._partial)
+        self._closed = True
 
     def readline(self):
-        """ Return a line of data.
-
-            If data has been pushed back with unreadline(), the most recently
-            returned unreadline()d data will be returned.
-        """
-        if not self._pending:
-            if self._done:
+        if not self._lines:
+            if self._closed:
                 return ''
             return NeedMoreData
-        return self._pending.pop()
+        # Pop the line off the stack and see if it matches the current
+        # false-EOF predicate.
+        line = self._lines.pop()
+        if self._eofstack:
+            matches = self._eofstack[-1]
+            if matches(line):
+                # We're at the false EOF.  But push the last line back first.
+                self._lines.append(line)
+                return ''
+        return line
 
     def unreadline(self, line):
-        """ Push a line back into the object. 
-        """
-        self._pending.append(line)
-
-    def peekline(self):
-        """ Non-destructively look at the next line """
-        if not self._pending:
-            if self._done:
-                return ''
-            return NeedMoreData
-        return self._pending[-1]
-
-
-    # for r in self._input.readuntil(regexp):
-    #     if r is NeedMoreData:
-    #         yield NeedMoreData
-    #     preamble, matchobj = r
-    def readuntil(self, matchre, afterblank=False, includematch=False):
-        """ Read a line at a time until we get the specified RE. 
-
-            Returns the text up to (and including, if includematch is true) the 
-            matched text, and the RE match object. If afterblank is true, 
-            there must be a blank line before the matched text. Moves current 
-            filepointer to the line following the matched line. If we reach 
-            end-of-file, return what we've got so far, and return None as the
-            RE match object.
-        """
-        prematch = []
-        blankseen = 0
-        while 1: 
-            if not self._pending:
-                if self._done:
-                    # end of file
-                    yield EMPTYSTRING.join(prematch), None
-                else:
-                    yield NeedMoreData
-                continue
-            line = self._pending.pop()
-            if afterblank:
-                if NLCRE.match(line):
-                    blankseen = 1
-                    continue
-                else:
-                    blankseen = 0
-            m = matchre.match(line)
-            if (m and not afterblank) or (m and afterblank and blankseen):
-                if includematch:
-                    prematch.append(line)
-                yield EMPTYSTRING.join(prematch), m
-            prematch.append(line)
-
-
-    NLatend = re.compile('(\r\n|\r|\n)$').match
-    NLCRE_crack = re.compile('(\r\n|\r|\n)')
+        # Let the consumer push a line back into the buffer.
+        self._lines.append(line)
 
     def push(self, data):
-        """ Push some new data into this object """
+        """Push some new data into this object."""
         # Handle any previous leftovers
-        data, self._partial = self._partial+data, ''
-        # Crack into lines, but leave the newlines on the end of each
-        lines = self.NLCRE_crack.split(data)
-        # The *ahem* interesting behaviour of re.split when supplied
-        # groups means that the last element is the data after the 
-        # final RE. In the case of a NL/CR terminated string, this is
-        # the empty string.
-        self._partial = lines.pop()
-        o = []
-        for i in range(len(lines) / 2):
-            o.append(EMPTYSTRING.join([lines[i*2], lines[i*2+1]]))
-        self.pushlines(o)
-    
+        data, self._partial = self._partial + data, ''
+        # Crack into lines, but preserve the newlines on the end of each
+        parts = NLCRE_crack.split(data)
+        # The *ahem* interesting behaviour of re.split when supplied grouping
+        # parentheses is that the last element of the resulting list is the
+        # data after the final RE.  In the case of a NL/CR terminated string,
+        # this is the empty string.
+        self._partial = parts.pop()
+        # parts is a list of strings, alternating between the line contents
+        # and the eol character(s).  Gather up a list of lines after
+        # re-attaching the newlines.
+        lines = []
+        for i in range(len(parts) / 2):
+            lines.append(parts[i*2] + parts[i*2+1])
+        self.pushlines(lines)
+
     def pushlines(self, lines):
-        """ Push a list of new lines into the object """
-        # Reverse and insert at the front of _pending
-        self._pending[:0] = lines[::-1]
+        # Reverse and insert at the front of the lines.
+        self._lines[:0] = lines[::-1]
 
-    def end(self):
-        """ There is no more data """
-        self._done = True
-
-    def is_done(self):
-        return self._done
+    def is_closed(self):
+        return self._closed
 
     def __iter__(self):
         return self
 
     def next(self):
-        l = self.readline()
-        if l == '': 
+        line = self.readline()
+        if line == '':
             raise StopIteration
-        return l
+        return line
 
+
+
 class FeedParser:
-    "A feed-style parser of email. copy docstring here"
+    """A feed-style parser of email."""
 
-    def __init__(self, _class=Message.Message):
-        "fnord fnord fnord"
-        self._class = _class
-        self._input = FeedableLumpOfText()
-        self._root = None
-        self._objectstack = []
+    def __init__(self, _factory=Message.Message):
+        """_factory is called with no arguments to create a new message obj"""
+        self._factory = _factory
+        self._input = BufferedSubFile()
+        self._msgstack = []
         self._parse = self._parsegen().next
+        self._cur = None
+        self._last = None
+        self._headersonly = False
 
-    def end(self):
-        self._input.end()
-        self._call_parse()
-        return self._root
+    # Non-public interface for supporting Parser's headersonly flag
+    def _set_headersonly(self):
+        self._headersonly = True
 
     def feed(self, data):
+        """Push more data into the parser."""
         self._input.push(data)
         self._call_parse()
 
@@ -150,213 +148,285 @@ class FeedParser:
         except StopIteration:
             pass
 
-    headerRE = re.compile(r'^(From |[-\w]{2,}:|[\t ])')
+    def close(self):
+        """Parse all remaining data and return the root message object."""
+        self._input.close()
+        self._call_parse()
+        root = self._pop_message()
+        assert not self._msgstack
+        return root
 
-    def _parse_headers(self,headerlist):
-        # Passed a list of strings that are the headers for the 
-        # current object
+    def _new_message(self):
+        msg = self._factory()
+        if self._cur and self._cur.get_content_type() == 'multipart/digest':
+            msg.set_default_type('message/rfc822')
+        if self._msgstack:
+            self._msgstack[-1].attach(msg)
+        self._msgstack.append(msg)
+        self._cur = msg
+        self._cur.defects = []
+        self._last = msg
+
+    def _pop_message(self):
+        retval = self._msgstack.pop()
+        if self._msgstack:
+            self._cur = self._msgstack[-1]
+        else:
+            self._cur = None
+        return retval
+
+    def _parsegen(self):
+        # Create a new message and start by parsing headers.
+        self._new_message()
+        headers = []
+        # Collect the headers, searching for a line that doesn't match the RFC
+        # 2822 header or continuation pattern (including an empty line).
+        for line in self._input:
+            if line is NeedMoreData:
+                yield NeedMoreData
+                continue
+            if not headerRE.match(line):
+                # If we saw the RFC defined header/body separator
+                # (i.e. newline), just throw it away. Otherwise the line is
+                # part of the body so push it back.
+                if not NLCRE.match(line):
+                    self._input.unreadline(line)
+                break
+            headers.append(line)
+        # Done with the headers, so parse them and figure out what we're
+        # supposed to see in the body of the message.
+        self._parse_headers(headers)
+        # Headers-only parsing is a backwards compatibility hack, which was
+        # necessary in the older parser, which could throw errors.  All
+        # remaining lines in the input are thrown into the message body.
+        if self._headersonly:
+            lines = []
+            while True:
+                line = self._input.readline()
+                if line is NeedMoreData:
+                    yield NeedMoreData
+                    continue
+                if line == '':
+                    break
+                lines.append(line)
+            self._cur.set_payload(EMPTYSTRING.join(lines))
+            return
+        # So now the input is sitting at the first body line.  If the message
+        # claims to be a message/rfc822 type, then what follows is another RFC
+        # 2822 message.
+        if self._cur.get_content_type() == 'message/rfc822':
+            for retval in self._parsegen():
+                if retval is NeedMoreData:
+                    yield NeedMoreData
+                    continue
+                break
+            self._pop_message()
+            return
+        if self._cur.get_content_type() == 'message/delivery-status':
+            # message/delivery-status contains blocks of headers separated by
+            # a blank line.  We'll represent each header block as a separate
+            # nested message object.  A blank line separates the subparts.
+            while True:
+                self._input.push_eof_matcher(NLCRE.match)
+                for retval in self._parsegen():
+                    if retval is NeedMoreData:
+                        yield NeedMoreData
+                        continue
+                    break
+                msg = self._pop_message()
+                # We need to pop the EOF matcher in order to tell if we're at
+                # the end of the current file, not the end of the last block
+                # of message headers.
+                self._input.pop_eof_matcher()
+                # The input stream must be sitting at the newline or at the
+                # EOF.  We want to see if we're at the end of this subpart, so
+                # first consume the blank line, then test the next line to see
+                # if we're at this subpart's EOF.
+                line = self._input.readline()
+                line = self._input.readline()
+                if line == '':
+                    break
+                # Not at EOF so this is a line we're going to need.
+                self._input.unreadline(line)
+            return
+        if self._cur.get_content_maintype() == 'multipart':
+            boundary = self._cur.get_boundary()
+            if boundary is None:
+                # The message /claims/ to be a multipart but it has not
+                # defined a boundary.  That's a problem which we'll handle by
+                # reading everything until the EOF and marking the message as
+                # defective.
+                self._cur.defects.append(Errors.NoBoundaryInMultipart())
+                lines = []
+                for line in self._input:
+                    if line is NeedMoreData:
+                        yield NeedMoreData
+                        continue
+                    lines.append(line)
+                self._cur.set_payload(EMPTYSTRING.join(lines))
+                return
+            # Create a line match predicate which matches the inter-part
+            # boundary as well as the end-of-multipart boundary.  Don't push
+            # this onto the input stream until we've scanned past the
+            # preamble.
+            separator = '--' + boundary
+            boundaryre = re.compile(
+                '(?P<sep>' + re.escape(separator) +
+                r')(?P<end>--)?(?P<ws>[ \t]*)(?P<linesep>\r\n|\r|\n)$')
+            capturing_preamble = True
+            preamble = []
+            linesep = False
+            while True:
+                line = self._input.readline()
+                if line is NeedMoreData:
+                    yield NeedMoreData
+                    continue
+                if line == '':
+                    break
+                mo = boundaryre.match(line)
+                if mo:
+                    # If we're looking at the end boundary, we're done with
+                    # this multipart.  If there was a newline at the end of
+                    # the closing boundary, then we need to initialize the
+                    # epilogue with the empty string (see below).
+                    if mo.group('end'):
+                        linesep = mo.group('linesep')
+                        break
+                    # We saw an inter-part boundary.  Were we in the preamble?
+                    if capturing_preamble:
+                        if preamble:
+                            # According to RFC 2046, the last newline belongs
+                            # to the boundary.
+                            lastline = preamble[-1]
+                            eolmo = NLCRE_eol.search(lastline)
+                            if eolmo:
+                                preamble[-1] = lastline[:-len(eolmo.group(0))]
+                            self._cur.preamble = EMPTYSTRING.join(preamble)
+                        capturing_preamble = False
+                        self._input.unreadline(line)
+                        continue
+                    # We saw a boundary separating two parts.  Recurse to
+                    # parse this subpart; the input stream points at the
+                    # subpart's first line.
+                    self._input.push_eof_matcher(boundaryre.match)
+                    for retval in self._parsegen():
+                        if retval is NeedMoreData:
+                            yield NeedMoreData
+                            continue
+                        break
+                    # Because of RFC 2046, the newline preceding the boundary
+                    # separator actually belongs to the boundary, not the
+                    # previous subpart's payload (or epilogue if the previous
+                    # part is a multipart).
+                    if self._last.get_content_maintype() == 'multipart':
+                        epilogue = self._last.epilogue
+                        if epilogue == '':
+                            self._last.epilogue = None
+                        elif epilogue is not None:
+                            mo = NLCRE_eol.search(epilogue)
+                            if mo:
+                                end = len(mo.group(0))
+                                self._last.epilogue = epilogue[:-end]
+                    else:
+                        payload = self._last.get_payload()
+                        if isinstance(payload, basestring):
+                            mo = NLCRE_eol.search(payload)
+                            if mo:
+                                payload = payload[:-len(mo.group(0))]
+                                self._last.set_payload(payload)
+                    self._input.pop_eof_matcher()
+                    self._pop_message()
+                    # Set the multipart up for newline cleansing, which will
+                    # happen if we're in a nested multipart.
+                    self._last = self._cur
+                else:
+                    # I think we must be in the preamble
+                    assert capturing_preamble
+                    preamble.append(line)
+            # We've seen either the EOF or the end boundary.  If we're still
+            # capturing the preamble, we never saw the start boundary.  Note
+            # that as a defect and store the captured text as the payload.
+            # Otherwise everything from here to the EOF is epilogue.
+            if capturing_preamble:
+                self._cur.defects.append(Errors.StartBoundaryNotFound())
+                self._cur.set_payload(EMPTYSTRING.join(preamble))
+                return
+            # If the end boundary ended in a newline, we'll need to make sure
+            # the epilogue isn't None
+            if linesep:
+                epilogue = ['']
+            else:
+                epilogue = []
+            for line in self._input:
+                if line is NeedMoreData:
+                    yield NeedMoreData
+                    continue
+                epilogue.append(line)
+            # Any CRLF at the front of the epilogue is not technically part of
+            # the epilogue.  Also, watch out for an empty string epilogue,
+            # which means a single newline.
+            firstline = epilogue[0]
+            bolmo = NLCRE_bol.match(firstline)
+            if bolmo:
+                epilogue[0] = firstline[len(bolmo.group(0)):]
+            self._cur.epilogue = EMPTYSTRING.join(epilogue)
+            return
+        # Otherwise, it's some non-multipart type, so the entire rest of the
+        # file contents becomes the payload.
+        lines = []
+        for line in self._input:
+            if line is NeedMoreData:
+                yield NeedMoreData
+                continue
+            lines.append(line)
+        self._cur.set_payload(EMPTYSTRING.join(lines))
+
+    def _parse_headers(self, lines):
+        # Passed a list of lines that make up the headers for the current msg
         lastheader = ''
         lastvalue = []
-
-
-        for lineno, line in enumerate(headerlist):
+        for lineno, line in enumerate(lines):
             # Check for continuation
             if line[0] in ' \t':
                 if not lastheader:
-                    raise Errors.HeaderParseError('First line must not be a continuation')
+                    # The first line of the headers was a continuation.  This
+                    # is illegal, so let's note the defect, store the illegal
+                    # line, and ignore it for purposes of headers.
+                    defect = Errors.FirstHeaderLineIsContinuation(line)
+                    self._cur.defects.append(defect)
+                    continue
                 lastvalue.append(line)
                 continue
-
             if lastheader:
                 # XXX reconsider the joining of folded lines
-                self._cur[lastheader] = EMPTYSTRING.join(lastvalue).rstrip()
+                self._cur[lastheader] = EMPTYSTRING.join(lastvalue)[:-1]
                 lastheader, lastvalue = '', []
-
-            # Check for Unix-From
+            # Check for envelope header, i.e. unix-from
             if line.startswith('From '):
                 if lineno == 0:
                     self._cur.set_unixfrom(line)
                     continue
-                elif lineno == len(headerlist) - 1:
+                elif lineno == len(lines) - 1:
                     # Something looking like a unix-from at the end - it's
-                    # probably the first line of the body
+                    # probably the first line of the body, so push back the
+                    # line and stop.
                     self._input.unreadline(line)
                     return
                 else:
-                    # Weirdly placed unix-from line. Ignore it.
+                    # Weirdly placed unix-from line.  Note this as a defect
+                    # and ignore it.
+                    defect = Errors.MisplacedEnvelopeHeader(line)
+                    self._cur.defects.append(defect)
                     continue
-
+            # Split the line on the colon separating field name from value.
             i = line.find(':')
             if i < 0:
-                # The older parser had various special-cases here. We've
-                # already handled them
-                raise Errors.HeaderParseError(
-                       "Not a header, not a continuation: ``%s''" % line)
+                defect = Errors.MalformedHeader(line)
+                self._cur.defects.append(defect)
+                continue
             lastheader = line[:i]
             lastvalue = [line[i+1:].lstrip()]
-
+        # Done with all the lines, so handle the last header.
         if lastheader:
             # XXX reconsider the joining of folded lines
             self._cur[lastheader] = EMPTYSTRING.join(lastvalue).rstrip()
-
-
-    def _parsegen(self):
-        # Parse any currently available text
-        self._new_sub_object()
-        self._root = self._cur
-        completing = False
-        last = None
-        
-        for line in self._input:
-            if line is NeedMoreData:
-                yield None # Need More Data
-                continue
-            self._input.unreadline(line)
-            if not completing:
-                headers = []
-                # Now collect all headers.
-                for line in self._input:
-                    if line is NeedMoreData:
-                        yield None # Need More Data
-                        continue
-                    if not self.headerRE.match(line):
-                        self._parse_headers(headers)
-                        # A message/rfc822 has no body and no internal 
-                        # boundary.
-                        if self._cur.get_content_maintype() == "message":
-                            self._new_sub_object()
-                            completing = False
-                            headers = []
-                            continue
-                        if line.strip():
-                            # No blank line between headers and body. 
-                            # Push this line back, it's the first line of 
-                            # the body.
-                            self._input.unreadline(line)
-                        break
-                    else:
-                        headers.append(line)
-                else:
-                    # We're done with the data and are still inside the headers
-                    self._parse_headers(headers)
-
-            # Now we're dealing with the body
-            boundary = self._cur.get_boundary()
-            isdigest = (self._cur.get_content_type() == 'multipart/digest')
-            if boundary and not self._cur._finishing:
-                separator = '--' + boundary
-                self._cur._boundaryRE = re.compile(
-                        r'(?P<sep>' + re.escape(separator) +
-                        r')(?P<end>--)?(?P<ws>[ \t]*)(?P<linesep>\r\n|\r|\n)$')
-                for r in self._input.readuntil(self._cur._boundaryRE):
-                    if r is NeedMoreData:
-                         yield NeedMoreData
-                    else:
-                        preamble, matchobj = r
-                        break
-                if not matchobj:
-                    # Broken - we hit the end of file. Just set the body 
-                    # to the text.
-                    if completing:
-                        self._attach_trailer(last, preamble)
-                    else:
-                        self._attach_preamble(self._cur, preamble)
-                    # XXX move back to the parent container.
-                    self._pop_container()
-                    completing = True
-                    continue
-                if preamble:
-                    if completing:
-                        preamble = preamble[:-len(matchobj.group('linesep'))]
-                        self._attach_trailer(last, preamble)
-                    else:
-                        self._attach_preamble(self._cur, preamble)
-                elif not completing:
-                    # The module docs specify an empty preamble is None, not ''
-                    self._cur.preamble = None
-                    # If we _are_ completing, the last object gets no payload
-
-                if matchobj.group('end'):
-                    # That was the end boundary tag. Bounce back to the
-                    # parent container
-                    last = self._pop_container()
-                    self._input.unreadline(matchobj.group('linesep'))
-                    completing = True
-                    continue
-
-                # A number of MTAs produced by a nameless large company
-                # we shall call "SicroMoft" produce repeated boundary 
-                # lines.
-                while True:
-                    line = self._input.peekline()
-                    if line is NeedMoreData:
-                        yield None
-                        continue
-                    if self._cur._boundaryRE.match(line):
-                        self._input.readline()
-                    else:
-                        break
-
-                self._new_sub_object()
-                
-                completing = False
-                if isdigest:
-                    self._cur.set_default_type('message/rfc822')
-                    continue
-            else:
-                # non-multipart or after end-boundary
-                if last is not self._root:
-                    last = self._pop_container()
-                if self._cur.get_content_maintype() == "message":
-                    # We double-pop to leave the RFC822 object
-                    self._pop_container()
-                    completing = True
-                elif self._cur._boundaryRE and last <> self._root:
-                    completing = True
-                else:
-                    # Non-multipart top level, or in the trailer of the 
-                    # top level multipart
-                    while not self._input.is_done():
-                        yield None
-                    data = list(self._input)
-                    body = EMPTYSTRING.join(data)
-                    self._attach_trailer(last, body)
-
-
-    def _attach_trailer(self, obj, trailer):
-        #import pdb ; pdb.set_trace()
-        if obj.get_content_maintype() in ( "multipart", "message" ):
-            obj.epilogue = trailer
-        else:
-            obj.set_payload(trailer)
-
-    def _attach_preamble(self, obj, trailer):
-        if obj.get_content_maintype() in ( "multipart", "message" ):
-            obj.preamble = trailer
-        else:
-            obj.set_payload(trailer)
-
-
-    def _new_sub_object(self):
-        new = self._class()
-        #print "pushing", self._objectstack, repr(new)
-        if self._objectstack:
-            self._objectstack[-1].attach(new)
-        self._objectstack.append(new)
-        new._boundaryRE = None
-        new._finishing = False
-        self._cur = new
-
-    def _pop_container(self):
-        # Move the pointer to the container of the current object.
-        # Returns the (old) current object
-        #import pdb ; pdb.set_trace()
-        #print "popping", self._objectstack
-        last = self._objectstack.pop()
-        if self._objectstack:
-            self._cur = self._objectstack[-1]
-        else:
-            self._cur._finishing = True
-        return last
-
-
