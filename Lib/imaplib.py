@@ -1136,7 +1136,7 @@ if __name__ == '__main__':
     USER = getpass.getuser()
     PASSWD = getpass.getpass("IMAP password for %s on %s: " % (USER, host or "localhost"))
 
-    test_mesg = 'From: %s@localhost\nSubject: IMAP4 test\n\ndata...\n' % USER
+    test_mesg = 'From: %(user)s@localhost%(lf)sSubject: IMAP4 test%(lf)s%(lf)sdata...%(lf)s' % {'user':USER, 'lf':CRLF}
     test_seq1 = (
     ('login', (USER, PASSWD)),
     ('create', ('/tmp/xxx 1',)),
