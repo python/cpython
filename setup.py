@@ -176,13 +176,13 @@ class PyBuildExt(build_ext):
         except ImportError, why:
 
             if 1:
-                self.announce('*** WARNING: removing "%s" since importing it'
+                self.announce('*** WARNING: renaming "%s" since importing it'
                               ' failed: %s' % (ext.name, why))
                 assert not self.inplace
-                fullname = self.get_ext_fullname(ext.name)
-                ext_filename = os.path.join(self.build_lib,
-                                            self.get_ext_filename(fullname))
-                os.remove(ext_filename)
+                basename, tail = os.path.splitext(ext_filename)
+                newname = basename + "_failed" + tail
+                if os.path.exists(newname): os.remove(newname)
+                os.rename(ext_filename, newname)
 
                 # XXX -- This relies on a Vile HACK in
                 # distutils.command.build_ext.build_extension().  The
