@@ -647,56 +647,6 @@ listappend(PyListObject *self, PyObject *v)
 	return ins(self, (int) self->ob_size, v);
 }
 
-static int
-listextend_internal(PyListObject *self, PyObject *b)
-{
-	int selflen = PyList_GET_SIZE(self);
-	int blen;
-	register int i;
-	PyObject **src, **dest;
-
-	blen = PyObject_Size(b);
-	if (blen == 0) {
-		/* short circuit when b is empty */
-		Py_DECREF(b);
-		return 0;
-	}
-
-	if (self == (PyListObject*)b) {
-		/* as in list_ass_slice() we must special case the
-		 * situation: a.extend(a)
-		 *
-		 * XXX: I think this way ought to be faster than using
-		 * list_slice() the way list_ass_slice() does.
-		 */
-		Py_DECREF(b);
-		b = PyList_New(selflen);
-		if (!b)
-			return -1;
-		for (i = 0; i < selflen; i++) {
-			PyObject *o = PyList_GET_ITEM(self, i);
-			Py_INCREF(o);
-			PyList_SET_ITEM(b, i, o);
-		}
-	}
-
-	if (list_resize(self, selflen + blen) == -1) {
-		Py_DECREF(b);
-		return -1;
-	}
-
-	/* populate the end of self with b's items */
-	src = PySequence_Fast_ITEMS(b);
-	dest = self->ob_item + selflen;
-	for (i = 0; i < blen; i++) {
-		PyObject *o = src[i];
-		Py_INCREF(o);
-		dest[i] = o;
-	}
-	Py_DECREF(b);
-	return 0;
-}
-
 static PyObject *
 listextend(PyListObject *self, PyObject *b)
 {
@@ -712,11 +662,35 @@ listextend(PyListObject *self, PyObject *b)
 	   2) extending self to self requires making a copy first 
 	*/
 	if (PyList_CheckExact(b) || PyTuple_CheckExact(b) || (PyObject *)self == b) {
+		PyObject **src, **dest;
 		b = PySequence_Fast(b, "argument must be iterable");
 		if (!b)
 			return NULL;
-		if (listextend_internal(self, b) < 0)
+		n = PySequence_Fast_GET_SIZE(b);
+		if (n == 0) {
+			/* short circuit when b is empty */
+			Py_DECREF(b);
+			Py_RETURN_NONE;
+		}
+		m = self->ob_size;
+		if (list_resize(self, m + n) == -1) {
+			Py_DECREF(b);
 			return NULL;
+		}
+		/* note that we may still have self == b here for the
+		 * situation a.extend(a), but the following code works
+		 * in that case too.  Just make sure to resize self
+		 * before calling PySequence_Fast_ITEMS.
+		 */
+		/* populate the end of self with b's items */
+		src = PySequence_Fast_ITEMS(b);
+		dest = self->ob_item + m;
+		for (i = 0; i < n; i++) {
+			PyObject *o = src[i];
+			Py_INCREF(o);
+			dest[i] = o;
+		}
+		Py_DECREF(b);
 		Py_RETURN_NONE;
 	}
 
