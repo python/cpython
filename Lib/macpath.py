@@ -114,7 +114,7 @@ def getmtime(filename):
 def getatime(filename):
     """Return the last access time of a file, reported by os.stat()."""
     st = os.stat(filename)
-    return st[ST_MTIME]
+    return st[ST_ATIME]
 
 
 def islink(s):
