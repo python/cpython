@@ -305,15 +305,19 @@ Or perhaps someone can propose a better rule?)
 \bifuncindex{ord}
 
 \item[Unicode]
-The items of a Unicode object are Unicode characters.  A Unicode
-character is represented by a Unicode object of one item and can hold
-a 16-bit value representing a Unicode ordinal.  The built-in functions
+The items of a Unicode object are Unicode code units.  A Unicode code
+unit is represented by a Unicode object of one item and can hold
+either a 16-bit or 32-bit value representing a Unicode ordinal (the
+maximum value for the ordinal is given in \code{sys.maxunicode}, and
+depends on how Python is configured at compile time).  Surrogate pairs
+may be present in the Unicode object, and will be reported as two
+separate items.  The built-in functions
 \function{unichr()}\bifuncindex{unichr} and
-\function{ord()}\bifuncindex{ord} convert between characters and
+\function{ord()}\bifuncindex{ord} convert between code units and
 nonnegative integers representing the Unicode ordinals as defined in
 the Unicode Standard 3.0. Conversion from and to other encodings are
 possible through the Unicode method \method{encode} and the built-in
-function \function{unicode()}\bifuncindex{unicode}.
+function \function{unicode()}.\bifuncindex{unicode}
 \obindex{unicode}
 \index{character}
 \index{integer}
@@ -892,14 +896,18 @@ Special read-only attributes: \member{start} is the lower bound;
   \ttindex{stop}
   \ttindex{step}}
 
-Special method: \method{indices} takes an single integer argument
-\var{length} and computes information about the extended slice that
-the slice object would describe if applied to a sequence of
-\var{length}.  It returns a tuple of three integers; respectively
-these are the \var{start} and \var{stop} indices and the \var{step} or
-stride length of the slice.  Missing or out-of-bounds indices are
-handled in a manner consistent with regular slices.
+Slice objects support one method:
+
+\begin{methoddesc}[slice]{indices}{self, length}
+This method takes a single integer argument \var{length} and computes
+information about the extended slice that the slice object would
+describe if applied to a sequence of \var{length} items.  It returns a
+tuple of three integers; respectively these are the \var{start} and
+\var{stop} indices and the \var{step} or stride length of the slice.
+Missing or out-of-bounds indices are handled in a manner consistent
+with regular slices.
 \versionadded{2.3}
+\end{methoddesc}
 
 \end{description} % Internal types
 
