@@ -304,9 +304,7 @@ class HTTPResponse:
 
         # are we using the chunked-style of transfer encoding?
         tr_enc = self.msg.getheader('transfer-encoding')
-        if tr_enc:
-            if tr_enc.lower() != 'chunked':
-                raise UnknownTransferEncoding()
+        if tr_enc and tr_enc.lower() == "chunked":
             self.chunked = 1
             self.chunk_left = None
         else:
