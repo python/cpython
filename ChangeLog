@@ -1,3 +1,43 @@
+Wed Apr 27 13:15:42 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Misc/python-mode.el: version 1.09 from Tim (grand new
+	indentation scheme)
+
+	* configure.in: test for setvbuf
+
+	* Python/ceval.c (PRINT_EXPR): assign a non-None value to '_'
+	before printing it
+
+	* Python/compile.c: only call PRINT_EXPR for interactive code
+	(start symbol single_input), else call POP_TOP after evaluating an
+	expression
+
+Tue Apr 26 16:23:06 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/bltinmodule.c (builtin_reduce): added essential INCREF()
+	if a third argument is present
+
+	* Doc/tut.tex: added chapter "Recent Additions"
+
+Mon Apr 25 11:27:09 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/ref7.tex (section{Function definitions}): add missing '}'.
+
+	* Doc/ref2.tex (subsection{String literals}): documented triple
+	quotes and double quotes.
+
+	* Lib/test/test_grammar.py: added tests for triple-quoted strings
+	and strings continued with backslash-newline
+
+	* Objects/fileobject.c (writestring): don't do anything when
+	writing to a Python object while an error is already set
+
+	* Parser/tokenizer.c: added support for triple-quoted strings and
+	strings continued with backslash
+
+	* Python/compile.c (parsenumber): support triple-quoted strings.
+	Raise SyntaxError, not SystemError for bad number syntax
+
 Fri Apr 22 17:39:20 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Objects/{tuple,list,string,mapping}object.c,
@@ -45,8 +85,6 @@ Fri Apr 15 10:10:17 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Doc/libtypes.tex (subsubsection{File Objects}): documented
 	file.setbufsize
-
-	* Objects/fileobject.c (file_setbufsize): interface to setvbuf
 
 Thu Apr 14 12:36:25 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
