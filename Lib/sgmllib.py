@@ -173,6 +173,8 @@ class SGMLParser:
 		# Now parse the data between i+1 and j into a tag and attrs
 		attrs = []
 		tagfind = regex.compile('[a-zA-Z][a-zA-Z0-9]*')
+		# XXX Should also support value-less attributes (e.g. ISMAP)
+		# XXX Should use regex.group()
 		attrfind = regex.compile(
 		  '[ \t\n]+\([a-zA-Z][a-zA-Z0-9]*\)' +
 		  '\([ \t\n]*=[ \t\n]*' +
