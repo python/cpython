@@ -42,9 +42,7 @@ elif 'nt' in _names:
     curdir = '.'; pardir = '..'; sep = '\\'; pathsep = ';'
     defpath = '.;C:\\bin'
     from nt import *
-    for i in ['_exit',
-              '_P_WAIT', '_P_NOWAIT', '_P_OVERLAY',
-              '_P_NOWAITO', '_P_DETACH']:
+    for i in ['_exit']:
         try:
             exec "from nt import " + i
         except ImportError:
