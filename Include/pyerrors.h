@@ -41,12 +41,14 @@ extern object *NameError;
 extern object *SystemError;
 extern object *KeyboardInterrupt;
 
-/* Some more planned for the future */
-
-#define IndexError		RuntimeError
-#define KeyError		RuntimeError
-#define ZeroDivisionError	RuntimeError
-#define OverflowError		RuntimeError
+/* New exceptions */
+extern object *AttributeError;
+extern object *IOError;
+extern object *ZeroDivisionError;
+extern object *IndexError;
+extern object *ValueError;
+extern object *KeyError;
+extern object *OverflowError;
 
 /* Convenience functions */
 
