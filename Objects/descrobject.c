@@ -916,10 +916,10 @@ getset_descr_set(PyObject *self, PyObject *obj, PyObject *value)
 static int
 getset_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	PyObject *get, *set;
+	PyObject *get = NULL, *set = NULL;
 	getsetobject *gs = (getsetobject *)self;
 
-	if (!PyArg_ParseTuple(args, "OO:getset.__init__", &get, &set))
+	if (!PyArg_ParseTuple(args, "|OO:getset.__init__", &get, &set))
 		return -1;
 	if (get == Py_None)
 		get = NULL;
@@ -931,6 +931,14 @@ getset_init(PyObject *self, PyObject *args, PyObject *kwds)
 	gs->set = set;
 	return 0;
 }
+
+static char getset_doc[] =
+"getset([getfunc[, setfunc]]) -> getset attribute\n"
+"Typical use to define a managed attribute x of C instances:\n"
+"class C(object):\n"
+"    def getx(self): return self.__x\n"
+"    def setx(self, value): self.__x = value\n"
+"    x = getset(getx, setx)";
 
 PyTypeObject PyGetSet_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -955,7 +963,7 @@ PyTypeObject PyGetSet_Type = {
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT,			/* tp_flags */
- 	0,					/* tp_doc */
+ 	getset_doc,				/* tp_doc */
  	0,					/* tp_traverse */
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
