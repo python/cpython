@@ -369,7 +369,9 @@ static PyObject *
 set_difference(PySetObject *so, PyObject *other)
 {
 	PySetObject *result, *otherset=NULL;
-	PyObject *item, *otherdata, *tgtdata, *it;
+	PyObject *otherdata, *tgtdata;
+	PyObject *key, *value;
+	int pos = 0;
 
 	result = (PySetObject *)make_new_set(so->ob_type, NULL);
 	if (result == NULL)
@@ -389,30 +391,15 @@ set_difference(PySetObject *so, PyObject *other)
 		otherdata = otherset->data;
 	}	
 
-	it = PyObject_GetIter(so->data);
-	if (it == NULL) {
-		Py_XDECREF(otherset);
-		Py_DECREF(result);
-		return NULL;
-	}
-
-	while ((item = PyIter_Next(it)) != NULL) {
-		if (!PyDict_Contains(otherdata, item)) {
-			if (PyDict_SetItem(tgtdata, item, Py_True) == -1) {
+	while (PyDict_Next(so->data, &pos, &key, &value)) {
+		if (!PyDict_Contains(otherdata, key)) {
+			if (PyDict_SetItem(tgtdata, key, Py_True) == -1) {
 				Py_XDECREF(otherset);
-				Py_DECREF(it);
-				Py_DECREF(item);
 				return NULL;
 			}
 		}
-		Py_DECREF(item);
 	}
-	Py_DECREF(it);
 	Py_XDECREF(otherset);
-	if (PyErr_Occurred()) {
-		Py_DECREF(result);
-		return NULL;
-	}
 	return (PyObject *)result;
 }
 
@@ -482,11 +469,12 @@ set_isub(PySetObject *so, PyObject *other)
 static PyObject *
 set_symmetric_difference_update(PySetObject *so, PyObject *other)
 {
-	PyObject *item, *selfdata, *it, *otherdata;
+	PyObject *selfdata, *otherdata;
 	PySetObject *otherset = NULL;
+	PyObject *key, *value;
+	int pos = 0;
 
 	selfdata = so->data;
-
 	if (PyDict_Check(other))
 		otherdata = other;
 	else if (PyAnySet_Check(other))
@@ -498,32 +486,20 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 		otherdata = otherset->data;
 	}
 
-	it = PyObject_GetIter(otherdata);
-	if (it == NULL)
-		return NULL;
-
-	while ((item = PyIter_Next(it)) != NULL) {
-		if (PyDict_Contains(selfdata, item)) {
-			if (PyDict_DelItem(selfdata, item) == -1) {
+	while (PyDict_Next(otherdata, &pos, &key, &value)) {
+		if (PyDict_Contains(selfdata, key)) {
+			if (PyDict_DelItem(selfdata, key) == -1) {
 				Py_XDECREF(otherset);
-				Py_DECREF(it);
-				Py_DECREF(item);
 				return NULL;
 			}
 		} else {
-			if (PyDict_SetItem(selfdata, item, Py_True) == -1) {
+			if (PyDict_SetItem(selfdata, key, Py_True) == -1) {
 				Py_XDECREF(otherset);
-				Py_DECREF(it);
-				Py_DECREF(item);
 				return NULL;
 			}
 		}
-		Py_DECREF(item);
 	}
 	Py_XDECREF(otherset);
-	Py_DECREF(it);
-	if (PyErr_Occurred())
-		return NULL;
 	Py_RETURN_NONE;
 }
 
@@ -534,7 +510,9 @@ static PyObject *
 set_symmetric_difference(PySetObject *so, PyObject *other)
 {
 	PySetObject *result;
-	PyObject *item, *selfdata, *otherdata, *tgtdata, *it, *rv, *otherset;
+	PyObject *selfdata, *otherdata, *tgtdata, *rv, *otherset;
+	PyObject *key, *value;
+	int pos = 0;
 
 	if (PyDict_Check(other))
 		otherdata = other;
@@ -557,46 +535,23 @@ set_symmetric_difference(PySetObject *so, PyObject *other)
 	tgtdata = result->data;
 	selfdata = so->data;
 
-	it = PyObject_GetIter(otherdata);
-	if (it == NULL) {
-		Py_DECREF(result);
-		return NULL;
-	}
-	while ((item = PyIter_Next(it)) != NULL) {
-		if (!PyDict_Contains(selfdata, item)) {
-			if (PyDict_SetItem(tgtdata, item, Py_True) == -1) {
-				Py_DECREF(it);
-				Py_DECREF(item);
+	while (PyDict_Next(otherdata, &pos, &key, &value)) {
+		if (!PyDict_Contains(selfdata, key)) {
+			if (PyDict_SetItem(tgtdata, key, Py_True) == -1) {
+				Py_DECREF(result);
 				return NULL;
 			}
 		}
-		Py_DECREF(item);
-	}
-	Py_DECREF(it);
-	if (PyErr_Occurred()) {
-		Py_DECREF(result);
-		return NULL;
 	}
 
-	it = PyObject_GetIter(selfdata);
-	if (it == NULL) {
-		Py_DECREF(result);
-		return NULL;
-	}
-	while ((item = PyIter_Next(it)) != NULL) {
-		if (!PyDict_Contains(otherdata, item)) {
-			if (PyDict_SetItem(tgtdata, item, Py_True) == -1) {
-				Py_DECREF(it);
-				Py_DECREF(item);
+	pos = 0;
+	while (PyDict_Next(selfdata, &pos, &key, &value)) {
+		if (!PyDict_Contains(otherdata, key)) {
+			if (PyDict_SetItem(tgtdata, key, Py_True) == -1) {
+				Py_DECREF(result);
 				return NULL;
 			}
 		}
-		Py_DECREF(item);
-	}
-	Py_DECREF(it);
-	if (PyErr_Occurred()) {
-		Py_DECREF(result);
-		return NULL;
 	}
 
 	return (PyObject *)result;
@@ -637,7 +592,9 @@ set_ixor(PySetObject *so, PyObject *other)
 static PyObject *
 set_issubset(PySetObject *so, PyObject *other)
 {
-	PyObject *otherdata, *it, *item, *tmp, *result;
+	PyObject *otherdata, *tmp, *result;
+	PyObject *key, *value;
+	int pos = 0;
 
 	if (!PyAnySet_Check(other)) {
 		tmp = make_new_set(&PySet_Type, other);
@@ -649,23 +606,12 @@ set_issubset(PySetObject *so, PyObject *other)
 	}
 	if (set_len(so) > set_len((PySetObject *)other)) 
 		Py_RETURN_FALSE;
-	
-	it = PyObject_GetIter(so->data);
-	if (it == NULL)
-		return NULL;
 
 	otherdata = ((PySetObject *)other)->data;
-	while ((item = PyIter_Next(it)) != NULL) {
-		if (!PyDict_Contains(otherdata, item)) {
-			Py_DECREF(it);
-			Py_DECREF(item);
+	while (PyDict_Next(((PySetObject *)so)->data, &pos, &key, &value)) {
+		if (!PyDict_Contains(otherdata, key))
 			Py_RETURN_FALSE;
-		}
-		Py_DECREF(item);
 	}
-	Py_DECREF(it);
-	if (PyErr_Occurred()) 
-		return NULL;
 	Py_RETURN_TRUE;
 }
 
@@ -706,29 +652,22 @@ set_nocmp(PyObject *self)
 static long
 frozenset_hash(PyObject *self)
 {
-	PyObject *it, *item;
 	PySetObject *so = (PySetObject *)self;
-	long hash = 0;
+	PyObject *key, *value;
+	int pos = 0;
 
+	long hash = 0;
 	if (so->hash != -1)
 		return so->hash;
-		
-	it = PyObject_GetIter(((PySetObject *)so)->data);
-	if (it == NULL) 
-		return -1;
 
-	while ((item = PyIter_Next(it)) != NULL) {
+	while (PyDict_Next(so->data, &pos, &key, &value)) {
 		/* Multiplying by a large prime increases the bit dispersion for
 		   closely spaced hash values.  The is important because some
 		   use cases have many combinations of a small number of 
 		   elements with nearby hashes so that many distinct combinations
 		   collapse to only a handful of distinct hash values. */
-		hash ^= PyObject_Hash(item) * 3644798167u;
-		Py_DECREF(item);
+		hash ^= PyObject_Hash(key) * 3644798167u;
 	}
-	Py_DECREF(it);
-	if (PyErr_Occurred()) 
-		return -1;
 	so->hash = hash;
 	return hash;
 }
@@ -788,30 +727,17 @@ set_repr(PySetObject *so)
 static int
 set_tp_print(PySetObject *so, FILE *fp, int flags)
 {
-	PyObject *it, *item;
-	int firstpass=1;
+	PyObject *key, *value;
+	int pos = 0;
 
-	it = PyObject_GetIter(so->data);
-	if (it == NULL)
-		return -1;
 	fprintf(fp, "%s([", so->ob_type->tp_name);
-
-	while ((item = PyIter_Next(it)) != NULL) {
-		if (firstpass == 1)
-			firstpass = 0;
-		else
+	while (PyDict_Next(so->data, &pos, &key, &value)) {
+		if (pos)
 			fprintf(fp, ", ");
-		if (PyObject_Print(item, fp, 0) != 0) {
-			Py_DECREF(it);
-			Py_DECREF(item);
+		if (PyObject_Print(key, fp, 0) != 0)
 			return -1;
-		}
-		Py_DECREF(item);
 	}
-	Py_DECREF(it);
 	fprintf(fp, "])");
-	if (PyErr_Occurred()) 
-		return -1;
 	return 0;
 }
 
