@@ -146,13 +146,18 @@ The mathematical constant \emph{e}.
 \end{datadesc}
 
 \begin{notice}
-  Specific exceptions raised in assorted error cases (and even whether some
+  The \module{math} module consists mostly of thin wrappers around
+  the platform C math library functions.  Behavior in exceptional cases is
+  loosely specified by the C standards, and Python inherits much of its
+  math-function error-reporting behavior from the platform C
+  implementation.  As a result,
+  the specific exceptions raised in error cases (and even whether some
   arguments are considered to be exceptional at all) are not defined in any
   useful cross-platform or cross-release way.  For example, whether
   \code{math.log(0)} returns \code{-Inf} or raises \exception{ValueError} or
-  \exception{OverflowError} is both platform- and release-dependent, and in
-  cases where \code{math.log(0)} raises an \exception{OverflowError},
-  \code{math.log(0L)} often raises a \exception{ValueError}.
+  \exception{OverflowError} isn't defined, and in
+  cases where \code{math.log(0)} raises \exception{OverflowError},
+  \code{math.log(0L)} may raise \exception{ValueError} instead.
 \end{notice}
 
 \begin{seealso}
