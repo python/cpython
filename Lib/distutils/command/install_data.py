@@ -18,7 +18,8 @@ class install_data (Command):
 
     user_options = [
         ('install-dir=', 'd',
-         "directory to install the files to"),
+         "base directory for installating data files "
+         "(default: installation base dir)"),
         ('root=', None,
          "install everything relative to this alternate root directory"),
         ]
@@ -39,11 +40,14 @@ class install_data (Command):
         self.mkpath(self.install_dir)
         for f in self.data_files:
             if type(f) == StringType:
-                # its a simple file, so copy it
+                # it's a simple file, so copy it
+                self.warn("setup script did not provide a directory for "
+                          "'%s' -- installing right in '%s'" %
+                          (f, self.install_dir))
                 out = self.copy_file(f, self.install_dir)
                 self.outfiles.append(out)
             else:
-                # its a tuple with path to install to and a list of files
+                # it's a tuple with path to install to and a list of files
                 dir = f[0]
                 if not os.path.isabs(dir):
                     dir = os.path.join(self.install_dir, dir)
