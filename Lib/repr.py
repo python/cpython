@@ -111,8 +111,7 @@ class Repr:
             # Bugs in x.__repr__() can cause arbitrary
             # exceptions -- then make up something
         except:
-            return '<' + x.__class__.__name__ + ' instance at ' + \
-                      hex(id(x))[2:] + '>'
+            return '<%s instance at %x>' % (x.__class__.__name__, id(x))
         if len(s) > self.maxstring:
             i = max(0, (self.maxstring-3)//2)
             j = max(0, self.maxstring-3-i)
