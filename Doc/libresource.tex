@@ -7,64 +7,134 @@ system resources utilized by a program.
 
 Symbolic constants are used to specify particular system resources and
 to request usage information about either the current process or its
-children. 
+children.
 
-Resources usage can be limited using the \code{setrlimit} function
+A single exception is defined for errors:
+
+\renewcommand{\indexsubitem}{(in module resource)}
+
+\begin{excdesc}{error}
+  The functions described below may raise this error if the underlying
+  system call failures unexpectedly.
+\end{excdesc}
+
+\subsection{Resource Limits}
+
+Resources usage can be limited using the \code{setrlimit()} function
 described below. Each resource is controlled by a pair of limits: a
 soft limit and a hard limit. The soft limit is the current limit, and
 may be lowered or raised by a process over time. The soft limit can
 never exceed the hard limit. The hard limit can be lowered to any
-value greater than the soft limit, but not raised. (Only process with
-the effective UID of the super-user can raise a hard limit).
+value greater than the soft limit, but not raised. (Only processes with
+the effective UID of the super-user can raise a hard limit.)
 
 The specific resources that can be limited are system dependent. They
-are described in the \code{getrlimit} man page. Typical resources
-include:
+are described in the \code{getrlimit()} man page.  The resources
+listed below are supported when the underlying operating system
+supports them; resources which cannot be checked or controlled by the
+operating system are not defined in this module for those platforms.
 
-\begin{description}
+\begin{funcdesc}{getrlimit}{resource}
+  Returns a tuple \code{(\var{soft}, \var{hard})} with the current
+  soft and hard limits of \var{resource}. Raises \code{ValueError} if
+  an invalid resource is specified, or \code{resource.error} if the
+  underyling system call fails unexpectedly.
+\end{funcdesc}
 
-\item[RLIMIT_CORE]
-The maximum size (in bytes) of a core file that the current process
-can create.
+\begin{funcdesc}{setrlimit}{resource, limits}
+  Sets new limits of consumption of \var{resource}. The \var{limits}
+  argument must be a tuple \code{(\var{soft}, \var{hard})} of two
+  integers describing the new limits. A value of \code{-1} can be used to
+  specify the maximum possible upper limit.
 
-\item[RLIMIT_CPU]
-The maximum amount of CPU time (in seconds) that a process can use. If
-this limit is exceeded, a \code{SIGXCPU} signal is sent to the
-process. (See the \code{signal} module documentation for information
-about how to catch this signal and do something useful, e.g. flush
-open files to disk.)
+  Raises \code{ValueError} if an invalid resource is specified, if the new
+  soft limit exceeds the hard limit, or if a process tries to raise its
+  hard limit (unless the process has an effective UID of
+  super-user). Can also raise a \code{resource.error} if the
+  underyling system call fails.
+\end{funcdesc}
 
-\end{description}
+These symbols define resources whose consumption can be controlled
+using the \code{setrlimit()} and \code{getrlimit()} functions defined
+below. The values of these symbols are exactly the constants used
+by C programs.
 
-\begin{datadesc}{RLIMIT_*}
-  These symbols define resources whose consumption can be controlled
-  using the \code{setrlimit} and \code{getrlimit} functions defined
-  below. The values of these symbols are exactly the constants used
-  by C programs.
+The \UNIX{} man page for \code{getrlimit()} lists the available
+resources.  Note that not all systems use the same symbol or same
+value to denote the same resource.
 
-  The \UNIX{} man page for \file{getrlimit} lists the available
-  resources. Note that not all systems use the same symbol or same
-  value to denote the same resource.
+\begin{datadesc}{RLIMIT_CORE}
+  The maximum size (in bytes) of a core file that the current process
+  can create.  This may result in the creation of a partial core file
+  if a larger core would be required to contain the entire process
+  image.
 \end{datadesc}
 
-\begin{datadesc}{RUSAGE_*}
-  These symbols are passed to the \code{getrusage} function to specify
-  whether usage information is being request for the current process,
-  \code{RUSAGE_SELF} or its child processes \code{RUSAGE_CHILDREN}. On
-  some system, \code{RUSAGE_BOTH} requests information for both.
+\begin{datadesc}{RLIMIT_CPU}
+  The maximum amount of CPU time (in seconds) that a process can
+  use. If this limit is exceeded, a \code{SIGXCPU} signal is sent to
+  the process. (See the \code{signal} module documentation for
+  information about how to catch this signal and do something useful,
+  e.g. flush open files to disk.)
 \end{datadesc}
 
-\begin{datadesc}{error}
-  The functions described below may raise this error if the underlying
-  system call failures unexpectedly.
+\begin{datadesc}{RLIMIT_FSIZE}
+  The maximum size of a file which the process may create.  This only
+  affects the stack of the main thread in a multi-threaded process.
 \end{datadesc}
 
-The resource module defines the following functions:
+\begin{datadesc}{RLIMIT_DATA}
+  The maximum size (in bytes) of the process's heap.
+\end{datadesc}
+
+\begin{datadesc}{RLIMIT_STACK}
+  The maximum size (in bytes) of the call stack for the current
+  process.
+\end{datadesc}
+
+\begin{datadesc}{RLIMIT_RSS}
+  The maximum resident set size that should be made available to the
+  process.
+\end{datadesc}
+
+\begin{datadesc}{RLIMIT_NPROC}
+  The maximum number of processes the current process may create.
+\end{datadesc}
+
+\begin{datadesc}{RLIMIT_NOFILE}
+  The maximum number of open file descriptors for the current
+  process.
+\end{datadesc}
+
+\begin{datadesc}{RLIMIT_OFILE}
+  The BSD name for \code{RLIMIT_NOFILE}.
+\end{datadesc}
+
+\begin{datadesc}{RLIMIT_MEMLOC}
+  The maximm address space which may be locked in memory.
+\end{datadesc}
+
+\begin{datadesc}{RLIMIT_VMEM}
+  The largest area of mapped memory which the process may occupy.
+\end{datadesc}
+
+\begin{datadesc}{RLIMIT_AS}
+  The maximum area (in bytes) of address space which may be taken by
+  the process.
+\end{datadesc}
+
+\subsection{Resource Usage}
+
+These functiona are used to retrieve resource usage information:
 
 \begin{funcdesc}{getrusage}{who}
   This function returns a large tuple that describes the resources
   consumed by either the current process or its children, as specified
-  by the \var{who} parameter. The elements of the return value each
+  by the \var{who} parameter.  The \var{who} parameter should be
+  specified using one of the \code{RUSAGE_}* constants described
+  below.
+
+  The elements of the return value each
   describe how a particular system resource has been used, e.g. amount
   of time spent running is user mode or number of times the process was
   swapped out of main memory. Some values are dependent on the clock
@@ -73,7 +143,7 @@ The resource module defines the following functions:
   The first two elements of the return value are floating point values
   representing the amount of time spent executing in user mode and the
   amount of time spent executing in system mode, respectively. The
-  remaining values are integers. Consult the \code{getrusage} man page
+  remaining values are integers. Consult the \code{getrusage()} man page
   for detailed information about these values. A brief summary is
   presented here:
 
@@ -97,7 +167,7 @@ The resource module defines the following functions:
 	15 &	involuntary context switches \\
 \end{tabular}
 
-  This function will raise a ValueError if an invalid \var{who}
+  This function will raise a \code{ValueError} if an invalid \var{who}
   parameter is specified. It may also raise a \code{resource.error}
   exception in unusual circumstances.
 \end{funcdesc}
@@ -111,22 +181,22 @@ The resource module defines the following functions:
   bytes. 
 \end{funcdesc}
 
-\begin{funcdesc}{getrlimit}{resource}
-  Returns a tuple \code{(\var{soft}, \var{hard})} with the current
-  soft and hard limits of \var{resource}. Raises ValueError if
-  an invalid resource is specified, or \code{resource.error} if the
-  underyling system call fails unexpectedly.
-\end{funcdesc}
+The following \code{RUSAGE_}* symbols are passed to the
+\code{getrusage()} function to specify which processes information
+should be provided for.
 
-\begin{funcdesc}{setrlimit}{resource\, limits}
-  Sets new limits of consumption of \var{resource}. The \var{limits}
-  argument must be a tuple \code{(\var{soft}, \var{hard})} of two
-  integers describing the new limits. A value of -1 can be used to
-  specify the maximum possible upper limit.
+\begin{datadesc}{RUSAGE_SELF}
+  \code{RUSAGE_SELF} should be used to
+  request information pertaining only to the process itself.
+\end{datadesc}
 
-  Raises ValueError if an invalid resource is specified, if the new
-  soft limit exceeds the hard limit, or if a process tries to raise its
-  hard limit (unless the process has an effective UID of
-  super-user). Can also raise a \code{resource.error} if the
-  underyling system call fails.
-\end{funcdesc}
+\begin{datadesc}{RUSAGE_CHILDREN}
+  Pass to \code{getrusage()} to request resource information for child
+  processes of the calling process.
+\end{datadesc}
+
+\begin{datadesc}{RUSAGE_BOTH}
+  Pass to \code{getrusage()} to request resources consumed by both the
+  current process and child processes.  May not be available on all
+  systems.
+\end{datadesc}
