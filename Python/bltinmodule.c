@@ -193,8 +193,8 @@ static char unicode_doc[] =
 "unicode(string [, encoding[, errors]]) -> object\n\
 \n\
 Creates a new Unicode object from the given encoded string.\n\
-encoding defaults to 'utf-8' and errors, defining the error handling,\n\
-to 'strict'.";
+encoding defaults to the current default string encoding and \n\
+errors, defining the error handling, to 'strict'.";
 
 
 static PyObject *
