@@ -55,7 +55,7 @@ class TextWrapper:
     #   Hello/ /there/ /--/ /you/ /goof-/ball,/ /use/ /the/ /-b/ /option!
     # (after stripping out empty strings).
     wordsep_re = re.compile(r'(\s+|'                  # any whitespace
-                            r'\w{2,}-(?=\w{2,})|'     # hyphenated words
+                            r'-*\w{2,}-(?=\w{2,})|'   # hyphenated words
                             r'(?<=\w)-{2,}(?=\w))')   # em-dash
 
     # XXX will there be a locale-or-charset-aware version of
