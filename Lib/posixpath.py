@@ -343,21 +343,26 @@ def normpath(path):
     """Normalize path, eliminating double slashes, etc."""
     if path == '':
         return '.'
-    initial_slash = (path[0] == '/')
+    initial_slashes = path.startswith('/')
+    # POSIX allows one or two initial slashes, but treats three or more
+    # as single slash.
+    if (initial_slashes and 
+        path.startswith('//') and not path.startswith('///')):
+        initial_slashes = 2
     comps = path.split('/')
     new_comps = []
     for comp in comps:
         if comp in ('', '.'):
             continue
-        if (comp != '..' or (not initial_slash and not new_comps) or
+        if (comp != '..' or (not initial_slashes and not new_comps) or
              (new_comps and new_comps[-1] == '..')):
             new_comps.append(comp)
         elif new_comps:
             new_comps.pop()
     comps = new_comps
     path = '/'.join(comps)
-    if initial_slash:
-        path = '/' + path
+    if initial_slashes:
+        path = '/'*initial_slashes + path
     return path or '.'
 
 
