@@ -1281,23 +1281,103 @@ file_writelines(PyFileObject *f, PyObject *args)
 	return result;
 }
 
-static PyMethodDef file_methods[] = {
-	{"readline",	(PyCFunction)file_readline,   METH_VARARGS},
-	{"read",	(PyCFunction)file_read,       METH_VARARGS},
-	{"write",	(PyCFunction)file_write,      METH_OLDARGS},
-	{"fileno",	(PyCFunction)file_fileno,     METH_NOARGS},
-	{"seek",	(PyCFunction)file_seek,       METH_VARARGS},
+static char readline_doc[] =
+"readline([size]) -> next line from the file, as a string.\n"
+"\n"
+"Retain newline.  A non-negative size argument limits the maximum\n"
+"number of bytes to return (an incomplete line may be returned then).\n"
+"Return an empty string at EOF.";
+
+static char read_doc[] =
+"read([size]) -> read at most size bytes, returned as a string.\n"
+"\n"
+"If the size argument is negative or omitted, read until EOF is reached.";
+
+static char write_doc[] =
+"write(str) -> None.  Write string str to file.\n"
+"\n"
+"Note that due to buffering, flush() or close() may be needed before\n"
+"the file on disk reflects the data written.";
+
+static char fileno_doc[] =
+"fileno() -> integer \"file descriptor\".\n"
+"\n"
+"This is needed for lower-level file interfaces, such os.read().";
+
+static char seek_doc[] =
+"seek(offset[, whence]) -> None.  Move to new file position.\n"
+"\n"
+"Argument offset is a byte count.  Optional argument whence defaults to\n"
+"0 (offset from start of file, offset should be >= 0); other values are 1\n"
+"(move relative to current position, positive or negative), and 2 (move\n"
+"relative to end of file, usually negative, although many platforms allow\n"
+"seeking beyond the end of a file).\n"
+"\n"
+"Note that not all file objects are seekable.";
+
 #ifdef HAVE_FTRUNCATE
-	{"truncate",	(PyCFunction)file_truncate,   METH_VARARGS},
+static char truncate_doc[] =
+"truncate([size]) -> None.  Truncate the file to at most size bytes.\n"
+"\n"
+"Size defaults to the current file position, as returned by tell().";
 #endif
-	{"tell",	(PyCFunction)file_tell,       METH_NOARGS},
-	{"readinto",	(PyCFunction)file_readinto,   METH_OLDARGS},
-	{"readlines",	(PyCFunction)file_readlines,  METH_VARARGS},
-	{"xreadlines",	(PyCFunction)file_xreadlines, METH_NOARGS},
-	{"writelines",	(PyCFunction)file_writelines, METH_O},
-	{"flush",	(PyCFunction)file_flush,      METH_NOARGS},
-	{"close",	(PyCFunction)file_close,      METH_NOARGS},
-	{"isatty",	(PyCFunction)file_isatty,     METH_NOARGS},
+
+static char tell_doc[] =
+"tell() -> current file position, an integer (may be a long integer).";
+
+static char readinto_doc[] =
+"readinto() -> Undocumented.  Don't use this; it may go away.";
+
+static char readlines_doc[] =
+"readlines([size]) -> list of strings, each a line from the file.\n"
+"\n"
+"Call readline() repeatedly and return a list of the lines so read.\n"
+"The optional size argument, if given, is an approximate bound on the\n"
+"total number of bytes in the lines returned.";
+
+static char xreadlines_doc[] =
+"xreadlines() -> next line from the file, as a string.\n"
+"\n"
+"Equivalent to xreadlines.xreadlines(file).  This is like readline(), but\n"
+"often quicker, due to reading ahead internally.";
+
+static char writelines_doc[] =
+"writelines(list of strings) -> None.  Write the strings to the file.\n"
+"\n"
+"Note that newlines are not added.  This is equivalent to calling write()\n"
+"for each string in the list.";
+
+static char flush_doc[] =
+"flush() -> None.  Flush the internal I/O buffer.";
+
+static char close_doc[] =
+"close() -> None or (perhaps) an integer.  Close the file.\n"
+"\n"
+"Sets data attribute .closed to true.  A closed file cannot be used for\n"
+"further I/O operations.  close() may be called more than once without\n"
+"error.  Some kinds of file objects (for example, opened by popen())\n"
+"may return an exit status upon closing.";
+
+static char isatty_doc[] =
+"isatty() -> true or false.  True if the file is connected to a tty device.";
+
+static PyMethodDef file_methods[] = {
+	{"readline",	(PyCFunction)file_readline,   METH_VARARGS, readline_doc},
+	{"read",	(PyCFunction)file_read,       METH_VARARGS, read_doc},
+	{"write",	(PyCFunction)file_write,      METH_OLDARGS, write_doc},
+	{"fileno",	(PyCFunction)file_fileno,     METH_NOARGS,  fileno_doc},
+	{"seek",	(PyCFunction)file_seek,       METH_VARARGS, seek_doc},
+#ifdef HAVE_FTRUNCATE
+	{"truncate",	(PyCFunction)file_truncate,   METH_VARARGS, truncate_doc},
+#endif
+	{"tell",	(PyCFunction)file_tell,       METH_NOARGS,  tell_doc},
+	{"readinto",	(PyCFunction)file_readinto,   METH_OLDARGS, readinto_doc},
+	{"readlines",	(PyCFunction)file_readlines,  METH_VARARGS, readlines_doc},
+	{"xreadlines",	(PyCFunction)file_xreadlines, METH_NOARGS,  xreadlines_doc},
+	{"writelines",	(PyCFunction)file_writelines, METH_O,	    writelines_doc},
+	{"flush",	(PyCFunction)file_flush,      METH_NOARGS,  flush_doc},
+	{"close",	(PyCFunction)file_close,      METH_NOARGS,  close_doc},
+	{"isatty",	(PyCFunction)file_isatty,     METH_NOARGS,  isatty_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 
