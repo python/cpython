@@ -59,6 +59,8 @@ emacs_bindings = [
      "<<open-window-from-file>>", "<Control-x><Control-f>"),
     ("file", "Open module...", "C-x C-m",
      "<<open-module>>", "<Control-x><Control-m>"),
+    ("file", "Class browser...", "C-x C-b",
+     "<<open-class-browser>>", "<Control-x><Control-b>"),
     ("file", None, None),
 
     ("file", "Save", "C-x C-s",
