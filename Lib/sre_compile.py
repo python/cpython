@@ -3,7 +3,7 @@
 #
 # convert template to internal format
 #
-# Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
+# Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
 #
 # See the sre.py file for information on usage and redistribution.
 #
@@ -176,7 +176,7 @@ def _optimize_charset(charset, fixup):
                 for i in range(fixup(av[0]), fixup(av[1])+1):
                     charmap[i] = 1
             elif op is CATEGORY:
-                # FIXME: could append to charmap tail
+                # XXX: could append to charmap tail
                 return charset # cannot compress
     except IndexError:
         # character set contains unicode characters
@@ -364,7 +364,7 @@ def compile(p, flags=0):
 
     # print code
 
-    # FIXME: <fl> get rid of this limitation!
+    # XXX: <fl> get rid of this limitation!
     assert p.pattern.groups <= 100,\
            "sorry, but this version only supports 100 named groups"
 

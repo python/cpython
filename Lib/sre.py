@@ -3,7 +3,7 @@
 #
 # re-compatible interface for the sre matching engine
 #
-# Copyright (c) 1998-2000 by Secret Labs AB.  All rights reserved.
+# Copyright (c) 1998-2001 by Secret Labs AB.  All rights reserved.
 #
 # This version of the SRE library can be redistributed under CNRI's
 # Python 1.6 license.  For any other use, please contact Secret Labs
@@ -14,23 +14,22 @@
 # other compatibility work.
 #
 
-# FIXME: change all FIXME's to XXX ;-)
-
 import sre_compile
 import sre_parse
 
 import string
 
 # flags
-I = IGNORECASE = sre_compile.SRE_FLAG_IGNORECASE
-L = LOCALE = sre_compile.SRE_FLAG_LOCALE
-M = MULTILINE = sre_compile.SRE_FLAG_MULTILINE
-S = DOTALL = sre_compile.SRE_FLAG_DOTALL
-X = VERBOSE = sre_compile.SRE_FLAG_VERBOSE
+I = IGNORECASE = sre_compile.SRE_FLAG_IGNORECASE # ignore case
+L = LOCALE = sre_compile.SRE_FLAG_LOCALE # assume current 8-bit locale
+U = UNICODE = sre_compile.SRE_FLAG_UNICODE # assume unicode locale
+M = MULTILINE = sre_compile.SRE_FLAG_MULTILINE # make anchors look for newline
+S = DOTALL = sre_compile.SRE_FLAG_DOTALL # make dot match newline
+X = VERBOSE = sre_compile.SRE_FLAG_VERBOSE # ignore whitespace and comments
 
-# sre extensions (may or may not be in 1.6/2.0 final)
-T = TEMPLATE = sre_compile.SRE_FLAG_TEMPLATE
-U = UNICODE = sre_compile.SRE_FLAG_UNICODE
+# sre extensions (experimental, don't rely on these)
+T = TEMPLATE = sre_compile.SRE_FLAG_TEMPLATE # disable backtracking
+DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
 
 # sre exception
 error = sre_compile.error
@@ -38,36 +37,60 @@ error = sre_compile.error
 # --------------------------------------------------------------------
 # public interface
 
-# FIXME: add docstrings
-
 def match(pattern, string, flags=0):
+    """Try to apply the pattern at the start of the string, returning
+    a match object, or None if no match was found."""
     return _compile(pattern, flags).match(string)
 
 def search(pattern, string, flags=0):
+    """Scan through string looking for a match to the pattern, returning
+    a match object, or None if no match was found."""
     return _compile(pattern, flags).search(string)
 
 def sub(pattern, repl, string, count=0):
+    """Return the string obtained by replacing the leftmost
+    non-overlapping occurrences of the pattern in string by the
+    replacement repl"""
     return _compile(pattern, 0).sub(repl, string, count)
 
 def subn(pattern, repl, string, count=0):
+    """Return a 2-tuple containing (new_string, number).
+    new_string is the string obtained by replacing the leftmost
+    non-overlapping occurrences of the pattern in the source
+    string by the replacement repl.  number is the number of
+    substitutions that were made."""
     return _compile(pattern, 0).subn(repl, string, count)
 
 def split(pattern, string, maxsplit=0):
+    """Split the source string by the occurrences of the pattern,
+    returning a list containing the resulting substrings."""
     return _compile(pattern, 0).split(string, maxsplit)
 
 def findall(pattern, string, maxsplit=0):
+    """Return a list of all non-overlapping matches in the string.
+
+    If one or more groups are present in the pattern, return a
+    list of groups; this will be a list of tuples if the pattern
+    has more than one group.
+
+    Empty matches are included in the result."""
     return _compile(pattern, 0).findall(string, maxsplit)
 
 def compile(pattern, flags=0):
+    "Compile a regular expression pattern, returning a pattern object."
     return _compile(pattern, flags)
 
 def purge():
+    "Clear the regular expression cache"
     _cache.clear()
 
 def template(pattern, flags=0):
+    "Compile a template pattern, returning a pattern object"
+
     return _compile(pattern, flags|T)
 
 def escape(pattern):
+    "Escape all non-alphanumeric characters in pattern."
     s = list(pattern)
     for i in range(len(pattern)):
         c = pattern[i]
@@ -204,7 +227,7 @@ class Scanner:
                 break
             action = self.lexicon[m.lastindex][1]
             if callable(action):
-                self.match = match
+                self.match = m
                 action = action(self, m.group())
             if action is not None:
                 append(action)
