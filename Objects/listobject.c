@@ -1436,15 +1436,15 @@ static char sort_doc[] =
 "L.sort([cmpfunc]) -- sort *IN PLACE*; if given, cmpfunc(x, y) -> -1, 0, 1";
 
 static PyMethodDef list_methods[] = {
-	{"append",	(PyCFunction)listappend, 1, append_doc},
-	{"insert",	(PyCFunction)listinsert, 1, insert_doc},
-	{"extend",      (PyCFunction)listextend, 1, extend_doc},
-	{"pop",		(PyCFunction)listpop, 1, pop_doc},
-	{"remove",	(PyCFunction)listremove, 1, remove_doc},
-	{"index",	(PyCFunction)listindex, 1, index_doc},
-	{"count",	(PyCFunction)listcount, 1, count_doc},
-	{"reverse",	(PyCFunction)listreverse, 1, reverse_doc},
-	{"sort",	(PyCFunction)listsort, 1, sort_doc},
+	{"append",	(PyCFunction)listappend, METH_VARARGS, append_doc},
+	{"insert",	(PyCFunction)listinsert, METH_VARARGS, insert_doc},
+	{"extend",      (PyCFunction)listextend, METH_VARARGS, extend_doc},
+	{"pop",		(PyCFunction)listpop, METH_VARARGS, pop_doc},
+	{"remove",	(PyCFunction)listremove, METH_VARARGS, remove_doc},
+	{"index",	(PyCFunction)listindex, METH_VARARGS, index_doc},
+	{"count",	(PyCFunction)listcount, METH_VARARGS, count_doc},
+	{"reverse",	(PyCFunction)listreverse, METH_VARARGS, reverse_doc},
+	{"sort",	(PyCFunction)listsort, METH_VARARGS, sort_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 
