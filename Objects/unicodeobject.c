@@ -3222,19 +3222,19 @@ int charmaptranslate_lookup(Py_UNICODE c, PyObject *mapping, PyObject **result)
 if not reallocate and adjust various state variables.
 Return 0 on success, -1 on error */
 static
-int charmaptranslate_makespace(PyObject **outobj, Py_UNICODE **outp, int *outsize,
+int charmaptranslate_makespace(PyObject **outobj, Py_UNICODE **outp,
     int requiredsize)
 {
-    if (requiredsize > *outsize) {
+    int oldsize = PyUnicode_GET_SIZE(*outobj);
+    if (requiredsize > oldsize) {
 	/* remember old output position */
 	int outpos = *outp-PyUnicode_AS_UNICODE(*outobj);
 	/* exponentially overallocate to minimize reallocations */
-	if (requiredsize < 2 * *outsize)
-	    requiredsize = 2 * *outsize;
+	if (requiredsize < 2 * oldsize)
+	    requiredsize = 2 * oldsize;
 	if (_PyUnicode_Resize(outobj, requiredsize) < 0)
 	    return -1;
 	*outp = PyUnicode_AS_UNICODE(*outobj) + outpos;
-	*outsize = requiredsize;
     }
     return 0;
 }
@@ -3245,14 +3245,15 @@ int charmaptranslate_makespace(PyObject **outobj, Py_UNICODE **outp, int *outsiz
    The called must decref result.
    Return 0 on success, -1 on error. */
 static
-int charmaptranslate_output(Py_UNICODE c, PyObject *mapping,
-    PyObject **outobj, int *outsize, Py_UNICODE **outp, PyObject **res)
+int charmaptranslate_output(const Py_UNICODE *startinp, const Py_UNICODE *curinp,
+    int insize, PyObject *mapping, PyObject **outobj, Py_UNICODE **outp,
+    PyObject **res)
 {
-    if (charmaptranslate_lookup(c, mapping, res))
+    if (charmaptranslate_lookup(*curinp, mapping, res))
 	return -1;
     if (*res==NULL) {
 	/* not found => default to 1:1 mapping */
-	*(*outp)++ = (Py_UNICODE)c;
+	*(*outp)++ = *curinp;
     }
     else if (*res==Py_None)
 	;
@@ -3268,8 +3269,10 @@ int charmaptranslate_output(Py_UNICODE c, PyObject *mapping,
 	}
 	else if (repsize!=0) {
 	    /* more than one character */
-	    int requiredsize = *outsize + repsize - 1;
-	    if (charmaptranslate_makespace(outobj, outp, outsize, requiredsize))
+	    int requiredsize = (*outp-PyUnicode_AS_UNICODE(*outobj)) +
+		(insize - (*curinp-*startinp)) +
+		repsize - 1;
+	    if (charmaptranslate_makespace(outobj, outp, requiredsize))
 		return -1;
 	    memcpy(*outp, PyUnicode_AS_UNICODE(*res), sizeof(Py_UNICODE)*repsize);
 	    *outp += repsize;
@@ -3294,7 +3297,6 @@ PyObject *PyUnicode_TranslateCharmap(const Py_UNICODE *p,
     Py_UNICODE *str;
     /* current output position */
     int respos = 0;
-    int ressize;
     char *reason = "character maps to <undefined>";
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
@@ -3312,16 +3314,15 @@ PyObject *PyUnicode_TranslateCharmap(const Py_UNICODE *p,
        replacements, if we need more, we'll resize */
     res = PyUnicode_FromUnicode(NULL, size);
     if (res == NULL)
-        goto onError;
+	goto onError;
     if (size == 0)
 	return res;
     str = PyUnicode_AS_UNICODE(res);
-    ressize = size;
 
     while (p<endp) {
 	/* try to encode it */
 	PyObject *x = NULL;
-	if (charmaptranslate_output(*p, mapping, &res, &ressize, &str, &x)) {
+	if (charmaptranslate_output(startp, p, size, mapping, &res, &str, &x)) {
 	    Py_XDECREF(x);
 	    goto onError;
 	}
@@ -3340,7 +3341,7 @@ PyObject *PyUnicode_TranslateCharmap(const Py_UNICODE *p,
 
 	    /* find all untranslatable characters */
 	    while (collend < endp) {
-	    	if (charmaptranslate_lookup(*collend, mapping, &x))
+		if (charmaptranslate_lookup(*collend, mapping, &x))
 		    goto onError;
 		Py_XDECREF(x);
 		if (x!=Py_None)
@@ -3379,7 +3380,7 @@ PyObject *PyUnicode_TranslateCharmap(const Py_UNICODE *p,
 			char buffer[2+29+1+1];
 			char *cp;
 			sprintf(buffer, "&#%d;", (int)*p);
-			if (charmaptranslate_makespace(&res, &str, &ressize,
+			if (charmaptranslate_makespace(&res, &str,
 			    (str-PyUnicode_AS_UNICODE(res))+strlen(buffer)+(endp-collend)))
 			    goto onError;
 			for (cp = buffer; *cp; ++cp)
@@ -3395,7 +3396,7 @@ PyObject *PyUnicode_TranslateCharmap(const Py_UNICODE *p,
 			goto onError;
 		    /* generate replacement  */
 		    repsize = PyUnicode_GET_SIZE(repunicode);
-		    if (charmaptranslate_makespace(&res, &str, &ressize,
+		    if (charmaptranslate_makespace(&res, &str,
 			(str-PyUnicode_AS_UNICODE(res))+repsize+(endp-collend))) {
 			Py_DECREF(repunicode);
 			goto onError;
@@ -3409,7 +3410,7 @@ PyObject *PyUnicode_TranslateCharmap(const Py_UNICODE *p,
     }
     /* Resize if we allocated to much */
     respos = str-PyUnicode_AS_UNICODE(res);
-    if (respos<ressize) {
+    if (respos<PyUnicode_GET_SIZE(res)) {
 	if (_PyUnicode_Resize(&res, respos) < 0)
 	    goto onError;
     }
