@@ -66,6 +66,10 @@ Library
   + A new module method csv.field_size_limit() has been added that sets
     the parser field size limit (returning the former limit). The initial
     limit is 128kB.
+  + A line_num attribute has been added to the reader object, which tracks
+    the number of lines read from the source iterator. This is not
+    the same as the number of records returned, as records can span
+    multiple lines.
   + reader and writer objects were not being registered with the cyclic-GC.
     This has been fixed.
 

@@ -242,7 +242,7 @@ class Test_Csv(unittest.TestCase):
         self._read_test(['1,",3,",5'], [['1', '"', '3', '"', '5']],
                         quoting=csv.QUOTE_NONE, escapechar='\\')
         # will this fail where locale uses comma for decimals?
-        self._read_test([',3,"5",7.3'], [['', 3, '5', 7.3]],
+        self._read_test([',3,"5",7.3, 9'], [['', 3, '5', 7.3, 9]],
                         quoting=csv.QUOTE_NONNUMERIC)
         self.assertRaises(ValueError, self._read_test, 
                           ['abc,3'], [[]],
@@ -266,6 +266,18 @@ class Test_Csv(unittest.TestCase):
             self.assertRaises(TypeError, csv.field_size_limit, 1, None)
         finally:
             csv.field_size_limit(limit)
+
+    def test_read_linenum(self):
+        r = csv.reader(['line,1', 'line,2', 'line,3'])
+        self.assertEqual(r.line_num, 0)
+        r.next()
+        self.assertEqual(r.line_num, 1)
+        r.next()
+        self.assertEqual(r.line_num, 2)
+        r.next()
+        self.assertEqual(r.line_num, 3)
+        self.assertRaises(StopIteration, r.next)
+        self.assertEqual(r.line_num, 3)
 
 class TestDialectRegistry(unittest.TestCase):
     def test_registry_badargs(self):
