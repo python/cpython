@@ -31,10 +31,6 @@ PyExc_TypeError
 PyExc_ValueError
 PyExc_ZeroDivisionError
 PyExc_MemoryErrorInst
-_PyBuiltin_Fini_2
-_PyBuiltin_Fini_1
-_PyBuiltin_Init_2
-_PyBuiltin_Init_1
 PyEval_CallObjectWithKeywords
 PyEval_CallObject
 Py_FlushLine
