@@ -995,7 +995,7 @@ and no way to retrieve the application's exit status.  The \var{path}
 parameter is relative to the current directory.  If you want to use an
 absolute path, make sure the first character is not a slash
 (\character{/}); the underlying Win32 \cfunction{ShellExecute()}
-function doesn't work it is.  Use the \function{os.path.normpath()}
+function doesn't work if it is.  Use the \function{os.path.normpath()}
 function to ensure that the path is properly encoded for Win32.
 Availability: Windows.
 \versionadded{2.0}
