@@ -120,18 +120,12 @@ logreader_close(LogReaderObject *self, PyObject *args)
     return result;
 }
 
-#if Py_TPFLAGS_HAVE_ITER
-/* This is only used if the interpreter has iterator support; the
- * iternext handler is also used as a helper for other functions, so
- * does not need to be included in this conditional section.
- */
 static PyObject *
 logreader_tp_iter(LogReaderObject *self)
 {
     Py_INCREF(self);
     return (PyObject *) self;
 }
-#endif
 
 
 /* Log File Format
@@ -518,27 +512,6 @@ logreader_sq_item(LogReaderObject *self, int index)
     if (result == NULL && !PyErr_Occurred()) {
         PyErr_SetString(PyExc_IndexError, "no more events in log");
         return NULL;
-    }
-    return result;
-}
-
-PyDoc_STRVAR(next__doc__,
-"next() -> event-info\n"
-"Return the next event record from the log file.");
-
-static PyObject *
-logreader_next(LogReaderObject *self, PyObject *args)
-{
-    PyObject *result = NULL;
-
-    if (PyArg_ParseTuple(args, ":next")) {
-        result = logreader_tp_iternext(self);
-        /* XXX return None if there's nothing left */
-        /* tp_iternext does the right thing, though */
-        if (result == NULL && !PyErr_Occurred()) {
-            result = Py_None;
-            Py_INCREF(result);
-        }
     }
     return result;
 }
@@ -1181,10 +1154,6 @@ profiler_dealloc(ProfilerObject *self)
     PyObject_Del((PyObject *)self);
 }
 
-/* Always use METH_VARARGS even though some of these could be METH_NOARGS;
- * this allows us to maintain compatibility with Python versions < 2.2
- * more easily, requiring only the changes to the dispatcher to be made.
- */
 static PyMethodDef profiler_methods[] = {
     {"addinfo", (PyCFunction)profiler_addinfo, METH_VARARGS, addinfo__doc__},
     {"close",   (PyCFunction)profiler_close,   METH_VARARGS, close__doc__},
@@ -1195,11 +1164,7 @@ static PyMethodDef profiler_methods[] = {
     {NULL, NULL}
 };
 
-/* Use a table even though there's only one "simple" member; this allows
- * __members__ and therefore dir() to work.
- */
-static struct memberlist profiler_members[] = {
-    {"closed",       T_INT,  -1, READONLY},
+static PyMemberDef profiler_members[] = {
     {"frametimings", T_LONG, offsetof(ProfilerObject, linetimings), READONLY},
     {"lineevents",   T_LONG, offsetof(ProfilerObject, lineevents), READONLY},
     {"linetimings",  T_LONG, offsetof(ProfilerObject, linetimings), READONLY},
@@ -1207,22 +1172,17 @@ static struct memberlist profiler_members[] = {
 };
 
 static PyObject *
-profiler_getattr(ProfilerObject *self, char *name)
+profiler_get_closed(ProfilerObject *self, void *closure)
 {
-    PyObject *result;
-    if (strcmp(name, "closed") == 0) {
-        result = (self->logfp == NULL) ? Py_True : Py_False;
-        Py_INCREF(result);
-    }
-    else {
-        result = PyMember_Get((char *)self, profiler_members, name);
-        if (result == NULL) {
-            PyErr_Clear();
-            result = Py_FindMethod(profiler_methods, (PyObject *)self, name);
-        }
-    }
+    PyObject *result = (self->logfp == NULL) ? Py_True : Py_False;
+    Py_INCREF(result);
     return result;
 }
+
+static PyGetSetDef profiler_getsets[] = {
+    {"closed", (getter)profiler_get_closed, NULL},
+    {NULL}
+};
 
 
 PyDoc_STRVAR(profiler_object__doc__,
@@ -1251,7 +1211,7 @@ static PyTypeObject ProfilerType = {
     0,					/* tp_itemsize		*/
     (destructor)profiler_dealloc,	/* tp_dealloc		*/
     0,					/* tp_print		*/
-    (getattrfunc)profiler_getattr,	/* tp_getattr		*/
+    0,					/* tp_getattr		*/
     0,					/* tp_setattr		*/
     0,					/* tp_compare		*/
     0,					/* tp_repr		*/
@@ -1261,31 +1221,37 @@ static PyTypeObject ProfilerType = {
     0,					/* tp_hash		*/
     0,					/* tp_call		*/
     0,					/* tp_str		*/
-    0,					/* tp_getattro		*/
+    PyObject_GenericGetAttr,		/* tp_getattro		*/
     0,					/* tp_setattro		*/
     0,					/* tp_as_buffer		*/
     Py_TPFLAGS_DEFAULT,			/* tp_flags		*/
     profiler_object__doc__,		/* tp_doc		*/
+    0,					/* tp_traverse		*/
+    0,					/* tp_clear		*/
+    0,					/* tp_richcompare	*/
+    0,					/* tp_weaklistoffset	*/
+    0,					/* tp_iter		*/
+    0,					/* tp_iternext		*/
+    profiler_methods,			/* tp_methods		*/
+    profiler_members,			/* tp_members		*/
+    profiler_getsets,			/* tp_getset		*/
+    0,					/* tp_base		*/
+    0,					/* tp_dict		*/
+    0,					/* tp_descr_get		*/
+    0,					/* tp_descr_set		*/
 };
 
 
 static PyMethodDef logreader_methods[] = {
     {"close",   (PyCFunction)logreader_close,  METH_VARARGS,
      logreader_close__doc__},
-    {"next",    (PyCFunction)logreader_next,   METH_VARARGS,
-     next__doc__},
     {NULL, NULL}
 };
 
-static PyObject *
-logreader_getattr(LogReaderObject *self, char *name)
-{
-    if (strcmp(name, "info") == 0) {
-        Py_INCREF(self->info);
-        return self->info;
-    }
-    return Py_FindMethod(logreader_methods, (PyObject *)self, name);
-}
+static PyMemberDef logreader_members[] = {
+    {"info", T_OBJECT, offsetof(LogReaderObject, info), RO},
+    {NULL}
+};
 
 
 PyDoc_STRVAR(logreader__doc__,
@@ -1313,7 +1279,7 @@ static PyTypeObject LogReaderType = {
     0,					/* tp_itemsize		*/
     (destructor)logreader_dealloc,	/* tp_dealloc		*/
     0,					/* tp_print		*/
-    (getattrfunc)logreader_getattr,	/* tp_getattr		*/
+    0,					/* tp_getattr		*/
     0,					/* tp_setattr		*/
     0,					/* tp_compare		*/
     0,					/* tp_repr		*/
@@ -1323,19 +1289,24 @@ static PyTypeObject LogReaderType = {
     0,					/* tp_hash		*/
     0,					/* tp_call		*/
     0,					/* tp_str		*/
-    0,					/* tp_getattro		*/
+    PyObject_GenericGetAttr,		/* tp_getattro		*/
     0,					/* tp_setattro		*/
     0,					/* tp_as_buffer		*/
     Py_TPFLAGS_DEFAULT,			/* tp_flags		*/
     logreader__doc__,			/* tp_doc		*/
-#if Py_TPFLAGS_HAVE_ITER
     0,					/* tp_traverse		*/
     0,					/* tp_clear		*/
     0,					/* tp_richcompare	*/
     0,					/* tp_weaklistoffset	*/
     (getiterfunc)logreader_tp_iter,	/* tp_iter		*/
     (iternextfunc)logreader_tp_iternext,/* tp_iternext		*/
-#endif
+    logreader_methods,			/* tp_methods		*/
+    logreader_members,			/* tp_members		*/
+    0,					/* tp_getset		*/
+    0,					/* tp_base		*/
+    0,					/* tp_dict		*/
+    0,					/* tp_descr_get		*/
+    0,					/* tp_descr_set		*/
 };
 
 static PyObject *
