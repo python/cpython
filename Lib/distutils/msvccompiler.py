@@ -17,6 +17,35 @@ from distutils.ccompiler import \
      CCompiler, gen_preprocess_options, gen_lib_options
 
 
+_can_read_reg = 0
+try:
+    import winreg
+    _HKEY_CLASSES_ROOT = winreg.HKEY_CLASSES_ROOT
+    _HKEY_LOCAL_MACHINE = winreg.HKEY_LOCAL_MACHINE
+    _HKEY_CURRENT_USER = winreg.HKEY_CURRENT_USER
+    _HKEY_USERS = winreg.HKEY_USERS
+    _RegOpenKeyEx = winreg.OpenKeyEx
+    _RegEnumKey = winreg.EnumKey
+    _RegEnumValue = winreg.EnumValue
+    _RegError = winreg.error
+    _can_read_reg = 1
+except ImportError:
+    try:
+        import win32api
+        import win32con
+        _HKEY_CLASSES_ROOT = win32con.HKEY_CLASSES_ROOT
+        _HKEY_LOCAL_MACHINE = win32con.HKEY_LOCAL_MACHINE
+        _HKEY_CURRENT_USER = win32con.HKEY_CURRENT_USER
+        _HKEY_USERS = win32con.HKEY_USERS
+        _RegOpenKeyEx = win32api.RegOpenKeyEx
+        _RegEnumKey = win32api.RegEnumKey
+        _RegEnumValue = win32api.RegEnumValue
+        _RegError = win32api.error
+        _can_read_reg = 1
+    except ImportError:
+        pass
+    
+
 def get_devstudio_versions ():
     """Get list of devstudio versions from the Windows registry.  Return a
        list of strings containing version numbers; the list will be
@@ -24,30 +53,27 @@ def get_devstudio_versions ():
        a registry-access module) or the appropriate registry keys weren't
        found."""
 
-    try:
-        import win32api
-        import win32con
-    except ImportError:
+    if not _can_read_reg:
         return []
 
     K = 'Software\\Microsoft\\Devstudio'
     L = []
-    for base in (win32con.HKEY_CLASSES_ROOT,
-                 win32con.HKEY_LOCAL_MACHINE,
-                 win32con.HKEY_CURRENT_USER,
-                 win32con.HKEY_USERS):
+    for base in (_HKEY_CLASSES_ROOT,
+                 _HKEY_LOCAL_MACHINE,
+                 _HKEY_CURRENT_USER,
+                 _HKEY_USERS):
         try:
-            k = win32api.RegOpenKeyEx(base,K)
+            k = _RegOpenKeyEx(base,K)
             i = 0
             while 1:
                 try:
-                    p = win32api.RegEnumKey(k,i)
+                    p = _RegEnumKey(k,i)
                     if p[0] in '123456789' and p not in L:
                         L.append(p)
-                except win32api.error:
+                except _RegError:
                     break
                 i = i + 1
-        except win32api.error:
+        except _RegError:
             pass
     L.sort()
     L.reverse()
@@ -61,10 +87,7 @@ def get_msvc_paths (path, version='6.0', platform='x86'):
        a list of strings; will be empty list if unable to access the
        registry or appropriate registry keys not found."""
        
-    try:
-        import win32api
-        import win32con
-    except ImportError:
+    if not _can_read_reg:
         return []
 
     L = []
@@ -74,16 +97,16 @@ def get_msvc_paths (path, version='6.0', platform='x86'):
     K = ('Software\\Microsoft\\Devstudio\\%s\\' +
          'Build System\\Components\\Platforms\\Win32 (%s)\\Directories') % \
         (version,platform)
-    for base in (win32con.HKEY_CLASSES_ROOT,
-                 win32con.HKEY_LOCAL_MACHINE,
-                 win32con.HKEY_CURRENT_USER,
-                 win32con.HKEY_USERS):
+    for base in (_HKEY_CLASSES_ROOT,
+                 _HKEY_LOCAL_MACHINE,
+                 _HKEY_CURRENT_USER,
+                 _HKEY_USERS):
         try:
-            k = win32api.RegOpenKeyEx(base,K)
+            k = _RegOpenKeyEx(base,K)
             i = 0
             while 1:
                 try:
-                    (p,v,t) = win32api.RegEnumValue(k,i)
+                    (p,v,t) = _RegEnumValue(k,i)
                     if string.upper(p) == path:
                         V = string.split(v,';')
                         for v in V:
@@ -91,9 +114,9 @@ def get_msvc_paths (path, version='6.0', platform='x86'):
                             L.append(v)
                         break
                     i = i + 1
-                except win32api.error:
+                except _RegError:
                     break
-        except win32api.error:
+        except _RegError:
             pass
     return L
 
