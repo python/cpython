@@ -14,7 +14,8 @@ whether objects should also be accessible as sequences, etc and press
 'generate code'. It will write a complete skeleton module for you.
 
 Usage when you don't have tk is slightly more difficult. Look at
-EXAMPLE.py for some details.
+EXAMPLE.py for some details (to run, use "python EXAMPLE.py").  Don't
+bother with EXAMPLE.py if you have Tkinter!!!
 
 Oh yeah: you'll probably want to change Templates/copyright, or all
 your code ends up as being copyrighted to CWI:-)
