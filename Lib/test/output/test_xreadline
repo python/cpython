@@ -1,4 +1,4 @@
-test_xrl
-AttributeError
-TypeError
-RuntimeError xreadlines object accessed out of order
+test_xreadline
+AttributeError (expected)
+TypeError (expected)
+RuntimeError (expected): xreadlines object accessed out of order

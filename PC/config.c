@@ -42,7 +42,9 @@ extern void initmsvcrt(void);
 extern void init_locale(void);
 #endif
 extern void init_codecs(void);
+extern void initxreadlines(void);
 
+/* XXX tim: what's the purpose of ADDMODULE MARKER? */
 /* -- ADDMODULE MARKER 1 -- */
 
 extern void PyMarshal_Init(void);
@@ -92,7 +94,9 @@ struct _inittab _PyImport_Inittab[] = {
 #endif
 
         {"_codecs", init_codecs},
+	{"xreadlines", initxreadlines},
 
+/* XXX tim: what's the purpose of ADDMODULE MARKER? */
 /* -- ADDMODULE MARKER 2 -- */
 
         /* This module "lives in" with marshal.c */
