@@ -313,7 +313,7 @@ libinstall:	python $(srcdir)/Lib/$(MACHDEP)
 # Create the MACHDEP source directory, if one wasn't distributed..
 $(srcdir)/Lib/$(MACHDEP):
 		mkdir $(srcdir)/Lib/$(MACHDEP)
-		cp $(srcdir)/Lib/generic/regen $(srcdir)/Lib/$(MACHDEP)/regen
+		cp $(srcdir)/Lib/plat-generic/regen $(srcdir)/Lib/$(MACHDEP)/regen
 		export PATH; PATH="`pwd`:$$PATH"; \
 		export PYTHONPATH; PYTHONPATH="`pwd`/Lib"; \
 		cd $(srcdir)/Lib/$(MACHDEP); ./regen
