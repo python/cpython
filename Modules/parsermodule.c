@@ -1039,6 +1039,14 @@ validate_testlist(node *tree)
 }
 
 
+static int
+validate_testlist_safe(node *tree)
+{
+    return (validate_repeating_list(tree, testlist_safe,
+                                    validate_test, "testlist_safe"));
+}
+
+
 /* '*' NAME [',' '**' NAME] | '**' NAME
  */
 static int
@@ -1218,7 +1226,7 @@ validate_list_for(node *tree)
         res = (validate_name(CHILD(tree, 0), "for")
                && validate_exprlist(CHILD(tree, 1))
                && validate_name(CHILD(tree, 2), "in")
-               && validate_testlist(CHILD(tree, 3)));
+               && validate_testlist_safe(CHILD(tree, 3)));
 
     return res;
 }
