@@ -134,7 +134,7 @@ reg_search(re, args)
 		err_setstr(RegexError, "search offset out of range");
 		return NULL;
 	}
-	range = size - offset + 1;
+	range = size - offset;
 	re->re_regs_valid = 0;
 	result = re_search(&re->re_patbuf, buffer, size, offset, range,
 			   &re->re_regs);
