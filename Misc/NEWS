@@ -3,19 +3,37 @@ What's new in this release?
 
 Below is a partial list of changes.  This list is much more detailed than 
 previous; however it is still not complete.  I did go through my CVS logs 
-but ran out of time.  I believe that at least all major changes are 
-actually noted here.  Note that I have not placed 
+but ran out of time.  Some changes made beteen Oct 1996 and April 1997
+have not yet been noted.
 
 
 Miscellaneous
 -------------
 
-- The default module search path is now much saner.  Both on Unix and 
-Windows, it is essentially derived from the path to the executable which 
-can be overridden by setting the environment variable $PYTHONHOME).  The 
-value of $PYTHONPATH on Windows is now inserted in front of the default 
-path, like in Unix (instead of overriding the default path).  On Windows, 
-the directory containing the executable is added to the end of the path.
+- The default module search path is now much saner.  Both on Unix and
+Windows, it is essentially derived from the path to the executable
+(which can be overridden by setting the environment variable
+$PYTHONHOME).  The value of $PYTHONPATH on Windows is now inserted in
+front of the default path, like in Unix (instead of overriding the
+default path).  On Windows, the directory containing the executable is
+added to the end of the path.
+
+- On Unix, when using sys.argv[0] to insert the script directory in
+front of sys.path, expand a symbolic link.  You can now install a
+program in a private directory and have a symbolic link to it in a
+public bin directory, and it will put the private directory in the
+module search path.  Note that the symlink is expanded in sys.path[0]
+but not in sys.argv[0], so you can still tell the name by which you
+were invoked.
+
+- It is now recommended to use ``#!/usr/bin/env python'' instead of
+``#!/usr/local/bin/python'' at the start of executable scripts, except
+for CGI scripts.  It has been determined that the use of /usr/bin/env
+is more portable than that of /usr/local/bin/python -- scripts almost
+never have to be edited when the Python interpreter lives in a
+non-standard place.  Note that this doesn't work for CGI scripts since
+the python executable often doesn't live in the HTTP server's default
+search path.
 
 - The silly -s command line option and the corresponding
 PYTHONSUPPRESS environment variable (and the Py_SuppressPrint global
@@ -30,6 +48,20 @@ when using the debugger or profiler (reported by Just van Rossum).
 The simplest example is ``def f((a,b),(c,d)): print a,b,c,d''; this
 would print the wrong value when run under the debugger or profiler.
 
+- The sort() methods for lists no longer uses the C library qsort(); I
+wrote my own quicksort implementation, with help from Tim Peters.
+This solves a bug in dictionary comparisons on some Solaris versions
+when Python is built with threads, and makes sorting lists even
+faster.
+
+- The hacks that the dictionary implementation used to speed up
+repeated lookups of the same C string were removed; these were a
+source of subtle problems and don't seem to serve much of a purpose
+any longer.
+
+- All traces of support for the long dead access statement have been
+removed from the sources.
+
 - Plugged the two-byte memory leak in the tokenizer when reading an
 interactive EOF.
 
@@ -37,7 +69,8 @@ interactive EOF.
 Performance
 -----------
 
-- It's much faster (almost twice for pystone.py -- see Tools/scripts).
+- It's much faster (almost twice for pystone.py -- see
+Tools/scripts).  See the entry on string interning below.
 
 - Some speedup by using separate free lists for method objects (both
 the C and the Python variety) and for floating point numbers.
@@ -51,6 +84,12 @@ types (e.g.  i+i, i-i, and list[i]).  Fredrik Lundh.
 
 - Small speedup by reordering the method tables of some common
 objects (e.g. list.append is now first).
+
+- Big optimization to the read() method of file objects.  A read()
+without arguments now attempts to use fstat to allocate a buffer of
+the right size; for pipes and sockets, it will fall back to doubling
+the buffer size.  While that the improvement is real on all systems,
+it is most dramatic on Windows.
 
 
 Documentation
@@ -96,24 +135,33 @@ consisting of a backslash and a quote.  (Raw strings are also
 affectionately known as Robin strings, after their inventor, Robin 
 Friedrich.)
 
-- There's a simple assert statement, and a new exception AssertionError.  
-For example, ``assert foo > 0'' is equivalent to ``if not foo > 0: raise 
-AssertionError''.  Sorry, the text of the asserted condition is not 
-available; it would be too generate code for this.  However, the text is 
-displayed as part of the traceback!  There's also a -O option to the 
-interpreter that removes SET_LINENO instructions, assert statements; it 
-uses and produces .pyo files instead of .pyc files.  In the future it 
-should be possible to write external bytecode optimizers that create better 
-optimized .pyo files.  Without -O, the assert statement actually generates 
-code that first checks __debug__; if this variable is false, the assertion 
-is not checked.  __debug__ is a built-in variable whose value is 
-initialized to track the -O flag (it's true iff -O is not specified).  With 
--O, no code is generated for assert statements, nor for code of the form 
-``if __debug__: <something>''.  Sorry, no further constant folding happens.
+- There's a simple assert statement, and a new exception
+AssertionError.  For example, ``assert foo > 0'' is equivalent to ``if
+not foo > 0: raise AssertionError''.  Sorry, the text of the asserted
+condition is not available; it would be too generate code for this.
+However, the text is displayed as part of the traceback!  There's also
+a -O option to the interpreter that removes SET_LINENO instructions,
+assert statements; it uses and produces .pyo files instead of .pyc
+files (the line numbers are still available in the .pyo file, as a
+separate table; but the removal of the SET_LINENO instructions means
+that the debugger can't set breakpoints on lines in -O mode).  In the
+future it should be possible to write external bytecode optimizers
+that create better optimized .pyo files.  Without -O, the assert
+statement actually generates code that first checks __debug__; if this
+variable is false, the assertion is not checked.  __debug__ is a
+built-in variable whose value is initialized to track the -O flag
+(it's true iff -O is not specified).  With -O, no code is generated
+for assert statements, nor for code of the form ``if __debug__:
+<something>''.  Sorry, no further constant folding happens.
 
 
 Changes to builtin features
 ---------------------------
+
+- There's a new exception FloatingPointError (used only by Lee Busby's
+patches to catch floating point exceptions, at the moment).
+
+- The obsolete exception ConflictError has been deleted.
 
 - There's a new function sys.exc_info() which returns the tuple 
 (sys.exc_type, sys.exc_value, sys.exc_traceback) in a thread-safe way.
@@ -153,14 +201,13 @@ dictionary d into this one, overriding existing keys.  BTW, the
 dictionary implementation file is now called dictobject.c rather than
 the confusing mappingobject.c.
 
-- The sort() methods for lists no longer uses the C library qsort(); I
-wrote my own quicksort implementation, with help from Tim Peters.
-This solves a bug in dictionary comparisons on some Solaris versions
-when Python is built with threads, and makes sorting lists even
-faster.
-
 - The intrinsic function dir() is much smarter; it looks in __dict__,
 __members__ and __methods__.
+
+- The intrinsic functions int(), long() and float() can now take a
+string argument and then do the same thing as string.atoi(),
+string.atol(), and string.atof().  No second 'base' argument is
+allowed, and complex() does not take a string (nobody cared enough).
 
 - When a module is deleted, its globals are now deleted in two phases.
 In the first phase, all variables whose name begins with exactly one
@@ -181,6 +228,12 @@ class.  Jim Fulton will love it -- it also works with instances of his
 "extension classes", since it is triggered by the presence of a
 __class__ attribute on the purported base class.
 
+- New optional parameter to the readlines() method of file objects.
+This indicates the number of bytes to read (the actual number of bytes
+read will be somewhat larger due to buffering reading until the end of
+the line).  Some optimizations have also been made to speed it up (but
+not as much as read()).
+
 
 New extension modules
 ---------------------
@@ -189,8 +242,9 @@ New extension modules
 Fulton and other folks at Digital Creations.  These are much more
 efficient than their Python counterparts StringIO.py and pickle.py,
 but don't support subclassing.  cPickle.c clocks up to 1000 times
-faster than pickle.py.  The pickle.py module has been updated to make
-it compatible with the new binary format that cPickle.c produces (by
+faster than pickle.py; cStringIO.c's improvement is less dramatic but
+still significant.  The pickle.py module has been updated to make it
+compatible with the new binary format that cPickle.c produces (by
 default it produces the old all-ASCII format compatible with the old
 pickle.py, still much faster than pickle.py; it can read both
 formats).  A new helper module, copy_reg.py, is provided to register
@@ -231,6 +285,10 @@ database is still open before making any new calls.
 - Various modules now export their type object: socket.SocketType,
 array.ArrayType.
 
+- The socket module's accept() method now returns unknown addresses as
+a tuple rather than raising an exception.  (This can happen in
+promiscuous mode.)  Theres' also a new function getprotobyname().
+
 - The pthread support for the thread module now works on most platforms.
 
 - STDWIN is now officially obsolete.  Support for it will eventually
@@ -238,6 +296,26 @@ be removed from the distribution.
 
 - The binascii extension module is now hopefully fully debugged.  (XXX
 Oops -- Fredril Lundh promised me a fix that I never received.)
+
+- audioop.c: added a ratecv method
+
+- posixmodule.c: now exports the O_* flags (O_APPEND etc.).  On
+Windows, also O_TEXT and O_BINARY.  The 'error' variable (the
+exception is raises) is renamed -- its string value is now "os.error",
+so newbies don't believe they have to import posix (or nt) to catch
+it when they see os.error reported as posix.error.
+
+- A new version of the al (audio library) module for SGI was
+contributed by Sjoerd Mullender.
+
+- The regex module has a new function get_syntax() which retrieves the
+syntax setting set by set_syntax().  The code was also sanitized,
+removing worries about unclean error handling.  See also below for its
+successor, re.py.
+
+- The "new" module (which creates new objects of various types) once
+again has a fully functioning new.function() method.  Dangerous as
+ever!
 
 
 New library modules
@@ -298,7 +376,8 @@ cgi scripts more easily outside an http server.  There's an optional
 limit to the size of uploads to POST (Skip Montanaro).  Added a
 'strict_parsing' option to all parsing functions (Jim Fulton).  The
 function parse_qs() now uses urllib.unquote() on the name as well as
-the value of fields (Clarence Gardner).
+the value of fields (Clarence Gardner).  The FieldStorage class now
+has a __len__() method.
 
 - httplib.py: the socket object is no longer closed; all HTTP/1.*
 versions are now treated the same; and it is now thread-safe (by not
@@ -310,7 +389,8 @@ using the regex module).
 access to the standard error stream and the process id of the
 subprocess possible.
 
-- Added timezone support to the rfc822.py module; also added
+- Added timezone support to the rfc822.py module, in the form of a
+getdate_tz() method and a parsedate_tz() function.  Also added
 recognition of some non-standard date formats, by Lars Wirzenius.
 
 - mhlib.py: various enhancements, including almost compatible parsing
@@ -325,16 +405,24 @@ Wirzenius.)  (Of course, you should be using cStringIO for performance.)
 - Improvements for whrandom.py by Tim Peters: use 32-bit arithmetic to
 speed it up, and replace 0 seed values by 1 to avoid degeneration.
 
-- Module ftplib.py: added support for parsing a .netrc file.  Fred
-Drake.
+- Module ftplib.py: added support for parsing a .netrc file (Fred
+Drake).  Also added an ntransfercmd() method to the FTP class, which
+allows access to the expected size of a transfer when available, and a
+parse150() function to the module which parses the corresponding 150
+response.
 
 - urllib.py: the ftp cache is now limited to 10 entries.  Added
 quote_plus() method which is like qupte() but also replaces spaces
 with '+', for encoding CGI form arguments.  Catch all errors from the
 ftp module.  HTTP requests now add the Host: header line.  The proxy
-variable names are now mapped to lower case, for Windows.
+variable names are now mapped to lower case, for Windows.  The
+spliturl() function no longer erroneously throws away all data past
+the first newline.  The basejoin() function now intereprets "../"
+correctly.
 
-- shelve.py: use cPickle and cStringIO when available.
+- shelve.py: use cPickle and cStringIO when available.  Also added
+a sync() method, which calls the database's sync() method if there is
+one.
 
 - The mimetools.py module now uses the available Python modules for
 decoding quoted-printable, uuencode and base64 formats, rather than
@@ -355,6 +443,35 @@ is set to 20 (not 2000 as it was in earlier alphas).
 - Sjoerd Mullender's mimify.py module now supports base64 encoding and 
 includes functions to handle the funny encoding you sometimes see in mail 
 headers.  It is now documented.
+
+- mailbox.py: Added BabylMailbox.  Improved the way the mailbox is
+gotten from the environment.
+
+- Many more modules now correctly open files in binary mode when this
+is necessary on non-Unix platforms.
+
+- The copying functions in the undocumented module shutil.py are
+smarter.
+
+- The Writer classes in the formatter.py module now have a flush()
+method.
+
+- The Python bytecode disassembler module, dis.py, has been enhanced
+quite a bit.  There's now one main function, dis.dis(), which takes
+almost any kind of object (function, module, class, instance, method,
+code object) and disassembles it; without arguments it disassembles
+the last frame of the last traceback.  The other functions have
+changed slightly, too.
+
+- The imghdr.py module recognizes new image types: BMP, PNG.
+
+- The string module has a new function replace(str, old, new,
+[maxsplit]) which does substring replacements.  It is actually
+implemented in C in the strop module.  The functions [r]find() an
+[r]index() have an optional 4th argument indicating the end of the
+substring to search, alsoo implemented by their strop counterparts.
+(Remember, never import strop -- import string uses strop when
+available with zero overhead.)
 
 
 Changes to the build process
@@ -408,9 +525,17 @@ of always adding one byte to all malloc() arguments on most platforms.
 Change to the Python/C API
 --------------------------
 
-- I've completed the Grand Renaming, with the help of Roger Masse and Barry 
-Warsaw.  This makes reading or debugging the code much easier.  Many other 
-unrelated code reorganizations have also been carried out.
+- I've completed the Grand Renaming, with the help of Roger Masse and
+Barry Warsaw.  This makes reading or debugging the code much easier.
+Many other unrelated code reorganizations have also been carried out.
+The allobjects.h header file is gone; instead, you would have to
+include Python.h followed by rename2.h.  But you're better off running
+Tools/scripts/fixcid.py -s Misc/RENAME on your source, so you can omit
+the rename2.h; it will disappear in the next release.
+
+- The API functions in the file cgensupport.c are no longer
+supported.  This file has been moved to Modules and is only ever
+compiled when the SGI specific 'gl' module is built.
 
 - PyObject_Compare() can now raise an exception.  Check with
 PyErr_Occurred().  The comparison function in an object type may also
@@ -435,10 +560,10 @@ The old, half-hearted Py_Cleanup() routine is gone.  Use of Py_Exit()
 is deprecated (it is nothing more than Py_Finalize() followed by
 exit()).
 
-- There are no known memory leaks.  While Py_Finalize() doesn't free
-*all* allocated memory (some of it is hard to track down), repeated
-calls to Py_Finalize() and Py_Initialize() do not create unaccessible
-heap blocks.
+- There are no known memory leaks left.  While Py_Finalize() doesn't
+free *all* allocated memory (some of it is hard to track down),
+repeated calls to Py_Finalize() and Py_Initialize() do not create
+unaccessible heap blocks.
 
 - There is now explicit per-thread state.  (Inspired by, but not the
 same as, Greg Stein's free threading patches.)
@@ -477,14 +602,28 @@ PyErr_Occurred() to check (there is *no* special return value).
 instead of clearing exceptions.  This fixes an obscure bug where using
 these would clear a pending exception, discovered by Just van Rossum.
 
+- PyArg_GetInt() is gone.
+
+- It's no longer necessary to include graminit.h when calling one of
+the extended parser API functions.  The three public grammar start
+symbols are now in Python.h as Py_single_input, Py_file_input, and
+Py_eval_input.
+
 
 Tkinter
 -------
 
-- New standard dialog modules for Tkinter: tkColorChooser.py,
-tkCommonDialog.py, tkMessageBox.py, tkFileDialog.py, tkSimpleDialog.py
-These interface with the new Tk dialog scripts.  Contributed by
-Fredrik Lundh.
+- On popular demand, _tkinter once again installs a hook for readline
+that processes certain Tk events while waiting for the user to type
+(using PyOS_InputHook).
+
+- A patch by Craig McPheeters plugs the most obnoxious memory leaks,
+caused by command definitions referencing widget objects beyond their
+lifetime.
+
+- New standard dialog modules: tkColorChooser.py, tkCommonDialog.py,
+tkMessageBox.py, tkFileDialog.py, tkSimpleDialog.py These interface
+with the new Tk dialog scripts.  Contributed by Fredrik Lundh.
 
 - Tkinter.py: when the first Tk object is destroyed, it sets the
 hiddel global _default_root to None, so that when another Tk object is
@@ -541,9 +680,11 @@ extension makefile (Misc/Makefile.pre.in).
 
 - Tools/scripts/h2py.py now supports C++ comments.
 
-- The pystone.py script is upgraded to version 1.1; there was a bug in
-version 1.0 (distributed with Python 1.4) that leaked memory.  Also,
-in 1.1, the LOOPS variable is incremented to 10000.
+- Tools/scripts/pystone.py script is upgraded to version 1.1; there
+was a bug in version 1.0 (distributed with Python 1.4) that leaked
+memory.  Also, in 1.1, the LOOPS variable is incremented to 10000.
+
+- Demo/classes/Rat.py completely rewritten by Sjoerd Mullender.
 
 
 Windows (NT and 95)
@@ -576,82 +717,64 @@ expansion in expanduser().
 
 - The freeze tool now works on Windows.
 
-- See also the Tkinter category for a note on _tkinter.createfilehandler().
+- See also the Tkinter category for a sad note on
+_tkinter.createfilehandler().
+
+- The truncate() method for file objects now works on Windows.
+
+- Py_Initialize() is no longer called when the DLL is loaded.  You
+must call it yourself.  (And you can't call it twice -- it's a fatal
+error to call it when Python is already initialized.)
 
 
 Mac
 ---
 
-- As always, the Macintosh port was done by Jack Jansen.  See his
-separate announcement for the Mac specific source code and the binary
-distribution(s).
+- As always, the Macintosh port will be done by Jack Jansen.  He will
+make a separate announcement for the Mac specific source code and the
+binary distribution(s) when these are ready.
 
 
-More
-----
+Fixed after 1.5a3 was released
+------------------------------
 
-The following items should be expanded upon:
+The following changes have been made to the source base after the
+release of 1.5a3.  These need to be merged into their respective
+categories for the next release.
 
-- formatter.*Writer.flush
+- regrtest.py is slightly more verbose, printing the name of each test
+as it runs them.
 
-- dis.{cmp_op, hascompare}
+- fileobject.c: ftell() on Linux discards all buffered data; changed
+read() code to use lseek() instead
 
-- ftplib: FTP.ntransfercmd, parse150
+- configure.in, configure, importdl.c: NeXT sharedlib fixes
 
-- imghdr recognizes bmp, png
+- tupleobject.c: PyTuple_SetItem asserts refcnt==1
 
-- mimify base64 support
+- resource.c: Change how and when to declare getpagesize() and
+getrlimit()
 
-- new.function revived
+- mpzmodule.c: CPP hack to support GMP 1.x for real
 
-- cgi.FieldStorage: __len__ added
+- importdl.c, configure*: set sharedlib extensions properly for NeXT
 
-New exceptions:
-	FloatingPointError
-Deleted exception:
-	ConflictError
+- configure*, Makefile.in, Modules/Makefile.pre.in: AIX shared libraries
+fixed; moved addition of PURIFY to LINKCC to configure
 
->    audioop.ratecv
+- reopmodule.c, regexmodule.c, regexpr.c, zlibmodule.c: casts to shut
+up Mac compiler
 
->     posix.O_APPEND
->     posix.O_CREAT
->     posix.O_DSYNC
->     posix.O_EXCL
->     posix.O_NDELAY
->     posix.O_NOCTTY
->     posix.O_NONBLOCK
->     posix.O_RDONLY
->     posix.O_RDWR
->     posix.O_RSYNC
->     posix.O_SYNC
->     posix.O_TRUNC
->     posix.O_WRONLY
-	posix.O_TEXT
-	posix.O_BINARY
-(also in os, of course)
+- _tkinter.c: removed buggy mac #ifndef
 
->     regex.get_syntax
+- Doc: various Mac documentation changes, added docs for 'ic' module
 
->     socket.getprotobyname
+- PC/make_nt.in: deleted
 
->     strop.replace
-Also string.replace
+- test_time.py, test_strftime.py: tweaks to catch %Z
 
-- Jack's buffer interface!
-	- supported by regex module!
+- test_rotor.py: print b -> print `b`
 
-- posix.error, nt.error renamed to os.error
+- Tkinter.py: (tagOrId) -> (tagOrId,)
 
-- rfc822 getdate_tz and parsedate_tz
-
-- shelve.*.sync
-
-- shutil improved interface
-
-- socket.getprotobynameo
-
-- new al module for SGI
-
-Obsolete: cgensupport.[ch] are now in Modules and only linked with glmodule.c.
-
-- much faster file.read() and readlines() on windows
+- faqwiz.py: Recognize https:// as URL
