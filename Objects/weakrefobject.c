@@ -135,7 +135,7 @@ weakref_repr(PyWeakReference *self)
                 (long)(self));
     }
     else {
-        sprintf(buffer, "<weakref at %#lx; to '%s' at %#lx>",
+        sprintf(buffer, "<weakref at %#lx; to '%.50s' at %#lx>",
                 (long)(self), PyWeakref_GET_OBJECT(self)->ob_type->tp_name,
                 (long)(PyWeakref_GET_OBJECT(self)));
     }

@@ -232,7 +232,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 			if (import_python &&
 			    strcasecmp(buffer,import_python)) {
 				sprintf(buffer,
-					"Module use of %s conflicts "
+					"Module use of %.150s conflicts "
 					"with this version of Python.",
 					import_python);
 				PyErr_SetString(PyExc_ImportError,buffer);

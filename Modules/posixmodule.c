@@ -5787,7 +5787,7 @@ static int insertvalues(PyObject *d)
     APIRET    rc;
     ULONG     values[QSV_MAX+1];
     PyObject *v;
-    char     *ver, tmp[10];
+    char     *ver, tmp[50];
 
     Py_BEGIN_ALLOW_THREADS
     rc = DosQuerySysInfo(1, QSV_MAX, &values[1], sizeof(values));

@@ -36,7 +36,7 @@ sizeof_error(const char* fatname, const char* typename,
         int expected, int got)
 {
 	char buf[1024];
-	sprintf(buf, "%s #define == %d but sizeof(%s) == %d",
+	sprintf(buf, "%.200s #define == %d but sizeof(%.200s) == %d",
 		fatname, expected, typename, got);
 	PyErr_SetString(TestError, buf);
 	return (PyObject*)NULL;

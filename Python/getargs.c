@@ -1,11 +1,6 @@
 
 /* New getargs implementation */
 
-/* XXX There are several unchecked sprintf or strcat calls in this file.
-   XXX The only way these can become a danger is if some C code in the
-   XXX Python source (or in an extension) uses ridiculously long names
-   XXX or ridiculously deep nesting in format strings. */
-
 #include "Python.h"
 
 #include <ctype.h>
@@ -140,7 +135,7 @@ vgetargs1(PyObject *args, char *format, va_list *p_va, int compat)
 		if (max == 0) {
 			if (args == NULL)
 				return 1;
-			sprintf(msgbuf, "%s%s takes no arguments",
+			sprintf(msgbuf, "%.200s%s takes no arguments",
 				fname==NULL ? "function" : fname,
 				fname==NULL ? "" : "()");
 			PyErr_SetString(PyExc_TypeError, msgbuf);
@@ -149,7 +144,7 @@ vgetargs1(PyObject *args, char *format, va_list *p_va, int compat)
 		else if (min == 1 && max == 1) {
 			if (args == NULL) {
 				sprintf(msgbuf,
-					"%s%s takes at least one argument",
+					"%.200s%s takes at least one argument",
 					fname==NULL ? "function" : fname,
 					fname==NULL ? "" : "()");
 				PyErr_SetString(PyExc_TypeError, msgbuf);
@@ -179,7 +174,7 @@ vgetargs1(PyObject *args, char *format, va_list *p_va, int compat)
 	if (len < min || max < len) {
 		if (message == NULL) {
 			sprintf(msgbuf,
-				"%s%s takes %s %d argument%s (%d given)",
+				"%.150s%s takes %s %d argument%s (%d given)",
 				fname==NULL ? "function" : fname,
 				fname==NULL ? "" : "()",
 				min==max ? "exactly"
@@ -220,7 +215,7 @@ vgetargs1(PyObject *args, char *format, va_list *p_va, int compat)
 static void
 seterror(int iarg, char *msg, int *levels, char *fname, char *message)
 {
-	char buf[256];
+	char buf[512];
 	int i;
 	char *p = buf;
 
@@ -228,14 +223,14 @@ seterror(int iarg, char *msg, int *levels, char *fname, char *message)
 		return;
 	else if (message == NULL) {
 		if (fname != NULL) {
-			sprintf(p, "%s() ", fname);
+			sprintf(p, "%.200s() ", fname);
 			p += strlen(p);
 		}
 		if (iarg != 0) {
 			sprintf(p, "argument %d", iarg);
 			i = 0;
 			p += strlen(p);
-			while (levels[i] > 0) {
+			while (levels[i] > 0 && (int)(p-buf) < 220) {
 				sprintf(p, ", item %d", levels[i]-1);
 				p += strlen(p);
 				i++;
@@ -245,7 +240,7 @@ seterror(int iarg, char *msg, int *levels, char *fname, char *message)
 			sprintf(p, "argument");
 			p += strlen(p);
 		}
-		sprintf(p, " %s", msg);
+		sprintf(p, " %.256s", msg);
 		message = buf;
 	}
 	PyErr_SetString(PyExc_TypeError, message);
@@ -300,8 +295,8 @@ converttuple(PyObject *arg, char **p_format, va_list *p_va, int *levels,
 	if (!PySequence_Check(arg) || PyString_Check(arg)) {
 		levels[0] = 0;
 		sprintf(msgbuf,
-			toplevel ? "expected %d arguments, not %s" :
-				   "must be %d-item sequence, not %s",
+			toplevel ? "expected %d arguments, not %.50s" :
+				   "must be %d-item sequence, not %.50s",
 			n, arg == Py_None ? "None" : arg->ob_type->tp_name);
 		return msgbuf;
 	}

@@ -32,7 +32,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 	if (rc != NO_ERROR) {
 		char errBuf[256];
 		sprintf(errBuf,
-			"DLL load failed, rc = %d: %s",
+			"DLL load failed, rc = %d: %.200s",
 			rc, failreason);
 		PyErr_SetString(PyExc_ImportError, errBuf);
 		return NULL;
