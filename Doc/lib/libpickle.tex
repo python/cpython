@@ -18,13 +18,13 @@ structure.  ``Pickling'' is the process whereby a Python object
 hierarchy is converted into a byte stream, and ``unpickling'' is the
 inverse operation, whereby a byte stream is converted back into an
 object hierarchy.  Pickling (and unpickling) is alternatively known as
-``serialization'', ``marshaling\footnote{Don't confuse this with the
-\module{marshal}\refmodule{marshal} module}'', or ``flattening'',
+``serialization'', ``marshalling,''\footnote{Don't confuse this with
+the \refmodule{marshal} module} or ``flattening'',
 however the preferred term used here is ``pickling'' and
 ``unpickling'' to avoid confusing.
 
 This documentation describes both the \module{pickle} module and the 
-\module{cPickle}\refmodule{cPickle} module.
+\refmodule{cPickle} module.
 
 \subsection{Relationship to other Python modules}
 
@@ -46,7 +46,7 @@ The data streams the two modules produce are guaranteed to be
 interchangeable.
 
 Python has a more primitive serialization module called
-\module{marshal}\refmodule{marshal}, but in general
+\refmodule{marshal}, but in general
 \module{pickle} should always be the preferred way to serialize Python
 objects.  \module{marshal} exists primarily to support Python's
 \file{.pyc} files.
@@ -457,7 +457,7 @@ unpickled object.
 
 An alternative to implementing a \method{__reduce__()} method on the
 object to be pickled, is to register the callable with the
-\refmodule{copy_reg} module.  This module provides a way
+\refmodule[copyreg]{copy_reg} module.  This module provides a way
 for programs to register ``reduction functions'' and constructors for
 user-defined types.   Reduction functions have the same semantics and
 interface as the \method{__reduce__()} method described above, except
@@ -597,7 +597,7 @@ One common feature that both modules implement is the
 \member{__safe_for_unpickling__} attribute.  Before calling a callable
 which is not a class, the unpickler will check to make sure that the
 callable has either been registered as a safe callable via the
-\refmodule{copy_reg} module, or that it has an
+\refmodule[copyreg]{copy_reg} module, or that it has an
 attribute \member{__safe_for_unpickling__} with a true value.  This
 prevents the unpickling environment from being tricked into doing
 evil things like call \code{os.unlink()} with an arbitrary file name.
