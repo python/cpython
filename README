@@ -450,8 +450,8 @@ found in Lib/tk3inter/.)
 
 To enable the Python/Tk interface, once you've built and installed
 Tcl/Tk, all you need to do is edit two lines in Modules/Setup; search
-for the string "tkinter".  Un-comment one (normally the first) of the
-lines beginning with "#tkinter" and un-comment the line beginning with
+for the string "_tkinter".  Un-comment one (normally the first) of the
+lines beginning with "#_tkinter" and un-comment the line beginning with
 "#TKPATH".  (If you have installed Tcl/Tk in unusual places you will
 have to edit the first line as well to fix the -I and -L options.)
 See the Build Instructions above for more details.
@@ -463,15 +463,15 @@ the Demo/tkinter directory, in the subdirectories guido, matt and www.
 
 Note that there's a Python module called "Tkinter" (capital T) which
 lives in Lib/tkinter/Tkinter.py, and a C module called "tkinter"
-(lower case t) which lives in Modules/tkintermodule.c.  Demos and
+(lower case t) which lives in Modules/_tkinter.c.  Demos and
 normal Tk applications only import the Python Tkinter module -- only
-the latter uses the C tkinter module directly.  In order to find the C
-tkinter module, it must be compiled and linked into the Python
-interpreter -- the tkinter line in the Setup file does this.  In order
+the latter uses the C _tkinter module directly.  In order to find the C
+_tkinter module, it must be compiled and linked into the Python
+interpreter -- the _tkinter line in the Setup file does this.  In order
 to find the Python Tkinter module, sys.path must be set correctly --
 the TKPATH assignment in the Setup file takes care of this, but only
 if you install Python properly ("make install libinstall").  (You can
-also use dynamic loading for the C tkinter module, in which case you
+also use dynamic loading for the C _tkinter module, in which case you
 must manually fix up sys.path or set $PYTHONPATH for the Python
 Tkinter module.)
 

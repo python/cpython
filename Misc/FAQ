@@ -113,7 +113,7 @@ Here's an overview of the questions per chapter:
   3.14. Q. Under Solaris 2.x, using GCC, how do I use shared libraries?
   3.15. Q. Errors when linking with a shared library containing C++ code.
   3.16. Q. Tk menus or radiobuttons don't work properly in Python 1.2.
-  3.17. Q. I built with tkintermodule.c enabled but get "Tkinter not found".
+  3.17. Q. I built with _tkintermodule.c enabled but get "Tkinter not found".
   3.18. Q. I built with Tk 4.0 but Tkinter complains about the Tk version.
   3.19. Q. Tk doesn't work right on DEC Alpha.
 
@@ -876,7 +876,7 @@ edit config.c slightly to make it compilable with C++.
 A. There's a bug in Tkinter.py; remove ClassType and InstanceType from
 the definition of CallableTypes near the top of Lib/tkinter/Tkinter.py.
 
-3.17. Q. I built with tkintermodule.c enabled but get "Tkinter not found".
+3.17. Q. I built with _tkintermodule.c enabled but get "Tkinter not found".
 
 A. Tkinter.py (note: upper case T) lives in a subdirectory of Lib,
 Lib/tkinter.  If you are using the default module search path, you
@@ -1111,10 +1111,10 @@ the module only works on specific platforms (e.g. gl only works on SGI
 machines).
 
 NOTE: if the complaint is about "Tkinter" (upper case T) and you have
-already configured module "tkinter" (lower case t), the solution is
-*not* to rename tkinter to Tkinter or vice versa.  There is probably
-something wrong with your module search path.  Check out the value of
-sys.path.
+already configured module "_tkinter" (lower case t and underscore),
+the solution is *not* to rename tkinter to Tkinter or vice versa.
+There is probably something wrong with your module search path.  Check
+out the value of sys.path.
 
 For X-related modules (Xt and Xm) you will have to do more work: they
 are currently not part of the standard Python distribution.  You will
