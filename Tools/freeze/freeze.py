@@ -201,7 +201,7 @@ def main():
 
     # modules that are imported by the Python runtime
     implicits = []
-    for module in ('site', 'exceptions',):
+    for module in ('site', 'warnings',):
         if module not in exclude:
             implicits.append(module)
 
