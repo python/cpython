@@ -612,6 +612,13 @@ def main():
     if args:
         for filename in sys.argv[1:]:
             flist.open(filename)
+            aPath = os.path.abspath(os.path.dirname(filename))
+            if not aPath in sys.path:
+                sys.path.insert(0, aPath)
+    else:
+        aPath = os.getcwd()
+        if not aPath in sys.path:
+            sys.path.insert(0, aPath)
     t = PyShell(flist)
     flist.pyshell = t
     t.begin()
