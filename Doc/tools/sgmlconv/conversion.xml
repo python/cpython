@@ -396,7 +396,8 @@
 
   <!-- Table markup. -->
   <macro name="hline"/>
-  <environment name="tableii">
+  <environment name="tableii" outputname="table">
+    <attribute name="cols">2</attribute>
     <attribute name="colspec"/>
     <attribute name="style"/>
     <child name="entry"/>
@@ -404,14 +405,15 @@
          </text>
     <child name="entry"/>
     </environment>
-  <macro name="lineii">
+  <macro name="lineii" outputname="row">
     <child name="entry"/>
     <text>
          </text>
     <child name="entry"/>
     </macro>
 
-  <environment name="tableiii">
+  <environment name="tableiii" outputname="table">
+    <attribute name="cols">3</attribute>
     <attribute name="colspec"/>
     <attribute name="style"/>
     <child name="entry"/>
@@ -422,7 +424,7 @@
          </text>
     <child name="entry"/>
     </environment>
-  <macro name="lineiii">
+  <macro name="lineiii" outputname="row">
     <child name="entry"/>
     <text>
          </text>
@@ -432,7 +434,8 @@
     <child name="entry"/>
     </macro>
 
-  <environment name="tableiv">
+  <environment name="tableiv" outputname="table">
+    <attribute name="cols">4</attribute>
     <attribute name="colspec"/>
     <attribute name="style"/>
     <child name="entry"/>
@@ -446,7 +449,7 @@
          </text>
     <child name="entry"/>
     </environment>
-  <macro name="lineiv">
+  <macro name="lineiv" outputname="row">
     <child name="entry"/>
     <text>
          </text>
