@@ -1224,8 +1224,8 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 		    Py_UCS4 ch2 = s[i];
 		    /* Check for low surrogate */
 		    if (0xDC00 <= ch2 && ch2 <= 0xDFFF) {
-                        ch = ((ch - 0xD800)<<10 | (ch2-0xDC00))+0x10000;
-                        *p++ = (char)((ch >> 18) | 0xf0);
+                        ch = ((ch - 0xD800) << 10 | (ch2 - 0xDC00)) + 0x00010000;
+                        *p++ = (char)(0xf0 | (ch >> 18));
                         *p++ = (char)(0x80 | ((ch >> 12) & 0x3f));
 			*p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
 			*p++ = (char)(0x80 | (ch & 0x3f));
