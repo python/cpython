@@ -37,7 +37,7 @@ def print_tb(tb, limit=None, file=None):
 	n = 0
 	while tb is not None and (limit is None or n < limit):
 		f = tb.tb_frame
-		lineno = tb.tb_lineno
+		lineno = tb_lineno(tb)
 		co = f.f_code
 		filename = co.co_filename
 		name = co.co_name
@@ -59,7 +59,7 @@ def extract_tb(tb, limit = None):
 	n = 0
 	while tb is not None and (limit is None or n < limit):
 		f = tb.tb_frame
-		lineno = tb.tb_lineno
+		lineno = tb_lineno(tb)
 		co = f.f_code
 		filename = co.co_filename
 		name = co.co_name
@@ -169,7 +169,7 @@ def extract_stack(f=None, limit = None):
 	list = []
 	n = 0
 	while f is not None and (limit is None or n < limit):
-		lineno = f.f_lineno
+		lineno = f.f_lineno	# XXX Too bad if -O is used
 		co = f.f_code
 		filename = co.co_filename
 		name = co.co_name
@@ -181,3 +181,21 @@ def extract_stack(f=None, limit = None):
 		n = n+1
 	list.reverse()
 	return list
+
+# Calculate the correct line number of the traceback given in tb (even
+# with -O on).
+# Coded by Marc-Andre Lemburg from the example of PyCode_Addr2Line()
+# in compile.c.
+
+def tb_lineno(tb):
+	c = tb.tb_frame.f_code
+	tab = c.co_lnotab
+	line = c.co_firstlineno
+	stopat = tb.tb_lasti
+	addr = 0
+	for i in range(0, len(tab), 2):
+		addr = addr + ord(tab[i])
+		if addr > stopat:
+			break
+		line = line + ord(tab[i+1])
+	return line
