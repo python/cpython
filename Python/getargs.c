@@ -553,7 +553,7 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf)
 	case 'c': {/* char */
 		char *p = va_arg(*p_va, char *);
 		if (PyString_Check(arg) && PyString_Size(arg) == 1)
-			*p = PyString_AsString(arg)[0];
+			*p = PyString_AS_STRING(arg)[0];
 		else
 			return converterr("char", arg, msgbuf);
 		break;
