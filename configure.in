@@ -294,9 +294,9 @@ then
 	AIX*)
 	   LINKCC="\$(srcdir)/Modules/makexp_aix Modules/python.exp \"\" \$(LIBRARY); $LINKCC";;
 	dgux*)
-	   LINKCC="LD_RUN_PATH=$libdir $(LINKCC)";;
+	   LINKCC="LD_RUN_PATH=$libdir $LINKCC";;
 	Monterey64*)
-	   LINKCC="$(LINKCC) -L/usr/lib/ia64l64";;
+	   LINKCC="$LINKCC -L/usr/lib/ia64l64";;
 	esac
 fi
 AC_MSG_RESULT($LINKCC)
