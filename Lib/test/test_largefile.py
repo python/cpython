@@ -30,13 +30,14 @@ size = 2500000000L
 name = test_support.TESTFN
 
 
-# on Windows this test comsumes large resources:
-#  it takes a long time to build the >2GB file and takes >2GB of disk space
-# therefore test_support.use_large_resources must be defined to run this test
-if sys.platform[:3] == 'win' and not test_support.use_large_resources:
-    raise test_support.TestSkipped, \
-          "test requires %s bytes and a long time to run" % str(size)
-
+# On Windows this test comsumes large resources; It takes a long time to build
+# the >2GB file and takes >2GB of disk space therefore the resource must be
+# enabled to run this test.  If not, nothing after this line stanza will be
+# executed.
+if sys.platform[:3] == 'win':
+    test_support.requires(
+        'largefile',
+        'test requires %s bytes and a long time to run' % str(size))
 
 
 def expect(got_this, expect_this):
