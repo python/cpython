@@ -105,12 +105,9 @@ class build_ext (Command):
         
 
         # Make sure Python's include directories (for Python.h, config.h,
-        # etc.) are in the include search path.  We have to roll our own
-        # "exec include dir", because the Makefile parsed by sysconfig
-        # doesn't have it (sigh).
-        py_include = sysconfig.INCLUDEPY # prefix + "include" + "python" + ver
-        exec_py_include = os.path.join (sysconfig.exec_prefix, 'include',
-                                        'python' + sys.version[0:3])
+        # etc.) are in the include search path.
+        py_include = sysconfig.get_python_inc()
+        plat_py_include = sysconfig.get_python_inc(plat_specific=1)
         if self.include_dirs is None:
             self.include_dirs = self.distribution.include_dirs or []
         if type (self.include_dirs) is StringType:
@@ -120,8 +117,8 @@ class build_ext (Command):
         # Put the Python "system" include dir at the end, so that
         # any local include dirs take precedence.
         self.include_dirs.append (py_include)
-        if exec_py_include != py_include:
-            self.include_dirs.insert (0, exec_py_include)
+        if plat_py_include != py_include:
+            self.include_dirs.append (plat_py_include)
 
         if type (self.libraries) is StringType:
             self.libraries = [self.libraries]
