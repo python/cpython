@@ -11,7 +11,9 @@
 # directory.)
 
 # Each line in this file describes one or more optional modules.
-# Comment out lines to suppress modules.
+# Modules enabled here will not be compiled by the setup.py script,
+# so the file can be used to override setup.py's behavior.
+
 # Lines have the following structure:
 #
 # <module> ... [<sourcefile> ...] [<cpparg> ...] [<library> ...]
@@ -273,7 +275,8 @@ GLHACK=-Dclear=__GLclear
 #sunaudiodev sunaudiodev.c
 
 
-# Linux specific modules -- off by default:
+# A Linux specific module -- off by default; this may also work on 
+# some *BSDs.
 
 #linuxaudiodev linuxaudiodev.c
 
