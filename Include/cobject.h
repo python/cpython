@@ -1,9 +1,3 @@
-#ifndef Py_COBJECT_H
-#define Py_COBJECT_H
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /***********************************************************
 Copyright (c) 2000, BeOpen.com.
 Copyright (c) 1995-2000, Corporation for National Research Initiatives.
@@ -23,6 +17,12 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 */
 
+#ifndef Py_COBJECT_H
+#define Py_COBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern DL_IMPORT(PyTypeObject) PyCObject_Type;
 
 #define PyCObject_Check(op) ((op)->ob_type == &PyCObject_Type)
@@ -34,7 +34,7 @@ extern DL_IMPORT(PyTypeObject) PyCObject_Type;
 
 */
 extern DL_IMPORT(PyObject *)
-PyCObject_FromVoidPtr Py_PROTO((void *cobj, void (*destruct)(void*)));
+PyCObject_FromVoidPtr(void *cobj, void (*destruct)(void*));
 
 
 /* Create a PyCObject from a pointer to a C object, a description object,
@@ -43,20 +43,20 @@ PyCObject_FromVoidPtr Py_PROTO((void *cobj, void (*destruct)(void*)));
    the PyCObject is destroyed.
 */
 extern DL_IMPORT(PyObject *)
-PyCObject_FromVoidPtrAndDesc Py_PROTO((void *cobj, void *desc,
-                                       void (*destruct)(void*,void*)));
+PyCObject_FromVoidPtrAndDesc(void *cobj, void *desc,
+                             void (*destruct)(void*,void*));
 
 /* Retrieve a pointer to a C object from a PyCObject. */
 extern DL_IMPORT(void *)
-PyCObject_AsVoidPtr Py_PROTO((PyObject *));
+PyCObject_AsVoidPtr(PyObject *);
 
 /* Retrieve a pointer to a description object from a PyCObject. */
 extern DL_IMPORT(void *)
-PyCObject_GetDesc Py_PROTO((PyObject *));
+PyCObject_GetDesc(PyObject *);
 
 /* Import a pointer to a C object from a module using a PyCObject. */
 extern DL_IMPORT(void *)
-PyCObject_Import Py_PROTO((char *module_name, char *cobject_name));
+PyCObject_Import(char *module_name, char *cobject_name);
 
 #ifdef __cplusplus
 }

@@ -1,9 +1,3 @@
-#ifndef Py_LISTOBJECT_H
-#define Py_LISTOBJECT_H
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /***********************************************************
 Copyright (c) 2000, BeOpen.com.
 Copyright (c) 1995-2000, Corporation for National Research Initiatives.
@@ -28,26 +22,32 @@ inserted in the list.  Similarly, PyList_GetItem does not increment the
 returned item's reference count.
 */
 
+#ifndef Py_LISTOBJECT_H
+#define Py_LISTOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
-	PyObject_VAR_HEAD
-	PyObject **ob_item;
+    PyObject_VAR_HEAD
+    PyObject **ob_item;
 } PyListObject;
 
 extern DL_IMPORT(PyTypeObject) PyList_Type;
 
 #define PyList_Check(op) ((op)->ob_type == &PyList_Type)
 
-extern DL_IMPORT(PyObject *) PyList_New Py_PROTO((int size));
-extern DL_IMPORT(int) PyList_Size Py_PROTO((PyObject *));
-extern DL_IMPORT(PyObject *) PyList_GetItem Py_PROTO((PyObject *, int));
-extern DL_IMPORT(int) PyList_SetItem Py_PROTO((PyObject *, int, PyObject *));
-extern DL_IMPORT(int) PyList_Insert Py_PROTO((PyObject *, int, PyObject *));
-extern DL_IMPORT(int) PyList_Append Py_PROTO((PyObject *, PyObject *));
-extern DL_IMPORT(PyObject *) PyList_GetSlice Py_PROTO((PyObject *, int, int));
-extern DL_IMPORT(int) PyList_SetSlice Py_PROTO((PyObject *, int, int, PyObject *));
-extern DL_IMPORT(int) PyList_Sort Py_PROTO((PyObject *));
-extern DL_IMPORT(int) PyList_Reverse Py_PROTO((PyObject *));
-extern DL_IMPORT(PyObject *) PyList_AsTuple Py_PROTO((PyObject *));
+extern DL_IMPORT(PyObject *) PyList_New(int size);
+extern DL_IMPORT(int) PyList_Size(PyObject *);
+extern DL_IMPORT(PyObject *) PyList_GetItem(PyObject *, int);
+extern DL_IMPORT(int) PyList_SetItem(PyObject *, int, PyObject *);
+extern DL_IMPORT(int) PyList_Insert(PyObject *, int, PyObject *);
+extern DL_IMPORT(int) PyList_Append(PyObject *, PyObject *);
+extern DL_IMPORT(PyObject *) PyList_GetSlice(PyObject *, int, int);
+extern DL_IMPORT(int) PyList_SetSlice(PyObject *, int, int, PyObject *);
+extern DL_IMPORT(int) PyList_Sort(PyObject *);
+extern DL_IMPORT(int) PyList_Reverse(PyObject *);
+extern DL_IMPORT(PyObject *) PyList_AsTuple(PyObject *);
 
 /* Macro, trading safety for speed */
 #define PyList_GET_ITEM(op, i) (((PyListObject *)(op))->ob_item[i])

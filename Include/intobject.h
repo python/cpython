@@ -1,9 +1,3 @@
-#ifndef Py_INTOBJECT_H
-#define Py_INTOBJECT_H
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /***********************************************************
 Copyright (c) 2000, BeOpen.com.
 Copyright (c) 1995-2000, Corporation for National Research Initiatives.
@@ -29,20 +23,26 @@ The type PyIntObject is (unfortunately) exposed here so we can declare
 _Py_TrueStruct and _Py_ZeroStruct below; don't use this.
 */
 
+#ifndef Py_INTOBJECT_H
+#define Py_INTOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
-	PyObject_HEAD
-	long ob_ival;
+    PyObject_HEAD
+    long ob_ival;
 } PyIntObject;
 
 extern DL_IMPORT(PyTypeObject) PyInt_Type;
 
 #define PyInt_Check(op) ((op)->ob_type == &PyInt_Type)
 
-extern DL_IMPORT(PyObject *) PyInt_FromString Py_PROTO((char*, char**, int));
-extern DL_IMPORT(PyObject *) PyInt_FromUnicode Py_PROTO((Py_UNICODE*, int, int));
-extern DL_IMPORT(PyObject *) PyInt_FromLong Py_PROTO((long));
-extern DL_IMPORT(long) PyInt_AsLong Py_PROTO((PyObject *));
-extern DL_IMPORT(long) PyInt_GetMax Py_PROTO((void));
+extern DL_IMPORT(PyObject *) PyInt_FromString(char*, char**, int);
+extern DL_IMPORT(PyObject *) PyInt_FromUnicode(Py_UNICODE*, int, int);
+extern DL_IMPORT(PyObject *) PyInt_FromLong(long);
+extern DL_IMPORT(long) PyInt_AsLong(PyObject *);
+extern DL_IMPORT(long) PyInt_GetMax(void);
 
 
 /*
@@ -68,8 +68,8 @@ extern DL_IMPORT(PyIntObject) _Py_ZeroStruct, _Py_TrueStruct; /* Don't use these
  * into the main Python shared library/DLL.  Guido thinks I'm weird for
  * building it this way.  :-)  [cjh]
  */
-extern DL_IMPORT(unsigned long) PyOS_strtoul Py_PROTO((char *, char **, int));
-extern DL_IMPORT(long) PyOS_strtol Py_PROTO((char *, char **, int));
+extern DL_IMPORT(unsigned long) PyOS_strtoul(char *, char **, int);
+extern DL_IMPORT(long) PyOS_strtol(char *, char **, int);
 
 #ifdef __cplusplus
 }

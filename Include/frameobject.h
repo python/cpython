@@ -1,9 +1,3 @@
-#ifndef Py_FRAMEOBJECT_H
-#define Py_FRAMEOBJECT_H
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /***********************************************************
 Copyright (c) 2000, BeOpen.com.
 Copyright (c) 1995-2000, Corporation for National Research Initiatives.
@@ -16,32 +10,38 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 /* Frame object interface */
 
+#ifndef Py_FRAMEOBJECT_H
+#define Py_FRAMEOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
-	int b_type;		/* what kind of block this is */
-	int b_handler;		/* where to jump to find handler */
-	int b_level;		/* value stack level to pop to */
+    int b_type;			/* what kind of block this is */
+    int b_handler;		/* where to jump to find handler */
+    int b_level;		/* value stack level to pop to */
 } PyTryBlock;
 
 typedef struct _frame {
-	PyObject_HEAD
-	struct _frame *f_back;	/* previous frame, or NULL */
-	PyCodeObject *f_code;	/* code segment */
-	PyObject *f_builtins;	/* builtin symbol table (PyDictObject) */
-	PyObject *f_globals;	/* global symbol table (PyDictObject) */
-	PyObject *f_locals;	/* local symbol table (PyDictObject) */
-	PyObject **f_valuestack; /* points after the last local */
-	PyObject *f_trace;	/* Trace function */
-	PyObject *f_exc_type, *f_exc_value, *f_exc_traceback;
-	PyThreadState *f_tstate;
-	int f_lasti;		/* Last instruction if called */
-	int f_lineno;		/* Current line number */
-	int f_restricted;	/* Flag set if restricted operations
+    PyObject_HEAD
+    struct _frame *f_back;	/* previous frame, or NULL */
+    PyCodeObject *f_code;	/* code segment */
+    PyObject *f_builtins;	/* builtin symbol table (PyDictObject) */
+    PyObject *f_globals;	/* global symbol table (PyDictObject) */
+    PyObject *f_locals;		/* local symbol table (PyDictObject) */
+    PyObject **f_valuestack;	/* points after the last local */
+    PyObject *f_trace;		/* Trace function */
+    PyObject *f_exc_type, *f_exc_value, *f_exc_traceback;
+    PyThreadState *f_tstate;
+    int f_lasti;		/* Last instruction if called */
+    int f_lineno;		/* Current line number */
+    int f_restricted;		/* Flag set if restricted operations
 				   in this scope */
-	int f_iblock;		/* index in f_blockstack */
-	PyTryBlock f_blockstack[CO_MAXBLOCKS]; /* for try and loop blocks */
-	int f_nlocals;		/* number of locals */
-	int f_stacksize;	/* size of value stack */
-	PyObject *f_localsplus[1]; /* locals+stack, dynamically sized */
+    int f_iblock;		/* index in f_blockstack */
+    PyTryBlock f_blockstack[CO_MAXBLOCKS]; /* for try and loop blocks */
+    int f_nlocals;		/* number of locals */
+    int f_stacksize;		/* size of value stack */
+    PyObject *f_localsplus[1];	/* locals+stack, dynamically sized */
 } PyFrameObject;
 
 
@@ -51,9 +51,8 @@ extern DL_IMPORT(PyTypeObject) PyFrame_Type;
 
 #define PyFrame_Check(op) ((op)->ob_type == &PyFrame_Type)
 
-DL_IMPORT(PyFrameObject *) PyFrame_New
-	Py_PROTO((PyThreadState *, PyCodeObject *,
-		  PyObject *, PyObject *));
+DL_IMPORT(PyFrameObject *) PyFrame_New(PyThreadState *, PyCodeObject *,
+                                       PyObject *, PyObject *);
 
 
 /* The rest of the interface is specific for frame objects */
@@ -80,17 +79,17 @@ DL_IMPORT(PyFrameObject *) PyFrame_New
 
 /* Block management functions */
 
-DL_IMPORT(void) PyFrame_BlockSetup Py_PROTO((PyFrameObject *, int, int, int));
-DL_IMPORT(PyTryBlock *) PyFrame_BlockPop Py_PROTO((PyFrameObject *));
+DL_IMPORT(void) PyFrame_BlockSetup(PyFrameObject *, int, int, int);
+DL_IMPORT(PyTryBlock *) PyFrame_BlockPop(PyFrameObject *);
 
 /* Extend the value stack */
 
-DL_IMPORT(PyObject **) PyFrame_ExtendStack Py_PROTO((PyFrameObject *, int, int));
+DL_IMPORT(PyObject **) PyFrame_ExtendStack(PyFrameObject *, int, int);
 
 /* Conversions between "fast locals" and locals in dictionary */
 
-DL_IMPORT(void) PyFrame_LocalsToFast Py_PROTO((PyFrameObject *, int));
-DL_IMPORT(void) PyFrame_FastToLocals Py_PROTO((PyFrameObject *));
+DL_IMPORT(void) PyFrame_LocalsToFast(PyFrameObject *, int);
+DL_IMPORT(void) PyFrame_FastToLocals(PyFrameObject *);
 
 #ifdef __cplusplus
 }
