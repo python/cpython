@@ -12,6 +12,9 @@ What's New in Python 2.3 beta 2?
 Core and builtins
 -----------------
 
+- SF patch 751998 fixes an unwanted side effect of the previous fix
+  for SF bug 742860 (the next item).
+
 - SF bug 742860: "WeakKeyDictionary __delitem__ uses iterkeys".  This
   wasn't threadsafe, was very inefficient (expected time O(len(dict))
   instead of O(1)), and could raise a spurious RuntimeError if another
@@ -70,6 +73,10 @@ Extension modules
 Library
 -------
 
+- A brand new version of IDLE (from the IDLEfork project at
+  SourceForge) is now included as Lib/idlelib.  The old Tools/idle is
+  no more.
+
 - copy.py: applied SF patch 707900, fixing bug 702858, by Steven
   Taschuk.  Copying a new-style class that had a reference to itself
   didn't work.  (The same thing worked fine for old-style classes.)
@@ -99,6 +106,8 @@ Library
 
 Tools/Demos
 -----------
+
+- Tools/idle is gone; long live Lib/idlelib.
 
 - diff.py is a new script for print file diffs in context, unified, or ndiff
   formats.  Provides an alternate command line interface to difflib.py.
