@@ -26,7 +26,7 @@
 	<key>CFBundleExecutable</key>
 	<string>BuildApplet</string>
 	<key>CFBundleGetInfoString</key>
-	<string>2.4alpha1, (c) 2004 Python Software Foundation.</string>
+	<string>2.5alpha0, (c) 2004 Python Software Foundation.</string>
 	<key>CFBundleIconFile</key>
 	<string>BuildApplet.icns</string>
 	<key>CFBundleIdentifier</key>
@@ -34,17 +34,17 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleLongVersionString</key>
-	<string>2.4alpha1, (c) 2004 Python Software Foundation.</string>
+	<string>2.5alpha0, (c) 2004 Python Software Foundation.</string>
 	<key>CFBundleName</key>
 	<string>PythonIDE</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.4alpha1</string>
+	<string>2.5alpha0</string>
 	<key>CFBundleSignature</key>
 	<string>Pide</string>
 	<key>CFBundleVersion</key>
-	<string>2.4alpha1</string>
+	<string>2.5alpha0</string>
 	<key>CSResourcesFileMapped</key>
 	<true/>
 	<key>LSRequiresCarbon</key>

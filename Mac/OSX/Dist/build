@@ -1,12 +1,12 @@
 #!/bin/sh -e
 #----------------------------------------------------------------------
-# Build MacPython 2.3 and make an Installer package of it
+# Build MacPython 2.5 and make an Installer package of it
 
 # TODO:  Parameterize the versions, builddirs, etc...
 
 # Script configs
-PYVERSION=2.4a0
-PYVER=2.4
+PYVERSION=2.5a0
+PYVER=2.5
 BUILDNUM=1
 DOCLEANUP=no
 
@@ -86,7 +86,8 @@ if [ ! -e waste ]; then
     ln -s $WASTEDIR waste
 fi
 
-$PYTHONSRC/configure -C --enable-framework LDFLAGS=-Wl,-x
+#$PYTHONSRC/configure -C --enable-framework LDFLAGS=-Wl,-x
+$PYTHONSRC/configure -C --enable-framework
 make
 make DIRMODE=775 EXEMODE=775 FILEMODE=664 DESTDIR=$INSTALLROOT frameworkinstall
 make DIRMODE=775 EXEMODE=775 FILEMODE=664 DESTDIR=$INSTALLROOT frameworkinstallextras

@@ -17,6 +17,7 @@ Here are the steps you ned to follow to build a MacPython installer:
 - Edit ``resource/ReadMe.txt`` and ``resources/Welcome.rtf`` to reflect
   version number and such.
 - Edit ``build`` to change ``PYVERSION``, ``PYVER`` and ``BUILDNUM``.
+- Edit ``resources/postflight`` and change version number.
 - Run ``./build``. Optionally you can pass the name of the directory
   where Python will be built, so you don't have to wait for the complete
   build when you're debugging the process. For the final distribution use
