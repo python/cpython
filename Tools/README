@@ -17,4 +17,7 @@ scripts		A number of useful single-file programs, e.g. for
 		converting old Python sources to the current language
 		definition.
 
+versioncheck	A tool to automate checking whether you have the latest
+		version of a package (by Jack Jansen).
+
 webchecker	A link checker for web sites.
