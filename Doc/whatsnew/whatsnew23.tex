@@ -2,7 +2,7 @@
 % $Id$
 
 \title{What's New in Python 2.3}
-\release{0.05}
+\release{0.06}
 \author{A.M. Kuchling}
 \authoraddress{\email{amk@amk.ca}}
 
@@ -1830,20 +1830,64 @@ Expat.
 \end{itemize}
 
 
-\begin{comment}
 %======================================================================
 \subsection{Date/Time Type}
 
 Date and time types suitable for expressing timestamps were added as
 the \module{datetime} module.  The types don't support different
-calendars or many fancy features, and just stick to the basics.
+calendars or many fancy features, and just stick to the basics of
+representing time.
 
 The three primary types are: \class{date}, representing a day, month,
 and year; \class{time}, consisting of hour, minute, and second value;
-and \class{datetime}, which contains both a date and a time.
+and \class{datetime}, which contains both a date and a time.  These
+basic types don't understand time zones, but there are subclasses
+named \class{timetz} and \class{datetimetz} that do.  There's also a
+\class{timedelta} class representing a difference between two points
+in time, and time zone logic is implemented by classes inheriting from
+the abstract \class{tzinfo} class.
 
-XXX finish this section
-\end{comment}
+You can create instances of \class{date} and \class{time} by either
+supplying keyword arguments to the constructor,
+e.g. \code{datetime.date(year=1972, month=10, day=15)}, or by using
+one of a number of class methods.  For example, the \method{today()}
+class method returns the current local date:
+\code{datetime.date.today()}.  
+
+Once created, instances of the date/time classes are all immutable.
+There are a number of methods for producing formatted strings from
+objects,
+
+\begin{verbatim}
+>>> import datetime
+>>> now = datetime.datetime.now()
+>>> now.isoformat()
+'2002-12-30T21:27:03.994956'
+>>> now.ctime()  # Only available on date, datetime
+'Mon Dec 30 21:27:03 2002'
+>>> now.strftime('%Y %d %h')
+'2002 30 Dec'
+\end{verbatim}
+
+The \method{replace()} method allows modifying one or more fields 
+of a \class{date} or \class{datetime} instance:
+
+\begin{verbatim}
+>>> d = datetime.datetime.now()
+>>> d
+datetime.datetime(2002, 12, 30, 22, 15, 38, 827738)
+>>> d.replace(year=2001, hour = 12)
+datetime.datetime(2001, 12, 30, 12, 15, 38, 827738)
+>>>
+\end{verbatim}
+
+Instances can be compared, hashed, and converted to strings (the
+result is the same as that of \method{isoformat()}).  \class{date} and
+\class{datetime} instances can be subtracted from each other, and
+added to \class{timedelta} instances.
+
+For more information, refer to the \ulink{module's reference
+documentation}{http://www.python.org/dev/doc/devel/lib/module-datetime.html}.
 
 
 %======================================================================
