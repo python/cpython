@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 1992,1993,1994  Tim Peters
 
-;; Author: 1995-2001 Barry A. Warsaw
+;; Author: 1995-2002 Barry A. Warsaw
 ;;         1992-1994 Tim Peters
 ;; Maintainer: python-mode@python.org
 ;; Created:    Feb 1992
@@ -27,12 +27,8 @@
 
 ;; pdbtrack support contributed by Ken Manheimer, April 2001.
 
-;; This version of python-mode.el has only been tested with XEmacs
-;; 21.1.14 and Emacs 20.7 as these are the latest versions of these
-;; Emacsen as of this writing (11-Apr-2001).  I have no intent to test
-;; it with earlier Emacsen, but I will accept patches if they are
-;; small and reasonable.  Please use the SourceForge Python project to
-;; submit bugs or patches:
+;; Please use the SourceForge Python project to submit bugs or
+;; patches:
 ;;
 ;;     http://sourceforge.net/projects/python
 
@@ -42,10 +38,8 @@
 
 ;;     http://www.python.org/emacs/python-mode/
 ;;
-;; but this link is fairly out of date, due to the current difficulty
-;; in updating that site. It does contain links to other packages that
-;; you might find useful, such as pdb interfaces, OO-Browser links,
-;; etc.  Eventually, we'll be able to update it much more easily.
+;; It does contain links to other packages that you might find useful,
+;; such as pdb interfaces, OO-Browser links, etc.
 
 ;; BUG REPORTING:
 
@@ -1355,14 +1349,17 @@ is inserted at the end.  See also the command `py-clear-queue'."
 			 (format "python-%d-%d" sn pid)
 		       (format "python-%d" sn)))
 		 (make-temp-name "python-")))
-	 (file (expand-file-name temp py-temp-directory))
+	 (file (concat (expand-file-name temp py-temp-directory) ".py"))
 	 (cur (current-buffer))
-	 (buf (get-buffer-create file)))
+	 (buf (get-buffer-create file))
+	 shell)
     ;; Write the contents of the buffer, watching out for indented regions.
     (save-excursion
       (goto-char start)
       (let ((needs-if (/= (py-point 'bol) (py-point 'boi))))
 	(set-buffer buf)
+	(python-mode)
+	(setq shell py-which-shell)
 	(when needs-if
 	  (insert "if 1:\n"))
 	(insert-buffer-substring cur start end)))
@@ -1377,7 +1374,7 @@ is inserted at the end.  See also the command `py-clear-queue'."
 	     ;; TBD: a horrible hack, but why create new Custom variables?
 	     (arg (if (string-equal py-which-bufname "Python")
 		      "-u" "")))
-	(start-process py-which-bufname buf py-which-shell arg file)
+	(start-process py-which-bufname buf shell arg file)
 	(pop-to-buffer buf)
 	(py-postprocess-output-buffer buf)
 	;; TBD: clean up the temporary file!
@@ -1396,7 +1393,7 @@ is inserted at the end.  See also the command `py-clear-queue'."
       (setq py-exception-buffer (cons file (current-buffer))))
      (t
       ;; TBD: a horrible hack, buy why create new Custom variables?
-      (let ((cmd (concat py-which-shell
+      (let ((cmd (concat shell
 			 (if (string-equal py-which-bufname "JPython")
 			     " -" ""))))
 	;; otherwise either run it synchronously in a subprocess
@@ -2909,7 +2906,7 @@ local bindings to py-newline-and-indent."))
   "Return the parse state at point (see `parse-partial-sexp' docs)."
   (save-excursion
     (let ((here (point))
-	  in-listcomp pps done)
+	  pps done)
       (while (not done)
 	;; back up to the first preceding line (if any; else start of
 	;; buffer) that begins with a popular Python keyword, or a
@@ -2918,41 +2915,22 @@ local bindings to py-newline-and-indent."))
 	;; at a non-zero nesting level.  It may be slow for people who
 	;; write huge code blocks or huge lists ... tough beans.
 	(re-search-backward py-parse-state-re nil 'move)
-	;; Watch out for landing inside a list comprehension
-	(save-excursion
-	  (if (and (looking-at "[ \t]*\\<\\(if\\|for\\)\\>")
-		   (py-safe (progn (up-list -1) t))
-		   (eq (char-after) ?\[))
-	      (setq in-listcomp (point))
-	    (setq in-listcomp nil)))
 	(beginning-of-line)
 	;; In XEmacs, we have a much better way to test for whether
 	;; we're in a triple-quoted string or not.  Emacs does not
 	;; have this built-in function, which is its loss because
 	;; without scanning from the beginning of the buffer, there's
 	;; no accurate way to determine this otherwise.
-	(if (not (fboundp 'buffer-syntactic-context))
-	    ;; Emacs
-	    (progn
-	      (save-excursion (setq pps (parse-partial-sexp (point) here)))
-	      ;; make sure we don't land inside a triple-quoted string
-	      (setq done (or (not (nth 3 pps))
-			     (bobp)))
-	      ;; Just go ahead and short circuit the test back to the
-	      ;; beginning of the buffer.  This will be slow, but not
-	      ;; nearly as slow as looping through many
-	      ;; re-search-backwards.
-	      (if (not done)
-		  (goto-char (point-min))))
-	  ;; XEmacs
-	  (setq done (or (not (buffer-syntactic-context))
-			 (bobp)))
-	  (when in-listcomp
-	    (goto-char in-listcomp)
-	    (setq done nil))
-	  (when done
-	    (setq pps (parse-partial-sexp (point) here)))
-	  ))
+	(save-excursion (setq pps (parse-partial-sexp (point) here)))
+	;; make sure we don't land inside a triple-quoted string
+	(setq done (or (not (nth 3 pps))
+		       (bobp)))
+	;; Just go ahead and short circuit the test back to the
+	;; beginning of the buffer.  This will be slow, but not
+	;; nearly as slow as looping through many
+	;; re-search-backwards.
+	(if (not done)
+	    (goto-char (point-min))))
       pps)))
 
 (defun py-nesting-level ()
