@@ -781,7 +781,7 @@ with the type information from \var{format} from left to right.
 
 \strong{Note:}  Nested tuples cannot be parsed when using keyword
 arguments!  Keyword parameters passed in which are not present in the
-\var{kwlist} will cause a \exception{TypeError} to be raised.
+\var{kwlist} will cause \exception{TypeError} to be raised.
 
 Here is an example module which uses keywords, based on an example by
 Geoff Philbrick (\email{philbrick@hks.com}):
@@ -825,8 +825,7 @@ void
 initkeywdarg()
 {
   /* Create the module and add the functions */
-  Py_InitModule("keywdarg", keywdarg_methods);  
-  
+  Py_InitModule("keywdarg", keywdarg_methods);
 }
 \end{verbatim}
 
