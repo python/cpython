@@ -163,6 +163,24 @@ def getmembers(object, predicate=None):
     results.sort()
     return results
 
+# ----------------------------------------------------------- class helpers
+def _searchbases(cls, accum):
+    # Simulate the "classic class" search order.
+    if cls in accum:
+        return
+    accum.append(cls)
+    for base in cls.__bases__:
+        _searchbases(base, accum)
+
+def getmro(cls):
+    "Return tuple of base classes (including cls) in method resolution order."
+    if hasattr(cls, "__mro__"):
+        return cls.__mro__
+    else:
+        result = []
+        _searchbases(cls, result)
+        return tuple(result)
+
 # -------------------------------------------------- source code extraction
 def indentsize(line):
     """Return the indent size, in spaces, at the start of a line of text."""
