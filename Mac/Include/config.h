@@ -137,7 +137,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* #undef size_t */
 
 /* Define if you have the ANSI C header files.  */
-#define STDC_HEADERS
+#define STDC_HEADERS 1
 
 /* Define if you don't have dirent.h, but have sys/dir.h.  */
 /* #undef SYSDIR */
@@ -180,7 +180,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* #undef HAVE_ALTZONE */
 
 /* Define if your compiler supports function prototypes */
-#define HAVE_PROTOTYPES
+#define HAVE_PROTOTYPES 1
 
 /* Define if your compiler supports variable length function prototypes
    (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
