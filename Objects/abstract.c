@@ -62,7 +62,7 @@ PyObject_Type(PyObject *o)
 }
 
 int
-PyObject_Length(PyObject *o)
+PyObject_Size(PyObject *o)
 {
 	PySequenceMethods *m;
 
@@ -75,7 +75,7 @@ PyObject_Length(PyObject *o)
 	if (m && m->sq_length)
 		return m->sq_length(o);
 
-	return PyMapping_Length(o);
+	return PyMapping_Size(o);
 }
 
 PyObject *
@@ -803,7 +803,7 @@ PySequence_Check(PyObject *s)
 }
 
 int
-PySequence_Length(PyObject *s)
+PySequence_Size(PyObject *s)
 {
 	PySequenceMethods *m;
 
@@ -1036,7 +1036,7 @@ PySequence_Tuple(PyObject *v)
 	if (m && m->sq_item) {
 		int i;
 		PyObject *t;
-		int n = PySequence_Length(v);
+		int n = PySequence_Size(v);
 		if (n < 0)
 			return NULL;
 		t = PyTuple_New(n);
@@ -1087,7 +1087,7 @@ PySequence_List(PyObject *v)
 	if (m && m->sq_item) {
 		int i;
 		PyObject *l;
-		int n = PySequence_Length(v);
+		int n = PySequence_Size(v);
 		if (n < 0)
 			return NULL;
 		l = PyList_New(n);
@@ -1152,7 +1152,7 @@ PySequence_Count(PyObject *s, PyObject *o)
 		return -1;
 	}
 	
-	l = PySequence_Length(s);
+	l = PySequence_Size(s);
 	if (l < 0)
 		return -1;
 
@@ -1232,7 +1232,7 @@ PySequence_Index(PyObject *s, PyObject *o)
 		return -1;
 	}
 	
-	l = PySequence_Length(s);
+	l = PySequence_Size(s);
 	if (l < 0)
 		return -1;
 
@@ -1261,7 +1261,7 @@ PyMapping_Check(PyObject *o)
 }
 
 int
-PyMapping_Length(PyObject *o)
+PyMapping_Size(PyObject *o)
 {
 	PyMappingMethods *m;
 

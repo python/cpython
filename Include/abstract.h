@@ -381,11 +381,13 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 equivalent to the Python expression: type(o).
        */
 
-     DL_IMPORT(int) PyObject_Length(PyObject *o);
+     DL_IMPORT(int) PyObject_Size(PyObject *o);
+
+#define PyObject_Length(O) PyObject_Size((O))
 
        /*
-         Return the length of object o.  If the object, o, provides
-	 both sequence and mapping protocols, the sequence length is
+         Return the size of object o.  If the object, o, provides
+	 both sequence and mapping protocols, the sequence size is
 	 returned. On error, -1 is returned.  This is the equivalent
 	 to the Python expression: len(o).
 
@@ -681,10 +683,12 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(int) PySequence_Length(PyObject *o);
+     DL_IMPORT(int) PySequence_Size(PyObject *o);
+
+#define PySequence_Length(O) PySequence_Size((O))
 
        /*
-         Return the length of sequence object o, or -1 on failure.
+         Return the size of sequence object o, or -1 on failure.
 
        */
 
@@ -833,7 +837,9 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 This function always succeeds.
        */
 
-     DL_IMPORT(int) PyMapping_Length(PyObject *o);
+     DL_IMPORT(int) PyMapping_Size(PyObject *o);
+
+#define PyMapping_Length(O) PyMapping_Size((O))
 
        /*
          Returns the number of keys in object o on success, and -1 on
