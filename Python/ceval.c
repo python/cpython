@@ -111,8 +111,12 @@ staticforward PyTypeObject gentype;
 
 typedef struct {
 	PyObject_HEAD
-	PyFrameObject *frame;
-        int running; /* true if generator is being executed */ 
+	/* The gi_ prefix is intended to remind of generator-iterator. */
+
+	PyFrameObject *gi_frame;
+
+        /* True if generator is being executed. */ 
+        int gi_running;
 } genobject;
 
 static PyObject *
@@ -123,15 +127,15 @@ gen_new(PyFrameObject *f)
 		Py_DECREF(f);
 		return NULL;
 	}
-	gen->frame = f;
-	gen->running = 0;
+	gen->gi_frame = f;
+	gen->gi_running = 0;
 	return (PyObject *)gen;
 }
 
 static void
 gen_dealloc(genobject *gen)
 {
-	Py_DECREF(gen->frame);
+	Py_DECREF(gen->gi_frame);
 	PyObject_DEL(gen);
 }
 
@@ -139,10 +143,10 @@ static PyObject *
 gen_iternext(genobject *gen)
 {
 	PyThreadState *tstate = PyThreadState_GET();
-	PyFrameObject *f = gen->frame;
+	PyFrameObject *f = gen->gi_frame;
 	PyObject *result;
 
-	if (gen->running) {
+	if (gen->gi_running) {
 		PyErr_SetString(PyExc_ValueError,
 				"generator already executing");
 		return NULL;
@@ -156,9 +160,9 @@ gen_iternext(genobject *gen)
 	assert(f->f_back == NULL);
 	f->f_back = tstate->frame;
 
-	gen->running = 1;
+	gen->gi_running = 1;
 	result = eval_frame(f);
-	gen->running = 0;
+	gen->gi_running = 0;
 
 	/* Don't keep the reference to f_back any longer than necessary.  It
 	 * may keep a chain of frames alive or it could create a reference
