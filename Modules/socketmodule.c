@@ -355,7 +355,6 @@ typedef struct {
 } SSLObject;
 
 staticforward PyTypeObject SSL_Type;
-staticforward int SSL_setattr(SSLObject *self, char *name, PyObject *v);
 staticforward PyObject *SSL_SSLwrite(SSLObject *self, PyObject *args);
 staticforward PyObject *SSL_SSLread(SSLObject *self, PyObject *args);
 
