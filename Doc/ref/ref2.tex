@@ -358,10 +358,8 @@ to those used by Standard \C{}.  The recognized escape sequences are:
 \end{tableii}
 \index{ASCII@\ASCII{}}
 
-In strict compatibility with Standard C, up to three octal digits are
-accepted, but an unlimited number of hex digits is taken to be part of
-the hex escape (and then the lower 8 bits of the resulting hex number
-are used in 8-bit implementations).
+As in Standard C, up to three octal digits are accepted.  However,
+exactly two hex digits are taken in hex escapes.
 
 Unlike Standard \index{unrecognized escape sequence}C,
 all unrecognized escape sequences are left in the string unchanged,
