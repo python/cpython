@@ -28,10 +28,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "marshal.h"
 #include "import.h"
 
+#include "pythonresources.h"
+
 #include <OSUtils.h> /* for Set(Current)A5 */
 #include <Files.h>
-#include <Aliases.h>
-#include <Folders.h>
 #include <StandardFile.h>
 #include <Resources.h>
 #include <Memory.h>
@@ -59,32 +59,6 @@ typedef FileFilterYDProcPtr FileFilterYDUPP;
 
 #include <signal.h>
 #include <stdio.h>
-
-/* The alert for "No Python directory, where is it?" */
-#define NOPYTHON_ALERT 128
-#define YES_ITEM 1
-#define NO_ITEM 2
-#define CURWD_ITEM 3
-
-/* The alert for "this is an applet template" */
-#define NOPYC_ALERT 129
-
-/* The dialog for our GetDirectory call */
-#define GETDIR_ID 130		/* Resource ID for our "get directory" */
-#define SELECTCUR_ITEM 10	/* "Select current directory" button */
-
-/* The dialog for interactive options */
-#define OPT_DIALOG		131		/* Resource ID for dialog */
-#define OPT_OK			1
-#define OPT_CANCEL		2
-#define OPT_INSPECT		3
-#define OPT_VERBOSE		4
-#define OPT_SUPPRESS	5
-#define OPT_UNBUFFERED	6
-#define OPT_DEBUGGING	7
-
-/* The STR# resource for sys.path initialization */
-#define PYTHONPATH_ID 128
 
 /*
 ** We have to be careful, since we can't handle
@@ -130,6 +104,17 @@ static int in_foreground;
 ** when < 0, don't do any event scanning 
 */
 int PyMac_DoYieldEnabled = 1;
+
+/*
+** Some stuff for our GetDirectory and PromptGetFile routines
+*/
+struct hook_args {
+	int selectcur_hit;		/* Set to true when "select current" selected */
+	char *prompt;			/* The prompt */
+};
+static DlgHookYDUPP myhook_upp;
+static int upp_inited = 0;
+
 
 /* Convert C to Pascal string. Returns pointer to static buffer. */
 unsigned char *
@@ -407,201 +392,6 @@ PyMac_Idle()
 	PyMac_DoYield();
 	return intrpeek();
 }
-
-/*
-** Return the name of the Python directory
-*/
-char *
-PyMac_GetPythonDir()
-{
-    int item;
-    static char name[256];
-    AliasHandle handle;
-    FSSpec dirspec;
-    int ok = 0;
-    Boolean modified = 0, cannotmodify = 0;
-    short oldrh, prefrh;
-    short prefdirRefNum;
-    long prefdirDirID;
-    
-    /*
-    ** Remember old resource file and try to open preferences file
-    ** in the preferences folder. If it doesn't exist we try to create
-    ** it. If anything fails here we limp on, but set cannotmodify so
-    ** we don't try to store things later on.
-    */
-    oldrh = CurResFile();
-    if ( FindFolder(kOnSystemDisk, 'pref', kDontCreateFolder, &prefdirRefNum,
-    				&prefdirDirID) != noErr ) {
-    	/* Something wrong with preferences folder */
-    	cannotmodify = 1;
-    } else {
-    	(void)FSMakeFSSpec(prefdirRefNum, prefdirDirID, "\pPython Preferences", &dirspec);
-		prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
-		if ( prefrh == -1 ) {
-#ifdef USE_MAC_MODPREFS
-			/* It doesn't exist. Try to create it */
-			FSpCreateResFile(&dirspec, 'PYTH', 'pref', 0);
-	  		prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
-			if ( prefrh == -1 ) {
-				/* This is strange, what should we do now? */
-				cannotmodify = 1;
-			} else {
-				UseResFile(prefrh);
-    		}
-#else
-			printf("Error: no Preferences file. Attempting to limp on...\n");
-			name[0] = 0;
-			getwd(name);
-			return name;
-#endif
-    	}
-    }
-    /* So, we've opened our preferences file, we hope. Look for the alias */
-    handle = (AliasHandle)Get1Resource('alis', 128);
-    if ( handle ) {
-    	/* It exists. Resolve it (possibly updating it) */
-    	if ( ResolveAlias(NULL, handle, &dirspec, &modified) == noErr ) {
-    		ok = 1;
-    	}
-    }
-    if ( !ok ) {
-#ifdef USE_MAC_MODPREFS
-    	/* No luck, so far. ask the user for help */
-	    item = Alert(NOPYTHON_ALERT, NULL);
-	    if ( item == YES_ITEM ) {
-	    	/* The user wants to point us to a directory. Let her do so */
-	    	ok = PyMac_GetDirectory(&dirspec);
-	    	if ( ok )
-	    		modified = 1;
-	    } else if ( item == CURWD_ITEM ) {
-	    	/* The user told us the current directory is fine. Build an FSSpec for it */
-	    	if ( getwd(name) ) {
-	    		if ( FSMakeFSSpec(0, 0, Pstring(name), &dirspec) == 0 ) {
-	    			ok = 1;
-	    			modified = 1;
-	    		}
-	    	}
-	    }
-	    if ( handle ) {
-	    	/* Set the (old, invalid) alias record to the new data */
-	    	UpdateAlias(NULL, &dirspec, handle, &modified);
-	    }
-#else
-		printf("Error: corrupted Preferences file. Attempting to limp on...\n");
-		name[0] = 0;
-		getwd(name);
-		return name;
-#endif
-    }
-#ifdef USE_MAC_MODPREFS
-    if ( ok && modified && !cannotmodify) {
-    	/* We have a new, valid fsspec and we can update the preferences file. Do so. */
-    	if ( !handle ) {
-    		if (NewAlias(NULL, &dirspec, &handle) == 0 )
-    			AddResource((Handle)handle, 'alis', 128, "\p");
-    	} else {
-    		ChangedResource((Handle)handle);
-    	}
-    	UpdateResFile(prefrh);
-    }
-#endif
-    if ( !cannotmodify ) {
-    	/* This means we have the resfile open. Close it. */
-    	CloseResFile(prefrh);
-    }
-    /* Back to the old resource file */
-    UseResFile(oldrh);
-    /* Now turn the fsspec into a path to give back to our caller */
-    if ( ok ) {
-    	ok = (nfullpath(&dirspec, name) == 0);
-    	if ( ok ) strcat(name, ":");
-    }
-    if ( !ok ) {
-		/* If all fails, we return the current directory */
-		name[0] = 0;
-		(void)getwd(name);
-	}
-	return name;
-}
-
-#ifndef USE_BUILTIN_PATH
-char *
-PyMac_GetPythonPath(dir)
-char *dir;
-{
-    FSSpec dirspec;
-    short oldrh, prefrh = -1;
-    short prefdirRefNum;
-    long prefdirDirID;
-    char *rv;
-    int i, newlen;
-    Str255 pathitem;
-    
-    /*
-    ** Remember old resource file and try to open preferences file
-    ** in the preferences folder.
-    */
-    oldrh = CurResFile();
-    if ( FindFolder(kOnSystemDisk, 'pref', kDontCreateFolder, &prefdirRefNum,
-    				&prefdirDirID) == noErr ) {
-    	(void)FSMakeFSSpec(prefdirRefNum, prefdirDirID, "\pPython Preferences", &dirspec);
-		prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
-    }
-    /* At this point, we may or may not have the preferences file open, and it
-    ** may or may not contain a sys.path STR# resource. We don't care, if it doesn't
-    ** exist we use the one from the application (the default).
-    ** We put an initial '\n' in front of the path that we don't return to the caller
-    */
-    if( (rv = malloc(2)) == NULL )
-    	goto out;
-    strcpy(rv, "\n");
-    for(i=1; ; i++) {
-    	GetIndString(pathitem, PYTHONPATH_ID, i);
-    	if( pathitem[0] == 0 )
-    		break;
-    	if ( pathitem[0] >= 9 && strncmp((char *)pathitem+1, "$(PYTHON)", 9) == 0 ) {
-    		/* We have to put the directory in place */
-    		newlen = strlen(rv) + strlen(dir) + (pathitem[0]-9) + 2;
-    		if( (rv=realloc(rv, newlen)) == NULL)
-    			goto out;
-    		strcat(rv, dir);
-    		/* Skip a colon at the beginning of the item */
-    		if ( pathitem[0] > 9 && pathitem[1+9] == ':' ) {
-				memcpy(rv+strlen(rv), pathitem+1+10, pathitem[0]-10);
-				newlen--;
-			} else {
-				memcpy(rv+strlen(rv), pathitem+1+9, pathitem[0]-9);
-			}
-    		rv[newlen-2] = '\n';
-    		rv[newlen-1] = 0;
-    	} else {
-    		/* Use as-is */
-    		newlen = strlen(rv) + (pathitem[0]) + 2;
-    		if( (rv=realloc(rv, newlen)) == NULL)
-    			goto out;
-    		memcpy(rv+strlen(rv), pathitem+1, pathitem[0]);
-    		rv[newlen-2] = '\n';
-    		rv[newlen-1] = 0;
-    	}
-	}
-	if( strlen(rv) == 1) {
-		free(rv);
-		rv = NULL;
-	}
-	if ( rv ) {
-		rv[strlen(rv)-1] = 0;
-		rv++;
-	}
-out:
-	if ( prefrh ) {
-		CloseResFile(prefrh);
-		UseResFile(oldrh);
-	}
-	return rv;
-}
-#endif /* !USE_BUILTIN_PATH */
-
 /*
 ** Returns true if the argument has a resource fork, and it contains
 ** a 'PYC ' resource of the correct name
@@ -713,11 +503,20 @@ error:
 ** Helper routine for GetDirectory
 */
 static pascal short
-myhook_proc(short item, DialogPtr theDialog, void *dataptr)
+myhook_proc(short item, DialogPtr theDialog, struct hook_args *dataptr)
 {
+	if ( item == sfHookFirstCall && dataptr->prompt) {
+		Handle prompth;
+		short type;
+		Rect rect;
+		
+		GetDialogItem(theDialog, PROMPT_ITEM, &type, &prompth, &rect);
+		if ( prompth )
+			SetDialogItemText(prompth, (unsigned char *)dataptr->prompt);
+	} else
 	if ( item == SELECTCUR_ITEM ) {
 		item = sfItemCancelButton;
-		* (int *)dataptr = 1;
+		dataptr->selectcur_hit = 1;
 	}
 	return item;
 }	
@@ -727,27 +526,52 @@ myhook_proc(short item, DialogPtr theDialog, void *dataptr)
 ** why Apple doesn't provide a standard solution for this...
 */
 int
-PyMac_GetDirectory(dirfss)
+PyMac_GetDirectory(dirfss, prompt)
 	FSSpec *dirfss;
+	char *prompt;
 {
 	static SFTypeList list = {'fldr', 0, 0, 0};
 	static Point where = {-1, -1};
-	static DlgHookYDUPP myhook_upp;
-	static int upp_inited = 0;
 	StandardFileReply reply;
-	int select_clicked = 0;
+	struct hook_args hook_args;
 	
 	if ( !upp_inited ) {
 		myhook_upp = NewDlgHookYDProc(myhook_proc);
 		upp_inited = 1;
 	}
+	if ( prompt && *prompt )
+		hook_args.prompt = (char *)Pstring(prompt);
+	else
+		hook_args.prompt = NULL;
+	hook_args.selectcur_hit = 0;
 	CustomGetFile((FileFilterYDUPP)0, 1, list, &reply, GETDIR_ID, where, myhook_upp,
-				NULL, NULL, NULL, (void *)&select_clicked);
+				NULL, NULL, NULL, (void *)&hook_args);
 				
 	reply.sfFile.name[0] = 0;
 	if( FSMakeFSSpec(reply.sfFile.vRefNum, reply.sfFile.parID, reply.sfFile.name, dirfss) )
 		return 0;
-	return select_clicked;
+	return hook_args.selectcur_hit;
+}
+
+/*
+** Slightly extended StandardGetFile: accepts a prompt */
+void PyMac_PromptGetFile(short numTypes, ConstSFTypeListPtr typeList, 
+		StandardFileReply *reply, char *prompt)
+{
+	static Point where = {-1, -1};
+	struct hook_args hook_args;
+	
+	if ( !upp_inited ) {
+		myhook_upp = NewDlgHookYDProc(myhook_proc);
+		upp_inited = 1;
+	}
+	if ( prompt && *prompt )
+		hook_args.prompt = (char *)Pstring(prompt);
+	else
+		hook_args.prompt = NULL;
+	hook_args.selectcur_hit = 0;
+	CustomGetFile((FileFilterYDUPP)0, numTypes, typeList, reply, GETFILEPROMPT_ID, where,
+				myhook_upp, NULL, NULL, NULL, (void *)&hook_args);
 }
 
 /* Convert a 4-char string object argument to an OSType value */
@@ -901,154 +725,4 @@ PyMac_BuildEventRecord(EventRecord *e)
 	                     e->where.h,
 	                     e->where.v,
 	                     e->modifiers);
-}
-
-
-#ifdef USE_MAC_APPLET_SUPPORT
-/* Applet support */
-
-/* Run a compiled Python Python script from 'PYC ' resource __main__ */
-static int
-run_main_resource()
-{
-	Handle h;
-	long size;
-	PyObject *code;
-	PyObject *result;
-	
-	h = GetNamedResource('PYC ', "\p__main__");
-	if (h == NULL) {
-		Alert(NOPYC_ALERT, NULL);
-		return 1;
-	}
-	size = GetResourceSizeOnDisk(h);
-	HLock(h);
-	code = PyMarshal_ReadObjectFromString(*h + 8, (int)(size - 8));
-	HUnlock(h);
-	ReleaseResource(h);
-	if (code == NULL) {
-		PyErr_Print();
-		return 1;
-	}
-	result = PyImport_ExecCodeModule("__main__", code);
-	Py_DECREF(code);
-	if (result == NULL) {
-		PyErr_Print();
-		return 1;
-	}
-	Py_DECREF(result);
-	return 0;
-}
-
-/* Initialization sequence for applets */
-void
-PyMac_InitApplet()
-{
-	int argc;
-	char **argv;
-	int err;
-
-	PyMac_AddLibResources();
-#ifdef __MWERKS__
-	SIOUXSettings.asktosaveonclose = 0;
-	SIOUXSettings.showstatusline = 0;
-	SIOUXSettings.tabspaces = 4;
-#endif
-	argc = PyMac_GetArgv(&argv);
-	Py_Initialize();
-	PySys_SetArgv(argc, argv);
-	err = run_main_resource();
-	fflush(stderr);
-	fflush(stdout);
-#ifdef __MWERKS__
-	if (!err)
-		SIOUXSettings.autocloseonquit = 1;
-	else
-		printf("\n[Terminated]\n");
-#endif
-	/* XXX Should we bother to Py_Exit(sts)? */
-}
-
-#endif /* USE_MAC_APPLET_SUPPORT */
-
-/* For normal application */
-void
-PyMac_InitApplication()
-{
-	int argc;
-	char **argv;
-	
-#ifdef USE_MAC_SHARED_LIBRARY
-	PyMac_AddLibResources();
-#endif
-#ifdef __MWERKS__
-	SIOUXSettings.asktosaveonclose = 0;
-	SIOUXSettings.showstatusline = 0;
-	SIOUXSettings.tabspaces = 4;
-#endif
-	argc = PyMac_GetArgv(&argv);
-	if ( argc > 1 ) {
-		/* We're running a script. Attempt to change current directory */
-		char curwd[256], *endp;
-		
-		strcpy(curwd, argv[1]);
-		endp = strrchr(curwd, ':');
-		if ( endp && endp > curwd ) {
-			*endp = '\0';
-
-			chdir(curwd);
-		}
-	}
-	Py_Main(argc, argv);
-}
-
-/*
-** PyMac_InteractiveOptions - Allow user to set options if option key is pressed
-*/
-void
-PyMac_InteractiveOptions(int *inspect, int *verbose, int *suppress_print, 
-						 int *unbuffered, int *debugging)
-{
-	KeyMap rmap;
-	unsigned char *map;
-	short item, type;
-	ControlHandle handle;
-	DialogPtr dialog;
-	Rect rect;
-	
-	GetKeys(rmap);
-	map = (unsigned char *)rmap;
-	if ( ( map[0x3a>>3] & (1<<(0x3a&7)) ) == 0 )	/* option key is 3a */
-		return;
-
-	dialog = GetNewDialog(OPT_DIALOG, NULL, (WindowPtr)-1);
-	if ( dialog == NULL ) {
-		printf("Option dialog not found - cannot set options\n");
-		return;
-	}
-	while (1) {
-		handle = NULL;
-		ModalDialog(NULL, &item);
-		if ( item == OPT_OK )
-			break;
-		if ( item == OPT_CANCEL ) {
-			DisposDialog(dialog);
-			exit(0);
-		}
-#define OPT_ITEM(num, var) \
-		if ( item == (num) ) { \
-			*(var) = !*(var); \
-			GetDialogItem(dialog, (num), &type, (Handle *)&handle, &rect); \
-			SetCtlValue(handle, (short)*(var)); \
-		}
-		
-		OPT_ITEM(OPT_INSPECT, inspect);
-		OPT_ITEM(OPT_VERBOSE, verbose);
-		OPT_ITEM(OPT_SUPPRESS, suppress_print);
-		OPT_ITEM(OPT_UNBUFFERED, unbuffered);
-		OPT_ITEM(OPT_DEBUGGING, debugging);
-		
-#undef OPT_ITEM
-	}
-	DisposDialog(dialog);
 }
