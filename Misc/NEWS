@@ -42,6 +42,8 @@ Core and builtins
 Library
 -------
 
+- Bug #936637: Properly delegate startElementNS in saxutils.XMLFilterBase.
+
 - Bug #944082: Empty passwords in urllib2 are now supported.
 
 - Bug #926075: Fixed a bug that returns a wrong pattern object
