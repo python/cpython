@@ -43,8 +43,8 @@ Here's Python code that prints a simple piece of HTML:
 	print "<H1>This is my first CGI script</H1>"
 	print "Hello, world!"
 
-(It may not be fully legal HTML according to the letter of the
-standard, but any browser will understand it.)
+It may not be fully legal HTML according to the letter of the
+standard, but any browser will understand it.
 
 
 Using the cgi module
@@ -82,11 +82,11 @@ of FieldStorage (or MiniFieldStorage, depending on the form encoding).
 
 If the submitted form data contains more than one field with the same
 name, the object retrieved by form[key] is not a (Mini)FieldStorage
-instance but a list of such instances.  If you expect this possibility
-(i.e., when your HTML form comtains multiple fields with the same
-name), use the type() function to determine whether you have a single
-instance or a list of instances.  For example, here's code that
-concatenates any number of username fields, separated by commas:
+instance but a list of such instances.  If you are expecting this
+possibility (i.e., when your HTML form comtains multiple fields with
+the same name), use the type() function to determine whether you have
+a single instance or a list of instances.  For example, here's code
+that concatenates any number of username fields, separated by commas:
 
 	username = form["username"]
 	if type(username) is type([]):
@@ -213,16 +213,16 @@ installed; usually this is in a directory cgi-bin in the server tree.
 
 Make sure that your script is readable and executable by "others"; the
 Unix file mode should be 755 (use "chmod 755 filename").  Make sure
-that the first line of the script contains "#!" starting in column 1
+that the first line of the script contains #! starting in column 1
 followed by the pathname of the Python interpreter, for instance:
 
 	#! /usr/local/bin/python
 
 Make sure the Python interpreter exists and is executable by "others".
 
-(Note that it's probably not a good idea to use #! /usr/bin/env python
+Note that it's probably not a good idea to use #! /usr/bin/env python
 here, since the Python interpreter may not be on the default path
-given to CGI scripts!!!)
+given to CGI scripts!!!
 
 Make sure that any files your script needs to read or write are
 readable or writable, respectively, by "others" -- their mode should
@@ -244,7 +244,7 @@ before importing other modules, e.g.:
 	sys.path.insert(0, "/usr/home/joe/lib/python")
 	sys.path.insert(0, "/usr/local/lib/python")
 
-(This way, the directory inserted last will be searched first!)
+This way, the directory inserted last will be searched first!
 
 Instructions for non-Unix systems will vary; check your HTTP server's
 documentation (it will usually have a section on CGI scripts).
@@ -298,8 +298,8 @@ your script: replace its main code with the single statement
 This should produce the same results as those gotten from installing
 the cgi.py file itself.
 
-When an ordinary Python script raises an unhandled exception
-(e.g. because of a typo in a module name, a file that can't be opened,
+When an ordinary Python script raises an unhandled exception (e.g.,
+because of a typo in a module name, a file that can't be opened,
 etc.), the Python interpreter prints a nice traceback and exits.
 While the Python interpreter will still do this when your CGI script
 raises an exception, most likely the traceback will end up in one of
@@ -409,8 +409,6 @@ Perhaps there should be a slimmed version that doesn't contain all those
 backwards compatible and debugging classes and functions?
 
 """
-
-# " <== Emacs font-lock de-bogo-kludgificocity
 
 __version__ = "2.2"
 
