@@ -84,7 +84,7 @@ static PySequenceMethods xreadlines_as_sequence = {
 };
 
 static PyTypeObject XReadlinesObject_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0,
 	"xreadlines",
 	sizeof(PyXReadlinesObject) + PyGC_HEAD_SIZE,
@@ -118,5 +118,6 @@ initxreadlines(void)
 {
 	PyObject *m;
 
+	XReadlinesObject_Type.ob_type = &PyType_Type;
 	m = Py_InitModule("xreadlines", xreadlines_methods);
 }
