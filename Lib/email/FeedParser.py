@@ -404,6 +404,10 @@ class FeedParser:
             # Check for envelope header, i.e. unix-from
             if line.startswith('From '):
                 if lineno == 0:
+                    # Strip off the trailing newline
+                    mo = NLCRE_eol.search(line)
+                    if mo:
+                        line = line[:-len(mo.group(0))]
                     self._cur.set_unixfrom(line)
                     continue
                 elif lineno == len(lines) - 1:
