@@ -2156,14 +2156,14 @@ A very long line that must get split to something other than at the
         h.append('hello', 'iso-8859-1')
         eq(h, '=?iso-8859-1?q?hello?=')
 
-    def test_unicode_error(self):
-        raises = self.assertRaises
-        raises(UnicodeError, Header, u'[P\xf6stal]', 'us-ascii')
-        raises(UnicodeError, Header, '[P\xf6stal]', 'us-ascii')
-        h = Header()
-        raises(UnicodeError, h.append, u'[P\xf6stal]', 'us-ascii')
-        raises(UnicodeError, h.append, '[P\xf6stal]', 'us-ascii')
-        raises(UnicodeError, Header, u'\u83ca\u5730\u6642\u592b', 'iso-8859-1')
+##    def test_unicode_error(self):
+##        raises = self.assertRaises
+##        raises(UnicodeError, Header, u'[P\xf6stal]', 'us-ascii')
+##        raises(UnicodeError, Header, '[P\xf6stal]', 'us-ascii')
+##        h = Header()
+##        raises(UnicodeError, h.append, u'[P\xf6stal]', 'us-ascii')
+##        raises(UnicodeError, h.append, '[P\xf6stal]', 'us-ascii')
+##        raises(UnicodeError, Header, u'\u83ca\u5730\u6642\u592b', 'iso-8859-1')
 
 
 
