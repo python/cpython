@@ -1682,25 +1682,8 @@ and user-defined functions.  Both support the same operation (to call
 the function), but the implementation is different, hence the
 different object types.
 
-The implementation adds two special read-only attributes:
-\code{\var{f}.func_code} is a function's \dfn{code
-object}\obindex{code} (see below) and \code{\var{f}.func_globals} is
-the dictionary used as the function's global namespace (this is the
-same as \code{\var{m}.__dict__} where \var{m} is the module in which
-the function \var{f} was defined).
-
-Function objects also support getting and setting arbitrary
-attributes, which can be used, for example, to attach metadata to
-functions.  Regular attribute dot-notation is used to get and set such
-attributes. \emph{Note that the current implementation only supports
-function attributes on user-defined functions.  Function attributes on
-built-in functions may be supported in the future.}
-
-Functions have another special attribute \code{\var{f}.__dict__}
-(a.k.a. \code{\var{f}.func_dict}) which contains the namespace used to
-support function attributes.  \code{__dict__} and \code{func_dict} can
-be accessed directly or set to a dictionary object.  A function's
-dictionary cannot be deleted.
+See the \citetitle[../ref/ref.html]{Python Reference Manual} for more
+information.
 
 \subsubsection{Methods \label{typesmethods}}
 \obindex{method}

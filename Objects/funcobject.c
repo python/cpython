@@ -163,8 +163,6 @@ static PyMemberDef func_memberlist[] = {
         {"__doc__",       T_OBJECT,     OFF(func_doc), WRITE_RESTRICTED},
         {"func_globals",  T_OBJECT,     OFF(func_globals),
 	 RESTRICTED|READONLY},
-        {"func_name",     T_OBJECT,     OFF(func_name),         READONLY},
-        {"__name__",      T_OBJECT,     OFF(func_name),         READONLY},
         {"__module__",    T_OBJECT,     OFF(func_module), WRITE_RESTRICTED},
         {NULL}  /* Sentinel */
 };
@@ -250,6 +248,36 @@ func_set_code(PyFunctionObject *op, PyObject *value)
 }
 
 static PyObject *
+func_get_name(PyFunctionObject *op)
+{
+	if (restricted())
+		return NULL;
+	Py_INCREF(op->func_name);
+	return op->func_name;
+}
+
+static int
+func_set_name(PyFunctionObject *op, PyObject *value)
+{
+	PyObject *tmp;
+
+	if (restricted())
+		return -1;
+	/* Not legal to del f.func_name or to set it to anything
+	 * other than a string object. */
+	if (value == NULL || !PyString_Check(value)) {
+		PyErr_SetString(PyExc_TypeError,
+				"func_name must be set to a string object");
+		return -1;
+	}
+	tmp = op->func_name;
+	Py_INCREF(value);
+	op->func_name = value;
+	Py_DECREF(tmp);
+	return 0;
+}
+
+static PyObject *
 func_get_defaults(PyFunctionObject *op)
 {
 	if (restricted())
@@ -291,6 +319,8 @@ static PyGetSetDef func_getsetlist[] = {
 	 (setter)func_set_defaults},
 	{"func_dict", (getter)func_get_dict, (setter)func_set_dict},
 	{"__dict__", (getter)func_get_dict, (setter)func_set_dict},
+	{"func_name", (getter)func_get_name, (setter)func_set_name},
+	{"__name__", (getter)func_get_name, (setter)func_set_name},
 	{NULL} /* Sentinel */
 };
 
@@ -416,8 +446,6 @@ func_dealloc(PyFunctionObject *op)
 static PyObject*
 func_repr(PyFunctionObject *op)
 {
-	if (op->func_name == Py_None)
-		return PyString_FromFormat("<anonymous function at %p>", op);
 	return PyString_FromFormat("<function %s at %p>",
 				   PyString_AsString(op->func_name),
 				   op);

@@ -268,8 +268,15 @@ def test_func_name():
     def f(): pass
     verify(f.__name__ == "f")
     verify(f.func_name == "f")
-    cantset(f, "func_name", "f")
-    cantset(f, "__name__", "f")
+    f.__name__ = "g"
+    verify(f.__name__ == "g")
+    verify(f.func_name == "g")
+    f.func_name = "h"
+    verify(f.__name__ == "h")
+    verify(f.func_name == "h")
+    cantset(f, "func_globals", 1)
+    cantset(f, "__name__", 1)
+    
 
 def test_func_code():
     def f(): pass
