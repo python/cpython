@@ -3,8 +3,6 @@
 #----------------------------------------------------------------------
 # test largefile support on system where this makes sense
 #
-#XXX how to only run this when support is there
-#XXX how to only optionally run this, it will take along time
 #----------------------------------------------------------------------
 
 import test_support
