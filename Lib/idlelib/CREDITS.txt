@@ -24,8 +24,9 @@ Hernan Foffani, Christos Georgiou, Jason Orendorff, Josh Robb, and Bruce
 Sherwood have submitted useful patches.  Thanks, guys!
 
 There are others who should be included here, especially those who contributed
-to IDLE versions prior to 0.8, principally Mark Hammond, Tim Peters, and Moshe
-Zadka.  For additional details refer to NEWS.txt and Changelog.
+to IDLE versions prior to 0.8, principally Mark Hammond, Jeremy Hylton,
+Tim Peters, and Moshe Zadka.  For additional details refer to NEWS.txt and
+Changelog.
 
 Please contact the IDLEfork maintainer to have yourself included here if you
 are one of those we missed! 
