@@ -151,6 +151,16 @@ mfsa_getattr(self, name)
 	mfsaobject *self;
 	char *name;
 {
+	if ( strcmp(name, "data") == 0 ) {
+		int size;
+		PyObject *rv;
+		
+		size = GetHandleSize((Handle)self->alias);
+		HLock((Handle)self->alias);
+		rv = PyString_FromStringAndSize(*(Handle)self->alias, size);
+		HUnlock((Handle)self->alias);
+		return rv;
+	}
 	return findmethod(mfsa_methods, (object *)self, name);
 }
 
@@ -353,6 +363,8 @@ mfss_getattr(self, name)
 	mfssobject *self;
 	char *name;
 {
+	if ( strcmp(name, "data") == 0)
+		return PyString_FromStringAndSize((char *)&self->fsspec, sizeof(FSSpec));	
 	return findmethod(mfss_methods, (object *)self, name);
 }
 
@@ -498,6 +510,45 @@ mfs_FSSpec(self, args)
 	return (object *)newmfssobject(&fss);
 }
 
+static object *
+mfs_RawFSSpec(self, args)
+	object *self;	/* Not used */
+	object *args;
+{
+	FSSpec *fssp;
+	int size;
+
+	if (!newgetargs(args, "s#", &fssp, &size))
+		return NULL;
+	if ( size != sizeof(FSSpec) ) {
+		PyErr_SetString(PyExc_TypeError, "Incorrect size for FSSpec record");
+		return NULL;
+	}
+	return (object *)newmfssobject(fssp);
+}
+
+static object *
+mfs_RawAlias(self, args)
+	object *self;	/* Not used */
+	object *args;
+{
+	char *dataptr;
+	Handle h;
+	int size;
+
+	if (!newgetargs(args, "s#", &dataptr, &size))
+		return NULL;
+	h = NewHandle(size);
+	if ( h == NULL ) {
+		PyErr_NoMemory();
+		return NULL;
+	}
+	HLock(h);
+	memcpy((char *)*h, dataptr, size);
+	HUnlock(h);
+	return (object *)newmfsaobject((AliasHandle)h);
+}
+
 /* List of methods defined in the module */
 
 static struct methodlist mfs_methods[] = {
@@ -505,6 +556,8 @@ static struct methodlist mfs_methods[] = {
 	{"StandardGetFile",		mfs_StandardGetFile,	1},
 	{"StandardPutFile",		mfs_StandardPutFile,	1},
 	{"FSSpec",				mfs_FSSpec,				1},
+	{"RawFSSpec",			mfs_RawFSSpec,			1},
+	{"RawAlias",			mfs_RawAlias,			1},
  
 	{NULL,		NULL}		/* sentinel */
 };
