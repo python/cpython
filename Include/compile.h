@@ -47,7 +47,7 @@ typedef struct {
 	PyObject *co_name;	/* string */
 } PyCodeObject;
 
-extern DL_IMPORT PyTypeObject PyCode_Type;
+extern DL_IMPORT(PyTypeObject) PyCode_Type;
 
 #define PyCode_Check(op) ((op)->ob_type == &PyCode_Type)
 

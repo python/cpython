@@ -30,7 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* File object interface */
 
-extern DL_IMPORT PyTypeObject PyFile_Type;
+extern DL_IMPORT(PyTypeObject) PyFile_Type;
 
 #define PyFile_Check(op) ((op)->ob_type == &PyFile_Type)
 

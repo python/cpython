@@ -40,25 +40,25 @@ void PyErr_Restore Py_PROTO((PyObject *, PyObject *, PyObject *));
 
 /* Predefined exceptions */
 
-extern DL_IMPORT PyObject *PyExc_AccessError;
-extern DL_IMPORT PyObject *PyExc_AttributeError;
-extern DL_IMPORT PyObject *PyExc_ConflictError;
-extern DL_IMPORT PyObject *PyExc_EOFError;
-extern DL_IMPORT PyObject *PyExc_IOError;
-extern DL_IMPORT PyObject *PyExc_ImportError;
-extern DL_IMPORT PyObject *PyExc_IndexError;
-extern DL_IMPORT PyObject *PyExc_KeyError;
-extern DL_IMPORT PyObject *PyExc_KeyboardInterrupt;
-extern DL_IMPORT PyObject *PyExc_MemoryError;
-extern DL_IMPORT PyObject *PyExc_NameError;
-extern DL_IMPORT PyObject *PyExc_OverflowError;
-extern DL_IMPORT PyObject *PyExc_RuntimeError;
-extern DL_IMPORT PyObject *PyExc_SyntaxError;
-extern DL_IMPORT PyObject *PyExc_SystemError;
-extern DL_IMPORT PyObject *PyExc_SystemExit;
-extern DL_IMPORT PyObject *PyExc_TypeError;
-extern DL_IMPORT PyObject *PyExc_ValueError;
-extern DL_IMPORT PyObject *PyExc_ZeroDivisionError;
+extern DL_IMPORT(PyObject *) PyExc_AccessError;
+extern DL_IMPORT(PyObject *) PyExc_AttributeError;
+extern DL_IMPORT(PyObject *) PyExc_ConflictError;
+extern DL_IMPORT(PyObject *) PyExc_EOFError;
+extern DL_IMPORT(PyObject *) PyExc_IOError;
+extern DL_IMPORT(PyObject *) PyExc_ImportError;
+extern DL_IMPORT(PyObject *) PyExc_IndexError;
+extern DL_IMPORT(PyObject *) PyExc_KeyError;
+extern DL_IMPORT(PyObject *) PyExc_KeyboardInterrupt;
+extern DL_IMPORT(PyObject *) PyExc_MemoryError;
+extern DL_IMPORT(PyObject *) PyExc_NameError;
+extern DL_IMPORT(PyObject *) PyExc_OverflowError;
+extern DL_IMPORT(PyObject *) PyExc_RuntimeError;
+extern DL_IMPORT(PyObject *) PyExc_SyntaxError;
+extern DL_IMPORT(PyObject *) PyExc_SystemError;
+extern DL_IMPORT(PyObject *) PyExc_SystemExit;
+extern DL_IMPORT(PyObject *) PyExc_TypeError;
+extern DL_IMPORT(PyObject *) PyExc_ValueError;
+extern DL_IMPORT(PyObject *) PyExc_ZeroDivisionError;
 
 /* Convenience functions */
 

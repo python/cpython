@@ -39,7 +39,7 @@ typedef struct {
 	double ob_fval;
 } PyFloatObject;
 
-extern DL_IMPORT PyTypeObject PyFloat_Type;
+extern DL_IMPORT(PyTypeObject) PyFloat_Type;
 
 #define PyFloat_Check(op) ((op)->ob_type == &PyFloat_Type)
 

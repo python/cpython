@@ -30,7 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Method object interface */
 
-extern DL_IMPORT PyTypeObject PyCFunction_Type;
+extern DL_IMPORT(PyTypeObject) PyCFunction_Type;
 
 #define PyCFunction_Check(op) ((op)->ob_type == &PyCFunction_Type)
 

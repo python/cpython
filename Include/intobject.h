@@ -50,7 +50,7 @@ typedef struct {
 	long ob_ival;
 } PyIntObject;
 
-extern DL_IMPORT PyTypeObject PyInt_Type;
+extern DL_IMPORT(PyTypeObject) PyInt_Type;
 
 #define PyInt_Check(op) ((op)->ob_type == &PyInt_Type)
 
@@ -69,7 +69,7 @@ Hope these macros don't conflict with other people's.
 Don't forget to apply Py_INCREF() when returning True or False!!!
 */
 
-extern DL_IMPORT PyIntObject _Py_ZeroStruct, _Py_TrueStruct; /* Don't use these directly */
+extern DL_IMPORT(PyIntObject) _Py_ZeroStruct, _Py_TrueStruct; /* Don't use these directly */
 
 #define Py_False ((PyObject *) &_Py_ZeroStruct)
 #define Py_True ((PyObject *) &_Py_TrueStruct)

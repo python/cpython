@@ -49,7 +49,7 @@ typedef struct {
 	PyObject *ob_item[1];
 } PyTupleObject;
 
-extern DL_IMPORT PyTypeObject PyTuple_Type;
+extern DL_IMPORT(PyTypeObject) PyTuple_Type;
 
 #define PyTuple_Check(op) ((op)->ob_type == &PyTuple_Type)
 

@@ -30,7 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Module object interface */
 
-extern DL_IMPORT PyTypeObject PyModule_Type;
+extern DL_IMPORT(PyTypeObject) PyModule_Type;
 
 #define PyModule_Check(op) ((op)->ob_type == &PyModule_Type)
 

@@ -46,7 +46,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define AC_R_PUBLIC	0004
 #define AC_W_PUBLIC	0002
 
-extern DL_IMPORT PyTypeObject PyAccess_Type;
+extern DL_IMPORT(PyTypeObject) PyAccess_Type;
 
 #define PyAccess_Check(v) ((v)->ob_type == &PyAccess_Type)
 
@@ -58,7 +58,7 @@ void PyAccess_SetOwner Py_PROTO((PyObject *, PyObject *));
 PyObject *PyAccess_Clone Py_PROTO((PyObject *));
 int PyAccess_HasValue Py_PROTO((PyObject *));
 
-extern DL_IMPORT PyTypeObject PyAnyNumber_Type, PyAnySequence_Type, PyAnyMapping_Type;
+extern DL_IMPORT(PyTypeObject) PyAnyNumber_Type, PyAnySequence_Type, PyAnyMapping_Type;
 
 #ifdef __cplusplus
 }

@@ -61,7 +61,7 @@ typedef struct _frame {
 
 /* Standard object interface */
 
-extern DL_IMPORT PyTypeObject PyFrame_Type;
+extern DL_IMPORT(PyTypeObject) PyFrame_Type;
 
 #define PyFrame_Check(op) ((op)->ob_type == &PyFrame_Type)
 
