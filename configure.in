@@ -354,7 +354,7 @@ AC_MSG_CHECKING(for long long support)
 have_long_long=no
 AC_TRY_COMPILE([], [long long x; x = (long long)0;], AC_DEFINE(HAVE_LONG_LONG) have_long_long=yes)
 AC_MSG_RESULT($have_long_long)
-if test $have_long_long = yes ; then
+if test "$have_long_long" = yes ; then
 AC_CHECK_SIZEOF(long long)
 fi
 
@@ -375,9 +375,9 @@ AC_MSG_RESULT($ac_cv_sizeof_off_t)
 AC_DEFINE_UNQUOTED(SIZEOF_OFF_T, $ac_cv_sizeof_off_t)
 
 AC_MSG_CHECKING(whether to enable large file support)
-if test $have_long_long = yes -a \
-	$ac_cv_sizeof_off_t -gt $ac_cv_sizeof_long -a \
-	$ac_cv_sizeof_long_long -ge $ac_cv_sizeof_off_t; then
+if test "$have_long_long" = yes -a \
+	"$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
+	"$ac_cv_sizeof_long_long" -ge "$ac_cv_sizeof_off_t"; then
   AC_DEFINE(HAVE_LARGEFILE_SUPPORT)
   AC_MSG_RESULT(yes)
 else
