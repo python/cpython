@@ -590,8 +590,8 @@ class Thread:
     def isDaemon(self):
         """Return the thread's daemon flag."""
 
-    def setDaemon(self):
-        """Set the thread's daemon flag.
+    def setDaemon(self, daemonic):
+        """Set the thread's daemon flag (a Boolean).
 
         This must be called before start() is called.
 
