@@ -7,9 +7,13 @@ modules in setup scripts."""
 
 __revision__ = "$Id$"
 
-import os, string
+import os, string, sys
 from types import *
 
+try:
+    import warnings
+except ImportError:
+    warnings = None
 
 # This class is really only used by the "build_ext" command, so it might
 # make sense to put it in distutils.command.build_ext.  However, that
@@ -86,6 +90,7 @@ class Extension:
                   extra_compile_args=None,
                   extra_link_args=None,
                   export_symbols=None,
+                  **kw                      # To catch unknown keywords
                  ):
 
         assert type(name) is StringType, "'name' must be a string"
@@ -106,6 +111,15 @@ class Extension:
         self.extra_link_args = extra_link_args or []
         self.export_symbols = export_symbols or []
 
+        # If there are unknown keyword options, warn about them
+        if len(kw):
+            L = kw.keys() ; L.sort()
+            L = map(repr, L)
+            msg = "Unknown Extension options: " + string.join(L, ', ')
+            if warnings is not None:
+                warnings.warn(msg)
+            else:
+                sys.stderr.write(msg + '\n')
 # class Extension
 
 
