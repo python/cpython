@@ -256,11 +256,8 @@ file_seek(f, args)
 	if (f->f_fp == NULL)
 		return err_closed();
 	whence = 0;
-	if (!PyArg_Parse(args, "l", &offset)) {
-		PyErr_Clear();
-		if (!PyArg_Parse(args, "(li)", &offset, &whence))
-			return NULL;
-	}
+	if (!PyArg_ParseTuple(args, "l|i", &offset, &whence))
+		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	errno = 0;
 	ret = fseek(f->f_fp, offset, whence);
@@ -285,10 +282,11 @@ file_truncate(f, args)
 	
 	if (f->f_fp == NULL)
 		return err_closed();
-	if (!PyArg_Parse(args, "l", &newsize)) {
-		PyErr_Clear();
-		if (!PyArg_NoArgs(args))
-		        return NULL;
+	newsize = -1;
+	if (!PyArg_ParseTuple(args, "|l", &newsize)) {
+		return NULL;
+	}
+	if (newsize < 0) {
 		Py_BEGIN_ALLOW_THREADS
 		errno = 0;
 		newsize =  ftell(f->f_fp); /* default to current position*/
@@ -870,9 +868,9 @@ static PyMethodDef file_methods[] = {
 	{"read",	(PyCFunction)file_read, 1},
 	{"write",	(PyCFunction)file_write, 0},
 	{"fileno",	(PyCFunction)file_fileno, 0},
-	{"seek",	(PyCFunction)file_seek, 0},
+	{"seek",	(PyCFunction)file_seek, 1},
 #ifdef HAVE_FTRUNCATE
-	{"truncate",	(PyCFunction)file_truncate, 0},
+	{"truncate",	(PyCFunction)file_truncate, 1},
 #endif
 	{"tell",	(PyCFunction)file_tell, 0},
 	{"readinto",	(PyCFunction)file_readinto, 0},
