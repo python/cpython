@@ -1309,22 +1309,13 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 
 	/* Look in tp_dict of types in MRO */
 	mro = type->tp_mro;
-	if (mro == NULL) {
-		if (PyType_Ready(type) < 0) {
-			/* It's not ideal to clear the error condition,
-			   but this function is documented as not setting
-			   an exception, and I don't want to change that.
-			   When PyType_Ready() can't proceed, it won't
-			   set the "ready" flag, so future attempts to ready
-			   the same type will call it again -- hopefully
-			   in a context that propagates the exception out.
-			*/
-			PyErr_Clear();
-			return NULL;
-		}
-		mro = type->tp_mro;
-		assert(mro != NULL);
-	}
+
+	/* If mro is NULL, the type is either not yet initialized
+	   by PyType_Ready(), or already cleared by type_clear().
+	   Either way the safest thing to do is to return NULL. */
+	if (mro == NULL)
+		return NULL;
+
 	assert(PyTuple_Check(mro));
 	n = PyTuple_GET_SIZE(mro);
 	for (i = 0; i < n; i++) {
@@ -3099,9 +3090,16 @@ slot_nb_power(PyObject *self, PyObject *other, PyObject *modulus)
 
 	if (modulus == Py_None)
 		return slot_nb_power_binary(self, other);
-	/* Three-arg power doesn't use __rpow__ */
-	return call_method(self, "__pow__", &pow_str,
-			   "(OO)", other, modulus);
+	/* Three-arg power doesn't use __rpow__.  But ternary_op
+	   can call this when the second argument's type uses
+	   slot_nb_power, so check before calling self.__pow__. */
+	if (self->ob_type->tp_as_number != NULL &&
+	    self->ob_type->tp_as_number->nb_power == slot_nb_power) {
+		return call_method(self, "__pow__", &pow_str,
+				   "(OO)", other, modulus);
+	}
+	Py_INCREF(Py_NotImplemented);
+	return Py_NotImplemented;
 }
 
 SLOT0(slot_nb_negative, "__neg__")
