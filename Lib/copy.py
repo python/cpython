@@ -51,7 +51,7 @@ __getstate__() and __setstate__().  See the documentation for module
 # XXX need to support copy_reg here too...
 
 import types
-from pickle import _slotnames
+from copy_reg import _better_reduce
 
 class Error(Exception):
     pass
@@ -89,46 +89,6 @@ def copy(x):
     else:
         y = copierfunction(x)
     return y
-
-def __newobj__(cls, *args):
-    return cls.__new__(cls, *args)
-
-def _better_reduce(obj):
-    cls = obj.__class__
-    getnewargs = getattr(obj, "__getnewargs__", None)
-    if getnewargs:
-        args = getnewargs()
-    else:
-        args = ()
-    getstate = getattr(obj, "__getstate__", None)
-    if getstate:
-        try:
-            state = getstate()
-        except TypeError, err:
-            # XXX Catch generic exception caused by __slots__
-            if str(err) != ("a class that defines __slots__ "
-                            "without defining __getstate__ "
-                            "cannot be pickled"):
-                raise # Not that specific exception
-            getstate = None
-    if not getstate:
-        state = getattr(obj, "__dict__", None)
-        names = _slotnames(cls)
-        if names:
-            slots = {}
-            nil = []
-            for name in names:
-                value = getattr(obj, name, nil)
-                if value is not nil:
-                    slots[name] = value
-            if slots:
-                state = (state, slots)
-    listitems = dictitems = None
-    if isinstance(obj, list):
-        listitems = iter(obj)
-    elif isinstance(obj, dict):
-        dictitems = obj.iteritems()
-    return __newobj__, (cls,) + args, state, listitems, dictitems
     
 
 _copy_dispatch = d = {}
