@@ -48,6 +48,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #ifndef HAVE_UNIVERSAL_HEADERS
 #define GetResourceSizeOnDisk(x) SizeResource(x)
+typedef DlgHookYDProcPtr DlgHookYDUPP;
+#define NewDlgHookYDProc(userRoutine) ((DlgHookYDUPP) (userRoutine))
+typedef FileFilterYDProcPtr FileFilterYDUPP;
 #endif
 
 #include <signal.h>
@@ -588,14 +591,12 @@ error:
 		return NULL;
 	}
 }
+
 /*
 ** Helper routine for GetDirectory
 */
-static int
-myhook_proc(item, theDialog, dataptr)
-	short item;
-	DialogPtr theDialog;
-	void *dataptr;
+static pascal short
+myhook_proc(short item, DialogPtr theDialog, void *dataptr)
 {
 	if ( item == SELECTCUR_ITEM ) {
 		item = sfItemCancelButton;
@@ -623,7 +624,7 @@ PyMac_GetDirectory(dirfss)
 		myhook_upp = NewDlgHookYDProc(myhook_proc);
 		upp_inited = 1;
 	}
-	CustomGetFile((FileFilterUPP)0, 1, list, &reply, GETDIR_ID, where, myhook_upp,
+	CustomGetFile((FileFilterYDUPP)0, 1, list, &reply, GETDIR_ID, where, myhook_upp,
 				NULL, NULL, NULL, (void *)&select_clicked);
 				
 	reply.sfFile.name[0] = 0;
@@ -786,7 +787,26 @@ PyMac_BuildEventRecord(EventRecord *e)
 }
 
 
-/* ---------- */
+#ifndef USE_MAC_SHARED_LIBRARY
+
+/* For normal application */
+void
+main()
+{
+	int argc;
+	char **argv;
+	
+#ifdef __MWERKS__
+	SIOUXSettings.asktosaveonclose = 0;
+	SIOUXSettings.showstatusline = 0;
+	SIOUXSettings.tabspaces = 4;
+#endif
+	argc = PyMac_GetArgv(&argv);
+	Py_Main(argc, argv);
+}
+
+#else /* USE_MAC_SHARED_LIBRARY */
+
 /* Applet support */
 
 /* Run a compiled Python Python script from 'PYC ' resource __main__ */
@@ -828,16 +848,10 @@ PyMac_InitApplet()
 {
 	int argc;
 	char **argv;
+	int err;
 
-#ifdef __MWERKS__
-	/*
-	** Guido: you should fix this. You should arrange to have the
-	** __sinit routine from macshlglue.c called so you can stuff
-	** resources into the lib file.
-	*/
+#ifdef USE_MAC_SHARED_LIBRARY
 	PyMac_AddLibResources();
-#else
-	KABOO! KABOO!
 #endif
 #ifdef __MWERKS__
 	SIOUXSettings.asktosaveonclose = 0;
@@ -858,3 +872,5 @@ PyMac_InitApplet()
 #endif
 	/* XXX Should we bother to Py_Exit(sts)? */
 }
+
+#endif /* USE_MAC_SHARED_LIBRARY */
