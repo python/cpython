@@ -72,9 +72,12 @@ class IOBinding:
         if self.filename_change_hook:
             self.filename_change_hook()
 
-    def open(self, event):
+    def open(self, event=None, editFile=None):
         if self.editwin.flist:
-            filename = self.askopenfile()
+            if not editFile:
+                filename = self.askopenfile()
+            else:
+                filename=editFile
             if filename:
                 # if the current window has no filename and hasn't been
                 #   modified, we replace it's contents (no loss).  Otherwise
@@ -93,7 +96,10 @@ class IOBinding:
             if reply == "cancel":
                 self.text.focus_set()
                 return "break"
-        filename = self.askopenfile()
+        if not editFile:
+            filename = self.askopenfile()
+        else:
+            filename=editFile
         if filename:
             self.loadfile(filename)
         else:

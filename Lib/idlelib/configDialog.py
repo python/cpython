@@ -1072,12 +1072,9 @@ class ConfigDialog(Toplevel):
         """
         save all configuration changes to user config files.
         """
-        #if self.changedItems['main'].has_key('HelpFiles'):
         #this section gets completely replaced
-        print idleConf.GetAllExtraHelpSourcesList()
         idleConf.userCfg['main'].remove_section('HelpFiles')
         idleConf.userCfg['main'].Save()
-        print idleConf.GetAllExtraHelpSourcesList()
         for configType in self.changedItems.keys():
             cfgTypeHasChanges=0
             for section in self.changedItems[configType].keys():
@@ -1086,7 +1083,6 @@ class ConfigDialog(Toplevel):
                     if self.SetUserValue(configType,section,item,value):
                         cfgTypeHasChanges=1
             if cfgTypeHasChanges: 
-                print configType,'- changed'
                 idleConf.userCfg[configType].Save()                
         self.ResetChangedItems() #clear the changed items dict
          

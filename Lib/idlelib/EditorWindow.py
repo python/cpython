@@ -105,6 +105,8 @@ class EditorWindow:
             #self.top.instanceDict makes flist.inversedict avalable to
             #configDialog.py so it can access all EditorWindow instaces
             self.top.instanceDict=flist.inversedict
+        self.recentFilesPath=os.path.join(idleConf.GetUserCfgDir(),
+                'recent-files.lst')
         self.vbar = vbar = Scrollbar(top, name='vbar')
         self.text_frame = text_frame = Frame(top)
         self.text = text = Text(text_frame, name='text', padx=5, wrap=None,
@@ -178,6 +180,11 @@ class EditorWindow:
             self.color = None
         self.undo = undo = self.UndoDelegator(); per.insertfilter(undo)
         self.io = io = self.IOBinding(self)
+        #create the Recent Files submenu
+        self.menuRecentFiles=Menu(self.menubar)
+        self.menudict['file'].insert_cascade(3,label='Recent Files',
+                underline=0,menu=self.menuRecentFiles)
+        self.UpdateRecentFilesList()
 
         text.undo_block_start = undo.undo_block_start
         text.undo_block_stop = undo.undo_block_stop
@@ -253,6 +260,7 @@ class EditorWindow:
             menudict[name] = menu = Menu(mbar, name=name)
             mbar.add_cascade(label=label, menu=menu, underline=underline)
         self.fill_menus()
+        #create the ExtraHelp menu, if required
         self.ResetExtraHelpMenu()
 
     def postwindowsmenu(self):
@@ -542,12 +550,69 @@ class EditorWindow:
             self.menuExtraHelp.delete(1,END)
             for menuItem in menuList:
                 self.menuExtraHelp.add_command(label=menuItem[0],
-                        command=lambda:self.display_docs(menuItem[1]))
+                        command=self.__DisplayExtraHelpCallback(menuItem[1]))
         else: #no extra help items
             if hasattr(self,'menuExtraHelp'): 
                 helpMenu.delete(cascadeIndex-1)                    
                 del(self.menuExtraHelp)
+    
+    def __DisplayExtraHelpCallback(self,helpFile):
+        def DisplayExtraHelp(helpFile=helpFile):
+            self.display_docs(helpFile)
+        return DisplayExtraHelp
                     
+    def UpdateRecentFilesList(self,newFile=None):
+        #load or update the recent files list, and menu if required
+        rfList=[]
+        if os.path.exists(self.recentFilesPath):
+            RFfile=open(self.recentFilesPath,'r')
+            try:
+                rfList=RFfile.readlines()
+            finally:
+                RFfile.close()
+        if newFile: 
+            newFile=os.path.abspath(newFile)+'\n'
+            if newFile in rfList:
+                rfList.remove(newFile)
+            rfList.insert(0,newFile)
+        rfList=self.__CleanRecentFiles(rfList)
+        print self.top.instanceDict
+        print self
+        if rfList:
+            for instance in self.top.instanceDict.keys():
+                instance.menuRecentFiles.delete(1,END)
+                for file in rfList:
+                    fileName=file[0:-1]
+                    instance.menuRecentFiles.add_command(label=fileName,
+                            command=instance.__RecentFileCallback(fileName))
+                    
+    def __CleanRecentFiles(self,rfList):
+        origRfList=rfList[:]
+        count=0
+        nonFiles=[]
+        for path in rfList:
+            if not os.path.exists(path[0:-1]): 
+                nonFiles.append(count)
+            count=count+1
+        if nonFiles:
+            nonFiles.reverse()
+            for index in nonFiles:
+                del(rfList[index])
+        if len(rfList)>19:
+            rfList=rfList[0:19]
+        #if rfList != origRfList:
+        RFfile=open(self.recentFilesPath,'w')
+        try:
+            RFfile.writelines(rfList)
+        finally:
+            RFfile.close()
+        return rfList
+    
+    def __RecentFileCallback(self,fileName):
+        def OpenRecentFile(fileName=fileName):
+            self.io.open(editFile=fileName)
+        return OpenRecentFile
+    
     def saved_change_hook(self):
         short = self.short_title()
         long = self.long_title()
@@ -628,6 +693,10 @@ class EditorWindow:
         return reply
 
     def _close(self):
+        print self.io.filename
+        if self.io.filename:
+            self.UpdateRecentFilesList(newFile=self.io.filename)
+            
         WindowList.unregister_callback(self.postwindowsmenu)
         if self.close_hook:
             self.close_hook()
