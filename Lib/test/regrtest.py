@@ -286,7 +286,7 @@ def runtest(test, generate, verbose, quiet, testdir = None):
     if verbose:
         cfp = None
     else:
-        cfp =  StringIO.StringIO()
+        cfp = StringIO.StringIO()
     try:
         save_stdout = sys.stdout
         try:
