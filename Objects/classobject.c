@@ -649,34 +649,20 @@ instance_getattr2(register PyInstanceObject *inst, PyObject *name)
 	PyClassObject *class;
 	descrgetfunc f;
 
-	class = NULL;
 	v = PyDict_GetItem(inst->in_dict, name);
-	if (v == NULL) {
-		v = class_lookup(inst->in_class, name, &class);
-		if (v == NULL)
-			return v;
+	if (v != NULL) {
+		Py_INCREF(v);
+		return v;
 	}
-	Py_INCREF(v);
-	if (class != NULL) {
+	v = class_lookup(inst->in_class, name, &class);
+	if (v != NULL) {
+		Py_INCREF(v);
 		f = v->ob_type->tp_descr_get;
 		if (f != NULL) {
 			PyObject *w = f(v, (PyObject *)inst,
 					(PyObject *)(inst->in_class));
 			Py_DECREF(v);
 			v = w;
-		}
-		else if (PyMethod_Check(v)) {
-			/* XXX This should be a tp_descr_get slot of
-			   PyMethodObjects */
-			PyObject *im_class = PyMethod_GET_CLASS(v);
-			/* Only if classes are compatible */
-			if (PyClass_IsSubclass((PyObject *)class, im_class)) {
-				PyObject *im_func = PyMethod_GET_FUNCTION(v);
-				PyObject *w = PyMethod_New(im_func,
-						(PyObject *)inst, im_class);
-				Py_DECREF(v);
-				v = w;
-			}
 		}
 	}
 	return v;
@@ -2194,16 +2180,19 @@ instancemethod_call(PyObject *func, PyObject *arg, PyObject *kw)
 }
 
 static PyObject *
-instancemethod_descr_get(PyObject *meth, PyObject *obj, PyObject *type)
+instancemethod_descr_get(PyObject *meth, PyObject *obj, PyObject *class)
 {
-	if (PyMethod_GET_SELF(meth) != NULL) {
-		/* Don't rebind an already bound method */
+	/* Don't rebind an already bound method, or an unbound method
+	   of a class that's not a base class of class */
+	if (PyMethod_GET_SELF(meth) != NULL ||
+	    (PyMethod_GET_CLASS(meth) != NULL &&
+	     !PyObject_IsSubclass(class,  PyMethod_GET_CLASS(meth)))) {
 		Py_INCREF(meth);
 		return meth;
 	}
 	if (obj == Py_None)
 		obj = NULL;
-	return PyMethod_New(PyMethod_GET_FUNCTION(meth), obj, type);
+	return PyMethod_New(PyMethod_GET_FUNCTION(meth), obj, class);
 }
 
 PyTypeObject PyMethod_Type = {
