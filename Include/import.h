@@ -61,6 +61,9 @@ struct _inittab {
 
 extern DL_IMPORT(struct _inittab *) PyImport_Inittab;
 
+extern int PyImport_AppendInittab Py_PROTO((char *name, void (*initfunc)()));
+extern int PyImport_ExtendInittab Py_PROTO((struct _inittab *newtab));
+
 struct _frozen {
 	char *name;
 	unsigned char *code;
