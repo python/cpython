@@ -20,6 +20,19 @@ VERSION=2.3
 AC_SUBST(SOVERSION)
 SOVERSION=1.0
 
+# The later defininition of _XOPEN_SOURCE disables certain features
+# on Linux, so we need _GNU_SOURCE to re-enable them (makedev, tm_zone).
+AC_DEFINE(_GNU_SOURCE, 1, [Define on Linux to activate all library features])
+
+# The definition of _GNU_SOURCE potentially causes a change of the value
+# of _XOPEN_SOURCE. So define it only conditionally.
+AH_VERBATIM([_XOPEN_SOURCE],
+[/* Define on UNIX to activate XPG/5 features.  */
+#ifndef _XOPEN_SOURCE
+# define _XOPEN_SOURCE 500
+#endif])
+AC_DEFINE(_XOPEN_SOURCE, 500)
+
 # Arguments passed to configure.
 AC_SUBST(CONFIG_ARGS)
 CONFIG_ARGS="$ac_configure_args"
