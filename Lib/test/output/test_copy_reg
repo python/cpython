@@ -1,0 +1,9 @@
+test_copy_reg
+Caught expected TypeError:
+copy_reg is not intended for use with classes
+
+Caught expected TypeError:
+reduction functions must be callable
+
+Caught expected TypeError:
+constructors must be callable
