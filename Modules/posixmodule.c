@@ -460,22 +460,6 @@ static PyObject * os2_error(int code)
 /* POSIX generic methods */
 
 static PyObject *
-posix_int(PyObject *args, char *format, int (*func)(int))
-{
-	int fd;
-	int res;
-	if (!PyArg_ParseTuple(args, format, &fd))
-		return NULL;
-	Py_BEGIN_ALLOW_THREADS
-	res = (*func)(fd);
-	Py_END_ALLOW_THREADS
-	if (res < 0)
-		return posix_error();
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-static PyObject *
 posix_fildes(PyObject *fdobj, int (*func)(int))
 {
 	int fd;
