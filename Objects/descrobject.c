@@ -26,7 +26,7 @@ typedef struct {
 
 typedef struct {
 	COMMON;
-	struct getsetlist *d_getset;
+	PyGetSetDef *d_getset;
 } PyGetSetDescrObject;
 
 typedef struct {
@@ -302,7 +302,7 @@ static PyMemberDef descr_members[] = {
 	{0}
 };
 
-static struct getsetlist method_getset[] = {
+static PyGetSetDef method_getset[] = {
 	{"__doc__", (getter)method_get_doc},
 	{0}
 };
@@ -317,8 +317,23 @@ member_get_doc(PyMemberDescrObject *descr, void *closure)
 	return PyString_FromString(descr->d_member->doc);
 }
 
-static struct getsetlist member_getset[] = {
+static PyGetSetDef member_getset[] = {
 	{"__doc__", (getter)member_get_doc},
+	{0}
+};
+
+static PyObject *
+getset_get_doc(PyGetSetDescrObject *descr, void *closure)
+{
+	if (descr->d_getset->doc == NULL) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	return PyString_FromString(descr->d_getset->doc);
+}
+
+static PyGetSetDef getset_getset[] = {
+	{"__doc__", (getter)getset_get_doc},
 	{0}
 };
 
@@ -332,7 +347,7 @@ wrapper_get_doc(PyWrapperDescrObject *descr, void *closure)
 	return PyString_FromString(descr->d_base->doc);
 }
 
-static struct getsetlist wrapper_getset[] = {
+static PyGetSetDef wrapper_getset[] = {
 	{"__doc__", (getter)wrapper_get_doc},
 	{0}
 };
@@ -444,7 +459,7 @@ static PyTypeObject PyGetSetDescr_Type = {
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
 	descr_members,				/* tp_members */
-	0,					/* tp_getset */
+	getset_getset,				/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 	(descrgetfunc)getset_get,		/* tp_descr_get */
@@ -532,7 +547,7 @@ PyDescr_NewMember(PyTypeObject *type, PyMemberDef *member)
 }
 
 PyObject *
-PyDescr_NewGetSet(PyTypeObject *type, struct getsetlist *getset)
+PyDescr_NewGetSet(PyTypeObject *type, PyGetSetDef *getset)
 {
 	PyGetSetDescrObject *descr;
 
@@ -778,7 +793,7 @@ wrapper_doc(wrapperobject *wp)
 	}
 }
 
-static struct getsetlist wrapper_getsets[] = {
+static PyGetSetDef wrapper_getsets[] = {
 	{"__name__", (getter)wrapper_name},
 	{"__doc__", (getter)wrapper_doc},
 	{0}

@@ -55,8 +55,9 @@ spamlist_state_get(spamlistobject *self)
 	return PyInt_FromLong(self->state);
 }
 
-static struct getsetlist spamlist_getsets[] = {
-	{"state", (getter)spamlist_state_get, NULL, NULL},
+static PyGetSetDef spamlist_getsets[] = {
+	{"state", (getter)spamlist_state_get, NULL,
+	 "an int variable for demonstration purposes"},
 	{0}
 };
 

@@ -159,7 +159,7 @@ meth_get__self__(PyCFunctionObject *m, void *closure)
 	return self;
 }
 
-static struct getsetlist meth_getsets [] = {
+static PyGetSetDef meth_getsets [] = {
 	{"__doc__",  (getter)meth_get__doc__,  NULL, NULL},
 	{"__name__", (getter)meth_get__name__, NULL, NULL},
 	{"__self__", (getter)meth_get__self__, NULL, NULL},

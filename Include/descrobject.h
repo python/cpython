@@ -1,14 +1,15 @@
-/* XXX getter, setter, getsetlist and wrapperbase need 'Py'-prefixed names */
+/* Descriptors */
 
 typedef PyObject *(*getter)(PyObject *, void *);
 typedef int (*setter)(PyObject *, PyObject *, void *);
 
-struct getsetlist {
+typedef struct PyGetSetDef {
 	char *name;
 	getter get;
 	setter set;
+	char *doc;
 	void *closure;
-};
+} PyGetSetDef;
 
 typedef PyObject *(*wrapperfunc)(PyObject *self, PyObject *args,
 				 void *wrapped);
@@ -23,7 +24,7 @@ extern DL_IMPORT(PyObject *) PyDescr_NewMethod(PyTypeObject *, PyMethodDef *);
 extern DL_IMPORT(PyObject *) PyDescr_NewMember(PyTypeObject *,
 					       struct PyMemberDef *);
 extern DL_IMPORT(PyObject *) PyDescr_NewGetSet(PyTypeObject *,
-					       struct getsetlist *);
+					       struct PyGetSetDef *);
 extern DL_IMPORT(PyObject *) PyDescr_NewWrapper(PyTypeObject *,
 						struct wrapperbase *, void *);
 extern DL_IMPORT(int) PyDescr_IsData(PyObject *);

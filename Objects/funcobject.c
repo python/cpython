@@ -257,7 +257,7 @@ func_set_defaults(PyFunctionObject *op, PyObject *value)
 	return 0;
 }
 
-static struct getsetlist func_getsetlist[] = {
+static PyGetSetDef func_getsetlist[] = {
         {"func_code", (getter)func_get_code, (setter)func_set_code},
         {"func_defaults", (getter)func_get_defaults,
 	 (setter)func_set_defaults},

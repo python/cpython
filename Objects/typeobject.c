@@ -91,7 +91,7 @@ type_dynamic(PyTypeObject *type, void *context)
 	return res;
 }
 
-struct getsetlist type_getsets[] = {
+PyGetSetDef type_getsets[] = {
 	{"__name__", (getter)type_name, NULL, NULL},
 	{"__module__", (getter)type_module, NULL, NULL},
 	{"__dict__",  (getter)type_dict,  NULL, NULL},
@@ -659,7 +659,7 @@ subtype_dict(PyObject *obj, void *context)
 	}
 }
 
-struct getsetlist subtype_getsets[] = {
+PyGetSetDef subtype_getsets[] = {
 	{"__dict__", subtype_dict, NULL, NULL},
 	{0},
 };
@@ -1282,7 +1282,7 @@ add_members(PyTypeObject *type, PyMemberDef *memb)
 }
 
 static int
-add_getset(PyTypeObject *type, struct getsetlist *gsp)
+add_getset(PyTypeObject *type, PyGetSetDef *gsp)
 {
 	PyObject *dict = type->tp_defined;
 
