@@ -55,7 +55,7 @@ def main():
 		videofile = videofile + '.video'
 
 	print 'Opening video input file..'
-	vin = VFile.VinFile().init(videofile)
+	vin = VFile.VinFile(videofile)
 
 	print 'Opening audio input file..'
 	ain = aifc.open(audiofile, 'r')

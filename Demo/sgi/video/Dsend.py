@@ -119,10 +119,9 @@ def main():
 	gl.qdevice(DEVICE.WINTHAW)
 	width, height = gl.getsize()
 
-	lvo = LiveVideoOut.LiveVideoOut().init(wid, width, height, vtype)
+	lvo = LiveVideoOut.LiveVideoOut(wid, width, height, vtype)
 
-	lvi = DisplayVideoIn.DisplayVideoIn().init(pktmax, \
-		  width, height, vtype)
+	lvi = DisplayVideoIn.DisplayVideoIn(pktmax, width, height, vtype)
 
 	if xpos or ypos:
 		lvi.positionvideo(xpos, ypos)

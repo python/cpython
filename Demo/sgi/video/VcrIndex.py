@@ -9,7 +9,7 @@ VERSION_STRING='#!VcrIndex 1.1\n'
 PREV_VERSION_STRING='#!VcrIndex 1.0\n'
 
 class VcrIndex:
-	def init(self, name):
+	def __init__(self, name):
 		self.curmovie = None
 		self.curscene = None
 		self.modified = 0
@@ -18,12 +18,12 @@ class VcrIndex:
 		self.editable = []
 		if not name:
 			self.movies = {}
-			return self
+			return
 		try:
 			fp = open(name, 'r')
 		except IOError:
 			self.movies = {}
-			return self
+			return
 		header = fp.readline()
 		if header == PREV_VERSION_STRING:
 			print 'Converting old-format database...'
@@ -41,14 +41,13 @@ class VcrIndex:
 				
 				self.movies[m] = newd
 			print 'Done.'
-			return self
+			return
 		if header <> VERSION_STRING:
 			print 'VcrIndex: incorrect version string:', header
 			self.movies = {}
-			return self
+			return
 		data = fp.read(100000)
 		self.movies = eval(data)
-		return self
 	#
 	# Save database to given file (or same file as read from if no
 	# filename given).

@@ -12,12 +12,12 @@ class LiveVideoOut:
 	# wid:    the window id where the video is to be displayed (centered)
 	# vw, vh: size of the video image to be displayed
 
-	def init(self, wid, vw, vh, type):
+	def __init__(self, wid, vw, vh, type):
 		##print 'Init', wid, xywh
 		##print 'video', vw, vw
 		self.vw = vw
 		self.vh = vh
-		self.disp = Displayer().init()
+		self.disp = Displayer()
 		if not type in ('rgb', 'rgb8', 'grey', 'mono', 'grey2', \
 			  'grey4'):
 			raise 'Incorrent live video output type', type
@@ -32,7 +32,6 @@ class LiveVideoOut:
 		self.disp.initcolormap()
 		self.reshapewindow()
 		gl.winset(oldwid)
-		return self
 
 	# Call this in response to every REDRAW event for the window
 	# or if the window size has changed for other reasons.
@@ -111,7 +110,7 @@ class LiveVideoOut:
 class LiveVideoOutSlow(LiveVideoOut):
 
 	# Reshapewindow - Realloc buffer.
-	# (is also called by init() indirectly)
+	# (is also called by __init__() indirectly)
 
 	def reshapewindow(self):
 		LiveVideoOut.reshapewindow(self)

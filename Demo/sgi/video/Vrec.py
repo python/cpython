@@ -253,7 +253,7 @@ def record(v, info, filename, audiofilename, mono, grey, greybits, \
 	# XXX (Strange: need fps of Indigo monitor, not of PAL or NTSC!)
 	tpf = 1000.0 / fps # Time per field in msec
 	if filename:
-		vout = VFile.VoutFile().init(filename)
+		vout = VFile.VoutFile(filename)
 		if mono:
 			format = 'mono'
 		elif grey and greybits == 8:
@@ -273,7 +273,7 @@ def record(v, info, filename, audiofilename, mono, grey, greybits, \
 			print 'done.'
 		MAXSIZE = 20 # XXX should be a user option
 		import Queue
-		queue = Queue.Queue().init(MAXSIZE)
+		queue = Queue.Queue(MAXSIZE)
 		done = thread.allocate_lock()
 		done.acquire_lock()
 		convertor = None
@@ -376,8 +376,8 @@ def saveframes(vout, queue, done, mono, monotreshold, convertor):
 AQSIZE = 8000 # XXX should be a user option
 
 def initaudio(filename, stop, done):
-	import thread, aiff
-	afile = aiff.Aiff().init(filename, 'w')
+	import thread, aifc
+	afile = aifc.open(filename, 'w')
 	afile.nchannels = AL.MONO
 	afile.sampwidth = AL.SAMPLE_8
 	params = [AL.INPUT_RATE, 0]

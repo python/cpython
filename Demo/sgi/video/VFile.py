@@ -186,7 +186,7 @@ class VideoParams:
 	# Set all parameters to something decent
 	# (except width and height are set to zero)
 
-	def init(self):
+	def __init__(self):
 		# Essential parameters
 		self.frozen = 0		# if set, can't change parameters
 		self.format = 'grey'	# color system used
@@ -203,7 +203,6 @@ class VideoParams:
 		self.chrompack = 0	# set if separate chrominance data
 		self.setderived()
 		self.decompressor = None
-		return self
 
 	# Freeze the parameters (disallow changes)
 
@@ -369,11 +368,11 @@ class Displayer(VideoParams):
 	# Initialize an instance.
 	# This does not need a current window
 
-	def init(self):
+	def __init__(self):
 		if no_gl:
 			raise RuntimeError, \
 				  'no gl module available, so cannot display'
-		self = VideoParams.init(self)
+		VideoParams.__init__(self)
 		# User-settable parameters
 		self.magnify = 1.0	# frame magnification factor
 		self.xorigin = 0	# x frame offset
@@ -817,15 +816,18 @@ def writecompressfileheader(fp, cheader, values):
 
 class BasicVinFile(VideoParams):
 
-	def init(self, filename):
-		if filename == '-':
+	def __init__(self, filename):
+		if type(filename) != type(''):
+			fp = filename
+			filename = '???'
+		elif filename == '-':
 			fp = sys.stdin
 		else:
 			fp = open(filename, 'r')
-		return self.initfp(fp, filename)
+		self.initfp(fp, filename)
 
 	def initfp(self, fp, filename):
-		self = VideoParams.init(self)
+		VideoParams.__init__(self)
 		self.fp = fp
 		self.filename = filename
 		self.version, values = readfileheader(fp, filename)
@@ -857,7 +859,6 @@ class BasicVinFile(VideoParams):
 		except IOError:
 			self.startpos = -1
 			self.canseek = 0
-		return self
 
 	def _readv0frameheader(self, fp):
 		t, ds, cs = readv0frameheader(fp)
@@ -966,9 +967,8 @@ def getfilesize(filename):
 class RandomVinFile(BasicVinFile):
 
 	def initfp(self, fp, filename):
-		self = BasicVinFile.initfp(self, fp, filename)
+		BasicVinFile.initfp(self, fp, filename)
 		self.index = []
-		return self
 
 	def warmcache(self):
 		if len(self.index) == 0:
@@ -1073,19 +1073,21 @@ class RandomVinFile(BasicVinFile):
 
 class BasicVoutFile(VideoParams):
 
-	def init(self, filename):
-		if filename == '-':
+	def __init__(self, filename):
+		if type(filename) != type(''):
+			fp = filename
+			filename = '???'
+		elif filename == '-':
 			fp = sys.stdout
 		else:
 			fp = open(filename, 'w')
-		return self.initfp(fp, filename)
+		self.initfp(fp, filename)
 
 	def initfp(self, fp, filename):
-		self = VideoParams.init(self)
+		VideoParams.__init__(self)
 		self.fp = fp
 		self.filename = filename
 		self.version = 3.1 # In case anyone inquries
-		return self
 
 	def flush(self):
 		self.fp.flush()
@@ -1153,8 +1155,8 @@ class BasicVoutFile(VideoParams):
 class VinFile(RandomVinFile, Displayer):
 
 	def initfp(self, fp, filename):
-		self = Displayer.init(self)
-		return RandomVinFile.initfp(self, fp, filename)
+		Displayer.__init__(self)
+		RandomVinFile.initfp(self, fp, filename)
 
 	def shownextframe(self):
 		t, data, cdata = self.getnextframe()
@@ -1165,9 +1167,9 @@ class VinFile(RandomVinFile, Displayer):
 class VoutFile(BasicVoutFile, Displayer):
 
 	def initfp(self, fp, filename):
-		self = Displayer.init(self)
-##		self = Grabber.init(self) # XXX not needed
-		return BasicVoutFile.initfp(self, fp, filename)
+		Displayer.__init__(self)
+##		Grabber.__init__(self) # XXX not needed
+		BasicVoutFile.initfp(self, fp, filename)
 
 
 # Simple test program (VinFile only)
@@ -1176,7 +1178,7 @@ def test():
 	import time
 	if sys.argv[1:]: filename = sys.argv[1]
 	else: filename = 'film.video'
-	vin = VinFile().init(filename)
+	vin = VinFile(filename)
 	vin.printinfo()
 	gl.foreground()
 	gl.prefsize(vin.getsize())

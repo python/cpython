@@ -142,13 +142,12 @@ MUTE_AV_OFF = EXP_7 + '\xc7'
 DEBUG=0
 
 class VCR:
-	def init(self):
+	def __init__(self):
 		self.ifp, self.ofp = initline(DEVICE)
 		self.busy_cmd = None
 		self.async = 0
 		self.cb = None
 		self.cb_arg = None
-		return self
 
 	def _check(self):
 		if self.busy_cmd:

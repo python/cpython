@@ -144,7 +144,7 @@ def main():
 
 def process(filename):
 	try:
-		vin = VFile.VinFile().init(filename)
+		vin = VFile.VinFile(filename)
 	except IOError, msg:
 		sys.stderr.write(filename + ': I/O error: ' + `msg` + '\n')
 		return 1
@@ -233,7 +233,7 @@ def playonce(vin):
 		MAXSIZE = 20 # Don't read ahead too much
 		import thread
 		import Queue
-		queue = Queue.Queue().init(MAXSIZE)
+		queue = Queue.Queue(MAXSIZE)
 		stop = []
 		thread.start_new_thread(read_ahead, (vin, queue, stop))
 		# Get the read-ahead thread going

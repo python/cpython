@@ -11,7 +11,7 @@ class DisplayVideoIn:
 	# Initialize an instance.  Arguments:
 	# vw, vh: size of the video window data to be captured.
 	# position defaults to 0, 0 but can be set later
-	def init(self, pktmax, vw, vh, type):
+	def __init__(self, pktmax, vw, vh, type):
 		self.pktmax = pktmax
 		self.realwidth, self.realheight = vw, vh
 		if type <> 'rgb':
@@ -40,7 +40,6 @@ class DisplayVideoIn:
 		self.dataoffset = 0
 		self.lpos = 0
 		self.hints = 0
-		return self
 
 	# Change the size of the video being displayed.
 
@@ -72,7 +71,7 @@ class DisplayVideoIn:
 	# - data is a piece of data
 	# The dimensions of data are:
 	# - pixel depth = 1 byte
-	# - scan line width = self.width (the vw argument to init())
+	# - scan line width = self.width (the vw argument to __init__())
 	# - number of scan lines = self.lpp (PKTMAX / vw)
 
 	def getnextpacket(self):

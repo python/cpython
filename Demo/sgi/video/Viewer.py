@@ -5,9 +5,9 @@ import os
 
 class InputViewer:
 
-	def init(self, filename, title, *args):
+	def __init__(self, filename, title, *args):
 		try:
-			self.vin = VFile.VinFile().init(filename)
+			self.vin = VFile.VinFile(filename)
 		except (EOFError, VFile.Error):
 			raise IOError, 'bad video input file'
 		self.vin.warmcache()
@@ -20,7 +20,6 @@ class InputViewer:
 		gl.prefsize(self.vin.width, self.vin.height)
 		self.wid = -1
 		self.reset()
-		return self
 
 	def close(self):
 		self.vin.close()
@@ -99,9 +98,9 @@ class InputViewer:
 
 class OutputViewer:
 
-	def init(self, filename, title, qsize):
+	def __init__(self, filename, title, qsize):
 		try:
-			self.vout = VFile.VoutFile().init(filename)
+			self.vout = VFile.VoutFile(filename)
 		except (EOFError, VFile.Error):
 			raise IOError, 'bad video output file'
 		if not title:
@@ -112,7 +111,6 @@ class OutputViewer:
 		gl.foreground()
 		self.wid = -1
 		self.reset()
-		return self
 
 	def close(self):
 		while self.queue:
@@ -124,7 +122,7 @@ class OutputViewer:
 	def rewind(self):
 		info = self.vout.getinfo()
 		self.vout.close()
-		self.vout = VFile.VoutFile().init(self.filename)
+		self.vout = VFile.VoutFile(self.filename)
 		self.vout.setinfo(info)
 		self.reset()
 
@@ -228,8 +226,8 @@ class OutputViewer:
 
 def test():
 	import sys
-	a = InputViewer().init(sys.argv[1], '')
-	b = OutputViewer().init(sys.argv[2], '')
+	a = InputViewer(sys.argv[1], '')
+	b = OutputViewer(sys.argv[2], '')
 	b.setinfo(a.getinfo())
 	
 	while 1:

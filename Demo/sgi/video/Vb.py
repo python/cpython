@@ -43,7 +43,7 @@ watchcursor.defwatch(WATCH)
 
 def main():
 ##	fl.set_graphics_mode(0, 1)
-	vb = VideoBagOfTricks().init()
+	vb = VideoBagOfTricks()
 	while 1:
 		dummy = fl.do_forms()
 		[dummy]
@@ -82,7 +82,7 @@ class VideoBagOfTricks:
 
 	# Init/close stuff
 
-	def init(self):
+	def __init__(self):
 		self.window = None
 		formdef = flp.parse_form('VbForm', 'form')
 		flp.create_full_form(self, formdef)
@@ -105,7 +105,6 @@ class VideoBagOfTricks:
 			self.optfullsizewindow()
 		self.showform()
 		fl.set_event_call_back(self.do_event)
-		return self
 
 	def close(self):
 		self.close_video()
@@ -610,7 +609,7 @@ class VideoBagOfTricks:
 		if not self.vcr:
 			try:
 				print 'Connecting to VCR ...'
-				self.vcr = VCR.VCR().init()
+				self.vcr = VCR.VCR()
 				print 'Waiting for VCR to come online ...'
 				self.vcr.initvcr()
 				print 'Preparing VCR ...'
@@ -804,7 +803,7 @@ class VideoBagOfTricks:
 				x, y = x/2, y/2
 			elif self.rgb24_size == 3:
 				x, y = x/4, y/4
-		vout = VFile.VoutFile().init(self.vfile)
+		vout = VFile.VoutFile(self.vfile)
 		vout.setformat(self.vformat)
 		if self.vformat == 'compress':
 			cheader = self.init_compressor(x, y)

@@ -68,7 +68,7 @@ def main():
 	gl.qdevice(DEVICE.WINSHUT)
 	gl.qdevice(DEVICE.WINQUIT)
 
-	lvo = LiveVideoOut.LiveVideoOut().init(wid, width, height, vtype)
+	lvo = LiveVideoOut.LiveVideoOut(wid, width, height, vtype)
 
 	ifdlist = [gl.qgetfd(), s.fileno()]
 	ofdlist = []

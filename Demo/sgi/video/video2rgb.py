@@ -74,7 +74,7 @@ def main():
 
 def process(filename):
 	try:
-		vin = VFile.VinFile().init(filename)
+		vin = VFile.VinFile(filename)
 	except IOError, msg:
 		sys.stderr.write(filename + ': I/O error: ' + `msg` + '\n')
 		return 1
