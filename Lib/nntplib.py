@@ -83,8 +83,9 @@ class NNTP:
 	# 1: print commands and responses but not body text etc.
 	# 2: also print raw lines read and sent before stripping CR/LF
 
-	def debug(self, level):
+	def set_debuglevel(self, level):
 		self.debugging = level
+	debug = set_debuglevel
 
 	# Internal: send one line to the server, appending CRLF
 	def putline(self, line):
