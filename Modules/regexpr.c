@@ -1914,7 +1914,7 @@ int re_search(regexp_t bufp,
      }
      if (anchor == 1)
      { /* anchored to begline */
-	if (pos > 0 && string[pos - 1])
+	if (pos > 0 && (string[pos - 1] != '\n'))
 	   continue;
      }
      assert(pos >= 0 && pos <= size);
