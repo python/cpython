@@ -170,6 +170,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef __SC__
 #define BAD_STATIC_FORWARD
 #endif
+#ifdef __MRC__
+#define BAD_STATIC_FORWARD
+#endif
 
 /* Define to `long' if <time.h> doesn't define.  */
 /* #undef clock_t */
