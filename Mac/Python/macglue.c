@@ -129,7 +129,7 @@ static void PyMac_DoYield Py_PROTO((int));
 static long interval_fg = 12;
 static long interval_bg = 6;
 static long yield_fg = 1;
-static long yield_bg = 12;
+static long yield_bg = 2;
 static long lastyield;
 static int in_foreground;
 
@@ -543,10 +543,23 @@ void
 SIOUXDoAboutBox(void)
 {
 	DialogPtr theDialog;
+	WindowRef theWindow;
+	CGrafPtr thePort;
 	short item;
+	short xpos, ypos, width, height, swidth, sheight;
 	
 	if( (theDialog = GetNewDialog(ABOUT_ID, NULL, (WindowPtr)-1)) == NULL )
 		return;
+	theWindow = GetDialogWindow(theDialog);
+	thePort = GetWindowPort(theWindow);
+	width = thePort->portRect.right - thePort->portRect.left;
+	height = thePort->portRect.bottom - thePort->portRect.top;
+	swidth = qd.screenBits.bounds.right - qd.screenBits.bounds.left;
+	sheight = qd.screenBits.bounds.bottom - qd.screenBits.bounds.top - LMGetMBarHeight();
+	xpos = (swidth-width)/2;
+	ypos = (sheight-height)/2 + LMGetMBarHeight();
+	MoveWindow(theWindow, xpos, ypos, 0);
+	ShowWindow(theWindow);
 	ModalDialog(NULL, &item);
 	DisposeDialog(theDialog);
 }
