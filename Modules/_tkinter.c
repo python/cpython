@@ -41,6 +41,13 @@ Copyright (C) 1994 Steen Lumholt.
 #define MAC_TCL
 #endif
 
+/* Starting with Tcl 8.4, many APIs offer const-correctness.  Unfortunately,
+   making _tkinter correct for this API means to break earlier
+   versions. USE_COMPAT_CONST allows to make _tkinter work with both 8.4 and
+   earlier versions. Once Tcl releases before 8.4 don't need to be supported
+   anymore, this should go. */
+#define USE_COMPAT_CONST
+
 #ifdef TK_FRAMEWORK
 #include <Tcl/tcl.h>
 #include <Tk/tk.h>
@@ -607,8 +614,8 @@ Tkapp_Call(PyObject *self, PyObject *args)
 	else {
 		/* We could request the object result here, but doing
 		   so would confuse applications that expect a string. */
-		char *s = Tcl_GetStringResult(interp);
-		char *p = s;
+		const char *s = Tcl_GetStringResult(interp);
+		const char *p = s;
 
 		/* If the result contains any bytes with the top bit set,
 		   it's UTF-8 and we should decode it to Unicode */
@@ -783,7 +790,8 @@ Tkapp_AddErrorInfo(PyObject *self, PyObject *args)
 static PyObject *
 SetVar(PyObject *self, PyObject *args, int flags)
 {
-	char *name1, *name2, *ok, *s;
+	char *name1, *name2, *s;
+	const char *ok;
 	PyObject *newValue;
 	PyObject *tmp;
 
@@ -843,7 +851,8 @@ Tkapp_GlobalSetVar(PyObject *self, PyObject *args)
 static PyObject *
 GetVar(PyObject *self, PyObject *args, int flags)
 {
-	char *name1, *name2=NULL, *s;
+	char *name1, *name2=NULL;
+	const char *s;
 	PyObject *res = NULL;
 
 	if (!PyArg_ParseTuple(args, "s|s:getvar", &name1, &name2))
