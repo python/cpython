@@ -1,0 +1,320 @@
+\chapter{Utilities \label{utilities}}
+
+The functions in this chapter perform various utility tasks, ranging
+from helping C code be more portable across platforms, using Python
+modules from C, and parsing function arguments and constructing Python
+values from C values.
+
+
+\section{Operating System Utilities \label{os}}
+
+\begin{cfuncdesc}{int}{Py_FdIsInteractive}{FILE *fp, char *filename}
+  Return true (nonzero) if the standard I/O file \var{fp} with name
+  \var{filename} is deemed interactive.  This is the case for files
+  for which \samp{isatty(fileno(\var{fp}))} is true.  If the global
+  flag \cdata{Py_InteractiveFlag} is true, this function also returns
+  true if the \var{filename} pointer is \NULL{} or if the name is
+  equal to one of the strings \code{'<stdin>'} or \code{'???'}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{long}{PyOS_GetLastModificationTime}{char *filename}
+  Return the time of last modification of the file \var{filename}.
+  The result is encoded in the same way as the timestamp returned by
+  the standard C library function \cfunction{time()}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyOS_AfterFork}{}
+  Function to update some internal state after a process fork; this
+  should be called in the new process if the Python interpreter will
+  continue to be used.  If a new executable is loaded into the new
+  process, this function does not need to be called.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyOS_CheckStack}{}
+  Return true when the interpreter runs out of stack space.  This is a
+  reliable check, but is only available when \constant{USE_STACKCHECK}
+  is defined (currently on Windows using the Microsoft Visual \Cpp{}
+  compiler and on the Macintosh).  \constant{USE_CHECKSTACK} will be
+  defined automatically; you should never change the definition in
+  your own code.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyOS_sighandler_t}{PyOS_getsig}{int i}
+  Return the current signal handler for signal \var{i}.  This is a
+  thin wrapper around either \cfunction{sigaction()} or
+  \cfunction{signal()}.  Do not call those functions directly!
+  \ctype{PyOS_sighandler_t} is a typedef alias for \ctype{void
+  (*)(int)}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyOS_sighandler_t}{PyOS_setsig}{int i, PyOS_sighandler_t h}
+  Set the signal handler for signal \var{i} to be \var{h}; return the
+  old signal handler.  This is a thin wrapper around either
+  \cfunction{sigaction()} or \cfunction{signal()}.  Do not call those
+  functions directly!  \ctype{PyOS_sighandler_t} is a typedef alias
+  for \ctype{void (*)(int)}.
+\end{cfuncdesc}
+
+
+\section{Process Control \label{processControl}}
+
+\begin{cfuncdesc}{void}{Py_FatalError}{char *message}
+  Print a fatal error message and kill the process.  No cleanup is
+  performed.  This function should only be invoked when a condition is
+  detected that would make it dangerous to continue using the Python
+  interpreter; e.g., when the object administration appears to be
+  corrupted.  On \UNIX, the standard C library function
+  \cfunction{abort()}\ttindex{abort()} is called which will attempt to
+  produce a \file{core} file.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{Py_Exit}{int status}
+  Exit the current process.  This calls
+  \cfunction{Py_Finalize()}\ttindex{Py_Finalize()} and then calls the
+  standard C library function
+  \code{exit(\var{status})}\ttindex{exit()}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{Py_AtExit}{void (*func) ()}
+  Register a cleanup function to be called by
+  \cfunction{Py_Finalize()}\ttindex{Py_Finalize()}.  The cleanup
+  function will be called with no arguments and should return no
+  value.  At most 32 \index{cleanup functions}cleanup functions can be
+  registered.  When the registration is successful,
+  \cfunction{Py_AtExit()} returns \code{0}; on failure, it returns
+  \code{-1}.  The cleanup function registered last is called first.
+  Each cleanup function will be called at most once.  Since Python's
+  internal finallization will have completed before the cleanup
+  function, no Python APIs should be called by \var{func}.
+\end{cfuncdesc}
+
+
+\section{Importing Modules \label{importing}}
+
+\begin{cfuncdesc}{PyObject*}{PyImport_ImportModule}{char *name}
+  This is a simplified interface to
+  \cfunction{PyImport_ImportModuleEx()} below, leaving the
+  \var{globals} and \var{locals} arguments set to \NULL.  When the
+  \var{name} argument contains a dot (when it specifies a submodule of
+  a package), the \var{fromlist} argument is set to the list
+  \code{['*']} so that the return value is the named module rather
+  than the top-level package containing it as would otherwise be the
+  case.  (Unfortunately, this has an additional side effect when
+  \var{name} in fact specifies a subpackage instead of a submodule:
+  the submodules specified in the package's \code{__all__} variable
+  are \index{package variable!\code{__all__}}
+  \withsubitem{(package variable)}{\ttindex{__all__}}loaded.)  Return
+  a new reference to the imported module, or \NULL{} with an exception
+  set on failure (the module may still be created in this case ---
+  examine \code{sys.modules} to find out).
+  \withsubitem{(in module sys)}{\ttindex{modules}}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyImport_ImportModuleEx}{char *name,
+                       PyObject *globals, PyObject *locals, PyObject *fromlist}
+  Import a module.  This is best described by referring to the
+  built-in Python function
+  \function{__import__()}\bifuncindex{__import__}, as the standard
+  \function{__import__()} function calls this function directly.
+
+  The return value is a new reference to the imported module or
+  top-level package, or \NULL{} with an exception set on failure (the
+  module may still be created in this case).  Like for
+  \function{__import__()}, the return value when a submodule of a
+  package was requested is normally the top-level package, unless a
+  non-empty \var{fromlist} was given.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyImport_Import}{PyObject *name}
+  This is a higher-level interface that calls the current ``import
+  hook function''.  It invokes the \function{__import__()} function
+  from the \code{__builtins__} of the current globals.  This means
+  that the import is done using whatever import hooks are installed in
+  the current environment, e.g. by \module{rexec}\refstmodindex{rexec}
+  or \module{ihooks}\refstmodindex{ihooks}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyImport_ReloadModule}{PyObject *m}
+  Reload a module.  This is best described by referring to the
+  built-in Python function \function{reload()}\bifuncindex{reload}, as
+  the standard \function{reload()} function calls this function
+  directly.  Return a new reference to the reloaded module, or \NULL{}
+  with an exception set on failure (the module still exists in this
+  case).
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyImport_AddModule}{char *name}
+  Return the module object corresponding to a module name.  The
+  \var{name} argument may be of the form \code{package.module}).
+  First check the modules dictionary if there's one there, and if not,
+  create a new one and insert in in the modules dictionary.
+  \note{This function does not load or import the module; if the
+  module wasn't already loaded, you will get an empty module object.
+  Use \cfunction{PyImport_ImportModule()} or one of its variants to
+  import a module.  Return \NULL{} with an exception set on failure.}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyImport_ExecCodeModule}{char *name, PyObject *co}
+  Given a module name (possibly of the form \code{package.module}) and
+  a code object read from a Python bytecode file or obtained from the
+  built-in function \function{compile()}\bifuncindex{compile}, load
+  the module.  Return a new reference to the module object, or \NULL{}
+  with an exception set if an error occurred (the module may still be
+  created in this case).  (This function would reload the module if it
+  was already imported.)
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{long}{PyImport_GetMagicNumber}{}
+  Return the magic number for Python bytecode files
+  (a.k.a. \file{.pyc} and \file{.pyo} files).  The magic number should
+  be present in the first four bytes of the bytecode file, in
+  little-endian byte order.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyImport_GetModuleDict}{}
+  Return the dictionary used for the module administration
+  (a.k.a.\ \code{sys.modules}).  Note that this is a per-interpreter
+  variable.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{_PyImport_Init}{}
+  Initialize the import mechanism.  For internal use only.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyImport_Cleanup}{}
+  Empty the module table.  For internal use only.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{_PyImport_Fini}{}
+  Finalize the import mechanism.  For internal use only.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{_PyImport_FindExtension}{char *, char *}
+  For internal use only.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{_PyImport_FixupExtension}{char *, char *}
+  For internal use only.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyImport_ImportFrozenModule}{char *name}
+  Load a frozen module named \var{name}.  Return \code{1} for success,
+  \code{0} if the module is not found, and \code{-1} with an exception
+  set if the initialization failed.  To access the imported module on
+  a successful load, use \cfunction{PyImport_ImportModule()}.  (Note
+  the misnomer --- this function would reload the module if it was
+  already imported.)
+\end{cfuncdesc}
+
+\begin{ctypedesc}[_frozen]{struct _frozen}
+  This is the structure type definition for frozen module descriptors,
+  as generated by the \program{freeze}\index{freeze utility} utility
+  (see \file{Tools/freeze/} in the Python source distribution).  Its
+  definition, found in \file{Include/import.h}, is:
+
+\begin{verbatim}
+struct _frozen {
+    char *name;
+    unsigned char *code;
+    int size;
+};
+\end{verbatim}
+\end{ctypedesc}
+
+\begin{cvardesc}{struct _frozen*}{PyImport_FrozenModules}
+  This pointer is initialized to point to an array of \ctype{struct
+  _frozen} records, terminated by one whose members are all \NULL{} or
+  zero.  When a frozen module is imported, it is searched in this
+  table.  Third-party code could play tricks with this to provide a
+  dynamically created collection of frozen modules.
+\end{cvardesc}
+
+\begin{cfuncdesc}{int}{PyImport_AppendInittab}{char *name,
+                                               void (*initfunc)(void)}
+  Add a single module to the existing table of built-in modules.  This
+  is a convenience wrapper around
+  \cfunction{PyImport_ExtendInittab()}, returning \code{-1} if the
+  table could not be extended.  The new module can be imported by the
+  name \var{name}, and uses the function \var{initfunc} as the
+  initialization function called on the first attempted import.  This
+  should be called before \cfunction{Py_Initialize()}.
+\end{cfuncdesc}
+
+\begin{ctypedesc}[_inittab]{struct _inittab}
+  Structure describing a single entry in the list of built-in
+  modules.  Each of these structures gives the name and initialization
+  function for a module built into the interpreter.  Programs which
+  embed Python may use an array of these structures in conjunction
+  with \cfunction{PyImport_ExtendInittab()} to provide additional
+  built-in modules.  The structure is defined in
+  \file{Include/import.h} as:
+
+\begin{verbatim}
+struct _inittab {
+    char *name;
+    void (*initfunc)(void);
+};
+\end{verbatim}
+\end{ctypedesc}
+
+\begin{cfuncdesc}{int}{PyImport_ExtendInittab}{struct _inittab *newtab}
+  Add a collection of modules to the table of built-in modules.  The
+  \var{newtab} array must end with a sentinel entry which contains
+  \NULL{} for the \member{name} field; failure to provide the sentinel
+  value can result in a memory fault.  Returns \code{0} on success or
+  \code{-1} if insufficient memory could be allocated to extend the
+  internal table.  In the event of failure, no modules are added to
+  the internal table.  This should be called before
+  \cfunction{Py_Initialize()}.
+\end{cfuncdesc}
+
+
+\section{Parsing arguments and building values
+         \label{arg-parsing}}
+
+These functions are useful when creating your own extensions functions
+and methods.  Additional information and examples are available in
+\citetitle[../ext/ext.html]{Extending and Embedding the Python
+Interpreter}.
+
+\begin{cfuncdesc}{int}{PyArg_ParseTuple}{PyObject *args, char *format,
+                                         \moreargs}
+  Parse the parameters of a function that takes only positional
+  parameters into local variables.  Returns true on success; on
+  failure, it returns false and raises the appropriate exception.  See
+  \citetitle[../ext/parseTuple.html]{Extending and Embedding the
+  Python Interpreter} for more information.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyArg_ParseTupleAndKeywords}{PyObject *args,
+                       PyObject *kw, char *format, char *keywords[],
+                       \moreargs}
+  Parse the parameters of a function that takes both positional and
+  keyword parameters into local variables.  Returns true on success;
+  on failure, it returns false and raises the appropriate exception.
+  See \citetitle[../ext/parseTupleAndKeywords.html]{Extending and
+  Embedding the Python Interpreter} for more information.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyArg_Parse}{PyObject *args, char *format,
+                                    \moreargs}
+  Function used to deconstruct the argument lists of ``old-style''
+  functions --- these are functions which use the
+  \constant{METH_OLDARGS} parameter parsing method.  This is not
+  recommended for use in parameter parsing in new code, and most code
+  in the standard interpreter has been modified to no longer use this
+  for that purpose.  It does remain a convenient way to decompose
+  other tuples, however, and may continue to be used for that
+  purpose.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{Py_BuildValue}{char *format,
+                                            \moreargs}
+  Create a new value based on a format string similar to those
+  accepted by the \cfunction{PyArg_Parse*()} family of functions and a
+  sequence of values.  Returns the value or \NULL{} in the case of an
+  error; an exception will be raised if \NULL{} is returned.  For more
+  information on the format string and additional parameters, see
+  \citetitle[../ext/buildValue.html]{Extending and Embedding the
+  Python Interpreter}.
+\end{cfuncdesc}
