@@ -38,7 +38,7 @@ COMMONPERL= $(TOPDIR)/perl/manual.perl \
 	$(TOPDIR)/perl/l2hinit.perl
 
 
-all:	$(INDEXFILES)
+all:	$(INDEXFILES) modindex.html
 
 .PHONY: api ext lib mac ref tut
 
@@ -50,6 +50,10 @@ ref: ref/ref.html
 tut: tut/tut.html
 
 $(INDEXFILES): $(COMMONPERL) $(TOPDIR)/html/about.dat
+
+modindex.html: lib/lib.html mac/mac.html $(TOOLSDIR)/mkmodindex
+	$(TOOLSDIR)/mkmodindex --columns 5 --output modindex.html \
+		lib/modindex.html mac/modindex.html
 
 api/api.html:  $(PAPERDIR)/api.aux $(BUILDINDEX)
 	$(MKHTML) api $(L2HARGS)
