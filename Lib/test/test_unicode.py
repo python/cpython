@@ -6,10 +6,32 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
 """#"
-import unittest, test.test_support
-import sys, string, codecs
+import unittest, sys, string, codecs, new
+from test import test_support, string_tests
 
-class UnicodeTest(unittest.TestCase):
+class UnicodeTest(
+    string_tests.CommonTest,
+    string_tests.MixinStrUnicodeUserStringTest
+    ):
+    type2test = unicode
+
+    def checkequalnofix(self, result, object, methodname, *args):
+        method = getattr(object, methodname)
+        realresult = method(*args)
+        self.assertEqual(realresult, result)
+        self.assert_(type(realresult) is type(result))
+
+        # if the original is returned make sure that
+        # this doesn't happen with subclasses
+        if realresult is object:
+            class usub(unicode):
+                def __repr__(self):
+                    return 'usub(%r)' % unicode.__repr__(self)
+            object = usub(object)
+            method = getattr(object, methodname)
+            realresult = method(*args)
+            self.assertEqual(realresult, result)
+            self.assert_(object is not realresult)
 
     def test_repr(self):
         if not sys.platform.startswith('java'):
@@ -45,320 +67,102 @@ class UnicodeTest(unittest.TestCase):
             testrepr = repr(u''.join(map(unichr, xrange(256))))
             self.assertEqual(testrepr, latin1repr)
 
-    def checkmethod(self, method, input, output, *args):
-        f = getattr(input, method)
-        value = f(*args)
-        self.assertEqual(output, value)
-        self.assert_(type(output) is type(value))
-
-        # if the original is returned make sure that
-        # this doesn't happen with subclasses
-        if value is input:
-            class usub(unicode):
-                def __repr__(self):
-                    return 'usub(%r)' % unicode.__repr__(self)
-            input = usub(input)
-            f = getattr(input, method)
-            value = f(*args)
-            self.assertEqual(output, value)
-            self.assert_(input is not value)
-
-    def test_capitalize(self):
-        self.checkmethod('capitalize', u' hello ', u' hello ')
-        self.checkmethod('capitalize', u'Hello ', u'Hello ')
-        self.checkmethod('capitalize', u'hello ', u'Hello ')
-        self.checkmethod('capitalize', u'aaaa', u'Aaaa')
-        self.checkmethod('capitalize', u'AaAa', u'Aaaa')
-
-        self.assertRaises(TypeError, u'hello'.capitalize, 42)
-
     def test_count(self):
-        self.checkmethod('count', u'aaa', 3, u'a')
-        self.checkmethod('count', u'aaa', 0, u'b')
-        self.checkmethod('count', 'aaa', 3, u'a')
-        self.checkmethod('count', 'aaa', 0, u'b')
-        self.checkmethod('count', u'aaa', 3, 'a')
-        self.checkmethod('count', u'aaa', 0, 'b')
-        self.checkmethod('count', u'aaa', 0, 'b')
-        self.checkmethod('count', u'aaa', 1, 'a', -1)
-        self.checkmethod('count', u'aaa', 3, 'a', -10)
-        self.checkmethod('count', u'aaa', 2, 'a', 0, -1)
-        self.checkmethod('count', u'aaa', 0, 'a', 0, -10)
-
-        self.assertRaises(TypeError, u'hello'.count)
-        self.assertRaises(TypeError, u'hello'.count, 42)
-
-    def test_title(self):
-        self.checkmethod('title', u' hello ', u' Hello ')
-        self.checkmethod('title', u'Hello ', u'Hello ')
-        self.checkmethod('title', u'hello ', u'Hello ')
-        self.checkmethod('title', u"fOrMaT thIs aS titLe String", u'Format This As Title String')
-        self.checkmethod('title', u"fOrMaT,thIs-aS*titLe;String", u'Format,This-As*Title;String')
-        self.checkmethod('title', u"getInt", u'Getint')
-
-        self.assertRaises(TypeError, u'hello'.title, 42)
+        string_tests.CommonTest.test_count(self)
+        # check mixed argument types
+        self.checkequalnofix(3,  'aaa', 'count', u'a')
+        self.checkequalnofix(0,  'aaa', 'count', u'b')
+        self.checkequalnofix(3, u'aaa', 'count',  'a')
+        self.checkequalnofix(0, u'aaa', 'count',  'b')
+        self.checkequalnofix(0, u'aaa', 'count',  'b')
+        self.checkequalnofix(1, u'aaa', 'count',  'a', -1)
+        self.checkequalnofix(3, u'aaa', 'count',  'a', -10)
+        self.checkequalnofix(2, u'aaa', 'count',  'a', 0, -1)
+        self.checkequalnofix(0, u'aaa', 'count',  'a', 0, -10)
 
     def test_find(self):
-        self.checkmethod('find', u'abcdefghiabc', 0, u'abc')
-        self.checkmethod('find', u'abcdefghiabc', 9, u'abc', 1)
-        self.checkmethod('find', u'abcdefghiabc', -1, u'def', 4)
+        self.checkequalnofix(0,  u'abcdefghiabc', 'find', u'abc')
+        self.checkequalnofix(9,  u'abcdefghiabc', 'find', u'abc', 1)
+        self.checkequalnofix(-1, u'abcdefghiabc', 'find', u'def', 4)
 
         self.assertRaises(TypeError, u'hello'.find)
         self.assertRaises(TypeError, u'hello'.find, 42)
 
     def test_rfind(self):
-        self.checkmethod('rfind', u'abcdefghiabc', 9, u'abc')
-        self.checkmethod('rfind', 'abcdefghiabc', 9, u'abc')
-        self.checkmethod('rfind', 'abcdefghiabc', 12, u'')
-        self.checkmethod('rfind', u'abcdefghiabc', 12, '')
-        self.checkmethod('rfind', u'abcdefghiabc', 12, u'')
-
-        self.assertRaises(TypeError, u'hello'.rfind)
-        self.assertRaises(TypeError, u'hello'.rfind, 42)
+        string_tests.CommonTest.test_rfind(self)
+        # check mixed argument types
+        self.checkequalnofix(9,   'abcdefghiabc', 'rfind', u'abc')
+        self.checkequalnofix(12,  'abcdefghiabc', 'rfind', u'')
+        self.checkequalnofix(12, u'abcdefghiabc', 'rfind',  '')
 
     def test_index(self):
-        self.checkmethod('index', u'abcdefghiabc', 0, u'')
-        self.checkmethod('index', u'abcdefghiabc', 3, u'def')
-        self.checkmethod('index', u'abcdefghiabc', 0, u'abc')
-        self.checkmethod('index', u'abcdefghiabc', 9, u'abc', 1)
-
-        self.assertRaises(ValueError, u'abcdefghiabc'.index, u'hib')
-        self.assertRaises(ValueError, u'abcdefghiab'.index, u'abc', 1)
-        self.assertRaises(ValueError, u'abcdefghi'.index, u'ghi', 8)
-        self.assertRaises(ValueError, u'abcdefghi'.index, u'ghi', -1)
-
-        self.assertRaises(TypeError, u'hello'.index)
-        self.assertRaises(TypeError, u'hello'.index, 42)
+        string_tests.CommonTest.test_index(self)
+        # check mixed argument types
+        for (t1, t2) in ((str, unicode), (unicode, str)):
+            self.checkequalnofix(0, t1('abcdefghiabc'), 'index',  t2(''))
+            self.checkequalnofix(3, t1('abcdefghiabc'), 'index',  t2('def'))
+            self.checkequalnofix(0, t1('abcdefghiabc'), 'index',  t2('abc'))
+            self.checkequalnofix(9, t1('abcdefghiabc'), 'index',  t2('abc'), 1)
+            self.assertRaises(ValueError, t1('abcdefghiabc').index, t2('hib'))
+            self.assertRaises(ValueError, t1('abcdefghiab').index,  t2('abc'), 1)
+            self.assertRaises(ValueError, t1('abcdefghi').index,  t2('ghi'), 8)
+            self.assertRaises(ValueError, t1('abcdefghi').index,  t2('ghi'), -1)
 
     def test_rindex(self):
-        self.checkmethod('rindex', u'abcdefghiabc', 12, u'')
-        self.checkmethod('rindex', u'abcdefghiabc', 3, u'def')
-        self.checkmethod('rindex', u'abcdefghiabc', 9, u'abc')
-        self.checkmethod('rindex', u'abcdefghiabc', 0, u'abc', 0, -1)
+        string_tests.CommonTest.test_rindex(self)
+        # check mixed argument types
+        for (t1, t2) in ((str, unicode), (unicode, str)):
+            self.checkequalnofix(12, t1('abcdefghiabc'), 'rindex',  t2(''))
+            self.checkequalnofix(3,  t1('abcdefghiabc'), 'rindex',  t2('def'))
+            self.checkequalnofix(9,  t1('abcdefghiabc'), 'rindex',  t2('abc'))
+            self.checkequalnofix(0,  t1('abcdefghiabc'), 'rindex',  t2('abc'), 0, -1)
 
-        self.assertRaises(ValueError, u'abcdefghiabc'.rindex, u'hib')
-        self.assertRaises(ValueError, u'defghiabc'.rindex, u'def', 1)
-        self.assertRaises(ValueError, u'defghiabc'.rindex, u'abc', 0, -1)
-        self.assertRaises(ValueError, u'abcdefghi'.rindex, u'ghi', 0, 8)
-        self.assertRaises(ValueError, u'abcdefghi'.rindex, u'ghi', 0, -1)
-
-        self.assertRaises(TypeError, u'hello'.rindex)
-        self.assertRaises(TypeError, u'hello'.rindex, 42)
-
-    def test_lower(self):
-        self.checkmethod('lower', u'HeLLo', u'hello')
-        self.checkmethod('lower', u'hello', u'hello')
-
-        self.assertRaises(TypeError, u"hello".lower, 42)
-
-    def test_upper(self):
-        self.checkmethod('upper', u'HeLLo', u'HELLO')
-        self.checkmethod('upper', u'HELLO', u'HELLO')
-
-        self.assertRaises(TypeError, u'hello'.upper, 42)
+            self.assertRaises(ValueError, t1('abcdefghiabc').rindex,  t2('hib'))
+            self.assertRaises(ValueError, t1('defghiabc').rindex,  t2('def'), 1)
+            self.assertRaises(ValueError, t1('defghiabc').rindex,  t2('abc'), 0, -1)
+            self.assertRaises(ValueError, t1('abcdefghi').rindex,  t2('ghi'), 0, 8)
+            self.assertRaises(ValueError, t1('abcdefghi').rindex,  t2('ghi'), 0, -1)
 
     def test_translate(self):
-        if 0:
-            transtable = '\000\001\002\003\004\005\006\007\010\011\012\013\014\015\016\017\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037 !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`xyzdefghijklmnopqrstuvwxyz{|}~\177\200\201\202\203\204\205\206\207\210\211\212\213\214\215\216\217\220\221\222\223\224\225\226\227\230\231\232\233\234\235\236\237\240\241\242\243\244\245\246\247\250\251\252\253\254\255\256\257\260\261\262\263\264\265\266\267\270\271\272\273\274\275\276\277\300\301\302\303\304\305\306\307\310\311\312\313\314\315\316\317\320\321\322\323\324\325\326\327\330\331\332\333\334\335\336\337\340\341\342\343\344\345\346\347\350\351\352\353\354\355\356\357\360\361\362\363\364\365\366\367\370\371\372\373\374\375\376\377'
-
-            self.checkmethod('maketrans', u'abc', transtable, u'xyz')
-            self.checkmethod('maketrans', u'abc', ValueError, u'xyzq')
-
-            self.checkmethod('translate', u'xyzabcdef', u'xyzxyz', transtable, u'def')
-
-            table = string.maketrans('a', u'A')
-            self.checkmethod('translate', u'abc', u'Abc', table)
-            self.checkmethod('translate', u'xyz', u'xyz', table)
-
-        self.checkmethod('translate', u"abababc", u'bbbc', {ord('a'):None})
-        self.checkmethod('translate', u"abababc", u'iiic', {ord('a'):None, ord('b'):ord('i')})
-        self.checkmethod('translate', u"abababc", u'iiix', {ord('a'):None, ord('b'):ord('i'), ord('c'):u'x'})
-        self.checkmethod('translate', u"abababc", u'<i><i><i>c', {ord('a'):None, ord('b'):u'<i>'})
-        self.checkmethod('translate', u"abababc", u'c', {ord('a'):None, ord('b'):u''})
+        self.checkequalnofix(u'bbbc', u'abababc', 'translate', {ord('a'):None})
+        self.checkequalnofix(u'iiic', u'abababc', 'translate', {ord('a'):None, ord('b'):ord('i')})
+        self.checkequalnofix(u'iiix', u'abababc', 'translate', {ord('a'):None, ord('b'):ord('i'), ord('c'):u'x'})
+        self.checkequalnofix(u'<i><i><i>c', u'abababc', 'translate', {ord('a'):None, ord('b'):u'<i>'})
+        self.checkequalnofix(u'c', u'abababc', 'translate', {ord('a'):None, ord('b'):u''})
 
         self.assertRaises(TypeError, u'hello'.translate)
+        self.assertRaises(TypeError, u'abababc'.translate, {ord('a'):''})
 
     def test_split(self):
-        self.checkmethod(
-            'split',
-            u'this is the split function',
-            [u'this', u'is', u'the', u'split', u'function']
-        )
-        self.checkmethod('split', u'a|b|c|d', [u'a', u'b', u'c', u'd'], u'|')
-        self.checkmethod('split', u'a|b|c|d', [u'a', u'b', u'c|d'], u'|', 2)
-        self.checkmethod('split', u'a b c d', [u'a', u'b c d'], None, 1)
-        self.checkmethod('split', u'a b c d', [u'a', u'b', u'c d'], None, 2)
-        self.checkmethod('split', u'a b c d', [u'a', u'b', u'c', u'd'], None, 3)
-        self.checkmethod('split', u'a b c d', [u'a', u'b', u'c', u'd'], None, 4)
-        self.checkmethod('split', u'a b c d', [u'a b c d'], None, 0)
-        self.checkmethod('split', u'a  b  c  d', [u'a', u'b', u'c  d'], None, 2)
-        self.checkmethod('split', u'a b c d ', [u'a', u'b', u'c', u'd'])
-        self.checkmethod('split', u'a//b//c//d', [u'a', u'b', u'c', u'd'], u'//')
-        self.checkmethod('split', u'a//b//c//d', [u'a', u'b', u'c', u'd'], '//')
-        self.checkmethod('split', 'a//b//c//d', [u'a', u'b', u'c', u'd'], u'//')
-        self.checkmethod('split', u'endcase test', [u'endcase ', u''], u'test')
-        self.checkmethod('split', u'endcase test', [u'endcase ', u''], 'test')
-        self.checkmethod('split', 'endcase test', [u'endcase ', u''], u'test')
+        string_tests.CommonTest.test_split(self)
 
-        self.assertRaises(TypeError, u"hello".split, 42, 42, 42)
+        # Mixed arguments
+        self.checkequalnofix([u'a', u'b', u'c', u'd'], u'a//b//c//d', 'split', '//')
+        self.checkequalnofix([u'a', u'b', u'c', u'd'], 'a//b//c//d', 'split', u'//')
+        self.checkequalnofix([u'endcase ', u''], u'endcase test', 'split', 'test')
 
     def test_join(self):
-        # join now works with any sequence type
-        class Sequence:
-            def __init__(self, seq): self.seq = seq
-            def __len__(self): return len(self.seq)
-            def __getitem__(self, i): return self.seq[i]
+        string_tests.MixinStrUnicodeUserStringTest.test_join(self)
 
-        self.checkmethod('join', u' ', u'a b c d', [u'a', u'b', u'c', u'd'])
-        self.checkmethod('join', u' ', u'a b c d', ['a', 'b', u'c', u'd'])
-        self.checkmethod('join', u'', u'abcd', (u'a', u'b', u'c', u'd'))
-        self.checkmethod('join', u' ', u'w x y z', Sequence('wxyz'))
-        self.assertRaises(TypeError, u' '.join, 7)
-        self.assertRaises(TypeError, u' '.join, Sequence([7, u'hello', 123L]))
-        self.checkmethod('join', ' ', u'a b c d', [u'a', u'b', u'c', u'd'])
-        self.checkmethod('join', ' ', u'a b c d', ['a', 'b', u'c', u'd'])
-        self.checkmethod('join', '', u'abcd', (u'a', u'b', u'c', u'd'))
-        self.checkmethod('join', ' ', u'w x y z', Sequence(u'wxyz'))
-        self.assertRaises(TypeError, ' '.join, TypeError)
-
-        result = u''
-        for i in range(10):
-            if i > 0:
-                result = result + u':'
-            result = result + u'x'*10
-
-        self.checkmethod('join', u':', result, [u'x' * 10] * 10)
-        self.checkmethod('join', u':', result, (u'x' * 10,) * 10)
-
-        self.assertRaises(TypeError, u"hello".join)
+        # mixed arguments
+        self.checkequalnofix(u'a b c d', u' ', 'join', ['a', 'b', u'c', u'd'])
+        self.checkequalnofix(u'abcd', u'', 'join', (u'a', u'b', u'c', u'd'))
+        self.checkequalnofix(u'w x y z', u' ', 'join', string_tests.Sequence('wxyz'))
+        self.checkequalnofix(u'a b c d', ' ', 'join', [u'a', u'b', u'c', u'd'])
+        self.checkequalnofix(u'a b c d', ' ', 'join', ['a', 'b', u'c', u'd'])
+        self.checkequalnofix(u'abcd', '', 'join', (u'a', u'b', u'c', u'd'))
+        self.checkequalnofix(u'w x y z', ' ', 'join', string_tests.Sequence(u'wxyz'))
 
     def test_strip(self):
-        self.checkmethod('strip', u'   hello   ', u'hello')
-        self.checkmethod('lstrip', u'   hello   ', u'hello   ')
-        self.checkmethod('rstrip', u'   hello   ', u'   hello')
-        self.checkmethod('strip', u'hello', u'hello')
-
-        # strip/lstrip/rstrip with None arg
-        self.checkmethod('strip', u'   hello   ', u'hello', None)
-        self.checkmethod('lstrip', u'   hello   ', u'hello   ', None)
-        self.checkmethod('rstrip', u'   hello   ', u'   hello', None)
-        self.checkmethod('strip', u'hello', u'hello', None)
-
-        # strip/lstrip/rstrip with unicode arg
-        self.checkmethod('strip', u'xyzzyhelloxyzzy', u'hello', u'xyz')
-        self.checkmethod('lstrip', u'xyzzyhelloxyzzy', u'helloxyzzy', u'xyz')
-        self.checkmethod('rstrip', u'xyzzyhelloxyzzy', u'xyzzyhello', u'xyz')
-        self.checkmethod('strip', u'hello', u'hello', u'xyz')
-
-        # strip/lstrip/rstrip with str arg
-        self.checkmethod('strip', u'xyzzyhelloxyzzy', u'hello', 'xyz')
-        self.checkmethod('lstrip', u'xyzzyhelloxyzzy', u'helloxyzzy', 'xyz')
-        self.checkmethod('rstrip', u'xyzzyhelloxyzzy', u'xyzzyhello', 'xyz')
-        self.checkmethod('strip', u'hello', u'hello', 'xyz')
-
-        self.assertRaises(TypeError, u"hello".strip, 42, 42)
+        string_tests.CommonTest.test_strip(self)
         self.assertRaises(UnicodeError, u"hello".strip, "\xff")
 
-    def test_swapcase(self):
-        self.checkmethod('swapcase', u'HeLLo cOmpUteRs', u'hEllO CoMPuTErS')
-
-        self.assertRaises(TypeError, u"hello".swapcase, 42)
-
     def test_replace(self):
-        self.checkmethod('replace', u'one!two!three!', u'one@two!three!', u'!', u'@', 1)
-        self.checkmethod('replace', u'one!two!three!', u'onetwothree', '!', '')
-        self.checkmethod('replace', u'one!two!three!', u'one@two@three!', u'!', u'@', 2)
-        self.checkmethod('replace', u'one!two!three!', u'one@two@three@', u'!', u'@', 3)
-        self.checkmethod('replace', u'one!two!three!', u'one@two@three@', u'!', u'@', 4)
-        self.checkmethod('replace', u'one!two!three!', u'one!two!three!', u'!', u'@', 0)
-        self.checkmethod('replace', u'one!two!three!', u'one@two@three@', u'!', u'@')
-        self.checkmethod('replace', u'one!two!three!', u'one!two!three!', u'x', u'@')
-        self.checkmethod('replace', u'one!two!three!', u'one!two!three!', u'x', u'@', 2)
-        self.checkmethod('replace', u'abc', u'-a-b-c-', u'', u'-')
-        self.checkmethod('replace', u'abc', u'-a-b-c', u'', u'-', 3)
-        self.checkmethod('replace', u'abc', u'abc', u'', u'-', 0)
-        self.checkmethod('replace', u'abc', u'abc', u'ab', u'--', 0)
-        self.checkmethod('replace', u'abc', u'abc', u'xy', u'--')
-        self.checkmethod('replace', u'', u'', u'', u'')
+        string_tests.CommonTest.test_replace(self)
 
         # method call forwarded from str implementation because of unicode argument
-        self.checkmethod('replace', 'one!two!three!', u'one@two!three!', u'!', u'@', 1)
-        self.assertRaises(TypeError, 'replace'.replace, 42)
+        self.checkequalnofix(u'one@two!three!', 'one!two!three!', 'replace', u'!', u'@', 1)
         self.assertRaises(TypeError, 'replace'.replace, u"r", 42)
-
-        self.assertRaises(TypeError, u"hello".replace)
-        self.assertRaises(TypeError, u"hello".replace, 42, u"h")
-        self.assertRaises(TypeError, u"hello".replace, u"h", 42)
-
-    def test_startswith(self):
-        self.checkmethod('startswith', u'hello', True, u'he')
-        self.checkmethod('startswith', u'hello', True, u'hello')
-        self.checkmethod('startswith', u'hello', False, u'hello world')
-        self.checkmethod('startswith', u'hello', True, u'')
-        self.checkmethod('startswith', u'hello', False, u'ello')
-        self.checkmethod('startswith', u'hello', True, u'ello', 1)
-        self.checkmethod('startswith', u'hello', True, u'o', 4)
-        self.checkmethod('startswith', u'hello', False, u'o', 5)
-        self.checkmethod('startswith', u'hello', True, u'', 5)
-        self.checkmethod('startswith', u'hello', False, u'lo', 6)
-        self.checkmethod('startswith', u'helloworld', True, u'lowo', 3)
-        self.checkmethod('startswith', u'helloworld', True, u'lowo', 3, 7)
-        self.checkmethod('startswith', u'helloworld', False, u'lowo', 3, 6)
-
-        self.assertRaises(TypeError, u"hello".startswith)
-        self.assertRaises(TypeError, u"hello".startswith, 42)
-
-    def test_endswith(self):
-        self.checkmethod('endswith', u'hello', True, u'lo')
-        self.checkmethod('endswith', u'hello', False, u'he')
-        self.checkmethod('endswith', u'hello', True, u'')
-        self.checkmethod('endswith', u'hello', False, u'hello world')
-        self.checkmethod('endswith', u'helloworld', False, u'worl')
-        self.checkmethod('endswith', u'helloworld', True, u'worl', 3, 9)
-        self.checkmethod('endswith', u'helloworld', True, u'world', 3, 12)
-        self.checkmethod('endswith', u'helloworld', True, u'lowo', 1, 7)
-        self.checkmethod('endswith', u'helloworld', True, u'lowo', 2, 7)
-        self.checkmethod('endswith', u'helloworld', True, u'lowo', 3, 7)
-        self.checkmethod('endswith', u'helloworld', False, u'lowo', 4, 7)
-        self.checkmethod('endswith', u'helloworld', False, u'lowo', 3, 8)
-        self.checkmethod('endswith', u'ab', False, u'ab', 0, 1)
-        self.checkmethod('endswith', u'ab', False, u'ab', 0, 0)
-        self.checkmethod('endswith', 'helloworld', True, u'd')
-        self.checkmethod('endswith', 'helloworld', False, u'l')
-
-        self.assertRaises(TypeError, u"hello".endswith)
-        self.assertRaises(TypeError, u"hello".endswith, 42)
-
-    def test_expandtabs(self):
-        self.checkmethod('expandtabs', u'abc\rab\tdef\ng\thi', u'abc\rab      def\ng       hi')
-        self.checkmethod('expandtabs', u'abc\rab\tdef\ng\thi', u'abc\rab      def\ng       hi', 8)
-        self.checkmethod('expandtabs', u'abc\rab\tdef\ng\thi', u'abc\rab  def\ng   hi', 4)
-        self.checkmethod('expandtabs', u'abc\r\nab\tdef\ng\thi', u'abc\r\nab  def\ng   hi', 4)
-        self.checkmethod('expandtabs', u'abc\r\nab\r\ndef\ng\r\nhi', u'abc\r\nab\r\ndef\ng\r\nhi', 4)
-
-        self.assertRaises(TypeError, u"hello".expandtabs, 42, 42)
-
-    def test_capwords(self):
-        if 0:
-            self.checkmethod('capwords', u'abc def ghi', u'Abc Def Ghi')
-            self.checkmethod('capwords', u'abc\tdef\nghi', u'Abc Def Ghi')
-            self.checkmethod('capwords', u'abc\t   def  \nghi', u'Abc Def Ghi')
-
-    def test_zfill(self):
-        self.checkmethod('zfill', u'123', u'123', 2)
-        self.checkmethod('zfill', u'123', u'123', 3)
-        self.checkmethod('zfill', u'123', u'0123', 4)
-        self.checkmethod('zfill', u'+123', u'+123', 3)
-        self.checkmethod('zfill', u'+123', u'+123', 4)
-        self.checkmethod('zfill', u'+123', u'+0123', 5)
-        self.checkmethod('zfill', u'-123', u'-123', 3)
-        self.checkmethod('zfill', u'-123', u'-123', 4)
-        self.checkmethod('zfill', u'-123', u'-0123', 5)
-        self.checkmethod('zfill', u'', u'000', 3)
-        self.checkmethod('zfill', u'34', u'34', 1)
-        self.checkmethod('zfill', u'34', u'00034', 5)
-
-        self.assertRaises(TypeError, u"123".zfill)
 
     def test_comparison(self):
         # Comparisons:
@@ -425,151 +229,59 @@ class UnicodeTest(unittest.TestCase):
         # Surrogates on both sides, no fixup required
         self.assert_(u'\ud800\udc02' < u'\ud84d\udc56')
 
-    def test_ljust(self):
-        self.checkmethod('ljust', u'abc',  u'abc       ', 10)
-        self.checkmethod('ljust', u'abc',  u'abc   ', 6)
-        self.checkmethod('ljust', u'abc', u'abc', 2)
-
-        self.assertRaises(TypeError, u"abc".ljust)
-
-    def test_rjust(self):
-        self.checkmethod('rjust', u'abc',  u'       abc', 10)
-        self.checkmethod('rjust', u'abc',  u'   abc', 6)
-        self.checkmethod('rjust', u'abc', u'abc', 2)
-
-        self.assertRaises(TypeError, u"abc".rjust)
-
-    def test_center(self):
-        self.checkmethod('center', u'abc', u'   abc    ', 10)
-        self.checkmethod('center', u'abc', u' abc  ', 6)
-        self.checkmethod('center', u'abc', u'abc', 2)
-
-        self.assertRaises(TypeError, u"abc".center)
-
     def test_islower(self):
-        self.checkmethod('islower', u'', False)
-        self.checkmethod('islower', u'a', True)
-        self.checkmethod('islower', u'A', False)
-        self.checkmethod('islower', u'\n', False)
-        self.checkmethod('islower', u'\u1FFc', False)
-        self.checkmethod('islower', u'abc', True)
-        self.checkmethod('islower', u'aBc', False)
-        self.checkmethod('islower', u'abc\n', True)
-
-        self.assertRaises(TypeError, u"abc".islower, 42)
+        string_tests.MixinStrUnicodeUserStringTest.test_islower(self)
+        self.checkequalnofix(False, u'\u1FFc', 'islower')
 
     def test_isupper(self):
-        self.checkmethod('isupper', u'', False)
-        self.checkmethod('isupper', u'a', False)
-        self.checkmethod('isupper', u'A', True)
-        self.checkmethod('isupper', u'\n', False)
-        if sys.platform[:4] != 'java':
-            self.checkmethod('isupper', u'\u1FFc', False)
-        self.checkmethod('isupper', u'ABC', True)
-        self.checkmethod('isupper', u'AbC', False)
-        self.checkmethod('isupper', u'ABC\n', True)
-
-        self.assertRaises(TypeError, u"abc".isupper, 42)
+        string_tests.MixinStrUnicodeUserStringTest.test_isupper(self)
+        if not sys.platform.startswith('java'):
+            self.checkequalnofix(False, u'\u1FFc', 'isupper')
 
     def test_istitle(self):
-        self.checkmethod('istitle', u'', False)
-        self.checkmethod('istitle', u'a', False)
-        self.checkmethod('istitle', u'A', True)
-        self.checkmethod('istitle', u'\n', False)
-        self.checkmethod('istitle', u'\u1FFc', True)
-        self.checkmethod('istitle', u'A Titlecased Line', True)
-        self.checkmethod('istitle', u'A\nTitlecased Line', True)
-        self.checkmethod('istitle', u'A Titlecased, Line', True)
-        self.checkmethod('istitle', u'Greek \u1FFcitlecases ...', True)
-        self.checkmethod('istitle', u'Not a capitalized String', False)
-        self.checkmethod('istitle', u'Not\ta Titlecase String', False)
-        self.checkmethod('istitle', u'Not--a Titlecase String', False)
-        self.checkmethod('istitle', u'NOT', False)
-
-        self.assertRaises(TypeError, u"abc".istitle, 42)
+        string_tests.MixinStrUnicodeUserStringTest.test_title(self)
+        self.checkequalnofix(True, u'\u1FFc', 'istitle')
+        self.checkequalnofix(True, u'Greek \u1FFcitlecases ...', 'istitle')
 
     def test_isspace(self):
-        self.checkmethod('isspace', u'', False)
-        self.checkmethod('isspace', u'a', False)
-        self.checkmethod('isspace', u' ', True)
-        self.checkmethod('isspace', u'\t', True)
-        self.checkmethod('isspace', u'\r', True)
-        self.checkmethod('isspace', u'\n', True)
-        self.checkmethod('isspace', u' \t\r\n', True)
-        self.checkmethod('isspace', u' \t\r\na', False)
-
-        self.assertRaises(TypeError, u"abc".isspace, 42)
+        string_tests.MixinStrUnicodeUserStringTest.test_isspace(self)
+        self.checkequalnofix(True, u'\u2000', 'isspace')
+        self.checkequalnofix(True, u'\u200a', 'isspace')
+        self.checkequalnofix(False, u'\u2014', 'isspace')
 
     def test_isalpha(self):
-        self.checkmethod('isalpha', u'', False)
-        self.checkmethod('isalpha', u'a', True)
-        self.checkmethod('isalpha', u'A', True)
-        self.checkmethod('isalpha', u'\n', False)
-        self.checkmethod('isalpha', u'\u1FFc', True)
-        self.checkmethod('isalpha', u'abc', True)
-        self.checkmethod('isalpha', u'aBc123', False)
-        self.checkmethod('isalpha', u'abc\n', False)
-
-        self.assertRaises(TypeError, u"abc".isalpha, 42)
-
-    def test_isalnum(self):
-        self.checkmethod('isalnum', u'', False)
-        self.checkmethod('isalnum', u'a', True)
-        self.checkmethod('isalnum', u'A', True)
-        self.checkmethod('isalnum', u'\n', False)
-        self.checkmethod('isalnum', u'123abc456', True)
-        self.checkmethod('isalnum', u'a1b3c', True)
-        self.checkmethod('isalnum', u'aBc000 ', False)
-        self.checkmethod('isalnum', u'abc\n', False)
-
-        self.assertRaises(TypeError, u"abc".isalnum, 42)
+        string_tests.MixinStrUnicodeUserStringTest.test_isalpha(self)
+        self.checkequalnofix(True, u'\u1FFc', 'isalpha')
 
     def test_isdecimal(self):
-        self.checkmethod('isdecimal', u'', False)
-        self.checkmethod('isdecimal', u'a', False)
-        self.checkmethod('isdecimal', u'0', True)
-        self.checkmethod('isdecimal', u'\u2460', False) # CIRCLED DIGIT ONE
-        self.checkmethod('isdecimal', u'\xbc', False) # VULGAR FRACTION ONE QUARTER
-        self.checkmethod('isdecimal', u'\u0660', True) # ARABIC-INDIC DIGIT ZERO
-        self.checkmethod('isdecimal', u'0123456789', True)
-        self.checkmethod('isdecimal', u'0123456789a', False)
+        self.checkequalnofix(False, u'', 'isdecimal')
+        self.checkequalnofix(False, u'a', 'isdecimal')
+        self.checkequalnofix(True, u'0', 'isdecimal')
+        self.checkequalnofix(False, u'\u2460', 'isdecimal') # CIRCLED DIGIT ONE
+        self.checkequalnofix(False, u'\xbc', 'isdecimal') # VULGAR FRACTION ONE QUARTER
+        self.checkequalnofix(True, u'\u0660', 'isdecimal') # ARABIC-INDIC DIGIT ZERO
+        self.checkequalnofix(True, u'0123456789', 'isdecimal')
+        self.checkequalnofix(False, u'0123456789a', 'isdecimal')
 
-        self.assertRaises(TypeError, u"abc".isdecimal, 42)
+        self.checkraises(TypeError, 'abc', 'isdecimal', 42)
 
     def test_isdigit(self):
-        self.checkmethod('isdigit', u'', False)
-        self.checkmethod('isdigit', u'a', False)
-        self.checkmethod('isdigit', u'0', True)
-        self.checkmethod('isdigit', u'\u2460', True)
-        self.checkmethod('isdigit', u'\xbc', False)
-        self.checkmethod('isdigit', u'\u0660', True)
-        self.checkmethod('isdigit', u'0123456789', True)
-        self.checkmethod('isdigit', u'0123456789a', False)
-
-        self.assertRaises(TypeError, u"abc".isdigit, 42)
+        string_tests.MixinStrUnicodeUserStringTest.test_isdigit(self)
+        self.checkequalnofix(True, u'\u2460', 'isdigit')
+        self.checkequalnofix(False, u'\xbc', 'isdigit')
+        self.checkequalnofix(True, u'\u0660', 'isdigit')
 
     def test_isnumeric(self):
-        self.checkmethod('isnumeric', u'', False)
-        self.checkmethod('isnumeric', u'a', False)
-        self.checkmethod('isnumeric', u'0', True)
-        self.checkmethod('isnumeric', u'\u2460', True)
-        self.checkmethod('isnumeric', u'\xbc', True)
-        self.checkmethod('isnumeric', u'\u0660', True)
-        self.checkmethod('isnumeric', u'0123456789', True)
-        self.checkmethod('isnumeric', u'0123456789a', False)
+        self.checkequalnofix(False, u'', 'isnumeric')
+        self.checkequalnofix(False, u'a', 'isnumeric')
+        self.checkequalnofix(True, u'0', 'isnumeric')
+        self.checkequalnofix(True, u'\u2460', 'isnumeric')
+        self.checkequalnofix(True, u'\xbc', 'isnumeric')
+        self.checkequalnofix(True, u'\u0660', 'isnumeric')
+        self.checkequalnofix(True, u'0123456789', 'isnumeric')
+        self.checkequalnofix(False, u'0123456789a', 'isnumeric')
 
         self.assertRaises(TypeError, u"abc".isnumeric, 42)
-
-    def test_splitlines(self):
-        self.checkmethod('splitlines', u"abc\ndef\n\rghi", [u'abc', u'def', u'', u'ghi'])
-        self.checkmethod('splitlines', u"abc\ndef\n\r\nghi", [u'abc', u'def', u'', u'ghi'])
-        self.checkmethod('splitlines', u"abc\ndef\r\nghi", [u'abc', u'def', u'ghi'])
-        self.checkmethod('splitlines', u"abc\ndef\r\nghi\n", [u'abc', u'def', u'ghi'])
-        self.checkmethod('splitlines', u"abc\ndef\r\nghi\n\r", [u'abc', u'def', u'ghi', u''])
-        self.checkmethod('splitlines', u"\nabc\ndef\r\nghi\n\r", [u'', u'abc', u'def', u'ghi', u''])
-        self.checkmethod('splitlines', u"\nabc\ndef\r\nghi\n\r", [u'\n', u'abc\n', u'def\r\n', u'ghi\n', u'\r'], True)
-
-        self.assertRaises(TypeError, u"abc".splitlines, 42, 42)
 
     def test_contains(self):
         # Testing Unicode contains method
@@ -634,6 +346,7 @@ class UnicodeTest(unittest.TestCase):
         self.assertRaises(TypeError, u"abc".__contains__)
 
     def test_formatting(self):
+        string_tests.MixinStrUnicodeUserStringTest.test_formatting(self)
         # Testing Unicode formatting strings...
         self.assertEqual(u"%s, %s" % (u"abc", "abc"), u'abc, abc')
         self.assertEqual(u"%s, %s, %i, %f, %5.2f" % (u"abc", "abc", 1, 2, 3), u'abc, abc, 1, 2.000000,  3.00')
@@ -641,33 +354,10 @@ class UnicodeTest(unittest.TestCase):
         self.assertEqual(u"%s, %s, %i, %f, %5.2f" % (u"abc", "abc", -1, -2, 3.5), u'abc, abc, -1, -2.000000,  3.50')
         self.assertEqual(u"%s, %s, %i, %f, %5.2f" % (u"abc", "abc", -1, -2, 3.57), u'abc, abc, -1, -2.000000,  3.57')
         self.assertEqual(u"%s, %s, %i, %f, %5.2f" % (u"abc", "abc", -1, -2, 1003.57), u'abc, abc, -1, -2.000000, 1003.57')
-        self.assertEqual(u"%c" % (u"a",), u'a')
-        self.assertEqual(u"%c" % ("a",), u'a')
-        self.assertEqual(u"%c" % (34,), u'"')
-        self.assertEqual(u"%c" % (36,), u'$')
-        self.assertEqual(u"%d".__mod__(10), u'10')
         if not sys.platform.startswith('java'):
             self.assertEqual(u"%r, %r" % (u"abc", "abc"), u"u'abc', 'abc'")
         self.assertEqual(u"%(x)s, %(y)s" % {'x':u"abc", 'y':"def"}, u'abc, def')
-        self.assertEqual(u"%(x)s, %(ä)s" % {'x':u"abc", u'ä':"def"}, u'abc, def')
-
-        for ordinal in (-100, 0x200000):
-            self.assertRaises(ValueError, u"%c".__mod__, ordinal)
-
-        # float formatting
-        for prec in xrange(100):
-            format = u'%%.%if' % prec
-            value = 0.01
-            for x in xrange(60):
-                value = value * 3.141592655 / 3.0 * 10.0
-                # The formatfloat() code in stringobject.c and
-                # unicodeobject.c uses a 120 byte buffer and switches from
-                # 'f' formatting to 'g' at precision 50, so we expect
-                # OverflowErrors for the ranges x < 50 and prec >= 67.
-                if x < 50 and prec >= 67:
-                    self.assertRaises(OverflowError, format.__mod__, value)
-                else:
-                    format % value
+        self.assertEqual(u"%(x)s, %(\xfc)s" % {'x':u"abc", u'\xfc':"def"}, u'abc, def')
 
         # formatting jobs delegated from the string implementation:
         self.assertEqual('...%(foo)s...' % {'foo':u"abc"}, u'...abc...')
@@ -684,28 +374,9 @@ class UnicodeTest(unittest.TestCase):
         self.assertEqual('%*.*s' % (5,2,u'abc',), u'   ab')
         self.assertEqual('%*.*s' % (5,3,u'abc',), u'  abc')
         self.assertEqual('%i %*.*s' % (10, 5,3,u'abc',), u'10   abc')
-        self.assertEqual('%i%s %*.*s' % (10, 3, 5,3,u'abc',), u'103   abc')
+        self.assertEqual('%i%s %*.*s' % (10, 3, 5, 3, u'abc',), u'103   abc')
 
-        self.assertEqual(u'%3ld' % 42, u' 42')
-        self.assertEqual(u'%07.2f' % 42, u'0042.00')
-
-        self.assertRaises(TypeError, u"abc".__mod__)
-        self.assertRaises(TypeError, u"%(foo)s".__mod__, 42)
-        self.assertRaises(TypeError, u"%s%s".__mod__, (42,))
-        self.assertRaises(TypeError, u"%c".__mod__, (None,))
         self.assertRaises(ValueError, u"%c".__mod__, (sys.maxunicode+1,))
-        self.assertRaises(ValueError, u"%(foo".__mod__, {})
-        self.assertRaises(TypeError, u"%(foo)s %(bar)s".__mod__, (u"foo", 42))
-
-        # argument names with properly nested brackets are supported
-        self.assertEqual(u"%((foo))s" % {u"(foo)": u"bar"}, u"bar")
-
-        # 100 is a magic number in PyUnicode_Format, this forces a resize
-        self.assertEqual(u"%sx" % (103*u"a"), 103*u"a"+u"x")
-
-        self.assertRaises(TypeError, u"%*s".__mod__, (u"foo", u"bar"))
-        self.assertRaises(TypeError, u"%10.*f".__mod__, (u"foo", 42.))
-        self.assertRaises(ValueError, u"%10".__mod__, (42,))
 
     def test_constructor(self):
         # unicode(obj) tests (this maps to PyObject_Unicode() at C level)
@@ -1023,41 +694,10 @@ class UnicodeTest(unittest.TestCase):
         print >>out, u'def\n'
         print >>out, u'def\n'
 
-    def test_mul(self):
-        self.checkmethod('__mul__', u'abc', u'', -1)
-        self.checkmethod('__mul__', u'abc', u'', 0)
-        self.checkmethod('__mul__', u'abc', u'abc', 1)
-        self.checkmethod('__mul__', u'abc', u'abcabcabc', 3)
-        self.assertRaises(OverflowError, (10000*u'abc').__mul__, sys.maxint)
-
-    def test_subscript(self):
-        self.checkmethod('__getitem__', u'abc', u'a', 0)
-        self.checkmethod('__getitem__', u'abc', u'c', -1)
-        self.checkmethod('__getitem__', u'abc', u'a', 0L)
-        self.checkmethod('__getitem__', u'abc', u'abc', slice(0, 3))
-        self.checkmethod('__getitem__', u'abc', u'abc', slice(0, 1000))
-        self.checkmethod('__getitem__', u'abc', u'a', slice(0, 1))
-        self.checkmethod('__getitem__', u'abc', u'', slice(0, 0))
-        # FIXME What about negative indizes? This is handled differently by [] and __getitem__(slice)
-
-        self.assertRaises(TypeError, u"abc".__getitem__, "def")
-
-    def test_slice(self):
-        self.checkmethod('__getslice__', u'abc', u'abc', 0, 1000)
-        self.checkmethod('__getslice__', u'abc', u'abc', 0, 3)
-        self.checkmethod('__getslice__', u'abc', u'ab', 0, 2)
-        self.checkmethod('__getslice__', u'abc', u'bc', 1, 3)
-        self.checkmethod('__getslice__', u'abc', u'b', 1, 2)
-        self.checkmethod('__getslice__', u'abc', u'', 2, 2)
-        self.checkmethod('__getslice__', u'abc', u'', 1000, 1000)
-        self.checkmethod('__getslice__', u'abc', u'', 2000, 1000)
-        self.checkmethod('__getslice__', u'abc', u'', 2, 1)
-        # FIXME What about negative indizes? This is handled differently by [] and __getslice__
-
 def test_main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(UnicodeTest))
-    test.test_support.run_suite(suite)
+    test_support.run_suite(suite)
 
 if __name__ == "__main__":
     test_main()

@@ -1,14 +1,13 @@
-"""Common tests shared by test_string and test_userstring"""
+"""
+Common tests shared by test_str, test_unicode, test_userstring and test_string.
+"""
 
-import string
-from test.test_support import verify, vereq, verbose, TestFailed, have_unicode
-
-transtable = '\000\001\002\003\004\005\006\007\010\011\012\013\014\015\016\017\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037 !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`xyzdefghijklmnopqrstuvwxyz{|}~\177\200\201\202\203\204\205\206\207\210\211\212\213\214\215\216\217\220\221\222\223\224\225\226\227\230\231\232\233\234\235\236\237\240\241\242\243\244\245\246\247\250\251\252\253\254\255\256\257\260\261\262\263\264\265\266\267\270\271\272\273\274\275\276\277\300\301\302\303\304\305\306\307\310\311\312\313\314\315\316\317\320\321\322\323\324\325\326\327\330\331\332\333\334\335\336\337\340\341\342\343\344\345\346\347\350\351\352\353\354\355\356\357\360\361\362\363\364\365\366\367\370\371\372\373\374\375\376\377'
-
+import unittest, string, sys
+from test import test_support
 from UserList import UserList
 
 class Sequence:
-    def __init__(self): self.seq = 'wxyz'
+    def __init__(self, seq='wxyz'): self.seq = seq
     def __len__(self): return len(self.seq)
     def __getitem__(self, i): return self.seq[i]
 
@@ -19,313 +18,613 @@ class BadSeq2(Sequence):
     def __init__(self): self.seq = ['a', 'b', 'c']
     def __len__(self): return 8
 
-def run_module_tests(test):
-    """Run all tests that exercise a function in the string module"""
+class CommonTest(unittest.TestCase):
+    # This testcase contains test that can be used in all
+    # stringlike classes. Currently this is str, unicode
+    # UserString and the string module.
 
-    test('atoi', " 1 ", 1)
-    test('atoi', " 1x", ValueError)
-    test('atoi', " x1 ", ValueError)
-    test('atol', "  1  ", 1L)
-    test('atol', "  1x ", ValueError)
-    test('atol', "  x1 ", ValueError)
-    test('atof', "  1  ", 1.0)
-    test('atof', "  1x ", ValueError)
-    test('atof', "  x1 ", ValueError)
+    # The type to be tested
+    # Change in subclasses to change the behaviour of fixtesttype()
+    type2test = None
 
-    test('maketrans', 'abc', transtable, 'xyz')
-    test('maketrans', 'abc', ValueError, 'xyzq')
+    # All tests pass their arguments to the testing methods
+    # as str objects. fixtesttype() can be used to propagate
+    # these arguments to the appropriate type
+    def fixtype(self, obj):
+        if isinstance(obj, str):
+            return self.__class__.type2test(obj)
+        elif isinstance(obj, list):
+            return [self.fixtype(x) for x in obj]
+        elif isinstance(obj, tuple):
+            return tuple([self.fixtype(x) for x in obj])
+        elif isinstance(obj, dict):
+            return dict([
+               (self.fixtype(key), self.fixtype(value))
+               for (key, value) in obj.iteritems()
+            ])
+        else:
+            return obj
 
-    # join now works with any sequence type
-    test('join', ['a', 'b', 'c', 'd'], 'a b c d')
-    test('join', ('a', 'b', 'c', 'd'), 'abcd', '')
-    test('join', Sequence(), 'w x y z')
-    test('join', 7, TypeError)
+    # check that object.method(*args) returns result
+    def checkequal(self, result, object, methodname, *args):
+        result = self.fixtype(result)
+        object = self.fixtype(object)
+        args = self.fixtype(args)
+        realresult = getattr(object, methodname)(*args)
+        self.assertEqual(
+            result,
+            realresult
+        )
+        # if the original is returned make sure that
+        # this doesn't happen with subclasses
+        if object == realresult:
+            class subtype(self.__class__.type2test):
+                pass
+            object = subtype(object)
+            realresult = getattr(object, methodname)(*args)
+            self.assert_(object is not realresult)
 
-    test('join', BadSeq1(), TypeError)
-    test('join', BadSeq2(), 'a b c')
+    # check that object.method(*args) raises exc
+    def checkraises(self, exc, object, methodname, *args):
+        object = self.fixtype(object)
+        args = self.fixtype(args)
+        self.assertRaises(
+            exc,
+            getattr(object, methodname),
+            *args
+        )
 
-    # try a few long ones
-    print ":".join(['x' * 100] * 100)
-    print ":".join(('x' * 100,) * 100)
+    # call object.method(*args) without any checks
+    def checkcall(self, object, methodname, *args):
+        object = self.fixtype(object)
+        args = self.fixtype(args)
+        getattr(object, methodname)(*args)
+
+    def test_capitalize(self):
+        self.checkequal(' hello ', ' hello ', 'capitalize')
+        self.checkequal('Hello ', 'Hello ','capitalize')
+        self.checkequal('Hello ', 'hello ','capitalize')
+        self.checkequal('Aaaa', 'aaaa', 'capitalize')
+        self.checkequal('Aaaa', 'AaAa', 'capitalize')
+
+        self.checkraises(TypeError, 'hello', 'capitalize', 42)
+
+    def test_count(self):
+        self.checkequal(3, 'aaa', 'count', 'a')
+        self.checkequal(0, 'aaa', 'count', 'b')
+        self.checkequal(3, 'aaa', 'count', 'a')
+        self.checkequal(0, 'aaa', 'count', 'b')
+        self.checkequal(3, 'aaa', 'count', 'a')
+        self.checkequal(0, 'aaa', 'count', 'b')
+        self.checkequal(0, 'aaa', 'count', 'b')
+        self.checkequal(1, 'aaa', 'count', 'a', -1)
+        self.checkequal(3, 'aaa', 'count', 'a', -10)
+        self.checkequal(2, 'aaa', 'count', 'a', 0, -1)
+        self.checkequal(0, 'aaa', 'count', 'a', 0, -10)
+
+        self.checkraises(TypeError, 'hello', 'count')
+        self.checkraises(TypeError, 'hello', 'count', 42)
+
+    def test_find(self):
+        self.checkequal(0, 'abcdefghiabc', 'find', 'abc')
+        self.checkequal(9, 'abcdefghiabc', 'find', 'abc', 1)
+        self.checkequal(-1, 'abcdefghiabc', 'find', 'def', 4)
+
+        self.checkraises(TypeError, 'hello', 'find')
+        self.checkraises(TypeError, 'hello', 'find', 42)
+
+    def test_rfind(self):
+        self.checkequal(9,  'abcdefghiabc', 'rfind', 'abc')
+        self.checkequal(12, 'abcdefghiabc', 'rfind', '')
+        self.checkequal(0, 'abcdefghiabc', 'rfind', 'abcd')
+        self.checkequal(-1, 'abcdefghiabc', 'rfind', 'abcz')
+
+        self.checkraises(TypeError, 'hello', 'rfind')
+        self.checkraises(TypeError, 'hello', 'rfind', 42)
+
+    def test_index(self):
+        self.checkequal(0, 'abcdefghiabc', 'index', '')
+        self.checkequal(3, 'abcdefghiabc', 'index', 'def')
+        self.checkequal(0, 'abcdefghiabc', 'index', 'abc')
+        self.checkequal(9, 'abcdefghiabc', 'index', 'abc', 1)
+
+        self.checkraises(ValueError, 'abcdefghiabc', 'index', 'hib')
+        self.checkraises(ValueError, 'abcdefghiab', 'index', 'abc', 1)
+        self.checkraises(ValueError, 'abcdefghi', 'index', 'ghi', 8)
+        self.checkraises(ValueError, 'abcdefghi', 'index', 'ghi', -1)
+
+        self.checkraises(TypeError, 'hello', 'index')
+        self.checkraises(TypeError, 'hello', 'index', 42)
+
+    def test_rindex(self):
+        self.checkequal(12, 'abcdefghiabc', 'rindex', '')
+        self.checkequal(3,  'abcdefghiabc', 'rindex', 'def')
+        self.checkequal(9,  'abcdefghiabc', 'rindex', 'abc')
+        self.checkequal(0,  'abcdefghiabc', 'rindex', 'abc', 0, -1)
+
+        self.checkraises(ValueError, 'abcdefghiabc', 'rindex', 'hib')
+        self.checkraises(ValueError, 'defghiabc', 'rindex', 'def', 1)
+        self.checkraises(ValueError, 'defghiabc', 'rindex', 'abc', 0, -1)
+        self.checkraises(ValueError, 'abcdefghi', 'rindex', 'ghi', 0, 8)
+        self.checkraises(ValueError, 'abcdefghi', 'rindex', 'ghi', 0, -1)
+
+        self.checkraises(TypeError, 'hello', 'rindex')
+        self.checkraises(TypeError, 'hello', 'rindex', 42)
+
+    def test_lower(self):
+        self.checkequal('hello', 'HeLLo', 'lower')
+        self.checkequal('hello', 'hello', 'lower')
+        self.checkraises(TypeError, 'hello', 'lower', 42)
+
+    def test_upper(self):
+        self.checkequal('HELLO', 'HeLLo', 'upper')
+        self.checkequal('HELLO', 'HELLO', 'upper')
+        self.checkraises(TypeError, 'hello', 'upper', 42)
+
+    def test_expandtabs(self):
+        self.checkequal('abc\rab      def\ng       hi', 'abc\rab\tdef\ng\thi', 'expandtabs')
+        self.checkequal('abc\rab      def\ng       hi', 'abc\rab\tdef\ng\thi', 'expandtabs', 8)
+        self.checkequal('abc\rab  def\ng   hi', 'abc\rab\tdef\ng\thi', 'expandtabs', 4)
+        self.checkequal('abc\r\nab  def\ng   hi', 'abc\r\nab\tdef\ng\thi', 'expandtabs', 4)
+        self.checkequal('abc\rab      def\ng       hi', 'abc\rab\tdef\ng\thi', 'expandtabs')
+        self.checkequal('abc\rab      def\ng       hi', 'abc\rab\tdef\ng\thi', 'expandtabs', 8)
+        self.checkequal('abc\r\nab\r\ndef\ng\r\nhi', 'abc\r\nab\r\ndef\ng\r\nhi', 'expandtabs', 4)
+
+        self.checkraises(TypeError, 'hello', 'expandtabs', 42, 42)
+
+    def test_split(self):
+        self.checkequal(['this', 'is', 'the', 'split', 'function'],
+            'this is the split function', 'split')
+        self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'split', '|')
+        self.checkequal(['a', 'b', 'c|d'], 'a|b|c|d', 'split', '|', 2)
+        self.checkequal(['a', 'b c d'], 'a b c d', 'split', None, 1)
+        self.checkequal(['a', 'b', 'c d'], 'a b c d', 'split', None, 2)
+        self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'split', None, 3)
+        self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'split', None, 4)
+        self.checkequal(['a b c d'], 'a b c d', 'split', None, 0)
+        self.checkequal(['a', 'b', 'c  d'], 'a  b  c  d', 'split', None, 2)
+        self.checkequal(['a', 'b', 'c', 'd'], 'a b c d ', 'split')
+        self.checkequal(['a', 'b', 'c', 'd'], 'a//b//c//d', 'split', '//')
+        self.checkequal(['endcase ', ''], 'endcase test', 'split', 'test')
+
+        self.checkraises(TypeError, 'hello', 'split', 42, 42, 42)
+
+    def test_strip(self):
+        self.checkequal('hello', '   hello   ', 'strip')
+        self.checkequal('hello   ', '   hello   ', 'lstrip')
+        self.checkequal('   hello', '   hello   ', 'rstrip')
+        self.checkequal('hello', 'hello', 'strip')
+
+    def test_ljust(self):
+        self.checkequal('abc       ', 'abc', 'ljust', 10)
+        self.checkequal('abc   ', 'abc', 'ljust', 6)
+        self.checkequal('abc', 'abc', 'ljust', 3)
+        self.checkequal('abc', 'abc', 'ljust', 2)
+
+        self.checkraises(TypeError, 'abc', 'ljust')
+
+    def test_rjust(self):
+        self.checkequal('       abc', 'abc', 'rjust', 10)
+        self.checkequal('   abc', 'abc', 'rjust', 6)
+        self.checkequal('abc', 'abc', 'rjust', 3)
+        self.checkequal('abc', 'abc', 'rjust', 2)
+
+        self.checkraises(TypeError, 'abc', 'rjust')
+
+    def test_center(self):
+        self.checkequal('   abc    ', 'abc', 'center', 10)
+        self.checkequal(' abc  ', 'abc', 'center', 6)
+        self.checkequal('abc', 'abc', 'center', 3)
+        self.checkequal('abc', 'abc', 'center', 2)
+
+        self.checkraises(TypeError, 'abc', 'center')
+
+    def test_swapcase(self):
+        self.checkequal('hEllO CoMPuTErS', 'HeLLo cOmpUteRs', 'swapcase')
+
+        self.checkraises(TypeError, 'hello', 'swapcase', 42)
+
+    def test_replace(self):
+        self.checkequal('one@two!three!', 'one!two!three!', 'replace', '!', '@', 1)
+        self.checkequal('onetwothree', 'one!two!three!', 'replace', '!', '')
+        self.checkequal('one@two@three!', 'one!two!three!', 'replace', '!', '@', 2)
+        self.checkequal('one@two@three@', 'one!two!three!', 'replace', '!', '@', 3)
+        self.checkequal('one@two@three@', 'one!two!three!', 'replace', '!', '@', 4)
+        self.checkequal('one!two!three!', 'one!two!three!', 'replace', '!', '@', 0)
+        self.checkequal('one@two@three@', 'one!two!three!', 'replace', '!', '@')
+        self.checkequal('one!two!three!', 'one!two!three!', 'replace', 'x', '@')
+        self.checkequal('one!two!three!', 'one!two!three!', 'replace', 'x', '@', 2)
+        self.checkequal('-a-b-c-', 'abc', 'replace', '', '-')
+        self.checkequal('-a-b-c', 'abc', 'replace', '', '-', 3)
+        self.checkequal('abc', 'abc', 'replace', '', '-', 0)
+        self.checkequal('', '', 'replace', '', '')
+        self.checkequal('abc', 'abc', 'replace', 'ab', '--', 0)
+        self.checkequal('abc', 'abc', 'replace', 'xy', '--')
+        # Next three for SF bug 422088: [OSF1 alpha] string.replace(); died with
+        # MemoryError due to empty result (platform malloc issue when requesting
+        # 0 bytes).
+        self.checkequal('', '123', 'replace', '123', '')
+        self.checkequal('', '123123', 'replace', '123', '')
+        self.checkequal('x', '123x123', 'replace', '123', '')
+
+        self.checkraises(TypeError, 'hello', 'replace')
+        self.checkraises(TypeError, 'hello', 'replace', 42)
+        self.checkraises(TypeError, 'hello', 'replace', 42, 'h')
+        self.checkraises(TypeError, 'hello', 'replace', 'h', 42)
+
+    def test_zfill(self):
+        self.checkequal('123', '123', 'zfill', 2)
+        self.checkequal('123', '123', 'zfill', 3)
+        self.checkequal('0123', '123', 'zfill', 4)
+        self.checkequal('+123', '+123', 'zfill', 3)
+        self.checkequal('+123', '+123', 'zfill', 4)
+        self.checkequal('+0123', '+123', 'zfill', 5)
+        self.checkequal('-123', '-123', 'zfill', 3)
+        self.checkequal('-123', '-123', 'zfill', 4)
+        self.checkequal('-0123', '-123', 'zfill', 5)
+        self.checkequal('000', '', 'zfill', 3)
+        self.checkequal('34', '34', 'zfill', 1)
+        self.checkequal('0034', '34', 'zfill', 4)
+
+        self.checkraises(TypeError, '123', 'zfill')
+
+class MixinStrUnicodeUserStringTest:
+    # additional tests that only work for
+    # stringlike objects, i.e. str, unicode, UserString
+    # (but not the string module)
+
+    def test_islower(self):
+        self.checkequal(False, '', 'islower')
+        self.checkequal(True, 'a', 'islower')
+        self.checkequal(False, 'A', 'islower')
+        self.checkequal(False, '\n', 'islower')
+        self.checkequal(True, 'abc', 'islower')
+        self.checkequal(False, 'aBc', 'islower')
+        self.checkequal(True, 'abc\n', 'islower')
+        self.checkraises(TypeError, 'abc', 'islower', 42)
+
+    def test_isupper(self):
+        self.checkequal(False, '', 'isupper')
+        self.checkequal(False, 'a', 'isupper')
+        self.checkequal(True, 'A', 'isupper')
+        self.checkequal(False, '\n', 'isupper')
+        self.checkequal(True, 'ABC', 'isupper')
+        self.checkequal(False, 'AbC', 'isupper')
+        self.checkequal(True, 'ABC\n', 'isupper')
+        self.checkraises(TypeError, 'abc', 'isupper', 42)
+
+    def test_istitle(self):
+        self.checkequal(False, '', 'istitle')
+        self.checkequal(False, 'a', 'istitle')
+        self.checkequal(True, 'A', 'istitle')
+        self.checkequal(False, '\n', 'istitle')
+        self.checkequal(True, 'A Titlecased Line', 'istitle')
+        self.checkequal(True, 'A\nTitlecased Line', 'istitle')
+        self.checkequal(True, 'A Titlecased, Line', 'istitle')
+        self.checkequal(False, 'Not a capitalized String', 'istitle')
+        self.checkequal(False, 'Not\ta Titlecase String', 'istitle')
+        self.checkequal(False, 'Not--a Titlecase String', 'istitle')
+        self.checkequal(False, 'NOT', 'istitle')
+        self.checkraises(TypeError, 'abc', 'istitle', 42)
+
+    def test_isspace(self):
+        self.checkequal(False, '', 'isspace')
+        self.checkequal(False, 'a', 'isspace')
+        self.checkequal(True, ' ', 'isspace')
+        self.checkequal(True, '\t', 'isspace')
+        self.checkequal(True, '\r', 'isspace')
+        self.checkequal(True, '\n', 'isspace')
+        self.checkequal(True, ' \t\r\n', 'isspace')
+        self.checkequal(False, ' \t\r\na', 'isspace')
+        self.checkraises(TypeError, 'abc', 'isspace', 42)
+
+    def test_isalpha(self):
+        self.checkequal(False, '', 'isalpha')
+        self.checkequal(True, 'a', 'isalpha')
+        self.checkequal(True, 'A', 'isalpha')
+        self.checkequal(False, '\n', 'isalpha')
+        self.checkequal(True, 'abc', 'isalpha')
+        self.checkequal(False, 'aBc123', 'isalpha')
+        self.checkequal(False, 'abc\n', 'isalpha')
+        self.checkraises(TypeError, 'abc', 'isalpha', 42)
+
+    def test_isalnum(self):
+        self.checkequal(False, '', 'isalnum')
+        self.checkequal(True, 'a', 'isalnum')
+        self.checkequal(True, 'A', 'isalnum')
+        self.checkequal(False, '\n', 'isalnum')
+        self.checkequal(True, '123abc456', 'isalnum')
+        self.checkequal(True, 'a1b3c', 'isalnum')
+        self.checkequal(False, 'aBc000 ', 'isalnum')
+        self.checkequal(False, 'abc\n', 'isalnum')
+        self.checkraises(TypeError, 'abc', 'isalnum', 42)
+
+    def test_isdigit(self):
+        self.checkequal(False, '', 'isdigit')
+        self.checkequal(False, 'a', 'isdigit')
+        self.checkequal(True, '0', 'isdigit')
+        self.checkequal(True, '0123456789', 'isdigit')
+        self.checkequal(False, '0123456789a', 'isdigit')
+
+        self.checkraises(TypeError, 'abc', 'isdigit', 42)
+
+    def test_title(self):
+        self.checkequal(' Hello ', ' hello ', 'title')
+        self.checkequal('Hello ', 'hello ', 'title')
+        self.checkequal('Hello ', 'Hello ', 'title')
+        self.checkequal('Format This As Title String', "fOrMaT thIs aS titLe String", 'title')
+        self.checkequal('Format,This-As*Title;String', "fOrMaT,thIs-aS*titLe;String", 'title', )
+        self.checkequal('Getint', "getInt", 'title')
+        self.checkraises(TypeError, 'hello', 'title', 42)
+
+    def test_splitlines(self):
+        self.checkequal(['abc', 'def', '', 'ghi'], "abc\ndef\n\rghi", 'splitlines')
+        self.checkequal(['abc', 'def', '', 'ghi'], "abc\ndef\n\r\nghi", 'splitlines')
+        self.checkequal(['abc', 'def', 'ghi'], "abc\ndef\r\nghi", 'splitlines')
+        self.checkequal(['abc', 'def', 'ghi'], "abc\ndef\r\nghi\n", 'splitlines')
+        self.checkequal(['abc', 'def', 'ghi', ''], "abc\ndef\r\nghi\n\r", 'splitlines')
+        self.checkequal(['', 'abc', 'def', 'ghi', ''], "\nabc\ndef\r\nghi\n\r", 'splitlines')
+        self.checkequal(['\n', 'abc\n', 'def\r\n', 'ghi\n', '\r'], "\nabc\ndef\r\nghi\n\r", 'splitlines', 1)
+
+        self.checkraises(TypeError, 'abc', 'splitlines', 42, 42)
+
+    def test_startswith(self):
+        self.checkequal(True, 'hello', 'startswith', 'he')
+        self.checkequal(True, 'hello', 'startswith', 'hello')
+        self.checkequal(False, 'hello', 'startswith', 'hello world')
+        self.checkequal(True, 'hello', 'startswith', '')
+        self.checkequal(False, 'hello', 'startswith', 'ello')
+        self.checkequal(True, 'hello', 'startswith', 'ello', 1)
+        self.checkequal(True, 'hello', 'startswith', 'o', 4)
+        self.checkequal(False, 'hello', 'startswith', 'o', 5)
+        self.checkequal(True, 'hello', 'startswith', '', 5)
+        self.checkequal(False, 'hello', 'startswith', 'lo', 6)
+        self.checkequal(True, 'helloworld', 'startswith', 'lowo', 3)
+        self.checkequal(True, 'helloworld', 'startswith', 'lowo', 3, 7)
+        self.checkequal(False, 'helloworld', 'startswith', 'lowo', 3, 6)
+
+        # test negative indices
+        self.checkequal(True, 'hello', 'startswith', 'he', 0, -1)
+        self.checkequal(True, 'hello', 'startswith', 'he', -53, -1)
+        self.checkequal(False, 'hello', 'startswith', 'hello', 0, -1)
+        self.checkequal(False, 'hello', 'startswith', 'hello world', -1, -10)
+        self.checkequal(False, 'hello', 'startswith', 'ello', -5)
+        self.checkequal(True, 'hello', 'startswith', 'ello', -4)
+        self.checkequal(False, 'hello', 'startswith', 'o', -2)
+        self.checkequal(True, 'hello', 'startswith', 'o', -1)
+        self.checkequal(True, 'hello', 'startswith', '', -3, -3)
+        self.checkequal(False, 'hello', 'startswith', 'lo', -9)
+
+        self.checkraises(TypeError, 'hello', 'startswith')
+        self.checkraises(TypeError, 'hello', 'startswith', 42)
+
+    def test_endswith(self):
+        self.checkequal(True, 'hello', 'endswith', 'lo')
+        self.checkequal(False, 'hello', 'endswith', 'he')
+        self.checkequal(True, 'hello', 'endswith', '')
+        self.checkequal(False, 'hello', 'endswith', 'hello world')
+        self.checkequal(False, 'helloworld', 'endswith', 'worl')
+        self.checkequal(True, 'helloworld', 'endswith', 'worl', 3, 9)
+        self.checkequal(True, 'helloworld', 'endswith', 'world', 3, 12)
+        self.checkequal(True, 'helloworld', 'endswith', 'lowo', 1, 7)
+        self.checkequal(True, 'helloworld', 'endswith', 'lowo', 2, 7)
+        self.checkequal(True, 'helloworld', 'endswith', 'lowo', 3, 7)
+        self.checkequal(False, 'helloworld', 'endswith', 'lowo', 4, 7)
+        self.checkequal(False, 'helloworld', 'endswith', 'lowo', 3, 8)
+        self.checkequal(False, 'ab', 'endswith', 'ab', 0, 1)
+        self.checkequal(False, 'ab', 'endswith', 'ab', 0, 0)
+
+        # test negative indices
+        self.checkequal(True, 'hello', 'endswith', 'lo', -2)
+        self.checkequal(False, 'hello', 'endswith', 'he', -2)
+        self.checkequal(True, 'hello', 'endswith', '', -3, -3)
+        self.checkequal(False, 'hello', 'endswith', 'hello world', -10, -2)
+        self.checkequal(False, 'helloworld', 'endswith', 'worl', -6)
+        self.checkequal(True, 'helloworld', 'endswith', 'worl', -5, -1)
+        self.checkequal(True, 'helloworld', 'endswith', 'worl', -5, 9)
+        self.checkequal(True, 'helloworld', 'endswith', 'world', -7, 12)
+        self.checkequal(True, 'helloworld', 'endswith', 'lowo', -99, -3)
+        self.checkequal(True, 'helloworld', 'endswith', 'lowo', -8, -3)
+        self.checkequal(True, 'helloworld', 'endswith', 'lowo', -7, -3)
+        self.checkequal(False, 'helloworld', 'endswith', 'lowo', 3, -4)
+        self.checkequal(False, 'helloworld', 'endswith', 'lowo', -8, -2)
+
+        self.checkraises(TypeError, 'hello', 'endswith')
+        self.checkraises(TypeError, 'hello', 'endswith', 42)
+
+    def test_strip_args(self):
+        # strip/lstrip/rstrip with None arg
+        self.checkequal('hello', '   hello   ', 'strip', None)
+        self.checkequal('hello   ', '   hello   ', 'lstrip', None)
+        self.checkequal('   hello', '   hello   ', 'rstrip', None)
+        self.checkequal('hello', 'hello', 'strip', None)
+
+        # strip/lstrip/rstrip with str arg
+        self.checkequal('hello', 'xyzzyhelloxyzzy', 'strip', 'xyz')
+        self.checkequal('helloxyzzy', 'xyzzyhelloxyzzy', 'lstrip', 'xyz')
+        self.checkequal('xyzzyhello', 'xyzzyhelloxyzzy', 'rstrip', 'xyz')
+        self.checkequal('hello', 'hello', 'strip', 'xyz')
+
+        # strip/lstrip/rstrip with unicode arg
+        if test_support.have_unicode:
+            self.checkequal(unicode('hello', 'ascii'), 'xyzzyhelloxyzzy',
+                 'strip', unicode('xyz', 'ascii'))
+            self.checkequal(unicode('helloxyzzy', 'ascii'), 'xyzzyhelloxyzzy',
+                 'lstrip', unicode('xyz', 'ascii'))
+            self.checkequal(unicode('xyzzyhello', 'ascii'), 'xyzzyhelloxyzzy',
+                 'rstrip', unicode('xyz', 'ascii'))
+            self.checkequal(unicode('hello', 'ascii'), 'hello',
+                 'strip', unicode('xyz', 'ascii'))
+
+        self.checkraises(TypeError, 'hello', 'strip', 42, 42)
+        self.checkraises(TypeError, 'hello', 'lstrip', 42, 42)
+        self.checkraises(TypeError, 'hello', 'rstrip', 42, 42)
+
+    def test___contains__(self):
+        self.checkequal(True, '', '__contains__', '')         # vereq('' in '', True)
+        self.checkequal(True, 'abc', '__contains__', '')      # vereq('' in 'abc', True)
+        self.checkequal(False, 'abc', '__contains__', '\0')   # vereq('\0' in 'abc', False)
+        self.checkequal(True, '\0abc', '__contains__', '\0')  # vereq('\0' in '\0abc', True)
+        self.checkequal(True, 'abc\0', '__contains__', '\0')  # vereq('\0' in 'abc\0', True)
+        self.checkequal(True, '\0abc', '__contains__', 'a')   # vereq('a' in '\0abc', True)
+        self.checkequal(True, 'asdf', '__contains__', 'asdf') # vereq('asdf' in 'asdf', True)
+        self.checkequal(False, 'asd', '__contains__', 'asdf') # vereq('asdf' in 'asd', False)
+        self.checkequal(False, '', '__contains__', 'asdf')    # vereq('asdf' in '', False)
+
+    def test_subscript(self):
+        self.checkequal(u'a', 'abc', '__getitem__', 0)
+        self.checkequal(u'c', 'abc', '__getitem__', -1)
+        self.checkequal(u'a', 'abc', '__getitem__', 0L)
+        self.checkequal(u'abc', 'abc', '__getitem__', slice(0, 3))
+        self.checkequal(u'abc', 'abc', '__getitem__', slice(0, 1000))
+        self.checkequal(u'a', 'abc', '__getitem__', slice(0, 1))
+        self.checkequal(u'', 'abc', '__getitem__', slice(0, 0))
+        # FIXME What about negative indizes? This is handled differently by [] and __getitem__(slice)
+
+        self.checkraises(TypeError, 'abc', '__getitem__', 'def')
+
+    def test_slice(self):
+        self.checkequal('abc', 'abc', '__getslice__', 0, 1000)
+        self.checkequal('abc', 'abc', '__getslice__', 0, 3)
+        self.checkequal('ab', 'abc', '__getslice__', 0, 2)
+        self.checkequal('bc', 'abc', '__getslice__', 1, 3)
+        self.checkequal('b', 'abc', '__getslice__', 1, 2)
+        self.checkequal('', 'abc', '__getslice__', 2, 2)
+        self.checkequal('', 'abc', '__getslice__', 1000, 1000)
+        self.checkequal('', 'abc', '__getslice__', 2000, 1000)
+        self.checkequal('', 'abc', '__getslice__', 2, 1)
+        # FIXME What about negative indizes? This is handled differently by [] and __getslice__
+
+        self.checkraises(TypeError, 'abc', '__getslice__', 'def')
+
+    def test_mul(self):
+        self.checkequal('', 'abc', '__mul__', -1)
+        self.checkequal('', 'abc', '__mul__', 0)
+        self.checkequal('abc', 'abc', '__mul__', 1)
+        self.checkequal('abcabcabc', 'abc', '__mul__', 3)
+        self.checkraises(TypeError, 'abc', '__mul__')
+        self.checkraises(TypeError, 'abc', '__mul__', '')
+        self.checkraises(OverflowError, 10000*'abc', '__mul__', sys.maxint)
+
+    def test_join(self):
+        # join now works with any sequence type
+        # moved here, because the argument order is
+        # different in string.join (see the test in
+        # test.test_string.StringTest.test_join)
+        self.checkequal('a b c d', ' ', 'join', ['a', 'b', 'c', 'd'])
+        self.checkequal('abcd', '', 'join', ('a', 'b', 'c', 'd'))
+        self.checkequal('w x y z', ' ', 'join', Sequence())
+        self.checkequal('abc', 'a', 'join', ('abc',))
+        self.checkequal('z', 'a', 'join', UserList(['z']))
+        if test_support.have_unicode:
+            self.checkequal(unicode('a.b.c'), unicode('.'), 'join', ['a', 'b', 'c'])
+            self.checkequal(unicode('a.b.c'), '.', 'join', [unicode('a'), 'b', 'c'])
+            self.checkequal(unicode('a.b.c'), '.', 'join', ['a', unicode('b'), 'c'])
+            self.checkequal(unicode('a.b.c'), '.', 'join', ['a', 'b', unicode('c')])
+            self.checkraises(TypeError, '.', 'join', ['a', unicode('b'), 3])
+        for i in [5, 25, 125]:
+            self.checkequal(((('a' * i) + '-') * i)[:-1], '-', 'join',
+                 ['a' * i] * i)
+            self.checkequal(((('a' * i) + '-') * i)[:-1], '-', 'join',
+                 ('a' * i,) * i)
+
+        self.checkraises(TypeError, ' ', 'join', BadSeq1())
+        self.checkequal('a b c', ' ', 'join', BadSeq2())
+
+        self.checkraises(TypeError, ' ', 'join')
+        self.checkraises(TypeError, ' ', 'join', 7)
+        self.checkraises(TypeError, ' ', 'join', Sequence([7, 'hello', 123L]))
+
+    def test_formatting(self):
+        self.checkequal('+hello+', '+%s+', '__mod__', 'hello')
+        self.checkequal('+10+', '+%d+', '__mod__', 10)
+        self.checkequal('a', "%c", '__mod__', "a")
+        self.checkequal('a', "%c", '__mod__', "a")
+        self.checkequal('"', "%c", '__mod__', 34)
+        self.checkequal('$', "%c", '__mod__', 36)
+        self.checkequal('10', "%d", '__mod__', 10)
+
+        for ordinal in (-100, 0x200000):
+            # unicode raises ValueError, str raises OverflowError
+            self.checkraises((ValueError, OverflowError), '%c', '__mod__', ordinal)
+
+        self.checkequal(' 42', '%3ld', '__mod__', 42)
+        self.checkequal('0042.00', '%07.2f', '__mod__', 42)
+
+        self.checkraises(TypeError, 'abc', '__mod__')
+        self.checkraises(TypeError, '%(foo)s', '__mod__', 42)
+        self.checkraises(TypeError, '%s%s', '__mod__', (42,))
+        self.checkraises(TypeError, '%c', '__mod__', (None,))
+        self.checkraises(ValueError, '%(foo', '__mod__', {})
+        self.checkraises(TypeError, '%(foo)s %(bar)s', '__mod__', ('foo', 42))
+
+        # argument names with properly nested brackets are supported
+        self.checkequal('bar', '%((foo))s', '__mod__', {'(foo)': 'bar'})
+
+        # 100 is a magic number in PyUnicode_Format, this forces a resize
+        self.checkequal(103*'a'+'x', '%sx', '__mod__', 103*'a')
+
+        self.checkraises(TypeError, '%*s', '__mod__', ('foo', 'bar'))
+        self.checkraises(TypeError, '%10.*f', '__mod__', ('foo', 42.))
+        self.checkraises(ValueError, '%10', '__mod__', (42,))
+
+    def test_floatformatting(self):
+        # float formatting
+        for prec in xrange(100):
+            format = '%%.%if' % prec
+            value = 0.01
+            for x in xrange(60):
+                value = value * 3.141592655 / 3.0 * 10.0
+                # The formatfloat() code in stringobject.c and
+                # unicodeobject.c uses a 120 byte buffer and switches from
+                # 'f' formatting to 'g' at precision 50, so we expect
+                # OverflowErrors for the ranges x < 50 and prec >= 67.
+                if x < 50 and prec >= 67:
+                    self.checkraises(OverflowError, format, "__mod__", value)
+                else:
+                    self.checkcall(format, "__mod__", value)
+
+class MixinStrStringUserStringTest:
+    # Additional tests for 8bit strings, i.e. str, UserString and
+    # the string module
+
+    def test_maketrans(self):
+        self.assertEqual(
+           ''.join(map(chr, xrange(256))).replace('abc', 'xyz'),
+           string.maketrans('abc', 'xyz')
+        )
+        self.assertRaises(ValueError, string.maketrans, 'abc', 'xyzw')
+
+    def test_translate(self):
+        table = string.maketrans('abc', 'xyz')
+        self.checkequal('xyzxyz', 'xyzabcdef', 'translate', table, 'def')
+
+        table = string.maketrans('a', 'A')
+        self.checkequal('Abc', 'abc', 'translate', table)
+        self.checkequal('xyz', 'xyz', 'translate', table)
+        self.checkequal('yz', 'xyz', 'translate', table, 'x')
+        self.checkraises(ValueError, 'xyz', 'translate', 'too short', 'strip')
+        self.checkraises(ValueError, 'xyz', 'translate', 'too short')
 
 
-def run_method_tests(test):
-    """Run all tests that exercise a method of a string object"""
+class MixinStrUserStringTest:
+    # Additional tests that only work with
+    # 8bit compatible object, i.e. str and UserString
 
-    test('capitalize', ' hello ', ' hello ')
-    test('capitalize', 'hello ', 'Hello ')
-    test('capitalize', 'aaaa', 'Aaaa')
-    test('capitalize', 'AaAa', 'Aaaa')
-
-    test('count', 'aaa', 3, 'a')
-    test('count', 'aaa', 0, 'b')
-
-    test('find', 'abcdefghiabc', 0, 'abc')
-    test('find', 'abcdefghiabc', 9, 'abc', 1)
-    test('find', 'abcdefghiabc', -1, 'def', 4)
-    test('rfind', 'abcdefghiabc', 9, 'abc')
-    test('lower', 'HeLLo', 'hello')
-    test('lower', 'hello', 'hello')
-    test('upper', 'HeLLo', 'HELLO')
-    test('upper', 'HELLO', 'HELLO')
-
-    test('title', ' hello ', ' Hello ')
-    test('title', 'hello ', 'Hello ')
-    test('title', "fOrMaT thIs aS titLe String", 'Format This As Title String')
-    test('title', "fOrMaT,thIs-aS*titLe;String", 'Format,This-As*Title;String')
-    test('title', "getInt", 'Getint')
-
-    test('expandtabs', 'abc\rab\tdef\ng\thi', 'abc\rab      def\ng       hi')
-    test('expandtabs', 'abc\rab\tdef\ng\thi', 'abc\rab      def\ng       hi', 8)
-    test('expandtabs', 'abc\rab\tdef\ng\thi', 'abc\rab  def\ng   hi', 4)
-    test('expandtabs', 'abc\r\nab\tdef\ng\thi', 'abc\r\nab  def\ng   hi', 4)
-
-    test('islower', 'a', 1)
-    test('islower', 'A', 0)
-    test('islower', '\n', 0)
-    test('islower', 'abc', 1)
-    test('islower', 'aBc', 0)
-    test('islower', 'abc\n', 1)
-
-    test('isupper', 'a', 0)
-    test('isupper', 'A', 1)
-    test('isupper', '\n', 0)
-    test('isupper', 'ABC', 1)
-    test('isupper', 'AbC', 0)
-    test('isupper', 'ABC\n', 1)
-
-    test('istitle', 'a', 0)
-    test('istitle', 'A', 1)
-    test('istitle', '\n', 0)
-    test('istitle', 'A Titlecased Line', 1)
-    test('istitle', 'A\nTitlecased Line', 1)
-    test('istitle', 'A Titlecased, Line', 1)
-    test('istitle', 'Not a capitalized String', 0)
-    test('istitle', 'Not\ta Titlecase String', 0)
-    test('istitle', 'Not--a Titlecase String', 0)
-
-    test('isalpha', 'a', 1)
-    test('isalpha', 'A', 1)
-    test('isalpha', '\n', 0)
-    test('isalpha', 'abc', 1)
-    test('isalpha', 'aBc123', 0)
-    test('isalpha', 'abc\n', 0)
-
-    test('isalnum', 'a', 1)
-    test('isalnum', 'A', 1)
-    test('isalnum', '\n', 0)
-    test('isalnum', '123abc456', 1)
-    test('isalnum', 'a1b3c', 1)
-    test('isalnum', 'aBc000 ', 0)
-    test('isalnum', 'abc\n', 0)
-
-    # join now works with any sequence type
-    test('join', ' ', 'a b c d', ['a', 'b', 'c', 'd'])
-    test('join', '', 'abcd', ('a', 'b', 'c', 'd'))
-    test('join', ' ', 'w x y z', Sequence())
-    test('join', 'a', 'abc', ('abc',))
-    test('join', 'a', 'z', UserList(['z']))
-    if have_unicode:
-        test('join', unicode('.'), unicode('a.b.c'), ['a', 'b', 'c'])
-        test('join', '.', unicode('a.b.c'), [unicode('a'), 'b', 'c'])
-        test('join', '.', unicode('a.b.c'), ['a', unicode('b'), 'c'])
-        test('join', '.', unicode('a.b.c'), ['a', 'b', unicode('c')])
-        test('join', '.', TypeError, ['a', unicode('b'), 3])
-    for i in [5, 25, 125]:
-        test('join', '-', ((('a' * i) + '-') * i)[:-1],
-             ['a' * i] * i)
-
-    test('join', ' ', TypeError, BadSeq1())
-    test('join', ' ', 'a b c', BadSeq2())
-
-    test('splitlines', "abc\ndef\n\rghi", ['abc', 'def', '', 'ghi'])
-    test('splitlines', "abc\ndef\n\r\nghi", ['abc', 'def', '', 'ghi'])
-    test('splitlines', "abc\ndef\r\nghi", ['abc', 'def', 'ghi'])
-    test('splitlines', "abc\ndef\r\nghi\n", ['abc', 'def', 'ghi'])
-    test('splitlines', "abc\ndef\r\nghi\n\r", ['abc', 'def', 'ghi', ''])
-    test('splitlines', "\nabc\ndef\r\nghi\n\r", ['', 'abc', 'def', 'ghi', ''])
-    test('splitlines', "\nabc\ndef\r\nghi\n\r", ['\n', 'abc\n', 'def\r\n', 'ghi\n', '\r'], 1)
-
-    test('split', 'this is the split function',
-         ['this', 'is', 'the', 'split', 'function'])
-    test('split', 'a|b|c|d', ['a', 'b', 'c', 'd'], '|')
-    test('split', 'a|b|c|d', ['a', 'b', 'c|d'], '|', 2)
-    test('split', 'a b c d', ['a', 'b c d'], None, 1)
-    test('split', 'a b c d', ['a', 'b', 'c d'], None, 2)
-    test('split', 'a b c d', ['a', 'b', 'c', 'd'], None, 3)
-    test('split', 'a b c d', ['a', 'b', 'c', 'd'], None, 4)
-    test('split', 'a b c d', ['a b c d'], None, 0)
-    test('split', 'a  b  c  d', ['a', 'b', 'c  d'], None, 2)
-    test('split', 'a b c d ', ['a', 'b', 'c', 'd'])
-
-    test('strip', '   hello   ', 'hello')
-    test('lstrip', '   hello   ', 'hello   ')
-    test('rstrip', '   hello   ', '   hello')
-    test('strip', 'hello', 'hello')
-
-    # strip/lstrip/rstrip with None arg
-    test('strip', '   hello   ', 'hello', None)
-    test('lstrip', '   hello   ', 'hello   ', None)
-    test('rstrip', '   hello   ', '   hello', None)
-    test('strip', 'hello', 'hello', None)
-
-    # strip/lstrip/rstrip with str arg
-    test('strip', 'xyzzyhelloxyzzy', 'hello', 'xyz')
-    test('lstrip', 'xyzzyhelloxyzzy', 'helloxyzzy', 'xyz')
-    test('rstrip', 'xyzzyhelloxyzzy', 'xyzzyhello', 'xyz')
-    test('strip', 'hello', 'hello', 'xyz')
-
-    # strip/lstrip/rstrip with unicode arg
-    if have_unicode:
-        test('strip', 'xyzzyhelloxyzzy',
-             unicode('hello', 'ascii'), unicode('xyz', 'ascii'))
-        test('lstrip', 'xyzzyhelloxyzzy',
-             unicode('helloxyzzy', 'ascii'), unicode('xyz', 'ascii'))
-        test('rstrip', 'xyzzyhelloxyzzy',
-             unicode('xyzzyhello', 'ascii'), unicode('xyz', 'ascii'))
-        test('strip', 'hello',
-             unicode('hello', 'ascii'), unicode('xyz', 'ascii'))
-
-    test('swapcase', 'HeLLo cOmpUteRs', 'hEllO CoMPuTErS')
-    test('translate', 'xyzabcdef', 'xyzxyz', transtable, 'def')
-
-    table = string.maketrans('a', 'A')
-    test('translate', 'abc', 'Abc', table)
-    test('translate', 'xyz', 'xyz', table)
-    test('translate', 'xyz', ValueError, 'too short', 'strip')
-    test('translate', 'xyz', ValueError, 'too short')
-
-    test('replace', 'one!two!three!', 'one@two!three!', '!', '@', 1)
-    test('replace', 'one!two!three!', 'onetwothree', '!', '')
-    test('replace', 'one!two!three!', 'one@two@three!', '!', '@', 2)
-    test('replace', 'one!two!three!', 'one@two@three@', '!', '@', 3)
-    test('replace', 'one!two!three!', 'one@two@three@', '!', '@', 4)
-    test('replace', 'one!two!three!', 'one!two!three!', '!', '@', 0)
-    test('replace', 'one!two!three!', 'one@two@three@', '!', '@')
-    test('replace', 'one!two!three!', 'one!two!three!', 'x', '@')
-    test('replace', 'one!two!three!', 'one!two!three!', 'x', '@', 2)
-    test('replace', 'abc', '-a-b-c-', '', '-')
-    test('replace', 'abc', '-a-b-c', '', '-', 3)
-    test('replace', 'abc', 'abc', '', '-', 0)
-    test('replace', '', '', '', '')
-    # Next three for SF bug 422088: [OSF1 alpha] string.replace(); died with
-    # MemoryError due to empty result (platform malloc issue when requesting
-    # 0 bytes).
-    test('replace', '123', '', '123', '')
-    test('replace', '123123', '', '123', '')
-    test('replace', '123x123', 'x', '123', '')
-
-    test('startswith', 'hello', 1, 'he')
-    test('startswith', 'hello', 1, 'hello')
-    test('startswith', 'hello', 0, 'hello world')
-    test('startswith', 'hello', 1, '')
-    test('startswith', 'hello', 0, 'ello')
-    test('startswith', 'hello', 1, 'ello', 1)
-    test('startswith', 'hello', 1, 'o', 4)
-    test('startswith', 'hello', 0, 'o', 5)
-    test('startswith', 'hello', 1, '', 5)
-    test('startswith', 'hello', 0, 'lo', 6)
-    test('startswith', 'helloworld', 1, 'lowo', 3)
-    test('startswith', 'helloworld', 1, 'lowo', 3, 7)
-    test('startswith', 'helloworld', 0, 'lowo', 3, 6)
-
-    # test negative indices in startswith
-    test('startswith', 'hello', 1, 'he', 0, -1)
-    test('startswith', 'hello', 1, 'he', -53, -1)
-    test('startswith', 'hello', 0, 'hello', 0, -1)
-    test('startswith', 'hello', 0, 'hello world', -1, -10)
-    test('startswith', 'hello', 0, 'ello', -5)
-    test('startswith', 'hello', 1, 'ello', -4)
-    test('startswith', 'hello', 0, 'o', -2)
-    test('startswith', 'hello', 1, 'o', -1)
-    test('startswith', 'hello', 1, '', -3, -3)
-    test('startswith', 'hello', 0, 'lo', -9)
-
-    test('endswith', 'hello', 1, 'lo')
-    test('endswith', 'hello', 0, 'he')
-    test('endswith', 'hello', 1, '')
-    test('endswith', 'hello', 0, 'hello world')
-    test('endswith', 'helloworld', 0, 'worl')
-    test('endswith', 'helloworld', 1, 'worl', 3, 9)
-    test('endswith', 'helloworld', 1, 'world', 3, 12)
-    test('endswith', 'helloworld', 1, 'lowo', 1, 7)
-    test('endswith', 'helloworld', 1, 'lowo', 2, 7)
-    test('endswith', 'helloworld', 1, 'lowo', 3, 7)
-    test('endswith', 'helloworld', 0, 'lowo', 4, 7)
-    test('endswith', 'helloworld', 0, 'lowo', 3, 8)
-    test('endswith', 'ab', 0, 'ab', 0, 1)
-    test('endswith', 'ab', 0, 'ab', 0, 0)
-
-    # test negative indices in endswith
-    test('endswith', 'hello', 1, 'lo', -2)
-    test('endswith', 'hello', 0, 'he', -2)
-    test('endswith', 'hello', 1, '', -3, -3)
-    test('endswith', 'hello', 0, 'hello world', -10, -2)
-    test('endswith', 'helloworld', 0, 'worl', -6)
-    test('endswith', 'helloworld', 1, 'worl', -5, -1)
-    test('endswith', 'helloworld', 1, 'worl', -5, 9)
-    test('endswith', 'helloworld', 1, 'world', -7, 12)
-    test('endswith', 'helloworld', 1, 'lowo', -99, -3)
-    test('endswith', 'helloworld', 1, 'lowo', -8, -3)
-    test('endswith', 'helloworld', 1, 'lowo', -7, -3)
-    test('endswith', 'helloworld', 0, 'lowo', 3, -4)
-    test('endswith', 'helloworld', 0, 'lowo', -8, -2)
-
-    test('zfill', '123', '123', 2)
-    test('zfill', '123', '123', 3)
-    test('zfill', '123', '0123', 4)
-    test('zfill', '+123', '+123', 3)
-    test('zfill', '+123', '+123', 4)
-    test('zfill', '+123', '+0123', 5)
-    test('zfill', '-123', '-123', 3)
-    test('zfill', '-123', '-123', 4)
-    test('zfill', '-123', '-0123', 5)
-    test('zfill', '', '000', 3)
-    test('zfill', '34', '34', 1)
-    test('zfill', '34', '0034', 4)
-
-    test('__mod__', '+%s+', '+hello+', 'hello')
-    test('__mod__', '+%d+', '+10+', 10)
-
-    # Encoding/decoding
-    codecs = [('rot13', 'uryyb jbeyq'),
-              ('base64', 'aGVsbG8gd29ybGQ=\n'),
-              ('hex', '68656c6c6f20776f726c64'),
-              ('uu', 'begin 666 <data>\n+:&5L;&\\@=V]R;&0 \n \nend\n')]
-    for encoding, data in codecs:
-        test('encode', 'hello world', data, encoding)
-        test('decode', data, 'hello world', encoding)
-    # zlib is optional, so we make the test optional too...
-    try:
-        import zlib
-    except ImportError:
-        pass
-    else:
-        data = 'x\x9c\xcbH\xcd\xc9\xc9W(\xcf/\xcaI\x01\x00\x1a\x0b\x04]'
-        verify('hello world'.encode('zlib') == data)
-        verify(data.decode('zlib') == 'hello world')
-
-def test_exception(lhs, rhs, msg):
-    try:
-        lhs in rhs
-    except TypeError:
-        pass
-    else:
-        raise TestFailed, msg
-
-def run_contains_tests(test):
-    test('__contains__', '', True, '')         # vereq('' in '', True)
-    test('__contains__', 'abc', True, '')      # vereq('' in 'abc', True)
-    test('__contains__', 'abc', False, '\0')   # vereq('\0' in 'abc', False)
-    test('__contains__', '\0abc', True, '\0')  # vereq('\0' in '\0abc', True)
-    test('__contains__', 'abc\0', True, '\0')  # vereq('\0' in 'abc\0', True)
-    test('__contains__', '\0abc', True, 'a')   # vereq('a' in '\0abc', True)
-    test('__contains__', 'asdf', True, 'asdf') # vereq('asdf' in 'asdf', True)
-    test('__contains__', 'asd', False, 'asdf') # vereq('asdf' in 'asd', False)
-    test('__contains__', '', False, 'asdf')    # vereq('asdf' in '', False)
-
-def run_inplace_tests(constructor):
-    # Verify clearing of SF bug #592573
-    s = t = constructor('abc')
-    s += constructor('def')
-    verify(s != t, 'in-place concatenate should create a new object')
+    def test_encoding_decoding(self):
+        codecs = [('rot13', 'uryyb jbeyq'),
+                  ('base64', 'aGVsbG8gd29ybGQ=\n'),
+                  ('hex', '68656c6c6f20776f726c64'),
+                  ('uu', 'begin 666 <data>\n+:&5L;&\\@=V]R;&0 \n \nend\n')]
+        for encoding, data in codecs:
+            self.checkequal(data, 'hello world', 'encode', encoding)
+            self.checkequal('hello world', data, 'decode', encoding)
+        # zlib is optional, so we make the test optional too...
+        try:
+            import zlib
+        except ImportError:
+            pass
+        else:
+            data = 'x\x9c\xcbH\xcd\xc9\xc9W(\xcf/\xcaI\x01\x00\x1a\x0b\x04]'
+            self.checkequal(data, 'hello world', 'encode', 'zlib')
+            self.checkequal('hello world', data, 'decode', 'zlib')
