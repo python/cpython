@@ -264,7 +264,7 @@ try:
     s = pickle.dumps(pat)
     pat = pickle.loads(s)
 except:
-    print TestFailed, 're module pickle' # expected
+    print TestFailed, 're module pickle'
 
 try:
     import cPickle
@@ -272,7 +272,7 @@ try:
     s = cPickle.dumps(pat)
     pat = cPickle.loads(s)
 except:
-    print TestFailed, 're module cPickle' # expected
+    print TestFailed, 're module cPickle'
 
 # constants
 test(r"""sre.I""", sre.IGNORECASE)
