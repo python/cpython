@@ -1497,7 +1497,7 @@ mpz_float(self)
 		mulstate *= multiplier;
 		mpz_div_2exp(&mpzscratch, &mpzscratch, BITS_PER_MP_LIMB);
 	}
-	PyFPE_END_PROTECT
+	PyFPE_END_PROTECT(mulstate)
 
 	assert(mpz_cmp_ui(&mpzscratch, (unsigned long int)0) == 0);
 	mpz_clear(&mpzscratch);

@@ -818,14 +818,14 @@ parsenumber(co, s)
 		c.real = 0.;
 		PyFPE_START_PROTECT("atof", return 0)
 		c.imag = atof(s);
-		PyFPE_END_PROTECT
+		PyFPE_END_PROTECT(c)
 		return newcomplexobject(c);
 	}
 	else {
 #endif
 		PyFPE_START_PROTECT("atof", return 0)
 		dx = atof(s);
-		PyFPE_END_PROTECT
+		PyFPE_END_PROTECT(dx)
 		return newfloatobject(dx);
 	}
 }

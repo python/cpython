@@ -82,7 +82,7 @@ math_1(args, func)
 	errno = 0;
 	PyFPE_START_PROTECT("in math_1", return 0)
 	x = (*func)(x);
-	PyFPE_END_PROTECT
+	PyFPE_END_PROTECT(x)
 	CHECK(x);
 	if (errno != 0)
 		return math_error();
@@ -101,7 +101,7 @@ math_2(args, func)
 	errno = 0;
 	PyFPE_START_PROTECT("in math_2", return 0)
 	x = (*func)(x, y);
-	PyFPE_END_PROTECT
+	PyFPE_END_PROTECT(x)
 	CHECK(x);
 	if (errno != 0)
 		return math_error();
@@ -179,7 +179,7 @@ math_ldexp(self, args)
 	errno = 0;
 	PyFPE_START_PROTECT("ldexp", return 0)
 	x = ldexp(x, (int)y);
-	PyFPE_END_PROTECT
+	PyFPE_END_PROTECT(x)
 	CHECK(x);
 	if (errno != 0)
 		return math_error();

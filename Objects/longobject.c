@@ -1421,7 +1421,7 @@ long_float(v)
 	double result;
 	PyFPE_START_PROTECT("long_float", return 0)
 	result = dgetlongvalue(v);
-	PyFPE_END_PROTECT
+	PyFPE_END_PROTECT(result)
 	return newfloatobject(result);
 }
 
