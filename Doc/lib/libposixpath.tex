@@ -11,6 +11,12 @@ module \module{os}\refstmodindex{os} and use \code{os.path}.
 
 \index{path!operations}
 
+\begin{funcdesc}{abspath}{p}
+Return a normalized absolutized version of the pathname \var{p}.  On
+most platforms, this is equivalent to
+\code{normpath(join(os.getcwd()), \var{p})}.
+\end{funcdesc}
+
 \begin{funcdesc}{basename}{p}
 Return the base name of pathname
 \var{p}.
