@@ -51,11 +51,13 @@ unchanged.
 \end{funcdesc}
 
 \begin{funcdesc}{getsize}{filename}
+\versionadded{1.5.2}
 Return the size, in bytes, of \var{filename}.  Raise
 \exception{os.error} if the file does not exist or is inaccessible.
 \end{funcdesc}
 
 \begin{funcdesc}{getmtime}{filename}
+\versionadded{1.5.2}
 Return the time of last modification of \var{filename}.  The return
 value is integer giving the number of seconds since the epoch (see the 
 \module{time} module.  Raise \exception{os.error} if the file does not
@@ -63,6 +65,7 @@ exist or is inaccessible.
 \end{funcdesc}
 
 \begin{funcdesc}{getatime}{filename}
+\versionadded{1.5.2}
 Return the time of last access of \var{filename}.  The return
 value is integer giving the number of seconds since the epoch (see the 
 \module{time} module.  Raise \exception{os.error} if the file does not

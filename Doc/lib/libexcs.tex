@@ -94,6 +94,7 @@ index used on a mapping or sequence is invalid: \exception{IndexError},
 \end{excdesc}
 
 \begin{excdesc}{EnvironmentError}
+\versionadded{1.5.2}
 The base class for exceptions that
 can occur outside the Python system: \exception{IOError},
 \exception{OSError}.  When exceptions of this type are created with a
@@ -145,20 +146,24 @@ Raised when an \keyword{assert} statement fails.
 \end{excdesc}
 
 \begin{excdesc}{FloatingPointError}
-Raised when a floating point operation fails.  This exception is
-always defined, but can only be raised when Python is configured with
-the \code{--with-fpectl} option, or the \constant{WANT_SIGFPE_HANDLER}
-symbol is defined in the \file{config.h} file.
+  Raised when a floating point operation fails.  This exception is
+  always defined, but can only be raised when Python is configured
+  with the \code{--with-fpectl} option, or the
+  \constant{WANT_SIGFPE_HANDLER} symbol is defined in the
+  \file{config.h} file.
 \end{excdesc}
 
 \begin{excdesc}{IOError}
+  \versionchanged{1.5.2}
 % XXXJH xrefs here
-  Raised when an I/O operation (such as a \keyword{print} statement, the
-  built-in \function{open()} function or a method of a file object) fails
-  for an I/O-related reason, e.g., ``file not found'' or ``disk full''.
+  Raised when an I/O operation (such as a \keyword{print} statement,
+  the built-in \function{open()} function or a method of a file
+  object) fails for an I/O-related reason, e.g., ``file not found'' or
+  ``disk full''.
 
-This class is derived \exception{EnvironmentError}.  See the discussion
-above for more information on exception instance attributes.
+  This class is derived \exception{EnvironmentError}.  See the
+  discussion above for more information on exception instance
+  attributes.
 \end{excdesc}
 
 \begin{excdesc}{ImportError}
@@ -209,6 +214,7 @@ above for more information on exception instance attributes.
 \end{excdesc}
 
 \begin{excdesc}{OSError}
+  \versionadded{1.5.2}
   %xref for os module
   This class is derived from \exception{EnvironmentError} and is used
   primarily as the by the \module{os} module's \code{os.error}
