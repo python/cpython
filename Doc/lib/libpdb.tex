@@ -1,0 +1,210 @@
+\section{Standard module \sectcode{pdb}}
+\stmodindex{pdb}
+\index{debugging}
+
+This module defines an interactive source code debugger for Python
+programs.  It supports breakpoints and single stepping at the source
+line level, inspection of stack frames, source code listing, and
+evaluation of arbitrary Python code in the context of any stack frame.
+It also supports post-mortem debugging and can be called under program
+control.
+
+The debugger is extensible --- it is actually defined as a class
+\code{Pdb}.  The extension interface uses the (also undocumented)
+modules \code{bdb} and \code{cmd}; it is currently undocumented.
+\ttindex{Pdb}
+\ttindex{bdb}
+\ttindex{cmd}
+
+A primitive windowing version of the debugger also exists --- this is
+module \code{wdb}, which requires STDWIN.
+\index{stdwin}
+\ttindex{wdb}
+
+Typical usage to run a program under control of the debugger is:
+
+\begin{verbatim}
+>>> import pdb
+>>> import mymodule
+>>> pdb.run('mymodule.test()')
+(Pdb)
+\end{verbatim}
+
+Typical usage to inspect a crashed program is:
+
+\begin{verbatim}
+>>> import pdb
+>>> import mymodule
+>>> mymodule.test()
+(crashes with a stack trace)
+>>> pdb.pm()
+(Pdb)
+\end{verbatim}
+
+The debugger's prompt is ``\code{(Pdb) }''.
+
+The module defines the following functions; each enters the debugger
+in a slightly different way:
+
+\begin{funcdesc}{run}{statement\optional{\, globals\optional{\, locals}}}
+Execute the \var{statement} (which should be a string) under debugger
+control.  The debugger prompt appears before any code is executed; you
+can set breakpoint and type \code{continue}, or you can step through
+the statement using \code{step} or \code{next}.  The optional
+\var{globals} and \var{locals} arguments specify the environment in
+which the code is executed; by default the dictionary of the module
+\code{__main__} is used.  (See the explanation of the \code{exec}
+statement or the \code{eval()} built-in function.)
+\end{funcdesc}
+
+\begin{funcdesc}{runeval}{expression\optional{\, globals\optional{\, locals}}}
+Evaluate the \var{expression} (which should be a string) under
+debugger control.  When \code{runeval()} returns, it returns the value
+of the expression.  Otherwise this function is similar to
+\code{run()}.
+\end{funcdesc}
+
+\begin{funcdesc}{runcall}{function\optional{\, argument\, ...}}
+Call the \var{function} (which should be a callable Python object, not
+a string) with the given arguments.  When \code{runcall()} returns, it
+returns the return value of the function call.  The debugger prompt
+appears as soon as the function is entered.
+\end{funcdesc}
+
+\begin{funcdesc}{set_trace}{}
+Enter the debugger at the calling stack frame.  This is useful to
+hard-code a breakpoint at a given point in code, even if the code is
+not otherwise being debugged.
+\end{funcdesc}
+
+\begin{funcdesc}{post_mortem}{traceback}
+Enter post-mortem debugging of the given \var{traceback} object.
+\end{funcdesc}
+
+\begin{funcdesc}{pm}{}
+Enter post-mortem debugging based on the traceback found in
+\code{sys.last_traceback}.
+\end{funcdesc}
+
+\subsection{Debugger Commands}
+
+The debugger recognizes the following commands.  Most commands can be
+abbreviated to one or two letters; e.g. ``\code{h(elp)}'' means that
+either ``\code{h}'' or ``\code{help}'' can be used to enter the help
+command (but not ``\code{he}'' or ``\code{hel}'', nor ``\code{H}'' or
+``\code{Help} or ``\code{HELP}'').  Arguments to commands must be
+separated by whitespace (spaces or tabs).  Optional arguments are
+enclosed in square brackets (``\code{[]}'')in the command syntax; the
+square brackets must not be typed.  Alternatives in the command syntax
+are separated by a vertical bar (``\code{|}'').
+
+Entering a blank line repeats the last command entered.  Exception: if
+the last command was a ``\code{list}'' command, the next 11 lines are
+listed.
+
+Commands that the debugger doesn't recognize are assumed to be Python
+statements and are executed in the context of the program being
+debugged.  Python statements can also be prefixed with an exclamation
+point (``\code{!}'').  This is a powerful way to inspect the program
+being debugged; it is even possible to change variables.  When an
+exception occurs in such a statement, the exception name is printed
+but the debugger's state is not changed.
+
+\begin{description}
+
+\item[{h(elp) [\var{command}]}]
+
+Without argument, print the list of available commands.
+With a \var{command} as argument, print help about that command.
+``\code{help pdb}'' displays the full documentation file; if the
+environment variable \code{PAGER} is defined, the file is piped
+through that command instead.  Since the var{command} argument must be
+an identifier, ``\code{help exec}'' gives help on the ``\code{!}''
+command.
+
+\item[{w(here)}]
+
+Print a stack trace, with the most recent frame at the bottom.
+An arrow indicates the current frame, which determines the
+context of most commands.
+
+\item[{d(own)}]
+
+Move the current frame one level down in the stack trace
+(to an older frame).
+
+\item[{u(p)}]
+
+Move the current frame one level up in the stack trace
+(to a newer frame).
+
+\item[{b(reak) [\var{lineno} \code{|} \var{function}]}]
+
+With a \var{lineno} argument, set a break there in the current
+file.  With a \var{function} argument, set a break at the entry of
+that function.  Without argument, list all breaks.
+
+\item[{cl(ear) [lineno]}]
+
+With a \var{lineno} argument, clear that break in the current file.
+Without argument, clear all breaks (but first ask confirmation).
+
+\item[{s(tep)}]
+
+Execute the current line, stop at the first possible occasion
+(either in a function that is called or on the next line in the
+current function).
+
+\item[{n(ext)}]
+
+Continue execution until the next line in the current function
+is reached or it returns.  (The difference between \code{next} and
+\code{step} is that \code{step} stops inside a called function, while
+\code{next} executes called functions at full speed, only stopping at
+the next line in the current function.)
+
+\item[{r(eturn)}]
+
+Continue execution until the current function returns.
+
+\item[{c(ont(inue))}]
+
+Continue execution, only stop when a breakpoint is encountered.
+
+\item[{l(ist) [\var{first} [, \var{last}]]}]
+
+List source code for the current file.
+Without arguments, list 11 lines around the current line
+or continue the previous listing.
+With one argument, list 11 lines around at that line.
+With two arguments, list the given range;
+if the second argument is less than the first, it is a count.
+
+\item[{a(rgs)}]
+
+Print the argument list of the current function.
+
+\item[{p \var{expression}}]
+
+Evaluate the \var{expression} in the current context and print its
+value.
+
+\item[{[!] \var{statement}}]
+
+Execute the (one-line) \var{statement} in the context of
+the current stack frame.
+The exclamation point can be omitted unless the first word
+of the statement resembles a debugger command.
+To set a global variable, you can prefix the assignment
+command with a ``\code{global}'' command on the same line, e.g.:
+\begin{verbatim}
+(Pdb) global list_options; list_options = ['-l']
+(Pdb)
+\end{verbatim}
+
+\item[{q(uit)}]
+
+Quit from the debugger.
+The program being executed is aborted.
+
+\end{description}
