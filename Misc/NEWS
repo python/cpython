@@ -28,6 +28,9 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 
 - #409651 - in Lib/fnmatch.py, make \ in a character group work
 
+- #119622:  compile errors due to redundant atof decls. Removed from
+  Python/compile.c and Python/marshal.c
+
 
 What's New in Python 2.0?
 =========================
