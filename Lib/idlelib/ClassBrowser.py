@@ -143,7 +143,10 @@ class ClassBrowserTreeItem(TreeItem):
 
     def IsExpandable(self):
         if self.cl:
-            return not not self.cl.methods
+            try:
+                return not not self.cl.methods
+            except AttributeError:
+                return False
 
     def GetSubList(self):
         if not self.cl:
