@@ -1072,7 +1072,9 @@ DB_associate(DBObject* self, PyObject* args, PyObject* kwargs)
      * threads have already been initialized.
      *  (see pybsddb-users mailing list post on 2002-08-07)
      */
+#ifdef WITH_THREAD
     PyEval_InitThreads();
+#endif
     MYDB_BEGIN_ALLOW_THREADS;
 #if (DBVER >= 41)
     err = self->db->associate(self->db,
