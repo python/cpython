@@ -245,7 +245,7 @@ sedscript:	$(MAKEFILE)
 	echo "/^BASESETUP=/s%=.*%=	$(BASESETUP)%" >>sedscript
 
 # Bootstrap target
-boot:
+boot:	clobber
 	VERSION=`python -c "import sys; print sys.version[:3]"`; \
 	installdir=`python -c "import sys; print sys.prefix"`; \
 	exec_installdir=`python -c "import sys; print sys.exec_prefix"`; \
