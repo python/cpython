@@ -1,3 +1,18 @@
+"""Chip viewer and widget.
+
+In the lower left corner of the main Pynche window, you will see two
+ChipWidgets, one for the selected color and one for the nearest color.  The
+selected color is the actual RGB value expressed as an X11 #COLOR name. The
+nearest color is the named color from the X11 database that is closest to the
+selected color in 3D space.  There may be other colors equally close, but the
+nearest one is the first one found.
+
+Clicking on the nearest color chip selects that named color.
+
+The ChipViewer class includes the entire lower left quandrant; i.e. both the
+selected and nearest ChipWidgets.
+"""
+
 from types import StringType
 from Tkinter import *
 import ColorDB
