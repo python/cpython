@@ -15,7 +15,7 @@
 \tableofcontents
 
 \section{Introduction}
-\label{sec:intro}
+\label{intro}
 
 In the past, Python module developers have not had much infrastructure
 support for distributing modules, nor have Python users had much support
@@ -38,7 +38,7 @@ refer to the ``Installing Python Modules'' manual.
 
 
 \section{Concepts \& Terminology}
-\label{sec:concepts}
+\label{concepts}
 
 Using the Distutils is quite simple, both for module developers and for
 users/administrators installing third-party modules.  As a developer,
@@ -65,7 +65,7 @@ of code.
 
 
 \subsection{A simple example}
-\label{sec:simple-example}
+\label{simple-example}
 
 The setup script is usually quite simple, although since it's written in
 Python, there are no arbitrary limits to what you can do.  If all you
@@ -140,7 +140,7 @@ Other \command{bdist\_*} commands exist for RPM-based Linux systems
 
 
 \subsection{General Python terminology}
-\label{sec:python-terms}
+\label{python-terms}
 
 If you're reading this document, you probably have a good idea of what
 modules, extensions, and so forth are.  Nevertheless, just to be sure
@@ -167,7 +167,7 @@ following glossary of common Python terms:
 
 
 \subsection{Distutils-specific terminology}
-\label{sec:distutils-term}
+\label{distutils-term}
 
 The following terms apply more specifically to the domain of
 distributing Python modules using the Distutils:
@@ -192,13 +192,13 @@ distributing Python modules using the Distutils:
 
 
 \section{Writing the Setup Script}
-\label{sec:setup-script}
+\label{setup-script}
 
 The setup script is the centre of all activity in building,
 distributing, and installing modules using the Distutils.  The main
 purpose of the setup script is to describe your module distribution to
 the Distutils, so that the various commands that operate on your modules
-do the right thing.  As we saw in section~\ref{sec:simple-example}
+do the right thing.  As we saw in section~\ref{simple-example}
 above, the setup script consists mainly of a call to \function{setup()},
 and all information supplied to the Distutils is suppled as keyword
 arguments to \function{setup()}.
@@ -225,7 +225,7 @@ setup (name = "Distutils",
       )
 \end{verbatim}
 There are only two differences between this and the trivial one-file
-distribution presented in section~\ref{sec:simple-example}: more
+distribution presented in section~\ref{simple-example}: more
 meta-data, and the specification of pure Python modules by package,
 rather than by module.  This is important since the Distutils consist of
 a couple of dozen modules split into (so far) two packages; an explicit
@@ -245,7 +245,7 @@ the opposite of the Mac OS convention with colons).
 
 
 \subsection{Package directories}
-\label{sec:package-dirs}
+\label{package-dirs}
 
 The \option{packages} option tells the Distutils to process (build,
 distribute, install, etc.) all pure Python modules found in each package
@@ -292,12 +292,12 @@ tells the Distutils to look for \file{lib/\_\_init\_\_.py} and
 
 
 \subsection{Listing individual modules}
-\label{sec:listing-modules}
+\label{listing-modules}
 
 For a small module distribution, you might prefer to list all modules
 rather than listing packages---especially the case of a single module
 that goes in the ``root package'' (i.e., no package at all).  This
-simplest case was shown in section~\ref{sec:simple-example}; here is a
+simplest case was shown in section~\ref{simple-example}; here is a
 slightly more involved example:
 \begin{verbatim}
 py_modules = ['mod1', 'pkg.mod2']
@@ -312,7 +312,7 @@ And again, you can override the package/directory layout using the
 
 
 \section{Writing the Setup Configuration File}
-\label{sec:setup-config}
+\label{setup-config}
 
 \XXX{not implemented yet!}
 
@@ -338,9 +338,9 @@ setup configuration file, \file{setup.cfg}.
 
 
 \section{Creating a Source Distribution}
-\label{sec:source-dist}
+\label{source-dist}
 
-As shown in section~\ref{sec:simple-example}, you use the
+As shown in section~\ref{simple-example}, you use the
 \command{sdist} command to create a source distribution.  In the
 simplest case,
 \begin{verbatim}
@@ -376,7 +376,7 @@ to create a gzipped tarball and a zip file.  The available formats are:
 
 
 \subsection{The manifest and manifest template}
-\label{sec:manifest}
+\label{manifest}
 
 Without any additional information, the \command{sdist} command puts a
 minimal set of files into the source distribution:
@@ -414,7 +414,7 @@ distribution root matching \code{*.txt}, all files anywhere under the
 \file{examples} directory matching \code{*.txt} or \code{*.py}, and
 exclude all directories matching \code{examples/sample?/build}.  There
 are several other commands available in the manifest template
-mini-language; see section~\ref{sec:sdist-cmd}.
+mini-language; see section~\ref{sdist-cmd}.
 
 The order of commands in the manifest template very much matters:
 initially, we have the list of default files as described above, and
@@ -454,7 +454,7 @@ That way, the manifest template is portable across operating systems.
 
 
 \subsection{Manifest-related options}
-\label{sec:manifest-options}
+\label{manifest-options}
 
 The normal course of operations for the \command{sdist} command is as
 follows:
@@ -493,7 +493,7 @@ distribution will be empty.
 
 
 \section{Creating Built Distributions}
-\label{sec:built-dist}
+\label{built-dist}
 
 A ``built distribution'' is what you're probably used to thinking of
 either as a ``binary package'' or an ``installer'' (depending on your
@@ -594,23 +594,23 @@ each, are:
 \end{tableii}
 
 \section{Examples}
-\label{sec:examples}
+\label{examples}
 
 
 \subsection{Pure Python distribution (by module)}
-\label{sec:pure-mod}
+\label{pure-mod}
 
 
 \subsection{Pure Python distribution (by package)}
-\label{sec:pure-pkg}
+\label{pure-pkg}
 
 
 \subsection{Single extension module}
-\label{sec:single-ext}
+\label{single-ext}
 
 
 \subsection{Multiple extension modules}
-\label{sec:multiple-ext}
+\label{multiple-ext}
 
 
 \subsection{Putting it all together}
@@ -618,48 +618,48 @@ each, are:
 
 
 \section{Extending the Distutils}
-\label{sec:extending}
+\label{extending}
 
 
 \subsection{Extending existing commands}
-\label{sec:extend-existing}
+\label{extend-existing}
 
 
 \subsection{Writing new commands}
-\label{sec:new-commands}
+\label{new-commands}
 
 
 
 \section{Reference}
-\label{sec:ref}
+\label{ref}
 
 
 \subsection{Building modules: the \protect\command{build} command family}
-\label{sec:build-cmds}
+\label{build-cmds}
 
 \subsubsection{\protect\command{build}}
-\label{sec:build-cmd}
+\label{build-cmd}
 
 \subsubsection{\protect\command{build\_py}}
-\label{sec:build-py-cmd}
+\label{build-py-cmd}
 
 \subsubsection{\protect\command{build\_ext}}
-\label{sec:build-ext-cmd}
+\label{build-ext-cmd}
 
 \subsubsection{\protect\command{build\_clib}}
-\label{sec:build-clib-cmd}
+\label{build-clib-cmd}
 
 
 \subsection{Installing modules: the \protect\command{install} command family}
-\label{sec:install-cmd}
+\label{install-cmd}
 
 
 \subsection{Cleaning up: the \protect\command{clean} command}
-\label{sec:clean-cmd}
+\label{clean-cmd}
 
 
 \subsection{Creating a source distribution: the \protect\command{sdist} command}
-\label{sec:sdist-cmd}
+\label{sdist-cmd}
 
 
 \XXX{fragment moved down from above: needs context!}
@@ -694,7 +694,7 @@ anything except backslash or colon; on Mac OS anything except colon.
 
 \subsection{Creating a ``built'' distribution: the
   \protect\command{bdist} command family}
-\label{sec:bdist-cmds}
+\label{bdist-cmds}
 
 
 \subsubsection{\protect\command{blib}}

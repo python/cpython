@@ -37,7 +37,7 @@
 \tableofcontents
 
 \section{Introduction}
-\label{sec:intro}
+\label{intro}
 
 Although Python's extensive standard library covers many programming
 needs, there often comes a time when you need to add some new
@@ -66,7 +66,7 @@ the ``Distributing Python Modules'' manual.
 
 
 \subsection{Best case: trivial installation}
-\label{sec:trivial-inst}
+\label{trivial-inst}
 
 In the best case, someone will have prepared a special version of the
 module distribution you want to install that is targeted specifically at
@@ -94,7 +94,7 @@ building and installing modules from standard source distributions.
 
 
 \subsection{The new standard: Distutils}
-\label{sec:new-standard}
+\label{new-standard}
 
 If you download a module source distribution, you can tell pretty
 quickly if was packaged and distributed in the standard way, i.e. using
@@ -118,7 +118,7 @@ command is everything you need to get out of this manual.
 
 
 \subsection{The old way: no standards}
-\label{sec:old-way}
+\label{old-way}
 
 Before the Distutils, there was no infrastructure to support installing
 third-party modules in a consistent, standardized way.  Thus, it's not
@@ -147,13 +147,13 @@ developers---hence, we include documentation for builders/installers
 here.
 
 All of the pre-Distutils material is tucked away in
-section~\ref{sec:pre-distutils}.
+section~\ref{pre-distutils}.
 
 
 \section{Standard Build and Install}
-\label{sec:normal-install}
+\label{normal-install}
 
-As described in section~\ref{sec:new-standard}, building and installing
+As described in section~\ref{new-standard}, building and installing
 a module distribution using the Distutils is usually one simple command:
 \begin{verbatim}
 python setup.py install
@@ -227,7 +227,7 @@ python setup.py build --build-base=/tmp/pybuild/foo-1.0
 \end{verbatim}
 (Or you could do this permanently with a directive in your system or
 personal Distutils configuration file; see
-section~\ref{sec:config-files}.)  Normally, this isn't necessary.
+section~\ref{config-files}.)  Normally, this isn't necessary.
 
 The default layout for the build tree is as follows:
 \begin{verbatim}
@@ -356,7 +356,7 @@ installations in the next section.
    \end{tableiii}}
 
 \section{Alternate Installation}
-\label{sec:alt-install}
+\label{alt-install}
 
 Often, it is necessary or desirable to install modules to a location
 other than the standard location for third-party Python modules.  For
@@ -377,7 +377,7 @@ of the following section applies to you.
 
 
 \subsection{Alternate installation: Unix (the home scheme)}
-\label{sec:alt-unix-prefix}
+\label{alt-unix-prefix}
 
 Under Unix, there are two ways to perform an alternate installation.
 The ``prefix scheme'' is similar to how alternate installation works
@@ -407,7 +407,7 @@ installation base as follows:
               {home}{/share}
 
 \subsection{Alternate installation: Unix (the prefix scheme)}
-\label{sec:alt-unix-home}
+\label{alt-unix-home}
 
 The ``prefix scheme'' is useful when you wish to use one Python
 installation to perform the build/install (i.e., to run the setup
@@ -479,7 +479,7 @@ point to an alternate Python installation, this is immaterial.)
 
 
 \subsection{Alternate installation: Windows}
-\label{sec:alt-windows}
+\label{alt-windows}
 
 Since Windows has no conception of a user's home directory, and since
 the standard Python installation under Windows is simpler than that
@@ -502,7 +502,7 @@ Files are installed as follows:
 
 
 \subsection{Alternate installation: Mac~OS}
-\label{sec:alt-macos}
+\label{alt-macos}
 
 Like Windows, Mac~OS has no notion of home directories (or even of
 users), and a fairly simple standard Python installation.  Thus, only a
@@ -528,10 +528,10 @@ non-pure distributions''.  Is this necessary?!?}
 
 
 \section{Custom Installation}
-\label{sec:custom-install}
+\label{custom-install}
 
 Sometimes, the alternate installation schemes described in
-section~\ref{sec:alt-install} just don't do what you want.  You might
+section~\ref{alt-install} just don't do what you want.  You might
 want to tweak just one or two directories while keeping everything under
 the same base directory, or you might want to completely redefine the
 installation scheme.  In either case, you're creating a \emph{custom
@@ -613,7 +613,7 @@ as it does when parsing your configuration file(s)).
 Obviously, specifying the entire installation scheme every time you
 install a new module distribution would be very tedious.  Thus, you can
 put these options into your Distutils config file (see
-section~\ref{sec:config-files}):
+section~\ref{config-files}):
 \begin{verbatim}
 [install]
 install-base=$HOME
@@ -650,28 +650,28 @@ extra variables that may not be in your environment, such as
 \code{\$PLAT}.  (And of course, you can only use the configuration
 variables supplied by the Distutils on systems that don't have
 environment variables, such as Mac~OS (\XXX{true?}).)  See
-section~\ref{sec:config-files} for details.
+section~\ref{config-files} for details.
 
 \XXX{need some Windows and Mac~OS examples---when would custom
   installation schemes be needed on those platforms?}
 
 
 \section{Distutils Configuration Files}
-\label{sec:config-files}
+\label{config-files}
 
 \XXX{not even implemented yet, much less documented!}
 
 
 \section{Pre-Distutils Conventions}
-\label{sec:pre-distutils}
+\label{pre-distutils}
 
 
 \subsection{The Makefile.pre.in file}
-\label{sec:makefile-pre-in}
+\label{makefile-pre-in}
 
 
 \subsection{Installing modules manually}
-\label{sec:manual-install}
+\label{manual-install}
 
 
 
