@@ -145,7 +145,8 @@ Return nothing if a response code in the range 200--299 is received.
 Raise an exception otherwise.
 \end{methoddesc}
 
-\begin{methoddesc}{retrbinary}{command, callback\optional{, maxblocksize}}
+\begin{methoddesc}{retrbinary}{command,
+    callback\optional{, maxblocksize\optional{, rest}}}
 Retrieve a file in binary transfer mode.  \var{command} should be an
 appropriate \samp{RETR} command, i.e.\ \code{'RETR \var{filename}'}.
 The \var{callback} function is called for each block of data received,
@@ -153,7 +154,8 @@ with a single string argument giving the data block.
 The optional \var{maxblocksize} argument specifies the maximum chunk size to
 read on the low-level socket object created to do the actual transfer
 (which will also be the largest size of the data blocks passed to
-\var{callback}).  A reasonable default is chosen.
+\var{callback}).  A reasonable default is chosen. \var{rest} means the
+same thing as in the \method{transfercmd()} method.
 \end{methoddesc}
 
 \begin{methoddesc}{retrlines}{command\optional{, callback}}
@@ -185,19 +187,34 @@ read until \EOF{} from the open file object \var{file} using its
 \method{readline()} method to provide the data to be stored.
 \end{methoddesc}
 
-\begin{methoddesc}{transfercmd}{cmd}
+\begin{methoddesc}{transfercmd}{cmd\optional{, rest}}
 Initiate a transfer over the data connection.  If the transfer is
 active, send a \samp{PORT} command and the transfer command specified
 by \var{cmd}, and accept the connection.  If the server is passive,
 send a \samp{PASV} command, connect to it, and start the transfer
 command.  Either way, return the socket for the connection.
+
+If optional \var{rest} is given, a \samp{REST} command is
+sent to the server, passing \var{rest} as an argument.  \var{rest} is
+usually a byte offset into the requested file, telling the server to
+restart sending the file's bytes at the requested offset, skipping
+over the initial bytes.  Note however that RFC
+959 requires only that \var{rest} be a string containing characters
+in the printable range from ASCII code 33 to ASCII code 126.  The
+\method{transfercmd()} method, therefore, converts
+\var{rest} to a string, but no check is
+performed on the string's contents.  If the server does
+not recognize the \samp{REST} command, an
+\exception{error_reply} exception will be raised.  If this happens,
+simply call \method{transfercmd()} without a \var{rest} argument.
 \end{methoddesc}
 
-\begin{methoddesc}{ntransfercmd}{cmd}
+\begin{methoddesc}{ntransfercmd}{cmd\optional{, rest}}
 Like \method{transfercmd()}, but returns a tuple of the data
 connection and the expected size of the data.  If the expected size
 could not be computed, \code{None} will be returned as the expected
-size.
+size.  \var{cmd} and \var{rest} means the same thing as in
+\method{transfercmd()}.
 \end{methoddesc}
 
 \begin{methoddesc}{nlst}{argument\optional{, \ldots}}
