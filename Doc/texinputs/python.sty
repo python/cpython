@@ -24,6 +24,8 @@
   \let\py@LinkColor=\NavyBlue
   \let\py@NormalColor=\Black
   \pdfcompresslevel=9
+  \pdfpagewidth=\paperwidth    % page width of PDF output
+  \pdfpageheight=\paperheight  % page height of PDF output
   %
   % Pad the number with '0' to 3 digits wide so no page name is a prefix
   % of any other.
@@ -45,10 +47,6 @@
       \pdfendlink%
     }{#3}%
   }
-  %
-  % This is supposed to build the "outline" view of the document; it seems
-  % quite fragile.  The breakages are the same as in the ToC.
-  %
   \AtEndDocument{
     \InputIfFileExists{\jobname.bkm}{\pdfcatalog{/PageMode /UseOutlines}}{}
   }
@@ -62,9 +60,9 @@
     \py@OldLabel{#1}%
     \py@target{label-#1}%
   }
-  % This stuff adds a page# destination to every PDF page, where # has
-  % the same formatting as the displayed page number.  This doesn't really
-  % help with the frontmatter, but does fine with the body.
+  % This stuff adds a page# destination to every PDF page, where # is three
+  % digits wide, padded with leading zeros.  This doesn't really help with
+  % the frontmatter, but does fine with the body.
   %
   % This is *heavily* based on the hyperref package.
   %
