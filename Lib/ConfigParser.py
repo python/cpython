@@ -91,6 +91,8 @@ import re
 
 DEFAULTSECT = "DEFAULT"
 
+MAX_INTERPOLATION_DEPTH = 10
+
 
 
 # exception classes
@@ -130,15 +132,16 @@ class InterpolationError(Error):
         self.option = option
         self.section = section
 
-class MissingSectionHeaderError(Error):
-    def __init__(self, filename, lineno, line):
-        Error.__init__(
-            self,
-            'File contains no section headers.\nfile: %s, line: %d\n%s' %
-            (filename, lineno, line))
-        self.filename = filename
-        self.lineno = lineno
-        self.line = line
+class InterpolationDepthError(Error):
+    def __init__(self, option, section, rawval):
+        Error.__init__(self,
+                       "Value interpolation too deeply recursive:\n"
+                       "\tsection: [%s]\n"
+                       "\toption : %s\n"
+                       "\trawval : %s\n"
+                       % (section, option, rawval))
+        self.option = option
+        self.section = section
 
 class ParsingError(Error):
     def __init__(self, filename):
@@ -149,6 +152,16 @@ class ParsingError(Error):
     def append(self, lineno, line):
         self.errors.append((lineno, line))
         self._msg = self._msg + '\n\t[line %2d]: %s' % (lineno, line)
+
+class MissingSectionHeaderError(ParsingError):
+    def __init__(self, filename, lineno, line):
+        Error.__init__(
+            self,
+            'File contains no section headers.\nfile: %s, line: %d\n%s' %
+            (filename, lineno, line))
+        self.filename = filename
+        self.lineno = lineno
+        self.line = line
 
 
 
@@ -183,7 +196,7 @@ class ConfigParser:
 
         The DEFAULT section is not acknowledged.
         """
-        return self.__sections.has_key(section)
+        return section in self.sections()
 
     def options(self, section):
         """Return a list of option names for the given section name."""
@@ -192,15 +205,13 @@ class ConfigParser:
         except KeyError:
             raise NoSectionError(section)
         opts.update(self.__defaults)
+        if opts.has_key('__name__'):
+            del opts['__name__']
         return opts.keys()
 
     def has_option(self, section, option):
         """Return whether the given section has the given option."""
-        try:
-            opts = self.__sections[section]
-        except KeyError:
-            raise NoSectionError(section)
-        return opts.has_key(option)
+        return option in self.options(section)
 
     def read(self, filenames):
         """Read and parse a filename or a list of filenames.
@@ -266,10 +277,11 @@ class ConfigParser:
             rawval = d[option]
         except KeyError:
             raise NoOptionError(option, section)
-        # do the string interpolation
+
         if raw:
             return rawval
 
+        # do the string interpolation
         value = rawval                  # Make it a pretty variable name
         depth = 0                       
         while depth < 10:               # Loop through this until it's done
@@ -280,7 +292,10 @@ class ConfigParser:
                 except KeyError, key:
                     raise InterpolationError(key, option, section, rawval)
             else:
-                return value
+                break
+        if value.find("%(") >= 0:
+            raise InterpolationDepthError(option, section, rawval)
+        return value
     
     def __get(self, section, conv, option):
         return conv(self.get(section, option))
@@ -365,7 +380,7 @@ class ConfigParser:
     # of \w, _ is allowed in section header names.
     SECTCRE = re.compile(
         r'\['                                 # [
-        r'(?P<header>[-\w_.*,(){}]+)'         # a lot of stuff found by IvL
+        r'(?P<header>[-\w_.*,(){} ]+)'        # a lot of stuff found by IvL
         r'\]'                                 # ]
         )
     OPTCRE = re.compile(
