@@ -1,0 +1,4 @@
+#define dot_anchor_width 1
+#define dot_anchor_height 1
+static char dot_anchor_bits[] = {
+ 0xfe};
