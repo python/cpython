@@ -160,6 +160,11 @@ int PyMac_DoYieldEnabled = 1;
 int PyMac_ConsoleIsDead;
 
 /*
+** Sioux menu bar, saved early so we can restore it
+*/
+static Handle sioux_mbar;
+
+/*
 ** Some stuff for our GetDirectory and PromptGetFile routines
 */
 struct hook_args {
@@ -415,8 +420,6 @@ scan_event_queue(flush)
 	}
 }
 
-#define TICKCOUNT 6
-
 int
 PyOS_InterruptOccurred()
 {
@@ -426,6 +429,7 @@ PyOS_InterruptOccurred()
 			schedparams.next_check = (unsigned long)LMGetTicks()
 					 + schedparams.check_interval;
 			if (interrupted) {
+				scan_event_queue(1);	/* Eat events up to cmd-. */
 				interrupted = 0;
 				return 1;
 			}
@@ -433,23 +437,6 @@ PyOS_InterruptOccurred()
 	}
 	return 0;
 }
-
-#if 0
-
-/* intrpeek() is like intrcheck(), but it doesn't flush the events. The
-** idea is that you call intrpeek() somewhere in a busy-wait loop, and return
-** None as soon as it returns 1. The mainloop will then pick up the cmd-. soon
-** thereafter.
-*/
-static int
-intrpeek()
-{
-#ifdef THINK_C
-	scan_event_queue(0);
-#endif
-	return interrupted;
-}
-#endif
 
 /* Check whether we are in the foreground */
 int
@@ -505,6 +492,7 @@ PyMac_HandleEvent(evp, maycallpython)
 		}
 	}
 #endif /* !__MWERKS__ */
+	printf("not handled\n");
 }
 
 /*
@@ -596,19 +584,35 @@ PyMac_SetSchedParams(PyMacSchedParams *sp)
 		schedparams.enabled = 0;
 	schedparams.next_check = 0;	/* Check immedeately */
 }
+
 /*
 ** Install our menu bar.
 */
 void
 PyMac_InitMenuBar()
 {
-	Handle bar;
 	MenuHandle applemenu;
 	
-	if ( (bar=GetMenuBar()) == NULL ) return;
+	if ( (sioux_mbar=GetMenuBar()) == NULL )  {
+		/* Sioux menu not installed yet. Do so */
+		SIOUXSetupMenus();
+		if ( (sioux_mbar=GetMenuBar()) == NULL )
+			return;
+	}
 	if ( (applemenu=GetMenuHandle(SIOUX_APPLEID)) == NULL ) return;
 	SetMenuItemText(applemenu, 1, "\pAbout Python...");
 }
+
+/*
+** Restore sioux menu bar
+*/
+void
+PyMac_RestoreMenuBar()
+{
+	if ( sioux_mbar )
+		SetMenuBar(sioux_mbar);
+}
+
 
 /*
 ** Our replacement about box

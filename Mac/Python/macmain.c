@@ -214,6 +214,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 
 #ifdef USE_SIOUX
 	/* Set various SIOUX flags. Some are changed later based on options */
+/*	SIOUXSettings.standalone = 0;	/* XXXX Attempting to keep sioux from eating events */
 	SIOUXSettings.asktosaveonclose = 0;
 	SIOUXSettings.showstatusline = 0;
 	SIOUXSettings.tabspaces = 4;
@@ -462,6 +463,7 @@ PyMac_Exit(status)
 		SIOUXSettings.standalone = 1;
 		SIOUXSettings.autocloseonquit = 0;
 		SIOUXSetTitle("\p\307terminated\310");
+		PyMac_RestoreMenuBar();
 #ifdef USE_MSL
 		/*
 		** Temporary workaround: autocloseonquit clearing does not
