@@ -953,7 +953,7 @@ PyCursesWindow_GetAttr(self, name)
 	PyCursesWindowObject *self;
 	char *name;
 {
-  return findmethod(PyCursesWindow_Methods, (PyObject *)self, name);
+  return Py_FindMethod(PyCursesWindow_Methods, (PyObject *)self, name);
 }
 
 /* --------------- PAD routines ---------------- */

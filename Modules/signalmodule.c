@@ -28,7 +28,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "intrcheck.h"
 
 #include <signal.h>
-#include <errno.h>
 
 #ifndef SIG_ERR
 #define SIG_ERR ((RETSIGTYPE (*)())-1)
@@ -130,16 +129,16 @@ PySignal_Alarm(self, args)
 	return PyInt_FromLong(alarm(t));
 }
 
-static object *
+static PyObject *
 PySignal_Pause(self, args)
 	PyObject *self; /* Not used */
 	PyObject *args;
 {
 	if (!PyArg_NoArgs(args))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	pause();
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -418,7 +417,7 @@ sigcheck()
 	if (get_thread_ident() != main_thread)
 		return 0;
 #endif
-	f = getframe();
+	f = PyEval_GetFrame();
 	if (f == (PyObject *)NULL)
 		f = Py_None;
 	for (i = 1; i < NSIG; i++) {
@@ -446,13 +445,13 @@ sigcheck()
 /* Replacement for intrcheck.c functionality */
 
 void
-initintr()
+PyOS_InitInterrupts ()
 {
 	initsignal();
 }
 
 int
-intrcheck()
+PyOS_InterruptOccurred ()
 {
 	if (PySignal_SignalHandlerArray[SIGINT].tripped) {
 #ifdef WITH_THREAD

@@ -744,7 +744,7 @@ Tkapp_DeleteCommand (self, args)
 
 /** File Handler **/
 
-void
+static void
 FileHandler (clientData, mask)
      ClientData clientData;	/* Is: (func, file) */
      int mask;
@@ -770,7 +770,7 @@ GetFileNo (file)
 	PyObject *file; /* Either an int >= 0 or an object with a
 			   .fileno() method that returns an int >= 0 */
 {
-	object *meth, *args, *res;
+	PyObject *meth, *args, *res;
 	int id;
 	if (PyInt_Check(file)) {
 		id = PyInt_AsLong(file);
@@ -933,7 +933,7 @@ Tktt_GetAttr (self, name)
 
 static PyTypeObject Tktt_Type =
 {
-  OB_HEAD_INIT (&PyType_Type)
+  PyObject_HEAD_INIT (&PyType_Type)
   0,				/*ob_size */
   "tktimertoken",		/*tp_name */
   sizeof (TkttObject),		/*tp_basicsize */
@@ -1122,7 +1122,7 @@ Tkapp_GetAttr (self, name)
 
 static PyTypeObject Tkapp_Type =
 {
-  OB_HEAD_INIT (&PyType_Type)
+  PyObject_HEAD_INIT (&PyType_Type)
   0,				/*ob_size */
   "tkapp",			/*tp_name */
   sizeof (TkappObject),		/*tp_basicsize */
