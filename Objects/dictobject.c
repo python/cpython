@@ -1230,18 +1230,60 @@ dict_tp_clear(PyObject *op)
 	return 0;
 }
 
+
+static char has_key__doc__[] =
+"D.has_key(k) -> 1 if D has a key k, else 0";
+
+static char get__doc__[] =
+"D.get(k[,d]) -> D[k] if D.has_key(k), else d.  d defaults to None.";
+
+static char setdefault_doc__[] =
+"D.setdefault(k[,d]) -> D.get(k,d), also set D[k]=d if not D.has_key(k)";
+
+static char popitem__doc__[] =
+"D.popitem() -> (k, v), remove and return some (key, value) pair as a\n\
+2-tuple; but raise KeyError if D is empty";
+
+static char keys__doc__[] =
+"D.keys() -> list of D's keys";
+
+static char items__doc__[] =
+"D.items() -> list of D's (key, value) pairs, as 2-tuples";
+
+static char values__doc__[] =
+"D.values() -> list of D's values";
+
+static char update__doc__[] =
+"D.update(E) -> None.  Update D from E: for k in E.keys(): D[k] = E[k]";
+
+static char clear__doc__[] =
+"D.clear() -> None.  Remove all items from D.";
+
+static char copy__doc__[] =
+"D.copy() -> a shallow copy of D";
+
 static PyMethodDef mapp_methods[] = {
-	{"has_key",	(PyCFunction)dict_has_key,      METH_VARARGS},
-	{"keys",	(PyCFunction)dict_keys},
-	{"items",	(PyCFunction)dict_items},
-	{"values",	(PyCFunction)dict_values},
-	{"update",	(PyCFunction)dict_update},
-	{"clear",	(PyCFunction)dict_clear},
-	{"copy",	(PyCFunction)dict_copy},
-	{"get",         (PyCFunction)dict_get,          METH_VARARGS},
-	{"setdefault",  (PyCFunction)dict_setdefault,   METH_VARARGS},
-	{"popitem",	(PyCFunction)dict_popitem},
-	{NULL,		NULL}		/* sentinel */
+	{"has_key",	(PyCFunction)dict_has_key,      METH_VARARGS,
+	 has_key__doc__},
+	{"get",         (PyCFunction)dict_get,          METH_VARARGS,
+	 get__doc__},
+	{"setdefault",  (PyCFunction)dict_setdefault,   METH_VARARGS,
+	 setdefault_doc__},
+	{"popitem",	(PyCFunction)dict_popitem,	METH_OLDARGS,
+	 popitem__doc__},
+	{"keys",	(PyCFunction)dict_keys,		METH_OLDARGS,
+	keys__doc__},
+	{"items",	(PyCFunction)dict_items,	METH_OLDARGS,
+	 items__doc__},
+	{"values",	(PyCFunction)dict_values,	METH_OLDARGS,
+	 values__doc__},
+	{"update",	(PyCFunction)dict_update,	METH_OLDARGS,
+	 update__doc__},
+	{"clear",	(PyCFunction)dict_clear,	METH_OLDARGS,
+	 clear__doc__},
+	{"copy",	(PyCFunction)dict_copy,		METH_OLDARGS,
+	 copy__doc__},
+	{NULL,		NULL}	/* sentinel */
 };
 
 static PyObject *
