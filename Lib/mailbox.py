@@ -14,6 +14,9 @@ class _Mailbox:
         self.seekp = 0
         self.factory = factory
 
+    def __iter__(self):
+        return self
+
     def next(self):
         while 1:
             self.fp.seek(self.seekp)
@@ -191,6 +194,9 @@ class MHMailbox:
         self.boxes = map(str, list)
         self.factory = factory
 
+    def __iter__(self):
+        return self
+
     def next(self):
         if not self.boxes:
             return None
@@ -218,6 +224,9 @@ class Maildir:
                   for f in os.listdir(curdir) if f[0] != '.']
 
         self.boxes = boxes
+
+    def __iter__(self):
+        return self
 
     def next(self):
         if not self.boxes:
