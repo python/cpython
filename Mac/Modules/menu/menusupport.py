@@ -24,6 +24,7 @@ from macsupport import *
 
 MenuHandle = OpaqueByValueType(OBJECTTYPE, OBJECTPREFIX)
 MenuRef = MenuHandle
+OptMenuRef = OpaqueByValueType(OBJECTTYPE, "Opt" + OBJECTPREFIX)
 Handle = OpaqueByValueType("Handle", "ResObj")
 MenuBarHandle = OpaqueByValueType("MenuBarHandle", "ResObj")
 MenuID = Type("MenuID", "h")
@@ -68,6 +69,29 @@ extern int _MenuObj_Convert(PyObject *, MenuHandle *);
 
 #define as_Menu(h) ((MenuHandle)h)
 #define as_Resource(h) ((Handle)h)
+
+
+/* Alternative version of MenuObj_New, which returns None for NULL argument */
+PyObject *OptMenuObj_New(MenuRef itself)
+{
+	if (itself == NULL) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	return MenuObj_New(itself);
+}
+
+/* Alternative version of MenuObj_Convert, which returns NULL for a None argument */
+int OptMenuObj_Convert(PyObject *v, MenuRef *p_itself)
+{
+	PyObject *tmp;
+	
+	if ( v == Py_None ) {
+		*p_itself = NULL;
+		return 1;
+	}
+	return MenuObj_Convert(v, p_itself);
+}
 """
 
 initstuff = initstuff + """
