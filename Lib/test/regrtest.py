@@ -37,6 +37,7 @@ import os
 import getopt
 import traceback
 import random
+import StringIO
 
 import test_support
 
@@ -284,7 +285,11 @@ def count(n, word):
 class Compare:
 
     def __init__(self, filename):
-        self.fp = open(filename, 'r')
+        if os.path.exists(filename):
+            self.fp = open(filename, 'r')
+        else:
+            self.fp = StringIO.StringIO(
+                os.path.basename(filename) + "\n")
         self.stuffthatmatched = []
 
     def write(self, data):
