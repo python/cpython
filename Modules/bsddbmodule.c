@@ -838,6 +838,8 @@ static PyMethodDef bsddbmodule_methods[] = {
 	{"hashopen",	(PyCFunction)bsdhashopen, METH_VARARGS},
 	{"btopen",	(PyCFunction)bsdbtopen, METH_VARARGS},
 	{"rnopen",	(PyCFunction)bsdrnopen, METH_VARARGS},
+	/* strictly for use by dbhhash!!! */
+	{"open",	(PyCFunction)bsdhashopen, METH_VARARGS},
 	{0,		0},
 };
 
