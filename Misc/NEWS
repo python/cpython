@@ -4,6 +4,19 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.4 release candidate 2
+=====================================================
+
+*Release date: XX-NOV-2004*
+
+Core and builtins
+-----------------
+
+- Bug 875692: Improve signal handling, especially when using threads, by
+  forcing an early re-execution of PyEval_EvalFrame() "periodic" code when
+  things_to_do is not cleared by Py_MakePendingCalls().
+
+
 What's New in Python 2.4 (release candidate 1|beta 3)
 =====================================================
 
