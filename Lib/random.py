@@ -292,6 +292,27 @@ def weibullvariate(alpha, beta):
 	u = random()
 	return alpha * pow(-log(u), 1.0/beta)
 
+# -------------------- shuffle --------------------
+# Not quite a random distribution, but a standard algorithm.
+# This implementation due to Tim Peters.
+
+def shuffle(x, random=random, int=int):
+    """x, random=random.random -> shuffle list x in place; return None.
+
+    Optional arg random is a 0-argument function returning a random
+    float in [0.0, 1.0); by default, the standard random.random.
+
+    Note that for even rather small len(x), the total number of
+    permutations of x is larger than the period of most random number
+    generators; this implies that "most" permutations of a long
+    sequence can never be generated.
+    """
+
+    for i in xrange(len(x)-1, 0, -1):
+        # pick an element in x[:i+1] with which to exchange x[i]
+        j = int(random() * (i+1))
+        x[i], x[j] = x[j], x[i]
+
 # -------------------- test program --------------------
 
 def test(N = 200):
