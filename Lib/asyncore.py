@@ -208,7 +208,7 @@ class dispatcher:
             elif self.connected:
                 status.append ('connected')
             if self.addr:
-                if self.addr == types.TupleType:
+                if type(self.addr) == types.TupleType:
                     status.append ('%s:%d' % self.addr)
                 else:
                     status.append (self.addr)
