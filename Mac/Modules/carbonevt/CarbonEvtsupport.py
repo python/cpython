@@ -11,19 +11,21 @@ for typ in RefObjectTypes:
 	execstr = "%(name)s = OpaqueByValueType('%(name)s')" % {"name": typ}
 	exec execstr
 
-# these types will have no methods and will merely be opaque blobs
-# should write getattr and setattr for them?
+if 0:
+	# these types will have no methods and will merely be opaque blobs
+	# should write getattr and setattr for them?
 
-StructObjectTypes = ["EventTypeSpec",
-					"HIPoint",
-					"HICommand",
-					"EventHotKeyID",
-					]
+	StructObjectTypes = ["EventTypeSpec",
+						"HIPoint",
+						"HICommand",
+						"EventHotKeyID",
+						]
 
-for typ in StructObjectTypes:
-	execstr = "%(name)s = OpaqueType('%(name)s')" % {"name": typ}
-	exec execstr
+	for typ in StructObjectTypes:
+		execstr = "%(name)s = OpaqueType('%(name)s')" % {"name": typ}
+		exec execstr
 
+EventHotKeyID = OpaqueByValueType("EventHotKeyID", "EventHotKeyID")
 EventTypeSpec_ptr = OpaqueType("EventTypeSpec", "EventTypeSpec")
 
 # is this the right type for the void * in GetEventParameter
@@ -51,7 +53,7 @@ EventHandlerProcPtr = FakeType("(EventHandlerProcPtr)0")
 CarbonEventsFunction = OSErrFunctionGenerator
 CarbonEventsMethod = OSErrMethodGenerator
 
-includestuff = """
+includestuff = r"""
 #ifdef WITHOUT_FRAMEWORKS
 #include <CarbonEvents.h>
 #else
@@ -60,7 +62,15 @@ includestuff = """
 
 #include "macglue.h"
 
-#define USE_MAC_MP_MULTITHREADING 1
+/* Macro to test whether a weak-loaded CFM function exists */
+#define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
+    	PyErr_SetString(PyExc_NotImplementedError, \
+    	"Not available in this shared library/OS version"); \
+    	return; \
+    }} while(0)
+
+
+#define USE_MAC_MP_MULTITHREADING 0
 
 #if USE_MAC_MP_MULTITHREADING
 static PyThreadState *_save;
@@ -131,11 +141,11 @@ EventHotKeyID_Convert(PyObject *v, EventHotKeyID *out)
 
 /********** end EventHotKeyID *******/
 
-/******** handlecommand ***********/
+/******** myEventHandler ***********/
 
-static EventHandlerUPP gEventHandlerUPP;
+static EventHandlerUPP myEventHandlerUPP;
 
-pascal OSStatus CarbonEvents_HandleEvent(EventHandlerCallRef handlerRef, EventRef event, void *outPyObject) {
+pascal OSStatus myEventHandler(EventHandlerCallRef handlerRef, EventRef event, void *outPyObject) {
 	PyObject *retValue;
 	int status;
 
@@ -155,12 +165,13 @@ pascal OSStatus CarbonEvents_HandleEvent(EventHandlerCallRef handlerRef, EventRe
     return status;
 }
 
-/******** end handlecommand ***********/
+/******** end myEventHandler ***********/
 
 """
 
 initstuff = initstuff + """
-gEventHandlerUPP = NewEventHandlerUPP(CarbonEvents_HandleEvent);
+PyMac_PRECHECK(NewEventHandlerUPP); /* This can fail if CarbonLib is too old */
+myEventHandlerUPP = NewEventHandlerUPP(myEventHandler);
 """
 module = MacModule('_CarbonEvt', 'CarbonEvents', includestuff, finalstuff, initstuff)
 
@@ -197,7 +208,7 @@ OSStatus _err;
 if (!PyArg_ParseTuple(_args, "O&O", EventTypeSpec_Convert, &inSpec, &callback))
 	return NULL;
 
-_err = InstallEventHandler(_self->ob_itself, gEventHandlerUPP, 1, &inSpec, (void *)callback, &outRef);
+_err = InstallEventHandler(_self->ob_itself, myEventHandlerUPP, 1, &inSpec, (void *)callback, &outRef);
 if (_err != noErr) return PyMac_Error(_err);
 
 return Py_BuildValue("O&", EventHandlerRef_New, outRef);"""
@@ -209,7 +220,7 @@ EventTargetRefobject.add(f)
 runappeventloop = """
 #if USE_MAC_MP_MULTITHREADING
 if (MPCreateCriticalRegion(&reentrantLock) != noErr) {
-	printf("lock failure\\n");
+	PySys_WriteStderr("lock failure\\n");
 	return NULL;
 }
 _save = PyEval_SaveThread();
