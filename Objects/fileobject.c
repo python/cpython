@@ -688,77 +688,105 @@ static PyObject*
 getline_via_fgets(FILE *fp)
 {
 /* INITBUFSIZE is the maximum line length that lets us get away with the fast
- * no-realloc path.  get_line uses 100 for its initial size, but isn't trying
- * to avoid reallocs.  Under MSVC 6, and using files with lines all under 100
- * chars long, dropping this from 200 to 100 bought less than 1% speedup.
- * Since many kinds of log files have lines exceeding 100 chars, the tiny
- * slowdown from using 200 is more than offset by the large speedup for such
- * log files.
- * INCBUFSIZE is the amount by which we grow the buffer, if INITBUFSIZE isn't
- * enough.  It doesn't much matter what this set to.
+ * no-realloc, one-fgets()-call path.  Boosting it isn't free, because we have
+ * to fill this much of the buffer with a known value in order to figure out
+ * how much of the buffer fgets() overwrites.  So if INITBUFSIZE is larger
+ * than "most" lines, we waste time filling unused buffer slots.  100 is
+ * surely adequate for most peoples' email archives, chewing over source code,
+ * etc -- "regular old text files".
+ * MAXBUFSIZE is the maximum line length that lets us get away with the less
+ * fast (but still zippy) no-realloc, two-fgets()-call path.  See above for
+ * cautions about boosting that.  300 was chosen because the worst real-life
+ * text-crunching job reported on Python-Dev was a mail-log crawler where over
+ * half the lines were 254 chars.
+ * INCBUFSIZE is the amount by which we grow the buffer, if MAXBUFSIZE isn't
+ * enough.  It doesn't much matter what this is set to: we only get here for
+ * absurdly long lines anyway.
  */
-#define INITBUFSIZE 200
+#define INITBUFSIZE 100
+#define MAXBUFSIZE 300
 #define INCBUFSIZE 1000
+	char* p;	/* temp */
+	char buf[MAXBUFSIZE];
 	PyObject* v;	/* the string object result */
-	size_t total_v_size;  /* total # chars in v's buffer */
 	char* pvfree;	/* address of next free slot */
 	char* pvend;    /* address one beyond last free slot */
-	char* p;	/* temp */
-	char buf[INITBUFSIZE];
+	size_t nfree;	/* # of free buffer slots; pvend-pvfree */
+	size_t total_v_size;  /* total # of slots in buffer */
 
 	/* Optimize for normal case:  avoid _PyString_Resize if at all
-	 * possible via first reading into auto buf.
+	 * possible via first reading into stack buffer "buf".
 	 */
-	Py_BEGIN_ALLOW_THREADS
-	memset(buf, '\n', INITBUFSIZE);
-	p = fgets(buf, INITBUFSIZE, fp);
-	Py_END_ALLOW_THREADS
+	total_v_size = INITBUFSIZE;	/* start small and pray */
+	pvfree = buf;
+	for (;;) {
+		Py_BEGIN_ALLOW_THREADS
+		pvend = buf + total_v_size;
+		nfree = pvend - pvfree;
+		memset(pvfree, '\n', nfree);
+		p = fgets(pvfree, nfree, fp);
+		Py_END_ALLOW_THREADS
 
-	if (p == NULL) {
-		clearerr(fp);
-		if (PyErr_CheckSignals())
-			return NULL;
-		v = PyString_FromStringAndSize("", 0);
-		return v;
-	}
-	/* fgets read *something* */
-	p = memchr(buf, '\n', INITBUFSIZE);
-	if (p != NULL) {
-		/* Did the \n come from fgets or from us?
-		 * Since fgets stops at the first \n, and then writes \0, if
-		 * it's from fgets a \0 must be next.  But if that's so, it
-		 * could not have come from us, since the \n's we filled the
-		 * buffer with have only more \n's to the right.
-		 */
-		pvend = buf + INITBUFSIZE;
-		if (p+1 < pvend && *(p+1) == '\0') {
-			/* It's from fgets:  we win!  In particular, we
-			 * haven't done any mallocs yet, and can build the
-			 * final result on the first try.
-			 */
-			v = PyString_FromStringAndSize(buf, p - buf + 1);
+		if (p == NULL) {
+			clearerr(fp);
+			if (PyErr_CheckSignals())
+				return NULL;
+			v = PyString_FromStringAndSize(buf, pvfree - buf);
 			return v;
 		}
-		/* Must be from us:  fgets didn't fill the buffer and didn't
-		 * find a newline, so it must be the last and newline-free
-		 * line of the file.
+		/* fgets read *something* */
+		p = memchr(pvfree, '\n', nfree);
+		if (p != NULL) {
+			/* Did the \n come from fgets or from us?
+			 * Since fgets stops at the first \n, and then writes
+			 * \0, if it's from fgets a \0 must be next.  But if
+			 * that's so, it could not have come from us, since
+			 * the \n's we filled the buffer with have only more
+			 * \n's to the right.
+			 */
+			if (p+1 < pvend && *(p+1) == '\0') {
+				/* It's from fgets:  we win!  In particular,
+				 * we haven't done any mallocs yet, and can
+				 * build the final result on the first try.
+				 */
+				++p;	/* include \n from fgets */
+			}
+			else {
+				/* Must be from us:  fgets didn't fill the
+				 * buffer and didn't find a newline, so it
+				 * must be the last and newline-free line of
+				 * the file.
+				 */
+				assert(p > pvfree && *(p-1) == '\0');
+				--p;	/* don't include \0 from fgets */
+			}
+			v = PyString_FromStringAndSize(buf, p - buf);
+			return v;
+		}
+		/* yuck:  fgets overwrote all the newlines, i.e. the entire
+		 * buffer.  So this line isn't over yet, or maybe it is but
+		 * we're exactly at EOF.  If we haven't already, try using the
+		 * rest of the stack buffer.
 		 */
-		assert(p > buf && *(p-1) == '\0');
-		v = PyString_FromStringAndSize(buf, p - buf - 1);
-		return v;
+		assert(*(pvend-1) == '\0');
+		if (pvfree == buf) {
+			pvfree = pvend - 1;	/* overwrite trailing null */
+			total_v_size = MAXBUFSIZE;
+		}
+		else
+			break;
 	}
-	/* yuck:  fgets overwrote all the newlines, i.e. the entire buffer.
-	 * So this line isn't over yet, or maybe it is but we're exactly at
-	 * EOF; in either case, we're tired <wink>.
+
+	/* The stack buffer isn't big enough; malloc a string object and read
+	 * into its buffer.
 	 */
-	assert(buf[INITBUFSIZE-1] == '\0');
-	total_v_size = INITBUFSIZE + INCBUFSIZE;
+	total_v_size = MAXBUFSIZE + INCBUFSIZE;
 	v = PyString_FromStringAndSize((char*)NULL, (int)total_v_size);
 	if (v == NULL)
 		return v;
 	/* copy over everything except the last null byte */
-	memcpy(BUF(v), buf, INITBUFSIZE-1);
-	pvfree = BUF(v) + INITBUFSIZE - 1;
+	memcpy(BUF(v), buf, MAXBUFSIZE-1);
+	pvfree = BUF(v) + MAXBUFSIZE - 1;
 
 	/* Keep reading stuff into v; if it ever ends successfully, break
 	 * after setting p one beyond the end of the line.  The code here is
@@ -766,8 +794,6 @@ getline_via_fgets(FILE *fp)
 	 * the code above for detailed comments about the logic.
 	 */
 	for (;;) {
-		size_t nfree;
-
 		Py_BEGIN_ALLOW_THREADS
 		pvend = BUF(v) + total_v_size;
 		nfree = pvend - pvfree;
@@ -814,6 +840,7 @@ getline_via_fgets(FILE *fp)
 		_PyString_Resize(&v, p - BUF(v));
 	return v;
 #undef INITBUFSIZE
+#undef MAXBUFSIZE
 #undef INCBUFSIZE
 }
 #endif	/* ifdef USE_FGETS_IN_GETLINE */
