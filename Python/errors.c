@@ -535,10 +535,6 @@ PyErr_NewException(char *name, PyObject *base, PyObject *dict)
 	}
 	if (base == NULL)
 		base = PyExc_Exception;
-	if (!PyClass_Check(base)) {
-		/* Must be using string-based standard exceptions (-X) */
-		return PyString_FromString(name);
-	}
 	if (dict == NULL) {
 		dict = mydict = PyDict_New();
 		if (dict == NULL)
