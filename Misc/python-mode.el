@@ -1370,8 +1370,7 @@ problem as best as we can determine."
                              (max (point-min)
                                   (string-match "^\\([^#]\\|#[^#]\\|#$\\)"
                                                 (buffer-substring (point-min)
-                                                                  (point-max)
-                                                                  funcbuffer))
+                                                                  (point-max)))
                                   ))))))
              (list lineno funcbuffer))
 
@@ -1392,10 +1391,6 @@ named for funcname or define a function funcname."
   (let ((buffers (buffer-list))
         curbuf
         got)
-    (if (and py-pdbtrack-last-grubbed-buffer
-             (member py-pdbtrack-last-grubbed-buffer buffers))
-        ; Prefer last grubbed buffer by putting it at the front of the list:
-        (setq buffers (cons py-pdbtrack-last-grubbed-buffer buffers)))
     (while (and buffers (not got))
       (setq buf (car buffers)
             buffers (cdr buffers))
@@ -1404,9 +1399,10 @@ named for funcname or define a function funcname."
                (or (string-match funcname (buffer-name buf))
                    (string-match (concat "^\\s-*\\(def\\|class\\)\\s-+"
                                          funcname "\\s-*(")
-                                 (buffer-substring (point-min buf)
-                                                   (point-max buf)
-                                                   buf))))
+                                 (save-excursion
+                                   (set-buffer buf)
+                                   (buffer-substring (point-min)
+                                                     (point-max))))))
           (setq got buf)))
     (setq py-pdbtrack-last-grubbed-buffer got)))
 
