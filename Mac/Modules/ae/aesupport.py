@@ -111,7 +111,12 @@ AEEventHandlerUPP upp_GenericEventHandler;
 
 static pascal Boolean AEIdleProc(EventRecord *theEvent, long *sleepTime, RgnHandle *mouseRgn)
 {
-	PyMac_Yield();
+	if ( PyOS_InterruptOccurred() )
+		return 1;
+	if ( PyMac_HandleEvent(theEvent) < 0 ) {
+		fprintf(stderr, "Exception in user event handler during AE processing\\n");
+		PyErr_Clear();
+	}
 	return 0;
 }
 
