@@ -20,11 +20,12 @@ def wrapper(func, *rest):
     res = None
     try:
 	# Initialize curses
-	stdscr=curses.initscr()
+        stdscr=curses.initscr()
         
 	# Turn off echoing of keys, and enter cbreak mode,
 	# where no buffering is performed on keyboard input
-	curses.noecho() ; curses.cbreak()
+        curses.noecho()
+        curses.cbreak()
 
 	# In keypad mode, escape sequences for special keys
 	# (like the cursor keys) will be interpreted and
@@ -35,17 +36,19 @@ def wrapper(func, *rest):
     except:
 	# In the event of an error, restore the terminal
 	# to a sane state.
-	stdscr.keypad(0)
-	curses.echo() ; curses.nocbreak()
-	curses.endwin()
+        stdscr.keypad(0)
+        curses.echo()
+        curses.nocbreak()
+        curses.endwin()
         
         # Pass the exception upwards
         (exc_type, exc_value, exc_traceback) = sys.exc_info()
         raise exc_type, exc_value, exc_traceback
     else:
 	# Set everything back to normal
-	stdscr.keypad(0)
-	curses.echo() ; curses.nocbreak()
-	curses.endwin()		 # Terminate curses
+        stdscr.keypad(0)
+        curses.echo()
+        curses.nocbreak()
+        curses.endwin()		 # Terminate curses
 
         return res
