@@ -328,6 +328,7 @@ class FaqDir:
     def roulette(self):
 	self.__fill()
 	import whrandom
+	if not self.__files: return None
 	return whrandom.choice(self.__files)
 
     def list(self):
@@ -576,8 +577,11 @@ class FaqWizard:
 	emit(TAIL_RECENT)
 
     def do_roulette(self):
-	self.prologue(T_ROULETTE)
 	file = self.dir.roulette()
+	if not file:
+	    self.error("No entries.")
+	    return
+	self.prologue(T_ROULETTE)
 	self.dir.show(file)
 
     def do_help(self):
