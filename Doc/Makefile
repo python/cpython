@@ -124,7 +124,7 @@ librand.tex libregex.tex libregsub.tex \
 libselect.tex libsgi.tex libsgmllib.tex \
 	libshelve.tex libsocket.tex libsomeos.tex libstdwin.tex \
 	libstring.tex libstrings.tex libstruct.tex libsun.tex libsys.tex \
-libtempfile.tex libthread.tex libtime.tex \
+libtempfile.tex libtermios.tex libthread.tex libtime.tex \
 	libtraceback.tex libtypes.tex libtypes2.tex \
 libunix.tex liburllib.tex liburlparse.tex \
 libwhrandom.tex libwww.tex
