@@ -50,7 +50,7 @@ class _localized_day:
                      for j in range(7)]
         return data[i]
 
-    def __len__(self_):
+    def __len__(self):
         return 7
 
 # Full and abbreviated names of weekdays
