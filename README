@@ -274,8 +274,7 @@ DEC Unix: When enabling threads, use --with-dec-threads, not
 	--with-thread.
 
 AIX:	A complete overhaul of the shared library support is now in
-	place.  To enable it, uncomment the LINKCC line in the Setup
-	file.  See Misc/AIX-NOTES for some notes on how it's done.
+	place.  See Misc/AIX-NOTES for some notes on how it's done.
 
 	WARNING!  In some versions of AIX, you get errors about
 	Invalid Indent when running the Python test set.  This appears
