@@ -36,11 +36,13 @@ extern int _WinObj_Convert(PyObject *, WindowRef *);
 #define WinObj_Convert _WinObj_Convert
 #endif
 
-#if !ACCESSOR_CALLS_ARE_FUNCTIONS
+#if !ACCESSOR_CALLS_ARE_FUNCTIONS && UNIVERSAL_INTERFACES_VERSION < 0x340
 /* Carbon calls that we emulate in classic mode */
 #define GetWindowSpareFlag(win) (((CWindowPeek)(win))->spareFlag)
 #define GetWindowFromPort(port) ((WindowRef)(port))
 #define GetWindowPortBounds(win, rectp) (*(rectp) = ((CWindowPeek)(win))->port.portRect)
+#endif
+#if !ACCESSOR_CALLS_ARE_FUNCTIONS
 #define IsPointerValid(p) (((long)p&3) == 0)
 #endif
 #if ACCESSOR_CALLS_ARE_FUNCTIONS

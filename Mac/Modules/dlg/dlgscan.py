@@ -53,6 +53,7 @@ class MyScanner(Scanner):
 ##			# Can't find these in the CW Pro 3 libraries
 			'SetDialogMovableModal',
 			'GetDialogControlNotificationProc',
+			'SetGrafPortOfDialog', # Funny, and probably not useful
 			]
 
 	def makegreylist(self):
