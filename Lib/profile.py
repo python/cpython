@@ -109,21 +109,22 @@ class Profile:
     avoid contaminating the program that we are profiling. (old profiler
     used to write into the frames local dictionary!!) Derived classes
     can change the definition of some entries, as long as they leave
-    [3:] intact.
+    [-2:] intact (frame and previous tuple).  In case an internal error is
+    detected, the -3 element is used as the function name.
 
-    [0] = Time that needs to be charged to the parent frame's function.
-          It is used so that a function call will not have to access the
-          timing data for the parent frame.
-    [1] = Total time spent in this frame's function, excluding time in
-          subfunctions
-    [2] = Cumulative time spent in this frame's function, including time in
-          all subfunctions to this frame (but excluding this frame!).
-    [3] = Name of the function that corresponds to this frame.
-    [4] = Actual frame that we correspond to (used to sync exception handling)
-    [5] = Our parent 6-tuple (corresponds to frame.f_back)
+    [ 0] = Time that needs to be charged to the parent frame's function.
+           It is used so that a function call will not have to access the
+           timing data for the parent frame.
+    [ 1] = Total time spent in this frame's function, excluding time in
+           subfunctions
+    [ 2] = Cumulative time spent in this frame's function, including time in
+           all subfunctions to this frame.
+    [-3] = Name of the function that corresponds to this frame.
+    [-2] = Actual frame that we correspond to (used to sync exception handling)
+    [-1] = Our parent 6-tuple (corresponds to frame.f_back)
 
     Timing data for each function is stored as a 5-tuple in the dictionary
-    self.timings[].  The index is always the name stored in self.cur[4].
+    self.timings[].  The index is always the name stored in self.cur[-3].
     The following are the definitions of the members:
 
     [0] = The number of times this function was called, not counting direct
@@ -248,16 +249,16 @@ class Profile:
 
 
     def trace_dispatch_call(self, frame, t):
-        if self.cur and frame.f_back is not self.cur[4]:
+        if self.cur and frame.f_back is not self.cur[-2]:
             rt, rtt, rct, rfn, rframe, rcur = self.cur
             if not isinstance(rframe, Profile.fake_frame):
                 if rframe.f_back is not frame.f_back:
                     print rframe, rframe.f_back
                     print frame, frame.f_back
-                    raise "Bad call", self.cur[3]
+                    raise "Bad call", self.cur[-3]
                 self.trace_dispatch_return(rframe, 0)
-                if self.cur and frame.f_back is not self.cur[4]:
-                    raise "Bad call[2]", self.cur[3]
+                if self.cur and frame.f_back is not self.cur[-2]:
+                    raise "Bad call[2]", self.cur[-3]
         fcode = frame.f_code
         fn = (fcode.co_filename, fcode.co_firstlineno, fcode.co_name)
         self.cur = (t, 0, 0, fn, frame, self.cur)
@@ -270,11 +271,11 @@ class Profile:
         return 1
 
     def trace_dispatch_return(self, frame, t):
-        if frame is not self.cur[4]:
-            if frame is self.cur[4].f_back:
-                self.trace_dispatch_return(self.cur[4], 0)
+        if frame is not self.cur[-2]:
+            if frame is self.cur[-2].f_back:
+                self.trace_dispatch_return(self.cur[-2], 0)
             else:
-                raise "Bad return", self.cur[3]
+                raise "Bad return", self.cur[-3]
 
         # Prefix "r" means part of the Returning or exiting frame
         # Prefix "p" means part of the Previous or older frame
@@ -317,7 +318,7 @@ class Profile:
     # very nice :-).
 
     def set_cmd(self, cmd):
-        if self.cur[5]: return   # already set
+        if self.cur[-1]: return   # already set
         self.cmd = cmd
         self.simulate_call(cmd)
 
@@ -339,7 +340,7 @@ class Profile:
     def simulate_call(self, name):
         code = self.fake_code('profile', 0, name)
         if self.cur:
-            pframe = self.cur[4]
+            pframe = self.cur[-2]
         else:
             pframe = None
         frame = self.fake_frame(code, pframe)
@@ -352,10 +353,10 @@ class Profile:
     def simulate_cmd_complete(self):
         get_time = self.get_time
         t = get_time() - self.t
-        while self.cur[5]:
+        while self.cur[-1]:
             # We *can* cause assertion errors here if
             # dispatch_trace_return checks for a frame match!
-            a = self.dispatch['return'](self, self.cur[4], t)
+            a = self.dispatch['return'](self, self.cur[-2], t)
             t = 0
         self.t = get_time() - t
 
