@@ -972,7 +972,7 @@ dict_fromkeys(PyObject *cls, PyObject *args)
 	PyObject *d;
 	int status;
 
-	if (!PyArg_ParseTuple(args, "O|O:fromkeys", &seq, &value))
+	if (!PyArg_UnpackTuple(args, "fromkeys", 1, 2, &seq, &value))
 		return NULL;
 
 	d = PyObject_CallObject(cls, NULL);
@@ -1479,7 +1479,7 @@ dict_get(register dictobject *mp, PyObject *args)
 	PyObject *val = NULL;
 	long hash;
 
-	if (!PyArg_ParseTuple(args, "O|O:get", &key, &failobj))
+	if (!PyArg_UnpackTuple(args, "get", 1, 2, &key, &failobj))
 		return NULL;
 
 	if (!PyString_CheckExact(key) ||
@@ -1505,7 +1505,7 @@ dict_setdefault(register dictobject *mp, PyObject *args)
 	PyObject *val = NULL;
 	long hash;
 
-	if (!PyArg_ParseTuple(args, "O|O:setdefault", &key, &failobj))
+	if (!PyArg_UnpackTuple(args, "setdefault", 1, 2, &key, &failobj))
 		return NULL;
 
 	if (!PyString_CheckExact(key) ||
@@ -1834,7 +1834,7 @@ dict_init(PyObject *self, PyObject *args, PyObject *kwds)
 	PyObject *arg = NULL;
 	int result = 0;
 
-	if (!PyArg_ParseTuple(args, "|O:dict", &arg))
+	if (!PyArg_UnpackTuple(args, "dict", 0, 1, &arg))
 		result = -1;
 
 	else if (arg != NULL) {

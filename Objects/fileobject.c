@@ -503,7 +503,7 @@ file_truncate(PyFileObject *f, PyObject *args)
 	if (f->f_fp == NULL)
 		return err_closed();
 	newsizeobj = NULL;
-	if (!PyArg_ParseTuple(args, "|O:truncate", &newsizeobj))
+	if (!PyArg_UnpackTuple(args, "truncate", 0, 1, &newsizeobj))
 		return NULL;
 
 	/* Set newsize to current postion if newsizeobj NULL, else to the

@@ -686,7 +686,7 @@ proxy_get(proxyobject *pp, PyObject *args)
 {
 	PyObject *key, *def = Py_None;
 
-	if (!PyArg_ParseTuple(args, "O|O:get", &key, &def))
+	if (!PyArg_UnpackTuple(args, "get", 1, 2, &key, &def))
 		return NULL;
 	return PyObject_CallMethod(pp->dict, "get", "(OO)", key, def);
 }

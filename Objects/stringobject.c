@@ -2046,7 +2046,7 @@ string_translate(PyStringObject *self, PyObject *args)
 	int trans_table[256];
 	PyObject *tableobj, *delobj = NULL;
 
-	if (!PyArg_ParseTuple(args, "O|O:translate",
+	if (!PyArg_UnpackTuple(args, "translate", 1, 2,
 			      &tableobj, &delobj))
 		return NULL;
 
