@@ -13,7 +13,12 @@ forgotten) from the programmer.
 #include "config.h"
 #include "Python.h"
 
+char dllVersionBuffer[16] = ""; // a private buffer
+
+// Python Globals
 HMODULE PyWin_DLLhModule = NULL;
+const char *PyWin_DLLVersionString = dllVersionBuffer;
+
 
 BOOL	WINAPI	DllMain (HANDLE hInst, 
 						ULONG ul_reason_for_call,
@@ -23,6 +28,8 @@ BOOL	WINAPI	DllMain (HANDLE hInst,
 	{
 		case DLL_PROCESS_ATTACH:
 			PyWin_DLLhModule = hInst;
+			// 1000 is a magic number I picked out of the air.  Could do with a #define, I spose...
+			LoadString(hInst, 1000, dllVersionBuffer, sizeof(dllVersionBuffer));
 			//initall();
 			break;
 		case DLL_PROCESS_DETACH:
