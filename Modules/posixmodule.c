@@ -2118,9 +2118,9 @@ posix_getgroups(PyObject *self, PyObject *args)
 #endif
 
 #ifdef HAVE_GETPGID
-static char posix_getpgid__doc__[] =
+PyDoc_STRVAR(posix_getpgid__doc__,
 "getpgid(pid) -> pgid\n\
-Call the system call getpgid().";
+Call the system call getpgid().");
 
 static PyObject *
 posix_getpgid(PyObject *self, PyObject *args)
