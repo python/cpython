@@ -26,7 +26,7 @@
  * compile-time literal concatenation.
  */
 static char
-module__doc__[] = 
+module__doc__[] =
 "Python's standard exception class hierarchy.\n\
 \n\
 Before Python 1.5, the standard exceptions were all simple string objects.\n\
@@ -53,51 +53,58 @@ Exception\n\
  |\n\
  +-- SystemExit\n\
  +-- StandardError\n\
+ |    |\n\
+ |    +-- KeyboardInterrupt\n\
+ |    +-- ImportError\n\
+ |    +-- EnvironmentError\n\
+ |    |    |\n\
+ |    |    +-- IOError\n\
+ |    |    +-- OSError\n\
+ |    |         |\n\
+ |    |         +-- WindowsError\n\
+ |    |\n\
+ |    +-- EOFError\n\
+ |    +-- RuntimeError\n\
+ |    |    |\n\
+ |    |    +-- NotImplementedError\n\
+ |    |\n\
+ |    +-- NameError\n\
+ |    |    |\n\
+ |    |    +-- UnboundLocalError\n\
+ |    |\n\
+ |    +-- AttributeError\n\
+ |    +-- SyntaxError\n\
+ |    |    |\n\
+ |    |    +-- IndentationError\n\
+ |    |         |\n\
+ |    |         +-- TabError\n\
+ |    |\n\
+ |    +-- TypeError\n\
+ |    +-- AssertionError\n\
+ |    +-- LookupError\n\
+ |    |    |\n\
+ |    |    +-- IndexError\n\
+ |    |    +-- KeyError\n\
+ |    |\n\
+ |    +-- ArithmeticError\n\
+ |    |    |\n\
+ |    |    +-- OverflowError\n\
+ |    |    +-- ZeroDivisionError\n\
+ |    |    +-- FloatingPointError\n\
+ |    |\n\
+ |    +-- ValueError\n\
+ |    |    |\n\
+ |    |    +-- UnicodeError\n\
+ |    |\n\
+ |    +-- SystemError\n\
+ |    +-- MemoryError\n\
+ |\n\
+ +---Warning\n\
       |\n\
-      +-- KeyboardInterrupt\n\
-      +-- ImportError\n\
-      +-- EnvironmentError\n\
-      |    |\n\
-      |    +-- IOError\n\
-      |    +-- OSError\n\
-      |         |\n\
-      |         +-- WindowsError\n\
-      |\n\
-      +-- EOFError\n\
-      +-- RuntimeError\n\
-      |    |\n\
-      |    +-- NotImplementedError\n\
-      |\n\
-      +-- NameError\n\
-      |    |\n\
-      |    +-- UnboundLocalError\n\
-      |\n\
-      +-- AttributeError\n\
-      +-- SyntaxError\n\
-      |    |\n\
-      |    +-- IndentationError\n\
-      |         |\n\
-      |         +-- TabError\n\
-      |\n\
-      +-- TypeError\n\
-      +-- AssertionError\n\
-      +-- LookupError\n\
-      |    |\n\
-      |    +-- IndexError\n\
-      |    +-- KeyError\n\
-      |\n\
-      +-- ArithmeticError\n\
-      |    |\n\
-      |    +-- OverflowError\n\
-      |    +-- ZeroDivisionError\n\
-      |    +-- FloatingPointError\n\
-      |\n\
-      +-- ValueError\n\
-      |    |\n\
-      |    +-- UnicodeError\n\
-      |\n\
-      +-- SystemError\n\
-      +-- MemoryError";
+      +-- UserWarning\n\
+      +-- DeprecationWarning\n\
+      +-- SyntaxWarning\n\
+      +-- RuntimeWarning";
 
 
 /* Helper function for populating a dictionary with method wrappers. */
@@ -121,7 +128,7 @@ populate_methods(PyObject *klass, PyObject *dict, PyMethodDef *methods)
 	    Py_DECREF(func);
 	    return -1;
 	}
-	
+
 	/* add method to dictionary */
 	status = PyDict_SetItemString(dict, methods->ml_name, meth);
 	Py_DECREF(meth);
@@ -136,7 +143,7 @@ populate_methods(PyObject *klass, PyObject *dict, PyMethodDef *methods)
     return 0;
 }
 
-	
+
 
 /* This function is used to create all subsequent exception classes. */
 static int
@@ -168,6 +175,7 @@ make_class(PyObject **klass, PyObject *base,
     if (populate_methods(*klass, dict, methods)) {
 	Py_DECREF(*klass);
 	*klass = NULL;
+	goto finally;
     }
 
     status = 0;
@@ -333,7 +341,7 @@ make_Exception(char *modulename)
 
     if (!(name = PyString_FromString("Exception")))
 	goto finally;
-    
+
     if (!(PyExc_Exception = PyClass_New(NULL, dict, name)))
 	goto finally;
 
@@ -379,7 +387,7 @@ SystemExit__init__(PyObject *self, PyObject *args)
     /* Set args attribute. */
     if (!(args = PySequence_GetSlice(args, 1, PySequence_Size(args))))
         return NULL;
-    
+
     status = PyObject_SetAttrString(self, "args", args);
     if (status < 0) {
 	Py_DECREF(args);
@@ -461,9 +469,9 @@ EnvironmentError__init__(PyObject *self, PyObject *args)
 	 * of the os module functions, PyErr_SetFromErrnoWithFilename() is
 	 * called, giving a third argument which is the filename.  But, so
 	 * that old code using in-place unpacking doesn't break, e.g.:
-	 * 
+	 *
 	 * except IOError, (errno, strerror):
-	 * 
+	 *
 	 * we hack args so that it only contains two items.  This also
 	 * means we need our own __str__() which prints out the filename
 	 * when it was supplied.
@@ -473,7 +481,7 @@ EnvironmentError__init__(PyObject *self, PyObject *args)
 	item2 = PySequence_GetItem(args, 2);
 	if (!item0 || !item1 || !item2)
 	    goto finally;
-	
+
 	if (PyObject_SetAttrString(self, "errno", item0) ||
 	    PyObject_SetAttrString(self, "strerror", item1) ||
 	    PyObject_SetAttrString(self, "filename", item2))
@@ -494,7 +502,7 @@ EnvironmentError__init__(PyObject *self, PyObject *args)
 	item1 = PySequence_GetItem(args, 1);
 	if (!item0 || !item1)
 	    goto finally;
-	
+
 	if (PyObject_SetAttrString(self, "errno", item0) ||
 	    PyObject_SetAttrString(self, "strerror", item1))
 	{
@@ -527,7 +535,7 @@ EnvironmentError__str__(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "O:__str__", &self))
 	return NULL;
-    
+
     filename = PyObject_GetAttrString(self, "filename");
     serrno = PyObject_GetAttrString(self, "errno");
     strerror = PyObject_GetAttrString(self, "strerror");
@@ -570,7 +578,7 @@ EnvironmentError__str__(PyObject *self, PyObject *args)
 
 	PyTuple_SET_ITEM(tuple, 0, serrno);
 	PyTuple_SET_ITEM(tuple, 1, strerror);
-	
+
 	rtnval = PyString_Format(fmt, tuple);
 
 	Py_DECREF(fmt);
@@ -1063,7 +1071,7 @@ init_exceptions(void)
     {
 	Py_FatalError("Base class `Exception' could not be created.");
     }
-    
+
     /* Now we can programmatically create all the remaining exceptions.
      * Remember to start the loop at 1 to skip Exceptions.
      */
@@ -1132,6 +1140,14 @@ fini_exceptions(void)
     PyExc_MemoryErrorInst = NULL;
 
     for (i=0; exctable[i].name; i++) {
+	/* clear the class's dictionary, freeing up circular references
+	 * between the class and its methods.
+	 */
+	PyObject* cdict = PyObject_GetAttrString(*exctable[i].exc, "__dict__");
+	PyDict_Clear(cdict);
+	Py_DECREF(cdict);
+
+	/* Now decref the exception class */
 	Py_XDECREF(*exctable[i].exc);
 	*exctable[i].exc = NULL;
     }
