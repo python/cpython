@@ -5,16 +5,8 @@
 # skipped by the code here.  This makes it possible to define the
 # Debug menu here, which is only present in the PythonShell window.
 
-# changes by dscherer@cmu.edu:
-#   - Python shell moved to 'Run' menu
-#   - "Help" renamed to "IDLE Help" to distinguish from Python help.
-#     The distinction between the environment and the language is dim
-#     or nonexistent in a novice's mind.
-#   - Silly advice added
-
 import sys
 import string
-#from keydefs import *
 from configHandler import idleConf
 
 menudefs = [
@@ -51,6 +43,16 @@ menudefs = [
    ('R_eplace...', '<<replace>>'),
    ('Go to _line', '<<goto-line>>'),
   ]),
+('format', [
+    ('_Indent region', '<<indent-region>>'),
+    ('_Dedent region', '<<dedent-region>>'),
+    ('Comment _out region', '<<comment-region>>'),
+    ('U_ncomment region', '<<uncomment-region>>'),
+    ('Tabify region', '<<tabify-region>>'),
+    ('Untabify region', '<<untabify-region>>'),
+    ('Toggle tabs', '<<toggle-tabs>>'),
+    ('New indent width', '<<change-indentwidth>>'),
+]),
  ('run',[
    ('Python shell', '<<open-python-shell>>'),
  ]),
