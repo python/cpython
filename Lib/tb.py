@@ -2,14 +2,10 @@
 # Also an interactive stack trace browser.
 
 import sys
-try:
-	import mac
-	os = mac
-except ImportError:
-	import posix
-	os = posix
+import os
 from stat import *
 import string
+import linecache
 
 def br(): browser(sys.last_traceback)
 
@@ -67,7 +63,7 @@ def browserlist(tb):
 	for i in range(first, last+1):
 		if i == lineno: prefix = '***' + string.rjust(`i`, 4) + ':'
 		else: prefix = string.rjust(`i`, 7) + ':'
-		line = readfileline(filename, i)
+		line = linecache.getline(filename, i)
 		if line[-1:] == '\n': line = line[:-1]
 		print prefix + line
 
@@ -112,7 +108,7 @@ def printtbheader(tb):
 	filename = tb.tb_frame.f_code.co_filename
 	lineno = tb.tb_lineno
 	info = '"' + filename + '"(' + `lineno` + ')'
-	line = readfileline(filename, lineno)
+	line = linecache.getline(filename, lineno)
 	if line:
 		info = info + ': ' + string.strip(line)
 	print info
@@ -175,46 +171,3 @@ def printdict(v, maxlevel):
 		printobject(v[key], maxlevel-1)
 		if i+1 < n: print ',',
 	if n > 6: print '...',
-
-_filecache = {}
-
-def readfileline(filename, lineno):
-	try:
-		stat = os.stat(filename)
-	except os.error, msg:
-		print 'Cannot stat', filename, '--', msg
-		return ''
-	cache_ok = 0
-	if _filecache.has_key(filename):
-		cached_stat, lines = _filecache[filename]
-		if stat[ST_SIZE] == cached_stat[ST_SIZE] and \
-				stat[ST_MTIME] == cached_stat[ST_MTIME]:
-			cache_ok = 1
-		else:
-			print 'Stale cache entry for', filename
-			del _filecache[filename]
-	if not cache_ok:
-		lines = readfilelines(filename)
-		if not lines:
-			return ''
-		_filecache[filename] = stat, lines
-	if 0 <= lineno-1 < len(lines):
-		return lines[lineno-1]
-	else:
-		print 'Line number out of range, last line is', len(lines)
-		return ''
-
-def readfilelines(filename):
-	try:
-		fp = open(filename, 'r')
-	except:
-		print 'Cannot open', filename
-		return []
-	lines = []
-	while 1:
-		line = fp.readline()
-		if not line: break
-		lines.append(line)
-	if not lines:
-		print 'Empty file', filename
-	return lines
