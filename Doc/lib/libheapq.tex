@@ -25,13 +25,16 @@ The API below differs from textbook heap algorithms in two aspects:
 (a) We use zero-based indexing.  This makes the relationship between the
 index for a node and the indexes for its children slightly less
 obvious, but is more suitable since Python uses zero-based indexing.
-(b) Our pop method returns the smallest item, not the largest.
+(b) Our pop method returns the smallest item, not the largest (called a
+"min heap" in textbooks; a "max heap" is more common in texts because
+of its suitability for in-place sorting).
 
 These two make it possible to view the heap as a regular Python list
 without surprises: \code{\var{heap}[0]} is the smallest item, and
 \code{\var{heap}.sort()} maintains the heap invariant!
 
-To create a heap, use a list initialized to \code{[]}.
+To create a heap, use a list initialized to \code{[]}, or you can
+transform a populated list into a heap via function \function{heapify()}.
 
 The following functions are provided:
 
@@ -45,6 +48,10 @@ Pop and return the smallest item from the \var{heap}, maintaining the
 heap invariant.
 \end{funcdesc}
 
+\begin{funcdesc}{heapify}{x}
+Transform list \var{x} into a heap, in-place, in linear time.
+\end{funcdesc}
+
 Example of use:
 
 \begin{verbatim}
@@ -53,17 +60,17 @@ Example of use:
 >>> data = [1, 3, 5, 7, 9, 2, 4, 6, 8, 0]
 >>> for item in data:
 ...     heappush(heap, item)
-... 
+...
 >>> sorted = []
 >>> while heap:
 ...     sorted.append(heappop(heap))
-... 
+...
 >>> print sorted
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 >>> data.sort()
 >>> print data == sorted
 True
->>> 
+>>>
 \end{verbatim}
 
 
