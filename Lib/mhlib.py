@@ -522,12 +522,15 @@ class Folder:
 					pass
 
 	# Remove one or more messages from all sequeuces (including last)
+	# -- but not from 'cur'!!!
 	def removefromallsequences(self, list):
 		if hasattr(self, 'last') and self.last in list:
 			del self.last
 		sequences = self.getsequences()
 		changed = 0
 		for name, seq in sequences.items():
+			if name == 'cur':
+				continue
 			for n in list:
 				if n in seq:
 					seq.remove(n)
