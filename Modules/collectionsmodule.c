@@ -587,7 +587,8 @@ deque_richcompare(PyObject *v, PyObject *w, int op)
 	PyObject *it1=NULL, *it2=NULL, *x, *y;
 	int i, b, vs, ws, minlen, cmp=-1;
 
-	if (v->ob_type != &deque_type || w->ob_type != &deque_type) {
+	if (!PyObject_TypeCheck(v, &deque_type) || 
+	    !PyObject_TypeCheck(w, &deque_type)) {
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
 	}
