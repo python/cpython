@@ -310,6 +310,15 @@ class BaseSet(object):
     def _update(self, iterable):
         # The main loop for update() and the subclass __init__() methods.
         data = self._data
+
+        # Use the fast update() method when a dictionary is available.
+        if isinstance(iterable, BaseSet):
+            data.update(iterable._data)
+            return
+        if isinstance(iterable, dict):
+            data.update(iterable)
+            return
+
         value = True
         it = iter(iterable)
         while True:
