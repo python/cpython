@@ -47,8 +47,9 @@ except (ImportError, AttributeError):
         pass
 else:
     def _set_cloexec(fd):
-        flags = _fcntl.fcntl(fd, _fcntl.F_GETFD, 0)
-        if flags >= 0:
+        try: flags = _fcntl.fcntl(fd, _fcntl.F_GETFD, 0)
+        except IOError: pass
+        else:
             # flags read successfully, modify
             flags |= _fcntl.FD_CLOEXEC
             _fcntl.fcntl(fd, _fcntl.F_SETFD, flags)
