@@ -52,7 +52,6 @@ Shift + Left == -25
 Shift + Right == +25
 """
 
-import sys
 from Tkinter import *
 
 STOP = 'Stop'
@@ -153,7 +152,7 @@ class DetailsViewer:
         self.__l2.configure(text=text)
 
     def __quit(self, event=None):
-        sys.exit(0)
+        self.__root.quit()
 
     def __withdraw(self, event=None):
         self.__root.withdraw()
