@@ -2862,6 +2862,32 @@ def docdescriptor():
     vereq(NewClass.__doc__, 'object=None; type=NewClass')
     vereq(NewClass().__doc__, 'object=NewClass instance; type=NewClass')
 
+def imulbug():
+    # SF bug 544647
+    if verbose: print "Testing for __imul__ problems..."
+    class C(object):
+        def __imul__(self, other):
+            return (self, other)
+    x = C()
+    y = x
+    y *= 1.0
+    vereq(y, (x, 1.0))
+    y = x
+    y *= 2
+    vereq(y, (x, 2))
+    y = x
+    y *= 3L
+    vereq(y, (x, 3L))
+    y = x
+    y *= 1L<<100
+    vereq(y, (x, 1L<<100))
+    y = x
+    y *= None
+    vereq(y, (x, None))
+    y = x
+    y *= "foo"
+    vereq(y, (x, "foo"))
+
 def test_main():
     class_docstrings()
     lists()
@@ -2920,6 +2946,7 @@ def test_main():
     modules()
     pickleslots()
     docdescriptor()
+    imulbug()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
