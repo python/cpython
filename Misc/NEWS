@@ -359,6 +359,10 @@ Extension modules
 
 Library
 -------
+  
+- Bug #981530: Fix UnboundLocalError in shutil.rmtree().  This affects
+  the documented behavior: the function passed to the onerror()
+  handler can now also be os.listdir.
 
 - Bug #754449: threading.Thread objects no longer mask exceptions raised during
   interpreter shutdown with another exception from attempting to handle the
