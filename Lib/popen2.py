@@ -11,7 +11,7 @@ def _cleanup():
 	inst.poll()
 
 class Popen3:
-    def __init__(self, cmd, capturestderr=0):
+    def __init__(self, cmd, capturestderr=0, bufsize=-1):
 	if type(cmd) == type(''):
 	    cmd = ['/bin/sh', '-c', cmd]
 	p2cread, p2cwrite = os.pipe()
@@ -41,12 +41,12 @@ class Popen3:
 	    # Shouldn't come here, I guess
 	    os._exit(1)
 	os.close(p2cread)
-	self.tochild = os.fdopen(p2cwrite, 'w')
+	self.tochild = os.fdopen(p2cwrite, 'w', bufsize)
 	os.close(c2pwrite)
-	self.fromchild = os.fdopen(c2pread, 'r')
+	self.fromchild = os.fdopen(c2pread, 'r', bufsize)
 	if capturestderr:
 	    os.close(errin)
-	    self.childerr = os.fdopen(errout, 'r')
+	    self.childerr = os.fdopen(errout, 'r', bufsize)
 	else:
 	    self.childerr = None
 	self.sts = -1 # Child not completed yet
@@ -68,14 +68,14 @@ class Popen3:
 	    _active.remove(self)
 	return self.sts
 
-def popen2(cmd):
+def popen2(cmd, bufsize=-1):
     _cleanup()
-    inst = Popen3(cmd, 0)
+    inst = Popen3(cmd, 0, bufsize)
     return inst.fromchild, inst.tochild
 
-def popen3(cmd):
+def popen3(cmd, bufsize=-1):
     _cleanup()
-    inst = Popen3(cmd, 1)
+    inst = Popen3(cmd, 1, bufsize)
     return inst.fromchild, inst.tochild, inst.childerr
 
 def _test():
