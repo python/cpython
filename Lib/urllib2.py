@@ -300,7 +300,7 @@ class OpenerDirector:
 
     def open(self, fullurl, data=None):
         # accept a URL or a Request object
-        if type(fullurl) == types.StringType:
+        if isinstance(fullurl, types.StringType):
             req = Request(fullurl, data)
         else:
             req = fullurl
@@ -350,7 +350,7 @@ def is_callable(obj):
                      types.BuiltinMethodType,  types.LambdaType,
                      types.MethodType):
         return 1
-    if type(obj) == types.InstanceType:
+    if isinstance(obj, types.InstanceType):
         return hasattr(obj, '__call__')
     return 0
 
@@ -364,7 +364,7 @@ def get_methods(inst):
         classes = classes + list(klass.__bases__)
         for name in dir(klass):
             attr = getattr(klass, name)
-            if type(attr) == types.UnboundMethodType:
+            if isinstance(attr, types.UnboundMethodType):
                 methods[name] = 1
     for name in dir(inst):
         if is_callable(getattr(inst, name)):
@@ -396,10 +396,10 @@ def build_opener(*handlers):
     skip = []
     for klass in default_classes:
         for check in handlers:
-            if type(check) == types.ClassType:
+            if isinstance(check, types.ClassType):
                 if issubclass(check, klass):
                     skip.append(klass)
-            elif type(check) == types.InstanceType:
+            elif isinstance(check, types.InstanceType):
                 if isinstance(check, klass):
                     skip.append(klass)
     for klass in skip:
@@ -409,7 +409,7 @@ def build_opener(*handlers):
         opener.add_handler(klass())
 
     for h in handlers:
-        if type(h) == types.ClassType:
+        if isinstance(h, types.ClassType):
             h = h()
         opener.add_handler(h)
     return opener
@@ -542,7 +542,7 @@ class HTTPPasswordMgr:
 
     def add_password(self, realm, uri, user, passwd):
         # uri could be a single URI or a sequence
-        if type(uri) == types.StringType:
+        if isinstance(uri, types.StringType):
             uri = [uri]
         uri = tuple(map(self.reduce_uri, uri))
         if not self.passwd.has_key(realm):
@@ -1055,7 +1055,7 @@ class OpenerFactory:
     def build_opener(self):
         opener = OpenerDirector()
         for ph in self.proxy_handlers:
-            if type(ph) == types.ClassType:
+            if isinstance(ph, types.ClassType):
                 ph = ph()
             opener.add_handler(ph)
 
@@ -1121,7 +1121,7 @@ if __name__ == "__main__":
     #install_opener(build_opener(dauth, bauth, cfh, GopherHandler, ph))
 
     for url in urls:
-        if type(url) == types.TupleType:
+        if isinstance(url, types.TupleType):
             url, req = url
         else:
             req = None
