@@ -808,7 +808,8 @@ sub setup_column_alignments{
     local($_) = @_;
     my($a1,$a2,$a3,$a4) = split(/[|]/,$_);
     my($th1,$th2,$th3,$th4) = ('<th>', '<th>', '<th>', '<th>');
-    $col_aligns[0] = (($a1 eq 'c') ? '<td align=center>' : '<td>');
+    $col_aligns[0] = (($a1 eq 'c') ? '<td align=center valign=baseline>'
+		                   : '<td valign=baseline>');
     $col_aligns[1] = (($a2 eq 'c') ? '<td align=center>' : '<td>');
     $col_aligns[2] = (($a3 eq 'c') ? '<td align=center>' : '<td>');
     $col_aligns[3] = (($a4 eq 'c') ? '<td align=center>' : '<td>');
