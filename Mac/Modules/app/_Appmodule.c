@@ -33,14 +33,14 @@ static PyObject *App_Error;
 
 PyTypeObject ThemeDrawingState_Type;
 
-#define ThemeDrawingState_Check(x) ((x)->ob_type == &ThemeDrawingState_Type)
+#define ThemeDrawingStateObj_Check(x) ((x)->ob_type == &ThemeDrawingState_Type)
 
 typedef struct ThemeDrawingStateObject {
 	PyObject_HEAD
 	ThemeDrawingState ob_itself;
 } ThemeDrawingStateObject;
 
-PyObject *ThemeDrawingState_New(ThemeDrawingState itself)
+PyObject *ThemeDrawingStateObj_New(ThemeDrawingState itself)
 {
 	ThemeDrawingStateObject *it;
 	it = PyObject_NEW(ThemeDrawingStateObject, &ThemeDrawingState_Type);
@@ -48,9 +48,9 @@ PyObject *ThemeDrawingState_New(ThemeDrawingState itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-int ThemeDrawingState_Convert(PyObject *v, ThemeDrawingState *p_itself)
+int ThemeDrawingStateObj_Convert(PyObject *v, ThemeDrawingState *p_itself)
 {
-	if (!ThemeDrawingState_Check(v))
+	if (!ThemeDrawingStateObj_Check(v))
 	{
 		PyErr_SetString(PyExc_TypeError, "ThemeDrawingState required");
 		return 0;
@@ -59,13 +59,13 @@ int ThemeDrawingState_Convert(PyObject *v, ThemeDrawingState *p_itself)
 	return 1;
 }
 
-static void ThemeDrawingState_dealloc(ThemeDrawingStateObject *self)
+static void ThemeDrawingStateObj_dealloc(ThemeDrawingStateObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
 	PyMem_DEL(self);
 }
 
-static PyObject *ThemeDrawingState_SetThemeDrawingState(ThemeDrawingStateObject *_self, PyObject *_args)
+static PyObject *ThemeDrawingStateObj_SetThemeDrawingState(ThemeDrawingStateObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _rv;
@@ -80,7 +80,7 @@ static PyObject *ThemeDrawingState_SetThemeDrawingState(ThemeDrawingStateObject 
 	return _res;
 }
 
-static PyObject *ThemeDrawingState_DisposeThemeDrawingState(ThemeDrawingStateObject *_self, PyObject *_args)
+static PyObject *ThemeDrawingStateObj_DisposeThemeDrawingState(ThemeDrawingStateObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _rv;
@@ -92,28 +92,28 @@ static PyObject *ThemeDrawingState_DisposeThemeDrawingState(ThemeDrawingStateObj
 	return _res;
 }
 
-static PyMethodDef ThemeDrawingState_methods[] = {
-	{"SetThemeDrawingState", (PyCFunction)ThemeDrawingState_SetThemeDrawingState, 1,
+static PyMethodDef ThemeDrawingStateObj_methods[] = {
+	{"SetThemeDrawingState", (PyCFunction)ThemeDrawingStateObj_SetThemeDrawingState, 1,
 	 "(Boolean inDisposeNow) -> (OSStatus _rv)"},
-	{"DisposeThemeDrawingState", (PyCFunction)ThemeDrawingState_DisposeThemeDrawingState, 1,
+	{"DisposeThemeDrawingState", (PyCFunction)ThemeDrawingStateObj_DisposeThemeDrawingState, 1,
 	 "() -> (OSStatus _rv)"},
 	{NULL, NULL, 0}
 };
 
-PyMethodChain ThemeDrawingState_chain = { ThemeDrawingState_methods, NULL };
+PyMethodChain ThemeDrawingStateObj_chain = { ThemeDrawingStateObj_methods, NULL };
 
-static PyObject *ThemeDrawingState_getattr(ThemeDrawingStateObject *self, char *name)
+static PyObject *ThemeDrawingStateObj_getattr(ThemeDrawingStateObject *self, char *name)
 {
-	return Py_FindMethodInChain(&ThemeDrawingState_chain, (PyObject *)self, name);
+	return Py_FindMethodInChain(&ThemeDrawingStateObj_chain, (PyObject *)self, name);
 }
 
-#define ThemeDrawingState_setattr NULL
+#define ThemeDrawingStateObj_setattr NULL
 
-#define ThemeDrawingState_compare NULL
+#define ThemeDrawingStateObj_compare NULL
 
-#define ThemeDrawingState_repr NULL
+#define ThemeDrawingStateObj_repr NULL
 
-#define ThemeDrawingState_hash NULL
+#define ThemeDrawingStateObj_hash NULL
 
 PyTypeObject ThemeDrawingState_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -122,16 +122,16 @@ PyTypeObject ThemeDrawingState_Type = {
 	sizeof(ThemeDrawingStateObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
-	(destructor) ThemeDrawingState_dealloc, /*tp_dealloc*/
+	(destructor) ThemeDrawingStateObj_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) ThemeDrawingState_getattr, /*tp_getattr*/
-	(setattrfunc) ThemeDrawingState_setattr, /*tp_setattr*/
-	(cmpfunc) ThemeDrawingState_compare, /*tp_compare*/
-	(reprfunc) ThemeDrawingState_repr, /*tp_repr*/
+	(getattrfunc) ThemeDrawingStateObj_getattr, /*tp_getattr*/
+	(setattrfunc) ThemeDrawingStateObj_setattr, /*tp_setattr*/
+	(cmpfunc) ThemeDrawingStateObj_compare, /*tp_compare*/
+	(reprfunc) ThemeDrawingStateObj_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
-	(hashfunc) ThemeDrawingState_hash, /*tp_hash*/
+	(hashfunc) ThemeDrawingStateObj_hash, /*tp_hash*/
 };
 
 /* --------------- End object type ThemeDrawingState ---------------- */
@@ -1151,7 +1151,7 @@ static PyObject *App_GetThemeDrawingState(PyObject *_self, PyObject *_args)
 	_err = GetThemeDrawingState(&outState);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     ThemeDrawingState_New, outState);
+	                     ThemeDrawingStateObj_New, outState);
 	return _res;
 }
 
