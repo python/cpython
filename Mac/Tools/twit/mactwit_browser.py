@@ -300,7 +300,7 @@ class VarBrowser(FrameWork.DialogWindow):
 		self.scroll(-1)
 		point = (0, 0)
 		ok, point = self.lists[0].list.LGetSelect(1, point)
-		self.leftover.append(point, self.lists[0].content, self.lists[0].title, self.lists[0].active)
+		self.leftover.append((point, self.lists[0].content, self.lists[0].title, self.lists[0].active))
 		for i in range(len(self.lists)-1):
 			point = (0, 0)
 			ok, point = self.lists[i+1].list.LGetSelect(1, point)
@@ -331,7 +331,7 @@ class VarBrowser(FrameWork.DialogWindow):
 		if self.lists[-1].content <> None:
 			point = (0, 0)
 			ok, point = self.lists[-1].list.LGetSelect(1, point)
-			self.rightover.append(point, self.lists[-1].content, self.lists[-1].title, self.lists[-1].active )
+			self.rightover.append((point, self.lists[-1].content, self.lists[-1].title, self.lists[-1].active ))
 		for i in range(len(self.lists)-1, 0, -1):
 			point = (0, 0)
 			ok, point = self.lists[i-1].list.LGetSelect(1, point)

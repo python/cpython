@@ -490,7 +490,7 @@ class HorizontalPanes(Widget):
 		for panesize in panesizes:
 			if current:
 				self._gutters.append(current)
-			self._panesizes.append(current, current + panesize)
+			self._panesizes.append((current, current + panesize))
 			current = current + panesize
 		self.makepanebounds()
 	

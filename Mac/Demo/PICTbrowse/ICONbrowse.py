@@ -70,7 +70,7 @@ class ICONbrowse(FrameWork.Application):
 			finally:
 				Res.SetResLoad(1)
 			id, type, name = r.GetResInfo()
-			rv.append(id, name)
+			rv.append((id, name))
 		return rv
 		
 class ICONwindow(FrameWork.Window):

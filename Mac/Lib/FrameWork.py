@@ -512,6 +512,7 @@ class Menu:
 	def delete(self):
 		self.bar.delmenu(self.id)
 		del self.bar.menus[self.id]
+		self.menu.DisposeMenu()
 		del self.bar
 		del self.items
 		del self.menu
@@ -520,7 +521,7 @@ class Menu:
 		
 	def additem(self, label, shortcut=None, callback=None, kind=None):
 		self.menu.AppendMenu('x')		# add a dummy string
-		self.items.append(label, shortcut, callback, kind)
+		self.items.append((label, shortcut, callback, kind))
 		item = len(self.items)
 		self.menu.SetMenuItemText(item, label)		# set the actual text
 		if shortcut and type(shortcut) == type(()):
@@ -547,7 +548,7 @@ class Menu:
 	
 	def addseparator(self):
 		self.menu.AppendMenu('(-')
-		self.items.append('', None, None, 'separator')
+		self.items.append(('', None, None, 'separator'))
 	
 	def addsubmenu(self, label, title=''):
 		sub = Menu(self.bar, title, -1)

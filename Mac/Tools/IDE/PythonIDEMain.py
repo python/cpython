@@ -204,7 +204,7 @@ class PythonIDE(Wapplication.Application):
 			title = window.GetWTitle()
 			if not title:
 				title = "<no title>"
-			windows.append(title, window)
+			windows.append((title, window))
 		windows.sort()
 		for title, window in windows:
 			if title == "Python Interactive":	# ugly but useful hack by Joe Strout
