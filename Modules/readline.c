@@ -168,8 +168,10 @@ on_completion(text, state)
 	char *result = NULL;
 	if (completer != NULL) {
 		PyObject *r;
+		PyThreadState *save_tstate;
 		/* Note that readline is called with the interpreter
 		   lock released! */
+		save_tstate = PyThreadState_Swap(NULL);
 		PyEval_RestoreThread(tstate);
 		r = PyObject_CallFunction(completer, "si", text, state);
 		if (r == NULL)
@@ -190,6 +192,7 @@ on_completion(text, state)
 		Py_XDECREF(r);
 	  done:
 		PyEval_SaveThread();
+		PyThreadState_Swap(save_tstate);
 	}
 	return result;
 }
