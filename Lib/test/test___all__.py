@@ -1,4 +1,3 @@
-
 from test_support import verify, verbose, TestFailed
 import sys
 
@@ -8,7 +7,7 @@ def check_all(_modname):
            "%s has no __all__ attribute" % _modname)
     exec "del %s" % _modname
     exec "from %s import *" % _modname
-    
+
     _keys = locals().keys()
     _keys.remove("_modname")
     _keys.sort()
