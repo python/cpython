@@ -4,9 +4,7 @@
 \bimodindex{re}
 
 % XXX Remove before 1.5final release.
-{\large\bf The \code{re} module is still in the process of being
-developed, and more features will be added in future 1.5 alphas and
-betas.  This documentation is also preliminary and incomplete.  If you
+{\large\bf This documentation is also preliminary and incomplete.  If you
 find a bug or documentation error, or just find something unclear,
 please send a message to
 \code{string-sig@python.org}, and we'll fix it.}
@@ -53,7 +51,7 @@ patterns will be expressed in Python code using this raw string notation.
 %Similarly, a backslash followed by a digit 0-7 should be doubled to
 %avoid interpretation as an octal escape.
 
-\subsection{Regular Expressions}
+\subsection{Regular Expression Syntax}
 
 A regular expression (or RE) specifies a set of strings that matches
 it; the functions in this module let you check if a particular string
@@ -92,9 +90,10 @@ character except a newline.  If the \code{DOTALL} flag has been
 specified, this matches any character including a newline.
 \item[\code{\^}] (Caret.)  Matches the start of the string, and in
 \code{MULTILINE} mode also immediately after each newline.
-\item[\code{\$}] Matches the end of the string.  
+\item[\code{\$}] Matches the end of the string, and in
+\code{MULTILINE} mode also matches before a newline.
 \code{foo} matches both 'foo' and 'foobar', while the regular
-expression '\code{foo\$}' matches only 'foo'.
+expression \code{foo\$} matches only 'foo'.
 %
 \item[\code{*}] Causes the resulting RE to
 match 0 or more repetitions of the preceding RE, as many repetitions
@@ -130,17 +129,18 @@ sequence isn't recognized by Python's parser, the backslash and
 subsequent character are included in the resulting string.  However,
 if Python would recognize the resulting sequence, the backslash should
 be repeated twice.   This is complicated and hard to understand, so
-it's highly recommended that you use raw strings.
+it's highly recommended that you use raw strings for all but the simplest expressions.
 %
 \item[\code{[]}] Used to indicate a set of characters.  Characters can
-be listed individually, or a range is indicated by giving two
-characters and separating them by a '-'.  Special characters are not
-active inside sets.  For example, \code{[akm\$]} will match any of the
-characters 'a', 'k', 'm', or '\$'; \code{[a-z]} will match any
-lowercase letter and \code{[a-zA-Z0-9]} matches any letter or digit.
-Character classes of the form \code{\e \var{X}} defined below are also acceptable. 
-If you want to include a \code{]} or a \code{-} inside a
-set, precede it with a backslash. 
+be listed individually, or a range of characters can be indicated by
+giving two characters and separating them by a '-'.  Special
+characters are not active inside sets.  For example, \code{[akm\$]}
+will match any of the characters 'a', 'k', 'm', or '\$'; \code{[a-z]}
+will match any lowercase letter and \code{[a-zA-Z0-9]} matches any
+letter or digit.  Character classes such as \code{\e w} or \code {\e
+S} (defined below) are also acceptable inside a range.  If you want to
+include a \code{]} or a \code{-} inside a set, precede it with a
+backslash.
 
 Characters \emph{not} within a range can be matched by including a
 \code{\^} as the first character of the set; \code{\^} elsewhere will
@@ -151,11 +151,11 @@ creates a regular expression that will match either A or B.  This can
 be used inside groups (see below) as well.  To match a literal '|', 
 use \code{\e|}, or enclose it inside a character class, like \code{[|]}.
 %
-\item[\code{(...)}] Matches whatever regular expression is inside the parentheses, and indicates the start and end of a group; the
-contents of a group can be retrieved after a match has been performed,
-and can be matched later in the string with the
-\code{\e \var{number}} special sequence, described below.  To match the
-literals '(' or ')', 
+\item[\code{(...)}] Matches whatever regular expression is inside the
+parentheses, and indicates the start and end of a group; the contents
+of a group can be retrieved after a match has been performed, and can
+be matched later in the string with the \code{\e \var{number}} special
+sequence, described below.  To match the literals '(' or ')', 
 use \code{\e(} or \code{\e)}, or enclose them inside a character
 class: \code{[(] [)]}.
 %
@@ -167,9 +167,9 @@ Following are the currently supported extensions.
 \item[\code{(?iLmsx)}] (One or more letters from the set 'i', 'L', 'm', 's',
 'x'.) The group matches the empty string; the letters set the
 corresponding flags (re.I, re.L, re.M, re.S, re.X) for the entire regular
-expression.  (The flag 'L' is uppercase because it is not in standard Perl.)
-This is useful if you wish include the flags as part of the regular
-expression, instead of passing a \var{flag} argument to the \code{compile} function.
+expression.  This is useful if you wish include the flags as part of
+the regular expression, instead of passing a \var{flag} argument to
+the \code{compile} function. 
 %
 \item[\code{(?:...)}] A non-grouping version of regular parentheses.
 Matches whatever's inside the parentheses, but the text matched by the
@@ -183,11 +183,13 @@ symbolic group is also a numbered group, just as if the group were not
 named.  So the group named 'id' in the example above can also be
 referenced as the numbered group 1.
 
-For example, if the pattern string is
-\code{r'(?P<id>[a-zA-Z_]\e w*)'}, the group can be referenced by its
+For example, if the pattern is
+\code{(?P<id>[a-zA-Z_]\e w*)}, the group can be referenced by its
 name in arguments to methods of match objects, such as \code{m.group('id')}
 or \code{m.end('id')}, and also by name in pattern text (e.g. \code{(?P=id)}) and
 replacement text (e.g. \code{\e g<id>}).
+%
+\item[\code{(?P=\var{name})}] Matches whatever text was matched by the earlier group named \var{name}.
 %
 \item[\code{(?\#...)}] A comment; the contents of the parentheses are simply ignored.
 %
@@ -203,8 +205,7 @@ For example,
 The special sequences consist of '\code{\e}' and a character from the
 list below.  If the ordinary character is not on the list, then the
 resulting RE will match the second character.  For example,
-\code{\e\$} matches the character '\$'.  Ones where the backslash
-should be doubled are indicated.
+\code{\e\$} matches the character '\$'.  
 
 \begin{itemize}
 
@@ -222,7 +223,9 @@ as a group match, but as the character with octal value \var{number}.
 \item[\code{\e b}] Matches the empty string, but only at the
 beginning or end of a word.  A word is defined as a sequence of
 alphanumeric characters, so the end of a word is indicated by
-whitespace or a non-alphanumeric character.  
+whitespace or a non-alphanumeric character.  Inside a character range,
+\code{\e b} represents the backspace character, for compatibility with
+Python's string literals.
 %
 \item[\code{\e B}] Matches the empty string, but only when it is
 \emph{not} at the beginning or end of a word.
@@ -274,35 +277,42 @@ The module defines the following functions and constants, and an exception:
 
 \begin{itemize}
 
-\item[I ] or IGNORECASE:
-Perform case-insensitive matching; expressions like [A-Z] will match
-lowercase letters, too.
+\item {I or IGNORECASE or \code{(?i)}}
 
-\item[L ] or LOCALE:
-Make \code{\e w}, \code{\e W}, \code{\e b}, \code{\e B}, dependent on
-the current locale.
+{Perform case-insensitive matching; expressions like \code{[A-Z]} will match
+lowercase letters, too.  This is not affected by the current locale.
+}
+\item {L or LOCALE or \code{(?L)}}
 
-\item[M ] or MULTILINE:
-When specified, the pattern character \code{\^} matches at the
-beginning of the string and at the beginning of each line (immediately
-following each newline); and the pattern character \code{\$} matches
-at the end of the string and at the end of each line (immediately
-preceding each newline).
+{Make \code{\e w}, \code{\e W}, \code{\e b},
+\code{\e B}, dependent on the current locale. 
+}
 
+\item {M or MULTILINE or \code{(?m)}}
+
+{When specified, the pattern character \code{\^} matches at the
+  beginning of the string and at the beginning of each line
+  (immediately following each newline); and the pattern character
+\code{\$} matches at the end of the string and at the end of each line
+(immediately preceding each newline).
 By default, \code{\^} matches only at the beginning of the string, and
 \code{\$} only at the end of the string and immediately before the
 newline (if any) at the end of the string. 
+}
 
-\item[S ] or DOTALL:
-Make the \code{.} special character match a newline; without this
-flag, \code{.} will match anything \emph{except} a newline.
+\item {S or DOTALL or \code{(?s)}}
 
-\item[X ] or VERBOSE:
-When specified, whitespace within the pattern string is ignored except
-when in a character class or preceded by an unescaped backslash, and,
-when a line contains a \code{\#} not in a character class or preceded
-by an unescaped backslash, all characters from the leftmost such
-\code{\#} through the end of the line are ignored.
+{Make the \code{.} special character any character at all, including a
+newline; without this flag, \code{.} will match anything \emph{except}
+a newline.} 
+
+\item {X or VERBOSE or \code{(?x)}}
+
+{Ignore whitespace within the pattern
+except when in a character class or preceded by an unescaped
+backslash, and, when a line contains a \code{\#} neither in a character
+class or preceded by an unescaped backslash, all characters from the
+leftmost such \code{\#} through the end of the line are ignored.  }
 
 \end{itemize}
 
@@ -319,8 +329,8 @@ is equivalent to
 result = re.match(pat, str)
 \end{verbatim}\ecode
 %
-but the version using \code{compile()} is more efficient when multiple
-regular expressions are used concurrently in a single program.  
+but the version using \code{compile()} is more efficient when the
+expression will be used several times in a single program.
 %(The compiled version of the last pattern passed to \code{regex.match()} or
 %\code{regex.search()} is cached, so programs that use only a single
 %regular expression at a time needn't worry about compiling regular
@@ -328,9 +338,9 @@ regular expressions are used concurrently in a single program.
 \end{funcdesc}
 
 \begin{funcdesc}{escape}{string}
-Return \var{string} with all non-alphanumerics backslashed; this is
-useful if you want to match some variable string which may have
-regular expression metacharacters in it.
+  Return \var{string} with all non-alphanumerics backslashed; this is
+  useful if you want to match an arbitrary literal string that may have
+  regular expression metacharacters in it.
 \end{funcdesc}
 
 \begin{funcdesc}{match}{pattern\, string\optional{\, flags}}
@@ -382,9 +392,9 @@ replacement string.  For example:
 \end{verbatim}\ecode
 %
 The pattern may be a string or a 
-regexp object; if you need to specify
-regular expression flags, you must use a regexp object, or use
-embedded modifiers in a pattern string; e.g.
+regex object; if you need to specify
+regular expression flags, you must use a regex object, or use
+embedded modifiers in a pattern; e.g.
 %
 \bcode\begin{verbatim}
 sub("(?i)b+", "x", "bbbb BBBB") returns 'x x'.
@@ -418,16 +428,14 @@ attributes:
 \begin{funcdesc}{match}{string\optional{\, pos}\optional{\, endpos}}
   If zero or more characters at the beginning of \var{string} match
   this regular expression, return a corresponding
-  \code{Match} object.  Return \code{None} if the string does not
+  \code{MatchObject} instance.  Return \code{None} if the string does not
   match the pattern; note that this is different from a zero-length
   match.
   
   The optional second parameter \var{pos} gives an index in the string
-  where the search is to start; it defaults to \code{0}.  This is not
-  completely equivalent to slicing the string; the \code{'\^'} pattern
-  character matches at the real begin of the string and at positions
-  just after a newline, not necessarily at the index where the search
-  is to start.
+  where the search is to start; it defaults to \code{0}.  The
+  \code{'\^'} pattern character will match at the index where the
+  search is to start.
 
   The optional parameter \var{endpos} limits how far the string will
   be searched; it will be as if the string is \var{endpos} characters
@@ -441,8 +449,8 @@ attributes:
   position in the string matches the pattern; note that this is
   different from finding a zero-length match at some point in the string.
   
-  The optional \var{pos} and \var{endpos} parameters have the same meaning as for the 
-  \code{match} method.
+  The optional \var{pos} and \var{endpos} parameters have the same
+  meaning as for the \code{match} method.
 \end{funcdesc}
 
 \begin{funcdesc}{split}{string\, \optional{, maxsplit=0}}
@@ -474,8 +482,8 @@ symbolic groups were used in the pattern.
 The pattern string from which the regex object was compiled.
 \end{datadesc}
 
-\subsection{Match Objects}
-Match objects support the following methods and attributes:
+\subsection{MatchObjects}
+\code{Matchobject} instances support the following methods and attributes:
 
 \begin{funcdesc}{start}{group}
 \end{funcdesc}
@@ -504,21 +512,26 @@ Note that if \var{group} did not contribute to the match, this is
 \code{(None, None)}.
 \end{funcdesc}
 
-\begin{funcdesc}{group}{\optional{g1, g2, ...})}
-This method is only valid when the last call to the \code{match}
-or \code{search} method found a match.  It returns one or more
-groups of the match.  If there is a single \var{index} argument,
-the result is a single string; if there are multiple arguments, the
-result is a tuple with one item per argument.  If the \var{index} is
-zero, the corresponding return value is the entire matching string; if
-it is in the inclusive range [1..99], it is the string matching the
-the corresponding parenthesized group (using the default syntax,
-groups are parenthesized using \code{\e (} and \code{\e )}).  If no
-such group exists, the corresponding result is \code{None}.
+\begin{funcdesc}{group}{\optional{g1, g2, ...}}
+Returns one or more groups of the match.  If there is a single
+\var{index} argument, the result is a single string; if there are
+multiple arguments, the result is a tuple with one item per argument.
+If the \var{index} is zero, the corresponding return value is the
+entire matching string; if it is in the inclusive range [1..99], it is
+the string matching the the corresponding parenthesized group.  If no
+such group exists, the corresponding result is
+\code{None}.
 
 If the regular expression uses the \code{(?P<\var{name}>...)} syntax,
 the \var{index} arguments may also be strings identifying groups by
 their group name.
+\end{funcdesc}
+
+\begin{funcdesc}{groups}{}
+Return a tuple containing all the subgroups of the match, from 1 up to
+however many groups are in the pattern.  Groups that did not
+participate in the match have values of \code{None}.  If the tuple
+would only be one element long, a string will be returned instead.  
 \end{funcdesc}
 
 \begin{datadesc}{pos}
@@ -534,8 +547,8 @@ string beyond which the regex engine will not go.
 \end{datadesc}
 
 \begin{datadesc}{re}
-The regular expression object whose match() or search() method
-produced this match object.
+The regular expression object whose \code{match()} or \code{search()} method
+produced this \code{MatchObject} instance.
 \end{datadesc}
 
 \begin{datadesc}{string}
@@ -545,4 +558,3 @@ The string passed to \code{match()} or \code{search()}.
 \begin{seealso}
 \seetext Jeffrey Friedl, \emph{Mastering Regular Expressions}.
 \end{seealso}
-
