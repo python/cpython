@@ -99,7 +99,6 @@ import os
 import posixpath
 import random
 import re
-import rfc822
 import sha
 import socket
 import sys
@@ -1129,12 +1128,13 @@ class FileHandler(BaseHandler):
 
     # not entirely sure what the rules are here
     def open_local_file(self, req):
+        import email.Utils
         host = req.get_host()
         file = req.get_selector()
         localfile = url2pathname(file)
         stats = os.stat(localfile)
         size = stats.st_size
-        modified = rfc822.formatdate(stats.st_mtime)
+        modified = email.Utils.formatdate(stats.st_mtime, usegmt=True)
         mtype = mimetypes.guess_type(file)[0]
         headers = mimetools.Message(StringIO(
             'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %

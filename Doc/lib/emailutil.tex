@@ -84,7 +84,7 @@ changes in daylight savings time, though not worth worrying about for
 common use.
 \end{funcdesc}
 
-\begin{funcdesc}{formatdate}{\optional{timeval\optional{, localtime}}}
+\begin{funcdesc}{formatdate}{\optional{timeval\optional{, localtime}\optional{, usegmt}}}
 Returns a date string as per \rfc{2822}, e.g.:
 
 \begin{verbatim}
@@ -99,6 +99,11 @@ Optional \var{localtime} is a flag that when \code{True}, interprets
 \var{timeval}, and returns a date relative to the local timezone
 instead of UTC, properly taking daylight savings time into account.
 The default is \code{False} meaning UTC is used.
+
+Optional \var{usegmt} is a flag that when \code{True}, outputs a 
+date string with the timezone as an ascii string \code{GMT}, rather
+than a numeric \code{-0000}. This is needed for some protocols (such
+as HTTP). This only applies when \var{localtime} is \code{False}
 \end{funcdesc}
 
 \begin{funcdesc}{make_msgid}{\optional{idstring}}

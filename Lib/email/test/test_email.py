@@ -2037,6 +2037,15 @@ class TestMiscellaneous(unittest.TestCase):
             Utils.parsedate(Utils.formatdate(now, localtime=True))[:6],
             time.localtime(now)[:6])
 
+    def test_formatdate_usegmt(self):
+        now = time.time()
+        self.assertEqual(
+            Utils.formatdate(now, localtime=False),
+            time.strftime('%a, %d %b %Y %H:%M:%S -0000', time.gmtime(now)))
+        self.assertEqual(
+            Utils.formatdate(now, localtime=False, usegmt=True),
+            time.strftime('%a, %d %b %Y %H:%M:%S GMT', time.gmtime(now)))
+
     def test_parsedate_none(self):
         self.assertEqual(Utils.parsedate(''), None)
 
