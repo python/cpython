@@ -61,6 +61,18 @@ def need(restype, resid, filename=None, modname=None):
 	else:
 		raise ResourceFileNotFoundError, filename
 	
+	refno = open_pathname(pathname)
+	
+	# And check that the resource exists now
+	if type(resid) is type(1):
+		h = Res.GetResource(restype, resid)
+	else:
+		h = Res.GetNamedResource(restype, resid)
+	return refno
+	
+def open_pathname(pathname):
+	"""Open a resource file given by pathname, possibly decoding an
+	AppleSingle file"""
 	try:
 		refno = Res.FSpOpenResFile(pathname, 1)
 	except Res.Error, arg:
@@ -72,13 +84,6 @@ def need(restype, resid, filename=None, modname=None):
 				refno = Res.FSOpenResourceFile(pathname, u'', 1)
 			else:
 				raise
-				
-	
-	# And check that the resource exists now
-	if type(resid) is type(1):
-		h = Res.GetResource(restype, resid)
-	else:
-		h = Res.GetNamedResource(restype, resid)
 	return refno
 	
 def _decode(pathname):
