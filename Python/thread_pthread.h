@@ -70,7 +70,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #  define PY_PTHREAD_STD
 #elif defined(__linux)
 #  define PY_PTHREAD_STD
-
+#elif defined(__DGUX)
+#  define PY_PTHREAD_D6
 #endif
 
 
@@ -80,7 +81,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #  define pthread_attr_default pthread_attr_default
 #  define pthread_mutexattr_default pthread_mutexattr_default
 #  define pthread_condattr_default pthread_condattr_default
-#elif defined(PY_PTHREAD_STD)
+#elif defined(PY_PTHREAD_STD) || defined(PY_PTHREAD_D6)
 #  define pthread_attr_default ((pthread_attr_t *)NULL)
 #  define pthread_mutexattr_default ((pthread_mutexattr_t *)NULL)
 #  define pthread_condattr_default ((pthread_condattr_t *)NULL)
@@ -136,6 +137,10 @@ int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 				 pthread_attr_default,
 				 (pthread_startroutine_t)func, 
 				 (pthread_addr_t)arg
+#elif defined(PY_PTHREAD_D6)
+				 pthread_attr_default,
+				 (void* (*)_P((void *)))func,
+				 arg
 #elif defined(PY_PTHREAD_D7)
 				 pthread_attr_default,
 				 func,
@@ -148,7 +153,7 @@ int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 				 );
 
 	if (success >= 0) {
-#if defined(PY_THREAD_D4) || defined(PY_PTHREAD_D7)
+#if defined(PY_THREAD_D4) || defined(PY_PTHREAD_D6) || defined(PY_PTHREAD_D7)
 		pthread_detach(&th);
 #elif defined(PY_PTHREAD_STD)
 		pthread_detach(th);
