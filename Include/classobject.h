@@ -37,12 +37,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Class object interface */
 
-#ifdef WITH_THREAD
-#include "thread.h"
-#else
-#define get_thread_ident() 1L
-#endif
-
 /* Revealing some structures (not for general use) */
 
 typedef struct {
