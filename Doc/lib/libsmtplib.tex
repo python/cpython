@@ -14,7 +14,8 @@ listener daemon.  For details of SMTP and ESMTP operation, consult
 \rfc{821} (\citetitle{Simple Mail Transfer Protocol}) and \rfc{1869}
 (\citetitle{SMTP Service Extensions}).
 
-\begin{classdesc}{SMTP}{\optional{host\optional{, port}}}
+\begin{classdesc}{SMTP}{\optional{host\optional{, port\optional{,
+                        local_hostname}}}}
 A \class{SMTP} instance encapsulates an SMTP connection.  It has
 methods that support a full repertoire of SMTP and ESMTP
 operations. If the optional host and port parameters are given, the
