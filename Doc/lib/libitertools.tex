@@ -321,13 +321,15 @@ Samuele
 
 \end{verbatim}
 
-This section has further examples of how itertools can be combined.
-Note that \function{enumerate()} and \method{iteritems()} already
-have highly efficient implementations in Python.  They are only
-included here to illustrate how higher level tools can be created
-from building blocks.
+This section shows how itertools can be combined to create other more
+powerful itertools.  Note that \function{enumerate()} and \method{iteritems()}
+already have efficient implementations in Python.  They are only included here
+to illustrate how higher level tools can be created from building blocks.
 
 \begin{verbatim}
+def take(n, seq):
+    return list(islice(seq, n))
+
 def enumerate(iterable):
     return izip(count(), iterable)
 
@@ -380,7 +382,18 @@ def window(seq, n=2):
         result = result[1:] + (elem,)
         yield result
 
-def take(n, seq):
-    return list(islice(seq, n))
+def tee(iterable):
+    "Return two independent iterators from a single iterable"
+    def gen(next, data={}, cnt=[0]):
+        dpop = data.pop
+        for i in count():
+            if i == cnt[0]:
+                item = data[i] = next()
+                cnt[0] += 1
+            else:
+                item = dpop(i)
+            yield item
+    next = iter(iterable).next
+    return (gen(next), gen(next))
 
 \end{verbatim}
