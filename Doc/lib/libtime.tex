@@ -151,6 +151,11 @@ represented as a valid time, \exception{OverflowError} is raised.
 \begin{funcdesc}{sleep}{secs}
 Suspend execution for the given number of seconds.  The argument may
 be a floating point number to indicate a more precise sleep time.
+The actual suspension time may be less than that requested because any
+caught signal will terminate the \function{sleep()} following
+execution of that signal's catching routine.  Also, the suspension
+time may be longer than requested by an arbitrary amount because of
+the scheduling of other activity in the system.
 \end{funcdesc}
 
 \begin{funcdesc}{strftime}{format, tuple}
