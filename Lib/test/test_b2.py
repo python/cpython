@@ -115,10 +115,26 @@ print 'reload'
 import string
 reload(string)
 
+print 'repr'
+if repr('') <> '\'\'': raise TestFailed, 'repr(\'\')'
+if repr(0) <> '0': raise TestFailed, 'repr(0)'
+if repr(0L) <> '0L': raise TestFailed, 'repr(0L)'
+if repr(()) <> '()': raise TestFailed, 'repr(())'
+if repr([]) <> '[]': raise TestFailed, 'repr([])'
+if repr({}) <> '{}': raise TestFailed, 'repr({})'
+
 print 'setattr'
 import sys
 setattr(sys, 'foobar', 1)
 if sys.foobar != 1: raise TestFailed, 'setattr(sys, \'foobar\', 1)'
+
+print 'str'
+if str('') <> '': raise TestFailed, 'str(\'\')'
+if str(0) <> '0': raise TestFailed, 'str(0)'
+if str(0L) <> '0L': raise TestFailed, 'str(0L)'
+if str(()) <> '()': raise TestFailed, 'str(())'
+if str([]) <> '[]': raise TestFailed, 'str([])'
+if str({}) <> '{}': raise TestFailed, 'str({})'
 
 print 'type'
 if type('') <> type('123') or type('') == type(()):
