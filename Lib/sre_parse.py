@@ -8,6 +8,8 @@
 # See the sre.py file for information on usage and redistribution.
 #
 
+# XXX: show string offset and offending character for all errors
+
 import string, sys
 
 from sre_constants import *
@@ -410,11 +412,11 @@ def _parse(source, state):
                         else:
                             code2 = LITERAL, ord(this)
                         if code1[0] != LITERAL or code2[0] != LITERAL:
-                            raise error, "illegal range"
+                            raise error, "bad character range"
                         lo = code1[1]
                         hi = code2[1]
                         if hi < lo:
-                            raise error, "illegal range"
+                            raise error, "bad character range"
                         set.append((RANGE, (lo, hi)))
                 else:
                     if code1[0] is IN:
@@ -457,7 +459,8 @@ def _parse(source, state):
                     min = int(lo)
                 if hi:
                     max = int(hi)
-                # XXX: <fl> check that hi >= lo ???
+                if max < min:
+                    raise error, "bad repeat interval"
             else:
                 raise error, "not supported"
             # figure out which item to repeat
@@ -465,6 +468,8 @@ def _parse(source, state):
                 item = subpattern[-1:]
             else:
                 raise error, "nothing to repeat"
+            if item[0][0] in (MIN_REPEAT, MAX_REPEAT):
+                raise error, "multiple repeat"
             if source.match("?"):
                 subpattern[-1] = (MIN_REPEAT, (min, max, item))
             else:
@@ -493,7 +498,7 @@ def _parse(source, state):
                             name = name + char
                         group = 1
                         if not isname(name):
-                            raise error, "illegal character in group name"
+                            raise error, "bad character in group name"
                     elif source.match("="):
                         # named backreference
                         name = ""
@@ -505,7 +510,7 @@ def _parse(source, state):
                                 break
                             name = name + char
                         if not isname(name):
-                            raise error, "illegal character in group name"
+                            raise error, "bad character in group name"
                         gid = state.groupdict.get(name)
                         if gid is None:
                             raise error, "unknown group name"
@@ -547,6 +552,8 @@ def _parse(source, state):
                     continue
                 else:
                     # flags
+                    if not FLAGS.has_key(source.next):
+                        raise error, "unexpected end of pattern"
                     while FLAGS.has_key(source.next):
                         state.flags = state.flags | FLAGS[source.get()]
             if group:
@@ -565,7 +572,9 @@ def _parse(source, state):
             else:
                 while 1:
                     char = source.get()
-                    if char is None or char == ")":
+                    if char is None:
+                        raise error, "unexpected end of pattern"
+                    if char == ")":
                         break
                     raise error, "unknown extension"
 
@@ -592,6 +601,7 @@ def parse(str, flags=0, pattern=None):
     if pattern is None:
         pattern = Pattern()
     pattern.flags = flags
+    pattern.str = str
 
     p = _parse_sub(source, pattern, 0)
 
@@ -639,7 +649,7 @@ def parse_template(source, pattern):
                     index = int(name)
                 except ValueError:
                     if not isname(name):
-                        raise error, "illegal character in group name"
+                        raise error, "bad character in group name"
                     try:
                         index = pattern.groupindex[name]
                     except KeyError:
