@@ -207,14 +207,15 @@ Instance attributes (read-only):
 Supported operations:
 
 \begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
-  \lineii{t1 = t2 + t3}{Sum of t2 and t3. 
-			Afterwards t1-t2 == t3 and t1-t3 == t2 are true.}{(1)}
-  \lineii{t1 = t2 - t3}{Difference of t2 and t3. Afterwards t1 = t2 - t3 and
-			t2 == t1 + t3 are true.}{(1)}
-  \lineii{t1 = t2 * i or t1 = i * t2}{Delta multiplied by an integer or long.
-			Afterwards t1 // i == t2 is true, provided i != 0.
-			In general, t1 * i == t1 * (i-1) + t1 is true.}{(1)}
-  \lineii{t1 = t2 // i}{The floor is computed and the remainder (if any) is
+  \lineii{\var{t1} = \var{t2} + \var{t3}}{Sum of \var{t2} and \var{t3}. 
+                        Afterwards \var{t1}-\var{t2} == \var{t3} and \var{t1}-\var{t3} == \var{t2} are true.}{(1)}
+  \lineii{\var{t1} = \var{t2} - \var{t3}}{Difference of \var{t2} and \var{t3}. Afterwards \var{t1} = \var{t2} - \var{t3} and
+                        \var{t2} == \var{t1} + \var{t3} are true.}{(1)}
+  \lineii{\var{t1} = \var{t2} * \var{i} or \var{t1} = \var{i} * \var{t2}}
+                        {Delta multiplied by an integer or long.
+                        Afterwards \var{t1} // i == \var{t2} is true, provided i != 0.
+                        In general, \var{t1} * i == \var{t1} * (i-1) + \var{t1} is true.}{(1)}
+  \lineii{\var{t1} = \var{t2} // \var{i}}{The floor is computed and the remainder (if any) is
 			thrown away.}{(2)}
   
 \end{tableii}
