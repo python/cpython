@@ -694,8 +694,19 @@ the \exception{ZeroDivisionError} exception.  The arguments may be floating
 point numbers, e.g., \code{3.14\%0.7} equals \code{0.34} (since
 \code{3.14} equals \code{4*0.7 + 0.34}.)  The modulo operator always
 yields a result with the same sign as its second operand (or zero);
-the absolute value of the result is strictly smaller than the second
-operand.
+the absolute value of the result is strictly smaller than the absolute
+value of the second operand\footnote{
+    While \code{abs(x\%y) < abs(y)) is true mathematically, for
+    floats it may not be true numerically due to roundoff.  For
+    example, and assuming a platform on which a Python float is an
+    IEEE 754 double-precision number, in order that \code{-1e-100 \% 1e100}
+    have the same sign as \code{1e100}, the computed result is
+    \code{-1e-100 + 1e100}, which is numerically exactly equal
+    to \code{1e100}.  Function \function{fmod()} in the \module{math}
+    module returns a result whose sign matches the sign of the
+    first argument instead, and so returns \code{-1e-100} in this case.
+    Which approach is more appropriate depends on the application.
+}.
 \index{modulo}
 
 The integer division and modulo operators are connected by the
@@ -704,7 +715,7 @@ modulo are also connected with the built-in function \function{divmod()}:
 \code{divmod(x, y) == (x/y, x\%y)}.  These identities don't hold for
 floating point numbers; there similar identities hold
 approximately where \code{x/y} is replaced by \code{floor(x/y)}) or
-\code{floor(x/y) - 1} (for floats),\footnote{
+\code{floor(x/y) - 1}\footnote{
     If x is very close to an exact integer multiple of y, it's
     possible for \code{floor(x/y)} to be one larger than
     \code{(x-x\%y)/y} due to rounding.  In such cases, Python returns
