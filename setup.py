@@ -431,8 +431,10 @@ class PyBuildExt(build_ext):
         # You need to ftp the GNU MP library.
         # This was originally written and tested against GMP 1.2 and 1.3.2.
         # It has been modified by Rob Hooft to work with 2.0.2 as well, but I
-        # haven't tested it recently.   For a more complete module,
-        # refer to pympz.sourceforge.net.
+        # haven't tested it recently, and it definitely doesn't work with
+        # GMP 4.0.  For more complete modules, refer to
+        # http://gmpy.sourceforge.net and
+        # http://www.egenix.com/files/python/mxNumber.html
 
         # A compatible MP library unencumbered by the GPL also exists.  It was
         # posted to comp.sources.misc in volume 40 and is widely available from
