@@ -261,7 +261,7 @@ class FileInput:
         self._backupfilename = 0
         if backupfilename and not self._backup:
             try: os.unlink(backupfilename)
-            except: pass
+            except OSError: pass
 
         self._isstdin = False
         self._buffer = []
@@ -301,7 +301,7 @@ class FileInput:
                     self._file = open(self._backupfilename, "r")
                     try:
                         perm = os.fstat(self._file.fileno()).st_mode
-                    except:
+                    except OSError:
                         self._output = open(self._filename, "w")
                     else:
                         fd = os.open(self._filename,
@@ -310,7 +310,7 @@ class FileInput:
                         self._output = os.fdopen(fd, "w")
                         try:
                             os.chmod(self._filename, perm)
-                        except:
+                        except OSError:
                             pass
                     self._savestdout = sys.stdout
                     sys.stdout = self._output
