@@ -150,7 +150,7 @@ class PlistWriter(DumbXMLWriter):
 		self.beginElement("data")
 		for line in data.asBase64().split("\n"):
 			if line:
-				self.writeln(line.strip())
+				self.writeln(line)
 		self.endElement("data")
 
 	def writeDict(self, d):
@@ -196,8 +196,10 @@ class Dict:
 
 class Plist(Dict):
 
-	"""The main Plist object. Basically a dict (the toplevel object of
-	a plist is a dict) with one additional method: write()."""
+	"""The main Plist object. Basically a dict (the toplevel object
+	of a plist is a dict) with two additional methods to read from
+	and write to files.
+	"""
 
 	def fromFile(cls, pathOrFile):
 		didOpen = 0
