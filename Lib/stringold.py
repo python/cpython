@@ -121,7 +121,7 @@ def joinfields(words, sep = ' '):
 
 # Find substring, raise exception if not found
 def index(s, sub, i = 0, last=None):
-	if last == None: last = len(s)
+	if last is None: last = len(s)
 	res = find(s, sub, i, last)
 	if res < 0:
 		raise ValueError, 'substring not found in string.index'
@@ -129,17 +129,24 @@ def index(s, sub, i = 0, last=None):
 
 # Find last substring, raise exception if not found
 def rindex(s, sub, i = 0, last=None):
-	if last == None: last = len(s)
+	if last is None: last = len(s)
 	res = rfind(s, sub, i, last)
 	if res < 0:
 		raise ValueError, 'substring not found in string.index'
 	return res
 
 # Count non-overlapping occurrences of substring
-def count(s, sub, i = 0):
-	if i < 0: i = max(0, i + len(s))
+def count(s, sub, i = 0, last=None):
+	Slen = len(s)  # cache this value, for speed
+	if last is None:
+		last = Slen
+	elif last < 0:
+		last = max(0, last + Slen)
+	elif last > Slen:
+		last = Slen
+	if i < 0: i = max(0, i + Slen)
 	n = len(sub)
-	m = len(s) + 1 - n
+	m = last + 1 - n
 	if n == 0: return m-i
 	r = 0
 	while i < m:
@@ -153,7 +160,7 @@ def count(s, sub, i = 0):
 # Find substring, return -1 if not found
 def find(s, sub, i = 0, last=None):
 	Slen = len(s)  # cache this value, for speed
-	if last == None:
+	if last is None:
 		last = Slen
 	elif last < 0:
 		last = max(0, last + Slen)
@@ -170,7 +177,7 @@ def find(s, sub, i = 0, last=None):
 # Find last substring, return -1 if not found
 def rfind(s, sub, i = 0, last=None):
 	Slen = len(s)  # cache this value, for speed
-	if last == None:
+	if last is None:
 		last = Slen
 	elif last < 0:
 		last = max(0, last + Slen)
