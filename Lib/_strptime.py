@@ -6,31 +6,24 @@ CLASSES:
                 time information as is returned by time.strftime()
 
 FUNCTIONS:
-    firstjulian -- Calculates the Julian date up to the first of the specified
-                    year
-    gregorian -- Calculates the Gregorian date based on the Julian day and
-                    year
-    julianday -- Calculates the Julian day since the first of the year based
-                    on the Gregorian date
-    dayofweek -- Calculates the day of the week from the Gregorian date.
+    _getlang -- Figure out what language is being used for the locale
     strptime -- Calculates the time struct represented by the passed-in string
 
-Requires Python 2.2.1 or higher.
+Requires Python 2.2.1 or higher (mainly because of the use of property()).
 Can be used in Python 2.2 if the following line is added:
-    >>> True = 1; False = 0
+    True = 1; False = 0
 """
 import time
 import locale
 import calendar
 from re import compile as re_compile
 from re import IGNORECASE
+from datetime import date as datetime_date
 
 __author__ = "Brett Cannon"
-__email__ = "drifty@bigfoot.com"
+__email__ = "brett@python.org"
 
 __all__ = ['strptime']
-
-RegexpType = type(re_compile(''))
 
 def _getlang():
     # Figure out what the current language is set to.
@@ -425,7 +418,7 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     month = day = 1
     hour = minute = second = 0
     tz = -1
-    # Defaulted to -1 so as to signal using functions to calc values
+    # weekday and julian defaulted to -1 so as to signal need to calculate values
     weekday = julian = -1
     found_dict = found.groupdict()
     for group_key in found_dict.iterkeys():
@@ -495,16 +488,21 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                 tz = 1
             elif locale_time.timezone[2].lower() == found_zone:
                 tz = -1
-    #XXX <bc>: If calculating fxns are never exposed to the general
-    #populous then just inline calculations.  Also might be able to use
-    #``datetime`` and the methods it provides.
+    # Cannot pre-calculate datetime_date() since can change in Julian
+    #calculation and thus could have different value for the day of the week
+    #calculation
     if julian == -1:
-        julian = julianday(year, month, day)
-    else:  # Assuming that if they bothered to include Julian day it will
+        # Need to add 1 to result since first day of the year is 1, not 0.
+        julian = datetime_date(year, month, day).toordinal() - \
+                  datetime_date(year, 1, 1).toordinal() + 1
+    else:  # Assume that if they bothered to include Julian day it will
            #be accurate
-        year, month, day = gregorian(julian, year)
+        datetime_result = datetime_date.fromordinal((julian - 1) + datetime_date(year, 1, 1).toordinal())
+        year = datetime_result.year
+        month = datetime_result.month
+        day = datetime_result.day
     if weekday == -1:
-        weekday = dayofweek(year, month, day)
+        weekday = datetime_date(year, month, day).weekday()
     return time.struct_time((year, month, day,
                              hour, minute, second,
                              weekday, julian, tz))
@@ -522,39 +520,3 @@ def _insensitiveindex(lst, findme):
     else:
         raise ValueError("value not in list")
 
-def firstjulian(year):
-    """Calculate the Julian date up until the first of the year."""
-    return ((146097 * (year + 4799)) // 400) - 31738
-
-def julianday(year, month, day):
-    """Calculate the Julian day since the beginning of the year.
-    Calculated from the Gregorian date.
-    """
-    a = (14 - month) // 12
-    return (day - 32045
-            + (((153 * (month + (12 * a) - 3)) + 2) // 5)
-            + ((146097 * (year + 4800 - a)) // 400)) - firstjulian(year) + 1
-
-def gregorian(julian, year):
-    """Return 3-item list containing Gregorian date based on the Julian day."""
-    a = 32043 + julian + firstjulian(year)
-    b = ((4 * a) + 3) // 146097
-    c = a - ((146097 * b) // 4)
-    d = ((4 * c) + 3) // 1461
-    e = c - ((1461 * d) // 4)
-    m = ((5 * e) + 2) // 153
-    day = 1 + e - (((153 * m) + 2) // 5)
-    month = m + 3 - (12 * (m // 10))
-    year = (100 * b) + d - 4800 + (m // 10)
-    return [year, month, day]
-
-def dayofweek(year, month, day):
-    """Calculate the day of the week (Monday is 0)."""
-    a = (14 - month) // 12
-    y = year - a
-    weekday = (day + y + ((97 * y) // 400)
-               + ((31 * (month + (12 * a) -2 )) // 12)) % 7
-    if weekday == 0:
-        return 6
-    else:
-        return weekday-1

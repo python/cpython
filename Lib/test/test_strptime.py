@@ -329,37 +329,6 @@ class StrptimeTests(unittest.TestCase):
                         "Default values for strptime() are incorrect;"
                         " %s != %s" % (strp_output, defaults))
 
-class FxnTests(unittest.TestCase):
-    """Test functions that fill in info by validating result and are triggered
-    properly."""
-
-    def setUp(self):
-        """Create an initial time tuple."""
-        self.time_tuple = time.gmtime()
-
-    def test_julianday_result(self):
-        # Test julianday
-        result = _strptime.julianday(self.time_tuple[0], self.time_tuple[1],
-                                     self.time_tuple[2])
-        self.failUnless(result == self.time_tuple[7],
-                        "julianday failed; %s != %s" %
-                         (result, self.time_tuple[7]))
-
-    def test_gregorian_result(self):
-        # Test gregorian
-        result = _strptime.gregorian(self.time_tuple[7], self.time_tuple[0])
-        comparison = [self.time_tuple[0], self.time_tuple[1], self.time_tuple[2]]
-        self.failUnless(result == comparison,
-                        "gregorian() failed; %s != %s" % (result, comparison))
-
-    def test_dayofweek_result(self):
-        # Test dayofweek
-        result = _strptime.dayofweek(self.time_tuple[0], self.time_tuple[1],
-                                     self.time_tuple[2])
-        comparison = self.time_tuple[6]
-        self.failUnless(result == comparison,
-                        "dayofweek() failed; %s != %s" % (result, comparison))
-
 class Strptime12AMPMTests(unittest.TestCase):
     """Test a _strptime regression in '%I %p' at 12 noon (12 PM)"""
 
@@ -380,15 +349,52 @@ class JulianTests(unittest.TestCase):
             # use 2004, since it is a leap year, we have 366 days
             eq(_strptime.strptime('%d 2004' % i, '%j %Y')[7], i)
 
+class CalculationTests(unittest.TestCase):
+    """Test that strptime() fills in missing info correctly"""
+
+    def setUp(self):
+        self.time_tuple = time.gmtime()
+
+    def test_julian_calculation(self):
+        # Make sure that when Julian is missing that it is calculated
+        format_string = "%Y %m %d %H %M %S %w %Z"
+        result = _strptime.strptime(time.strftime(format_string, self.time_tuple),
+                                    format_string)
+        self.failUnless(result.tm_yday == self.time_tuple.tm_yday,
+                        "Calculation of tm_yday failed; %s != %s" %
+                         (result.tm_yday, self.time_tuple.tm_yday))
+
+    def test_gregorian_calculation(self):
+        # Test that Gregorian date can be calculated from Julian day
+        format_string = "%Y %H %M %S %w %j %Z"
+        result = _strptime.strptime(time.strftime(format_string, self.time_tuple),
+                                    format_string)
+        self.failUnless(result.tm_year == self.time_tuple.tm_year and
+                         result.tm_mon == self.time_tuple.tm_mon and
+                         result.tm_mday == self.time_tuple.tm_mday,
+                        "Calculation of Gregorian date failed;"
+                         "%s-%s-%s != %s-%s-%s" %
+                         (result.tm_year, result.tm_mon, result.tm_mday,
+                          self.time_tuple.tm_year, self.time_tuple.tm_mon,
+                          self.time_tuple.tm_mday))
+
+    def test_day_of_week_calculation(self):
+        # Test that the day of the week is calculated as needed
+        format_string = "%Y %m %d %H %S %j %Z"
+        result = _strptime.strptime(time.strftime(format_string, self.time_tuple),
+                                    format_string)
+        self.failUnless(result.tm_wday == self.time_tuple.tm_wday,
+                        "Calculation of day of the week failed;"
+                         "%s != %s" % (result.tm_wday, self.time_tuple.tm_wday))
 
 def test_main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(LocaleTime_Tests))
     suite.addTest(unittest.makeSuite(TimeRETests))
     suite.addTest(unittest.makeSuite(StrptimeTests))
-    suite.addTest(unittest.makeSuite(FxnTests))
     suite.addTest(unittest.makeSuite(Strptime12AMPMTests))
     suite.addTest(unittest.makeSuite(JulianTests))
+    suite.addTest(unittest.makeSuite(CalculationTests))
     test_support.run_suite(suite)
 
 
