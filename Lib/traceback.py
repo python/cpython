@@ -16,11 +16,20 @@ def print_tb(tb, limit = None):
 		co = f.f_code
 		filename = co.co_filename
 		name = co.co_name
-		print '  File "%s", line %d, in %s' % (filename, lineno, name)
+		print '  File "%s", line %d, in %s' % (filename,lineno,name)
 		line = linecache.getline(filename, lineno)
 		if line: print '    ' + string.strip(line)
 		tb = tb.tb_next
 		n = n+1
+
+def format_tb(tb, limit = None):
+	list = []
+	for filename, lineno, name, line in extract_tb(tb, limit):
+		item = '  File "%s", line %d, in %s\n' % (filename,lineno,name)
+		if line:
+			item = item + '    %s\n' % string.strip(line)
+		list.append(item)
+	return list
 
 def extract_tb(tb, limit = None):
 	if limit is None:
@@ -42,16 +51,29 @@ def extract_tb(tb, limit = None):
 		n = n+1
 	return list
 
+
 def print_exception(etype, value, tb, limit = None):
 	if tb:
 		print 'Traceback (innermost last):'
 		print_tb(tb, limit)
+	for line in format_exception_only(etype, value):
+		print line,
+
+def format_exception(etype, value, tb, limit = None):
+	if tb:
+		list = ['Traceback (innermost last):\n']
+		list = list + format_tb(tb, limit)
+	list = list + format_exception_only(etype, value)
+	return list
+
+def format_exception_only(etype, value):
+	list = []
 	if type(etype) == types.ClassType:
 		stype = etype.__name__
 	else:
 		stype = etype
 	if value is None:
-		print stype
+		list.append(str(stype) + '\n')
 	else:
 		if etype is SyntaxError:
 			try:
@@ -60,22 +82,24 @@ def print_exception(etype, value, tb, limit = None):
 				pass
 			else:
 				if not filename: filename = "<string>"
-				print '  File "%s", line %d' % \
-				      (filename, lineno)
+				list.append('  File "%s", line %d\n' %
+					    (filename, lineno))
 				i = 0
 				while i < len(line) and \
 				      line[i] in string.whitespace:
 					i = i+1
+				list.append('    %s\n' % string.strip(line))
 				s = '    '
-				print s + string.strip(line)
 				for c in line[i:offset-1]:
 					if c in string.whitespace:
 						s = s + c
 					else:
 						s = s + ' '
-				print s + '^'
+				list.append('%s^\n' % s)
 				value = msg
-		print '%s: %s' % (stype, value)
+		list.append('%s: %s\n' % (str(stype), str(value)))
+	return list
+
 
 def print_exc(limit = None):
 	print_exception(sys.exc_type, sys.exc_value, sys.exc_traceback,
