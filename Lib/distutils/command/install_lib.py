@@ -2,7 +2,7 @@
 
 __revision__ = "$Id$"
 
-import sys, string
+import sys, os, string
 from distutils.core import Command
 from distutils.util import copy_tree
 
@@ -39,14 +39,17 @@ class install_lib (Command):
 
     def run (self):
 
-        # Make sure we have "built" all pure Python modules first
-        self.run_peer ('build_py')
+        # Make sure we have built everything we need first
+        if self.distribution.has_pure_modules():
+            self.run_peer ('build_py')
+        if self.distribution.has_ext_modules():
+            self.run_peer ('build_ext')
 
         # Install everything: simply dump the entire contents of the build
         # directory to the installation directory (that's the beauty of
         # having a build directory!)
         outfiles = self.copy_tree (self.build_dir, self.install_dir)
-                   
+
         # (Optionally) compile .py to .pyc
         # XXX hey! we can't control whether we optimize or not; that's up
         # to the invocation of the current Python interpreter (at least
@@ -73,4 +76,43 @@ class install_lib (Command):
 
     # run ()
 
-# class InstallPy
+
+    def _mutate_outputs (self, has_any, build_cmd, cmd_option, output_dir):
+
+        if not has_any:
+            return []
+
+        build_cmd = self.find_peer (build_cmd)
+        build_files = build_cmd.get_outputs()
+        build_dir = build_cmd.get_option (cmd_option)
+
+        prefix_len = len (build_dir) + len (os.sep)
+        outputs = []
+        for file in build_files:
+            outputs.append (os.path.join (output_dir, file[prefix_len:]))
+
+        return outputs
+
+    # _mutate_outputs ()
+        
+    def get_outputs (self):
+        """Return the list of files that would be installed if this command
+        were actually run.  Not affected by the "dry-run" flag or whether
+        modules have actually been built yet."""
+
+        pure_outputs = \
+            self._mutate_outputs (self.distribution.has_pure_modules(),
+                                  'build_py', 'build_lib',
+                                  self.install_dir)
+
+
+        ext_outputs = \
+            self._mutate_outputs (self.distribution.has_ext_modules(),
+                                  'build_ext', 'build_lib',
+                                  self.install_dir)
+
+        return pure_outputs + ext_outputs
+
+    # get_outputs ()
+
+# class install_lib
