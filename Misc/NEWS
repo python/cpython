@@ -75,6 +75,9 @@ Core and builtins
 - Added a reversed() builtin function that returns a reverse iterator
   over a sequence.
 
+- Added a sorted() builtin function that returns a new sorted list
+  from any iterable.  
+
 - CObjects are now mutable (on the C level) through PyCObject_SetVoidPtr.
 
 - list.sort() now supports three keyword arguments:  cmp, key, and reverse.
@@ -85,9 +88,6 @@ Core and builtins
   the documentation has been amended to provide a guarantee that all sorts
   starting with Py2.3 are guaranteed to be stable (the relative order of
   records with equal keys is unchanged).
-
-- Added a list.sorted() classmethod that returns a new sorted list
-  from any iterable.
 
 - Added test whether wchar_t is signed or not. A signed wchar_t is not
   usable as internal unicode type base for Py_UNICODE since the

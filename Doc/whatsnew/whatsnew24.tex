@@ -177,9 +177,9 @@ they were input.  For example, you can sort a list of people by name,
 and then sort the list by age, resulting in a list sorted by age where
 people with the same age are in name-sorted order.
 
-\item The list type gained a \method{sorted(iterable)} method that works
-like the in-place \method{sort()} method but has been made suitable for
-use in expressions.  The differences are:
+\item There is a new builtin function \function{sorted(iterable)} that works
+like the in-place \method{list.sort()} method but has been made suitable
+for use in expressions.  The differences are:
   \begin{itemize}
   \item the input may be any iterable;
   \item a newly formed copy is sorted, leaving the original intact; and
@@ -188,17 +188,17 @@ use in expressions.  The differences are:
 
 \begin{verbatim}
 >>> L = [9,7,8,3,2,4,1,6,5]
->>> [10+i for i in list.sorted(L)]  # usable in a list comprehension
+>>> [10+i for i in sorted(L)]       # usable in a list comprehension
 [11, 12, 13, 14, 15, 16, 17, 18, 19]
 >>> L = [9,7,8,3,2,4,1,6,5]         # original is left unchanged
 [9,7,8,3,2,4,1,6,5]   
 
->>> list.sorted('Monte Python')     # any iterable may be an input
+>>> sorted('Monte Python')          # any iterable may be an input
 [' ', 'M', 'P', 'e', 'h', 'n', 'n', 'o', 'o', 't', 't', 'y']
 
 >>> # List the contents of a dict sorted by key values
 >>> colormap = dict(red=1, blue=2, green=3, black=4, yellow=5)
->>> for k, v in list.sorted(colormap.iteritems()):
+>>> for k, v in sorted(colormap.iteritems()):
 ...     print k, v
 ...
 black 4
@@ -301,14 +301,14 @@ counting, or identifying duplicate elements:
 
 \begin{verbatim}
 >>> word = 'abracadabra'
->>> word = list.sorted(word)   # Turn string into sorted list of letters
->>> word 
+>>> letters = sorted(word)   # Turn string into sorted list of letters
+>>> letters 
 ['a', 'a', 'a', 'a', 'a', 'b', 'b', 'c', 'd', 'r', 'r']
->>> [k for k, g in groupby(word)]   # List the various group keys
+>>> [k for k, g in groupby(word)]                     # List unique letters
 ['a', 'b', 'c', 'd', 'r']
->>> [(k, len(list(g))) for k, g in groupby(word)] # List key and group length
+>>> [(k, len(list(g))) for k, g in groupby(word)]     # Count letter occurences
 [('a', 5), ('b', 2), ('c', 1), ('d', 1), ('r', 2)]
->>> [k for k, g in groupby(word) if len(list(g)) > 1] # All groups of size >1
+>>> [k for k, g in groupby(word) if len(list(g)) > 1] # List duplicate letters
 ['a', 'b', 'r']
 \end{verbatim}
 

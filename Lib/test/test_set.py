@@ -22,8 +22,8 @@ class TestJointOps(unittest.TestCase):
         self.d = dict.fromkeys(word)
 
     def test_uniquification(self):
-        actual = list.sorted(self.s)
-        expected = list.sorted(self.d)
+        actual = sorted(self.s)
+        expected = sorted(self.d)
         self.assertEqual(actual, expected)
         self.assertRaises(PassThru, self.thetype, check_pass_thru())
         self.assertRaises(TypeError, self.thetype, [[]])
@@ -1241,7 +1241,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
         for cons in (set, frozenset):
             for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
                 for g in (G, I, Ig, S, L, R):
-                    self.assertEqual(list.sorted(cons(g(s))), list.sorted(g(s)))
+                    self.assertEqual(sorted(cons(g(s))), sorted(g(s)))
                 self.assertRaises(TypeError, cons , X(s))
                 self.assertRaises(TypeError, cons , N(s))
                 self.assertRaises(ZeroDivisionError, cons , E(s))
@@ -1253,7 +1253,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
                 for g in (G, I, Ig, L, R):
                     expected = meth(data)
                     actual = meth(G(data))
-                    self.assertEqual(list.sorted(actual), list.sorted(expected))
+                    self.assertEqual(sorted(actual), sorted(expected))
                 self.assertRaises(TypeError, meth, X(s))
                 self.assertRaises(TypeError, meth, N(s))
                 self.assertRaises(ZeroDivisionError, meth, E(s))
@@ -1267,7 +1267,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
                     t = s.copy()
                     getattr(s, methname)(list(g(data)))
                     getattr(t, methname)(g(data))
-                    self.assertEqual(list.sorted(s), list.sorted(t))
+                    self.assertEqual(sorted(s), sorted(t))
 
                 self.assertRaises(TypeError, getattr(set('january'), methname), X(data))
                 self.assertRaises(TypeError, getattr(set('january'), methname), N(data))

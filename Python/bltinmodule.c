@@ -1758,6 +1758,50 @@ PyDoc_STRVAR(round_doc,
 Round a number to a given precision in decimal digits (default 0 digits).\n\
 This always returns a floating point number.  Precision may be negative.");
 
+static PyObject *
+builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	PyObject *newlist, *v, *seq, *compare=NULL, *keyfunc=NULL, *newargs;
+	PyObject *callable;
+	static char *kwlist[] = {"iterable", "cmp", "key", "reverse", 0};
+	long reverse;
+
+	if (args != NULL) {
+		if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OOi:sorted",
+			kwlist, &seq, &compare, &keyfunc, &reverse))
+			return NULL;
+	}
+
+	newlist = PySequence_List(seq);
+	if (newlist == NULL)
+		return NULL;
+
+	callable = PyObject_GetAttrString(newlist, "sort");
+	if (callable == NULL) {
+		Py_DECREF(newlist);
+		return NULL;
+	}
+	
+	newargs = PyTuple_GetSlice(args, 1, 4);
+	if (newargs == NULL) {
+		Py_DECREF(newlist);
+		Py_DECREF(callable);
+		return NULL;
+	}
+
+	v = PyObject_Call(callable, newargs, kwds);
+	Py_DECREF(newargs);
+	Py_DECREF(callable);
+	if (v == NULL) {
+		Py_DECREF(newlist);
+		return NULL;
+	}
+	Py_DECREF(v);
+	return newlist;
+}
+
+PyDoc_STRVAR(sorted_doc,
+"sorted(iterable, cmp=None, key=None, reverse=False) --> new sorted list");
 
 static PyObject *
 builtin_vars(PyObject *self, PyObject *args)
@@ -2055,6 +2099,7 @@ static PyMethodDef builtin_methods[] = {
  	{"repr",	builtin_repr,       METH_O, repr_doc},
  	{"round",	builtin_round,      METH_VARARGS, round_doc},
  	{"setattr",	builtin_setattr,    METH_VARARGS, setattr_doc},
+ 	{"sorted",	(PyCFunction)builtin_sorted,     METH_VARARGS | METH_KEYWORDS, sorted_doc},
  	{"sum",		builtin_sum,        METH_VARARGS, sum_doc},
 #ifdef Py_USING_UNICODE
  	{"unichr",	builtin_unichr,     METH_VARARGS, unichr_doc},
