@@ -99,6 +99,7 @@ tabify-region=<Alt-Key-5>
 untabify-region=<Alt-Key-6>
 toggle-tabs=<Alt-Key-t>
 change-indentwidth=<Alt-Key-u>
+
 [IDLE Classic Mac]
 copy=<Command-Key-c>
 cut=<Command-Key-x>
