@@ -21,6 +21,33 @@ BTNUP = 5
 BTNDRAG = 6
 
 
+def constant(numchips):
+    step = 255.0 / (numchips - 1)
+    start = 0.0
+    seq = []
+    while numchips > 0:
+	seq.append(int(start))
+	start = start + step
+	numchips = numchips - 1
+    return seq
+
+# red variations, green+blue = cyan constant
+def constant_cyan_generator(numchips, red, green, blue):
+    seq = constant(numchips)
+    return map(None, seq, [green] * numchips, [blue] * numchips)
+
+# green variations, red+blue = magenta constant
+def constant_magenta_generator(numchips, red, green, blue):
+    seq = constant(numchips)
+    return map(None, [red] * numchips, seq, [blue] * numchips)
+
+# blue variations, red+green = yellow constant
+def constant_yellow_generator(numchips, red, green, blue):
+    seq = constant(numchips)
+    return map(None, [red] * numchips, [green] * numchips, seq)
+
+
+
 
 class LeftArrow:
     _ARROWWIDTH = 30
@@ -94,16 +121,16 @@ class StripWidget:
 
     def __init__(self, switchboard,
                  parent     = None,
-                 color      = (128, 128, 128),
-                 chipwidth  = self._CHIPWIDTH,
-                 chipheight = self._CHIPHEIGHT,
-                 numchips   = self._NUMCHIPS,
+                 chipwidth  = _CHIPWIDTH,
+                 chipheight = _CHIPHEIGHT,
+                 numchips   = _NUMCHIPS,
                  generator  = None,
                  axis       = None,
                  label      = ''):
         # instance variables
 	self.__generator = generator
 	self.__axis = axis
+        self.__numchips = numchips
 	assert self.__axis in (0, 1, 2)
 	self.__update_while_dragging = 0
         # the last chip selected
@@ -148,7 +175,7 @@ class StripWidget:
 	# create the strip label
 	self.__label = canvas.create_text(
 	    3, y + chipheight + 8,
-	    text=self['label'],
+	    text=label,
 	    anchor=W)
 
 	# create the arrow and text item
@@ -158,39 +185,29 @@ class StripWidget:
 	chipx = self.__arrow_x(len(chips) - 1)
 	self.__rightarrow = RightArrow(canvas, chipx)
 
-    # Invoked when one of the chips is clicked.  This should just tell the
-    # switchboard to set the color on all the output components
-    def __set_color(self):
-	rgbtuple = self['color']
-	self.set_color(self, rgbtuple)
-
     def __arrow_x(self, chipnum):
 	coords = self.__canvas.coords(chipnum+1)
 	assert coords
 	x0, y0, x1, y1 = coords
 	return (x1 + x0) / 2.0
 
+    # Invoked when one of the chips is clicked.  This should just tell the
+    # switchboard to set the color on all the output components
     def __select_chip(self, event=None):
-        if self.__delegate:
-            x = event.x
-            y = event.y
-            canvas = self.__canvas
-            chip = canvas.find_overlapping(x, y, x, y)
-            if chip and (1 <= chip[0] <= self.__numchips):
-                color = self.__chips[chip[0]-1]
-                rgbtuple = ColorDB.rrggbb_to_triplet(color)
-                etype = int(event.type)
-                if (etype == BTNUP or self.__update_while_dragging):
-                    # update everyone
-                    self.__delegate.set_color(self, rgbtuple)
-                else:
-                    # just track the arrows
-                    self.__trackarrow(chip[0], rgbtuple)
-
-
-    def __set_delegate(self):
-	self.__delegate = self['delegate']
-	
+        x = event.x
+        y = event.y
+        canvas = self.__canvas
+        chip = canvas.find_overlapping(x, y, x, y)
+        if chip and (1 <= chip[0] <= self.__numchips):
+            color = self.__chips[chip[0]-1]
+            red, green, blue = ColorDB.rrggbb_to_triplet(color)
+            etype = int(event.type)
+            if (etype == BTNUP or self.__update_while_dragging):
+                # update everyone
+                self.__sb.update_views(red, green, blue)
+            else:
+                # just track the arrows
+                self.__trackarrow(chip[0], (red, green, blue))
 
     def __trackarrow(self, chip, rgbtuple):
         # invert the last chip
@@ -221,10 +238,6 @@ class StripWidget:
 	self.__canvas.itemconfigure(chip, outline=outline)
 
 
-    #
-    # public interface
-    #
-
     def update_yourself(self, red, green, blue):
 	assert self.__generator
 	i = 1
@@ -233,7 +246,7 @@ class StripWidget:
 	tclcmd = []
 	tk = self.__canvas.tk
         # get the red, green, and blue components for all chips
-        for t in self.__generator(self.__numchips, rgbtuple):
+        for t in self.__generator(self.__numchips, red, green, blue):
             rrggbb = ColorDB.triplet_to_rrggbb(t)
             chips.append(rrggbb)
             tred, tgreen, tblue = t
@@ -248,3 +261,28 @@ class StripWidget:
 
     def set_update_while_dragging(self, flag):
 	self.__update_while_dragging = flag
+
+
+
+class StripViewer:
+    def __init__(self, switchboard, parent=None):
+        self.__sb = switchboard
+        self.__reds = StripWidget(switchboard, parent,
+                                  generator=constant_cyan_generator,
+                                  axis=0,
+                                  label='Red Variations')
+
+        self.__greens = StripWidget(switchboard, parent,
+                                    generator=constant_magenta_generator,
+                                    axis=1,
+                                    label='Green Variations')
+
+        self.__blues = StripWidget(switchboard, parent,
+                                   generator=constant_yellow_generator,
+                                   axis=2,
+                                   label='Blue Variations')
+
+    def update_yourself(self, red, green, blue):
+        self.__reds.update_yourself(red, green, blue)
+        self.__greens.update_yourself(red, green, blue)
+        self.__blues.update_yourself(red, green, blue)
