@@ -605,11 +605,10 @@ PyNumber_Add(PyObject *v, PyObject *w)
 	PyObject *result = binary_op1(v, w, NB_SLOT(nb_add));
 	if (result == Py_NotImplemented) {
 		PySequenceMethods *m = v->ob_type->tp_as_sequence;
-		Py_DECREF(Py_NotImplemented);
-		if (m && m->sq_concat) {
+		Py_DECREF(result);
+		if (m && m->sq_concat)
 			result = (*m->sq_concat)(v, w);
-		}
-                else {
+		if (result == Py_NotImplemented) {
                     PyErr_Format(
 			    PyExc_TypeError,
 			    "unsupported operand types for +: '%s' and '%s'",
