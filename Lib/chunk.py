@@ -49,19 +49,24 @@ default is 1, i.e. aligned.
 """
 
 class Chunk:
-    def __init__(self, file, align = 1):
+    def __init__(self, file, align = 1, bigendian = 1, inclheader = 0):
         import struct
         self.closed = 0
         self.align = align	# whether to align to word (2-byte) boundaries
+        if bigendian:
+            strflag = '>'
+        else:
+            strflag = '<'
         self.file = file
         self.chunkname = file.read(4)
         if len(self.chunkname) < 4:
             raise EOFError
         try:
-            self.chunksize = struct.unpack('>l', file.read(4))[0]
+            self.chunksize = struct.unpack(strflag+'l', file.read(4))[0]
         except struct.error:
             raise EOFError
-        self.chunksize = self.chunksize - 8 # subtract header
+        if inclheader:
+            self.chunksize = self.chunksize - 8 # subtract header
         self.size_read = 0
         try:
             self.offset = self.file.tell()
@@ -73,6 +78,10 @@ class Chunk:
     def getname(self):
         """Return the name (ID) of the current chunk."""
         return self.chunkname
+
+    def getsize(self):
+        """Return the size of the current chunk."""
+        return self.chunksize
 
     def close(self):
         if not self.closed:

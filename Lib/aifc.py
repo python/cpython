@@ -293,8 +293,6 @@ class Aifc_read:
 		self._comm_chunk_read = 0
 		while 1:
 			self._ssnd_seek_needed = 1
-			#DEBUG: SGI's soundfiler has a bug.  There should
-			# be no need to check for EOF here.
 			try:
 				chunk = Chunk(self._file)
 			except EOFError:
@@ -336,10 +334,6 @@ class Aifc_read:
 			f = __builtin__.open(f, 'rb')
 		# else, assume it is an open file object already
 		self.initfp(f)
-
-	def __del__(self):
-		if self._file:
-			self.close()
 
 	#
 	# User visible methods.
