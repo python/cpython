@@ -58,6 +58,9 @@ typedef struct {
 staticforward PyTypeObject Bsddbtype;
 
 #define is_bsddbobject(v) ((v)->ob_type == &Bsddbtype)
+#define check_bsddbobject_open(v) if ((v)->di_bsddb == NULL) \
+               { PyErr_SetString(BsddbError, "BSDDB object has already been closed"); \
+                 return NULL; }
 
 static PyObject *BsddbError;
 
@@ -206,6 +209,10 @@ static int
 bsddb_length(dp)
 	bsddbobject *dp;
 {
+        if (dp->di_bsddb == NULL) {
+                 PyErr_SetString(BsddbError, "BSDDB object has already been closed"); 
+                 return -1; 
+        }
 	if (dp->di_size < 0) {
 		DBT krec, drec;
 		int status;
@@ -237,6 +244,8 @@ bsddb_subscript(dp, key)
 
 	if (!PyArg_Parse(key, "s#", &data, &size))
 		return NULL;
+        check_bsddbobject_open(dp);
+	
 	krec.data = data;
 	krec.size = size;
 
@@ -267,6 +276,10 @@ bsddb_ass_sub(dp, key, value)
 				"bsddb key type must be string");
 		return -1;
 	}
+        if (dp->di_bsddb == NULL) {
+                 PyErr_SetString(BsddbError, "BSDDB object has already been closed"); 
+                 return -1; 
+        }
 	krec.data = data;
 	krec.size = size;
 	dp->di_size = -1;
@@ -341,6 +354,7 @@ bsddb_keys(dp, args)
 
 	if (!PyArg_NoArgs(args))
 		return NULL;
+	check_bsddbobject_open(dp);
 	list = PyList_New(0);
 	if (list == NULL)
 		return NULL;
@@ -383,6 +397,7 @@ bsddb_has_key(dp, args)
 
 	if (!PyArg_Parse(args, "s#", &data, &size))
 		return NULL;
+	check_bsddbobject_open(dp);
 	krec.data = data;
 	krec.size = size;
 
@@ -407,6 +422,7 @@ bsddb_set_location(dp, key)
 
 	if (!PyArg_Parse(key, "s#", &data, &size))
 		return NULL;
+	check_bsddbobject_open(dp);
 	krec.data = data;
 	krec.size = size;
 
@@ -435,6 +451,7 @@ bsddb_seq(dp, args, sequence_request)
 	if (!PyArg_NoArgs(args))
 		return NULL;
 
+	check_bsddbobject_open(dp);
 	krec.data = 0;
 	krec.size = 0;
 
@@ -487,6 +504,9 @@ bsddb_sync(dp, args)
 {
 	int status;
 
+	if (!PyArg_NoArgs(args))
+		return NULL;
+	check_bsddbobject_open(dp);
 	status = (dp->di_bsddb->sync)(dp->di_bsddb, 0);
 	if (status != 0) {
 		PyErr_SetFromErrno(BsddbError);

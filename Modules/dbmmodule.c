@@ -48,6 +48,9 @@ typedef struct {
 staticforward PyTypeObject Dbmtype;
 
 #define is_dbmobject(v) ((v)->ob_type == &Dbmtype)
+#define check_dbmobject_open(v) if ((v)->di_dbm == NULL) \
+               { PyErr_SetString(DbmError, "DBM object has already been closed"); \
+                 return NULL; }
 
 static PyObject *DbmError;
 
@@ -86,6 +89,10 @@ static int
 dbm_length(dp)
 	dbmobject *dp;
 {
+        if (dp->di_dbm == NULL) {
+                 PyErr_SetString(DbmError, "DBM object has already been closed"); 
+                 return -1; 
+        }
         if ( dp->di_size < 0 ) {
 		datum key;
 		int size;
@@ -109,6 +116,7 @@ register PyObject *key;
 	if (!PyArg_Parse(key, "s#", &krec.dptr, &krec.dsize) )
 		return NULL;
 	
+        check_dbmobject_open(dp);
 	drec = dbm_fetch(dp->di_dbm, krec);
 	if ( drec.dptr == 0 ) {
 		PyErr_SetString(PyExc_KeyError,
@@ -135,6 +143,10 @@ PyObject *v, *w;
 				"dbm mappings have string indices only");
 		return -1;
 	}
+        if (dp->di_dbm == NULL) {
+                 PyErr_SetString(DbmError, "DBM object has already been closed"); 
+                 return -1;
+        }
 	dp->di_size = -1;
 	if (w == NULL) {
 		if ( dbm_delete(dp->di_dbm, krec) < 0 ) {
@@ -195,6 +207,7 @@ PyObject *args;
 
 	if (!PyArg_NoArgs(args))
 		return NULL;
+        check_dbmobject_open(dp);
 	v = PyList_New(0);
 	if (v == NULL)
 		return NULL;
@@ -224,6 +237,7 @@ PyObject *args;
 	
 	if (!PyArg_Parse(args, "s#", &key.dptr, &key.dsize))
 		return NULL;
+        check_dbmobject_open(dp);
 	val = dbm_fetch(dp->di_dbm, key);
 	return PyInt_FromLong(val.dptr != NULL);
 }
