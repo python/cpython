@@ -12,6 +12,11 @@ PyObject *
 PySeqIter_New(PyObject *seq)
 {
 	seqiterobject *it;
+
+	if (!PySequence_Check(seq)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}	
 	it = PyObject_GC_New(seqiterobject, &PySeqIter_Type);
 	if (it == NULL)
 		return NULL;
@@ -63,7 +68,7 @@ iter_iternext(PyObject *iterator)
 	it = (seqiterobject *)iterator;
 	seq = it->it_seq;
 
-	if (PyList_Check(seq)) {
+	if (PyList_CheckExact(seq)) {
 		PyObject *item;
 		if (it->it_index >= PyList_GET_SIZE(seq)) {
 			return NULL;
@@ -73,8 +78,19 @@ iter_iternext(PyObject *iterator)
 		Py_INCREF(item);
 		return item;
 	}
+	if (PyTuple_CheckExact(seq)) {
+		PyObject *item;
+		if (it->it_index >= PyTuple_GET_SIZE(seq)) {
+			return NULL;
+		}
+		item = PyTuple_GET_ITEM(seq, it->it_index);
+		it->it_index++;
+		Py_INCREF(item);
+		return item;
+	}
 	else {
-		PyObject *result = PySequence_GetItem(seq, it->it_index++);
+		PyObject *result = PySequence_ITEM(seq, it->it_index);
+		it->it_index++;
 		if (result != NULL) {
 			return result;
 		}
