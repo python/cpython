@@ -705,7 +705,7 @@ get(Picklerobject *self, PyObject *id) {
 
 static int
 put(Picklerobject *self, PyObject *ob) {
-    if (ob->ob_refcnt < 2 || self->fast) 
+    if (ob->ob_refcnt < 2 || self->fast)
         return 0;
 
     return put2(self, ob);
@@ -921,7 +921,7 @@ fast_save_enter(Picklerobject *self, PyObject *obj)
     return 1;
 }
 
-int 
+int
 fast_save_leave(Picklerobject *self, PyObject *obj)
 {
     if (self->fast_container-- >= PY_CPICKLE_FAST_LIMIT) {
@@ -1064,12 +1064,8 @@ save_float(Picklerobject *self, PyObject *args) {
             return -1;
         }
 
-        if (e >= 1024) {
-            /* XXX 1024 itself is reserved for Inf/NaN */
-            PyErr_SetString(PyExc_OverflowError,
-                            "float too large to pack with d format");
-            return -1;
-        }
+        if (e >= 1024)
+	    goto Overflow;
         else if (e < -1022) {
             /* Gradual underflow */
             f = ldexp(f, 1022 + e);
@@ -1083,9 +1079,26 @@ save_float(Picklerobject *self, PyObject *args) {
         /* fhi receives the high 28 bits; flo the low 24 bits (== 52 bits) */
         f *= 268435456.0; /* 2**28 */
         fhi = (long) floor(f); /* Truncate */
+	assert(fhi < 268435456);
+
         f -= (double)fhi;
         f *= 16777216.0; /* 2**24 */
         flo = (long) floor(f + 0.5); /* Round */
+	assert(flo <= 16777216);
+	if (flo >> 24) {
+		/* The carry propagated out of a string of 24 1 bits. */
+		flo = 0;
+		++fhi;
+		if (fhi >> 28) {
+			/* And it also progagated out of the next
+			 * 28 bits.
+			 */
+			fhi = 0;
+			++e;
+			if (e >= 2047)
+				goto Overflow;
+		}
+	}
 
         /* First byte */
         *p = (s<<7) | (e>>4);
@@ -1131,6 +1144,11 @@ save_float(Picklerobject *self, PyObject *args) {
     }
 
     return 0;
+
+ Overflow:
+	PyErr_SetString(PyExc_OverflowError,
+			"float too large to pack with d format");
+	return -1;
 }
 
 
@@ -2103,9 +2121,9 @@ dump(Picklerobject *self, PyObject *args) {
 
 static PyObject *
 Pickle_clear_memo(Picklerobject *self, PyObject *args) {
-    if (!PyArg_ParseTuple(args,":clear_memo")) 
+    if (!PyArg_ParseTuple(args,":clear_memo"))
 	return NULL;
-    if (self->memo) 
+    if (self->memo)
 	PyDict_Clear(self->memo);
     Py_INCREF(Py_None);
     return Py_None;
@@ -2120,7 +2138,7 @@ Pickle_getvalue(Picklerobject *self, PyObject *args) {
   Pdata *data;
 
   /* Can be called by Python code or C code */
-  if (args && !PyArg_ParseTuple(args, "|i:getvalue", &clear)) 
+  if (args && !PyArg_ParseTuple(args, "|i:getvalue", &clear))
       return NULL;
 
   /* Check to make sure we are based on a list */
@@ -2482,7 +2500,7 @@ static PyMemberDef Pickler_members[] = {
 };
 
 static PyGetSetDef Pickler_getsets[] = {
-    {"persistent_id", (getter)Pickler_get_pers_func, 
+    {"persistent_id", (getter)Pickler_get_pers_func,
                      (setter)Pickler_set_pers_func},
     {"inst_persistent_id", NULL, (setter)Pickler_set_inst_pers_func},
     {"memo", (getter)Pickler_get_memo, (setter)Pickler_set_memo},

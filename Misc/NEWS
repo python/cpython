@@ -2,6 +2,14 @@ What's New in Python 2.2.3 ?
 Release date: XX-XXX-2003
 ============================
 
+- SF #705836: The platform-independent routines for packing floats in
+  IEEE formats (struct.pack's <f, >f, <d, and >d codes; pickle and
+  cPickle's protocol 1 pickling of floats) ignored that rounding can
+  cause a carry to propagate.  The worst consequence was that, in rare
+  cases, <f and >f could produce strings that, when unpacked again,
+  were a factor of 2 away from the original float.  This has been
+  fixed.
+
 - Backported SF patch #676342: after using pdb, the readline command
   completion was botched.
 
@@ -31,7 +39,7 @@ Release date: XX-XXX-2003
   value, but according to PEP 237 it really needs to be 1 in Python
   2.2.3 and 2.3.  (SF #660455)
 
-- SF bug #678518:  fix some bugs in the parser module.  
+- SF bug #678518:  fix some bugs in the parser module.
 
 - Bastion.py and rexec.py are disabled.  These modules are not safe in
   Python 2.2. or 2.3.
@@ -103,7 +111,7 @@ Release date: XX-XXX-2003
 
 - SF #570655, fix misleading option text for bdist_rpm
 
-- Distutils: Allow unknown keyword arguments to the setup() function 
+- Distutils: Allow unknown keyword arguments to the setup() function
   and the Extension constructor, printing a warning about them instead
   of reporting an error and stopping.
 
@@ -419,7 +427,7 @@ Library
     gauss() may see different results now.
 
   - The randint() method is rehabilitated (i.e. no longer deprecated).
-  
+
 -  In copy.py: when an object is copied through its __reduce__ method,
    there was no check for a __setstate__ method on the result [SF
    patch 565085]; deepcopy should treat instances of custom
