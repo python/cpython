@@ -253,6 +253,11 @@ class PimpInterface:
 			rv = "Cannot open %s: %s\n" % (url, arg)
 			rv += "\nSee MacPython Package Manager help page."
 			return rv
+		except:
+			rv = "Unspecified error while parsing database: %s\n" % url
+			rv += "Usually, this means the database is not correctly formatted.\n"
+			rv += "\nSee MacPython Package Manager help page."
+			return rv
 		# Check whether we can write the installation directory.
 		# If not, set to the per-user directory, possibly
 		# creating it, if needed.
