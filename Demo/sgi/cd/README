@@ -1,6 +1,9 @@
 These are some programs to work with the SCSI CD-ROM player's audio
 interface (see cdaudio(3) in IRIX 4.0 or higher; tested only on 4.0.2).
 
+See also the SGI-specific standard module 'readcd', documented as
+"readcd.lib" in the library.
+
 cdwin.py	A trivial window interface to play a CD over the CD
 		player's audio jack.  More functionality is left as an
 		excersice to the reader.  Needs module stdwin.
@@ -20,9 +23,6 @@ recvcd.py	Receive UDP packets containing CD audio data (from
 		actually use module cd.)
 
 cdaiff.py	Dump CD audio to disk in AIFF format.
-
-readcd.py	Utility module to make it easy to specify play lists
-		for a CD player (used by cdaiff.py).
 
 Note that to read *data* CD-ROMs you must open /dev/rdsk/dks0d4s7 or
 some such special file...
