@@ -153,6 +153,7 @@ AC_SUBST(MAINOBJ)
 MAINOBJ=python.o
 AC_MSG_CHECKING(for --with-cxx=<compiler>)
 AC_ARG_WITH(cxx, [  --with-cxx=<compiler>           enable C++ support],[
+	check_cxx=no
 	case $withval in
 	no)	CXX=
 		with_cxx=no;;
@@ -161,9 +162,28 @@ AC_ARG_WITH(cxx, [  --with-cxx=<compiler>           enable C++ support],[
 		with_cxx=$withval;;
 	esac], [
 	with_cxx=no
+	check_cxx=yes
 ])
 AC_MSG_RESULT($with_cxx)
+
+dnl The following fragment works similar to AC_PROG_CXX.
+dnl It does not fail if CXX is not found, and it is not executed if 
+dnl --with-cxx was given.
+dnl Finally, it does not test whether CXX is g++.
+
+if test "$check_cxx" = "yes" 
+then
+	AC_CHECK_PROGS(CXX, $CCC c++ g++ gcc CC cxx cc++ cl, notfound)
+	if test "$CXX" = "notfound"
+	then
+		CXX=
+	else
+		AC_PROG_CXX_WORKS
+	fi
+fi
+
 SET_CXX="CXX=$CXX"
+
 
 #AC_MSG_CHECKING(CCC)
 #if test -z "$CCC"
