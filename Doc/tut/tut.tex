@@ -733,6 +733,107 @@ The built-in function \function{len()} returns the length of a string:
 34
 \end{verbatim}
 
+
+\subsection{Unicode Strings \label{unicodeStrings}}
+\sectionauthor{Marc-Andre Lemburg}{mal@lemburg.com}
+
+Starting with Python 1.6 a new data type for storing text data is
+available to the programmer: the Unicode object. It can be used to
+store and manipulate Unicode data (see \url{http://www.unicode.org})
+and intergrates well with the existing string objects providing
+auto-conversions where necessary.
+
+Unicode has the advantage of providing one ordinal for every character
+in every script used in modern and ancient texts. Previously, there
+were only 256 possible ordinals for script characters and texts were
+typically bound to a code page which mapped the ordinals to script
+characters. This lead to very much confusion especially with respect
+to internalization (usually written as \samp{i18n} --- \character{i} +
+18 characters + \character{n}) of software. Unicode solves these
+problems by defining one code page for all scripts.
+
+Creating Unicode strings in Python is just as simple as creating
+normal strings:
+
+\begin{verbatim}
+>>> u'Hello World !'
+u'Hello World !'
+\end{verbatim}
+
+The small \character{u} in front of the quote indicates that an
+Unicode string is supposed to be created. If you want to include
+special characters in the string, you can do so by using the Python
+\emph{Unicode-Escape} encoding. The following example shows how:
+
+\begin{verbatim}
+>>> u'Hello\\u0020World !'
+u'Hello World !'
+\end{verbatim}
+
+The escape sequence \code{\\u0020} indicates to insert the Unicode
+character with the HEX ordinal 0x0020 (the space character) at the
+given position.
+
+Other characters are interpreted by using their respective ordinal
+value directly as Unicode ordinal. Due to the fact that the lower 256
+Unicode are the same as the standard Latin-1 encoding used in many
+western countries, the process of entering Unicode is greatly
+simplified.
+
+For experts, there is also a raw mode just like for normal
+strings. You have to prepend the string with a small 'r' to have
+Python use the \emph{Raw-Unicode-Escape} encoding. It will only apply
+the above \code{\\uXXXX} conversion if there is an uneven number of
+backslashes in front of the small 'u'.
+
+\begin{verbatim}
+>>> ur'Hello\u0020World !'
+u'Hello World !'
+>>> ur'Hello\\u0020World !'
+u'Hello\\\\u0020World !'
+\end{verbatim}
+
+The raw mode is most useful when you have to enter lots of backslashes
+e.g. in regular expressions.
+
+Apart from these standard encodings, Python provides a whole set of
+other ways of creating Unicod strings on the basis of a known
+encoding. 
+
+The builtin \function{unicode()}\bifuncindex{unicode} provides access
+to all registered Unicode codecs (COders and DECoders). Some of the
+more well known encodings which these codecs can convert are
+\emph{Latin-1}, \emph{ASCII}, \emph{UTF-8} and \emph{UTF-16}. The latter two
+are variable length encodings which permit to store Unicode characters
+in 8 or 16 bits. Python uses UTF-8 as default encoding. This becomes
+noticable when printing Unicode strings or writing them to files.
+
+\begin{verbatim}
+>>> u"הצü"
+u'\344\366\374'
+>>> str(u"הצü")
+'\303\244\303\266\303\274'
+\end{verbatim}
+
+If you have data in a specific encoding and want to produce a
+corresponding Unicode string from it, you can use the
+\function{unicode()} builtin with the encoding name as second
+argument.
+
+\begin{verbatim}
+>>> unicode('\303\244\303\266\303\274','UTF-8')
+u'\344\366\374'
+\end{verbatim}
+
+To convert the Unicode string back into a string using the original
+encoding, the objects provide an \method{encode()} method.
+
+\begin{verbatim}
+>>> u"הצü".encode('UTF-8')
+'\303\244\303\266\303\274'
+\end{verbatim}
+
+
 \subsection{Lists \label{lists}}
 
 Python knows a number of \emph{compound} data types, used to group
