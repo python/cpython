@@ -808,6 +808,7 @@ sub do_cmd_production{
 sub do_cmd_productioncont{
     local($_) = @_;
     my $defn = next_argument();
+    $defn =~ s/^( +)/'&nbsp;' x length $1/e;
     return ("<tr valign=\"baseline\">\n"
             . "    <td>&nbsp;</td>\n"
             . "    <td>&nbsp;</td>\n"
@@ -911,6 +912,8 @@ sub cfuncline_helper($$$){
         "<tt class=\"cfunction\">$name()</tt>" . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;		# ???? - why both of these?
+    $args =~ s/(\s|\*)([a-z_][a-z_0-9]*),/\1<var>\2<\/var>,/g;
+    $args =~ s/(\s|\*)([a-z_][a-z_0-9]*)$/\1<var>\2<\/var>/s;
     return "$type <b>$idx</b>(<var>$args</var>)";
 }
 sub do_cmd_cfuncline{
