@@ -45,9 +45,12 @@ allowed to postpone garbage collection or omit it altogether --- it is
 a matter of implementation quality how garbage collection is
 implemented, as long as no objects are collected that are still
 reachable.  (Implementation note: the current implementation uses a
-reference-counting scheme which collects most objects as soon as they
-become unreachable, but never collects garbage containing circular
-references.)
+reference-counting scheme with (optional) delayed detection of
+cyclicly linked garbage, which collects most objects as soon as they
+become unreachable, but is not guaranteed to collect garbage
+containing circular references.  See the
+\citetitle[../lib/module-gc.html]{Python Library Reference} for
+information on controlling the collection of cyclic garbage.)
 \index{garbage collection}
 \index{reference counting}
 \index{unreachable object}
