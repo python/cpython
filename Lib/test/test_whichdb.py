@@ -45,7 +45,12 @@ for name in anydbm._names:
     def test_whichdb_name(self, name=name, mod=mod):
         # Check whether whichdb correctly guesses module name
         # for databases opened with module mod.
+        # Try with empty files first
         f = mod.open(_fname, 'c')
+        f.close()
+        self.assertEqual(name, whichdb.whichdb(_fname))
+        # Now add a key
+        f = mod.open(_fname, 'w')
         f["1"] = "1"
         f.close()
         self.assertEqual(name, whichdb.whichdb(_fname))
