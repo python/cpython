@@ -517,6 +517,11 @@ Core and builtins
 Extension modules
 -----------------
 
+- Added three operators to the operator module:
+    operator.pow(a,b) which is equivalent to:  a**b.
+    operator.is_(a,b) which is equivalent to:  a is b.
+    operator.is_not(a,b) which is equivalent to:  a is not b.
+
 - posix.openpty now works on all systems that have /dev/ptmx.
 
 - A module zipimport exists to support importing code from zip
@@ -732,8 +737,6 @@ Library
   also a class ImmutableSet which is useful when you need sets of sets
   or when you need to use sets as dict keys, and a class BaseSet which
   is the base class of the two.
-
-- Added operator.pow(a,b) which is equivalent to a**b.
 
 - Added random.sample(population,k) for random sampling without replacement.
   Returns a k length list of unique elements chosen from the population.

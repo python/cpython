@@ -215,6 +215,17 @@ class OperatorTestCase(unittest.TestCase):
     def test_bitwise_xor(self):
         self.failUnless(operator.xor(0xb, 0xc) == 0x7)
 
+    def test_is(self):
+        a = b = 'xyzpdq'
+        c = a[:3] + b[3:]
+        self.failUnless(operator.is_(a, b))
+        self.failIf(operator.is_(a,c))
+
+    def test_is_not(self):
+        a = b = 'xyzpdq'
+        c = a[:3] + b[3:]
+        self.failIf(operator.is_not(a, b))
+        self.failUnless(operator.is_not(a,c))
 
 def test_main():
     test_support.run_unittest(OperatorTestCase)
