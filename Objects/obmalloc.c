@@ -112,7 +112,6 @@
  *
  * You shouldn't change this unless you know what you are doing.
  */
-
 #define ALIGNMENT		8		/* must be 2^N */
 #define ALIGNMENT_SHIFT		3
 #define ALIGNMENT_MASK		(ALIGNMENT - 1)
@@ -124,25 +123,12 @@
  *
  * The following invariants must hold:
  *	1) ALIGNMENT <= SMALL_REQUEST_THRESHOLD <= 256
- *	2) SMALL_REQUEST_THRESHOLD == N * ALIGNMENT
+ *	2) SMALL_REQUEST_THRESHOLD is evenly divisible by ALIGNMENT
  *
  * Although not required, for better performance and space efficiency,
  * it is recommended that SMALL_REQUEST_THRESHOLD is set to a power of 2.
  */
-
-/*
- * For Python compiled on systems with 32 bit pointers and integers,
- * a value of 64 (= 8 * 8) is a reasonable speed/space tradeoff for
- * the object allocator. To adjust automatically this threshold for
- * systems with 64 bit pointers, we make this setting depend on a
- * Python-specific slot size unit = sizeof(long) + sizeof(void *),
- * which is expected to be 8, 12 or 16 bytes.
- */
-
-#define _PYOBJECT_THRESHOLD	((SIZEOF_LONG + SIZEOF_VOID_P) * ALIGNMENT)
-
-#define SMALL_REQUEST_THRESHOLD	_PYOBJECT_THRESHOLD /* must be N * ALIGNMENT */
-
+#define SMALL_REQUEST_THRESHOLD	256
 #define NB_SMALL_SIZE_CLASSES	(SMALL_REQUEST_THRESHOLD / ALIGNMENT)
 
 /*
@@ -152,14 +138,12 @@
  * It is probably better if this is the native page size, but it doesn't
  * have to be.
  */
-
 #define SYSTEM_PAGE_SIZE	(4 * 1024)
 #define SYSTEM_PAGE_SIZE_MASK	(SYSTEM_PAGE_SIZE - 1)
 
 /*
  * Maximum amount of memory managed by the allocator for small requests.
  */
-
 #ifdef WITH_MEMORY_LIMITS
 #ifndef SMALL_MEMORY_LIMIT
 #define SMALL_MEMORY_LIMIT	(64 * 1024 * 1024)	/* 64 MB -- more? */
@@ -177,10 +161,14 @@
  *
  * Therefore, allocating arenas with malloc is not optimal, because there is
  * some address space wastage, but this is the most portable way to request
- * memory from the system accross various platforms.
+ * memory from the system across various platforms.
  */
 
-#define ARENA_SIZE		(256 * 1024 - SYSTEM_PAGE_SIZE)	/* 256k - 1p */
+/* ALLOCATED_ARENA_SIZE is passed to malloc; after alignment, we can't
+ * count on more than ARENA_SIZE bytes being usable for pools.
+ */
+#define ALLOCATED_ARENA_SIZE	(256 << 10)	/* 256KB */
+#define ARENA_SIZE		(ALLOCATED_ARENA_SIZE - SYSTEM_PAGE_SIZE)
 
 #ifdef WITH_MEMORY_LIMITS
 #define MAX_ARENAS		(SMALL_MEMORY_LIMIT / ARENA_SIZE)
@@ -190,13 +178,9 @@
  * Size of the pools used for small blocks. Should be a power of 2,
  * between 1K and SYSTEM_PAGE_SIZE, that is: 1k, 2k, 4k, eventually 8k.
  */
-
 #define POOL_SIZE		SYSTEM_PAGE_SIZE	/* must be 2^N */
 #define POOL_SIZE_MASK		SYSTEM_PAGE_SIZE_MASK
-#define POOL_MAGIC		0x74D3A651		/* authentication id */
-
 #define ARENA_NB_POOLS		(ARENA_SIZE / POOL_SIZE)
-#define ARENA_NB_PAGES		(ARENA_SIZE / SYSTEM_PAGE_SIZE)
 
 /*
  * -- End of tunable settings section --
@@ -232,7 +216,6 @@
  * Basic types
  * I don't care if these are defined in <sys/types.h> or elsewhere. Axiom.
  */
-
 #undef  uchar
 #define uchar			unsigned char	/* assuming == 8 bits  */
 
@@ -248,6 +231,9 @@
 #undef  off_t
 #define off_t 			uint	/* 16 bits <= off_t <= 64 bits */
 
+#undef uptr
+#define uptr			Py_uintptr_t
+
 /* When you say memory, my mind reasons in terms of (pointers to) blocks */
 typedef uchar block;
 
@@ -258,8 +244,7 @@ struct pool_header {
 	block *freeblock;		/* pool's free list head         */
 	struct pool_header *nextpool;	/* next pool of this size class  */
 	struct pool_header *prevpool;	/* previous pool       ""        */
-	struct pool_header *pooladdr;	/* pool address (always aligned) */
-	uint magic;			/* pool magic number		 */
+	ulong arenaindex;		/* index into arenas of base adr */
 	uint szidx;			/* block size class index	 */
 	uint capacity;			/* pool capacity in # of blocks  */
 };
@@ -271,6 +256,10 @@ typedef struct pool_header *poolp;
 #define POOL_OVERHEAD		ROUNDUP(sizeof(struct pool_header))
 
 #define DUMMY_SIZE_IDX		0xffff	/* size class of newly cached pools */
+
+/* Round pointer P down to the closest pool-aligned address <= P, as a poolp */
+#define POOL_ADDR(P)	\
+	((poolp)((uptr)(P) & ~(uptr)POOL_SIZE_MASK))
 
 /*==========================================================================*/
 
@@ -319,16 +308,138 @@ static poolp usedpools[2 * ((NB_SMALL_SIZE_CLASSES + 7) / 8) * 8] = {
  */
 static poolp freepools = NULL;		/* free list for cached pools */
 
-/*
- * Arenas
- */
-static uint arenacnt = 0;		/* number of allocated arenas */
-static uint watermark = ARENA_NB_POOLS;	/* number of pools allocated from
-					   the current arena */
-static block *arenalist = NULL;		/* list of allocated arenas */
-static block *arenabase = NULL;		/* free space start address in
-					   current arena */
+/*==========================================================================*/
+/* Arena management. */
 
+/* arenas is a vector of arena base addresses, in order of allocation time.
+ * arenas currently contains narenas entries, and has space allocated
+ * for at most maxarenas entries.
+ *
+ * CAUTION:  See the long comment block about thread safety in new_arena():
+ * the code currently relies in deep ways on that this vector only grows,
+ * and only grows by appending at the end.  For now we never return an arena
+ * to the OS.
+ */
+static uptr *arenas = NULL;
+static ulong narenas = 0;
+static ulong maxarenas = 0;
+
+/* Number of pools already allocated from the current arena.  This is
+ * initialized to the max # of pools to provoke the first allocation request
+ * into allocating a new arena.
+ */
+static uint watermark = ARENA_NB_POOLS;
+
+/* Free space start address in current arena. */
+static block *arenabase = NULL;
+
+#if 0
+static ulong wasmine = 0;
+static ulong wasntmine = 0;
+
+static void
+dumpem(void *ptr)
+{
+	if (ptr)
+		printf("inserted new arena at %08x\n", ptr);
+	printf("# arenas %d\n", narenas);
+	printf("was mine %lu wasn't mine %lu\n", wasmine, wasntmine);
+}
+#define INCMINE ++wasmine
+#define INCTHEIRS ++wasntmine
+
+#else
+#define dumpem(ptr)
+#define INCMINE
+#define INCTHEIRS
+#endif
+
+/* Allocate a new arena and return its base address.  If we run out of
+ * memory, return NULL.
+ */
+static block *
+new_arena(void)
+{
+	block *bp = (block *)PyMem_MALLOC(ALLOCATED_ARENA_SIZE);
+	if (bp == NULL)
+		return NULL;
+
+	watermark = 0;
+	/* Page-round up */
+	arenabase = bp + (SYSTEM_PAGE_SIZE -
+			  ((off_t )bp & SYSTEM_PAGE_SIZE_MASK));
+
+	/* Make room for a new entry in the arenas vector. */
+	if (arenas == NULL) {
+		arenas = (uptr *)PyMem_MALLOC(16 * sizeof(*arenas));
+		if (arenas == NULL)
+			goto error;
+		maxarenas = 16;
+		narenas = 0;
+	}
+	else if (narenas == maxarenas) {
+		/* Grow arenas.  Don't use realloc:  if this fails, we
+		 * don't want to lose the base addresses we already have.
+		 * Exceedingly subtle:  Someone may be calling the pymalloc
+		 * free via PyMem_{DEL, Del, FREE, Free} without holding the
+		 *.GIL.  Someone else may simultaneously be calling the
+		 * pymalloc malloc while holding the GIL via, e.g.,
+		 * PyObject_New.  Now the pymalloc free may index into arenas
+		 * for an address check, while the pymalloc malloc calls
+		 * new_arena and we end up here to grow a new arena *and*
+		 * grow the arenas vector.  If the value for arenas pymalloc
+		 * free picks up "vanishes" during this resize, anything may
+		 * happen, and it would be an incredibly rare bug.  Therefore
+		 * the code here takes great pains to make sure that, at every
+		 * moment, arenas always points to an intact vector of
+		 * addresses.  It doesn't matter whether arenas points to a
+		 * wholly up-to-date vector when pymalloc free checks it in
+		 * this case, because the only legal (and that even this is
+		 * legal is debatable) way to call PyMem_{Del, etc} while not
+		 * holding the GIL is if the memory being released is not
+		 * object memory, i.e. if the address check in pymalloc free
+		 * is supposed to fail.  Having an incomplete vector can't
+		 * make a supposed-to-fail case succeed by mistake (it could
+		 * only make a supposed-to-succeed case fail by mistake).
+		 * Read the above 50 times before changing anything in this
+		 * block.
+		 */
+		uptr *oldarenas;
+		int newmax = maxarenas + (maxarenas >> 1);
+		uptr *p = (uptr *)PyMem_MALLOC(newmax * sizeof(*arenas));
+		if (p == NULL)
+			goto error;
+		memcpy(p, arenas, narenas * sizeof(*arenas));
+		oldarenas = arenas;
+		arenas = p;
+		PyMem_FREE(oldarenas);
+		maxarenas = newmax;
+	}
+
+	/* Append the new arena address to arenas. */
+	assert(narenas < maxarenas);
+	arenas[narenas] = (uptr)bp;
+	++narenas;
+	dumpem(bp);
+	return bp;
+
+error:
+	PyMem_FREE(bp);
+	return NULL;
+}
+
+/* Return true if and only if P is an address that was allocated by
+ * pymalloc.  I must be the index into arenas that the address claims
+ * to come from.
+ * Tricky:  Letting B be the arena base address in arenas[I], P belongs to the
+ * arena if and only if
+ *	B <= P < B + ALLOCATED_ARENA_SIZE
+ * Subtracting B throughout, this is true iff
+ *	0 <= P-B < ALLOCATED_ARENA_SIZE
+ * By using unsigned arithmetic, the "0 <=" half of the test can be skipped.
+ */
+#define ADDRESS_IN_RANGE(P, I) \
+	((I) < narenas && (uptr)(P) - arenas[I] < (uptr)ALLOCATED_ARENA_SIZE)
 /*==========================================================================*/
 
 /* malloc */
@@ -449,8 +560,7 @@ _PyMalloc_Malloc(size_t nbytes)
 			watermark++;
 			pool = (poolp )arenabase;
 			arenabase += POOL_SIZE;
-			pool->pooladdr = pool;
-			pool->magic = (uint )POOL_MAGIC;
+			pool->arenaindex = narenas - 1;
 			pool->szidx = DUMMY_SIZE_IDX;
 			goto init_pool;
 		}
@@ -458,40 +568,21 @@ _PyMalloc_Malloc(size_t nbytes)
                  * Allocate new arena
                  */
 #ifdef WITH_MEMORY_LIMITS
-		if (!(arenacnt < MAX_ARENAS)) {
+		if (!(narenas < MAX_ARENAS)) {
 			UNLOCK();
 			goto redirect;
 		}
 #endif
-		/*
-		 * With malloc, we can't avoid loosing one page address space
-		 * per arena due to the required alignment on page boundaries.
-		 */
-		bp = (block *)PyMem_MALLOC(ARENA_SIZE + SYSTEM_PAGE_SIZE);
-		if (bp == NULL) {
-			UNLOCK();
-			goto redirect;
-		}
-		/*
-		 * Keep a reference in the list of allocated arenas. We might
-		 * want to release (some of) them in the future. The first
-		 * word is never used, no matter whether the returned address
-		 * is page-aligned or not, so we safely store a pointer in it.
-		 */
-		*(block **)bp = arenalist;
-		arenalist = bp;
-		arenacnt++;
-		watermark = 0;
-		/* Page-round up */
-		arenabase = bp + (SYSTEM_PAGE_SIZE -
-				  ((off_t )bp & SYSTEM_PAGE_SIZE_MASK));
-		goto commit_pool;
+		bp = new_arena();
+		if (bp != NULL)
+			goto commit_pool;
+		UNLOCK();
+		goto redirect;
 	}
 
         /* The small block allocator ends here. */
 
-	redirect:
-
+redirect:
 	/*
 	 * Redirect the original request to the underlying (libc) allocator.
 	 * We jump here on bigger requests, on error in the code above (as a
@@ -509,68 +600,69 @@ _PyMalloc_Free(void *p)
 	poolp pool;
 	poolp next, prev;
 	uint size;
-	off_t offset;
 
 	if (p == NULL)	/* free(NULL) has no effect */
 		return;
 
-	offset = (off_t )p & POOL_SIZE_MASK;
-	pool = (poolp )((block *)p - offset);
-	if (pool->pooladdr != pool || pool->magic != (uint )POOL_MAGIC) {
-		PyMem_FREE(p);
+	pool = POOL_ADDR(p);
+	if (ADDRESS_IN_RANGE(p, pool->arenaindex)) {
+		/* We allocated this address. */
+		INCMINE;
+		LOCK();
+		/*
+		 * At this point, the pool is not empty
+		 */
+		if ((*(block **)p = pool->freeblock) == NULL) {
+			/*
+			 * Pool was full
+			 */
+			pool->freeblock = (block *)p;
+			--pool->ref.count;
+			/*
+			 * Frontlink to used pools
+			 * This mimics LRU pool usage for new allocations and
+			 * targets optimal filling when several pools contain
+			 * blocks of the same size class.
+			 */
+			size = pool->szidx;
+			next = usedpools[size + size];
+			prev = next->prevpool;
+			pool->nextpool = next;
+			pool->prevpool = prev;
+			next->prevpool = pool;
+			prev->nextpool = pool;
+			UNLOCK();
+			return;
+		}
+		/*
+		 * Pool was not full
+		 */
+		pool->freeblock = (block *)p;
+		if (--pool->ref.count != 0) {
+			UNLOCK();
+			return;
+		}
+		/*
+		 * Pool is now empty, unlink from used pools
+		 */
+		next = pool->nextpool;
+		prev = pool->prevpool;
+		next->prevpool = prev;
+		prev->nextpool = next;
+		/*
+		 * Frontlink to free pools
+		 * This ensures that previously freed pools will be allocated
+		 * later (being not referenced, they are perhaps paged out).
+		 */
+		pool->nextpool = freepools;
+		freepools = pool;
+		UNLOCK();
 		return;
 	}
 
-	LOCK();
-	/*
-	 * At this point, the pool is not empty
-	 */
-	if ((*(block **)p = pool->freeblock) == NULL) {
-		/*
-		 * Pool was full
-		 */
-		pool->freeblock = (block *)p;
-		--pool->ref.count;
-		/*
-		 * Frontlink to used pools
-		 * This mimics LRU pool usage for new allocations and
-		 * targets optimal filling when several pools contain
-		 * blocks of the same size class.
-		 */
-		size = pool->szidx;
-		next = usedpools[size + size];
-		prev = next->prevpool;
-		pool->nextpool = next;
-		pool->prevpool = prev;
-		next->prevpool = pool;
-		prev->nextpool = pool;
-		UNLOCK();
-		return;
-	}
-	/*
-	 * Pool was not full
-	 */
-	pool->freeblock = (block *)p;
-	if (--pool->ref.count != 0) {
-		UNLOCK();
-		return;
-	}
-	/*
-	 * Pool is now empty, unlink from used pools
-	 */
-	next = pool->nextpool;
-	prev = pool->prevpool;
-	next->prevpool = prev;
-	prev->nextpool = next;
-	/*
-	 * Frontlink to free pools
-	 * This ensures that previously freed pools will be allocated
-	 * later (being not referenced, they are perhaps paged out).
-	 */
-	pool->nextpool = freepools;
-	freepools = pool;
-	UNLOCK();
-	return;
+	/* We did not allocate this address. */
+	INCTHEIRS;
+	PyMem_FREE(p);
 }
 
 /* realloc */
@@ -586,22 +678,16 @@ _PyMalloc_Realloc(void *p, size_t nbytes)
 		return _PyMalloc_Malloc(nbytes);
 
 	/* realloc(p, 0) on big blocks is redirected. */
-	pool = (poolp )((block *)p - ((off_t )p & POOL_SIZE_MASK));
-	if (pool->pooladdr != pool || pool->magic != (uint )POOL_MAGIC) {
-		/* We haven't allocated this block */
-		if (!(nbytes > SMALL_REQUEST_THRESHOLD) && nbytes) {
-			/* small request */
-			size = nbytes;
-			goto malloc_copy_free;
-		}
-		bp = (block *)PyMem_REALLOC(p, nbytes);
-	}
-	else {
+	pool = POOL_ADDR(p);
+	if (ADDRESS_IN_RANGE(p, pool->arenaindex)) {
 		/* We're in charge of this block */
+		INCMINE;
 		size = (pool->szidx + 1) << ALIGNMENT_SHIFT; /* block size */
 		if (size >= nbytes) {
 			/* Don't bother if a smaller size was requested
 			   except for realloc(p, 0) == free(p), ret NULL */
+			/* XXX but Python guarantees that *its* flavor of
+			   resize(p, 0) will not do a free or return NULL */
 			if (nbytes == 0) {
 				_PyMalloc_Free(p);
 				bp = NULL;
@@ -610,15 +696,27 @@ _PyMalloc_Realloc(void *p, size_t nbytes)
 				bp = (block *)p;
 		}
 		else {
-
-		malloc_copy_free:
-
 			bp = (block *)_PyMalloc_Malloc(nbytes);
 			if (bp != NULL) {
 				memcpy(bp, p, size);
 				_PyMalloc_Free(p);
 			}
 		}
+	}
+	else {
+		/* We haven't allocated this block */
+		INCTHEIRS;
+		if (nbytes <= SMALL_REQUEST_THRESHOLD && nbytes) {
+			/* small request */
+			size = nbytes;
+			bp = (block *)_PyMalloc_Malloc(nbytes);
+			if (bp != NULL) {
+				memcpy(bp, p, size);
+				_PyMalloc_Free(p);
+			}
+		}
+		else
+			bp = (block *)PyMem_REALLOC(p, nbytes);
 	}
 	return (void *)bp;
 }
