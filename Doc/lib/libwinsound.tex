@@ -21,12 +21,12 @@ two functions and several constants.
   through \code{0x7fff}).  The \var{duration} parameter specifies the
   number of milliseconds the sound should last.  If the system is not
   able to beep the speaker, \exception{RuntimeError} is raised.
-  Note:  this function works as documented above only on Windows NT and
-  Windows 2000.  Under Windows 95 and 98, the arguments are ignored;
+  \strong{Note:}  Under Windows 95 and 98, the arguments are ignored;
   if the system has a sound card, the system default sound is played
-  (typically ding.wav, or whatever is registered as the default sound via
-  Control Panel -> Sounds); else (no sound card) the standard system beep.
-  \versionadded{1.5.3} % XXX fix this version number when release is scheduled!
+  (typically \file{ding.wav}, or whatever is registered as the default
+  sound via Control Panel -> Sounds); else (no sound card) the
+  standard system beep.
+  \versionadded{1.6}
 \end{funcdesc}
 
 \begin{funcdesc}{PlaySound}{sound, flags}
