@@ -89,6 +89,84 @@ Greg Wilson and ultimately implemented by Raymond Hettinger.}
 XXX write this.
 
 %======================================================================
+\section{PEP 229: Generator Expressions}
+
+Generator expressions create in-line generators using a syntax similar
+to list comprehensions but with parenthesis instead of the surrounding
+brackets.
+
+Genexps allow simple generators to be constructed without a separate function
+definition.  Writing:
+       
+\begin{verbatim}
+       g = (tgtexp  for var1 in exp1  for var2 in exp2 if exp3)
+\end{verbatim}
+       
+is equivalent to:
+
+\begin{verbatim}
+    def _generator(exp):
+        for var1 in exp:
+            for var2 in exp2:
+                if exp3:
+                    yield tgtexp
+    g = _generator(exp1)
+    del _generator
+\end{verbatim}
+
+The advantage over full generator definitions is in economy of
+expression.  Their advantage over list comprehensions is in saving
+memory by creating data only when it is needed rather than forming
+a whole list is memory all at once.  Applications using memory
+friendly generator expressions may scale-up to high volumes of data
+more readily than with list comprehensions.
+
+Generator expressions are intended to be used inside functions
+such as \function{sum()}, \function{min()}, \function{set()}, and
+\function{dict()}.  These functions consume their data all at once
+and would not benefit from having a full list instead of a generator
+an input:
+
+\begin{verbatim}
+>>> sum(i*i for i in range(10))
+285
+
+>>> sorted(set(i*i for i in xrange(-10, 11)))
+[0, 1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+
+>>> words = "Adam apple baker Bill Nancy NASA nut".split()
+>>> dict((word.lower(), word) for word in words)
+{'apple': 'apple', 'baker': 'baker', 'bill': 'Bill', 'nasa': 'NASA',
+ 'adam': 'Adam', 'nancy': 'Nancy', 'nut': 'nut'}
+
+>>> xvec = [10, 20, 30]
+>>> yvec = [7, 5, 3]
+>>> sum(x*y for x,y in itertools.izip(xvec, yvec))     # dot product
+260
+
+\end{verbatim}     
+
+These examples show the intended use for generator expressions
+in situations where the values get consumed immediately after the
+generator is created.  In these situations, they operate like
+memory efficient versions of list comprehensions.
+
+For more complex uses of generators, it is strongly recommended that
+the traditional full generator definitions be used instead.  In a
+generator expression, the first for-loop expression is evaluated
+as soon as the expression is defined while the other expressions do
+not get evaluated until the generator is run.  This nuance is never
+an issue when the generator is used immediately.  If it is not used
+right away, then it is better to write a full generator definition
+which more clearly reveals when the expressions are evaluated and is
+more obvious about the visibility and lifetime of its looping variables.
+
+\begin{seealso}
+\seepep{289}{Generator Expressions}{Proposed by Raymond Hettinger and
+implemented by Jiwon Seo with early efforts steered by Hye-Shik Chang.}
+\end{seealso}
+
+%======================================================================
 \section{PEP 322: Reverse Iteration}
 
 A new built-in function, \function{reversed(\var{seq})}, takes a sequence

@@ -566,7 +566,7 @@ def test_main(verbose=None):
 
     # doctests
     from test import test_deque
-#    test_support.run_doctest(test_deque, verbose)
+    test_support.run_doctest(test_deque, verbose)
 
 if __name__ == "__main__":
     test_main(verbose=True)

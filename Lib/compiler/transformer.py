@@ -534,6 +534,12 @@ class Transformer:
     testlist1 = testlist
     exprlist = testlist
 
+    def testlist_gexp(self, nodelist):
+        if len(nodelist) == 2 and nodelist[1][0] == symbol.gen_for:
+            test = self.com_node(nodelist[0])
+            return self.com_generator_expression(test, nodelist[1])
+        return self.testlist(nodelist)
+
     def test(self, nodelist):
         # and_test ('or' and_test)* | lambdef
         if len(nodelist) == 1 and nodelist[0][0] == symbol.lambdef:
@@ -1085,6 +1091,48 @@ class Transformer:
                 values.append(self.com_node(nodelist[i]))
             return List(values)
 
+    if hasattr(symbol, 'gen_for'):
+        def com_generator_expression(self, expr, node):
+            # gen_iter: gen_for | gen_if
+            # gen_for: 'for' exprlist 'in' test [gen_iter]
+            # gen_if: 'if' test [gen_iter]
+
+            lineno = node[1][2]
+            fors = []
+            while node:
+                t = node[1][1]
+                if t == 'for':
+                    assignNode = self.com_assign(node[2], OP_ASSIGN)
+                    genNode = self.com_node(node[4])
+                    newfor = GenExprFor(assignNode, genNode, [])
+                    newfor.lineno = node[1][2]
+                    fors.append(newfor)
+                    if (len(node)) == 5:
+                        node = None
+                    else:
+                        node = self.com_gen_iter(node[5])
+                elif t == 'if':
+                    test = self.com_node(node[2])
+                    newif = GenExprIf(test)
+                    newif.lineno = node[1][2]
+                    newfor.ifs.append(newif)
+                    if len(node) == 3:
+                        node = None
+                    else:
+                        node = self.com_gen_iter(node[3])
+                else:
+                    raise SyntaxError, \
+                            ("unexpected generator expression element: %s %d"
+                             % (node, lineno))
+            fors[0].is_outmost = True
+            n = GenExpr(GenExprInner(expr, fors))
+            n.lineno = lineno
+            return n
+
+        def com_gen_iter(self, node):
+            assert node[0] == symbol.gen_iter
+            return node[1]
+
     def com_dictmaker(self, nodelist):
         # dictmaker: test ':' test (',' test ':' value)* [',']
         items = []
@@ -1122,6 +1170,8 @@ class Transformer:
             if node[0] == token.STAR or node[0] == token.DOUBLESTAR:
                 break
             kw, result = self.com_argument(node, kw)
+            if len_nodelist != 2 and isinstance(result, GenExpr):
+                raise SyntaxError, 'generator expression needs parenthesis'
             args.append(result)
         else:
             # No broken by star arg, so skip the last one we processed.
@@ -1148,6 +1198,9 @@ class Transformer:
         return CallFunc(primaryNode, args, star_node, dstar_node)
 
     def com_argument(self, nodelist, kw):
+        if len(nodelist) == 3 and nodelist[2][0] == symbol.gen_for:
+            test = self.com_node(nodelist[1])
+            return 0, self.com_generator_expression(test, nodelist[2])
         if len(nodelist) == 2:
             if kw:
                 raise SyntaxError, "non-keyword arg after keyword arg"

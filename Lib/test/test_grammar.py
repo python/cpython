@@ -739,3 +739,46 @@ print [
         for (sp_sno, sp_pno) in suppart
           if sno == sp_sno and pno == sp_pno
 ]
+
+# generator expression tests
+g = ([x for x in range(10)] for x in range(1))
+verify(g.next() == [x for x in range(10)])
+try:
+    g.next()
+    raise TestFailed, 'should produce StopIteration exception'
+except StopIteration:
+    pass
+
+a = 1
+try:
+    g = (a for d in a)
+    g.next()
+    raise TestFailed, 'should produce TypeError'
+except TypeError:
+    pass
+
+verify(list((x, y) for x in 'abcd' for y in 'abcd') == [(x, y) for x in 'abcd' for y in 'abcd'])
+verify(list((x, y) for x in 'ab' for y in 'xy') == [(x, y) for x in 'ab' for y in 'xy'])
+
+a = [x for x in range(10)]
+b = (x for x in (y for y in a))
+verify(sum(b) == sum([x for x in range(10)]))
+
+verify(sum(x**2 for x in range(10)) == sum([x**2 for x in range(10)]))
+verify(sum(x*x for x in range(10) if x%2) == sum([x*x for x in range(10) if x%2]))
+verify(sum(x for x in (y for y in range(10))) == sum([x for x in range(10)]))
+verify(sum(x for x in (y for y in (z for z in range(10)))) == sum([x for x in range(10)]))
+verify(sum(x for x in [y for y in (z for z in range(10))]) == sum([x for x in range(10)]))
+verify(sum(x for x in (y for y in (z for z in range(10) if True)) if True) == sum([x for x in range(10)]))
+verify(sum(x for x in (y for y in (z for z in range(10) if True) if False) if True) == 0)
+check_syntax("foo(x for x in range(10), 100)")
+check_syntax("foo(100, x for x in range(10))")
+
+# test for outmost iterable precomputation
+x = 10; g = (i for i in range(x)); x = 5
+verify(len(list(g)) == 10)
+
+# This should hold, since we're only precomputing outmost iterable.
+x = 10; t = False; g = ((i,j) for i in range(x) if t for j in range(x))
+x = 5; t = True;
+verify([(i,j) for i in range(10) for j in range(5)] == list(g))

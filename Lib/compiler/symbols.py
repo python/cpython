@@ -179,6 +179,21 @@ class ModuleScope(Scope):
 class FunctionScope(Scope):
     pass
 
+class GenExprScope(Scope):
+    __super_init = Scope.__init__
+
+    __counter = 1
+
+    def __init__(self, module, klass=None):
+        i = self.__counter
+        self.__counter += 1
+        self.__super_init("generator expression<%d>"%i, module, klass)
+        self.add_param('[outmost-iterable]')
+
+    def get_names(self):
+        keys = Scope.get_names()
+        return keys
+
 class LambdaScope(FunctionScope):
     __super_init = Scope.__init__
 
@@ -220,6 +235,32 @@ class SymbolVisitor:
         self.visit(node.code, scope)
         self.handle_free_vars(scope, parent)
 
+    def visitGenExpr(self, node, parent):
+        scope = GenExprScope(self.module, self.klass);
+        if parent.nested or isinstance(parent, FunctionScope) \
+                or isinstance(parent, GenExprScope):
+            scope.nested = 1
+
+        self.scopes[node] = scope
+        self.visit(node.code, scope)
+
+        self.handle_free_vars(scope, parent)
+
+    def visitGenExprInner(self, node, scope):
+        for genfor in node.quals:
+            self.visit(genfor, scope)
+
+        self.visit(node.expr, scope)
+
+    def visitGenExprFor(self, node, scope):
+        self.visit(node.assign, scope, 1)
+        self.visit(node.iter, scope)
+        for if_ in node.ifs:
+            self.visit(if_, scope)
+
+    def visitGenExprIf(self, node, scope):
+        self.visit(node.test, scope)
+        
     def visitLambda(self, node, parent, assign=0):
         # Lambda is an expression, so it could appear in an expression
         # context where assign is passed.  The transformer should catch
