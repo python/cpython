@@ -5,9 +5,8 @@
 % Write a chapter entitled ``Some Useful Modules''
 %  --regex, math+cmath
 % Should really move the Python startup file info to an appendix
-%
 
-\title{Python Tutorial -- DRAFT of \today}
+\title{Python Tutorial}
 
 \input{boilerplate}
 
@@ -22,29 +21,44 @@
 \begin{abstract}
 
 \noindent
-Python is a simple, yet powerful programming language that bridges the
-gap between C and shell programming, and is thus ideally suited for
-``throw-away programming'' and rapid prototyping.  Its syntax is put
-together from constructs borrowed from a variety of other languages;
-most prominent are influences from ABC, C, Modula-3 and Icon.
+Python is an easy to learn, powerful programming language.  It has
+efficient high-level data structures and a simple but effective
+approach to object-oriented programming.  Python's elegant syntax and
+dynamic typing, together with its interpreted nature, make it an ideal 
+language for scripting and rapid application development in many areas 
+on most platforms.
+
+The Python interpreter and the extensive standard library are freely
+available in source or binary form for all major platforms from the
+Python web site, \file{http://www.python.org}, and can be freely
+distributed.  The same site also contains distributions of and
+pointers to many free third party Python modules, programs and tools,
+and additional documentation.
 
 The Python interpreter is easily extended with new functions and data
-types implemented in C.  Python is also suitable as an extension
-language for highly customizable C applications such as editors or
-window managers.
-
-Python is available for many operating systems:
-several flavors of \UNIX{}, the Apple Macintosh, MS-DOS, Windows
-(3.1(1), '95 and NT flavors), OS/2, and others.
+types implemented in C or C++ (or other languages callable from C).
+Python is also suitable as an extension language for customizable
+applications.
 
 This tutorial introduces the reader informally to the basic concepts
 and features of the Python language and system.  It helps to have a
-Python interpreter handy for hands-on experience, but as the examples
-are self-contained, the tutorial can be read off-line as well.
+Python interpreter handy for hands-on experience, but all examples are
+self-contained, so the tutorial can be read off-line as well.
 
-For a description of standard objects and modules, see the \emph{Python
-Library Reference} document.  The \emph{Python Reference Manual} gives
-a more formal definition of the language.
+For a description of standard objects and modules, see the
+\emph{Python Library Reference} document.  The \emph{Python Reference
+Manual} gives a more formal definition of the language.  To write
+extensions in C or C++, read the \emph{Extending and Embedding} and
+\emph{Python/C API} manuals.  There are also several books covering
+Python in depth.
+
+This tutorial does not attempt to be comprehensive and cover every
+single feature, or even every commonly used feature.  Instead, it
+introduces many of Python's most noteworthy features, and will give
+you a good idea of the language's flavor and style.  After reading it,
+you will be able to read and write Python modules and programs, and
+you will be ready to learn more about the various Python library
+modules described in the \emph{Python Library Reference}.
 
 \end{abstract}
 
@@ -60,26 +74,6 @@ a more formal definition of the language.
 
 
 \chapter{Whetting Your Appetite}
-
-\section{Disclaimer}
-
-Now that there are several books out on Python, this tutorial has lost
-its role as the only introduction to Python for most new users.  This
-tutorial does not attempt to be comprehensive and cover every single
-feature, or even every commonly used feature.  Instead, it introduces
-many of Python's most noteworthy features, and will give you a good
-idea of the language's flavor and style.
-
-%It takes time to keep a document like this up to date in the face of
-%additions to the language, and I simply don't have enough time to do a
-%good job.  Therefore, this version of the tutorial is almost unchanged
-%since the previous release.  This doesn't mean that the tutorial is
-%out of date --- all the examples still work exactly as before.  There
-%are simply some new areas of the language that aren't covered.
-
-%To make up for this, there are some chapters at the end that cover
-%important changes in recent Python releases, and these are up to date
-%with the current release.
 
 \section{Introduction}
 
@@ -150,7 +144,7 @@ and use it as an extension or command language for that application.
 By the way, the language is named after the BBC show ``Monty Python's
 Flying Circus'' and has nothing to do with nasty reptiles.  Making
 references to Monty Python skits in documentation is not only allowed,
-it is encouraged.  
+it is encouraged!
 
 \section{Where From Here}
 
