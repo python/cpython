@@ -112,7 +112,7 @@ def main():
 
     # default the exclude list for each platform
     if win: exclude = exclude + [
-        'dos', 'dospath', 'mac', 'macpath', 'macfs', 'MACFS', 'posix', 'os2']
+        'dos', 'dospath', 'mac', 'macpath', 'macfs', 'MACFS', 'posix', 'os2', 'ce']
 
     # modules that are imported by the Python runtime
     implicits = ["site", "exceptions"]
@@ -376,7 +376,7 @@ def main():
             # Get a list of CExtension instances, each describing a module 
             # (including its source files)
             frozen_extensions = checkextensions_win32.checkextensions(
-                unknown, extensions)
+                unknown, extensions, prefix)
             for mod in frozen_extensions:
                 unknown.remove(mod.name)
 
