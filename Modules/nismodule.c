@@ -10,9 +10,7 @@
 
 /* NIS module implementation */
 
-#include "allobjects.h"
-#include "modsupport.h"
-#include "ceval.h"
+#include "Python.h"
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -25,13 +23,13 @@
 extern int yp_get_default_domain();
 #endif
 
-static object *NisError;
+static PyObject *NisError;
 
-static object *
+static PyObject *
 nis_error (err)
 	int err;
 {
-	err_setstr(NisError, yperr_string(err));
+	PyErr_SetString(NisError, yperr_string(err));
 	return NULL;
 }
 
@@ -62,7 +60,7 @@ nis_mapname (map)
 	return map;
 }
 
-typedef int (*foreachfunc) PROTO((int, char *, int, char *, int, char *));
+typedef int (*foreachfunc) Py_PROTO((int, char *, int, char *, int, char *));
 
 static int
 nis_foreach (instatus, inkey, inkeylen, inval, invallen, indata)
@@ -71,24 +69,24 @@ nis_foreach (instatus, inkey, inkeylen, inval, invallen, indata)
 	int inkeylen;
 	char *inval;
 	int invallen;
-	object *indata;
+	PyObject *indata;
 {
 	if (instatus == YP_TRUE) {
-		object *key = newsizedstringobject(inkey, inkeylen);
-		object *val = newsizedstringobject(inval, invallen);
+		PyObject *key = PyString_FromStringAndSize(inkey, inkeylen);
+		PyObject *val = PyString_FromStringAndSize(inval, invallen);
 		int err;
 		if (key == NULL || val == NULL) {
 			/* XXX error -- don't know how to handle */
-			err_clear();
-			XDECREF(key);
-			XDECREF(val);
+			PyErr_Clear();
+			Py_XDECREF(key);
+			Py_XDECREF(val);
 			return 1;
 		}
-		err = mappinginsert(indata, key, val);
-		DECREF(key);
-		DECREF(val);
+		err = PyDict_SetItem(indata, key, val);
+		Py_DECREF(key);
+		Py_DECREF(val);
 		if (err != 0) {
-			err_clear();
+			PyErr_Clear();
 			return 1;
 		}
 		return 0;
@@ -96,59 +94,59 @@ nis_foreach (instatus, inkey, inkeylen, inval, invallen, indata)
 	return 1;
 }
 
-static object *
+static PyObject *
 nis_match (self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char *match;
 	char *domain;
 	int keylen, len;
 	char *key, *map;
 	int err;
-	object *res;
+	PyObject *res;
 
-	if (!getargs(args, "(s#s)", &key, &keylen, &map))
+	if (!PyArg_Parse(args, "(s#s)", &key, &keylen, &map))
 		return NULL;
 	if ((err = yp_get_default_domain(&domain)) != 0)
 		return nis_error(err);
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	map = nis_mapname (map);
 	err = yp_match (domain, map, key, keylen, &match, &len);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (err != 0)
 		return nis_error(err);
-	res = newsizedstringobject (match, len);
+	res = PyString_FromStringAndSize (match, len);
 	free (match);
 	return res;
 }
 
-static object *
+static PyObject *
 nis_cat (self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char *domain;
 	char *map;
 	struct ypall_callback cb;
-	object *cat;
+	PyObject *cat;
 	int err;
 
-	if (!getstrarg(args, &map))
+	if (!PyArg_Parse(args, "s", &map))
 		return NULL;
 	if ((err = yp_get_default_domain(&domain)) != 0)
 		return nis_error(err);
-	cat = newdictobject ();
+	cat = PyDict_New ();
 	if (cat == NULL)
 		return NULL;
 	cb.foreach = (foreachfunc)nis_foreach;
 	cb.data = (char *)cat;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	map = nis_mapname (map);
 	err = yp_all (domain, map, &cb);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (err != 0) {
-		DECREF(cat);
+		Py_DECREF(cat);
 		return nis_error(err);
 	}
 	return cat;
@@ -170,23 +168,23 @@ typedef char *domainname;
 typedef char *mapname;
 
 enum nisstat {
-    NIS_TRUE = 1,
-    NIS_NOMORE = 2,
-    NIS_FALSE = 0,
-    NIS_NOMAP = -1,
-    NIS_NODOM = -2,
-    NIS_NOKEY = -3,
-    NIS_BADOP = -4,
-    NIS_BADDB = -5,
-    NIS_YPERR = -6,
-    NIS_BADARGS = -7,
-    NIS_VERS = -8
+	NIS_TRUE = 1,
+	NIS_NOMORE = 2,
+	NIS_FALSE = 0,
+	NIS_NOMAP = -1,
+	NIS_NODOM = -2,
+	NIS_NOKEY = -3,
+	NIS_BADOP = -4,
+	NIS_BADDB = -5,
+	NIS_YPERR = -6,
+	NIS_BADARGS = -7,
+	NIS_VERS = -8
 };
 typedef enum nisstat nisstat;
 
 struct nismaplist {
-    mapname map;
-    struct nismaplist *next;
+	mapname map;
+	struct nismaplist *next;
 };
 typedef struct nismaplist nismaplist;
 
@@ -201,86 +199,90 @@ static struct timeval TIMEOUT = { 25, 0 };
 static
 bool_t
 nis_xdr_domainname(xdrs, objp)
-    XDR *xdrs;
-    domainname *objp;
+	XDR *xdrs;
+	domainname *objp;
 {
-    if (!xdr_string(xdrs, objp, YPMAXDOMAIN)) {
-        return (FALSE);
-    }
-    return (TRUE);
+	if (!xdr_string(xdrs, objp, YPMAXDOMAIN)) {
+		return (FALSE);
+	}
+	return (TRUE);
 }
 
 static
 bool_t
 nis_xdr_mapname(xdrs, objp)
-    XDR *xdrs;
-    mapname *objp;
+	XDR *xdrs;
+	mapname *objp;
 {
-    if (!xdr_string(xdrs, objp, YPMAXMAP)) {
-        return (FALSE);
-    }
-    return (TRUE);
+	if (!xdr_string(xdrs, objp, YPMAXMAP)) {
+		return (FALSE);
+	}
+	return (TRUE);
 }
 
 static
 bool_t
 nis_xdr_ypmaplist(xdrs, objp)
-    XDR *xdrs;
-    nismaplist *objp;
+	XDR *xdrs;
+	nismaplist *objp;
 {
-    if (!nis_xdr_mapname(xdrs, &objp->map)) {
-        return (FALSE);
-    }
-    if (!xdr_pointer(xdrs, (char **)&objp->next, sizeof(nismaplist), nis_xdr_ypmaplist)) {
-        return (FALSE);
-    }
-    return (TRUE);
+	if (!nis_xdr_mapname(xdrs, &objp->map)) {
+		return (FALSE);
+	}
+	if (!xdr_pointer(xdrs, (char **)&objp->next,
+			 sizeof(nismaplist), nis_xdr_ypmaplist))
+	{
+		return (FALSE);
+	}
+	return (TRUE);
 }
 
 static
 bool_t
 nis_xdr_ypstat(xdrs, objp)
-    XDR *xdrs;
-    nisstat *objp;
+	XDR *xdrs;
+	nisstat *objp;
 {
-    if (!xdr_enum(xdrs, (enum_t *)objp)) {
-        return (FALSE);
-    }
-    return (TRUE);
+	if (!xdr_enum(xdrs, (enum_t *)objp)) {
+		return (FALSE);
+	}
+	return (TRUE);
 }
 
 
 static
 bool_t
 nis_xdr_ypresp_maplist(xdrs, objp)
-    XDR *xdrs;
-    nisresp_maplist *objp;
+	XDR *xdrs;
+	nisresp_maplist *objp;
 {
-    if (!nis_xdr_ypstat(xdrs, &objp->stat)) {
-        return (FALSE);
-    }
-    if (!xdr_pointer(xdrs, (char **)&objp->maps, sizeof(nismaplist), nis_xdr_ypmaplist)) {
-        return (FALSE);
-    }
-    return (TRUE);
+	if (!nis_xdr_ypstat(xdrs, &objp->stat)) {
+		return (FALSE);
+	}
+	if (!xdr_pointer(xdrs, (char **)&objp->maps,
+			 sizeof(nismaplist), nis_xdr_ypmaplist))
+	{
+		return (FALSE);
+	}
+	return (TRUE);
 }
 
 
 static
 nisresp_maplist *
 nisproc_maplist_2(argp, clnt)
-    domainname *argp;
-    CLIENT *clnt;
+	domainname *argp;
+	CLIENT *clnt;
 {
-    static nisresp_maplist res;
+	static nisresp_maplist res;
 
-    memset(&res, 0, sizeof(res));
-    if (clnt_call(clnt, YPPROC_MAPLIST, nis_xdr_domainname, (caddr_t)argp,
-		  nis_xdr_ypresp_maplist, (caddr_t)&res, TIMEOUT)
-	!= RPC_SUCCESS) {
-        return (NULL);
-    }
-    return (&res);
+	memset(&res, 0, sizeof(res));
+	if (clnt_call(clnt, YPPROC_MAPLIST, nis_xdr_domainname, (caddr_t)argp,
+		      nis_xdr_ypresp_maplist, (caddr_t)&res, TIMEOUT)
+	    != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&res);
 }
 
 static
@@ -290,13 +292,21 @@ nis_maplist ()
 	nisresp_maplist *list;
 	char *dom;
 	CLIENT *cl, *clnt_create();
-	char *server;
+	char *server = "";
+	int mapi = 0;
 
 	yp_get_default_domain (&dom);
-	yp_master (dom, aliases[0].map, &server);
+	while (!strcmp("", server) && aliases[mapi].map != 0L) {
+		yp_master (dom, aliases[mapi].map, &server);
+		mapi++;
+	}
+        if (!strcmp("", server)) {
+            PyErr_SetString(NisError, "No NIS master found for any map");
+            return NULL;
+        }
 	cl = clnt_create(server, YPPROG, YPVERS, "tcp");
 	if (cl == NULL) {
-		clnt_pcreateerror(server);
+		PyErr_SetString(NisError, clnt_spcreateerror(server));
 		return NULL;
 	}
 	list = nisproc_maplist_2 (&dom, cl);
@@ -307,21 +317,22 @@ nis_maplist ()
 	return list->maps;
 }
 
-static object *
+static PyObject *
 nis_maps (self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	nismaplist *maps;
-	object *list;
+	PyObject *list;
 
 	if ((maps = nis_maplist ()) == NULL)
 		return NULL;
-	if ((list = newlistobject(0)) == NULL)
+	if ((list = PyList_New(0)) == NULL)
 		return NULL;
 	for (maps = maps->next; maps; maps = maps->next) {
-		if (addlistitem (list, newstringobject (maps->map)) < 0) {
-			DECREF(list);
+		if (PyList_Append (list, PyString_FromString (maps->map)) < 0)
+		{
+			Py_DECREF(list);
 			list = NULL;
 			break;
 		}
@@ -330,7 +341,7 @@ nis_maps (self, args)
 	return list;
 }
 
-static struct methodlist nis_methods[] = {
+static PyMethodDef nis_methods[] = {
 	{"match",	nis_match},
 	{"cat",		nis_cat},
 	{"maps",	nis_maps},
@@ -340,10 +351,11 @@ static struct methodlist nis_methods[] = {
 void
 initnis ()
 {
-	object *m, *d;
-	m = initmodule("nis", nis_methods);
-	d = getmoduledict(m);
-	NisError = newstringobject("nis.error");
-	if (NisError == NULL || dictinsert(d, "error", NisError) != 0)
-		fatal("Cannot define nis.error");
+	PyObject *m, *d;
+	m = Py_InitModule("nis", nis_methods);
+	d = PyModule_GetDict(m);
+	NisError = PyString_FromString("nis.error");
+	if (NisError == NULL ||
+	    PyDict_SetItemString(d, "error", NisError) != 0)
+		Py_FatalError("Cannot define nis.error");
 }
