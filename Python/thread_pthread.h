@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <signal.h>
 
 
 /* try to determine what version of the Pthread Standard is installed.
@@ -66,6 +67,18 @@
 #  define pthread_attr_default ((pthread_attr_t *)NULL)
 #  define pthread_mutexattr_default ((pthread_mutexattr_t *)NULL)
 #  define pthread_condattr_default ((pthread_condattr_t *)NULL)
+#endif
+
+
+/* On platforms that don't use standard POSIX threads pthread_sigmask()
+ * isn't present.  DEC threads uses sigprocmask() instead as do most
+ * other UNIX International compliant systems that don't have the full
+ * pthread implementation.
+ */
+#ifdef PY_PTHREAD_STD
+#  define SET_THREAD_SIGMASK pthread_sigmask
+#else
+#  define SET_THREAD_SIGMASK sigprocmask
 #endif
 
 
@@ -135,6 +148,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
 	pthread_t th;
 	int success;
+ 	sigset_t oldmask, newmask;
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
 	pthread_attr_t attrs;
 #endif
@@ -151,6 +165,14 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 #ifdef PTHREAD_SYSTEM_SCHED_SUPPORTED
         pthread_attr_setscope(&attrs, PTHREAD_SCOPE_SYSTEM);
 #endif
+
+	/* Mask all signals in the current thread before creating the new
+	 * thread.  This causes the new thread to start with all signals
+	 * blocked.
+	 */
+	sigfillset(&newmask);
+	SET_THREAD_SIGMASK(SIG_BLOCK, &newmask, &oldmask);
+
 	success = pthread_create(&th, 
 #if defined(PY_PTHREAD_D4)
 				 pthread_attr_default,
@@ -174,6 +196,10 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 				 (void *)arg
 #endif
 				 );
+
+	/* Restore signal mask for original thread */
+	SET_THREAD_SIGMASK(SIG_SETMASK, &oldmask, NULL);
+
 #ifdef THREAD_STACK_SIZE
 	pthread_attr_destroy(&attrs);
 #endif
