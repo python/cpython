@@ -298,6 +298,10 @@ The \var{mode} and \var{bufsize} arguments have the same meaning as
 the corresponding arguments to the built-in \function{open()}
 function.
 Availability: Macintosh, \UNIX, Windows.
+
+\versionchanged[When specified, the \var{mode} argument must now start
+  with one of the letters \code{'r'}, \code{'w'}, or \code{'a'},
+  otherwise a \exception{ValueError} is raised. ]{2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{popen}{command\optional{, mode\optional{, bufsize}}}
