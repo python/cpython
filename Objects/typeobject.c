@@ -2050,16 +2050,16 @@ PyType_Ready(PyTypeObject *type)
 
 	type->tp_flags |= Py_TPFLAGS_READYING;
 
-	/* Initialize ob_type if NULL.  This means extensions that want to be
-	   compilable separately on Windows can call PyType_Ready() instead of
-	   initializing the ob_type field of their type objects. */
-	if (type->ob_type == NULL)
-		type->ob_type = &PyType_Type;
-
 	/* Initialize tp_base (defaults to BaseObject unless that's us) */
 	base = type->tp_base;
 	if (base == NULL && type != &PyBaseObject_Type)
 		base = type->tp_base = &PyBaseObject_Type;
+
+	/* Initialize ob_type if NULL.  This means extensions that want to be
+	   compilable separately on Windows can call PyType_Ready() instead of
+	   initializing the ob_type field of their type objects. */
+	if (type->ob_type == NULL)
+		type->ob_type = base->ob_type;
 
 	/* Initialize tp_bases */
 	bases = type->tp_bases;
