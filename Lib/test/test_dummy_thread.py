@@ -102,6 +102,14 @@ class MiscTests(unittest.TestCase):
                         "_thread.LockType is not an instance of what is "
                          "returned by _thread.allocate_lock()")
 
+    def test_interrupt_main(self):
+        #Calling start_new_thread with a function that executes interrupt_main
+        # should raise KeyboardInterrupt upon completion.
+        def call_interrupt():
+            _thread.interrupt_main()
+        self.failUnlessRaises(KeyboardInterrupt, _thread.start_new_thread,
+                              call_interrupt, tuple())
+
 class ThreadTests(unittest.TestCase):
     """Test thread creation."""
 
