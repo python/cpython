@@ -19,7 +19,7 @@ def fact(n):
 		res.append(2)
 		n = n/2
 	# Try odd numbers up to sqrt(n)
-	limit = sqrt(n+1)
+	limit = sqrt(float(n+1))
 	i = 3
 	while i <= limit:
 		if n%i == 0:
@@ -28,7 +28,8 @@ def fact(n):
 			limit = sqrt(n+1)
 		else:
 			i = i+2
-	res.append(n)
+	if n != 1:
+		res.append(n)
 	return res
 
 def main():
