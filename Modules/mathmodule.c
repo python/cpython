@@ -31,21 +31,19 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Math module -- standard C math library functions, pi and e */
 
-#include "allobjects.h"
+#include "Python.h"
 
-#include <errno.h>
-
-#define getdoublearg(v, a) getargs(v, "d", a)
-#define get2doublearg(v, a, b) getargs(v, "(dd)", a, b)
+#define getdoublearg(v, a) PyArg_Parse(v, "d", a)
+#define get2doublearg(v, a, b) PyArg_Parse(v, "(dd)", a, b)
 
 #include "mymath.h"
 
 #ifndef _MSC_VER
 #ifndef __STDC__
-extern double fmod PROTO((double, double));
-extern double frexp PROTO((double, int *));
-extern double ldexp PROTO((double, int));
-extern double modf PROTO((double, double *));
+extern double fmod Py_PROTO((double, double));
+extern double frexp Py_PROTO((double, int *));
+extern double ldexp Py_PROTO((double, int));
+extern double modf Py_PROTO((double, double *));
 #endif /* __STDC__ */
 #endif /* _MSC_VER */
 
@@ -63,22 +61,23 @@ extern double modf PROTO((double, double *));
 #define CHECK(x) /* Don't know how to check */
 #endif
 
-static object *
+static PyObject *
 math_error()
 {
 	if (errno == EDOM)
-		err_setstr(ValueError, "math domain error");
+		PyErr_SetString(PyExc_ValueError, "math domain error");
 	else if (errno == ERANGE)
-		err_setstr(OverflowError, "math range error");
+		PyErr_SetString(PyExc_OverflowError, "math range error");
 	else
-		err_errno(ValueError); /* Unexpected math error */
+                /* Unexpected math error */
+		PyErr_SetFromErrno(PyExc_ValueError);
 	return NULL;
 }
 
-static object *
+static PyObject *
 math_1(args, func)
-	object *args;
-	double (*func) FPROTO((double));
+	PyObject *args;
+	double (*func) Py_FPROTO((double));
 {
 	double x;
 	if (!getdoublearg(args, &x))
@@ -89,13 +88,13 @@ math_1(args, func)
 	if (errno != 0)
 		return math_error();
 	else
-		return newfloatobject(x);
+		return PyFloat_FromDouble(x);
 }
 
-static object *
+static PyObject *
 math_2(args, func)
-	object *args;
-	double (*func) FPROTO((double, double));
+	PyObject *args;
+	double (*func) Py_FPROTO((double, double));
 {
 	double x, y;
 	if (!get2doublearg(args, &x, &y))
@@ -106,16 +105,16 @@ math_2(args, func)
 	if (errno != 0)
 		return math_error();
 	else
-		return newfloatobject(x);
+		return PyFloat_FromDouble(x);
 }
 
 #define FUNC1(stubname, func) \
-	static object * stubname(self, args) object *self, *args; { \
+	static PyObject * stubname(self, args) PyObject *self, *args; { \
 		return math_1(args, func); \
 	}
 
 #define FUNC2(stubname, func) \
-	static object * stubname(self, args) object *self, *args; { \
+	static PyObject * stubname(self, args) PyObject *self, *args; { \
 		return math_2(args, func); \
 	}
 
@@ -150,10 +149,10 @@ FUNC1(math_tan, tan)
 FUNC1(math_tanh, tanh)
 
 
-static object *
+static PyObject *
 math_frexp(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	double x;
 	int i;
@@ -164,13 +163,13 @@ math_frexp(self, args)
 	CHECK(x);
 	if (errno != 0)
 		return math_error();
-	return mkvalue("(di)", x, i);
+	return Py_BuildValue("(di)", x, i);
 }
 
-static object *
+static PyObject *
 math_ldexp(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	double x, y;
 	/* Cheat -- allow float as second argument */
@@ -182,13 +181,13 @@ math_ldexp(self, args)
 	if (errno != 0)
 		return math_error();
 	else
-		return newfloatobject(x);
+		return PyFloat_FromDouble(x);
 }
 
-static object *
+static PyObject *
 math_modf(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	double x, y;
 	if (!getdoublearg(args, &x))
@@ -206,10 +205,10 @@ math_modf(self, args)
 	CHECK(x);
 	if (errno != 0)
 		return math_error();
-	return mkvalue("(dd)", x, y);
+	return Py_BuildValue("(dd)", x, y);
 }
 
-static struct methodlist math_methods[] = {
+static PyMethodDef math_methods[] = {
 	{"acos", math_acos},
 	{"asin", math_asin},
 	{"atan", math_atan},
@@ -239,12 +238,12 @@ static struct methodlist math_methods[] = {
 void
 initmath()
 {
-	object *m, *d, *v;
+	PyObject *m, *d, *v;
 	
-	m = initmodule("math", math_methods);
-	d = getmoduledict(m);
-	dictinsert(d, "pi", v = newfloatobject(atan(1.0) * 4.0));
-	DECREF(v);
-	dictinsert(d, "e", v = newfloatobject(exp(1.0)));
-	DECREF(v);
+	m = Py_InitModule("math", math_methods);
+	d = PyModule_GetDict(m);
+	PyDict_SetItemString(d, "pi", v = PyFloat_FromDouble(atan(1.0) * 4.0));
+	Py_DECREF(v);
+	PyDict_SetItemString(d, "e", v = PyFloat_FromDouble(exp(1.0)));
+	Py_DECREF(v);
 }
