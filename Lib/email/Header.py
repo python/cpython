@@ -9,10 +9,10 @@ import email.base64MIME
 from email.Charset import Charset
 
 try:
-    from email._compat22 import _intdiv2
+    from email._compat22 import _floordiv
 except SyntaxError:
     # Python 2.1 spells integer division differently
-    from email._compat21 import _intdiv2
+    from email._compat21 import _floordiv
 
 CRLFSPACE = '\r\n '
 CRLF = '\r\n'
@@ -168,9 +168,8 @@ class Header:
             last = charset.from_splittable(splittable[splitpnt:], 0)
             return self._split(first, charset) + self._split(last, charset)
         else:
-            # Divide and conquer.  BAW: halfway depends on integer division.
-            # When porting to Python 2.2, use the // operator.
-            halfway = _intdiv2(len(splittable))
+            # Divide and conquer.
+            halfway = _floordiv(len(splittable), 2)
             first = charset.from_splittable(splittable[:halfway], 0)
             last = charset.from_splittable(splittable[halfway:], 0)
             return self._split(first, charset) + self._split(last, charset)
