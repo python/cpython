@@ -892,7 +892,8 @@ the \ctype{stat} structure, namely:
 \member{st_atime} (time of most recent access),
 \member{st_mtime} (time of most recent content modification),
 \member{st_ctime}
-(time of most recent content modification or metadata change).
+(platform dependent; time of most recent metadata change on \UNIX, or
+the time of creation on Windows).
 
 \versionchanged [If \function{stat_float_times} returns true, the time
 values are floats, measuring seconds. Fractions of a second may be
