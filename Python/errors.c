@@ -192,7 +192,7 @@ err_input(err)
 		err_nomem();
 		break;
 	case E_EOF:
-		err_setstr(SyntaxError, "unexpected EOF");
+		err_setstr(EOFError, "unexpected EOF while parsing");
 		break;
 	default:
 		err_setstr(SystemError, "unknown parsing error");
