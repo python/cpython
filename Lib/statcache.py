@@ -3,6 +3,11 @@
 There are functions to reset the cache or to selectively remove items.
 """
 
+import warnings
+warnings.warn("The statcache module is obsolete.  Use os.stat() instead.",
+              DeprecationWarning)
+del warnings
+
 import os as _os
 from stat import *
 
