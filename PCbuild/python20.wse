@@ -734,6 +734,18 @@ item: Install File
   Flags=0000000100000010
 end
 item: Install File
+  Source=%_SRC_%\Lib\xml\*.py
+  Destination=%MAINDIR%\Lib\xml
+  Description=XML support packages
+  Flags=0000000100000010
+end
+item: Install File
+  Source=%_SRC_%\Lib\lib-old\*.py
+  Destination=%MAINDIR%\Lib\lib-old
+  Description=Obsolete modules
+  Flags=0000000000000010
+end
+item: Install File
   Source=%_SRC_%\pcbuild\*.lib
   Destination=%MAINDIR%\libs
   Description=Link library files
@@ -908,14 +920,14 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\Lib\test\output\*.*
-  Destination=%MAINDIR%\Lib\test\output
-  Description=Python Test output files
+  Source=%_SRC_%\Lib\test\*.xml
+  Destination=%MAINDIR%\Lib\test
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\Lib\test\*.py
-  Destination=%MAINDIR%\Lib\test
+  Source=%_SRC_%\Lib\test\output\*.*
+  Destination=%MAINDIR%\Lib\test\output
+  Description=Python Test output files
   Flags=0000000000000010
 end
 item: End Block
