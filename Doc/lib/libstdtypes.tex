@@ -377,6 +377,13 @@ general and specific sequence types, dictionaries, and other more
 specialized forms.  The specific types are not important beyond their
 implementation of the iterator protocol.
 
+The intention of the protocol is that once an iterator's
+\method{next()} method raises \exception{StopIteration}, it will
+continue to do so on subsequent calls.  Implementations that
+do not obey this property are deemed broken.  (This constraint
+was added in Python 2.3; in Python 2.2, various iterators are
+broken according to this rule.)
+
 
 \subsection{Sequence Types \label{typesseq}}
 
