@@ -64,33 +64,11 @@ groupby_dealloc(groupbyobject *gbo)
 static int
 groupby_traverse(groupbyobject *gbo, visitproc visit, void *arg)
 {
-	int err;
-
-	if (gbo->it) {
-		err = visit(gbo->it, arg);
-		if (err)
-			return err;
-	}
-	if (gbo->keyfunc) {
-		err = visit(gbo->keyfunc, arg);
-		if (err)
-			return err;
-	}
-	if (gbo->tgtkey) {
-		err = visit(gbo->tgtkey, arg);
-		if (err)
-			return err;
-	}
-	if (gbo->currkey) {
-		err = visit(gbo->currkey, arg);
-		if (err)
-			return err;
-	}
-	if (gbo->currvalue) {
-		err = visit(gbo->currvalue, arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(gbo->it);
+	Py_VISIT(gbo->keyfunc);
+	Py_VISIT(gbo->tgtkey);
+	Py_VISIT(gbo->currkey);
+	Py_VISIT(gbo->currvalue);
 	return 0;
 }
 
@@ -671,18 +649,8 @@ cycle_dealloc(cycleobject *lz)
 static int
 cycle_traverse(cycleobject *lz, visitproc visit, void *arg)
 {
-	int err;
-
-	if (lz->it) {
-		err = visit(lz->it, arg);
-		if (err)
-			return err;
-	}
-	if (lz->saved) {
-		err = visit(lz->saved, arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(lz->it);
+	Py_VISIT(lz->saved);
 	return 0;
 }
 
@@ -820,18 +788,8 @@ dropwhile_dealloc(dropwhileobject *lz)
 static int
 dropwhile_traverse(dropwhileobject *lz, visitproc visit, void *arg)
 {
-	int err;
-
-	if (lz->it) {
-		err = visit(lz->it, arg);
-		if (err)
-			return err;
-	}
-	if (lz->func) {
-		err = visit(lz->func, arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(lz->it);
+	Py_VISIT(lz->func);
 	return 0;
 }
 
@@ -971,18 +929,8 @@ takewhile_dealloc(takewhileobject *lz)
 static int
 takewhile_traverse(takewhileobject *lz, visitproc visit, void *arg)
 {
-	int err;
-
-	if (lz->it) {
-		err = visit(lz->it, arg);
-		if (err)
-			return err;
-	}
-	if (lz->func) {
-		err = visit(lz->func, arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(lz->it);
+	Py_VISIT(lz->func);
 	return 0;
 }
 
@@ -1167,8 +1115,7 @@ islice_dealloc(isliceobject *lz)
 static int
 islice_traverse(isliceobject *lz, visitproc visit, void *arg)
 {
-	if (lz->it)
-		return visit(lz->it, arg);
+	Py_VISIT(lz->it);
 	return 0;
 }
 
@@ -1309,18 +1256,8 @@ starmap_dealloc(starmapobject *lz)
 static int
 starmap_traverse(starmapobject *lz, visitproc visit, void *arg)
 {
-	int err;
-
-	if (lz->it) {
-		err = visit(lz->it, arg);
-		if (err)
-			return err;
-	}
-	if (lz->func) {
-		err = visit(lz->func, arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(lz->it);
+	Py_VISIT(lz->func);
 	return 0;
 }
 
@@ -1462,18 +1399,8 @@ imap_dealloc(imapobject *lz)
 static int
 imap_traverse(imapobject *lz, visitproc visit, void *arg)
 {
-	int err;
-
-	if (lz->iters) {
-		err = visit(lz->iters, arg);
-		if (err)
-			return err;
-	}
-	if (lz->func) {
-		err = visit(lz->func, arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(lz->iters);
+	Py_VISIT(lz->func);
 	return 0;
 }
 
@@ -1648,8 +1575,7 @@ chain_dealloc(chainobject *lz)
 static int
 chain_traverse(chainobject *lz, visitproc visit, void *arg)
 {
-	if (lz->ittuple)
-		return visit(lz->ittuple, arg);
+	Py_VISIT(lz->ittuple);
 	return 0;
 }
 
@@ -1778,18 +1704,8 @@ ifilter_dealloc(ifilterobject *lz)
 static int
 ifilter_traverse(ifilterobject *lz, visitproc visit, void *arg)
 {
-	int err;
-
-	if (lz->it) {
-		err = visit(lz->it, arg);
-		if (err)
-			return err;
-	}
-	if (lz->func) {
-		err = visit(lz->func, arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(lz->it);
+	Py_VISIT(lz->func);
 	return 0;
 }
 
@@ -1929,18 +1845,8 @@ ifilterfalse_dealloc(ifilterfalseobject *lz)
 static int
 ifilterfalse_traverse(ifilterfalseobject *lz, visitproc visit, void *arg)
 {
-	int err;
-
-	if (lz->it) {
-		err = visit(lz->it, arg);
-		if (err)
-			return err;
-	}
-	if (lz->func) {
-		err = visit(lz->func, arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(lz->it);
+	Py_VISIT(lz->func);
 	return 0;
 }
 
@@ -2199,18 +2105,8 @@ izip_dealloc(izipobject *lz)
 static int
 izip_traverse(izipobject *lz, visitproc visit, void *arg)
 {
-	int err;
-
-	if (lz->ittuple) {
-		err = visit(lz->ittuple, arg);
-		if (err)
-			return err;
-	}
-	if (lz->result) {
-		err = visit(lz->result, arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(lz->ittuple);
+	Py_VISIT(lz->result);
 	return 0;
 }
 
@@ -2357,8 +2253,7 @@ repeat_dealloc(repeatobject *ro)
 static int
 repeat_traverse(repeatobject *ro, visitproc visit, void *arg)
 {
-	if (ro->element)
-		return visit(ro->element, arg);
+	Py_VISIT(ro->element);
 	return 0;
 }
 
