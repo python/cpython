@@ -594,7 +594,7 @@ posix_access(self, args)
 
 #ifdef HAVE_TTYNAME
 static char posix_ttyname__doc__[] =
-"ttyname(fd, mode) -> String\n\
+"ttyname(fd) -> String\n\
 Return the name of the terminal device connected to 'fd'.";
 
 static PyObject *
