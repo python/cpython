@@ -227,6 +227,25 @@ does the same work as this common idiom:
         dict[key] = []
     dict[key].append(item)
 
+New exceptions, TabError and IndentationError, thate are subclasses on
+SyntaxError.  XXX
+
+The limits on the size of expressions and file in Python source code
+have been raised from 2**16 to 2**32.  Previous versions of Python
+were limited because the maximum argument size the Python VM accepted
+was 2**16.  This limited the size of object constructor expressions,
+e.g. [1,2,3] or {'a':1, 'b':2}, and the size of source files.  This
+limit was raised thanks to a patch by Charles Waldman that effectively
+fixes the problem.  It is now much more likely that you will be
+limited by available memory than by an arbitrary limit in Python.
+
+The interpreter's maximum recursion depth can be modified by Python
+programs using sys.getrecursionlimit and sys.setrecursionlimit.  This
+limit is the maximum number of recursive calls that can be made by
+Python code.  The limit exists to prevent infinite recursion from
+overflowing the C stack and causing a core dump.  The default value is
+1000.  The maximum safe value for a particular platform can be found
+by running Misc/find_recursionlimit.py.
 
 New Modules and Packages
 ------------------------
@@ -252,15 +271,52 @@ webbrowser - a platform-independent API to launch a web browser.
 Changed Modules
 ---------------
 
-ftplib - ntransfercmd(), transfercmd(), and retrbinary() all now
+calendar -- Many new functions that support features including control
+over which day of the week is the first day, returning strings instead
+of printing them.  Also new symbolic constants for days of week,
+e.g. MONDAY, ..., SUNDAY.
+
+cgi -- FieldStorage objects have a getvalue method that works like a
+dictionary's get method and returns the value attribute of the object.
+
+ConfigParser -- The parser object has new methods has_option,
+remove_section, remove_option, set, and write.  They allow the module
+to be used for writing config files as well as reading them.
+
+ftplib -- ntransfercmd(), transfercmd(), and retrbinary() all now
 optionally support the RFC 959 REST command.
 
-socket - new function getfqdn()
+gzip -- readline and readlines now accept optional size arguments
 
-readline - new functions to read, write and truncate history files.  The
-readline section of the library reference manual contains an example.
+httplib -- New interfaces and support for HTTP/1.1 by Greg Stein.  See
+the module doc strings for details.
 
-XXX: I'm sure there are others
+os/popen2 -- popen2/popen3/popen4 support under Windows.  popen2/popen3
+support under Unix.
+
+os/pty -- support for openpty and forkpty by Thomas Wouters.
+
+os.path -- fix semantics of os.path.commonprefix
+
+smtplib -- support for sending very long messages
+
+socket -- new function getfqdn()
+
+readline -- new functions to read, write and truncate history files.
+The readline section of the library reference manual contains an
+example.
+
+shutil -- new copyfileobj function
+
+SimpleHTTPServer, CGIHTTPServer -- Fix problems with buffering in the
+HTTP server.
+
+Tkinter -- flatten optimization by Fredrik Lundh
+
+urllib -- scans environment variables for proxy configuration,
+e.g. http_proxy. 
+
+whichdb -- recognizes dumbdbm format
 
 
 Obsolete Modules
@@ -293,6 +349,24 @@ they are all included by Python.h.)
 
 Trent Mick ensured portability to 64-bit platforms, under both Linux
 and Win64, especially for the new Intel Itanium processor.
+
+The C APIs to return an object's size have been update to consistently
+use the form PyXXX_Size, e.g. PySequence_Size and PyDict_Size.  In
+previous versions, the abstract interfaces used PyXXX_Length and the
+concrete interfaces used PyXXX_Size.  The old names,
+e.g. PyObject_Length, are still available for backwards compatibility
+at the API level, but are deprecated.
+
+PyOS_CheckStack - XXX
+
+The GC changes resulted in creation of two new slots on object,
+tp_traverse and tp_clear.  The augmented assignment changes result in
+the createion of a new slot for each in-place operator.
+
+The GC API creates new requirements for container types implemented in
+C extesion modules.  See Include/objimpl.h for details.
+
+PyString_Decode / PyString_Encode. ???
 
 Numerous new APIs were added, e.g.
 
