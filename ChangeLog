@@ -1,3 +1,19 @@
+Mon May  9 10:37:48 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* acconfig.h: added _POSIX_THREADS define
+
+	* configure.in: test for -lpthreads; add directory argument to
+	--with-thread to LIBS as -L option
+
+	* Objects/stringobject.c (formatstring): don't DECREF result of
+	strobject() before using it
+
+	* Doc/libtypes.tex: fix typo in table of list methods; clarify
+	truncation behavior of floating point formatting
+
+	* Doc/ref3.tex: clarify defaults for __repr__, __cmp__ and
+	__str__; correct (some) descriptions of class constructors
+
 Fri May  6 11:25:26 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* various files: micro changes needed to compile on Mac;
