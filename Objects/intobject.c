@@ -681,8 +681,12 @@ int_neg(PyIntObject *v)
 static PyObject *
 int_pos(PyIntObject *v)
 {
-	Py_INCREF(v);
-	return (PyObject *)v;
+	if (PyInt_CheckExact(v)) {
+		Py_INCREF(v);
+		return (PyObject *)v;
+	}
+	else
+		return PyInt_FromLong(v->ob_ival);
 }
 
 static PyObject *
@@ -716,10 +720,8 @@ int_lshift(PyIntObject *v, PyIntObject *w)
 		PyErr_SetString(PyExc_ValueError, "negative shift count");
 		return NULL;
 	}
-	if (a == 0 || b == 0) {
-		Py_INCREF(v);
-		return (PyObject *) v;
-	}
+	if (a == 0 || b == 0)
+		return int_pos(v);
 	if (b >= LONG_BIT) {
 		return PyInt_FromLong(0L);
 	}
@@ -737,10 +739,8 @@ int_rshift(PyIntObject *v, PyIntObject *w)
 		PyErr_SetString(PyExc_ValueError, "negative shift count");
 		return NULL;
 	}
-	if (a == 0 || b == 0) {
-		Py_INCREF(v);
-		return (PyObject *) v;
-	}
+	if (a == 0 || b == 0)
+		return int_pos(v);
 	if (b >= LONG_BIT) {
 		if (a < 0)
 			a = -1;
