@@ -187,17 +187,22 @@ PyInt_FromString(char *s, char **pend, int base)
 	char *end;
 	long x;
 	char buffer[256]; /* For errors */
+	int warn = 0;
 
 	if ((base != 0 && base < 2) || base > 36) {
-		PyErr_SetString(PyExc_ValueError, "int() base must be >= 2 and <= 36");
+		PyErr_SetString(PyExc_ValueError,
+				"int() base must be >= 2 and <= 36");
 		return NULL;
 	}
 
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
 	errno = 0;
-	if (base == 0 && s[0] == '0')
+	if (base == 0 && s[0] == '0') {
 		x = (long) PyOS_strtoul(s, &end, base);
+		if (x < 0)
+			warn = 1;
+	}
 	else
 		x = PyOS_strtol(s, &end, base);
 	if (end == s || !isalnum(Py_CHARMASK(end[-1])))
@@ -215,6 +220,11 @@ PyInt_FromString(char *s, char **pend, int base)
 		if (err_ovf("string/unicode conversion"))
 			return NULL;
 		return PyLong_FromString(s, pend, base);
+	}
+	if (warn) {
+		if (PyErr_Warn(PyExc_FutureWarning,
+			"int('0...', 0): sign will change in Python 2.4") < 0)
+			return NULL;
 	}
 	if (pend)
 		*pend = end;
