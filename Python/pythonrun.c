@@ -92,7 +92,7 @@ PyObject *PyModule_GetWarningsModule()
 	/* Save and restore any exceptions */
 	PyErr_Fetch(&typ, &val, &tb);
 
-	all_modules = PySys_GetObject("__modules__");
+	all_modules = PySys_GetObject("modules");
 	if (all_modules) {
 		warnings_module = PyDict_GetItemString(all_modules, "warnings");
 		/* We keep a ref in the global */
