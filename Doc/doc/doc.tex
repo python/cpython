@@ -462,8 +462,6 @@ This \UNIX\ is also followed by a space.
   broader.  This class is used for ``how-to'' documents (this
   document is an example) and for shorter reference manuals for small,
   fairly cohesive module libraries.  Examples of the later use include
-  the standard \citetitle[../mac/mac.html]{Macintosh Library Modules}
-  and
 \citetitle[http://starship.python.net/crew/fdrake/manuals/krb5py/krb5py.html]{Using
   Kerberos from Python}, which contains reference material for an
   extension package.  These documents are roughly equivalent to a
@@ -824,7 +822,9 @@ This \UNIX\ is also followed by a space.
       specifications.  The header name should be entered in the same
       way it would normally be found in practice, with the
       camel-casing conventions being preferred where there is more
-      than one common usage.  For example: \mailheader{Content-Type}.
+      than one common usage.  The colon which follows the name of the
+      header should not be included.
+      For example: \code{\e mailheader\{Content-Type\}}.
     \end{macrodesc}
 
     \begin{macrodesc}{makevar}{\p{name}}
@@ -870,7 +870,7 @@ This \UNIX\ is also followed by a space.
       The symbol for indicating a value that may take a positive or
       negative value of a specified magnitude, typically represented
       by a plus sign placed over a minus sign.  For example:
-      \emph{The lateral movement has a tolerance of \plusminus 3\%{}}.
+      \code{\e plusminus 3\%{}}.
     \end{macrodesc}
 
     \begin{macrodesc}{program}{\p{name}}
@@ -1012,7 +1012,7 @@ This \UNIX\ is also followed by a space.
   modules.  The name for a module in a package should be typed in
   ``fully qualified'' form (it should include the package name).
   For example, a module ``foo'' in package ``bar'' should be marked as
-  \samp{\e module\{bar.foo\}}, and the beginning of the reference
+  \code{\e module\{bar.foo\}}, and the beginning of the reference
   section would appear as:
 
 \begin{verbatim}
