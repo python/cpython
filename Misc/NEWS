@@ -21,6 +21,9 @@ Extension modules
 
 Library
 
+- encodings package: added aliases for all supported IANA character
+  sets
+
 - ftplib: to safeguard the user's privacy, anonymous login will use
   "anonymous@" as default password, rather than the real user and host
   name.
