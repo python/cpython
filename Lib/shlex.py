@@ -95,7 +95,7 @@ class shlex:
                     self.pushback = [nextchar] + self.pushback
                     if self.debug >= 2:
                         print "I see punctuation in word state"
-                    state = ' '
+                    self.state = ' '
                     if self.token:
                         break	# emit current token
                     else:
