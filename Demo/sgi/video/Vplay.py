@@ -98,7 +98,7 @@ def main():
 			if opt == '-y': yoff = string.atoi(arg)
 	except string.atoi_error:
 		sys.stdout = sys.stderr
-		print 'Option', opt, 'require integer argument'
+		print 'Option', opt, 'requires integer argument'
 		sys.exit(2)
 
 	# Check validity of certain options combinations
