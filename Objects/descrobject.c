@@ -911,7 +911,7 @@ PyWrapper_New(PyObject *d, PyObject *self)
 	    self.__doc__ = doc
 
 	def __get__(self, inst, type=None):
-	    if self.__get is None:
+	    if self.__get is NULL:
 		raise AttributeError, "unreadable attribute"
 	    if inst is None:
 	        return self
@@ -963,13 +963,13 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
 	propertyobject *gs = (propertyobject *)self;
 
-	if (gs->prop_get == NULL) {
-		PyErr_SetString(PyExc_AttributeError, "unreadable attribute");
-		return NULL;
-	}
 	if (obj == NULL || obj == Py_None) {
 		Py_INCREF(self);
 		return self;
+	}
+	if (gs->prop_get == NULL) {
+		PyErr_SetString(PyExc_AttributeError, "unreadable attribute");
+		return NULL;
 	}
 	return PyObject_CallFunction(gs->prop_get, "(O)", obj);
 }
