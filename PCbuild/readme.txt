@@ -45,9 +45,9 @@ _sre
     Unicode-aware regular expression engine
 _symtable
     the _symtable module, symtablemodule.c
-_test
+_testcapi
     tests of the Python C API, run via Lib/test/test_capi.py, and
-    implemented by module Modules/_testmodule.c
+    implemented by module Modules/_testcapimodule.c
 mmap
     mmapmodule.c
 parser

@@ -1,3 +1,14 @@
+What's New in Python 2.1 alpha 507?
+===================================
+
+Core language, builtins, and interpreter
+
+Standard library
+
+Windows changes
+
+- Build:  Subproject _test (effectively) renamed to _testcapi.
+
 What's New in Python 2.1 alpha 2?
 =================================
 

@@ -41,11 +41,14 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name pythoncore
+    End Project Dependency
 }}}
 
 ###############################################################################
 
-Project: "_test"=.\_test.dsp - Package Owner=<4>
+Project: "_testcapi"=.\_testcapi.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -53,6 +56,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name pythoncore
+    End Project Dependency
 }}}
 
 ###############################################################################

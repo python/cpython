@@ -176,7 +176,7 @@ class PyBuildExt(build_ext):
         # access to the builtin codecs and codec registry
         exts.append( Extension('_codecs', ['_codecsmodule.c']) )
         # Python C API test module
-        exts.append( Extension('_test', ['_testmodule.c']) )
+        exts.append( Extension('_testcapi', ['_testcapimodule.c']) )
         # static Unicode character database
         exts.append( Extension('unicodedata', ['unicodedata.c']) )
         # access to ISO C locale support

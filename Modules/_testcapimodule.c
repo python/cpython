@@ -56,13 +56,13 @@ static PyMethodDef TestMethods[] = {
 };
 
 DL_EXPORT(void)
-init_test(void)
+init_testcapi(void)
 {
 	PyObject *m, *d;
 
-	m = Py_InitModule("_test", TestMethods);
+	m = Py_InitModule("_testcapi", TestMethods);
 
-	TestError = PyErr_NewException("_test.error", NULL, NULL);
+	TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
 	d = PyModule_GetDict(m);
 	PyDict_SetItemString(d, "error", TestError);
 }
