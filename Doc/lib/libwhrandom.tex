@@ -22,13 +22,9 @@ Returns the next random floating point number in the range [0.0 ... 1.0).
 \end{funcdesc}
 
 \begin{funcdesc}{seed}{x, y, z}
-Initializes the random number generator from the integers
-\var{x},
-\var{y}
-and
-\var{z}.
-When the module is first imported, the random number is initialized
-using values derived from the current time.
+Initializes the random number generator from the integers \var{x},
+\var{y} and \var{z}.  When the module is first imported, the random
+number is initialized using values derived from the current time.
 \end{funcdesc}
 
 \begin{funcdesc}{uniform}{a, b}
@@ -43,10 +39,10 @@ available at the module level.  Therefore one can write either
 generator = whrandom.whrandom()
 N = generator.random()
 \end{verbatim}
-%
+
 \begin{seealso}
-\seemodule{random}{generators for various random distributions}
-\seetext{Wichmann, B. A. \& Hill, I. D., ``Algorithm AS 183: 
-An efficient and portable pseudo-random number generator'', 
-\emph{Applied Statistics} 31 (1982) 188-190}
+  \seemodule{random}{generators for various random distributions}
+  \seetext{Wichmann, B. A. \& Hill, I. D., ``Algorithm AS 183: 
+           An efficient and portable pseudo-random number generator'',
+           \citetitle{Applied Statistics} 31 (1982) 188-190.}
 \end{seealso}
