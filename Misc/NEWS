@@ -167,8 +167,8 @@ can now use it to run arbitrary Python scripts in restricted mode).
 long ago.
 
 - Major upgrade to ConfigParser.py; converted to using 're', added new 
-exceptions, support underscore in section header and option name, no
-longer add 'name' option to every section.
+exceptions, support underscore in section header and option name.  No
+longer add 'name' option to every section; instead, add '__name__'.
 
 - The ihooks.py module now understands package imports.
 
