@@ -5,13 +5,14 @@ Release date: 28-Sep-2100
 Type/class unification and new-style classes
 
 - New-style classes are now always dynamic (except for built-in and
-  extension types).  There was no longer a performance penalty, and I
+  extension types).  There is no longer a performance penalty, and I
   no longer see another reason to keep this baggage around.  One relic
-  remains: the __dict__ or a new-style class is a read-only proxy.
-  You must set the class's attribute to modify.  As a consequence, the
+  remains: the __dict__ of a new-style class is a read-only proxy; you
+  must set the class's attribute to modify it.  As a consequence, the
   __defined__ attribute of new-style types no longer exists, for lack
   of need: there is once again only one __dict__ (although in the
-  future a __cache__ may be resurrected in its place).
+  future a __cache__ may be resurrected with a similar function, if I
+  can prove that it actually speeds things up).
 
 - C.__doc__ now works as expected for new-style classes (in 2.2a4 it
   always returned None, even when there was a class docstring).
