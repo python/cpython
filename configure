@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.198 
+# From configure.in Revision: 1.199 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -5436,7 +5436,7 @@ else
 int main() {
 
 /* Ultrix mips cc rejects this.  */
-typedef int charset[2]; const charset x = {0,0};
+typedef int charset[2]; const charset x;
 /* SunOS 4.1.1 cc rejects this.  */
 char const *const *ccp;
 char **p;
