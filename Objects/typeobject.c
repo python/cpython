@@ -5542,7 +5542,8 @@ super_getattro(PyObject *self, PyObject *name)
 						   this is instance-mode super 
 						   (See SF ID #743627)
 						*/
-						(su->obj==su->obj_type 
+						(su->obj == (PyObject *)
+							    su->obj_type 
 							? (PyObject *)NULL 
 							: su->obj),
 						(PyObject *)starttype);
