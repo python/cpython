@@ -123,8 +123,12 @@ class HTTP:
         try:
             [ver, code, msg] = string.split(line, None, 2)
         except ValueError:
-            self.headers = None
-            return -1, line, self.headers
+          try:
+              [ver, code] = string.split(line, None, 1)
+              msg = ""
+          except ValueError:
+              self.headers = None
+              return -1, line, self.headers
         if ver[:5] != 'HTTP/':
             self.headers = None
             return -1, line, self.headers
