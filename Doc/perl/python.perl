@@ -600,7 +600,7 @@ sub load_refcounts{
     open(REFCOUNT_FILE, "<$filename") || die "\n$!\n";
     print "[loading API refcount data]";
     while (<REFCOUNT_FILE>) {
-        if (/([a-zA-Z0-9_]+):PyObject\*:([a-zA-Z0-9_]*):(0|[-+]1):(.*)$/) {
+        if (/([a-zA-Z0-9_]+):PyObject\*:([a-zA-Z0-9_]*):(0|[-+]1|null):(.*)$/) {
             my($func, $param, $count, $comment) = ($1, $2, $3, $4);
             #print "\n$func($param) --> $count";
             $REFCOUNTS{"$func:$param"} = $count;
@@ -633,6 +633,10 @@ sub do_env_cfuncdesc{
     elsif ($result_rc eq '0') {
         $rcinfo = '<span class="label">Return value:</span>'
                   . "\n  <span class=\"value\">Borrowed reference.</span>";
+    }
+    elsif ($result_rc eq 'null') {
+        $rcinfo = '<span class="label">Return value:</span>'
+                  . "\n  <span class=\"value\">Always NULL.</span>";
     }
     if ($rcinfo ne '') {
         $rcinfo = "\n<div class=\"refcount-info\">\n  $rcinfo\n</div>";
