@@ -14,6 +14,7 @@ file as a string literal.
 
 import sys, string, time, os, stat, regex, cgi, faqconf
 from faqconf import *			# This imports all uppercase names
+now = time.time()
 
 class FileError:
     def __init__(self, file):
@@ -158,7 +159,6 @@ def send_my_cookie(ui):
     value = "%s/%s/%s" % (ui.author, ui.email, ui.password)
     import urllib
     value = urllib.quote(value)
-    now = time.time()
     then = now + COOKIE_LIFETIME
     gmt = time.gmtime(then)
     print "Set-Cookie: %s=%s; path=/cgi-bin/;" % (name, value),
@@ -243,8 +243,25 @@ class FaqEntry:
 	p.close()
 	self.version = version
 
+    def getmtime(self):
+	if not self.last_changed_date:
+	    return 0
+	try:
+	    return os.stat(self.file)[stat.ST_MTIME]
+	except os.error:
+	    return 0
+
+    def emit_marks(self):
+	mtime = self.getmtime()
+	if mtime >= now - DT_VERY_RECENT:
+	    emit(MARK_VERY_RECENT, self)
+	elif mtime >= now - DT_RECENT:
+	    emit(MARK_RECENT, self)
+
     def show(self, edit=1):
-	emit(ENTRY_HEADER, self)
+	emit(ENTRY_HEADER1, self)
+	self.emit_marks()
+	emit(ENTRY_HEADER2, self)
 	pre = 0
 	for line in string.split(self.body, '\n'):
 	    if not string.strip(line):
@@ -461,20 +478,18 @@ class FaqWizard:
 	self.last_changed(files)
 	self.format_index(files, localrefs=1)
 	self.format_all(files, edit=0)
-	sys.exit(0)
+	sys.exit(0)			# XXX Hack to suppress epilogue
 
     def last_changed(self, files):
 	latest = 0
 	for file in files:
-	    try:
-		st = os.stat(file)
-	    except os.error:
-		continue
-	    mtime = st[stat.ST_MTIME]
-	    if mtime > latest:
-		latest = mtime
-	print time.strftime(LAST_CHANGED,
-			    time.localtime(time.time()))
+	    entry = self.dir.open(file)
+	    if entry:
+		mtime = mtime = entry.getmtime()
+		if mtime > latest:
+		    latest = mtime
+	print time.strftime(LAST_CHANGED, time.localtime(now))
+	emit(EXPLAIN_MARKS)
 
     def format_all(self, files, edit=1, headers=1):
 	sec = 0
@@ -495,7 +510,9 @@ class FaqWizard:
 
     def do_index(self):
 	self.prologue(T_INDEX)
-	self.format_index(self.dir.list(), add=1)
+	files = self.dir.list()
+	self.last_changed(files)
+	self.format_index(files, add=1)
 
     def format_index(self, files, add=0, localrefs=0):
 	sec = 0
@@ -519,6 +536,7 @@ class FaqWizard:
 		emit(LOCAL_ENTRY, entry)
 	    else:
 		emit(INDEX_ENTRY, entry)
+	    entry.emit_marks()
 	if sec:
 	    if add:
 		emit(INDEX_ADDSECTION, sec=sec)
@@ -529,18 +547,16 @@ class FaqWizard:
 	    days = 1
 	else:
 	    days = string.atof(self.ui.days)
-	now = time.time()
 	try:
 	    cutoff = now - days * 24 * 3600
 	except OverflowError:
 	    cutoff = 0
 	list = []
 	for file in self.dir.list():
-	    try:
-		st = os.stat(file)
-	    except os.error:
+	    entry = self.dir.open(file)
+	    if not entry:
 		continue
-	    mtime = st[stat.ST_MTIME]
+	    mtime = entry.getmtime()
 	    if mtime >= cutoff:
 		list.append((mtime, file))
 	list.sort()
@@ -763,7 +779,7 @@ class FaqWizard:
 	except IOError, why:
 	    self.error(CANTWRITE, file=file, why=why)
 	    return
-	date = time.ctime(time.time())
+	date = time.ctime(now)
 	emit(FILEHEADER, self.ui, os.environ, date=date, _file=f, _quote=0)
 	f.write('\n')
 	f.write(self.ui.body)
