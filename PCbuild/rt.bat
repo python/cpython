@@ -15,10 +15,10 @@
 @rem runs
 @rem     python_d ../lib/test/regrtest.py -g test_binascii
 @rem to generate the expected-output file for binascii quickly.
+@setlocal
 @set _exe=python
 @set _qmode=no
 @set _dashO=
-@set _oldpath=%PATH%
 @PATH %PATH%;..\..\tcltk\bin
 @goto CheckOpts
 :Again
@@ -38,8 +38,3 @@
 @pause
 :Qmode
 %_exe% %_dashO% -E -tt ../lib/test/regrtest.py %1 %2 %3 %4 %5 %6 %7 %8 %9
-@set _exe=
-@set _qmode=
-@set _dashO=
-@PATH %_oldpath%
-@set _oldpath=
