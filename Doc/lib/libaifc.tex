@@ -113,19 +113,19 @@ writing have all the above methods, except for \code{readframes} and
 \code{setpos}.  In addition the following methods exist.  The
 \code{get} methods can only be called after the corresponding
 \code{set} methods have been called.  Before the first
-\code{writeframes} or \code{writeframesraw}, all parameters except for
-the number of frames must be filled in.
+\code{writeframes()} or \code{writeframesraw()}, all parameters except
+for the number of frames must be filled in.
 
 \begin{funcdesc}{aiff}{}
 Create an AIFF file.  The default is that an AIFF-C file is created,
-unless the name of the file ends in '.aiff' in which case the default
-is an AIFF file.
+unless the name of the file ends in \code{'.aiff'} in which case the
+default is an AIFF file.
 \end{funcdesc}
 
 \begin{funcdesc}{aifc}{}
 Create an AIFF-C file.  The default is that an AIFF-C file is created,
-unless the name of the file ends in '.aiff' in which case the default
-is an AIFF file.
+unless the name of the file ends in \code{'.aiff'} in which case the
+default is an AIFF file.
 \end{funcdesc}
 
 \begin{funcdesc}{setnchannels}{nchannels}
@@ -158,19 +158,19 @@ NONE, ULAW, ALAW, G722.
 \begin{funcdesc}{setparams}{nchannels\, sampwidth\, framerate\, comptype\, compname}
 Set all the above parameters at once.  The argument is a tuple
 consisting of the various parameters.  This means that it is possible
-to use the result of a \code{getparams} call as argument to
-\code{setparams}.
+to use the result of a \code{getparams()} call as argument to
+\code{setparams()}.
 \end{funcdesc}
 
 \begin{funcdesc}{setmark}{id\, pos\, name}
 Add a mark with the given id (larger than 0), and the given name at
 the given position.  This method can be called at any time before
-\code{close}.
+\code{close()}.
 \end{funcdesc}
 
 \begin{funcdesc}{tell}{}
 Return the current write position in the output file.  Useful in
-combination with \code{setmark}.
+combination with \code{setmark()}.
 \end{funcdesc}
 
 \begin{funcdesc}{writeframes}{data}
@@ -179,7 +179,7 @@ the audio file parameters have been set.
 \end{funcdesc}
 
 \begin{funcdesc}{writeframesraw}{data}
-Like \code{writeframes}, except that the header of the audio file is
+Like \code{writeframes()}, except that the header of the audio file is
 not updated.
 \end{funcdesc}
 
