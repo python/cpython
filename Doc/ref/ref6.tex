@@ -275,7 +275,8 @@ operation and an assignment statement:
              {\token{target} \token{augop} \token{expression_list}}
   \production{augop}
              {"+=" | "-=" | "*=" | "/=" | "\%=" | "**="}
-  \productioncont{| ">>=" | "<<=" | "\&=" | "\textasciicircum=" | "|="}
+  % The empty groups below prevent conversion to guillemets.
+  \productioncont{| ">{}>=" | "<{}<=" | "\&=" | "\textasciicircum=" | "|="}
 \end{productionlist}
 
 (See section~\ref{primaries} for the syntax definitions for the last

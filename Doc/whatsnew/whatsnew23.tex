@@ -2325,13 +2325,15 @@ exists.
 they're stored as 32-bit numbers and result in a negative value, but
 in Python 2.4 they'll become positive long integers. 
 
+% The empty groups below prevent conversion to guillemets.
 There are a few ways to fix this warning.  If you really need a
 positive number, just add an \samp{L} to the end of the literal.  If
 you're trying to get a 32-bit integer with low bits set and have
-previously used an expression such as \code{~(1 << 31)}, it's probably
+previously used an expression such as \code{\textasciitilde(1 <{}< 31)},
+it's probably
 clearest to start with all bits set and clear the desired upper bits.
 For example, to clear just the top bit (bit 31), you could write
-\code{0xffffffffL {\&}{\textasciitilde}(1L<<31)}.
+\code{0xffffffffL {\&}{\textasciitilde}(1L<{}<31)}.
 
 \item You can no longer disable assertions by assigning to \code{__debug__}.
 
