@@ -175,7 +175,7 @@ else:
 # default is 'ascii', but if you're willing to experiment, you can
 # change this.
 
-encoding = "ascii" # default
+encoding = "ascii" # Default value set by _PyUnicode_Init()
 
 if 0:
     # Enable to support locale aware default string encodings.
@@ -189,7 +189,8 @@ if 0:
     # Unicode to string conversion.
     encoding = "undefined"
 
-sys.setdefaultencoding(encoding)
+if encoding != "ascii":
+    sys.setdefaultencoding(encoding)
 
 #
 # Run custom site specific code, if available.
