@@ -479,7 +479,7 @@ typedef struct {
 #ifdef AF_UNIX
 		struct sockaddr_un un;
 #endif
-#ifdef INET6
+#ifdef ENABLE_IPV6
 		struct sockaddr_in6 in6;
 		struct sockaddr_storage storage;
 #endif
@@ -594,7 +594,7 @@ setipaddr(char* name, struct sockaddr * addr_ret, int af)
 		case AF_INET:
 			siz = 4;
 			break;
-#ifdef INET6
+#ifdef ENABLE_IPV6
 		case AF_INET6:
 			siz = 16;
 			break;
@@ -651,7 +651,7 @@ setipaddr(char* name, struct sockaddr * addr_ret, int af)
 	switch (addr_ret->sa_family) {
 	case AF_INET:
 		return 4;
-#ifdef INET6
+#ifdef ENABLE_IPV6
 	case AF_INET6:
 		return 16;
 #endif
@@ -725,7 +725,7 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen)
 	}
 #endif /* AF_UNIX */
 
-#ifdef INET6
+#ifdef ENABLE_IPV6
 	case AF_INET6:
 	{
 		struct sockaddr_in6 *a;
@@ -830,7 +830,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		return 1;
 	}
 
-#ifdef INET6
+#ifdef ENABLE_IPV6
 	case AF_INET6:
 	{
 		struct sockaddr_in6* addr;
@@ -919,7 +919,7 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
 		return 1;
 	}
 
-#ifdef INET6
+#ifdef ENABLE_IPV6
 	case AF_INET6:
 	{
 		*len_ret = sizeof (struct sockaddr_in6);
@@ -1993,7 +1993,7 @@ gethost_common(struct hostent *h, struct sockaddr *addr, int alen, int af)
 		if (alen < sizeof(struct sockaddr_in))
 			return NULL;
 		break;
-#ifdef INET6
+#ifdef ENABLE_IPV6
 	case AF_INET6:
 		if (alen < sizeof(struct sockaddr_in6))
 			return NULL;
@@ -2031,7 +2031,7 @@ gethost_common(struct hostent *h, struct sockaddr *addr, int alen, int af)
 				memcpy((char *) addr, &sin, sizeof(sin));
 			break;
 		    }
-#ifdef INET6
+#ifdef ENABLE_IPV6
 		case AF_INET6:
 		    {
 			struct sockaddr_in6 sin6;
@@ -2138,7 +2138,7 @@ for a host.  The host argument is a string giving a host name or IP number.";
 static PyObject *
 PySocket_gethostbyaddr(PyObject *self, PyObject *args)
 {
-#ifdef INET6
+#ifdef ENABLE_IPV6
         struct sockaddr_storage addr;
 #else
 	struct sockaddr_in addr;
@@ -2177,7 +2177,7 @@ PySocket_gethostbyaddr(PyObject *self, PyObject *args)
 		ap = (char *)&((struct sockaddr_in *)sa)->sin_addr;
 		al = sizeof(((struct sockaddr_in *)sa)->sin_addr);
 		break;
-#ifdef INET6
+#ifdef ENABLE_IPV6
 	case AF_INET6:
 		ap = (char *)&((struct sockaddr_in6 *)sa)->sin6_addr;
 		al = sizeof(((struct sockaddr_in6 *)sa)->sin6_addr);
@@ -2588,7 +2588,7 @@ PySocket_getnameinfo(PyObject *self, PyObject *args)
 		}
 		break;
 	    }
-#ifdef INET6
+#ifdef ENABLE_IPV6
 	case AF_INET6:
 	    {
 		struct sockaddr_in6 *sin6;

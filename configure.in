@@ -1189,8 +1189,7 @@ if test "$ipv6" = "yes"; then
 #ifdef IPV6_INRIA_VERSION
 yes
 #endif],
-				[ipv6type=$i;
-				OPT="-DINET6 $OPT"])
+				[ipv6type=$i])
 			;;
 		kame)
 			dnl http://www.kame.net/
@@ -1202,8 +1201,7 @@ yes
 				[ipv6type=$i;
 				ipv6lib=inet6
 				ipv6libdir=/usr/local/v6/lib
-				ipv6trylibc=yes
-				OPT="-DINET6 $OPT"])
+				ipv6trylibc=yes])
 			;;
 		linux-glibc)
 			dnl http://www.v6.linux.or.jp/
@@ -1213,8 +1211,7 @@ yes
 yes
 #endif],
 				[ipv6type=$i;
-				ipv6trylibc=yes
-				OPT="-DINET6 $OPT"])
+				ipv6trylibc=yes])
 			;;
 		linux-inet6)
 			dnl http://www.v6.linux.or.jp/
@@ -1222,7 +1219,7 @@ yes
 				ipv6type=$i
 				ipv6lib=inet6
 				ipv6libdir=/usr/inet6/lib
-				OPT="-DINET6 -I/usr/inet6/include $OPT"
+				OPT="-I/usr/inet6/include $OPT"
 			fi
 			;;
 		solaris)
@@ -1230,7 +1227,6 @@ yes
                           if /usr/xpg4/bin/grep -q tcp6 /etc/netconfig; then
 				ipv6type=$i
 				ipv6trylibc=yes
-				OPT="-DINET6 $OPT"
                           fi
                         fi
 			;;
@@ -1242,8 +1238,7 @@ yes
 #endif],
 				[ipv6type=$i;
 				ipv6lib=inet6;
-				ipv6libdir=/usr/local/v6/lib;
-				OPT="-DINET6 $OPT"])
+				ipv6libdir=/usr/local/v6/lib])
 			;;
 		v6d)
 			AC_EGREP_CPP(yes, [
@@ -1264,8 +1259,7 @@ yes
 #endif],
 				[ipv6type=$i;
 				ipv6lib=inet6;
-				ipv6libdir=/usr/local/v6/lib;
-				OPT="-DINET6 $OPT"])
+				ipv6libdir=/usr/local/v6/lib])
 			;;
 		esac
 		if test "$ipv6type" != "unknown"; then
