@@ -20,7 +20,14 @@ class Chooser:
         self.__pw = None
         self.__wantspec = wantspec
 
-    def show(self, color=None):
+    def show(self, color, options):
+        # scan for options that can override the ctor options
+        self.__wantspec = options.get('wantspec', self.__wantspec)
+        dbfile = options.get('databasefile', self.__databasefile)
+        # load the database file
+        colordb = None
+        if dbfile <> self.__databasefile:
+            colordb = ColorDB.get_colordb(dbfile)
         if not self.__master:
             from Tkinter import Tk
             self.__master = Tk()
@@ -32,7 +39,10 @@ class Chooser:
         else:
             self.__pw.deiconify()
         # convert color
-        colordb = self.__sb.colordb()
+        if colordb:
+            self.__sb.set_colordb(colordb)
+        else:
+            colordb = self.__sb.colordb()
         if color:
             r, g, b = Main.initial_color(color, colordb)
             self.__sb.update_views(r, g, b)
@@ -70,7 +80,7 @@ def askcolor(color = None, **options):
     global _chooser
     if not _chooser:
         _chooser = apply(Chooser, (), options)
-    return _chooser.show(color)
+    return _chooser.show(color, options)
 
 def save():
     global _chooser
