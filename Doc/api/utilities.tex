@@ -286,14 +286,14 @@ Numeric values are stored with the least significant byte first.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyMarshal_WriteShortToFile}{short value, FILE *file}
-  Marshal a \ctype{short} integer, \var{value}, to \var{file}.
+  Marshal a \ctype{short} integer, \var{value}, to \var{file}.  This
+  will only write the least-significant 16 bits of \var{value};
+  regardless of the size of the native \ctype{short} type.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyMarshal_WriteObjectToFile}{PyObject *value,
                                                      FILE *file}
-  Marshal a Python object, \var{value}, to \var{file}.  This
-  will only write the least-significant 16 bits of \var{value};
-  regardless of the size of the native \ctype{short} type.
+  Marshal a Python object, \var{value}, to \var{file}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyMarshal_WriteObjectToString}{PyObject *value}
@@ -318,7 +318,7 @@ Should only non-negative values be written using these routines?
 \begin{cfuncdesc}{int}{PyMarshal_ReadShortFromFile}{FILE *file}
   Return a C \ctype{short} from the data stream in a \ctype{FILE*}
   opened for reading.  Only a 16-bit value can be read in using
-  this function, regardless of the native size of \ctype{long}.
+  this function, regardless of the native size of \ctype{short}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyMarshal_ReadObjectFromFile}{FILE *file}
