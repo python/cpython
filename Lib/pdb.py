@@ -12,7 +12,7 @@ from repr import Repr
 import os
 import re
 import pprint
-
+import traceback
 # Create a custom safe Repr instance and increase its maxstring.
 # The default of 30 truncates error messages too easily.
 _repr = Repr()
@@ -57,6 +57,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         cmd.Cmd.__init__(self)
         self.prompt = '(Pdb) '
         self.aliases = {}
+        self.mainpyfile = ''
+        self._wait_for_mainpyfile = 0
         # Try to load readline if it exists
         try:
             import readline
@@ -117,12 +119,19 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def user_call(self, frame, argument_list):
         """This method is called when there is the remote possibility
         that we ever need to stop in this function."""
+        if self._wait_for_mainpyfile:
+            return
         if self.stop_here(frame):
             print '--Call--'
             self.interaction(frame, None)
 
     def user_line(self, frame):
         """This function is called when we stop or break at this line."""
+        if self._wait_for_mainpyfile:
+            if (self.mainpyfile != self.canonic(frame.f_code.co_filename)
+                or frame.f_lineno<= 0):
+                return
+            self._wait_for_mainpyfile = 0
         self.interaction(frame, None)
 
     def user_return(self, frame, return_value):
@@ -281,8 +290,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def defaultFile(self):
         """Produce a reasonable default."""
         filename = self.curframe.f_code.co_filename
-        if filename == '<string>' and mainpyfile:
-            filename = mainpyfile
+        if filename == '<string>' and self.mainpyfile:
+            filename = self.mainpyfile
         return filename
 
     do_b = do_break
@@ -525,13 +534,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.lastcmd = p.lastcmd
 
     def do_quit(self, arg):
+        self._user_requested_quit = 1
         self.set_quit()
         return 1
+
     do_q = do_quit
     do_exit = do_quit
 
     def do_EOF(self, arg):
         print
+        self._user_requested_quit = 1
         self.set_quit()
         return 1
 
@@ -928,7 +940,16 @@ Deletes the specified alias."""
         help()
 
     def lookupmodule(self, filename):
-        """Helper function for break/clear parsing -- may be overridden."""
+        """Helper function for break/clear parsing -- may be overridden.
+
+        lookupmodule() translates (possibly incomplete) file or module name
+        into an absolute file name.
+        """
+        if os.path.isabs(filename) and  os.path.exists(filename):
+            return filename 
+        f = os.path.join(sys.path[0], filename)
+        if  os.path.exists(f) and self.canonic(f) == self.mainpyfile:
+            return f
         root, ext = os.path.splitext(filename)
         if ext == '':
             filename = filename + '.py'
@@ -941,6 +962,24 @@ Deletes the specified alias."""
             if os.path.exists(fullname):
                 return fullname
         return None
+
+    def _runscript(self, filename):
+        # Start with fresh empty copy of globals and locals and tell the script
+        # that it's being run as __main__ to avoid scripts being able to access
+        # the pdb.py namespace.
+        globals_ = {"__name__" : "__main__"} 
+        locals_ = globals_ 
+
+        # When bdb sets tracing, a number of call and line events happens
+        # BEFORE debugger even reaches user's code (and the exact sequence of
+        # events depends on python version). So we take special measures to
+        # avoid stopping before we reach the main script (see user_line and
+        # user_call for details).
+        self._wait_for_mainpyfile = 1
+        self.mainpyfile = self.canonic(filename)
+        self._user_requested_quit = 0
+        statement = 'execfile( "%s")' % filename
+        self.run(statement, globals=globals_, locals=locals_)
 
 # Simplified interface
 
@@ -992,23 +1031,49 @@ def help():
         print 'Sorry, can\'t find the help file "pdb.doc"',
         print 'along the Python search path'
 
-mainmodule = ''
-mainpyfile = ''
-
-# When invoked as main program, invoke the debugger on a script
-if __name__=='__main__':
+def main():
     if not sys.argv[1:]:
         print "usage: pdb.py scriptfile [arg] ..."
         sys.exit(2)
 
-    mainpyfile = filename = sys.argv[1]     # Get script filename
-    if not os.path.exists(filename):
-        print 'Error:', repr(filename), 'does not exist'
+    mainpyfile =  sys.argv[1]     # Get script filename
+    if not os.path.exists(mainpyfile):
+        print 'Error:', mainpyfile, 'does not exist'
         sys.exit(1)
-    mainmodule = os.path.basename(filename)
+
     del sys.argv[0]         # Hide "pdb.py" from argument list
 
-    # Insert script directory in front of module search path
-    sys.path.insert(0, os.path.dirname(filename))
+    # Replace pdb's dir with script's dir in front of module search path.
+    sys.path[0] = os.path.dirname(mainpyfile)
 
-    run('execfile(%r)' % (filename,))
+    # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
+    # modified by the script being debugged. It's a bad idea when it was
+    # changed by the user from the command line. The best approach would be to
+    # have a "restart" command which would allow explicit specification of
+    # command line arguments.
+    pdb = Pdb()
+    while 1:
+        try:
+            pdb._runscript(mainpyfile)
+            if pdb._user_requested_quit:
+                break
+            print "The program finished and will be restarted"    
+        except SystemExit:
+            # In most cases SystemExit does not warrant a post-mortem session.
+            print "The program exited via sys.exit(). Exit status: ",
+            print sys.exc_info()[1]
+        except:
+            traceback.print_exc()
+            print "Uncaught exception. Entering post mortem debugging"
+            print "Running 'cont' or 'step' will restart the program"
+            t = sys.exc_info()[2]
+            while t.tb_next is not None:
+                t = t.tb_next
+            pdb.interaction(t.tb_frame,t)
+            print "Post mortem debugger finished. The "+mainpyfile+" will be restarted"
+
+
+# When invoked as main program, invoke the debugger on a script
+if __name__=='__main__':
+    main()
+        
