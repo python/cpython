@@ -1,0 +1,7 @@
+This is a sample doctest in a text file.
+
+In this example, we'll rely on some silly setup:
+
+  >>> import test.test_doctest
+  >>> test.test_doctest.sillySetup
+  True

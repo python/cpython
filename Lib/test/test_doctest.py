@@ -11,8 +11,12 @@ import doctest
 
 def sample_func(v):
     """
+    Blah blah
+
     >>> print sample_func(22)
     44
+
+    Yee ha!
     """
     return v+v
 
@@ -252,7 +256,7 @@ will return a single test (for that function's docstring):
     [<DocTest sample_func from ...:12 (1 example)>]
     >>> e = tests[0].examples[0]
     >>> print (e.source, e.want, e.lineno)
-    ('print sample_func(22)', '44\n', 1)
+    ('print sample_func(22)', '44\n', 3)
 
     >>> doctest: -ELLIPSIS # Turn ellipsis back off
 
@@ -912,14 +916,20 @@ def test_testsource(): r"""
 Unit tests for `testsource()`.
 
 The testsource() function takes a module and a name, finds the (first)
-test with that name in that module, and converts it to an
+test with that name in that module, and converts it to a script. The
+example code is converted to regular Python code.  The surrounding
+words and expected output are converted to comments:
 
     >>> import test.test_doctest
     >>> name = 'test.test_doctest.sample_func'
     >>> print doctest.testsource(test.test_doctest, name)
+    #      Blah blah
+    #
     print sample_func(22)
     # Expected:
     #     44
+    #
+    #      Yee ha!
 
     >>> name = 'test.test_doctest.SampleNewStyleClass'
     >>> print doctest.testsource(test.test_doctest, name)
@@ -974,6 +984,171 @@ Run the debugger on the docstring, and then restore sys.stdin.
     (Pdb)
 
 """
+
+def test_DocTestSuite():
+    """DocTestSuite creates a unittest test suite into a doctest.
+
+       We create a Suite by providing a module.  A module can be provided
+       by passing a module object:
+
+         >>> import unittest
+         >>> import test.sample_doctest
+         >>> suite = doctest.DocTestSuite(test.sample_doctest)
+         >>> suite.run(unittest.TestResult())
+         <unittest.TestResult run=7 errors=0 failures=3>
+
+       We can also supply the module by name:
+
+         >>> suite = doctest.DocTestSuite('test.sample_doctest')
+         >>> suite.run(unittest.TestResult())
+         <unittest.TestResult run=7 errors=0 failures=3>
+
+       We can use the current module:
+
+         >>> suite = test.sample_doctest.test_suite()
+         >>> suite.run(unittest.TestResult())
+         <unittest.TestResult run=7 errors=0 failures=3>
+
+       We can supply global variables.  If we pass globs, they will be
+       used instead of the module globals.  Here we'll pass an empty
+       globals, triggering an extra error:
+
+         >>> suite = doctest.DocTestSuite('test.sample_doctest', globs={})
+         >>> suite.run(unittest.TestResult())
+         <unittest.TestResult run=7 errors=0 failures=4>
+
+       Alternatively, we can provide extra globals.  Here we'll make an
+       error go away by providing an extra global variable:
+
+         >>> suite = doctest.DocTestSuite('test.sample_doctest',
+         ...                              extraglobs={'y': 1})
+         >>> suite.run(unittest.TestResult())
+         <unittest.TestResult run=7 errors=0 failures=2>
+
+       You can pass option flags.  Here we'll cause an extra error
+       by disabling the blank-line feature:
+
+         >>> suite = doctest.DocTestSuite('test.sample_doctest',
+         ...                         optionflags=doctest.DONT_ACCEPT_BLANKLINE)
+         >>> suite.run(unittest.TestResult())
+         <unittest.TestResult run=7 errors=0 failures=4>
+
+       You can supply setUp and teatDoen functions:
+
+         >>> def setUp():
+         ...     import test.test_doctest
+         ...     test.test_doctest.sillySetup = True
+
+         >>> def tearDown():
+         ...     import test.test_doctest
+         ...     del test.test_doctest.sillySetup
+
+       Here, we installed a silly variable that the test expects:
+
+         >>> suite = doctest.DocTestSuite('test.sample_doctest',
+         ...      setUp=setUp, tearDown=tearDown)
+         >>> suite.run(unittest.TestResult())
+         <unittest.TestResult run=7 errors=0 failures=2>
+
+       But the tearDown restores sanity:
+
+         >>> import test.test_doctest
+         >>> test.test_doctest.sillySetup
+         Traceback (most recent call last):
+         ...
+         AttributeError: 'module' object has no attribute 'sillySetup'
+
+       Finally, you can provide an alternate test finder.  Here we'll
+       use a custom test_finder to to run just the test named bar:
+
+         >>> finder = doctest.DocTestFinder(
+         ...    namefilter=lambda prefix, base: base!='bar')
+         >>> suite = doctest.DocTestSuite('test.sample_doctest',
+         ...                              test_finder=finder)
+         >>> suite.run(unittest.TestResult())
+         <unittest.TestResult run=2 errors=0 failures=0>
+
+       """
+
+def test_DocFileSuite():
+    """We can test tests found in text files using a DocFileSuite.
+
+       We create a suite by providing the names of one or more text
+       files that include examples:
+
+         >>> import unittest
+         >>> suite = doctest.DocFileSuite('test_doctest.txt',
+         ...                              'test_doctest2.txt')
+         >>> suite.run(unittest.TestResult())
+         <unittest.TestResult run=2 errors=0 failures=2>
+
+       The test files are looked for in the directory containing the
+       calling module.  A package keyword argument can be provided to
+       specify a different relative location.
+
+         >>> import unittest
+         >>> suite = doctest.DocFileSuite('test_doctest.txt',
+         ...                              'test_doctest2.txt',
+         ...                              package='test')
+         >>> suite.run(unittest.TestResult())
+         <unittest.TestResult run=2 errors=0 failures=2>
+
+       Note that '/' should be used as a path separator.  It will be
+       converted to a native separator at run time:
+
+
+         >>> suite = doctest.DocFileSuite('../test/test_doctest.txt')
+         >>> suite.run(unittest.TestResult())
+         <unittest.TestResult run=1 errors=0 failures=1>
+
+       You can specify initial global variables:
+
+         >>> suite = doctest.DocFileSuite('test_doctest.txt',
+         ...                              'test_doctest2.txt',
+         ...                              globs={'favorite_color': 'blue'})
+         >>> suite.run(unittest.TestResult())
+         <unittest.TestResult run=2 errors=0 failures=1>
+
+       In this case, we supplied a missing favorite color. You can
+       provide doctest options:
+
+         >>> suite = doctest.DocFileSuite('test_doctest.txt',
+         ...                              'test_doctest2.txt',
+         ...                         optionflags=doctest.DONT_ACCEPT_BLANKLINE,
+         ...                              globs={'favorite_color': 'blue'})
+         >>> suite.run(unittest.TestResult())
+         <unittest.TestResult run=2 errors=0 failures=2>
+
+       And, you can provide setUp and tearDown functions:
+
+       You can supply setUp and teatDoen functions:
+
+         >>> def setUp():
+         ...     import test.test_doctest
+         ...     test.test_doctest.sillySetup = True
+
+         >>> def tearDown():
+         ...     import test.test_doctest
+         ...     del test.test_doctest.sillySetup
+
+       Here, we installed a silly variable that the test expects:
+
+         >>> suite = doctest.DocFileSuite('test_doctest.txt',
+         ...                              'test_doctest2.txt',
+         ...                              setUp=setUp, tearDown=tearDown)
+         >>> suite.run(unittest.TestResult())
+         <unittest.TestResult run=2 errors=0 failures=1>
+
+       But the tearDown restores sanity:
+
+         >>> import test.test_doctest
+         >>> test.test_doctest.sillySetup
+         Traceback (most recent call last):
+         ...
+         AttributeError: 'module' object has no attribute 'sillySetup'
+
+    """
+
 
 ######################################################################
 ## Main

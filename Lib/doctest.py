@@ -1,6 +1,6 @@
 # Module doctest.
 # Released to the public domain 16-Jan-2001, by Tim Peters (tim@python.org).
-# Significant enhancements by:
+# Major enhancements and refactoring by:
 #     Jim Fulton
 #     Edward Loper
 
@@ -296,7 +296,7 @@ __all__ = [
     'testmod',
     'run_docstring_examples',
     'Tester',
-    'DocTestTestCase',
+    'DocTestCase',
     'DocTestSuite',
     'testsource',
     'debug',
@@ -305,7 +305,7 @@ __all__ = [
 
 import __future__
 
-import sys, traceback, inspect, linecache, re, types
+import sys, traceback, inspect, linecache, os, re, types
 import unittest, difflib, tempfile
 from StringIO import StringIO
 
@@ -329,6 +329,26 @@ OPTIONFLAGS_BY_NAME = {
 # Special string markers for use in `want` strings:
 BLANKLINE_MARKER = '<BLANKLINE>'
 ELLIPSIS_MARKER = '...'
+
+
+# There are 4 basic classes:
+#  - Example: a <source, want> pair, plus an intra-docstring line number.
+#  - DocTest: a collection of examples, parsed from a docstring, plus
+#    info about where the docstring came from (name, filename, lineno).
+#  - DocTestFinder: extracts DocTests from a given object's docstring and
+#    its contained objects' docstrings.
+#  - DocTestRunner: runs DocTest cases, and accumulates statistics.
+#
+# So the basic picture is:
+#
+#                             list of:
+# +------+                   +---------+                   +-------+
+# |object| --DocTestFinder-> | DocTest | --DocTestRunner-> |results|
+# +------+                   +---------+                   +-------+
+#                            | Example |
+#                            |   ...   |
+#                            | Example |
+#                            +---------+
 
 ######################################################################
 ## Table of Contents
@@ -449,6 +469,209 @@ class _SpoofOut(StringIO):
         if hasattr(self, "softspace"):
             del self.softspace
 
+class Parser:
+    """
+    Extract doctests from a string.
+    """
+
+    _PS1 = ">>>"
+    _PS2 = "..."
+    _isPS1 = re.compile(r"(\s*)" + re.escape(_PS1)).match
+    _isPS2 = re.compile(r"(\s*)" + re.escape(_PS2)).match
+    _isEmpty = re.compile(r"\s*$").match
+    _isComment = re.compile(r"\s*#").match
+
+    def __init__(self, name, string):
+        """
+        Prepare to extract doctests from string `string`.
+
+        `name` is an arbitrary (string) name associated with the string,
+        and is used only in error messages.
+        """
+        self.name = name
+        self.source = string
+
+    def get_examples(self):
+        """
+        Return the doctest examples from the string.
+
+        This is a list of (source, want, lineno) triples, one per example
+        in the string.  "source" is a single Python statement; it ends
+        with a newline iff the statement contains more than one
+        physical line.  "want" is the expected output from running the
+        example (either from stdout, or a traceback in case of exception).
+        "want" always ends with a newline, unless no output is expected,
+        in which case "want" is an empty string.  "lineno" is the 0-based
+        line number of the first line of "source" within the string.  It's
+        0-based because it's most common in doctests that nothing
+        interesting appears on the same line as opening triple-quote,
+        and so the first interesting line is called "line 1" then.
+
+        >>> text = '''
+        ...        >>> x, y = 2, 3  # no output expected
+        ...        >>> if 1:
+        ...        ...     print x
+        ...        ...     print y
+        ...        2
+        ...        3
+        ...
+        ...        Some text.
+        ...        >>> x+y
+        ...        5
+        ...        '''
+        >>> for x in Parser('<string>', text).get_examples():
+        ...     print x
+        ('x, y = 2, 3  # no output expected', '', 1)
+        ('if 1:\\n    print x\\n    print y\\n', '2\\n3\\n', 2)
+        ('x+y', '5\\n', 9)
+        """
+        return self._parse(kind='examples')
+
+    def get_program(self):
+        """
+        Return an executable program from the string, as a string.
+
+        The format of this isn't rigidly defined.  In general, doctest
+        examples become the executable statements in the result, and
+        their expected outputs become comments, preceded by an "#Expected:"
+        comment.  Everything else (text, comments, everything not part of
+        a doctest test) is also placed in comments.
+
+        >>> text = '''
+        ...        >>> x, y = 2, 3  # no output expected
+        ...        >>> if 1:
+        ...        ...     print x
+        ...        ...     print y
+        ...        2
+        ...        3
+        ...
+        ...        Some text.
+        ...        >>> x+y
+        ...        5
+        ...        '''
+        >>> print Parser('<string>', text).get_program()
+        x, y = 2, 3  # no output expected
+        if 1:
+            print x
+            print y
+        # Expected:
+        #     2
+        #     3
+        #
+        #         Some text.
+        x+y
+        # Expected:
+        #     5
+        """
+        return self._parse(kind='program')
+
+    def _parse(self,   kind):
+        assert kind in ('examples', 'program')
+        do_program = kind == 'program'
+        output = []
+        push = output.append
+
+        string = self.source
+        if not string.endswith('\n'):
+            string += '\n'
+
+        isPS1, isPS2 = self._isPS1, self._isPS2
+        isEmpty, isComment = self._isEmpty, self._isComment
+        lines = string.split("\n")
+        i, n = 0, len(lines)
+        while i < n:
+            # Search for an example (a PS1 line).
+            line = lines[i]
+            i += 1
+            m = isPS1(line)
+            if m is None:
+                if do_program:
+                    line = line.rstrip()
+                    if line:
+                        line = '  ' + line
+                    push('#' + line)
+                continue
+            # line is a PS1 line.
+            j = m.end(0)  # beyond the prompt
+            if isEmpty(line, j) or isComment(line, j):
+                # a bare prompt or comment -- not interesting
+                if do_program:
+                    push("#  " + line[j:])
+                continue
+            # line is a non-trivial PS1 line.
+            lineno = i - 1
+            if line[j] != " ":
+                raise ValueError('line %r of the docstring for %s lacks '
+                                 'blank after %s: %r' %
+                                 (lineno, self.name, self._PS1, line))
+
+            j += 1
+            blanks = m.group(1)
+            nblanks = len(blanks)
+            # suck up this and following PS2 lines
+            source = []
+            while 1:
+                source.append(line[j:])
+                line = lines[i]
+                m = isPS2(line)
+                if m:
+                    if m.group(1) != blanks:
+                        raise ValueError('line %r of the docstring for %s '
+                            'has inconsistent leading whitespace: %r' %
+                            (i, self.name, line))
+                    i += 1
+                else:
+                    break
+
+            if do_program:
+                output.extend(source)
+            else:
+                # get rid of useless null line from trailing empty "..."
+                if source[-1] == "":
+                    assert len(source) > 1
+                    del source[-1]
+                if len(source) == 1:
+                    source = source[0]
+                else:
+                    source = "\n".join(source) + "\n"
+
+            # suck up response
+            if isPS1(line) or isEmpty(line):
+                if not do_program:
+                    push((source, "", lineno))
+                continue
+
+            # There is a response.
+            want = []
+            if do_program:
+                push("# Expected:")
+            while 1:
+                if line[:nblanks] != blanks:
+                    raise ValueError('line %r of the docstring for %s '
+                        'has inconsistent leading whitespace: %r' %
+                        (i, self.name, line))
+                want.append(line[nblanks:])
+                i += 1
+                line = lines[i]
+                if isPS1(line) or isEmpty(line):
+                    break
+
+            if do_program:
+                output.extend(['#     ' + x for x in want])
+            else:
+                want = "\n".join(want) + "\n"
+                push((source, want, lineno))
+
+        if do_program:
+            # Trim junk on both ends.
+            while output and output[-1] == '#':
+                output.pop()
+            while output and output[0] == '#':
+                output.pop(0)
+            output = '\n'.join(output)
+
+        return output
+
 ######################################################################
 ## 2. Example & DocTest
 ######################################################################
@@ -501,6 +724,8 @@ class DocTest:
       - name: A name identifying the DocTest (typically, the name of
         the object whose docstring this DocTest was extracted from).
 
+      - docstring: The docstring being tested
+
       - filename: The name of the file that this DocTest was extracted
         from.
 
@@ -520,85 +745,9 @@ class DocTest:
         self.filename = filename
         self.lineno = lineno
         # Parse the docstring.
-        self.examples = self._parse(docstring)
-
-    _PS1 = ">>>"
-    _PS2 = "..."
-    _isPS1 = re.compile(r"(\s*)" + re.escape(_PS1)).match
-    _isPS2 = re.compile(r"(\s*)" + re.escape(_PS2)).match
-    _isEmpty = re.compile(r"\s*$").match
-    _isComment = re.compile(r"\s*#").match
-
-    def _parse(self, string):
-        if not string.endswith('\n'):
-            string += '\n'
-        examples = []
-        isPS1, isPS2 = self._isPS1, self._isPS2
-        isEmpty, isComment = self._isEmpty, self._isComment
-        lines = string.split("\n")
-        i, n = 0, len(lines)
-        while i < n:
-            # Search for an example (a PS1 line).
-            line = lines[i]
-            i += 1
-            m = isPS1(line)
-            if m is None:
-                continue
-            # line is a PS1 line.
-            j = m.end(0)  # beyond the prompt
-            if isEmpty(line, j) or isComment(line, j):
-                # a bare prompt or comment -- not interesting
-                continue
-            # line is a non-trivial PS1 line.
-            lineno = i - 1
-            if line[j] != " ":
-                raise ValueError('line %r of the docstring for %s lacks '
-                                 'blank after %s: %r' %
-                                 (lineno, self.name, self._PS1, line))
-
-            j += 1
-            blanks = m.group(1)
-            nblanks = len(blanks)
-            # suck up this and following PS2 lines
-            source = []
-            while 1:
-                source.append(line[j:])
-                line = lines[i]
-                m = isPS2(line)
-                if m:
-                    if m.group(1) != blanks:
-                        raise ValueError('line %r of the docstring for %s '
-                            'has inconsistent leading whitespace: %r' %
-                            (i, self.name, line))
-                    i += 1
-                else:
-                    break
-            # get rid of useless null line from trailing empty "..."
-            if source[-1] == "":
-                assert len(source) > 1
-                del source[-1]
-            if len(source) == 1:
-                source = source[0]
-            else:
-                source = "\n".join(source) + "\n"
-            # suck up response
-            if isPS1(line) or isEmpty(line):
-                want = ""
-            else:
-                want = []
-                while 1:
-                    if line[:nblanks] != blanks:
-                        raise ValueError('line %r of the docstring for %s '
-                            'has inconsistent leading whitespace: %r' %
-                            (i, self.name, line))
-                    want.append(line[nblanks:])
-                    i += 1
-                    line = lines[i]
-                    if isPS1(line) or isEmpty(line):
-                        break
-                want = "\n".join(want) + "\n"
-            examples.append(Example(source, want, lineno))
-        return examples
+        self.docstring = docstring
+        examples = Parser(name, docstring).get_examples()
+        self.examples = [Example(*example) for example in examples]
 
     def __repr__(self):
         if len(self.examples) == 0:
@@ -646,14 +795,21 @@ class DocTestFinder:
     ignored.
     """
 
-    def __init__(self, verbose=False, namefilter=None, objfilter=None,
-                 recurse=True):
+    def __init__(self, verbose=False, doctest_factory=DocTest,
+                 namefilter=None, objfilter=None, recurse=True):
         """
         Create a new doctest finder.
+
+        The optional argument `doctest_factory` specifies a class or
+        function that should be used to create new DocTest objects (or
+        objects that implement the same interface as DocTest).  This
+        signature for this factory function should match the signature
+        of the DocTest constructor.
 
         If the optional argument `recurse` is false, then `find` will
         only examine the given object, and not any contained objects.
         """
+        self._doctest_factory = doctest_factory
         self._verbose = verbose
         self._namefilter = namefilter
         self._objfilter = objfilter
@@ -862,7 +1018,7 @@ class DocTestFinder:
             filename = None
         else:
             filename = getattr(module, '__file__', module.__name__)
-        return DocTest(docstring, globs, name, filename, lineno)
+        return self._doctest_factory(docstring, globs, name, filename, lineno)
 
     def _find_lineno(self, obj, source_lines):
         """
@@ -1348,14 +1504,6 @@ class DocTestRunner:
             return self.__run(test, compileflags, out)
         finally:
             sys.stdout = saveout
-            # While Python gc can clean up most cycles on its own, it doesn't
-            # chase frame objects.  This is especially irksome when running
-            # generator tests that raise exceptions, because a named generator-
-            # iterator gets an entry in globs, and the generator-iterator
-            # object's frame's traceback info points back to globs.  This is
-            # easy to break just by clearing the namespace.  This can also
-            # help to break other kinds of cycles, and even for cycles that
-            # gc can break itself it's better to break them ASAP.
             if clear_globs:
                 test.globs.clear()
 
@@ -1416,13 +1564,154 @@ class DocTestRunner:
             print "Test passed."
         return totalf, totalt
 
+class DocTestFailure(Exception):
+    """A DocTest example has failed in debugging mode.
+
+    The exception instance has variables:
+
+    - test: the DocTest object being run
+
+    - excample: the Example object that failed
+
+    - got: the actual output
+    """
+    def __init__(self, test, example, got):
+        self.test = test
+        self.example = example
+        self.got = got
+
+    def __str__(self):
+        return str(self.test)
+
+class UnexpectedException(Exception):
+    """A DocTest example has encountered an unexpected exception
+
+    The exception instance has variables:
+
+    - test: the DocTest object being run
+
+    - excample: the Example object that failed
+
+    - exc_info: the exception info
+    """
+    def __init__(self, test, example, exc_info):
+        self.test = test
+        self.example = example
+        self.exc_info = exc_info
+
+    def __str__(self):
+        return str(self.test)
+    
+class DebugRunner(DocTestRunner):
+    r"""Run doc tests but raise an exception as soon as there is a failure.
+
+       If an unexpected exception occurs, an UnexpectedException is raised.
+       It contains the test, the example, and the original exception:
+
+         >>> runner = DebugRunner(verbose=False)
+         >>> test = DocTest('>>> raise KeyError\n42', {}, 'foo', 'foo.py', 0)
+         >>> try:
+         ...     runner.run(test)
+         ... except UnexpectedException, failure:
+         ...     pass
+
+         >>> failure.test is test
+         True
+
+         >>> failure.example.want
+         '42\n'
+
+         >>> exc_info = failure.exc_info
+         >>> raise exc_info[0], exc_info[1], exc_info[2]
+         Traceback (most recent call last):
+         ...
+         KeyError
+
+       We wrap the original exception to give the calling application
+       access to the test and example information.
+
+       If the output doesn't match, then a DocTestFailure is raised:
+
+         >>> test = DocTest('''
+         ...      >>> x = 1
+         ...      >>> x
+         ...      2
+         ...      ''', {}, 'foo', 'foo.py', 0)
+
+         >>> try:
+         ...    runner.run(test)
+         ... except DocTestFailure, failure:
+         ...    pass
+
+       DocTestFailure objects provide access to the test:
+
+         >>> failure.test is test
+         True
+
+       As well as to the example:
+
+         >>> failure.example.want
+         '2\n'
+
+       and the actual output:
+
+         >>> failure.got
+         '1\n'
+
+       If a failure or error occurs, the globals are left intact:
+
+         >>> del test.globs['__builtins__']
+         >>> test.globs
+         {'x': 1}
+
+         >>> test = DocTest('''
+         ...      >>> x = 2
+         ...      >>> raise KeyError
+         ...      ''', {}, 'foo', 'foo.py', 0)
+
+         >>> runner.run(test)
+         Traceback (most recent call last):
+         ...
+         UnexpectedException: <DocTest foo from foo.py:0 (2 examples)>
+         
+         >>> del test.globs['__builtins__']
+         >>> test.globs
+         {'x': 2}
+
+       But the globals are cleared if there is no error:
+
+         >>> test = DocTest('''
+         ...      >>> x = 2
+         ...      ''', {}, 'foo', 'foo.py', 0)
+
+         >>> runner.run(test)
+         (0, 1)
+
+         >>> test.globs
+         {}
+
+       """
+
+    def run(self, test, compileflags=None, out=None, clear_globs=True):
+        r = DocTestRunner.run(self, test, compileflags, out, False)
+        if clear_globs:
+            test.globs.clear()
+        return r
+
+    def report_unexpected_exception(self, out, test, example, exc_info):
+        raise UnexpectedException(test, example, exc_info)
+
+    def report_failure(self, out, test, example, got):
+        raise DocTestFailure(test, example, got)
+
 ######################################################################
 ## 5. Test Functions
 ######################################################################
 # These should be backwards compatible.
 
 def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
-            report=True, optionflags=0, extraglobs=None):
+            report=True, optionflags=0, extraglobs=None,
+            raise_on_error=False):
     """m=None, name=None, globs=None, verbose=None, isprivate=None,
        report=True, optionflags=0, extraglobs=None
 
@@ -1502,6 +1791,11 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
             When CONTEXT_DIFF is specified, failures that involve
             multi-line expected and actual outputs will be displayed
             using a context diff.
+
+    Optional keyword arg "raise_on_error" raises an exception on the
+    first unexpected exception or failure. This allows failures to be
+    post-mortem debugged.
+
     """
 
     """ [XX] This is no longer true:
@@ -1530,7 +1824,12 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
 
     # Find, parse, and run all tests in the given module.
     finder = DocTestFinder(namefilter=isprivate)
-    runner = DocTestRunner(verbose=verbose, optionflags=optionflags)
+
+    if raise_on_error:
+        runner = DebugRunner(verbose=verbose, optionflags=optionflags)
+    else:
+        runner = DocTestRunner(verbose=verbose, optionflags=optionflags)
+
     for test in finder.find(m, name, globs=globs, extraglobs=extraglobs):
         runner.run(test)
 
@@ -1637,110 +1936,167 @@ class Tester:
 ## 7. Unittest Support
 ######################################################################
 
-class DocTestTestCase(unittest.TestCase):
-    """A test case that wraps a test function.
+class DocTestCase(unittest.TestCase):
 
-    This is useful for slipping pre-existing test functions into the
-    PyUnit framework. Optionally, set-up and tidy-up functions can be
-    supplied. As with TestCase, the tidy-up ('tearDown') function will
-    always be called if the set-up ('setUp') function ran successfully.
-    """
-
-    def __init__(self, test_runner, test,
-                 setUp=None, tearDown=None):
+    def __init__(self, test, optionflags=0, setUp=None, tearDown=None):
         unittest.TestCase.__init__(self)
-        self.__test_runner = test_runner
-        self.__test = test
-        self.__setUp = setUp
-        self.__tearDown = tearDown
+        self._dt_optionflags = optionflags
+        self._dt_test = test
+        self._dt_setUp = setUp
+        self._dt_tearDown = tearDown
 
     def setUp(self):
-        if self.__setUp is not None:
-            self.__setUp()
+        if self._dt_setUp is not None:
+            self._dt_setUp()
 
     def tearDown(self):
-        if self.__tearDown is not None:
-            self.__tearDown()
+        if self._dt_tearDown is not None:
+            self._dt_tearDown()
 
     def runTest(self):
-        test = self.__test
+        test = self._dt_test
         old = sys.stdout
         new = StringIO()
+        runner = DocTestRunner(optionflags=self._dt_optionflags, verbose=False)
+
         try:
-            self.__test_runner.DIVIDER = "-"*70
-            failures, tries = self.__test_runner.run(test, out=new.write)
+            runner.DIVIDER = "-"*70
+            failures, tries = runner.run(test, out=new.write)
         finally:
             sys.stdout = old
 
         if failures:
-            lname = '.'.join(test.name.split('.')[-1:])
-            if test.lineno is None:
-                lineno = 'unknown line number'
-            else:
-                lineno = 'line %s' % test.lineno
-            err = new.getvalue()
+            raise self.failureException(self.format_failure(new.getvalue()))
 
-            raise self.failureException(
-                'Failed doctest test for %s\n'
-                '  File "%s", %s, in %s\n\n%s'
-                % (test.name, test.filename, lineno, lname, err))
+    def format_failure(self, err):
+        test = self._dt_test
+        if test.lineno is None:
+            lineno = 'unknown line number'
+        else:
+            lineno = 'line %s' % test.lineno
+        lname = '.'.join(test.name.split('.')[-1:])
+        return ('Failed doctest test for %s\n'
+                '  File "%s", line %s, in %s\n\n%s'
+                % (test.name, test.filename, lineno, lname, err)
+                )
+
+    def debug(self):
+        r"""Run the test case without results and without catching exceptions
+
+           The unit test framework includes a debug method on test cases
+           and test suites to support post-mortem debugging.  The test code
+           is run in such a way that errors are not caught.  This way a
+           caller can catch the errors and initiate post-mortem debugging.
+
+           The DocTestCase provides a debug method that raises
+           UnexpectedException errors if there is an unexepcted
+           exception:
+
+             >>> test = DocTest('>>> raise KeyError\n42',
+             ...                {}, 'foo', 'foo.py', 0)
+             >>> case = DocTestCase(test)
+             >>> try:
+             ...     case.debug()
+             ... except UnexpectedException, failure:
+             ...     pass
+
+           The UnexpectedException contains the test, the example, and
+           the original exception:
+
+             >>> failure.test is test
+             True
+
+             >>> failure.example.want
+             '42\n'
+
+             >>> exc_info = failure.exc_info
+             >>> raise exc_info[0], exc_info[1], exc_info[2]
+             Traceback (most recent call last):
+             ...
+             KeyError
+
+           If the output doesn't match, then a DocTestFailure is raised:
+
+             >>> test = DocTest('''
+             ...      >>> x = 1
+             ...      >>> x
+             ...      2
+             ...      ''', {}, 'foo', 'foo.py', 0)
+             >>> case = DocTestCase(test)
+
+             >>> try:
+             ...    case.debug()
+             ... except DocTestFailure, failure:
+             ...    pass
+
+           DocTestFailure objects provide access to the test:
+
+             >>> failure.test is test
+             True
+
+           As well as to the example:
+
+             >>> failure.example.want
+             '2\n'
+
+           and the actual output:
+
+             >>> failure.got
+             '1\n'
+
+           """
+
+        runner = DebugRunner(verbose = False, optionflags=self._dt_optionflags)
+        runner.run(self._dt_test, out=nooutput)
 
     def id(self):
-        return self.__test.name
+        return self._dt_test.name
 
     def __repr__(self):
-        name = self.__test.name.split('.')
+        name = self._dt_test.name.split('.')
         return "%s (%s)" % (name[-1], '.'.join(name[:-1]))
 
     __str__ = __repr__
 
     def shortDescription(self):
-        return "Doctest: " + self.__test.name
+        return "Doctest: " + self._dt_test.name
 
+def nooutput(*args):
+    pass
 
-def DocTestSuite(module=None, filename=None, globs=None, extraglobs=None,
-                 optionflags=0,
-                 test_finder=None, test_runner=None,
+def DocTestSuite(module=None, globs=None, extraglobs=None,
+                 optionflags=0, test_finder=None,
                  setUp=lambda: None, tearDown=lambda: None):
     """
-    Convert doctest tests for a mudule to a unittest test suite
+    Convert doctest tests for a mudule to a unittest test suite.
 
-    This tests convers each documentation string in a module that
-    contains doctest tests to a unittest test case. If any of the
-    tests in a doc string fail, then the test case fails. An error is
-    raised showing the name of the file containing the test and a
+    This converts each documentation string in a module that
+    contains doctest tests to a unittest test case.  If any of the
+    tests in a doc string fail, then the test case fails.  An exception
+    is raised showing the name of the file containing the test and a
     (sometimes approximate) line number.
 
-    A module argument provides the module to be tested. The argument
+    The `module` argument provides the module to be tested.  The argument
     can be either a module or a module name.
 
     If no argument is given, the calling module is used.
     """
-    if module is not None and filename is not None:
-        raise ValueError('Specify module or filename, not both.')
 
     if test_finder is None:
         test_finder = DocTestFinder()
-    if test_runner is None:
-        test_runner = DocTestRunner(optionflags=optionflags)
 
-    if filename is not None:
-        name = os.path.basename(filename)
-        test = Test(open(filename).read(),name,filename,0)
-        if globs is None:
-            globs = {}
-    else:
-        module = _normalize_module(module)
-        tests = test_finder.find(module, globs=globs, extraglobs=extraglobs)
-        if globs is None:
-            globs = module.__dict__
-        if not tests: # [XX] why do we want to do this?
-            raise ValueError(module, "has no tests")
+    module = _normalize_module(module)
+    tests = test_finder.find(module, globs=globs, extraglobs=extraglobs)
+    if globs is None:
+        globs = module.__dict__
+    if not tests: # [XX] why do we want to do this?
+        raise ValueError(module, "has no tests")
 
     tests.sort()
     suite = unittest.TestSuite()
     for test in tests:
-        if len(test.examples) == 0: continue
+        if len(test.examples) == 0:
+            continue
         if not test.filename:
             filename = module.__file__
             if filename.endswith(".pyc"):
@@ -1748,8 +2104,76 @@ def DocTestSuite(module=None, filename=None, globs=None, extraglobs=None,
             elif filename.endswith(".pyo"):
                 filename = filename[:-1]
             test.filename = filename
-        suite.addTest(DocTestTestCase(test_runner, test,
-                                      setUp, tearDown))
+        suite.addTest(DocTestCase(test, optionflags, setUp, tearDown))
+
+    return suite
+
+class DocFileCase(DocTestCase):
+
+    def id(self):
+        return '_'.join(self._dt_test.name.split('.'))
+
+    def __repr__(self):
+        return self._dt_test.filename
+    __str__ = __repr__
+
+    def format_failure(self, err):
+        return ('Failed doctest test for %s\n  File "%s", line 0\n\n%s'
+                % (self._dt_test.name, self._dt_test.filename, err)
+                )
+
+def DocFileTest(path, package=None, globs=None,
+                setUp=None, tearDown=None,
+                optionflags=0):
+    package = _normalize_module(package)
+    name = path.split('/')[-1]
+    dir = os.path.split(package.__file__)[0]
+    path = os.path.join(dir, *(path.split('/')))
+    doc = open(path).read()
+
+    if globs is None:
+        globs = {}
+
+    test = DocTest(doc, globs, name, path, 0)
+
+    return DocFileCase(test, optionflags, setUp, tearDown)
+
+def DocFileSuite(*paths, **kw):
+    """Creates a suite of doctest files.
+
+    One or more text file paths are given as strings.  These should
+    use "/" characters to separate path segments.  Paths are relative
+    to the directory of the calling module, or relative to the package
+    passed as a keyword argument.
+
+    A number of options may be provided as keyword arguments:
+
+    package
+      The name of a Python package.  Text-file paths will be
+      interpreted relative to the directory containing this package.
+      The package may be supplied as a package object or as a dotted
+      package name.
+
+    setUp
+      The name of a set-up function.  This is called before running the
+      tests in each file.
+
+    tearDown
+      The name of a tear-down function.  This is called after running the
+      tests in each file.
+
+    globs
+      A dictionary containing initial global variables for the tests.
+    """
+    suite = unittest.TestSuite()
+
+    # We do this here so that _normalize_module is called at the right
+    # level.  If it were called in DocFileTest, then this function
+    # would be the caller and we might guess the package incorrectly.
+    kw['package'] = _normalize_module(kw.get('package'))
+
+    for path in paths:
+        suite.addTest(DocFileTest(path, **kw))
 
     return suite
 
@@ -1757,26 +2181,86 @@ def DocTestSuite(module=None, filename=None, globs=None, extraglobs=None,
 ## 8. Debugging Support
 ######################################################################
 
+def script_from_examples(s):
+    r"""Extract script from text with examples.
+
+       Converts text with examples to a Python script.  Example input is
+       converted to regular code.  Example output and all other words
+       are converted to comments:
+
+       >>> text = '''
+       ...       Here are examples of simple math.
+       ...
+       ...           Python has super accurate integer addition
+       ...
+       ...           >>> 2 + 2
+       ...           5
+       ...
+       ...           And very friendly error messages:
+       ...
+       ...           >>> 1/0
+       ...           To Infinity
+       ...           And
+       ...           Beyond
+       ...
+       ...           You can use logic if you want:
+       ...
+       ...           >>> if 0:
+       ...           ...    blah
+       ...           ...    blah
+       ...           ...
+       ...
+       ...           Ho hum
+       ...           '''
+
+       >>> print script_from_examples(text)
+       #        Here are examples of simple math.
+       #
+       #            Python has super accurate integer addition
+       #
+       2 + 2
+       # Expected:
+       #     5
+       #
+       #            And very friendly error messages:
+       #
+       1/0
+       # Expected:
+       #     To Infinity
+       #     And
+       #     Beyond
+       #
+       #            You can use logic if you want:
+       #
+       if 0:
+          blah
+          blah
+       <BLANKLINE>
+       #
+       #            Ho hum
+       """
+
+    return Parser('<string>', s).get_program()
+
 def _want_comment(example):
     """
-    Return a comment containing the expected output for the given
-    example.
+    Return a comment containing the expected output for the given example.
     """
     # Return the expected output, if any
     want = example.want
     if want:
-        if want[-1] == '\n': want = want[:-1]
+        if want[-1] == '\n':
+            want = want[:-1]
         want = "\n#     ".join(want.split("\n"))
         want = "\n# Expected:\n#     %s" % want
     return want
 
 def testsource(module, name):
-    """Extract the test sources from a doctest test docstring as a script
+    """Extract the test sources from a doctest docstring as a script.
 
     Provide the module (or dotted name of the module) containing the
     test to be debugged and the name (within the module) of the object
     with the doc string with tests to be debugged.
-
     """
     module = _normalize_module(module)
     tests = DocTestFinder().find(module)
@@ -1784,27 +2268,16 @@ def testsource(module, name):
     if not test:
         raise ValueError(name, "not found in tests")
     test = test[0]
-    testsrc = '\n'.join([
-        "%s%s" % (example.source, _want_comment(example))
-        for example in test.examples
-        ])
+    testsrc = script_from_examples(test.docstring)
     return testsrc
 
 def debug_src(src, pm=False, globs=None):
-    """Debug a single doctest test doc string
-
-    The string is provided directly
-    """
-    test = DocTest(src, globs or {}, 'debug', None, None)
-
-    testsrc = '\n'.join([
-        "%s%s" % (example.source, _want_comment(example))
-        for example in test.examples
-        ])
+    """Debug a single doctest docstring, in argument `src`'"""
+    testsrc = script_from_examples(src)
     debug_script(testsrc, pm, globs)
 
 def debug_script(src, pm=False, globs=None):
-    "Debug a test script"
+    "Debug a test script.  `src` is the script, as a string."
     import pdb
 
     srcfilename = tempfile.mktemp("doctestdebug.py")
@@ -1829,12 +2302,11 @@ def debug_script(src, pm=False, globs=None):
         pdb.run("execfile(%r)" % srcfilename, globs, globs)
 
 def debug(module, name, pm=False):
-    """Debug a single doctest test doc string
+    """Debug a single doctest docstring.
 
     Provide the module (or dotted name of the module) containing the
     test to be debugged and the name (within the module) of the object
-    with the doc string with tests to be debugged.
-
+    with the docstring with tests to be debugged.
     """
     module = _normalize_module(module)
     testsrc = testsource(module, name)
