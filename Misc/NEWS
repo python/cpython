@@ -81,6 +81,9 @@ Core
 
 Library
 
+- telnetlib includes symbolic names for the options, and support for
+  setting an option negotiation callback.
+
 - The new C standard no longer requires that math libraries set errno to
   ERANGE on overflow.  For platform libraries that exploit this new
   freedom, Python's overflow-checking was wholly broken.  A new overflow-
