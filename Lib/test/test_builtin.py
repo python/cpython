@@ -364,9 +364,9 @@ class BuiltinTest(unittest.TestCase):
             )
 
     def test_filter_subclasses(self):
-        # test, that filter() never returns tuple, str or unicode subclasses
-        # and that the result always go's through __getitem__
-        funcs = (None, lambda x: True)
+        # test that filter() never returns tuple, str or unicode subclasses
+        # and that the result always goes through __getitem__
+        funcs = (None, bool, lambda x: True)
         class tuple2(tuple):
             def __getitem__(self, index):
                 return 2*tuple.__getitem__(self, index)
@@ -630,7 +630,7 @@ class BuiltinTest(unittest.TestCase):
                 ('1' + '0'*20, 10L**20),
                 ('1' + '0'*100, 10L**100)
         ]
-        L2 = L
+        L2 = L[:]
         if have_unicode:
             L2 += [
                 (unicode('1') + unicode('0')*20, 10L**20),
