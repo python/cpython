@@ -3439,11 +3439,11 @@ all_ins(d)
 #endif
 
 #ifdef HAVE_SPAWNV
-        if (ins(d, "_P_WAIT", (long)_P_WAIT)) return -1;
-        if (ins(d, "_P_NOWAIT", (long)_P_NOWAIT)) return -1;
-        if (ins(d, "_P_OVERLAY", (long)_OLD_P_OVERLAY)) return -1;
-        if (ins(d, "_P_NOWAITO", (long)_P_NOWAITO)) return -1;
-        if (ins(d, "_P_DETACH", (long)_P_DETACH)) return -1;
+        if (ins(d, "P_WAIT", (long)_P_WAIT)) return -1;
+        if (ins(d, "P_NOWAIT", (long)_P_NOWAIT)) return -1;
+        if (ins(d, "P_OVERLAY", (long)_OLD_P_OVERLAY)) return -1;
+        if (ins(d, "P_NOWAITO", (long)_P_NOWAITO)) return -1;
+        if (ins(d, "P_DETACH", (long)_P_DETACH)) return -1;
 #endif
 
 #if defined(PYOS_OS2)
