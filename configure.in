@@ -467,6 +467,7 @@ then
 		fi ;;
 	Linux*) LDSHARED="gcc -shared";;
 	dgux*) LDSHARED="ld -G";;
+	BSD/OS*/4*) LDSHARED="gcc -shared";;
 	FreeBSD*/[[34]]*) LDSHARED="gcc -shared";;
 	FreeBSD*|OpenBSD*) LDSHARED="ld -Bshareable";;
 	NetBSD*)
