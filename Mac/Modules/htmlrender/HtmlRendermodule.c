@@ -755,6 +755,20 @@ static PyObject *Html_HRUtilGetURLFromFSSpec(_self, _args)
 	return _res;
 }
 
+static PyObject *Html_HRHTMLRenderingLibAvailable(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	int _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = HRHTMLRenderingLibAvailable();
+	_res = Py_BuildValue("i",
+	                     _rv);
+	return _res;
+}
+
 static PyMethodDef Html_methods[] = {
 	{"HRGetHTMLRenderingLibVersion", (PyCFunction)Html_HRGetHTMLRenderingLibVersion, 1,
 	 "() -> (NumVersion returnVers)"},
@@ -772,6 +786,8 @@ static PyMethodDef Html_methods[] = {
 	 "(char * rootURL, char * linkURL) -> (FSSpec destSpec)"},
 	{"HRUtilGetURLFromFSSpec", (PyCFunction)Html_HRUtilGetURLFromFSSpec, 1,
 	 "(FSSpec fsspec, Handle urlHandle) -> None"},
+	{"HRHTMLRenderingLibAvailable", (PyCFunction)Html_HRHTMLRenderingLibAvailable, 1,
+	 "() -> (int _rv)"},
 	{NULL, NULL, 0}
 };
 

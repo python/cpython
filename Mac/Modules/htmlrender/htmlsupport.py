@@ -143,8 +143,8 @@ class MyObjectDefinition(GlobalObjectDefinition):
 ##		Output("if (v == Py_None) { *p_itself = NULL; return 1; }")
 ##		Output("if (PyInt_Check(v)) { *p_itself = (DialogPtr)PyInt_AsLong(v);")
 ##		Output("                      return 1; }")
-##	def outputFreeIt(self, itselfname):
-##		Output("DisposeDialog(%s);", itselfname)
+	def outputFreeIt(self, itselfname):
+		Output("HRDisposeReference(%s);", itselfname)
 
 # Create the generator groups and link them
 module = MacModule('HtmlRender', 'Html', includestuff, finalstuff, initstuff)
@@ -159,6 +159,9 @@ Method = OSErrMethodGenerator
 functions = []
 methods = []
 execfile("htmlgen.py")
+
+f = Function(int, 'HRHTMLRenderingLibAvailable')
+functions.append(f)
 
 # add the populated lists to the generator groups
 for f in functions: module.add(f)
