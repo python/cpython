@@ -864,6 +864,132 @@ def methods():
     verify(d2.boo() == 2)
     verify(d2.goo() == 2)
 
+def specials():
+    # Test operators like __hash__ for which a built-in default exists
+    if verbose: print "testing special operators..."
+    # Test the default behavior for static classes
+    class C(object):
+        def __getitem__(self, i):
+            if 0 <= i < 10: return i
+            raise IndexError
+    c1 = C()
+    c2 = C()
+    verify(not not c1)
+    verify(hash(c1) == id(c1))
+    verify(cmp(c1, c2) == cmp(id(c1), id(c2)))
+    verify(c1 == c1)
+    verify(c1 != c2)
+    verify(not c1 != c1)
+    verify(not c1 == c2)
+    verify(str(c1) == '<C object at 0x%x>' % id(c1))
+    verify(repr(c1) == '<C object at 0x%x>' % id(c1))
+    verify(-1 not in c1)
+    for i in range(10):
+        verify(i in c1)
+    verify(10 not in c1)
+    # Test the default behavior for dynamic classes
+    class D(object):
+        __dynamic__ = 1
+        def __getitem__(self, i):
+            if 0 <= i < 10: return i
+            raise IndexError
+    d1 = D()
+    d2 = D()
+    verify(not not d1)
+    verify(hash(d1) == id(d1))
+    verify(cmp(d1, d2) == cmp(id(d1), id(d2)))
+    verify(d1 == d1)
+    verify(d1 != d2)
+    verify(not d1 != d1)
+    verify(not d1 == d2)
+    verify(str(d1) == '<D object at 0x%x>' % id(d1))
+    verify(repr(d1) == '<D object at 0x%x>' % id(d1))
+    verify(-1 not in d1)
+    for i in range(10):
+        verify(i in d1)
+    verify(10 not in d1)
+    # Test overridden behavior for static classes
+    class Proxy(object):
+        def __init__(self, x):
+            self.x = x
+        def __nonzero__(self):
+            return not not self.x
+        def __hash__(self):
+            return hash(self.x)
+        def __eq__(self, other):
+            return self.x == other
+        def __ne__(self, other):
+            return self.x != other
+        def __cmp__(self, other):
+            return cmp(self.x, other.x)
+        def __str__(self):
+            return "Proxy:%s" % self.x
+        def __repr__(self):
+            return "Proxy(%r)" % self.x
+        def __contains__(self, value):
+            return value in self.x
+    p0 = Proxy(0)
+    p1 = Proxy(1)
+    p_1 = Proxy(-1)
+    verify(not p0)
+    verify(not not p1)
+    verify(hash(p0) == hash(0))
+    verify(p0 == p0)
+    verify(p0 != p1)
+    verify(not p0 != p0)
+    verify(not p0 == p1)
+    verify(cmp(p0, p1) == -1)
+    verify(cmp(p0, p0) == 0)
+    verify(cmp(p0, p_1) == 1)
+    verify(str(p0) == "Proxy:0")
+    verify(repr(p0) == "Proxy(0)")
+    p10 = Proxy(range(10))
+    verify(-1 not in p10)
+    for i in range(10):
+        verify(i in p10)
+    verify(10 not in p10)
+    # Test overridden behavior for dynamic classes
+    class DProxy(object):
+        __dynamic__ = 1
+        def __init__(self, x):
+            self.x = x
+        def __nonzero__(self):
+            return not not self.x
+        def __hash__(self):
+            return hash(self.x)
+        def __eq__(self, other):
+            return self.x == other
+        def __ne__(self, other):
+            return self.x != other
+        def __cmp__(self, other):
+            return cmp(self.x, other.x)
+        def __str__(self):
+            return "DProxy:%s" % self.x
+        def __repr__(self):
+            return "DProxy(%r)" % self.x
+        def __contains__(self, value):
+            return value in self.x
+    p0 = DProxy(0)
+    p1 = DProxy(1)
+    p_1 = DProxy(-1)
+    verify(not p0)
+    verify(not not p1)
+    verify(hash(p0) == hash(0))
+    verify(p0 == p0)
+    verify(p0 != p1)
+    verify(not p0 != p0)
+    verify(not p0 == p1)
+    verify(cmp(p0, p1) == -1)
+    verify(cmp(p0, p0) == 0)
+    verify(cmp(p0, p_1) == 1)
+    verify(str(p0) == "DProxy:0")
+    verify(repr(p0) == "DProxy(0)")
+    p10 = DProxy(range(10))
+    verify(-1 not in p10)
+    for i in range(10):
+        verify(i in p10)
+    verify(10 not in p10)
+
 def all():
     lists()
     dicts()
@@ -891,6 +1017,7 @@ def all():
     altmro()
     overloading()
     methods()
+    specials()
 
 all()
 
