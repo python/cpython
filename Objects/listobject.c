@@ -448,14 +448,22 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 	   list. :-( */
 	PyObject **recycle, **p;
 	PyObject **item;
+	PyObject *v_as_SF = NULL; /* PySequence_Fast(v) */
 	int n; /* Size of replacement list */
 	int d; /* Change in size */
 	int k; /* Loop index */
 #define b ((PyListObject *)v)
 	if (v == NULL)
 		n = 0;
-	else if (PyList_Check(v)) {
-		n = b->ob_size;
+	else {
+		char msg[256];
+		sprintf(msg, "must assign sequence (not \"%.200s\") to slice",
+			     v->ob_type->tp_name);
+		v_as_SF = PySequence_Fast(v, msg);
+		if(v_as_SF == NULL)
+			return -1;
+		n = PySequence_Fast_GET_SIZE(v_as_SF);
+
 		if (a == b) {
 			/* Special case "a[i:j] = a" -- copy b first */
 			int ret;
@@ -464,12 +472,6 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 			Py_DECREF(v);
 			return ret;
 		}
-	}
-	else {
-		PyErr_Format(PyExc_TypeError,
-			     "must assign list (not \"%.200s\") to slice",
-			     v->ob_type->tp_name);
-		return -1;
 	}
 	if (ilow < 0)
 		ilow = 0;
@@ -512,7 +514,7 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 		a->ob_size += d;
 	}
 	for (k = 0; k < n; k++, ilow++) {
-		PyObject *w = b->ob_item[k];
+		PyObject *w = PySequence_Fast_GET_ITEM(v_as_SF, k);
 		Py_XINCREF(w);
 		item[ilow] = w;
 	}
@@ -525,6 +527,7 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 		PyMem_FREE(a->ob_item);
 		a->ob_item = NULL;
 	}
+	Py_XDECREF(v_as_SF);
 	return 0;
 #undef b
 }
