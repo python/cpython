@@ -14,7 +14,13 @@ class CallTip:
         self.x = self.y = 0
 
     def showtip(self, text):
+        # SF bug 546078:  IDLE calltips cause application error.
+        # There were crashes on various Windows flavors, and even a
+        # crashing X server on Linux, with very long calltips.
+        if len(text) >= 79:
+            text = text[:75] + ' ...'
         self.text = text
+
         if self.tipwindow or not self.text:
             return
         self.widget.see("insert")
