@@ -34,9 +34,10 @@ punctuation = """!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
 printable = digits + letters + punctuation + whitespace
 
 # Case conversion helpers
-_idmap = ''
-for i in range(256): _idmap = _idmap + chr(i)
-del i
+# Use str to convert Unicode literal in case of -U
+l = map(chr, xrange(256))
+_idmap = str('').join(l)
+del l
 
 # Backward compatible names for exceptions
 index_error = ValueError
