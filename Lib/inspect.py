@@ -619,6 +619,8 @@ def getargspec(func):
     'args' is a list of the argument names (it may contain nested lists).
     'varargs' and 'varkw' are the names of the * and ** arguments or None.
     'defaults' is an n-tuple of the default values of the last n arguments."""
+    if ismethod(func):
+        func = func.im_func
     if not isfunction(func): raise TypeError, 'arg is not a Python function'
     args, varargs, varkw = getargs(func.func_code)
     return args, varargs, varkw, func.func_defaults
