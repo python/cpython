@@ -65,7 +65,20 @@ main(argc, argv)
 	initargs(&argc, &argv); /* Defined in config*.c */
 
 	while ((c = getopt(argc, argv, "c:")) != EOF) {
+		if (c == 'c') {
+			/* -c is the last option; following arguments
+			   that look like options are left for the
+			   the command to interpret. */
+			command = malloc(strlen(optarg) + 2);
+			/* Ignore malloc errors this early... */
+			strcpy(command, optarg);
+			strcat(command, "\n");
+			break;
+		}
+		
 		switch (c) {
+
+		/* This space reserved for other options */
 
 		default:
 			fprintf(stderr,
@@ -73,18 +86,6 @@ main(argc, argv)
 				argv[0]);
 			exit(2);
 			/*NOTREACHED*/
-
-		case 'c':
-			if (command != NULL) {
-				fprintf(stderr, "%s: duplicate -c option\n",
-					argv[0]);
-				exit(2);
-			}
-			command = malloc(strlen(optarg) + 2);
-			/* Ignore malloc errors this early... */
-			strcpy(command, optarg);
-			strcat(command, "\n");
-			break;
 
 		}
 	}
