@@ -3843,6 +3843,11 @@ load(Unpicklerobject *self) {
                     break;
                 continue;
 
+            case '\0':
+                /* end of file */
+                PyErr_SetNone(PyExc_EOFError);
+                break;
+                
             default:
                 cPickle_ErrFormat(UnpicklingError, "invalid load key, '%s'.",
                     "c", s[0]);
