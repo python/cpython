@@ -739,6 +739,22 @@ listpop(PyListObject *self, PyObject *args)
 	return v;
 }
 
+/* Reverse a slice of a list in place, from lo up to (exclusive) hi. */
+static void
+reverse_slice(PyObject **lo, PyObject **hi)
+{
+	assert(lo && hi);
+
+	--hi;
+	while (lo < hi) {
+		PyObject *t = *lo;
+		*lo = *hi;
+		*hi = t;
+		++lo;
+		--hi;
+	}
+}
+
 /* New quicksort implementation for arrays of object pointers.
    Thanks to discussions with Tim Peters. */
 
@@ -1026,14 +1042,8 @@ samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
 	}
 	if (hi - r <= MAXMERGE) {
 		/* Reverse the reversed prefix, then insert the tail */
-		PyObject **originalr = r;
-		l = lo;
-		do {
-			--r;
-			tmp = *l; *l = *r; *r = tmp;
-			++l;
-		} while (l < r);
-		return binarysort(lo, hi, originalr, compare);
+		reverse_slice(lo, r);
+		return binarysort(lo, hi, r, compare);
 	}
 
 	/* ----------------------------------------------------------
@@ -1321,28 +1331,10 @@ PyList_Sort(PyObject *v)
 	return 0;
 }
 
-static void
-_listreverse(PyListObject *self)
-{
-	register PyObject **p, **q;
-	register PyObject *tmp;
-	
-	if (self->ob_size > 1) {
-		for (p = self->ob_item, q = self->ob_item + self->ob_size - 1;
-		     p < q;
-		     p++, q--)
-		{
-			tmp = *p;
-			*p = *q;
-			*q = tmp;
-		}
-	}
-}
-
 static PyObject *
 listreverse(PyListObject *self)
 {
-	_listreverse(self);
+	reverse_slice(self->ob_item, self->ob_item + self->ob_size);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -1354,7 +1346,7 @@ PyList_Reverse(PyObject *v)
 		PyErr_BadInternalCall();
 		return -1;
 	}
-	_listreverse((PyListObject *)v);
+	listreverse((PyListObject *)v);
 	return 0;
 }
 
