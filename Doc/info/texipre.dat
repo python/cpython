@@ -91,7 +91,7 @@ the language, see the @cite{Python Tutorial}.  The @cite{Python
 Reference Manual} gives a more formal definition of the language.
 (These manuals are not yet available in INFO or Texinfo format.)
 
-This version corresponds to Python version 1.5 (Dec 31 1997).
+This version corresponds to Python version 1.5 (Feb 17, 1998).
 
 @end ifinfo
 
