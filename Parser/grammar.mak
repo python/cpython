@@ -2,6 +2,9 @@
 #
 #     nmake /f grammar.mak
 #
+# You may also need to copy python23.dll into this directory, or get
+# it on your search path.
+#
 # The intermediate files can be nuked afterwards:
 #
 #     nmake /f grammar.mak clean
@@ -14,7 +17,7 @@
 
 LIBS= ..\PCbuild\python23.lib
 
-CFLAGS= /I ..\Include /I ..\PC /D MS_NO_COREDLL /MD
+CFLAGS= /I ..\Include /I ..\PC /D MS_NO_COREDLL /D PGEN /MD
 
 GRAMMAR_H= ..\Include\graminit.h
 GRAMMAR_C= ..\Python\graminit.c
