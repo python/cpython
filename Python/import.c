@@ -984,6 +984,34 @@ find_module(name, path, buf, buflen, p_fp)
 
 #ifdef MS_WIN32
 #include <windows.h>
+#include <ctype.h>
+
+static int
+allcaps8x3(s)
+	char *s;
+{
+	/* Return 1 if s is an 8.3 filename in ALLCAPS */
+	char c;
+	char *dot = strchr(s, '.');
+	char *end = strchr(s, '\0');
+	if (dot != NULL) {
+		if (dot-s > 8)
+			return 1; /* More than 8 before '.' */
+		if (end-dot > 4)
+			return 1; /* More than 3 after '.' */
+		end = strchr(dot+1, '.');
+		if (end != NULL)
+			return 1; /* More than one dot  */
+	}
+	else if (end-s > 8)
+		return 1; /* More than 8 and no dot */
+	while ((c = *s++)) {
+		if (islower(c))
+			return 0;
+	}
+	return 1;
+}
+
 static int
 check_case(char *buf, int len, int namelen, char *name)
 {
@@ -999,6 +1027,14 @@ check_case(char *buf, int len, int namelen, char *name)
 		return 0;
 	}
 	FindClose(h);
+	if (allcaps8x3(data.cFileName)) {
+		/* Skip the test if the filename is ALL.CAPS.  This can
+		   happen in certain circumstances beyond our control,
+		   e.g. when software is installed under NT on a FAT
+		   filesystem and then the same FAT filesystem is used
+		   under Windows 95. */
+		return 1;
+	}
 	if (strncmp(data.cFileName, name, namelen) != 0) {
 		strcpy(buf+len-namelen, data.cFileName);
 		PyErr_Format(PyExc_NameError,
@@ -2008,9 +2044,11 @@ imp_is_frozen(self, args)
 	PyObject *args;
 {
 	char *name;
+	struct _frozen *p;
 	if (!PyArg_ParseTuple(args, "s", &name))
 		return NULL;
-	return PyInt_FromLong(find_frozen(name) != NULL);
+	p = find_frozen(name);
+	return PyInt_FromLong((long) (p == NULL ? 0 : p->size));
 }
 
 static FILE *
