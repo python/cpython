@@ -203,9 +203,9 @@ void free_sema(type_sema aSemaphore)
 
 }
 
-void down_sema(type_sema aSemaphore)
+void down_sema(type_sema aSemaphore, int waitflag)
 {
-
+  return -1;
 }
 
 void up_sema(type_sema aSemaphore)

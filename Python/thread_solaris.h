@@ -25,6 +25,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <errno.h>
 #include </usr/include/thread.h>
 #undef _POSIX_THREADS
 
@@ -211,12 +212,25 @@ void free_sema _P1(sema, type_sema sema)
 	free((void *) sema);
 }
 
-void down_sema _P1(sema, type_sema sema)
+int down_sema _P2(sema, type_sema sema, waitflag, int waitflag)
 {
+	int success;
+
 	dprintf(("down_sema(%lx) called\n", (long) sema));
-	if (sema_wait((sema_t *) sema))
-		perror("sema_wait");
-	dprintf(("down_sema(%lx) return\n", (long) sema));
+	if (waitflag)
+		success = sema_wait((sema_t *) sema);
+	else
+		success = sema_trywait((sema_t *) sema);
+	if (success < 0) {
+		if (errno == EBUSY)
+			success = 0;
+		else
+			perror("sema_wait");
+	}
+	else
+		success = !success;
+	dprintf(("down_sema(%lx) return %d\n", (long) sema, success));
+	return success;
 }
 
 void up_sema _P1(sema, type_sema sema)

@@ -183,10 +183,11 @@ void free_sema _P1(sema, type_sema sema)
 	dprintf(("free_sema(%lx) called\n", (long) sema));
 }
 
-void down_sema _P1(sema, type_sema sema)
+int down_sema _P2(sema, type_sema sema, waitflag, int waitflag)
 {
-	dprintf(("down_sema(%lx) called\n", (long) sema));
+	dprintf(("down_sema(%lx, %d) called\n", (long) sema, waitflag));
 	dprintf(("down_sema(%lx) return\n", (long) sema));
+	return -1;
 }
 
 void up_sema _P1(sema, type_sema sema)
