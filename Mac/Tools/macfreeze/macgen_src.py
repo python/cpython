@@ -88,6 +88,10 @@ def generate(output, module_dict, debug=0, with_ifdef=0):
 		c_modules = []
 		for module in module_dict.keys():
 			if module_dict[module].gettype() in ('builtin', 'dynamic'):
+				# if the module is in a package we have no choice but
+				# to put it at the toplevel in the frozen application.
+				if '.' in module:
+					module = module.split('.')[-1]
 				c_modules.append(module)
 		ifp = open(CONFIG_TEMPLATE)
 		ofp = open(config_name, 'w')
