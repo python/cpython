@@ -152,12 +152,36 @@ builtin_buffer(self, args)
 }
 
 static char buffer_doc[] =
-"buffer(object [, offset[, size]) -> object\n\
+"buffer(object [, offset[, size]]) -> object\n\
 \n\
 Creates a new buffer object which references the given object.\n\
 The buffer will reference a slice of the target object from the\n\
 start of the object (or at the specified offset). The slice will\n\
 extend to the end of the target object (or with the specified size).";
+
+
+static PyObject *
+builtin_unicode(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	char *s;
+	int len;
+	char *encoding = NULL;
+	char *errors = NULL;
+
+	if ( !PyArg_ParseTuple(args, "s#|ss:unicode", &s, &len, 
+			       &encoding, &errors) )
+	    return NULL;
+	return PyUnicode_Decode(s, len, encoding, errors);
+}
+
+static char unicode_doc[] =
+"unicode(string [, encoding[, errors]]) -> object\n\
+\n\
+Creates a new unicode object from the given encoded string.\n\
+encoding defaults to 'utf-8' and errors, defining the error handling,\n\
+to 'strict'.";
 
 
 static PyObject *
@@ -309,6 +333,31 @@ static char chr_doc[] =
 "chr(i) -> character\n\
 \n\
 Return a string of one character with ordinal i; 0 <= i < 256.";
+
+
+static PyObject *
+builtin_unichr(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	long x;
+	Py_UNICODE s[1];
+
+	if (!PyArg_ParseTuple(args, "l:unichr", &x))
+		return NULL;
+	if (x < 0 || x >= 65536) {
+		PyErr_SetString(PyExc_ValueError,
+				"unichr() arg not in range(65536)");
+		return NULL;
+	}
+	s[0] = (Py_UNICODE)x;
+	return PyUnicode_FromUnicode(s, 1);
+}
+
+static char unichr_doc[] =
+"unichr(i) -> unicode character\n\
+\n\
+Return a unicode string of one character with ordinal i; 0 <= i < 65536.";
 
 
 static PyObject *
@@ -1541,17 +1590,29 @@ builtin_ord(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	char c;
+	PyObject *obj;
+	long ord;
 
-	if (!PyArg_ParseTuple(args, "c:ord", &c))
+	if (!PyArg_ParseTuple(args, "O:ord", &obj))
 		return NULL;
-	return PyInt_FromLong((long)(c & 0xff));
+
+	if (PyString_Check(obj) && PyString_GET_SIZE(obj) == 1)
+		ord = (long)((unsigned char)*PyString_AS_STRING(obj));
+	else if (PyUnicode_Check(obj) && PyUnicode_GET_SIZE(obj) == 1)
+		ord = (long)*PyUnicode_AS_UNICODE(obj);
+	else {
+		PyErr_SetString(PyExc_TypeError,
+				"expected a string or unicode character");
+		return NULL;
+	}
+
+	return PyInt_FromLong(ord);
 }
 
 static char ord_doc[] =
 "ord(c) -> integer\n\
 \n\
-Return the integer ordinal of a one character string.";
+Return the integer ordinal of a one character [unicode] string.";
 
 
 static PyObject *
@@ -2227,6 +2288,8 @@ static PyMethodDef builtin_methods[] = {
 	{"str",		builtin_str, 1, str_doc},
 	{"tuple",	builtin_tuple, 1, tuple_doc},
 	{"type",	builtin_type, 1, type_doc},
+	{"unicode",	builtin_unicode, 1, unicode_doc},
+	{"unichr",	builtin_unichr, 1, unichr_doc},
 	{"vars",	builtin_vars, 1, vars_doc},
 	{"xrange",	builtin_xrange, 1, xrange_doc},
 	{NULL,		NULL},
@@ -2259,6 +2322,7 @@ PyObject *PyExc_SyntaxError;
 PyObject *PyExc_SystemError;
 PyObject *PyExc_SystemExit;
 PyObject *PyExc_UnboundLocalError;
+PyObject *PyExc_UnicodeError;
 PyObject *PyExc_TypeError;
 PyObject *PyExc_ValueError;
 PyObject *PyExc_ZeroDivisionError;
@@ -2304,6 +2368,7 @@ bltin_exc[] = {
 	{"SystemError",        &PyExc_SystemError,        1},
 	{"SystemExit",         &PyExc_SystemExit,         1},
 	{"UnboundLocalError",  &PyExc_UnboundLocalError,  1},
+	{"UnicodeError",       &PyExc_UnicodeError,       1},
 	{"TypeError",          &PyExc_TypeError,          1},
 	{"ValueError",         &PyExc_ValueError,         1},
 #ifdef MS_WINDOWS
@@ -2465,6 +2530,14 @@ initerrors(dict)
 	PyExc_UnboundLocalError = PyExc_NameError;
 	if (PyDict_SetItemString(dict, "UnboundLocalError",
 				 PyExc_NameError) != 0)
+		Py_FatalError("Cannot create string-based exceptions");
+
+	/* Make UnicodeError an alias for ValueError */
+	Py_INCREF(PyExc_ValueError);
+	Py_DECREF(PyExc_UnicodeError);
+	PyExc_UnicodeError = PyExc_ValueError;
+	if (PyDict_SetItemString(dict, "UnicodeError",
+				 PyExc_ValueError) != 0)
 		Py_FatalError("Cannot create string-based exceptions");
 
 	/* missing from the StandardError tuple: Exception, StandardError,
