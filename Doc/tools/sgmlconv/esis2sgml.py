@@ -8,28 +8,9 @@ latex2esis.py script when run over the Python documentation.
 __version__ = '$Revision$'
 
 import errno
+import esistools
 import re
 import string
-
-
-_data_rx = re.compile(r"[^\\][^\\]*")
-
-def decode(s):
-    r = ''
-    while s:
-        m = _data_rx.match(s)
-        if m:
-            r = r + m.group()
-            s = s[len(m.group()):]
-        elif s[1] == "\\":
-            r = r + "\\"
-            s = s[2:]
-        elif s[1] == "n":
-            r = r + "\n"
-            s = s[2:]
-        else:
-            raise ValueError, "can't handle " + `s`
-    return r
 
 
 def format_attrs(attrs):
@@ -56,13 +37,16 @@ def do_convert(ifp, ofp, knownempties, xml=0):
         if data and data[-1] == "\n":
             data = data[:-1]
         if type == "-":
-            data = decode(data)
+            data = esistools.decode(data)
             ofp.write(data)
             if "\n" in data:
                 lastopened = None
             knownempty = 0
             lastempty = 0
         elif type == "(":
+            if data == "COMMENT":
+                ofp.write("<!--")
+                continue
             if knownempty and xml:
                 ofp.write("<%s%s/>" % (data, format_attrs(attrs)))
             else:
@@ -75,6 +59,9 @@ def do_convert(ifp, ofp, knownempties, xml=0):
             lastempty = knownempty
             knownempty = 0
         elif type == ")":
+            if data == "COMMENT":
+                ofp.write("-->")
+                continue
             if xml:
                 if not lastempty:
                     ofp.write("</%s>" % data)
@@ -87,7 +74,7 @@ def do_convert(ifp, ofp, knownempties, xml=0):
             lastempty = 0
         elif type == "A":
             name, type, value = string.split(data, " ", 2)
-            attrs[name] = decode(value)
+            attrs[name] = esistools.decode(value)
         elif type == "e":
             knownempty = 1
 
@@ -101,26 +88,35 @@ def xml_convert(ifp, ofp, knownempties=()):
 
 
 def main():
+    import getopt
     import sys
     #
     convert = sgml_convert
-    if sys.argv[1:] and sys.argv[1] in ("-x", "--xml"):
-        convert = xml_convert
-        del sys.argv[1]
-    if len(sys.argv) == 1:
+    xml = 0
+    xmldecl = 0
+    opts, args = getopt.getopt(sys.argv[1:], "dx", ["declare", "xml"])
+    for opt, arg in opts:
+        if opt in ("-d", "--declare"):
+            xmldecl = 1
+        elif opt in ("-x", "--xml"):
+            xml = 1
+            convert = xml_convert
+    if len(args) == 0:
         ifp = sys.stdin
         ofp = sys.stdout
-    elif len(sys.argv) == 2:
-        ifp = open(sys.argv[1])
+    elif len(args) == 1:
+        ifp = open(args[0])
         ofp = sys.stdout
-    elif len(sys.argv) == 3:
-        ifp = open(sys.argv[1])
-        ofp = open(sys.argv[2], "w")
+    elif len(args) == 2:
+        ifp = open(args[0])
+        ofp = open(args[1], "w")
     else:
         usage()
         sys.exit(2)
     # knownempties is ignored in the XML version
     try:
+        if xml and xmldecl:
+            opf.write('<?xml version="1.0" encoding="iso8859-1"?>\n')
         convert(ifp, ofp)
     except IOError, (err, msg):
         if err != errno.EPIPE:
