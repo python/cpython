@@ -5578,6 +5578,7 @@ INITFUNC(void)
 	PyDict_SetItemString(d, "error", PyExc_OSError);
 
 #ifdef HAVE_PUTENV
-	posix_putenv_garbage = PyDict_New();
+	if (posix_putenv_garbage == NULL)
+		posix_putenv_garbage = PyDict_New();
 #endif
 }
