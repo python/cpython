@@ -1,7 +1,5 @@
 #! /usr/local/python
 
-XXX This file needs some work for Python 0.9.6!!!
-
 # A STDWIN-based front end for the Python interpreter.
 #
 # This is useful if you want to avoid console I/O and instead
@@ -29,15 +27,7 @@ import stdwin
 from stdwinevents import *
 import rand
 import mainloop
-
-from util import readfile # 0.9.1
-
-try:
-	import mac
-	os = mac
-except NameError:
-	import posix
-	os = posix
+import os
 
 
 # Filename used to capture output from commands; change to suit your taste
@@ -213,8 +203,7 @@ def do_open(win):
 		filename = stdwin.askfile('Open file', '', 0)
 		win = makewindow()
 		win.filename = filename
-		win.editor.replace(readfile(filename)) # 0.9.1
-		# win.editor.replace(open(filename, 'r').read()) # 0.9.2
+		win.editor.replace(open(filename, 'r').read())
 		win.editor.setfocus(0, 0)
 		win.settitle(win.filename)
 		#
