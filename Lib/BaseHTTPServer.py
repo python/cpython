@@ -172,7 +172,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
 
     This server parses the request and the headers, and then calls a
     function specific to the request type (<command>).  Specifically,
-    a request SPAM will be handled by a method handle_SPAM().  If no
+    a request SPAM will be handled by a method do_SPAM().  If no
     such method exists the server sends an error response to the
     client.  If it exists, it is called with no arguments:
 
