@@ -204,7 +204,7 @@ Implements \code{TOS = TOS1 << TOS }.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BINARY_RSHIFT}{}
-Implements \code{TOS = TOS1 << TOS }.
+Implements \code{TOS = TOS1 >> TOS }.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BINARY_AND}{}
@@ -241,19 +241,19 @@ Slice assignment needs even an additional parameter.  As any statement,
 they put nothing on the stack.
 
 \begin{opcodedesc}{STORE_SLICE+0}{}
-Implements \code{TOS[:]=TOS1}.
+Implements \code{TOS[:] = TOS1}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{STORE_SLICE+1}{}
-Implements \code{TOS1[TOS:]=TOS2}.
+Implements \code{TOS1[TOS:] = TOS2}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{STORE_SLICE+2}{}
-Implements \code{TOS1[:TOS]=TOS2}.
+Implements \code{TOS1[:TOS] = TOS2}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{STORE_SLICE+3}{}
-Implements \code{TOS2[TOS1:TOS]=TOS3}.
+Implements \code{TOS2[TOS1:TOS] = TOS3}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{DELETE_SLICE+0}{}
@@ -273,7 +273,7 @@ Implements \code{del TOS2[TOS1:TOS]}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{STORE_SUBSCR}{}
-Implements \code{TOS1[TOS]=TOS2}.
+Implements \code{TOS1[TOS] = TOS2}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{DELETE_SUBSCR}{}
