@@ -759,6 +759,9 @@
 /* Define if WINDOW in curses.h offers a field _flags. */
 #undef WINDOW_HAS_FLAGS
 
+/* Define to enable profile hooks for C extension functions and builtins */
+#undef WITH_C_PROF
+
 /* Define if you want documentation strings in extension modules */
 #undef WITH_DOC_STRINGS
 

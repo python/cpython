@@ -3502,15 +3502,23 @@ call_function(PyObject ***pp_stack, int oparg
 			PyCFunction meth = PyCFunction_GET_FUNCTION(func);
 			PyObject *self = PyCFunction_GET_SELF(func);
 			if (flags & METH_NOARGS && na == 0) {
+#ifdef WITH_C_PROF
  				BEGIN_C_TRACE
+#endif
 				x = (*meth)(self, NULL);
+#ifdef WITH_C_PROF
 				END_C_TRACE
+#endif
 			}
 			else if (flags & METH_O && na == 1) {
 				PyObject *arg = EXT_POP(*pp_stack);
+#ifdef WITH_C_PROF
 				BEGIN_C_TRACE
+#endif
 				x = (*meth)(self, arg);
+#ifdef WITH_C_PROF
 				END_C_TRACE
+#endif
 				Py_DECREF(arg);
 			}
 			else {
@@ -3521,7 +3529,9 @@ call_function(PyObject ***pp_stack, int oparg
 		else {
 			PyObject *callargs;
 			callargs = load_args(pp_stack, na);
+#ifdef WITH_C_PROF
 			BEGIN_C_TRACE
+#endif
 #ifdef WITH_TSC
 			rdtscll(*pintr0);
 #endif
@@ -3529,7 +3539,9 @@ call_function(PyObject ***pp_stack, int oparg
 #ifdef WITH_TSC
 			rdtscll(*pintr1);
 #endif
+#ifdef WITH_C_PROF
 			END_C_TRACE
+#endif
 			Py_XDECREF(callargs);
 		}
 	} else {
