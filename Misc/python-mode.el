@@ -462,7 +462,7 @@ Currently-active file is at the head of the list.")
     (define-key py-mode-map [delete]    'py-electric-delete)
     (define-key py-mode-map [backspace] 'py-electric-backspace))
   ;; marking interesting locations
-  (define-key py-mode-map "\C-c\C-m"  'py-mark-def-or-class)
+  (define-key py-mode-map "\e\C-h"    'py-mark-def-or-class)
   (define-key py-mode-map "\C-c\C-k"  'py-mark-block)
   ;; Miscellaneous
   (define-key py-mode-map "\C-c:"     'py-guess-indent-offset)
@@ -2049,7 +2049,9 @@ pleasant."
 		     (re-search-backward "^[ \t]*[^ \t#]" nil 'move)
 		     (forward-line 1))
 		  ;; no comment, so go back
-		  (goto-char start))))))))
+		  (goto-char start)))))))
+  (exchange-point-and-mark)
+  (py-keep-region-active))
 
 ;; ripped from cc-mode
 (defun py-forward-into-nomenclature (&optional arg)
