@@ -639,7 +639,7 @@ static struct PyMethodDef PyLocale_Methods[] = {
   {"nl_langinfo", (PyCFunction) PyLocale_nl_langinfo,
    METH_VARARGS, nl_langinfo__doc__},
 #endif
-#ifdef HAVE_LANGINFO_H
+#ifdef HAVE_LIBINTL_H
   {"gettext",(PyCFunction)PyIntl_gettext,METH_VARARGS,
     gettext__doc__},
   {"dgettext",(PyCFunction)PyIntl_dgettext,METH_VARARGS,
