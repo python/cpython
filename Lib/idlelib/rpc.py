@@ -154,26 +154,49 @@ class SocketIO:
                 ret = remoteref(ret)
             return ("OK", ret)
         except:
-            ##traceback.print_exc(file=sys.__stderr__)
+            self.debug("localcall:EXCEPTION")
+            efile = sys.stderr
             typ, val, tb = info = sys.exc_info()
             sys.last_type, sys.last_value, sys.last_traceback = info
-            if isinstance(typ, type(Exception)):
-                # Class exception
-                mod = typ.__module__
-                name = typ.__name__
-                if issubclass(typ, Exception):
-                    args = val.args
-                else:
-                    args = (str(val),)
+            tbe = traceback.extract_tb(tb)
+            print >>efile, 'Traceback (most recent call last):'
+            exclude = ("run.py", "rpc.py", "RemoteDebugger.py", "bdb.py")
+            self.cleanup_traceback(tbe, exclude)
+            traceback.print_list(tbe, file=efile)
+            lines = traceback.format_exception_only(typ, val)
+            for line in lines:
+                print>>efile, line,
+            return ("EXCEPTION", None)
+
+    def cleanup_traceback(self, tb, exclude):
+        "Remove excluded traces from beginning/end of tb; get cached lines"
+        orig_tb = tb[:]
+        while tb:
+            for rpcfile in exclude:
+                if tb[0][0].count(rpcfile):
+                    break    # found an exclude, break for: and delete tb[0]
             else:
-                # User string exception
-                mod = None
-                name = typ
-                if val is None: val = ''
-                args = str(val)
-            tb = traceback.extract_tb(tb)
-            self.debug("localcall:EXCEPTION: ", mod, name, args, tb)
-            return ("EXCEPTION", (mod, name, args, tb))
+                break        # no excludes, have left RPC code, break while:
+            del tb[0]
+        while tb:
+            for rpcfile in exclude:
+                if tb[-1][0].count(rpcfile):
+                    break
+            else:
+                break
+            del tb[-1]
+        if len(tb) == 0:
+            # error was in RPC internals, don't prune!
+            tb[:] = orig_tb[:]
+            print>>sys.stderr, "** RPC Internal Error: ", tb
+        for i in range(len(tb)):
+            fn, ln, nm, line = tb[i]
+            if nm == '?':
+                nm = "-toplevel-"
+            if not line and fn.startswith("<pyshell#"):
+                line = self.remotecall('linecache', 'getline',
+                                       (fn, ln), {})
+            tb[i] = fn, ln, nm, line
 
     def remotecall(self, oid, methodname, args, kwargs):
         self.debug("calling asynccall via remotecall")
@@ -198,26 +221,7 @@ class SocketIO:
         if how == "OK":
             return what
         if how == "EXCEPTION":
-            self.debug("decoderesponse: EXCEPTION:", what)
-            mod, name, args, tb = what
-            self.traceback = tb
-            if mod: # not string exception
-                try:
-                    __import__(mod)
-                    module = sys.modules[mod]
-                except ImportError:
-                    pass
-                else:
-                    try:
-                        cls = getattr(module, name)
-                    except AttributeError:
-                        pass
-                    else:
-                        # instantiate a built-in exception object and raise it
-                        raise getattr(__import__(mod), name)(*args)
-                name = mod + "." + name
-            # do the best we can:
-            raise name, args
+            raise Exception, "RPC SocketIO.decoderesponse exception"
         if how == "ERROR":
             self.debug("decoderesponse: Internal ERROR:", what)
             raise RuntimeError, what
