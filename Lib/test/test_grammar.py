@@ -260,6 +260,25 @@ print
 print 0 or 1, 0 or 1,
 print 0 or 1
 
+print 'extended print_stmt' # 'print' '>>' test ','
+import sys
+print >> sys.stdout, 1, 2, 3
+print >> sys.stdout, 1, 2, 3,
+print >> sys.stdout
+print >> sys.stdout, 0 or 1, 0 or 1,
+print >> sys.stdout, 0 or 1
+
+# syntax errors
+def check_syntax(statement):
+	try:
+		compile(statement, '<string>', 'exec')
+	except SyntaxError:
+		pass
+	else:
+		print 'Missing SyntaxError: "%s"' % statement
+check_syntax('print ,')
+check_syntax('print >> x,')
+
 print 'del_stmt' # 'del' exprlist
 del abc
 del x, y, (z, xyz)
