@@ -37,6 +37,9 @@ def urlretrieve(url):
 	if not _urlopener:
 		_urlopener = URLopener()
 	return _urlopener.retrieve(url)
+def urlcleanup():
+	if _urlopener:
+		_urlopener.cleanup()
 
 
 # Class to open URLs.
@@ -48,7 +51,7 @@ class URLopener:
 	# Constructor
 	def __init__(self):
 		self.addheaders = []
-		self.tempfiles = []
+		self.tempcache = {}
 		self.ftpcache = ftpcache
 		# Undocumented feature: you can use a different
 		# ftp cache by assigning to the .ftpcache member;
@@ -62,11 +65,12 @@ class URLopener:
 
 	def cleanup(self):
 		import os
-		for tfn in self.tempfiles:
+		for url in self.tempcache.keys():
 			try:
-				os.unlink(tfn)
+				os.unlink(self.tempcache[url][0])
 			except os.error:
 				pass
+			del self.tempcache[url]
 
 	# Add a header to be used by the HTTP interface only
 	# e.g. u.addheader('Accept', 'sound/basic')
@@ -93,7 +97,13 @@ class URLopener:
 	# retrieve(url) returns (filename, None) for a local object
 	# or (tempfilename, headers) for a remote object
 	def retrieve(self, url):
-		type, url1 = splittype(unwrap(url))
+		if self.tempcache.has_key(url):
+			return self.tempcache[url]
+		url1 = unwrap(url)
+		if self.tempcache.has_key(url1):
+			self.tempcache[url] = self.tempcache[url1]
+			return self.tempcache[url1]
+		type, url1 = splittype(url1)
 		if not type or type == 'file':
 			try:
 				fp = self.open_local_file(url1)
@@ -102,19 +112,19 @@ class URLopener:
 			except IOError, msg:
 				pass
 		fp = self.open(url)
+		headers = fp.info()
 		import tempfile
 		tfn = tempfile.mktemp()
-		self.tempfiles.append(tfn)
+		self.tempcache[url] = result = tfn, headers
 		tfp = open(tfn, 'w')
 		bs = 1024*8
 		block = fp.read(bs)
 		while block:
 			tfp.write(block)
 			block = fp.read(bs)
-		headers = fp.info()
 		del fp
 		del tfp
-		return tfn, headers
+		return result
 
 	# Each method named open_<type> knows how to open that type of URL
 
@@ -370,7 +380,7 @@ def test():
 			fn, h = None, None
 		print '-'*40
 	finally:
-		_urlopener.cleanup()
+		urlcleanup()
 
 # Run test program when run as a script
 if __name__ == '__main__':
