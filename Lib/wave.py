@@ -439,7 +439,7 @@ class Wave_write:
             self._nframes = initlength / (self._nchannels * self._sampwidth)
         self._datalength = self._nframes * self._nchannels * self._sampwidth
         self._form_length_pos = self._file.tell()
-        self._file.write(struct.pack('<lsslhhllhhs',
+        self._file.write(struct.pack('<l4s4slhhllhh4s',
             36 + self._datalength, 'WAVE', 'fmt ', 16,
             WAVE_FORMAT_PCM, self._nchannels, self._framerate,
             self._nchannels * self._framerate * self._sampwidth,
