@@ -7,7 +7,7 @@
    All rights reserved.
 */
 
-#define BLOCKLEN 46
+#define BLOCKLEN 2
 #define CENTER ((BLOCKLEN - 1) / 2)
 
 /* A `dequeobject` is composed of a doubly-linked list of `block` nodes.
@@ -24,17 +24,19 @@
  *
  * The indices, d.leftindex and d.rightindex are always in the range
  *     0 <= index < BLOCKLEN.
+ * Their exact relationship is:
+ *     (d.leftindex + d.len - 1) % BLOCKLEN == d.rightindex.
  *
  * Empty deques have d.len == 0; d.leftblock==d.rightblock;
  * d.leftindex == CENTER+1; and d.rightindex == CENTER.
  * Checking for d.len == 0 is the intended way to see whether d is empty.
  *
  * Whenever d.leftblock == d.rightblock, 
- *     d.leftindex + d.len == d.rightindex + 1.
+ *     d.leftindex + d.len - 1 == d.rightindex.
  * 
- * However, when d.leftblock != rightblock, d.leftindex and d.rightindex
- * are indices into distinct blocks and have no relationship to one
- * another (for example, sometimes d.leftindex > d.rightindex).
+ * However, when d.leftblock != d.rightblock, d.leftindex and d.rightindex
+ * become indices into distinct blocks and either may be larger than the 
+ * other.
  */
 
 typedef struct BLOCK {
