@@ -12,7 +12,7 @@ from distutils.dep_util import newer
 from distutils.util import convert_path
 
 # check if Python is called on the first line with this expression
-first_line_re = re.compile(r'^#!.*python(\s+.*)?')
+first_line_re = re.compile(r'^#!.*python(\s+.*)?$')
 
 class build_scripts (Command):
 
