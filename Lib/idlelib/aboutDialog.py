@@ -1,11 +1,12 @@
 """
 about box for idle
 """
+
 from Tkinter import *
-import tkFont
 import string, os
 import textView
 import idlever
+
 class AboutDialog(Toplevel):
     """
     modal about dialog for idle
@@ -66,16 +67,16 @@ class AboutDialog(Toplevel):
                 text='Released under the Python 2.1.1 PSF Licence',
                 justify=LEFT,fg=self.fg,bg=self.bg)
         labelLicense.grid(row=4,column=0,sticky=W,columnspan=3,padx=10,pady=5)
-        framePad = Frame(frameBg,height=5,bg=self.bg).grid(row=5,column=0)
+        Frame(frameBg,height=5,bg=self.bg).grid(row=5,column=0)
         labelEmail = Label(frameBg,text='email:  idle-dev@python.org',
                 justify=LEFT,fg=self.fg,bg=self.bg)
         labelEmail.grid(row=6,column=0,columnspan=2,sticky=W,padx=10,pady=0)
         labelWWW = Label(frameBg,text='www:  http://idlefork.sourceforge.net',
                 justify=LEFT,fg=self.fg,bg=self.bg)
         labelWWW.grid(row=7,column=0,columnspan=2,sticky=W,padx=10,pady=0)
-        frameDivider = Frame(frameBg,borderwidth=1,relief=SUNKEN,
-                height=2,bg=self.bg).grid(row=8,column=0,sticky=(E,W),columnspan=3,
-                padx=5,pady=5)
+        Frame(frameBg,borderwidth=1,relief=SUNKEN,
+                height=2,bg=self.bg).grid(row=8,column=0,sticky=EW,
+                                          columnspan=3, padx=5, pady=5)
         labelPythonVer = Label(frameBg,text='Python version:  '+
                 sys.version.split()[0],fg=self.fg,bg=self.bg)
         labelPythonVer.grid(row=9,column=0,sticky=W,padx=10,pady=0)
