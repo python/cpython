@@ -9,10 +9,6 @@
 
 #include "Python.h"
 
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
-
 
 /* elementary operations on complex numbers */
 

@@ -40,12 +40,6 @@ char copyright[] = " SRE 0.9.8 Copyright (c) 1997-2000 by Secret Labs AB ";
 
 #include "sre.h"
 
-#if defined(HAVE_LIMITS_H)
-#include <limits.h>
-#else
-#define INT_MAX 2147483647
-#endif
-
 #include <ctype.h>
 
 /* name of this module, minus the leading underscore */

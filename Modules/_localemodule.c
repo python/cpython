@@ -15,7 +15,6 @@ This software comes with no warranty. Use at your own risk.
 #include <errno.h>
 #include <locale.h>
 #include <string.h>
-#include <limits.h>
 #include <ctype.h>
 
 #if defined(MS_WIN32)

@@ -9,9 +9,6 @@
 #include "Python.h"
 
 #include <ctype.h>
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
 
 
 int PyArg_Parse(PyObject *, char *, ...);

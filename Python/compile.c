@@ -24,12 +24,6 @@
 #include "structmember.h"
 
 #include <ctype.h>
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
-#ifndef INT_MAX
-#define INT_MAX 2147483647
-#endif
 
 /* Three symbols from graminit.h are also defined in Python.h, with
    Py_ prefixes to their names.  Python.h can't include graminit.h

@@ -4,18 +4,6 @@
 #include "Python.h"
 #include <ctype.h>
 
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
-
-#ifndef LONG_MAX
-#define LONG_MAX 0X7FFFFFFFL
-#endif
-
-#ifndef LONG_MIN
-#define LONG_MIN (-LONG_MAX-1)
-#endif
-
 #ifndef CHAR_BIT
 #define CHAR_BIT 8
 #endif

@@ -10,9 +10,6 @@
 */
 
 #include "Python.h"
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
 
 int (*PyOS_InputHook)(void) = NULL;
 

@@ -9,12 +9,8 @@
 int null_strings, one_strings;
 #endif
 
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#else
-#ifndef UCHAR_MAX
+#if !defined(HAVE_LIMITS_H) && !defined(UCHAR_MAX)
 #define UCHAR_MAX 255
-#endif
 #endif
 
 static PyStringObject *characters[UCHAR_MAX + 1];

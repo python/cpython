@@ -9,12 +9,6 @@ this module directly.";
 
 #include "Python.h"
 
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#else
-#define INT_MAX 2147483647
-#endif
-
 #include <ctype.h>
 /* XXX This file assumes that the <ctype.h> is*() functions
    XXX are defined for all 8-bit characters! */

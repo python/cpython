@@ -33,21 +33,14 @@ typedef unsigned char *POINTER;
 /* UINT2 defines a two byte word */
 typedef unsigned short int UINT2;
 
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#else
-/* Wild guess */
-#define LONG_MAX 2147483647L
-#endif
-
 /* UINT4 defines a four byte word */
-#if defined(INT_MAX) && INT_MAX == 2147483647
-typedef unsigned int UINT4;
-#else
-#if defined(LONG_MAX) && LONG_MAX == 2147483647L
+#if SIZEOF_LONG == 4
 typedef unsigned long int UINT4;
+#else
+#if INT_MAX == 2147483647
+typedef unsigned int UINT4;
 #endif
-/* Too bad if neither is */
+/* Too bad if neither is; pyport.h would need to be fixed. */
 #endif
 
 /* ========== End global.h; continue md5.h ========== */

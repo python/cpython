@@ -24,14 +24,7 @@ extern DL_IMPORT(void *) PyLong_AsVoidPtr(PyObject *);
 
 #ifdef HAVE_LONG_LONG
 
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
-
 /* Hopefully this is portable... */
-#ifndef LONG_MAX
-#define LONG_MAX 2147483647L
-#endif
 #ifndef ULONG_MAX
 #define ULONG_MAX 4294967295U
 #endif
