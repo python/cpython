@@ -177,7 +177,19 @@ sharedinstall:	$(DESTSHARED) $(SHAREDMODS)
 			fi; \
 		done
 
-$(DESTSHARED):
-		mkdir $(DESTSHARED); chmod 755 $(DESTSHARED)
+DIRMODE=755
+
+$(DESTSHARED): $(exec_prefix)/lib/python $(exec_prefix)/lib $(exec_prefix)
+		mkdir $(DESTSHARED); chmod $(DIRMODE) $(DESTSHARED)
+
+$(exec_prefix)/lib/python:
+		mkdir $(exec_prefix)/lib/python
+		chmod $(DIRMODE) $(exec_prefix)/lib/python
+
+$(exec_prefix)/lib:
+		mkdir $(exec_prefix)/lib; chmod $(DIRMODE) $(exec_prefix)/lib
+
+$(exec_prefix):
+		mkdir $(exec_prefix); chmod $(DIRMODE) $(exec_prefix)
 
 # Stuff is appended here by makesetup and make depend
