@@ -280,7 +280,7 @@ static object *
 r_object(p)
 	RFILE *p;
 {
-	object *v;
+	object *v, *v2;
 	long i, n;
 	int type = r_byte(p);
 	
@@ -347,8 +347,15 @@ r_object(p)
 		v = newtupleobject((int)n);
 		if (v == NULL)
 			return v;
-		for (i = 0; i < n; i++)
-			SETTUPLEITEM(v, (int)i, r_object(p));
+		for (i = 0; i < n; i++) {
+			v2 = r_object(p);
+			if ( v2 == NULL ) {
+				DECREF(v);
+				v = NULL;
+				break;
+			}
+			SETTUPLEITEM(v, (int)i, v2);
+		}
 		return v;
 	
 	case TYPE_LIST:
@@ -356,8 +363,15 @@ r_object(p)
 		v = newlistobject((int)n);
 		if (v == NULL)
 			return v;
-		for (i = 0; i < n; i++)
-			setlistitem(v, (int)i, r_object(p));
+		for (i = 0; i < n; i++) {
+			v2 = r_object(p);
+			if ( v2 == NULL ) {
+				DECREF(v);
+				v = NULL;
+				break;
+			}
+			setlistitem(v, (int)i, v2);
+		}
 		return v;
 	
 	case TYPE_DICT:
@@ -368,8 +382,9 @@ r_object(p)
 			object *key, *val;
 			key = r_object(p);
 			if (key == NULL)
-				break;
+				break; /* XXXX and how about memory errors? */
 			val = r_object(p);
+			/* XXXX error check? */
 			dict2insert(v, key, val);
 			DECREF(key);
 			XDECREF(val);
@@ -381,12 +396,20 @@ r_object(p)
 			int argcount = r_short(p);
 			int nlocals = r_short(p);
 			int flags = r_short(p);
-			object *code = r_object(p);
-			object *consts = r_object(p);
-			object *names = r_object(p);
-			object *varnames = r_object(p);
-			object *filename = r_object(p);
-			object *name = r_object(p);
+			object *code = NULL;
+			object *consts = NULL;
+			object *names = NULL;
+			object *varnames = NULL;
+			object *filename = NULL;
+			object *name = NULL;
+			
+			code = r_object(p);
+			if (code) consts = r_object(p);
+			if (consts) names = r_object(p);
+			if (names) varnames = r_object(p);
+			if (varnames) filename = r_object(p);
+			if (filename) name = r_object(p);
+			
 			if (!err_occurred()) {
 				v = (object *) newcodeobject(
 					argcount, nlocals, flags, 
