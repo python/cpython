@@ -17,25 +17,25 @@ you to control scriptable applications from your Python program,
 and with a fairly pythonic interface. This piece of
 Python:</p>
 	
-<blockquote><tt><pre>
+<blockquote><pre><tt>
 import Finder
 
 f = Finder.Finder()
 print f.get(f.window(1).name)
-</pre></tt></blockquote>
+</tt></pre></blockquote>
 
 <p>is identical to the following piece of AppleScript:</p>
 
-<blockquote><tt><pre>
+<blockquote><pre><tt>
 tell application "Finder"
 	get name of window 1
 end tell
-</pre></tt></blockquote>
+</tt></pre></blockquote>
 
 <p>To send AppleEvents to an application you must first create the Python
 modules interfacing to the terminology of the application (what
 <tt>Script Editor</tt> calls the "Dictionary"). Use the IDE menu command
-<tt>File->Generate OSA Suite...</tt> for this. For more control run</p>
+<tt>File-&gt;Generate OSA Suite...</tt> for this. For more control run</p>
 
 <blockquote><tt>
 pythonw .../Lib/plat-mac/gensuitemodule.py --help

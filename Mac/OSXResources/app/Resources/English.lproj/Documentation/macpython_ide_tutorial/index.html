@@ -1,4 +1,6 @@
-<html>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/1999/REC-html401-19991224/loose.dtd">
+<html lang="en">
 <head>
 	<title>One Day of MacPython IDE Toying</title>
 	<link rel="SHORTCUT ICON" href="../pythonsmall.gif">
@@ -9,7 +11,7 @@
 		<table>
 		<tr>
 			<td>
-				<img src="IDE.gif">
+				<img src="IDE.gif" alt="">
 			</td>
 			<td>
 				<p>This document gives a very basic introduction to the
@@ -34,16 +36,16 @@ and download the most recent Python interpreter. Get the Mac OSX binary
 installer.) The first thing we'd like to do is actually start running it!
 We can do this by opening up the IDE, which should be in Applications
 under the newly-created MacPython program folder: </p><p><img
-src="loading_ide.gif" border=1></p>
+src="loading_ide.gif" border=1 alt="image of IDE icon"></p>
 
 <hr><br style="page-break-after: always">
 
 <p>The IDE starts up and shows an interactive window: </p>
-<p><img src="new_ide_window.gif"></p>
+<p><img src="new_ide_window.gif" alt="image of new window"></p>
 
 <p>If the window does not show up (because you have run the IDE before
-and closed it: it remembers that between runs) open it with the <tt>Windows->Python Interactive</tt>
-menu entry. <p>
+and closed it: it remembers that between runs) open it with the <tt>Windows-&gt;Python Interactive</tt>
+menu entry. </p>
 
 <p>This is the interactive window to the IDE, it allows us to enter
 commands directly into Python, and as soon as we enter a command,
@@ -56,7 +58,7 @@ we can think of it as a very powerful calculator.</p>
 
 <p>Let's try something now!  As per tradition, let's get Python to say
 the immortal words, "Hello World".  <img src="hello_world.gif"
-border=1></p> <p>Those '<tt>&gt;&gt;&gt</tt>' signs act as a prompt
+border=1 alt="image of hello world program"></p> <p>Those '<tt>&gt;&gt;&gt;</tt>' signs act as a prompt
 for us: Python is ready to read in a new command by giving us that
 visual cue.  Also, we notice that as we enter commands, Python will
 give us its output immediately.
@@ -67,7 +69,7 @@ give us its output immediately.
 <p>Ok, this seems pretty simple enough.  Let's try a few more
 commands.  If we look below:</p>
 
-<p><img src="simple_commands.gif" border=1></p>
+<p><img src="simple_commands.gif" border=1 alt="image of command window"></p>
 
 <p>we'll see the result of running a few more commands.  Don't worry
 too much about knowing the exact rules for making programs yet: the
@@ -97,11 +99,11 @@ thing over again.</p>
 <p>Let's try this.  First, let's start with a clean slate by opening
 up a new window.</p> 
 
-<p><img src="making_new_window.gif" border=1></p>
+<p><img src="making_new_window.gif" border=1 alt="image of making new window"></p>
 
 <p>Here's the result of that menu command:</p>
 
-<p><img src="new_window_made.gif" border=1></p>
+<p><img src="new_window_made.gif" border=1 alt="image of new window"></p>
 
 <p>We notice that there's nothing in this new window.  What this means
 is that this file is purely for our commands: Python won't interject
@@ -114,7 +116,7 @@ to edit windows in other editors such as TextEdit or BBEdit.</p>
 <p>What we wanted to do before was save some of the stuff we had
 tried out on the interpreter window.  Let's do that by typing (or
 copy/pasting) those commands into our edit window.</p>
-<p><img src="entering_in_new_window.gif" border=1></p>
+<p><img src="entering_in_new_window.gif" border=1 alt="image of entering commands"></p>
 
 <p>Ok, we're done with copying and pasting.  
 One big thing to notice
@@ -129,22 +131,22 @@ an extra empty print statement so our output ends with a newline.
 
 <hr><br style="page-break-after: always">
 
-<p>Let's save the file now.  The Save command is located under the <tt>File</tt> menu:
-<p><img src="saving_edited_file.gif" border=1></p>
+<p>Let's save the file now.  The Save command is located under the <tt>File</tt> menu:</p>
+<p><img src="saving_edited_file.gif" border=1 alt="image of saving file"></p>
 
 
 <hr><br style="page-break-after: always">
 
 <p>Now that we've saved the program, how do we run the program? Use the
 Run All button at the top of the editing window, or the equivalent
-menu command <tt>Python->Run Window</tt>. The output will appear in a new
+menu command <tt>Python-&gt;Run Window</tt>. The output will appear in a new
 window called Output Window. </p>
 
 <p>By the way, one thing to notice is that I made a typo: I didn't
 quite copy exactly what I had entered in the interpreter window
 before.  Does this affect things?</p>
 
-<p><img src="syntax_error.gif" border=1></p>
+<p><img src="syntax_error.gif" border=1 alt="image of syntax error"></p>
 
 <p>Ooops.  Here is an example of what Python calls a "syntax error".
 Python sees that we made a typo, and warns us to take a much closer
@@ -168,7 +170,7 @@ the error occurred. </p>
 <p>Ok, let's say that we fixed that silly typo.  Let's try to run the
 program again. This gives us a new window, the Output window, showing
 the output of our program:</p>
-<p><img src="output_window.gif" border=1></p>
+<p><img src="output_window.gif" border=1 alt="image of output window"></p>
 
 <hr><br style="page-break-after: always">
 
@@ -198,7 +200,7 @@ breakdown of things to see and explore:</p>
 	when it reaches this line so you can inspect things. The profiler
 	is also nifty: it shows you where your program is spending its time.</li>
 	
-	<li>The module browser (<tt>Python->Module Browser</tt>) shows you all Python
+	<li>The module browser (<tt>Python-&gt;Module Browser</tt>) shows you all Python
 	modules currently loaded. You can look at the contents of the module with
 	Browse... and (for modules written in Python) at the source with Source...</li>
 	
@@ -211,7 +213,7 @@ breakdown of things to see and explore:</p>
 	if you have installed it with the Package Manager, and the Apple Developer
 	documentation. </li>
 	
-	<li>The <tt>File->Save as Applet</tt> menu command saves your script as a MacOSX
+	<li>The <tt>File-&gt;Save as Applet</tt> menu command saves your script as a MacOSX
 	application. This allows you to create a script that you can drop files on,
 	and much more. The IDE itself is such an applet, completely written in Python. </li>
 	
