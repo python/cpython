@@ -133,6 +133,9 @@ class POP3:
 		list = []; octets = 0
 		line, o = self._getline()
 		while line != '.':
+			if line[:2] == '..':
+				o = o-1
+				line = line[1:]
 			octets = octets + o
 			list.append(line)
 			line, o = self._getline()
