@@ -245,7 +245,6 @@ class build_ext (Command):
             include_dirs = build_info.get ('include_dirs')
             objects = self.compiler.compile (sources,
                                              output_dir=self.build_temp,
-                                             keep_dir=1,
                                              macros=macros,
                                              include_dirs=include_dirs,
                                              debug=self.debug)
@@ -256,8 +255,10 @@ class build_ext (Command):
             extra_objects = build_info.get ('extra_objects')
             if extra_objects:
                 objects.extend (extra_objects)
-            libraries = self.libraries + build_info.get ('libraries')
-            library_dirs = self.library_dirs + build_info.get ('library_dirs')
+            libraries = (self.libraries +
+                         (build_info.get ('libraries') or []))
+            library_dirs = (self.library_dirs +
+                            (build_info.get ('library_dirs') or []))
             extra_args = build_info.get ('extra_link_args') or []
 
             if self.compiler.compiler_type == 'msvc':
