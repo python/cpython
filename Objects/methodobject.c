@@ -132,7 +132,7 @@ static long
 meth_hash(a)
 	methodobject *a;
 {
-	long x, y;
+	long x;
 	if (a->m_self == NULL)
 		x = 0;
 	else {

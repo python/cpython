@@ -456,7 +456,6 @@ int_divmod(x, y)
 	intobject *x;
 	intobject *y;
 {
-	object *v, *v0, *v1;
 	long d, m;
 	if (i_divmod(x, y, &d, &m) < 0)
 		return NULL;

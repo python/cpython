@@ -63,7 +63,7 @@ inc_count(tp)
 	if (tp->tp_alloc == 0) {
 		/* first time; hang in linked list */
 		if (tp->tp_next != NULL) /* sanity check */
-			abort();
+			fatal("XXX inc_count sanity check");
 		tp->tp_next = type_list;
 		type_list = tp;
 	}
@@ -379,24 +379,18 @@ UNREF(op)
 	register object *op;
 {
 	register object *p;
-	if (op->ob_refcnt < 0) {
-		fprintf(stderr, "UNREF negative refcnt\n");
-		abort();
-	}
+	if (op->ob_refcnt < 0)
+		fatal("UNREF negative refcnt");
 	if (op == &refchain ||
-	    op->_ob_prev->_ob_next != op || op->_ob_next->_ob_prev != op) {
-		fprintf(stderr, "UNREF invalid object\n");
-		abort();
-	}
+	    op->_ob_prev->_ob_next != op || op->_ob_next->_ob_prev != op)
+		fatal("UNREF invalid object");
 #ifdef SLOW_UNREF_CHECK
 	for (p = refchain._ob_next; p != &refchain; p = p->_ob_next) {
 		if (p == op)
 			break;
 	}
-	if (p == &refchain) { /* Not found */
-		fprintf(stderr, "UNREF unknown object\n");
-		abort();
-	}
+	if (p == &refchain) /* Not found */
+		fatal("UNREF unknown object");
 #endif
 	op->_ob_next->_ob_prev = op->_ob_prev;
 	op->_ob_prev->_ob_next = op->_ob_next;

@@ -94,7 +94,7 @@ newfileobject(name, mode)
 	f = (fileobject *) newopenfileobject((FILE *)NULL, name, mode, fclose);
 	if (f == NULL)
 		return NULL;
-#ifdef USE_FOPENRF
+#ifdef HAVE_FOPENRF
 	if (*mode == '*') {
 		FILE *fopenRF();
 		f->f_fp = fopenRF(name, mode+1);
@@ -230,6 +230,51 @@ file_seek(f, args)
 	INCREF(None);
 	return None;
 }
+
+#ifdef HAVE_FTRUNCATE
+static object *
+file_truncate(f, args)
+	fileobject *f;
+	object *args;
+{
+	long newsize;
+	int ret;
+	
+	if (f->f_fp == NULL)
+		return err_closed();
+	if (!getargs(args, "l", &newsize)) {
+		err_clear();
+		if (!getnoarg(args))
+		        return NULL;
+		BGN_SAVE
+		errno = 0;
+		newsize =  ftell(f->f_fp); /* default to current position*/
+		END_SAVE
+		if (newsize == -1L) {
+		        err_errno(IOError);
+			clearerr(f->f_fp);
+			return NULL;
+		}
+	}
+	BGN_SAVE
+	errno = 0;
+	ret = fflush(f->f_fp);
+	END_SAVE
+	if (ret == 0) {
+	        BGN_SAVE
+		errno = 0;
+		ret = ftruncate(fileno(f->f_fp), newsize);
+		END_SAVE
+	}
+	if (ret != 0) {
+		err_errno(IOError);
+		clearerr(f->f_fp);
+		return NULL;
+	}
+	INCREF(None);
+	return None;
+}
+#endif /* HAVE_FTRUNCATE */
 
 static object *
 file_tell(f, args)
@@ -615,6 +660,9 @@ static struct methodlist file_methods[] = {
 	{"readline",	(method)file_readline},
 	{"readlines",	(method)file_readlines},
 	{"seek",	(method)file_seek},
+#ifdef HAVE_FTRUNCATE
+	{"truncate",	(method)file_truncate},
+#endif
 	{"tell",	(method)file_tell},
 	{"write",	(method)file_write},
 	{"writelines",	(method)file_writelines},

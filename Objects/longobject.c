@@ -570,7 +570,6 @@ x_divrem(v1, w1, prem)
 
 /* Forward */
 static void long_dealloc PROTO((object *));
-static int long_print PROTO((object *, FILE *, int));
 static object *long_repr PROTO((object *));
 static int long_compare PROTO((longobject *, longobject *));
 static long long_hash PROTO((longobject *));

@@ -159,7 +159,7 @@ string_dealloc(op)
 	DEL(op);
 }
 
-unsigned int
+int
 getstringsize(op)
 	register object *op;
 {

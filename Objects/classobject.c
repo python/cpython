@@ -247,7 +247,6 @@ addaccess(class, inst)
 	
 	pos = 0;
 	while (mappinggetnext(class->cl_dict, &pos, &key, &value)) {
-		object *v;
 		if (!is_accessobject(value))
 			continue;
 		if (hasaccessvalue(value))
@@ -274,7 +273,6 @@ newinstanceobject(class, arg)
 	object *arg;
 {
 	register instanceobject *inst;
-	object *v;
 	object *init;
 	if (!is_classobject(class)) {
 		err_badcall();
@@ -328,12 +326,12 @@ static void
 instance_dealloc(inst)
 	register instanceobject *inst;
 {
-	object *error_type, *error_value;
+	object *error_type, *error_value, *error_traceback;
 	object *del;
 	/* Call the __del__ method if it exists.  First temporarily
 	   revive the object and save the current exception, if any. */
 	INCREF(inst);
-	err_get(&error_type, &error_value);
+	err_fetch(&error_type, &error_value, &error_traceback);
 	if ((del = instance_getattr1(inst, "__del__")) != NULL) {
 		object *args = newtupleobject(0);
 		object *res = args;
@@ -345,7 +343,7 @@ instance_dealloc(inst)
 		/* XXX If __del__ raised an exception, it is ignored! */
 	}
 	/* Restore the saved exception and undo the temporary revival */
-	err_setval(error_type, error_value);
+	err_restore(error_type, error_value, error_traceback);
 	/* Can't use DECREF here, it would cause a recursive call */
 	if (--inst->ob_refcnt > 0)
 		return; /* __del__ added a reference; don't delete now */
@@ -427,6 +425,7 @@ instance_getattr(inst, name)
 			}
 		}
 #endif
+		err_clear();
 		args = mkvalue("(Os)", inst, name);
 		if (args == NULL)
 			return NULL;
