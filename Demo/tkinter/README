@@ -1,7 +1,7 @@
 Several collections of example code for Tkinter.
 
 See the toplevel README for an explanation of the difference between
-Tkinter and tkinter, how to enable the Python Tk interface, and where
+Tkinter and _tkinter, how to enable the Python Tk interface, and where
 to get Matt Conway's lifesaver document.
 
 Subdirectories:

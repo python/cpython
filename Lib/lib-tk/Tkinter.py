@@ -1,15 +1,15 @@
 # Tkinter.py -- Tk/Tcl widget wrappers
 
-import tkinter
-from tkinter import TclError
+import _tkinter
+from _tkinter import TclError
 from types import *
 from Tkconstants import *
 
 CallableTypes = (FunctionType, MethodType,
 		 BuiltinFunctionType, BuiltinMethodType)
 
-TkVersion = eval(tkinter.TK_VERSION)
-TclVersion = eval(tkinter.TCL_VERSION)
+TkVersion = eval(_tkinter.TK_VERSION)
+TclVersion = eval(_tkinter.TCL_VERSION)
 
 
 def _flatten(tuple):
@@ -575,18 +575,18 @@ class Tk(Misc, Wm):
 			import sys, os
 			baseName = os.path.basename(sys.argv[0])
 			if baseName[-3:] == '.py': baseName = baseName[:-3]
-		self.tk = tkinter.create(screenName, baseName, className)
+		self.tk = _tkinter.create(screenName, baseName, className)
 		# Version sanity checks
 		tk_version = self.tk.getvar('tk_version')
-		if tk_version != tkinter.TK_VERSION:
+		if tk_version != _tkinter.TK_VERSION:
 		    raise RuntimeError, \
 		    "tk.h version (%s) doesn't match libtk.a version (%s)" \
-		    % (tkinter.TK_VERSION, tk_version)
+		    % (_tkinter.TK_VERSION, tk_version)
 		tcl_version = self.tk.getvar('tcl_version')
-		if tcl_version != tkinter.TCL_VERSION:
+		if tcl_version != _tkinter.TCL_VERSION:
 		    raise RuntimeError, \
 		    "tcl.h version (%s) doesn't match libtcl.a version (%s)" \
-		    % (tkinter.TCL_VERSION, tcl_version)
+		    % (_tkinter.TCL_VERSION, tcl_version)
 		if TkVersion < 4.0:
 		    raise RuntimeError, \
 			  "Tk 4.0 or higher is required; found Tk %s" \

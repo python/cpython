@@ -2,6 +2,7 @@
 
 import regex
 from Tkinter import *
+from Tkinter import _tkinter
 from ScrolledText import ScrolledText
 
 # XXX These fonts may have to be changed to match your system
@@ -44,7 +45,7 @@ class EditableManPage(ScrolledText):
 	# Parse a file, in the background
 	def asyncparsefile(self, fp):
 		self._startparser(fp)
-		self.tk.createfilehandler(fp, tkinter.READABLE,
+		self.tk.createfilehandler(fp, _tkinter.READABLE,
 					  self._filehandler)
 
 	parsefile = asyncparsefile	# Alias

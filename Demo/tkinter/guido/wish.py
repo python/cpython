@@ -1,9 +1,9 @@
 # This is about all it requires to write a wish shell in Python!
 
-import tkinter
+import _tkinter
 import os
 
-tk = tkinter.create(os.environ['DISPLAY'], 'wish', 'Tk', 1)
+tk = _tkinter.create(os.environ['DISPLAY'], 'wish', 'Tk', 1)
 tk.call('update')
 
 cmd = ''
@@ -20,7 +20,7 @@ while 1:
 		tk.record(line)
 		try:
 			result = tk.call('eval', cmd)
-		except tkinter.TclError, msg:
+		except _tkinter.TclError, msg:
 			print 'TclError:', msg
 		else:
 			if result: print result
