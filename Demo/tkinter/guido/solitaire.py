@@ -446,6 +446,9 @@ def randperm(n):
 
 class OpenStack(Stack):
 
+    def acceptable(self, cards):
+	return 0
+
     def usermovehandler(self, cards):
 	card = cards[0]
 	stack = self.game.closeststack(card)
@@ -561,6 +564,8 @@ class Solitaire:
 	for i in range(NROWS):
 	    self.rows.append(RowStack(x, y, self))
 	    x = x + XSPACING
+
+	self.openstacks = [self.opendeck] + self.suits + self.rows
 	
 	self.deck.fill()
 	self.deal()
@@ -591,7 +596,7 @@ class Solitaire:
 	cdist = 999999999
 	# Since we only compare distances,
 	# we don't bother to take the square root.
-	for stack in self.rows + self.suits:
+	for stack in self.openstacks:
 	    dist = (stack.x - card.x)**2 + (stack.y - card.y)**2
 	    if dist < cdist:
 		closest = stack
@@ -609,7 +614,7 @@ class Solitaire:
 	    r.showtop()
 
     def reset(self):
-	for stack in [self.opendeck] + self.suits + self.rows:
+	for stack in self.openstacks:
 	    while 1:
 		card = stack.deal()
 		if not card:
