@@ -12,6 +12,9 @@ What's New in Python 2.4 beta 1?
 Core and builtins
 -----------------
 
+- Patch #975056: Restartable signals were not correctly disabled on 
+  BSD systems. Consistently use PyOS_setsig() instead of signal().
+
 - The internal portable implementation of thread-local storage (TLS), used
   by the ``PyGILState_Ensure()``/``PyGILState_Release()`` API, was not
   thread-correct.  This could lead to a variety of problems, up to and
