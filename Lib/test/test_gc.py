@@ -181,7 +181,7 @@ class Ouch:
     n = 0
     def __del__(self):
         Ouch.n = Ouch.n + 1
-        if Ouch.n % 7 == 0:
+        if Ouch.n % 17 == 0:
             gc.collect()
 
 def test_trashcan():
@@ -192,9 +192,15 @@ def test_trashcan():
     # If this test fails (as it does in 2.0, 2.1 and 2.2), it will
     # most likely die via segfault.
 
+    # Note:  In 2.3 the possibility for compiling without cyclic gc was
+    # removed, and that in turn allows the trashcan mechanism to work
+    # via much simpler means (e.g., it never abuses the type pointer or
+    # refcount fields anymore).  Since it's much less likely to cause a
+    # problem now, the various constants in this expensive (we force a lot
+    # of full collections) test are cut back from the 2.2 version.
     gc.enable()
-    N = 200
-    for count in range(3):
+    N = 150
+    for count in range(2):
         t = []
         for i in range(N):
             t = [t, Ouch()]
