@@ -204,6 +204,9 @@ class MyGRObjectDefinition(GlobalObjectDefinition):
 			if ( strcmp(name, "spExtra") == 0 )
 				return Py_BuildValue("O&", PyMac_BuildFixed, self->ob_itself->spExtra);
 			/* XXXX Add more, as needed */
+			/* This one is so we can compare grafports: */
+			if ( strcmp(name, "_id") == 0 )
+				return Py_BuildValue("l", (long)self->ob_itself);
 		}""")
 
 class MyBMObjectDefinition(GlobalObjectDefinition):
