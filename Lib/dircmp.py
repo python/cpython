@@ -13,7 +13,7 @@ from stat import *
 
 # Directory comparison class.
 #
-class dircmp():
+class dircmp:
 	#
 	def new(dd, (a, b)): # Initialize
 		dd.a = a
@@ -128,7 +128,7 @@ class dircmp():
 		dd.report()
 		try:
 			x = dd.subdirs
-		except NameError:
+		except AttributeError:
 			return # No subdirectories computed
 		for x in dd.subdirs.keys():
 			print
