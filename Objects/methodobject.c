@@ -9,6 +9,7 @@
 #include "methodobject.h"
 #include "objimpl.h"
 #include "token.h"
+#include "errors.h"
 
 typedef struct {
 	OB_HEAD
@@ -39,7 +40,7 @@ getmethod(op)
 	object *op;
 {
 	if (!is_methodobject(op)) {
-		errno = EBADF;
+		err_badcall();
 		return NULL;
 	}
 	return ((methodobject *)op) -> m_meth;
@@ -50,7 +51,7 @@ getself(op)
 	object *op;
 {
 	if (!is_methodobject(op)) {
-		errno = EBADF;
+		err_badcall();
 		return NULL;
 	}
 	return ((methodobject *)op) -> m_self;

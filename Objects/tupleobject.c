@@ -8,6 +8,7 @@
 #include "tupleobject.h"
 #include "intobject.h"
 #include "objimpl.h"
+#include "errors.h"
 
 typedef struct {
 	OB_VARHEAD
@@ -21,15 +22,13 @@ newtupleobject(size)
 	register int i;
 	register tupleobject *op;
 	if (size < 0) {
-		errno = EINVAL;
+		err_badcall();
 		return NULL;
 	}
 	op = (tupleobject *)
 		malloc(sizeof(tupleobject) + size * sizeof(object *));
-	if (op == NULL) {
-		errno = ENOMEM;
-		return NULL;
-	}
+	if (op == NULL)
+		return err_nomem();
 	NEWREF(op);
 	op->ob_type = &Tupletype;
 	op->ob_size = size;
@@ -43,7 +42,7 @@ gettuplesize(op)
 	register object *op;
 {
 	if (!is_tupleobject(op)) {
-		errno = EBADF;
+		err_badcall();
 		return -1;
 	}
 	else
@@ -56,11 +55,11 @@ gettupleitem(op, i)
 	register int i;
 {
 	if (!is_tupleobject(op)) {
-		errno = EBADF;
+		err_badcall();
 		return NULL;
 	}
 	if (i < 0 || i >= ((tupleobject *)op) -> ob_size) {
-		errno = EDOM;
+		err_setstr(IndexError, "tuple index out of range");
 		return NULL;
 	}
 	return ((tupleobject *)op) -> ob_item[i];
@@ -76,12 +75,14 @@ settupleitem(op, i, newitem)
 	if (!is_tupleobject(op)) {
 		if (newitem != NULL)
 			DECREF(newitem);
-		return errno = EBADF;
+		err_badcall();
+		return -1;
 	}
 	if (i < 0 || i >= ((tupleobject *)op) -> ob_size) {
 		if (newitem != NULL)
 			DECREF(newitem);
-		return errno = EDOM;
+		err_setstr(IndexError, "tuple assignment index out of range");
+		return -1;
 	}
 	olditem = ((tupleobject *)op) -> ob_item[i];
 	((tupleobject *)op) -> ob_item[i] = newitem;
@@ -179,7 +180,7 @@ tupleitem(a, i)
 	register int i;
 {
 	if (i < 0 || i >= a->ob_size) {
-		errno = EDOM;
+		err_setstr(IndexError, "tuple index out of range");
 		return NULL;
 	}
 	INCREF(a->ob_item[i]);
@@ -224,15 +225,14 @@ tupleconcat(a, bb)
 	register int i;
 	tupleobject *np;
 	if (!is_tupleobject(bb)) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
 #define b ((tupleobject *)bb)
 	size = a->ob_size + b->ob_size;
 	np = (tupleobject *) newtupleobject(size);
 	if (np == NULL) {
-		errno = ENOMEM;
-		return NULL;
+		return err_nomem();
 	}
 	for (i = 0; i < a->ob_size; i++) {
 		object *v = a->ob_item[i];
