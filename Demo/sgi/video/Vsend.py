@@ -96,9 +96,9 @@ def main():
 	gl.qdevice(DEVICE.WINTHAW)
 	width, height = gl.getsize()
 
-	lvo = LiveVideoOut.LiveVideoOut().init(wid, width, height, vtype)
+	lvo = LiveVideoOut.LiveVideoOut(wid, width, height, vtype)
 
-	lvi = LiveVideoIn.LiveVideoIn().init(pktmax, width, height, vtype)
+	lvi = LiveVideoIn.LiveVideoIn(pktmax, width, height, vtype)
 
 	s = socket(AF_INET, SOCK_DGRAM)
 	s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)

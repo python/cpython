@@ -10,7 +10,7 @@ from VFile import Error
 
 class VGrabber(VFile.VideoParams):
 
-	# XXX The init() method of VideoParams is just fine, for now
+	# XXX The constructor of VideoParams is just fine, for now
 
 	# Grab a frame.
 	# Return (data, chromdata) just like getnextframe().

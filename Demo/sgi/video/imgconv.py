@@ -126,14 +126,13 @@ def enumerate_converters(fcs):
 
 def instantiate_converter(args):
 	list = args[2]
-	cl = RtConverters().init(list)
+	cl = RtConverters(list)
 	args.append(cl.convert)
 	return args
 
 class RtConverters:
-	def init(self, list):
+	def __init__(self, list):
 		self.list = list
-		return self
 
 	def convert(self, img, w, h):
 		for cv in self.list:

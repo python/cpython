@@ -33,7 +33,7 @@ class LiveVideoIn:
 	# Note that the data has to be cropped unless vw and vh are
 	# just right for the video board (vw:vh == 4:3 and vh even).
 
-	def init(self, pktmax, vw, vh, type):
+	def __init__(self, pktmax, vw, vh, type):
 		if not have_video:
 			raise RuntimeError, 'no video available'
 		if vw % 4 != 0:
@@ -72,13 +72,12 @@ class LiveVideoIn:
 ##		if not self.justright:
 ##			print 'Want:', self.width, 'x', self.height,
 ##			print '; grab:', self.realwidth, 'x', self.realheight
-		return self
 
 	# Change the size of the video being displayed.
 
 	def resizevideo(self, vw, vh):
 		self.close()
-		self = self.init(self.pktmax, vw, vh, self.type)
+		self.__init__(self.pktmax, vw, vh, self.type)
 
 	# Remove an instance.
 	# This turns off continuous capture.
@@ -103,7 +102,7 @@ class LiveVideoIn:
 	# - data is a piece of data
 	# The dimensions of data are:
 	# - pixel depth = 1 byte
-	# - scan line width = self.width (the vw argument to init())
+	# - scan line width = self.width (the vw argument to __init__())
 	# - number of scan lines = self.lpp (PKTMAX / vw)
 
 	def getnextpacket(self):

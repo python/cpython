@@ -48,7 +48,7 @@ def main():
 		format = oformat
 	cfunc = imgconv.getconverter(oformat, format)
 
-	vout = VFile.VoutFile().init(outfile)
+	vout = VFile.VoutFile(outfile)
 	vout.format = format
 	vout.width = nxsize
 	vout.height = ysize

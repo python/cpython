@@ -309,7 +309,7 @@ def record(v, info, filename, audiofilename, \
 		# Construct header and write it
 		#
 		try:
-			vout = VFile.VoutFile().init(filename)
+			vout = VFile.VoutFile(filename)
 		except IOError, msg:
 			print filename, ':', msg
 			sys.exit(1)
@@ -389,8 +389,8 @@ def record(v, info, filename, audiofilename, \
 AQSIZE = 8*8000 # XXX should be a user option
 
 def initaudio(filename, stop, start, done):
-	import thread, aiff
-	afile = aiff.Aiff().init(filename, 'w')
+	import thread, aifc
+	afile = aifc.open(filename, 'w')
 	afile.nchannels = AL.MONO
 	afile.sampwidth = AL.SAMPLE_8
 	params = [AL.INPUT_RATE, 0]

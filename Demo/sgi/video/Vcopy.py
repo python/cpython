@@ -149,7 +149,7 @@ def process(infilename, outfilename):
 	global newwidth, newheight, newpf
 
 	try:
-		vin = VFile.BasicVinFile().init(infilename)
+		vin = VFile.BasicVinFile(infilename)
 	except IOError, msg:
 		sys.stderr.write(infilename + ': I/O error: ' + `msg` + '\n')
 		return 1
@@ -161,7 +161,7 @@ def process(infilename, outfilename):
 		return 1
 
 	try:
-		vout = VFile.BasicVoutFile().init(outfilename)
+		vout = VFile.BasicVoutFile(outfilename)
 	except IOError, msg:
 		sys.stderr.write(outfilename + ': I/O error: ' + `msg` + '\n')
 		return 1

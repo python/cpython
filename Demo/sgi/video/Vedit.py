@@ -32,7 +32,7 @@ def main():
 	for o, a in opts:
 		if o == '-q':
 			qsize = string.atoi(a)
-	ed = Editor().init(qsize)
+	ed = Editor(qsize)
 	if args[0:]:
 		ed.open_input(args[0])
 	if args[1:]:
@@ -43,7 +43,7 @@ def main():
 
 class Editor:
 
-	def init(self, qsize):
+	def __init__(self, qsize):
 		self.qsize = qsize
 		self.vin = None
 		self.vout = None
@@ -53,7 +53,6 @@ class Editor:
 		flp.create_full_form(self, formdef)
 		self.form.show_form(FL.PLACE_SIZE, FL.TRUE, 'Vedit')
 		fl.set_event_call_back(self.do_event)
-		return self
 
 	def do_event(self, dev, val):
 		if dev == DEVICE.REDRAW:
@@ -215,7 +214,7 @@ class Editor:
 		basename = os.path.split(filename)[1]
 		title = 'in: ' + basename
 		try:
-			vin = Viewer.InputViewer().init(filename, title)
+			vin = Viewer.InputViewer(filename, title)
 		except:
 			self.err('Can\'t open input file', filename)
 			return
@@ -244,7 +243,7 @@ class Editor:
 		basename = os.path.split(filename)[1]
 		title = 'out: ' + basename
 		try:
-			vout = Viewer.OutputViewer().init(filename, \
+			vout = Viewer.OutputViewer(filename, \
 				title, self.qsize)
 		except:
 			self.err('Can\'t open output file', filename)

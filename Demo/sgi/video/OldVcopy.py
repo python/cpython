@@ -41,9 +41,9 @@ def main():
 		usage()
 	[ifile, ofile] = args
 	print 'open film ', ifile
-	ifilm = VFile.VinFile().init(ifile)
+	ifilm = VFile.VinFile(ifile)
 	print 'open output ', ofile
-	ofilm = GrabbingVoutFile().init(ofile)
+	ofilm = GrabbingVoutFile(ofile)
 	
 	ofilm.setinfo(ifilm.getinfo())
 
