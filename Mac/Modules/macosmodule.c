@@ -601,6 +601,14 @@ MacOS_DebugStr(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
+static char GetTicks_doc[] = "Return number of ticks since bootup";
+
+static PyObject *
+MacOS_GetTicks(PyObject *self, PyObject *args)
+{
+	return Py_BuildValue("i", (int)LMGetTicks());
+}
+
 static char openrf_doc[] = "Open resource fork of a file";
 
 static PyObject *
@@ -676,6 +684,7 @@ static PyMethodDef MacOS_Methods[] = {
 	{"openrf",			MacOS_openrf, 		1, 	openrf_doc},
 	{"splash",			MacOS_splash,		1, 	splash_doc},
 	{"DebugStr",			MacOS_DebugStr,		1,	DebugStr_doc},
+	{"GetTicks",			MacOS_GetTicks,		1,	GetTicks_doc},
 	{NULL,				NULL}		 /* Sentinel */
 };
 
