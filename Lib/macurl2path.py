@@ -29,7 +29,7 @@ def url2pathname(pathname):
             i = i+1
     if not components[0]:
         # Absolute unix path, don't start with colon
-        return string.join(components[1:], ':')
+        rv = string.join(components[1:], ':')
     else:
         # relative unix path, start with colon. First replace
         # leading .. by empty strings (giving ::file)
@@ -37,7 +37,9 @@ def url2pathname(pathname):
         while i < len(components) and components[i] == '..':
             components[i] = ''
             i = i + 1
-        return ':' + string.join(components, ':')
+        rv = ':' + string.join(components, ':')
+    # and finally unquote slashes and other funny characters
+    return urllib.unquote(rv)
 
 def pathname2url(pathname):
     "convert mac pathname to /-delimited pathname"
@@ -54,13 +56,17 @@ def pathname2url(pathname):
         if components[i] == '':
             components[i] = '..'
     # Truncate names longer than 31 bytes
-    components = map(lambda x: x[:31], components)
+    components = map(_pncomp2url, components)
 
     if os.path.isabs(pathname):
         return '/' + string.join(components, '/')
     else:
         return string.join(components, '/')
-
+        
+def _pncomp2url(component):
+	component = urllib.quote(component[:31], safe='')  # We want to quote slashes
+	return component
+	
 def test():
     for url in ["index.html",
                 "bar/index.html",
