@@ -1305,8 +1305,16 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen)
 		if (res < 0 && WSAGetLastError() == WSAEWOULDBLOCK) {
 			internal_select(s, 1);
 			res = connect(s->sock_fd, addr, addrlen);
-			if (res < 0 && WSAGetLastError() == WSAEISCONN)
-				res = 0;
+			if (res < 0) {
+				/* On Win98, WSAEISCONN was seen here.  But
+				 * on Win2K, WSAEINVAL.  So accept both as
+				 * meaning "fine".
+				 */
+				int code = WSAGetLastError();
+				if (code == WSAEISCONN ||
+				    code == WSAEINVAL)
+					res = 0;
+			}
 		}
 	}
 
@@ -2495,11 +2503,11 @@ socket_ntohl(PyObject *self, PyObject *arg)
 				return PyErr_Format(PyExc_OverflowError,
 					    "long int larger than 32 bits");
 			x = y;
-		}			
+		}
 #endif
 	}
 	else
-		return PyErr_Format(PyExc_TypeError, 
+		return PyErr_Format(PyExc_TypeError,
 				    "expected int/long, %s found",
 				    arg->ob_type->tp_name);
 	if (x == (unsigned long) -1 && PyErr_Occurred())
@@ -2554,11 +2562,11 @@ socket_htonl(PyObject *self, PyObject *arg)
 				return PyErr_Format(PyExc_OverflowError,
 					    "long int larger than 32 bits");
 			x = y;
-		}			
+		}
 #endif
 	}
 	else
-		return PyErr_Format(PyExc_TypeError, 
+		return PyErr_Format(PyExc_TypeError,
 				    "expected int/long, %s found",
 				    arg->ob_type->tp_name);
 	return PyInt_FromLong(htonl(x));
