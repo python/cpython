@@ -4206,7 +4206,9 @@ jcompile(node *n, const char *filename, struct compiling *base,
 	PyCodeObject *co;
 	if (!com_init(&sc, filename))
 		return NULL;
-	if (TYPE(n) == encoding_decl) {
+	if (flags && flags->cf_flags & PyCF_SOURCE_IS_UTF8) {
+		sc.c_encoding = "utf-8";
+	} else if (TYPE(n) == encoding_decl) {
 		sc.c_encoding = STR(n);
 		n = CHILD(n, 0);
 	} else {

@@ -9,6 +9,7 @@ extern "C" {
 
 #define PyCF_MASK (CO_FUTURE_DIVISION)
 #define PyCF_MASK_OBSOLETE (CO_GENERATOR_ALLOWED | CO_NESTED)
+#define PyCF_SOURCE_IS_UTF8  0x0100
 
 typedef struct {
 	int cf_flags;  /* bitmask of CO_xxx flags relevant to future */

@@ -195,6 +195,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, compile)
         self.assertRaises(ValueError, compile, 'print 42\n', '<string>', 'badmode')
         self.assertRaises(ValueError, compile, 'print 42\n', '<string>', 'single', 0xff)
+        if have_unicode:
+            compile(unicode('print u"\xc3\xa5"\n', 'utf8'), '', 'exec')
 
     def test_complex(self):
         class OS:
@@ -309,6 +311,8 @@ class BuiltinTest(unittest.TestCase):
             self.assertEqual(eval(unicode('c'), globals, locals), 300)
             bom = '\xef\xbb\xbf'
             self.assertEqual(eval(bom + 'a', globals, locals), 1)
+            self.assertEqual(eval(unicode('u"\xc3\xa5"', 'utf8'), globals),
+                             unicode('\xc3\xa5', 'utf8'))
         self.assertRaises(TypeError, eval)
         self.assertRaises(TypeError, eval, ())
 
