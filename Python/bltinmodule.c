@@ -1011,13 +1011,13 @@ builtin_range(self, args)
 
 	if (gettuplesize(args) <= 1) {
 		if (!newgetargs(args,
-				"i;range() requires 1-3 int arguments",
+				"l;range() requires 1-3 int arguments",
 				&ihigh))
 			return NULL;
 	}
 	else {
 		if (!newgetargs(args,
-				"ii|i;range() requires 1-3 int arguments",
+				"ll|l;range() requires 1-3 int arguments",
 				&ilow, &ihigh, &istep))
 			return NULL;
 	}
@@ -1053,18 +1053,18 @@ builtin_xrange(self, args)
 	object *args;
 {
 	long ilow = 0, ihigh = 0, istep = 1;
-	int n;
+	long n;
 	object *v;
 
 	if (gettuplesize(args) <= 1) {
 		if (!newgetargs(args,
-				"i;xrange() requires 1-3 int arguments",
+				"l;xrange() requires 1-3 int arguments",
 				&ihigh))
 			return NULL;
 	}
 	else {
 		if (!newgetargs(args,
-				"ii|i;xrange() requires 1-3 int arguments",
+				"ll|l;xrange() requires 1-3 int arguments",
 				&ilow, &ihigh, &istep))
 			return NULL;
 	}
@@ -1382,7 +1382,14 @@ static struct methodlist builtin_methods[] = {
 	{NULL,		NULL},
 };
 
+static object *builtin_mod;
 static object *builtin_dict;
+
+object *
+getbuiltinmod()
+{
+	return builtin_mod;
+}
 
 object *
 getbuiltindict()
@@ -1449,9 +1456,8 @@ initerrors()
 void
 initbuiltin()
 {
-	object *m;
-	m = initmodule("__builtin__", builtin_methods);
-	builtin_dict = getmoduledict(m);
+	builtin_mod = initmodule("__builtin__", builtin_methods);
+	builtin_dict = getmoduledict(builtin_mod);
 	INCREF(builtin_dict);
 	initerrors();
 	(void) dictinsert(builtin_dict, "None", None);
