@@ -110,6 +110,8 @@ class _Database(UserDict.DictMixin):
             f.write("%r, %r\n" % (key, pos_and_siz_pair))
         f.close()
 
+    sync = _commit
+
     def __getitem__(self, key):
         pos, siz = self._index[key]     # may raise KeyError
         f = _open(self._datfile, 'rb')
