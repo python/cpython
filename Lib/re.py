@@ -137,7 +137,7 @@ class MatchObject:
 	    except (KeyError, TypeError):
 		raise IndexError
 	return self.regs[i]
-    def group(i):
+    def group(self, i):
 	if type(i) == type(''):
 	    try:
 		i = self.re.groupindex[i]
@@ -188,12 +188,13 @@ class Set(Instruction):
     name = 'set'
     def __init__(self, set):
 	self.set = set
+	print set
 	Instruction.__init__(self, chr(3), 33)
-    def assemble_set(self, position, labels):
+    def assemble(self, position, labels):
 	result = self.opcode
 	temp = 0
 	for i, c in map(lambda x: (x, chr(x)), range(256)):
-	    if c in self.set[2]:
+	    if c in self.set:
 		temp = temp | (1 << (i & 7))
 	    if (i % 8) == 7:
 		result = result + chr(temp)
@@ -203,7 +204,7 @@ class Set(Instruction):
 	result = '%-15s' % (self.name)
 	self.set.sort()
 	for char in self.set:
-	    result = result + `char`
+	    result = result + char
 	return result
     
 class Exact(Instruction):
@@ -768,7 +769,7 @@ def compile(pattern, flags=0):
 		expr.append(Label(label))
 		label = label + 1
 
-	    if stack[-1][0][1] > 0:
+	    if stack[-1][0].register > 0:
 		expr = [StartMemory(stack[-1][0].register)] + \
 		       expr + \
 		       [EndMemory(stack[-1][0].register)]
@@ -1075,7 +1076,6 @@ def compile(pattern, flags=0):
 		    if next not in set:
 			set.append(next)
 		    last = next
-
 	    if pattern[index] != ']':
 		raise error, 'incomplete set'
 
