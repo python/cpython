@@ -101,6 +101,17 @@ DL_IMPORT(PyThreadState *) PyThreadState_Get Py_PROTO((void));
 DL_IMPORT(PyThreadState *) PyThreadState_Swap Py_PROTO((PyThreadState *));
 DL_IMPORT(PyObject *) PyThreadState_GetDict Py_PROTO((void));
 
+
+/* Variable and macro for in-line access to current thread state */
+
+DL_IMPORT(PyThreadState *) _PyThreadState_Current;
+
+#ifdef Py_DEBUG
+#define PyThreadState_GET() PyThreadState_Get()
+#else
+#define PyThreadState_GET() (_PyThreadState_Current)
+#endif
+
 #ifdef __cplusplus
 }
 #endif
