@@ -71,7 +71,7 @@ To: $ADDRESSES
 From: "Fred L. Drake" <fdrake@acm.org>
 Subject: [$DOCLABEL doc updates]
 
-The development version of the documentation has been updated:
+The $DOCLABEL version of the documentation has been updated:
 
     http://python.sourceforge.net/$DOCTYPE-docs/
 
