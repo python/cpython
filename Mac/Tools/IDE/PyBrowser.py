@@ -291,8 +291,13 @@ class BrowserWidget(W.List):
 		text = string.join(selitems, '\r')
 		if text:
 			from Carbon import Scrap
-			Scrap.ZeroScrap()
-			Scrap.PutScrap('TEXT', text)
+			if hasattr(Scrap, 'PutScrap'):
+				Scrap.ZeroScrap()
+				Scrap.PutScrap('TEXT', text)
+			else:
+				Scrap.ClearCurrentScrap()
+				sc = Scrap.GetCurrentScrap()
+				sc.PutScrapFlavor('TEXT', 0, text)
 
 
 class Browser:
