@@ -1,5 +1,5 @@
-What's New in Python 2.1 alpha 509?
-===================================
+What's New in Python 2.1 beta 1?
+================================
 
 Core language, builtins, and interpreter
 
@@ -71,6 +71,14 @@ Windows changes
   all Win9x systems before.
 
 - Build:  Subproject _test (effectively) renamed to _testcapi.
+
+New platforms
+
+- 2.1 should compile and run out of the box under MacOS X, even using HFS+.
+  Thanks to Steven Majewski!
+
+- 2.1 should compile and run out of the box on Cygwin.  Thanks to Jason
+  Tishler!
 
 
 What's New in Python 2.1 alpha 2?
