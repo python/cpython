@@ -143,6 +143,9 @@ class_dealloc(op)
 	Py_DECREF(op->cl_bases);
 	Py_DECREF(op->cl_dict);
 	Py_XDECREF(op->cl_name);
+	Py_XDECREF(op->cl_getattr);
+	Py_XDECREF(op->cl_setattr);
+	Py_XDECREF(op->cl_delattr);
 	free((ANY *)op);
 }
 
