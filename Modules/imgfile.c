@@ -24,7 +24,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* IMGFILE module - Interface to sgi libimg */
 
-/*XXXX This modele should be done better at some point. It should return
+/* XXX This modele should be done better at some point. It should return
 ** an object of image file class, and have routines to manipulate these
 ** image files in a neater way (so you can get rgb images off a greyscale
 ** file, for instance, or do a straight display without having to get the
@@ -54,13 +54,9 @@ static imgfile_error(str)
 }
 
 static
-imgfile_open(args)
-    object *args;
-{
+imgfile_open(fname)
     char *fname;
-    
-    if ( !getargs(args, "s", &fname) )
-      return 0;
+{
     i_seterror(imgfile_error);
     error_called = 0;
     if ( image != NULL && strcmp(fname, gfname) != 0 ) {
@@ -91,7 +87,10 @@ imgfile_read(self, args)
     static short rs[8192], gs[8192], bs[8192];
     int x, y;
     
-    if ( !imgfile_open(args) )
+    if ( !getargs(args, "s", &fname) )
+      return 0;
+    
+    if ( !imgfile_open(fname) )
       return NULL;
     
     if ( image->colormap != CM_NORMAL ) {
@@ -139,6 +138,78 @@ imgfile_read(self, args)
 }
 
 static object *
+imgfile_readscaled(self, args)
+    object *self;
+    object *args;
+{
+    char *fname;
+    object *rv;
+    int xsize, ysize, zsize;
+    char *cdatap;
+    long *idatap;
+    static short rs[8192], gs[8192], bs[8192];
+    int x, y;
+    int xwtd, ywtd, xorig, yorig;
+    float xfac, yfac;
+    int cnt;
+    
+    if ( !getargs(args, "(sii)", &fname, &xwtd, &ywtd) )
+      return 0;
+
+    if ( !imgfile_open(fname) )
+      return NULL;
+    
+    if ( image->colormap != CM_NORMAL ) {
+	err_setstr(ImgfileError, "Can only handle CM_NORMAL images");
+	return NULL;
+    }
+    if ( BPP(image->type) != 1 ) {
+	err_setstr(ImgfileError, "Cannot handle imgfiles with bpp!=1");
+	return NULL;
+    }
+    xsize = image->xsize;
+    ysize = image->ysize;
+    zsize = image->zsize;
+    if ( zsize != 1 && zsize != 3) {
+	err_setstr(ImgfileError, "Can only handle 1 or 3 byte pixels");
+	return NULL;
+    }
+
+    if ( zsize == 3 ) zsize = 4;
+    rv = newsizedstringobject(NULL, xwtd*ywtd*zsize);
+    xfac = (float)xsize/(float)xwtd;
+    yfac = (float)ysize/(float)ywtd;
+    if ( rv == NULL )
+      return NULL;
+    cdatap = getstringvalue(rv);
+    idatap = (long *)cdatap;
+    for ( y=0; y < ywtd && !error_called; y++ ) {
+	yorig = (int)(y*yfac);
+	if ( zsize == 1 ) {
+	    getrow(image, rs, yorig, 0);
+	    for(x=0; x<xwtd; x++ ) {
+		*cdatap++ = rs[(int)(x*xfac)];	
+	  }
+	} else {
+	    getrow(image, rs, yorig, 0);
+	    getrow(image, gs, yorig, 1);
+	    getrow(image, bs, yorig, 2);
+	    for(x=0; x<xwtd; x++ ) {
+		xorig = (int)(x*xfac);
+		*idatap++ = (rs[xorig] & 0xff)     |
+		           ((gs[xorig] & 0xff)<<8) |
+			   ((bs[xorig] & 0xff)<<16);
+	  }
+	}
+    }
+    if ( error_called ) {
+	DECREF(rv);
+	return NULL;
+    }
+    return rv;
+}
+
+static object *
 imgfile_getsizes(self, args)
     object *self;
     object *args;
@@ -146,7 +217,10 @@ imgfile_getsizes(self, args)
     char *fname;
     object *rv;
     
-    if ( !imgfile_open(args) )
+    if ( !getargs(args, "s", &fname) )
+      return 0;
+    
+    if ( !imgfile_open(fname) )
       return NULL;
     rv = newtupleobject(3);
     if ( rv == NULL )
@@ -159,8 +233,9 @@ imgfile_getsizes(self, args)
 
 
 static struct methodlist imgfile_methods[] = {
-    { "getsizes", imgfile_getsizes },
-    { "read",     imgfile_read },
+    { "getsizes",	imgfile_getsizes },
+    { "read",		imgfile_read },
+    { "readscaled",	imgfile_readscaled },
     { 0,          0 }
 };
 
