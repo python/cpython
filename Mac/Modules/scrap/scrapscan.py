@@ -3,8 +3,10 @@
 # Note that the scrap-manager include file is so weird that this
 # generates a boilerplate to be edited by hand.
 
-import addpack
-addpack.addpack(':tools:bgen:bgen')
+import sys
+import os
+BGENDIR=os.path.join(sys.prefix, ':Tools:bgen:bgen')
+sys.path.append(BGENDIR)
 from scantools import Scanner
 from bgenlocations import TOOLBOXDIR
 

@@ -8,8 +8,9 @@ import string
 import regex
 import regsub
 import MacOS
-import addpack
-addpack.addpack(':Tools:bgen:bgen')
+
+BGENDIR=os.path.join(sys.prefix, ':Tools:bgen:bgen')
+sys.path.append(BGENDIR)
 from bgenlocations import TOOLBOXDIR
 
 from scantools import Scanner

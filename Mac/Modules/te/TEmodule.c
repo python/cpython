@@ -217,7 +217,7 @@ static PyObject *TEObj_TEKey(_self, _args)
 {
 	PyObject *_res = NULL;
 	CharParameter key;
-	if (!PyArg_ParseTuple(_args, "c",
+	if (!PyArg_ParseTuple(_args, "h",
 	                      &key))
 		return NULL;
 	TEKey(key,
