@@ -6,8 +6,8 @@ Reply-to: guido@cwi.nl (Guido van Rossum)
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
-Version: 1.8
-Last-modified: 15 May 1994
+Version: 1.9
+Last-modified: 8 June 1994
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -27,7 +27,7 @@ Author's address:
 Email:	guido@cwi.nl
 
 The latest version of this FAQ is available by anonymous ftp from
-ftp.cwi.nl [192.16.184.180] in the directory /pub/python, with
+ftp.cwi.nl [192.16.191.128] in the directory /pub/python, with
 filename python-FAQ.  It will also be posted regularly to the
 newsgroups comp.answers and comp.lang.python.
 
@@ -68,6 +68,7 @@ Here's an overview of the questions per chapter:
   1.8. Q. Are there any published articles about Python that I can quote?
   1.9. Q. How does the Python version numbering scheme work?
   1.10. Q. Are there other ftp sites that carry Python related material?
+  1.11. Q. Are there copyright restrictions on the use of Python?
 
  2. Python in the real world
   2.1. Q. How many people are using Python?
@@ -109,10 +110,18 @@ Here's an overview of the questions per chapter:
   4.9. Q. I have a module in which I want to execute some extra code when it
        is run as a script.  How do I find out whether I am running as a
        script?
+  4.10. Q. I try to run a program from the Demo directory but it fails with
+        ImportError: No module named ...; what gives?
+  4.11. Q. What GUI toolkits exist for Python?
+  4.12. Q. Are there any interfaces to commercial database in Python?
 
  5. Extending Python
   5.1. Q. Can I create my own functions in C?
   5.2. Q. Can I create my own functions in C++?
+  5.3. Q. How can I execute arbitrary Python statements from C?
+  5.4. Q. How can I evaluate an arbitrary Python expression from C?
+  5.5. Q. How do I extract C values from a Python object?
+  5.6. Q. How do I use mkvalue() to create a tuple of arbitrary length?
 
  6. Python's design
   6.1. Q. Why isn't there a generic copying operation for objects in
@@ -128,10 +137,11 @@ Here's an overview of the questions per chapter:
   7.2. Q. Is there a DOS version of Python?
   7.3. Q. Is there a Windows version of Python?
   7.4. Q. Is there a Windows NT version of Python?
-  7.5. Q. I have the DOS or Windows version but it appears to be only a
-       binary.  Where's the library?
-  7.6. Q. Where's the documentation for the Mac or PC version?
-  7.7. Q. The Mac (PC) version doesn't seem to have any facilities for
+  7.5. Q. Is there an OS/2 version of Python?
+  7.6. Q. I have the PC version but it appears to be only a binary.
+       Where's the library?
+  7.7. Q. Where's the documentation for the Mac or PC version?
+  7.8. Q. The Mac (PC) version doesn't seem to have any facilities for
        creating or editing programs apart from entering it interactively, and
        there seems to be no way to save code that was entered interactively.
        How do I create a Python program on the Mac (PC)?
@@ -174,7 +184,7 @@ either!
 1.3. Q. How do I obtain a copy of the Python source?
 
 A. The latest Python source distribution is always available by
-anonymous ftp from ftp.cwi.nl [192.16.184.180] in the directory
+anonymous ftp from ftp.cwi.nl [192.16.191.128] in the directory
 /pub/python, with filename python<version>.tar.gz.  (Old versions may
 have an extension of .Z, indicating use of "compress" compression.)
 It is a gzip'ed tar file containing the complete C source, LaTeX
@@ -186,7 +196,7 @@ run out of the box on most UNIX platforms.  At the time of writing,
 1.4. Q. How do I get documentation on Python?
 
 A. The latest Python documentation set is always available by
-anonymous ftp from ftp.cwi.nl [192.16.184.180] in the directory
+anonymous ftp from ftp.cwi.nl [192.16.191.128] in the directory
 /pub/python, with filename pythondoc-ps<version>.tar.gz.  It is a
 gzip'ed tar file containing PostScript files of the reference manual,
 the library manual, and the tutorial.  At the time of writing
@@ -202,7 +212,7 @@ A. The following sites keep mirrors of the Python distribution:
 
 Site			IP address 	Directory
 
-gatekeeper.dec.com	16.1.0.2	/pub/plan/python/cwi
+gatekeeper.dec.com	16.1.0.2	/pub/plan/python
 ftp.uu.net		192.48.96.9	/languages/python
 ftp.wustl.edu		128.252.135.4	/graphics/graphics/sgi-stuff/python
 ftp.funet.fi		128.214.6.100	/pub/languages/python
@@ -218,16 +228,14 @@ A. There is a newsgroup, comp.lang.python, and a mailing list.  The
 newsgroup and mailing list are gatewayed into each other -- if you can
 read news it is not necessary to subscribe to the mailing list.  Send
 e-mail to python-list-request@cwi.nl to (un)subscribe to the mailing
-list.
+list.  Once you're on, send e-mail tp python-list@cwi.nl to send mail
+to the entire mailing list and newsgroup.
 
 1.7. Q. Is there a book on Python, or will there be one out soon?
 
-A. Unfortunately, not yet.  I would like to write one but my
-obligations at CWI include too much other work to make much progress
-on it.  Several parties have expressed interest in sponsoring or
-helping the production of a book or reference manual, but so far there
-are no firm plans.  If you volunteer help, by all means drop me a
-note!
+A. Unfortunately, not yet.  Mark Lutz and I are planning to write one,
+but we are still a in very preliminary stage.  If you would like to
+beat us at it and get rich from book royalties, go ahead!
 
 1.8. Q. Are there any published articles about Python that I can quote?
 
@@ -271,6 +279,14 @@ inclusion, place it together with a readme file (with extension
 .readme) in the publicly writable directory /incoming/python.  This
 service is maintained by Lance Ellinghouse <lance@markv.com>.
 
+1.11. Q. Are there copyright restrictions on the use of Python?
+
+A. Hardly.  You can do anything you want with the source, as long as
+you leave the copyrights in, display those copyrights in any
+documentation about Python that you produce, don't use the author's
+institute's name in publicity without prior written permission, and
+don't hold them responsible for anything (read the actual copyright
+for a precise legal wording).
 
 
 2. Python in the real world
@@ -283,7 +299,9 @@ to the Python mailing list before it was gatewayed into the newsgroup
 was about 180 (several of which were local redistribution lists).  I
 believe that many active Python users don't bother to subscribe to the
 list, and now that there's a newsgroup the mailing list subscription
-is even less meaningful.
+is even less meaningful.  I see new names on the newsgroup all the
+time and my best guess is that there are currently at least several
+thousands of users.
 
 2.2. Q. Have any significant projects been done in Python?
 
@@ -323,21 +341,24 @@ months for the past four years.
 
 2.5. Q. What new developments are expected for Python in the future?
 
-A.  Without warranty that any of this will actually be realized: I am
-currently thinking about mechanisms for built-in on-line help and a
-switch/case statement.  There have been some discussions on
-hierarchical module names which might solve the problem of the
-development of large packages.  A pthreads interface has been
-contributed which I would like to merge into the latest release.  The
-X interface needs improving.  There are also some people
-(independently) working on a windowing interface based on STDWIN but
-with the power and ease of use of the average modern widget set.  I
-still hope to get some help in producing a Windows version.  It would
-be nice if there were a window-based class browser (Someone at CWI has
-contributed one using Motif but it needs some work).  Also: improved
-support for embedding Python in other applications, e.g. by renaming
-most global symbols to have a "Py" prefix and providing more
-documentation and threading support.
+A.  A proposal is being worked out to change the semantics of operator
+overloading (__add__, __mul__ etc.) to make them more useful for
+implementing types that don't resemble numbers.  Additions will be
+__call__ (to call an instance as if it were a function) and __eq__,
+_lt__ etc. (to override individual comparisons).  A (new) pthreads
+interface has been submitted which will be integrated in the next
+release.  The X11/Motif interface will be improved.  There are ideas
+about built-in help using strings placed into function objects, and
+possibly a switch statement.
+
+There will be better ports to the Mac, DOS, Windows, Windows NT, and
+OS/2.  The Windows ports will support dynalically loaded modules using
+DLLs.  The Mac port may also support dynamic loading of modules.
+There may be a Windows version of STDWIN.
+
+Also planned is improved support for embedding Python in other
+applications, e.g. by renaming most global symbols to have a "Py"
+prefix and providing more documentation and threading support.
 
 
 3. Building Python
@@ -562,6 +583,66 @@ module is running as a script:
 
 	if __name__ == '__main__': main()
 
+4.10. Q. I try to run a program from the Demo directory but it fails with
+ImportError: No module named ...; what gives?
+
+A. This is probably an optional module which hasn't been configured on
+your system.  This especially happens with modules like "stdwin",
+"gl", "Xt" or "Xm".  For stdwin and many other modules, see
+Modules/Setup.in for info on how to add these modules to your Python,
+if it is possible at all.  Sometimes you will have to ftp and build
+another package first (e.g. stdwin).  Sometimes the module only works
+on specific platforms (e.g. gl only works on SGI machines).  For
+X-related modules (Xt and Xm) you will have to do more work: they are
+currently not part of the standard Python distribution.  You will have
+to ftp the file "extensions.tar.gz" file from a Python ftp repository
+(e.g. ftp.cwi.nl) and follow the instructions there.  Note: the X
+related modules are still somewhat flakey, so don't try this unless
+you know a bit or two about building X applications on your platform.
+
+4.11. Q. What GUI toolkits exist for Python?
+
+A. Depending on what platform(s) you are aiming at, there are several.
+
+- The standard Python distribution comes with an interface to STDWIN,
+a platform-independent low-level windowing interface (you have to ftp
+the source for stdwin separately, e.g. from ftp.cwi.nl in pub/stdwin
+or gatekeeper.dec.com in pub/misc/stdwin).  STDWIN runs under X11 or
+the Mac; a Windows port is about to be released.
+
+- For SGI only, there's an interface to the complete GL (Graphics
+Library -- low level but very good 3D capabilities) as well as to
+FORMS (a buttons-and-sliders-etc package built on top of GL by Mark
+Overmars -- ftp'able from ftp.cs.ruu.nl in pub/SGI/FORMS).
+
+- There's an interface to X11, including the Athena and Motif widget
+sets (and a few individual widgets, like Mosaic's HTML widget and
+SGI's GL widget) in the Extensions set, which is separately ftp'able
+from ftp.cwi.nl as pub/python/extensions.tar.gz.
+
+- There's an interface to SUIT, the U of Virginia's Simple User
+Interface Toolkit; it can be ftp'ed from uvacs.cs.virginia.edu as
+pub/suit/python/SUIT_python.tar.Z.  A PC binary of Python 1.0.2
+compiled with DJGPP and with SUIT support built-in has been made
+available by Antonio Costa on ftp site asterix.inescn.pt, directory
+pub/PC/python, file pyt102su.exe (a self-extracting archive).
+
+- There's a neat interface to the Tcl/Tk widget set; ftp it from
+ftp.cwi.nl as pub/python/tkinter.tar.gz.
+
+- There's an interface to WAFE, a Tcl interface to the X11 Motif and
+Athena widget sets.  Last I heard about it it was included in the
+WAFE 1.0 prerelease, ftp'able from ftp.wu-wien.ac.at as
+pub/src/X11/wafe/wafe-1.0.tar.gz-prerelease.
+
+4.12. Q. Are there any interfaces to commercial database in Python?
+
+A. There's an interface to SYBASE by John Redford
+<jredford@lehman.com>.
+
+There's also an interface to metalbase by Lance Ellinghouse
+<lance@markv.com>.
+
 
 5. Extending Python
 ===================
@@ -580,6 +661,38 @@ you place extern "C" { ... } around the Python include files and put
 extern "C" before each function that is going to be called by the
 Python interpreter.  Global or static C++ objects with constructors
 are probably not a good idea.
+
+5.3. Q. How can I execute arbitrary Python statements from C?
+
+A. The highest-level function to do this is run_command() which takes
+a single string argument which is executed in the context of module
+__main__ and returns 0 for success and -1 when an exception occurred
+(including SyntaxError).  If you want more control, use run_string();
+see the source for run_command() in Python/pythonrun.c.
+
+5.4. Q. How can I evaluate an arbitrary Python expression from C?
+
+A. Call the function run_string() from the previous question with the
+start symbol eval_input; it then parses an expression, evaluates it
+and returns its value.  See exec_eval() in Python/bltinmodule.c.
+
+5.5. Q. How do I extract C values from a Python object?
+
+A. That depends on the object's type.  If it's a tuple,
+gettuplesize(o) returns its length and gettupleitem(o, i) returns its
+i'th item; similar for lists with getlistsize(o) and getlistitem(o,
+i).  For strings, getstringsize(o) returns its length and
+getstringvalue(o) a pointer to its value (note that Python strings may
+contain null bytes so strlen() is not safe).  To test which type an
+object is, first make sure it isn't NULL, and then use
+is_stringobject(o), is_tupleobject(o), is_listobject(o) etc.
+
+5.6. Q. How do I use mkvalue() to create a tuple of arbitrary length?
+
+A. You can't.  Use t = newtupleobject(n) instead, and fill it with
+objects using settupleitem(t, i, o) -- note that this "eats" a
+reference count of o.  Similar for lists with newlistobject(n) and
+setlistitem(l, i, o).
 
 
 6. Python's design
@@ -680,8 +793,14 @@ KeyboardInterrupt.  You can also run 16python.exe or 32python.exe in a
 A. Yes.  Use ntpython.exe.  This is for Intel CPUs.  If you want a
 Windows user interface, use qwpython.exe.
 
-7.5. Q. I have the DOS or Windows version but it appears to be only a
-binary.  Where's the library?
+7.5. Q. Is there an OS/2 version of Python?
+
+A. Yes.  You can ftp it (from ftp.cwi.nl in pub/python, or from the
+mirror sites) as pyth_os2.zip.  This contains both an executable and
+Makefiles for those fortunate enough to have a C compiler.
+
+7.6. Q. I have the PC version but it appears to be only a binary.
+Where's the library?
 
 A. You still need to copy the files from the distribution directory
 "python/Lib" to your system.  If you don't have the full distribution,
@@ -703,13 +822,13 @@ as follows (talking to a DOS prompt):
 
 	C> SET PYTHONPATH=C:\misc\python\lib
 
-7.6. Q. Where's the documentation for the Mac or PC version?
+7.7. Q. Where's the documentation for the Mac or PC version?
 
 A. There isn't any.  The documentation for the Unix version also
 applies to the Mac and PC versions.  Where applicable, differences
 are indicated in the text.
 
-7.7. Q. The Mac (PC) version doesn't seem to have any facilities for
+7.8. Q. The Mac (PC) version doesn't seem to have any facilities for
 creating or editing programs apart from entering it interactively, and
 there seems to be no way to save code that was entered interactively.
 How do I create a Python program on the Mac (PC)?
