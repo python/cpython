@@ -73,26 +73,28 @@ nonzero fraction (\UNIX{} \cfunction{select()} is used to implement
 this, where available).
 
 \item
-The time tuple as returned by \function{gmtime()},
+The time value as returned by \function{gmtime()},
 \function{localtime()}, and \function{strptime()}, and accepted by
 \function{asctime()}, \function{mktime()} and \function{strftime()},
-is a tuple of 9 integers:
+is a sequence of 9 integers.  The return values of \function{gmtime()},
+\function{localtime()}, and \function{strptime()} also offer attribute
+names for individual fields.
 
-\begin{tableiii}{r|l|l}{textrm}{Index}{Field}{Values}
-  \lineiii{0}{year}{(for example, 1993)}
-  \lineiii{1}{month}{range [1,12]}
-  \lineiii{2}{day}{range [1,31]}
-  \lineiii{3}{hour}{range [0,23]}
-  \lineiii{4}{minute}{range [0,59]}
-  \lineiii{5}{second}{range [0,61]; see \strong{(1)} in \function{strftime()} description}
-  \lineiii{6}{weekday}{range [0,6], Monday is 0}
-  \lineiii{7}{Julian day}{range [1,366]}
-  \lineiii{8}{daylight savings flag}{0, 1 or -1; see below}
+\begin{tableiii}{c|l|l}{textrm}{Index}{Attribute}{Values}
+  \lineiii{0}{\member{tm_year}}{(for example, 1993)}
+  \lineiii{1}{\member{tm_mon}}{range [1,12]}
+  \lineiii{2}{\member{tm_mday}}{range [1,31]}
+  \lineiii{3}{\member{tm_hour}}{range [0,23]}
+  \lineiii{4}{\member{tm_min}}{range [0,59]}
+  \lineiii{5}{\member{tm_sec}}{range [0,61]; see \strong{(1)} in \function{strftime()} description}
+  \lineiii{6}{\member{tm_wday}}{range [0,6], Monday is 0}
+  \lineiii{7}{\member{tm_yday}}{range [1,366]}
+  \lineiii{8}{\member{tm_isdst}}{0, 1 or -1; see below}
 \end{tableiii}
 
 Note that unlike the C structure, the month value is a
 range of 1-12, not 0-11.  A year value will be handled as described
-under ``Year 2000 (Y2K) issues'' above.  A \code{-1} argument as
+under ``Year 2000 (Y2K) issues'' above.  A \code{-1} argument as the
 daylight savings flag, passed to \function{mktime()} will usually
 result in the correct daylight savings state to be filled in.
 
@@ -100,6 +102,9 @@ When a tuple with an incorrect length is passed to a function
 expecting a time tuple, or having elements of the wrong type, a
 \exception{TypeError} is raised.
 
+\versionchanged[The time value sequence was changed from a tuple to a
+                specialized type, with the addition of attribute names
+                for the fields]{2.2}
 \end{itemize}
 
 The module defines the following functions and data items:
@@ -284,6 +289,12 @@ provided as part of the input string are filled in with default
 values; the specific values are platform-dependent as the XPG standard
 does not provide sufficient information to constrain the result.
 \end{funcdesc}
+
+\begin{datadesc}{struct_time}
+The type of the time value sequence returned by \function{gmtime()},
+\function{localtime()}, and \function{strptime()}.
+\versionadded{2.2}
+\end{datadesc}
 
 \begin{funcdesc}{time}{}
 Return the time as a floating point number expressed in seconds since
