@@ -12,6 +12,11 @@ What's New in Python 2.4 alpha 3?
 Core and builtins
 -----------------
 
+- code_new (a.k.a new.code()) now checks its arguments sufficiently
+  carefully that passing them on to PyCode_New() won't trigger calls
+  to Py_FatalError() or PyErr_BadInternalCall().  It is still the case
+  that the returned code object might be entirely insane.
+
 - Subclasses of string can no longer be interned.  The semantics of
   interning were not clear here -- a subclass could be mutable, for
   example -- and had bugs.  Explicitly interning a subclass of string
