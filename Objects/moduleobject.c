@@ -29,7 +29,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 typedef struct {
 	OB_HEAD
-	object *md_name;
 	object *md_dict;
 } moduleobject;
 
@@ -37,16 +36,24 @@ object *
 newmoduleobject(name)
 	char *name;
 {
-	moduleobject *m = NEWOBJ(moduleobject, &Moduletype);
+	moduleobject *m;
+	object *nameobj;
+	m = NEWOBJ(moduleobject, &Moduletype);
 	if (m == NULL)
 		return NULL;
-	m->md_name = newstringobject(name);
+	nameobj = newstringobject(name);
 	m->md_dict = newdictobject();
-	if (m->md_name == NULL || m->md_dict == NULL) {
-		DECREF(m);
-		return NULL;
-	}
+	if (m->md_dict == NULL || nameobj == NULL)
+		goto fail;
+	if (dictinsert(m->md_dict, "__name__", nameobj) != 0)
+		goto fail;
+	DECREF(nameobj);
 	return (object *)m;
+
+ fail:
+	XDECREF(nameobj);
+	DECREF(m);
+	return NULL;
 }
 
 object *
@@ -64,11 +71,17 @@ char *
 getmodulename(m)
 	object *m;
 {
+	object *nameobj;
 	if (!is_moduleobject(m)) {
 		err_badarg();
 		return NULL;
 	}
-	return getstringvalue(((moduleobject *)m) -> md_name);
+	nameobj = dictlookup(((moduleobject *)m)->md_dict, "__name__");
+	if (nameobj == NULL || !is_stringobject(nameobj)) {
+		err_setstr(SystemError, "nameless module");
+		return NULL;
+	}
+	return getstringvalue(nameobj);
 }
 
 /* Methods */
@@ -77,8 +90,6 @@ static void
 module_dealloc(m)
 	moduleobject *m;
 {
-	if (m->md_name != NULL)
-		DECREF(m->md_name);
 	if (m->md_dict != NULL)
 		DECREF(m->md_dict);
 	free((char *)m);
@@ -89,7 +100,12 @@ module_repr(m)
 	moduleobject *m;
 {
 	char buf[100];
-	sprintf(buf, "<module '%.80s'>", getstringvalue(m->md_name));
+	char *name = getmodulename((object *)m);
+	if (name == NULL) {
+		err_clear();
+		name = "?";
+	}
+	sprintf(buf, "<module '%.80s'>", name);
 	return newstringobject(buf);
 }
 
@@ -102,10 +118,6 @@ module_getattr(m, name)
 	if (strcmp(name, "__dict__") == 0) {
 		INCREF(m->md_dict);
 		return m->md_dict;
-	}
-	if (strcmp(name, "__name__") == 0) {
-		INCREF(m->md_name);
-		return m->md_name;
 	}
 	res = dictlookup(m->md_dict, name);
 	if (res == NULL)
@@ -126,12 +138,9 @@ module_setattr(m, name, v)
 	object *v;
 {
 	object *ac;
-	if (name[0] == '_' && name[1] == '_') {
-		int n = strlen(name);
-		if (name[n-1] == '_' && name[n-2] == '_') {
-			err_setstr(TypeError, "read-only special attribute");
-			return -1;
-		}
+	if (name[0] == '_' && strcmp(name, "__dict__") == 0) {
+		err_setstr(TypeError, "read-only special attribute");
+		return -1;
 	}
 	ac = dictlookup(m->md_dict, name);
 	if (ac != NULL && is_accessobject(ac))

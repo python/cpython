@@ -101,66 +101,24 @@ add_module(name)
 	return m;
 }
 
-/* Suffixes used by find_module: */
+enum filetype {SEARCH_ERROR, PY_SOURCE, PY_COMPILED, C_EXTENSION};
 
-#define PY_SUFFIX	".py"
-#define PYC_SUFFIX	".pyc"
+static struct filedescr {
+	char *suffix;
+	char *mode;
+	enum filetype type;
+} filetab[] = {
 #ifdef USE_DL
 #ifdef SUN_SHLIB
-#define O_SUFFIX	"module.so"
+	{"module.so", "rb", C_EXTENSION},
 #else
-#define O_SUFFIX	"module.o"
+	{"module.o", "rb", C_EXTENSION},
 #endif /* SUN_SHLIB */
-#endif
-
-/* This will search for a module named 'name' with the extension 'ext'
-   and return it in 'namebuf' and return the mtime of each in 'mtime'.
-   It returns a file pointer opened for 'mode' if successful, NULL if
-   unsuccessful.
- */
-static FILE *
-find_module(name, ext, mode, namebuf, mtime)
-	char *name;
-	char *ext;
-	char *mode;
-	char *namebuf;
-	long *mtime;
-{
-	object *path;
-	FILE *fp;
-
-	path = sysget("path");
-	if (path == NULL || !is_listobject(path)) {
-		/* No path -- at least try current directory */
-		strcpy(namebuf, name);
-		strcat(namebuf, ext);
-		if ((fp = fopen(namebuf, mode)) == NULL)
-			return NULL;
-		*mtime = getmtime(namebuf);
-		return fp;
-	} else {
-		int npath = getlistsize(path);
-		int i;
-		for (i = 0; i < npath; i++) {
-			object *v = getlistitem(path, i);
-			int len;
-			if (!is_stringobject(v))
-				continue;
-			strcpy(namebuf, getstringvalue(v));
-			len = getstringsize(v);
-			if (len > 0 && namebuf[len-1] != SEP)
-				namebuf[len++] = SEP;
-			strcpy(namebuf+len, name);
-			strcat(namebuf, ext);
-			if ((fp = fopen(namebuf, mode)) == NULL)
-				continue;
-			*mtime = getmtime(namebuf);
-			return fp;
-		}
-	}
-	namebuf[0] = '\0';
-	return NULL;
-}
+#endif /* USE_DL */
+	{".py", "r", PY_SOURCE},
+	{".pyc", "rb", PY_COMPILED},
+	{0, 0}
+};
 
 static object *
 get_module(m, name, m_ret)
@@ -168,150 +126,113 @@ get_module(m, name, m_ret)
 	char *name;
 	object **m_ret;
 {
-	codeobject *co = NULL;
-	object *v, *d;
-	FILE *fp, *fpc;
-	node *n;
-	int err;
+	int err, npath, i, len;
+	long magic;
+	long mtime, pyc_mtime;
 	char namebuf[MAXPATHLEN+1];
-	int namelen;
-	long mtime;
+	struct filedescr *fdp;
+	FILE *fp = NULL, *fpc = NULL;
+	node *n = NULL;
+	object *path, *v, *d;
+	codeobject *co = NULL;
 
-#ifdef USE_DL
-	if ((fpc = find_module(name, O_SUFFIX, "rb",
-			       namebuf, &mtime)) != NULL) {
-		char funcname[258];
-		dl_funcptr p;
-		D(fprintf(stderr, "Found %s\n", namebuf));
-		fclose(fpc);
-		sprintf(funcname, "init%s", name);
-#ifdef SUN_SHLIB
-		{
-		  void *handle = dlopen (namebuf, 1);
-		  p = (dl_funcptr) dlsym(handle, funcname);
-		}
-#else
-		if (verbose)
-			fprintf(stderr,
-				"import %s # dynamically loaded from \"%s\"\n",
-				name, namebuf);
-		p =  dl_loadmod(argv0, namebuf, funcname);
-#endif /* SUN_SHLIB */
-		if (p == NULL) {
-			err_setstr(SystemError,
-			   "dynamic module does not define init function");
-			return NULL;
-		} else {
-			(*p)();
-			*m_ret = m = dictlookup(modules, name);
-			if (m == NULL) {
-				err_setstr(SystemError,
-				   "dynamic module not initialized properly");
-				return NULL;
-			} else {
-				D(fprintf(stderr,
-					"module %s loaded!\n", name));
-				INCREF(None);
-				return None;
-			}
-		}
+	path = sysget("path");
+	if (path == NULL || !is_listobject(path)) {
+		err_setstr(ImportError,
+			   "sys.path must be list of directory names");
+		return NULL;
 	}
-	else
-#endif
-	if ((fpc = find_module(name, PYC_SUFFIX, "rb",
-			      namebuf, &mtime)) != NULL) {
-		long pyc_mtime;
-		long magic;
-		namebuf[(strlen(namebuf)-1)] = '\0';
+	npath = getlistsize(path);
+	for (i = 0; i < npath; i++) {
+		v = getlistitem(path, i);
+		if (!is_stringobject(v))
+			continue;
+		strcpy(namebuf, getstringvalue(v));
+		len = getstringsize(v);
+		if (len > 0 && namebuf[len-1] != SEP)
+			namebuf[len++] = SEP;
+		strcpy(namebuf+len, name);
+		len += strlen(name);
+		for (fdp = filetab; fdp->suffix != NULL; fdp++) {
+			strcpy(namebuf+len, fdp->suffix);
+			if (verbose > 1)
+				fprintf(stderr, "# trying %s\n", namebuf);
+			fp = fopen(namebuf, fdp->mode);
+			if (fp != NULL)
+				break;
+		}
+		if (fp != NULL)
+			break;
+	}
+	if (fp == NULL) {
+		sprintf(namebuf, "No module named %s", name);
+		err_setstr(ImportError, namebuf);
+		return NULL;
+	}
+
+	switch (fdp->type) {
+
+	case PY_SOURCE:
 		mtime = getmtime(namebuf);
-		magic = rd_long(fpc);
-		pyc_mtime = rd_long(fpc);
-		if (mtime != -1 && mtime > pyc_mtime) {
-			fclose(fpc);
-			goto read_py;
-		}
-		if (magic == MAGIC) {
-			v = rd_object(fpc);
-			if (v == NULL || err_occurred() ||
-			    !is_codeobject(v)) {
-				err_clear();
-				XDECREF(v);
-			}
-			else
-				co = (codeobject *)v;
-		}
-		fclose(fpc);
-		if (verbose) {
-			if (co != NULL)
-				fprintf(stderr,
-			"import %s # precompiled from \"%s\"\n",
-					name, namebuf);
-			else {
-				fprintf(stderr,
-				"# invalid precompiled file \"%s\"\n",
-					namebuf);
-			}
-		}
-		if (co == NULL)
-			goto read_py;
-	}
-	else {
-read_py:
-		if ((fp = find_module(name, PY_SUFFIX, "r",
-				      namebuf, &mtime)) != NULL) {
-			namelen = strlen(namebuf);
-			if (co == NULL) {
+		strcat(namebuf, "c");
+		fpc = fopen(namebuf, "rb");
+		if (fpc != NULL) {
+			magic = rd_long(fpc);
+			if (magic != MAGIC) {
 				if (verbose)
 					fprintf(stderr,
-						"import %s # from \"%s\"\n",
-						name, namebuf);
-				err = parse_file(fp, namebuf, file_input, &n);
-			} else
-				err = E_DONE;
-			fclose(fp);
-			if (err != E_DONE) {
-				err_input(err);
-				return NULL;
-			}
-		}
-		else {
-			if (m == NULL) {
-				sprintf(namebuf, "no module named %.200s",
-					name);
-				err_setstr(ImportError, namebuf);
+						"# %s.pyc has bad magic\n",
+						name);
 			}
 			else {
-				sprintf(namebuf, "no source for module %.200s",
-					name);
-				err_setstr(ImportError, namebuf);
+				pyc_mtime = rd_long(fpc);
+				if (pyc_mtime != mtime) {
+					if (verbose)
+						fprintf(stderr,
+						  "# %s.pyc has bad mtime\n",
+						  name);
+				}
+				else {
+					fclose(fp);
+					fp = fpc;
+					if (verbose)
+					   fprintf(stderr,
+					     "# %s.pyc matches %s.py\n",
+						   name, name);
+					goto use_compiled;
+				}
 			}
+			fclose(fpc);
+		}
+		err = parse_file(fp, namebuf, file_input, &n);
+		if (err != E_DONE) {
+			err_input(err);
 			return NULL;
 		}
-	}
-	if (m == NULL) {
-		m = add_module(name);
-		if (m == NULL) {
-			freetree(n);
-			return NULL;
-		}
-		*m_ret = m;
-	}
-	d = getmoduledict(m);
-	if (co == NULL) {
 		co = compile(n, namebuf);
 		freetree(n);
 		if (co == NULL)
 			return NULL;
+		if (verbose)
+			fprintf(stderr,
+				"import %s # from %.*s\n",
+				name, strlen(namebuf)-1, namebuf);
 		/* Now write the code object to the ".pyc" file */
-		namebuf[namelen] = 'c';
-		namebuf[namelen+1] = '\0';
 		fpc = fopen(namebuf, "wb");
-		if (fpc != NULL) {
+		if (fpc == NULL) {
+			if (verbose)
+				fprintf(stderr,
+					"# can't create %s\n", namebuf);
+		}
+		else {
 			wr_long(MAGIC, fpc);
 			/* First write a 0 for mtime */
 			wr_long(0L, fpc);
 			wr_object((object *)co, fpc);
 			if (ferror(fpc)) {
+				if (verbose)
+					fprintf(stderr,
+						"# can't write %s\n", namebuf);
 				/* Don't keep partial file */
 				fclose(fpc);
 				(void) unlink(namebuf);
@@ -322,9 +243,97 @@ read_py:
 				wr_long(mtime, fpc);
 				fflush(fpc);
 				fclose(fpc);
+				if (verbose)
+					fprintf(stderr,
+						"# wrote %s\n", namebuf);
 			}
 		}
+		break;
+
+	case PY_COMPILED:
+		if (verbose)
+			fprintf(stderr, "# %s.pyc without %s.py\n",
+				name, name);
+		magic = rd_long(fp);
+		if (magic != MAGIC) {
+			err_setstr(ImportError,
+				   "Bad magic number in .pyc file");
+			return NULL;
+		}
+		(void) rd_long(fp);
+	use_compiled:
+		v = rd_object(fp);
+		fclose(fp);
+		if (v == NULL || !is_codeobject(v)) {
+			XDECREF(v);
+			err_setstr(ImportError,
+				   "Bad code object in .pyc file");
+			return NULL;
+		}
+		co = (codeobject *)v;
+		if (verbose)
+			fprintf(stderr,
+				"import %s # precompiled from %s\n",
+				name, namebuf);
+		break;
+
+#ifdef USE_DL
+	case C_EXTENSION:
+	      {
+		char funcname[258];
+		dl_funcptr p;
+		fclose(fp);
+		sprintf(funcname, "init%s", name);
+#ifdef SUN_SHLIB
+		{
+		  void *handle = dlopen (namebuf, 1);
+		  p = (dl_funcptr) dlsym(handle, funcname);
+		}
+#else
+		p =  dl_loadmod(argv0, namebuf, funcname);
+#endif /* SUN_SHLIB */
+		if (p == NULL) {
+			err_setstr(ImportError,
+			   "dynamic module does not define init function");
+			return NULL;
+		} else {
+			(*p)();
+			*m_ret = m = dictlookup(modules, name);
+			if (m == NULL) {
+				err_setstr(SystemError,
+				   "dynamic module not initialized properly");
+				return NULL;
+			} else {
+				if (verbose)
+					fprintf(stderr,
+				"import %s # dynamically loaded from %s\n",
+						name, namebuf);
+				INCREF(None);
+				return None;
+			}
+		}
+		break;
+	      }
+#endif /* USE_DL */
+
+	default:
+		fclose(fp);
+		err_setstr(SystemError,
+			   "search loop returned unexpected result");
+		return NULL;
+
 	}
+
+	/* We get here for either PY_SOURCE or PY_COMPILED */
+	if (m == NULL) {
+		m = add_module(name);
+		if (m == NULL) {
+			freetree(n);
+			return NULL;
+		}
+		*m_ret = m;
+	}
+	d = getmoduledict(m);
 	v = eval_code(co, d, d, d, (object *)NULL);
 	DECREF(co);
 	return v;
@@ -367,12 +376,16 @@ object *
 reload_module(m)
 	object *m;
 {
+	char *name;
 	if (m == NULL || !is_moduleobject(m)) {
 		err_setstr(TypeError, "reload() argument must be module");
 		return NULL;
 	}
+	name = getmodulename(m);
+	if (name == NULL)
+		return NULL;
 	/* XXX Ought to check for builtin modules -- can't reload these... */
-	return get_module(m, getmodulename(m), (object **)NULL);
+	return get_module(m, name, (object **)NULL);
 }
 
 void
