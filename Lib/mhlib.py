@@ -36,6 +36,7 @@
 # f.putsequences(dict)    # write sequences back to folder
 #
 # m = f.openmessage(n)    # new open message object (costs a file descriptor)
+# m is a derived class of mimetools.Message(rfc822.Message), with:
 # s = m.getheadertext()   # text of message's headers
 # s = m.getheadertext(pred) # text of message's headers, filtered by pred
 # s = m.getbodytext()     # text of message's body, decoded
@@ -299,11 +300,19 @@ class Folder:
 	# Write the set of sequences back to the folder
 	def putsequences(self, sequences):
 		fullname = self.getsequencesfilename()
-		f = open(fullname, 'w')
+		f = None
 		for key in sequences.keys():
 			s = IntSet('', ' ')
 			s.fromlist(sequences[key])
+			if not f: f = open(fullname, 'w')
 			f.write('%s: %s\n' % (key, s.tostring()))
+		if not f:
+			try:
+				os.unlink(fullname)
+			except os.error:
+				pass
+		else:
+			f.close()
 
 	# Return the current message.  Raise KeyError when there is none
 	def getcurrent(self):
@@ -313,7 +322,7 @@ class Folder:
 	def setcurrent(self, n):
 		updateline(self.getsequencesfilename(), 'cur', str(n), 0)
 
-	# Open a message -- returns a mimetools.Message object
+	# Open a message -- returns a Message object
 	def openmessage(self, n):
 		path = self.getmessagefilename(n)
 		return Message(self, n)

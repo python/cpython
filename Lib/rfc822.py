@@ -329,11 +329,18 @@ _monthnames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
 	  'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 def parsedate(data):
-	# XXX This completely ignores timezone matters at the moment...
+	# XXX This still mostly ignores timezone matters at the moment...
 	data = string.split(data)
 	if data[0][-1] == ',':
 		# There's a dayname here. Skip it
 		del data[0]
+	if len(data) == 4:
+		s = data[3]
+		i = string.find(s, '+')
+		if i > 0:
+			data[3:] = [s[:i], s[i+1:]]
+		else:
+			data.append('') # Dummy tz
 	if len(data) < 5:
 		return None
 	data = data[:5]
