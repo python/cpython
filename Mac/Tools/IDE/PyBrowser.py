@@ -502,33 +502,53 @@ class Browser:
 
 
 SIMPLE_TYPES = (
-	types.NoneType,
-	types.IntType,
-	types.LongType,
-	types.FloatType,
-	types.ComplexType,
-	types.StringType
+	type(None),
+	int,
+	long,
+	float,
+	complex,
+	str,
+	unicode,
 )
 
-INDEXING_TYPES = (
-	types.TupleType,
-	types.ListType,
-	types.DictionaryType
-)
+def get_ivars(obj):
+	"""Return a list the names of all (potential) instance variables."""
+	# __mro__ recipe from Guido
+	slots = {}
+	# old-style C objects
+	if hasattr(obj, "__members__"):
+		for name in obj.__members__:
+			slots[name] = None
+	if hasattr(obj, "__methods__"):
+		for name in obj.__methods__:
+			slots[name] = None
+	# generic type
+	if hasattr(obj, "__dict__"):
+		slots.update(obj.__dict__)
+	cls = type(obj)
+	if hasattr(cls, "__mro__"):
+		# new-style class, use descriptors
+		for base in cls.__mro__:
+			for name, value in base.__dict__.items():
+				# XXX using callable() is a heuristic which isn't 100%
+				# foolproof.
+				if hasattr(value, "__get__") and not callable(value):
+					slots[name] = None
+	if "__dict__" in slots:
+		del slots["__dict__"]
+	slots = slots.keys()
+	slots.sort()
+	return slots
 
 def unpack_object(object, indent = 0):
 	tp = type(object)
-	if tp in SIMPLE_TYPES and tp is not types.NoneType:
+	if isinstance(object, SIMPLE_TYPES) and object is not None:
 		raise TypeError, "can't browse simple type: %s" % tp.__name__
-	elif tp == types.DictionaryType:
+	elif isinstance(object, dict):
 		return unpack_dict(object, indent)
-	elif tp in (types.TupleType, types.ListType):
+	elif isinstance(object, (tuple, list)):
 		return unpack_sequence(object, indent)
-	elif tp == types.InstanceType:
-		return unpack_instance(object, indent)
-	elif tp == types.ClassType:
-		return unpack_class(object, indent)
-	elif tp == types.ModuleType:
+	elif isinstance(object, types.ModuleType):
 		return unpack_dict(object.__dict__, indent)
 	else:
 		return unpack_other(object, indent)
@@ -555,23 +575,15 @@ def unpack_class(clss, indent = 0):
 	return pack_items(items, indent)
 
 def unpack_other(object, indent = 0):
-	attrs = []
-	if hasattr(object, '__members__'):
-		attrs = attrs + object.__members__
-	if hasattr(object, '__methods__'):
-		attrs = attrs + object.__methods__
-	if hasattr(object, '__dict__'):
-		attrs = attrs + object.__dict__.keys()
-	if hasattr(object, '__slots__'):
-		# XXX??
-		attrs = attrs + object.__slots__
-	if hasattr(object, "__class__") and "__class__" not in attrs:
-		attrs.append("__class__")
-	if hasattr(object, "__doc__") and "__doc__" not in attrs:
-		attrs.append("__doc__")
+	attrs = get_ivars(object)
 	items = []
 	for attr in attrs:
-		items.append((attr, getattr(object, attr)))
+		try:
+			value = getattr(object, attr)
+		except:
+			pass
+		else:
+			items.append((attr, value))
 	return pack_items(items, indent)
 
 def pack_items(items, indent = 0):
