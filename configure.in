@@ -324,6 +324,10 @@ then
 	    OPT="-O";;
 	esac
     esac
+    case $ac_sys_system in
+    Darwin*)
+    	OPT="$OPT -no-cpp-precomp";;
+    esac
 fi
 
 # The current (beta) Monterey compiler dies with optimizations
@@ -504,9 +508,12 @@ fi
 # Minor variations in building a framework between NextStep versions 4 and 5
 AC_SUBST(LIBTOOL_CRUFT)
 case $ac_sys_system/$ac_sys_release in
-  Darwin/*)
+  Darwin/1.3*)
     ns_undef_sym='_environ'
     LIBTOOL_CRUFT="-lcc_dynamic -arch_only ppc -U $ns_undef_sym" ;;
+  Darwin/*)
+    ns_undef_sym='_environ'
+    LIBTOOL_CRUFT="-lcc_dynamic -arch_only ppc -flat_namespace -U $ns_undef_sym" ;;
   next/4*)
     ns_undef_sym='__environ'
     LIBTOOL_CRUFT="-U $ns_undef_sym" ;;
@@ -521,7 +528,10 @@ then
 	OPT="$OPT -fno-common"
 	# -U __environ is needed since bundles don't have access
 	# to crt0 when built but will always be linked against it
-	LDFLAGS="$LDFLAGS -Wl,-U,$ns_undef_sym"
+	case $ac_sys_system/$ac_sys_release in
+	    Darwin/1.3*)LDFLAGS="$LDFLAGS -Wl,-F. -Wl,-U,$ns_undef_sym";;
+	    Darwin/*)LDFLAGS="$LDFLAGS -Wl,-F. -Wl,-flat_namespace,-U,$ns_undef_sym";;
+	esac
 	AC_DEFINE(WITH_NEXT_FRAMEWORK)
 	AC_MSG_RESULT(yes)
 else
@@ -588,12 +598,17 @@ then
 	hp*|HP*) LDSHARED="ld -b";;
 	OSF*) LDSHARED="ld -shared -expect_unresolved \"*\"";;
 	DYNIX/ptx*) LDSHARED="ld -G";;
-        Darwin/*|next/*) 
+        Darwin/1.3*|next/*) 
 		if test "$ns_dyld"
 		then LDSHARED='$(CC) $(LDFLAGS) -bundle -undefined suppress'
 		else LDSHARED='$(CC) $(CFLAGS) -nostdlib -r';
 		fi
-	if test "$with_next_framework" ; then
+		if test "$with_next_framework" ; then
+		    LDSHARED="$LDSHARED \$(LDLIBRARY)"
+		fi ;;
+        Darwin/*) 
+		LDSHARED='$(CC) $(LDFLAGS) -flat_namespace -bundle -undefined suppress'
+		if test "$with_next_framework" ; then
 		    LDSHARED="$LDSHARED \$(LDLIBRARY)"
 		fi ;;
 	Linux*) LDSHARED="gcc -shared";;
