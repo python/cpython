@@ -54,14 +54,18 @@ call, similar to the value accompanying \code{posix.error}.
 \begin{datadesc}{AF_UNIX}
 \dataline{AF_INET}
 These constants represent the address (and protocol) families,
-used for the first argument to \code{socket()}.
+used for the first argument to \code{socket()}.  If the \code{AF_UNIX}
+constant is not defined then this protocol is unsupported.
 \end{datadesc}
 
 \begin{datadesc}{SOCK_STREAM}
 \dataline{SOCK_DGRAM}
+\dataline{SOCK_RAW}
+\dataline{SOCK_RDM}
+\dataline{SOCK_SEQPACKET}
 These constants represent the socket types,
 used for the second argument to \code{socket()}.
-(There are other types, but only \code{SOCK_STREAM} and
+(Only \code{SOCK_STREAM} and
 \code{SOCK_DGRAM} appear to be generally useful.)
 \end{datadesc}
 
@@ -69,6 +73,11 @@ used for the second argument to \code{socket()}.
 Translate a host name to IP address format.  The IP address is
 returned as a string, e.g.,  \code{'100.50.200.5'}.  If the host name
 is an IP address itself it is returned unchanged.
+\end{funcdesc}
+
+\begin{funcdesc}{gethostname}{}
+Return the current host's canonical name, as a string
+(e.g. \code{'voorn.cwi.nl'}).
 \end{funcdesc}
 
 \begin{funcdesc}{getservbyname}{servicename\, protocolname}
@@ -139,7 +148,7 @@ with \code{select}.
 Return the remote address to which the socket is connected.  This is
 useful to find out the port number of a remote IP socket, for instance.
 (The format of the address returned depends on the address family --
-see above.)
+see above.)  On some systems this function is not supported.
 \end{funcdesc}
 
 \begin{funcdesc}{getsockname}{}
