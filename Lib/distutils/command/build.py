@@ -97,26 +97,34 @@ class build (Command):
 
     def run (self):
 
-        # For now, "build" means "build_py" then "build_ext".  (Eventually
-        # it should also build documentation.)
+        # Run all relevant sub-commands.  This will be some subset of:
+        #  - build_py      - pure Python modules
+        #  - build_clib    - standalone C libraries
+        #  - build_ext     - Python extensions
+        #  - build_scripts - (Python) scripts
+        for cmd_name in self.get_sub_commands():
+            self.run_command(cmd_name)
 
-        # Invoke the 'build_py' command to "build" pure Python modules
-        # (ie. copy 'em into the build tree)
-        if self.distribution.has_pure_modules():
-            self.run_command ('build_py')
 
-        # Build any standalone C libraries next -- they're most likely to
-        # be needed by extension modules, so obviously have to be done
-        # first!
-        if self.distribution.has_c_libraries():
-            self.run_command ('build_clib')
+    # -- Predicates for the sub-command list ---------------------------
 
-        # And now 'build_ext' -- compile extension modules and put them
-        # into the build tree
-        if self.distribution.has_ext_modules():
-            self.run_command ('build_ext')
+    def has_pure_modules (self):
+        return self.distribution.has_pure_modules()
 
-        if self.distribution.has_scripts():
-            self.run_command ('build_scripts')
+    def has_c_libraries (self):
+        return self.distribution.has_c_libraries()
+
+    def has_ext_modules (self):
+        return self.distribution.has_ext_modules()
+
+    def has_scripts (self):
+        return self.distribution.has_scripts()
+
+
+    sub_commands = [('build_py',      has_pure_modules),
+                    ('build_clib',    has_c_libraries),
+                    ('build_ext',     has_ext_modules),
+                    ('build_scripts', has_scripts),
+                   ]
 
 # class build
