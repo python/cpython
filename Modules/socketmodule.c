@@ -779,8 +779,10 @@ BUILD_FUNC_DEF_2(PySocketSock_recv,PySocketSockObject *,s, PyObject *,args)
 	Py_BEGIN_ALLOW_THREADS
 	n = recv(s->sock_fd, PyString_AsString(buf), len, flags);
 	Py_END_ALLOW_THREADS
-	if (n < 0)
+	if (n < 0) {
+		Py_DECREF(buf);
 		return PySocket_Err();
+	}
 	if (_PyString_Resize(&buf, n) < 0)
 		return NULL;
 	return buf;
@@ -814,8 +816,10 @@ BUILD_FUNC_DEF_2(PySocketSock_recvfrom,PySocketSockObject *,s, PyObject *,args)
 		     (struct sockaddr *)addrbuf, &addrlen);
 #endif
 	Py_END_ALLOW_THREADS
-	if (n < 0)
+	if (n < 0) {
+		Py_DECREF(buf);
 		return PySocket_Err();
+	}
 	if (_PyString_Resize(&buf, n) < 0)
 		return NULL;
 	addr = makesockaddr((struct sockaddr *)addrbuf, addrlen);
