@@ -1770,7 +1770,9 @@ class PhotoImage(Image):
 	def put(self, data, to=None):
 		args = (self.name, 'put', data)
 		if to:
-			args = args + to
+			if to[0] == '-to':
+				to = to[1:]
+			args = args + ('-to',) + tuple(to)
 		apply(self.tk.call, args)
 	# XXX read
 	def write(self, filename, format=None, from_coords=None):
