@@ -225,6 +225,8 @@ class RCS:
 	if status:
 	    raise IOError, status
 	if not line: return None
+	if line[-1] == '\n':
+	    line = line[:-1]
 	return self.realname(name_rev) == self.realname(line)
 
     def checkfile(self, name_rev):
