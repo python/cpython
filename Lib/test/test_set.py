@@ -389,12 +389,12 @@ class TestFrozenSet(TestJointOps):
 
     def test_hash_effectiveness(self):
         n = 13
-        rng = range(n)
         hashvalues = set()
+        addhashvalue = hashvalues.add
+        elemmasks = [(i+1, 1<<i) for i in range(n)]
         for i in xrange(2**n):
-            combination = [j for j in rng if (1<<j)&i]
-            hashvalues.add(hash(self.thetype(combination)))
-        self.assert_(len(hashvalues) >= 2**(n-2))
+            addhashvalue(hash(frozenset([e for e, m in elemmasks if m&i])))
+        self.assertEqual(len(hashvalues), 2**n)
 
 class FrozenSetSubclass(frozenset):
     pass
