@@ -49,6 +49,7 @@
 LATEX=		latex
 BIBTEX=		bibtex
 DVIPS=		dvips -f -N0
+DISTILL=	distill
 MAKEINDEX=	makeindex
 L2H=		latex2html
 L2HARGS=	-address $$LOGNAME@`domainname`
@@ -74,12 +75,22 @@ all:	all-ps
 
 all-dvi: tut.dvi lib.dvi ext.dvi api.dvi
 all-ps:	 tut.ps lib.ps ext.ps api.ps
+all-pdf: tut.pdf lib.pdf ext.pdf api.pdf
 
 # Individual document fake targets
 tut:	tut.ps
 lib:	lib.ps
 ext:	ext.ps
 api:	api.ps
+
+# Rules to build PostScript and PDF formats
+.SUFFIXES: .dvi .ps .pdf
+
+.dvi.ps:
+	$(DVIPS) $< >$@
+
+.ps.pdf:
+	$(DISTILL) $<
 
 # Dependencies
 tut.dvi lib.dvi ext.dvi api.dvi: myformat.sty fix_hack
@@ -88,9 +99,6 @@ tut.dvi lib.dvi ext.dvi api.dvi: myformat.sty fix_hack
 tut.dvi: tut.tex 
 	$(LATEX) tut
 	$(LATEX) tut
-
-tut.ps:	tut.dvi
-	$(DVIPS) tut >tut.ps
 
 # LaTeX source files for the Python Library Reference
 LIBFILES = lib.tex \
@@ -135,9 +143,6 @@ lib.dvi: modindex.py $(LIBFILES)
 	./modindex.py modules.idx
 	$(LATEX) lib
 
-lib.ps:	lib.dvi
-	$(DVIPS) lib >lib.ps
-
 # Extensions document
 ext.dvi: ext.tex
 	touch ext.ind
@@ -146,9 +151,6 @@ ext.dvi: ext.tex
 	$(MAKEINDEX) ext.idx
 	$(LATEX) ext
 
-ext.ps:	ext.dvi
-	$(DVIPS) ext >ext.ps
-
 # Python-C API document
 api.dvi: api.tex 
 	touch api.ind
@@ -156,9 +158,6 @@ api.dvi: api.tex
 	./fix_hack api.idx
 	$(MAKEINDEX) api.idx
 	$(LATEX) api
-
-api.ps:	api.dvi
-	$(DVIPS) api >api.ps
 
 
 # The remaining part of the Makefile is concerned with various
