@@ -26,7 +26,7 @@ for dir in sys.path:
 			s = 'import ' + head
 			print s
 			try:
-				exec(s + '\n')
+				exec s + '\n'
 			except KeyboardInterrupt:
 				del names[:]
 				print '\n[interrupt]'
