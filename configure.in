@@ -1043,14 +1043,16 @@ AC_MSG_RESULT($CFLAGSFORSHARED)
 # SHLIBS are libraries (except -lc and -lm) to link to the python shared
 # library (with --enable-shared).
 # For platforms on which shared libraries are not allowed to have unresolved
-# symbols, this must be set to $(LIBS) (expanded by make).
+# symbols, this must be set to $(LIBS) (expanded by make). We do this even
+# if it is not required, since it creates a dependency of the shared library
+# to LIBS. This, in turn, means that applications linking the shared libpython
+# don't need to link LIBS explicitly. The default should be only changed
+# on systems where this approach causes problems.
 AC_SUBST(SHLIBS)
 AC_MSG_CHECKING(SHLIBS)
 case "$ac_sys_system" in
-	atheos*)
-		SHLIBS='$(LIBS)';;
 	*)
-		SHLIBS='';;
+		SHLIBS='$(LIBS)';;
 esac
 AC_MSG_RESULT($SHLIBS)
 
