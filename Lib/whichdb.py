@@ -2,6 +2,7 @@
 
 import os
 import struct
+import sys
 
 try:
     import dbm
@@ -29,8 +30,10 @@ def whichdb(filename):
     try:
         f = open(filename + os.extsep + "pag", "rb")
         f.close()
-        f = open(filename + os.extsep + "dir", "rb")
-        f.close()
+        # dbm linked with gdbm on OS/2 doesn't have .dir file
+        if not (dbm.library == "GNU gdbm" and sys.platform == "os2emx"):
+            f = open(filename + os.extsep + "dir", "rb")
+            f.close()
         return "dbm"
     except IOError:
         # some dbm emulations based on Berkeley DB generate a .db file
