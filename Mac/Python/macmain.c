@@ -567,7 +567,16 @@ PyMac_OutputNotSeen()
 		PyMac_InitMenuBar();
 	console_output_state = STATE_LASTWRITE;
 }
-	
+
+/*
+** Override abort() - The default one is not what we want.
+*/
+void
+abort()
+{
+	console_output_state = STATE_LASTWRITE;
+	PyMac_Exit(1);
+}
 
 /*
 ** Terminate application
@@ -605,6 +614,7 @@ PyMac_Exit(status)
 		SIOUXSettings.standalone = 1;
 		SIOUXSettings.autocloseonquit = 0;
 		SIOUXSetTitle("\p\307terminated\310");
+		PyMac_RaiseConsoleWindow();
 		PyMac_RestoreMenuBar();
 #ifdef USE_MSL
 		/*
