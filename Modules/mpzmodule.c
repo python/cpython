@@ -969,12 +969,9 @@ MPZ_mpz(self, args)
 		mpz_clear(&mplongdigit);
 	}
 	else if (PyString_Check(objp)) {
-		char *cp;
-		int len;
+		char *cp = PyString_AS_STRING(objp);
+		int len = PyString_GET_SIZE(objp);
 		MP_INT mplongdigit;
-		
-		if (!PyArg_Parse(objp, "s#", &cp, &len))
-			return NULL;
 
 		if ((mpzp = newmpzobject()) == NULL)
 			return NULL;

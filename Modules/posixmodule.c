@@ -612,7 +612,7 @@ posix_listdir(self, args)
 	WIN32_FIND_DATA FileData;
 	char namebuf[MAX_PATH+5];
 
-	if (!PyArg_Parse(args, "s#", &name, &len))
+	if (!PyArg_Parse(args, "t#", &name, &len))
 		return NULL;
 	if (len >= MAX_PATH) {
 		PyErr_SetString(PyExc_ValueError, "path too long");
@@ -673,7 +673,7 @@ posix_listdir(self, args)
 	char namebuf[MAX_PATH+5];
 	struct _find_t ep;
 
-	if (!PyArg_Parse(args, "s#", &name, &len))
+	if (!PyArg_Parse(args, "t#", &name, &len))
 		return NULL;
 	if (len >= MAX_PATH) {
 		PyErr_SetString(PyExc_ValueError, "path too long");
@@ -738,7 +738,7 @@ posix_listdir(self, args)
     FILEFINDBUF3   ep;
     APIRET rc;
 
-	if (!PyArg_Parse(args, "s#", &name, &len))
+	if (!PyArg_Parse(args, "t#", &name, &len))
         return NULL;
     if (len >= MAX_PATH) {
 		PyErr_SetString(PyExc_ValueError, "path too long");
