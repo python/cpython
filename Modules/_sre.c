@@ -32,6 +32,7 @@
  * 2001-05-14 fl  fixes for 1.5.2
  * 2001-07-01 fl  added BIGCHARSET support (from Martin von Loewis)
  * 2001-09-18 fl  added _getliteral helper
+ * 2001-10-18 fl  fixed group reset issue (from Matthew Mueller)
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
@@ -47,7 +48,7 @@
 #ifndef SRE_RECURSIVE
 
 static char copyright[] =
-    " SRE 2.1.1 Copyright (c) 1997-2001 by Secret Labs AB ";
+    " SRE 2.2.0 Copyright (c) 1997-2001 by Secret Labs AB ";
 
 #include "Python.h"
 #include "structmember.h" /* offsetof */
@@ -1061,6 +1062,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 if (i)
                     return i;
                 i = mark_restore(state, 0, lastmark);
+                state->lastmark = lastmark;
                 if (i < 0)
                     return i;
                 rp->count = count - 1;

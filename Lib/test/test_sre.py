@@ -204,6 +204,12 @@ test(r"""pat.match('a').group(1, 2, 3)""", ('a', None, None))
 test(r"""pat.match('b').group('a1', 'b2', 'c3')""", (None, 'b', None))
 test(r"""pat.match('ac').group(1, 'b2', 3)""", ('a', None, 'c'))
 
+# bug 448951 (similar to 429357, but with single char match)
+# (Also test greedy matches.)
+for op in '','?','*':
+    test(r"""sre.match(r'((.%s):)?z', 'z').groups()"""%op, (None, None))
+    test(r"""sre.match(r'((.%s):)?z', 'a:z').groups()"""%op, ('a:', 'a'))
+
 if verbose:
     print "Running tests on sre.escape"
 
