@@ -325,7 +325,7 @@ generic_setattr(g, name, v)
 
 	if (v == NULL) {
 		err_setstr(TypeError, "can't delete forms object attributes");
-		return NULL;
+		return -1;
 	}
 
 	/* "label" is an exception: setmember doesn't set strings;
@@ -333,7 +333,7 @@ generic_setattr(g, name, v)
 	if (strcmp(name, "label") == 0) {
 		if (!is_stringobject(v)) {
 			err_setstr(TypeError, "label attr must be string");
-			return NULL;
+			return -1;
 		}
 		fl_set_object_label(g->ob_generic, getstringvalue(v));
 		return 0;
