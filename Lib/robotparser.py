@@ -20,6 +20,11 @@ def _debug(msg):
 
 
 class RobotFileParser:
+    """ This class provides a set of methods to read, parse and answer
+    questions about a single robots.txt file.
+
+    """
+
     def __init__(self, url=''):
         self.entries = []
         self.default_entry = None
@@ -29,17 +34,29 @@ class RobotFileParser:
         self.last_checked = 0
 
     def mtime(self):
+        """Returns the time the robots.txt file was last fetched.
+
+        This is useful for long-running web spiders that need to
+        check for new robots.txt files periodically.
+
+        """
         return self.last_checked
 
     def modified(self):
+        """Sets the time the robots.txt file was last fetched to the
+        current time.
+
+        """
         import time
         self.last_checked = time.time()
 
     def set_url(self, url):
+        """Sets the URL referring to a robots.txt file."""
         self.url = url
         self.host, self.path = urlparse.urlparse(url)[1:3]
 
     def read(self):
+        """Reads the robots.txt URL and feeds it to the parser."""
         opener = URLopener()
         f = opener.open(self.url)
         lines = []
