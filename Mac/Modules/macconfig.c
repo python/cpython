@@ -80,6 +80,7 @@ extern void initerrno();
 extern void initpcre();
 extern void initunicodedata();
 extern void init_codecs();
+extern void initNav();
 #ifdef USE_MACCTB
 extern void initctb();
 #endif
@@ -120,7 +121,6 @@ extern void initMenu();
 extern void initQd();
 extern void initRes();
 extern void initWin();
-extern void initNav();
 #endif
 #ifdef USE_QT
 extern void initCm();
@@ -207,6 +207,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"unicodedata", initunicodedata},
 	{"_codecs", init_codecs},
 	{"sha", initsha},
+	{"Nav", initNav},
 #ifdef USE_MACCTB
 	{"ctb", initctb},
 #endif
@@ -228,7 +229,6 @@ struct _inittab _PyImport_Inittab[] = {
 	{"Drag", initDrag},
 	{"Evt", initEvt},
 	{"Menu", initMenu},
-	{"Nav", initNav},
 	{"Qd", initQd},
 	{"Win", initWin},
 	{"Res", initRes},
