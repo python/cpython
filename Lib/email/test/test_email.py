@@ -1420,6 +1420,21 @@ counter to RFC 2822, there's no separating newline here
         unless(isinstance(msg.defects[1],
                           Errors.MultipartInvariantViolationDefect))
 
+    def test_missing_start_boundary(self):
+        outer = self._msgobj('msg_42.txt')
+        # The message structure is:
+        #
+        # multipart/mixed
+        #    text/plain
+        #    message/rfc822
+        #        multipart/mixed [*]
+        #
+        # [*] This message is missing its start boundary
+        bad = outer.get_payload(1).get_payload(0)
+        self.assertEqual(len(bad.defects), 1)
+        self.failUnless(isinstance(bad.defects[0],
+                                   Errors.StartBoundaryNotFoundDefect))
+
 
 
 # Test RFC 2047 header encoding and decoding
