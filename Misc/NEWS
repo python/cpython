@@ -83,6 +83,10 @@ Tests
 
 Windows
 
+- Installer:  If you install IDLE, and don't disable file-extension
+  registration, a new "Edit with IDLE" context (right-click) menu entry
+  is created for .py and .pyw files.
+
 - The signal module now supports SIGBREAK on Windows, thanks to Steven
   Scott.  Note that SIGBREAK is unique to Windows.  The default SIGBREAK
   action remains to call Win32 ExitProcess().  This can be changed via
