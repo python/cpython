@@ -23,19 +23,20 @@ from errors import DistutilsPlatformError
 PREFIX = os.path.normpath(sys.prefix)
 EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 
-# Boolean; if it's true, we're still building Python, so
-# we use different (hard-wired) directories.
+# python_build: (Boolean) if true, we're either building Python or
+# building an extension with an un-installed Python, so we use
+# different (hard-wired) directories.
 
-python_build = 0
-
-def set_python_build():
-    """Set the python_build flag to true.
-
-    This means that we're building Python itself.  Only called from
-    the setup.py script shipped with Python.
-    """
-    global python_build
+argv0_path = os.path.dirname(os.path.abspath(sys.executable))
+landmark = os.path.join(argv0_path, "Modules", "Setup")
+if not os.path.isfile(landmark):
+    python_build = 0
+elif os.path.isfile(os.path.join(argv0_path, "Lib", "os.py")):
     python_build = 1
+else:
+    python_build = os.path.isfile(os.path.join(os.path.dirname(argv0_path),
+                                               "Lib", "os.py"))
+del argv0_path, landmark
 
 
 def get_python_inc(plat_specific=0, prefix=None):
@@ -53,7 +54,14 @@ def get_python_inc(plat_specific=0, prefix=None):
         prefix = plat_specific and EXEC_PREFIX or PREFIX
     if os.name == "posix":
         if python_build:
-            return "Include/"
+            base = os.path.dirname(os.path.abspath(sys.executable))
+            if plat_specific:
+                inc_dir = base
+            else:
+                inc_dir = os.path.join(base, "Include")
+                if not os.path.exists(inc_dir):
+                    inc_dir = os.path.join(os.path.dirname(base), "Include")
+            return inc_dir
         return os.path.join(prefix, "include", "python" + sys.version[:3])
     elif os.name == "nt":
         return os.path.join(prefix, "include")
@@ -163,7 +171,7 @@ def get_config_h_filename():
 def get_makefile_filename():
     """Return full pathname of installed Makefile from the Python build."""
     if python_build:
-        return './Makefile'
+        return os.path.join(os.path.dirname(sys.executable), "Makefile")
     lib_dir = get_python_lib(plat_specific=1, standard_lib=1)
     return os.path.join(lib_dir, "config", "Makefile")
 
