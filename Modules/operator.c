@@ -110,6 +110,11 @@ used for special class methods; variants without leading and trailing\n\
   if(-1 == (r=AOP(a1,a2))) return NULL; \
   return PyInt_FromLong(r); }
 
+#define spamrc(OP,A) static PyObject *OP(PyObject *s, PyObject *a) { \
+  PyObject *a1, *a2; \
+  if(! PyArg_ParseTuple(a,"OO:" #OP,&a1,&a2)) return NULL; \
+  return PyObject_RichCompare(a1,a2,A); }
+
 spami(isCallable       , PyCallable_Check)
 spami(isNumberType     , PyNumber_Check)
 spami(truth            , PyObject_IsTrue)
@@ -117,6 +122,8 @@ spam2(op_add           , PyNumber_Add)
 spam2(op_sub           , PyNumber_Subtract)
 spam2(op_mul           , PyNumber_Multiply)
 spam2(op_div           , PyNumber_Divide)
+spam2(op_floordiv      , PyNumber_FloorDivide)
+spam2(op_truediv       , PyNumber_TrueDivide)
 spam2(op_mod           , PyNumber_Remainder)
 spam1(op_neg           , PyNumber_Negative)
 spam1(op_pos           , PyNumber_Positive)
@@ -140,6 +147,12 @@ spami(isMappingType    , PyMapping_Check)
 spam2(op_getitem       , PyObject_GetItem)
 spam2n(op_delitem       , PyObject_DelItem)
 spam3n(op_setitem      , PyObject_SetItem)
+spamrc(op_lt           , Py_LT)
+spamrc(op_le           , Py_LE)
+spamrc(op_eq           , Py_EQ)
+spamrc(op_ne           , Py_NE)
+spamrc(op_gt           , Py_GT)
+spamrc(op_ge           , Py_GE)
 
 static PyObject*
 op_getslice(PyObject *s, PyObject *a)
@@ -214,7 +227,9 @@ spam1(isMappingType,
 spam2(add,__add__, "add(a, b) -- Same as a + b.")
 spam2(sub,__sub__, "sub(a, b) -- Same as a - b.")
 spam2(mul,__mul__, "mul(a, b) -- Same as a * b.")
-spam2(div,__div__, "div(a, b) -- Same as a / b.")
+spam2(div,__div__, "div(a, b) -- Same as a / b when __future__.division is not in effect.")
+spam2(floordiv,__floordiv__, "floordiv(a, b) -- Same as a // b.")
+spam2(truediv,__truediv__, "truediv(a, b) -- Same as a / b when __future__.division is in effect.")
 spam2(mod,__mod__, "mod(a, b) -- Same as a % b.")
 spam2(neg,__neg__, "neg(a) -- Same as -a.")
 spam2(pos,__pos__, "pos(a) -- Same as +a.")
@@ -243,6 +258,12 @@ spam2(setslice,__setslice__,
 "setslice(a, b, c, d) -- Same as a[b:c] = d.")
 spam2(delslice,__delslice__,
 "delslice(a, b, c) -- Same as del a[b:c].")
+spam2(lt,__lt__, "lt(a, b) -- Same as a<b.")
+spam2(le,__le__, "le(a, b) -- Same as a<=b.")
+spam2(eq,__eq__, "eq(a, b) -- Same as a==b.")
+spam2(ne,__ne__, "ne(a, b) -- Same as a!=b.")
+spam2(gt,__gt__, "gt(a, b) -- Same as a>b.")
+spam2(ge,__ge__, "ge(a, b) -- Same as a>=b.")
 
 	{NULL,		NULL}		/* sentinel */
 
