@@ -85,6 +85,7 @@ class EditorWindow:
     from IOBinding import IOBinding
     import Bindings
     from Tkinter import Toplevel
+    from MultiStatusBar import MultiStatusBar
 
     about_title = about_title
     about_text = about_text
@@ -101,7 +102,8 @@ class EditorWindow:
         self.menubar = Menu(root)
         self.top = top = self.Toplevel(root, menu=self.menubar)
         self.vbar = vbar = Scrollbar(top, name='vbar')
-        self.text = text = Text(top, name='text', padx=5,
+        self.text_frame = text_frame = Frame(top)
+        self.text = text = Text(text_frame, name='text', padx=5,
                                 foreground=cprefs.CNormal[0],
                                 background=cprefs.CNormal[1],
                                 highlightcolor=cprefs.CHilite[0],
@@ -139,7 +141,8 @@ class EditorWindow:
         if sys.platform[:3] == 'win':
             text['font'] = ("lucida console", 8)
 #            text['font'] = ("courier new", 10)
-        text.pack(side=LEFT, fill=BOTH, expand=1)
+        text_frame.pack(side=LEFT, fill=BOTH, expand=1)
+        text.pack(side=TOP, fill=BOTH, expand=1)
         text.focus_set()
 
         self.per = per = self.Percolator(text)
@@ -186,6 +189,21 @@ class EditorWindow:
         if self.extensions.has_key('AutoIndent'):
             self.extensions['AutoIndent'].set_indentation_params(
                 self.ispythonsource(filename))
+        self.set_status_bar()
+
+    def set_status_bar(self):
+        self.status_bar = self.MultiStatusBar(self.text_frame)
+        self.status_bar.set_label('column', 'Col: ?', side=RIGHT)
+        self.status_bar.set_label('line', 'Ln: ?', side=RIGHT)
+        self.status_bar.pack(side=BOTTOM, fill=X)
+        self.text.bind('<KeyRelease>', self.set_line_and_column)
+        self.text.bind('<ButtonRelease>', self.set_line_and_column)
+        self.text.after_idle(self.set_line_and_column)
+
+    def set_line_and_column(self, event=None):
+        line, column = string.split(self.text.index(INSERT), '.')
+        self.status_bar.set_label('column', 'Col: %s' % column)
+        self.status_bar.set_label('line', 'Ln: %s' % line)
 
     def wakeup(self):
         if self.top.wm_state() == "iconic":
