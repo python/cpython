@@ -82,6 +82,8 @@ class VT100:
 		self.fill_top()
 
 	def send(self, buffer):
+		self.msg('send: unfinished=%s, buffer=%s',
+			  `self.unfinished`, `buffer`)
 		self.unfinished = self.unfinished + buffer
 		i = 0
 		n = len(self.unfinished)
@@ -110,7 +112,7 @@ class VT100:
 					break
 				argstr = argstr + c
 			else:
-				i = i - len(argstr)
+				i = i - len(argstr) - 2
 				break
 ##			self.msg('found ESC [ %s %s' % (`argstr`, `c`))
 			args = string.splitfields(argstr, ';')
