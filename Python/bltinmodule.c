@@ -1524,13 +1524,14 @@ builtin_ord(PyObject *self, PyObject *args)
 		}
 	} else {
 		PyErr_Format(PyExc_TypeError,
-			     "ord() expected string or Unicode character, " \
+			     "ord() expected string of length 1, but " \
 			     "%.200s found", obj->ob_type->tp_name);
 		return NULL;
 	}
 
 	PyErr_Format(PyExc_TypeError, 
-		     "ord() expected a character, length-%d string found",
+		     "ord() expected a character, "
+		     "but string of length %d found",
 		     size);
 	return NULL;
 }
