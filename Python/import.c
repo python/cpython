@@ -487,7 +487,7 @@ load_module(name)
 		break;
 
 	case C_EXTENSION:
-		m = load_dynamic_module(name, buf);
+		m = load_dynamic_module(name, buf, fp);
 		break;
 
 #ifdef macintosh
@@ -868,7 +868,7 @@ imp_load_dynamic(self, args)
 	object *dummy;
 	if (!newgetargs(args, "ss|O", &name, &pathname, &dummy))
 		return NULL;
-	return load_dynamic_module(name, pathname);
+	return load_dynamic_module(name, pathname, NULL);
 }
 
 static object *

@@ -127,6 +127,8 @@ static void aix_loaderror(char *name);
 #ifdef DYNAMIC_LINK
 
 #ifdef USE_SHLIB
+#include <sys/types.h>
+#include <sys/stat.h>
 #ifdef __NetBSD__
 #include <nlist.h>
 #include <link.h>
@@ -204,9 +206,10 @@ struct filedescr import_filetab[] = {
 };
 
 object *
-load_dynamic_module(name, pathname)
+load_dynamic_module(name, pathname, fp)
 	char *name;
 	char *pathname;
+	FILE *fp;
 {
 #ifndef DYNAMIC_LINK
 	err_setstr(ImportError, "dynamically linked modules not supported");
@@ -215,7 +218,34 @@ load_dynamic_module(name, pathname)
 	object *m;
 	char funcname[258];
 	dl_funcptr p = NULL;
+#ifdef USE_SHLIB
+	static struct {
+		dev_t dev;
+		ino_t ino;
+		void *handle;
+	} handles[128];
+	static int nhandles = 0;
+#endif
 	sprintf(funcname, FUNCNAME_PATTERN, name);
+#ifdef USE_SHLIB
+	if (fp != NULL) {
+		int i;
+		struct stat statb;
+		fstat(fileno(fp), &statb);
+		for (i = 0; i < nhandles; i++) {
+			if (statb.st_dev == handles[i].dev &&
+			    statb.st_ino == handles[i].ino) {
+				p = (dl_funcptr) dlsym(handles[i].handle,
+						       funcname);
+				goto got_it;
+			}
+		}
+		if (nhandles < 128) {
+			handles[nhandles].dev = statb.st_dev;
+			handles[nhandles].ino = statb.st_ino;
+		}
+	}
+#endif /* USE_SHLIB */
 #ifdef USE_MAC_SHARED_LIBRARY
 	/* Dynamic loading of CFM shared libraries on the Mac */
 	{
@@ -255,6 +285,8 @@ load_dynamic_module(name, pathname)
 			err_setstr(ImportError, dlerror());
 			return NULL;
 		}
+		if (fp != NULL && nhandles < 128)
+			handles[nhandles++].handle = handle;
 		p = (dl_funcptr) dlsym(handle, funcname);
 	}
 #endif /* USE_SHLIB */
@@ -345,6 +377,7 @@ load_dynamic_module(name, pathname)
                         perror(funcname);
 	}
 #endif /* hpux */
+  got_it:
 	if (p == NULL) {
 		err_setstr(ImportError,
 		   "dynamic module does not define init function");
@@ -385,7 +418,7 @@ void aix_loaderror(char *pathname)
 		int errno;
 		char *errstr;
 	} load_errtab[] = {
-		{L_ERROR_TOOMANY,	"to many errors, rest skipped."},
+		{L_ERROR_TOOMANY,	"too many errors, rest skipped."},
 		{L_ERROR_NOLIB,		"can't load library:"},
 		{L_ERROR_UNDEF,		"can't find symbol in library:"},
 		{L_ERROR_RLDBAD,
