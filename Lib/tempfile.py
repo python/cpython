@@ -27,7 +27,8 @@ def gettempdir():
     elif os.name == 'mac':
     	import macfs, MACFS
     	try:
-    	     refnum, dirid = macfs.FindFolder(MACFS.kOnSystemDisk, MACFS.kTemporaryFolderType, 0)
+    	     refnum, dirid = macfs.FindFolder(MACFS.kOnSystemDisk,
+					      MACFS.kTemporaryFolderType, 0)
     	     dirname = macfs.FSSpec((refnum, dirid, '')).as_pathname()
     	     attempdirs.insert(0, dirname)
 	except macfs.error:
@@ -76,13 +77,13 @@ counter = 0
 
 # User-callable function to return a unique temporary file name
 
-def mktemp():
+def mktemp(suffix=""):
 	global counter
 	dir = gettempdir()
 	pre = gettempprefix()
 	while 1:
 		counter = counter + 1
-		file = os.path.join(dir, pre + `counter`)
+		file = os.path.join(dir, pre + `counter` + suffix)
 		if not os.path.exists(file):
 			return file
 
@@ -95,8 +96,8 @@ class TemporaryFileWrapper:
     no longer needed.
     """
     def __init__(self, file, path):
-	self.file=file
-	self.path=path
+	self.file = file
+	self.path = path
 
     def close(self):
 	self.file.close()
@@ -107,15 +108,15 @@ class TemporaryFileWrapper:
 	except: pass
 
     def __getattr__(self, name):
-	file=self.__dict__['file']
-	a=getattr(file, name)
+	file = self.__dict__['file']
+	a = getattr(file, name)
 	setattr(self, name, a)
 	return a
 
 
-def TemporaryFile(mode='w+b', bufsize=-1):
-    name=mktemp()
-    file=open(name,mode,bufsize)
+def TemporaryFile(mode='w+b', bufsize=-1, suffix=""):
+    name = mktemp(suffix)
+    file = open(name, mode, bufsize)
     try:
 	os.unlink(name)
     except os.error:
