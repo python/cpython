@@ -60,27 +60,39 @@ winsound
 
 The following subprojects will generally NOT build out of the box.  They
 wrap code Python doesn't control, and you'll need to download the base
-packages first (study the subproject structure from within MSVC to see
-where each expects to find the unpacked packages):
+packages first and unpack them into siblings of PCbuilds's parent
+directory; for example, if your PCbuild is  .......\dist\src\PCbuild\,
+unpack into new subdirectories of dist\.
 
 _tkinter
-    Python wrapper for the Tk windowing system.  Requires tcl831.exe from
+    Python wrapper for the Tk windowing system.  Requires tcl832.exe from
         http://dev.scriptics.com/software/tcltk/downloadnow83.html
+    Run the installer, forcing installation into dist\Tcl.
+    Be sure to install everything, including the Tcl/Tk header files.
 
 zlib
     Python wrapper for the zlib compression library.  Requires
         http://www.winimage.com/zLibDll/zlib133dll.zip
     and
         ftp://ftp.uu.net/graphics/png/src/zlib133.zip
+    Unpack the former into dist\zlib113dll.
+    Uppack the latter into dist\zlib113.
 
 bsddb
     Python wrapper for the BSD database 1.85.  Requires db.1.85.win32.zip,
     from the "bsd db" link at
         http://www.nightmare.com/software.html
+    Unpack into dist\bsddb.
+    You then need to compile it:  cd to dist\bsddb\Port\win32, and run
+        nmake -f makefile_nt.msc
+    This builds bsddb\Port\win32\db.lib, which the MSVC project links in.
+    Note that if you're running Win9X, you'll need to run vcvars32.bat
+    before running nmake (this batch file is in your MSVC installation).
 
 pyexpat
     Python wrapper for accelerated XML parsing.  Requires
         ftp://ftp.jclark.com/pub/xml/expat.zip
+    Unpack into dist\expat.
 
 
 NOTE ON CONFIGURATIONS
