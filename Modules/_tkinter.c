@@ -1480,7 +1480,7 @@ void
 init_tkinter()
 {
 #ifndef WIN32
-	extern int (*Py_input_hook) ();
+	extern int (*PyOS_InputHook) ();
 #endif
 	PyObject *m, *d;
 
@@ -1506,8 +1506,8 @@ init_tkinter()
 	ins_string(d, "TCL_VERSION", TCL_VERSION);
 
 #ifndef WIN32
-	if (Py_input_hook == NULL)
-		Py_input_hook = EventHook;
+	if (PyOS_InputHook == NULL)
+		PyOS_InputHook = EventHook;
 #endif
 
 	if (PyErr_Occurred())

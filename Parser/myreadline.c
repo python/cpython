@@ -51,7 +51,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "mymalloc.h"
 #include "intrcheck.h"
 
-int (*Py_input_hook)() = NULL;
+int (*PyOS_InputHook)() = NULL;
 
 /* This function restarts a fgets() after an EINTR error occurred
    except if PyOS_InterruptOccurred() returns true. */
@@ -64,8 +64,8 @@ my_fgets(buf, len, fp)
 {
 	char *p;
 	for (;;) {
-		if (Py_input_hook != NULL)
-			(void)(Py_input_hook)();
+		if (PyOS_InputHook != NULL)
+			(void)(PyOS_InputHook)();
 		errno = 0;
 		p = fgets(buf, len, fp);
 		if (p != NULL)
