@@ -358,7 +358,6 @@ function_call(PyObject *func, PyObject *arg, PyObject *kw)
 		k = PyMem_NEW(PyObject *, 2*nk);
 		if (k == NULL) {
 			PyErr_NoMemory();
-			Py_DECREF(arg);
 			return NULL;
 		}
 		pos = i = 0;
