@@ -38,7 +38,7 @@ import random
 # Tests are built around these assumed context defaults
 DefaultContext.prec=9
 DefaultContext.rounding=ROUND_HALF_EVEN
-DefaultContext.trap_enablers=dict.fromkeys(Signals, 0)
+DefaultContext.traps=dict.fromkeys(Signals, 0)
 setcontext(DefaultContext)
 
 
@@ -105,8 +105,8 @@ class DecimalTest(unittest.TestCase):
     def setUp(self):
         global dir
         self.context = Context()
-        for key in DefaultContext.trap_enablers.keys():
-            DefaultContext.trap_enablers[key] = 1
+        for key in DefaultContext.traps.keys():
+            DefaultContext.traps[key] = 1
         self.ignore_list = ['#']
         # Basically, a # means return NaN InvalidOperation.
         # Different from a sNaN in trim
@@ -120,8 +120,8 @@ class DecimalTest(unittest.TestCase):
     def tearDown(self):
         """Cleaning up enviroment."""
         # leaving context in original state
-        for key in DefaultContext.trap_enablers.keys():
-            DefaultContext.trap_enablers[key] = 0
+        for key in DefaultContext.traps.keys():
+            DefaultContext.traps[key] = 0
         return
 
     def eval_file(self, file):
@@ -205,9 +205,9 @@ class DecimalTest(unittest.TestCase):
         theirexceptions = [ErrorNames[x.lower()] for x in exceptions]
 
         for exception in Signals:
-            self.context.trap_enablers[exception] = 1 #Catch these bugs...
+            self.context.traps[exception] = 1 #Catch these bugs...
         for exception in theirexceptions:
-            self.context.trap_enablers[exception] = 0
+            self.context.traps[exception] = 0
         for i, val in enumerate(valstemp):
             if val.count("'") % 2 == 1:
                 quote = 1 - quote
@@ -221,7 +221,7 @@ class DecimalTest(unittest.TestCase):
             if fname in ('to_sci_string', 'to_eng_string'):
                 if EXTENDEDERRORTEST:
                     for error in theirexceptions:
-                        self.context.trap_enablers[error] = 1
+                        self.context.traps[error] = 1
                         try:
                             funct(self.context.create_decimal(v))
                         except error:
@@ -231,7 +231,7 @@ class DecimalTest(unittest.TestCase):
                                       (e, s, error))
                         else:
                             self.fail("Did not raise %s in %s" % (error, s))
-                        self.context.trap_enablers[error] = 0
+                        self.context.traps[error] = 0
                 v = self.context.create_decimal(v)
             else:
                 v = Decimal(v)
@@ -241,7 +241,7 @@ class DecimalTest(unittest.TestCase):
 
         if EXTENDEDERRORTEST and fname not in ('to_sci_string', 'to_eng_string'):
             for error in theirexceptions:
-                self.context.trap_enablers[error] = 1
+                self.context.traps[error] = 1
                 try:
                     funct(*vals)
                 except error:
@@ -251,7 +251,7 @@ class DecimalTest(unittest.TestCase):
                               (e, s, error))
                 else:
                     self.fail("Did not raise %s in %s" % (error, s))
-                self.context.trap_enablers[error] = 0
+                self.context.traps[error] = 0
         try:
             result = str(funct(*vals))
             if fname == 'same_quantum':
@@ -263,7 +263,7 @@ class DecimalTest(unittest.TestCase):
             raise
 
         myexceptions = self.getexceptions()
-        self.resetflags()
+        self.context.clear_flags()
 
         myexceptions.sort()
         theirexceptions.sort()
@@ -281,10 +281,6 @@ class DecimalTest(unittest.TestCase):
             if self.context.flags[exception]:
                 L.append(exception)
         return L
-
-    def resetflags(self):
-        for exception in Signals:
-            self.context.flags[exception] = 0
 
     def change_precision(self, prec):
         self.context.prec = prec

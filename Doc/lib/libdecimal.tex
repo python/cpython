@@ -112,7 +112,7 @@ precision, rounding, or trap enablers:
 >>> from decimal import *
 >>> getcontext()
 Context(prec=28, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
-        setflags=[], settraps=[])
+        capitals=1, flags=[], traps=[])
 
 >>> getcontext().prec = 7
 \end{verbatim}
@@ -204,10 +204,10 @@ because many of the traps are enabled:
 >>> myothercontext = Context(prec=60, rounding=ROUND_HALF_DOWN)
 >>> myothercontext
 Context(prec=60, rounding=ROUND_HALF_DOWN, Emin=-999999999, Emax=999999999,
-        setflags=[], settraps=[])
+        capitals=1, flags=[], traps=[])
 >>> ExtendedContext
 Context(prec=9, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
-        setflags=[], settraps=[])
+        capitals=1, flags=[], traps=[])
 >>> setcontext(myothercontext)
 >>> Decimal(1) / Decimal(7)
 Decimal("0.142857142857142857142857142857142857142857142857142857142857")
@@ -236,21 +236,21 @@ clear the flags before each set of monitored computations by using the
 Decimal("3.14159292")
 >>> getcontext()
 Context(prec=9, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
-        setflags=['Inexact', 'Rounded'], settraps=[])
+        capitals=1, flags=[Inexact, Rounded], traps=[])
 \end{verbatim}
 
-The \var{setflags} entry shows that the rational approximation to
+The \var{flags} entry shows that the rational approximation to
 \constant{Pi} was rounded (digits beyond the context precision were thrown
 away) and that the result is inexact (some of the discarded digits were
 non-zero).
 
-Individual traps are set using the dictionary in the \member{trap_enablers}
+Individual traps are set using the dictionary in the \member{traps}
 field of a context:
 
 \begin{verbatim}
 >>> Decimal(1) / Decimal(0)
 Decimal("Infinity")
->>> getcontext().trap_enablers[DivisionByZero] = 1
+>>> getcontext().traps[DivisionByZero] = 1
 >>> Decimal(1) / Decimal(0)
 
 Traceback (most recent call last):
@@ -264,14 +264,14 @@ To turn all the traps on or off all at once, use a loop.  Also, the
 
 \begin{verbatim}
 >>> getcontext.clear_flags()
->>> for sig in getcontext().trap_enablers:
-...     getcontext().trap_enablers[sig] = 1
+>>> for sig in getcontext().traps:
+...     getcontext().traps[sig] = 1
 
->>> getcontext().trap_enablers.update({Rounded:0, Inexact:0, Subnormal:0})
+>>> getcontext().traps.update({Rounded:0, Inexact:0, Subnormal:0})
 >>> getcontext()
 Context(prec=9, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
-        setflags=[], settraps=['Clamped', 'Underflow', 'InvalidOperation',
-        'DivisionByZero', 'Overflow'])
+        capitals=1, flags=[], traps=[Clamped, Underflow,
+        InvalidOperation, DivisionByZero, Overflow])
 \end{verbatim}
 
 Applications typically set the context once at the beginning of a program
@@ -489,7 +489,7 @@ In addition, the module provides three pre-made contexts:
 In addition to the three supplied contexts, new contexts can be created
 with the \class{Context} constructor.
 
-\begin{classdesc}{Context}{prec=None, rounding=None, trap_enablers=None,
+\begin{classdesc}{Context}{prec=None, rounding=None, traps=None,
         flags=None, Emin=None, Emax=None, capitals=1}
   Creates a new context.  If a field is not specified or is \constant{None},
   the default values are copied from the \constant{DefaultContext}.  If the
@@ -508,7 +508,7 @@ with the \class{Context} constructor.
       \constant{ROUND_HALF_UP} (away from zero), or
       \constant{ROUND_UP} (away from zero).
 
-  The \var{trap_enablers} and \var{flags} fields are mappings from signals
+  The \var{traps} and \var{flags} fields are mappings from signals
   to either \constant{0} or \constant{1}.
 
   The \var{Emin} and \var{Emax} fields are integers specifying the outer
@@ -839,7 +839,7 @@ be a race condition with threads calling \function{getcontext()}. For example:
 # Set applicationwide defaults for all threads about to be launched
 DefaultContext.prec=12
 DefaultContext.rounding=ROUND_DOWN
-DefaultContext.trap_enablers=dict.fromkeys(Signals, 0)
+DefaultContext.traps=dict.fromkeys(Signals, 0)
 setcontext(DefaultContext)
 
 # Now start all of the threads
