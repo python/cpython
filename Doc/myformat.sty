@@ -26,6 +26,9 @@
 \RequirePackage{times}\typeout{Using times fonts instead of Computer Modern.}
 
 
+% for PDF output, use maximal compression:
+\@ifundefined{pdfannotlink}{}{\pdfcompresslevel=9}
+
 % Increase printable page size (copied from fullpage.sty)
 \topmargin 0pt
 \advance \topmargin by -\headheight
