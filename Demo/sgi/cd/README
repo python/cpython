@@ -12,9 +12,9 @@ playcd.py	Read audio data from the CD and play it over the
 		Indigo's built-in speker or audio jack.  Needs module al.
 
 sendcd.py	Read audio data from the CD and send it as UDP packets
-		over the network (to readcd.py).
+		over the network (to recvcd.py).
 
-readcd.py	Receive UDP packets containing CD audio data (from
+recvcd.py	Receive UDP packets containing CD audio data (from
 		sendcd.py) and play them over the Indigo's built-in
 		speaker or audio jack.  Needs module al.  (Doesn't
 		actually use module cd.)
