@@ -14,6 +14,7 @@
 #include <Controls.h>
 
 extern PyObject *ResObj_New(Handle);
+extern PyObject *ResObj_OptNew(Handle);
 extern int ResObj_Convert(PyObject *, Handle *);
 
 extern PyObject *WinObj_New(WindowPtr);
@@ -1051,19 +1052,20 @@ static PyObject *AE_AEGetEventHandler(_self, _args)
 	OSErr _err;
 	AEEventClass theAEEventClass;
 	AEEventID theAEEventID;
-	long procptr, handlerptr;
-	
+	AEEventHandlerUPP handler__proc__ = upp_GenericEventHandler;
+	PyObject *handler;
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetOSType, &theAEEventClass,
 	                      PyMac_GetOSType, &theAEEventID))
 		return NULL;
 	_err = AEGetEventHandler(theAEEventClass,
 	                         theAEEventID,
-	                         (AEEventHandlerUPP *)&procptr, &handlerptr,
+	                         &handler__proc__, (long *)&handler,
 	                         0);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("ll",
-	                     (long)procptr, (long)handlerptr);
+	_res = Py_BuildValue("O",
+	                     handler);
+	Py_INCREF(handler); /* XXX leak, but needed */
 	return _res;
 }
 
