@@ -203,12 +203,11 @@ t_bootstrap(boot_raw)
 	void *boot_raw;
 {
 	struct bootstate *boot = (struct bootstate *) boot_raw;
-	PyThreadState *alttstate, *tstate;
+	PyThreadState *tstate;
 	PyObject *res;
 
 	tstate = PyThreadState_New(boot->interp);
-	PyEval_RestoreThread((void *)NULL);
-	alttstate = PyThreadState_Swap(tstate);
+	PyEval_AcquireThread(tstate);
 	res = PyEval_CallObjectWithKeywords(
 		boot->func, boot->args, boot->keyw);
 	Py_DECREF(boot->func);
@@ -225,8 +224,7 @@ t_bootstrap(boot_raw)
 	}
 	else
 		Py_DECREF(res);
-	(void) PyThreadState_Swap(alttstate);
-	(void) PyEval_SaveThread();
+	PyEval_ReleaseThread(tstate);
 	PyThreadState_Delete(tstate);
 	exit_thread();
 }
