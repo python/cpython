@@ -37,7 +37,9 @@ instances.
                            ffactor\optional{, nelem\optional{,
                            cachesize\optional{, hash\optional{,
                            lorder}}}}}}}}}
-Open the hash format file named \var{filename}.  The optional
+Open the hash format file named \var{filename}.  Files never intended
+to be preserved on disk may be created by passing \code{None} as the 
+\var{filename}.  The optional
 \var{flag} identifies the mode used to open the file.  It may be
 \character{r} (read only), \character{w} (read-write),
 \character{c} (read-write - create if necessary) or
@@ -51,7 +53,9 @@ for their use and interpretation.
 mode\optional{, btflags\optional{, cachesize\optional{, maxkeypage\optional{,
 minkeypage\optional{, psize\optional{, lorder}}}}}}}}}
 
-Open the btree format file named \var{filename}.  The optional
+Open the btree format file named \var{filename}.  Files never intended 
+to be preserved on disk may be created by passing \code{None} as the 
+\var{filename}.  The optional
 \var{flag} identifies the mode used to open the file.  It may be
 \character{r} (read only), \character{w} (read-write),
 \character{c} (read-write - create if necessary) or
@@ -65,7 +69,9 @@ interpretation.
 rnflags\optional{, cachesize\optional{, psize\optional{, lorder\optional{,
 reclen\optional{, bval\optional{, bfname}}}}}}}}}}
 
-Open a DB record format file named \var{filename}.  The optional
+Open a DB record format file named \var{filename}.  Files never intended 
+to be preserved on disk may be created by passing \code{None} as the 
+\var{filename}.  The optional
 \var{flag} identifies the mode used to open the file.  It may be
 \character{r} (read only), \character{w} (read-write),
 \character{c} (read-write - create if necessary) or
