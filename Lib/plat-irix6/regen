@@ -1,6 +1,7 @@
 #! /bin/sh
 case `uname -sr` in
-'IRIX '[45].*)	;;
+'IRIX '[456].*)	;;
+'IRIX64 '[456].*)	;;
 *)	echo Probably not on an IRIX system 1>&2
 	exit 1;;
 esac
