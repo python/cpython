@@ -106,6 +106,12 @@ Common commands: (see '--help-commands' for more)
          "print the list of classifiers"),
         ('keywords', None,
          "print the list of keywords"),
+        ('provides', None,
+         "print the list of packages/modules provided"),
+        ('requires', None,
+         "print the list of packages/modules required"),
+        ('obsoletes', None,
+         "print the list of packages/modules made obsolete")
         ]
     display_option_names = map(lambda x: translate_longopt(x[0]),
                                display_options)
@@ -210,7 +216,6 @@ Common commands: (see '--help-commands' for more)
         # distribution options.
 
         if attrs:
-
             # Pull out the set of command options and work on them
             # specifically.  Note that this order guarantees that aliased
             # command options will override any supplied redundantly
@@ -235,7 +240,9 @@ Common commands: (see '--help-commands' for more)
             # Now work on the rest of the attributes.  Any attribute that's
             # not already defined is invalid!
             for (key,val) in attrs.items():
-                if hasattr(self.metadata, key):
+                if hasattr(self.metadata, "set_" + key):
+                    getattr(self.metadata, "set_" + key)(val)
+                elif hasattr(self.metadata, key):
                     setattr(self.metadata, key, val)
                 elif hasattr(self, key):
                     setattr(self, key, val)
@@ -678,7 +685,8 @@ Common commands: (see '--help-commands' for more)
                 value = getattr(self.metadata, "get_"+opt)()
                 if opt in ['keywords', 'platforms']:
                     print string.join(value, ',')
-                elif opt == 'classifiers':
+                elif opt in ('classifiers', 'provides', 'requires',
+                             'obsoletes'):
                     print string.join(value, '\n')
                 else:
                     print value
@@ -1024,7 +1032,10 @@ class DistributionMetadata:
                          "license", "description", "long_description",
                          "keywords", "platforms", "fullname", "contact",
                          "contact_email", "license", "classifiers",
-                         "download_url")
+                         "download_url",
+                         # PEP 314
+                         "provides", "requires", "obsoletes",
+                         )
 
     def __init__ (self):
         self.name = None
@@ -1041,40 +1052,58 @@ class DistributionMetadata:
         self.platforms = None
         self.classifiers = None
         self.download_url = None
+        # PEP 314
+        self.provides = None
+        self.requires = None
+        self.obsoletes = None
 
     def write_pkg_info (self, base_dir):
         """Write the PKG-INFO file into the release tree.
         """
-
         pkg_info = open( os.path.join(base_dir, 'PKG-INFO'), 'w')
 
-        pkg_info.write('Metadata-Version: 1.0\n')
-        pkg_info.write('Name: %s\n' % self.get_name() )
-        pkg_info.write('Version: %s\n' % self.get_version() )
-        pkg_info.write('Summary: %s\n' % self.get_description() )
-        pkg_info.write('Home-page: %s\n' % self.get_url() )
-        pkg_info.write('Author: %s\n' % self.get_contact() )
-        pkg_info.write('Author-email: %s\n' % self.get_contact_email() )
-        pkg_info.write('License: %s\n' % self.get_license() )
-        if self.download_url:
-            pkg_info.write('Download-URL: %s\n' % self.download_url)
-
-        long_desc = rfc822_escape( self.get_long_description() )
-        pkg_info.write('Description: %s\n' % long_desc)
-
-        keywords = string.join( self.get_keywords(), ',')
-        if keywords:
-            pkg_info.write('Keywords: %s\n' % keywords )
-
-        for platform in self.get_platforms():
-            pkg_info.write('Platform: %s\n' % platform )
-
-        for classifier in self.get_classifiers():
-            pkg_info.write('Classifier: %s\n' % classifier )
+        self.write_pkg_file(pkg_info)
 
         pkg_info.close()
 
     # write_pkg_info ()
+
+    def write_pkg_file (self, file):
+        """Write the PKG-INFO format data to a file object.
+        """
+        version = '1.0'
+        if self.provides or self.requires or self.obsoletes:
+            version = '1.1'
+
+        file.write('Metadata-Version: %s\n' % version)
+        file.write('Name: %s\n' % self.get_name() )
+        file.write('Version: %s\n' % self.get_version() )
+        file.write('Summary: %s\n' % self.get_description() )
+        file.write('Home-page: %s\n' % self.get_url() )
+        file.write('Author: %s\n' % self.get_contact() )
+        file.write('Author-email: %s\n' % self.get_contact_email() )
+        file.write('License: %s\n' % self.get_license() )
+        if self.download_url:
+            file.write('Download-URL: %s\n' % self.download_url)
+
+        long_desc = rfc822_escape( self.get_long_description() )
+        file.write('Description: %s\n' % long_desc)
+
+        keywords = string.join( self.get_keywords(), ',')
+        if keywords:
+            file.write('Keywords: %s\n' % keywords )
+
+        self._write_list(file, 'Platform', self.get_platforms())
+        self._write_list(file, 'Classifier', self.get_classifiers())
+
+        # PEP 314
+        self._write_list(file, 'Requires', self.get_requires())
+        self._write_list(file, 'Provides', self.get_provides())
+        self._write_list(file, 'Obsoletes', self.get_obsoletes())
+
+    def _write_list (self, file, name, values):
+        for value in values:
+            file.write('%s: %s\n' % (name, value))
 
     # -- Metadata query methods ----------------------------------------
 
@@ -1133,6 +1162,40 @@ class DistributionMetadata:
 
     def get_download_url(self):
         return self.download_url or "UNKNOWN"
+
+    # PEP 314
+
+    def get_requires(self):
+        return self.requires or []
+
+    def set_requires(self, value):
+        import distutils.versionpredicate
+        for v in value:
+            distutils.versionpredicate.VersionPredicate(v)
+        self.requires = value
+
+    def get_provides(self):
+        return self.provides or []
+
+    def set_provides(self, value):
+        value = [v.strip() for v in value]
+        for v in value:
+            import distutils.versionpredicate
+            ver = distutils.versionpredicate.check_provision(v)
+            if ver:
+                import distutils.version
+                sv = distutils.version.StrictVersion()
+                sv.parse(ver.strip()[1:-1])
+        self.provides = value
+
+    def get_obsoletes(self):
+        return self.obsoletes or []
+
+    def set_obsoletes(self, value):
+        import distutils.versionpredicate
+        for v in value:
+            distutils.versionpredicate.VersionPredicate(v)
+        self.obsoletes = value
 
 # class DistributionMetadata
 

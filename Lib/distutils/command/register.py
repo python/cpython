@@ -231,7 +231,13 @@ Your selection [default 1]: ''',
             'platform': meta.get_platforms(),
             'classifiers': meta.get_classifiers(),
             'download_url': meta.get_download_url(),
+            # PEP 314
+            'provides': meta.get_provides(),
+            'requires': meta.get_requires(),
+            'obsoletes': meta.get_obsoletes(),
         }
+        if data['provides'] or data['requires'] or data['obsoletes']:
+            data['metadata_version'] = '1.1'
         return data
 
     def post_to_server(self, data, auth=None):
