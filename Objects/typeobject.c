@@ -3296,8 +3296,20 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
 	}
 	getattr = _PyType_Lookup(tp, getattr_str);
 	getattribute = _PyType_Lookup(tp, getattribute_str);
+	if (getattribute != NULL &&
+	    getattribute->ob_type == &PyWrapperDescr_Type &&
+	    ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
+	    PyObject_GenericGetAttr)
+		    getattribute = NULL;
 	if (getattr == NULL && getattribute == NULL) {
 		/* Avoid further slowdowns */
+		/* XXX This is questionable: it means that a class that
+		   isn't born with __getattr__ or __getattribute__ cannot
+		   acquire them in later life.  But it's a relatively big
+		   speedup, so I'm keeping it in for now.  If this is
+		   removed, you can also remove the "def __getattr__" from
+		   class C (marked with another XXX comment) in dynamics()
+		   in Lib/test/test_descr.py. */
 		if (tp->tp_getattro == slot_tp_getattr_hook)
 			tp->tp_getattro = PyObject_GenericGetAttr;
 		return PyObject_GenericGetAttr(self, name);
