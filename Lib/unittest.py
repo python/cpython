@@ -504,7 +504,7 @@ class TestLoader:
                 except ImportError:
                     del parts_copy[-1]
                     if not parts_copy: raise
-                parts = parts[1:]
+            parts = parts[1:]
         obj = module
         for part in parts:
             parent, obj = obj, getattr(obj, part)
