@@ -12,7 +12,7 @@ forms in server-side scripts.}
 \index{URL}
 
 
-Support module for CGI (Common Gateway Interface) scripts.%
+Support module for Common Gateway Interface (CGI) scripts.%
 \index{Common Gateway Interface}
 
 This module defines a number of utilities for use by CGI scripts
@@ -294,7 +294,7 @@ There's one important rule: if you invoke an external program (via the
 \function{os.system()} or \function{os.popen()} functions. or others
 with similar functionality), make very sure you don't pass arbitrary
 strings received from the client to the shell.  This is a well-known
-security hole whereby clever hackers anywhere on the web can exploit a
+security hole whereby clever hackers anywhere on the Web can exploit a
 gullible CGI script to invoke arbitrary shell commands.  Even parts of
 the URL or field names cannot be trusted, since the request doesn't
 have to come from your form!
@@ -330,7 +330,7 @@ as user ``nobody'', without any special privileges.  It can only read
 (write, execute) files that everybody can read (write, execute).  The
 current directory at execution time is also different (it is usually
 the server's cgi-bin directory) and the set of environment variables
-is also different from what you get at login.  In particular, don't
+is also different from what you get when you log in.  In particular, don't
 count on the shell's search path for executables (\envvar{PATH}) or
 the Python module search path (\envvar{PYTHONPATH}) to be set to
 anything interesting.

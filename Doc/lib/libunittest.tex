@@ -627,7 +627,7 @@ be of interest when inspecting the results of running a set of tests:
 The following methods of the \class{TestResult} class are used to
 maintain the internal data structures, and mmay be extended in
 subclasses to support additional reporting requirements.  This is
-particularly useful in building GUI tools which support interactive
+particularly useful in building tools which support interactive
 reporting while tests are being run.
 
 \begin{methoddesc}[TestResult]{startTest}{test}
@@ -667,8 +667,8 @@ One additional method is available for \class{TestResult} objects:
   \class{TestRunner} object return to its caller without running any
   additional tests.  This is used by the \class{TextTestRunner} class
   to stop the test framework when the user signals an interrupt from
-  the keyboard.  GUI tools which provide runners can use this in a
-  similar manner.
+  the keyboard.  Interactive tools which provide runners can use this
+  in a similar manner.
 \end{methoddesc}
 
 
