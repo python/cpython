@@ -73,6 +73,9 @@ class MozillaCookieJar(FileCookieJar):
                 secure = (secure == "TRUE")
                 domain_specified = (domain_specified == "TRUE")
                 if name == "":
+                    # cookies.txt regards 'Set-Cookie: foo' as a cookie
+                    # with no name, whereas cookielib regards it as a
+                    # cookie with no value.
                     name = value
                     value = None
 

@@ -115,13 +115,6 @@ class LWPCookieJar(FileCookieJar):
 
                 for data in split_header_words([line]):
                     name, value = data[0]
-                    # name and value are an exception here, since a plain "foo"
-                    # (with no "=", unlike "bar=foo") means a cookie with no
-                    # name and value "foo".  With all other cookie-attributes,
-                    # the situation is reversed: "foo" means an attribute named
-                    # "foo" with no value!
-                    if value is None:
-                        name, value = value, name
                     standard = {}
                     rest = {}
                     for k in boolean_attrs:
