@@ -1397,6 +1397,10 @@ class Listbox(Widget):
 				self._w, 'get', first, last))
 		else:
 			return self.tk.call(self._w, 'get', first)
+	def index(self, index):
+		i = self.tk.call(self._w, 'index', index)
+		if i == 'none': return None
+		return getint(i)
 	def insert(self, index, *elements):
 		self.tk.call((self._w, 'insert', index) + elements)
 	def nearest(self, y):
@@ -1408,34 +1412,38 @@ class Listbox(Widget):
 		self.tk.call(self._w, 'scan', 'dragto', x, y)
 	def see(self, index):
 		self.tk.call(self._w, 'see', index)
-	def index(self, index):
-		i = self.tk.call(self._w, 'index', index)
-		if i == 'none': return None
-		return getint(i)
-	def select_anchor(self, index):
+	def selection_anchor(self, index):
 		self.tk.call(self._w, 'selection', 'anchor', index)
-	selection_anchor = select_anchor
-	def select_clear(self, first, last=None):
+	select_anchor = selection_anchor
+	def selection_clear(self, first, last=None):
 		self.tk.call(self._w,
 			     'selection', 'clear', first, last)
-	selection_clear = select_clear
-	def select_includes(self, index):
+	select_clear = selection_clear
+	def selection_includes(self, index):
 		return self.tk.getboolean(self.tk.call(
 			self._w, 'selection', 'includes', index))
-	selection_includes = select_includes
-	def select_set(self, first, last=None):
+	select_includes = selection_includes
+	def selection_set(self, first, last=None):
 		self.tk.call(self._w, 'selection', 'set', first, last)
-	selection_set = select_set
+	select_set = selection_set
 	def size(self):
 		return getint(self.tk.call(self._w, 'size'))
 	def xview(self, *what):
 		if not what:
 			return self._getdoubles(self.tk.call(self._w, 'xview'))
 		self.tk.call((self._w, 'xview') + what)
+	def xview_moveto(self, fraction):
+		self.tk.call(self._w, 'xview', 'moveto', fraction)
+	def xview_scroll(self, number, what):
+		self.tk.call(self._w, 'xview', 'scroll', number, what)
 	def yview(self, *what):
 		if not what:
 			return self._getdoubles(self.tk.call(self._w, 'yview'))
 		self.tk.call((self._w, 'yview') + what)
+	def yview_moveto(self, fraction):
+		self.tk.call(self._w, 'yview', 'moveto', fraction)
+	def yview_scroll(self, number, what):
+		self.tk.call(self._w, 'yview', 'scroll', number, what)
 
 class Menu(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
