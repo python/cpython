@@ -41,6 +41,8 @@
 #define OPT_SUPPRESS	5
 #define OPT_UNBUFFERED	6
 #define OPT_DEBUGGING	7
+#define OPT_KEEPNORMAL	8
+#define OPT_KEEPERROR	9
 
 /* Dialog for 'No preferences directory' */
 #define NOPREFDIR_ID	133

@@ -40,6 +40,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <SIOUX.h>
 #endif
 
+#ifdef THINK_C
+#include <console.h>
+#endif
+
 #define STARTUP "PythonStartup"
 
 extern int Py_DebugFlag; /* For parser.c, declared in pythonrun.c */
@@ -58,6 +62,10 @@ static char *argv0;
 /* For getargcargv(); set by main() */
 static char **orig_argv;
 static int  orig_argc;
+
+/* Flags indicating whether stdio window should stay open on termination */
+static int keep_normal;
+static int keep_error = 1;
 
 #ifdef USE_MAC_APPLET_SUPPORT
 /* Applet support */
@@ -117,12 +125,7 @@ PyMac_InitApplet()
 	err = run_main_resource();
 	fflush(stderr);
 	fflush(stdout);
-#ifdef __MWERKS__
-	if (!err)
-		SIOUXSettings.autocloseonquit = 1;
-	else
-		printf("\n[Terminated]\n");
-#endif
+	PyMac_Exit(err);
 	/* XXX Should we bother to Py_Exit(sts)? */
 }
 
@@ -164,7 +167,8 @@ PyMac_InitApplication()
 */
 void
 PyMac_InteractiveOptions(int *inspect, int *verbose, int *suppress_print, 
-						 int *unbuffered, int *debugging)
+						 int *unbuffered, int *debugging, int *keep_normal,
+						 int *keep_error)
 {
 	KeyMap rmap;
 	unsigned char *map;
@@ -183,6 +187,11 @@ PyMac_InteractiveOptions(int *inspect, int *verbose, int *suppress_print,
 		printf("Option dialog not found - cannot set options\n");
 		return;
 	}
+	
+	/* Set keep-open-on-error */
+	GetDialogItem(dialog, OPT_KEEPERROR, &type, (Handle *)&handle, &rect);
+	SetCtlValue(handle, *keep_error);
+	
 	while (1) {
 		handle = NULL;
 		ModalDialog(NULL, &item);
@@ -204,6 +213,8 @@ PyMac_InteractiveOptions(int *inspect, int *verbose, int *suppress_print,
 		OPT_ITEM(OPT_SUPPRESS, suppress_print);
 		OPT_ITEM(OPT_UNBUFFERED, unbuffered);
 		OPT_ITEM(OPT_DEBUGGING, debugging);
+		OPT_ITEM(OPT_KEEPNORMAL, keep_normal);
+		OPT_ITEM(OPT_KEEPERROR, keep_error);
 		
 #undef OPT_ITEM
 	}
@@ -228,8 +239,7 @@ Py_Main(argc, argv)
 	argv0 = argv[0];	/* For getprogramname() */
 	
 	PyMac_InteractiveOptions(&inspect, &Py_VerboseFlag, &Py_SuppressPrintingFlag,
-			&unbuffered, &Py_DebugFlag);
-
+			&unbuffered, &Py_DebugFlag, &keep_normal, &keep_error);
 
 	if (unbuffered) {
 #ifndef MPW
@@ -253,7 +263,7 @@ Py_Main(argc, argv)
 		if ((fp = fopen(filename, "r")) == NULL) {
 			fprintf(stderr, "%s: can't open file '%s'\n",
 				argv[0], filename);
-			exit(2);
+			PyMac_Exit(2);
 		}
 	}
 	
@@ -282,6 +292,31 @@ Py_Main(argc, argv)
 	/*NOTREACHED*/
 }
 
+/*
+** Terminate application
+*/
+PyMac_Exit(status)
+	int status;
+{
+	int keep;
+	
+	if ( status )
+		keep = keep_error;
+	else
+		keep = keep_normal;
+		
+#ifdef __MWERKS__
+	if (keep)
+		printf("\n[Terminated]\n");
+	else
+		SIOUXSettings.autocloseonquit = 1;
+#endif
+#ifdef THINK_C
+	console_options.pause_atexit = keep;
+#endif
+
+	exit(status);
+}
 
 /* Return the program name -- some code out there needs this. */
 
