@@ -1,5 +1,5 @@
-How to install Python 2.1 on your Macintosh
--------------------------------------------
+How to install Python 2.1.1 on your Macintosh
+---------------------------------------------
 
 This is a MacPython that can run on classic MacOS (from 8.1
 onwards) and natively on MacOSX. The installer tries to work out whether you can
@@ -12,8 +12,6 @@ You should definitely read the Relnotes file too.
 A special note about the active installer: do not background it, it may hang
 your machine. This is a general problem with Vise active installers, MindVision
 are working on it.
-
-If you installed a 2.1 beta on MacOSX you MUST read the uninstall section below.
 
 ------
 
@@ -82,8 +80,8 @@ After installing
 It is probably a good idea to run the automatic tests. Start
 Python and "import test.autotest". 
 
-Two tests will fail on MacOS9, both with MemoryErrors:
-test_longexp and test_zlib (on MacOSX nothing should fail).
+Three tests will fail on MacOS9, all with MemoryErrors:
+test_longexp, test_sha and test_zlib (on MacOSX nothing should fail).
 
 If you increase the PythonInterpreter memory
 partition size they will pass (but for longexp you have to increase it by an
@@ -108,7 +106,7 @@ Uninstalling
 
 Two items are installed in the system folder: the interpreter shared
 libraries PythonCore and PythonCoreCarbon lives in the Extensions folder and the
-"Python 2.1 Preferences" file in the Python subfolder in the
+"Python 2.1.1 Preferences" file in the Python subfolder in the
 Preferences folder. All the rest of Python lives in the folder you
 installed in.
 
@@ -117,7 +115,7 @@ in OSX that is triggered by Python: if any orphaned aliases are left in
 /Library/CFMSupport your machine will start to behave very badly. 2.1
 beta installers triggered this problem if you simply threw away your Python folder,
 so if you installed a 2.1beta you should clean out the aliases in /Library/CFMSupport
-too. This final 2.1 installer always copies the shared libraries on OSX, so it does
+too. The final 2.1 installer always copied the shared libraries on OSX, so it does
 not have the problem anymore.
 
 Things to see
@@ -157,9 +155,9 @@ that this means you can keep your older version around if you are unsure
 whether to upgrade. The bad news is that your old preference settings
 are lost and you have to set them again.
 
-After you are satisfied that 2.1 works as expected you can trash
+After you are satisfied that 2.1.1 works as expected you can trash
 anything in the system folder that has "python" in the name and not
-"2.1".
+"2.1.1".
 
 As of 2.1 the ConfigurePython applets will try to detect incompatible preferences
 files and offer to remove them. This means that re-running ConfigurePython after
