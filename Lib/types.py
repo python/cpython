@@ -2,8 +2,6 @@
 
 Types that are part of optional modules (e.g. array) are not listed.
 """
-from __future__ import generators
-
 import sys
 
 # Iterators in Python aren't a matter of type but of protocol.  A large
@@ -83,4 +81,4 @@ EllipsisType = type(Ellipsis)
 
 DictProxyType = type(TypeType.__dict__)
 
-del sys, _f, _C, _x, generators                  # Not for export
+del sys, _f, _C, _x                  # Not for export
