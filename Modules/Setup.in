@@ -1,3 +1,4 @@
+# -*- shell-script -*-
 # The file Setup is used by the makesetup script to construct the files
 # Makefile and config.c, from Makefile.pre and config.c.in,
 # respectively.  The file Setup itself is initially copied from
@@ -330,8 +331,8 @@ cPickle cPickle.c
 # For SGI IRIX (tested on 5.3):
 #fpectl fpectlmodule.c -lfpe
 
-# For Solaris with SunPro compiler (tested on 2.5):
-# (Without the compile you don't have -lsunmath.)
+# For Solaris with SunPro compiler (tested on Solaris 2.5 with SunPro C 4.2):
+# (Without the compiler you don't have -lsunmath.)
 #fpectl fpectlmodule.c -R/opt/SUNWspro/lib -lsunmath -lm
 
 # For other systems: see instructions in fpectlmodule.c.
