@@ -11,8 +11,13 @@ candidate_locales = ['es_UY', 'fr_FR', 'fi_FI', 'es_CO', 'pt_PT', 'it_IT',
     'da_DK', 'nn_NO', 'cs_CZ', 'de_LU', 'es_BO', 'sq_AL', 'sk_SK', 'fr_CH',
     'de_DE', 'sr_YU', 'br_FR', 'nl_BE', 'sv_FI', 'pl_PL', 'fr_CA', 'fo_FO',
     'bs_BA', 'fr_LU', 'kl_GL', 'fa_IR', 'de_BE', 'sv_SE', 'it_CH', 'uk_UA',
-    'eu_ES', 'vi_VN', 'af_ZA', 'nb_NO', 'en_DK', 'tg_TJ',
+    'eu_ES', 'vi_VN', 'af_ZA', 'nb_NO', 'en_DK', 'tg_TJ', 'en_US',
     'es_ES.ISO8859-1', 'fr_FR.ISO8859-15', 'ru_RU.KOI8-R', 'ko_KR.eucKR']
+
+# List known locale values to test against when available.
+# Dict formatted as ``<locale> : (<decimal_point>, <thousands_sep>)``.  If a
+# value is not known, use '' .
+known_numerics = {'fr_FR' : (',', ''), 'en_US':('.', ',')}
 
 class _LocaleTests(unittest.TestCase):
 
@@ -22,7 +27,50 @@ class _LocaleTests(unittest.TestCase):
     def tearDown(self):
         setlocale(LC_NUMERIC, self.oldlocale)
 
-    def test_lc_numeric(self):
+    # Want to know what value was calculated, what it was compared against,
+    # what function was used for the calculation, what type of data was used,
+    # the locale that was supposedly set, and the actual locale that is set.
+    lc_numeric_err_msg = "%s != %s (%s for %s; set to %s, using %s)"
+
+    def numeric_tester(self, calc_type, calc_value, data_type, used_locale):
+        """Compare calculation against known value, if available"""
+        try:
+            set_locale = setlocale(LC_NUMERIC)
+        except Error:
+            set_locale = "<not able to determine>"
+        known_value = known_numerics.get(used_locale,
+                                    ('', ''))[data_type is 'thousands_sep']
+        if known_value and calc_value:
+            self.assertEquals(calc_value, known_value,
+                                self.lc_numeric_err_msg % (
+                                    calc_value, known_value,
+                                    calc_type, data_type, set_locale,
+                                    used_locale))
+
+    def test_lc_numeric_nl_langinfo(self):
+        # Test nl_langinfo against known values
+        for loc in candidate_locales:
+            try:
+                setlocale(LC_NUMERIC, loc)
+            except Error:
+                continue
+            for li, lc in ((RADIXCHAR, "decimal_point"),
+                            (THOUSEP, "thousands_sep")):
+                self.numeric_tester('nl_langinfo', nl_langinfo(li), lc, loc)
+
+    def test_lc_numeric_localeconv(self):
+        # Test localeconv against known values
+        for loc in candidate_locales:
+            try:
+                setlocale(LC_NUMERIC, loc)
+            except Error:
+                continue
+            for li, lc in ((RADIXCHAR, "decimal_point"),
+                            (THOUSEP, "thousands_sep")):
+                self.numeric_tester('localeconv', localeconv()[lc], lc, loc)
+
+    def test_lc_numeric_basic(self):
+        # Test nl_langinfo against localeconv
         for loc in candidate_locales:
             try:
                 setlocale(LC_NUMERIC, loc)
@@ -32,18 +80,17 @@ class _LocaleTests(unittest.TestCase):
                             (THOUSEP, "thousands_sep")):
                 nl_radixchar = nl_langinfo(li)
                 li_radixchar = localeconv()[lc]
-                # Both with seeing what the locale is set to in order to detect
-                # when setlocale lies and says it accepted the locale setting
-                # but in actuality didn't use it (as seen in OS X 10.3)
                 try:
                     set_locale = setlocale(LC_NUMERIC)
                 except Error:
                     set_locale = "<not able to determine>"
                 self.assertEquals(nl_radixchar, li_radixchar,
-                                    "%s != %s (%s); "
-                                    "supposed to be %s, set to %s" %
-                                        (nl_radixchar, li_radixchar, lc,
-                                         loc, set_locale))
+                                "%s (nl_langinfo) != %s (localeconv) "
+                                "(set to %s, using %s)" % (
+                                                nl_radixchar, li_radixchar,
+                                                loc, set_locale))
+
+
 
 def test_main():
     run_unittest(_LocaleTests)
