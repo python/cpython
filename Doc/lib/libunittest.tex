@@ -579,6 +579,19 @@ instances:
   \class{TestSuite} instances to this test suite.
 \end{methoddesc}
 
+The \method{run()} method is also slightly different:
+
+\begin{methoddesc}[TestSuite]{run}{result}
+  Run the tests associated with this suite, collecting the result into
+  the test result object passed as \var{result}.  Note that unlike
+  \method{TestCase.run()}, \method{TestSuite.run()} requires the
+  result object to be passed in.
+\end{methoddesc}
+
+In the typical usage of a \class{TestSuite} object, the \method{run()}
+method is invoked by a \class{TestRunner} rather than by the end-user
+test harness.
+
 
 \subsection{TestResult Objects
             \label{testresult-objects}}
@@ -706,9 +719,20 @@ configurable properties.
 \begin{methoddesc}[TestLoader]{loadTestsFromName}{name\optional{, module}}
   Return a suite of all tests cases given a string specifier.
 
-  The specifier \var{name} may resolve either to a module, a test case
-  class, a test method within a test case class, or a callable object
-  which returns a \class{TestCase} or \class{TestSuite} instance.
+  The specifier \var{name} is a ``dotted name'' that may resolve
+  either to a module, a test case class, a test method within a test
+  case class, or a callable object which returns a \class{TestCase} or
+  \class{TestSuite} instance.  For example, if you have a module
+  \module{SampleTests} containing a \class{TestCase}-derived class
+  \class{SampleTestCase} with three test methods (\method{test_one()},
+  \method{test_two()}, and \method{test_three()}), the specifier
+  \code{'SampleTests.SampleTestCase'} would cause this method to
+  return a suite which will run all three test methods.  Using the
+  specifier \code{'SampleTests.SampleTestCase.test_two'} would cause
+  it to return a test suite which will run only the
+  \method{test_two()} test method.  The specifier can refer to modules
+  and packages which have not been imported; they will be imported as
+  a side-effect.
 
   The method optionally resolves \var{name} relative to a given module.
 \end{methoddesc}
