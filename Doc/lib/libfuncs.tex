@@ -722,7 +722,9 @@ its goal is to return a printable string.
 
 \begin{funcdesc}{tuple}{sequence}
 Return a tuple whose items are the same and in the same order as
-\var{sequence}'s items.  If \var{sequence} is already a tuple, it
+\var{sequence}'s items.  \var{sequence} may be a sequence, a
+container that supports iteration, or an iterator object.
+If \var{sequence} is already a tuple, it
 is returned unchanged.  For instance, \code{tuple('abc')} returns
 returns \code{('a', 'b', 'c')} and \code{tuple([1, 2, 3])} returns
 \code{(1, 2, 3)}.
