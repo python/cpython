@@ -31,8 +31,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <string.h>
 #include <errno.h>
 
-#if !TARGET_API_MAC_CARBON_NOTYET
-/* XXXX Skip for Carbon, for now */
+#if !TARGET_API_MAC_CARBON
+/* Skip for Carbon */
 #include "macstat.h"
 #endif
 
@@ -51,7 +51,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <sys/types.h>
 #include <sys/stat.h>
 #else /* USE_GUSI */
-#if !TARGET_API_MAC_CARBON_NOTYET
+#if !TARGET_API_MAC_CARBON
 #define stat macstat
 #endif
 #endif /* USE_GUSI */
@@ -499,7 +499,7 @@ mac_fstat(self, args)
 }
 #endif /* WEHAVE_FSTAT */
 
-#if !TARGET_API_MAC_CARBON_NOTYET
+#if !TARGET_API_MAC_CARBON
 static PyObject *
 mac_xstat(self, args)
 	PyObject *self;
@@ -623,7 +623,7 @@ static struct PyMethodDef mac_methods[] = {
 	{"rename",	mac_rename},
 	{"rmdir",	mac_rmdir},
 	{"stat",	mac_stat},
-#if !TARGET_API_MAC_CARBON_NOTYET
+#if !TARGET_API_MAC_CARBON
 	{"xstat",	mac_xstat},
 #endif
 	{"sync",	mac_sync},
