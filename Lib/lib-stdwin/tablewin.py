@@ -16,6 +16,7 @@
 
 import stdwin
 import gwin
+from stdwinevents import *
 
 def open(title, data): # Public function to open a table window
 	#
@@ -163,15 +164,13 @@ def whichcol(w, h): # Return column number (may be >= len(w.data))
 	return len(w.data)
 
 def arrow(w, type):
-	import stdwinsupport
-	S = stdwinsupport
-	if type = S.wc_left:
+	if type = WC_LEFT:
 		incr = -1, 0
-	elif type = S.wc_up:
+	elif type = WC_UP:
 		incr = 0, -1
-	elif type = S.wc_right:
+	elif type = WC_RIGHT:
 		incr = 1, 0
-	elif type = S.wc_down:
+	elif type = WC_DOWN:
 		incr = 0, 1
 	else:
 		return
