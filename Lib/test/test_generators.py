@@ -903,33 +903,42 @@ def conjoin(gs):
 # conjoin too.
 # NOTE WELL:  This allows large problems to be solved with only trivial
 # demands on stack space.  Without explicitly resumable generators, this is
-# much harder to achieve.
+# much harder to achieve.  OTOH, this is much slower (up to a factor of 2)
+# than the fancy unrolled recursive conjoin.
 
 def flat_conjoin(gs):  # rename to conjoin to run tests with this instead
     n = len(gs)
     values = [None] * n
     iters  = [None] * n
+    _StopIteration = StopIteration  # make local because caught a *lot*
     i = 0
-    while i >= 0:
-        # Need a fresh iterator.
-        if i >= n:
-            yield values
-            # Backtrack.
-            i -= 1
+    while 1:
+        # Descend.
+        try:
+            while i < n:
+                it = iters[i] = gs[i]().next
+                values[i] = it()
+                i += 1
+        except _StopIteration:
+            pass
         else:
-            iters[i] = gs[i]().next
+            assert i == n
+            yield values
 
-        # Need next value from current iterator.
+        # Backtrack until an older iterator can be resumed.
+        i -= 1
         while i >= 0:
             try:
                 values[i] = iters[i]()
-            except StopIteration:
-                # Backtrack.
-                i -= 1
-            else:
-                # Start fresh at next level.
+                # Success!  Start fresh at next level.
                 i += 1
                 break
+            except _StopIteration:
+                # Continue backtracking.
+                i -= 1
+        else:
+            assert i < 0
+            break
 
 # A conjoin-based N-Queens solver.
 
@@ -986,31 +995,21 @@ class Queens:
 # A conjoin-based Knight's Tour solver.  This is pretty sophisticated
 # (e.g., when used with flat_conjoin above, and passing hard=1 to the
 # constructor, a 200x200 Knight's Tour was found quickly -- note that we're
-# creating 10s of thousands of generators then!), so goes on at some length
+# creating 10s of thousands of generators then!), and is lengthy.
 
 class Knights:
-    def __init__(self, n, hard=0):
-        self.n = n
+    def __init__(self, m, n, hard=0):
+        self.m, self.n = m, n
 
-        def coords2index(i, j):
-            return i*n + j
+        # solve() will set up succs[i] to be a list of square #i's
+        # successors.
+        succs = self.succs = []
 
-        offsets = [( 1,  2), ( 2,  1), ( 2, -1), ( 1, -2),
-                   (-1, -2), (-2, -1), (-2,  1), (-1,  2)]
-        succs = []
-        for i in range(n):
-            for j in range(n):
-                s = [coords2index(i+io, j+jo) for io, jo in offsets
-                                              if 0 <= i+io < n and
-                                                 0 <= j+jo < n]
-                succs.append(s)
-                del s
-        del offsets
+        # Remove i0 from each of its successor's successor lists, i.e.
+        # successors can't go back to i0 again.  Return 0 if we can
+        # detect this makes a solution impossible, else return 1.
 
-        free   = [0] * n**2     # 0 if occupied, 1 if visited
-        nexits = free[:]        # number of free successors
-
-        def decrexits(i0):
+        def remove_from_successors(i0, len=len):
             # If we remove all exits from a free square, we're dead:
             # even if we move to it next, we can't leave it again.
             # If we create a square with one exit, we must visit it next;
@@ -1021,159 +1020,170 @@ class Knights:
             # the other one a dead end.
             ne0 = ne1 = 0
             for i in succs[i0]:
-                if free[i]:
-                    e = nexits[i] - 1
-                    nexits[i] = e
-                    if e == 0:
-                        ne0 += 1
-                    elif e == 1:
-                        ne1 += 1
+                s = succs[i]
+                s.remove(i0)
+                e = len(s)
+                if e == 0:
+                    ne0 += 1
+                elif e == 1:
+                    ne1 += 1
             return ne0 == 0 and ne1 < 2
 
-        def increxits(i0):
+        # Put i0 back in each of its successor's successor lists.
+
+        def add_to_successors(i0):
             for i in succs[i0]:
-                if free[i]:
-                    nexits[i] += 1
+                succs[i].append(i0)
 
         # Generate the first move.
         def first():
-            if n < 1:
+            if m < 1 or n < 1:
                 return
-
-            # Initialize board structures.
-            for i in xrange(n**2):
-                free[i] = 1
-                nexits[i] = len(succs[i])
 
             # Since we're looking for a cycle, it doesn't matter where we
             # start.  Starting in a corner makes the 2nd move easy.
-            corner = coords2index(0, 0)
-            free[corner] = 0
-            decrexits(corner)
+            corner = self.coords2index(0, 0)
+            remove_from_successors(corner)
             self.lastij = corner
             yield corner
-            increxits(corner)
-            free[corner] = 1
+            add_to_successors(corner)
 
         # Generate the second moves.
         def second():
-            corner = coords2index(0, 0)
+            corner = self.coords2index(0, 0)
             assert self.lastij == corner  # i.e., we started in the corner
-            if n < 3:
+            if m < 3 or n < 3:
                 return
-            assert nexits[corner] == len(succs[corner]) == 2
-            assert coords2index(1, 2) in succs[corner]
-            assert coords2index(2, 1) in succs[corner]
+            assert len(succs[corner]) == 2
+            assert self.coords2index(1, 2) in succs[corner]
+            assert self.coords2index(2, 1) in succs[corner]
             # Only two choices.  Whichever we pick, the other must be the
-            # square picked on move n**2, as it's the only way to get back
+            # square picked on move m*n, as it's the only way to get back
             # to (0, 0).  Save its index in self.final so that moves before
             # the last know it must be kept free.
             for i, j in (1, 2), (2, 1):
-                this, final = coords2index(i, j), coords2index(3-i, 3-j)
-                assert free[this] and free[final]
+                this  = self.coords2index(i, j)
+                final = self.coords2index(3-i, 3-j)
                 self.final = final
-                nexits[final] += 1  # it has an exit back to 0,0
 
-                free[this] = 0
-                decrexits(this)
+                remove_from_successors(this)
+                succs[final].append(corner)
                 self.lastij = this
                 yield this
-                increxits(this)
-                free[this] = 1
+                succs[final].remove(corner)
+                add_to_successors(this)
 
-                nexits[final] -= 1
-
-        # Generate moves 3 thru n**2-1.
-        def advance():
+        # Generate moves 3 thru m*n-1.
+        def advance(len=len):
             # If some successor has only one exit, must take it.
             # Else favor successors with fewer exits.
             candidates = []
             for i in succs[self.lastij]:
-                if free[i]:
-                    e = nexits[i]
-                    assert e > 0, "else decrexits() pruning flawed"
-                    if e == 1:
-                        candidates = [(e, i)]
-                        break
-                    candidates.append((e, i))
+                e = len(succs[i])
+                assert e > 0, "else remove_from_successors() pruning flawed"
+                if e == 1:
+                    candidates = [(e, i)]
+                    break
+                candidates.append((e, i))
             else:
                 candidates.sort()
 
             for e, i in candidates:
                 if i != self.final:
-                    if decrexits(i):
-                        free[i] = 0
+                    if remove_from_successors(i):
                         self.lastij = i
                         yield i
-                        free[i] = 1
-                    increxits(i)
+                    add_to_successors(i)
 
-        # Generate moves 3 thru n**2-1.  Alternative version using a
+        # Generate moves 3 thru m*n-1.  Alternative version using a
         # stronger (but more expensive) heuristic to order successors.
-        # Since the # of backtracking levels is n**2, a poor move early on
-        # can take eons to undo.  Smallest n for which this matters a lot is
-        # n==52.
-        def advance_hard(midpoint=(n-1)/2.0):
+        # Since the # of backtracking levels is m*n, a poor move early on
+        # can take eons to undo.  Smallest square board for which this
+        # matters a lot is 52x52.
+        def advance_hard(vmid=(m-1)/2.0, hmid=(n-1)/2.0, len=len):
             # If some successor has only one exit, must take it.
             # Else favor successors with fewer exits.
             # Break ties via max distance from board centerpoint (favor
             # corners and edges whenever possible).
             candidates = []
             for i in succs[self.lastij]:
-                if free[i]:
-                    e = nexits[i]
-                    assert e > 0, "else decrexits() pruning flawed"
-                    if e == 1:
-                        candidates = [(e, 0, i)]
-                        break
-                    i1, j1 = divmod(i, n)
-                    d = (i1 - midpoint)**2 + (j1 - midpoint)**2
-                    candidates.append((e, -d, i))
+                e = len(succs[i])
+                assert e > 0, "else remove_from_successors() pruning flawed"
+                if e == 1:
+                    candidates = [(e, 0, i)]
+                    break
+                i1, j1 = self.index2coords(i)
+                d = (i1 - vmid)**2 + (j1 - hmid)**2
+                candidates.append((e, -d, i))
             else:
                 candidates.sort()
 
             for e, d, i in candidates:
                 if i != self.final:
-                    if decrexits(i):
-                        free[i] = 0
+                    if remove_from_successors(i):
                         self.lastij = i
                         yield i
-                        free[i] = 1
-                    increxits(i)
+                    add_to_successors(i)
 
         # Generate the last move.
         def last():
             assert self.final in succs[self.lastij]
             yield self.final
 
-        if n <= 1:
-            self.rowgenerators = [first]
+        if m*n < 4:
+            self.squaregenerators = [first]
         else:
-            self.rowgenerators = [first, second] + \
-                [hard and advance_hard or advance] * (n**2 - 3) + \
+            self.squaregenerators = [first, second] + \
+                [hard and advance_hard or advance] * (m*n - 3) + \
                 [last]
+
+    def coords2index(self, i, j):
+        assert 0 <= i < self.m
+        assert 0 <= j < self.n
+        return i * self.n + j
+
+    def index2coords(self, index):
+        assert 0 <= index < self.m * self.n
+        return divmod(index, self.n)
+
+    def _init_board(self):
+        succs = self.succs
+        del succs[:]
+        m, n = self.m, self.n
+        c2i = self.coords2index
+
+        offsets = [( 1,  2), ( 2,  1), ( 2, -1), ( 1, -2),
+                   (-1, -2), (-2, -1), (-2,  1), (-1,  2)]
+        rangen = range(n)
+        for i in range(m):
+            for j in rangen:
+                s = [c2i(i+io, j+jo) for io, jo in offsets
+                                     if 0 <= i+io < m and
+                                        0 <= j+jo < n]
+                succs.append(s)
 
     # Generate solutions.
     def solve(self):
-        for x in conjoin(self.rowgenerators):
+        self._init_board()
+        for x in conjoin(self.squaregenerators):
             yield x
 
     def printsolution(self, x):
-        n = self.n
-        assert len(x) == n**2
-        w = len(str(n**2 + 1))
+        m, n = self.m, self.n
+        assert len(x) == m*n
+        w = len(str(m*n))
         format = "%" + str(w) + "d"
 
-        squares = [[None] * n for i in range(n)]
+        squares = [[None] * n for i in range(m)]
         k = 1
         for i in x:
-            i1, j1 = divmod(i, n)
+            i1, j1 = self.index2coords(i)
             squares[i1][j1] = format % k
             k += 1
 
         sep = "+" + ("-" * w + "+") * n
         print sep
-        for i in range(n):
+        for i in range(m):
             row = squares[i]
             print "|" + "|".join(row) + "|"
             print sep
@@ -1269,7 +1279,7 @@ Solution 2
 And run a Knight's Tour on a 10x10 board.  Note that there are about
 20,000 solutions even on a 6x6 board, so don't dare run this to exhaustion.
 
->>> k = Knights(10)
+>>> k = Knights(10, 10)
 >>> LIMIT = 2
 >>> count = 0
 >>> for x in k.solve():
