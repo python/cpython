@@ -233,15 +233,14 @@ proxy_checkref(PyWeakReference *proxy)
         return generic(x, y); \
     }
 
-/* Note that the second and third args need to be checked for NULL since
- * (at least) the tp_call slot can receive NULL for either of those args.
+/* Note that the third arg needs to be checked for NULL since the tp_call
+ * slot can receive NULL for this arg.
  */
 #define WRAP_TERNARY(method, generic) \
     static PyObject * \
     method(PyObject *proxy, PyObject *v, PyObject *w) { \
         UNWRAP(proxy); \
-        if (v != NULL) \
-            UNWRAP(v); \
+        UNWRAP(v); \
         if (w != NULL) \
             UNWRAP(w); \
         return generic(proxy, v, w); \
