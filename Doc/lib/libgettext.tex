@@ -285,46 +285,90 @@ The \module{gettext} module provides one additional class derived from
 \class{NullTranslations}: \class{GNUTranslations}.  This class
 overrides \method{_parse()} to enable reading GNU \program{gettext}
 format \file{.mo} files in both big-endian and little-endian format.
-It also adds the ability to coerce both message ids and message
-strings to Unicode.
+It also coerces both message ids and message strings to Unicode.
 
 \class{GNUTranslations} parses optional meta-data out of the
 translation catalog.  It is convention with GNU \program{gettext} to
 include meta-data as the translation for the empty string.  This
-meta-data is in \rfc{822}-style \code{key: value} pairs, and must
-contain the \code{Project-Id-Version}.  If the key
+meta-data is in \rfc{822}-style \code{key: value} pairs, and should
+contain the \code{Project-Id-Version} key.  If the key
 \code{Content-Type} is found, then the \code{charset} property is used
 to initialize the ``protected'' \member{_charset} instance variable,
-defaulting to \code{None} if not found.  The entire set of
-key/value pairs are placed into a dictionary and set as the
-``protected'' \member{_info} instance variable.
+defaulting to \code{None} if not found.  If the charset encoding is
+specified, then all message ids and message strings read from the
+catalog are converted to Unicode using this encoding.  The
+\method{ugettext()} method always returns a Unicode, while the
+\method{gettext()} returns an encoded 8-bit string.  For the message
+id arguments of both methods, either Unicode strings or 8-bit strings
+containing only US-ASCII characters are acceptable.  Note that the
+Unicode version of the methods (i.e. \method{ugettext()} and
+\method{ungettext()}) are the recommended interface to use for
+internationalized Python programs.
+
+The entire set of key/value pairs are placed into a dictionary and set
+as the ``protected'' \member{_info} instance variable.
 
 If the \file{.mo} file's magic number is invalid, or if other problems
 occur while reading the file, instantiating a \class{GNUTranslations} class
 can raise \exception{IOError}.
 
-The other usefully overridden method is \method{ugettext()}, which
-returns a Unicode string by passing both the translated message string
-and the value of the ``protected'' \member{_charset} variable to the
-builtin \function{unicode()} function.  Note that if you use
-\method{ugettext()} you probably also want your message ids to be
-Unicode.  To do this, set the variable \var{coerce} to \code{True} in
-the \class{GNUTranslations} constructor.  This ensures that both the
-message ids and message strings are decoded to Unicode when the file
-is read, using the file's \code{charset} value.  If you do this, you
-will not want to use the \method{gettext()} method -- always use
-\method{ugettext()} instead.
+The following methods are overridden from the base class implementation:
 
-To facilitate plural forms, the methods \method{ngettext} and
-\method{ungettext} are overridden as well.
+\begin{methoddesc}[GNUTranslations]{gettext}{message}
+Look up the \var{message} id in the catalog and return the
+corresponding message string, as an 8-bit string encoded with the
+catalog's charset encoding, if known.  If there is no entry in the
+catalog for the \var{message} id, and a fallback has been set, the
+look up is forwarded to the fallback's \method{gettext()} method.
+Otherwise, the \var{message} id is returned.
+\end{methoddesc}
 
-\begin{methoddesc}[GNUTranslations]{__init__}{
-    \optional{fp\optional{, coerce}}}
-Constructs and parses a translation catalog in GNU gettext format.
-\var{fp} is passed to the base class (\class{NullTranslations})
-constructor.  \var{coerce} is a flag specifying whether message ids
-and message strings should be converted to Unicode when the file is
-parsed.  It defaults to \code{False} for backward compatibility.
+\begin{methoddesc}[GNUTranslations]{ugettext}{message}
+Look up the \var{message} id in the catalog and return the
+corresponding message string, as a Unicode string.  If there is no
+entry in the catalog for the \var{message} id, and a fallback has been
+set, the look up is forwarded to the fallback's \method{ugettext()}
+method.  Otherwise, the \var{message} id is returned.
+\end{methoddesc}
+
+\begin{methoddesc}[GNUTranslations]{ngettext}{singular, plural, n}
+Do a plural-forms lookup of a message id.  \var{singular} is used as
+the message id for purposes of lookup in the catalog, while \var{n} is
+used to determine which plural form to use.  The returned message
+string is an 8-bit string encoded with the catalog's charset encoding,
+if known.
+
+If the message id is not found in the catalog, and a fallback is
+specified, the request is forwarded to the fallback's
+\method{ngettext()} method.  Otherwise, when \var{n} is 1 \var{singular} is
+returned, and \var{plural} is returned in all other cases.
+
+\versionadded{2.3}
+\end{methoddesc}
+
+\begin{methoddesc}[GNUTranslations]{ungettext}{singular, plural, n}
+Do a plural-forms lookup of a message id.  \var{singular} is used as
+the message id for purposes of lookup in the catalog, while \var{n} is
+used to determine which plural form to use.  The returned message
+string is a Unicode string.
+
+If the message id is not found in the catalog, and a fallback is
+specified, the request is forwarded to the fallback's
+\method{ungettext()} method.  Otherwise, when \var{n} is 1 \var{singular} is
+returned, and \var{plural} is returned in all other cases.
+
+Here is an example:
+
+\begin{verbatim}
+n = len(os.listdir('.'))
+cat = GNUTranslations(somefile)
+message = cat.ungettext(
+    'There is %(num)d file in this directory',
+    'There are %(num)d files in this directory',
+    n) % {'n': n}
+\end{verbatim}
+
+\versionadded{2.3}
 \end{methoddesc}
 
 \subsubsection{Solaris message catalog support}
