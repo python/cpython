@@ -663,8 +663,8 @@ def _test_dir():
 
 def _test_revamp():
   "Debug/test function for the revamped import system."
-  BuiltinImporter().install()
   PathImporter().install()
+  BuiltinImporter().install()
 
 def _print_importers():
   items = sys.modules.items()
