@@ -14,6 +14,16 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 #include "unicodeobject.h"
 
+#ifdef macintosh
+/* This probably needs to be defined for some other compilers too. It breaks the
+** 5000-label switch statement up into switches with around 1000 cases each.
+*/
+#define BREAK_SWITCH_UP	return 1; } switch (ch) {
+#else
+#define BREAK_SWITCH_UP /* nothing */
+#endif
+
+
 /* Returns 1 for Unicode characters having the category 'Zl' or type
    'B', 0 otherwise. */
 
@@ -5991,6 +6001,7 @@ int _PyUnicode_IsAlpha(register const Py_UNICODE ch)
     case 0x1021: /* MYANMAR LETTER A */
     case 0x1023: /* MYANMAR LETTER I */
     case 0x1024: /* MYANMAR LETTER II */
+BREAK_SWITCH_UP
     case 0x1025: /* MYANMAR LETTER U */
     case 0x1026: /* MYANMAR LETTER UU */
     case 0x1027: /* MYANMAR LETTER E */
@@ -6990,6 +7001,7 @@ int _PyUnicode_IsAlpha(register const Py_UNICODE ch)
     case 0x1531: /* CANADIAN SYLLABICS YWI */
     case 0x1532: /* CANADIAN SYLLABICS WEST-CREE YWI */
     case 0x1533: /* CANADIAN SYLLABICS YWII */
+BREAK_SWITCH_UP
     case 0x1534: /* CANADIAN SYLLABICS WEST-CREE YWII */
     case 0x1535: /* CANADIAN SYLLABICS YWO */
     case 0x1536: /* CANADIAN SYLLABICS WEST-CREE YWO */
@@ -7989,6 +8001,7 @@ int _PyUnicode_IsAlpha(register const Py_UNICODE ch)
     case 0xA029: /* YI SYLLABLE BEX */
     case 0xA02A: /* YI SYLLABLE BE */
     case 0xA02B: /* YI SYLLABLE BEP */
+BREAK_SWITCH_UP
     case 0xA02C: /* YI SYLLABLE BUT */
     case 0xA02D: /* YI SYLLABLE BUX */
     case 0xA02E: /* YI SYLLABLE BU */
@@ -8988,6 +9001,7 @@ int _PyUnicode_IsAlpha(register const Py_UNICODE ch)
     case 0xA410: /* YI SYLLABLE QURX */
     case 0xA411: /* YI SYLLABLE QUR */
     case 0xA412: /* YI SYLLABLE QYT */
+BREAK_SWITCH_UP
     case 0xA413: /* YI SYLLABLE QYX */
     case 0xA414: /* YI SYLLABLE QY */
     case 0xA415: /* YI SYLLABLE QYP */
@@ -9987,6 +10001,7 @@ int _PyUnicode_IsAlpha(register const Py_UNICODE ch)
     case 0xFD93: /* ARABIC LIGATURE HEH WITH MEEM WITH JEEM INITIAL FORM */
     case 0xFD94: /* ARABIC LIGATURE HEH WITH MEEM WITH MEEM INITIAL FORM */
     case 0xFD95: /* ARABIC LIGATURE NOON WITH HAH WITH MEEM INITIAL FORM */
+BREAK_SWITCH_UP
     case 0xFD96: /* ARABIC LIGATURE NOON WITH HAH WITH ALEF MAKSURA FINAL FORM */
     case 0xFD97: /* ARABIC LIGATURE NOON WITH JEEM WITH MEEM FINAL FORM */
     case 0xFD98: /* ARABIC LIGATURE NOON WITH JEEM WITH MEEM INITIAL FORM */
