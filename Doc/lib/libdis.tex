@@ -556,6 +556,25 @@ Stores TOS into the local \code{co_varnames[\var{var_num}]}.
 Deletes local \code{co_varnames[\var{var_num}]}.
 \end{opcodedesc}
 
+\begin{opcodedesc}{LOAD_CLOSURE}{i}
+Pushes a reference to the cell contained in slot \var{i} of the
+cell and free variable storage.  The name of the variable is 
+\code{co_cellvars[\var{i}]} if \var{i} is less than the length of
+\var{co_cellvars}.  Otherwise it is 
+\code{co_freevars[\var{i} - len(co_cellvars)]}.
+\end{opcodedesc}
+
+\begin{opcodedesc}{LOAD_DEREF}{i}
+Loads the cell contained in slot \var{i} of the cell and free variable
+storage.  Pushes a reference to the object the cell contains on the
+stack. 
+\end{opcodedesc}
+
+\begin{opcodedesc}{STORE_DEREF}{i}
+Stores TOS into the cell contained in slot \var{i} of the cell and
+free variable storage.
+\end{opcodedesc}
+
 \begin{opcodedesc}{SET_LINENO}{lineno}
 Sets the current line number to \var{lineno}.
 \end{opcodedesc}
@@ -581,6 +600,14 @@ to call is on the stack.
 Pushes a new function object on the stack.  TOS is the code associated
 with the function.  The function object is defined to have \var{argc}
 default parameters, which are found below TOS.
+\end{opcodedesc}
+
+\begin{opcodedesc}{MAKE_CLOSURE}{argc}
+Creates a new function object, sets its \var{func_closure} slot, and
+pushes it on the stack.  TOS is the code associated with the function.
+If the code object has N free variables, the next N items on the stack
+are the cells for these variables.  The function also has \var{argc}
+default parameters, where are found before the cells.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BUILD_SLICE}{argc}
