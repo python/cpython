@@ -693,7 +693,7 @@ _PyMalloc_Free(void *p)
 			 * freeblock wasn't NULL, so the pool wasn't full,
 			 * and the pool is in a usedpools[] list.
 			 */
-			assert(pool->ref.count < pool.capacity);
+			assert(pool->ref.count < pool->capacity);
 			if (--pool->ref.count != 0) {
 				/* pool isn't empty:  leave it in usedpools */
 				UNLOCK();
