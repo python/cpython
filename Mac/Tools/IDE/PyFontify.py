@@ -19,15 +19,16 @@ sublist is not used, hence always None.
 # Many thanks for regular expression debugging & authoring are due to:
 #	Tim (the-incredib-ly y'rs) Peters and Cristian Tismer
 # So, who owns the copyright? ;-) How about this:
-# Copyright 1996-2000: 
+# Copyright 1996-2001: 
 #	Mitchell S. Chapman,
 #	Zachary Roadhouse,
 #	Tim Peters,
 #	Just van Rossum
 
-__version__ = "0.3.3"
+__version__ = "0.4"
 
-import string, re
+import string
+import re
 
 # First a little helper, since I don't like to repeat things. (Tismer speaking)
 import string
@@ -43,50 +44,47 @@ keywordsList = [
 	"break", "else", "if", "or", "while",
 	"class", "except", "import", "pass",
 	"continue", "finally", "in", "print",
-	"def", "for", "is", "raise"]
+	"def", "for", "is", "raise", "yield"]
 
 # Build up a regular expression which will match anything
 # interesting, including multi-line triple-quoted strings.
-commentPat = "#.*"
+commentPat = r"#[^\n]*"
 
-pat = "q[^\q\n]*\(\\\\[\000-\377][^\q\n]*\)*q"
-quotePat = replace(pat, "q", "'") + "\|" + replace(pat, 'q', '"')
+pat = r"q[^\\q\n]*(\\[\000-\377][^\\q\n]*)*q"
+quotePat = replace(pat, "q", "'") + "|" + replace(pat, 'q', '"')
 
 # Way to go, Tim!
-pat = """
+pat = r"""
 	qqq
 	[^\\q]*
-	\(
-		\(	\\\\[\000-\377]
-		\|	q
-			\(	\\\\[\000-\377]
-			\|	[^\\q]
-			\|	q
-				\(	\\\\[\000-\377]
-				\|	[^\\q]
-				\)
-			\)
-		\)
+	(
+		(	\\[\000-\377]
+		|	q
+			(	\\[\000-\377]
+			|	[^\q]
+			|	q
+				(	\\[\000-\377]
+				|	[^\\q]
+				)
+			)
+		)
 		[^\\q]*
-	\)*
+	)*
 	qqq
 """
 pat = string.join(string.split(pat), '')	# get rid of whitespace
-tripleQuotePat = replace(pat, "q", "'") + "\|" + replace(pat, 'q', '"')
+tripleQuotePat = replace(pat, "q", "'") + "|" + replace(pat, 'q', '"')
 
 # Build up a regular expression which matches all and only
 # Python keywords. This will let us skip the uninteresting
 # identifier references.
 # nonKeyPat identifies characters which may legally precede
 # a keyword pattern.
-nonKeyPat = "\(^\|[^a-zA-Z0-9_.\"']\)"
+nonKeyPat = r"(^|[^a-zA-Z0-9_.\"'])"
 
-keyPat = nonKeyPat + "\("
-for keyword in keywordsList:
-	keyPat = keyPat + keyword + "\|"
-keyPat = keyPat[:-2] + "\)" + nonKeyPat
+keyPat = nonKeyPat + "(" + "|".join(keywordsList) + ")" + nonKeyPat
 
-matchPat = commentPat + "\|" + keyPat + "\|" + tripleQuotePat + "\|" + quotePat
+matchPat = commentPat + "|" + keyPat + "|" + tripleQuotePat + "|" + quotePat
 matchRE = re.compile(matchPat)
 
 idKeyPat = "[ \t]*[A-Za-z_][A-Za-z_0-9.]*"	# Ident w. leading whitespace.
@@ -111,7 +109,10 @@ def fontify(pytext, searchfrom = 0, searchto = None):
 	end = searchfrom
 	while 1:
 		m = search(pytext, end)
-		if not m or m.start() >= searchto:
+		if m is None:
+			break	# EXIT LOOP
+		start = m.start()
+		if start >= searchto:
 			break	# EXIT LOOP
 		match = m.group(0)
 		end = start + len(match)
@@ -132,10 +133,12 @@ def fontify(pytext, searchfrom = 0, searchto = None):
 			# following identifier.
 			if match in ["def", "class"]:
 				m = idSearch(pytext, end)
-				if m and m.start() == end:
-					match = m.group(0)
-					end = start + len(match)
-					tags_append((identifierTag, start, end, None))
+				if m is not None:
+					start = m.start()
+					if start == end:
+						match = m.group(0)
+						end = start + len(match)
+						tags_append((identifierTag, start, end, None))
 		elif c == "#":
 			tags_append((commentTag, start, end, None))
 		else:
