@@ -904,12 +904,11 @@ more information about XML-RPC.
 
   \item Various bugfixes and performance improvements have been made
   to the SRE engine underlying the \module{re} module.  For example,
-  \function{re.sub()} will now use \function{string.replace()}
-  automatically when the pattern and its replacement are both just
-  literal strings without regex metacharacters.  Another contributed
-  patch speeds up certain Unicode character ranges by a factor of
-  two. (SRE is maintained by Fredrik Lundh.  The BIGCHARSET patch was
-  contributed by Martin von L\"owis.)
+  the \function{re.sub()} and \function{re.split()} functions have
+  been rewritten in C.  Another contributed patch speeds up certain
+  Unicode character ranges by a factor of two. (SRE is maintained by
+  Fredrik Lundh.  The BIGCHARSET patch was contributed by Martin von
+  L\"owis.)
 
   \item The \module{smtplib} module now supports \rfc{2487}, ``Secure
   SMTP over TLS'', so it's now possible to encrypt the SMTP traffic
@@ -1043,7 +1042,7 @@ using Python as a standard OSA scripting language and much more.''
 
 Most of the MacPython toolbox modules, which interface to MacOS APIs
 such as windowing, QuickTime, scripting, etc. have been ported to OS~X,
-but they've been left commented out in \filename{setup.py}.  People who want
+but they've been left commented out in \file{setup.py}.  People who want
 to experiment with these modules can uncomment them manually.
 
 % Jack's original comments:
@@ -1159,8 +1158,9 @@ to experiment with these modules can uncomment them manually.
 
 The author would like to thank the following people for offering
 suggestions and corrections to various drafts of this article: Fred
-Bremmer, Keith Briggs, Andrew Dalke, Fred~L. Drake, Jr., Carel Fellinger, Mark
-Hammond, Stephen Hansen, Jack Jansen, Marc-Andr\'e Lemburg, Tim Peters, Neil
-Schemenauer, Guido van Rossum.
+Bremmer, Keith Briggs, Andrew Dalke, Fred~L. Drake, Jr., Carel
+Fellinger, Mark Hammond, Stephen Hansen, Jack Jansen, Marc-Andr\'e
+Lemburg, Fredrik Lundh, Tim Peters, Neil Schemenauer, Guido van
+Rossum.
 
 \end{document}
