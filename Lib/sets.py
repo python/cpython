@@ -141,6 +141,11 @@ class BaseSet(object):
     # Standard set operations: union, intersection, both differences.
     # Each has an operator version (e.g. __or__, invoked with |) and a
     # method version (e.g. union).
+    # Subtle:  Each pair requires distinct code so that the outcome is
+    # correct when the type of other isn't suitable.  For example, if
+    # we did "union = __or__" instead, then Set().union(3) would return
+    # NotImplemented instead of raising TypeError (albeit that *why* it
+    # raises TypeError as-is is also a bit subtle).
 
     def __or__(self, other):
         """Return the union of two sets as a new set.
