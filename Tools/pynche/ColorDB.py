@@ -15,9 +15,12 @@ Supporte file types are:
 
 import sys
 import re
+from types import *
 
 class BadColor(Exception):
     pass
+
+DEFAULT_DB = None
 
 
 # generic class
@@ -80,10 +83,11 @@ class ColorDB:
 	except KeyError:
 	    raise BadColor(name)
 
-    def nearest(self, red, green, blue):
+    def nearest(self, rgbtuple):
 	# TBD: use Voronoi diagrams, Delaunay triangulation, or octree for
 	# speeding up the locating of nearest point.  This is really
 	# inefficient!
+	red, green, blue = rgbtuple
 	nearest = -1
 	nearest_name = ''
 	for name, aliases in self.__byrrggbb.values():
@@ -132,6 +136,9 @@ def get_colordb(file, filetype=X_RGB_TXT):
     finally:
 	if fp:
 	    fp.close()
+    # save a global copy
+    global DEFAULT_DB
+    DEFAULT_DB = colordb
     return colordb
 
 
@@ -141,28 +148,20 @@ def rrggbb_to_triplet(color):
     if color[0] <> '#':
 	raise BadColor(color)
 
-    zero = ord('0')
-    a = ord('a')
-    A = ord('A')
-    def _hexchar(c, zero=zero, a=a, A=A):
-	v = ord(c)
-	if v >= zero and v <= zero+9:
-	    return v - zero
-	elif v >= a and v <= a+26:
-	    return v - a + 10
-	elif v >= A and v <= A+26:
-	    return v - A + 10
-	else:
-	    raise BadColor
+    red = color[1:3]
+    green = color[3:5]
+    blue = color[5:7]
+    return tuple(map(lambda v: string.atoi(v, 16), (red, green, blue)))
 
-    try:
-	digits = map(_hexchar, color[1:])
-    except BadColor:
-	raise BadColor(color)
-    red = digits[0] * 16 + digits[1]
-    green = digits[2] * 16 + digits[3]
-    blue = digits[4] * 16 + digits[5]
-    return (red, green, blue)
+
+def triplet_to_rrggbb(rgbtuple):
+    """Converts a (red, green, blue) tuple to #rrggbb."""
+    def hexify(v):
+	hexstr = hex(v)[2:4]
+	if len(hexstr) < 2:
+	    hexstr = '0' + hexstr
+	return hexstr
+    return '#%s%s%s' % tuple(map(hexify, rgbtuple))
 
 
 
