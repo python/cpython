@@ -27,7 +27,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 """#"
 
-import codecs, exceptions, types
+import codecs, exceptions, types, aliases
 
 _cache = {}
 _unknown = '--unknown--'
@@ -38,6 +38,7 @@ _norm_encoding_map = ('                                              . '
                       '                                                '
                       '                                                '
                       '                ')
+_aliases = aliases.aliases
 
 class CodecRegistryError(exceptions.LookupError,
                          exceptions.SystemError):
@@ -74,23 +75,31 @@ def search_function(encoding):
 
     # Import the module:
     #
-    # First look in the encodings package, then try to lookup the
-    # encoding in the aliases mapping and retry the import using the
-    # default import module lookup scheme with the alias name.
+    # First try to find an alias for the normalized encoding
+    # name and lookup the module using the aliased name, then try to
+    # lookup the module using the standard import scheme, i.e. first
+    # try in the encodings package, then at top-level.
     #
-    modname = normalize_encoding(encoding)
-    try:
-        mod = __import__('encodings.' + modname,
-                         globals(), locals(), _import_tail)
-    except ImportError:
-        import aliases
-        modname = (aliases.aliases.get(modname) or
-                   aliases.aliases.get(modname.replace('.', '_')) or
-                   modname)
+    norm_encoding = normalize_encoding(encoding)
+    aliased_encoding = _aliases.get(norm_encoding) or \
+                       _aliases.get(norm_encoding.replace('.', '_'))
+    if aliased_encoding is not None:
+        modnames = [aliased_encoding,
+                    norm_encoding]
+    else:
+        modnames = [norm_encoding]
+    for modname in modnames:
+        if not modname:
+            continue
         try:
-            mod = __import__(modname, globals(), locals(), _import_tail)
+            mod = __import__(modname,
+                             globals(), locals(), _import_tail)
         except ImportError:
-            mod = None
+            pass
+        else:
+            break
+    else:
+        mod = None
 
     try:
         getregentry = mod.getregentry
@@ -125,10 +134,9 @@ def search_function(encoding):
     except AttributeError:
         pass
     else:
-        import aliases
         for alias in codecaliases:
-            if not aliases.aliases.has_key(alias):
-                aliases.aliases[alias] = modname
+            if not _aliases.has_key(alias):
+                _aliases[alias] = modname
 
     # Return the registry entry
     return entry
