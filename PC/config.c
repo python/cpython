@@ -61,6 +61,7 @@ extern void init_codecs_iso2022(void);
 extern void init_codecs_jp(void);
 extern void init_codecs_kr(void);
 extern void init_codecs_tw(void);
+extern void init_subprocess(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
@@ -105,6 +106,8 @@ struct _inittab _PyImport_Inittab[] = {
         {"msvcrt", initmsvcrt},
         {"_locale", init_locale},
 #endif
+	/* XXX Should _subprocess go in a WIN32 block?  not WIN64? */
+	{"_subprocess", init_subprocess},
 
         {"_codecs", init_codecs},
 	{"_weakref", init_weakref},
