@@ -3,8 +3,8 @@
 """usage: %(program)s [options...] file ...
 
 Options specifying formats to build:
-    --html		HyperText Markup Language
-    --pdf		Portable Document Format (default)
+    --html		HyperText Markup Language (default)
+    --pdf		Portable Document Format
     --ps		PostScript
     --dvi		'DeVice Indepentent' format from TeX
     --text		ASCII text (requires lynx)
@@ -97,7 +97,7 @@ class Options:
     up_link = None
     up_title = None
     #
-    DEFAULT_FORMATS = ("pdf",)
+    DEFAULT_FORMATS = ("html",)
     ALL_FORMATS = ("dvi", "html", "pdf", "ps", "text")
 
     def __init__(self):
