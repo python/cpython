@@ -49,6 +49,10 @@
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
+
+#ifndef Py_DEBUG
+#define NDEBUG 1
+#endif
 #include <assert.h>
 
 #include "pyport.h"
