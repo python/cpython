@@ -281,6 +281,7 @@ __all__ = [
     'DocTestSuite',
     'testsource',
     'debug',
+    'master',
 ]
 
 import __future__
