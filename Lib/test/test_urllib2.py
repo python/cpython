@@ -670,15 +670,25 @@ class MiscTests(unittest.TestCase):
         else:
             self.assert_(False)
 
+class NetworkTests(unittest.TestCase):
+    def test_range (self):
+        req = urllib2.Request("http://www.python.org",
+                              headers={'Range': 'bytes=20-39'})
+        result = urllib2.urlopen(req)
+        data = result.read()
+        self.assertEqual(len(data), 20)
+
+        
 
 def test_main(verbose=None):
     from test import test_sets
-    test_support.run_unittest(
-        TrivialTests,
-        OpenerDirectorTests,
-        HandlerTests,
-        MiscTests,
-    )
+    tests = (TrivialTests,
+             OpenerDirectorTests,
+             HandlerTests,
+             MiscTests)
+    if test_support.is_resource_enabled('network'):
+        tests += (NetworkTests,)
+    test_support.run_unittest(*tests)
 
 if __name__ == "__main__":
     test_main(verbose=True)
