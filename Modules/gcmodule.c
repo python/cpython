@@ -346,9 +346,9 @@ has_finalizer(PyObject *op)
 		if (delstr == NULL)
 			Py_FatalError("PyGC: can't initialize __del__ string");
 	}
-	return (PyInstance_Check(op) ||
-	        PyType_HasFeature(op->ob_type, Py_TPFLAGS_HEAPTYPE))
-	       && PyObject_HasAttr(op, delstr);
+	return PyInstance_Check(op) ? PyObject_HasAttr(op, delstr) :
+	        PyType_HasFeature(op->ob_type, Py_TPFLAGS_HEAPTYPE) ?
+		op->ob_type->tp_del != NULL : 0;
 }
 
 /* Move all objects with finalizers (instances with __del__) */
