@@ -100,13 +100,16 @@ int Py_MakePendingCalls Py_PROTO((void));
 */
 
 extern void PyEval_InitThreads Py_PROTO((void));
-extern PyObject *PyEval_SaveThread Py_PROTO((void));
-extern void PyEval_RestoreThread Py_PROTO((PyObject *));
+extern PyThreadState *PyEval_SaveThread Py_PROTO((void));
+extern void PyEval_RestoreThread Py_PROTO((PyThreadState *));
 
 #ifdef WITH_THREAD
 
+extern void PyEval_AcquireThread Py_PROTO((PyThreadState *tstate));
+extern void PyEval_ReleaseThread Py_PROTO((PyThreadState *tstate));
+
 #define Py_BEGIN_ALLOW_THREADS { \
-			PyObject *_save; \
+			PyThreadState *_save; \
 			_save = PyEval_SaveThread();
 #define Py_BLOCK_THREADS	PyEval_RestoreThread(_save);
 #define Py_UNBLOCK_THREADS	_save = PyEval_SaveThread();
