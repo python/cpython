@@ -412,12 +412,24 @@ PyOS_CheckStack()
 {
 	char here;
 	static char *sentinel = 0;
+	static PyThreadState *thread_for_sentinel = 0;
 	
 	if ( sentinel == 0 ) {		
 		sentinel = &here - StackSpace() + MINIMUM_STACK_SIZE;
 	}
-	if ( &here < sentinel )
-		return -1;
+	if ( thread_for_sentinel == 0 ) {
+		thread_for_sentinel = PyThreadState_Get();
+	}
+	if ( &here < sentinel ) {
+		if (thread_for_sentinel == PyThreadState_Get()) {
+			return -1;
+#if 0
+		} else {
+			/* Else we are unsure... */
+			fprintf(stderr, "Stackcheck in other thread (was %x now %x)\n", thread_for_sentinel,PyThreadState_Get()); 
+#endif
+		}
+	}
 	return 0;
 }
 #endif /* USE_STACKCHECK */
