@@ -4316,7 +4316,7 @@ setup_confname_table(table, tablesize, tablename, moddict)
     d = PyDict_New();
     if (d != NULL) {
         PyObject *o;
-        int i = 0;
+        size_t i = 0;
 
         for (; i < tablesize; ++i) {
             o = PyInt_FromLong(table[i].value);
