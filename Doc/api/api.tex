@@ -1828,6 +1828,60 @@ Macro form of \cfunction{PyString_GetSize()} but without error checking.
 \end{cfuncdesc}
 
 
+\subsection{Buffer Objects \label{bufferObjects}}
+
+XXX need a real description of buffers and buffer ''segments.``
+
+\begin{cvardesc}{PyTypeObject}{PyBuffer_Type}
+The instance of \ctype{PyTypeObject} which represents the Python
+buffer type.
+\end{cvardesc}
+
+\begin{cvardesc}{int}{Py_END_OF_BUFFER}
+Constant returned by \cfunction{Py}
+\end{cvardesc}
+
+\begin{cfuncdesc}{int}{PyBuffer_Check}{PyObject *p}
+Return true if the argument has type \cdata{PyBuffer_Type}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyBuffer_FromObject}{PyObject *base,
+                                                  int offset, int size}
+Return a new read-only buffer object.
+Raises \exception{TypeError} if \var{base} doesn't support the
+read-only buffer protocol or doesn't provide exactly one buffer
+segment.  Raises \exception{ValueError} if \var{offset} is less than
+zero.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyBuffer_FromReadWriteObject}{PyObject *base,
+                                                           int offset,
+                                                           int size}
+Return a new writable buffer object.  Parameters and exceptions are
+similar to those for \cfunction{PyBuffer_FromObject()}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyBuffer_FromMemory}{void *ptr, int size}
+Return a new read-only buffer object that reads from a memory buffer.
+The caller is responsible for ensuring that the memory buffer, passed
+in as \var{ptr}, is not deallocated while the returned buffer object
+exists.  Raises \exception{ValueError} if \var{size} is less than
+zero.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyBuffer_FromReadWriteMemory}{void *ptr, int size}
+Return a new writable buffer object that reads from and writes to a
+memory buffer.  The caller is responsible for ensuring that the memory
+buffer, passed in as \var{ptr}, is not deallocated while the returned
+buffer object exists.  Raises \exception{ValueError} if \var{size} is
+less than zero.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyBuffer_New}{int size}
+Returns a new writable buffer object that maintains its own memory
+buffer of \var{size} bytes.  \var{size} must be zero or positive.
+\end{cfuncdesc}
+
 
 \subsection{Tuple Objects \label{tupleObjects}}
 
@@ -3029,9 +3083,20 @@ PyObject_HEAD, PyObject_HEAD_INIT, PyObject_VAR_HEAD
 Typedefs:
 unaryfunc, binaryfunc, ternaryfunc, inquiry, coercion, intargfunc,
 intintargfunc, intobjargproc, intintobjargproc, objobjargproc,
-getreadbufferproc, getwritebufferproc, getsegcountproc,
+getreadbufferproc, getsegcountproc, getcharbufferproc,
 destructor, printfunc, getattrfunc, getattrofunc, setattrfunc,
 setattrofunc, cmpfunc, reprfunc, hashfunc
+
+\begin{ctypedesc}{int (*getwritebufferproc) (PyObject *self, int segment,
+                                             void **ptrptr)}
+Return a pointer to a writable memory buffer in \code{*\var{ptrptr}};
+the memory buffer must correspond to buffer segment \var{segment}.
+Must return \code{-1} and set an exception on error.
+\exception{TypeError} should be raised if the object only supports
+read-only buffers, and \exception{SystemError} should be raised when
+\var{segment} specifies a segment that doesn't exist.
+% Why doesn't it raise ValueError for this one?
+\end{ctypedesc}
 
 PyNumberMethods
 
