@@ -109,18 +109,18 @@ to create the \code{'eval'} and \code{'exec'} forms.
 
 \begin{funcdesc}{expr}{source}
 The \function{expr()} function parses the parameter \var{source}
-as if it were an input to \samp{compile(\var{source}, 'eval')}.  If
-the parse succeeds, an AST object is created to hold the internal
-parse tree representation, otherwise an appropriate exception is
-thrown.
+as if it were an input to \samp{compile(\var{source}, 'file.py',
+'eval')}.  If the parse succeeds, an AST object is created to hold the
+internal parse tree representation, otherwise an appropriate exception
+is thrown.
 \end{funcdesc}
 
 \begin{funcdesc}{suite}{source}
 The \function{suite()} function parses the parameter \var{source}
-as if it were an input to \samp{compile(\var{source}, 'exec')}.  If
-the parse succeeds, an AST object is created to hold the internal
-parse tree representation, otherwise an appropriate exception is
-thrown.
+as if it were an input to \samp{compile(\var{source}, 'file.py',
+'exec')}.  If the parse succeeds, an AST object is created to hold the
+internal parse tree representation, otherwise an appropriate exception
+is thrown.
 \end{funcdesc}
 
 \begin{funcdesc}{sequence2ast}{sequence}
@@ -323,7 +323,7 @@ this purpose, using the \module{parser} module to produce an
 intermediate data structure is equivalent to the code
 
 \begin{verbatim}
->>> code = compile('a + 5', 'eval')
+>>> code = compile('a + 5', 'file.py', 'eval')
 >>> a = 5
 >>> eval(code)
 10
@@ -336,7 +336,7 @@ as an AST object:
 \begin{verbatim}
 >>> import parser
 >>> ast = parser.expr('a + 5')
->>> code = ast.compile()
+>>> code = ast.compile('file.py')
 >>> a = 5
 >>> eval(code)
 10
