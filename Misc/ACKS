@@ -28,6 +28,8 @@ Alfonso Baciero
 Stig Bakken
 Greg Ball
 Luigi Ballabio
+Michael J. Barber
+Chris Barker
 Cesar Eduardo Barros
 Des Barry
 Ulf Bartelt
@@ -37,6 +39,7 @@ Samuel L. Bayer
 Donald Beaudry
 David Beazley
 Neal Becker
+Bill Bedford
 Reimer Behrends
 Thomas Bellman
 Juan M. Bello Rivas
@@ -49,6 +52,7 @@ Dominic Binks
 Roy Bixler
 Martin Bless
 Pablo Bleyer
+Erik van Blokland
 Finn Bock
 Paul Boddie
 David Bolen
@@ -59,7 +63,9 @@ Thierry Bousch
 Monty Brandenberg
 Terrence Brannon
 Dave Brennan
+Tom Bridgman
 Gary S. Brown
+Daniel Brotsky
 Oleg Broytmann
 Dave Brueck
 Stan Bubrouski
@@ -122,6 +128,7 @@ Daniel Dittmar
 Walter Dörwald
 Jaromir Dolecek
 Cesar Douady
+Dean Draayer
 Fred L. Drake, Jr.
 John DuBois
 Paul Dubois
@@ -152,6 +159,7 @@ Mark Favas
 Niels Ferguson
 Sebastian Fernandez
 Vincent Fiack
+Russell Finn
 Nils Fischbeck
 Hernán Martínez Foffani
 Doug Fort
@@ -163,6 +171,7 @@ Tadayoshi Funaba
 Peter Funk
 Lele Gaifax
 Raymund Galvin
+Nitin Ganatra
 Fred Gansevles
 Lars Marius Garshol
 Harry Henry Gebel
@@ -233,6 +242,7 @@ Michael Hudson
 Jim Hugunin
 Greg Humphreys
 Jeremy Hylton
+Tony Ingraldi
 John Interrante
 Ben Jackson
 Paul Jackson
@@ -250,8 +260,10 @@ Lucas de Jonge
 Jens B. Jorgensen
 John Jorgensen
 Andreas Jung
+Tattoo Mabonzo K.
 Bob Kahn
 Tamito Kajiyama
+Jacob Kaplan-Moss
 Lou Kates
 Randall Kern
 Robert Kern
@@ -280,6 +292,7 @@ Soren Larsen
 Piers Lauder
 Chris Lawrence
 Christopher Lee
+Luc Lefebvre
 Kip Lehman
 Marc-Andre Lemburg
 William Lewis
@@ -291,6 +304,7 @@ Nick Lockwood
 Stephanie Lockwood
 Martin von Löwis
 Anne Lord
+Tom Loredo
 Jason Lowe
 Tony Lownds
 Ray Loyzaga
@@ -351,15 +365,19 @@ Jeffrey Ollie
 Nigel O'Brian
 Kevin O'Connor
 Tim O'Malley
+Pascal Oberndoerfer
 Denis S. Otkidach
 Piet van Oostrum
 Jason Orendorff
 Douglas Orr
+Russel Owen
 Todd R. Palmer
+Alexandre Parenteau
 Dan Parisien
 Harri Pasanen
 Randy Pausch
 Ondrej Palkovsky
+M. Papillon
 Marcel van der Peijl
 Samuele Pedroni
 Steven Pemberton
@@ -444,6 +462,7 @@ Nathan Paul Simons
 Janne Sinkkonen
 George Sipe
 Kragen Sitaker
+Christopher Smith
 Gregory P. Smith
 Rafal Smotrzyk
 Dirk Soede
@@ -451,7 +470,9 @@ Paul Sokolovsky
 Clay Spence
 Per Spilling
 Noah Spurrier
+Oliver Steele
 Greg Stein
+Chris Stern
 Dan Stromberg
 Nathan Sullivan
 Mark Summerfield
@@ -505,6 +526,7 @@ Steve Waterbury
 Aaron Watters
 Bob Watson
 Henrik Weber
+Corran Webster
 Zack Weinberg
 Edward Welbourne
 Rickard Westman
@@ -524,6 +546,7 @@ Stefan Witzel
 Klaus-Juergen Wolf
 Dan Wolfe
 Richard Wolff
+Gordon Worley
 Thomas Wouters
 Doug Wyatt
 Ka-Ping Yee
