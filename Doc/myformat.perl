@@ -72,6 +72,17 @@ sub do_cmd_manpage{
     $_;
 }
 
+sub do_cmd_rfc{
+    local($_) = @_;
+    s/$next_pair_pr_rx//;
+    local($br_id,$rfcnumber) = ($1, $2);
+
+    # Save the reference
+    local($nstr) = &gen_index_id("RFC!RFC $rfcnumber", '');
+    $index{$nstr} .= &make_half_href("$CURRENT_FILE#$br_id");
+    "<a name=\"$br_id\">RFC $rfcnumber<\/a>" .$_;
+}
+
 sub do_cmd_kbd{
 	local($_) = @_;
 	s/$any_next_pair_pr_rx/<kbd>\2<\/kbd>/;
@@ -111,6 +122,15 @@ sub do_cmd_strong{
 # file and samp are at the end of this file since they screw up fontlock.
 
 # index commands
+
+$INDEX_SUBITEM = "";
+
+sub do_cmd_setindexsubitem{
+    local($_) = @_;
+    s/$any_next_pair_pr_rx//;
+    $INDEX_SUBITEM = $2;
+    $_;
+}
 
 sub do_cmd_indexii{
 	local($_) = @_;
@@ -177,6 +197,15 @@ sub my_parword_index_helper{
 	&make_index_entry($br_id, "$str ($word)") . $_;
 }
 
+
+# Set this to true to strip out the <tt>...</tt> from index entries;
+# this is analogous to using the second definition of \idxcode{} from
+# myformat.sty.
+#
+# It is used from &make_mod_index_entry() and &make_str_index_entry().
+#
+$STRIP_INDEX_TT = 0;
+
 sub make_mod_index_entry {
     local($br_id,$str,$define) = @_;
     local($halfref) = &make_half_href("$CURRENT_FILE#$br_id");
@@ -189,6 +218,9 @@ sub make_mod_index_entry {
 	$Modules{$nstr} .= $halfref;
     }
     $str = &gen_index_id($str, $define);
+    if ($STRIP_INDEX_TT) {
+        $str =~ s/<tt>(.*)<\/tt>/\1/;
+    }
     $index{$str} .= $halfref;
     "<a name=\"$br_id\">$anchor_invisible_mark<\/a>";
 }
@@ -204,7 +236,6 @@ sub my_module_index_helper{
 sub do_cmd_bifuncindex{ &my_parword_index_helper('built-in function', @_); }
 sub do_cmd_bimodindex{ &my_module_index_helper('built-in', @_, 'DEF'); }
 sub do_cmd_stmodindex{ &my_module_index_helper('standard', @_, 'DEF'); }
-sub do_cmd_bifuncindex{ &my_parword_index_helper('standard module', @_); }
 
 sub do_cmd_refbimodindex{ &my_module_index_helper('built-in', @_, 'REF'); }
 sub do_cmd_refstmodindex{ &my_module_index_helper('standard', @_, 'REF'); }
@@ -244,6 +275,9 @@ sub make_str_index_entry {
     $TITLE = $ref_before unless $TITLE;
     # Save the reference
     local($nstr) = &gen_index_id($str, '');
+    if ($STRIP_INDEX_TT) {
+        $nstr =~ s/<tt>(.*)<\/tt>/\1/;
+    }
     $index{$nstr} .= &make_half_href("$CURRENT_FILE#$br_id");
     "<a name=\"$br_id\">$str<\/a>";
 }
@@ -258,7 +292,7 @@ sub do_env_cfuncdesc{
     $function_name = "$4";
     $arg_list = "$6";
     $idx = &make_str_index_entry($3,
-			"<tt>$function_name</tt>" . &get_indexsubitem);
+			"<tt>$function_name()</tt>" . &get_indexsubitem);
   }
   "<dl><dt>$return_type <b>$idx</b>" .
     "(<var>$arg_list</var>)\n<dd>$'\n</dl>"
@@ -298,7 +332,7 @@ sub do_env_funcdesc{
     $function_name = "$2";
     $arg_list = "$4";
     $idx = &make_str_index_entry($3,
-			"<tt>$function_name</tt>" . &get_indexsubitem);
+			"<tt>$function_name()</tt>" . &get_indexsubitem);
   }
   "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>$'\n</dl>";
 }
@@ -309,7 +343,7 @@ sub do_cmd_funcline{
 
   s/$funcdesc_rx//o;
   local($br_id, $function_name, $arg_list) = ($3, $2, $4);
-  local($idx) = &make_str_index_entry($br_id, "<tt>$function_name</tt>");
+  local($idx) = &make_str_index_entry($br_id, "<tt>$function_name()</tt>");
 
   "<dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_;
 }
@@ -321,9 +355,9 @@ sub do_env_opcodedesc{
   if (/$opcodedesc_rx/o) {
     $opcode_name = "$2";
     $arg_list = "$4";
-    $idx = &make_str_index_entry($3,
-			"<tt>$opcode_name</tt> (byte code instruction)");
-    $idx =~ s/ \(byte code instruction\)//;
+#    $idx = &make_str_index_entry($3,
+#			"<tt>$opcode_name</tt> (byte code instruction)");
+#    $idx =~ s/ \(byte code instruction\)//;
   }
   $stuff = "<dl><dt><b>$idx</b>";
   if ($arg_list) {
