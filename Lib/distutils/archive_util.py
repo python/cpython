@@ -93,7 +93,7 @@ def make_zipfile (base_name, base_dir, verbose=0, dry_run=0):
 
         def visit (z, dirname, names):
             for name in names:
-                path = os.path.join (dirname, name)
+                path = os.path.normpath(os.path.join(dirname, name))
                 if os.path.isfile (path):
                     z.write (path, path)
 
