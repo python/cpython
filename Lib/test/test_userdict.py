@@ -155,8 +155,12 @@ class SeqDict(DictMixin):
             raise KeyError
         return self.valuelist[i]
     def __setitem__(self, key, value):
-        self.keylist.append(key)
-        self.valuelist.append(value)
+        try:
+            i = self.keylist.index(key)
+            self.valuelist[i] = value
+        except ValueError:
+            self.keylist.append(key)
+            self.valuelist.append(value)
     def __delitem__(self, key):
         try:
             i = self.keylist.index(key)
