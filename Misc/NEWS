@@ -96,7 +96,9 @@ Tools
 
 Build
 
-API
+C API
+
+- New function PyObject_Dir(obj), like Python __builtin__.dir(obj).
 
 - Note that PyLong_AsDouble can fail!  This has always been true, but no
   callers checked for it.  It's more likely to fail now, because overflow

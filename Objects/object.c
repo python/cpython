@@ -1357,6 +1357,151 @@ PyCallable_Check(PyObject *x)
 	}
 }
 
+/* Helper for PyObject_Dir.
+   Merge the __dict__ of aclass into dict, and recursively also all
+   the __dict__s of aclass's base classes.  The order of merging isn't
+   defined, as it's expected that only the final set of dict keys is
+   interesting.
+   Return 0 on success, -1 on error.
+*/
+
+static int
+merge_class_dict(PyObject* dict, PyObject* aclass)
+{
+	PyObject *classdict;
+	PyObject *bases;
+
+	assert(PyDict_Check(dict));
+	assert(aclass);
+
+	/* Merge in the type's dict (if any). */
+	classdict = PyObject_GetAttrString(aclass, "__dict__");
+	if (classdict == NULL)
+		PyErr_Clear();
+	else {
+		int status = PyDict_Update(dict, classdict);
+		Py_DECREF(classdict);
+		if (status < 0)
+			return -1;
+	}
+
+	/* Recursively merge in the base types' (if any) dicts. */
+	bases = PyObject_GetAttrString(aclass, "__bases__");
+	if (bases != NULL) {
+		int i, n;
+		assert(PyTuple_Check(bases));
+		n = PyTuple_GET_SIZE(bases);
+		for (i = 0; i < n; i++) {
+			PyObject *base = PyTuple_GET_ITEM(bases, i);
+			if (merge_class_dict(dict, base) < 0) {
+				Py_DECREF(bases);
+				return -1;
+			}
+		}
+		Py_DECREF(bases);
+	}
+	return 0;
+}
+
+/* Like __builtin__.dir(arg).  See bltinmodule.c's builtin_dir for the
+   docstring, which should be kept in synch with this implementation. */
+
+PyObject *
+PyObject_Dir(PyObject *arg)
+{
+	/* Set exactly one of these non-NULL before the end. */
+	PyObject *result = NULL;	/* result list */
+	PyObject *masterdict = NULL;	/* result is masterdict.keys() */
+
+	/* If NULL arg, return the locals. */
+	if (arg == NULL) {
+		PyObject *locals = PyEval_GetLocals();
+		if (locals == NULL)
+			goto error;
+		result = PyDict_Keys(locals);
+		if (result == NULL)
+			goto error;
+	}
+
+	/* Elif this is some form of module, we only want its dict. */
+	else if (PyObject_TypeCheck(arg, &PyModule_Type)) {
+		masterdict = PyObject_GetAttrString(arg, "__dict__");
+		if (masterdict == NULL)
+			goto error;
+		assert(PyDict_Check(masterdict));
+	}
+
+	/* Elif some form of type or class, grab its dict and its bases.
+	   We deliberately don't suck up its __class__, as methods belonging
+	   to the metaclass would probably be more confusing than helpful. */
+	else if (PyType_Check(arg) || PyClass_Check(arg)) {
+		masterdict = PyDict_New();
+		if (masterdict == NULL)
+			goto error;
+		if (merge_class_dict(masterdict, arg) < 0)
+			goto error;
+	}
+
+	/* Else look at its dict, and the attrs reachable from its class. */
+	else {
+		PyObject *itsclass;
+		/* Create a dict to start with.  CAUTION:  Not everything
+		   responding to __dict__ returns a dict! */
+		masterdict = PyObject_GetAttrString(arg, "__dict__");
+		if (masterdict == NULL) {
+			PyErr_Clear();
+			masterdict = PyDict_New();
+		}
+		else if (!PyDict_Check(masterdict)) {
+			Py_DECREF(masterdict);
+			masterdict = PyDict_New();
+		}
+		else {
+			/* The object may have returned a reference to its
+			   dict, so copy it to avoid mutating it. */
+			PyObject *temp = PyDict_Copy(masterdict);
+			Py_DECREF(masterdict);
+			masterdict = temp;
+		}
+		if (masterdict == NULL)
+			goto error;
+
+		/* Merge in attrs reachable from its class.
+		   CAUTION:  Not all objects have a __class__ attr. */
+		itsclass = PyObject_GetAttrString(arg, "__class__");
+		if (itsclass == NULL)
+			PyErr_Clear();
+		else {
+			int status = merge_class_dict(masterdict, itsclass);
+			Py_DECREF(itsclass);
+			if (status < 0)
+				goto error;
+		}
+	}
+
+	assert((result == NULL) ^ (masterdict == NULL));
+	if (masterdict != NULL) {
+		/* The result comes from its keys. */
+		assert(result == NULL);
+		result = PyDict_Keys(masterdict);
+		if (result == NULL)
+			goto error;
+	}
+
+	assert(result);
+	if (PyList_Sort(result) != 0)
+		goto error;
+	else
+		goto normal_return;
+
+  error:
+	Py_XDECREF(result);
+	result = NULL;
+	/* fall through */
+  normal_return:
+  	Py_XDECREF(masterdict);
+	return result;
+}
 
 /*
 NoObject is usable as a non-NULL undefined value, used by the macro None.

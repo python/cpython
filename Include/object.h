@@ -346,6 +346,14 @@ extern DL_IMPORT(int) PyNumber_CoerceEx(PyObject **, PyObject **);
 
 extern DL_IMPORT(void) (*PyObject_ClearWeakRefs)(PyObject *);
 
+/* PyObject_Dir(obj) acts like Python __builtin__.dir(obj), returning a
+   list of strings.  PyObject_Dir(NULL) is like __builtin__.dir(),
+   returning the names of the current locals.  In this case, if there are
+   no current locals, NULL is returned, and PyErr_Occurred() is false.
+*/
+extern DL_IMPORT(PyObject *) PyObject_Dir(PyObject *);
+
+
 /* Helpers for printing recursive container types */
 extern DL_IMPORT(int) Py_ReprEnter(PyObject *);
 extern DL_IMPORT(void) Py_ReprLeave(PyObject *);
