@@ -97,7 +97,27 @@ elif os.name != 'riscos':
             TESTFN_ENCODING="mbcs"
 else:
     TESTFN = 'test'
-del os
+
+# Make sure we can write to TESTFN, try in /tmp if we can't
+fp = None
+try:
+    fp = open(TESTFN, 'w+')
+except IOError:
+    TMP_TESTFN = os.path.join('/tmp', TESTFN)
+    try:
+        fp = open(TMP_TESTFN, 'w+')
+        TESTFN = TMP_TESTFN
+        del TMP_TESTFN
+    except IOError:
+        print ('WARNING: tests will fail, unable to write to: %s or %s' % 
+                (TESTFN, TMP_TESTFN))
+if fp is not None:
+    fp.close()
+    try:
+        os.unlink(TESTFN)
+    except:
+        pass
+del os, fp
 
 from os import unlink
 
