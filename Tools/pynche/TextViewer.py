@@ -18,6 +18,8 @@ in the text window (which only has a background).
 from Tkinter import *
 import ColorDB
 
+ADDTOVIEW = 'Text Window...'
+
 class TextViewer:
     def __init__(self, switchboard, master=None):
         self.__sb = switchboard

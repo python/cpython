@@ -59,6 +59,8 @@ WRAP = 'Wrap Around'
 RATIO = 'Preserve Distance'
 GRAV = 'Squash'
 
+ADDTOVIEW = 'Details Window...'
+
 
 class DetailsViewer:
     def __init__(self, switchboard, master=None):
