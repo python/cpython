@@ -1845,6 +1845,15 @@ end
 item: Remark
   Text=Main Python DLL
 end
+item: Remark
+  Text=Tell Wise it's OK to delete the Python DLL at uninstall time,
+end
+item: Remark
+  Text=despite that we (may) write it into a system directory.
+end
+item: Add Text to INSTALL.LOG
+  Text=Non-System File:
+end
 item: Install File
   Source=.\python%_pymajor_%%_pyminor_%.dll
   Destination=%DLLDEST%\python%_PYMAJOR_%%_PYMINOR_%.dll
