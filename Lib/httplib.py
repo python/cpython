@@ -78,10 +78,10 @@ except ImportError:
 
 __all__ = ["HTTP", "HTTPResponse", "HTTPConnection", "HTTPSConnection",
            "HTTPException", "NotConnected", "UnknownProtocol",
-           "UnknownTransferEncoding", "IllegalKeywordArgument",
-           "UnimplementedFileMode", "IncompleteRead", "InvalidURL",
-           "ImproperConnectionState", "CannotSendRequest", "CannotSendHeader",
-           "ResponseNotReady", "BadStatusLine", "error"]
+           "UnknownTransferEncoding", "UnimplementedFileMode",
+           "IncompleteRead", "InvalidURL", "ImproperConnectionState",
+           "CannotSendRequest", "CannotSendHeader", "ResponseNotReady",
+           "BadStatusLine", "error"]
 
 HTTP_PORT = 80
 HTTPS_PORT = 443
@@ -733,21 +733,10 @@ class HTTPSConnection(HTTPConnection):
 
     default_port = HTTPS_PORT
 
-    def __init__(self, host, port=None, **x509):
-        keys = x509.keys()
-        try:
-            keys.remove('key_file')
-        except ValueError:
-            pass
-        try:
-            keys.remove('cert_file')
-        except ValueError:
-            pass
-        if keys:
-            raise IllegalKeywordArgument()
+    def __init__(self, host, port=None, key_file=None, cert_file=None):
         HTTPConnection.__init__(self, host, port)
-        self.key_file = x509.get('key_file')
-        self.cert_file = x509.get('cert_file')
+        self.key_file = key_file
+        self.cert_file = cert_file
 
     def connect(self):
         "Connect to a host on a given (SSL) port."
@@ -889,9 +878,6 @@ class UnknownProtocol(HTTPException):
         self.version = version
 
 class UnknownTransferEncoding(HTTPException):
-    pass
-
-class IllegalKeywordArgument(HTTPException):
     pass
 
 class UnimplementedFileMode(HTTPException):
