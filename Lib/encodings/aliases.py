@@ -122,7 +122,7 @@ aliases = {
     'ibm500'             : 'cp500',
 
     # cp775 codec
-    '775'              : 'cp775',
+    '775'                : 'cp775',
     'cspc775baltic'      : 'cp775',
     'ibm775'             : 'cp775',
 
@@ -294,6 +294,11 @@ aliases = {
     'l6'                 : 'iso8859_10',
     'latin6'             : 'iso8859_10',
 
+    # iso8859_11 codec
+    'thai'               : 'iso8859_11',
+    'iso_8859_11'        : 'iso8859_11',
+    'iso_8859_11_2001'   : 'iso8859_11',
+
     # iso8859_13 codec
     'iso_8859_13'        : 'iso8859_13',
 
@@ -307,6 +312,13 @@ aliases = {
 
     # iso8859_15 codec
     'iso_8859_15'        : 'iso8859_15',
+
+    # iso8859_16 codec
+    'iso_8859_16'        : 'iso8859_16',
+    'iso_8859_16_2001'   : 'iso8859_16',
+    'iso_ir_226'         : 'iso8859_16',
+    'l10'                : 'iso8859_16',
+    'latin10'            : 'iso8859_16',
 
     # iso8859_2 codec
     'csisolatin2'        : 'iso8859_2',
@@ -372,18 +384,6 @@ aliases = {
     'iso_ir_148'         : 'iso8859_9',
     'l5'                 : 'iso8859_9',
     'latin5'             : 'iso8859_9',
-
-    # iso8859_11 codec
-    'thai'               : 'iso8859_11',
-    'iso_8859_11'        : 'iso8859_11',
-    'iso_8859_11_2001'   : 'iso8859_11',
-
-    # iso8859_16 codec
-    'iso_8859_16'        : 'iso8859_16',
-    'iso_8859_16_2001'   : 'iso8859_16',
-    'iso_ir_226'         : 'iso8859_16',
-    'l10'                : 'iso8859_16',
-    'latin10'            : 'iso8859_16',
 
     # johab codec
     'cp1361'             : 'johab',
