@@ -435,6 +435,23 @@ class TestMessageAPI(TestEmailBase):
         msg['Content-Type'] = 'no-slash-in-this-string'
         self.assertEqual(msg.get_content_subtype(), 'plain')
 
+    def test_replace_header(self):
+        eq = self.assertEqual
+        msg = Message()
+        msg.add_header('First', 'One')
+        msg.add_header('Second', 'Two')
+        msg.add_header('Third', 'Three')
+        eq(msg.keys(), ['First', 'Second', 'Third'])
+        eq(msg.values(), ['One', 'Two', 'Three'])
+        msg.replace_header('Second', 'Twenty')
+        eq(msg.keys(), ['First', 'Second', 'Third'])
+        eq(msg.values(), ['One', 'Twenty', 'Three'])
+        msg.add_header('First', 'Eleven')
+        msg.replace_header('First', 'One Hundred')
+        eq(msg.keys(), ['First', 'Second', 'Third', 'First'])
+        eq(msg.values(), ['One Hundred', 'Twenty', 'Three', 'Eleven'])
+        self.assertRaises(KeyError, msg.replace_header, 'Fourth', 'Missing')
+
 
 
 # Test the email.Encoders module
