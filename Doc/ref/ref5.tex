@@ -689,7 +689,7 @@ The integer division and modulo operators are connected by the
 following identity: \code{x == (x/y)*y + (x\%y)}.  Integer division and
 modulo are also connected with the built-in function \function{divmod()}:
 \code{divmod(x, y) == (x/y, x\%y)}.  These identities don't hold for
-floating point and complex numbers; there similar identities hold
+floating point numbers; there similar identities hold
 approximately where \code{x/y} is replaced by \code{floor(x/y)}) or
 \code{floor(x/y) - 1} (for floats),\footnote{
     If x is very close to an exact integer multiple of y, it's
@@ -697,8 +697,13 @@ approximately where \code{x/y} is replaced by \code{floor(x/y)}) or
     \code{(x-x\%y)/y} due to rounding.  In such cases, Python returns
     the latter result, in order to preserve that \code{divmod(x,y)[0]
     * y + x \%{} y} be very close to \code{x}.
-} or \code{floor((x/y).real)} (for
-complex).
+}.
+
+Complex floor division operator, modulo operator, and
+\function{divmod()}.
+
+\deprecated{2.3}{Instead convert to float using \function{abs()}
+if appropriate.}
 
 The \code{+} (addition) operator yields the sum of its arguments.
 The arguments must either both be numbers or both sequences of the

@@ -218,8 +218,8 @@ to coerce numbers to a specific type.
 \bifuncindex{float}
 \bifuncindex{complex}
 
-All numeric types support the following operations, sorted by
-ascending priority (operations in the same box have the same
+All numeric types (except complex) support the following operations,
+sorted by ascending priority (operations in the same box have the same
 priority; all numeric operations have a higher priority than
 comparison operations):
 
@@ -229,7 +229,7 @@ comparison operations):
   \hline
   \lineiii{\var{x} * \var{y}}{product of \var{x} and \var{y}}{}
   \lineiii{\var{x} / \var{y}}{quotient of \var{x} and \var{y}}{(1)}
-  \lineiii{\var{x} \%{} \var{y}}{remainder of \code{\var{x} / \var{y}}}{}
+  \lineiii{\var{x} \%{} \var{y}}{remainder of \code{\var{x} / \var{y}}}{(4)}
   \hline
   \lineiii{-\var{x}}{\var{x} negated}{}
   \lineiii{+\var{x}}{\var{x} unchanged}{}
@@ -240,7 +240,7 @@ comparison operations):
   \lineiii{float(\var{x})}{\var{x} converted to floating point}{}
   \lineiii{complex(\var{re},\var{im})}{a complex number with real part \var{re}, imaginary part \var{im}.  \var{im} defaults to zero.}{}
   \lineiii{\var{c}.conjugate()}{conjugate of the complex number \var{c}}{}
-  \lineiii{divmod(\var{x}, \var{y})}{the pair \code{(\var{x} / \var{y}, \var{x} \%{} \var{y})}}{(3)}
+  \lineiii{divmod(\var{x}, \var{y})}{the pair \code{(\var{x} / \var{y}, \var{x} \%{} \var{y})}}{(3)(4)}
   \lineiii{pow(\var{x}, \var{y})}{\var{x} to the power \var{y}}{}
   \lineiii{\var{x} ** \var{y}}{\var{x} to the power \var{y}}{}
 \end{tableiii}
@@ -272,6 +272,12 @@ for well-defined conversions.
 \item[(3)]
 See section \ref{built-in-funcs}, ``Built-in Functions,'' for a full
 description.
+
+\item[(4)]
+Complex floor division operator, modulo operator, and \function{divmod()}.
+
+\deprecated{2.3}{Instead convert to float using \function{abs()}
+if appropriate.}
 
 \end{description}
 % XXXJH exceptions: overflow (when? what operations?) zerodivision
