@@ -6,6 +6,11 @@ from __future__ import generators
 
 import sys
 
+# Iterators in Python aren't a matter of type but of protocol.  A large
+# and changing number of builtin types implement *some* flavor of
+# iterator.  Don't check the type!  Use hasattr to check for both
+# "__iter__" and "next" attributes instead.
+
 NoneType = type(None)
 TypeType = type
 ObjectType = object
@@ -76,9 +81,6 @@ except TypeError:
 SliceType = type(slice(0))
 EllipsisType = type(Ellipsis)
 
-DictIterType = type(iter({}))
-SequenceIterType = type(iter([]))
-FunctionIterType = type(iter(lambda: 0, 0))
 DictProxyType = type(TypeType.__dict__)
 
 del sys, _f, _C, _x                     # Not for export
