@@ -106,7 +106,7 @@ naive or aware.  \var{d} is aware if \code{\var{d}.tzinfo} is not
 is naive.
 
 The distinction between naive and aware doesn't apply to
-\code{timedelta} objects.
+\class{timedelta} objects.
 
 Subclass relationships:
 
@@ -124,11 +124,11 @@ object
 A \class{timedelta} object represents a duration, the difference
 between two dates or times.
 
-\begin{classdesc}{timedelta}{days=0, seconds=0, microseconds=0,
-                             milliseconds=0, minutes=0, hours=0, weeks=0}
-
-  All arguments are optional.  Arguments may be ints, longs, or floats,
-  and may be positive or negative.
+\begin{classdesc}{timedelta}{\optional{days\optional{, seconds\optional{,
+                             microseconds\optional{, milliseconds\optional{,
+                             minutes\optional{, hours\optional{, weeks}}}}}}}}
+  All arguments are optional and default to \code{0}.  Arguments may
+  be ints, longs, or floats, and may be positive or negative.
 
   Only \var{days}, \var{seconds} and \var{microseconds} are stored
   internally.  Arguments are converted to those units:
@@ -209,8 +209,8 @@ Supported operations:
           (1)}
   \lineii{\var{t1} = \var{t2} - \var{t3}}
           {Difference of \var{t2} and \var{t3}.
-           Afterwards \var{t1} == \var{t2} - \var{t3} and \var{t2} == \var{t1} + \var{t3} are
-           true.
+           Afterwards \var{t1} == \var{t2} - \var{t3} and
+           \var{t2} == \var{t1} + \var{t3} are true.
           (1)}
   \lineii{\var{t1} = \var{t2} * \var{i} or \var{t1} = \var{i} * \var{t2}}
           {Delta multiplied by an integer or long.
@@ -352,7 +352,6 @@ Instance attributes (read-only):
 
 Supported operations:
 
-% XXX rewrite to be a table
 \begin{tableii}{c|l}{code}{Operation}{Result}
   \lineii{\var{date2} = \var{date1} + \var{timedelta}}
     {\var{date2} is \code{\var{timedelta}.days} days removed from
@@ -366,7 +365,7 @@ Supported operations:
   \lineii{\var{timedelta} = \var{date1} - \var{date2}}
    {(3)}
 
-  \lineii{\var{date1}<\var{date2}}
+  \lineii{\var{date1} < \var{date2}}
    {\var{date1} is considered less than \var{date2} when \var{date1}
    precedes \var{date2} in time. (4)}
 
@@ -520,9 +519,10 @@ day.
 
 Constructor:
 
-\begin{classdesc}{datetime}{year, month, day,
-                            hour=0, minute=0, second=0, microsecond=0,
-                            tzinfo=None}
+\begin{classdesc}{datetime}{year, month, day\optional{,
+                            hour\optional{, minute\optional{,
+                            second\optional{, microsecond\optional{,
+                            tzinfo}}}}}}
   The year, month and day arguments are required.  \var{tzinfo} may
   be \code{None}, or an instance of a \class{tzinfo} subclass.  The
   remaining arguments may be ints or longs, in the following ranges:
@@ -550,7 +550,7 @@ Other constructors, all class methods:
   See also \method{now()}, \method{fromtimestamp()}.
 \end{methoddesc}
 
-\begin{methoddesc}{now(tz=None)}{}
+\begin{methoddesc}{now}{\optional{tz}}
   Return the current local date and time.  If optional argument
   \var{tz} is \code{None} or not specified, this is like
   \method{today()}, but, if possible, supplies more precision than can
@@ -572,7 +572,7 @@ Other constructors, all class methods:
   See also \method{now()}.
 \end{methoddesc}
 
-\begin{methoddesc}{fromtimestamp}{timestamp, tz=None}
+\begin{methoddesc}{fromtimestamp}{timestamp\optional{, tz}}
   Return the local date and time corresponding to the \POSIX{}
   timestamp, such as is returned by \function{time.time()}.
   If optional argument \var{tz} is \code{None} or not specified, the
@@ -780,8 +780,10 @@ Instance methods:
   and tzinfo members.  See also method \method{time()}.
 \end{methoddesc}
 
-\begin{methoddesc}{replace}{year=, month=, day=, hour=, minute=, second=,
-                            microsecond=, tzinfo=}
+\begin{methoddesc}{replace}{\optional{year\optional{, month\optional{,
+                            day\optional{, hour\optional{, minute\optional{,
+                            second\optional{, microsecond\optional{,
+                            tzinfo}}}}}}}}}
   Return a datetime with the same members, except for those members given
   new values by whichever keyword arguments are specified.  Note that
   \code{tzinfo=None} can be specified to create a naive datetime from
@@ -911,7 +913,7 @@ Instance methods:
   same as \code{self.date().isocalendar()}.
 \end{methoddesc}
 
-\begin{methoddesc}{isoformat}{sep='T'}
+\begin{methoddesc}{isoformat}{\optional{sep}}
   Return a string representing the date and time in ISO 8601 format,
       YYYY-MM-DDTHH:MM:SS.mmmmmm
   or, if \member{microsecond} is 0,
@@ -967,8 +969,8 @@ Instance methods:
 A time object represents a (local) time of day, independent of any
 particular day, and subject to adjustment via a \class{tzinfo} object.
 
-\begin{classdesc}{time}{hour=0, minute=0, second=0, microsecond=0,
-                        tzinfo=None}
+\begin{classdesc}{time}{hour\optional{, minute\optional{, second\optional{,
+                        microsecond\optional{, tzinfo}}}}}
   All arguments are optional.  \var{tzinfo} may be \code{None}, or
   an instance of a \class{tzinfo} subclass.  The remaining arguments
   may be ints or longs, in the following ranges:
@@ -981,7 +983,8 @@ particular day, and subject to adjustment via a \class{tzinfo} object.
   \end{itemize}
 
   If an argument outside those ranges is given,
-  \exception{ValueError} is raised.
+  \exception{ValueError} is raised.  All default to \code{0} except
+  \var{tzinfo}, which defaults to \constant{None}.
 \end{classdesc}
 
 Class attributes:
@@ -1057,7 +1060,9 @@ Supported operations:
 
 Instance methods:
 
-\begin{methoddesc}{replace}(hour=, minute=, second=, microsecond=, tzinfo=)
+\begin{methoddesc}{replace}{\optional{hour\optional{, minute\optional{,
+                            second\optional{, microsecond\optional{,
+                            tzinfo}}}}}}
   Return a \class{time} with the same value, except for those members given
   new values by whichever keyword arguments are specified.  Note that
   \code{tzinfo=None} can be specified to create a naive \class{time} from
@@ -1183,7 +1188,7 @@ implement all of them.
       \code{\var{tz}.utcoffset(\var{dt}) - \var{tz}.dst(\var{dt})}
 
   must return the same result for every \class{datetime} \var{dt}
-  with \code{\var{dt}.tzinfo==\var{tz}}  For sane \class{tzinfo}
+  with \code{\var{dt}.tzinfo == \var{tz}}  For sane \class{tzinfo}
   subclasses, this expression yields the time zone's "standard offset",
   which should not depend on the date or the time, but only on geographic
   location.  The implementation of \method{datetime.astimezone()} relies
@@ -1197,18 +1202,23 @@ implement all of them.
   of these two:
 
 \begin{verbatim}
-    return timedelta(0)   # a fixed-offset class:  doesn't account for DST
+    def dst(self):
+        # a fixed-offset class:  doesn't account for DST
+        return timedelta(0)
+\end{verbatim}
 
   or
 
-    # Code to set dston and dstoff to the time zone's DST transition
-    # times based on the input dt.year, and expressed in standard local
-    # time.  Then
+\begin{verbatim}
+    def dst(self):
+        # Code to set dston and dstoff to the time zone's DST
+        # transition times based on the input dt.year, and expressed
+        # in standard local time.  Then
 
-    if dston <= dt.replace(tzinfo=None) < dstoff:
-        return timedelta(hours=1)
-    else:
-        return timedelta(0)
+        if dston <= dt.replace(tzinfo=None) < dstoff:
+            return timedelta(hours=1)
+        else:
+            return timedelta(0)
 \end{verbatim}
 
   The default implementation of \method{dst()} raises
@@ -1321,7 +1331,7 @@ April, and ends the minute after 1:59 (EDT) on the last Sunday in October:
 When DST starts (the "start" line), the local wall clock leaps from 1:59
 to 3:00.  A wall time of the form 2:MM doesn't really make sense on that
 day, so \code{astimezone(Eastern)} won't deliver a result with
-\code{hour==2} on the
+\code{hour == 2} on the
 day DST begins.  In order for \method{astimezone()} to make this
 guarantee, the \method{rzinfo.dst()} method must consider times
 in the "missing hour" (2:MM for Eastern) to be in daylight time.
@@ -1398,4 +1408,3 @@ C standard added additional format codes.
 The exact range of years for which \method{strftime()} works also
 varies across platforms.  Regardless of platform, years before 1900
 cannot be used.
-
