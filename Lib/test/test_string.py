@@ -22,6 +22,25 @@ def test(name, input, output, *args):
     except:
         value = sys.exc_type
         f = name
+    if value == output:
+        # if the original is returned make sure that
+        # this doesn't happen with subclasses
+        if value is input:
+            class ssub(str):
+                def __repr__(self):
+                    return 'ssub(%r)' % str.__repr__(self)
+            input = ssub(input)
+            try:
+                f = getattr(input, name)
+                value = apply(f, args)
+            except AttributeError:
+                f = getattr(string, name)
+                value = apply(f, (input,) + args)
+            if value is input:
+                if verbose:
+                   print 'no'
+                print '*',f, `input`, `output`, `value`
+                return
     if value != output:
         if verbose:
             print 'no'
