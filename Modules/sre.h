@@ -13,8 +13,9 @@
 
 #include "sre_constants.h"
 
-/* size of a code word (must be unsigned short or larger) */
-#ifdef USE_UCS4_STORAGE
+/* size of a code word (must be unsigned short or larger, and
+   large enough to hold a Py_UNICODE character) */
+#ifdef Py_UNICODE_WIDE
 #define SRE_CODE unsigned long
 #else
 #define SRE_CODE unsigned short

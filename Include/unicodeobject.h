@@ -66,10 +66,11 @@ Copyright (c) Corporation for National Research Initiatives.
 #error Must define Py_UNICODE_SIZE
 #endif
 
-/* experimental UCS-4 support.  enable at your own risk! */
-#undef USE_UCS4_STORAGE
-#if Py_UNICODE_SIZE == 4
-#define USE_UCS4_STORAGE
+/* Setting Py_UNICODE_WIDE enables UCS-4 storage.  Otherwise, Unicode
+   strings are stored as UCS-2 (with limited support for UTF-16) */
+
+#if Py_UNICODE_SIZE >= 4
+#define Py_UNICODE_WIDE
 #endif
 
 /* Set these flags if the platform has "wchar.h", "wctype.h" and the
@@ -81,12 +82,12 @@ Copyright (c) Corporation for National Research Initiatives.
 #ifndef PY_UNICODE_TYPE
 
 /* Windows has a usable wchar_t type (unless we're using UCS-4) */
-# if defined(MS_WIN32) && !defined(USE_UCS4_STORAGE)
+# if defined(MS_WIN32) && Py_UNICODE_SIZE == 2
 #  define HAVE_USABLE_WCHAR_T
 #  define PY_UNICODE_TYPE wchar_t
 # endif
 
-# if defined(USE_UCS4_STORAGE)
+# if defined(Py_UNICODE_WIDE)
 #  define PY_UNICODE_TYPE Py_UCS4
 # endif
 
