@@ -1,4 +1,4 @@
-#! /usr/local/python
+#! /usr/local/bin/python
 
 # pdeps
 #
@@ -21,8 +21,8 @@
 
 
 import sys
-import regexp
-import path
+import regex
+import os
 import string
 
 
@@ -58,15 +58,15 @@ def main():
 
 # Compiled regular expressions to search for import statements
 #
-m_import = regexp.compile('^[ \t]*from[ \t]+([^ \t]+)[ \t]+')
-m_from = regexp.compile('^[ \t]*import[ \t]+([^#]+)')
+m_import = regex.compile('^[ \t]*from[ \t]+\([^ \t]+\)[ \t]+')
+m_from = regex.compile('^[ \t]*import[ \t]+\([^#]+\)')
 
 
 # Collect data from one file
 #
 def process(filename, table):
 	fp = open(filename, 'r')
-	mod = path.basename(filename)
+	mod = os.path.basename(filename)
 	if mod[-3:] == '.py':
 		mod = mod[:-3]
 	table[mod] = list = []
@@ -77,17 +77,17 @@ def process(filename, table):
 			nextline = fp.readline()
 			if not nextline: break
 			line = line[:-1] + nextline
-		result = m_import.exec(line)
-		if not result:
-			result = m_from.exec(line)
-		if result:
-			(a, b), (a1, b1) = result
-			words = string.splitfields(line[a1:b1], ',')
-			# print '#', line, words
-			for word in words:
-				word = string.strip(word)
-				if word not in list:
-					list.append(word)
+		if m_import.match(line) >= 0:
+			(a, b), (a1, b1) = m_import.regs[:2]
+		elif m_from.match(line) >= 0:
+			(a, b), (a1, b1) = m_from.regs[:2]
+		else: continue
+		words = string.splitfields(line[a1:b1], ',')
+		# print '#', line, words
+		for word in words:
+			word = string.strip(word)
+			if word not in list:
+				list.append(word)
 
 
 # Compute closure (this is in fact totally general)

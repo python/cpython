@@ -1,4 +1,4 @@
-#!/usr/local/python
+#!/usr/local/bin/python
 
 # objgraph
 #
@@ -21,9 +21,9 @@
 
 import sys
 import string
-import path
+import os
 import getopt
-import regexp
+import regex
 
 # Types of symbols.
 #
@@ -33,7 +33,7 @@ ignore = 'Nntrgdsbavuc'
 
 # Regular expression to parse "nm -o" output.
 #
-matcher = regexp.compile('(.*):\t?........ (.) (.*)$')
+matcher = regex.compile('\(.*\):\t?........ \(.\) \(.*\)$')
 
 # Store "item" in "dict" under "key".
 # The dictionary maps keys to lists of items.
@@ -66,12 +66,13 @@ undef2file = {}
 #
 def readinput(file):
 	while 1:
-		s = file.readline(200) # Arbitrary, but reasonable limit
+		s = file.readline()
 		if not s:
 			break
-		# If you get an exception on this line,
+		# If you get any output from this line,
 		# it is probably caused by an unexpected input line:
-		(ra, rb), (r1a, r1b), (r2a, r2b), (r3a, r3b) = matcher.exec(s)
+		if matcher.search(s) < 0: s; continue # Shouldn't happen
+		(ra, rb), (r1a, r1b), (r2a, r2b), (r3a, r3b) = matcher.regs[:4]
 		fn, name, type = s[r1a:r1b], s[r3a:r3b], s[r2a:r2b]
 		if type in definitions:
 			store(def2file, name, fn)
@@ -160,7 +161,8 @@ def main():
 		optlist, args = getopt.getopt(sys.argv[1:], 'cdu')
 	except getopt.error:
 		sys.stdout = sys.stderr
-		print 'Usage:', path.basename(sys.argv[0]), '[-cdu] [file] ...'
+		print 'Usage:', os.path.basename(sys.argv[0]),
+		print           '[-cdu] [file] ...'
 		print '-c: print callers per objectfile'
 		print '-d: print callees per objectfile'
 		print '-u: print usage of undefined symbols'
