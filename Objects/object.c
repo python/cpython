@@ -137,6 +137,8 @@ _PyObject_NewVar(PyTypeObject *tp, int nitems)
 	return PyObject_INIT_VAR(op, tp, nitems);
 }
 
+/* for binary compatibility with 2.2 */
+#undef _PyObject_Del
 void
 _PyObject_Del(PyObject *op)
 {
@@ -1913,27 +1915,6 @@ void
 PyMem_Free(void *p)
 {
 	PyMem_FREE(p);
-}
-
-
-/* Python's object malloc wrappers (see objimpl.h) */
-
-void *
-PyObject_Malloc(size_t nbytes)
-{
-	return PyObject_MALLOC(nbytes);
-}
-
-void *
-PyObject_Realloc(void *p, size_t nbytes)
-{
-	return PyObject_REALLOC(p, nbytes);
-}
-
-void
-PyObject_Free(void *p)
-{
-	PyObject_FREE(p);
 }
 
 
