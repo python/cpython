@@ -1336,18 +1336,19 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen)
 
 	if (s->sock_timeout > 0.0) {
 		if (res < 0 && WSAGetLastError() == WSAEWOULDBLOCK) {
-			internal_select(s, 1);
-			res = connect(s->sock_fd, addr, addrlen);
-			if (res < 0) {
-				/* On Win98, WSAEISCONN was seen here.  But
-				 * on Win2K, WSAEINVAL.  So accept both as
-				 * meaning "fine".
-				 */
-				int code = WSAGetLastError();
-				if (code == WSAEISCONN ||
-				    code == WSAEINVAL)
-					res = 0;
-			}
+			/* This is a mess.  Best solution: trust select */
+			fd_set fds;
+			struct timeval tv;
+			tv.tv_sec = (int)s->sock_timeout;
+			tv.tv_usec = (int)((s->sock_timeout - tv.tv_sec) * 1e6);
+			FD_ZERO(&fds);
+			FD_SET(s->sock_fd, &fds);
+			res = select(s->sock_fd+1, NULL, &fds, NULL, &tv);
+			if (res == 0)
+				res = WSAEWOULDBLOCK;
+			else if (res > 0)
+				res = 0;
+			/* else if (res < 0) an error occurred */
 		}
 	}
 
