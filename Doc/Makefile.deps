@@ -171,6 +171,9 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/libxmllib.tex \
 	../lib/libpyexpat.tex \
 	../lib/xmlsax.tex \
+	../lib/xmlsaxhandler.tex \
+	../lib/xmlsaxutils.tex \
+	../lib/xmlsaxreader.tex \
 	../lib/libqueue.tex \
 	../lib/liblocale.tex \
 	../lib/libgettext.tex \
