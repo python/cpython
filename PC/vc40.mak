@@ -87,7 +87,7 @@ CLEAN :
 	-@erase "$(INTDIR)\getcopyright.obj"
 	-@erase "$(INTDIR)\getmtime.obj"
 	-@erase "$(INTDIR)\getopt.obj"
-	-@erase "$(INTDIR)\getpath_nt.obj"
+	-@erase "$(INTDIR)\getpathp.obj"
 	-@erase "$(INTDIR)\getplatform.obj"
 	-@erase "$(INTDIR)\getversion.obj"
 	-@erase "$(INTDIR)\graminit.obj"
@@ -236,7 +236,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\getcopyright.obj" \
 	"$(INTDIR)\getmtime.obj" \
 	"$(INTDIR)\getopt.obj" \
-	"$(INTDIR)\getpath_nt.obj" \
+	"$(INTDIR)\getpathp.obj" \
 	"$(INTDIR)\getplatform.obj" \
 	"$(INTDIR)\getversion.obj" \
 	"$(INTDIR)\graminit.obj" \
@@ -407,10 +407,10 @@ CLEAN :
 
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "PC" /I "Include" /I "C:\TCL\include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_CONFIG_H" /YX /c
-CPP_PROJ=/nologo /MD /W3 /GX /O2 /I "PC" /I "Include" /I "C:\TCL\include" /D\
- "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_CONFIG_H"\
- /Fp"$(INTDIR)/_tkinter.pch" /YX /Fo"$(INTDIR)/" /c 
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "PC" /I "Include" /I "C:\Program Files\TCL\include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_CONFIG_H" /YX /c
+CPP_PROJ=/nologo /MD /W3 /GX /O2 /I "PC" /I "Include" /I\
+ "C:\Program Files\TCL\include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D\
+ "HAVE_CONFIG_H" /Fp"$(INTDIR)/_tkinter.pch" /YX /Fo"$(INTDIR)/" /c 
 CPP_OBJS=.\vc40\tmp/
 CPP_SBRS=.\.
 
@@ -458,8 +458,8 @@ DEF_FILE= \
 LINK32_OBJS= \
 	"$(INTDIR)\_tkinter.obj" \
 	"$(OUTDIR)\python15.lib" \
-	".\PC\tcl80.lib" \
-	".\PC\tk80.lib"
+	"..\..\..\..\Program Files\Tcl\lib\tcl80vc.lib" \
+	"..\..\..\..\Program Files\Tcl\lib\tk80vc.lib"
 
 "$(OUTDIR)\_tkinter.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -514,7 +514,7 @@ CLEAN :
 	-@erase "$(INTDIR)\getcopyright.obj"
 	-@erase "$(INTDIR)\getmtime.obj"
 	-@erase "$(INTDIR)\getopt.obj"
-	-@erase "$(INTDIR)\getpath_nt.obj"
+	-@erase "$(INTDIR)\getpathp.obj"
 	-@erase "$(INTDIR)\getplatform.obj"
 	-@erase "$(INTDIR)\getversion.obj"
 	-@erase "$(INTDIR)\graminit.obj"
@@ -662,7 +662,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\getcopyright.obj" \
 	"$(INTDIR)\getmtime.obj" \
 	"$(INTDIR)\getopt.obj" \
-	"$(INTDIR)\getpath_nt.obj" \
+	"$(INTDIR)\getpathp.obj" \
 	"$(INTDIR)\getplatform.obj" \
 	"$(INTDIR)\getversion.obj" \
 	"$(INTDIR)\graminit.obj" \
@@ -1269,9 +1269,6 @@ DEP_CPP_GETAR=\
 # Begin Source File
 
 SOURCE=.\Objects\funcobject.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_FUNCO=\
 	".\Include\abstract.h"\
 	".\Include\ceval.h"\
@@ -1314,53 +1311,6 @@ DEP_CPP_FUNCO=\
 "$(INTDIR)\funcobject.obj" : $(SOURCE) $(DEP_CPP_FUNCO) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_FUNCO=\
-	".\Include\abstract.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\compile.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\structmember.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\funcobject.obj" : $(SOURCE) $(DEP_CPP_FUNCO) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -1510,9 +1460,6 @@ DEP_CPP_FLOAT=\
 # Begin Source File
 
 SOURCE=.\Objects\fileobject.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_FILEO=\
 	".\Include\abstract.h"\
 	".\Include\ceval.h"\
@@ -1556,54 +1503,6 @@ DEP_CPP_FILEO=\
 "$(INTDIR)\fileobject.obj" : $(SOURCE) $(DEP_CPP_FILEO) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_FILEO=\
-	".\Include\abstract.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\structmember.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	{$(INCLUDE)}"\sys\STAT.H"\
-	{$(INCLUDE)}"\sys\TYPES.H"\
-	
-
-"$(INTDIR)\fileobject.obj" : $(SOURCE) $(DEP_CPP_FILEO) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -1894,9 +1793,6 @@ DEP_CPP_CMATH=\
 # Begin Source File
 
 SOURCE=.\Objects\classobject.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_CLASS=\
 	".\Include\abstract.h"\
 	".\Include\ceval.h"\
@@ -1938,52 +1834,6 @@ DEP_CPP_CLASS=\
 "$(INTDIR)\classobject.obj" : $(SOURCE) $(DEP_CPP_CLASS) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_CLASS=\
-	".\Include\abstract.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\structmember.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\classobject.obj" : $(SOURCE) $(DEP_CPP_CLASS) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -2529,16 +2379,12 @@ DEP_CPP_THREA=\
 	".\Include\thread.h"\
 	".\PC\config.h"\
 	".\Python\thread_cthread.h"\
-	".\Python\thread_foobar.h"\
 	".\Python\thread_lwp.h"\
 	".\Python\thread_nt.h"\
 	".\Python\thread_pthread.h"\
 	".\Python\thread_sgi.h"\
 	".\Python\thread_solaris.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
-	
-NODEP_CPP_THREA=\
-	"\usr\include\thread.h"\
 	
 
 "$(INTDIR)\thread.obj" : $(SOURCE) $(DEP_CPP_THREA) "$(INTDIR)"
@@ -4063,53 +3909,6 @@ DEP_CPP_IMPORT_=\
 ################################################################################
 # Begin Source File
 
-SOURCE=.\PC\getpath_nt.c
-DEP_CPP_GETPA=\
-	".\Include\abstract.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\osdefs.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\getpath_nt.obj" : $(SOURCE) $(DEP_CPP_GETPA) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-# End Source File
-################################################################################
-# Begin Source File
-
 SOURCE=.\PC\dl_nt.c
 DEP_CPP_DL_NT=\
 	".\Include\abstract.h"\
@@ -4360,6 +4159,7 @@ DEP_CPP_CPICK=\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
+	".\Include\graminit.h"\
 	".\Include\import.h"\
 	".\Include\intobject.h"\
 	".\Include\intrcheck.h"\
@@ -4485,6 +4285,55 @@ DEP_CPP_MSVCR=\
 
 
 # End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\PC\getpathp.c
+DEP_CPP_GETPA=\
+	".\Include\abstract.h"\
+	".\Include\ceval.h"\
+	".\Include\classobject.h"\
+	".\Include\cobject.h"\
+	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
+	".\Include\fileobject.h"\
+	".\Include\floatobject.h"\
+	".\Include\funcobject.h"\
+	".\Include\import.h"\
+	".\Include\intobject.h"\
+	".\Include\intrcheck.h"\
+	".\Include\listobject.h"\
+	".\Include\longobject.h"\
+	".\Include\methodobject.h"\
+	".\Include\modsupport.h"\
+	".\Include\moduleobject.h"\
+	".\Include\mymalloc.h"\
+	".\Include\myproto.h"\
+	".\Include\object.h"\
+	".\Include\objimpl.h"\
+	".\Include\osdefs.h"\
+	".\Include\pydebug.h"\
+	".\Include\pyerrors.h"\
+	".\Include\pyfpe.h"\
+	".\Include\pystate.h"\
+	".\Include\Python.h"\
+	".\Include\pythonrun.h"\
+	".\Include\rangeobject.h"\
+	".\Include\sliceobject.h"\
+	".\Include\stringobject.h"\
+	".\Include\sysmodule.h"\
+	".\Include\traceback.h"\
+	".\Include\tupleobject.h"\
+	".\PC\config.h"\
+	{$(INCLUDE)}"\sys\STAT.H"\
+	{$(INCLUDE)}"\sys\TYPES.H"\
+	
+
+"$(INTDIR)\getpathp.obj" : $(SOURCE) $(DEP_CPP_GETPA) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+# End Source File
 # End Target
 ################################################################################
 # Begin Target
@@ -4515,47 +4364,15 @@ SOURCE=.\Modules\python.c
 
 SOURCE=.\Modules\_tkinter.c
 DEP_CPP__TKIN=\
-	".\Include\abstract.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\myselect.h"\
-	".\Include\mytime.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	"C:\TCL\include\tcl.h"\
-	"C:\TCL\include\tk.h"\
-	"C:\TCL\include\X11\X.h"\
-	"C:\TCL\include\X11\Xfuncproto.h"\
-	"C:\TCL\include\X11\Xlib.h"\
+	"\Program Files\TCL\include\tcl.h"\
+	"\Program Files\TCL\include\tk.h"\
+	"\Program Files\TCL\include\X11\X.h"\
+	"\Program Files\TCL\include\X11\Xfuncproto.h"\
+	"\Program Files\TCL\include\X11\Xlib.h"\
+	
+NODEP_CPP__TKIN=\
+	".\Modules\myselect.h"\
+	".\Modules\Python.h"\
 	
 
 "$(INTDIR)\_tkinter.obj" : $(SOURCE) $(DEP_CPP__TKIN) "$(INTDIR)"
@@ -4576,12 +4393,12 @@ SOURCE=.\vc40\python15.lib
 ################################################################################
 # Begin Source File
 
-SOURCE=.\PC\tk80.lib
+SOURCE="\Program Files\Tcl\lib\tk80vc.lib"
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\PC\tcl80.lib
+SOURCE="\Program Files\Tcl\lib\tcl80vc.lib"
 # End Source File
 # End Target
 # End Project
