@@ -27,7 +27,8 @@
 ;; Note: this version of python-mode.el is no longer compatible with
 ;; Emacs 18.  For a gabazillion reasons, I highly recommend upgrading
 ;; to X/Emacs 19 or X/Emacs 20.  For older versions of the 19 series,
-;; you may need to acquire the Custom library.
+;; you may need to acquire the Custom library.  Please see
+;; <http://www.python.org/ftp/emacs/> for details.
 
 ;; python-mode.el is currently distributed with XEmacs 19 and XEmacs
 ;; 20.  Since this file is not GPL'd it is not distributed with Emacs,
@@ -344,13 +345,17 @@ Currently-active file is at the head of the list.")
 ;; change this, you probably have to change `py-current-defun' as
 ;; well.  This is only used by `py-current-defun' to find the name for
 ;; add-log.el.
-(defvar py-defun-start-re
+(defconst py-defun-start-re
   "^\\([ \t]*\\)def[ \t]+\\([a-zA-Z_0-9]+\\)\\|\\(^[a-zA-Z_0-9]+\\)[ \t]*=")
 
 ;; Regexp for finding a class name.  If you change this, you probably
 ;; have to change `py-current-defun' as well.  This is only used by
 ;; `py-current-defun' to find the name for add-log.el.
-(defvar py-class-start-re "^class[ \t]*\\([a-zA-Z_0-9]+\\)")
+(defconst py-class-start-re "^class[ \t]*\\([a-zA-Z_0-9]+\\)")
+
+;; Regexp that describes tracebacks
+(defconst py-traceback-line-re
+  "[ \t]+File \"\\([^\"]+\\)\", line \\([0-9]+\\), in ")
 
 
 
@@ -369,6 +374,43 @@ Currently-active file is at the head of the list.")
   ;; to take explicit action.
   (and (boundp 'zmacs-region-stays)
        (setq zmacs-region-stays t)))
+
+(defsubst py-point (position)
+  ;; Returns the value of point at certain commonly referenced POSITIONs.
+  ;; POSITION can be one of the following symbols:
+  ;; 
+  ;; bol  -- beginning of line
+  ;; eol  -- end of line
+  ;; bod  -- beginning of defun
+  ;; boi  -- back to indentation
+  ;; 
+  ;; This function does not modify point or mark.
+  (let ((here (point)))
+    (cond
+     ((eq position 'bol) (beginning-of-line))
+     ((eq position 'eol) (end-of-line))
+     ((eq position 'bod) (beginning-of-python-def-or-class))
+     ((eq position 'bob) (beginning-of-buffer))
+     ((eq position 'eob) (end-of-buffer))
+     ((eq position 'boi) (back-to-indentation))
+     (t (error "unknown buffer position requested: %s" position))
+     )
+    (prog1
+	(point)
+      (goto-char here))))
+
+(defsubst py-highlight-line (from to file line)
+  (cond
+   ((fboundp 'make-extent)
+    ;; XEmacs
+    (let ((e (make-extent from to)))
+      (set-extent-property e 'mouse-face 'highlight)
+      (set-extent-property e 'py-exc-info (cons file line))
+      (set-extent-property e 'keymap py-mode-output-map)))
+   (t
+    ;; Emacs -- Please port this!
+    )
+   ))
 
 
 ;; Major mode boilerplate
@@ -433,6 +475,8 @@ Currently-active file is at the head of the list.")
   (define-key py-mode-map "\C-c\C-hm" 'py-describe-mode)
   (define-key py-mode-map "\e\C-a"    'beginning-of-python-def-or-class)
   (define-key py-mode-map "\e\C-e"    'end-of-python-def-or-class)
+  (define-key py-mode-map "\C-c-"     'py-up-exception)
+  (define-key py-mode-map "\C-c="     'py-down-exception)
   ;; information
   (define-key py-mode-map "\C-c\C-b" 'py-submit-bug-report)
   (define-key py-mode-map "\C-c\C-v" 'py-version)
@@ -441,10 +485,24 @@ Currently-active file is at the head of the list.")
   ;; shadow global bindings for newline-and-indent w/ the py- version.
   ;; BAW - this is extremely bad form, but I'm not going to change it
   ;; for now.
-  (mapcar (function (lambda (key)
-		      (define-key
-			py-mode-map key 'py-newline-and-indent)))
-   (where-is-internal 'newline-and-indent))
+  (mapcar #'(lambda (key)
+	      (define-key py-mode-map key 'py-newline-and-indent))
+	  (where-is-internal 'newline-and-indent))
+  )
+
+(defvar py-mode-output-map nil
+  "Keymap used in *Python Output* buffers*")
+(if py-mode-output-map
+    nil
+  (setq py-mode-output-map (make-sparse-keymap))
+  (define-key py-mode-output-map [button2]  'py-mouseto-exception)
+  (define-key py-mode-output-map "\C-c\C-c" 'py-goto-exception)
+  ;; TBD: Disable all self-inserting keys.  This is bogus, we should
+  ;; really implement this as *Python Output* buffer being read-only
+  (mapcar #' (lambda (key)
+	       (define-key py-mode-output-map key
+		 #'(lambda () (interactive) (beep))))
+	     (where-is-internal 'self-insert-command))
   )
 
 (defvar py-mode-syntax-table nil
@@ -964,8 +1022,23 @@ Electric behavior is inhibited inside a string or comment."
 	    ))
       (set-buffer curbuf))))
 
+(defun py-postprocess-output-buffer (buf)
+  (save-excursion
+    (set-buffer buf)
+    (beginning-of-buffer)
+    (while (re-search-forward py-traceback-line-re nil t)
+      (let ((file (match-string 1))
+	    (line (string-to-int (match-string 2))))
+	(py-highlight-line (py-point 'bol) (py-point 'eol) file line))
+      )))
+
 
 ;;; Subprocess commands
+
+;; only used when (memq 'broken-temp-names py-emacs-features)
+(defvar py-serial-number 0)
+(defvar py-exception-buffer nil)
+(defconst py-output-buffer "*Python Output*")
 
 ;;;###autoload
 (defun py-shell ()
@@ -1004,9 +1077,12 @@ filter."
   (setq comint-prompt-regexp "^>>> \\|^[.][.][.] ")
   (set-process-filter (get-buffer-process (current-buffer)) 'py-process-filter)
   (set-syntax-table py-mode-syntax-table)
-  (local-set-key [tab] 'self-insert-command))
+  ;; set up keybindings for this subshell
+  (local-set-key [tab]   'self-insert-command)
+  (local-set-key "\C-c-" 'py-up-exception)
+  (local-set-key "\C-c=" 'py-down-exception)
+  )
 
-
 (defun py-clear-queue ()
   "Clear the queue of temporary files waiting to execute."
   (interactive)
@@ -1014,9 +1090,6 @@ filter."
     (mapcar 'delete-file py-file-queue)
     (setq py-file-queue nil)
     (message "%d pending files de-queued." n)))
-
-;; only used when (memq 'broken-temp-names py-emacs-features)
-(defvar py-serial-number 0)
 
 (defun py-execute-region (start end &optional async)
   "Execute the the region in a Python interpreter.
@@ -1046,15 +1119,15 @@ is inserted at the end.  See also the command `py-clear-queue'."
 		       (format "python-%d" py-serial-number)
 		     (setq py-serial-number (1+ py-serial-number)))
 		 (make-temp-name "python")))
-	 (file (concat (file-name-as-directory py-temp-directory) temp))
-	 (outbuf "*Python Output*"))
+	 (file (concat (file-name-as-directory py-temp-directory) temp)))
     (write-region start end file nil 'nomsg)
     (cond
      ;; always run the code in it's own asynchronous subprocess
      (async
-      (let* ((buf (generate-new-buffer-name "*Python Output*")))
+      (let* ((buf (generate-new-buffer-name py-output-buffer)))
 	(start-process "Python" buf py-python-command "-u" file)
 	(pop-to-buffer buf)
+	(py-postprocess-output-buffer buf)
 	))
      ;; if the Python interpreter shell is running, queue it up for
      ;; execution there.
@@ -1063,10 +1136,13 @@ is inserted at the end.  See also the command `py-clear-queue'."
       (if (not py-file-queue)
 	  (py-execute-file proc file)
 	(message "File %s queued for execution" file))
-      (push file py-file-queue))
+      (push file py-file-queue)
+      (setq py-exception-buffer (cons file (current-buffer))))
      (t
       ;; otherwise either run it synchronously in a subprocess
-      (shell-command-on-region start end py-python-command outbuf)
+      (shell-command-on-region start end py-python-command py-output-buffer)
+      (setq py-exception-buffer (current-buffer))
+      (py-postprocess-output-buffer py-output-buffer)
       ))))
 
 ;; Code execution command
@@ -1079,6 +1155,90 @@ sent.  A trailing newline will be supplied if needed.
 See the `\\[py-execute-region]' docs for an account of some subtleties."
   (interactive "P")
   (py-execute-region (point-min) (point-max) async))
+
+
+
+(defun py-jump-to-exception (file line)
+  (let ((buffer (cond ((string-equal file "<stdin>")
+		       py-exception-buffer)
+		      ((and (consp py-exception-buffer)
+			    (string-equal file (car py-exception-buffer)))
+		       (cdr py-exception-buffer))
+		      ((py-safe (find-file-noselect file)))
+		      ;; could not figure out what file the exception
+		      ;; is pointing to, so prompt for it
+		      (t (find-file (read-file-name "Exception file: "
+						    nil
+						    file t))))))
+    (pop-to-buffer buffer)
+    (goto-line line)
+    (message "Jumping to exception in file %s on line %d" file line)))
+
+(defun py-mouseto-exception (event)
+  (interactive "e")
+  (cond
+   ((fboundp 'event-point)
+    ;; XEmacs
+    (let* ((point (event-point event))
+	   (buffer (event-buffer event))
+	   (e (and point buffer (extent-at point buffer 'py-exc-info)))
+	   (info (and e (extent-property e 'py-exc-info))))
+      (message "Event point: %d, info: %s" point info)
+      (and info
+	   (py-jump-to-exception (car info) (cdr info)))
+      ))
+   ;; Emacs -- Please port this!
+   ))
+
+(defun py-goto-exception ()
+  "Go to the line indicated by the traceback."
+  (interactive)
+  (let (file line)
+    (save-excursion
+      (beginning-of-line)
+      (if (looking-at py-traceback-line-re)
+	  (setq file (match-string 1)
+		line (string-to-int (match-string 2)))))
+    (if (not file)
+	(error "Not on a traceback line."))
+    (py-jump-to-exception file line)))
+
+(defun py-find-next-exception (start buffer searchdir errwhere)
+  ;; Go to start position in buffer, search in the specified
+  ;; direction, and jump to the exception found.  If at the end of the
+  ;; exception, print error message
+  (let (file line)
+    (save-excursion
+      (set-buffer buffer)
+      (goto-char (py-point start))
+      (if (funcall searchdir py-traceback-line-re nil t)
+	  (setq file (match-string 1)
+		line (string-to-int (match-string 2)))))
+    (if (and file line)
+	(py-jump-to-exception file line)
+      (error "%s of traceback" errwhere))))
+
+(defun py-down-exception (&optional bottom)
+  "Go to the next line down in the traceback.
+With optional \\[universal-argument], jump to the bottom (innermost)
+exception in the exception stack."
+  (interactive "P")
+  (let* ((proc (get-process "Python"))
+	 (buffer (if proc "*Python*" py-output-buffer)))
+    (if bottom
+	(py-find-next-exception 'eob buffer 're-search-backward "Bottom")
+      (py-find-next-exception 'eol buffer 're-search-forward "Bottom"))))
+
+(defun py-up-exception (&optional top)
+  "Go to the previous line up in the traceback.
+With optional \\[universal-argument], jump to the top (outermost)
+exception in the exception stack."
+  (interactive "P")
+  (let* ((proc (get-process "Python"))
+	 (buffer (if proc "*Python*" py-output-buffer)))
+    (if top
+	(py-find-next-exception 'bob buffer 're-search-forward "Top")
+      (py-find-next-exception 'boi buffer 're-search-backward "Top"))))
 
 
 ;; Electric deletion
@@ -1198,14 +1358,14 @@ the new line indented."
   ;; honor-block-close-p is non-nil, statements such as return, raise,
   ;; break, continue, and pass force one level of outdenting.
   (save-excursion
-    (let ((pps (parse-partial-sexp (save-excursion
-				     (beginning-of-python-def-or-class)
-				     (point))
-				   (point))))
+    (let* ((bod (py-point 'bod))
+	   (pps (parse-partial-sexp bod (point))))
       (beginning-of-line)
       (cond
-       ;; are we inside a string or comment?
-       ((or (nth 3 pps) (nth 4 pps))
+       ;; are we inside a multi-line string or comment?
+       ((or (and (nth 3 pps)
+		 (nth 3 (parse-partial-sexp bod (py-point 'boi))))
+	    (nth 4 pps))
 	(save-excursion
 	  (if (not py-align-multiline-strings-p) 0
 	    ;; skip back over blank & non-indenting comment lines
