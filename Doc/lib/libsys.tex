@@ -256,8 +256,15 @@ else:
 \begin{datadesc}{maxint}
   The largest positive integer supported by Python's regular integer
   type.  This is at least 2**31-1.  The largest negative integer is
-  \code{-maxint-1} -- the asymmetry results from the use of 2's
+  \code{-maxint-1} --- the asymmetry results from the use of 2's
   complement binary arithmetic.
+\end{datadesc}
+
+\begin{datadesc}{maxunicode}
+  An integer giving the largest supported code point for a Unicode
+  character.  The value of this depends on the configuration option
+  that specifies whether Unicode characters are stored as UCS-2 or
+  UCS-4.
 \end{datadesc}
 
 \begin{datadesc}{modules}
@@ -448,6 +455,12 @@ else:
   value corresponding to the Python version 2.0 is \code{(2, 0, 0,
   'final', 0)}.
   \versionadded{2.0}
+\end{datadesc}
+
+\begin{datadesc}{warnoptions}
+  This is an implementation detail of the warnings framework; do not
+  modify this value.  Refer to the \refmodule{warnings} module for
+  more information on the warnings framework.
 \end{datadesc}
 
 \begin{datadesc}{winver}
