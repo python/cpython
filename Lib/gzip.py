@@ -253,9 +253,13 @@ class GzipFile:
             self.myfileobj = None
 
     def __del__(self):
-        if (self.myfileobj is not None or
-            self.fileobj is not None):
-            self.close()
+        try:
+            if (self.myfileobj is None and
+                self.fileobj is None):
+                return
+        except AttributeError:
+            return
+        self.close()
         
     def flush(self):
         self.fileobj.flush()
