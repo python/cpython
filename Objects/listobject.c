@@ -306,6 +306,26 @@ list_length(a)
 	return a->ob_size;
 }
 
+
+
+static int
+list_contains(a, el)
+	PyListObject *a;
+	PyObject *el;
+{
+	int i, cmp;
+
+	for (i = 0; i < a->ob_size; ++i) {
+		cmp = PyObject_Compare(el, PyList_GET_ITEM(a, i));
+		if (cmp == 0)
+			return 1;
+		if (PyErr_Occurred())
+			return -1;
+	}
+	return 0;
+}
+
+
 static PyObject *
 list_item(a, i)
 	PyListObject *a;
@@ -1447,6 +1467,7 @@ static PySequenceMethods list_as_sequence = {
 	(intintargfunc)list_slice, /*sq_slice*/
 	(intobjargproc)list_ass_item, /*sq_ass_item*/
 	(intintobjargproc)list_ass_slice, /*sq_ass_slice*/
+	(objobjproc)list_contains, /*sq_contains*/
 };
 
 PyTypeObject PyList_Type = {
